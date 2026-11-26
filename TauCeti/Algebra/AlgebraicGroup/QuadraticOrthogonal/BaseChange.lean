@@ -101,17 +101,13 @@ theorem image_relationSet_baseChange
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom (1 ⊗ₜ[R] x)) ''
         relationSet R n q =
       relationSet K n q' := by
-  have hrel := coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix hq
-  have hsum (i j : Fin n) :
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom
-          (1 ⊗ₜ[R] (relationMatrix R n q i j + relationMatrix R n q j i)) =
-        relationMatrix K n q' i j + relationMatrix K n q' j i := by
-    rw [TensorProduct.tmul_add, map_add, hrel, hrel]
-  rw [relationSet_def, relationSet_def, Matrix.altRelationSet_def, Matrix.altRelationSet_def,
-    Set.image_union, ← Set.range_comp, ← Set.range_comp]
-  congr 1
-  · exact congrArg Set.range (funext fun i ↦ hrel i i)
-  · exact congrArg Set.range (funext fun ij ↦ hsum ij.1 ij.2)
+  let φ : GeneralLinear.coordinateHopfAlgebra R n →+* GeneralLinear.coordinateHopfAlgebra K n :=
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K n).hom.hom.toAlgHom.toRingHom.comp
+      Algebra.TensorProduct.includeRight.toRingHom
+  have hmatrix : (relationMatrix R n q).map φ = relationMatrix K n q' :=
+    Matrix.ext (coordinateHopfAlgebraBaseChangeIso_hom_relationMatrix hq)
+  rw [relationSet_def, relationSet_def, ← hmatrix, ← Matrix.image_altRelationSet]
+  rfl
 
 /-- The general-linear base-change isomorphism carries the base-changed defining Hopf ideal of
 `O(q)` onto the defining Hopf ideal of `O(q')`, when the coefficients of `q` map to those of

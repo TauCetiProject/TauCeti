@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Similitude
 public import TauCeti.Algebra.AlgebraicGroup.QuadraticOrthogonal.Basic
+import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
 # The orthogonal similitude group scheme of a quadratic form
@@ -42,7 +43,9 @@ Wᵀ M W - s M = -(s Wᵀ (Xᵀ M X - r M) W)    (W X = 1, s r = 1).
 * `TauCeti.QuadraticSimilitude.multiplier`: the multiplier character `GO(q) → 𝔾_m`.
 * `TauCeti.QuadraticSimilitude.pointsSubgroup` and `TauCeti.QuadraticSimilitude.pointsMulEquiv`:
   the points are the pairs `(g, c)` with `q_A(g x) = c · q_A(x)`, with `pointsMulEquiv_fst`,
-  `pointsMulEquiv_snd` and the naturality `pointsMulEquiv_mapValue`.
+  `pointsMulEquiv_snd` and the naturality `pointsMulEquiv_mapValue`, all instances of the
+  general `TauCeti.ConstantFormSimilitude.quotientPointsMulEquiv` at the membership criterion
+  `mem_definingPointsSubgroup_iff`.
 * `TauCeti.QuadraticSimilitude.coordinateMap_eq_zero_of_mem_relationSet` and
   `TauCeti.QuadraticSimilitude.isAltMod_map_coordinateMap`: the relations hold in the coordinate
   Hopf algebra of `GO(q)`.
@@ -105,22 +108,6 @@ entries and its symmetric sums. -/
 theorem relationSet_def : relationSet R n q = (relationMatrix R n q).altRelationSet := by
   rw [relationSet]
 
-/-- Mapping `gᵀ M g - c M` through an algebra morphism `phi`, for `M` the coefficient matrix of
-`q` read in each algebra, applies `phi` to `g` and to `c`. -/
-theorem transpose_mul_mul_sub_smul_map {A B : Type*} [Ring A] [Algebra R A] [Ring B]
-    [Algebra R B] (phi : A →ₐ[R] B) (g : Matrix (Fin n) (Fin n) A) (c : A) :
-    (gᵀ * (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A) * g -
-        c • (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A)).map phi =
-      (g.map phi)ᵀ * (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R B) *
-          g.map phi -
-        phi c • (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R B) := by
-  have hC : ((coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A)).map phi =
-      (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R B) := by
-    rw [Matrix.map_map]
-    exact congrArg _ (funext fun r => phi.commutes r)
-  rw [Matrix.map_sub _ (map_sub phi), Matrix.map_mul, Matrix.map_mul,
-    Matrix.map_smul' _ _ _ (map_mul phi), hC, Matrix.transpose_map]
-
 /-- Mapping the relation matrix through an algebra morphism gives the relation of the images of
 the generic matrix and of the multiplier coordinate. -/
 theorem relationMatrix_map {T : Type*} [Ring T] [Algebra R T]
@@ -131,7 +118,7 @@ theorem relationMatrix_map {T : Type*} [Ring T] [Algebra R T]
           (matrixCoord R n).map phi -
         phi (multiplierCoord R n) •
           (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R T) := by
-  rw [relationMatrix, transpose_mul_mul_sub_smul_map]
+  rw [relationMatrix, Matrix.map_transpose_mul_mul_sub_smul]
 
 /-! ### The three Hopf-ideal closure conditions -/
 
@@ -401,24 +388,13 @@ theorem mem_definingPointsSubgroup_iff
     ← definingHopfIdeal_toIdeal_le_ker_iff]
   exact ⟨fun h x hx => h x (HopfIdeal.mem_toIdeal.mp hx), fun h x hx => h hx⟩
 
-/-- The subgroup of ambient points cut out by the defining Hopf ideal is `GO(q)(A)`. -/
-private theorem map_definingPointsSubgroup :
-    (CommHopfAlgCat.quotientPointsSubgroup (ambientHopfAlgebra R n)
-        (definingHopfIdeal R n q) (CommAlgCat.of R A)).map
-        (ambientPointsMulEquiv R n A).toMonoidHom =
-      pointsSubgroup R n q A := by
-  ext p
-  rw [Subgroup.mem_map_equiv, mem_definingPointsSubgroup_iff, MulEquiv.apply_symm_apply]
-
 /-- **The points identification**: the group of algebra-valued points of the coordinate Hopf
 algebra of `GO(q)` is the group of similitudes `(g, c)` of `q_A`. -/
 noncomputable def pointsMulEquiv :
     HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n q) (CommAlgCat.of R A) ≃*
       pointsSubgroup R n q A :=
-  ((CommHopfAlgCat.quotientPointsSubgroupNatIso (ambientHopfAlgebra R n)
-      (definingHopfIdeal R n q)).app (CommAlgCat.of R A)).groupIsoToMulEquiv.trans
-    (((ambientPointsMulEquiv R n A).subgroupMap _).trans
-      (MulEquiv.subgroupCongr (map_definingPointsSubgroup R n q)))
+  quotientPointsMulEquiv R n (definingHopfIdeal R n q) (pointsSubgroup R n q A)
+    (mem_definingPointsSubgroup_iff R n q)
 
 /-- Under the points identifications, the quotient-point inclusion is the inclusion of
 `GO(q)(A)` into `GLₙ(A) × Aˣ`. -/
@@ -427,10 +403,8 @@ theorem pointsMulEquiv_coe
     ambientPointsMulEquiv R n A
         (CommHopfAlgCat.quotientPointsHom (ambientHopfAlgebra R n) (definingHopfIdeal R n q)
           (CommAlgCat.of R A) f) =
-      (pointsMulEquiv R n q (A := A) f : GL (Fin n) A × Aˣ) := by
-  have hcomponent := CommHopfAlgCat.quotientPointsSubgroupNatIso_hom_app_apply
-    (ambientHopfAlgebra R n) (definingHopfIdeal R n q) (CommAlgCat.of R A) f
-  exact congrArg (ambientPointsMulEquiv R n A) (congrArg Subtype.val hcomponent).symm
+      (pointsMulEquiv R n q (A := A) f : GL (Fin n) A × Aˣ) :=
+  quotientPointsMulEquiv_coe R n _ _ _ f
 
 /-- The multiplier of a point, read through the points identification, is its value on the
 multiplier coordinate. -/
@@ -438,10 +412,8 @@ theorem pointsMulEquiv_snd
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n q) (CommAlgCat.of R A)) :
     (((pointsMulEquiv R n q (A := A) f : GL (Fin n) A × Aˣ).2 : Aˣ) : A) =
       f.ofConv ((multiplierCoordinateMap R n q).hom (LaurentPolynomial.T 1)) := by
-  rw [← pointsMulEquiv_coe, coe_ambientPointsMulEquiv_snd,
-    CommHopfAlgCat.quotientPointsHom_apply_apply, multiplierCoordinateMap_def, coordinateMap_def,
-    multiplierCoord_def]
-  simp
+  rw [pointsMulEquiv, quotientPointsMulEquiv_snd, multiplierCoordinateMap_def, coordinateMap_def,
+    CommHopfAlgCat.hom_comp, BialgHom.comp_apply, multiplierCoord_def]
 
 /-- The matrix of a point, read through the points identification, is its value on the image of
 the generic matrix in the coordinate Hopf algebra. -/
@@ -450,10 +422,7 @@ theorem pointsMulEquiv_fst
     (((pointsMulEquiv R n q (A := A) f : GL (Fin n) A × Aˣ).1 : GL (Fin n) A) :
         Matrix (Fin n) (Fin n) A) =
       (matrixCoord R n).map fun x ↦ f.ofConv ((coordinateMap R n q).hom x) := by
-  rw [← pointsMulEquiv_coe, coe_ambientPointsMulEquiv_fst]
-  ext i j
-  rw [Matrix.map_apply, Matrix.map_apply, CommHopfAlgCat.quotientPointsHom_apply_apply,
-    coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk]
+  rw [pointsMulEquiv, quotientPointsMulEquiv_fst, coordinateMap_def]
 
 variable (A) in
 /-- **The multiplier on points**, `(g, c) ↦ c`, on the similitudes of `q`. -/
@@ -522,7 +491,7 @@ def pointsSubgroupMap (phi : A →ₐ[R] B) : pointsSubgroup R n q A →* points
     fun p => by
       have h := ((mem_pointsSubgroup_iff_isAltMod R n q _).mp p.property).map phi
         (by rw [Ideal.map_bot])
-      rw [transpose_mul_mul_sub_smul_map] at h
+      rw [Matrix.map_transpose_mul_mul_sub_smul] at h
       rw [mem_pointsSubgroup_iff_isAltMod]
       exact h
 
@@ -542,8 +511,8 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
     pointsMulEquiv R n q (A := B) (AlgHom.mapValue (H := coordinateHopfAlgebra R n q) phi f) =
       pointsSubgroupMap R n q phi (pointsMulEquiv R n q (A := A) f) := by
   apply Subtype.ext
-  rw [coe_pointsSubgroupMap, ← pointsMulEquiv_coe, ← pointsMulEquiv_coe,
-    ← CommHopfAlgCat.mapValue_quotientPointsHom, ambientPointsMulEquiv_mapValue]
+  rw [coe_pointsSubgroupMap]
+  exact quotientPointsMulEquiv_mapValue R n _ phi _ _ _ _ f
 
 end Points
 

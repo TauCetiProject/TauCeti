@@ -36,6 +36,7 @@ every characteristic: `g` preserves the form with coefficient matrix `M` exactly
 * `Matrix.IsAltMod.map`: stability under a ring morphism carrying the ideal into another.
 * `Matrix.altRelationSet`: the diagonal entries and symmetric sums, which generate the smallest
   ideal modulo which the matrix is alternating (`Matrix.span_altRelationSet_le_iff`), with
+  `Matrix.mem_altRelationSet_iff`, `Matrix.image_altRelationSet` and
   `Matrix.IsAltMod.apply_mem_of_map`.
 * `Matrix.isAltMod_bot_iff`: alternating modulo `⊥` means the quadratic form vanishes.
 -/
@@ -180,6 +181,23 @@ theorem altRelationSet_def (N : Matrix ι ι S) :
     N.altRelationSet =
       Set.range (fun i => N i i) ∪ Set.range fun ij : ι × ι => N ij.1 ij.2 + N ij.2 ij.1 := by
   rw [altRelationSet]
+
+/-- An alternating relation of `N` is a diagonal entry `N i i` or a symmetric sum
+`N i j + N j i`. -/
+@[simp]
+theorem mem_altRelationSet_iff {N : Matrix ι ι S} {x : S} :
+    x ∈ N.altRelationSet ↔ (∃ i, N i i = x) ∨ ∃ i j, N i j + N j i = x := by
+  rw [altRelationSet_def, Set.mem_union, Set.mem_range, Set.mem_range, Prod.exists]
+
+/-- The image of the alternating relations of `N` under a ring morphism `f` is the set of
+alternating relations of `N.map f`. -/
+theorem image_altRelationSet {T F : Type*} [CommSemiring T] [FunLike F S T]
+    [RingHomClass F S T] (f : F) (N : Matrix ι ι S) :
+    f '' N.altRelationSet = (N.map f).altRelationSet := by
+  rw [altRelationSet_def, altRelationSet_def, Set.image_union, ← Set.range_comp,
+    ← Set.range_comp]
+  congr 1
+  exact congrArg Set.range (funext fun ij => map_add f _ _)
 
 /-- An ideal contains the alternating relations of `N` exactly when `N` is alternating modulo
 it. -/

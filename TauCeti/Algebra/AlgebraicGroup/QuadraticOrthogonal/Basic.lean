@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.Alternating.ModIdeal
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.QuadraticForm.Matrix
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
 # The orthogonal group scheme of a quadratic form
@@ -123,13 +124,7 @@ theorem relationMatrix_map {T : Type*} [Ring T] [Algebra R T]
           (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R T) *
           (GeneralLinear.genericMatrix R n).map phi -
         (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R T) := by
-  have hC : ((coefficientMatrix q (Pi.basisFun R (Fin n))).map
-      (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n))).map phi =
-      (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R T) := by
-    rw [Matrix.map_map]
-    exact congrArg _ (funext fun r => phi.commutes r)
-  rw [relationMatrix, Matrix.map_sub _ (map_sub phi), Matrix.map_mul, Matrix.map_mul, hC,
-    Matrix.transpose_map]
+  rw [relationMatrix, Matrix.map_transpose_mul_mul_sub]
 
 /-! ### The three Hopf-ideal closure conditions -/
 

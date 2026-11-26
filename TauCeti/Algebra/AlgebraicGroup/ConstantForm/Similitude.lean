@@ -85,6 +85,10 @@ None of these identities uses a property of `C`.
   componentwise map `pointsSubgroupMap`.
 * `TauCeti.ConstantFormSimilitude.ambientPointsMulEquiv`: the points of `GLₙ × 𝔾_m` are
   `GLₙ(A) × Aˣ`, naturally in `A` (`ambientPointsMulEquiv_mapValue`).
+* `TauCeti.ConstantFormSimilitude.quotientPointsMulEquiv`: the points of the closed subgroup
+  scheme of `GLₙ × 𝔾_m` cut out by any Hopf ideal, given a description `S` of the ambient points
+  killing it, with `quotientPointsMulEquiv_fst`, `quotientPointsMulEquiv_snd` and the naturality
+  `quotientPointsMulEquiv_mapValue`; `pointsMulEquiv` is its instance at the defining ideal.
 
 ## References
 
@@ -172,12 +176,8 @@ theorem relationMatrix_map {T : Type*} [Ring T] [Algebra R T]
     (relationMatrix R n C).map phi =
       (matrixCoord R n).map phi * C.map (algebraMap R T) * ((matrixCoord R n).map phi)ᵀ -
         phi (multiplierCoord R n) • C.map (algebraMap R T) := by
-  have hC : (C.map (algebraMap R (ambientHopfAlgebra R n))).map phi =
-      C.map (algebraMap R T) := by
-    rw [Matrix.map_map]
-    exact congrArg _ (funext fun r => phi.commutes r)
   rw [relationMatrix, Matrix.map_sub _ (map_sub phi), Matrix.map_mul, Matrix.map_mul,
-    Matrix.map_smul' _ _ _ (map_mul phi), hC, Matrix.transpose_map]
+    Matrix.map_smul' _ _ _ (map_mul phi), Matrix.map_map_algebraMap, Matrix.transpose_map]
 
 /-! ### The three Hopf-ideal closure conditions -/
 
@@ -452,7 +452,7 @@ theorem multiplier_def :
 
 section Points
 
-variable {A : Type w} [CommRing A] [Algebra R A]
+variable {A : Type w} [CommRing A] [Algebra R A] {B : Type*} [CommRing B] [Algebra R B]
 
 /-- The points of `GLₙ × 𝔾_m`: the product-points equivalence followed by the points
 equivalences of the two factors. -/
@@ -495,6 +495,116 @@ theorem coe_ambientPointsMulEquiv_snd
   rw [ambientPointsMulEquiv_apply, MultiplicativeGroup.pointsMulEquiv_apply,
     laurentEvalEquiv_symm_apply, multiplierCoord, ← BialgHom.mapDomain_apply_apply]
 
+/-- The ambient points equivalence is natural in the value algebra. -/
+theorem ambientPointsMulEquiv_mapValue (phi : A →ₐ[R] B)
+    (g : HopfAlgebra.points (R := R) (H := ambientHopfAlgebra R n) (CommAlgCat.of R A)) :
+    ambientPointsMulEquiv R n B (AlgHom.mapValue (H := ambientHopfAlgebra R n) phi g) =
+      Prod.map (Matrix.GeneralLinearGroup.map (phi : A →+* B)) (Units.map (phi : A →* B))
+        (ambientPointsMulEquiv R n A g) := by
+  unfold ambientPointsMulEquiv
+  -- `ambientHopfAlgebra R n` is the tensor product `O(GLₙ) ⊗[R] R[T;T⁻¹]` of the two factors.
+  exact (congrArg (MulEquiv.prodCongr _ _)
+    (AffineGroup.Product.pointsMulEquiv_mapValue phi g)).trans
+      (Prod.ext (GeneralLinear.pointsMulEquiv_mapValue n phi _)
+        (MultiplicativeGroup.pointsMulEquiv_mapValue phi _))
+
+/-! #### The points of a closed subgroup scheme of `GLₙ × 𝔾_m` -/
+
+section QuotientPoints
+
+variable (I : HopfIdeal R (ambientHopfAlgebra R n))
+
+/-- If the ambient points killing `I` are those whose pair lies in `S`, the ambient points
+identification carries the subgroup they form onto `S`. -/
+private theorem map_quotientPointsSubgroup_eq {S : Subgroup (GL (Fin n) A × Aˣ)}
+    (hS : ∀ g, g ∈ CommHopfAlgCat.quotientPointsSubgroup (ambientHopfAlgebra R n) I
+        (CommAlgCat.of R A) ↔ ambientPointsMulEquiv R n A g ∈ S) :
+    (CommHopfAlgCat.quotientPointsSubgroup (ambientHopfAlgebra R n) I (CommAlgCat.of R A)).map
+        (ambientPointsMulEquiv R n A).toMonoidHom =
+      S := by
+  ext p
+  rw [Subgroup.mem_map_equiv, hS, MulEquiv.apply_symm_apply]
+
+/-- **The points of a closed subgroup scheme of `GLₙ × 𝔾_m`**: if an ambient point kills the
+Hopf ideal `I` exactly when its pair `(h, r) ∈ GLₙ(A) × Aˣ` lies in `S`, the group of `A`-valued
+points of the quotient coordinate Hopf algebra by `I` is `S`. -/
+noncomputable def quotientPointsMulEquiv (S : Subgroup (GL (Fin n) A × Aˣ))
+    (hS : ∀ g, g ∈ CommHopfAlgCat.quotientPointsSubgroup (ambientHopfAlgebra R n) I
+        (CommAlgCat.of R A) ↔ ambientPointsMulEquiv R n A g ∈ S) :
+    HopfAlgebra.points (R := R) (H := CommHopfAlgCat.quotient (ambientHopfAlgebra R n) I)
+        (CommAlgCat.of R A) ≃*
+      S :=
+  ((CommHopfAlgCat.quotientPointsSubgroupNatIso (ambientHopfAlgebra R n) I).app
+      (CommAlgCat.of R A)).groupIsoToMulEquiv.trans
+    (((ambientPointsMulEquiv R n A).subgroupMap _).trans
+      (MulEquiv.subgroupCongr (map_quotientPointsSubgroup_eq R n I hS)))
+
+/-- Under the points identifications, the quotient-point inclusion is the inclusion of `S` into
+`GLₙ(A) × Aˣ`. -/
+theorem quotientPointsMulEquiv_coe (S : Subgroup (GL (Fin n) A × Aˣ))
+    (hS : ∀ g, g ∈ CommHopfAlgCat.quotientPointsSubgroup (ambientHopfAlgebra R n) I
+        (CommAlgCat.of R A) ↔ ambientPointsMulEquiv R n A g ∈ S)
+    (f : HopfAlgebra.points (R := R) (H := CommHopfAlgCat.quotient (ambientHopfAlgebra R n) I)
+      (CommAlgCat.of R A)) :
+    ambientPointsMulEquiv R n A
+        (CommHopfAlgCat.quotientPointsHom (ambientHopfAlgebra R n) I (CommAlgCat.of R A) f) =
+      (quotientPointsMulEquiv R n I S hS f : GL (Fin n) A × Aˣ) := by
+  have hcomponent := CommHopfAlgCat.quotientPointsSubgroupNatIso_hom_app_apply
+    (ambientHopfAlgebra R n) I (CommAlgCat.of R A) f
+  -- `quotientPointsMulEquiv` is the natural isomorphism followed by `MulEquiv.subgroupMap` and
+  -- `MulEquiv.subgroupCongr`, both of which apply `ambientPointsMulEquiv` to the underlying point.
+  exact congrArg (ambientPointsMulEquiv R n A) (congrArg Subtype.val hcomponent).symm
+
+/-- The matrix of a point, read through `quotientPointsMulEquiv`, is its value on the image of
+the generic matrix in the quotient. -/
+theorem quotientPointsMulEquiv_fst (S : Subgroup (GL (Fin n) A × Aˣ))
+    (hS : ∀ g, g ∈ CommHopfAlgCat.quotientPointsSubgroup (ambientHopfAlgebra R n) I
+        (CommAlgCat.of R A) ↔ ambientPointsMulEquiv R n A g ∈ S)
+    (f : HopfAlgebra.points (R := R) (H := CommHopfAlgCat.quotient (ambientHopfAlgebra R n) I)
+      (CommAlgCat.of R A)) :
+    (((quotientPointsMulEquiv R n I S hS f : GL (Fin n) A × Aˣ).1 : GL (Fin n) A) :
+        Matrix (Fin n) (Fin n) A) =
+      (matrixCoord R n).map fun x ↦
+        f.ofConv ((CommHopfAlgCat.mkQuotient (ambientHopfAlgebra R n) I).hom x) := by
+  rw [← quotientPointsMulEquiv_coe, coe_ambientPointsMulEquiv_fst]
+  ext i j
+  rw [Matrix.map_apply, Matrix.map_apply, CommHopfAlgCat.quotientPointsHom_apply_apply,
+    CommHopfAlgCat.mkQuotient_apply, Ideal.Quotient.mkₐ_eq_mk]
+
+/-- The unit of a point, read through `quotientPointsMulEquiv`, is its value on the image of the
+multiplier coordinate in the quotient. -/
+theorem quotientPointsMulEquiv_snd (S : Subgroup (GL (Fin n) A × Aˣ))
+    (hS : ∀ g, g ∈ CommHopfAlgCat.quotientPointsSubgroup (ambientHopfAlgebra R n) I
+        (CommAlgCat.of R A) ↔ ambientPointsMulEquiv R n A g ∈ S)
+    (f : HopfAlgebra.points (R := R) (H := CommHopfAlgCat.quotient (ambientHopfAlgebra R n) I)
+      (CommAlgCat.of R A)) :
+    (((quotientPointsMulEquiv R n I S hS f : GL (Fin n) A × Aˣ).2 : Aˣ) : A) =
+      f.ofConv ((CommHopfAlgCat.mkQuotient (ambientHopfAlgebra R n) I).hom
+        (multiplierCoord R n)) := by
+  rw [← quotientPointsMulEquiv_coe, coe_ambientPointsMulEquiv_snd,
+    CommHopfAlgCat.quotientPointsHom_apply_apply, CommHopfAlgCat.mkQuotient_apply,
+    Ideal.Quotient.mkₐ_eq_mk]
+
+/-- **`quotientPointsMulEquiv` is natural in the value algebra**: post-composing a point with
+`phi` maps its pair componentwise by `phi`. -/
+theorem quotientPointsMulEquiv_mapValue (phi : A →ₐ[R] B) (S : Subgroup (GL (Fin n) A × Aˣ))
+    (hS : ∀ g, g ∈ CommHopfAlgCat.quotientPointsSubgroup (ambientHopfAlgebra R n) I
+        (CommAlgCat.of R A) ↔ ambientPointsMulEquiv R n A g ∈ S)
+    (S' : Subgroup (GL (Fin n) B × Bˣ))
+    (hS' : ∀ g, g ∈ CommHopfAlgCat.quotientPointsSubgroup (ambientHopfAlgebra R n) I
+        (CommAlgCat.of R B) ↔ ambientPointsMulEquiv R n B g ∈ S')
+    (f : HopfAlgebra.points (R := R) (H := CommHopfAlgCat.quotient (ambientHopfAlgebra R n) I)
+      (CommAlgCat.of R A)) :
+    (quotientPointsMulEquiv R n I S' hS'
+        (AlgHom.mapValue (H := CommHopfAlgCat.quotient (ambientHopfAlgebra R n) I) phi f) :
+          GL (Fin n) B × Bˣ) =
+      Prod.map (Matrix.GeneralLinearGroup.map (phi : A →+* B)) (Units.map (phi : A →* B))
+        (quotientPointsMulEquiv R n I S hS f) := by
+  rw [← quotientPointsMulEquiv_coe, ← quotientPointsMulEquiv_coe,
+    ← CommHopfAlgCat.mapValue_quotientPointsHom, ambientPointsMulEquiv_mapValue]
+
+end QuotientPoints
+
 /-- **The subgroup of `GLₙ(A) × Aˣ` of similitudes of `C`**: pairs `(h, r)` with
 `h C hᵀ = r C`. -/
 def pointsSubgroup (A : Type w) [CommRing A] [Algebra R A] : Subgroup (GL (Fin n) A × Aˣ) where
@@ -534,25 +644,13 @@ theorem mem_definingPointsSubgroup_iff
     ← definingHopfIdeal_toIdeal_le_ker_iff]
   exact ⟨fun h x hx => h x (HopfIdeal.mem_toIdeal.mp hx), fun h x hx => h hx⟩
 
-/-- The subgroup of ambient points cut out by the defining Hopf ideal is the subgroup of
-similitudes of `C`. -/
-private theorem map_definingPointsSubgroup :
-    (CommHopfAlgCat.quotientPointsSubgroup (ambientHopfAlgebra R n)
-        (definingHopfIdeal R n C) (CommAlgCat.of R A)).map
-        (ambientPointsMulEquiv R n A).toMonoidHom =
-      pointsSubgroup R n C A := by
-  ext p
-  rw [Subgroup.mem_map_equiv, mem_definingPointsSubgroup_iff, MulEquiv.apply_symm_apply]
-
 /-- **The points identification**: the group of algebra-valued points of the similitude
 coordinate Hopf algebra is the group of similitudes `(h, r)` of `C`. -/
 noncomputable def pointsMulEquiv :
     HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n C) (CommAlgCat.of R A) ≃*
       pointsSubgroup R n C A :=
-  ((CommHopfAlgCat.quotientPointsSubgroupNatIso (ambientHopfAlgebra R n)
-      (definingHopfIdeal R n C)).app (CommAlgCat.of R A)).groupIsoToMulEquiv.trans
-    (((ambientPointsMulEquiv R n A).subgroupMap _).trans
-      (MulEquiv.subgroupCongr (map_definingPointsSubgroup R n C)))
+  quotientPointsMulEquiv R n (definingHopfIdeal R n C) (pointsSubgroup R n C A)
+    (mem_definingPointsSubgroup_iff R n C)
 
 /-- Under the points identifications, the quotient-point inclusion is the inclusion of
 similitudes into `GLₙ(A) × Aˣ`. -/
@@ -561,12 +659,8 @@ theorem pointsMulEquiv_coe
     ambientPointsMulEquiv R n A
         (CommHopfAlgCat.quotientPointsHom (ambientHopfAlgebra R n) (definingHopfIdeal R n C)
           (CommAlgCat.of R A) f) =
-      (pointsMulEquiv R n C (A := A) f : GL (Fin n) A × Aˣ) := by
-  have hcomponent := CommHopfAlgCat.quotientPointsSubgroupNatIso_hom_app_apply
-    (ambientHopfAlgebra R n) (definingHopfIdeal R n C) (CommAlgCat.of R A) f
-  -- `pointsMulEquiv` is the natural isomorphism followed by `MulEquiv.subgroupMap` and
-  -- `MulEquiv.subgroupCongr`, both of which apply `ambientPointsMulEquiv` to the underlying point.
-  exact congrArg (ambientPointsMulEquiv R n A) (congrArg Subtype.val hcomponent).symm
+      (pointsMulEquiv R n C (A := A) f : GL (Fin n) A × Aˣ) :=
+  quotientPointsMulEquiv_coe R n _ _ _ f
 
 /-- The multiplier of a point, read through the points identification, is its unit
 component. -/
@@ -574,9 +668,8 @@ theorem pointsMulEquiv_snd
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n C) (CommAlgCat.of R A)) :
     (((pointsMulEquiv R n C (A := A) f : GL (Fin n) A × Aˣ).2 : Aˣ) : A) =
       f.ofConv ((multiplierCoordinateMap R n C).hom (LaurentPolynomial.T 1)) := by
-  rw [← pointsMulEquiv_coe, coe_ambientPointsMulEquiv_snd,
-    CommHopfAlgCat.quotientPointsHom_apply_apply, multiplierCoordinateMap_def, coordinateMap_def]
-  simp [multiplierCoord]
+  rw [pointsMulEquiv, quotientPointsMulEquiv_snd, multiplierCoordinateMap_def, coordinateMap_def,
+    CommHopfAlgCat.hom_comp, BialgHom.comp_apply, multiplierCoord_def]
 
 /-- The matrix of a point, read through the points identification, is its value on the image of
 the generic matrix in the coordinate Hopf algebra. -/
@@ -585,10 +678,7 @@ theorem pointsMulEquiv_fst
     (((pointsMulEquiv R n C (A := A) f : GL (Fin n) A × Aˣ).1 : GL (Fin n) A) :
         Matrix (Fin n) (Fin n) A) =
       (matrixCoord R n).map fun x ↦ f.ofConv ((coordinateMap R n C).hom x) := by
-  rw [← pointsMulEquiv_coe, coe_ambientPointsMulEquiv_fst]
-  ext i j
-  rw [Matrix.map_apply, Matrix.map_apply, CommHopfAlgCat.quotientPointsHom_apply_apply,
-    coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk]
+  rw [pointsMulEquiv, quotientPointsMulEquiv_fst, coordinateMap_def]
 
 variable (A) in
 /-- **The multiplier on points**, `(h, r) ↦ r`, on the similitudes of `C`. -/
@@ -609,33 +699,15 @@ theorem multiplierPoints_pointsMulEquiv
       f.ofConv ((multiplierCoordinateMap R n C).hom (LaurentPolynomial.T 1)) := by
   rw [multiplierPoints_apply, pointsMulEquiv_snd]
 
-variable {B : Type*} [CommRing B] [Algebra R B]
-
-/-- The ambient points equivalence is natural in the value algebra. -/
-theorem ambientPointsMulEquiv_mapValue (phi : A →ₐ[R] B)
-    (g : HopfAlgebra.points (R := R) (H := ambientHopfAlgebra R n) (CommAlgCat.of R A)) :
-    ambientPointsMulEquiv R n B (AlgHom.mapValue (H := ambientHopfAlgebra R n) phi g) =
-      Prod.map (Matrix.GeneralLinearGroup.map (phi : A →+* B)) (Units.map (phi : A →* B))
-        (ambientPointsMulEquiv R n A g) := by
-  unfold ambientPointsMulEquiv
-  -- `ambientHopfAlgebra R n` is the tensor product `O(GLₙ) ⊗[R] R[T;T⁻¹]` of the two factors.
-  exact (congrArg (MulEquiv.prodCongr _ _)
-    (AffineGroup.Product.pointsMulEquiv_mapValue phi g)).trans
-      (Prod.ext (GeneralLinear.pointsMulEquiv_mapValue n phi _)
-        (MultiplicativeGroup.pointsMulEquiv_mapValue phi _))
-
 /-- **Change of value algebra on similitudes**: an algebra morphism `phi : A → B` sends a
 similitude `(h, r)` of `C` over `A` to the similitude `(phi h, phi r)` over `B`. -/
 def pointsSubgroupMap (phi : A →ₐ[R] B) : pointsSubgroup R n C A →* pointsSubgroup R n C B :=
   ((MonoidHom.prodMap (Matrix.GeneralLinearGroup.map (phi : A →+* B))
       (Units.map (phi : A →* B))).comp (pointsSubgroup R n C A).subtype).codRestrict _
     fun p => by
-      have hC : (C.map (algebraMap R A)).map phi = C.map (algebraMap R B) := by
-        rw [Matrix.map_map]
-        exact congrArg _ (funext fun r => phi.commutes r)
       have h := congrArg (Matrix.map · phi) ((mem_pointsSubgroup_iff R n C _).mp p.property)
-      rw [Matrix.map_mul, Matrix.map_mul, Matrix.map_smul' _ _ _ (map_mul phi), hC,
-        Matrix.transpose_map] at h
+      rw [Matrix.map_mul, Matrix.map_mul, Matrix.map_smul' _ _ _ (map_mul phi),
+        Matrix.map_map_algebraMap, Matrix.transpose_map] at h
       rw [mem_pointsSubgroup_iff, MonoidHom.comp_apply, Subgroup.coe_subtype,
         MonoidHom.coe_prodMap, Prod.map_fst, Prod.map_snd, Units.coe_map, MonoidHom.coe_ofClass,
         Matrix.GeneralLinearGroup.val_map_apply, RingHom.coe_coe]
@@ -657,8 +729,8 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
     pointsMulEquiv R n C (A := B) (AlgHom.mapValue (H := coordinateHopfAlgebra R n C) phi f) =
       pointsSubgroupMap R n C phi (pointsMulEquiv R n C (A := A) f) := by
   apply Subtype.ext
-  rw [coe_pointsSubgroupMap, ← pointsMulEquiv_coe, ← pointsMulEquiv_coe,
-    ← CommHopfAlgCat.mapValue_quotientPointsHom, ambientPointsMulEquiv_mapValue]
+  rw [coe_pointsSubgroupMap]
+  exact quotientPointsMulEquiv_mapValue R n _ phi _ _ _ _ f
 
 end Points
 
