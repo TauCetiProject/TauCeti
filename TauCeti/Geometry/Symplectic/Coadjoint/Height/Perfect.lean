@@ -27,7 +27,8 @@ component of `μ`. Following Bott, this file computes the Betti numbers of `O` f
   (`TauCeti.IsRootPlaneDecomposition.isMorse_orbitMap_coadjointRepresentation_apply`), with
   critical points the points of the orbit lying over `t`. So every coadjoint orbit of a compact
   Lie group carries a Morse height
-  (`Module.Dual.exists_isMorse_orbitMap_coadjointRepresentation_apply`).
+  (`TauCeti.exists_isRootPlaneDecomposition_groupLieAlgebra`,
+  `Module.Dual.exists_isMorse_orbitMap_coadjointRepresentation_apply`).
 * As a component of a moment map for a compact group acting by symplectomorphisms, a height has
   even Morse index at every critical point
   (`TauCeti.SmoothTwoForm.IsMomentMap.even_manifoldMorseIndex`).
@@ -57,6 +58,8 @@ even-cell structure itself, are not proved here.
 
 * `TauCeti.IsRootPlaneDecomposition.isMorse_orbitMap_coadjointRepresentation_apply`: the height of
   a regular element of `t` is a Morse function on every coadjoint orbit.
+* `TauCeti.exists_isRootPlaneDecomposition_groupLieAlgebra`: the Lie algebra of a compact Lie
+  group has a root-plane decomposition, for a separating invariant form, with a regular element.
 * `Module.Dual.exists_isMorse_orbitMap_coadjointRepresentation_apply`: a coadjoint orbit of a
   compact Lie group carries a Morse height.
 * `Module.Dual.isPerfectMorse_orbitMap_coadjointRepresentation_apply`: Morse heights are perfect.
@@ -111,6 +114,33 @@ theorem isMorse_orbitMap_coadjointRepresentation_apply [Finite ι]
 
 end TauCeti.IsRootPlaneDecomposition
 
+omit [I.Boundaryless] in
+/-- **A root-plane decomposition of the Lie algebra of a compact Lie group.** The Lie algebra `𝔤`
+of a compact Lie group carries a separating invariant form `B` and a root-plane decomposition
+`𝔤 = t + Σ F_k` for `B`, with planes of dimension two, over an abelian subspace `t` containing a
+regular element, at which no root vanishes. `B` is an `Ad`-invariant inner product and `t` a
+maximal abelian subspace (`TauCeti.exists_isRootPlaneDecomposition`). -/
+theorem TauCeti.exists_isRootPlaneDecomposition_groupLieAlgebra [CompactSpace G] :
+    ∃ (B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)) (t : Submodule ℝ (GroupLieAlgebra I G))
+      (r : ℕ) (α : Fin r → Dual ℝ t) (F : Fin r → Submodule ℝ (GroupLieAlgebra I G))
+      (J : (k : Fin r) → Module.End ℝ (F k)),
+      IsRootPlaneDecomposition B t α F J ∧ (∀ k, finrank ℝ (F k) = 2) ∧
+        B.lieInvariant (GroupLieAlgebra I G) ∧ B.SeparatingLeft ∧ ∃ X : t, ∀ k, α k X ≠ 0 := by
+  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := inferInstanceAs (FiniteDimensional ℝ E)
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  -- An `Ad`-invariant inner product, and a maximal abelian subspace for it.
+  obtain ⟨b, hsymm, hpos, hinv⟩ :=
+    exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant (I := I) (G := G)
+  have hB : b.toBilinForm.lieInvariant (GroupLieAlgebra I G) :=
+    lieInvariant_of_adjoint_invariant hinv
+  have hsep : b.toBilinForm.SeparatingLeft := fun x hx ↦ by
+    by_contra h
+    exact (hpos x h).ne' (hx x)
+  obtain ⟨t, r, α, F, J, hD, hF, hX⟩ :=
+    TauCeti.exists_isRootPlaneDecomposition (B := b.toBilinForm)
+      (LinearMap.BilinForm.isSymm_def.2 hsymm) hpos hB
+  exact ⟨b.toBilinForm, t, r, α, F, J, hD, hF, hB, hsep, hX⟩
+
 namespace Module.Dual
 
 variable (ν : Module.Dual ℝ (GroupLieAlgebra I G))
@@ -123,19 +153,8 @@ theorem exists_isMorse_orbitMap_coadjointRepresentation_apply [CompactSpace G] :
     ∃ X : GroupLieAlgebra I G,
       IsMorse 𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
         fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X := by
-  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := inferInstanceAs (FiniteDimensional ℝ E)
-  have : T2Space G := I.t2Space_of_lieGroup ∞
-  obtain ⟨b, hsymm, hpos, hinv⟩ :=
-    exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant (I := I) (G := G)
-  -- An `Ad`-invariant inner product, and a regular element of a maximal abelian subspace for it.
-  have hB : b.toBilinForm.lieInvariant (GroupLieAlgebra I G) :=
-    lieInvariant_of_adjoint_invariant hinv
-  have hsep : b.toBilinForm.SeparatingLeft := fun x hx ↦ by
-    by_contra h
-    exact (hpos x h).ne' (hx x)
-  obtain ⟨t, r, α, F, J, hD, -, X, hX⟩ :=
-    TauCeti.exists_isRootPlaneDecomposition (B := b.toBilinForm)
-      (LinearMap.BilinForm.isSymm_def.2 hsymm) hpos hB
+  obtain ⟨B, t, r, α, F, J, hD, -, hB, hsep, X, hX⟩ :=
+    TauCeti.exists_isRootPlaneDecomposition_groupLieAlgebra (I := I) (G := G)
   exact ⟨X, hD.isMorse_orbitMap_coadjointRepresentation_apply hB hsep hX⟩
 
 /-! ### Perfection and Betti numbers -/

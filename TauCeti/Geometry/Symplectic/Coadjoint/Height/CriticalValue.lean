@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Coadjoint.Height.Perfect
 import Mathlib.Algebra.Module.Submodule.Union
-import TauCeti.Algebra.Lie.InvariantForm.RootPlane.Decomposition
-import TauCeti.Geometry.Lie.Adjoint.InvariantForm
 import TauCeti.Topology.Algebra.Module.Hyperplane
 
 /-!
@@ -23,7 +21,7 @@ every root, `f_X` is a Morse function, and its critical points are the points of
 
 `Crit(f_X) = μ⁻¹(B t)`
 
-(`IsRootPlaneDecomposition.criticalPoints_eq_preimage_orbitMap_coadjointRepresentation`).
+(`TauCeti.IsRootPlaneDecomposition.criticalPoints_eq_preimage_orbitMap_coadjointRepresentation`).
 This finite set `C` does not depend on the regular element `X`, but the critical values do: at the
 point `x ∈ C` with `μ x = B q`, `q ∈ t`, the value is `f_X(x) = B(q, X)`. So the critical points
 over `q ≠ q'` share their value exactly when `B(q - q', X) = 0`, which can happen for regular `X`.
@@ -42,7 +40,8 @@ every nonempty open subset of `t`, such as an open Weyl chamber, contains an ele
 is a Morse function with pairwise distinct critical values
 (`IsRootPlaneDecomposition.exists_mem_isMorse_and_injOn_orbitMap_coadjointRepresentation_apply`).
 In particular every coadjoint orbit of a compact Lie group carries such a height
-(`Module.Dual.exists_isMorse_and_injOn_orbitMap_coadjointRepresentation_apply`). Each critical
+(`Module.Dual.exists_isMorse_and_injOn_orbitMap_coadjointRepresentation_apply`), from the
+root-plane decomposition of `TauCeti.exists_isRootPlaneDecomposition_groupLieAlgebra`. Each critical
 level of such a height contains exactly one critical point, which is what building the orbit from
 the sublevel sets of `f_X` one handle at a time needs.
 
@@ -50,8 +49,6 @@ the sublevel sets of `f_X` one handle at a time needs.
 
 In the namespace `TauCeti.IsRootPlaneDecomposition`:
 
-* `criticalPoints_eq_preimage_orbitMap_coadjointRepresentation`: the critical set of a regular
-  height is the part of the orbit lying over `t`.
 * `isOpen_setOf_injOn_orbitMap_coadjointRepresentation_apply`,
   `dense_setOf_injOn_orbitMap_coadjointRepresentation_apply`: the regular elements of `t` whose
   height has pairwise distinct critical values form a dense open subset of `t`.
@@ -88,28 +85,6 @@ namespace TauCeti.IsRootPlaneDecomposition
 variable {ν : Module.Dual ℝ (GroupLieAlgebra I G)} {B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)}
   {ι : Type*} {t : Submodule ℝ (GroupLieAlgebra I G)} {α : ι → Dual ℝ t}
   {F : ι → Submodule ℝ (GroupLieAlgebra I G)} {J : (i : ι) → Module.End ℝ (F i)}
-
-/-- **The critical set of a regular height.** In a root-plane decomposition of `𝔤` for a
-separating invariant form `B`, let `X ∈ t` be regular, `α_i(X) ≠ 0` for every root. Then the
-critical points of the height `f_X` on the coadjoint orbit of `ν` are the points `x` with
-`μ x ∈ B t`. In particular the critical set is the same for every regular `X`. -/
-theorem criticalPoints_eq_preimage_orbitMap_coadjointRepresentation [Finite ι]
-    (hD : IsRootPlaneDecomposition B t α F J) (hB : B.lieInvariant (GroupLieAlgebra I G))
-    (hsep : B.SeparatingLeft) {X : t} (hX : ∀ i, α i X ≠ 0) :
-    criticalPoints
-        𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
-        (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X) =
-      (coadjointRepresentation ℝ I G).orbitMap ν ⁻¹' (B '' (t : Set (GroupLieAlgebra I G))) := by
-  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := inferInstanceAs (FiniteDimensional ℝ E)
-  have hinj : Function.Injective B :=
-    LinearMap.ker_eq_bot.mp (LinearMap.separatingLeft_iff_ker_eq_bot.mp hsep)
-  -- In finite dimensions the injective map `q ↦ B q` to the dual is onto.
-  have hsurj := (B.linearEquivOfInjective hinj Subspace.dual_finrank_eq.symm).surjective
-  ext x
-  obtain ⟨q, hq⟩ := hsurj ((coadjointRepresentation ℝ I G).orbitMap ν x)
-  rw [LinearMap.linearEquivOfInjective_apply] at hq
-  rw [hD.mem_criticalPoints_orbitMap_coadjointRepresentation_apply_iff_mem hB hsep hX hq.symm,
-    mem_preimage, ← hq, hinj.mem_set_image, SetLike.mem_coe]
 
 /-- The regular elements of `t` whose height has pairwise distinct critical values are the points
 at which finitely many nonzero continuous functionals on `t` do not vanish: the roots, and the
@@ -250,19 +225,8 @@ theorem exists_isMorse_and_injOn_orbitMap_coadjointRepresentation_apply [Compact
         (criticalPoints
           𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
           fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X) := by
-  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := inferInstanceAs (FiniteDimensional ℝ E)
-  have : T2Space G := I.t2Space_of_lieGroup ∞
-  -- An `Ad`-invariant inner product, and a root-plane decomposition with a regular element.
-  obtain ⟨b, hsymm, hpos, hinv⟩ :=
-    exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant (I := I) (G := G)
-  have hB : b.toBilinForm.lieInvariant (GroupLieAlgebra I G) :=
-    lieInvariant_of_adjoint_invariant hinv
-  have hsep : b.toBilinForm.SeparatingLeft := fun x hx ↦ by
-    by_contra h
-    exact (hpos x h).ne' (hx x)
-  obtain ⟨t, r, α, F, J, hD, -, X₀, hX₀⟩ :=
-    TauCeti.exists_isRootPlaneDecomposition (B := b.toBilinForm)
-      (LinearMap.BilinForm.isSymm_def.2 hsymm) hpos hB
+  obtain ⟨B, t, r, α, F, J, hD, -, hB, hsep, X₀, hX₀⟩ :=
+    exists_isRootPlaneDecomposition_groupLieAlgebra (I := I) (G := G)
   obtain ⟨X, -, hX⟩ := hD.exists_mem_isMorse_and_injOn_orbitMap_coadjointRepresentation_apply
     (ν := ν) hB hsep (fun i hi ↦ hX₀ i (by simp [hi])) isOpen_univ univ_nonempty
   exact ⟨X, hX⟩
