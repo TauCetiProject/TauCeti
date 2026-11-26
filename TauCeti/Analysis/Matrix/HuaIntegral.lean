@@ -10,12 +10,12 @@ public import Mathlib.MeasureTheory.Integral.Marginal
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Matrix.Order
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Positivity
-import TauCeti.Analysis.SpecialFunctions.Gamma.LIntegral
-import TauCeti.Analysis.SpecialFunctions.Gaussian.Complex
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.LinearAlgebra.Matrix.Determinant.StarRankOne
-import TauCeti.MeasureTheory.Measure.Haar.MatrixComplex
+import TauCeti.MeasureTheory.Measure.Haar.Matrix.Complex
 
 /-!
 # Hua's integral bound for complex matrices
@@ -28,7 +28,7 @@ complex matrices, where `M` is positive definite.
 * `TauCeti.lintegral_one_add_sum_norm_sq_inv_pow`: the integral of `(1 + ∑ j, ‖y j‖²) ^ (-(k + 1))`
   over `ℂ ^ κ` (`k = Fintype.card κ`) equals `π ^ k / k!`.
 * `TauCeti.lintegral_norm_det_add_vecMulVec_inv_pow_le`: one-row Hua bound.
-* `TauCeti.lmarginal_norm_det_add_sum_vecMulVec_inv_pow_le`: iterated marginal Hua bound over a
+* `Matrix.lmarginal_norm_det_add_sum_vecMulVec_inv_pow_le`: iterated marginal Hua bound over a
   finite set of rows `s`.
 * `TauCeti.lintegral_norm_det_add_conjTranspose_mul_inv_pow_le`: two-sided affine Hua bound over
   `ι → κ → ℂ` matrices for any exponent `r + card ι` (`r ≥ card κ`), invertible `S` and `T`, and
@@ -55,47 +55,54 @@ namespace TauCeti
 theorem lintegral_one_add_sum_norm_sq_inv_pow {κ : Type*} [Fintype κ] :
     ∫⁻ y : κ → ℂ, ENNReal.ofReal ((1 + ∑ j : κ, ‖y j‖ ^ 2)⁻¹ ^ (card κ + 1)) =
       ENNReal.ofReal (π ^ card κ / (card κ).factorial) := by
-  set k : ℕ := card κ
-  let F (y : κ → ℂ) (t : ℝ) : ℝ :=
-    (Gamma (k + 1))⁻¹ * (t ^ (k : ℝ) * rexp (-((1 + ∑ j : κ, ‖y j‖ ^ 2) * t)))
-  have _ : 0 < Gamma ((k : ℝ) + 1) := Gamma_pos_of_pos (by positivity)
-  have h_point (y : κ → ℂ) :
-      ENNReal.ofReal ((1 + ∑ j : κ, ‖y j‖ ^ 2)⁻¹ ^ (k + 1)) =
-        ∫⁻ t : ℝ in Set.Ioi 0, ENNReal.ofReal (F y t) := by
-    have h_pos : 0 < 1 + ∑ j : κ, ‖y j‖ ^ 2 := by positivity
-    have h_eq : (1 + ∑ j : κ, ‖y j‖ ^ 2)⁻¹ ^ (k + 1) =
-        (Gamma (k + 1))⁻¹ * ((1 / (1 + ∑ j : κ, ‖y j‖ ^ 2)) ^ ((k : ℝ) + 1) * Gamma (k + 1)) := by
-      rw [one_div, rpow_add_one (by positivity), rpow_natCast, pow_succ]
-      field_simp [k]
-    rw [h_eq, ENNReal.ofReal_mul (by positivity),
-      ← lintegral_rpow_mul_exp_neg_mul_Ioi (b := (k : ℝ) + 1) (by positivity) h_pos,
-      ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-    refine setLIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
-    have := Set.mem_Ioi.1 ht
-    rw [← ENNReal.ofReal_mul (by positivity)]
-    simp [F]
-  have h_slice (t : ℝ) (ht : 0 < t) :
-      ∫⁻ y : κ → ℂ, ENNReal.ofReal (F y t) =
-        ENNReal.ofReal (π ^ k / Gamma (k + 1)) *
-          ENNReal.ofReal (t ^ ((1 : ℝ) - 1) * rexp (-(1 * t))) := by
-    have h_int : ∫ y : κ → ℂ, F y t =
-        π ^ k / Gamma (k + 1) * (t ^ ((1 : ℝ) - 1) * rexp (-(1 * t))) := by
-      have h_split (y : κ → ℂ) :
-          F y t = (Gamma (k + 1))⁻¹ * t ^ (k : ℝ) * rexp (-t) * rexp (-t * ∑ j : κ, ‖y j‖ ^ 2) := by
-        simp only [F, mul_assoc, ← Real.exp_add]
-        ring_nf
-      simp_rw [h_split]
-      rw [integral_const_mul, integral_rexp_neg_mul_sum_norm_sq ht]
-      simp only [rpow_natCast, div_pow, sub_self, rpow_zero, one_mul, k]
-      field_simp
-    have h_ne : π ^ k / Gamma (k + 1) * (t ^ ((1 : ℝ) - 1) * rexp (-(1 * t))) ≠ 0 := by positivity
-    rw [← ofReal_integral_eq_lintegral_ofReal (.of_integral_ne_zero (h_int.trans_ne h_ne))
-      (.of_forall fun y ↦ by dsimp only [F]; positivity), h_int, ENNReal.ofReal_mul (by positivity)]
-  rw [lintegral_congr h_point, lintegral_lintegral_swap (by fun_prop),
-    setLIntegral_congr_fun measurableSet_Ioi fun t ht ↦ h_slice t (Set.mem_Ioi.1 ht),
-    lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-    lintegral_rpow_mul_exp_neg_mul_Ioi one_pos one_pos, ← ENNReal.ofReal_mul (by positivity)]
-  simp [Gamma_nat_eq_factorial, k]
+  let e1 : (κ → ℂ) ≃ᵐ (κ → Fin 2 → ℝ) :=
+    MeasurableEquiv.piCongrRight fun _ ↦ Complex.measurableEquivPi
+  let e2 : (κ → Fin 2 → ℝ) ≃ᵐ (κ × Fin 2 → ℝ) := Homeomorph.piCurry.symm.toMeasurableEquiv
+  let e3 : (κ × Fin 2 → ℝ) ≃ᵐ EuclideanSpace ℝ (κ × Fin 2) :=
+    (EuclideanSpace.equiv (κ × Fin 2) ℝ).symm.toHomeomorph.toMeasurableEquiv
+  let e : (κ → ℂ) ≃ᵐ EuclideanSpace ℝ (κ × Fin 2) := (e1.trans e2).trans e3
+  have h1 : MeasurePreserving e1 :=
+    volume_preserving_pi fun _ ↦ Complex.volume_preserving_equiv_pi
+  have h2 : MeasurePreserving e2 := by
+    refine ⟨e2.measurable, (Measure.pi_eq fun s hs ↦ ?_).symm⟩
+    rw [Measure.map_apply e2.measurable (.univ_pi hs)]
+    have hpre : e2 ⁻¹' Set.univ.pi s = Set.univ.pi fun i ↦ Set.univ.pi fun j ↦ s (i, j) := by
+      ext y; simp [e2]
+    rw [hpre, volume_pi, Measure.pi_pi]
+    simp_rw [volume_pi, Measure.pi_pi]
+    exact (Fintype.prod_prod_type fun p : κ × Fin 2 ↦ volume (s p)).symm
+  have h3 : MeasurePreserving e3 := PiLp.volume_preserving_toLp (κ × Fin 2)
+  have he : MeasurePreserving e := (h3.comp h2).comp h1
+  have h_norm (y : κ → ℂ) : ‖e y‖ ^ 2 = ∑ j : κ, ‖y j‖ ^ 2 := by
+    rw [EuclideanSpace.norm_sq_eq, Fintype.sum_prod_type]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
+    simp [e, e1, e2, e3, Fin.sum_univ_two, MeasurableEquiv.piCongrRight,
+      Complex.measurableEquivPi, sq]
+  have h_pow (x : EuclideanSpace ℝ (κ × Fin 2)) :
+      (1 + ‖x‖ ^ 2) ^ (-(2 * ((card κ : ℝ) + 1)) / 2) = (1 + ‖x‖ ^ 2)⁻¹ ^ (card κ + 1) := by
+    rw [neg_div, mul_div_cancel_left₀ _ two_ne_zero, rpow_neg (by positivity),
+      ← Nat.cast_one, ← Nat.cast_add, rpow_natCast, inv_pow]
+  have h_dim : Module.finrank ℝ (EuclideanSpace ℝ (κ × Fin 2)) = 2 * card κ := by
+    rw [finrank_euclideanSpace, Fintype.card_prod, Fintype.card_fin, mul_comm]
+  have h_int : ∫ x : EuclideanSpace ℝ (κ × Fin 2), (1 + ‖x‖ ^ 2)⁻¹ ^ (card κ + 1) =
+      π ^ card κ / (card κ).factorial := by
+    have h := integral_rpow_neg_one_add_norm_sq (V := EuclideanSpace ℝ (κ × Fin 2))
+      (r := 2 * ((card κ : ℝ) + 1)) (by rw [h_dim]; push_cast; linarith)
+    simp_rw [h_pow] at h
+    rw [h, h_dim]
+    have h_sub : (2 * ((card κ : ℝ) + 1) - (2 * card κ : ℕ)) / 2 = 1 := by push_cast; ring
+    have h_half : (2 * ((card κ : ℝ) + 1)) / 2 = (card κ : ℝ) + 1 := by ring
+    have h_dim_half : ((2 * card κ : ℕ) : ℝ) / 2 = card κ := by push_cast; ring
+    rw [h_sub, h_half, h_dim_half, Gamma_one, mul_one, rpow_natCast, Gamma_nat_eq_factorial]
+  have h_int_y : ∫ y : κ → ℂ, (1 + ∑ j : κ, ‖y j‖ ^ 2)⁻¹ ^ (card κ + 1) =
+      π ^ card κ / (card κ).factorial := by
+    have h_comp := he.integral_comp' (g := fun x : EuclideanSpace ℝ (κ × Fin 2) ↦
+      (1 + ‖x‖ ^ 2)⁻¹ ^ (card κ + 1))
+    simpa only [h_norm] using h_comp.trans h_int
+  have h_ne : π ^ card κ / (card κ).factorial ≠ 0 := by positivity
+  rw [← ofReal_integral_eq_lintegral_ofReal (.of_integral_ne_zero (h_int_y.trans_ne h_ne))
+    (.of_forall fun y ↦ by positivity), h_int_y]
 
 /-- One row of Hua's bound: for positive definite `M`, invertible `S`, and `r ≥ card κ`,
 `∫⁻ v, ‖det (M + (v S + a)ᴴ (v S + a))‖⁻¹ ^ (r + 1) ≤ (π^k / (k! ‖det S‖²)) ‖det M‖⁻¹ ^ r`. -/
@@ -149,6 +156,10 @@ theorem lintegral_norm_det_add_vecMulVec_inv_pow_le {κ : Type*} [Fintype κ] [D
       congr 1
       ring
 
+end TauCeti
+
+namespace Matrix
+
 /-- **Hua's integral bound** (iterated marginal form): for positive definite `M`, invertible `S`,
 `r ≥ card κ`, and a finite set of rows `s`, the iterated lower Lebesgue integral of
 `‖det (M + ∑ i ∈ s, (y i S + a i)ᴴ (y i S + a i))‖⁻¹ ^ (r + s.card)` over `i ∈ s` is at most
@@ -199,11 +210,15 @@ theorem lmarginal_norm_det_add_sum_vecMulVec_inv_pow_le {ι κ : Type*} [Decidab
         exact lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
       _ ≤ ENNReal.ofReal (K ^ s.card) * ENNReal.ofReal (K * ‖M.det‖⁻¹ ^ r) := by
         gcongr
-        exact lintegral_norm_det_add_vecMulVec_inv_pow_le hM hS (a i) hr
+        exact TauCeti.lintegral_norm_det_add_vecMulVec_inv_pow_le hM hS (a i) hr
       _ = ENNReal.ofReal (K ^ (insert i s).card * ‖M.det‖⁻¹ ^ r) := by
         rw [← ENNReal.ofReal_mul (by positivity), Finset.card_insert_of_notMem hi, pow_succ]
         congr 1
         ring
+
+end Matrix
+
+namespace TauCeti
 
 /-- **Hua's integral bound over matrices** (two-sided affine form): for invertible
 `S : Matrix ι ι ℂ` and `T : Matrix κ κ ℂ`, positive definite `G : Matrix κ κ ℂ`, and `r ≥ card κ`,
@@ -232,7 +247,7 @@ theorem lintegral_norm_det_add_conjTranspose_mul_inv_pow_le {ι κ : Type*} [Fin
   have h_hua : ∫⁻ v, g v ≤
       ENNReal.ofReal
         ((π ^ card κ / (card κ).factorial / ‖T.det‖ ^ 2) ^ card ι * ‖G.det‖⁻¹ ^ r) := by
-    have h := lmarginal_norm_det_add_sum_vecMulVec_inv_pow_le (ι := ι)
+    have h := Matrix.lmarginal_norm_det_add_sum_vecMulVec_inv_pow_le (ι := ι)
       T hT (fun i ↦ c i) hG Finset.univ hr 0
     rw [lmarginal_univ, ← volume_pi, lintegral_congr h_integrand] at h
     simpa only [Finset.card_univ] using h

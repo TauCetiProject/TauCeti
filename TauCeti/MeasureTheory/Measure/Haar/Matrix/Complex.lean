@@ -9,24 +9,19 @@ public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.LinearAlgebra.Matrix.Kronecker
 import Mathlib.MeasureTheory.Measure.Haar.Unique
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Change of variables for complex matrix actions on Lebesgue measure
 
-Provides a general lower Lebesgue integral change-of-variables formula for invertible real linear
-maps on finite-dimensional normed spaces (`MeasureTheory.lintegral_comp_linearMap`), and derives
-from it the complex matrix change-of-variables formulas for `mulVec` on `κ → ℂ` and affine left
-matrix multiplication on `ι → κ → ℂ`. All use `MeasurableEmbedding.lintegral_map`, so no
-measurability assumption on the integrand is needed.
+Derives lower Lebesgue integral change-of-variables formulas for invertible complex matrices acting
+on `κ → ℂ` by `mulVec` and on `ι → κ → ℂ` by affine left matrix multiplication from
+`MeasureTheory.lintegral_comp_linearMap`. No measurability assumption on the integrand is needed.
 
 ## Main results
 
-* `MeasureTheory.lintegral_comp_linearMap`: for an invertible real linear map `f : E →ₗ[ℝ] E` on a
-  finite-dimensional real normed space with an additive Haar measure `μ`,
-  `∫⁻ x, g (f x) ∂μ = ENNReal.ofReal |(LinearMap.det f)⁻¹| * ∫⁻ x, g x ∂μ`.
 * `MeasureTheory.lintegral_comp_mulVec`: for an invertible complex matrix `u`,
   `∫⁻ y : κ → ℂ, g (u *ᵥ y) = ENNReal.ofReal (‖u.det‖⁻¹ ^ 2) * ∫⁻ y : κ → ℂ, g y`.
 * `MeasureTheory.lintegral_comp_matrix_mul_add`: for an invertible complex matrix `S` and offset
@@ -40,17 +35,6 @@ public section
 open Fintype Matrix
 
 namespace MeasureTheory
-
-/-- Change of variables for an invertible real linear map on a finite-dimensional real normed space
-with an additive Haar measure `μ`. -/
-theorem lintegral_comp_linearMap {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
-    {f : E →ₗ[ℝ] E} (hf : LinearMap.det f ≠ 0) (g : E → ENNReal) :
-    ∫⁻ x, g (f x) ∂μ = ENNReal.ofReal |(LinearMap.det f)⁻¹| * ∫⁻ x, g x ∂μ := by
-  have h_emb : MeasurableEmbedding f :=
-    (f.equivOfDetNeZero hf).toContinuousLinearEquiv.toHomeomorph.measurableEmbedding
-  rw [← h_emb.lintegral_map g, Measure.map_linearMap_addHaar_eq_smul_addHaar μ hf,
-    lintegral_smul_measure, smul_eq_mul]
 
 /-- Change of variables on `κ → ℂ` for an invertible complex matrix `u`. -/
 theorem lintegral_comp_mulVec {κ : Type*} [Fintype κ] [DecidableEq κ]
