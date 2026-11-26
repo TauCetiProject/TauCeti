@@ -63,6 +63,11 @@ theorem rieszSum_smul (c : ℂ) (a : ℕ → ℂ) (y : ℝ) :
     rieszSum (c • a) y = c * rieszSum a y := by
   simp only [rieszSum_def, Pi.smul_apply, smul_eq_mul, mul_assoc, Finset.mul_sum]
 
+/-- Conjugating the coefficients conjugates the first Riesz sum. -/
+@[simp] theorem rieszSum_conj (a : ℕ → ℂ) (y : ℝ) :
+    rieszSum (fun n ↦ (starRingEnd ℂ) (a n)) y = (starRingEnd ℂ) (rieszSum a y) := by
+  simp [rieszSum_def, map_sum, map_mul, map_sub, map_div₀]
+
 /-- An index `n ∈ Finset.Icc 1 ⌊y⌋₊` of a first Riesz sum satisfies `1 ≤ n` and `n ≤ y`. -/
 private theorem one_le_and_le_of_mem_Icc_floor {n : ℕ} {y : ℝ} (hn : n ∈ Finset.Icc 1 ⌊y⌋₊) :
     1 ≤ n ∧ (n : ℝ) ≤ y :=
