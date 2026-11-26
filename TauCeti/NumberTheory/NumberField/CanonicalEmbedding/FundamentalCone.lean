@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCone
+import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 import TauCeti.RingTheory.ClassGroup.Basic
 
@@ -287,47 +288,19 @@ theorem natCard_unitSMul_eq_torsionOrder {x : mixedSpace K} (hx : mixedEmbedding
 points of `idealLattice K I`. -/
 noncomputable def coneOrbitEquiv (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     (fundamentalCone K ∩ idealLattice K I : Set (mixedSpace K)) × ((𝓞 K)ˣ ⧸ Units.torsion K) ≃
-      {x : idealLattice K I // x ≠ 0} := by
-  refine Equiv.ofBijective
-    (fun p ↦ ⟨(Quotient.out p.2).unitSMulIdealLatticeEquiv I ⟨p.1.val, p.1.property.2⟩,
-      fun h ↦ ?_⟩)
-    ⟨?_, ?_⟩
-  · have hnorm : mixedEmbedding.norm ((Quotient.out p.2 : (𝓞 K)ˣ) • (p.1 : mixedSpace K)) = 0 := by
-      simpa using congrArg (fun z : idealLattice K I ↦ mixedEmbedding.norm (z : mixedSpace K)) h
-    rw [norm_unit_smul] at hnorm
-    exact (norm_pos_of_mem p.1.property.1).ne' hnorm
-  · rintro ⟨a₁, g₁⟩ ⟨a₂, g₂⟩ h
-    have hsmul : (Quotient.out g₁ : (𝓞 K)ˣ) • (a₁ : mixedSpace K) =
-        (Quotient.out g₂ : (𝓞 K)ˣ) • (a₂ : mixedSpace K) := by
-      simpa using congrArg (fun z : {x : idealLattice K I // x ≠ 0} ↦ (z.val : mixedSpace K)) h
-    have ha₁ : (a₁ : mixedSpace K) =
-        ((Quotient.out g₁)⁻¹ * Quotient.out g₂) • (a₂ : mixedSpace K) := by
-      rw [mul_smul, ← hsmul, inv_smul_smul]
-    have htor : (Quotient.out g₁)⁻¹ * Quotient.out g₂ ∈ Units.torsion K :=
-      (unit_smul_mem_iff_mem_torsion a₂.property.1 _).mp (ha₁ ▸ a₁.property.1)
-    have hg : g₁ = g₂ := by
-      rw [← Quotient.out_eq g₁, ← Quotient.out_eq g₂]
-      exact QuotientGroup.eq.mpr htor
-    subst hg
-    exact Prod.ext (Subtype.ext (MulAction.injective (Quotient.out g₁) hsmul)) rfl
-  · rintro ⟨⟨x, hxI⟩, hx0⟩
-    have hx0' : x ≠ 0 := fun h ↦ hx0 (Subtype.ext h)
-    obtain ⟨b, -, hb⟩ := (mem_idealLattice K I).mp hxI
-    obtain ⟨v, hv⟩ := exists_unit_smul_mem ((norm_eq_zero_iff' ⟨b, hb⟩).not.mpr hx0')
-    set g : (𝓞 K)ˣ ⧸ Units.torsion K := QuotientGroup.mk v⁻¹
-    set u : (𝓞 K)ˣ := Quotient.out g
-    have htor : (v⁻¹)⁻¹ * u ∈ Units.torsion K :=
-      QuotientGroup.eq.mp (Quotient.out_eq g).symm
-    have htor' : u⁻¹ * v⁻¹ ∈ Units.torsion K := by
-      simpa [mul_inv_rev] using Subgroup.inv_mem (Units.torsion K) htor
-    have ha_cone : u⁻¹ • x ∈ fundamentalCone K := by
-      have heq : u⁻¹ • x = (u⁻¹ * v⁻¹) • (v • x) := by rw [mul_smul, inv_smul_smul]
-      rw [heq]
-      exact (unit_smul_mem_iff_mem_torsion hv _).mpr htor'
-    have haI : u⁻¹ • x ∈ idealLattice K I := (u⁻¹.unitSMul_mem_idealLattice_iff I x).mpr hxI
-    refine ⟨(⟨u⁻¹ • x, ha_cone, haI⟩, g), Subtype.ext (Subtype.ext ?_)⟩
-    rw [Units.unitSMulIdealLatticeEquiv_apply]
-    exact smul_inv_smul u x
+      {x : idealLattice K I // x ≠ 0} :=
+  let eCone :
+      (fundamentalCone K ∩ idealLattice K I : Set (mixedSpace K)) ≃
+        {x : idealLattice K I // (x : mixedSpace K) ∈ fundamentalCone K} :=
+    (Equiv.subtypeEquivRight fun _ ↦ and_comm).trans
+      (Equiv.subtypeSubtypeEquivSubtypeInter
+        (fun x : mixedSpace K ↦ x ∈ idealLattice K I)
+        (fun x : mixedSpace K ↦ x ∈ fundamentalCone K)).symm
+  ((Equiv.prodCongr (eCone.trans (idealLatticeFundamentalConeEquiv I).symm) (Equiv.refl _)).trans
+    ((Equiv.prodAssoc _ _ _).trans
+      (Equiv.prodCongr (Equiv.refl _)
+        ((Equiv.prodComm _ _).trans Subgroup.groupEquivQuotientProdSubgroup.symm)))).trans
+    (idealLatticeNeZeroEquiv I)
 
 /-- Underlying mixed-space point of `coneOrbitEquiv`. -/
 @[simp]
@@ -335,8 +308,19 @@ theorem coneOrbitEquiv_apply_coe (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
     (a : (fundamentalCone K ∩ idealLattice K I : Set (mixedSpace K)))
     (g : (𝓞 K)ˣ ⧸ Units.torsion K) :
     ((coneOrbitEquiv I (a, g) : {x : idealLattice K I // x ≠ 0}) : mixedSpace K) =
-      (Quotient.out g : (𝓞 K)ˣ) • (a : mixedSpace K) :=
-  Units.unitSMulIdealLatticeEquiv_apply _ _ _
+      (Quotient.out g : (𝓞 K)ˣ) • (a : mixedSpace K) := by
+  set x : {x : idealLattice K I // (x : mixedSpace K) ∈ fundamentalCone K} :=
+    ⟨⟨a.val, a.property.right⟩, a.property.left⟩
+  set p := (idealLatticeFundamentalConeEquiv I).symm x
+  have hp : ((idealLatticeFundamentalConeEquiv I p : idealLattice K I) : mixedSpace K) =
+      (a : mixedSpace K) := by
+    simp only [p, Equiv.apply_symm_apply, x]
+  simp only [coneOrbitEquiv, Equiv.trans_apply, Equiv.prodCongr_apply, Prod.map_apply,
+    Equiv.coe_refl, id_eq, Equiv.prodAssoc_apply, Equiv.prodComm_apply,
+    Prod.swap_prod_mk, Subgroup.groupEquivQuotientProdSubgroup_symm_apply,
+    coe_idealLatticeNeZeroEquiv]
+  change (Quotient.out g * (p.2 : (𝓞 K)ˣ)) • mixedEmbedding K (coneGen I p.1) = _
+  rw [mul_smul, ← coe_idealLatticeFundamentalConeEquiv I p, hp]
 
 /-- **The cone in unit rank `0`.** When the unit rank is `0`, as for `ℚ` and the imaginary
 quadratic fields, there is no logarithmic condition to impose, and the fundamental cone is the set

@@ -265,10 +265,10 @@ theorem hasSum_norm_cpow_fundamentalCone_inter_idealLattice {c : RayClassGroup (
         LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) s) := by
   let e : {x : idealLattice K I // (x : mixedSpace K) ∈ fundamentalCone K} ≃
       ↥(fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))) :=
-    { toFun x := ⟨x.val, x.property, x.val.property⟩
-      invFun x := ⟨⟨x.val, x.property.right⟩, x.property.left⟩
-      left_inv _ := rfl
-      right_inv _ := rfl }
+    (Equiv.subtypeSubtypeEquivSubtypeInter
+      (fun x : mixedSpace K ↦ x ∈ idealLattice K I)
+      (fun x : mixedSpace K ↦ x ∈ fundamentalCone K)).trans
+      (Equiv.subtypeEquivRight fun _ ↦ and_comm)
   have hc : oneEquivClassGroup c = (ClassGroup.mk K I)⁻¹ := by
     rw [← inv_inv c, map_inv, ← hI, oneEquivClassGroup_rayClassMk, idealsPrimeToEquiv_symm_apply]
   have h := (e.hasSum_iff (f := fun a :
