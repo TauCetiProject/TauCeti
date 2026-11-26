@@ -119,23 +119,6 @@ theorem le_measureReal_forall_abs_card_filter_sub_sum_le {Ω α Q : Type*} [Meas
   rw [hgood, measureReal_compl hB, probReal_univ]
   exact sub_le_sub_left hle _
 
-/-- Convert the squared sampling-size condition into a bound on the scaled sum of the
-per-fibre error allowances. -/
-private theorem scaled_fiber_error_le {k o D ω₀ : ℝ} (hω₀ : 0 < ω₀)
-    (hsize : (2 * k) ^ 2 * o ^ 2 / ω₀ ^ 2 ≤ D) :
-    k * (o * (2 * Real.sqrt D)) ≤ ω₀ * D := by
-  have hD : 0 ≤ D := (by positivity : 0 ≤ (2 * k) ^ 2 * o ^ 2 / ω₀ ^ 2).trans hsize
-  have hsq : (2 * k * o) ^ 2 ≤ (ω₀ * Real.sqrt D) ^ 2 := by
-    rw [mul_pow (2 * k), mul_pow ω₀, Real.sq_sqrt hD]
-    have h := (div_le_iff₀ (by positivity : 0 < ω₀ ^ 2)).1 hsize
-    simpa only [mul_comm D] using h
-  have hright : 0 ≤ ω₀ * Real.sqrt D := by positivity
-  have h := (le_abs_self (2 * k * o)).trans <|
-    (sq_le_sq₀ (abs_nonneg _) hright).1 (by simpa only [sq_abs] using hsq)
-  have hs := mul_le_mul_of_nonneg_right h (Real.sqrt_nonneg D)
-  rw [mul_assoc ω₀, Real.mul_self_sqrt hD] at hs
-  nlinarith only [hs]
-
 /-- The size and relative errors follow deterministically from the absolute errors of the
 individual fibre counts. -/
 private theorem card_fiber_bounds_of_abs_sub_le {Q : Type*} [Fintype Q] (c ω : Q → ℝ)
@@ -156,12 +139,18 @@ private theorem card_fiber_bounds_of_abs_sub_le {Q : Type*} [Fintype Q] (c ω : 
   have htot : |(∑ j, c j) - E| ≤ o * (2 * Real.sqrt D) := by
     simpa only [Finset.sum_sub_distrib, M, ← Finset.mul_sum, ← hE] using
       (Finset.abs_sum_le_sum_abs (fun q ↦ c q - M q) Finset.univ).trans hsumErr
-  have hhalf := (scaled_fiber_error_le (k := 2) (o := o) hω₀
-    (by simpa only [show (2 * 2 : ℝ) ^ 2 = 16 by norm_num, o] using hsize)).trans hE₀
+  have hscale (k : ℝ) (h : (2 * k) ^ 2 * o ^ 2 / ω₀ ^ 2 ≤ D) : 2 * k * o * Real.sqrt D ≤ E := by
+    have hs : 2 * k * o / ω₀ ≤ Real.sqrt D :=
+      Real.le_sqrt_of_sq_le (by simpa only [div_pow, mul_pow] using h)
+    have ht := mul_le_mul_of_nonneg_right ((div_le_iff₀ hω₀).mp hs) (Real.sqrt_nonneg D)
+    rw [mul_right_comm (Real.sqrt D), Real.mul_self_sqrt hD.le, mul_comm D] at ht
+    exact ht.trans hE₀
+  have hhalf := hscale 2
+    (by simpa only [show (2 * 2 : ℝ) ^ 2 = 16 by norm_num, o] using hsize)
   have hcard₀ : E / 2 ≤ (∑ j, c j) := by linarith [(abs_le.mp htot).1]
   refine ⟨hcard₀, by linarith [(abs_le.mp htot).2], fun h ↦ ?_, fun q ↦ ?_⟩
-  · have hthird := (scaled_fiber_error_le (k := 3) (o := o) hω₀
-      (by simpa only [show (2 * 3 : ℝ) ^ 2 = 36 by norm_num, o] using h)).trans hE₀
+  · have hthird := hscale 3
+      (by simpa only [show (2 * 3 : ℝ) ^ 2 = 36 by norm_num, o] using h)
     linarith [(abs_le.mp htot).1]
   · have hW : 0 < W := (mul_pos ho hω₀).trans_le hW₀
     have hν : ω q / W * E = M q := calc
