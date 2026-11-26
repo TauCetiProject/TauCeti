@@ -152,14 +152,11 @@ private lemma bijective_residueTraceDualityHom_sheaf_of_separating
     obtain ⟨g, hg⟩ := hD.exists_rationalFunctionsMul_eq (φ ≫ e.hom ≫ SchemeWeilDivisor.sheafι K)
     have hg0 : g = 0 := by
       by_contra hg0
-      apply coe_weilDifferentialOfSeparating_ne_zero hF ht
-      ext b
-      have h := residueTraceDualityHom_sheaf_apply hF hk hex hdim ht K hK φ g hg
-        (repartitionMul hF g⁻¹ b)
-      have hb : repartitionMul hF g (repartitionMul hF g⁻¹ b) = b :=
-        Subtype.ext (by rw [coe_repartitionMul_apply, coe_repartitionMul_apply, smul_smul,
-          mul_inv_cancel₀ hg0, one_smul])
-      rwa [hφ, LinearMap.zero_apply, hb, eq_comm] at h
+      exact repartitionDualMul_ne_zero hF hg0 (coe_weilDifferentialOfSeparating_ne_zero hF ht)
+        (LinearMap.ext fun a ↦ by
+          rw [repartitionDualMul_apply_apply,
+            ← residueTraceDualityHom_sheaf_apply hF hk hex hdim ht K hK φ g hg a, hφ,
+            LinearMap.zero_apply, LinearMap.zero_apply])
     rw [hg0, Scheme.rationalFunctionsMul_zero, Limits.comp_zero] at hg
     rw [← cancel_mono (e.hom ≫ SchemeWeilDivisor.sheafι K), hg, Limits.zero_comp]
   · -- the duality of Weil differentials writes `ℓ` as `[a] ↦ ω(f a)` for a section `f` of

@@ -620,15 +620,15 @@ theorem rationalFunctionsMul_one : rationalFunctionsMul X 1 = 𝟙 _ := by
 /-- Multiplication by `0` is the zero endomorphism. -/
 @[simp]
 theorem rationalFunctionsMul_zero : rationalFunctionsMul X 0 = 0 := by
-  refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
-  ext s
-  by_cases hU : Nonempty U
-  · apply (rationalFunctionsEquiv U).injective
-    rw [rationalFunctionsEquiv_rationalFunctionsMul_app, zero_mul]
-    simp
-  · exact TopCat.Presheaf.section_ext
-      ⟨(rationalFunctions X).presheaf, (rationalFunctions X).isSheaf⟩
-      U _ _ fun x hx ↦ (hU ⟨⟨x, hx⟩⟩).elim
+  let _ : Nonempty ((⊤ : X.Opens) : Type u) := instNonemptyTop
+  simp only [rationalFunctionsMul, map_zero]
+  let M : (Spec X.functionField).Modules :=
+    SheafOfModules.unit (Spec X.functionField).ringCatSheaf
+  let F := Scheme.Modules.pushforward (fromSpecFunctionField X)
+  -- As above, this definitional change only exposes the pushforward and scalar-multiplication
+  -- wrappers so their zero laws apply directly.
+  change F.map (Scheme.Modules.globalSectionsSmul M 0) = 0
+  rw [Scheme.Modules.globalSectionsSmul_zero, Functor.map_zero]
 
 /-- Multiplying by a unit `g` and then by `g⁻¹` is the identity on `𝒦_X`. -/
 @[simp]
