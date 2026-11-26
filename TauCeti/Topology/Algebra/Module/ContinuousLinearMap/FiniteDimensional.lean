@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.SimpleRing.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
-import Mathlib.RingTheory.SimpleRing.Congr
-import TauCeti.RingTheory.Semisimple.EndAlgebra
 
 /-!
 # Continuous endomorphisms of a finite-dimensional topological vector space
@@ -19,11 +16,6 @@ invertible as a linear map. Neither a norm nor completeness of the scalars is ne
 spectrum of such a map over the scalar field `𝕜` is the spectrum of its underlying linear map,
 which is the finite set of its eigenvalues. Consequently its spectrum over any field `S` of scalars
 acting compatibly, for instance over `ℝ` for a map on a complex space, is finite.
-
-Over a complete nontrivially normed field `𝕜` and a Hausdorff topological vector space `V`,
-continuous and algebraic endomorphisms are algebra-equivalent
-(`LinearMap.toContinuousLinearMapAlgEquiv`), and in particular `V →L[𝕜] V` is a simple ring when
-`V` is nontrivial (`IsSimpleRing.continuousLinearMap`).
 
 Mathlib's `ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap` and
 `ContinuousLinearMap.spectrum_eq` are the corresponding statements on a Banach space.
@@ -39,9 +31,6 @@ Mathlib's `ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap` and
   subfields of the scalars such as `ℝ ⊆ ℂ`.
 * `ContinuousLinearMap.isUnit_smul_one_sub`: `c • 1 - T` is invertible when `T` has no
   eigenvector of eigenvalue `c`.
-* `LinearMap.toContinuousLinearMapAlgEquiv`: algebra equivalence
-  `Module.End 𝕜 V ≃ₐ[𝕜] (V →L[𝕜] V)`.
-* `IsSimpleRing.continuousLinearMap`: `V →L[𝕜] V` is a simple ring when `V` is nontrivial.
 -/
 
 public section
@@ -94,43 +83,3 @@ theorem isUnit_smul_one_sub {T : V →L[𝕜] V} {c : 𝕜} (h : ∀ v, T v = c 
   exact (sub_eq_zero.1 hv').symm
 
 end ContinuousLinearMap
-
-section SimpleRing
-
-variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [T2Space V]
-  [IsTopologicalAddGroup V] [ContinuousSMul 𝕜 V] [FiniteDimensional 𝕜 V]
-
-/-- Algebra equivalence between algebraic and continuous endomorphisms of a finite-dimensional
-Hausdorff topological vector space over a complete nontrivially normed field, generalizing
-`Module.End.toContinuousLinearMap` beyond normed spaces. -/
-def LinearMap.toContinuousLinearMapAlgEquiv : Module.End 𝕜 V ≃ₐ[𝕜] (V →L[𝕜] V) :=
-  { LinearMap.toContinuousLinearMap (𝕜 := 𝕜) (E := V) (F' := V) with
-    map_mul' := fun _ _ ↦ rfl
-    commutes' := fun _ ↦ rfl }
-
-/-- The underlying linear map of `LinearMap.toContinuousLinearMapAlgEquiv f` is `f`. -/
-@[simp]
-theorem LinearMap.coe_toContinuousLinearMapAlgEquiv (f : Module.End 𝕜 V) :
-    (LinearMap.toContinuousLinearMapAlgEquiv f : Module.End 𝕜 V) = f :=
-  (rfl)
-
-/-- `LinearMap.toContinuousLinearMapAlgEquiv f` has the same underlying function as `f`. -/
-@[simp]
-theorem LinearMap.coe_toContinuousLinearMapAlgEquiv' (f : Module.End 𝕜 V) :
-    ⇑(LinearMap.toContinuousLinearMapAlgEquiv f) = f :=
-  (rfl)
-
-/-- The inverse of `LinearMap.toContinuousLinearMapAlgEquiv` forgets continuity. -/
-@[simp]
-theorem LinearMap.toContinuousLinearMapAlgEquiv_symm_apply (f : V →L[𝕜] V) :
-    LinearMap.toContinuousLinearMapAlgEquiv.symm f = (f : Module.End 𝕜 V) :=
-  (rfl)
-
-/-- On a nontrivial finite-dimensional Hausdorff topological vector space over a complete
-nontrivially normed field, the endomorphism ring `V →L[𝕜] V` is simple. -/
-instance IsSimpleRing.continuousLinearMap [Nontrivial V] : IsSimpleRing (V →L[𝕜] V) :=
-  IsSimpleRing.of_ringEquiv LinearMap.toContinuousLinearMapAlgEquiv.toRingEquiv
-    (IsSimpleRing.moduleEnd (R := 𝕜) (M := V))
-
-end SimpleRing

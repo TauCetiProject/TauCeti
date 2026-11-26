@@ -26,8 +26,9 @@ norm-closed two-sided ideal of `H →L[ℂ] H`, hence a nonunital C⋆-algebra o
 `TwoSidedIdeal.nonUnitalCStarAlgebra`, and `CalkinAlgebra H` is a unital C⋆-algebra with canonical
 quotient `⋆`-homomorphism `CalkinAlgebra.mk` and essential-norm formula `CalkinAlgebra.norm_mk_eq`.
 
-Combining the closed-ideal `star a * a` criterion (`TauCeti.Analysis.CStarAlgebra.Hereditary.Ideal`)
-and self-adjoint separation (`TauCeti.Analysis.CStarAlgebra.Quotient`),
+Combining the closed-ideal `star a * a` criterion and self-adjoint separation
+(`TauCeti.Analysis.CStarAlgebra.Hereditary.Ideal`),
+the quotient C⋆-algebra structure (`TauCeti.Analysis.CStarAlgebra.Quotient`),
 spectral cutoffs of normal operators (`TauCeti.Analysis.InnerProductSpace.BorelCalculus.Cutoff`),
 noncompact-idempotent factorization (`TauCeti.Analysis.Normed.Operator.Compact.Idempotent`),
 the compact-operator and separable-range ideals (`TauCeti.Analysis.Normed.Operator.Compact.Ideal`),
@@ -191,20 +192,20 @@ theorem norm_mk_eq (T : H →L[ℂ] H) :
 `⊥` or `⊤`. -/
 theorem eq_bot_or_eq_top_of_isClosed [SeparableSpace H] (J : TwoSidedIdeal (CalkinAlgebra H))
     (hJ : IsClosed (J : Set (CalkinAlgebra H))) : J = ⊥ ∨ J = ⊤ := by
-  let e := TwoSidedIdeal.Quotient.idealCorrespondence (ContinuousLinearMap.compactIdeal ℂ H)
-  have hI_closed : IsClosed ((e.symm J).val : Set (H →L[ℂ] H)) := by
-    rw [TwoSidedIdeal.Quotient.idealCorrespondence_symm_coe]
+  let e := TwoSidedIdeal.Quotient.comapMkRelIso (ContinuousLinearMap.compactIdeal ℂ H)
+  have hI_closed : IsClosed ((e J).val : Set (H →L[ℂ] H)) := by
+    rw [TwoSidedIdeal.Quotient.coe_comapMkRelIso]
     exact hJ.preimage (TwoSidedIdeal.Quotient.continuous_mk (ContinuousLinearMap.compactIdeal ℂ H))
   rcases ContinuousLinearMap.eq_bot_or_eq_compactIdeal_or_eq_top_of_isClosed hI_closed with
     hbot | hcpt | htop
-  · -- When `(e.symm J).val = ⊥`, `compactIdeal ℂ H ≤ (e.symm J).val` forces equality.
-    have hle : (e.symm J).val ≤ ContinuousLinearMap.compactIdeal ℂ H := by
+  · -- When `(e J).val = ⊥`, `compactIdeal ℂ H ≤ (e J).val` forces equality.
+    have hle : (e J).val ≤ ContinuousLinearMap.compactIdeal ℂ H := by
       rw [hbot]
       exact bot_le
-    exact Or.inl ((e.symm_apply_eq.mp (Subtype.ext
-      (le_antisymm hle (Set.mem_Ici.mp (e.symm J).property)))).trans (map_bot e))
-  · exact Or.inl ((e.symm_apply_eq.mp (Subtype.ext hcpt)).trans (map_bot e))
-  · exact Or.inr ((e.symm_apply_eq.mp (Subtype.ext htop)).trans (map_top e))
+    exact Or.inl ((e.eq_symm_apply.mpr (Subtype.ext
+      (le_antisymm hle (Set.mem_Ici.mp (e J).property)))).trans (map_bot e.symm))
+  · exact Or.inl ((e.eq_symm_apply.mpr (Subtype.ext hcpt)).trans (map_bot e.symm))
+  · exact Or.inr ((e.eq_symm_apply.mpr (Subtype.ext htop)).trans (map_top e.symm))
 
 /-- **Simplicity of the Calkin algebra.** When `H` is a separable infinite-dimensional complex
 Hilbert space, `CalkinAlgebra H` is algebraically simple: it is nontrivial and has no proper
@@ -221,15 +222,16 @@ theorem isSimpleRing_iff :
   refine ⟨fun h ↦ ?_, fun ⟨_, hinf⟩ ↦ isSimpleRing hinf⟩
   refine ⟨?_, nontrivial_iff_not_finiteDimensional.mp inferInstance⟩
   by_contra hsep
-  let e := TwoSidedIdeal.Quotient.idealCorrespondence (ContinuousLinearMap.compactIdeal ℂ H)
+  let e := TwoSidedIdeal.Quotient.comapMkRelIso (ContinuousLinearMap.compactIdeal ℂ H)
   let K : Set.Ici (ContinuousLinearMap.compactIdeal ℂ H) :=
     ⟨ContinuousLinearMap.separableRangeIdeal ℂ H,
       ContinuousLinearMap.compactIdeal_le_separableRangeIdeal⟩
-  have hbot : ⊥ < e K :=
-    map_bot e ▸ (e.lt_iff_lt.mpr (ContinuousLinearMap.compactIdeal_lt_separableRangeIdeal hsep))
-  have htop : e K < ⊤ :=
-    map_top e ▸ (e.lt_iff_lt.mpr (ContinuousLinearMap.separableRangeIdeal_lt_top hsep))
-  rcases IsSimpleOrder.eq_bot_or_eq_top (e K) with h0 | h1
+  have hbot : ⊥ < e.symm K :=
+    map_bot e.symm ▸
+      (e.symm.lt_iff_lt.mpr (ContinuousLinearMap.compactIdeal_lt_separableRangeIdeal hsep))
+  have htop : e.symm K < ⊤ :=
+    map_top e.symm ▸ (e.symm.lt_iff_lt.mpr (ContinuousLinearMap.separableRangeIdeal_lt_top hsep))
+  rcases IsSimpleOrder.eq_bot_or_eq_top (e.symm K) with h0 | h1
   · exact hbot.ne' h0
   · exact htop.ne h1
 

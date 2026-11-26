@@ -7,7 +7,9 @@ module
 
 public import Mathlib.RingTheory.SimpleRing.Basic
 public import TauCeti.Analysis.CStarAlgebra.Calkin
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
+import Mathlib.RingTheory.SimpleRing.Congr
+import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.RingTheory.Semisimple.EndAlgebra
 
 /-!
 # Sanity checks for compact-operator ideals and the Calkin algebra
@@ -46,6 +48,9 @@ example (d : ℕ) : ContinuousLinearMap.compactIdeal ℂ (EuclideanSpace ℂ (Fi
 
 example (I : TwoSidedIdeal (EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2))) :
     I = ⊥ ∨ I = ⊤ :=
+  letI : IsSimpleRing (EuclideanSpace ℂ (Fin 2) →L[ℂ] EuclideanSpace ℂ (Fin 2)) :=
+    IsSimpleRing.of_ringEquiv (Module.End.toContinuousLinearMap _).toRingEquiv
+      IsSimpleRing.moduleEnd
   IsSimpleOrder.eq_bot_or_eq_top I
 
 example (n : Type*) [Fintype n] :
