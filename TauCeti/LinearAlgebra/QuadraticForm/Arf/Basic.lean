@@ -195,9 +195,9 @@ theorem anisotropic_binaryQuadraticForm_iff {a b : ZMod 2} :
     (binaryQuadraticForm (ZMod 2) a b).Anisotropic ↔ a = 1 ∧ b = 1 := by
   refine ⟨fun h ↦ ?_, ?_⟩
   · have ha : a ≠ 0 := fun ha0 ↦
-      one_ne_zero (congrFun (h ![1, 0] (by simp [ha0])) 0)
+      one_ne_zero (α := ZMod 2) (by simpa using congrFun (h ![1, 0] (by simp [ha0])) 0)
     have hb : b ≠ 0 := fun hb0 ↦
-      one_ne_zero (congrFun (h ![0, 1] (by simp [hb0])) 1)
+      one_ne_zero (α := ZMod 2) (by simpa using congrFun (h ![0, 1] (by simp [hb0])) 1)
     exact ⟨ZMod.ne_zero_iff_eq_one.mp ha, ZMod.ne_zero_iff_eq_one.mp hb⟩
   · rintro ⟨rfl, rfl⟩
     rw [anisotropic_binaryQuadraticForm_one_iff]
