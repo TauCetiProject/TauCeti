@@ -30,6 +30,9 @@ fields on a product manifold.
   through a projection.
 * `TauCeti.mfderiv_fst_apply` and `TauCeti.mfderiv_snd_apply`: the derivatives of the projections
   take the corresponding component of a tangent vector.
+* `TauCeti.mfderiv_slice_left_apply` and `TauCeti.mfderiv_slice_right_apply`: the differential of
+  a coordinate slice of a map on a product manifold is the differential of the map applied to
+  `(v, 0)` or `(0, w)`.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_add_comp_snd_apply`: the derivative of a separated sum
@@ -176,6 +179,32 @@ theorem mfderiv_swap (p : M × N) :
     mfderiv_prodMk mdifferentiableAt_snd mdifferentiableAt_fst, mfderiv_snd, mfderiv_fst]
   -- The sides differ only in the target tangent-space index, `(p.2, p.1)` or `Prod.swap p`.
   rfl
+
+/-- The differential of the left slice `x' ↦ f (x', y)` at `x` applied to `v` is the differential
+of `f` at `(x, y)` applied to `(v, 0)`. -/
+theorem mfderiv_slice_left_apply {f : M × N → M''} {x : M} {y : N}
+    (hf : MDifferentiableAt (I.prod J) I'' f (x, y)) (v : TangentSpace I x) :
+    mfderiv I I'' (fun x' ↦ f (x', y)) x v =
+      mfderiv (I.prod J) I'' f (x, y) (v, (0 : TangentSpace J y)) := by
+  have hι : MDifferentiableAt I (I.prod J) (fun x' : M ↦ (x', y)) x :=
+    mdifferentiableAt_id.prodMk mdifferentiableAt_const
+  have happly := DFunLike.congr_fun (mfderiv_comp x hf hι) v
+  rw [ContinuousLinearMap.comp_apply, mfderiv_prod_left] at happly
+  -- `ContinuousLinearMap.inl` sends `v` to `(v, 0)` in `TangentSpace (I.prod J) (x, y)`.
+  exact happly
+
+/-- The differential of the right slice `y' ↦ f (x, y')` at `y` applied to `w` is the differential
+of `f` at `(x, y)` applied to `(0, w)`. -/
+theorem mfderiv_slice_right_apply {f : M × N → M''} {x : M} {y : N}
+    (hf : MDifferentiableAt (I.prod J) I'' f (x, y)) (w : TangentSpace J y) :
+    mfderiv J I'' (fun y' ↦ f (x, y')) y w =
+      mfderiv (I.prod J) I'' f (x, y) ((0 : TangentSpace I x), w) := by
+  have hι : MDifferentiableAt J (I.prod J) (fun y' : N ↦ (x, y')) y :=
+    mdifferentiableAt_const.prodMk mdifferentiableAt_id
+  have happly := DFunLike.congr_fun (mfderiv_comp y hf hι) w
+  rw [ContinuousLinearMap.comp_apply, mfderiv_prod_right] at happly
+  -- `ContinuousLinearMap.inr` sends `w` to `(0, w)` in `TangentSpace (I.prod J) (x, y)`.
+  exact happly
 
 /-- The derivative of a vector-valued function of the first factor, read on a product. -/
 theorem mvfderiv_comp_fst_apply (g : M → F) (p : M × N) (v : TangentSpace (I.prod J) p) :

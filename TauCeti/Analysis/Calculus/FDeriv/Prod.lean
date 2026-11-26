@@ -69,8 +69,9 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
 * `DifferentiableAt.hasFDerivAt_slice_fst`, `DifferentiableAt.hasFDerivAt_slice_snd`: the
   derivatives of the slices `y ↦ g (y, t)` and `t ↦ g (y, t)` of a map differentiable at the point
   `(y, t)`.
-* `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`: the derivatives of the two slices
-  of a function on a product are the restrictions of its derivative.
+* `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`, `TauCeti.fderivWithin_slice_left`,
+  `TauCeti.fderivWithin_slice_right`: the derivatives and within-derivatives of the two slices of
+  a function on a product are the restrictions of its derivative.
 * `TauCeti.differentiableAt_comp_snd_iff` and `TauCeti.fderiv_comp_snd`: a function of the
   second variable alone is differentiable exactly when the function is, and its derivative is the
   derivative of the function read on the second component, with no differentiability assumption.
@@ -88,9 +89,10 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   variables has derivative `(s, t) ↦ s • a - t • b`.
 * `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right`: the derivative of a function
   on a product is the sum of the derivatives of its two slices.
-* `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
-  a function in a scalar first or second variable are its derivative applied to `(1, 0)` and
-  `(0, 1)`.
+* `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`,
+  `TauCeti.hasDerivWithinAt_slice_right`, `TauCeti.fderivWithin_apply_mk_zero_one`: the partial
+  derivatives of a function in a scalar first or second variable are its derivative (or
+  within-derivative on a product set) applied to `(1, 0)` and `(0, 1)`.
 * `TauCeti.hasDerivAt_fst_slice_left`, `TauCeti.hasDerivAt_snd_slice_left`: the same for the two
   components of a map into a product.
 * `TauCeti.norm_deriv_slice_right_le`: the partial derivative in a scalar second variable has
@@ -181,6 +183,28 @@ restricted to the second factor. -/
 theorem fderiv_slice_right {f : E × F → G} (hf : DifferentiableAt 𝕜 f (a, b)) :
     fderiv 𝕜 (fun y ↦ f (a, y)) b = (fderiv 𝕜 f (a, b)).comp (ContinuousLinearMap.inr 𝕜 E F) :=
   (hf.hasFDerivAt.comp b (hasFDerivAt_prodMk_right a b)).fderiv
+
+/-- The within-derivative of the first-variable slice `fun x ↦ f (x, b)` along `s` is the
+within-derivative of `f` along `s ×ˢ t` restricted to the first factor. -/
+theorem fderivWithin_slice_left {f : E × F → G} {s : Set E} {t : Set F}
+    (hf : DifferentiableWithinAt 𝕜 f (s ×ˢ t) (a, b))
+    (hs : UniqueDiffWithinAt 𝕜 s a) (hb : b ∈ t) :
+    fderivWithin 𝕜 (fun x ↦ f (x, b)) s a =
+      (fderivWithin 𝕜 f (s ×ˢ t) (a, b)).comp (ContinuousLinearMap.inl 𝕜 E F) :=
+  (hf.hasFDerivWithinAt.comp a
+    ((hasFDerivAt_prodMk_left a b).hasFDerivWithinAt (s := s))
+    (fun _ hx ↦ Set.mk_mem_prod hx hb)).fderivWithin hs
+
+/-- The within-derivative of the second-variable slice `fun y ↦ f (a, y)` along `t` is the
+within-derivative of `f` along `s ×ˢ t` restricted to the second factor. -/
+theorem fderivWithin_slice_right {f : E × F → G} {s : Set E} {t : Set F}
+    (hf : DifferentiableWithinAt 𝕜 f (s ×ˢ t) (a, b))
+    (ht : UniqueDiffWithinAt 𝕜 t b) (ha : a ∈ s) :
+    fderivWithin 𝕜 (fun y ↦ f (a, y)) t b =
+      (fderivWithin 𝕜 f (s ×ˢ t) (a, b)).comp (ContinuousLinearMap.inr 𝕜 E F) :=
+  (hf.hasFDerivWithinAt.comp b
+    ((hasFDerivAt_prodMk_right a b).hasFDerivWithinAt (s := t))
+    (fun _ hy ↦ Set.mk_mem_prod ha hy)).fderivWithin ht
 
 /-- The derivative of a function on a product is the sum of the derivatives of its two slices,
 applied to the two components of the direction. -/
@@ -440,6 +464,21 @@ theorem hasDerivAt_slice_right {u : E × 𝕜 → G} {a : E} {t : 𝕜}
     (hu : DifferentiableAt 𝕜 u (a, t)) :
     HasDerivAt (fun t ↦ u (a, t)) (fderiv 𝕜 u (a, t) (0, 1)) t :=
   hu.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right a t)
+
+/-- Where `u` is differentiable within `s ×ˢ U` at `(a, t)` with `a ∈ s`, its partial derivative
+in the second variable within `U` is its within-derivative applied to `(0, 1)`. -/
+theorem hasDerivWithinAt_slice_right {u : E × 𝕜 → G} {s : Set E} {U : Set 𝕜} {a : E} {t : 𝕜}
+    (hu : DifferentiableWithinAt 𝕜 u (s ×ˢ U) (a, t)) (ha : a ∈ s) :
+    HasDerivWithinAt (fun w ↦ u (a, w)) (fderivWithin 𝕜 u (s ×ˢ U) (a, t) (0, 1)) U t :=
+  hu.hasFDerivWithinAt.comp_hasDerivWithinAt t
+    (hasDerivAt_prodMk_right a t).hasDerivWithinAt (fun _ hw ↦ ⟨ha, hw⟩)
+
+/-- Where `u` is differentiable within `s ×ˢ U` at `(a, t)` with `a ∈ s` and `U ∈ nhds t`, its
+within-derivative applied to `(0, 1)` is the partial derivative in the second variable. -/
+theorem fderivWithin_apply_mk_zero_one {u : E × 𝕜 → G} {s : Set E} {U : Set 𝕜} {a : E} {t : 𝕜}
+    (hu : DifferentiableWithinAt 𝕜 u (s ×ˢ U) (a, t)) (ha : a ∈ s) (hU : U ∈ nhds t) :
+    fderivWithin 𝕜 u (s ×ˢ U) (a, t) (0, 1) = deriv (fun w ↦ u (a, w)) t :=
+  ((hasDerivWithinAt_slice_right hu ha).hasDerivAt hU).deriv.symm
 
 /-- Where `u` is differentiable, its partial derivative in the second variable has norm at most
 the norm of its derivative. -/
