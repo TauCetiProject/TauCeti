@@ -126,12 +126,10 @@ theorem bijective_cohomologyMap_loopChainMap_sq_add_mul {R : Type} [CommRing R] 
   obtain ⟨a, rfl⟩ := E.surjective a
   obtain ⟨b, rfl⟩ := E.surjective b
   simp only [Function.comp_apply, Prod.map_apply, AlgEquiv.symm_apply_apply, map_add, map_mul]
-  rw [groupAlgebraLoopChainCohomologyAlgEquiv_apply, groupAlgebraLoopChainCohomologyAlgEquiv_apply,
-    groupAlgebraLoopChainCohomologyAlgEquiv_apply, groupAlgebraLoopChainCohomologyAlgEquiv_apply,
-    groupAlgebraLoopChainCohomologyAlgEquiv_apply,
-    cohomologyMap_loopChainMap_groupAlgebraToLoopChainCohomology,
-    cohomologyMap_loopChainMap_groupAlgebraToLoopChainCohomology, mapDomainAlgHom_apply,
-    mapDomainAlgHom_apply, ← of_apply, groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom]
+  simp only [E, groupAlgebraLoopChainCohomologyAlgEquiv_apply,
+    cohomologyMap_loopChainMap_groupAlgebraToLoopChainCohomology, mapDomainAlgHom_apply]
+  -- The basis element `single [γ] 1` is the class of the point chain of `γ`.
+  rw [← of_apply, groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom]
 
 end Circle
 

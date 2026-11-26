@@ -508,6 +508,7 @@ variable {B b R} in
 /-- **The group ring in the cohomology of the loop chains is natural.** For a based map
 `f : (B, b) → (B', b')`, the map that `C_*(Ωf)` induces on cohomology restricts on the group ring
 `R[π₁(B, b)]` to the map of group rings induced by `f` on fundamental groups. -/
+@[simp]
 theorem cohomologyMap_loopChainMap_groupAlgebraToLoopChainCohomology {B' : Type u}
     [TopologicalSpace B'] {b' : B'} (f : C(B, B')) (hf : f b = b')
     (a : MonoidAlgebra R (FundamentalGroup B b)) :
@@ -521,11 +522,10 @@ theorem cohomologyMap_loopChainMap_groupAlgebraToLoopChainCohomology {B' : Type 
     AlgHom.congr_fun h a
   ext g
   obtain ⟨γ, rfl⟩ := MooreLoopSpace.fundamentalGroupHom_surjective b g
-  rw [AlgHom.comp_apply, AlgHom.comp_apply, MonoidAlgebra.mapDomainAlgHom_apply,
-    MonoidAlgebra.mapDomain_single, ← MooreLoopSpace.fundamentalGroupHom_map,
-    ← MonoidAlgebra.of_apply, ← MonoidAlgebra.of_apply,
-    groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom,
-    groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom]
+  simp only [AlgHom.comp_apply, MonoidAlgebra.mapDomainAlgHom_apply,
+    MonoidAlgebra.mapDomain_single, ← MooreLoopSpace.fundamentalGroupHom_map]
+  -- Fold both basis elements back into `of` to evaluate on the classes of loops.
+  simp only [← MonoidAlgebra.of_apply, groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom]
   -- On the class of the point chain of `γ`, `C_*(Ωf)` gives the point chain of `Ωf γ`.
   refine (DGAlgHom.cohomologyMap_mk _ _).trans (congrArg _ (Subtype.ext ?_))
   exact (DGAlgHom.cyclesMap_apply_coe _ _).trans (loopChainMap_cubicalChainPoint R f hf γ)

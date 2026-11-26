@@ -594,6 +594,7 @@ theorem fundamentalGroupMulEquiv_map_pow (n : ℕ) {x : Circle} (γ : Fundamenta
 /-- **The `n`-th power map of the circle raises loop classes to the `n`-th power.** On the
 fundamental group of the circle at `1`, which `z ↦ z ^ n` fixes, the induced endomorphism is
 `γ ↦ γ ^ n`. -/
+@[simp]
 theorem mapOfEq_pow (n : ℕ) (γ : FundamentalGroup Circle 1) :
     FundamentalGroup.mapOfEq ⟨(· ^ n), continuous_pow n⟩ (one_pow n) γ = γ ^ n := by
   -- Changing the basepoint along an equality does not change the image in `ℤ`.
