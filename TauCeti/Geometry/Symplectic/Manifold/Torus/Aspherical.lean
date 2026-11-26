@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Torus.HigherHomotopy
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Covering
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Covering
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chern
 public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
