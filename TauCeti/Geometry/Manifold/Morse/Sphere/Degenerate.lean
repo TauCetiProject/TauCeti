@@ -37,8 +37,9 @@ statements about smooth functions with few critical points.
   together with the whole equator `h = 0` (`TauCeti.criticalPoints_sq_comp_sphereHeight`). On `Sⁿ`
   with `n ≥ 2` the equator is infinite, so `f` has infinitely many critical points
   (`TauCeti.totalCriticalCount_sq_comp_sphereHeight_of_two_le`), and on the circle it has four
-  (`TauCeti.totalCriticalCount_sq_comp_sphereHeight_of_eq_one`). So `f` has two critical values
-  but never exactly two critical points in positive dimension: a count of critical values cannot
+  (`TauCeti.totalCriticalCount_sq_comp_sphereHeight_of_eq_one`). Yet in positive dimension `f`
+  has exactly two critical values, `0` on the equator and `1` at the poles
+  (`TauCeti.image_criticalPoints_sq_comp_sphereHeight`). So a count of critical values cannot
   replace the count of critical points in such a theorem.
 * **A constant function.** Every point is a critical point of a constant function, so in positive
   dimension it has infinitely many critical points
@@ -183,6 +184,27 @@ theorem criticalPoints_sq_comp_sphereHeight (v : sphere (0 : E) 1) :
   congr 1
   ext x
   simp
+
+/-- **`h²` has exactly two critical values** on a sphere of positive dimension: `0`, its value on
+the equator, and `1`, its value at the two poles. Positive dimension is needed: the sphere `S⁰`
+consists of the two poles, whose equator is empty. -/
+theorem image_criticalPoints_sq_comp_sphereHeight (hn : n ≠ 0) (v : sphere (0 : E) 1) :
+    ((fun t : ℝ ↦ t ^ 2) ∘ sphereHeight v) ''
+      criticalPoints (𝓡 n) ((fun t : ℝ ↦ t ^ 2) ∘ sphereHeight v) = {0, 1} := by
+  -- In positive dimension the height takes every value in `[-1, 1]`, so the equator is nonempty.
+  have hne : {x | sphereHeight v x = 0}.Nonempty := by
+    obtain ⟨x, hx⟩ : (0 : ℝ) ∈ range (sphereHeight v) := by
+      rw [range_sphereHeight (Nat.pos_of_ne_zero hn)]
+      norm_num
+    exact ⟨x, hx⟩
+  have heq : ((fun t : ℝ ↦ t ^ 2) ∘ sphereHeight v) '' {x | sphereHeight v x = 0} = {0} := by
+    rw [← hne.image_const 0]
+    exact EqOn.image_eq fun x (hx : sphereHeight v x = 0) ↦ by
+      simp only [Function.comp_apply, hx]
+      norm_num
+  rw [criticalPoints_sq_comp_sphereHeight, image_union, image_pair, heq]
+  simp only [Function.comp_apply, sphereHeight_self, sphereHeight_neg_self]
+  norm_num [pair_comm]
 
 /-- **On a sphere of dimension at least two, `h²` has infinitely many critical points.** -/
 theorem totalCriticalCount_sq_comp_sphereHeight_of_two_le (hn : 2 ≤ n) (v : sphere (0 : E) 1) :
