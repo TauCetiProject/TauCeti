@@ -14,7 +14,7 @@ import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.Tactic.Linarith
 import TauCeti.Data.Finsupp.Weight
 import TauCeti.Order.WellQuasiOrder
-import TauCeti.RingTheory.MvPolynomial.Ideal.Point
+import TauCeti.RingTheory.MvPolynomial.Ideal.Pow
 import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 import TauCeti.RingTheory.MvPolynomial.TaylorJet
 
@@ -95,8 +95,7 @@ private lemma weightedBasis_mem_of_weight_le [Finite ι] {κ : ι → ℕ}
   obtain ⟨u, hu : κ u ≤ α u⟩ := hα
   obtain ⟨β, rfl⟩ : ∃ β : ι →₀ ℕ, α = single u (κ u) + β := exists_add_of_le (single_le_iff.2 hu)
   have cost_eq : cost (single u (κ u) + β) = 1 + cost β := by
-    rw [map_add, h_cost, weight_single, nsmul_eq_mul, Pi.inv_apply,
-      mul_inv_cancel₀ (Nat.cast_ne_zero.2 (hκ u).ne')]
+    simp [h_cost, weight_single, (hκ u).ne']
   have h_split : weightedBasis κ g (single u (κ u) + β) γ =
       weightedBasis κ g β (single u 1 + γ) + g u * weightedBasis κ g β γ := by
     simp only [weightedBasis, monomial_single_add, map_mul, pow_one, aeval_X]
@@ -160,7 +159,8 @@ theorem exists_le_weight_of_mem_vanishingIdeal_pow [Field K] [Fintype ι] [Finty
     subset_span ⟨(⟨α, by simpa [mem_finsupp_iff]⟩, ⟨γ, (hΓ γ).2 hγ⟩), rfl⟩
   have b_ker (α γ : ι →₀ ℕ) (hγ : d ≤ γ.degree) : weightedBasis κ g α γ ∈ J.ker :=
     mem_ker fun t ↦ mul_mem_left _ _
-      (aeval_monomial_mem_vanishingIdeal_pow (fun u ↦ by simp [hg_eval]) hγ)
+      (aeval_monomial_mem_pow (I := vanishingIdeal K {z t})
+        (fun u ↦ (mem_vanishingIdeal_singleton_iff _ _).2 (by simp [hg_eval])) hγ)
   have mem_sup (p : MvPolynomial ι K) : p ∈ span K (Set.range v) ⊔ J.ker :=
     mem_of_forall_weightedBasis_mem hκ hg_cost fun _ _ β γ hβ _ ↦
       (lt_or_ge γ.degree d).elim (fun h ↦ mem_sup_left (b_span β γ hβ h))

@@ -190,7 +190,8 @@ theorem weight_le_degree_nsmul_of_monotone [Preorder σ] (f : σ →₀ ℕ) {w 
 theorem weight_mono_of_nonneg {w : σ → M} (hw : ∀ s, 0 ≤ w s) :
     Monotone (weight w : (σ →₀ ℕ) → M) := fun f g hfg ↦ by
   classical
-  have : IsOrderedAddMonoid M := { add_le_add_left := fun _ _ h c ↦ add_le_add_left h c }
+  -- `Finsupp.sum_le_sum_index` expects `IsOrderedAddMonoid M`, derived here from `AddLeftMono M`.
+  have := IsOrderedAddMonoid.of_addLeftMono (α := M)
   rw [weight_apply, weight_apply]
   exact sum_le_sum_index hfg (fun s _ _ _ ↦ nsmul_le_nsmul_left (hw s)) fun _ _ ↦ zero_nsmul _
 
