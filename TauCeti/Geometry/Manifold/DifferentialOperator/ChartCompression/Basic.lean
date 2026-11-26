@@ -189,6 +189,18 @@ theorem cutoffPushforward_apply (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     e.cutoffPushforward he φ h y = φ y * h (e.symm y) :=
   (rfl)
 
+omit [T2Space M] in
+/-- The pushforward `φ · (h ∘ e⁻¹)` is smooth as a function on `E`. -/
+theorem contDiff_cutoffPushforward (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (h : C^∞⟮𝓘(ℝ, E), M; ℝ⟯) : ContDiff ℝ ∞ (e.cutoffPushforward he φ h : E → ℝ) :=
+  contMDiff_iff_contDiff.1 (e.cutoffPushforward he φ h).contMDiff
+
+omit [T2Space M] in
+/-- The pushforward `φ · (h ∘ e⁻¹)` has compact support, contained in that of `φ`. -/
+theorem hasCompactSupport_cutoffPushforward (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (h : C^∞⟮𝓘(ℝ, E), M; ℝ⟯) : HasCompactSupport (e.cutoffPushforward he φ h : E → ℝ) :=
+  funext (e.cutoffPushforward_apply he φ h) ▸ φ.hasCompactSupport.mul_right
+
 /-- **Functions supported in a chart are cutoffs.** A smooth function `g` on `M` with compact
 support in the chart source is the pullback `ρ ∘ e`, extended by `0`, of a cutoff `ρ` with compact
 support in the chart target. This turns a partition of unity subordinate to chart sources into
@@ -201,9 +213,8 @@ theorem exists_cutoffPullback_one_eq [FiniteDimensional ℝ E] {g : C^∞⟮𝓘
     (Ω := ⟨e.target, e.open_target⟩) (n := ⊤)
     (hgc.isCompact.image_of_continuousOn (e.continuousOn.mono hg))
     (image_subset_iff.2 fun p hp ↦ e.map_source (hg hp))
-  have hρ : ContDiff ℝ ∞ fun y ↦ θ y * g (e.symm y) := by
-    rw [← funext (e.cutoffPushforward_apply he θ g)]
-    exact contMDiff_iff_contDiff.1 (e.cutoffPushforward he θ g).contMDiff
+  have hρ : ContDiff ℝ ∞ fun y ↦ θ y * g (e.symm y) :=
+    funext (e.cutoffPushforward_apply he θ g) ▸ e.contDiff_cutoffPushforward he θ g
   refine ⟨⟨fun y ↦ θ y * g (e.symm y), hρ, θ.hasCompactSupport.mul_right,
     tsupport_mul_subset_left.trans θ.tsupport_subset⟩, ?_⟩
   ext p

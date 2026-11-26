@@ -657,14 +657,13 @@ theorem classicalPrincipalSymbol_complexifyLinearMap {m : ℕ}
   have hx : x ∈ e.source := mem_chart_source _ x
   set χ := (exists_cutoff_chartAt (n := n) x).choose
   have hχ : χ (e x) = 1 := (exists_cutoff_chartAt (n := n) x).choose_spec.self_of_nhds
-  -- The chart frequency `η` of `ξ`, which is nonzero since `⟪η, ·⟫ ∘ de_x = ξ`.
+  -- The chart frequency `η` of `ξ`, which is nonzero, with `⟪η, ·⟫ ∘ de_x = ξ`.
   set η := (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
     (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse)
   have hηξ := innerSL_toDual_symm_comp_inverse_mvfderiv
     (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx ξ
-  have hη : η ≠ 0 := fun h ↦ hξ <| by
-    rw [← hηξ]
-    simp [η, h]
+  have hη : η ≠ 0 := toDual_symm_comp_inverse_mvfderiv_ne_zero
+    (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx hξ
   -- Compare the two descriptions of the principal symbol of the polynomial symbol of `D` in `e`.
   have h₁ := coefficient_principal_eq_classicalPrincipalSymbol
     (complexifyLinearMap_mem_classicalPseudodifferentialOperators hD) he χ χ
