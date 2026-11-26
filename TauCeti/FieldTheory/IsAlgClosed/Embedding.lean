@@ -35,6 +35,8 @@ countable field into `ℂ` to a field of cardinality at most the continuum.
   basis to a given algebraically independent family.
 * `IsTranscendenceBasis.exists_algEquiv_apply_eq`: between algebraically closed fields, an
   isomorphism realising a bijection of transcendence bases.
+* `IsTranscendenceBasis.cardinalMk_eq_of_aleph0_lt`: a transcendence basis of an uncountable
+  algebraically closed field over a countable nontrivial ring has the field's cardinality.
 * `TauCeti.IsAlgClosed.nonempty_algHom_of_lift_trdeg_le`,
   `TauCeti.IsAlgClosed.nonempty_algEquiv_of_lift_trdeg_eq`: homomorphisms and isomorphisms from
   transcendence degrees.
@@ -47,7 +49,7 @@ countable field into `ℂ` to a field of cardinality at most the continuum.
   cardinality.
 * `TauCeti.IsAlgClosed.exists_ringHom_extend_of_cardinal_le`: extension of an embedding of a
   countable commutative ring into an uncountable algebraically closed field `E` along an embedding
-  into a field `K` with `#K ≤ #E`.
+  into an integral domain `K` with `#K ≤ #E`.
 
 The isomorphism statements specialise `IsTranscendenceBasis.exists_ringEquiv_comp_algebraMap`,
 which follows Mathlib's `IsAlgClosed.equivOfTranscendenceBasis`; the homomorphism statements
@@ -111,6 +113,13 @@ theorem exists_algEquiv_apply_eq {E : Type*} [Field E] [Algebra R E] [IsAlgClose
   obtain ⟨τ, hτ, hτv⟩ := hv.exists_ringEquiv_comp_algebraMap hw (RingEquiv.refl R) e
   exact ⟨AlgEquiv.ofRingEquiv (f := τ) fun r ↦ by simpa using RingHom.congr_fun hτ r, hτv⟩
 
+/-- A transcendence basis of an uncountable algebraically closed field `Ω` over a countable
+nontrivial commutative ring `R` has the same cardinality as `Ω`. -/
+theorem cardinalMk_eq_of_aleph0_lt [Nontrivial R] [Countable R] {s : Set Ω}
+    (hs : IsTranscendenceBasis R ((↑) : s → Ω)) (hΩ : ℵ₀ < #Ω) : #s = #Ω :=
+  (lift_inj.1 (_root_.IsAlgClosed.cardinal_eq_cardinal_transcendence_basis_of_aleph0_lt _ hs
+    (mk_le_aleph0 (α := R)) hΩ)).symm
+
 end IsTranscendenceBasis
 
 variable {k : Type*} {Ω : Type v} [Field k] [Field Ω] [Algebra k Ω] [IsAlgClosed Ω]
@@ -144,8 +153,7 @@ field `k` is the cardinality of `Ω`. -/
 theorem trdeg_eq_cardinalMk [Countable k] (hΩ : ℵ₀ < #Ω) : trdeg k Ω = #Ω := by
   obtain ⟨t, ht⟩ := exists_isTranscendenceBasis k Ω
   rw [← ht.cardinalMk_eq_trdeg]
-  exact (lift_inj.1 (_root_.IsAlgClosed.cardinal_eq_cardinal_transcendence_basis_of_aleph0_lt _ ht
-    (mk_le_aleph0 (α := k)) hΩ)).symm
+  exact ht.cardinalMk_eq_of_aleph0_lt hΩ
 
 /-- **Steinitz extension for countable subrings.** Let `K` be a countable commutative ring, `E` and
 `L` uncountable algebraically closed fields of the same cardinality, and `f : K →+* E`,
@@ -162,26 +170,20 @@ theorem exists_ringEquiv_extend {E : Type u} {L : Type v} {K : Type*} [Field E] 
   have : Nontrivial K := f.domain_nontrivial
   obtain ⟨s, hs⟩ := exists_isTranscendenceBasis K E
   obtain ⟨t, ht⟩ := exists_isTranscendenceBasis K L
-  have hs_card : #s = #E :=
-    (lift_inj.1 (_root_.IsAlgClosed.cardinal_eq_cardinal_transcendence_basis_of_aleph0_lt _ hs
-      (mk_le_aleph0 (α := K)) hE)).symm
   have hL : ℵ₀ < #L := by
     have hE' : Cardinal.lift.{v} (ℵ₀ : Cardinal.{u}) < Cardinal.lift.{v} #E :=
       Cardinal.lift_lt.2 hE
     rwa [h_mk, lift_aleph0, ← lift_aleph0.{u}, lift_lt] at hE'
-  have ht_card : #t = #L :=
-    (lift_inj.1 (_root_.IsAlgClosed.cardinal_eq_cardinal_transcendence_basis_of_aleph0_lt _ ht
-      (mk_le_aleph0 (α := K)) hL)).symm
-  obtain ⟨e⟩ : Nonempty (s ≃ t) :=
-    Cardinal.lift_mk_eq'.1 (by rw [hs_card, ht_card, h_mk])
+  obtain ⟨e⟩ : Nonempty (s ≃ t) := Cardinal.lift_mk_eq'.1 <| by
+    rw [hs.cardinalMk_eq_of_aleph0_lt hE, ht.cardinalMk_eq_of_aleph0_lt hL, h_mk]
   obtain ⟨φ, -⟩ := hs.exists_algEquiv_apply_eq ht e
   exact ⟨φ.toRingEquiv, φ.commutes⟩
 
-/-- Let `D` be a countable commutative ring, `E` an uncountable algebraically closed field, `K` a
-field with `#K ≤ #E`, and `f : D →+* K`, `φ : D →+* E` injective ring homomorphisms. Then `φ`
-extends along `f` to a ring homomorphism `ψ : K →+* E`. -/
+/-- Let `D` be a countable commutative ring, `E` an uncountable algebraically closed field, `K` an
+integral domain with `#K ≤ #E`, and `f : D →+* K`, `φ : D →+* E` injective ring homomorphisms.
+Then `φ` extends along `f` to a ring homomorphism `ψ : K →+* E`. -/
 theorem exists_ringHom_extend_of_cardinal_le {D : Type*} {K : Type u} {E : Type v} [CommRing D]
-    [Countable D] [Field K] [Field E] [IsAlgClosed E] (hE : ℵ₀ < #E)
+    [Countable D] [CommRing K] [IsDomain K] [Field E] [IsAlgClosed E] (hE : ℵ₀ < #E)
     {f : D →+* K} {φ : D →+* E} (hf : Function.Injective f) (hφ : Function.Injective φ)
     (h_le : Cardinal.lift.{v} #K ≤ Cardinal.lift.{u} #E) :
     ∃ ψ : K →+* E, ψ.comp f = φ := by
@@ -191,11 +193,9 @@ theorem exists_ringHom_extend_of_cardinal_le {D : Type*} {K : Type u} {E : Type 
   have : Nontrivial D := f.domain_nontrivial
   obtain ⟨s, hs⟩ := exists_isTranscendenceBasis D K
   obtain ⟨t, ht⟩ := exists_isTranscendenceBasis D E
-  have ht_card : #t = #E :=
-    (lift_inj.1 (_root_.IsAlgClosed.cardinal_eq_cardinal_transcendence_basis_of_aleph0_lt _ ht
-      (mk_le_aleph0 (α := D)) hE)).symm
   have hst : Cardinal.lift.{v} #s ≤ Cardinal.lift.{u} #t :=
-    (lift_le.2 (mk_set_le s)).trans (h_le.trans_eq (congrArg Cardinal.lift ht_card.symm))
+    (lift_le.2 (mk_set_le s)).trans
+      (h_le.trans_eq (congrArg Cardinal.lift (ht.cardinalMk_eq_of_aleph0_lt hE).symm))
   obtain ⟨g⟩ : Nonempty (s ↪ t) := Cardinal.lift_mk_le'.1 hst
   obtain ⟨ψ, -⟩ := hs.exists_algHom_apply_eq (ht.1.comp g g.injective)
   exact ⟨ψ.toRingHom, RingHom.ext ψ.commutes⟩

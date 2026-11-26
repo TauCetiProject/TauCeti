@@ -51,7 +51,7 @@ theorem isAlgebraic_of_forall_norm_ringEquiv_le {ℓ : ℕ} [Fact ℓ.Prime] {x 
       (isOpen_Ioi.preimage continuous_norm) (NormedField.exists_lt_norm _ c)
   obtain ⟨φ, hφ⟩ := TauCeti.Complex.exists_algEquiv_apply_eq
     (TauCeti.Padic.cardinalMk_eq_continuum_of_isAlgebraic ℓ (PadicAlgCl ℓ)) hy hx
-  exact hcy.not_ge ((φ.symm_apply_eq.2 hφ.symm) ▸ h_bound φ.symm.toRingEquiv)
+  exact hcy.not_ge (by simpa [← hφ] using h_bound φ.symm.toRingEquiv)
 
 end TauCeti
 
