@@ -586,6 +586,20 @@ theorem coe_centerEquivOfLe {H : Subgroup (D.points k)}
       D.torusPoints k (quotientCharTorusPoint _ χ) := by
   simp [centerEquivOfLe]
 
+private theorem centerSubgroupEquivOfLe_symm_apply {H : Subgroup (D.points k)}
+    (hEH : D.elementarySubgroup k ≤ H) (hHE : H ≤ D.extendedElementarySubgroup k)
+    (hZ : (D.torusPoints k).range ⊓
+        Subgroup.centralizer (D.rootTorusSubgroup k : Set (D.points k)) ≤ H)
+    (s : Fin t.rank → kˣ) (hsH : D.torusPoints k s ∈ H)
+    (hg : (⟨D.torusPoints k s, hsH⟩ : H) ∈ Subgroup.center H) :
+    ((Subgroup.subgroupOfEquivOfLe hZ).symm.trans
+        (MulEquiv.subgroupCongr (D.center_eq_subgroupOf_of_le k hEH hHE).symm)).symm
+        ⟨⟨D.torusPoints k s, hsH⟩, hg⟩ =
+      ⟨D.torusPoints k s,
+        Subgroup.mem_subgroupOf.mp ((D.center_eq_subgroupOf_of_le k hEH hHE).le hg)⟩ := by
+  ext
+  simp [MulEquiv.subgroupCongr_symm_apply]
+
 /-- The inverse equivalence `centerEquivOfLe` evaluates a quotient class on the torus parameter of
 the given central element. -/
 @[simp]
@@ -598,7 +612,8 @@ theorem centerEquivOfLe_symm_apply_mk {H : Subgroup (D.points k)}
     (D.centerEquivOfLe k hEH hHE hZ).symm ⟨⟨D.torusPoints k s, hsH⟩, hg⟩
         (Submodule.Quotient.mk μ) =
       torusCharacter s μ := by
-  simp only [centerEquivOfLe, MulEquiv.symm_trans_apply]
+  rw [centerEquivOfLe, MulEquiv.symm_trans_apply,
+    D.centerSubgroupEquivOfLe_symm_apply k hEH hHE hZ s hsH hg]
   exact D.torusInfCentralizerRootTorusSubgroupEquiv_symm_apply_mk k
     (D.rootSubgroupPoints_injective k) s _ μ
 
