@@ -43,6 +43,8 @@ generally, if `ω(qᵢ, pⱼ) = cᵢ δᵢⱼ`, the value is `m! ∏ᵢ cᵢ`
 * `ContinuousAlternatingMap.wedgePow_smul`: `(c φ) ^ m = c ^ m φ ^ m`.
 * `ContinuousAlternatingMap.wedgePow_succ_apply_vecCons`: the power rule for inserting a vector
   into a wedge power of a two-form.
+* `ContinuousAlternatingMap.wedgePow_succ_apply_vecCons_vecCons`: splitting off a pair `(x, y)`
+  with `ω(x, ·)` vanishing on the remaining vectors.
 * `ContinuousAlternatingMap.curryLeftTopological_wedgePow_succ_eq_zero`: a vector in the kernel
   of a two-form lies in the kernel of each of its positive powers.
 * `ContinuousAlternatingMap.pairedWedge_wedgePow_apply_vecCons_of_forall`: for a vector `v` in
@@ -153,6 +155,16 @@ theorem wedgePow_succ_apply_vecCons (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) 
       push_cast
       ring
     exact key _ _ rfl
+
+/-- **Splitting off a pair.** If `ω(x, qᵢ) = 0` for every `i`, then the `(m + 1)`-th wedge power
+of a two-form `ω` takes the value `(m + 1) ω(x, y) ω ^ m (q)` on `(x, y, q₀, q₁, …)`. -/
+theorem wedgePow_succ_apply_vecCons_vecCons (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) {x : E} (y : E)
+    {q : Fin (2 * m) → E} (hq : ∀ i, ω ![x, q i] = 0) :
+    wedgePow ω (m + 1) (Matrix.vecCons x (Matrix.vecCons y q)) =
+      (m + 1) * (ω ![x, y] * wedgePow ω m q) := by
+  rw [wedgePow_succ_apply_vecCons, pairedWedge_apply_vecCons_of_forall _ _ _ _ _ _ fun i ↦ by
+      rw [curryLeftTopological_apply_apply, hq], curryLeftTopological_apply_apply,
+    ContinuousLinearMap.mul_apply']
 
 /-- If `ω(v, w) = 0` for every `w`, then the interior product of `v` with every positive power of
 `ω` vanishes. -/
