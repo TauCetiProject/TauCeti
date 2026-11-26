@@ -106,7 +106,8 @@ theorem exists_paths_isMixedSeparator_card_eq [Finite V] [Decidable (D.Adj s t)]
 
 /-- **Menger's theorem for possibly adjacent vertices of a digraph, predicate form.** After
 deleting the direct arrow and any fewer than `k` other vertices, `t` remains reachable from `s`
-exactly when there are the direct path and `k` further internally vertex-disjoint paths. -/
+exactly when there is a family of distinct, internally vertex-disjoint directed `s`–`t` paths
+indexed by `Fin k ⊕ D.AdjHom s t`: `k` paths, plus one more if `D.Adj s t` holds. -/
 theorem forall_not_isMixedSeparator_iff_exists_paths [Finite V] [Decidable (D.Adj s t)]
     (hst : s ≠ t) (k : ℕ) :
     (∀ X : Finset V, #X < k →
