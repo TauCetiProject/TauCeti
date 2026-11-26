@@ -6,22 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Lagrange
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
-# Derivative and Lagrange residue sums of nodal polynomials
+# Lagrange residue sums and derivative signs of nodal polynomials
 
-For a finite family of distinct nodes `x : ι → K` in a field `K`, the nodal polynomial
+For a finite family of distinct nodes `x : ι → K`, the nodal polynomial
 `Lagrange.nodal Finset.univ x = ∏ j, (X - C (x j))` is the monic polynomial with simple roots
 `x j`. Its derivative at a node `x i` evaluates to `∏ j ∈ univ.erase i, (x i - x j)`.
 
-This file records the derivative evaluation at a node, two classical residue-sum identities for
-rational functions `F / p` and `F / ((X - C c) * p)` with `deg F < deg p`, and the alternating
-signs of `p'(x i)` when the nodes are strictly monotone or antitone in a linearly ordered field.
+This file records two classical residue-sum identities over a field for rational functions `F / p`
+and `F / ((X - C c) * p)` with `deg F < deg p`, and the alternating signs of `p'(x i)` when the
+nodes are strictly monotone or antitone in a linearly ordered commutative ring.
 
 ## Main results
 
-* `Lagrange.eval_derivative_nodal`: `(derivative (nodal univ x)).eval (x i) =
-  ∏ j ∈ univ.erase i, (x i - x j)`.
 * `Lagrange.sum_eval_div_eval_derivative_nodal`: for monic `F` of degree `< card ι`,
   `∑ i, F.eval (x i) / (derivative (nodal univ x)).eval (x i)` equals `1` if
   `F.natDegree + 1 = card ι` and `0` otherwise.
@@ -54,11 +53,6 @@ section Residues
 
 variable {ι K : Type*} [Fintype ι] [Field K] {x : ι → K} {F : K[X]}
 
-/-- The derivative of `nodal univ x` at a node `x i` is the product of `x i - x j` over `j ≠ i`. -/
-theorem eval_derivative_nodal [DecidableEq ι] (x : ι → K) (i : ι) :
-    (derivative (nodal univ x)).eval (x i) = ∏ j ∈ univ.erase i, (x i - x j) := by
-  rw [eval_nodal_derivative_eval_node_eq (mem_univ i), eval_nodal]
-
 /-- For distinct nodes `x : ι → K` and a monic polynomial `F` with `F.natDegree < card ι`,
 the sum of residues `F(x i) / p'(x i)` equals `1` if `F.natDegree + 1 = card ι` and `0`
 otherwise. -/
@@ -67,7 +61,7 @@ theorem sum_eval_div_eval_derivative_nodal (hx : Function.Injective x) (hF : F.M
     ∑ i : ι, F.eval (x i) / (derivative (nodal univ x)).eval (x i) =
       if F.natDegree + 1 = Fintype.card ι then 1 else 0 := by
   classical
-  simp_rw [eval_derivative_nodal]
+  simp_rw [eval_nodal_derivative_eval_node_eq (mem_univ _), eval_nodal]
   rw [← coeff_eq_sum hx.injOn (degree_le_natDegree.trans_lt (Nat.cast_lt.2 hdeg)), card_univ]
   split_ifs with htop
   · rw [← htop, Nat.add_sub_cancel, hF.coeff_natDegree]
@@ -94,7 +88,7 @@ end Residues
 
 section Signs
 
-variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] {M : ℕ} {x : Fin M → K}
+variable {K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] {M : ℕ} {x : Fin M → K}
 
 /-- For strictly decreasing nodes `x 0 > x 1 > ...`, `(derivative (nodal univ x)).eval (x i)` has
 sign `(-1) ^ i`. -/
@@ -102,12 +96,10 @@ theorem derivative_nodal_sign_of_strictAnti (hx : StrictAnti x) (i : Fin M) :
     0 < (-1 : K) ^ (i : ℕ) * (derivative (nodal univ x)).eval (x i) := by
   have hsplit : (-1 : K) ^ (i : ℕ) * ∏ j ∈ univ.erase i, (x i - x j) =
       (∏ j ∈ Ioi i, (x i - x j)) * ∏ j ∈ Iio i, (x j - x i) := by
-    have herase : ∏ j ∈ univ.erase i, (x i - x j) =
-        (∏ j ∈ Ioi i, (x i - x j)) * ∏ j ∈ Iio i, (x i - x j) := by
-      rw [← prod_disjUnion (disjoint_Ioi_Iio i), Ioi_disjUnion_Iio, compl_singleton]
-    rw [herase, ← Fin.card_Iio, mul_left_comm, ← prod_neg]
+    rw [Finset.prod_erase_univ_eq_prod_Ioi_mul_prod_Iio i (fun j ↦ x i - x j), ← Fin.card_Iio,
+      mul_left_comm, ← prod_neg]
     simp_rw [neg_sub]
-  rw [eval_derivative_nodal, hsplit]
+  rw [eval_nodal_derivative_eval_node_eq (mem_univ i), eval_nodal, hsplit]
   exact mul_pos (prod_pos fun j hj ↦ sub_pos.2 (hx (mem_Ioi.1 hj)))
     (prod_pos fun j hj ↦ sub_pos.2 (hx (mem_Iio.1 hj)))
 
@@ -117,12 +109,10 @@ theorem derivative_nodal_sign_of_strictMono (hx : StrictMono x) (i : Fin M) :
     0 < (-1 : K) ^ (M - 1 - (i : ℕ)) * (derivative (nodal univ x)).eval (x i) := by
   have hsplit : (-1 : K) ^ (M - 1 - (i : ℕ)) * ∏ j ∈ univ.erase i, (x i - x j) =
       (∏ j ∈ Ioi i, (x j - x i)) * ∏ j ∈ Iio i, (x i - x j) := by
-    have herase : ∏ j ∈ univ.erase i, (x i - x j) =
-        (∏ j ∈ Ioi i, (x i - x j)) * ∏ j ∈ Iio i, (x i - x j) := by
-      rw [← prod_disjUnion (disjoint_Ioi_Iio i), Ioi_disjUnion_Iio, compl_singleton]
-    rw [herase, ← Fin.card_Ioi, ← mul_assoc, ← prod_neg]
+    rw [Finset.prod_erase_univ_eq_prod_Ioi_mul_prod_Iio i (fun j ↦ x i - x j), ← Fin.card_Ioi,
+      ← mul_assoc, ← prod_neg]
     simp_rw [neg_sub]
-  rw [eval_derivative_nodal, hsplit]
+  rw [eval_nodal_derivative_eval_node_eq (mem_univ i), eval_nodal, hsplit]
   exact mul_pos (prod_pos fun j hj ↦ sub_pos.2 (hx (mem_Ioi.1 hj)))
     (prod_pos fun j hj ↦ sub_pos.2 (hx (mem_Iio.1 hj)))
 
