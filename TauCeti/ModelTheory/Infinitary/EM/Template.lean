@@ -58,15 +58,25 @@ where each `Pᵢ x` and `¬⋀ᵢ Pᵢ x` are eventually true along the identity
   subsequence of a sequence indiscernible for `Δ` has the same template on `Δ`.
 * `FirstOrder.Language.isIndiscernibleOn_morleySeed`: an injective sequence is indiscernible for
   the Morley seed.
-* `FirstOrder.Language.lift_mk_le_of_realizesOn_templateOf_morleySeed`: a sequence realizing on
-  the Morley seed of `φ` the template of an injective sequence in a model of `φ` lands, injectively,
-  in a model of `φ`.
+* `FirstOrder.Language.realize_and_injective_of_realizesOn_templateOf_morleySeed`: a sequence
+  realizing on the Morley seed of `φ` the template of an injective sequence in a model of `φ` is
+  injective, and its target is a model of `φ`.
+* `FirstOrder.Language.lift_mk_le_of_realizesOn_templateOf_morleySeed`: if `b : I → N` realizes on
+  the Morley seed of a sentence the template of an injective sequence, then `#I ≤ #N`.
 
 ## References
 
 * D. Marker, *Lectures on Infinitary Model Theory*, Lecture Notes in Logic 46 (2016), §5.1: the
   proof of Theorem 5.2, whose starting theory contains `φ` and the disequalities `dᵢ ≠ dⱼ`, and
   whose indiscernibility conditions `Γ` are recorded here by templates.
+* C. Freer, `cameronfreer/infinitary-logic` (Apache-2.0) at commit
+  `518a366cba97b1ae8c4dc64a297a396939bc3e0b`: `InfinitaryLogic/Methods/EM/Template.lean`
+  (`Lomega1omegaTemplate`, `templateOfSeq`), `InfinitaryLogic/Methods/EM/Realization.lean` and
+  `InfinitaryLogic/Methods/EM/FragmentAdapter.lean` (`disEqFormula`, `morleySeed`) formalize the
+  same layer. Divergences: index types are preorders rather than linear orders, a template is a
+  set of bounded formulas for each arity rather than a truth assignment turned into template
+  sentences over `L[[J]]`, realization is relative to a set `Δ` of formulas, and the Morley seed
+  is the set `{φ, x₀ ≠ x₁}` rather than a sequence of formulas.
 -/
 
 public section
@@ -138,6 +148,36 @@ theorem RealizesOn.realize_sentence_iff (h : Φ.RealizesOn a Δ) {φ : L.Sentenc
 
 theorem RealizesOn.mono (hΔ : Δ' ⊆ Δ) (h : Φ.RealizesOn a Δ) : Φ.RealizesOn a Δ' :=
   fun p hp ↦ h p (hΔ hp)
+
+/-- Realization on one formula: it holds at an increasing tuple exactly if `Φ` declares it
+true. -/
+@[simp]
+theorem realizesOn_singleton {φ : L.BoundedFormulaω Empty n} :
+    Φ.RealizesOn a {⟨n, φ⟩} ↔
+      ∀ t : Fin n ↪o J, φ.Realize (Empty.elim : Empty → M) (a ∘ t) ↔ φ ∈ Φ.formulas n :=
+  ⟨fun h ↦ h.realize_iff rfl, fun h ↦ by rintro _ rfl; exact h⟩
+
+@[simp]
+theorem realizesOn_empty : Φ.RealizesOn a (∅ : Set (Σ n, L.BoundedFormulaω Empty n)) :=
+  fun _ hp ↦ hp.elim
+
+@[simp]
+theorem realizesOn_union :
+    Φ.RealizesOn a (Δ ∪ Δ') ↔ Φ.RealizesOn a Δ ∧ Φ.RealizesOn a Δ' :=
+  ⟨fun h ↦ ⟨h.mono Set.subset_union_left, h.mono Set.subset_union_right⟩,
+    fun h p hp ↦ hp.elim (h.1 p) (h.2 p)⟩
+
+@[simp]
+theorem realizesOn_iUnion {ι : Sort*} {Δs : ι → Set (Σ n, L.BoundedFormulaω Empty n)} :
+    Φ.RealizesOn a (⋃ i, Δs i) ↔ ∀ i, Φ.RealizesOn a (Δs i) :=
+  ⟨fun h i ↦ h.mono (Set.subset_iUnion Δs i), fun h p hp ↦ by
+    obtain ⟨i, hi⟩ := Set.mem_iUnion.1 hp
+    exact h i p hi⟩
+
+@[simp]
+theorem realizesOn_insert {p : Σ n, L.BoundedFormulaω Empty n} :
+    Φ.RealizesOn a (insert p Δ) ↔ Φ.RealizesOn a {p} ∧ Φ.RealizesOn a Δ := by
+  rw [Set.insert_eq, realizesOn_union]
 
 /-- A subsequence of a sequence realizing `Φ` on `Δ` realizes `Φ` on `Δ`. -/
 theorem RealizesOn.comp_orderEmbedding (h : Φ.RealizesOn a Δ) (e : K ↪o J) :
@@ -265,7 +305,7 @@ theorem EMTemplate.RealizesOn.injective (h : Φ.RealizesOn c Δ) (hΔ : ⟨2, L.
     (hΦ : L.disEq ∈ Φ.formulas 2) : Function.Injective c := by
   intro x y hxy
   by_contra hne
-  -- Order the two indices to obtain an increasing pair on which `a` takes equal values.
+  -- Order the two indices to obtain an increasing pair on which `c` takes equal values.
   wlog hlt : x < y generalizing x y
   · exact this hxy.symm (Ne.symm hne) ((le_of_not_gt hlt).lt_of_ne' hne)
   let t : Fin 2 ↪o I := .ofStrictMono ![x, y] <| Fin.strictMono_iff_lt_succ.2 fun i ↦ by

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.EM.Template
-public import Mathlib.ModelTheory.Order
+public import TauCeti.ModelTheory.Order
 import Mathlib.Data.Finset.Sort
 
 /-!
@@ -48,13 +48,6 @@ namespace TauCeti.Examples.Indiscernible
 open FirstOrder FirstOrder.Language
 
 attribute [local instance] orderStructure Language.emptyStructure
-
-/-- The structure `orderStructure` interprets the order symbol as the order. -/
-theorem orderedStructure_orderStructure (M : Type*) [LE M] :
-    Language.order.OrderedStructure M :=
-  ⟨fun _ ↦ Iff.rfl⟩
-
-attribute [local instance] orderedStructure_orderStructure
 
 /-- The increasing pair `(a, b)` of natural numbers. -/
 def pair (a b : ℕ) (h : a < b) : Fin 2 ↪o ℕ :=
@@ -203,7 +196,7 @@ example {L : Language} {M : Type*} [L.Structure M] {J : Type*} [LinearOrder J] {
 
 -- A constant sequence over a two-point order is indiscernible for the Morley seed, with
 -- `x₀ ≠ x₁` false, so it does not realize the template of an injective sequence.
-example {L : Language} {M N : Type*} [L.Structure M] [L.Structure N] [Nonempty N]
+example {L : Language} {M N : Type*} [L.Structure M] [L.Structure N]
     {J : Type*} [LinearOrder J] {a : J → M} (ha : Function.Injective a) (φ : L.Sentenceω)
     (c : N) :
     IsIndiscernibleOn (fun _ : Fin 2 ↦ c) (morleySeed φ) ∧

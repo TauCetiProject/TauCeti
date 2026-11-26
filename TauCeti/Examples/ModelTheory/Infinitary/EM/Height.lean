@@ -19,16 +19,24 @@ records, on `Δ = {Pᵢ(x₀) | i} ∪ {⋀ᵢ Pᵢ(x₀)}`, what is eventually 
 `Δ` is realized by a tail of `a`, but no sequence over a nonempty index order, in any structure,
 realizes the template on all of `Δ`. So `L_{ω₁ω}` has no compactness for templates, and templates
 used for stretching must carry witness conditions instead.
+
+## References
+
+* C. Freer, `cameronfreer/infinitary-logic` (Apache-2.0) at commit
+  `518a366cba97b1ae8c4dc64a297a396939bc3e0b`: the same height counterexample is
+  `T_counterexample`, over `HeightCex.Lang`, in
+  `InfinitaryLogic/Conditional/MorleyHanfTransfer.lean`.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti.Examples.Height
 
 open FirstOrder FirstOrder.Language Filter
 
-/-- The language of the unary predicates `Pᵢ`, `i : ℕ`. -/
-def heightLang : Language :=
+/-- The language of the unary predicates `Pᵢ`, `i : ℕ`. Its body is exposed so that its symbol
+types reduce in the definitions below. -/
+@[expose] def heightLang : Language :=
   ⟨fun _ ↦ Empty, fun k ↦ PLift (k = 1) × ℕ⟩
 
 /-- The structure on `ℕ` in which `Pᵢ x` holds when `i ≤ x`. -/
@@ -54,10 +62,16 @@ theorem realize_P {N : Type*} [heightLang.Structure N] (i : ℕ) (xs : Fin 1 →
   rw [P, BoundedFormulaInf.realize_rel]
   exact iff_of_eq (congrArg _ (funext fun j ↦ by simp [Fin.fin_one_eq_zero j]))
 
+/-- `Pᵢ` holds at `x` in `ℕ` exactly when `i ≤ x`. This is the instance's `RelMap` unfolded: the
+relation symbol `Psym i` carries `i`, and the index `⟨0, _⟩` it reads is `(0 : Fin 1)`. -/
+@[simp]
+theorem relMap_Psym_nat (i : ℕ) (xs : Fin 1 → ℕ) : Structure.RelMap (Psym i) xs ↔ i ≤ xs 0 :=
+  Iff.rfl
+
 @[simp]
 theorem realize_P_nat (i : ℕ) (xs : Fin 1 → ℕ) :
-    (P i).Realize (Empty.elim : Empty → ℕ) xs ↔ i ≤ xs 0 :=
-  realize_P i xs
+    (P i).Realize (Empty.elim : Empty → ℕ) xs ↔ i ≤ xs 0 := by
+  rw [realize_P, relMap_Psym_nat]
 
 /-- The formulas `Pᵢ(x₀)` and `⋀ᵢ Pᵢ(x₀)`. -/
 def Δ : Set (Σ n, heightLang.BoundedFormulaω Empty n) :=

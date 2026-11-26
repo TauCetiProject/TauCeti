@@ -56,6 +56,13 @@ Quantification does not preserve it: in `(ℕ, <)` the identity sequence is indi
 
 * D. Marker, *Lectures on Infinitary Model Theory*, Lecture Notes in Logic 46 (2016), §5.1: the
   indiscernibility conditions `Γ` in the proof of Theorem 5.2.
+* C. Freer, `cameronfreer/infinitary-logic` (Apache-2.0) at commit
+  `518a366cba97b1ae8c4dc64a297a396939bc3e0b`: `InfinitaryLogic/Methods/EM/Indiscernible.lean`
+  (`IsLomega1omegaIndiscernible` and its `Γ`-restricted form) and
+  `InfinitaryLogic/Methods/TailIndiscernible.lean` (a tail-restricted variant) formalize
+  indiscernibility for `L_{ω₁ω}`. Divergences: index types are preorders rather than linear
+  orders, increasing tuples are order embeddings `Fin n ↪o J` rather than strictly monotone maps,
+  and the restricted form is relative to a set of formulas rather than a sequence of them.
 -/
 
 public section
