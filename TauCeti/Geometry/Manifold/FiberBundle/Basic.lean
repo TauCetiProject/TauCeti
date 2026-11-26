@@ -461,6 +461,14 @@ theorem proj_mem_of_mem_chartAt_source {z w : ManifoldTotalSpace F E}
   have hyb := (trivializationAt F E x.proj).mem_source.1 hw.1
   exact ⟨hyb, (trivializationAt F E x.proj).coe_fst' hyb ▸ hw.2.1⟩
 
+/-- Any point in the source of the preferred chart of `ManifoldTotalSpace F E` at `z` projects into
+the source of the preferred extended chart `extChartAt IB z.proj` of the base. -/
+theorem proj_mem_extChartAt_source_of_mem_chartAt_source {z w : ManifoldTotalSpace F E}
+    (hw : w ∈ (chartAt (ModelProd HB HF) z).source) :
+    w.proj ∈ (extChartAt IB z.proj).source := by
+  rw [extChartAt_source]
+  exact (proj_mem_of_mem_chartAt_source hw).2
+
 /-- On the source of the preferred chart at `i`, the first coordinate of the extended chart of
 `ManifoldTotalSpace F E` is the extended chart of the base at `i.proj` applied to `proj`. -/
 theorem extChartAt_fst_eq {i z : ManifoldTotalSpace F E}
@@ -485,8 +493,8 @@ theorem proj_extChartAt_symm (z : ManifoldTotalSpace F E) {y : EB × EF}
     (extChartAt (IB.prod IF) (homeomorph F E x)).map_target hy
   have hmem : ((extChartAt (IB.prod IF) (homeomorph F E x)).symm y).proj ∈
       (extChartAt IB x.proj).source := by
-    rw [extChartAt_source]
-    simpa [proj_homeomorph] using (proj_mem_of_mem_chartAt_source hsrc).2
+    simpa [proj_homeomorph] using
+      proj_mem_extChartAt_source_of_mem_chartAt_source (IB := IB) hsrc
   rw [proj_homeomorph]
   rw [homeomorph_symm_proj] at h
   exact ((extChartAt IB x.proj).left_inv hmem).symm.trans (congrArg (extChartAt IB x.proj).symm h)

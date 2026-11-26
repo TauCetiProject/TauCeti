@@ -24,11 +24,12 @@ holonomic sections of `J¹E` via the pointwise Cartan contact map.
   manifold-differentiable and locally a section, `FiberFirstJet.prolongAt` packages `mfderiv` of `s`
   (adjusted by `tangentSpaceCast` along `(s x).proj = x`) as an element of `FiberFirstJet`.
   `FiberFirstJetBundle.prolong` extends this to an arbitrary map `s : B → ManifoldTotalSpace F E`
-  without hypotheses, returning the chart-dependent fallback `⟨s x, default⟩` whenever either
+  without hypotheses, returning an arbitrary fallback `⟨s x, Classical.arbitrary _⟩` whenever either
   `MDifferentiableAt` or `(ManifoldTotalSpace.proj ∘ s) =ᶠ[𝓝 x] id` fails.
 * **Global dependent sections** `s : ∀ b, E b` are prolonged by `FiberFirstJetBundle.jet`, defined
   by composing `s` with `ManifoldTotalSpace.homeomorph F E` and applying `prolong` (so `jet`
-  likewise falls back to `⟨homeomorph ⟨x, s x⟩, default⟩` where `s` is not differentiable).
+  likewise falls back to `⟨homeomorph ⟨x, s x⟩, Classical.arbitrary _⟩` where `s` is not
+  differentiable).
 
 ## Regularity and boundary hypotheses
 
@@ -110,12 +111,9 @@ theorem modelEquivAt_prolongAt {s : B → ManifoldTotalSpace F E} {x : B}
     modelEquivAt (s x) (prolongAt hs hproj) = (ContinuousLinearMap.snd 𝕜 EB EF).comp
       (fderivWithin 𝕜 (writtenInExtChartAt IB (IB.prod IF) x s) (range IB)
         (extChartAt IB x x)) := by
-  have hcast (u : EB) :
-      tangentSpaceCast IB (s x).proj x ((tangentSpaceCastModel IB (s x).proj).symm u) =
-        (tangentSpaceCastModel IB x).symm u :=
-    (tangentSpaceCastModel IB x).injective (by simp)
   ext u
-  rw [modelEquivAt_apply, prolongAt_apply, hcast, hs.mfderiv]
+  rw [modelEquivAt_apply, prolongAt_apply, Manifold.tangentSpaceCast_tangentSpaceCastModel_symm,
+    hs.mfderiv]
   simp
 
 /-- Local fibre-coordinate representative of `s : B → ManifoldTotalSpace F E` in the preferred
@@ -156,8 +154,7 @@ theorem contDiffAt_localRep {n : ℕ∞ω} [IsManifold IB n B] [IsManifold IF n 
     ContDiffAt 𝕜 n (localRep IB IF s i) (extChartAt IB i.proj x) := by
   have hx : (s x).proj = x := hproj.eq_of_nhds
   have hbi : x ∈ (extChartAt IB i.proj).source :=
-    (extChartAt_source IB i.proj).symm ▸ hx ▸
-      (ManifoldTotalSpace.proj_mem_of_mem_chartAt_source hi).2
+    hx ▸ ManifoldTotalSpace.proj_mem_extChartAt_source_of_mem_chartAt_source hi
   exact (contDiffWithinAt_localRep hs hi hbi).contDiffAt (IB.range_eq_univ ▸ univ_mem)
 
 /-- For a differentiable local section `s` at `x`, `writtenInExtChartAt IB (IB.prod IF) x s` has
@@ -230,8 +227,7 @@ theorem hasFDerivWithinAt_localRep [IsManifold IB 1 B] [IsManifold IF 1 F]
       (range IB) (extChartAt IB i.proj x) := by
   have hx_eq : (s x).proj = x := hproj.eq_of_nhds
   have hbi : x ∈ (extChartAt IB i.proj).source :=
-    (extChartAt_source IB i.proj).symm ▸ hx_eq ▸
-      (ManifoldTotalSpace.proj_mem_of_mem_chartAt_source hi).2
+    hx_eq ▸ ManifoldTotalSpace.proj_mem_extChartAt_source_of_mem_chartAt_source hi
   have hi' : s x ∈ (extChartAt (IB.prod IF) i).source :=
     (extChartAt_source (IB.prod IF) i).symm ▸ hi
   have hsx' := mem_extChartAt_source (I := IB.prod IF) (s x)
@@ -274,8 +270,7 @@ theorem coordAt_prolongAt [IsManifold IB 1 B] [IsManifold IF 1 F]
       fderivWithin 𝕜 (localRep IB IF s i) (range IB) (extChartAt IB i.proj x) := by
   have hx_eq : (s x).proj = x := hproj.eq_of_nhds
   have hbi : x ∈ (extChartAt IB i.proj).source :=
-    (extChartAt_source IB i.proj).symm ▸ hx_eq ▸
-      (ManifoldTotalSpace.proj_mem_of_mem_chartAt_source hi).2
+    hx_eq ▸ ManifoldTotalSpace.proj_mem_extChartAt_source_of_mem_chartAt_source hi
   exact ((hasFDerivWithinAt_localRep hs hproj hi).fderivWithin
     (IB.uniqueDiffOn _ (extChartAt_target_subset_range i.proj
       ((extChartAt IB i.proj).map_source hbi)))).symm
@@ -288,18 +283,24 @@ open Classical in
 variable (IB IF) in
 /-- **Holonomic prolongation of a local section** `s : B → ManifoldTotalSpace F E` at `x`.
 Evaluates to `⟨s x, FiberFirstJet.prolongAt hs hproj⟩` when `s` is differentiable at `x` and
-satisfies `(ManifoldTotalSpace.proj ∘ s) =ᶠ[𝓝 x] id`, and falls back to the chart-dependent value
-`⟨s x, default⟩` otherwise. -/
+satisfies `(ManifoldTotalSpace.proj ∘ s) =ᶠ[𝓝 x] id`, and falls back to
+`⟨s x, Classical.arbitrary _⟩` otherwise. -/
 def prolong (s : B → ManifoldTotalSpace F E) (x : B) : FiberFirstJetBundle IB IF F E :=
   if h : MDifferentiableAt IB (IB.prod IF) s x ∧ (ManifoldTotalSpace.proj ∘ s) =ᶠ[𝓝 x] id then
     ⟨s x, FiberFirstJet.prolongAt h.1 h.2⟩
-  else ⟨s x, default⟩
+  else ⟨s x, Classical.arbitrary _⟩
 
 /-- The target-bundle projection of `prolong IB IF s x` is `s x`. -/
 @[simp]
 theorem proj_prolong (s : B → ManifoldTotalSpace F E) (x : B) :
     (prolong IB IF s x).proj = s x := by
   simp only [prolong]; split_ifs <;> rfl
+
+/-- The source (base) projection of `prolong IB IF s x` is `(s x).proj`. -/
+@[simp]
+theorem baseProj_prolong (s : B → ManifoldTotalSpace F E) (x : B) :
+    baseProj (prolong IB IF s x) = (s x).proj := by
+  rw [baseProj_apply, proj_prolong]
 
 /-- When `s` is differentiable at `x` and locally a section near `x`, `prolong IB IF s x` evaluates
 to `⟨s x, FiberFirstJet.prolongAt hs hproj⟩`. -/
@@ -320,24 +321,22 @@ theorem prolong_congr {s₁ s₂ : B → ManifoldTotalSpace F E} {x : B} (h : s�
       mk_eq_mk_iff_modelEquivAt]
     refine ⟨hx, ?_⟩
     ext u
-    have hcast (y : B) :
-        tangentSpaceCast IB y x ((tangentSpaceCastModel IB y).symm u) =
-          (tangentSpaceCastModel IB x).symm u :=
-      (tangentSpaceCastModel IB x).injective (by simp)
     rw [FiberFirstJet.modelEquivAt_apply, FiberFirstJet.modelEquivAt_apply,
-      FiberFirstJet.prolongAt_apply, FiberFirstJet.prolongAt_apply, hcast, hcast, h.symm.mfderiv_eq]
+      FiberFirstJet.prolongAt_apply, FiberFirstJet.prolongAt_apply,
+      Manifold.tangentSpaceCast_tangentSpaceCastModel_symm,
+      Manifold.tangentSpaceCast_tangentSpaceCastModel_symm, h.symm.mfderiv_eq]
     simp
   · have hs₂ : ¬(MDifferentiableAt IB (IB.prod IF) s₂ x ∧
         (ManifoldTotalSpace.proj ∘ s₂) =ᶠ[𝓝 x] id) := fun h₂ ↦
       hs₁ ⟨h₂.1.congr_of_eventuallyEq h, (h.fun_comp ManifoldTotalSpace.proj).trans h₂.2⟩
     simp only [prolong, hs₁, hs₂, ↓reduceDIte]
-    rw [hx]
+    exact congrArg (fun z ↦ (⟨z, Classical.arbitrary _⟩ : FiberFirstJetBundle IB IF F E)) hx
 
 variable (IB IF F) in
 /-- **Holonomic prolongation of a global dependent section** `s : ∀ b, E b` at `x`.
 Defined as `prolong IB IF (fun b ↦ ManifoldTotalSpace.homeomorph F E ⟨b, s b⟩) x`: it evaluates to
 `FiberFirstJet.prolongAt` when `b ↦ homeomorph F E ⟨b, s b⟩` is differentiable at `x`, and falls
-back to `⟨homeomorph F E ⟨x, s x⟩, default⟩` otherwise. -/
+back to `⟨homeomorph F E ⟨x, s x⟩, Classical.arbitrary _⟩` otherwise. -/
 def jet (s : ∀ b, E b) (x : B) : FiberFirstJetBundle IB IF F E :=
   prolong IB IF (fun b ↦ ManifoldTotalSpace.homeomorph F E ⟨b, s b⟩) x
 
@@ -354,6 +353,7 @@ theorem proj_jet (s : ∀ b, E b) (x : B) :
   proj_prolong _ x
 
 /-- The base projection of `jet IB IF F s x` is `x`. -/
+@[simp]
 theorem baseProj_jet (s : ∀ b, E b) (x : B) : baseProj (jet IB IF F s x) = x := by
   rw [baseProj_apply, proj_jet, ManifoldTotalSpace.proj_homeomorph]
 
@@ -463,8 +463,7 @@ theorem prolong_eq_iff_firstJetAt_mk_eq [IsManifold IB ∞ B] [IsManifold IF ∞
   have hx₁ : (s₁ x).proj = x := hproj₁.eq_of_nhds
   have hx₂ : (s₂ x).proj = x := hproj₂.eq_of_nhds
   have hbi : x ∈ (extChartAt IB i.proj).source :=
-    (extChartAt_source IB i.proj).symm ▸ hx₁ ▸
-      (ManifoldTotalSpace.proj_mem_of_mem_chartAt_source hi₁).2
+    hx₁ ▸ ManifoldTotalSpace.proj_mem_extChartAt_source_of_mem_chartAt_source hi₁
   have hmd₁ := hs₁.mdifferentiableAt (by simp)
   have hmd₂ := hs₂.mdifferentiableAt (by simp)
   rw [prolong_of_mdifferentiableAt hmd₁ hproj₁, prolong_of_mdifferentiableAt hmd₂ hproj₂,
@@ -618,19 +617,18 @@ theorem exists_contMDiffAt_prolong_eq {n : ℕ∞ω} [IF.Boundaryless]
 /-- **Cartan contact characterization of holonomic sections**: for a differentiable local section
 `σ : B → FiberFirstJetBundle IB IF F E` over `B` (`(baseProj ∘ σ) =ᶠ[𝓝 x] id`), the pullback of the
 pointwise contact map `contactFormAt (σ x)` along `mfderiv _ _ σ x` vanishes iff `σ x` equals the
-holonomic prolongation of its underlying bundle section `targetProj ∘ σ` at `x`. -/
+holonomic prolongation of its underlying bundle section `TotalSpace.proj ∘ σ` at `x`. -/
 theorem contactFormAt_comp_mfderiv_eq_zero_iff [IsManifold IB 1 B] [IsManifold IF 1 F]
     [ContMDiffFiberBundle 1 F E IB IF] {σ : B → FiberFirstJetBundle IB IF F E} {x : B}
     (hσ : MDifferentiableAt IB ((IB.prod IF).prod 𝓘(𝕜, EB →L[𝕜] EF)) σ x)
     (hbase : (baseProj ∘ σ) =ᶠ[𝓝 x] id) :
     (contactFormAt (σ x)).comp (mfderiv IB ((IB.prod IF).prod 𝓘(𝕜, EB →L[𝕜] EF)) σ x) = 0 ↔
-      σ x = prolong IB IF (targetProj ∘ σ) x := by
-  rw [targetProj_eq_proj]
+      σ x = prolong IB IF (TotalSpace.proj ∘ σ) x := by
   -- Stage 1: relate `mfderiv` of `σ`, the projected section `TotalSpace.proj ∘ σ`, and `prolongAt`.
   have hs : MDifferentiableAt IB (IB.prod IF) (TotalSpace.proj ∘ σ) x :=
     (Bundle.mdifferentiableAt_proj (FiberFirstJet IB IF F E)).comp x hσ
   have hproj : (ManifoldTotalSpace.proj ∘ (TotalSpace.proj ∘ σ)) =ᶠ[𝓝 x] id := by
-    rwa [baseProj_eq_proj_comp_targetProj, targetProj_eq_proj] at hbase
+    rwa [baseProj_eq_proj_comp_proj] at hbase
   have hmfd_s (v : TangentSpace IB x) :
       mfderiv ((IB.prod IF).prod 𝓘(𝕜, EB →L[𝕜] EF)) (IB.prod IF) TotalSpace.proj (σ x)
         (mfderiv IB ((IB.prod IF).prod 𝓘(𝕜, EB →L[𝕜] EF)) σ x v) =

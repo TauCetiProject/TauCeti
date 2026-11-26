@@ -26,10 +26,10 @@ section defined in a chart neighbourhood of `z`
 (`FiberFirstJetBundle.exists_contMDiffAt_prolong_eq` in `FirstJet.Prolongation`); smooth bump
 extensions would only be needed to extend such a local section globally across `B`.
 
-Unlike a vector bundle, `J¹E → E` (`targetProj`) has no coordinate-independent zero section: local
-bundle transitions mix base and fibre coordinates, contributing an additive shear term to local
-derivative coordinates (`coordChange_eq_firstJetCoordChange_snd`). Differences of two splittings at
-`z`, however, have zero base differential and transform linearly through
+Unlike a vector bundle, `J¹E → E` (`TotalSpace.proj`) has no coordinate-independent zero section:
+local bundle transitions mix base and fibre coordinates, contributing an additive shear term to
+local derivative coordinates (`coordChange_eq_firstJetCoordChange_snd`). Differences of two
+splittings at `z`, however, have zero base differential and transform linearly through
 `VerticalSpace.coordChange` (`coordChange_sub`), making `FiberFirstJet IB IF F E z` an affine
 torsor over `T_{z.proj} B →L[𝕜] V_z E`.
 
@@ -50,8 +50,8 @@ structure for `C^(n + 1)` bundle data (`contMDiffFiberBundle`, `isManifold`). At
   `coordChange_eq_firstJetCoordChange_snd`, `contMDiffOn_coordChange`).
 * `TauCeti.FiberFirstJet.fiberPrebundle` and `contMDiffFiberBundle`: topological and `C^n` fibre
   bundle structures on `TauCeti.FiberFirstJetBundle IB IF F E`.
-* `TauCeti.FiberFirstJetBundle.targetProj`, `baseProj`, `isManifold`, and `contactFormAt`: target
-  and base projections, `C^n` manifold structure on `J¹E`, and the pointwise Cartan contact map.
+* `TauCeti.FiberFirstJetBundle.baseProj`, `isManifold`, and `contactFormAt`: source (base)
+  projection, `C^n` manifold structure on `J¹E`, and the pointwise Cartan contact map.
 
 ## References
 
@@ -184,10 +184,9 @@ theorem modelEquivAt_symm_apply (z : ManifoldTotalSpace F E) (A : EB →L[𝕜] 
         (tangentSpaceCastModel IB z.proj u, A (tangentSpaceCastModel IB z.proj u)) :=
   (rfl)
 
-/-- Arbitrary inhabitant `(modelEquivAt z).symm 0` of `FiberFirstJet IB IF F E z`.
-Warning: this splitting has zero vertical slope only in the preferred chart at `z` and is NOT
-coordinate-independent; it is provided solely for nonemptiness and totalized junk fallbacks. -/
-instance : Inhabited (FiberFirstJet IB IF F E z) :=
+/-- Every fibre `FiberFirstJet IB IF F E z` is nonempty, witnessed in preferred model coordinates
+by `(modelEquivAt z).symm 0`. -/
+instance : Nonempty (FiberFirstJet IB IF F E z) :=
   ⟨(modelEquivAt z).symm 0⟩
 
 instance : TopologicalSpace (FiberFirstJet IB IF F E z) :=
@@ -298,11 +297,7 @@ theorem coe_contactProj (j : FiberFirstJet IB IF F E z)
     (w : TangentSpace (IB.prod IF) z) :
     (j.contactProj w : TangentSpace (IB.prod IF) z) =
       w - j (mfderiv (IB.prod IF) IB ManifoldTotalSpace.proj z w) := by
-  rw [contactProj, comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.trans_apply, VerticalSpace.equivSubmodule_symm_apply,
-    VerticalSpace.val_mk, ← ContinuousLinearEquiv.coe_toLinearEquiv]
-  simp only [ContinuousLinearEquiv.ofEq, LinearEquiv.coe_ofEq_apply,
-    ContinuousLinearMap.coe_projKerOfRightInverse_apply, toContinuousLinearMap_apply]
+  simp [contactProj, ContinuousLinearEquiv.ofEq]
 
 @[simp]
 theorem contactProj_coe (j : FiberFirstJet IB IF F E z)
@@ -348,27 +343,13 @@ def splittingEquiv (j : FiberFirstJet IB IF F E z) :
 theorem splittingEquiv_apply (j : FiberFirstJet IB IF F E z)
     (w : TangentSpace (IB.prod IF) z) : j.splittingEquiv w =
       (mfderiv (IB.prod IF) IB ManifoldTotalSpace.proj z w, j.contactProj w) := by
-  rw [splittingEquiv, ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.prodCongr_apply,
-    ContinuousLinearEquiv.refl_apply]
-  refine Prod.ext (ContinuousLinearEquiv.fst_equivOfRightInverse _ _ j.mfderiv_proj_apply w)
-    (VerticalSpace.ext ?_)
-  rw [ContinuousLinearEquiv.trans_apply, VerticalSpace.equivSubmodule_symm_apply,
-    VerticalSpace.val_mk, ← ContinuousLinearEquiv.coe_toLinearEquiv]
-  simp only [ContinuousLinearEquiv.ofEq, LinearEquiv.coe_ofEq_apply,
-    ContinuousLinearEquiv.snd_equivOfRightInverse, toContinuousLinearMap_apply, coe_contactProj]
+  ext <;> simp [splittingEquiv, ContinuousLinearEquiv.ofEq]
 
 @[simp]
 theorem splittingEquiv_symm_apply (j : FiberFirstJet IB IF F E z)
     (p : TangentSpace IB z.proj × VerticalSpace IB IF F E z) :
     j.splittingEquiv.symm p = j p.1 + (p.2 : TangentSpace (IB.prod IF) z) := by
-  rw [splittingEquiv, ContinuousLinearEquiv.symm_trans_apply,
-    ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.prodCongr_apply,
-    ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.refl_apply,
-    ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.symm_symm,
-    ContinuousLinearEquiv.equivOfRightInverse_symm_apply]
-  simp only [← ContinuousLinearEquiv.coe_symm_toLinearEquiv, ContinuousLinearEquiv.ofEq,
-    LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply, VerticalSpace.coe_equivSubmodule_apply,
-    toContinuousLinearMap_apply]
+  simp [splittingEquiv, ContinuousLinearEquiv.ofEq, ← ContinuousLinearEquiv.coe_symm_toLinearEquiv]
 
 end Carrier
 
@@ -554,9 +535,9 @@ theorem coordChange_eq_firstJetCoordChange_snd [IB.Boundaryless] [IF.Boundaryles
   have hi' : z ∈ (extChartAt (IB.prod IF) i).source := (extChartAt_source (IB.prod IF) i).symm ▸ hi
   have hk' : z ∈ (extChartAt (IB.prod IF) k).source := (extChartAt_source (IB.prod IF) k).symm ▸ hk
   have hbi : z.proj ∈ (extChartAt IB i.proj).source :=
-    (extChartAt_source IB i.proj).symm ▸ (ManifoldTotalSpace.proj_mem_of_mem_chartAt_source hi).2
+    ManifoldTotalSpace.proj_mem_extChartAt_source_of_mem_chartAt_source hi
   have hbk : z.proj ∈ (extChartAt IB k.proj).source :=
-    (extChartAt_source IB k.proj).symm ▸ (ManifoldTotalSpace.proj_mem_of_mem_chartAt_source hk).2
+    ManifoldTotalSpace.proj_mem_extChartAt_source_of_mem_chartAt_source hk
   have hpair : (h (extChartAt IB k.proj z.proj), (extChartAt (IB.prod IF) i z).2) =
       extChartAt (IB.prod IF) i z := Prod.ext (by
     dsimp only [h]
@@ -618,7 +599,7 @@ def pretrivializationAt (i : ManifoldTotalSpace F E) :
     Pretrivialization (EB →L[𝕜] EF) (π (EB →L[𝕜] EF) (FiberFirstJet IB IF F E)) where
   toFun p := (p.proj, coordAt i p.snd)
   invFun q := if hq : q.1 ∈ (chartAt (ModelProd HB HF) i).source then ⟨q.1, ofCoordAt hq q.2⟩
-    else ⟨q.1, default⟩
+    else ⟨q.1, Classical.arbitrary _⟩
   source := π (EB →L[𝕜] EF) (FiberFirstJet IB IF F E) ⁻¹' (chartAt (ModelProd HB HF) i).source
   target := (chartAt (ModelProd HB HF) i).source ×ˢ univ
   map_source' _ hp := ⟨hp, mem_univ _⟩
@@ -774,42 +755,36 @@ theorem mk_eq_mk_iff_modelEquivAt {z₁ z₂ : ManifoldTotalSpace F E}
   ⟨by rintro ⟨⟩; exact ⟨rfl, rfl⟩, fun ⟨rfl, h⟩ ↦
     congrArg (TotalSpace.mk' _ z₁) ((FiberFirstJet.modelEquivAt z₁).injective h)⟩
 
-/-- The target projection `π_{1,0} : J¹E → E` onto `ManifoldTotalSpace F E`. -/
-def targetProj (p : FiberFirstJetBundle IB IF F E) : ManifoldTotalSpace F E := p.proj
-
 /-- The source (base) projection `π_1 : J¹E → B` onto `B`. -/
 def baseProj (p : FiberFirstJetBundle IB IF F E) : B := p.proj.proj
 
-@[simp]
-theorem targetProj_apply (p : FiberFirstJetBundle IB IF F E) : targetProj p = p.proj :=
-  (rfl)
-
-@[simp]
+/-- Pointwise formula for the source projection `baseProj` via `TotalSpace.proj` and
+`ManifoldTotalSpace.proj`. -/
 theorem baseProj_apply (p : FiberFirstJetBundle IB IF F E) : baseProj p = p.proj.proj :=
   (rfl)
 
-/-- `targetProj` coincides with `TotalSpace.proj` on `FiberFirstJetBundle`. -/
-theorem targetProj_eq_proj :
-    (targetProj : FiberFirstJetBundle IB IF F E → ManifoldTotalSpace F E) = TotalSpace.proj :=
-  (rfl)
-
-/-- `baseProj` factors as `ManifoldTotalSpace.proj ∘ targetProj`. -/
-theorem baseProj_eq_proj_comp_targetProj :
-    (baseProj : FiberFirstJetBundle IB IF F E → B) = ManifoldTotalSpace.proj ∘ targetProj :=
+/-- `baseProj` factors as `ManifoldTotalSpace.proj ∘ TotalSpace.proj`. -/
+theorem baseProj_eq_proj_comp_proj :
+    (baseProj : FiberFirstJetBundle IB IF F E → B) =
+      ManifoldTotalSpace.proj ∘ TotalSpace.proj :=
   (rfl)
 
 /-- Every point `z : ManifoldTotalSpace F E` has a nonempty fibre in `FiberFirstJetBundle`, so
-`targetProj` is surjective. -/
-theorem targetProj_surjective :
-    Function.Surjective (targetProj : FiberFirstJetBundle IB IF F E → ManifoldTotalSpace F E) :=
-  fun z ↦ ⟨⟨z, default⟩, rfl⟩
+`TotalSpace.proj` is surjective. -/
+theorem proj_surjective :
+    Function.Surjective
+      (TotalSpace.proj : FiberFirstJetBundle IB IF F E → ManifoldTotalSpace F E) :=
+  fun z ↦ let ⟨j⟩ := (inferInstance : Nonempty (FiberFirstJet IB IF F E z)); ⟨⟨z, j⟩, rfl⟩
 
 /-- When the model fibre `F` is nonempty, the source projection `baseProj : J¹E → B` is
 surjective. -/
 theorem baseProj_surjective [Nonempty F] :
     Function.Surjective (baseProj : FiberFirstJetBundle IB IF F E → B) := fun b ↦
   let ⟨x, hx⟩ := FiberBundle.surjective_proj F E b
-  ⟨⟨ManifoldTotalSpace.homeomorph F E x, default⟩, (ManifoldTotalSpace.proj_homeomorph x).trans hx⟩
+  let ⟨j⟩ := (inferInstance :
+    Nonempty (FiberFirstJet IB IF F E (ManifoldTotalSpace.homeomorph F E x)))
+  ⟨⟨ManifoldTotalSpace.homeomorph F E x, j⟩,
+    (baseProj_apply _).trans ((ManifoldTotalSpace.proj_homeomorph x).trans hx)⟩
 
 section Structure
 variable [IsManifold IB 1 B] [IsManifold IF 1 F] [ContMDiffFiberBundle 1 F E IB IF]
@@ -826,19 +801,13 @@ theorem mk_eq_mk_iff_coordAt {i z₁ z₂ : ManifoldTotalSpace F E}
   apply congrArg (TotalSpace.mk' _ z₁)
   rw [← FiberFirstJet.ofCoordAt_coordAt hz₁ j₁, ← FiberFirstJet.ofCoordAt_coordAt hz₁ j₂, h]
 
-/-- The target projection `targetProj : J¹E → E` is `C^n` whenever `J¹E` is `C^1`-charted (and in
-fact for all `n : ℕ∞ω` via `Bundle.contMDiff_proj`). -/
-theorem contMDiff_targetProj (n : ℕ∞ω) :
-    ContMDiff ((IB.prod IF).prod 𝓘(𝕜, EB →L[𝕜] EF)) (IB.prod IF) n
-      (targetProj : FiberFirstJetBundle IB IF F E → ManifoldTotalSpace F E) :=
-  Bundle.contMDiff_proj (FiberFirstJet IB IF F E)
-
 /-- On any `C^1` fibre bundle over `C^1` base and fibre manifolds, the source projection
 `baseProj : J¹E → B` is `C^n` for every `n : ℕ∞ω`. -/
 theorem contMDiff_baseProj (n : ℕ∞ω) :
     ContMDiff ((IB.prod IF).prod 𝓘(𝕜, EB →L[𝕜] EF)) IB n
       (baseProj : FiberFirstJetBundle IB IF F E → B) :=
-  (ManifoldTotalSpace.contMDiff_proj n F E IB IF).comp (contMDiff_targetProj n)
+  (ManifoldTotalSpace.contMDiff_proj n F E IB IF).comp
+    (Bundle.contMDiff_proj (FiberFirstJet IB IF F E))
 
 /-- For a `C^(n + 1)` fibre bundle over `C^(n + 1)` base and fibre manifolds, the total space
 `FiberFirstJetBundle IB IF F E` is a `C^n` manifold. -/

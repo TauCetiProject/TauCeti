@@ -255,10 +255,7 @@ theorem coe_verticalLinearEquiv_apply (x : ManifoldTotalSpace G P)
     (ξ : GroupLieAlgebra IG G) :
     (verticalLinearEquiv IB IG x ξ : TangentSpace (IB.prod IG) x) =
       rightFundamentalVectorField (IB.prod IG) ξ x := by
-  rw [verticalLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    ContinuousLinearEquiv.coe_toLinearEquiv, VerticalSpace.equivSubmodule_symm_apply,
-    VerticalSpace.val_mk, LinearEquiv.coe_ofEq_apply, LinearEquiv.ofInjective_apply,
-    rightFundamentalLinearMap_apply]
+  simp [verticalLinearEquiv]
 
 @[simp]
 theorem verticalLinearEquiv_symm_mk (x : ManifoldTotalSpace G P)

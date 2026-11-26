@@ -49,7 +49,9 @@ Smooth descent along the projection, which needs no submersion theory, is in
   `TauCeti.Geometry.Manifold.VectorBundle.Submersion` from the normed-space fibre charts of
   `FiberBundle.chartedSpace` to a manifold fibre.
 * Preferred tangent-trivialization bridges use
-  `TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic`.
+  `TauCeti.Geometry.Manifold.VectorBundle.Tangent.Cast` (base-point bridges) and
+  `TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic`
+  (`continuousLinearMapAt_symmL_coordChange`).
 -/
 public section
 
@@ -116,9 +118,9 @@ theorem fst_comp_tangentCoordChange {i j z : ManifoldTotalSpace F E}
   have hi' : z ∈ (extChartAt (IB.prod IF) i).source := (extChartAt_source (IB.prod IF) i).symm ▸ hi
   have hj' : z ∈ (extChartAt (IB.prod IF) j).source := (extChartAt_source (IB.prod IF) j).symm ▸ hj
   have hbi : z.proj ∈ (extChartAt IB i.proj).source :=
-    (extChartAt_source IB i.proj).symm ▸ (proj_mem_of_mem_chartAt_source hi).2
+    proj_mem_extChartAt_source_of_mem_chartAt_source hi
   have hbj : z.proj ∈ (extChartAt IB j.proj).source :=
-    (extChartAt_source IB j.proj).symm ▸ (proj_mem_of_mem_chartAt_source hj).2
+    proj_mem_extChartAt_source_of_mem_chartAt_source hj
   have hLHS := (hasFDerivAt_fst (𝕜 := 𝕜) (E := EB) (F := EF)).comp_hasFDerivWithinAt _
     (hasFDerivWithinAt_tangentCoordChange (I := IB.prod IF) ⟨hi', hj'⟩)
   have hRHS := ((extChartAt_fst_eq (IB := IB) (IF := IF) hi).symm ▸

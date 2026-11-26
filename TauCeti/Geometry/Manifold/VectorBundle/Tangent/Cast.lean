@@ -18,6 +18,7 @@ identifying the preferred tangent-bundle trivialization at a point `x` with
 
 * `TauCeti.Manifold.tangentSpaceCast_symm`,
   `TauCeti.Manifold.tangentSpaceCastModel_tangentSpaceCast`,
+  `TauCeti.Manifold.tangentSpaceCast_tangentSpaceCastModel_symm`,
   `TauCeti.Manifold.tangentSpaceCastModel_apply`, and
   `TauCeti.Manifold.tangentSpaceCastModel_symm_apply`: basic identities for the foundational
   tangent-space casts.
@@ -57,6 +58,15 @@ theorem tangentSpaceCastModel_tangentSpaceCast (I : ModelWithCorners 𝕜 E H) (
     tangentSpaceCastModel I y (tangentSpaceCast I x y v) = tangentSpaceCastModel I x v := by
   -- At this foundational bridge, both implementation casts act as the identity on `E`.
   rfl
+
+/-- Transporting an inverse model-space cast `(tangentSpaceCastModel I x).symm v` along
+`tangentSpaceCast I x y` yields `(tangentSpaceCastModel I y).symm v`. -/
+@[simp]
+theorem tangentSpaceCast_tangentSpaceCastModel_symm (I : ModelWithCorners 𝕜 E H) (x y : M)
+    (v : E) :
+    tangentSpaceCast I x y ((tangentSpaceCastModel I x).symm v) =
+      (tangentSpaceCastModel I y).symm v :=
+  (tangentSpaceCastModel I y).injective (by simp)
 
 /-- The foundational tangent-to-model cast preserves the underlying vector in `E`.
 Use this equation explicitly: automatic simplification would erase the distinction between
