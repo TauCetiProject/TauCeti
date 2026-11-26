@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.LDU
-import Mathlib.LinearAlgebra.Matrix.Adjugate
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.Determinant.FromBlocks
 
 /-!
@@ -28,9 +28,9 @@ minor of order `n` and put
 `Gr = |det Z|² - T T' |D|²`.
 
 Then the Gram determinant of the `2n + 2` vectors `F ∪ F'` is `(-1) ^ (n + 1) * Gr`
-(`Matrix.det_gram_fromCols_of_frame`). Typically `F' = x F''` for an isometry `x` of the form
-and a second frame `F''`, so that `Z` is the matrix of the products `⟨F_a, x F''_b⟩`
-(`Matrix.det_gram_fromCols_mul_of_frame`).
+(`Matrix.det_conjTranspose_fromCols_mul_mul_fromCols_of_frame`). Typically `F' = x F''` for an
+isometry `x` of the form and a second frame `F''`, so that `Z` is the matrix of the products
+`⟨F_a, x F''_b⟩` (`Matrix.det_conjTranspose_fromCols_mul_mul_fromCols_mul_of_frame`).
 
 The Gram matrix of `F ∪ F'` is the block matrix `[[S, Z], [Zᴴ, S']]`, whose diagonal blocks `S`
 and `S'` each have one nonzero entry. Exchanging the two block columns gives
@@ -42,7 +42,8 @@ principal minors of order `n`.
 
 The leading principal minors of `Z` are unchanged when `F` and `F'` are replaced by `F * U`
 and `F' * U'` for upper unitriangular `U` and `U'`, that is when each frame vector is changed by
-a combination of the earlier ones (`Matrix.det_submatrix_castLE_conjTranspose_mul_mul`). If an
+a combination of the earlier ones (`Matrix.det_submatrix_castLE_conjTranspose_mul_mul`, from
+`Matrix.det_submatrix_castLE_mul_mul`). If an
 isometry `s` and an invertible `s'` move the two frames in this way, the leading principal
 minors of the matrix of the products `⟨F_a, s x s'⁻¹ F'_b⟩` are those of the products
 `⟨F_a, x F'_b⟩` (`Matrix.det_submatrix_castLE_frame_mul_mul`); in particular so is `Gr`.
@@ -54,9 +55,7 @@ minors of the matrix of the products `⟨F_a, s x s'⁻¹ F'_b⟩` are those of 
 * `Matrix.det_fromBlocks_single_last`: the determinant of a block matrix whose diagonal blocks
   each have a single entry at the last corner, in terms of the determinants and the leading
   principal minors of the off-diagonal blocks.
-* `Matrix.det_gram_fromCols_of_frame`: the Gram determinant of two frames.
-* `Matrix.det_submatrix_castLE_mul_mul`: the leading principal minors of `L * M * U` are those of
-  `M` for lower unitriangular `L` and upper unitriangular `U`.
+* `Matrix.det_conjTranspose_fromCols_mul_mul_fromCols_of_frame`: the Gram determinant of two frames.
 * `Matrix.det_submatrix_castLE_frame_mul_mul`: invariance of the leading principal minors of the
   products of two frames under isometries moving the frames by unitriangular matrices.
 
@@ -88,16 +87,6 @@ namespace Matrix
 section Block
 
 variable {m R : Type*} [Fintype m] [DecidableEq m] [CommRing R]
-
-/-- The determinant of a square matrix whose row `i` is the sum of the rows `i` of two matrices
-that agree with it in every other row is the sum of their determinants. -/
-private theorem det_eq_add_of_row_eq_add {A B C : Matrix m m R} (i : m)
-    (h_row : A i = B i + C i) (hB : ∀ j ≠ i, B j = A j) (hC : ∀ j ≠ i, C j = A j) :
-    A.det = B.det + C.det := by
-  have h_update (X : Matrix m m R) (hX : ∀ j ≠ i, X j = A j) : A.updateRow i (X i) = X := by
-    ext j k
-    by_cases hj : j = i <;> simp [updateRow_apply, hj, hX]
-  conv_lhs => rw [← updateRow_eq_self A i, h_row, det_updateRow_add, h_update B hB, h_update C hC]
 
 /-- **Determinant of a block matrix with single off-diagonal entries.** For square matrices `Z`,
 `W` and scalars `c`, `c'`, the block matrix whose off-diagonal blocks have the single entries `c`
@@ -138,12 +127,6 @@ theorem det_fromBlocks_single_single (Z W : Matrix m m R) (i : m) (c c' : R) :
 
 variable {n : ℕ}
 
-/-- The corner entry of the adjugate of a matrix indexed by `Fin (n + 1)` is its leading principal
-minor of order `n`. -/
-private theorem adjugate_last_last (Z : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
-    Z.adjugate (last n) (last n) = (Z.submatrix castSucc castSucc).det := by
-  simp [adjugate_fin_succ_eq_det_submatrix, ← two_mul, pow_mul]
-
 /-- **Determinant of a block matrix with single diagonal entries.** For matrices `Z`, `W` indexed
 by `Fin (n + 1)` and scalars `a`, `b`, the block matrix `[[S_a, Z], [W, S_b]]`, whose diagonal
 blocks have the single entries `a` and `b` at the last corner, has determinant
@@ -159,8 +142,8 @@ theorem det_fromBlocks_single_last (Z W : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 
       fromBlocks Z (single (last n) (last n) a) (single (last n) (last n) b) W *
         fromBlocks 0 1 1 0 := by
     simp [fromBlocks_multiply]
-  rw [h, det_mul, det_fromBlocks_zero₁₁_zero₂₂, det_fromBlocks_single_single, adjugate_last_last,
-    adjugate_last_last]
+  rw [h, det_mul, det_fromBlocks_zero₁₁_zero₂₂, det_fromBlocks_single_single,
+    adjugate_last_last_eq_det_submatrix_castSucc, adjugate_last_last_eq_det_submatrix_castSucc]
   simp only [Fintype.card_fin, det_one, mul_one]
   ring
 
@@ -179,7 +162,7 @@ entries `-T` and `-T'` at the last corner. With `Z = Fᴴ * A * F'` the matrix o
 `⟨F_a, F'_b⟩` and `D` its leading principal minor of order `n`, the Gram determinant of the
 `2n + 2` vectors `F ∪ F'` is `(-1) ^ (n + 1) * (|det Z|² - T T' |D|²)`, where `|x|²` is
 `x * star x`. -/
-theorem det_gram_fromCols_of_frame (hA : A.IsHermitian)
+theorem det_conjTranspose_fromCols_mul_mul_fromCols_of_frame (hA : A.IsHermitian)
     (hF : Fᴴ * A * F = single (last n) (last n) (-T))
     (hF' : F'ᴴ * A * F' = single (last n) (last n) (-T')) :
     ((fromCols F F')ᴴ * A * fromCols F F').det =
@@ -196,26 +179,20 @@ theorem det_gram_fromCols_of_frame (hA : A.IsHermitian)
   rw [h_gram, det_fromBlocks_single_last, det_conjTranspose, ← conjTranspose_submatrix,
     det_conjTranspose, neg_mul_neg]
 
-/-- An isometry `x` of the form `A`, that is `star x * A * x = A`, does not change the Gram
-matrix of a family of vectors: `(x F)ᴴ A (x F) = Fᴴ A F`. -/
-theorem conjTranspose_mul_mul_mul_of_star_mul_mul_eq {m : Type*} {x : Matrix ι ι R}
-    (hx : star x * A * x = A) (F : Matrix ι m R) : (x * F)ᴴ * A * (x * F) = Fᴴ * A * F := by
-  conv_rhs => rw [← hx]
-  simp only [conjTranspose_mul, star_eq_conjTranspose, Matrix.mul_assoc]
-
 /-- **The Gram determinant of a frame and the image of a frame.** For an isometry `x` of the
 Hermitian form `A`, that is `star x * A * x = A` as for the elements of `unitaryGroupOf A`, and
 frames `F`, `F'` of norms `-T`, `-T'`, the Gram determinant of the
 `2n + 2` vectors `F ∪ x F'` is `(-1) ^ (n + 1) * (|det Z|² - T T' |D|²)`, where `Z` is the matrix
 of the products `⟨F_a, x F'_b⟩` and `D` its leading principal minor of order `n`. -/
-theorem det_gram_fromCols_mul_of_frame (hA : A.IsHermitian) {x : Matrix ι ι R}
-    (hx : star x * A * x = A) (hF : Fᴴ * A * F = single (last n) (last n) (-T))
+theorem det_conjTranspose_fromCols_mul_mul_fromCols_mul_of_frame (hA : A.IsHermitian)
+    {x : Matrix ι ι R} (hx : star x * A * x = A) (hF : Fᴴ * A * F = single (last n) (last n) (-T))
     (hF' : F'ᴴ * A * F' = single (last n) (last n) (-T')) :
     ((fromCols F (x * F'))ᴴ * A * fromCols F (x * F')).det =
       (-1) ^ (n + 1) * ((Fᴴ * A * (x * F')).det * star (Fᴴ * A * (x * F')).det - T * T' *
         (((Fᴴ * A * (x * F')).submatrix castSucc castSucc).det *
           star ((Fᴴ * A * (x * F')).submatrix castSucc castSucc).det)) :=
-  det_gram_fromCols_of_frame hA hF (by rw [conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx, hF'])
+  det_conjTranspose_fromCols_mul_mul_fromCols_of_frame hA hF
+    (by rw [conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx, hF'])
 
 end Frame
 
@@ -225,38 +202,7 @@ section Invariance
 
 variable {R : Type*} [CommRing R] {n l : ℕ}
 
-/-- The leading principal submatrix of order `l` of a matrix indexed by `Fin n` is its square
-block on the indices below `l`, up to reindexing. -/
-private theorem det_submatrix_castLE_eq (M : Matrix (Fin n) (Fin n) R) (h : l ≤ n) :
-    (M.submatrix (castLE h) (castLE h)).det =
-      (M.toSquareBlockProp fun j => (j : ℕ) < l).det := by
-  let e : Fin l ≃ {j : Fin n // (j : ℕ) < l} :=
-    { toFun i := ⟨castLE h i, i.isLt⟩
-      invFun j := ⟨j.val, j.property⟩
-      left_inv _ := rfl
-      right_inv _ := rfl }
-  rw [toSquareBlockProp_def, ← det_submatrix_equiv_self e]
-  rfl
-
-/-- **Leading principal minors of `L * M * U`.** For a lower unitriangular `L` and an upper
-unitriangular `U`, the leading principal minors of `L * M * U` are those of `M`. -/
-theorem det_submatrix_castLE_mul_mul {L M U : Matrix (Fin n) (Fin n) R}
-    (hL : L.BlockUnitriangular OrderDual.toDual) (hU : U.BlockUnitriangular id) (h : l ≤ n) :
-    ((L * M * U).submatrix (castLE h) (castLE h)).det =
-      (M.submatrix (castLE h) (castLE h)).det := by
-  rw [det_submatrix_castLE_eq _ h, det_submatrix_castLE_eq _ h]
-  exact det_toSquareBlockProp_blockLDU (b := id) hL hU fun i j hji hi =>
-    lt_of_le_of_lt (show (j : ℕ) ≤ i from hji) hi
-
 variable [StarRing R]
-
-/-- The conjugate transpose of an upper unitriangular matrix is lower unitriangular. -/
-private theorem BlockUnitriangular.conjTranspose {U : Matrix (Fin n) (Fin n) R}
-    (hU : U.BlockUnitriangular id) : Uᴴ.BlockUnitriangular OrderDual.toDual := by
-  refine blockUnitriangular_iff.2 ⟨fun i j hij => ?_, fun i j hij => ?_⟩
-  · rw [conjTranspose_apply, hU.blockTriangular (OrderDual.toDual_lt_toDual.1 hij), star_zero]
-  · obtain rfl : i = j := OrderDual.toDual_inj.1 hij
-    rw [conjTranspose_apply, hU.apply_of_eq rfl, one_apply_eq, star_one]
 
 /-- **Leading principal minors of the products of two frames.** Replacing the frames `F` and `F'`
 by `F * U` and `F' * U'` for upper unitriangular `U` and `U'`, that is changing each frame vector

@@ -13,14 +13,14 @@ import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
-# The Gram determinant of two frames in `U(p, q)` is nonnegative
+# The Gram determinant of two frames in `U(p, q)` has sign `(-1) ^ (n + 1)`
 
 Let `J = diag(1, …, 1, -1, …, -1)` be the Gram matrix of the Hermitian form of signature
 `(p, q)` on `𝕜^(p ⊕ q)`, over `ℝ` or `ℂ`. Let `F` and `F'` be frames of `n + 1` vectors of norms
-`-T` and `-T'` (`Matrix.det_gram_fromCols_of_frame`): the first `n` vectors of each are isotropic
-and orthogonal to the whole frame, and the last has norm `-T`, respectively `-T'`. Let
-`Z = Fᴴ * J * F'` be the matrix of the products `⟨F_a, F'_b⟩` and `D` its leading principal minor
-of order `n`. If `q ≤ n + 1` and `T ≥ 0`, then
+`-T` and `-T'` (`Matrix.det_conjTranspose_fromCols_mul_mul_fromCols_of_frame`): the first `n`
+vectors of each are isotropic and orthogonal to the whole frame, and the last has norm `-T`,
+respectively `-T'`. Let `Z = Fᴴ * J * F'` be the matrix of the products `⟨F_a, F'_b⟩` and `D` its
+leading principal minor of order `n`. If `q ≤ n + 1` and `T ≥ 0`, then
 
 `T T' |D|² ≤ |det Z|²`
 
@@ -82,13 +82,17 @@ theorem mul_mul_norm_det_submatrix_castSucc_sq_le (hq : Fintype.card q ≤ n + 1
     rw [mulVecLin_apply, ← star_dotProduct_conjTranspose_mul_mul_mulVec,
       show Eᴴ * (Pᴴ * J * P) * E = (P * E)ᴴ * J * (P * E) by
         simp only [conjTranspose_mul, Matrix.mul_assoc], hPE, hF]
-    simp only [dotProduct, Pi.star_apply, RCLike.star_def, single_mulVec, neg_mul,
-      Function.update_apply, Pi.zero_apply, mul_ite, mul_neg, ← mul_assoc, mul_zero,
-      Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, map_neg, RCLike.mul_re, RCLike.conj_re,
-      RCLike.ofReal_re, RCLike.conj_im, RCLike.ofReal_im, sub_zero, RCLike.mul_im, zero_add,
-      sub_neg_eq_add, neg_add_rev, add_neg_le_iff_le_add, ge_iff_le]
-    nlinarith [mul_nonneg hT (mul_self_nonneg (RCLike.re (c (last n)))),
-      mul_nonneg hT (mul_self_nonneg (RCLike.im (c (last n))))]
+    -- the form of `single (last n) (last n) (-T)` at `c` is `-T * ‖c (last n)‖ ^ 2`
+    have h_val : star c ⬝ᵥ single (last n) (last n) (-(T : 𝕜)) *ᵥ c =
+        ((-T * ‖c (last n)‖ ^ 2 : ℝ) : 𝕜) := by
+      suffices h : star (c (last n)) * (-(T : 𝕜) * c (last n)) =
+          ((-T * ‖c (last n)‖ ^ 2 : ℝ) : 𝕜) by
+        simpa [dotProduct, single_mulVec, Function.update_apply] using h
+      rw [RCLike.star_def, mul_left_comm, RCLike.conj_mul]
+      push_cast
+      ring
+    rw [h_val, RCLike.ofReal_re, neg_mul, neg_nonpos]
+    positivity
   -- The form is nonnegative on the vectors `v` whose image `P v` has vanishing `q` coordinates.
   set K := (P.submatrix Sum.inr id).mulVecLin
   have hW' (v) (hv : v ∈ LinearMap.ker K) : 0 ≤ RCLike.re (star v ⬝ᵥ (Pᴴ * J * P) *ᵥ v) := by
@@ -107,15 +111,24 @@ theorem mul_mul_norm_det_submatrix_castSucc_sq_le (hq : Fintype.card q ≤ n + 1
     simp only [finrank_fintype_fun_eq_card, Fintype.card_sum, Fintype.card_fin]
     omega)
   rw [LinearMap.finrank_range_of_inj hE, finrank_fintype_fun_eq_card, Fintype.card_fin,
-    det_gram_fromCols_of_frame isHermitian_indefiniteDiagonal hF hF'] at h_sign
+    det_conjTranspose_fromCols_mul_mul_fromCols_of_frame isHermitian_indefiniteDiagonal hF hF']
+    at h_sign
   -- The Gram determinant is `(-1) ^ (n + 1)` times the real number `|det Z|² - T T' |D|²`.
   have h_real (z : 𝕜) : z * star z = ((‖z‖ ^ 2 : ℝ) : 𝕜) := by
     rw [RCLike.star_def, RCLike.mul_conj, RCLike.ofReal_pow]
-  rw [h_real, h_real, show ∀ a b : ℝ, (-1 : 𝕜) ^ (n + 1) * (a - T * T' * b) =
-      (((-1) ^ (n + 1) * (a - T * T' * b) : ℝ) : 𝕜) by intro a b; push_cast; ring,
-    RCLike.ofReal_re, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul,
-    sub_nonneg] at h_sign
-  exact h_sign
+  have h_re (a b : 𝕜) :
+      RCLike.re ((-1 : 𝕜) ^ (n + 1) * (a * star a - (T : 𝕜) * T' * (b * star b))) =
+        (-1) ^ (n + 1) * (‖a‖ ^ 2 - T * T' * ‖b‖ ^ 2) := by
+    have h : (-1 : 𝕜) ^ (n + 1) * (a * star a - (T : 𝕜) * T' * (b * star b)) =
+        (((-1) ^ (n + 1) * (‖a‖ ^ 2 - T * T' * ‖b‖ ^ 2) : ℝ) : 𝕜) := by
+      rw [h_real, h_real]
+      push_cast
+      ring
+    rw [h, RCLike.ofReal_re]
+  have h_sq : ((-1 : ℝ) ^ (n + 1)) ^ 2 = 1 := by
+    rw [← pow_mul]
+    exact Even.neg_one_pow ⟨n + 1, by ring⟩
+  rwa [h_re, ← mul_assoc, ← sq, h_sq, one_mul, sub_nonneg] at h_sign
 
 end Matrix
 
