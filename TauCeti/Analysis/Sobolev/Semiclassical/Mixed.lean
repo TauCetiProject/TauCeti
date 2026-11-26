@@ -5,14 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.Mixed
 public import TauCeti.Analysis.Sobolev.Semiclassical.Basic
-public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
-import Mathlib.Data.Nat.Choose.Sum
-import Mathlib.LinearAlgebra.Determinant
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
-import Mathlib.GroupTheory.Perm.Fin
-import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
-import TauCeti.Analysis.Calculus.IteratedFDeriv.SymmetricFinite
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
@@ -28,28 +23,21 @@ pseudoholomorphic curve in Taubes's large-parameter analysis do, at the scale `h
 The natural norms for them weight the normal derivatives by powers of `h`, leave the horizontal
 derivatives unscaled, and normalize the volume by the normal volume `h^(dim V)` of the tube.
 
-**Mixed derivatives.** For `a ≤ n`, the mixed derivative of order `(a, n - a)` of `f` at `x` is
-the `n`-th derivative `Dⁿ f x` restricted to horizontal vectors in its first `a` slots and to
-normal vectors in the remaining `n - a`:
-
-`∂^{a, n - a} f x (m) = Dⁿ f x (P_{Vᗮ} m₀, …, P_{Vᗮ} m_{a-1}, P_V m_a, …, P_V m_{n-1})`
-
-(`Submodule.mixedIteratedFDeriv`). It is bounded by the full derivative
-(`Submodule.norm_mixedIteratedFDeriv_le`). Conversely, by the symmetry of iterated derivatives and
-the expansion of each argument into its horizontal and normal parts, the full derivative of a
-`Cⁿ` function is bounded by its mixed derivatives,
-`‖Dⁿ f x‖ ≤ ∑_{a ≤ n} (n choose a) ‖∂^{a, n - a} f x‖`
-(`Submodule.norm_iteratedFDeriv_le_sum_choose_mul_norm_mixedIteratedFDeriv`).
+**Mixed derivatives.** The mixed derivative `∂^{a, n - a} f x` of order `(a, n - a)`
+(`Submodule.mixedIteratedFDeriv`) is the `n`-th derivative `Dⁿ f x` with its first `a` arguments
+projected to the horizontal subspace `Vᗮ` and the other `n - a` to the normal subspace `V`. It and
+the **normal dilation** `Submodule.normalDilation V t`, which fixes `Vᗮ` and multiplies `V` by
+`t`, are defined in `TauCeti.Analysis.Calculus.IteratedFDeriv.Mixed`, together with their pointwise
+calculus; this file builds the `L²` norms from them.
 
 **The mixed norm.** The mixed semiclassical Sobolev norm of order `j` at scale `h` is
 
 `‖f‖_{j,h,V} = h^(-dim V / 2) ∑_{n ≤ j} ∑_{a ≤ n} h^(n - a) ‖∂^{a, n - a} f‖₂`
 
 (`Submodule.mixedSemiclassicalSobolevNorm`): each normal derivative costs a factor `h`, each
-horizontal one none. The **normal dilation** `Submodule.normalDilation V t`, which fixes `Vᗮ` and
-multiplies `V` by `t`, reads a field in the rescaled normal coordinate `w = y / h`, `y ∈ V`: for
-`f` of class `Cʲ` and `h > 0`, the mixed norm at scale `h` is the mixed norm at scale one of the
-dilated field `f ∘ normalDilation V h`, that is, the unweighted mixed norm
+horizontal one none. The normal dilation by `h` reads a field in the rescaled normal coordinate
+`w = y / h`, `y ∈ V`: for `h > 0`, the mixed norm at scale `h` is the mixed norm at scale one of
+the dilated field `f ∘ normalDilation V h`, that is, the unweighted mixed norm
 `∑_{a + b ≤ j} ‖∇^a ∂_w^b v‖₂` of the rescaled field `v` against `dvol dw`
 (`Submodule.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation`).
 
@@ -71,25 +59,18 @@ derivative costs one factor of the scale, `h ‖∂_v f‖_{j,h,V} ≤ ‖v‖ �
 derivatives `(h ∂_ν, ∇)` of the tube spaces; on the isotropic semiclassical norms of
 `TauCeti.semiclassicalSobolevNorm` every derivative costs a factor `h`.
 
-The derivative identities hold for any subspace `V` with an orthogonal projection; the
-determinant of the normal dilation and the norms assume that `E` is finite-dimensional. A product
+The norms assume that `E` is finite-dimensional and `V` has an orthogonal projection. A product
 tube model `base × fibre` is the case `E = WithLp 2 (base × fibre)` with `V` the fibre; the inner
 product space is needed for the Sobolev embedding, which the sup norm of a plain product does not
 carry.
 
 ## Main definitions
 
-* `Submodule.normalDilation V t`: the linear map `P_{Vᗮ} + t P_V`.
-* `Submodule.mixedIteratedFDeriv V n a f x`: the mixed derivative of order `(a, n - a)`.
 * `Submodule.mixedSemiclassicalSobolevNorm V j h f`: the mixed norm `‖f‖_{j,h,V}`.
 
 ## Main results
 
-* `Submodule.det_normalDilation`: `det (normalDilation V t) = t ^ dim V`.
-* `Submodule.mixedIteratedFDeriv_comp_normalDilation`: the mixed derivative of order
-  `(a, n - a)` of `f ∘ normalDilation V t` is `t ^ (n - a)` times that of `f`.
-* `Submodule.norm_iteratedFDeriv_le_sum_choose_mul_norm_mixedIteratedFDeriv`: the full derivative is
-  bounded by the mixed ones.
+* `Submodule.lpNorm_comp_normalDilation`: the change of variables under the normal dilation.
 * `Submodule.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation`: the mixed norm at scale `h` is
   the unscaled mixed norm of the normally dilated field.
 * `Submodule.exists_norm_le_mul_mixedSemiclassicalSobolevNorm`: the Sobolev embedding, uniformly in
@@ -119,269 +100,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] (V : Submodule ℝ E)
   [V.HasOrthogonalProjection]
 
-/-! ### The normal dilation -/
-
-/-- The **normal dilation** by `t` along the subspace `V`: the linear map `P_{Vᗮ} + t P_V`, which
-fixes the orthogonal complement `Vᗮ` and multiplies `V` by `t`. Composing a field with it reads
-the field in the normal coordinate rescaled by `t`. -/
-def normalDilation (t : ℝ) : E →L[ℝ] E :=
-  Vᗮ.starProjection + t • V.starProjection
-
-@[simp]
-theorem normalDilation_apply (t : ℝ) (x : E) :
-    V.normalDilation t x = Vᗮ.starProjection x + t • V.starProjection x :=
-  (rfl)
-
-/-- The normal dilation fixes the horizontal part of every vector. -/
-theorem normalDilation_starProjection_orthogonal (t : ℝ) (x : E) :
-    V.normalDilation t (Vᗮ.starProjection x) = Vᗮ.starProjection x := by
-  rw [normalDilation_apply, starProjection_eq_self_iff.2 (Vᗮ.starProjection_apply_mem x),
-    (V.starProjection_apply_eq_zero_iff).2 (Vᗮ.starProjection_apply_mem x), smul_zero, add_zero]
-
-/-- The normal dilation by `t` multiplies the normal part of every vector by `t`. -/
-theorem normalDilation_starProjection (t : ℝ) (x : E) :
-    V.normalDilation t (V.starProjection x) = t • V.starProjection x := by
-  rw [normalDilation_apply, starProjection_eq_self_iff.2 (V.starProjection_apply_mem x),
-    (Vᗮ.starProjection_apply_eq_zero_iff).2
-      (le_orthogonal_orthogonal V (V.starProjection_apply_mem x)), zero_add]
-
-@[simp]
-theorem normalDilation_one : V.normalDilation 1 = ContinuousLinearMap.id ℝ E := by
-  ext x
-  rw [ContinuousLinearMap.id_apply, normalDilation_apply, one_smul, add_comm,
-    starProjection_add_starProjection_orthogonal]
-
-/-- Normal dilations compose by multiplying their factors. -/
-theorem normalDilation_mul (s t : ℝ) :
-    V.normalDilation (s * t) = (V.normalDilation s).comp (V.normalDilation t) := by
-  ext x
-  rw [ContinuousLinearMap.comp_apply, normalDilation_apply V t, map_add, map_smul,
-    normalDilation_starProjection_orthogonal, normalDilation_starProjection, smul_smul,
-    normalDilation_apply, mul_comm]
-
-/-- For `t ≠ 0` the normal dilation by `t` is a linear automorphism, with inverse the normal
-dilation by `t⁻¹`. -/
-def normalDilationEquiv {t : ℝ} (ht : t ≠ 0) : E ≃L[ℝ] E :=
-  .ofContinuousLinearMap (V.normalDilation t) (V.normalDilation t⁻¹)
-    (by rw [← normalDilation_mul, mul_inv_cancel₀ ht, normalDilation_one])
-    (by rw [← normalDilation_mul, inv_mul_cancel₀ ht, normalDilation_one])
-
-@[simp]
-theorem coe_normalDilationEquiv {t : ℝ} (ht : t ≠ 0) :
-    (V.normalDilationEquiv ht : E →L[ℝ] E) = V.normalDilation t :=
-  (rfl)
-
-@[simp]
-theorem normalDilationEquiv_apply {t : ℝ} (ht : t ≠ 0) (x : E) :
-    V.normalDilationEquiv ht x = V.normalDilation t x :=
-  (rfl)
-
-/-- **The determinant of the normal dilation** by `t` is `t ^ dim V`. -/
-theorem det_normalDilation [FiniteDimensional ℝ E] (t : ℝ) :
-    LinearMap.det (V.normalDilation t : E →ₗ[ℝ] E) = t ^ finrank ℝ V := by
-  -- Read through the splitting `E ≃ V × Vᗮ`, the dilation is `t • id ⊕ id`.
-  set e := prodEquivOfIsCompl V Vᗮ V.isCompl_orthogonal
-  have hconj : (V.normalDilation t : E →ₗ[ℝ] E) =
-      (e : V × Vᗮ →ₗ[ℝ] E) ∘ₗ (LinearMap.prodMap (t • LinearMap.id) LinearMap.id) ∘ₗ
-        (e.symm : E →ₗ[ℝ] V × Vᗮ) := by
-    refine LinearMap.ext fun x ↦ ?_
-    obtain ⟨y, rfl⟩ := e.surjective x
-    obtain ⟨v, w⟩ := y
-    have hw : V.starProjection (w : E) = 0 := (V.starProjection_apply_eq_zero_iff).2 w.property
-    simp [e, hw, starProjection_eq_self_iff.2 v.property, add_comm]
-  rw [hconj, LinearMap.det_conj, LinearMap.det_prodMap, LinearMap.det_smul, LinearMap.det_id,
-    LinearMap.det_id, mul_one, mul_one]
-
-/-! ### Mixed derivatives -/
-
-/-- The **mixed derivative** of order `(a, n - a)` of `f` at `x`: the `n`-th derivative of `f` at
-`x` with its first `a` arguments projected to the horizontal subspace `Vᗮ` and its remaining
-`n - a` arguments projected to the normal subspace `V`. For `a ≥ n` every argument is horizontal.
-Its norm is the norm of `Dⁿ f x` on `a` horizontal and `n - a` normal vectors. -/
-def mixedIteratedFDeriv (n a : ℕ) (f : E → F) (x : E) :
-    ContinuousMultilinearMap ℝ (fun _ : Fin n ↦ E) F :=
-  (iteratedFDeriv ℝ n f x).compContinuousLinearMap fun i ↦
-    if (i : ℕ) < a then Vᗮ.starProjection else V.starProjection
-
-@[simp]
-theorem mixedIteratedFDeriv_apply (n a : ℕ) (f : E → F) (x : E) (m : Fin n → E) :
-    V.mixedIteratedFDeriv n a f x m = iteratedFDeriv ℝ n f x fun i ↦
-      if (i : ℕ) < a then Vᗮ.starProjection (m i) else V.starProjection (m i) := by
-  rw [mixedIteratedFDeriv, ContinuousMultilinearMap.compContinuousLinearMap_apply]
-  congr 1
-  ext i
-  exact apply_ite (fun L : E →L[ℝ] E ↦ L (m i)) _ _ _
-
-/-- A mixed derivative is bounded by the full derivative of the same order. -/
-theorem norm_mixedIteratedFDeriv_le (n a : ℕ) (f : E → F) (x : E) :
-    ‖V.mixedIteratedFDeriv n a f x‖ ≤ ‖iteratedFDeriv ℝ n f x‖ := by
-  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-  refine mul_le_of_le_one_right (norm_nonneg _) (prod_le_one₀ (fun _ _ ↦ norm_nonneg _)
-    fun i _ ↦ ?_)
-  split_ifs
-  · exact Vᗮ.starProjection_norm_le
-  · exact V.starProjection_norm_le
-
-/-- The mixed derivatives of a function of class `Cⁿ` depend continuously on the point. -/
-theorem continuous_mixedIteratedFDeriv {n : ℕ} {f : E → F} (hf : ContDiff ℝ n f) (a : ℕ) :
-    Continuous (V.mixedIteratedFDeriv n a f) :=
-  (ContinuousMultilinearMap.compContinuousLinearMapL fun i : Fin n ↦
-    if (i : ℕ) < a then Vᗮ.starProjection else V.starProjection).continuous.comp
-    (hf.continuous_iteratedFDeriv le_rfl)
-
-@[simp]
-theorem mixedIteratedFDeriv_zero_fun (n a : ℕ) :
-    V.mixedIteratedFDeriv n a (0 : E → F) = 0 := by
-  ext x m
-  simp [mixedIteratedFDeriv_apply, iteratedFDeriv_zero]
-
-/-- Mixed derivatives commute with translations. -/
-theorem mixedIteratedFDeriv_comp_sub (n a : ℕ) (f : E → F) (c : E) :
-    V.mixedIteratedFDeriv n a (fun y ↦ f (y - c)) =
-      fun x ↦ V.mixedIteratedFDeriv n a f (x - c) := by
-  ext x : 1
-  rw [mixedIteratedFDeriv, mixedIteratedFDeriv, iteratedFDeriv_comp_sub]
-
-/-- **Mixed derivatives under the normal dilation.** For `f` of class `Cⁿ`, the mixed derivative
-of order `(a, n - a)` of `f ∘ normalDilation V t` is `t ^ (n - a)` times that of `f` at the
-dilated point: each normal derivative contributes a factor `t`, each horizontal one none. -/
-theorem mixedIteratedFDeriv_comp_normalDilation {n : ℕ} {f : E → F} (hf : ContDiff ℝ n f)
-    (a : ℕ) (t : ℝ) (x : E) :
-    V.mixedIteratedFDeriv n a (f ∘ V.normalDilation t) x =
-      t ^ (n - a) • V.mixedIteratedFDeriv n a f (V.normalDilation t x) := by
-  -- The `n - a` normal slots each contribute a factor `t`.
-  have hcard : #{i : Fin n | ¬(i : ℕ) < a} = n - a := by
-    have h := card_filter_add_card_filter_not (s := (univ : Finset (Fin n))) (fun i ↦ (i : ℕ) < a)
-    rw [Fin.card_filter_val_lt, card_univ, Fintype.card_fin] at h
-    omega
-  have hc : ∏ i : Fin n, (if (i : ℕ) < a then (1 : ℝ) else t) = t ^ (n - a) := by
-    rw [prod_ite, prod_const_one, one_mul, prod_const, hcard]
-  ext m
-  rw [mixedIteratedFDeriv_apply, (V.normalDilation t).iteratedFDeriv_comp_right hf x le_rfl,
-    ContinuousMultilinearMap.compContinuousLinearMap_apply, smul_apply,
-    mixedIteratedFDeriv_apply, ← hc, ← ContinuousMultilinearMap.map_smul_univ]
-  congr 1
-  ext i
-  split_ifs <;> simp only [one_smul, normalDilation_starProjection_orthogonal,
-    normalDilation_starProjection]
-
-/-- **The full derivative is bounded by the mixed derivatives.** For `f` of class `Cⁿ` at `x`,
-`‖Dⁿ f x‖ ≤ ∑_{a ≤ n} (n choose a) ‖∂^{a, n - a} f x‖`. Splitting every argument into its horizontal
-and normal parts expands `Dⁿ f x` into `2ⁿ` terms; by the symmetry of `Dⁿ f x`, the term whose
-arguments indexed by a set `S` are horizontal is a value of the mixed derivative of order
-`(#S, n - #S)`. -/
-theorem norm_iteratedFDeriv_le_sum_choose_mul_norm_mixedIteratedFDeriv {n : ℕ} {f : E → F}
-    {x : E} (hf : ContDiffAt ℝ n f x) :
-    ‖iteratedFDeriv ℝ n f x‖ ≤
-      ∑ a ∈ range (n + 1), (n.choose a : ℝ) * ‖V.mixedIteratedFDeriv n a f x‖ := by
-  classical
-  -- The term of the expansion in which the arguments indexed by `S` are horizontal.
-  have hterm (S : Finset (Fin n)) (m : Fin n → E) :
-      ‖iteratedFDeriv ℝ n f x (S.piecewise (fun i ↦ Vᗮ.starProjection (m i))
-          fun i ↦ V.starProjection (m i))‖ ≤ ‖V.mixedIteratedFDeriv n #S f x‖ * ∏ i, ‖m i‖ := by
-    -- A permutation of the slots carrying the first `#S` slots onto `S`.
-    have h₁ : Fintype.card {i : Fin n // (i : ℕ) < #S} = Fintype.card {i : Fin n // i ∈ S} := by
-      rw [Fintype.card_subtype, Fin.card_filter_val_lt, Fintype.card_coe,
-        min_eq_right (by simpa using S.card_le_univ)]
-    have h₂ : Fintype.card {i : Fin n // ¬(i : ℕ) < #S} = Fintype.card {i : Fin n // i ∉ S} := by
-      rw [Fintype.card_subtype_compl, Fintype.card_subtype_compl, h₁]
-    set σ := Equiv.subtypeCongr (Fintype.equivOfCardEq h₁) (Fintype.equivOfCardEq h₂)
-    have hσ (i : Fin n) : σ i ∈ S ↔ (i : ℕ) < #S := by
-      by_cases hi : (i : ℕ) < #S
-      · simp [σ, Equiv.subtypeCongr, hi]
-      · simpa [σ, Equiv.subtypeCongr, hi] using (Fintype.equivOfCardEq h₂ ⟨i, hi⟩).property
-    rw [← hf.iteratedFDeriv_comp_perm_of_le (by simp) _ σ, ← Equiv.prod_comp σ fun i ↦ ‖m i‖]
-    have hperm : (S.piecewise (fun i ↦ Vᗮ.starProjection (m i))
-        fun i ↦ V.starProjection (m i)) ∘ σ = fun i : Fin n ↦
-          if (i : ℕ) < #S then Vᗮ.starProjection (m (σ i)) else V.starProjection (m (σ i)) := by
-      ext i
-      simp only [Function.comp_apply, piecewise, hσ]
-    rw [hperm, ← mixedIteratedFDeriv_apply]
-    exact ContinuousMultilinearMap.le_opNorm _ _
-  refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ ?_
-  have hm : (fun i ↦ Vᗮ.starProjection (m i)) + (fun i ↦ V.starProjection (m i)) = m := by
-    ext i
-    simp only [Pi.add_apply, add_comm, starProjection_add_starProjection_orthogonal]
-  have hexp := (iteratedFDeriv ℝ n f x).map_add_univ (fun i ↦ Vᗮ.starProjection (m i))
-    fun i ↦ V.starProjection (m i)
-  rw [hm] at hexp
-  rw [hexp]
-  refine (norm_sum_le _ _).trans ((sum_le_sum fun S _ ↦ hterm S m).trans_eq ?_)
-  rw [← sum_mul, ← powerset_univ,
-    sum_powerset_apply_card fun k ↦ ‖V.mixedIteratedFDeriv n k f x‖, card_univ,
-    Fintype.card_fin]
-  simp only [nsmul_eq_mul]
-
-/-- **A normal derivative raises the normal order.** For `a ≤ n`, `f` of class `Cⁿ⁺¹` at `x` and a
-normal vector `v ∈ V`, the mixed derivative of order `(a, n - a)` of the derivative of `f` along
-`v` is the mixed derivative of order `(a, n + 1 - a)` of `f` with `v` in its last slot. -/
-theorem mixedIteratedFDeriv_fderiv_apply_of_mem {n a : ℕ} (ha : a ≤ n) {f : E → F} {x : E}
-    (hf : ContDiffAt ℝ (n + 1) f x) {v : E} (hv : v ∈ V) (m : Fin n → E) :
-    V.mixedIteratedFDeriv n a (fun y ↦ fderiv ℝ f y v) x m =
-      V.mixedIteratedFDeriv (n + 1) a f x (Fin.snoc m v) := by
-  rw [mixedIteratedFDeriv_apply, hf.iteratedFDeriv_fderiv_apply_eq_iteratedFDeriv_snoc,
-    mixedIteratedFDeriv_apply]
-  congr 1
-  ext i
-  refine Fin.lastCases ?_ (fun k ↦ ?_) i
-  · simp [show ¬n < a by omega, starProjection_eq_self_iff.2 hv]
-  · simp
-
-/-- **A horizontal derivative raises the horizontal order.** For `a ≤ n`, `f` of class `Cⁿ⁺¹` at
-`x` and a horizontal vector `e ∈ Vᗮ`, the mixed derivative of order `(a, n - a)` of the derivative
-of `f` along `e` is the mixed derivative of order `(a + 1, n - a)` of `f` with `e` inserted in
-slot `a`, the first normal slot. -/
-theorem mixedIteratedFDeriv_fderiv_apply_of_mem_orthogonal {n a : ℕ} (ha : a ≤ n) {f : E → F}
-    {x : E} (hf : ContDiffAt ℝ (n + 1) f x) {e : E} (he : e ∈ Vᗮ) (m : Fin n → E) :
-    V.mixedIteratedFDeriv n a (fun y ↦ fderiv ℝ f y e) x m =
-      V.mixedIteratedFDeriv (n + 1) (a + 1) f x (Fin.insertNth ⟨a, by omega⟩ e m) := by
-  set p : Fin (n + 1) := ⟨a, by omega⟩
-  set w : Fin n → E := fun i ↦
-    if (i : ℕ) < a then Vᗮ.starProjection (m i) else V.starProjection (m i)
-  -- By symmetry, the slot of the new horizontal argument may be moved from the last one to `a`.
-  have hsymm : iteratedFDeriv ℝ (n + 1) f x (Fin.snoc w e) =
-      iteratedFDeriv ℝ (n + 1) f x (p.insertNth e w) := by
-    rw [← Fin.insertNth_last', ← Fin.cons_comp_cycleRange, ← Fin.cons_comp_cycleRange,
-      hf.iteratedFDeriv_comp_perm_of_le (by simp), hf.iteratedFDeriv_comp_perm_of_le (by simp)]
-  rw [mixedIteratedFDeriv_apply, hf.iteratedFDeriv_fderiv_apply_eq_iteratedFDeriv_snoc, hsymm,
-    mixedIteratedFDeriv_apply]
-  congr 1
-  ext i
-  refine p.succAboveCases ?_ (fun k ↦ ?_) i
-  · simp [p, starProjection_eq_self_iff.2 he]
-  · rw [Fin.insertNth_apply_succAbove, Fin.insertNth_apply_succAbove]
-    by_cases hk : (k : ℕ) < a
-    · rw [Fin.succAbove_of_castSucc_lt _ _ (by simpa [p, Fin.lt_def] using hk)]
-      simp [w, hk, show (k : ℕ) < a + 1 by omega]
-    · rw [Fin.succAbove_of_le_castSucc _ _ (by simpa [p, Fin.le_def] using hk)]
-      simp [w, hk]
-
-/-- The mixed derivatives of a normal derivative:
-`‖∂^{a, n - a} (∂_v f) x‖ ≤ ‖v‖ ‖∂^{a, n + 1 - a} f x‖` for `a ≤ n` and `v ∈ V`. -/
-theorem norm_mixedIteratedFDeriv_fderiv_apply_le_of_mem {n a : ℕ} (ha : a ≤ n) {f : E → F}
-    {x : E} (hf : ContDiffAt ℝ (n + 1) f x) {v : E} (hv : v ∈ V) :
-    ‖V.mixedIteratedFDeriv n a (fun y ↦ fderiv ℝ f y v) x‖ ≤
-      ‖v‖ * ‖V.mixedIteratedFDeriv (n + 1) a f x‖ := by
-  refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ ?_
-  rw [V.mixedIteratedFDeriv_fderiv_apply_of_mem ha hf hv]
-  refine (ContinuousMultilinearMap.le_opNorm _ _).trans_eq ?_
-  rw [Fin.prod_univ_castSucc]
-  simp only [Fin.snoc_castSucc, Fin.snoc_last]
-  ring
-
-/-- The mixed derivatives of a horizontal derivative:
-`‖∂^{a, n - a} (∂_e f) x‖ ≤ ‖e‖ ‖∂^{a + 1, n - a} f x‖` for `a ≤ n` and `e ∈ Vᗮ`. -/
-theorem norm_mixedIteratedFDeriv_fderiv_apply_le_of_mem_orthogonal {n a : ℕ} (ha : a ≤ n)
-    {f : E → F} {x : E} (hf : ContDiffAt ℝ (n + 1) f x) {e : E} (he : e ∈ Vᗮ) :
-    ‖V.mixedIteratedFDeriv n a (fun y ↦ fderiv ℝ f y e) x‖ ≤
-      ‖e‖ * ‖V.mixedIteratedFDeriv (n + 1) (a + 1) f x‖ := by
-  refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ ?_
-  rw [V.mixedIteratedFDeriv_fderiv_apply_of_mem_orthogonal ha hf he]
-  refine (ContinuousMultilinearMap.le_opNorm _ _).trans_eq ?_
-  rw [Fin.prod_univ_succAbove _ ⟨a, by omega⟩]
-  simp only [Fin.insertNth_apply_same, Fin.insertNth_apply_succAbove]
-  ring
-
 /-! ### The mixed norm -/
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -390,9 +108,10 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 order `n`. -/
 theorem memLp_mixedIteratedFDeriv {n : ℕ} {f : E → F} (hD : MemLp (iteratedFDeriv ℝ n f) 2)
     (a : ℕ) : MemLp (V.mixedIteratedFDeriv n a f) 2 :=
-  hD.of_le ((ContinuousMultilinearMap.compContinuousLinearMapL fun i : Fin n ↦
+  hD.of_le (((ContinuousMultilinearMap.compContinuousLinearMapL fun i : Fin n ↦
       if (i : ℕ) < a then Vᗮ.starProjection else V.starProjection).continuous
-        |>.comp_aestronglyMeasurable hD.aestronglyMeasurable)
+        |>.comp_aestronglyMeasurable hD.aestronglyMeasurable).congr <| .of_forall fun x ↦ by
+      simp only [ContinuousMultilinearMap.compContinuousLinearMapL_apply, mixedIteratedFDeriv_def])
     (.of_forall fun x ↦ V.norm_mixedIteratedFDeriv_le n a f x)
 
 /-- **The `L²` norm of the full derivative is bounded by those of the mixed derivatives.** For `f`
@@ -422,7 +141,7 @@ theorem memLp_iteratedFDeriv_and_lpNorm_le {n : ℕ} {f : E → F} (hf : ContDif
 
 the `L²` norms of the mixed derivatives through total order `j`, each normal derivative weighted
 by `h` and each horizontal one unweighted, against the volume normalized by the normal volume
-`h^(dim V)`. For `f` of class `Cʲ` and `h > 0` it is the unweighted mixed norm of the normally
+`h^(dim V)`. For `h > 0` it is the unweighted mixed norm of the normally
 dilated field `f ∘ normalDilation V h`
 (`Submodule.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation`).
 
@@ -466,8 +185,7 @@ theorem mixedSemiclassicalSobolevNorm_comp_sub (j : ℕ) (h : ℝ) (f : E → F)
   congr 1
   refine sum_congr rfl fun n _ ↦ sum_congr rfl fun a _ ↦ ?_
   conv_rhs => rw [← (measurePreserving_sub_right volume c).map_eq]
-  rw [(measurableEmbedding_subRight c).eLpNorm_map_measure]
-  rfl
+  rw [(measurableEmbedding_subRight c).eLpNorm_map_measure, Function.comp_def]
 
 /-- **Change of variables under the normal dilation.** Composing with the normal dilation by
 `h > 0` multiplies `L²` norms by `h^(-dim V / 2)`. -/
@@ -477,7 +195,11 @@ theorem lpNorm_comp_normalDilation {G : Type*} [NormedAddCommGroup G] (u : E →
       h ^ (-(finrank ℝ V : ℝ) / 2) * lpNorm u 2 volume := by
   have hc := Measure.eLpNorm_comp_continuousLinearEquiv volume u (V.normalDilationEquiv hh.ne') 2
   have hdet : LinearMap.det ((V.normalDilationEquiv hh.ne' : E ≃ₗ[ℝ] E) : E →ₗ[ℝ] E) =
-      h ^ finrank ℝ V := V.det_normalDilation h
+      h ^ finrank ℝ V := by
+    rw [← V.det_normalDilation h]
+    congr 1
+    ext x
+    simp
   have hval : |(h ^ finrank ℝ V)⁻¹| ^ (1 / (2 : ℝ≥0∞)).toReal =
       h ^ (-(finrank ℝ V : ℝ) / 2) := by
     rw [abs_of_pos (by positivity), ← Real.rpow_natCast, ← Real.rpow_neg hh.le,
@@ -487,27 +209,24 @@ theorem lpNorm_comp_normalDilation {G : Type*} [NormedAddCommGroup G] (u : E →
     ring
   rw [← toReal_eLpNorm, ← toReal_eLpNorm]
   rw [hdet] at hc
-  rw [show u ∘ V.normalDilation h = u ∘ V.normalDilationEquiv hh.ne' from rfl, hc,
+  rw [← V.coe_normalDilationEquiv hh.ne', ContinuousLinearEquiv.coe_coe, hc,
     ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _), hval]
 
 
-/-- **The mixed norm is the unscaled mixed norm of the normally dilated field.** For `f` of class
-`Cʲ` and `h > 0`, `‖f‖_{j,h,V} = ‖f ∘ normalDilation V h‖_{j,1,V}`: in the normal coordinate
-rescaled by `h`, each normal derivative gains the factor `h` of its weight and the change of
-variables gains the volume normalization `h^(-dim V / 2)`. -/
-theorem mixedSemiclassicalSobolevNorm_eq_comp_normalDilation {j : ℕ} {f : E → F}
-    (hf : ContDiff ℝ j f) {h : ℝ} (hh : 0 < h) :
+/-- **The mixed norm is the unscaled mixed norm of the normally dilated field.** For `h > 0`,
+`‖f‖_{j,h,V} = ‖f ∘ normalDilation V h‖_{j,1,V}`: in the normal coordinate rescaled by `h`, each
+normal derivative gains the factor `h` of its weight and the change of variables gains the volume
+normalization `h^(-dim V / 2)`. No smoothness of `f` is needed. -/
+theorem mixedSemiclassicalSobolevNorm_eq_comp_normalDilation (j : ℕ) (f : E → F) {h : ℝ}
+    (hh : 0 < h) :
     V.mixedSemiclassicalSobolevNorm j h f =
       V.mixedSemiclassicalSobolevNorm j 1 (f ∘ V.normalDilation h) := by
   rw [mixedSemiclassicalSobolevNorm_one, mixedSemiclassicalSobolevNorm, mul_sum]
-  refine sum_congr rfl fun n hn ↦ ?_
+  refine sum_congr rfl fun n _ ↦ ?_
   rw [mul_sum]
   refine sum_congr rfl fun a _ ↦ ?_
-  have hD : V.mixedIteratedFDeriv n a (f ∘ V.normalDilation h) =
-      h ^ (n - a) • (V.mixedIteratedFDeriv n a f ∘ V.normalDilation h) :=
-    funext fun x ↦ V.mixedIteratedFDeriv_comp_normalDilation
-      (hf.of_le (by exact_mod_cast Nat.lt_succ_iff.1 (mem_range.1 hn))) a h x
-  rw [hD, lpNorm_const_smul_of_nonneg (pow_nonneg hh.le _), V.lpNorm_comp_normalDilation _ hh]
+  rw [V.mixedIteratedFDeriv_comp_normalDilation_of_ne_zero n a f hh.ne',
+    lpNorm_const_smul_of_nonneg (pow_nonneg hh.le _), V.lpNorm_comp_normalDilation _ hh]
   ring
 
 /-- **Comparison of scales.** For `0 < h ≤ 1`, multiplying the mixed norm at scale `h` by
@@ -581,21 +300,19 @@ theorem exists_norm_le_mul_mixedSemiclassicalSobolevNorm {j : ℕ} (hj : finrank
   obtain ⟨C, hC, hCf⟩ := TauCeti.exists_norm_le_mul_semiclassicalSobolevNorm (E := E) hj
   refine ⟨C * 2 ^ j, by positivity, fun h hh f hf hm x ↦ ?_⟩
   -- Read `f` in the normal coordinate rescaled by `h`.
-  set g := f ∘ V.normalDilation h
+  set g := f ∘ V.normalDilation h with hg_def
   have hg : ContDiff ℝ j g := hf.comp (V.normalDilation h).contDiff
   have hgm (n : ℕ) (hn : n ≤ j) (a : ℕ) (ha : a ≤ n) :
       MemLp (V.mixedIteratedFDeriv n a g) 2 := by
-    have hD : V.mixedIteratedFDeriv n a g =
-        h ^ (n - a) • fun y ↦ V.mixedIteratedFDeriv n a f (V.normalDilationEquiv hh.ne' y) :=
-      funext fun y ↦ V.mixedIteratedFDeriv_comp_normalDilation
-        (hf.of_le (by exact_mod_cast hn)) a h y
-    rw [hD]
+    rw [V.mixedIteratedFDeriv_comp_normalDilation_of_ne_zero n a f hh.ne',
+      ← V.coe_normalDilationEquiv hh.ne', ContinuousLinearEquiv.coe_coe]
     exact ((hm n hn a ha).comp_continuousLinearEquiv _).const_smul _
   obtain ⟨hDg, hle⟩ := V.memLp_iteratedFDeriv_and_semiclassicalSobolevNorm_one_le hg hgm
-  have hx : g (V.normalDilation h⁻¹ x) = f x := by
-    simp only [g, Function.comp_apply, ← ContinuousLinearMap.comp_apply, ← normalDilation_mul,
-      mul_inv_cancel₀ hh.ne', normalDilation_one, ContinuousLinearMap.id_apply]
-  rw [← hx, V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation hf hh, mul_assoc]
+  have hx : g ((V.normalDilationEquiv hh.ne').symm x) = f x := by
+    rw [hg_def, Function.comp_apply,
+      ← normalDilationEquiv_apply _ hh.ne',
+      ContinuousLinearEquiv.apply_symm_apply]
+  rw [← hx, V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation j f hh, mul_assoc]
   exact (hCf 1 one_pos g hg hDg _).trans (mul_le_mul_of_nonneg_left hle hC)
 
 
