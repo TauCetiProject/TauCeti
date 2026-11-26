@@ -36,8 +36,10 @@ finitely generated algebra.
 * `MvPolynomial.totalDegree_eval₂_C_comp_le`: if every `f i` with `i ∈ p.vars` has total degree
   at most `D`, then `p.eval₂ (C.comp φ) f` has total degree at most `p.totalDegree * D`.
 * `MvPolynomial.totalDegree_aeval_le`: the same bound for `aeval f p`.
-* `MvPolynomial.totalDegree_det_le`: a determinant of polynomials of total degree at most `1` has
-  total degree at most the size of the matrix.
+* `MvPolynomial.totalDegree_C_mul_eq`: over a ring without zero divisors, multiplying by a
+  nonzero constant preserves the total degree.
+* `MvPolynomial.totalDegree_det_le`: a determinant of polynomials of total degree at most `d` has
+  total degree at most `d` times the size of the matrix.
 -/
 
 public section
@@ -109,15 +111,24 @@ theorem totalDegree_aeval_le {σ τ R S : Type*} [CommSemiring R] [CommSemiring 
   rw [aeval_def, IsScalarTower.algebraMap_eq R S (MvPolynomial τ S), algebraMap_eq]
   exact totalDegree_eval₂_C_comp_le p (algebraMap R S) hf
 
-/-- The determinant of a square matrix of polynomials of total degree at most `1` has total
-degree at most the size of the matrix. -/
+/-- Over a ring without zero divisors, multiplying by a nonzero constant preserves the total
+degree: it does not change the support. -/
+theorem totalDegree_C_mul_eq {R σ : Type*} [CommSemiring R] [NoZeroDivisors R] {a : R}
+    (ha : a ≠ 0) (p : MvPolynomial σ R) : (C a * p).totalDegree = p.totalDegree := by
+  have hsupp : (C a * p).support = p.support := by
+    ext s
+    simp [coeff_C_mul, ha]
+  rw [totalDegree, hsupp, totalDegree]
+
+/-- The determinant of a square matrix of polynomials of total degree at most `d` has total
+degree at most `d` times the size of the matrix. -/
 theorem totalDegree_det_le {R σ ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
-    {M : Matrix ι ι (MvPolynomial σ R)} (h : ∀ i j, (M i j).totalDegree ≤ 1) :
-    M.det.totalDegree ≤ Fintype.card ι := by
+    {M : Matrix ι ι (MvPolynomial σ R)} {d : ℕ} (h : ∀ i j, (M i j).totalDegree ≤ d) :
+    M.det.totalDegree ≤ Fintype.card ι * d := by
   rw [Matrix.det_apply]
   refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun τ _ ↦ ?_)
   refine (totalDegree_smul_le _ _).trans ((totalDegree_finsetProd _ _).trans ?_)
-  calc ∑ i, (M (τ i) i).totalDegree ≤ ∑ _i : ι, 1 := Finset.sum_le_sum fun i _ ↦ h _ _
-    _ = Fintype.card ι := by simp
+  calc ∑ i, (M (τ i) i).totalDegree ≤ ∑ _i : ι, d := Finset.sum_le_sum fun i _ ↦ h _ _
+    _ = Fintype.card ι * d := by simp
 
 end MvPolynomial

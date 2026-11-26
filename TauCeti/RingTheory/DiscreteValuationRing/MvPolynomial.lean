@@ -17,10 +17,9 @@ import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 
 Let `O` be a discrete valuation ring with uniformizer `ϖ`. Every nonzero `F ∈ O[X_σ]` is
 `ϖ^c G` with `G` of unit content, that is, with some coefficient a unit
-(`IsDiscreteValuationRing.exists_eq_C_pow_mul_isUnit_coeff`). Products of polynomials of unit
-content have unit content, since their reductions modulo `ϖ` are nonzero polynomials over the
-residue field, a domain (`IsDiscreteValuationRing.exists_isUnit_coeff_prod`). This is the form
-of Gauss's lemma used by the generic determinant lemma of `LengthBoundsInPadicFamilies` §1.8b (1).
+(`IsDiscreteValuationRing.exists_eq_C_pow_mul_isUnit_coeff`). Over any local ring, products of
+polynomials of unit content have unit content, since their reductions modulo the maximal ideal are
+nonzero polynomials over the residue field, a domain (`IsLocalRing.exists_isUnit_coeff_prod`).
 -/
 
 public section
@@ -53,18 +52,21 @@ theorem exists_eq_C_pow_mul_isUnit_coeff {ϖ : O} (hϖ : Irreducible ϖ) {F : Mv
   rw [mul_left_cancel₀ (pow_ne_zero c hϖ.ne_zero) hc]
   exact u.isUnit
 
-/-- **Gauss's lemma over a discrete valuation ring.** A finite product of multivariate
-polynomials each having a unit coefficient has a unit coefficient: the reductions modulo the
-maximal ideal are nonzero, and so is their product over the residue field. -/
-theorem exists_isUnit_coeff_prod {B : Type*} (s : Finset B) {G : B → MvPolynomial σ O}
-    (hG : ∀ b ∈ s, ∃ t, IsUnit ((G b).coeff t)) :
+end IsDiscreteValuationRing
+
+namespace IsLocalRing
+
+/-- **Gauss's lemma over a local ring.** A finite product of multivariate polynomials each having
+a unit coefficient has a unit coefficient: the reductions modulo the maximal ideal are nonzero,
+and so is their product over the residue field. -/
+theorem exists_isUnit_coeff_prod {O σ B : Type*} [CommRing O] [IsLocalRing O] (s : Finset B)
+    {G : B → MvPolynomial σ O} (hG : ∀ b ∈ s, ∃ t, IsUnit ((G b).coeff t)) :
     ∃ t, IsUnit ((∏ b ∈ s, G b).coeff t) := by
-  have hmap : ∀ b ∈ s, map (IsLocalRing.residue O) (G b) ≠ 0 := fun b hb ↦ by
+  have hmap : ∀ b ∈ s, map (residue O) (G b) ≠ 0 := fun b hb ↦ by
     obtain ⟨t, ht⟩ := hG b hb
-    exact ne_of_apply_ne (fun p ↦ p.coeff t) (by
-      rw [coeff_map]; simp only [AddMonoidAlgebra.coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
-      exact (residue_ne_zero_iff_isUnit _).2 ht)
-  have hprod : map (IsLocalRing.residue O) (∏ b ∈ s, G b) ≠ 0 := by
+    refine ne_of_apply_ne (fun p ↦ p.coeff t) ?_
+    simpa [coeff_map] using (residue_ne_zero_iff_isUnit _).2 ht
+  have hprod : map (residue O) (∏ b ∈ s, G b) ≠ 0 := by
     rw [map_prod]
     exact Finset.prod_ne_zero_iff.2 hmap
   obtain ⟨t, ht⟩ := support_nonempty.2 hprod
@@ -72,4 +74,4 @@ theorem exists_isUnit_coeff_prod {B : Type*} (s : Finset B) {G : B → MvPolynom
   rw [← coeff_map]
   exact mem_support_iff.1 ht
 
-end IsDiscreteValuationRing
+end IsLocalRing
