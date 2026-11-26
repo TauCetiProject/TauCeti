@@ -34,9 +34,11 @@ so that the explicit groups, not a copy of them, carry the `R`-module structure.
 * `TauCeti.ContCohomology.H1.smul_mk` and `TauCeti.ContCohomology.H2.smul_mk`: a scalar acts on
   the class of a cocycle as on the cocycle.
 * `TauCeti.ContCohomology.smul_mem_Z1`, `smul_mem_B1`, `smul_mem_Z2`, `smul_mem_B2`: cocycles and
-  coboundaries are stable under the scalars, the cases of `cochainsMap1_mem_Z1`,
-  `cochainsMap1_mem_B1`, `cochainsMap2_mem_Z2` and `cochainsMap2_mem_B2` for the identity of `G`
-  and the coefficient map `r • ·`.
+  coboundaries are stable under the scalars. They are proved from the cocycle and coboundary
+  identities, so that, like `B1`, `Z1`, `Z2` and `B2` themselves, they need no multiplication on
+  `G` in degree `0` and only a multiplication in the higher degrees; the coefficient-map lemmas
+  `cochainsMap1_mem_Z1`, `cochainsMap1_mem_B1`, `cochainsMap2_mem_Z2` and `cochainsMap2_mem_B2`
+  would give them only for a monoid `G`.
 
 ## Implementation notes
 
@@ -71,47 +73,48 @@ universe u v w
 
 section Stability
 
-variable {R : Type w} {G : Type u} [Monoid G] {M : Type v} [AddCommGroup M] [DistribSMul R M]
+variable {R : Type w} {G : Type u} {M : Type v} [AddCommGroup M] [DistribSMul R M]
 
 /-- Pulling a `1`-cochain back along the identity of `G` and the coefficient map `r • ·` is
 multiplication by `r`. -/
-theorem cochainsMap1_smul (r : R) (f : G → M) :
+theorem cochainsMap1_smul [Monoid G] (r : R) (f : G → M) :
     cochainsMap1 (MonoidHom.id G) (DistribSMul.toAddMonoidHom M r) f = r • f :=
   funext fun g ↦ cochainsMap1_apply _ _ f g
 
 /-- Pulling a `2`-cochain back along the identity of `G` and the coefficient map `r • ·` is
 multiplication by `r`. -/
-theorem cochainsMap2_smul (r : R) (f : G × G → M) :
+theorem cochainsMap2_smul [Monoid G] (r : R) (f : G × G → M) :
     cochainsMap2 (MonoidHom.id G) (DistribSMul.toAddMonoidHom M r) f = r • f :=
   funext fun ⟨g, h⟩ ↦ cochainsMap2_apply _ _ f g h
 
 variable [DistribSMul G M] [SMulCommClass G R M]
 
 /-- The `1`-coboundaries are stable under the scalars. -/
-theorem smul_mem_B1 (r : R) {f : G → M} (hf : f ∈ B1 G M) : r • f ∈ B1 G M :=
-  cochainsMap1_smul r f ▸ cochainsMap1_mem_B1 (MonoidHom.id G) (DistribSMul.toAddMonoidHom M r)
-    (fun g m ↦ (smul_comm g r m).symm) hf
+theorem smul_mem_B1 (r : R) {f : G → M} (hf : f ∈ B1 G M) : r • f ∈ B1 G M := by
+  obtain ⟨m, hm⟩ := mem_B1_iff.1 hf
+  refine mem_B1_iff.2 ⟨r • m, fun g ↦ ?_⟩
+  rw [Pi.smul_apply, ← hm g, smul_sub, smul_comm g r m]
 
-variable [TopologicalSpace G] [TopologicalSpace M] [IsTopologicalAddGroup M]
+variable [Mul G] [TopologicalSpace G] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [ContinuousConstSMul R M]
 
 /-- The continuous `1`-cocycles are stable under continuous scalars. -/
-theorem smul_mem_Z1 (r : R) {f : G → M} (hf : f ∈ Z1 G M) : r • f ∈ Z1 G M :=
-  cochainsMap1_smul r f ▸ cochainsMap1_mem_Z1 G M G M (ContinuousMonoidHom.id G)
-    (DistribSMul.toAddMonoidHom M r)
-    (continuous_const_smul r) (fun g m ↦ (smul_comm g r m).symm) hf
+theorem smul_mem_Z1 (r : R) {f : G → M} (hf : f ∈ Z1 G M) : r • f ∈ Z1 G M := by
+  obtain ⟨hc, hf⟩ := mem_Z1_iff.1 hf
+  refine mem_Z1_iff.2 ⟨hc.const_smul r, fun g h ↦ ?_⟩
+  simp only [Pi.smul_apply, hf g h, smul_add, smul_comm g r]
 
 /-- The continuous `2`-cocycles are stable under continuous scalars. -/
-theorem smul_mem_Z2 (r : R) {f : G × G → M} (hf : f ∈ Z2 G M) : r • f ∈ Z2 G M :=
-  cochainsMap2_smul r f ▸ cochainsMap2_mem_Z2 G M G M (ContinuousMonoidHom.id G)
-    (DistribSMul.toAddMonoidHom M r)
-    (continuous_const_smul r) (fun g m ↦ (smul_comm g r m).symm) hf
+theorem smul_mem_Z2 (r : R) {f : G × G → M} (hf : f ∈ Z2 G M) : r • f ∈ Z2 G M := by
+  obtain ⟨hc, hf⟩ := mem_Z2_iff.1 hf
+  refine mem_Z2_iff.2 ⟨hc.const_smul r, fun g h j ↦ ?_⟩
+  simp only [Pi.smul_apply, ← smul_add, hf g h j, smul_comm g r]
 
 /-- The `2`-coboundaries are stable under continuous scalars. -/
-theorem smul_mem_B2 (r : R) {f : G × G → M} (hf : f ∈ B2 G M) : r • f ∈ B2 G M :=
-  cochainsMap2_smul r f ▸ cochainsMap2_mem_B2 (ContinuousMonoidHom.id G)
-    (DistribSMul.toAddMonoidHom M r)
-    (continuous_const_smul r) (fun g m ↦ (smul_comm g r m).symm) hf
+theorem smul_mem_B2 (r : R) {f : G × G → M} (hf : f ∈ B2 G M) : r • f ∈ B2 G M := by
+  obtain ⟨c, hc, rfl⟩ := mem_B2_iff.1 hf
+  refine mem_B2_iff.2 ⟨r • c, hc.const_smul r, funext fun ⟨g, h⟩ ↦ ?_⟩
+  simp only [d1_apply, Pi.smul_apply, smul_comm g r, smul_add, smul_sub]
 
 end Stability
 

@@ -29,7 +29,6 @@ this identification carries one `R`-module structure to the other.
 
 ## Main definitions
 
-* `TauCeti.ofDiscreteModuleSMulMap`: the endomorphism `r • ·` of `ofDiscreteModule ℤ G M`.
 * `TauCeti.ContinuousCohomology.smulRingHom`: the action of `R` on `Hⁿ(G, M)` as a ring
   homomorphism into the additive endomorphisms.
 * `TauCeti.ContinuousCohomology.instModuleOfDiscreteModule`: the `R`-module structure on
@@ -39,8 +38,6 @@ this identification carries one `R`-module structure to the other.
 
 ## Main results
 
-* `TauCeti.ofDiscreteModuleMap_toDistribMulActionHom`: `ofDiscreteModuleSMulMap` is the image of
-  Mathlib's equivariant map `SMulCommClass.toDistribMulActionHom`.
 * `TauCeti.ContinuousCohomology.smul_def`: a scalar acts as the coefficient map of `r • ·`.
 * `TauCeti.ContinuousCohomology.coeffMap_smul`: the coefficient map of an `R`-linear equivariant
   map of discrete modules is `R`-linear.
@@ -72,37 +69,7 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u v
-
-section SMulMap
-
-variable {R : Type u} [Semiring R] {G : Type v} [Monoid G]
-  {M : Type v} [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
-  [DistribMulAction G M] [SMulCommClass G R M]
-
-variable (G M) in
-/-- Multiplication by a scalar `r` on a discrete module `M`, as an endomorphism of
-`ofDiscreteModule ℤ G M`; it is equivariant because the action of `G` commutes with the scalars. -/
-def ofDiscreteModuleSMulMap (r : R) : ofDiscreteModule ℤ G M ⟶ ofDiscreteModule ℤ G M :=
-  ofDiscreteModuleMap (DistribSMul.toAddMonoidHom M r).toIntLinearMap
-    fun g m ↦ (smul_comm g r m).symm
-
-/-- `ofDiscreteModuleSMulMap G M r` acts on the module as `r • ·`. -/
-@[simp]
-theorem ofDiscreteModuleSMulMap_hom_apply (r : R) (m : M) :
-    (ofDiscreteModuleSMulMap G M r).hom m = r • m :=
-  (rfl)
-
-/-- `ofDiscreteModuleSMulMap G M r` is the endomorphism of `ofDiscreteModule ℤ G M` given by
-Mathlib's equivariant map `SMulCommClass.toDistribMulActionHom G M r`. -/
-theorem ofDiscreteModuleMap_toDistribMulActionHom [SMulCommClass R G M] (r : R) :
-    ofDiscreteModuleMap (SMulCommClass.toDistribMulActionHom G M r).toAddMonoidHom.toIntLinearMap
-      (fun g m ↦ map_smul (SMulCommClass.toDistribMulActionHom G M r) g m) =
-      ofDiscreteModuleSMulMap G M r :=
-  TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ (ofDiscreteModuleMap_hom_apply _ _ m).trans
-    (ofDiscreteModuleSMulMap_hom_apply (G := G) r m).symm)
-
-end SMulMap
+universe v
 
 namespace ContinuousCohomology
 
