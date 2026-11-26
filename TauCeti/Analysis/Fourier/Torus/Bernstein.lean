@@ -11,8 +11,8 @@ public import TauCeti.Analysis.InnerProductSpace.Euclidean.IntegerPoints
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Convolution.Young
+import TauCeti.Analysis.Distribution.SchwartzSpace.Bernstein
 import TauCeti.Analysis.Distribution.SchwartzSpace.Dilation
-import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.Convolution
@@ -84,10 +84,14 @@ one derivative at a fixed exponent. Derivatives of higher order follow by iterat
 intermediate trigonometric polynomials, and the gain of integrability is applied last.
 
 For the reverse inequality, Schwartz symbols `σᵢ` on `ℝᵈ` agreeing with `ξ i / (2πi ‖ξ‖²)` on the
-annulus `1 ≤ ‖ξ‖ ≤ θ` (`SchwartzMap.exists_eqOn_annulus_of_contDiffOn`) satisfy
-`∑ i, σᵢ(ξ) 2πi ξ i = 1` there. Hence `f = R⁻¹ ∑ᵢ Kᵢ ⋆ ∂ᵢ f` for the periodic kernels `Kᵢ` of the
-dilated symbols `σᵢ (· / R)`, whose `L¹` norms are at most `∫ ‖𝓕⁻ σᵢ‖` for every `R > 0`
-(`SchwartzMap.eLpNorm_periodicKernel_le`), and Young's inequality concludes.
+annulus `1 ≤ ‖ξ‖ ≤ θ` satisfy `∑ i, σᵢ(ξ) 2πi ξ i = 1` there
+(`OrthonormalBasis.exists_sum_mul_eq_one_of_one_le_norm_of_norm_le`). Hence
+`f = R⁻¹ ∑ᵢ Kᵢ ⋆ ∂ᵢ f` for the periodic kernels `Kᵢ` of the dilated symbols `σᵢ (· / R)`, and
+Young's inequality for these kernels (`SchwartzMap.eLpNorm_periodicKernel_convolution_le`) bounds
+each term by `∫ ‖𝓕⁻ σᵢ‖`, for every `R > 0`. This is the periodic counterpart of the whole-space
+proof in `TauCeti/Analysis/Distribution/SchwartzSpace/Bernstein.lean`
+(`SchwartzMap.exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_support_fourier_subset`) and of
+`OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq`, with the same symbols.
 
 ## Main declarations
 
@@ -627,30 +631,6 @@ universe u
 
 variable {d : Type*} [Fintype d]
 
-/-- On the annulus `1 ≤ ‖ξ‖ ≤ θ` of `ℝᵈ` there are Schwartz symbols `σᵢ` inverting the partial
-derivatives, `∑ i, σᵢ(ξ) 2πi ξᵢ = 1`: away from the origin they agree with `ξᵢ / (2πi ‖ξ‖²)`. -/
-private theorem exists_sum_mul_eq_one_of_one_le_norm_of_norm_le (θ : ℝ) :
-    ∃ σ : d → 𝓢(EuclideanSpace ℝ d, ℂ), ∀ ξ : EuclideanSpace ℝ d, 1 ≤ ‖ξ‖ → ‖ξ‖ ≤ θ →
-      ∑ i, σ i ξ * (2 * Real.pi * Complex.I * ξ i) = 1 := by
-  let m (i : d) (ξ : EuclideanSpace ℝ d) : ℂ :=
-    (2 * Real.pi * Complex.I)⁻¹ * ((ξ i / ‖ξ‖ ^ 2 : ℝ) : ℂ)
-  have hm (i : d) : ContDiffOn ℝ ∞ (m i) {0}ᶜ := by
-    refine contDiffOn_const.mul (Complex.ofRealCLM.contDiff.comp_contDiffOn ?_)
-    exact (contDiff_piLp_apply (p := 2)).contDiffOn.div (contDiff_norm_sq ℝ).contDiffOn
-      fun ξ hξ ↦ pow_ne_zero 2 (norm_ne_zero_iff.2 hξ)
-  choose σ hσ using fun i ↦ SchwartzMap.exists_eqOn_annulus_of_contDiffOn (hm i) θ
-  refine ⟨σ, fun ξ h1 hθ ↦ ?_⟩
-  have hξ : ‖ξ‖ ^ 2 ≠ 0 := pow_ne_zero 2 (by linarith)
-  have hsq : ∑ i, ξ i ^ 2 = ‖ξ‖ ^ 2 := by
-    simp [EuclideanSpace.norm_sq_eq, Real.norm_eq_abs, sq_abs]
-  calc ∑ i, σ i ξ * (2 * Real.pi * Complex.I * ξ i)
-      = ∑ i, ((ξ i ^ 2 / ‖ξ‖ ^ 2 : ℝ) : ℂ) := Finset.sum_congr rfl fun i _ ↦ by
-        rw [hσ i ⟨h1, hθ⟩]
-        simp only [m]
-        push_cast
-        field_simp
-    _ = 1 := by rw [← Complex.ofReal_sum, ← Finset.sum_div, hsq, div_self hξ, Complex.ofReal_one]
-
 /-- The periodic kernel of a Schwartz symbol dilated by `R > 0`, `ξ ↦ σ (R⁻¹ • ξ)`. -/
 private noncomputable def dilatedKernel (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) {R : ℝ} (hR : 0 < R) :
     C(UnitAddTorus d, ℂ) :=
@@ -667,22 +647,12 @@ private theorem eLpNorm_dilatedKernel_convolution_le {E : Type*} [NormedAddCommG
     (hp : 1 ≤ p) {g : UnitAddTorus d → E} (hg : AEStronglyMeasurable g) :
     eLpNorm (⇑(dilatedKernel σ hR) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] g) p volume ≤
       ENNReal.ofReal (∫ y, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) y‖) * eLpNorm g p volume := by
-  have hK : eLpNorm (dilatedKernel σ hR) 1 volume ≤
-      ENNReal.ofReal (∫ y, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) y‖) := by
-    refine (SchwartzMap.eLpNorm_periodicKernel_le _).trans_eq ?_
-    congr 1
-    have h : ⇑(SchwartzMap.compSMulCLM ℂ (Units.mk0 R⁻¹ (inv_ne_zero hR.ne')) σ) =
-        fun ξ ↦ σ (R⁻¹ • ξ) := funext fun ξ ↦ by simp [Units.smul_def]
-    rw [h]
-    exact integral_norm_fourierInv_comp_smul _ (inv_ne_zero hR.ne')
-  calc eLpNorm (⇑(dilatedKernel σ hR) ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] g) p volume
-      ≤ ‖(ContinuousLinearMap.lsmul ℂ ℂ : ℂ →L[ℂ] E →L[ℂ] E)‖ₑ *
-          eLpNorm (dilatedKernel σ hR) 1 volume * eLpNorm g p volume :=
-        eLpNorm_convolution_le _ (dilatedKernel σ hR).continuous.aestronglyMeasurable hg hp
-    _ ≤ 1 * ENNReal.ofReal (∫ y, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) y‖) * eLpNorm g p volume := by
-        gcongr
-        exact ContinuousLinearMap.opENorm_lsmul_le
-    _ = _ := by rw [one_mul]
+  have h : ⇑(SchwartzMap.compSMulCLM ℂ (Units.mk0 R⁻¹ (inv_ne_zero hR.ne')) σ) =
+      fun ξ ↦ σ (R⁻¹ • ξ) := funext fun ξ ↦ by simp [Units.smul_def]
+  rw [volume_eq_pi_haarAddCircle, ← integral_norm_fourierInv_comp_smul _ (inv_ne_zero hR.ne'),
+    ← h]
+  exact SchwartzMap.eLpNorm_periodicKernel_convolution_le _ hp
+    (by rwa [volume_eq_pi_haarAddCircle] at hg)
 
 /-- **Reproducing formula on an annulus.** If the symbols `σᵢ` invert the partial derivatives on
 the annulus `1 ≤ ‖ξ‖ ≤ θ`, `f` has spectrum in the annulus `R ≤ ‖n‖ ≤ θ R` and `ĝᵢ(n) =
@@ -757,7 +727,9 @@ theorem exists_eLpNorm_le_div_mul_sum_eLpNorm_of_mFourierCoeff_eq (θ : ℝ) :
       (∀ n, (‖latticePoint n‖ < R ∨ θ * R < ‖latticePoint n‖) → mFourierCoeff f n = 0) →
       (∀ i n, mFourierCoeff (g i) n = (2 * Real.pi * Complex.I * n i) • mFourierCoeff f n) →
       eLpNorm f p volume ≤ ENNReal.ofReal (C / R) * ∑ i, eLpNorm (g i) p volume := by
-  obtain ⟨σ, hσ⟩ := exists_sum_mul_eq_one_of_one_le_norm_of_norm_le (d := d) θ
+  -- Schwartz symbols inverting the partial derivatives on the annulus `1 ≤ ‖ξ‖ ≤ θ`.
+  obtain ⟨σ, hσ⟩ := (EuclideanSpace.basisFun d ℝ).exists_sum_mul_eq_one_of_one_le_norm_of_norm_le θ
+  simp only [EuclideanSpace.inner_basisFun_real] at hσ
   set A : d → ℝ := fun i ↦ ∫ y, ‖𝓕⁻ (σ i : EuclideanSpace ℝ d → ℂ) y‖
   have hA (i : d) : 0 ≤ A i := integral_nonneg fun _ ↦ norm_nonneg _
   refine ⟨∑ i, A i, Finset.sum_nonneg fun i _ ↦ hA i, ?_⟩

@@ -36,7 +36,10 @@ size at most of order `2^j`, so Bernstein's inequality
 `‖Δⱼ ∂ᵢ c‖_p ≤ C 2^j ‖Δⱼ c‖_p`. For `j ≥ 1` the frequencies of `Δⱼ c` lie in the annulus
 `2^{j-1} φ.rIn ≤ ‖n‖ ≤ 2^j φ.rOut`, where the reverse Bernstein inequality
 (`TauCeti.UnitAddTorus.exists_eLpNorm_le_div_mul_sum_eLpNorm_of_mFourierCoeff_eq`) gives
-`2^j ‖Δⱼ c‖_p ≤ C ∑ᵢ ‖Δⱼ ∂ᵢ c‖_p`.
+`2^j ‖Δⱼ c‖_p ≤ C ∑ᵢ ‖Δⱼ ∂ᵢ c‖_p`. The argument is the periodic counterpart of the whole-space
+lifting `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_lineDerivOp_eq`
+(`TauCeti/Analysis/FunctionalSpaces/BesovSpace/LineDeriv.lean`), with the same annulus ratio
+`2 φ.rOut / φ.rIn`.
 
 ## Main declarations
 
@@ -109,15 +112,18 @@ theorem mFourierCoeff_littlewoodPaleyBlockLp_partialDeriv {p : ℝ≥0∞} [Fact
 
 /-! ### Bernstein's inequalities for the blocks -/
 
-/-- The blocks are integrable for the global volume on the torus, the measure for which the
-Bernstein inequalities are stated: `volume_eq_pi_haarAddCircle` identifies it with the product of
-the Haar probability measures, which is by definition the file-local `volume`. -/
+/-- The blocks are integrable for the global volume on the torus, built from Mathlib's
+`AddCircle.measureSpace`, the measure for which the Bernstein inequalities are stated:
+`volume_eq_pi_haarAddCircle` identifies it with the product of the Haar probability measures,
+which is by definition the file-local `volume`. -/
 private theorem integrable_littlewoodPaleyBlockLp {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ)
     (c : (d → ℤ) → ℂ) :
-    Integrable (littlewoodPaleyBlockLp φ p j c) (Measure.pi fun _ ↦ AddCircle.haarAddCircle) :=
+    letI : MeasureSpace UnitAddCircle := AddCircle.measureSpace 1
+    Integrable (littlewoodPaleyBlockLp φ p j c : UnitAddTorus d → ℂ) := by
   have : IsFiniteMeasure (volume : Measure (UnitAddTorus d)) :=
     inferInstanceAs (IsFiniteMeasure (Measure.pi fun _ ↦ AddCircle.haarAddCircle))
-  (Lp.memLp _).integrable Fact.out
+  rw [volume_eq_pi_haarAddCircle]
+  exact (Lp.memLp _).integrable Fact.out
 
 variable (φ) in
 /-- **Bernstein's inequality for the periodic blocks.** There is `C ≥ 0`, depending only on `d` and
@@ -139,8 +145,7 @@ theorem exists_norm_littlewoodPaleyBlockLp_partialDeriv_le :
   have hR : 1 ≤ 2 ^ j * M := one_le_mul_of_one_le_of_one_le (one_le_pow₀ one_le_two) hM
   have h := hB (p := p) (q := p) Fact.out le_rfl 1 (fun _ ↦ Pi.single i 1) hR
     (f := (f : UnitAddTorus d → ℂ)) (g := (g : UnitAddTorus d → ℂ))
-    (by rw [volume_eq_pi_haarAddCircle]; exact integrable_littlewoodPaleyBlockLp j c)
-    (by rw [volume_eq_pi_haarAddCircle]; exact integrable_littlewoodPaleyBlockLp j _)
+    (integrable_littlewoodPaleyBlockLp j c) (integrable_littlewoodPaleyBlockLp j _)
     (fun n hn ↦ by
       rw [mFourierCoeff_littlewoodPaleyBlockLp,
         inhomogeneousLittlewoodPaley_latticePoint_eq_zero hn, Complex.ofReal_zero, zero_mul])
@@ -182,10 +187,10 @@ theorem exists_pow_mul_norm_littlewoodPaleyBlockLp_succ_le_mul_sum :
     ring
   have h := hrev (p := p) Fact.out hR (f := (f : UnitAddTorus d → ℂ))
     (g := fun i ↦ (g i : UnitAddTorus d → ℂ))
-    (by rw [volume_eq_pi_haarAddCircle]; exact integrable_littlewoodPaleyBlockLp _ c)
-    (fun i ↦ by rw [volume_eq_pi_haarAddCircle]; exact integrable_littlewoodPaleyBlockLp _ _)
+    (integrable_littlewoodPaleyBlockLp _ c) (fun i ↦ integrable_littlewoodPaleyBlockLp _ _)
     (fun n hn ↦ by
-      rw [mFourierCoeff_littlewoodPaleyBlockLp, hθR] at *
+      rw [hθR] at hn
+      rw [mFourierCoeff_littlewoodPaleyBlockLp]
       rcases hn with hn | hn
       · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le hn.le, Complex.ofReal_zero,
           zero_mul]
@@ -232,16 +237,20 @@ private theorem exists_rpow_mul_norm_littlewoodPaleyBlockLp_partialDeriv_le :
     _ = _ := by rw [h2]; ring
 
 variable (φ) in
-/-- The weighted form of `exists_pow_mul_norm_littlewoodPaleyBlockLp_succ_le_mul_sum`: the
-weighted blocks of order `s` of the partial derivatives control the weighted block of order `s + 1`
-of index `j + 1`. -/
-private theorem exists_rpow_mul_norm_littlewoodPaleyBlockLp_succ_le_sum :
+/-- The weighted form of `exists_pow_mul_norm_littlewoodPaleyBlockLp_succ_le_mul_sum`, for every
+index `j`: the weighted block of order `s + 1` is bounded by the low-frequency block `Δ₀ c` when
+`j = 0`, and by the weighted blocks of order `s` of the partial derivatives otherwise. -/
+private theorem exists_rpow_mul_norm_littlewoodPaleyBlockLp_le_ite_add_sum :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] (j : ℕ) (c : (d → ℤ) → ℂ),
-      2 ^ ((s + 1) * ((j + 1 : ℕ) : ℝ)) * ‖littlewoodPaleyBlockLp φ p (j + 1) c‖ ≤
-        C * ∑ i, 2 ^ (s * ((j + 1 : ℕ) : ℝ)) *
-          ‖littlewoodPaleyBlockLp φ p (j + 1) (partialDeriv i c)‖ := by
+      2 ^ ((s + 1) * j) * ‖littlewoodPaleyBlockLp φ p j c‖ ≤
+        (if j = 0 then ‖littlewoodPaleyBlockLp φ p 0 c‖ else 0) +
+          C * ∑ i, 2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j (partialDeriv i c)‖ := by
   obtain ⟨C, hC, h⟩ := exists_pow_mul_norm_littlewoodPaleyBlockLp_succ_le_mul_sum φ
   refine ⟨2 * C, by positivity, fun s p _ j c ↦ ?_⟩
+  rcases j with _ | j
+  · simp only [↓reduceIte, CharP.cast_eq_zero, mul_zero, Real.rpow_zero, one_mul]
+    exact le_add_of_nonneg_right (by positivity)
+  simp only [Nat.add_one_ne_zero, ↓reduceIte, zero_add]
   have h2 : (2 : ℝ) ^ ((s + 1) * ((j + 1 : ℕ) : ℝ)) =
       2 ^ (s * ((j + 1 : ℕ) : ℝ)) * (2 * 2 ^ j) := by
     rw [add_mul, one_mul, Real.rpow_add two_pos, Real.rpow_natCast, pow_succ, mul_comm 2]
@@ -270,7 +279,7 @@ theorem MemBesov.partialDeriv {c : (d → ℤ) → ℂ} (hc : MemBesov φ (s + 1
 theorem memBesov_add_one_iff {c : (d → ℤ) → ℂ} :
     MemBesov φ (s + 1) p q c ↔ ∀ i, MemBesov φ s p q (partialDeriv i c) := by
   refine ⟨fun hc i ↦ hc.partialDeriv i, fun hc ↦ ?_⟩
-  obtain ⟨C, hC, h⟩ := exists_rpow_mul_norm_littlewoodPaleyBlockLp_succ_le_sum φ
+  obtain ⟨C, -, h⟩ := exists_rpow_mul_norm_littlewoodPaleyBlockLp_le_ite_add_sum φ
   -- The majorant: the low-frequency block at `j = 0`, and the reverse Bernstein bound beyond.
   set b : ℕ → ℝ := fun j ↦ if j = 0 then ‖littlewoodPaleyBlockLp φ p 0 c‖ else 0
   have hb : Memℓp b q :=
@@ -284,12 +293,7 @@ theorem memBesov_add_one_iff {c : (d → ℤ) → ℂ} :
     AddSubgroup.sum_mem (lp (fun _ : ℕ ↦ ℝ) q) fun i _ ↦ memBesov_def.1 (hc i)
   refine memBesov_def.2 ((hb.add (hsum.const_mul C)).mono fun j ↦ ?_)
   rw [Real.norm_of_nonneg (by positivity)]
-  rcases j with _ | j
-  · simp only [b, ↓reduceIte, CharP.cast_eq_zero, mul_zero, Real.rpow_zero, one_mul,
-      Finset.sum_apply, Pi.add_apply]
-    exact le_add_of_nonneg_right (by positivity)
-  · simp only [b, Nat.add_one_ne_zero, ↓reduceIte, Pi.add_apply, Finset.sum_apply, zero_add]
-    exact h s p j c
+  simpa only [b, Pi.add_apply, Finset.sum_apply] using h s p j c
 
 end MemBesov
 
@@ -336,7 +340,7 @@ theorem exists_norm_le_norm_littlewoodPaleyBlockLp_zero_add_mul_sum :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
       (u : BesovSpace φ (s + 1) p q),
       ‖u‖ ≤ ‖littlewoodPaleyBlockLp φ p 0 u.coeff‖ + C * ∑ i, ‖partialDerivCLM φ s p q i u‖ := by
-  obtain ⟨C, hC, h⟩ := exists_rpow_mul_norm_littlewoodPaleyBlockLp_succ_le_sum φ
+  obtain ⟨C, hC, h⟩ := exists_rpow_mul_norm_littlewoodPaleyBlockLp_le_ite_add_sum φ
   refine ⟨C, hC, fun {s p q} _ _ u ↦ ?_⟩
   have hq : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
   -- The majorant of the weighted blocks of `u`, as an element of `ℓ^q`.
@@ -357,12 +361,8 @@ theorem exists_norm_le_norm_littlewoodPaleyBlockLp_zero_add_mul_sum :
   refine le_trans ?_ (Real.le_norm_self _)
   simp only [B, e, lp.coeFn_add, lp.coeFn_smul, lp.coeFn_sum, Pi.add_apply, Pi.smul_apply,
     Finset.sum_apply, smul_eq_mul, lp.single_apply, Pi.single_apply, lp.normSeq_apply,
-    norm_weightedBlocks_apply, coeff_partialDerivCLM]
-  rcases j with _ | j
-  · simp only [Nat.cast_zero, mul_zero, Real.rpow_zero, one_mul, ↓reduceIte, mul_one]
-    exact le_add_of_nonneg_right (mul_nonneg hC (Finset.sum_nonneg fun _ _ ↦ by positivity))
-  · simp only [Nat.add_one_ne_zero, ↓reduceIte, mul_zero, zero_add]
-    exact h s p j u.coeff
+    norm_weightedBlocks_apply, coeff_partialDerivCLM, mul_ite, mul_one, mul_zero]
+  exact h s p j u.coeff
 
 end BesovSpace
 
