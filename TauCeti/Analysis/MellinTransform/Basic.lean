@@ -24,10 +24,10 @@ over `(0, 1]` and `(1, ∞)`; the substitution `u = x t` moves their common endp
 Power bounds at `0+` and `+∞` give absolute convergence and holomorphy of these two partial
 Mellin integrals.
 
-The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing there have the same
-transform, with the same convergence. Kernels that are extended by zero off `(0, ∞)` are compared
-with their unextended forms this way. A finite sum of kernels with absolutely convergent
-Mellin transforms at a common parameter can be transformed term by term. A real-power
+The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing almost everywhere
+there have the same transform, with the same convergence. Kernels extended by zero off `(0, ∞)`
+are compared with their unextended forms this way. A finite sum of kernels with absolutely
+convergent Mellin transforms at a common parameter can be transformed term by term. A real-power
 substitution rescales the parameter, and multiplying the kernel by a complex power shifts it.
 
 ## Main results
@@ -35,7 +35,8 @@ substitution rescales the parameter, and multiplying the kernel by a complex pow
 * `HasMellin.finsetSum`: finite sums preserve absolute convergence and transform term by term.
 * `HasMellin.comp_rpow`, `HasMellin.cpow_smul`: power substitutions and power weights transport
   both convergence and the value of the transform.
-* `TauCeti.hasMellin_congr`: functions agreeing on `(0, ∞)` have the same Mellin transform.
+* `TauCeti.hasMellin_congr_ae`, `TauCeti.hasMellin_congr`: functions agreeing almost everywhere
+  or pointwise on `(0, ∞)` have the same Mellin transform and convergence.
 * `TauCeti.mellinConvergent_indicator_Ioi_iff`: convergence of the Mellin transform of an
   upper-tail indicator is integrability of the upper Mellin integrand.
 * `TauCeti.mellin_indicator_Ioi`, `TauCeti.mellin_indicator_Ici`: the Mellin transform of an
@@ -121,14 +122,18 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
+/-- Functions that agree almost everywhere on `(0, ∞)` have the same Mellin transform,
+with the same convergence. -/
+theorem hasMellin_congr_ae {f g : ℝ → E} (h : f =ᵐ[volume.restrict (Ioi 0)] g) {s : ℂ} {m : E} :
+    HasMellin f s m ↔ HasMellin g s m := by
+  have h' := h.mono fun t ht ↦ congrArg (fun z : E ↦ (t : ℂ) ^ (s - 1) • z) ht
+  simp only [HasMellin, MellinConvergent, IntegrableOn, mellin,
+    integrable_congr h', integral_congr_ae h']
+
 /-- Functions that agree on `(0, ∞)` have the same Mellin transform, with the same convergence. -/
 theorem hasMellin_congr {f g : ℝ → E} (h : EqOn f g (Ioi 0)) {s : ℂ} {m : E} :
-    HasMellin f s m ↔ HasMellin g s m := by
-  have h' : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • f t) (fun t ↦ (t : ℂ) ^ (s - 1) • g t)
-      (Ioi 0) := fun t ht ↦ by simp only [h ht]
-  simp only [HasMellin, MellinConvergent, mellin,
-    MeasureTheory.integrableOn_congr_fun h' measurableSet_Ioi,
-    MeasureTheory.setIntegral_congr_fun measurableSet_Ioi h']
+    HasMellin f s m ↔ HasMellin g s m :=
+  hasMellin_congr_ae (h.eventuallyEq_of_mem (ae_restrict_mem measurableSet_Ioi))
 
 /-- For a measurable `s ⊆ (0, ∞)`, the Mellin transform of `s.indicator f` converges exactly when
 the Mellin integrand of `f` is integrable on `s`. -/

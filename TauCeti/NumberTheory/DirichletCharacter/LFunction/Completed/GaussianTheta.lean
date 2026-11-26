@@ -28,6 +28,18 @@ open Complex Finset Filter HurwitzZeta MeasureTheory Set
 
 namespace DirichletCharacter
 
+private theorem hurwitzEven_f_modif_of_mem_Ioo (a : UnitAddCircle) {x : ℝ}
+    (hx : x ∈ Set.Ioo 0 1) :
+    (hurwitzEvenFEPair a).f_modif x = (evenKernel a x : ℂ) - (x ^ (-(1 / 2) : ℝ) : ℝ) := by
+  simp only [WeakFEPair.f_modif, Pi.add_apply, indicator_of_notMem (notMem_Ioi.mpr hx.2.le),
+    indicator_of_mem hx, zero_add, hurwitzEvenFEPair, Function.comp_apply, one_mul, smul_eq_mul,
+    mul_one]
+
+private theorem hurwitzEven_f_modif_of_one_lt (a : UnitAddCircle) {x : ℝ} (hx : 1 < x) :
+    (hurwitzEvenFEPair a).f_modif x = (evenKernel a x : ℂ) - (if a = 0 then 1 else 0) := by
+  simp only [WeakFEPair.f_modif, Pi.add_apply, indicator_of_mem (Set.mem_Ioi.mpr hx),
+    indicator_of_notMem (notMem_Ioo_of_ge hx.le), add_zero, hurwitzEvenFEPair, Function.comp_apply]
+
 private theorem hasMellin_even_hurwitz_sum {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
     (hχ : χ ≠ 1) (s : ℂ) :
     HasMellin (fun x ↦ ∑ a : ZMod N, χ a * (evenKernel (ZMod.toAddCircle a) x : ℂ)) (s / 2)
@@ -48,7 +60,7 @@ private theorem hasMellin_even_hurwitz_sum {N : ℕ} [NeZero N] {χ : DirichletC
       ∑ a : ZMod N, χ a * (2 * completedHurwitzZetaEven (ZMod.toAddCircle a) s) := by
     have hΛ₀ (a : ZMod N) : (P a).Λ₀ (s / 2) =
         2 * completedHurwitzZetaEven₀ (ZMod.toAddCircle a) s := by
-      simp [P, completedHurwitzZetaEven₀, mul_div_cancel₀]
+      rw [completedHurwitzZetaEven₀, mul_div_cancel₀ _ two_ne_zero]
     simp_rw [hΛ₀, completedHurwitzZetaEven_eq]
     simp only [mul_left_comm (χ _) 2, ← mul_sum, mul_sub, sum_sub_distrib,
       ← mul_div_assoc, ← sum_div, ← sum_mul, mul_one, hconst, hsum, mul_zero, zero_mul,
@@ -60,23 +72,20 @@ private theorem hasMellin_even_hurwitz_sum {N : ℕ} [NeZero N] {χ : DirichletC
       simp
     filter_upwards [ae_restrict_mem measurableSet_Ioi, hne] with x hx hx1
     rcases lt_or_gt_of_ne hx1 with hl | hr
-    · have hm : x ∈ Ioo (0 : ℝ) 1 := ⟨hx, hl⟩
-      simp [WeakFEPair.f_modif, P, hurwitzEvenFEPair, hm, hl.le, mul_sub,
-        sum_sub_distrib, ← sum_mul, hsum]
-    · simp [WeakFEPair.f_modif, P, hurwitzEvenFEPair, hr, hr.le, mul_sub,
-        sum_sub_distrib, χ.map_zero' hN]
+    · simp only [P, hurwitzEven_f_modif_of_mem_Ioo _ ⟨hx, hl⟩, mul_sub,
+        sum_sub_distrib, ← sum_mul, hsum, zero_mul, sub_zero]
+    · simp only [P, hurwitzEven_f_modif_of_one_lt _ hr, mul_sub, sum_sub_distrib, hconst, sub_zero]
   rw [hvalue] at h
-  have hweight := hae.mono fun x hx ↦ congrArg (fun z : ℂ ↦ (x : ℂ) ^ (s / 2 - 1) • z) hx
-  exact ⟨(integrable_congr hweight).mp h.1, (integral_congr_ae hweight).symm.trans h.2⟩
+  exact (TauCeti.hasMellin_congr_ae hae).mp h
 
 private theorem hasMellin_odd_hurwitz_sum {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (s : ℂ) :
     HasMellin (fun x ↦ ∑ a : ZMod N, χ a * (oddKernel (ZMod.toAddCircle a) x : ℂ)) ((s + 1) / 2)
       (∑ a : ZMod N, χ a * (2 * completedHurwitzZetaOdd (ZMod.toAddCircle a) s)) := by
   refine HasMellin.finsetSum fun a _ ↦ ?_
   have h := (isStrong_hurwitzOddFEPair (ZMod.toAddCircle a)).hasMellin ((s + 1) / 2)
-  have hm := hasMellin_const_smul h.1 (χ a)
-  rw [h.2] at hm
-  simpa [completedHurwitzZetaOdd, smul_eq_mul, mul_div_cancel₀] using hm
+  rw [completedHurwitzZetaOdd, mul_div_cancel₀ _ two_ne_zero, ← h.2]
+  simpa only [smul_eq_mul, hurwitzOddFEPair_f, Function.comp_apply] using
+    hasMellin_const_smul h.1 (χ a)
 
 /-- In its residue-class expression, the Gaussian theta kernel of a nonprincipal Dirichlet
 character has Mellin transform equal to half the completed L-function. The degree `j` is the
@@ -107,7 +116,8 @@ theorem hasMellin_gaussianTheta_residue_sum {N : ℕ} [NeZero N] (χ : Dirichlet
       ((N : ℂ) ^ s * χ.completedLFunction s) := by
     have h := HasMellin.comp_rpow (a := 2) (s := s + j)
       (by simpa only [ofReal_ofNat] using hcore) (by norm_num)
-    simpa [real_smul, mul_assoc] using h
+    simpa only [abs_two, real_smul, ofReal_inv, ofReal_ofNat, mul_assoc,
+      inv_mul_cancel_left₀ (two_ne_zero : (2 : ℂ) ≠ 0)] using h
   -- Apply the power weight before dilation so the dilation factor only involves `s`.
   have hd := (hsquare.cpow_smul (s := s) (a := (j : ℂ))).comp_mul_right hN
   have hvalue := hd.2
