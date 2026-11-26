@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.LocalizedModule.Away.Basic
 public import TauCeti.Algebra.Module.ZMod.TensorProduct
-import Mathlib.GroupTheory.Perm.Cycle.Type
+import TauCeti.Algebra.Group.PowMonoidHom
 
 /-!
 # Uniquely two-divisible abelian groups
@@ -119,20 +119,13 @@ theorem isUniquelyTwoDivisible_zmod_iff (n : ℕ) : IsUniquelyTwoDivisible (ZMod
     Nat.coprime_two_left]
 
 /-- A finite abelian group is uniquely two-divisible exactly when its order is odd: multiplication
-by two is a bijection when two is prime to the order, and otherwise kills an element of order two,
-which exists by Cauchy's theorem. -/
+by two is onto, hence bijective, exactly when two is prime to the order
+(`TauCeti.nsmulAddMonoidHom_range_eq_top_iff_coprime`). -/
 theorem isUniquelyTwoDivisible_iff_odd_natCard (G : Type*) [AddCommGroup G] [Finite G] :
     IsUniquelyTwoDivisible G ↔ Odd (Nat.card G) := by
-  have h : (fun x : G ↦ (2 : ℤ) • x) = (2 • · : G → G) := funext fun x ↦ natCast_zsmul x 2
-  rw [isUniquelyTwoDivisible_iff, h]
-  refine ⟨fun hbij ↦ ?_, fun hodd ↦ (Nat.coprime_two_right.2 hodd).nsmul_right_bijective⟩
-  by_contra hodd
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  obtain ⟨g, hg⟩ := exists_prime_addOrderOf_dvd_card' 2
-    (even_iff_two_dvd.1 (Nat.not_odd_iff_even.1 hodd))
-  have hg0 : g = 0 := hbij.1 (by dsimp only; rw [← hg, addOrderOf_nsmul_eq_zero, nsmul_zero])
-  rw [hg0, addOrderOf_zero] at hg
-  exact absurd hg (by decide)
+  have h : (fun x : G ↦ (2 : ℤ) • x) = nsmulAddMonoidHom 2 := funext fun x ↦ natCast_zsmul x 2
+  rw [isUniquelyTwoDivisible_iff, h, ← Finite.surjective_iff_bijective,
+    ← AddMonoidHom.range_eq_top, nsmulAddMonoidHom_range_eq_top_iff_coprime, Nat.coprime_two_right]
 
 end TauCeti
 

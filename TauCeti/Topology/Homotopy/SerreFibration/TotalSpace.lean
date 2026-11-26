@@ -23,10 +23,6 @@ groups indexed by any finite type. In degree zero this says that `E` is path-con
 `F` are (`TauCeti.TopCat.pathConnectedSpace_of_mem_serreFibrations`, in
 `TauCeti.Topology.Homotopy.SerreFibration.Basic`).
 
-Conversely, exactness at `π_{k+1}(B)` bounds the homotopy of the base: if `π_{k+1}(E, e)` and
-`π_k(F, e)` are trivial, then so is `π_{k+1}(B, b)`
-(`TauCeti.TopCat.subsingleton_homotopyGroup_base_of_mem_serreFibrations`).
-
 So the total space of a fibration whose base and one fibre are `n`-connected is `n`-connected, at
 every base point of `E` (`TauCeti.TopCat.forall_subsingleton_homotopyGroup_of_mem_serreFibrations`),
 and simply connected when the base and one fibre are
@@ -49,8 +45,6 @@ orientation local systems over them are trivial.
 
 * `TauCeti.TopCat.subsingleton_homotopyGroup_of_mem_serreFibrations`: `π_N(E, e)` is trivial when
   `π_N(B, b)` and `π_N(p⁻¹(b), e)` are.
-* `TauCeti.TopCat.subsingleton_homotopyGroup_base_of_mem_serreFibrations`: `π_{N+1}(B, b)` is
-  trivial when `π_{N+1}(E, e)` and `π_N(p⁻¹(b), e)` are.
 * `TauCeti.TopCat.forall_subsingleton_homotopyGroup_of_mem_serreFibrations`: the total space is
   `n`-connected when the base and one fibre are.
 * `TauCeti.TopCat.simplyConnectedSpace_of_mem_serreFibrations`: the total space is simply
@@ -107,19 +101,6 @@ theorem subsingleton_homotopyGroup_of_mem_serreFibrations (hp : serreFibrations 
   | inr _ =>
     -- Since `π_N(F, e)` is trivial, `p` is injective on `π_N(E, e)`.
     exact (injective_homotopyGroupMap_of_subsingleton (N := N) hp (e := e)).subsingleton
-
-/-- **The homotopy of the base is bounded by that of the total space and of a fibre.** Let
-`p : E → B` be a Serre fibration and `e` a point of the fibre over `b`. If `π_{N+1}(E, e)` and
-`π_N(p⁻¹(b), e)` are trivial, for a finite index type `N`, then so is `π_{N+1}(B, b)`, by exactness
-of `π_{N+1}(E) → π_{N+1}(B) → π_N(p⁻¹(b))` at `π_{N+1}(B)`. Here `π_{N+1}` is modelled on the cube
-`I^(Option N)`. -/
-theorem subsingleton_homotopyGroup_base_of_mem_serreFibrations (hp : serreFibrations p) {b : B}
-    (e : p.fiber b) {N : Type*} [Finite N] (hE : Subsingleton (HomotopyGroup (Option N) E e.val))
-    (hF : Subsingleton (HomotopyGroup N (p.fiber b) e)) :
-    Subsingleton (HomotopyGroup (Option N) B b) :=
-  have := hE
-  have := hF
-  (surjective_homotopyGroupMap_of_subsingleton (N := N) hp (e := e)).subsingleton
 
 /-- **The total space of a fibration with `n`-connected base and fibre is `n`-connected.** Let
 `p : E → B` be a Serre fibration and `e` a point of the fibre over `b`. If `π_k(B, b)` and
