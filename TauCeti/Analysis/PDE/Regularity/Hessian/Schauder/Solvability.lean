@@ -39,10 +39,11 @@ equation.
   `λ` and `M`.
 * **The method of continuity**
   (`TauCeti.CkHolderSpaceOn.forall_exists_nonDivergenceOperatorL_eq_iff`). For two such operators
-  `L₀` and `L₁`, with the same ellipticity constant, the Dirichlet problem for `L₀` is solvable
-  for every `f ∈ C^{0,α}(Ω)` if and only if the one for `L₁` is. Along the segment
+  `L₀` and `L₁`, with ellipticity constants `λ₀` and `λ₁`, the Dirichlet problem for `L₀` is
+  solvable for every `f ∈ C^{0,α}(Ω)` if and only if the one for `L₁` is. Along the segment
   `L_t = (1 - t) L₀ + t L₁`, whose coefficients are the convex combinations of those of `L₀` and
-  `L₁` and so satisfy the same bounds, the a priori estimate holds with one constant, and the
+  `L₁` and so satisfy the same bounds, with ellipticity constant `min λ₀ λ₁`, the a priori
+  estimate holds with one constant, and the
   abstract method of continuity (`ContinuousLinearMap.surjective_iff_of_forall_norm_le_lineMap`)
   applies on the Banach space of the elements vanishing on `∂Ω`.
 * **Reduction to the Laplacian**
@@ -243,17 +244,17 @@ theorem exists_norm_le_mul_norm_nonDivergenceOperatorL (hα0 : 0 < α) (hα1 : �
 `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{2,α}` boundary, and let
 `L₀ u = ∑ᵢⱼ a₀ⁱʲ ∂ᵢ∂ⱼu + ∑ᵢ b₀ⁱ ∂ᵢu + c₀ u` and `L₁ u = ∑ᵢⱼ a₁ⁱʲ ∂ᵢ∂ⱼu + ∑ᵢ b₁ⁱ ∂ᵢu + c₁ u` have
 coefficients in the bounded `α`-Hölder functions on `Ω`, with `a₀` and `a₁` uniformly elliptic
-with the same constant `λ > 0` and `c₀, c₁ ≤ 0`. Then the Dirichlet problem `L₀ u = f` in `Ω`,
+with constants `λ₀ > 0` and `λ₁ > 0` and `c₀, c₁ ≤ 0`. Then the Dirichlet problem `L₀ u = f` in `Ω`,
 `u = 0` on `∂Ω`, has a solution `u ∈ C^{2,α}(Ω)` for every `f ∈ C^{0,α}(Ω)` if and only if the
 Dirichlet problem for `L₁` does (Gilbarg–Trudinger, Theorems 5.2 and 6.8). -/
 theorem forall_exists_nonDivergenceOperatorL_eq_iff (hα0 : 0 < α) (hα1 : α < 1)
-    (hbdry : (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))).HasC2HolderBoundary α) {lam : ℝ}
-    (hlam : 0 < lam) {a₀ a₁ : Fin (n + 1) → Fin (n + 1) → HolderSpace α Ω ℝ}
+    (hbdry : (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))).HasC2HolderBoundary α) {lam₀ lam₁ : ℝ}
+    (hlam₀ : 0 < lam₀) (hlam₁ : 0 < lam₁) {a₀ a₁ : Fin (n + 1) → Fin (n + 1) → HolderSpace α Ω ℝ}
     {b₀ b₁ : Fin (n + 1) → HolderSpace α Ω ℝ} {c₀ c₁ : HolderSpace α Ω ℝ}
     (ha₀ : ∀ (x : Ω) (ξ : EuclideanSpace ℝ (Fin (n + 1))),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a₀ i j x).toQuadraticForm' ξ)
+      lam₀ * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a₀ i j x).toQuadraticForm' ξ)
     (ha₁ : ∀ (x : Ω) (ξ : EuclideanSpace ℝ (Fin (n + 1))),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a₁ i j x).toQuadraticForm' ξ)
+      lam₁ * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a₁ i j x).toQuadraticForm' ξ)
     (hc₀ : ∀ x : Ω, c₀ x ≤ 0) (hc₁ : ∀ x : Ω, c₁ x ≤ 0) :
     (∀ f : HolderSpace α Ω ℝ, ∃ u ∈ vanishingOnFrontierSubmodule 2 α Ω ℝ,
         nonDivergenceOperatorL hΩ hb hα1.le a₀ b₀ c₀ u = f) ↔
@@ -268,8 +269,8 @@ theorem forall_exists_nonDivergenceOperatorL_eq_iff (hα0 : 0 < α) (hα1 : α <
       (finite_range _)).union (toFinite _)).image _).bddAbove
   have hS {f} (hf : f ∈ S) : ‖f‖ ≤ M := hM (mem_image_of_mem _ hf)
   have hM0 : 0 ≤ M := (norm_nonneg c₀).trans (hS (by simp [S]))
-  obtain ⟨C, hC⟩ := exists_norm_le_mul_norm_nonDivergenceOperatorL hΩ hb hα0 hα1 hbdry hlam
-    ⟨M, hM0⟩
+  obtain ⟨C, hC⟩ := exists_norm_le_mul_norm_nonDivergenceOperatorL hΩ hb hα0 hα1 hbdry
+    (lt_min hlam₀ hlam₁) ⟨M, hM0⟩
   -- The convex combinations of the coefficients satisfy the same bounds.
   have hnorm {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) {f₀ f₁ : HolderSpace α Ω ℝ} (h₀ : f₀ ∈ S)
       (h₁ : f₁ ∈ S) : ‖AffineMap.lineMap f₀ f₁ t‖ ≤ M := by
@@ -306,7 +307,9 @@ theorem forall_exists_nonDivergenceOperatorL_eq_iff (hα0 : 0 < α) (hα1 : α <
     rw [hA, Matrix.toQuadraticForm'_add, Matrix.toQuadraticForm'_smul,
       Matrix.toQuadraticForm'_smul]
     simp only [_root_.add_apply, _root_.smul_apply, smul_eq_mul]
-    nlinarith [ha₀ x ξ, ha₁ x ξ, ht.1, ht.2]
+    nlinarith [(mul_le_mul_of_nonneg_right (min_le_left lam₀ lam₁) (sq_nonneg ‖ξ‖)).trans
+      (ha₀ x ξ), (mul_le_mul_of_nonneg_right (min_le_right lam₀ lam₁) (sq_nonneg ‖ξ‖)).trans
+      (ha₁ x ξ), ht.1, ht.2]
   · simp only [AffineMap.lineMap_apply_module, HolderSpace.add_apply, HolderSpace.smul_apply,
       smul_eq_mul]
     nlinarith [hc₀ x, hc₁ x, ht.1, ht.2]
@@ -330,16 +333,14 @@ theorem forall_exists_nonDivergenceOperatorL_eq_iff_laplacianL (hα0 : 0 < α) (
       ∀ f : HolderSpace α Ω ℝ, ∃ u ∈ vanishingOnFrontierSubmodule 2 α Ω ℝ,
         laplacianL α Ω ℝ u = f := by
   rw [← nonDivergenceOperatorL_eq_laplacianL hΩ hb hα1.le]
-  refine forall_exists_nonDivergenceOperatorL_eq_iff hΩ hb hα0 hα1 hbdry
-    (lt_min hlam one_pos) (fun x ξ ↦ (mul_le_mul_of_nonneg_right (min_le_left _ _)
-      (sq_nonneg _)).trans (ha x ξ)) (fun x ξ ↦ ?_) hc fun _ ↦ le_rfl
+  refine forall_exists_nonDivergenceOperatorL_eq_iff hΩ hb hα0 hα1 hbdry hlam one_pos ha
+    (fun x ξ ↦ ?_) hc fun _ ↦ le_rfl
   -- The identity matrix has quadratic form `‖ξ‖²`.
   have hI : (Matrix.of fun i j ↦ (if i = j then (1 : HolderSpace α Ω ℝ) else 0) x) =
       (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) := by
     ext i j
     by_cases hij : i = j <;> simp [hij, Matrix.one_apply, HolderSpace.one_apply,
       HolderSpace.zero_apply]
-  rw [hI, PDE.toQuadraticForm'_one]
-  exact mul_le_of_le_one_left (sq_nonneg _) (min_le_right _ _)
+  rw [hI, PDE.toQuadraticForm'_one, one_mul]
 
 end TauCeti.CkHolderSpaceOn
