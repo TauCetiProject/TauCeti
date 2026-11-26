@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.RingTheory.ClassGroup.Basic
 public import TauCeti.RingTheory.DedekindDomain.Factorization
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
+import TauCeti.Algebra.Group.Submonoid.Units
 import TauCeti.RingTheory.ClassGroup.HeightOneSpectrum
 import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 
@@ -41,6 +42,8 @@ the everywhere-integral units together with the principal finite ideles.
   of `toFractionalIdeal`.
 * `IsDedekindDomain.FiniteAdeleRing.integralUnits_eq_units_integralAdeles`: the
   everywhere-integral units are the unit group of the integral finite adeles.
+* `IsDedekindDomain.FiniteAdeleRing.range_units_map_val_eq_integralUnits`: the everywhere-integral
+  units are the images of the units of the integral finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.mem_integralUnits_iff_val_mem_and_inv_mem`: membership
   means that both the idele and its inverse are integral finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.sIntegralUnits_eq_units_sIntegralAdeles`: the analogous
@@ -370,6 +373,15 @@ finite idele lies in `integralUnits` exactly when it and its inverse are integra
 theorem integralUnits_eq_units_integralAdeles :
     integralUnits R K = (integralAdeles R K).toSubmonoid.units := by
   rw [← sIntegralUnits_empty, sIntegralUnits_eq_units_sIntegralAdeles, sIntegralAdeles_empty]
+
+variable (R K) in
+/-- The units of `𝔸_f` coming from units of the integral adeles are the everywhere-integral
+units. -/
+theorem range_units_map_val_eq_integralUnits :
+    (Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])).range =
+      integralUnits R K := by
+  rw [integralUnits_eq_units_integralAdeles]
+  exact (integralAdeles R K).toSubmonoid.range_units_map_subtype
 
 /-- An idele is an everywhere-integral unit if and only if it and its inverse
 are integral finite adeles. -/
