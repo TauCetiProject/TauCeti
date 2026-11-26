@@ -17,6 +17,7 @@ import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Square
 import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
 /-!
@@ -79,6 +80,9 @@ with no continuity assumed) and computes their principal symbols:
 * `IsCompact.exists_sum_cutoffPullback_eq_one`: a compact set has finitely many cutoffs in preferred
   charts whose pullbacks sum to `1` on it, through which operators on `M` are assembled from
   operators in charts.
+* `TauCeti.exists_locallyFinite_finsum_sq_cutoffPullback_eq_one`: a Hausdorff σ-compact manifold
+  has a locally finite family of cutoffs in preferred charts whose pullbacks have squares summing
+  to `1` everywhere, through which operators on a noncompact manifold are assembled symmetrically.
 * `OpenPartialHomeomorph.complexChartCompression_congr`: two charts with the same inverse on the
   supports of the cutoffs give the same chart compressions.
 * `OpenPartialHomeomorph.complexChartCompression_comp_apply`: the compression of a composition
@@ -161,6 +165,21 @@ theorem tsupport_cutoffPullback_subset (ψ : 𝓓(⟨e.target, e.open_target⟩,
   e.tsupport_subset_symm_image_tsupport ψ
     (fun x hx h ↦ by rw [cutoffPullback_apply_of_mem he _ _ hx, h, zero_mul])
     fun _ hx ↦ cutoffPullback_apply_of_notMem he _ _ hx
+
+/-- The pullback `ψ ∘ e` of a cutoff, extended by `0`, is supported exactly in the image of the
+support of `ψ` under the inverse of the chart. -/
+@[simp]
+theorem tsupport_cutoffPullback_one (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
+    tsupport (e.cutoffPullback he ψ 1) = e.symm '' tsupport ψ := by
+  refine subset_antisymm (e.tsupport_cutoffPullback_subset he ψ 1) ?_
+  rintro _ ⟨y, hy, rfl⟩
+  -- `e⁻¹` is continuous on the chart target and maps the support of `ψ` into that of `ψ ∘ e`.
+  refine closure_mono ?_ ((e.continuousAt_symm (ψ.tsupport_subset hy)).continuousWithinAt
+    |>.mem_closure_image hy)
+  rintro _ ⟨z, hz, rfl⟩
+  have hzt : z ∈ e.target := ψ.tsupport_subset (subset_tsupport _ hz)
+  rwa [Function.mem_support, cutoffPullback_one_apply_of_mem he _ (e.map_target hzt),
+    e.right_inv hzt]
 
 /-- **Pushing a function on the manifold forward to a chart.** For a cutoff `φ` with compact
 support in the target of the chart `e`, the smooth function `φ · (h ∘ e⁻¹)` on `E`, which vanishes
@@ -266,6 +285,13 @@ theorem cutoffPullback_mul (hχ : tsupport ψ ⊆ χ ⁻¹' {1}) (g f : C^∞⟮
     · rw [show χ (e x) = 1 from hχ (subset_tsupport _ hψ)]
       ring
   · simp [cutoffPullback_apply_of_notMem he _ _ hx]
+
+/-- A cutoff `χ` equal to `1` on the support of `ψ` absorbs `ψ`, both read on `M` through the
+chart: `ψ(e x) χ(e x) = ψ(e x)`. -/
+theorem cutoffPullback_one_mul_cutoffPullback_one_of_tsupport_subset
+    (hχ : tsupport ψ ⊆ χ ⁻¹' {1}) (x : M) :
+    e.cutoffPullback he ψ 1 x * e.cutoffPullback he χ 1 x = e.cutoffPullback he ψ 1 x := by
+  rw [mul_comm, ← Pi.mul_apply, ← ContMDiffMap.coe_mul, ← cutoffPullback_mul he hχ, mul_one]
 
 /-- Pushing forward by `φ` intertwines multiplication by the pullback of `g` by a cutoff `χ` equal
 to `1` on the support of `φ` with multiplication by `g`. -/
@@ -687,12 +713,14 @@ end Complex
 
 end OpenPartialHomeomorph
 
-/-! ### Chart cutoffs summing to one on a compact set -/
+/-! ### Chart cutoffs summing to one -/
 
 section ChartPartition
 
+universe u
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [T2Space M] [IsManifold 𝓘(ℝ, E) ∞ M]
+  {M : Type u} [TopologicalSpace M] [ChartedSpace E M] [T2Space M] [IsManifold 𝓘(ℝ, E) ∞ M]
 
 /-- **Chart cutoffs summing to one on a compact set.** A compact set `K` of a Hausdorff manifold
 modelled on a finite-dimensional space has finitely many points `cᵢ` and cutoffs `ρᵢ` with compact
@@ -743,5 +771,40 @@ theorem IsCompact.exists_sum_cutoffPullback_eq_one {K : Set M} (hK : IsCompact K
     fun j ↦ TestFunction.smulLeftCLMOfContDiffOn (hg (σ.symm j)) (θ (σ.symm j)), fun y hy ↦ ?_⟩
   rw [← f.sum_eq_one hy, finsum_eq_sum_of_fintype, ← σ.symm.sum_comp]
   exact Finset.sum_congr rfl fun j _ ↦ hρ (σ.symm j) y
+
+namespace TauCeti
+
+/-- **Chart cutoffs whose squares sum to one.** A Hausdorff σ-compact manifold modelled on a
+finite-dimensional space has points `cᵢ` and cutoffs `χᵢ` with compact supports in the targets of
+the preferred charts at the `cᵢ`, such that the chart preimages `(chartAt cᵢ)⁻¹(supp χᵢ)` form a
+locally finite family and the squares of the functions `χᵢ ∘ chartAt cᵢ`, extended by `0` off the
+chart sources (`OpenPartialHomeomorph.cutoffPullback`), add up to `1` everywhere. Such cutoffs
+glue operators `Pᵢ` in the charts symmetrically, as `∑ᵢ χᵢ Pᵢ χᵢ`. -/
+theorem exists_locallyFinite_finsum_sq_cutoffPullback_eq_one [SigmaCompactSpace M] :
+    ∃ (ι : Type u) (c : ι → M)
+      (χ : ∀ i, 𝓓(⟨(chartAt E (c i)).target, (chartAt E (c i)).open_target⟩, ℝ)),
+      (LocallyFinite fun i ↦ (chartAt E (c i)).symm '' tsupport (χ i)) ∧
+        ∀ y, ∑ᶠ i, (chartAt E (c i)).cutoffPullback (IsManifold.chart_mem_maximalAtlas (c i))
+          (χ i) 1 y ^ 2 = 1 := by
+  obtain ⟨ι, fs, -⟩ := SmoothBumpCovering.exists_isSubordinate 𝓘(ℝ, E)
+    (isClosed_univ : IsClosed (univ : Set M)) (U := fun _ ↦ univ) fun _ _ ↦ univ_mem
+  -- Normalize the partition of unity of the bump covering to a square partition `gᵢ`. Each `gᵢ`
+  -- is supported in the compact support of the bump function at `cᵢ`, inside the chart source.
+  set g := fs.toSmoothPartitionOfUnity.sqrtNormalized
+  have hg (i : ι) : tsupport (g i) ⊆ tsupport (fs i) := by
+    rw [SmoothPartitionOfUnity.tsupport_sqrtNormalized]
+    exact closure_mono (fs.support_toSmoothPartitionOfUnity_subset i)
+  choose χ hχ using fun i ↦ (chartAt E (fs.c i)).exists_cutoffPullback_one_eq
+    (IsManifold.chart_mem_maximalAtlas (fs.c i))
+    ((fs i).hasCompactSupport.isCompact.of_isClosed_subset (isClosed_tsupport _) (hg i))
+    ((hg i).trans (fs i).tsupport_subset_chartAt_source)
+  refine ⟨ι, fs.c, χ, fs.locallyFinite.closure.subset fun i ↦ ?_, fun y ↦ ?_⟩
+  · rw [← OpenPartialHomeomorph.tsupport_cutoffPullback_one
+      (IsManifold.chart_mem_maximalAtlas (fs.c i)), hχ i]
+    exact hg i
+  · simp_rw [hχ]
+    exact fs.toSmoothPartitionOfUnity.sum_sq_sqrtNormalized_eq_one (mem_univ y)
+
+end TauCeti
 
 end ChartPartition
