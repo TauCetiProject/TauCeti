@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.Analysis.Calculus.Deriv.ZPow
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
 
 /-!
 # Iterated derivatives of partial fractions
@@ -36,10 +36,8 @@ theorem iteratedDeriv_sum_div_sub {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   rw [iteratedDeriv_fun_sum ha, Finset.mul_sum]
   apply Finset.sum_congr rfl
   intro ρ _
-  have hinv := congrFun (iteratedDeriv_comp_sub_const (n := k) (f := Inv.inv) (s := ρ)) c
-  rw [iteratedDeriv_eq_iterate (f := Inv.inv), iter_deriv_inv] at hinv
-  have hpow : (-1 - (k : ℤ)) = -((k + 1 : ℕ) : ℤ) := by omega
-  simp only [div_eq_mul_inv, iteratedDeriv_const_mul_field, hinv, hpow, zpow_neg, zpow_natCast]
+  rw [congrFun (iteratedDeriv_comp_sub_const (n := k) (f := fun y ↦ m ρ / y) (s := ρ)) c,
+    TauCeti.iteratedDeriv_const_div]
   ring
 
 end Finset

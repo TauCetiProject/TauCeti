@@ -9,8 +9,7 @@ public import TauCeti.Analysis.Complex.LocalLogDeriv
 import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Calculus.IteratedDeriv.PartialFractions
 import TauCeti.Analysis.Complex.CanonicalFactor
-import TauCeti.Analysis.Complex.DivisorFactorization
-import TauCeti.Analysis.Meromorphic.FactorizedRational
+import TauCeti.Analysis.Meromorphic.Divisor
 
 /-!
 # Taylor coefficients of a logarithmic derivative
@@ -33,34 +32,6 @@ open scoped Nat Topology
 namespace AnalyticOnNhd
 
 variable {f : ℂ → ℂ} {c : ℂ} {r R t M : ℝ}
-
-/-- Subtracting the fractions `m / (z - ρ)` for zeros `ρ` in the closed disc, with
-multiplicity `m`, gives a logarithmic derivative that extends analytically across those zeros. -/
-theorem exists_logDeriv_sub_finsum_divisor_extension
-    (hf : AnalyticOnNhd ℂ f (closedBall c r)) :
-    ∃ g : ℂ → ℂ, AnalyticOnNhd ℂ g (closedBall c r) ∧
-      ∀ z ∈ closedBall c r, f z ≠ 0 →
-        logDeriv f z - ∑ᶠ ρ, (MeromorphicOn.divisor f (closedBall c r) ρ : ℂ) / (z - ρ) = g z := by
-  classical
-  by_cases h : ¬ ∃ z ∈ closedBall c r, f z ≠ 0
-  · exact ⟨0, fun _ _ ↦ analyticAt_const, fun z hz hfz ↦ (h ⟨z, hz, hfz⟩).elim⟩
-  have h₀ := not_not.mp h
-  let D := MeromorphicOn.divisor f (closedBall c r)
-  let P : ℂ → ℂ := ∏ᶠ ρ, (· - ρ) ^ D ρ
-  let G := toMeromorphicNFOn (P⁻¹ • f) D.support
-  obtain ⟨hG, hG₀, hfPG, _⟩ := hf.finprod_zpow_factorization le_rfl h₀
-  have hfin := D.finiteSupport (isCompact_closedBall _ _)
-  refine ⟨logDeriv G, fun z hz ↦ ((hG z hz).deriv.div (hG z hz) (hG₀ z hz)), ?_⟩
-  intro z hz hfz
-  have hDz : D z = 0 := (hf z hz).divisor_apply_eq_zero hfz
-  have heq : f = P * G := by
-    calc f = P • G := hfPG
-         _ = P * G := smul_eq_mul _ _
-  rw [finsum_eq_sum_of_support_subset (fun ρ ↦ (D ρ : ℂ) / (z - ρ)) (s := hfin.toFinset) (by
-    intro ρ hρ
-    exact hfin.mem_toFinset.mpr (fun hzero ↦ hρ (by simp [hzero])))]
-  exact Function.FactorizedRational.logDeriv_sub_sum_eq hfin hDz
-    (hG z hz).differentiableAt (hG₀ z hz) (.of_eq heq)
 
 -- Extend the pointwise estimate to a zero on the Cauchy circle by continuity from the disc.
 private theorem norm_extension_le_on_sphere
