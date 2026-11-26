@@ -68,8 +68,7 @@ theorem koopmanGroup_fourierLp (n : ℤ) (t : ℝ) :
   rw [h1, h2, h3, Pi.smul_apply, h4, Function.comp_apply, smul_eq_mul]
   rw [show exp (2 * π * I * n * t) = fourier n (t : AddCircle (1 : ℝ)) by
     rw [fourier_coe_apply, ofReal_one, div_one]]
-  -- the quotient action `t +ᵥ x` is `↑t + x` by definition
-  exact TauCeti.fourier_apply_add n (t : AddCircle (1 : ℝ)) x
+  rw [AddCircle.vadd_eq_add, TauCeti.fourier_apply_add]
 
 /-- The orbit `t ↦ U_t e_n` is continuous. -/
 example (n : ℤ) : Continuous fun t : ℝ =>
