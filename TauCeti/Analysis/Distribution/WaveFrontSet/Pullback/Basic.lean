@@ -69,6 +69,10 @@ opposite wave front covectors over a common point is defined (Hörmander I, Theo
   restriction to `E × {0}`.
 * `Distribution.isMicrolocallySmoothAt_pullbackInl`, `Distribution.waveFrontSet_pullbackInl_subset`:
   the wave front set of the pullback lies in the image of that of `T` under `ιᵀ`.
+* `Distribution.localFourier_pullbackInl_eq_tsum`: the localized Fourier transform of the pullback
+  as a lattice series of localized Fourier transforms of `T`, for a cutoff `χ` equal to one near
+  the support of the cutoff of the pullback, as supplied by
+  `Distribution.exists_cutoff_eq_one_prod_closedBall`.
 * `Distribution.pullbackInl_add`, `Distribution.pullbackInl_smul`,
   `Distribution.pullbackInl_smul_of_ne_zero`, `Distribution.pullbackInl_zero`,
   `Distribution.pullbackInl_neg`, `Distribution.pullbackInl_sub`: linearity in `T`.
@@ -200,8 +204,8 @@ private theorem exists_pos_forall_norm_fst_lt_imp_mem {Γ : Set (WithLp 2 (E × 
 
 /-- Around `K × {0}`, for a compact set `K` with `K × {0} ⊆ G ∩ W`, there is a cutoff `χ` supported
 in `G`, equal to one on `K × closedBall 0 δ` for some `δ > 0`. -/
-private theorem exists_cutoff {K : Set E} (hK : IsCompact K) {G : Set (WithLp 2 (E × D))}
-    (hG : IsOpen G) (hKG : ∀ x ∈ K, toLp 2 (x, (0 : D)) ∈ G ∩ W) :
+theorem exists_cutoff_eq_one_prod_closedBall {K : Set E} (hK : IsCompact K)
+    {G : Set (WithLp 2 (E × D))} (hG : IsOpen G) (hKG : ∀ x ∈ K, toLp 2 (x, (0 : D)) ∈ G ∩ W) :
     ∃ δ > 0, ∃ χ : 𝓓(W, ℂ), (∀ x ∈ K, ∀ y : D, ‖y‖ ≤ δ → χ (toLp 2 (x, y)) = 1) ∧
       tsupport χ ⊆ G := by
   obtain ⟨δ, hδ, htube⟩ := hK.exists_pos_forall_toLp_mem (hG.inter W.isOpen) hKG
@@ -354,7 +358,8 @@ private theorem exists_cutoff_decay (T : 𝓓'(W, ℂ)) {K : Set E} (hK : IsComp
         exact isMicrolocallySmoothAt_of_fst_eq_zero T (hKW x hx) (h x hx) hζ0 hζ)
   obtain ⟨c, hc, hcΓ⟩ := exists_pos_forall_norm_fst_lt_imp_mem hΓ hcone fun b hb ↦
     hVΓ _ (by simp) fun h0 ↦ hb (by simpa using congrArg WithLp.snd h0)
-  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ := exists_cutoff hK hG fun x hx ↦ ⟨hKG ⟨x, hx, rfl⟩, hKW x hx⟩
+  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ :=
+    exists_cutoff_eq_one_prod_closedBall hK hG fun x hx ↦ ⟨hKG ⟨x, hx, rfl⟩, hKW x hx⟩
   exact ⟨δ, hδ, χ, hχ1, c, hc, fun N ↦ (hdecay χ (hχG.trans subset_union_left) N).imp
     fun _ hC ζ hζ ↦ hC ζ (hcΓ ζ hζ)⟩
 
@@ -767,7 +772,7 @@ private theorem complexPairing_pullbackInl_eq_tsum [MeasurableSpace E] [BorelSpa
 
 /-- The localized Fourier transform of the pullback with cutoff `φ` as a lattice series: the
 pullback evaluated at the modulated cutoff `φ e_ξ`, whose Fourier transform is `𝓕 φ (· + ξ)`. -/
-private theorem localFourier_pullbackInl_eq_tsum [MeasurableSpace E] [BorelSpace E]
+theorem localFourier_pullbackInl_eq_tsum [MeasurableSpace E] [BorelSpace E]
     [MeasurableSpace D] [BorelSpace D] (T : 𝓓'(W, ℂ))
     (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
     (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
@@ -893,8 +898,9 @@ theorem isMicrolocallySmoothAt_pullbackInl (T : 𝓓'(W, ℂ))
     fun x hx ↦ by
       rw [mem_singleton_iff.1 hx]
       exact ⟨hp₀G (mem_singleton _), hU hx₀⟩
-  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ := exists_cutoff (isCompact_closedBall x₀ (r / 2)) hG fun x hx ↦
-    htube x₀ rfl x 0 ((mem_closedBall.1 hx).trans_lt (half_lt_self hr)) (by simpa using hr)
+  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ :=
+    exists_cutoff_eq_one_prod_closedBall (isCompact_closedBall x₀ (r / 2)) hG fun x hx ↦
+      htube x₀ rfl x 0 ((mem_closedBall.1 hx).trans_lt (half_lt_self hr)) (by simpa using hr)
   obtain ⟨φ, -, hφ1, hφ⟩ := exists_cutoff_tsupport_subset (Ω := U) (n := ⊤)
     (isCompact_singleton (x := x₀)) (isOpen_ball.inter U.isOpen)
     (singleton_subset_iff.2 ⟨mem_ball_self (half_pos hr), hx₀⟩) inter_subset_right
