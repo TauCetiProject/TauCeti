@@ -148,18 +148,6 @@ theorem testSectionToBCF_apply (ξ : testSection F₀ F₁) (z : ℝ × I) :
     testSectionToBCF ξ z = (ξ : ℝ × ℝ → V) (z.1, z.2) :=
   (rfl)
 
-/-- A test section tends to zero along both ends of the strip, uniformly in `t`: it vanishes for
-`|s|` large. -/
-private theorem tendsto_testSectionToBCF_comap_fst_cocompact (ξ : testSection F₀ F₁) :
-    Tendsto (testSectionToBCF ξ) (comap Prod.fst (cocompact ℝ)) (𝓝 0) := by
-  obtain ⟨-, -, -, R, hR⟩ := mem_testSection_iff.1 ξ.property
-  refine tendsto_const_nhds.congr' ?_
-  have hev : ∀ᶠ z : ℝ × I in comap Prod.fst (cocompact ℝ), R < |z.1| :=
-    tendsto_comap.eventually ((tendsto_norm_cocompact_atTop.eventually_gt_atTop R).mono
-      fun s hs ↦ by rwa [Real.norm_eq_abs] at hs)
-  filter_upwards [hev] with z hz
-  rw [testSectionToBCF_apply, hR _ _ hz.le]
-
 end BCF
 
 /-! ### The Sobolev embedding for `p > 2` -/
@@ -295,7 +283,9 @@ theorem tendsto_continuousValue_comap_fst_cocompact (hp : 2 < p) (hpt : p ≠ �
   refine tendsto_of_forall_tendsto_toJetClosure (continuousValue F₀ F₁ p).continuous
     (fun ξ ↦ ?_) x
   rw [continuousValue_toW1p hp hpt]
-  exact tendsto_testSectionToBCF_comap_fst_cocompact ξ
+  obtain ⟨-, -, -, R, hR⟩ := mem_testSection_iff.1 ξ.property
+  exact tendsto_comap_fst_cocompact_of_eq_zero fun z hz ↦ by
+    rw [testSectionToBCF_apply, hR _ _ hz.le]
 
 /-- **The Sobolev embedding commutes with translation**: the continuous representative of the
 translate of an element of `W1p F₀ F₁ p` is the translate of its continuous representative. -/

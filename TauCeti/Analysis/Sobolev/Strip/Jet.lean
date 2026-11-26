@@ -213,6 +213,18 @@ theorem jet_eq_zero_of_lt_abs {R : ℝ} (hR : ∀ s t, R ≤ |s| → ξ (s, t) =
     (hz : R < |z.1|) : jet ξ z = 0 :=
   jet_eq_zero_of_notMem_Icc (eq_zero_of_notMem_Ioo_neg hR) (by rwa [mem_Icc, ← abs_le, not_le])
 
+/-- A map on `ℝ × X` vanishing for `|s| > R` tends to zero along both ends `|s| → ∞`, uniformly
+in the second coordinate. -/
+theorem tendsto_comap_fst_cocompact_of_eq_zero {X W : Type*} [Zero W] [TopologicalSpace W]
+    {u : ℝ × X → W} {R : ℝ} (hR : ∀ z, R < |z.1| → u z = 0) :
+    Tendsto u (comap Prod.fst (cocompact ℝ)) (𝓝 0) := by
+  refine tendsto_const_nhds.congr' ?_
+  have hev : ∀ᶠ z : ℝ × X in comap Prod.fst (cocompact ℝ), R < |z.1| :=
+    tendsto_comap.eventually ((tendsto_norm_cocompact_atTop.eventually_gt_atTop R).mono
+      fun s hs ↦ by rwa [Real.norm_eq_abs] at hs)
+  filter_upwards [hev] with z hz
+  exact (hR z hz).symm
+
 omit [NormedSpace ℝ V] in
 /-- A section bounded on `[-R, R] × [0, 1]` and vanishing for `|s| > R` lies in every `Lᵖ` of the
 strip. -/

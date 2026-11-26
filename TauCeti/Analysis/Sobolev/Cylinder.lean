@@ -211,12 +211,7 @@ theorem jet_add_one (hξ : ξ ∈ testSection V) (s t : ℝ) : jet ξ (s, t + 1)
 theorem tendsto_jet_comap_fst_cocompact (hξ : ξ ∈ testSection V) :
     Tendsto (jet ξ) (comap Prod.fst (cocompact ℝ)) (𝓝 0) := by
   obtain ⟨-, -, R, hR⟩ := mem_testSection_iff.1 hξ
-  refine tendsto_const_nhds.congr' ?_
-  have hev : ∀ᶠ z : ℝ × ℝ in comap Prod.fst (cocompact ℝ), R < |z.1| :=
-    tendsto_comap.eventually ((tendsto_norm_cocompact_atTop.eventually_gt_atTop R).mono
-      fun s hs ↦ by rwa [Real.norm_eq_abs] at hs)
-  filter_upwards [hev] with z hz
-  exact (jet_eq_zero_of_lt_abs hR hz).symm
+  exact tendsto_comap_fst_cocompact_of_eq_zero fun _ ↦ jet_eq_zero_of_lt_abs hR
 
 /-- The jet of a test section lies in every `Lᵖ` of the strip. -/
 theorem memLp_jet (hξ : ξ ∈ testSection V) (p : ℝ≥0∞) : MemLp (jet ξ) p stripMeasure := by
