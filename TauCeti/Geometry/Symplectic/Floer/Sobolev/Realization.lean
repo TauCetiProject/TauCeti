@@ -261,6 +261,14 @@ theorem floerJetCoeff_const (ω : SymplecticForm V) (J₀ : V →L[ℝ] V)
   refine ContinuousLinearMap.ext fun v ↦ ?_
   simp [floerJetCoeff_apply, floerLinearizationCoeff_apply, sub_eq_add_neg]
 
+/-- For a constant complex structure `J₀`, the coefficient field of the linearized Floer operator
+at `z` depends only on the values of the Hamiltonians `K_s`, `K_t` and of the map at `z`. -/
+theorem floerJetCoeff_const_congr (ω : SymplecticForm V) (J₀ : V →L[ℝ] V)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ} {u u' : ℝ × ℝ → V} {z z' : ℝ × ℝ} (hKs : Ks z = Ks' z')
+    (hKt : Kt z = Kt' z') (hu : u z = u' z') :
+    ω.floerJetCoeff (fun _ _ ↦ J₀) Ks Kt u z = ω.floerJetCoeff (fun _ _ ↦ J₀) Ks' Kt' u' z' := by
+  rw [floerJetCoeff_const, floerJetCoeff_const, hKs, hKt, hu]
+
 /-- The coefficient field of the linearized Floer operator on jets is continuous when the data are
 `C¹` (and the Hamiltonians `C²`) along the graph of a `C¹` map `u`. -/
 theorem continuous_floerJetCoeff (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}

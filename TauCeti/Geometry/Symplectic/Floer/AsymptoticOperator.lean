@@ -17,7 +17,6 @@ import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Analysis.Calculus.PeriodicDeriv
-import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Geometry.Symplectic.Transport
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -1044,9 +1043,7 @@ theorem exists_loop_eq_fderiv_hamiltonianVectorField (ω : SymplecticForm V) {H 
         ContDiff ℝ 1 fun t : ℝ ↦ S t := by
   set f : ℝ → V →L[ℝ] V := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)
   have hxc : ContDiff ℝ 1 x :=
-    contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
-      (ω.contDiff_hamiltonianVectorField_uncurry (n := 0)
-        (by simpa using hH.of_le (by norm_num))).continuous hx
+    ω.contDiff_of_hasDerivAt_hamiltonianVectorField (hH.of_le (by norm_num)) hx
   have hf : ContDiff ℝ 1 f :=
     ContDiff.fderiv (f := fun t ↦ ω.hamiltonianVectorField (H t))
       (ω.contDiff_hamiltonianVectorField_uncurry (n := 2) (hH.of_le (by norm_num))) hxc
