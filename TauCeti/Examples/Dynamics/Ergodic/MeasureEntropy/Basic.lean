@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Ergodic.MeasureEntropy.Basic
+public import TauCeti.InformationTheory.PartitionEntropy.Finite
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Count
 
@@ -60,7 +61,7 @@ theorem twoBits_real_snd (j : Bool) : twoBits.real (Prod.snd ⁻¹' {j}) = 1 / 2
 
 /-- A fair binary label has entropy `log 2`. -/
 example : countablePartitionEntropy fairBit id = ENNReal.ofReal (log 2) := by
-  rw [countablePartitionEntropy_eq_ofReal_sum]
+  rw [countablePartitionEntropy_eq_ofReal_labelEntropy, labelEntropy_def]
   simp only [Set.preimage_id, fairBit_real_singleton, Fintype.sum_bool, negMulLog, one_div,
     log_inv]
   congr 1
@@ -68,7 +69,7 @@ example : countablePartitionEntropy fairBit id = ENNReal.ofReal (log 2) := by
 
 /-- The uniform probability on `Bool × Bool` with the identity label has entropy `2 log 2`. -/
 example : countablePartitionEntropy twoBits id = ENNReal.ofReal (2 * log 2) := by
-  rw [countablePartitionEntropy_eq_ofReal_sum]
+  rw [countablePartitionEntropy_eq_ofReal_labelEntropy, labelEntropy_def]
   have h : ∀ p : Bool × Bool, twoBits.real (id ⁻¹' {p}) = 1 / 4 := fun ⟨i, j⟩ ↦ by
     rw [Set.preimage_id, ← twoBits_real_cell i j, ← Set.prod_eq,
       Set.singleton_prod_singleton]
