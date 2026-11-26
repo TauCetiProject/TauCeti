@@ -245,7 +245,7 @@ theorem rotateFramedVortex_smul (u : Circle) (g : framedGaugeGroup)
     (x : framedVortexSubMulAction 1 m) :
     rotateFramedVortex u (g • x) = rotateFramedGauge u g • rotateFramedVortex u x := by
   have hg : Differentiable ℝ fun w ↦ (g.val (u * w) : ℂ) :=
-    ((mem_framedGaugeGroup _).1 (rotateFramedGauge u g).property).1.differentiable (by simp)
+    differentiable_of_mem_framedGaugeGroup (rotateFramedGauge u g).property
   refine Subtype.ext ?_
   simp only [coe_rotateFramedVortex, SubMulAction.val_smul, framedGaugeGroup_smul,
     coe_rotateFramedGauge, rotateField_gaugeTransform]

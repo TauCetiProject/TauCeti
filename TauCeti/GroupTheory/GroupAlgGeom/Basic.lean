@@ -610,6 +610,13 @@ theorem eval_wordMap (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (v 
   congr 1
   exact eval_eq_of_comp_inl σ.comp_coeff
 
+/-- Evaluating at the word map of an isomorphism `e : G[Y] ≃ G[X]` fixing the coefficients is
+evaluating after applying `e`. -/
+theorem eval_wordMap_mulEquiv {Y : Type*} (e : GX G Y ≃* GX G X) (he : ∀ g, e (inl g) = inl g)
+    (v : X → H) (w : GX G Y) :
+    eval ι (wordMap ι (fun y => e (inr (FreeGroup.of y))) v) w = eval ι v (e w) :=
+  DFunLike.congr_fun (eval_wordMap (.ofMulEquiv e he) v) w
+
 variable (ι) in
 /-- The tuple of variables maps every set of points to itself. -/
 theorem mapsTo_wordMap_id (s : Set (X → H)) :

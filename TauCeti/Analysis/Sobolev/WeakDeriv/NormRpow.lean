@@ -68,6 +68,8 @@ point lemma; at `p = -1`, the unit radial field, it is assembled from the coordi
   are bounded by `‖v‖ ‖x‖ ^ (s + 1)` and their derivatives by `(1 + |s|) ‖v‖ ‖x‖ ^ s`.
 * `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`: for `p > -1`, the radial field `‖x‖ ^ p • x` is
   weakly differentiable on every open set, with its classical derivative.
+* `TauCeti.locallyIntegrable_norm_rpow_smul_id_add_smulRight_pow`: for `p > -1`, the `d`-th power
+  of the norm of that derivative is locally integrable.
 * `TauCeti.hasWeakFDerivOn_norm_rpow_neg_one_smul_self`: for `d ≥ 2`, so is the unit radial field.
 -/
 
@@ -514,6 +516,29 @@ theorem locallyIntegrable_rpow_smul_id_add_smulRight {p : ℝ}
       (hsr.measurable2 (by fun_prop) measurable_id)
   refine hbound.mono hmeas.aestronglyMeasurable (ae_of_all _ fun x ↦ ?_)
   rw [Real.norm_of_nonneg (by positivity)]
+  exact norm_rpow_smul_id_add_smulRight_le p x
+
+/-- For `p > -1` the `n`-th power of the norm of the classical derivative of the radial field
+`x ↦ ‖x‖ ^ p • x` away from the origin, `n = dim E`, is locally integrable: it is
+`O(‖x‖ ^ (p n))` and `p n > -n`. -/
+theorem locallyIntegrable_norm_rpow_smul_id_add_smulRight_pow {p : ℝ} (hp : -1 < p) :
+    LocallyIntegrable (fun x : E ↦ ‖‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
+      ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x‖ ^ Module.finrank ℝ E) μ := by
+  rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hd | hd
+  · simpa only [hd, pow_zero] using locallyIntegrable_const (μ := μ) (1 : ℝ)
+  have hd' : (1 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hd
+  have hpow : LocallyIntegrable (fun x : E ↦ ‖x‖ ^ (p * Module.finrank ℝ E)) μ := by
+    simpa only [zero_sub, norm_neg] using
+      locallyIntegrable_norm_sub_rpow (mu := μ) (by nlinarith) (0 : E)
+  have hmeas := (locallyIntegrable_rpow_smul_id_add_smulRight (μ := μ)
+    (by linarith : -(Module.finrank ℝ E : ℝ) < p)).aestronglyMeasurable.norm.pow
+      (Module.finrank ℝ E)
+  refine (hpow.smul ((1 + |p|) ^ Module.finrank ℝ E)).mono hmeas (ae_of_all _ fun x ↦ ?_)
+  simp only [Pi.smul_apply, smul_eq_mul, norm_pow, norm_mul, Real.norm_eq_abs, abs_norm,
+    abs_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _),
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ 1 + |p|), Real.rpow_mul_natCast (norm_nonneg x),
+    ← mul_pow]
+  gcongr
   exact norm_rpow_smul_id_add_smulRight_le p x
 
 /-- **The weak derivative of the radial field.** For `p > -1`, the radial field

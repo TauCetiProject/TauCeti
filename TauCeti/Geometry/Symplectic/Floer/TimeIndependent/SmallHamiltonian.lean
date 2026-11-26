@@ -558,7 +558,7 @@ theorem eq_zero_of_floerLinearization_eq_zero (hg : ∀ v w, ω v (J w) = ⟪v, 
       (fun _ _ ↦ 0) (fun _ ↦ H) u ξ z = 0)
     (hB : ∀ z, ‖ξ z‖ ≤ B) : ξ = 0 :=
   funext <| eq_zero_of_fderiv_apply_real_eq hg hH ha hc ha2π hcM hu hM hξ hper hmean
-    (fun z ↦ (floerLinearization_const_eq_zero_iff ω J H).1 (hD z)) hB
+    (fun z ↦ (floerLinearization_const_eq_zero_iff ω J (fun _ ↦ H)).1 (hD z)) hB
 
 end Linearization
 

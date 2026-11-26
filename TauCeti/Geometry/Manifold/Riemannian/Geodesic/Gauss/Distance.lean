@@ -70,6 +70,9 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
 
 In the namespace `TauCeti.Manifold`:
 
+* `isNormalDomain_ball_iff_exists_partialDiffeomorph_eball` and
+  `isNormalDomain_ball_iff_exists_partialDiffeomorph_ball`: metric-ball partial-diffeomorphism
+  characterizations of normal tangent balls.
 * `contMDiffAt_dist_sq_self`: squared distance is smooth at the centre.
 * `mvfderiv_dist_sq_self` and `mgradient_dist_sq_self`: its differential and gradient vanish there.
 * `mgradient_dist_self`: the distance gradient vanishes at the centre.
@@ -444,6 +447,32 @@ theorem mgradient_toReal_edist_sq {V : Set (TangentSpace I q)}
 
 end IsNormalDomain
 
+section
+
+variable [IsRiemannianManifold I M]
+
+/-- **Metric-ball characterization of normal tangent balls.** For `r > 0`, the open tangent ball
+`B(0, r) ⊆ T_p M` is a normal domain if and only if `exp_p` restricts to a smooth partial
+diffeomorphism from `B(0, r)` onto the open metric ball `Metric.eball p (ENNReal.ofReal r)`. -/
+theorem isNormalDomain_ball_iff_exists_partialDiffeomorph_eball {p : M} {r : ℝ} (hr : 0 < r) :
+    IsNormalDomain I M p (Metric.ball 0 r) ↔
+      ∃ e : PartialDiffeomorph 𝓘(ℝ, TangentSpace I p) I (TangentSpace I p) M ∞,
+        e.source = Metric.ball 0 r ∧ e.target = Metric.eball p (ENNReal.ofReal r) ∧
+          EqOn e (riemannianExp I M p) (Metric.ball 0 r) := by
+  refine ⟨fun h ↦ ⟨h.toPartialDiffeomorph, h.toPartialDiffeomorph_source,
+    by rw [h.toPartialDiffeomorph_target, h.image_riemannianExp_ball subset_rfl],
+    fun _ _ ↦ congrFun h.coe_toPartialDiffeomorph _⟩, fun ⟨e, hsrc, _, heq⟩ ↦ ?_⟩
+  have hinj : InjOn (riemannianExp I M p) (Metric.ball 0 r) :=
+    (hsrc ▸ e.toOpenPartialHomeomorph.injOn).congr heq
+  refine ⟨Metric.isOpen_ball, Metric.mem_ball_self hr,
+    (convex_ball (0 : TangentSpace I p) r).starConvex (Metric.mem_ball_self hr), fun v hv ↦ ?_,
+    hinj, fun ⟨v, hv⟩ ↦
+      isLocalDiffeomorphAt_of_eqOn (Φ := e) (hsrc.symm ▸ hv) (hsrc.symm ▸ heq.symm)⟩
+  exact by_contra fun hv' ↦ hv' ((hinj hv (Metric.mem_ball_self hr)
+    (by rw [riemannianExp_of_notMem_expDomain hv', riemannianExp_zero])) ▸ zero_mem_expDomain p)
+
+end
+
 section Metric
 
 variable {M : Type*} [MetricSpace M] [ChartedSpace H M]
@@ -738,6 +767,14 @@ theorem exists_dist_riemannianExp_eq_dist_sub (x q : M) :
   rw [hy, edist_dist, edist_dist, ← ENNReal.ofReal_add hδ dist_nonneg,
     ENNReal.ofReal_eq_ofReal_iff dist_nonneg (add_nonneg hδ dist_nonneg)] at heq
   rw [dist_comm, heq, add_sub_cancel_left]
+
+/-- Ordinary-metric counterpart of `isNormalDomain_ball_iff_exists_partialDiffeomorph_eball`. -/
+theorem isNormalDomain_ball_iff_exists_partialDiffeomorph_ball {p : M} {r : ℝ} (hr : 0 < r) :
+    IsNormalDomain I M p (Metric.ball 0 r) ↔
+      ∃ e : PartialDiffeomorph 𝓘(ℝ, TangentSpace I p) I (TangentSpace I p) M ∞,
+        e.source = Metric.ball 0 r ∧ e.target = Metric.ball p r ∧
+          EqOn e (riemannianExp I M p) (Metric.ball 0 r) := by
+  rw [isNormalDomain_ball_iff_exists_partialDiffeomorph_eball hr, Metric.eball_ofReal]
 
 end Metric
 

@@ -16,7 +16,9 @@ public import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
 A cochain complex `L` in an abelian category is K-injective (Mathlib's
 `CochainComplex.IsKInjective`) if every morphism from an acyclic complex to `L` is null-homotopic.
 This file proves that contractible complexes are K-injective
-(`CochainComplex.isKInjective_of_homotopy_id_zero`), and two closure properties of this class:
+(`CochainComplex.isKInjective_of_homotopy_id_zero`), that a right adjoint whose left adjoint is
+exact preserves K-injective complexes (`CochainComplex.isKInjective_map_of_adjunction`), and two
+closure properties of this class:
 
 * a product of K-injective complexes is K-injective (`CochainComplex.isKInjective_of_isLimit_fan`);
 * in a degreewise split short exact sequence `0 → X₁ → X₂ → X₃ → 0` of cochain complexes with
@@ -101,6 +103,43 @@ theorem isKInjective_X₁_of_degreewiseSplit (S : ShortComplex (CochainComplex C
   exact ObjectProperty.ext_of_isTriangulatedClosed₁ _ _
     (trianglehOfDegreewiseSplit_distinguished S σ) (IsKInjective.rightOrthogonal S.X₂)
     (IsKInjective.rightOrthogonal S.X₃)
+
+/-- **Right adjoints with exact left adjoints preserve K-injectivity**: if `G : C ⥤ D` is right
+adjoint to a functor `L` preserving finite limits, then `G` applied termwise to a K-injective
+complex gives a K-injective complex. A morphism `K ⟶ G(I)` from an acyclic complex corresponds
+termwise to a morphism `L(K) ⟶ I`, and `L(K)` is acyclic because `L` is exact. -/
+theorem isKInjective_map_of_adjunction {D : Type*} [Category* D] [Abelian D] {G : C ⥤ D}
+    {L : D ⥤ C} (adj : L ⊣ G) [G.PreservesZeroMorphisms] [PreservesFiniteLimits L]
+    (I : CochainComplex C ℤ) [I.IsKInjective] :
+    IsKInjective ((G.mapHomologicalComplex (.up ℤ)).obj I) where
+  nonempty_homotopy_zero {K} f hK := by
+    have : L.Additive := L.additive_of_preserves_binary_products
+    have := adj.rightAdjoint_preservesLimits
+    have : G.Additive := G.additive_of_preserves_binary_products
+    have : PreservesFiniteColimits L := by
+      have := adj.leftAdjoint_preservesColimits
+      exact PreservesColimitsOfSize.preservesFiniteColimits.{0, 0} L
+    have hLK : ((L.mapHomologicalComplex (.up ℤ)).obj K).Acyclic := fun j ↦ by
+      have h := hK j
+      rw [HomologicalComplex.exactAt_iff' _ (j - 1) j (j + 1) (by simp) (by simp)] at h ⊢
+      exact h.map L
+    -- The transpose `L(K) ⟶ I` of `f` and the unit `K ⟶ G(L(K))` of the adjunction.
+    let f' : (L.mapHomologicalComplex (.up ℤ)).obj K ⟶ I :=
+      { f n := (adj.homEquiv _ _).symm (f.f n)
+        comm' i j _ := by
+          dsimp
+          rw [← adj.homEquiv_naturality_left_symm, ← adj.homEquiv_naturality_right_symm,
+            ← HomologicalComplex.Hom.comm]
+          rfl }
+    let u : K ⟶ (G.mapHomologicalComplex (.up ℤ)).obj ((L.mapHomologicalComplex (.up ℤ)).obj K) :=
+      { f n := adj.unit.app (K.X n)
+        comm' i j _ := by simp }
+    have hf : f = u ≫ (G.mapHomologicalComplex (.up ℤ)).map f' := by
+      ext n
+      simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f, u, f']
+      rw [← Adjunction.homEquiv_unit, Equiv.apply_symm_apply]
+    exact ⟨(Homotopy.ofEq hf).trans ((((G.mapHomotopy (IsKInjective.homotopyZero f' hLK)).compLeft
+      u)).trans (.ofEq (by simp)))⟩
 
 end CochainComplex
 
