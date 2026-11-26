@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.Module
 public import TauCeti.Analysis.CStarAlgebra.State.Space
-public import TauCeti.Analysis.Normed.Order.StateSpace
+public import TauCeti.Analysis.Normed.Order.OrderUnit.StateSpace
 
 /-!
 # C⋆-algebra states and order-unit states

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
-public import TauCeti.Analysis.Normed.Order.OrderUnit
+public import TauCeti.Analysis.Normed.Order.OrderUnit.Basic
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Convex.Cone.PositiveDual
 import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
@@ -352,42 +352,6 @@ theorem norm_eq_iSup_states (h : IsOrderUnitNorm e) (a : E) :
   refine le_antisymm ?_ (ciSup_le fun φ => h.abs_apply_le_of_mem_stateSpace φ.property a)
   exact (h.norm_le_iff_forall_mem_stateSpace ((abs_nonneg _).trans (le_ciSup hb ⟨φ₀, hφ₀⟩))).2
     fun φ hφ => le_ciSup (f := g) hb ⟨φ, hφ⟩
-
-omit [IsOrderedAddMonoid E] in
-/-- Bundle a positive linear map between order-unit spaces as a `PositiveContinuousLinearMap`. -/
-noncomputable def toPositiveContinuousLinearMap {F G : Type*} [SeminormedAddCommGroup F]
-    [NormedSpace ℝ F] [PartialOrder F] [IsOrderedAddMonoid F] {f : F} [FunLike G E F]
-    [LinearMapClass G ℝ E F] [OrderHomClass G E F] (he : IsOrderUnitNorm e)
-    (hf : IsOrderUnitNorm f) (T : G) : E →P[ℝ] F where
-  toContinuousLinearMap := LinearMap.mkContinuous (T : E →ₗ[ℝ] F) ‖T e‖
-    (hf.norm_map_le he.le_norm_smul T (OrderHomClass.mono T))
-  monotone' := OrderHomClass.mono T
-
-omit [IsOrderedAddMonoid E] in
-@[simp]
-theorem toPositiveContinuousLinearMap_apply {F G : Type*} [SeminormedAddCommGroup F]
-    [NormedSpace ℝ F] [PartialOrder F] [IsOrderedAddMonoid F] {f : F} [FunLike G E F]
-    [LinearMapClass G ℝ E F] [OrderHomClass G E F] (he : IsOrderUnitNorm e)
-    (hf : IsOrderUnitNorm f) (T : G) (a : E) :
-    he.toPositiveContinuousLinearMap hf T a = T a := (rfl)
-
-/-- **Kadison's characterization of positivity:** a continuous real linear functional `φ` on an
-order-unit space is monotone if and only if `‖φ‖ = φ e`. -/
-theorem monotone_iff_opNorm_eq_apply (he : IsOrderUnitNorm e) {φ : E →L[ℝ] ℝ} :
-    Monotone φ ↔ ‖φ‖ = φ e := by
-  refine ⟨fun hφ => ContinuousLinearMap.opNorm_eq_apply_of_monotone φ hφ he.le_norm_smul
-    he.norm_eq_one.le, fun hnorm a b hab => ?_⟩
-  have hnonneg : 0 ≤ φ (b - a) := by
-    refine LinearMapClass.apply_nonneg_of_abs_apply_le_mul_norm (u := e) φ (fun g => ?_)
-      (he.nonneg_iff_norm_smul_sub_le.1 (sub_nonneg.mpr hab))
-    simpa [← hnorm, Real.norm_eq_abs] using φ.le_opNorm g
-  simpa [map_sub, sub_nonneg] using hnonneg
-
-/-- A normalized continuous real linear functional (`φ e = 1`) on an order-unit space is monotone
-if and only if `‖φ‖ = 1`. -/
-theorem monotone_iff_opNorm_eq_one (he : IsOrderUnitNorm e) {φ : E →L[ℝ] ℝ} (hφ : φ e = 1) :
-    Monotone φ ↔ ‖φ‖ = 1 := by
-  rw [he.monotone_iff_opNorm_eq_apply, hφ]
 
 omit [IsOrderedAddMonoid E] in
 /-- **State extension along a unital linear isometry:** every state on `E` extends along any unital

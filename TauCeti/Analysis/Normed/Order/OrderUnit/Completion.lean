@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Analysis.Normed.Operator.Basic
-public import TauCeti.Analysis.Normed.Order.OrderUnit
-public import TauCeti.Analysis.Normed.Order.StateSpace
+public import TauCeti.Analysis.Normed.Order.OrderUnit.Basic
+public import TauCeti.Analysis.Normed.Order.OrderUnit.StateSpace
 import Mathlib.Analysis.Normed.Operator.Extend
 
 /-!
