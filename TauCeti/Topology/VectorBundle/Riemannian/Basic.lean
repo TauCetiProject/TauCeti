@@ -41,7 +41,8 @@ continuous reference inner products on the fibres.
   norm of `e.symmL ℝ (b x) (w x)` is continuous at `x₀` when `b` and `w` are continuous at `x₀`
   and `b x₀ ∈ e.baseSet`.
 * `Bundle.Trivialization.continuousOn_innerSL_comp_symmL`: the covectors `⟪η x, ·⟫` of a
-  continuous section, read in a trivialization, are continuous over its base set.
+  section continuous on a subset of the base set of a trivialization, read in it, are continuous
+  there.
 * `IsOpen.norm_lt_bundle`: the vectors of norm less than `r` over an open set form an open subset
   of the total space.
 * `IsCompact.norm_le_bundle`: the vectors of norm at most `r` over a compact set form a compact
@@ -108,21 +109,21 @@ theorem Bundle.Trivialization.continuousAt_norm_symmL (e : Trivialization F (π 
     simp [e.symmL_apply hx]
   exact (TauCeti.continuous_norm_bundle F E).continuousAt.comp hsec
 
-/-- **Pairing with a continuous section in a trivialization.** For a continuous section `η` of a
-continuous Riemannian bundle with finite-dimensional model fiber, the covectors `⟪η x, ·⟫` read
-in a trivialization `e`, `x ↦ ⟪η x, ·⟫ ∘L e.symmL ℝ x`, depend continuously on `x` over the base
-set of `e`. -/
+/-- **Pairing with a continuous section in a trivialization.** For a section `η` of a continuous
+Riemannian bundle with finite-dimensional model fiber, continuous on a subset `s` of the base set
+of a trivialization `e`, the covectors `⟪η x, ·⟫` read in `e`, `x ↦ ⟪η x, ·⟫ ∘L e.symmL ℝ x`,
+depend continuously on `x ∈ s`. -/
 theorem Bundle.Trivialization.continuousOn_innerSL_comp_symmL [FiniteDimensional ℝ F]
-    (e : Trivialization F (π F E)) [e.IsLinear ℝ] {η : ∀ x, E x}
-    (hη : Continuous fun x ↦ TotalSpace.mk' F x (η x)) :
-    ContinuousOn (fun x ↦ innerSL ℝ (η x) ∘L e.symmL ℝ x) e.baseSet := by
+    (e : Trivialization F (π F E)) [e.IsLinear ℝ] {η : ∀ x, E x} {s : Set B}
+    (hs : s ⊆ e.baseSet) (hη : ContinuousOn (fun x ↦ TotalSpace.mk' F x (η x)) s) :
+    ContinuousOn (fun x ↦ innerSL ℝ (η x) ∘L e.symmL ℝ x) s := by
   refine continuousOn_clm_apply.2 fun v ↦ ?_
-  -- The section `x ↦ e.symm x v` is continuous on the base set of `e`.
-  have hv : ContinuousOn (fun x ↦ TotalSpace.mk' F x (e.symm x v)) e.baseSet :=
-    e.continuousOn_symm.comp (continuousOn_id.prodMk continuousOn_const) fun x hx ↦
-      ⟨hx, mem_univ v⟩
-  refine (hη.continuousOn.inner_bundle hv).congr fun x hx ↦ ?_
-  rw [ContinuousLinearMap.comp_apply, innerSL_apply_apply, e.symmL_apply hx]
+  -- The section `x ↦ e.symm x v` is continuous on `s`.
+  have hv : ContinuousOn (fun x ↦ TotalSpace.mk' F x (e.symm x v)) s :=
+    (e.continuousOn_symm.mono (prod_mono hs subset_rfl)).comp
+      (continuousOn_id.prodMk continuousOn_const) fun x hx ↦ ⟨hx, mem_univ v⟩
+  refine (hη.inner_bundle hv).congr fun x hx ↦ ?_
+  rw [ContinuousLinearMap.comp_apply, innerSL_apply_apply, e.symmL_apply (hs hx)]
 
 /-- In a continuous Riemannian bundle, the vectors of norm less than `r` lying over an open subset
 of the base form an open subset of the total space. -/

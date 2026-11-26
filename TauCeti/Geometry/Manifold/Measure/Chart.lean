@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.ExtChartAt.SelfModel
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Measure.WithDensity
 import TauCeti.MeasureTheory.Measure.WithDensity
