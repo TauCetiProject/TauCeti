@@ -12,13 +12,15 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 
 For `a < b`, the open slab `{x | a < x.fst < b}` of the model space `WithLp 2 (ℝ × E)` lies
 between the hyperplanes `{a} × E` and `{b} × E`. This file proves that it is a Lipschitz domain
-with constant `0` for every `E` (`Set.isLipschitzDomainWith_setOf_fst_mem_Ioo`): at a point of
+with constant `0` for every `E` (`TauCeti.isLipschitzDomainWith_setOf_fst_mem_Ioo`): at a point of
 the lower face a translation is a chart with the flat graph `0`, and at a point of the upper face
 a translation followed by the reflection `(t, y) ↦ (-t, y)` of the normal coordinate is one.
 
 When `E` is the zero space the slab is the interval `(a, b)` itself, embedded in
-`WithLp 2 (ℝ × E) ≃ ℝ`, and it is bounded (`TauCeti.isBounded_setOf_fst_mem_Ioo`). This is how the
-trace theory of bounded Lipschitz domains of `ℝ × E` covers intervals, in dimension `dim E = 0`.
+`WithLp 2 (ℝ × E) ≃ ℝ`: its preimage under `t ↦ (t, 0)` is `(a, b)`
+(`TauCeti.withLpProdUnique_symm_preimage_setOf_fst_mem_Ioo`), and it is bounded
+(`TauCeti.isBounded_setOf_fst_mem_Ioo`). This is how the trace theory of bounded Lipschitz
+domains of `ℝ × E` covers intervals, in dimension `dim E = 0`.
 -/
 
 public section
@@ -36,17 +38,12 @@ theorem isOpen_setOf_fst_mem_Ioo : IsOpen {x : WithLp 2 (ℝ × E) | x.fst ∈ I
 /-- A frontier point of the slab `{x | a < x.fst < b}` lies on one of its two faces. -/
 theorem fst_eq_or_fst_eq_of_mem_frontier_setOf_fst_mem_Ioo {x : WithLp 2 (ℝ × E)}
     (hx : x ∈ frontier {x : WithLp 2 (ℝ × E) | x.fst ∈ Ioo a b}) : x.fst = a ∨ x.fst = b := by
-  have hclosed : IsClosed {x : WithLp 2 (ℝ × E) | x.fst ∈ Icc a b} :=
-    isClosed_Icc.preimage (WithLp.continuous_fst ..)
-  rw [isOpen_setOf_fst_mem_Ioo.frontier_eq] at hx
-  have hsub : {x : WithLp 2 (ℝ × E) | x.fst ∈ Ioo a b} ⊆ {x | x.fst ∈ Icc a b} :=
-    fun y hy => Ioo_subset_Icc_self hy
-  have hIcc : x.fst ∈ Icc a b := closure_minimal hsub hclosed hx.1
-  have hIoo : x.fst ∉ Ioo a b := hx.2
-  simp only [mem_Icc, mem_Ioo, not_and_or, not_lt] at hIcc hIoo
-  rcases hIoo with h | h
-  · exact .inl (le_antisymm h hIcc.1)
-  · exact .inr (le_antisymm hIcc.2 h)
+  have h := (WithLp.continuous_fst ..).frontier_preimage_subset (Ioo a b) hx
+  rw [mem_preimage, isOpen_Ioo.frontier_eq] at h
+  have hIcc : x.fst ∈ Icc a b := closure_minimal Ioo_subset_Icc_self isClosed_Icc h.1
+  rcases not_and_or.1 h.2 with h | h
+  · exact .inl (le_antisymm (not_lt.1 h) hIcc.1)
+  · exact .inr (le_antisymm hIcc.2 (not_lt.1 h))
 
 /-- Over the zero space the slab `{x | a < x.fst < b}` is bounded: it is the interval `(a, b)`
 inside `WithLp 2 (ℝ × E) ≃ ℝ`. -/
@@ -56,13 +53,25 @@ theorem isBounded_setOf_fst_mem_Ioo [Subsingleton E] :
     ((isBounded_Ioo a b).prod (Bornology.IsBounded.all (univ : Set E))) |>.subset
       fun _ hx => ⟨hx, mem_univ _⟩
 
-end TauCeti
+section LipschitzDomain
 
-namespace Set
+variable [NormedSpace ℝ E]
 
-open TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {a b : ℝ}
+/-- An isometry `e` with `e x = 0` is a chart of the slab at `x` with the flat graph `0` if a
+point `y` with `|(e y).fst| < b - a` lies in the slab exactly when `0 < (e y).fst`. Both faces of
+the slab use it. -/
+private theorem isLipschitzDomainAtWith_setOf_fst_mem_Ioo_of_chart (hab : a < b)
+    {x : WithLp 2 (ℝ × E)} (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (hex : e x = 0)
+    (hmem : ∀ y : WithLp 2 (ℝ × E), -(b - a) < (e y).fst → (e y).fst < b - a →
+      (y.fst ∈ Ioo a b ↔ 0 < (e y).fst)) :
+    {x : WithLp 2 (ℝ × E) | x.fst ∈ Ioo a b}.IsLipschitzDomainAtWith (E := E) 0 x :=
+  (isLipschitzDomainAtWith_iff ..).2 ⟨e, 0, b - a, 1, hex,
+    (isLipschitzChartWith_iff ..).2 ⟨sub_pos.2 hab, one_pos, rfl, LipschitzWith.const 0,
+      fun z hz => by
+        rw [mem_normalCylinder] at hz
+        have h := hmem (e.symm z)
+        rw [e.apply_symm_apply] at h
+        exact h hz.1 hz.2.1⟩⟩
 
 /-- **The slab between two parallel hyperplanes is a Lipschitz domain**, with constant `0`. At
 a point `x` of the lower face `{a} × E` the translation by `-x` is a chart, and at a point of the
@@ -73,42 +82,35 @@ theorem isLipschitzDomainWith_setOf_fst_mem_Ioo (hab : a < b) :
   refine (isLipschitzDomainWith_iff ..).2
     ⟨isOpen_setOf_fst_mem_Ioo, fun x hx => ?_⟩
   rcases fst_eq_or_fst_eq_of_mem_frontier_setOf_fst_mem_Ioo hx with hxa | hxb
-  · -- On the lower face, `x + z` lies in the slab exactly when `0 < z.fst`.
-    refine (isLipschitzDomainAtWith_iff ..).2 ⟨AffineIsometryEquiv.constVAdd ℝ _ (-x), 0, b - a,
-      1, by simp,
-      (isLipschitzChartWith_iff ..).2 ⟨sub_pos.2 hab, one_pos, rfl, LipschitzWith.const 0,
-        fun z hz => ?_⟩⟩
-    rw [mem_normalCylinder] at hz
-    have hsymm : (AffineIsometryEquiv.constVAdd ℝ _ (-x)).symm z =
-        WithLp.toLp 2 (a + z.fst, x.snd + z.snd) := by
-      rw [AffineIsometryEquiv.symm_apply_eq]
-      obtain ⟨⟨t, y⟩⟩ := z
-      obtain ⟨⟨s, w⟩⟩ := x
-      simp only [WithLp.toLp_fst] at hxa
-      simp [hxa, ← WithLp.toLp_neg, ← WithLp.toLp_add]
-    rw [hsymm, mem_ofPred_eq, WithLp.toLp_fst, mem_Ioo, Pi.zero_apply]
+  · -- On the lower face, `y` lies in the slab exactly when `0 < y.fst - a`.
+    refine isLipschitzDomainAtWith_setOf_fst_mem_Ioo_of_chart hab
+      (AffineIsometryEquiv.constVAdd ℝ _ (-x)) (by simp) fun y h₁ h₂ => ?_
+    simp only [AffineIsometryEquiv.coe_constVAdd, vadd_eq_add, WithLp.add_fst, WithLp.neg_fst,
+      hxa, mem_Ioo] at h₁ h₂ ⊢
     constructor <;> intro h
     · linarith [h.1]
     · constructor <;> linarith
-  · -- On the upper face, `x + (-z.fst, z.snd)` lies in the slab exactly when `0 < z.fst`.
-    refine (isLipschitzDomainAtWith_iff ..).2 ⟨(AffineIsometryEquiv.constVAdd ℝ _ (-x)).trans
-      (LinearIsometryEquiv.withLpProdCongr 2 (LinearIsometryEquiv.neg ℝ (E := ℝ))
-        (LinearIsometryEquiv.refl ℝ E)).toAffineIsometryEquiv, 0, b - a, 1, by simp,
-      (isLipschitzChartWith_iff ..).2 ⟨sub_pos.2 hab, one_pos, rfl, LipschitzWith.const 0,
-        fun z hz => ?_⟩⟩
-    rw [mem_normalCylinder] at hz
-    have hsymm : ((AffineIsometryEquiv.constVAdd ℝ _ (-x)).trans
+  · -- On the upper face, `y` lies in the slab exactly when `0 < b - y.fst`.
+    refine isLipschitzDomainAtWith_setOf_fst_mem_Ioo_of_chart hab
+      ((AffineIsometryEquiv.constVAdd ℝ _ (-x)).trans
         (LinearIsometryEquiv.withLpProdCongr 2 (LinearIsometryEquiv.neg ℝ (E := ℝ))
-          (LinearIsometryEquiv.refl ℝ E)).toAffineIsometryEquiv).symm z =
-        WithLp.toLp 2 (b - z.fst, x.snd + z.snd) := by
-      rw [AffineIsometryEquiv.symm_apply_eq]
-      obtain ⟨⟨t, y⟩⟩ := z
-      obtain ⟨⟨s, w⟩⟩ := x
-      simp only [WithLp.toLp_fst] at hxb
-      simp [hxb]
-    rw [hsymm, mem_ofPred_eq, WithLp.toLp_fst, mem_Ioo, Pi.zero_apply]
+          (LinearIsometryEquiv.refl ℝ E)).toAffineIsometryEquiv) (by simp) fun y h₁ h₂ => ?_
+    simp only [AffineIsometryEquiv.coe_trans, LinearIsometryEquiv.coe_toAffineIsometryEquiv,
+      Function.comp_apply, AffineIsometryEquiv.coe_constVAdd, vadd_eq_add,
+      LinearIsometryEquiv.withLpProdCongr_apply, WithLp.toLp_fst, LinearIsometryEquiv.coe_neg,
+      WithLp.add_fst, WithLp.neg_fst, hxb, mem_Ioo] at h₁ h₂ ⊢
     constructor <;> intro h
     · linarith [h.2]
     · constructor <;> linarith
 
-end Set
+/-- Over the zero space the slab `{x | a < x.fst < b}` is the interval `(a, b)`: its preimage
+under the isometry `t ↦ (t, 0)` of the line onto `WithLp 2 (ℝ × E)`. -/
+theorem withLpProdUnique_symm_preimage_setOf_fst_mem_Ioo [Unique E] :
+    (LinearIsometryEquiv.withLpProdUnique 2 ℝ ℝ E).symm ⁻¹'
+      {x : WithLp 2 (ℝ × E) | x.fst ∈ Ioo a b} = Ioo a b := by
+  ext t
+  simp
+
+end LipschitzDomain
+
+end TauCeti

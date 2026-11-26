@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Slab
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
+import TauCeti.LinearAlgebra.Dimension.Prod
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -23,7 +24,7 @@ A bounded Lipschitz domain `Ω ⊆ ℝ × E` has a trace operator
 
 The model space `ℝ × E` is a copy of the line exactly when `E` is the zero space, and then the
 slab `{x | a < x.fst < b}` is a bounded Lipschitz domain
-(`Set.isLipschitzDomainWith_setOf_fst_mem_Ioo`, `TauCeti.isBounded_setOf_fst_mem_Ioo`), the
+(`TauCeti.isLipschitzDomainWith_setOf_fst_mem_Ioo`, `TauCeti.isBounded_setOf_fst_mem_Ioo`), the
 interval `(a, b)` itself. More generally, let an affine isometry `g : ℝ → ℝ × E` carry `(a, b)`
 onto a bounded Lipschitz domain `Ω`. Then `frontier Ω = {g a, g b}`, surface measure is counting
 measure, and for `u ∈ W^{1,p}(Ω)`, whose transfer `u ∘ g` lies in `W^{1,p}(a, b)`:
@@ -102,15 +103,6 @@ theorem W1p.frontierTrace_ae_eq_intervalRepresentativeL (hp : p ≠ (∞ : ℝ�
     ((W1p.continuous_intervalRepresentativeL_projIcc hab _).comp g.symm.continuous).continuousOn
     (W1p.value_ae_eq_intervalRepresentativeL_comp hab g hg u)
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The model space `ℝ × E` is a rigid copy of the line only when `E` is the zero space. -/
-private theorem finrank_eq_zero_of_affineIsometryEquiv (g : ℝ ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) :
-    finrank ℝ E = 0 := by
-  have h := g.linearIsometryEquiv.toLinearEquiv.finrank_eq
-  rw [(WithLp.linearEquiv 2 ℝ (ℝ × E)).finrank_eq, Module.finrank_prod, Module.finrank_self]
-    at h
-  omega
-
 /-- **The trace on a rigid copy of an interval is the endpoint map.** Let an affine isometry
 `g : ℝ → ℝ × E` carry the interval `(a, b)` onto a bounded Lipschitz domain `Ω`, and let
 `1 ≤ p < ∞`. Then `E` is the zero space, the frontier of `Ω` is the pair of points `{g a, g b}`,
@@ -138,7 +130,10 @@ theorem W1p.frontierTrace_apply_eq_intervalTraceL (hp : p ≠ (∞ : ℝ≥0∞)
     have hpos : (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
         (frontier (Ω : Set (WithLp 2 (ℝ × E)))) {g t} ≠ 0 := by
       rw [Measure.restrict_apply (measurableSet_singleton _),
-        singleton_inter_of_mem hmem, finrank_eq_zero_of_affineIsometryEquiv g,
+        singleton_inter_of_mem hmem,
+        -- `ℝ × E` is a copy of the line `ℝ` only when `E` is the zero space.
+        (g.linearIsometryEquiv.toLinearEquiv.trans
+          (WithLp.linearEquiv 2 ℝ (ℝ × E))).finrank_eq_zero_of_self_prod,
         Measure.euclideanHausdorffMeasure_zero, Measure.hausdorffMeasure_zero_singleton]
       exact one_ne_zero
     by_contra hne
@@ -155,15 +150,17 @@ points `(a, 0)` and `(b, 0)` are the endpoint values of `t ↦ u (t, 0)`, its in
 theorem W1p.frontierTrace_apply_toLp_eq_intervalTraceL [Unique E] (hp : p ≠ (∞ : ℝ≥0∞))
     (hab : a < b) (u : W1p volume ⟨{x : WithLp 2 (ℝ × E) | x.fst ∈ Ioo a b},
       isOpen_setOf_fst_mem_Ioo⟩ p) :
-    (W1p.frontierTrace hp (Set.isLipschitzDomainWith_setOf_fst_mem_Ioo hab)
+    (W1p.frontierTrace hp (isLipschitzDomainWith_setOf_fst_mem_Ioo hab)
         isBounded_setOf_fst_mem_Ioo u (WithLp.toLp 2 (a, 0)),
-      W1p.frontierTrace hp (Set.isLipschitzDomainWith_setOf_fst_mem_Ioo hab)
+      W1p.frontierTrace hp (isLipschitzDomainWith_setOf_fst_mem_Ioo hab)
         isBounded_setOf_fst_mem_Ioo u (WithLp.toLp 2 (b, 0))) =
       W1p.intervalTraceL hab (W1p.compAffineIsometryEquivL (U := ⟨Ioo a b, isOpen_Ioo⟩)
-        (LinearIsometryEquiv.withLpProdUnique 2 ℝ ℝ E).symm.toAffineIsometryEquiv rfl u) := by
+        (LinearIsometryEquiv.withLpProdUnique 2 ℝ ℝ E).symm.toAffineIsometryEquiv
+        withLpProdUnique_symm_preimage_setOf_fst_mem_Ioo.symm u) := by
   have h := W1p.frontierTrace_apply_eq_intervalTraceL hp
-    (Set.isLipschitzDomainWith_setOf_fst_mem_Ioo hab) isBounded_setOf_fst_mem_Ioo hab
-    (LinearIsometryEquiv.withLpProdUnique 2 ℝ ℝ E).symm.toAffineIsometryEquiv rfl u
+    (isLipschitzDomainWith_setOf_fst_mem_Ioo hab) isBounded_setOf_fst_mem_Ioo hab
+    (LinearIsometryEquiv.withLpProdUnique 2 ℝ ℝ E).symm.toAffineIsometryEquiv
+    withLpProdUnique_symm_preimage_setOf_fst_mem_Ioo.symm u
   rwa [LinearIsometryEquiv.coe_toAffineIsometryEquiv,
     LinearIsometryEquiv.withLpProdUnique_symm_apply,
     LinearIsometryEquiv.withLpProdUnique_symm_apply, ← Unique.eq_default 0] at h
