@@ -87,6 +87,13 @@ def IsResiduallyDisjoint (ρ : Representation A G V) (σ : Representation A G W)
 
 variable {ρ : Representation A G V} {σ : Representation A G W}
 
+/-- The defining condition of residual disjointness: some `x ∈ A[G]` acts on `ρ` and on `σ` with
+characteristic polynomials whose reductions modulo the maximal ideal are coprime. -/
+theorem isResiduallyDisjoint_iff : ρ.IsResiduallyDisjoint σ ↔
+    ∃ x : MonoidAlgebra A G, IsCoprime ((ρ.asAlgebraHom x).charpoly.map (residue A))
+      ((σ.asAlgebraHom x).charpoly.map (residue A)) :=
+  Iff.rfl
+
 /-- Residual disjointness is symmetric. -/
 @[symm]
 theorem IsResiduallyDisjoint.symm (h : ρ.IsResiduallyDisjoint σ) : σ.IsResiduallyDisjoint ρ :=
@@ -118,8 +125,9 @@ disjointness: its characteristic polynomials `(X - 1) ^ m` and `X ^ n` are copri
 theorem isResiduallyDisjoint_of_asAlgebraHom {e : MonoidAlgebra A G}
     (hρ : ρ.asAlgebraHom e = 1) (hσ : σ.asAlgebraHom e = 0) : ρ.IsResiduallyDisjoint σ := by
   refine ⟨e, ?_⟩
-  rw [hρ, hσ, LinearMap.charpoly_one, LinearMap.charpoly_zero, Polynomial.map_pow,
-    Polynomial.map_pow, Polynomial.map_sub, map_X, Polynomial.map_one]
+  rw [hρ, hσ]
+  simp only [LinearMap.charpoly_one, LinearMap.charpoly_zero, Polynomial.map_pow,
+    Polynomial.map_sub, Polynomial.map_X, Polynomial.map_one]
   refine IsCoprime.pow ?_
   simpa using isCoprime_X_sub_C_of_isUnit_sub (R := ResidueField A) (a := 1) (b := 0) (by simp)
 
@@ -183,19 +191,22 @@ theorem isResiduallyDisjoint_ofLinearCharacter_iff {χ ψ : G →* Aˣ} :
   constructor
   · rintro ⟨e, hχ, hψ⟩
     by_contra! h
-    -- If the reductions of `χ` and `ψ` agree on `G`, the two scalars by which any `x ∈ A[G]`
-    -- acts agree modulo the maximal ideal, contradicting `1 ≢ 0`.
-    have key : ∀ x : MonoidAlgebra A G, residue A ((ofLinearCharacter χ).asAlgebraHom x 1) =
-        residue A ((ofLinearCharacter ψ).asAlgebraHom x 1) := fun x ↦ by
-      induction x using MonoidAlgebra.induction_linear with
-      | zero => simp
-      | add x y hx hy => simp only [map_add, LinearMap.add_apply, hx, hy]
-      | single g r => simp [h g]
-    simpa [hχ, hψ] using key e
+    -- If the reductions of `χ` and `ψ` agree on `G`, the scalars `1` and `0` by which `e` acts
+    -- agree modulo the maximal ideal, a contradiction.
+    have key : (Algebra.ofId A (ResidueField A)).comp
+          (MonoidAlgebra.lift A A G ((Units.coeHom A).comp χ)) =
+        (Algebra.ofId A (ResidueField A)).comp
+          (MonoidAlgebra.lift A A G ((Units.coeHom A).comp ψ)) :=
+      (MonoidAlgebra.lift A (ResidueField A) G).symm.injective
+        (MonoidHom.ext fun g ↦ by simpa using h g)
+    have h1 := LinearMap.congr_fun hχ 1
+    have h0 := LinearMap.congr_fun hψ 1
+    rw [asAlgebraHom_ofLinearCharacter_apply, mul_one] at h1 h0
+    simpa [h1, h0] using congr($key e)
   · rintro ⟨g, hg⟩
     obtain ⟨u, hu⟩ : IsUnit ((χ g : A) - ψ g) :=
       (residue_ne_zero_iff_isUnit _).1 (by simpa [sub_eq_zero])
     refine ⟨(↑u⁻¹ : A) • (MonoidAlgebra.single g 1 - MonoidAlgebra.single 1 (ψ g : A)), ?_, ?_⟩ <;>
-      refine LinearMap.ext_ring ?_ <;> simp [← hu]
+      refine LinearMap.ext_ring ?_ <;> rw [asAlgebraHom_ofLinearCharacter_apply] <;> simp [← hu]
 
 end Representation
