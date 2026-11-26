@@ -49,8 +49,10 @@ derivative applies.
 * `TauCeti.SmoothForm.contMDiffAt_apply_vectorField`,
   `TauCeti.SmoothForm.contMDiff_apply_vectorField`: a smooth real one-form evaluated on a vector
   field that is `C^n` at a point (resp. everywhere) is `C^n` there.
-* `TauCeti.SmoothForm.degreeOneEquiv_mpullback_apply`: the section of a pulled-back one-form
-  evaluates a tangent vector through the differential of the map.
+* `TauCeti.SmoothForm.degreeOneEquiv_mpullback_apply`,
+  `TauCeti.SmoothForm.degreeOneEquiv_mpullback`: the section of a pulled-back one-form evaluates a
+  tangent vector through the differential of the map, so it is the original section composed with
+  the differential.
 * `TauCeti.isLocalFrameOn_degreeOneEquiv_iff`: real one-forms are a frame of the cotangent bundle
   on a set exactly when their values are a basis of every cotangent space over it.
 * `TauCeti.SmoothForm.degreeOneEquiv_mextDerivₗ`: the section of the exterior derivative `df` of a
@@ -366,6 +368,14 @@ theorem degreeOneEquiv_eq_smul {φ ψ : SmoothForm I M F 1} {x : M} {c : ℝ}
     (h : ψ.val x = c • φ.val x) : degreeOneEquiv ψ x = c • degreeOneEquiv φ x :=
   ContinuousLinearMap.ext fun v ↦ by simp [h]
 
+/-- The sections of `ψ` and `φ` at `x` differ by the factor `c` exactly when `ψ = c φ` at `x`. -/
+theorem degreeOneEquiv_eq_smul_iff {φ ψ : SmoothForm I M F 1} {x : M} {c : ℝ} :
+    degreeOneEquiv ψ x = c • degreeOneEquiv φ x ↔ ψ.val x = c • φ.val x := by
+  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, degreeOneEquiv_eq_smul⟩
+  have hv : v = fun _ ↦ v 0 := funext fun i ↦ by rw [Subsingleton.elim i 0]
+  rw [hv, ContinuousAlternatingMap.smul_apply, ← degreeOneEquiv_apply_apply,
+    ← degreeOneEquiv_apply_apply, h, _root_.smul_apply]
+
 /-- The linear functional `RoughForm.eval` of a smooth real one-form at `x` is its section, read as
 a linear map. -/
 theorem eval_val (φ : SmoothForm I M ℝ 1) (x : M) :
@@ -388,6 +398,15 @@ theorem degreeOneEquiv_mpullback_apply {E' H' M' : Type*} [NormedAddCommGroup E'
     (φ : SmoothForm I' M' F 1) (x : M) (v : TangentSpace I x) :
     degreeOneEquiv (mpullback f hf φ) x v = degreeOneEquiv φ (f x) (mfderiv I I' f x v) :=
   mpullback_apply f hf φ x _
+
+/-- The section of the pullback of a smooth one-form `φ` along `f` at `x` is the section of `φ` at
+`f x` composed with the differential `df_x`. -/
+theorem degreeOneEquiv_mpullback {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] [IsManifold I' 1 M'] {f : M → M'} (hf : ContMDiff I I' ∞ f)
+    (φ : SmoothForm I' M' F 1) (x : M) :
+    degreeOneEquiv (mpullback f hf φ) x = degreeOneEquiv φ (f x) ∘L mfderiv I I' f x :=
+  ContinuousLinearMap.ext (degreeOneEquiv_mpullback_apply hf φ x)
 
 end SmoothForm
 

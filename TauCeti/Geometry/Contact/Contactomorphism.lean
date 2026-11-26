@@ -285,10 +285,7 @@ theorem preservesCoorientation_iff_pullbackCoorientation_eq
   rw [SmoothForm.coorientation_eq_coorientation_iff] at h
   obtain ⟨c, hc, hcv⟩ := h.exists_pos_right (SmoothForm.degreeOneEquiv_ne_zero (hβ' x).1)
     (SmoothForm.degreeOneEquiv_ne_zero (hα x).1)
-  refine ⟨c, hc, ContinuousAlternatingMap.ext fun v ↦ ?_⟩
-  have hv : v = fun _ ↦ v 0 := funext fun i ↦ by rw [Subsingleton.elim i 0]
-  rw [hv, ContinuousAlternatingMap.smul_apply, ← SmoothForm.degreeOneEquiv_apply_apply,
-    ← SmoothForm.degreeOneEquiv_apply_apply, ← _root_.smul_apply, ← hcv]
+  exact ⟨c, hc, SmoothForm.degreeOneEquiv_eq_smul_iff.1 hcv⟩
 
 /-- On a connected manifold, a contactomorphism from a nowhere vanishing form either preserves
 the coorientation given by `β` or the opposite coorientation given by `-β`: its multiplier is a
