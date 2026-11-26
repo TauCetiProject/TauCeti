@@ -47,6 +47,9 @@ of one orientation class give an oriented atlas.
   `z ↦ c + R ^ 2 / conj (z - c)`.
 * `EuclideanGeometry.contDiffAt_inversion`: inversion is analytic away from its centre.
 * `TauCeti.snd_inversion`: the last coordinate of inversion about a centre in `E × {0}`.
+* `TauCeti.one_sub_norm_inversion_toLp_zero_neg_one_sqrt_two_sq`,
+  `TauCeti.snd_inversion_toLp_zero_neg_one_sqrt_two`: `1 - ‖·‖ ^ 2` and the last coordinate of
+  inversion in the sphere of radius `√2` centred at `(0, -1)`.
 * `AffineIsometry.map_inversion`: an affine isometry carries inversion in the sphere of centre `c`
   and radius `R` to inversion in the sphere of centre `f c` and radius `R`.
 * `LinearIsometry.map_inversion`: the same for a linear isometry.
@@ -248,6 +251,36 @@ theorem snd_inversion (a : E) (R : ℝ) (p : WithLp 2 (E × ℝ)) :
     (EuclideanGeometry.inversion (WithLp.toLp 2 (a, 0)) R p).snd =
       (R / dist p (WithLp.toLp 2 (a, 0))) ^ 2 * p.snd := by
   simp [EuclideanGeometry.inversion]
+
+/-- Inversion in the sphere of radius `√2` centred at `(0, -1)` satisfies
+`1 - ‖inversion (0, -1) √2 p‖ ^ 2 = 4 * p.snd / dist p (0, -1) ^ 2` for `p ≠ (0, -1)`. -/
+theorem one_sub_norm_inversion_toLp_zero_neg_one_sqrt_two_sq {p : WithLp 2 (E × ℝ)}
+    (hp : p ≠ WithLp.toLp 2 (0, -1)) :
+    1 - ‖EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) p‖ ^ 2 =
+      4 * p.snd / dist p (WithLp.toLp 2 (0, -1)) ^ 2 := by
+  set c : WithLp 2 (E × ℝ) := WithLp.toLp 2 (0, -1)
+  have hc : ‖c‖ ^ 2 = 1 := by rw [← real_inner_self_eq_norm_sq]; simp [c]
+  have hinner : inner ℝ (p - c) c = -(p.snd + 1) := by simp [c]
+  rw [norm_inversion_sq, hinner, hc, ← dist_eq_norm, div_pow, Real.sq_sqrt zero_le_two]
+  field_simp [dist_ne_zero.2 hp]
+  ring
+
+/-- The last coordinate of inversion in the sphere of radius `√2` centred at `(0, -1)` at
+`p ≠ (0, -1)` is `(1 - ‖p‖ ^ 2) / dist p (0, -1) ^ 2`. -/
+theorem snd_inversion_toLp_zero_neg_one_sqrt_two {p : WithLp 2 (E × ℝ)}
+    (hp : p ≠ WithLp.toLp 2 (0, -1)) :
+    (EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) p).snd =
+      (1 - ‖p‖ ^ 2) / dist p (WithLp.toLp 2 (0, -1)) ^ 2 := by
+  let c : WithLp 2 (E × ℝ) := WithLp.toLp 2 (0, -1)
+  have hc : ‖c‖ ^ 2 = 1 := by rw [← real_inner_self_eq_norm_sq]; simp [c]
+  have hinner : inner ℝ p c = -p.snd := by simp [c]
+  have hd_sq : dist p c ^ 2 = ‖p‖ ^ 2 + 2 * p.snd + 1 := by
+    rw [dist_eq_norm, norm_sub_sq_real, hc, hinner]
+    ring
+  simp only [inversion_def, vsub_eq_sub, vadd_eq_add, div_pow, Real.sq_sqrt zero_le_two,
+    WithLp.add_snd, WithLp.smul_snd, WithLp.sub_snd, WithLp.toLp_snd, smul_eq_mul]
+  field_simp [dist_ne_zero.2 hp]
+  linarith [hd_sq]
 
 /-- Inversion in a sphere of positive radius sends a point other than the centre into the open
 ball exactly when the point lies outside the closed ball. -/

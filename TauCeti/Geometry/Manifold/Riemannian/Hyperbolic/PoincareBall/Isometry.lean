@@ -273,48 +273,17 @@ private theorem upper_ne_cayleyCenter (x : UpperHalfSpace E) :
   simp only [UpperHalfSpace.snd_coe, WithLp.toLp_snd] at hsnd
   linarith [UpperHalfSpace.height_pos x]
 
-private theorem norm_cayleyCenter_sq : ‖(WithLp.toLp 2 ((0 : E), (-1 : ℝ)) : P)‖ ^ 2 = 1 := by
-  rw [← real_inner_self_eq_norm_sq]
-  simp
-
-private theorem dist_cayleyCenter_sq (p : P) :
-    dist p (WithLp.toLp 2 (0, -1)) ^ 2 = ‖p‖ ^ 2 + 2 * p.snd + 1 := by
-  rw [dist_eq_norm, norm_sub_sq_real, norm_cayleyCenter_sq]
-  have hinner : inner ℝ p (WithLp.toLp 2 ((0 : E), (-1 : ℝ))) = -p.snd := by simp
-  rw [hinner]
-  ring
-
 private theorem ball_ne_cayleyCenter (x : PoincareBall P) :
     (x : P) ≠ WithLp.toLp 2 (0, -1) := fun h ↦ by
-  have hnorm : ‖(x : P)‖ ^ 2 = 1 := by rw [h, norm_cayleyCenter_sq]
+  have hnorm : ‖(x : P)‖ ^ 2 = 1 := by rw [h, ← real_inner_self_eq_norm_sq]; simp
   linarith [norm_sq_lt_one x]
-
-private theorem one_sub_norm_cayleyInversion_sq {p : P} (hp : p ≠ WithLp.toLp 2 (0, -1)) :
-    1 - ‖EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) p‖ ^ 2 =
-      4 * p.snd / dist p (WithLp.toLp 2 (0, -1)) ^ 2 := by
-  set c : P := WithLp.toLp 2 (0, -1)
-  have hd : dist p c ≠ 0 := dist_ne_zero.2 hp
-  have hinner : inner ℝ (p - c) c = -(p.snd + 1) := by simp [c]
-  rw [EuclideanGeometry.norm_inversion_sq, hinner, norm_cayleyCenter_sq, ← dist_eq_norm, div_pow,
-    Real.sq_sqrt zero_le_two]
-  field_simp [hd]
-  ring
-
-private theorem snd_cayleyInversion {q : P} (hq : q ≠ WithLp.toLp 2 (0, -1)) :
-    (EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) q).snd =
-      (1 - ‖q‖ ^ 2) / dist q (WithLp.toLp 2 (0, -1)) ^ 2 := by
-  have hd : dist q (WithLp.toLp 2 (0, -1)) ≠ 0 := dist_ne_zero.2 hq
-  simp only [EuclideanGeometry.inversion_def, vsub_eq_sub, vadd_eq_add, div_pow,
-    Real.sq_sqrt zero_le_two, WithLp.add_snd, WithLp.smul_snd, WithLp.sub_snd,
-    WithLp.toLp_snd, smul_eq_mul]
-  field_simp [hd]
-  linarith [dist_cayleyCenter_sq q]
 
 private def cayleyToFun (x : UpperHalfSpace E) : PoincareBall P :=
   mk (EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) (x : P)) <| by
     have hpos : 0 < 1 -
         ‖EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) (x : P)‖ ^ 2 := by
-      rw [one_sub_norm_cayleyInversion_sq (upper_ne_cayleyCenter x), UpperHalfSpace.snd_coe]
+      rw [one_sub_norm_inversion_toLp_zero_neg_one_sqrt_two_sq (upper_ne_cayleyCenter x),
+        UpperHalfSpace.snd_coe]
       exact div_pos (mul_pos (by norm_num) (UpperHalfSpace.height_pos x))
         (pow_pos (dist_pos.2 (upper_ne_cayleyCenter x)) 2)
     nlinarith [norm_nonneg
@@ -328,7 +297,7 @@ private theorem coe_cayleyToFun (x : UpperHalfSpace E) :
 private def cayleyInvFun (y : PoincareBall P) : UpperHalfSpace E :=
   UpperHalfSpace.mk
       (EuclideanGeometry.inversion (WithLp.toLp 2 (0, -1)) (Real.sqrt 2) (y : P)) <| by
-    rw [snd_cayleyInversion (ball_ne_cayleyCenter y)]
+    rw [snd_inversion_toLp_zero_neg_one_sqrt_two (ball_ne_cayleyCenter y)]
     exact div_pos (one_sub_norm_sq_pos y) (pow_pos (dist_pos.2 (ball_ne_cayleyCenter y)) 2)
 
 private theorem coe_cayleyInvFun (y : PoincareBall P) :
@@ -405,7 +374,8 @@ def cayleyIsometry : RiemannianIsometry 𝓘(ℝ, P) 𝓘(ℝ, P) (UpperHalfSpac
     rw [coe_cayleyDiffeomorph, inner_def, UpperHalfSpace.inner_def,
       tangentSpaceCastModel_mfderiv_cayleyToFun, tangentSpaceCastModel_mfderiv_cayleyToFun,
       EuclideanGeometry.inner_fderiv_inversion, coe_cayleyToFun,
-      one_sub_norm_cayleyInversion_sq (upper_ne_cayleyCenter x), UpperHalfSpace.snd_coe]
+      one_sub_norm_inversion_toLp_zero_neg_one_sqrt_two_sq (upper_ne_cayleyCenter x),
+      UpperHalfSpace.snd_coe]
     have hd : dist (x : P) (WithLp.toLp 2 (0, -1)) ≠ 0 := dist_ne_zero.2 (upper_ne_cayleyCenter x)
     have hh : UpperHalfSpace.height x ≠ 0 := (UpperHalfSpace.height_pos x).ne'
     have h4 : Real.sqrt 2 ^ 4 = (Real.sqrt 2 ^ 2) ^ 2 := by ring
@@ -437,7 +407,7 @@ private theorem coe_cayleyIsometry : ⇑(cayleyIsometry E) = cayleyToFun := (rfl
   simp only [EuclideanGeometry.inversion_def, vsub_eq_sub, vadd_eq_add, div_pow,
     Real.sq_sqrt zero_le_two]
   have hd : dist (WithLp.toLp 2 ((0 : E), (1 : ℝ))) (WithLp.toLp 2 (0, -1)) ^ 2 = 4 := by
-    rw [dist_cayleyCenter_sq, ← real_inner_self_eq_norm_sq]
+    rw [dist_eq_norm, ← WithLp.toLp_sub, ← real_inner_self_eq_norm_sq]
     simp
     norm_num
   rw [hd]
