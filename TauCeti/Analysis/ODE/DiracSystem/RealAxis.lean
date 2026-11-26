@@ -16,11 +16,11 @@ import TauCeti.Analysis.Matrix.EuclideanLin
 For a real spectral parameter `x`, the Dirac coefficient `-Ω(x - Q_q(s)) = -xΩ + ΩQ_q(s)` is the
 sum of the skew-adjoint matrix `-xΩ`, which does not change lengths, and the symmetric matrix
 `ΩQ_q(s)` of norm `|q(s)|`. So `|⟪v, -Ω(x - Q_q(s)) v⟫| ≤ |q(s)| ‖v‖²` for the real inner product
-of `ℂ²` (`TauCeti.abs_re_inner_diracCoeff_ofReal_le`). By the propagator bounds from the
-symmetric part of the coefficient (`TauCeti.norm_propagator_apply_le_of_abs_inner_le`), `M_q(t, x)`
-multiplies norms by factors between `e^{-∫₀ᵗ |q|}` and `e^{∫₀ᵗ |q|}`
-(`TauCeti.norm_diracFundamentalMatrix_ofReal_apply_le`,
-`TauCeti.exp_neg_mul_norm_le_norm_diracFundamentalMatrix_ofReal_apply`).
+of `ℂ²` (`TauCeti.abs_re_inner_toEuclideanCLM_diracCoeff_ofReal_le`). By the propagator bounds
+from the symmetric part of the coefficient (`TauCeti.norm_propagator_apply_le_of_abs_inner_le`),
+`M_q(t, x)` multiplies norms by factors between `e^{-∫₀ᵗ |q|}` and `e^{∫₀ᵗ |q|}`
+(`TauCeti.norm_toEuclideanCLM_diracFundamentalMatrix_ofReal_apply_le`,
+`TauCeti.exp_neg_mul_norm_le_norm_toEuclideanCLM_diracFundamentalMatrix_ofReal_apply`).
 
 For `t ≥ 0` the entries `A, B, C, D` of `M_q(t, x)` are real
 (`TauCeti.conj_diracFundamentalMatrix_ofReal`), so `|E(t, x)|² = A² + C²` and
@@ -53,12 +53,14 @@ variable {q : ℝ → ℂ} {t : ℝ}
 
 /-- For a real spectral parameter `x`, the Dirac coefficient changes lengths at rate at most
 `|q(s)|`: `|Re ⟪v, -Ω(x - Q_q(s)) v⟫| ≤ |q(s)| ‖v‖²` in `ℂ²`. -/
-theorem abs_re_inner_diracCoeff_ofReal_le (q : ℝ → ℂ) (x s : ℝ) (v : EuclideanSpace ℂ (Fin 2)) :
+theorem abs_re_inner_toEuclideanCLM_diracCoeff_ofReal_le (q : ℝ → ℂ) (x s : ℝ)
+    (v : EuclideanSpace ℂ (Fin 2)) :
     |(inner ℂ v (toEuclideanCLM (𝕜 := ℂ) (diracCoeff q x s) v)).re| ≤ ‖q s‖ * ‖v‖ ^ 2 := by
   have hskew : (inner ℂ v (toEuclideanCLM (𝕜 := ℂ) ((x : ℂ) • !![(0 : ℂ), -1; 1, 0]) v)).re =
       0 := by
-    simp [PiLp.inner_apply, Fin.sum_univ_two, mulVec, dotProduct]
-    ring
+    rw [map_smul, smul_apply, inner_smul_right, re_ofReal_mul]
+    refine mul_eq_zero_of_right _ ?_
+    simp [PiLp.inner_apply, Fin.sum_univ_two, mulVec, dotProduct, mul_comm]
   rw [diracCoeff_eq_smul_add, map_add, add_apply, inner_add_right, Complex.add_re, hskew,
     zero_add]
   refine (Complex.abs_re_le_norm _).trans ((norm_inner_le_norm _ _).trans ?_)
@@ -81,19 +83,19 @@ private theorem diracFundamentalMatrix_ofReal_apply_bounds (hq : IntegrableOn q 
     ← abs_of_nonneg (intervalIntegral.integral_nonneg ht fun _ _ ↦ norm_nonneg _)]
   refine ⟨exp_neg_mul_norm_le_norm_propagator_apply_of_abs_inner_le hP hm ?_ v,
     norm_propagator_apply_le_of_abs_inner_le hP hm ?_ v⟩ <;>
-  exact .of_forall fun s w ↦ abs_re_inner_diracCoeff_ofReal_le q x s w
+  exact .of_forall fun s w ↦ abs_re_inner_toEuclideanCLM_diracCoeff_ofReal_le q x s w
 
 /-- For a real spectral parameter `x` and `t ≥ 0`, each vector `M_q(t, x) v` has norm at most
 `e^{∫₀ᵗ |q|} ‖v‖`. -/
-theorem norm_diracFundamentalMatrix_ofReal_apply_le (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t)
-    (x : ℝ) (v : EuclideanSpace ℂ (Fin 2)) :
+theorem norm_toEuclideanCLM_diracFundamentalMatrix_ofReal_apply_le (hq : IntegrableOn q (Icc 0 t))
+    (ht : 0 ≤ t) (x : ℝ) (v : EuclideanSpace ℂ (Fin 2)) :
     ‖toEuclideanCLM (𝕜 := ℂ) (diracFundamentalMatrix q t x) v‖ ≤
       Real.exp (∫ s in (0 : ℝ)..t, ‖q s‖) * ‖v‖ :=
   (diracFundamentalMatrix_ofReal_apply_bounds hq ht x v).2
 
 /-- For a real spectral parameter `x` and `t ≥ 0`, each vector `M_q(t, x) v` has norm at least
 `e^{-∫₀ᵗ |q|} ‖v‖`. -/
-theorem exp_neg_mul_norm_le_norm_diracFundamentalMatrix_ofReal_apply
+theorem exp_neg_mul_norm_le_norm_toEuclideanCLM_diracFundamentalMatrix_ofReal_apply
     (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t) (x : ℝ) (v : EuclideanSpace ℂ (Fin 2)) :
     Real.exp (-∫ s in (0 : ℝ)..t, ‖q s‖) * ‖v‖ ≤
       ‖toEuclideanCLM (𝕜 := ℂ) (diracFundamentalMatrix q t x) v‖ :=

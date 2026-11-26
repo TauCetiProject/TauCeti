@@ -47,16 +47,24 @@ variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [InnerP
   [NormedSpace 𝕜 E] [IsScalarTower ℝ 𝕜 E] [CompleteSpace E]
   {P : ℝ → E →L[𝕜] E} {m : ℝ → ℝ} {s t : ℝ}
 
+omit [InnerProductSpace ℝ E] [IsScalarTower ℝ 𝕜 E] [CompleteSpace E] in
+/-- The `Icc` form of `uIcc s t` taken by the propagator API: `P` is integrable on
+`Icc (min s t) (max s t)`, which contains `s` and `t`. -/
+private theorem integrableOn_Icc_min_max_of_uIcc (hP : IntegrableOn P (uIcc s t)) :
+    IntegrableOn P (Icc (min s t) (max s t)) ∧ s ∈ Icc (min s t) (max s t) ∧
+      t ∈ Icc (min s t) (max s t) := by
+  rw [Icc_min_max]
+  exact ⟨hP, left_mem_uIcc, right_mem_uIcc⟩
+
 /-- Along a solution, `r ↦ ‖N_P(r, s) v‖²` is absolutely continuous between `s` and `t`. -/
 theorem absolutelyContinuousOnInterval_norm_sq_propagator_apply (hP : IntegrableOn P (uIcc s t))
     (v : E) : AbsolutelyContinuousOnInterval (fun r ↦ ‖propagator P r s v‖ ^ 2) s t := by
-  have hP' : IntegrableOn P (Icc (min s t) (max s t)) := by rwa [← uIcc]
-  have hs : s ∈ Icc (min s t) (max s t) := ⟨min_le_left _ _, le_max_left _ _⟩
+  obtain ⟨hP', hs, -⟩ := integrableOn_Icc_min_max_of_uIcc hP
   have h := absolutelyContinuousOnInterval_propagator_left hP' hs
   have h' := (ContinuousLinearMap.apply 𝕜 E v).lipschitzWith.comp_absolutelyContinuousOnInterval h
   have hwac : AbsolutelyContinuousOnInterval (fun r ↦ propagator P r s v) s t := by
     refine h'.mono ?_
-    rw [uIcc_of_le (min_le_max), ← uIcc]
+    rw [uIcc_of_le min_le_max, Icc_min_max]
   have hnac : AbsolutelyContinuousOnInterval (fun r ↦ ‖propagator P r s v‖) s t :=
     lipschitzWith_one_norm.comp_absolutelyContinuousOnInterval hwac
   simpa only [sq] using hnac.fun_mul hnac
@@ -66,16 +74,10 @@ between `s` and `t`. -/
 theorem ae_deriv_norm_sq_propagator_apply (hP : IntegrableOn P (uIcc s t)) (v : E) :
     ∀ᵐ r ∂volume.restrict (uIcc s t), deriv (fun r ↦ ‖propagator P r s v‖ ^ 2) r =
       2 * ⟪propagator P r s v, P r (propagator P r s v)⟫ := by
-  have hP' : IntegrableOn P (Icc (min s t) (max s t)) := by rwa [← uIcc]
-  have hs : s ∈ Icc (min s t) (max s t) := ⟨min_le_left _ _, le_max_left _ _⟩
-  have hnull : volume ({min s t, max s t} : Set ℝ) = 0 := (Set.toFinite _).measure_zero _
-  rw [ae_restrict_iff' measurableSet_uIcc]
-  filter_upwards [ae_hasDerivAt_propagator_left hP' hs, measure_eq_zero_iff_ae_notMem.1 hnull]
-    with r hr hr' hrI
-  have hrI' : r ∈ Icc (min s t) (max s t) := hrI
-  have hrIoo : r ∈ Ioo (min s t) (max s t) :=
-    ⟨lt_of_le_of_ne hrI'.1 fun h ↦ hr' (by simp [h]),
-      lt_of_le_of_ne hrI'.2 fun h ↦ hr' (by simp [h])⟩
+  obtain ⟨hP', hs, -⟩ := integrableOn_Icc_min_max_of_uIcc hP
+  rw [← Icc_min_max, ← Measure.restrict_congr_set Ioo_ae_eq_Icc,
+    ae_restrict_iff' measurableSet_Ioo]
+  filter_upwards [ae_hasDerivAt_propagator_left hP' hs] with r hr hrIoo
   exact ((((ContinuousLinearMap.apply 𝕜 E v).restrictScalars ℝ).hasFDerivAt).comp_hasDerivAt
     r (hr hrIoo)).norm_sq.deriv
 
@@ -148,9 +150,8 @@ theorem norm_le_exp_mul_norm_propagator_apply_of_abs_inner_le (hP : IntegrableOn
     (hm : IntegrableOn m (uIcc s t))
     (hPm : ∀ᵐ u ∂volume.restrict (uIcc s t), ∀ v, |⟪v, P u v⟫| ≤ m u * ‖v‖ ^ 2) (v : E) :
     ‖v‖ ≤ exp |∫ u in s..t, m u| * ‖propagator P t s v‖ := by
-  have hP' : IntegrableOn P (Icc (min s t) (max s t)) := by rwa [← uIcc]
-  have hinv := congrArg (fun L : E →L[𝕜] E ↦ L v) (propagator_comp_propagator_swap hP'
-    ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩)
+  obtain ⟨hP', hs, ht⟩ := integrableOn_Icc_min_max_of_uIcc hP
+  have hinv := congrArg (fun L : E →L[𝕜] E ↦ L v) (propagator_comp_propagator_swap hP' hs ht)
   simp only [ContinuousLinearMap.comp_apply, one_apply_eq_self] at hinv
   rw [uIcc_comm] at hP hm hPm
   have h := norm_propagator_apply_le_of_abs_inner_le hP hm hPm (propagator P t s v)
