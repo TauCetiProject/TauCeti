@@ -95,6 +95,27 @@ theorem indicator_compContinuous (s : Set X) (hs : IsClopen s) (f : C(Y, X)) :
   ext x
   by_cases hx : f x ∈ s <;> simp [hx]
 
+section compContinuousPositiveLinearMap
+
+variable (𝕜 β : Type*) [NormedField 𝕜] [NormedAddCommGroup β] [Lattice β] [NormedSpace 𝕜 β]
+
+/-- Precomposition with a continuous map, as a positive linear map. -/
+def compContinuousPositiveLinearMap (g : C(Y, X)) : (X →ᵇ β) →ₚ[𝕜] (Y →ᵇ β) where
+  toLinearMap := (compContinuousCLM β 𝕜 g).toLinearMap
+  monotone' _ _ h y := h (g y)
+
+@[simp]
+theorem compContinuousPositiveLinearMap_apply (g : C(Y, X)) (f : X →ᵇ β) :
+    compContinuousPositiveLinearMap 𝕜 β g f = f.compContinuous g :=
+  (rfl)
+
+@[simp]
+theorem compContinuousPositiveLinearMap_toLinearMap (g : C(Y, X)) :
+    (compContinuousPositiveLinearMap 𝕜 β g).toLinearMap = (compContinuousCLM β 𝕜 g).toLinearMap :=
+  (rfl)
+
+end compContinuousPositiveLinearMap
+
 end BoundedContinuousFunction
 
 namespace LinearMap
@@ -276,6 +297,21 @@ theorem LinearMap.toAddContent_comp_compContinuousCLM (m : (X →ᵇ ℝ) →ₗ
   ext s
   simp
 
+/-- The pushforward of a nonnegative content on all subsets along `r`, as a nonnegative
+content. -/
+def AddContent.mapNonneg {α β : Type*} (r : α → β)
+    (ν : {ν : AddContent ℝ (univ : Set (Set α)) // ∀ s, 0 ≤ ν s}) :
+    {ν : AddContent ℝ (univ : Set (Set β)) // ∀ s, 0 ≤ ν s} :=
+  ⟨ν.val.map r fun _ _ => mem_univ _,
+    fun s => (ν.property (r ⁻¹' s)).trans_eq (AddContent.map_apply _ _ _ s).symm⟩
+
+@[simp]
+theorem AddContent.coe_mapNonneg {α β : Type*} (r : α → β)
+    (ν : {ν : AddContent ℝ (univ : Set (Set α)) // ∀ s, 0 ≤ ν s}) :
+    (AddContent.mapNonneg r ν : AddContent ℝ (univ : Set (Set β))) =
+      ν.val.map r fun _ _ => mem_univ _ :=
+  (rfl)
+
 namespace PositiveLinearMap
 
 /-- The functional associated to the pushforward of a content `ν` along a map `r` of discrete
@@ -283,22 +319,18 @@ spaces integrates `f` as the functional associated to `ν` integrates `f ∘ r`.
 @[simp]
 theorem addContentEquiv_symm_map_apply
     (ν : {ν : AddContent ℝ (univ : Set (Set X)) // ∀ s, 0 ≤ ν s}) (r : X → Y) (f : Y →ᵇ ℝ) :
-    (addContentEquiv Y).symm ⟨ν.val.map r fun _ _ => mem_univ _,
-        fun s => (ν.property (r ⁻¹' s)).trans_eq (AddContent.map_apply _ _ _ s).symm⟩ f =
+    (addContentEquiv Y).symm (AddContent.mapNonneg r ν) f =
       (addContentEquiv X).symm ν (f.compContinuous ⟨r, continuous_of_discreteTopology⟩) := by
-  set m := (addContentEquiv X).symm ν
-  -- The precomposition `f ↦ m (f ∘ r)`, as a positive functional on `Y →ᵇ ℝ`.
-  let m' : (Y →ᵇ ℝ) →ₚ[ℝ] ℝ :=
-    { toLinearMap := m.toLinearMap ∘ₗ (BoundedContinuousFunction.compContinuousCLM ℝ ℝ
-        ⟨r, continuous_of_discreteTopology⟩).toLinearMap
-      monotone' := fun _ _ h => m.monotone' fun x => h (r x) }
-  have hm' : (addContentEquiv Y).symm ⟨ν.val.map r fun _ _ => mem_univ _,
-      fun s => (ν.property (r ⁻¹' s)).trans_eq (AddContent.map_apply _ _ _ s).symm⟩ = m' := by
+  have hm : (addContentEquiv Y).symm (AddContent.mapNonneg r ν) =
+      ((addContentEquiv X).symm ν).comp (BoundedContinuousFunction.compContinuousPositiveLinearMap
+        ℝ ℝ ⟨r, continuous_of_discreteTopology⟩) := by
     refine (addContentEquiv Y).symm_apply_eq.2 (Subtype.ext ?_)
-    rw [coe_addContentEquiv_apply, LinearMap.toAddContent_comp_compContinuousCLM,
-      ← coe_addContentEquiv_apply, Equiv.apply_symm_apply]
-  rw [hm', ← coe_toLinearMap]
-  simp [m']
+    rw [coe_addContentEquiv_apply, toLinearMap_comp,
+      BoundedContinuousFunction.compContinuousPositiveLinearMap_toLinearMap,
+      LinearMap.toAddContent_comp_compContinuousCLM, ← coe_addContentEquiv_apply,
+      Equiv.apply_symm_apply, AddContent.coe_mapNonneg]
+  rw [hm]
+  rfl
 
 variable {Γ : Type*} [Group Γ] [MulAction Γ X]
 
