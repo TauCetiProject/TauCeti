@@ -49,7 +49,8 @@ statement does not require attainment.
   `‖J v‖² ≤ ‖S‖ B v v`, and `IsCoercive.inv_norm_formSolutionOperator_mul_norm_apply_sq_le` its
   reciprocal form `‖S‖⁻¹ ‖J v‖² ≤ B v v`.
 * `IsCoercive.exists_ne_zero_forall_apply_eq_inv_norm_smul_inner`: `‖S‖⁻¹` is a variational
-  eigenvalue, the least one.
+  eigenvalue, the least one: `IsCoercive.inv_norm_formSolutionOperator_le` bounds it by every
+  variational eigenvalue.
 * `IsCoercive.isLeast_rayleighQuotient`: **the Rayleigh principle**, `‖S‖⁻¹` is the minimum of
   the Rayleigh quotient.
 * `IsCoercive.isGreatest_inv_norm_formSolutionOperator`: `‖S‖⁻¹` is the optimal constant in
@@ -125,6 +126,22 @@ theorem inv_norm_formSolutionOperator_mul_norm_apply_sq_le (hB : IsCoercive B) (
 variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
   [NormedAddCommGroup H] [InnerProductSpace ℝ H]
   {B : V →L[ℝ] V →L[ℝ] ℝ}
+
+/-- **`‖S‖⁻¹` is at most every variational eigenvalue**: if `B u v = κ ⟪J u, J v⟫` for some
+`u ≠ 0` and every `v`, then `‖S‖⁻¹ ≤ κ`. The solution operator acts on `J u ≠ 0` by `κ⁻¹`, so
+`κ⁻¹ ≤ ‖S‖`. Neither symmetry of `B` nor compactness of `J` is used. -/
+theorem inv_norm_formSolutionOperator_le (hB : IsCoercive B) (J : V →L[ℝ] H) {kappa : ℝ}
+    {u : V} (hu : u ≠ 0) (heq : ∀ v : V, B u v = kappa * ⟪J u, J v⟫_ℝ) :
+    ‖hB.formSolutionOperator J‖⁻¹ ≤ kappa := by
+  have hkappa := hB.pos_of_forall_apply_eq_smul_inner J hu heq
+  have hJu := norm_pos_iff.mpr (hB.apply_ne_zero_of_forall_apply_eq_smul_inner J hu heq)
+  have hle : kappa⁻¹ * ‖J u‖ ≤ ‖hB.formSolutionOperator J‖ * ‖J u‖ := by
+    calc kappa⁻¹ * ‖J u‖ = ‖hB.formSolutionOperator J (J u)‖ := by
+          rw [hB.formSolutionOperator_apply_eq_inv_smul hkappa.ne' heq, norm_smul,
+            Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hkappa)]
+      _ ≤ ‖hB.formSolutionOperator J‖ * ‖J u‖ := (hB.formSolutionOperator J).le_opNorm _
+  have hinv := le_of_mul_le_mul_right hle hJu
+  exact (inv_le_comm₀ ((inv_pos.mpr hkappa).trans_le hinv) hkappa).mpr hinv
 
 /-! ### The Rayleigh principle -/
 

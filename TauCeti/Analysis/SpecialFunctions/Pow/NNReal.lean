@@ -62,6 +62,8 @@ tend to `1` as `p → ∞`, which turns a lower or upper bound weighted by a pow
 the corresponding bound in the limit of the `Lᵖ` seminorms. This is a case of the continuity of
 `y ↦ a ^ y` in the real exponent for a finite nonzero base `a`; it also gives `c ^ ε → 1` as
 `ε → 0`, so that a constant factor does not change an exponential rate in large deviations.
+Dually, `ε⁻¹ ^ d → ∞` as `ε → 0⁺` for `d > 0`, so a finite constant factor in a power-law bound
+`c * ε⁻¹ ^ d` is absorbed by any larger exponent `d'`, as in box-counting estimates.
 
 A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as `ofReal a ^ d * ofReal r ^ d`
 for every exponent `d`, since neither factor is `∞`. This rescales the gauge `(2 r) ^ d` of
@@ -122,6 +124,9 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 * `ENNReal.tendsto_rpow_one_div_atTop`: `c ^ (1 / p) → 1` as `p → ∞` for `c ∉ {0, ∞}`.
 * `ENNReal.tendsto_const_mul_rpow_one_div_atTop`: `M * c ^ (1 / p) → M` as `p → ∞` for
   `c ∉ {0, ∞}` and any `M : ℝ≥0∞`.
+* `ENNReal.tendsto_inv_rpow_nhdsGT_zero`: `ε⁻¹ ^ d → ∞` as `ε → 0⁺` in `ℝ≥0`, for `d > 0`.
+* `ENNReal.eventually_mul_inv_rpow_le`: `c * ε⁻¹ ^ d ≤ ε⁻¹ ^ d'` for small `ε > 0`, for finite `c`
+  and `d < d'`.
 * `ENNReal.ofReal_inv_sqrt_le_enorm_rpow`: `ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹)` for every real `x`.
 * `ENNReal.ofReal_inv_sqrt_le_of_pow_three_le`: `y³ ≤ 2 |d|` gives `1 / √d ≤ √2 y^(-3/2)`.
 * `ENNReal.exists_enorm_sub_rpow_neg_half_mul_le`: for three distinct points `eᵢ`, the product of
@@ -360,6 +365,27 @@ theorem tendsto_const_mul_rpow_one_div_atTop (M : ℝ≥0∞) {c : ℝ≥0∞} (
     Filter.Tendsto (fun p : ℝ ↦ M * c ^ (1 / p)) Filter.atTop (𝓝 M) := by
   simpa only [mul_one] using
     Tendsto.const_mul (tendsto_rpow_one_div_atTop hc0 hc) (.inl one_ne_zero)
+
+/-- As `ε → 0⁺` in `ℝ≥0`, `ε⁻¹ ^ d → ∞` for every positive exponent `d`. -/
+theorem tendsto_inv_rpow_nhdsGT_zero {d : ℝ} (hd : 0 < d) :
+    Filter.Tendsto (fun ε : ℝ≥0 ↦ (ε : ℝ≥0∞)⁻¹ ^ d) (𝓝[>] 0) (𝓝 ∞) := by
+  have h0 : Filter.Tendsto (fun ε : ℝ≥0 ↦ (ε : ℝ≥0∞)) (𝓝[>] 0) (𝓝 0) :=
+    (continuous_coe.tendsto' 0 0 coe_zero).mono_left nhdsWithin_le_nhds
+  have hinv := (continuous_inv.tendsto (0 : ℝ≥0∞)).comp h0
+  rw [inv_zero] at hinv
+  have h := (continuous_rpow_const (y := d)).tendsto ∞ |>.comp hinv
+  rwa [top_rpow_of_pos hd] at h
+
+/-- A finite constant factor is absorbed by raising the exponent: for `d < d'`,
+`c * ε⁻¹ ^ d ≤ ε⁻¹ ^ d'` for all small `ε > 0` in `ℝ≥0`. -/
+theorem eventually_mul_inv_rpow_le {c : ℝ≥0∞} (hc : c ≠ ∞) {d d' : ℝ} (hdd' : d < d') :
+    ∀ᶠ ε : ℝ≥0 in 𝓝[>] 0, c * (ε : ℝ≥0∞)⁻¹ ^ d ≤ (ε : ℝ≥0∞)⁻¹ ^ d' := by
+  filter_upwards [(tendsto_inv_rpow_nhdsGT_zero (sub_pos.2 hdd')).eventually_const_lt hc.lt_top,
+    self_mem_nhdsWithin] with ε hcε hε
+  have h0 : (ε : ℝ≥0∞)⁻¹ ≠ 0 := ENNReal.inv_ne_zero.2 coe_ne_top
+  have htop : (ε : ℝ≥0∞)⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 (coe_ne_zero.2 (ne_of_gt hε))
+  calc c * (ε : ℝ≥0∞)⁻¹ ^ d ≤ (ε : ℝ≥0∞)⁻¹ ^ (d' - d) * (ε : ℝ≥0∞)⁻¹ ^ d := by gcongr
+    _ = (ε : ℝ≥0∞)⁻¹ ^ d' := by rw [← rpow_add _ _ h0 htop, sub_add_cancel]
 
 /-- The inverse square root of a real `x` is at most `‖x‖ₑ ^ (-1/2)`, as a value in `ℝ≥0∞`. The two
 agree for `x > 0`; for `x ≤ 0` the left side is `0`. -/

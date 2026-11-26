@@ -93,6 +93,8 @@ inequalities on annuli apply.
   inhomogeneous blocks of `u` are `Lᵖ` functions, its blocks `Pⱼ u`, `j ≤ 0`, are bounded in `Lᵖ`.
 * `TemperedDistribution.homogeneousLittlewoodPaleyBlock_toTemperedDistribution`: on `L²` the block
   `Pⱼ` is the `L²` Fourier multiplier with symbol `ψⱼ`.
+* `TemperedDistribution.exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock`:
+  almost orthogonality on `L²`, an `L²` function `Pⱼ v` has no block `Pₖ` with `|k - j| ≥ L`.
 * `TemperedDistribution.tendsto_fourierMultiplierCLM_two_zpow_atTop`: `Sᵦ u → u` as `b → ∞`.
 * `TemperedDistribution.tendsto_sum_homogeneousLittlewoodPaleyBlock_iff`: the homogeneous
   reconstruction holds exactly when `Sₐ u → 0` as `a → -∞`, and
@@ -622,6 +624,25 @@ theorem homogeneousLittlewoodPaleyBlock_toTemperedDistribution {j : ℤ}
     homogeneousLittlewoodPaleyBlock_eq_fourierMultiplierCLM]
   exact Lp.fourierMultiplierCLM_toTemperedDistribution_eq f
     (φ.hasTemperateGrowth_ofReal_littlewoodPaley j) hmem
+
+/-- **Almost orthogonality of the blocks on `L²`.** There is `L` such that an `L²` function `f`
+that is the `j`-th block `Pⱼ v` of a tempered distribution `v` has no block `Pₖ` with
+`|k - j| ≥ L`: the `L²` Fourier multiplier with symbol `ψₖ` vanishes on `f`. -/
+theorem exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock :
+    ∃ L : ℕ, ∀ j k : ℤ, k ∉ Finset.Ioo (j - L) (j + L) → ∀ {m : Lp ℂ ∞ (volume : Measure E)},
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley k ξ : ℂ)) →
+      ∀ (f : Lp G 2 (volume : Measure E)) (v : 𝓢'(E, G)),
+        (f : 𝓢'(E, G)) = homogeneousLittlewoodPaleyBlock G φ j v →
+          Lp.fourierMultiplierCLM G m f = 0 := by
+  obtain ⟨L, hL⟩ := exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero (F := G) φ φ
+  refine ⟨L, fun j k hk m hm f v hf ↦ Lp.toTemperedDistribution_injective ?_⟩
+  dsimp only
+  rw [← homogeneousLittlewoodPaleyBlock_toTemperedDistribution φ hm, hf,
+    Lp.toTemperedDistribution_zero]
+  rw [Finset.mem_Ioo, not_and_or, not_lt, not_lt] at hk
+  rcases hk with hk | hk
+  · exact congr($((hL k j (by omega)).1) v)
+  · exact congr($((hL j k (by omega)).2) v)
 
 end L2
 
