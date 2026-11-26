@@ -252,6 +252,23 @@ theorem W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq {v : W1p mu Omeg
   · have hg0 : W1p.gradient v x = 0 := by_contra fun hne ↦ hxΓ (hx hne)
     rw [indicator_of_notMem hxΓ, hg0, norm_zero, zero_mul, mul_zero, ENNReal.ofReal_zero]
 
+/-- Above a level `l ≥ 0`, a first-order term tested against `v = (u - l)⁺` only sees `v`:
+`∫_Ω ⟪b, ∇u⟫ v = ∫_Ω ⟪b, ∇v⟫ v`, since `∇u = ∇v` where `v ≠ 0`. -/
+theorem W1p.integral_inner_gradient_mul_value_posPartAbove (hp : p ≠ ∞) {l : ℝ} (hl : 0 ≤ l)
+    (b : E → E) (u : W1p mu Omega p) :
+    ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (W1p.posPartAbove hp hl u) x ∂mu =
+      ∫ x in Omega, ⟪b x, W1p.gradient (W1p.posPartAbove hp hl u) x⟫_ℝ *
+        W1p.value (W1p.posPartAbove hp hl u) x ∂mu := by
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.value_posPartAbove_ae hp hl u, W1p.gradient_posPartAbove_ae hp hl u]
+    with x hvx hgx
+  rw [hgx, hvx]
+  by_cases hx : l < W1p.value u x
+  · rw [indicator_of_mem (s := {y | l < W1p.value u y}) hx]
+  · rw [indicator_of_notMem (s := {y | l < W1p.value u y}) hx,
+      max_eq_right (sub_nonpos.2 (not_lt.1 hx))]
+    simp
+
 /-- If `u > l ≥ 0` on a set of positive measure and `(u - l)⁺` satisfies a Sobolev inequality
 `‖(u - l)⁺‖_q ≤ S ‖∇(u - l)⁺‖_p` with `q ≠ 0`, then the gradient of `(u - l)⁺` is not zero:
 otherwise `(u - l)⁺ = 0`, that is `u ≤ l`, almost everywhere. -/

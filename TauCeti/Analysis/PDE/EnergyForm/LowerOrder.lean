@@ -24,6 +24,9 @@ between the two sides of a weak equation.
   coefficients the energy form is that of its principal part plus the `L²` pairing of
   `⟪b, ∇u⟫ + c u` with `v`; `TauCeti.PDE.memLp_inner_gradient` and
   `TauCeti.PDE.memLp_lowerOrder`: `⟪b, ∇u⟫ ∈ L²(Ω)` and `⟪b, ∇u⟫ + c u ∈ L²(Ω)`.
+* `TauCeti.PDE.energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner`: with bounded lower-order
+  coefficients the energy form is that of the operator without drift plus the pairing
+  `∫_Ω ⟪b, ∇u⟫ v`.
 * `TauCeti.PDE.lowerOrderL`: the lower-order part `u ↦ ⟪b, ∇u⟫ + c u` as a bounded operator
   `H¹(Ω) → L²(Ω)`, and `TauCeti.PDE.energyFormH1_eq_principal_add_inner_lowerOrderL`: tested
   against `H¹₀(Ω)`, the energy form is that of its principal part plus the `L²` pairing of
@@ -126,6 +129,33 @@ theorem energyFormH1_eq_principal_add_setIntegral {a : EuclideanSpace ℝ ι →
     energyFormH1_def, ← energyFormIntegral_def, Pi.zero_def, Pi.zero_def, add_assoc,
     ← integral_add hBv hCv]
   simp only [add_mul]
+
+/-- **Splitting off the drift.** With an essentially bounded principal energy density and bounded
+lower-order coefficients, the energy form of `-∂ᵢ(aⁱʲ ∂ⱼ·) + bⁱ ∂ᵢ + c` is that of
+`-∂ᵢ(aⁱʲ ∂ⱼ·) + c` plus the drift pairing:
+
+`a_{b,c}(u, v) = a_{0,c}(u, v) + ∫_Ω ⟪b, ∇u⟫ v`. -/
+theorem energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : EuclideanSpace ℝ ι → ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
+    (u v : W1p mu Omega 2) :
+    energyFormH1 a b c u v = energyFormH1 a 0 c u v +
+      ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x ∂mu := by
+  have hv := Lp.memLp (W1p.value v)
+  have hBv : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x) (mu.restrict Omega) :=
+    (memLp_inner_gradient hb u).integrable_mul hv
+  have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) := hc.fun_mul (Lp.memLp _)
+  have hCv : Integrable (fun x => c x * W1p.value u x * W1p.value v x) (mu.restrict Omega) :=
+    hC.integrable_mul hv
+  rw [energyFormH1_eq_principal_add_setIntegral ha hb hc,
+    energyFormH1_eq_principal_add_setIntegral ha MemLp.zero hc, add_assoc]
+  congr 1
+  rw [← integral_add (hCv.congr (ae_of_all _ fun x => by simp)) hBv]
+  refine integral_congr_ae (ae_of_all _ fun x => ?_)
+  simp only [Pi.zero_apply, inner_zero_left, zero_add]
+  ring
 
 /-- **Moving the lower-order terms to the right-hand side.** If `u ∈ H¹(Ω)` is a weak solution of
 `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = f` in `Ω`, with an essentially bounded principal energy density,

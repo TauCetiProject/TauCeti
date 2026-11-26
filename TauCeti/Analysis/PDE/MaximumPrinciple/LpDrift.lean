@@ -131,25 +131,6 @@ private theorem integrable_inner_gradient_mul_value
 
 variable [DecidableEq ι]
 
-omit [DecidableEq ι] in
-/-- Above a level `l ≥ 0`, the drift term of the weak form tested against `v = (u - l)⁺` only sees
-`v`: `∫ ⟪b, ∇u⟫ v = ∫ ⟪b, ∇v⟫ v`, since `∇u = ∇v` where `v ≠ 0`. -/
-private theorem integral_inner_gradient_mul_value_posPartAbove {l : ℝ} (hl : 0 ≤ l)
-    (u : W1p mu Omega 2) :
-    ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ *
-        W1p.value (W1p.posPartAbove (by norm_num) hl u) x ∂mu =
-      ∫ x in Omega, ⟪b x, W1p.gradient (W1p.posPartAbove (by norm_num) hl u) x⟫_ℝ *
-        W1p.value (W1p.posPartAbove (by norm_num) hl u) x ∂mu := by
-  refine integral_congr_ae ?_
-  filter_upwards [W1p.value_posPartAbove_ae (by norm_num) hl u,
-    W1p.gradient_posPartAbove_ae (by norm_num) hl u] with x hvx hgx
-  rw [hgx, hvx]
-  by_cases hx : l < W1p.value u x
-  · rw [indicator_of_mem (s := {y | l < W1p.value u y}) hx]
-  · rw [indicator_of_notMem (s := {y | l < W1p.value u y}) hx,
-      max_eq_right (sub_nonpos.2 (not_lt.1 hx))]
-    simp
-
 /-- The energy inequality behind the weak maximum principle with a drift `‖b‖ ≤ β + |d|`,
 `d ∈ Lᵖ`: for a weak subsolution `u` and `v = (u - l)⁺ ∈ H¹₀(Ω) ∩ L^q`,
 `λ ‖∇v‖₂² ≤ ∫ (σ + β + |d|) |∇v| v`. -/
@@ -203,7 +184,7 @@ private theorem UniformlyEllipticOn.mul_norm_gradient_sq_le_integral_of_memLp_dr
     hsign hl hmem
   have h₃ := hu ⟨v, hmem⟩ (W1p.value_posPartAbove_nonneg_ae (by norm_num) hl u)
   simp only at h₃
-  rw [integral_inner_gradient_mul_value_posPartAbove hl u] at h₃
+  rw [W1p.integral_inner_gradient_mul_value_posPartAbove (by norm_num) hl b u] at h₃
   have hsplit : ∫ x in Omega, (sigma + beta + ‖d x‖) * (‖g x‖ * ‖f x‖) ∂mu =
       sigma * ∫ x in Omega, ‖g x‖ * ‖f x‖ ∂mu +
         ∫ x in Omega, (beta + ‖d x‖) * (‖g x‖ * ‖f x‖) ∂mu := by
