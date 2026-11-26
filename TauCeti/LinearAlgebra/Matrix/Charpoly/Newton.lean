@@ -123,6 +123,21 @@ private theorem trace_pow_eq_aeval_newtonMvPolynomial_of_splits [Algebra ℤ K]
 
 end Splits
 
+/-- The coefficient ring `ℤ[Xᵢⱼ]` of the universal matrix `Matrix.mvPolynomialX n n ℤ` embeds into
+an algebraically closed field, in which the characteristic polynomial of the universal matrix
+splits. Identities in the coefficients of `det (1 - X A)` and the traces of the powers of `A`
+proved in the split case pull back along this embedding, then specialise to every matrix along
+`Xᵢⱼ ↦ Aᵢⱼ` (`Matrix.mvPolynomialX_map_eval₂`). -/
+private noncomputable def universalEmbedding (n : Type*) :
+    MvPolynomial (n × n) ℤ →+* AlgebraicClosure (FractionRing (MvPolynomial (n × n) ℤ)) :=
+  (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) _).comp
+    (algebraMap (MvPolynomial (n × n) ℤ) (FractionRing (MvPolynomial (n × n) ℤ)))
+
+private theorem universalEmbedding_injective (n : Type*) :
+    Function.Injective (universalEmbedding n) :=
+  (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) _).injective.comp
+    (IsFractionRing.injective _ _)
+
 variable {n m R : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m] [CommRing R]
 
 /-- **Newton's identities** for the traces of the powers of a matrix: over any commutative ring,
@@ -131,20 +146,14 @@ the coefficients `c_r` of `det (1 - X A)` and the traces `p_j = tr (A ^ j)` sati
 theorem mul_coeff_charpolyRev_eq_neg_sum (A : Matrix n n R) (r : ℕ) :
     (r : R) * A.charpolyRev.coeff r =
       -∑ j ∈ range r, A.charpolyRev.coeff (r - (j + 1)) * (A ^ (j + 1)).trace := by
-  -- The universal matrix over `ℤ[Xᵢⱼ]`, whose coefficient ring embeds into an algebraically
-  -- closed field, where the characteristic polynomial splits.
+  -- The universal matrix over `ℤ[Xᵢⱼ]`, whose characteristic polynomial splits after
+  -- `universalEmbedding`.
   let U := mvPolynomialX n n ℤ
-  let K := AlgebraicClosure (FractionRing (MvPolynomial (n × n) ℤ))
-  let ι : MvPolynomial (n × n) ℤ →+* K :=
-    (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) K).comp
-      (algebraMap (MvPolynomial (n × n) ℤ) (FractionRing (MvPolynomial (n × n) ℤ)))
-  have hι : Function.Injective ι :=
-    (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) K).injective.comp
-      (IsFractionRing.injective _ _)
   have hU : (r : MvPolynomial (n × n) ℤ) * U.charpolyRev.coeff r =
       -∑ j ∈ range r, U.charpolyRev.coeff (r - (j + 1)) * (U ^ (j + 1)).trace := by
-    apply hι
-    have h := mul_coeff_charpolyRev_eq_neg_sum_of_splits (IsAlgClosed.splits (U.map ι).charpoly) r
+    apply universalEmbedding_injective n
+    have h := mul_coeff_charpolyRev_eq_neg_sum_of_splits
+      (IsAlgClosed.splits (U.map (universalEmbedding n)).charpoly) r
     simpa [charpolyRev_map, coeff_map, ← Matrix.map_pow, AddMonoidHom.map_trace] using h
   -- Specialise the universal identity along `Xᵢⱼ ↦ Aᵢⱼ`.
   let φ : MvPolynomial (n × n) ℤ →+* R := MvPolynomial.eval₂Hom (Int.castRingHom R)
@@ -162,23 +171,17 @@ theorem trace_pow_eq_aeval_newtonMvPolynomial (A : Matrix n n R) (k : ℕ) :
     (A ^ k).trace = MvPolynomial.aeval
       (fun j : Fin (Fintype.card n) ↦ (-1) ^ (j.val + 1) * A.charpolyRev.coeff (j + 1))
       (TauCeti.newtonMvPolynomial ℤ (Fintype.card n) k) := by
-  -- The universal matrix over `ℤ[Xᵢⱼ]`, as in `Matrix.mul_coeff_charpolyRev_eq_neg_sum`.
+  -- The universal matrix over `ℤ[Xᵢⱼ]`, whose characteristic polynomial splits after
+  -- `universalEmbedding`.
   let U := mvPolynomialX n n ℤ
-  let K := AlgebraicClosure (FractionRing (MvPolynomial (n × n) ℤ))
-  let ι : MvPolynomial (n × n) ℤ →+* K :=
-    (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) K).comp
-      (algebraMap (MvPolynomial (n × n) ℤ) (FractionRing (MvPolynomial (n × n) ℤ)))
-  have hι : Function.Injective ι :=
-    (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) K).injective.comp
-      (IsFractionRing.injective _ _)
   have hU : (U ^ k).trace = MvPolynomial.aeval
       (fun j : Fin (Fintype.card n) ↦ (-1) ^ (j.val + 1) * U.charpolyRev.coeff (j + 1))
       (TauCeti.newtonMvPolynomial ℤ (Fintype.card n) k) := by
-    apply hι
+    apply universalEmbedding_injective n
     have h := trace_pow_eq_aeval_newtonMvPolynomial_of_splits
-      (IsAlgClosed.splits (U.map ι).charpoly) k
+      (IsAlgClosed.splits (U.map (universalEmbedding n)).charpoly) k
     -- Every ring homomorphism commutes with evaluating an integer polynomial.
-    rw [MvPolynomial.map_aeval_eq_aeval_map (RingHom.id ℤ) ι (Subsingleton.elim _ _),
+    rw [MvPolynomial.map_aeval_eq_aeval_map (RingHom.id ℤ) _ (Subsingleton.elim _ _),
       MvPolynomial.map_id]
     simpa [charpolyRev_map, coeff_map, ← Matrix.map_pow, AddMonoidHom.map_trace] using h
   -- Specialise the universal identity along `Xᵢⱼ ↦ Aᵢⱼ`.

@@ -136,25 +136,8 @@ theorem coeff_eq_of_isConj {g h : U d} (hgh : IsConj g h) (i : ℕ) : coeff g i 
 eigenvalues of a unitary matrix are closed under `λ ↦ (conj λ)⁻¹`. -/
 theorem coeff_dim_sub (g : U d) {i : ℕ} (hi : i ≤ d) :
     coeff g (d - i) = (-1) ^ d * (g : Matrix (Fin d) (Fin d) ℂ).det * conj (coeff g i) := by
-  set M := (g : Matrix (Fin d) (Fin d) ℂ)
-  have hdet : conj M.det * M.det = 1 := (det_of_mem_unitary g.property).1
-  have hdet0 : M.det ≠ 0 := right_ne_zero_of_mul_eq_one hdet
-  -- `g⁻¹ = gᴴ`, whose characteristic polynomial is the conjugate of that of `g`; compare
-  -- coefficients in `charpoly g⁻¹ = (-1)^d (det g)⁻¹ det (1 - T g)`.
-  have h := congrArg (·.coeff i) (charpoly_inv M (M.isUnit_iff_isUnit_det.mpr hdet0.isUnit))
-  have hinv : M⁻¹ = (Mᵀ).map (starRingEnd ℂ) := by
-    rw [inv_eq_right_inv (mem_unitaryGroup_iff.mp g.property)]
-    ext i j
-    simp [M]
-  have hC : (-1 : Polynomial ℂ) ^ d * Polynomial.C M.det⁻¹ = Polynomial.C ((-1) ^ d * M.det⁻¹) := by
-    simp
-  simp only [hinv, charpoly_map, charpoly_transpose, Polynomial.coeff_map, Fintype.card_fin,
-    Ring.inverse_eq_inv', hC, Polynomial.coeff_C_mul] at h
-  rw [← coeff_dim_sub_eq_coeff_charpoly g hi, ← coeff_def] at h
-  have h' := congrArg conj h
-  rw [Complex.conj_conj] at h'
-  rw [h']
-  simp [inv_eq_of_mul_eq_one_right hdet]
+  simpa [coeff_def] using coeff_charpolyRev_card_sub_of_mem_unitaryGroup g.property (k := i)
+    (by simpa)
 
 /-- **Palindromy on `USp(d)`.** For even `d` and `g ∈ USp(d)`, `a_(d-i)(g) = a_i(g)` for `i ≤ d`:
 a symplectic matrix has the same characteristic polynomial as its inverse. -/
