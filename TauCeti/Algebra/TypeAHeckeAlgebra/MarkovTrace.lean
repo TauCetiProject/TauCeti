@@ -185,10 +185,8 @@ theorem map_mul_wenzlProjection (hτ : IsMarkovTrace z τ) (u : Rˣ)
     (hu : (u : R) = 1 + (q : R) ^ 2) (hz : z = q * η - ↑q⁻¹ * (1 - η)) {n : ℕ}
     {x : InfiniteTypeAHeckeAlgebra R q} (hx : x ∈ stage R q (n + 1)) :
     τ (x * (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q n)) = (1 - η) * τ x := by
-  have hs : ((q⁻¹ * u : Rˣ) : R) = (q : R) + ↑q⁻¹ := by
-    rw [Units.val_mul, hu, ← q.val_mul_val_add_val_inv, ← mul_assoc, q.inv_mul, one_mul]
   rw [wenzlProjection_eq_one_sub_eigenprojection u hu, mul_sub, mul_one, map_sub,
-    hτ.map_mul_eigenprojection (q⁻¹ * u) hs hz hx]
+    hτ.map_mul_eigenprojection (q⁻¹ * u) (Units.val_inv_mul_eq_val_add_val_inv hu) hz hx]
   ring
 
 end IsMarkovTrace

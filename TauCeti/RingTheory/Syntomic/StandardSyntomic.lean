@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Extension.Presentation.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 public import TauCeti.Topology.PureDimension
+import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 import Mathlib.RingTheory.KrullDimension.Polynomial
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.RingTheory.KrullDimension.FiniteType
@@ -58,6 +59,8 @@ a complete intersection, is not standard syntomic of relative dimension zero.
 * `Algebra.Presentation.isStandardSyntomicOfRelativeDimension_of_ringKrullDim_le`: over a field, a
   nonzero algebra of dimension at most `n` presented with at least `n` more generators than
   relations is standard syntomic of relative dimension `n`.
+* `TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.quotient_span_singleton`: over a field, a
+  hypersurface `k[x₀, …, xₙ] ⧸ (f)` with `f ≠ 0` is standard syntomic of relative dimension `n`.
 
 ## References
 
@@ -257,6 +260,26 @@ variable (n R) in
 /-- A polynomial algebra in `n` variables is standard syntomic of relative dimension `n`. -/
 instance mvPolynomial_fin : IsStandardSyntomicOfRelativeDimension n R (MvPolynomial (Fin n) R) := by
   simpa using mvPolynomial R (Fin n)
+
+/-- Over a field `k`, the hypersurface `k[x₀, …, xₙ] ⧸ (f)` cut out by a nonzero polynomial `f` is
+standard syntomic of relative dimension `n`: `f` is a nonzerodivisor, so the hypersurface has
+Krull dimension at most `n`. -/
+theorem quotient_span_singleton {k : Type u} [Field k] {f : MvPolynomial (Fin (n + 1)) k}
+    (hf : f ≠ 0) :
+    IsStandardSyntomicOfRelativeDimension n k (MvPolynomial (Fin (n + 1)) k ⧸ Ideal.span {f}) := by
+  let P := (_root_.Algebra.Presentation.naive (v := ![f])).ofAlgEquiv
+    (Ideal.quotientEquivAlgOfEq k (I := Ideal.span (Set.range ![f])) (J := Ideal.span {f})
+      (by simp))
+  cases subsingleton_or_nontrivial (MvPolynomial (Fin (n + 1)) k ⧸ Ideal.span {f}) with
+  | inl _ =>
+    -- `f` is a nonzero constant, and all fibres of the zero algebra are empty.
+    exact P.isStandardSyntomicOfRelativeDimension (by simp) fun p _ _ ↦ (not_subsingleton
+      (p.Fiber (MvPolynomial (Fin (n + 1)) k ⧸ Ideal.span {f})) inferInstance).elim
+  | inr _ =>
+    refine P.isStandardSyntomicOfRelativeDimension_of_ringKrullDim_le (by simp [add_comm]) ?_
+    rw [← ENat.WithBot.add_le_add_one_right_iff]
+    simpa [MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field]
+      using ringKrullDim_quotient_succ_le_of_nonZeroDivisor (mem_nonZeroDivisors_of_ne_zero hf)
 
 end IsStandardSyntomicOfRelativeDimension
 

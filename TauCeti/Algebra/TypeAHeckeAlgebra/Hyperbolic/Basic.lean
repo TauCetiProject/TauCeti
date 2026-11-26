@@ -58,6 +58,7 @@ stabilization constants, and assert nothing about positivity.
   `(1 - tanh α * tanh θ) / 2`.
 * `TauCeti.hyperbolicWenzlProjParam`: Wenzl's complementary hyperbolic projection parameter
   `(1 + tanh α * tanh θ) / 2`.
+* `TauCeti.hyperbolicWritheUnit`: the writhe-rescaling unit `I * exp (-α)` of `ℂ`.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.hyperbolicGen`: the rescaled generator `I * exp (-α) • T i`,
   as a unit.
 
@@ -228,6 +229,19 @@ theorem hyperbolicWenzlProjParam_eq_cosh_add_div {α θ : ℂ} (hα : cosh α �
   rw [← hyperbolicProjParam_neg_right, hyperbolicProjParam_eq_cosh_sub_div hα hθ', sub_neg_eq_add,
     cosh_neg]
 
+/-- The writhe-rescaling unit `I * exp (-α)` of `ℂ`. -/
+noncomputable def hyperbolicWritheUnit (α : ℂ) : ℂˣ :=
+  Units.mk0 (I * exp (-α)) (mul_ne_zero I_ne_zero (exp_ne_zero _))
+
+/-- The underlying value of `hyperbolicWritheUnit α` is `I * exp (-α)`. -/
+@[simp]
+theorem val_hyperbolicWritheUnit (α : ℂ) : (hyperbolicWritheUnit α : ℂ) = I * exp (-α) := (rfl)
+
+/-- The inverse of `hyperbolicWritheUnit α` is `-I * exp α`. -/
+theorem val_inv_hyperbolicWritheUnit (α : ℂ) :
+    (↑(hyperbolicWritheUnit α)⁻¹ : ℂ) = -I * exp α := by
+  simp [hyperbolicWritheUnit, ← exp_neg, mul_comm]
+
 /-- The positive stabilization constant `I * (exp (-α - θ) * η - exp (-α + θ) * (1 - η))` of a
 Markov trace with projection parameter `η`, for the generators `γ = I * exp (-α) • T`. -/
 noncomputable def hyperbolicStabilization (α θ η : ℂ) : ℂ :=
@@ -311,6 +325,26 @@ theorem hyperbolicStabilization_normalization {α θ η : ℂ} (hα : cosh α �
     simp
   exact ⟨h, ((hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff hα hθ).2 hη) ▸ h⟩
 
+/-- Multiplying the Markov parameter `z = exp (-θ) * η - exp θ * (1 - η)` by
+`hyperbolicWritheUnit α` gives `hyperbolicStabilization α θ η`. -/
+theorem hyperbolicWritheUnit_mul_eq_hyperbolicStabilization {α θ z η : ℂ}
+    (hz : z = exp (-θ) * η - exp θ * (1 - η)) :
+    (hyperbolicWritheUnit α : ℂ) * z = hyperbolicStabilization α θ η := by
+  rw [val_hyperbolicWritheUnit, hz, hyperbolicStabilization_def, exp_sub, exp_add, exp_neg, exp_neg]
+  ring
+
+/-- Multiplying the negative Hecke stabilization factor `z - (q - q⁻¹)` at
+`q = hyperbolicHeckeParam θ` by `(hyperbolicWritheUnit α)⁻¹` gives
+`hyperbolicStabilizationInv α θ η`. -/
+theorem inv_hyperbolicWritheUnit_mul_sub_eq_hyperbolicStabilizationInv {α θ z η : ℂ}
+    (hz : z = exp (-θ) * η - exp θ * (1 - η)) :
+    (↑(hyperbolicWritheUnit α)⁻¹ : ℂ) *
+        (z - ((hyperbolicHeckeParam θ : ℂ) - ↑(hyperbolicHeckeParam θ)⁻¹)) =
+      hyperbolicStabilizationInv α θ η := by
+  rw [val_inv_hyperbolicWritheUnit, val_hyperbolicHeckeParam, val_inv_hyperbolicHeckeParam, hz,
+    hyperbolicStabilizationInv_def, exp_sub, exp_add, exp_neg]
+  ring
+
 namespace InfiniteTypeAHeckeAlgebra
 
 /-- The rescaled braid generator `γ i = I * exp (-α) • T i` of the Hecke algebra with parameter
@@ -318,7 +352,7 @@ namespace InfiniteTypeAHeckeAlgebra
 noncomputable def hyperbolicGen (α θ : ℂ) (i : ℕ) :
     (InfiniteTypeAHeckeAlgebra ℂ (hyperbolicHeckeParam θ))ˣ :=
   Units.map (algebraMap ℂ (InfiniteTypeAHeckeAlgebra ℂ (hyperbolicHeckeParam θ))).toMonoidHom
-    (Units.mk0 (I * exp (-α)) (mul_ne_zero I_ne_zero (exp_ne_zero _))) *
+    (hyperbolicWritheUnit α) *
     unitT (hyperbolicHeckeParam θ) i
 
 variable {α θ : ℂ}
@@ -337,7 +371,7 @@ theorem val_inv_hyperbolicGen (i : ℕ) :
       (-I * exp α) • (T _ i - algebraMap ℂ _ (exp (-θ) - exp θ)) := by
   apply Units.inv_eq_of_mul_eq_one_right
   have h : I * exp (-α) * (-I * exp α) = 1 := by
-    rw [mul_mul_mul_comm, ← exp_add, neg_add_cancel, exp_zero, mul_one, mul_neg, I_mul_I, neg_neg]
+    rw [← val_hyperbolicWritheUnit, ← val_inv_hyperbolicWritheUnit, Units.mul_inv]
   rw [val_hyperbolicGen, smul_mul_smul_comm, h, one_smul, ← val_hyperbolicHeckeParam θ,
     ← val_inv_hyperbolicHeckeParam θ, ← val_inv_unitT, ← val_unitT, Units.mul_inv]
 

@@ -20,6 +20,8 @@ that statement for the base ring `ℤ`, read at the unit `1`, and that is how it
 
 The file also records that, in a ring without zero divisors, a unit `u` other than `±1` is not
 its own inverse in the form `u - u⁻¹ ≠ 0`, as used for quantum integers at `δ = u + u⁻¹`.
+It finally records that a pair of units `r + s = 1` gives the pair `r⁻¹ + (-(s r⁻¹)) = 1`, the
+step reducing the Steinberg relation for the tame symbol from negative to positive order.
 
 ## Main results
 
@@ -28,6 +30,9 @@ its own inverse in the form `u - u⁻¹ ≠ 0`, as used for quantum integers at 
 * `Units.val_sub_val_inv_ne_zero`: in a ring without zero divisors, a unit `u ≠ ±1` satisfies
   `u - u⁻¹ ≠ 0`.
 * `Units.val_mul_val_add_val_inv`: for any unit `q` in a ring, `q * (q + q⁻¹) = 1 + q ^ 2`.
+* `Units.val_inv_mul_eq_val_add_val_inv`: if `u = 1 + q ^ 2`, then `q⁻¹ * u = q + q⁻¹`.
+* `Units.val_inv_add_val_neg_mul_inv_eq_one`: if `r + s = 1` for units, then
+  `r⁻¹ + (-(s r⁻¹)) = 1`.
 -/
 
 public section
@@ -51,12 +56,26 @@ end TauCeti
 
 namespace Units
 
+variable {R : Type*} [Ring R]
+
 /-- For any unit `q` in a ring, `q * (q + q⁻¹) = 1 + q ^ 2`. -/
-theorem val_mul_val_add_val_inv {R : Type*} [Ring R] (q : Rˣ) :
+theorem val_mul_val_add_val_inv (q : Rˣ) :
     (q : R) * ((q : R) + ↑q⁻¹) = 1 + (q : R) ^ 2 := by
   rw [mul_add, q.mul_inv, sq, add_comm]
 
-variable {R : Type*} [Ring R] [NoZeroDivisors R]
+/-- If `u = 1 + q ^ 2` for units `q` and `u`, then `q⁻¹ * u = q + q⁻¹`. -/
+theorem val_inv_mul_eq_val_add_val_inv {q u : Rˣ} (hu : (u : R) = 1 + (q : R) ^ 2) :
+    ((q⁻¹ * u : Rˣ) : R) = (q : R) + ↑q⁻¹ := by
+  rw [Units.val_mul, hu, ← q.val_mul_val_add_val_inv, ← mul_assoc, q.inv_mul, one_mul]
+
+/-- If `r + s = 1` for units `r` and `s`, then `r⁻¹ + (-(s r⁻¹)) = 1`. This trades a pair adding
+up to one for another such pair whose first entry is `r⁻¹`, as in the Steinberg relation. -/
+theorem val_inv_add_val_neg_mul_inv_eq_one {r s : Rˣ} (h : (r : R) + s = 1) :
+    ((r⁻¹ : Rˣ) : R) + ((-(s * r⁻¹) : Rˣ) : R) = 1 := by
+  rw [Units.val_neg, Units.val_mul, ← sub_eq_add_neg, ← one_sub_mul, ← eq_sub_of_add_eq h,
+    Units.mul_inv]
+
+variable [NoZeroDivisors R]
 
 /-- In a ring without zero divisors, a unit `u ≠ ±1` satisfies `u - u⁻¹ ≠ 0`. -/
 theorem val_sub_val_inv_ne_zero {u : Rˣ} (hu₁ : u ≠ 1) (hu₂ : u ≠ -1) :

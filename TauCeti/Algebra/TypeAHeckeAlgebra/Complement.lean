@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.MarkovTrace
-import TauCeti.Algebra.Ring.Units
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -151,16 +150,6 @@ theorem complementEquiv_eigenprojection (s : Rˣ) (hs : (s : R) = (q : R) + ↑q
   simp only [map_mul, map_add, map_one] at hscalar
   simp only [Algebra.smul_def, map_sub]
   noncomm_ring [← hscalar]
-
-/-- Wenzl's projection is the image of the native eigenprojection under `complementEquiv`. -/
-theorem wenzlProjection_eq_complementEquiv_eigenprojection (u : Rˣ)
-    (hu : (u : R) = 1 + (q : R) ^ 2) (i : ℕ) :
-    (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) =
-      complementEquiv q ((↑(q⁻¹ * u)⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
-  have hs : ((q⁻¹ * u : Rˣ) : R) = (q : R) + ↑q⁻¹ := by
-    rw [Units.val_mul, hu, ← q.val_mul_val_add_val_inv, ← mul_assoc, q.inv_mul, one_mul]
-  rw [wenzlProjection_eq_one_sub_eigenprojection u hu,
-    complementEquiv_eigenprojection q (q⁻¹ * u) hs]
 
 /-- Complementing exchanges the index and sign characters. -/
 @[simp]

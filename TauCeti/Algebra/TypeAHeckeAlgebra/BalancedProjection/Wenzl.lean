@@ -117,8 +117,7 @@ isomorphism sends `e i` to `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)`. -/
 theorem wenzlHeckeEquiv_e_eq_wenzlProjection (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2) (i : ℕ) :
     wenzlHeckeEquiv q hτ (e τ i) =
       (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) := by
-  have hs : ((q⁻¹ * u : Rˣ) : R) = (q : R) + ↑q⁻¹ := by
-    rw [Units.val_mul, hu, ← q.val_mul_val_add_val_inv, ← mul_assoc, q.inv_mul, one_mul]
+  have hs : ((q⁻¹ * u : Rˣ) : R) = (q : R) + ↑q⁻¹ := Units.val_inv_mul_eq_val_add_val_inv hu
   have hinv : (↑(q⁻¹ * u)⁻¹ : R) * ((q : R) + ↑q⁻¹) = 1 := by
     rw [← hs, Units.inv_mul]
   have hcoeff : τ * ((q : R) + ↑q⁻¹) = ↑(q⁻¹ * u)⁻¹ := by

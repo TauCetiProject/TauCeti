@@ -32,6 +32,9 @@ the theorem presents `M_{c+ε}` as the pushout of `M_{c-ε}` and one handle alon
   `𝔻 0 × ∂𝔻 1` of the handle onto the two ends `±√ε`
   (`TauCeti.exists_isIso_handle_sq_real`). The sublevel is the interval `[-√ε, √ε]`
   (`Real.setOf_sq_le_eq_Icc`): a handle of index `0` adds a new component, here the only one.
+  The handle is a product of closed balls: the compact sublevel is not homeomorphic to the open
+  unit ball of `EuclideanSpace ℝ (Fin 1)`, an open interval
+  (`TauCeti.not_nonempty_homeomorph_setOf_sq_le_ball`).
 * **Index `1` in dimension `1`: the inverted well.** For `f(x) = -x²` on `ℝ` at the level `0`, the
   critical point `0` has index `1` (`TauCeti.manifoldMorseIndex_neg_sq_real`). The lower sublevel
   `{-x² ≤ -ε} = {ε ≤ x²}` is the union of the two rays `(-∞, -√ε]` and `[√ε, ∞)`
@@ -97,6 +100,25 @@ theorem exists_isIso_handle_sq_real :
     rw [show α = (TopCat.isoOfHomeo .empty).hom from TopCat.ext isEmptyElim]
     infer_instance
   exact ⟨ε, hε, hε1, χ, hpush.isIso_inr_of_isIso, htop⟩
+
+/-- **The handles are closed.** The sublevel `{x² ≤ ε}` of the quadratic well is compact, so it is
+not homeomorphic to the open unit ball of `EuclideanSpace ℝ (Fin 1)`, an open interval, which is not
+compact. So the handle `𝔻 0 × 𝔻 1` of `TauCeti.exists_isIso_handle_sq_real` cannot be replaced by
+the product of open unit balls, which is homeomorphic to that open interval. -/
+theorem not_nonempty_homeomorph_setOf_sq_le_ball (ε : ℝ) :
+    ¬ Nonempty ({x : ℝ | x ^ 2 ≤ ε} ≃ₜ ball (0 : EuclideanSpace ℝ (Fin 1)) 1) := by
+  rintro ⟨e⟩
+  have : CompactSpace {x : ℝ | x ^ 2 ≤ ε} := isCompact_iff_compactSpace.1 <|
+    (isCompact_Icc (a := -√ε) (b := √ε)).of_isClosed_subset
+      (isClosed_le (continuous_pow 2) continuous_const) fun x hx ↦ abs_le.1 (Real.abs_le_sqrt hx)
+  have hB : IsCompact (ball (0 : EuclideanSpace ℝ (Fin 1)) 1) :=
+    isCompact_iff_compactSpace.2 e.compactSpace
+  -- A compact open ball would be closed, and its frontier, the unit sphere, would be empty.
+  obtain ⟨y, hy⟩ :=
+    (NormedSpace.sphere_nonempty (x := (0 : EuclideanSpace ℝ (Fin 1)))).2 zero_le_one
+  rw [← frontier_ball _ one_ne_zero, hB.isClosed.frontier_eq, isOpen_ball.interior_eq,
+    sdiff_self] at hy
+  exact hy
 
 /-! ### The inverted well -/
 

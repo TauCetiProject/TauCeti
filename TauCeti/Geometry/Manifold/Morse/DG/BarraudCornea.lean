@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.MooreEvaluation
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
-public import TauCeti.Geometry.Manifold.Morse.Stable.BrokenTrajectorySpace
+public import TauCeti.Geometry.Manifold.Morse.Stable.Broken.TrajectorySpace
 public import TauCeti.Geometry.Manifold.Morse.Stable.LevelPath
 
 /-!

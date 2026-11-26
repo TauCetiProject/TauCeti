@@ -60,10 +60,6 @@ private theorem wenzlParam_exp_ofReal_mul_I (k : ℤ) {θ : ℝ} (hθ : Real.cos
   simp only [ofReal_div, ofReal_mul, ofReal_ofNat, ofReal_cos, ofReal_sin, ofReal_add,
     ofReal_one, ofReal_intCast]
 
-private theorem isPrimitiveRoot_exp_two_pi_mul_I_div {l : ℕ} (hl : l ≠ 0) :
-    IsPrimitiveRoot (exp (2 * π * I / l)) l :=
-  Complex.isPrimitiveRoot_exp l hl
-
 /-- **The values at the roots of unity.** For `l ≥ 3` and `0 < k < l`, at `Q = exp (2 π i / l)`,
 `a_k(Q) = sin ((k + 1) π / l) / (2 * cos (π / l) * sin (k π / l))`, a real number. -/
 theorem wenzlParam_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
@@ -108,7 +104,7 @@ theorem wenzlParam_neg_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk�
 theorem wenzlParam_add_wenzlParam_neg_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k)
     (hkl : k < l) :
     wenzlParam (k : ℤ) (exp (2 * π * I / l)) + wenzlParam (-(k : ℤ)) (exp (2 * π * I / l)) = 1 := by
-  have hζ := isPrimitiveRoot_exp_two_pi_mul_I_div (l := l) (by omega)
+  have hζ := Complex.isPrimitiveRoot_exp l (by omega)
   have hsum : ∑ i ∈ range k, exp (2 * π * I / l) ^ i ≠ 0 := by
     intro h0
     have hgeom := geom_sum_mul (exp (2 * π * I / l)) k
@@ -123,7 +119,7 @@ theorem wenzlParam_add_wenzlParam_neg_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 �
 theorem wenzlParam_sub_exp_two_pi_mul_I_div {l k : ℕ} (hl : 2 ≤ l) (hkl : k ≤ l) :
     wenzlParam ((l - k : ℕ) : ℤ) (exp (2 * π * I / l)) =
       wenzlParam (-(k : ℤ)) (exp (2 * π * I / l)) := by
-  have hζ := isPrimitiveRoot_exp_two_pi_mul_I_div (l := l) (by omega)
+  have hζ := Complex.isPrimitiveRoot_exp l (by omega)
   rw [Nat.cast_sub hkl, sub_eq_neg_add]
   exact wenzlParam_add_of_pow_eq_one (hζ.ne_one (by omega)) hζ.pow_eq_one (-(k : ℤ))
 
