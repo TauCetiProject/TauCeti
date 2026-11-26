@@ -423,6 +423,40 @@ lemma Compatible.compatibleAt (h : form.Compatible J) (x : M) :
     (h.isNondegenerate.symplecticFormAt x).Compatible (J.almostComplexStructureAt x) :=
   h.isNondegenerate.compatible_iff.mp h x
 
+section CompatiblePullback
+
+variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂]
+  {I₂ : ModelWithCorners ℝ E₂ H₂} [TopologicalSpace M₂] [ChartedSpace H₂ M₂] [IsManifold I₂ ∞ M₂]
+  {J₂ : SmoothAlmostComplexStructure I₂ M₂}
+
+/-- **Compatibility through a surjective local diffeomorphism.** Let `f` be a surjective local
+diffeomorphism, such as the projection of a covering space, whose derivatives intertwine the almost
+complex structures, `df ∘ J₂ = J ∘ df`. Then `f` pulls a two-form back to a form compatible with
+`J₂` exactly when the form is compatible with `J`. -/
+theorem _root_.IsLocalDiffeomorph.compatible_mpullback_iff {f : M₂ → M}
+    (hf : IsLocalDiffeomorph I₂ I ∞ f) (hsurj : Function.Surjective f)
+    (hJ : ∀ z v, mfderiv I₂ I f z (J₂ z v) = J (f z) (mfderiv I₂ I f z v)) :
+    SmoothTwoForm.Compatible (SmoothForm.mpullback f hf.contMDiff form) J₂ ↔
+      form.Compatible J := by
+  have hinv z := hf.isInvertible_mfderiv (by simp) z
+  refine ⟨fun h ↦ ⟨fun x v w ↦ ?_, fun x v hv ↦ ?_⟩, fun h ↦ ⟨fun z u u' ↦ ?_, fun z u hu ↦ ?_⟩⟩
+  · -- Every tangent vector at `x = f z` is the image of one at `z`.
+    obtain ⟨z, rfl⟩ := hsurj x
+    obtain ⟨u, rfl⟩ := (hinv z).surjective v
+    obtain ⟨u', rfl⟩ := (hinv z).surjective w
+    have h' := h.invariant z u u'
+    rwa [SmoothForm.eval₂_mpullback, SmoothForm.eval₂_mpullback, hJ, hJ] at h'
+  · obtain ⟨z, rfl⟩ := hsurj x
+    obtain ⟨u, rfl⟩ := (hinv z).surjective v
+    have h' := h.tames z u fun hu ↦ hv (by rw [hu, map_zero])
+    rwa [SmoothForm.eval₂_mpullback, hJ] at h'
+  · rw [SmoothForm.eval₂_mpullback, SmoothForm.eval₂_mpullback, hJ, hJ]
+    exact h.invariant _ _ _
+  · rw [SmoothForm.eval₂_mpullback, hJ]
+    exact h.tames _ _ fun hu' ↦ hu ((injective_iff_map_eq_zero _).1 (hinv z).injective u hu')
+
+end CompatiblePullback
+
 section Chart
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {ω₀ : SymplecticForm V} {φ : M → V}
