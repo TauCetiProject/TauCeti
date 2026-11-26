@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Operator.Dense
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Multiplication by bounded operator fields on `Lᵖ`
@@ -64,14 +65,24 @@ theorem memLp_mulStrong (F : X → E →L[𝕜] E') (hF : ∀ v, Continuous fun 
       (fun x ↦ (F x).continuous) (fun x ↦ map_zero (F x)))
     (.of_forall fun x ↦ (F x).le_of_opNorm_le (hC x) _)
 
+omit [TopologicalSpace X] [R1Space X] [BorelSpace X] [μ.InnerRegularCompactLTTop] in
+private theorem norm_toLp_mulStrong_le (F : X → E →L[𝕜] E') {f : Lp E p μ}
+    (hf : MemLp (fun x ↦ F x (f x)) p μ) {C : ℝ} (hC : ∀ x, ‖F x‖ ≤ C) :
+    ‖hf.toLp _‖ ≤ C * ‖f‖ :=
+  Lp.norm_le_mul_norm_of_ae_le_mul <| by
+    filter_upwards [hf.coeFn_toLp] with x hx
+    rw [hx]
+    exact (F x).le_of_opNorm_le (hC x) _
+
 variable [Fact (1 ≤ p)] in
 /-- Pointwise multiplication by a uniformly bounded, strongly continuous operator field,
 as a bounded linear map on `Lᵖ` for `1 ≤ p < ∞`. -/
 def mulStrong (hp : p ≠ ∞) (F : X → E →L[𝕜] E') (hF : ∀ v, Continuous fun x ↦ F x v)
-    {C : ℝ} (hC : ∀ x, ‖F x‖ ≤ C) : Lp E p μ →L[𝕜] Lp E' p μ :=
-  let mem (f : Lp E p μ) := memLp_mulStrong μ F hF hC
-    (zero_lt_one.trans_le Fact.out).ne' hp f
-  LinearMap.mkContinuous
+    (hB : ∃ C : ℝ, ∀ x, ‖F x‖ ≤ C) : Lp E p μ →L[𝕜] Lp E' p μ :=
+  let mem (f : Lp E p μ) : MemLp (fun x ↦ F x (f x)) p μ := by
+    obtain ⟨C, hC⟩ := hB
+    exact memLp_mulStrong μ F hF hC (zero_lt_one.trans_le Fact.out).ne' hp f
+  LinearMap.mkContinuousOfExistsBound
     { toFun f := (mem f).toLp _
       map_add' f g := by
         rw [← MemLp.toLp_add]
@@ -83,25 +94,26 @@ def mulStrong (hp : p ≠ ∞) (F : X → E →L[𝕜] E') (hF : ∀ v, Continuo
         refine MemLp.toLp_congr _ _ ?_
         filter_upwards [Lp.coeFn_smul c f] with x hx
         simp only [hx, Pi.smul_apply, map_smul] }
-    (max C 0) fun f ↦ Lp.norm_le_mul_norm_of_ae_le_mul <| by
-      filter_upwards [(mem f).coeFn_toLp] with x hx
-      rw [LinearMap.coe_mk, AddHom.coe_mk, hx]
-      exact (F x).le_of_opNorm_le ((hC x).trans (le_max_left _ _)) _
+    (by
+      obtain ⟨C, hC⟩ := hB
+      exact ⟨C, fun f ↦ norm_toLp_mulStrong_le μ F (mem f) hC⟩)
 
 /-- Multiplication by a strongly continuous operator field acts by pointwise application
 almost everywhere. -/
 theorem coeFn_mulStrong [Fact (1 ≤ p)] (hp : p ≠ ∞) (F : X → E →L[𝕜] E')
-    (hF : ∀ v, Continuous fun x ↦ F x v) {C : ℝ} (hC : ∀ x, ‖F x‖ ≤ C) (f : Lp E p μ) :
-    mulStrong μ hp F hF hC f =ᵐ[μ] fun x ↦ F x (f x) :=
-  (memLp_mulStrong μ F hF hC (zero_lt_one.trans_le Fact.out).ne' hp f).coeFn_toLp
+    (hF : ∀ v, Continuous fun x ↦ F x v) (hB : ∃ C : ℝ, ∀ x, ‖F x‖ ≤ C) (f : Lp E p μ) :
+    mulStrong μ hp F hF hB f =ᵐ[μ] fun x ↦ F x (f x) := by
+  obtain ⟨C, hC⟩ := hB
+  exact (memLp_mulStrong μ F hF hC (zero_lt_one.trans_le Fact.out).ne' hp f).coeFn_toLp
 
 /-- The operator norm of multiplication is bounded by any nonnegative uniform bound on
 the field. -/
 theorem norm_mulStrong_le [Fact (1 ≤ p)] (hp : p ≠ ∞) (F : X → E →L[𝕜] E')
-    (hF : ∀ v, Continuous fun x ↦ F x v) {C : ℝ} (hC : ∀ x, ‖F x‖ ≤ C) :
-    ‖mulStrong μ hp F hF hC‖ ≤ max C 0 := by
-  unfold mulStrong
-  exact LinearMap.mkContinuous_norm_le _ (le_max_right C 0) _
+    (hF : ∀ v, Continuous fun x ↦ F x v) (hB : ∃ C : ℝ, ∀ x, ‖F x‖ ≤ C)
+    {C : ℝ} (hC₀ : 0 ≤ C) (hC : ∀ x, ‖F x‖ ≤ C) :
+    ‖mulStrong μ hp F hF hB‖ ≤ C :=
+  ContinuousLinearMap.opNorm_le_bound _ hC₀ fun f ↦ norm_toLp_mulStrong_le μ F
+    (memLp_mulStrong μ F hF hC (zero_lt_one.trans_le Fact.out).ne' hp f) hC
 
 section Algebra
 
@@ -110,7 +122,7 @@ variable [Fact (1 ≤ p)] (hp : p ≠ ∞)
 /-- The zero operator field acts as zero on `Lᵖ`. -/
 @[simp]
 theorem mulStrong_zero (h₀ : ∀ v, Continuous fun x ↦ (0 : X → E →L[𝕜] E') x v)
-    {C : ℝ} (hC : ∀ x, ‖(0 : X → E →L[𝕜] E') x‖ ≤ C) :
+    (hC : ∃ C : ℝ, ∀ x, ‖(0 : X → E →L[𝕜] E') x‖ ≤ C) :
     mulStrong μ hp (0 : X → E →L[𝕜] E') h₀ hC = 0 := by
   ext1 f
   refine Lp.ext ?_
@@ -123,7 +135,7 @@ theorem mulStrong_zero (h₀ : ∀ v, Continuous fun x ↦ (0 : X → E →L[�
 /-- The constant identity field acts as the identity on `Lᵖ`. -/
 @[simp]
 theorem mulStrong_one (h₁ : ∀ v, Continuous fun x ↦ (1 : X → E →L[𝕜] E) x v)
-    {C : ℝ} (hC : ∀ x, ‖(1 : X → E →L[𝕜] E) x‖ ≤ C) :
+    (hC : ∃ C : ℝ, ∀ x, ‖(1 : X → E →L[𝕜] E) x‖ ≤ C) :
     mulStrong μ hp (1 : X → E →L[𝕜] E) h₁ hC = 1 := by
   ext1 f
   refine Lp.ext ?_
@@ -132,8 +144,9 @@ theorem mulStrong_one (h₁ : ∀ v, Continuous fun x ↦ (1 : X → E →L[𝕜
 /-- The sum of two operator fields acts as the sum of their multiplication operators. -/
 theorem mulStrong_add (F G : X → E →L[𝕜] E')
     (hF : ∀ v, Continuous fun x ↦ F x v) (hG : ∀ v, Continuous fun x ↦ G x v)
-    (hFG : ∀ v, Continuous fun x ↦ (F + G) x v) {C D B : ℝ}
-    (hC : ∀ x, ‖F x‖ ≤ C) (hD : ∀ x, ‖G x‖ ≤ D) (hB : ∀ x, ‖(F + G) x‖ ≤ B) :
+    (hFG : ∀ v, Continuous fun x ↦ (F + G) x v)
+    (hC : ∃ C : ℝ, ∀ x, ‖F x‖ ≤ C) (hD : ∃ D : ℝ, ∀ x, ‖G x‖ ≤ D)
+    (hB : ∃ B : ℝ, ∀ x, ‖(F + G) x‖ ≤ B) :
     mulStrong μ hp (F + G) hFG hB = mulStrong μ hp F hF hC + mulStrong μ hp G hG hD := by
   ext1 f
   refine Lp.ext ?_
@@ -147,7 +160,7 @@ theorem mulStrong_add (F G : X → E →L[𝕜] E')
 /-- Scaling an operator field scales its multiplication operator by the same scalar. -/
 theorem mulStrong_smul (c : 𝕜) (F : X → E →L[𝕜] E')
     (hF : ∀ v, Continuous fun x ↦ F x v) (hcF : ∀ v, Continuous fun x ↦ (c • F) x v)
-    {C B : ℝ} (hC : ∀ x, ‖F x‖ ≤ C) (hB : ∀ x, ‖(c • F) x‖ ≤ B) :
+    (hC : ∃ C : ℝ, ∀ x, ‖F x‖ ≤ C) (hB : ∃ B : ℝ, ∀ x, ‖(c • F) x‖ ≤ B) :
     mulStrong μ hp (c • F) hcF hB = c • mulStrong μ hp F hF hC := by
   ext1 f
   refine Lp.ext ?_
@@ -161,8 +174,9 @@ in the same order. -/
 theorem mulStrong_comp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
     (F : X → E' →L[𝕜] E'') (G : X → E →L[𝕜] E')
     (hF : ∀ v, Continuous fun x ↦ F x v) (hG : ∀ v, Continuous fun x ↦ G x v)
-    (hFG : ∀ v, Continuous fun x ↦ (F x).comp (G x) v) {C D B : ℝ}
-    (hC : ∀ x, ‖F x‖ ≤ C) (hD : ∀ x, ‖G x‖ ≤ D) (hB : ∀ x, ‖(F x).comp (G x)‖ ≤ B) :
+    (hFG : ∀ v, Continuous fun x ↦ (F x).comp (G x) v)
+    (hC : ∃ C : ℝ, ∀ x, ‖F x‖ ≤ C) (hD : ∃ D : ℝ, ∀ x, ‖G x‖ ≤ D)
+    (hB : ∃ B : ℝ, ∀ x, ‖(F x).comp (G x)‖ ≤ B) :
     mulStrong μ hp (fun x ↦ (F x).comp (G x)) hFG hB =
       (mulStrong μ hp F hF hC).comp (mulStrong μ hp G hG hD) := by
   ext1 f
@@ -184,14 +198,15 @@ theorem continuous_mulStrong_apply {Z : Type*} [TopologicalSpace Z]
     (hF : ∀ v, Continuous fun q : Z × X ↦ F q.1 q.2 v)
     {C : ℝ} (hC : ∀ z x, ‖F z x‖ ≤ C) (ξ : Lp E p μ) :
     Continuous fun z ↦ mulStrong μ hp (F z)
-      (fun v ↦ (hF v).comp (continuous_const.prodMk continuous_id)) (hC z) ξ := by
+      (fun v ↦ (hF v).comp (continuous_const.prodMk continuous_id)) ⟨C, hC z⟩ ξ := by
   let M (z : Z) := mulStrong μ hp (F z)
-    (fun v ↦ (hF v).comp (continuous_const.prodMk continuous_id)) (hC z)
+    (fun v ↦ (hF v).comp (continuous_const.prodMk continuous_id)) ⟨C, hC z⟩
   have hM z (u : Lp E p μ) : M z u =ᵐ[μ] fun x ↦ F z x (u x) :=
     coeFn_mulStrong μ hp _ _ _ u
   refine ContinuousLinearMap.continuous_apply_of_dense
     (f := M) (Lp.dense_setOf_continuous_hasCompactSupport hp)
-    (fun z ↦ norm_mulStrong_le μ hp _ _ (hC z)) ?_ ξ
+    (fun z ↦ norm_mulStrong_le μ hp _ _ _ (le_max_right C 0)
+      fun x ↦ (hC z x).trans (le_max_left C 0)) ?_ ξ
   rintro u ⟨f, hfc, hfs, hu⟩
   have hcont : Continuous fun q : Z × X ↦ F q.1 q.2 (f q.2) :=
     AddMonoidHomClass.continuous_apply_of_bound hF
@@ -208,12 +223,10 @@ theorem continuous_mulStrong_apply {Z : Type*} [TopologicalSpace Z]
   have hd : Continuous fun q : Z × X ↦ ‖F q.1 q.2 (f q.2) - F z₀ q.2 (f q.2)‖ :=
     (hcont.sub (hcont.comp (continuous_const.prodMk continuous_snd))).norm
   have hsmall : ∀ᶠ z in 𝓝 z₀, ∀ x ∈ K, ‖F z x (f x) - F z₀ x (f x)‖ < δ := by
-    have he := hK.mem_prod_nhdsSet_of_forall
-      (s := {q : Z × X | ‖F q.1 q.2 (f q.2) - F z₀ q.2 (f q.2)‖ < δ}) fun x _ ↦ by
-        rw [← nhds_prod_eq]
-        exact (hd.continuousAt (x := (z₀, x))).preimage_mem_nhds
-          (Iio_mem_nhds (by simpa using hδ))
-    exact (Filter.Eventually.curry he).mono fun _ hz ↦ hz.self_of_nhdsSet
+    refine hK.eventually_forall_mem_of_tendsto_prod_nhds (g := fun _ ↦ 0) (isOpen_Iio (a := δ))
+      (fun x _ ↦ ?_) (fun _ _ ↦ hδ)
+    rw [← nhds_prod_eq]
+    simpa only [sub_self, _root_.norm_zero] using hd.tendsto (z₀, x)
   filter_upwards [hsmall] with z hz
   rw [_root_.dist_eq_norm]
   calc
@@ -238,8 +251,8 @@ variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpac
 
 /-- A strongly continuous field of unitary operators acts unitarily on `L²`. -/
 theorem mulStrong_mem_unitary (F : X → H →L[𝕜] H) (hF : ∀ v, Continuous fun x ↦ F x v)
-    {C : ℝ} (hC : ∀ x, ‖F x‖ ≤ C) (hU : ∀ x, F x ∈ unitary (H →L[𝕜] H)) :
-    mulStrong (p := 2) μ ENNReal.ofNat_ne_top F hF hC ∈ unitary (Lp H 2 μ →L[𝕜] Lp H 2 μ) := by
+    (hB : ∃ C : ℝ, ∀ x, ‖F x‖ ≤ C) (hU : ∀ x, F x ∈ unitary (H →L[𝕜] H)) :
+    mulStrong (p := 2) μ ENNReal.ofNat_ne_top F hF hB ∈ unitary (Lp H 2 μ →L[𝕜] Lp H 2 μ) := by
   have hstar (v : H) : Continuous fun x ↦ star (F x) v := by
     refine continuous_iff_continuousAt.2 fun x ↦ Metric.continuousAt_iff'.2 fun ε hε ↦ ?_
     have h := (Metric.continuousAt_iff' (b := x)).1 (hF (star (F x) v)).continuousAt ε hε
@@ -252,9 +265,11 @@ theorem mulStrong_mem_unitary (F : X → H →L[𝕜] H) (hF : ∀ v, Continuous
     have hisom : Isometry (F y) := (Unitary.linearIsometryEquiv U).isometry
     rw [← hisom.dist_eq, hUy, dist_comm]
     simpa only [hUx] using hy
-  let T := mulStrong (p := 2) μ ENNReal.ofNat_ne_top F hF hC
+  let T := mulStrong (p := 2) μ ENNReal.ofNat_ne_top F hF hB
   let S := mulStrong (p := 2) μ ENNReal.ofNat_ne_top (fun x ↦ star (F x)) hstar
-    (fun x ↦ by simpa only [norm_star] using hC x)
+    (by
+      obtain ⟨C, hC⟩ := hB
+      exact ⟨C, fun x ↦ by simpa only [norm_star] using hC x⟩)
   have hS (f : Lp H 2 μ) : S f =ᵐ[μ] fun x ↦ star (F x) (f x) :=
     coeFn_mulStrong μ ENNReal.ofNat_ne_top _ _ _ f
   have hT (f : Lp H 2 μ) : T f =ᵐ[μ] fun x ↦ F x (f x) :=
@@ -311,13 +326,13 @@ variable (μ p) in
 operator `f ↦ (x ↦ F x (f x))` from `Lᵖ(X, E)` to `Lᵖ(X, E')` for `1 ≤ p < ∞`. -/
 def mulLp (F : X →ᵇ (E →L[𝕜] E')) : Lp E p μ →L[𝕜] Lp E' p μ :=
   Lp.mulStrong μ hp F (fun v ↦ F.continuous.clm_apply (continuous_const (y := v)))
-    F.norm_coe_le_norm
+    ⟨‖F‖, F.norm_coe_le_norm⟩
 
 /-- The multiplication operator acts by pointwise application almost everywhere. -/
 theorem coeFn_mulLp (F : X →ᵇ (E →L[𝕜] E')) (f : Lp E p μ) :
     F.mulLp μ p hp f =ᵐ[μ] fun x ↦ F x (f x) :=
   Lp.coeFn_mulStrong μ hp F (fun v ↦ F.continuous.clm_apply (continuous_const (y := v)))
-    F.norm_coe_le_norm f
+    ⟨‖F‖, F.norm_coe_le_norm⟩ f
 
 variable {hp}
 
@@ -329,8 +344,7 @@ theorem mulLp_eq_iff {F : X →ᵇ (E →L[𝕜] E')} {f : Lp E p μ} {g : Lp E'
 
 /-- The operator norm of a multiplication operator is at most the supremum norm of its symbol. -/
 theorem norm_mulLp_le (F : X →ᵇ (E →L[𝕜] E')) : ‖F.mulLp μ p hp‖ ≤ ‖F‖ :=
-  (Lp.norm_mulStrong_le μ hp F (fun v ↦ F.continuous.clm_apply (continuous_const (y := v)))
-    F.norm_coe_le_norm).trans_eq (max_eq_left (norm_nonneg F))
+  Lp.norm_mulStrong_le μ hp F _ _ (norm_nonneg F) F.norm_coe_le_norm
 
 @[simp]
 theorem mulLp_zero : (0 : X →ᵇ (E →L[𝕜] E')).mulLp μ p hp = 0 := by
@@ -405,7 +419,7 @@ theorem mulL2StarAlgHom_apply (F : X →ᵇ (H →L[𝕜] H)) :
 theorem mulLp_mem_unitary {F : X →ᵇ (H →L[𝕜] H)} (hF : ∀ x, F x ∈ unitary (H →L[𝕜] H)) :
     F.mulLp μ 2 ENNReal.ofNat_ne_top ∈ unitary (Lp H 2 μ →L[𝕜] Lp H 2 μ) :=
   Lp.mulStrong_mem_unitary μ F (fun v ↦ F.continuous.clm_apply (continuous_const (y := v)))
-    F.norm_coe_le_norm hF
+    ⟨‖F‖, F.norm_coe_le_norm⟩ hF
 
 end Hilbert
 

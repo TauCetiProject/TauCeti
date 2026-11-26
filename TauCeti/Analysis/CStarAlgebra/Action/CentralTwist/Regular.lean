@@ -55,10 +55,7 @@ private theorem continuous_regularTwist_fst (a : A) :
 omit [IsTopologicalGroup G] in
 private theorem regularTwist_mem_unitary (s r : G) :
     regularTwist α ω s r ∈ unitary 𝓜(ℂ, A) :=
-  Unitary.mem_iff.mpr (by
-    have h := (Unitary.map (StarMonoidHom.ofClass (α.multiplier r⁻¹))
-      (ω.value s (s⁻¹ * r))).property
-    exact Unitary.mem_iff.mp h)
+  Unitary.map_mem (α.multiplier r⁻¹) (ω.value s (s⁻¹ * r)).property
 
 private theorem continuous_regularTwist_apply (v : H) :
     Continuous fun p : G × G => ρ.multiplierExtension hρ (regularTwist α ω p.1 p.2) v :=
@@ -92,7 +89,7 @@ private def regularTwistOperator (s : G) : Lp H 2 μ →L[ℂ] Lp H 2 μ :=
     (fun r => ρ.multiplierExtension hρ (regularTwist α ω s r))
     (fun v => (continuous_regularTwist_apply α ω ρ hρ v).comp
       (continuous_const.prodMk continuous_id))
-    (norm_regularTwist_apply_le α ω ρ hρ s)
+    ⟨1, norm_regularTwist_apply_le α ω ρ hρ s⟩
 
 omit [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ] in
 private theorem coeFn_regularTwistOperator (s : G) (ξ : Lp H 2 μ) :
@@ -104,8 +101,7 @@ omit [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ] in
 private theorem regularTwistOperator_mem_unitary (s : G) :
     regularTwistOperator α ω ρ hρ μ s ∈ unitary (Lp H 2 μ →L[ℂ] Lp H 2 μ) :=
   Lp.mulStrong_mem_unitary μ _ _ _ fun r =>
-    (Unitary.map (StarMonoidHom.ofClass (ρ.multiplierExtension hρ))
-      ⟨_, regularTwist_mem_unitary α ω s r⟩).property
+    Unitary.map_mem (ρ.multiplierExtension hρ) (regularTwist_mem_unitary α ω s r)
 
 /-- The projective unitary translation in the twisted regular pair. -/
 private def regularUnitary (s : G) : unitary (Lp H 2 μ →L[ℂ] Lp H 2 μ) :=
