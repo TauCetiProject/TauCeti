@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.Homotopy
 public import TauCeti.RingTheory.NovikovModule.Residue
 public import TauCeti.RingTheory.NovikovModule.Specialization
 public import TauCeti.RingTheory.NovikovModule.Topology
+import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 
 /-!
 # The completed complex of a Laurent differential over the Novikov ring
@@ -62,7 +63,9 @@ with Novikov coefficients.
   lifts of the orbits of that degree.
 * `TauCeti.NovikovModule.novikovComplex`: the Novikov complex of a Laurent differential.
 * `TauCeti.NovikovModule.novikovComplexXEquiv`, `TauCeti.NovikovModule.novikovComplexBasis`: its
-  term of degree `a` is the piece of degree `a`, free on the orbits of degree `a`.
+  term of degree `a` is the piece of degree `a`, free on the orbits of degree `a`; so its terms
+  are finite free modules over the Novikov ring (the `Module.Free` and `Module.Finite`
+  instances).
 * `TauCeti.NovikovModule.novikovComplexHom`: the chain map of a Laurent chain map.
 * `TauCeti.NovikovModule.novikovComplexHomotopy`: the homotopy given by a Laurent homotopy.
 * `TauCeti.NovikovModule.novikovComplexHomotopyEquiv`: the homotopy equivalence of Novikov
@@ -71,7 +74,8 @@ with Novikov coefficients.
 ## Main results
 
 * `TauCeti.NovikovModule.IsLaurentKernel.exists_potential_le`: a Laurent kernel between finite
-  unions of torsors with equivariant potentials obeys a potential bound.
+  unions of torsors with equivariant potentials obeys a potential bound, and so does a composite
+  of two of them (`TauCeti.NovikovModule.IsLaurentKernel.exists_potential_le_kernelComp`).
 * `TauCeti.NovikovModule.IsLaurentKernel.novikovMap_novikovMap_apply_val`: composites of maps of
   Laurent kernels are given by composites of kernels.
 * `TauCeti.NovikovModule.IsLaurentKernel.novikovMap_novikovMap_sub_eq`: a Laurent kernel homotopy
@@ -151,6 +155,25 @@ theorem exists_potential_le [Finite ι₁] (hm : IsLaurentKernel d₁ d₀ c m) 
   rw [hq] at hle
   linarith
 
+include hF₁ hF₀ hF₂ in
+/-- **A composite of Laurent kernels obeys a potential bound.** Along a nonzero coefficient of the
+composite kernel the potential increase is at most the sum of the bounds of the two kernels. -/
+theorem exists_potential_le_kernelComp [Finite ι₁] [Finite ι₀] (hm : IsLaurentKernel d₁ d₀ c m)
+    (hm' : IsLaurentKernel d₀ d₂ c' m') :
+    ∃ C, ∀ p q, kernelComp m m' p q ≠ 0 → F₂ q ≤ F₁ p + C := by
+  obtain ⟨C, hC⟩ := hm.exists_potential_le hF₁ hF₀
+  obtain ⟨C', hC'⟩ := hm'.exists_potential_le hF₀ hF₂
+  exact ⟨C + C', fun p q h => by
+    linarith [potential_le_of_kernelComp_ne_zero (hC p) (hC' · q) h]⟩
+
+include hF₀ hF₂ in
+/-- The outputs of a composite of Laurent kernels are completed combinations. -/
+theorem kernelComp_mem_novikovModule [Finite ι₀] (hm : IsLaurentKernel d₁ d₀ c m)
+    (hm' : IsLaurentKernel d₀ d₂ c' m') (p : Σ i, P₁ i) :
+    kernelComp m m' p ∈ NovikovModule R F₂ :=
+  kernelComp_mem (hm'.exists_potential_le hF₀ hF₂).choose_spec hm'.mem_novikovModule
+    (hm.mem_novikovModule p)
+
 variable [Finite ι₁] [Finite ι₀] [Finite ι₂]
 
 /-- **The map of a Laurent kernel on completed combinations.** The coefficient of `q` in the image
@@ -186,13 +209,10 @@ theorem novikovMap_novikovMap_apply_val (hm : IsLaurentKernel d₁ d₀ c m)
       ∑ᶠ p, a.val p * kernelComp m m' p q := by
   obtain ⟨C, hC⟩ := hm.exists_potential_le hF₁ hF₀
   obtain ⟨C', hC'⟩ := hm'.exists_potential_le hF₀ hF₂
-  have hfin := hm.mem_novikovModule (F₀ := F₀)
-  have hfin' := hm'.mem_novikovModule (F₀ := F₂)
-  have hCC (p q) (h : kernelComp m m' p q ≠ 0) : F₂ q ≤ F₁ p + (C + C') := by
-    linarith [potential_le_of_kernelComp_ne_zero (hC p) (hC' · q) h]
+  obtain ⟨C'', hCC⟩ := hm.exists_potential_le_kernelComp hF₁ hF₀ hF₂ hm'
   rw [hm.novikovMap_apply hF₁ hF₀ hC, hm'.novikovMap_apply hF₀ hF₂ hC',
-    kernelMap_kernelMap hC hfin hC' hfin' hCC fun p => kernelComp_mem hC' hfin' (hfin p),
-    kernelMap_apply_val]
+    kernelMap_kernelMap hC hm.mem_novikovModule hC' hm'.mem_novikovModule hCC
+      (hm.kernelComp_mem_novikovModule hF₀ hF₂ hm'), kernelMap_apply_val]
 
 end IsLaurentKernel
 
@@ -222,14 +242,10 @@ theorem novikovMap_novikovMap_sub_eq [DecidableEq (Σ i, P₁ i)] {e e' : A}
     hΨ.novikovMap hF₀ hF₁ (hm.novikovMap hF₁ hF₀ a) - a =
       hδ.novikovMap hF₁ hF₁ (hK.novikovMap hF₁ hF₁ a) +
         hK.novikovMap hF₁ hF₁ (hδ.novikovMap hF₁ hF₁ a) := by
-  obtain ⟨C, hC⟩ := hm.exists_potential_le hF₁ hF₀
-  obtain ⟨C', hC'⟩ := hΨ.exists_potential_le hF₀ hF₁
+  obtain ⟨CC, hCC⟩ := hm.exists_potential_le_kernelComp hF₁ hF₀ hF₁ hΨ
   obtain ⟨Ck, hCk⟩ := hK.exists_potential_le hF₁ hF₁
   obtain ⟨Cδ, hCδ⟩ := hδ.exists_potential_le hF₁ hF₁
-  have hfin (p) : kernelComp m Ψ p ∈ NovikovModule R F₁ :=
-    kernelComp_mem hC' hΨ.mem_novikovModule (hm.mem_novikovModule p)
-  have hCC (p q) (h : kernelComp m Ψ p q ≠ 0) : F₁ q ≤ F₁ p + (C + C') := by
-    linarith [potential_le_of_kernelComp_ne_zero (hC p) (hC' · q) h]
+  have hfin := hm.kernelComp_mem_novikovModule hF₀ hF₁ hΨ
   -- The composite of the two maps and the identity are kernel maps, and the difference of their
   -- kernels is the kernel homotopy.
   have h1 (p q) (h : (if p = q then (1 : R) else 0) ≠ 0) : F₁ q ≤ F₁ p + 0 := by
@@ -433,6 +449,16 @@ theorem coe_novikovComplexXEquiv_novikovComplexBasis (r : ∀ i, P i) (a : A)
       NovikovModule R F) = basis hF r i := by
   simp [novikovComplexBasis]
 
+/-- The terms of the Novikov complex are free over the Novikov ring. -/
+instance (a : A) :
+    Module.Free (NovikovSeries R H N) ((novikovComplex R hF d hd δ hδ hδδ).X a) :=
+  .of_basis (novikovComplexBasis R hF d hd δ hδ hδδ (fun _ => Classical.arbitrary _) a)
+
+/-- The terms of the Novikov complex are finitely generated over the Novikov ring. -/
+instance (a : A) :
+    Module.Finite (NovikovSeries R H N) ((novikovComplex R hF d hd δ hδ hδδ).X a) :=
+  .of_basis (novikovComplexBasis R hF d hd δ hδ hδδ (fun _ => Classical.arbitrary _) a)
+
 end Complex
 
 section HomotopyEquiv
@@ -577,6 +603,7 @@ and `δ₀`. Its maps are the chain maps of `Φ` and `Ψ`
 (`TauCeti.NovikovModule.novikovComplexHom`). The same data specialize on the finite Laurent
 model to a homotopy equivalence of cyclic complexes,
 `TauCeti.NovikovModule.cyclicComplexHomotopyEquiv`. -/
+@[expose, simps hom inv homotopyHomInvId homotopyInvHomId]
 def novikovComplexHomotopyEquiv (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
     (Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R) (K : (Σ i, P₁ i) → (Σ i, P₁ i) → R)
     (K' : (Σ k, P₀ k) → (Σ k, P₀ k) → R) (hΦ : IsLaurentKernel d₁ d₀ 0 Φ)
@@ -594,86 +621,6 @@ def novikovComplexHomotopyEquiv (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
   inv := novikovComplexHom Ψ hΨ hΨδ
   homotopyHomInvId := novikovComplexHomotopy Φ Ψ K hΦ hΨ hK hΦδ hΨδ hΦΨ
   homotopyInvHomId := novikovComplexHomotopy Ψ Φ K' hΨ hΦ hK' hΨδ hΦδ hΨΦ
-
-/-- The forward map of the homotopy equivalence of Novikov complexes is the chain map of `Φ`. -/
-@[simp]
-theorem novikovComplexHomotopyEquiv_hom (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
-    (Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R) (K : (Σ i, P₁ i) → (Σ i, P₁ i) → R)
-    (K' : (Σ k, P₀ k) → (Σ k, P₀ k) → R) (hΦ : IsLaurentKernel d₁ d₀ 0 Φ)
-    (hΨ : IsLaurentKernel d₀ d₁ 0 Ψ) (hK : IsLaurentKernel d₁ d₁ (-1) K)
-    (hK' : IsLaurentKernel d₀ d₀ (-1) K')
-    (hΦδ : ∀ p q, kernelComp δ₁ Φ p q = kernelComp Φ δ₀ p q)
-    (hΨδ : ∀ p q, kernelComp δ₀ Ψ p q = kernelComp Ψ δ₁ p q)
-    (hΦΨ : ∀ p q, kernelComp Φ Ψ p q - (if p = q then 1 else 0) =
-      kernelComp K δ₁ p q + kernelComp δ₁ K p q)
-    (hΨΦ : ∀ p q, kernelComp Ψ Φ p q - (if p = q then 1 else 0) =
-      kernelComp K' δ₀ p q + kernelComp δ₀ K' p q) :
-    (novikovComplexHomotopyEquiv (hF₁ := hF₁) (hd₁ := hd₁) (hδ₁ := hδ₁) (hδδ₁ := hδδ₁)
-        (hF₀ := hF₀) (hd₀ := hd₀) (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ hΦΨ
-        hΨΦ).hom =
-      novikovComplexHom Φ hΦ hΦδ :=
-  (rfl)
-
-/-- The backward map of the homotopy equivalence of Novikov complexes is the chain map of `Ψ`. -/
-@[simp]
-theorem novikovComplexHomotopyEquiv_inv (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
-    (Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R) (K : (Σ i, P₁ i) → (Σ i, P₁ i) → R)
-    (K' : (Σ k, P₀ k) → (Σ k, P₀ k) → R) (hΦ : IsLaurentKernel d₁ d₀ 0 Φ)
-    (hΨ : IsLaurentKernel d₀ d₁ 0 Ψ) (hK : IsLaurentKernel d₁ d₁ (-1) K)
-    (hK' : IsLaurentKernel d₀ d₀ (-1) K')
-    (hΦδ : ∀ p q, kernelComp δ₁ Φ p q = kernelComp Φ δ₀ p q)
-    (hΨδ : ∀ p q, kernelComp δ₀ Ψ p q = kernelComp Ψ δ₁ p q)
-    (hΦΨ : ∀ p q, kernelComp Φ Ψ p q - (if p = q then 1 else 0) =
-      kernelComp K δ₁ p q + kernelComp δ₁ K p q)
-    (hΨΦ : ∀ p q, kernelComp Ψ Φ p q - (if p = q then 1 else 0) =
-      kernelComp K' δ₀ p q + kernelComp δ₀ K' p q) :
-    (novikovComplexHomotopyEquiv (hF₁ := hF₁) (hd₁ := hd₁) (hδ₁ := hδ₁) (hδδ₁ := hδδ₁)
-        (hF₀ := hF₀) (hd₀ := hd₀) (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ hΦΨ
-        hΨΦ).inv =
-      novikovComplexHom Ψ hΨ hΨδ :=
-  (rfl)
-
-/-- The homotopy from the composite of the maps of the homotopy equivalence of Novikov complexes
-to the identity of the first complex has the components of the homotopy given by `K`. -/
-@[simp]
-theorem novikovComplexHomotopyEquiv_homotopyHomInvId_hom (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
-    (Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R) (K : (Σ i, P₁ i) → (Σ i, P₁ i) → R)
-    (K' : (Σ k, P₀ k) → (Σ k, P₀ k) → R) (hΦ : IsLaurentKernel d₁ d₀ 0 Φ)
-    (hΨ : IsLaurentKernel d₀ d₁ 0 Ψ) (hK : IsLaurentKernel d₁ d₁ (-1) K)
-    (hK' : IsLaurentKernel d₀ d₀ (-1) K')
-    (hΦδ : ∀ p q, kernelComp δ₁ Φ p q = kernelComp Φ δ₀ p q)
-    (hΨδ : ∀ p q, kernelComp δ₀ Ψ p q = kernelComp Ψ δ₁ p q)
-    (hΦΨ : ∀ p q, kernelComp Φ Ψ p q - (if p = q then 1 else 0) =
-      kernelComp K δ₁ p q + kernelComp δ₁ K p q)
-    (hΨΦ : ∀ p q, kernelComp Ψ Φ p q - (if p = q then 1 else 0) =
-      kernelComp K' δ₀ p q + kernelComp δ₀ K' p q) :
-    (novikovComplexHomotopyEquiv (hF₁ := hF₁) (hd₁ := hd₁) (hδ₁ := hδ₁) (hδδ₁ := hδδ₁)
-        (hF₀ := hF₀) (hd₀ := hd₀) (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ hΦΨ
-        hΨΦ).homotopyHomInvId.hom =
-      (novikovComplexHomotopy (hF₀ := hF₀) (hd₀ := hd₀) (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K hΦ hΨ hK
-        hΦδ hΨδ hΦΨ).hom :=
-  (rfl)
-
-/-- The homotopy from the composite of the maps of the homotopy equivalence of Novikov complexes
-to the identity of the second complex has the components of the homotopy given by `K'`. -/
-@[simp]
-theorem novikovComplexHomotopyEquiv_homotopyInvHomId_hom (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
-    (Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R) (K : (Σ i, P₁ i) → (Σ i, P₁ i) → R)
-    (K' : (Σ k, P₀ k) → (Σ k, P₀ k) → R) (hΦ : IsLaurentKernel d₁ d₀ 0 Φ)
-    (hΨ : IsLaurentKernel d₀ d₁ 0 Ψ) (hK : IsLaurentKernel d₁ d₁ (-1) K)
-    (hK' : IsLaurentKernel d₀ d₀ (-1) K')
-    (hΦδ : ∀ p q, kernelComp δ₁ Φ p q = kernelComp Φ δ₀ p q)
-    (hΨδ : ∀ p q, kernelComp δ₀ Ψ p q = kernelComp Ψ δ₁ p q)
-    (hΦΨ : ∀ p q, kernelComp Φ Ψ p q - (if p = q then 1 else 0) =
-      kernelComp K δ₁ p q + kernelComp δ₁ K p q)
-    (hΨΦ : ∀ p q, kernelComp Ψ Φ p q - (if p = q then 1 else 0) =
-      kernelComp K' δ₀ p q + kernelComp δ₀ K' p q) :
-    (novikovComplexHomotopyEquiv (hF₁ := hF₁) (hd₁ := hd₁) (hδ₁ := hδ₁) (hδδ₁ := hδδ₁)
-        (hF₀ := hF₀) (hd₀ := hd₀) (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ hΦΨ
-        hΨΦ).homotopyInvHomId.hom =
-      (novikovComplexHomotopy (hF₀ := hF₁) (hd₀ := hd₁) (hδ₀ := hδ₁) (hδδ₀ := hδδ₁) Ψ Φ K' hΨ hΦ
-        hK' hΨδ hΦδ hΨΦ).hom :=
-  (rfl)
 
 end HomotopyEquiv
 
