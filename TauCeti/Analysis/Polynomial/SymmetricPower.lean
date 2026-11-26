@@ -278,7 +278,12 @@ variable {K n}
 them: the roots of a monic polynomial depend continuously on its coefficients. -/
 @[continuity, fun_prop]
 theorem continuous_ofEsymm : Continuous fun d : Fin n → K => ofEsymm d := by
-  simp only [ofEsymm, ← coeffHomeomorph_symm_apply]
+  have h : (fun d : Fin n → K => ofEsymm d) =
+      fun d => (coeffHomeomorph K n).symm fun i : Fin n => (-1) ^ (n - (i : ℕ)) * d i.rev :=
+    funext fun d => by
+      rw [coeffHomeomorph_symm_apply, Equiv.eq_symm_apply]
+      exact funext (coeffEquiv_ofEsymm d)
+  rw [h]
   exact (coeffHomeomorph K n).symm.continuous.comp <|
     continuous_pi fun i => continuous_const.mul (continuous_apply i.rev)
 

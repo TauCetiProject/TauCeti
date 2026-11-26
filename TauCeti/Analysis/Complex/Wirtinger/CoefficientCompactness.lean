@@ -11,7 +11,6 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Complex.Wirtinger.Precompact
 import TauCeti.Analysis.Polynomial.SymmetricPower
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 import TauCeti.Analysis.Polynomial.Monic.RootBound
@@ -228,12 +227,6 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_esymm_of_eq {m : ℕ} {p 
 
 /-! ### The limits solve the equation -/
 
-private theorem esymm_ofEsymm_of_mem {m j : ℕ} (hj : j ∈ Finset.Icc 1 m) (e : ℕ → ℂ) :
-    ((Sym.ofEsymm (fun i : Fin m ↦ e (i + 1)) : Sym ℂ m) : Multiset ℂ).esymm j = e j := by
-  obtain ⟨hj1, hjm⟩ := Finset.mem_Icc.1 hj
-  obtain ⟨i, rfl⟩ : ∃ i : Fin m, (i : ℕ) + 1 = j := ⟨⟨j - 1, by omega⟩, by simp; omega⟩
-  exact Sym.esymm_ofEsymm _ i
-
 /-- The zeroth-order term `∑_{V ∈ s} \bar V e_{j-1}(s ∖ V)` of the equation of the elementary
 symmetric functions is continuous on the symmetric power: by `Multiset.sum_map_mul_esymm_erase`
 it is a polynomial in the elementary symmetric functions of `s` and the sums
@@ -310,10 +303,9 @@ theorem exists_esymm_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn {m
   have hR (n : ℕ) (z : ℂ) (hz : z ∈ U) :
       ((Sym.ofEsymm (D n z) : Sym ℂ m) : Multiset ℂ) = R n z := by
     rw [← (Sym.eq_ofEsymm_iff (s := Sym.mk (R n z) (hcard n z hz))).2 fun i ↦
-      (hbR n _ (hmem i) z hz).symm]
-    rfl
+      (hbR n _ (hmem i) z hz).symm, Sym.coe_mk]
   refine ⟨fun z ↦ Sym.ofEsymm (D₀ z), fun z _ ↦ (Sym.ofEsymm (D₀ z)).card_coe,
-    fun j hj z _ ↦ (esymm_ofEsymm_of_mem hj (c · z)).symm, fun j hj ↦ ?_⟩
+    fun j hj z _ ↦ (Sym.esymm_ofEsymm_of_mem hj (c · z)).symm, fun j hj ↦ ?_⟩
   -- The limiting zeroth-order term is that of the limiting coefficients and forms.
   have htarget : (fun z ↦ -((j * c j z) • ν₀ z +
       (((Sym.ofEsymm (D₀ z) : Sym ℂ m) : Multiset ℂ).map fun w ↦
@@ -321,7 +313,7 @@ theorem exists_esymm_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn {m
           μ₀ z) 1) = fun z ↦ -esymmZerothOrder m j (D₀ z, ν₀ z, μ₀ z) := by
     funext z
     have he : ((Sym.ofEsymm (D₀ z) : Sym ℂ m) : Multiset ℂ).esymm j = c j z :=
-      esymm_ofEsymm_of_mem hj (c · z)
+      Sym.esymm_ofEsymm_of_mem hj (c · z)
     simp only [esymmZerothOrder, he]
   rw [htarget]
   refine hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn (hb · j hj) (hc j hj)
