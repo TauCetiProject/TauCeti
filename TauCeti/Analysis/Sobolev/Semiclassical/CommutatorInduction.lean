@@ -133,8 +133,7 @@ private theorem contDiff_const_smul_coordinateDeriv_and_memLp {u : CoordinateSpa
     funext fun x ↦ iteratedFDeriv_const_smul_apply
       ((hu.coordinateDeriv [j]).of_le (by exact_mod_cast le_top)).contDiffAt
   rw [hD]
-  exact (memLp_iteratedFDeriv_coordinateDeriv (hu.of_le (by exact_mod_cast le_top)) (hum _)
-    j).const_smul h
+  exact (memLp_iteratedFDeriv_coordinateDeriv_of_forall hu hum j i).const_smul h
 
 /-- Constants obeying `C (k + 1) ≥ 1 + n C k (1 + B k C k + C 0)` with `C 0, B k ≥ 0` are
 nonnegative. -/

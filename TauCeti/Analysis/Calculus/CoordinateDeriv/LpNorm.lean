@@ -18,7 +18,9 @@ order `i + 1` of `f` control each other in `L²`:
 
 * `‖Dⁱ (∂ⱼ f)‖₂ ≤ ‖D^(i+1) f‖₂` (`TauCeti.lpNorm_iteratedFDeriv_coordinateDeriv_le`), and in
   particular `Dⁱ (∂ⱼ f) ∈ L²` when `D^(i+1) f ∈ L²`
-  (`TauCeti.memLp_iteratedFDeriv_coordinateDeriv`);
+  (`TauCeti.memLp_iteratedFDeriv_coordinateDeriv`), so that the partial derivatives of a smooth
+  function with all derivatives in `L²` are again such functions
+  (`TauCeti.memLp_iteratedFDeriv_coordinateDeriv_of_forall`);
 * `‖D^(i+1) f‖₂ ≤ ∑ⱼ ‖Dⁱ (∂ⱼ f)‖₂`
   (`TauCeti.lpNorm_iteratedFDeriv_succ_le_sum_coordinateDeriv`).
 
@@ -29,6 +31,7 @@ and `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`.
 public section
 
 open MeasureTheory
+open scoped ContDiff
 
 namespace TauCeti
 
@@ -42,6 +45,13 @@ theorem memLp_iteratedFDeriv_coordinateDeriv {i : ℕ} {f : CoordinateSpace n �
   hfm.of_le ((hf.coordinateDeriv_of_le [j] (by simp)).continuous_iteratedFDeriv
       le_rfl).aestronglyMeasurable
     (.of_forall (norm_iteratedFDeriv_coordinateDeriv_le hf j))
+
+/-- The partial derivatives of a smooth function with all derivatives square integrable again have
+all derivatives square integrable. -/
+theorem memLp_iteratedFDeriv_coordinateDeriv_of_forall {f : CoordinateSpace n → F}
+    (hf : ContDiff ℝ ∞ f) (hfm : ∀ i, MemLp (iteratedFDeriv ℝ i f) 2) (j : Fin n) (i : ℕ) :
+    MemLp (iteratedFDeriv ℝ i (coordinateDeriv [j] f)) 2 :=
+  memLp_iteratedFDeriv_coordinateDeriv (hf.of_le (by exact_mod_cast le_top)) (hfm _) j
 
 /-- The `L²` norm of a derivative of order `i` of a partial derivative of a `C^(i+1)` function `f`
 is at most that of the derivative of order `i + 1` of `f`, `‖Dⁱ (∂ⱼ f)‖₂ ≤ ‖D^(i+1) f‖₂`, when the
