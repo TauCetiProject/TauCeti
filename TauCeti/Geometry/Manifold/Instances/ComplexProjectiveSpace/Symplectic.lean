@@ -416,32 +416,6 @@ theorem eval₂_mpullback_affineParam_fubiniStudyForm (k : Fin (n + 1)) (z : Fin
 
 /-! ### Compatibility with the complex structure -/
 
-/-- By the definition of the atlas, the preferred chart at `x` is `affineChart k` for the index `k`
-chosen by `exists_mem_affineOpen x`. -/
-private theorem chartAt_eq_affineChart (x : ComplexProjectiveSpace n) :
-    chartAt (Fin n → ℂ) x = affineChart (exists_mem_affineOpen x).choose :=
-  (rfl)
-
-/-- The derivative of the parametrization `affineParam k` of the preferred chart `affineChart k`
-at `x`, taken at the chart point of `x`, is the identity in the coordinates of that chart. -/
-private theorem mfderiv_affineParam_chartAt_apply (x : ComplexProjectiveSpace n)
-    (v : TangentSpace 𝓘(ℝ, Fin n → ℂ) (chartAt (Fin n → ℂ) x x)) :
-    mfderiv 𝓘(ℝ, Fin n → ℂ) 𝓘(ℝ, Fin n → ℂ) (affineParam (exists_mem_affineOpen x).choose)
-        (chartAt (Fin n → ℂ) x x) v = v := by
-  have h := mfderivWithin_range_extChartAt_symm (I := 𝓘(ℝ, Fin n → ℂ)) (x := x)
-  rw [modelWithCornersSelf_coe, range_id, mfderivWithin_univ] at h
-  have hf : (extChartAt 𝓘(ℝ, Fin n → ℂ) x).symm = affineParam (exists_mem_affineOpen x).choose := by
-    funext z
-    simp [chartAt_eq_affineChart, affineChart_symm_apply]
-  rw [hf, extChartAt_coe] at h
-  exact congrArg (fun L ↦ L v) h
-
-/-- The parametrization of the preferred chart at `x` sends the chart point of `x` back to `x`. -/
-private theorem affineParam_chartAt (x : ComplexProjectiveSpace n) :
-    affineParam (exists_mem_affineOpen x).choose (chartAt (Fin n → ℂ) x x) = x := by
-  rw [← affineChart_symm_apply, ← chartAt_eq_affineChart]
-  exact (chartAt (Fin n → ℂ) x).left_inv (mem_chart_source (Fin n → ℂ) x)
-
 /-- The Fubini–Study form at `x`, on tangent vectors with coordinates `v`, `w` in the preferred
 chart `X_k ≠ 0` at `x`: the imaginary part of the homogeneous Fubini–Study Hermitian form at the
 homogeneous coordinate vector of `x` on the lifts `insertZeroL k v`, `insertZeroL k w`. -/
