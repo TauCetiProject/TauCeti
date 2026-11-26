@@ -12,7 +12,7 @@ import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Module.Projective
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Quotient.Card
-import TauCeti.Algebra.BigOperators.Expect
+import TauCeti.GroupTheory.Coset.Fiber
 import TauCeti.LinearAlgebra.Quotient.Lift
 
 /-!
@@ -104,7 +104,7 @@ variable {V W : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
   [AddCommGroup W] [Module k W] [Module.Finite k W]
 
 /-- The block average at the classes of `a` and `b` is the mean of `A` over the block maps
-`blockTriangularEnd a b x` for all `x : W →ₗ[k] V`. -/
+`blockTriangular a b x` for all `x : W →ₗ[k] V`. -/
 theorem blockAverage_ofEnd (F : HallAlgebra k) (a : Module.End k V) (b : Module.End k W)
     [Fintype (W →ₗ[k] V)] :
     blockAverage F (ofEnd a) (ofEnd b) =
@@ -171,23 +171,6 @@ attribute [local instance low] Fintype.ofFinite
 private abbrev compat (P : a.invtSubmodule × b.invtSubmodule) : Submodule k (W →ₗ[k] V) :=
   P.2.val.compatibleMaps P.1.val
 
-omit [Fintype k] [Module.Finite k V] [Module.Finite k W] in
-/-- For `y` taking `B` into `A`, the product `A × B` is invariant under the block map of `y`. -/
-private theorem prod_mem_invtSubmodule (P : a.invtSubmodule × b.invtSubmodule)
-    (y : compat a b P) : P.1.val.prod P.2.val ∈ (blockTriangular a b y.val).invtSubmodule := by
-  refine (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun p hp ↦ ?_
-  rw [Submodule.mem_prod] at hp ⊢
-  have hA := (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).1 P.1.prop
-  have hB := (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).1 P.2.prop
-  exact ⟨by simpa using add_mem (hA _ hp.1) (y.prop hp.2), by simpa using hB _ hp.2⟩
-
-omit [Fintype k] [Module.Finite k V] [Module.Finite k W] in
-/-- The shear by `s` intertwines the block map of `a s - s b + y` with the block map of `y`. -/
-private theorem shear_blockTriangular (s y : W →ₗ[k] V) (p : V × W) :
-    shear s (blockTriangular a b (a ∘ₗ s - s ∘ₗ b + y) p) =
-      blockTriangular a b y (shear s p) := by
-  ext <;> simp; abel
-
 /-- The parametrisation of the pairs `(x, U)`, `U` invariant under the block map of `x`: a pair
 `P = (A, B)`, a map `y` taking `B` into `A` and a class `s` of shears give
 `x = a s - s b + y` and the preimage of `A × B` under the shear by `s`. -/
@@ -196,8 +179,9 @@ private noncomputable def mackeyParam :
       Σ x : W →ₗ[k] V, (blockTriangular a b x).invtSubmodule
   | ⟨P, y, s⟩ => ⟨a ∘ₗ s.out - s.out ∘ₗ b + y.val,
       ⟨_, Submodule.comap_mem_invtSubmodule (shear s.out).toLinearMap
-        (shear_blockTriangular a b _ _)
-        (prod_mem_invtSubmodule a b P y)⟩⟩
+        (LinearMap.shear_blockTriangular a b _ _)
+        (Module.End.prod_mem_invtSubmodule_blockTriangular P.1.prop P.2.prop
+          ((Submodule.mem_compatibleMaps _ _).1 y.prop))⟩⟩
 
 omit [Fintype k] [Module.Finite k V] [Module.Finite k W] in
 private theorem mem_mackeyParam (P : a.invtSubmodule × b.invtSubmodule) (y : compat a b P)
@@ -310,8 +294,9 @@ private theorem mackeyTerm_mackeyParam (F H : HallAlgebra k) (P : a.invtSubmodul
       H (ofEnd (blockTriangular (a.invtQuot P.1.prop) (b.invtQuot P.2.prop)
         (induced a b P z).2)) := by
   obtain ⟨y, s⟩ := z
-  have h_sh := shear_blockTriangular a b s.out y.val
-  have h_prod := prod_mem_invtSubmodule a b P y
+  have h_sh := LinearMap.shear_blockTriangular a b s.out y.val
+  have h_prod := Module.End.prod_mem_invtSubmodule_blockTriangular P.1.prop P.2.prop
+    ((Submodule.mem_compatibleMaps _ _).1 y.prop)
   -- The shear identifies the block map of `x` on `U` with the block map of `y` on `A × B`.
   have h_sub : ofEnd ((blockTriangular a b (mackeyParam a b ⟨P, y, s⟩).1).invtRestrict
       (mackeyParam a b ⟨P, y, s⟩).2.prop) =

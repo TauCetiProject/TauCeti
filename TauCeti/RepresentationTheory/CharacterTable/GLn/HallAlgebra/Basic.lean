@@ -133,11 +133,8 @@ theorem smul_apply (a : ℂ) (F : HallAlgebra k) (c : SimilarityClass k) : (a �
 /-- Values of a finite sum of class functions. -/
 @[simp]
 theorem finset_sum_apply {ι : Type*} (s : Finset ι) (F : ι → HallAlgebra k)
-    (c : SimilarityClass k) : (∑ i ∈ s, F i) c = ∑ i ∈ s, F i c := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih => simp [Finset.sum_insert hi, ih]
+    (c : SimilarityClass k) : (∑ i ∈ s, F i) c = ∑ i ∈ s, F i c :=
+  Finset.sum_apply c s F
 
 /-- The constant function `𝟙` with value `1` on every class, of every size. -/
 def constOne : HallAlgebra k :=
@@ -273,16 +270,6 @@ attribute [local instance low] Fintype.ofFinite
 
 variable {V : Type*} [AddCommGroup V] [Module k V]
 
-/-- The inclusion of a `g`-invariant subspace intertwines the restriction of `g` with `g`. -/
-private theorem subtype_invtRestrict {g : Module.End k V} {W : Submodule k V}
-    (hW : W ∈ g.invtSubmodule) (x : W) : W.subtype (g.invtRestrict hW x) = g (W.subtype x) :=
-  g.coe_invtRestrict_apply hW x
-
-/-- The quotient map by a `g`-invariant subspace intertwines `g` with the map it induces. -/
-private theorem mkQ_invtQuot {g : Module.End k V} {W : Submodule k V}
-    (hW : W ∈ g.invtSubmodule) (x : V) : W.mkQ (g x) = g.invtQuot hW (W.mkQ x) :=
-  (g.invtQuot_mk hW x).symm
-
 variable [Finite k] [Module.Finite k V]
 
 omit [Finite k] in
@@ -330,35 +317,11 @@ protected theorem mul_one (F : HallAlgebra k) : F * 1 = F := by
     have h_lt := Submodule.finrank_lt this
     rw [one_apply, ite_eq_right (by simp; omega), mul_zero]
 
-omit [Finite k] in
-/-- For `g`-invariant subspaces `U ≤ W`, with `W` the preimage of a subspace `W'` of `V ⧸ U`, the
-map that `g` induces on `W ⧸ U` has the class of the restriction to `W'` of the map induced by
-`g` on `V ⧸ U`. -/
-private theorem ofEnd_invtQuot_invtRestrict_comap_mkQ {g : Module.End k V} {U : Submodule k V}
-    (hU : U ∈ g.invtSubmodule) {W' : Submodule k (V ⧸ U)}
-    (hW' : W' ∈ (g.invtQuot hU).invtSubmodule) :
-    ofEnd ((g.invtRestrict (Submodule.comap_mem_invtSubmodule U.mkQ (mkQ_invtQuot hU) hW')).invtQuot
-        (Submodule.comap_mem_invtSubmodule (W'.comap U.mkQ).subtype (subtype_invtRestrict _) hU)) =
-      ofEnd ((g.invtQuot hU).invtRestrict hW') := by
-  -- The quotient map `W → W'` is surjective, with kernel `U ∩ W`.
-  let p : W'.comap U.mkQ →ₗ[k] W' := (U.mkQ ∘ₗ (W'.comap U.mkQ).subtype).codRestrict W' (·.prop)
-  have hp (y : W'.comap U.mkQ) : (p y : V ⧸ U) = U.mkQ y := rfl
-  refine ofEnd_invtQuot_eq_of_surjective (g' := (g.invtQuot hU).invtRestrict hW') p ?_ _ ?_ ?_
-  · intro x
-    apply Subtype.ext
-    rw [Module.End.coe_invtRestrict_apply, hp, hp, Module.End.coe_invtRestrict_apply]
-    exact (g.invtQuot_mk hU x.val).symm
-  · rintro ⟨y, hy⟩
-    obtain ⟨v, rfl⟩ := U.mkQ_surjective y
-    exact ⟨⟨v, hy⟩, rfl⟩
-  · ext x
-    exact Subtype.ext_iff.trans ((hp x).symm ▸ Submodule.Quotient.mk_eq_zero U (x := x.val))
-
 /-- The term of a chain `U ≤ W` of invariant subspaces in the two iterated products. -/
 private noncomputable def chainTerm (F G H : HallAlgebra k) (g : Module.End k V)
     (U W : g.invtSubmodule) : ℂ :=
   F (ofEnd (g.invtRestrict U.prop)) * G (ofEnd ((g.invtRestrict W.prop).invtQuot
-    (Submodule.comap_mem_invtSubmodule W.val.subtype (subtype_invtRestrict W.prop) U.prop))) *
+    (Submodule.comap_mem_invtSubmodule W.val.subtype (g.coe_invtRestrict_apply W.prop) U.prop))) *
     H (ofEnd (g.invtQuot W.prop))
 
 open scoped Classical in
@@ -372,11 +335,12 @@ private theorem mul_mul_ofEnd_term (F G H : HallAlgebra k) (g : Module.End k V)
   rw [mul_ofEnd_eq_sum, Finset.sum_mul,
     ← Finset.filter_true_of_mem (s := Finset.univ)
       (p := fun U' ↦ LinearMap.ker W.val.subtype ≤ U'.val)
-      (by simp), LinearMap.sum_invtSubmodule_comap W.val.subtype (subtype_invtRestrict W.prop)]
+      (by simp),
+    LinearMap.sum_invtSubmodule_comap W.val.subtype (g.coe_invtRestrict_apply W.prop)]
   simp only [Submodule.range_subtype]
   refine Finset.sum_congr rfl fun U hU ↦ ?_
-  rw [chainTerm, ofEnd_invtRestrict_comap _ (subtype_invtRestrict W.prop) W.val.injective_subtype
-    U.prop (by simpa using (Finset.mem_filter.1 hU).2)]
+  rw [chainTerm, ofEnd_invtRestrict_comap _ (g.coe_invtRestrict_apply W.prop)
+    W.val.injective_subtype U.prop (by simpa using (Finset.mem_filter.1 hU).2)]
 
 open scoped Classical in
 /-- `(A ∗ (B ∗ C))(g)` is the sum of `chainTerm` over the chains `U ≤ W`, grouped by `U`. -/
@@ -386,15 +350,16 @@ private theorem mul_ofEnd_mul_term (F G H : HallAlgebra k) (g : Module.End k V)
       ∑ W ∈ Finset.univ.filter (fun W : g.invtSubmodule ↦ U.val ≤ W.val),
         chainTerm F G H g U W := by
   -- The invariant subspaces of `g` on `V ⧸ U` are the images of those containing `U`.
-  have key :=
-    LinearMap.sum_invtSubmodule_comap U.val.mkQ (mkQ_invtQuot U.prop) (chainTerm F G H g U)
+  have key := LinearMap.sum_invtSubmodule_comap U.val.mkQ
+    (fun x ↦ (g.invtQuot_mk U.prop x).symm) (chainTerm F G H g U)
   rw [U.val.ker_mkQ, Finset.filter_true_of_mem (s := Finset.univ)
     (p := fun W' : (g.invtQuot U.prop).invtSubmodule ↦ W'.val ≤ LinearMap.range U.val.mkQ)
     (by simp)] at key
   rw [mul_ofEnd_eq_sum, Finset.mul_sum, key]
   refine Finset.sum_congr rfl fun W' _ ↦ ?_
   rw [chainTerm, ofEnd_invtQuot_invtRestrict_comap_mkQ U.prop W'.prop,
-    ofEnd_invtQuot_comap _ (mkQ_invtQuot U.prop) U.val.mkQ_surjective W'.prop, mul_assoc]
+    ofEnd_invtQuot_comap _ (fun x ↦ (g.invtQuot_mk U.prop x).symm) U.val.mkQ_surjective W'.prop,
+    mul_assoc]
 
 /-- The induction product is associative. -/
 protected theorem mul_assoc (F G H : HallAlgebra k) : F * G * H = F * (G * H) := by
@@ -404,26 +369,6 @@ protected theorem mul_assoc (F G H : HallAlgebra k) : F * G * H = F * (G * H) :=
   rw [mul_ofEnd_eq_sum, mul_ofEnd_eq_sum]
   simp only [mul_mul_ofEnd_term, mul_ofEnd_mul_term]
   exact Finset.sum_comm' (by simp)
-
-omit [Finite k] in
-/-- The transpose of `g` on the annihilator of `W` has the class of `g` on `V ⧸ W`, and on the
-quotient by the annihilator the class of `g` on `W`. -/
-private theorem ofEnd_dualMap_dualAnnihilator {g : Module.End k V} {W : Submodule k V}
-    (hW : W ∈ g.invtSubmodule) :
-    ofEnd (V := W.dualAnnihilator)
-        (Module.End.invtRestrict g.dualMap (W.dualAnnihilator_mem_invtSubmodule hW)) =
-        ofEnd (g.invtQuot hW) ∧
-      ofEnd (Module.End.invtQuot g.dualMap (W.dualAnnihilator_mem_invtSubmodule hW)) =
-        ofEnd (g.invtRestrict hW) := by
-  constructor
-  · rw [ofEnd_invtRestrict_eq_of_injective (g := (g.invtQuot hW).dualMap) W.mkQ.dualMap
-      (fun φ ↦ LinearMap.ext fun v ↦ by simp) _
-      (LinearMap.dualMap_injective_of_surjective W.mkQ_surjective) W.range_dualMap_mkQ_eq,
-      ofEnd_dualMap]
-  · rw [ofEnd_invtQuot_eq_of_surjective (g' := (g.invtRestrict hW).dualMap) W.subtype.dualMap
-      (fun φ ↦ LinearMap.ext fun w ↦ by simp) _
-      (LinearMap.dualMap_surjective_of_injective W.injective_subtype)
-      (by simp [LinearMap.ker_dualMap_eq_dualAnnihilator_range]), ofEnd_dualMap]
 
 /-- The induction product is commutative. -/
 protected theorem mul_comm (F H : HallAlgebra k) : F * H = H * F := by
@@ -438,8 +383,8 @@ protected theorem mul_comm (F H : HallAlgebra k) : F * H = H * F := by
       left_inv W := Subtype.ext Subspace.dualAnnihilator_dualCoannihilator_eq
       right_inv W := Subtype.ext Subspace.dualCoannihilator_dualAnnihilator_eq }
   refine (Fintype.sum_equiv E _ _ fun W ↦ ?_).symm
-  obtain ⟨h₁, h₂⟩ := ofEnd_dualMap_dualAnnihilator W.prop
-  simp only [E, Equiv.coe_fn_mk, h₁, h₂, mul_comm]
+  simp only [E, Equiv.coe_fn_mk, ofEnd_invtRestrict_dualAnnihilator W.prop,
+    ofEnd_invtQuot_dualAnnihilator W.prop, mul_comm]
 
 /-- For finite `k`, the induction product makes the class functions on all square matrices a
 commutative ring, with unit the indicator of the classes of size `0`. -/

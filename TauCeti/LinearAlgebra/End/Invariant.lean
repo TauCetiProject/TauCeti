@@ -43,6 +43,10 @@ the shear `(v, w) ↦ (v + s w, w)` changes its upper right block.
 * `Submodule.dualAnnihilator_mem_invtSubmodule`,
   `Submodule.dualCoannihilator_mem_invtSubmodule`: annihilators exchange the submodules invariant
   under `g` and under its transpose.
+* `Module.End.prod_mem_invtSubmodule_blockTriangular`: `A × B` is invariant under a block map
+  whose diagonal blocks preserve `A` and `B` and whose upper right block maps `B` into `A`.
+* `LinearMap.shear_blockTriangular`: the shear by `s` conjugates the block map with upper right
+  block `a ∘ s - s ∘ b + y` to the one with upper right block `y`.
 
 ## References
 
@@ -177,6 +181,18 @@ theorem blockTriangular_apply (a : Module.End R V) (b : Module.End R W) (x : W �
     (p : V × W) : a.blockTriangular b x p = (a p.1 + x p.2, b p.2) := by
   simp [blockTriangular]
 
+/-- If `A` is `a`-invariant, `B` is `b`-invariant and `x` maps `B` into `A`, then `A × B` is
+invariant under the block map `(v, w) ↦ (a v + x w, b w)`. -/
+theorem prod_mem_invtSubmodule_blockTriangular {a : Module.End R V} {b : Module.End R W}
+    {x : W →ₗ[R] V} {A : Submodule R V} {B : Submodule R W} (hA : A ∈ a.invtSubmodule)
+    (hB : B ∈ b.invtSubmodule) (hx : B ≤ A.comap x) :
+    A.prod B ∈ (a.blockTriangular b x).invtSubmodule := by
+  refine (mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun p hp ↦ ?_
+  rw [Submodule.mem_prod] at hp ⊢
+  have hA := (mem_invtSubmodule_iff_forall_mem_of_mem _).1 hA
+  have hB := (mem_invtSubmodule_iff_forall_mem_of_mem _).1 hB
+  exact ⟨by simpa using add_mem (hA _ hp.1) (hx hp.2), by simpa using hB _ hp.2⟩
+
 end BlockTriangular
 
 end Module.End
@@ -203,6 +219,13 @@ theorem shear_apply (s : W →ₗ[R] V) (p : V × W) : s.shear p = (p.1 + s p.2,
 @[simp]
 theorem shear_symm_apply (s : W →ₗ[R] V) (p : V × W) : s.shear.symm p = (p.1 - s p.2, p.2) :=
   (rfl)
+
+/-- The shear by `s` intertwines the block map with upper right block `a ∘ s - s ∘ b + y` with the
+block map with upper right block `y`. -/
+theorem shear_blockTriangular (a : Module.End R V) (b : Module.End R W) (s y : W →ₗ[R] V)
+    (p : V × W) :
+    s.shear (a.blockTriangular b (a ∘ₗ s - s ∘ₗ b + y) p) = a.blockTriangular b y (s.shear p) := by
+  ext <;> simp; abel
 
 end Shear
 

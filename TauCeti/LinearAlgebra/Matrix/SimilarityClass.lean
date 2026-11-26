@@ -40,10 +40,16 @@ These classes index the class functions on all square matrices of the Hall algeb
   `TauCeti.SimilarityClass.ofEnd_invtQuot_eq_of_surjective`: classes of the endomorphisms induced
   on invariant subspaces and quotients (`Module.End.invtRestrict`, `Module.End.invtQuot`), computed
   through an injective or surjective intertwining map.
+* `TauCeti.SimilarityClass.ofEnd_invtQuot_invtRestrict_comap_mkQ`: for invariant subspaces
+  `U ≤ W`, the class of `g` on `W ⧸ U` computed in `V ⧸ U` (third isomorphism theorem).
 * `TauCeti.SimilarityClass.ofEnd_dualMap`: every endomorphism of a finite-dimensional vector
   space is similar to its transpose. The proof identifies `V` with a product of cyclic
   `k[X]`-modules `k[X] ⧸ (p)` and each of these with its dual through a nondegenerate form
   `(x, y) ↦ L (x * y)` (`Ideal.exists_nondegenerate_mul_form`).
+* `TauCeti.SimilarityClass.ofEnd_invtRestrict_dualAnnihilator`,
+  `TauCeti.SimilarityClass.ofEnd_invtQuot_dualAnnihilator`: the transpose of `g` on the annihilator
+  of an invariant subspace `W`, and on the quotient by it, has the class of `g` on `V ⧸ W`, and on
+  `W`.
 
 ## References
 
@@ -239,6 +245,30 @@ theorem ofEnd_invtQuot_comap (p : V →ₗ[k] V') (hp : ∀ x, p (g x) = g' (p x
   ofEnd_invtQuot_eq_of_surjective (U.mkQ ∘ₗ p) (fun x ↦ by simp [hp]) _
     (U.mkQ_surjective.comp h_surj) (by simp [LinearMap.ker_comp])
 
+/-- For `g`-invariant subspaces `U ≤ W`, with `W` the preimage of a subspace `W'` of `V ⧸ U`, the
+map that `g` induces on `W ⧸ U` has the class of the restriction to `W'` of the map induced by
+`g` on `V ⧸ U`. -/
+theorem ofEnd_invtQuot_invtRestrict_comap_mkQ {U : Submodule k V} (hU : U ∈ g.invtSubmodule)
+    {W' : Submodule k (V ⧸ U)} (hW' : W' ∈ (g.invtQuot hU).invtSubmodule) :
+    ofEnd ((g.invtRestrict (Submodule.comap_mem_invtSubmodule U.mkQ
+        (fun x ↦ (g.invtQuot_mk hU x).symm) hW')).invtQuot
+        (Submodule.comap_mem_invtSubmodule (W'.comap U.mkQ).subtype
+          (g.coe_invtRestrict_apply _) hU)) =
+      ofEnd ((g.invtQuot hU).invtRestrict hW') := by
+  -- The quotient map `W → W'` is surjective, with kernel `U ∩ W`.
+  let p : W'.comap U.mkQ →ₗ[k] W' := (U.mkQ ∘ₗ (W'.comap U.mkQ).subtype).codRestrict W' (·.prop)
+  have hp (y : W'.comap U.mkQ) : (p y : V ⧸ U) = U.mkQ y := rfl
+  refine ofEnd_invtQuot_eq_of_surjective (g' := (g.invtQuot hU).invtRestrict hW') p ?_ _ ?_ ?_
+  · intro x
+    apply Subtype.ext
+    rw [Module.End.coe_invtRestrict_apply, hp, hp, Module.End.coe_invtRestrict_apply]
+    exact (g.invtQuot_mk hU x.val).symm
+  · rintro ⟨y, hy⟩
+    obtain ⟨v, rfl⟩ := U.mkQ_surjective y
+    exact ⟨⟨v, hy⟩, rfl⟩
+  · ext x
+    exact Subtype.ext_iff.trans ((hp x).symm ▸ Submodule.Quotient.mk_eq_zero U (x := x.val))
+
 end Invariant
 
 end SimilarityClass
@@ -270,6 +300,31 @@ theorem SimilarityClass.ofEnd_dualMap {V : Type*} [AddCommGroup V] [Module k V]
   refine (ofEnd_eq_of_apply_eq D ?_).symm
   simp [D, LinearMap.BilinForm.toDual, LinearMap.ext_iff, E, ← Module.AEval'.X_smul_of,
     smul_mul_assoc, mul_smul_comm]
+
+/-- The transpose of `g` on the annihilator of a `g`-invariant subspace `W` has the class of the map
+induced by `g` on `V ⧸ W`. -/
+theorem SimilarityClass.ofEnd_invtRestrict_dualAnnihilator {V : Type*} [AddCommGroup V]
+    [Module k V] [Module.Finite k V] {g : Module.End k V} {W : Submodule k V}
+    (hW : W ∈ g.invtSubmodule) :
+    ofEnd (V := W.dualAnnihilator)
+        (Module.End.invtRestrict g.dualMap (W.dualAnnihilator_mem_invtSubmodule hW)) =
+      ofEnd (g.invtQuot hW) := by
+  rw [ofEnd_invtRestrict_eq_of_injective (g := (g.invtQuot hW).dualMap) W.mkQ.dualMap
+    (fun φ ↦ LinearMap.ext fun v ↦ by simp) _
+    (LinearMap.dualMap_injective_of_surjective W.mkQ_surjective) W.range_dualMap_mkQ_eq,
+    ofEnd_dualMap]
+
+/-- The map induced by the transpose of `g` on the quotient by the annihilator of a `g`-invariant
+subspace `W` has the class of the restriction of `g` to `W`. -/
+theorem SimilarityClass.ofEnd_invtQuot_dualAnnihilator {V : Type*} [AddCommGroup V]
+    [Module k V] [Module.Finite k V] {g : Module.End k V} {W : Submodule k V}
+    (hW : W ∈ g.invtSubmodule) :
+    ofEnd (Module.End.invtQuot g.dualMap (W.dualAnnihilator_mem_invtSubmodule hW)) =
+      ofEnd (g.invtRestrict hW) := by
+  rw [ofEnd_invtQuot_eq_of_surjective (g' := (g.invtRestrict hW).dualMap) W.subtype.dualMap
+    (fun φ ↦ LinearMap.ext fun w ↦ by simp) _
+    (LinearMap.dualMap_surjective_of_injective W.injective_subtype)
+    (by simp [LinearMap.ker_dualMap_eq_dualAnnihilator_range]), ofEnd_dualMap]
 
 end Transpose
 
