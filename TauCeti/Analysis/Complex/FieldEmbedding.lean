@@ -71,8 +71,7 @@ private theorem lift_trdeg_le [CommRing E] [IsDomain E] [Algebra k E] (hE : #E �
 /-- A domain of cardinality `𝔠` has the same transcendence degree as `ℂ` over a countable field. -/
 private theorem lift_trdeg_eq [CommRing E] [IsDomain E] [Algebra k E] (hE : #E = 𝔠) :
     Cardinal.lift.{0} (trdeg k E) = Cardinal.lift.{u} (trdeg k ℂ) := by
-  rw [trdeg_eq_continuum, lift_continuum,
-    trdeg_eq_cardinalMk (hE ▸ aleph0_lt_continuum), hE, lift_continuum]
+  simp [trdeg_eq_continuum, trdeg_eq_cardinalMk (hE ▸ aleph0_lt_continuum), hE]
 
 /-- Every complex embedding of a countable field `k`, given as a `k`-algebra structure on `ℂ`,
 extends to every field extension `E` of `k`, or domain containing `k`, with `#E ≤ 𝔠`. -/

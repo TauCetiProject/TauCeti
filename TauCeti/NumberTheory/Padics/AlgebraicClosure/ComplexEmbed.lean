@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.Complex
-public import Mathlib.RingTheory.Algebraic.Basic
 import Mathlib.Algebra.AlgebraicCard
 import TauCeti.NumberTheory.Padics.Cardinality
 
@@ -21,9 +20,9 @@ uniformly bounded across all ring isomorphisms `ι : ℂ ≃+* PadicAlgCl ℓ` m
 
 ## Main results
 
-* `TauCeti.isAlgebraic_of_forall_norm_ringEquiv_le`: if `x : ℂ` has uniformly bounded spectral
-  norm `‖ι x‖ ≤ c` across all ring isomorphisms `ι : ℂ ≃+* PadicAlgCl ℓ`, then `x` is algebraic
-  over `ℚ`.
+* `TauCeti.isAlgebraic_of_forall_ringEquiv_norm_apply_le`: if `x : ℂ` has uniformly bounded
+  spectral norm `‖ι x‖ ≤ c` across all ring isomorphisms `ι : ℂ ≃+* PadicAlgCl ℓ`, then `x` is
+  algebraic over `ℚ`.
 
 ## References
 
@@ -42,7 +41,7 @@ namespace TauCeti
 /-- **`ℓ`-adic criterion for algebraicity of complex numbers.** Let `ℓ` be a prime. If the
 spectral norms `‖ι x‖` of `x : ℂ` under all ring isomorphisms `ι : ℂ ≃+* PadicAlgCl ℓ` have a
 common upper bound `c`, then `x` is algebraic over `ℚ`. -/
-theorem isAlgebraic_of_forall_norm_ringEquiv_le {ℓ : ℕ} [Fact ℓ.Prime] {x : ℂ} {c : ℝ}
+theorem isAlgebraic_of_forall_ringEquiv_norm_apply_le {ℓ : ℕ} [Fact ℓ.Prime] {x : ℂ} {c : ℝ}
     (h_bound : ∀ ι : ℂ ≃+* PadicAlgCl ℓ, ‖ι x‖ ≤ c) : IsAlgebraic ℚ x := by
   by_contra hx
   obtain ⟨y, hy, hcy⟩ : ∃ y : PadicAlgCl ℓ, ¬IsAlgebraic ℚ y ∧ c < ‖y‖ :=

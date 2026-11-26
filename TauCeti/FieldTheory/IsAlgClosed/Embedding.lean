@@ -35,9 +35,10 @@ field into `ℂ` to a field of cardinality at most the continuum.
   basis to a given algebraically independent family.
 * `IsTranscendenceBasis.exists_algEquiv_apply_eq`: between algebraically closed fields, an
   isomorphism realising a bijection of transcendence bases.
-* `TauCeti.IsAlgClosed.nonempty_algHom_of_lift_trdeg_le`,
-  `TauCeti.IsAlgClosed.nonempty_algEquiv_of_lift_trdeg_eq`: homomorphisms and isomorphisms from
-  transcendence degrees.
+* `TauCeti.IsAlgClosed.exists_algHom_injective_of_lift_trdeg_le`,
+  `TauCeti.IsAlgClosed.nonempty_algHom_of_lift_trdeg_le`,
+  `TauCeti.IsAlgClosed.nonempty_algEquiv_of_lift_trdeg_eq`: injective homomorphisms and
+  isomorphisms from transcendence degrees over a commutative ring with faithful actions.
 * `Transcendental.exists_algHom_apply_eq`, `Transcendental.exists_algEquiv_apply_eq`: the same,
   sending a transcendental element to a prescribed transcendental element.
 * `TauCeti.IsAlgClosed.exists_ringEquiv_extend`: Steinitz extension of injective embeddings of a
@@ -45,7 +46,7 @@ field into `ℂ` to a field of cardinality at most the continuum.
   cardinality.
 * `TauCeti.IsAlgClosed.exists_ringHom_extend_of_cardinal_le`: extension of an embedding of a
   countable commutative ring into an uncountable algebraically closed field `E` along an embedding
-  into an integral domain `K` with `#K ≤ #E`.
+  into an integral domain `K` with `#K ≤ #E`, yielding an injective ring homomorphism `K →+* E`.
 
 The isomorphism statements specialise `IsTranscendenceBasis.exists_ringEquiv_comp_algebraMap`,
 which follows Mathlib's `IsAlgClosed.equivOfTranscendenceBasis`; the homomorphism statements
@@ -115,24 +116,84 @@ variable {k : Type*} {Ω : Type v} [Field k] [Field Ω] [Algebra k Ω] [IsAlgClo
 
 namespace TauCeti.IsAlgClosed
 
-/-- A domain `E` containing a field `k` maps over `k` to an algebraically closed extension
-`Ω` of `k` whose transcendence degree over `k` is at least that of `E`. -/
-theorem nonempty_algHom_of_lift_trdeg_le {E : Type u} [CommRing E] [IsDomain E] [Algebra k E]
-    (h : Cardinal.lift.{v} (trdeg k E) ≤ Cardinal.lift.{u} (trdeg k Ω)) :
-    Nonempty (E →ₐ[k] Ω) := by
-  obtain ⟨s, hs⟩ := exists_isTranscendenceBasis k E
-  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis k Ω
-  obtain ⟨f⟩ := hs.nonempty_embedding_of_lift_trdeg_le ht h
-  obtain ⟨φ, -⟩ := hs.exists_algHom_apply_eq (ht.1.comp f f.injective)
-  exact ⟨φ⟩
+private theorem algHom_injective_of_isAlgebraic {A E Ω : Type*} [CommRing A] [CommRing E]
+    [IsDomain E] [Algebra A E] [Algebra.IsAlgebraic A E] [Field Ω] [Algebra A Ω]
+    (φ : E →ₐ[A] Ω) (hA : Function.Injective (algebraMap A Ω)) : Function.Injective φ := by
+  have : Nontrivial A := RingHom.domain_nontrivial (algebraMap A Ω)
+  refine (injective_iff_map_eq_zero φ).2 fun x hx ↦ ?_
+  obtain ⟨p, hp0, hpx⟩ := Algebra.IsAlgebraic.isAlgebraic (R := A) x
+  suffices ∀ (n : ℕ) (q : Polynomial A), q.natDegree = n → q ≠ 0 →
+      Polynomial.aeval x q = 0 → x = 0 from this p.natDegree p rfl hp0 hpx
+  intro n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    intro q hdeg hq0 hqx
+    by_cases hc0 : q.coeff 0 = 0
+    · obtain ⟨r, rfl⟩ := Polynomial.X_dvd_iff.2 hc0
+      have hr0 : r ≠ 0 := right_ne_zero_of_mul hq0
+      have hrdeg : r.natDegree < n := by
+        rw [← hdeg, Polynomial.natDegree_X_mul hr0]; exact Nat.lt_succ_self _
+      have hxr : x = 0 ∨ Polynomial.aeval x r = 0 := by
+        simpa [map_mul, Polynomial.aeval_X] using hqx
+      rcases hxr with hx0 | hrx
+      · exact hx0
+      · exact ih r.natDegree hrdeg r rfl hr0 hrx
+    · have h0 : algebraMap A Ω (q.coeff 0) = 0 := by
+        have h1 := congrArg φ hqx
+        rw [map_zero, ← Polynomial.aeval_algHom_apply, hx, Polynomial.aeval_def,
+          Polynomial.eval₂_at_zero] at h1
+        exact h1
+      exact absurd (hA (h0.trans (map_zero _).symm)) hc0
 
-/-- Two algebraically closed extensions of `k` with the same transcendence degree over `k` are
-isomorphic over `k`. -/
-theorem nonempty_algEquiv_of_lift_trdeg_eq {E : Type u} [Field E] [Algebra k E] [IsAlgClosed E]
-    (h : Cardinal.lift.{v} (trdeg k E) = Cardinal.lift.{u} (trdeg k Ω)) :
-    Nonempty (E ≃ₐ[k] Ω) := by
-  obtain ⟨s, hs⟩ := exists_isTranscendenceBasis k E
-  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis k Ω
+/-- A domain `E` over a commutative ring `R` acting faithfully on `E` and an algebraically closed
+field `Ω` embeds over `R` into `Ω` whenever `trdeg R E ≤ trdeg R Ω`. -/
+theorem exists_algHom_injective_of_lift_trdeg_le {R : Type*} {E : Type u} {Ω : Type v}
+    [CommRing R] [CommRing E] [IsDomain E] [Algebra R E] [FaithfulSMul R E]
+    [Field Ω] [Algebra R Ω] [IsAlgClosed Ω] [FaithfulSMul R Ω]
+    (h : Cardinal.lift.{v} (trdeg R E) ≤ Cardinal.lift.{u} (trdeg R Ω)) :
+    ∃ φ : E →ₐ[R] Ω, Function.Injective φ := by
+  have : Nontrivial R := RingHom.domain_nontrivial (algebraMap R E)
+  obtain ⟨s, hs⟩ := exists_isTranscendenceBasis R E
+  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis R Ω
+  obtain ⟨f⟩ := hs.nonempty_embedding_of_lift_trdeg_le ht h
+  have hw : AlgebraicIndependent R (((↑) : t → Ω) ∘ f) := ht.1.comp f f.injective
+  obtain ⟨φ, hφ⟩ := hs.exists_algHom_apply_eq hw
+  let A := Algebra.adjoin R (Set.range ((↑) : s → E))
+  have hφA : (φ.comp A.val).comp hs.1.aevalEquiv.toAlgHom = aeval (((↑) : t → Ω) ∘ f) :=
+    MvPolynomial.algHom_ext fun i ↦ by simpa using hφ i
+  have hA_inj : Function.Injective (φ.comp A.val) := by
+    have hcomp : Function.Injective ((φ.comp A.val) ∘ hs.1.aevalEquiv) := by
+      have heq : ((φ.comp A.val) ∘ hs.1.aevalEquiv : MvPolynomial s R → Ω) =
+          aeval (((↑) : t → Ω) ∘ f) := congrArg DFunLike.coe hφA
+      rw [heq]
+      exact algebraicIndependent_iff_injective_aeval.1 hw
+    exact (Function.Injective.of_comp_iff' _ hs.1.aevalEquiv.bijective).1 hcomp
+  let : Algebra A Ω := (φ.comp A.val).toRingHom.toAlgebra
+  have := hs.isAlgebraic
+  let φA : E →ₐ[A] Ω :=
+    { φ.toRingHom with commutes' := fun a ↦ by simp [RingHom.algebraMap_toAlgebra] }
+  exact ⟨φ, algHom_injective_of_isAlgebraic φA
+    (by simpa [RingHom.algebraMap_toAlgebra] using hA_inj)⟩
+
+/-- A domain `E` over a commutative ring `R` acting faithfully on `E` and an algebraically closed
+field `Ω` maps over `R` to `Ω` whenever `trdeg R E ≤ trdeg R Ω`. -/
+theorem nonempty_algHom_of_lift_trdeg_le {R : Type*} {E : Type u} {Ω : Type v}
+    [CommRing R] [CommRing E] [IsDomain E] [Algebra R E] [FaithfulSMul R E]
+    [Field Ω] [Algebra R Ω] [IsAlgClosed Ω] [FaithfulSMul R Ω]
+    (h : Cardinal.lift.{v} (trdeg R E) ≤ Cardinal.lift.{u} (trdeg R Ω)) :
+    Nonempty (E →ₐ[R] Ω) :=
+  let ⟨φ, _⟩ := exists_algHom_injective_of_lift_trdeg_le h; ⟨φ⟩
+
+/-- Two algebraically closed fields over a commutative ring `R` acting faithfully on both with the
+same transcendence degree over `R` are isomorphic over `R`. -/
+theorem nonempty_algEquiv_of_lift_trdeg_eq {R : Type*} {E : Type u} {Ω : Type v}
+    [CommRing R] [Field E] [Algebra R E] [IsAlgClosed E] [FaithfulSMul R E]
+    [Field Ω] [Algebra R Ω] [IsAlgClosed Ω] [FaithfulSMul R Ω]
+    (h : Cardinal.lift.{v} (trdeg R E) = Cardinal.lift.{u} (trdeg R Ω)) :
+    Nonempty (E ≃ₐ[R] Ω) := by
+  have : Nontrivial R := RingHom.domain_nontrivial (algebraMap R E)
+  obtain ⟨s, hs⟩ := exists_isTranscendenceBasis R E
+  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis R Ω
   obtain ⟨e⟩ := hs.nonempty_equiv_of_lift_trdeg_eq ht h
   obtain ⟨φ, -⟩ := hs.exists_algEquiv_apply_eq ht e
   exact ⟨φ⟩
@@ -147,40 +208,38 @@ theorem exists_ringEquiv_extend {E : Type u} {L : Type v} {K : Type*} [Field E] 
     (f : K →+* E) (g : K →+* L) (hf : Function.Injective f) (hg : Function.Injective g) :
     ∃ σ : E ≃+* L, ∀ a : K, σ (f a) = g a := by
   algebraize [f, g]
-  have : FaithfulSMul K E := (faithfulSMul_iff_algebraMap_injective K E).2 hf
-  have : FaithfulSMul K L := (faithfulSMul_iff_algebraMap_injective K L).2 hg
-  have : Nontrivial K := f.domain_nontrivial
-  obtain ⟨s, hs⟩ := exists_isTranscendenceBasis K E
-  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis K L
-  have hL : ℵ₀ < #L := by
-    have hE' : Cardinal.lift.{v} (ℵ₀ : Cardinal.{u}) < Cardinal.lift.{v} #E :=
-      Cardinal.lift_lt.2 hE
-    rwa [h_mk, lift_aleph0, ← lift_aleph0.{u}, lift_lt] at hE'
-  obtain ⟨e⟩ : Nonempty (s ≃ t) := Cardinal.lift_mk_eq'.1 <| by
-    rw [hs.cardinalMk_eq_of_aleph0_lt hE, ht.cardinalMk_eq_of_aleph0_lt hL, h_mk]
-  obtain ⟨φ, -⟩ := hs.exists_algEquiv_apply_eq ht e
-  exact ⟨φ.toRingEquiv, φ.commutes⟩
+  have : FaithfulSMul K E := (faithfulSMul_iff_algebraMap_injective K E).2 <| by
+    simpa only [RingHom.algebraMap_toAlgebra] using hf
+  have : FaithfulSMul K L := (faithfulSMul_iff_algebraMap_injective K L).2 <| by
+    simpa only [RingHom.algebraMap_toAlgebra] using hg
+  have hL : ℵ₀ < #L := Cardinal.aleph0_lt_lift.1 (h_mk ▸ Cardinal.aleph0_lt_lift.2 hE)
+  obtain ⟨φ⟩ := nonempty_algEquiv_of_lift_trdeg_eq (R := K) (E := E) (Ω := L) <| by
+    rw [TauCeti.trdeg_eq_cardinalMk hE, TauCeti.trdeg_eq_cardinalMk hL, h_mk]
+  exact ⟨φ.toRingEquiv, fun a ↦ by
+    simpa only [AlgEquiv.coe_toRingEquiv, RingHom.algebraMap_toAlgebra] using φ.commutes a⟩
 
 /-- Let `D` be a countable commutative ring, `E` an uncountable algebraically closed field, `K` an
 integral domain with `#K ≤ #E`, and `f : D →+* K`, `φ : D →+* E` injective ring homomorphisms.
-Then `φ` extends along `f` to a ring homomorphism `ψ : K →+* E`. -/
+Then `φ` extends along `f` to an injective ring homomorphism `ψ : K →+* E`. -/
 theorem exists_ringHom_extend_of_cardinal_le {D : Type*} {K : Type u} {E : Type v} [CommRing D]
     [Countable D] [CommRing K] [IsDomain K] [Field E] [IsAlgClosed E] (hE : ℵ₀ < #E)
     {f : D →+* K} {φ : D →+* E} (hf : Function.Injective f) (hφ : Function.Injective φ)
     (h_le : Cardinal.lift.{v} #K ≤ Cardinal.lift.{u} #E) :
-    ∃ ψ : K →+* E, ψ.comp f = φ := by
+    ∃ ψ : K →+* E, Function.Injective ψ ∧ ψ.comp f = φ := by
   algebraize [f, φ]
-  have : FaithfulSMul D K := (faithfulSMul_iff_algebraMap_injective D K).2 hf
-  have : FaithfulSMul D E := (faithfulSMul_iff_algebraMap_injective D E).2 hφ
+  have : FaithfulSMul D K := (faithfulSMul_iff_algebraMap_injective D K).2 <| by
+    simpa only [RingHom.algebraMap_toAlgebra] using hf
+  have : FaithfulSMul D E := (faithfulSMul_iff_algebraMap_injective D E).2 <| by
+    simpa only [RingHom.algebraMap_toAlgebra] using hφ
   have : Nontrivial D := f.domain_nontrivial
   obtain ⟨s, hs⟩ := exists_isTranscendenceBasis D K
-  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis D E
-  have hst : Cardinal.lift.{v} #s ≤ Cardinal.lift.{u} #t :=
-    (lift_le.2 (mk_set_le s)).trans
-      (h_le.trans_eq (congrArg Cardinal.lift (ht.cardinalMk_eq_of_aleph0_lt hE).symm))
-  obtain ⟨g⟩ : Nonempty (s ↪ t) := Cardinal.lift_mk_le'.1 hst
-  obtain ⟨ψ, -⟩ := hs.exists_algHom_apply_eq (ht.1.comp g g.injective)
-  exact ⟨ψ.toRingHom, RingHom.ext ψ.commutes⟩
+  have htr : Cardinal.lift.{v} (trdeg D K) ≤ Cardinal.lift.{u} (trdeg D E) := by
+    rw [← hs.cardinalMk_eq_trdeg, TauCeti.trdeg_eq_cardinalMk hE]
+    exact (lift_le.2 (mk_set_le s)).trans h_le
+  obtain ⟨ψ, hψ_inj⟩ := exists_algHom_injective_of_lift_trdeg_le htr
+  exact ⟨ψ.toRingHom, hψ_inj, RingHom.ext fun d ↦ by
+    simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      RingHom.algebraMap_toAlgebra] using ψ.commutes d⟩
 
 end TauCeti.IsAlgClosed
 
