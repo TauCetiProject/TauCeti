@@ -79,12 +79,13 @@ private theorem momentum_ne_zero_iff (t : ℝ) :
     (γ t).property (energyMomentum_eq hγ hF t)
 
 include hγ in
-/-- Along a motion defined at all times, the height `q₃` moves with velocity `p₃`. -/
+/-- Along a motion defined at all times, the height `q₃` moves with velocity `p₃`, written as
+`1 * p₃` to match the velocity `c p` of the oscillation between two turning points. -/
 private theorem hasDerivAt_height (t : ℝ) :
     HasDerivAt (fun t ↦ (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2)
-      ((γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2) t :=
-  hasDerivWithinAt_univ.1 <| hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
-    (hγ.isMIntegralCurveOn univ) (mem_univ t)
+      (1 * (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2) t :=
+  (hasDerivWithinAt_univ.1 <| hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
+    (hγ.isMIntegralCurveOn univ) (mem_univ t)).congr_deriv (one_mul _).symm
 
 include hγ hF in
 /-- Along a motion of energy `h` defined at all times, the vertical momentum `p₃` moves with
@@ -177,7 +178,7 @@ private theorem sub_le_integral {s t : ℝ} (hst : s ≤ t)
     t - s ≤ ∫ z in (sphericalPendulumLowerTurningPoint h j)..
       (sphericalPendulumUpperTurningPoint h j), (√(2 * (h - z) * (1 - z ^ 2) - j ^ 2))⁻¹ :=
   sub_le_integral_of_forall_hasDerivAt_mul one_pos
-    (fun u ↦ (hasDerivAt_height hγ u).congr_deriv (one_mul _).symm) (continuous_momentum hγ hF)
+    (hasDerivAt_height hγ) (continuous_momentum hγ hF)
     (height_mem_Icc hj hz₀ hV hγ hF) (intervalIntegrable_inv_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq
       hj hz₀ hV) (fun _ _ ↦ inv_nonneg.2 (Real.sqrt_nonneg _))
     (fun _ _ ↦ sub_eq_integral_of_pos hj hz₀ hV hγ hF)
@@ -190,7 +191,7 @@ theorem exists_apply_two_eq_sphericalPendulumLowerTurningPoint_of_isMIntegralCur
     ∃ t, (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 =
       sphericalPendulumLowerTurningPoint h j :=
   let ⟨s, _, hs⟩ := exists_mem_Ioo_eq_of_forall_hasDerivAt_mul one_pos
-    (fun u ↦ (hasDerivAt_height hγ u).congr_deriv (one_mul _).symm) (continuous_momentum hγ hF)
+    (hasDerivAt_height hγ) (continuous_momentum hγ hF)
     (height_mem_Icc hj hz₀ hV hγ hF) (momentum_ne_zero_iff hj hz₀ hV hγ hF)
     (fun _ ↦ exists_hasDerivAt_momentum_neg hj hz₀ hV hγ hF)
     (fun _ _ ↦ sub_le_integral hj hz₀ hV hγ hF) t₀
@@ -213,13 +214,12 @@ theorem exists_mem_Ioo_apply_two_eq_sphericalPendulumUpperTurningPoint_of_isMInt
       (∀ u ∈ Ioo t₁ t₂, 0 < (γ u : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2) ∧
       ∀ u ∈ Ioo t₂ (t₁ + sphericalPendulumPeriod h j),
         (γ u : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 < 0 := by
-  have hx (u : ℝ) := (hasDerivAt_height hγ u).congr_deriv (one_mul _).symm
-  obtain ⟨t₂, h₁₂, h₂, hpos⟩ := exists_gt_eq_and_forall_pos_of_forall_hasDerivAt_mul one_pos hx
-    (continuous_momentum hγ hF) (height_mem_Icc hj hz₀ hV hγ hF)
+  obtain ⟨t₂, h₁₂, h₂, hpos⟩ := exists_gt_eq_and_forall_pos_of_forall_hasDerivAt_mul one_pos
+    (hasDerivAt_height hγ) (continuous_momentum hγ hF) (height_mem_Icc hj hz₀ hV hγ hF)
     (momentum_ne_zero_iff hj hz₀ hV hγ hF) (fun _ ↦ exists_hasDerivAt_momentum_pos hj hz₀ hV hγ hF)
     (fun _ _ ↦ sub_le_integral hj hz₀ hV hγ hF) h₁
-  obtain ⟨t₃, h₂₃, h₃, hneg⟩ := exists_gt_eq_and_forall_neg_of_forall_hasDerivAt_mul one_pos hx
-    (continuous_momentum hγ hF) (height_mem_Icc hj hz₀ hV hγ hF)
+  obtain ⟨t₃, h₂₃, h₃, hneg⟩ := exists_gt_eq_and_forall_neg_of_forall_hasDerivAt_mul one_pos
+    (hasDerivAt_height hγ) (continuous_momentum hγ hF) (height_mem_Icc hj hz₀ hV hγ hF)
     (momentum_ne_zero_iff hj hz₀ hV hγ hF) (fun _ ↦ exists_hasDerivAt_momentum_neg hj hz₀ hV hγ hF)
     (fun _ _ ↦ sub_le_integral hj hz₀ hV hγ hF) h₂
   have hT := sub_eq_sphericalPendulumPeriod_of_isMIntegralCurveOn hj hz₀ hV h₁₂.le h₂₃.le
