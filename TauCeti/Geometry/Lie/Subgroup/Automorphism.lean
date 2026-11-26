@@ -182,6 +182,12 @@ theorem expUnit_continuousAd_mem_innerAutomorphismSubgroup (x : V) :
     expUnit (continuousAd x) ∈ innerAutomorphismSubgroup L :=
   Subgroup.subset_closure ⟨x, rfl⟩
 
+/-- A subgroup contains the analytic inner automorphism subgroup exactly when it contains
+every adjoint exponential. -/
+theorem innerAutomorphismSubgroup_le_iff {H : Subgroup Endˣ} :
+    innerAutomorphismSubgroup L ≤ H ↔ ∀ x : V, expUnit (continuousAd x) ∈ H :=
+  (Subgroup.closure_le H).trans Set.range_subset_iff
+
 /-- The adjoint operators are infinitesimal automorphisms. -/
 theorem continuousAd_mem_linearLieSubalgebra_automorphismSubgroup (x : V) :
     continuousAd x ∈ (automorphismSubgroup L).linearLieSubalgebra := by
@@ -191,12 +197,34 @@ theorem continuousAd_mem_linearLieSubalgebra_automorphismSubgroup (x : V) :
 
 /-- The analytic inner automorphism group acts by Lie automorphisms. -/
 theorem innerAutomorphismSubgroup_le : innerAutomorphismSubgroup L ≤ automorphismSubgroup L := by
-  refine (Subgroup.closure_le _).2 ?_
-  rintro _ ⟨x, rfl⟩
+  apply innerAutomorphismSubgroup_le_iff.mpr
+  intro x
   have hx := continuousAd_mem_linearLieSubalgebra_automorphismSubgroup x
   rw [Subgroup.mem_linearLieSubalgebra_iff (isClosed_automorphismSubgroup L),
     Subgroup.mem_linearLieAlgebra_iff] at hx
   simpa only [SetLike.mem_coe, one_smul] using hx 1
+
+/-- The analytic inner automorphism subgroup of a finite-dimensional real Lie algebra is
+connected. -/
+theorem isConnected_innerAutomorphismSubgroup :
+    IsConnected (innerAutomorphismSubgroup L : Set Endˣ) := by
+  let G := innerAutomorphismSubgroup L
+  let f : V → Endˣ := fun x ↦ expUnit (continuousAd x)
+  have hconn : IsPreconnected (Set.range f) :=
+    isPreconnected_range (continuous_expUnit.comp
+      (continuousAd (L := L)).toLinearMap.continuous_of_finiteDimensional)
+  have h₁ : 1 ∈ Set.range f := ⟨0, by simp [f]⟩
+  have hsub : Set.range f ⊆ (G : Set Endˣ) :=
+    Set.range_subset_iff.mpr expUnit_continuousAd_mem_innerAutomorphismSubgroup
+  have hle : G ≤ G.ambientConnectedComponentOfOne := by
+    apply innerAutomorphismSubgroup_le_iff.mpr
+    intro x
+    rw [← SetLike.mem_coe, Subgroup.coe_ambientConnectedComponentOfOne]
+    exact hconn.subset_connectedComponentIn h₁ hsub ⟨x, rfl⟩
+  have hG : IsPreconnected (G : Set Endˣ) := by
+    rw [le_antisymm hle G.ambientConnectedComponentOfOne_le]
+    exact G.isPreconnected_ambientConnectedComponentOfOne
+  exact ⟨⟨1, G.one_mem⟩, hG⟩
 
 variable [LieAlgebra.IsKilling ℝ L]
 
@@ -268,13 +296,6 @@ theorem isClosed_innerAutomorphismSubgroup :
     IsClosed (innerAutomorphismSubgroup L : Set Endˣ) := by
   rw [innerAutomorphismSubgroup_eq_ambientConnectedComponentOfOne]
   exact Subgroup.isClosed_ambientConnectedComponentOfOne (isClosed_automorphismSubgroup L)
-
-/-- The analytic inner automorphism subgroup is connected. -/
-theorem isConnected_innerAutomorphismSubgroup :
-    IsConnected (innerAutomorphismSubgroup L : Set Endˣ) := by
-  rw [innerAutomorphismSubgroup_eq_ambientConnectedComponentOfOne,
-    Subgroup.coe_ambientConnectedComponentOfOne, isConnected_connectedComponentIn_iff]
-  exact (automorphismSubgroup L).one_mem
 
 variable (L) in
 /-- The analytic inner automorphism subgroup is an embedded Lie subgroup with model space the
