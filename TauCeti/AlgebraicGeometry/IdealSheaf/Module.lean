@@ -44,9 +44,7 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
 * `Scheme.IdealSheafData.isIso_sheafι_top`: the unit ideal sheaf, which cuts out the empty closed
   subscheme, is the whole structure sheaf;
 * `Scheme.IdealSheafData.isZero_sheaf_bot`: the zero ideal sheaf, which cuts out all of `X`, is the
-  zero module;
-* `Scheme.IdealSheafData.eqToHom_sheafι`: transporting `I.sheaf` along an equality of ideal
-  sheaves commutes with the inclusion `sheafι`.
+  zero module.
 
 ## References
 
@@ -279,13 +277,6 @@ theorem isZero_sheaf_bot : Limits.IsZero (⊥ : X.IdealSheafData).sheaf := by
   have ht : Scheme.Modules.Hom.app (⊥ : X.IdealSheafData).sheafι U t ∈ (⊥ : Ideal Γ(X, U)) :=
     sections_bot U ▸ sheafι_app_mem _ U t
   exact sheafι_app_injective _ U (((Ideal.mem_bot (R := Γ(X, U))).mp ht).trans (map_zero _).symm)
-
-/-- Transporting `I.sheaf` along an equality `h : I = J` commutes with the inclusion into `𝒪_X`. -/
-@[simp, reassoc]
-lemma eqToHom_sheafι {I J : X.IdealSheafData} (h : I = J) :
-    eqToHom (congrArg sheaf h) ≫ J.sheafι = I.sheafι := by
-  subst h
-  exact Category.id_comp _
 
 end
 

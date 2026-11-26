@@ -126,13 +126,6 @@ theorem zeroSectionDivisor_pow_map (n : ℕ) :
       (W.zeroSectionDivisor ^ n).comap (W.projModelBaseChange f) := by
   rw [zeroSectionDivisor_map, AlgebraicGeometry.Scheme.IdealSheafData.comap_pow]
 
-/-- The variable-change isomorphism `(W.projModelVariableChangeIso C).hom` forms a cartesian square
-over `𝟙 (Spec R)`. -/
-theorem isPullback_projModelVariableChangeIso_hom (C : VariableChange R) :
-    IsPullback (W.projModelVariableChangeIso C).hom (C • W).projModelOver W.projModelOver
-      (𝟙 (Spec (.of R))) :=
-  IsPullback.of_horiz_isIso ⟨by simp⟩
-
 /-- **An admissible change of variables pulls `[0]` back to `[0]`.** -/
 @[simp]
 theorem zeroSectionDivisor_variableChange (C : VariableChange R) :
@@ -332,24 +325,6 @@ theorem zeroSectionDivisor_pow_three_comap_chartι (i : Fin 3) :
         ← equivOfIsAffine_symm_apply, map_one]
     rw [zeroSectionDivisor_comap_chartι_eq_top_of_ne_one W hi, hrhs, ← one_eq_top, one_pow]
 
-/-- In any commutative ring `B`, if `z * v = x ^ 3` with `z` regular and `v` a unit, then `x` is
-regular and `(x, z) = (x)`. -/
-private theorem isSMulRegular_and_span_pair_eq_span_singleton {B : Type*} [CommRing B]
-    {x z v : B} (hrel : z * v = x ^ 3) (hz : IsSMulRegular B z) (hv : IsUnit v) :
-    IsSMulRegular B x ∧ Ideal.span {x, z} = Ideal.span {x} := by
-  obtain ⟨u, rfl⟩ := hv
-  have hpow : x ^ 2 * x = z * u := by rw [hrel]; ring
-  have hx3 : IsSMulRegular B (x ^ 2 * x) := by
-    rw [hpow]
-    exact hz.mul (u.isUnit.isSMulRegular (M := B))
-  refine ⟨IsSMulRegular.of_mul hx3,
-    le_antisymm ?_ (Ideal.span_mono (Set.singleton_subset_iff.mpr (Or.inl rfl)))⟩
-  rw [Ideal.span_le, Set.pair_subset_iff]
-  refine ⟨Ideal.subset_span rfl, Ideal.mem_span_singleton'.mpr ⟨x ^ 2 * ↑u⁻¹, ?_⟩⟩
-  calc x ^ 2 * (↑u⁻¹ : B) * x = x ^ 3 * ↑u⁻¹ := by ring
-    _ = z * u * ↑u⁻¹ := by rw [← hrel]
-    _ = z := by rw [mul_assoc, Units.mul_inv, mul_one]
-
 /-- **The zero section cuts out an effective Cartier divisor** on `W.projModel` over any
 commutative ring, with no ellipticity hypothesis. -/
 theorem isEffectiveCartier_zeroSectionDivisor :
@@ -384,11 +359,14 @@ theorem isEffectiveCartier_zeroSectionDivisor :
       have hz_reg : IsSMulRegular Γ(Y, ⊤) (e z) :=
         (TauCeti.isSMulRegular_map_iff (Scheme.ΓSpecIso (.of A)).symm.commRingCatIsoToRingEquiv
           z).mpr W.isSMulRegular_chartPoint_one_two
-      obtain ⟨hx_reg, hspan⟩ := isSMulRegular_and_span_pair_eq_span_singleton hrel
-        ((isAffineOpen_top Y).isSMulRegular_map le_top hz_reg) hu
+      have hx_reg : IsSMulRegular Γ(Y, U) (φ (e x)) :=
+        (IsSMulRegular.pow_iff (by decide : 0 < 3)).mp
+          (hrel ▸ ((isAffineOpen_top Y).isSMulRegular_map le_top hz_reg).mul
+            (hu.isSMulRegular (M := Γ(Y, U))))
       refine ⟨U, hq1t, φ (e x), hx_reg, ?_⟩
-      rw [ofIdealTop_ideal, Ideal.map_span, Set.image_pair, Ideal.map_span, Set.image_pair]
-      exact hspan
+      rw [ofIdealTop_ideal, Ideal.map_span, Set.image_pair, Ideal.map_span, Set.image_pair,
+        Ideal.span_pair_eq_span_left_iff_dvd, ← hu.dvd_mul_right, hrel]
+      exact dvd_pow_self _ (by decide : 3 ≠ 0)
   · rw [W.zeroSectionDivisor_comap_chartι_eq_top_of_ne_one hi]; exact isEffectiveCartier_top _
 
 end Chart

@@ -342,7 +342,7 @@ private lemma isIso_curryPairing {L M : InvertibleSheaf X} (e : tensorProduct L 
 
 /-- On underlying `𝒪_X`-modules, `(tensorDualIso L).hom` factors through `tensorProductObjIso`,
 `evaluationDualIso`, and `trivialObjIsoUnit`. -/
-lemma tensorDualIso_hom_hom_eq (L : InvertibleSheaf X) :
+lemma tensorDualIso_hom_hom_eq_tensorProductObjIso_hom_comp (L : InvertibleSheaf X) :
     (tensorDualIso L).hom.hom =
       (tensorProductObjIso L (dual L)).hom ≫
         (evaluationDualIso L).hom ≫ (trivialObjIsoUnit X).inv := by
@@ -438,7 +438,7 @@ lemma tensorProductCongrRight_dualIsoOfTensorIsoTrivial_inv_tensorDualIso_hom
   -- `whiskerLeft_dualIsoOfTensorIsoTrivial_inv_evaluationDualIso_hom`.
   ext1
   rw [ObjectProperty.FullSubcategory.comp_hom, ← Iso.symm_hom, ← tensorProductCongrRight_symm,
-    tensorDualIso_hom_hom_eq,
+    tensorDualIso_hom_hom_eq_tensorProductObjIso_hom_comp,
     tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom_assoc L
       (dualIsoOfTensorIsoTrivial e).symm,
     Iso.symm_hom, whiskerLeft_dualIsoOfTensorIsoTrivial_inv_evaluationDualIso_hom_assoc,

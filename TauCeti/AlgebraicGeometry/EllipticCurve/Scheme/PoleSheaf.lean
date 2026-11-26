@@ -17,6 +17,7 @@ import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Prime
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Pole sheaves and the cubic polarisation of a projective Weierstrass model
@@ -25,13 +26,15 @@ For any Weierstrass curve `W` over a commutative ring `R` (no ellipticity hypoth
 relative effective Cartier divisor on `W.projModel`, and the **pole sheaf** `𝒪(n[0])`
 (`WeierstrassCurve.poleSheaf W n`) is the dual of `𝒪(-n[0])`. Multiplication by `Z` embeds `𝒪(-1)`
 into `𝒪` with image ideal sheaf `3[0]`, giving `𝒪(-3[0]) ≅ 𝒪(-1)`
-(`zeroSectionDivisorPowThreeSheafIso`) and by duality `𝒪(3[0]) ≅ 𝒪(1)`
+(`zeroSectionDivisorPowThreeSheafIso`), the pairing `𝒪(-3[0]) ⊗ 𝒪(1) ≅ 𝒪`
+(`poleSheafThreePairingIso`), and by duality `𝒪(3[0]) ≅ 𝒪(1)`
 (`poleSheafThreeIsoProjModelTwistingSheafOne`). Since `𝒪(1)` is ample on `W.projModel`, `𝒪(n[0])`
 is ample for every `n > 0` (`isAmple_poleSheaf`).
 
 ## Main definitions and results
 
 * `projModelTwistingSheaf`, `zMulHom`, `zeroSectionDivisorPowThreeSheafIso`, `poleSheaf`,
+  `zeroSectionDivisorPowThreeTensorTwistingSheafOneIso`, `poleSheafThreePairingIso`,
   `poleSheafThreeIsoProjModelTwistingSheafOne`.
 * `zeroSectionDivisor_pow_three_eq_imageIdealSheaf`, `mk_poleSheaf_three`, `mk_poleSheaf_three_mul`,
   `isGloballyGenerated_poleSheaf_three_mul`, `isAmple_poleSheaf`.
@@ -226,10 +229,7 @@ private theorem chartι_appLE_awayToSection_coord_two (i : Fin 3)
   have happ : (W.chartι i).appLE U ⊤ h (Proj.awayToSection 𝒜 (W.toProjective.coord i)
       (W.zOverCoord i)) =
       g.appTop (U.topIso.inv (Proj.awayToSection 𝒜 (W.toProjective.coord i) (W.zOverCoord i))) := by
-    have h₁ : ∀ {f₁ f₂ : Spec (.of (W.toProjective.ChartRing i)) ⟶ Proj 𝒜}
-        (_ : f₁ = f₂) (e₁ : ⊤ ≤ f₁ ⁻¹ᵁ U) (e₂ : ⊤ ≤ f₂ ⁻¹ᵁ U),
-        f₁.appLE U ⊤ e₁ = f₂.appLE U ⊤ e₂ := by rintro _ _ rfl _ _; rfl
-    refine (ConcreteCategory.congr_hom ((h₁ hchart h _).trans
+    refine (ConcreteCategory.congr_hom (((W.chartι i).congr_appLE hchart U ⊤ h _).trans
       (Scheme.Hom.appLE_comp_appLE g U.ι U ⊤ ⊤ U.ι_preimage_self.ge le_top).symm) _).trans ?_
     have hι : U.ι.appLE U ⊤ U.ι_preimage_self.ge = U.topIso.inv := by
       rw [Scheme.Opens.ι_appLE, Scheme.Opens.topIso_inv]
@@ -285,8 +285,12 @@ noncomputable def zeroSectionDivisorPowThreeSheafIso :
   have heq : (eqToIso (congrArg Scheme.IdealSheafData.sheaf
       W.zeroSectionDivisor_pow_three_eq_imageIdealSheaf)).inv ≫
         (W.zeroSectionDivisor ^ 3).sheafι = W.zMulHom.imageIdealSheaf.sheafι :=
-    (congrArg (· ≫ _) (eqToIso.inv _)).trans
-      (Scheme.IdealSheafData.eqToHom_sheafι W.zeroSectionDivisor_pow_three_eq_imageIdealSheaf.symm)
+    (congrArg (· ≫ _) (eqToIso.inv _)).trans <|
+      (eqToHom_naturality (f := Scheme.IdealSheafData.sheaf)
+        (g := fun _ ↦ SheafOfModules.unit W.projModel.ringCatSheaf)
+        Scheme.IdealSheafData.sheafι
+        W.zeroSectionDivisor_pow_three_eq_imageIdealSheaf.symm).symm.trans
+        (Category.comp_id _)
   exact (Category.assoc _ _ _).trans <|
     (congrArg (_ ≫ ·) heq).trans W.zMulHom.imageIdealSheafIso_hom_ι
 
@@ -326,17 +330,19 @@ theorem poleSheaf_def (n : ℕ) :
 
 /-- In the Picard group of `W.projModel`, `[𝒪(n[0])] = [𝒪([0])] ^ n`. -/
 theorem mk_poleSheaf_eq_pow (n : ℕ) :
-    LineBundleClass.mk (W.poleSheaf n) = LineBundleClass.mk (W.poleSheaf 1) ^ n :=
-  LineBundleClass.mk_dual_toInvertibleSheaf_pow_eq_pow W.isEffectiveCartier_zeroSectionDivisor _ _
+    LineBundleClass.mk (W.poleSheaf n) = LineBundleClass.mk (W.poleSheaf 1) ^ n := by
+  rw [poleSheaf_def, poleSheaf_def,
+    LineBundleClass.mk_dual_toInvertibleSheaf_pow W.isEffectiveCartier_zeroSectionDivisor,
+    LineBundleClass.mk_dual_toInvertibleSheaf_congr _ _ (pow_one _)]
 
 /-- `𝒪(0[0])` has trivial class in the Picard group of `W.projModel`. -/
-@[simp] theorem mk_poleSheaf_zero : LineBundleClass.mk (W.poleSheaf 0) = 1 := by
-  rw [W.mk_poleSheaf_eq_pow 0, pow_zero]
+@[simp] theorem mk_poleSheaf_zero : LineBundleClass.mk (W.poleSheaf 0) = 1 :=
+  LineBundleClass.mk_dual_toInvertibleSheaf_pow_zero _
 
 /-- In the Picard group of `W.projModel`, `[𝒪((m + n)[0])] = [𝒪(m[0])] * [𝒪(n[0])]`. -/
 theorem mk_poleSheaf_add (m n : ℕ) : LineBundleClass.mk (W.poleSheaf (m + n)) =
-    LineBundleClass.mk (W.poleSheaf m) * LineBundleClass.mk (W.poleSheaf n) := by
-  rw [W.mk_poleSheaf_eq_pow (m + n), W.mk_poleSheaf_eq_pow m, W.mk_poleSheaf_eq_pow n, pow_add]
+    LineBundleClass.mk (W.poleSheaf m) * LineBundleClass.mk (W.poleSheaf n) :=
+  LineBundleClass.mk_dual_toInvertibleSheaf_pow_add _ _ _
 
 /-! ### Base-change and variable-change invariance -/
 
@@ -404,111 +410,85 @@ theorem pullback_mk_poleSheaf_projModelVariableChangeIso_hom (C : VariableChange
 
 /-! ### Cubic polarisation `𝒪(3[0]) ≅ 𝒪(1)` and ampleness -/
 
-private noncomputable def poleSheafThreePairingSheafIso :
-    let h₃ := W.isEffectiveCartier_zeroSectionDivisor_pow 3
-    @Iso (SheafOfModules W.projModel.ringCatSheaf) _
-      (InvertibleSheaf.tensorProduct h₃.toInvertibleSheaf (W.projModelTwistingSheaf 1)).obj
-      (InvertibleSheaf.trivial W.projModel).obj :=
-  let C := SheafOfModules W.projModel.ringCatSheaf
-  let h₃ := W.isEffectiveCartier_zeroSectionDivisor_pow 3
-  @Iso.trans C _ _ _ _ (@eqToIso C _ _ _ (by
-      rw [InvertibleSheaf.tensorProduct_obj, h₃.toInvertibleSheaf_obj,
-        W.projModelTwistingSheaf_obj])) <|
-    @Iso.trans C _ _ _ _ (TauCeti.SheafOfModules.tensorProductCongrLeft W.projModel.sheaf
-      W.zeroSectionDivisorPowThreeSheafIso) <|
-    @Iso.trans C _ _ _ _ (Proj.twistingSheaf.tensorProductIso W.toProjective.coord
-      W.toProjective.coord_mem_grading W.iSup_basicOpen_coord_eq_top (-1) 1) <|
-    @Iso.trans C _ _ _ _ (@eqToIso C _ _ _
-      (congrArg (Proj.twistingSheaf W.toProjective.grading) (neg_add_cancel 1))) <|
-    @Iso.trans C _ _ _ _ (Proj.unitIsoTwistingSheafZero W.toProjective.grading).symm
-      (InvertibleSheaf.trivialObjIsoUnit W.projModel).symm
+open MonoidalCategory in
+/-- Canonical monoidal pairing `𝒪(-3[0]) ⊗ 𝒪(1) ≅ 𝒪_{W.projModel}` in `W.projModel.Modules`,
+combining `zeroSectionDivisorPowThreeSheafIso` on the first factor with twisting-sheaf
+multiplication `𝒪(-1) ⊗ 𝒪(1) ≅ 𝒪(0) ≅ 𝒪_{W.projModel}`. -/
+noncomputable def zeroSectionDivisorPowThreeTensorTwistingSheafOneIso :
+    (W.zeroSectionDivisor ^ 3).sheaf ⊗ Proj.twistingSheaf W.toProjective.grading 1 ≅
+      𝟙_ W.projModel.Modules :=
+  whiskerRightIso W.zeroSectionDivisorPowThreeSheafIso
+      (Proj.twistingSheaf W.toProjective.grading 1) ≪≫
+    Proj.twistingSheaf.tensorObjIso W.toProjective.coord
+      W.toProjective.coord_mem_grading W.iSup_basicOpen_coord_eq_top (-1) 1 ≪≫
+    eqToIso (congrArg (Proj.twistingSheaf W.toProjective.grading) (neg_add_cancel 1)) ≪≫
+    (Proj.unitIsoTwistingSheafZero W.toProjective.grading).symm
 
-private noncomputable def poleSheafThreePairingIso :
+open MonoidalCategory in
+/-- Defining equation for `zeroSectionDivisorPowThreeTensorTwistingSheafOneIso`. -/
+theorem zeroSectionDivisorPowThreeTensorTwistingSheafOneIso_def :
+    W.zeroSectionDivisorPowThreeTensorTwistingSheafOneIso =
+      whiskerRightIso W.zeroSectionDivisorPowThreeSheafIso
+          (Proj.twistingSheaf W.toProjective.grading 1) ≪≫
+        Proj.twistingSheaf.tensorObjIso W.toProjective.coord
+          W.toProjective.coord_mem_grading W.iSup_basicOpen_coord_eq_top (-1) 1 ≪≫
+        eqToIso (congrArg (Proj.twistingSheaf W.toProjective.grading) (neg_add_cancel 1)) ≪≫
+        (Proj.unitIsoTwistingSheafZero W.toProjective.grading).symm :=
+  (rfl)
+
+open MonoidalCategory in
+private noncomputable def poleSheafThreePairingSheafIso :
+    (InvertibleSheaf.tensorProduct
+        (W.isEffectiveCartier_zeroSectionDivisor_pow 3).toInvertibleSheaf
+        (W.projModelTwistingSheaf 1)).obj ≅
+      (InvertibleSheaf.trivial W.projModel).obj :=
+  InvertibleSheaf.tensorProductObjIso
+      (W.isEffectiveCartier_zeroSectionDivisor_pow 3).toInvertibleSheaf
+      (W.projModelTwistingSheaf 1) ≪≫
+    tensorIso (eqToIso (W.isEffectiveCartier_zeroSectionDivisor_pow 3).toInvertibleSheaf_obj)
+      (eqToIso (W.projModelTwistingSheaf_obj 1)) ≪≫
+    W.zeroSectionDivisorPowThreeTensorTwistingSheafOneIso ≪≫
+    (InvertibleSheaf.trivialObjIsoUnit W.projModel).symm
+
+/-- Canonical pairing `𝒪(-3[0]) ⊗ 𝒪(1) ≅ 𝒪_{W.projModel}` of invertible sheaves on `W.projModel`,
+packaging `zeroSectionDivisorPowThreeTensorTwistingSheafOneIso`. -/
+noncomputable def poleSheafThreePairingIso :
     InvertibleSheaf.tensorProduct
         (W.isEffectiveCartier_zeroSectionDivisor_pow 3).toInvertibleSheaf
         (W.projModelTwistingSheaf 1) ≅ InvertibleSheaf.trivial W.projModel :=
+  -- `poleSheafThreePairingSheafIso` is constructed in `W.projModel.Modules`, which is
+  -- definitionally `SheafOfModules W.projModel.ringCatSheaf` (the ambient category of
+  -- `InvertibleSheaf W.projModel`).
   ObjectProperty.isoMk _ W.poleSheafThreePairingSheafIso
 
-/-- Canonical identification `𝒪(3[0]) ≅ 𝒪(1)` obtained by dualizing `𝒪(-3[0]) ⊗ 𝒪(1) ≅ 𝒪`. -/
+open MonoidalCategory in
+/-- On underlying `𝒪_{W.projModel}`-modules, `poleSheafThreePairingIso` is
+`zeroSectionDivisorPowThreeTensorTwistingSheafOneIso` transported across `tensorProductObjIso`,
+`toInvertibleSheaf_obj`, `projModelTwistingSheaf_obj`, and `trivialObjIsoUnit`. -/
+theorem poleSheafThreePairingIso_hom_hom :
+    W.poleSheafThreePairingIso.hom.hom =
+      (InvertibleSheaf.tensorProductObjIso
+          (W.isEffectiveCartier_zeroSectionDivisor_pow 3).toInvertibleSheaf
+          (W.projModelTwistingSheaf 1)).hom ≫
+        ((eqToIso (W.isEffectiveCartier_zeroSectionDivisor_pow 3).toInvertibleSheaf_obj).hom ⊗ₘ
+          (eqToIso (W.projModelTwistingSheaf_obj 1)).hom) ≫
+        W.zeroSectionDivisorPowThreeTensorTwistingSheafOneIso.hom ≫
+        (InvertibleSheaf.trivialObjIsoUnit W.projModel).inv :=
+  (rfl)
+
+/-- Canonical identification `𝒪(3[0]) ≅ 𝒪(1)` obtained by dualizing `poleSheafThreePairingIso`. -/
 noncomputable def poleSheafThreeIsoProjModelTwistingSheafOne :
     W.poleSheaf 3 ≅ W.projModelTwistingSheaf 1 :=
-  InvertibleSheaf.dualIsoOfTensorIsoTrivial W.poleSheafThreePairingIso
+  eqToIso (W.poleSheaf_def 3) ≪≫
+    InvertibleSheaf.dualIsoOfTensorIsoTrivial W.poleSheafThreePairingIso
 
-/-- Transporting the canonical duality pairing `𝒪(-3[0]) ⊗ 𝒪(3[0]) ≅ 𝒪_{W.projModel}` along the
-inverse of `poleSheafThreeIsoProjModelTwistingSheafOne` recovers the composite of
-`zeroSectionDivisorPowThreeSheafIso : 𝒪(-3[0]) ≅ 𝒪(-1)` with the twisting-sheaf multiplication
-`𝒪(-1) ⊗ 𝒪(1) ≅ 𝒪(0) ≅ 𝒪_{W.projModel}`. -/
-@[reassoc]
-theorem tensorProductCongrRight_poleSheafThreeIsoProjModelTwistingSheafOne_inv_tensorDualIso_hom :
-    let C := SheafOfModules W.projModel.ringCatSheaf
-    let h₃ := W.isEffectiveCartier_zeroSectionDivisor_pow 3
-    ((InvertibleSheaf.tensorProductCongrRight
-        (L := h₃.toInvertibleSheaf) W.poleSheafThreeIsoProjModelTwistingSheafOne).inv ≫
-      (eqToIso (congrArg (InvertibleSheaf.tensorProduct h₃.toInvertibleSheaf)
-        (W.poleSheaf_def 3))).hom ≫
-      (InvertibleSheaf.tensorDualIso h₃.toInvertibleSheaf).hom).hom =
-      (@eqToIso C _ _ _ (by
-        rw [InvertibleSheaf.tensorProduct_obj, h₃.toInvertibleSheaf_obj,
-          W.projModelTwistingSheaf_obj])).hom ≫
-      (TauCeti.SheafOfModules.tensorProductCongrLeft W.projModel.sheaf
-        W.zeroSectionDivisorPowThreeSheafIso).hom ≫
-      (Proj.twistingSheaf.tensorProductIso W.toProjective.coord
-        W.toProjective.coord_mem_grading W.iSup_basicOpen_coord_eq_top (-1) 1).hom ≫
-      (@eqToIso C _ _ _
-        (congrArg (Proj.twistingSheaf W.toProjective.grading) (neg_add_cancel 1))).hom ≫
-      (Proj.unitIsoTwistingSheafZero W.toProjective.grading).inv ≫
-      (InvertibleSheaf.trivialObjIsoUnit W.projModel).inv := by
-  let h₃ := W.isEffectiveCartier_zeroSectionDivisor_pow 3
-  have h0 : (InvertibleSheaf.tensorProductCongrRight (L := h₃.toInvertibleSheaf)
-        W.poleSheafThreeIsoProjModelTwistingSheafOne).inv ≫
-      (eqToIso (congrArg (InvertibleSheaf.tensorProduct h₃.toInvertibleSheaf)
-        (W.poleSheaf_def 3))).hom ≫ (InvertibleSheaf.tensorDualIso h₃.toInvertibleSheaf).hom =
-      W.poleSheafThreePairingIso.hom :=
-    (congrArg (_ ≫ ·) (Category.id_comp _)).trans
-      (InvertibleSheaf.tensorProductCongrRight_dualIsoOfTensorIsoTrivial_inv_tensorDualIso_hom
-        W.poleSheafThreePairingIso)
-  exact congrArg (·.hom) h0
-
-private theorem comp_five_inv_hom_id {C : Type*} [Category C] {X₁ X₂ X₃ X₄ X₅ X₆ X₇ : C}
-    (f₁ : X₁ ⟶ X₂) (f₂ : X₂ ⟶ X₃) (f₃ : X₃ ⟶ X₄) (f₄ : X₄ ⟶ X₅) (f₅ : X₅ ⟶ X₆)
-    (e : X₇ ≅ X₆) :
-    (f₁ ≫ f₂ ≫ f₃ ≫ f₄ ≫ f₅ ≫ e.inv) ≫ e.hom = f₁ ≫ f₂ ≫ f₃ ≫ f₄ ≫ f₅ := by
-  simp
-
-/-- On underlying `𝒪_{W.projModel}`-modules, evaluating the inverse of
-`poleSheafThreeIsoProjModelTwistingSheafOne` against `𝒪(-3[0])` recovers
-`zeroSectionDivisorPowThreeSheafIso` followed by the twisting-sheaf multiplication
-`𝒪(-1) ⊗ 𝒪(1) ≅ 𝒪(0) ≅ 𝒪_{W.projModel}`. -/
-@[reassoc]
-theorem whiskerLeft_poleSheafThreeIsoProjModelTwistingSheafOne_inv_ev :
-    let C := SheafOfModules W.projModel.ringCatSheaf
-    let h₃ := W.isEffectiveCartier_zeroSectionDivisor_pow 3
-    (MonoidalCategory.whiskerLeft (C := C) h₃.toInvertibleSheaf.obj
-        (W.poleSheafThreeIsoProjModelTwistingSheafOne.inv.hom ≫
-          (@eqToIso C _ _ _ (by rw [W.poleSheaf_def, InvertibleSheaf.dual_obj])).hom)) ≫
-        (InvertibleSheaf.evaluationDualIsoSheaf h₃.toInvertibleSheaf).hom =
-      (InvertibleSheaf.tensorProductObjIso h₃.toInvertibleSheaf
-        (W.projModelTwistingSheaf 1)).inv ≫
-      (@eqToIso C _ _ _ (by
-        rw [InvertibleSheaf.tensorProduct_obj, h₃.toInvertibleSheaf_obj,
-          W.projModelTwistingSheaf_obj])).hom ≫
-      (TauCeti.SheafOfModules.tensorProductCongrLeft W.projModel.sheaf
-        W.zeroSectionDivisorPowThreeSheafIso).hom ≫
-      (Proj.twistingSheaf.tensorProductIso W.toProjective.coord
-        W.toProjective.coord_mem_grading W.iSup_basicOpen_coord_eq_top (-1) 1).hom ≫
-      (@eqToIso C _ _ _
-        (congrArg (Proj.twistingSheaf W.toProjective.grading) (neg_add_cancel 1))).hom ≫
-      (Proj.unitIsoTwistingSheafZero W.toProjective.grading).inv := by
-  -- `Proj.twistingSheaf` uses `ringCatSheaf W.projModel.sheaf` while `.sheaf` uses
-  -- `W.projModel.ringCatSheaf`, so we apply `comp_five_inv_hom_id` rather than `simp` directly.
-  have hpair : W.poleSheafThreePairingIso.hom.hom = W.poleSheafThreePairingSheafIso.hom :=
-    (congrArg (·.hom) (ObjectProperty.isoMk_hom _ W.poleSheafThreePairingSheafIso)).trans
-      (ObjectProperty.homMk_hom _)
-  exact (InvertibleSheaf.whiskerLeft_dualIsoOfTensorIsoTrivial_inv_ev
-      W.poleSheafThreePairingIso).trans <|
-    congrArg ((InvertibleSheaf.tensorProductObjIso _ _).inv ≫ ·) <|
-      (congrArg (· ≫ _) hpair).trans
-        (comp_five_inv_hom_id _ _ _ _ _ (InvertibleSheaf.trivialObjIsoUnit W.projModel))
+/-- `poleSheafThreeIsoProjModelTwistingSheafOne` is `dualIsoOfTensorIsoTrivial` applied to
+`poleSheafThreePairingIso` along `poleSheaf_def 3`. -/
+theorem poleSheafThreeIsoProjModelTwistingSheafOne_def :
+    W.poleSheafThreeIsoProjModelTwistingSheafOne =
+      eqToIso (W.poleSheaf_def 3) ≪≫
+        InvertibleSheaf.dualIsoOfTensorIsoTrivial W.poleSheafThreePairingIso :=
+  (rfl)
 
 /-- **`[𝒪(3[0])] = [𝒪(1)]` in the Picard group of `W.projModel`.** -/
 theorem mk_poleSheaf_three :

@@ -61,9 +61,11 @@ homogeneous coordinate rings `WeierstrassCurve.Projective.variableChangeEquiv W 
 * `WeierstrassCurve.projModelVariableChangeIso_one` and
   `WeierstrassCurve.projModelVariableChangeIso_mul`: the isomorphisms induced by changes of
   variables are compatible with the identity and with products.
-* `WeierstrassCurve.projModelVariableChangeIso_hom_projModelOver` and
-  `WeierstrassCurve.projModelZero_projModelVariableChangeIso_hom`: the isomorphism induced by a
-  change of variables lies over `Spec R` and preserves the zero section.
+* `WeierstrassCurve.projModelVariableChangeIso_hom_projModelOver`,
+  `WeierstrassCurve.projModelZero_projModelVariableChangeIso_hom`, and
+  `WeierstrassCurve.isPullback_projModelVariableChangeIso_hom`: the isomorphism induced by a
+  change of variables lies over `Spec R`, preserves the zero section, and forms a pullback square
+  over `𝟙 (Spec R)`.
 
 ## References
 
@@ -315,6 +317,13 @@ theorem projModelZero_projModelVariableChangeIso_hom :
     fun _ _ ha ↦ by
       simpa [variableChangeGradedHom_apply] using Projective.evalZero_variableChangeEquiv W C ha]
   simp
+
+/-- The variable-change isomorphism `(W.projModelVariableChangeIso C).hom` forms a cartesian square
+over `𝟙 (Spec R)`. -/
+theorem isPullback_projModelVariableChangeIso_hom :
+    IsPullback (W.projModelVariableChangeIso C).hom (C • W).projModelOver W.projModelOver
+      (𝟙 (Spec (.of R))) :=
+  IsPullback.of_horiz_isIso ⟨by simp⟩
 
 end VariableChange
 

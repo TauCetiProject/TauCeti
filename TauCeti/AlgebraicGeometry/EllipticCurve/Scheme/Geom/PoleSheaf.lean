@@ -67,18 +67,19 @@ theorem poleSheaf_def (n : ℕ) :
 
 /-- In the Picard group of `E.carrier`, `[𝒪_E(n[0])] = [𝒪_E([0])] ^ n`. -/
 theorem mk_poleSheaf_eq_pow (n : ℕ) :
-    LineBundleClass.mk (E.poleSheaf n) = LineBundleClass.mk (E.poleSheaf 1) ^ n :=
-  LineBundleClass.mk_dual_toInvertibleSheaf_pow_eq_pow
-    E.isRelativeEffectiveCartier_zeroSectionDivisor.isEffectiveCartier _ _
+    LineBundleClass.mk (E.poleSheaf n) = LineBundleClass.mk (E.poleSheaf 1) ^ n := by
+  rw [poleSheaf_def, poleSheaf_def, LineBundleClass.mk_dual_toInvertibleSheaf_pow
+      E.isRelativeEffectiveCartier_zeroSectionDivisor.isEffectiveCartier,
+    LineBundleClass.mk_dual_toInvertibleSheaf_congr _ _ (pow_one _)]
 
 /-- `𝒪_E(0[0])` has trivial class in the Picard group of `E.carrier`. -/
-@[simp] theorem mk_poleSheaf_zero : LineBundleClass.mk (E.poleSheaf 0) = 1 := by
-  rw [E.mk_poleSheaf_eq_pow 0, pow_zero]
+@[simp] theorem mk_poleSheaf_zero : LineBundleClass.mk (E.poleSheaf 0) = 1 :=
+  LineBundleClass.mk_dual_toInvertibleSheaf_pow_zero _
 
 /-- In the Picard group of `E.carrier`, `[𝒪_E((m + n)[0])] = [𝒪_E(m[0])] * [𝒪_E(n[0])]`. -/
 theorem mk_poleSheaf_add (m n : ℕ) : LineBundleClass.mk (E.poleSheaf (m + n)) =
-    LineBundleClass.mk (E.poleSheaf m) * LineBundleClass.mk (E.poleSheaf n) := by
-  rw [E.mk_poleSheaf_eq_pow (m + n), E.mk_poleSheaf_eq_pow m, E.mk_poleSheaf_eq_pow n, pow_add]
+    LineBundleClass.mk (E.poleSheaf m) * LineBundleClass.mk (E.poleSheaf n) :=
+  LineBundleClass.mk_dual_toInvertibleSheaf_pow_add _ _ _
 
 /-! ### Base-change functoriality -/
 

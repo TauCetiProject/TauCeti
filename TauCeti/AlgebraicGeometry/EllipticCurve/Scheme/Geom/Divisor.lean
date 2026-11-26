@@ -121,13 +121,6 @@ theorem zeroSectionDivisor_pow_eq_comap_of_isPullback (n : ℕ) :
 
 end BaseChange
 
-/-- The zero section of `E.baseChange f` projects to `f ≫ E.zero`. -/
-@[reassoc]
-theorem zero_baseChangeIso_hom_comp_fst {T : Scheme.{u}} (f : T ⟶ S) :
-    (E.baseChange f).zero ≫ (E.baseChangeIso f).hom ≫ pullback.fst E.structureMap f =
-      f ≫ E.zero := by
-  rw [← Category.assoc, E.zero_baseChangeIso_hom, pullbackSection_fst]
-
 /-- Under `E.baseChange f`, `[0]` is the inverse image of `[0]` on `E`. -/
 @[simp] theorem zeroSectionDivisor_baseChange {T : Scheme.{u}} (f : T ⟶ S) :
     (E.baseChange f).zeroSectionDivisor =

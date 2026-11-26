@@ -24,7 +24,8 @@ Smoothness of relative dimension one, properness and the local-model condition
   curve `E` over `S` along `f : T ⟶ S`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeIso E f`: the identification of the total
   space of `E.baseChange f` with the pullback of `E.structureMap` along `f`, compatible with the
-  structure morphisms (`baseChangeIso_hom_snd`) and the zero sections (`zero_baseChangeIso_hom`).
+  structure morphisms (`baseChangeIso_hom_snd`) and the zero sections (`zero_baseChangeIso_hom`,
+  `zero_baseChangeIso_hom_comp_fst`).
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeMap E k hk`: the canonical morphism
   between base changes induced by a morphism `k` of bases over `S`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.baseChangeLift hg₁ hg₂ hh`: for a base change square
@@ -165,6 +166,13 @@ induced by `f ≫ E.zero`. -/
 theorem zero_baseChangeIso_hom : (E.baseChange f).zero ≫ (E.baseChangeIso f).hom =
     pullbackSection E.structureMap f (f ≫ E.zero) (by simp) := by
   simp [baseChangeIso, baseChange]
+
+/-- The zero section of `E.baseChange f` projects to `f ≫ E.zero`. -/
+@[reassoc]
+theorem zero_baseChangeIso_hom_comp_fst :
+    (E.baseChange f).zero ≫ (E.baseChangeIso f).hom ≫ pullback.fst E.structureMap f =
+      f ≫ E.zero := by
+  rw [← Category.assoc, E.zero_baseChangeIso_hom, pullbackSection_fst]
 
 /-- The base change `E.baseChange f` is a pullback of the structure morphism of `E` along `f`: the
 square formed by the projection `(E.baseChangeIso f).hom ≫ pullback.fst _ _` to `E`, the two
