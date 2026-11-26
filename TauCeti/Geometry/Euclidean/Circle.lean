@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Geometry.Euclidean.Angle.Oriented.Rotation
 public import TauCeti.Geometry.Sphere.Circle
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
@@ -28,7 +29,9 @@ This file provides two parametrizations of circles in Euclidean planes:
   sphere membership, derivatives, chord-vector formulas (`Orientation.circleCurve_add_two_mul_sub`),
   the tangent-chord area-form identity (`Orientation.areaForm_deriv_circleCurve_sub`), injectivity
   on `[0, 2 π R)`, and the characterization of double normals as diameters
-  (`Orientation.inner_circleCurve_sub_deriv_eq_zero_iff`).
+  (`Orientation.inner_circleCurve_sub_deriv_eq_zero_iff`). In the complex plane with its standard
+  orientation and starting vector `1`, it is Mathlib's `circleMap` reparametrized by arclength,
+  `s ↦ circleMap c R (s / R)` (`Complex.orientation_circleCurve_one`).
 
 It also records the derivative of a rotating curve `s ↦ o.rotation (θ s) (c s)`
 (`Orientation.hasDerivAt_rotation`).
@@ -351,3 +354,17 @@ theorem inner_circleCurve_sub_deriv_eq_zero_iff (o : Orientation ℝ E (Fin 2)) 
     rw [hu, map_neg, LinearMap.neg_apply, o.areaForm_apply_self, neg_zero]
 
 end Orientation
+
+namespace Complex
+
+attribute [local instance] Complex.finrank_real_complex_fact
+
+/-- In the complex plane with its standard orientation, the arclength parametrization of the circle
+of center `c` and radius `R` starting at `c + R` is `circleMap c R (· / R)`. -/
+theorem orientation_circleCurve_one (c : ℂ) (R s : ℝ) :
+    Complex.orientation.circleCurve c 1 R s = circleMap c R (s / R) := by
+  simp only [Orientation.circleCurve_def, Complex.rightAngleRotation, circleMap, Complex.exp_mul_I,
+    Complex.real_smul, Complex.ofReal_cos, Complex.ofReal_sin]
+  ring
+
+end Complex

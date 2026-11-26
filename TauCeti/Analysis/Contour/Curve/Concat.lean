@@ -68,8 +68,8 @@ theorem intervalIntegral_deriv_smul_congr {E : Type*} [NormedAddCommGroup E] [No
 /-- **The contour integral along a concatenation.** If `η` agrees with `γ` on the open interval
 between `a` and `b` and with `δ` on the open interval between `b` and `c`, and the contour
 integrands of `γ` and `δ` are integrable there, then the contour integral of `η` over `a..c` is the
-sum of those of `γ` over `a..b` and of `δ` over `b..c`. This applies in particular to the
-concatenation `t ↦ if t ≤ b then γ t else δ t` when `a ≤ b ≤ c`. -/
+sum of those of `γ` over `a..b` and of `δ` over `b..c`. For the concatenation
+`t ↦ if t ≤ b then γ t else δ t` this is `intervalIntegral_deriv_smul_ite_le_eq_add`. -/
 theorem intervalIntegral_deriv_smul_eq_add_of_eqOn {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℂ E] {f : ℂ → E} {η : ℝ → ℂ} (hγ : EqOn η γ (uIoo a b))
     (hδ : EqOn η δ (uIoo b c))
@@ -82,6 +82,20 @@ theorem intervalIntegral_deriv_smul_eq_add_of_eqOn {E : Type*} [NormedAddCommGro
       (hγi.congr_uIoo ((hγ.deriv isOpen_Ioo).comp_left₂ hγ.comp_left).symm)
       (hδi.congr_uIoo ((hδ.deriv isOpen_Ioo).comp_left₂ hδ.comp_left).symm),
     intervalIntegral_deriv_smul_congr hγ, intervalIntegral_deriv_smul_congr hδ]
+
+/-- **Splitting a concatenation at the join.** For `a ≤ b ≤ c`, the contour integral along
+`t ↦ if t ≤ b then γ t else δ t` over `a..c` is the sum of those along `γ` over `a..b` and along `δ`
+over `b..c`. The curves need not meet at `b`: on the open intervals on either side of it the
+concatenation is `γ` or `δ`. -/
+theorem intervalIntegral_deriv_smul_ite_le_eq_add {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {f : ℂ → E} (hab : a ≤ b) (hbc : b ≤ c)
+    (hγi : IntervalIntegrable (fun t => deriv γ t • f (γ t)) volume a b)
+    (hδi : IntervalIntegrable (fun t => deriv δ t • f (δ t)) volume b c) :
+    ∫ t in a..c, deriv (fun t => if t ≤ b then γ t else δ t) t • f (if t ≤ b then γ t else δ t) =
+      (∫ t in a..b, deriv γ t • f (γ t)) + ∫ t in b..c, deriv δ t • f (δ t) :=
+  intervalIntegral_deriv_smul_eq_add_of_eqOn
+    (fun _ ht => ite_eq_left (uIoo_of_le hab ▸ ht).2.le)
+    (fun _ ht => ite_eq_right (not_le.2 (uIoo_of_le hbc ▸ ht).1)) hγi hδi
 
 end Integral
 

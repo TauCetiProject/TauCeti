@@ -11,14 +11,15 @@ public import TauCeti.CategoryTheory.Preadditive.AdditiveGenerator
 public import TauCeti.RingTheory.DominantDimension
 public import TauCeti.RingTheory.GlobalDimension
 
-import TauCeti.Algebra.Category.FGModuleCat.Generator.Cogenerator
+import Mathlib.RingTheory.HopkinsLevitzki
+import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
 import TauCeti.Algebra.Category.ModuleCat.Algebra
 import TauCeti.CategoryTheory.Functor.RingEquivEnd
 import TauCeti.CategoryTheory.Preadditive.Projectivization.GlobalDimension
 import TauCeti.RingTheory.GlobalDimension.AdditiveGenerator
 import TauCeti.RingTheory.GlobalDimension.MulOpposite
 import TauCeti.RingTheory.Morita.GlobalDimension
-import TauCeti.RingTheory.Morita.Tachikawa
+import TauCeti.RingTheory.Morita.Tachikawa.Basic
 
 /-!
 # Auslander algebras
@@ -109,7 +110,7 @@ theorem isAuslanderAlgebra_end (R : Type u) [CommRing R] [IsArtinianRing R] {A :
     [Algebra R A] [Module.Finite R A] [Small.{w} A] (M : FGModuleCat.{w} A)
     (hM : IsAdditiveGenerator M) : IsAuslanderAlgebra (Module.End A M.obj) :=
   isAuslanderAlgebra_iff.2 ⟨hM.globalDimension_moduleEnd_le_two R,
-    two_le_dominantDimension_end R M (hM.isGeneratorCogenerator R)⟩
+    two_le_dominantDimension_end R M hM.isGeneratorCogenerator⟩
 
 open scoped ModuleCat.Algebra in
 /-- **Generator-cogenerators with endomorphism ring of global dimension at most two are additive

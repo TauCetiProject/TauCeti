@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Univ
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
+public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
@@ -71,7 +72,9 @@ In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗�
 both partial traces of a continuously varying matrix on a product index.
 
 A matrix-valued function converges exactly when each of its entries does
-(`Matrix.tendsto_iff_tendsto_apply`). The matrices with nonnegative diagonal form a closed set
+(`Matrix.tendsto_iff_tendsto_apply`); in particular, pointwise convergence of sesquilinear forms
+gives convergence of their Gram matrices in any pair of finite bases
+(`LinearMap.tendsto_toMatrix₂`). The matrices with nonnegative diagonal form a closed set
 (`Matrix.isClosed_setOfPred_nonneg_diag`).
 
 `Matrix.ofHomeomorph` bundles `Matrix.of` as a homeomorphism `(m → n → α) ≃ₜ Matrix m n α`.
@@ -413,3 +416,20 @@ theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero 
   exact isClosed_iInter fun i ↦ isClosed_le continuous_const (continuous_id.matrix_elem i i)
 
 end Matrix
+
+namespace LinearMap
+
+open Filter Topology in
+/-- Pointwise convergence of sesquilinear forms gives convergence of their Gram matrices in any
+pair of finite bases. -/
+theorem tendsto_toMatrix₂ {R M₁ M₂ N₂ n m α : Type*} [CommSemiring R] [AddCommMonoid M₁]
+    [Module R M₁] [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid N₂] [Module R N₂]
+    [TopologicalSpace N₂] {σ₁ σ₂ : R →+* R} [Fintype n] [Fintype m] [DecidableEq n]
+    [DecidableEq m] (b₁ : Module.Basis n R M₁) (b₂ : Module.Basis m R M₂) {l : Filter α}
+    {B : α → M₁ →ₛₗ[σ₁] M₂ →ₛₗ[σ₂] N₂} {B₀ : M₁ →ₛₗ[σ₁] M₂ →ₛₗ[σ₂] N₂}
+    (hB : ∀ u v, Tendsto (fun a ↦ B a u v) l (𝓝 (B₀ u v))) :
+    Tendsto (fun a ↦ toMatrix₂ b₁ b₂ (B a)) l (𝓝 (toMatrix₂ b₁ b₂ B₀)) :=
+  Matrix.tendsto_iff_tendsto_apply.2 fun i j ↦ by
+    simpa only [toMatrix₂_apply] using hB (b₁ i) (b₂ j)
+
+end LinearMap
