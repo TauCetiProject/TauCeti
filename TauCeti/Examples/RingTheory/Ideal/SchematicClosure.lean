@@ -20,7 +20,7 @@ uniformizer of a discrete valuation ring). Two examples of the schematic closure
   `K[x] = K ⊗[O] O[x]`, the closure ideal is `I^♮ = (ϖx - 1)`
   (`TauCeti.Examples.closureIdeal_span_X_sub_inv`). The closure `O[x] ⧸ (ϖx - 1)` has no section
   (`TauCeti.Examples.isEmpty_algHom_closure_span_X_sub_inv`) and, over a local ring, an empty
-  special fibre (`TauCeti.Examples.subsingleton_residueField_tensor_closure_span_X_sub_inv`):
+  special fibre (`TauCeti.Examples.subsingleton_residueField_tensorProduct_closure_span_X_sub_inv`):
   the `K`-point `x = ϖ⁻¹` does not extend to an `O`-point.
 * the failure of `(0)^♮ = 0` without flatness: the closure of the zero ideal is the `O`-torsion
   ideal, which for `A = O × O ⧸ (ϖ)` is `0 × O ⧸ (ϖ)`, not `0`
@@ -85,7 +85,7 @@ theorem isEmpty_algHom_closure_span_X_sub_inv (hϖ0 : ϖ ≠ 0) (hϖ : ¬IsUnit 
 
 /-- **The closure of `x = ϖ⁻¹` has empty special fibre**: over a local ring `O` with `ϖ` in the
 maximal ideal, `κ ⊗[O] O[x] ⧸ (ϖx - 1)` is the zero ring. -/
-theorem subsingleton_residueField_tensor_closure_span_X_sub_inv [IsLocalRing O] (hϖ0 : ϖ ≠ 0)
+theorem subsingleton_residueField_tensorProduct_closure_span_X_sub_inv [IsLocalRing O] (hϖ0 : ϖ ≠ 0)
     (hϖ : ¬IsUnit ϖ) :
     Subsingleton (IsLocalRing.ResidueField O ⊗[O] closure K (Ideal.span
         {(1 : K) ⊗ₜ[O] (X : O[X]) - (algebraMap O K ϖ)⁻¹ ⊗ₜ[O] (1 : O[X])})) := by
