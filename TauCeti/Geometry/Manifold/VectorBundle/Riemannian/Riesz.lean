@@ -91,6 +91,7 @@ theorem inner_rieszDual {x : M} (φ : TangentSpace I x →L[ℝ] ℝ)
 
 /-- The inverse of the Riesz dual is the metric dual: it sends a tangent vector `v` to the
 covector `⟪v, ·⟫`. -/
+@[simp]
 theorem rieszDual_symm_apply {x : M} (v : TangentSpace I x) :
     (rieszDual (I := I) x).symm v = innerSL ℝ v := by
   ext w

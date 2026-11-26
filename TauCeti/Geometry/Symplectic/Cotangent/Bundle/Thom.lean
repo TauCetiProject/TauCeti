@@ -45,13 +45,14 @@ isomorphisms of the vector bundle `T*M`:
   `Hₘ(D*M, S*M; K) ≅ Hₚ(M; K)` for `n + p = m`, over any base
   (`TauCeti.CotangentBundle.codiscPairSingularHomologyIso`, from `TauCeti.homologyThomIso`);
 * with no orientation, when `2 = 0` in `K`, for instance `K = ZMod 2`
-  (`TauCeti.CotangentBundle.nonempty_singularHomology_codiscPair_iso_of_two_eq_zero`);
+  (`nonempty_singularHomology_codiscPair_iso_singularHomology_of_two_eq_zero`, in the namespace
+  `TauCeti.CotangentBundle`);
 * for an oriented manifold, over every commutative ring, `ℤ` included
-  (`TauCeti.CotangentBundle.nonempty_singularHomology_codiscPair_iso_of_orientation`). The Riesz
-  isomorphisms `p ↦ p♯` of the metric (`Riemannian.Tensor.rieszDual`) form a continuous bundle
-  isomorphism `T*M ≃ TM` (`TauCeti.CotangentBundle.continuous_rieszDual`), along which an
-  orientation of `M` transports to an orientation of `T*M`
-  (`TauCeti.CotangentBundle.orientation`), and this has a Thom class;
+  (`nonempty_singularHomology_codiscPair_iso_singularHomology_of_orientation`, in the namespace
+  `TauCeti.CotangentBundle`). The Riesz isomorphisms `p ↦ p♯` of the metric
+  (`Riemannian.Tensor.rieszDual`) form a continuous bundle isomorphism `T*M ≃ TM`
+  (`TauCeti.CotangentBundle.continuous_rieszDual`), along which an orientation of `M` transports
+  to an orientation of `T*M` (`TauCeti.CotangentBundle.orientation`), and this has a Thom class;
 * for a compact manifold, orientable or not, over every commutative ring,
   `Hₚ₊ₙ(D*M, S*M; K) ≅ Hₚ(M; o(T*M) ⊗ K)` with coefficients in the orientation local system of
   `T*M` (`TauCeti.CotangentBundle.nonempty_singularHomology_codiscPair_iso_twistedHomology`),
@@ -73,9 +74,9 @@ isomorphisms of the vector bundle `T*M`:
 * `TauCeti.CotangentBundle.isFiberGauge_norm_snd`: the norm of covectors is a fibre gauge.
 * `TauCeti.CotangentBundle.isIso_singularHomologyMap_codiscPairMap`: `(D*M, S*M)` and the Thom pair
   of `T*M` have the same relative homology.
-* `TauCeti.CotangentBundle.nonempty_singularHomology_codiscPair_iso_of_two_eq_zero`,
-  `TauCeti.CotangentBundle.nonempty_singularHomology_codiscPair_iso_of_orientation`,
-  `TauCeti.CotangentBundle.nonempty_singularHomology_codiscPair_iso_twistedHomology`: the Thom
+* `nonempty_singularHomology_codiscPair_iso_singularHomology_of_two_eq_zero`,
+  `nonempty_singularHomology_codiscPair_iso_singularHomology_of_orientation`,
+  `nonempty_singularHomology_codiscPair_iso_twistedHomology`, in `TauCeti.CotangentBundle`: the Thom
   isomorphism of the codisc bundle in characteristic two, for oriented manifolds, and with
   orientation-twisted coefficients over a compact manifold.
 
@@ -215,8 +216,8 @@ theorem codiscPairSingularHomologyIso_hom (K : Type u) [CommRing K] (p m : ℕ)
 /-- **The Thom isomorphism of the codisc bundle in characteristic two.** For a Riemannian manifold
 of dimension `n`, orientable or not, and a commutative ring `K` in which `2 = 0`, such as
 `ZMod 2`, `Hₚ₊ₙ(D*M, S*M; K) ≅ Hₚ(M; K)` in every degree `p`. -/
-theorem nonempty_singularHomology_codiscPair_iso_of_two_eq_zero (K : Type u) [CommRing K]
-    (h2 : (2 : K) = 0) (p : ℕ) :
+theorem nonempty_singularHomology_codiscPair_iso_singularHomology_of_two_eq_zero (K : Type u)
+    [CommRing K] (h2 : (2 : K) = 0) (p : ℕ) :
     Nonempty ((codiscPair I M).singularHomology (ModuleCat.of K K) (finrank ℝ E + p) ≅
       ((singularHomologyFunctor (ModuleCat.{u} K) p).obj (ModuleCat.of K K)).obj
         (TopCat.of M)) :=
@@ -238,7 +239,7 @@ variable {E H : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimens
 /-- **The Thom isomorphism of the codisc bundle of an oriented manifold.** For an oriented
 Riemannian manifold of dimension `n` and every commutative ring `K`, `ℤ` included,
 `Hₚ₊ₙ(D*M, S*M; K) ≅ Hₚ(M; K)` in every degree `p`. -/
-theorem nonempty_singularHomology_codiscPair_iso_of_orientation
+theorem nonempty_singularHomology_codiscPair_iso_singularHomology_of_orientation
     (hι : Fintype.card ι = finrank ℝ E)
     (o : VectorBundleOrientation E (TangentSpace I : M → Type u) ι) (K : Type u) [CommRing K]
     (p : ℕ) :
