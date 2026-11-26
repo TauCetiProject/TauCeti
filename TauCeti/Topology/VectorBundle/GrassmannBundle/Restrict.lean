@@ -24,8 +24,8 @@ induced by the inclusion `W → B` covered by the identities of the fibres.
   an open embedding (`TauCeti.grassmannBundle.isOpenEmbedding_inclusion`), as is every continuous
   map of Grassmann bundles induced by an open embedding of the bases
   (`TauCeti.grassmannBundle.isOpenEmbedding_map`).
-* For open `W ⊆ B` and open `W' ⊆ W`, the Grassmann bundle of `(E|_W)|_{W'}` is homeomorphic to
-  that of `E|_{W'}` over the inclusions into `G_k(E)`
+* For `W ⊆ B` and `W' ⊆ W`, the Grassmann bundle of `(E|_W)|_{W'}` is homeomorphic to that of
+  `E|_{W'}` over the inclusions into `G_k(E)`
   (`TauCeti.grassmannBundle.restrictRestrictHomeomorph`).
 
 This is the carrier of the restriction of a varifold on `B` to an open subset
@@ -108,14 +108,6 @@ theorem image_inclusion_preimage_proj (A : Set W) :
   rw [mem_preimage, ← Subtype.val_injective hx]
   exact hxA
 
-/-- The planes of `G_k(E)` reached through the two inclusions `G_k((E|_W)|_{W'}) → G_k(E|_W)` and
-`G_k(E|_W) → G_k(E)` are those reached through the single inclusion `G_k(E|_{W'}) → G_k(E)`,
-`W'` being read as a subset of `B`: in both cases the planes over `W'`. -/
-theorem range_inclusion_comp_inclusion {W' : Set W} :
-    range (inclusion F E k W ∘ inclusion F (ContinuousMap.subtypeVal W *ᵖ E) k W') =
-      range (inclusion F E k (Subtype.val '' W')) := by
-  rw [range_comp, range_inclusion, image_inclusion_preimage_proj, range_inclusion]
-
 end Map
 
 variable {B F : Type*} {E : B → Type*} [TopologicalSpace B]
@@ -145,52 +137,83 @@ theorem continuous_inclusion : Continuous (inclusion F E k W) := by
     Trivialization.continuousLinearEquivAt_pullback]
   exact (((trivializationAt F E (x₀ : B)).continuousLinearEquivAt ℝ _ hx).apply_symm_apply v).symm
 
+section Transitivity
+
+variable {W}
+
+variable (F E k) in
+/-- **Transitivity of restriction for Grassmann bundles.** For `W ⊆ B` and `W' ⊆ W`, the Grassmann
+bundle of the iterated restriction `(E|_W)|_{W'}` is homeomorphic to that of the single restriction
+`E|_{W'}`, with `W'` read as a subset of `B`, compatibly with the inclusions into `G_k(E)`
+(`TauCeti.grassmannBundle.inclusion_restrictRestrictHomeomorph`): it is induced by the
+identification of `W'` with its image in `B`, covered by the identities of the fibres. -/
+def restrictRestrictHomeomorph (W' : Set W) :
+    grassmannBundle F (ContinuousMap.subtypeVal W' *ᵖ (ContinuousMap.subtypeVal W *ᵖ E)) k ≃ₜ
+      grassmannBundle F (ContinuousMap.subtypeVal (Subtype.val '' W') *ᵖ E) k :=
+  mapHomeomorphOfInverse k (fun x ↦ ⟨x.val.val, mem_image_of_mem _ x.property⟩)
+    (fun x ↦ LinearIsometryEquiv.refl ℝ (E x.val.val))
+    (fun y ↦ ⟨⟨y.val, image_val_subset y.property⟩, mem_of_mem_image_val y.property⟩)
+    (fun y ↦ LinearIsometryEquiv.refl ℝ (E y.val)) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+    ((continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _)
+    ((continuous_subtypeVal.subtype_mk _).subtype_mk _)
+    (fun x₀ ↦ by
+      -- In coordinates the identity of the fibres is the identity of `F` near `x₀`.
+      refine (continuousAt_const (y := ContinuousLinearMap.id ℝ F)).congr ?_
+      filter_upwards [(continuous_subtypeVal.comp continuous_subtypeVal).continuousAt.eventually_mem
+        ((trivializationAt F E (x₀ : B)).open_baseSet.mem_nhds
+          (mem_baseSet_trivializationAt F E (x₀ : B)))] with x hx
+      ext v
+      -- All trivializations involved are pullbacks of the trivialization of `E` at `x₀`.
+      rw [ContinuousLinearMap.inCoordinates_eq (by exact hx) (by exact hx)]
+      simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
+        Trivialization.continuousLinearEquivAt_pullback]
+      exact (((trivializationAt F E (x₀ : B)).continuousLinearEquivAt ℝ _ hx).apply_symm_apply
+        v).symm)
+    (fun y₀ ↦ by
+      -- In coordinates the identity of the fibres is the identity of `F` near `y₀`.
+      refine (continuousAt_const (y := ContinuousLinearMap.id ℝ F)).congr ?_
+      filter_upwards [continuous_subtypeVal.continuousAt.eventually_mem
+        ((trivializationAt F E (y₀ : B)).open_baseSet.mem_nhds
+          (mem_baseSet_trivializationAt F E (y₀ : B)))] with y hy
+      ext v
+      -- All trivializations involved are pullbacks of the trivialization of `E` at `y₀`.
+      rw [ContinuousLinearMap.inCoordinates_eq (by exact hy) (by exact hy)]
+      simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
+        Trivialization.continuousLinearEquivAt_pullback]
+      exact (((trivializationAt F E (y₀ : B)).continuousLinearEquivAt ℝ _ hy).apply_symm_apply
+        v).symm)
+
+/-- The homeomorphism `G_k((E|_W)|_{W'}) ≃ₜ G_k(E|_{W'})` commutes with the inclusions into
+`G_k(E)`. -/
+@[simp]
+theorem inclusion_restrictRestrictHomeomorph {W' : Set W}
+    (p : grassmannBundle F (ContinuousMap.subtypeVal W' *ᵖ (ContinuousMap.subtypeVal W *ᵖ E)) k) :
+    inclusion F E k (Subtype.val '' W') (restrictRestrictHomeomorph F E k W' p) =
+      inclusion F E k W (inclusion F (ContinuousMap.subtypeVal W *ᵖ E) k W' p) :=
+  -- Both sides are the map induced by the inclusion `W' → B` and the identities of the fibres.
+  (congrArg (inclusion F E k (Subtype.val '' W'))
+    (congrFun (coe_mapHomeomorphOfInverse ..) p)).trans
+    ((congrFun (map_comp _ _ _ _) p).symm.trans (congrFun (map_comp (ContinuousMap.subtypeVal W')
+      (fun x ↦ LinearIsometryEquiv.refl ℝ ((ContinuousMap.subtypeVal W *ᵖ E) x))
+      (ContinuousMap.subtypeVal W) fun x ↦ LinearIsometryEquiv.refl ℝ (E x)) p))
+
+/-- The homeomorphism `G_k((E|_W)|_{W'}) ≃ₜ G_k(E|_{W'})` covers the identification of `W'` with
+its image in `B`. -/
+@[simp]
+theorem coe_proj_restrictRestrictHomeomorph {W' : Set W}
+    (p : grassmannBundle F (ContinuousMap.subtypeVal W' *ᵖ (ContinuousMap.subtypeVal W *ᵖ E)) k) :
+    ((proj (restrictRestrictHomeomorph F E k W' p) : Subtype.val '' W') : B) =
+      ((proj p : W') : B) := by
+  rw [← proj_inclusion, inclusion_restrictRestrictHomeomorph, proj_inclusion, proj_inclusion]
+
+end Transitivity
+
 variable [T2Space B] [FiniteDimensional ℝ F] [ContinuousFiberNorm F E]
 
 /-- **The inclusion `G_k(E|_W) → G_k(E)` is an open embedding** for an open `W`, when `E` has
 finite rank and continuous fibre norm and `B` is Hausdorff. -/
 theorem isOpenEmbedding_inclusion (hW : IsOpen W) : IsOpenEmbedding (inclusion F E k W) :=
   isOpenEmbedding_map hW.isOpenEmbedding_subtypeVal (continuous_inclusion W)
-
-section Transitivity
-
-variable {W} {W' : Set W}
-
-variable (F E k) in
-/-- **Transitivity of restriction for Grassmann bundles.** For open `W ⊆ B` and open `W' ⊆ W`,
-the Grassmann bundle of the iterated restriction `(E|_W)|_{W'}` is homeomorphic to that of the
-single restriction `E|_{W'}`, with `W'` read as a subset of `B`, compatibly with the inclusions
-into `G_k(E)` (`TauCeti.grassmannBundle.inclusion_restrictRestrictHomeomorph`). Both inclusions
-are open embeddings onto the planes over `W'`. -/
-def restrictRestrictHomeomorph (hW : IsOpen W) (hW' : IsOpen W') :
-    grassmannBundle F (ContinuousMap.subtypeVal W' *ᵖ (ContinuousMap.subtypeVal W *ᵖ E)) k ≃ₜ
-      grassmannBundle F (ContinuousMap.subtypeVal (Subtype.val '' W') *ᵖ E) k :=
-  ((isOpenEmbedding_inclusion W hW).comp
-    (isOpenEmbedding_inclusion W' hW')).isEmbedding.toHomeomorph |>.trans <|
-    (Homeomorph.setCongr (range_inclusion_comp_inclusion W)).trans
-      (isOpenEmbedding_inclusion _ (hW.isOpenMap_subtypeVal W' hW')).isEmbedding.toHomeomorph.symm
-
-/-- The homeomorphism `G_k((E|_W)|_{W'}) ≃ₜ G_k(E|_{W'})` commutes with the inclusions into
-`G_k(E)`. -/
-@[simp]
-theorem inclusion_restrictRestrictHomeomorph (hW : IsOpen W) (hW' : IsOpen W')
-    (p : grassmannBundle F (ContinuousMap.subtypeVal W' *ᵖ (ContinuousMap.subtypeVal W *ᵖ E)) k) :
-    inclusion F E k (Subtype.val '' W') (restrictRestrictHomeomorph F E k hW hW' p) =
-      inclusion F E k W (inclusion F (ContinuousMap.subtypeVal W *ᵖ E) k W' p) := by
-  rw [← IsEmbedding.toHomeomorph_apply_coe
-    (isOpenEmbedding_inclusion _ (hW.isOpenMap_subtypeVal W' hW')).isEmbedding]
-  simp [restrictRestrictHomeomorph, Homeomorph.setCongr]
-
-/-- The homeomorphism `G_k((E|_W)|_{W'}) ≃ₜ G_k(E|_{W'})` covers the identification of `W'` with
-its image in `B`. -/
-@[simp]
-theorem coe_proj_restrictRestrictHomeomorph (hW : IsOpen W) (hW' : IsOpen W')
-    (p : grassmannBundle F (ContinuousMap.subtypeVal W' *ᵖ (ContinuousMap.subtypeVal W *ᵖ E)) k) :
-    ((proj (restrictRestrictHomeomorph F E k hW hW' p) : Subtype.val '' W') : B) =
-      ((proj p : W') : B) := by
-  rw [← proj_inclusion, inclusion_restrictRestrictHomeomorph, proj_inclusion, proj_inclusion]
-
-end Transitivity
 
 end grassmannBundle
 

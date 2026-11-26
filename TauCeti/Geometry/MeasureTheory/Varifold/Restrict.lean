@@ -158,15 +158,15 @@ restriction `(V|_W)|_{W'}`, carried to `G_k(E|_{W'})` by the homeomorphism
 as a subset of `B`. -/
 theorem map_restrictRestrictHomeomorph_restrictOpens_restrictOpens (hW : IsOpen W)
     (hW' : IsOpen W') :
-    (restrictOpens W' (restrictOpens W V)).map (restrictRestrictHomeomorph F E k hW hW') =
+    (restrictOpens W' (restrictOpens W V)).map (restrictRestrictHomeomorph F E k W') =
       restrictOpens (Subtype.val '' W') V := by
   have hg := measurableEmbedding_inclusion (F := F) (E := E) (k := k)
     (hW.isOpenMap_subtypeVal W' hW')
-  have hcomp : inclusion F E k (Subtype.val '' W') ∘ restrictRestrictHomeomorph F E k hW hW' =
+  have hcomp : inclusion F E k (Subtype.val '' W') ∘ restrictRestrictHomeomorph F E k W' =
       inclusion F E k W ∘ inclusion F (ContinuousMap.subtypeVal W *ᵖ E) k W' :=
-    funext (inclusion_restrictRestrictHomeomorph hW hW')
+    funext inclusion_restrictRestrictHomeomorph
   rw [← hg.comap_map ((restrictOpens W' (restrictOpens W V)).map _),
-    Measure.map_map hg.measurable (restrictRestrictHomeomorph F E k hW hW').measurable, hcomp,
+    Measure.map_map hg.measurable (restrictRestrictHomeomorph F E k W').measurable, hcomp,
     ← Measure.map_map (measurableEmbedding_inclusion hW).measurable
       (measurableEmbedding_inclusion hW').measurable,
     map_inclusion_map_inclusion_restrictOpens_restrictOpens _ hW hW',
