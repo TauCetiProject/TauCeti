@@ -33,12 +33,13 @@ on `D`, a choice of partners in `D` on an open set is continuous
 partner in `D` (`TauCeti.exists_continuousOn_slice_eq_of_injOn`).
 
 Conversely to openness, suppose that every point of a nonempty open set `U` has a partner on its
-slice other than itself. If `(s, t) ↦ (u(s, t), t)` is locally injective on an open set `G` with
-countable complement, then on a smaller nonempty open set the partners can be chosen in `G` and
-continuously (`TauCeti.exists_continuousOn_slice_eq_of_forall_exists_ne`). The proof covers `U` by
-countably many closed sets, those of points with a partner at distance at least `1 / (m + 1)` in
-one of countably many compact balls in `G` on which `(s, t) ↦ (u(s, t), t)` is injective, together
-with the horizontal lines through the points outside `G`, and applies Baire's theorem
+slice other than itself, lying in a set `S`. If `(s, t) ↦ (u(s, t), t)` is locally injective on an
+open set `G` containing all but countably many points of `S`, then on a smaller nonempty open set
+the partners can be chosen in `G` and continuously
+(`TauCeti.exists_continuousOn_slice_eq_of_forall_exists_ne`). The proof covers `U` by countably
+many closed sets, those of points with a partner at distance at least `1 / (m + 1)` in one of
+countably many compact balls in `G` on which `(s, t) ↦ (u(s, t), t)` is injective, together with
+the horizontal lines through the points of `S` outside `G`, and applies Baire's theorem
 (`IsOpen.exists_inter_interior_nonempty_of_subset_iUnion`). Inside one such ball the partner is
 unique, so it varies continuously.
 
@@ -227,23 +228,24 @@ private theorem exists_countable_closedBall_cover_injOn {G : Set (ℝ × ℝ)} (
       mem_nhdsWithin_of_mem_nhds (closedBall_mem_nhds p (hr p hp))
   exact ⟨T, hTc, r, hGT, fun p hp ↦ hrG p (hTG hp), fun p hp ↦ hrinj p (hTG hp)⟩
 
-/-- **The Baire step.** Let `u : ℝ × ℝ → X` be continuous, let `G` be a set with countable
-complement, covered by the closed balls of a countable family indexed by `T`, and suppose that
-every point `(s, t)` of a nonempty open set `U` has a partner `s' ≠ s` on its slice, with
-`u(s', t) = u(s, t)`. Then for some `p ∈ T` and `m : ℕ`, the set of points with a partner in the
-ball of `p` at distance at least `1 / (m + 1)` has interior points in `U`. -/
-private theorem exists_nonempty_inter_interior_setOf_slice_eq {G U T : Set (ℝ × ℝ)}
-    {r : ℝ × ℝ → ℝ} (hu : Continuous u) (hGc : Gᶜ.Countable) (hTc : T.Countable)
+/-- **The Baire step.** Let `u : ℝ × ℝ → X` be continuous, let `G` be a set covered by the closed
+balls of a countable family indexed by `T`, containing all but countably many points of a set
+`S`, and suppose that every point `(s, t)` of a nonempty open set `U` has a partner `s' ≠ s` on
+its slice, with `(s', t) ∈ S` and `u(s', t) = u(s, t)`. Then for some `p ∈ T` and `m : ℕ`, the set
+of points with a partner in the ball of `p` at distance at least `1 / (m + 1)` has interior points
+in `U`. -/
+private theorem exists_nonempty_inter_interior_setOf_slice_eq {G S U T : Set (ℝ × ℝ)}
+    {r : ℝ × ℝ → ℝ} (hu : Continuous u) (hGc : (S \ G).Countable) (hTc : T.Countable)
     (hGT : G ⊆ ⋃ p ∈ T, closedBall p (r p)) (hU : IsOpen U) (hUne : U.Nonempty)
-    (h : ∀ z ∈ U, ∃ s ≠ z.1, u (s, z.2) = u z) :
+    (h : ∀ z ∈ U, ∃ s ≠ z.1, (s, z.2) ∈ S ∧ u (s, z.2) = u z) :
     ∃ p ∈ T, ∃ m : ℕ, (U ∩ interior {z | ∃ s, (s, z.2) ∈ closedBall p (r p) ∧
       1 / ((m : ℝ) + 1) ≤ |s - z.1| ∧ u (s, z.2) = u z}).Nonempty := by
   -- The closed sets of points with a partner in the ball of `p ∈ T` at distance at least
-  -- `1 / (m + 1)` and the horizontal lines through the countably many points outside `G`
+  -- `1 / (m + 1)` and the horizontal lines through the countably many points of `S` outside `G`
   -- cover `U`.
   have := hTc.to_subtype
   have := hGc.to_subtype
-  let f : (T × ℕ) ⊕ (Gᶜ : Set (ℝ × ℝ)) → Set (ℝ × ℝ)
+  let f : (T × ℕ) ⊕ (S \ G : Set (ℝ × ℝ)) → Set (ℝ × ℝ)
     | .inl i => {z | ∃ s, (s, z.2) ∈ closedBall (i.1 : ℝ × ℝ) (r i.1) ∧
         1 / ((i.2 : ℝ) + 1) ≤ |s - z.1| ∧ u (s, z.2) = u z}
     | .inr q => Prod.snd ⁻¹' {(q : ℝ × ℝ).2}
@@ -252,13 +254,13 @@ private theorem exists_nonempty_inter_interior_setOf_slice_eq {G U T : Set (ℝ 
     exacts [isClosed_setOf_exists_slice_eq hu (isCompact_closedBall _ _) _,
       isClosed_singleton.preimage continuous_snd]
   have hcover : U ⊆ ⋃ i, f i := fun z hzU ↦ by
-    obtain ⟨s, hs, hsu⟩ := h z hzU
+    obtain ⟨s, hs, hsS, hsu⟩ := h z hzU
     refine mem_iUnion.2 ?_
     by_cases hq : (s, z.2) ∈ G
     · obtain ⟨p, hp, hpq⟩ := mem_iUnion₂.1 (hGT hq)
       obtain ⟨m, hm⟩ := exists_nat_one_div_lt (abs_pos.2 (sub_ne_zero.2 hs))
       exact ⟨.inl (⟨p, hp⟩, m), s, hpq, hm.le, hsu⟩
-    · exact ⟨.inr ⟨(s, z.2), hq⟩, rfl⟩
+    · exact ⟨.inr ⟨(s, z.2), hsS, hq⟩, rfl⟩
   -- By Baire's theorem one of these sets has interior points in `U`; only the first kind can,
   -- since lines have empty interior.
   obtain ⟨i, z, hzU, hz⟩ := hU.exists_inter_interior_nonempty_of_subset_iUnion hUne hf hcover
@@ -268,16 +270,17 @@ private theorem exists_nonempty_inter_interior_setOf_slice_eq {G U T : Set (ℝ 
       simp only [f, interior_preimage_snd_singleton, notMem_empty, not_false_eq_true])
 
 /-- **Continuous choice of partners on an open set, by Baire's theorem.** Let
-`u : ℝ × ℝ → X` be continuous, with values in a Hausdorff space, and let `G` be an open set whose
-complement is countable, near each point of which `(s, t) ↦ (u(s, t), t)` is injective. If every
-point `(s, t)` of a nonempty open set `U` has a partner `s' ≠ s` on its slice, with
-`u(s', t) = u(s, t)`, then on some nonempty open `W ⊆ U` these partners can be chosen
-continuously and in `G`: there is `φ`, continuous on `W`, with `φ(z) ≠ z.1`,
-`u(φ(z), z.2) = u(z)` and `(φ(z), z.2) ∈ G` for every `z ∈ W`. -/
-theorem exists_continuousOn_slice_eq_of_forall_exists_ne {G U : Set (ℝ × ℝ)} (hu : Continuous u)
-    (hG : IsOpen G) (hGinj : ∀ p ∈ G, ∃ N ∈ 𝓝 p, InjOn (fun z ↦ (u z, z.2)) N)
-    (hGc : Gᶜ.Countable) (hU : IsOpen U) (hUne : U.Nonempty)
-    (h : ∀ z ∈ U, ∃ s ≠ z.1, u (s, z.2) = u z) :
+`u : ℝ × ℝ → X` be continuous, with values in a Hausdorff space, and let `G` be an open set, near
+each point of which `(s, t) ↦ (u(s, t), t)` is injective, containing all but countably many points
+of a set `S`. If every point `(s, t)` of a nonempty open set `U` has a partner `s' ≠ s` on its
+slice, with `(s', t) ∈ S` and `u(s', t) = u(s, t)`, then on some nonempty open `W ⊆ U` these
+partners can be chosen continuously and in `G`: there is `φ`, continuous on `W`, with
+`φ(z) ≠ z.1`, `u(φ(z), z.2) = u(z)` and `(φ(z), z.2) ∈ G` for every `z ∈ W`. For `S = univ`,
+`G` has countable complement. -/
+theorem exists_continuousOn_slice_eq_of_forall_exists_ne {G S U : Set (ℝ × ℝ)}
+    (hu : Continuous u) (hG : IsOpen G)
+    (hGinj : ∀ p ∈ G, ∃ N ∈ 𝓝 p, InjOn (fun z ↦ (u z, z.2)) N) (hGc : (S \ G).Countable)
+    (hU : IsOpen U) (hUne : U.Nonempty) (h : ∀ z ∈ U, ∃ s ≠ z.1, (s, z.2) ∈ S ∧ u (s, z.2) = u z) :
     ∃ W ⊆ U, IsOpen W ∧ W.Nonempty ∧ ∃ φ : ℝ × ℝ → ℝ, ContinuousOn φ W ∧
       ∀ z ∈ W, φ z ≠ z.1 ∧ u (φ z, z.2) = u z ∧ (φ z, z.2) ∈ G := by
   obtain ⟨T, hTc, r, hGT, hrG, hrinj⟩ := exists_countable_closedBall_cover_injOn hG hGinj
