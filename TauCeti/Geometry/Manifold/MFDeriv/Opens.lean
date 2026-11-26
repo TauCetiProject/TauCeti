@@ -18,8 +18,10 @@ source, or following a map into an open target by the inclusion, does not change
 applied to a tangent vector. Differentiability itself is local, so a map and its restriction to
 an open source have vanishing differentials at the same points, with no differentiability
 assumption. The same holds for the differential `mvfderiv` of a vector-valued function
-(`TauCeti.Manifold.mvfderiv_comp_subtype_val`). Likewise the restriction `f⁻¹(U) → U` of a map to
-the preimage of an open subset has the differential of the map
+(`TauCeti.Manifold.mvfderiv_comp_subtype_val`), and the differential of a `C¹` map on an open
+subset of a normed space depends continuously on the point
+(`TauCeti.Manifold.continuous_mfderiv_of_contMDiff_opens`). Likewise the restriction
+`f⁻¹(U) → U` of a map to the preimage of an open subset has the differential of the map
 (`TauCeti.Manifold.mfderiv_restrictPreimage_apply`), and so the same tangent image
 (`TauCeti.Manifold.mem_range_mfderiv_restrictPreimage_iff`).
 
@@ -89,6 +91,25 @@ theorem mvfderiv_comp_subtype_val {F : Type*} [NormedAddCommGroup F] [NormedSpac
   -- The tangent spaces at `x` in `U` and at `(x : N)` in `N` are both the model space `E'`, and
   -- `fromTangentSpace` is the identity of it at either base point.
   rfl
+
+/-- The differential of a `C¹` map `a` on an open subset `U` of a normed space depends
+continuously on the point of `U`, as a continuous linear map `E →L[𝕜] F`. -/
+theorem continuous_mfderiv_of_contMDiff_opens {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {U : Opens E} {a : U → F} {n : WithTop ℕ∞}
+    (ha : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) n a) (hn : n ≠ 0) :
+    Continuous (Y := E →L[𝕜] F) fun x : U ↦ mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) a x := by
+  -- Extend `a` from `U` to `E`, where its differential is a Fréchet derivative.
+  let ã : E → F := Function.extend Subtype.val a 0
+  have hãa : (fun x : U ↦ ã x) = a := funext (Subtype.val_injective.extend_apply a 0)
+  have hda (x : U) : (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) a x : E →L[𝕜] F) = fderiv 𝕜 ã x := by
+    refine ContinuousLinearMap.ext fun w ↦ ?_
+    rw [← hãa]
+    exact (mfderiv_comp_subtype_val_apply (f := ã) w).trans
+      (DFunLike.congr_fun mfderiv_eq_fderiv w)
+  simp only [hda]
+  exact continuous_iff_continuousAt.2 fun x ↦ ContinuousAt.comp (g := fderiv 𝕜 ã)
+    ((contMDiffAt_iff_contDiffAt.1 (contMDiffAt_subtype_iff.1 (hãa ▸ ha x))).continuousAt_fderiv
+      hn) continuous_subtypeVal.continuousAt
 
 /-- Restricting a map `f : N → M` to the preimage `f⁻¹(U) → U` of an open subset `U` does not
 change its differential. No differentiability is assumed. -/

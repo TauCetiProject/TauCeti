@@ -30,25 +30,18 @@ This file defines the state space `TauCeti.stateSpace A` as a subset of the weak
 * `TauCeti.map_eq_zero_of_mem_openSegment_of_mem_stateSpace`: if a functional in an open
   segment between two states vanishes at a nonnegative element, so do both states.
 * `TauCeti.pullbackFunctional`: precomposition with a star homomorphism, as a continuous
-<<<<<<< HEAD
-  complex-linear map of weak-* duals. By
+  complex-linear map of weak-* duals, injective along surjective star homomorphisms
+  (`TauCeti.pullbackFunctional_injective_of_surjective`). By
   `TauCeti.mapsTo_pullbackFunctional_stateSpace_of_surjective`,
   `TauCeti.pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero`, and
   `TauCeti.mapsTo_pullbackFunctional_stateSpace` it restricts to states along surjective star
-  homomorphisms, norm-attaining star homomorphisms, and unital star homomorphisms.
-=======
-  complex-linear map of weak-* duals, injective along surjective star homomorphisms
-  (`TauCeti.pullbackFunctional_injective_of_surjective`). By
-  `TauCeti.mapsTo_pullbackFunctional_stateSpace_of_surjective` and
-  `TauCeti.mapsTo_pullbackFunctional_stateSpace` it restricts to an affine map of state spaces
-  along surjective star homomorphisms and along unital star homomorphisms. Along a surjective
-  `f`, its image on states consists of the states vanishing on the kernel of `f`,
-  `TauCeti.mem_image_pullbackFunctional_stateSpace_iff`.
+  homomorphisms, norm-attaining star homomorphisms, and unital star homomorphisms (affinely along
+  surjective and unital star homomorphisms). Along a surjective `f`, its image on states consists of
+  the states vanishing on the kernel of `f`, `TauCeti.mem_image_pullbackFunctional_stateSpace_iff`.
 * `TauCeti.pullbackFunctional_comp_of_apply` and `TauCeti.pullbackFunctional_eq_id_of_apply`:
   restriction of functionals along star homomorphisms is a contravariant functor.
 * `TauCeti.mem_stateSpace_of_pullbackFunctional_mem_stateSpace`: a positive functional of norm at
   most `1` whose restriction along a star homomorphism is a state is itself a state.
->>>>>>> origin/main
 
 For unital `A`:
 
@@ -302,27 +295,18 @@ theorem mem_image_pullbackFunctional_stateSpace_iff (f : F) (hf : Function.Surje
   refine ⟨?_, fun ⟨hψ, hker⟩ => ?_⟩
   · rintro ⟨φ, hφ, rfl⟩
     exact ⟨mapsTo_pullbackFunctional_stateSpace_of_surjective f hf hφ, fun k hk => by simp [hk]⟩
-  -- `ψ` vanishes on the kernel of `f`, so it factors linearly through `f`
-  let g : B →ₗ[ℂ] ℂ := (f : A →ₗ[ℂ] B).liftOfSurjective hf
-    ⟨toStrongDual ψ, fun k hk => by simpa using hker k hk⟩
-  have hg (a : A) : g (f a) = ψ a := by
-    simpa using LinearMap.equivOfSurjective_apply (f := (f : A →ₗ[ℂ] B)) hf
-      (g := (toStrongDual ψ : A →ₗ[ℂ] ℂ)) (fun k hk => by simpa using hker k hk) (m := a)
-  have hgpos (b : B) (hb : 0 ≤ b) : 0 ≤ g b := by
-    obtain ⟨c, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hb
-    obtain ⟨a, rfl⟩ := hf c
-    rw [← map_star, ← map_mul, hg]
-    exact map_nonneg_of_mem_stateSpace hψ (star_mul_self_nonneg a)
-  let ω : B →P[ℂ] ℂ := .ofClass (PositiveLinearMap.mk₀ g hgpos)
-  have hcomp : ((ω.comp (.ofClass f) : A →P[ℂ] ℂ) : A →L[ℂ] ℂ) = toStrongDual ψ := by
-    -- `PositiveLinearMap.mk₀` has no evaluation lemma; `ω` evaluates as `g` by definition
-    ext a
-    exact hg a
+  -- `ψ` vanishes on the kernel of `f`, so it lifts through `f` via `liftOfSurjective`
+  let ψ₀ : A →P[ℂ] ℂ := .mk₀ (toStrongDual ψ) fun a ha =>
+    (map_nonneg_of_mem_stateSpace hψ ha).trans_eq (toStrongDual_apply ψ a).symm
+  let ω : B →P[ℂ] ℂ := ψ₀.liftOfSurjective f hf fun k hk => by
+    simpa [ψ₀] using hker k hk
   refine ⟨StrongDual.toWeakDual (ω : B →L[ℂ] ℂ), ?_, ?_⟩
   · rw [PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff,
-      ← PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective ω f hf, hcomp]
+      PositiveContinuousLinearMap.opNorm_liftOfSurjective,
+      PositiveContinuousLinearMap.toContinuousLinearMap_mk₀]
     exact norm_toStrongDual_of_mem_stateSpace hψ
-  · rw [pullbackFunctional_toWeakDual, hcomp, toWeakDual_toStrongDual]
+  · rw [pullbackFunctional_toWeakDual, PositiveContinuousLinearMap.liftOfSurjective_comp_ofClass,
+      PositiveContinuousLinearMap.toContinuousLinearMap_mk₀, toWeakDual_toStrongDual]
 
 /-- **Functoriality of restriction.** If `k = g ∘ f` pointwise, restricting along `k` is
 restricting along `g` and then along `f`. -/

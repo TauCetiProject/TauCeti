@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Dynamics.SymbolicDynamics.Basic
 public import Mathlib.MeasureTheory.Constructions.Cylinders
+public import Mathlib.Probability.ProductMeasure
 
 /-!
 # Cylinder sets of the full shift as measurable sets
@@ -15,7 +16,9 @@ Mathlib's cylinder set `SymbolicDynamics.FullShift.cylinder U x = {y : y = x on 
 set `U` of indices, is the cylinder event `MeasureTheory.cylinder U {x|_U}` of a single pattern.
 This file records that cylinder sets are measurable when the alphabet has measurable singletons,
 that the intersection of two cylinder sets is a cylinder set on the union of their supports, and
-that the cylinder sets, and those of a fixed configuration, form π-systems.
+that the cylinder sets, and those of a fixed configuration, form π-systems. Under a product of
+probability measures `μ i` on the coordinates, the cylinder set of `x` on `U` has measure
+`∏ i ∈ U, μ i {x i}`; for a constant family `μ i = p` this is the Bernoulli measure of a cylinder.
 
 ## Main results
 
@@ -24,6 +27,7 @@ that the cylinder sets, and those of a fixed configuration, form π-systems.
 * `SymbolicDynamics.FullShift.cylinder_inter_cylinder`
 * `SymbolicDynamics.FullShift.isPiSystem_cylinder`
 * `SymbolicDynamics.FullShift.isPiSystem_cylinder_fixed`
+* `SymbolicDynamics.FullShift.infinitePi_cylinder`
 -/
 
 public section
@@ -80,5 +84,14 @@ theorem isPiSystem_cylinder_fixed (x : G → A) :
   classical
   rintro _ ⟨U, rfl⟩ _ ⟨V, rfl⟩ -
   exact ⟨U ∪ V, (cylinder_union U V x).symm⟩
+
+/-- **Measure of a cylinder set.** Under the product `Measure.infinitePi μ` of probability measures,
+the cylinder set of configurations agreeing with `x` on a finite set `U` of coordinates has measure
+`∏ i ∈ U, μ i {x i}`. For `μ = fun _ ↦ p` this is the Bernoulli measure of a cylinder. -/
+theorem infinitePi_cylinder [MeasurableSpace A] [MeasurableSingletonClass A] (μ : G → Measure A)
+    [∀ i, IsProbabilityMeasure (μ i)] (U : Finset G) (x : G → A) :
+    Measure.infinitePi μ (FullShift.cylinder U x) = ∏ i ∈ U, μ i {x i} := by
+  rw [cylinder_eq_set_pi]
+  exact Measure.infinitePi_pi _ fun i _ ↦ measurableSet_singleton (x i)
 
 end SymbolicDynamics.FullShift

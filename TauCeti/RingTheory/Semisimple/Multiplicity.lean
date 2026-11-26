@@ -58,6 +58,12 @@ finite-dimensional semisimple algebra it suffices to compare the maps out of sim
   form is `TauCeti.finrank_linearMap_pi_eq_natCard_mul_finrank_end`.
 * `TauCeti.jordanHolderMultiplicity_pi_eq_natCard`: over any ring, the count of simple factors
   is the Jordan-Hölder multiplicity.
+* `IsSemisimpleModule.exists_simple_family`: finitely many pairwise non-isomorphic simple modules
+  covering the simple submodules of two finitely generated semisimple modules.
+* `IsSemisimpleModule.exists_linearEquiv_pi_natCard_eq`: given such a family, a finitely
+  generated semisimple module is a product of copies of its members, each occurring with its
+  multiplicity; `TauCeti.apply_jordanHolderMultiplicity_eq_of_forall_eq` compares
+  multiplicities on the family.
 * `TauCeti.natCard_eq_natCard_of_linearEquiv_pi`: equivalent finite products of simple modules
   over any ring have equally many factors isomorphic to `S`; applied to two decompositions of
   one module, this says that the multiplicity is well defined.
@@ -344,6 +350,14 @@ universe u v w
 
 variable {R : Type u} [Ring R]
 
+/-- A finitely generated semisimple module is a finite product of simple submodules. -/
+theorem _root_.IsSemisimpleModule.exists_linearEquiv_pi_submodule (M : Type v) [AddCommGroup M]
+    [Module R M] [IsSemisimpleModule R M] [Module.Finite R M] :
+    ∃ (n : ℕ) (Q : Fin n → Submodule R M), (∀ i, IsSimpleModule R (Q i)) ∧
+      Nonempty (M ≃ₗ[R] ∀ i, Q i) := by
+  obtain ⟨n, Q, eQ, hQ⟩ := IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp R M
+  exact ⟨n, Q, hQ, ⟨eQ.trans DFinsupp.linearEquivFunOnFintype⟩⟩
+
 /-- A finitely generated semisimple module is a finite product of quotients of the ring by maximal
 left ideals. This is `IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp` with each simple summand
 replaced by an isomorphic cyclic module, so that all the factors live in the universe of `R`. -/
@@ -355,6 +369,95 @@ theorem _root_.IsSemisimpleModule.exists_linearEquiv_pi_quotient (M : Type v) [A
   choose m hm e' using fun i ↦ isSimpleModule_iff_quot_maximal.mp (hS i)
   exact ⟨n, m, hm, ⟨e.trans DFinsupp.linearEquivFunOnFintype |>.trans
     (LinearEquiv.piCongrRight fun i ↦ (e' i).some)⟩⟩
+
+/-- **A complete family of simple types for two modules.** For finitely generated semisimple
+modules `M` and `N` there are finitely many pairwise non-isomorphic simple submodules `T i` of
+`M × N` to which every simple submodule of `M` and of `N` is isomorphic: one simple submodule
+chosen in each isotypic component of `M × N`. -/
+theorem _root_.IsSemisimpleModule.exists_simple_family (M : Type v) (N : Type w)
+    [AddCommGroup M] [Module R M] [IsSemisimpleModule R M] [Module.Finite R M]
+    [AddCommGroup N] [Module R N] [IsSemisimpleModule R N] [Module.Finite R N] :
+    ∃ (ι : Type (max v w)) (_ : Fintype ι) (T : ι → Submodule R (M × N)),
+      (∀ i, IsSimpleModule R (T i)) ∧ (Pairwise fun i j => IsEmpty (T i ≃ₗ[R] T j)) ∧
+      (∀ P : Submodule R M, IsSimpleModule R P → ∃ i, Nonempty (P ≃ₗ[R] T i)) ∧
+      ∀ P : Submodule R N, IsSimpleModule R P → ∃ i, Nonempty (P ≃ₗ[R] T i) := by
+  choose T hT heq using fun c : isotypicComponents R (M × N) => c.property
+  -- A simple submodule lies in its isotypic component, which is of the type of the chosen `T c`.
+  have hcover (P : Submodule R (M × N)) [IsSimpleModule R P] :
+      ∃ c, Nonempty (P ≃ₗ[R] T c) := by
+    let c : isotypicComponents R (M × N) := ⟨_, P, ‹_›, rfl⟩
+    have := hT c
+    refine ⟨c, isIsotypicOfType_submodule_iff.mp (.isotypicComponent R (M × N) (T c)) P ?_⟩
+    rw [← heq c]
+    exact P.le_isotypicComponent
+  refine ⟨_, Fintype.ofFinite _, T, hT, fun c d hcd => ⟨fun f => hcd (Subtype.ext ?_)⟩,
+    fun P _ => ?_, fun P _ => ?_⟩
+  · rw [heq c, heq d, f.isotypicComponent_eq]
+  · let e := P.equivMapOfInjective _ (LinearMap.inl_injective (R := R) (M := M) (M₂ := N))
+    have := IsSimpleModule.congr e.symm
+    obtain ⟨c, ⟨f⟩⟩ := hcover (P.map (LinearMap.inl R M N))
+    exact ⟨c, ⟨e.trans f⟩⟩
+  · let e := P.equivMapOfInjective _ (LinearMap.inr_injective (R := R) (M := M) (M₂ := N))
+    have := IsSimpleModule.congr e.symm
+    obtain ⟨c, ⟨f⟩⟩ := hcover (P.map (LinearMap.inr R M N))
+    exact ⟨c, ⟨e.trans f⟩⟩
+
+section Family
+
+variable {ι : Type*} {T : ι → Type*} [∀ i, AddCommGroup (T i)] [∀ i, Module R (T i)]
+  {M : Type v} [AddCommGroup M] [Module R M] [IsSemisimpleModule R M] [Module.Finite R M]
+
+/-- **The multiplicity decomposition.** If every simple submodule of `M` is isomorphic to one of
+the pairwise non-isomorphic modules `T i`, then `M` is a finite product of copies of the `T i`, in
+which `T i` occurs `[M : T i]` times. -/
+theorem _root_.IsSemisimpleModule.exists_linearEquiv_pi_natCard_eq
+    (hT : Pairwise fun i j => IsEmpty (T i ≃ₗ[R] T j))
+    (hM : ∀ P : Submodule R M, IsSimpleModule R P → ∃ i, Nonempty (P ≃ₗ[R] T i)) :
+    ∃ (n : ℕ) (σ : Fin n → ι), Nonempty (M ≃ₗ[R] ∀ x, T (σ x)) ∧
+      ∀ i, Nat.card {x // σ x = i} = jordanHolderMultiplicity R M (T i) := by
+  obtain ⟨n, Q, hQ, ⟨eM⟩⟩ := IsSemisimpleModule.exists_linearEquiv_pi_submodule (R := R) M
+  choose σ hσ using fun x => hM (Q x) (hQ x)
+  have (x : Fin n) : IsSimpleModule R (T (σ x)) := have := hQ x; .congr (hσ x).some.symm
+  let e : M ≃ₗ[R] ∀ x, T (σ x) := eM.trans (.piCongrRight fun x => (hσ x).some)
+  refine ⟨n, σ, ⟨e⟩, fun i => ?_⟩
+  rw [jordanHolderMultiplicity_eq_of_linearEquiv e, jordanHolderMultiplicity_pi_eq_natCard]
+  refine Nat.card_congr (Equiv.subtypeEquivRight fun x => ⟨fun h => h ▸ ⟨.refl R _⟩, ?_⟩)
+  rintro ⟨f⟩
+  by_contra hne
+  exact (hT hne).false f.symm
+
+/-- **Multiplicities outside a covering family vanish.** If every simple submodule of `M` is
+isomorphic to some `T i`, then a module isomorphic to no `T i` does not occur in `M`. -/
+theorem jordanHolderMultiplicity_eq_zero_of_forall_isEmpty
+    (hM : ∀ P : Submodule R M, IsSimpleModule R P → ∃ i, Nonempty (P ≃ₗ[R] T i))
+    (S : Type*) [AddCommGroup S] [Module R S] (hS : ∀ i, IsEmpty (S ≃ₗ[R] T i)) :
+    jordanHolderMultiplicity R M S = 0 := by
+  obtain ⟨n, Q, hQ, ⟨eM⟩⟩ := IsSemisimpleModule.exists_linearEquiv_pi_submodule (R := R) M
+  rw [jordanHolderMultiplicity_eq_of_linearEquiv eM, jordanHolderMultiplicity_pi_eq_natCard,
+    Nat.card_eq_zero]
+  refine Or.inl ⟨fun ⟨x, ⟨e⟩⟩ => ?_⟩
+  obtain ⟨i, ⟨f⟩⟩ := hM (Q x) (hQ x)
+  exact (hS i).false (e.trans f)
+
+/-- **Comparing multiplicities on a covering family.** If every simple submodule of `M` and of `N`
+is isomorphic to some `T i`, then a function of the multiplicities that agrees on every `T i`
+agrees on every module: a module isomorphic to no `T i` occurs in neither `M` nor `N`. -/
+theorem apply_jordanHolderMultiplicity_eq_of_forall_eq {α : Type*} (φ : ℕ → α) {N : Type*}
+    [AddCommGroup N] [Module R N] [IsSemisimpleModule R N] [Module.Finite R N]
+    (hM : ∀ P : Submodule R M, IsSimpleModule R P → ∃ i, Nonempty (P ≃ₗ[R] T i))
+    (hN : ∀ P : Submodule R N, IsSimpleModule R P → ∃ i, Nonempty (P ≃ₗ[R] T i))
+    (h : ∀ i, φ (jordanHolderMultiplicity R M (T i)) = φ (jordanHolderMultiplicity R N (T i)))
+    (S : Type*) [AddCommGroup S] [Module R S] :
+    φ (jordanHolderMultiplicity R M S) = φ (jordanHolderMultiplicity R N S) := by
+  by_cases hS : ∃ i, Nonempty (S ≃ₗ[R] T i)
+  · obtain ⟨i, ⟨f⟩⟩ := hS
+    rw [jordanHolderMultiplicity_congr f, jordanHolderMultiplicity_congr f]
+    exact h i
+  · simp only [not_exists, not_nonempty_iff] at hS
+    rw [jordanHolderMultiplicity_eq_zero_of_forall_isEmpty hM S hS,
+      jordanHolderMultiplicity_eq_zero_of_forall_isEmpty hN S hS]
+
+end Family
 
 /-- **Maps from a finite product of simple modules into a simple module `S`.** Their number is
 the number of endomorphisms of `S`, raised to the number of factors isomorphic to `S`: by Schur's

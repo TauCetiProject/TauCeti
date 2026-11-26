@@ -132,7 +132,7 @@ theorem gnsUniversalRepresentation_injective :
   refine eq_zero_of_forall_mem_stateSpace_apply_star_mul_self_eq_zero fun φ hφ => ?_
   let s : stateSpace A := ⟨φ, hφ⟩
   simpa only [StateSpace.toPositiveLinearMap_apply] using
-    (StateSpace.toPositiveLinearMap s).apply_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero
+    (StateSpace.toPositiveLinearMap s).map_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero
       (ha s)
 
 /-- Two elements have the same image under `gnsUniversalRepresentation A` if and only if they are

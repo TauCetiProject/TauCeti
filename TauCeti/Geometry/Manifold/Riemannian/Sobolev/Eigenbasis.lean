@@ -113,7 +113,7 @@ theorem norm_sq_eq_of_mem_weakEigenspace {μ : ℝ} {w : SobolevH1 I M}
     innerSL_apply_eq_of_mem_weakEigenspace hw]
 
 /-- The value map is injective on each weak eigenspace, whatever the regularity of the metric. -/
-private theorem injective_toLp_domRestrict (μ : ℝ) :
+theorem toLp_domRestrict_weakEigenspace_injective (μ : ℝ) :
     Function.Injective
       ((toLp : SobolevH1 I M →L[ℝ] _).toLinearMap.domRestrict (weakEigenspace I M μ)) := by
   refine (injective_iff_map_eq_zero _).2 fun w hw ↦ Subtype.ext ?_
@@ -192,7 +192,7 @@ theorem finrank_weakEigenspace_eq_ncard (hu : ∀ i, toLp (u i) = b i)
     (hμ : ∀ i, u i ∈ weakEigenspace I M (μ i)) (ν : ℝ) :
     finrank ℝ (weakEigenspace I M ν) = {i | μ i = ν}.ncard := by
   have hb := b.orthonormal.linearIndependent
-  rw [(LinearEquiv.ofInjective _ (injective_toLp_domRestrict ν)).finrank_eq,
+  rw [(LinearEquiv.ofInjective _ (toLp_domRestrict_weakEigenspace_injective ν)).finrank_eq,
     LinearMap.range_domRestrict, map_toLp_weakEigenspace_eq_span b hu hμ,
     finrank_span_set_eq_ncard (hb.linearIndepOn _).id_image]
   exact ncard_image_of_injective _ hb.injective
@@ -235,7 +235,8 @@ instance finiteDimensional_weakEigenspace (ν : ℝ) :
   have hspan := FiniteDimensional.span_of_finite ℝ
     ((finite_setOf_eq_of_orthonormal (orthonormal_toLp_of_hilbertBasis b hu') hμ ν).image b)
   rw [← map_toLp_weakEigenspace_eq_span b hu' hμ, ← LinearMap.range_domRestrict] at hspan
-  exact (LinearEquiv.ofInjective _ (injective_toLp_domRestrict ν)).symm.finiteDimensional
+  exact (LinearEquiv.ofInjective _
+    (toLp_domRestrict_weakEigenspace_injective ν)).symm.finiteDimensional
 
 end Existence
 
