@@ -79,7 +79,7 @@ theorem mem_Ioo_neg_ceil_ceil_iff {c : ℤ} {Y : K} :
 theorem setOf_abs_intCast_lt_eq_Ioo (Y : K) :
     {c : ℤ | |(c : K)| < Y} = ↑(Finset.Ioo (-⌈Y⌉) ⌈Y⌉) := by
   ext c
-  exact mem_Ioo_neg_ceil_ceil_iff.symm
+  rw [Set.mem_ofPred_eq, Finset.mem_coe, mem_Ioo_neg_ceil_ceil_iff]
 
 /-- There are finitely many integers of absolute value less than `Y`. -/
 theorem finite_setOf_abs_intCast_lt (Y : K) : {c : ℤ | |(c : K)| < Y}.Finite := by

@@ -8,8 +8,6 @@ module
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.Data.Set.Card
 public import Mathlib.NumberTheory.Divisors
-public import Mathlib.Order.Interval.Finset.Nat
-import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 
 /-!
 # Square-divisor tails and their multiplicities
@@ -83,10 +81,12 @@ theorem squareDivisorMultiplicity_of_eq_zero (h : Δ a = 0) :
   simp [squareDivisorMultiplicity_eq_card, h]
 
 /-- An element has positive multiplicity exactly when it lies in the tail. -/
+@[simp, grind =]
 theorem squareDivisorMultiplicity_pos_iff :
     0 < squareDivisorMultiplicity Δ M a ↔ a ∈ squareDivisorTail Δ M := by
   classical
-  rw [squareDivisorMultiplicity_eq_card, Finset.card_pos, Finset.filter_nonempty_iff]
+  rw [squareDivisorMultiplicity_eq_card, Finset.card_pos, Finset.filter_nonempty_iff,
+    mem_squareDivisorTail]
   constructor
   · rintro ⟨m, hm, hM, hsq, hdvd⟩
     exact ⟨fun h ↦ by simp [h] at hm, m, hM, hsq, hdvd⟩
@@ -95,13 +95,16 @@ theorem squareDivisorMultiplicity_pos_iff :
     exact Int.natCast_dvd.mp ((dvd_pow_self (m : ℤ) two_ne_zero).trans hdvd)
 
 /-- An element outside the tail has multiplicity zero. -/
+@[simp]
 theorem squareDivisorMultiplicity_eq_zero_iff :
     squareDivisorMultiplicity Δ M a = 0 ↔ a ∉ squareDivisorTail Δ M := by
   rw [← squareDivisorMultiplicity_pos_iff, Nat.pos_iff_ne_zero, not_not]
 
 /-- The tail shrinks as the modulus cutoff grows. -/
 theorem squareDivisorTail_antitone : Antitone (squareDivisorTail Δ) := by
-  rintro M M' hMM' a ⟨h0, m, hM, hm⟩
+  intro M M' hMM' a ha
+  rw [mem_squareDivisorTail] at ha ⊢
+  obtain ⟨h0, m, hM, hm⟩ := ha
   exact ⟨h0, m, hMM'.trans_lt hM, hm⟩
 
 /-- The multiplicity decreases as the modulus cutoff grows. -/
@@ -134,8 +137,8 @@ theorem ncard_inter_squareDivisorTail_le_sum (s : Finset A) (Δ : A → ℤ) (M 
   classical
   calc ((s : Set A) ∩ squareDivisorTail Δ M).ncard
       = #{a ∈ s | a ∈ squareDivisorTail Δ M} := by
-        rw [← Set.ncard_coe_finset, Finset.coe_filter]
-        rfl
+        rw [← Set.ncard_coe_finset, Finset.coe_filter, Set.inter_def]
+        simp only [Finset.mem_coe]
     _ = ∑ a ∈ s, if a ∈ squareDivisorTail Δ M then 1 else 0 := Finset.card_filter _ _
     _ ≤ ∑ a ∈ s, squareDivisorMultiplicity Δ M a := by
         refine Finset.sum_le_sum fun a _ ↦ ?_
