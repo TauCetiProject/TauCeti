@@ -1076,11 +1076,14 @@ without any assumption on the subgroup action. -/
 theorem _root_.Subgroup.explicitRes1_mk_eq_zero_of_forall_eq_zero (I : Subgroup G)
     (z : Z1 G M) (hz : ∀ g : I, (z : G → M) (g : G) = 0) :
     explicitRes1 G M I (z : H1 G M) = 0 := by
-  rw [explicitRes1_mk, H1pi_eq_zero_iff, mem_B1_iff]
-  refine ⟨0, fun g ↦ ?_⟩
-  rw [smul_zero, sub_zero, cocyclesMap1_apply, AddMonoidHom.id_apply,
-    ContinuousMonoidHom.subgroupSubtype_apply]
-  exact (hz g).symm
+  rw [explicitRes1_mk, H1pi_eq_zero_iff]
+  have hzero : (cocyclesMap1 G M I M (ContinuousMonoidHom.subgroupSubtype I)
+      (AddMonoidHom.id M) continuous_id (fun _ _ ↦ rfl) z : I → M) = 0 := by
+    exact funext fun g ↦ (cocyclesMap1_apply G M I M
+      (ContinuousMonoidHom.subgroupSubtype I) (AddMonoidHom.id M) continuous_id
+      (fun _ _ ↦ rfl) z g).trans (hz g)
+  rw [hzero]
+  exact (B1 I M).zero_mem
 
 /-- If `I` acts trivially, a cocycle has unramified class if and only if it vanishes on `I`.
 In particular, this condition is independent of the choice of cocycle representative. -/
