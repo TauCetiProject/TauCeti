@@ -83,7 +83,12 @@ about `y` in a compact coordinate ball of a chart
 densities bound the derivatives of the coordinate expressions
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_le`), and the
 `C¹` convergence theorem for the coordinate Floer equation
-(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub`) applies.
+(`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_stdComplexLineImag_sub`) applies. This step
+needs no compact window and no bubbling analysis: smooth solutions with energy densities bounded on
+compact subsets of an open set `S`, converging on `S` through `e`, converge in `C¹` to a `C¹`
+solution of the Floer equation on `S`
+(`IsNondegenerate.contMDiffOn_and_isComplexLinearMap_of_tendstoLocallyUniformlyOn`), which applies
+on domains such as a pair of pants once the bubbling points are found by other means.
 
 The energy of the limit is accounted for at the bubbling points, as for a symplectic vector space in
 `TauCeti.Geometry.Symplectic.Floer.Compactness.Limit` and for solutions in a single symplectic chart
@@ -604,6 +609,91 @@ private theorem IsNondegenerate.exists_ball_tendstoLocallyUniformlyOn_fderiv_ext
   obtain ⟨t, ht, hevt⟩ := hdconv s hs z hz
   exact ⟨t, ht, by rwa [← map_add_atTop_eq_nat N, eventually_map]⟩
 
+omit [NormedSpace ℝ F] in
+/-- **Limits of Floer solutions with bounded energy densities are `C¹` Floer solutions.** Let `ω`
+be a nondegenerate two-form on a boundaryless manifold `M` with finite-dimensional model space,
+`K ⊆ M` compact and `U` an open set of the domain. Let the structures `J(z, x)` and the Hamiltonian
+vector fields of `K_s` and `K_t`, read in the chart at every point of `K`, be `C²` on `U` times the
+chart target. Let `e : M → F` be continuous and injective on `K`. Let `uₙ` be smooth solutions of
+the Floer equation `(du - X_{K_s} ds - X_{K_t} dt)^{0,1} = 0` on an open set `S ⊆ U` with values
+in `K`, for structures tamed by `ω` over `S`, whose
+energy densities are uniformly bounded on every compact subset of `S`, and which converge to a map
+`v : S → K`, continuous on `S`, locally uniformly through `e` and pointwise in `M`. Then
+
+* `v` is `C¹` on `S`;
+* the convergence holds in `C¹`: for every `α ∈ K`, the derivatives of the coordinate expressions
+  `extChartAt I α ∘ uₙ` converge to the derivative of `extChartAt I α ∘ v` locally uniformly on
+  the open set of points of `S` at which `v` lies in the source of the chart at `α`;
+* `v` solves the Floer equation on `S`.
+
+This is the regularity statement behind
+`IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset_of_mapsTo`,
+where the bounds on the energy densities hold off the bubbling points. The statement is local,
+so `S` need not lie in a compact part of `U`. -/
+theorem IsNondegenerate.contMDiffOn_and_isComplexLinearMap_of_tendstoLocallyUniformlyOn
+    (hω : ω.IsNondegenerate) (hU : IsOpen U) (hK : IsCompact K)
+    (hJ : ∀ x ∈ K,
+      ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I x J) (U ×ˢ (extChartAt I x).target))
+    (hXs : ∀ x ∈ K,
+      ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt x Ks) (U ×ˢ (extChartAt I x).target))
+    (hXt : ∀ x ∈ K,
+      ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt x Kt) (U ×ˢ (extChartAt I x).target))
+    (he : ContinuousOn e K) (he_inj : InjOn e K) {S : Set (ℝ × ℝ)} (hS : IsOpen S) (hSU : S ⊆ U)
+    (hJt : ∀ z ∈ S, ∀ y, (hω.symplecticFormAt y).Tames (J z y))
+    {u : ℕ → ℝ × ℝ → M} {v : ℝ × ℝ → M}
+    (hu : ∀ n, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) (u n) S) (huK : ∀ n, MapsTo (u n) S K)
+    (hfl : ∀ n, ∀ z ∈ S, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u n z))
+      (ω.perturbedMFDeriv Ks Kt (u n) z).toLinearMap)
+    (hbd : ∀ C, IsCompact C → C ⊆ S →
+      ∃ A, ∀ n, ∀ z ∈ C, ω.floerEnergyDensity Ks Kt (u n) z ≤ A)
+    (hv : ContinuousOn v S) (hvK : MapsTo v S K)
+    (hconv : TendstoLocallyUniformlyOn (fun n ↦ e ∘ u n) (e ∘ v) atTop S)
+    (hpt : ∀ z ∈ S, Tendsto (fun n ↦ u n z) atTop (𝓝 (v z))) :
+    ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 v S ∧
+      (∀ α ∈ K, TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (extChartAt I α ∘ u n))
+        (fderiv ℝ (extChartAt I α ∘ v)) atTop (S ∩ v ⁻¹' (extChartAt I α).source)) ∧
+      ∀ y ∈ S, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J y (v y))
+        (ω.perturbedMFDeriv Ks Kt v y).toLinearMap := by
+  -- Near every point of `S`, the limit is read in the chart at any point of `K` whose source
+  -- contains its value. The window is a closed disc about the point inside `S`.
+  have hloc {α : M} (hα : α ∈ K) {y : ℝ × ℝ} (hy : y ∈ S) (hyα : v y ∈ (extChartAt I α).source) :
+      ∃ r > 0, ball y r ⊆ S ∧ MapsTo v (ball y r) (extChartAt I α).source ∧
+        ContDiffOn ℝ 1 (extChartAt I α ∘ v) (ball y r) ∧
+        TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (extChartAt I α ∘ u n))
+          (fderiv ℝ (extChartAt I α ∘ v)) atTop (ball y r) ∧
+        ∀ z ∈ ball y r, fderiv ℝ (extChartAt I α ∘ v) z stdComplexLineImag -
+            ω.hamiltonianOneFormInChartAt α Ks Kt (z, (extChartAt I α ∘ v) z)
+              stdComplexLineImag =
+          Floer.almostComplexInChartAt I α J (z, (extChartAt I α ∘ v) z)
+            (fderiv ℝ (extChartAt I α ∘ v) z stdComplexLineReal -
+              ω.hamiltonianOneFormInChartAt α Ks Kt (z, (extChartAt I α ∘ v) z)
+                stdComplexLineReal) := by
+    obtain ⟨ε, hε, hεS⟩ := Metric.isOpen_iff.1 hS y hy
+    have hcl : closedBall y (ε / 2) ⊆ S :=
+      (closedBall_subset_ball (half_lt_self hε)).trans hεS
+    have hbS : ball y (ε / 2) ⊆ S := ball_subset_closedBall.trans hcl
+    obtain ⟨r, hr, hrb, h⟩ := hω.exists_ball_tendstoLocallyUniformlyOn_fderiv_extChartAt hU
+      (hcl.trans hSU) (isCompact_closedBall y (ε / 2)) hK (hJ α hα) (hXs α hα) (hXt α hα)
+      (fun z hz ↦ hJt z (hcl hz)) he he_inj isOpen_ball ball_subset_closedBall
+      (fun n ↦ (hu n).mono hbS) (fun n ↦ (huK n).mono_left hbS) (fun n z hz ↦ hfl n z (hbS hz))
+      (fun C hC hCb ↦ hbd C hC (hCb.trans hbS)) (hv.mono hbS) (hvK.mono_left hbS)
+      (hconv.mono hbS) (fun z hz ↦ hpt z (hbS hz)) (mem_ball_self (half_pos hε)) hyα
+    exact ⟨r, hr, hrb.trans hbS, h⟩
+  -- So the limit is `C¹` on `S`, and the derivatives converge in each chart.
+  obtain ⟨hvC1, hdconv⟩ :=
+    contMDiffOn_and_tendstoLocallyUniformlyOn_fderiv_extChartAt_comp_of_forall_exists_ball hS hv
+      hvK (Q := u) fun α hα y hy hyα ↦
+        (hloc hα hy hyα).imp fun _ ⟨hr, _, h₁, h₂, h₃, _⟩ ↦ ⟨hr, h₁, h₂, h₃⟩
+  refine ⟨hvC1, hdconv, fun y hy ↦ ?_⟩
+  -- In the chart at `v y`, the limit solves the Floer equation at `y`.
+  obtain ⟨r, hr, -, -, -, -, heq⟩ := hloc (hvK hy) hy (mem_extChartAt_source (v y))
+  refine (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
+    (((hvC1 y hy).contMDiffAt (hS.mem_nhds hy)).mdifferentiableAt one_ne_zero)
+    (mem_extChartAt_source (v y))).2 ?_
+  simpa only [hamiltonianOneFormInChartAt_stdComplexLineReal,
+    hamiltonianOneFormInChartAt_stdComplexLineImag, Function.comp_apply] using
+    heq y (mem_ball_self hr)
+
 /-- **Floer solutions in a manifold converge in `C¹` off finitely many bubbling points.** Under the
 hypotheses of
 `IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_of_mapsTo` on
@@ -667,31 +757,14 @@ theorem
   refine ⟨δ, hδ, fun Ω u A hΩ hΩD hu huK hfl hcont hint hA ↦ ?_⟩
   obtain ⟨φ, hφ, Z, hZΩ, hcard, hconc, hbd, v, hv, hvK, hconv, hpt⟩ :=
     h0 hΩ hΩD (fun k ↦ (hu k).of_le (by norm_cast)) huK hfl hcont hint hA
-  set S := Ω \ (Z : Set (ℝ × ℝ))
-  have hS : IsOpen S := hΩ.sdiff Z.finite_toSet.isClosed
-  -- Near every point of `S`, the limit is read in the chart at any point of `K` whose source
-  -- contains its value.
-  have hloc {α : M} (hα : α ∈ K) {y : ℝ × ℝ} (hy : y ∈ S) (hyα : v y ∈ (extChartAt I α).source) :=
-    hω.exists_ball_tendstoLocallyUniformlyOn_fderiv_extChartAt (u := fun n ↦ u (φ n)) hU hDU hD
-      hK (hJ α hα) (hXs α hα) (hXt α hα) hJt (fun x hx ↦ (he x hx).continuousAt.continuousWithinAt)
-      he_inj hS (sdiff_subset.trans hΩD) (fun n ↦ (hu (φ n)).mono sdiff_subset)
-      (fun n ↦ (huK (φ n)).mono_left sdiff_subset) (fun n z hz ↦ hfl (φ n) z hz.1) hbd hv hvK
-      hconv hpt hy hyα
-  -- So the limit is `C¹` on `S`, and the derivatives converge in each chart.
-  obtain ⟨hvC1, hdconv⟩ :=
-    contMDiffOn_and_tendstoLocallyUniformlyOn_fderiv_extChartAt_comp_of_forall_exists_ball hS hv
-      hvK (Q := fun n ↦ u (φ n)) fun α hα y hy hyα ↦
-        (hloc hα hy hyα).imp fun _ ⟨hr, _, h₁, h₂, h₃, _⟩ ↦ ⟨hr, h₁, h₂, h₃⟩
-  refine ⟨φ, hφ, Z, hZΩ, hcard, hconc, hbd, v, hvC1, hvK, hconv, hpt, hdconv, fun y hy ↦ ?_⟩
-  -- In the chart at `v y`, the limit solves the Floer equation at `y`.
-  obtain ⟨r, hr, -, -, -, -, heq⟩ := hloc (hvK hy) hy (mem_extChartAt_source (v y))
-  refine (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
-    (((hvC1 y hy).contMDiffAt (hS.mem_nhds hy)).mdifferentiableAt one_ne_zero)
-    (mem_extChartAt_source (v y))).2 ?_
-  simpa only [hamiltonianOneFormInChartAt_stdComplexLineReal,
-    hamiltonianOneFormInChartAt_stdComplexLineImag, Function.comp_apply] using
-    heq y (mem_ball_self hr)
-
+  have hS : IsOpen (Ω \ (Z : Set (ℝ × ℝ))) := hΩ.sdiff Z.finite_toSet.isClosed
+  obtain ⟨hvC1, hdconv, hvfl⟩ := hω.contMDiffOn_and_isComplexLinearMap_of_tendstoLocallyUniformlyOn
+    hU hK hJ hXs hXt (fun x hx ↦ (he x hx).continuousAt.continuousWithinAt) he_inj hS
+    (sdiff_subset.trans (hΩD.trans hDU)) (fun z hz ↦ hJt z (hΩD hz.1))
+    (fun n ↦ (hu (φ n)).mono sdiff_subset)
+    (fun n ↦ (huK (φ n)).mono_left sdiff_subset) (fun n z hz ↦ hfl (φ n) z hz.1) hbd hv hvK
+    hconv hpt
+  exact ⟨φ, hφ, Z, hZΩ, hcard, hconc, hbd, v, hvC1, hvK, hconv, hpt, hdconv, hvfl⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- **The energy density is a continuous function of the jet in a chart.** If the Hamiltonian

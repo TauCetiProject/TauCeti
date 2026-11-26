@@ -36,7 +36,11 @@ subsequence of `Fₙ` has a further subsequence and a set `Zᵢ` such that
 
 Then a single subsequence of `Fₙ` converges locally uniformly on `(⋃ᵢ Uᵢ) \ Z` for a finite set
 `Z` with `#Z * δ ≤ E`, and the energy `δ` concentrates at every point of `Z`
-(`TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion`).
+(`TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion`). If moreover functions
+`Gₙ`, such as the energy densities of the maps, are eventually bounded above near every point of
+`Uᵢ \ Zᵢ` along the subsequences of the windows, then they are eventually bounded above near
+every point of `(⋃ᵢ Uᵢ) \ Z` along the single subsequence
+(`TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion_of_le`).
 
 The subsequence is the diagonal of the subsequences chosen successively on the windows. Energy
 concentration and locally uniform convergence along a filter pass to finer filters, so the diagonal
@@ -60,6 +64,8 @@ bounds on the compact subsets of their union
 
 * `TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion`: convergence off finitely
   many bubbling points on a countable union of windows.
+* `TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion_of_le`: the same, with local
+  bounds off the bubbling points.
 * `TauCeti.exists_bubblingSet_of_forall_window`: the bubbling set of an exhaustion by windows with
   thresholds depending on the window.
 
@@ -123,45 +129,53 @@ theorem exists_bubblingSet_of_forall_window {X κ ι β : Type*} [MetricSpace X]
 
 variable {X α : Type*} [TopologicalSpace X] [UniformSpace α] [MeasurableSpace X]
 
-/-- **Convergence off finitely many bubbling points on a countable union of windows.** Let
-`Uᵢ` be countably many open sets, `Fₙ : X → α` maps and `μₙ` measures on `X` with
-`μₙ (⋃ᵢ Uᵢ) ≤ E < ∞`, and let `δ > 0`. Suppose that for every window `Uᵢ` and every subsequence
-`ψ`, there are a further subsequence `ψ ∘ φ`, a set `Zᵢ` and a map `vᵢ` such that every
-neighbourhood of a point of `Zᵢ` eventually carries `μ`-energy at least `δ` along `ψ ∘ φ`, and
-`F ∘ ψ ∘ φ → vᵢ` locally uniformly on `Uᵢ \ Zᵢ`. Then there are a subsequence `φ`, a finite set
-`Z ⊆ ⋃ᵢ Uᵢ` with `#Z * δ ≤ E` and a map `v` such that every neighbourhood of a point of `Z`
-eventually carries energy at least `δ` along `φ`, and `F ∘ φ → v` locally uniformly on
-`(⋃ᵢ Uᵢ) \ Z`. -/
-theorem exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion [T2Space X]
+/-- **Convergence off finitely many bubbling points on a countable union of windows, with local
+bounds.** Let `Uᵢ` be countably many open sets, `Fₙ : X → α` maps, `Gₙ : X → ℝ` functions (the
+energy densities of the maps) and `μₙ` measures on `X` with `μₙ (⋃ᵢ Uᵢ) ≤ E < ∞`, and let `δ > 0`.
+Suppose that for every window `Uᵢ` and every subsequence `ψ`, there are a further subsequence
+`ψ ∘ φ`, a set `Zᵢ` and a map `vᵢ` such that every neighbourhood of a point of `Zᵢ` eventually
+carries `μ`-energy at least `δ` along `ψ ∘ φ`, the functions `G ∘ ψ ∘ φ` are eventually bounded
+above near every point of `Uᵢ \ Zᵢ`, and `F ∘ ψ ∘ φ → vᵢ` locally uniformly on `Uᵢ \ Zᵢ`. Then
+there are a subsequence `φ`, a finite set `Z ⊆ ⋃ᵢ Uᵢ` with `#Z * δ ≤ E` and a map `v` such that
+every neighbourhood of a point of `Z` eventually carries energy at least `δ` along `φ`, the
+functions `G ∘ φ` are eventually bounded above near every point of `(⋃ᵢ Uᵢ) \ Z`, and
+`F ∘ φ → v` locally uniformly on `(⋃ᵢ Uᵢ) \ Z`. -/
+theorem exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion_of_le [T2Space X]
     [OpensMeasurableSpace X] [T2Space α] {ι : Type*} [Countable ι] {U : ι → Set X}
-    (hU : ∀ i, IsOpen (U i)) {F : ℕ → X → α} {μ : ℕ → Measure X} {δ E : ℝ≥0∞} (hδ : δ ≠ 0)
-    (hE : E ≠ ∞) (hμ : ∀ n, μ n (⋃ i, U i) ≤ E)
+    (hU : ∀ i, IsOpen (U i)) {F : ℕ → X → α} {G : ℕ → X → ℝ} {μ : ℕ → Measure X}
+    {δ E : ℝ≥0∞} (hδ : δ ≠ 0) (hE : E ≠ ∞) (hμ : ∀ n, μ n (⋃ i, U i) ≤ E)
     (h : ∀ i ⦃ψ : ℕ → ℕ⦄, StrictMono ψ → ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ Z : Set X,
       (∀ z ∈ Z, ∀ N ∈ 𝓝 z, ∀ᶠ n in atTop, δ ≤ μ (ψ (φ n)) N) ∧
+      (∀ y ∈ U i \ Z, ∃ N ∈ 𝓝 y, ∃ A, ∀ᶠ n in atTop, ∀ x ∈ N, G (ψ (φ n)) x ≤ A) ∧
       ∃ v : X → α, TendstoLocallyUniformlyOn (fun n ↦ F (ψ (φ n))) v atTop (U i \ Z)) :
     ∃ (φ : ℕ → ℕ) (Z : Finset X) (v : X → α), StrictMono φ ∧ ↑Z ⊆ ⋃ i, U i ∧
       Z.card * δ ≤ E ∧ (∀ z ∈ Z, ∀ N ∈ 𝓝 z, ∀ᶠ n in atTop, δ ≤ μ (φ n) N) ∧
+      (∀ y ∈ (⋃ i, U i) \ ↑Z, ∃ N ∈ 𝓝 y, ∃ A, ∀ᶠ n in atTop, ∀ x ∈ N, G (φ n) x ≤ A) ∧
       TendstoLocallyUniformlyOn (fun n ↦ F (φ n)) v atTop ((⋃ i, U i) \ ↑Z) := by
   rcases isEmpty_or_nonempty ι with hι | hι
-  · exact ⟨id, ∅, F 0, strictMono_id, by simp, by simp, by simp,
+  · exact ⟨id, ∅, F 0, strictMono_id, by simp, by simp, by simp, fun _ hy ↦ by simp at hy,
       fun _ _ _ hx ↦ by simp at hx⟩
   obtain ⟨e, he⟩ := exists_surjective_nat ι
   -- The property of the filter of a subsequence on the window `U (e m)`; it passes to finer
   -- filters.
   let P : ℕ → Filter ℕ → Prop := fun m l ↦ ∃ Z : Set X,
     (∀ z ∈ Z, ∀ N ∈ 𝓝 z, ∀ᶠ n in l, δ ≤ μ n N) ∧
+    (∀ y ∈ U (e m) \ Z, ∃ N ∈ 𝓝 y, ∃ A, ∀ᶠ n in l, ∀ x ∈ N, G n x ≤ A) ∧
     ∃ v : X → α, TendstoLocallyUniformlyOn F v l (U (e m) \ Z)
   obtain ⟨D, hD, hDP⟩ := extraction_forall_of_antitone (P := P)
     (fun _ _ _ hl hP ↦ by
-      obtain ⟨Z, hconc, v, hv⟩ := hP
-      exact ⟨Z, fun z hz N hN ↦ (hconc z hz N hN).filter_mono hl, v,
+      obtain ⟨Z, hconc, hbd, v, hv⟩ := hP
+      exact ⟨Z, fun z hz N hN ↦ (hconc z hz N hN).filter_mono hl,
+        fun y hy ↦ (hbd y hy).imp fun _ ⟨hN, A, hA⟩ ↦ ⟨hN, A, hA.filter_mono hl⟩, v,
         hv.comp_tendsto (tendsto_id'.2 hl)⟩) fun m ψ hψ ↦ by
-    obtain ⟨φ, hφ, Z, hconc, v, hv⟩ := h (e m) hψ
-    exact ⟨φ, hφ, Z, fun z hz N hN ↦ eventually_map.2 (hconc z hz N hN), v,
+    obtain ⟨φ, hφ, Z, hconc, hbd, v, hv⟩ := h (e m) hψ
+    exact ⟨φ, hφ, Z, fun z hz N hN ↦ eventually_map.2 (hconc z hz N hN),
+      fun y hy ↦ (hbd y hy).imp fun _ ⟨hN, A, hA⟩ ↦ ⟨hN, A, eventually_map.2 hA⟩, v,
       tendstoLocallyUniformlyOn_map_iff.2 hv⟩
-  -- Along the diagonal, energy concentrates at the bubbling points of every window, and the
-  -- diagonal converges on every window off its bubbling points.
-  choose Zw hconcD vw hvD using hDP
+  -- Along the diagonal, energy concentrates at the bubbling points of every window, the
+  -- functions `G` are bounded near the other points of every window, and the diagonal converges
+  -- on every window off its bubbling points.
+  choose Zw hconcD hbdD vw hvD using hDP
   -- The bubbling set is the union of the bubbling sets of the windows, inside the windows.
   set Z : Set X := ⋃ m, Zw m ∩ U (e m)
   have hZW : Z ⊆ ⋃ i, U i :=
@@ -179,7 +193,39 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion [T2Space X]
     (fun m x hx ↦ by rw [hZf.coe_toFinset]; exact mem_iUnion_of_mem m hx)
     fun m ↦ tendstoLocallyUniformlyOn_map_iff.1 (hvD m)
   rw [he.iUnion_comp U] at hv
-  exact ⟨D, hZf.toFinset, v, hD, by simpa using hZW, hcard _ (by simp),
-    fun z hz N hN ↦ hZconc z (by simpa using hz) N hN, hv⟩
+  refine ⟨D, hZf.toFinset, v, hD, by simpa using hZW, hcard _ (by simp),
+    fun z hz N hN ↦ hZconc z (by simpa using hz) N hN, fun y hy ↦ ?_, hv⟩
+  -- A point off `Z` lies in a window off its bubbling set, where the bound holds.
+  rw [hZf.coe_toFinset] at hy
+  obtain ⟨i, hi⟩ := mem_iUnion.1 hy.1
+  obtain ⟨m, rfl⟩ := he i
+  obtain ⟨N, hN, A, hA⟩ := hbdD m y ⟨hi, fun hyZ ↦ hy.2 (mem_iUnion.2 ⟨m, hyZ, hi⟩)⟩
+  exact ⟨N, hN, A, eventually_map.1 hA⟩
+
+/-- **Convergence off finitely many bubbling points on a countable union of windows.** Let
+`Uᵢ` be countably many open sets, `Fₙ : X → α` maps and `μₙ` measures on `X` with
+`μₙ (⋃ᵢ Uᵢ) ≤ E < ∞`, and let `δ > 0`. Suppose that for every window `Uᵢ` and every subsequence
+`ψ`, there are a further subsequence `ψ ∘ φ`, a set `Zᵢ` and a map `vᵢ` such that every
+neighbourhood of a point of `Zᵢ` eventually carries `μ`-energy at least `δ` along `ψ ∘ φ`, and
+`F ∘ ψ ∘ φ → vᵢ` locally uniformly on `Uᵢ \ Zᵢ`. Then there are a subsequence `φ`, a finite set
+`Z ⊆ ⋃ᵢ Uᵢ` with `#Z * δ ≤ E` and a map `v` such that every neighbourhood of a point of `Z`
+eventually carries energy at least `δ` along `φ`, and `F ∘ φ → v` locally uniformly on
+`(⋃ᵢ Uᵢ) \ Z`. This is the case `G = 0` of
+`TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion_of_le`. -/
+theorem exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion [T2Space X]
+    [OpensMeasurableSpace X] [T2Space α] {ι : Type*} [Countable ι] {U : ι → Set X}
+    (hU : ∀ i, IsOpen (U i)) {F : ℕ → X → α} {μ : ℕ → Measure X} {δ E : ℝ≥0∞} (hδ : δ ≠ 0)
+    (hE : E ≠ ∞) (hμ : ∀ n, μ n (⋃ i, U i) ≤ E)
+    (h : ∀ i ⦃ψ : ℕ → ℕ⦄, StrictMono ψ → ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ Z : Set X,
+      (∀ z ∈ Z, ∀ N ∈ 𝓝 z, ∀ᶠ n in atTop, δ ≤ μ (ψ (φ n)) N) ∧
+      ∃ v : X → α, TendstoLocallyUniformlyOn (fun n ↦ F (ψ (φ n))) v atTop (U i \ Z)) :
+    ∃ (φ : ℕ → ℕ) (Z : Finset X) (v : X → α), StrictMono φ ∧ ↑Z ⊆ ⋃ i, U i ∧
+      Z.card * δ ≤ E ∧ (∀ z ∈ Z, ∀ N ∈ 𝓝 z, ∀ᶠ n in atTop, δ ≤ μ (φ n) N) ∧
+      TendstoLocallyUniformlyOn (fun n ↦ F (φ n)) v atTop ((⋃ i, U i) \ ↑Z) := by
+  obtain ⟨φ, Z, v, hφ, hZ, hcard, hconc, -, hv⟩ :=
+    exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion_of_le (G := 0) hU hδ hE hμ
+      fun i ψ hψ ↦ (h i hψ).imp fun _ ⟨hφ, Z, hconc, hv⟩ ↦
+        ⟨hφ, Z, hconc, fun _ _ ↦ ⟨univ, univ_mem, 0, .of_forall fun _ _ _ ↦ le_rfl⟩, hv⟩
+  exact ⟨φ, Z, v, hφ, hZ, hcard, hconc, hv⟩
 
 end TauCeti
