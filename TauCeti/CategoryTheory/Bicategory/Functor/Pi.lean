@@ -443,41 +443,6 @@ lemma piMapCompπ_inv_as_app (f : ∀ i, F i ⟶ G i) (i : I) (X : LocallyDiscre
     (piMapCompπ f i).inv.as.app X = 𝟙 _ :=
   rfl
 
-/-- The product `piMap f ⟶ piMap g` of a family of modifications `m i : f i ⟶ g i`. -/
-def piMap₂ {f g : ∀ i, F i ⟶ G i} (m : ∀ i, f i ⟶ g i) : piMap f ⟶ piMap g :=
-  pi.homMk fun i ↦ (piMapCompπ f i).hom ≫ pi.π F i ◁ m i ≫ (piMapCompπ g i).inv
-
-/-- The components of `piMap₂ m` are those of the `m i`. -/
-@[simp]
-lemma piMap₂_as_app_app {f g : ∀ i, F i ⟶ G i} (m : ∀ i, f i ⟶ g i) (X : LocallyDiscrete Cᵒᵖ)
-    (x : (pi F).obj X) (i : I) :
-    ((piMap₂ m).as.app X).toNatTrans.app x i = ((m i).as.app X).toNatTrans.app (x i) := by
-  simp only [piMap₂, pi.homMk_as_app_app, Pseudofunctor.StrongTrans.homCategory_comp_as_app,
-    piMapCompπ_hom_as_app, piMapCompπ_inv_as_app, Pseudofunctor.StrongTrans.whiskerLeft_as_app]
-  -- The identities come from `piMapCompπ` and live over objects that are only definitionally the
-  -- source and target of the whiskered component, so `Category.id_comp` applies only up to
-  -- unfolding.
-  erw [Category.id_comp, Category.comp_id]
-  rfl
-
-/-- The product of identity modifications is the identity. -/
-@[simp]
-lemma piMap₂_id (f : ∀ i, F i ⟶ G i) : piMap₂ (fun i ↦ 𝟙 (f i)) = 𝟙 (piMap f) := by
-  ext X x
-  funext i
-  exact piMap₂_as_app_app _ X x i
-
-/-- The product of composite modifications is the composite of the products. -/
-@[simp]
-lemma piMap₂_comp {f g h : ∀ i, F i ⟶ G i} (m : ∀ i, f i ⟶ g i) (n : ∀ i, g i ⟶ h i) :
-    piMap₂ (fun i ↦ m i ≫ n i) = piMap₂ m ≫ piMap₂ n := by
-  ext X x
-  funext i
-  simp only [Pseudofunctor.StrongTrans.homCategory_comp_as_app, Cat.Hom₂.comp_app, pi.comp_apply',
-    piMap₂_as_app_app]
-  -- The two composites differ only in how their middle object is written.
-  rfl
-
 /-- The product of a family of strong transformations whose components over `X` are equivalences
 has its component over `X` an equivalence. -/
 instance isEquivalence_piMap_app (f : ∀ i, F i ⟶ G i) (X : LocallyDiscrete Cᵒᵖ)
@@ -537,6 +502,56 @@ lemma hom_ext (m n : φ ⟶ ψ) : m = n :=
   pi.hom_ext fun i ↦ i.elim
 
 end terminal
+
+end TauCeti.Stack
+
+end
+
+/-! ### The product of a family of modifications
+
+`piMap₂` is not exposed: its components are computed by `piMap₂_as_app_app`. -/
+
+public section
+
+namespace TauCeti.Stack
+
+variable {C : Type u} [Category.{v} C] {I : Type w}
+  {F G : I → Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w u'}}
+
+/-- The product `piMap f ⟶ piMap g` of a family of modifications `m i : f i ⟶ g i`. -/
+def piMap₂ {f g : ∀ i, F i ⟶ G i} (m : ∀ i, f i ⟶ g i) : piMap f ⟶ piMap g :=
+  pi.homMk fun i ↦ (piMapCompπ f i).hom ≫ pi.π F i ◁ m i ≫ (piMapCompπ g i).inv
+
+/-- The components of `piMap₂ m` are those of the `m i`. -/
+@[simp]
+lemma piMap₂_as_app_app {f g : ∀ i, F i ⟶ G i} (m : ∀ i, f i ⟶ g i) (X : LocallyDiscrete Cᵒᵖ)
+    (x : (pi F).obj X) (i : I) :
+    ((piMap₂ m).as.app X).toNatTrans.app x i = ((m i).as.app X).toNatTrans.app (x i) := by
+  simp only [piMap₂, pi.homMk_as_app_app, Pseudofunctor.StrongTrans.homCategory_comp_as_app,
+    piMapCompπ_hom_as_app, piMapCompπ_inv_as_app, Pseudofunctor.StrongTrans.whiskerLeft_as_app]
+  -- The identities come from `piMapCompπ` and live over objects that are only definitionally the
+  -- source and target of the whiskered component, so `Category.id_comp` applies only up to
+  -- unfolding.
+  erw [Category.id_comp, Category.comp_id]
+  rfl
+
+/-- The product of identity modifications is the identity. -/
+@[simp]
+lemma piMap₂_id (f : ∀ i, F i ⟶ G i) : piMap₂ (fun i ↦ 𝟙 (f i)) = 𝟙 (piMap f) := by
+  ext X x
+  funext i
+  exact piMap₂_as_app_app _ X x i
+
+/-- The product of composite modifications is the composite of the products. -/
+@[simp]
+lemma piMap₂_comp {f g h : ∀ i, F i ⟶ G i} (m : ∀ i, f i ⟶ g i) (n : ∀ i, g i ⟶ h i) :
+    piMap₂ (fun i ↦ m i ≫ n i) = piMap₂ m ≫ piMap₂ n := by
+  ext X x
+  funext i
+  simp only [Pseudofunctor.StrongTrans.homCategory_comp_as_app, Cat.Hom₂.comp_app, pi.comp_apply',
+    piMap₂_as_app_app]
+  -- The two composites differ only in how their middle object is written.
+  rfl
 
 end TauCeti.Stack
 
