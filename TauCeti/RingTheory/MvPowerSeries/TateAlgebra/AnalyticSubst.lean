@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
+import TauCeti.RingTheory.MvPowerSeries.NormCoeff
 
 /-!
 # Analytic substitution into restricted power series
@@ -47,6 +48,8 @@ here allows radii that are not norms of elements of `R`, which no weight family 
 * `TauCeti.MvPowerSeries.coeff_restrictedAnalyticSubst`: the coefficients of `f(g)` are the
   convergent sums `∑' t, fₜ · coeff e (g₁^t₁ ⋯ g_k^t_k)`.
 * `TauCeti.MvPowerSeries.norm_restrictedAnalyticSubst_le`: substitution is contractive.
+* `TauCeti.MvPowerSeries.norm_coeff_restrictedAnalyticSubst_le`: geometric coefficient bounds on
+  the `gᵢ` pass to `f(g)`.
 * `TauCeti.MvPowerSeries.eq_restrictedAnalyticSubst`: uniqueness among continuous algebra
   homomorphisms.
 * `TauCeti.MvPowerSeries.restrictedAnalyticSubst_zero_apply`: substituting zero gives the
@@ -178,6 +181,30 @@ variable [∀ i, Fact (0 < r i)]
 theorem norm_restrictedAnalyticSubst_le (f : IsRestricted.subring (R := R) r) :
     ‖restrictedAnalyticSubst g hg f‖ ≤ ‖f‖ :=
   norm_restrictedEval₂_le _ g _ hg f
+
+/-- **Geometric coefficient bounds survive analytic substitution.** If the coefficients of each
+`gᵢ` satisfy `‖coeff e gᵢ‖ ≤ rᵢ ∏ⱼ ρⱼ ^ eⱼ` for nonnegative rates `ρ`, then the coefficients of
+`f(g)` satisfy `‖coeff e f(g)‖ ≤ ‖f‖ ∏ⱼ ρⱼ ^ eⱼ`. -/
+theorem norm_coeff_restrictedAnalyticSubst_le [NormOneClass R] {ρ : τ → ℝ} (hρ : ∀ j, 0 ≤ ρ j)
+    (hgρ : ∀ i e, ‖coeff e (g i : MvPowerSeries τ R)‖ ≤ r i * e.prod (ρ · ^ ·))
+    (f : IsRestricted.subring (R := R) r) (e : τ →₀ ℕ) :
+    ‖coeff e (restrictedAnalyticSubst g hg f : MvPowerSeries τ R)‖ ≤ ‖f‖ * e.prod (ρ · ^ ·) := by
+  rw [coeff_restrictedAnalyticSubst]
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (mul_nonneg (norm_nonneg f) (prod_pow_nonneg hρ e)) fun t ↦ ?_
+  -- The term of `t` is `fₜ gᵗ`, and `‖fₜ‖ ∏ᵢ rᵢ ^ tᵢ ≤ ‖f‖` bounds its coefficients.
+  have hgt : ‖coeff e (∏ i, (g i : MvPowerSeries τ R) ^ t i)‖ ≤
+      t.prod (r · ^ ·) * e.prod (ρ · ^ ·) := by
+    rw [Finsupp.prod_fintype t _ fun _ ↦ pow_zero _]
+    exact norm_coeff_prod_le_prod_mul_prod_pow hρ Finset.univ
+      (fun i _ ↦ norm_coeff_pow_le_pow_mul_prod_pow hρ (hgρ i) (t i)) e
+  calc ‖coeff t (f : MvPowerSeries (Fin k) R) * coeff e (∏ i, (g i : MvPowerSeries τ R) ^ t i)‖
+      ≤ ‖coeff t (f : MvPowerSeries (Fin k) R)‖ * (t.prod (r · ^ ·) * e.prod (ρ · ^ ·)) :=
+        (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left hgt (norm_nonneg _))
+    _ = ‖coeff t (f : MvPowerSeries (Fin k) R)‖ * t.prod (r · ^ ·) * e.prod (ρ · ^ ·) :=
+        (mul_assoc _ _ _).symm
+    _ ≤ ‖f‖ * e.prod (ρ · ^ ·) := mul_le_mul_of_nonneg_right (norm_coeff_mul_prod_le f t)
+        (prod_pow_nonneg hρ e)
 
 /-- Analytic substitution is continuous for the Gauss norms. -/
 theorem continuous_restrictedAnalyticSubst : Continuous (restrictedAnalyticSubst g hg) :=
