@@ -39,8 +39,9 @@ noncomputable def incl : TLAlg R δ n →ₐ[R] TLAlg R δ (n + 1) :=
 /-- The tower inclusion acts on underlying morphisms by right whiskering with one strand. -/
 @[simp]
 theorem asHom_incl (x : TLAlg R δ n) :
-    (incl R δ n x).asHom = x.asHom ▷ (TLCat.of 1 : TLCat R δ) :=
-  (tensorRight (TLCat.of 1 : TLCat R δ)).mapEndAlgHom_asHom R (TLCat.of n) x
+    (incl R δ n x).asHom = x.asHom ▷ (TLCat.of 1 : TLCat R δ) := by
+  simpa only [incl, Functor.flip_obj_map, curriedTensor_map_app] using
+    (tensorRight (TLCat.of 1 : TLCat R δ)).mapEndAlgHom_asHom R (TLCat.of n) x
 
 /-- A basis diagram is sent to the basis diagram obtained by adding a rightmost straight
 strand. In particular no power of the loop parameter is introduced. -/
@@ -51,7 +52,30 @@ theorem incl_diagBasis (x : PlanarMatching (n + n)) :
         (TLDiagram.tensor ⟨x, 0⟩ (TLDiagram.id 1)).matching) := by
   apply End.ext
   rw [asHom_incl]
+  -- Reduce the asHom projections of the two End.of constructors.
+  dsimp only
+  -- Tensoring objects adds their strand counts: of n ⊗ of 1 is of (n + 1).
   exact TLCat.diagBasis_whiskerRight x (TLCat.of 1 : TLCat R δ)
+
+/-- Adding a straight strand on the right preserves each existing generator. -/
+@[simp]
+theorem incl_e (i : Fin (n - 1)) :
+    incl R δ n (e R δ i) = e R δ (Fin.castLE (by omega) i) := by
+  apply End.ext
+  rw [asHom_incl, asHom_e_eq_diagBasis, asHom_e_eq_diagBasis,
+    TLCat.diagBasis_whiskerRight]
+  -- Tensoring objects adds their strand counts, so both basis vectors have the same endpoints.
+  congr 1
+  have he : (⟨(TLDiagCat.e n i).diagram.matching, 0⟩ : TLDiagram n n) =
+      (TLDiagCat.e n i).diagram :=
+    TLDiagram.ext rfl (TLDiagCat.circles_e n i).symm
+  rw [he]
+  apply congrArg TLDiagram.matching
+  rw [TLDiagCat.diagram_e, TLDiagCat.diagram_e, TLDiagram.cast_tensor,
+    TLDiagram.tensor_assoc, TLDiagram.id_tensor_id, TLDiagram.cast_cast]
+  have h : n - 2 - (i : ℕ) + 1 = n + 1 - 2 - (i : ℕ) := by omega
+  congr! (config := { preTransparency := .default }) 3 <;>
+    simpa using congrArg (fun k => (i : ℕ) + 2 + k) h
 
 /-- Adding a strand preserves all coefficients, pushing them forward along the injection
 of planar matchings. -/

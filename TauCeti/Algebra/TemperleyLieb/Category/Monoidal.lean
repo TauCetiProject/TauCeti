@@ -377,7 +377,8 @@ instance tensorRight_faithful (Z : TLCat R δ) : (tensorRight Z).Faithful where
     apply Finsupp.mapDomain_injective (f := fun x : PlanarMatching (X.as + Y.as) =>
       (TLDiagram.tensor ⟨x, 0⟩ (TLDiagram.id Z.as)).matching)
       (fun _ _ hxy => (TLDiagram.matching_tensor_eq_iff.mp hxy).1)
-    have h' : f ▷ Z = g ▷ Z := h
+    have h' : f ▷ Z = g ▷ Z := by
+      simpa only [Functor.flip_obj_map, curriedTensor_map_app] using h
     simpa only [coeff_whiskerRight] using congrArg Hom.coeff h'
 
 /-! ### Linearization is a monoidal functor -/
