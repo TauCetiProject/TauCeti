@@ -300,11 +300,11 @@ theorem exists_squareMatrix_of_minimalCover_of_squarePresentation {r s : ℕ}
   let q : (Fin s → A) →ₗ[A] (Fin (s - r) → A) := eK.symm.toLinearMap ∘ₗ p ∘ₗ f
   have hq_surj : Function.Surjective q := fun y ↦ by
     obtain ⟨z, hz⟩ : (eK y : Fin s → A) ∈ LinearMap.range f := by
-      rw [hfg, LinearMap.mem_ker, ← hu, LinearMap.comp_apply, LinearMap.mem_ker.mp (eK y).2,
+      rw [hfg, LinearMap.mem_ker, ← hu, LinearMap.comp_apply, LinearMap.mem_ker.mp (eK y).property,
         map_zero]
     refine ⟨z, ?_⟩
     have hpz : p (f z) = eK y := Subtype.ext <| by
-      simp [p, hz, LinearMap.mem_ker.mp (eK y).2]
+      simp [p, hz, LinearMap.mem_ker.mp (eK y).property]
     change eK.symm (p (f z)) = y
     rw [hpz, eK.symm_apply_apply]
   obtain ⟨t, ht⟩ := Module.projective_lifting_property q LinearMap.id hq_surj
@@ -317,9 +317,9 @@ theorem exists_squareMatrix_of_minimalCover_of_squarePresentation {r s : ℕ}
   simp only [LinearMap.mem_range, LinearMap.mem_ker]
   constructor
   · rintro ⟨x, rfl⟩
-    change (π ∘ₗ u) (f (eL' x).1) = 0
+    change (π ∘ₗ u) (f (eL' x).val) = 0
     rw [hu]
-    exact LinearMap.mem_ker.mp (hfg ▸ LinearMap.mem_range_self f (eL' x).1)
+    exact LinearMap.mem_ker.mp (hfg ▸ LinearMap.mem_range_self f (eL' x).val)
   · intro hy
     obtain ⟨z, hz⟩ : w' y ∈ LinearMap.range f := by
       rwa [hfg, LinearMap.mem_ker, ← LinearMap.comp_apply g w', hgw']
@@ -329,7 +329,7 @@ theorem exists_squareMatrix_of_minimalCover_of_squarePresentation {r s : ℕ}
       change eK.symm (p (f z)) = 0
       rw [hpz, map_zero]
     refine ⟨eL'.symm ⟨z, hzq⟩, ?_⟩
-    change u (f (eL' (eL'.symm ⟨z, hzq⟩)).1) = y
+    change u (f (eL' (eL'.symm ⟨z, hzq⟩)).val) = y
     rw [eL'.apply_symm_apply, hz, ← LinearMap.comp_apply u w', huw', LinearMap.id_apply]
 
 /-- Over a local ring, a minimal free cover `π : Aʳ ↠ N` of a quadratically presented module has
@@ -551,11 +551,11 @@ theorem exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents {ι
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl }
   let incl : P →ₗ[R] (∀ i, Fin m → Rᵢ i) :=
-    { toFun := fun f i k ↦ if h : k.1 < r i then f i ⟨k.1, h⟩ else 0
+    { toFun := fun f i k ↦ if h : k.val < r i then f i ⟨k.val, h⟩ else 0
       map_add' := fun _ _ ↦ funext fun i ↦ funext fun k ↦ by
-        by_cases h : k.1 < r i <;> simp [h]; rfl
+        by_cases h : k.val < r i <;> simp [h]; rfl
       map_smul' := fun _ _ ↦ funext fun i ↦ funext fun k ↦ by
-        by_cases h : k.1 < r i <;> simp [h]; rfl }
+        by_cases h : k.val < r i <;> simp [h]; rfl }
   have hpi : proj ∘ₗ incl = LinearMap.id :=
     LinearMap.ext fun _ ↦ funext fun _ ↦ funext fun _ ↦ by simp [proj, incl]
   have hfin : Module.Finite R P :=

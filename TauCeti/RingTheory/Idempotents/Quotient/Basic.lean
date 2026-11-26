@@ -172,7 +172,7 @@ noncomputable def cornerRingEquivQuotient {O : Type*} [CommRing O] {e : O}
     he.Corner ≃+* O ⧸ Ideal.span {1 - e} := by
   let φ : O →+* he.Corner :=
     { toFun := he.compress
-      map_one' := Subtype.ext (by simp [IsIdempotentElem.val_compress, he.eq])
+      map_one' := Subtype.ext (by simp)
       map_mul' := fun x y ↦ Subtype.ext <| by
         simp only [IsIdempotentElem.Corner.val_mul, IsIdempotentElem.val_compress]
         have he4 : e * e * e * e = e * e := by simp only [he.eq]
@@ -184,17 +184,17 @@ noncomputable def cornerRingEquivQuotient {O : Type*} [CommRing O] {e : O}
   have hker : RingHom.ker φ = Ideal.span {1 - e} := by
     ext x
     rw [RingHom.mem_ker, Ideal.mem_span_singleton]
-    have hval : (φ x).1 = e * x := by
-      rw [show (φ x).1 = e * x * e from he.val_compress x, mul_right_comm, he.eq]
+    have hval : (φ x).val = e * x := by
+      rw [show (φ x).val = e * x * e from he.val_compress x, mul_right_comm, he.eq]
     constructor
     · intro hx
       have hex : e * x = 0 := by rw [← hval, hx]; rfl
       exact ⟨x, by rw [sub_mul, one_mul, hex, sub_zero]⟩
     · rintro ⟨y, rfl⟩
       apply Subtype.ext
-      rw [hval, show (0 : he.Corner).1 = 0 from rfl, ← mul_assoc, mul_sub, mul_one, he.eq,
+      rw [hval, show (0 : he.Corner).val = 0 from rfl, ← mul_assoc, mul_sub, mul_one, he.eq,
         sub_self, zero_mul]
-  exact (RingHom.quotientKerEquivOfSurjective fun x ↦ ⟨x.1, he.compress_val x⟩).symm.trans
+  exact (RingHom.quotientKerEquivOfSurjective fun x ↦ ⟨x.val, he.compress_val x⟩).symm.trans
     (Ideal.quotEquivOfEq hker)
 
 end CommRing
