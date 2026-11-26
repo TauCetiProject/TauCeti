@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
@@ -19,7 +20,9 @@ For inner product spaces `E` and `F` over `𝕜` (`[RCLike 𝕜]`), `WithLp.inlL
 of operator norm `1` on nontrivial spaces (`WithLp.norm_inlL2`, `WithLp.norm_inrL2`). When `E` and
 `F` are complete, they are the Hilbert-space adjoints of the coordinate projections
 `WithLp.fstL 2 𝕜 E F` and `WithLp.sndL 2 𝕜 E F` (`WithLp.adjoint_fstL`, `WithLp.adjoint_sndL`,
-`WithLp.adjoint_inlL2`, `WithLp.adjoint_inrL2`).
+`WithLp.adjoint_inlL2`, `WithLp.adjoint_inrL2`). The diagonal embedding `WithLp.diagL2 𝕜 E`,
+`x ↦ (x, x)`, has adjoint `(x, y) ↦ x + y` (`WithLp.adjoint_diagL2`); being continuous linear,
+the map `x ↦ (x, x)` is smooth (`WithLp.contDiff_toLp_diag`).
 
 An operator on `WithLp 2 (E × F)` is a `2 × 2` block matrix of operators between the factors:
 `WithLp.blockL2 a b c d` is the operator `(x, y) ↦ (a x + b y, c x + d y)`, and every operator is
@@ -29,6 +32,9 @@ three siblings). Block operators multiply as matrices (`WithLp.blockL2_mul_block
 adjoint is the conjugate transpose (`WithLp.adjoint_blockL2`), and a block operator with compact
 entries is compact (`WithLp.isCompactOperator_blockL2`). The block diagonal operators are the
 block sums `ContinuousLinearMap.withLpProdMap` (`WithLp.blockL2_zero_zero`).
+
+The orthogonal complement of the diagonal `WithLp.diagonal 2 𝕜 E` of `WithLp 2 (E × E)` consists
+of the antidiagonal vectors `(η, -η)` (`WithLp.mem_orthogonal_diagonal_iff`).
 -/
 
 public section
@@ -77,6 +83,21 @@ theorem isometry_inrL2 : Isometry (inrL2 𝕜 E F) :=
 @[simp] theorem norm_inrL2 [Nontrivial F] : ‖inrL2 𝕜 E F‖ = 1 :=
   (inrL2 𝕜 E F).homothety_norm fun _ => by simp
 
+/-- The diagonal embedding `x ↦ (x, x)` of `E` into the `L²` direct sum `WithLp 2 (E × E)`. -/
+def diagL2 : E →L[𝕜] WithLp 2 (E × E) :=
+  (WithLp.prodContinuousLinearEquiv 2 𝕜 E E).symm.toContinuousLinearMap.comp
+    ((ContinuousLinearMap.id 𝕜 E).prod (ContinuousLinearMap.id 𝕜 E))
+
+@[simp] theorem diagL2_apply (x : E) : diagL2 𝕜 E x = WithLp.toLp 2 (x, x) := by rfl
+
+/-- The diagonal embedding `WithLp.diagL2 𝕜 E`, as a function, is `x ↦ (x, x)`. -/
+theorem coe_diagL2 : ⇑(diagL2 𝕜 E) = fun x ↦ WithLp.toLp 2 (x, x) := by rfl
+
+/-- The diagonal map `x ↦ (x, x)` into `WithLp 2 (E × E)` is smooth, being the continuous linear
+map `WithLp.diagL2 𝕜 E`. -/
+theorem contDiff_toLp_diag {n : WithTop ℕ∞} : ContDiff 𝕜 n fun x : E ↦ WithLp.toLp 2 (x, x) :=
+  coe_diagL2 𝕜 E ▸ (diagL2 𝕜 E).contDiff
+
 section Adjoint
 
 variable [CompleteSpace E] [CompleteSpace F]
@@ -93,7 +114,32 @@ variable [CompleteSpace E] [CompleteSpace F]
 @[simp] theorem adjoint_inrL2 : (inrL2 𝕜 E F).adjoint = WithLp.sndL 2 𝕜 E F := by
   rw [← adjoint_sndL, ContinuousLinearMap.adjoint_adjoint]
 
+/-- The adjoint of the diagonal embedding is the sum of the coordinates, `(x, y) ↦ x + y`. -/
+theorem adjoint_diagL2 : (diagL2 𝕜 E).adjoint = WithLp.fstL 2 𝕜 E E + WithLp.sndL 2 𝕜 E E :=
+  ((ContinuousLinearMap.eq_adjoint_iff _ _).mpr fun _ _ => by
+    simp [WithLp.prod_inner_apply, inner_add_left]).symm
+
+@[simp] theorem adjoint_diagL2_apply (z : WithLp 2 (E × E)) :
+    (diagL2 𝕜 E).adjoint z = z.fst + z.snd := by
+  simp [adjoint_diagL2]
+
 end Adjoint
+
+/-! ### The diagonal -/
+
+variable {𝕜 E} in
+/-- The vectors orthogonal to the diagonal of `WithLp 2 (E × E)` are the `(η, -η)`. -/
+@[simp]
+theorem mem_orthogonal_diagonal_iff {ζ : WithLp 2 (E × E)} :
+    ζ ∈ (diagonal 2 𝕜 E)ᗮ ↔ ζ.snd = -ζ.fst := by
+  rw [Submodule.mem_orthogonal]
+  refine ⟨fun h ↦ ?_, fun h u hu ↦ ?_⟩
+  · have h' := h (toLp 2 (ζ.fst + ζ.snd, ζ.fst + ζ.snd)) (mem_diagonal_iff.2 rfl)
+    rw [prod_inner_apply] at h'
+    simp only [ofLp_fst, ofLp_snd] at h'
+    rw [← inner_add_right, inner_self_eq_zero] at h'
+    exact eq_neg_iff_add_eq_zero.2 (by rwa [add_comm])
+  · simp [prod_inner_apply, mem_diagonal_iff.1 hu, h]
 
 /-! ### Block operators -/
 

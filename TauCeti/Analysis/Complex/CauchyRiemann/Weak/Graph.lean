@@ -167,9 +167,8 @@ theorem isWeakCauchyRiemannOn_toLp_prodMk_graphStructure_iff_of_contDiffOn [Comp
     isWeakCauchyRiemannOn_iff_of_contDiffOn hu hJ hη]
   refine forall₂_congr fun z hz ↦ ?_
   rw [Floer.fderiv_toLp_prodMk_I_eq_graphStructure_iff
-      ((hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hz)),
-    ← add_apply_eq_zero_iff_eq_apply (hJJ z hz), map_sub, ← sub_eq_zero]
-  constructor <;> intro h <;> rw [← h] <;> abel
+      ((hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hz))]
+  exact add_apply_eq_add_apply_iff_sub_eq_apply_sub (hJJ z hz) _ _ _ _
 
 end Graph
 

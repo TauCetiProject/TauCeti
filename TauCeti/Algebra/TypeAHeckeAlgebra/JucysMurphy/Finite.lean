@@ -53,6 +53,13 @@ noncomputable def additiveJucysMurphy (i : Fin n) : TypeAHeckeAlgebra R q n :=
     InfiniteTypeAHeckeAlgebra.stage_mono (Nat.succ_le_of_lt i.isLt)
       (InfiniteTypeAHeckeAlgebra.additiveJucysMurphy_mem_stage i)⟩
 
+/-- Transporting the additive Jucys–Murphy element to an equal strand count casts its index. -/
+theorem cast_additiveJucysMurphy {m : ℕ} (h : m = n) (i : Fin m) :
+    (AlgEquiv.cast h : TypeAHeckeAlgebra R q m ≃ₐ[R] TypeAHeckeAlgebra R q n)
+      (additiveJucysMurphy q i) = additiveJucysMurphy q (Fin.cast h i) := by
+  subst n
+  rfl
+
 /-- The embedding in the infinite algebra preserves the normalized Jucys–Murphy elements. -/
 @[simp]
 theorem toInfinite_jucysMurphy (i : Fin n) :

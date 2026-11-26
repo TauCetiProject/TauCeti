@@ -477,9 +477,8 @@ private theorem sub_le_normalModelForm_apply_normalModelStructure {p : ℂ × �
   -- the five terms of `Ω(X, J_N X)` and their bounds
   have hJ : normalModelStructure ν μ p X = (I * X.1, I * X.2 + 2 * I * c * conj X.1) :=
     normalModelStructure_apply ν μ p X
-  have h₀ : ω₀ p.1 ![X.1, I * X.1] = ω₀ p.1 ![1, I] * x ^ 2 := by
-    rw [ContinuousAlternatingMap.apply_eq_apply_one_I_mul_im]
-    simp [x, ← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
+  have h₀ : ω₀ p.1 ![X.1, I * X.1] = ω₀ p.1 ![1, I] * x ^ 2 :=
+    ContinuousAlternatingMap.apply_I_mul_eq_apply_one_I_mul_norm_sq (ω₀ p.1) X.1
   have h₁ : stdComplexSymplecticForm X.2 (I * X.2 + 2 * I * c * conj X.1) =
       y ^ 2 + stdComplexSymplecticForm X.2 (2 * I * c * conj X.1) := by
     simp [stdComplexSymplecticForm_apply, y, ← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
