@@ -9,7 +9,6 @@ public import Mathlib.GroupTheory.Torsion
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.SeparableClosure
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Unramified
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Inflation
 import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Coinvariants.Basic
 import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Extension
