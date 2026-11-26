@@ -40,7 +40,9 @@ namespace TauCeti
 for `p ≥ 0`. This is the line case of `TauCeti.hasFDerivAt_norm_rpow_smul_self`. -/
 theorem hasDerivAt_abs_rpow_mul_self {p : ℝ} (hp : 0 ≤ p) (x : ℝ) :
     HasDerivAt (fun x : ℝ ↦ |x| ^ p * x) ((p + 1) * |x| ^ p) x := by
-  refine (hasFDerivAt_norm_rpow_smul_self (E := ℝ) hp x).hasDerivAt.congr_deriv ?_
+  have hd := (hasFDerivAt_norm_rpow_smul_self (E := ℝ) hp x).hasDerivAt
+  simp only [Real.norm_eq_abs, smul_eq_mul] at hd
+  refine hd.congr_deriv ?_
   rcases eq_or_ne x 0 with rfl | hx
   · rcases hp.eq_or_lt with rfl | hp
     · simp
@@ -48,9 +50,7 @@ theorem hasDerivAt_abs_rpow_mul_self {p : ℝ} (hp : 0 ≤ p) (x : ℝ) :
   · have h : |x| ^ (p - 2) * (x * x) = |x| ^ p := by
       rw [← abs_mul_abs_self, ← sq, ← Real.rpow_natCast, ← Real.rpow_add (abs_pos.2 hx)]
       norm_num
-    simp only [Real.norm_eq_abs, add_apply, smul_apply,
-      ContinuousLinearMap.id_apply, smul_eq_mul, mul_one, ContinuousLinearMap.smulRight_apply,
-      coe_innerSL_apply, RCLike.inner_apply, conj_trivial, one_mul]
+    simp
     linear_combination p * h
 
 /-- The third derivative of `|x| ^ p`, for `p > 3`, is the odd power
