@@ -369,6 +369,17 @@ theorem degree_eq_of_kernelComp_ne_zero {d₁ : S₁ → ℤ} {d₀ : S₀ → �
   obtain ⟨p₀, hp₀⟩ : ∃ p₀, m p₁ p₀ * m' p₀ p₂ ≠ 0 := exists_ne_zero_of_finsum_ne_zero h
   rw [hm' p₀ (right_ne_zero_of_mul hp₀), hm p₀ (left_ne_zero_of_mul hp₀)]
 
+/-- **A factor common to all terms of a composite kernel.** If every term `m(p₁, p₀) m'(p₀, p₂)`
+of the composite is `c` times the corresponding term of the composite of `l` and `l'`, for a
+left-regular `c` (for instance a sign), then the composite of `m` and `m'` at `(p₁, p₂)` is `c`
+times that of `l` and `l'`. No finiteness of the sums is needed. -/
+theorem kernelComp_eq_mul_kernelComp {c : R} (hc : IsLeftRegular c) {l : S₁ → S₀ → R}
+    {l' : S₀ → S₂ → R} {p₁ : S₁} {p₂ : S₂}
+    (h : ∀ p₀, m p₁ p₀ * m' p₀ p₂ = c * (l p₁ p₀ * l' p₀ p₂)) :
+    kernelComp m m' p₁ p₂ = c * kernelComp l l' p₁ p₂ := by
+  rw [kernelComp_apply, kernelComp_apply, hc.mul_finsum]
+  exact finsum_congr h
+
 /-- **Finite outputs of a composite kernel.** If the output of `m` at `p₁` and every output of
 `m'` are finite combinations, so is the output of the composite kernel at `p₁`. -/
 theorem finite_support_kernelComp {p₁ : S₁} (hm : (support (m p₁)).Finite)

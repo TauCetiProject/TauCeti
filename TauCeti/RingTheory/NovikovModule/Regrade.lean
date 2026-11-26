@@ -313,9 +313,8 @@ private theorem kernelComp_kernelTensor_eq_negOnePowCast_mul {T₁ T₂ T₀ : T
     (hφ₁ : ∀ p s, φ₁ p s ≠ 0 → ν₁ s = μ₁ p) (q : S₁ × S₂) (t₀ : T₀) :
     kernelComp (kernelTensor φ₁ φ₂) (fun s : T₁ × T₂ => m' s.1 s.2) q t₀ =
       negOnePowCast R (n * μ₁ q.1) * kernelComp (kernelTensor φ₁ φ₂) t' q t₀ := by
-  rw [kernelComp_apply, kernelComp_apply,
-    (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * μ₁ q.1))).mul_finsum]
-  refine finsum_congr fun s => ?_
+  refine kernelComp_eq_mul_kernelComp
+    (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self _)) fun s => ?_
   by_cases hs : φ₁ q.1 s.1 = 0
   · simp [hs]
   rw [kernelTensor_apply, hmt', hφ₁ _ _ hs]
@@ -364,9 +363,8 @@ theorem functionalBoundary_regradeProductFunctional
   have h₁ : kernelComp (tensorDifferential (fun p => n - μ₁ p) δ₁ δ₂)
       (regradeProductFunctional n μ₂ μ₀ ψ) x q =
       negOnePowCast R (n * (μ₂ x.2 + μ₀ q)) * kernelComp (tensorDifferential μ₁ δ₁ δ₂) ψ x q := by
-    rw [kernelComp_apply, kernelComp_apply,
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * (μ₂ x.2 + μ₀ q)))).mul_finsum]
-    refine finsum_congr fun x' => ?_
+    refine kernelComp_eq_mul_kernelComp
+      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self _)) fun x' => ?_
     rw [tensorDifferential_cochain hδ₂, regradeProductFunctional_apply,
       ← negOnePowCast_eq_of_even_sub (a := n * (μ₂ x.2 + μ₂ x'.2) + n * (μ₂ x'.2 + μ₀ q))
         (b := n * (μ₂ x.2 + μ₀ q)) ⟨n * μ₂ x'.2, by ring⟩, negOnePowCast_add]
@@ -374,9 +372,8 @@ theorem functionalBoundary_regradeProductFunctional
   -- At the output breakings the output sign changes by `(-1)^n`.
   have h₂ : kernelComp (regradeProductFunctional n μ₂ μ₀ ψ) δ₀ x q =
       negOnePowCast R (n + n * (μ₂ x.2 + μ₀ q)) * kernelComp ψ δ₀ x q := by
-    rw [kernelComp_apply, kernelComp_apply,
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n + n * (μ₂ x.2 + μ₀ q)))).mul_finsum]
-    refine finsum_congr fun p => ?_
+    refine kernelComp_eq_mul_kernelComp
+      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self _)) fun p => ?_
     by_cases hp : δ₀ p q = 0
     · simp [hp]
     rw [regradeProductFunctional_apply, hδ₀ p q hp,
@@ -524,9 +521,8 @@ theorem kernelComp_sub_kernelComp_eq_kernelComp_add_kernelComp_of_functionalBoun
   -- The cochain composites are the raw composites twisted by the sign of the first input.
   have hT (q : S₁ × S₂) (t₀ : T₀) : kernelComp (fun q : S₁ × S₂ => m q.1 q.2) φ₀ q t₀ =
       negOnePowCast R (n * μ₁ q.1) * kernelComp t φ₀ q t₀ := by
-    rw [kernelComp_apply, kernelComp_apply,
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * μ₁ q.1))).mul_finsum]
-    exact finsum_congr fun p => by rw [hmt]; ring
+    exact kernelComp_eq_mul_kernelComp (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self _))
+      fun p => by rw [hmt]; ring
   -- Both raw composites have raw degree `-n`.
   have hTdeg (q : S₁ × S₂) (t₀ : T₀) (hq : kernelComp t φ₀ q t₀ ≠ 0) :
       ν₀ t₀ = μ₁ q.1 + μ₂ q.2 - n := by
