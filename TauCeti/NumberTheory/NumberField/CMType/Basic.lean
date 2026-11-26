@@ -48,6 +48,11 @@ complex. In particular `ℚ` has no CM type.
 * `TauCeti.CMType.coe_star_eq_image`: `ιΦ` is the image of `Φ` under conjugation.
 * `TauCeti.CMType.card_ringHom_eq_two_mul`: `#Hom(E, ℂ) = 2 * #Φ`, and
   `TauCeti.CMType.two_mul_card_eq_finrank`: `2 * #Φ = [E : ℚ]` for a number field `E`.
+* `TauCeti.CMType.equivSet`, `TauCeti.CMType.card_eq_two_pow`: relative to a reference type
+  `Φ₀`, CM types correspond to subsets of `Φ₀`, so there are `2 ^ #Φ₀` of them.
+* `TauCeti.CMType.two_mul_ncard_mem`, `TauCeti.CMType.four_mul_ncard_mem_and_mem`: half of the CM
+  types contain a given embedding, and a quarter contain two embeddings from different conjugate
+  pairs.
 * `TauCeti.CMType.nonempty_iff`: `E` has a CM type iff no embedding `E →+* ℂ` is real, and
   `TauCeti.CMType.nonempty_iff_isTotallyComplex`: a field has a CM type iff it is totally
   complex. In particular every CM field has a CM type.
@@ -245,6 +250,90 @@ theorem card_ringHom_eq_two_mul (Φ : CMType E) : Nat.card (E →+* ℂ) = 2 * N
 theorem two_mul_card_eq_finrank {K : Type*} [Field K] [NumberField K] (Φ : CMType K) :
     2 * Nat.card Φ = Module.finrank ℚ K := by
   rw [← Φ.card_ringHom_eq_two_mul, Nat.card_eq_fintype_card, Embeddings.card]
+
+/-- A ring with finitely many complex embeddings carries finitely many CM types. -/
+instance [Finite (E →+* ℂ)] : Finite (CMType E) :=
+  Finite.of_injective _ (SetLike.coe_injective (A := CMType E))
+
+/-- Relative to a reference CM type `Φ₀`, a CM type `Φ` is determined by the embeddings of `Φ₀`
+it contains: an embedding `ψ ∉ Φ₀` lies in `Φ` exactly when `star ψ ∈ Φ₀` does not. -/
+def equivSet (Φ₀ : CMType E) : CMType E ≃ Set Φ₀ where
+  toFun Φ := {x | x.val ∈ Φ}
+  invFun s :=
+    { carrier := {ψ | (ψ ∈ Φ₀ → ψ ∈ Subtype.val '' s) ∧ (ψ ∉ Φ₀ → star ψ ∉ Subtype.val '' s)}
+      star_mem_iff' ψ := by by_cases hψ : ψ ∈ Φ₀ <;> simp [hψ] }
+  left_inv Φ := by
+    ext ψ
+    rw [← mem_carrier]
+    by_cases hψ : ψ ∈ Φ₀ <;> simp [hψ]
+  right_inv s := by
+    ext x
+    rw [Set.mem_ofPred_eq, ← mem_carrier]
+    simp [x.property]
+
+@[simp]
+theorem mem_equivSet {Φ₀ Φ : CMType E} {x : Φ₀} : x ∈ Φ₀.equivSet Φ ↔ x.val ∈ Φ :=
+  Iff.rfl
+
+@[simp]
+theorem mem_equivSet_symm {Φ₀ : CMType E} {s : Set Φ₀} {x : Φ₀} :
+    x.val ∈ Φ₀.equivSet.symm s ↔ x ∈ s :=
+  Set.ext_iff.mp (Φ₀.equivSet.apply_symm_apply s) x
+
+/-- **There are `2 ^ d` CM types** on a ring with `2 * d` complex embeddings, one for each choice
+of an embedding in every conjugate pair. -/
+theorem card_eq_two_pow [Finite (E →+* ℂ)] (Φ : CMType E) :
+    Nat.card (CMType E) = 2 ^ Nat.card Φ := by
+  classical
+  have := Fintype.ofFinite Φ
+  rw [Nat.card_congr Φ.equivSet, Nat.card_eq_fintype_card, Fintype.card_set,
+    Nat.card_eq_fintype_card]
+
+/-- Exactly half of the CM types contain a given embedding: taking the complementary type
+exchanges those containing `φ` with those omitting it. -/
+theorem two_mul_ncard_mem [Finite (E →+* ℂ)] (φ : E →+* ℂ) :
+    2 * {Ψ : CMType E | φ ∈ Ψ}.ncard = Nat.card (CMType E) := by
+  rw [← Set.ncard_add_ncard_compl {Ψ : CMType E | φ ∈ Ψ}, two_mul]
+  congr 1
+  exact Set.ncard_congr (fun Ψ _ ↦ star Ψ) (fun Ψ hΨ ↦ by simpa using hΨ)
+    (fun _ _ _ _ h ↦ star_injective h) fun Ψ hΨ ↦ ⟨star Ψ, by simpa using hΨ, star_star Ψ⟩
+
+/-- The CM type obtained from `Φ` by exchanging its choice in the conjugate pair `{φ, star φ}`. -/
+private def flipPair (Φ : CMType E) (φ : E →+* ℂ) : CMType E where
+  carrier := {ψ | ψ ∈ Φ ↔ ¬(ψ = φ ∨ ψ = star φ)}
+  star_mem_iff' ψ := by
+    have h : star ψ = φ ↔ ψ = star φ := by rw [star_eq_iff_star_eq, eq_comm]
+    simp only [Set.mem_ofPred_eq, star_mem_iff, h, star_inj]
+    tauto
+
+private theorem mem_flipPair {Φ : CMType E} {φ ψ : E →+* ℂ} :
+    ψ ∈ flipPair Φ φ ↔ (ψ ∈ Φ ↔ ¬(ψ = φ ∨ ψ = star φ)) :=
+  Iff.rfl
+
+private theorem flipPair_flipPair (Φ : CMType E) (φ : E →+* ℂ) :
+    flipPair (flipPair Φ φ) φ = Φ := by
+  ext ψ
+  simp only [mem_flipPair]
+  tauto
+
+/-- A quarter of the CM types contain two given embeddings from different conjugate pairs:
+exchanging the choice in the pair of `ψ` matches the types containing `φ` and `ψ` with those
+containing `φ` but not `ψ`. -/
+theorem four_mul_ncard_mem_and_mem [Finite (E →+* ℂ)] {φ ψ : E →+* ℂ} (h₁ : ψ ≠ φ)
+    (h₂ : ψ ≠ star φ) :
+    4 * {Ψ : CMType E | φ ∈ Ψ ∧ ψ ∈ Ψ}.ncard = Nat.card (CMType E) := by
+  have h₃ : φ ≠ star ψ := fun h ↦ h₂ (by rw [h, star_star])
+  have hφ (Ψ : CMType E) : φ ∈ flipPair Ψ ψ ↔ φ ∈ Ψ := by simp [mem_flipPair, h₁.symm, h₃]
+  have hψ (Ψ : CMType E) : ψ ∈ flipPair Ψ ψ ↔ ψ ∉ Ψ := by simp [mem_flipPair]
+  have h : ({Ψ : CMType E | φ ∈ Ψ} \ {Ψ | ψ ∈ Ψ}).ncard =
+      {Ψ : CMType E | φ ∈ Ψ ∧ ψ ∈ Ψ}.ncard :=
+    Set.ncard_congr (fun Ψ _ ↦ flipPair Ψ ψ) (fun Ψ hΨ ↦ by simpa [hφ, hψ] using hΨ)
+      (fun Ψ Ψ' _ _ h ↦ by rw [← flipPair_flipPair Ψ ψ, h, flipPair_flipPair])
+      fun Ψ hΨ ↦ ⟨flipPair Ψ ψ, by simpa [hφ, hψ] using hΨ, flipPair_flipPair Ψ ψ⟩
+  rw [← two_mul_ncard_mem φ,
+    ← Set.ncard_inter_add_ncard_sdiff_eq_ncard {Ψ : CMType E | φ ∈ Ψ} {Ψ | ψ ∈ Ψ}, h]
+  simp only [Set.inter_ofPred_eq_sep, Set.sep_ofPred]
+  ring
 
 /-! ### Induced types -/
 
