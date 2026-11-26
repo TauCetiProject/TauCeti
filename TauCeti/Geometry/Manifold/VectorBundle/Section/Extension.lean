@@ -39,7 +39,10 @@ section over an open subset agrees near each point of that subset with a global 
 `ContMDiffSection.extendAt`. Sums and multiples of such extensions agree near the point with the
 corresponding sums and multiples over the subset (`ContMDiffSection.eventually_add_eq_of_opens`,
 `ContMDiffSection.eventually_smul_eq_of_opens`,
-`ContMDiffSection.eventually_smul_function_eq_of_opens`).
+`ContMDiffSection.eventually_smul_function_eq_of_opens`). Such a section even agrees near each
+compact subset of the open subset with a global compactly supported `C^n` section whose closed
+support lies in the open subset
+(`ContMDiffSection.exists_eventuallyEq_isCompact_tsupport_subset_of_opens`).
 -/
 
 public section
@@ -429,6 +432,37 @@ theorem exists_eventuallyEq_isCompact_tsupport_subset {K U : Set M} (hK : IsComp
   exact ⟨s', hσ1.mono fun x hx ↦ by simp [s', hx],
     hσc.isCompact.of_isClosed_subset s'.isClosed_tsupport hs'σ,
     hs'σ.trans (hσU.trans interior_subset)⟩
+
+/-- A `C^n` section `s` (`n ≤ ∞`) of a vector bundle over an open subset `U` agrees near any
+compact subset `K` of `U` with a global compactly supported `C^n` section whose closed support lies
+in `U`: the product of `s` with a smooth cutoff equal to `1` near `K` and supported in `U`,
+extended by zero. -/
+theorem exists_eventuallyEq_isCompact_tsupport_subset_of_opens {U : TopologicalSpace.Opens M}
+    (s : Cₛ^n⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯) {K : Set U}
+    (hK : IsCompact K) :
+    ∃ t : Cₛ^n⟮I; F, V⟯,
+      IsCompact t.tsupport ∧ t.tsupport ⊆ U ∧ ∀ᶠ y : U in 𝓝ˢ K, t y = s y := by
+  obtain ⟨σ, hσ, hσ1, hσc, hσU, -⟩ :=
+    (hK.image continuous_subtypeVal).exists_contMDiff_one_nhds_tsupport_subset I U.isOpen
+      (by rintro _ ⟨x, -, rfl⟩; exact x.property)
+  -- The cutoff restricted to `U` has compact support, since `tsupport σ ⊆ U`.
+  let f : C^n⟮I, U; ℝ⟯ :=
+    ⟨σ ∘ Subtype.val, (hσ.of_le ENat.LEInfty.out).comp contMDiff_subtypeVal⟩
+  have hf : HasCompactSupport f :=
+    (Topology.IsInducing.subtypeVal.isCompact_preimage' hσc.isCompact
+      fun y hy ↦ ⟨⟨y, hσU hy⟩, rfl⟩).of_isClosed_subset (_root_.isClosed_tsupport _)
+      (tsupport_comp_subset_preimage σ continuous_subtypeVal :)
+  let t' : compactlySupported I F n ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) :=
+    ⟨f • s, smul_function_mem_compactlySupported_of_hasCompactSupport f hf s⟩
+  refine ⟨extendByZero t', mem_compactlySupported.1 (extendByZero_mem_compactlySupported t'),
+    by rw [tsupport_extendByZero]; rintro _ ⟨x, -, rfl⟩; exact x.property, ?_⟩
+  refine eventually_nhdsSet_iff_forall.2 fun x hx ↦ ?_
+  filter_upwards [continuous_subtypeVal.continuousAt.eventually
+    (hσ1.filter_mono (nhds_le_nhdsSet (mem_image_of_mem _ hx)))] with y hy
+  rw [extendByZero_apply_of_mem, smul_apply]
+  simp only [f, ContMDiffMap.coeFn_mk, Function.comp_apply, hy]
+  -- The scalar action on the fibre of the pullback bundle over `y` is that on the fibre of `V`.
+  exact one_smul ℝ (s y)
 
 end LocalExtension
 
