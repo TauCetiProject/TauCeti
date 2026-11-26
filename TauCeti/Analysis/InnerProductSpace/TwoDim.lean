@@ -27,9 +27,7 @@ On the complex plane, the continuous oriented volume form is normalized on the s
 basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`, and
 every real two-form on `ℂ` is a multiple of it
 (`ContinuousAlternatingMap.apply_eq_apply_one_I_mul_im`); in particular it is invariant under
-multiplication by `I` (`ContinuousAlternatingMap.apply_I_mul_I_mul`). A real one-form on `ℂ` is
-determined by its values on `1` and `I`
-(`ContinuousAlternatingMap.apply_const_eq_re_mul_add_im_mul`).
+multiplication by `I` (`ContinuousAlternatingMap.apply_I_mul_I_mul`).
 
 An orthonormal basis `b` of a Euclidean plane identifies the plane with `ℂ` by
 `Complex.isometryOfOrthonormal b`, and the complex coordinate so defined carries the orientation of
@@ -176,17 +174,5 @@ theorem apply_I_mul_eq_apply_one_I_mul_norm_sq (α : ℂ [⋀^Fin 2]→L[ℝ] �
     α ![u, I * u] = α ![1, I] * ‖u‖ ^ 2 := by
   rw [apply_eq_apply_one_I_mul_im]
   simp [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
-
-/-- Every real one-form on `ℂ` is determined by its values on the basis `(1, I)`:
-`a(ξ) = Re ξ · a(1) + Im ξ · a(I)`. -/
-theorem apply_const_eq_re_mul_add_im_mul (a : ℂ [⋀^Fin 1]→L[ℝ] ℝ) (ξ : ℂ) :
-    a (fun _ ↦ ξ) = ξ.re * a (fun _ ↦ 1) + ξ.im * a (fun _ ↦ I) := by
-  set e := ofSubsingleton ℝ ℂ ℝ (0 : Fin 1)
-  have h (v : ℂ) : a (fun _ ↦ v) = e.symm a v := by
-    conv_lhs => rw [← e.apply_symm_apply a]
-    simp [e]
-  have hξ : ξ = ξ.re • (1 : ℂ) + ξ.im • I := by simp
-  rw [h, h, h, hξ, map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
-  simp
 
 end ContinuousAlternatingMap

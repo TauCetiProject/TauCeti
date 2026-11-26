@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.LocalPotentials
 import TauCeti.Analysis.InnerProductSpace.TwoDim
+import TauCeti.Analysis.Normed.Module.Alternating.Complex
 import TauCeti.Geometry.Symplectic.Complex.Line
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 
@@ -108,9 +109,10 @@ theorem normalModelConnectionCoeff_def (z : ℂ) :
 private theorem two_mul_I_mul_normalModelConnectionCoeff_mul_conj (z ξ : ℂ) :
     2 * I * normalModelConnectionCoeff A z * conj ξ =
       -((A z (fun _ ↦ ξ) : ℂ) + I * A z (fun _ ↦ I * ξ)) := by
-  have h₁ := (A z).apply_const_eq_re_mul_add_im_mul ξ
-  have h₂ := (A z).apply_const_eq_re_mul_add_im_mul (I * ξ)
-  simp only [mul_re, I_re, I_im, zero_mul, one_mul, zero_sub, mul_im] at h₂
+  have h₁ := (A z).apply_const_complex ξ
+  have h₂ := (A z).apply_const_complex (I * ξ)
+  simp only [smul_eq_mul] at h₁
+  simp only [mul_re, I_re, I_im, zero_mul, one_mul, zero_sub, mul_im, smul_eq_mul] at h₂
   rw [h₁, h₂, normalModelConnectionCoeff_def]
   apply Complex.ext <;> simp <;> ring
 
