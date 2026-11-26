@@ -44,8 +44,8 @@ This file constructs them, for coefficients in a commutative ring `k`.
 * **The coefficients.** The dual orientation line `o_(E_B)^∨`, on which `g ∈ Γ_B` acts by the sign
   of the determinant of `g` on `E_B`, is `Representation.dualOrientationLine` of the external
   direct sum `E_B` (`Representation.externalPi`).
-* **The complexes.** `TauCeti.ImplicitAtlas.partialChains` is the complex of invariant relative
-  chains `C(D_(I,J,B), D_(I,J,B) ∖ Z_K; o_(E_B)^∨)^(Γ_B)` in its homological grading, the limit
+* **The complexes.** The complex of invariant relative chains
+  `C(D_(I,J,B), D_(I,J,B) ∖ Z_K; o_(E_B)^∨)^(Γ_B)`, in its homological grading, is the limit
   of the diagonal action `TopPair.diagonalChainAction`. Placing the chains of degree `n` in
   cochain degree `d + m_B - n`, invariant chains become a functor of the pair with its action
   (`TauCeti.ImplicitAtlas.invariantChainsFunctor`), and the complexes form a K-presheaf of cochain
@@ -249,23 +249,6 @@ section Complexes
 
 variable (k : Type u) [CommRing k]
 
-/-- **The invariant relative chains of a deformation pair**: the complex
-`C(D_(I,J,B), D_(I,J,B) ∖ Z_K; o_(E_B)^∨)^(Γ_B)` of the chains invariant under the diagonal action
-of `Γ_B` on the deformation pair and on the dual orientation line, in its homological grading. -/
-def partialChains (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) (K : Set X) :
-    ChainComplex (ModuleCat.{u} k) ℕ :=
-  limit (TopPair.diagonalChainAction
-    ((Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k)
-    (𝒜.deformationPairFunctor I hJB K))
-
-/-- The invariant relative chains of a deformation pair are the limit of the diagonal action of
-`Γ_B` on its chains with coefficients in the dual orientation line. -/
-theorem partialChains_def (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) (K : Set X) :
-    𝒜.partialChains k I hJB K = limit (TopPair.diagonalChainAction
-      ((Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k)
-      (𝒜.deformationPairFunctor I hJB K)) :=
-  (rfl)
-
 variable (ρ) in
 /-- **The invariant relative chains with coefficients in the dual orientation line, in cochain
 degrees `n - •`**, as a functor of a pair with an action of `Γ_B`: a pair `P` goes to the complex
@@ -321,9 +304,9 @@ def partialVirtualComplex (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
     rw [← Functor.map_comp, deformationPairRestriction_comp_deformationPairRestriction]
 
 /-- The value of the partial virtual complex on a compact set `K` is the complex of invariant
-relative chains of the deformation pair of `K` (`partialChains_def`), in cochain degrees
-`d + m_B - •`. It is stated with the limit, as `invariantChainsFunctor_obj` is, so that values
-and restrictions share one simp normal form. -/
+relative chains of the deformation pair of `K`, the limit of the diagonal action of `Γ_B`, in
+cochain degrees `d + m_B - •`. It is stated with the limit, as `invariantChainsFunctor_obj` is, so
+that values and restrictions share one simp normal form. -/
 @[simp]
 theorem partialVirtualComplex_obj (I : Finset A) {J B : Finset A} (hJB : J ⊆ B)
     (K : (Compacts (TopCat.of X))ᵒᵖ) :
