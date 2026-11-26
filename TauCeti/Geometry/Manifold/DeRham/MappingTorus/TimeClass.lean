@@ -22,9 +22,9 @@ form `dt` and time period homomorphism `N : H₁(Y_φ; ℤ) → ℤ`, `N(h) = �
 topological mapping torus of `φ⁻¹` (`TauCeti.SmoothMappingTorus.homeomorphMappingTorus`), the Wang
 class `ε ∘ δ : H₁(Y_φ; ℤ) → ℤ` (`TauCeti.MappingTorus.wangClass`) is `-N`
 (`TauCeti.SmoothMappingTorus.wangClass_singularHomologyMap_homeomorphMappingTorus`), since the
-universal sign `TauCeti.MappingTorus.circleWangSign` is `-1`
-(`TauCeti.MappingTorus.circleWangSign_eq_neg_one`). Both factor through the projection to the
-circle `ℝ / ℤ`: `N` as the winding number of the image class
+Wang class of the circle is `-1` on the circuit class
+(`TauCeti.MappingTorus.circleWangClass_hom_fundamentalClass`). Both factor through the projection
+to the circle `ℝ / ℤ`: `N` as the winding number of the image class
 (`TauCeti.SmoothMappingTorus.intTimePeriodHom_eq_firstHomologyAddEquiv`), the Wang class as the
 Wang class of the circle
 (`TauCeti.MappingTorus.wangClass_eq_singularHomologyMap_proj_comp_circleWangClass`). Hence, for a
@@ -114,7 +114,7 @@ theorem intTimePeriodHom_eq_firstHomologyAddEquiv
 
 /-- **The Wang class of a mapping torus is minus its time period.** Through the homeomorphism of
 `Y_φ` with the topological mapping torus of `φ⁻¹`, the Wang class `ε ∘ δ : H₁(Y_φ; ℤ) → ℤ` is minus
-the time period `N(c) = ∫_c dt`, since the sign `circleWangSign` of the circle is `-1`. -/
+the time period `N(c) = ∫_c dt`, since the Wang class of the circle is `-1` on the circuit class. -/
 theorem wangClass_singularHomologyMap_homeomorphMappingTorus
     (c : ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus φ))).homology 1) :
     (wangClass (ModuleCat.of ℤ ℤ) φ.toHomeomorph.symm).hom

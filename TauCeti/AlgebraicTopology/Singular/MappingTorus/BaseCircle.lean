@@ -57,14 +57,13 @@ the angular class and the time form of the circle are compared by
   identity of `ℝ/ℤ`, so it pulls the base class back to the base class
   (`TauCeti.MappingTorus.singularCohomologyMap_map_baseClass`).
 * **Comparison with the Wang class.** `circleWangClass` and the winding number are both
-  isomorphisms `H₁(ℝ/ℤ; ℤ) ≅ ℤ`, so they differ by a sign, the value
-  `TauCeti.MappingTorus.circleWangSign` of `circleWangClass` on the circuit class
-  `AddCircle.fundamentalClass 1`. This sign is `-1`
-  (`TauCeti.MappingTorus.circleWangSign_eq_neg_one`), computed on the chains of the cyclic cover
-  `pt × ℝ` of the circle: the circuit lifts to the path from height `0` to height `1`, whose
-  boundary is `(𝟙 - τ_*)(-[0])` for the deck transformation `τ` raising the height by one, so the
-  Wang connecting morphism sends the circuit class to `-[pt]`. Thus the Wang class of the circle is
-  minus the winding number (`TauCeti.MappingTorus.circleWangClass_hom_apply`,
+  isomorphisms `H₁(ℝ/ℤ; ℤ) ≅ ℤ`, so they differ by a sign, the value of `circleWangClass` on the
+  circuit class `AddCircle.fundamentalClass 1`. This value is `-1`
+  (`TauCeti.MappingTorus.circleWangClass_hom_fundamentalClass`), computed on the chains of the
+  cyclic cover `pt × ℝ` of the circle: the circuit lifts to the path from height `0` to height
+  `1`, whose boundary is `(𝟙 - τ_*)(-[0])` for the deck transformation `τ` raising the height by
+  one, so the Wang connecting morphism sends the circuit class to `-[pt]`. Thus the Wang class of
+  the circle is minus the winding number (`TauCeti.MappingTorus.circleWangClass_hom_apply`,
   `TauCeti.MappingTorus.circleWangClass_eq_neg_singularKronecker_angularClass`), and
   `⟨[dt], h⟩ = -ε(δ h)` on every mapping torus
   (`TauCeti.MappingTorus.singularKronecker_baseClass_eq_neg_wangClass`,
@@ -251,18 +250,8 @@ end Circle
 
 /-! ### The integral Wang class of the circle -/
 
-/-- **The sign of the Wang class of the circle**: the value of the integral Wang class
-`H₁(ℝ/ℤ; ℤ) ⟶ ℤ` of the circle on the circuit class `AddCircle.fundamentalClass 1`. It is `-1`
-(`TauCeti.MappingTorus.circleWangSign_eq_neg_one`). -/
-def circleWangSign : ℤ :=
-  (circleWangClass (ModuleCat.of ℤ ℤ)).hom (AddCircle.fundamentalClass 1)
-
-/-- The integral Wang class of the circle takes the value `circleWangSign` on the circuit class. -/
-theorem circleWangClass_hom_fundamentalClass :
-    (circleWangClass (ModuleCat.of ℤ ℤ)).hom (AddCircle.fundamentalClass 1) = circleWangSign :=
-  (rfl)
-
-/-! The value of `circleWangSign` is computed on the mapping torus `T` of the identity of a point,
+/-! The value of the integral Wang class `H₁(ℝ/ℤ; ℤ) ⟶ ℤ` of the circle on the circuit class
+`AddCircle.fundamentalClass 1` is computed on the mapping torus `T` of the identity of a point,
 the circle of `circleWangClass`. The loop `t ↦ [⋆, t]` of `T` lifts to the path `t ↦ (⋆, t)` of the
 cylinder `pt × ℝ`, whose boundary `[⋆, 1] - [⋆, 0]` is `(𝟙 - τ_*)(-[⋆, 0])` for the deck
 transformation `τ` raising the height by one. So the Wang connecting morphism sends the class of
@@ -352,17 +341,18 @@ private lemma homologyMap_proj_unitLoopClass :
     simp
 
 /-- **The sign of the Wang class of the circle is `-1`.** The integral Wang class `ε ∘ δ` of the
-circle takes the value `-1` on the circuit class, so it is minus the winding number
-(`circleWangClass_eq_neg_singularKronecker_angularClass`). -/
+circle takes the value `-1` on the circuit class `AddCircle.fundamentalClass 1`, so it is minus the
+winding number (`circleWangClass_eq_neg_singularKronecker_angularClass`). -/
 @[simp]
-theorem circleWangSign_eq_neg_one : circleWangSign = -1 :=
+theorem circleWangClass_hom_fundamentalClass :
+    (circleWangClass (ModuleCat.of ℤ ℤ)).hom (AddCircle.fundamentalClass 1) = -1 :=
   (congrArg (circleWangClass (ModuleCat.of ℤ ℤ)).hom homologyMap_proj_unitLoopClass.symm).trans
     ((ConcreteCategory.congr_hom
       (singularHomologyMap_proj_comp_circleWangClass (ModuleCat.of ℤ ℤ)) unitLoopClass).trans
       wangClass_unitLoopClass)
 
-/-- The integral Wang class of the circle is minus the winding number, since its value
-`circleWangSign` on the circuit class is `-1`. -/
+/-- The integral Wang class of the circle is minus the winding number, since its value on the
+circuit class is `-1`. -/
 theorem circleWangClass_hom_apply
     (c : ((singularChains ℤ).obj (TopCat.of UnitAddCircle)).homology 1) :
     (circleWangClass (ModuleCat.of ℤ ℤ)).hom c = -AddCircle.firstHomologyAddEquiv 1 c := by
@@ -371,7 +361,7 @@ theorem circleWangClass_hom_apply
   -- cannot form the motive across the two spellings, so these steps are chained in term mode.
   refine (congrArg _ (AddCircle.eq_firstHomologyAddEquiv_zsmul_fundamentalClass 1 c)).trans
     ((map_zsmul _ _ _).trans ((smul_eq_mul _ _).trans ?_))
-  rw [circleWangClass_hom_fundamentalClass, circleWangSign_eq_neg_one, mul_neg_one]
+  rw [circleWangClass_hom_fundamentalClass, mul_neg_one]
 
 section Integral
 
