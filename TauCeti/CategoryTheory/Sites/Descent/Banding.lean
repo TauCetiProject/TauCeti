@@ -52,8 +52,8 @@ the restriction of a transformation compatible with `φ` is compatible with the 
   transformation to the slice site over `U` preserves the restricted bands.
 * `CategoryTheory.Pseudofunctor.BandCompatible`: the property of a strong transformation of
   carrying the band of the source to the band of the target along a morphism `φ : A ⟶ B` of
-  sheaves of abelian groups, with `bandCompatible_id_iff`, `BandCompatible.comp`,
-  `bandCompatible_iff_of_iso` and `BandCompatible.over`.
+  sheaves of abelian groups, with `bandCompatible_iff_map_mulEquiv_hom`, `bandCompatible_id_iff`,
+  `BandCompatible.comp`, `bandCompatible_iff_of_iso` and `BandCompatible.over`.
 
 ## References
 
@@ -240,6 +240,20 @@ lemma BandCompatible.map_mulEquiv_hom (φ : A ⟶ B) (η : StrongTrans F G)
       (bG.mulEquiv U ((η.app (.mk (op U))).toFunctor.obj x)
         (.ofAdd (φ.hom.app (op U) a.toAdd))).asIso.hom :=
   congr($(BandCompatible.mapAut_mulEquiv (bG := bG) (φ := φ) (η := η) U x a).asIso.hom)
+
+variable (bG : G.AbelianBanding J B) in
+/-- A transformation is compatible with `φ` if and only if its component functors carry the
+underlying morphisms of band automorphisms to the underlying morphisms of the band automorphisms
+of their images along `φ`. -/
+lemma bandCompatible_iff_map_mulEquiv_hom (φ : A ⟶ B) (η : StrongTrans F G) :
+    BandCompatible φ bF bG η ↔ ∀ (U : C) (x : F.obj (.mk (op U)))
+      (a : Multiplicative (A.obj.obj (op U))),
+      (η.app (.mk (op U))).toFunctor.map (bF.mulEquiv U x a).asIso.hom =
+        (bG.mulEquiv U ((η.app (.mk (op U))).toFunctor.obj x)
+          (.ofAdd (φ.hom.app (op U) a.toAdd))).asIso.hom :=
+  ⟨fun _ ↦ BandCompatible.map_mulEquiv_hom bG φ η, fun h ↦ ⟨fun U x a ↦ Aut.ext <| Iso.ext <| by
+    rw [Functor.mapAut_apply_asIso]
+    exact h U x a⟩⟩
 
 /-- A transformation is compatible with the identity of `A` if and only if it preserves the
 bands. -/
