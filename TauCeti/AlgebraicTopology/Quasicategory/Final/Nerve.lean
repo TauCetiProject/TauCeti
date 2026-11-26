@@ -10,20 +10,21 @@ public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.Limits.Final
 public import TauCeti.AlgebraicTopology.Quasicategory.Final
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Coslice
-public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Connected
-public import TauCeti.CategoryTheory.Comma.Under.Pullback
+public import TauCeti.CategoryTheory.Comma.StructuredArrow.Pullback
 
 /-!
 # Finality for maps of nerves
 
 The undercategory comparison `CategoryTheory.nerve.cosliceIso` and Mathlib's
 `CategoryTheory.nerveAdjunction` identify the fibres tested by `SSet.IsFinal` with nerves
-of structured arrow categories. Weak contractibility implies connectedness, giving
-ordinary finality in the sense of `CategoryTheory.Functor.Final`.
+of structured arrow categories. Weak contractibility implies connectedness. The edge
+description `CategoryTheory.nerve.homEquiv` turns simplicial connectedness of those nerves
+into the zigzag condition for `CategoryTheory.Functor.Final`.
 
 ## References
 
 * J. Lurie, *Higher Topos Theory*, Theorem 4.1.3.1.
+* Kerodon, §1.2.1, Connected Components of Simplicial Sets (Tag 00G5).
 -/
 
 public section
@@ -32,20 +33,22 @@ universe u
 
 open SSet CategoryTheory Limits Simplicial
 
-namespace CategoryTheory.nerve
+namespace CategoryTheory.Functor
+
+open nerve
 
 variable {C D : Type u} [Category.{u} C] [Category.{u} D]
 
 /-- The nerve of the structured arrow category over `x` is the pullback of the nerve
 map of `F` along the simplicial coslice projection at `x`. -/
-theorem isPullback_structuredArrow_coslice (F : C ⥤ D) (x : D) :
+theorem isPullback_nerveMap_structuredArrow_coslice (F : C ⥤ D) (x : D) :
     IsPullback (nerveMap (StructuredArrow.proj x F))
       (nerveMap (StructuredArrow.pre x F (𝟭 D)) ≫ (cosliceIso x).hom)
-      (nerveMap F) (coslice.π (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve D)) := by
+      (nerveMap F) (coslice.π (SSet.const (nerveEquiv.symm x) : Δ[0] ⟶ nerve D)) := by
   have : nerveFunctor.{u, u}.IsRightAdjoint := nerveAdjunction.isRightAdjoint
   have h : IsPullback (nerveMap (StructuredArrow.proj x F))
       (nerveMap (StructuredArrow.pre x F (𝟭 D))) (nerveMap F) (nerveMap (Under.forget x)) :=
-    (F.isPullback_structuredArrow_pre (𝟭 D) x).map nerveFunctor
+    (StructuredArrow.isPullback_proj_pre x F (𝟭 D)).map nerveFunctor
   refine h.of_iso (Iso.refl _) (Iso.refl _) (cosliceIso x) (Iso.refl _) ?_ ?_ ?_ ?_
   · simp only [Iso.refl_hom, Category.comp_id, Category.id_comp]
   · simp only [Iso.refl_hom, Category.id_comp]
@@ -61,18 +64,30 @@ theorem isFinal_nerveMap_iff (F : C ⥤ D) :
   constructor
   · intro h x
     have := h (nerveEquiv.symm x)
-    exact IsWeaklyContractible.of_iso (isPullback_structuredArrow_coslice F x).isoPullback.symm
+    exact IsWeaklyContractible.of_iso
+      (F.isPullback_nerveMap_structuredArrow_coslice x).isoPullback.symm
   · intro h y
     obtain ⟨x, rfl⟩ := nerveEquiv.symm.surjective y
     have := h x
-    exact IsWeaklyContractible.of_iso (isPullback_structuredArrow_coslice F x).isoPullback
+    exact IsWeaklyContractible.of_iso (F.isPullback_nerveMap_structuredArrow_coslice x).isoPullback
 
 /-- A functor whose nerve map is final is final in the ordinary sense. -/
-theorem _root_.CategoryTheory.Functor.final_of_isFinal_nerveMap (F : C ⥤ D)
+theorem final_of_isFinal_nerveMap (F : C ⥤ D)
     (h : SSet.IsFinal (nerveMap F)) : F.Final := by
   constructor
   intro x
-  have := (isFinal_nerveMap_iff F).1 h x
-  exact (isConnected_nerve_iff _).1 inferInstance
+  have := F.isFinal_nerveMap_iff.1 h x
+  have connected : (nerve (StructuredArrow x F)).IsConnected := inferInstance
+  have : Nonempty (StructuredArrow x F) := connected.nonempty.map nerveEquiv
+  apply zigzag_isConnected
+  intro a b
+  obtain ⟨a, rfl⟩ := nerveEquiv.surjective a
+  obtain ⟨b, rfl⟩ := nerveEquiv.surjective b
+  have hab := (π₀.mk_eq_mk_iff (X := nerve (StructuredArrow x F)) a b).mp (Subsingleton.elim _ _)
+  induction hab with
+  | rel _ _ h => exact h.elim fun e ↦ Zigzag.of_hom (nerve.homEquiv e)
+  | refl => exact Zigzag.refl _
+  | symm _ _ _ ih => exact ih.symm
+  | trans _ _ _ _ _ ih₁ ih₂ => exact ih₁.trans ih₂
 
-end CategoryTheory.nerve
+end CategoryTheory.Functor
