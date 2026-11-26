@@ -51,6 +51,11 @@ In the namespace `TauCeti.ThricePuncturedSphere`:
 * `exists_add_mul_cylindricalEndLift_eq`: the converse for the input ends; for the output end it
   is `Puncture.exists_cylindricalEndLift_inf_eq`.
 * `add_mul_cylindricalEndLift_ne`: a point with `s > 0` on an input end is no center.
+* `norm_equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_sub` and
+  `det_fderiv_realChart_add_mul_cylindricalEndLift`: in real coordinates, the distance to the center
+  along an input end, and the Jacobian `4π² |w - c|²` of its end lift.
+* `isCompact_preimage_puncturedSphereTruncation`, `preimage_puncturedSphereTruncation_subset`: in
+  real coordinates `Σ_R` is compact and avoids the centers.
 -/
 
 public section
@@ -61,7 +66,7 @@ open scoped Topology
 namespace TauCeti.ThricePuncturedSphere
 
 open Puncture
-open TauCeti.Complex (realChart injOn_realChart)
+open TauCeti.Complex (realChart injOn_realChart equivRealProdCLM_symm_realChart)
 
 variable {ι : Type*} {c a : ι → ℂ} {R : ℝ}
 
@@ -275,5 +280,40 @@ theorem realChart_add_mul_cylindricalEndLift_add_one (c a : ℂ) (s t : ℝ) :
   simp only [Complex.ofReal_add, Complex.ofReal_one] at h
   rw [TauCeti.Complex.realChart_mk, TauCeti.Complex.realChart_mk, Complex.ofReal_add,
     Complex.ofReal_one, h]
+
+
+/-- In real coordinates, a point of the input end with center `c` and scale `a`, at longitudinal
+coordinate `s`, lies at distance `‖a‖ exp (-2πs) / 2` from the center. -/
+theorem norm_equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_sub (c a : ℂ)
+    (ζ : ℝ × ℝ) :
+    ‖Complex.equivRealProdCLM.symm (realChart (fun z ↦ c + a * zero.cylindricalEndLift z) ζ) - c‖ =
+      ‖a‖ * Real.exp (-(2 * π * ζ.1)) / 2 := by
+  rw [equivRealProdCLM_symm_realChart, norm_add_mul_cylindricalEndLift_sub,
+    Complex.equivRealProdCLM_symm_apply_re]
+
+/-- The Jacobian of the end lift `z ↦ c + a φ₀(z)` of an input end, in real coordinates, is
+`4π² |w - c|²` at the point `w` it reaches. -/
+theorem det_fderiv_realChart_add_mul_cylindricalEndLift (c a : ℂ) (ζ : ℝ × ℝ) :
+    (fderiv ℝ (realChart fun z ↦ c + a * zero.cylindricalEndLift z) ζ).det =
+      4 * π ^ 2 * ‖Complex.equivRealProdCLM.symm
+        (realChart (fun z ↦ c + a * zero.cylindricalEndLift z) ζ) - c‖ ^ 2 := by
+  rw [TauCeti.Complex.det_fderiv_realChart (hasDerivAt_add_mul_cylindricalEndLift c a _),
+    equivRealProdCLM_symm_realChart, add_sub_cancel_left, zero.deriv_cylindricalEndLift,
+    endCenter_zero, sub_zero, Complex.normSq_eq_norm_sq]
+  simp only [norm_mul, norm_neg, Complex.norm_ofNat, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos pi_pos]
+  ring
+
+/-- The truncation of a sphere with moving input ends is compact in real coordinates. -/
+theorem isCompact_preimage_puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R) :=
+  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    (isCompact_puncturedSphereTruncation c a R)
+
+/-- For nonzero scales, the truncation in real coordinates lies in the plane minus the centers. -/
+theorem preimage_puncturedSphereTruncation_subset (ha : ∀ i, a i ≠ 0) (R : ℝ) :
+    Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R ⊆
+      {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} :=
+  fun _ hz i ↦ ne_of_mem_puncturedSphereTruncation (ha i) hz
 
 end TauCeti.ThricePuncturedSphere
