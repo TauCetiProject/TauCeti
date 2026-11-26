@@ -47,9 +47,7 @@ algebraic properties of the coefficients `N_S` that the operators at auxiliary p
 
 ## References
 
-The statements are those of
-§5.1 (a)–(c) of the ShortGRH roadmap `CongruencesOfTwistedThetaLifts`.
-They and their proofs are adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0,
+The statements and their proofs are adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0,
 Copyright 2026 Anthropic PBC), file `src/New/Congruences/FirstOrder/OnePrime.lean`
 (`New.Patching.familyCoeff`, `New.Patching.exists_empty_eq_sum_and_insert_eq_mul`,
 `New.Patching.map_top_coeff_mul_C_sub_X_mul_C_eq_zero`,
@@ -115,11 +113,12 @@ theorem map_nsmul_eq_mul_norm (ρ : (∀ j : J, Γ j) →* R) {Ψ A : R} {n : �
   have invariant (g : ∀ j, Γ j) : σ A * σ (ρ g) = σ A := by
     let H : Submonoid (∀ j, Γ j) :=
       { carrier := {g | σ A * σ (ρ g) = σ A}
-        mul_mem' := fun {g h} (hg : σ A * σ (ρ g) = σ A) (hh : σ A * σ (ρ h) = σ A) ↦
-          show σ A * σ (ρ (g * h)) = σ A by rw [map_mul, map_mul, ← mul_assoc, hg, hh]
+        mul_mem' := fun {g h} hg hh ↦ by
+          rw [Set.mem_ofPred_eq] at hg hh ⊢
+          rw [map_mul, map_mul, ← mul_assoc, hg, hh]
         one_mem' := by simp }
-    refine Submonoid.pi_mem_of_mulSingle_mem (H := H) g fun j ↦ ?_
-    change σ A * σ (ρ (Pi.mulSingle j (g j))) = σ A
+    have mem_H (x : ∀ j, Γ j) : x ∈ H ↔ σ A * σ (ρ x) = σ A := Iff.rfl
+    refine (mem_H g).1 (Submonoid.pi_mem_of_mulSingle_mem g fun j ↦ (mem_H _).2 ?_)
     rw [← map_mul, ← sub_eq_zero, ← map_sub, ← mul_sub_one, hA]
   rw [map_nsmul, map_mul, map_mul, map_sum]
   exact nsmul_eq_mul_norm (ρ := σ.toMonoidHom.comp ρ) (by simpa using congrArg σ hΨ) invariant
@@ -132,6 +131,18 @@ noncomputable def commutingProd : (∀ j : J, 𝒜 j) →* R :=
   MonoidHom.noncommPiCoprod (fun j ↦ (𝒜 j).subtype.toMonoidHom)
     fun i j hij a b ↦ h𝒜 i j hij a a.property b b.property
 
+omit [DecidableEq J] in
+/-- `commutingProd` is the product of its factors, in any order. -/
+theorem commutingProd_apply (x : ∀ j : J, 𝒜 j) :
+    commutingProd h𝒜 x = (univ : Finset J).noncommProd (fun j ↦ (x j : R))
+      (fun i _ j _ hij ↦ h𝒜 i j hij _ (x i).property _ (x j).property) :=
+  MonoidHom.noncommPiCoprod_apply _ x
+
+/-- The product of a family with a single factor `a` different from `1` is `a`. -/
+@[simp]
+theorem commutingProd_mulSingle (j : J) (a : 𝒜 j) : commutingProd h𝒜 (Pi.mulSingle j a) = a := by
+  simp [commutingProd]
+
 /-- In a product of elements of pairwise commuting subrings, any one factor can be written
 last. -/
 theorem commutingProd_update (x : ∀ j : J, 𝒜 j) (j : J) (a : 𝒜 j) :
@@ -142,8 +153,7 @@ theorem commutingProd_update (x : ∀ j : J, 𝒜 j) (j : J) (a : 𝒜 j) :
     · subst hk
       simp
     · simp [Function.update_of_ne hk, Pi.mulSingle_eq_of_ne hk]
-  rw [split, map_mul]
-  simp [commutingProd]
+  rw [split, map_mul, commutingProd_mulSingle]
 
 /-- A product of sums of elements of pairwise commuting subrings expands as a sum of products:
 `∏ⱼ ∑ᵢ xⱼᵢ = ∑_f ∏ⱼ xⱼ(f j)`. -/
@@ -170,6 +180,10 @@ of the pairwise commuting subrings `𝒜 j`
 noncomputable def normDeformationCoeff (Nm der : ∀ j : J, 𝒜 j) (S : Finset J) : R :=
   commutingProd h𝒜 (S.piecewise der Nm)
 
+theorem normDeformationCoeff_def (Nm der : ∀ j : J, 𝒜 j) (S : Finset J) :
+    normDeformationCoeff h𝒜 Nm der S = commutingProd h𝒜 (S.piecewise der Nm) :=
+  (rfl)
+
 /-- The product `∏ⱼ (Nmⱼ + ∂ⱼ)` is the sum of the coefficients `N_S` over all `S`. Applied with
 `αⱼ ∂ⱼ` in place of `∂ⱼ`, for scalars `αⱼ` commuting with `𝒜 j`, this exhibits `N_S` as the
 coefficient of `∏_{j ∈ S} αⱼ` in `∏ⱼ (Nmⱼ + αⱼ ∂ⱼ)`. -/
@@ -181,7 +195,7 @@ theorem commutingProd_add_eq_sum_normDeformationCoeff (Nm der : ∀ j : J, 𝒜 
   refine Fintype.sum_bijective (fun f ↦ univ.filter fun j ↦ f j = true) ⟨fun f f' h ↦ ?_,
     fun S ↦ ⟨fun j ↦ decide (j ∈ S), by simp⟩⟩ _ _ fun f ↦ ?_
   · exact funext fun j ↦ Bool.eq_iff_iff.2 (by simpa using Finset.ext_iff.1 h j)
-  · simp only [normDeformationCoeff]
+  · simp only [normDeformationCoeff_def]
     congr 1
     funext j
     cases hf : f j <;> simp [x, hf, Finset.piecewise]
@@ -205,7 +219,7 @@ theorem normDeformationCoeff_empty (ρ : (∀ j : J, Γ j) →* R)
   have prod_single (g : ∀ j : J, Γ j) : commutingProd h𝒜 (fun j ↦ r j (g j)) = ρ g :=
     DFunLike.congr_fun (MonoidHom.noncommPiCoprodEquiv.right_inv ρ) g
   calc normDeformationCoeff h𝒜 Nm der ∅ = commutingProd h𝒜 fun j ↦ ∑ g : Γ j, r j g := by
-        rw [normDeformationCoeff, piecewise_empty, norm_eq]
+        rw [normDeformationCoeff_def, piecewise_empty, norm_eq]
     _ = ∑ g : (j : J) → Γ j, commutingProd h𝒜 fun j ↦ r j (g j) := commutingProd_sum h𝒜 r
     _ = ∑ g : (j : J) → Γ j, ρ g := sum_congr rfl fun g _ ↦ prod_single g
 
@@ -217,8 +231,8 @@ theorem exists_normDeformationCoeff_eq_mul (Nm der : ∀ j : J, 𝒜 j) {j : J} 
       normDeformationCoeff h𝒜 Nm der (insert j S) = N' * der j := by
   refine ⟨commutingProd h𝒜 (Function.update (S.piecewise der Nm) j 1), ?_, ?_⟩
   · rw [← commutingProd_update, ← piecewise_eq_of_notMem S der Nm hj, Function.update_eq_self,
-      normDeformationCoeff]
-  · rw [← commutingProd_update, normDeformationCoeff, piecewise_insert]
+      normDeformationCoeff_def]
+  · rw [← commutingProd_update, normDeformationCoeff_def, piecewise_insert]
 
 /-- **The coefficients of a product of first-order deformations of norms.** Let `ρ` map the product
 of the finite groups `Γ j` to the ring `R`. Let `𝒜 j` be pairwise commuting subrings that contain
@@ -249,8 +263,8 @@ section TopCoefficient
 open MvPolynomial
 
 /-- For `j ∉ S`, the coefficient of `∏_{i ∈ S} Xᵢ` in `G (t - Xⱼ r)` is `t` times that in `G`. -/
-theorem coeff_mul_C_sub_X_mul_C_of_notMem {J T : Type*} [CommRing T] (G : MvPolynomial J T)
-    (t r : T) {j : J} {S : Finset J} (hj : j ∉ S) :
+theorem _root_.MvPolynomial.coeff_mul_C_sub_X_mul_C_of_notMem {J T : Type*} [CommRing T]
+    (G : MvPolynomial J T) (t r : T) {j : J} {S : Finset J} (hj : j ∉ S) :
     (G * (C t - X j * C r)).coeff (∑ i ∈ S, .single i 1) =
       t * G.coeff (∑ i ∈ S, .single i 1) := by
   classical
@@ -259,8 +273,8 @@ theorem coeff_mul_C_sub_X_mul_C_of_notMem {J T : Type*} [CommRing T] (G : MvPoly
 
 /-- For `j ∉ S`, the coefficient of `Xⱼ ∏_{i ∈ S} Xᵢ` in `G (t - Xⱼ r)` is `t` times that in `G`
 minus `r` times the coefficient of `∏_{i ∈ S} Xᵢ` in `G`. -/
-theorem coeff_mul_C_sub_X_mul_C_insert {J T : Type*} [DecidableEq J] [CommRing T]
-    (G : MvPolynomial J T) (t r : T) {j : J} {S : Finset J} (hj : j ∉ S) :
+theorem _root_.MvPolynomial.coeff_mul_C_sub_X_mul_C_insert {J T : Type*} [DecidableEq J]
+    [CommRing T] (G : MvPolynomial J T) (t r : T) {j : J} {S : Finset J} (hj : j ∉ S) :
     (G * (C t - X j * C r)).coeff (∑ i ∈ insert j S, .single i 1) =
       t * G.coeff (∑ i ∈ insert j S, .single i 1) - r * G.coeff (∑ i ∈ S, .single i 1) := by
   rw [mul_sub, mul_left_comm G, sum_insert hj]
@@ -297,7 +311,8 @@ theorem map_top_coeff_mul_C_sub_X_mul_C_eq_zero {N : Finset J → R} {der : J �
   have tie (b : T) : σ (N' * der j * ac (t * b)) = σ (N' * Nm j * ac (r * b)) := by
     simpa only [map_mul, mul_assoc] using congrArg (σ N' * · * σ (ac b)) h_tie
   rw [map_add, coeff_mul_C_sub_X_mul_C_of_notMem G t r hj, coeff_mul_C_sub_X_mul_C_insert G t r hj,
-    h_S, h_insert, tie, ac.map_sub, mul_sub, kill, zero_sub, map_neg, add_neg_cancel]
+    h_S, h_insert, tie, map_sub ac, mul_sub, kill]
+  simp
 
 end TopCoefficient
 

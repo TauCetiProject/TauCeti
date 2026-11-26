@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.RepresentationTheory.NormDeformation.Basic
-import TauCeti.GroupTheory.Transfer.Basic
+public import TauCeti.GroupTheory.Transfer.Basic
 
 /-!
 # Logarithms and the coset derivative
@@ -40,6 +40,9 @@ modulo `m / k`* if it kills every `x` with `k x ∈ m R`.
   chosen representatives `h` of `Γ / H`.
 * `TauCeti.cosetDerivative ρ H B`: the coset derivative `-(∑ h) B(valMinAbs) (∑ h⁻¹)`.
 
+The components in `H` of the products `g h` are the cocycle `QuotientGroup.outCocycle`, and the
+transfer is computed from it by `MonoidHom.transfer_eq_prod_out`.
+
 ## Main results
 
 * `TauCeti.exists_isReductionMod`: if `R` has no `k`-torsion and `k μ = m`, there is a reduction
@@ -48,16 +51,14 @@ modulo `m / k`* if it kills every `x` with `k x ∈ m R`.
   where `Ver a` is the transfer of `a` to `Γ`.
 * `TauCeti.map_sub_one_mul_weightedNorm_valMinAbs`: `(γ - 1) L(c) ≡ -Nm` modulo `m` if `c γ = 1`.
 * `TauCeti.map_valMinAbs_eq_zero_of_shift`: an additive map on weights that kills all
-  differences `f (· - k) - f` kills the logarithm modulo `m / (2 k)` (roadmap §5.1 (e), first part).
-* `TauCeti.exists_map_nsmul_mul_sub_one_eq_sum_mul`: `n ∂ (g - 1) ≡ Nm Z` with `L' Z = 0`
-  (roadmap §5.1 (e), second part).
+  differences `f (· - k) - f` kills the logarithm modulo `m / (2 k)`.
+* `TauCeti.exists_map_nsmul_mul_sub_one_eq_sum_mul`: `n ∂ (g - 1) ≡ Nm Z` with `L Z = 0`, for
+  every `L` that is right-invariant (`L g = L`) and kills `B 1`.
 
 ## References
 
-The statements are those of
-§5.1 (e) of the ShortGRH roadmap `CongruencesOfTwistedThetaLifts`.
-They and their proofs are adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0,
-Copyright 2026 Anthropic PBC), file `src/New/Congruences/FirstOrder/OnePrime.lean`
+The statements and their proofs are adapted from grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC), file `src/New/Congruences/FirstOrder/OnePrime.lean`
 (`New.Patching.IsReductionMod`, `New.Patching.exists_isReductionMod`, `New.Patching.weightedSum`,
 `New.Patching.cosetDerivative`, `New.Patching.map_cosetNorm_mul_weightedSum_mul_cosetNormInv`,
 `New.Patching.map_sub_one_mul_weightedSum_valMinAbs`,
@@ -85,6 +86,9 @@ congruence `a ≡ b` modulo `m / k` implies `σ a = σ b`; `exists_isReductionMo
 which the converse holds. -/
 def IsReductionMod (σ : R →+* S) (m k : ℕ) : Prop :=
   ∀ x y : R, k • x = m • y → σ x = 0
+
+theorem isReductionMod_iff : IsReductionMod σ m k ↔ ∀ x y : R, k • x = m • y → σ x = 0 :=
+  Iff.rfl
 
 /-- A reduction modulo `m / k` kills `m`. -/
 theorem IsReductionMod.natCast_eq_zero (hσ : IsReductionMod σ m k) : (m : S) = 0 := by
@@ -153,6 +157,7 @@ theorem weightedNorm_apply (c : Γ →* Multiplicative (ZMod m)) (f : ZMod m →
   (rfl)
 
 /-- The weighted norm at the constant weight `1` is the norm `∑ ρ g`. -/
+@[simp]
 theorem weightedNorm_one (c : Γ →* Multiplicative (ZMod m)) :
     weightedNorm ρ c 1 = ∑ g : Γ, ρ g := by
   simp [weightedNorm_apply]
@@ -209,44 +214,51 @@ weights `ℤ/m → ℤ`, where `h` runs over the fixed representatives of `Γ / 
 noncomputable def cosetDerivative (H : Subgroup Γ) (B : (ZMod m → ℤ) →+ R) : R :=
   -(cosetNorm ρ H * B valMinAbs * cosetNormInv ρ H)
 
-/-- The element `p ∈ H` with `g x = h p`, where `h` is the fixed representative of the coset
-`g x H`. -/
-noncomputable def cosetComponent (H : Subgroup Γ) (g x : Γ) : H :=
-  ⟨(↑(g * x) : Γ ⧸ H).out⁻¹ * (g * x), QuotientGroup.eq.1 (↑(g * x) : Γ ⧸ H).out_eq⟩
+open scoped Classical in
+theorem cosetNorm_def (H : Subgroup Γ) : cosetNorm ρ H = ∑ η : Γ ⧸ H, ρ η.out :=
+  (rfl)
+
+open scoped Classical in
+theorem cosetNormInv_def (H : Subgroup Γ) : cosetNormInv ρ H = ∑ η : Γ ⧸ H, ρ η.out⁻¹ :=
+  (rfl)
+
+theorem cosetDerivative_def (H : Subgroup Γ) (B : (ZMod m → ℤ) →+ R) :
+    cosetDerivative ρ H B = -(cosetNorm ρ H * B valMinAbs * cosetNormInv ρ H) :=
+  (rfl)
 
 variable {H : Subgroup Γ}
 
 /-- Let `h` run over the representatives `η.out` that `Quotient.out` chooses for the cosets
-`η ∈ Γ / H`, so that `cosetNorm ρ H = ∑ ρ h`. For a weight `f : H → ℤ` and `x ∈ Γ`, the product
-`(∑ ρ h) (∑_{p ∈ H} f p ρ p) ρ x⁻¹` is the sum over `g ∈ Γ` of `f p ρ g` with
-`p = cosetComponent H g x`, the element of `H` in the unique factorisation `g = h p x⁻¹`. -/
-theorem cosetNorm_mul_sum_mul [Fintype H] (f : H → ℤ) (x : Γ) :
-    cosetNorm ρ H * (∑ p : H, f p • ρ p) * ρ x⁻¹ = ∑ g : Γ, f (cosetComponent H g x) • ρ g := by
-  have component_eq (η : Γ ⧸ H) (p : H) : cosetComponent H (η.out * p * x⁻¹) x = p := by
-    simp [cosetComponent]
-  rw [cosetNorm, sum_mul_sum, ← sum_product', sum_mul]
-  refine sum_nbij' (fun (η, p) ↦ η.out * p * x⁻¹) (fun g ↦ (↑(g * x), cosetComponent H g x))
-    (by simp) (by simp) (by simp [component_eq]) (by simp [cosetComponent]) ?_
+`η ∈ Γ / H`, so that `cosetNorm ρ H = ∑ ρ h`. For a weight `f : H → ℤ` and a coset `q`, the
+product `(∑ ρ h) (∑_{p ∈ H} f p ρ p) ρ q.out⁻¹` is the sum over `g ∈ Γ` of `f p ρ g` with
+`p = outCocycle g q`, the element of `H` in the unique factorisation `g q.out = h p`. -/
+theorem cosetNorm_mul_sum_mul_out_inv [Fintype H] (f : H → ℤ) (q : Γ ⧸ H) :
+    cosetNorm ρ H * (∑ p : H, f p • ρ p) * ρ q.out⁻¹ =
+      ∑ g : Γ, f (QuotientGroup.outCocycle g q) • ρ g := by
+  classical
+  -- `g ↦ (g • q, outCocycle g q)` inverts `(η, p) ↦ η.out * p * q.out⁻¹`.
+  have smul_eq (η : Γ ⧸ H) (p : H) : (η.out * p * q.out⁻¹) • q = η := by
+    rw [← QuotientGroup.out_eq' (_ • q), QuotientGroup.mk_out_smul, inv_mul_cancel_right,
+      QuotientGroup.mk_mul_of_mem _ p.property, QuotientGroup.out_eq']
+  have cocycle_eq (η : Γ ⧸ H) (p : H) : QuotientGroup.outCocycle (η.out * p * q.out⁻¹) q = p :=
+    Subtype.ext (by rw [QuotientGroup.coe_outCocycle, smul_eq]; simp [mul_assoc])
+  rw [cosetNorm_def, sum_mul_sum, ← sum_product', sum_mul]
+  refine sum_nbij' (fun (η, p) ↦ η.out * p * q.out⁻¹)
+    (fun g ↦ (g • q, QuotientGroup.outCocycle g q)) (by simp) (by simp)
+    (fun x _ ↦ by simp [smul_eq, cocycle_eq]) (fun g _ ↦ ?_) ?_
+  · simp [mul_assoc]
   rintro ⟨η, p⟩ -
-  simp only [component_eq, map_mul, mul_smul_comm, smul_mul_assoc]
+  simp only [cocycle_eq, map_mul, mul_smul_comm, smul_mul_assoc]
 
 /-- The coset norm times the norm of `H` is the norm of `Γ`. -/
 theorem cosetNorm_mul_norm [Fintype H] : cosetNorm ρ H * ∑ p : H, ρ p = ∑ g : Γ, ρ g := by
-  simpa using cosetNorm_mul_sum_mul ρ (H := H) 1 1
-
-open scoped Classical in
-/-- The transfer of `a : H → A` at `g` is the product, over the fixed representatives `h` of
-`Γ / H`, of the values of `a` at the components `p ∈ H` of `g h = h' p`. -/
-theorem transfer_eq_prod_cosetComponent {A : Type*} [CommGroup A] (a : H →* A) (g : Γ) :
-    a.transfer g = ∏ η : Γ ⧸ H, a (cosetComponent H g η.out) := by
-  have hf : Function.Bijective fun η : Γ ⧸ H ↦ ((η.out : Γ) : Γ ⧸ H) := by
-    convert Function.bijective_id with η
-    exact QuotientGroup.out_eq' η
-  have mk_mul (η : Γ ⧸ H) : ((g * η.out : Γ) : Γ ⧸ H) = g • η := by
-    rw [← smul_eq_mul, ← MulAction.Quotient.smul_mk, QuotientGroup.out_eq']
-  rw [MonoidHom.transfer_eq_prod_of_bijective a _ hf g (g • ·) fun η ↦ by
-    rw [QuotientGroup.out_eq', mk_mul]]
-  exact prod_congr rfl fun η _ ↦ congrArg a (Subtype.ext (by simp [cosetComponent, mk_mul]))
+  -- Multiply the case `f = 1` of `cosetNorm_mul_sum_mul_out_inv` by `ρ q.out` on the right.
+  let q : Γ ⧸ H := ↑(1 : Γ)
+  have h := congrArg (· * ρ q.out) (cosetNorm_mul_sum_mul_out_inv ρ (H := H) 1 q)
+  simp only [Pi.one_apply, one_smul, mul_assoc, ← map_mul, inv_mul_cancel, map_one,
+    mul_one] at h
+  rw [h, sum_mul]
+  exact Fintype.sum_equiv (.mulRight q.out) _ _ fun g ↦ (map_mul ρ g q.out).symm
 
 /-- **The coset norms carry a logarithm to the logarithm of its transfer.** Let `σ : R → S` be a
 ring map with `m = 0` in `S`. For a homomorphism `c` to `ℤ/m` let `L c = ∑ valMinAbs (c g) ρ g`
@@ -261,16 +273,16 @@ theorem map_cosetNorm_mul_weightedNorm_mul_cosetNormInv [Fintype H] (hm : (m : S
   -- The coefficient of `g` on the left is the sum over the representatives `h` of the logarithms
   -- of the components of `g h`, which is congruent modulo `m` to the logarithm of the transfer.
   let C : (Γ → ℤ) →+ R := (Fintype.linearCombination ℤ ρ).toAddMonoidHom
-  let weight (η : Γ ⧸ H) (g : Γ) : ℤ := valMinAbs (a (cosetComponent H g η.out)).toAdd
+  let weight (η : Γ ⧸ H) (g : Γ) : ℤ := valMinAbs (a (QuotientGroup.outCocycle g η)).toAdd
   have h_term (η : Γ ⧸ H) :
       cosetNorm ρ H * weightedNorm (ρ.comp H.subtype) a valMinAbs * ρ η.out⁻¹ = C (weight η) :=
-    cosetNorm_mul_sum_mul ρ (fun p ↦ valMinAbs (a p).toAdd) η.out
+    cosetNorm_mul_sum_mul_out_inv ρ (fun p ↦ valMinAbs (a p).toAdd) η
   have h_weights (g : Γ) :
       (valMinAbs (a.transfer g).toAdd : ZMod m) = (∑ η : Γ ⧸ H, weight η) g := by
-    simp [weight, transfer_eq_prod_cosetComponent, toAdd_prod]
+    simp [weight, MonoidHom.transfer_eq_prod_out, toAdd_prod]
   calc σ (cosetNorm ρ H * weightedNorm (ρ.comp H.subtype) a valMinAbs * cosetNormInv ρ H)
       = σ (C (∑ η : Γ ⧸ H, weight η)) := by
-        simp only [cosetNormInv, map_sum C, mul_sum, h_term]
+        simp only [cosetNormInv_def, map_sum C, mul_sum, h_term]
     _ = σ (weightedNorm ρ a.transfer valMinAbs) := map_eq_of_weights_modEq hm C _ _ h_weights
 
 /-- Let `σ : R → S` be a ring map with `m = 0` in `S`, let `a : H → ℤ/m` be a homomorphism on a
@@ -287,24 +299,22 @@ theorem exists_map_valMinAbs_mul_sub_one (hm : (m : S) = 0) (a : H →* Multipli
   classical
   -- Right multiplication by `g` permutes the `h⁻¹` up to factors in `H`, which shift the weight
   -- by a constant.
-  let k (η : Γ ⧸ H) : ZMod m := (a (cosetComponent H g η.out)).toAdd
+  let k (η : Γ ⧸ H) : ZMod m := (a (QuotientGroup.outCocycle g η)).toAdd
   have permute : cosetNormInv ρ H * ρ g =
-      ∑ η : Γ ⧸ H, ρ (cosetComponent H g η.out) * ρ η.out⁻¹ := by
-    have term_eq (η : Γ ⧸ H) :
-        ρ (cosetComponent H g η.out) * ρ η.out⁻¹ = ρ (MulAction.toPerm g η).out⁻¹ * ρ g := by
-      have hη : ((g * η.out : Γ) : Γ ⧸ H) = g • η := by
-        rw [← smul_eq_mul, ← MulAction.Quotient.smul_mk, QuotientGroup.out_eq']
-      simp [cosetComponent, hη, mul_assoc, ← map_mul]
-    rw [cosetNormInv, sum_mul]
+      ∑ η : Γ ⧸ H, ρ (QuotientGroup.outCocycle g η) * ρ η.out⁻¹ := by
+    have term_eq (η : Γ ⧸ H) : ρ (QuotientGroup.outCocycle g η) * ρ η.out⁻¹ =
+        ρ (MulAction.toPerm g η).out⁻¹ * ρ g := by
+      simp [mul_assoc, ← map_mul]
+    rw [cosetNormInv_def, sum_mul]
     exact (Fintype.sum_equiv (MulAction.toPerm g) _ _ term_eq).symm
   have shift (y : ZMod m) :
       σ (B fun x ↦ valMinAbs (x - y)) = σ (B valMinAbs - valMinAbs y • B 1) := by
     rw [← map_zsmul, ← map_sub]
     exact map_eq_of_weights_modEq hm B _ _ (by simp)
   have term_congr (η : Γ ⧸ H) :
-      σ (B valMinAbs * (ρ (cosetComponent H g η.out) * ρ η.out⁻¹ - ρ η.out⁻¹)) =
+      σ (B valMinAbs * (ρ (QuotientGroup.outCocycle g η) * ρ η.out⁻¹ - ρ η.out⁻¹)) =
         σ (B 1 * -(valMinAbs (k η) • ρ η.out⁻¹)) :=
-    calc σ (B valMinAbs * (ρ (cosetComponent H g η.out) * ρ η.out⁻¹ - ρ η.out⁻¹))
+    calc σ (B valMinAbs * (ρ (QuotientGroup.outCocycle g η) * ρ η.out⁻¹ - ρ η.out⁻¹))
         = (σ (B fun x ↦ valMinAbs (x - k η)) - σ (B valMinAbs)) * σ (ρ η.out⁻¹) := by
           rw [mul_sub, ← mul_assoc, hB, ← sub_mul, map_mul, map_sub]
       _ = σ (-(valMinAbs (k η) • B 1) * ρ η.out⁻¹) := by
@@ -312,7 +322,7 @@ theorem exists_map_valMinAbs_mul_sub_one (hm : (m : S) = 0) (a : H →* Multipli
       _ = σ (B 1 * -(valMinAbs (k η) • ρ η.out⁻¹)) := by
           rw [neg_mul, mul_neg, smul_mul_assoc, mul_smul_comm]
   refine ⟨∑ η : Γ ⧸ H, -(valMinAbs (k η) • ρ η.out⁻¹), ?_⟩
-  rw [mul_assoc, mul_sub_one, permute, cosetNormInv, ← sum_sub_distrib, mul_sum, mul_sum,
+  rw [mul_assoc, mul_sub_one, permute, cosetNormInv_def, ← sum_sub_distrib, mul_sum, mul_sum,
     map_sum, map_sum]
   exact sum_congr rfl fun η _ ↦ term_congr η
 
@@ -338,7 +348,7 @@ theorem exists_map_nsmul_mul_sub_one_eq_sum_mul [Fintype H] (hm : (m : S) = 0)
   refine ⟨-(Ψ * B 1 * Q), ?_, ?_⟩
   · calc σ (n • (cosetDerivative ρ H B * (ρ g - 1)))
         = -(σ (cosetNorm ρ H) * n • σ (B valMinAbs * cosetNormInv ρ H * (ρ g - 1))) := by
-          simp only [cosetDerivative, neg_mul, smul_neg, map_neg, map_nsmul, map_mul,
+          simp only [cosetDerivative_def, neg_mul, smul_neg, map_neg, map_nsmul, map_mul,
             mul_smul_comm, mul_assoc]
       _ = σ (-(cosetNorm ρ H * (n • B 1 * Q))) := by
           simp only [hQ, map_neg, map_nsmul, map_mul, smul_mul_assoc]
