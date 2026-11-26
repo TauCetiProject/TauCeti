@@ -19,13 +19,11 @@ the largest possible entropy, `H(join_n a) = n * H(a)`
 independent (`TauCeti.partitionEntropyRate_of_iIndepFun`): the itinerary of length `n + 1` is the
 join of the itinerary of length `n` with the independent label `a ∘ T^[n]`.
 
-These are parts of item 5 of §4.1 of the ClassicalErgodicTheory roadmap; the converse, that
-equality forces independence for finite labels, needs the equality case of subadditivity.
+The converse, that equality forces independence for finite labels, needs the equality case of
+subadditivity and is not proved here.
 
 ## Main results
 
-* `TauCeti.partitionEntropyRate_eq_iff_forall`: `h_μ(T, a) = H(a)` iff
-  `H(join_n a) = n * H(a)` for all `n`.
 * `TauCeti.countablePartitionEntropy_iteratedPartitionLabel_of_iIndepFun`: if the labels
   `a ∘ T^[k]` are independent, `H(join_n a) = n * H(a)`.
 * `TauCeti.partitionEntropyRate_of_iIndepFun`: if the labels `a ∘ T^[k]` are independent, the
@@ -33,8 +31,7 @@ equality forces independence for finite labels, needs the equality case of subad
 
 ## References
 
-* O. Sarig, *Lecture Notes on Ergodic Theory*, 2023, Proposition 4.3, p. 106 (the locator given
-  by the ClassicalErgodicTheory roadmap).
+* O. Sarig, *Lecture Notes on Ergodic Theory*, 2023, Proposition 4.3, p. 106.
 -/
 
 public section
@@ -46,25 +43,6 @@ namespace TauCeti
 
 variable {X ι : Type*} {mX : MeasurableSpace X} {μ : Measure X} {T : X → X} {a : X → ι}
   [MeasurableSpace ι] [MeasurableSingletonClass ι] [Countable ι]
-
-/-- **Maximal rate.** For a measure-preserving map of a probability space (or the zero measure)
-and a measurable countable label, the entropy rate equals the entropy exactly
-when every itinerary has the largest possible entropy: `H(join_n a) = n * H(a)` for all `n`. -/
-theorem partitionEntropyRate_eq_iff_forall [IsZeroOrProbabilityMeasure μ]
-    (hT : MeasurePreserving T μ μ) (ha : Measurable a) :
-    partitionEntropyRate μ T a = countablePartitionEntropy μ a ↔
-      ∀ n : ℕ, countablePartitionEntropy μ (iteratedPartitionLabel T a n) =
-        n * countablePartitionEntropy μ a := by
-  refine ⟨fun h n ↦ ?_, fun h ↦ le_antisymm (partitionEntropyRate_le μ T a)
-    (le_partitionEntropyRate_iff.mpr fun n hn ↦ ?_)⟩
-  · rcases eq_or_ne n 0 with rfl | hn
-    · simp [iteratedPartitionLabel_zero]
-    refine le_antisymm (countablePartitionEntropy_iteratedPartitionLabel_le_mul hT ha n) ?_
-    have := h.symm.le.trans (partitionEntropyRate_le_div (Nat.pos_of_ne_zero hn) μ T a)
-    rwa [ENNReal.le_div_iff_mul_le (Or.inl (by simpa using hn)) (Or.inl (by simp)),
-      mul_comm] at this
-  · rw [h n, ENNReal.le_div_iff_mul_le (Or.inl (by simpa using hn.ne')) (Or.inl (by simp)),
-      mul_comm]
 
 /-- **Independent iterates.** For a measure-preserving map of a probability space and a
 measurable countable label `a` whose iterates `a ∘ T^[k]` are independent, the length-`n`
@@ -110,10 +88,8 @@ measurable countable label whose iterates `a ∘ T^[k]` are independent, the ent
 entropy: `h_μ(T, a) = H(a)`. -/
 theorem partitionEntropyRate_of_iIndepFun (hT : MeasurePreserving T μ μ) (ha : Measurable a)
     (hind : iIndepFun (fun k x ↦ a (T^[k] x)) μ) :
-    partitionEntropyRate μ T a = countablePartitionEntropy μ a := by
-  refine le_antisymm (partitionEntropyRate_le μ T a)
-    (le_partitionEntropyRate_iff.mpr fun n hn ↦ ?_)
-  rw [countablePartitionEntropy_iteratedPartitionLabel_of_iIndepFun hT ha hind n,
-    ENNReal.le_div_iff_mul_le (Or.inl (by simpa using hn.ne')) (Or.inl (by simp)), mul_comm]
+    partitionEntropyRate μ T a = countablePartitionEntropy μ a :=
+  partitionEntropyRate_eq_of_forall
+    (countablePartitionEntropy_iteratedPartitionLabel_of_iIndepFun hT ha hind)
 
 end TauCeti

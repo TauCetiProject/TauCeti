@@ -8,7 +8,6 @@ module
 public import TauCeti.Examples.Dynamics.Ergodic.MeasureEntropy.Basic
 public import TauCeti.Dynamics.Ergodic.MeasureEntropy.Independent
 public import TauCeti.Dynamics.Ergodic.MeasureEntropy.Congr
-public import TauCeti.InformationTheory.LabelEntropy
 
 /-!
 # Worked example: the swap on two points
@@ -17,7 +16,7 @@ For the swap `not` on two equiprobable points with the partition into points, th
 entropy `log 2` but rate `0`: the rate is strictly below the entropy. The labels `id` and
 `not ∘ id = not` generate the same partition, so they are not independent, and accordingly the
 iterates of the label are not independent (`TauCeti.partitionEntropyRate_of_iIndepFun` would
-force rate `log 2`). This is the Check of §4.1 of the ClassicalErgodicTheory roadmap.
+force rate `log 2`).
 -/
 
 public section
@@ -26,15 +25,6 @@ open MeasureTheory ProbabilityTheory Real TauCeti
 open scoped ENNReal
 
 namespace TauCeti.MeasureEntropyExamples
-
-/-- The partition of two equiprobable points into points has entropy `log 2`. -/
-theorem countablePartitionEntropy_fairBit_id :
-    countablePartitionEntropy fairBit id = ENNReal.ofReal (log 2) := by
-  rw [countablePartitionEntropy_eq_ofReal_labelEntropy, labelEntropy_def]
-  simp only [Set.preimage_id, fairBit_real_singleton, Fintype.sum_bool, negMulLog, one_div,
-    log_inv]
-  congr 1
-  ring
 
 /-- Under the swap the partition into points has rate `0`. -/
 theorem partitionEntropyRate_not_id : partitionEntropyRate fairBit not id = 0 :=

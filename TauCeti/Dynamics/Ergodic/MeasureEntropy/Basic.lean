@@ -31,6 +31,10 @@ of the partitions `T^[-k] a`, `k < n`. At `n = 0` it is the unique empty tuple.
 * `TauCeti.countablePartitionEntropy_iteratedPartitionLabel_add_le`: for a measure-preserving map
   under a probability (or zero) measure the itinerary entropies are subadditive,
   `H(join_{m+n} a) ≤ H(join_m a) + H(join_n a)`.
+* `TauCeti.partitionEntropyRate_eq_iff_forall`: for a measure-preserving map under a probability
+  (or zero) measure and a measurable countable label, `h_μ(T, a) = H(a)` iff
+  `H(join_n a) = n * H(a)` for all `n`; the backward direction holds with no hypotheses
+  (`TauCeti.partitionEntropyRate_eq_of_forall`).
 * `TauCeti.tendsto_partitionEntropyRate`: by Fekete's lemma, `H(join_n a) / n` converges to the
   entropy rate for a measure-preserving map under a probability (or zero) measure and a
   measurable countable label.
@@ -153,6 +157,17 @@ theorem partitionEntropyRate_le (μ : Measure X) (T : X → X) (a : X → ι) :
   rw [Nat.cast_one, div_one, iteratedPartitionLabel_one,
     countablePartitionEntropy_comp_of_injective a Function.const_injective]
 
+/-- **Maximal rate.** If every itinerary has the largest possible entropy,
+`H(join_n a) = n * H(a)` for all `n`, then the entropy rate is the entropy. -/
+theorem partitionEntropyRate_eq_of_forall {T : X → X} {a : X → ι}
+    (h : ∀ n : ℕ, countablePartitionEntropy μ (iteratedPartitionLabel T a n) =
+      n * countablePartitionEntropy μ a) :
+    partitionEntropyRate μ T a = countablePartitionEntropy μ a := by
+  refine le_antisymm (partitionEntropyRate_le μ T a)
+    (le_partitionEntropyRate_iff.mpr fun n hn ↦ ?_)
+  rw [h n, ENNReal.le_div_iff_mul_le (Or.inl (by simpa using hn.ne')) (Or.inl (by simp)),
+    mul_comm]
+
 /-- Under the identity the length-`(n + 1)` itinerary is the label repeated `n + 1` times, and so
 has the same entropy as the label. -/
 theorem countablePartitionEntropy_iteratedPartitionLabel_id (μ : Measure X) (a : X → ι)
@@ -249,6 +264,22 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_le_mul [IsZeroOrProbabi
     rw [iteratedPartitionLabel_one, countablePartitionEntropy_comp_of_injective a
       Function.const_injective, Nat.cast_succ, add_mul, one_mul]
     gcongr
+
+/-- **Maximal rate.** For a measure-preserving map of a probability space (or the zero measure)
+and a measurable countable label, the entropy rate equals the entropy exactly
+when every itinerary has the largest possible entropy: `H(join_n a) = n * H(a)` for all `n`. -/
+theorem partitionEntropyRate_eq_iff_forall [IsZeroOrProbabilityMeasure μ]
+    (hT : MeasurePreserving T μ μ) (ha : Measurable a) :
+    partitionEntropyRate μ T a = countablePartitionEntropy μ a ↔
+      ∀ n : ℕ, countablePartitionEntropy μ (iteratedPartitionLabel T a n) =
+        n * countablePartitionEntropy μ a := by
+  refine ⟨fun h n ↦ ?_, partitionEntropyRate_eq_of_forall⟩
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [iteratedPartitionLabel_zero]
+  refine le_antisymm (countablePartitionEntropy_iteratedPartitionLabel_le_mul hT ha n) ?_
+  have := h.symm.le.trans (partitionEntropyRate_le_div (Nat.pos_of_ne_zero hn) μ T a)
+  rwa [ENNReal.le_div_iff_mul_le (Or.inl (by simpa using hn)) (Or.inl (by simp)),
+    mul_comm] at this
 
 /-- For a measure-preserving map under a probability (or zero) measure, a label of finite entropy
 has itineraries of finite entropy. -/
