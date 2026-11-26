@@ -433,6 +433,21 @@ theorem iterateSumCircleTimesSphereGeneratorEquiv_apply :
       iterateSumCircleTimesSphereGeneratorEquiv_apply k, iterateSumCircleTimesSphereGenerator_succ]
     exact addBasepointGeneratorEquiv_apply _ _ _
 
+/-- The inverse equivalence reads off the old generator `x` and the choice `ε`. -/
+@[simp]
+theorem iterateSumCircleTimesSphereGeneratorEquiv_symm_apply (k : ℕ) (x : H.Generator)
+    (ε : Fin k → Fin 2) :
+    (H.iterateSumCircleTimesSphereGeneratorEquiv r₀ k).symm
+      (H.iterateSumCircleTimesSphereGenerator r₀ x k ε) = (x, ε) :=
+  (H.iterateSumCircleTimesSphereGeneratorEquiv r₀ k).symm_apply_eq.mpr
+    (H.iterateSumCircleTimesSphereGeneratorEquiv_apply r₀ k (x, ε)).symm
+
+/-- Distinct pairs `(x, ε)` give distinct generators of the `k`-fold connected sum. -/
+theorem iterateSumCircleTimesSphereGenerator_injective (k : ℕ) :
+    Function.Injective fun c : H.Generator × (Fin k → Fin 2) =>
+      H.iterateSumCircleTimesSphereGenerator r₀ c.1 k c.2 :=
+  fun _ _ h => (H.iterateSumCircleTimesSphereGeneratorEquiv r₀ k).injective (by simpa using h)
+
 variable [DecidableEq Region]
 
 /-- The region Euler characteristics of the `k`-fold connected sum: each sum lowers that of `r₀`
