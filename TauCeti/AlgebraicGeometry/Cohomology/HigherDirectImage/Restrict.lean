@@ -29,7 +29,10 @@ along `f ∣_ U` of the restriction to `f⁻¹ U`
 `CategoryTheory.Functor.rightDerivedCompIso` for right derived functors gives the result.
 
 In particular, the vanishing of `R^q f_* M` can be checked on an open cover of the target
-(`AlgebraicGeometry.Scheme.Hom.isZero_higherDirectImage_iff_of_iSup_eq_top`).
+(`AlgebraicGeometry.Scheme.Hom.isZero_higherDirectImage_iff_of_iSup_eq_top`). Similarly,
+post-composing `f : X ⟶ Y` with a scheme isomorphism `e : Y ≅ Z` corresponds on higher direct
+images to restricting along `e.inv`
+(`AlgebraicGeometry.Scheme.Hom.higherDirectImageCompRestrictIso`).
 
 The same argument applies before sheafification. Restriction of presheaves of modules is exact
 (`AlgebraicGeometry.Scheme.PresheafOfModules.isRightAdjoint_restrictFunctor` and
@@ -83,6 +86,24 @@ def higherDirectImagePresheafRestrictIso (U : Y.Opens) (q : ℕ) :
       (Functor.associator _ _ _).symm ≪≫
       Functor.isoWhiskerRight (TauCeti.AlgebraicGeometry.restrictPushforwardIso f U) _ ≪≫
       Functor.associator _ _ _) q
+
+/-- Post-composing a morphism `f : X ⟶ Y` with a scheme isomorphism `e : Y ≅ Z` agrees on higher
+direct images with restricting along `e.inv`. -/
+def higherDirectImageCompRestrictIso {Z : Scheme.{u}} (e : Y ≅ Z) (q : ℕ) :
+    f.higherDirectImage q ⋙ Scheme.Modules.restrictFunctor e.inv ≅
+      (f ≫ e.hom).higherDirectImage q := by
+  have := (Scheme.Modules.pushforward f).additive_of_preserves_binary_products
+  have := (Scheme.Modules.pushforward (f ≫ e.hom)).additive_of_preserves_binary_products
+  let compIso : Scheme.Modules.pushforward f ⋙ Scheme.Modules.restrictFunctor e.inv ≅
+      𝟭 X.Modules ⋙ Scheme.Modules.pushforward (f ≫ e.hom) :=
+    Functor.isoWhiskerLeft (Scheme.Modules.pushforward f)
+        (TauCeti.AlgebraicGeometry.pushforwardIsoRestrictFunctor e).symm ≪≫
+      Scheme.Modules.pushforwardComp f e.hom ≪≫
+      (Functor.leftUnitor _).symm
+  exact Functor.rightDerivedCompIso (Scheme.Modules.pushforward f)
+      (Scheme.Modules.restrictFunctor e.inv) (𝟭 X.Modules)
+      (Scheme.Modules.pushforward (f ≫ e.hom)) compIso q ≪≫
+    Functor.leftUnitor _
 
 /-- **Vanishing of higher direct images is local on the target.** For an open cover `U` of the
 target, `R^q f_* M` vanishes exactly when every `R^q (f ∣_ U i)_* (M|_{f⁻¹ (U i)})` does. -/
