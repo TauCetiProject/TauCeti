@@ -36,12 +36,12 @@ public section
 
 namespace TauCeti
 
-universe u v w
+universe u v w w'
 
 namespace Representation
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [CharZero k]
-variable {V W : Type w} [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+variable {V : Type w} {W : Type w'} [AddCommGroup V] [Module k V] [FiniteDimensional k V]
   [AddCommGroup W] [Module k W] [FiniteDimensional k W]
 
 /-- **For a finite group over a field of characteristic zero,

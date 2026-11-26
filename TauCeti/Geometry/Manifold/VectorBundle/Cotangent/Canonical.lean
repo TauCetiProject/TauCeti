@@ -175,6 +175,16 @@ theorem trivializationAt_apply_snd_coordForm (hx : x ∈ (chartAt H x₀).source
   rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
     coordForm_compContinuousLinearMap_symmL hx]
 
+/-- Read in the trivialization of its own chart, a multiple `c` of the coordinate form is `c` times
+the constant determinant form of the basis. -/
+theorem trivializationAt_apply_snd_smul_coordForm (hx : x ∈ (chartAt H x₀).source) (c : 𝕜) :
+    (trivializationAt (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) x₀
+      ⟨x, c • coordForm I x₀ b x⟩).2 = c • b.continuousDet := by
+  rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+    ← ContinuousAlternatingMap.compContinuousLinearMapₗ_apply, map_smul,
+    ContinuousAlternatingMap.compContinuousLinearMapₗ_apply,
+    coordForm_compContinuousLinearMap_symmL hx]
+
 /-- The coordinate form does not vanish on the source of its chart. -/
 @[simp]
 theorem coordForm_ne_zero (hx : x ∈ (chartAt H x₀).source) : coordForm I x₀ b x ≠ 0 := by

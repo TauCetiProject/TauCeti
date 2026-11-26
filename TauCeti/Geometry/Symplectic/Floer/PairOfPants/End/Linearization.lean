@@ -193,8 +193,6 @@ theorem floerLinearizationAdjoint_comp_positiveEndChart (ω : SymplecticForm V)
     (hX Complex.I) ((floerOperator_eq_zero_iff ω J _ _ u _).2 hfl) hη hJu)
   -- The pullback of the perturbation at `ζ` is the cylindrical datum `H'_q(t) dt`, and the
   -- adjoint at `ζ` sees the perturbation only at `ζ`.
-  rw [floerLinearizationAdjoint_def, floerLinearizationAdjoint_def]
-  ext v
-  simp only [add_apply, ContinuousLinearMap.comp_apply, floerLinearizationCoeff_apply, h₀, hH']
+  exact ω.floerLinearizationAdjoint_congr_data _ _ .rfl h₀.symm hH'.symm
 
 end TauCeti.SymplecticForm

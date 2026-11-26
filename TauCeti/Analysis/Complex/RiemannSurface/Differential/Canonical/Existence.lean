@@ -12,7 +12,7 @@ import TauCeti.Analysis.Complex.RiemannSurface.Differential.RiemannHurwitz
 /-!
 # Existence of a canonical divisor
 
-Let `X` be a compact connected Riemann surface with `H¹(X, 𝒪)` finite-dimensional. Riemann–Roch
+Let `X` be a compact connected Hausdorff Riemann surface. Riemann–Roch
 gives a finite holomorphic map `f : X → ℙ¹`
 (`TauCeti.RiemannSurface.exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one`; Forster's
 construction of a finite meromorphic map). Pulling back the meromorphic `1`-form `dz` of the
@@ -39,11 +39,9 @@ open TauCeti.AlgebraicGeometry
 
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   [CompactSpace X] [T2Space X] [ConnectedSpace X]
-  [FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
-    (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)]
 
-/-- **Existence of a canonical divisor.** A compact connected Riemann surface with
-finite-dimensional `H¹(X, 𝒪)` has a canonical divisor. -/
+/-- **Existence of a canonical divisor.** A compact connected Riemann surface
+has a canonical divisor. -/
 theorem exists_isCanonicalDivisor : ∃ K : WeilDivisor X, IsCanonicalDivisor K := by
   obtain ⟨F, -⟩ := exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one (X := X)
   obtain ⟨K, hK, -⟩ :=

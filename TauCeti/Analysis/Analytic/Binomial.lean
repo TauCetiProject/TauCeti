@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Binomial
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.RingTheory.Binomial
 
 /-!
@@ -32,12 +34,18 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
   series on the open unit interval.
 * `TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one` — the complex-valued
   multichoose binomial series on the open unit disk.
+* `TauCeti.hasSum_integral_mul_multichoose_mul_pow` — termwise integration over `[0, 1]` of the
+  binomial series of `(1 - v t) ^ (-a)` against an integrable weight, when `‖v t‖ ≤ q < 1`.
 * `TauCeti.summable_multichoose_mul_geometric_iff_norm_lt_one` — exact summability of
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
 * `TauCeti.norm_multichoose_le_of_norm_le` — norm bound
   `‖Ring.multichoose w n‖ ≤ Ring.multichoose r n` for `‖w‖ ≤ r`.
+* `TauCeti.norm_eval_ascPochhammer_div_factorial_le` — norm bound
+  `‖(ascPochhammer 𝕂 n).eval w / n !‖ ≤ Ring.multichoose r n` for `‖w‖ ≤ r`.
 * `TauCeti.exists_abs_one_add_rpow_sub_sum_le` — the remainder of the real binomial series of
   `(1 + u) ^ r` after `K` terms is `O(|u| ^ K)` as `u → 0`.
+* `TauCeti.isBigO_one_add_cpow_sub_sum` — the remainder of the complex binomial series of
+  `(1 + z) ^ c` after `K` terms is `O(z ^ K)` as `z → 0`.
 * `TauCeti.binomialSeries_radius_ge_one_of_normedRing` — the binomial series has radius at least
   `1` in every normed algebra over `ℝ` or `ℂ`.
 * `TauCeti.binomialSeries_sum_mul_binomialSeries_sum` — on the open unit ball of a Banach algebra,
@@ -48,7 +56,7 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
 
 public section
 
-open Filter Set Topology
+open Filter MeasureTheory Set Topology
 open scoped ENNReal NNReal
 
 namespace TauCeti
@@ -75,6 +83,14 @@ theorem norm_multichoose_le_of_norm_le {𝕂 : Type*} [RCLike 𝕂]
     RCLike.norm_natCast]
   exact mul_le_mul_of_nonneg_left hp (by positivity)
 
+/-- Bound `‖(ascPochhammer 𝕂 n).eval w / n.factorial‖` by `Ring.multichoose r n` whenever
+`‖w‖ ≤ r`. -/
+theorem norm_eval_ascPochhammer_div_factorial_le {𝕂 : Type*} [RCLike 𝕂]
+    {w : 𝕂} {r : ℝ} (hr : ‖w‖ ≤ r) (n : ℕ) :
+    ‖(ascPochhammer 𝕂 n).eval w / (n.factorial : 𝕂)‖ ≤ Ring.multichoose r n := by
+  rw [div_eq_inv_mul, ← TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
+  exact norm_multichoose_le_of_norm_le hr n
+
 /-- The generalized multichoose power series sums to `(1 - x)⁻ʳ` when `|x| < 1`. -/
 theorem hasSum_multichoose_mul_geometric_of_abs_lt_one {r x : ℝ} (hx : |x| < 1) :
     HasSum (fun n : ℕ => Ring.multichoose r n * x ^ n) (1 / (1 - x) ^ r) := by
@@ -93,6 +109,37 @@ theorem hasSum_multichoose_mul_geometric_complex_of_norm_lt_one {r z : ℂ}
     rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
   simpa [Ring.multichoose_eq, mul_comm] using
     (Complex.one_div_one_sub_cpow_hasFPowerSeriesOnBall_zero r).hasSum_sub hmem
+
+/-- Termwise integration of the binomial series `(1 - v)^{-a} = ∑ₙ (a)ₙ / n! vⁿ` against a weight
+`w` integrable on `[0, 1]`, when `v` is continuous on `[0, 1]` and bounded there by `q < 1`. -/
+theorem hasSum_integral_mul_multichoose_mul_pow (a : ℂ) {w v : ℝ → ℂ}
+    (hw : IntervalIntegrable w volume 0 1) (hv : ContinuousOn v (Icc 0 1)) {q : ℝ} (hq : q < 1)
+    (hvq : ∀ t ∈ Ioc (0 : ℝ) 1, ‖v t‖ ≤ q) :
+    HasSum (fun n : ℕ => ∫ t : ℝ in 0..1, w t * (Ring.multichoose a n * v t ^ n))
+      (∫ t : ℝ in 0..1, w t * (1 - v t) ^ (-a)) := by
+  have hq0 : 0 ≤ q := (norm_nonneg _).trans (hvq 1 ⟨one_pos, le_rfl⟩)
+  have hsum : Summable fun n : ℕ => ‖Ring.multichoose a n‖ * q ^ n :=
+    (hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a) (z := (q : ℂ))
+      (by rwa [Complex.norm_of_nonneg hq0])).summable.norm.congr fun n => by
+        rw [norm_mul, norm_pow, Complex.norm_of_nonneg hq0]
+  refine intervalIntegral.hasSum_integral_of_dominated_convergence
+    (fun n t => ‖w t‖ * (‖Ring.multichoose a n‖ * q ^ n)) (fun n => ?_)
+    (fun n => ae_of_all _ fun t ht => ?_) (ae_of_all _ fun t _ => hsum.mul_left ‖w t‖) ?_
+    (ae_of_all _ fun t ht => ?_)
+  · rw [uIoc_of_le zero_le_one]
+    exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
+      (hw.mul_continuousOn (by rw [uIcc_of_le zero_le_one]; fun_prop))).aestronglyMeasurable
+  · rw [uIoc_of_le zero_le_one] at ht
+    rw [norm_mul (w t), norm_mul (Ring.multichoose a n), norm_pow]
+    gcongr
+    exact hvq t ht
+  · simp_rw [tsum_mul_left]
+    exact hw.norm.mul_const _
+  · rw [uIoc_of_le zero_le_one] at ht
+    have h := hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a)
+      ((hvq t ht).trans_lt hq)
+    rw [one_div, ← Complex.cpow_neg] at h
+    exact h.mul_left (w t)
 
 /-- For positive real `r`, the generalized multichoose power series is unconditionally summable
 at a real or complex argument `q` exactly when `q` lies in the open unit ball. -/
@@ -138,6 +185,18 @@ theorem exists_abs_one_add_rpow_sub_sum_le (r : ℝ) (K : ℕ) :
   have hbound := hεA (y := u) (by simpa using huε)
   simpa only [zero_add, FormalMultilinearSeries.partialSum, binomialSeries_apply, List.ofFn_const,
     List.prod_replicate, smul_eq_mul, Real.norm_eq_abs, abs_pow, abs_abs] using hbound
+
+/-- The remainder of the complex binomial series of `(1 + z) ^ c` after `K` terms is `O(z ^ K)` as
+`z → 0`. -/
+theorem isBigO_one_add_cpow_sub_sum (c : ℂ) (K : ℕ) :
+    (fun z : ℂ ↦ (1 + z) ^ c - ∑ k ∈ Finset.range K, Ring.choose c k * z ^ k) =O[𝓝 0]
+      fun z ↦ z ^ K := by
+  have hpow : (fun z : ℂ ↦ ‖z‖ ^ K) =O[𝓝 0] fun z ↦ z ^ K :=
+    (Asymptotics.isBigO_norm_left.2 (Asymptotics.isBigO_refl _ _)).congr_left fun z ↦ norm_pow z K
+  refine ((Complex.one_add_cpow_hasFPowerSeriesAt_zero (a := c)).isBigO_sub_partialSum_pow K
+    |>.trans hpow).congr_left fun z ↦ ?_
+  simp only [zero_add, FormalMultilinearSeries.partialSum, binomialSeries_apply, List.ofFn_const,
+    List.prod_replicate, smul_eq_mul, mul_comm]
 
 section NormedAlgebra
 

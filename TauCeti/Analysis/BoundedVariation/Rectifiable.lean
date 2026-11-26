@@ -5,15 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
+public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Basic
 import TauCeti.Analysis.BoundedVariation.BlowUp
 import TauCeti.Analysis.BoundedVariation.LowerDensityEstimates
-import TauCeti.Analysis.BoundedVariation.Poincare
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Geometry.MeasureTheory.Rectifiable.ConeCriterion
-import TauCeti.MeasureTheory.Integral.Lebesgue.Basic
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
@@ -27,11 +24,10 @@ geometric half of De Giorgi's structure theorem for sets of locally finite perim
 The proof treats `dim E ≤ 1` and `dim E ≥ 2` by distinct mechanisms:
 
 * **Low dimensions (`dim E ≤ 1`, `TauCeti.countable_reducedBoundary_of_finrank_le_one`).** When
-  `dim E = 0`, `E` is a subsingleton. When `dim E = 1`, the localized BV Poincaré inequality on
-  `ball x r ⊆ Ω` has exponent `(dim E)⁻¹ = 1`, so the volume factor `μ A` (`A = s ∩ ball x r` or
-  `ball x r \ s`, depending on whether the ball mean of `χ_s` is at most or at least `1 / 2`)
-  cancels from both sides and `diam (ball x r) / μ.real (ball x r)` is bounded independently of
-  `r`. Letting `r → 0⁺` shows that every point of `∂*s` is an atom of the σ-finite perimeter
+  `dim E = 0`, `E` is a subsingleton. When `dim E = 1`, writing `μ = c • volume`, every small
+  closed ball around `x ∈ ∂*s` has perimeter measure at least `c > 0`
+  (`TauCeti.eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank_eq_one`).
+  Letting `r → 0⁺` shows that every point of `∂*s` is an atom of the σ-finite perimeter
   measure `|Dχ_s|`, hence `∂*s` is countable.
 * **Dimensions `dim E ≥ 2` (`TauCeti.exists_pos_forall_abs_inner_sub_outerNormal_le`).** By the
   lower volume density estimates (`TauCeti.eventually_ofReal_pow_le_mul_measure_inter_ball` and
@@ -80,78 +76,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-! ### Dimension at most one -/
 
-/-- For an additive Haar measure `μ`, around any `x ∈ reducedBoundary μ Ω s`, every ball
-`ball x r ⊆ Ω` (`r > 0`) contains a null-measurable subset `A` of positive `μ`-measure on which
-`|χ_s - ⨍_{ball x r} χ_s| ≥ 1 / 2`. -/
-private theorem exists_subset_ball_measure_ne_zero_half_le_abs_indicator_sub [μ.IsAddHaarMeasure]
-    (hx : x ∈ reducedBoundary μ Ω s) {r : ℝ} (hr : 0 < r) (hrΩ : ball x r ⊆ Ω) :
-    ∃ A ⊆ ball x r, μ A ≠ 0 ∧ NullMeasurableSet A μ ∧
-      ∀ z ∈ A, (1 / 2 : ℝ) ≤
-        |s.indicator (1 : E → ℝ) z - ⨍ y in ball x r, s.indicator (1 : E → ℝ) y ∂μ| := by
-  set B : Set E := ball x r
-  set m : ℝ := ⨍ y in B, s.indicator (1 : E → ℝ) y ∂μ
-  have hsΩ : NullMeasurableSet (s ∩ Ω) μ := nullMeasurableSet_inter_of_mem_reducedBoundary hx
-  rcases le_total m (1 / 2) with hm | hm
-  · refine ⟨s ∩ B, inter_subset_right, (measure_inter_ball_pos hx hr).ne', ?_, fun z hz => ?_⟩
-    · have heq : s ∩ B = (s ∩ Ω) ∩ B := by
-        ext z; simp only [mem_inter_iff]
-        exact ⟨fun h => ⟨⟨h.1, hrΩ h.2⟩, h.2⟩, fun h => ⟨h.1.1, h.2⟩⟩
-      rw [heq]
-      exact hsΩ.inter measurableSet_ball.nullMeasurableSet
-    · rw [indicator_of_mem hz.1, Pi.one_apply, abs_of_nonneg (by linarith)]
-      linarith
-  · have hxc : x ∈ reducedBoundary μ Ω sᶜ := by rwa [reducedBoundary_compl]
-    refine ⟨sᶜ ∩ B, inter_subset_right, (measure_inter_ball_pos hxc hr).ne', ?_, fun z hz => ?_⟩
-    · have heq : sᶜ ∩ B = B \ (s ∩ Ω) := by
-        ext z; simp only [mem_inter_iff, mem_compl_iff, Set.mem_sdiff]
-        exact ⟨fun h => ⟨h.2, fun hs => h.1 hs.1⟩, fun h => ⟨fun hs => h.2 ⟨hs, hrΩ h.1⟩, h.1⟩⟩
-      rw [heq]
-      exact measurableSet_ball.nullMeasurableSet.diff hsΩ
-    · rw [indicator_of_notMem hz.1, zero_sub, abs_neg, abs_of_nonneg (by linarith)]
-      exact hm
-
-/-- In dimension `1`, for an additive Haar measure `μ`, at any `x ∈ reducedBoundary μ Ω s` and for
-any `ball x r ⊆ Ω` (`r > 0`), the perimeter measure of `closedBall x r` is bounded below by a
-positive constant independent of `r`. -/
-private theorem inv_two_le_mul_variationMeasure_closedBall_of_finrank_eq_one [μ.IsAddHaarMeasure]
-    (hn : finrank ℝ E = 1) (hx : x ∈ reducedBoundary μ Ω s) {r : ℝ} (hr : 0 < r)
-    (hrΩ : ball x r ⊆ Ω) :
-    (2⁻¹ : ℝ≥0∞) ≤ ENNReal.ofReal (2 / μ.real (ball 0 1)) *
-      variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) := by
-  obtain ⟨hu₀, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
-  set B : Set E := ball x r
-  let U : Opens E := ⟨B, isOpen_ball⟩
-  obtain ⟨A, hAB, hA0, hAm, hval⟩ :=
-    exists_subset_ball_measure_ne_zero_half_le_abs_indicator_sub hx hr hrΩ
-  have hAfin : μ A ≠ ∞ := ((measure_mono hAB).trans_lt measure_ball_lt_top).ne
-  have hpoinc :=
-    setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_totalVariationOn_of_convex
-      (Ω := U) (convex_ball x r) isBounded_ball (hu₀.mono_set hrΩ) Subset.rfl
-      (measure_ball_pos μ x hr).ne' hAB
-  have hcoef : ENNReal.ofReal (μ.real (ball (0 : E) 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) *
-      diam B ^ finrank ℝ E / μ.real B) ≤ ENNReal.ofReal (2 / μ.real (ball (0 : E) 1)) :=
-    ENNReal.ofReal_le_ofReal <| by
-      simpa [B, hn] using μ.addHaar_real_ball_rpow_mul_diam_ball_pow_div_le x hr
-  have hlow : (2⁻¹ : ℝ≥0∞) * μ A ≤
-      ∫⁻ z in A, ‖s.indicator (1 : E → ℝ) z - ⨍ y in B, s.indicator (1 : E → ℝ) y ∂μ‖ₑ ∂μ := by
-    refine mul_measure_le_setLIntegral₀ hAm fun z hz => ?_
-    rw [Real.eNorm_eq_ofReal_abs,
-      show (2⁻¹ : ℝ≥0∞) = ENNReal.ofReal (1 / 2) by
-        rw [one_div, ENNReal.ofReal_inv_of_pos zero_lt_two, ENNReal.ofReal_ofNat]]
-    exact ENNReal.ofReal_le_ofReal (hval z hz)
-  have hcomb : (2⁻¹ : ℝ≥0∞) * μ A ≤
-      (ENNReal.ofReal (2 / μ.real (ball (0 : E) 1)) *
-        variationMeasure μ Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r)) * μ A := by
-    refine hlow.trans (hpoinc.trans ?_)
-    rw [Opens.coe_mk, hn, Nat.cast_one, inv_one, ENNReal.rpow_one, mul_right_comm]
-    refine mul_le_mul_left (mul_le_mul ?_ ?_ zero_le zero_le) (μ A)
-    · simpa only [hn, Nat.cast_one, inv_one] using hcoef
-    · rw [← perimeter_def]
-      exact perimeter_ball_le_variationMeasure_closedBall hu₀ hfin hrΩ
-  have hcancel := mul_le_mul_left hcomb (μ A)⁻¹
-  rwa [mul_assoc, ENNReal.mul_inv_cancel hA0 hAfin, mul_one,
-    mul_assoc, ENNReal.mul_inv_cancel hA0 hAfin, mul_one] at hcancel
-
 /-- **In dimension at most `1`, the reduced boundary is countable** for any additive Haar measure
 `μ`. -/
 theorem countable_reducedBoundary_of_finrank_le_one [μ.IsAddHaarMeasure]
@@ -178,15 +102,10 @@ theorem countable_reducedBoundary_of_finrank_le_one [μ.IsAddHaarMeasure]
         (isClosed_closedBall.preimage continuous_subtypeVal).measurableSet.nullMeasurableSet)
       (fun _ _ _ hij => preimage_mono (closedBall_subset_closedBall hij)) ⟨r₀, hr₀, hfin⟩
     rw [hS0, h0] at hlim
-    have hmul : Tendsto (fun t => ENNReal.ofReal (2 / μ.real (ball (0 : E) 1)) *
-        variationMeasure μ Ω (s.indicator 1) (S t)) (𝓝[>] 0) (𝓝 0) := by
-      simpa only [mul_zero, Function.comp_def] using
-        ENNReal.Tendsto.const_mul hlim (Or.inr ENNReal.ofReal_ne_top)
-    have hle : (2⁻¹ : ℝ≥0∞) ≤ 0 := ge_of_tendsto hmul <| by
-      filter_upwards [Ioo_mem_nhdsGT hr₀] with r hr
-      exact inv_two_le_mul_variationMeasure_closedBall_of_finrank_eq_one h1 hx hr.1
-        ((ball_subset_closedBall.trans (closedBall_subset_closedBall hr.2.le)).trans hr₀Ω)
-    exact absurd (nonpos_iff_eq_zero.1 hle) (by norm_num)
+    have hle : (μ.addHaarScalarFactor volume : ℝ≥0∞) ≤ 0 := ge_of_tendsto hlim
+      (eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank_eq_one h1 hx)
+    exact (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne'
+      (by exact_mod_cast nonpos_iff_eq_zero.1 hle)
 
 /-! ### Normal cone estimate in dimension at least two -/
 

@@ -44,6 +44,8 @@ right generality, is not keyed on `Submodule`.
   the product of its submodules.
 * `TauCeti.isOpen_torsionOf`: the torsion ideal `Ideal.torsionOf R M m` of an element in a
   discrete module with continuous scalar action is open.
+* `ContinuousLinearEquiv.comap_topologicalClosure`: the preimage of the closure of a submodule
+  under a continuous linear equivalence is the closure of its preimage.
 -/
 
 public section
@@ -116,3 +118,20 @@ theorem TauCeti.isOpen_torsionOf {R M : Type*} [CommRing R] [TopologicalSpace R]
     IsOpen (Ideal.torsionOf R M m : Set R) :=
   (isOpen_discrete {(0 : M)}).preimage
     (continuous_id.smul (continuous_const : Continuous fun _ : R ↦ m))
+
+namespace ContinuousLinearEquiv
+
+variable {R R₂ M N : Type*} [Semiring R] [Semiring R₂] {σ : R →+* R₂} {σ' : R₂ →+* R}
+  [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+  [AddCommMonoid M] [TopologicalSpace M] [Module R M] [ContinuousAdd M] [ContinuousConstSMul R M]
+  [AddCommMonoid N] [TopologicalSpace N] [Module R₂ N] [ContinuousAdd N]
+  [ContinuousConstSMul R₂ N]
+
+/-- The preimage of the closure of a submodule under a continuous (semi)linear equivalence is the
+closure of its preimage: the submodule form of `Homeomorph.preimage_closure`. -/
+theorem comap_topologicalClosure (e : M ≃SL[σ] N) (p : Submodule R₂ N) :
+    p.topologicalClosure.comap (e : M →ₛₗ[σ] N) =
+      (p.comap (e : M →ₛₗ[σ] N)).topologicalClosure :=
+  SetLike.coe_injective (e.toHomeomorph.preimage_closure p)
+
+end ContinuousLinearEquiv

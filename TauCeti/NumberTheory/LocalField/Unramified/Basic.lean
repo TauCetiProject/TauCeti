@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.Unramified.LocalRing
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.RingTheory.Unramified.LocalRing
 
+import TauCeti.RingTheory.Etale.FlatUnramified
+
 /-!
 # Unramified extensions of local fields
 
@@ -432,10 +434,8 @@ theorem isUnramified_iff_etale : IsUnramified K L ↔ Algebra.Etale 𝒪[K] 𝒪
   rw [isUnramified_iff_formallyUnramified]
   refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
   -- `𝒪[L]` is finite and free over the noetherian ring `𝒪[K]`, so it is flat and of finite
-  -- presentation, and étale is then the same as formally unramified.
-  have : Algebra.FinitePresentation 𝒪[K] 𝒪[L] :=
-    Algebra.FinitePresentation.of_finiteType.1 inferInstance
-  exact Algebra.Etale.of_formallyUnramified_of_flat
+  -- type, and étale is then the same as formally unramified.
+  exact Algebra.Etale.of_formallyUnramified_of_flat_of_isNoetherianRing
 
 /-! ### The integral basis attached to a residue basis -/
 

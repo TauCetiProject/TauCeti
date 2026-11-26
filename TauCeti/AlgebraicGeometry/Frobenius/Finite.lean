@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import TauCeti.Algebra.CharP.Frobenius.Finite
 public import TauCeti.AlgebraicGeometry.Frobenius.Basic
-public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 
 /-!
 # Finiteness of the absolute Frobenius

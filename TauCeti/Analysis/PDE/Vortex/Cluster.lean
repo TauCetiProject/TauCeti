@@ -336,14 +336,6 @@ private theorem laplacian_log_norm_sq_eq_of_mul {h : ℂ → ℂ} {z : ℂ}
     laplacian_log_normSq_eq hy₁ hy₁sol hz₁, laplacian_log_normSq_eq hy₂ hy₂sol hz₂] at hΔ
   linarith
 
-/-- A vortex with `|α| → 1` at infinity has `|α|² ≤ 1`. -/
-private theorem norm_sectionValue_sq_le_one {u : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hu : ContDiff ℝ 2 u) (hsol : ∀ z, equation u z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (u z 2 ^ 2 + u z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (z : ℂ) :
-    ‖sectionValue u z‖ ^ 2 ≤ 1 := by
-  rw [sq_norm_sectionValue]
-  exact normSq_le_one_of_tendsto (contDiff_apply hu 2) (contDiff_apply hu 3) hsol hlim z
-
 /-- **The maximum principle for the ratio.** If `α_x = h α_{y₁} α_{y₂}` for vortices `x`, `y₁`, `y₂`
 with `|α| → 1` at infinity and a nowhere-vanishing `C²` factor `h`, and the zeros of
 `α_{y₁} α_{y₂}` have empty interior, then `|h| ≤ 1`. -/
@@ -376,8 +368,8 @@ private theorem norm_le_one_of_sectionValue_eq_mul {h : ℂ → ℂ}
   have hpos (z : ℂ) (hz : 0 < Real.log (‖h z‖ ^ 2)) : 0 ≤ Δ (fun z ↦ Real.log (‖h z‖ ^ 2)) z := by
     have h₁ : 1 < ‖h z‖ ^ 2 := by
       rwa [Real.log_pos_iff (by positivity)] at hz
-    have hs₁ := norm_sectionValue_sq_le_one hy₁ hy₁sol hy₁lim z
-    have hs₂ := norm_sectionValue_sq_le_one hy₂ hy₂sol hy₂lim z
+    have hs₁ := sq_norm_sectionValue_le_one hy₁ hy₁sol hy₁lim z
+    have hs₂ := sq_norm_sectionValue_le_one hy₂ hy₂sol hy₂lim z
     have hs : 0 ≤ ‖sectionValue y₁ z‖ ^ 2 * ‖sectionValue y₂ z‖ ^ 2 := by positivity
     rw [hΔ]
     nlinarith [mul_nonneg (sub_nonneg.2 hs₁) (sub_nonneg.2 hs₂)]
@@ -484,7 +476,7 @@ theorem norm_sectionValue_le_of_add {y : ℂ → EuclideanSpace ℝ (Fin 4)} {D�
   have hy₂' : ContDiff ℝ 2 y₂ := hy₂.of_le (by simp)
   have h₂ : ‖sectionValue y₂ z‖ ≤ 1 :=
     (pow_le_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1
-      (norm_sectionValue_sq_le_one hy₂' hy₂sol hy₂lim z)
+      (sq_norm_sectionValue_le_one hy₂' hy₂sol hy₂lim z)
   calc ‖sectionValue x z‖ ≤ ‖sectionValue y z‖ * ‖sectionValue y₂ z‖ :=
         norm_sectionValue_le_mul_of_add hx hy hy₂' hxsol hysol hy₂sol hxlim hylim hy₂lim hD hD₁
           hD₂ z
@@ -498,24 +490,6 @@ section Overlap
 
 variable {x y₁ y₂ : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- The flux identity `∫ (1 - |α|²) = 16 π deg D` in terms of `|α|`. -/
-private theorem integral_one_sub_norm_sectionValue_sq {u : ℂ → EuclideanSpace ℝ (Fin 4)}
-    {D : Multiset ℂ} (hu : ContDiff ℝ 2 u) (hsol : ∀ z, equation u z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (u z 2 ^ 2 + u z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hD : IsZeroMultiplicity (sectionValue u) (Multiset.count · D)) :
-    ∫ z, (1 - ‖sectionValue u z‖ ^ 2) = 16 * Real.pi * Multiset.card D := by
-  simpa only [sq_norm_sectionValue] using integral_one_sub_normSq_eq_mul_card
-    (contDiff_apply hu 0) (contDiff_apply hu 1) (contDiff_apply hu 2) (contDiff_apply hu 3) hsol
-    hlim hD
-
-/-- The defect `1 - |α|²` of a vortex with `|α| → 1` at infinity is integrable. -/
-private theorem integrable_one_sub_norm_sectionValue_sq {u : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hu : ContDiff ℝ 2 u) (hsol : ∀ z, equation u z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (u z 2 ^ 2 + u z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    Integrable fun z ↦ 1 - ‖sectionValue u z‖ ^ 2 := by
-  simpa only [sq_norm_sectionValue] using integrable_one_sub_normSq (μ := volume)
-    (contDiff_apply hu 2) (contDiff_apply hu 3) hsol hlim
-
 /-- The overlap `(1 - |α_{y₁}|²) (1 - |α_{y₂}|²)` of the defects of two vortices with `|α| → 1` at
 infinity is integrable. -/
 theorem integrable_one_sub_sq_norm_sectionValue_mul_one_sub (hy₁ : ContDiff ℝ 2 y₁)
@@ -524,10 +498,10 @@ theorem integrable_one_sub_sq_norm_sectionValue_mul_one_sub (hy₁ : ContDiff �
     (hy₁lim : Tendsto (fun z ↦ 4 * (y₁ z 2 ^ 2 + y₁ z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hy₂lim : Tendsto (fun z ↦ 4 * (y₂ z 2 ^ 2 + y₂ z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     Integrable fun z ↦ (1 - ‖sectionValue y₁ z‖ ^ 2) * (1 - ‖sectionValue y₂ z‖ ^ 2) := by
-  refine (integrable_one_sub_norm_sectionValue_sq hy₁ hy₁sol hy₁lim).mul_bdd (c := 1)
+  refine (integrable_one_sub_sq_norm_sectionValue hy₁ hy₁sol hy₁lim).mul_bdd (c := 1)
     (continuous_const.sub (continuous_sq_norm_sectionValue hy₂)).aestronglyMeasurable
     (.of_forall fun z ↦ ?_)
-  have h₂ := norm_sectionValue_sq_le_one hy₂ hy₂sol hy₂lim z
+  have h₂ := sq_norm_sectionValue_le_one hy₂ hy₂sol hy₂lim z
   rw [Real.norm_eq_abs, abs_le]
   constructor <;> nlinarith [sq_nonneg ‖sectionValue y₂ z‖]
 
@@ -542,9 +516,9 @@ theorem integrable_sq_norm_sectionValue_sub_mul
     (hy₂lim : Tendsto (fun z ↦ 4 * (y₂ z 2 ^ 2 + y₂ z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     Integrable fun z ↦
       ‖sectionValue x z‖ ^ 2 - ‖sectionValue y₁ z‖ ^ 2 * ‖sectionValue y₂ z‖ ^ 2 := by
-  refine ((((integrable_one_sub_norm_sectionValue_sq hy₁ hy₁sol hy₁lim).add
-    (integrable_one_sub_norm_sectionValue_sq hy₂ hy₂sol hy₂lim)).sub
-    (integrable_one_sub_norm_sectionValue_sq hx hxsol hxlim)).sub
+  refine ((((integrable_one_sub_sq_norm_sectionValue hy₁ hy₁sol hy₁lim).add
+    (integrable_one_sub_sq_norm_sectionValue hy₂ hy₂sol hy₂lim)).sub
+    (integrable_one_sub_sq_norm_sectionValue hx hxsol hxlim)).sub
     (integrable_one_sub_sq_norm_sectionValue_mul_one_sub hy₁ hy₂ hy₁sol hy₂sol hy₁lim
       hy₂lim)).congr (.of_forall fun z ↦ ?_)
   simp only [Pi.add_apply, Pi.sub_apply]
@@ -579,9 +553,9 @@ theorem integral_abs_sq_norm_sectionValue_sub_mul_eq {D₁ D₂ : Multiset ℂ}
     rw [mul_pow] at hle
     rw [abs_of_nonpos (sub_nonpos.2 hle)]
     ring
-  have hix := integrable_one_sub_norm_sectionValue_sq hx hxsol hxlim
-  have hi₁ := integrable_one_sub_norm_sectionValue_sq hy₁ hy₁sol hy₁lim
-  have hi₂ := integrable_one_sub_norm_sectionValue_sq hy₂ hy₂sol hy₂lim
+  have hix := integrable_one_sub_sq_norm_sectionValue (μ := volume) hx hxsol hxlim
+  have hi₁ := integrable_one_sub_sq_norm_sectionValue (μ := volume) hy₁ hy₁sol hy₁lim
+  have hi₂ := integrable_one_sub_sq_norm_sectionValue (μ := volume) hy₂ hy₂sol hy₂lim
   have hi₃ : Integrable fun z ↦
       (1 - ‖sectionValue x z‖ ^ 2) - (1 - ‖sectionValue y₁ z‖ ^ 2) -
         (1 - ‖sectionValue y₂ z‖ ^ 2) :=
@@ -591,9 +565,9 @@ theorem integral_abs_sq_norm_sectionValue_sub_mul_eq {D₁ D₂ : Multiset ℂ}
   rw [funext hpt, integral_add hi₃
       (integrable_one_sub_sq_norm_sectionValue_mul_one_sub hy₁ hy₂ hy₁sol hy₂sol hy₁lim hy₂lim),
     integral_sub hi₄ hi₂, integral_sub hix hi₁,
-    integral_one_sub_norm_sectionValue_sq hx hxsol hxlim hD,
-    integral_one_sub_norm_sectionValue_sq hy₁ hy₁sol hy₁lim hD₁,
-    integral_one_sub_norm_sectionValue_sq hy₂ hy₂sol hy₂lim hD₂, Multiset.card_add]
+    integral_one_sub_sq_norm_sectionValue_eq_mul_card hx hxsol hxlim hD,
+    integral_one_sub_sq_norm_sectionValue_eq_mul_card hy₁ hy₁sol hy₁lim hD₁,
+    integral_one_sub_sq_norm_sectionValue_eq_mul_card hy₂ hy₂sol hy₂lim hD₂, Multiset.card_add]
   push_cast
   ring
 
@@ -615,10 +589,10 @@ private theorem tendsto_integral_one_sub_mul_one_sub_comp_add (hy₁ : ContDiff 
     simpa only [sq_norm_sectionValue] using hy₂lim
   have hbound (a z : ℂ) : ‖(1 - ‖sectionValue y₁ z‖ ^ 2) * (1 - ‖sectionValue y₂ (z + a)‖ ^ 2)‖ ≤
       1 - ‖sectionValue y₁ z‖ ^ 2 := by
-    have h₁ := norm_sectionValue_sq_le_one hy₁ hy₁sol hy₁lim z
-    have h₂ := norm_sectionValue_sq_le_one hy₂ hy₂sol hy₂lim (z + a)
-    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (sub_nonneg.2 h₁) (sub_nonneg.2 h₂))]
-    exact mul_le_of_le_one_right (sub_nonneg.2 h₁)
+    have h₁ := one_sub_sq_norm_sectionValue_nonneg hy₁ hy₁sol hy₁lim z
+    have h₂ := one_sub_sq_norm_sectionValue_nonneg hy₂ hy₂sol hy₂lim (z + a)
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg h₁ h₂)]
+    exact mul_le_of_le_one_right h₁
       (by nlinarith [sq_nonneg ‖sectionValue y₂ (z + a)‖])
   have hpt (z : ℂ) : Tendsto (fun a ↦
       (1 - ‖sectionValue y₁ z‖ ^ 2) * (1 - ‖sectionValue y₂ (z + a)‖ ^ 2)) (cocompact ℂ) (𝓝 0) := by
@@ -632,7 +606,7 @@ private theorem tendsto_integral_one_sub_mul_one_sub_comp_add (hy₁ : ContDiff 
     (.of_forall fun a ↦ ((continuous_const.sub hc₁).mul
       (continuous_const.sub (hc₂.comp (continuous_id.add continuous_const)))).aestronglyMeasurable)
     (.of_forall fun a ↦ .of_forall (hbound a))
-    (integrable_one_sub_norm_sectionValue_sq hy₁ hy₁sol hy₁lim) (.of_forall hpt)
+    (integrable_one_sub_sq_norm_sectionValue hy₁ hy₁sol hy₁lim) (.of_forall hpt)
 
 /-- **Separated clusters.** Let `y₁` and `y₂` be `C²` vortices on the plane with `|α| → 1` at
 infinity and zero divisors `D₁` and `D₂`, and for each `a ∈ ℂ` let `x a` be a `C²` vortex with
@@ -702,8 +676,8 @@ theorem exists_integral_one_sub_sq_norm_sectionValue_mul_one_sub_le_mul_exp (μ 
   have hlim₂ := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₂
   have h := integral_mul_le_mul_exp_of_forall_le_norm_sub μ hc₀ hcb
     (f := fun z ↦ 1 - ‖sectionValue y₁ z‖ ^ 2) (g := fun z ↦ 1 - ‖sectionValue y₂ z‖ ^ 2)
-    (fun z ↦ sub_nonneg.2 (norm_sectionValue_sq_le_one (hy₁.of_le (by simp)) hy₁sol hlim₁ z))
-    (fun z ↦ sub_nonneg.2 (norm_sectionValue_sq_le_one (hy₂.of_le (by simp)) hy₂sol hlim₂ z))
+    (one_sub_sq_norm_sectionValue_nonneg (hy₁.of_le (by simp)) hy₁sol hlim₁)
+    (one_sub_sq_norm_sectionValue_nonneg (hy₂.of_le (by simp)) hy₂sol hlim₂)
     (fun z ρ hρ ↦ by
       simpa only [sq_norm_sectionValue] using hK₁ y₁ D₁ hy₁ hy₁sol hframe₁ hD₁ z ρ hρ)
     (fun z ρ hρ ↦ by
