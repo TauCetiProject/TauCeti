@@ -198,8 +198,9 @@ theorem exists_norm_iteratedGradient_le_of_traceCLM_comp_iteratedGradient_eq_of_
   · -- A ball of nonpositive radius is empty, and so is every `Lᵖ` function on it.
     have h0 : iteratedGradient 1 u = 0 := Lp.eq_zero_iff_ae_eq_zero.2
       (ae_restrict_of_forall_mem Omega.isOpen.measurableSet fun x hx => by
-        rw [SetLike.mem_coe, ← SetLike.mem_coe, hΩ, ball_eq_empty.2 hR] at hx
-        exact hx.elim)
+        have hx' : x ∈ (Omega : Set (WithLp 2 (ℝ × E))) := hx
+        rw [hΩ, ball_eq_empty.2 hR] at hx'
+        exact hx'.elim)
     rw [h0, norm_zero]
     exact mul_nonneg (le_max_right _ _) (norm_nonneg _)
   exact norm_iteratedGradient_le_of_eq_ball hp_top (le_max_right C₀ 0) rfl

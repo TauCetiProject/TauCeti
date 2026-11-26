@@ -363,6 +363,17 @@ def hessianTraceL (Omega : Opens (WithLp 2 (ℝ × E)))
   ((traceCLM ℝ (WithLp 2 (ℝ × E))).comp (ContinuousLinearMap.compL ℝ (WithLp 2 (ℝ × E))
     (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) A)).compLpL p _ ∘L iteratedGradientL 1
 
+/-- `hessianTraceL Omega A` unfolded to its defining composite. It is proved by `delta` rather than
+`rw [hessianTraceL]`, because the equation lemma of this unexposed definition has a type that is
+slow to check. -/
+private theorem hessianTraceL_eq (Omega : Opens (WithLp 2 (ℝ × E)))
+    (A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
+    hessianTraceL (p := p) Omega A =
+      ((traceCLM ℝ (WithLp 2 (ℝ × E))).comp (ContinuousLinearMap.compL ℝ (WithLp 2 (ℝ × E))
+        (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) A)).compLpL p _ ∘L iteratedGradientL 1 := by
+  delta hessianTraceL
+  rfl
+
 /-- Almost everywhere on `Ω`, `hessianTraceL Omega A u` is `tr (A ∘ D²u)`. -/
 theorem coeFn_hessianTraceL (Omega : Opens (WithLp 2 (ℝ × E)))
     (A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))
@@ -372,10 +383,7 @@ theorem coeFn_hessianTraceL (Omega : Opens (WithLp 2 (ℝ × E)))
   filter_upwards [ContinuousLinearMap.coeFn_compLpL (p := p) ((traceCLM ℝ (WithLp 2 (ℝ × E))).comp
     (ContinuousLinearMap.compL ℝ (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) A))
     (iteratedGradient 1 u)] with x hx
-  -- `delta` rather than `rw [hessianTraceL]`: the equation lemma of this unexposed definition has
-  -- a type that is slow to check.
-  delta hessianTraceL
-  rw [ContinuousLinearMap.comp_apply, iteratedGradientL_apply, hx,
+  rw [hessianTraceL_eq, ContinuousLinearMap.comp_apply, iteratedGradientL_apply, hx,
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply]
 
 /-- The operator `u ↦ tr (A ∘ D²u)` depends continuously on `A`, since it is linear in `A` and the
@@ -388,12 +396,10 @@ private theorem continuous_hessianTraceL (Omega : Opens (WithLp 2 (ℝ × E))) :
         Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega)) :=
     { toFun := fun A => hessianTraceL Omega A
       map_add' := fun A B => by
-        delta hessianTraceL
-        simp only [map_add, ContinuousLinearMap.comp_add,
+        simp only [hessianTraceL_eq, map_add, ContinuousLinearMap.comp_add,
           ContinuousLinearMap.add_compLpL, ContinuousLinearMap.add_comp]
       map_smul' := fun c A => by
-        delta hessianTraceL
-        simp only [map_smul, ContinuousLinearMap.comp_smul,
+        simp only [hessianTraceL_eq, map_smul, ContinuousLinearMap.comp_smul,
           ContinuousLinearMap.smul_compLpL, ContinuousLinearMap.smul_comp, RingHom.id_apply] }
   exact T.continuous_of_finiteDimensional
 
