@@ -87,6 +87,12 @@ theorem isTiling_univ_iff :
     IsTiling Set.univ M ↔ ∀ f : TriFace, ∃! e, e ∈ M ∧ e ∈ f.edges := by
   simp [IsTiling]
 
+/-- The empty tiling is the only tiling of the empty region. -/
+@[simp] theorem isTiling_empty_iff : IsTiling ∅ M ↔ M = ∅ := by
+  simp only [isTiling_def, Set.mem_empty_iff_false, false_imp_iff, implies_true, and_true,
+    Set.eq_empty_iff_forall_notMem]
+  exact ⟨fun h e he => h e he _ e.mem_whiteFace_edges, fun h e he => (h e he).elim⟩
+
 namespace IsTiling
 
 theorem subset_interiorEdges (h : IsTiling R M) : M ⊆ interiorEdges R :=

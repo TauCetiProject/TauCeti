@@ -26,10 +26,7 @@ open TauCeti
 /-! ### The empty region -/
 
 /-- The empty tiling is the only tiling of the empty region. -/
-theorem isTiling_empty_iff {M : Set TriEdge} : IsTiling ∅ M ↔ M = ∅ := by
-  simp only [isTiling_def, Set.mem_empty_iff_false, false_imp_iff, implies_true, and_true,
-    Set.eq_empty_iff_forall_notMem]
-  exact ⟨fun h e he => h e he _ e.mem_whiteFace_edges, fun h e he => (h e he).elim⟩
+example {M : Set TriEdge} : IsTiling ∅ M ↔ M = ∅ := isTiling_empty_iff
 
 /-- The empty tiling corresponds to a perfect matching of the empty graph. -/
 example : (tilingSubgraph ∅ ∅).IsPerfectMatching :=
@@ -48,7 +45,7 @@ example : {P : (SimpleGraph.induce (∅ : Set TriFace) hexGraph).Subgraph | P.Is
 
 /-- The perfect matching of the empty graph has no edges. -/
 example : (tilingSubgraph ∅ ∅).edgeSet = ∅ :=
-  Set.eq_empty_of_forall_notMem fun e => e.ind fun v => isEmptyElim v
+  Set.eq_empty_of_isEmpty _
 
 /-! ### A single face -/
 
@@ -62,8 +59,7 @@ theorem not_isTiling_whiteZero (M : Set TriEdge) : ¬IsTiling {whiteZero} M := b
   obtain ⟨e, ⟨he, -⟩, -⟩ := h.existsUnique (Set.mem_singleton whiteZero)
   have hw : e.whiteFace = whiteZero := h.whiteFace_mem he
   have hb : e.blackFace = whiteZero := h.blackFace_mem he
-  have := congrArg TriFace.isWhite (hw.trans hb.symm)
-  simp at this
+  exact e.whiteFace_ne_blackFace (hw.trans hb.symm)
 
 /-- The graph with the single vertex `W(0)` has no perfect matching: by `tilingSubgraph_bijOn` it
 would come from a tiling of `{W(0)}`. -/
