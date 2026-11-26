@@ -67,9 +67,12 @@ Against the homology cross product `[ℝ / pℤ] × y` of the circuit class with
 (`TopCat.singularCupPairing_snd_snd_addCircle_singularHomologyCross`,
 `TopCat.singularCupPairing_fst_snd_fst_snd_addCircle_singularHomologyCross`,
 `TopCat.singularCupPairing_snd_fst_snd_addCircle_singularHomologyCross` and
-`TopCat.singularCupPairing_fst_snd_snd_addCircle_singularHomologyCross`). That
-`⟨v ⌣ a, [Y_φ]⟩ = 1` for the fundamental class of `Y_φ` and a suitable generator `a`, which makes
-`v, t` a hyperbolic pair of the intersection form, is not proved here.
+`TopCat.singularCupPairing_fst_snd_snd_addCircle_singularHomologyCross`). For `a = [dt]` there is
+a class `y` with `⟨v ⌣ [dt], y⟩ = ⟨v, i_*[F]⟩ = 1`, one whose image under the Wang connecting
+morphism is `±[F]`
+(`TauCeti.MappingTorus.exists_singularCupPairing_baseClass_eq_evalFundamentalClass`), so `v, t`
+is a hyperbolic pair of the cup pairing against `[ℝ / pℤ] × y`. That `y` is the fundamental class
+of the three-manifold `Y_φ` is not proved here.
 
 **The first cohomology.** For a path-connected `Y`, the same slant decomposition in degree one,
 `H¹((ℝ / pℤ) × Y; ℤ) ≃ H¹(Y; ℤ) × H⁰(Y; ℤ)`, together with `H⁰(Y; ℤ) ≅ ℤ`
