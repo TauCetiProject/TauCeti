@@ -102,8 +102,8 @@ theorem exists_abs_sum_sdiff_primesLE_sq_inv_sub_log_two_le :
   have hn2 : (2 : ℝ) ≤ n := by exact_mod_cast hn
   have hlog : Real.log n ≠ 0 := (Real.log_pos (by linarith)).ne'
   have h := hC n ((n ^ 2 : ℕ) : ℝ) hn2 (by push_cast; nlinarith)
-  rwa [Nat.floor_natCast, Nat.floor_natCast, Nat.cast_pow, Real.log_pow, Nat.cast_ofNat,
-    mul_div_cancel_right₀ _ hlog] at h
+  simp only [Nat.floor_natCast] at h
+  simpa [Real.log_pow, mul_div_cancel_right₀ _ hlog] using h
 
 section Comparison
 

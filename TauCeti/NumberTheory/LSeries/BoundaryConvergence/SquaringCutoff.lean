@@ -107,8 +107,18 @@ private theorem summable_sum_sdiff_primesLE_inv_sub_log_two :
   rw [Real.norm_eq_abs]
   refine h.trans_eq ?_
   push_cast
-  rw [Real.log_pow, Nat.cast_pow, Nat.cast_ofNat, mul_comm, ← div_div, div_pow, one_pow,
-    div_eq_mul_one_div (C / Real.log 2) (2 ^ k)]
+  rw [Real.log_pow, one_div_pow]
+  push_cast
+  field_simp
+
+private theorem two_pow_four_pow (m : ℕ) : (2 : ℕ) ^ 4 ^ m = 2 ^ 2 ^ (2 * m) := by
+  rw [pow_mul]; norm_num
+
+private theorem two_pow_four_pow_sq (m : ℕ) : ((2 : ℕ) ^ 4 ^ m) ^ 2 = 2 ^ 2 ^ (2 * m + 1) := by
+  rw [two_pow_four_pow, ← pow_mul, pow_succ]
+
+private theorem neg_one_pow_two_mul (m : ℕ) : (-1 : ℂ) ^ (2 * m) = 1 :=
+  Even.neg_one_pow ⟨m, by ring⟩
 
 /-- After an even number of squaring blocks, the signed prime sum differs from its value at `2` by
 the partial sum of the paired block errors. -/
@@ -119,8 +129,7 @@ private theorem sum_primesLE_squaringBlockSign_two_mul (m : ℕ) :
   | zero => simp
   | succ m ih =>
     rw [show 2 * (m + 1) = 2 * m + 1 + 1 by ring, sum_primesLE_squaringBlockSign_succ,
-      sum_primesLE_squaringBlockSign_succ, ih, sum_range_succ,
-      (Even.neg_one_pow ⟨m, by ring⟩ : (-1 : ℂ) ^ (2 * m) = 1),
+      sum_primesLE_squaringBlockSign_succ, ih, sum_range_succ, neg_one_pow_two_mul,
       (Odd.neg_one_pow ⟨m, rfl⟩ : (-1 : ℂ) ^ (2 * m + 1) = -1)]
     push_cast
     ring
@@ -137,13 +146,12 @@ theorem exists_tendsto_sum_primesLE_squaringBlockSign_div :
   have ht := summable_sum_sdiff_primesLE_inv_sub_log_two
   have hpair := (ht.comp_injective (mul_right_injective₀ two_ne_zero)).sub
     (ht.comp_injective ((add_left_injective 1).comp (mul_right_injective₀ two_ne_zero)))
-  have h4 (m : ℕ) : (2 : ℕ) ^ (2 * m) = 4 ^ m := by rw [pow_mul]; norm_num
   have heven : Tendsto (fun m : ℕ ↦ 𝒮 (2 ^ 4 ^ m)) atTop
       (𝓝 (𝒮 (2 ^ 2 ^ 0) + ((∑' j : ℕ, ((𝔰 (2 * j) - Real.log 2) - (𝔰 (2 * j + 1) - Real.log 2)) :
         ℝ) : ℂ))) := by
     refine (tendsto_const_nhds.add ((Complex.continuous_ofReal.tendsto _).comp
       hpair.hasSum.tendsto_sum_nat)).congr fun m ↦ ?_
-    simp only [Function.comp_apply, ← h4, sum_primesLE_squaringBlockSign_two_mul]
+    simp only [Function.comp_apply, two_pow_four_pow, sum_primesLE_squaringBlockSign_two_mul]
   refine ⟨_, heven, ?_⟩
   -- The odd cutoffs add one more block, with sign `+1` and sum `log 2 + o(1)`.
   have herr := (Complex.continuous_ofReal.tendsto 0).comp
@@ -153,8 +161,8 @@ theorem exists_tendsto_sum_primesLE_squaringBlockSign_div :
   rw [add_zero] at hodd
   refine hodd.congr fun m ↦ ?_
   simp only [Function.comp_apply, id_eq]
-  rw [← h4, sq, ← pow_add, ← two_mul, ← pow_succ', sum_primesLE_squaringBlockSign_succ,
-    (Even.neg_one_pow ⟨m, by ring⟩ : (-1 : ℂ) ^ (2 * m) = 1)]
+  rw [two_pow_four_pow_sq, two_pow_four_pow, sum_primesLE_squaringBlockSign_succ,
+    neg_one_pow_two_mul]
   push_cast
   ring
 
