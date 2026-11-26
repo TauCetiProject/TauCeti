@@ -36,7 +36,8 @@ in a conic neighbourhood
 through which the Euclidean microlocal elliptic regularity of
 `TauCeti.Analysis.Pseudodifferential.CharacteristicSet` applies to `P`. It rests on the Euclidean
 fact that the characteristic set of a classical symbol is the set of nonzero covectors at which its
-principal symbol is not invertible (`TauCeti.ClassicalSymbol.mem_characteristicSet_iff`).
+principal symbol is not invertible
+(`TauCeti.ClassicalSymbol.mem_characteristicSet_toSymbol_iff`).
 
 For the complexification of a differential operator `D` of order at most `m`, the characteristic
 set consists of the nonzero covectors at which the geometric principal symbol of `D` vanishes
@@ -172,7 +173,7 @@ theorem mk_mem_classicalCharacteristicSet_iff_mem_characteristicSet
         classicalCharacteristicSet m P ↔ (e x, η) ∈ a.toSymbol.characteristicSet := by
   have he₁ : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) 1 M :=
     IsManifold.maximalAtlas_subset_of_le (by simp) he
-  rw [ClassicalSymbol.mem_characteristicSet_iff,
+  rw [ClassicalSymbol.mem_characteristicSet_toSymbol_iff,
     coefficient_principal_eq_classicalPrincipalSymbol hP he φ ψ ha hx,
     ContinuousLinearMap.isInvertible_smul_id_iff, mem_classicalCharacteristicSet_iff,
     ne_eq, innerSL_comp_mvfderiv_eq_zero_iff he₁ hx]

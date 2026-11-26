@@ -33,7 +33,7 @@ invertibility of the full symbol with the inverse bound `‖a(x, ξ)⁻¹‖ ≤
 
 Together these say that the characteristic set of a classical symbol is the set of nonzero
 covectors at which its principal symbol is not invertible
-(`TauCeti.ClassicalSymbol.mem_characteristicSet_iff`).
+(`TauCeti.ClassicalSymbol.mem_characteristicSet_toSymbol_iff`).
 
 ## References
 
