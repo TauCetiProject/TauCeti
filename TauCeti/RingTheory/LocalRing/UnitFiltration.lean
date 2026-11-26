@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 import Mathlib.RingTheory.Filtration
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # The unit filtration of a local ring
@@ -156,13 +157,6 @@ theorem coe_unitFiltrationGradedZeroEquivResidueFieldUnits_mk (u : unitFiltratio
       residue S ((u : Sˣ) : S) := by
   simp [unitFiltrationGradedZeroEquivResidueFieldUnits_mk]
 
-private theorem comap_maximalIdeal_pow_succ_eq_smul_top (n : ℕ) :
-    Submodule.comap (maximalIdeal S ^ (n + 1)).subtype (maximalIdeal S ^ (n + 2)) =
-      (maximalIdeal S • ⊤ : Submodule S (maximalIdeal S ^ (n + 1) : Ideal S)) := by
-  ext x
-  rw [Submodule.mem_comap, Submodule.subtype_apply, Submodule.mem_smul_top_iff, smul_eq_mul,
-    pow_succ']
-
 /-- Subtracting `1` identifies each positive graded piece `U_{n+1} / U_{n+2}` of the unit
 filtration with the multiplicative copy of the maximal-ideal graded piece
 `𝔪 ^ (n + 1) ⧸ (𝔪 • ⊤)`. -/
@@ -171,7 +165,10 @@ noncomputable def unitFiltrationGradedSuccEquivMaximalIdealGraded (n : ℕ) :
       Multiplicative ((maximalIdeal S ^ (n + 1) : Ideal S) ⧸
         (maximalIdeal S • ⊤ : Submodule S (maximalIdeal S ^ (n + 1) : Ideal S))) :=
   (Ideal.principalUnitGroupPowQuotientEquiv (maximalIdeal_le_jacobson (⊥ : Ideal S)) n).trans
-    (Submodule.quotEquivOfEq _ _ (comap_maximalIdeal_pow_succ_eq_smul_top S n)).toMultiplicative
+    (Submodule.quotEquivOfEq _ _
+      (by simpa only [pow_succ] using
+        (Ideal.smul_top_eq_comap_mul (maximalIdeal S ^ (n + 1))
+          (maximalIdeal S)).symm)).toMultiplicative
 
 /-- Evaluates `unitFiltrationGradedSuccEquivMaximalIdealGraded` on the class of `u` as the class of
 `(u : S) - 1`. -/
@@ -184,7 +181,9 @@ theorem unitFiltrationGradedSuccEquivMaximalIdealGraded_mk (n : ℕ)
   (MulEquiv.trans_apply ..).trans <|
     (congrArg _ (Ideal.principalUnitGroupPowQuotientEquiv_mk ..)).trans <|
       congrArg Multiplicative.ofAdd
-        (Submodule.quotEquivOfEq_mk _ _ (comap_maximalIdeal_pow_succ_eq_smul_top S n) _)
+        (Submodule.quotEquivOfEq_mk _ _
+          (by simpa only [pow_succ] using
+            (Ideal.smul_top_eq_comap_mul (maximalIdeal S ^ (n + 1)) (maximalIdeal S)).symm) _)
 
 /-- When the residue field has characteristic `p`, every element of a positive graded piece
 `U_{n+1} / U_{n+2}` satisfies `x ^ p = 1`. -/

@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.DiscreteValuationRing.UnitFiltration
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
 import TauCeti.Algebra.Group.Action.MulDistribMulAction
+import TauCeti.RingTheory.LocalRing.RamificationGroup.UnitFiltration
 
 /-!
 # Graded embeddings of the ramification filtration into the unit filtration of a DVR
@@ -42,8 +43,6 @@ When `B` is a local algebra over a local ring `A` fixed by `G` with separable re
 
 ## Main results
 
-* `TauCeti.IsLocalRing.unitsMap_div_mem_unitFiltration_succ`: an element of the `i`-th
-  ramification group moves every unit of a local ring by a factor in `U_{i+1}`.
 * `TauCeti.IsDiscreteValuationRing.ramificationGroupToUnitFiltrationGraded_eq_of_irreducible` and
   `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToUnitFiltrationGraded_eq_of_irreducible`:
   independence of the choice of uniformizer.
@@ -59,31 +58,6 @@ When `B` is a local algebra over a local ring `A` fixed by `G` with separable re
 public section
 
 open IsLocalRing TauCeti.IsLocalRing
-
-namespace TauCeti.IsLocalRing
-
-section Action
-
-variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
-
-/-- For an element `σ` in the `i`-th ramification group of a local ring `S` and any unit `u : Sˣ`,
-the ratio `(σ • u) / u` lies one step deeper in the unit filtration, in `unitFiltration S (i + 1)`.
--/
-theorem unitsMap_div_mem_unitFiltration_succ {i : ℕ} {σ : G}
-    (hσ : σ ∈ ramificationGroup G S (i : ℤ)) (u : Sˣ) :
-    Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom u / u ∈
-      unitFiltration S (i + 1) := by
-  rw [mem_unitFiltration_iff, div_eq_mul_inv]
-  have hsub :
-      ((Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom u * u⁻¹ : Sˣ) : S) - 1 =
-        (σ • (u : S) - (u : S)) * (u⁻¹ : Sˣ) := by
-    simp [sub_mul]
-  rw [hsub]
-  exact Ideal.mul_mem_right _ _ (mem_ramificationGroup_natCast_iff.mp hσ (u : S))
-
-end Action
-
-end TauCeti.IsLocalRing
 
 namespace TauCeti.IsDiscreteValuationRing
 
@@ -132,7 +106,7 @@ theorem coe_uniformizerRatio_mul_apply (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
           (uniformizerRatio i hϖ τ : Bˣ) := by
   rw [coe_uniformizerRatio i hϖ (σ * τ), coe_uniformizerRatio i hϖ σ,
     coe_uniformizerRatio i hϖ τ,
-    unitsMap_uniformizerChangeUnit (MulSemiringAction.toRingHom G B (σ : G)) ϖ ((τ : G) • ϖ)
+    (MulSemiringAction.toRingHom G B (σ : G)).unitsMap_uniformizerChangeUnit ϖ ((τ : G) • ϖ)
       hϖ (hϖ.smul (τ : G)) (hϖ.smul (σ : G)) ((hϖ.smul (τ : G)).smul (σ : G))]
   have hmul : ((σ * τ : ramificationGroup G B (i : ℤ)) : G) • ϖ = (σ : G) • (τ : G) • ϖ := by
     rw [Subgroup.coe_mul, mul_smul]
@@ -177,7 +151,7 @@ private theorem coe_uniformizerRatio_change (i : ℕ) {ϖ ϖ' : B} (hϖ : Irredu
         Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom
           (uniformizerChangeUnit ϖ ϖ' hϖ hϖ') := by
   rw [coe_uniformizerRatio i hϖ' σ, coe_uniformizerRatio i hϖ σ,
-    unitsMap_uniformizerChangeUnit (MulSemiringAction.toRingHom G B (σ : G)) ϖ ϖ'
+    (MulSemiringAction.toRingHom G B (σ : G)).unitsMap_uniformizerChangeUnit ϖ ϖ'
       hϖ hϖ' (hϖ.smul (σ : G)) (hϖ'.smul (σ : G)),
     uniformizerChangeUnit_mul]
   simp_rw [MulSemiringAction.toRingHom_apply]

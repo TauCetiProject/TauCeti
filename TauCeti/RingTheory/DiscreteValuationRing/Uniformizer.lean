@@ -79,18 +79,32 @@ theorem uniformizerChangeUnit_mul (π₁ π₂ π₃ : R) (h₁ : Irreducible π
   rw [Units.val_mul, ← mul_assoc, mul_uniformizerChangeUnit, mul_uniformizerChangeUnit,
     mul_uniformizerChangeUnit]
 
+end TauCeti
+
+namespace RingHom
+
+open TauCeti
+
+variable {R S : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
+  [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
+
 /-- A ring homomorphism preserving irreducibility of `π` and `π'` carries
 `uniformizerChangeUnit π π'` to the change unit between their images. -/
-theorem unitsMap_uniformizerChangeUnit {S : Type*} [CommRing S] [IsDomain S]
-    [IsDiscreteValuationRing S] (f : R →+* S) (π π' : R)
+theorem unitsMap_uniformizerChangeUnit (f : R →+* S) (π π' : R)
     (hπ : Irreducible π) (hπ' : Irreducible π')
     (hfπ : Irreducible (f π)) (hfπ' : Irreducible (f π')) :
     Units.map f.toMonoidHom (uniformizerChangeUnit π π' hπ hπ') =
       uniformizerChangeUnit (f π) (f π') hfπ hfπ' := by
   apply Units.ext
   apply mul_left_cancel₀ hfπ.ne_zero
-  simp only [mul_uniformizerChangeUnit, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+  simp only [mul_uniformizerChangeUnit, Units.coe_map, toMonoidHom_eq_coe,
     MonoidHom.coe_ofClass, ← map_mul]
+
+end RingHom
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 
 private noncomputable def uniformizerPowToMaximalIdealGraded (π : R)
     (hπ : Irreducible π) (m : ℕ) :
