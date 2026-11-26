@@ -10,7 +10,7 @@ import Mathlib.Tactic.Module
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Deriv
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Local
-import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Morrey
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.AEEq
 
 /-!
 # Regularity of the kernel and cokernel of smooth real Cauchy–Riemann operators
