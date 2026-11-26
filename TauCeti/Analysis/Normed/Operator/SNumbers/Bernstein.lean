@@ -303,10 +303,9 @@ theorem bernsteinNumber_le_gelfandNumber (T : E →L[𝕜] F) (n : ℕ) :
   rw [Submodule.ker_mkQ] at hxN
   exact ⟨x, hxM, hx0, (T ∘L N.subtypeL).le_opNNNorm ⟨x, hxN⟩⟩
 
-/-- **Upper bound for `ℓ₂ → ℓ_∞`.** On a finite index type `ι`, the identity map
-`EuclideanSpace 𝕜 ι →L[𝕜] (ι → 𝕜)` has `n`-th Bernstein number at most `(√(n + 1))⁻¹`: every
-`(n + 1)`-dimensional subspace contains a sup-norm unit-ball vector attaining norm `1` on at
-least `n + 1` coordinates, whose `ℓ₂` norm is at least `√(n + 1)`. -/
+/-- **Upper bound for `ℓ₂ → ℓ_∞`.** On a finite index type `ι` over a normed `ℝ`-algebra field `𝕜`,
+the identity map `EuclideanSpace 𝕜 ι →L[𝕜] (ι → 𝕜)` has `n`-th Bernstein number at most
+`(√(n + 1))⁻¹`. -/
 theorem bernsteinNumber_piLp_continuousLinearEquiv_le
     {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [Fintype ι] (n : ℕ) :
     (PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι ↦ 𝕜) :
@@ -317,6 +316,8 @@ theorem bernsteinNumber_piLp_continuousLinearEquiv_le
   let M' : Submodule 𝕜 (ι → 𝕜) := M.map (e.toLinearEquiv : EuclideanSpace 𝕜 ι →ₗ[𝕜] ι → 𝕜)
   have hfinM' : Module.finrank 𝕜 M' = n + 1 :=
     (e.toLinearEquiv.finrank_map_eq M).trans (Module.finrank_eq_of_rank_eq (by exact_mod_cast hM))
+  -- A sup-norm unit-ball vector of `M'` attaining norm `1` on at least `n + 1` coordinates has
+  -- `ℓ₂` norm at least `√(n + 1)`.
   obtain ⟨y, hyM', hy1, hcard⟩ := M'.exists_mem_norm_le_one_le_ncard_norm_eq_one
   rw [hfinM'] at hcard
   obtain ⟨x, hxM, rfl⟩ := Submodule.mem_map.mp hyM'
@@ -350,9 +351,7 @@ theorem bernsteinNumber_piLp_continuousLinearEquiv_le
     _ ≤ (NNReal.sqrt (n + 1))⁻¹ * ‖x‖₊ := by gcongr
 
 /-- **Upper bound for `ℓ_∞ → ℓ₂`.** On a finite index type `ι` over `ℝ` or `ℂ`, the identity map
-`(ι → 𝕜) →L[𝕜] EuclideanSpace 𝕜 ι` has `n`-th Bernstein number at most `√(card ι / (n + 1))`:
-testing the orthogonal projections of the standard basis vectors onto an `(n + 1)`-dimensional
-subspace bounds the squared coercivity constant by `card ι / (n + 1)`. -/
+`(ι → 𝕜) →L[𝕜] EuclideanSpace 𝕜 ι` has `n`-th Bernstein number at most `√(card ι / (n + 1))`. -/
 theorem bernsteinNumber_piLp_continuousLinearEquiv_symm_le
     {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] (n : ℕ) :
     ((PiLp.continuousLinearEquiv 2 𝕜 (fun _ : ι ↦ 𝕜)).symm :
