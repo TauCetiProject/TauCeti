@@ -101,7 +101,9 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 * `Distribution.isMicrolocallySmoothAt_restrictCLM_iff`, `Distribution.waveFrontSet_restrictCLM`:
   for an open subset `Ω' ≤ Ω`, `WF(T|_{Ω'}) = WF(T) ∩ (Ω' × E)`.
 * `Distribution.waveFrontSet_inter_eq_of_restrictCLM_eq`: distributions with the same restriction
-  to an open set have the same wave front set over it.
+  to an open set have the same wave front set over it;
+  `Distribution.mem_waveFrontSet_iff_of_isVanishingOn_sub` is the same statement over one point,
+  for distributions whose difference vanishes on an open neighbourhood of it.
 
 ## References
 
@@ -902,6 +904,21 @@ theorem waveFrontSet_inter_eq_of_restrictCLM_eq {S T : 𝓓'(Ω, ℂ)} {U : Open
     (h : (restrictCLM S : 𝓓'(U, ℂ)) = restrictCLM T) :
     S.waveFrontSet ∩ (U : Set E) ×ˢ univ = T.waveFrontSet ∩ (U : Set E) ×ˢ univ := by
   rw [← waveFrontSet_restrictCLM hU, h, waveFrontSet_restrictCLM hU]
+
+/-- The wave front set is local: if `S - T` vanishes on an open set `O ∋ x`, then `S` and `T` have
+the same singularities over `x`. -/
+theorem mem_waveFrontSet_iff_of_isVanishingOn_sub {S T : 𝓓'(Ω, ℂ)} {O : Set E} {x ξ : E}
+    (hO : IsOpen O) (hx : x ∈ O) (h : IsVanishingOn ⇑(S - T) O) :
+    (x, ξ) ∈ S.waveFrontSet ↔ (x, ξ) ∈ T.waveFrontSet := by
+  rw [mem_waveFrontSet_iff, mem_waveFrontSet_iff]
+  refine and_congr_right fun hxΩ ↦ and_congr_right fun _ ↦ not_congr ?_
+  have hd : (S - T).IsMicrolocallySmoothAt x ξ := isMicrolocallySmoothAt_of_notMem_dsupport hxΩ
+    (fun h' ↦ (h.disjoint_dsupport hO).ne_of_mem hx h' rfl) ξ
+  refine ⟨fun hS ↦ ?_, fun hT ↦ ?_⟩
+  · convert hS.add (hd.smul (-1)) using 1
+    module
+  · convert hT.add hd using 1
+    abel
 
 end Restriction
 
