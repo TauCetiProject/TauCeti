@@ -26,7 +26,7 @@ open Filter MeasureTheory Set
 namespace TauCeti
 
 open Real in
-/-- The logarithmic power majorant is integrable above any cutoff strictly greater than one. -/
+/-- For `b < -1`, the majorant `t⁻¹ (log t)^b` is integrable on `(x, ∞)` for any `x > 1`. -/
 theorem integrableOn_Ioi_inv_mul_log_rpow {x b : ℝ} (hx : 1 < x) (hb : b < -1) :
     IntegrableOn (fun t : ℝ ↦ t⁻¹ * log t ^ b) (Ioi x) := by
   have h := integrableOn_comp_exp_Ioi (fun t : ℝ ↦ t⁻¹ * log t ^ b) (log x)
