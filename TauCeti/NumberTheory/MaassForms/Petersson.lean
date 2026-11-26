@@ -39,9 +39,10 @@ every level (`TauCeti.CongruenceSubgroup.isFundamentalDomain_dirichletDomain_gam
 
 The product is homogeneous in the first slot and conjugate-homogeneous in the second, additive in
 each slot when the integrands `f * conj g` are integrable on the domain (as they are for
-square-integrable automorphic functions), conjugate-symmetric, and positive definite on
-continuous square-integrable automorphic functions; it is invariant under every element of
-`PSL(2, ℝ)` normalizing `PΓ₀(N)`, such as the image of the Fricke matrix `[0, -1; N, 0]`.
+a.e.-strongly measurable square-integrable automorphic functions), conjugate-symmetric, and
+positive definite on continuous square-integrable automorphic functions; it is invariant under
+every element of `PSL(2, ℝ)` normalizing `PΓ₀(N)`, such as the image of the scaled Fricke matrix
+`[0, -1/√N; √N, 0]`.
 
 ## Main definitions
 
@@ -208,10 +209,10 @@ domain `F` of `PΓ₀(N)` centred at `2i`, for the invariant measure `dμ = dx d
 normalization by the covolume (`petersson_eq_integral`). It is homogeneous in `f` and
 conjugate-homogeneous in `g` (`petersson_smul_left`, `petersson_smul_right`), and additive in each
 slot when the integrands are integrable on `F` (`petersson_add_left`, `petersson_add_right`), as
-they are for square-integrable automorphic functions; so it is the weight-`0` pairing
-`UpperHalfPlane.peterssonInner 0 F` with its arguments swapped, since that pairing is
-conjugate-homogeneous in its first argument. For automorphic `f` and
-`g` with the same nebentypus the integral is the same over every measurable fundamental domain of
+they are for a.e.-strongly measurable square-integrable automorphic functions; so it is the
+weight-`0` pairing `UpperHalfPlane.peterssonInner 0 F` with its arguments swapped, since that
+pairing is conjugate-homogeneous in its first argument. For automorphic `f` and `g` with the same
+nebentypus the integral is the same over every measurable fundamental domain of
 `PΓ₀(N)` (`IsAutomorphic.petersson_eq_setIntegral`). -/
 noncomputable def petersson (f g : ℍ → ℂ) : ℂ :=
   peterssonInner 0 (dirichletDomain (gamma0PSL N) (pt 0 2)) g f
@@ -262,7 +263,7 @@ theorem petersson_smul_right (c : ℂ) (f g : ℍ → ℂ) :
   peterssonInner_smul_left 0 _ c g f
 
 /-- **Additivity in the first slot**, when `f₁ * conj g` and `f₂ * conj g` are integrable on the
-Dirichlet domain, as they are for square-integrable automorphic functions
+Dirichlet domain, as they are for a.e.-strongly measurable square-integrable automorphic functions
 (`IsSquareIntegrable.integrableOn_mul_conj`). -/
 theorem petersson_add_left {f₁ f₂ : ℍ → ℂ}
     (h₁ : IntegrableOn (fun z ↦ f₁ z * conj (g z)) (dirichletDomain (gamma0PSL N) (pt 0 2)))

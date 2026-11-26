@@ -60,9 +60,15 @@ theorem mem_gamma0PSL {g : PSL(2, ℝ)} :
     g ∈ gamma0PSL N ↔ ∃ γ ∈ Gamma0 N, sl2zToPSL2R γ = g :=
   Subgroup.mem_map
 
-theorem sl2zToPSL2R_mem_gamma0PSL {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
-    sl2zToPSL2R γ ∈ gamma0PSL N :=
-  mem_gamma0PSL.mpr ⟨γ, hγ, rfl⟩
+/-- The image of `γ : SL(2, ℤ)` lies in `PΓ₀(N)` exactly when `γ ∈ Γ₀(N)`, because the kernel
+`{±1}` of `sl2zToPSL2R` lies in `Γ₀(N)`. -/
+theorem sl2zToPSL2R_mem_gamma0PSL_iff {γ : SL(2, ℤ)} :
+    sl2zToPSL2R γ ∈ gamma0PSL N ↔ γ ∈ Gamma0 N := by
+  refine (Subgroup.ext_iff.mp (Subgroup.comap_map_eq_self fun δ hδ ↦ ?_) γ)
+  rw [sl2zToPSL2R_ker, Matrix.SpecialLinearGroup.mem_center_iff] at hδ
+  obtain ⟨r, -, hr⟩ := hδ
+  rw [Gamma0_mem, ← hr, Matrix.scalar_apply, Matrix.diagonal_apply_ne _ (by decide),
+    Int.cast_zero]
 
 instance : DiscreteTopology (gamma0PSL N) :=
   Subgroup.discreteTopology_map_sl2zToPSL2R _
