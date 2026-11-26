@@ -67,20 +67,16 @@ variable {A A' A'' : Type u} {B B' B'' : Type v} [NonUnitalCStarAlgebra A]
 contractive for the maximal norms. -/
 def map (φ : A →⋆ₙₐ[ℂ] A') (ψ : B →⋆ₙₐ[ℂ] B') :
     MaxTensorProduct A B →⋆ₙₐ[ℂ] MaxTensorProduct A' B' :=
-  (((of A' B').comp (Algebra.TensorProduct.mapNonUnitalStarAlgHom φ ψ)).comp
-    (toMaxStarAlgEquiv A B).symm.toNonUnitalStarAlgHom).fromCompletion <|
-    AddMonoidHomClass.continuous_of_bound _ 1 fun x ↦ by
-      simpa [norm_def] using maxTensorNorm_mapNonUnitalStarAlgHom_le φ ψ (ofMax x)
+  extend ((of A' B').comp (Algebra.TensorProduct.mapNonUnitalStarAlgHom φ ψ)) fun x ↦ by
+    simpa using maxTensorNorm_mapNonUnitalStarAlgHom_le φ ψ x
 
 variable (φ : A →⋆ₙₐ[ℂ] A') (ψ : B →⋆ₙₐ[ℂ] B')
 
 /-- On `A ⊗[ℂ] B`, the induced map is `φ ⊗ ψ`. -/
 @[simp]
 theorem map_of (x : A ⊗[ℂ] B) :
-    map φ ψ (of A B x) = of A' B' (Algebra.TensorProduct.mapNonUnitalStarAlgHom φ ψ x) := by
-  rw [← coe_toMax_eq_of]
-  -- `map φ ψ` is by definition the extension from the completion of `MaxTensorAlgebra A B`.
-  exact (NonUnitalStarAlgHom.fromCompletion_apply_coe _ _ (toMax x)).trans (by simp)
+    map φ ψ (of A B x) = of A' B' (Algebra.TensorProduct.mapNonUnitalStarAlgHom φ ψ x) :=
+  extend_of _ _ x
 
 /-- The induced map sends `a ⊗ b` to `φ a ⊗ ψ b`. -/
 theorem map_of_tmul (a : A) (b : B) : map φ ψ (of A B (a ⊗ₜ b)) = of A' B' (φ a ⊗ₜ ψ b) := by
@@ -93,10 +89,6 @@ theorem map_comp_of :
     (map φ ψ).comp (of A B) =
       (of A' B').comp (Algebra.TensorProduct.mapNonUnitalStarAlgHom φ ψ) :=
   NonUnitalStarAlgHom.ext (map_of φ ψ)
-
-/-- The induced map is contractive. -/
-theorem norm_map_le (x : MaxTensorProduct A B) : ‖map φ ψ x‖ ≤ ‖x‖ :=
-  NonUnitalStarAlgHom.norm_apply_le (map φ ψ) x
 
 /-- The tensor product of the identities induces the identity. -/
 @[simp]
@@ -130,36 +122,12 @@ theorem lift_comp_map {C : Type (max u v)} [NonUnitalCStarAlgebra C] (φ' : A' �
 
 /-- Star isomorphisms `e : A ≃ A'` and `f : B ≃ B'` induce a star isomorphism
 `A ⊗max B ≃ A' ⊗max B'`, sending `a ⊗ b` to `e a ⊗ f b`. -/
+@[expose, simps! apply symm_apply]
 def congr (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') :
-    MaxTensorProduct A B ≃⋆ₐ[ℂ] MaxTensorProduct A' B' where
-  toFun := map e.toNonUnitalStarAlgHom f.toNonUnitalStarAlgHom
-  invFun := map e.symm.toNonUnitalStarAlgHom f.symm.toNonUnitalStarAlgHom
-  left_inv x := by
-    rw [map_map, show e.symm.toNonUnitalStarAlgHom.comp e.toNonUnitalStarAlgHom =
-        NonUnitalStarAlgHom.id ℂ A from NonUnitalStarAlgHom.ext e.symm_apply_apply,
-      show f.symm.toNonUnitalStarAlgHom.comp f.toNonUnitalStarAlgHom =
-        NonUnitalStarAlgHom.id ℂ B from NonUnitalStarAlgHom.ext f.symm_apply_apply, map_id]
-    rfl
-  right_inv x := by
-    rw [map_map, show e.toNonUnitalStarAlgHom.comp e.symm.toNonUnitalStarAlgHom =
-        NonUnitalStarAlgHom.id ℂ A' from NonUnitalStarAlgHom.ext e.apply_symm_apply,
-      show f.toNonUnitalStarAlgHom.comp f.symm.toNonUnitalStarAlgHom =
-        NonUnitalStarAlgHom.id ℂ B' from NonUnitalStarAlgHom.ext f.apply_symm_apply, map_id]
-    rfl
-  map_mul' := map_mul _
-  map_add' := map_add _
-  map_smul' := map_smul _
-  map_star' := map_star _
-
-@[simp]
-theorem congr_apply (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') (x : MaxTensorProduct A B) :
-    congr e f x = map e.toNonUnitalStarAlgHom f.toNonUnitalStarAlgHom x :=
-  (rfl)
-
-@[simp]
-theorem congr_symm_apply (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') (x : MaxTensorProduct A' B') :
-    (congr e f).symm x = map e.symm.toNonUnitalStarAlgHom f.symm.toNonUnitalStarAlgHom x :=
-  (rfl)
+    MaxTensorProduct A B ≃⋆ₐ[ℂ] MaxTensorProduct A' B' :=
+  .ofNonUnitalStarAlgHom (map e.toNonUnitalStarAlgHom f.toNonUnitalStarAlgHom)
+    (map e.symm.toNonUnitalStarAlgHom f.symm.toNonUnitalStarAlgHom)
+    (starAlgHom_ext fun a b ↦ by simp) (starAlgHom_ext fun a b ↦ by simp)
 
 end Map
 
@@ -170,21 +138,16 @@ variable (A : Type u) (B : Type v) [NonUnitalCStarAlgebra A] [NonUnitalCStarAlge
 /-- The flip `A ⊗max B → B ⊗max A`, `a ⊗ b ↦ b ⊗ a`, as a star homomorphism: the extension of
 the flip of `A ⊗[ℂ] B`, which is isometric for the maximal norms. -/
 def commHom : MaxTensorProduct A B →⋆ₙₐ[ℂ] MaxTensorProduct B A :=
-  (((of B A).comp (Algebra.TensorProduct.commNonUnitalStarAlgHom ℂ A B)).comp
-    (toMaxStarAlgEquiv A B).symm.toNonUnitalStarAlgHom).fromCompletion <|
-    AddMonoidHomClass.continuous_of_bound _ 1 fun x ↦ by
-      simp [norm_def, Algebra.TensorProduct.coe_commNonUnitalStarAlgHom]
+  extend ((of B A).comp (Algebra.TensorProduct.commNonUnitalStarAlgHom ℂ A B)) fun x ↦ by
+    simp [Algebra.TensorProduct.coe_commNonUnitalStarAlgHom]
 
 variable {A B}
 
 /-- On `A ⊗[ℂ] B`, the flip of the maximal tensor product is the algebraic flip. -/
 @[simp]
 theorem commHom_of (x : A ⊗[ℂ] B) :
-    commHom A B (of A B x) = of B A (TensorProduct.comm ℂ A B x) := by
-  rw [← coe_toMax_eq_of]
-  -- `commHom A B` is by definition the extension from the completion of `MaxTensorAlgebra A B`.
-  exact (NonUnitalStarAlgHom.fromCompletion_apply_coe _ _ (toMax x)).trans (by
-    simp [Algebra.TensorProduct.coe_commNonUnitalStarAlgHom])
+    commHom A B (of A B x) = of B A (TensorProduct.comm ℂ A B x) :=
+  (extend_of _ _ x).trans (by simp [Algebra.TensorProduct.coe_commNonUnitalStarAlgHom])
 
 /-- Flipping twice is the identity. -/
 @[simp]
@@ -196,34 +159,21 @@ variable (A B)
 
 /-- **The flip of the maximal tensor product**: the star isomorphism `A ⊗max B ≃ B ⊗max A`
 sending `a ⊗ b` to `b ⊗ a` (`TauCeti.MaxTensorProduct.comm_of_tmul`). -/
-def comm : MaxTensorProduct A B ≃⋆ₐ[ℂ] MaxTensorProduct B A where
-  toFun := commHom A B
-  invFun := commHom B A
-  left_inv := commHom_commHom
-  right_inv := commHom_commHom
-  map_mul' := map_mul _
-  map_add' := map_add _
-  map_smul' := map_smul _
-  map_star' := map_star _
+@[expose, simps! apply]
+def comm : MaxTensorProduct A B ≃⋆ₐ[ℂ] MaxTensorProduct B A :=
+  .ofNonUnitalStarAlgHom (commHom A B) (commHom B A) (NonUnitalStarAlgHom.ext commHom_commHom)
+    (NonUnitalStarAlgHom.ext commHom_commHom)
 
 variable {A B}
 
-theorem comm_apply (x : MaxTensorProduct A B) : comm A B x = commHom A B x :=
-  (rfl)
-
+/-- The inverse of the flip is the flip. -/
 @[simp]
 theorem comm_symm : (comm A B).symm = comm B A :=
-  (rfl)
+  StarAlgEquiv.symm_ofNonUnitalStarAlgHom _ _ _ _
 
 /-- The flip sends `a ⊗ b` to `b ⊗ a`. -/
 theorem comm_of_tmul (a : A) (b : B) : comm A B (of A B (a ⊗ₜ b)) = of B A (b ⊗ₜ a) := by
   simp [comm_apply]
-
-/-- The flip is isometric. -/
-@[simp]
-theorem norm_comm (x : MaxTensorProduct A B) : ‖comm A B x‖ = ‖x‖ :=
-  le_antisymm (NonUnitalStarAlgHom.norm_apply_le (commHom A B) x) <| by
-    simpa [comm_apply] using NonUnitalStarAlgHom.norm_apply_le (commHom B A) (comm A B x)
 
 end Comm
 
