@@ -8,9 +8,12 @@ module
 public import TauCeti.Geometry.Lie.FundamentalVectorField.Circle
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Integrable
+public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Radial
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Linear
 public import Mathlib.Geometry.Euclidean.Angle.Oriented.Rotation
+public import TauCeti.Topology.Algebra.ProperAction.Basic
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Complex.Isometry
 import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.Inner
 import TauCeti.Analysis.InnerProductSpace.TwoDim
@@ -47,7 +50,12 @@ This action is the symmetry behind the conservation of angular momentum:
 * the rotations preserve the punctured phase space `{(q, p) | q ≠ 0}`
   (`TauCeti.puncturedPhaseSpace`), where singular central potentials are smooth, and the angular
   momentum restricts to the moment map of a Hamiltonian circle action there
-  (`TauCeti.hamiltonianTorusData_angularMomentum_puncturedPhaseSpace`).
+  (`TauCeti.hamiltonianTorusData_angularMomentum_puncturedPhaseSpace`). The rotations act freely
+  (`TauCeti.stabilizer_circle_puncturedPhaseSpace_eq_bot`) and properly on it. Two of its states
+  differ by a rotation exactly when they have the same radius, radial momentum and angular
+  momentum (`TauCeti.exists_circle_smul_eq_iff`), since the rotations preserve the radius and the
+  radial momentum (`TauCeti.radialProjection_circle_smul`): `conj q * p` has real part `⟪q, p⟫`
+  and imaginary part `L`, so the rotation by `q / q'` carries `(q', p')` to `(q, p)`.
 
 The conservation law `{H, L} = 0` for a central-force Hamiltonian `H` is
 `TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum`.
@@ -83,6 +91,8 @@ rotations `R_t` (`Orientation.rotation`):
   `TauCeti.hamiltonianTorusData_angularMomentum_puncturedPhaseSpace`: the rotations are a
   Hamiltonian circle action with moment map the angular momentum, on the phase space and on the
   punctured phase space.
+* `TauCeti.exists_circle_smul_eq_iff`: the rotation orbits of the punctured phase space are the
+  common levels of the radius, the radial momentum and the angular momentum.
 * `TauCeti.eq_rotation_of_forall_hasDerivAt_angularMomentum`,
   `TauCeti.periodic_of_forall_hasDerivAt_angularMomentum`: in an oriented inner product plane, the
   Hamiltonian flow of `L` is the rotation of the plane, so it is `2π`-periodic.
@@ -121,6 +131,16 @@ theorem angularMomentum_circle_smul (z : Circle) (x : ℂ × ℂ) :
     rw [conj_mul', Circle.norm_coe, ofReal_one, one_pow]
   simp only [Circle.smul_def, Prod.smul_mk, smul_eq_mul, angularMomentum_one_I]
   rw [map_mul, mul_mul_mul_comm, hz, one_mul]
+
+/-- Rotations preserve the radius and the radial momentum. -/
+@[simp]
+theorem radialProjection_circle_smul (g : Circle) (x : ℂ × ℂ) :
+    radialProjection (g • x) = radialProjection x := by
+  obtain ⟨q, p⟩ := x
+  have hq : ‖(g : ℂ) * q‖ = ‖q‖ := by simp
+  have hqp : ⟪(g : ℂ) * q, (g : ℂ) * p⟫_ℝ = ⟪q, p⟫_ℝ := by
+    simpa [rotation_apply] using (rotation g).inner_map_map q p
+  simp only [Circle.smul_def, Prod.smul_mk, smul_eq_mul, radialProjection_apply, hq, hqp]
 
 /-- **The planar angular momentum generates the rotations.** With the plane identified with `ℂ`,
 the Hamiltonian vector field of `L(q, p) = q₁ p₂ - q₂ p₁` at `(q, p)` is `(i q, i p)`. -/
@@ -259,6 +279,56 @@ theorem hamiltonianTorusData_angularMomentum_puncturedPhaseSpace :
         (imCLM ∘L mvfderiv (𝓡 1) (fun z : Circle ↦ (z : ℂ)) 1).toLinearMap :=
   hamiltonianTorusData_angularMomentum.mpullback contMDiff_subtypeVal
     coe_smul_puncturedPhaseSpace
+
+/-- The rotations act properly on the punctured planar phase space, as the circle is compact. -/
+instance : ProperSMul Circle (puncturedPhaseSpace ℂ) :=
+  properSMul_of_compactSpace _ _
+
+/-- The rotations act freely on the punctured planar phase space: a rotation fixing a state of
+nonzero position is the identity. -/
+theorem stabilizer_circle_puncturedPhaseSpace_eq_bot (x : puncturedPhaseSpace ℂ) :
+    MulAction.stabilizer Circle x = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).2 fun z hz ↦ ?_
+  have h : (z : ℂ) * (x : ℂ × ℂ).1 = (x : ℂ × ℂ).1 :=
+    congrArg (fun y : puncturedPhaseSpace ℂ ↦ (y : ℂ × ℂ).1) (MulAction.mem_stabilizer_iff.1 hz)
+  exact Circle.coe_inj.1 (mul_right_cancel₀ (mem_puncturedPhaseSpace.1 x.property)
+    (h.trans (one_mul _).symm))
+
+/-- **The rotation orbits are the common levels of `(r, p_r, L)`.** Two states of the punctured
+planar phase space differ by a rotation exactly when they have the same radius, radial momentum
+and angular momentum. -/
+theorem exists_circle_smul_eq_iff {x x' : puncturedPhaseSpace ℂ} :
+    (∃ g : Circle, g • x' = x) ↔
+      radialProjection (x : ℂ × ℂ) = radialProjection (x' : ℂ × ℂ) ∧
+        angularMomentum 1 I (x : ℂ × ℂ) = angularMomentum 1 I (x' : ℂ × ℂ) := by
+  refine ⟨fun ⟨g, hg⟩ ↦ ?_, fun ⟨hr, hL⟩ ↦ ?_⟩
+  · rw [← hg, coe_smul_puncturedPhaseSpace]
+    exact ⟨radialProjection_circle_smul g _, angularMomentum_circle_smul g _⟩
+  obtain ⟨⟨q, p⟩, hq⟩ := x
+  obtain ⟨⟨q', p'⟩, hq'⟩ := x'
+  rw [mem_puncturedPhaseSpace] at hq hq'
+  simp only [radialProjection_apply, Prod.mk.injEq] at hr
+  obtain ⟨hn, hrad⟩ := hr
+  have hn₀ : ‖q'‖ ≠ 0 := norm_ne_zero_iff.2 hq'
+  rw [hn, div_left_inj₀ hn₀] at hrad
+  rw [angularMomentum_one_I, angularMomentum_one_I] at hL
+  -- `conj q * p` is determined by `⟪q, p⟫ = Re (conj q * p)` and `L = Im (conj q * p)`.
+  have hc : conj q * p = conj q' * p' := Complex.ext (by
+    simpa [Complex.inner, mul_re, mul_comm] using hrad) hL
+  have hg : ‖q / q'‖ = 1 := by rw [norm_div, hn, div_self hn₀]
+  obtain ⟨g, hgq⟩ : ∃ g : Circle, (g : ℂ) * q' = q :=
+    ⟨⟨q / q', by simpa [Submonoid.unitSphere, mem_sphere_zero_iff_norm] using hg⟩,
+      div_mul_cancel₀ q hq'⟩
+  refine ⟨g, Subtype.ext ?_⟩
+  -- The rotation by `g = q / q'` acts on positions and momenta by multiplication by `g`.
+  simp only [coe_smul_puncturedPhaseSpace, Circle.smul_def, Prod.smul_mk, smul_eq_mul, hgq,
+    Prod.mk.injEq, true_and]
+  -- `conj q * (g p') = |g|² conj q' * p' = conj q * p`, and `q ≠ 0`.
+  have hconj : conj (g : ℂ) * g = 1 := by
+    rw [conj_mul', Circle.norm_coe, ofReal_one, one_pow]
+  refine mul_left_cancel₀ (map_ne_zero (starRingEnd ℂ) |>.2 hq) ?_
+  rw [hc, ← hgq, map_mul]
+  linear_combination (conj q' * p') * hconj
 
 /-! ### Rotations of an oriented plane -/
 

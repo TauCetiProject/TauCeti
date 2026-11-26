@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Rayleigh
+public import TauCeti.Analysis.InnerProductSpace.QuadraticForm.OpNorm
 public import Mathlib.Topology.MetricSpace.Cover
 
 /-!
@@ -52,28 +52,6 @@ theorem norm_inner_map_self_sub_le {𝕜 E : Type*} [RCLike 𝕜] [NormedAddComm
     _ ≤ (‖T‖ * η) * 1 + ‖T‖ * η := by
       gcongr
     _ = 2 * η * ‖T‖ := by ring
-
-/-- For a symmetric continuous linear map, a uniform bound on the real part of its quadratic
-form over unit vectors bounds its operator norm. -/
-theorem norm_le_of_forall_norm_eq_one_abs_re_inner_map_self_le {𝕜 E : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] (T : E →L[𝕜] E) (hT : T.IsSymmetric)
-    {C : ℝ} (hC : 0 ≤ C)
-    (h : ∀ x : E, ‖x‖ = 1 → |RCLike.re (Inner.inner 𝕜 (T x) x)| ≤ C) : ‖T‖ ≤ C := by
-  rw [T.norm_eq_iSup_rayleighQuotient hT]
-  refine ciSup_le fun x ↦ ?_
-  by_cases hx : x = 0
-  · subst x
-    simpa only [rayleighQuotient_apply_zero, abs_zero] using hC
-  · have hxmem : T.rayleighQuotient x ∈
-        T.rayleighQuotient '' ({0}ᶜ : Set E) := ⟨x, hx, rfl⟩
-    rw [T.image_rayleigh_eq_image_rayleigh_sphere (by norm_num : (0 : ℝ) < 1)] at hxmem
-    obtain ⟨y, hy, hxy⟩ := hxmem
-    have hy_norm : ‖y‖ = 1 := mem_sphere_zero_iff_norm.mp hy
-    have hquotient : T.rayleighQuotient y =
-        RCLike.re (Inner.inner 𝕜 (T y) y) := by
-      simp [rayleighQuotient, reApplyInnerSelf_apply, hy_norm]
-    rw [← hxy, hquotient]
-    exact h y hy_norm
 
 /-- A bound on the real part of a symmetric operator's quadratic form on an `η`-cover of the
 unit sphere bounds its operator norm. The cover points may lie anywhere in the closed unit ball.

@@ -35,9 +35,10 @@ induce isomorphic functors on the localizations
 For a DG left module `N`, tensoring with its semi-free resolution
 (`TauCeti.semifreeResolution`) is the **derived tensor product** `- ⊗^L_A N`
 (`TauCeti.derivedTensorLocalizerMorphism`). Any two semi-free resolutions of `N` are homologous
-(`TauCeti.exists_rowFiniteHomologous_homotopy`), so tensoring with any other semi-free resolution
-of `N`, whose generators live in the same universe, computes the same functor up to isomorphism
-(`TauCeti.nonempty_localizedFunctor_iso_derivedTensor`).
+(`TauCeti.exists_rowFiniteHomologous_homotopy`); in particular any other semi-free resolution of
+`N`, whose generators live in the same universe, is homologous to the canonical one
+(`TauCeti.nonempty_rowFiniteHomologous_semifreeResolution`), so tensoring with it computes the
+same functor up to isomorphism (`TauCeti.nonempty_localizedFunctor_iso_derivedTensor`).
 
 ## Main definitions
 
@@ -54,6 +55,8 @@ of `N`, whose generators live in the same universe, computes the same functor up
 
 * `TauCeti.RowFiniteTwistingCocycle.quasiIso_coefficientFunctor_map`: semi-free modules are
   K-flat.
+* `TauCeti.nonempty_rowFiniteHomologous_semifreeResolution`: a semi-free resolution is
+  homologous to the canonical one.
 * `TauCeti.nonempty_localizedFunctor_iso_derivedTensor`: the derived tensor product does not
   depend on the semi-free resolution.
 
@@ -247,6 +250,15 @@ def derivedTensorLocalizerMorphism :
   (semifreeResolution 𝒜 d 𝒩 dN).coefficientLocalizerMorphism hA
     wellFounded_mem_support_semifreeResolution
 
+/-- The derived tensor product is the morphism of localizers of the semi-free resolution, through
+which homologous cocycles give isomorphic localized functors
+(`TauCeti.RowFiniteHomologous.localizedFunctorIso`). -/
+theorem derivedTensorLocalizerMorphism_def :
+    derivedTensorLocalizerMorphism.{uR, uA, uM} hA 𝒩 dN =
+      (semifreeResolution 𝒜 d 𝒩 dN).coefficientLocalizerMorphism hA
+        wellFounded_mem_support_semifreeResolution :=
+  (rfl)
+
 @[simp]
 theorem derivedTensorLocalizerMorphism_functor :
     (derivedTensorLocalizerMorphism.{uR, uA, uM} hA 𝒩 dN).functor =
@@ -258,6 +270,27 @@ variable [IsScalarTower R A N] [SetLike.GradedSMul 𝒜 𝒩] [DirectSum.Decompo
   (L₁ : DGRightModuleCat.{uR, uA, uM} hA ⥤ D₁) [L₁.IsLocalization (DGRightModuleCat.quasiIsos hA)]
   (L₂ : CochainComplex (ModuleCat.{max (max uA uN) uM} R) ℤ ⥤ D₂)
   [L₂.IsLocalization (HomologicalComplex.quasiIso _ (ComplexShape.up ℤ))]
+
+/-- **A semi-free resolution is homologous to the canonical one.** Let `mP` be a semi-free
+cocycle, with generators in the universe of those of the canonical resolution, and
+`ε : K_{mP} → N`, given on generators, a quasi-isomorphism of DG left modules: a degree-preserving
+chain map whose relative cycles are relative boundaries. Then `mP` and the canonical semi-free
+resolution of `N` (`TauCeti.semifreeResolution`) are homologous. -/
+theorem nonempty_rowFiniteHomologous_semifreeResolution (hN : IsDGLeftModule hA 𝒩 dN)
+    {P : Type (max uA uN)} {ind : P → ℤ} {mP : RowFiniteTwistingCocycle 𝒜 d P ind}
+    (hmP : WellFounded fun y x ↦ y ∈ (mP.m x).support) {ε : P → N}
+    (hε : ∀ x, ε x ∈ 𝒩 (-ind x))
+    (hεd : ∀ x, Finsupp.linearCombination A ε (mP.m x) = dN (ε x))
+    (hεrel : ∀ c w, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP.m c = 0 →
+      Finsupp.linearCombination A ε c = dN w →
+        ∃ u v, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP.m u = c ∧
+          Finsupp.linearCombination A ε u + dN v = w) :
+    Nonempty (RowFiniteHomologous hA mP (semifreeResolution 𝒜 d 𝒩 dN)) := by
+  obtain ⟨H, -⟩ := exists_rowFiniteHomologous_homotopy hmP
+    wellFounded_mem_support_semifreeResolution hN hε semifreeResolutionAugmentation_mem hεd
+    linearCombination_semifreeResolutionAugmentation_m hεrel
+    (exists_rowFiniteTwistedDifferential_semifreeResolution_eq hN)
+  exact ⟨H⟩
 
 /-- **The derived tensor product does not depend on the resolution.** Let `mP` be a semi-free
 cocycle, with generators in the universe of those of the canonical resolution, and
@@ -274,12 +307,9 @@ theorem nonempty_localizedFunctor_iso_derivedTensor (hN : IsDGLeftModule hA 𝒩
         ∃ u v, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP.m u = c ∧
           Finsupp.linearCombination A ε u + dN v = w) :
     Nonempty ((mP.coefficientLocalizerMorphism hA hmP).localizedFunctor L₁ L₂ ≅
-      (derivedTensorLocalizerMorphism hA 𝒩 dN).localizedFunctor L₁ L₂) := by
-  obtain ⟨H, -⟩ := exists_rowFiniteHomologous_homotopy hmP
-    wellFounded_mem_support_semifreeResolution hN hε semifreeResolutionAugmentation_mem hεd
-    linearCombination_semifreeResolutionAugmentation_m hεrel
-    (exists_rowFiniteTwistedDifferential_semifreeResolution_eq hN)
-  exact ⟨H.localizedFunctorIso L₁ L₂ hmP wellFounded_mem_support_semifreeResolution⟩
+      (derivedTensorLocalizerMorphism hA 𝒩 dN).localizedFunctor L₁ L₂) :=
+  (nonempty_rowFiniteHomologous_semifreeResolution hN hmP hε hεd hεrel).map fun H ↦
+    H.localizedFunctorIso L₁ L₂ hmP wellFounded_mem_support_semifreeResolution
 
 end DerivedTensor
 

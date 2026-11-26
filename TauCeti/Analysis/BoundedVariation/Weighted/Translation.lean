@@ -163,13 +163,7 @@ theorem hasDerivAt_measureReal_stdGaussian_smul_vadd (hn : 2 ≤ finrank ℝ E) 
   -- identify the derivative with the weighted Gauss–Green flux of the constant field `w`
   have hWX : Integrable fun x =>
       fderiv ℝ (gaussianWeight E) x w * Real.exp (-gaussianWeight E x) := by
-    obtain ⟨bound, hbound, hle⟩ := exists_integrable_bound w
-    refine hbound.mono' (by
-      simp only [fderiv_gaussianWeight, innerSL_apply_apply]
-      exact ((continuous_id.inner continuous_const).mul
-        continuous_exp_neg_gaussianWeight).aestronglyMeasurable)
-      (Eventually.of_forall fun x => ?_)
-    simpa [abs_mul, abs_of_pos (Real.exp_pos _)] using hle 0 (by simp) x
+    simpa [fderiv_gaussianWeight] using integrable_inner_mul_exp_neg_gaussianWeight w
   rw [← integral_weightedDivergence_eq_integral_reducedBoundary_of_bounded
     (W := gaussianWeight E) (X := fun _ => w) contDiff_gaussianWeight hn
     integrable_exp_neg_gaussianWeight hs

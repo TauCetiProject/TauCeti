@@ -19,7 +19,7 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.Order.ProjIcc
 import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Primitives of integrable functions on the line
