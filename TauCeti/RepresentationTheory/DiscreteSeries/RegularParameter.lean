@@ -33,8 +33,9 @@ The doubled Harish-Chandra parameters of the discrete series of a unitary group 
 gap, the regular parameters, have distinct entries of the parity of `n - 1`. This file shows that
 every such vector is the doubled parameter of an explicit weight, with prescribed columns of the
 heights above `n` and control of the determinant power from below
-(`TauCeti.exists_isDoubledHCParameter_of_le`): the column multiplicities are the gaps between
-consecutive entries of the sorted vector. Conversely a bound `β` on the entries of the
+(`TauCeti.exists_isDoubledHCParameter_of_le`): each multiplicity `κ h`, `0 < h < n`, is half the
+gap between consecutive entries of the sorted vector, less one, and `κ n` is half the gap between
+the least entry and `2 e₀ + 1 - n`. Conversely a bound `β` on the entries of the
 parameter bounds the weight: it has at most `n · β` boxes in the columns of height below `n`
 (`TauCeti.IsDoubledHCParameter.boxesBelow_le`), and its determinant power has absolute value at
 most `β` (`TauCeti.IsDoubledHCParameter.abs_le`).
@@ -94,16 +95,44 @@ height `h`. -/
 def boxesBelow (n : ℕ) (κ : ℕ → ℕ) : ℕ :=
   ∑ h ∈ range n, h * κ h
 
+/-- Unfolds `IsDoubledHCParameter`. -/
+theorem isDoubledHCParameter_iff {ι : Type*} [Fintype ι] {κ : ℕ → ℕ} {e : ℤ} {l : ι → ℤ} :
+    IsDoubledHCParameter κ e l ↔
+      l.Injective ∧ ∀ i, ∃ p < Fintype.card ι, l i = doubledHCParameter (Fintype.card ι) κ e p := by
+  rw [IsDoubledHCParameter]
+
+/-- Unfolds `columnHighestWeight`. -/
+theorem columnHighestWeight_def (n : ℕ) (κ : ℕ → ℕ) (e : ℤ) (p : ℕ) :
+    columnHighestWeight n κ e p = e + ∑ h ∈ Ioo p n, (κ h : ℤ) := by
+  rw [columnHighestWeight]
+
+/-- Unfolds `doubledHCParameter`. -/
+theorem doubledHCParameter_def (n : ℕ) (κ : ℕ → ℕ) (e : ℤ) (p : ℕ) :
+    doubledHCParameter n κ e p = 2 * columnHighestWeight n κ e p + n - 1 - 2 * p := by
+  rw [doubledHCParameter]
+
+/-- Unfolds `boxesBelow`. -/
+theorem boxesBelow_def (n : ℕ) (κ : ℕ → ℕ) : boxesBelow n κ = ∑ h ∈ range n, h * κ h := by
+  rw [boxesBelow]
+
 /-- The doubled parameter in terms of the column multiplicities. -/
 theorem doubledHCParameter_eq (n : ℕ) (κ : ℕ → ℕ) (e : ℤ) (p : ℕ) :
     doubledHCParameter n κ e p = 2 * (e + ∑ h ∈ Ioo p n, (κ h : ℤ)) + n - 1 - 2 * p := by
-  rw [doubledHCParameter, columnHighestWeight]
+  rw [doubledHCParameter_def, columnHighestWeight_def]
 
 /-- The last entry of the doubled parameter, at the position `n - 1`, is `2 e + 1 - n`. -/
 theorem doubledHCParameter_sub_one {n : ℕ} (hn : 0 < n) (κ : ℕ → ℕ) (e : ℤ) :
     doubledHCParameter n κ e (n - 1) = 2 * e + 1 - n := by
   have h_empty : Ioo (n - 1) n = ∅ := by grind
   rw [doubledHCParameter_eq, h_empty, sum_empty]
+  omega
+
+/-- The entry at the position `p < n` of the doubled parameter exceeds the last one by twice the
+row `∑_{p < h < n} κ h` plus `2 (n - 1 - p)`. -/
+theorem doubledHCParameter_sub_doubledHCParameter_sub_one {n p : ℕ} (hp : p < n) (κ : ℕ → ℕ)
+    (e : ℤ) : doubledHCParameter n κ e p - doubledHCParameter n κ e (n - 1) =
+      2 * ∑ h ∈ Ioo p n, (κ h : ℤ) + 2 * ((n : ℤ) - 1 - p) := by
+  rw [doubledHCParameter_sub_one (by omega), doubledHCParameter_eq]
   omega
 
 /-- The doubled parameter sees only the columns of height below `n`. -/
@@ -122,44 +151,56 @@ theorem boxesBelow_eq_sum_sum_Ioo (n : ℕ) (κ : ℕ → ℕ) :
     have h_row (p : ℕ) (hp : p ∈ range n) :
         ∑ h ∈ Ioo p (n + 1), κ h = ∑ h ∈ Ioo p n, κ h + κ n := by
       rw [Ioo_add_one_right_eq_Ioc, sum_Ioo_add_eq_sum_Ioc (mem_range.mp hp)]
-    rw [boxesBelow, sum_range_succ, ← boxesBelow, ih, sum_range_succ, Ioo_add_one_right_eq_Ioc,
-      Ioc_self, sum_empty, add_zero, sum_congr rfl h_row, sum_add_distrib, sum_const, card_range,
-      nsmul_eq_mul, Nat.cast_id]
+    rw [boxesBelow_def, sum_range_succ, ← boxesBelow_def, ih, sum_range_succ]
+    simp [sum_congr rfl h_row, sum_add_distrib]
 
 namespace IsDoubledHCParameter
 
 variable {ι : Type*} [Fintype ι] {κ κ' : ℕ → ℕ} {e : ℤ} {l : ι → ℤ}
 
+/-- The entries of a doubled parameter are distinct. -/
+theorem injective (h : IsDoubledHCParameter κ e l) : l.Injective :=
+  h.1
+
+/-- Each entry of `l` is the entry of the doubled parameter at some position `p < card ι`. -/
+theorem exists_lt_eq (h : IsDoubledHCParameter κ e l) (i : ι) :
+    ∃ p < Fintype.card ι, l i = doubledHCParameter (Fintype.card ι) κ e p :=
+  h.2 i
+
 /-- Being the doubled parameter of `(κ, e)` depends only on the columns of height below
 `card ι`. -/
 theorem congr (h : IsDoubledHCParameter κ e l) (hκ : ∀ k < Fintype.card ι, κ k = κ' k) :
     IsDoubledHCParameter κ' e l :=
-  ⟨h.1, fun i => by
-    obtain ⟨p, hp, hi⟩ := h.2 i
+  isDoubledHCParameter_iff.mpr ⟨h.injective, fun i => by
+    obtain ⟨p, hp, hi⟩ := h.exists_lt_eq i
     exact ⟨p, hp, hi.trans (doubledHCParameter_congr hκ e p)⟩⟩
 
 /-- Every entry of the doubled parameter occurs in `l`. -/
 theorem exists_eq (h : IsDoubledHCParameter κ e l) {p : ℕ} (hp : p < Fintype.card ι) :
     ∃ i, l i = doubledHCParameter (Fintype.card ι) κ e p := by
   -- The positions of the entries of `l` are distinct, so they fill all of `Fin (card ι)`.
-  choose pos hpos hl using h.2
+  choose pos hpos hl using h.exists_lt_eq
   have h_inj : Function.Injective fun i => (⟨pos i, hpos i⟩ : Fin (Fintype.card ι)) :=
-    fun i i' hii' => h.1 <| by rw [hl i, hl i', Fin.mk.inj_iff.mp hii']
+    fun i i' hii' => h.injective <| by rw [hl i, hl i', Fin.mk.inj_iff.mp hii']
   obtain ⟨i, hi⟩ := ((Fintype.bijective_iff_injective_and_card _).mpr
     ⟨h_inj, (Fintype.card_fin _).symm⟩).2 ⟨p, hp⟩
   exact ⟨i, by rw [hl i, Fin.mk.inj_iff.mp hi]⟩
+
+/-- A bound `β` on the entries of `l` bounds every entry of the doubled parameter of `(κ, e)`. -/
+theorem abs_doubledHCParameter_le (h : IsDoubledHCParameter κ e l) {β : ℤ}
+    (hβ : ∀ i, |l i| ≤ β) {p : ℕ} (hp : p < Fintype.card ι) :
+    |doubledHCParameter (Fintype.card ι) κ e p| ≤ β := by
+  obtain ⟨i, hi⟩ := h.exists_eq hp
+  exact hi ▸ hβ i
 
 /-- If the entries of the doubled parameter of `(κ, e)` are bounded by `β`, each row of the
 diagram of the columns of height below `card ι` has at most `β` boxes. -/
 theorem sum_Ioo_le (h : IsDoubledHCParameter κ e l) {β : ℕ} (hβ : ∀ i, |l i| ≤ β) {p : ℕ}
     (hp : p < Fintype.card ι) : ∑ k ∈ Ioo p (Fintype.card ι), κ k ≤ β := by
   -- The row length is at most half the difference between the entry at `p` and the last entry.
-  obtain ⟨i, hi⟩ := h.exists_eq hp
-  obtain ⟨i', hi'⟩ := h.exists_eq (Nat.sub_one_lt_of_lt hp)
-  rw [doubledHCParameter_sub_one (by omega)] at hi'
-  rw [doubledHCParameter_eq] at hi
-  have hβi := _root_.abs_le.mp (hβ i)
-  have hβi' := _root_.abs_le.mp (hβ i')
+  have h_entry := _root_.abs_le.mp (h.abs_doubledHCParameter_le hβ hp)
+  have h_last := _root_.abs_le.mp (h.abs_doubledHCParameter_le hβ (Nat.sub_one_lt_of_lt hp))
+  have h_diff := doubledHCParameter_sub_doubledHCParameter_sub_one hp κ e
   have h_cast := Nat.cast_sum (R := ℤ) (Ioo p (Fintype.card ι)) κ
   omega
 
@@ -180,13 +221,11 @@ theorem abs_le [Nonempty ι] (h : IsDoubledHCParameter κ e l) {β : ℕ} (hβ :
     |e| ≤ β := by
   -- The first entry of `l` is at least `2 e + card ι - 1` and the last is `2 e + 1 - card ι`.
   have hn : 0 < Fintype.card ι := Fintype.card_pos
-  obtain ⟨i, hi⟩ := h.exists_eq hn
-  obtain ⟨i', hi'⟩ := h.exists_eq (Nat.sub_one_lt_of_lt hn)
-  rw [doubledHCParameter_sub_one hn] at hi'
-  rw [doubledHCParameter_eq] at hi
-  have h_sum : 0 ≤ ∑ k ∈ Ioo 0 (Fintype.card ι), (κ k : ℤ) := sum_nonneg fun _ _ => by positivity
-  have hβi := _root_.abs_le.mp (hβ i)
-  have hβi' := _root_.abs_le.mp (hβ i')
+  have h_first := _root_.abs_le.mp (h.abs_doubledHCParameter_le hβ hn)
+  have h_last := _root_.abs_le.mp (h.abs_doubledHCParameter_le hβ (Nat.sub_one_lt_of_lt hn))
+  have h_diff := doubledHCParameter_sub_doubledHCParameter_sub_one hn κ e
+  have h_cast := Nat.cast_sum (R := ℤ) (Ioo 0 (Fintype.card ι)) κ
+  rw [doubledHCParameter_sub_one hn] at h_last h_diff
   rw [_root_.abs_le]
   constructor <;> omega
 
@@ -226,7 +265,7 @@ private theorem exists_eq_add_card_add_sum_Ioc {ι : Type*} {v : ι → ℤ} (hv
     simp only [card_insert_of_notMem ha, forall_mem_insert]
     refine ⟨κ, fun k hk ↦ ?_, ⟨#S, Nat.lt_succ_self _, ?_⟩, fun i hi ↦ ?_⟩
     · rw [h_high k (by omega), Function.update_of_ne hk.ne']
-    · simp
+    · simp only [Nat.Ioc_succ_singleton, sum_singleton, Nat.cast_add, Nat.cast_one]
       omega
     · obtain ⟨p, hp_lt, hp_eq⟩ := h_position i hi
       exact ⟨p, by omega, by grind [sum_Ioc_succ_top]⟩
