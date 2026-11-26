@@ -43,9 +43,10 @@ On a compact manifold of positive dimension, with `μ` finite, every classical p
 operator `P` of order `m` has a formal adjoint, which is a classical pseudodifferential operator of
 order `m` with conjugate principal symbol
 (`TauCeti.exists_mem_classicalPseudodifferentialOperators_forall_integral_inner_eq`), and this
-formal adjoint is unique (`TauCeti.eq_of_forall_integral_inner_eq`). Indeed `P` is a finite sum of
-chart quantizations (`TauCeti.exists_eq_sum_chartQuantization`), `μ` reads in each of their charts
-as a smooth positive density
+formal adjoint is unique
+(`TauCeti.eq_of_forall_integral_inner_eq_of_forall_integral_inner_eq`). Indeed `P` is a
+finite sum of chart quantizations (`TauCeti.exists_eq_sum_chartQuantization`), `μ` reads in each
+of their charts as a smooth positive density
 (`TauCeti.HasSmoothPositiveDensity.exists_map_restrict_source_eq_withDensity`), and a finite sum of
 chart quantizations has such a formal adjoint
 (`TauCeti.exists_mem_classicalPseudodifferentialOperators_integral_inner_sum_chartQuantization_eq`).
@@ -88,8 +89,8 @@ classical symbol of order `m` (`TauCeti.ClassicalSymbol.weightedAdjoint`) with p
 * `TauCeti.exists_mem_classicalPseudodifferentialOperators_forall_integral_inner_eq`: on a compact
   manifold of positive dimension, every classical pseudodifferential operator has a formal adjoint
   of the same order with conjugate principal symbol.
-* `TauCeti.eq_of_forall_integral_inner_eq`: on a compact manifold, formal adjoints for a finite
-  measure positive on open sets are unique.
+* `TauCeti.eq_of_forall_integral_inner_eq_of_forall_integral_inner_eq`: on a compact
+  manifold, formal adjoints for a finite measure positive on open sets are unique.
 * `TauCeti.IsClassicalElliptic.exists_isClassicalElliptic_forall_integral_inner_eq`: on a compact
   manifold of positive dimension, the formal adjoint of an elliptic operator is elliptic.
 
@@ -409,7 +410,7 @@ on nonempty open sets, for instance a finite measure with a smooth positive dens
 (`TauCeti.HasSmoothPositiveDensity.isPositiveDensityMeasure`), an operator `P` on the
 complex-valued smooth functions has at most one formal adjoint: if
 `∫ ⟪P u, v⟫ dμ = ∫ ⟪u, Q₁ v⟫ dμ = ∫ ⟪u, Q₂ v⟫ dμ` for all smooth `u` and `v`, then `Q₁ = Q₂`. -/
-theorem eq_of_forall_integral_inner_eq [μ.IsOpenPosMeasure]
+theorem eq_of_forall_integral_inner_eq_of_forall_integral_inner_eq [μ.IsOpenPosMeasure]
     {Q₁ Q₂ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
     (h₁ : ∀ u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
@@ -447,7 +448,8 @@ order `m` has a formal adjoint `Q` for `μ`,
 
 for all smooth `u` and `v`, which is a classical pseudodifferential operator of order `m` with
 principal symbol `σ_m(Q)(x, ξ) = conj σ_m(P)(x, ξ)`. It is unique
-(`TauCeti.eq_of_forall_integral_inner_eq`), since `μ` is positive on nonempty open sets. -/
+(`TauCeti.eq_of_forall_integral_inner_eq_of_forall_integral_inner_eq`), since `μ` is
+positive on nonempty open sets. -/
 theorem exists_mem_classicalPseudodifferentialOperators_forall_integral_inner_eq [NeZero n]
     (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
     (hP : P ∈ classicalPseudodifferentialOperators m) :

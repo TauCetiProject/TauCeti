@@ -79,16 +79,15 @@ theorem integral_extendZero {e : X → Y} (he : IsOpenEmbedding e) (f : C_c(X, E
 
 /-- **Riesz uniqueness on an open set.** On a second countable locally compact Hausdorff space,
 two measures that vanish off an open set `s`, are finite on the compact subsets of `s` and give
-the same integral to every compactly supported continuous function supported in `s` are equal.
-Both measures are pushed forward from their pullbacks to `s`, which are finite on compact sets and
-hence regular, so that `MeasureTheory.Measure.ext_of_integral_eq_on_compactlySupported` applies on
-`s`. -/
+the same integral to every compactly supported continuous function supported in `s` are equal. -/
 theorem _root_.MeasureTheory.Measure.ext_of_integral_eq_on_compactlySupported_of_isOpen
     {X : Type*} [TopologicalSpace X] [T2Space X] [LocallyCompactSpace X]
     [SecondCountableTopology X] [MeasurableSpace X] [BorelSpace X] {s : Set X} (hs : IsOpen s)
     {μ ν : Measure X} (hμ : μ sᶜ = 0) (hν : ν sᶜ = 0)
     (hμK : ∀ K, IsCompact K → K ⊆ s → μ K < ∞) (hνK : ∀ K, IsCompact K → K ⊆ s → ν K < ∞)
     (h : ∀ g : C_c(X, ℝ), tsupport g ⊆ s → ∫ x, g x ∂μ = ∫ x, g x ∂ν) : μ = ν := by
+  -- Both measures are pushed forward from their pullbacks to `s`, which are finite on compact sets
+  -- and hence regular, so that `Measure.ext_of_integral_eq_on_compactlySupported` applies on `s`.
   have hsm := hs.measurableSet
   have hemb : IsOpenEmbedding ((↑) : s → X) := hs.isOpenEmbedding_subtypeVal
   have hmap : ∀ ρ : Measure X, ρ sᶜ = 0 → (ρ.comap ((↑) : s → X)).map (↑) = ρ := fun ρ hρ ↦ by
