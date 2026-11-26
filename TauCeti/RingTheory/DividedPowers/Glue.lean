@@ -101,7 +101,8 @@ theorem convolution_two {x y : A} (hx : x ∈ I) (hy : y ∈ J) :
     convolution γ ε 2 x y = γ.dpow 2 x + x * y + ε.dpow 2 y := by
   rw [convolution_def, Nat.sum_antidiagonal_eq_sum_range_succ_mk, sum_range_succ, sum_range_succ,
     sum_range_one]
-  simp [γ.dpow_zero hx, γ.dpow_one hx, ε.dpow_zero hy, ε.dpow_one hy]
+  simp only [Nat.reduceSub, Nat.sub_zero, tsub_self, γ.dpow_zero hx, γ.dpow_one hx,
+    ε.dpow_zero hy, ε.dpow_one hy]
   ring
 
 /-- If `x ∉ I`, then `convolution γ ε n x y = 0`. -/
@@ -163,6 +164,16 @@ theorem convolution_add (n : ℕ) {x x' y y' : A} (hx : x ∈ I) (hx' : x' ∈ I
 theorem coincide_on_inf (hIJ : I ⊓ J = I * J) {n : ℕ} {w : A} (hw : w ∈ I ⊓ J) :
     γ.dpow n w = ε.dpow n w :=
   γ.coincide_on_smul ε (by rwa [Ideal.smul_eq_mul, ← hIJ])
+
+/-- Any divided power structure on `I` agrees with `dividedPowersBot A` on `I ⊓ ⊥`. -/
+theorem coincide_on_inf_bot_right :
+    ∀ n, ∀ w ∈ I ⊓ ⊥, γ.dpow n w = (dividedPowersBot A).dpow n w :=
+  fun _ _ ↦ coincide_on_inf γ (dividedPowersBot A) ((inf_bot_eq I).trans (Ideal.mul_bot I).symm)
+
+/-- `dividedPowersBot A` agrees with any divided power structure on `J` on `⊥ ⊓ J`. -/
+theorem coincide_on_inf_bot_left :
+    ∀ n, ∀ w ∈ ⊥ ⊓ J, (dividedPowersBot A).dpow n w = ε.dpow n w :=
+  fun n w hw ↦ (coincide_on_inf_bot_right ε n w ⟨hw.2, hw.1⟩).symm
 
 end Convolution
 
@@ -315,15 +326,13 @@ theorem glue_dpow_self (γ : DividedPowers I) (n : ℕ) (z : A) :
 /-- Gluing `γ` with `dividedPowersBot A` recovers the original operations of `γ` on all of `A`. -/
 @[simp]
 theorem glue_dpow_bot (γ : DividedPowers I) (n : ℕ) (z : A) :
-    (glue γ (dividedPowersBot A) (fun _ _ ↦ coincide_on_inf γ (dividedPowersBot A)
-      ((inf_bot_eq I).trans (Ideal.mul_bot I).symm))).dpow n z = γ.dpow n z :=
+    (glue γ (dividedPowersBot A) (coincide_on_inf_bot_right γ)).dpow n z = γ.dpow n z :=
   glue_dpow_of_le_left _ bot_le n z
 
 /-- Gluing `dividedPowersBot A` with `ε` recovers the original operations of `ε` on all of `A`. -/
 @[simp]
 theorem bot_glue_dpow (ε : DividedPowers J) (n : ℕ) (z : A) :
-    (glue (dividedPowersBot A) ε (fun _ _ ↦ coincide_on_inf (dividedPowersBot A) ε
-      ((bot_inf_eq J).trans (Ideal.bot_mul J).symm))).dpow n z = ε.dpow n z :=
+    (glue (dividedPowersBot A) ε (coincide_on_inf_bot_left ε)).dpow n z = ε.dpow n z :=
   glue_dpow_of_le_right _ bot_le n z
 
 /-- Gluing divided power structures is symmetric as a bundled `DividedPowers` structure up to
@@ -358,16 +367,14 @@ theorem glue_self (γ : DividedPowers I) :
 /-- Gluing `γ` with `dividedPowersBot A` recovers `γ` as a bundled `DividedPowers` structure up
 to transport along `sup_bot_eq`. -/
 theorem glue_bot (γ : DividedPowers I) :
-    (sup_bot_eq I ▸ glue γ (dividedPowersBot A) (fun _ _ ↦ coincide_on_inf γ (dividedPowersBot A)
-      ((inf_bot_eq I).trans (Ideal.mul_bot I).symm))) = γ := by
+    (sup_bot_eq I ▸ glue γ (dividedPowersBot A) (coincide_on_inf_bot_right γ)) = γ := by
   rw [Subsingleton.elim (sup_bot_eq I) (sup_of_le_left (bot_le : (⊥ : Ideal A) ≤ I)),
     DividedPowers.glue_of_le_left _ bot_le]
 
 /-- Gluing `dividedPowersBot A` with `ε` recovers `ε` as a bundled `DividedPowers` structure up
 to transport along `bot_sup_eq`. -/
 theorem bot_glue (ε : DividedPowers J) :
-    (bot_sup_eq J ▸ glue (dividedPowersBot A) ε (fun _ _ ↦ coincide_on_inf (dividedPowersBot A) ε
-      ((bot_inf_eq J).trans (Ideal.bot_mul J).symm))) = ε := by
+    (bot_sup_eq J ▸ glue (dividedPowersBot A) ε (coincide_on_inf_bot_left ε)) = ε := by
   rw [Subsingleton.elim (bot_sup_eq J) (sup_of_le_right (bot_le : (⊥ : Ideal A) ≤ J)),
     DividedPowers.glue_of_le_right _ bot_le]
 
