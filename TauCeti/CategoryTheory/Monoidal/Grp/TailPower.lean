@@ -58,7 +58,8 @@ values in every `S`-scheme, nonreduced ones included.
   separating the head coordinate; `TauCeti.GrpObj.morphismProperty_tailZPow_iff` transfers
   properties of morphisms along this identification.
 * `TauCeti.GrpObj.tailZPow_mul`, `TauCeti.GrpObj.tailZPow_one`: the tail powers compose like the
-  exponents; in particular `tailZPow G i₀ (-1)` is an isomorphism.
+  exponents; in particular `tailZPow G i₀ (-1)` is an isomorphism, inverse to itself
+  (`TauCeti.GrpObj.inv_tailZPow_neg_one`).
 * `TauCeti.GrpObj.map_shiftedPower_comp_piComparison`,
   `TauCeti.GrpObj.map_tailZPow_comp_piComparison`: compatibility with monoidal functors.
 
@@ -151,6 +152,11 @@ theorem tailZPow_mul (e e' : ℤ) : tailZPow G i₀ (e * e') = tailZPow G i₀ e
 isomorphism, inverse to itself. -/
 instance isIso_tailZPow_neg_one : IsIso (tailZPow G i₀ (-1)) :=
   ⟨tailZPow G i₀ (-1), by simp [← tailZPow_mul], by simp [← tailZPow_mul]⟩
+
+/-- The tail power with exponent `-1` is its own inverse. -/
+@[simp]
+theorem inv_tailZPow_neg_one : inv (tailZPow G i₀ (-1)) = tailZPow G i₀ (-1) :=
+  IsIso.inv_eq_of_hom_inv_id (by simp [← tailZPow_mul])
 
 /-- For a single factor there is no tail, and the tail power is the identity for every
 exponent. -/
@@ -253,10 +259,7 @@ theorem map_tailZPow_comp_piComparison [GrpObj G] {J : Type w} [DecidableEq J] (
       simp [← F.map_comp]
     · simp only [Category.assoc, piComparison_comp_π, ← F.map_comp, tailZPow_π_of_ne _ _ _ h,
         GrpObj.comp_zpow]
-      rcases e with e | e
-      · simpa using map_pow F.homMonoidHom (Pi.π (fun _ : J => G) i) e
-      · simpa [zpow_negSucc] using
-          congrArg Inv.inv (map_pow F.homMonoidHom (Pi.π (fun _ : J => G) i) (e + 1))
+      simpa using map_zpow F.homMonoidHom (Pi.π (fun _ : J => G) i) e
 
 end Functor
 
