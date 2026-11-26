@@ -152,6 +152,26 @@ noncomputable def mapAlgEquiv (M : Model K X) (e : X ≃ₐ[RatFunc k] X') : Mod
       ← IntermediateField.adjoin_map, M.adjoin_range_embedding, ← AlgHom.fieldRange_eq_map]
     exact eq_top_iff.mpr fun x _ ↦ AlgHom.mem_fieldRange.mpr ⟨e.symm x, e.apply_symm_apply x⟩
 
+/-- Transport a model along an isomorphism `e : K₀ ≃+* K₁` of constant fields commuting with the
+embeddings into `k`. -/
+@[expose, simps pair embedding]
+noncomputable def congrConstants {K₀ K₁ : Type v} [Field K₀] [CharZero K₀] [Algebra K₀ k]
+    [Field K₁] [CharZero K₁] [Algebra K₁ k] (M : Model K₀ X) (e : K₀ ≃+* K₁)
+    (he : ∀ c : K₀, algebraMap K₁ k (e c) = algebraMap K₀ k c) : Model K₁ X where
+  pair := M.pair.conj e
+  embedding := M.embedding.comp (conjRingEquiv e M.pair).symm.toRingHom
+  embedding_algebraMap c := by
+    rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+      ← e.apply_symm_apply c, ← conjRingEquiv_algebraMap e M.pair (e.symm c),
+      RingEquiv.symm_apply_apply, embedding_algebraMap, ← he (e.symm c)]
+  embedding_algebraMap_X := by
+    rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+      ← RatFunc.mapRingEquiv_X e, ← conjRingEquiv_algebraMap_ratFunc e M.pair,
+      RingEquiv.symm_apply_apply, embedding_algebraMap_X]
+  adjoin_range_embedding := by
+    rw [RingHom.coe_comp, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, Set.range_comp,
+      (conjRingEquiv e M.pair).symm.surjective.range_eq, Set.image_univ, M.adjoin_range_embedding]
+
 variable (M : Model K X)
 
 /-- The `M.pair`-algebra structure on `X` induced by `M.embedding`. -/
@@ -267,8 +287,9 @@ theorem fractionRingEquiv_algebraMap_tmul (y : M.pair) (c : k) :
       M.embedding y * algebraMap k X c := by
   let _ := constAlgebra K X
   let _ := M.tensorProductAlgebra
-  rw [fractionRingEquiv, AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes]
-  exact M.tensorProductMap_tmul y c
+  rw [fractionRingEquiv, AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes, tensorProductAlgebra,
+    RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    M.tensorProductMap_tmul]
 
 @[simp]
 theorem fractionRingEquiv_symm_embedding (y : M.pair) :
@@ -513,8 +534,16 @@ theorem isDefinedOver_self (c : IsoClass k) : c.IsDefinedOver k := by
 `IntermediateField.extendScalars h`. -/
 theorem IsDefinedOver.extendScalars {F : Type*} [Field F] [Algebra F k]
     {F' K₀ : IntermediateField F k} (h : F' ≤ K₀) {c : IsoClass k} (hc : c.IsDefinedOver K₀) :
-    c.IsDefinedOver (IntermediateField.extendScalars h) :=
-  hc
+    c.IsDefinedOver (IntermediateField.extendScalars h) := by
+  obtain ⟨X, rfl, ⟨M⟩⟩ := hc
+  let e : K₀ ≃+* IntermediateField.extendScalars h :=
+    { toFun x := ⟨x.val, (IntermediateField.mem_extendScalars h).mpr x.property⟩
+      invFun x := ⟨x.val, (IntermediateField.mem_extendScalars h).mp x.property⟩
+      left_inv _ := Subtype.ext rfl
+      right_inv _ := Subtype.ext rfl
+      map_mul' _ _ := Subtype.ext (by simp)
+      map_add' _ _ := Subtype.ext (by simp) }
+  exact isDefinedOver_mk_iff.mpr ⟨M.congrConstants e fun _ ↦ rfl⟩
 
 /-- If a class is defined over a field `K`, then every automorphism of `k` fixing `K` fixes the
 class. -/
