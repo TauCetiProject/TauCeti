@@ -14,6 +14,7 @@ import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
 import TauCeti.RingTheory.Etale.FlatUnramified
+import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.Ideal.LiesOver
 import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.RamificationInertia.Bijective
@@ -268,7 +269,7 @@ theorem IsTamelyRamifiedWRT.exists_isUnit_forall_ramificationIdx_dvd
     exact (isTamelyRamifiedWRT_def.mp h Q.val).2
   · intro P _
     have hP : P ∈ (maximalIdeal A).primesOver (integralClosure A L) :=
-      ⟨inferInstance, ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A P)).symm⟩⟩
+      ⟨inferInstance, inferInstance⟩
     exact Finset.dvd_prod_of_mem _ (Finset.mem_univ (⟨P, hP⟩ : (maximalIdeal A).primesOver _))
 
 variable [Algebra.IsSeparable K L]
@@ -300,8 +301,6 @@ theorem isUnramifiedWRT_iff_forall_isUnramifiedAt :
       ((IsLocalization.algEquiv (nonZeroDivisors (integralClosure A L)) L
         (Localization.AtPrime (⊥ : Ideal (integralClosure A L)))).restrictScalars A)
   have : P.IsMaximal := Ideal.IsPrime.isMaximal ‹_› hP
-  have : P.LiesOver (maximalIdeal A) :=
-    ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A P)).symm⟩
   exact (Ideal.isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable_quotient _ P).mpr (h P)
 
 /-- A finite separable extension `L` of the fraction field of a discrete valuation ring `A` is
@@ -334,7 +333,7 @@ theorem isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank :
   have hn : 0 < Module.finrank K L := Module.finrank_pos
   have hliesOver (P : Ideal (integralClosure A L)) [P.IsMaximal] :
       P ∈ (maximalIdeal A).primesOver (integralClosure A L) :=
-    ⟨inferInstance, ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A P)).symm⟩⟩
+    ⟨inferInstance, inferInstance⟩
   have hmax (Q : (maximalIdeal A).primesOver (integralClosure A L)) : Q.val.IsMaximal :=
     have := Q.property.1
     have := Q.property.2
@@ -402,11 +401,6 @@ theorem IsTamelyRamifiedWRT.trans [IsLocalRing A] [IsDiscreteValuationRing (inte
     IsIntegralClosure.tower_top (R := A)
   rw [isTamelyRamifiedWRT_iff_of_isIntegralClosure (integralClosure A L)] at hL
   intro P _ _
-  have hQ : P.under (integralClosure A M) = maximalIdeal (integralClosure A M) :=
-    eq_maximalIdeal (Ideal.IsMaximal.under _ P)
-  have : P.LiesOver (maximalIdeal (integralClosure A M)) := ⟨hQ.symm⟩
-  have : (maximalIdeal (integralClosure A M)).LiesOver (maximalIdeal A) :=
-    ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
   obtain ⟨hsepM, heM⟩ := hM (maximalIdeal (integralClosure A M))
   obtain ⟨hsepL, heL⟩ := hL P
   let := Ideal.Quotient.field (maximalIdeal A)
@@ -435,10 +429,6 @@ theorem IsUnramifiedWRT.trans [IsLocalRing A] [IsDiscreteValuationRing (integral
     IsIntegralClosure.tower_top (R := A)
   rw [isUnramifiedWRT_iff_of_isIntegralClosure (integralClosure A L)] at hL
   intro P _ _
-  have : P.LiesOver (maximalIdeal (integralClosure A M)) :=
-    ⟨(eq_maximalIdeal (Ideal.IsMaximal.under _ P)).symm⟩
-  have : (maximalIdeal (integralClosure A M)).LiesOver (maximalIdeal A) :=
-    ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
   obtain ⟨heM, hsepM⟩ := hM (maximalIdeal (integralClosure A M))
   obtain ⟨heL, hsepL⟩ := hL P
   let := Ideal.Quotient.field (maximalIdeal A)
