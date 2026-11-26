@@ -29,14 +29,16 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 /-!
 # Frobenius' theorem: finite-dimensional real division algebras are `ℝ`, `ℂ`, or `ℍ[ℝ]`
 
-Every finite-dimensional associative real algebra without zero divisors is `ℝ`-isomorphic to `ℝ`,
-`ℂ`, or the Hamilton quaternions `ℍ[ℝ]` (`TauCeti.nonempty_algEquiv_real_or_complex_or_quaternion`).
+Every finite-dimensional associative real algebra without zero divisors is `ℝ`-isomorphic to
+`ℝ`, `ℂ`, or the Hamilton quaternions `ℍ[ℝ]`
+(`TauCeti.nonempty_algEquiv_real_or_complex_or_quaternion`).
 The central case (`TauCeti.nonempty_algEquiv_real_or_quaternion`) shows that a finite-dimensional
-real division algebra with centre `ℝ` is `ℝ` or `ℍ[ℝ]`, which is the step that computes the Brauer
-group of `ℝ`: the two Brauer classes already known -- the identity and the class of `ℍ[ℝ]` -- are
-all there are.
+real division algebra with centre `ℝ` is `ℝ` or `ℍ[ℝ]`, which is the step that computes the
+Brauer group of `ℝ`: the two Brauer classes already known -- the identity and the class of
+`ℍ[ℝ]` -- are all there are.
 
-The proof runs in three steps, and only the first uses anything about central simple algebras.
+The proof of the central case (`TauCeti.nonempty_algEquiv_real_or_quaternion`) runs in three
+steps, and only the first uses anything about central simple algebras.
 
 *The degree is at most two.* A central division algebra has a subfield of degree `deg ℝ D`
 (`TauCeti.Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg`), and a finite extension
@@ -60,7 +62,12 @@ the division ring `D` and put `j` in `ℝ`; rescaling `j` makes `j * j = -1`. Th
 division ring and surjective because both sides have dimension `4`.
 
 Beyond the degree bound no maximal subfield, centralizer theorem or Skolem-Noether argument is
-needed; the rest is the elementary Frobenius argument.
+needed for the central case; the rest is the elementary Frobenius argument. The general theorem
+(`TauCeti.nonempty_algEquiv_real_or_complex_or_quaternion`) reduces to the central case or `ℂ` by
+classifying the centre `Z(D)` via `Real.nonempty_algEquiv_or`: when `Z(D) ≃ₐ[ℝ] ℝ`, `D` is
+central over `ℝ` and the central case applies; when `Z(D) ≃ₐ[ℝ] ℂ`, `D` is finite over the
+algebraically closed field `ℂ`, so `ℂ → D` is bijective by
+`IsAlgClosed.algebraMap_bijective_of_isIntegral`.
 
 ## Main results
 
@@ -431,13 +438,7 @@ theorem nonempty_algEquiv_real_or_quaternion (D : Type*) [DivisionRing D] [Algeb
     exact nonempty_algEquiv_quaternion_of_finrank_eq_four D (by omega)
 
 /-- **Frobenius' theorem for real division algebras.** Every finite-dimensional associative real
-algebra without zero divisors is `ℝ`-isomorphic to `ℝ`, `ℂ`, or `ℍ[ℝ]`.
-
-Such an algebra is automatically a division algebra. Its centre is a finite field extension of
-`ℝ`, hence isomorphic to `ℝ` or `ℂ`. In the real-centre case `D` is central over `ℝ` and
-`TauCeti.nonempty_algEquiv_real_or_quaternion` gives `ℝ` or `ℍ[ℝ]`; in the complex-centre case
-`D` is finite and therefore integral over the algebraically closed field `ℂ`, so `ℂ → D` is
-bijective. -/
+algebra without zero divisors is `ℝ`-isomorphic to `ℝ`, `ℂ`, or `ℍ[ℝ]`. -/
 theorem nonempty_algEquiv_real_or_complex_or_quaternion (D : Type*) [Ring D] [IsDomain D]
     [Algebra ℝ D] [FiniteDimensional ℝ D] :
     Nonempty (D ≃ₐ[ℝ] ℝ) ∨ Nonempty (D ≃ₐ[ℝ] ℂ) ∨ Nonempty (D ≃ₐ[ℝ] ℍ[ℝ]) := by
@@ -445,18 +446,14 @@ theorem nonempty_algEquiv_real_or_complex_or_quaternion (D : Type*) [Ring D] [Is
   set Z := Subalgebra.center ℝ D
   let _ : Field Z := (IsField.of_isDomain_of_finite ℝ Z).toField
   have _ : Algebra.IsAlgebraic ℝ Z := Algebra.IsAlgebraic.of_finite ℝ Z
-  rcases _root_.Real.nonempty_algEquiv_or Z with hZ | hZ
-  · obtain ⟨eZ⟩ := hZ
-    have : Algebra.IsCentral ℝ D := ⟨fun x hx ↦ by
+  rcases _root_.Real.nonempty_algEquiv_or Z with ⟨⟨eZ⟩⟩ | ⟨⟨eZ⟩⟩
+  · have : Algebra.IsCentral ℝ D := ⟨fun x hx ↦ by
       have hz : (⟨x, hx⟩ : Z) = algebraMap ℝ Z (eZ ⟨x, hx⟩) :=
         eZ.injective (by rw [AlgEquiv.commutes, Algebra.algebraMap_self_apply])
-      have hval : x = algebraMap ℝ D (eZ ⟨x, hx⟩) := congrArg Subtype.val hz
-      exact hval ▸ Subalgebra.algebraMap_mem _ _⟩
-    rcases nonempty_algEquiv_real_or_quaternion D with hR | hH
-    · exact Or.inl hR
-    · exact Or.inr (Or.inr hH)
-  · obtain ⟨eZ⟩ := hZ
-    right; left
+      rw [show x = algebraMap ℝ D (eZ ⟨x, hx⟩) from congrArg Subtype.val hz]
+      exact Subalgebra.algebraMap_mem _ _⟩
+    exact (nonempty_algEquiv_real_or_quaternion D).imp id Or.inr
+  · right; left
     let f : ℂ →ₐ[ℝ] D := (Subalgebra.val Z).comp eZ.symm.toAlgHom
     have hcomm (c : ℂ) (x : D) : f c * x = x * f c :=
       (Subalgebra.mem_center_iff.mp (eZ.symm c).property x).symm
@@ -466,8 +463,7 @@ theorem nonempty_algEquiv_real_or_complex_or_quaternion (D : Type*) [Ring D] [Is
       rw [hmap, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, f.commutes]
     have _ : Module.Finite ℂ D :=
       @Module.Finite.of_restrictScalars_finite ℝ ℂ D _ _ _ Algebra.toModule _ _ hst ‹_›
-    have h := IsAlgClosed.algebraMap_bijective_of_isIntegral (k := ℂ) (K := D)
-    rw [hmap] at h
-    exact ⟨(AlgEquiv.ofBijective f h).symm⟩
+    have hbij := IsAlgClosed.algebraMap_bijective_of_isIntegral (k := ℂ) (K := D)
+    rw [hmap] at hbij; exact ⟨(AlgEquiv.ofBijective f hbij).symm⟩
 
 end TauCeti

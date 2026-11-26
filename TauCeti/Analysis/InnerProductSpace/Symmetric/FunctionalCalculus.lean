@@ -56,7 +56,7 @@ calculus of a Hermitian matrix.
 * `LinearMap.IsSymmetric.norm_cfc_apply_sq_add_norm_cfc_apply_sq`: `‖f(T)x‖² + ‖g(T)x‖² = ‖x‖²`
   when `f² + g² = 1` on the eigenvalues of `T`.
 * `LinearMap.IsSymmetric.exists_aeval_eq_cfc`: every functional calculus value `hT.cfc f` of
-  a symmetric real operator is a polynomial in `T`.
+  a symmetric operator is a real polynomial in `T`.
 
 ## References
 
@@ -270,10 +270,12 @@ theorem isPositive_cfc_iff (hT : T.IsSymmetric) {f : ℝ → ℝ} :
   exact inner_self_nonneg
 
 /-- Every functional calculus value `hT.cfc f` of a symmetric operator on a finite-dimensional
-real inner product space equals `Polynomial.aeval T p` for a Lagrange interpolating polynomial. -/
-theorem exists_aeval_eq_cfc {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    [FiniteDimensional ℝ V] {T : V →ₗ[ℝ] V} (hT : T.IsSymmetric) (f : ℝ → ℝ) :
-    ∃ p : ℝ[X], Polynomial.aeval T p = hT.cfc f := by
+inner product space over an `RCLike` field `𝕜` equals
+`Polynomial.aeval T (p.map (algebraMap ℝ 𝕜))` for a real Lagrange interpolating polynomial `p`
+constructed via `Lagrange.interpolate` and evaluated at the eigenvalues via
+`Lagrange.eval_interpolate_at_node`. -/
+theorem exists_aeval_eq_cfc (hT : T.IsSymmetric) (f : ℝ → ℝ) :
+    ∃ p : ℝ[X], Polynomial.aeval T (p.map (algebraMap ℝ 𝕜)) = hT.cfc f := by
   let p : ℝ[X] := Lagrange.interpolate (Finset.univ.image (hT.eigenvalues rfl)) _root_.id f
   refine ⟨p, (hT.eigenvectorBasis rfl).toBasis.ext fun i ↦ ?_⟩
   have heval : Polynomial.eval (hT.eigenvalues rfl i) p = f (hT.eigenvalues rfl i) := by
@@ -281,6 +283,7 @@ theorem exists_aeval_eq_cfc {V : Type*} [NormedAddCommGroup V] [InnerProductSpac
       (fun _ _ _ _ h ↦ h) (Finset.mem_image_of_mem _ (Finset.mem_univ i))
   rw [OrthonormalBasis.coe_toBasis, hT.cfc_apply_eigenvectorBasis,
     Module.End.aeval_apply_of_mem_apply_eq_smul (hT.apply_eigenvectorBasis rfl i)]
-  simp only [RCLike.ofReal_real_eq_id, id_eq, heval]
+  simp only [Polynomial.eval_map_algebraMap, Polynomial.aeval_def, Polynomial.eval₂_at_apply,
+    RCLike.algebraMap_eq_ofReal, heval]
 
 end LinearMap.IsSymmetric

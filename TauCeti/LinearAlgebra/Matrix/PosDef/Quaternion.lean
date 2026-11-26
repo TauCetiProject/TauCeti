@@ -7,15 +7,14 @@ module
 
 public import Mathlib.Algebra.Quaternion
 public import Mathlib.Basic.Real.Basic
-public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
-import Mathlib.Tactic.Linarith
 
 /-!
-# Positive definite and skew-Hermitian quaternionic matrices
+# Positive definite quaternionic matrices
 
-Hermitian and skew-Hermitian quadratic-form identities for quaternionic matrices, together with
-`Matrix.QuatPosDef`.
+Defines `Matrix.QuatPosDef` for Hermitian quaternionic matrices with `(star v ⬝ᵥ (M *ᵥ v)).re > 0`
+on nonzero vectors, with sum expansion (`Matrix.quatPosDef_iff_sum`) and cone operations
+(`Matrix.QuatPosDef.add`, `Matrix.QuatPosDef.smul`).
 -/
 
 public section
@@ -23,24 +22,6 @@ public section
 open scoped Matrix Quaternion
 
 namespace Matrix
-
-/-- Over a star semiring, conjugating `star v ⬝ᵥ (M *ᵥ v)` replaces `M` by `Mᴴ`. -/
-theorem star_dotProduct_mulVec_self {n R : Type*} [Fintype n] [NonUnitalSemiring R] [StarRing R]
-    (M : Matrix n n R) (v : n → R) : star (star v ⬝ᵥ (M *ᵥ v)) = star v ⬝ᵥ (Mᴴ *ᵥ v) := by
-  rw [← star_dotProduct, star_mulVec, dotProduct_mulVec]
-
-/-- For a skew-Hermitian matrix `Mᴴ = -M`, `star v ⬝ᵥ (M *ᵥ v)` is skew-adjoint. -/
-theorem star_dotProduct_mulVec_self_of_skewHermitian {n R : Type*} [Fintype n] [Ring R]
-    [StarRing R] {M : Matrix n n R} (hM : Mᴴ = -M) (v : n → R) :
-    star (star v ⬝ᵥ (M *ᵥ v)) = -(star v ⬝ᵥ (M *ᵥ v)) := by
-  rw [star_dotProduct_mulVec_self, hM, neg_mulVec, dotProduct_neg]
-
-/-- The real part of the quadratic form of a skew-Hermitian quaternionic matrix vanishes. -/
-theorem re_dotProduct_mulVec_eq_zero_of_skewHermitian {n : Type*} [Fintype n]
-    {M : Matrix n n ℍ[ℝ]} (hM : Mᴴ = -M) (v : n → ℍ[ℝ]) :
-    (star v ⬝ᵥ (M *ᵥ v)).re = 0 := by
-  have hre := congrArg QuaternionAlgebra.re (star_dotProduct_mulVec_self_of_skewHermitian hM v)
-  simp only [Quaternion.re_star, QuaternionAlgebra.re_neg] at hre; linarith
 
 section
 
@@ -59,6 +40,19 @@ theorem QuatPosDef.isHermitian {M : Matrix n n ℍ[ℝ]} (hM : M.QuatPosDef) : M
 
 theorem QuatPosDef.pos {M : Matrix n n ℍ[ℝ]} (hM : M.QuatPosDef) {v : n → ℍ[ℝ]} (hv : v ≠ 0) :
     0 < (star v ⬝ᵥ (M *ᵥ v)).re := hM.2 v hv
+
+/-- The sum of two positive definite quaternionic matrices is positive definite. -/
+theorem QuatPosDef.add {M N : Matrix n n ℍ[ℝ]} (hM : M.QuatPosDef) (hN : N.QuatPosDef) :
+    (M + N).QuatPosDef :=
+  ⟨hM.1.add hN.1, fun v hv ↦ by
+    simpa [Matrix.add_mulVec, dotProduct_add] using add_pos (hM.2 v hv) (hN.2 v hv)⟩
+
+/-- A strictly positive real scalar multiple of a positive definite quaternionic matrix is
+positive definite. -/
+theorem QuatPosDef.smul {c : ℝ} (hc : 0 < c) {M : Matrix n n ℍ[ℝ]} (hM : M.QuatPosDef) :
+    (c • M).QuatPosDef :=
+  ⟨ext fun i j ↦ by simp [hM.1.apply i j], fun v hv ↦ by
+    simpa [Matrix.smul_mulVec, dotProduct_smul, smul_eq_mul] using mul_pos hc (hM.2 v hv)⟩
 
 /-- Sum expansion of `Matrix.QuatPosDef` in terms of `∑ j, ∑ k, star (v j) * M j k * v k`. -/
 theorem quatPosDef_iff_sum (M : Matrix n n ℍ[ℝ]) :

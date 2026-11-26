@@ -57,7 +57,7 @@ already maps onto `B` (`AlgHom.exists_algHom_surjective_of_prod`).
   `TauCeti.card_centralIdempotents_pi_of_isSimpleRing`: a finite product of simple rings has
   `2 ^ (number of factors)` central idempotents.
 * `TauCeti.star_mem_centralIdempotents`, `TauCeti.star_eq_of_mem_centralIdempotents`,
-  `TauCeti.star_coord_idempotent_eq_self`: star preserves central idempotents, fixes them in
+  `RingEquiv.star_symm_single_one`: star preserves central idempotents, fixes them in
   proper star rings, and hence fixes coordinate idempotents of product decompositions.
 * `AlgHom.exists_algHom_surjective_of_prod`: a surjection of algebras `A × A ↠ B` onto a simple
   ring restricts to a surjection along one of the two coordinates.
@@ -112,10 +112,13 @@ theorem star_mem_centralIdempotents [StarRing R] {e : R} (he : e ∈ centralIdem
 theorem star_eq_of_mem_centralIdempotents [StarRing R] [IsProperStar R] {e : R}
     (he : e ∈ centralIdempotents R) : star e = e := by
   have hse := star_mem_centralIdempotents he
+  have h1e : (1 - e) * e = 0 := by rw [sub_mul, one_mul, he.1.eq, sub_self]
   have hprod : star (e * (1 - star e)) * (e * (1 - star e)) = 0 := by
-    rw [star_mul, star_sub, star_one, star_star, mul_assoc, ← mul_assoc (star e) e,
-      mul_comm_of_mem_centralIdempotents hse e, ← mul_assoc (1 - e) (e * star e),
-      ← mul_assoc (1 - e) e, sub_mul, one_mul, he.1.eq, sub_self, zero_mul, zero_mul]
+    calc star (e * (1 - star e)) * (e * (1 - star e))
+        = (1 - e) * star e * e * (1 - star e) := by simp [mul_assoc]
+      _ = (1 - e) * e * star e * (1 - star e) := by
+          rw [mul_assoc (1 - e) (star e) e, mul_comm_of_mem_centralIdempotents hse e, ← mul_assoc]
+      _ = 0 := by simp [h1e]
   have hee : e = e * star e :=
     sub_eq_zero.mp (by simpa [mul_sub] using star_mul_self_eq_zero.mp hprod)
   exact (congrArg star hee).trans (by rw [star_mul, star_star, ← hee])
@@ -191,17 +194,6 @@ theorem coe_centralIdempotentsPiEquiv_symm_apply (e : ∀ i, centralIdempotents 
 theorem card_centralIdempotents_pi [Fintype ι] :
     Nat.card (centralIdempotents (∀ i, A i)) = ∏ i, Nat.card (centralIdempotents (A i)) :=
   (Nat.card_congr (centralIdempotentsPiEquiv A)).trans Nat.card_pi
-
-/-- In a ring with proper star, every coordinate central idempotent `e.symm (Pi.single i 1)` of a
-product decomposition is fixed by `star`. -/
-theorem star_coord_idempotent_eq_self {E : Type*} [Ring E] [StarRing E] [IsProperStar E]
-    [DecidableEq ι] (e : E ≃+* ∀ i, A i) (i : ι) :
-    star (e.symm (Pi.single i 1)) = e.symm (Pi.single i 1) := by
-  refine star_eq_of_mem_centralIdempotents (e.symm.map_mem_centralIdempotents
-    ((mem_centralIdempotents_pi A).mpr fun j ↦ ?_))
-  by_cases hj : j = i
-  · subst hj; simpa using one_mem_centralIdempotents (R := A j)
-  · simpa [Pi.single_eq_of_ne hj] using zero_mem_centralIdempotents (R := A j)
 
 end Pi
 
@@ -297,3 +289,20 @@ theorem exists_algHom_surjective_of_prod [IsSimpleRing B] (φ : (A × A) →ₐ[
 end ProdSurjection
 
 end AlgHom
+
+namespace RingEquiv
+
+open TauCeti
+
+/-- In a ring with proper star, every coordinate central idempotent `e.symm (Pi.single i 1)` of a
+product decomposition is fixed by `star`. -/
+theorem star_symm_single_one {E : Type*} [Ring E] [StarRing E] [IsProperStar E] {ι : Type*}
+    [DecidableEq ι] {A : ι → Type*} [∀ i, Ring (A i)] (e : E ≃+* ∀ i, A i) (i : ι) :
+    star (e.symm (Pi.single i 1)) = e.symm (Pi.single i 1) := by
+  refine star_eq_of_mem_centralIdempotents (e.symm.map_mem_centralIdempotents
+    ((mem_centralIdempotents_pi A).mpr fun j ↦ ?_))
+  by_cases hj : j = i
+  · subst hj; simpa using one_mem_centralIdempotents (R := A j)
+  · simpa [Pi.single_eq_of_ne hj] using zero_mem_centralIdempotents (R := A j)
+
+end RingEquiv

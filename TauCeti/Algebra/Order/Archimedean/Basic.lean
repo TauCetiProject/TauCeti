@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Archimedean.Basic
-public import Mathlib.Basic.Real.Basic
-import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 
@@ -21,8 +19,7 @@ It also chooses the length of a finite geometric sequence of exponents. Given a 
 and a target `s < r`, it finds a number `M ≥ 1` of steps such that the starting value
 `s / r ^ M` lies below any prescribed `p > 0` while every term `s / r ^ M * r ^ k` with `k < M`
 stays below `1`. Moser's iteration uses it to pick the exponents `p₀ χ^k` along which a reverse
-Hölder inequality is iterated. It also records that an additive endomorphism of `ℝ` preserving
-positivity is linear.
+Hölder inequality is iterated.
 
 Finally, it chooses a dyadic scale `2ᵏ` comparable to a given length: for `ρ, n > 0` there is
 an integer `k` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`. Covering arguments with dyadic cubes use it to fit
@@ -35,8 +32,6 @@ a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with 
   there is `M > 0` with `s / r ^ M < p` and `s / r ^ M * r ^ k < 1` for all `k < M`.
 * `TauCeti.exists_nat_ge_and_div_le`: for `0 < δ` and `n₀ : ℕ` there are `n ≥ n₀` and `N > 0`
   with `1 / (N + 1) ≤ δ` and `2 * n / N ≤ δ`.
-* `AddMonoidHom.real_eq_mul_one`: an additive map `ℝ →+ ℝ` sending positive reals to positive
-  reals is linear (`f r = r * f 1`).
 * `TauCeti.exists_four_mul_two_zpow_mul_le_and_lt`: for `ρ, n > 0` there is `k : ℤ` with
   `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`.
 -/
@@ -97,27 +92,3 @@ theorem exists_four_mul_two_zpow_mul_le_and_lt {ρ n : L} (hρ : 0 < ρ) (hn : 0
 end Field
 
 end TauCeti
-
-/-- An additive map `ℝ →+ ℝ` sending positive reals to positive reals is linear. -/
-theorem AddMonoidHom.real_eq_mul_one (f : ℝ →+ ℝ) (hf : ∀ r : ℝ, 0 < r → 0 < f r)
-    (r : ℝ) : f r = r * f 1 := by
-  have hmono : StrictMono f := fun a b hab ↦
-    sub_pos.mp (by rw [← map_sub]; exact hf _ (sub_pos.mpr hab))
-  have hrat (q : ℚ) : f q = (q : ℝ) * f 1 := by
-    have hq' : (q.den : ℝ) * (q : ℝ) = (q.num : ℝ) := by
-      rw [mul_comm]; exact_mod_cast Rat.mul_den_eq_num q
-    have hq : (q.den : ℕ) • (q : ℝ) = (q.num : ℤ) • (1 : ℝ) := by
-      rw [nsmul_eq_mul, zsmul_eq_mul, mul_one]; exact hq'
-    have hden : (q.den : ℝ) * f q = q.num * f 1 := by
-      have h := congrArg f hq
-      rwa [map_nsmul, map_zsmul, nsmul_eq_mul, zsmul_eq_mul] at h
-    apply mul_left_cancel₀ (Nat.cast_ne_zero.mpr q.den_nz)
-    calc (q.den : ℝ) * f q = (q.num : ℝ) * f 1 := hden
-      _ = ((q.den : ℝ) * (q : ℝ)) * f 1 := by rw [hq']
-      _ = (q.den : ℝ) * ((q : ℝ) * f 1) := mul_assoc _ _ _
-  have hf1 : 0 < f 1 := hf 1 one_pos
-  refine le_antisymm (le_of_not_gt fun hlt ↦ ?_) (le_of_not_gt fun hlt ↦ ?_)
-  · obtain ⟨q, hq1, hq2⟩ := exists_rat_btwn ((lt_div_iff₀ hf1).mpr hlt)
-    linarith [hmono hq1, (lt_div_iff₀ hf1).mp hq2, hrat q]
-  · obtain ⟨q, hq1, hq2⟩ := exists_rat_btwn ((div_lt_iff₀ hf1).mpr hlt)
-    linarith [hmono hq2, (div_lt_iff₀ hf1).mp hq1, hrat q]
