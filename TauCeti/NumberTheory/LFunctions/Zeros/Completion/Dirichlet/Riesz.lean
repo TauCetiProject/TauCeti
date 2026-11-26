@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Riesz
 import TauCeti.NumberTheory.LFunctions.Continued.Dirichlet
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Growth
-import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 
 /-!
 # Bounds for the first Riesz zero series of primitive Dirichlet characters
@@ -36,10 +35,7 @@ theorem exists_norm_rieszZeroSeries_le_of_zeroFreeRightOf {N : ℕ} [NeZero N]
       ‖rieszZeroSeries (dirichletData χ hχ).entireCompletion y‖ ≤ C * y ^ σ := by
   rw [← dirichletData_continuedL χ hχ]
   have h := dirichletData_hasMeromorphicContinuation χ hχ
-  refine h.exists_norm_rieszZeroSeries_le_of_zeroFreeRightOf
-    (dirichletData_entireCompletion_orderLE_one χ hχ) (by norm_num) ?_
-  intro ρ hρ
-  have hρre := (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hρ).1
-  simpa only [dirichletData_gammaFactor] using χ.gammaFactor_ne_zero_of_re_pos hρre
+  exact h.exists_norm_rieszZeroSeries_le_of_zeroFreeRightOf
+    (dirichletData_entireCompletion_orderLE_one χ hχ) (by norm_num)
 
 end DirichletCharacter.IsPrimitive

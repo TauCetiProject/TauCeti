@@ -11,9 +11,9 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Basic
 /-!
 # Comparing the entire completion with the continued L-function
 
-Where the gamma factor is nonzero, the zeros of the entire completion are exactly the points
-where the continued L-function has positive meromorphic order. This lets estimates for series
-over the zeros of the entire completion use hypotheses stated on the original L-function.
+Zeros of the entire completion have positive meromorphic order in the continued L-function,
+even at gamma poles. This lets estimates for series over the zeros of the entire completion
+use zero-free hypotheses on the continued L-function.
 -/
 
 public section
@@ -22,13 +22,13 @@ namespace TauCeti.LFunctions.AnalyticLFunctionData.HasMeromorphicContinuation
 
 variable {d : AnalyticLFunctionData}
 
-/-- Where the gamma factor is nonzero, a zero of the entire completion is exactly a point of
-positive order of the continued L-function. -/
-theorem entireCompletion_eq_zero_iff_meromorphicOrderAt_continuedL_pos
-    (h : d.HasMeromorphicContinuation) {s : ℂ} (hγ : d.gammaFactor s ≠ 0) :
-    d.entireCompletion s = 0 ↔ 0 < meromorphicOrderAt d.continuedL s := by
-  rw [h.entireCompletion_eq_zero_iff_meromorphicOrderAt_pos,
-    d.meromorphicOrderAt_continuedL h.meromorphic,
-    (d.meromorphicOrderAt_gammaFactor_eq_zero_iff s).mpr hγ, sub_zero]
+/-- A zero of the entire completion has positive order in the continued L-function:
+removing the gamma factor cannot decrease the meromorphic order. -/
+theorem meromorphicOrderAt_continuedL_pos_of_entireCompletion_eq_zero
+    (h : d.HasMeromorphicContinuation) {s : ℂ} (hs : d.entireCompletion s = 0) :
+    0 < meromorphicOrderAt d.continuedL s := by
+  rw [d.meromorphicOrderAt_continuedL h.meromorphic, LinearOrderedAddCommGroupWithTop.sub_pos]
+  exact Or.inl ((d.meromorphicOrderAt_gammaFactor_nonpos s).trans_lt
+    (h.entireCompletion_eq_zero_iff_meromorphicOrderAt_pos.mp hs))
 
 end TauCeti.LFunctions.AnalyticLFunctionData.HasMeromorphicContinuation

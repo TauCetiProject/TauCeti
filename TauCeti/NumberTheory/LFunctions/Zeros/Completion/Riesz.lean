@@ -13,25 +13,24 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.ContinuedL
 # Riesz zero-series bounds for L-function records
 
 A zero-free half-plane for the continued L-function bounds the Riesz zero contribution of
-its entire completion when the gamma factor is nonzero at the completion's zeros.
+its entire completion.
 -/
 
 public section
 
 namespace TauCeti.LFunctions.AnalyticLFunctionData.HasMeromorphicContinuation
 
-/-- If the entire completion has order below two and the gamma factor is nonzero at its zeros,
-a zero-free half-plane right of `σ` for the continued L-function gives a bound `C * y ^ σ` on
-the norm of the first Riesz zero series for `y ≥ 1`. The constant is independent of `σ`. -/
+/-- If the entire completion has order below two, a zero-free half-plane right of `σ` for the
+continued L-function gives a bound `C * y ^ σ` on the norm of the first Riesz zero series for
+`y ≥ 1`. The constant is independent of `σ`. -/
 theorem exists_norm_rieszZeroSeries_le_of_zeroFreeRightOf {d : AnalyticLFunctionData}
-    (h : d.HasMeromorphicContinuation) {A : ℝ} (hord : OrderLE d.entireCompletion A) (hA : A < 2)
-    (hγ : ∀ ρ, d.entireCompletion ρ = 0 → d.gammaFactor ρ ≠ 0) :
+    (h : d.HasMeromorphicContinuation) {A : ℝ} (hord : OrderLE d.entireCompletion A) (hA : A < 2) :
     ∃ C ≥ 0, ∀ σ : ℝ, ZeroFreeRightOf σ d.continuedL → ∀ y ≥ 1,
       ‖rieszZeroSeries d.entireCompletion y‖ ≤ C * y ^ σ := by
   refine ⟨_, tsum_nonneg (fun _ ↦ norm_nonneg _), fun σ hσ y hy ↦
     hord.norm_rieszZeroSeries_le h.differentiable_entireCompletion hA ?_ hy⟩
   intro ρ hρ
-  have hpos := (h.entireCompletion_eq_zero_iff_meromorphicOrderAt_continuedL_pos (hγ ρ hρ)).mp hρ
+  have hpos := h.meromorphicOrderAt_continuedL_pos_of_entireCompletion_eq_zero hρ
   exact le_of_not_gt fun hlt ↦ hpos.not_ge ((zeroFreeRightOf_iff.mp hσ) ρ hlt)
 
 end TauCeti.LFunctions.AnalyticLFunctionData.HasMeromorphicContinuation
