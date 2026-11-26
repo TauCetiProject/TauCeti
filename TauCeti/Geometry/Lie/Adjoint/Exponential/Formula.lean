@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.ODE.ExistUnique
 import TauCeti.Analysis.Normed.Algebra.Basic
 import TauCeti.Geometry.Lie.Exponential.Trotter
+import TauCeti.Analysis.Normed.Operator.InvariantSubmodule
 
 /-!
 # The adjoint action on the Lie-group exponential
@@ -50,6 +51,8 @@ the exponential of their sum is the product of their exponentials.
 * `LeftInvariantDerivation.Ad_lieExp`: **the adjoint-exponential formula
   `Ad (lieExp X) = exp (ad X)`** as an identity of bounded operators on left-invariant
   derivations, and `LeftInvariantDerivation.Ad_lieExp_apply` its pointwise form.
+* `TauCeti.Lie.Ad_lieExp_mem_of_forall_lie_mem`: `Ad (lieExp X)` preserves every subspace that
+  `ad X` preserves.
 
 ## References
 
@@ -358,5 +361,26 @@ theorem _root_.LeftInvariantDerivation.Ad_lieExp_apply (X Y : LeftInvariantDeriv
       NormedSpace.exp (LinearMap.toContinuousLinearMap
         (LieAlgebra.ad ℝ (LeftInvariantDerivation I G) X)) Y :=
   DFunLike.congr_fun X.Ad_lieExp Y
+
+/-- **The adjoint action of an exponential preserves an `ad`-invariant subspace**: if `ad X`
+preserves `S`, then so does `Ad (lieExp X) = exp (ad X)`. -/
+theorem Ad_lieExp_mem_of_forall_lie_mem [T2Space G]
+    {S : Submodule ℝ (LeftInvariantDerivation I G)} {X : LeftInvariantDerivation I G}
+    (hX : ∀ Y ∈ S, ⁅X, Y⁆ ∈ S) {Y : LeftInvariantDerivation I G} (hY : Y ∈ S) :
+    Ad (I := I) (lieExp X) Y ∈ S := by
+  have _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  have _ : CompleteSpace (LeftInvariantDerivation I G) := FiniteDimensional.completeSpace ℝ _
+  let A := LinearMap.toContinuousLinearMap (LieAlgebra.ad ℝ (LeftInvariantDerivation I G) X)
+  have hA : S ∈ Module.End.invtSubmodule A.toLinearMap :=
+    (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun Z hZ => by
+      simpa only [A, ContinuousLinearMap.coe_coe, LinearMap.coe_toContinuousLinearMap',
+        LieAlgebra.ad_apply] using hX Z hZ
+  have h := (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).1
+    ((A.forall_exp_smul_mem_invtSubmodule_iff S.isClosed_of_finiteDimensional).mpr hA 1) Y hY
+  have hAd := LeftInvariantDerivation.Ad_lieExp_apply X Y
+  dsimp only at hAd
+  rw [hAd]
+  simpa only [one_smul, ContinuousLinearMap.coe_coe] using h
 
 end TauCeti.Lie
