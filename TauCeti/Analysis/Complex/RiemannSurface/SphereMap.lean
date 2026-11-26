@@ -73,6 +73,28 @@ theorem meromorphicOrderAt_affineChart_infty :
   rw [_root_.meromorphicOrderAt_id] at h
   convert h using 1 <;> simp [Pi.inv_def, Function.id_def]
 
+/-- Every integer power of the inverted coordinate is meromorphic on its chart, that is, away
+from `0`. -/
+theorem meromorphicAt_invChart_zpow {y : OnePoint ℂ} (hy : y ≠ ((0 : ℂ) : OnePoint ℂ)) (m : ℤ) :
+    TauCeti.RiemannSurface.MeromorphicAt (fun y ↦ invChart y ^ m) y := by
+  simpa using invChart.meromorphicAt_coordinate_zpow invChart_mem_maximalAtlas 0 m
+    (by simpa [invChart_source] using hy)
+
+/-- The `m`-th power of the inverted coordinate has order `m` at `∞`. -/
+@[simp]
+theorem meromorphicOrderAt_invChart_zpow_infty (m : ℤ) :
+    TauCeti.RiemannSurface.meromorphicOrderAt (fun y ↦ invChart y ^ m) (∞ : OnePoint ℂ) = m := by
+  have h := invChart.meromorphicOrderAt_coordinate_zpow invChart_mem_maximalAtlas 0 m
+    (x := (∞ : OnePoint ℂ)) (by simp [invChart_source, infty_ne_coe])
+  simpa using h
+
+/-- Every power of the inverted coordinate has order `0` at the finite nonzero points. -/
+theorem meromorphicOrderAt_invChart_zpow_coe {t : ℂ} (ht : t ≠ 0) (m : ℤ) :
+    TauCeti.RiemannSurface.meromorphicOrderAt (fun y ↦ invChart y ^ m) (t : OnePoint ℂ) = 0 := by
+  have h := invChart.meromorphicOrderAt_coordinate_zpow invChart_mem_maximalAtlas 0 m
+    (x := (t : OnePoint ℂ)) (by simpa [invChart_source] using ht)
+  simpa [ht] using h
+
 end OnePoint
 
 namespace TauCeti.RiemannSurface
@@ -92,6 +114,12 @@ def sphereMap (f : X → ℂ) (x : X) : OnePoint ℂ :=
 theorem sphereMap_def (f : X → ℂ) (x : X) :
     sphereMap f x = limUnder (𝓝[≠] x) fun y ↦ (f y : OnePoint ℂ) :=
   (rfl)
+
+/-- The value of `sphereMap f` at `x` only depends on `f` on a punctured neighbourhood of `x`. -/
+theorem sphereMap_congr_nhdsNE {f' : X → ℂ} (h : f =ᶠ[𝓝[≠] x] f') :
+    sphereMap f x = sphereMap f' x := by
+  have hc : (fun y ↦ (f y : OnePoint ℂ)) =ᶠ[𝓝[≠] x] fun y ↦ (f' y : OnePoint ℂ) := h.fun_comp _
+  rw [sphereMap_def, sphereMap_def, limUnder, limUnder, map_congr hc]
 
 /-! ### Values -/
 
