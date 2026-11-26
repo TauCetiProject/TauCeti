@@ -74,11 +74,6 @@ namespace TauCeti.MvPowerSeries
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {k : ℕ} {s : Fin k → ℝ} {i : Fin k}
   {g : Matrix (Fin 2) (Fin 2) R}
 
-omit [IsUltrametricDist R] in
-/-- The exponent `Xᵢ` has weight `sᵢ`. -/
-private theorem prod_pow_single (i : Fin k) : (Finsupp.single i 1).prod (s · ^ ·) = s i := by
-  simp [Finsupp.prod_single_index]
-
 /-- If `‖c‖ ≤ sᵢ` and `‖d‖ ≤ 1`, the denominator `c Xᵢ + d` of `g = !![a, b; c, d]` has
 coefficients bounded by `∏ⱼ sⱼ ^ tⱼ`. -/
 theorem norm_coeff_moebiusDenom_le (hs : ∀ j, 0 ≤ s j) (hc : ‖g 1 0‖ ≤ s i) (hd : ‖g 1 1‖ ≤ 1)
@@ -86,7 +81,7 @@ theorem norm_coeff_moebiusDenom_le (hs : ∀ j, 0 ≤ s j) (hc : ‖g 1 0‖ ≤
     ‖coeff t (moebiusDenom i g : _root_.MvPowerSeries (Fin k) R)‖ ≤ t.prod (s · ^ ·) := by
   rw [coe_moebiusDenom, map_add]
   exact (IsUltrametricDist.norm_add_le_max _ _).trans <| max_le
-    (norm_coeff_monomial_le_prod_pow hs (by rwa [prod_pow_single]) t)
+    (norm_coeff_monomial_le_prod_pow hs (by rwa [prod_pow_single, pow_one]) t)
     (norm_coeff_monomial_le_prod_pow hs (by simpa using hd) t)
 
 variable [CompleteSpace R] [NormOneClass R]
@@ -117,7 +112,7 @@ theorem norm_coeff_ringInverse_moebiusDenom_le (hs : ∀ j, 0 ≤ s j) (hg : g �
   refine norm_coeff_invOfUnit_le_prod_pow hs (norm_inv_lowerRight_unit hg).le (fun t ht ↦ ?_) t
   rw [coe_moebiusDenom, map_add]
   simp only [coeff_monomial t (0 : Fin k →₀ ℕ), ht, ↓reduceIte, add_zero]
-  exact norm_coeff_monomial_le_prod_pow hs (by rwa [prod_pow_single]) t
+  exact norm_coeff_monomial_le_prod_pow hs (by rwa [prod_pow_single, pow_one]) t
 
 /-- **The coefficients of a Möbius series.** For `g = !![a, b; c, d] ∈ moebiusSubmonoid R` with
 `‖c‖ ≤ sᵢ` and `‖det g‖ ≤ sᵢ`, the Möbius series `(a Xᵢ + b) / (c Xᵢ + d)` has coefficients bounded
@@ -157,7 +152,7 @@ theorem norm_coeff_moebius_le (hs : ∀ j, 0 ≤ s j) (hg : g ∈ moebiusSubmono
   · refine norm_coeff_monomial_le_prod_pow hs ?_ t
     simpa [hu] using norm_mul_le_of_le (norm_upperRight_le_one_of_mem_moebiusSubmonoid hg) hu.le
   · have hm := norm_coeff_monomial_le_prod_pow (x := g.det * ↑u⁻¹) hs (by
-      rw [prod_pow_single]
+      rw [prod_pow_single, pow_one]
       simpa [hu] using norm_mul_le_of_le hdet hu.le)
     exact norm_coeff_mul_le_prod_pow hm (norm_coeff_ringInverse_moebiusDenom_le hs hg hc) t
 

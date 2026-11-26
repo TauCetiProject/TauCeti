@@ -36,6 +36,7 @@ families of automorphic forms.
 
 * `MvPowerSeries.prod_pow_nonneg`: the rate `∏ i, s i ^ t i` is nonnegative.
 * `MvPowerSeries.prod_pow_add`: the rate is multiplicative in the exponent.
+* `MvPowerSeries.prod_pow_single`: the rate of the exponent `single i n` is `s i ^ n`.
 * `MvPowerSeries.norm_coeff_monomial_le_prod_pow`: the bound of a monomial.
 * `MvPowerSeries.norm_coeff_mul_le_mul_prod_pow`: the bounds multiply under multiplication.
 * `MvPowerSeries.norm_coeff_pow_le_pow_mul_prod_pow` and
@@ -64,6 +65,11 @@ theorem prod_pow_nonneg {s : σ → ℝ} (hs : ∀ i, 0 ≤ s i) (t : σ →₀ 
 theorem prod_pow_add {c : σ → ℝ} (s t : σ →₀ ℕ) :
     (s + t).prod (c · ^ ·) = s.prod (c · ^ ·) * t.prod (c · ^ ·) :=
   Finsupp.prod_add_index' (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _
+
+/-- The rate of the exponent `single i n`, i.e. of the monomial `Xᵢ ^ n`, is `s i ^ n`. -/
+theorem prod_pow_single {s : σ → ℝ} (i : σ) (n : ℕ) :
+    (Finsupp.single i n).prod (s · ^ ·) = s i ^ n :=
+  Finsupp.prod_single_index (pow_zero _)
 
 section Ring
 
