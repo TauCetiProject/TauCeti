@@ -46,15 +46,6 @@ namespace Polynomial
 
 variable {R : Type*} [CommRing R] [Algebra ℚ R]
 
-/-- The coefficient of `Xᵏ` in `Lₙ^{(α)}` for `k ≤ n`, with the rational factor written through
-`algebraMap` and the rising factorial through `eval`, the shape used by the coefficient
-comparisons below. -/
-private theorem coeff_laguerre_of_le_eq (α : R) {n k : ℕ} (h : k ≤ n) :
-    (laguerre α n).coeff k =
-      (-1 : R) ^ k * algebraMap ℚ R (1 / ((n - k).factorial * k.factorial)) *
-        (ascPochhammer R (n - k)).eval (α + k + 1) := by
-  rw [coeff_laguerre_of_le α h, Algebra.smul_def, eval_eq_smeval, mul_assoc]
-
 /-- The derivative of a Laguerre polynomial raises the parameter and lowers the index:
 `(Lₙ₊₁^{(α)})' = -Lₙ^{(α+1)}` (DLMF 18.9.23). It is stated at index `n + 1` because the
 `n`-indexed form fails at `n = 0`. -/

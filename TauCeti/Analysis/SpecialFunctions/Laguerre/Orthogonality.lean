@@ -72,10 +72,8 @@ private theorem coeff_laguerre_mul_Gamma (hα : -1 < α) (j : ℕ) {n k : ℕ} (
   set s : ℝ := α + k + 1
   have hs : 0 < s := by have : (0 : ℝ) ≤ k := k.cast_nonneg; linarith
   -- `Γ(s + m) = (s)ₘ Γ(s)` for the positive base `s = α + k + 1`
-  have hΓ (m : ℕ) : Gamma (s + m) = (ascPochhammer ℝ m).eval s * Gamma s := by
-    rw [← Gamma_add_nat_div_Gamma_eq s fun i hi => by
-        have : (0 : ℝ) ≤ i := i.cast_nonneg; linarith,
-      div_mul_cancel₀ _ (Gamma_pos_of_pos hs).ne']
+  have hΓ := Gamma_add_natCast_eq_ascPochhammer_eval_mul (x := s) fun i hi => by
+    have : (0 : ℝ) ≤ i := i.cast_nonneg; linarith
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hk
   have h₁ : ((j + k : ℕ) : ℝ) + α + 1 = s + j := by push_cast; ring
   have h₂ : ((k + d : ℕ) : ℝ) + α + 1 = s + d := by push_cast; ring
@@ -87,8 +85,9 @@ private theorem coeff_laguerre_mul_Gamma (hα : -1 < α) (j : ℕ) {n k : ℕ} (
   -- the sign `(-1) ^ (n - k) = (-1) ^ d` of the forward-difference summand meets the `(-1) ^ d`
   -- split off from `(-1) ^ n = (-1) ^ k * (-1) ^ d`
   have hsign : (-1 : ℝ) ^ d * (-1) ^ d = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
-  rw [coeff_laguerre_of_le α hk, h₁, h₂, h₃, hΓ, hΓ, ← eval_eq_smeval, ← hfact]
-  simp only [Nat.add_sub_cancel_left, Rat.smul_def, zsmul_eq_mul, pow_add]
+  rw [coeff_laguerre_of_le_eq α hk, h₁, h₂, h₃, hΓ, hΓ, ← hfact]
+  simp only [Nat.add_sub_cancel_left, zsmul_eq_mul, pow_add, map_div₀, map_one, map_mul,
+    map_natCast]
   push_cast
   have : (k.factorial : ℝ) ≠ 0 := by positivity
   have : (d.factorial : ℝ) ≠ 0 := by positivity
