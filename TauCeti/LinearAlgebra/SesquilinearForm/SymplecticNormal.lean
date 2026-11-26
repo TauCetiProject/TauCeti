@@ -166,6 +166,7 @@ theorem IsRefl.symplecticNormalForm_symplecticNormalCongr (hB : B.IsRefl) (hB' :
 
 /-- The equivalences of symplectic normal spaces induced by two successive equivalences compose
 to the one induced by their composite. -/
+@[simp]
 theorem symplecticNormalCongr_trans (hℓ : Function.Injective ℓ) (hℓ' : Function.Injective ℓ')
     (h : ∀ u v, B' (e u) (e v) = ℓ (B u v)) (h' : ∀ u v, B'' (e' u) (e' v) = ℓ' (B' u v))
     (hW : W.map (e : V →ₗ[K] V') = W') (hW' : W'.map (e' : V' →ₗ[K] V'') = W'') :

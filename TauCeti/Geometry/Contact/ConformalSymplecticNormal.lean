@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Contact.Isotropic
 public import TauCeti.Geometry.Symplectic.Rescale
 public import TauCeti.LinearAlgebra.SesquilinearForm.SymplecticNormal
+import TauCeti.Algebra.Module.Submodule.Map
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.LinearAlgebra.Quotient.Basic
 
 /-!
 # The conformal symplectic normal spaces of an isotropic map
@@ -127,31 +129,6 @@ variable {E₁ H₁ M₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E�
   {F : M → M₁} {G : M₁ → M₂}
 
 omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
-/-- An invertible differential mapping `D x` into `D₁ (F x)`, whose inverse maps `D₁ (F x)` into
-`D x`, maps `D x` onto `D₁ (F x)`. -/
-private theorem map_mfderiv_eq {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
-    (hFD : ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
-    (hFD' : ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x) :
-    (D x).map (LinearEquiv.ofBijective (mfderiv I I₁ F x).toLinearMap hFx.bijective :
-      TangentSpace I x →ₗ[ℝ] TangentSpace I₁ (F x)) = D₁ (F x) :=
-  le_antisymm (Submodule.map_le_iff_le_comap.2 hFD) fun v hv ↦
-    ⟨_, hFD' v hv, hFx.self_apply_inverse v⟩
-
-omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
-/-- An invertible differential mapping `D x` into `D₁ (F x)`, whose inverse maps `D₁ (F x)` into
-`D x`, induces an injective map of contact lines `T_x M ⧸ D x → T_(F x) M₁ ⧸ D₁ (F x)`. -/
-private theorem injective_mapQ_mfderiv {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
-    (hFD : ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
-    (hFD' : ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x) :
-    Function.Injective ((D x).mapQ (D₁ (F x)) (mfderiv I I₁ F x).toLinearMap hFD) := by
-  refine (injective_iff_map_eq_zero _).2 fun a ha ↦ ?_
-  induction a using Submodule.Quotient.induction_on with
-  | H u =>
-    rw [Submodule.mapQ_apply, Submodule.Quotient.mk_eq_zero] at ha
-    rw [Submodule.Quotient.mk_eq_zero, ← hFx.inverse_apply_self u]
-    exact hFD' _ ha
-
-omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
 /-- The restriction of the invertible differential to an equivalence `D x ≃ D₁ (F x)` agrees with
 the restriction of the differential to a map `D x → D₁ (F x)`. -/
 private theorem ofSubmodules_ofBijective_mfderiv_apply {x : M}
@@ -192,12 +169,17 @@ def conformalSymplecticNormalEquiv {n : ℕ∞ω} (hD : IsContMDiffDistribution 
     (hFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
     (hf : MDifferentiableAt J I f y) :
     ConformalSymplecticNormal J D f y ≃ₗ[ℝ] ConformalSymplecticNormal J D₁ (F ∘ f) y :=
-  have hmap := map_mfderiv_eq hFx hFD hFD'.self_of_nhds
+  -- The inverse differential carries `D₁ (F (f y))` back into `D (f y)`.
+  have hFD₁ (u) (hu : mfderiv I I₁ F (f y) u ∈ D₁ (F (f y))) : u ∈ D (f y) :=
+    hFx.inverse_apply_self u ▸ hFD'.self_of_nhds _ hu
+  have hmap : (D (f y)).map (LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap
+      hFx.bijective : TangentSpace I (f y) →ₗ[ℝ] TangentSpace I₁ (F (f y))) = D₁ (F (f y)) :=
+    Submodule.map_equiv_eq_iff.2 fun u ↦ ⟨hFD₁ u, hFD u⟩
   LinearMap.symplecticNormalCongr _ _
     ((LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap hFx.bijective).ofSubmodules _ _
       hmap)
     (ℓ := (D (f y)).mapQ (D₁ (F (f y))) (mfderiv I I₁ F (f y)).toLinearMap hFD)
-    (injective_mapQ_mfderiv hFx hFD hFD'.self_of_nhds)
+    ((Submodule.mapQ_injective_iff _ _ _ hFD).2 hFD₁)
     -- The target distribution is indexed by `(F ∘ f) y`, which `rw` does not unfold to
     -- `F (f y)`, so the restrictions are identified in term mode.
     (fun u v ↦ (congrArg₂ (distributionLeviForm D₁ (F (f y)) · ·)
