@@ -110,6 +110,7 @@ theorem mapOfAlgebra_apply (x : SpectralAlgClosure K) :
 
 /-- `SpectralAlgClosure.mapOfAlgebra K L` is `K`-linear: it sends the image of `c : K` in `K^alg`
 to the image of `c` in `L^alg`, through `L`. -/
+@[simp]
 theorem mapOfAlgebra_algebraMap [Algebra K L]
     [IsScalarTower K (AlgebraicClosure K) (AlgebraicClosure L)] (c : K) :
     mapOfAlgebra K L (algebraMap K (SpectralAlgClosure K) c) =
@@ -136,6 +137,20 @@ def mapOfAlgebraEquiv : SpectralAlgClosure K ≃+* SpectralAlgClosure L :=
 theorem coe_mapOfAlgebraEquiv : ⇑(mapOfAlgebraEquiv K L) = mapOfAlgebra K L :=
   (rfl)
 
+/-- `SpectralAlgClosure.mapOfAlgebra K L` undoes the inverse of
+`SpectralAlgClosure.mapOfAlgebraEquiv K L`. -/
+@[simp]
+theorem mapOfAlgebra_mapOfAlgebraEquiv_symm (b : SpectralAlgClosure L) :
+    mapOfAlgebra K L ((mapOfAlgebraEquiv K L).symm b) = b :=
+  (mapOfAlgebraEquiv K L).apply_symm_apply b
+
+/-- The inverse of `SpectralAlgClosure.mapOfAlgebraEquiv K L` undoes
+`SpectralAlgClosure.mapOfAlgebra K L`. -/
+@[simp]
+theorem mapOfAlgebraEquiv_symm_mapOfAlgebra (a : SpectralAlgClosure K) :
+    (mapOfAlgebraEquiv K L).symm (mapOfAlgebra K L a) = a :=
+  (mapOfAlgebraEquiv K L).symm_apply_apply a
+
 end Field
 
 variable (K L : Type*) [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K]
@@ -148,11 +163,15 @@ Through the embedding, `L^alg` is a normed `K`-algebra, since the norm of `L` re
 `K`, and a `K`-algebra map out of the algebraic extension `K^alg` preserves the norm
 (`AlgHom.isometry`). -/
 theorem isometry_mapOfAlgebra : Isometry (mapOfAlgebra K L) := by
-  -- `L^alg` is a normed `K`-algebra through `L`.
+  -- `L^alg` is a normed `K`-algebra through `L`: the algebra map of
+  -- `NormedAlgebra.restrictScalars` is `algebraMap L _ ∘ algebraMap K L` by definition, which is
+  -- the scalar tower `K → L → L^alg`.
   let := NormedAlgebra.restrictScalars K L (SpectralAlgClosure L)
+  have : IsScalarTower K L (SpectralAlgClosure L) := .of_algebraMap_eq fun _ ↦ rfl
   let f : SpectralAlgClosure K →ₐ[K] SpectralAlgClosure L :=
     { toRingHom := mapOfAlgebra K L
-      commutes' := mapOfAlgebra_algebraMap K L }
+      commutes' := fun c ↦
+        (mapOfAlgebra_algebraMap K L c).trans (IsScalarTower.algebraMap_apply K L _ c).symm }
   exact f.isometry
 
 /-- The extension `C_K →+* C_L` of the embedding `K^alg → L^alg`: the completion of
@@ -174,6 +193,7 @@ theorem completionMapOfAlgebra_coe (a : SpectralAlgClosure K) :
 
 /-- `SpectralAlgClosure.completionMapOfAlgebra K L` is `K`-linear: it sends the image of `c : K`
 in `C_K` to the image of `c` in `C_L`, through `L`. -/
+@[simp]
 theorem completionMapOfAlgebra_algebraMap (c : K) :
     completionMapOfAlgebra K L (algebraMap K (CompletedAlgClosure K) c) =
       algebraMap L (CompletedAlgClosure L) (algebraMap K L c) := by
@@ -201,6 +221,15 @@ theorem coe_completionMapOfAlgebraEquiv :
     ⇑(completionMapOfAlgebraEquiv K L) = completionMapOfAlgebra K L :=
   funext fun x ↦ (Completion.mapRingEquiv_apply _ _ _ x).trans
     (completionMapOfAlgebra_apply K L x).symm
+
+/-- The inverse of the isomorphism `C_K ≃+* C_L` extends the inverse of
+`SpectralAlgClosure.mapOfAlgebraEquiv K L`. -/
+@[simp]
+theorem completionMapOfAlgebraEquiv_symm_coe (b : SpectralAlgClosure L) :
+    (completionMapOfAlgebraEquiv K L).symm b =
+      ((mapOfAlgebraEquiv K L).symm b : CompletedAlgClosure K) := by
+  rw [RingEquiv.symm_apply_eq, coe_completionMapOfAlgebraEquiv, completionMapOfAlgebra_coe,
+    mapOfAlgebra_mapOfAlgebraEquiv_symm]
 
 /-- The extension `C_K → C_L` of the embedding `K^alg → L^alg` is bijective when `L` is algebraic
 over `K`. -/

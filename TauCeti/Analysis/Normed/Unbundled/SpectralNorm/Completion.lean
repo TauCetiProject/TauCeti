@@ -60,21 +60,16 @@ variable {K E E' E'' : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpa
   [NormedField E] [NormedAlgebra K E] [Algebra.IsAlgebraic K E]
   [NormedField E'] [NormedAlgebra K E'] [NormedField E''] [NormedAlgebra K E'']
 
-/-- A `K`-algebra isomorphism of normed fields, algebraic over a complete ultrametric field `K`,
-is an isometry. -/
-theorem isometry_of_isAlgebraic (φ : E ≃ₐ[K] E') : Isometry φ :=
-  φ.toAlgHom.isometry
-
 /-- The inverse of a `K`-algebra isomorphism of normed fields, algebraic over a complete
 ultrametric field `K`, is an isometry. -/
 theorem isometry_symm_of_isAlgebraic (φ : E ≃ₐ[K] E') : Isometry φ.symm :=
-  φ.isometry_of_isAlgebraic.right_inv φ.apply_symm_apply
+  φ.toAlgHom.isometry.right_inv φ.apply_symm_apply
 
 /-- The extension `Completion E ≃A[K] Completion E'` of a `K`-algebra isomorphism
 `φ : E ≃ₐ[K] E'` of normed fields with `E` algebraic over a complete ultrametric field `K`: the
-completion of `φ`, which is an isometry (`AlgEquiv.isometry_of_isAlgebraic`). -/
+completion of `φ`, which is an isometry (`AlgHom.isometry`). -/
 def completion (φ : E ≃ₐ[K] E') : Completion E ≃A[K] Completion E' where
-  toAlgEquiv := Completion.mapAlgEquiv φ φ.isometry_of_isAlgebraic.continuous
+  toAlgEquiv := Completion.mapAlgEquiv φ φ.toAlgHom.isometry.continuous
     φ.isometry_symm_of_isAlgebraic.continuous
   continuous_toFun := Completion.continuous_mapAlgEquiv φ _ _
   continuous_invFun := Completion.continuous_mapAlgEquiv_symm φ _ _
@@ -110,7 +105,7 @@ theorem eq_completion_of_continuous (φ : E ≃ₐ[K] E') {f : Completion E → 
 theorem isometry_completion (φ : E ≃ₐ[K] E') : Isometry φ.completion := by
   have h : ⇑φ.completion = Completion.map φ := funext φ.completion_apply
   rw [h]
-  exact φ.isometry_of_isAlgebraic.completion_map
+  exact φ.toAlgHom.isometry.completion_map
 
 /-- `φ.completion` preserves the norm. -/
 @[simp]
