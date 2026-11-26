@@ -36,7 +36,8 @@ definitions agree (`unipotentCommHopfAlgProperty_iff_geometricallyUnipotentPoint
 
 A group-like element `c ≠ 1` of `H`, that is, a nontrivial character of `G`, rules out
 unipotence: the one-dimensional comodule `k_c` has no nonzero fixed vector
-(`not_unipotentCommHopfAlgProperty_of_isGroupLikeElem`).
+(`not_unipotentCommHopfAlgProperty_of_isGroupLikeElem`), so the only character of a unipotent group
+is trivial (`unipotentCommHopfAlgProperty.eq_one_of_isGroupLikeElem`).
 
 ## Main declarations
 
@@ -53,6 +54,8 @@ unipotence: the one-dimensional comodule `k_c` has no nonzero fixed vector
   closed field, for reduced finite-type groups, the two definitions agree.
 * `TauCeti.not_unipotentCommHopfAlgProperty_of_isGroupLikeElem`: a nontrivial character excludes
   unipotence.
+* `TauCeti.unipotentCommHopfAlgProperty.eq_one_of_isGroupLikeElem`: the only character of a
+  unipotent group is trivial.
 
 ## References
 
@@ -221,6 +224,12 @@ theorem not_unipotentCommHopfAlgProperty_of_isGroupLikeElem {c : H} (hc : IsGrou
   have h := congrArg (TensorProduct.lid k H) hvc
   rw [TensorProduct.lid_tmul, TensorProduct.lid_tmul] at h
   exact hc1 (smul_right_injective H hv h)
+
+/-- **A unipotent group has no nontrivial characters**: its only group-like element is `1`. -/
+theorem unipotentCommHopfAlgProperty.eq_one_of_isGroupLikeElem
+    (hH : unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k H)) {c : H}
+    (hc : IsGroupLikeElem k c) : c = 1 :=
+  not_not.mp fun hc1 ↦ not_unipotentCommHopfAlgProperty_of_isGroupLikeElem hc hc1 hH
 
 end
 
