@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.ACL.Basic
-import Mathlib.Topology.MetricSpace.HausdorffDistance
+import Mathlib.Topology.GDelta.MetrizableSpace
 import Mathlib.Topology.UrysohnsLemma
 
 /-!
@@ -19,9 +19,9 @@ every map `ACL` on `Ω` (`TauCeti.IsACLOn.aestronglyMeasurable_formalDeriv`). Th
 `Continuous.stronglyMeasurable_formalDeriv` from maps continuous on all of `ℝⁿ` to maps
 continuous on an open set.
 
-The proof writes `Ω` as the union of the open sets `Vₖ = {x | 1/(k+1) < d(x, Ωᶜ)}`, each
-contained in the closed set `Kₖ = {x | 1/(k+1) ≤ d(x, Ωᶜ)} ⊆ Ω`. On `Kₖ`, `u` agrees with a map
-continuous on all of `ℝⁿ`, its product with a Urysohn cutoff
+The proof writes `Ω` as the union of countably many open sets `Vₖ` whose closures lie in `Ω`
+(`Disjoint.hasSeparatingCover_closed_gdelta_right`, as `Ωᶜ` is closed and hence Gδ). On the
+closure of `Vₖ`, `u` agrees with a map continuous on all of `ℝⁿ`, its product with a Urysohn cutoff
 (`ContinuousOn.exists_continuous_eqOn_of_isClosed`, which holds in any normal space). The formal
 derivatives of the two maps agree on `Vₖ` because the formal derivative depends only on germs
 (`Filter.EventuallyEq.formalDeriv_eq`).
@@ -29,8 +29,7 @@ derivatives of the two maps agree on `Vₖ` because the formal derivative depend
 
 public section
 
-open MeasureTheory Set Filter Metric
-open scoped ENNReal Topology
+open MeasureTheory Set Filter
 
 noncomputable section
 
@@ -66,36 +65,22 @@ derivative of `u` is almost everywhere strongly measurable on `Ω` with respect 
 theorem _root_.ContinuousOn.aestronglyMeasurable_formalDeriv [CompleteSpace F]
     (hu : ContinuousOn u Ω) (hΩ : IsOpen Ω) :
     AEStronglyMeasurable (formalDeriv u) (μ.restrict Ω) := by
-  -- The open sets `V k` and the closed sets `K k`, with `V k ⊆ K k ⊆ Ω` and `⋃ k, V k = Ω`.
-  set V : ℕ → Set (EuclideanSpace ℝ (Fin n)) := fun k ↦ {x | ((k : ℝ≥0∞) + 1)⁻¹ < infEDist x Ωᶜ}
-  set K : ℕ → Set (EuclideanSpace ℝ (Fin n)) := fun k ↦ {x | ((k : ℝ≥0∞) + 1)⁻¹ ≤ infEDist x Ωᶜ}
-  have hVK (k : ℕ) : V k ⊆ K k := fun x hx ↦ by
-    simp only [V, K, mem_ofPred_eq] at hx ⊢
-    exact hx.le
-  have hV (k : ℕ) : IsOpen (V k) := isOpen_lt continuous_const continuous_infEDist
-  have hK (k : ℕ) : IsClosed (K k) := isClosed_le continuous_const continuous_infEDist
-  have hKΩ (k : ℕ) : K k ⊆ Ω := fun x hx ↦ by
-    by_contra hxΩ
-    have h0 : infEDist x Ωᶜ = 0 := infEDist_zero_of_mem hxΩ
-    simp only [K, mem_ofPred_eq, h0, nonpos_iff_eq_zero, ENNReal.inv_eq_zero] at hx
-    exact ENNReal.add_ne_top.2 ⟨ENNReal.natCast_ne_top k, ENNReal.one_ne_top⟩ hx
-  have hUnion : ⋃ k, V k = Ω := by
-    refine Subset.antisymm (iUnion_subset fun k ↦ (hVK k).trans (hKΩ k)) fun x hx ↦ ?_
-    have hpos : 0 < infEDist x Ωᶜ := by
-      rw [pos_iff_ne_zero, ne_eq, ← mem_closure_iff_infEDist_zero, hΩ.isClosed_compl.closure_eq]
-      exact fun h ↦ h hx
-    obtain ⟨k, hk⟩ := ENNReal.exists_inv_nat_lt hpos.ne'
-    exact mem_iUnion.2 ⟨k, (ENNReal.inv_le_inv.2 (le_self_add)).trans_lt hk⟩
-  rw [← hUnion, aestronglyMeasurable_iUnion_iff]
+  -- Open sets `V k` covering `Ω`, each with closure inside `Ω`: as `Ωᶜ` is closed, hence Gδ,
+  -- `Ω` has a countable open cover separated from `Ωᶜ`.
+  obtain ⟨V, hΩV, hV⟩ := disjoint_compl_right.hasSeparatingCover_closed_gdelta_right
+    hΩ.isClosed_compl hΩ.isClosed_compl.isGδ
+  have hVΩ (k : ℕ) : closure (V k) ⊆ Ω := disjoint_compl_right_iff_subset.1 (hV k).2
+  rw [← (iUnion_subset fun k ↦ subset_closure.trans (hVΩ k)).antisymm hΩV,
+    aestronglyMeasurable_iUnion_iff]
   intro k
-  -- A continuous map `g` on `ℝⁿ` agreeing with `u` on `K k`.
-  obtain ⟨g, hg, hgu⟩ := hu.exists_continuous_eqOn_of_isClosed hΩ (hK k) (hKΩ k)
+  -- A continuous map `g` on `ℝⁿ` agreeing with `u` on `closure (V k)`.
+  obtain ⟨g, hg, hgu⟩ := hu.exists_continuous_eqOn_of_isClosed hΩ isClosed_closure (hVΩ k)
   -- On the open set `V k`, the formal derivatives of `u` and `g` agree.
   have heq : EqOn (formalDeriv g) (formalDeriv u) (V k) := fun x hx ↦
     Filter.EventuallyEq.formalDeriv_eq <|
-      Filter.mem_of_superset ((hV k).mem_nhds hx) fun y hy ↦ hgu (hVK k hy)
+      Filter.mem_of_superset ((hV k).1.mem_nhds hx) fun y hy ↦ hgu (subset_closure hy)
   exact (hg.stronglyMeasurable_formalDeriv.aestronglyMeasurable).congr
-    ((ae_restrict_mem (hV k).measurableSet).mono heq)
+    ((ae_restrict_mem (hV k).1.measurableSet).mono heq)
 
 /-- The formal derivative of a map `ACL` on an open set `Ω` is almost everywhere strongly
 measurable on `Ω` with respect to any measure. -/
