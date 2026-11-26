@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Flow.Complete
 public import Mathlib.Dynamics.Flow
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Diffeomorphism.Group
-public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -35,11 +34,7 @@ use is a compact invariant region of a field that blows up elsewhere, such as th
 * `TauCeti.apply_globalFlow_eq_sub`: a function `f` with `df(v) = -1` on a band decreases at unit
   speed along the flow while the flow stays in the band;
   `TauCeti.apply_globalFlow_eq_sub_of_forall_mem`: the same forward or backward up to a time `s`,
-  along a flow line staying where `df(v) = -1` between `0` and `s`;
-  `TauCeti.mvfderiv_apply_eq_one_of_eventually_apply_globalFlow_eq_add`: conversely, a function
-  translated at unit speed by the flow has `df(v) = 1`, so
-  (`TauCeti.isRegularValue_of_apply_globalFlow_eq_add`) the values it is translated through are
-  regular.
+  along a flow line staying where `df(v) = -1` between `0` and `s`.
 * `TauCeti.globalFlow_eq_of_isMIntegralCurve`: every integral curve is an orbit.
 * `TauCeti.forall_globalFlow_eq_self_iff`, `TauCeti.exists_globalFlow_ne_self`: a point is fixed at
   all times exactly when the field vanishes there.
@@ -177,43 +172,6 @@ theorem apply_globalFlow_eq_sub_of_forall_mem {f : M → ℝ} {U : Set M}
     left_mem_uIcc right_mem_uIcc
   rw [Flow.map_zero_apply, add_zero] at hconst
   linarith
-
-/-- **A function translated by a flow has unit derivative along the field.** If `f` is
-differentiable at `x` and `f (ψ_t x) = f x + t` for all times `t` near `0`, where `ψ` is the flow
-of `v`, then `df_x(v x) = 1`. -/
-theorem mvfderiv_apply_eq_one_of_eventually_apply_globalFlow_eq_add {f : M → ℝ} {x : M}
-    (hf : MDifferentiableAt I 𝓘(ℝ) f x)
-    (hfx : ∀ᶠ t in 𝓝 0, f (globalFlow v hv hcomplete t x) = f x + t) :
-    mvfderiv I f x (v x) = 1 := by
-  have hf0 : MDifferentiableAt I 𝓘(ℝ) f (globalFlow v hv hcomplete 0 x) := by
-    rwa [Flow.map_zero_apply]
-  -- The derivative is written as a function of the base point, so that the base point `ψ_0 x`
-  -- can be rewritten to `x` without rewriting the type of the tangent vector `v (ψ_0 x)`.
-  have hd : HasDerivAt (fun t ↦ f (globalFlow v hv hcomplete t x))
-      ((fun y ↦ mvfderiv I f y (v y)) (globalFlow v hv hcomplete 0 x)) 0 :=
-    Manifold.hasDerivAt_comp_curve hf0 (isMIntegralCurve_globalFlow hv hcomplete x 0)
-  rw [Flow.map_zero_apply] at hd
-  exact (((hasDerivAt_id' (0 : ℝ)).const_add (f x)).congr_of_eventuallyEq hfx).unique hd |>.symm
-
-/-- **Values swept by a flow are regular.** If `f` is differentiable on the band `a < f < b` and
-the flow `ψ` of `v` translates `f` at unit speed there, `f (ψ_t x) = f x + t` whenever `f x` and
-`f x + t` lie in `(a, b)`, then every value in `(a, b)` is a regular value of `f`. -/
-theorem isRegularValue_of_apply_globalFlow_eq_add {f : M → ℝ} {a b : ℝ}
-    (hf : ∀ x, f x ∈ Ioo a b → MDifferentiableAt I 𝓘(ℝ) f x)
-    (hfv : ∀ x t, f x ∈ Ioo a b → f x + t ∈ Ioo a b →
-      f (globalFlow v hv hcomplete t x) = f x + t)
-    {c : ℝ} (hc : c ∈ Ioo a b) : IsRegularValue I 𝓘(ℝ) f c := by
-  rw [isRegularValue_iff]
-  rintro x rfl
-  rw [isRegularPoint_iff_mvfderiv_ne_zero]
-  intro h0
-  have h1 := mvfderiv_apply_eq_one_of_eventually_apply_globalFlow_eq_add hv hcomplete
-    (hf x hc) <| by
-      filter_upwards [(isOpen_Ioo.preimage (by fun_prop : Continuous fun s ↦ f x + s)).mem_nhds
-        (by simpa using hc)] with s hs
-      exact hfv x s hc hs
-  rw [h0] at h1
-  exact zero_ne_one h1
 
 /-- Every integral curve of the field is an orbit of the flow. -/
 theorem globalFlow_eq_of_isMIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCurve γ v) (t : ℝ) :

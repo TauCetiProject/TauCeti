@@ -9,11 +9,13 @@ public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 
 public import Mathlib.Algebra.FiniteSupport.Basic
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
+public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 import Mathlib.Algebra.Order.Hom.Lattice
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.NumberTheory.Padics.HeightOneSpectrum
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Finite places of number fields
@@ -39,6 +41,10 @@ characteristic-zero field `K`) and `FinitePlace K`—and hence `Nonempty`—lets
 pick a finite place with `Classical.arbitrary` (or `Finset.exists_notMem` outside a finite
 exceptional set) whenever an invariant that is the same at every place must be read off at one
 place.
+
+When `K` contains a primitive `n`-th root of unity, the algebra map to the completion induces
+`IsDedekindDomain.HeightOneSpectrum.adicCompletionRootsOfUnityEquiv`, identifying the `n`-th
+roots of unity of `K` with those of the completion.
 
 Two finite places are equal exactly when their absolute values are equivalent,
 `NumberField.FinitePlace.eq_iff_isEquiv`, as Mathlib has for infinite places. For a prime `w` of a
@@ -92,6 +98,39 @@ instance [NumberField K] : Infinite (FinitePlace K) :=
     (FinitePlace.equivHeightOneSpectrum (K := K)).surjective
 
 end TauCeti
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+variable {K : Type*} [Field K] [NumberField K] {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity K n]
+  (v : HeightOneSpectrum (𝓞 K))
+
+/-- The algebra map identifies the `n`-th roots of unity of `K` with those of its completion. -/
+def adicCompletionRootsOfUnityEquiv : rootsOfUnity n K ≃* rootsOfUnity n (v.adicCompletion K) :=
+  rootsOfUnityEquivOfPrimitiveRoots (algebraMap K (v.adicCompletion K)).injective
+    (HasEnoughRootsOfUnity.primitiveRoots_nonempty K n)
+
+/-- The forward map of the completion equivalence is the algebra map restricted to roots of
+unity. -/
+@[simp]
+theorem adicCompletionRootsOfUnityEquiv_apply (ζ : rootsOfUnity n K) :
+    v.adicCompletionRootsOfUnityEquiv ζ =
+      restrictRootsOfUnity (algebraMap K (v.adicCompletion K)) n ζ :=
+  Subtype.ext (Units.ext (val_rootsOfUnityEquivOfPrimitiveRoots_apply_coe _ _ ζ))
+
+/-- The inverse of the completion equivalence sends a root of unity to its preimage under the
+algebra map. -/
+@[simp]
+theorem restrictRootsOfUnity_adicCompletionRootsOfUnityEquiv_symm_apply
+    (ζ : rootsOfUnity n (v.adicCompletion K)) :
+    restrictRootsOfUnity (algebraMap K (v.adicCompletion K)) n
+      (v.adicCompletionRootsOfUnityEquiv.symm ζ) = ζ := by
+  rw [← v.adicCompletionRootsOfUnityEquiv_apply, MulEquiv.apply_symm_apply]
+
+/-- A primitive root of unity in a number field remains primitive in a finite completion. -/
+instance hasEnoughRootsOfUnity_adicCompletion : HasEnoughRootsOfUnity (v.adicCompletion K) n :=
+  (v.adicCompletionRootsOfUnityEquiv (n := n)).hasEnoughRootsOfUnity
+
+end IsDedekindDomain.HeightOneSpectrum
 
 namespace NumberField.FinitePlace
 

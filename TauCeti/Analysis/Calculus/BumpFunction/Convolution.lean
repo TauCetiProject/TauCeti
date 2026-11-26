@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
+import Mathlib.Analysis.Convex.Integral
+import TauCeti.Analysis.Calculus.BumpFunction.Normed
 import TauCeti.Analysis.Calculus.BumpFunction.Rescale
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.Holder
@@ -306,17 +308,27 @@ theorem tendstoUniformlyOnFilter_normed_convolution {ι : Type*} {l : Filter ι}
   intro ε hε
   simpa only [dist_comm] using (tendsto_order.1 hdist).2 ε hε
 
+/-- Mollifying a locally integrable function with values in a closed convex set `s` by a
+normalized bump keeps its values in `s`: the mollification at `x` is the mean of `g (x - ·)` for the
+probability measure with density `φ.normed μ`. -/
+theorem normed_convolution_mem_of_convex (φ : ContDiffBump (0 : G)) {s : Set F}
+    (hs : Convex ℝ s) (hsc : IsClosed s) (hg : LocallyIntegrable g μ) (hgs : ∀ x, g x ∈ s)
+    (x : G) : (φ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x ∈ s := by
+  have hexists := (φ.hasCompactSupport_normed (μ := μ)).convolutionExists_left
+    (lsmul ℝ ℝ) φ.continuous_normed hg x
+  have heq : (φ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x = ∫ t, g (x - t) ∂φ.normedMeasure μ := by
+    rw [convolution_def, φ.integral_normedMeasure]
+    simp only [lsmul_apply]
+  rw [heq]
+  refine hs.integral_mem hsc (ae_of_all _ fun t => hgs _) ?_
+  simpa only [φ.integrable_normedMeasure_iff, ConvolutionExistsAt, lsmul_apply] using hexists
+
 /-- Mollifying a locally integrable function with values in `[a, b]` by a normalized bump keeps
 its values in `[a, b]`. -/
 theorem normed_convolution_mem_Icc (φ : ContDiffBump (0 : G)) {w : G → ℝ} {a b : ℝ}
     (hw : LocallyIntegrable w μ) (hwab : ∀ x, w x ∈ Set.Icc a b) (x : G) :
-    (φ.normed μ ⋆[lsmul ℝ ℝ, μ] w) x ∈ Set.Icc a b := by
-  have hexists := (φ.hasCompactSupport_normed (μ := μ)).convolutionExists_left
-    (lsmul ℝ ℝ) φ.continuous_normed hw x
-  exact ⟨le_convolution_lsmul_of_forall_le (μ := μ) φ.support_normed_eq.subset
-    φ.nonneg_normed φ.integral_normed hexists fun y _ => (hwab y).1,
-    convolution_lsmul_le_of_forall_le (μ := μ) φ.support_normed_eq.subset
-    φ.nonneg_normed φ.integral_normed hexists fun y _ => (hwab y).2⟩
+    (φ.normed μ ⋆[lsmul ℝ ℝ, μ] w) x ∈ Set.Icc a b :=
+  φ.normed_convolution_mem_of_convex (convex_Icc a b) isClosed_Icc hw hwab x
 
 open Set in
 /-- Mollifying a function that is continuous on a ball by bumps with radii tending to `0`
