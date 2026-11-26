@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.ConleyZehnder.FrameChange
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 import TauCeti.Analysis.Matrix.SymplecticGroup.Maslov.Lagrangian
+import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
 
 /-!
@@ -59,19 +60,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {L : Submodule ℝ V}
 
-omit [FiniteDimensional ℝ V] in
-/-- In a basis of `V` whose first half is a basis `e` of a subspace `L`, the vectors of `L` have
-vanishing coordinates along the second half. -/
-private theorem repr_inr_eq_zero_of_mem {m : ℕ} {b : Basis (Fin m ⊕ Fin m) ℝ V}
-    {e : Basis (Fin m) ℝ L} (hbe : ∀ i, b (Sum.inl i) = (e i : V)) {v : V} (hv : v ∈ L)
-    (i : Fin m) : b.repr v (Sum.inr i) = 0 := by
-  have hv' : v = ∑ j, e.repr ⟨v, hv⟩ j • b (Sum.inl j) := by
-    have h := congrArg Subtype.val (e.sum_repr ⟨v, hv⟩)
-    simp_rw [Submodule.coe_sum, Submodule.coe_smul, ← hbe] at h
-    exact h.symm
-  rw [hv']
-  simp
-
 /-- **Loops preserving a Lagrangian subspace have Maslov index zero.** If a loop `g` of linear
 symplectic maps of `(V, ω)` maps a Lagrangian subspace `L` into itself at every time, then its
 Maslov index vanishes. -/
@@ -89,9 +77,9 @@ theorem maslovIndex_eq_zero_of_mapsTo (hL : ω.IsLagrangian L) {A : V →L[ℝ] 
   -- In it, the matrices of `g` have a vanishing lower left block.
   refine GLSymplectic.maslovIndex_eq_zero_of_toBlocks₂₁_eq_zero _ fun t ↦ ?_
   ext i j
-  rw [matrixPath_apply, coe_toGLSymplectic, toBlocks₂₁, of_apply, LinearMap.toMatrix_apply,
+  simp only [matrixPath_apply, coe_toGLSymplectic, toBlocks₂₁, of_apply, LinearMap.toMatrix_apply,
     Matrix.zero_apply]
-  refine repr_inr_eq_zero_of_mem hbe (hgL t ?_) i
+  refine b.repr_inr_eq_zero_of_mem hbe (hgL t ?_) i
   rw [SetLike.mem_coe, hbe]
   exact (e j).property
 

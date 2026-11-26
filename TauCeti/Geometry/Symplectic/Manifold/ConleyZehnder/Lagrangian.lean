@@ -29,8 +29,8 @@ give the same index:
 
 * for frames with the same model whose change of frame is a loop
   (`TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_of_map_eq`);
-* for periodic frames along a loop with arbitrary models `(W, ω₀, L₀)` and `(W', ω', L₀')`
-  (`TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_of_map_eq_of_map_eq`): a linear
+* for frames with arbitrary models `(W, ω₀, L₀)` and `(W', ω', L₀')` whose change of frame is a
+  loop (`TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_of_map_eq_of_map_eq`): a linear
   symplectomorphism `W ≃ W'` carrying `L₀` onto `L₀'`
   (`TauCeti.SymplecticForm.exists_isSymplectomorphism_map_eq`) moves both frames to one model.
 
@@ -46,9 +46,9 @@ changes the index by `2`.
   subspace of the model onto a Lagrangian subspace exactly when the subspace is Lagrangian.
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_of_map_eq`: two symplectic frames with the same
   model, carrying a Lagrangian of the model to the same subspaces along `γ`, give the same index.
-* `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_of_map_eq_of_map_eq`: two periodic symplectic
-  frames, with any models, adapted to the same subspaces along `γ` through Lagrangians of their
-  models, give the same index.
+* `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_of_map_eq_of_map_eq`: two symplectic frames,
+  with any models and with a loop as change of frame, adapted to the same subspaces along `γ`
+  through Lagrangians of their models, give the same index.
 
 ## References
 
@@ -116,13 +116,14 @@ theorem frameConleyZehnderIndex_eq_of_map_eq {χ χ' : ∀ t, W ≃L[ℝ] Tangen
 
 /-- **The Conley–Zehnder index in frames adapted to a distribution of subspaces.** Let `Λ(t)` be
 subspaces of the tangent spaces along `γ`, and let `χ` and `χ'` be symplectic frames along `γ`,
-with models `(W, ω₀)` and `(W', ω')`, each taking the same values at the two ends of `γ`. If `χ`
-carries a Lagrangian subspace `L₀` of `W` onto `Λ`, and `χ'` a subspace `L₀'` of `W'` onto `Λ`,
-then the Conley–Zehnder index of `Φ` is the same in both frames. (Then `L₀'` is Lagrangian too.) -/
+with models `(W, ω₀)` and `(W', ω')`, whose change of frame `t ↦ χ(t)⁻¹ ∘ χ'(t)` is a loop, for
+instance periodic frames along a loop. If `χ` carries a Lagrangian subspace `L₀` of `W` onto `Λ`,
+and `χ'` a subspace `L₀'` of `W'` onto `Λ`, then the Conley–Zehnder index of `Φ` is the same in both
+frames. (Then `L₀'` is Lagrangian too.) -/
 theorem frameConleyZehnderIndex_eq_of_map_eq_of_map_eq
     {χ : ∀ t, W ≃L[ℝ] TangentSpace I (γ t)} {χ' : ∀ t, W' ≃L[ℝ] TangentSpace I (γ t)}
     (hχ : IsSymplecticFrame σ ω₀ γ χ) (hχ' : IsSymplecticFrame σ ω' γ χ')
-    (hχ₁ : ∀ v, χ 0 v = χ 1 v) (hχ'₁ : ∀ v, χ' 0 v = χ' 1 v) (hL₀ : ω₀.IsLagrangian L₀)
+    (hper : (χ' 0).trans (χ 0).symm = (χ' 1).trans (χ 1).symm) (hL₀ : ω₀.IsLagrangian L₀)
     {Λ : ∀ t, Submodule ℝ (TangentSpace I (γ t))}
     (hL : ∀ t, L₀.map (χ t : W →ₗ[ℝ] TangentSpace I (γ t)) = Λ t)
     (hL' : ∀ t, L₀'.map (χ' t : W' →ₗ[ℝ] TangentSpace I (γ t)) = Λ t)
@@ -149,11 +150,13 @@ theorem frameConleyZehnderIndex_eq_of_map_eq_of_map_eq
   have he' : ∀ v w, ω' (e.toContinuousLinearEquiv v) (e.toContinuousLinearEquiv w) = ω₀ v w :=
     he.apply
   rw [← frameConleyZehnderIndex_trans hχ' e.toContinuousLinearEquiv he' hΦ hΦσ]
-  refine frameConleyZehnderIndex_eq_of_map_eq hχ (hχ'.trans _ he')
-    (trans_symm_zero_eq_trans_symm_one (χ' := fun t ↦ e.toContinuousLinearEquiv.trans (χ' t))
-      hχ₁ fun v ↦ hχ'₁ _) hL₀ (fun t ↦ ?_) hΦ hΦσ
+  -- Composing with `e` keeps the change of frame a loop.
+  have hper_e : ((e.toContinuousLinearEquiv.trans (χ' 0)).trans (χ 0).symm) =
+      ((e.toContinuousLinearEquiv.trans (χ' 1)).trans (χ 1).symm) :=
+    ContinuousLinearEquiv.ext <| funext fun v ↦ DFunLike.congr_fun hper (e v)
+  refine frameConleyZehnderIndex_eq_of_map_eq hχ (hχ'.trans _ he') hper_e hL₀ (fun t ↦ ?_) hΦ hΦσ
   -- Both sides are the image of `L₀` under `v ↦ χ'(t) (e v)`.
   rw [hL, ← hL', ← heL, ← Submodule.map_comp]
-  rfl
+  exact congrArg L₀.map (LinearMap.ext fun v ↦ ContinuousLinearEquiv.trans_apply _ _ v)
 
 end TauCeti.SmoothTwoForm

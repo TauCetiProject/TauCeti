@@ -22,8 +22,8 @@ A *vertical frame* along a path `γ` in `T*M` is a symplectic frame `χ` along `
 (`TauCeti.SmoothTwoForm.IsSymplecticFrame`) that carries a fixed subspace `L₀` of its model onto the
 vertical tangent spaces. Such an `L₀` is automatically Lagrangian, since `χ` is symplectic. This
 file shows that a family `Φ` of linear symplectic maps along a loop, such as the linearized flow
-of a Hamiltonian along a periodic orbit, has the same Conley–Zehnder index in all periodic vertical
-frames, whatever their models
+of a Hamiltonian along a periodic orbit, has the same Conley–Zehnder index in any two vertical
+frames whose change of frame is a loop, such as two periodic vertical frames, whatever their models
 (`TauCeti.CotangentBundle.frameConleyZehnderIndex_eq_of_map_eq_ker_mfderiv_proj`). This is the
 index that grades Floer homology of cotangent bundles canonically, with no choice of caps or of
 trivializations: two vertical frames differ by a loop preserving a Lagrangian, which has Maslov
@@ -31,12 +31,13 @@ index zero.
 
 A periodic vertical frame along a loop `γ` trivializes the vertical tangent spaces along `γ`, the
 fibres of `T*M` along `π ∘ γ`, so it exists only when the pullback of `TM` along `π ∘ γ` is
-orientable. The loops along which it is not orientable are not treated here.
+orientable. Along the other loops, the comparison above still applies to vertical frames whose
+change of frame is a loop, but no such frame is constructed here.
 
 ## Main results
 
-* `TauCeti.CotangentBundle.frameConleyZehnderIndex_eq_of_map_eq_ker_mfderiv_proj`: periodic
-  vertical frames give the same Conley–Zehnder index.
+* `TauCeti.CotangentBundle.frameConleyZehnderIndex_eq_of_map_eq_ker_mfderiv_proj`: vertical
+  frames whose change of frame is a loop give the same Conley–Zehnder index.
 
 ## References
 
@@ -66,9 +67,10 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 
 /-- **The Conley–Zehnder index in vertical frames.** Let `γ` be a path in `T*M` and `Φ` a family
 of linear maps along `γ` preserving the canonical symplectic form. Let `χ` and `χ'` be symplectic
-frames along `γ`, with models `(W, ω₀)` and `(W', ω')`, each taking the same values at the two
-ends of `γ`, and carrying subspaces `L₀` of `W` and `L₀'` of `W'` onto the vertical tangent spaces
-`ker dπ` along `γ`. Then the Conley–Zehnder index of `Φ` is the same in both frames. -/
+frames along `γ`, with models `(W, ω₀)` and `(W', ω')`, whose change of frame
+`t ↦ χ(t)⁻¹ ∘ χ'(t)` is a loop, for instance periodic frames along a loop, and carrying subspaces
+`L₀` of `W` and `L₀'` of `W'` onto the vertical tangent spaces `ker dπ` along `γ`. Then the
+Conley–Zehnder index of `Φ` is the same in both frames. -/
 theorem frameConleyZehnderIndex_eq_of_map_eq_ker_mfderiv_proj
     {γ : unitInterval → CotangentBundle I M}
     {Φ : ∀ t, TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (γ 0) ≃L[ℝ]
@@ -77,7 +79,7 @@ theorem frameConleyZehnderIndex_eq_of_map_eq_ker_mfderiv_proj
     {χ' : ∀ t, W' ≃L[ℝ] TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (γ t)}
     (hχ : SmoothTwoForm.IsSymplecticFrame (symplecticForm I M) ω₀ γ χ)
     (hχ' : SmoothTwoForm.IsSymplecticFrame (symplecticForm I M) ω' γ χ')
-    (hχ₁ : ∀ v, χ 0 v = χ 1 v) (hχ'₁ : ∀ v, χ' 0 v = χ' 1 v)
+    (hper : (χ' 0).trans (χ 0).symm = (χ' 1).trans (χ 1).symm)
     (hL : ∀ t, L₀.map (χ t : W →ₗ[ℝ] TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (γ t)) =
       (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (TotalSpace.proj : CotangentBundle I M → M) (γ t)).ker)
     (hL' : ∀ t, L₀'.map (χ' t : W' →ₗ[ℝ] TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (γ t)) =
@@ -93,7 +95,7 @@ theorem frameConleyZehnderIndex_eq_of_map_eq_ker_mfderiv_proj
   have hL₀ : ω₀.IsLagrangian L₀ :=
     (hχ.isLagrangian_map_iff isSymplectic_symplecticForm.isNondegenerate 0).1
       (hL 0 ▸ isLagrangian_ker_mfderiv_proj (γ 0))
-  exact SmoothTwoForm.frameConleyZehnderIndex_eq_of_map_eq_of_map_eq hχ hχ' hχ₁ hχ'₁ hL₀ hL hL'
-    hΦ hΦσ
+  exact SmoothTwoForm.frameConleyZehnderIndex_eq_of_map_eq_of_map_eq hχ hχ' hper hL₀ hL hL' hΦ
+    hΦσ
 
 end TauCeti.CotangentBundle
