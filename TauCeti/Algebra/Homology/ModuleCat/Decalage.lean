@@ -303,6 +303,10 @@ private noncomputable def cyclesToDecalage (n : ℤ) : C.cycles n →ₗ[R] C.de
   (C.iCycles n).hom.codRestrict _ fun z ↦
     C.mem_decalageSubmodule_of_d_eq_zero f (C.iCycles_d_apply n (n + 1) z)
 
+private lemma cyclesToDecalage_apply (n : ℤ) (z : C.cycles n) :
+    Subtype.val (cyclesToDecalage f n z) = C.iCycles n z :=
+  LinearMap.codRestrict_apply _ _ _
+
 private lemma d_cyclesToDecalage (n : ℤ) (z : C.cycles n) :
     (C.principalDecalage f hC).d n (n + 1) (cyclesToDecalage f n z) = 0 := by
   rw [principalDecalage_d_eq_zero_iff]
@@ -327,15 +331,16 @@ noncomputable def principalDecalageCyclesIso (n : ℤ) :
   hom_inv_id := by
     ext z : 2
     refine (C.principalDecalage f hC).moduleCat_iCycles_injective n (Subtype.ext ?_)
-    exact (congrArg Subtype.val (ConcreteCategory.congr_hom
+    exact ((congrArg Subtype.val (ConcreteCategory.congr_hom
       ((C.principalDecalage f hC).liftCycles_i _ _ _ _) _)).trans
-        (ConcreteCategory.congr_hom (C.liftCycles_i _ _ _ _) z)
+        (cyclesToDecalage_apply _ _)).trans
+          (ConcreteCategory.congr_hom (C.liftCycles_i _ _ _ _) z)
   inv_hom_id := by
     ext z : 2
     refine C.moduleCat_iCycles_injective n ?_
     exact (ConcreteCategory.congr_hom (C.liftCycles_i _ _ _ _) _).trans
-      (congrArg Subtype.val (ConcreteCategory.congr_hom
-        ((C.principalDecalage f hC).liftCycles_i _ _ _ _) z))
+      ((congrArg Subtype.val (ConcreteCategory.congr_hom
+        ((C.principalDecalage f hC).liftCycles_i _ _ _ _) z)).trans (cyclesToDecalage_apply _ z))
 
 /-- `principalDecalageCyclesIso` does not change the underlying element of a cocycle. -/
 @[simp]
@@ -407,8 +412,8 @@ lemma homologyToPrincipalDecalage_homologyπ_apply (n : ℤ) (z : C.cycles n) :
     HomologicalComplex.moduleCatHomologyClass_apply]
   congr 1
   refine (C.principalDecalage f hC).moduleCat_iCycles_injective n (Subtype.ext ?_)
-  rw [HomologicalComplex.iCycles_moduleCatCyclesMk, iCycles_principalDecalageCyclesIso_inv_apply]
-  rfl
+  rw [HomologicalComplex.iCycles_moduleCatCyclesMk, iCycles_principalDecalageCyclesIso_inv_apply,
+    cyclesToDecalage_apply]
 
 /-- `homologyToPrincipalDecalage` sends the class of a cocycle of `C` to the class of the same
 cocycle of `E_f(C)`. -/
