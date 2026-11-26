@@ -516,4 +516,21 @@ theorem leftRel_map_iff_of_inv_mem_doubleCoset {G F : Type*} [Group G] {K : Subg
   simp [QuotientGroup.leftRel_apply, ← map_inv, ← map_mul,
     K.map_mem_iff_of_inv_mem_doubleCoset hτg]
 
+/-- The equivalence on left cosets `G ⧸ K ≃ G ⧸ K` induced by a multiplicative equivalence `τ`
+sending every `g⁻¹` into the double coset `K * g * K`. -/
+def quotientEquivOfInvMemDoubleCoset {G F : Type*} [Group G] (K : Subgroup G)
+    [EquivLike F G G] [MonoidHomClass F G G] (τ : F)
+    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) : G ⧸ K ≃ G ⧸ K :=
+  Quotient.congr (EquivLike.toEquiv τ) (K.leftRel_map_iff_of_inv_mem_doubleCoset (τ := τ) hτg)
+
+/-- The chosen representative of `K.quotientEquivOfInvMemDoubleCoset τ hτg q` differs from
+`τ q.out` on the right by an element of `K`. -/
+theorem out_quotientEquivOfInvMemDoubleCoset_eq_mul {G F : Type*} [Group G] (K : Subgroup G)
+    [EquivLike F G G] [MonoidHomClass F G G] (τ : F)
+    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (q : G ⧸ K) :
+    ∃ k ∈ K, (K.quotientEquivOfInvMemDoubleCoset τ hτg q).out = τ q.out * k := by
+  simpa [quotientEquivOfInvMemDoubleCoset] using
+    QuotientGroup.out_congr_eq_mul (EquivLike.toEquiv τ)
+      (K.leftRel_map_iff_of_inv_mem_doubleCoset (τ := τ) hτg) q
+
 end Subgroup

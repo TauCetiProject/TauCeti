@@ -143,6 +143,18 @@ theorem Representation.heckeOp_def (π : Representation A G W) (K : Subgroup G) 
     π.heckeOp K f v = ∑ᶠ q : G ⧸ K, f q.out • π q.out v :=
   (rfl)
 
+/-- On a `K`-fixed vector, the Hecke operator of a right `K`-invariant function can be computed
+using any section `s : G ⧸ K → G` of `QuotientGroup.mk`. -/
+theorem Representation.heckeOp_eq_finsum_of_mk {K : Subgroup G} (π : Representation A G W)
+    {f : G → A} {v : W} (hf : ∀ g : G, ∀ k ∈ K, f (g * k) = f g) (hv : ∀ k ∈ K, π k v = v)
+    (s : G ⧸ K → G) (hs : ∀ q : G ⧸ K, QuotientGroup.mk (s q) = q) :
+    π.heckeOp K f v = ∑ᶠ q : G ⧸ K, f (s q) • π (s q) v := by
+  rw [heckeOp_def]
+  refine finsum_congr fun q ↦ ?_
+  obtain ⟨⟨k, hk⟩, hsq⟩ := QuotientGroup.mk_out_eq_mul K (s q)
+  rw [hs q] at hsq
+  rw [hsq, hf _ _ hk, map_mul, mul_apply_eq_comp, hv k hk]
+
 @[simp] theorem Representation.heckeOp_zero_right (π : Representation A G W) (K : Subgroup G)
     (f : G → A) : π.heckeOp K f 0 = 0 := by
   simp [heckeOp_def]
@@ -201,17 +213,6 @@ theorem Representation.heckeOp_mem_fixed {K : Subgroup G} (π : Representation A
   exact QuotientGroup.finsum_mulLeft_eq k (fun g ↦ f g • π g v) fun g k' hk' ↦ by
     rw [hf.mul_right _ hk', map_mul, mul_apply_eq_comp, hv k' hk']
 
-private def quotientEquivOfDoubleCoset {K : Subgroup G} (τ : G ≃* G)
-    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) : G ⧸ K ≃ G ⧸ K :=
-  Quotient.congr τ.toEquiv (K.leftRel_map_iff_of_inv_mem_doubleCoset (τ := τ) hτg)
-
-private theorem out_quotientEquivOfDoubleCoset_eq_mul {K : Subgroup G} (τ : G ≃* G)
-    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (q : G ⧸ K) :
-    ∃ k ∈ K, (quotientEquivOfDoubleCoset (K := K) τ hτg q).out = τ q.out * k := by
-  simpa [quotientEquivOfDoubleCoset] using
-    QuotientGroup.out_congr_eq_mul τ.toEquiv
-      (K.leftRel_map_iff_of_inv_mem_doubleCoset (τ := τ) hτg) q
-
 private theorem apply_map_inv_of_doubleCoset {K : Subgroup G} {f : G → A}
     (hf : K.IsHeckeFunction f) (τ : G ≃* G)
     (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (g : G) :
@@ -224,10 +225,10 @@ endomorphism `σ : A →+* A`, the dual function `g ↦ σ (f g⁻¹)` is again 
 theorem Subgroup.IsHeckeFunction.dual {K : Subgroup G} {f : G → A} (hf : K.IsHeckeFunction f)
     (σ : A →+* A) (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) :
     K.IsHeckeFunction (fun g ↦ σ (f g⁻¹)) := by
-  let e := quotientEquivOfDoubleCoset (K := K) τ hτg
+  let e := K.quotientEquivOfInvMemDoubleCoset τ hτg
   refine ⟨(hf.finite_support.image e).subset fun q hq ↦ ⟨e.symm q, ?_, e.apply_symm_apply q⟩,
     fun g k hk ↦ ⟨?_, ?_⟩⟩
-  · obtain ⟨k, hk, heq⟩ := out_quotientEquivOfDoubleCoset_eq_mul (K := K) τ hτg (e.symm q)
+  · obtain ⟨k, hk, heq⟩ := K.out_quotientEquivOfInvMemDoubleCoset_eq_mul τ hτg (e.symm q)
     rw [e.apply_symm_apply] at heq
     have h1 : f q.out⁻¹ = f (e.symm q).out := by
       rw [heq, mul_inv_rev, hf.mul_left _ (K.inv_mem hk), ← map_inv,
@@ -247,13 +248,13 @@ theorem Subgroup.IsHeckeFunction.heckeOp_adjoint {K : Subgroup G} {f : G → A}
     (hv : ∀ k ∈ K, π k v = v) (hv' : ∀ k ∈ K, π' k v' = v')
     (hB : ∀ (g : G) (x : W) (y : W'), B (π g x) (π' g y) = B x y) :
     B (π.heckeOp K f v) v' = B v (π'.heckeOp K (fun g ↦ σ (f g⁻¹)) v') := by
-  let e := quotientEquivOfDoubleCoset (K := K) τ hτg
+  let e := K.quotientEquivOfInvMemDoubleCoset τ hτg
   have hmove (x : G) (w : W) (w' : W') : B w (π' x w') = B (π x⁻¹ w) w' := by
     rw [← hB x⁻¹ w (π' x w'), ← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one,
       one_apply_eq_self]
   have hq_term (q : G ⧸ K) :
       f (e q).out⁻¹ = f q.out ∧ B v (π' (e q).out v') = B (π q.out v) v' := by
-    obtain ⟨k, hk, heq⟩ := out_quotientEquivOfDoubleCoset_eq_mul (K := K) τ hτg q
+    obtain ⟨k, hk, heq⟩ := K.out_quotientEquivOfInvMemDoubleCoset_eq_mul τ hτg q
     obtain ⟨a, ha, b, hb, hg⟩ := hτg q.out⁻¹
     rw [inv_inv] at hg
     have heq' : (e q).out = a * q.out⁻¹ * (b * k) := by
@@ -465,25 +466,24 @@ theorem Subgroup.IsHeckeFunction.heckeConv_comm {K : Subgroup G} {f f' : G → A
   funext x
   simp only [Subgroup.heckeConv_def]
   obtain ⟨a, ha, b, hb, hb_eq⟩ := hτg x
-  let φ : G ≃ G := τ.toEquiv.trans (Equiv.mulLeft (x * b))
-  have hcongr : ∀ g g' : G, leftRel K g g' ↔ leftRel K (φ g) (φ g') := fun g g' ↦ by
-    simpa [φ, leftRel_apply, mul_assoc] using K.leftRel_map_iff_of_inv_mem_doubleCoset hτg g g'
-  refine (finsum_congr fun q ↦ ?_).trans (finsum_comp_equiv (Quotient.congr φ hcongr))
-  obtain ⟨k, hk, heq⟩ := QuotientGroup.out_congr_eq_mul φ hcongr q
-  have hf'_eq : f' (x * b * τ q.out * k) = f' (q.out⁻¹ * x) := by
-    rw [← apply_map_inv_of_doubleCoset hf' τ hτg (q.out⁻¹ * x), hf'.mul_right _ hk]
+  have hshift := (QuotientGroup.finsum_mulLeft_eq (x * b) (fun g ↦ f' g * f (g⁻¹ * x))
+    fun g k hk ↦ by
+      rw [hf'.mul_right _ hk, mul_inv_rev, mul_assoc, hf.mul_left _ (K.inv_mem hk)]).symm
+  rw [hshift]
+  refine (finsum_congr fun q ↦ ?_).trans
+    (finsum_comp_equiv (K.quotientEquivOfInvMemDoubleCoset τ hτg))
+  obtain ⟨k, hk, heq⟩ := K.out_quotientEquivOfInvMemDoubleCoset_eq_mul τ hτg q
+  have hf'_eq : f' (x * b * (τ q.out * k)) = f' (q.out⁻¹ * x) := by
+    rw [← apply_map_inv_of_doubleCoset hf' τ hτg (q.out⁻¹ * x), ← mul_assoc, hf'.mul_right _ hk]
     have hmul : τ (q.out⁻¹ * x)⁻¹ = a * (x * b * τ q.out) := by
       rw [mul_inv_rev, inv_inv, map_mul, hb_eq]; group
     rw [hmul, hf'.mul_left _ ha]
-  have hf_eq : f ((x * b * τ q.out * k)⁻¹ * x) = f q.out := by
+  have hf_eq : f ((x * b * (τ q.out * k))⁻¹ * x) = f q.out := by
     rw [← apply_map_inv_of_doubleCoset hf τ hτg q.out]
-    have hmul : (x * b * τ q.out * k)⁻¹ * x = k⁻¹ * (τ q.out⁻¹ * b⁻¹) := by
+    have hmul : (x * b * (τ q.out * k))⁻¹ * x = k⁻¹ * (τ q.out⁻¹ * b⁻¹) := by
       rw [map_inv]; group
     rw [hmul, hf.mul_left _ (K.inv_mem hk), hf.mul_right _ (K.inv_mem hb)]
-  rw [heq]
-  simp only [φ, Equiv.trans_apply, Equiv.coe_mulLeft, MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe,
-    hf'_eq, hf_eq]
-  exact mul_comm _ _
+  rw [heq, hf'_eq, hf_eq, mul_comm]
 
 /-- **Gelfand's trick (commutativity of operators).** If `τ : G ≃* G` sends every `g⁻¹` into
 `K * g * K`, then any two Hecke operators commute on `K`-fixed vectors. -/

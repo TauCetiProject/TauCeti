@@ -19,10 +19,14 @@ inverse transpose (`Matrix.GeneralLinearGroup.inverseTranspose`), we establish:
 
 * `ValuationSubring.exists_inverseTranspose_inv_eq`: every `g : GL n F` satisfies
   `inverseTranspose g⁻¹ = inverseTranspose k * g * k` for some `k ∈ integralGL O F n`.
+* `ValuationSubring.exists_inverseTranspose_inv_mem_doubleCoset`: every `g : GL n F` satisfies
+  `inverseTranspose g⁻¹ ∈ integralGL O F n * g * integralGL O F n`.
 * `Subgroup.IsHeckeFunction.dual_integralGL`: the dual `g ↦ σ (f g⁻¹)` of a Hecke function for
   `integralGL O F n` is again a Hecke function.
 * `Subgroup.IsHeckeFunction.heckeOp_adjoint_integralGL`: adjointness of spherical Hecke operators
   for `(GL n F, integralGL O F n)`.
+* `Subgroup.IsHeckeFunction.heckeConv_comm_integralGL`: commutativity of Hecke convolution for
+  `(GL n F, integralGL O F n)`.
 * `Subgroup.IsHeckeFunction.heckeOp_comm_integralGL`: commutativity of spherical Hecke operators
   on `integralGL O F n`-fixed vectors.
 
@@ -69,7 +73,9 @@ theorem exists_inverseTranspose_inv_eq {n : Type u} [Fintype n] [DecidableEq n] 
       _ = diagonal d * k.valᵀ := by simp
   rw [hcancel]
 
-private theorem exists_doubleCoset_inverseTranspose {n : Type u} [Fintype n] [DecidableEq n]
+/-- For every `g ∈ GL n F`, `inverseTranspose g⁻¹` lies in the double coset
+`integralGL O F n * g * integralGL O F n`. -/
+theorem exists_inverseTranspose_inv_mem_doubleCoset {n : Type u} [Fintype n] [DecidableEq n]
     {F : Type*} [Field F] (O : ValuationSubring F) (g : GL n F) :
     ∃ a ∈ integralGL O F n, ∃ b ∈ integralGL O F n, inverseTranspose g⁻¹ = a * g * b := by
   obtain ⟨k, hk, h⟩ := O.exists_inverseTranspose_inv_eq g
@@ -87,7 +93,7 @@ theorem Subgroup.IsHeckeFunction.dual_integralGL {A F : Type*} [CommSemiring A] 
     (O : ValuationSubring F) {f : GL n F → A} (hf : (integralGL O F n).IsHeckeFunction f)
     (σ : A →+* A) :
     (integralGL O F n).IsHeckeFunction (fun g ↦ σ (f g⁻¹)) :=
-  hf.dual σ inverseTranspose O.exists_doubleCoset_inverseTranspose
+  hf.dual σ inverseTranspose O.exists_inverseTranspose_inv_mem_doubleCoset
 
 /-- **Gelfand's trick (adjointness) for `GL_n(F)` over a valuation subring `O`.** -/
 theorem Subgroup.IsHeckeFunction.heckeOp_adjoint_integralGL {A W W' Z F : Type*} [CommSemiring A]
@@ -101,7 +107,16 @@ theorem Subgroup.IsHeckeFunction.heckeOp_adjoint_integralGL {A W W' Z F : Type*}
     (hB : ∀ (g : GL n F) (x : W) (y : W'), B (π g x) (π' g y) = B x y) :
     B (π.heckeOp (integralGL O F n) f v) v' =
       B v (π'.heckeOp (integralGL O F n) (fun g ↦ σ (f g⁻¹)) v') :=
-  hf.heckeOp_adjoint inverseTranspose O.exists_doubleCoset_inverseTranspose B hv hv' hB
+  hf.heckeOp_adjoint inverseTranspose O.exists_inverseTranspose_inv_mem_doubleCoset B hv hv' hB
+
+/-- **Gelfand's trick (commutativity of convolution) for `GL_n(F)` over a valuation subring `O`.**
+-/
+theorem Subgroup.IsHeckeFunction.heckeConv_comm_integralGL {A F : Type*} [CommSemiring A] [Field F]
+    (O : ValuationSubring F) {f f' : GL n F → A}
+    (hf : (integralGL O F n).IsHeckeFunction f)
+    (hf' : (integralGL O F n).IsHeckeFunction f') :
+    (integralGL O F n).heckeConv f f' = (integralGL O F n).heckeConv f' f :=
+  hf.heckeConv_comm hf' inverseTranspose O.exists_inverseTranspose_inv_mem_doubleCoset
 
 /-- **Gelfand's trick (commutativity) for `GL_n(F)` over a valuation subring `O`.** -/
 theorem Subgroup.IsHeckeFunction.heckeOp_comm_integralGL {A W F : Type*} [CommSemiring A]
@@ -112,7 +127,7 @@ theorem Subgroup.IsHeckeFunction.heckeOp_comm_integralGL {A W F : Type*} [CommSe
     (hv : ∀ k ∈ integralGL O F n, π k v = v) :
     π.heckeOp (integralGL O F n) f (π.heckeOp (integralGL O F n) f' v) =
       π.heckeOp (integralGL O F n) f' (π.heckeOp (integralGL O F n) f v) :=
-  hf.heckeOp_comm hf' hv inverseTranspose O.exists_doubleCoset_inverseTranspose
+  hf.heckeOp_comm hf' hv inverseTranspose O.exists_inverseTranspose_inv_mem_doubleCoset
 
 end GLnValuation
 
