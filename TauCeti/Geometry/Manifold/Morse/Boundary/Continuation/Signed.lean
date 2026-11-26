@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Transverse
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Diffeomorph
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Pair.Commutation
