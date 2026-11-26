@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.HigherPrimePowers
 public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.OrderedEulerProduct
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
 
 /-!
 # Ordered prime sums at the boundary
@@ -31,11 +32,14 @@ Only the higher-power tail is summed unconditionally: the prime sums are limits 
 cutoffs, and no unconditional `HasSum` over the primes is asserted. The specialization to a
 nontrivial Dirichlet character is `DirichletCharacter.exists_tendsto_sum_primesLE_div`.
 
-## Main result
+## Main results
 
 * `TauCeti.LSeries.tendsto_sum_Icc_div_iff_tendsto_sum_primesLE_div`: the ordered partial sums of
   `∑ a n / n` converge to `L` if and only if the ordered prime sums `∑ p ≤ N, c p / p` converge
   to `L - T`.
+* `TauCeti.LSeries.tendsto_prod_primesLE_inv_of_tendsto_sum_primesLE_div`: along any cutoffs
+  tending to infinity, convergence of the prime sums `∑ p ≤ B, c p / p` to `L` makes the Euler
+  products `∏ p ≤ B, (1 - c p / p)⁻¹` converge to `exp (L + T)`.
 -/
 
 public section
@@ -45,7 +49,28 @@ open scoped Topology
 
 namespace TauCeti.LSeries
 
-variable {a c : ℕ → ℂ} (hc : ∀ p, p.Prime → ‖c p‖ ≤ 1) (ha : ∀ n, ¬IsPrimePow n → a n = 0)
+variable {a c : ℕ → ℂ}
+
+/-- **Ordered Euler products from ordered prime sums along any cutoffs.** Let `‖c p‖ ≤ 1` at every
+prime `p` and let the cutoffs `B i` tend to infinity along a filter `l`. If the prime sums
+`∑ p ≤ B i, c p / p` converge to `L` along `l`, then the Euler products
+`∏ p ≤ B i, (1 - c p / p)⁻¹` converge to `exp (L + T)` along `l`, where `T` is the absolutely
+convergent sum of the higher-prime-power terms `c p ^ (k + 2) / ((k + 2) * p ^ (k + 2))`. -/
+theorem tendsto_prod_primesLE_inv_of_tendsto_sum_primesLE_div {ι : Type*} {l : Filter ι}
+    {B : ι → ℕ} (hc : ∀ p, p.Prime → ‖c p‖ ≤ 1) (hB : Tendsto B l atTop) {L : ℂ}
+    (hL : Tendsto (fun i ↦ ∑ p ∈ Nat.primesLE (B i), c p / p) l (𝓝 L)) :
+    Tendsto (fun i ↦ ∏ p ∈ Nat.primesLE (B i), (1 - c p / p)⁻¹) l
+      (𝓝 (Complex.exp (L + ∑' q : Nat.Primes × ℕ,
+        c q.1 ^ (q.2 + 2) / (((q.2 + 2 : ℕ) : ℂ) * (q.1 : ℂ) ^ (q.2 + 2))))) := by
+  have hlog := ((tendsto_sum_primesLE_log_one_sub_inv_sub_div hc).comp hB).add hL
+  rw [add_comm] at hlog
+  refine ((Complex.continuous_exp.tendsto _).comp hlog).congr fun i ↦ ?_
+  simp only [Function.comp_apply, ← sum_add_distrib, sub_add_cancel, Complex.exp_sum]
+  refine prod_congr rfl fun p hp ↦ Complex.exp_log (inv_ne_zero ?_)
+  have hpp := Nat.prime_of_mem_primesLE hp
+  exact Complex.one_sub_div_natCast_ne_zero hpp.one_lt (hc p hpp)
+
+variable (hc : ∀ p, p.Prime → ‖c p‖ ≤ 1) (ha : ∀ n, ¬IsPrimePow n → a n = 0)
   (ha_pow : ∀ p k : ℕ, p.Prime → k ≠ 0 → a (p ^ k) = c p ^ k / k)
 include hc ha ha_pow
 
