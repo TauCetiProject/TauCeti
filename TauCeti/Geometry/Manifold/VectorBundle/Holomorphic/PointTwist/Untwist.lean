@@ -52,9 +52,12 @@ nowhere-zero section of the resulting twist, which is therefore trivial.
 * `TauCeti.contMDiff_untwistSection`: the interpolation is smooth when `f` is a smooth function
   equal to `1` near `x` and supported in the chart of the twist at `x`.
 * `TauCeti.exists_untwist_section`: untwisting a zero satisfying the estimate above.
-* `TauCeti.exists_negPointTwist_section_of_hasFDerivAt` and
-  `TauCeti.exists_pointTwist_section_of_hasFDerivAt`: untwisting a positive zero in `L(-x)`, and a
-  negative zero in `L(x)`, from the derivative of the chart reading.
+* `TauCeti.exists_untwist_section_of_isSignedTransverseZero`: untwisting a zero of sign `s`
+  (`TauCeti.IsSignedTransverseZero`), positive in `L(-x)` and negative in `L(x)`, from the
+  derivative of the chart reading.
+* `TauCeti.negPointTwistChartReading_eventuallyEq_of_pointTwistDiv`: away from `x`, the chart
+  reading of a section of `E(±x)` is that of its image in `E` under `pointTwistDiv`, so
+  untwisting at `x` leaves the readings at other points unchanged.
 
 ## References
 
@@ -301,44 +304,54 @@ theorem exists_untwist_section {x : X} {σ : ∀ z, L z}
   · have hfz : f z = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hz (hfS h).1.2
     exact pointTwistDiv_untwistSection_of_eq_zero hfz fun h ↦ hz (h ▸ hx)
 
-/-- **Untwisting a positive zero.** Let `σ` be a smooth section of `L` vanishing at `x`, and `V` a
-neighbourhood of `x` containing no other zero of `σ`. If the real derivative `D` of the chart
-reading of `σ` at `x` is within `‖c‖` of multiplication by `c`, so that `x` is a positive transverse
-zero, then the negative point twist `L(-x)` has a smooth section with no zero in `V`, which outside
-`V` is `σ`, read in `L` through `pointTwistDiv`. -/
-theorem exists_negPointTwist_section_of_hasFDerivAt {x : X} {σ : ∀ z, L z}
+/-- **Untwisting a transverse zero.** Let `σ` be a smooth section of `L` vanishing at `x`, and `V`
+a neighbourhood of `x` containing no other zero of `σ`. If `x` is transverse of sign `s`, that is,
+the real derivative `D` of the chart reading of `σ` at `x` is within `‖c‖` of `u ↦ u c`
+(`s = false`, a positive zero) or of `u ↦ conj u c` (`s = true`, a negative zero), then the signed
+point twist `L(-x)` (`s = false`), respectively `L(x)` (`s = true`), has a smooth section with no
+zero in `V`, which outside `V` is `σ`, read in `L` through `pointTwistDiv`. -/
+theorem exists_untwist_section_of_isSignedTransverseZero {x : X} {σ : ∀ z, L z}
     (hσ : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) ∞ fun z ↦ TotalSpace.mk' ℂ z (σ z))
-    (hσx : σ x = 0) {V : Set X} (hV : V ∈ 𝓝 x) (hVσ : ∀ z ∈ V, σ z = 0 → z = x)
-    {D : ℂ →L[ℝ] ℂ} (hD : HasFDerivAt (negPointTwistChartReading ℂ x σ) D (chartAt ℂ x x))
-    {c : ℂ} (hDc : ‖D - (ContinuousLinearMap.id ℝ ℂ).smulRight c‖ < ‖c‖) :
-    ∃ τ : ∀ z, (negPointTwistCore ℂ L x).Fiber z,
+    (hσx : σ x = 0) {V : Set X} (hV : V ∈ 𝓝 x) (hVσ : ∀ z ∈ V, σ z = 0 → z = x) {s : Bool}
+    (hx : IsSignedTransverseZero σ x s) :
+    ∃ τ : ∀ z, (signedPointTwistCore ℂ L x s).Fiber z,
       ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) ∞ (fun z ↦ TotalSpace.mk' ℂ z (τ z)) ∧
         (∀ z ∈ V, τ z ≠ 0) ∧ ∀ z ∉ V, pointTwistDiv ℂ L x z (τ z) = σ z := by
-  refine exists_untwist_section hσ hV hVσ false (c := c) ?_
+  obtain ⟨D, c, hD, hDc⟩ := isSignedTransverseZero_iff.1 hx
+  refine exists_untwist_section hσ hV hVσ s (c := c) ?_
   filter_upwards [hD.eventually_norm_sub_sub_apply_lt hDc] with w hw
+  cases s <;>
   simpa only [negPointTwistChartReading_chartAt_self ℂ hσx, sub_zero,
-    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply, smul_eq_mul,
-    Bool.false_eq_true, ite_false] using hw
-
-/-- **Untwisting a negative zero.** Let `σ` be a smooth section of `L` vanishing at `x`, and `V` a
-neighbourhood of `x` containing no other zero of `σ`. If the real derivative `D` of the chart
-reading of `σ` at `x` is within `‖c‖` of `u ↦ conj u * c`, so that `x` is a negative transverse
-zero, then the point twist `L(x)` has a smooth section with no zero in `V`, which outside `V` is
-`σ`, read in `L` through `pointTwistDiv`. -/
-theorem exists_pointTwist_section_of_hasFDerivAt {x : X} {σ : ∀ z, L z}
-    (hσ : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) ∞ fun z ↦ TotalSpace.mk' ℂ z (σ z))
-    (hσx : σ x = 0) {V : Set X} (hV : V ∈ 𝓝 x) (hVσ : ∀ z ∈ V, σ z = 0 → z = x)
-    {D : ℂ →L[ℝ] ℂ} (hD : HasFDerivAt (negPointTwistChartReading ℂ x σ) D (chartAt ℂ x x))
-    {c : ℂ} (hDc : ‖D - Complex.conjCLE.toContinuousLinearMap.smulRight c‖ < ‖c‖) :
-    ∃ τ : ∀ z, (pointTwistCore ℂ L x).Fiber z,
-      ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) ∞ (fun z ↦ TotalSpace.mk' ℂ z (τ z)) ∧
-        (∀ z ∈ V, τ z ≠ 0) ∧ ∀ z ∉ V, pointTwistDiv ℂ L x z (τ z) = σ z := by
-  refine exists_untwist_section hσ hV hVσ true (c := c) ?_
-  filter_upwards [hD.eventually_norm_sub_sub_apply_lt hDc] with w hw
-  simpa only [negPointTwistChartReading_chartAt_self ℂ hσx, sub_zero,
-    ContinuousLinearMap.smulRight_apply, ContinuousLinearEquiv.coe_coe, Complex.conjCLE_apply,
-    smul_eq_mul, ite_true] using hw
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply,
+    ContinuousLinearEquiv.coe_coe, Complex.conjCLE_apply, smul_eq_mul, ite_true, ite_false,
+    Bool.false_eq_true] using hw
 
 end Untwist
+
+/-! ### Chart readings away from the twist point -/
+
+section ChartReading
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {E : X → Type*} [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)]
+  [∀ z, TopologicalSpace (E z)] [TopologicalSpace (TotalSpace F E)]
+  [FiberBundle F E] [VectorBundle ℂ F E]
+
+/-- Away from `x`, the chart reading at `y` of a section `τ` of the signed point twist `E(±x)` is
+that of its image in `E` under `pointTwistDiv`: if this image is `σ` near `y`, the two readings
+agree near the chart coordinate of `y`. -/
+theorem negPointTwistChartReading_eventuallyEq_of_pointTwistDiv {x y : X} {s : Bool}
+    (hyx : y ≠ x) {τ : ∀ z, (signedPointTwistCore F E x s).Fiber z} {σ : ∀ z, E z}
+    (h : ∀ᶠ z in 𝓝 y, pointTwistDiv F E x z (τ z) = σ z) :
+    negPointTwistChartReading F y τ =ᶠ[𝓝 (chartAt ℂ y y)] negPointTwistChartReading F y σ := by
+  have hb : (signedPointTwistCore F E x s).baseSet (y, false) ∈ 𝓝 y :=
+    ((signedPointTwistCore F E x s).isOpen_baseSet _).mem_nhds
+      (mem_signedPointTwistCore_baseSet.2 ⟨mem_baseSet_trivializationAt F E y, by simpa using hyx⟩)
+  filter_upwards [(chartAt ℂ y).tendsto_symm (mem_chart_source ℂ y) (h.and hb)] with w hw
+  rw [negPointTwistChartReading_apply, negPointTwistChartReading_apply,
+    signedPointTwistCore_trivializationAt_of_ne hyx, ← hw.1]
+  exact (trivializationAt_pointTwistDiv hw.2 _).symm
+
+end ChartReading
 
 end TauCeti
