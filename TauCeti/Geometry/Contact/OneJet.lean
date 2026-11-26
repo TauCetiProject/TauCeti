@@ -38,6 +38,9 @@ lift of the exact Lagrangian graph of `dg`.
   `J¹Q`, a section is a Legendrian embedding exactly when it is horizontal.
 * `TauCeti.CotangentBundle.isLegendrianEmbedding_contactization_liouvilleForm`: one-jets of smooth
   functions are Legendrian embeddings.
+* `TauCeti.CotangentBundle.contactization_liouvilleForm_apply_zeroSection`,
+  `TauCeti.CotangentBundle.mextDeriv_contactization_liouvilleForm_apply`: the value of `dz - λ`
+  over zero covectors, and its exterior derivative, the canonical symplectic form of `T*M`.
 
 ## References
 
@@ -76,6 +79,31 @@ theorem isHorizontalMap_contactization_liouvilleForm_iff (α : SmoothForm I M �
       α.val = mextDeriv (RoughForm.ofFunction I g) := by
   rw [SmoothForm.isHorizontalMap_contactization_iff _ (SmoothForm.degreeOneEquiv α).contMDiff hg,
     mpullback_liouvilleForm]
+
+/-- **The one-jet form along the zero section.** At a point `(0_q, s)` of `J¹M = T*M × ℝ` over a
+zero covector, the form `dz - λ` evaluates a tangent vector to its `z`-component, since the
+Liouville form vanishes at zero covectors. -/
+theorem contactization_liouvilleForm_apply_zeroSection (q : M) (s : ℝ)
+    (w : TangentSpace ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ))
+      (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) q, s)) :
+    (liouvilleForm I M).contactization.val
+        (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) q, s) ![w] = w.2 := by
+  rw [SmoothForm.contactization_apply, liouvilleForm_apply, Manifold.tangentSpaceProdEquiv_apply]
+  -- The Liouville form at the zero covector is the zero covector applied to `dπ w.1`.
+  simp only [NormedSpace.fromTangentSpace_apply, zeroSection_snd, zero_apply,
+    sub_zero]
+
+/-- **The exterior derivative of the one-jet form.** At a point `p` of `J¹M = T*M × ℝ`, read in the
+preferred chart at `p` itself, the exterior derivative of `dz - λ` is the canonical symplectic
+form `ω = -dλ` on the cotangent components: it pairs `v` and `w` to `w₁₂(v₁₁) - v₁₂(w₁₁)`, where
+`v = ((v₁₁, v₁₂), v₂)` with `v₁₁` a base coordinate and `v₁₂` a covector coordinate. -/
+theorem mextDeriv_contactization_liouvilleForm_apply (p : CotangentBundle I M × ℝ)
+    (v w : TangentSpace ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ)) p) :
+    mextDeriv (liouvilleForm I M).contactization.val p ![v, w] = w.1.2 v.1.1 - v.1.2 w.1.1 := by
+  rw [SmoothForm.mextDeriv_contactization_apply, ← symplecticForm_eq_neg_mextDerivₗ,
+    eval₂_symplecticForm, Manifold.tangentSpaceProdEquiv_apply,
+    Manifold.tangentSpaceProdEquiv_apply]
+  exact strongDualCotangentSymplecticForm_apply (V := E) v.1 w.1
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
 

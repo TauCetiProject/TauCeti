@@ -12,11 +12,16 @@ import Mathlib.Data.Finset.Basic
 /-!
 # Cardinality bounds for finsets
 
-* `TauCeti.two_le_card_filter_eq_of_no_singleton_fiber`: if every element of a finite type
-  shares its value under a map with another element, every fiber over the image has at least two
-  elements.
+* `Finset.two_le_card_filter_eq_of_no_singleton_fiber_on` and
+  `TauCeti.two_le_card_filter_eq_of_no_singleton_fiber`: if every element of a finset (or finite
+  type) shares its value under a map with another element, every fiber over the image has at least
+  two elements.
 * `TauCeti.two_mul_card_image_le_of_no_singleton_fiber`: a map with no singleton fiber has
   at most half as many image elements as domain elements.
+* `TauCeti.card_filter_eq_true_eq_card_filter_eq_false` and
+  `TauCeti.two_mul_card_filter_eq_true`: a permutation exchanging the two values of a `Bool`-valued
+  function, such as a colour-exchanging graph automorphism, matches its two fibres, so the number of
+  elements is even.
 * `Finset.card_sdiff_insert_add_one`: adding an element `a ∈ T \ S` to `S` lowers the number of
   elements of `T` outside `S` by one.
 * `Finset.subset_induction`: downward induction on `S ⊆ T`, from `T` itself and steps from
@@ -28,6 +33,16 @@ import Mathlib.Data.Finset.Basic
 public section
 
 namespace Finset
+
+/-- If every element of `s` shares its value under `f` with another element of `s`, then
+every fiber of `f` on `s` over `s.image f` has at least two elements. -/
+theorem two_le_card_filter_eq_of_no_singleton_fiber_on {ι β : Type*} [DecidableEq β]
+    {f : ι → β} (s : Finset ι) (h : ∀ a ∈ s, ∃ b ≠ a, b ∈ s ∧ f b = f a) :
+    ∀ y ∈ s.image f, 2 ≤ #{a ∈ s | f a = y} := by
+  intro y hy
+  obtain ⟨a, ha, rfl⟩ := mem_image.1 hy
+  obtain ⟨b, hba, hb, hfb⟩ := h a ha
+  exact one_lt_card.2 ⟨a, mem_filter.2 ⟨ha, rfl⟩, b, mem_filter.2 ⟨hb, hfb⟩, hba.symm⟩
 
 variable {ι : Type*} [DecidableEq ι]
 
@@ -70,16 +85,40 @@ namespace TauCeti
 
 open Finset
 
+section BoolFibres
+
+variable {V : Type*} [Fintype V]
+
+/-- **A permutation exchanging the two values of a `Bool`-valued function matches its two fibres**:
+if `c (f v) = !c v` for every `v`, then `c` takes the values `true` and `false` equally often. For
+a two-colouring of a graph, this says that a colour-exchanging permutation matches the two colour
+classes. -/
+theorem card_filter_eq_true_eq_card_filter_eq_false (c : V → Bool) (f : V ≃ V)
+    (h : ∀ v, c (f v) = !c v) : #{v | c v = true} = #{v | c v = false} :=
+  Finset.card_equiv f fun v ↦ by simp [h]
+
+/-- **A finite type with a permutation exchanging the two values of a `Bool`-valued function has
+even cardinality**: each fibre holds half of the elements. In particular, a finite graph with a
+colour-exchanging automorphism has an even number of vertices. -/
+theorem two_mul_card_filter_eq_true (c : V → Bool) (f : V ≃ V) (h : ∀ v, c (f v) = !c v) :
+    2 * #{v | c v = true} = Fintype.card V := by
+  have htot := Finset.card_filter_add_card_filter_not (s := Finset.univ) fun v ↦ c v = true
+  rw [Finset.card_univ] at htot
+  rw [Nat.two_mul, ← htot]
+  congr 1
+  convert card_filter_eq_true_eq_card_filter_eq_false c f h using 3
+  simp
+
+end BoolFibres
+
 variable {ι β : Type*} [Fintype ι] [DecidableEq β] {f : ι → β}
 
 /-- If every element of a finite type shares its value under `f` with another element, then
 every fiber of `f` over its image has at least two elements. -/
 theorem two_le_card_filter_eq_of_no_singleton_fiber (h : ∀ a, ∃ b ≠ a, f b = f a) :
-    ∀ y ∈ univ.image f, 2 ≤ #{a | f a = y} := by
-  intro y hy
-  obtain ⟨a, -, rfl⟩ := mem_image.1 hy
-  obtain ⟨b, hba, hb⟩ := h a
-  exact one_lt_card.2 ⟨a, by simp, b, mem_filter.2 ⟨mem_univ _, hb⟩, hba.symm⟩
+    ∀ y ∈ univ.image f, 2 ≤ #{a | f a = y} :=
+  univ.two_le_card_filter_eq_of_no_singleton_fiber_on fun a _ ↦
+    let ⟨b, hba, hb⟩ := h a; ⟨b, hba, mem_univ b, hb⟩
 
 /-- A map whose fibers contain at least two elements has at most half as many image elements
 as domain elements. -/

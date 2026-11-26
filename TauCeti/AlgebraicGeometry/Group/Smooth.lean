@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.AlgebraicGeometry.Group.Smooth
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 
 /-!
 # Smoothness of group schemes over algebraically closed fields
@@ -44,11 +45,7 @@ theorem smooth_of_grpObj_of_isAlgClosed_of_isReduced
     Smooth f := by
   have := LocallyOfFiniteType.jacobsonSpace f
   have : Nonempty G := ⟨η[Over.mk f].left (IsLocalRing.closedPoint _)⟩
-  rw [← Scheme.Hom.smoothLocus_eq_top_iff, ← TopologicalSpace.Opens.coe_eq_univ,
-    ← not_ne_iff, ← Set.nonempty_compl]
-  intro h
-  obtain ⟨x, hx, hxc⟩ :=
-    nonempty_inter_closedPoints h f.smoothLocus.is_open'.isClosed_compl.isLocallyClosed
+  refine f.smooth_of_closedPoints_subset_smoothLocus fun x hxc ↦ ?_
   obtain ⟨y, hy : y ∈ f.smoothLocus, hyc⟩ := nonempty_inter_closedPoints
     f.dense_smoothLocus_of_perfectField.nonempty f.smoothLocus.is_open'.isLocallyClosed
   let x' : 𝟙_ _ ⟶ Over.mk f := Over.homMk _ ((pointEquivClosedPoint f).symm ⟨x, hxc⟩).property
@@ -69,6 +66,6 @@ theorem smooth_of_grpObj_of_isAlgClosed_of_isReduced
   -- restate it with `f` so `rw!` can match `hy` syntactically.
   have hef : e.hom.left ≫ f = f := Over.w e.hom
   rw! [← he', ← e.hom.left.mem_preimage, Scheme.Hom.preimage_smoothLocus_eq, hef] at hy
-  exact hx hy
+  exact hy
 
 end TauCeti.AlgebraicGeometry

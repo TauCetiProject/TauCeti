@@ -42,6 +42,8 @@ de Rham–Witt complex.
   iff `d x` is divisible by `pʳ`.
 * `TauCeti.DieudonneComplex.IsSaturated.mem_range_F_of_d_V_iterate`: if `d (Vʳ x)` is divisible
   by `p`, then `x` is in the image of `F`.
+* `TauCeti.DieudonneComplex.IsSaturated.exists_pow_smul_eq_V_iterate_iff`: `Vʳ x` is divisible by
+  `pʳ` iff `d (Vʳ x)` is.
 
 ## References
 
@@ -209,6 +211,35 @@ lemma V_iterate_succ_F_apply {n : ℤ} (r : ℕ) (x : M.X n) :
     (⇑(hM.V n).hom)^[r + 1] ((M.F n).hom x) = p • (⇑(hM.V n).hom)^[r] x := by
   rw [Function.iterate_succ_apply, V_F_apply, iterate_map_nsmul]
 
+/-- `Fʳ Vʳ = pʳ`. -/
+@[simp]
+lemma F_iterate_V_iterate_apply {n : ℤ} (r : ℕ) (x : M.X n) :
+    (⇑(M.F n).hom)^[r] ((⇑(hM.V n).hom)^[r] x) = p ^ r • x := by
+  induction r with
+  | zero => simp
+  | succ r ih =>
+    rw [Function.iterate_succ_apply, Function.iterate_succ_apply', F_V_apply, iterate_map_nsmul,
+      ih, pow_succ', mul_smul]
+
+/-- `Vʳ Fʳ = pʳ`. -/
+@[simp]
+lemma V_iterate_F_iterate_apply {n : ℤ} (r : ℕ) (x : M.X n) :
+    (⇑(hM.V n).hom)^[r] ((⇑(M.F n).hom)^[r] x) = p ^ r • x := by
+  induction r with
+  | zero => simp
+  | succ r ih =>
+    rw [Function.iterate_succ_apply, Function.iterate_succ_apply', V_F_apply, iterate_map_nsmul,
+      ih, pow_succ', mul_smul]
+
+/-- `Vʳ d = pʳ d Vʳ`, for the differential between any two degrees. -/
+lemma V_iterate_d_apply {i j : ℤ} (r : ℕ) (x : M.X i) :
+    (⇑(hM.V j).hom)^[r] ((M.d i j).hom x) = p ^ r • (M.d i j).hom ((⇑(hM.V i).hom)^[r] x) := by
+  induction r with
+  | zero => simp
+  | succ r ih =>
+    rw [Function.iterate_succ_apply', ih, map_nsmul, V_d_apply, Function.iterate_succ_apply',
+      pow_succ, mul_smul]
+
 /-- `F (d (Vʳ⁺¹ x)) = d (Vʳ x)`, for the differential between any two degrees. -/
 lemma F_d_V_iterate_succ_apply {i j : ℤ} (r : ℕ) (x : M.X i) :
     (M.F j).hom ((M.d i j).hom ((⇑(hM.V i).hom)^[r + 1] x)) =
@@ -230,6 +261,16 @@ lemma V_d_V_iterate_apply {i j : ℤ} (r : ℕ) (x : M.X i) :
   rw [V_d_apply, Function.iterate_succ_apply']
 
 end Iterate
+
+/-- `Vʳ x` is divisible by `pʳ` iff `d (Vʳ x)` is: if `d (Vʳ x) = pʳ t`, then
+`d x = Fʳ (d (Vʳ x)) = pʳ Fʳ t`, so `x = Fʳ y` and `Vʳ x = pʳ y`. -/
+lemma exists_pow_smul_eq_V_iterate_iff {r : ℕ} {n : ℤ} {x : M.X n} :
+    (∃ y, p ^ r • y = (⇑(hM.V n).hom)^[r] x) ↔
+      ∃ t, p ^ r • t = (M.d n (n + 1)).hom ((⇑(hM.V n).hom)^[r] x) := by
+  refine ⟨fun ⟨y, hy⟩ ↦ ⟨(M.d n (n + 1)).hom y, by rw [← map_nsmul, hy]⟩, fun ⟨t, ht⟩ ↦ ?_⟩
+  obtain ⟨y, rfl⟩ := (hM.mem_range_F_iterate_iff (x := x) r).2
+    ⟨(⇑(M.F (n + 1)).hom)^[r] t, by rw [← iterate_map_nsmul, ht, F_iterate_d_V_iterate_apply]⟩
+  exact ⟨y, (hM.V_iterate_F_iterate_apply r y).symm⟩
 
 /-- If `d (Vʳ x)` is divisible by `p`, then `x` is in the image of the Frobenius. -/
 lemma mem_range_F_of_d_V_iterate {r : ℕ} {i j : ℤ} (hij : i + 1 = j) {x : M.X i}

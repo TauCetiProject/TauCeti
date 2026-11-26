@@ -65,7 +65,8 @@ with composition: the composition isomorphism of pullbacks carries the compariso
 * `AlgebraicGeometry.Scheme.Modules.pullbackObjUnitIso`: the isomorphism `f^* 𝒪_Y ≅ 𝒪_X`, with
   `pullbackObjUnitIso_id`, `pullbackObjUnitIso_comp` (with its inverse form
   `pullbackObjUnitIso_inv_comp`), and `pullbackObjUnitIso_congr` comparing it with identity,
-  composition, and equality of scheme morphisms;
+  composition, and equality of scheme morphisms, and `pullbackObjUnitIso_inv_conj_comp` pulling
+  back a function factored through a pulled-back module;
 * `AlgebraicGeometry.Scheme.Modules.pushforwardLaxMonoidal` and
   `AlgebraicGeometry.Scheme.Modules.pullbackOplaxMonoidal`: the lax monoidal structure of
   pushforward and the oplax monoidal structure of pullback, with unit maps computed by
@@ -81,6 +82,8 @@ with composition: the composition isomorphism of pullbacks carries the compariso
   form for invertible tensor comparisons;
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackIso` identifies the restriction of `f^* M` to
   an open `W ⊆ f⁻¹ V` with the pullback of `M|_V` along `f.resLE V W e`, naturally in `M`;
+* `AlgebraicGeometry.Scheme.Modules.isZero_pullback_of_isZero_restrict`: a module vanishing on an
+  open pulls back to zero along morphisms with image in that open;
 * `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover`: a morphism of modules is an
   isomorphism exactly when its pullbacks to the members of an open cover are, and
   `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover_opensRange` the same for open
@@ -327,6 +330,26 @@ lemma pullbackObjUnitIso_congr {f g : X ⟶ Y} (hf : f = g) :
   subst g
   simp only [pullbackCongr, eqToIso_refl, Iso.refl_hom, NatTrans.id_app,
     Category.id_comp]
+
+/-- Pulling back along `f : X ⟶ Y` a function `a ≫ b` on `Y`, factored through `g^* M`, is the
+composite of the pulled-back factors, after the identifications `f^* 𝒪_Y ≅ 𝒪_X` and
+`f^* g^* M ≅ h^* M` for `h = f ≫ g`. -/
+@[reassoc]
+lemma pullbackObjUnitIso_inv_conj_comp (f : X ⟶ Y) (g : Y ⟶ Z) {h : X ⟶ Z} (w : f ≫ g = h)
+    (M : Z.Modules) (a : 𝟙_ Y.Modules ⟶ (pullback g).obj M)
+    (b : (pullback g).obj M ⟶ 𝟙_ Y.Modules) :
+    (pullbackObjUnitIso f).inv ≫ (pullback f).map (a ≫ b ≫ (pullbackObjUnitIso g).inv) ≫
+        (pullbackComp f g).hom.app _ ≫ (pullbackCongr w).hom.app _ =
+      ((pullbackObjUnitIso f).inv ≫ (pullback f).map a ≫ (pullbackComp f g).hom.app M ≫
+          (pullbackCongr w).hom.app M) ≫
+        ((pullbackCongr w).inv.app M ≫ (pullbackComp f g).inv.app M ≫ (pullback f).map b ≫
+            (pullbackObjUnitIso f).hom) ≫
+          (pullbackObjUnitIso h).inv := by
+  subst w
+  rw [← pullbackObjUnitIso_inv_comp]
+  simp only [pullbackCongr, eqToIso_refl, Iso.refl_hom, Iso.refl_inv, NatTrans.id_app,
+    Category.id_comp, Category.comp_id, Functor.map_comp, Category.assoc,
+    Iso.hom_inv_id_app_assoc, Iso.hom_inv_id_assoc]
 
 /-- The unit of `(f ≫ g)^* ⊣ (f ≫ g)_*`, read through `(f ≫ g)^* ≅ f^* g^*`, is the unit of
 `g^* ⊣ g_*` followed by `g_*` of the unit of `f^* ⊣ f_*` and `g_* f_* = (f ≫ g)_*`. -/
@@ -575,6 +598,18 @@ lemma restrictPullbackIso_hom_app (V : Y.Opens) (W : X.Opens) (e : W ≤ f ⁻¹
         (pullbackComp (f.resLE V W e) V.ι).inv.app M ≫
         (pullback (f.resLE V W e)).map ((restrictFunctorIsoPullback V.ι).inv.app M) :=
   (rfl)
+
+/-- **Pullback of a module vanishing on an open.** If `M|_W` is zero for an open `W` of `Y`, the
+pullback of `M` along any morphism `g : X ⟶ Y` with image in `W` is zero: `g` factors through the
+inclusion of `W`, and pullback preserves zero objects. -/
+theorem isZero_pullback_of_isZero_restrict (M : Y.Modules) {W : Y.Opens}
+    (h : IsZero (M.restrict W.ι)) (g : X ⟶ Y) (hg : Set.range g ⊆ W) :
+    IsZero ((pullback g).obj M) := by
+  have e : IsOpenImmersion.lift W.ι g (by simpa using hg) ≫ W.ι = g :=
+    IsOpenImmersion.lift_fac _ _ _
+  exact ((pullback (IsOpenImmersion.lift W.ι g _)).map_isZero
+    (h.of_iso ((restrictFunctorIsoPullback W.ι).app M).symm)).of_iso
+      ((pullbackCongr e).symm.app M ≪≫ ((pullbackComp _ _).app M).symm)
 
 /-- A morphism of modules is an isomorphism exactly when its pullbacks to the members of an open
 cover are isomorphisms. -/

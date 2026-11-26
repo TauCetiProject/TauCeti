@@ -23,8 +23,17 @@ Mathlib's `ModuleCat.extendScalars f`, by `s ⊗ p ↦ s ⊗ₜ p`.
 * `TauCeti.BalancedExtension.functor f`: the functor `ModuleCat R ⥤ ModuleCat S`.
 * `TauCeti.BalancedExtension.adjunction f`: extension of scalars is left adjoint to
   restriction of scalars.
+* `TauCeti.BalancedExtension.functorComp f g`: extension along `g ∘ f` is extension along `f`
+  followed by extension along `g`.
+* `TauCeti.BalancedExtension.functorCongr h`: extension along equal ring homomorphisms.
 * `TauCeti.BalancedExtension.extendScalarsIso f`: for commutative rings, the identification with
   `ModuleCat.extendScalars f`.
+
+## Main results
+
+* `TauCeti.BalancedExtension.functor_map_surjective`: along a surjective ring homomorphism,
+  every `S`-linear map `S ⊗_R P → S ⊗_R N` with `P` projective is the extension of an `R`-linear
+  map `P → N`.
 
 ## References
 
@@ -130,7 +139,88 @@ theorem adjunction_homEquiv_symm_apply_tmul {M : ModuleCat.{max v u₂} R}
   exact (congrArg ((adjunction f).counit.app N) (map_tmul (f := f) ψ.hom s m)).trans
     (adjunction_counit_app_tmul f N s (ψ m))
 
+/-- **Extension of scalars along a surjection is full on projective sources.** If `f` is
+surjective and `P` is projective, every `S`-linear map `S ⊗_R P → S ⊗_R N` is `S ⊗_R g` for an
+`R`-linear map `g : P → N`. Without surjectivity this fails: along `ℤ → ℚ`, multiplication by `1/2`
+on `ℚ ⊗_ℤ ℤ ≅ ℚ` is not `ℚ ⊗_ℤ g` for any `g : ℤ → ℤ`. -/
+theorem functor_map_surjective (hf : Function.Surjective f) {P N : ModuleCat.{max v u₂} R}
+    [Module.Projective R P] :
+    Function.Surjective ((functor.{u₁, u₂, max v u₂} f).map :
+      (P ⟶ N) → ((functor f).obj P ⟶ (functor f).obj N)) := by
+  intro φ
+  -- The adjoint `P → S ⊗_R N` of `φ` lifts along the unit `n ↦ 1 ⊗ n`, which is onto.
+  obtain ⟨g, hg⟩ := Module.projective_lifting_property ((adjunction f).unit.app N).hom
+    ((adjunction f).homEquiv P _ φ).hom fun x ↦
+      (includeRight_surjective hf x).imp fun n hn ↦
+        (adjunction_unit_app_apply f N n).trans ((includeRight_apply n).symm.trans hn)
+  refine ⟨ModuleCat.ofHom g, ((adjunction f).homEquiv _ _).injective ?_⟩
+  rw [Adjunction.homEquiv_unit, Adjunction.unit_naturality]
+  exact ModuleCat.hom_ext hg
+
 end Ring
+
+section Congr
+
+variable {R : Type u₁} {S : Type u₂} [Ring R] [Ring S]
+
+/-- Extension of scalars along equal ring homomorphisms gives isomorphic functors: the natural
+isomorphism whose components are `TauCeti.BalancedExtension.congrRingHom`, `s ⊗ p ↦ s ⊗ p`. -/
+noncomputable def functorCongr {f f' : R →+* S} (h : f = f') :
+    functor.{u₁, u₂, v} f ≅ functor.{u₁, u₂, v} f' :=
+  NatIso.ofComponents (fun P ↦ (congrRingHom (P := P) h).toModuleIso) fun φ ↦
+    ModuleCat.hom_ext (congrRingHom_comp_map h (ModuleCat.Hom.hom φ))
+
+@[simp]
+theorem functorCongr_hom_app_tmul {f f' : R →+* S} (h : f = f') (P : ModuleCat.{v} R)
+    (s : S) (p : P) :
+    (functorCongr h).hom.app P (tmul f s p) = tmul f' s p :=
+  congrRingHom_tmul h s p
+
+@[simp]
+theorem functorCongr_inv_app_tmul {f f' : R →+* S} (h : f = f') (P : ModuleCat.{v} R)
+    (s : S) (p : P) :
+    (functorCongr h).inv.app P (tmul f' s p) = tmul f s p :=
+  (LinearEquiv.symm_apply_eq _).2 (congrRingHom_tmul h s p).symm
+
+/-- Extension of scalars along a ring homomorphism and itself: the identity. -/
+@[simp]
+theorem functorCongr_refl (f : R →+* S) :
+    functorCongr.{u₁, u₂, v} (rfl : f = f) = Iso.refl _ :=
+  Iso.ext (NatTrans.ext (funext fun P ↦ ModuleCat.hom_ext (hom_ext fun p ↦
+    functorCongr_hom_app_tmul rfl P 1 p)))
+
+end Congr
+
+section Composition
+
+variable {R S T : Type u₁} [Ring R] [Ring S] [Ring T]
+
+variable (f : R →+* S) (g : S →+* T)
+
+/-- **Extension of scalars along a composite**, as a natural isomorphism: extending along `g ∘ f`
+is extending along `f` and then along `g`. Its component at `P` is the inverse of
+`TauCeti.BalancedExtension.cancelBaseChange`, `t ⊗ p ↦ t ⊗ (1 ⊗ p)`. This is the form of Mathlib's
+`ModuleCat.extendScalarsComp` for possibly noncommutative rings. -/
+noncomputable def functorComp :
+    functor.{u₁, u₁, max v u₁} (g.comp f) ≅
+      functor.{u₁, u₁, max v u₁} f ⋙ functor.{u₁, u₁, max v u₁} g :=
+  (NatIso.ofComponents (fun P ↦ (cancelBaseChange f g (P := P)).toModuleIso) fun φ ↦
+    ModuleCat.hom_ext (cancelBaseChange_comp_map f g (ModuleCat.Hom.hom φ))).symm
+
+/-- The component of `TauCeti.BalancedExtension.functorComp` sends `t ⊗ p` to `t ⊗ (1 ⊗ p)`. Not
+`@[simp]`: its left-hand side mentions the composite functor, which `simp` unfolds. -/
+theorem functorComp_hom_app_tmul (P : ModuleCat.{max v u₁} R) (t : T) (p : P) :
+    (functorComp f g).hom.app P (tmul (g.comp f) t p) = tmul g t (tmul f 1 p) :=
+  cancelBaseChange_symm_tmul f g t p
+
+/-- The inverse component of `TauCeti.BalancedExtension.functorComp` sends `t ⊗ (s ⊗ p)` to
+`(t * g s) ⊗ p`. Not `@[simp]`: its left-hand side mentions the composite functor, which `simp`
+unfolds. -/
+theorem functorComp_inv_app_tmul (P : ModuleCat.{max v u₁} R) (t : T) (s : S) (p : P) :
+    (functorComp f g).inv.app P (tmul g t (tmul f s p)) = tmul (g.comp f) (t * g s) p :=
+  cancelBaseChange_tmul f g t s p
+
+end Composition
 
 section CommRing
 
