@@ -45,6 +45,9 @@ coefficients (`TopCat.singularKroneckerEquiv`), and `Hₙ(N; ℤ)` is freely gen
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_id_singularCohomologyMap`:
   `⟨f^* c, [N]⟩ = ⟨c, f_*[N]⟩`.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_comp`: `⟨c, (g ∘ f)_*[N]⟩ = ⟨g^* c, f_*[N]⟩`.
+* `TauCeti.HomologicalOrientation.evalFundamentalClass_singularCohomologyChainCoefficientMap`: for
+  a class `v` on chains with coefficients in `ℤ`, the pairing with `f_*[N]` is `⟨f^* v, [N]⟩`
+  with `[N]` read in `Hₙ(N; ℤ)`.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_eq_of_homotopic`: homotopic maps give the
   same pairing.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_neg`: reversing the orientation negates the
@@ -130,6 +133,36 @@ theorem evalFundamentalClass_id_singularCohomologyMap (f : C(N, X))
         (TopCat.singularCohomologyMap (TopCat.ofHom f) n c) =
       o.evalFundamentalClass hn M f c := by
   simpa using (o.evalFundamentalClass_comp hn M f (ContinuousMap.id N) c).symm
+
+/-- **The pairing for classes on chains with coefficients in `ℤ`.** For a class `v ∈ Hⁿ(X; M)`
+built on singular chains with coefficients in `ℤ` rather than `ULift ℤ`, evaluating `v` on
+`f_*[N]` after changing the chain coefficients along `ULift ℤ ≅ ℤ` is the Kronecker pairing
+`⟨f^* v, [N]⟩` with the fundamental class read in `Hₙ(N; ℤ)` through
+`TauCeti.uliftIntHomologyIso`. -/
+theorem evalFundamentalClass_singularCohomologyChainCoefficientMap (f : C(N, X))
+    (v : (TopCat.of X).singularCohomology (ModuleCat.of ℤ ℤ) ℤ M n) :
+    o.evalFundamentalClass hn M f
+        ((TopCat.of X).singularCohomologyChainCoefficientMap ℤ M uliftIntIso.hom n v) =
+      ((TopCat.of N).singularKronecker ℤ n (TopCat.singularCohomologyMap (TopCat.ofHom f) n v)).hom
+        ((uliftIntHomologyIso (TopCat.of N) n).hom.hom (o.fundamentalClass hn)) := by
+  symm
+  -- term-mode steps: the homology objects are written through `SSet.homology` on one side and
+  -- `singularHomologyFunctor` on the other, so `rw` cannot form the motives
+  refine (congrArg (fun g ↦ ModuleCat.Hom.hom g
+    ((uliftIntHomologyIso (TopCat.of N) n).hom.hom (o.fundamentalClass hn)))
+    (TopCat.singularKronecker_naturality (TopCat.ofHom f) ℤ n v)).trans ?_
+  refine Eq.trans ?_ (o.evalFundamentalClass_apply hn _ _ _).symm
+  refine Eq.trans ?_ (congrArg (fun g ↦ ModuleCat.Hom.hom g (o.mapFundamentalClass hn f))
+    (TopCat.singularKronecker_singularCohomologyChainCoefficientMap _ ℤ uliftIntIso.hom n
+      v)).symm
+  refine Eq.trans ?_ (congrArg (fun g ↦
+      (g ≫ (TopCat.of X).singularKronecker ℤ n v).hom (o.mapFundamentalClass hn f))
+    (uliftIntHomologyIso_hom (TopCat.of X) n))
+  refine Eq.trans ?_ (congrArg (fun x ↦ ModuleCat.Hom.hom
+    ((uliftIntHomologyIso (TopCat.of X) n).hom ≫ (TopCat.of X).singularKronecker ℤ n v) x)
+    (o.mapFundamentalClass_def hn f)).symm
+  exact (congrArg (fun g ↦ (g ≫ (TopCat.of X).singularKronecker ℤ n v).hom
+    (o.fundamentalClass hn)) (homologyMap_comp_uliftIntHomologyIso_hom (TopCat.ofHom f) n)).symm
 
 /-- **Homotopy invariance of the pairing**: homotopic maps give the same evaluation. -/
 theorem evalFundamentalClass_eq_of_homotopic {f g : C(N, X)} (h : f.Homotopic g) :
