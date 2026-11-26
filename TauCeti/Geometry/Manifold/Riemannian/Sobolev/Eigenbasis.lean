@@ -41,15 +41,16 @@ the multiplicity of each eigenvalue in the basis is the dimension of its eigensp
 * **`H¹(M)` in an eigenbasis.** With `cᵢ = ⟪bᵢ, f⟫_{L²}` the coordinates of `f ∈ L²(M)` in such a
   basis, `f` lies in `H¹(M)` exactly when `∑ (μᵢ + 1) cᵢ² < ∞`
   (`TauCeti.Manifold.SobolevH1.mem_range_toLp_iff_summable`), that is, exactly when it lies in
-  the domain of the diagonal operator `(Δ⁺ + 1)^{1/2}` with entries `√(μᵢ + 1)`
+  the domain of the diagonal operator `S` with entries `√(μᵢ + 1)` in the basis
   (`TauCeti.Manifold.SobolevH1.range_toLp_eq_diagonalPMap_sqrt_domain`). For a `C¹` metric, the
   eigenfunction expansion `w = ∑ cᵢ uᵢ` of `w ∈ H¹(M)` converges in `H¹(M)`
   (`TauCeti.Manifold.SobolevH1.hasSum_inner_toLp_smul`), and the `H¹` norm and the Dirichlet form
-  are diagonal: `‖w‖²_{H¹} = ∑ (μᵢ + 1) cᵢ² = ‖(Δ⁺ + 1)^{1/2} w‖²_{L²}` and
+  are diagonal: `‖w‖²_{H¹} = ∑ (μᵢ + 1) cᵢ² = ‖S w‖²_{L²}` and
   `D(w, v) = ∑ μᵢ cᵢ(w) cᵢ(v)` (`TauCeti.Manifold.SobolevH1.hasSum_norm_sq`,
   `TauCeti.Manifold.SobolevH1.norm_diagonalPMap_sqrt`,
-  `TauCeti.Manifold.SobolevH1.hasSum_dirichletForm`). So `H¹(M)` is the form domain of `Δ⁺`, the
-  first space of the spectral Sobolev scale of `Δ⁺ + 1`, with the same norm.
+  `TauCeti.Manifold.SobolevH1.hasSum_dirichletForm`). Informally, `S` is `(Δ⁺ + 1)^{1/2}`, so
+  these say that `H¹(M)` is the form domain of `Δ⁺` with the same norm; the identification of `S`
+  with a power of `TauCeti.Manifold.SobolevH1.negLaplacian` is not proved here.
 
 ## The argument
 
@@ -231,9 +232,9 @@ theorem mem_range_toLp_iff_summable (hu : ∀ i, toLp (u i) = b i)
   isCoercive_innerSL.mem_range_iff_summable_mul_inner_sq
     (fun v w ↦ real_inner_comm w v) hu fun i ↦ innerSL_apply_eq_of_mem_weakEigenspace (hμ i)
 
-/-- **`H¹(M)` is the domain of `(Δ⁺ + 1)^{1/2}`.** If a Hilbert basis `b` of `L²(M)` consists of
-the values of weak eigenfunctions `uᵢ` with eigenvalues `μᵢ`, then the values of `H¹(M)` form the
-domain of the diagonal operator with entries `√(μᵢ + 1)` in the basis `b`. -/
+/-- **`H¹(M)` is the domain of the diagonal operator `√(μᵢ + 1)`.** If a Hilbert basis `b` of
+`L²(M)` consists of the values of weak eigenfunctions `uᵢ` with eigenvalues `μᵢ`, then the values
+of `H¹(M)` form the domain of the diagonal operator with entries `√(μᵢ + 1)` in the basis `b`. -/
 theorem range_toLp_eq_diagonalPMap_sqrt_domain (hu : ∀ i, toLp (u i) = b i)
     (hμ : ∀ i, u i ∈ weakEigenspace I M (μ i)) :
     Set.range (toLp (I := I) (M := M)) = (b.diagonalPMap fun i ↦ √(μ i + 1)).domain :=
@@ -278,10 +279,10 @@ theorem hasSum_dirichletForm (hu : ∀ i, toLp (u i) = b i)
   rw [real_inner_comm (b i)]
   ring
 
-/-- **`(Δ⁺ + 1)^{1/2}` measures the `H¹` norm.** For a `C¹` metric, if a Hilbert basis `b` of
-`L²(M)` consists of the values of weak eigenfunctions `uᵢ` with eigenvalues `μᵢ`, then the diagonal
-operator with entries `√(μᵢ + 1)` in the basis `b` sends the value of `w ∈ H¹(M)` to a vector of
-norm `‖w‖_{H¹}`. -/
+/-- **The diagonal operator `√(μᵢ + 1)` measures the `H¹` norm.** For a `C¹` metric, if a
+Hilbert basis `b` of `L²(M)` consists of the values of weak eigenfunctions `uᵢ` with eigenvalues
+`μᵢ`, then the diagonal operator with entries `√(μᵢ + 1)` in the basis `b` sends the value of
+`w ∈ H¹(M)` to a vector of norm `‖w‖_{H¹}`. -/
 theorem norm_diagonalPMap_sqrt (hu : ∀ i, toLp (u i) = b i)
     (hμ : ∀ i, u i ∈ weakEigenspace I M (μ i)) (w : SobolevH1 I M)
     (hw : toLp w ∈ (b.diagonalPMap fun i ↦ √(μ i + 1)).domain) :

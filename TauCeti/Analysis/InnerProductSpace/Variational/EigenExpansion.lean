@@ -34,8 +34,8 @@ Equivalently, `J V` is the domain of the diagonal operator `√κ` in the basis 
 square root `A^{1/2}` of the operator `A` with eigenvalues `κ i`, and `‖A^{1/2} J w‖² = B w w`
 (`IsCoercive.range_eq_diagonalPMap_sqrt_domain`, `IsCoercive.norm_diagonalPMap_sqrt_sq`). So the
 energy space `V` is the form domain of `A`, the first space of the spectral Sobolev scale of `A`.
-For a closed manifold, `A = Δ⁺ + 1` and this identifies `H¹(M)` with the domain of
-`(Δ⁺ + 1)^{1/2}`, with equal norms.
+For a closed manifold, `A` is informally `Δ⁺ + 1` and this identifies `H¹(M)` with the domain
+of the diagonal operator with entries `√(μ i + 1)`, with equal norms.
 
 The proofs only use Bessel's inequality in the energy `B`: the eigenvectors `u i` are orthogonal
 for `B`, with `B (u i) (u i) = κ i`, so the partial sums of the expansion of `w` have energy
@@ -43,9 +43,10 @@ for `B`, with `B (u i) (u i) = κ i`, so the partial sums of the expansion of `w
 
 ## Main results
 
-* `IsCoercive.summable_mul_inner_sq`: Bessel's inequality, `∑ κ i ⟪b i, J w⟫² < ∞`.
-* `IsCoercive.hasSum_inner_smul_of_summable`: if `∑ κ i ⟪b i, h⟫² < ∞`, the expansion
-  `∑ ⟪b i, h⟫ u i` converges in `V` to a preimage of `h`.
+* `IsCoercive.summable_mul_inner_sq`, `IsCoercive.tsum_mul_inner_sq_le`: Bessel's inequality,
+  `∑ κ i ⟪b i, J w⟫² ≤ B w w < ∞`.
+* `IsCoercive.exists_apply_eq_and_hasSum_inner_smul_of_summable`: if `∑ κ i ⟪b i, h⟫² < ∞`,
+  the expansion `∑ ⟪b i, h⟫ u i` converges in `V` to a preimage of `h`.
 * `IsCoercive.mem_range_iff_summable_mul_inner_sq`: the range of `J` in coordinates.
 * `IsCoercive.hasSum_inner_smul`, `IsCoercive.hasSum_mul_inner_mul_inner`,
   `IsCoercive.hasSum_mul_inner_sq`: for injective `J`, the expansion of `w` converges to `w` and
@@ -120,11 +121,19 @@ private theorem sum_mul_inner_sq_le (hB : IsCoercive B) (hsymm : ∀ v w, B v w 
   linarith
 
 /-- **Bessel's inequality in the energy.** For `w : V`, the coordinates of `J w` satisfy
-`∑ κ i ⟪b i, J w⟫² < ∞`, with sum at most `B w w`. -/
+`∑ κ i ⟪b i, J w⟫² < ∞`; the sum is at most `B w w` (`IsCoercive.tsum_mul_inner_sq_le`). -/
 theorem summable_mul_inner_sq (hB : IsCoercive B) (hsymm : ∀ v w, B v w = B w v)
     (hJu : ∀ i, J (u i) = b i) (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (w : V) :
     Summable fun i ↦ κ i * ⟪b i, J w⟫_ℝ ^ 2 :=
   summable_of_sum_le (fun i ↦ mul_nonneg (pos_of_hilbertBasis hB hJu heq i).le (sq_nonneg _))
+    (sum_mul_inner_sq_le hB hsymm hJu heq w)
+
+/-- **Bessel's inequality in the energy**, the bound: for `w : V`,
+`∑ κ i ⟪b i, J w⟫² ≤ B w w`. -/
+theorem tsum_mul_inner_sq_le (hB : IsCoercive B) (hsymm : ∀ v w, B v w = B w v)
+    (hJu : ∀ i, J (u i) = b i) (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (w : V) :
+    ∑' i, κ i * ⟪b i, J w⟫_ℝ ^ 2 ≤ B w w :=
+  (summable_mul_inner_sq hB hsymm hJu heq w).tsum_le_of_sum_le
     (sum_mul_inner_sq_le hB hsymm hJu heq w)
 
 variable [CompleteSpace V]
@@ -132,8 +141,8 @@ variable [CompleteSpace V]
 /-- **Convergence of the eigenfunction expansion.** If the coordinates of `h : H` satisfy
 `∑ κ i ⟪b i, h⟫² < ∞`, then the expansion `∑ ⟪b i, h⟫ u i` converges in `V`, to a vector whose
 image under `J` is `h`. -/
-theorem hasSum_inner_smul_of_summable (hB : IsCoercive B) (hJu : ∀ i, J (u i) = b i)
-    (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) {h : H}
+theorem exists_apply_eq_and_hasSum_inner_smul_of_summable (hB : IsCoercive B)
+    (hJu : ∀ i, J (u i) = b i) (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) {h : H}
     (hsum : Summable fun i ↦ κ i * ⟪b i, h⟫_ℝ ^ 2) :
     ∃ w : V, J w = h ∧ HasSum (fun i ↦ ⟪b i, h⟫_ℝ • u i) w := by
   obtain ⟨C, hC, hle⟩ := id hB
@@ -161,7 +170,7 @@ theorem mem_range_iff_summable_mul_inner_sq (hB : IsCoercive B) (hsymm : ∀ v w
   refine ⟨?_, fun hsum ↦ ?_⟩
   · rintro ⟨w, rfl⟩
     exact summable_mul_inner_sq hB hsymm hJu heq w
-  · obtain ⟨w, hw, -⟩ := hasSum_inner_smul_of_summable hB hJu heq hsum
+  · obtain ⟨w, hw, -⟩ := exists_apply_eq_and_hasSum_inner_smul_of_summable hB hJu heq hsum
     exact ⟨w, hw⟩
 
 section Injective
@@ -174,7 +183,8 @@ include hB hsymm hJ hJu heq
 `w : V` is the sum `∑ ⟪b i, J w⟫ u i` of its eigenfunction expansion, converging in `V`. -/
 theorem hasSum_inner_smul (w : V) : HasSum (fun i ↦ ⟪b i, J w⟫_ℝ • u i) w := by
   obtain ⟨w', hw', hsum⟩ :=
-    hasSum_inner_smul_of_summable hB hJu heq (summable_mul_inner_sq hB hsymm hJu heq w)
+    exists_apply_eq_and_hasSum_inner_smul_of_summable hB hJu heq
+      (summable_mul_inner_sq hB hsymm hJu heq w)
   rwa [hJ hw'] at hsum
 
 /-- **The form is diagonal in the eigenbasis.** For injective `J`,
