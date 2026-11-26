@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Cerf.Isolated
 -- Private: used only inside proofs.
-import TauCeti.Analysis.Calculus.Bifurcation
 import TauCeti.Analysis.Calculus.Bifurcation.Fold
 import TauCeti.Analysis.Calculus.Morse.Cerf.Index
 import TauCeti.Analysis.Calculus.ContDiff.Prod
