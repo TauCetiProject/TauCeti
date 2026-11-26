@@ -43,10 +43,10 @@ nilpotent.
 * `TauCeti.pow_finrank_eq_zero_of_frobenius_monodromy_of_valuation`: the same conclusion over a
   field when `σ` preserves a valuation `v` with `v c ≠ 1`.
 * `TauCeti.eq_zero_of_frobenius_mul_p_pow_eq`: in the fraction field of the Witt vectors of a
-  perfect ring `k`, `φ(a) p ^ n = a` with `n ≥ 1` forces `a = 0`.
+  perfect domain `k`, `φ(a) p ^ n = a` with `n ≥ 1` forces `a = 0`.
 * `TauCeti.pow_finrank_eq_zero_of_isocrystal_monodromy`: on a finite-dimensional isocrystal over
-  `W(k)[1/p]` in the sense of Mathlib's `WittVector.Isocrystal`, every linear `N` with
-  `N Φ = p Φ N` satisfies `N ^ dim V = 0`.
+  the fraction field `K(p, k)` of `W(k)` in the sense of Mathlib's `WittVector.Isocrystal`, every
+  linear `N` with `N Φ = p Φ N` satisfies `N ^ dim V = 0`.
 
 ## References
 
@@ -144,8 +144,9 @@ open scoped Isocrystal
 variable (p : ℕ) [Fact p.Prime] (k : Type*) [CommRing k] [IsDomain k] [CharP k p]
   [PerfectRing k p]
 
-/-- In the fraction field `W(k)[1/p]` of the Witt vectors of a perfect ring `k` of
-characteristic `p`, the equation `φ(a) p ^ n = a` with `n ≥ 1` only has the solution `a = 0`. -/
+/-- In the fraction field `K(p, k)` of the Witt vectors `W(k)` of a perfect domain `k` of
+characteristic `p` (which is `W(k)[1/p]` when `k` is a field), the equation `φ(a) p ^ n = a` with
+`n ≥ 1` only has the solution `a = 0`. -/
 theorem eq_zero_of_frobenius_mul_p_pow_eq {a : K(p, k)} {n : ℕ} (hn : n ≠ 0)
     (ha : φ(p, k) a * (p : K(p, k)) ^ n = a) : a = 0 := by
   by_contra ha0
@@ -183,8 +184,8 @@ theorem eq_zero_of_frobenius_mul_p_pow_eq {a : K(p, k)} {n : ℕ} (hn : n ≠ 0)
   exact mul_ne_zero hu (pow_ne_zero _ hw) h0.symm
 
 /-- **Nilpotence of Hyodo–Kato monodromy**. On a finite-dimensional isocrystal `V` over the
-fraction field `W(k)[1/p]` of the Witt vectors of a perfect ring `k` of characteristic `p`, every
-linear endomorphism `N` satisfying `N Φ = p Φ N` with the Frobenius `Φ` of `V` has
+fraction field `K(p, k)` of the Witt vectors `W(k)` of a perfect domain `k` of characteristic `p`,
+every linear endomorphism `N` satisfying `N Φ = p Φ N` with the Frobenius `Φ` of `V` has
 `N ^ dim V = 0`. -/
 theorem pow_finrank_eq_zero_of_isocrystal_monodromy {V : Type*} [AddCommGroup V]
     [Isocrystal p k V] [FiniteDimensional K(p, k) V] {N : V →ₗ[K(p, k)] V}
