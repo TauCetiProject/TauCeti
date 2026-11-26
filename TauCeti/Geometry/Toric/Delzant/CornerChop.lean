@@ -9,8 +9,10 @@ public import Mathlib.Order.Filter.Basic
 public import Mathlib.Topology.Order.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import TauCeti.Geometry.Toric.Delzant.Basic
+public import TauCeti.Geometry.Toric.Delzant.Simplex
 
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
+import TauCeti.Algebra.Group.Pi.Lemmas
 import Mathlib.Order.Filter.Finite
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Order.OrderClosed
@@ -32,7 +34,9 @@ Let `Δ = {x | c j ≤ ⟨x, u j⟩ for every j}` be a facet presentation in an 
 the moment polytope of a symplectic toric manifold corresponds to the toric symplectic blowup of
 the fixed point over that vertex, with a ball whose size is set by `ε`. For instance, chopping a
 corner of the triangle of `ℂP²` gives a Hirzebruch trapezoid, the moment polytope of the blowup
-of `ℂP²` at a point. This file treats the polytopes only.
+of `ℂP²` at a point. This file treats the polytopes only; the Betti numbers and volumes of the
+corresponding Delzant quotients are in `TauCeti.Geometry.Toric.Delzant.Quotient.Topology` and
+`TauCeti.Geometry.Toric.Delzant.Quotient.Volume`.
 
 **Small corner chops of a Delzant polytope are Delzant**
 (`TauCeti.Toric.IsDelzant.eventually_isDelzant_cornerChop`): in dimension at least two, every
@@ -52,7 +56,26 @@ lattice, the `y j` are affine coordinates on `V*` vanishing at `v`.
   and the barycentre of the new facet lies only on the new facet.
 
 In dimension one the chop translates a facet, and the old facet becomes redundant, so the
-dimension hypothesis is needed.
+dimension hypothesis is needed. The argument needs only that the constraints inactive at `v` stay
+inactive on the simplex `{y j ≥ 0, ∑ j, y j ≤ ε}` and that each old facet keeps a point lying only
+on it beyond depth `ε`, so the same holds at every depth with these two properties
+(`TauCeti.Toric.IsDelzant.isDelzant_cornerChop`).
+
+**The vertices of a corner chop.** At such a depth the chop replaces the vertex `v` by the
+`n = dim V` points at depth `ε` on the edges from `v`, at which one coordinate `y j₀` is `ε` and
+the others vanish
+(`TauCeti.Toric.IsSmoothVertex.mem_extremePoints_facetPolyhedron_cornerChop_iff`): every other
+vertex of `Δ` lies deeper than `ε`, since near the corner only constraints in `s` can be active,
+and fewer than `n` of them do not determine a point. So the chopped polytope has `n - 1` more
+vertices than `Δ` (`TauCeti.Toric.IsSmoothVertex.ncard_extremePoints_facetPolyhedron_cornerChop`).
+On the symplectic side, the toric blowup replaces the fixed point over `v` by `n` fixed points on
+the exceptional divisor `ℂPⁿ⁻¹`.
+
+**The blown-up projective space.** For the corner `0` of the standard simplex of size `a` in `ℝⁿ`,
+the moment polytope of `ℂPⁿ`, both properties hold at every depth `0 < ε < a` when `n ≥ 2`. The
+chopped simplex `{0 ≤ x(eₖ), ε ≤ ∑ k, x(eₖ) ≤ a}`, the moment polytope of `ℂPⁿ` blown up at a
+point, is therefore Delzant (`TauCeti.Toric.isDelzant_simplex_cornerChop`), with `2 n` vertices
+(`TauCeti.Toric.ncard_extremePoints_facetPolyhedron_simplex_cornerChop`).
 
 ## Main definitions
 
@@ -72,8 +95,16 @@ dimension hypothesis is needed.
   smooth vertex lies in the polyhedron.
 * `TauCeti.Toric.IsSmoothVertex.eventually_forall_lt_apply`: the constraints inactive at a smooth
   vertex stay inactive on the small simplex there.
-* `TauCeti.Toric.IsDelzant.eventually_isDelzant_cornerChop`: small corner chops of a Delzant
-  polytope at a vertex are Delzant polytopes.
+* `TauCeti.Toric.IsDelzant.isDelzant_cornerChop`,
+  `TauCeti.Toric.IsDelzant.eventually_isDelzant_cornerChop`: corner chops of a Delzant polytope at
+  a vertex are Delzant polytopes, at every small depth.
+* `TauCeti.Toric.IsSmoothVertex.mem_extremePoints_facetPolyhedron_cornerChop_iff`,
+  `TauCeti.Toric.IsSmoothVertex.ncard_extremePoints_facetPolyhedron_cornerChop`,
+  `TauCeti.Toric.IsSmoothVertex.eventually_ncard_extremePoints_facetPolyhedron_cornerChop`: the
+  vertices of a corner chop, and their number.
+* `TauCeti.Toric.isDelzant_simplex_cornerChop`,
+  `TauCeti.Toric.ncard_extremePoints_facetPolyhedron_simplex_cornerChop`: the moment polytope of
+  `ℂPⁿ` blown up at a point is Delzant and has `2 n` vertices.
 
 ## References
 
@@ -181,6 +212,23 @@ section Coordinates
 
 variable {v : StrongDual ℝ V} {w : ι → StrongDual ℝ V}
 
+/-- The facets in `s`, active at `v`, pass through `v`. -/
+private theorem apply_eq_of_coe_eq_activeSet
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) : ∀ j ∈ s, v (i (u j)) = c j :=
+  fun j hj ↦ by rwa [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply] at hj
+
+/-- At a smooth vertex there are as many active facets as the rank of the lattice. -/
+private theorem card_eq_finrank_of_isSmoothVertex (hv : IsSmoothVertex i u c v)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) : s.card = Module.finrank ℤ N := by
+  rw [← hv.ncard_activeSet, ← hs, ncard_coe_finset]
+
+/-- If all the coordinates `⟨x, u j⟩ - c j`, `j ∈ s`, but the `j₀`-th vanish, their sum is the
+`j₀`-th. -/
+private theorem sum_sub_eq_of_forall_ne {j₀ : ι} (hj₀ : j₀ ∈ s)
+    (h : ∀ j ∈ s, j ≠ j₀ → x (i (u j)) = c j) :
+    ∑ j ∈ s, (x (i (u j)) - c j) = x (i (u j₀)) - c j₀ :=
+  Finset.sum_eq_single_of_mem j₀ hj₀ fun k hk hkj ↦ by rw [h k hk hkj, sub_self]
+
 /-- Evaluating a combination of the functionals `w j` dual to the normals `u j`, `j ∈ s`, on a
 normal `u k` picks out the coefficient of `w k`. -/
 private theorem sum_mul_apply_eq [DecidableEq ι]
@@ -209,9 +257,6 @@ theorem IsSmoothVertex.exists_coord [DecidableEq ι] (hi : IsIntegralLattice i)
   have hB (j : (s : Set ι)) : B j = i (u j) := by
     simpa [B, b', hb] using hi.isBaseChange.basis_apply b' j
   have := Module.Finite.of_basis B
-  have hvs (j) (hj : j ∈ s) : c j = v (i (u j)) := by
-    rw [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply] at hj
-    exact hj.symm
   let w (j : ι) : StrongDual ℝ V :=
     if h : j ∈ s then LinearMap.toContinuousLinearMap (B.coord ⟨j, h⟩) else 0
   have hw (j) (hj : j ∈ s) (k) (hk : k ∈ s) : w j (i (u k)) = if j = k then 1 else 0 := by
@@ -223,7 +268,7 @@ theorem IsSmoothVertex.exists_coord [DecidableEq ι] (hi : IsIntegralLattice i)
   obtain ⟨k, hk⟩ := k
   simp only [ContinuousLinearMap.coe_coe, add_apply,
     sum_apply, smul_apply, smul_eq_mul, hB]
-  rw [sum_mul_apply_eq hw _ hk, hvs k hk]
+  rw [sum_mul_apply_eq hw _ hk, ← apply_eq_of_coe_eq_activeSet hs k hk]
   ring
 
 /-- **Small depths.** At a point `v` of the polyhedron with active facets `s`, every sufficiently
@@ -254,6 +299,11 @@ private theorem apply_eq_add_sum (x : StrongDual ℝ V) (n : V) :
 corner. -/
 private theorem eq_of_forall_apply_eq (h : ∀ j ∈ s, x (i (u j)) = c j) : x = v := by
   rw [hx x, Finset.sum_eq_zero fun j hj ↦ by rw [h j hj, sub_self, zero_smul], add_zero]
+
+/-- A functional vanishing on the normals `u j`, `j ∈ s`, at the corner vanishes. -/
+private theorem eq_zero_of_forall_apply_eq_zero (hvs : ∀ j ∈ s, v (i (u j)) = c j)
+    {f : StrongDual ℝ V} (hf : ∀ j ∈ s, f (i (u j)) = 0) : f = 0 :=
+  add_eq_left.1 (eq_of_forall_apply_eq hx fun j hj ↦ by rw [add_apply, hvs j hj, hf j hj, add_zero])
 
 /-- A point other than the corner, with nonnegative coordinates relative to the corner, has
 positive depth: its coordinates have positive sum. -/
@@ -322,7 +372,31 @@ theorem IsSmoothVertex.eventually_forall_lt_apply [Finite ι] (hi : IsIntegralLa
 
 section Vertices
 
+/-- Off the new facet, the constraints active on the chopped polytope are the old ones. -/
+private theorem activeSet_cornerChop_of_none_notMem
+    (hnone : none ∉
+      activeSet (facetPairing i (cornerChopNormal u s)) (cornerChopSupport c s ε) x) :
+    activeSet (facetPairing i (cornerChopNormal u s)) (cornerChopSupport c s ε) x =
+      some '' activeSet (facetPairing i u) c x := by
+  ext o
+  cases o with
+  | none => simpa using hnone
+  | some j => simp
+
 variable [Finite ι] {v : StrongDual ℝ V} {w : ι → StrongDual ℝ V}
+
+/-- A vertex of the chopped polytope off the new facet is a vertex of the original polytope. -/
+private theorem mem_extremePoints_of_none_notMem
+    (hx : x ∈ (facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε)).extremePoints ℝ)
+    (hnone : none ∉
+      activeSet (facetPairing i (cornerChopNormal u s)) (cornerChopSupport c s ε) x) :
+    x ∈ (facetPolyhedron i u c).extremePoints ℝ := by
+  obtain ⟨hxP, hker⟩ := mem_extremePoints_facetPolyhedron_iff.1 hx
+  refine mem_extremePoints_facetPolyhedron_iff.2
+    ⟨facetPolyhedron_cornerChop_subset hxP, fun f hf ↦ hker f fun o ho ↦ ?_⟩
+  rw [activeSet_cornerChop_of_none_notMem hnone] at ho
+  obtain ⟨j, hj, rfl⟩ := ho
+  exact hf j hj
 
 /-- A vertex of the chopped polytope off the new facet is a smooth vertex, when every vertex of the
 original polytope is smooth. -/
@@ -332,28 +406,17 @@ private theorem isSmoothVertex_cornerChop_of_none_notMem
     (hnone : none ∉
       activeSet (facetPairing i (cornerChopNormal u s)) (cornerChopSupport c s ε) x) :
     IsSmoothVertex i (cornerChopNormal u s) (cornerChopSupport c s ε) x := by
-  obtain ⟨hxP, hker⟩ := mem_extremePoints_facetPolyhedron_iff.1 hx
-  -- The active constraints are the old ones active at `x`.
-  have hA : activeSet (facetPairing i (cornerChopNormal u s)) (cornerChopSupport c s ε) x =
-      some '' activeSet (facetPairing i u) c x := by
-    ext o
-    cases o with
-    | none => simpa using hnone
-    | some j => simp
-  have hxΔ : x ∈ (facetPolyhedron i u c).extremePoints ℝ := by
-    refine mem_extremePoints_facetPolyhedron_iff.2
-      ⟨facetPolyhedron_cornerChop_subset hxP, fun f hf ↦ hker f fun o ho ↦ ?_⟩
-    rw [hA] at ho
-    obtain ⟨j, hj, rfl⟩ := ho
-    exact hf j hj
-  obtain ⟨hli, hsp⟩ := isSmoothVertex_iff_linearIndepOn.1 (hsmooth x hxΔ)
-  rw [isSmoothVertex_iff_linearIndepOn, hA, image_image]
+  obtain ⟨hli, hsp⟩ :=
+    isSmoothVertex_iff_linearIndepOn.1 (hsmooth x (mem_extremePoints_of_none_notMem hx hnone))
+  rw [isSmoothVertex_iff_linearIndepOn, activeSet_cornerChop_of_none_notMem hnone, image_image]
   exact ⟨hli.image_of_comp some (cornerChopNormal u s), hsp⟩
 
+-- The hypothesis `hε` says that the depth `ε` is small: the constraints inactive at the corner stay
+-- inactive on the simplex `{y j ≥ 0, ∑ j, y j ≤ ε}` in the coordinates `y j = ⟨x, u j⟩ - c j`.
 variable [DecidableEq ι] (hw : ∀ j ∈ s, ∀ k ∈ s, w j (i (u k)) = if j = k then 1 else 0)
-  (hx : ∀ x : StrongDual ℝ V, x = v + ∑ j ∈ s, (x (i (u j)) - c j) • w j)
-  (hε : ∀ k ∉ s, ε * ∑ j ∈ s, |w j (i (u k))| < v (i (u k)) - c k)
-include hw hx hε
+  (hε : ∀ x : StrongDual ℝ V, (∀ j ∈ s, c j ≤ x (i (u j))) → ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε →
+    ∀ k ∉ s, c k < x (i (u k)))
+include hw hε
 
 /-- At a vertex of the chopped polytope on the new facet, exactly one of the coordinates relative
 to the corner is nonzero, and the active constraints are the new facet and the old facets in `s`
@@ -367,8 +430,7 @@ private theorem exists_activeSet_cornerChop_eq_image
   obtain ⟨hxP, hker⟩ := mem_extremePoints_facetPolyhedron_iff.1 hx'
   have hxΔ := mem_facetPolyhedron.1 (facetPolyhedron_cornerChop_subset hxP)
   -- Off `s`, the constraints are inactive near the corner.
-  have hslack {k} (hk : k ∉ s) : c k < x (i (u k)) :=
-    lt_apply_of_sum_le hx hε (fun j _ ↦ hxΔ j) hnone.le hk
+  have hslack {k} (hk : k ∉ s) : c k < x (i (u k)) := hε x (fun j _ ↦ hxΔ j) hnone.le k hk
   -- Some coordinate is nonzero, since they sum to `ε > 0`.
   obtain ⟨j₀, hj₀, hj₀ne⟩ : ∃ j₀ ∈ s, x (i (u j₀)) ≠ c j₀ := by
     by_contra! h
@@ -418,7 +480,7 @@ private theorem isSmoothVertex_cornerChop_of_none_mem
     (hε0 : 0 < ε) (hnone : ∑ j ∈ s, (x (i (u j)) - c j) = ε) :
     IsSmoothVertex i (cornerChopNormal u s) (cornerChopSupport c s ε) x := by
   classical
-  obtain ⟨j₀, hj₀, hA⟩ := exists_activeSet_cornerChop_eq_image hw hx hε hx' hε0 hnone
+  obtain ⟨j₀, hj₀, hA⟩ := exists_activeSet_cornerChop_eq_image hw hε hx' hε0 hnone
   set φ : ι → Option ι := fun j ↦ if j = j₀ then none else some j
   -- The new normal and the old normals in `s` other than `u j₀` generate the lattice.
   have hspan : ⊤ ≤ Submodule.span ℤ (range fun j : (s : Set ι) ↦ cornerChopNormal u s (φ j)) := by
@@ -446,16 +508,41 @@ private theorem isSmoothVertex_cornerChop_of_none_mem
   rw [image_image, image_eq_range]
   exact top_le_iff.1 hspan
 
+variable (hx : ∀ x : StrongDual ℝ V, x = v + ∑ j ∈ s, (x (i (u j)) - c j) • w j)
+include hx
+
+/-- A vertex of the polyhedron other than the corner lies beyond the small simplex at the corner:
+its coordinates relative to the corner sum to more than `ε`. -/
+private theorem lt_sum_sub_of_mem_extremePoints {y : StrongDual ℝ V}
+    (hy : y ∈ (facetPolyhedron i u c).extremePoints ℝ) (hyv : y ≠ v) :
+    ε < ∑ j ∈ s, (y (i (u j)) - c j) := by
+  by_contra! hle
+  obtain ⟨hyP, hker⟩ := mem_extremePoints_facetPolyhedron_iff.1 hy
+  -- Some coordinate `y j₀` is nonzero. Near the corner the active constraints at `y` lie in `s`,
+  -- so the functional `w j₀` vanishes on all active normals, although it is nonzero.
+  obtain ⟨j₀, hj₀, hne⟩ : ∃ j₀ ∈ s, y (i (u j₀)) ≠ c j₀ := by
+    by_contra! h
+    exact hyv (eq_of_forall_apply_eq hx h)
+  have h0 := hker (w j₀) fun k hk ↦ ?_
+  · simpa [hw j₀ hj₀ j₀ hj₀] using congrArg (· (i (u j₀))) h0
+  rw [mem_activeSet, facetPairing_apply] at hk
+  have hks : k ∈ s := by
+    by_contra hks
+    exact (hε y (fun j _ ↦ mem_facetPolyhedron.1 hyP j) hle k hks).ne' hk
+  rw [hw j₀ hj₀ k hks, ite_eq_right_iff]
+  rintro rfl
+  exact absurd hk hne
+
 end Vertices
 
-/-! ### Small corner chops are Delzant -/
+/-! ### Corner chops of Delzant polytopes -/
 
 /-- A point with the coordinates `ε / #s` relative to the corner lies only on the new facet. -/
 private theorem exists_activeSet_cornerChop_eq_none [DecidableEq ι] {v : StrongDual ℝ V}
     {w : ι → StrongDual ℝ V}
     (hw : ∀ j ∈ s, ∀ k ∈ s, w j (i (u k)) = if j = k then 1 else 0)
-    (hx : ∀ x : StrongDual ℝ V, x = v + ∑ j ∈ s, (x (i (u j)) - c j) • w j)
-    (hε : ∀ k ∉ s, ε * ∑ j ∈ s, |w j (i (u k))| < v (i (u k)) - c k)
+    (hε : ∀ x : StrongDual ℝ V, (∀ j ∈ s, c j ≤ x (i (u j))) → ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε →
+      ∀ k ∉ s, c k < x (i (u k)))
     (hvs : ∀ j ∈ s, v (i (u j)) = c j) (hs : s.Nonempty) (hε0 : 0 < ε) :
     ∃ x ∈ facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε),
       activeSet (facetPairing i (cornerChopNormal u s)) (cornerChopSupport c s ε) x = {none} := by
@@ -470,7 +557,7 @@ private theorem exists_activeSet_cornerChop_eq_none [DecidableEq ι] {v : Strong
       nsmul_eq_mul, mul_div_cancel₀ _ hn.ne']
   have hpos : 0 < ε / s.card := div_pos hε0 hn
   have hslack {k} (hk : k ∉ s) : c k < z (i (u k)) :=
-    lt_apply_of_sum_le hx hε (fun j hj ↦ by rw [hz j hj]; linarith) hzsum.le hk
+    hε z (fun j hj ↦ by rw [hz j hj]; linarith) hzsum.le k hk
   refine ⟨z, mem_facetPolyhedron_cornerChop_iff.2 ⟨mem_facetPolyhedron.2 fun k ↦ ?_, hzsum.ge⟩,
     Set.ext fun o ↦ ?_⟩
   · by_cases hk : k ∈ s
@@ -485,6 +572,49 @@ private theorem exists_activeSet_cornerChop_eq_none [DecidableEq ι] {v : Strong
       · rw [hz k hk]; linarith
       · exact (hslack hk).ne'
 
+/-- **Corner chops of a Delzant polytope are Delzant.** Let `Δ` be a Delzant polytope in an
+integral lattice of positive rank, and `v` a vertex of `Δ`, at which the facets indexed by `s`
+meet. Chop the corner `v` off `Δ` at a depth `ε > 0`, by the new facet
+`∑ j ∈ s, (⟨x, u j⟩ - c j) = ε` with inward normal `∑ j ∈ s, u j`, such that
+
+* the constraints of `Δ` inactive at `v` stay inactive on the simplex `{y j ≥ 0, ∑ j, y j ≤ ε}` in
+  the coordinates `y j = ⟨x, u j⟩ - c j` relative to `v`, and
+* each facet of `Δ` contains a point lying on no other facet whose coordinates sum to more than
+  `ε`.
+
+Then the chopped polytope is a Delzant polytope: the polytope of the toric symplectic blowup at
+the fixed point over `v`. -/
+theorem IsDelzant.isDelzant_cornerChop [Finite ι] (hi : IsIntegralLattice i)
+    (hΔ : IsDelzant i u c) {v : StrongDual ℝ V} (hv : v ∈ (facetPolyhedron i u c).extremePoints ℝ)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) (hV : 0 < Module.finrank ℝ V)
+    (hε0 : 0 < ε)
+    (hε : ∀ x : StrongDual ℝ V, (∀ j ∈ s, c j ≤ x (i (u j))) → ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε →
+      ∀ k ∉ s, c k < x (i (u k)))
+    (hirr : ∀ j, ∃ y ∈ facetPolyhedron i u c, activeSet (facetPairing i u) c y = {j} ∧
+      ε < ∑ k ∈ s, (y (i (u k)) - c k)) :
+    IsDelzant i (cornerChopNormal u s) (cornerChopSupport c s ε) := by
+  classical
+  have hsv := hΔ.isSmoothVertex v hv
+  obtain ⟨w, hw, -⟩ := hsv.exists_coord hi hs
+  have hvs := apply_eq_of_coe_eq_activeSet hs
+  have hcard := card_eq_finrank_of_isSmoothVertex hsv hs
+  have hsp : Submodule.span ℤ (u '' s) = ⊤ := by
+    rw [hs]; exact (isSmoothVertex_iff_linearIndepOn.1 hsv).2
+  refine ⟨hΔ.isBounded.subset facetPolyhedron_cornerChop_subset, fun x hx' ↦ ?_, fun o ↦ ?_⟩
+  · by_cases hnone : ∑ j ∈ s, (x (i (u j)) - c j) = ε
+    · exact isSmoothVertex_cornerChop_of_none_mem hw hε hsp hcard.le hx' hε0 hnone
+    · exact isSmoothVertex_cornerChop_of_none_notMem hΔ.isSmoothVertex hx' (by simpa using hnone)
+  cases o with
+  | none =>
+    exact exists_activeSet_cornerChop_eq_none hw hε hvs
+      (Finset.card_pos.1 (by rw [hcard, hi.finrank_eq]; exact hV)) hε0
+  | some j =>
+    obtain ⟨y, hyP, hyj, hεy⟩ := hirr j
+    refine ⟨y, mem_facetPolyhedron_cornerChop_iff.2 ⟨hyP, hεy.le⟩, Set.ext fun o ↦ ?_⟩
+    cases o with
+    | none => simpa using hεy.ne'
+    | some k => rw [some_mem_activeSet_cornerChop_iff, hyj]; simp
+
 /-- **Small corner chops of a Delzant polytope are Delzant.** Let `Δ` be a Delzant polytope in an
 integral lattice of rank at least two, and `v` a vertex of `Δ`, at which the facets indexed by
 `s` meet. Then for every sufficiently small `ε > 0`, chopping the corner `v` off `Δ` at depth `ε`,
@@ -497,15 +627,9 @@ theorem IsDelzant.eventually_isDelzant_cornerChop [Finite ι] (hi : IsIntegralLa
     ∀ᶠ ε in 𝓝[>] 0, IsDelzant i (cornerChopNormal u s) (cornerChopSupport c s ε) := by
   classical
   have hsv := hΔ.isSmoothVertex v hv
-  obtain ⟨w, hw, hx⟩ := hsv.exists_coord hi hs
-  have hsA (j) : j ∈ s ↔ v (i (u j)) = c j := by
-    rw [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply]
-  have hvs (j) (hj : j ∈ s) : v (i (u j)) = c j := (hsA j).1 hj
-  have hcard : s.card = Module.finrank ℤ N := by
-    rw [← hsv.ncard_activeSet, ← hs, ncard_coe_finset]
+  obtain ⟨w, -, hx⟩ := hsv.exists_coord hi hs
+  have hcard := card_eq_finrank_of_isSmoothVertex hsv hs
   have hcard2 : 2 ≤ s.card := hcard ▸ hi.finrank_eq ▸ hV
-  have hsp : Submodule.span ℤ (u '' s) = ⊤ := by
-    rw [hs]; exact (isSmoothVertex_iff_linearIndepOn.1 hsv).2
   -- Points lying on only one old facet, and their (positive) depths relative to the corner.
   choose y hyP hyj using hΔ.irredundant
   have hdepth (j) : 0 < ∑ k ∈ s, (y j (i (u k)) - c k) := by
@@ -516,21 +640,256 @@ theorem IsDelzant.eventually_isDelzant_cornerChop [Finite ι] (hi : IsIntegralLa
     omega
   have h₁ : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ j, ε < ∑ k ∈ s, (y j (i (u k)) - c k) :=
     eventually_all.2 fun j ↦ (eventually_lt_nhds (hdepth j)).filter_mono nhdsWithin_le_nhds
-  have h₂ := (eventually_mul_sum_abs_lt (w := w) (extremePoints_subset hv) hs).filter_mono
+  have h₂ := (hsv.eventually_forall_lt_apply hi (extremePoints_subset hv) hs).filter_mono
     (nhdsWithin_le_nhds (s := Ioi 0))
   filter_upwards [self_mem_nhdsWithin, h₁, h₂] with ε (hε0 : 0 < ε) hεy hε
-  refine ⟨hΔ.isBounded.subset facetPolyhedron_cornerChop_subset, fun x hx' ↦ ?_, fun o ↦ ?_⟩
-  · by_cases hnone : ∑ j ∈ s, (x (i (u j)) - c j) = ε
-    · exact isSmoothVertex_cornerChop_of_none_mem hw hx hε hsp hcard.le hx' hε0 hnone
-    · exact isSmoothVertex_cornerChop_of_none_notMem hΔ.isSmoothVertex hx' (by simpa using hnone)
+  exact hΔ.isDelzant_cornerChop hi hv hs (by omega) hε0 hε fun j ↦ ⟨y j, hyP j, hyj j, hεy j⟩
+
+/-! ### The vertices of a corner chop -/
+
+/-- **The vertices of a corner chop.** Let `v` be a smooth vertex of `Δ` in an integral lattice, at
+which the facets indexed by `s` meet, and chop the corner `v` off `Δ` at a depth `ε > 0` for which
+the constraints of `Δ` inactive at `v` stay inactive on the simplex `{y j ≥ 0, ∑ j, y j ≤ ε}` in the
+coordinates `y j = ⟨x, u j⟩ - c j` relative to `v`. The vertices of the chopped polytope are the
+vertices of `Δ` other than `v`, together with the points at depth `ε` on the edges of `Δ` from `v`:
+the points at which one coordinate `y j₀` is `ε` and the others vanish. -/
+theorem IsSmoothVertex.mem_extremePoints_facetPolyhedron_cornerChop_iff [Finite ι]
+    (hi : IsIntegralLattice i)
+    {v : StrongDual ℝ V} (hv : IsSmoothVertex i u c v)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) (hε0 : 0 < ε)
+    (hε : ∀ x : StrongDual ℝ V, (∀ j ∈ s, c j ≤ x (i (u j))) → ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε →
+      ∀ k ∉ s, c k < x (i (u k))) :
+    x ∈ (facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε)).extremePoints ℝ ↔
+      x ∈ (facetPolyhedron i u c).extremePoints ℝ ∧ x ≠ v ∨
+        ∃ j₀ ∈ s, x (i (u j₀)) = c j₀ + ε ∧ ∀ j ∈ s, j ≠ j₀ → x (i (u j)) = c j := by
+  classical
+  obtain ⟨w, hw, hx⟩ := hv.exists_coord hi hs
+  have hvs := apply_eq_of_coe_eq_activeSet hs
+  constructor
+  · intro hx'
+    by_cases hnone : ∑ j ∈ s, (x (i (u j)) - c j) = ε
+    · -- On the new facet, all coordinates but one vanish.
+      obtain ⟨j₀, hj₀, hA⟩ := exists_activeSet_cornerChop_eq_image hw hε hx' hε0 hnone
+      have hzero (j) (hj : j ∈ s) (hne : j ≠ j₀) : x (i (u j)) = c j := by
+        have hmem : some j ∈
+            activeSet (facetPairing i (cornerChopNormal u s)) (cornerChopSupport c s ε) x := by
+          rw [hA]
+          exact ⟨j, hj, by simp [hne]⟩
+        rwa [some_mem_activeSet_cornerChop_iff, mem_activeSet, facetPairing_apply] at hmem
+      refine Or.inr ⟨j₀, hj₀, ?_, hzero⟩
+      rw [sum_sub_eq_of_forall_ne hj₀ hzero] at hnone
+      linarith
+    · -- Off the new facet, the vertices are those of `Δ`, and the corner is cut off.
+      refine Or.inl ⟨mem_extremePoints_of_none_notMem hx' (by simpa using hnone), ?_⟩
+      rintro rfl
+      exact notMem_facetPolyhedron_cornerChop hs.subset hε0 (extremePoints_subset hx')
+  · rintro (⟨hxΔ, hxv⟩ | ⟨j₀, hj₀, hxj₀, hxj⟩)
+    · exact inter_extremePoints_subset_extremePoints_of_subset facetPolyhedron_cornerChop_subset
+        ⟨mem_facetPolyhedron_cornerChop_iff.2 ⟨extremePoints_subset hxΔ,
+          (lt_sum_sub_of_mem_extremePoints hw hε hx hxΔ hxv).le⟩, hxΔ⟩
+    · -- A point on an edge at depth `ε` lies on the new facet and on the old facets in `s` other
+      -- than `j₀`, and a functional vanishing on their normals vanishes on all the normals in `s`.
+      have hxs (j) (hj : j ∈ s) : c j ≤ x (i (u j)) := by
+        by_cases h : j = j₀
+        · subst h; rw [hxj₀]; linarith
+        · rw [hxj j hj h]
+      have hsum : ∑ j ∈ s, (x (i (u j)) - c j) = ε := by
+        rw [sum_sub_eq_of_forall_ne hj₀ hxj, hxj₀, add_sub_cancel_left]
+      have hxP : x ∈ facetPolyhedron i u c := mem_facetPolyhedron.2 fun k ↦
+        if hk : k ∈ s then hxs k hk else (hε x hxs hsum.le k hk).le
+      refine mem_extremePoints_facetPolyhedron_iff.2
+        ⟨mem_facetPolyhedron_cornerChop_iff.2 ⟨hxP, hsum.ge⟩, fun f hf ↦ ?_⟩
+      have hrest (j) (hj : j ∈ s) (hne : j ≠ j₀) : f (i (u j)) = 0 := by
+        simpa using hf (some j) (by simp [hxj j hj hne])
+      refine eq_zero_of_forall_apply_eq_zero hx hvs fun j hj ↦ ?_
+      by_cases h : j = j₀
+      · subst h
+        have h0 := hf none (none_mem_activeSet_cornerChop_iff.2 hsum)
+        simp only [cornerChopNormal_none, map_sum] at h0
+        rwa [Finset.sum_eq_single_of_mem j hj fun k hk hkj ↦ hrest k hk hkj] at h0
+      · exact hrest j hj h
+
+/-- **A corner chop has `n - 1` more vertices**, in dimension `n`. Let `v` be a smooth vertex of
+the polytope `Δ` in an integral lattice, at which the facets indexed by `s` meet, and chop the
+corner `v` off `Δ` at a depth `ε > 0` for which the constraints of `Δ` inactive at `v` stay
+inactive on the simplex `{y j ≥ 0, ∑ j, y j ≤ ε}` in the coordinates `y j = ⟨x, u j⟩ - c j`
+relative to `v`. The chop replaces the vertex `v` by the `n` points at depth `ε` on the edges from
+`v`. -/
+theorem IsSmoothVertex.ncard_extremePoints_facetPolyhedron_cornerChop [Finite ι]
+    (hi : IsIntegralLattice i)
+    {v : StrongDual ℝ V} (hv : IsSmoothVertex i u c v)
+    (hvΔ : v ∈ (facetPolyhedron i u c).extremePoints ℝ)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) (hε0 : 0 < ε)
+    (hε : ∀ x : StrongDual ℝ V, (∀ j ∈ s, c j ≤ x (i (u j))) → ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε →
+      ∀ k ∉ s, c k < x (i (u k))) :
+    ((facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε)).extremePoints ℝ).ncard +
+        1 = ((facetPolyhedron i u c).extremePoints ℝ).ncard + Module.finrank ℝ V := by
+  classical
+  obtain ⟨w, hw, hx⟩ := hv.exists_coord hi hs
+  have hvs := apply_eq_of_coe_eq_activeSet hs
+  -- The points at depth `ε` on the edges from `v` are the points `v + ε w j`, `j ∈ s`.
+  have hedge (x : StrongDual ℝ V) :
+      (∃ j₀ ∈ s, x (i (u j₀)) = c j₀ + ε ∧ ∀ j ∈ s, j ≠ j₀ → x (i (u j)) = c j) ↔
+        x ∈ (fun j ↦ v + ε • w j) '' s := by
+    constructor
+    · rintro ⟨j₀, hj₀, hxj₀, hxj⟩
+      refine ⟨j₀, hj₀, ?_⟩
+      rw [hx x, Finset.sum_eq_single_of_mem j₀ hj₀ fun k hk hkj ↦ by
+        rw [hxj k hk hkj, sub_self, zero_smul], hxj₀, add_sub_cancel_left]
+    · rintro ⟨j₀, hj₀, rfl⟩
+      exact ⟨j₀, hj₀, by simp [hvs j₀ hj₀, hw j₀ hj₀ j₀ hj₀],
+        fun j hj hne ↦ by simp [hvs j hj, hw j₀ hj₀ j hj, Ne.symm hne]⟩
+  have hS : (facetPolyhedron i (cornerChopNormal u s) (cornerChopSupport c s ε)).extremePoints ℝ =
+      (facetPolyhedron i u c).extremePoints ℝ \ {v} ∪ (fun j ↦ v + ε • w j) '' s := by
+    ext x
+    rw [hv.mem_extremePoints_facetPolyhedron_cornerChop_iff hi hs hε0 hε, hedge, mem_union,
+      Set.mem_sdiff, mem_singleton_iff]
+  have hfin : ((facetPolyhedron i u c).extremePoints ℝ).Finite :=
+    finite_extremePoints_facetPolyhedron
+  -- The old vertices other than `v` lie deeper than `ε`.
+  have hdisj : Disjoint ((facetPolyhedron i u c).extremePoints ℝ \ {v})
+      ((fun j ↦ v + ε • w j) '' s) := by
+    refine Set.disjoint_left.2 fun x ⟨hxΔ, hxv⟩ hx' ↦ ?_
+    obtain ⟨j₀, hj₀, hxj₀, hxj⟩ := (hedge x).2 hx'
+    have hlt := lt_sum_sub_of_mem_extremePoints hw hε hx hxΔ hxv
+    rw [sum_sub_eq_of_forall_ne hj₀ hxj, hxj₀, add_sub_cancel_left] at hlt
+    exact lt_irrefl ε hlt
+  have hinj : InjOn (fun j ↦ v + ε • w j) s := fun j hj k hk h ↦ by
+    have h' := congrArg (· (i (u j))) h
+    by_contra hne
+    simp [hw j hj j hj, hw k hk j hj, Ne.symm hne, hε0.ne'] at h'
+  have hcard := (card_eq_finrank_of_isSmoothVertex hv hs).trans hi.finrank_eq
+  rw [hS, ncard_union_eq hdisj (hfin.subset sdiff_subset) (s.finite_toSet.image _),
+    hinj.ncard_image, ncard_coe_finset, add_right_comm, ncard_sdiff_singleton_add_one hvΔ hfin,
+    hcard]
+
+/-- **A small corner chop has `n - 1` more vertices**, in dimension `n`. Let `v` be a smooth vertex
+of the polytope `Δ` in an integral lattice. For every sufficiently small depth `ε > 0`, chopping the
+corner `v` off `Δ` replaces the vertex `v` by `n` new vertices, one on each edge from `v`. -/
+theorem IsSmoothVertex.eventually_ncard_extremePoints_facetPolyhedron_cornerChop [Finite ι]
+    (hi : IsIntegralLattice i) {v : StrongDual ℝ V} (hv : IsSmoothVertex i u c v)
+    (hvΔ : v ∈ (facetPolyhedron i u c).extremePoints ℝ)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
+    ∀ᶠ ε in 𝓝[>] 0, ((facetPolyhedron i (cornerChopNormal u s)
+        (cornerChopSupport c s ε)).extremePoints ℝ).ncard + 1 =
+      ((facetPolyhedron i u c).extremePoints ℝ).ncard + Module.finrank ℝ V := by
+  filter_upwards [self_mem_nhdsWithin, (hv.eventually_forall_lt_apply hi (extremePoints_subset hvΔ)
+    hs).filter_mono nhdsWithin_le_nhds] with ε (hε0 : 0 < ε) hε
+  exact hv.ncard_extremePoints_facetPolyhedron_cornerChop hi hvΔ hs hε0 hε
+
+/-! ### The blown-up projective space -/
+
+section Simplex
+
+variable {n : ℕ} {a : ℝ}
+
+/-- The corner `0` of the standard simplex is where its coordinate facets meet. -/
+private theorem coe_map_some_eq_activeSet_simplex_zero (ha : a ≠ 0) :
+    ((Finset.univ.map .some : Finset (Option (Fin n))) : Set (Option (Fin n))) =
+      activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n)))
+        (simplexSupport a) 0 := by
+  ext o
+  cases o with
+  | none => exact iff_of_false (by simp) (none_notMem_activeSet_simplex_zero ha)
+  | some k => exact iff_of_true (by simp) (some_mem_activeSet_simplex_iff.2 (by simp))
+
+/-- Up to the depth `a`, the slanted facet of the simplex of size `a` stays inactive on the
+simplex `{0 ≤ x(eₖ), ∑ k, x(eₖ) ≤ ε}` at the corner `0`. -/
+private theorem lt_apply_simplex_of_sum_le {ε : ℝ} (hεa : ε < a) (x : StrongDual ℝ (Fin n → ℝ))
+    (hxs : ∀ j ∈ (Finset.univ.map .some : Finset (Option (Fin n))),
+      simplexSupport a j ≤ x ((Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) j)))
+    (hxε : ∑ j ∈ (Finset.univ.map .some : Finset (Option (Fin n))),
+      (x ((Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) j)) - simplexSupport a j) ≤ ε)
+    (k : Option (Fin n)) (hk : k ∉ (Finset.univ.map .some : Finset (Option (Fin n)))) :
+    simplexSupport a k < x ((Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) k)) := by
+  obtain rfl : k = none := by
+    cases k with
+    | none => rfl
+    | some k => simp at hk
+  have hxP := mem_facetPolyhedron_simplex_of_sum_le hεa.le hxs hxε
+  refine (mem_facetPolyhedron.1 hxP none).lt_of_ne fun h ↦ ?_
+  have hnone : none ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin n))
+      (simplexNormal (Fin n))) (simplexSupport a) x := by
+    rw [mem_activeSet, facetPairing_apply]
+    exact h.symm
+  have hxε' : ∑ k, x (Pi.single k 1) ≤ ε := by simpa [Finset.sum_map] using hxε
+  linarith [none_mem_activeSet_simplex_iff.1 hnone]
+
+/-- Up to the depth `a`, each facet of the simplex of size `a` in `ℝⁿ`, `n ≥ 2`, contains a point
+lying on no other facet whose coordinates sum to more than `ε`. -/
+private theorem exists_activeSet_simplex_eq_singleton (hn : 2 ≤ n) {ε : ℝ} (hε : 0 < ε)
+    (hεa : ε < a) (o : Option (Fin n)) :
+    ∃ y ∈ facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n))
+        (simplexSupport a),
+      activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n)))
+          (simplexSupport a) y = {o} ∧
+        ε < ∑ j ∈ (Finset.univ.map .some : Finset (Option (Fin n))),
+          (y ((Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) j)) -
+            simplexSupport a j) := by
+  have ha : 0 < a := hε.trans hεa
+  have : NeZero n := ⟨by omega⟩
+  -- The depth of a point below the corner `0` is the sum of its coordinates.
+  have hdepth (y : StrongDual ℝ (Fin n → ℝ)) :
+      ∑ j ∈ (Finset.univ.map .some : Finset (Option (Fin n))),
+        (y ((Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) j)) -
+          simplexSupport a j) = ∑ k, y (Pi.single k 1) := by
+    simp [Finset.sum_map]
+  simp only [hdepth]
   cases o with
   | none =>
-    exact exists_activeSet_cornerChop_eq_none hw hx hε hvs
-      (Finset.card_pos.1 (by omega)) hε0
-  | some j =>
-    refine ⟨y j, mem_facetPolyhedron_cornerChop_iff.2 ⟨hyP j, (hεy j).le⟩, Set.ext fun o ↦ ?_⟩
-    cases o with
-    | none => simpa using (hεy j).ne'
-    | some k => rw [some_mem_activeSet_cornerChop_iff, hyj j]; simp
+    -- The barycentre of the facet `∑ k, x (e k) = a`, at depth `a`.
+    obtain ⟨y, hyP, hy⟩ := exists_activeSet_simplex_eq_none (κ := Fin n) ha
+    refine ⟨y, hyP, hy, ?_⟩
+    rw [none_mem_activeSet_simplex_iff.1 (hy ▸ mem_singleton none)]
+    exact hεa
+  | some k =>
+    -- A point with `x (e k) = 0` and all other coordinates equal, at depth `(a + ε) / 2`.
+    have hn1 : (0 : ℝ) < n - 1 := by
+      have : (2 : ℝ) ≤ n := by exact_mod_cast hn
+      linarith
+    have hsum : (Fintype.card (Fin n) - 1) * ((a + ε) / (2 * (n - 1))) = (a + ε) / 2 := by
+      rw [Fintype.card_fin]
+      field_simp
+    obtain ⟨y, hyP, hy, hy'⟩ := exists_activeSet_simplex_eq_some (a := a)
+      (b := (a + ε) / (2 * (n - 1))) (by positivity) k (by rw [hsum]; linarith)
+    exact ⟨y, hyP, hy, by rw [hy', hsum]; linarith⟩
+
+/-- **The blown-up projective space is Delzant at every depth.** For `n ≥ 2` and `0 < ε < a`,
+chopping the corner `0` off the standard simplex of size `a` in `ℝⁿ` at depth `ε` gives the
+Delzant polytope `{0 ≤ x(eₖ) for every k, ε ≤ ∑ k, x(eₖ) ≤ a}`, the moment polytope of `ℂPⁿ`
+blown up at a fixed point. For `n = 1` the chop is the interval `[ε, a]` with the redundant facet
+`x(e₁) ≥ 0`, so it is not Delzant. For `n = 2`, chopping the vertex `(0, a)` instead gives a
+Hirzebruch trapezoid (`TauCeti.Toric.isDelzant_cornerChop_simplex`). -/
+theorem isDelzant_simplex_cornerChop (hn : 2 ≤ n) {ε : ℝ} (hε : 0 < ε) (hεa : ε < a) :
+    IsDelzant ((Int.castAddHom ℝ).compLeft (Fin n))
+      (cornerChopNormal (simplexNormal (Fin n)) (Finset.univ.map .some))
+      (cornerChopSupport (simplexSupport a) (Finset.univ.map .some) ε) := by
+  have ha : 0 < a := hε.trans hεa
+  have : NeZero n := ⟨by omega⟩
+  exact (isDelzant_simplex ha).isDelzant_cornerChop (isIntegralLattice_intCast n)
+    ((mem_extremePoints_facetPolyhedron_simplex_iff ha).2 (Or.inl rfl))
+    (coe_map_some_eq_activeSet_simplex_zero ha.ne') (by rw [Module.finrank_fin_fun]; omega) hε
+    (lt_apply_simplex_of_sum_le hεa) (exists_activeSet_simplex_eq_singleton hn hε hεa)
+
+/-- **The blown-up projective space has `2 n` vertices.** For `n ≥ 1` and `0 < ε < a`, chopping
+the corner `0` off the standard simplex of size `a` in `ℝⁿ` at depth `ε` replaces that vertex by the
+`n` vertices `ε eₖ*`, which leaves the `n` vertices `a eₖ*` and these. -/
+theorem ncard_extremePoints_facetPolyhedron_simplex_cornerChop [NeZero n] {ε : ℝ} (hε : 0 < ε)
+    (hεa : ε < a) :
+    ((facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin n))
+      (cornerChopNormal (simplexNormal (Fin n)) (Finset.univ.map .some))
+      (cornerChopSupport (simplexSupport a) (Finset.univ.map .some) ε)).extremePoints ℝ).ncard =
+        2 * n := by
+  have ha : 0 < a := hε.trans hεa
+  have h0 := (mem_extremePoints_facetPolyhedron_simplex_iff (κ := Fin n) ha).2 (Or.inl rfl)
+  have h :=
+    ((isDelzant_simplex ha).isSmoothVertex 0 h0).ncard_extremePoints_facetPolyhedron_cornerChop
+    (isIntegralLattice_intCast n) h0 (coe_map_some_eq_activeSet_simplex_zero ha.ne') hε
+    (lt_apply_simplex_of_sum_le hεa)
+  rw [ncard_extremePoints_facetPolyhedron_simplex ha, Fintype.card_fin,
+    Module.finrank_fin_fun] at h
+  omega
+
+end Simplex
 
 end TauCeti.Toric
