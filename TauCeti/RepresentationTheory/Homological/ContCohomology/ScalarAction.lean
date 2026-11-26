@@ -39,6 +39,8 @@ the two `R`-module structures are the same structure on the same group.
 
 ## Main results
 
+* `TauCeti.ofDiscreteModuleMap_toDistribMulActionHom`: `ofDiscreteModuleSMulMap` is the image of
+  Mathlib's equivariant map `SMulCommClass.toDistribMulActionHom`.
 * `TauCeti.ContinuousCohomology.smul_def`: a scalar acts as the coefficient map of `r • ·`.
 * `TauCeti.ContinuousCohomology.coeffMap_smul`: the coefficient map of an `R`-linear equivariant
   map of discrete modules is `R`-linear.
@@ -81,6 +83,15 @@ def ofDiscreteModuleSMulMap (r : R) : ofDiscreteModule ℤ G M ⟶ ofDiscreteMod
 theorem ofDiscreteModuleSMulMap_hom_apply (r : R) (m : M) :
     (ofDiscreteModuleSMulMap G M r).hom m = r • m :=
   (rfl)
+
+/-- `ofDiscreteModuleSMulMap G M r` is the endomorphism of `ofDiscreteModule ℤ G M` given by
+Mathlib's equivariant map `SMulCommClass.toDistribMulActionHom G M r`. -/
+theorem ofDiscreteModuleMap_toDistribMulActionHom [SMulCommClass R G M] (r : R) :
+    ofDiscreteModuleMap (SMulCommClass.toDistribMulActionHom G M r).toAddMonoidHom.toIntLinearMap
+      (fun g m ↦ map_smul (SMulCommClass.toDistribMulActionHom G M r) g m) =
+      ofDiscreteModuleSMulMap G M r :=
+  TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ (ofDiscreteModuleMap_hom_apply _ _ m).trans
+    (ofDiscreteModuleSMulMap_hom_apply (G := G) r m).symm)
 
 end SMulMap
 
@@ -183,15 +194,14 @@ theorem ofDiscreteModuleRestrictScalarsIntEquiv_smul (r : R)
     rintro B rfl f hf
     simp only [eqToHom_refl, Category.comp_id, Category.id_comp] at hf
     rw [hf]
-    rfl
+    simp only [eqToHom_refl, ConcreteCategory.id_apply]
   -- The transported endomorphism of `r • ·` is the underlying additive map of `r • 𝟙 X`.
   have hX := ofDiscreteModule_eq_restrictScalarsInt_obj X
   have hf : ofDiscreteModuleSMulMap G X.V r ≫ eqToHom hX =
       eqToHom hX ≫ restrictScalarsInt.map (r • 𝟙 X) := by
     refine TopRep.hom_ext (DFunLike.ext _ _ fun x ↦ ?_)
-    change (eqToHom hX).hom ((ofDiscreteModuleSMulMap G X.V r).hom x) =
-      (restrictScalarsInt.map (r • 𝟙 X)).hom ((eqToHom hX).hom x)
-    rw [TopRep.eqToHom_hom_apply, TopRep.eqToHom_hom_apply]
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopRep.eqToHom_hom_apply,
+      TopRep.eqToHom_hom_apply]
     refine (cast_eq _ _).trans
       ((ofDiscreteModuleSMulMap_hom_apply (G := G) (M := X.V) r x).trans ?_)
     refine Eq.symm ((restrictScalarsInt_map_hom_apply (r • 𝟙 X) _).trans ?_)
@@ -207,7 +217,12 @@ theorem ofDiscreteModuleRestrictScalarsIntEquiv_smul (r : R)
     ((continuousCohomologyFunctor R G n).map_smul r (𝟙 X)).trans
       (congrArg (r • ·) (coeffMap_id X n))
   rw [hc]
-  rfl
+  -- the two sides live in the carriers of `restrictScalarsInt.obj (continuousCohomology n X)` and
+  -- `continuousCohomology n X`, which agree only up to unfolding, so `rw` cannot see through
+  exact (TopModuleCat.restrictScalarsInt_map_apply (r • 𝟙 (continuousCohomology n X)) _).trans
+    ((DFunLike.congr_fun (TopModuleCat.hom_smul r (𝟙 _)) _).trans
+      ((smul_apply (TopModuleCat.Hom.hom (𝟙 (continuousCohomology n X))) r _).trans
+        (congrArg (r • ·) (ConcreteCategory.id_apply _))))
 
 /-- `ofDiscreteModuleRestrictScalarsIntEquiv` as an `R`-linear equivalence, for the action
 `instModuleOfDiscreteModule` of `R` on the cohomology of the carrier. -/

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.ZMod.SMulCommClass
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree.Module
+public import TauCeti.Topology.Algebra.ConstMulAction.ZMod
 public import TauCeti.Topology.Algebra.ContinuousZModDual
 
 /-!
@@ -78,11 +80,9 @@ variable {n : ℕ} {G : Type u} [Monoid G] [TopologicalSpace G]
 /-- **`H¹(G, A)` inherits the `ZMod n`-module structure of `A`.** This is the `R = ZMod n` case
 of `TauCeti.ContCohomology.H1.instModule`, a scalar acting on the class of a cocycle as on the
 cocycle; the scalars of `ZMod n` automatically commute with the action and act continuously
-(`TauCeti.ContCohomology.smulCommClass_zmod`, `TauCeti.ContCohomology.continuousConstSMul_zmod`),
-so the coefficient action is arbitrary. The two instances are equal by definition. -/
+(`TauCeti.ZMod.smulCommClass'`, `TauCeti.ZMod.continuousConstSMul`), so the coefficient action is
+arbitrary. The two instances are equal by definition. -/
 noncomputable instance instModuleH1 : Module (ZMod n) (H1 G A) :=
-  haveI := smulCommClass_zmod n G A
-  haveI := continuousConstSMul_zmod n A
   H1.instModule
 
 end ModuleStructure

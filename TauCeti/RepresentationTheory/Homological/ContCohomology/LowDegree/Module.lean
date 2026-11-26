@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.AddSubgroupQuotient
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 
 /-!
@@ -21,10 +22,6 @@ so that the explicit groups, not a copy of them, carry the `R`-module structure.
 
 ## Main definitions
 
-* `TauCeti.ContCohomology.quotientSMulRingHom`: for additive subgroups `B` and `Z` of an
-  `R`-module stable under the scalars, the action of `R` on `Z ⧸ B.addSubgroupOf Z`, as a ring
-  homomorphism into the additive endomorphisms; `TauCeti.ContCohomology.quotientModule` is the
-  resulting module structure.
 * `TauCeti.ContCohomology.H1.instModule` and `TauCeti.ContCohomology.H2.instModule`: `H¹(G, M)`
   and `H²(G, M)` are `R`-modules.
 
@@ -37,11 +34,11 @@ so that the explicit groups, not a copy of them, carry the `R`-module structure.
 
 ## Implementation notes
 
-The module structure is built from explicit stability proofs (`quotientModule`), and the
-instances only supply those proofs. Two instances built this way for the same scalar action on
-`M` are therefore definitionally equal whatever proofs they were given. The `ZMod n`-module
-structures of `TauCeti.instModuleH1` and `TauCeti.ContCohomology.instModuleZModH2` are built this
-way, so they agree with `H1.instModule` and `H2.instModule` at `R = ZMod n` by `rfl`.
+The module structure is built from explicit stability proofs by `AddSubgroup.quotientModule`, and
+the instances only supply those proofs. Two instances built this way for the same scalar action
+on `M` are therefore definitionally equal whatever proofs they were given. The `ZMod n`-module
+structures `TauCeti.instModuleH1` and `TauCeti.ContCohomology.instModuleZModH2` are
+`H1.instModule` and `H2.instModule` at `R = ZMod n`, so they agree with them by `rfl`.
 
 At `R = ℤ` the instances differ from the `ℤ`-module structure `AddCommGroup.toIntModule` that
 every abelian group carries: the two agree only propositionally, by Mathlib's `int_smul_eq_zsmul`
@@ -55,52 +52,6 @@ public section
 namespace TauCeti.ContCohomology
 
 universe u v w
-
-/-! ### Scalars on a quotient of stable subgroups -/
-
-section Quotient
-
-variable {R : Type w} [Semiring R] {A : Type v} [AddCommGroup A] [Module R A]
-  (Z B : AddSubgroup A) (hZ : ∀ (r : R), ∀ a ∈ Z, r • a ∈ Z)
-  (hB : ∀ (r : R), ∀ a ∈ B, r • a ∈ B)
-
-/-- Multiplication by a scalar `r` on `Z ⧸ B.addSubgroupOf Z`, for additive subgroups `Z` and `B`
-of an `R`-module that are stable under the scalars: the map induced by `r • ·` on `Z`. -/
-def quotientSMulHom (r : R) : AddMonoid.End (Z ⧸ B.addSubgroupOf Z) :=
-  QuotientAddGroup.map _ _
-    (((DistribSMul.toAddMonoidHom A r).comp Z.subtype).codRestrict Z fun z ↦ hZ r z z.property)
-    fun z hz ↦ hB r z hz
-
-/-- `quotientSMulHom` acts on the class of an element as the scalar on that element. -/
-theorem quotientSMulHom_mk (r : R) (z : Z) :
-    quotientSMulHom Z B hZ hB r (z : Z ⧸ B.addSubgroupOf Z) =
-      ((⟨r • (z : A), hZ r z z.property⟩ : Z) : Z ⧸ B.addSubgroupOf Z) :=
-  (rfl)
-
-/-- The scalar action on `Z ⧸ B.addSubgroupOf Z` as a ring homomorphism into the additive
-endomorphisms. -/
-def quotientSMulRingHom : R →+* AddMonoid.End (Z ⧸ B.addSubgroupOf Z) where
-  toFun := quotientSMulHom Z B hZ hB
-  map_one' := by
-    refine QuotientAddGroup.addMonoidHom_ext _ (AddMonoidHom.ext fun z ↦ ?_)
-    exact congrArg (QuotientAddGroup.mk' _) (Subtype.ext (one_smul R (z : A)))
-  map_mul' r s := by
-    refine QuotientAddGroup.addMonoidHom_ext _ (AddMonoidHom.ext fun z ↦ ?_)
-    exact congrArg (QuotientAddGroup.mk' _) (Subtype.ext (mul_smul r s (z : A)))
-  map_zero' := by
-    refine QuotientAddGroup.addMonoidHom_ext _ (AddMonoidHom.ext fun z ↦ ?_)
-    exact congrArg (QuotientAddGroup.mk' _) (Subtype.ext (zero_smul R (z : A)))
-  map_add' r s := by
-    refine QuotientAddGroup.addMonoidHom_ext _ (AddMonoidHom.ext fun z ↦ ?_)
-    exact congrArg (QuotientAddGroup.mk' _) (Subtype.ext (add_smul r s (z : A)))
-
-/-- The `R`-module structure on `Z ⧸ B.addSubgroupOf Z` for scalar-stable additive subgroups `Z`
-and `B` of an `R`-module, with `r • [z] = [r • z]`. Not an instance: the stability proofs are
-supplied by the instances on the explicit cohomology groups. -/
-abbrev quotientModule : Module R (Z ⧸ B.addSubgroupOf Z) :=
-  Module.compHom _ (quotientSMulRingHom Z B hZ hB)
-
-end Quotient
 
 /-! ### Stability of cocycles and coboundaries -/
 
@@ -172,13 +123,14 @@ variable {R : Type w} [Semiring R] {G : Type u} [Monoid G] [TopologicalSpace G]
 action of `G`: `r` acts on the class of a cocycle `z` as the class of `r • z`. -/
 instance (priority := 100) H1.instModule [SMulCommClass G R M] [ContinuousConstSMul R M] :
     Module R (H1 G M) :=
-  quotientModule (Z1 G M) (B1 G M) (fun r _ hz ↦ smul_mem_Z1 r hz) (fun r _ hb ↦ smul_mem_B1 r hb)
+  AddSubgroup.quotientModule (Z1 G M) (B1 G M) (fun r _ hz ↦ smul_mem_Z1 r hz)
+    (fun r _ hb ↦ smul_mem_B1 r hb)
 
 /-- A scalar acts on the class of a `1`-cocycle as on the cocycle. -/
+@[simp]
 theorem H1.smul_mk [SMulCommClass G R M] [ContinuousConstSMul R M] (r : R) (z : Z1 G M) :
     r • (z : H1 G M) = ((⟨r • (z : G → M), smul_mem_Z1 r z.property⟩ : Z1 G M) : H1 G M) :=
-  (rfl)
-
+  AddSubgroup.quotientModule_smul_mk _ _ _ _ r z
 
 variable [ContinuousMul G]
 
@@ -186,37 +138,15 @@ variable [ContinuousMul G]
 action of `G`: `r` acts on the class of a cocycle `z` as the class of `r • z`. -/
 instance (priority := 100) H2.instModule [SMulCommClass G R M] [ContinuousConstSMul R M] :
     Module R (H2 G M) :=
-  quotientModule (Z2 G M) (B2 G M) (fun r _ hz ↦ smul_mem_Z2 r hz) (fun r _ hb ↦ smul_mem_B2 r hb)
+  AddSubgroup.quotientModule (Z2 G M) (B2 G M) (fun r _ hz ↦ smul_mem_Z2 r hz)
+    (fun r _ hb ↦ smul_mem_B2 r hb)
 
 /-- A scalar acts on the class of a `2`-cocycle as on the cocycle. -/
+@[simp]
 theorem H2.smul_mk [SMulCommClass G R M] [ContinuousConstSMul R M] (r : R) (z : Z2 G M) :
     r • (z : H2 G M) = ((⟨r • (z : G × G → M), smul_mem_Z2 r z.property⟩ : Z2 G M) : H2 G M) :=
-  (rfl)
-
+  AddSubgroup.quotientModule_smul_mk _ _ _ _ r z
 
 end Instances
-
-/-! ### `ZMod n` scalars -/
-
-section ZMod
-
-variable (n : ℕ) (G : Type u) (M : Type v) [AddCommGroup M] [Module (ZMod n) M]
-
-/-- The scalars of `ZMod n` commute with every distributive action on a `ZMod n`-module: they act
-through integer multiples. Not an instance; it is supplied to `H1.instModule` and `H2.instModule`
-by `TauCeti.instModuleH1` and `TauCeti.ContCohomology.instModuleZModH2`. -/
-theorem smulCommClass_zmod [DistribSMul G M] : SMulCommClass G (ZMod n) M where
-  smul_comm g c m := by
-    rw [← ZMod.intCast_zmod_cast c, Int.cast_smul_eq_zsmul, Int.cast_smul_eq_zsmul]
-    exact (DistribSMul.toAddMonoidHom M g).map_zsmul _ m
-
-/-- The scalars of `ZMod n` act continuously on a topological `ZMod n`-module: they act through
-integer multiples. Not an instance, for the same reason as `smulCommClass_zmod`. -/
-theorem continuousConstSMul_zmod [TopologicalSpace M] [IsTopologicalAddGroup M] :
-    ContinuousConstSMul (ZMod n) M where
-  continuous_const_smul c := (continuous_zsmul (c.cast : ℤ)).congr fun m ↦ by
-    rw [← Int.cast_smul_eq_zsmul (ZMod n), ZMod.intCast_zmod_cast]
-
-end ZMod
 
 end TauCeti.ContCohomology

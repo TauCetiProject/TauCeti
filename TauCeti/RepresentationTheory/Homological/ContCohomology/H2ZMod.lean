@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZMod
+public import TauCeti.Algebra.Module.ZMod.SMulCommClass
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree.Module
+public import TauCeti.Topology.Algebra.ConstMulAction.ZMod
 
 /-!
 # `H²(G, M)` as a `ZMod n`-module
@@ -45,11 +47,9 @@ variable {n : ℕ} {G : Type u} [Monoid G] [TopologicalSpace G] [ContinuousMul G
 /-- `H²(G, M)` is a `ZMod n`-module whenever the coefficients `M` are; in particular
 `H²(G, ZMod n)` is one, for any continuous action of `G` on `ZMod n`. This is the `R = ZMod n`
 case of `TauCeti.ContCohomology.H2.instModule`, the scalars of `ZMod n` commuting with the action
-and acting continuously by `smulCommClass_zmod` and `continuousConstSMul_zmod`; the two instances
-are equal by definition. -/
+and acting continuously by `TauCeti.ZMod.smulCommClass'` and `TauCeti.ZMod.continuousConstSMul`;
+the two instances are equal by definition. -/
 instance instModuleZModH2 [Module (ZMod n) M] : Module (ZMod n) (H2 G M) :=
-  haveI := smulCommClass_zmod n G M
-  haveI := continuousConstSMul_zmod n M
   H2.instModule
 
 /-- Scalar multiplication by `c : ZMod n` on the class of a `2`-cocycle is the class of its

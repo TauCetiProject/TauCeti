@@ -59,32 +59,23 @@ variable {R : Type w} [Semiring R] {G M : Type u} [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M] [SMulCommClass G R M]
 
-variable (G M) in
-/-- Multiplication by a scalar as an equivariant additive endomorphism of `M`. -/
-private def smulHom (r : R) : M →+[G] M :=
-  { DistribSMul.toAddMonoidHom M r with map_smul' := fun g m ↦ (smul_comm g r m).symm }
-
-omit [TopologicalSpace G] [IsTopologicalGroup G] [ContinuousSMul G M] in
-/-- The endomorphism of `ofDiscreteModule ℤ G M` attached to `smulHom G M r` is
-`ofDiscreteModuleSMulMap G M r`. -/
-private theorem ofDiscreteModuleMap_smulHom (r : R) :
-    ofDiscreteModuleMap (smulHom G M r).toAddMonoidHom.toIntLinearMap
-      (fun g m ↦ map_smul (smulHom G M r) g m) = ofDiscreteModuleSMulMap G M r :=
-  TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ (ofDiscreteModuleMap_hom_apply _ _ m).trans
-    (ofDiscreteModuleSMulMap_hom_apply (G := G) r m).symm)
-
 /-- **The degree-one comparison commutes with the scalars.** -/
 theorem explicitH1AddEquivContinuousCohomology_smul (r : R) (x : H1 G M) :
     explicitH1AddEquivContinuousCohomology G M (r • x) =
       r • explicitH1AddEquivContinuousCohomology G M x := by
-  have hx : r • x = explicitCoeff1 G M (smulHom G M r) continuous_of_discreteTopology x := by
+  -- `r • ·` as an equivariant map of `M`, which needs the scalars on the left
+  have := SMulCommClass.symm G R M
+  have hx : r • x = explicitCoeff1 G M (SMulCommClass.toDistribMulActionHom G M r)
+      continuous_of_discreteTopology x := by
     induction x using QuotientAddGroup.induction_on with
     | H c =>
       rw [explicitCoeff1_mk, H1.smul_mk]
       refine congrArg _ (Subtype.ext (funext fun g ↦ ?_))
-      exact (cocyclesMap1_apply G M G M (ContinuousMonoidHom.id G) (smulHom G M r)
-        continuous_of_discreteTopology (fun g m ↦ map_smul (smulHom G M r) g m) c g).symm
-  rw [hx, ← explicitH1AddEquivContinuousCohomology_coeffMap, ofDiscreteModuleMap_smulHom,
+      exact (cocyclesMap1_apply G M G M (ContinuousMonoidHom.id G)
+        (SMulCommClass.toDistribMulActionHom G M r) continuous_of_discreteTopology
+        (fun g m ↦ map_smul (SMulCommClass.toDistribMulActionHom G M r) g m) c g).symm
+  rw [hx, ← explicitH1AddEquivContinuousCohomology_coeffMap,
+    ofDiscreteModuleMap_toDistribMulActionHom,
     ContinuousCohomology.smul_def]
 
 variable (R G M) in
@@ -117,14 +108,19 @@ variable [LocallyCompactSpace G]
 theorem explicitH2AddEquivContinuousCohomology_smul (r : R) (x : H2 G M) :
     explicitH2AddEquivContinuousCohomology G M (r • x) =
       r • explicitH2AddEquivContinuousCohomology G M x := by
-  have hx : r • x = explicitCoeff2 G M (smulHom G M r) continuous_of_discreteTopology x := by
+  -- `r • ·` as an equivariant map of `M`, which needs the scalars on the left
+  have := SMulCommClass.symm G R M
+  have hx : r • x = explicitCoeff2 G M (SMulCommClass.toDistribMulActionHom G M r)
+      continuous_of_discreteTopology x := by
     induction x using QuotientAddGroup.induction_on with
     | H c =>
       rw [explicitCoeff2_mk, H2.smul_mk]
       refine congrArg _ (Subtype.ext (funext fun ⟨g, h⟩ ↦ ?_))
-      exact (cocyclesMap2_apply G M G M (ContinuousMonoidHom.id G) (smulHom G M r)
-        continuous_of_discreteTopology (fun g m ↦ map_smul (smulHom G M r) g m) c g h).symm
-  rw [hx, ← explicitH2AddEquivContinuousCohomology_coeffMap, ofDiscreteModuleMap_smulHom,
+      exact (cocyclesMap2_apply G M G M (ContinuousMonoidHom.id G)
+        (SMulCommClass.toDistribMulActionHom G M r) continuous_of_discreteTopology
+        (fun g m ↦ map_smul (SMulCommClass.toDistribMulActionHom G M r) g m) c g h).symm
+  rw [hx, ← explicitH2AddEquivContinuousCohomology_coeffMap,
+    ofDiscreteModuleMap_toDistribMulActionHom,
     ContinuousCohomology.smul_def]
 
 variable (R G M) in
