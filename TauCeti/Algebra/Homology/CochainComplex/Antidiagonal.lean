@@ -17,8 +17,9 @@ isomorphisms on the antidiagonal `i + k = n`. If moreover `C.X (n + 1)` and `D.X
 then the cohomology of `C` in degree `i` is isomorphic to the homology of `D` in degree `k` whenever
 `i + k = n` (`CochainComplex.homologyIsoOfAntidiagonal`), and the isomorphism sends the class of a
 cocycle `x` to the class of the cycle `φ i k x`
-(`CochainComplex.homologyπ_comp_homologyIsoOfAntidiagonal_hom`). In other words, `D` read in the
-degrees `n - k` is the complex `C`.
+(`CochainComplex.homologyπ_comp_homologyIsoOfAntidiagonal_hom`). Only the (co)homology in degrees
+at most `n` is identified: the hypotheses say nothing about `φ` off the antidiagonal nor about the
+objects in degrees above `n + 1`.
 
 This is the homological algebra behind the Morse-theoretic proof of Poincaré duality, where `C` is
 the Morse cochain complex of a function `f` and `D` the Morse chain complex of `-f`.
@@ -118,6 +119,7 @@ noncomputable def homologyIsoOfAntidiagonal
 /-- **The identification of the cohomology of `C` with the homology of `D` on classes.** For
 `i + k = n`, `CochainComplex.homologyIsoOfAntidiagonal` sends the class of a cocycle `x` of `C` of
 degree `i` to the class of the cycle `φ i k x` of `D` of degree `k`. -/
+@[reassoc (attr := simp)]
 theorem homologyπ_comp_homologyIsoOfAntidiagonal_hom
     (comm : ∀ i k, C.d i (i + 1) ≫ φ (i + 1) k = φ i (k + 1) ≫ D.d (k + 1) k)
     (iso : ∀ i k, i + k = n → IsIso (φ i k)) (hC : IsZero (C.X (n + 1)))

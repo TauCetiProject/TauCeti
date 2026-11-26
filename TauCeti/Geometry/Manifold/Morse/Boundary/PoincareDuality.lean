@@ -21,6 +21,11 @@ manifolds. The opposite function `-f`, with the pseudo-gradient `-X` and the dua
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundaryCoeff_dual`). This file turns that
 identity of boundary maps into an identification of complexes and of their (co)homology.
 
+The integral Morse cochain complex of `f`, and with it every complex and duality statement below,
+is built under the hypothesis `hsq` that the integral Morse boundary of `f` squares to zero. That
+hypothesis, which needs the orientations of the compactified spaces of index-two trajectories, is
+not proved in the library yet, so the results here are conditional on it.
+
 * **`∂² = 0` for `-f`.** The Morse boundary of `-f` squares to zero exactly when that of `f` does
   (`IsMorseSmale.signedMorseBoundary_dual_comp_signedMorseBoundary_dual_eq_zero_iff`, in
   `TauCeti.Geometry.Manifold.Morse.Boundary.DualOrientation`). In particular the integral Morse
@@ -292,7 +297,9 @@ theorem IsMorseSmale.signedMorseCochainComplex_d_comp_ofHom_signedCochainToNegCh
 /-- **Poincaré duality for Morse (co)homology.** On a manifold of dimension `n` oriented by `oM`,
 for `i + k = n`, reading integral cochains of `f` as chains of `-f` identifies the Morse cohomology
 of `f` with coefficients in `R` in degree `i` with the Morse homology of `-f`, for the
-pseudo-gradient `-X` and the dual orientation data, with coefficients in `R` in degree `k`. -/
+pseudo-gradient `-X` and the dual orientation data, with coefficients in `R` in degree `k`.
+This is conditional on the hypothesis `hsq` that the integral Morse boundary of `f` squares to
+zero, which builds both complexes and is not proved in the library yet. -/
 noncomputable def IsMorseSmale.signedMorseCohomologyEquivNegHomology {i k : ℕ}
     (hik : i + k = finrank ℝ E) :
     (hX.signedMorseCochainComplex 𝔬 hf R hsq).homology i ≃ₗ[R]
