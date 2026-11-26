@@ -189,9 +189,8 @@ theorem modularFunctionCoeffAction_apply_eq_iff {σ : ℂ ≃+* ℂ}
 theorem modularFunctionCoeffAction_symm_apply_apply (σ : ℂ ≃+* ℂ)
     (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
     modularFunctionCoeffAction N σ.symm (modularFunctionCoeffAction N σ F) = F := by
-  rw [modularFunctionCoeffAction_apply, modularFunctionCoeffAction_apply, coeffConj_coeffConj,
-    ← RingEquiv.toRingHom_trans, RingEquiv.self_trans_symm, RingEquiv.toRingHom_refl,
-    coeffConj_id]
+  have hσ : σ.symm = σ⁻¹ := RingEquiv.ext fun x ↦ (RingAut.inv_apply σ x).symm
+  rw [hσ, map_inv, RingAut.inv_apply, RingEquiv.symm_apply_apply]
 
 /-- The conjugate of a constant function is the conjugate constant. -/
 @[simp]

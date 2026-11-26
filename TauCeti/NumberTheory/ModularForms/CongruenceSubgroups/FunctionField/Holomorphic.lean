@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.CoeffAction
-import TauCeti.Analysis.Complex.Fuchsian.Compactification.FiniteHolomorphicMap
-import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Cofinite
-import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Integral
+import TauCeti.NumberTheory.ModularForms.LevelOne.FunctionField
 
 /-!
 # Coefficient conjugation preserves holomorphic modular functions
@@ -36,35 +34,6 @@ open scoped MatrixGroups
 namespace TauCeti
 
 variable {N : ℕ} [NeZero N]
-
-/-- For a finite-index subgroup `H` of `SL(2, ℤ)`, a meromorphic function on `X_H` is integral
-over `ℂ[j]` exactly when it has no poles on the upper half-plane. Poles at the cusps are
-allowed. -/
-theorem _root_.Subgroup.isIntegral_adjoin_jMeromorphicFunction_iff (H : Subgroup SL(2, ℤ))
-    [H.FiniteIndex] (F : MeromorphicFunction (H.map sl2zToPSL2R).CompactifiedQuotient) :
-    IsIntegral (Algebra.adjoin ℂ
-      {Subgroup.compactifiedQuotientComap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R
-        ModularGroup.jMeromorphicFunction}) F ↔
-      ∀ τ : ℍ, F (ofQuotient (Quotient.mk _ τ)) ≠ ∞ := by
-  let := (Subgroup.isCofinite_map_sl2zToPSL2R H).compactSpace_compactifiedQuotient
-  let β := ModularGroup.jFiniteHolomorphicMap.comp
-    (Fuchsian.compactifiedQuotientFiniteHolomorphicMap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R)
-  have hj : comapₐ β β.holomorphic β.nonconstant coordinate =
-      Subgroup.compactifiedQuotientComap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R
-        ModularGroup.jMeromorphicFunction := by
-    ext x
-    simp [β, ModularGroup.coe_jMeromorphicFunction]
-  rw [← hj, isIntegral_adjoin_comap_coordinate_iff]
-  constructor
-  · intro h τ
-    apply h _
-    simp [β]
-  · intro h x hx
-    cases x with
-    | ofQuotient p =>
-      induction p using Quotient.inductionOn with
-      | h τ => exact h τ
-    | ofCusp C => exact (hx (by simp [β])).elim
 
 /-- Coefficient conjugation preserves the modular functions of level `N` integral over `ℂ[j]`. -/
 private theorem isIntegral_adjoin_jMeromorphicFunction_coeffAction
