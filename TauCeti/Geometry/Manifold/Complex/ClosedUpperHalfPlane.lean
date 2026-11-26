@@ -11,11 +11,14 @@ public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Boundary.Model
 public import TauCeti.Analysis.Convex.Cone.StrictInward
 public import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
+import TauCeti.Analysis.Complex.ReImTopology
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The closed upper half-plane as a model with corners
 
-`ClosedUpperHalfPlane` is the subtype of complex numbers with nonnegative imaginary part.
+`ClosedUpperHalfPlane` is the subtype of complex numbers with nonnegative imaginary part. Being a
+closed subset of `ℂ`, it is locally compact (`ClosedUpperHalfPlane.instLocallyCompactSpace`).
 `closedUpperHalfPlaneModel` is its real model with corners in `ℂ`. Its manifold interior is the
 open upper half-plane, and its manifold boundary is the real axis. The inverse of the model
 retracts the lower half-plane onto the real axis; it is only a model inverse on the model range.
@@ -42,6 +45,12 @@ bordered atlas to the native real half-space model. Its preferred chart law fixe
 structure for boundary constructions. The strict inward cone at the real axis has positive
 imaginary component; the native boundary parametrization has range `Complex.imCLM.ker`.
 
+The inclusion of the closed upper half-plane into `ℂ` is smooth
+(`ClosedUpperHalfPlane.contMDiff_coe`), the interior in `ℂ` of a subset of the closed upper
+half-plane has positive imaginary part (`interior_subset_setOf_im_pos`), and off the real axis the
+inverse of a chart of a `C^n` maximal atlas, `n ≠ 0`, is differentiable
+(`ClosedUpperHalfPlane.mdifferentiableAt_extend_symm_of_im_pos`).
+
 -/
 
 public section
@@ -66,6 +75,10 @@ theorem coe_ofReal (s : ℝ) : (ofReal s : ℂ) = s := by rw [ofReal]
 
 /-- The imaginary coordinate of every point of the closed upper half-plane is nonnegative. -/
 theorem im_nonneg (z : ClosedUpperHalfPlane) : 0 ≤ (z : ℂ).im := z.property
+
+/-- The closed upper half-plane is locally compact, being a closed subset of `ℂ`. -/
+instance instLocallyCompactSpace : LocallyCompactSpace ClosedUpperHalfPlane :=
+  (isClosed_le continuous_const Complex.continuous_im).locallyCompactSpace
 
 end ClosedUpperHalfPlane
 
@@ -135,6 +148,33 @@ theorem range_closedUpperHalfPlaneModel :
   rw [h]
   exact Subtype.range_coe_subtype
 
+/-- The interior in `ℂ` of a subset of the closed upper half-plane consists of points of positive
+imaginary part. -/
+theorem interior_subset_setOf_im_pos {t : Set ℂ} (ht : t ⊆ range closedUpperHalfPlaneModel) :
+    interior t ⊆ {z : ℂ | 0 < z.im} := by
+  have h := interior_mono ht
+  rwa [range_closedUpperHalfPlaneModel, Complex.interior_setOfPred_le_im] at h
+
+/-- Off the real axis, the inverse of a chart of the `C^n` maximal atlas of a manifold modelled on
+the closed upper half-plane, `n ≠ 0`, is differentiable. -/
+theorem ClosedUpperHalfPlane.mdifferentiableAt_extend_symm_of_im_pos {M : Type*}
+    [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] {n : ℕ∞ω} (hn : n ≠ 0)
+    {φ : OpenPartialHomeomorph M ClosedUpperHalfPlane}
+    (hφ : φ ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel n M) {z : ℂ}
+    (hz : z ∈ (φ.extend closedUpperHalfPlaneModel).target) (hzim : 0 < z.im) :
+    MDifferentiableAt 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel
+      (φ.extend closedUpperHalfPlaneModel).symm z := by
+  refine φ.mdifferentiableAt_extend_symm_of_mem_interior hn hφ ?_
+  rw [OpenPartialHomeomorph.extend_target] at hz ⊢
+  rw [range_closedUpperHalfPlaneModel, interior_inter_setOf_im_nonneg
+    (φ.open_target.preimage closedUpperHalfPlaneModel.continuous_symm)]
+  exact ⟨hz.1, hzim⟩
+
+/-- The inclusion of the closed upper half-plane into `ℂ` is smooth up to the boundary. -/
+theorem ClosedUpperHalfPlane.contMDiff_coe {n : ℕ∞ω} :
+    ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) n ((↑) : ClosedUpperHalfPlane → ℂ) :=
+  funext closedUpperHalfPlaneModel_apply ▸ closedUpperHalfPlaneModel.contMDiff
+
 /-- The part of the extended target of a chart into the closed upper half-plane lying over an
 open set is relatively open in the closed upper half-plane: it is `Ω ∩ {z | 0 ≤ z.im}` for an
 open `Ω ⊆ ℂ`. -/
@@ -153,6 +193,16 @@ theorem _root_.OpenPartialHomeomorph.exists_isOpen_extend_target_inter_preimage 
   simp only [OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.extend_coe_symm,
     range_closedUpperHalfPlaneModel, mem_inter_iff, mem_preimage, mem_ofPred_eq]
   tauto
+
+/-- The part of the target of the extended chart at `x` of a manifold modelled on the closed upper
+half-plane lying over an open set is relatively open in the closed upper half-plane: it is
+`Ω ∩ {z | 0 ≤ z.im}` for an open `Ω ⊆ ℂ`. This is
+`OpenPartialHomeomorph.exists_isOpen_extend_target_inter_preimage` for the chart at `x`. -/
+theorem exists_isOpen_extChartAt_target_inter_preimage {M : Type*} [TopologicalSpace M]
+    [ChartedSpace ClosedUpperHalfPlane M] (x : M) {W : Set M} (hW : IsOpen W) :
+    ∃ Ω : Set ℂ, IsOpen Ω ∧ (extChartAt closedUpperHalfPlaneModel x).target ∩
+      (extChartAt closedUpperHalfPlaneModel x).symm ⁻¹' W = Ω ∩ {z | 0 ≤ z.im} :=
+  (chartAt ClosedUpperHalfPlane x).exists_isOpen_extend_target_inter_preimage hW
 
 /-- The manifold interior of the model consists exactly of points with positive imaginary part. -/
 @[simp]
@@ -415,14 +465,14 @@ theorem ClosedUpperHalfPlane.toHomeomorph_euclideanHalfSpaceDiffeomorph (n : ℕ
   Homeomorph.ext fun z ↦ Subtype.ext (by simp)
 
 /-- The canonical native half-space charts of a closed-upper-half-plane charted space.
-The original charts are composed with the existing real coordinate homeomorphism. This is
-an explicitly chosen charted-space structure, rather than a global instance on every `M`. -/
+The original charts are followed by the existing real coordinate homeomorphism
+(`Homeomorph.chartedSpaceComp`). This is an explicitly chosen charted-space structure, rather
+than a global instance on every `M`. -/
 @[instance_reducible]
 def ClosedUpperHalfPlane.euclideanHalfSpaceChartedSpace (M : Type*)
     [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] :
     ChartedSpace (EuclideanHalfSpace (1 + 1)) M :=
-  letI := euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-  ChartedSpace.comp (EuclideanHalfSpace (1 + 1)) ClosedUpperHalfPlane M
+  euclideanHalfSpaceHomeomorph.chartedSpaceComp M
 
 /-- The preferred chart of the native half-space transfer is the original chart followed by
 the existing real coordinate homeomorphism. -/
@@ -431,8 +481,8 @@ theorem ClosedUpperHalfPlane.chartAt_euclideanHalfSpace (M : Type*)
     letI := euclideanHalfSpaceChartedSpace M
     chartAt (EuclideanHalfSpace (1 + 1)) x =
       (chartAt ClosedUpperHalfPlane x).trans
-        euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph := by
-  rfl
+        euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph :=
+  euclideanHalfSpaceHomeomorph.chartAt_chartedSpaceComp x
 
 /-- Evaluation of the preferred chart in the native half-space transfer. -/
 @[simp]
@@ -474,7 +524,6 @@ theorem ClosedUpperHalfPlane.isManifold_euclideanHalfSpace {n : ℕ∞ω} (M : T
     [IsManifold closedUpperHalfPlaneModel n M] :
     letI := euclideanHalfSpaceChartedSpace M
     IsManifold (𝓡∂ (1 + 1)) n M := by
-  let := euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
   have h := (euclideanHalfSpaceDiffeomorph n).isManifold_chartedSpaceComp M
   rwa [toHomeomorph_euclideanHalfSpaceDiffeomorph] at h
 

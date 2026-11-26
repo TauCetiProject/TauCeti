@@ -228,9 +228,9 @@ theorem form_typeDSpinorWeight_single (hn : 4 ≤ n) (ht : (D n).IsSimplyLaced) 
   rw [rootLatticeIsometryCheckerboard_typeDSpinorWeight, rootLatticeIsometryCheckerboard_single,
     (checkerboardLattice n).isSymm.eq, checkerboardLattice_form_checkerboardSpinor]
   have hsum : ∑ j : Fin n, checkerboardSimpleRoot n hn i j =
-      ((∑ j : Fin n, typeDSimpleRoot n hn i j : ℤ) : ℚ) := by
+      ((∑ j : Fin n, typeDSimpleRoot n (by omega) i j : ℤ) : ℚ) := by
     simp only [checkerboardSimpleRoot_apply, Int.cast_sum]
-  rw [hsum, sum_typeDSimpleRoot hn i]
+  rw [hsum, sum_typeDSimpleRoot (by omega) i]
   by_cases hi : (i : ℕ) + 1 < n
   · simp [hi]; omega
   · simp [(by omega : (i : ℕ) + 1 = n)]
@@ -247,10 +247,10 @@ theorem form_typeDVectorWeight_single (hn : 4 ≤ n) (ht : (D n).IsSimplyLaced) 
     (checkerboardLattice n).isSymm.eq, checkerboardLattice_form_checkerboardVector,
     checkerboardSimpleRoot_apply]
   by_cases hi : (i : ℕ) + 1 < n
-  · rw [typeDSimpleRoot_of_add_one_lt hn hi]
+  · rw [typeDSimpleRoot_of_add_one_lt (by omega) hi]
     simp only [Pi.sub_apply, Pi.single_apply, Fin.ext_iff, Fin.val_top]
     split_ifs <;> first | (exfalso; omega) | norm_num
-  · rw [typeDSimpleRoot_of_not_add_one_lt hn hi]
+  · rw [typeDSimpleRoot_of_not_add_one_lt (by omega) hi]
     simp only [Pi.add_apply, Pi.single_apply, Fin.ext_iff, Fin.val_top]
     split_ifs <;> first | (exfalso; omega) | norm_num
 

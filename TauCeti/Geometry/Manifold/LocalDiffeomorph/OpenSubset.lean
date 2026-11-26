@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Partial diffeomorphisms and open subsets
@@ -33,7 +35,9 @@ manifold is diffeomorphic to it through its inclusion, and a diffeomorphism mapp
 onto another restricts to a diffeomorphism between them. A partial diffeomorphism out of an open
 subset can be carried, near any point of its source, to the ambient manifold. A partial
 diffeomorphism between nonempty open subsets is itself a partial diffeomorphism between the ambient
-manifolds, with the same source and target read in them.
+manifolds, with the same source and target read in them. Correcting a partial diffeomorphism by a
+diffeomorphism of its source gives, on any open subset of the source, a diffeomorphism onto an open
+subset of the target manifold.
 
 ## Main declarations
 
@@ -45,6 +49,9 @@ manifolds, with the same source and target read in them.
 * `PartialDiffeomorph.toDiffeomorphSourceTarget`: a partial diffeomorphism as a diffeomorphism
   between its open source and its open target.
 * `Diffeomorph.ofTop`: an open subset equal to `⊤` is diffeomorphic to the ambient manifold.
+* `Diffeomorph.nestedOpen`: for nested open subsets `U ≤ D`, the preimage of `U` in `D` is
+  diffeomorphic to `U`. It compares structures on a restriction to `D` followed by a restriction
+  to `U` with the direct restriction to `U`.
 * `Diffeomorph.subtype`: a diffeomorphism restricts to a diffeomorphism between open subsets that
   it maps onto each other.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
@@ -56,9 +63,14 @@ manifolds, with the same source and target read in them.
 * `PartialDiffeomorph.subtypeVal`: the inclusion of a nonempty open subset as a partial
   diffeomorphism.
 * `PartialDiffeomorph.liftOpens`: a partial diffeomorphism between nonempty open subsets, as a
-  partial diffeomorphism between the ambient manifolds.
+  partial diffeomorphism between the ambient manifolds. On the open subset it has the values
+  (`PartialDiffeomorph.liftOpens_comp_subtypeVal`) and the differentials
+  (`PartialDiffeomorph.mfderiv_liftOpens_apply_coe`) of the original one.
 * `IsLocalDiffeomorphAt.exists_partialDiffeomorph_eqOn`: a local diffeomorphism at `x` agrees with
   a partial diffeomorphism whose source contains `x` and lies in a prescribed open set.
+* `PartialDiffeomorph.exists_diffeomorph_opens_comp_eq`: a partial diffeomorphism corrected by a
+  diffeomorphism of its source is, on an open subset of the source, a diffeomorphism onto an open
+  subset.
 -/
 
 public section
@@ -271,6 +283,32 @@ theorem coe_ofTop_symm_apply {U : TopologicalSpace.Opens M} {hU : U = ⊤} (x : 
     ((ofTop (I := I) (n := n) U hU).symm x : M) = x :=
   (rfl)
 
+/-- For nested open subsets `U ≤ D`, the preimage of `U` in `D` is diffeomorphic to `U`. -/
+def nestedOpen {U D : TopologicalSpace.Opens M} (h : U ≤ D) :
+    (TopologicalSpace.Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U)
+      ≃ₘ^n⟮I, I⟯ U where
+  toFun x := ⟨x.val.val, x.property⟩
+  invFun u := ⟨⟨u.val, h u.property⟩, u.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff U _).mp
+    ((contMDiff_subtypeVal (I := I) (U := D)).comp contMDiff_subtypeVal)
+  contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).mp
+    ((TauCeti.ContMDiff.subtypeVal_comp_iff D _).mp contMDiff_subtypeVal)
+
+/-- The diffeomorphism `Diffeomorph.nestedOpen` keeps the underlying point. -/
+@[simp]
+theorem nestedOpen_apply {U D : TopologicalSpace.Opens M} (h : U ≤ D)
+    (x : TopologicalSpace.Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U) :
+    nestedOpen (I := I) (n := n) h x = ⟨x.val.val, x.property⟩ :=
+  (rfl)
+
+/-- The inverse of `Diffeomorph.nestedOpen` views a point of `U` in `D`. -/
+@[simp]
+theorem nestedOpen_symm_apply {U D : TopologicalSpace.Opens M} (h : U ≤ D) (x : U) :
+    (nestedOpen (I := I) (n := n) h).symm x = ⟨⟨x.val, h x.property⟩, x.property⟩ :=
+  (rfl)
+
 section Subtype
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {G : Type*} [TopologicalSpace G]
@@ -453,6 +491,18 @@ theorem liftOpens_apply_coe (x : U) : ⇑(Ψ.liftOpens hU hV) x = Ψ x := by
   simp only [liftOpens, coe_trans, Function.comp_apply, PartialDiffeomorph.symm_toPartialEquiv,
     subtypeVal_symm_apply_coe, coe_subtypeVal]
 
+/-- The lift of `Ψ` restricts to `Ψ` on `U`. -/
+theorem liftOpens_comp_subtypeVal :
+    ⇑(Ψ.liftOpens hU hV) ∘ Subtype.val = Subtype.val ∘ Ψ :=
+  funext (Ψ.liftOpens_apply_coe hU hV)
+
+/-- On `U`, the lift of `Ψ` has the differential of `Ψ`, the tangent spaces of `U` and `V` being
+those of `M` and `N`. -/
+theorem mfderiv_liftOpens_apply_coe (x : U) (v : TangentSpace I (x : M)) :
+    mfderiv I J (Ψ.liftOpens hU hV) x v = mfderiv I J Ψ x v :=
+  (TauCeti.Manifold.mfderiv_apply_of_subtype_val_comp_eq
+    (Ψ.liftOpens_comp_subtypeVal hU hV).symm v).symm
+
 /-- On `V`, the inverse of the lift of `Ψ` is the inverse of `Ψ`. -/
 @[simp]
 theorem liftOpens_symm_apply_coe (y : V) :
@@ -519,3 +569,48 @@ theorem congr_of_eventuallyEq {g : M → N} (hf : IsLocalDiffeomorphAt I J n f x
   exact ⟨Φ, hxΦ, fun y hy ↦ (hfg y (hΦs hy)).trans (hfΦ hy)⟩
 
 end IsLocalDiffeomorphAt
+
+namespace PartialDiffeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H : Type*} [TopologicalSpace H] {G : Type*} [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G} {n : WithTop ℕ∞}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+
+open TopologicalSpace in
+/-- **Correcting a partial diffeomorphism by a diffeomorphism of its source.** Let `Ψ` be a `C^n`
+partial diffeomorphism from `M` to `N` and `Θ` a `C^n` diffeomorphism of the source of `Ψ`. On any
+open subset `U₀` of the source, `Ψ ∘ Θ` is a `C^n` diffeomorphism onto an open subset of `N`. -/
+theorem exists_diffeomorph_opens_comp_eq (Ψ : PartialDiffeomorph I J M N n)
+    (Θ : (⟨Ψ.source, Ψ.open_source⟩ : Opens M) ≃ₘ^n⟮I, I⟯ (⟨Ψ.source, Ψ.open_source⟩ : Opens M))
+    {U₀ : Opens M} (hU₀ : U₀ ≤ (⟨Ψ.source, Ψ.open_source⟩ : Opens M)) :
+    ∃ (U₁ : Opens N) (φ : U₀ ≃ₘ^n⟮I, J⟯ U₁),
+      Subtype.val ∘ ⇑φ = (Ψ ∘ Subtype.val) ∘ Θ ∘ Opens.inclusion hU₀ := by
+  let ι := Opens.inclusion hU₀
+  let Φ : U₀ → N := (Ψ ∘ Subtype.val) ∘ Θ ∘ ι
+  have hinj : Function.Injective Φ := fun z z' h ↦ by
+    have h' := Ψ.toPartialEquiv.injOn (Θ (ι z)).property (Θ (ι z')).property h
+    have hv := congrArg Subtype.val (Θ.injective (Subtype.ext h') : ι z = ι z')
+    exact Subtype.ext hv
+  -- Near each point, `ι` is the inclusion of `U₀` followed by the inverse of that of the source.
+  have hι : IsLocalDiffeomorph I I n ι := fun z ↦ by
+    let e := (subtypeVal I n U₀ ⟨z⟩).trans (subtypeVal I n _ ⟨ι z⟩).symm
+    have he : ⇑e = ι := funext fun y ↦ subtypeVal_symm_apply (I := I) (n := n) _ _ (hU₀ y.property)
+    have hz : z ∈ e.source := by
+      simp only [e, trans_source, symm_toPartialEquiv, PartialEquiv.symm_source,
+        subtypeVal_source, subtypeVal_target, coe_subtypeVal, mem_inter_iff, mem_univ,
+        mem_preimage, SetLike.mem_coe, true_and]
+      exact hU₀ z.property
+    exact he ▸ e.isLocalDiffeomorphAt I I n hz
+  -- `Φ` is a composite of local diffeomorphisms.
+  have hloc : IsLocalDiffeomorph I J n Φ := fun z ↦
+    (hι z).comp (hg := (Θ.isLocalDiffeomorph _).comp
+      (hg := (TauCeti.isLocalDiffeomorph_subtype_val _).comp
+        (hg := Ψ.isLocalDiffeomorphAt I J n (Θ (ι z)).property)))
+  exact ⟨hloc.image, hloc.diffeomorphOfInjective hinj,
+    funext (IsLocalDiffeomorph.coe_diffeomorphOfInjective_apply hloc hinj)⟩
+
+end PartialDiffeomorph

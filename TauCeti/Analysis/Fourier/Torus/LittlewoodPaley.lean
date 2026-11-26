@@ -8,9 +8,12 @@ module
 public import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 public import TauCeti.Analysis.Fourier.Torus.Multiplier
+public import TauCeti.Analysis.Fourier.Torus.SchwartzMultiplier
+import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
-# The periodic Littlewood–Paley decomposition on `L²` of the torus
+# The periodic Littlewood–Paley decomposition of the torus
 
 Let `φ` be a smooth bump function on `EuclideanSpace ℝ d` and let `ψ₀ = φ, ψ₁, ψ₂, …` be the
 inhomogeneous Littlewood–Paley partition of unity built from it
@@ -44,6 +47,13 @@ The blocks have the following properties.
   bounded above and below by positive constants depending only on `φ`. Hence the square function
   `(∑ⱼ ‖Δⱼ f‖²)^{1/2}` is equivalent to `‖f‖` on `L²(𝕋ᵈ)`. The weight need not be identically `1`,
   since the `ψⱼ` form a partition of unity rather than a partition of unity of squares.
+* **Uniform `Lᵖ` bounds.** For `1 ≤ p ≤ ∞`, `‖Δⱼ f‖_p ≤ ‖𝓕⁻ ψⱼ‖_{L¹(ℝᵈ)} ‖f‖_p`
+  (`TauCeti.UnitAddTorus.eLpNorm_littlewoodPaleyBlock_le`), the bound of the corresponding block on
+  `Lᵖ(ℝᵈ)`. The kernels `𝓕⁻ ψⱼ`, `j ≥ 1`, are `L¹`-normalised dilates of one another, so the blocks
+  are bounded on `Lᵖ` uniformly in `j`
+  (`TauCeti.UnitAddTorus.exists_eLpNorm_littlewoodPaleyBlock_le`), and the low-pass partial sums
+  `∑_{j ≤ N} Δⱼ` uniformly in `N`, by `‖𝓕⁻ φ‖_{L¹(ℝᵈ)}`
+  (`TauCeti.UnitAddTorus.eLpNorm_sum_littlewoodPaleyBlock_range_le`).
 
 As in Mathlib's `UnitAddTorus.mFourierBasis`, `L²(𝕋ᵈ)` is taken for the product of the Haar
 probability measures on the circle factors.
@@ -64,6 +74,9 @@ probability measures on the circle factors.
   `TauCeti.UnitAddTorus.exists_tsum_norm_sq_littlewoodPaleyBlock_le` and
   `TauCeti.UnitAddTorus.exists_norm_sq_le_mul_tsum_norm_sq_littlewoodPaleyBlock`: the `L²` square
   function.
+* `TauCeti.UnitAddTorus.eLpNorm_littlewoodPaleyBlock_le`,
+  `TauCeti.UnitAddTorus.exists_eLpNorm_littlewoodPaleyBlock_le` and
+  `TauCeti.UnitAddTorus.eLpNorm_sum_littlewoodPaleyBlock_range_le`: the uniform `Lᵖ` bounds.
 
 ## References
 
@@ -79,7 +92,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Topology
-open scoped lp ENNReal
+open scoped lp ENNReal NNReal FourierTransform SchwartzMap
 
 namespace TauCeti.UnitAddTorus
 
@@ -168,15 +181,15 @@ theorem exists_finset_littlewoodPaleyBlock_eq_sum (j : ℕ) :
       littlewoodPaleyBlock φ j f =
         ∑ n ∈ s, (φ.inhomogeneousLittlewoodPaley j (latticePoint n) * mFourierCoeff f n) •
           mFourierLp 2 n := by
-  set s := (finite_setOf_norm_latticePoint_lt (ι := d) (2 ^ j * φ.rOut)).toFinset
+  set s := (finite_setOf_norm_latticePoint_le (ι := d) (2 ^ j * φ.rOut)).toFinset
   refine ⟨s, fun f ↦ ?_⟩
   have h : HasSum (fun n ↦
       (φ.inhomogeneousLittlewoodPaley j (latticePoint n) * mFourierCoeff f n) • mFourierLp 2 n)
       (∑ n ∈ s, (φ.inhomogeneousLittlewoodPaley j (latticePoint n) * mFourierCoeff f n) •
         mFourierLp 2 n) :=
     hasSum_sum_of_ne_finset_zero fun n hn ↦ by
-      simp only [s, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_lt] at hn
-      simp [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hn]
+      simp only [s, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_le] at hn
+      simp [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hn.le]
   rw [littlewoodPaleyBlock_eq_fourierMultiplier]
   exact (hasSum_fourierMultiplier _ f).unique (by simpa using h)
 
@@ -315,5 +328,51 @@ theorem exists_norm_sq_le_mul_tsum_norm_sq_littlewoodPaleyBlock :
       _ = L * ((∑' j, φ.inhomogeneousLittlewoodPaley j (latticePoint n) ^ 2) *
           ‖mFourierCoeff f n‖ ^ 2) := mul_assoc _ _ _
   · exact (summable_tsum_inhomogeneousLittlewoodPaley_sq_mul_norm_sq_mFourierCoeff φ f).mul_left _
+
+/-! ### `Lᵖ` bounds -/
+
+/-- **The `Lᵖ` bound for a periodic Littlewood–Paley block.** For `1 ≤ p ≤ ∞` and `f ∈ L²(𝕋ᵈ)`,
+`‖Δⱼ f‖_p ≤ ‖𝓕⁻ ψⱼ‖_{L¹(ℝᵈ)} ‖f‖_p`, the bound of the corresponding block on `Lᵖ(ℝᵈ)`. -/
+theorem eLpNorm_littlewoodPaleyBlock_le (j : ℕ) {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (f : L²(UnitAddTorus d)) :
+    eLpNorm (littlewoodPaleyBlock φ j f) p volume ≤
+      ENNReal.ofReal (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) x‖) *
+        eLpNorm f p volume := by
+  have h := eLpNorm_fourierMultiplier_le (φ.inhomogeneousLittlewoodPaleySchwartz j)
+    (m := littlewoodPaleySymbol φ j) (fun n ↦ by simp) hp f
+  rwa [φ.coe_inhomogeneousLittlewoodPaleySchwartz] at h
+
+/-- **The periodic Littlewood–Paley blocks are bounded on `Lᵖ` uniformly in `j`.** There is `C`,
+depending only on `φ`, with `‖Δⱼ f‖_p ≤ C ‖f‖_p` for every `j`, every `1 ≤ p ≤ ∞` and every
+`f ∈ L²(𝕋ᵈ)`. The kernels `𝓕⁻ ψⱼ`, `j ≥ 1`, are `L¹`-normalised dilates of `𝓕⁻ ψ₁`. -/
+theorem exists_eLpNorm_littlewoodPaleyBlock_le :
+    ∃ C : ℝ≥0, ∀ (j : ℕ) {p : ℝ≥0∞}, 1 ≤ p → ∀ f : L²(UnitAddTorus d),
+      eLpNorm (littlewoodPaleyBlock φ j f) p volume ≤ C * eLpNorm f p volume := by
+  obtain ⟨C, hC⟩ := φ.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le 0
+  refine ⟨C, fun j p hp f ↦ (eLpNorm_littlewoodPaleyBlock_le φ j hp f).trans ?_⟩
+  gcongr
+  exact (ENNReal.ofReal_le_ofReal (by simpa using hC j)).trans_eq ENNReal.ofReal_coe_nnreal
+
+/-- **The periodic low-pass truncations are bounded on `Lᵖ` uniformly in `N`.** For
+`1 ≤ p ≤ ∞` and `f ∈ L²(𝕋ᵈ)`, the truncation `S_N f = ∑_{j ≤ N} Δⱼ f` satisfies
+`‖S_N f‖_p ≤ ‖𝓕⁻ φ‖_{L¹(ℝᵈ)} ‖f‖_p`. The truncation is the multiplier with symbol `φ (2^{-N} ·)`,
+whose kernel is an `L¹`-normalised dilate of `𝓕⁻ φ`. -/
+theorem eLpNorm_sum_littlewoodPaleyBlock_range_le (N : ℕ) {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (f : L²(UnitAddTorus d)) :
+    eLpNorm ((∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock φ j) f) p volume ≤
+      ENNReal.ofReal (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * eLpNorm f p volume := by
+  have hc : ((2 : ℝ) ^ N)⁻¹ ≠ 0 := by positivity
+  -- The symbol `φ (2^{-N} ·) = ∑_{j ≤ N} ψⱼ` is a sum of the Schwartz pieces of the partition.
+  set σ : 𝓢(EuclideanSpace ℝ d, ℂ) :=
+    ∑ j ∈ Finset.range (N + 1), φ.inhomogeneousLittlewoodPaleySchwartz j
+  have hσ : (σ : EuclideanSpace ℝ d → ℂ) = fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ) := by
+    ext ξ
+    simp [σ, ← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
+  have h := eLpNorm_fourierMultiplier_le σ
+    (m := ∑ j ∈ Finset.range (N + 1), littlewoodPaleySymbol φ j) (fun n ↦ by
+      rw [hσ, lp.coeFn_sum, Finset.sum_apply]
+      simp [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]) hp f
+  rw [hσ, TauCeti.integral_norm_fourierInv_comp_smul (fun ξ ↦ (φ ξ : ℂ)) hc] at h
+  simpa only [littlewoodPaleyBlock_eq_fourierMultiplier, map_sum] using h
 
 end TauCeti.UnitAddTorus

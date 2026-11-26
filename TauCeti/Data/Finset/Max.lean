@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Max
+public import Mathlib.Order.Interval.Set.UnorderedInterval
 
 /-!
 # Minimizers on finite sets
@@ -19,6 +20,10 @@ two-cut construction of Littelmann root operators, used in
 More generally, any number `n ≤ #s` of points of a finite set `s` can be taken among the smallest
 values of a function: some `t ⊆ s` with `n` elements has no value above a value outside it
 (`Finset.exists_subset_card_eq_forall_le`).
+
+A point `t` outside a finite set `Z` lies strictly between its neighbours in `Z`, taken in
+`WithBot` and `WithTop` so that a missing neighbour is `⊥` or `⊤`; no point of `Z` lies between
+`t` and any point of that gap (`Finset.exists_lt_lt_forall_notMem_uIcc`).
 -/
 
 public section
@@ -63,5 +68,31 @@ theorem exists_subset_card_eq_forall_le {α β : Type*} [LinearOrder β] (s : Fi
     rcases mem_insert.mp hc with rfl | hc
     · exact hmin b (mem_sdiff.mpr ⟨hb, hbt'⟩)
     · exact ht c hc b hb hbt'
+
+/-- A point `t` outside a finite set `Z` lies strictly between neighbours `a` and `b` taken from
+`Z` together with `⊥` and `⊤` respectively. No point of `Z` lies in `uIcc t u` for any `u`
+strictly between `a` and `b`. -/
+theorem exists_lt_lt_forall_notMem_uIcc {α : Type*} [LinearOrder α] {Z : Finset α} {t : α}
+    (ht : t ∉ Z) :
+    ∃ a ∈ insert ⊥ (Z.image (↑)), ∃ b ∈ insert ⊤ (Z.image (↑)),
+      a < (t : WithBot α) ∧ (t : WithTop α) < b ∧
+        ∀ u : α, a < u → (u : WithTop α) < b → ∀ z ∈ Z, z ∉ Set.uIcc t u := by
+  classical
+  refine ⟨(Z.filter (· < t)).max, ?_, (Z.filter (t < ·)).min, ?_, ?_, ?_, ?_⟩
+  · exact insert_subset_insert _ (image_subset_image (filter_subset _ _))
+      (max_mem_insert_bot_image_coe _)
+  · exact insert_subset_insert _ (image_subset_image (filter_subset _ _))
+      (min_mem_insert_top_image_coe _)
+  · rw [max_eq_sup_coe, Finset.sup_lt_iff (WithBot.bot_lt_coe t)]
+    simp
+  · rw [min_eq_inf_withTop, Finset.lt_inf_iff (WithTop.coe_lt_top t)]
+    simp
+  · rintro u hau hub z hz
+    rcases lt_trichotomy z t with hzt | rfl | hzt
+    · exact Set.notMem_uIcc_of_lt hzt
+        (WithBot.coe_lt_coe.1 ((le_max (mem_filter.2 ⟨hz, hzt⟩)).trans_lt hau))
+    · exact (ht hz).elim
+    · exact Set.notMem_uIcc_of_gt hzt
+        (WithTop.coe_lt_coe.1 (hub.trans_le (min_le (mem_filter.2 ⟨hz, hzt⟩))))
 
 end Finset

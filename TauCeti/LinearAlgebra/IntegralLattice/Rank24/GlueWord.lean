@@ -160,7 +160,9 @@ theorem encodeGlueWord_piGlueAlphabetCongr_eq_ofFn {m : ℕ} {s : Fin m → Dynk
     rw [DynkinType.piGlueAlphabetCongr_apply]
     exact DynkinType.val_glueLabelEquiv_symm_ofEq (h k) _ _ _)
 
-private theorem getD_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) (i : Fin n) :
+/-- Reading entry `i` of an encoded glue word with default `0` recovers the Conway--Sloane label
+of coordinate `i`. -/
+theorem getD_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) (i : Fin n) :
     (encodeGlueWord t ht w).getD i 0 = (((t i).glueLabelEquiv (ht i)).symm (w i)).val := by
   rw [List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord]
 
@@ -416,7 +418,7 @@ theorem form_glueWordVector_self_of_getD_lt {n : ℕ} (t : Fin n → DynkinType)
     (hl : ∀ i : Fin n, l.getD i 0 < (t i).glueLabelCount) :
     (pi fun i ↦ (t i).rootLattice (ht i)).form (glueWordVector t l) (glueWordVector t l) =
       glueWordMinimum t l := by
-  rw [pi_form, piForm_apply, glueWordMinimum_def]
+  rw [pi_form, LinearMap.BilinForm.pi_apply, glueWordMinimum_def]
   exact Finset.sum_congr rfl fun i _ ↦
     (t i).form_glueLabelVector_self (hv i) (ht i) ⟨_, hl i⟩
 

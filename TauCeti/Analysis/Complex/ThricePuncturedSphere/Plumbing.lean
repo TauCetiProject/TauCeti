@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Coordinate
 public import TauCeti.Analysis.Complex.RealChart
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
 
@@ -74,6 +75,11 @@ maps on the plumbed sphere is computed.
   `Puncture.realChart_plumbingMap_mem_plumbedSphere`:
   the part `s_q ≤ L/2` of `S` and the image of the part `-s_∞ ≤ L/2` of `S'` lie in the
   four-punctured sphere, also in real coordinates.
+* `Puncture.plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le`: for `L > 1` the plumbing
+  map of a finite end `q` carries the whole part `-s_∞ ≤ L/2` of the plane, including `0` and `1`,
+  to the capped puncture `c_q` or into `ℂ ∖ {0, 1}`;
+  `Puncture.plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le` is the consequence `ψ_L(w) ≠ 0` for
+  the end at `1`.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_subset`,
   `TauCeti.ThricePuncturedSphere.Puncture.isCompact_plumbedTruncation`: the truncation `Σ_R` is a
   compact subset of the four-punctured sphere.
@@ -90,6 +96,9 @@ maps on the plumbed sphere is computed.
 * `TauCeti.ThricePuncturedSphere.Puncture.cylindricalEndLift_mem_plumbedTruncation`,
   `Puncture.plumbingMap_cylindricalEndLift_mem_plumbedTruncation`: the four boundary circles of
   `Σ_R` lie in it.
+* `TauCeti.ThricePuncturedSphere.Puncture.tendsto_setLIntegral_plumbedTruncation`: so, for any
+  measure, the lower Lebesgue integrals of a function `f : ℝ × ℝ → ℝ≥0∞` over the truncations `Σ_R`
+  tend to its integral over the plumbed sphere.
 
 ## References
 
@@ -145,6 +154,13 @@ theorem plumbingFactor_eq_mul_ofReal (q : Puncture) (L : ℝ) :
   rw [plumbingFactor_def, Complex.ofReal_div, Complex.ofReal_exp]
   push_cast
   ring_nf
+
+/-- The plumbing factor of the input end `0` is the real number `e^{-2πL} / 4`. -/
+theorem plumbingFactor_zero (L : ℝ) :
+    zero.plumbingFactor L = ((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
+  rw [plumbingFactor_eq_mul_ofReal, endScale_zero]
+  push_cast
+  ring
 
 /-- The plumbing scale depends smoothly on the real neck length. -/
 theorem contDiff_plumbingFactor (q : Puncture) {n : WithTop ℕ∞} :
@@ -582,6 +598,35 @@ theorem plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le (hq : q ≠ 
   rw [endSign_inf, neg_one_mul] at hwL
   linarith
 
+/-- The plumbing map `ψ_L` of a finite end `q`, for `L > 1`, carries every point of the inserted
+plane `ℂ` outside the circle `s_∞ = -L/2` of the end at `∞` to the capped puncture `c_q` or a point
+of `ℂ ∖ {0, 1}`: points of the disc `‖w‖ ≤ 2 exp (2π)` land within `exp (-2π(L - 1)) / 2 < 1` of
+`c_q`, away from the other finite puncture, and the other points land in the plumbed
+four-punctured sphere. -/
+theorem plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le (hq : q ≠ inf) (hL : 1 < L)
+    {w : ℂ} (hwL : inf.endSign * (inf.endCoord w).re ≤ L / 2) :
+    q.plumbingMap L w = q.endCenter ∨ q.plumbingMap L w ≠ 0 ∧ q.plumbingMap L w ≠ 1 := by
+  by_cases hw : ‖w‖ ≤ 2 * Real.exp (2 * π)
+  · have h := (norm_sub_endCenter_div_plumbingFactor_le_iff hq L 1).1
+      (by rwa [plumbingMap_sub_endCenter_div_plumbingFactor, mul_one])
+    have hexp : Real.exp (-(2 * π * (L - 1))) < 1 :=
+      Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
+    have hlt : ‖q.plumbingMap L w - q.endCenter‖ < 1 := by linarith
+    refine (eq_or_ne _ _).imp id fun hc ↦ ⟨fun h0 ↦ ?_, fun h1 ↦ ?_⟩ <;>
+      [rw [h0] at hc hlt; rw [h1] at hc hlt] <;> cases q <;> simp_all
+  · have h1 : (1 : ℝ) ≤ 2 * Real.exp (2 * π) := by
+      linarith [Real.one_le_exp (by positivity : (0 : ℝ) ≤ 2 * π)]
+    exact Or.inr (plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le hq (by linarith)
+      ⟨fun h ↦ hw (by rw [h, norm_zero]; positivity),
+        fun h ↦ hw (by rw [h, norm_one]; exact h1)⟩ hwL).1
+
+/-- The plumbing map `ψ_L` of the end at `1`, for `L > 1`, carries every point of the inserted
+plane `ℂ` outside the circle `s_∞ = -L/2` of the end at `∞` to a nonzero point. -/
+theorem plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (hL : 1 < L) {w : ℂ}
+    (hwL : inf.endSign * (inf.endCoord w).re ≤ L / 2) : one.plumbingMap L w ≠ 0 :=
+  (plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le (by simp) hL hwL).elim
+    (fun h ↦ by simp [h]) And.left
+
 /-- The plumbing map carries a point of the inserted thrice-punctured sphere outside the circle
 `s_∞ = -L/2` into the plumbed four-punctured sphere, in real coordinates. -/
 theorem realChart_plumbingMap_mem_plumbedSphere (hq : q ≠ inf) (hL : 0 < L)
@@ -819,5 +864,23 @@ theorem plumbingMap_cylindricalEndLift_mem_plumbedTruncation {q r : Puncture} (h
   have h := endSign_mul_re_endCoord_nonpos hr hpos
   rw [endSign_inf, neg_one_mul] at h
   exact mem_plumbedTruncation_iff.2 (Or.inr ⟨_, hmem, by linarith, rfl⟩)
+
+/-- **Integrals over the plumbed truncations.** In the real coordinates, for any measure `μ`, the
+lower Lebesgue integrals of a function `f : ℝ × ℝ → ℝ≥0∞` over the truncations `Σ_R` tend to its
+integral over the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}` as `R → ∞`. -/
+theorem tendsto_setLIntegral_plumbedTruncation {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL : 0 < L)
+    (μ : MeasureTheory.Measure (ℝ × ℝ)) (f : ℝ × ℝ → ENNReal) :
+    Filter.Tendsto
+      (fun R ↦ ∫⁻ z in Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R, f z ∂μ)
+      Filter.atTop (nhds (∫⁻ z in {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}, f z ∂μ)) := by
+  have h := MeasureTheory.tendsto_measure_iUnion_atTop (μ := μ.withDensity f)
+    (s := fun R ↦ Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R)
+    fun _ _ hR ↦ preimage_mono (plumbedTruncation_mono q L hR)
+  rw [iUnion_preimage_plumbedTruncation hq hL,
+    MeasureTheory.withDensity_apply f (isOpen_plumbedSphere q L).measurableSet] at h
+  exact h.congr fun R ↦
+    MeasureTheory.withDensity_apply f (measurableSet_preimage_plumbedTruncation q L R)
 
 end TauCeti.ThricePuncturedSphere.Puncture
