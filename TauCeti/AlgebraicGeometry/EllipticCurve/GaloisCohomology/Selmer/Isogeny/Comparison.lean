@@ -178,8 +178,9 @@ private theorem sum_localPairing_eq_zero (S : Finset (GlobalNumberFields.Place K
       (localPairing φ v (φ.kerRes (τ v) c) (φ.dualKerRes (τ v) d)),
     Finset.sum_congr rfl hl, Finset.sum_sum_eq_sum_toLeft_add_sum_toRight]
   simp only [basePairing_inl, basePairing_inr]
-  refine φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero c d (fun v ↦ τ (.inl v))
-    (fun w ↦ τ (.inr w)) S (fun v hv ↦ ?_) (fun v _ ↦ ?_) (fun w hw ↦ ?_) (fun w _ ↦ ?_) <;>
+  refine φ.sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero c d
+    (fun v ↦ τ (.inl v)) (fun w ↦ τ (.inr w)) S (fun v hv ↦ ?_) (fun v _ ↦ ?_) (fun w hw ↦ ?_)
+    (fun w _ ↦ ?_) <;>
   rw [pointRes_kerCoeffIncl]
   exacts [hc' (.inl v) hv, hd' (.inl v), hc' (.inr w) hw, hd' (.inr w)]
 

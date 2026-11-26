@@ -35,8 +35,9 @@ degree of the base change of `φ` to `K_v` equals `n` only propositionally, so t
 in `ℚ/ℤ` only. At a place where both classes satisfy the Selmer local conditions, their local
 pairing vanishes (`TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`, in
 `WeilPairing/Orthogonality`). So if `a` and `b` satisfy them at every place outside a finite set
-`S` of places, finite or infinite, the pairings at the places of `S` sum to zero
-(`TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`).
+`S` of places, finite or infinite, the pairings at the places of `S` sum to zero (in the namespace
+`TauCeti.Isogeny`,
+`sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`).
 
 This is the reciprocity input for comparing global Selmer conditions with their orthogonals; in
 the isogeny form it is the global duality input of Cassels' comparison of the `φ`- and
@@ -54,9 +55,9 @@ applying the Brauer sum formula
   the isogeny Weil cup product are the local Tate pairings of the restricted classes.
 * `finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`,
   in the namespace `TauCeti.Isogeny`: global reciprocity for the isogeny Weil cup product.
-* `TauCeti.Isogeny.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`: global classes satisfying
-  the Selmer local conditions outside a finite set `S` of places have local pairings at the places
-  of `S` summing to zero.
+* `sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`,
+  in the namespace `TauCeti.Isogeny`: global classes satisfying the Selmer local conditions outside
+  a finite set `S` of places have local pairings at the places of `S` summing to zero.
 
 ## References
 
@@ -259,7 +260,7 @@ infinite. Then the local Tate pairings of their restrictions at the finite place
 archimedean local Tate pairings at the infinite places of `S`, embedded in `ℚ/ℤ`, sum to zero.
 This is the orthogonality half of global duality for the localisations of the Selmer groups of
 `φ` and `φ̂` relaxed at `S`. -/
-theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
+theorem sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero
     (τ : ∀ v : HeightOneSpectrum (𝓞 K),
       SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
     (τ' : ∀ w : InfinitePlace K, SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
