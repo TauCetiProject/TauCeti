@@ -11,8 +11,7 @@ import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Data.Fintype.Powerset
 import Mathlib.FieldTheory.Finiteness
-import Mathlib.LinearAlgebra.Matrix.Dual
-import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.InformationTheory.Coding.EuclideanDual
 
 /-!
 # The eventown theorem
@@ -57,28 +56,24 @@ theorem card_le_two_pow_of_even (F : Finset (Finset α)) (hsize : ∀ A ∈ F, E
     have := congr_fun h a
     by_cases hA : a ∈ A <;> by_cases hB : a ∈ B <;> simp_all [v]
   let W := Submodule.span (ZMod 2) (v '' F)
-  -- The dot product, a nondegenerate bilinear form on `α → ZMod 2`.
-  let L := (dotProductEquiv (ZMod 2) α).toLinearMap
-  -- The incidence vectors are pairwise orthogonal, and orthogonal to themselves, since the dot
-  -- product of the incidence vectors of `A` and `B` is `#(A ∩ B)` modulo `2`.
-  have horth : ∀ A ∈ F, ∀ B ∈ F, L (v A) (v B) = 0 := by
+  -- The incidence vectors are pairwise orthogonal, and orthogonal to themselves, for the dot
+  -- product, since the dot product of the incidence vectors of `A` and `B` is `#(A ∩ B)` modulo
+  -- `2`.
+  have horth : ∀ A ∈ F, ∀ B ∈ F, v A ⬝ᵥ v B = 0 := by
     intro A hA B hB
-    have hdot : L (v A) (v B) = #(A ∩ B) := by simp [L, v, dotProduct, inter_comm A B]
+    have hdot : v A ⬝ᵥ v B = #(A ∩ B) := by simp [v, dotProduct, inter_comm A B]
     rw [hdot, ZMod.natCast_eq_zero_iff_even]
     obtain rfl | hAB := eq_or_ne A B
     · simpa using hsize A hA
     · exact hinter A hA B hB hAB
-  -- Hence `W` is totally isotropic for the nondegenerate dot product.
-  have hW₀ : Submodule.map₂ L W W = ⊥ := by
-    rw [Submodule.map₂_span_span, Submodule.span_eq_bot]
-    rintro _ ⟨_, ⟨A, hA, rfl⟩, _, ⟨B, hB, rfl⟩, rfl⟩
-    exact horth A hA B hB
-  have hW : ∀ x ∈ W, ∀ y ∈ W, L x y = 0 := fun x hx y hy ↦ by
-    simpa [hW₀] using Submodule.apply_mem_map₂ L hx hy
-  have hdim : 2 * Module.finrank (ZMod 2) W ≤ Fintype.card α := by
-    rw [← Module.finrank_fintype_fun_eq_card (ZMod 2)]
-    exact LinearMap.two_mul_finrank_le_finrank_of_apply_eq_zero_of_injective
-      (dotProductEquiv (ZMod 2) α).injective (Module.finrank_self (ZMod 2)) hW
+  -- Hence `W` is self-orthogonal, so has at most half the ambient dimension.
+  have hW : W.IsSelfOrthogonal := by
+    refine Submodule.isSelfOrthogonal_iff_le.mpr <| Submodule.span_le.mpr ?_
+    rintro _ ⟨B, hB, rfl⟩
+    exact Submodule.mem_euclideanDual_span.mpr <| by
+      rintro _ ⟨A, hA, rfl⟩
+      exact horth A hA B hB
+  have hdim := hW.two_mul_finrank_le_card
   -- Distinct members give distinct elements of `W`, which has `2 ^ dim W` elements.
   classical
   calc #F = Fintype.card F := (Fintype.card_coe F).symm
