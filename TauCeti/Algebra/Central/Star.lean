@@ -37,15 +37,15 @@ public section
 
 namespace TauCeti.Algebra
 
-variable (K : Type*) [Field K] (B : Type*) [Ring B] [StarRing B] [Algebra K B]
-  [Algebra.IsCentral K B]
+variable (K : Type*) (B : Type*)
 
 /-- The involution maps the image of `K` into itself. -/
-theorem exists_algebraMap_eq_star (x : K) : ∃ y : K, algebraMap K B y = star (algebraMap K B x) :=
+theorem exists_algebraMap_eq_star [CommSemiring K] [Semiring B] [StarRing B] [Algebra K B]
+    [Algebra.IsCentral K B] (x : K) : ∃ y : K, algebraMap K B y = star (algebraMap K B x) :=
   Algebra.mem_bot.mp <| Algebra.IsCentral.out <|
     Set.star_mem_center ((Subalgebra.center K B).algebraMap_mem x)
 
-variable [Nontrivial B]
+variable [Field K] [Ring B] [StarRing B] [Algebra K B] [Algebra.IsCentral K B] [Nontrivial B]
 
 /-- The **involution induced on the centre** `K` of `B`: `σ(x)` is the element of `K` with image
 `(algebraMap K B x)*`. It is a ring endomorphism since `K` is commutative. -/
