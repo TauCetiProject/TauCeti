@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.Transvection.Basic
 public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Isometry
-public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.OrthogonalBasis
+public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Orthogonal.Basis
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -81,16 +81,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] {σ : K →+* K} {ε : ℤˣ}
 
-/-- The sign `ε` acts on a field through its image `±1`. -/
-private theorem units_smul_eq_mul (c : K) : ε • c = ((ε : ℤ) : K) * c := by
-  rw [Units.smul_def, zsmul_eq_mul]
-
-private theorem units_cast_sq : ((ε : ℤ) : K) ^ 2 = 1 := by
-  rw [← Int.cast_pow, Int.isUnit_sq ε.isUnit, Int.cast_one]
-
-private theorem units_cast_ne_zero : ((ε : ℤ) : K) ≠ 0 := fun h ↦ by
-  simpa [h] using units_cast_sq (K := K) (ε := ε)
-
 /-- **Every `σ`-hermitian scalar is a trace.** Over a field whose involution `σ` is not the
 identity, every `c` with `σ c = c` is `s + σ s` for a unit `s`. -/
 theorem exists_units_add_eq [RingHomInvPair σ σ] (hσ : ∃ z, σ z ≠ z) {c : K} (hc : σ c = c) :
@@ -141,12 +131,12 @@ noncomputable def quasiReflection (v : V) (s : Kˣ) (hs : (s : K) + ε • σ s 
     V ≃ₗ[K] V :=
   LinearEquiv.dilatransvection (f := -((s : K)⁻¹ • H.form v)) (v := v) <| IsUnit.mk0 _ <| by
     have h1 : 1 + (-((s : K)⁻¹ • H.form v)) v = -((s : K)⁻¹ * (((ε : ℤ) : K) * σ s)) := by
-      rw [LinearMap.neg_apply, LinearMap.smul_apply, smul_eq_mul, ← hs, units_smul_eq_mul,
+      rw [LinearMap.neg_apply, LinearMap.smul_apply, smul_eq_mul, ← hs, Int.units_smul_eq_cast_mul,
         mul_add, inv_mul_cancel₀ s.ne_zero]
       ring
     rw [h1, neg_ne_zero]
     exact mul_ne_zero (inv_ne_zero s.ne_zero)
-      (mul_ne_zero units_cast_ne_zero ((map_ne_zero σ).2 s.ne_zero))
+      (mul_ne_zero (Int.cast_units_ne_zero _) ((map_ne_zero σ).2 s.ne_zero))
 
 @[simp]
 theorem quasiReflection_apply (v : V) (s : Kˣ) (hs : (s : K) + ε • σ s = H.form v v) (x : V) :
@@ -192,7 +182,7 @@ theorem quasiReflection_mem_isometryGroup (v : V) (s : Kˣ)
   have hxv : H.form x v = ε • σ (H.form v x) := H.form_swap v x
   simp only [quasiReflection_apply, map_sub, map_smulₛₗ, LinearMap.sub_apply,
     LinearMap.smul_apply, smul_eq_mul, map_mul, hxv, ← hs, RingHom.id_apply]
-  rw [units_smul_eq_mul, units_smul_eq_mul]
+  rw [Int.units_smul_eq_cast_mul, Int.units_smul_eq_cast_mul]
   linear_combination (σ (H.form v x) * H.form v y * σ (s : K)⁻¹) * inv_mul_cancel₀ s.ne_zero +
     (σ (H.form v x) * H.form v y * ((ε : ℤ) : K) * (s : K)⁻¹) * hss
 
@@ -269,9 +259,9 @@ theorem exists_form_apply_eq_ite [RingHomSurjective σ] {ι : Type*} [Finite ι]
   obtain ⟨u, hu⟩ := hΦ (Pi.single j ((ε : ℤ) : K))
   refine ⟨u, fun i ↦ ?_⟩
   have hi : H.form (x i) u = Pi.single (M := fun _ ↦ K) j ((ε : ℤ) : K) i := congrFun hu i
-  rw [H.form_swap (x i) u, hi, units_smul_eq_mul]
+  rw [H.form_swap (x i) u, hi, Int.units_smul_eq_cast_mul]
   rcases eq_or_ne i j with rfl | hij
-  · simp [← sq, units_cast_sq]
+  · simp [← sq, Int.cast_units_sq]
   · simp [hij]
 
 variable [RingHomInvPair σ σ]
@@ -331,9 +321,9 @@ private theorem exists_mem_quasiReflectionSubgroup_step (hσ : ∃ z, σ z ≠ z
         (y j - x j) + ((t : K)⁻¹ * H.form u (x j)) • u := by
       rw [quasiReflection_apply]
       abel
-    rw [hsub, map_add, hne, zero_add, map_smul, smul_eq_mul, hyu, units_smul_eq_mul]
+    rw [hsub, map_add, hne, zero_add, map_smul, smul_eq_mul, hyu, Int.units_smul_eq_cast_mul]
     exact mul_ne_zero (mul_ne_zero (inv_ne_zero t.ne_zero) hux)
-      (mul_ne_zero units_cast_ne_zero ((map_ne_zero σ).2 huy))
+      (mul_ne_zero (Int.cast_units_ne_zero _) ((map_ne_zero σ).2 huy))
   obtain ⟨r, hr, hrx, hry⟩ := reflect (H.quasiReflection u t ht (x j)) (by rw [hρ, hxy])
     (fun i hi ↦ by
       calc H.form (H.quasiReflection u t ht (x j)) (y i)
