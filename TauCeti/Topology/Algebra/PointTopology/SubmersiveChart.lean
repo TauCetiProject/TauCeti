@@ -193,28 +193,23 @@ private theorem exists_openPartialHomeomorph_pointCoords [Fintype ↥(Set.range 
   let e := (P.implicitData x).levelSetChart (c := 0) (funext (P.eval_relation_eq_zero x))
   have he := (P.implicitData x).mem_levelSetChart_source (c := 0)
     (funext (P.eval_relation_eq_zero x))
-  refine ⟨P.pointsHomeomorphZeroSet.toOpenPartialHomeomorph.trans e, ?_, fun y ↦ ?_, ?_⟩
-  · rw [OpenPartialHomeomorph.trans_source, Homeomorph.toOpenPartialHomeomorph_source,
-      Set.univ_inter, Set.mem_preimage, Homeomorph.toOpenPartialHomeomorph_apply]
-    convert he using 1
-    exact Subtype.ext (P.toPresentation.coe_pointsHomeomorphZeroSet_apply x)
-  · rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply,
-      Homeomorph.toOpenPartialHomeomorph_apply, ImplicitFunctionData.levelSetChart_apply]
+  refine ⟨P.pointsHomeomorphZeroSet.transOpenPartialHomeomorph e, ?_, fun y ↦ ?_, ?_⟩
+  · have hx : P.pointsHomeomorphZeroSet x = ⟨_, funext (P.eval_relation_eq_zero x)⟩ :=
+      Subtype.ext (P.toPresentation.coe_pointsHomeomorphZeroSet_apply x)
+    simpa [hx] using he
+  · simp only [Homeomorph.transOpenPartialHomeomorph_apply, Function.comp_apply,
+      e, ImplicitFunctionData.levelSetChart_apply]
     ext i
     simp [coordProj_apply]
   · intro a z hz
     obtain ⟨p, rfl⟩ := P.aeval_val_surjective a
-    have hz' : z ∈ e.target := by
-      rw [OpenPartialHomeomorph.trans_target] at hz
-      exact hz.1
+    have hz' : z ∈ e.target := by simpa using hz
     have ha := P.analyticAt_coe_levelSetChart_symm x z hz'
     have he (w : ↥(Set.range P.map)ᶜ → K) :
-        (P.pointsHomeomorphZeroSet.toOpenPartialHomeomorph.trans e).symm w (aeval P.val p) =
+        (P.pointsHomeomorphZeroSet.transOpenPartialHomeomorph e).symm w (aeval P.val p) =
           eval (e.symm w : ι → K) p := by
-      rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.trans_apply,
-        ← Homeomorph.symm_toOpenPartialHomeomorph, Homeomorph.toOpenPartialHomeomorph_apply,
-        MvPolynomial.comp_aeval_apply, MvPolynomial.aeval_eq_eval]
-      simp only [P.toPresentation.pointsHomeomorphZeroSet_symm_apply_val]
+      simp [MvPolynomial.comp_aeval_apply, MvPolynomial.aeval_eq_eval,
+        P.toPresentation.pointsHomeomorphZeroSet_symm_apply_val]
     simp_rw [he]
     exact (AnalyticOnNhd.eval_mvPolynomial p _ trivial).comp ha
 
@@ -255,10 +250,12 @@ theorem IsStandardSmooth.exists_openPartialHomeomorph_points [IsStandardSmooth K
       Homeomorph.piCongrLeft_apply_apply, he, SubmersivePresentation.pointCoords_apply]
     simp only [c.symm_apply_apply]
   · intro b z hz
-    have hz' : (fun i ↦ z (c i)) ∈ e.target := by
-      simpa [OpenPartialHomeomorph.transHomeomorph_target] using hz
     let q := ContinuousLinearEquiv.piCongrLeft K (fun _ : Fin _ ↦ K) c
-    exact (ha b _ hz').comp (q.symm.analyticAt z)
+    have hq : ⇑(Homeomorph.piCongrLeft (Y := fun _ ↦ K) c).symm = ⇑q.symm := (rfl)
+    have hz' : q.symm z ∈ e.target := by
+      simpa only [OpenPartialHomeomorph.transHomeomorph_target, Set.mem_preimage, hq] using hz
+    simpa only [OpenPartialHomeomorph.transHomeomorph_symm_apply, Function.comp_apply, hq] using
+      (ha b _ hz').fun_comp (q.symm.analyticAt z)
 
 /-- **Local charts on the points of a smooth algebra.** Every point `x` of a smooth `K`-algebra
 has a chart: an open partial homeomorphism from the points, with their evaluation topology, to
@@ -292,6 +289,10 @@ theorem Smooth.exists_openPartialHomeomorph_points [Smooth K A] (x : A →ₐ[K]
     exact Set.image_subset_range j e.source
   · rw [OpenPartialHomeomorph.lift_openEmbedding_apply, heb]
   · intro a z hz
-    exact ha (algebraMap A (Localization.Away g) a) z hz
+    have hz' : z ∈ e.target := by
+      simpa only [OpenPartialHomeomorph.lift_openEmbedding_target] using hz
+    simpa only [OpenPartialHomeomorph.lift_openEmbedding_symm, Function.comp_apply, j,
+      AlgHom.comp_apply, IsScalarTower.toAlgHom_apply] using
+      ha (algebraMap A (Localization.Away g) a) z hz'
 
 end Algebra

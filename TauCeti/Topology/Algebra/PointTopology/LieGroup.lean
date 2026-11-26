@@ -8,8 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.Topology.Algebra.PointTopology.Group
+public import TauCeti.Geometry.Manifold.Algebra.TranslatedChart
+import TauCeti.Analysis.Analytic.AlgHomConvolution
 import TauCeti.Topology.Algebra.PointTopology.SubmersiveChart
-import Mathlib.Analysis.Calculus.FDeriv.Analytic
 
 /-!
 # Analytic Lie groups of points of smooth affine groups
@@ -33,7 +34,8 @@ and analytic coordinate evaluations in the resulting manifold structure.
   second edition, §3.1.
 -/
 
-open Set Filter Topology Coalgebra WithConv
+open Set Filter Topology WithConv
+open OpenPartialHomeomorph
 open scoped ContDiff Manifold
 
 namespace TauCeti.PointTopology
@@ -42,65 +44,8 @@ variable {K H : Type*} [NontriviallyNormedField K] [CommRing H] [_root_.HopfAlge
 
 local notation "G" => WithConv (H →ₐ[K] K)
 
-section Analytic
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace K E]
-  {x : E} {f g : E → WithConv (H →ₐ[K] K)}
-
-/-- Convolution preserves analyticity of the coordinate evaluations. -/
-private theorem analyticAt_eval_mul
-    (hf : ∀ a : H, AnalyticAt K (fun z ↦ (f z).ofConv a) x)
-    (hg : ∀ a : H, AnalyticAt K (fun z ↦ (g z).ofConv a) x) (a : H) :
-    AnalyticAt K (fun z ↦ (f z * g z).ofConv a) x := by
-  have heq (z : E) : (f z * g z).ofConv a =
-      ∑ i ∈ (ℛ K a).index,
-        (f z).ofConv ((ℛ K a).left i) * (g z).ofConv ((ℛ K a).right i) := by
-    have h := (ℛ K a).convMul_apply
-      (toConv (f z).ofConv.toLinearMap) (toConv (g z).ofConv.toLinearMap)
-    rw [← AlgHom.toLinearMap_convMul] at h
-    exact h
-  simp_rw [heq]
-  exact Finset.analyticAt_fun_sum _ fun i _ ↦ (hf _).mul (hg _)
-
-end Analytic
-
 variable {n : ℕ}
 local notation "V" => (Fin n → K)
-
-section Chart
-
-variable (e : OpenPartialHomeomorph (WithConv (H →ₐ[K] K)) (Fin n → K))
-
-/-- The translation of the identity chart to the point `p`. -/
-private noncomputable def translatedChart (p : G) : OpenPartialHomeomorph G V :=
-  (Homeomorph.mulLeft p⁻¹).toOpenPartialHomeomorph.trans e
-
-private theorem translatedChart_apply (p q : G) :
-    translatedChart e p q = e (p⁻¹ * q) := by
-  rw [translatedChart, OpenPartialHomeomorph.trans_apply,
-    Homeomorph.toOpenPartialHomeomorph_apply, Homeomorph.coe_mulLeft]
-
-private theorem translatedChart_symm_apply (p : G) (z : V) :
-    (translatedChart e p).symm z = p * e.symm z := by
-  rw [translatedChart, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
-    OpenPartialHomeomorph.trans_apply, ← Homeomorph.symm_toOpenPartialHomeomorph,
-    Homeomorph.toOpenPartialHomeomorph_apply, Homeomorph.mulLeft_symm, inv_inv,
-    Homeomorph.coe_mulLeft]
-
-private theorem translatedChart_target (p : G) : (translatedChart e p).target = e.target := by
-  rw [translatedChart, OpenPartialHomeomorph.trans_target,
-    Homeomorph.toOpenPartialHomeomorph_target, preimage_univ, inter_univ]
-
-/-- The atlas obtained by left translating an identity chart. -/
-@[instance_reducible]
-private noncomputable def chartedSpaceOfOne (h₁ : (1 : G) ∈ e.source) : ChartedSpace V G where
-  atlas := range (translatedChart e)
-  chartAt := translatedChart e
-  mem_chart_source p := by
-    simpa [translatedChart, OpenPartialHomeomorph.trans_source, Homeomorph.coe_mulLeft] using h₁
-  chart_mem_atlas p := mem_range_self p
-
-end Chart
 
 variable {e : OpenPartialHomeomorph (WithConv (H →ₐ[K] K)) (Fin n → K)}
   {s : H} {a : Fin n → H} {m : Fin n → ℕ}
@@ -125,18 +70,17 @@ private theorem analyticAt_translatedChart_comp
     (hx : f x ∈ (translatedChart e p).source) (hc : ContinuousAt f x)
     (hf : ∀ b : H, AnalyticAt K (fun z ↦ (f z).ofConv b) x) :
     AnalyticAt K (translatedChart e p ∘ f) x := by
-  have hx' : p⁻¹ * f x ∈ e.source := by
-    simpa [translatedChart, OpenPartialHomeomorph.trans_source, Homeomorph.coe_mulLeft] using hx
+  have hx' := (mem_translatedChart_source_iff e p (f x)).1 hx
   simp only [Function.comp_def, translatedChart_apply]
   exact analyticAt_chart_comp hs he hx' (continuousAt_const.mul hc)
-    (analyticAt_eval_mul (fun _ ↦ analyticAt_const) hf)
+    (analyticAt_eval_convMul (fun _ ↦ analyticAt_const) hf)
 
 private theorem analyticAt_eval_translatedChart_symm
     (ha : ∀ b : H, AnalyticOnNhd K (fun z ↦ (e.symm z).ofConv b) e.target)
     {p : G} {z : V} (hz : z ∈ (translatedChart e p).target) (b : H) :
     AnalyticAt K (fun w ↦ ((translatedChart e p).symm w).ofConv b) z := by
   simp only [translatedChart_symm_apply]
-  exact analyticAt_eval_mul (fun _ ↦ analyticAt_const)
+  exact analyticAt_eval_convMul (fun _ ↦ analyticAt_const)
     (fun b ↦ ha b z ((translatedChart_target e p) ▸ hz)) b
 
 section Manifold
@@ -151,8 +95,9 @@ private theorem isManifold_chartedSpaceOfOne : letI := chartedSpaceOfOne e h₁
     IsManifold 𝓘(K, V) ω G := by
   let := chartedSpaceOfOne e h₁
   refine isManifold_of_contDiffOn 𝓘(K, V) ω G fun c d hc hd ↦ ?_
-  obtain ⟨p, rfl⟩ : c ∈ range (translatedChart e) := hc
-  obtain ⟨q, rfl⟩ : d ∈ range (translatedChart e) := hd
+  simp only [atlas_chartedSpaceOfOne] at hc hd
+  obtain ⟨p, rfl⟩ := hc
+  obtain ⟨q, rfl⟩ := hd
   simp only [mfld_simps]
   refine AnalyticOnNhd.contDiffOn_of_completeSpace ?_
   intro z hz
@@ -168,8 +113,9 @@ private theorem contMDiff_eval_chartedSpaceOfOne (b : H) : letI := chartedSpaceO
   apply contMDiffAt_iff.2
   refine ⟨(continuous_eval_ofConv b).continuousAt, ?_⟩
   simp only [mfld_simps]
-  exact (analyticAt_eval_translatedChart_symm ha
-    ((translatedChart e p).map_source (mem_chart_source V p)) b).contDiffAt.contDiffWithinAt
+  have hp : p ∈ (translatedChart e p).source := by simpa using h₁
+  exact (analyticAt_eval_translatedChart_symm ha ((translatedChart e p).map_source hp)
+    b).contDiffAt.contDiffWithinAt
 
 include hs he ha in
 private theorem contMDiff_mul_chartedSpaceOfOne : letI := chartedSpaceOfOne e h₁
@@ -179,15 +125,15 @@ private theorem contMDiff_mul_chartedSpaceOfOne : letI := chartedSpaceOfOne e h�
   apply contMDiffAt_iff.2
   refine ⟨continuous_mul.continuousAt, ?_⟩
   simp only [mfld_simps]
-  have hp₁ := mem_chart_source V p.1
-  have hp₂ := mem_chart_source V p.2
+  have hp₁ : p.1 ∈ (translatedChart e p.1).source := by simpa using h₁
+  have hp₂ : p.2 ∈ (translatedChart e p.2).source := by simpa using h₁
   have hz₁ := (translatedChart e p.1).map_source hp₁
   have hz₂ := (translatedChart e p.2).map_source hp₂
   have hx : (translatedChart e p.1).symm (translatedChart e p.1 p.1) *
       (translatedChart e p.2).symm (translatedChart e p.2 p.2) ∈
         (translatedChart e (p.1 * p.2)).source := by
     rw [(translatedChart e p.1).left_inv hp₁, (translatedChart e p.2).left_inv hp₂]
-    exact mem_chart_source V (p.1 * p.2)
+    simpa using h₁
   let z₀ : V × V := (translatedChart e p.1 p.1, translatedChart e p.2 p.2)
   let f : V × V → G := fun z ↦ (translatedChart e p.1).symm z.1
   let g : V × V → G := fun z ↦ (translatedChart e p.2).symm z.2
@@ -204,64 +150,63 @@ private theorem contMDiff_mul_chartedSpaceOfOne : letI := chartedSpaceOfOne e h�
     ContinuousAt.comp (x := z₀) (f := Prod.snd)
       ((translatedChart e p.2).continuousAt_symm hz₂) continuousAt_snd
   have h := analyticAt_translatedChart_comp (f := fun z ↦ f z * g z) (x := z₀)
-    hs he hx (hc₁.mul hc₂) (analyticAt_eval_mul hf hg)
+    hs he hx (hc₁.mul hc₂) (analyticAt_eval_convMul hf hg)
+  exact h.contDiffAt.contDiffWithinAt
+
+include hs he ha in
+private theorem contMDiff_inv_chartedSpaceOfOne : letI := chartedSpaceOfOne e h₁
+    ContMDiff 𝓘(K, V) 𝓘(K, V) ω (fun p : G ↦ p⁻¹) := by
+  let := chartedSpaceOfOne e h₁
+  intro p
+  apply contMDiffAt_iff.2
+  refine ⟨continuous_inv.continuousAt, ?_⟩
+  simp only [mfld_simps]
+  have hp : p ∈ (translatedChart e p).source := by simpa using h₁
+  have hz := (translatedChart e p).map_source hp
+  have hx : ((translatedChart e p).symm (translatedChart e p p))⁻¹ ∈
+      (translatedChart e p⁻¹).source := by
+    rw [(translatedChart e p).left_inv hp]
+    simpa using h₁
+  have hinv (b : H) : AnalyticAt K
+      (fun z : V ↦ (((translatedChart e p).symm z)⁻¹).ofConv b)
+      (translatedChart e p p) := by
+    simp only [WithConv.algHom_inv_apply]
+    exact analyticAt_eval_translatedChart_symm ha hz (HopfAlgebraStruct.antipode K b)
+  have h := analyticAt_translatedChart_comp (f := fun z ↦ ((translatedChart e p).symm z)⁻¹)
+    hs he hx ((translatedChart e p).continuousAt_symm hz).inv hinv
   exact h.contDiffAt.contDiffWithinAt
 
 include hs he ha in
 private theorem lieGroup_chartedSpaceOfOne : letI := chartedSpaceOfOne e h₁
     LieGroup 𝓘(K, V) ω G := by
   let := chartedSpaceOfOne e h₁
-  exact {
-    toIsManifold := isManifold_chartedSpaceOfOne h₁ hs he ha
-    contMDiff_inv := by
-      intro p
-      apply contMDiffAt_iff.2
-      refine ⟨continuous_inv.continuousAt, ?_⟩
-      simp only [mfld_simps]
-      have hp := mem_chart_source V p
-      have hz := (translatedChart e p).map_source hp
-      have hx : ((translatedChart e p).symm (translatedChart e p p))⁻¹ ∈
-          (translatedChart e p⁻¹).source := by
-        rw [(translatedChart e p).left_inv hp]
-        exact mem_chart_source V p⁻¹
-      have hinv (b : H) : AnalyticAt K
-          (fun z : V ↦ (((translatedChart e p).symm z)⁻¹).ofConv b)
-          (translatedChart e p p) := by
-        simp only [WithConv.algHom_inv_apply]
-        exact analyticAt_eval_translatedChart_symm ha hz (HopfAlgebraStruct.antipode K b)
-      have h := analyticAt_translatedChart_comp (f := fun z ↦ ((translatedChart e p).symm z)⁻¹)
-        hs he hx ((translatedChart e p).continuousAt_symm hz).inv hinv
-      exact h.contDiffAt.contDiffWithinAt
-    contMDiff_mul := contMDiff_mul_chartedSpaceOfOne h₁ hs he ha }
+  exact
+    { toIsManifold := isManifold_chartedSpaceOfOne h₁ hs he ha
+      contMDiff_inv := contMDiff_inv_chartedSpaceOfOne h₁ hs he ha
+      contMDiff_mul := contMDiff_mul_chartedSpaceOfOne h₁ hs he ha }
 
 end Manifold
 
-public section
+section Smooth
 
-/-- **Analytic Lie group of points of a smooth affine group.** Over a complete nontrivially
-normed field, a smooth commutative Hopf algebra has a finite-dimensional analytic Lie group of
-points for the evaluation topology and convolution group law. Every coordinate evaluation is
-analytic in the same manifold structure. -/
-theorem exists_lieGroup [CompleteSpace K] [Algebra.Smooth K H] :
-    ∃ (d : ℕ) (C : ChartedSpace (Fin d → K) G), letI := C
-      LieGroup 𝓘(K, Fin d → K) ω G ∧
-        ∀ a : H, ContMDiff 𝓘(K, Fin d → K) 𝓘(K) ω (fun p : G ↦ p.ofConv a) := by
+variable (K H) [CompleteSpace K] [Algebra.Smooth K H]
+
+private theorem exists_identityChart :
+    ∃ (n : ℕ) (e : OpenPartialHomeomorph G (Fin n → K)), (1 : G) ∈ e.source ∧
+      (∃ (s : H) (a : Fin n → H) (m : Fin n → ℕ),
+        ∀ p ∈ e.source, p.ofConv s ≠ 0 ∧ ∀ i, e p i = p.ofConv (a i) / p.ofConv s ^ m i) ∧
+      ∀ b : H, AnalyticOnNhd K (fun z ↦ (e.symm z).ofConv b) e.target := by
   obtain ⟨n, E, s, b, h₁, -, hsource, he, ha⟩ :=
     Algebra.Smooth.exists_openPartialHomeomorph_points (1 : G).ofConv
   let j : G ≃ₜ (H →ₐ[K] K) := isHomeomorph_ofConv.homeomorph
   have hj (p : G) : j p = p.ofConv := IsHomeomorph.homeomorph_apply ..
-  let e := j.toOpenPartialHomeomorph.trans E
-  have h₁' : (1 : G) ∈ e.source := by
-    simpa [e, OpenPartialHomeomorph.trans_source, hj] using h₁
-  have hs (p : G) (hp : p ∈ e.source) : p.ofConv s ≠ 0 :=
-    isUnit_iff_ne_zero.1 (hsource (hj p ▸ hp.2))
+  let e := j.transOpenPartialHomeomorph E
+  have h₁' : (1 : G) ∈ e.source := by simpa [e, hj] using h₁
+  have hs (p : G) (hp : p ∈ e.source) : p.ofConv s ≠ 0 := by
+    apply isUnit_iff_ne_zero.1 (hsource ?_)
+    simpa [e, hj] using hp
   have ha' (a : H) : AnalyticOnNhd K (fun z ↦ (e.symm z).ofConv a) e.target := by
-    have hsymm (z : Fin n → K) : (e.symm z).ofConv = E.symm z := by
-      simp only [e, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
-        OpenPartialHomeomorph.trans_apply, ← Homeomorph.symm_toOpenPartialHomeomorph,
-        Homeomorph.toOpenPartialHomeomorph_apply, ← hj, Homeomorph.apply_symm_apply]
-    intro z hz
-    simpa only [hsymm] using ha a z hz.1
+    simpa [e, ← hj] using ha a
   classical
   choose m a hm using fun i ↦ IsLocalization.Away.surj s (b i)
   have he' (p : G) (hp : p ∈ e.source) (i : Fin n) :
@@ -273,13 +218,69 @@ theorem exists_lieGroup [CompleteSpace K] [Algebra.Smooth K H] :
     obtain ⟨y, hy⟩ := hmem
     have hy' (c : H) : y (algebraMap H (Localization.Away s) c) = p.ofConv c :=
       DFunLike.congr_fun hy c
-    simp only [e, OpenPartialHomeomorph.trans_apply, Homeomorph.toOpenPartialHomeomorph_apply, hj]
+    simp only [e, Homeomorph.transOpenPartialHomeomorph_apply, Function.comp_apply, hj]
     have hforward : E p.ofConv i = y (b i) := (congrArg (fun z ↦ E z i) hy).symm.trans (he y i)
     rw [hforward, eq_div_iff (pow_ne_zero _ (hs p hp)), ← hy' s, ← hy' (a i)]
     simpa only [map_mul, map_pow] using congrArg y (hm i)
-  exact ⟨n, chartedSpaceOfOne e h₁', lieGroup_chartedSpaceOfOne h₁' hs he' ha',
-    contMDiff_eval_chartedSpaceOfOne h₁' ha'⟩
+  exact ⟨n, e, h₁', ⟨s, a, m, fun p hp ↦ ⟨hs p hp, he' p hp⟩⟩, ha'⟩
+
+public section
+
+/-- The number of local parameters used in the analytic charts of the group of points. -/
+noncomputable def chartDimension : ℕ := (exists_identityChart K H).choose
+
+/-- The chosen chart at the identity, obtained from smooth local parameters. -/
+noncomputable def identityChart : OpenPartialHomeomorph G (Fin (chartDimension K H) → K) :=
+  (exists_identityChart K H).choose_spec.choose
+
+/-- The chosen chart at the identity contains the identity in its source. -/
+theorem one_mem_identityChart_source : (1 : G) ∈ (identityChart K H).source :=
+  (exists_identityChart K H).choose_spec.choose_spec.1
+
+/-- The coordinates of the identity chart are evaluations of fractions with a common
+denominator element that is nonzero on the chart source. -/
+theorem identityChart_coordinates :
+    ∃ (s : H) (a : Fin (chartDimension K H) → H) (m : Fin (chartDimension K H) → ℕ),
+      ∀ p ∈ (identityChart K H).source, p.ofConv s ≠ 0 ∧
+        ∀ i, identityChart K H p i = p.ofConv (a i) / p.ofConv s ^ m i :=
+  (exists_identityChart K H).choose_spec.choose_spec.2.1
+
+/-- Each coordinate evaluation pulled back by the identity chart is analytic on its target. -/
+theorem analyticOnNhd_eval_identityChart_symm (b : H) :
+    AnalyticOnNhd K (fun z ↦ ((identityChart K H).symm z).ofConv b) (identityChart K H).target :=
+  (exists_identityChart K H).choose_spec.choose_spec.2.2 b
+
+/-- The analytic atlas of the smooth affine group, obtained by left translation of the
+chosen identity chart. Use `letI := chartedSpace K H` to install it locally. -/
+@[instance_reducible]
+noncomputable def chartedSpace : ChartedSpace (Fin (chartDimension K H) → K) G :=
+  (identityChart K H).chartedSpaceOfOne (one_mem_identityChart_source K H)
+
+/-- Every chart in the chosen charted space is the left translate at its base point of the
+chosen identity chart. -/
+@[simp]
+theorem chartAt_eq_translatedChart (p : G) : letI := chartedSpace K H
+    chartAt (Fin (chartDimension K H) → K) p = (identityChart K H).translatedChart p :=
+  chartAt_chartedSpaceOfOne _ (one_mem_identityChart_source K H) p
+
+/-- The points of a smooth commutative Hopf algebra form an analytic Lie group in the
+chosen atlas, for the evaluation topology and convolution group law. -/
+scoped instance lieGroup : letI := chartedSpace K H
+    LieGroup 𝓘(K, Fin (chartDimension K H) → K) ω G := by
+  obtain ⟨s, a, m, h⟩ := identityChart_coordinates K H
+  exact lieGroup_chartedSpaceOfOne (one_mem_identityChart_source K H)
+    (fun p hp ↦ (h p hp).1) (fun p hp ↦ (h p hp).2)
+    (analyticOnNhd_eval_identityChart_symm K H)
+
+/-- Every coordinate evaluation is analytic in the chosen charted space of smooth affine
+group points. -/
+theorem contMDiff_eval (b : H) : letI := chartedSpace K H
+    ContMDiff 𝓘(K, Fin (chartDimension K H) → K) 𝓘(K) ω (fun p : G ↦ p.ofConv b) :=
+  contMDiff_eval_chartedSpaceOfOne (one_mem_identityChart_source K H)
+    (analyticOnNhd_eval_identityChart_symm K H) b
 
 end
+
+end Smooth
 
 end TauCeti.PointTopology
