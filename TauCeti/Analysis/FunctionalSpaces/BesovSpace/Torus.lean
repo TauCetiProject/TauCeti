@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import TauCeti.Analysis.Fourier.Torus.LittlewoodPaley
+import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.Bernstein
@@ -83,6 +84,10 @@ coefficients are recovered from the blocks: `c(n) = ∑_{j ≤ N} (Δⱼ c)^(n)`
   uniformly in `j` (`TauCeti.UnitAddTorus.exists_norm_littlewoodPaleyBlockLp_mul_le`, from
   `TauCeti.UnitAddTorus.exists_eLpNorm_littlewoodPaleyBlock_le`), so `2^{js} ‖Δ'ⱼ c‖_p` is at most
   a constant times a window sum of the `2^{ks} ‖Δₖ c‖_p`.
+* `TauCeti.UnitAddTorus.norm_littlewoodPaleyBlockLp_le_of_mul_eq`: a block whose coefficients are
+  those of a Schwartz multiplier `σ` applied to `f ∈ Lᵖ(𝕋ᵈ)` is bounded by `‖𝓕⁻ σ‖₁ ‖f‖_p`, so the
+  blocks of the Fourier coefficients of `f ∈ Lᵖ(𝕋ᵈ)` are bounded by `‖f‖_p`, uniformly in `j` and
+  `p` (`TauCeti.UnitAddTorus.exists_norm_littlewoodPaleyBlockLp_mFourierCoeff_le`).
 * `TauCeti.UnitAddTorus.BesovSpace.inclusion` and `TauCeti.UnitAddTorus.BesovSpace.inclusionOfLT`:
   the inclusions `B^s_{p,q}(𝕋ᵈ) ⊆ B^{s'}_{p,q'}(𝕋ᵈ)` for `s' ≤ s` and `q ≤ q'`, of norm at most
   one, and for `s' < s` and arbitrary `q, q'`, as continuous linear maps.
@@ -112,7 +117,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Topology
-open scoped lp ENNReal NNReal
+open scoped lp ENNReal NNReal FourierTransform SchwartzMap
 
 namespace TauCeti.UnitAddTorus
 
@@ -343,6 +348,52 @@ theorem exists_norm_littlewoodPaleyBlockLp_mul_le (φ' : ContDiffBump (0 : Eucli
     eLpNorm_congr_ae (coeFn_littlewoodPaleyBlockLp_ae_eq 2 p k c)] at h
   simpa [Lp.norm_def, ENNReal.toReal_mul] using
     ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top (Lp.eLpNorm_ne_top _)) h
+
+/-! ### Schwartz multipliers on the blocks -/
+
+/-- **Schwartz multipliers on the periodic blocks.** If the coefficients `ψⱼ(n) c(n)` of the block
+`Δⱼ c` are the multiplied coefficients `σ(n) f̂(n)` of a function `f ∈ Lᵖ(𝕋ᵈ)`, `1 ≤ p ≤ ∞`, for a
+Schwartz function `σ` on `ℝᵈ`, then `‖Δⱼ c‖_p ≤ ‖𝓕⁻ σ‖_{L¹(ℝᵈ)} ‖f‖_p`. -/
+theorem norm_littlewoodPaleyBlockLp_le_of_mul_eq {p : ℝ≥0∞} [Fact (1 ≤ p)] {c : (d → ℤ) → ℂ}
+    (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) (j : ℕ) (f : Lp ℂ p (volume : Measure (UnitAddTorus d)))
+    (h : ∀ n, (φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n =
+      σ (latticePoint n) * mFourierCoeff f n) :
+    ‖littlewoodPaleyBlockLp φ p j c‖ ≤
+      (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * ‖f‖ := by
+  -- `ψⱼ` vanishes outside a finite set of frequencies `S`, on which the block is a finite sum.
+  set S := (finite_setOf_norm_latticePoint_le (ι := d) (2 ^ j * φ.rOut)).toFinset
+  have hS (n : d → ℤ) (hn : n ∉ S) : φ.inhomogeneousLittlewoodPaley j (latticePoint n) = 0 :=
+    inhomogeneousLittlewoodPaley_eq_zero_of_notMem j hn
+  have heq : (fun x ↦ ∑ n ∈ S,
+      (φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n * mFourier n x) =
+      fun x ↦ ∑' n : d → ℤ, σ (latticePoint n) * mFourierCoeff f n * mFourier n x := by
+    funext x
+    rw [tsum_eq_sum fun n hn ↦ by rw [← h n, hS n hn, Complex.ofReal_zero, zero_mul, zero_mul]]
+    exact Finset.sum_congr rfl fun n _ ↦ by rw [h n]
+  have hb := eLpNorm_tsum_mul_mFourierCoeff_mul_mFourier_le σ Fact.out (Lp.memLp f)
+  rw [← heq, ← eLpNorm_congr_ae (coeFn_littlewoodPaleyBlockLp (p := p) hS c)] at hb
+  rw [Lp.norm_def, Lp.norm_def]
+  calc (eLpNorm (littlewoodPaleyBlockLp φ p j c) p volume).toReal
+      ≤ (ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) *
+          eLpNorm f p volume).toReal :=
+        ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (Lp.eLpNorm_ne_top f)) hb
+    _ = _ := by
+        rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ norm_nonneg _)]
+
+variable (φ) in
+/-- **The periodic blocks are bounded on `Lᵖ(𝕋ᵈ)`.** There is `C ≥ 0`, depending only on `φ`,
+such that for every `1 ≤ p ≤ ∞`, every `j` and every `f ∈ Lᵖ(𝕋ᵈ)`, the block `Δⱼ f̂` of the Fourier
+coefficients of `f` satisfies `‖Δⱼ f̂‖_p ≤ C ‖f‖_p`. -/
+theorem exists_norm_littlewoodPaleyBlockLp_mFourierCoeff_le :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (p : ℝ≥0∞) [Fact (1 ≤ p)] (j : ℕ)
+      (f : Lp ℂ p (volume : Measure (UnitAddTorus d))),
+      ‖littlewoodPaleyBlockLp φ p j (mFourierCoeff f)‖ ≤ C * ‖f‖ := by
+  obtain ⟨C, hC⟩ := φ.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le 0
+  refine ⟨C, C.coe_nonneg, fun p _ j f ↦ ?_⟩
+  refine (norm_littlewoodPaleyBlockLp_le_of_mul_eq (φ.inhomogeneousLittlewoodPaleySchwartz j) j f
+    fun n ↦ by simp).trans ?_
+  gcongr
+  simpa [ContDiffBump.coe_inhomogeneousLittlewoodPaleySchwartz] using hC j
 
 /-! ### Bernstein's inequality for the blocks -/
 

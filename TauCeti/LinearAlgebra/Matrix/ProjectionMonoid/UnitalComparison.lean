@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Prod
-public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Unitization
+public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Unitization.Basic
 
 /-!
 # `K₀` through the unitization agrees with `K₀` of a unital algebra

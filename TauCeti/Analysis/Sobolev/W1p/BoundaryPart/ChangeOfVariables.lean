@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
+import TauCeti.Dynamics.Ergodic.MeasurePreserving
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -64,6 +65,12 @@ on the line `y = 0` with the shear creates a jump of the gradient across that li
   `TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_iff` for homeomorphisms.
 * `TauCeti.W1p.compMeasurePreservingL_graphFlattening_mem_w1pVanishingOnSubmodule_iff`: for
   `p < ∞`, invariance of `W^{1,p}_Γ` under the shears flattening Lipschitz graphs.
+
+## References
+
+* S. Bauer, D. Pauly, M. Schomburg, *The Maxwell compactness property in bounded weak Lipschitz
+  domains with mixed boundary conditions*, SIAM J. Math. Anal. 48 (2016), Lemma 3.1 and
+  Appendix A (boundary parts are transported by bi-Lipschitz charts).
 -/
 
 public section
@@ -200,8 +207,7 @@ theorem W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule (hΦc : ContDiff 
   refine map_mem_w1pVanishingOnSubmodule_of_compOfIsProperMap hΦc hΦp _ (fun φ => ?_) hu
   refine W1p.ext_value (Lp.ext ?_)
   filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ hUV hΦl hM _,
-    (hUV ▸ hΦ.restrict_preimage V.isOpen.measurableSet :
-      MeasurePreserving Φ (mu.restrict U) (nu.restrict V)).quasiMeasurePreserving.ae
+    (hΦ.restrict_of_preimage_eq V.isOpen.measurableSet hUV).quasiMeasurePreserving.ae
       (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := nu) (p := p) (le_top : V ≤ ⊤) φ),
     W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) (le_top : U ≤ ⊤) _]
     with x h1 h2 h3
@@ -230,8 +236,7 @@ theorem W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_locallyLipschi
     ((hΦp.isCompact_preimage φ.hasCompactSupport.isCompact).of_isClosed_subset isClosed_closure hts)
     (((hφ.preimage Φ).mono_left hts).mono_right (hΦp.continuous.closure_preimage_subset Γ)) ?_
   filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ hUV hΦl hM _,
-    (hUV ▸ hΦ.restrict_preimage V.isOpen.measurableSet :
-      MeasurePreserving Φ (mu.restrict U) (nu.restrict V)).quasiMeasurePreserving.ae
+    (hΦ.restrict_of_preimage_eq V.isOpen.measurableSet hUV).quasiMeasurePreserving.ae
       (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := nu) (p := p) (le_top : V ≤ ⊤) φ)]
     with x h1 h2
   rw [h1, h2, Function.comp_apply]
