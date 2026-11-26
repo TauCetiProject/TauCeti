@@ -63,14 +63,15 @@ of the expressions for it and its inverse. -/
   exact Finsupp.sum_single_index (by simp)
 
 /-- Adding two weight families adds their Mellin expressions. -/
-theorem dirichletFamilyRieszRemainderMellin_add (w v : PrimitiveDirichletCharacter →₀ ℝ) :
+@[simp] theorem dirichletFamilyRieszRemainderMellin_add (w v : PrimitiveDirichletCharacter →₀ ℝ) :
     dirichletFamilyRieszRemainderMellin (w + v) =
       dirichletFamilyRieszRemainderMellin w + dirichletFamilyRieszRemainderMellin v := by
   unfold dirichletFamilyRieszRemainderMellin
   exact Finsupp.sum_add_index' (by simp) fun _ _ _ ↦ by rw [ofReal_add, add_div, add_smul]
 
 /-- Scaling a weight family by a real number scales its Mellin expression. -/
-theorem dirichletFamilyRieszRemainderMellin_smul (a : ℝ) (w : PrimitiveDirichletCharacter →₀ ℝ) :
+@[simp] theorem dirichletFamilyRieszRemainderMellin_smul
+    (a : ℝ) (w : PrimitiveDirichletCharacter →₀ ℝ) :
     dirichletFamilyRieszRemainderMellin (a • w) = a • dirichletFamilyRieszRemainderMellin w := by
   funext s
   rw [Pi.smul_apply, Complex.real_smul, dirichletFamilyRieszRemainderMellin_apply,
@@ -153,15 +154,16 @@ zero multiplicities for the character and its inverse. -/
   rw [dirichletFamilyZeroMultiplicity_def, Finsupp.sum_single_index (by simp)]
 
 /-- Adding two weight families adds their weighted zero multiplicities. -/
-theorem dirichletFamilyZeroMultiplicity_add (w v : PrimitiveDirichletCharacter →₀ ℝ) (ρ : ℂ) :
+@[simp] theorem dirichletFamilyZeroMultiplicity_add
+    (w v : PrimitiveDirichletCharacter →₀ ℝ) (ρ : ℂ) :
     dirichletFamilyZeroMultiplicity (w + v) ρ =
       dirichletFamilyZeroMultiplicity w ρ + dirichletFamilyZeroMultiplicity v ρ := by
   simp only [dirichletFamilyZeroMultiplicity_def]
   exact Finsupp.sum_add_index' (by simp) (by simp [add_div, add_mul])
 
 /-- Scaling a weight family by a real number scales its weighted zero multiplicity. -/
-theorem dirichletFamilyZeroMultiplicity_smul (a : ℝ) (w : PrimitiveDirichletCharacter →₀ ℝ)
-    (ρ : ℂ) :
+@[simp] theorem dirichletFamilyZeroMultiplicity_smul
+    (a : ℝ) (w : PrimitiveDirichletCharacter →₀ ℝ) (ρ : ℂ) :
     dirichletFamilyZeroMultiplicity (a • w) ρ = a * dirichletFamilyZeroMultiplicity w ρ := by
   rw [dirichletFamilyZeroMultiplicity_def, dirichletFamilyZeroMultiplicity_def,
     Finsupp.sum_smul_index (by simp), Finsupp.mul_sum]
@@ -273,11 +275,9 @@ theorem dirichletFamilyRieszRemainderMellin_simplePole
   obtain ⟨m, hm⟩ := WithTop.ne_top_iff_exists.mp hp.ne_top
   have hlo := neg_one_le_meromorphicOrderAt_dirichletFamilyRieszRemainderMellin w h₀
   rw [← hm] at hp hlo ⊢
-  rw [← WithTop.coe_zero, WithTop.coe_lt_coe] at hp
-  rw [← WithTop.coe_one, ← WithTop.LinearOrderedAddCommGroup.coe_neg] at hlo ⊢
-  rw [WithTop.coe_le_coe] at hlo
-  rw [WithTop.coe_eq_coe]
-  omega
+  have hm_lt : m < 0 := by exact_mod_cast hp
+  have hm_le : m ≤ -1 := by omega
+  exact le_antisymm (WithTop.coe_le_coe.mpr hm_le) hlo
 
 /-- Every pole of the family expression lies strictly left of `Re s = 1`. -/
 theorem re_lt_one_of_dirichletFamilyRieszRemainderMellin_pole

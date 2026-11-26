@@ -94,10 +94,8 @@ theorem neg_one_le_meromorphicOrderAt_rieszRemainderMellin_LFunction {ρ : ℂ} 
   · rw [(χ.rieszRemainderMellin_LFunction_simplePole h₀ h).1]
   · have hnonneg := not_lt.mp fun hp ↦ h
       ((χ.meromorphicOrderAt_rieszRemainderMellin_LFunction_neg_iff h₀).mp hp)
-    have hneg : (-1 : WithTop ℤ) ≤ 0 := by
-      rw [← WithTop.coe_one, ← WithTop.LinearOrderedAddCommGroup.coe_neg,
-        ← WithTop.coe_zero, WithTop.coe_le_coe]
-      decide
+    have hneg : (-1 : WithTop ℤ) ≤ 0 :=
+      WithTop.coe_le_coe.mpr (neg_one_lt_zero : (-1 : ℤ) < 0).le
     exact hneg.trans hnonneg
 
 /-- Away from `0`, the residue of the Riesz remainder Mellin expression is the zero
