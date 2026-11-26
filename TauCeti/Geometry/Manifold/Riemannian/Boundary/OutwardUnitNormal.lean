@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Boundary.TangentSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Unit
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.NormalBundle
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 
 /-!
 # The outward unit normal along the boundary
@@ -50,7 +51,8 @@ directions, boundary defining functions and the second fundamental form are read
 * `TauCeti.outwardUnitNormal`: the outward unit normal at a boundary point.
 * `TauCeti.norm_outwardUnitNormal`, `TauCeti.isOutwardPointing_outwardUnitNormal` and
   `TauCeti.inner_outwardUnitNormal_mfderiv_subtypeVal`: its three defining laws.
-* `TauCeti.eq_outwardUnitNormal_iff`: the three laws characterize it.
+* `TauCeti.eq_outwardUnitNormal_iff`: the three laws characterize it, and
+  `TauCeti.eq_outwardUnitNormal_iff_of_dim_one` drops orthogonality in dimension one.
 * `TauCeti.orthogonalNormalSpace_subtypeVal_boundary_eq_span`: it spans the normal space.
 * `TauCeti.mgradient_neg_chartAt_normal_ne_zero`: at a boundary point, minus the normal coordinate
   of a preferred chart has nonzero gradient.
@@ -235,6 +237,23 @@ theorem eq_outwardUnitNormal_iff {q : (𝓡∂ (n + 1)).boundary M}
     v = outwardUnitNormal q ↔ IsOutwardUnitNormal q v :=
   ⟨fun hv ↦ hv ▸ isOutwardUnitNormal_outwardUnitNormal q,
     fun hv ↦ eq_of_isOutwardUnitNormal hv (isOutwardUnitNormal_outwardUnitNormal q)⟩
+
+section DimOne
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (0 + 1)) M]
+  [IsManifold (𝓡∂ (0 + 1)) 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (0 + 1)) x)]
+
+/-- On a one-dimensional manifold with boundary, a tangent vector at a boundary point is the
+outward unit normal exactly when it has norm one and points outward: the boundary is
+zero-dimensional, so orthogonality to its tangent vectors is automatic. -/
+theorem eq_outwardUnitNormal_iff_of_dim_one {q : (𝓡∂ (0 + 1)).boundary M}
+    {v : TangentSpace (𝓡∂ (0 + 1)) (q : M)} :
+    v = outwardUnitNormal q ↔ ‖v‖ = 1 ∧ IsOutwardPointing (q : M) v := by
+  refine eq_outwardUnitNormal_iff.trans
+    ⟨fun h ↦ ⟨h.norm_eq_one, h.isOutwardPointing⟩, fun ⟨hv, ho⟩ ↦ ⟨hv, ho, fun w ↦ ?_⟩⟩
+  rw [Subsingleton.elim w 0, map_zero, inner_zero_right]
+
+end DimOne
 
 /-- **The outward unit normal in a chart**: for every chart of the `C¹` maximal atlas whose source
 contains the boundary point `q`, the outward unit normal at `q` is the unit gradient of minus the

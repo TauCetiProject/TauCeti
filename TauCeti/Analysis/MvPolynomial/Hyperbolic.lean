@@ -15,8 +15,6 @@ public import Mathlib.Topology.Order.IntermediateValue
 public import TauCeti.FieldTheory.RealClosure.AbstractRolle
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.LineRestriction
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 
 /-!
 # Hyperbolic polynomials and their Gårding cones
@@ -68,8 +66,10 @@ logarithmic derivative `q'(t) / q(t) = ∑ⱼ 1 / (t - rⱼ)` is positive.
 * `MvPolynomial.IsHyperbolic.sum_smul_pderiv`,
   `MvPolynomial.IsHyperbolic.gardingCone_subset_sum_smul_pderiv`: the directional derivative
   `D_a p` is hyperbolic in the direction `a`, with a larger Gårding cone.
-* `MvPolynomial.isHyperbolic_esymm_card`, `MvPolynomial.gardingCone_esymm_card`: `σ_n` is
-  hyperbolic in the direction `e`, with the open positive orthant as Gårding cone.
+* `MvPolynomial.isHyperbolic_smul_left_iff`: hyperbolicity is unchanged by a positive scalar.
+
+The elementary symmetric polynomials `σ_k` and their cones `Γ_k` are treated in
+`TauCeti.Analysis.MvPolynomial.Hyperbolic.Esymm`.
 
 ## References
 
@@ -157,6 +157,26 @@ theorem gardingCone_smul_right {s : ℝ} (hs : 0 < s) : gardingCone p (s • a) 
   · simpa [smul_smul, hs.ne'] using hx (t / s) (div_nonneg ht hs.le)
   · simpa [smul_smul] using hx _ (mul_nonneg ht hs.le)
 
+/-- The Gårding cone of a nonzero constant is the whole space. -/
+@[simp]
+theorem gardingCone_C {c : ℝ} (hc : c ≠ 0) (a : σ → ℝ) :
+    gardingCone (C c : MvPolynomial σ ℝ) a = Set.univ := by
+  ext x
+  simpa [mem_gardingCone] using fun _ _ ↦ hc
+
+/-- The Gårding cone of `1` is the whole space. -/
+@[simp]
+theorem gardingCone_one (a : σ → ℝ) : gardingCone (1 : MvPolynomial σ ℝ) a = Set.univ := by
+  rw [← C_1]
+  exact gardingCone_C one_ne_zero a
+
+/-- The Gårding cone of a numeral `n ≥ 2` is the whole space. -/
+@[simp]
+theorem gardingCone_ofNat (n : ℕ) [n.AtLeastTwo] (a : σ → ℝ) :
+    gardingCone (ofNat(n) : MvPolynomial σ ℝ) a = Set.univ := by
+  rw [← map_ofNat C n]
+  exact gardingCone_C (OfNat.ofNat_ne_zero n) a
+
 /-- For a homogeneous polynomial with `p(a) ≠ 0`, a point `x` lies in the Gårding cone `Γ(p, a)`
 if and only if `p` does not vanish on the closed segment from `a` to `x`. -/
 theorem mem_gardingCone_iff_forall_mem_segment (hp : p.IsHomogeneous m) (ha : eval a p ≠ 0) :
@@ -219,7 +239,19 @@ theorem mem_gardingCone_iff_forall_mem_roots (hp : p.IsHomogeneous m) (ha : eval
     eval_aeval_C_add_C_mul_X]
   exact ⟨fun h t ht ↦ not_le.1 fun ht' ↦ h t ht' ht, fun h t ht h0 ↦ (h t h0).not_ge ht⟩
 
+/-- A positive constant is hyperbolic of degree `0` in every direction. -/
+theorem isHyperbolic_C {c : ℝ} (hc : 0 < c) (a : σ → ℝ) :
+    IsHyperbolic (C c : MvPolynomial σ ℝ) 0 a where
+  isHomogeneous := isHomogeneous_C σ c
+  eval_pos := by simpa using hc
+  splits _ := by simp
+
 namespace IsHyperbolic
+
+/-- A hyperbolic polynomial is nonzero. -/
+theorem ne_zero (hp : IsHyperbolic p m a) : p ≠ 0 := by
+  rintro rfl
+  simpa using hp.eval_pos
 
 /-- The restriction of a hyperbolic polynomial of degree `m` to a line in its direction has
 exactly `m` real roots, counted with multiplicity. -/
@@ -294,33 +326,11 @@ theorem gardingCone_subset_sum_smul_pderiv [Fintype σ] (hp : IsHyperbolic p m a
 
 end IsHyperbolic
 
-section Esymm
-
-variable [Fintype σ]
-
-/-- The elementary symmetric polynomial `σ_n = X₁ ⋯ X_n` in all `n` variables is hyperbolic of
-degree `n` in the direction `e = (1, …, 1)`: `σ_n(x + t • e) = ∏ᵢ (xᵢ + t)`. -/
-theorem isHyperbolic_esymm_card :
-    IsHyperbolic (esymm σ ℝ (Fintype.card σ)) (Fintype.card σ) 1 where
-  isHomogeneous := isHomogeneous_esymm _
-  eval_pos := by simp [esymm_card]
-  splits x := by
-    rw [esymm_card, map_prod]
-    exact Polynomial.Splits.prod fun i _ ↦ Polynomial.Splits.of_natDegree_le_one <| by
-      simp [add_comm]
-
-/-- The Gårding cone of `σ_n = X₁ ⋯ X_n` in the direction `e = (1, …, 1)` is the open positive
-orthant. -/
-theorem gardingCone_esymm_card :
-    gardingCone (esymm σ ℝ (Fintype.card σ)) 1 = {x | ∀ i, 0 < x i} := by
-  ext x
-  simp only [mem_gardingCone, esymm_card, map_prod, eval_X, Pi.add_apply, Pi.smul_apply,
-    Pi.one_apply, smul_eq_mul, mul_one, Set.mem_ofPred_eq]
-  refine ⟨fun h i ↦ ?_, fun h t ht ↦ Finset.prod_ne_zero_iff.2 fun i _ ↦ ?_⟩
-  · by_contra! hi
-    exact h (-x i) (by linarith) (Finset.prod_eq_zero (Finset.mem_univ i) (by ring))
-  · linarith [h i]
-
-end Esymm
+/-- Multiplying the polynomial by a positive constant does not change hyperbolicity. -/
+@[simp]
+theorem isHyperbolic_smul_left_iff {c : ℝ} (hc : 0 < c) :
+    IsHyperbolic (c • p) m a ↔ IsHyperbolic p m a := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.smul_left hc⟩
+  simpa [smul_smul, inv_mul_cancel₀ hc.ne'] using h.smul_left (inv_pos.2 hc)
 
 end MvPolynomial

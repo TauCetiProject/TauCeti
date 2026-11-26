@@ -26,7 +26,8 @@ when `s > k + n / 2` (`TemperedDistribution.MemSobolev.exists_zeroAtInftyContinu
 bounded operators.
 
 * `BesselPotentialSpace.toZeroAtInfty`: the **Sobolev embedding** `H^s(E, F) →L[ℂ] C₀(E, F)` for
-  `s > n / 2`, sending `u` to its continuous representative. Its image is `C^k` for
+  `s > n / 2`, sending `u` to its continuous representative, and `BesselPotentialSpace.toBCF` is
+  the same embedding into the bounded continuous functions. Its image is `C^k` for
   `s > k + n / 2`, with derivatives of order at most `k` bounded by a constant times `‖u‖_{H^s}`.
   It turns multiplication by a Schwartz function `φ` into pointwise multiplication
   (`BesselPotentialSpace.toZeroAtInfty_smulLeftCLM_apply`). A continuous function representing
@@ -58,7 +59,7 @@ public section
 noncomputable section
 
 open MeasureTheory Module Set TemperedDistribution Filter TopologicalSpace
-open scoped SchwartzMap BesselPotentialSpace ZeroAtInfty Distributions
+open scoped SchwartzMap BesselPotentialSpace ZeroAtInfty Distributions BoundedContinuousFunction
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
@@ -139,6 +140,19 @@ theorem norm_le_norm_toZeroAtInfty_of_ae_eq (h0 : 0 ≤ s) {u : H^{s}(E, F)} {g 
     (Continuous.ae_eq_iff_eq volume (toZeroAtInfty hs u).continuous hg).1
       ((coeFn_inclusionLp_ae_eq_toZeroAtInfty h0 u).symm.trans hu)
   exact h ▸ ZeroAtInftyContinuousMap.norm_coe_le_norm (toZeroAtInfty hs u) x
+
+variable (hs) in
+/-- The **Sobolev embedding** of `H^s(E, F)`, `s > dim E / 2`, into the bounded continuous
+functions: `toZeroAtInfty` followed by the inclusion of `C₀(E, F)` into `E →ᵇ F`. -/
+def toBCF : H^{s}(E, F) →L[ℂ] E →ᵇ F :=
+  (ZeroAtInftyContinuousMap.toBCFₗᵢ ℂ).toContinuousLinearMap.comp (toZeroAtInfty hs)
+
+/-- The Sobolev embedding into bounded continuous functions is the continuous representative given
+by `toZeroAtInfty`. -/
+@[simp]
+theorem coe_toBCF (u : H^{s}(E, F)) : ⇑(toBCF hs u) = ⇑(toZeroAtInfty hs u) := by
+  ext x
+  simp [toBCF]
 
 /-- The tempered distribution `u ∈ H^s`, `s > dim E / 2`, is integration against its Sobolev
 embedding. -/

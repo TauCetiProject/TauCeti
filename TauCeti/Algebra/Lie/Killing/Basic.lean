@@ -34,6 +34,17 @@ its Killing form is zero, and a zero form is nondegenerate only on the zero modu
   Killing form is free and finite over the base ring.
 * `TauCeti.exists_killingForm_lie_ne_zero`: on a nontrivial Killing Lie algebra the Killing form
   does not vanish on all brackets.
+* `LieIdeal.killingForm_eq_zero_of_disjoint`: the Killing form vanishes between Lie ideals with
+  trivial intersection, so it is additive over sums from pairwise disjoint ideals
+  (`LieIdeal.killingForm_sum_sum`).
+* `LieIdeal.killingForm_apply_apply_coe`: on a Lie ideal of a finite free Lie algebra over a
+  principal ideal domain, the Killing form of the ambient algebra restricts to that of the ideal.
+* `LieIdeal.forall_killingForm_neg_iff`: on a Lie ideal of a finite-dimensional Lie algebra over
+  an ordered field, the Killing form of the ambient algebra is negative definite exactly when the
+  ideal's own Killing form is.
+* `LieEquiv.forall_killingForm_map_neg_iff`: an equivalence of Lie algebras over an ordered field
+  carries a Lie ideal on which the Killing form is negative definite to one on which the Killing
+  form of the target is negative definite, and conversely.
 
 ## References
 
@@ -98,3 +109,68 @@ theorem exists_killingForm_lie_ne_zero [Nontrivial L] [IsKilling R L] :
   exact not_subsingleton L (subsingleton_of_isKilling_of_isLieAbelian R L)
 
 end TauCeti
+
+namespace LieIdeal
+
+open LieAlgebra LieModule
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- The Killing form vanishes between two Lie ideals with trivial intersection. -/
+theorem killingForm_eq_zero_of_disjoint {I J : LieIdeal R L} (h : Disjoint I J) {x y : L}
+    (hx : x ∈ I) (hy : y ∈ J) : killingForm R L x y = 0 := by
+  have : toEnd R L L x ∘ₗ toEnd R L L y = 0 := by
+    ext z
+    rw [LinearMap.comp_apply, toEnd_apply_apply, toEnd_apply_apply, LinearMap.zero_apply]
+    exact lie_eq_zero_of_disjoint h hx (lie_mem_left R L J y z hy)
+  rw [killingForm, traceForm_apply_apply, this, map_zero]
+
+/-- The Killing form is additive over sums of elements of pairwise disjoint Lie ideals: for
+`x i, y i ∈ I i`, `B(∑ x i, ∑ y i) = ∑ B(x i, y i)`. -/
+theorem killingForm_sum_sum {ι : Type*} {I : ι → LieIdeal R L}
+    (hI : Pairwise fun i j ↦ Disjoint (I i) (I j))
+    (s : Finset ι) {x y : ι → L} (hx : ∀ i, x i ∈ I i) (hy : ∀ i, y i ∈ I i) :
+    killingForm R L (∑ i ∈ s, x i) (∑ i ∈ s, y i) = ∑ i ∈ s, killingForm R L (x i) (y i) := by
+  classical
+  simp only [map_sum, LinearMap.sum_apply]
+  refine Finset.sum_congr rfl fun i hi ↦ Finset.sum_eq_single_of_mem i hi fun j _ hji ↦ ?_
+  exact killingForm_eq_zero_of_disjoint (hI hji) (hx j) (hy i)
+
+/-- On a Lie ideal of a finite free Lie algebra over a principal ideal domain, the Killing form of
+the ambient algebra restricts to the Killing form of the ideal: the pointwise form of Mathlib's
+`LieIdeal.killingForm_eq`. -/
+theorem killingForm_apply_apply_coe [Module.Free R L] [Module.Finite R L] [IsDomain R]
+    [IsPrincipalIdealRing R] (I : LieIdeal R L) (x y : I) :
+    killingForm R L x y = killingForm R I x y :=
+  (LinearMap.congr_fun₂ (killingForm_eq (I := I)) x y).symm
+
+end LieIdeal
+
+namespace LieIdeal
+
+/-- On a Lie ideal of a finite-dimensional Lie algebra over an ordered field, the Killing form of
+`L` is negative definite exactly when the Killing form of the ideal is. -/
+theorem forall_killingForm_neg_iff {K L : Type*} [Field K] [LinearOrder K] [LieRing L]
+    [LieAlgebra K L] [FiniteDimensional K L] (I : LieIdeal K L) :
+    (∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0) ↔
+      ∀ x : I, x ≠ 0 → killingForm K I x x < 0 := by
+  simp only [← LieIdeal.killingForm_apply_apply_coe]
+  exact ⟨fun h x hx ↦ h x x.property (by simpa using hx),
+    fun h x hx hx₀ ↦ h ⟨x, hx⟩ (by simpa using hx₀)⟩
+
+end LieIdeal
+
+namespace LieEquiv
+
+open LieAlgebra LieModule
+
+/-- An equivalence of Lie algebras over an ordered field preserves negative definiteness of the
+Killing form on Lie ideals: the Killing form of `L'` is negative definite on the image of `I`
+exactly when the Killing form of `L` is negative definite on `I`. -/
+theorem forall_killingForm_map_neg_iff {K L L' : Type*} [Field K] [LinearOrder K] [LieRing L]
+    [LieAlgebra K L] [LieRing L'] [LieAlgebra K L'] (e : L ≃ₗ⁅K⁆ L') (I : LieIdeal K L) :
+    (∀ y ∈ I.map e.toLieHom, y ≠ 0 → killingForm K L' y y < 0) ↔
+      ∀ x ∈ I, x ≠ 0 → killingForm K L x x < 0 :=
+  e.surjective.forall.trans <| by simp [LieIdeal.mem_map_equiv]
+
+end LieEquiv

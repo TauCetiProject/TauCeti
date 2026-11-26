@@ -126,7 +126,7 @@ private theorem exists_mem_unstableSet_of_notMem (hf : IsMorse 𝓘(ℝ, E) f) {
     (hyu : y ∉ hX.flow.unstableSet q) (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → y = q) :
     ∃ c, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0 ∧ manifoldMorseIndex 𝓘(ℝ, E) f c = finrank ℝ E ∧
       y ∈ hX.flow.unstableSet c := by
-  obtain ⟨c, hc, hyc⟩ := hX.exists_mem_unstableSet hf y
+  obtain ⟨c, hc, hyc⟩ := hX.exists_mem_unstableSet y
   have hcq : c ≠ q := by
     rintro rfl
     exact hyu hyc
@@ -282,7 +282,7 @@ theorem exists_mem_unstableSet_inter_stableSet_ne_of_isPreconnected (hf : IsMors
     swap
     · exact Or.inr hyA
     left
-    obtain ⟨c, hc, hyc⟩ := hX.exists_mem_unstableSet hf y
+    obtain ⟨c, hc, hyc⟩ := hX.exists_mem_unstableSet y
     by_cases hcq : c = q
     · -- The closure of `A` is closed and invariant, so it contains the backward limit `q` of `y`.
       subst hcq
