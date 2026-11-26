@@ -8,13 +8,18 @@ module
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 /-!
-# The underlying bijection of a continuous linear equivalence
+# The underlying bijection of a continuous linear equivalence, and `ULift`
 
 A continuous linear equivalence `e : M₁ ≃SL[σ₁₂] M₂` has an underlying bijection `e.toEquiv`,
 reached through `e.toLinearEquiv`. This file records that, as functions, `e.toEquiv` is `e` and
 its inverse is `e.symm`, the continuous counterparts of Mathlib's `LinearEquiv.coe_toEquiv` and
 `LinearEquiv.coe_toEquiv_symm`. They let constructions on bijections, such as pullbacks along an
 `Equiv`, be specialised to continuous linear equivalences by a named rewrite.
+
+It also evaluates Mathlib's `ContinuousLinearEquiv.ulift : ULift M ≃L[R] M` and its inverse as
+`ULift.down` and `ULift.up` (`ContinuousLinearEquiv.ulift_apply`,
+`ContinuousLinearEquiv.ulift_symm_apply`), as `ULift.moduleEquiv_apply` and
+`ULift.moduleEquiv_symm_apply` do for the linear equivalence.
 -/
 
 public section
@@ -34,5 +39,22 @@ theorem coe_toEquiv (e : M₁ ≃SL[σ₁₂] M₂) : ⇑e.toEquiv = e :=
 a function. -/
 theorem coe_toEquiv_symm (e : M₁ ≃SL[σ₁₂] M₂) : ⇑e.toEquiv.symm = e.symm :=
   rfl
+
+section ULift
+
+universe w
+
+variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+
+/-- `ContinuousLinearEquiv.ulift` is `ULift.down`. -/
+@[simp] theorem ulift_apply (x : ULift.{w} M) : (ulift : ULift.{w} M ≃L[R] M) x = x.down :=
+  rfl
+
+/-- The inverse of `ContinuousLinearEquiv.ulift` is `ULift.up`. -/
+@[simp] theorem ulift_symm_apply (x : M) :
+    (ulift : ULift.{w} M ≃L[R] M).symm x = ULift.up x :=
+  rfl
+
+end ULift
 
 end ContinuousLinearEquiv
