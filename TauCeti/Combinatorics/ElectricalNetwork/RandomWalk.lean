@@ -24,8 +24,9 @@ network the walk is irreducible, every vertex reaching every other along the edg
 the network. Conversely, every Markov kernel that is reversible with respect to a probability
 measure charging every point is the walk of the network with conductances
 `c x y = π {x} * κ x {y}`, whose invariant measure is `π`. Electrical networks are thus exactly
-the reversible Markov chains on finite state spaces, which is what lets voltages and effective
-resistances describe hitting probabilities and hitting times of reversible chains.
+the Markov chains on finite state spaces that are reversible with respect to a measure charging
+every point, which is what lets voltages and effective resistances describe hitting probabilities
+and hitting times of reversible chains.
 
 ## Main definitions
 
@@ -65,18 +66,18 @@ namespace ElectricalNetwork
 
 variable {V : Type*} [Fintype V] (N : ElectricalNetwork V)
 
-/-- At a vertex of positive weight the transition probabilities `c x y / c x` add up to `1`. -/
-private theorem sum_ofReal_cond_div_weight {x : V} (hx : 0 < N.weight x) :
-    ∑ y, ENNReal.ofReal (N.cond x y / N.weight x) = 1 := by
-  rw [← ENNReal.ofReal_sum_of_nonneg fun y _ => div_nonneg (N.nonneg x y) (N.weight_nonneg x),
-    ← Finset.sum_div, ← N.weight_def, div_self hx.ne', ENNReal.ofReal_one]
+/-- Nonnegative reals with positive sum `s`, divided by `s`, have masses adding up to `1`. -/
+private theorem sum_ofReal_div_eq_one {ι : Type*} [Fintype ι] {f : ι → ℝ} {s : ℝ}
+    (hf : ∀ i, 0 ≤ f i) (hs : ∑ i, f i = s) (h : 0 < s) : ∑ i, ENNReal.ofReal (f i / s) = 1 := by
+  rw [← ENNReal.ofReal_sum_of_nonneg fun i _ => div_nonneg (hf i) h.le, ← Finset.sum_div, hs,
+    div_self h.ne', ENNReal.ofReal_one]
 
 /-- The transition law of the random walk from `x`: it moves to `y` with probability `c x y / c x`
 when `c x > 0`, and stays at `x` when `x` has weight zero. -/
 noncomputable def walkPMF (x : V) : PMF V :=
   if hx : 0 < N.weight x then
     PMF.ofFintype (fun y => ENNReal.ofReal (N.cond x y / N.weight x))
-      (N.sum_ofReal_cond_div_weight hx)
+      (sum_ofReal_div_eq_one (N.nonneg x) (N.weight_def x).symm hx)
   else PMF.pure x
 
 /-- From a vertex of positive weight the walk moves to `y` with probability `c x y / c x`. -/
@@ -113,7 +114,8 @@ theorem toReal_walk_apply_singleton {x : V} (hx : 0 < N.weight x) (y : V) :
   rw [N.walk_apply_singleton hx, ENNReal.toReal_ofReal (div_nonneg (N.nonneg x y) hx.le)]
 
 /-- The walk stays forever at a vertex of weight zero. -/
-theorem walk_of_weight_eq_zero {x : V} (hx : N.weight x = 0) : N.walk x = Measure.dirac x := by
+theorem walk_apply_of_weight_eq_zero {x : V} (hx : N.weight x = 0) :
+    N.walk x = Measure.dirac x := by
   rw [walk_apply, N.walkPMF_of_weight_eq_zero hx, PMF.toMeasure_pure]
 
 /-- The walk steps from `x` to `y` with positive probability when `c x y > 0`. -/
@@ -157,8 +159,7 @@ theorem isProbabilityMeasure_stationaryMeasure (h : 0 < N.totalWeight) :
   refine ⟨?_⟩
   rw [← Finset.coe_univ, ← sum_measure_singleton]
   simp_rw [stationaryMeasure_singleton]
-  rw [← ENNReal.ofReal_sum_of_nonneg fun x _ => div_nonneg (N.weight_nonneg x) h.le,
-    ← Finset.sum_div, ← N.totalWeight_def, div_self h.ne', ENNReal.ofReal_one]
+  exact sum_ofReal_div_eq_one N.weight_nonneg N.totalWeight_def.symm h
 
 /-- **Detailed balance**: under the stationary measure the flow `π {x} * P(x, y)` from `x` to `y`
 is `c x y / c_G`. -/
@@ -205,20 +206,17 @@ theorem ofIsReversible_cond (hκ : κ.IsReversible π) (x y : V) :
 
 /-- In the network of a Markov kernel reversible with respect to a measure `π`, the weight of a
 vertex is the real part of its mass under `π` (which is `0` for an infinite mass). -/
+@[simp]
 theorem weight_ofIsReversible [IsMarkovKernel κ] (hκ : κ.IsReversible π) (x : V) :
     (ofIsReversible κ π hκ).weight x = (π {x}).toReal := by
-  simp_rw [weight_def, ofIsReversible_cond, ENNReal.toReal_mul]
-  rw [← Finset.mul_sum, ← ENNReal.toReal_sum fun y _ => measure_ne_top (κ x) {y},
-    sum_measure_singleton, Finset.coe_univ, measure_univ, ENNReal.toReal_one, mul_one]
+  simp [weight_def, ENNReal.toReal_mul, ← Finset.mul_sum, ← measureReal_def]
 
 /-- The network of a Markov kernel reversible with respect to a probability measure has total
 weight `1`. -/
+@[simp]
 theorem totalWeight_ofIsReversible [IsMarkovKernel κ] [IsProbabilityMeasure π]
     (hκ : κ.IsReversible π) : (ofIsReversible κ π hκ).totalWeight = 1 := by
-  rw [totalWeight_def]
-  simp_rw [weight_ofIsReversible]
-  rw [← ENNReal.toReal_sum fun x _ => measure_ne_top π {x}, sum_measure_singleton,
-    Finset.coe_univ, measure_univ, ENNReal.toReal_one]
+  simp [totalWeight_def, ← measureReal_def]
 
 /-- **Reversible kernels are walks of networks**: a Markov kernel reversible with respect to a
 finite measure `π` charging every point is the walk of the network with conductances
@@ -233,6 +231,7 @@ theorem walk_ofIsReversible [IsMarkovKernel κ] [IsFiniteMeasure π] (hκ : κ.I
 
 /-- The stationary measure of the network of a Markov kernel reversible with respect to a
 probability measure `π` is `π`. -/
+@[simp]
 theorem stationaryMeasure_ofIsReversible [IsMarkovKernel κ] [IsProbabilityMeasure π]
     (hκ : κ.IsReversible π) : (ofIsReversible κ π hκ).stationaryMeasure = π := by
   refine Measure.ext_of_singleton fun x => ?_
