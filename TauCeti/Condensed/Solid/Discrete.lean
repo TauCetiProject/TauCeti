@@ -71,6 +71,13 @@ private noncomputable def homApp
     (LocallyConstant S ℤ →+ LocallyConstant T R) →ₗ[R] LocallyConstant T M :=
   (g.hom.app (op T)).hom
 
+/-- `homApp g T` is the component of `g` over `T`. -/
+private theorem homApp_apply
+    (g : locallyConstantIntDual R S ⟶ (CondensedMod.LocallyConstant.functor R).obj M)
+    (T : CompHaus.{u}) (μ : LocallyConstant S ℤ →+ LocallyConstant T R) :
+    homApp g T μ = g.hom.app (op T) μ :=
+  rfl
+
 /-- The value at `t : T` of the component over `T` is the component over the point applied to the
 measure restricted to `t`. -/
 private theorem homApp_apply_apply
@@ -96,15 +103,31 @@ private theorem coord_apply (T : CompHaus.{u}) (μ : LocallyConstant S ℤ →+ 
 coordinates given by the basis `b`. -/
 private noncomputable def pointMap
     (g : locallyConstantIntDual R S ⟶ (CondensedMod.LocallyConstant.functor R).obj M) :
-    (I → LocallyConstant (CompHaus.of PUnit.{u + 1}) R) →ₗ[R] M :=
+    (I → R) →ₗ[R] M :=
   LocallyConstant.evalₗ R PUnit.unit ∘ₗ homApp g (CompHaus.of PUnit.{u + 1}) ∘ₗ
-    (coord (R := R) b (CompHaus.of PUnit.{u + 1})).symm.toLinearMap
+    (coord (R := R) b (CompHaus.of PUnit.{u + 1})).symm.toLinearMap ∘ₗ
+      LinearMap.compLeft (LocallyConstant.constₗ R) I
 
 private theorem pointMap_apply
     (g : locallyConstantIntDual R S ⟶ (CondensedMod.LocallyConstant.functor R).obj M)
-    (x : I → LocallyConstant (CompHaus.of PUnit.{u + 1}) R) :
-    pointMap b g x = homApp g _ ((coord b _).symm x) PUnit.unit :=
+    (x : I → R) :
+    pointMap b g x = homApp g (CompHaus.of PUnit.{u + 1})
+      ((coord b _).symm fun i ↦ .const _ (x i)) PUnit.unit :=
   rfl
+
+/-- The value of `pointMap b g` on the coordinates of the restriction of a measure `μ` over `T` to
+a point `t` is the value at `t` of the component of `g` over `T`. -/
+private theorem pointMap_coord_comap
+    (g : locallyConstantIntDual R S ⟶ (CondensedMod.LocallyConstant.functor R).obj M)
+    {T : CompHaus.{u}} (μ : LocallyConstant S ℤ →+ LocallyConstant T R) (t : T) :
+    pointMap b g (fun i ↦ μ (b i) t) = homApp g T μ t := by
+  rw [homApp_apply_apply, pointMap_apply]
+  congr 2
+  rw [LinearEquiv.symm_apply_eq]
+  funext i
+  ext ⟨⟩
+  rw [coord_apply, AddMonoidHom.comp_apply]
+  simp
 
 /-- For coordinates `c`, the value of `pointMap b g` on the coordinates of `c` switched on by
 `t : I → Bool` depends on only finitely many values of `t`. -/
@@ -112,8 +135,8 @@ private theorem exists_finset_pointMap_eq
     (g : locallyConstantIntDual R S ⟶ (CondensedMod.LocallyConstant.functor R).obj M)
     (c : I → R) :
     ∃ s : Finset I, ∀ t t' : I → Bool, (∀ i ∈ s, t i = t' i) →
-      pointMap b g (fun i ↦ .const _ (if t i then c i else 0)) =
-        pointMap b g (fun i ↦ .const _ (if t' i then c i else 0)) := by
+      pointMap b g (fun i ↦ if t i then c i else 0) =
+        pointMap b g (fun i ↦ if t' i then c i else 0) := by
   -- The measure over the Cantor cube `I → Bool` whose restriction to `t` has the coordinates of
   -- `c` switched on by `t`.
   let T := CompHaus.of (I → Bool)
@@ -123,13 +146,11 @@ private theorem exists_finset_pointMap_eq
   obtain ⟨s, hs⟩ :=
     (homApp g T μ).isLocallyConstant.exists_finset_dependsOn (π := fun _ : I ↦ Bool)
   have key (t : I → Bool) :
-      pointMap b g (fun i ↦ .const _ (if t i then c i else 0)) = homApp g T μ t := by
-    rw [homApp_apply_apply, pointMap_apply]
-    congr 2
-    rw [LinearEquiv.symm_apply_eq]
+      pointMap b g (fun i ↦ if t i then c i else 0) = homApp g T μ t := by
+    rw [← pointMap_coord_comap]
+    congr 1
     funext i
-    rw [coord_apply, AddMonoidHom.comp_apply, ← coord_apply b, LinearEquiv.apply_symm_apply]
-    ext ⟨⟩
+    rw [← coord_apply b, LinearEquiv.apply_symm_apply]
     rfl
   exact ⟨s, fun t t' htt' ↦ (key t).trans ((hs htt').trans (key t').symm)⟩
 
@@ -138,54 +159,41 @@ private theorem exists_finset_pointMap_eq
 private theorem pointMap_single_eq_zero [DecidableEq I]
     {g : locallyConstantIntDual R S ⟶ (CondensedMod.LocallyConstant.functor R).obj M}
     {s : Finset I} (hs : ∀ t t' : I → Bool, (∀ i ∈ s, t i = t' i) →
-      pointMap b g (fun i ↦ .const _ (if t i then (1 : I → R) i else 0)) =
-        pointMap b g (fun i ↦ .const _ (if t' i then (1 : I → R) i else 0)))
-    {i : I} (hi : i ∉ s) (r : LocallyConstant (CompHaus.of PUnit.{u + 1}) R) :
+      pointMap b g (fun i ↦ if t i then (1 : I → R) i else 0) =
+        pointMap b g (fun i ↦ if t' i then (1 : I → R) i else 0))
+    {i : I} (hi : i ∉ s) (r : R) :
     pointMap b g (Pi.single i r) = 0 := by
   -- First on the basis vector, comparing the indicator of `i` with zero, then by linearity.
   have h1 : pointMap b g (Pi.single i 1) = 0 := by
     have h := hs (fun k ↦ decide (k = i)) (fun _ ↦ false)
       (fun k hk ↦ by simp [ne_of_mem_of_not_mem hk hi])
-    have e1 : (fun k ↦ LocallyConstant.const (CompHaus.of PUnit.{u + 1})
-        (if decide (k = i) then (1 : I → R) k else 0)) = Pi.single i 1 := by
+    have e : (fun k ↦ if decide (k = i) then (1 : I → R) k else 0) = Pi.single i 1 := by
       funext k
-      ext ⟨⟩
       by_cases hk : k = i <;> simp [hk]
-    have e2 : (fun k ↦ LocallyConstant.const (CompHaus.of PUnit.{u + 1})
-        (if (fun _ ↦ false) k then (1 : I → R) k else 0)) = 0 := by
+    have e' : (fun k ↦ if (fun _ ↦ false) k then (1 : I → R) k else 0) = 0 := by
       funext k
-      ext ⟨⟩
       simp
-    rwa [e1, e2, map_zero] at h
-  have hr : Pi.single i r =
-      r PUnit.unit • (Pi.single i 1 : I → LocallyConstant (CompHaus.of PUnit.{u + 1}) R) := by
-    funext k
-    ext ⟨⟩
-    by_cases hk : k = i <;> simp [hk]
-  rw [hr, map_smul, h1, smul_zero]
+    rwa [e, e', map_zero] at h
+  rw [← mul_one r, ← smul_eq_mul, Pi.single_smul, map_smul, h1, smul_zero]
 
 /-- `pointMap b g` vanishes on the coordinates that vanish on some finite set. -/
 private theorem exists_finset_pointMap_eq_zero
     (g : locallyConstantIntDual R S ⟶ (CondensedMod.LocallyConstant.functor R).obj M) :
-    ∃ s : Finset I, ∀ x : I → LocallyConstant (CompHaus.of PUnit.{u + 1}) R,
-      (∀ i ∈ s, x i = 0) → pointMap b g x = 0 := by
+    ∃ s : Finset I, ∀ x : I → R, (∀ i ∈ s, x i = 0) → pointMap b g x = 0 := by
   classical
   obtain ⟨s, hs⟩ := exists_finset_pointMap_eq b g 1
   refine ⟨s, fun x hx ↦ ?_⟩
   -- Switching off the coordinates of `x` outside a large enough finite set does not change the
   -- value, and what remains is a finite sum of single coordinates.
-  obtain ⟨s', hs'⟩ := exists_finset_pointMap_eq b g fun i ↦ x i PUnit.unit
-  have hx' : x = fun i ↦ LocallyConstant.const (CompHaus.of PUnit.{u + 1})
-      (if (fun _ ↦ true) i then x i PUnit.unit else 0) := by
+  obtain ⟨s', hs'⟩ := exists_finset_pointMap_eq b g x
+  have hsum : (fun i ↦ if decide (i ∈ s' ∪ s) then x i else 0) =
+      ∑ k ∈ s' ∪ s, Pi.single k (x k) := by
     funext i
-    ext ⟨⟩
-    rfl
-  have hsum : (fun i ↦ LocallyConstant.const (CompHaus.of PUnit.{u + 1})
-      (if decide (i ∈ s' ∪ s) then x i PUnit.unit else 0)) = ∑ k ∈ s' ∪ s, Pi.single k (x k) := by
-    funext i
-    ext ⟨⟩
     by_cases hi : i ∈ s' ∪ s <;> simp [hi, Finset.sum_apply, Pi.single_apply]
-  rw [hx', ← hs' (fun k ↦ decide (k ∈ s' ∪ s)) _ (fun k hk ↦ by simp [hk]), hsum, map_sum]
+  have h := hs' (fun k ↦ decide (k ∈ s' ∪ s)) (fun _ ↦ true) (fun k hk ↦ by simp [hk])
+  rw [hsum, map_sum] at h
+  simp only [ite_true] at h
+  rw [← h]
   refine Finset.sum_eq_zero fun k _ ↦ ?_
   by_cases hk : k ∈ s
   · simp [hx k hk]
@@ -200,9 +208,8 @@ private theorem exists_finset_homApp_eq_zero
   obtain ⟨s, hs⟩ := exists_finset_pointMap_eq_zero b g
   refine ⟨s, fun T μ hμ ↦ ?_⟩
   ext t
-  have h := hs (coord b _ ((LocallyConstant.comapAddMonoidHom (ContinuousMap.const _ t)).comp μ))
-    fun i hi ↦ by rw [coord_apply, AddMonoidHom.comp_apply, hμ i hi, map_zero]
-  rwa [pointMap_apply, LinearEquiv.symm_apply_apply, ← homApp_apply_apply] at h
+  rw [← pointMap_coord_comap]
+  exact hs _ fun i hi ↦ by simp [hμ i hi]
 
 end Specker
 
@@ -218,7 +225,7 @@ theorem locallyConstantIntDual_exists_finset_hom_app_eq_zero
   classical
   have := LocallyConstant.freeOfProfinite S
   obtain ⟨s, hs⟩ := exists_finset_homApp_eq_zero (Module.Free.chooseBasis ℤ (LocallyConstant S ℤ)) g
-  exact ⟨s.image (Module.Free.chooseBasis ℤ _), fun T μ hμ ↦
+  exact ⟨s.image (Module.Free.chooseBasis ℤ _), fun T μ hμ ↦ (homApp_apply g T μ).symm.trans <|
     hs T μ fun i hi ↦ hμ _ (Finset.mem_image_of_mem _ hi)⟩
 
 attribute [local instance] discreteTopology_toProfinite_obj
@@ -241,8 +248,9 @@ private theorem exists_eq_locallyConstantIntDualMap_comp
       LocallyConstant.comap sec.hom.hom (LocallyConstant.comap j.hom.hom.hom φ) = φ := by
     ext x
     exact congrArg φ (Function.surjInv_eq hj x)
-  have hs' : ∀ (T : CompHaus.{u}) (μ : LocallyConstant S ℤ →+ LocallyConstant T R),
-      (∀ f ∈ s, μ f = 0) → homApp g T μ = 0 := hs
+  have hs' (T : CompHaus.{u}) (μ : LocallyConstant S ℤ →+ LocallyConstant T R)
+      (hμ : ∀ f ∈ s, μ f = 0) : homApp g T μ = 0 :=
+    (homApp_apply g T μ).trans (hs T μ hμ)
   -- Pushing a measure forward to `F` and back along `sec` does not change its values on `s`.
   have key (T : CompHaus.{u}) (μ : LocallyConstant S ℤ →+ LocallyConstant T R) :
       homApp g T μ = homApp g T ((locallyConstantIntDualMap R sec).hom.app (op T)
@@ -256,6 +264,8 @@ private theorem exists_eq_locallyConstantIntDualMap_comp
   · ext x
     exact Function.surjInv_eq hj x
   · ext T μ : 4
+    -- `homApp g T` is the component of `g` over `T` (`homApp_apply`), and the component of a
+    -- composite is the composite of the components.
     exact key T.unop μ
 
 /-- A morphism from `R[S]^solid` to a discrete condensed module vanishes if it vanishes after
@@ -277,9 +287,7 @@ private theorem eq_zero_of_profiniteSolidification_comp_eq_zero
       rw [NatTrans.naturality_assoc, profiniteSolidIsoLocallyConstantIntDual_hom_naturality_assoc,
         ← hg]
       simpa [e] using hh
-    rwa [← comp_zero (f := (profiniteFree R).map j.hom), cancel_epi, ← comp_zero
-      (f := (profiniteSolidification R).app F), cancel_epi, ← comp_zero
-      (f := (profiniteSolidIsoLocallyConstantIntDual R F).hom), cancel_epi] at h1
+    exact zero_of_epi_comp _ (zero_of_epi_comp _ (zero_of_epi_comp _ h1))
   have h2 : e.inv ≫ h = 0 := by rw [hg, h0, comp_zero]
   simpa [e] using congrArg (e.hom ≫ ·) h2
 
@@ -293,13 +301,18 @@ private theorem exists_profiniteSolidification_comp_eq
   obtain ⟨j, φ, hφ⟩ := S.exists_structuredArrow_comap_eq
     (S.freeModuleHomEquiv g : LocallyConstant S M)
   let F := FintypeCat.toProfinite.obj j.right
+  -- By definition of `CompHausLike.LocallyConstantModule.functorToPresheaves`, the sections of
+  -- `(CondensedMod.LocallyConstant.functor R).obj M` over `T` are `LocallyConstant T M`, and its
+  -- restriction maps are `LocallyConstant.comapₗ`; so `φ` is a section over `F` restricting to the
+  -- section corresponding to `g`.
+  let ψ : ((CondensedMod.LocallyConstant.functor R).obj M).obj.obj
+    (op (profiniteToCompHaus.obj F)) := φ
+  have hψ : ((CondensedMod.LocallyConstant.functor R).obj M).obj.map
+      (profiniteToCompHaus.map j.hom).op ψ = S.freeModuleHomEquiv g := hφ
   refine ⟨(profiniteSolid R).map j.hom ≫ inv ((profiniteSolidification R).app F) ≫
-    F.freeModuleHomEquiv.symm φ, ?_⟩
-  rw [← NatTrans.naturality_assoc, IsIso.hom_inv_id_assoc]
-  apply S.freeModuleHomEquiv.injective
-  rw [Functor.comp_map, Profinite.freeModuleHomEquiv_comp]
-  exact (congrArg (ConcreteCategory.hom (((CondensedMod.LocallyConstant.functor R).obj M).obj.map
-    (profiniteToCompHaus.map j.hom).op)) (Equiv.apply_symm_apply _ φ)).trans hφ
+    F.freeModuleHomEquiv.symm ψ, ?_⟩
+  rw [← NatTrans.naturality_assoc, IsIso.hom_inv_id_assoc, Functor.comp_map,
+    ← Profinite.freeModuleHomEquiv_symm_comp, hψ, AddEquiv.symm_apply_apply]
 
 end TauCeti
 
@@ -330,7 +343,7 @@ namespace CondensedMod
 variable {R : Type (u + 1)} [Ring R]
 
 /-- A discrete condensed module is solid. -/
-theorem isSolid_of_isDiscrete (A : CondensedMod.{u} R) [Condensed.IsDiscrete A] : A.IsSolid := by
+instance isSolid_of_isDiscrete (A : CondensedMod.{u} R) [Condensed.IsDiscrete A] : A.IsSolid := by
   obtain ⟨M, ⟨e⟩⟩ := Sheaf.IsConstant.mem_essImage (J := coherentTopology CompHaus) (F := A)
   exact ObjectProperty.prop_of_iso _ e (ModuleCat.isSolid_discrete M)
 
