@@ -90,7 +90,7 @@ or `ℂ` (`ContinuousMap.surjective_comp_of_isClosedEmbedding`). -/
 theorem surjective_compRightAlgHom_of_isClosedEmbedding (R : Type*) {A : Type v} [CommSemiring R]
     [Semiring A] [Algebra R A] [TopologicalSpace A] [IsTopologicalSemiring A]
     [TietzeExtension.{u, v} A] {e : C(X₁, X)} (he : Topology.IsClosedEmbedding e) :
-    Function.Surjective (compRightAlgHom R A e) :=
-  surjective_comp_of_isClosedEmbedding he
+    Function.Surjective (compRightAlgHom R A e) := fun f ↦ by
+  simpa [compRightAlgHom_apply] using surjective_comp_of_isClosedEmbedding he f
 
 end ContinuousMap

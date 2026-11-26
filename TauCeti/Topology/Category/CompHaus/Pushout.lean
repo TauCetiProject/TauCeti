@@ -164,15 +164,13 @@ def continuousMapPushoutDesc (f : C(X, T)) (g : C(Y, T)) (h : ∀ s, f (i s) = g
 @[simp]
 theorem continuousMapPushoutDesc_inl (f : C(X, T)) (g : C(Y, T)) (h : ∀ s, f (i s) = g (j s))
     (x : X) : continuousMapPushoutDesc i j f g h (pushout.inl i j x) = f x := by
-  have := ContinuousMap.compactSpace_range_union f g
-  exact congrArg Subtype.val (descCompact_inl i j _ _ _ x)
+  simp [continuousMapPushoutDesc, descCompact_inl]
 
 /-- The glued map restricts to `g` on `Y`. -/
 @[simp]
 theorem continuousMapPushoutDesc_inr (f : C(X, T)) (g : C(Y, T)) (h : ∀ s, f (i s) = g (j s))
     (y : Y) : continuousMapPushoutDesc i j f g h (pushout.inr i j y) = g y := by
-  have := ContinuousMap.compactSpace_range_union f g
-  exact congrArg Subtype.val (descCompact_inr i j _ _ _ y)
+  simp [continuousMapPushoutDesc, descCompact_inr]
 
 end Glue
 
@@ -223,8 +221,8 @@ def continuousMapPushoutAlgEquiv [T2Space A] :
     (ContinuousMap.mem_pullback_compRightAlgHom_iff.1 p.property)
   left_inv f := continuousMap_pushout_ext (by simp) (by simp)
   right_inv p := Subtype.ext (Prod.ext (by ext; simp) (by ext; simp))
-  map_mul' f g := Subtype.ext (Prod.ext (f.mul_comp g _) (f.mul_comp g _))
-  map_add' f g := Subtype.ext (Prod.ext (f.add_comp g _) (f.add_comp g _))
+  map_mul' f g := by ext <;> simp
+  map_add' f g := by ext <;> simp
   commutes' r := Subtype.ext (Prod.ext (by ext; simp) (by ext; simp))
 
 /-- `CompHaus.continuousMapPushoutAlgEquiv` sends a function to its restrictions to `X` and `Y`. -/
