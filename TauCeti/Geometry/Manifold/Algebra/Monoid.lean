@@ -28,6 +28,9 @@ The inclusions `ContMDiffMonoidMorphism.inl` and `ContMDiffMonoidMorphism.inr` o
 are smooth monoid morphisms into the product. Two smooth monoid morphisms with commuting images
 multiply to a smooth monoid morphism out of the product, `ContMDiffMonoidMorphism.noncommCoprod`,
 which restricts to them along the inclusions.
+
+A pointwise product of `C^n` maps, in the order of a list, is `C^n` (`TauCeti.contMDiff_list_prod`,
+with additive form `TauCeti.contMDiff_list_sum`), in a monoid that need not be commutative.
 -/
 
 public section
@@ -56,6 +59,10 @@ theorem coe_id : ⇑(id (n := n) (I := I) (G := G)) = _root_.id := (rfl)
 
 @[to_additive (attr := simp)]
 theorem coe_one : ⇑(1 : ContMDiffMonoidMorphism I I' n G G') = fun _ ↦ 1 := (rfl)
+
+@[to_additive (attr := simp)]
+theorem coe_toMonoidHom (φ : ContMDiffMonoidMorphism I I' n G G') : ⇑φ.toMonoidHom = ⇑φ :=
+  (rfl)
 
 /-- The first projection as a smooth monoid morphism. -/
 @[to_additive /-- The first projection as a smooth additive monoid morphism. -/]
@@ -276,5 +283,31 @@ theorem contMDiff_of_contMDiffAt_mulHom (f : F) {a : G}
   convert hmul using 1
   funext y
   simp [Function.comp_def, smul_eq_mul, ← map_mul, mul_assoc]
+
+section ListProd
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Monoid G] [ContMDiffMul I n G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M]
+
+/-- A pointwise product of `C^n` maps into a monoid with `C^n` multiplication, taken in the order
+of a list, is `C^n`. This is the smooth counterpart of `continuous_list_prod`, and needs no
+commutativity. -/
+@[to_additive /-- A pointwise sum of `C^n` maps into an additive monoid with `C^n` addition,
+taken in the order of a list, is `C^n`. -/]
+theorem contMDiff_list_prod {ι : Type*} {f : ι → M → G} (l : List ι)
+    (h : ∀ i ∈ l, ContMDiff J I n (f i)) :
+    ContMDiff J I n fun x ↦ (l.map fun i ↦ f i x).prod := by
+  induction l with
+  | nil => simpa using contMDiff_const
+  | cons a l ih =>
+    simp only [List.map_cons, List.prod_cons]
+    exact (h a List.mem_cons_self).mul (ih fun i hi ↦ h i (List.mem_cons_of_mem a hi))
+
+end ListProd
 
 end TauCeti

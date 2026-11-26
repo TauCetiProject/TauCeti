@@ -21,9 +21,8 @@ On the coordinate space `ι → ℂ` of a finite index type, write
 `∑ j, f_j d(conj z_j)` with coefficients in a complex Banach space is `bar∂`-closed when
 `∂f_j/∂(conj z_i) = ∂f_i/∂(conj z_j)` for all `i, j`. This file proves that every such form on
 all of `ℂⁿ` is `bar∂`-exact: some smooth `u` has `∂u/∂(conj z_j) = f_j` for every `j`
-(`TauCeti.exists_contDiff_conjWirtingerDeriv_apply_single_eq`). The polydisc version
-(`TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_single_eq_of_polydisc`) only solves the
-equation on a strictly smaller polydisc.
+(`TauCeti.exists_contDiff_conjWirtingerDeriv_apply_single_eq`), extending the polydisc version
+(`TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_single_eq_of_polydisc`) to `ℂⁿ`.
 
 The proof exhausts `ℂⁿ` by the balls of the sup norm, which are polydiscs. The polydisc lemma
 gives local solutions `h k` on the balls `ball 0 (k + 2)`. Consecutive ones differ by a
@@ -96,8 +95,7 @@ theorem exists_contDiff_conjWirtingerDeriv_apply_single_eq {f : ι → (ι → �
       (ball_pi 0 (hr_pos (k + 1))).symm
     rw [← hpi]
     exact exists_contDiffOn_conjWirtingerDeriv_apply_single_eq_of_polydisc
-      (r := fun _ ↦ r (k + 1) + 1) (fun _ ↦ lt_add_one _) (fun j ↦ (hf j).contDiffOn)
-      fun z _ ↦ hclosed z
+      (fun j ↦ (hf j).contDiffOn) fun z _ ↦ hclosed z
   choose h hh hh_eq using hloc
   have hdiffAt {k : ℕ} {z : ι → ℂ} (hz : z ∈ ball 0 (r (k + 1))) : DifferentiableAt ℝ (h k) z :=
     ((hh k).contDiffAt (isOpen_ball.mem_nhds hz)).differentiableAt (by simp)
@@ -111,8 +109,12 @@ theorem exists_contDiff_conjWirtingerDeriv_apply_single_eq {f : ι → (ι → �
       hh_eq (k + 1) z hz' j, hh_eq k z hz j, sub_self]
   -- Polynomial corrections `P k`, approximating the differences within `2⁻ᵏ`.
   have happrox (k : ℕ) : ∃ P : (ι → ℂ) → F, Differentiable ℂ P ∧
-      ∀ z ∈ closedBall 0 (r k), ‖(h (k + 1) - h k) z - P z‖ < (1 / 2 : ℝ) ^ k :=
-    (hdiff k).exists_differentiable_norm_sub_lt_of_pi (hr_mono k.lt_succ_self) (by positivity)
+      ∀ z ∈ closedBall 0 (r k), ‖(h (k + 1) - h k) z - P z‖ < (1 / 2 : ℝ) ^ k := by
+    have hd := hdiff k
+    rw [ball_pi _ (hr_pos (k + 1))] at hd
+    rw [closedBall_pi _ (hr_pos k).le]
+    exact hd.exists_differentiable_norm_sub_lt_of_pi (fun _ ↦ hr_mono k.lt_succ_self)
+      (by positivity)
   choose P hP hP_lt using happrox
   -- On `ball 0 (r m)`, the corrected limit is `h m` plus a holomorphic function.
   set u : (ι → ℂ) → F := fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z

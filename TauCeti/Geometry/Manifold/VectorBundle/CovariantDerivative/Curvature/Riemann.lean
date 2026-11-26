@@ -41,6 +41,8 @@ The sign and argument conventions follow J. M. Lee, *Introduction to Riemannian 
 * `CovariantDerivative.ricciTensor_eq_sum_riemannCurvatureTensor` and
   `CovariantDerivative.scalarCurvature_eq_sum_riemannCurvatureTensor`: the Ricci and scalar
   contractions in an orthonormal basis.
+* `CovariantDerivative.scalarCurvature_nonneg_of_riemannCurvatureTensor_nonneg`: nonnegative
+  sectional numerators imply nonnegative scalar curvature.
 -/
 
 public section
@@ -99,6 +101,15 @@ theorem scalarCurvature_eq_sum_riemannCurvatureTensor {i : Type*} [Fintype i] (x
   rw [cov.scalarCurvature_eq_sum_inner_curvatureTensor x b]
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
   rw [riemannCurvatureTensor_apply, real_inner_comm]
+
+/-- Nonnegative sectional numerators imply nonnegative scalar curvature. Neither metric
+compatibility nor smoothness of the metric is required. -/
+theorem scalarCurvature_nonneg_of_riemannCurvatureTensor_nonneg
+    (x : M) (hpos : ∀ u v, 0 ≤ cov.riemannCurvatureTensor x u v v u) :
+    0 ≤ cov.scalarCurvature x := by
+  rw [cov.scalarCurvature_eq_sum_riemannCurvatureTensor x
+    (stdOrthonormalBasis ℝ (TangentSpace I x))]
+  exact Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ hpos _ _
 
 /-- The Riemann curvature tensor is antisymmetric in its first pair of arguments. -/
 theorem riemannCurvatureTensor_antisymm_first (x : M) (u v w z : TangentSpace I x) :

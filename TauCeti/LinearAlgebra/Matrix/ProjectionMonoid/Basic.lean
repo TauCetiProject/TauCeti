@@ -43,6 +43,8 @@ general: for the bounded operators on an infinite-dimensional separable Hilbert 
 * `TauCeti.ProjectionMonoid.mk_reindex` and `TauCeti.ProjectionMonoid.mk_fromBlocks_zero`: the
   class is invariant under reindexing and under padding by a zero block.
 * `TauCeti.ProjectionMonoid.mk_fromBlocks`: the class of a block sum is the sum of the classes.
+* `TauCeti.ProjectionMonoid.mk_add_of_mul_eq_zero`: `[p + q] = [p] + [q]` for orthogonal
+  projections `p` and `q`.
 * `TauCeti.ProjectionMonoid.mk_eq_zero_iff`: a projection has class zero exactly when it is zero.
 * `TauCeti.ProjectionMonoid.mk_one`: over a unital star ring, the identity matrix of size `n` has
   class `n • [1]`.
@@ -239,6 +241,17 @@ theorem mk_fromBlocks {p : Matrix m m R} {q : Matrix n n R} (hp : IsStarProjecti
   exact mk_eq_mk ((hp.isMurrayVonNeumannEquivalent_reindex _).fromBlocks
     (hq.isMurrayVonNeumannEquivalent_reindex _))
 
+/-- **Orthogonal sums.** The class of the sum of orthogonal projections `p` and `q` is the sum of
+their classes. -/
+theorem mk_add_of_mul_eq_zero {p q : Matrix m m R} (hp : IsStarProjection p)
+    (hq : IsStarProjection q) (hpq : p * q = 0) :
+    mk (p + q) (hp.add hq hpq) = mk p hp + mk q hq := by
+  rw [← mk_fromBlocks, mk_eq_mk_iff]
+  have h := (hp.isMurrayVonNeumannEquivalent_fromBlocks_zero (n := m)).add
+    (hq.isMurrayVonNeumannEquivalent_zero_fromBlocks (n := m)) hpq
+    (by rw [fromBlocks_multiply]; simp)
+  simpa only [fromBlocks_add, add_zero, zero_add] using h
+
 /-- **Padding by zero.** Padding a projection by a zero block of any size does not change its
 class. -/
 theorem mk_fromBlocks_zero {p : Matrix m m R} (hp : IsStarProjection p) :
@@ -368,6 +381,21 @@ theorem map_comp (g : S →⋆ₙ+* T) (f : R →⋆ₙ+* S) :
   ext x
   induction x using ind with
   | mk _ p hp => simp [Matrix.map_map]
+
+/-- Applying the homomorphisms induced by `f` and then by `g` on `V` is applying the homomorphism
+induced by their composite. -/
+theorem map_map (g : S →⋆ₙ+* T) (f : R →⋆ₙ+* S) (x : ProjectionMonoid R) :
+    map g (map f x) = map (g.comp f) x := by
+  rw [map_comp, AddMonoidHom.comp_apply]
+
+/-- If a star ring homomorphism vanishes, so does the homomorphism it induces on `V`. -/
+theorem map_eq_zero_of_forall_eq_zero {f : R →⋆ₙ+* S} (hf : ∀ r, f r = 0)
+    (x : ProjectionMonoid R) : map f x = 0 := by
+  induction x using ind with
+  | mk _ p hp =>
+    rw [map_mk, mk_eq_zero_iff]
+    ext i j
+    exact hf _
 
 end map
 

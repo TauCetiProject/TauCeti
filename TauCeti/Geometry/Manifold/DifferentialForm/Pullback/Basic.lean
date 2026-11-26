@@ -251,16 +251,6 @@ theorem mpullback_apply (f : M → M') (ω : RoughForm I' M' F k)
     mpullback I I' f ω x v = ω (f x) (fun i ↦ mfderiv I I' f x (v i)) :=
   bundleMpullback_apply f ω x v
 
-/-- Evaluation of the pullback of a one-form on a tangent vector. -/
-theorem mpullback_apply_one (f : M → M') (ω : RoughForm I' M' F 1) (x : M)
-    (v : TangentSpace I x) :
-    mpullback I I' f ω x ![v] = ω (f x) ![mfderiv I I' f x v] := by
-  rw [mpullback_apply]
-  congr 1
-  funext i
-  rw [Fin.fin_one_eq_zero i]
-  rfl
-
 /-- Evaluation of the pullback of a two-form on a pair of tangent vectors. -/
 theorem mpullback_apply_pair (f : M → M') (ω : RoughForm I' M' F 2) (x : M)
     (a b : TangentSpace I x) :
@@ -269,6 +259,16 @@ theorem mpullback_apply_pair (f : M → M') (ω : RoughForm I' M' F 2) (x : M)
   congr 1
   funext i
   fin_cases i <;> rfl
+
+/-- Evaluation of the pullback of a one-form on a tangent vector. -/
+theorem mpullback_apply_one (f : M → M') (ω : RoughForm I' M' F 1) (x : M)
+    (v : TangentSpace I x) :
+    mpullback I I' f ω x ![v] = ω (f x) ![mfderiv I I' f x v] := by
+  rw [mpullback_apply]
+  congr 1
+  funext i
+  fin_cases i
+  rfl
 
 /-- Pullback within the whole manifold is ordinary pullback. -/
 @[simp]

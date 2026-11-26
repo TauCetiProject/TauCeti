@@ -31,6 +31,11 @@ open `U`, the preimage of `U` is all of `Spec k(X)`, and the induced ring map fr
 its sections `k(X)` makes them a fraction field of `Γ(X, U)`. This is how the normalization of `X`
 in its function field is computed on affine opens.
 
+For a domain `R` with a chosen fraction field `K`, the spectrum of `K` is identified with the
+spectrum of the function field of `Spec R` over `Spec R`, so that generic fibres computed along
+`R → K` and along the generic point of `Spec R` agree. For a field `k`, the generic point
+`Spec k(Spec k) ⟶ Spec k` is an isomorphism.
+
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.Scheme.genericPoint_mem`: the generic point of an irreducible scheme
@@ -48,6 +53,8 @@ in its function field is computed on affine opens.
   than the generic point.
 * `TauCeti.AlgebraicGeometry.Scheme.isClosed_singleton_of_ne_genericPoint`: on an irreducible
   scheme of dimension at most one, every point other than the generic point is closed.
+* `TauCeti.AlgebraicGeometry.Scheme.surjective_of_isClosedImmersion`: on such a scheme, a closed
+  immersion from an irreducible scheme with more than one point is surjective.
 * `TauCeti.AlgebraicGeometry.Scheme.isClosed_of_isLocallyClosed_of_genericPoint_notMem`: on a
   Noetherian irreducible scheme of dimension at most one, a locally closed set missing the generic
   point is closed, since all its points are closed. For instance, the zero locus of a function on
@@ -70,6 +77,13 @@ in its function field is computed on affine opens.
 * `TauCeti.AlgebraicGeometry.Scheme.algEquivAppPreimageSpecExtension`: on an integral scheme, for
   a field extension `L` of `k(X)`, the sections of `Spec L` over the preimage of a nonempty open `U`
   along `Spec L ⟶ Spec k(X) ⟶ X` are `L`, as a `Γ(X, U)`-algebra.
+* `TauCeti.isFractionRing_functionField_spec`: for a domain `R`, the function field of `Spec R` is
+  an `R`-algebra (`TauCeti.algebraFunctionFieldSpec`) and a fraction field of `R`.
+* `TauCeti.specFractionRingIsoFunctionField`: `Spec K ≅ Spec k(Spec R)` for a fraction field `K`
+  of a domain `R`, compatibly with the maps to `Spec R`
+  (`TauCeti.specFractionRingIsoFunctionField_hom_fromSpecStalk`).
+* `TauCeti.isIso_fromSpecStalk_genericPoint_spec`: the generic point of the spectrum of a field is
+  an isomorphism.
 -/
 
 public section
@@ -135,6 +149,23 @@ theorem isClosed_singleton_of_ne_genericPoint (hX : topologicalKrullDim X ≤ 1)
     exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim y).trans hX
   exact TauCeti.isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim
     ((coheight_eq_one_iff_ne_genericPoint hX).mpr hz)
+
+/-- On an irreducible scheme of dimension at most one, a closed immersion from an irreducible
+scheme with more than one point is surjective. -/
+theorem surjective_of_isClosedImmersion (hX : topologicalKrullDim X ≤ 1) {C : Scheme.{u}}
+    [IrreducibleSpace C] [Nontrivial C] (i : C ⟶ X) [IsClosedImmersion i] : Surjective i := by
+  -- The image of the generic point of `C` is not a closed point of `X`: its preimage would be a
+  -- closed point generizing every point of `C`. So it is the generic point of `X`.
+  have hgen : i (genericPoint C) = genericPoint X := by
+    by_contra hne
+    have hcl := (isClosed_singleton_of_ne_genericPoint hX hne).preimage i.continuous
+    rw [← Set.image_singleton, i.isClosedEmbedding.injective.preimage_image] at hcl
+    have h (c : C) : c = genericPoint C := by
+      simpa [hcl.closure_eq] using specializes_iff_mem_closure.mp (genericPoint_specializes c)
+    obtain ⟨a, b, hab⟩ := exists_pair_ne C
+    exact hab ((h a).trans (h b).symm)
+  exact ⟨fun x ↦ (genericPoint_specializes x).mem_closed i.isClosedEmbedding.isClosed_range
+    ⟨_, hgen⟩⟩
 
 /-- On a Noetherian irreducible scheme of dimension at most one, a locally closed set which does
 not contain the generic point is closed: all of its points have codimension one, so they are
@@ -361,5 +392,61 @@ theorem _root_.AlgebraicGeometry.Scheme.eq_of_fromSpecStalk_eq_specMap_comp
 end Scheme
 
 end AlgebraicGeometry
+
+end TauCeti
+
+namespace TauCeti
+
+open CategoryTheory
+
+universe u
+
+section FunctionField
+
+variable (R K : Type u) [CommRing R] [IsDomain R] [CommRing K] [Algebra R K] [IsFractionRing R K]
+
+/-- The function field of `Spec R` is an `R`-algebra through the map to the generic stalk.
+Mathlib states this instance over the bundled ring `CommRingCat.of R`, where instance search does
+not find the domain hypothesis on `R`. -/
+noncomputable instance algebraFunctionFieldSpec : Algebra R (Spec (.of R)).functionField :=
+  instAlgebraCarrierFunctionFieldSpec (.of R)
+
+/-- The function field of `Spec R` is a fraction field of the domain `R`, so it is isomorphic as an
+`R`-algebra to any chosen fraction field `K` of `R` (`IsLocalization.algEquiv`). -/
+instance isFractionRing_functionField_spec : IsFractionRing R (Spec (.of R)).functionField :=
+  functionField_isFractionRing_of_affine (.of R)
+
+/-- The spectrum of a chosen fraction field `K` of a domain `R` is isomorphic to the spectrum of
+the function field of `Spec R`, over `Spec R`
+(`TauCeti.specFractionRingIsoFunctionField_hom_fromSpecStalk`). -/
+noncomputable def specFractionRingIsoFunctionField :
+    Spec (.of K) ≅ Spec (Spec (.of R)).functionField :=
+  asIso (Spec.map (RingEquiv.toCommRingCatIso
+    (IsLocalization.algEquiv (nonZeroDivisors R) (Spec (.of R)).functionField K).toRingEquiv).hom)
+
+/-- The isomorphism `Spec K ≅ Spec K(Spec R)` lies over `Spec R`: followed by the generic point of
+`Spec R`, it is the morphism induced by `R → K`. -/
+@[reassoc (attr := simp)]
+lemma specFractionRingIsoFunctionField_hom_fromSpecStalk :
+    (specFractionRingIsoFunctionField R K).hom ≫
+        (Spec (.of R)).fromSpecStalk (genericPoint (Spec (.of R))) =
+      Spec.map (CommRingCat.ofHom (algebraMap R K)) := by
+  rw [Spec.fromSpecStalk_eq', specFractionRingIsoFunctionField, asIso_hom]
+  -- `rw [← Spec.map_comp]` fails here: the stalk in `Spec.fromSpecStalk_eq'` is the stalk of the
+  -- structure presheaf, which matches the function field only up to unfolding.
+  refine (Spec.map_comp _ _).symm.trans (congrArg Spec.map ?_)
+  ext r
+  exact (IsLocalization.algEquiv (nonZeroDivisors R) (Spec (.of R)).functionField K).commutes r
+
+end FunctionField
+
+/-- The generic point `Spec K(Spec k) ⟶ Spec k` of the spectrum of a field is an isomorphism: the
+generic point of `Spec k` is its closed point, whose stalk is `k` (`Spec_stalkClosedPointIso`). -/
+instance isIso_fromSpecStalk_genericPoint_spec (k : Type u) [Field k] :
+    IsIso ((Spec (.of k)).fromSpecStalk (genericPoint (Spec (.of k)))) := by
+  have h : genericPoint (Spec (.of k)) = IsLocalRing.closedPoint (CommRingCat.of k) :=
+    Subsingleton.elim _ _
+  rw [h, ← Spec_stalkClosedPointIso]
+  infer_instance
 
 end TauCeti

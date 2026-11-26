@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.AlmostSplit.Irreducible
+public import TauCeti.CategoryTheory.AlmostSplit.Irreducible.Basic
 public import TauCeti.CategoryTheory.AlmostSplit.Minimal
-import TauCeti.CategoryTheory.Preadditive.Radical.Basic
 
 /-!
 # Irreducible components of almost-split sequences
@@ -42,27 +41,14 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C]
 /-- Restricting the final map of an almost-split sequence to a retract of its middle term
 gives an irreducible morphism when the retract is nonzero. -/
 theorem isIrreducibleMorphism_comp_g (hS : S.IsAlmostSplit)
-    (hX : ¬ Limits.IsZero X) (i : X ⟶ S.X₂) [IsSplitMono i] : IsIrreducibleMorphism (i ≫ S.g) := by
-  have := hS.isRightAlmostSplit_g.isLocalRing_end
-  apply hS.isRightAlmostSplit_g.isIrreducibleMorphism_comp_of_isSplitMono
-    hS.isIso_of_comp_g_eq i
-  have hrad := comp_mem_jacobsonRadical_left i
-    (mem_jacobsonRadical_iff_not_isSplitEpi.mpr hS.isRightAlmostSplit_g.not_isSplitEpi)
-  intro hi
-  exact hX (isZero_of_isSplitMono_of_mem_jacobsonRadical hrad)
+    (hX : ¬ Limits.IsZero X) (i : X ⟶ S.X₂) [IsSplitMono i] : IsIrreducibleMorphism (i ≫ S.g) :=
+  hS.isRightAlmostSplit_g.isIrreducibleMorphism_comp_of_not_isZero hS.isIso_of_comp_g_eq hX i
 
 /-- Projecting the initial map of an almost-split sequence onto a retract of its middle term
 gives an irreducible morphism when the retract is nonzero. -/
 theorem isIrreducibleMorphism_f_comp (hS : S.IsAlmostSplit)
-    (hX : ¬ Limits.IsZero X) (p : S.X₂ ⟶ X) [IsSplitEpi p] : IsIrreducibleMorphism (S.f ≫ p) := by
-  have := hS.isRightAlmostSplit_g.isLocalRing_end
-  have := hS.isLeftAlmostSplit_f.isLocalRing_end
-  apply hS.isLeftAlmostSplit_f.isIrreducibleMorphism_comp_of_isSplitEpi
-    hS.isIso_of_f_comp_eq p
-  have hrad := comp_mem_jacobsonRadical_right
-    (mem_jacobsonRadical_iff_not_isSplitMono.mpr hS.isLeftAlmostSplit_f.not_isSplitMono) p
-  intro hp
-  exact hX (isZero_of_isSplitEpi_of_mem_jacobsonRadical hrad)
+    (hX : ¬ Limits.IsZero X) (p : S.X₂ ⟶ X) [IsSplitEpi p] : IsIrreducibleMorphism (S.f ≫ p) :=
+  hS.isLeftAlmostSplit_f.isIrreducibleMorphism_comp_of_not_isZero hS.isIso_of_f_comp_eq hX p
 
 /-- A morphism into the right-hand end is irreducible exactly when it is the restriction of
 the final map to a retract of the middle term. -/

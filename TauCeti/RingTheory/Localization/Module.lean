@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.FinitePresentation
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.RingTheory.QuotSMulTop
+public import Mathlib.RingTheory.Support
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.RingTheory.Localization.Ideal
 import TauCeti.Algebra.Module.LocalizedModule.Map
@@ -26,6 +28,10 @@ submonoid `S`:
   after localizing at `S`.
 * `LocalizedModule.bijective_map_single`: the inclusion of a factor of a finite product becomes
   bijective after localizing at `S` if every other factor vanishes there.
+* `LocalizedModule.map_injective_of_ker_le_torsion`: a linear map with torsion kernel stays
+  injective after localizing, when the localized source is torsion-free.
+* `LocalizedModule.bijective_map_of_smul_mem_range`: a linear map becomes bijective after
+  localizing at `S` if one element of `S` kills its kernel and multiplies the target into its range.
 * `LocalizedModule.equivLocalization`: the localization of `R` itself as a module is
   `Localization S`, sending `mk r s` to `Localization.mk r s`.
 * `LinearMap.exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id`: if `M` is finitely
@@ -34,6 +40,9 @@ submonoid `S`:
 * `Module.FinitePresentation.exists_bijective_map_of_isLocalizedModule`: if `M` is finitely
   presented, an isomorphism between localizations of `M` and `N` at `S` gives a map `M → N` whose
   localization at `S` is bijective.
+* `Module.FinitePresentation.exists_notMem_localizedMap_away_surjective`: if `M` is finitely
+  presented, `N` is finite and their localizations at a prime `p` admit a surjection, then some
+  map `M → N` becomes surjective after inverting some `s ∉ p`.
 * `LocalizedModule.bijective_map_dual_eval_iff`: if `M` and its dual are finitely presented, the
   map `M → M**` becomes bijective after localizing at `S` exactly when the localization `Mₛ` is
   reflexive over `Rₛ`. Taking duals commutes with localization for finitely presented modules,
@@ -142,6 +151,57 @@ theorem equivLocalization_symm_mk (r : R) (s : S) :
 
 end LocalizedModule
 
+namespace LocalizedModule
+
+/-- A linear map whose kernel consists of torsion elements stays injective after localizing at
+`S`, when the localization of its source is torsion-free over `Localization S`. -/
+theorem map_injective_of_ker_le_torsion {R M N : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (S : Submonoid R) (q : M →ₗ[R] N)
+    (htors : LinearMap.ker q ≤ Submodule.torsion R M)
+    [Module.IsTorsionFree (Localization S) (LocalizedModule S M)] :
+    Function.Injective (map S q) := by
+  refine IsLocalizedModule.injective_of_map_zero S (mkLinearMap S M) fun x hx ↦ ?_
+  rw [IsLocalizedModule.map_apply, IsLocalizedModule.eq_zero_iff S] at hx
+  obtain ⟨u, hu⟩ := hx
+  have hux : (u : R) • x ∈ LinearMap.ker q := by
+    rw [LinearMap.mem_ker, map_smul, ← Submonoid.smul_def]
+    exact hu
+  obtain ⟨b, hbx⟩ := (Submodule.mem_torsion_iff _).mp (htors hux)
+  -- The image of `b * u` in `Localization S` is regular, so it acts injectively.
+  have hreg : IsRegular (algebraMap R (Localization S) ((b : R) * u)) := by
+    rw [isRegular_iff_mem_nonZeroDivisors, map_mul]
+    exact mul_mem (IsLocalization.nonZeroDivisors_le_comap S _ b.property)
+      (IsLocalization.map_units _ u).mem_nonZeroDivisors
+  have h0 : algebraMap R (Localization S) ((b : R) * u) • mkLinearMap S M x = 0 := by
+    rw [mkLinearMap_apply, algebraMap_smul, smul'_mk, mul_smul, ← Submonoid.smul_def, hbx,
+      zero_mk]
+  exact hreg.isSMulRegular (h0.trans (smul_zero _).symm)
+
+variable {R : Type*} [CommRing R] {S : Submonoid R} {M N : Type*} [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N]
+
+/-- A linear map `f : M → N` becomes bijective after localizing at `S` if a single element `s ∈ S`
+kills its kernel and multiplies `N` into its range. -/
+theorem bijective_map_of_smul_mem_range {f : M →ₗ[R] N} {s : R} (hs : s ∈ S)
+    (hrange : ∀ n, s • n ∈ LinearMap.range f) (hker : ∀ m, f m = 0 → s • m = 0) :
+    Function.Bijective (map S f) := by
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦ ?_⟩
+  · induction x using induction_on with
+    | h m t =>
+      rw [map_mk, ← zero_mk 1, mk_eq] at hx
+      obtain ⟨u, hu⟩ := hx
+      have hfu : f (u • m) = 0 := by simpa using hu
+      rw [← zero_mk 1, mk_eq]
+      exact ⟨⟨s, hs⟩ * u, by simpa [mul_smul] using hker _ hfu⟩
+  · induction y using induction_on with
+    | h n t =>
+      obtain ⟨m, hm⟩ := hrange n
+      refine ⟨mk m (⟨s, hs⟩ * t), ?_⟩
+      rw [map_mk, hm]
+      exact mk_cancel_common_left ⟨s, hs⟩ t n
+
+end LocalizedModule
+
 namespace LinearMap
 
 open LocalizedModule
@@ -195,6 +255,32 @@ theorem exists_bijective_map_of_isLocalizedModule [FinitePresentation R M] (l : 
     simpa using congr($hh x)
   rw [this]
   exact ((Module.End.isUnit_iff _).mp (IsLocalizedModule.map_units g s)).comp l.bijective
+
+end Module.FinitePresentation
+
+namespace Module.FinitePresentation
+
+variable {R M N Mₚ Nₚ : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] [AddCommGroup Mₚ] [Module R Mₚ] [AddCommGroup Nₚ] [Module R Nₚ]
+
+/-- **Spreading out a surjection.** Let `M` be finitely presented and `N` finite over `R`, and let
+`fM : M → Mₚ`, `fN : N → Nₚ` be localizations at a prime `p`. If there is a surjective
+`R`-linear map `Mₚ → Nₚ`, then there are an `R`-linear map `φ : M → N` and `s ∉ p` such that
+`φ` becomes surjective after inverting `s` (Stacks, Tags 0583 and 00L2). -/
+theorem exists_notMem_localizedMap_away_surjective [Module.FinitePresentation R M]
+    [Module.Finite R N] (p : Ideal R) [p.IsPrime] (fM : M →ₗ[R] Mₚ) (fN : N →ₗ[R] Nₚ)
+    [IsLocalizedModule p.primeCompl fM] [IsLocalizedModule p.primeCompl fN] (g : Mₚ →ₗ[R] Nₚ)
+    (hg : Function.Surjective g) :
+    ∃ φ : M →ₗ[R] N, ∃ s ∉ p, Function.Surjective (LocalizedModule.map (.powers s) φ) := by
+  -- The map lifts by Mathlib's `Module.exists_localizedMap_surjective_of_surjective` and spreads
+  -- out by `Module.exists_localizedMap_away_surjective_of_localizedMap_atPrime_surjective`,
+  -- following the first step of Mathlib's
+  -- `Module.Free.away_of_finite_of_flat_of_rankAtStalk_constant`.
+  obtain ⟨φ, -, -, hsurj⟩ := exists_localizedMap_surjective_of_surjective p.primeCompl fM fN hg
+  rw [IsLocalizedModule.map_surjective_iff_localizedModuleMap_surjective fM fN] at hsurj
+  obtain ⟨t, ht, h⟩ := exists_localizedMap_away_surjective_of_localizedMap_atPrime_surjective
+    p φ hsurj
+  exact ⟨φ, t, ht, h⟩
 
 end Module.FinitePresentation
 

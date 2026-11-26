@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Field
+import TauCeti.Algebra.Field.Subfield.Basic
 import TauCeti.Algebra.Polynomial.XPow.SubC
 
 /-!
@@ -87,14 +88,10 @@ theorem discrFieldRingEquiv_apply
       (algebraMap F' E').comp (e : F →+* F'))
     (x : discrField f E) :
     (discrFieldRingEquiv hcomm x : E') = τ (x : E) := by
-  -- Equality transport between subfields preserves the underlying ambient element.
-  have coe_subfieldCongr {S T : Subfield E'} (h : S = T) (y : S) :
-      (RingEquiv.subfieldCongr h y : E') = (y : E') := by
-    subst T
-    rfl
   unfold discrFieldRingEquiv
   -- Use full transparency to identify the intermediate-field, subfield, and subring carriers.
-  erw [RingEquiv.trans_apply, coe_subfieldCongr, Subring.coe_equivMapOfInjective_apply]
+  erw [RingEquiv.trans_apply, RingEquiv.coe_subfieldCongr_apply,
+    Subring.coe_equivMapOfInjective_apply]
   simp only [RingEquiv.coe_toRingHom]
 
 /-- The inverse induced isomorphism is the inverse ambient isomorphism. -/

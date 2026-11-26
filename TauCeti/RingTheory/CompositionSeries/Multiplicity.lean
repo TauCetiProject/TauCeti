@@ -123,7 +123,7 @@ theorem isCompositionFactorAt_congr_of_eq {s t : CompositionSeries (Submodule R 
 
 /-- **The factors of a composition series are simple**: each step of a composition series is a
 covering, and a covering pair of submodules has simple quotient. -/
-theorem isSimpleModule_subquotient (s : CompositionSeries (Submodule R M)) (i : Fin s.length) :
+instance isSimpleModule_subquotient (s : CompositionSeries (Submodule R M)) (i : Fin s.length) :
     IsSimpleModule R (↥(s i.succ) ⧸ Submodule.comap (s i.succ).subtype (s i.castSucc)) :=
   have cov := s.step i
   (covBy_iff_quot_is_simple cov.le).mp cov

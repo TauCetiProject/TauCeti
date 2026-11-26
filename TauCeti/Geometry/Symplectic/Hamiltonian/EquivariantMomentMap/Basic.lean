@@ -55,6 +55,19 @@ disconnected group needs in addition a component condition: by
 equivariance holds exactly when the cocycle vanishes and the defect vanishes at one element of each
 connected component.
 
+The criteria for equivariance do not need `M` to be connected, provided the cocycle vanishes at
+every point, although `θ(g, x)` is then only locally constant in `x`. For an element `g` acting by
+a symplectomorphism, the defect `θ(g, ·)` always has vanishing differential
+(`TauCeti.SmoothTwoForm.IsMomentMap.mfderiv_momentDefect_apply_eq_zero`). Differentiating the
+cocycle identity `θ(g k, x) = θ(g, k • x) + Ad*_g θ(k, x)` in `k` at `k = 1` then shows that
+`θ(·, x)` is constant on each connected component of `G` as soon as the cocycle vanishes at `x`
+(`SmoothTwoForm.IsMomentMap.momentDefect_eq_of_momentCocycle_eq_zero_of_mem_connectedComponent`).
+So for a preconnected group acting by symplectomorphisms of any manifold, a moment map is
+coadjoint-equivariant exactly when its cocycle vanishes at every point
+(`TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_iff_forall_momentCocycle_eq_zero`), and
+a disconnected group needs in addition equivariance of one element of each connected component
+(`IsMomentMap.isEquivariantMomentMap_iff_forall_momentCocycle_eq_zero_and_apply_smul`).
+
 Shifting `μ` by a constant `ν ∈ 𝔤*` changes the defect by the coboundary `ν - Ad*_g ν`
 (`TauCeti.momentDefect_add_const`). Consequently, on a preconnected manifold the group-level moment
 maps of an action are exactly the shifts of any one of them by coadjoint-invariant constants
@@ -118,9 +131,19 @@ nondegenerate form every component of the moment map Poisson-commutes with the i
 * `TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_of_momentCocycle_eq_zero`: for a
   preconnected group acting by symplectomorphisms of a preconnected manifold, a moment map whose
   cocycle vanishes at one point is coadjoint-equivariant.
+* `TauCeti.SmoothTwoForm.IsMomentMap.mfderiv_momentDefect_apply_eq_zero`: for an element acting
+  symplectically, the defect of a moment map has vanishing differential in the point.
+* `SmoothTwoForm.IsMomentMap.momentDefect_eq_of_momentCocycle_eq_zero_of_mem_connectedComponent`:
+  on any manifold, if the cocycle vanishes at `x` then `θ(·, x)` is constant on each connected
+  component of `G`.
+* `TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_iff_forall_momentCocycle_eq_zero`: for
+  a preconnected group acting by symplectomorphisms of any manifold, a moment map is
+  coadjoint-equivariant exactly when its cocycle vanishes at every point.
 * For a possibly disconnected group, equivariance is the vanishing of the cocycle together with
   equivariance at one element of each connected component:
-`TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_iff_momentCocycle_eq_zero_and_apply_smul`
+`TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_iff_momentCocycle_eq_zero_and_apply_smul`,
+  and on any manifold
+`SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_iff_forall_momentCocycle_eq_zero_and_apply_smul`.
 * `TauCeti.SmoothTwoForm.IsMomentMap.differential_surjective_iff_discreteTopology_stabilizer`: at a
   point where the form is nondegenerate, `dμ_x` is surjective exactly when the stabilizer of `x` is
   discrete; `TauCeti.SmoothTwoForm.IsMomentMap.differential_surjective_of_stabilizer_eq_bot` is the
@@ -270,6 +293,16 @@ theorem isEquivariantMomentMap_iff_momentDefect_eq_zero :
   simp only [momentDefect_eq_zero_iff]
   exact ⟨fun h ↦ ⟨h.toIsMomentMap, h.apply_smul⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
+/-- **Groups with zero Lie algebra.** If the Lie algebra `𝔤` of `G` is zero, as for a discrete
+group, then `𝔤* = 0` and every map `μ : M → 𝔤*` is a group-level moment map. -/
+theorem isEquivariantMomentMap_of_subsingleton [Subsingleton (GroupLieAlgebra I G)]
+    (μ : M → Module.Dual ℝ (GroupLieAlgebra I G)) : σ.IsEquivariantMomentMap μ where
+  contMDiff ξ := by
+    simpa only [Subsingleton.elim ξ 0, map_zero] using contMDiff_const
+  isHamiltonianVectorField ξ := by
+    simpa only [Subsingleton.elim ξ 0, map_zero] using σ.isHamiltonianVectorField_const 0
+  apply_smul _ _ := Subsingleton.elim _ _
+
 namespace IsMomentMap
 
 /-- For a moment map `μ` and an element `g` acting by a symplectomorphism, the map
@@ -295,6 +328,42 @@ private theorem isMomentMap_comp_smul
   simpa only [hg, Function.comp_def] using
     h.mpullback (ContMDiffSMul.contMDiff_const_smul (I := I) g) hrel
 
+omit [TopologicalSpace M] in
+/-- The components of the defect at `g` are `x ↦ μ (g • x) ξ - μ x (Ad_{g⁻¹} ξ)`. -/
+private theorem momentDefect_apply_eq_sub (g : G) (ξ : GroupLieAlgebra I G) :
+    (fun x ↦ momentDefect μ g x ξ) = fun x ↦ μ (g • x) ξ - (μ x).comp
+      ((Lie.tangentAd (I := I) g⁻¹ : GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I G) :
+        GroupLieAlgebra I G →ₗ[ℝ] GroupLieAlgebra I G) ξ := by
+  funext x
+  rw [momentDefect_def, LinearMap.sub_apply, Lie.coadjointRepresentation_apply,
+    LinearMap.comp_apply, LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, Lie.tangentAd_apply]
+
+/-- For a moment map `μ` and an element `g` acting by a symplectomorphism, each component
+`x ↦ θ(g, x)(ξ)` of the defect is smooth. -/
+private theorem contMDiff_momentDefect_apply_left
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) {g : G}
+    (hg : SmoothForm.mpullback (fun x : M ↦ g • x) (ContMDiffSMul.contMDiff_const_smul (I := I) g)
+      σ = σ) (ξ : GroupLieAlgebra I G) :
+    ContMDiff I' 𝓘(ℝ) ∞ fun x ↦ momentDefect μ g x ξ := by
+  rw [momentDefect_apply_eq_sub]
+  exact ((isMomentMap_comp_smul h hg).contMDiff ξ).sub
+    ((h.comp (Lie.tangentAd (I := I) g⁻¹ :
+      GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I G)).contMDiff ξ)
+
+/-- **The defect of a moment map has vanishing differential in the point.** If `μ` is a moment map
+of the action by fundamental vector fields and `g` acts by a symplectomorphism, every component
+`x ↦ θ(g, x)(ξ)` of the defect has vanishing differential: `x ↦ μ (g • x)` and
+`x ↦ Ad*_g (μ x)` are moment maps of the same action `ξ ↦ (Ad_{g⁻¹} ξ)_M`. No connectedness of the
+manifold is needed. -/
+theorem mfderiv_momentDefect_apply_eq_zero
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) {g : G}
+    (hg : SmoothForm.mpullback (fun x : M ↦ g • x) (ContMDiffSMul.contMDiff_const_smul (I := I) g)
+      σ = σ) (ξ : GroupLieAlgebra I G) (x : M) :
+    mfderiv I' 𝓘(ℝ) (fun y ↦ momentDefect μ g y ξ) x = 0 := by
+  rw [momentDefect_apply_eq_sub]
+  exact (h.comp (Lie.tangentAd (I := I) g⁻¹ : GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I G))
+    |>.mfderiv_sub_eq_zero (isMomentMap_comp_smul h hg) ξ x
+
 /-- **The defect of a moment map is independent of the point.** If `μ` is a moment map of the
 action by fundamental vector fields and `g` acts by a symplectomorphism of a preconnected manifold,
 then `μ (g • x) - Ad*_g (μ x)` does not depend on `x`. -/
@@ -302,24 +371,9 @@ theorem momentDefect_eq [PreconnectedSpace M]
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) {g : G}
     (hg : SmoothForm.mpullback (fun x : M ↦ g • x) (ContMDiffSMul.contMDiff_const_smul (I := I) g)
       σ = σ)
-    (x y : M) : momentDefect μ g x = momentDefect μ g y := by
-  obtain ⟨ν, hν⟩ := ((h.comp (Lie.tangentAd (I := I) g⁻¹ :
-    GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I G)).isMomentMap_iff_exists_eq_add).1
-      (isMomentMap_comp_smul h hg)
-  have hdefect (z : M) : momentDefect μ g z = ν := by
-    have hz : μ (g • z) = (μ z).comp
-        ((Lie.tangentAd (I := I) g⁻¹ : GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I G) :
-          GroupLieAlgebra I G →ₗ[ℝ] GroupLieAlgebra I G) + ν :=
-      congrFun hν z
-    have hc : (μ z).comp
-        ((Lie.tangentAd (I := I) g⁻¹ : GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I G) :
-          GroupLieAlgebra I G →ₗ[ℝ] GroupLieAlgebra I G) =
-        Lie.coadjointRepresentation ℝ I G g (μ z) := by
-      ext ξ
-      rw [Lie.coadjointRepresentation_apply, LinearMap.comp_apply, LieHom.coe_toLinearMap,
-        LieEquiv.coe_toLieHom, Lie.tangentAd_apply]
-    rw [momentDefect_def, hz, hc, add_sub_cancel_left]
-  rw [hdefect, hdefect]
+    (x y : M) : momentDefect μ g x = momentDefect μ g y :=
+  LinearMap.ext fun ξ ↦ ((contMDiff_momentDefect_apply_left h hg ξ).mdifferentiable (by simp))
+    |>.apply_eq_of_mfderiv_eq_zero (h.mfderiv_momentDefect_apply_eq_zero hg ξ) x y
 
 /-- **Equivariance for the affine coadjoint action.** If `g` acts by a symplectomorphism of a
 preconnected manifold, a moment map satisfies `μ (g • x) = Ad*_g (μ x) + θ(g)`, where the defect
@@ -453,6 +507,49 @@ theorem mvfderiv_momentDefect_one (h : σ.IsMomentMap (InfinitesimalAction.funda
     momentCocycle_apply, LinearEquiv.apply_symm_apply, InfinitesimalAction.fundamental_apply,
     InfinitesimalAction.fundamental_apply]
 
+/-- **The defect at a point is constant on the connected components of the group.** Let `G` act by
+symplectomorphisms of a manifold `M`, connected or not, and let `μ` be a moment map of the action
+by fundamental vector fields whose cocycle vanishes at `x`. Then
+`momentDefect μ k x = momentDefect μ g x` whenever `k` lies in the connected component of `g`. -/
+theorem momentDefect_eq_of_momentCocycle_eq_zero_of_mem_connectedComponent
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ)
+    (hσ : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ) {x : M}
+    (hc : σ.momentCocycle (InfinitesimalAction.fundamental I G I' M) μ x = 0) {g k : G}
+    (hk : k ∈ connectedComponent g) : momentDefect μ k x = momentDefect μ g x := by
+  ext ξ
+  -- The component `g ↦ θ(g, x)(ξ)` is smooth with vanishing derivative at every `g`.
+  refine (h.contMDiff_momentDefect_apply x ξ).mdifferentiable (by simp)
+    |>.isLocallyConstant_of_mfderiv_eq_zero (fun g ↦ ?_)
+    |>.apply_eq_of_isPreconnected isPreconnected_connectedComponent hk mem_connectedComponent
+  rw [← mvfderiv_eq_zero_iff]
+  refine mfderiv_eq_zero_of_mfderiv_mul_left_one_eq_zero ?_
+  rw [← mvfderiv_eq_zero_iff]
+  /- Near `g`, the defect is `θ(g k, x)(ξ) = θ(g, k • x)(ξ) + θ(k, x)(Ad_{g⁻¹} ξ)`. Its derivative
+  in `k` at `1` vanishes: the first term because `θ(g, ·)` has vanishing differential, the second
+  because the cocycle at `x` vanishes. -/
+  have htrans : (fun k : G ↦ momentDefect μ (g * k) x ξ) = fun k ↦
+      momentDefect μ g (k • x) ξ +
+        momentDefect μ k x (Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ) := by
+    funext k
+    rw [momentDefect_mul, LinearMap.add_apply, Lie.coadjointRepresentation_apply]
+  have horbit : MDifferentiableAt I I' (fun k : G ↦ k • x) 1 :=
+    (ContMDiffSMul.contMDiff_smul_const (n := 1) x).mdifferentiableAt one_ne_zero
+  have hθ : MDifferentiableAt I' 𝓘(ℝ) (fun y ↦ momentDefect μ g y ξ) ((1 : G) • x) :=
+    (contMDiff_momentDefect_apply_left h (hσ g) ξ).mdifferentiableAt (by simp)
+  have h₁ : mfderiv I 𝓘(ℝ) (fun k : G ↦ momentDefect μ g (k • x) ξ) 1 = 0 := by
+    rw [← Function.comp_def (fun y ↦ momentDefect μ g y ξ), mfderiv_comp_of_eq hθ horbit rfl,
+      h.mfderiv_momentDefect_apply_eq_zero (hσ g), ContinuousLinearMap.zero_comp]
+  have hd₁ : MDifferentiableAt I 𝓘(ℝ) (fun k : G ↦ momentDefect μ g (k • x) ξ) 1 :=
+    hθ.comp_of_eq (1 : G) horbit rfl
+  ext v
+  rw [htrans, mvfderiv_fun_add hd₁
+      ((h.contMDiff_momentDefect_apply x _).mdifferentiableAt (by simp)),
+    mvfderiv_eq_zero_iff.2 h₁, zero_add, h.mvfderiv_momentDefect_one, hc,
+    ← LieModule.Cohomology.twoCochain_val_apply]
+  -- The zero two-cochain, read as a bilinear map, vanishes.
+  simp only [ZeroMemClass.coe_zero, LinearMap.zero_apply, map_zero, zero_apply]
+
 /-- **The defect is constant on the connected components of the group.** Let `G` act by
 symplectomorphisms of a preconnected manifold, and let `μ` be a moment map of the action by
 fundamental vector fields whose cocycle vanishes at one point. Then
@@ -464,28 +561,7 @@ theorem momentDefect_eq_of_mem_connectedComponent [PreconnectedSpace M]
     (hc : σ.momentCocycle (InfinitesimalAction.fundamental I G I' M) μ x₀ = 0) {g k : G}
     (hk : k ∈ connectedComponent g) (x : M) : momentDefect μ k x = momentDefect μ g x := by
   rw [h.momentDefect_eq (hσ k) x x₀, h.momentDefect_eq (hσ g) x x₀]
-  ext ξ
-  -- The component `g ↦ θ(g, x₀)(ξ)` is smooth with vanishing derivative at every `g`.
-  refine (h.contMDiff_momentDefect_apply x₀ ξ).mdifferentiable (by simp)
-    |>.isLocallyConstant_of_mfderiv_eq_zero (fun g ↦ ?_)
-    |>.apply_eq_of_isPreconnected isPreconnected_connectedComponent hk mem_connectedComponent
-  rw [← mvfderiv_eq_zero_iff]
-  refine mfderiv_eq_zero_of_mfderiv_mul_left_one_eq_zero ?_
-  rw [← mvfderiv_eq_zero_iff]
-  /- Near `g`, the defect is `θ(g k)(ξ) = θ(g)(ξ) + θ(k)(Ad_{g⁻¹} ξ)`, whose derivative in `k`
-  at `1` vanishes because the cocycle does. -/
-  have htrans : (fun k : G ↦ momentDefect μ (g * k) x₀ ξ) = fun k ↦
-      momentDefect μ g x₀ ξ +
-        momentDefect μ k x₀ (Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ) := by
-    funext k
-    rw [h.momentDefect_mul_eq (hσ g), LinearMap.add_apply, Lie.coadjointRepresentation_apply]
-  ext v
-  rw [htrans, mvfderiv_fun_add mdifferentiableAt_const
-      ((h.contMDiff_momentDefect_apply x₀ _).mdifferentiableAt (by simp)),
-    mvfderiv_const, zero_add, h.mvfderiv_momentDefect_one, hc,
-    ← LieModule.Cohomology.twoCochain_val_apply]
-  -- The zero two-cochain, read as a bilinear map, vanishes.
-  simp only [ZeroMemClass.coe_zero, LinearMap.zero_apply, map_zero, zero_apply]
+  exact h.momentDefect_eq_of_momentCocycle_eq_zero_of_mem_connectedComponent hσ hc hk
 
 /-- **The identity component acts equivariantly.** Let `G` act by symplectomorphisms of a
 preconnected manifold. If the cocycle of a moment map vanishes at one point, its defect vanishes on
@@ -639,6 +715,43 @@ theorem isEquivariantMomentMap_iff_momentCocycle_eq_zero_and_apply_smul [Preconn
   rw [← momentDefect_eq_zero_iff, ← h.momentDefect_eq_of_mem_connectedComponent hσ hc hsg,
     momentDefect_eq_zero_iff]
   exact hS' s hs
+
+/-- **Equivariance over a disconnected group, on any manifold.** Let `G` act by symplectomorphisms
+of a manifold `M`, connected or not, and let `S ⊆ G` meet every connected component of `G`. A
+moment map of the action by fundamental vector fields is coadjoint-equivariant exactly when its
+cocycle vanishes at every point and `μ (s • x) = Ad*_s (μ x)` for every `s ∈ S` and every `x`.
+On a preconnected manifold one point suffices for both conditions
+(`SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_iff_momentCocycle_eq_zero_and_apply_smul`).
+-/
+theorem isEquivariantMomentMap_iff_forall_momentCocycle_eq_zero_and_apply_smul
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ)
+    (hσ : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ) {S : Set G}
+    (hS : ∀ g : G, ∃ s ∈ S, s ∈ connectedComponent g) :
+    σ.IsEquivariantMomentMap μ ↔
+      (∀ x, σ.momentCocycle (InfinitesimalAction.fundamental I G I' M) μ x = 0) ∧
+        ∀ s ∈ S, ∀ x, μ (s • x) = Lie.coadjointRepresentation ℝ I G s (μ x) := by
+  refine ⟨fun h' ↦ ⟨h'.momentCocycle_eq_zero, fun s _ ↦ h'.apply_smul s⟩,
+    fun ⟨hc, hS'⟩ ↦ isEquivariantMomentMap_iff_momentDefect_eq_zero.2 ⟨h, fun g x ↦ ?_⟩⟩
+  obtain ⟨s, hs, hsg⟩ := hS g
+  rw [← h.momentDefect_eq_of_momentCocycle_eq_zero_of_mem_connectedComponent hσ (hc x) hsg,
+    momentDefect_eq_zero_iff]
+  exact hS' s hs x
+
+/-- **Infinitesimal equivariance integrates over a connected group, on any manifold.** Let a
+preconnected Lie group act by symplectomorphisms of a manifold `M`, connected or not. A moment map
+of the action by fundamental vector fields is coadjoint-equivariant exactly when its cocycle
+vanishes at every point. On a preconnected manifold vanishing at one point suffices
+(`TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_of_momentCocycle_eq_zero`). -/
+theorem isEquivariantMomentMap_iff_forall_momentCocycle_eq_zero [PreconnectedSpace G]
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ)
+    (hσ : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ) :
+    σ.IsEquivariantMomentMap μ ↔
+      ∀ x, σ.momentCocycle (InfinitesimalAction.fundamental I G I' M) μ x = 0 := by
+  rw [h.isEquivariantMomentMap_iff_forall_momentCocycle_eq_zero_and_apply_smul hσ (S := {1})
+    fun g ↦ ⟨1, rfl, by simp [PreconnectedSpace.connectedComponent_eq_univ]⟩]
+  simp
 
 end IsMomentMap
 

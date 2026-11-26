@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Differential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Torsion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Differential
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Fiber
 
 /-!
 # Iterated Frobenius and its fixed points
@@ -153,13 +152,7 @@ theorem pow_ofIsogeny_baseChangeFrobenius_pointMap_eq_self_iff (n : ℕ)
 theorem finite_fixedPoints_pow_ofIsogeny_baseChangeFrobenius (n : ℕ) (hn : 0 < n) :
     {P : (W⁄K).toAffine.Point |
       ((ofIsogeny (baseChangeFrobenius K W)) ^ n).pointMap P = P}.Finite := by
-  have hset : {P : (W⁄K).toAffine.Point |
-      ((ofIsogeny (baseChangeFrobenius K W)) ^ n).pointMap P = P} =
-      {P | (1 - (ofIsogeny (baseChangeFrobenius K W)) ^ n).pointMap P = 0} := by
-    ext P
-    rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, sub_pointMap, one_def, id_pointMap, sub_eq_zero,
-      eq_comm]
-  rw [hset]
+  rw [setOf_pointMap_eq_self]
   exact finite_setOf_pointMap_eq (one_sub_pow_ofIsogeny_baseChangeFrobenius_ne_zero W n hn) 0
 
 /-- Over a separably closed extension, `deg (1 - π ^ n)` counts the points fixed by `π ^ n`
@@ -170,11 +163,7 @@ theorem ncard_fixedPoints_pow_ofIsogeny_baseChangeFrobenius [IsSepClosed K] (n :
       (1 - (ofIsogeny (baseChangeFrobenius K W)) ^ n).degree := by
   have h := one_sub_pow_ofIsogeny_baseChangeFrobenius_ne_zero (K := K) W n hn
   have := isSeparable_toIsogeny_one_sub_pow_ofIsogeny_baseChangeFrobenius (K := K) W n hn
-  rw [← ofIsogeny_toIsogeny h, degree_ofIsogeny, ← ncard_fiber_toPointHom_eq_degree _ 0]
-  congr 1
-  ext P
-  rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, ← pointMap_ofIsogeny_eq_toPointHom,
-    ofIsogeny_toIsogeny, sub_pointMap, one_def, id_pointMap, sub_eq_zero, eq_comm]
+  rw [setOf_pointMap_eq_self, ncard_setOf_pointMap_eq h 0]
 
 end Points
 

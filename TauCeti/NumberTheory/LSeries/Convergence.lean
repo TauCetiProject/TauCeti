@@ -58,6 +58,8 @@ two abscissae is named.
   (`TauCeti.LSeriesConverges_iff_LSeriesSummable_of_nonneg`).
 * `TauCeti.LSeries.abscissaOfAbsConv_eq_of_LSeriesSummable_iff`: a series that converges
   absolutely exactly on `Re s > a` has abscissa of absolute convergence `a`.
+* `TauCeti.one_lt_re_two_mul`: doubling preserves the half-plane `Re s > 1`, as needed to
+  evaluate `ζ(2s)` alongside `ζ(s)`.
 
 ## References
 
@@ -82,6 +84,12 @@ open Complex Filter Finset MeasureTheory
 open scoped ComplexOrder Topology
 
 variable {f : ℕ → ℂ} {s s' : ℂ}
+
+/-- If `Re s > 1`, then `Re (2 * s) > 1`: doubling keeps a point of the half-plane `Re s > 1`,
+where the Riemann zeta series converges absolutely, inside that half-plane. -/
+theorem one_lt_re_two_mul (hs : 1 < s.re) : 1 < (2 * s).re := by
+  simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
+  linarith
 
 /-- **Ordinary convergence of a Dirichlet series.**  The partial sums `∑_{n < N} f n / n ^ s`,
 taken in the natural order of the index, tend to a limit.

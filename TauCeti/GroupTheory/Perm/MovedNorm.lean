@@ -8,6 +8,8 @@ module
 public import Mathlib.GroupTheory.Perm.Sign
 public import Mathlib.InformationTheory.Hamming
 public import TauCeti.Analysis.Normed.Group.ConjInvariant
+import TauCeti.Algebra.Group.Basic
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # The moved-point norm on finite permutation groups
@@ -18,8 +20,12 @@ permutations. Counting rather than normalizing by the degree makes the norm mean
 on an empty type; normalization cancels in same-degree coboundary expansion ratios.
 
 The construction uses Mathlib's support inequalities and conjugation formula. Nonidentity
-permutations move at least two points, with equality precisely for transpositions. These facts
-also supply the norm estimate for the parity retraction.
+permutations move at least two points, with equality precisely for transpositions. On `{1, τ}`
+indicators of a transposition `τ`, triple products and `{1, τ}`-valued gauge conjugations evaluate
+`movedNorm` to `{0, 2}` according to `Xor` parity (`Equiv.Perm.movedNorm_mul_triple_ite_isSwap`,
+`Equiv.Perm.movedNorm_mul_triple_ite_inv_isSwap`, and
+`Equiv.Perm.movedNorm_inv_mul_ite_mul_of_eq_one_or`). These facts also supply the norm estimate for
+the parity retraction.
 -/
 
 public section
@@ -81,6 +87,37 @@ theorem two_le_movedNorm_of_sign_eq_neg_one {σ : Perm α} (hσ : sign σ = -1) 
     2 ≤ movedNorm α σ := by
   apply two_le_movedNorm_of_ne_one
   rintro rfl
-  exact (by decide : (1 : ℤˣ) ≠ -1) (by simpa using hσ)
+  simp at hσ
+
+/-- Multiplying three `{1, τ}` indicators of a transposition `τ` gives moved-point norm `2` when an
+odd number of the three conditions hold, and `0` otherwise. -/
+theorem movedNorm_mul_triple_ite_isSwap {τ : Perm α} (hτ : τ.IsSwap) (p q r : Prop) [Decidable p]
+    [Decidable q] [Decidable r] :
+    movedNorm α ((if p then τ else 1) * (if q then τ else 1) * (if r then τ else 1)) =
+      if Xor p (Xor q r) then 2 else 0 := by
+  rw [TauCeti.ite_mul_ite_mul_ite_of_mul_self hτ.mul_self_eq_one]
+  split_ifs <;> simp [hτ.movedNorm]
+
+/-- Variant of `Equiv.Perm.movedNorm_mul_triple_ite_isSwap` with the third indicator inverted,
+matching the `α u v * α v w * (α u w)⁻¹` triangle-holonomy convention. -/
+theorem movedNorm_mul_triple_ite_inv_isSwap {τ : Perm α} (hτ : τ.IsSwap) (p q r : Prop)
+    [Decidable p] [Decidable q] [Decidable r] :
+    movedNorm α ((if p then τ else 1) * (if q then τ else 1) * (if r then τ else 1)⁻¹) =
+      if Xor p (Xor q r) then 2 else 0 := by
+  rw [TauCeti.ite_inv_of_mul_self hτ.mul_self_eq_one, movedNorm_mul_triple_ite_isSwap hτ]
+
+/-- For `{1, τ}`-valued endpoints `b₁` and `b₂`, gauge-conjugating a `{1, τ}` indicator gives
+moved-point norm `2` when `p` differs from `Xor (b₁ ≠ 1) (b₂ ≠ 1)`, and `0` otherwise. -/
+theorem movedNorm_inv_mul_ite_mul_of_eq_one_or {τ : Perm α} (hτ : τ.IsSwap) {b₁ b₂ : Perm α}
+    (hb₁ : b₁ = 1 ∨ b₁ = τ) (hb₂ : b₂ = 1 ∨ b₂ = τ) (p : Prop) [Decidable p] :
+    movedNorm α (b₁⁻¹ * (if p then τ else 1) * b₂) =
+      if Xor p (Xor (b₁ ≠ 1) (b₂ ≠ 1)) then 2 else 0 := by
+  have hτ₂ := hτ.mul_self_eq_one
+  have hτ_inv : τ⁻¹ = τ := inv_eq_of_mul_eq_one_right hτ₂
+  have hτ_ne : τ ≠ 1 := by
+    rintro rfl
+    simpa using hτ.movedNorm
+  rcases hb₁ with rfl | rfl <;> rcases hb₂ with rfl | rfl <;> by_cases hp : p <;>
+    simp [hp, hτ₂, hτ_inv, hτ_ne, hτ.movedNorm, Xor]
 
 end Equiv.Perm

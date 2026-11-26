@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.FDeriv.Comp
 public import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
 
 /-!
 # Functions satisfying Euler's identity of degree one
@@ -22,12 +23,18 @@ For a graph `x_(n+1) = v(x)` through the origin, `v(y) - Dv(y) y` is, up to a po
 the normal component of the position vector; this file therefore shows that a graph which is a
 cone near its vertex, smooth at the vertex, is a hyperplane.
 
+Conversely, a function that is positively homogeneous of degree one along the ray through `x`
+satisfies Euler's identity `Df(x) x = f(x)` at `x`, by Mathlib's
+`HasFDerivAt.apply_self_eq_smul_of_eventuallyEq`.
+
 ## Main results
 
 * `TauCeti.eq_fderiv_apply_of_forall_eq_fderiv_apply`: `v(y) = Dv(0) y`.
 * `TauCeti.eq_zero_of_forall_eq_fderiv_apply`: the case `Dv(0) = 0`.
 * `TauCeti.exists_ne_fderiv_apply_of_iteratedFDeriv_two_ne_zero`: if `D²v(0) ≠ 0`, Euler's
   identity fails somewhere in every ball around `0`.
+* `HasFDerivAt.apply_self_eq_of_eventually_homogeneous`: Euler's identity `f' x = f x` for a
+  function with `f (t • x) = t • f x` for `t` near `1`.
 -/
 
 public section
@@ -112,5 +119,13 @@ theorem exists_ne_fderiv_apply_of_iteratedFDeriv_two_ne_zero {v : E → F} {r : 
     funext fun _ ↦ ContinuousLinearMap.fderiv _
   ext m
   simp [iteratedFDeriv_two_apply, hlin]
+
+/-- **Euler's identity of degree one.** If `f` has derivative `f'` at `x` and
+`f (t • x) = t • f x` for `t` near `1`, then `f' x = f x`. -/
+theorem _root_.HasFDerivAt.apply_self_eq_of_eventually_homogeneous {𝕜 E' F' : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup F']
+    [NormedSpace 𝕜 F'] {f : E' → F'} {f' : E' →L[𝕜] F'} {x : E'} (hd : HasFDerivAt f f' x)
+    (hhom : ∀ᶠ t in 𝓝 (1 : 𝕜), f (t • x) = t • f x) : f' x = f x := by
+  simpa using hd.apply_self_eq_smul_of_eventuallyEq (hasDerivAt_id (1 : 𝕜)) hhom
 
 end TauCeti
