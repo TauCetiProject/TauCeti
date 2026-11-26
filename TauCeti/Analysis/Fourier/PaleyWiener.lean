@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Fourier.LpSpace
 import TauCeti.Analysis.LaplaceTransform.Truncated
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Paley–Wiener functions
@@ -36,13 +37,15 @@ extension of `φ` by zero, and in the complex plane it is entire of exponential 
   (`TauCeti.memLp_paleyWienerFunction`).
 * `TauCeti.conj_paleyWienerFunction_conj`: the reflection `F#(z) = conj(F(conj z))` is the
   Paley–Wiener function of `s ↦ conj(φ(-s))`.
-* `TauCeti.paleyWienerFunction_eq_indicator`: for `0 ≤ s ≤ t`, a Paley–Wiener function for the
-  interval `[-s, s]` is one for `[-t, t]`, so that `PW_s ⊆ PW_t`.
+* `TauCeti.paleyWienerFunction_eq_paleyWienerFunction_indicator`: for `0 ≤ s ≤ t`, a Paley–Wiener
+  function for the interval `[-s, s]` is one for `[-t, t]`, so that `PW_s ⊆ PW_t`.
 * `TauCeti.paleyWienerFunction_cexp_mul`: the Paley–Wiener function of the exponential
   `e^{isw}` is `2 sin(t(z + w))/(z + w)`; for `w = 0` it is `2 sin(tz)/z`.
 * `TauCeti.paleyWienerFunction_eq_integral_mul_conj_paleyWienerKernel`: the reproducing property
   `F(λ) = ∫_ℝ F(x) conj(k_t(λ, x)) dx` of the kernel
-  `k_t(λ, z) = sin(t(z - conj λ))/(π(z - conj λ))` (`TauCeti.paleyWienerKernel`).
+  `k_t(λ, z) = sin(t(z - conj λ))/(π(z - conj λ))` (`TauCeti.paleyWienerKernel`), which lies in
+  `PW_t` (`TauCeti.memLp_paleyWienerKernel`) and has
+  `‖k_t(λ, ·)‖²_{L²(ℝ)} = k_t(λ, λ)` (`TauCeti.integral_norm_paleyWienerKernel_sq`).
 
 ## References
 
@@ -99,6 +102,7 @@ theorem paleyWienerFunction_add (hφ : IntervalIntegrable φ volume (-t) t)
   exact intervalIntegral.integral_add (hφ.mul_continuousOn hc) (hψ.mul_continuousOn hc)
 
 /-- The Paley–Wiener function is homogeneous in the density. -/
+@[simp]
 theorem paleyWienerFunction_smul (c : ℂ) (t : ℝ) (φ : ℝ → ℂ) :
     paleyWienerFunction t (c • φ) = c • paleyWienerFunction t φ := by
   ext z
@@ -116,7 +120,7 @@ theorem paleyWienerFunction_congr_ae (h : ∀ᵐ s ∂volume, s ∈ Ι (-t) t �
 /-! ### Growth -/
 
 /-- `|e^{isz}| ≤ e^{t |Im z|}` for `|s| ≤ t`. -/
-private theorem norm_cexp_I_mul_le {s : ℝ} (hs : |s| ≤ t) (z : ℂ) :
+theorem norm_cexp_I_mul_le {s : ℝ} (hs : |s| ≤ t) (z : ℂ) :
     ‖cexp (I * s * z)‖ ≤ Real.exp (t * |z.im|) := by
   rw [norm_exp, Real.exp_le_exp]
   have : (I * s * z).re = -(s * z.im) := by simp [mul_comm]
@@ -182,13 +186,6 @@ theorem paleyWienerFunction_ofReal_eq_fourier (ht : 0 ≤ t) (φ : ℝ → ℂ) 
     field_simp
   · simp [indicator_of_notMem hv]
 
-/-- A density in `L²(-t, t)`, extended by zero, lies in `L¹(ℝ) ∩ L²(ℝ)`. -/
-private theorem integrable_indicator_Ioc (hφ : MemLp φ 2 (volume.restrict (Ioc (-t) t))) :
-    Integrable ((Ioc (-t) t).indicator φ) ∧ MemLp ((Ioc (-t) t).indicator φ) 2 := by
-  have h₁ : IntegrableOn φ (Ioc (-t) t) := hφ.integrable one_le_two
-  exact ⟨h₁.integrable_indicator measurableSet_Ioc,
-    (memLp_indicator_iff_restrict measurableSet_Ioc.nullMeasurableSet).2 hφ⟩
-
 /-- **Parseval's identity for Paley–Wiener functions.** For densities `φ, ψ ∈ L²(-t, t)`,
 `∫_ℝ F(x) conj(G(x)) dx = 2π ∫_{-t}^{t} φ(s) conj(ψ(s)) ds`, where `F` and `G` are the
 Paley–Wiener functions of `φ` and `ψ`. -/
@@ -197,9 +194,12 @@ theorem integral_paleyWienerFunction_mul_conj (ht : 0 ≤ t)
     (hψ : MemLp ψ 2 (volume.restrict (Ioc (-t) t))) :
     ∫ x : ℝ, paleyWienerFunction t φ x * conj (paleyWienerFunction t ψ x) =
       2 * π * ∫ s in -t..t, φ s * conj (ψ s) := by
-  obtain ⟨hf₁, hf₂⟩ := integrable_indicator_Ioc hφ
-  obtain ⟨hg₁, hg₂⟩ := integrable_indicator_Ioc hψ
-  have h := hg₁.integral_inner_fourier_fourier hg₂ hf₁ hf₂
+  have hIoc := (measure_Ioc_lt_top (μ := volume) (a := -t) (b := t)).ne
+  have hψ₁ := hψ.integrable_indicator one_le_two measurableSet_Ioc hIoc
+  have h := hψ₁.integral_inner_fourier_fourier
+    ((memLp_indicator_iff_restrict measurableSet_Ioc.nullMeasurableSet).2 hψ)
+    (hφ.integrable_indicator one_le_two measurableSet_Ioc hIoc)
+    ((memLp_indicator_iff_restrict measurableSet_Ioc.nullMeasurableSet).2 hφ)
   simp only [RCLike.inner_apply] at h
   simp_rw [paleyWienerFunction_ofReal_eq_fourier ht]
   rw [Measure.integral_comp_mul_left (fun w ↦ 𝓕 ((Ioc (-t) t).indicator φ) w *
@@ -225,8 +225,9 @@ theorem integral_norm_paleyWienerFunction_sq (ht : 0 ≤ t)
 /-- A Paley–Wiener function of a density in `L²(-t, t)` is square integrable on `ℝ`. -/
 theorem memLp_paleyWienerFunction (ht : 0 ≤ t) (hφ : MemLp φ 2 (volume.restrict (Ioc (-t) t))) :
     MemLp (fun x : ℝ ↦ paleyWienerFunction t φ x) 2 := by
-  obtain ⟨hf₁, hf₂⟩ := integrable_indicator_Ioc hφ
-  have hF := hf₁.memLp_fourier_two hf₂
+  have hφ₁ := hφ.integrable_indicator one_le_two measurableSet_Ioc measure_Ioc_lt_top.ne
+  have hF := hφ₁.memLp_fourier_two
+    ((memLp_indicator_iff_restrict measurableSet_Ioc.nullMeasurableSet).2 hφ)
   have hc : Continuous fun x : ℝ ↦ paleyWienerFunction t φ x :=
     (differentiable_paleyWienerFunction t φ).continuous.comp continuous_ofReal
   refine (memLp_two_iff_integrable_sq_norm hc.aestronglyMeasurable).2 ?_
@@ -243,10 +244,8 @@ theorem conj_paleyWienerFunction_conj (t : ℝ) (φ : ℝ → ℂ) (z : ℂ) :
       paleyWienerFunction t (fun s ↦ conj (φ (-s))) z := by
   have h : conj (paleyWienerFunction t φ (conj z)) =
       ∫ s in -t..t, conj (φ s) * cexp (I * (-s : ℝ) * z) := by
-    rw [paleyWienerFunction_def, intervalIntegral.intervalIntegral_eq_integral_uIoc,
-      intervalIntegral.intervalIntegral_eq_integral_uIoc, real_smul, real_smul, map_mul,
-      conj_ofReal, ← integral_conj]
-    congr 2 with s
+    rw [paleyWienerFunction_def, ← intervalIntegral.intervalIntegral_conj]
+    congr 1 with s
     rw [map_mul, ← Complex.exp_conj]
     simp
   rw [h, paleyWienerFunction_def]
@@ -256,7 +255,8 @@ theorem conj_paleyWienerFunction_conj (t : ℝ) (φ : ℝ → ℂ) (z : ℂ) :
 /-- **Nesting.** For `0 ≤ s ≤ t`, the Paley–Wiener function of `φ` on `[-s, s]` is the one of
 `φ 1_{(-s, s]}` on `[-t, t]`; together with `MeasureTheory.MemLp.indicator` this gives
 `PW_s ⊆ PW_t`. -/
-theorem paleyWienerFunction_eq_indicator {s : ℝ} (hs : 0 ≤ s) (hst : s ≤ t) (φ : ℝ → ℂ) :
+theorem paleyWienerFunction_eq_paleyWienerFunction_indicator {s : ℝ} (hs : 0 ≤ s) (hst : s ≤ t)
+    (φ : ℝ → ℂ) :
     paleyWienerFunction s φ = paleyWienerFunction t ((Ioc (-s) s).indicator φ) := by
   ext z
   rw [paleyWienerFunction_def, paleyWienerFunction_def,
@@ -284,9 +284,7 @@ theorem paleyWienerFunction_cexp_mul (t : ℝ) {w z : ℂ} (h : z + w ≠ 0) :
   have e₂ : I * (z + w) * ((-t : ℝ) : ℂ) = -(t * (z + w)) * I := by push_cast; ring
   rw [paleyWienerFunction_def, h', integral_exp_mul_complex hc, two_sin, e₁, e₂,
     div_eq_div_iff hc h]
-  ring_nf
-  simp only [I_sq]
-  ring
+  linear_combination (cexp (t * (z + w) * I) - cexp (-(t * (z + w)) * I)) * (z + w) * I_sq
 
 /-- The Paley–Wiener function of the constant `1` is `2 sin(tz)/z`. -/
 theorem paleyWienerFunction_one (t : ℝ) {z : ℂ} (hz : z ≠ 0) :
@@ -322,6 +320,7 @@ theorem paleyWienerKernel_eq (t : ℝ) {w z : ℂ} (h : z ≠ conj w) :
   field_simp
 
 /-- On the antidiagonal `z = conj λ` the reproducing kernel of `PW_t` is `t/π`. -/
+@[simp]
 theorem paleyWienerKernel_conj_self (t : ℝ) (w : ℂ) : paleyWienerKernel t w (conj w) = t / π := by
   have h : (fun s : ℝ ↦ cexp (I * s * (-conj w)) / (2 * π) * cexp (I * s * conj w)) =
       fun _ ↦ (2 * π : ℂ)⁻¹ := by
@@ -334,22 +333,31 @@ theorem paleyWienerKernel_conj_self (t : ℝ) (w : ℂ) : paleyWienerKernel t w 
   field_simp
   ring
 
+/-- The density `s ↦ e^{-is conj λ}/(2π)` of the reproducing kernel of `PW_t` lies in
+`L²(-t, t)`. -/
+theorem memLp_paleyWienerKernel_density (t : ℝ) (w : ℂ) :
+    MemLp (fun s : ℝ ↦ cexp (I * s * (-conj w)) / (2 * π)) 2 (volume.restrict (Ioc (-t) t)) := by
+  refine MemLp.of_bound (by fun_prop) (Real.exp (t * |(-conj w).im|) / (2 * π))
+    (ae_restrict_of_forall_mem measurableSet_Ioc fun s hs ↦ ?_)
+  rw [norm_div, show ‖(2 * π : ℂ)‖ = 2 * π by simp]
+  exact div_le_div_of_nonneg_right (norm_cexp_I_mul_le (abs_le.2 ⟨hs.1.le, hs.2⟩) _)
+    Real.two_pi_pos.le
+
+/-- The reproducing kernel `k_t(λ, ·)` of `PW_t` is square integrable on `ℝ`, so it lies in
+`PW_t`. -/
+theorem memLp_paleyWienerKernel (ht : 0 ≤ t) (w : ℂ) :
+    MemLp (fun x : ℝ ↦ paleyWienerKernel t w x) 2 :=
+  memLp_paleyWienerFunction ht (memLp_paleyWienerKernel_density t w)
+
 /-- **The reproducing property.** For `φ ∈ L²(-t, t)` with Paley–Wiener function `F` and every
 `λ ∈ ℂ`, `F(λ) = ∫_ℝ F(x) conj(k_t(λ, x)) dx`. -/
 theorem paleyWienerFunction_eq_integral_mul_conj_paleyWienerKernel (ht : 0 ≤ t)
     (hφ : MemLp φ 2 (volume.restrict (Ioc (-t) t))) (w : ℂ) :
     paleyWienerFunction t φ w =
       ∫ x : ℝ, paleyWienerFunction t φ x * conj (paleyWienerKernel t w x) := by
-  have hψ : MemLp (fun s : ℝ ↦ cexp (I * s * (-conj w)) / (2 * π))
-      2 (volume.restrict (Ioc (-t) t)) := by
-    refine MemLp.of_bound (by fun_prop) (Real.exp (t * |(-conj w).im|) / (2 * π))
-      (ae_restrict_of_forall_mem measurableSet_Ioc fun s hs ↦ ?_)
-    rw [norm_div, show ‖(2 * π : ℂ)‖ = 2 * π by simp]
-    exact div_le_div_of_nonneg_right (norm_cexp_I_mul_le (abs_le.2 ⟨hs.1.le, hs.2⟩) _)
-      Real.two_pi_pos.le
   simp_rw [paleyWienerKernel_def]
-  rw [integral_paleyWienerFunction_mul_conj ht hφ hψ, paleyWienerFunction_def,
-    ← intervalIntegral.integral_const_mul]
+  rw [integral_paleyWienerFunction_mul_conj ht hφ (memLp_paleyWienerKernel_density t w),
+    paleyWienerFunction_def, ← intervalIntegral.integral_const_mul]
   congr 1 with s
   have h : conj (cexp (I * s * (-conj w)) / (2 * π)) = cexp (I * s * w) / (2 * π) := by
     have h2π : conj (2 * π : ℂ) = 2 * π := by exact_mod_cast conj_ofReal (2 * π)
@@ -357,5 +365,14 @@ theorem paleyWienerFunction_eq_integral_mul_conj_paleyWienerKernel (ht : 0 ≤ t
     simp
   rw [h]
   field_simp
+
+/-- The squared `L²(ℝ)` norm of the reproducing kernel `k_t(λ, ·)` of `PW_t` is `k_t(λ, λ)`: the
+reproducing property applied to the kernel itself. -/
+theorem integral_norm_paleyWienerKernel_sq (ht : 0 ≤ t) (w : ℂ) :
+    ∫ x : ℝ, ‖paleyWienerKernel t w x‖ ^ 2 = (paleyWienerKernel t w w).re := by
+  have h := paleyWienerFunction_eq_integral_mul_conj_paleyWienerKernel ht
+    (memLp_paleyWienerKernel_density t w) w
+  simp_rw [← paleyWienerKernel_def, Complex.mul_conj', ← ofReal_pow] at h
+  rw [h, integral_complex_ofReal, ofReal_re]
 
 end TauCeti

@@ -48,18 +48,10 @@ theorem paleyWienerKernel_ofReal_self (t x : ℝ) : paleyWienerKernel t x x = t 
   simpa using paleyWienerKernel_conj_self t x
 
 /-- For real `λ` the reproducing kernel `k_t(λ, ·)` of `PW_t` has `‖k_t(λ, ·)‖²_{L²(ℝ)} = t/π`:
-the reproducing property applied to the kernel itself. -/
+the case `λ ∈ ℝ` of `TauCeti.integral_norm_paleyWienerKernel_sq`. -/
 theorem integral_norm_paleyWienerKernel_ofReal_sq {t : ℝ} (ht : 0 ≤ t) (x : ℝ) :
     ∫ y : ℝ, ‖paleyWienerKernel t x y‖ ^ 2 = t / π := by
-  have hψ : MemLp (fun s : ℝ ↦ cexp (I * s * (-conj (x : ℂ))) / (2 * π)) 2
-      (volume.restrict (Set.Ioc (-t) t)) := by
-    refine MemLp.of_bound (by fun_prop) (1 / (2 * π))
-      (ae_restrict_of_forall_mem measurableSet_Ioc fun s _ ↦ ?_)
-    rw [norm_div, conj_ofReal, norm_exp]
-    simp
-  have h := paleyWienerFunction_eq_integral_mul_conj_paleyWienerKernel ht hψ x
-  simp_rw [← paleyWienerKernel_def, Complex.mul_conj', ← ofReal_pow] at h
-  rw [paleyWienerKernel_ofReal_self, integral_complex_ofReal] at h
-  exact_mod_cast h.symm
+  rw [integral_norm_paleyWienerKernel_sq ht, paleyWienerKernel_ofReal_self]
+  norm_cast
 
 end TauCeti.Examples.PaleyWiener

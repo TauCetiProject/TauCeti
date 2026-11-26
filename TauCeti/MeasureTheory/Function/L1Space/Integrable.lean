@@ -52,7 +52,9 @@ a set containing the support of an integrable function keeps it integrable
 (`MeasureTheory.Integrable.smul_of_support_subset`), and so does an operator-valued function
 bounded on a set outside which the integrable function vanishes
 (`MeasureTheory.Integrable.apply_of_norm_le`). An `Lᵖ` function with `1 ≤ p` vanishing outside
-a set of finite measure is integrable (`MeasureTheory.MemLp.integrable_of_ae_notMem_eq_zero`), and
+a set of finite measure is integrable (`MeasureTheory.MemLp.integrable_of_ae_notMem_eq_zero`); in
+particular an `Lᵖ` function on a measurable set of finite measure, extended by zero, is integrable
+(`MeasureTheory.MemLp.integrable_indicator`), and
 so is a function vanishing outside a measurable set and dominated on it by a function integrable
 there (`MeasureTheory.integrable_of_forall_notMem_eq_zero_of_norm_le`).
 Scalar multiplication by a finite product of multiplicative indicators, each constant on a
@@ -262,6 +264,14 @@ theorem MemLp.integrable_of_ae_notMem_eq_zero {α E : Type*} [MeasurableSpace α
     (hs : μ s ≠ ⊤) (hfs : ∀ᵐ x ∂μ, x ∉ s → f x = 0) : Integrable f μ := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
   exact IntegrableOn.integrable_of_ae_notMem_eq_zero ((hf.restrict s).integrable hp) hfs
+
+/-- For `1 ≤ p`, a function in `Lᵖ(s)` on a measurable set `s` of finite measure, extended by zero
+off `s`, is integrable. -/
+theorem MemLp.integrable_indicator {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] {f : α → E} {p : ENNReal} {s : Set α} (hf : MemLp f p (μ.restrict s))
+    (hp : 1 ≤ p) (hs : MeasurableSet s) (hμs : μ s ≠ ⊤) : Integrable (s.indicator f) μ :=
+  ((memLp_indicator_iff_restrict hs.nullMeasurableSet).2 hf).integrable_of_ae_notMem_eq_zero hp
+    hμs (.of_forall fun _ hx ↦ Set.indicator_of_notMem hx f)
 
 /-- A function vanishing outside a measurable set `s`, a.e. strongly measurable on `s` and dominated
 on `s` by a function integrable there, is integrable. -/
