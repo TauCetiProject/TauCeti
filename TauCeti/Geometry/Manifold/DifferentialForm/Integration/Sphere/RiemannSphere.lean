@@ -23,7 +23,7 @@ of the standard sphere `TauCeti.riemannSphereSquare`. Read through the Hurewicz 
 `P(A)` on the homology class `A = u_*[S²] ∈ H₂(M; ℤ)` of any homomorphism `P : H₂(M; ℤ) → ℝ`
 that extends the integrals of `φ` over spheres
 (`TauCeti.integralTopForm_mpullback_eq_apply_singularHomologyFunctor_map`), and such a period `P`
-exists (`TauCeti.exists_addMonoidHom_forall_integralTopForm_mpullback_eq`); for a simply connected
+exists (`TauCeti.exists_addMonoidHom_hurewiczIntHom_eq_sphereIntegralHom`); for a simply connected
 `M` it is the integral of `φ` on `H₂(M; ℤ)`
 (`TauCeti.integralTopForm_mpullback_eq_homologySphereIntegralHom`). For the symplectic
 form of a closed symplectic manifold this is the identity `∫ u^*ω = ω(A)`: the symplectic area of
@@ -45,8 +45,6 @@ integral of `φ` over `u_*[S²]`.
   over the class `u_*[S²]` in `π₂(M, u ∞)`.
 * `TauCeti.integralTopForm_mpullback_eq_apply_singularHomologyFunctor_map`: it is `P(u_*[S²])` for
   every homomorphism `P : H₂(M; ℤ) → ℝ` extending the integrals of `φ` over spheres.
-* `TauCeti.exists_addMonoidHom_forall_integralTopForm_mpullback_eq`: there is one homomorphism
-  `P : H₂(M; ℤ) → ℝ` with `∫_{S²} u^*φ = P(u_*[S²])` for every smooth `u`.
 * `TauCeti.integralTopForm_mpullback_eq_homologySphereIntegralHom`: for a simply connected `M`,
   `P` can be taken to be the integral of `φ` on `H₂(M; ℤ)`, `TauCeti.homologySphereIntegralHom`.
 
@@ -157,33 +155,6 @@ theorem integralTopForm_mpullback_eq_apply_singularHomologyFunctor_map (hφ : φ
     (hP (u OnePoint.infty)
       (Additive.ofMul (map ⟨u, hu.continuous⟩ rfl ⟦riemannSphereSquare⟧))).symm.trans
         (congrArg P (hurewiczIntHom_map (n := 1) ⟨u, hu.continuous⟩ rfl ⟦riemannSphereSquare⟧))
-
-/-- **Areas of spheres are values of one homological period.** For a smooth closed real two-form
-`φ` on a compact boundaryless manifold `M` there is a homomorphism `P : H₂(M; ℤ) → ℝ` that takes
-the Hurewicz class of every sphere to the integral of `φ` over it, and hence the class
-`u_*[S²]` of every smooth map `u : OnePoint ℂ → M` to its area `∫_{S²} u^*φ`. For the symplectic
-form of a closed symplectic manifold, this is the identity `∫ u^*ω = ω(A)` for the homology class
-`A = u_*[S²]`. -/
-theorem exists_addMonoidHom_forall_integralTopForm_mpullback_eq (hφ : φ.IsClosed) :
-    ∃ P : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).obj
-        (TopCat.of M) →+ ℝ,
-      (∀ (x : M) (a : Additive (π_ 2 M x)),
-        P (hurewiczIntHom M x 1 a) = sphereIntegral φ.val x a.toMul) ∧
-      ∀ (u : OnePoint ℂ → M) (hu : ContMDiff 𝓘(ℝ, ℂ) I ∞ u),
-        integralTopForm ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
-            (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
-          (mpullback 𝓘(ℝ, ℂ) I u φ.val) =
-          P ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj (ModuleCat.of ℤ ℤ)).map
-            (TopCat.ofHom ⟨u, hu.continuous⟩)).hom
-              (hurewiczIntHom (OnePoint ℂ) OnePoint.infty 1
-                (Additive.ofMul (⟦riemannSphereSquare⟧ : π_ 2 (OnePoint ℂ) OnePoint.infty)))) := by
-  obtain ⟨P, hP⟩ := exists_addMonoidHom_hurewiczIntHom_eq_sphereIntegralHom
-    (φ.isSmoothForm.of_le (by simp)) ((SmoothForm.isClosed_def φ).1 hφ)
-  have hP' (x : M) (a : Additive (π_ 2 M x)) :
-      P (hurewiczIntHom M x 1 a) = sphereIntegral φ.val x a.toMul :=
-    (hP x a).trans (sphereIntegralHom_apply _ _ a)
-  exact ⟨P, hP', fun u hu ↦
-    integralTopForm_mpullback_eq_apply_singularHomologyFunctor_map hφ hP' hu⟩
 
 /-- **The area of a map of the Riemann sphere into a simply connected manifold.** For a smooth
 closed real two-form `φ` on a compact boundaryless simply connected manifold `M`, the area
