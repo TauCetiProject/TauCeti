@@ -12,7 +12,8 @@ public import Mathlib.Order.Interval.Set.Defs
 # Order characterizations on `Fin`
 
 This file characterizes elements of `Fin (k + 1)` by how they sit relative to the embedded indices
-`i'.castSucc` (`i' : Fin k`).
+`i'.castSucc` (`i' : Fin k`), and records that the embedded indices `Fin.castLE` form an initial
+segment.
 
 ## Main results
 
@@ -23,6 +24,7 @@ This file characterizes elements of `Fin (k + 1)` by how they sit relative to th
   if they determine the same order cut on the embedded indices `i'.castSucc` (`i' : Fin k`).
 * `Fin.strictMono_of_forall_mem_Ioo`: a tuple separated by a sequence, `a k < w k < a (k + 1)`,
   is strictly increasing.
+* `Fin.isLowerSet_range_castLE`: the image of `Fin.castLE` is an initial segment.
 -/
 
 public section
@@ -86,5 +88,11 @@ theorem strictMono_of_forall_mem_Ioo {α : Type*} [Preorder α] {n : ℕ} {w : F
   · exact fun i ↦ i.elim0
   · exact strictMono_iff_lt_succ.2 fun i ↦
       ((h i.castSucc).2.trans_le (le_of_eq (by simp))).trans (h i.succ).1
+
+/-- The image of `Fin.castLE` is an initial segment of `Fin l`. -/
+theorem isLowerSet_range_castLE {k l : ℕ} (h : k ≤ l) :
+    IsLowerSet (Set.range (castLE h)) := by
+  rw [range_castLE]
+  exact fun _ _ hab hb ↦ lt_of_le_of_lt (le_iff_val_le_val.mp hab) hb
 
 end Fin

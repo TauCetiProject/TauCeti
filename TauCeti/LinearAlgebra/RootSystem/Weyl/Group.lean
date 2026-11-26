@@ -30,6 +30,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   determined by its permutation of the roots.
 * `RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top` gives the same faithfulness
   when the coroots span, in particular for simply connected integral root data.
+* `RootPairing.weylGroupToPerm_injective_of_corootSpan_eq_top` deduces that the Weyl group then
+  acts faithfully on the root indices.
 * `RootPairing.reflectionPerm_reflectionPerm_self` says negating a root index twice gives it back.
 * `RootPairing.coroot'_reflection_self` says a reflection reverses the sign of its own
   coroot functional.
@@ -58,6 +60,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
 * `RootPairing.weylGroupRootRep_apply`, `RootPairing.weylGroupRootRep_ofIdx_apply`,
   `RootPairing.weylGroupRootRep_injective`, and `RootPairing.ker_weylGroupRootRep` identify the
   action of `P.weylGroupRootRep` with scalar multiplication and record its faithfulness.
+* `RootPairing.weylGroupCorootRep_apply` identifies the action of `P.weylGroupCorootRep` with
+  scalar multiplication.
 * `RootPairing.weylGroup.eq_one_of_forall_smul_root_eq` says a Weyl-group element fixing every root
   of a finite anisotropic root pairing over a domain is the identity, whether or not the roots
   span.
@@ -203,6 +207,12 @@ theorem weylGroupToPerm_injective_of_span_eq_top
     (hspan : Submodule.span R (range P.root) = ⊤) :
     Function.Injective P.weylGroupToPerm :=
   (Equiv.indexHom_injective_of_span_eq_top P hspan).comp Subtype.val_injective
+
+/-- If the coroots span, the action of the Weyl group on root indices is faithful. This applies to
+simply connected root data over the integers. -/
+theorem weylGroupToPerm_injective_of_corootSpan_eq_top (hspan : P.corootSpan R = ⊤) :
+    Function.Injective P.weylGroupToPerm :=
+  (Equiv.indexHom_injective_of_corootSpan_eq_top P hspan).comp Subtype.val_injective
 
 /-- The action of the Weyl group on root indices is faithful. -/
 theorem weylGroupToPerm_injective
@@ -381,6 +391,13 @@ multiplication on `M`. -/
 @[simp]
 theorem weylGroupRootRep_apply (w : P.weylGroup) (x : M) :
     P.weylGroupRootRep w x = w • x :=
+  (rfl)
+
+/-- The coroot-space representation `P.weylGroupCorootRep` acts by the scalar multiplication of the
+opposite Weyl group on `N`. -/
+@[simp]
+theorem weylGroupCorootRep_apply (w : P.weylGroup.op) (y : N) :
+    P.weylGroupCorootRep w y = w • y :=
   (rfl)
 
 /-- The weight-space representation of the Weyl group is faithful over every commutative ring. -/

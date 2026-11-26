@@ -10,7 +10,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.Count
 import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.Convex.HarnackChain
 import TauCeti.Analysis.Normed.Group.Basic
-import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Normed.Module.CoveringNumber
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral

@@ -42,8 +42,9 @@ is the octonion trace `TauCeti.CayleyDickson.trace`, and the entries
   + star (x (i + 1) * y (i + 2) + y (i + 1) * x (i + 2)))`. That expression *is* the definition
 below. The product is commutative, `R`-bilinear and unital, and the three diagonal idempotents form
 a complete orthogonal frame with the Peirce relations of a Jordan frame. The trace form
-`T(A ∘ B)` is associative. The Jordan identity `(A ∘ B) ∘ A² = A ∘ (B ∘ A²)` itself is not proved in
-this file.
+`T(A ∘ B)` is associative. The **Jordan identity** `(A ∘ B) ∘ A² = A ∘ (B ∘ A²)` is proved in
+`TauCeti/Algebra/AlbertAlgebra/Compact/Jordan.lean` from the cubic equation of
+`TauCeti/Algebra/AlbertAlgebra/Compact/Determinant.lean`.
 
 Over a linearly ordered ring the trace form is positive definite, since
 `T(A ∘ A) = ∑ dᵢ² + 2 ∑ N(xᵢ)` with `N` the positive definite octonion norm. Consequently a sum of

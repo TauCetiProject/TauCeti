@@ -136,6 +136,22 @@ theorem verschiebungCurve_monomialCurve (F : FormalGroup R) {m n : ℕ} (hm : m 
       F.monomialCurve (n * m) (mul_ne_zero hn hm) c :=
   Curve.ext (by simp [← pow_mul, mul_comm])
 
+/-- One step of peeling off monomials: if the residual `γ - s` vanishes below degree `m`, then
+after also subtracting its degree-`m` term `c Tᵐ` the residual vanishes up to degree `m`. -/
+theorem Curve.coeff_sub_add_monomialCurve_eq_zero {F : FormalGroup R} [F.IsComm] {γ s : F.Curve}
+    {m : ℕ} (hm : m ≠ 0) (h : ∀ i < m, PowerSeries.coeff i (γ - s).toPowerSeries = 0) {k : ℕ}
+    (hk : k ≤ m) :
+    PowerSeries.coeff k (γ - (s + F.monomialCurve m hm
+      (PowerSeries.coeff m (γ - s).toPowerSeries))).toPowerSeries = 0 := by
+  rw [← sub_sub]
+  let t := F.monomialCurve m hm (PowerSeries.coeff m (γ - s).toPowerSeries)
+  have ht (i : ℕ) (hi : i ≤ k) :
+      PowerSeries.coeff i (γ - s).toPowerSeries = PowerSeries.coeff i t.toPowerSeries := by
+    rcases (hi.trans hk).lt_or_eq with hil | rfl
+    · simp [t, h i hil, PowerSeries.coeff_X_pow, hil.ne]
+    · simp [t]
+  rw [coeff_sub_congr ht (fun _ _ ↦ rfl), sub_self, toPowerSeries_zero, map_zero]
+
 /-! ### Division by invertible natural numbers -/
 
 section CurveDivision

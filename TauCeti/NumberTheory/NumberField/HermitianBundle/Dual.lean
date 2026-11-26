@@ -26,7 +26,9 @@ a unique vector `u_φ` (the Riesz vector, `TauCeti.HermitianMetric.dualVector`).
 `h^∨_σ(a, b) = h_σ(u_b, u_a)`, so that the Riesz correspondence is antiunitary. Complex
 conjugation `c ⊗ x ↦ conj c ⊗ x` from the fibre at `σ` to the fibre at `conj σ`
 (`TauCeti.HermitianMetric.fiberConj`) carries the Riesz vector of `1 ⊗ f` at `σ` to that at
-`conj σ`, which gives the conjugation condition of the dual metric.
+`conj σ`, which gives the conjugation condition of the dual metric. The dual norm of `a` is the
+norm of `u_a`; on a line this gives `‖f‖_σ ‖s‖_σ = |σ(f s)|`
+(`TauCeti.HermitianMetric.norm_dual_one_tmul_mul_norm`).
 
 ## Main definitions
 
@@ -234,6 +236,27 @@ theorem dualVector_dual_one_tmul_eval (x : E) :
   rw [dualVector_eq_iff]
   ext b
   rw [dual_form_apply, ha, form_dualVector, dualPairing_one_tmul_eval]
+
+/-- The dual norm of `a` is the norm of its Riesz vector. -/
+theorem norm_dual_eq_norm_dualVector (a : Codomain σ ⊗[𝓞 K] Module.Dual (𝓞 K) E) :
+    h.dual.norm σ a = h.norm σ (h.dualVector σ a) := by
+  rw [norm_def, norm_def, dual_form_apply]
+
+/-- **The dual norm on a line**: if `E` has generic rank one, then `‖f‖_σ ‖s‖_σ = |σ(f s)|` for
+every section `s` and functional `f`. -/
+theorem norm_dual_one_tmul_mul_norm [NumberField K] (hE : Module.finrank K (K ⊗[𝓞 K] E) = 1)
+    (s : E) (f : Module.Dual (𝓞 K) E) :
+    h.dual.norm σ (1 ⊗ₜ f) * h.norm σ (1 ⊗ₜ s) = ‖σ (f s)‖ := by
+  obtain rfl | hs := eq_or_ne s 0
+  · simp
+  obtain ⟨c, hc⟩ := Codomain.exists_eq_smul_one_tmul σ hE hs (h.dualVector σ (1 ⊗ₜ f))
+  have hform : h.form σ (h.dualVector σ (1 ⊗ₜ f)) (1 ⊗ₜ s) = σ (f s) := by
+    rw [form_dualVector, dualPairing_tmul_tmul]
+    simp
+  rw [hc, LinearMap.map_smulₛₗ₂, smul_eq_mul, form_self_eq_norm_sq] at hform
+  rw [norm_dual_eq_norm_dualVector, hc, norm_smul, ← hform, norm_mul, Complex.norm_conj,
+    Complex.norm_real, Real.norm_of_nonneg (sq_nonneg _)]
+  ring
 
 /-- **`Ē ≅ Ē^∨∨` isometrically**: evaluation `E ≃ E^∨∨` is an isometry from a hermitian metric to
 its double dual. -/

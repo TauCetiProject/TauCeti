@@ -122,6 +122,16 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv_symm_comp
       (pre b).app (𝟙_ X.Modules) ≫ (Scheme.Modules.dualHomUnitEquiv M).symm s := by
   simp [← id_tensor_pre_app_comp_ev, ← whisker_exchange_assoc]
 
+/-- Evaluating the functional `M ⟶ 𝒪_X` of a global section `D` of the dual of `M` at a section
+`s` of `M` is evaluating the functional `(dualHomUnitEquiv M).symm s` of `s` at `D`: both are
+`D(s)`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.comp_uncurry'_eq_comp_dualHomUnitEquiv_symm
+    (s : 𝟙_ X.Modules ⟶ M) (D : 𝟙_ X.Modules ⟶ (ihom M).obj (𝟙_ X.Modules)) :
+    s ≫ uncurry' D = D ≫ (Scheme.Modules.dualHomUnitEquiv M).symm s := by
+  rw [Scheme.Modules.dualHomUnitEquiv_symm_apply, uncurry', uncurry_eq,
+    rightUnitor_inv_naturality_assoc, ← whisker_exchange_assoc]
+  simp [unitors_equal]
+
 /-- The section of a functional precomposed with the dual of `b : M ⟶ N` is the image under `b`
 of the section of the functional. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv_pre_comp

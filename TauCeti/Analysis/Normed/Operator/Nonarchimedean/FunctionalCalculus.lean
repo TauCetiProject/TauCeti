@@ -53,11 +53,8 @@ theorem IsRowCompact.charPowerSeries_eq_colemanDEntire (hu : u.IsRowCompact)
     fun n ↦ Polynomial.aeval u (PowerSeries.trunc (n + 1) B)
   have htrunc (n : ℕ) : (PowerSeries.trunc (n + 1) B).coeff 0 = 0 := by
     simp [PowerSeries.coeff_trunc, hB₀]
-  have hv : Tendsto (fun n ↦ ‖v n - B.evalAt u‖) atTop (𝓝 0) := by
-    have hsum := (hB.hasSum_evalAt u).tendsto_sum_nat.comp (tendsto_add_atTop_nat 1)
-    simpa only [v, Polynomial.aeval_def, PowerSeries.eval₂_trunc_eq_sum_range,
-      Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul, Function.comp_apply] using
-      tendsto_iff_norm_sub_tendsto_zero.1 hsum
+  have hv : Tendsto (fun n ↦ ‖v n - B.evalAt u‖) atTop (𝓝 0) :=
+    tendsto_iff_norm_sub_tendsto_zero.1 ((hB.tendsto_aeval_trunc u).comp (tendsto_add_atTop_nat 1))
   ext k
   have hcoeff := tendsto_charCoeff_matrixCoeff_of_tendsto
     (Eventually.of_forall fun n ↦ hu.aeval (htrunc n))
