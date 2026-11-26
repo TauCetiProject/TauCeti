@@ -135,8 +135,7 @@ private theorem sq_mul_semiclassicalSobolevNorm_le (k : ℕ) (hh : 0 < h) (b : V
   rw [← Real.sqrt_mul (by positivity)]
   refine ⟨Real.le_sqrt_of_sq_le ?_, ?_⟩
   · nlinarith [sq_nonneg (h ^ 2 * semiclassicalSobolevNorm k h ζ)]
-  · rw [show (2 : ℝ) = √4 by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq zero_le_two],
-      ← Real.sqrt_mul zero_le_four]
+  · rw [← div_le_iff₀' two_pos]
     refine Real.le_sqrt_of_sq_le ?_
     nlinarith [sq_nonneg (h ^ 2 * (h * semiclassicalSobolevNorm k h b))]
 
@@ -159,29 +158,25 @@ private theorem sqrt_rescaledTargetNormSq_le_of_le {k : ℕ} {C₀ : ℝ} (hC₀
   obtain ⟨hδb, hδζ⟩ := sq_mul_semiclassicalSobolevNorm_le k hh (b₁ - b₂) (ζ₁ - ζ₂)
   obtain ⟨-, hζ₁⟩ := sq_mul_semiclassicalSobolevNorm_le k hh b₁ ζ₁
   obtain ⟨hb₂, hζ₂⟩ := sq_mul_semiclassicalSobolevNorm_le k hh b₂ ζ₂
-  have := semiclassicalSobolevNorm_nonneg k hh.le (b₁ - b₂)
-  have := semiclassicalSobolevNorm_nonneg k hh.le b₂
-  have := semiclassicalSobolevNorm_nonneg k hh.le ζ₁
-  have := semiclassicalSobolevNorm_nonneg k hh.le ζ₂
-  have := semiclassicalSobolevNorm_nonneg k hh.le (ζ₁ - ζ₂)
+  set nδb := semiclassicalSobolevNorm k h (b₁ - b₂)
+  set nb₂ := semiclassicalSobolevNorm k h b₂
+  set nζ₁ := semiclassicalSobolevNorm k h ζ₁
+  set nζ₂ := semiclassicalSobolevNorm k h ζ₂
+  set nδζ := semiclassicalSobolevNorm k h (ζ₁ - ζ₂)
+  have : 0 ≤ nδb := semiclassicalSobolevNorm_nonneg k hh.le _
+  have : 0 ≤ nb₂ := semiclassicalSobolevNorm_nonneg k hh.le _
+  have : 0 ≤ nζ₁ := semiclassicalSobolevNorm_nonneg k hh.le _
+  have : 0 ≤ nζ₂ := semiclassicalSobolevNorm_nonneg k hh.le _
+  have : 0 ≤ nδζ := semiclassicalSobolevNorm_nonneg k hh.le _
   set s := √((k : ℝ) + 1)
   have hs : s ^ 2 = k + 1 := Real.sq_sqrt (by positivity)
-  have hh2 : 0 < h ^ 2 := by positivity
-  refine (sqrt_rescaledTargetNormSq_le k hh y).trans
-    ((mul_le_mul_of_nonneg_left hy hh2.le).trans ?_)
-  -- Each factor carries one `h²`; the leftover `h⁻²` is the volume factor `h^(-n/2)`.
-  rw [show h ^ 2 * (C₀ * (h * semiclassicalSobolevNorm k h (b₁ - b₂) *
-      semiclassicalSobolevNorm k h ζ₁ + h * semiclassicalSobolevNorm k h b₂ *
-        semiclassicalSobolevNorm k h (ζ₁ - ζ₂) + semiclassicalSobolevNorm k h (ζ₁ - ζ₂) *
-          (semiclassicalSobolevNorm k h ζ₁ + semiclassicalSobolevNorm k h ζ₂))) =
-      C₀ / h ^ 2 * (h ^ 2 * (h * semiclassicalSobolevNorm k h (b₁ - b₂)) *
-        (h ^ 2 * semiclassicalSobolevNorm k h ζ₁) +
-          h ^ 2 * (h * semiclassicalSobolevNorm k h b₂) *
-            (h ^ 2 * semiclassicalSobolevNorm k h (ζ₁ - ζ₂)) +
-          h ^ 2 * semiclassicalSobolevNorm k h (ζ₁ - ζ₂) *
-            (h ^ 2 * semiclassicalSobolevNorm k h ζ₁ +
-              h ^ 2 * semiclassicalSobolevNorm k h ζ₂)) by field_simp]
-  calc _ ≤ C₀ / h ^ 2 * ((s * √(rescaledFieldNormSq k h (b₁ - b₂) (ζ₁ - ζ₂))) *
+  calc √(rescaledTargetNormSq (k + 1) h y) ≤ h ^ 2 * semiclassicalSobolevNorm k h y :=
+        sqrt_rescaledTargetNormSq_le k hh y
+    _ ≤ h ^ 2 * (C₀ * (h * nδb * nζ₁ + h * nb₂ * nδζ + nδζ * (nζ₁ + nζ₂))) := by gcongr
+    -- Each factor carries one `h²`; the leftover `h⁻²` is the volume factor `h^(-n/2)`.
+    _ = C₀ / h ^ 2 * (h ^ 2 * (h * nδb) * (h ^ 2 * nζ₁) + h ^ 2 * (h * nb₂) * (h ^ 2 * nδζ) +
+          h ^ 2 * nδζ * (h ^ 2 * nζ₁ + h ^ 2 * nζ₂)) := by field_simp
+    _ ≤ C₀ / h ^ 2 * ((s * √(rescaledFieldNormSq k h (b₁ - b₂) (ζ₁ - ζ₂))) *
         (2 * (s * √(rescaledFieldNormSq k h b₁ ζ₁))) +
           (s * √(rescaledFieldNormSq k h b₂ ζ₂)) *
             (2 * (s * √(rescaledFieldNormSq k h (b₁ - b₂) (ζ₁ - ζ₂)))) +
@@ -259,10 +254,10 @@ theorem exists_sqrt_rescaledTargetNormSq_flatDirac_const_sub_flatDirac_const_le 
   have hδb := hb₁.sub hb₂
   have hδζ := hζ₁.sub hζ₂
   obtain ⟨h₁m, h₁⟩ := hB h hh (h • (b₁ - b₂)) ζ₁ (hδb.const_smul h) hζ₁
-    (fun i hi ↦ hδb.memLp_iteratedFDeriv_const_smul (by exact_mod_cast hi)
-      (hb₁.memLp_iteratedFDeriv_sub (by exact_mod_cast hi) hb₂ (hb₁m i hi) (hb₂m i hi)) h) hζ₁m
+    (fun i hi ↦ (hb₁.memLp_iteratedFDeriv_sub (by exact_mod_cast hi) hb₂ (hb₁m i hi)
+      (hb₂m i hi)).iteratedFDeriv_const_smul h) hζ₁m
   obtain ⟨-, h₂⟩ := hB h hh (h • b₂) (ζ₁ - ζ₂) (hb₂.const_smul h) hδζ
-    (fun i hi ↦ hb₂.memLp_iteratedFDeriv_const_smul (by exact_mod_cast hi) (hb₂m i hi) h)
+    (fun i hi ↦ (hb₂m i hi).iteratedFDeriv_const_smul h)
     fun i hi ↦ hζ₁.memLp_iteratedFDeriv_sub (by exact_mod_cast hi) hζ₂ (hζ₁m i hi) (hζ₂m i hi)
   rw [semiclassicalSobolevNorm_const_smul, abs_of_pos hh] at h₁ h₂
   have hc₁ : ContDiff ℝ k fun x ↦ cliffordMulL o ρ ((h • (b₁ - b₂)) x) (ζ₁ x) :=

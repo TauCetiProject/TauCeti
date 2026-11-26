@@ -572,6 +572,42 @@ private theorem memLp_and_semiclassicalSobolevNorm_comp_le (L : F →L[ℝ] G) {
   · simp
   · simp [iteratedFDeriv_const_of_ne hi]
 
+/-- The bounds on one term `x ↦ L (a (f x) * b (g x))` of the expansion of a bilinear map in
+coordinates, given the scalar algebra estimate with constant `C₀` at the scale `h`. -/
+private theorem contDiff_memLp_semiclassicalSobolevNorm_term_le {C₀ : ℝ} (hC₀ : 0 ≤ C₀)
+    (hmul : ∀ φ ψ : E → ℝ, ContDiff ℝ k φ → ContDiff ℝ k ψ →
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i φ) 2) → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i ψ) 2) →
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i (φ * ψ)) 2) ∧
+        semiclassicalSobolevNorm k h (φ * ψ) ≤
+          C₀ * semiclassicalSobolevNorm k h φ * semiclassicalSobolevNorm k h ψ)
+    (L : ℝ →L[ℝ] H) (a : F →L[ℝ] ℝ) (b : G →L[ℝ] ℝ) {f : E → F} {g : E → G}
+    (hf : ContDiff ℝ k f) (hg : ContDiff ℝ k g) (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2)
+    (hgm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i g) 2) (hh : 0 < h) :
+    ContDiff ℝ k (fun x ↦ L (a (f x) * b (g x))) ∧
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun x ↦ L (a (f x) * b (g x))) 2) ∧
+        semiclassicalSobolevNorm k h (fun x ↦ L (a (f x) * b (g x))) ≤
+          (k + 1) * 2 ^ k * ‖L‖ * C₀ * ((k + 1) * 2 ^ k * ‖a‖) * ((k + 1) * 2 ^ k * ‖b‖) *
+            semiclassicalSobolevNorm k h f * semiclassicalSobolevNorm k h g := by
+  have hfi := a.contDiff.comp hf
+  have hgj := b.contDiff.comp hg
+  obtain ⟨hfim, hfin⟩ := memLp_and_semiclassicalSobolevNorm_comp_le a hf hfm hh
+  obtain ⟨hgjm, hgjn⟩ := memLp_and_semiclassicalSobolevNorm_comp_le b hg hgm hh
+  obtain ⟨hpm, hpn⟩ := hmul _ _ hfi hgj hfim hgjm
+  obtain ⟨hvm, hvn⟩ := memLp_and_semiclassicalSobolevNorm_comp_le L (hfi.mul hgj) hpm hh
+  refine ⟨L.contDiff.comp (hfi.mul hgj), hvm, hvn.trans ?_⟩
+  have hf0 := semiclassicalSobolevNorm_nonneg k hh.le f
+  have hgj0 := semiclassicalSobolevNorm_nonneg k hh.le fun x ↦ b (g x)
+  calc (k + 1) * 2 ^ k * ‖L‖ *
+        semiclassicalSobolevNorm k h ((fun x ↦ a (f x)) * fun x ↦ b (g x))
+      ≤ (k + 1) * 2 ^ k * ‖L‖ * (C₀ * semiclassicalSobolevNorm k h (fun x ↦ a (f x)) *
+          semiclassicalSobolevNorm k h (fun x ↦ b (g x))) :=
+        mul_le_mul_of_nonneg_left hpn (by positivity)
+    _ ≤ (k + 1) * 2 ^ k * ‖L‖ * (C₀ * ((k + 1) * 2 ^ k * ‖a‖ * semiclassicalSobolevNorm k h f) *
+          ((k + 1) * 2 ^ k * ‖b‖ * semiclassicalSobolevNorm k h g)) :=
+        mul_le_mul_of_nonneg_left (mul_le_mul (mul_le_mul_of_nonneg_left hfin hC₀) hgjn hgj0
+          (mul_nonneg hC₀ (by positivity))) (by positivity)
+    _ = _ := by ring
+
 variable [FiniteDimensional ℝ F] [FiniteDimensional ℝ G]
 
 /-- **The bilinear algebra estimate, uniformly in the scale.** Let `2k > dim E` and let
@@ -607,31 +643,9 @@ theorem exists_semiclassicalSobolevNorm_bilinear_le (hk : finrank ℝ E < 2 * k)
   set K : ℝ := (k + 1) * 2 ^ k
   refine ⟨∑ p, K * ‖v p‖ * C₀ * (K * ‖cF p.1‖) * (K * ‖cG p.2‖), by positivity,
     fun h hh f g hf hg hfm hgm ↦ ?_⟩
-  -- The bounds on one term of the expansion.
-  have hterm (p : Fin (finrank ℝ F) × Fin (finrank ℝ G)) :
-      ContDiff ℝ k (fun x ↦ v p (cF p.1 (f x) * cG p.2 (g x))) ∧
-      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun x ↦ v p (cF p.1 (f x) * cG p.2 (g x))) 2) ∧
-        semiclassicalSobolevNorm k h (fun x ↦ v p (cF p.1 (f x) * cG p.2 (g x))) ≤
-          K * ‖v p‖ * C₀ * (K * ‖cF p.1‖) * (K * ‖cG p.2‖) *
-            semiclassicalSobolevNorm k h f * semiclassicalSobolevNorm k h g := by
-    have hfi := (cF p.1).contDiff.comp hf
-    have hgj := (cG p.2).contDiff.comp hg
-    obtain ⟨hfim, hfin⟩ := memLp_and_semiclassicalSobolevNorm_comp_le (cF p.1) hf hfm hh
-    obtain ⟨hgjm, hgjn⟩ := memLp_and_semiclassicalSobolevNorm_comp_le (cG p.2) hg hgm hh
-    obtain ⟨hpm, hpn⟩ := hmul h hh _ _ hfi hgj hfim hgjm
-    obtain ⟨hvm, hvn⟩ := memLp_and_semiclassicalSobolevNorm_comp_le (v p) (hfi.mul hgj) hpm hh
-    refine ⟨(v p).contDiff.comp (hfi.mul hgj), hvm, hvn.trans ?_⟩
-    have hf0 := semiclassicalSobolevNorm_nonneg k hh.le f
-    have hgj0 := semiclassicalSobolevNorm_nonneg k hh.le fun x ↦ cG p.2 (g x)
-    calc K * ‖v p‖ * semiclassicalSobolevNorm k h ((fun x ↦ cF p.1 (f x)) * fun x ↦ cG p.2 (g x))
-        ≤ K * ‖v p‖ * (C₀ * semiclassicalSobolevNorm k h (fun x ↦ cF p.1 (f x)) *
-            semiclassicalSobolevNorm k h (fun x ↦ cG p.2 (g x))) :=
-          mul_le_mul_of_nonneg_left hpn (by positivity)
-      _ ≤ K * ‖v p‖ * (C₀ * (K * ‖cF p.1‖ * semiclassicalSobolevNorm k h f) *
-            (K * ‖cG p.2‖ * semiclassicalSobolevNorm k h g)) :=
-          mul_le_mul_of_nonneg_left (mul_le_mul (mul_le_mul_of_nonneg_left hfin hC₀) hgjn hgj0
-            (mul_nonneg hC₀ (by positivity))) (by positivity)
-      _ = _ := by ring
+  have hterm (p : Fin (finrank ℝ F) × Fin (finrank ℝ G)) :=
+    contDiff_memLp_semiclassicalSobolevNorm_term_le hC₀ (hmul h hh) (v p) (cF p.1) (cG p.2) hf hg
+      hfm hgm hh
   have hfun : (fun x ↦ B (f x) (g x)) =
       fun x ↦ ∑ p, v p (cF p.1 (f x) * cG p.2 (g x)) := funext fun x ↦ hexp (f x) (g x)
   rw [hfun]

@@ -50,7 +50,7 @@ The iterated derivatives of order at most `k` of a compactly supported `C^k` fun
 `ContDiff.memLp_iteratedFDeriv_apply_of_hasCompactSupport`), and those of sums, differences and
 constant multiples of `C^k` functions are in `Lᵖ` when those of the functions are
 (`ContDiff.memLp_iteratedFDeriv_add`, `ContDiff.memLp_iteratedFDeriv_sub`,
-`ContDiff.memLp_iteratedFDeriv_const_smul`). For a continuous bilinear map `B`,
+`MeasureTheory.MemLp.iteratedFDeriv_const_smul`). For a continuous bilinear map `B`,
 the Leibniz rule and Hölder's inequality bound the `Lᵖ` norm of `D^k (B (u, v))` by a binomial sum
 of products of `Lᵠ` norms of `D^i u` and `Lʳ` norms of `D^(k-i) v`
 (`ContinuousLinearMap.eLpNorm_iteratedFDeriv_le_of_bilinear`). The derivative of the `k`-th
@@ -251,13 +251,16 @@ theorem ContDiff.memLp_iteratedFDeriv_sub (hn : n ≤ N) (hu : ContDiff 𝕜 N u
   rw [iteratedFDeriv_sub (hu.of_le hn) (hv.of_le hn)]
   exact hum.sub hvm
 
-/-- The `n`-th derivative of a constant multiple of a `C^N` function, `n ≤ N`, is in `Lᵖ` when
-that of the function is. -/
-theorem ContDiff.memLp_iteratedFDeriv_const_smul (hn : n ≤ N) (hu : ContDiff 𝕜 N u)
-    (hum : MemLp (iteratedFDeriv 𝕜 n u) p μ) (c : 𝕜) :
-    MemLp (iteratedFDeriv 𝕜 n (c • u)) p μ := by
-  rw [show iteratedFDeriv 𝕜 n (c • u) = c • iteratedFDeriv 𝕜 n u from
-    funext fun _ ↦ iteratedFDeriv_const_smul_apply (hu.of_le hn).contDiffAt]
+/-- The `n`-th derivative of a constant multiple of a function is in `Lᵖ` when that of the
+function is. No smoothness is needed: for `c ≠ 0`, scaling by `c` is a continuous linear
+equivalence, which commutes with iterated derivatives. -/
+theorem MeasureTheory.MemLp.iteratedFDeriv_const_smul (hum : MemLp (iteratedFDeriv 𝕜 n u) p μ)
+    (c : 𝕜) : MemLp (iteratedFDeriv 𝕜 n (c • u)) p μ := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · rw [zero_smul, iteratedFDeriv_zero]
+    exact MemLp.zero (ε := E [×n]→L[𝕜] F)
+  rw [show iteratedFDeriv 𝕜 n (c • u) = c • iteratedFDeriv 𝕜 n u from funext fun _ ↦
+    (ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (Units.mk0 c hc)).iteratedFDeriv_comp_left]
   exact hum.const_smul c
 
 end Algebra
