@@ -16,16 +16,15 @@ orbits form a smooth manifold of dimension `2m`
 (`TauCeti.Vortex.SobolevFieldSpace.isManifold_vortexModuli`). Gluing plane vortices into
 approximate solutions reads a field that is only close to a vortex through a nearby vortex orbit:
 the *field projection*. This file constructs it near every smooth vortex `x₀`, as a smooth,
-gauge-invariant retraction of a neighbourhood of `x₀` onto the vortices of the Coulomb slice of
-`x₀`.
+gauge-invariant map from a neighbourhood of `x₀` to the vortices of the Coulomb slice of `x₀` that
+keeps the gauge orbit of every vortex.
 
 **The Coulomb projection is gauge invariant.** Near a field `x`, the smooth Coulomb gauge carries
 each field `y` to a field `g · y` of the Coulomb slice `d₀* (· - x) = 0`, with coordinates `π y`
-smooth in those of `y` (`exists_isOpen_contDiffOn_forall_realSubRef_smul_eq`). Since the slice
-meets each nearby gauge orbit only once
-(`exists_isOpen_isOpenEmbedding_quotientMk_gaugeAdjoint_sub_eq_zero`), on a smaller neighbourhood
-`π` takes the same value on gauge equivalent fields
-(`exists_isOpen_contDiffOn_forall_realSubRef_smul_eq_and_forall_apply_smul_eq`).
+smooth in those of `y`. Since the slice meets each nearby gauge orbit only once, on a smaller
+neighbourhood `π` takes the same value on gauge equivalent fields
+(`TauCeti.Vortex.SobolevFieldSpace.`
+`exists_isOpen_contDiffOn_forall_realSubRef_smul_eq_and_forall_apply_smul_eq`).
 
 **The retraction in the slice.** At a vortex `x₀` lying in every `A_m^j`, the Coulomb slice chart
 reads a vortex `t` of the slice through a continuous linear map `Ψ` applied to the difference of
@@ -45,8 +44,8 @@ and takes values in the vortices of the Coulomb slice of `x₀`
 * it fixes vortex orbits: a vortex `y` of `U` is gauge equivalent to `P y`;
 * it fixes `x₀`.
 
-So `y ↦ [P y]` is a smooth retraction of a neighbourhood of `[x₀]` in the orbit space
-`A_m^(k+1) / G_(k+2)` onto the vortex moduli space. For `k ≥ 3`, composing with the divisor gives
+So the vortex orbit `[P y]` depends only on the gauge orbit of `y` within `U`, and it is the orbit
+of `y` when `y` is a vortex. For `k ≥ 3`, composing with the divisor gives
 gauge-invariant divisor coordinates `y ↦ c(D(P y)) ∈ ℂᵐ` near `x₀`, the coefficients of the monic
 polynomial whose roots are the zeros of `P y`; they are smooth in the field coordinates and are
 the coefficients of the divisor of `y` when `y` is a vortex
@@ -54,8 +53,6 @@ the coefficients of the divisor of `y` when `y` is a vortex
 
 ## Main results
 
-* `exists_isOpen_contDiffOn_forall_realSubRef_smul_eq_and_forall_apply_smul_eq`:
-  the smooth Coulomb projection near a field is gauge invariant.
 * `TauCeti.Vortex.SobolevFieldSpace.exists_isOpen_sliceVortexRetraction`: a smooth
   retraction of the fields near a vortex onto the vortices of its Coulomb slice.
 * `TauCeti.Vortex.SobolevFieldSpace.exists_isOpen_fieldProjection`: the field projection near a
@@ -81,58 +78,6 @@ open BesselPotentialSpace Filter Topology SobolevTopologicalGaugeGroup
 open scoped ContDiff
 
 variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
-
-section CoulombProjection
-
-variable [Fact (1 < k)] (hs : 1 < (k : ℝ) + 1)
-
-/-- **The smooth Coulomb projection is gauge invariant.** Let `x` be a continuous field of
-`A_m^k`, `k ≥ 3`. In the real chart of `A_m^k`, there are an open neighbourhood `U` of the
-coordinates of `x` and a map `π` of the real coordinates, smooth on `U` and fixing the coordinates
-of `x`, such that `π` sends the coordinates of every field `y` with coordinates in `U` to those of a
-gauge transform `g · y` lying in the Coulomb slice of `x`, and takes the same value at `y` and at
-`g · y` for every gauge `g` keeping the coordinates in `U`. -/
-theorem exists_isOpen_contDiffOn_forall_realSubRef_smul_eq_and_forall_apply_smul_eq (hk : 3 ≤ k)
-    (x : SobolevFieldSpace f m k) :
-    ∃ U : Set (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k)), IsOpen U ∧
-      x.realSubRef (Nat.cast_nonneg k) ∈ U ∧
-      ∃ π : (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k)) →
-          Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k),
-        ContDiffOn ℝ ∞ π U ∧
-          π (x.realSubRef (Nat.cast_nonneg k)) = x.realSubRef (Nat.cast_nonneg k) ∧
-        (∀ y : SobolevFieldSpace f m k, y.realSubRef (Nat.cast_nonneg k) ∈ U →
-          ∃ g : SobolevTopologicalGaugeGroup hs, g • y ∈ coulombSlice x ∧
-            (g • y).realSubRef (Nat.cast_nonneg k) = π (y.realSubRef (Nat.cast_nonneg k))) ∧
-        ∀ (y : SobolevFieldSpace f m k) (g : SobolevTopologicalGaugeGroup hs),
-          y.realSubRef (Nat.cast_nonneg k) ∈ U → (g • y).realSubRef (Nat.cast_nonneg k) ∈ U →
-            π ((g • y).realSubRef (Nat.cast_nonneg k)) = π (y.realSubRef (Nat.cast_nonneg k)) := by
-  have hk1 : (1 : ℝ) < k := Nat.one_lt_cast.2 Fact.out
-  obtain ⟨U₁, hU₁, hxU₁, π, hπ, hπx, hπS⟩ :=
-    exists_isOpen_contDiffOn_forall_realSubRef_smul_eq hs hk x
-  obtain ⟨V, hV, hxV, hemb⟩ :=
-    exists_isOpen_isOpenEmbedding_quotientMk_gaugeAdjoint_sub_eq_zero hs hk x
-  -- Shrink `U₁` so that the Coulomb representatives lie in `V`, where the slice meets each orbit
-  -- once.
-  refine ⟨U₁ ∩ π ⁻¹' (ofRealSubRef (f := f) (m := m) hk1 ⁻¹' V),
-      hπ.continuousOn.isOpen_inter_preimage hU₁ (hV.preimage (continuous_ofRealSubRef hk1)),
-      ⟨hxU₁, by
-        rw [Set.mem_preimage, Set.mem_preimage, hπx, ofRealSubRef_realSubRef]; exact hxV⟩,
-      π, hπ.mono Set.inter_subset_left, hπx, fun y hy ↦ hπS y hy.1, fun y g hy hgy ↦ ?_⟩
-  obtain ⟨g₁, hg₁S, hg₁⟩ := hπS y hy.1
-  obtain ⟨g₂, hg₂S, hg₂⟩ := hπS (g • y) hgy.1
-  have hq : Quotient.mk (MulAction.orbitRel (SobolevTopologicalGaugeGroup hs)
-      (SobolevFieldSpace f m k)) (g₁ • y) = Quotient.mk _ (g₂ • g • y) :=
-    Quotient.sound ⟨g₁ * (g₂ * g)⁻¹, by
-      beta_reduce; rw [smul_smul g₂ g y, smul_smul, inv_mul_cancel_right]⟩
-  have hV₁ : g₁ • y ∈ V := by rw [← ofRealSubRef_realSubRef hk1 (g₁ • y), hg₁]; exact hy.2
-  have hV₂ : g₂ • g • y ∈ V := by
-    rw [← ofRealSubRef_realSubRef hk1 (g₂ • g • y), hg₂]; exact hgy.2
-  have heq := congrArg Subtype.val (hemb.injective (a₁ := ⟨g₁ • y, hV₁, mem_coulombSlice.1 hg₁S⟩)
-    (a₂ := ⟨g₂ • g • y, hV₂, mem_coulombSlice.1 hg₂S⟩) hq)
-  rw [← hg₁, ← hg₂]
-  exact congrArg (realSubRef (Nat.cast_nonneg k)) heq.symm
-
-end CoulombProjection
 
 variable [Fact (1 < k + 1)] {hs : 1 < ((k + 1 : ℕ) : ℝ) + 1}
 
@@ -244,8 +189,8 @@ of the fields into the vortices of the Coulomb slice of `x₀` such that
 * `P` is gauge invariant on `U`: `P (g · y) = P y` whenever `y` and `g · y` lie in `U`;
 * `P` is smooth in the real coordinates of the fields at every field of `U`.
 
-So `y ↦ [P y]` is a smooth retraction of a neighbourhood of `[x₀]` in `A_m^(k+1) / G_(k+2)` onto
-the vortex moduli space. -/
+So the vortex orbit `[P y]` depends only on the gauge orbit of `y` within `U`, and it is the orbit
+of `y` when `y` is a vortex. -/
 theorem exists_isOpen_fieldProjection (hk : 2 ≤ k) (x₀ : SobolevFieldSpace f m (k + 1 : ℕ))
     (hmem : ∀ j : ℕ, ⇑x₀ ∈ framedFieldSpace f m j) (hsol : ∀ z, equation x₀ z = 0) :
     ∃ U : Set (SobolevFieldSpace f m (k + 1 : ℕ)), IsOpen U ∧ x₀ ∈ U ∧
@@ -312,11 +257,7 @@ theorem exists_isOpen_contDiffAt_coeffEquiv_sobolevVortexDivisor (hk : 3 ≤ k)
   · -- Gauges keep the divisor of a vortex.
     obtain ⟨g, hg⟩ := hPy y hy hsoly
     simp only [D, ← hg]
-    rw [← vortexModuliDivisor_mk (hs := hs) (by omega)
-        (fun z ↦ (equation_smul_eq_zero_iff (by omega) g y z).2 (hsoly z)),
-      ← vortexModuliDivisor_mk (hs := hs) (by omega) hsoly]
-    exact congrArg (fun q ↦ Sym.coeffEquiv ℂ m (vortexModuliDivisor hs (by omega) q))
-      (Subtype.ext (Quotient.sound ⟨g, rfl⟩))
+    exact congrArg (Sym.coeffEquiv ℂ m) (sobolevVortexDivisor_smul (by omega) g hsoly)
   · -- `P` is a smooth family of vortices near `y`, so its divisor coefficients are smooth.
     obtain ⟨F, hF, hFev⟩ := exists_contDiffAt_eventually_coeffEquiv_sobolevVortexDivisor_eq
       (by omega) (hPc y hy)
