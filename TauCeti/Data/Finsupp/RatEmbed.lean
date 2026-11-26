@@ -55,7 +55,7 @@ theorem exists_nat_smul_eq_ratEmbed {σ : Type*} [Finite σ] {x : σ → ℚ} (h
     ∃ (D : ℕ) (d : σ →₀ ℕ), 0 < D ∧ (D : ℚ) • x = ratEmbed d := by
   classical
   cases nonempty_fintype σ
-  obtain ⟨D, k, hD, hk⟩ := exists_nat_mul_eq_natCast Finset.univ fun i _ ↦ hx i
+  obtain ⟨D, k, hD, hk⟩ := Finset.exists_nat_mul_eq_natCast Finset.univ fun i _ ↦ hx i
   refine ⟨D, Finsupp.equivFunOnFinite.symm k, hD, funext fun i ↦ ?_⟩
   simpa only [Pi.smul_apply, smul_eq_mul, ratEmbed_apply,
     Finsupp.equivFunOnFinite_symm_apply_apply] using hk i (Finset.mem_univ i)

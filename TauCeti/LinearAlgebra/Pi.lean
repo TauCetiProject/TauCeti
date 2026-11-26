@@ -96,8 +96,6 @@ weights.
   `LinearEquiv.funCongrLeft_inv_symm_cancel`, `LinearEquiv.funCongrLeft_one_symm`, and
   `LinearEquiv.funCongrLeft_eq_comp`: reindexing by permutations as composition, identity, and
   inverse cancellation.
-* `LinearMap.proj_comp_funCongrLeft`: composing a coordinate projection with `funCongrLeft`
-  evaluates at the image coordinate.
 * `TauCeti.coordEq`, `TauCeti.coordEq_eq_ker`, `TauCeti.mem_coordEq_iff`, and
   `TauCeti.eq_or_eq_of_coordEq_eq`: the coordinate-equality hyperplane `{v | v a = v b}`.
 * `TauCeti.piMatrixLinearEquiv`: the `R`-linear equivalence flattening a family of matrices
@@ -445,15 +443,6 @@ end FinsetUnion
 end LinearEquiv
 
 namespace LinearMap
-
-/-- Composing the `i`-th coordinate projection with `LinearEquiv.funCongrLeft R M e` gives the
-`e i`-th coordinate projection. -/
-@[simp]
-public theorem proj_comp_funCongrLeft {R M ι ι' : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] (i : ι') (e : ι' ≃ ι) :
-    (proj i : (ι' → M) →ₗ[R] M).comp (LinearEquiv.funCongrLeft R M e).toLinearMap =
-      proj (e i) := by
-  ext w; simp
 
 /-- Applying a linear map coordinatewise to the one-point family `Pi.single i x` gives the
 one-point family `Pi.single i (f x)`. -/

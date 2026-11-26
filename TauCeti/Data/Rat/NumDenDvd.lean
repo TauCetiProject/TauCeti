@@ -26,7 +26,7 @@ the scaling `(A, B) ↦ (r⁴A, r⁶B)` between two integral short Weierstrass e
 
 Also proves the nonnegative specialization `Rat.den_dvd_iff_exists_mul_natCast_eq` and simultaneous
 denominator clearing across a `Finset` of nonnegative rationals
-(`TauCeti.exists_nat_mul_eq_natCast`).
+(`Finset.exists_nat_mul_eq_natCast`).
 
 ## Main results
 
@@ -37,7 +37,7 @@ denominator clearing across a `Finset` of nonnegative rationals
 * `Rat.den_dvd_iff_exists_mul_intCast_eq`: `r.den ∣ a` exactly when `r * a` is an integer.
 * `Rat.den_dvd_iff_exists_mul_natCast_eq`: for `0 ≤ r`, `r.den ∣ n` exactly when `r * n` is a
   natural number.
-* `TauCeti.exists_nat_mul_eq_natCast`: nonnegative rational families on a `Finset` clear
+* `Finset.exists_nat_mul_eq_natCast`: nonnegative rational families on a `Finset` clear
   denominators simultaneously.
 -/
 
@@ -107,7 +107,7 @@ theorem den_dvd_iff_exists_mul_natCast_eq {r : ℚ} (hr : 0 ≤ r) (n : ℕ) :
 
 end Rat
 
-namespace TauCeti
+namespace Finset
 
 /-- Any finite subset of a nonnegative rational family `x : ι → ℚ` clears denominators
 simultaneously to natural numbers. -/
@@ -125,6 +125,6 @@ theorem exists_nat_mul_eq_natCast {ι : Type*} (s : Finset ι) {x : ι → ℚ}
   simp only [hi, ↓reduceDIte]
   rw [mul_comm, hk ⟨i, hi⟩]
 
-end TauCeti
+end Finset
 
 end

@@ -107,7 +107,7 @@ private theorem ratEmbed_mem_maxOrbitCone_iff (m : MonomialOrder σ) (G : Subgro
   refine ⟨fun hd => ?_, fun hd => PointedCone.subset_hull ⟨d, hd, rfl⟩⟩
   obtain ⟨c, hc_supp, hc_nonneg, hc_sum⟩ := PointedCone.mem_hull_set.mp hd
   obtain ⟨N, k, hNpos, hk⟩ :=
-    TauCeti.exists_nat_mul_eq_natCast c.support fun y _ => hc_nonneg y
+    c.support.exists_nat_mul_eq_natCast fun y _ => hc_nonneg y
   choose a ha haeq using fun y (hy : y ∈ c.support) => hc_supp (Finset.mem_coe.mpr hy)
   let d' : σ →₀ ℕ := ∑ y ∈ c.support.attach, k y.val • a y.val y.property
   have hd'_mem : d' ∈ m.maxOrbitExponents G :=
@@ -371,7 +371,13 @@ private theorem wallFuncs_union_eqFuncs_comp_mem (G : Subgroup (Perm σ))
         Equiv.Perm.mul_def, Equiv.symm_trans]
     rw [hcomp]
     exact hwall _ (G.mul_mem (G.inv_mem hh) hk) ℓ hℓ
-  · rw [LinearMap.sub_comp, LinearMap.proj_comp_funCongrLeft, LinearMap.proj_comp_funCongrLeft]
+  · rw [LinearMap.sub_comp,
+      show (LinearMap.proj a : (σ → ℚ) →ₗ[ℚ] ℚ).comp
+          (LinearEquiv.funCongrLeft ℚ ℚ h.symm).toLinearMap =
+        LinearMap.proj (h.symm a) from LinearMap.proj_comp_funLeft h.symm a,
+      show (LinearMap.proj b : (σ → ℚ) →ₗ[ℚ] ℚ).comp
+          (LinearEquiv.funCongrLeft ℚ ℚ h.symm).toLinearMap =
+        LinearMap.proj (h.symm b) from LinearMap.proj_comp_funLeft h.symm b]
     exact heq_sub (heq_mem (h.symm a) (h.symm b) (h.symm.injective.ne hab))
 
 /-- Build the finite family of wall functionals and coordinate-equality functionals, and choose a
