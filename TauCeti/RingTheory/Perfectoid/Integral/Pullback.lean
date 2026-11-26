@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.AdicCompletion.Pullback
 public import TauCeti.RingTheory.Perfectoid.Integral.Pi
 public import TauCeti.RingTheory.Perfectoid.Integral.PowerTorsion
 public import TauCeti.RingTheory.Perfectoid.PreTilt.Pullback
+public import TauCeti.RingTheory.Pullback
 
 import Mathlib.Tactic.LinearCombination
 
@@ -209,9 +210,7 @@ theorem pullback [IsIntegralPerfectoid p A] [IsIntegralPerfectoid p A'] [IsInteg
   cases subsingleton_or_nontrivial A' with
   | inl _ =>
     -- over the zero ring, the fibre product is all of `A × B`
-    exact .of_ringEquiv (RingEquiv.ofBijective (f.pullback g).subtype
-      ⟨Subtype.val_injective, fun x ↦
-        ⟨⟨x, RingHom.mem_pullback.mpr (Subsingleton.elim _ _)⟩, rfl⟩⟩).symm
+    exact .of_ringEquiv (RingHom.pullbackEquivProdOfSubsingleton f g).symm
   | inr _ =>
     have : Nontrivial A := hf.nontrivial
     have : Nontrivial B := g.domain_nontrivial
