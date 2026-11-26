@@ -402,14 +402,9 @@ theorem comp_mem_classicalPseudodifferentialOperators
   refine ⟨∑ i, c i, fun u x ↦ ?_⟩
   set F := e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))
   -- The pieces `ρᵢ Q F` add up to `Q F`, which is supported in `K'`.
-  have hsplit : Q F = ∑ i, LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (ρ i)) (Q F) := by
-    ext y
-    simp only [ContMDiffMap.coe_sum, Finset.sum_apply, LinearMap.mulLeft_apply,
-      ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.ofReal_apply, ← Finset.sum_mul]
-    by_cases hy : y ∈ K'
-    · rw [← Complex.ofReal_sum, hρ1 y hy, Complex.ofReal_one, one_mul]
-    · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hy
-        (hQK' F (OpenPartialHomeomorph.tsupport_complexCutoffPullback_subset he ψ _) h), mul_zero]
+  have hsplit : Q F = ∑ i, LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (ρ i)) (Q F) :=
+    ContMDiffMap.eq_sum_mulLeft_ofReal _ ρ ((subset_tsupport _).trans
+      (hQK' F (OpenPartialHomeomorph.tsupport_complexCutoffPullback_subset he ψ _))) hρ1
   simp only [ClassicalSymbol.toSymbol_sum, Symbol.quantizeSchwartzValue_sum_left, hc,
     OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply]
   rw [← Finset.smul_sum]

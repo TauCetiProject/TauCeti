@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 public import TauCeti.Geometry.Manifold.ContMDiffMap.LocallyFiniteSum
 public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Basic
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
+import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
 
 /-!
@@ -346,6 +347,25 @@ theorem mem_classicalPseudodifferentialOperators_iff {m : ℝ}
             quantizeSchwartzValue a.toSymbol.coefficient u x =
               e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x :=
   Iff.rfl
+
+/-- The symbol of a chart compression by `φ` and `ψ` has compact spatial support, since every
+output of the compression is supported in the compact support of `φ`. -/
+theorem hasCompactSpatialSupport_of_eq_complexChartCompression {m : ℝ}
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {b : ClassicalSymbol n ℂ ℂ m}
+    (hb : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
+      quantizeSchwartzValue b.toSymbol.coefficient u y =
+        e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y) :
+    b.toSymbol.HasCompactSpatialSupport := by
+  refine Symbol.hasCompactSpatialSupport_iff_exists_tsupport_quantizeSchwartzValue_subset.2
+    ⟨tsupport φ, φ.hasCompactSupport.isCompact, fun u _ ↦ ?_⟩
+  rw [show quantizeSchwartzValue b.toSymbol.coefficient u = fun y ↦ φ y •
+      P (e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))) (e.symm y) from
+    funext fun y ↦ by rw [hb, OpenPartialHomeomorph.complexChartCompression_apply]]
+  exact tsupport_smul_subset_left _ _
 
 /-- **Inclusion of orders.** A classical pseudodifferential operator of order `m' = m - k`,
 `k ∈ ℕ`, has order `m`. As for classical symbols (`TauCeti.ClassicalSymbol.inclusion`), orders
