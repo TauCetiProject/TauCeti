@@ -83,15 +83,12 @@ private theorem isHomotopyKSheaf_totalComplex_aux (k : ℕ) :
     set S : ShortComplex (KPresheaf (HomologicalComplex₂ C (.up ℤ) (.up ℤ)) X) :=
       F.stupidTruncShortComplex a with hS
     -- `S.X₁.obj K`, `S.X₃.obj K` are truncations of `F.obj K` (`stupidTruncShortComplex_X₁`)
-    have h₁ : ∀ K p, p < a + 1 ∨ a + 1 + k < p → IsZero ((S.X₁.obj K).X p) := by
-      rintro K p (hp | hp)
-      · exact CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X (F.obj K) (a + 1) hp
-      · exact (F.obj K).isZero_stupidTrunc_X_of_isZero _ (hF K p (by omega))
-    have h₃ : ∀ K p, p ≠ a → IsZero ((S.X₃.obj K).X p) := by
-      intro K p hp
-      rcases lt_or_gt_of_ne hp with hp | hp
-      · exact (F.obj K).isZero_stupidTrunc_X_of_isZero _ (hF K p (by omega))
-      · exact CochainComplex.isZero_stupidTrunc_embeddingUpIntLE_X (F.obj K) a hp
+    have h₁ : ∀ K p, p < a + 1 ∨ a + 1 + k < p → IsZero ((S.X₁.obj K).X p) := fun K p hp ↦
+      CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X_of_isZero (F.obj K) (a + 1)
+        (a + 1 + k) (fun q hq ↦ hF K q (by omega)) hp
+    have h₃ : ∀ K p, p ≠ a → IsZero ((S.X₃.obj K).X p) := fun K p hp ↦
+      CochainComplex.isZero_stupidTrunc_embeddingUpIntLE_X_of_isZero (F.obj K) a a
+        (fun q hq ↦ hF K q (by omega)) (by omega)
     have : ∀ K, (S.X₁.obj K).HasTotal (ComplexShape.up ℤ) := fun K ↦
       HomologicalComplex₂.hasTotal_of_isZero_X _ (a + 1) (a + 1 + k) (h₁ K)
     have : ∀ K, (S.X₂.obj K).HasTotal (ComplexShape.up ℤ) := fun K ↦

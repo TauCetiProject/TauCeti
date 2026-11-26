@@ -26,7 +26,10 @@ any property of objects invariant under isomorphism and true for zero objects pa
 of the complex to that of the truncation (`HomologicalComplex.prop_stupidTrunc_X`). For a complex
 of complexes, such as a double complex, the truncation keeps the inner complexes exact
 (`HomologicalComplex.acyclic_stupidTrunc_X`) and vanishes in each bidegree where the complex of
-complexes does (`HomologicalComplex.isZero_stupidTrunc_X_X`).
+complexes does (`HomologicalComplex.isZero_stupidTrunc_X_X`). The brutal truncations in degrees
+`≥ n` and `≤ n` of a complex vanishing outside `[a, b]` vanish outside `[n, b]` and `[a, n]`
+(`CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X_of_isZero`,
+`CochainComplex.isZero_stupidTrunc_embeddingUpIntLE_X_of_isZero`).
 
 When `K` vanishes in degrees `> n + 1`, its top term `K.X (n + 1)` placed in degree `n + 1` is a
 subcomplex, and the two maps form the short complex `CochainComplex.topShortComplex K n`
@@ -174,6 +177,24 @@ lemma πStupidTruncLE_f_of_lt {i : ℤ} (hi : n < i) :
 lemma isZero_stupidTrunc_embeddingUpIntGE_X {i : ℤ} (hi : i < n) :
     IsZero ((K.stupidTrunc (ComplexShape.embeddingUpIntGE n)).X i) :=
   K.isZero_stupidTrunc_X _ i ((ComplexShape.notMem_range_embeddingUpIntGE_iff n i).2 hi)
+
+/-- If `K` vanishes in degrees `> b`, its brutal truncation in degrees `≥ n` vanishes outside
+`[n, b]`. -/
+lemma isZero_stupidTrunc_embeddingUpIntGE_X_of_isZero (b : ℤ)
+    (hK : ∀ p, b < p → IsZero (K.X p)) {i : ℤ} (hi : i < n ∨ b < i) :
+    IsZero ((K.stupidTrunc (ComplexShape.embeddingUpIntGE n)).X i) := by
+  rcases hi with hi | hi
+  · exact K.isZero_stupidTrunc_embeddingUpIntGE_X n hi
+  · exact K.isZero_stupidTrunc_X_of_isZero _ (hK i hi)
+
+/-- If `K` vanishes in degrees `< a`, its brutal truncation in degrees `≤ n` vanishes outside
+`[a, n]`. -/
+lemma isZero_stupidTrunc_embeddingUpIntLE_X_of_isZero (a : ℤ)
+    (hK : ∀ p, p < a → IsZero (K.X p)) {i : ℤ} (hi : i < a ∨ n < i) :
+    IsZero ((K.stupidTrunc (ComplexShape.embeddingUpIntLE n)).X i) := by
+  rcases hi with hi | hi
+  · exact K.isZero_stupidTrunc_X_of_isZero _ (hK i hi)
+  · exact K.isZero_stupidTrunc_embeddingUpIntLE_X n hi
 
 /-- The inclusion of the brutal truncation in degrees `≥ n + 1` followed by the projection onto
 the brutal truncation in degrees `≤ n` is zero. -/
