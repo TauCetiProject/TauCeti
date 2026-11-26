@@ -32,10 +32,10 @@ in `TauCeti.Algebra.Category.FiniteIsocrystal.Dual`.
 
 ## Main definitions
 
-* `TauCeti.FiniteIsocrystal.tensorObj`: the tensor product `D ⊗[L] D'` with Frobenius `Φ ⊗ Φ'`.
-* `TauCeti.FiniteIsocrystal.unit σ`: the unit isocrystal `L` with Frobenius `σ`.
-* The `MonoidalCategory`, `SymmetricCategory` and `MonoidalLinear E` instances on finite
-  isocrystals; the braiding is the symmetry `x ⊗ y ↦ y ⊗ x`.
+* `TauCeti.FiniteIsocrystal.instMonoidalCategory`: the monoidal structure, with tensor product
+  `D ⊗[L] D'` with Frobenius `Φ ⊗ Φ'` and unit `L` with Frobenius `σ`.
+* The `SymmetricCategory` and `MonoidalLinear E` instances on finite isocrystals; the braiding is
+  the symmetry `x ⊗ y ↦ y ⊗ x`.
 
 ## Main results
 
@@ -87,25 +87,35 @@ theorem map_frobenius_bijective :
     ← TensorProduct.toLinearMap_congr]
   exact (TensorProduct.congr _ _).bijective
 
-/-- The tensor product of two finite isocrystals: `D ⊗[L] D'` with Frobenius `Φ ⊗ Φ'`. -/
-abbrev tensorObj : FiniteIsocrystal.{u} σ :=
+end Tensor
+
+namespace instMonoidalCategory
+
+/-- Auxiliary definition used to build `TauCeti.FiniteIsocrystal.instMonoidalCategory`: the tensor
+product of two finite isocrystals, `D ⊗[L] D'` with Frobenius `Φ ⊗ Φ'`. -/
+abbrev tensorObj (D D' : FiniteIsocrystal.{u} σ) : FiniteIsocrystal.{u} σ :=
   of σ (D ⊗[L] D') (TensorProduct.map D.frobenius D'.frobenius) (map_frobenius_bijective D D')
 
 variable (σ) in
-/-- The unit finite isocrystal: the field `L` with Frobenius `σ`. -/
+/-- Auxiliary definition used to build `TauCeti.FiniteIsocrystal.instMonoidalCategory`: the unit
+finite isocrystal, the field `L` with Frobenius `σ`. -/
 abbrev unit : FiniteIsocrystal.{u} σ :=
   of σ L (σ : L →+* L).toSemilinearMap σ.bijective
 
-end Tensor
-
-variable {D₁ D₂ D₃ D₄ : FiniteIsocrystal.{u} σ}
-
-/-- The tensor product of two morphisms of finite isocrystals. -/
-abbrev tensorHom (f : D₁ ⟶ D₂) (g : D₃ ⟶ D₄) : tensorObj D₁ D₃ ⟶ tensorObj D₂ D₄ :=
+/-- Auxiliary definition used to build `TauCeti.FiniteIsocrystal.instMonoidalCategory`: the tensor
+product of two morphisms of finite isocrystals. -/
+abbrev tensorHom {D₁ D₂ D₃ D₄ : FiniteIsocrystal.{u} σ} (f : D₁ ⟶ D₂) (g : D₃ ⟶ D₄) :
+    tensorObj D₁ D₃ ⟶ tensorObj D₂ D₄ :=
   ofHom (TensorProduct.map f.hom g.hom) fun x => by
     induction x using TensorProduct.inductionOn with
     | tmul x y => simp
     | add x y hx hy => simp_all
+
+end instMonoidalCategory
+
+open instMonoidalCategory
+
+variable {D₁ D₂ D₃ D₄ : FiniteIsocrystal.{u} σ}
 
 instance : MonoidalCategoryStruct (FiniteIsocrystal.{u} σ) where
   tensorObj D D' := tensorObj D D'
@@ -187,7 +197,7 @@ end Hom
 
 /-! ### The monoidal structure -/
 
-instance : MonoidalCategory (FiniteIsocrystal.{u} σ) :=
+instance instMonoidalCategory : MonoidalCategory (FiniteIsocrystal.{u} σ) :=
   Monoidal.induced (forget₂ (FiniteIsocrystal σ) (ModuleCat L))
     { μIso _ _ := Iso.refl _
       εIso := Iso.refl _

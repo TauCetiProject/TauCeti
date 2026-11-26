@@ -41,6 +41,10 @@ vector bundles on the Fargues–Fontaine curve respects.
 * `TauCeti.FiniteIsocrystal.dualFrobenius_bijective`: the dual Frobenius is bijective.
 * `TauCeti.FiniteIsocrystal.map_frobenius_dualFrobenius_coevaluation_one`: the Frobenius
   `Φ ⊗ Φ^∨` of `D ⊗ D^∨` fixes the canonical element `∑ eᵢ ⊗ eᵢ^∨`.
+* `TauCeti.FiniteIsocrystal.hom_exactPairing_evaluation`,
+  `TauCeti.FiniteIsocrystal.hom_exactPairing_coevaluation` and
+  `TauCeti.FiniteIsocrystal.rightDual_eq_dual`: the underlying linear maps of `ε_` and `η_` are
+  Mathlib's `contractLeft` and `coevaluation`, and `Dᘁ = D^∨`.
 * `TauCeti.FiniteIsocrystal.finrank_dual`: the dual has the same rank.
 
 ## Implementation notes
@@ -196,7 +200,19 @@ noncomputable instance exactPairing : ExactPairing D D.dual where
       hom_coevaluation, hom_hom_leftUnitor, hom_inv_rightUnitor, LinearMap.comp_assoc]
     exact contractLeft_assoc_coevaluation' L D
 
+/-- The underlying linear map of the evaluation `ε_ D D^∨` is `ℓ ⊗ x ↦ ℓ x`. -/
+@[simp]
+theorem hom_exactPairing_evaluation : (ε_ D D.dual).hom = contractLeft L D := (rfl)
+
+/-- The underlying linear map of the coevaluation `η_ D D^∨` is `1 ↦ ∑ eᵢ ⊗ eᵢ^∨`. -/
+@[simp]
+theorem hom_exactPairing_coevaluation : (η_ D D.dual).hom = _root_.coevaluation L D := (rfl)
+
 noncomputable instance : HasRightDual D := ⟨D.dual⟩
+
+/-- The right dual `Dᘁ` of a finite isocrystal is its dual `D^∨`. -/
+@[simp]
+theorem rightDual_eq_dual : Dᘁ = D.dual := (rfl)
 
 noncomputable instance : RightRigidCategory (FiniteIsocrystal.{u} σ) where
 
