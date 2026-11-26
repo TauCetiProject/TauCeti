@@ -76,8 +76,9 @@ theorem ofCompletion_hom :
     (ofCompletion P hP hsheaf).hom =
       presentationLimitPreAdicSpacePairComap P (ofCompletion P hP hsheaf).pairOfDefinition hP
         (ofCompletion P hP hsheaf).le_plus (ofCompletion P hP hsheaf).isSheaf
-        (toCompletionHom P hP hsheaf) :=
-  Category.comp_id _
+        (toCompletionHom P hP hsheaf) := by
+  unfold ofCompletion toCompletionHom
+  rw [ofRationalLocalization_hom, Category.comp_id]
 
 /-- The structure morphism of `ofCompletion` is surjective on underlying points. -/
 @[simp]

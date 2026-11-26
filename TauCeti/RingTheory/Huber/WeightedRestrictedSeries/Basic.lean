@@ -1157,8 +1157,8 @@ theorem dense_weightedPolynomials [NonarchimedeanRing A] {T : Fin k → Set A}
   refine hU ?_
   have hxp : x - weightedPolynomialHom T hT p ∈ weightedNhd T hT U.toAddSubgroup := fun ν ↦ by
     simpa only [AddSubgroupClass.coe_sub, coe_weightedPolynomialHom] using hp ν
-  rw [SetLike.mem_coe]; dsimp only; rw [← sub_eq_add_neg, ← neg_sub]
-  exact (weightedNhd T hT U.toAddSubgroup).neg_mem hxp
+  simpa only [SetLike.mem_coe, sub_eq_add_neg, neg_add_rev, neg_neg] using
+    (weightedNhd T hT U.toAddSubgroup).neg_mem hxp
 
 /-- **Agreement on the generators propagates to the polynomials.** Two ring homomorphisms out of
 `A⟨X⟩_T` that agree on every constant series and every variable agree on the whole polynomial
