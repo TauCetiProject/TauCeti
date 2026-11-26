@@ -152,10 +152,10 @@ private theorem ord_norm_eq_finsum_of_isAffineOpen_of_ne_zero
   have (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) :
       IsScalarTower Γ(Y, V) (Y.presheaf.stalk y) (X.presheaf.stalk (x q)) :=
     .of_algebraMap_eq' <| by
-      -- Express the chosen stalk algebras as germ maps to use naturality of germs.
+      -- Express the section algebras as germ maps to use naturality of germs.
+      rw [f.algebraMap_stalkAlgebraOfApplyEq (hfx q)]
       change (X.presheaf.germ _ (x q) (hxU q)).hom.comp (f.appLE V (f ⁻¹ᵁ V) le_rfl).hom =
-        (Y.presheaf.stalkSpecializes (specializes_of_eq (hfx q)) ≫ f.stalkMap (x q)).hom.comp
-          (Y.presheaf.germ V y hy).hom
+        RingHom.comp _ (Y.presheaf.germ V y hy).hom
       rw [← CommRingCat.hom_comp, ← CommRingCat.hom_comp,
         TopCat.Presheaf.germ_stalkSpecializes_assoc, Scheme.Hom.germ_stalkMap,
         Scheme.Hom.appLE_eq_app]

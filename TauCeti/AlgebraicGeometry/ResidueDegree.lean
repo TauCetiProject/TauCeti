@@ -143,6 +143,22 @@ noncomputable abbrev stalkAlgebraOfApplyEq (f : X ⟶ Y) {x : X} {y : Y} (h : f 
     Algebra (Y.presheaf.stalk y) (X.presheaf.stalk x) :=
   (Y.presheaf.stalkSpecializes (specializes_of_eq h) ≫ f.stalkMap x).hom.toAlgebra
 
+/-- The algebra map of `stalkAlgebraOfApplyEq` is the specialization map of stalks followed by
+the stalk map of `f`. -/
+theorem algebraMap_stalkAlgebraOfApplyEq (f : X ⟶ Y) {x : X} {y : Y} (h : f x = y) :
+    letI := f.stalkAlgebraOfApplyEq h
+    algebraMap (Y.presheaf.stalk y) (X.presheaf.stalk x) =
+      (Y.presheaf.stalkSpecializes (specializes_of_eq h) ≫ f.stalkMap x).hom :=
+  rfl
+
+/-- Over the image point itself, the algebra map of `stalkAlgebraOfApplyEq` is the stalk map
+of `f`. -/
+@[simp]
+theorem algebraMap_stalkAlgebraOfApplyEq_rfl (f : X ⟶ Y) (x : X) :
+    letI := f.stalkAlgebraOfApplyEq (rfl : f x = f x)
+    algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) = (f.stalkMap x).hom := by
+  simp [algebraMap_stalkAlgebraOfApplyEq]
+
 /-- The natural-number truncation of the length of `κ(x)` over `𝒪_{Y,y}` is the residue
 degree `[κ(x) : κ(y)]` (both truncations are `0` when the extension is infinite). -/
 theorem length_residueField_eq_residueDegree (f : X ⟶ Y) {x : X} {y : Y} (h : f x = y) :
