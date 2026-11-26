@@ -15,9 +15,10 @@ The pullback `ℓ* TℂPᵐ⁺¹` of the tangent bundle of `ℂPᵐ⁺¹` along 
 `𝒪(2) ⊕ 𝒪(1)ᵐ` (`Projectivization.coordLineTangentDiffeomorph`), and the first Čech cohomology of
 a split bundle on `ℂℙ¹` vanishes when every twist is at least `-1`
 (`Projectivization.isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le`), so
-`H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`. This is the vanishing of `H¹(C, u* TℂPⁿ)` on the line component of a
-genus-zero stable map in the class of a line, on which the regularity of such maps rests
-(Fulton–Pandharipande, Lemma 10).
+`H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`. This is the case of the coordinate line of the vanishing of
+`H¹(C, u* TℂPⁿ)` on the line component `u` of a genus-zero stable map in the class of a line, on
+which the regularity of such maps rests (Fulton–Pandharipande, Lemma 10). A general line needs
+the splitting of the pulled-back tangent bundle along every line, which is not proved here.
 
 ## Main declarations
 
