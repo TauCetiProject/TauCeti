@@ -34,8 +34,6 @@ This is the basic example of a uniform lattice in a non-abelian nilpotent Lie gr
 * `TauCeti.HeisenbergGroup.instMeasurableSpace`, `instBorelSpace`: the Borel measurable
   structure of the topology on `HeisenbergGroup R`.
 * `TauCeti.HeisenbergGroup.instMeasureSpace`: Lebesgue measure on `H(ℝ)` in coordinates.
-* `TauCeti.HeisenbergGroup.intLattice`: the integer Heisenberg subgroup `H(ℤ) ≤ H(ℝ)`, identified
-  with `HeisenbergGroup ℤ` by `TauCeti.HeisenbergGroup.intLatticeEquiv`.
 * `TauCeti.HeisenbergGroup.unitCube`, `closedUnitCube`: the half-open unit cube `[0, 1)³` and the
   closed unit cube `[0, 1]³` in coordinates.
 
@@ -81,23 +79,23 @@ def measurableEquivProd [MeasurableSpace R] [BorelSpace R] [SecondCountableTopol
     HeisenbergGroup R ≃ᵐ R × R × R :=
   homeomorphProd.toMeasurableEquiv
 
+/-- The coordinate measurable equivalence is the coordinate homeomorphism. -/
+theorem coe_measurableEquivProd [MeasurableSpace R] [BorelSpace R] [SecondCountableTopology R] :
+    ⇑(measurableEquivProd : HeisenbergGroup R ≃ᵐ R × R × R) = homeomorphProd :=
+  homeomorphProd.toMeasurableEquiv_coe
+
 /-- The coordinate measurable equivalence reads off the three coordinates. -/
 @[simp]
 theorem measurableEquivProd_apply [MeasurableSpace R] [BorelSpace R] [SecondCountableTopology R]
-    (a : HeisenbergGroup R) : measurableEquivProd a = (a.x, a.y, a.z) :=
-  homeomorphProd_apply a
+    (a : HeisenbergGroup R) : measurableEquivProd a = (a.x, a.y, a.z) := by
+  rw [coe_measurableEquivProd, homeomorphProd_apply]
 
 /-- The inverse coordinate measurable equivalence assembles the three coordinates. -/
 @[simp]
 theorem measurableEquivProd_symm_apply [MeasurableSpace R] [BorelSpace R]
     [SecondCountableTopology R] (a : R × R × R) :
-    measurableEquivProd.symm a = ⟨a.1, a.2.1, a.2.2⟩ :=
-  homeomorphProd_symm_apply a
-
-/-- The coordinate measurable equivalence is the coordinate homeomorphism. -/
-theorem coe_measurableEquivProd [MeasurableSpace R] [BorelSpace R] [SecondCountableTopology R] :
-    ⇑(measurableEquivProd : HeisenbergGroup R ≃ᵐ R × R × R) = homeomorphProd :=
-  (rfl)
+    measurableEquivProd.symm a = ⟨a.1, a.2.1, a.2.2⟩ := by
+  rw [measurableEquivProd, Homeomorph.toMeasurableEquiv_symm_coe, homeomorphProd_symm_apply]
 
 end Measurable
 
@@ -193,58 +191,26 @@ instance instIsHaarMeasure : (volume : Measure (HeisenbergGroup ℝ)).IsHaarMeas
     rw [closedUnitCube, volume_preimage_homeomorphProd_prod]
     simp
 
-/-- The **integer Heisenberg group** `H(ℤ)`, as a subgroup of the real Heisenberg group. -/
-def intLattice : Subgroup (HeisenbergGroup ℝ) :=
-  (map (Int.castRingHom ℝ)).range
-
-/-- An element of `H(ℝ)` lies in `H(ℤ)` exactly when its three coordinates are integers. -/
-theorem mem_intLattice {g : HeisenbergGroup ℝ} :
-    g ∈ intLattice ↔ ∃ a b c : ℤ, g = ⟨a, b, c⟩ := by
-  simp only [intLattice, MonoidHom.mem_range, map_apply, eq_intCast]
-  exact ⟨fun ⟨n, hn⟩ ↦ ⟨n.x, n.y, n.z, hn.symm⟩, fun ⟨a, b, c, h⟩ ↦ ⟨⟨a, b, c⟩, h.symm⟩⟩
-
-/-- The integer Heisenberg group `HeisenbergGroup ℤ` is isomorphic to its image `H(ℤ)` in
-`H(ℝ)`. -/
-noncomputable def intLatticeEquiv : HeisenbergGroup ℤ ≃* intLattice :=
-  MonoidHom.ofInjective (map_injective (Int.castRingHom ℝ).injective_int)
-
-/-- The isomorphism `HeisenbergGroup ℤ ≃* H(ℤ)` casts each coordinate to `ℝ`. -/
-@[simp]
-theorem intLatticeEquiv_apply (n : HeisenbergGroup ℤ) :
-    (intLatticeEquiv n : HeisenbergGroup ℝ) = map (Int.castRingHom ℝ) n :=
-  (rfl)
-
-/-- The integer Heisenberg group is countable. -/
-instance instCountableIntLattice : Countable intLattice :=
-  intLatticeEquiv.symm.injective.countable
-
-/-- The integer Heisenberg group is discrete. -/
-instance instDiscreteTopologyIntLattice : DiscreteTopology intLattice := by
-  refine discreteTopology_of_isOpen_singleton_one (isOpen_induced_iff.mpr
-    ⟨homeomorphProd ⁻¹' (Ioo (-1) 1 ×ˢ Ioo (-1) 1 ×ˢ Ioo (-1) 1),
-      homeomorphProd.isOpen_preimage.mpr (isOpen_Ioo.prod (isOpen_Ioo.prod isOpen_Ioo)), ?_⟩)
-  ext ⟨g, hg⟩
-  obtain ⟨a, b, c, rfl⟩ := mem_intLattice.mp hg
-  simp only [mem_preimage, homeomorphProd_apply, mem_prod, mem_Ioo, mem_singleton_iff]
-  rw [Subtype.ext_iff]
-  simp only [OneMemClass.coe_one, HeisenbergGroup.ext_iff, one_x, one_y, one_z, Int.cast_eq_zero]
-  norm_cast
-  omega
-
 /-- The unit cube is a Borel set. -/
 theorem measurableSet_unitCube : MeasurableSet unitCube :=
   homeomorphProd.continuous.measurable
     (measurableSet_Ico.prod (measurableSet_Ico.prod measurableSet_Ico))
 
-/-- Every coset `g H(ℤ)` meets the unit cube. -/
-theorem exists_mul_mem_unitCube (g : HeisenbergGroup ℝ) :
-    ∃ γ ∈ intLattice, g * γ ∈ unitCube := by
+/-- The translate of `g` by an integer point `(a, b, c)` lies in the unit cube exactly when `a`,
+`b` and `c` cancel the integer parts of `x`, `y` and `z + x b`. -/
+theorem mul_intCast_mem_unitCube_iff {g : HeisenbergGroup ℝ} {a b c : ℤ} :
+    g * ⟨a, b, c⟩ ∈ unitCube ↔ ⌊g.x⌋ + a = 0 ∧ ⌊g.y⌋ + b = 0 ∧ ⌊g.z + g.x * b⌋ + c = 0 := by
   -- the translate of `g` by `(a, b, c)` is `(x + a, y + b, z + c + x b)`
-  refine ⟨⟨((-⌊g.x⌋ : ℤ) : ℝ), ((-⌊g.y⌋ : ℤ) : ℝ), ((-⌊g.z + g.x * ((-⌊g.y⌋ : ℤ) : ℝ)⌋ : ℤ) : ℝ)⟩,
-    mem_intLattice.mpr ⟨_, _, _, rfl⟩, ?_⟩
   simp only [mem_unitCube, mul_x, mul_y, mul_z, ← Int.floor_eq_zero_iff]
   rw [add_right_comm g.z]
-  simp only [Int.floor_add_intCast, add_neg_cancel, and_self]
+  simp only [Int.floor_add_intCast]
+
+/-- Every coset `g H(ℤ)` meets the unit cube. -/
+theorem exists_mul_mem_unitCube (g : HeisenbergGroup ℝ) :
+    ∃ γ ∈ intLattice, g * γ ∈ unitCube :=
+  ⟨⟨((-⌊g.x⌋ : ℤ) : ℝ), ((-⌊g.y⌋ : ℤ) : ℝ), ((-⌊g.z + g.x * ((-⌊g.y⌋ : ℤ) : ℝ)⌋ : ℤ) : ℝ)⟩,
+    mem_intLattice.mpr ⟨_, _, _, rfl⟩,
+    mul_intCast_mem_unitCube_iff.mpr ⟨add_neg_cancel _, add_neg_cancel _, add_neg_cancel _⟩⟩
 
 /-- The half-open unit cube is a fundamental domain for the right action of `H(ℤ)` on `H(ℝ)`. -/
 theorem isFundamentalDomain_unitCube :
@@ -257,11 +223,8 @@ theorem isFundamentalDomain_unitCube :
     intro δ hδ hδmem
     obtain ⟨a', b', c', rfl⟩ := mem_intLattice.mp hδ
     obtain ⟨a, b, c, rfl⟩ := mem_intLattice.mp hγ
-    simp only [mem_unitCube, mul_x, mul_y, mul_z, ← Int.floor_eq_zero_iff] at hδmem hmem
-    rw [add_right_comm g.z] at hδmem hmem
-    simp only [Int.floor_add_intCast] at hδmem hmem
-    obtain ⟨hx, hy, hz⟩ := hδmem
-    obtain ⟨hx', hy', hz'⟩ := hmem
+    obtain ⟨hx, hy, hz⟩ := mul_intCast_mem_unitCube_iff.mp hδmem
+    obtain ⟨hx', hy', hz'⟩ := mul_intCast_mem_unitCube_iff.mp hmem
     obtain rfl : b' = b := by omega
     obtain ⟨rfl, rfl⟩ : a' = a ∧ c' = c := by omega
     rfl

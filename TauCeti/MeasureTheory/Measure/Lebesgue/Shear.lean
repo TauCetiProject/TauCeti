@@ -17,6 +17,8 @@ Heisenberg group.
 
 ## Main results
 
+* `TauCeti.measurePreserving_skew_add_right`: on a product of additive groups with right
+  invariant measures, `(x, y) ↦ (x + a, y + g x)` preserves the product measure for measurable `g`.
 * `TauCeti.measurePreserving_shear`: `(y, z) ↦ (y + b, z + c + a y)` preserves Lebesgue measure
   on `ℝ × ℝ`.
 * `TauCeti.measurePreserving_affine`: `(x, y, z) ↦ (x + a, y + b, z + c + d x)` preserves Lebesgue
@@ -31,40 +33,41 @@ open MeasureTheory
 
 namespace TauCeti
 
+/-- On a product of additive groups with right invariant s-finite measures, the skew translation
+`(x, y) ↦ (x + a, y + g x)` preserves the product measure for every measurable `g`: it translates
+the base and each fibre. -/
+theorem measurePreserving_skew_add_right {G H : Type*} [MeasurableSpace G] [AddGroup G]
+    [MeasurableAdd G] [MeasurableSpace H] [AddGroup H] [MeasurableAdd₂ H] (μ : Measure G)
+    (ν : Measure H) [SFinite μ] [SFinite ν] [μ.IsAddRightInvariant] [ν.IsAddRightInvariant]
+    (a : G) {g : G → H} (hg : Measurable g) :
+    MeasurePreserving (fun p : G × H ↦ (p.1 + a, p.2 + g p.1)) (μ.prod ν) (μ.prod ν) :=
+  (measurePreserving_add_right μ a).skew_product (g := fun x y ↦ y + g x)
+    (measurable_snd.add (hg.comp measurable_fst))
+    (Filter.Eventually.of_forall fun x ↦ (measurePreserving_add_right ν (g x)).map_eq)
+
 /-- On `ℝ × ℝ`, the shear `(y, z) ↦ (y + b, z + c + a y)` preserves Lebesgue measure. -/
 theorem measurePreserving_shear (a b c : ℝ) :
     MeasurePreserving (fun q : ℝ × ℝ ↦ (q.1 + b, q.2 + c + a * q.1)) volume volume := by
-  have h := (measurePreserving_add_right (volume : Measure ℝ) b).skew_product
-    (μc := (volume : Measure ℝ)) (μd := (volume : Measure ℝ))
-    (g := fun (y z : ℝ) ↦ z + (c + a * y)) (by fun_prop)
-    (Filter.Eventually.of_forall fun y ↦ (measurePreserving_add_right volume _).map_eq)
-  rw [← Measure.volume_eq_prod] at h
-  convert h using 2 with q
-  simp [add_assoc]
+  simp_rw [add_assoc _ c, Measure.volume_eq_prod]
+  exact measurePreserving_skew_add_right volume volume b (g := fun y ↦ c + a * y) (by fun_prop)
 
 /-- On `ℝ × ℝ × ℝ`, the map `(x, y, z) ↦ (x + a, y + b, z + c + d x)` preserves Lebesgue measure:
 on each fibre over `x` it is a translation of `ℝ × ℝ`. -/
 theorem measurePreserving_affine (a b c d : ℝ) :
     MeasurePreserving (fun p : ℝ × ℝ × ℝ ↦ (p.1 + a, p.2.1 + b, p.2.2 + c + d * p.1))
       volume volume := by
-  have h := (measurePreserving_add_right (volume : Measure ℝ) a).skew_product
-    (μc := (volume : Measure (ℝ × ℝ))) (μd := (volume : Measure (ℝ × ℝ)))
-    (g := fun (x : ℝ) (q : ℝ × ℝ) ↦ q + (b, c + d * x)) (by fun_prop)
-    (Filter.Eventually.of_forall fun x ↦
-      (measurePreserving_add_right ((volume : Measure ℝ).prod volume) _).map_eq)
-  rw [← Measure.volume_eq_prod] at h
+  have h := measurePreserving_skew_add_right volume ((volume : Measure ℝ).prod volume) a
+    (g := fun x ↦ (b, c + d * x)) (by fun_prop)
+  rw [← Measure.volume_eq_prod, ← Measure.volume_eq_prod] at h
   convert h using 2 with p
   simp [Prod.ext_iff, add_assoc]
 
 /-- On `ℝ × ℝ × ℝ`, the map `(x, y, z) ↦ (x + a, y + b, z + c + d y)` preserves Lebesgue measure:
-it is a translation of `x` composed with the shear `measurePreserving_shear` of `(y, z)`. -/
+it is the product of a translation of `x` and the shear `measurePreserving_shear` of `(y, z)`. -/
 theorem measurePreserving_affine' (a b c d : ℝ) :
     MeasurePreserving (fun p : ℝ × ℝ × ℝ ↦ (p.1 + a, p.2.1 + b, p.2.2 + c + d * p.2.1))
       volume volume := by
-  have h := (measurePreserving_add_right (volume : Measure ℝ) a).skew_product
-    (μc := (volume : Measure (ℝ × ℝ))) (μd := (volume : Measure (ℝ × ℝ)))
-    (g := fun (_ : ℝ) (q : ℝ × ℝ) ↦ (q.1 + b, q.2 + c + d * q.1)) (by fun_prop)
-    (Filter.Eventually.of_forall fun _ ↦ (measurePreserving_shear d b c).map_eq)
-  rwa [← Measure.volume_eq_prod] at h
+  rw [Measure.volume_eq_prod]
+  exact (measurePreserving_add_right volume a).prod (measurePreserving_shear d b c)
 
 end TauCeti
