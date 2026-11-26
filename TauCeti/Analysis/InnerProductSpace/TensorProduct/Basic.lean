@@ -39,6 +39,8 @@ when endomorphisms are identified with tensors, without adding an instance on th
 * `LinearMap.sesqTmul`: the tensor product of two sesquilinear forms, Hermitian when both
   factors are (`LinearMap.IsSymm.sesqTmul`) and positive definite when both factors are
   (`LinearMap.sesqTmul_apply_self_pos`).
+* `TensorProduct.inner_map_left`: factorwise formal adjoint pairs induce a formal adjoint pair on
+  `E ⊗[𝕜] F` and `G ⊗[𝕜] H` without finite-dimensionality or completeness assumptions.
 * `TensorProduct.instCompleteSpaceOfFiniteDimensional`: the tensor product of two
   finite-dimensional inner product spaces is complete, which discharges completeness hypotheses
   on tensor products in adjoint statements for finite-dimensional factors.
@@ -180,6 +182,32 @@ theorem sesqTmul_apply_self_pos (hh₁ : h₁.IsSymm) (hh₂ : h₂.IsSymm)
 end LinearMap
 
 namespace TensorProduct
+
+section map
+
+variable {𝕜 E F G H : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+
+/-- If `(f, f')` and `(g, g')` are formal adjoint pairs for the inner products on `(E, G)` and
+`(F, H)`, then `(TensorProduct.map f g, TensorProduct.map f' g')` is a formal adjoint pair on the
+tensor products `E ⊗[𝕜] F` and `G ⊗[𝕜] H`, without continuity, finite-dimensionality or
+completeness assumptions. -/
+theorem inner_map_left {f : E →ₗ[𝕜] G} {f' : G →ₗ[𝕜] E} {g : F →ₗ[𝕜] H} {g' : H →ₗ[𝕜] F}
+    (hf : ∀ x x', inner 𝕜 (f x) x' = inner 𝕜 x (f' x'))
+    (hg : ∀ y y', inner 𝕜 (g y) y' = inner 𝕜 y (g' y'))
+    (u : E ⊗[𝕜] F) (v : G ⊗[𝕜] H) :
+    inner 𝕜 (TensorProduct.map f g u) v = inner 𝕜 u (TensorProduct.map f' g' v) := by
+  induction u using TensorProduct.inductionOn generalizing v with
+  | tmul x y =>
+    induction v using TensorProduct.inductionOn with
+    | tmul x' y' => simp only [TensorProduct.map_tmul, TensorProduct.inner_tmul, hf, hg]
+    | add v₁ v₂ hv₁ hv₂ => simp only [map_add, inner_add_right, hv₁, hv₂]
+  | add u₁ u₂ hu₁ hu₂ => simp only [map_add, inner_add_left, hu₁, hu₂]
+
+end map
 
 section mapL
 
