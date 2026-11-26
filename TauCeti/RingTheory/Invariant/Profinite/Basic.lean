@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Invariant.Galois
 public import Mathlib.RingTheory.Invariant.Profinite
+public import TauCeti.Topology.Algebra.GroupAction.Inertia
 
 /-!
 # Decomposition groups and residue extensions for profinite actions
@@ -33,20 +34,26 @@ normal subgroup fixing `b`, which is normal by Mathlib's `Ideal.Quotient.normal`
 
 The closedness statements need no compactness: for a continuous action on a discrete ring, each
 condition `g • x ∈ Q` or `g • x - x ∈ Q` cuts out a clopen subset of `G`. For inertia only
-closedness of the subgroup matters, and `AddSubgroup.isClosed_inertia` is stated for a closed
-additive subgroup of any topological additive group.
+closedness of the subgroup matters, and Tau Ceti's `AddSubgroup.isClosed_inertia`
+(`TauCeti/Topology/Algebra/GroupAction/Inertia.lean`) covers a closed additive subgroup of any
+topological additive group.
 
 ## Main results
 
 * `Ideal.isClosed_stabilizer`: the decomposition group of an ideal is closed, and hence compact
   when `G` is (an instance).
-* `AddSubgroup.isClosed_inertia`: the inertia group of a closed additive subgroup is closed.
 * `Ideal.isClosed_inertia`: the inertia group of an ideal is closed, and hence compact when `G` is
   (an instance).
 * `Ideal.Quotient.stabilizerQuotientInertiaEquivOfProfinite`: `D_Q / I_Q ≃* Aut((S ⧸ Q)/(R ⧸ P))`.
 * `Ideal.Quotient.normal_of_profinite`: for `Q` maximal, `S ⧸ Q` is a normal extension of `R ⧸ P`.
 * `Ideal.Quotient.isGalois_of_profinite`: if moreover `R ⧸ P` is perfect, it is Galois, so that
   `D_Q / I_Q` is its Galois group.
+
+## References
+
+* [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter I, §9 (decomposition and inertia
+  groups and the residue extension for finite Galois extensions) and Chapter II, §9 (their
+  analogues for infinite Galois extensions of valued fields).
 -/
 
 public section
@@ -58,18 +65,6 @@ open MulAction Pointwise
 section Closed
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
-
-/-- **Inertia groups are closed.** If `G` acts continuously on a topological additive group `M`,
-then the inertia group of a closed additive subgroup `I` of `M`, the `g` with `g • x - x ∈ I` for
-every `x`, is closed in `G`. -/
-theorem AddSubgroup.isClosed_inertia {M : Type*} [AddGroup M] [MulAction G M] [TopologicalSpace M]
-    [ContinuousSub M] [ContinuousSMul G M] {I : AddSubgroup M} (hI : IsClosed (I : Set M)) :
-    IsClosed (I.inertia G : Set G) := by
-  have : (I.inertia G : Set G) = ⋂ x : M, (fun g : G ↦ g • x - x) ⁻¹' I := by
-    ext; simp
-  rw [this]
-  exact isClosed_iInter fun _ ↦ hI.preimage ((continuous_id.smul continuous_const).sub
-    continuous_const)
 
 variable {S : Type*} [TopologicalSpace S] [DiscreteTopology S]
 
@@ -119,7 +114,7 @@ variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 group: `D_Q / I_Q ≃* Aut((S ⧸ Q)/(R ⧸ P))`. This is the profinite form of Mathlib's
 `Ideal.Quotient.stabilizerQuotientInertiaEquiv`; no finiteness of the residue extension is
 assumed. -/
-@[expose] noncomputable def Ideal.Quotient.stabilizerQuotientInertiaEquivOfProfinite [Q.IsPrime] :
+noncomputable def Ideal.Quotient.stabilizerQuotientInertiaEquivOfProfinite [Q.IsPrime] :
     stabilizer G Q ⧸ Q.inertia (stabilizer G Q) ≃* ((S ⧸ Q) ≃ₐ[R ⧸ P] (S ⧸ Q)) :=
   QuotientGroup.liftEquiv (N := Q.inertia (stabilizer G Q))
     (stabilizerHom_surjective_of_profinite P Q) (ker_stabilizerHom Q P G).symm
@@ -127,18 +122,14 @@ assumed. -/
 @[simp]
 theorem Ideal.Quotient.stabilizerQuotientInertiaEquivOfProfinite_mk [Q.IsPrime]
     (g : stabilizer G Q) :
-    stabilizerQuotientInertiaEquivOfProfinite G P Q g = stabilizerHom Q P G g :=
-  rfl
+    stabilizerQuotientInertiaEquivOfProfinite G P Q g = stabilizerHom Q P G g := by
+  rw [stabilizerQuotientInertiaEquivOfProfinite, QuotientGroup.liftEquiv_coe]
 
 include G in
 attribute [local instance] Ideal.Quotient.field Subgroup.finiteIndex_of_finite_quotient in
 /-- **The residue extension of a profinite action is normal.** For `Q` maximal over `P` (which is
 then maximal as well), `S ⧸ Q` is a normal extension of `R ⧸ P`. This is the profinite form of
-Mathlib's `Ideal.Quotient.normal`; the extension need not be finite.
-
-Each residue class is the image of a residue class of the invariants of an open normal subgroup
-`N` of `G`, on which the finite group `G ⧸ N` acts, so its minimal polynomial splits by the finite
-case. -/
+Mathlib's `Ideal.Quotient.normal`; the extension need not be finite. -/
 theorem Ideal.Quotient.normal_of_profinite [P.IsMaximal] [Q.IsMaximal] :
     Normal (R ⧸ P) (S ⧸ Q) := by
   have := Algebra.IsInvariant.isIntegral_of_profinite (A := R) (B := S) (G := G)
@@ -154,9 +145,13 @@ theorem Ideal.Quotient.normal_of_profinite [P.IsMaximal] [Q.IsMaximal] :
     (by rw [← Ideal.LiesOver.over (P := Q') (p := P)]; infer_instance)
   have hn : Normal (R ⧸ P) (S' ⧸ Q') := normal (G ⧸ N.toOpenSubgroup.toSubgroup) P Q'
   let f : (S' ⧸ Q') →ₐ[R ⧸ P] S ⧸ Q :=
-    { toRingHom := Ideal.quotientMap _ S'.val le_rfl
-      commutes' := Quotient.ind fun _ ↦ rfl }
-  have hx : Ideal.Quotient.mk Q b = f (Ideal.Quotient.mk Q' ⟨b, fun g ↦ hN g.property⟩) := rfl
+    { toRingHom := Ideal.quotientMap _ (algebraMap S' S) le_rfl
+      commutes' r := by
+        obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
+        rw [Ideal.Quotient.algebraMap_mk_of_liesOver, Ideal.Quotient.algebraMap_mk_of_liesOver]
+        exact Ideal.quotientMap_mk }
+  have hx : Ideal.Quotient.mk Q b = f (Ideal.Quotient.mk Q' ⟨b, fun g ↦ hN g.property⟩) := by
+    simp [f]
   rw [hx, minpoly.algHom_eq f f.injective]
   simpa [Polynomial.map_map] using (hn.splits _).map f.toRingHom
 
