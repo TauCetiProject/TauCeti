@@ -298,6 +298,13 @@ end WeierstrassCurve.Affine
 
 namespace WeierstrassCurve
 
+/-- The two-torsion polynomial of `y² = x³ + Ax + B` evaluates to `4(x³ + Ax + B)`. -/
+theorem eval_toPoly_twoTorsionPolynomial_shortCurve {R : Type*} [CommRing R] (A B x : R) :
+    (shortCurve A B).twoTorsionPolynomial.toPoly.eval x = 4 * (x ^ 3 + A * x + B) := by
+  rw [eval_toPoly_twoTorsionPolynomial, b₂_of_isShortNF, b₄_of_isShortNF, b₆_of_isShortNF,
+    shortCurve_a₄, shortCurve_a₆]
+  ring
+
 variable {F : Type*} [Field F] [DecidableEq F] [NeZero (2 : F)] {A B : F}
 
 /-- **A point of order two on `y² = x³ + Ax + B` lies over a root of `x³ + Ax + B`**, in
@@ -313,11 +320,10 @@ theorem exists_root_of_torsionBy_two_shortCurve_ne_bot
   · exact absurd rfl hP0
   refine ⟨x, ?_⟩
   have hx := Affine.Point.isRoot_twoTorsionPolynomial_of_add_self hxy hP
-  rw [Polynomial.IsRoot.def, eval_toPoly_twoTorsionPolynomial, b₂_of_isShortNF, b₄_of_isShortNF,
-    b₆_of_isShortNF, shortCurve_a₄, shortCurve_a₆] at hx
+  rw [Polynomial.IsRoot.def, eval_toPoly_twoTorsionPolynomial_shortCurve] at hx
   have h4 : (4 : F) ≠ 0 := by
     simpa [show (4 : F) = 2 * 2 by norm_num] using NeZero.ne (2 : F)
-  exact (mul_eq_zero.mp (by linear_combination hx)).resolve_left h4
+  exact (mul_eq_zero.mp hx).resolve_left h4
 
 /-- **The curve `y² = x³ + Ax + B` has a point of order two exactly when `x³ + Ax + B` has a
 root**, for an elliptic curve in characteristic different from `2`: `E[2] ≠ 0` if and only if
@@ -327,9 +333,7 @@ theorem torsionBy_two_shortCurve_ne_bot_iff [(shortCurve A B).IsElliptic] :
       ∃ x : F, x ^ 3 + A * x + B = 0 := by
   refine ⟨exists_root_of_torsionBy_two_shortCurve_ne_bot, fun ⟨x, hx⟩ ↦ ?_⟩
   have hroot : (shortCurve A B).twoTorsionPolynomial.toPoly.IsRoot x := by
-    rw [Polynomial.IsRoot.def, eval_toPoly_twoTorsionPolynomial, b₂_of_isShortNF,
-      b₄_of_isShortNF, b₆_of_isShortNF, shortCurve_a₄, shortCurve_a₆]
-    linear_combination 4 * hx
+    rw [Polynomial.IsRoot.def, eval_toPoly_twoTorsionPolynomial_shortCurve, hx, mul_zero]
   obtain ⟨y, hxy, hP⟩ := (Affine.Point.isRoot_twoTorsionPolynomial_iff inferInstance
     (shortCurve A B).isUnit_Δ.ne_zero x).mp hroot
   refine AddSubgroup.ne_bot_iff_exists_ne_zero.mpr ⟨⟨_, ?_⟩, fun h0 ↦

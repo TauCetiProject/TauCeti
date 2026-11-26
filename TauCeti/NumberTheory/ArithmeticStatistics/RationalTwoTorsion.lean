@@ -71,7 +71,8 @@ private theorem setOf_shortCurve_rat_root_subset {u : ℝ} (hu : 0 ≤ u) :
   set H := (shortCurve A B).shortEquationHeight
   -- `|A|³ ≤ H < u⁶` and `|z|⁶ ≤ 16H < (2u)⁶`
   have hA : 4 * A.natAbs ^ 3 ≤ H := by
-    simp [H]
+    simpa only [shortCurve_a₄] using
+      (shortCurve A B).four_mul_natAbs_a₄_pow_three_le_shortEquationHeight
   have hAu : (A.natAbs : ℝ) ≤ u ^ 2 := by
     refine (pow_le_pow_iff_left₀ (Nat.cast_nonneg _) (by positivity) three_ne_zero).mp ?_
     have : (4 * A.natAbs ^ 3 : ℝ) ≤ H := by exact_mod_cast hA

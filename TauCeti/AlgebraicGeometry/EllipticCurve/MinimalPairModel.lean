@@ -119,6 +119,16 @@ theorem shortEquationHeight_def :
     shortEquationHeight W = max (4 * W.a₄.natAbs ^ 3) (27 * W.a₆.natAbs ^ 2) :=
   (rfl)
 
+/-- The height of a short equation bounds `4|a₄|³`. -/
+theorem four_mul_natAbs_a₄_pow_three_le_shortEquationHeight :
+    4 * W.a₄.natAbs ^ 3 ≤ shortEquationHeight W :=
+  le_max_left _ _
+
+/-- The height of a short equation bounds `27a₆²`. -/
+theorem twentySeven_mul_natAbs_a₆_sq_le_shortEquationHeight :
+    27 * W.a₆.natAbs ^ 2 ≤ shortEquationHeight W :=
+  le_max_right _ _
+
 /-- The height of a short equation bounds `|a₄|`. -/
 theorem natAbs_a₄_le_shortEquationHeight : W.a₄.natAbs ≤ shortEquationHeight W := by
   have := Nat.le_self_pow three_ne_zero W.a₄.natAbs
@@ -152,8 +162,9 @@ of `x³ + Ax + B` has `r⁶ ≤ 16 · max (4|A|³) (27B²)`. So the `x`-coordina
 points of order two on `y² = x³ + Ax + B` are bounded by `2 H^(1/6)`. -/
 theorem natAbs_pow_six_le_mul_shortEquationHeight {A B r : ℤ} (h : r ^ 3 + A * r + B = 0) :
     r.natAbs ^ 6 ≤ 16 * (shortCurve A B).shortEquationHeight := by
-  have hA : 4 * A.natAbs ^ 3 ≤ (shortCurve A B).shortEquationHeight := by simp
-  have hB : 27 * B.natAbs ^ 2 ≤ (shortCurve A B).shortEquationHeight := by simp
+  have hA := (shortCurve A B).four_mul_natAbs_a₄_pow_three_le_shortEquationHeight
+  have hB := (shortCurve A B).twentySeven_mul_natAbs_a₆_sq_le_shortEquationHeight
+  simp only [shortCurve_a₄, shortCurve_a₆] at hA hB
   zify at hA hB
   rw [sq_abs] at hB
   zify
