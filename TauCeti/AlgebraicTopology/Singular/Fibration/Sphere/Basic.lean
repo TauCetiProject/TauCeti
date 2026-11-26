@@ -169,7 +169,7 @@ private lemma map_sphereRelCWComplex_zero (hn : n ≠ 0)
     (map_sphereCWComplex_of_ne_zero h hn (sphereRelCWComplexCellEquiv h n i)))).trans
     (coe_sphereTopCellCenter h).symm
 
-/-- The `0`-skeleton of the CW structure on the sphere itself is empty. -/
+/-- `skeletonLT 0` of the CW structure on the sphere itself, its base, is empty. -/
 lemma skeletonLT_zero_sphereRelCWComplex :
     letI := sphereRelCWComplex h
     (skeletonLT (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) 0 :
@@ -179,7 +179,7 @@ lemma skeletonLT_zero_sphereRelCWComplex :
   rw [skeletonLT_zero_eq_base]
   simp
 
-/-- From `n + 1` on, the skeleta of the CW structure on `Sⁿ` are the whole sphere. -/
+/-- For `k > n`, `skeletonLT k` of the CW structure on `Sⁿ` is the whole sphere. -/
 lemma skeletonLT_sphereRelCWComplex_of_lt {k : ℕ} (hk : n < k) :
     letI := sphereRelCWComplex h
     (skeletonLT (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) k :

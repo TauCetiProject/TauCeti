@@ -22,8 +22,8 @@ In the classical indexing:
 
 * the second page is the homology of the circle in the columns `0` and `2`,
   `E²_{0,q} ≅ Hq(S¹; R)` and `E²_{2,q} ≅ Hq(S¹; R)`
-  (`TauCeti.TopCat.hopfSerreSpectralSequencePageThreeXIsoPole`,
-  `TauCeti.TopCat.hopfSerreSpectralSequencePageThreeXIsoTopCell`), and vanishes in every other
+  (`TauCeti.TopCat.hopfSerreSpectralSequenceSecondPageXIsoPole`,
+  `TauCeti.TopCat.hopfSerreSpectralSequenceSecondPageXIsoTopCell`), and vanishes in every other
   column; since `H₀(S¹; ℤ) ≅ H₁(S¹; ℤ) ≅ ℤ` and the higher homology of the circle vanishes, over
   `ℤ` it is `ℤ` at `(0, 0)`, `(0, 1)`, `(2, 0)` and `(2, 1)` and zero elsewhere;
 * the differential `d² : E²_{2,0} ⟶ E²_{0,1}` is an isomorphism
@@ -71,49 +71,47 @@ theorem isIso_hopfSerreSpectralSequence_page_three_d :
   -- `S³` has no homology in the degrees `1` and `2`.
   have hS (m : ℕ) (hm₀ : m ≠ 0) (hm₃ : m ≠ 3) :
       IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) m).obj
-        (ModuleCat.of R R)).obj (_root_.TopCat.of (sphere (0 : EuclideanSpace ℂ (Fin 2)) 1))) := by
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm₀
-    exact (isZero_reducedSingularHomologyFunctor_sphere_of_ne (ModuleCat.of R R)
-      (finrank_real_euclideanSpace_complex 1) (by lia)).of_iso
-        ((reducedSingularHomologySuccIso _ k).app _).symm
-  -- The page `n + 1` of the general statements is the page `3` here: `((2 : ℕ) : ℤ) + 1` and `3`
-  -- are equal by computation, so the two instances are passed explicitly.
-  exact @isIso_of_mono_of_epi _ _ _ _ _ _
-    (mono_sphereSerreSpectralSequence_page_d (ι := Fin 3) (n := 2) rfl hopfSphere2Hom R
-      (by norm_num) (-3, 1) (0, -1) (by norm_num) (by ext <;> norm_num) (m := 2) (by norm_num)
-      (hS 2 (by lia) (by lia)))
-    (epi_sphereSerreSpectralSequence_page_d (ι := Fin 3) (n := 2) rfl hopfSphere2Hom R
-      (by norm_num) (-3, 1) (0, -1) (by norm_num) (by ext <;> norm_num) (m := 1) (by norm_num)
-      (hS 1 (by lia) (by lia)))
+        (ModuleCat.of R R)).obj (_root_.TopCat.of (sphere (0 : EuclideanSpace ℂ (Fin 2)) 1))) :=
+    (ContinuousMap.HomotopyEquiv.refl _).isZero_singularHomology_of_sphere_of_ne
+      (ModuleCat.of R R) (finrank_real_euclideanSpace_complex 1) hm₀ hm₃
+  have := mono_sphereSerreSpectralSequence_page_d (ι := Fin 3) (n := 2) rfl hopfSphere2Hom R
+    (by norm_num) 3 (by norm_num) (-3, 1) (0, -1) (by norm_num) (by ext <;> norm_num) (m := 2)
+    (by norm_num) (hS 2 (by lia) (by lia))
+  have := epi_sphereSerreSpectralSequence_page_d (ι := Fin 3) (n := 2) rfl hopfSphere2Hom R
+    (by norm_num) 3 (by norm_num) (-3, 1) (0, -1) (by norm_num) (by ext <;> norm_num) (m := 1)
+    (by norm_num) (hS 1 (by lia) (by lia))
+  exact isIso_of_mono_of_epi _
 
 /-- **The column `0` of the second page of the Serre spectral sequence of the Hopf fibration** is
 the homology of the circle: `E²_{0,q} ≅ Hq(S¹; R)`, through the fibre over the pole. -/
-def hopfSerreSpectralSequencePageThreeXIsoPole (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = -1)
+def hopfSerreSpectralSequenceSecondPageXIsoPole (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = -1)
     (ha : pq.1 + pq.2 = -(q : ℕ)) :
     ((hopfSerreSpectralSequence R).page 3).X pq ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) q).obj
         (ModuleCat.of R R)).obj (_root_.TopCat.of (sphere (0 : ℂ) 1)) :=
-  sphereSerreSpectralSequencePageXIsoPageTwoX (ι := Fin 3) (n := 2) rfl hopfSphere2Hom R 3 (by lia)
-      (by lia) pq (Or.inl hb) ≪≫
-    sphereSerreSpectralSequencePageTwoXIsoPole (ι := Fin 3) (n := 2) rfl hopfSphere2Hom R
+  sphereSerreSpectralSequencePageXIsoFirstPageX (ι := Fin 3) (n := 2) rfl hopfSphere2Hom R 3
+      (by lia) (by lia) pq (Or.inl hb) ≪≫
+    sphereSerreSpectralSequenceFirstPageXIsoPole (ι := Fin 3) (n := 2) rfl hopfSphere2Hom R
       (by norm_num) q pq hb ha ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) q).obj
-      (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo (hopfSphere2FiberHomeomorph _)).symm
+      (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo (hopfSphere2FiberHomeomorph _
+        (hopfSphere2_surjective _).choose_spec)).symm
 
 /-- **The column `2` of the second page of the Serre spectral sequence of the Hopf fibration** is
 the homology of the circle: `E²_{2,q} ≅ Hq(S¹; R)`, through the fibre over the centre of the
 `2`-cell. -/
-def hopfSerreSpectralSequencePageThreeXIsoTopCell (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = 1)
+def hopfSerreSpectralSequenceSecondPageXIsoTopCell (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = 1)
     (ha : pq.1 + pq.2 = -(q + 2 : ℕ)) :
     ((hopfSerreSpectralSequence R).page 3).X pq ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) q).obj
         (ModuleCat.of R R)).obj (_root_.TopCat.of (sphere (0 : ℂ) 1)) :=
-  sphereSerreSpectralSequencePageXIsoPageTwoX (ι := Fin 3) (n := 2) rfl hopfSphere2Hom R 3 (by lia)
-      (by lia) pq (Or.inr hb) ≪≫
-    sphereSerreSpectralSequencePageTwoXIsoTopCell (ι := Fin 3) (n := 2) rfl R
+  sphereSerreSpectralSequencePageXIsoFirstPageX (ι := Fin 3) (n := 2) rfl hopfSphere2Hom R 3
+      (by lia) (by lia) pq (Or.inr hb) ≪≫
+    sphereSerreSpectralSequenceFirstPageXIsoTopCell (ι := Fin 3) (n := 2) rfl R
       hopfSphere2Hom_mem_serreFibrations (by norm_num) q pq hb ha ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) q).obj
-      (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo (hopfSphere2FiberHomeomorph _)).symm
+      (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo (hopfSphere2FiberHomeomorph _
+        (hopfSphere2_surjective _).choose_spec)).symm
 
 end TopCat
 

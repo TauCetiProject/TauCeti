@@ -21,11 +21,11 @@ indexing `E^r_{k,q}`, with `E¹_{k,q} = Hq+k(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹); R)
 
 * the first page vanishes outside the columns `k = 0` and `k = n`
   (`TauCeti.TopCat.isZero_sphereSerreSpectralSequence_page_two_X`), and
-  `E¹_{0,q} ≅ Hq(p⁻¹(x₀); R)` (`TauCeti.TopCat.sphereSerreSpectralSequencePageTwoXIsoPole`) while,
+  `E¹_{0,q} ≅ Hq(p⁻¹(x₀); R)` (`TauCeti.TopCat.sphereSerreSpectralSequenceFirstPageXIsoPole`) while,
   for a Serre fibration, `E¹_{n,q} ≅ Hq(p⁻¹(x₁); R)`
-  (`TauCeti.TopCat.sphereSerreSpectralSequencePageTwoXIsoTopCell`);
+  (`TauCeti.TopCat.sphereSerreSpectralSequenceFirstPageXIsoTopCell`);
 * a differential `d^r` moves `r` columns to the left, so the two columns survive unchanged up to
-  `Eⁿ` (`TauCeti.TopCat.sphereSerreSpectralSequencePageXIsoPageTwoX`); in particular `E² = E¹`
+  `Eⁿ` (`TauCeti.TopCat.sphereSerreSpectralSequencePageXIsoFirstPageX`); in particular `E² = E¹`
   when `n ≥ 2`;
 * the only differential that can be nonzero from then on is the transgression
   `dⁿ : Eⁿ_{n,q} ⟶ Eⁿ_{0,q+n-1}`, after which the spectral sequence stops: `Eⁿ⁺¹ = E^∞` is made of
@@ -107,7 +107,7 @@ theorem isZero_sphereSerreSpectralSequence_page_two_X (pq : ℤ × ℤ) (h₀ : 
 
 /-- **The column `0` of the first page of the Serre spectral sequence of a map to `Sⁿ`** is the
 homology of the fibre over the pole: `E¹_{0,q} = Hq(p⁻¹(x₀), ∅; R) ≅ Hq(p⁻¹(x₀); R)`. -/
-def sphereSerreSpectralSequencePageTwoXIsoPole (hn : 1 ≤ n) (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = -1)
+def sphereSerreSpectralSequenceFirstPageXIsoPole (hn : 1 ≤ n) (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = -1)
     (ha : pq.1 + pq.2 = -(q : ℕ)) :
     ((sphereSerreSpectralSequence h p R).page 2).X pq ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
@@ -129,7 +129,7 @@ variable {p} in
 /-- **The column `n` of the first page of the Serre spectral sequence of a map to `Sⁿ`** is the
 homology of the fibre over the centre `x₁` of the top cell, shifted by `n`:
 `E¹_{n,q} = Hq+n(E, p⁻¹(x₀); R) ≅ Hq(p⁻¹(x₁); R)`. -/
-def sphereSerreSpectralSequencePageTwoXIsoTopCell (hp : serreFibrations p) (hn : 1 ≤ n) (q : ℕ)
+def sphereSerreSpectralSequenceFirstPageXIsoTopCell (hp : serreFibrations p) (hn : 1 ≤ n) (q : ℕ)
     (pq : ℤ × ℤ) (hb : pq.2 = n - 1) (ha : pq.1 + pq.2 = -(q + n : ℕ)) :
     ((sphereSerreSpectralSequence h p R).page 2).X pq ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
@@ -143,19 +143,24 @@ def sphereSerreSpectralSequencePageTwoXIsoTopCell (hp : serreFibrations p) (hn :
       (q + n) ≪≫
     sphereFibrationSingularHomologyIso h hp R hn q
 
+/-- The other end of a differential of the page `s` at `pq` lies `s - 1` columns away. -/
+private lemma snd_eq_or_snd_eq_of_rel {s : ℤ} {pq pq' : ℤ × ℤ}
+    (h : (ComplexShape.up' ((s, 1 - s) : ℤ × ℤ)).Rel pq pq' ∨
+      (ComplexShape.up' ((s, 1 - s) : ℤ × ℤ)).Rel pq' pq) :
+    pq'.2 = pq.2 + 1 - s ∨ pq'.2 = pq.2 - 1 + s := by
+  rcases h with h | h <;> have := congrArg Prod.snd h <;> simp only [Prod.snd_add] at this <;> lia
+
 /-- **The objects of the two columns survive to the page `n + 1`.** For `2 ≤ r ≤ n + 1`, the
 object at a position `pq` in the column `0` or `n` of the page `r` of the Serre spectral sequence of
 a map to `Sⁿ` is the object of the first page: the differentials of the pages before `n + 1` join
 the two columns to the empty columns strictly between them or outside them. -/
-def sphereSerreSpectralSequencePageXIsoPageTwoX (r : ℤ) (hr : 2 ≤ r)
+def sphereSerreSpectralSequencePageXIsoFirstPageX (r : ℤ) (hr : 2 ≤ r)
     (hrn : r ≤ n + 1) (pq : ℤ × ℤ) (hb : pq.2 = -1 ∨ pq.2 = n - 1) :
     ((sphereSerreSpectralSequence h p R).page r).X pq ≅
       ((sphereSerreSpectralSequence h p R).page 2).X pq :=
   (sphereSerreSpectralSequence h p R).pageXIsoOfLEOfIsZeroOfLT le_rfl r hr
     fun s hs hsr pq' hpq' ↦ by
-      -- The other end of a differential of the page `s` lies `s - 1` columns away.
-      have : pq'.2 = pq.2 + 1 - s ∨ pq'.2 = pq.2 - 1 + s := by
-        rcases hpq' with hpq' | hpq' <;> have := congrArg Prod.snd hpq' <;> simp at this <;> lia
+      have := snd_eq_or_snd_eq_of_rel hpq'
       exact isZero_sphereSerreSpectralSequence_page_two_X h p R pq' (by lia) (by lia)
 
 /-- **The page `n + 2` of the Serre spectral sequence of a map to `Sⁿ` is its last.** From the page
@@ -171,8 +176,7 @@ theorem isZero_sphereSerreSpectralSequence_page_X_of_isZero (pq : ℤ × ℤ)
   let S := sphereSerreSpectralSequence h p R
   -- From the page `n + 2` on, the object at `pq` survives unchanged to the page `n + 3 + m`.
   have hsurvive := S.pageXIsoOfLEOfIsZero (r := n + 2) (by lia) (pq := pq) (fun s hs pq' hpq' ↦ by
-    have : pq'.2 = pq.2 + 1 - s ∨ pq'.2 = pq.2 - 1 + s := by
-      rcases hpq' with hpq' | hpq' <;> have := congrArg Prod.snd hpq' <;> simp at this <;> lia
+    have := snd_eq_or_snd_eq_of_rel hpq'
     exact S.isZero_page_X_of_le le_rfl
       (isZero_sphereSerreSpectralSequence_page_two_X h p R pq' (by lia) (by lia)) _ (by lia))
     (n + 3 + m) (by lia)
@@ -197,15 +201,16 @@ theorem isZero_sphereSerreSpectralSequence_page_X_of_isZero (pq : ℤ × ℤ)
 
 /-- **The transgression `dⁿ` of a fibration over `Sⁿ` is injective when the total space has no
 homology in its degree.** The only differential of the Serre spectral sequence of a map to `Sⁿ`
-that can be nonzero after the first page goes from the column `n` to the column `0` on the page
-`n + 1` (classically `dⁿ : Eⁿ_{n,q} ⟶ Eⁿ_{0,q+n-1}`). Its kernel is the object at its source on the
-page `n + 2`, a graded piece of `Hq+n(E; R)`, so it is a monomorphism when `Hq+n(E; R) = 0`. -/
-theorem mono_sphereSerreSpectralSequence_page_d (hn : 1 ≤ n) (pq pq' : ℤ × ℤ)
-    (hb : pq.2 = n - 1)
+that can be nonzero goes from the column `n` to the column `0` on the page `n + 1` (classically
+`dⁿ : Eⁿ_{n,q} ⟶ Eⁿ_{0,q+n-1}`). Its kernel is the object at its source on the page `n + 2`, a
+graded piece of `Hq+n(E; R)`, so it is a monomorphism when `Hq+n(E; R) = 0`. -/
+theorem mono_sphereSerreSpectralSequence_page_d (hn : 1 ≤ n) (r : ℤ) (hr : r = n + 1)
+    (pq pq' : ℤ × ℤ) (hb : pq.2 = n - 1)
     (hpq' : pq + ((n + 1 : ℤ), -(n : ℤ)) = pq') {m : ℕ} (hm : pq.1 + pq.2 = -m)
     (hE : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) m).obj
       (ModuleCat.of R R)).obj E)) :
-    Mono (((sphereSerreSpectralSequence h p R).page (n + 1) (by lia)).d pq pq') := by
+    Mono (((sphereSerreSpectralSequence h p R).page r (by lia)).d pq pq') := by
+  subst hr
   let S := sphereSerreSpectralSequence h p R
   have hrel : (ComplexShape.up' (((n + 1 : ℤ), 1 - (n + 1 : ℤ)) : ℤ × ℤ)).Rel pq pq' := by
     rw [← hpq']; ext <;> simp
@@ -229,12 +234,13 @@ homology in the degree of its target.** The differential `dⁿ : Eⁿ_{n,q} ⟶ 
 `n + 1` of the Serre spectral sequence of a map to `Sⁿ` has as cokernel the object at its target on
 the page `n + 2`, a graded piece of `Hq+n-1(E; R)`, so it is an epimorphism when
 `Hq+n-1(E; R) = 0`. -/
-theorem epi_sphereSerreSpectralSequence_page_d (hn : 1 ≤ n) (pq pq' : ℤ × ℤ)
-    (hb : pq.2 = n - 1)
+theorem epi_sphereSerreSpectralSequence_page_d (hn : 1 ≤ n) (r : ℤ) (hr : r = n + 1)
+    (pq pq' : ℤ × ℤ) (hb : pq.2 = n - 1)
     (hpq' : pq + ((n + 1 : ℤ), -(n : ℤ)) = pq') {m : ℕ} (hm : pq'.1 + pq'.2 = -m)
     (hE : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) m).obj
       (ModuleCat.of R R)).obj E)) :
-    Epi (((sphereSerreSpectralSequence h p R).page (n + 1) (by lia)).d pq pq') := by
+    Epi (((sphereSerreSpectralSequence h p R).page r (by lia)).d pq pq') := by
+  subst hr
   let _ := sphereRelCWComplex h
   let S := sphereSerreSpectralSequence h p R
   have hb' : pq'.2 = -1 := by rw [← hpq']; simp; lia
