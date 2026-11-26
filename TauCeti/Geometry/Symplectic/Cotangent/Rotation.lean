@@ -354,9 +354,12 @@ theorem inner_angularMomentum
   -- `u ⬝ᵥ (q ⨯₃ p♯) = p♯ ⬝ᵥ (u ⨯₃ q)`.
   refine Eq.trans ?_ (InnerProductSpace.toDual_symm_apply (𝕜 := ℝ)
     (E := EuclideanSpace ℝ (Fin 3)) (x := euclideanCrossProduct u z.proj) (y := z.snd))
-  simp [angularMomentum_def, EuclideanSpace.inner_eq_star_dotProduct, cross_apply, dotProduct,
-    Fin.sum_univ_three]
-  ring
+  have key (q p : EuclideanSpace ℝ (Fin 3)) :
+      ⟪u, toLp 2 (ofLp q ⨯₃ ofLp p)⟫_ℝ = ⟪p, euclideanCrossProduct u q⟫_ℝ := by
+    simp only [euclideanCrossProduct_apply, EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
+    rw [dotProduct_comm, dotProduct_comm _ (ofLp p), triple_product_permutation,
+      triple_product_permutation]
+  exact key _ _
 
 /-- **The moment map of the cotangent-lifted rotations of `ℝ³` is the angular momentum.** For the
 orthogonal group `O(3)` acting on Euclidean three-space, the moment map `⟨μ(q, p), ξ⟩ = p(ξ q)` of

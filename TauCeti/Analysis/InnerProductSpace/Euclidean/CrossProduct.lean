@@ -9,7 +9,10 @@ public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.CrossProduct
+public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
+public import TauCeti.Algebra.Lie.SkewAdjoint
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Gram.Basic
 
 /-!
 # The cross product of Euclidean three-space
@@ -25,9 +28,10 @@ The cross product also describes the infinitesimal rotations of `ℝ³`. The end
 skew-adjoint endomorphism of `ℝ³` is of this form for a unique axis `u`, read off its coordinates.
 This is the **hat map**, a linear isomorphism `TauCeti.euclideanSoThreeEquiv` from `ℝ³` onto the
 orthogonal Lie algebra `so(3) = skewAdjointLieSubalgebra (innerₗ ℝ³)`. It carries the cross
-product to the commutator, `⁅û, v̂⁆ = (u ⨯₃ v)^` (`TauCeti.lie_euclideanSoThreeEquiv`), by the
-Jacobi identity of the cross product. The matrix version, onto the skew-symmetric matrices
-`LieAlgebra.Orthogonal.so (Fin 3) R`, is `TauCeti.soThreeEquiv`; the version here acts on the
+product to the commutator, `⁅û, v̂⁆ = (u ⨯₃ v)^` (`TauCeti.lie_euclideanSoThreeEquiv`). The matrix
+version, onto the skew-symmetric matrices `LieAlgebra.Orthogonal.so (Fin 3) R`, is
+`TauCeti.soThreeEquiv`; the version here is its transport along the standard basis of `ℝ³`
+(`TauCeti.skewAdjointLieEquivOfBasis`, the standard basis being orthonormal), and acts on the
 inner product space `ℝ³`, as the Lie algebra of its orthogonal group does
 (`TauCeti.orthogonalLieAlgebraEquiv`).
 
@@ -77,8 +81,9 @@ theorem euclideanCrossProduct_apply (u v : EuclideanSpace ℝ (Fin 3)) :
 /-- The infinitesimal rotations are skew-adjoint: `⟪u ⨯₃ v, w⟫ = -⟪v, u ⨯₃ w⟫`. -/
 theorem inner_euclideanCrossProduct_apply_left (u v w : EuclideanSpace ℝ (Fin 3)) :
     ⟪euclideanCrossProduct u v, w⟫_ℝ = -⟪v, euclideanCrossProduct u w⟫_ℝ := by
-  simp [EuclideanSpace.inner_eq_star_dotProduct, cross_apply, dotProduct, Fin.sum_univ_three]
-  ring
+  simp only [euclideanCrossProduct_apply, EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
+  rw [dotProduct_comm _ (ofLp v), ← cross_anticomm (ofLp w), dotProduct_neg, neg_neg]
+  exact (triple_product_permutation _ _ _).symm
 
 /-- The infinitesimal rotation about `u` lies in the orthogonal Lie algebra `so(3)` of the
 skew-adjoint endomorphisms of Euclidean three-space. -/
@@ -88,33 +93,25 @@ theorem euclideanCrossProduct_mem_skewAdjointLieSubalgebra (u : EuclideanSpace �
 
 /-- The **hat map** of Euclidean three-space: the linear isomorphism from `ℝ³` onto the orthogonal
 Lie algebra `so(3)` of skew-adjoint endomorphisms sending the axis `u` to the infinitesimal
-rotation `v ↦ u ⨯₃ v`. Its inverse reads the axis of `A` off the coordinates of `A e₁`, `A e₂`
-and `A e₀`. -/
+rotation `v ↦ u ⨯₃ v`. It is the matrix hat map `TauCeti.soThreeEquiv` transported along the
+standard basis by `TauCeti.skewAdjointLieEquivOfBasis`. -/
 noncomputable def euclideanSoThreeEquiv :
     EuclideanSpace ℝ (Fin 3) ≃ₗ[ℝ]
-      skewAdjointLieSubalgebra (innerₗ (EuclideanSpace ℝ (Fin 3))) where
-  toFun u := ⟨euclideanCrossProduct u, euclideanCrossProduct_mem_skewAdjointLieSubalgebra u⟩
-  map_add' u v := Subtype.ext (map_add _ u v)
-  map_smul' c u := Subtype.ext (map_smul _ c u)
-  invFun A := toLp 2
-    ![(A : Module.End ℝ (EuclideanSpace ℝ (Fin 3))) (EuclideanSpace.single 1 1) 2,
-      (A : Module.End ℝ (EuclideanSpace ℝ (Fin 3))) (EuclideanSpace.single 2 1) 0,
-      (A : Module.End ℝ (EuclideanSpace ℝ (Fin 3))) (EuclideanSpace.single 0 1) 1]
-  left_inv u := by
-    ext i
-    fin_cases i <;> simp [cross_apply]
-  right_inv A := by
-    refine Subtype.ext ((EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.ext fun j ↦ PiLp.ext fun i ↦ ?_)
-    have h := apply_single_apply_eq_neg_of_mem_skewAdjointLieSubalgebra A.property
-    fin_cases j <;> fin_cases i <;> simp [cross_apply] <;>
-      linarith [h 0 0, h 1 1, h 2 2, h 0 1, h 0 2, h 1 2]
+      skewAdjointLieSubalgebra (innerₗ (EuclideanSpace ℝ (Fin 3))) :=
+  (WithLp.linearEquiv 2 ℝ (Fin 3 → ℝ)).trans ((soThreeEquiv ℝ).trans
+    (skewAdjointLieEquivOfBasis (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis _
+      (LinearMap.BilinForm.toMatrix_innerₗ_orthonormalBasis _)).toLinearEquiv)
 
 /-- The hat map sends the axis `u` to the infinitesimal rotation `v ↦ u ⨯₃ v`. -/
 @[simp]
 theorem coe_euclideanSoThreeEquiv_apply (u v : EuclideanSpace ℝ (Fin 3)) :
     (euclideanSoThreeEquiv u : Module.End ℝ (EuclideanSpace ℝ (Fin 3))) v =
-      toLp 2 (ofLp u ⨯₃ ofLp v) :=
-  (rfl)
+      toLp 2 (ofLp u ⨯₃ ofLp v) := by
+  refine (LinearMap.congr_fun (coe_skewAdjointLieEquivOfBasis_apply _ _ _
+    (soThreeEquiv ℝ (ofLp u))) v).trans ?_
+  rw [Matrix.toLinAlgEquiv_apply]
+  ext i
+  simp [← crossProductMatrix_mulVec, Matrix.mulVec, dotProduct, Pi.single_apply]
 
 /-- The inverse of the hat map reads the axis of `A` off the coordinates of `A e₁`, `A e₂` and
 `A e₀`. -/
@@ -123,17 +120,19 @@ theorem euclideanSoThreeEquiv_symm_apply
     euclideanSoThreeEquiv.symm A = toLp 2
       ![(A : Module.End ℝ (EuclideanSpace ℝ (Fin 3))) (EuclideanSpace.single 1 1) 2,
         (A : Module.End ℝ (EuclideanSpace ℝ (Fin 3))) (EuclideanSpace.single 2 1) 0,
-        (A : Module.End ℝ (EuclideanSpace ℝ (Fin 3))) (EuclideanSpace.single 0 1) 1] :=
-  (rfl)
+        (A : Module.End ℝ (EuclideanSpace ℝ (Fin 3))) (EuclideanSpace.single 0 1) 1] := by
+  obtain ⟨u, rfl⟩ := euclideanSoThreeEquiv.surjective A
+  ext i
+  fin_cases i <;> simp [cross_apply]
 
-attribute [local instance 100] LieRing.ofAssociativeRing in
-/-- **The hat map carries the cross product to the commutator**: `⁅û, v̂⁆ = (u ⨯₃ v)^`, by the
-Jacobi identity of the cross product. -/
+/-- **The hat map carries the cross product to the commutator**: `⁅û, v̂⁆ = (u ⨯₃ v)^`. This is
+the matrix identity `TauCeti.lie_soThreeEquiv` transported along the standard basis. -/
 @[simp]
 theorem lie_euclideanSoThreeEquiv (u v : EuclideanSpace ℝ (Fin 3)) :
     ⁅euclideanSoThreeEquiv u, euclideanSoThreeEquiv v⁆ =
-      euclideanSoThreeEquiv (toLp 2 (ofLp u ⨯₃ ofLp v)) := by
-  refine Subtype.ext (LinearMap.ext fun w ↦ ?_)
-  simp [LieSubalgebra.coe_bracket, LieRing.of_associative_ring_bracket, cross_cross]
+      euclideanSoThreeEquiv (toLp 2 (ofLp u ⨯₃ ofLp v)) :=
+  ((skewAdjointLieEquivOfBasis (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis _
+    (LinearMap.BilinForm.toMatrix_innerₗ_orthonormalBasis _)).map_lie _ _).symm.trans
+    (congrArg _ (lie_soThreeEquiv (ofLp u) (ofLp v)))
 
 end TauCeti
