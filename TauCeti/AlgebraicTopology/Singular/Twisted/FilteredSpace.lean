@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
+public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
 import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
