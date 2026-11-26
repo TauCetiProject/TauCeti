@@ -221,6 +221,23 @@ theorem exists_value_ae_eq_boxSineMode_and_energyFormH1_eq {a b : ι → ℝ}
     (fun _ hx ↦ boxSineMode_eq_zero_of_mem_frontier hab k hx)
     (fun x _ ↦ laplacian_boxSineMode a b k x)
 
+omit [DecidableEq ι] in
+/-- An element of `L²` of a box that is a.e. equal to a separated mode with positive indices is
+nonzero: the mode is continuous and takes the value `1` somewhere in the open box. -/
+private theorem ne_zero_of_ae_eq_boxSineMode {a b : ι → ℝ} (hab : ∀ i, a i < b i) {k : ι → ℕ}
+    (hk : ∀ i, 0 < k i) {ψ : Lp ℝ 2 (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι)))}
+    (hψ : ψ =ᵐ[mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι))] boxSineMode a b k) :
+    ψ ≠ 0 := by
+  intro h0
+  have hz : EqOn (boxSineMode a b k) 0 (boxDomain a b) := by
+    refine Measure.eqOn_open_of_ae_eq (μ := mu) ?_ (boxDomain a b).isOpen
+      (contDiff_boxSineMode a b k).continuous.continuousOn continuousOn_const
+    filter_upwards [hψ, Lp.coeFn_zero ℝ 2
+      (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι)))] with x h1 h2
+    rw [← h1, h0, h2]
+  obtain ⟨x, hx, hpeak⟩ := exists_boxSineMode_eq_one hab hk
+  simpa [hpeak] using hz hx
+
 /-- Every positive multi-index gives a Dirichlet eigenvalue of `-Δ` on a box. Its
 nonzero eigenfunction is the product of the corresponding one-dimensional sine modes. -/
 theorem isDirichletEigenvalue_laplacian_boxDomain {a b : ι → ℝ}
@@ -230,16 +247,7 @@ theorem isDirichletEigenvalue_laplacian_boxDomain {a b : ι → ℝ}
   obtain ⟨u, hu, heq⟩ := exists_value_ae_eq_boxSineMode_and_energyFormH1_eq (mu := mu) hab k
   refine (isDirichletEigenvalue_iff_setIntegral _).mpr
     ⟨u, fun h0 ↦ ?_, fun v ↦ by rw [heq v, W1p.inner_value_eq_setIntegral]⟩
-  have hval : W1p.value (u : W1p mu (boxDomain a b) 2) = 0 := by
-    rw [← W1p0.valueL_apply, h0, map_zero]
-  have hz : EqOn (boxSineMode a b k) 0 (boxDomain a b) := by
-    refine Measure.eqOn_open_of_ae_eq (μ := mu) ?_ (boxDomain a b).isOpen
-      (contDiff_boxSineMode a b k).continuous.continuousOn continuousOn_const
-    filter_upwards [hu, Lp.coeFn_zero ℝ 2
-      (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι)))] with x h1 h2
-    rw [← h1, hval, h2]
-  obtain ⟨x, hx, hpeak⟩ := exists_boxSineMode_eq_one hab hk
-  simpa [hpeak] using hz hx
+  exact ne_zero_of_ae_eq_boxSineMode hab hk hu (by rw [← W1p0.valueL_apply, h0, map_zero])
 
 omit [DecidableEq ι] in
 /-- The identification `ι → ℝ ≃ EuclideanSpace ℝ ι` carries the product of the intervals
@@ -489,16 +497,16 @@ private theorem eigenspace_dirichletSolutionOperator_eq_span {a b : ι → ℝ}
     obtain ⟨u, hu_def⟩ : ∃ u : W1p0 mu (boxDomain a b) 2,
         u = kappa • weakSolutionDirichlet hcoeff hcoercive w := ⟨_, rfl⟩
     have hu : W1p.value (u : W1p mu (boxDomain a b) 2) = w := by
-      rw [← W1p0.valueL_apply, hu_def, map_smul, W1p0.valueL_apply, hw, smul_smul,
-        mul_inv_cancel₀ hkappa, one_smul]
+      rw [← W1p0.valueL_apply, hu_def, map_smul, W1p0.valueL_apply, hw, smul_inv_smul₀ hkappa]
     have hueq (v : W1p0 mu (boxDomain a b) 2) :
         energyFormH1 (fun _ ↦ 1) 0 0 (u : W1p mu (boxDomain a b) 2)
             (v : W1p mu (boxDomain a b) 2) =
           kappa * ⟪W1p.value (u : W1p mu (boxDomain a b) 2),
             W1p.value (v : W1p mu (boxDomain a b) 2)⟫_ℝ := by
-      rw [hu, ← energyFormH1L0_apply hcoeff, hu_def, map_smul, _root_.smul_apply,
-        energyFormH1L0_apply, (isWeakSolutionDirichlet_iff_inner w _).mp
-          (isWeakSolutionDirichlet_weakSolutionDirichlet hcoeff hcoercive w) v, smul_eq_mul]
+      have hS := (isWeakSolutionDirichlet_iff_inner w _).mp
+        (isWeakSolutionDirichlet_weakSolutionDirichlet hcoeff hcoercive w) v
+      rw [hu, ← energyFormH1L0_apply hcoeff, hu_def]
+      simp [energyFormH1L0_apply, hS]
     exact hu ▸ value_mem_span_of_energyFormH1_eq hab hφ hφeq hueq
   · -- Each mode with eigenvalue `κ` is an eigenvector.
     rintro _ ⟨k, hk, rfl⟩
@@ -518,22 +526,14 @@ private theorem linearIndependent_of_ae_eq_boxSineMode {a b : ι → ℝ} (hab :
     {ψ : (ι → ℕ) → Lp ℝ 2 (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι)))}
     (hψ : ∀ k, ψ k =ᵐ[mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι))] boxSineMode a b k) :
     LinearIndependent ℝ fun k : s ↦ ψ k := by
-  refine linearIndependent_of_ne_zero_of_inner_eq_zero (fun k h0 ↦ ?_) fun k l hkl ↦ ?_
-  · -- A mode with positive indices takes the value `1` somewhere in the open box.
-    have hz : EqOn (boxSineMode a b k) 0 (boxDomain a b) := by
-      refine Measure.eqOn_open_of_ae_eq (μ := mu) ?_ (boxDomain a b).isOpen
-        (contDiff_boxSineMode a b k).continuous.continuousOn continuousOn_const
-      filter_upwards [hψ k, Lp.coeFn_zero ℝ 2
-        (mu.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι)))] with x h1 h2
-      rw [← h1, h0, h2]
-    obtain ⟨x, hx, hpeak⟩ := exists_boxSineMode_eq_one hab (hs k k.property)
-    simpa [hpeak] using hz hx
-  · dsimp only
-    rw [MeasureTheory.L2.inner_def, ← setIntegral_boxSineMode_mul_boxSineMode_eq_zero (mu := mu)
-      (Subtype.coe_injective.ne hkl)]
-    refine integral_congr_ae ?_
-    filter_upwards [hψ k, hψ l] with x hk hl
-    simp [hk, hl, mul_comm]
+  refine linearIndependent_of_ne_zero_of_inner_eq_zero
+    (fun k ↦ ne_zero_of_ae_eq_boxSineMode hab (hs k k.property) (hψ k)) fun k l hkl ↦ ?_
+  dsimp only
+  rw [MeasureTheory.L2.inner_def, ← setIntegral_boxSineMode_mul_boxSineMode_eq_zero (mu := mu)
+    (Subtype.coe_injective.ne hkl)]
+  refine integral_congr_ae ?_
+  filter_upwards [hψ k, hψ l] with x hk hl
+  simp [hk, hl, mul_comm]
 
 /-- **The multiplicity of a Dirichlet eigenvalue of a box.** On the box `∏ᵢ (aᵢ, bᵢ)`, the
 eigenspace of the Dirichlet solution operator of `-Δ` for the eigenvalue `κ⁻¹`, `κ ≠ 0`, has

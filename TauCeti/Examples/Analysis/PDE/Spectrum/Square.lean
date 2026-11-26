@@ -62,11 +62,26 @@ private theorem finrank_eigenspace_eq_ncard
     mul_div_cancel_right₀ _ Real.pi_ne_zero]
   norm_cast
 
-/-- The positive solutions of `k₀² + k₁² = κ` are at most `2` when `κ ≤ 8`, which reduces the two
-cases below to a finite check. -/
-private theorem le_two_of_sq_add_sq_le {k : Fin 2 → ℕ} {κ : ℕ} (hκ : κ ≤ 8)
-    (h : k 0 ^ 2 + k 1 ^ 2 = κ) (i : Fin 2) : k i ≤ 2 := by
-  fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one] <;> nlinarith
+/-- For `κ ≤ 8` the positive solutions of `k₀² + k₁² = κ` lie in `{1, 2}²`, so counting them is a
+finite search, which reduces the two cases below to `decide`. -/
+private theorem ncard_setOf_sq_add_sq_eq {κ : ℕ} (hκ : κ ≤ 8) :
+    {k : Fin 2 → ℕ | (∀ i, 0 < k i) ∧ k 0 ^ 2 + k 1 ^ 2 = κ}.ncard =
+      {p ∈ Finset.Icc 1 2 ×ˢ Finset.Icc 1 2 | p.1 ^ 2 + p.2 ^ 2 = κ}.card := by
+  have hS : {k : Fin 2 → ℕ | (∀ i, 0 < k i) ∧ k 0 ^ 2 + k 1 ^ 2 = κ} =
+      (fun p : ℕ × ℕ ↦ ![p.1, p.2]) ''
+        ↑{p ∈ Finset.Icc 1 2 ×ˢ Finset.Icc 1 2 | p.1 ^ 2 + p.2 ^ 2 = κ} := by
+    ext k
+    simp only [Set.mem_ofPred_eq, Set.mem_image, Finset.coe_filter, Finset.mem_product,
+      Finset.mem_Icc, Fin.forall_fin_two, Prod.exists]
+    constructor
+    · rintro ⟨⟨h0, h1⟩, hk⟩
+      refine ⟨k 0, k 1, ⟨⟨⟨h0, by nlinarith⟩, h1, by nlinarith⟩, hk⟩, ?_⟩
+      ext i
+      fin_cases i <;> rfl
+    · rintro ⟨m, n, ⟨⟨⟨hm, -⟩, hn, -⟩, hmn⟩, rfl⟩
+      exact ⟨⟨hm, hn⟩, hmn⟩
+  rw [hS, Set.ncard_image_of_injective _ fun p q h ↦ Prod.ext (congrFun h 0) (congrFun h 1),
+    Set.ncard_coe_finset]
 
 /-- **The least Dirichlet eigenvalue of the square is simple**: `2 = 1² + 1²` in one way only. -/
 theorem finrank_eigenspace_dirichletSolutionOperator_two
@@ -81,20 +96,9 @@ theorem finrank_eigenspace_dirichletSolutionOperator_two
         Set (EuclideanSpace ℝ (Fin 2)))) →ₗ[ℝ]
         Lp ℝ 2 (mu.restrict (boxDomain (fun _ : Fin 2 ↦ (0 : ℝ)) (fun _ ↦ Real.pi) :
           Set (EuclideanSpace ℝ (Fin 2))))) 2⁻¹) = 1 := by
-  have hS : {k : Fin 2 → ℕ | (∀ i, 0 < k i) ∧ k 0 ^ 2 + k 1 ^ 2 = 2} = {![1, 1]} := by
-    ext k
-    simp only [Set.mem_ofPred_eq, Set.mem_singleton_iff]
-    refine ⟨fun ⟨hpos, hk⟩ ↦ ?_, fun hk ↦ by subst hk; simp⟩
-    have h0 := le_two_of_sq_add_sq_le (by norm_num) hk 0
-    have h1 := le_two_of_sq_add_sq_le (by norm_num) hk 1
-    have p0 := hpos 0
-    have p1 := hpos 1
-    interval_cases hk0 : k 0 <;> interval_cases hk1 : k 1 <;> simp at hk
-    ext i
-    fin_cases i <;> simp [hk0, hk1]
   have h := finrank_eigenspace_eq_ncard hcoeff hcoercive (κ := 2) two_ne_zero
-  rw [hS, Set.ncard_singleton] at h
-  exact_mod_cast h
+  rw [ncard_setOf_sq_add_sq_eq (by norm_num)] at h
+  exact_mod_cast h.trans (by decide)
 
 /-- **A multiple Dirichlet eigenvalue of the square**: `5 = 1² + 2² = 2² + 1²` has multiplicity
 `2`, with eigenfunctions `sin x sin 2y` and `sin 2x sin y`. -/
@@ -110,23 +114,8 @@ theorem finrank_eigenspace_dirichletSolutionOperator_five
         Set (EuclideanSpace ℝ (Fin 2)))) →ₗ[ℝ]
         Lp ℝ 2 (mu.restrict (boxDomain (fun _ : Fin 2 ↦ (0 : ℝ)) (fun _ ↦ Real.pi) :
           Set (EuclideanSpace ℝ (Fin 2))))) 5⁻¹) = 2 := by
-  have hS : {k : Fin 2 → ℕ | (∀ i, 0 < k i) ∧ k 0 ^ 2 + k 1 ^ 2 = 5} = {![1, 2], ![2, 1]} := by
-    ext k
-    simp only [Set.mem_ofPred_eq, Set.mem_insert_iff, Set.mem_singleton_iff]
-    refine ⟨fun ⟨hpos, hk⟩ ↦ ?_, fun hk ↦ by rcases hk with rfl | rfl <;> simp⟩
-    have h0 := le_two_of_sq_add_sq_le (by norm_num) hk 0
-    have h1 := le_two_of_sq_add_sq_le (by norm_num) hk 1
-    have p0 := hpos 0
-    have p1 := hpos 1
-    interval_cases hk0 : k 0 <;> interval_cases hk1 : k 1 <;> simp at hk
-    · left
-      ext i
-      fin_cases i <;> simp [hk0, hk1]
-    · right
-      ext i
-      fin_cases i <;> simp [hk0, hk1]
   have h := finrank_eigenspace_eq_ncard hcoeff hcoercive (κ := 5) (by norm_num)
-  rw [hS, Set.ncard_pair (by decide)] at h
-  exact_mod_cast h
+  rw [ncard_setOf_sq_add_sq_eq (by norm_num)] at h
+  exact_mod_cast h.trans (by decide)
 
 end TauCeti.Examples.DirichletSquare
