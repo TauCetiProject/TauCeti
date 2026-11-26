@@ -34,15 +34,19 @@ that `f t ((Real.sqrt t)⁻¹ • v) → Complex.exp (-B v v)` for `μ`-almost e
 
 This file proves the four conclusions of multivariate Laplace's method:
 
-* `TauCeti.mul_norm_sq_le_re_of_laplaceMethod` and `TauCeti.re_pos_of_laplaceMethod`: for a
-  single vector `v`, convergence `f t ((Real.sqrt t)⁻¹ • v) → Complex.exp (-z)` under the rescaled
-  majorant gives `γ * c * ‖v‖ ^ 2 ≤ z.re`; applied to `z = B v v` with `c, γ > 0` and `v ≠ 0`,
-  this yields `0 < (B v v).re` (without finite-dimensionality or a measure);
+* `TauCeti.re_pos_of_laplaceMethod_of_ae`: `0 < (B v v).re` for every `v ≠ 0`;
 * `TauCeti.eventually_integrable_of_laplaceMethod`: `f t` is `μ`-integrable for large `t`;
 * `TauCeti.tendsto_rpow_mul_integral_of_laplaceMethod`: for any almost-everywhere pointwise
   rescaled limit `g : E → ℂ`, `t ^ (n / 2) * ∫ v, f t v ∂μ → ∫ v, g v ∂μ`;
-* `TauCeti.eventually_integral_ne_zero_of_laplaceMethod`: `∫ v, f t v ∂μ ≠ 0` for large `t`;
-* `TauCeti.tendsto_integral_of_laplaceMethod`: the bundled theorem combining all four.
+* `TauCeti.eventually_integral_ne_zero_of_laplaceMethod`: `∫ v, f t v ∂μ ≠ 0` for large `t`.
+
+`TauCeti.laplaceMethod_multivariate` bundles these four statements for `g v = Complex.exp (-B v v)`.
+
+The pointwise ingredients are `TauCeti.mul_norm_sq_le_re_of_laplaceMethod` and
+`TauCeti.re_pos_of_laplaceMethod`: for a single vector `v`, convergence
+`f t ((Real.sqrt t)⁻¹ • v) → Complex.exp (-z)` under the rescaled majorant gives
+`γ * c * ‖v‖ ^ 2 ≤ z.re`; applied to `z = B v v` with `c, γ > 0` and `v ≠ 0`, this yields
+`0 < (B v v).re` (without finite-dimensionality or a measure).
 
 By the real-exponent Bernoulli inequality (`TauCeti.rpow_neg_one_add_div_le`), for
 `γ * t ≥ p := n / 2 + 1` the rescaled majorant `(1 + c * ‖(Real.sqrt t)⁻¹ • w‖ ^ 2) ^ (-(γ * t))`
@@ -72,12 +76,13 @@ private theorem tendsto_rescaled_norm_sq_majorant {E : Type*} [SeminormedAddComm
     [NormedSpace ℝ E] (c γ : ℝ) (v : E) :
     Tendsto (fun t : ℕ ↦ (1 + c * ‖(Real.sqrt t)⁻¹ • v‖ ^ 2) ^ (-(γ * t)))
       atTop (𝓝 (Real.exp (-(γ * c * ‖v‖ ^ 2)))) := by
-  have h1 := Real.tendsto_one_add_div_rpow_neg_mul (c * ‖v‖ ^ 2) γ
-  have hlim : Real.exp (-(γ * (c * ‖v‖ ^ 2))) = Real.exp (-(γ * c * ‖v‖ ^ 2)) := by ring_nf
+  have h1 := (Real.tendsto_one_add_div_rpow_mul_exp (c * ‖v‖ ^ 2) (-γ)).comp
+    tendsto_natCast_atTop_atTop
+  have hlim : Real.exp (c * ‖v‖ ^ 2 * -γ) = Real.exp (-(γ * c * ‖v‖ ^ 2)) := by ring_nf
   rw [hlim] at h1
-  refine h1.congr' ?_
-  filter_upwards [eventually_ge_atTop 1] with t _
-  rw [TauCeti.norm_inv_sqrt_smul_sq (Nat.cast_nonneg t) v, mul_div_assoc]
+  refine h1.congr' (.of_forall fun t ↦ ?_)
+  simp only [Function.comp_apply]
+  rw [TauCeti.norm_inv_sqrt_smul_sq (Nat.cast_nonneg t) v, mul_div_assoc, neg_mul]
 
 /-- **Pointwise lower bound via Laplace's method**: if `f t ((Real.sqrt t)⁻¹ • v)` converges to
 `Complex.exp (-z)` and is eventually bounded by
@@ -184,7 +189,11 @@ theorem tendsto_rpow_mul_integral_of_laplaceMethod {E : Type*} [NormedAddCommGro
     (fun w : E ↦ (1 + (γ * c / p) * ‖w‖ ^ 2) ^ (-p)) hmeas hdom hbound_int hlim
   simpa only [rescaled_integral_eq] using hconv
 
-private theorem re_pos_of_laplaceMethod_ae {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+/-- **Positivity** in multivariate Laplace's method: if `c, γ > 0`,
+`f t ((Real.sqrt t)⁻¹ • v) → Complex.exp (-B v v)` for `μ`-almost every `v`, and
+`‖f t v‖ ≤ (1 + c * ‖v‖ ^ 2) ^ (-(γ * t))` holds eventually for `μ`-almost every `v`, then
+`0 < (B v v).re` for every `v ≠ 0`. -/
+theorem re_pos_of_laplaceMethod_of_ae {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
     [μ.IsAddHaarMeasure] (B : E →ₗ[ℝ] E →ₗ[ℝ] ℂ) {c γ : ℝ} (hc : 0 < c) (hγ : 0 < γ)
     {f : ℕ → E → ℂ}
@@ -206,7 +215,7 @@ private theorem re_pos_of_laplaceMethod_ae {E : Type*} [NormedAddCommGroup E] [N
   have hcont_l : Continuous fun v : E ↦ γ * c * ‖v‖ ^ 2 :=
     continuous_const.mul (continuous_norm.pow 2)
   have hcont_r : Continuous fun v : E ↦ (B v v).re :=
-    Complex.continuous_re.comp (continuous_bilinear_diag B)
+    Complex.continuous_re.comp B.continuous_apply_self
   have hle : ∀ v : E, γ * c * ‖v‖ ^ 2 ≤ (B v v).re :=
     (Continuous.ae_le_iff_le μ hcont_l hcont_r).mp hae
   intro v hv
@@ -224,7 +233,7 @@ theorem eventually_integral_ne_zero_of_laplaceMethod {E : Type*} [NormedAddCommG
       Tendsto (fun t : ℕ ↦ f t ((Real.sqrt t)⁻¹ • v)) atTop (𝓝 (Complex.exp (-B v v))))
     (hmaj : ∀ᶠ t in atTop, ∀ᵐ v ∂μ, ‖f t v‖ ≤ (1 + c * ‖v‖ ^ 2) ^ (-(γ * t))) :
     ∀ᶠ t in atTop, ∫ v, f t v ∂μ ≠ 0 := by
-  have hpos := re_pos_of_laplaceMethod_ae μ B hc hγ hlim hmaj
+  have hpos := re_pos_of_laplaceMethod_of_ae μ B hc hγ hlim hmaj
   have hne : ∫ v : E, Complex.exp (-B v v) ∂μ ≠ 0 := integral_cexp_neg_bilinear_ne_zero μ B hpos
   have hlim_int := tendsto_rpow_mul_integral_of_laplaceMethod μ hc hγ hf hlim hmaj
   exact (hlim_int.eventually_ne hne).mono fun t ht hzero ↦ ht (by simp [hzero])
@@ -235,7 +244,7 @@ everywhere strongly measurable, `f t ((Real.sqrt t)⁻¹ • v) → Complex.exp 
 for `μ`-almost every `v : E`, then `(B v v).re > 0` for all `v ≠ 0`, `f t` is eventually
 `μ`-integrable, `t ^ (n / 2) * ∫ v, f t v ∂μ → ∫ v, Complex.exp (-B v v) ∂μ`, and eventually
 `∫ v, f t v ∂μ ≠ 0`. -/
-theorem tendsto_integral_of_laplaceMethod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem laplaceMethod_multivariate {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
     [μ.IsAddHaarMeasure] (B : E →ₗ[ℝ] E →ₗ[ℝ] ℂ) {c γ : ℝ} (hc : 0 < c) (hγ : 0 < γ)
     {f : ℕ → E → ℂ} (hf : ∀ᶠ t in atTop, AEStronglyMeasurable (f t) μ)
@@ -247,7 +256,7 @@ theorem tendsto_integral_of_laplaceMethod {E : Type*} [NormedAddCommGroup E] [No
       Tendsto (fun t : ℕ ↦ (((t : ℝ) ^ ((finrank ℝ E : ℝ) / 2) : ℝ) : ℂ) * ∫ v, f t v ∂μ)
         atTop (𝓝 (∫ v, Complex.exp (-B v v) ∂μ)) ∧
       ∀ᶠ t in atTop, ∫ v, f t v ∂μ ≠ 0 :=
-  ⟨re_pos_of_laplaceMethod_ae μ B hc hγ hlim hmaj,
+  ⟨re_pos_of_laplaceMethod_of_ae μ B hc hγ hlim hmaj,
     eventually_integrable_of_laplaceMethod μ hc hγ hf hmaj,
     tendsto_rpow_mul_integral_of_laplaceMethod μ hc hγ hf hlim hmaj,
     eventually_integral_ne_zero_of_laplaceMethod μ B hc hγ hf hlim hmaj⟩

@@ -80,8 +80,8 @@ proof of the Gelfond–Schneider theorem.
 
 ## Exponential limits of rescaled powers
 
-For all reals `a` and `γ`, `(1 + a / t) ^ (-(γ * t))` converges to `Real.exp (-(γ * a))` as
-`t : ℕ` tends to infinity (`Real.tendsto_one_add_div_rpow_neg_mul`).
+For all reals `a` and `b`, `(1 + a / x) ^ (b * x)` converges to `Real.exp (a * b)` as the real
+number `x` tends to infinity (`Real.tendsto_one_add_div_rpow_mul_exp`).
 -/
 
 public section
@@ -440,25 +440,19 @@ theorem tendsto_const_rpow_inv_atTop {B : ℝ} (hB : B ≠ 0) :
   simpa only [Function.comp_def, rpow_zero] using
     (continuousAt_const_rpow hB).tendsto.comp tendsto_inv_atTop_zero
 
-/-- For any real numbers `a` and `γ`, `(1 + a / t) ^ (-(γ * t))` converges to `exp (-(γ * a))`
-as `t : ℕ` tends to infinity. -/
-theorem tendsto_one_add_div_rpow_neg_mul (a γ : ℝ) :
-    Tendsto (fun t : ℕ ↦ (1 + a / (t : ℝ)) ^ (-(γ * t))) atTop (𝓝 (exp (-(γ * a)))) := by
-  have h1 : Tendsto (fun t : ℕ ↦ ((1 + a / (t : ℝ)) ^ t) ^ (-γ)) atTop (𝓝 (exp a ^ (-γ))) :=
-    (tendsto_one_add_div_pow_exp a).rpow_const (Or.inl (exp_pos _).ne')
-  have hval : exp a ^ (-γ) = exp (-(γ * a)) := by
-    rw [← exp_mul]
-    congr 1
-    ring
-  rw [hval] at h1
-  have hpos : ∀ᶠ t : ℕ in atTop, 0 < 1 + a / (t : ℝ) := by
-    have ht0 : Tendsto (fun t : ℕ ↦ 1 + a / (t : ℝ)) atTop (𝓝 1) := by
-      simpa using tendsto_const_nhds.add
-        (tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop (R := ℝ)))
-    exact ht0.eventually (lt_mem_nhds zero_lt_one)
+/-- For any real numbers `a` and `b`, `(1 + a / x) ^ (b * x)` converges to `exp (a * b)` as the
+real number `x` tends to infinity. -/
+theorem tendsto_one_add_div_rpow_mul_exp (a b : ℝ) :
+    Tendsto (fun x : ℝ ↦ (1 + a / x) ^ (b * x)) atTop (𝓝 (exp (a * b))) := by
+  have h1 : Tendsto (fun x : ℝ ↦ ((1 + a / x) ^ x) ^ b) atTop (𝓝 (exp a ^ b)) :=
+    (tendsto_one_add_div_rpow_exp a).rpow_const (Or.inl (exp_pos _).ne')
+  rw [← exp_mul] at h1
+  have hpos : ∀ᶠ x : ℝ in atTop, 0 ≤ 1 + a / x := by
+    have h0 : Tendsto (fun x : ℝ ↦ 1 + a / x) atTop (𝓝 1) := by
+      simpa using tendsto_const_nhds.add (tendsto_const_nhds.div_atTop (tendsto_id (α := ℝ)))
+    exact (h0.eventually (lt_mem_nhds zero_lt_one)).mono fun _ h ↦ h.le
   refine h1.congr' ?_
-  filter_upwards [hpos] with t hbase
-  have hexp : (t : ℝ) * -γ = -(γ * t) := by ring
-  rw [← rpow_natCast, ← rpow_mul hbase.le, hexp]
+  filter_upwards [hpos] with x hbase
+  rw [← rpow_mul hbase, mul_comm x b]
 
 end Real

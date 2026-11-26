@@ -31,9 +31,10 @@ nonzero vectors (`∀ v ≠ 0, 0 < (B v v).re`). Then:
 Nonvanishing is proved by choosing a basis of `E`, simultaneously diagonalizing the symmetrized real
 and imaginary matrices of `B` via `Matrix.PosDef.exists_simultaneous_diagonal_real`, transporting
 `μ` to Lebesgue measure on `Fin n → ℝ` up to a positive Haar factor, and evaluating the factored
-complex Gaussian integral using `GaussianFourier.integral_cexp_neg_sum_mul_add`. Integrability
-follows from nonvanishing via `MeasureTheory.Integrable.of_integral_ne_zero` and continuity via
-`TauCeti.continuous_bilinear_diag`.
+complex Gaussian integral using `GaussianFourier.integral_cexp_neg_sum_mul_add`; continuity of
+`v ↦ B v v` (`LinearMap.continuous_apply_self`) supplies the measurability needed for this change
+of variables. Integrability follows from nonvanishing via
+`MeasureTheory.Integrable.of_integral_ne_zero`.
 
 ## References
 
@@ -52,7 +53,7 @@ namespace TauCeti
 private theorem continuous_cexp_neg_bilinear {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] (B : E →ₗ[ℝ] E →ₗ[ℝ] ℂ) :
     Continuous fun v : E ↦ Complex.exp (-B v v) :=
-  (continuous_bilinear_diag B).neg.cexp
+  B.continuous_apply_self.neg.cexp
 
 private noncomputable def symmMatrix {E : Type*} [AddCommGroup E] [Module ℝ E] {n : ℕ}
     (β : LinearMap.BilinForm ℝ E) (b : Basis (Fin n) ℝ E) : Matrix (Fin n) (Fin n) ℝ :=
@@ -132,8 +133,8 @@ theorem integral_cexp_neg_bilinear_ne_zero {E : Type*} [NormedAddCommGroup E] [N
     (((P : Matrix _ _ ℝ).toLinearEquiv' P.invertible).trans b.equivFun.symm).toContinuousLinearEquiv
   have he_apply (y : Fin (finrank ℝ E) → ℝ) :
       e y = b.equivFun.symm ((P : Matrix _ _ ℝ) *ᵥ y) := by
-    rw [LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.trans_apply]
-    rfl
+    rw [LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.trans_apply, ← Matrix.toLin'_apply]
+    exact congrArg b.equivFun.symm (LinearMap.congr_fun (Matrix.toLinearEquiv'_apply _ _) y)
   let ν : Measure E := (volume : Measure (Fin (finrank ℝ E) → ℝ)).map e
   have hν : ν.IsAddHaarMeasure := e.isAddHaarMeasure_map volume
   set c : ℝ≥0 := Measure.addHaarScalarFactor μ ν

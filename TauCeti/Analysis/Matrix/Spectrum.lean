@@ -604,8 +604,9 @@ end Matrix.IsHermitian
 namespace Matrix.PosDef
 
 /-- Simultaneous diagonalization of a real positive-definite matrix `A` and a real Hermitian
-(symmetric) matrix `C`: there exist an invertible matrix `P : GL ι ℝ` and eigenvalues `lam` such
-that `Pᵀ * A * P = 1` and `Pᵀ * C * P = Matrix.diagonal lam`. -/
+(symmetric) matrix `C`: there exist an invertible matrix `P : GL ι ℝ` and a vector `lam` (the
+generalized eigenvalues of `C` relative to `A`) such that `Pᵀ * A * P = 1` and
+`Pᵀ * C * P = Matrix.diagonal lam`. -/
 theorem exists_simultaneous_diagonal_real {ι : Type*} [Fintype ι] [DecidableEq ι]
     {A C : Matrix ι ι ℝ} (hA : A.PosDef) (hC : C.IsHermitian) :
     ∃ (P : GL ι ℝ) (lam : ι → ℝ),
@@ -613,13 +614,11 @@ theorem exists_simultaneous_diagonal_real {ι : Type*} [Fintype ι] [DecidableEq
       (P : Matrix ι ι ℝ)ᵀ * C * (P : Matrix ι ι ℝ) = Matrix.diagonal lam := by
   let e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
   let lo : LinearOrder ι := LinearOrder.lift' e.symm e.symm.injective
-  obtain ⟨P₁, -, hP₁_lo⟩ :=
-    @Matrix.PosDef.exists_isUpperTriangular_conjTranspose_mul_mul_eq_one ℝ ι _ lo _ _ hA
+  obtain ⟨P₁, -, hP₁_lo⟩ := letI := lo; hA.exists_isUpperTriangular_conjTranspose_mul_mul_eq_one
   rw [Matrix.conjTranspose_eq_transpose_of_trivial] at hP₁_lo
-  have hP₁ : P₁ᵀ * A * P₁ = 1 := by
-    ext i j
-    have hij := congrFun (congrFun hP₁_lo i) j
-    by_cases h : i = j <;> simpa [Matrix.one_apply, h] using hij
+  -- The LDL lemma's `1` uses the `DecidableEq ι` derived from `lo`, not the ambient instance;
+  -- the two instances agree since `DecidableEq ι` is a subsingleton.
+  have hP₁ : P₁ᵀ * A * P₁ = 1 := by convert hP₁_lo
   let uP₁ : GL ι ℝ := ⟨P₁, P₁ᵀ * A, mul_eq_one_comm.mp hP₁, hP₁⟩
   set M := P₁ᵀ * C * P₁
   have hM : M.IsHermitian := by
