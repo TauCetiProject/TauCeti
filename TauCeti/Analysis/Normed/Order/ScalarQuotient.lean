@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Order.StateSpace
 public import TauCeti.Analysis.Normed.Module.Dual.Quotient
-import Mathlib.Analysis.LocallyConvex.HahnBanach
+import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 import TauCeti.Analysis.Normed.Order.PositiveLinearMap
 import TauCeti.MeasureTheory.Integral.RieszMarkovKakutani.Signed
 
@@ -21,10 +21,7 @@ representative.
 The continuous dual of this quotient is the annihilator of the order unit, by
 `Submodule.quotientDualEquivAnnihilator`. Its closed ball of radius two consists exactly of
 differences of states when pulled back to the original space. This normalization lets one compare
-state distances with seminorm bounds on the quotient. The dual-ball proof extends a functional
-to the continuous real functions on the state space and uses the Jordan parts
-`TauCeti.RealRMK.posPart` and `TauCeti.RealRMK.negPart`. Both parts have the same value at the
-constant one, so a common positive correction normalizes them and cancels in the difference.
+state distances with seminorm bounds on the quotient.
 
 ## References
 
@@ -134,37 +131,12 @@ private theorem exists_extension_stateSpaceEval (h : IsOrderUnitNorm e) (f : Str
     ∃ g : StrongDual ℝ C(OrderUnit.stateSpace e, ℝ),
       (∀ a, g (h.stateSpaceEval a) = f a) ∧ ‖g‖ = ‖f‖ := by
   let := isCompact_iff_compactSpace.mp h.isCompact_stateSpace
-  let S := h.stateSpaceEval.toLinearMap.range
-  have h_inj : Function.Injective h.stateSpaceEval.toLinearMap := by
-    intro a b hab
-    exact h.eq_iff_forall_mem_stateSpace.mpr fun φ hφ => by
-      simpa using congrArg (fun u : C(OrderUnit.stateSpace e, ℝ) => u ⟨φ, hφ⟩) hab
-  let i : E ≃ₗᵢ[ℝ] S :=
-    { LinearEquiv.ofInjective h.stateSpaceEval.toLinearMap h_inj with
-      norm_map' := h.stateSpaceEval.norm_map }
-  let f' : S →ₗ[ℝ] ℝ := f.toLinearMap.comp i.symm.toLinearEquiv.toLinearMap
-  let bound := ‖f‖₊ • normSeminorm ℝ C(OrderUnit.stateSpace e, ℝ)
-  have hc : Continuous bound := continuous_norm.const_smul ‖f‖₊
-  have bound_apply (u : C(OrderUnit.stateSpace e, ℝ)) : bound u = ‖f‖ * ‖u‖ := by
-    simp [bound, NNReal.smul_def]
-  have hf' (x : S) : ‖f' x‖ ≤ bound x := by
-    calc
-      ‖f' x‖ = ‖f (i.symm x)‖ := rfl
-      _ ≤ ‖f‖ * ‖i.symm x‖ := f.le_opNorm (i.symm x)
-      _ = ‖f‖ * ‖(x : C(OrderUnit.stateSpace e, ℝ))‖ :=
-        congrArg (‖f‖ * ·) (i.symm.norm_map x)
-      _ = bound x := (bound_apply x).symm
-  obtain ⟨g, hg, hbound⟩ := Module.Dual.exists_continuous_extension_of_le_seminorm S f' hc hf'
-  have hg_eval (a : E) : g (h.stateSpaceEval a) = f a := by
-    calc
-      g (h.stateSpaceEval a) = g ((i a).val) := rfl
-      _ = f' (i a) := hg (i a)
-      _ = f (i.symm (i a)) := rfl
-      _ = f a := congrArg f (i.symm_apply_apply a)
-  refine ⟨g, hg_eval, le_antisymm (g.opNorm_le_bound (norm_nonneg _) ?_) ?_⟩
-  · simpa only [bound_apply] using hbound
-  · exact f.opNorm_le_bound (ContinuousLinearMap.opNorm_nonneg g) fun a => by
-      simpa only [hg_eval, h.stateSpaceEval.norm_map] using g.le_opNorm (h.stateSpaceEval a)
+  let : NormedAddCommGroup E := .ofSeparation fun a ha => by
+    obtain ⟨hl, hu⟩ := (h.norm_le_iff (le_refl (0 : ℝ))).mp ha.le
+    simp only [zero_smul, neg_zero] at hl hu
+    exact le_antisymm hu hl
+  obtain ⟨g, hg, hg_norm⟩ := h.stateSpaceEval.exists_extension_norm_eq f
+  exact ⟨g, fun a => DFunLike.congr_fun hg a, hg_norm⟩
 
 private theorem exists_state_of_positive (h : IsOrderUnitNorm e) {ω : WeakDual ℝ E}
     (hω : ω ∈ OrderUnit.stateSpace e) (P : C_c(OrderUnit.stateSpace e, ℝ) →ₚ[ℝ] ℝ) :
@@ -206,6 +178,9 @@ private theorem exists_state_of_positive (h : IsOrderUnitNorm e) {ω : WeakDual 
   rw [eval_φ, h.stateSpaceEval_orderUnit, OrderUnit.apply_eq_one_of_mem_stateSpace hω]
   simp [slack]
 
+/- Extend the functional to the continuous real functions on the state space and use the Jordan
+parts `RealRMK.posPart` and `RealRMK.negPart`. Both parts have the same value at the constant one,
+so a common positive correction normalizes them and cancels in the difference. -/
 private theorem exists_states_sub_eq (h : IsOrderUnitNorm e) {f : StrongDual ℝ E}
     (hf : f e = 0) (hn : ‖f‖ ≤ 2) :
     ∃ φ ∈ OrderUnit.stateSpace e, ∃ ψ ∈ OrderUnit.stateSpace e,
