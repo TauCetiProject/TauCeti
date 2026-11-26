@@ -438,7 +438,7 @@ private theorem exists_isInvertible_coefficient_smul {x₀ ξ₀ : CoordinateSpa
   have hinv := h.of_mul_norm_sub_lt (le_add_of_nonneg_right zero_le_one) hlt
   have hnorm := (h.norm_inverse_le_of_mul_norm_sub_lt (le_add_of_nonneg_right zero_le_one)
     hlt).trans (div_le_div_of_nonneg_left hM.le (by norm_num : (0 : ℝ) < 1 / 2) (by linarith))
-  rw [ContinuousLinearMap.isInvertible_smul_iff_of_isScalarTower htm.ne'] at hinv
+  rw [ContinuousLinearMap.isInvertible_smul_iff htm.ne'] at hinv
   rw [ContinuousLinearMap.inverse_smul_of_isScalarTower, norm_smul, norm_inv,
     Real.norm_of_nonneg htm.le] at hnorm
   refine ⟨hinv, ?_⟩

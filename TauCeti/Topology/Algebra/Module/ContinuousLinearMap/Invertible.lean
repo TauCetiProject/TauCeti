@@ -346,23 +346,6 @@ theorem inverse_smul_of_isScalarTower {𝕜 S : Type*} [Semifield 𝕜] [Semifie
 
 end Smul
 
-section SmulIsScalarTower
-
-variable {𝕜 M M₂ S : Type*} [Semifield 𝕜] [Semifield S] [Algebra S 𝕜]
-  [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M]
-  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
-  [Module S M₂] [IsScalarTower S 𝕜 M₂] [ContinuousConstSMul S M₂]
-
-/-- Multiplying a continuous linear map by a nonzero scalar `c` from a subfield `S` of its scalars,
-such as a real multiple of a complex-linear map, does not change its invertibility. -/
-@[simp]
-theorem isInvertible_smul_iff_of_isScalarTower {c : S} (hc : c ≠ 0) {f : M →L[𝕜] M₂} :
-    (c • f).IsInvertible ↔ f.IsInvertible := by
-  rw [show c • f = algebraMap S 𝕜 c • f by ext; simp [algebraMap_smul],
-    isInvertible_smul_iff ((map_ne_zero _).2 hc)]
-
-end SmulIsScalarTower
-
 section OneAddNegInvSMul
 
 variable {𝕜 S M : Type*} [Field 𝕜] [Field S] [Algebra S 𝕜]
