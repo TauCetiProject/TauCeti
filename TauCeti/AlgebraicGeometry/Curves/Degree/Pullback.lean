@@ -178,8 +178,7 @@ theorem eulerDegree_pullback_of_isDominant [IsIntegral C'] [IsDominant g] (a : L
       Module.finrank g.functionFieldMap.hom.fieldRange C'.functionField * eulerDegree k a := by
   have : IsNoetherian C := isNoetherian_of_finiteType (C ↘ Spec (.of k))
   exact eulerDegree_pullback_of_finrank_comap k g (fun I hI _ ↦
-    ⟨hI.comap_of_isDominant g, hI.finrank_comap_subschemeι_comp g
-      (coheight_le_of_relativeDimensionLE_of_field (d := 1) (C ↘ Spec (.of k))) _ default⟩) a
+    ⟨hI.comap_of_isDominant g, hI.finrank_comap_subschemeι_comp g _ default⟩) a
 
 end Curve
 

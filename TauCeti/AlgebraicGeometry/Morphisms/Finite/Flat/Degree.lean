@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.LinearAlgebra.Dimension.Localization
-public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+public import TauCeti.AlgebraicGeometry.Morphisms.Affine.Degree
 
 /-!
 # The rank of a finite flat morphism is the degree of its function-field extension
@@ -41,8 +41,6 @@ structure on `K(X)` over `K(Y)`, which would clash with `Algebra.id` for an endo
 
 * `TauCeti.AlgebraicGeometry.finrank_SpecMap_eq_finrank_fractionRing`: the affine statement, for
   any compatible fraction rings.
-* `AlgebraicGeometry.Scheme.Hom.finrank_appLE_eq_finrank_fieldRange_functionFieldMap`: the rank of
-  the coordinate rings of a dominant affine morphism of integral schemes is `[K(X) : f^* K(Y)]`.
 * `AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_fieldRange_functionFieldMap`: the rank of a
   finite flat dominant morphism of integral schemes is the degree `[K(X) : f^* K(Y)]` at every
   point.
@@ -83,38 +81,6 @@ namespace AlgebraicGeometry
 open CategoryTheory
 
 variable {X Y : Scheme.{u}}
-
-/-- **The rank of the coordinate rings of a dominant affine morphism.** For a dominant affine
-morphism `f : X ⟶ Y` of integral schemes and a nonempty affine open `U` of `Y`, the ring
-`Γ(X, f⁻¹ U)` has rank `[K(X) : f^* K(Y)]` over `Γ(Y, U)`, the algebra structure being given by
-`f`. No finiteness or flatness is needed: the rank is that of the fraction fields. -/
-theorem Scheme.Hom.finrank_appLE_eq_finrank_fieldRange_functionFieldMap (f : X ⟶ Y)
-    [IsIntegral X] [IsIntegral Y] [IsAffineHom f] [IsDominant f] {U : Y.Opens}
-    (hU : IsAffineOpen U) [Nonempty U] :
-    letI := (f.appLE U (f ⁻¹ᵁ U) le_rfl).hom.toAlgebra
-    Module.finrank Γ(Y, U) Γ(X, f ⁻¹ᵁ U) =
-      Module.finrank f.functionFieldMap.hom.fieldRange X.functionField := by
-  have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
-  have : Nonempty (f ⁻¹ᵁ U) := by
-    obtain ⟨y⟩ := ‹Nonempty U›
-    obtain ⟨x, hx⟩ := f.denseRange.exists_mem_open U.isOpen ⟨y.val, y.property⟩
-    exact ⟨⟨x, hx⟩⟩
-  set φ := f.appLE U (f ⁻¹ᵁ U) le_rfl
-  -- The coordinate rings are domains with fraction fields `K(Y)` and `K(X)`, and `f^*` extends
-  -- `φ`.
-  have := functionField_isFractionRing_of_isAffineOpen Y U hU
-  have := functionField_isFractionRing_of_isAffineOpen X _ hV
-  algebraize [φ.hom, f.functionFieldMap.hom]
-  let : Algebra Γ(Y, U) X.functionField :=
-    ((X.germToFunctionField (f ⁻¹ᵁ U)).hom.comp φ.hom).toAlgebra
-  have : IsScalarTower Γ(Y, U) Γ(X, f ⁻¹ᵁ U) X.functionField := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower Γ(Y, U) Y.functionField X.functionField := .of_algebraMap_eq fun a ↦ by
-    have := congr($(f.germToFunctionField_functionFieldMap U).hom a)
-    simp only [CommRingCat.hom_comp, RingHom.comp_apply, Scheme.Hom.app_eq_appLE] at this
-    exact this.symm
-  rw [← IsFractionRing.finrank_eq Γ(Y, U) Y.functionField Γ(X, f ⁻¹ᵁ U) X.functionField]
-  exact Algebra.finrank_eq_of_equiv_equiv f.functionFieldMap.hom.rangeRestrictFieldEquiv
-    (.refl _) (by ext; simp [Subfield.algebraMap_ofSubfield, RingHom.algebraMap_toAlgebra])
 
 /-- **The rank of a finite flat morphism is its function-field degree.** For a finite flat
 dominant morphism `f : X ⟶ Y` of integral schemes, the rank of `f` at every point of `Y` is the

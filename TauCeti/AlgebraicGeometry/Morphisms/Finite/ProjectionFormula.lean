@@ -10,8 +10,10 @@ public import Mathlib.RingTheory.Localization.AtPrime.Extension
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Rank
-public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Flat.Degree
+public import TauCeti.AlgebraicGeometry.Morphisms.Affine.Degree
 public import TauCeti.RingTheory.Intersection.ProjectionFormula
+import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Finite
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Fiber
 
 /-!
 # The projection formula for finite dominant morphisms
@@ -30,8 +32,9 @@ onto singular curves, where the fibre length of `g` jumps at the singular points
 
 Over an affine open `U` of `Y` around `x`, the stalks above `x` are the localizations of the
 semilocal ring `B = Γ(X, g⁻¹ U)_x` at its maximal ideals, which correspond to the points of the
-fibre. The ring `B` is finite over `𝒪_{Y,x}` of rank `[K(X) : g^* K(Y)]`, so the formula is the
-local projection formula for finite extensions of local rings of dimension one,
+fibre (`AlgebraicGeometry.Scheme.Hom.exists_equiv_maximalSpectrum`). The ring `B` is finite over
+`𝒪_{Y,x}` of rank `[K(X) : g^* K(Y)]`, so the formula is the local projection formula for finite
+extensions of local rings of dimension one,
 `TauCeti.finsum_toNat_ord_algebraMap_mul_length_quotient_eq_finrank_mul_ord`.
 
 Summed over the points of an effective Cartier divisor `D` on `Y` finite over a field `K`, this
@@ -60,7 +63,7 @@ of constant rank this is `AlgebraicGeometry.Scheme.IdealSheafData.finrank_comap_
 
 public section
 
-open CategoryTheory AlgebraicGeometry IsLocalRing
+open CategoryTheory AlgebraicGeometry
 
 namespace AlgebraicGeometry
 
@@ -71,99 +74,6 @@ variable {X Y : Scheme.{u}}
 namespace Scheme.Hom
 
 variable (g : X ⟶ Y) [IsFinite g] [IsIntegral X] [IsIntegral Y] [IsDominant g]
-
-omit [IsIntegral X] [IsIntegral Y] [IsDominant g] in
-/-- The points of the fibre of `g` over `x ∈ U`, for `U` affine, are the maximal ideals of the
-semilocal ring `Γ(X, g⁻¹ U)_x`, localized at the complement of the prime of `x`: the point `y`
-corresponds to the extension of its prime ideal in `Γ(X, g⁻¹ U)`. -/
-private lemma exists_equiv_maximalSpectrum {x : Y} {U : Y.Opens} (hU : IsAffineOpen U)
-    (hxU : x ∈ U) :
-    letI := (g.appLE U (g ⁻¹ᵁ U) le_rfl).hom.toAlgebra
-    ∃ e : {y : X // g y = x} ≃ MaximalSpectrum (Localization (Algebra.algebraMapSubmonoid
-        Γ(X, g ⁻¹ᵁ U) (hU.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl)),
-      ∀ y, (e y).asIdeal = ((hU.preimage g).primeIdealOf
-        ⟨y, g.mem_preimage.mpr (y.property.symm ▸ hxU)⟩).asIdeal.map (algebraMap _ _) := by
-  have hV : IsAffineOpen (g ⁻¹ᵁ U) := hU.preimage g
-  set φ := g.appLE U (g ⁻¹ᵁ U) le_rfl with hφ
-  have hfin : φ.hom.Finite := by
-    rw [hφ, ← g.app_eq_appLE]
-    exact g.finite_app U hU
-  algebraize [φ.hom]
-  set p := hU.primeIdealOf ⟨x, hxU⟩ with hp
-  let := Y.presheaf.algebra_section_stalk ⟨x, hxU⟩
-  have := hU.isLocalization_stalk ⟨x, hxU⟩
-  set M := p.asIdeal.primeCompl
-  set B := Localization (Algebra.algebraMapSubmonoid Γ(X, g ⁻¹ᵁ U) M)
-  let : Algebra (Y.presheaf.stalk x) B := localizationAlgebra M Γ(X, g ⁻¹ᵁ U)
-  have : IsScalarTower Γ(Y, U) (Y.presheaf.stalk x) B := isScalarTower_localizationAlgebra _ _
-  have : Module.Finite (Y.presheaf.stalk x) B := by
-    have : IsLocalization (M.map (algebraMap Γ(Y, U) Γ(X, g ⁻¹ᵁ U))) B :=
-      inferInstanceAs (IsLocalization (Algebra.algebraMapSubmonoid _ M) B)
-    exact RingHom.finite_algebraMap.mp (RingHom.finite_localizationPreserves
-      (algebraMap Γ(Y, U) Γ(X, g ⁻¹ᵁ U)) M (Y.presheaf.stalk x) B hfin)
-  have hyV (y : {y : X // g y = x}) : (y : X) ∈ g ⁻¹ᵁ U :=
-    g.mem_preimage.mpr (y.property.symm ▸ hxU)
-  let q (y : {y : X // g y = x}) := (hV.primeIdealOf ⟨y, hyV y⟩).asIdeal
-  -- The prime of a point of the fibre lies over the prime `p` of `x`.
-  have hq (y : {y : X // g y = x}) : (q y).LiesOver p.asIdeal := by
-    have h := IsAffineOpen.comap_primeIdealOf_appLE U hU (g ⁻¹ᵁ U) hV le_rfl (hyV y)
-    rw [show (⟨g y, hyV y⟩ : U) = ⟨x, hxU⟩ from Subtype.ext y.property] at h
-    exact ⟨congrArg PrimeSpectrum.asIdeal h.symm⟩
-  -- Its extension to `B` lies over the maximal ideal of `𝒪_{Y,x}`, so is maximal.
-  have hmax (y : {y : X // g y = x}) : ((q y).map (algebraMap _ B)).IsMaximal := by
-    have := IsLocalization.AtPrime.isPrime_map_of_liesOver _ p.asIdeal B (q y)
-    have := IsLocalization.AtPrime.liesOver_map_of_liesOver p.asIdeal (Y.presheaf.stalk x) B (q y)
-    exact Ideal.IsMaximal.of_liesOver_isMaximal _ (maximalIdeal (Y.presheaf.stalk x))
-  let e : {y : X // g y = x} → MaximalSpectrum B := fun y ↦ ⟨_, hmax y⟩
-  refine ⟨.ofBijective e ⟨fun y₁ y₂ h ↦ ?_, fun m ↦ ?_⟩, fun _ ↦ rfl⟩
-  · -- Primes disjoint from the localized submonoid are recovered from their extensions.
-    have h' := congrArg (fun m : MaximalSpectrum B ↦ m.asIdeal.under Γ(X, g ⁻¹ᵁ U)) h
-    simp only [e] at h'
-    rw [IsLocalization.under_map_of_isPrime_disjoint _ B inferInstance
-        (Ideal.disjoint_primeCompl_of_liesOver _ p.asIdeal),
-      IsLocalization.under_map_of_isPrime_disjoint _ B inferInstance
-        (Ideal.disjoint_primeCompl_of_liesOver _ p.asIdeal)] at h'
-    simpa only [IsAffineOpen.fromSpec_primeIdealOf, Subtype.ext_iff] using
-      congrArg hV.fromSpec (PrimeSpectrum.ext h')
-  · -- A maximal ideal of `B` lies over the maximal ideal of `𝒪_{Y,x}`, so its contraction to
-    -- `Γ(X, g⁻¹ U)` is the prime of a point over `x`.
-    have : m.asIdeal.LiesOver (maximalIdeal (Y.presheaf.stalk x)) :=
-      ⟨(eq_maximalIdeal (Ideal.IsMaximal.under (Y.presheaf.stalk x) m.asIdeal)).symm⟩
-    have := IsLocalization.AtPrime.liesOver_comap_of_liesOver p.asIdeal
-      (Y.presheaf.stalk x) (S := Γ(X, g ⁻¹ᵁ U)) m.asIdeal
-    let z : g ⁻¹ᵁ U := hV.isoSpec.inv ⟨m.asIdeal.under _, inferInstance⟩
-    have hz : hV.primeIdealOf z = ⟨m.asIdeal.under _, inferInstance⟩ :=
-      Scheme.inv_hom_apply hV.isoSpec _
-    have hzx : g z = x := by
-      have h := IsAffineOpen.comap_primeIdealOf_appLE U hU (g ⁻¹ᵁ U) hV le_rfl z.property
-      simp only [Subtype.coe_eta] at h
-      have h' : hU.primeIdealOf ⟨g z, z.property⟩ = p := by
-        rw [← h, hz]
-        exact PrimeSpectrum.ext (Ideal.over_def _ p.asIdeal).symm
-      simpa only [hp, IsAffineOpen.fromSpec_primeIdealOf] using congrArg hU.fromSpec h'
-    refine ⟨⟨z, hzx⟩, MaximalSpectrum.ext ?_⟩
-    change ((hV.primeIdealOf z).asIdeal).map _ = _
-    rw [hz]
-    exact IsLocalization.map_under (Algebra.algebraMapSubmonoid Γ(X, g ⁻¹ᵁ U) M) B m.asIdeal
-
-omit [IsIntegral X] [IsIntegral Y] [IsDominant g] [IsFinite g] in
-/-- The residue degree of `g` at `y` is computed by any local ring `T` over `𝒪_{Y, g y}` isomorphic
-to `𝒪_{X,y}` compatibly with the stalk map. -/
-private lemma residueDegree_eq_finrank_residueField (y : X) {T : Type u} [CommRing T]
-    [IsLocalRing T] [Algebra (Y.presheaf.stalk (g y)) T]
-    [IsLocalHom (algebraMap (Y.presheaf.stalk (g y)) T)] (e : T ≃+* X.presheaf.stalk y)
-    (he : ∀ a, e (algebraMap _ T a) = g.stalkMap y a) :
-    g.residueDegree y =
-      Module.finrank (ResidueField (Y.presheaf.stalk (g y))) (ResidueField T) := by
-  dsimp only [Scheme.Hom.residueDegree]
-  let := (g.residueFieldMap y).hom.toAlgebra
-  refine Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl _) (ResidueField.mapEquiv e).symm
-    (RingHom.ext fun a ↦ ?_)
-  obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective a
-  change IsLocalRing.residue _ (algebraMap _ _ a) = ResidueField.map (e.symm : _ →+* T)
-    (ResidueField.map (g.stalkMap y).hom (IsLocalRing.residue _ a))
-  rw [ResidueField.map_residue, ResidueField.map_residue, ← he]
-  simp
 
 /-- The local projection formula over an affine open of the target. -/
 private lemma finsum_residueDegree_mul_toNat_ord_eq_of_isAffineOpen (x : Y)
@@ -331,30 +241,44 @@ end Scheme.Hom
 namespace Scheme.IdealSheafData.IsEffectiveCartier
 
 /-- **Inverse images of divisors along a finite dominant morphism.** Let `g : X ⟶ Y` be a finite
-dominant morphism of integral schemes, `Y` locally noetherian of dimension at most one at every
-point, and `D = V(I)` an effective Cartier divisor on `Y` finite over a field `K`. Then
+dominant morphism of integral schemes, `Y` locally noetherian, and `D = V(I)` an effective Cartier
+divisor on `Y` finite over a field `K`. Then
 `dim_K Γ(g⁻¹ D, 𝒪) = [K(X) : g^* K(Y)] · dim_K Γ(D, 𝒪)`, the dimensions being the ranks of the
 finite morphisms to `Spec K`. Unlike `Scheme.IdealSheafData.finrank_comap_subschemeι_comp`, no
-flatness is needed: `Y` may be a singular curve. -/
+flatness is needed: `Y` may be a singular curve. No dimension bound on `Y` is needed either: by
+Krull's principal ideal theorem, the local rings of `Y` along `D` have dimension at most one. -/
 theorem finrank_comap_subschemeι_comp {K : Type u} [Field K] {I : Y.IdealSheafData}
     (hI : I.IsEffectiveCartier) (g : X ⟶ Y) [IsFinite g] [IsIntegral X] [IsIntegral Y]
-    [IsDominant g] [IsLocallyNoetherian Y] (hY : ∀ y : Y, Order.coheight y ≤ 1)
-    (f : Y ⟶ Spec (.of K)) [IsFinite (I.subschemeι ≫ f)] (s : Spec (.of K)) :
+    [IsDominant g] [IsLocallyNoetherian Y] (f : Y ⟶ Spec (.of K)) [IsFinite (I.subschemeι ≫ f)]
+    (s : Spec (.of K)) :
     ((I.comap g).subschemeι ≫ g ≫ f).finrank s =
       Module.finrank g.functionFieldMap.hom.fieldRange X.functionField *
         (I.subschemeι ≫ f).finrank s := by
   have := I.isFinite_comap_subschemeι_comp f g
+  have : IsLocallyArtinian (Spec (.of K)) := Scheme.isLocallyArtinianScheme_Spec.mpr inferInstance
+  have : IsLocallyArtinian I.subscheme := .of_locallyQuasiFinite (I.subschemeι ≫ f)
   rw [Scheme.Hom.finrank_comp_eq_finsum_of_isClosedImmersion _ (g ≫ f) s,
     Scheme.Hom.finrank_comp_eq_finsum_of_isClosedImmersion _ f s, ker_subschemeι, ker_subschemeι,
     ← TauCeti.finsum_fiberwise g _ (((I.comap g).finite_support_length_stalkIdeal (g ≫ f)).subset
       (Function.support_mul_subset_right _ _)),
     mul_finsum]
-  -- Regroup by the fibres of `g`, and apply the local projection formula at each point of `Y`.
+  -- Regroup by the fibres of `g`, and apply the local projection formula at each point of `D`.
   refine finsum_congr fun x ↦ ?_
-  have := krullDimLE_of_coheight_le (hY x)
-  rw [mul_left_comm, ← g.finsum_residueDegree_mul_length_stalkIdeal_comap hI x, mul_finsum]
-  refine finsum_congr fun y ↦ ?_
-  rw [Scheme.Hom.residueDegree_comp, y.property, mul_assoc]
+  by_cases hx : x ∈ I.support
+  · have := hI.krullDimLE_one_stalk hx
+    rw [mul_left_comm, ← g.finsum_residueDegree_mul_length_stalkIdeal_comap hI x, mul_finsum]
+    refine finsum_congr fun y ↦ ?_
+    rw [Scheme.Hom.residueDegree_comp, y.property, mul_assoc]
+  -- Off the support of `D`, both sides vanish.
+  have hstalk {Z : Scheme.{u}} (J : Z.IdealSheafData) (z : Z) (hz : z ∉ J.support) :
+      (Module.length (Z.presheaf.stalk z) (Z.presheaf.stalk z ⧸ J.stalkIdeal z)).toNat = 0 := by
+    have : J.stalkIdeal z = ⊤ :=
+      by_contra fun h ↦ hz ((J.mem_support_iff_stalkIdeal_ne_top z).mpr h)
+    simp [this]
+  rw [hstalk I x hx, mul_zero, mul_zero]
+  refine finsum_eq_zero_of_forall_eq_zero fun y ↦ ?_
+  rw [hstalk (I.comap g) y (by rwa [support_comap, ← SetLike.mem_coe,
+    TopologicalSpace.Closeds.coe_preimage, Set.mem_preimage, y.property]), mul_zero]
 
 end Scheme.IdealSheafData.IsEffectiveCartier
 
