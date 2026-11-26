@@ -17,12 +17,12 @@ Worked examples for lattices in locally compact groups and the unfolding formula
 `∫_G f = ∫_(G/Γ) ∑_(γ ∈ Γ) f(g γ)`.
 
 * *`θℤ ⊂ ℝ`.* For `θ > 0`, `[t, t + θ)` is a fundamental domain for the right translation action
-  of `θℤ` on `ℝ` (`isAddFundamentalDomain_Ico_zmultiples_op`), so the covolume of `θℤ` for
-  Lebesgue measure is `θ` (`addCovolume_zmultiples_op`), and that of `ℤ` is `1`
-  (`addCovolume_zmultiples_one_op`). Weil's formula reads
+  of `θℤ` on `ℝ` (`isAddFundamentalDomain_Ico_op_zmultiples`), so the covolume of `θℤ` for
+  Lebesgue measure is `θ` (`addCovolume_op_zmultiples`), and that of `ℤ` is `1`
+  (`addCovolume_op_zmultiples_one`). Weil's formula reads
   `∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` (`lintegral_eq_setLIntegral_Ico_tsum_add_intCast`). These
   live in `TauCeti/MeasureTheory/Integral/IntervalIntegral/Periodic.lean`. Multiplying Lebesgue
-  measure by `c` multiplies the covolume by `c` (`addCovolume_zmultiples_op_smul_measure`, from
+  measure by `c` multiplies the covolume by `c` (`addCovolume_op_zmultiples_smul_measure`, from
   `MeasureTheory.addCovolume_smul_measure`).
 * *The side of the coset sum.* In `S₃`, with `Γ = {1, (0 1)}` (`coe_Γ`) and `f` the indicator of
   `(0 2)` (`indicatorSwap`), the right-translated sum `∑_(γ ∈ Γ) f(g γ)` is `1` at both
@@ -48,9 +48,9 @@ open scoped ENNReal
 /-! ### The lattice `θℤ ⊂ ℝ` -/
 
 /-- **Haar rescaling.** For Haar measure `c • volume` on `ℝ`, the covolume of `θℤ` is `c θ`. -/
-theorem addCovolume_zmultiples_op_smul_measure {θ : ℝ} (hθ : 0 < θ) (c : ℝ≥0∞) :
+theorem addCovolume_op_zmultiples_smul_measure {θ : ℝ} (hθ : 0 < θ) (c : ℝ≥0∞) :
     addCovolume (AddSubgroup.op <| .zmultiples θ) ℝ (c • volume) = c * ENNReal.ofReal θ := by
-  rw [addCovolume_smul_measure, addCovolume_zmultiples_op hθ]
+  rw [addCovolume_smul_measure, addCovolume_op_zmultiples hθ]
 
 /-! ### The side of the coset sum in `S₃` -/
 

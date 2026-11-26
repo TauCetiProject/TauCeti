@@ -11,8 +11,10 @@ public import TauCeti.Topology.Instances.AddCircle.Lift
 
 import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import TauCeti.Algebra.Group.ZMultiples
 import TauCeti.MeasureTheory.Function.Jacobian
 import TauCeti.MeasureTheory.Integral.OddSymmetric
+import TauCeti.MeasureTheory.Measure.AddCircle
 import TauCeti.Topology.Instances.AddCircle.Annulus
 
 /-!
@@ -66,11 +68,12 @@ domain for `θℤ`, so `θℤ` has covolume `θ`, and unfolding over `[0, 1)` gi
 * `AddCircle.measurePreserving_of_lift`: a measure-preserving map of `ℝ × Y` commuting with the
   translation by `T` of the first coordinate descends to a measure-preserving map of
   `AddCircle T × Y`.
-* `isAddFundamentalDomain_Ico_zmultiples_op`: `[t, t + θ)` is a fundamental domain for the right
-  translation action of `θℤ` on `ℝ`, the `Ico` companion of Mathlib's `isAddFundamentalDomain_Ioc'`.
-* `addCovolume_zmultiples_op` and `addCovolume_zmultiples_one_op`: the covolume of `θℤ` in `ℝ` is
-  `θ`, and that of `ℤ` is `1`.
-* `lintegral_eq_setLIntegral_Ico_tsum_add_intCast`: Weil's formula
+* `TauCeti.isAddFundamentalDomain_Ico_op_zmultiples`: `[t, t + θ)` is a fundamental domain for
+  the right translation action of `θℤ` on `ℝ`, the `Ico` companion of Mathlib's
+  `isAddFundamentalDomain_Ioc'`.
+* `TauCeti.addCovolume_op_zmultiples` and `TauCeti.addCovolume_op_zmultiples_one`: the covolume
+  of `θℤ` in `ℝ` is `θ`, and that of `ℤ` is `1`.
+* `TauCeti.lintegral_eq_setLIntegral_Ico_tsum_add_intCast`: Weil's formula
   `∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` for `ℤ ⊂ ℝ` and measurable `f : ℝ → [0, ∞]`.
 * `Function.Periodic.eqOn_zero_of_intervalIntegral_eq_zero`: a continuous periodic function which
   is nonnegative over a period and has integral zero over a period vanishes inside that period.
@@ -316,45 +319,46 @@ end AddCircle
 
 /-! ### The lattice `θℤ ⊂ ℝ` -/
 
+namespace TauCeti
+
 /-- **`[t, t + θ)` is a fundamental domain for `θℤ` acting on `ℝ` by right translation.**
 
 Adapted from Mathlib's `isAddFundamentalDomain_Ioc'`
 (`Mathlib/MeasureTheory/Integral/IntervalIntegral/Periodic.lean`), with `Ioc` replaced by `Ico`. -/
-theorem isAddFundamentalDomain_Ico_zmultiples_op {θ : ℝ} (hθ : 0 < θ) (t : ℝ)
+theorem isAddFundamentalDomain_Ico_op_zmultiples {θ : ℝ} (hθ : 0 < θ) (t : ℝ)
     (μ : Measure ℝ := by volume_tac) :
     IsAddFundamentalDomain (AddSubgroup.op <| .zmultiples θ) (Ico t (t + θ)) μ := by
   refine IsAddFundamentalDomain.mk' nullMeasurableSet_Ico fun x => ?_
-  refine ((AddSubgroup.zmultiplesEquivInt hθ.ne').symm.toEquiv.trans
-    (AddSubgroup.equivOp _)).bijective.existsUnique_iff.2 ?_
-  simpa [AddSubgroup.vadd_def, AddSubgroup.coe_zmultiplesEquivInt_symm_apply] using
-    existsUnique_add_zsmul_mem_Ico hθ x t
+  refine (intEquivOpZMultiples (not_isOfFinAddOrder_of_isAddTorsionFree hθ.ne')).bijective
+    |>.existsUnique_iff.2 ?_
+  simpa using existsUnique_add_zsmul_mem_Ico hθ x t
 
 /-- **The covolume of `θℤ` in `ℝ` is `θ`** for Lebesgue measure. -/
-theorem addCovolume_zmultiples_op {θ : ℝ} (hθ : 0 < θ) :
+@[simp]
+theorem addCovolume_op_zmultiples {θ : ℝ} (hθ : 0 < θ) :
     addCovolume (AddSubgroup.op <| .zmultiples θ) ℝ volume = ENNReal.ofReal θ := by
-  have h := (isAddFundamentalDomain_Ico_zmultiples_op hθ 0 volume).covolume_eq_volume volume
-  rw [h, Real.volume_Ico]
+  rw [(isAddFundamentalDomain_Ico_op_zmultiples hθ 0 volume).covolume_eq_volume volume,
+    Real.volume_Ico]
   simp
 
 /-- **The covolume of `ℤ` in `ℝ` is `1`.** -/
-theorem addCovolume_zmultiples_one_op :
+theorem addCovolume_op_zmultiples_one :
     addCovolume (AddSubgroup.op <| .zmultiples (1 : ℝ)) ℝ volume = 1 := by
-  simp [addCovolume_zmultiples_op one_pos]
+  simp
 
 /-- **Weil's formula for `ℤ ⊂ ℝ`**: `∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` for measurable
 `f : ℝ → [0, ∞]`. -/
 theorem lintegral_eq_setLIntegral_Ico_tsum_add_intCast {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
     ∫⁻ x, f x = ∫⁻ x in Ico (0 : ℝ) 1, ∑' n : ℤ, f (x + n) := by
-  have hD := isAddFundamentalDomain_Ico_zmultiples_op one_pos 0 (volume : Measure ℝ)
+  have hD := isAddFundamentalDomain_Ico_op_zmultiples one_pos 0 (volume : Measure ℝ)
   rw [zero_add] at hD
-  let e : ℤ ≃ (AddSubgroup.zmultiples (1 : ℝ)).op :=
-    (AddSubgroup.zmultiplesEquivInt one_ne_zero).symm.toEquiv.trans (AddSubgroup.equivOp _)
   rw [hD.lintegral_eq_tsum'', ← lintegral_tsum (f := fun g x => f (g +ᵥ x)) fun g =>
     (hf.comp (measurable_const_vadd _)).aemeasurable]
   refine setLIntegral_congr_fun measurableSet_Ico fun x _ => ?_
-  rw [← e.tsum_eq]
-  refine tsum_congr fun n => congrArg f ?_
-  simp [e, AddSubgroup.vadd_def, AddSubgroup.coe_zmultiplesEquivInt_symm_apply]
+  rw [← QuotientAddGroup.automorphize_mk, AddCircle.automorphize_coe (T := 1)]
+  simp
+
+end TauCeti
 
 /-- A continuous `T`-periodic function which is nonnegative on `[a, a + T]` and whose integral over
 a period vanishes, vanishes on `(a, a + T)`. -/
