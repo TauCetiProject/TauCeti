@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.Deriv.AffineMap
 public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.Deriv.Pow
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Calculus.MeanValue
-public import TauCeti.Analysis.Calculus.FDeriv.Remainder
 
 /-!
 # The quadratic mean value inequality
@@ -44,14 +42,10 @@ on `[0, 1]` gives an increment bounded by its integral
 `L max ‖x - z‖ ‖y - z‖` along the segment, with Mathlib's
 `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le'`, would lose a factor up to `2`.
 
-For a `C²` map the quadratic estimate holds near every point: a map `f` that is `C²` at `z`
-satisfies it with `φ = f' z` on some closed ball around `z`
-(`ContDiffAt.exists_forall_norm_image_sub_sub_le`). For a family `f p` of maps, jointly `C²` at
-`(p, z)` for every `p` in a compact set `K`, the radius and the constant can be chosen uniformly
-for `p ∈ K` (`IsCompact.exists_forall_norm_image_sub_sub_le`, a restatement of
-`IsCompact.exists_pos_forall_norm_sub_sub_fderiv_sub_le_mul`); this is how the constants of a
-gluing construction are made uniform over a compact family of approximate solutions. These two
-results are stated over `ℝ`, like the compactness results they rest on.
+For a family of maps that is jointly `C²`, a radius and a constant for the quadratic estimate,
+in the weaker form with `max ‖x - z‖ ‖y - z‖` in place of `(‖x - z‖ + ‖y - z‖) / 2`, can be
+chosen uniformly over a compact set of parameters, around centres that vary continuously with
+the parameter (`IsCompact.exists_pos_forall_norm_sub_sub_fderiv_sub_le_mul`).
 
 ## Main results
 
@@ -60,10 +54,6 @@ results are stated over `ℝ`, like the compactness results they rest on.
 * `Convex.norm_image_sub_sub_le_of_norm_hasFDerivWithin_sub_le`: the quadratic mean value
   inequality.
 * `Convex.norm_image_sub_sub_le_of_lipschitzOnWith`: its form for a Lipschitz derivative.
-* `IsCompact.exists_forall_norm_image_sub_sub_le`: the quadratic estimate for a family of `C²`
-  maps, uniformly over a compact set of parameters.
-* `ContDiffAt.exists_forall_norm_image_sub_sub_le`: the quadratic estimate for a `C²` map near a
-  point.
 
 ## References
 
@@ -178,45 +168,3 @@ theorem norm_image_sub_sub_le_of_lipschitzOnWith {K : ℝ≥0}
     (fun _ hw ↦ lipschitzOnWith_iff_norm_sub_le.1 hf' hw zs) xs ys
 
 end Convex
-
-section ContDiff
-
-variable {E G P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
-  [NormedSpace ℝ G] [NormedAddCommGroup P] [NormedSpace ℝ P]
-
-/-- **The quadratic estimate, uniformly over a compact family.** Let `f p` be a family of maps
-such that `(p, w) ↦ f p w` is `C²` at `(p, z)` for every `p` in a compact set `K`. Then there are
-a radius `δ > 0` and a constant `L` such that for every `p ∈ K` and all `x, y` in the closed ball
-of radius `δ` around `z`,
-`‖f p y - f p x - fderiv ℝ (f p) z (y - x)‖ ≤ (L / 2) (‖x - z‖ + ‖y - z‖) ‖y - x‖`.
-This is `IsCompact.exists_pos_forall_norm_sub_sub_fderiv_sub_le_mul` in the form of the quadratic
-estimate, using `max ‖x - z‖ ‖y - z‖ ≤ ‖x - z‖ + ‖y - z‖`. -/
-theorem IsCompact.exists_forall_norm_image_sub_sub_le {f : P → E → G} {K : Set P} {z : E}
-    (hK : IsCompact K) (hf : ∀ p ∈ K, ContDiffAt ℝ 2 (uncurry f) (p, z)) :
-    ∃ δ > 0, ∃ L : ℝ≥0, ∀ p ∈ K, ∀ x ∈ closedBall z δ, ∀ y ∈ closedBall z δ,
-      ‖f p y - f p x - fderiv ℝ (f p) z (y - x)‖ ≤ L / 2 * (‖x - z‖ + ‖y - z‖) * ‖y - x‖ := by
-  obtain ⟨δ, hδ, L, hL⟩ := hK.exists_pos_forall_norm_sub_sub_fderiv_sub_le_mul (F := f)
-    (x := fun _ ↦ z) hf continuousOn_const
-  refine ⟨δ, hδ, (2 * max L 0).toNNReal, fun p hp x hx y hy ↦ ?_⟩
-  rw [mem_closedBall, dist_eq_norm] at hx hy
-  have h := hL p hp (y - z) (x - z) hy hx
-  simp only [add_sub_cancel, sub_sub_sub_cancel_right] at h
-  refine h.trans ?_
-  rw [Real.coe_toNNReal _ (by positivity), mul_div_cancel_left₀ _ two_ne_zero,
-    max_comm ‖y - z‖]
-  gcongr
-  · exact le_max_left _ _
-  · exact max_le_add_of_nonneg (norm_nonneg _) (norm_nonneg _)
-
-/-- **The quadratic estimate for a `C²` map.** If `f` is `C²` at `z`, there are a radius `δ > 0`
-and a constant `L` such that for all `x, y` in the closed ball of radius `δ` around `z`,
-`‖f y - f x - fderiv ℝ f z (y - x)‖ ≤ (L / 2) (‖x - z‖ + ‖y - z‖) ‖y - x‖`. -/
-theorem ContDiffAt.exists_forall_norm_image_sub_sub_le {f : E → G} {z : E}
-    (hf : ContDiffAt ℝ 2 f z) :
-    ∃ δ > 0, ∃ L : ℝ≥0, ∀ x ∈ closedBall z δ, ∀ y ∈ closedBall z δ,
-      ‖f y - f x - fderiv ℝ f z (y - x)‖ ≤ L / 2 * (‖x - z‖ + ‖y - z‖) * ‖y - x‖ := by
-  obtain ⟨δ, hδ, L, h⟩ := isCompact_singleton.exists_forall_norm_image_sub_sub_le
-    (f := fun (_ : ℝ) ↦ f) (K := {0}) fun _ _ ↦ hf.comp _ contDiffAt_snd
-  exact ⟨δ, hδ, L, h 0 (mem_singleton 0)⟩
-
-end ContDiff

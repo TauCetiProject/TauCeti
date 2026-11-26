@@ -62,15 +62,13 @@ derivative is Lipschitz at `0`, `‖f' w - f' 0‖ ≤ L ‖w‖` on the ball, t
 inequality `Convex.norm_image_sub_sub_le_of_norm_hasFDerivWithin_sub_le` is exactly the quadratic
 estimate `‖N x - N y‖ ≤ (L / 2) (‖x‖ + ‖y‖) ‖x - y‖` on the ball. Hence, when `E` is complete,
 `2 C ‖f 0‖ ≤ δ` and `2 C² L ‖f 0‖ < 1`, the map `f` has a zero `x` in the range of `Q` with
-`‖x‖ ≤ 2 C ‖f 0‖` (`TauCeti.exists_mem_range_norm_le_apply_eq_zero`), and two zeros of `f` in the
-range of `Q` of norm at most `r ≤ δ` coincide when `C L r < 1`
-(`TauCeti.eq_of_apply_eq_zero`). The quadratic estimate of `N` itself is
-`TauCeti.norm_sub_sub_sub_le_of_norm_hasFDerivWithin_sub_le`, so every theorem of
+`‖x‖ ≤ 2 C ‖f 0‖`
+(`TauCeti.exists_mem_range_norm_le_apply_eq_zero_of_norm_hasFDerivWithin_sub_le`), and two zeros
+of `f` in the range of `Q` of norm at most `r ≤ δ` coincide when `C L r < 1`
+(`TauCeti.eq_of_apply_eq_zero_of_norm_hasFDerivWithin_sub_le`). The quadratic estimate of `N`
+itself is `TauCeti.norm_sub_sub_sub_le_of_norm_hasFDerivWithin_sub_le`, so every theorem of
 `TauCeti.Analysis.Normed.Operator.QuadraticCorrection.Basic` applies to `f`. This is the Newton
-step of a gluing construction, with the approximate solution translated to the origin. For a
-family of maps that is jointly `C²`, a radius `δ` and a constant `L` for the quadratic estimate
-can be chosen uniformly over a compact set of parameters
-(`IsCompact.exists_forall_norm_image_sub_sub_le`).
+step of a gluing construction, with the approximate solution translated to the origin.
 
 ## References
 
@@ -262,7 +260,8 @@ ball of radius `δ` around `0` at every point `w` of the ball, Lipschitz at `0`:
 `‖f' w - f' 0‖ ≤ L ‖w‖`. Let `Q` be a right inverse of `f' 0` with `‖Q y‖ ≤ C ‖y‖`. If `E` is
 complete, `2 C ‖f 0‖ ≤ δ` and `2 C² L ‖f 0‖ < 1`, then `f` has a zero `x` in the range of `Q` with
 `‖x‖ ≤ 2 C ‖f 0‖`. -/
-theorem exists_mem_range_norm_le_apply_eq_zero [CompleteSpace E]
+theorem exists_mem_range_norm_le_apply_eq_zero_of_norm_hasFDerivWithin_sub_le
+    [CompleteSpace E]
     (hf : ∀ w ∈ closedBall (0 : E) δ, HasFDerivWithinAt f (f' w) (closedBall 0 δ) w)
     (hf' : ∀ w ∈ closedBall (0 : E) δ, ‖f' w - f' 0‖ ≤ L * ‖w‖) (hDQ : ∀ y, f' 0 (Q y) = y)
     (hQ : ∀ y, ‖Q y‖ ≤ C * ‖y‖) (hδ : 2 * C * ‖f 0‖ ≤ δ) (he : 2 * C ^ 2 * L * ‖f 0‖ < 1) :
@@ -276,7 +275,7 @@ theorem exists_mem_range_norm_le_apply_eq_zero [CompleteSpace E]
 within the closed ball of radius `δ` around `0` at every point `w` of the ball, Lipschitz at `0`:
 `‖f' w - f' 0‖ ≤ L ‖w‖`, and let `Q` be a right inverse of `f' 0` with `‖Q y‖ ≤ C ‖y‖`. Two zeros
 of `f` in the range of `Q`, of norm at most `r ≤ δ`, coincide when `C L r < 1`. -/
-theorem eq_of_apply_eq_zero
+theorem eq_of_apply_eq_zero_of_norm_hasFDerivWithin_sub_le
     (hf : ∀ w ∈ closedBall (0 : E) δ, HasFDerivWithinAt f (f' w) (closedBall 0 δ) w)
     (hf' : ∀ w ∈ closedBall (0 : E) δ, ‖f' w - f' 0‖ ≤ L * ‖w‖) (hDQ : ∀ y, f' 0 (Q y) = y)
     (hQ : ∀ y, ‖Q y‖ ≤ C * ‖y‖) {r : ℝ} (hrδ : r ≤ δ) (hr : C * L * r < 1) {x y : E}
