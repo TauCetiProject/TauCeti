@@ -207,6 +207,57 @@ noncomputable def torusFamilyCyclicQuotientNonzeroOpens [TopologicalSpace E] :
     isOpen_ne_fun (continuous_torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul)
       continuous_const⟩
 
+/-- A point of the cyclic quotient belongs to `torusFamilyCyclicQuotientNonzeroOpens` iff its
+coordinate `t = z ^ m` is nonzero. -/
+theorem mem_torusFamilyCyclicQuotientNonzeroOpens [TopologicalSpace E]
+    (q : letI := periodAddAction P
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+      orbitRel.Quotient (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :
+    q ∈ torusFamilyCyclicQuotientNonzeroOpens R hone hmul P ρ hequiv b hb hbmul ↔
+      torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul q ≠ 0 :=
+  Iff.rfl
+
+/-- Canonical equivalence between the open-subset subtype `torusFamilyCyclicQuotientNonzeroOpens`
+and the predicate subtype `{q // torusFamilyCyclicQuotientProjection ... q ≠ 0}`. -/
+@[expose]
+noncomputable def torusFamilyCyclicQuotientNonzeroOpensEquiv [TopologicalSpace E] :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    ↥(torusFamilyCyclicQuotientNonzeroOpens R hone hmul P ρ hequiv b hb hbmul) ≃
+      {q : orbitRel.Quotient (rootsOfUnity m ℂ)
+          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) //
+        torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul q ≠ 0} :=
+  Equiv.subtypeEquivRight fun q ↦
+    SetLike.mem_coe.trans
+      (mem_torusFamilyCyclicQuotientNonzeroOpens R hone hmul P ρ hequiv b hb hbmul q)
+
+/-- Coercing `torusFamilyCyclicQuotientNonzeroOpensEquiv` to the ambient cyclic quotient is the
+identity on values. -/
+@[simp] theorem coe_torusFamilyCyclicQuotientNonzeroOpensEquiv [TopologicalSpace E]
+    (q : letI := periodAddAction P
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+      ↥(torusFamilyCyclicQuotientNonzeroOpens R hone hmul P ρ hequiv b hb hbmul)) :
+    ((torusFamilyCyclicQuotientNonzeroOpensEquiv R hone hmul P ρ hequiv b hb hbmul q :
+        letI := periodAddAction P
+        letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+        orbitRel.Quotient (rootsOfUnity m ℂ)
+          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))) = q.val := (rfl)
+
+/-- Coercing the inverse of `torusFamilyCyclicQuotientNonzeroOpensEquiv` to the ambient cyclic
+quotient is the identity on values. -/
+@[simp] theorem coe_torusFamilyCyclicQuotientNonzeroOpensEquiv_symm [TopologicalSpace E]
+    (q : letI := periodAddAction P
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+      {q : orbitRel.Quotient (rootsOfUnity m ℂ)
+          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) //
+        torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul q ≠ 0}) :
+    (((torusFamilyCyclicQuotientNonzeroOpensEquiv R hone hmul P ρ hequiv b hb hbmul).symm q :
+        letI := periodAddAction P
+        letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+        orbitRel.Quotient (rootsOfUnity m ℂ)
+          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))) = q.val := (rfl)
+
 /-! ### Holomorphy of the coordinate `t` -/
 
 section Manifold

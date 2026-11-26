@@ -337,6 +337,45 @@ def torusFamilyNonzeroOpens {Y Λ E F : Type*} [AddCommGroup Λ] [AddCommGroup E
   ⟨{y | φ (torusFamilyProjection P y) ≠ 0},
     isOpen_compl_singleton.preimage (hφ.comp (continuous_torusFamilyProjection P))⟩
 
+/-- A point of the torus family belongs to `torusFamilyNonzeroOpens φ P hφ` iff `φ` does not
+vanish at its base projection. -/
+@[simp] theorem mem_torusFamilyNonzeroOpens {Y Λ E F : Type*} [AddCommGroup Λ] [AddCommGroup E]
+    [TopologicalSpace Y] [TopologicalSpace E] [TopologicalSpace F] [Zero F] [T1Space F]
+    (φ : Y → F) (P : Y → Λ →ₗ[ℤ] E) (hφ : Continuous φ)
+    (y : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E)) :
+    y ∈ torusFamilyNonzeroOpens φ P hφ ↔ φ (torusFamilyProjection P y) ≠ 0 :=
+  Iff.rfl
+
+/-- Canonical equivalence between the open-subset subtype `torusFamilyNonzeroOpens φ P hφ` and the
+predicate subtype `{y // φ (torusFamilyProjection P y) ≠ 0}`. -/
+@[expose]
+def torusFamilyNonzeroOpensEquiv {Y Λ E F : Type*} [AddCommGroup Λ] [AddCommGroup E]
+    [TopologicalSpace Y] [TopologicalSpace E] [TopologicalSpace F] [Zero F] [T1Space F]
+    (φ : Y → F) (P : Y → Λ →ₗ[ℤ] E) (hφ : Continuous φ) :
+    (letI := periodAddAction P; ↥(torusFamilyNonzeroOpens φ P hφ)) ≃
+      (letI := periodAddAction P;
+        {y : AddAction.orbitRel.Quotient Λ (Y × E) // φ (torusFamilyProjection P y) ≠ 0}) :=
+  Equiv.subtypeEquivRight fun y ↦ SetLike.mem_coe.trans (mem_torusFamilyNonzeroOpens φ P hφ y)
+
+/-- Coercing `torusFamilyNonzeroOpensEquiv` to the ambient torus family is the identity on
+values. -/
+@[simp] theorem coe_torusFamilyNonzeroOpensEquiv {Y Λ E F : Type*} [AddCommGroup Λ]
+    [AddCommGroup E] [TopologicalSpace Y] [TopologicalSpace E] [TopologicalSpace F] [Zero F]
+    [T1Space F] (φ : Y → F) (P : Y → Λ →ₗ[ℤ] E) (hφ : Continuous φ)
+    (y : letI := periodAddAction P; ↥(torusFamilyNonzeroOpens φ P hφ)) :
+    ((torusFamilyNonzeroOpensEquiv φ P hφ y :
+        letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))) = y.val := (rfl)
+
+/-- Coercing the inverse of `torusFamilyNonzeroOpensEquiv` to the ambient torus family is the
+identity on values. -/
+@[simp] theorem coe_torusFamilyNonzeroOpensEquiv_symm {Y Λ E F : Type*} [AddCommGroup Λ]
+    [AddCommGroup E] [TopologicalSpace Y] [TopologicalSpace E] [TopologicalSpace F] [Zero F]
+    [T1Space F] (φ : Y → F) (P : Y → Λ →ₗ[ℤ] E) (hφ : Continuous φ)
+    (y : letI := periodAddAction P;
+      {y : AddAction.orbitRel.Quotient Λ (Y × E) // φ (torusFamilyProjection P y) ≠ 0}) :
+    (((torusFamilyNonzeroOpensEquiv φ P hφ).symm y :
+        letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))) = y.val := (rfl)
+
 /-- **A family of tori over a second-countable base is second countable.** If the periods depend
 continuously on the parameter, the orbit space `(Y × E)/Λ` of the period translation action is
 second countable whenever `Y` and `E` are, since its orbit map is open. No lattice hypothesis on

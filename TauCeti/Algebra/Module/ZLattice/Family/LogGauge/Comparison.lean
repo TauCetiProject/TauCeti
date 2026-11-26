@@ -134,7 +134,7 @@ theorem torusFamilyLogGaugeDiffeomorph_add_nsmul (l μ : Λ) (hr : 0 ≤ r)
       ((logTranslationQuotientAddNsmulDiffeomorph P hP hinj l μ hfree).subtype
           (U := logTranslationQuotientNonzeroOpens P (l + m • μ))
           (V := logTranslationQuotientNonzeroOpens P l) fun q ↦ by
-            simp only [Opens.mem_mk, Set.mem_ofPred_eq, ← Diffeomorph.coe_toEquiv,
+            simp only [mem_torusFamilyCyclicQuotientNonzeroOpens, ← Diffeomorph.coe_toEquiv,
               logTranslationQuotientAddNsmulDiffeomorph_toEquiv,
               torusFamilyCyclicQuotientProjection_logTranslationQuotientAddNsmulEquiv]).trans
         ((torusFamilyLogGaugeDiffeomorph P hP hinj l hr hfree).trans
@@ -161,10 +161,18 @@ theorem torusFamilyLogGaugeDiffeomorph_add_nsmul (l μ : Λ) (hr : 0 ≤ r)
   let _ := Opens.instChartedSpace (H := ModelProd ℂ E)
     (logTranslationQuotientNonzeroOpens P l)
   apply Diffeomorph.toEquiv_injective
+  ext ⟨q, hq⟩
   simp only [Diffeomorph.trans_toEquiv, Diffeomorph.subtype_toEquiv,
     logTranslationQuotientAddNsmulDiffeomorph_toEquiv,
-    torusFamilyLogGaugeDiffeomorph_toEquiv, torusFamilyLogTwistDiffeomorph_toEquiv]
-  exact torusFamilyLogGaugeEquiv_add_nsmul P l μ hr
+    torusFamilyLogGaugeDiffeomorph_toEquiv, torusFamilyLogTwistDiffeomorph_toEquiv,
+    Equiv.trans_apply, Equiv.subtypeEquiv_apply, Equiv.apply_symm_apply,
+    coe_torusFamilyNonzeroOpensEquiv_symm]
+  have h := congrArg (fun e ↦
+      (e (logTranslationQuotientNonzeroOpensEquiv P (l + m • μ) ⟨q, hq⟩)).val)
+    (torusFamilyLogGaugeEquiv_add_nsmul P l μ hr)
+  refine h.trans ?_
+  simp only [Equiv.trans_apply, Equiv.subtypeEquiv_apply]
+  congr 3
 
 end DiffeomorphComparison
 

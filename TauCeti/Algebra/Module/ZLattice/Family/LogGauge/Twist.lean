@@ -77,13 +77,12 @@ theorem contMDiffAt_torusFamilyLogTwistMap (μ : Λ)
   have hc : ContMDiffAt I 𝓘(ℂ, E) n c y₀ :=
     (hL.div_const (2 * π * Complex.I)).smul (hP μ).contMDiffAt
   refine (contMDiffAt_torusFamilyGauge P hinj hP hc).congr_of_eventuallyEq ?_
-  filter_upwards [(torusFamilyNonzeroOpens φ P hφ.continuous).isOpen.mem_nhds hx] with x' hx'
+  filter_upwards [(torusFamilyNonzeroOpens φ P hφ.continuous).isOpen.mem_nhds
+    (SetLike.mem_coe.2 ((mem_torusFamilyNonzeroOpens φ P hφ.continuous x).2 hx))] with x' hx'
   obtain ⟨⟨y, e⟩, rfl⟩ := Quotient.exists_rep x'
-  have hx'y : φ y ≠ 0 := by
-    have h : φ (torusFamilyProjection P ⟦(y, e)⟧) ≠ 0 := hx'
-    rwa [torusFamilyProjection_mk] at h
+  rw [SetLike.mem_coe, mem_torusFamilyNonzeroOpens, torusFamilyProjection_mk] at hx'
   rw [torusFamilyGauge_mk,
-    torusFamilyLogTwistMap_mk_of_exp_eq φ P μ (exp_log_add_log_div hx hx'y) e]
+    torusFamilyLogTwistMap_mk_of_exp_eq φ P μ (exp_log_add_log_div hx hx') e]
 
 /-- The punctured logarithmic twist is `C^n` on the open submanifold `{φ ∘ p ≠ 0}`. -/
 private theorem contMDiff_torusFamilyLogTwistEquiv (μ : Λ) :
@@ -91,18 +90,27 @@ private theorem contMDiff_torusFamilyLogTwistEquiv (μ : Λ) :
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
     letI := Opens.instChartedSpace (H := ModelProd H E)
       (torusFamilyNonzeroOpens φ P hφ.continuous)
-    ContMDiff (I.prod 𝓘(ℂ, E)) (I.prod 𝓘(ℂ, E)) n (torusFamilyLogTwistEquiv φ P μ) := by
+    ContMDiff (I.prod 𝓘(ℂ, E)) (I.prod 𝓘(ℂ, E)) n
+      ((torusFamilyNonzeroOpensEquiv φ P hφ.continuous).trans
+        ((torusFamilyLogTwistEquiv φ P μ).trans
+          (torusFamilyNonzeroOpensEquiv φ P hφ.continuous).symm)) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
   let U := torusFamilyNonzeroOpens φ P hφ.continuous
   let _ := Opens.instChartedSpace (H := ModelProd H E) U
   refine (ContMDiff.subtypeVal_comp_iff U _).1 fun y ↦ ?_
-  have hcomp : (Subtype.val : U → _) ∘ torusFamilyLogTwistEquiv φ P μ =
+  have hcomp : (Subtype.val : U → _) ∘
+      ((torusFamilyNonzeroOpensEquiv φ P hφ.continuous).trans
+        ((torusFamilyLogTwistEquiv φ P μ).trans
+          (torusFamilyNonzeroOpensEquiv φ P hφ.continuous).symm)) =
       torusFamilyLogTwistMap φ P μ ∘ (Subtype.val : U → _) :=
-    funext fun z ↦ coe_torusFamilyLogTwistEquiv φ P μ z
+    funext fun z ↦ by
+      simp only [Function.comp_apply, Equiv.coe_trans, coe_torusFamilyNonzeroOpensEquiv_symm,
+        coe_torusFamilyLogTwistEquiv, coe_torusFamilyNonzeroOpensEquiv]
   rw [hcomp]
   exact (contMDiffAt_subtype_iff (U := U) (x := y)).2
-    (contMDiffAt_torusFamilyLogTwistMap φ P hinj hφ hP μ y.property)
+    (contMDiffAt_torusFamilyLogTwistMap φ P hinj hφ hP μ
+      ((mem_torusFamilyNonzeroOpens φ P hφ.continuous y.val).1 (SetLike.mem_coe.1 y.property)))
 
 /-- **The logarithmic twist diffeomorphism.** For a `C^n` period family `P` over `Y` and a `C^n`
 function `φ : Y → ℂ`, each lattice element `μ : Λ` defines a `C^n` automorphism
@@ -120,29 +128,38 @@ noncomputable def torusFamilyLogTwistDiffeomorph (μ : Λ) :
   letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
   letI := Opens.instChartedSpace (H := ModelProd H E)
     (torusFamilyNonzeroOpens φ P hφ.continuous)
-  { toEquiv := torusFamilyLogTwistEquiv φ P μ
+  { toEquiv := (torusFamilyNonzeroOpensEquiv φ P hφ.continuous).trans
+      ((torusFamilyLogTwistEquiv φ P μ).trans
+        (torusFamilyNonzeroOpensEquiv φ P hφ.continuous).symm)
     contMDiff_toFun := contMDiff_torusFamilyLogTwistEquiv φ P hinj hφ hP μ
     contMDiff_invFun := by
-      rw [torusFamilyLogTwistEquiv_symm]
+      simp only [Equiv.symm_trans, Equiv.symm_symm, Equiv.trans_assoc,
+        torusFamilyLogTwistEquiv_symm]
       exact contMDiff_torusFamilyLogTwistEquiv φ P hinj hφ hP (-μ) }
 
-/-- The logarithmic twist diffeomorphism has underlying equivalence `torusFamilyLogTwistEquiv`. -/
+/-- The logarithmic twist diffeomorphism has underlying equivalence `torusFamilyLogTwistEquiv`
+transported along `torusFamilyNonzeroOpensEquiv`. -/
 @[simp] theorem torusFamilyLogTwistDiffeomorph_toEquiv (μ : Λ) :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
     letI := Opens.instChartedSpace (H := ModelProd H E)
       (torusFamilyNonzeroOpens φ P hφ.continuous)
     (torusFamilyLogTwistDiffeomorph φ P hinj hφ hP μ).toEquiv =
-      torusFamilyLogTwistEquiv φ P μ := (rfl)
+      (torusFamilyNonzeroOpensEquiv φ P hφ.continuous).trans
+        ((torusFamilyLogTwistEquiv φ P μ).trans
+          (torusFamilyNonzeroOpensEquiv φ P hφ.continuous).symm) := (rfl)
 
-/-- Coercing `torusFamilyLogTwistDiffeomorph` to a function gives `torusFamilyLogTwistEquiv`. -/
+/-- Coercing `torusFamilyLogTwistDiffeomorph` to a function gives `torusFamilyLogTwistEquiv`
+transported along `torusFamilyNonzeroOpensEquiv`. -/
 @[simp] theorem coe_torusFamilyLogTwistDiffeomorph (μ : Λ) :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
     letI := Opens.instChartedSpace (H := ModelProd H E)
       (torusFamilyNonzeroOpens φ P hφ.continuous)
     ⇑(torusFamilyLogTwistDiffeomorph φ P hinj hφ hP μ) =
-      torusFamilyLogTwistEquiv φ P μ := (rfl)
+      ⇑((torusFamilyNonzeroOpensEquiv φ P hφ.continuous).trans
+        ((torusFamilyLogTwistEquiv φ P μ).trans
+          (torusFamilyNonzeroOpensEquiv φ P hφ.continuous).symm)) := (rfl)
 
 /-- The logarithmic twist diffeomorphism for `0 : Λ` is the identity. -/
 @[simp] theorem torusFamilyLogTwistDiffeomorph_zero :
@@ -157,8 +174,7 @@ noncomputable def torusFamilyLogTwistDiffeomorph (μ : Λ) :
     (torusFamilyNonzeroOpens φ P hφ.continuous)
   apply Diffeomorph.toEquiv_injective
   simp only [torusFamilyLogTwistDiffeomorph_toEquiv, Diffeomorph.refl_toEquiv,
-    torusFamilyLogTwistEquiv_zero]
-  exact Equiv.ext fun _ ↦ rfl
+    torusFamilyLogTwistEquiv_zero, Equiv.refl_trans, Equiv.self_trans_symm]
 
 /-- Composing logarithmic twist diffeomorphisms adds their period parameters. -/
 @[simp] theorem torusFamilyLogTwistDiffeomorph_trans (μ₁ μ₂ : Λ) :
@@ -174,8 +190,10 @@ noncomputable def torusFamilyLogTwistDiffeomorph (μ : Λ) :
   let _ := Opens.instChartedSpace (H := ModelProd H E)
     (torusFamilyNonzeroOpens φ P hφ.continuous)
   apply Diffeomorph.toEquiv_injective
-  simp only [Diffeomorph.trans_toEquiv, torusFamilyLogTwistDiffeomorph_toEquiv]
-  exact torusFamilyLogTwistEquiv_trans φ P μ₁ μ₂
+  simp only [Diffeomorph.trans_toEquiv, torusFamilyLogTwistDiffeomorph_toEquiv, Equiv.trans_assoc]
+  rw [← Equiv.trans_assoc (torusFamilyNonzeroOpensEquiv φ P hφ.continuous).symm,
+    Equiv.symm_trans_self, Equiv.refl_trans,
+    ← Equiv.trans_assoc (torusFamilyLogTwistEquiv φ P μ₁), torusFamilyLogTwistEquiv_trans]
 
 /-- The inverse of a logarithmic twist diffeomorphism negates its period parameter. -/
 @[simp] theorem torusFamilyLogTwistDiffeomorph_symm (μ : Λ) :
@@ -190,8 +208,8 @@ noncomputable def torusFamilyLogTwistDiffeomorph (μ : Λ) :
   let _ := Opens.instChartedSpace (H := ModelProd H E)
     (torusFamilyNonzeroOpens φ P hφ.continuous)
   apply Diffeomorph.toEquiv_injective
-  simp only [Diffeomorph.symm_toEquiv, torusFamilyLogTwistDiffeomorph_toEquiv]
-  exact torusFamilyLogTwistEquiv_symm φ P μ
+  simp only [Diffeomorph.symm_toEquiv, torusFamilyLogTwistDiffeomorph_toEquiv, Equiv.symm_trans,
+    Equiv.symm_symm, Equiv.trans_assoc, torusFamilyLogTwistEquiv_symm]
 
 end LogTwistDiffeomorph
 

@@ -162,8 +162,13 @@ theorem logTranslationSection_eq_mk_of_exp_eq {ζ : rootsOfUnity m ℂ} {L : ℂ
     logTranslationSection P l ζ z =
       Quotient.mk _ (ζ • z, (L / (2 * π * I)) • powPullbackPeriod m r P z l) := by
   have hexp : exp (log ((ζ : ℂˣ) : ℂ)) = exp L := (exp_log (ζ : ℂˣ).ne_zero).trans hL.symm
-  simpa [logTranslationSection, powPullbackPeriod_apply, rootsOfUnityBall.powMap_smul] using
-    torusFamily_mk_add_div_two_pi_I_smul_eq_of_exp_eq (powPullbackPeriod m r P) l hexp (ζ • z) 0
+  have h := torusFamily_mk_add_div_two_pi_I_smul_eq_of_exp_eq (powPullbackPeriod m r P) l hexp
+    (ζ • z) 0
+  have hP : powPullbackPeriod m r P (ζ • z) l = powPullbackPeriod m r P z l := by
+    rw [powPullbackPeriod_apply, rootsOfUnityBall.powMap_smul, powPullbackPeriod_apply]
+  rw [zero_add, zero_add, hP] at h
+  rw [logTranslationSection]
+  exact h
 
 /-- **The cocycle law** of the translation section: translating by the section of `g * h` is
 translating by the section of `h` and then applying the affine map of `g`. Both sides differ by
@@ -260,8 +265,22 @@ theorem logTranslationSection_add_nsmul (l μ : Λ) (ζ : rootsOfUnity m ℂ)
     simpa only [Units.val_pow_eq_pow_val, Units.val_one] using congrArg Units.val hpow
   have h := torusFamily_mk_add_div_two_pi_I_smul_eq_of_exp_eq (powPullbackPeriod m r P) μ hexp
     (ζ • z) ((log ((ζ : ℂˣ) : ℂ) / (2 * π * I)) • powPullbackPeriod m r P z l)
-  simpa [logTranslationSection, powPullbackPeriod_apply, rootsOfUnityBall.powMap_smul,
-    div_two_pi_I_smul_nsmul _ m] using h
+  have hvec₁ :
+      (log ((ζ : ℂˣ) : ℂ) / (2 * π * I)) • powPullbackPeriod m r P z (l + m • μ) =
+        (log ((ζ : ℂˣ) : ℂ) / (2 * π * I)) • powPullbackPeriod m r P z l +
+          (((m : ℂ) * log ((ζ : ℂˣ) : ℂ)) / (2 * π * I)) •
+            powPullbackPeriod m r P (ζ • z) μ := by
+    rw [map_add, map_nsmul, smul_add, div_two_pi_I_smul_nsmul _ m, powPullbackPeriod_apply,
+      powPullbackPeriod_apply, rootsOfUnityBall.powMap_smul]
+  have hvec₂ : (log ((ζ : ℂˣ) : ℂ) / (2 * π * I)) • powPullbackPeriod m r P z l =
+      (log ((ζ : ℂˣ) : ℂ) / (2 * π * I)) • powPullbackPeriod m r P z l +
+        (0 / (2 * π * I)) • powPullbackPeriod m r P (ζ • z) μ := by
+    rw [zero_div, zero_smul, add_zero]
+  rw [logTranslationSection_eq_mk_of_exp_eq P (l + m • μ) (exp_log (ζ : ℂˣ).ne_zero) z,
+    logTranslationSection_eq_mk_of_exp_eq P l (exp_log (ζ : ℂˣ).ne_zero) z]
+  conv_lhs => rw [hvec₁]
+  conv_rhs => rw [hvec₂]
+  exact h
 
 /-- The normalized translation action depends only on the class of `l` modulo `mΛ`. -/
 theorem logTranslationMulAction_add_nsmul (l μ : Λ) :
@@ -356,6 +375,26 @@ noncomputable def logTranslationQuotientNonzeroOpens [TopologicalSpace E] (l : �
     TopologicalSpace.Opens (orbitRel.Quotient (rootsOfUnity m ℂ)
       (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
   torusFamilyCyclicQuotientNonzeroOpens (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
+    (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
+    (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
+    (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
+    (logTranslationSection_mul P l)
+
+/-- Canonical equivalence between the open-subset subtype `logTranslationQuotientNonzeroOpens P l`
+and the raw predicate subtype `{q // torusFamilyCyclicQuotientProjection ... q ≠ 0}`. -/
+@[expose, reducible]
+noncomputable def logTranslationQuotientNonzeroOpensEquiv [TopologicalSpace E] (l : Λ) :
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := logTranslationMulAction P l
+    ↥(logTranslationQuotientNonzeroOpens P l) ≃
+      {q : orbitRel.Quotient (rootsOfUnity m ℂ)
+          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) //
+        torusFamilyCyclicQuotientProjection (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
+          (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
+          (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
+          (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
+          (logTranslationSection_mul P l) q ≠ 0} :=
+  torusFamilyCyclicQuotientNonzeroOpensEquiv (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
     (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
     (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
     (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
@@ -786,26 +825,34 @@ private theorem continuous_torusFamilyLogGaugeEquiv :
     letI := periodAddAction P
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
-    Continuous (torusFamilyLogGaugeEquiv P l hr) := by
+    Continuous ((logTranslationQuotientNonzeroOpensEquiv P l).trans
+      ((torusFamilyLogGaugeEquiv P l hr).trans
+        (torusFamilyNonzeroOpensEquiv Subtype.val P continuous_subtypeVal).symm)) := by
   let _ := periodAddAction P
   let _ := periodAddAction (powPullbackPeriod m r P)
   let _ := logTranslationMulAction P l
   refine continuous_induced_rng.2
     (continuous_iff_continuousAt.2 fun q ↦ ?_)
-  exact (continuousAt_torusFamilyLogGauge_out P l hcont q.property).comp continuousAt_subtypeVal
+  exact (continuousAt_torusFamilyLogGauge_out P l hcont
+    ((mem_torusFamilyCyclicQuotientNonzeroOpens _ _ _ _ _ _ _ _ _ q.val).1
+      (SetLike.mem_coe.1 q.property))).comp continuousAt_subtypeVal
 
 include hcont in
 private theorem continuous_torusFamilyLogGaugeEquiv_symm :
     letI := periodAddAction P
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
-    Continuous (torusFamilyLogGaugeEquiv P l hr).symm := by
+    Continuous ((logTranslationQuotientNonzeroOpensEquiv P l).trans
+      ((torusFamilyLogGaugeEquiv P l hr).trans
+        (torusFamilyNonzeroOpensEquiv Subtype.val P continuous_subtypeVal).symm)).symm := by
   let _ := periodAddAction P
   let _ := periodAddAction (powPullbackPeriod m r P)
   let _ := logTranslationMulAction P l
   refine continuous_induced_rng.2
     (continuous_iff_continuousAt.2 fun y ↦ ?_)
-  exact (continuousAt_torusFamilyLogGaugeInv P l hr hcont y.property).comp continuousAt_subtypeVal
+  exact (continuousAt_torusFamilyLogGaugeInv P l hr hcont
+    ((mem_torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal y.val).1
+      (SetLike.mem_coe.1 y.property))).comp continuousAt_subtypeVal
 
 include hcont in
 /-- **The logarithmic gauge as a homeomorphism.** For continuous periods, the equivalence
@@ -820,21 +867,33 @@ noncomputable def torusFamilyLogGaugeHomeomorph :
   letI := periodAddAction P
   letI := periodAddAction (powPullbackPeriod m r P)
   letI := logTranslationMulAction P l
-  { toEquiv := torusFamilyLogGaugeEquiv P l hr
+  { toEquiv := (logTranslationQuotientNonzeroOpensEquiv P l).trans
+      ((torusFamilyLogGaugeEquiv P l hr).trans
+        (torusFamilyNonzeroOpensEquiv Subtype.val P continuous_subtypeVal).symm)
     continuous_toFun := continuous_torusFamilyLogGaugeEquiv P l hr hcont
     continuous_invFun := continuous_torusFamilyLogGaugeEquiv_symm P l hr hcont }
 
-/-- The homeomorphism has the underlying equivalence `TauCeti.torusFamilyLogGaugeEquiv`. -/
+/-- The homeomorphism has the underlying equivalence `TauCeti.torusFamilyLogGaugeEquiv`
+transported to the `Opens` subtypes. -/
 @[simp] theorem torusFamilyLogGaugeHomeomorph_toEquiv :
-    (torusFamilyLogGaugeHomeomorph P l hr hcont).toEquiv = torusFamilyLogGaugeEquiv P l hr :=
+    (torusFamilyLogGaugeHomeomorph P l hr hcont).toEquiv =
+      (logTranslationQuotientNonzeroOpensEquiv P l).trans
+        ((torusFamilyLogGaugeEquiv P l hr).trans
+          (torusFamilyNonzeroOpensEquiv Subtype.val P continuous_subtypeVal).symm) :=
   (rfl)
 
 @[simp] theorem coe_torusFamilyLogGaugeHomeomorph :
-    ⇑(torusFamilyLogGaugeHomeomorph P l hr hcont) = torusFamilyLogGaugeEquiv P l hr :=
+    ⇑(torusFamilyLogGaugeHomeomorph P l hr hcont) =
+      ⇑((logTranslationQuotientNonzeroOpensEquiv P l).trans
+        ((torusFamilyLogGaugeEquiv P l hr).trans
+          (torusFamilyNonzeroOpensEquiv Subtype.val P continuous_subtypeVal).symm)) :=
   (rfl)
 
 @[simp] theorem coe_torusFamilyLogGaugeHomeomorph_symm :
-    ⇑(torusFamilyLogGaugeHomeomorph P l hr hcont).symm = (torusFamilyLogGaugeEquiv P l hr).symm :=
+    ⇑(torusFamilyLogGaugeHomeomorph P l hr hcont).symm =
+      ⇑((logTranslationQuotientNonzeroOpensEquiv P l).trans
+        ((torusFamilyLogGaugeEquiv P l hr).trans
+          (torusFamilyNonzeroOpensEquiv Subtype.val P continuous_subtypeVal).symm)).symm :=
   (rfl)
 
 end Topology
