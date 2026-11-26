@@ -124,6 +124,8 @@ with algebraic multiplicity. At a nondegenerate fixed point it is `(-1) ^ i₊`
   conjugation by a diffeomorphism.
 * `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`: on a manifold modelled on a
   finite-dimensional space over a complete field, nondegenerate fixed points are isolated.
+* `TauCeti.IsNondegenerateFixedPt.exists_pos_forall_mem_closedBall_isFixedPt_eq`: on a metric
+  manifold, some closed ball around a nondegenerate fixed point contains no other fixed point.
 * `IsCompact.finite_of_isNondegenerateFixedPt`: on a manifold modelled on a finite-dimensional
   space over a complete field, a compact set of nondegenerate fixed points is finite.
 * `TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`: on a compact manifold modelled on a
@@ -158,6 +160,8 @@ with algebraic multiplicity. At a nondegenerate fixed point it is `(-1) ^ i₊`
   space, `det (1 - df_x) ≠ 0` at a nondegenerate fixed point `x`.
 * `TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`: in finite dimensions, a fixed point at
   which `f` is differentiable is nondegenerate exactly when `det (1 - df_x) ≠ 0`.
+* `TauCeti.isNondegenerateFixedPt_iterate_apply_iterate_iff`: in finite dimensions, the points of
+  a periodic orbit of period `n` are all nondegenerate fixed points of `f^[n]` or none is.
 * `TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`: `det (1 - df_x)` at a fixed
   point can be computed in any chart.
 * `TauCeti.isNondegenerateFixedPt_iff_injective_sub_id_of_hasFDerivWithinAt`: so can
@@ -329,6 +333,16 @@ theorem eventually_not_isFixedPt (h : IsNondegenerateFixedPt I f x) :
   filter_upwards [htends.eventually hne, hsource, hfsource] with y hy hys _ hfix
   apply hy
   rw [(extChartAt I x).left_inv hys, hfix.eq, sub_self]
+
+/-- **A closed ball isolating a nondegenerate fixed point.** On a metric manifold modelled on a
+finite-dimensional space over a complete field, a nondegenerate fixed point `x` of `g` is the only
+fixed point of `g` in some closed ball of positive radius around `x`. -/
+theorem exists_pos_forall_mem_closedBall_isFixedPt_eq {X : Type*} [PseudoMetricSpace X]
+    [ChartedSpace H X] {g : X → X} {x : X} (h : IsNondegenerateFixedPt I g x) :
+    ∃ r > 0, ∀ y ∈ Metric.closedBall x r, IsFixedPt g y → y = x := by
+  obtain ⟨r, hr, hr'⟩ := (nhdsWithin_hasBasis Metric.nhds_basis_closedBall _).eventually_iff.1
+    h.eventually_not_isFixedPt
+  exact ⟨r, hr, fun y hy hyfix ↦ by_contra fun hyx ↦ hr' ⟨hy, hyx⟩ hyfix⟩
 
 end IsNondegenerateFixedPt
 
@@ -710,6 +724,18 @@ theorem isNondegenerateFixedPt_iff_det_id_sub_ne_zero [FiniteDimensional 𝕜 E]
   simp only [LinearMap.sub_apply, LinearMap.id_apply, fixedPointDerivative_apply]
   exact ⟨fun h v hv ↦ h.eq_zero_of_mfderiv_apply_eq (sub_eq_zero.1 hv).symm,
     fun h ↦ ⟨x.property, hf, fun v hv ↦ h v (sub_eq_zero.2 hv.symm)⟩⟩
+
+/-- **Nondegeneracy is constant along a periodic orbit.** If `x` is a periodic point of period `n`
+of a map `f` differentiable at every point of the orbit of `x`, then every point `f^[j] x` of the
+orbit is a nondegenerate fixed point of `f^[n]` exactly when `x` is. -/
+theorem isNondegenerateFixedPt_iterate_apply_iterate_iff [FiniteDimensional 𝕜 E] {n : ℕ}
+    (hx : IsPeriodicPt f n x) (hf : ∀ m, MDifferentiableAt I I f (f^[m] x)) (j : ℕ) :
+    IsNondegenerateFixedPt I f^[n] (f^[j] x) ↔ IsNondegenerateFixedPt I f^[n] x := by
+  have hfj : MDifferentiableAt I I f^[n] (f^[j] x) :=
+    mdifferentiableAt_iterate fun m _ ↦ by rw [← iterate_add_apply]; exact hf _
+  rw [isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨f^[j] x, (hx.apply_iterate j).eq⟩ hfj,
+    isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x, hx.eq⟩ (mdifferentiableAt_iterate
+      fun m _ ↦ hf m), det_id_sub_fixedPointDerivative_apply_iterate hx hf j]
 
 /-- **Nondegeneracy gives a nonzero determinant.** At a nondegenerate fixed point `x` of a self-map
 `f` of a finite-dimensional normed space, with its trivial chart, `det (1 - df_x) ≠ 0`. -/

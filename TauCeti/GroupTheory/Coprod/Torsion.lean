@@ -9,7 +9,8 @@ public import Mathlib.GroupTheory.Coprod.Basic
 public import Mathlib.GroupTheory.OrderOfElement
 import TauCeti.Algebra.Group.Conj
 import TauCeti.Algebra.Group.Equiv.Pow
-import TauCeti.GroupTheory.CoprodI.Basic
+import TauCeti.Algebra.Group.ULift
+import TauCeti.GroupTheory.Coprod.Factors
 import TauCeti.GroupTheory.CoprodI.Torsion
 
 /-!
@@ -37,7 +38,7 @@ infinite order.
 
 Binary `Monoid.Coprod` results across arbitrary universes reduce to the indexed torsion
 classification (`TauCeti.GroupTheory.CoprodI.Torsion`) over `Bool` via
-`Monoid.CoprodI.uliftBoolEquivCoprod`.
+`Monoid.Coprod.equivCoprodI`.
 
 ## References
 
@@ -77,10 +78,9 @@ order. -/
 theorem not_isOfFinOrder_inl_mul_inr {x : M} {y : N} (hx : x ≠ 1) (hy : y ≠ 1) :
     ¬IsOfFinOrder (inl x * inr y : M ∗ N) := by
   intro hfin
-  have hfin' : IsOfFinOrder ((CoprodI.uliftBoolEquivCoprod M N).symm (inl x * inr y)) :=
-    (CoprodI.uliftBoolEquivCoprod M N).symm.isOfFinOrder_iff.mpr hfin
-  rw [map_mul, CoprodI.uliftBoolEquivCoprod_symm_inl,
-    CoprodI.uliftBoolEquivCoprod_symm_inr] at hfin'
+  have hfin' : IsOfFinOrder (equivCoprodI (inl x * inr y)) :=
+    equivCoprodI.isOfFinOrder_iff.mpr hfin
+  rw [map_mul, equivCoprodI_inl, equivCoprodI_inr] at hfin'
   exact CoprodI.not_isOfFinOrder_of_mul_of Bool.false_ne_true
     (fun h => hx (congrArg ULift.down h)) (fun h => hy (congrArg ULift.down h)) hfin'
 
@@ -113,20 +113,18 @@ theorem exists_isConj_of_isOfFinOrder_of_ne_one {g : G ∗ H}
     (hg : IsOfFinOrder g) (hg1 : g ≠ 1) :
     (∃ x : G, x ≠ 1 ∧ IsConj g (inl x) ∧ IsOfFinOrder x) ∨
        (∃ y : H, y ≠ 1 ∧ IsConj g (inr y) ∧ IsOfFinOrder y) := by
-  have hg' : IsOfFinOrder ((CoprodI.uliftBoolEquivCoprod G H).symm g) :=
-    (CoprodI.uliftBoolEquivCoprod G H).symm.isOfFinOrder_iff.mpr hg
-  have hg1' : (CoprodI.uliftBoolEquivCoprod G H).symm g ≠ 1 := by simp [hg1]
+  have hg' : IsOfFinOrder (equivCoprodI g) := equivCoprodI.isOfFinOrder_iff.mpr hg
+  have hg1' : equivCoprodI g ≠ 1 := by simp [hg1]
   obtain ⟨b, z, hz1, hconj, hz_fin⟩ :=
     CoprodI.exists_isConj_of_isOfFinOrder_of_ne_one hg' hg1'
-  have he : IsConj g (CoprodI.uliftBoolEquivCoprod G H (CoprodI.of (i := b) z)) := by
-    simpa only [MulEquiv.apply_symm_apply] using
-      (CoprodI.uliftBoolEquivCoprod G H).isConj_apply_iff.mpr hconj
+  have he : IsConj g (equivCoprodI.symm (CoprodI.of (i := b) z)) := by
+    simpa only [MulEquiv.symm_apply_apply] using equivCoprodI.symm.isConj_apply_iff.mpr hconj
   cases b with
   | false =>
-    rw [CoprodI.uliftBoolEquivCoprod_of_false (x := z)] at he
+    rw [equivCoprodI_symm_of_false (x := z)] at he
     exact Or.inl (exists_of_ulift_branch hz1 he hz_fin)
   | true =>
-    rw [CoprodI.uliftBoolEquivCoprod_of_true (y := z)] at he
+    rw [equivCoprodI_symm_of_true (x := z)] at he
     exact Or.inr (exists_of_ulift_branch hz1 he hz_fin)
 
 /-- Every element of finite order in `G ∗ H` is conjugate to an element of finite order in `G` or
@@ -155,11 +153,10 @@ theorem isOfFinOrder_iff {g : G ∗ H} :
 /-- The free product of two torsion-free groups is torsion-free. -/
 instance instIsMulTorsionFree [IsMulTorsionFree G] [IsMulTorsionFree H] :
     IsMulTorsionFree (G ∗ H) := by
-  have : ∀ b, IsMulTorsionFree (CoprodI.boolFactors G H b)
+  have : ∀ b, IsMulTorsionFree (Factors G H b)
     | false => (MulEquiv.ulift (α := G)).isMulTorsionFree_iff.mpr inferInstance
     | true => (MulEquiv.ulift (α := H)).isMulTorsionFree_iff.mpr inferInstance
-  exact (CoprodI.uliftBoolEquivCoprod G H).isMulTorsionFree_iff.mp
-    CoprodI.instIsMulTorsionFree
+  exact equivCoprodI.isMulTorsionFree_iff.mpr CoprodI.instIsMulTorsionFree
 
 end Group
 

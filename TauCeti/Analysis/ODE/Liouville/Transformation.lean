@@ -12,6 +12,12 @@ public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Tactic.FieldSimp
 public import Mathlib.Tactic.Ring
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Module
 
 /-!
 # The Liouville transformation
@@ -22,6 +28,9 @@ We compute both derivatives of this rescaling and its transformed differential e
 In particular, when `z'(ξ)² f(z(ξ)) = 1`, the equation `w'' = (u² f + g) w` becomes
 `W'' = (u² + ψ) W`, where `ψ` is given explicitly in terms of the first three derivatives
 of `z` and `g`.
+
+For a vector-valued `h`, the rescaling `φ'^{-1/2} • h ∘ φ` has second derivative
+`(φ'^{-1/2})'' • h ∘ φ + φ'^{-1/2} φ'² • h'' ∘ φ` (`iteratedDeriv_two_deriv_rpow_smul_comp`).
 
 All statements are local: they apply at an interior point of any parameter interval.
 The positivity of `z'` fixes the real square root used in the rescaling.
@@ -34,7 +43,8 @@ The positivity of `z'` fixes the real square root used in the rescaling.
 
 public section
 
-open scoped ContDiff
+open Set
+open scoped ContDiff Topology
 
 namespace TauCeti
 
@@ -185,5 +195,63 @@ theorem deriv_deriv_liouvilleTransform_of_normalized (z w f g : ℝ → ℝ) (u 
   congr 1
   simp only [liouvillePotential_apply]
   linear_combination u ^ 2 * hnorm
+
+/-- The second derivative of the Liouville rescaling `u • h ∘ φ`, `u = φ'^{-1/2}`, of a
+vector-valued function `h`: the first-derivative terms cancel, and
+`(u • h ∘ φ)'' = u'' • h ∘ φ + u φ'² • h'' ∘ φ`. Unlike `deriv_deriv_liouvilleTransform`, the
+correction is kept as `u''` rather than expanded into the Schwarzian derivative of `φ`. -/
+theorem iteratedDeriv_two_deriv_rpow_smul_comp {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {J U : Set ℝ} (hJ : IsOpen J) (hU : IsOpen U) {φ : ℝ → ℝ} {h : ℝ → E}
+    (hφ : ContDiffOn ℝ 3 φ J) (hd : ∀ t ∈ J, 0 < deriv φ t) (hh : ContDiffOn ℝ 2 h U)
+    (hφU : MapsTo φ J U) {t : ℝ} (ht : t ∈ J) :
+    iteratedDeriv 2 (fun s ↦ deriv φ s ^ (-(1 / 2) : ℝ) • h (φ s)) t =
+      iteratedDeriv 2 (fun s ↦ deriv φ s ^ (-(1 / 2) : ℝ)) t • h (φ t) +
+        (deriv φ t ^ (-(1 / 2) : ℝ) * deriv φ t ^ 2) • iteratedDeriv 2 h (φ t) := by
+  set d := deriv φ
+  set u : ℝ → ℝ := fun s ↦ d s ^ (-(1 / 2) : ℝ)
+  have hd2 : ContDiffOn ℝ 2 d J := hφ.deriv_of_isOpen hJ (by norm_num)
+  have hu : ContDiffOn ℝ 2 u J := hd2.rpow_const_of_ne fun s hs ↦ (hd s hs).ne'
+  have hφ1 (s : ℝ) (hs : s ∈ J) : HasDerivAt φ (d s) s :=
+    ((hφ.contDiffAt (hJ.mem_nhds hs)).differentiableAt (by norm_num)).hasDerivAt
+  have hd1 (s : ℝ) (hs : s ∈ J) : HasDerivAt d (deriv d s) s :=
+    ((hd2.contDiffAt (hJ.mem_nhds hs)).differentiableAt (by norm_num)).hasDerivAt
+  have hu1 (s : ℝ) (hs : s ∈ J) :
+      HasDerivAt u (deriv d s * (-(1 / 2)) * d s ^ (-(1 / 2) - 1 : ℝ)) s :=
+    (hd1 s hs).rpow_const (Or.inl (hd s hs).ne')
+  have hu2 : HasDerivAt (deriv u) (iteratedDeriv 2 u t) t := by
+    rw [iteratedDeriv_succ, iteratedDeriv_one]
+    exact (((hu.deriv_of_isOpen hJ (m := 1) (by norm_num)).contDiffAt
+      (hJ.mem_nhds ht)).differentiableAt (by norm_num)).hasDerivAt
+  have hh1 (y : ℝ) (hy : y ∈ U) : HasDerivAt h (deriv h y) y :=
+    ((hh.contDiffAt (hU.mem_nhds hy)).differentiableAt (by norm_num)).hasDerivAt
+  have hh2 : HasDerivAt (deriv h) (iteratedDeriv 2 h (φ t)) (φ t) := by
+    rw [iteratedDeriv_succ, iteratedDeriv_one]
+    exact (((hh.deriv_of_isOpen hU (m := 1) (by norm_num)).contDiffAt
+      (hU.mem_nhds (hφU ht))).differentiableAt (by norm_num)).hasDerivAt
+  -- the first derivative, near `t`
+  have hfirst : deriv (fun s ↦ u s • h (φ s)) =ᶠ[𝓝 t]
+      fun s ↦ (u s * d s) • deriv h (φ s) + deriv u s • h (φ s) := by
+    filter_upwards [hJ.mem_nhds ht] with s hs
+    have h1 : HasDerivAt (fun s ↦ u s • h (φ s))
+        (u s • d s • deriv h (φ s) + deriv u s • h (φ s)) s :=
+      (hu1 s hs).differentiableAt.hasDerivAt.smul ((hh1 _ (hφU hs)).scomp s (hφ1 s hs))
+    rw [h1.deriv, smul_smul]
+  have hsec : HasDerivAt (fun s ↦ (u s * d s) • deriv h (φ s) + deriv u s • h (φ s))
+      ((u t * d t) • d t • iteratedDeriv 2 h (φ t) +
+        (deriv d t * (-(1 / 2)) * d t ^ (-(1 / 2) - 1 : ℝ) * d t + u t * deriv d t) •
+          deriv h (φ t) +
+        (deriv u t • d t • deriv h (φ t) + iteratedDeriv 2 u t • h (φ t))) t :=
+    (((hu1 t ht).mul (hd1 t ht)).smul (hh2.scomp t (hφ1 t ht))).add
+      (hu2.smul ((hh1 _ (hφU ht)).scomp t (hφ1 t ht)))
+  rw [iteratedDeriv_succ, iteratedDeriv_one, hfirst.deriv_eq, hsec.deriv, (hu1 t ht).deriv]
+  have hdt := hd t ht
+  have hpow : d t ^ (-(1 / 2) - 1 : ℝ) * d t = d t ^ (-(1 / 2) : ℝ) := by
+    rw [Real.rpow_sub_one hdt.ne', div_mul_cancel₀ _ hdt.ne']
+  have key : deriv d t * (-(1 / 2)) * d t ^ (-(1 / 2) - 1 : ℝ) * d t + u t * deriv d t +
+      deriv d t * (-(1 / 2)) * d t ^ (-(1 / 2) - 1 : ℝ) * d t = 0 := by
+    simp only [u]
+    linear_combination (-deriv d t) * hpow
+  simp only [u] at key ⊢
+  linear_combination (norm := module) key • deriv h (φ t)
 
 end TauCeti

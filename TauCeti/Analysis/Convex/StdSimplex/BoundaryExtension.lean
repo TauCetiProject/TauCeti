@@ -147,6 +147,17 @@ theorem stdSimplexFacetProjection_mem_stdSimplexBoundary [Nontrivial ι] {x : ι
     (StdSimplex.apply_lt_one_of_mem_range_weights hx hj (h j)), i,
     stdSimplexFacetProjection_apply_self i x⟩
 
+/-- The facet projection from `i` maps every point of the standard simplex whose coordinates away
+from `i` are strictly positive into the open facet `openStdSimplexFacet ℝ i`. -/
+theorem stdSimplexFacetProjection_mem_openStdSimplexFacet [Nontrivial ι] {i : ι} {x : ι → ℝ}
+    (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) (hpos : ∀ j ≠ i, 0 < x j) :
+    stdSimplexFacetProjection i x ∈ openStdSimplexFacet ℝ i := by
+  obtain ⟨k, hk⟩ := exists_ne i
+  have hlt : x i < 1 := StdSimplex.apply_lt_one_of_mem_range_weights hx hk (hpos k hk)
+  exact mem_openStdSimplexFacet_iff.2 ⟨stdSimplexFacetProjection_mem_range_weights hx hlt,
+    stdSimplexFacetProjection_apply_self i x,
+    fun j hj => stdSimplexFacetProjection_apply_pos hj (hpos j hj) hlt⟩
+
 end FacetProjection
 
 /-! ### The rational extension -/

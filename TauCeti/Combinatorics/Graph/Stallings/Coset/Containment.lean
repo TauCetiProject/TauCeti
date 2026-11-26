@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Stallings.Coset.Embedding
+public import Mathlib.CategoryTheory.Category.Preorder
+public import Mathlib.CategoryTheory.Functor.FullyFaithful
 
 /-!
 # Subgroup containment as a morphism of subgroup graphs
@@ -15,9 +17,19 @@ based label-preserving morphism between their canonical subgroup graphs. Such a 
 unique. Thus subgroup inclusion can be read directly from based folded cores, without finite
 generation or a finite alphabet.
 
-The inclusion morphisms preserve identities and composition. They need not be injective on
-vertices: inclusion of a proper finite-index subgroup into the whole free group maps its
-multi-vertex graph to the one-vertex rose.
+The inclusion morphisms make the subgroup graph a functor from the poset of subgroups to based
+labelled graphs (`TauCeti.subgroupGraphFunctor`), and it is fully faithful
+(`TauCeti.subgroupGraphFunctorFullyFaithful`): subgroups embed in based labelled graphs as a
+full subcategory. The inclusion morphisms need not be injective on vertices: inclusion of a
+proper finite-index subgroup into the whole free group maps its multi-vertex graph to the
+one-vertex rose.
+
+## Main declarations
+
+* `Subgroup.nonempty_hom_subgroupGraph_iff`: containment of subgroups is the existence of a based
+  labelled morphism of their subgroup graphs.
+* `TauCeti.subgroupGraphFunctor`: the subgroup graph, as a functor out of the poset of subgroups.
+* `TauCeti.subgroupGraphFunctorFullyFaithful`: **that functor is fully faithful.**
 
 ## References
 
@@ -29,9 +41,9 @@ public section
 
 namespace Subgroup
 
-open TauCeti
+open CategoryTheory TauCeti
 
-variable {α : Type*} (H K L : Subgroup (FreeGroup α))
+variable {α : Type*} (H K : Subgroup (FreeGroup α))
 
 /-- Subgroup containment is precisely the existence of a based labelled morphism between
 the canonical subgroup graphs. -/
@@ -48,23 +60,49 @@ the canonical subgroup graphs. -/
     exact ⟨f.core H.cosetGraph_isFolded⟩
 
 /-- Between two canonical subgroup graphs there is at most one based labelled morphism. -/
-instance : Subsingleton (H.subgroupGraph.Hom K.subgroupGraph) where
+instance : Subsingleton (H.subgroupGraph ⟶ K.subgroupGraph) where
   allEq := StallingsGraph.Hom.eq_of_isFolded_of_reachable K.subgroupGraph_isFolded
     ((H.subgroupGraph.graph.isCore_iff H.subgroupGraph.base).mp H.subgroupGraph_isCore).1
 
-/-- The unique morphism of canonical subgroup graphs induced by a subgroup inclusion. -/
-noncomputable def subgroupGraphHom (h : H ≤ K) : H.subgroupGraph.Hom K.subgroupGraph :=
-  ((H.nonempty_hom_subgroupGraph_iff K).mpr h).some
-
-/-- Reflexive subgroup inclusion induces the identity morphism. -/
-@[simp] theorem subgroupGraphHom_refl :
-    H.subgroupGraphHom H le_rfl = StallingsGraph.Hom.id H.subgroupGraph :=
-  Subsingleton.elim _ _
-
-/-- Composing subgroup inclusions composes their based graph morphisms. -/
-@[simp] theorem subgroupGraphHom_comp (hHK : H ≤ K) (hKL : K ≤ L) :
-    (K.subgroupGraphHom L hKL).comp (H.subgroupGraphHom K hHK) =
-      H.subgroupGraphHom L (hHK.trans hKL) :=
-  Subsingleton.elim _ _
-
 end Subgroup
+
+namespace TauCeti
+
+open CategoryTheory
+
+variable {α : Type*} (H K : Subgroup (FreeGroup α))
+
+variable (α) in
+/-- **The subgroup graph as a functor**: a subgroup inclusion `H ≤ K` goes to the unique based
+labelled morphism `Γ(H) → Γ(K)`. -/
+noncomputable def subgroupGraphFunctor : Subgroup (FreeGroup α) ⥤ StallingsGraph α where
+  obj H := H.subgroupGraph
+  map {H K} f := ((H.nonempty_hom_subgroupGraph_iff K).mpr f.le).some
+  map_id _ := Subsingleton.elim _ _
+  map_comp _ _ := Subsingleton.elim _ _
+
+@[simp]
+theorem subgroupGraphFunctor_obj : (subgroupGraphFunctor α).obj H = H.subgroupGraph :=
+  (rfl)
+
+/-- Between two graphs in the image of `subgroupGraphFunctor` there is at most one morphism, so
+every morphism between them is the image of the subgroup inclusion. -/
+instance : Subsingleton ((subgroupGraphFunctor α).obj H ⟶ (subgroupGraphFunctor α).obj K) := by
+  rw [subgroupGraphFunctor_obj, subgroupGraphFunctor_obj]
+  infer_instance
+
+variable (α) in
+/-- **Subgroups of a free group are a full subcategory of based labelled graphs**: every based
+labelled morphism `Γ(H) → Γ(K)` comes from the inclusion `H ≤ K`. -/
+noncomputable def subgroupGraphFunctorFullyFaithful : (subgroupGraphFunctor α).FullyFaithful where
+  preimage {H K} f := homOfLE ((H.nonempty_hom_subgroupGraph_iff K).mp ⟨f⟩)
+  map_preimage _ := Subsingleton.elim _ _
+  preimage_map _ := Subsingleton.elim _ _
+
+instance : (subgroupGraphFunctor α).Full :=
+  (subgroupGraphFunctorFullyFaithful α).full
+
+instance : (subgroupGraphFunctor α).Faithful :=
+  (subgroupGraphFunctorFullyFaithful α).faithful
+
+end TauCeti

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
-public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import TauCeti.Analysis.Contour.AbsolutelyContinuous
 
@@ -31,8 +30,11 @@ curve is `1`, so its winding number is an integer. Otherwise the winding number 
 
 * `TauCeti.Contour.exists_int_windingNumber_of_closed` — the generalized winding number of a closed
   curve is an integer.
-* `TauCeti.IsPiecewiseC1On.exists_int_windingNumber` — the same for a closed piecewise-`C¹`
-  curve, whose regularity supplies the raw hypotheses on its own.
+
+The absolutely continuous form is `AbsolutelyContinuousOnInterval.exists_int_windingNumber`, which
+covers piecewise-`C¹` curves. Neither form contains the other: the one here asks for no
+integrability of the derivative, and so also covers a curve whose index integrand is not
+integrable, where the winding number is the junk value `0`.
 
 ## Provenance
 
@@ -68,17 +70,6 @@ theorem exists_int_windingNumber_of_closed {γ : ℝ → ℂ} {w : ℂ} {a b : �
   exact (hγ_cont.absolutelyContinuousOnInterval_of_intervalIntegrable_inv_sub_mul_deriv hP
     hγ_diff h_avoid h_int).exists_int_windingNumber hclosed
       (by simpa only [mem_image, not_exists, not_and] using h_avoid)
-
-/-- **Piecewise-`C¹` form of winding-number integrality.** For a closed piecewise-`C¹` curve that
-avoids `w`, the winding number about `w` is an integer. Piecewise-`C¹` regularity supplies the
-continuity and differentiability hypotheses of
-`exists_int_windingNumber_of_closed`. -/
-theorem _root_.TauCeti.IsPiecewiseC1On.exists_int_windingNumber {γ : ℝ → ℂ} {a b : ℝ} {w : ℂ}
-    (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
-    (h_avoid : ∀ t ∈ uIcc a b, γ t ≠ w) :
-    ∃ n : ℤ, windingNumber γ a b w = n := by
-  obtain ⟨P, hP, hγ_diff⟩ := hγ.exists_countable_differentiableAt
-  exact exists_int_windingNumber_of_closed hclosed hP hγ.continuousOn hγ_diff h_avoid
 
 end TauCeti.Contour
 

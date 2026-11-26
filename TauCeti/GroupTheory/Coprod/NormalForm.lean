@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Coprod.Basic
-import TauCeti.GroupTheory.CoprodI.Basic
+import TauCeti.GroupTheory.Coprod.Factors
 
 /-!
 # Uniqueness of reduced words in a free product
@@ -31,8 +31,8 @@ the image under `Monoid.Coprod.map f g` of the word is again a nonempty reduced 
 
 Mathlib builds `M ∗ N` independently of the free product `Monoid.CoprodI` of an indexed family.
 The free product of two monoids, possibly in different universes, is identified with the free
-product `Monoid.CoprodI` of the family of their `ULift`s indexed by `Bool`
-(`Monoid.CoprodI.boolEquivCoprod`), whose reduced words are unique (`Monoid.CoprodI.Word.equiv`),
+product `Monoid.CoprodI` of the family `Monoid.Coprod.Factors M N` of their `ULift`s indexed by
+`Bool` (`Monoid.Coprod.equivCoprodI`), whose reduced words are unique (`Monoid.CoprodI.Word.equiv`),
 and reduced words of `M ∗ N` go to reduced words there.
 
 ## References
@@ -49,55 +49,49 @@ universe u v
 
 section Monoid
 
-variable {M : Type u} {N : Type v} [Monoid M] [Monoid N]
+variable {M : Type u} {N : Type v}
 
 /-! ### Reduced words of `M ∗ N` as reduced words of `Monoid.CoprodI` -/
 
 -- `toSigma` is reducible so that unification identifies the factor `(toSigma s).1` of a letter
 -- `s = .inl m` with `false` (and of `s = .inr n` with `true`): `simp` cannot rewrite `toSigma s`
 -- inside the dependent index of `Monoid.CoprodI.of`.
-/-- A letter of `M ⊕ N` as a letter of the family `CoprodI.boolFactors M N`. -/
-private abbrev toSigma : M ⊕ N → Σ b, CoprodI.boolFactors M N b
-  | .inl m => ⟨false, MulEquiv.ulift.symm m⟩
-  | .inr n => ⟨true, MulEquiv.ulift.symm n⟩
+/-- A letter of `M ⊕ N` as a letter of the family `Factors M N`. -/
+private abbrev toSigma : M ⊕ N → Σ b, Factors M N b
+  | .inl m => ⟨false, ULift.up m⟩
+  | .inr n => ⟨true, ULift.up n⟩
 
 private theorem toSigma_fst (s : M ⊕ N) : (toSigma s).1 = s.isRight := by
   cases s <;> rfl
 
-private def fromSigma : (Σ b, CoprodI.boolFactors M N b) → M ⊕ N
-  | ⟨false, x⟩ => .inl (MulEquiv.ulift x)
-  | ⟨true, y⟩ => .inr (MulEquiv.ulift y)
+private theorem toSigma_injective : Function.Injective (toSigma (M := M) (N := N)) := by
+  rintro (m | n) (m' | n') h <;> simp_all [toSigma]
 
-private theorem toSigma_injective : Function.Injective (toSigma (M := M) (N := N)) :=
-  Function.LeftInverse.injective (g := fromSigma) fun s => by cases s <;> simp [fromSigma]
+variable [Monoid M] [Monoid N]
 
-private theorem toSigma_snd_ne_one {s : M ⊕ N} (h₁ : s ≠ .inl 1) (h₂ : s ≠ .inr 1) :
-    (toSigma s).2 ≠ 1 := by
-  cases s with
-  | inl m => exact fun h => h₁ (congrArg Sum.inl (MulEquiv.ulift.symm.injective h))
-  | inr n => exact fun h => h₂ (congrArg Sum.inr (MulEquiv.ulift.symm.injective h))
+private theorem equivCoprodI_mk_ofList (L : List (M ⊕ N)) :
+    equivCoprodI (mk (FreeMonoid.ofList L)) = (L.map fun s => CoprodI.of (toSigma s).2).prod := by
+  induction L with
+  | nil => simp
+  | cons s L ih =>
+    rw [FreeMonoid.ofList_cons, map_mul, map_mul, ih, List.map_cons, List.prod_cons]
+    cases s <;> simp [toSigma]
 
-/-- A reduced word of `M ∗ N` as a reduced word of `Monoid.CoprodI (boolFactors M N)`. -/
+/-- A reduced word of `M ∗ N` as a reduced word of `Monoid.CoprodI (Factors M N)`. -/
 private def toWord (L : List (M ⊕ N)) (hc : (L.map Sum.isRight).IsChain (· ≠ ·))
-    (h₁ : Sum.inl 1 ∉ L) (h₂ : Sum.inr 1 ∉ L) :
-    CoprodI.Word (CoprodI.boolFactors M N) where
+    (h₁ : Sum.inl 1 ∉ L) (h₂ : Sum.inr 1 ∉ L) : CoprodI.Word (Factors M N) where
   toList := L.map toSigma
   ne_one := by
     simp only [List.mem_map, forall_exists_index, and_imp]
-    rintro _ s hs rfl
-    exact toSigma_snd_ne_one (fun h => h₁ (h ▸ hs)) (fun h => h₂ (h ▸ hs))
+    rintro _ (m | n) hs rfl h <;> simp_all [toSigma, ULift.ext_iff]
   chain_ne := by
     rw [List.isChain_map]
     simpa [toSigma_fst, List.isChain_map] using hc
 
 private theorem prod_toWord (L : List (M ⊕ N)) (hc : (L.map Sum.isRight).IsChain (· ≠ ·))
     (h₁ : Sum.inl 1 ∉ L) (h₂ : Sum.inr 1 ∉ L) :
-    (toWord L hc h₁ h₂).prod =
-      (CoprodI.uliftBoolEquivCoprod M N).symm (mk (FreeMonoid.ofList L)) := by
-  rw [CoprodI.Word.prod, toWord, CoprodI.uliftBoolEquivCoprod_symm_mk_ofList, List.map_map]
-  congr 2
-  funext s
-  cases s <;> rfl
+    (toWord L hc h₁ h₂).prod = equivCoprodI (mk (FreeMonoid.ofList L)) := by
+  simp [CoprodI.Word.prod, toWord, equivCoprodI_mk_ofList, Function.comp_def]
 
 /-! ### Uniqueness of reduced words -/
 
@@ -114,7 +108,7 @@ theorem mk_ofList_inj {L L' : List (M ⊕ N)} (hc : (L.map Sum.isRight).IsChain 
   -- The corresponding reduced words of `Monoid.CoprodI` have the same product. A reduced word is
   -- determined by its product: `Word.prod` is, by definition, the inverse of the bijection
   -- `Word.equiv` from `Monoid.CoprodI` to its reduced words.
-  have hprod : Function.Injective (CoprodI.Word.prod (M := CoprodI.boolFactors M N)) :=
+  have hprod : Function.Injective (CoprodI.Word.prod (M := Factors M N)) :=
     CoprodI.Word.equiv.symm.injective
   have hw : toWord L hc h₁ h₂ = toWord L' hc' h₁' h₂' :=
     hprod (by rw [prod_toWord, prod_toWord, h])

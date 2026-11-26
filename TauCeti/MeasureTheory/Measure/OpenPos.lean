@@ -216,6 +216,24 @@ theorem _root_.ContinuousOn.le_of_ae_le {X Y : Type*} [TopologicalSpace X] [Meas
   by_contra hfg
   exact (hW.eq_empty_of_measure_zero hnull).subset ⟨hx, hfg⟩
 
+/-- An almost-everywhere pairwise comparison for a representative of a continuous real-valued
+function on an open set holds at every pair of points of that set, for a measure positive on
+nonempty open sets. -/
+theorem _root_.ContinuousOn.forall_le_mul_of_ae_ae {X : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] {B : Set X}
+    {f g : X → ℝ} {C : ℝ} (hg : ContinuousOn g B) (hB : IsOpen B)
+    (hval : f =ᵐ[μ.restrict B] g)
+    (hae : ∀ᵐ x ∂μ.restrict B, ∀ᵐ y ∂μ.restrict B, f y ≤ C * f x) :
+    ∀ y ∈ B, ∀ x ∈ B, g y ≤ C * g x := by
+  have hall : ∀ᵐ x ∂μ.restrict B, ∀ y ∈ B, g y ≤ C * g x := by
+    filter_upwards [hae, hval] with x hx hx'
+    refine ContinuousOn.le_of_ae_le (μ := μ) hB hg continuousOn_const ?_
+    filter_upwards [hx, hval] with y hy hy'
+    simpa only [hy', hx'] using hy
+  intro y hy
+  exact ContinuousOn.le_of_ae_le (μ := μ) hB continuousOn_const (continuousOn_const.mul hg)
+    (hall.mono fun _ hx ↦ hx y hy)
+
 /-- Under a measure positive on nonempty open sets, an almost everywhere inequality between
 continuous functions into an order-closed space holds everywhere. -/
 theorem _root_.Continuous.ae_le_iff_le {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]

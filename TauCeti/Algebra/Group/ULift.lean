@@ -8,17 +8,15 @@ module
 public import Mathlib.Algebra.Group.ULift
 
 /-!
-# Evaluation lemmas for `MulEquiv.ulift` and `AddEquiv.ulift`
+# The isomorphism between a magma and its universe lift
 
-This file provides `@[simp]` evaluation rules for `MulEquiv.ulift : ULift α ≃* α` and its inverse,
-together with their additive counterparts `AddEquiv.ulift_apply` and `AddEquiv.ulift_symm_apply`.
+The multiplicative isomorphism `MulEquiv.ulift : ULift α ≃* α` is `ULift.down`, with inverse
+`ULift.up`. This file records both as simplification rules.
 
 ## Main results
 
-* `MulEquiv.ulift_apply`, `AddEquiv.ulift_apply`: `MulEquiv.ulift x = x.down` and
-  `AddEquiv.ulift x = x.down`.
-* `MulEquiv.ulift_symm_apply`, `AddEquiv.ulift_symm_apply`: `MulEquiv.ulift.symm x = ULift.up x`
-  and `AddEquiv.ulift.symm x = ULift.up x`.
+* `MulEquiv.ulift_apply`: `MulEquiv.ulift x = x.down`.
+* `MulEquiv.ulift_symm_apply`: `MulEquiv.ulift.symm x = ULift.up x`.
 -/
 
 public section
@@ -29,15 +27,16 @@ namespace MulEquiv
 
 variable {α : Type u} [Mul α]
 
-/-- The multiplicative equivalence `ULift α ≃* α` evaluates to `ULift.down`. -/
-@[to_additive (attr := simp) /-- The additive equivalence `ULift α ≃+ α` evaluates to
+/-- The isomorphism `MulEquiv.ulift : ULift α ≃* α` evaluates by `ULift.down`. -/
+@[to_additive (attr := simp) /-- The isomorphism `AddEquiv.ulift : ULift α ≃+ α` evaluates by
 `ULift.down`. -/]
-theorem ulift_apply (x : ULift.{v} α) : (ulift : ULift.{v} α ≃* α) x = x.down :=
+theorem ulift_apply (x : ULift.{v} α) : MulEquiv.ulift x = x.down :=
   (rfl)
 
-/-- The inverse of `MulEquiv.ulift` evaluates to `ULift.up`. -/
-@[to_additive (attr := simp) /-- The inverse of `AddEquiv.ulift` evaluates to `ULift.up`. -/]
-theorem ulift_symm_apply (x : α) : (ulift : ULift.{v} α ≃* α).symm x = ULift.up.{v} x :=
+/-- The inverse of the isomorphism `MulEquiv.ulift : ULift α ≃* α` evaluates by `ULift.up`. -/
+@[to_additive (attr := simp) /-- The inverse of the isomorphism `AddEquiv.ulift : ULift α ≃+ α`
+evaluates by `ULift.up`. -/]
+theorem ulift_symm_apply (x : α) : (MulEquiv.ulift : ULift.{v} α ≃* α).symm x = ULift.up x :=
   (rfl)
 
 end MulEquiv

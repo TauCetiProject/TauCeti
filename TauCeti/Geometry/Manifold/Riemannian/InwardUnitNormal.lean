@@ -49,6 +49,7 @@ of Riemannian manifolds with boundary carries inward unit normals to inward unit
 * `TauCeti.IsBoundaryDefiningFunctionOn.mgradient_eq_norm_smul_inwardUnitNormal` and
   `TauCeti.IsBoundaryDefiningFunctionOn.mvfderiv_inwardUnitNormal`: the gradient formula for
   boundary defining functions.
+* `TauCeti.IsBoundaryDefiningFunctionOn.norm_mvfderiv_pos`: `|dρ_q| > 0` at boundary points.
 * `TauCeti.IsBoundaryDefiningFunctionOn.exists_eq_mul_norm_div_norm`: two boundary defining
   functions differ by a smooth positive factor, equal to `|dρ'| / |dρ|` on the boundary.
 * `TauCeti.inwardUnitNormal_eq_normalize_mgradient`: the chart formula in any chart of the `C¹`
@@ -254,6 +255,15 @@ theorem IsBoundaryDefiningFunctionOn.mvfderiv_inwardUnitNormal {ρ : M → ℝ} 
     (hqU : (q : M) ∈ U) :
     mvfderiv (𝓡∂ (n + 1)) ρ q (inwardUnitNormal q) = ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ :=
   mvfderiv_inwardUnitNormal_of_isLocalMin (hρ.isLocalMin hqU q.property)
+
+omit [IsManifold (𝓡∂ (n + 1)) 1 M] in
+/-- At a boundary point `q` of its domain, the differential of a boundary defining function `ρ` has
+positive norm `|dρ_q| > 0`. -/
+theorem IsBoundaryDefiningFunctionOn.norm_mvfderiv_pos {ρ : M → ℝ} {U : Set M}
+    (hρ : IsBoundaryDefiningFunctionOn n ρ U) {q : M} (hqU : q ∈ U)
+    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) : 0 < ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ := by
+  have hne : ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ ≠ 0 := by simpa using hρ.mvfderiv_ne_zero q hqU hq
+  exact (ContinuousLinearMap.opNorm_nonneg _).lt_of_ne' hne
 
 omit [IsManifold (𝓡∂ (n + 1)) 1 M] in
 /-- **Comparison of boundary defining functions, Riemannian form.** Two boundary defining functions

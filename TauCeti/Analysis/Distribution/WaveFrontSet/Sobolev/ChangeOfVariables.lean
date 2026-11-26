@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.LocalRegularity
+public import TauCeti.Analysis.Distribution.MicrolocalRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
+import TauCeti.Analysis.Distribution.WaveFrontSet.ChangeOfVariables
+import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Decomposition
 import TauCeti.Analysis.Sobolev.BesselPotential.Local
 
 /-!
-# Local Sobolev regularity under smooth changes of variables
+# Sobolev regularity under smooth changes of variables
 
 Let `e` be a smooth open partial homeomorphism of a finite-dimensional real inner product space
 `E` with smooth inverse, `U` an open subset of its source and `Ω` an open set containing `e '' U`.
@@ -28,6 +31,18 @@ are such maps `e`, this is the chart-change invariance needed to define the loca
 changes (multiplication by smooth matrix-valued functions) is needed in addition; this file does
 not prove it.
 
+The same holds microlocally: covectors pull back by the transpose of the derivative,
+
+`e^* T` is microlocally `H^s` at `(x, ξ)` if and only if `T` is microlocally `H^s` at
+`(e x, (De⁻¹(e x))ᵀ ξ)`
+
+(`Distribution.isMicrolocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff`), so the `H^s` wave
+front set of `e^* T` is the pullback of that of `T`
+(`Distribution.sobolevWaveFrontSet_compCLMOfOpenPartialHomeomorph`). This is the `H^s` refinement
+of the invariance of the wave front set
+(`Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`), and what makes the `H^s` wave front
+set a well-defined subset of the cotangent bundle of a manifold.
+
 ## The argument
 
 This is the case `p = 2` of the invariance of local `H^{s,p}` regularity
@@ -40,6 +55,13 @@ preserves `H^s` (`TemperedDistribution.MemSobolev.compCLM_of_norm_iteratedFDeriv
 Being `H^s` near a point is therefore an invariant notion of local regularity
 (`Distribution.isInvariantLocalRegularity_isLocallySobolevAt`).
 
+For the microlocal statement, a distribution `T` that is microlocally `H^s` at `(e x, η)` is
+`u + (T - u)` for an element `u` of `H^s` and a distribution `T - u` that is microlocally smooth
+at `(e x, η)` (`Distribution.IsMicrolocallySobolevAt.exists_memSobolev_isMicrolocallySmoothAt_sub`).
+The pullback of `u` is `H^s` near `x` by the local statement, and the pullback of `T - u` is
+microlocally smooth at the pulled back covector by the invariance of the wave front set
+(`Distribution.IsMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph`).
+
 ## Main results
 
 * `Distribution.IsLocallySobolevAt.compCLMOfOpenPartialHomeomorph`,
@@ -49,6 +71,14 @@ Being `H^s` near a point is therefore an invariant notion of local regularity
   invariant notion of local regularity (`Distribution.IsInvariantLocalRegularity`).
 * `Distribution.sobolevSingularSupport_compCLMOfOpenPartialHomeomorph`: the `H^s` singular
   support of a pullback.
+* `Distribution.IsMicrolocallySobolevAt.compCLMOfOpenPartialHomeomorph`,
+  `Distribution.isMicrolocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff`: invariance of
+  microlocal Sobolev regularity.
+* `Distribution.isInvariantMicrolocalRegularity_isMicrolocallySobolevAt`: being microlocally `H^s`
+  is an invariant notion of microlocal regularity
+  (`Distribution.IsInvariantMicrolocalRegularity`).
+* `Distribution.sobolevWaveFrontSet_compCLMOfOpenPartialHomeomorph`: the `H^s` wave front set of a
+  pullback.
 
 ## References
 
@@ -56,6 +86,8 @@ Being `H^s` near a point is therefore an invariant notion of local regularity
   (invariance of `H^s` under diffeomorphisms, and the local Sobolev spaces on manifolds).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Springer, 1985,
   Appendix B.1 (`H^s_loc` is invariant under diffeomorphisms).
+* L. Hörmander, *Lectures on Nonlinear Hyperbolic Differential Equations*, Springer, 1997,
+  §11.1 (the `H^s` wave front set and its invariance under diffeomorphisms).
 -/
 
 public section
@@ -63,7 +95,7 @@ public section
 noncomputable section
 
 open Set Filter Metric TopologicalSpace TestFunction
-open scoped Distributions Topology ContDiff
+open scoped Distributions Topology ContDiff InnerProduct
 
 namespace Distribution
 
@@ -115,5 +147,61 @@ theorem sobolevSingularSupport_compCLMOfOpenPartialHomeomorph (s : ℝ) (T : �
     exact ⟨hx, hUΩ hx, fun h' ↦ h ((isLocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff hx).2 h')⟩
   · rintro ⟨hx, -, h⟩
     exact ⟨hx, fun h' ↦ h ((isLocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff hx).1 h')⟩
+
+/-! ### Microlocal Sobolev regularity -/
+
+/-- **Microlocal Sobolev regularity under a change of variables.** If `T` is microlocally `H^s` at
+`(e x, (De⁻¹(e x))ᵀ ξ)`, then its pullback `e^* T` along `e` is microlocally `H^s` at `(x, ξ)`. -/
+theorem IsMicrolocallySobolevAt.compCLMOfOpenPartialHomeomorph {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (hx : x ∈ U) (h : T.IsMicrolocallySobolevAt s (e x) (((fderiv ℝ e.symm (e x))†) ξ)) :
+    (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsMicrolocallySobolevAt s x ξ := by
+  -- `T = u + (T - u)` with `u ∈ H^s` and `T - u` microlocally smooth at the image covector. Local
+  -- `H^s` regularity and microlocal smoothness are both invariant under pullback.
+  obtain ⟨u, hu, hTu⟩ := h.exists_memSobolev_isMicrolocallySmoothAt_sub
+  have h₁ : (Distribution.compCLMOfOpenPartialHomeomorph e he he' hU hUΩ
+      (TemperedDistribution.toDistribution Ω u)).IsMicrolocallySobolevAt s x ξ :=
+    ((hu.isLocallySobolevAt_toDistribution (hUΩ hx)).compCLMOfOpenPartialHomeomorph
+      hx).isMicrolocallySobolevAt ξ
+  have h₂ := (hTu.compCLMOfOpenPartialHomeomorph e he he' hU hUΩ hx).isMicrolocallySobolevAt s
+  rw [map_sub] at h₂
+  simpa using h₁.add h₂
+
+/-- Being microlocally `H^s` is an invariant notion of microlocal regularity: it is open, linear,
+conic, preserved by smooth multiples and pullback along smooth changes of variables, and unchanged
+by restriction to smaller open sets. -/
+theorem isInvariantMicrolocalRegularity_isMicrolocallySobolevAt (s : ℝ) :
+    IsInvariantMicrolocalRegularity
+      fun (Ω : Opens E) (T : 𝓓'(Ω, ℂ)) x ξ ↦ T.IsMicrolocallySobolevAt s x ξ where
+  isOpen_setOf _ T := isOpen_setOf_isMicrolocallySobolevAt s T
+  zero hx ξ := (isMicrolocallySmoothAt_zero hx ξ).isMicrolocallySobolevAt s
+  add hS hT := hS.add hT
+  smul c hT := hT.smul c
+  smul_covector hr hT := (isMicrolocallySobolevAt_smul_iff hr).2 hT
+  smulLeftCLM hg hT := hT.smulLeftCLM hg
+  smulLeftCLM_iff hg hx := isMicrolocallySobolevAt_smulLeftCLM_iff hg hx
+  restrictCLM_iff h _ _ hx _ := isMicrolocallySobolevAt_restrictCLM_iff h hx
+  compCLMOfOpenPartialHomeomorph _ _ _ _ _ _ _ hx hT := hT.compCLMOfOpenPartialHomeomorph hx
+
+/-- **Microlocal Sobolev regularity under a change of variables, pointwise.** For `x ∈ U`, the
+pullback `e^* T` is microlocally `H^s` at `(x, ξ)` exactly when `T` is microlocally `H^s` at
+`(e x, (De⁻¹(e x))ᵀ ξ)`. -/
+theorem isMicrolocallySobolevAt_compCLMOfOpenPartialHomeomorph_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)}
+    {x ξ : E} (hx : x ∈ U) :
+    (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsMicrolocallySobolevAt s x ξ ↔
+      T.IsMicrolocallySobolevAt s (e x) (((fderiv ℝ e.symm (e x))†) ξ) :=
+  (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s).compCLMOfOpenPartialHomeomorph_iff hx
+
+/-- **The `H^s` wave front set under a change of variables.** The `H^s` wave front set of the
+pullback `e^* T` consists of the `(x, ξ)` with `x ∈ U` and `(e x, (De⁻¹(e x))ᵀ ξ) ∈ WF_s(T)`:
+covectors pull back by the transpose of the derivative, for every real `s`. -/
+theorem sobolevWaveFrontSet_compCLMOfOpenPartialHomeomorph (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
+    (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).sobolevWaveFrontSet s =
+      {p : E × E | p.1 ∈ U ∧
+        (e p.1, ((fderiv ℝ e.symm (e p.1))†) p.2) ∈ T.sobolevWaveFrontSet s} := by
+  ext ⟨x, ξ⟩
+  have h := IsInvariantMicrolocalRegularity.setOf_compCLMOfOpenPartialHomeomorph
+    (isInvariantMicrolocalRegularity_isMicrolocallySobolevAt s) (he := he) (he' := he') (hU := hU)
+    (hUΩ := hUΩ) T
+  simpa only [mem_sobolevWaveFrontSet_iff, mem_ofPred_eq] using Set.ext_iff.1 h (x, ξ)
 
 end Distribution

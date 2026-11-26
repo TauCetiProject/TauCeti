@@ -51,7 +51,8 @@ integration-by-parts arguments:
 * `TauCeti.eNorm_integral_smul_sub_integral_smul_le`: against an integrable weight, the integrals
   of two products `a • b` and `f • g` of `L^∞` functions differ by at most
   `‖b‖_∞ ∫ |ψ| ‖a - f‖ + ‖f‖_∞ ∫ |ψ| ‖b - g‖`.
-* `TauCeti.lintegral_enorm_mul_enorm_mul_enorm_le` and
+* `TauCeti.lintegral_enorm_mul_enorm_mul_enorm_le`, its Bochner form
+  `TauCeti.integral_norm_mul_norm_mul_norm_le` and
   `MeasureTheory.MemLp.integrable_norm_mul_norm_mul_norm`: Hölder's inequality in three factors,
   `∫ |w| |g| |f| ≤ ‖w‖_p ‖g‖_r ‖f‖_q` for `1/p + 1/q = 1/s` and `1/r + 1/s = 1`, and the resulting
   integrability.
@@ -378,5 +379,28 @@ theorem lintegral_enorm_mul_enorm_mul_enorm_le {α E F G : Type*} [MeasurableSpa
     _ ≤ eLpNorm w p μ * (eLpNorm g r μ * eLpNorm f q μ) := by
         rw [mul_left_comm]
         gcongr
+
+/-- **Hölder's inequality in three factors**, for the Bochner integral:
+`∫ |w| |g| |f| ≤ ‖w‖_p ‖g‖_r ‖f‖_q` for `w ∈ Lᵖ`, `g ∈ Lʳ` and `f ∈ L^q` with
+`1/p + 1/q = 1/s` and `1/r + 1/s = 1`. This is the real form of
+`TauCeti.lintegral_enorm_mul_enorm_mul_enorm_le`. -/
+theorem integral_norm_mul_norm_mul_norm_le {α E F G : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
+    {p q r s : ℝ≥0∞} [p.HolderTriple q s] [r.HolderTriple s 1] {w : α → E} {g : α → F}
+    {f : α → G} (hw : MemLp w p μ) (hg : MemLp g r μ) (hf : MemLp f q μ) :
+    ∫ x, ‖w x‖ * (‖g x‖ * ‖f x‖) ∂μ ≤
+      (eLpNorm w p μ).toReal * ((eLpNorm g r μ).toReal * (eLpNorm f q μ).toReal) := by
+  have hle := lintegral_enorm_mul_enorm_mul_enorm_le (p := p) (q := q) (r := r) (s := s)
+    (μ := μ) hw.aestronglyMeasurable hg.aestronglyMeasurable hf.aestronglyMeasurable
+  rw [integral_eq_lintegral_of_nonneg_ae (f := fun x ↦ ‖w x‖ * (‖g x‖ * ‖f x‖))
+    (ae_of_all _ fun x ↦ by positivity)
+    (hw.aestronglyMeasurable.norm.mul
+      (hg.aestronglyMeasurable.norm.mul hf.aestronglyMeasurable.norm)),
+    ← ENNReal.toReal_mul, ← ENNReal.toReal_mul]
+  refine ENNReal.toReal_mono (ENNReal.mul_ne_top hw.eLpNorm_ne_top
+      (ENNReal.mul_ne_top hg.eLpNorm_ne_top hf.eLpNorm_ne_top))
+    ((lintegral_congr fun x ↦ ?_).trans_le hle)
+  rw [ENNReal.ofReal_mul (norm_nonneg _), ENNReal.ofReal_mul (norm_nonneg _), ofReal_norm,
+    ofReal_norm, ofReal_norm]
 
 end TauCeti

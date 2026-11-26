@@ -10,7 +10,9 @@ public import TauCeti.Analysis.Sobolev.Dilation
 public import TauCeti.Analysis.Sobolev.Wkp.Algebra
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Calculus.BumpFunction.Translates
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Semiclassical Sobolev norms on the whole space
@@ -47,6 +49,18 @@ The unscaled norms behave quite differently: on a function concentrated at scale
 the unscaled `L²` norms of the derivatives through order `k > n / 2` grows like `h^(n/2 - k)`
 relative to its sup norm.
 
+**Multipliers.** Multiplication by a scalar function `g` whose derivatives obey the semiclassical
+bounds `hⁱ ‖Dⁱ g‖ ≤ B` for `i ≤ k`, such as a gauge transformation or a cutoff varying on the scale
+`h`, is bounded on the semiclassical norms, with a constant depending only on `k` and `B`:
+`‖g • f‖_{k,h} ≤ (k + 1) 2ᵏ B ‖f‖_{k,h}`
+(`TauCeti.semiclassicalSobolevNorm_smul_le_of_le_left`). The same bound holds with the roles
+reversed, for a vector-valued `f` with these bounds and a square-integrable scalar `g`
+(`TauCeti.semiclassicalSobolevNorm_smul_le_of_le_right`). Both follow from the Leibniz rule, in
+which each derivative is weighted by the power of `h` matching its order
+(`ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_left`,
+`ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_right`). Unlike the algebra estimate they need
+no Sobolev embedding, so they hold for every order `k` and in every dimension.
+
 The norms at different scales compare as follows. A derivative costs one factor of `h`:
 `h ‖Df‖_{k,h} ≤ ‖f‖_{k+1,h}` (`TauCeti.mul_semiclassicalSobolevNorm_fderiv_le`). For `0 < h ≤ 1`
 the semiclassical and unscaled norms satisfy
@@ -69,6 +83,8 @@ the semiclassical and unscaled norms satisfy
 * `TauCeti.exists_semiclassicalSobolevNorm_mul_le`: the algebra estimate, uniformly in `h`.
 * `TauCeti.mul_semiclassicalSobolevNorm_fderiv_le`: `h D` is bounded from order `k + 1` to
   order `k`.
+* `TauCeti.semiclassicalSobolevNorm_smul_le_of_le_left`: multipliers with semiclassical `Cᵏ`
+  bounds are bounded, uniformly in `h`.
 
 ## References
 
@@ -346,5 +362,101 @@ theorem pow_mul_semiclassicalSobolevNorm_one_le (k : ℕ) {h : ℝ} (hh : 0 < h)
   refine Finset.sum_le_sum fun i hi ↦ ?_
   exact mul_le_mul_of_nonneg_right
     (pow_le_pow_of_le_one hh.le hh₁ (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))) lpNorm_nonneg
+
+/-! ### Multipliers with semiclassical `Cᵏ` bounds -/
+
+section Multiplier
+
+variable {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F]
+  {k : ℕ} {h B : ℝ} {g : E → 𝕜} {f : E → F}
+
+/-- If the pointwise bound `hⁿ ‖Dⁿ (g • f)‖ ≤ 2ᵏ B ∑_{j ≤ k} hʲ ‖Dʲ u‖` holds for `n ≤ k` and
+`Dʲ u ∈ L²` for `j ≤ k`, then the derivatives of `g • f` through order `k` are square integrable
+and `‖g • f‖_{k,h} ≤ (k + 1) 2ᵏ B ‖u‖_{k,h}`. -/
+private theorem memLp_and_semiclassicalSobolevNorm_smul_le {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {u : E → G} (hg : ContDiff ℝ k g) (hf : ContDiff ℝ k f)
+    (hum : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i u) 2) (hh : 0 < h) (hB0 : 0 ≤ B)
+    (hle : ∀ n ≤ k, ∀ x, h ^ n * ‖iteratedFDeriv ℝ n (fun y ↦ g y • f y) x‖ ≤
+      2 ^ k * B * ∑ j ∈ Finset.range (k + 1), h ^ j * ‖iteratedFDeriv ℝ j u x‖) :
+    (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun y ↦ g y • f y) 2) ∧
+      semiclassicalSobolevNorm k h (fun y ↦ g y • f y) ≤
+        (k + 1) * 2 ^ k * B * semiclassicalSobolevNorm k h u := by
+  have hgf : ContDiff ℝ k fun y ↦ g y • f y := hg.smul hf
+  have hum' (j : ℕ) (hj : j ∈ Finset.range (k + 1)) :
+      MemLp (fun x ↦ ‖iteratedFDeriv ℝ j u x‖) 2 :=
+    (hum j (Nat.lt_succ_iff.1 (Finset.mem_range.1 hj))).norm
+  -- The pointwise bound, integrated: `Dⁿ (g • f) ∈ L²` with
+  -- `hⁿ ‖Dⁿ (g • f)‖₂ ≤ 2ᵏ B ∑_{j ≤ k} hʲ ‖‖Dʲ u‖‖₂`.
+  set Ψ : E → ℝ := (2 ^ k * B) • ∑ j ∈ Finset.range (k + 1),
+    h ^ j • fun x ↦ ‖iteratedFDeriv ℝ j u x‖ with hΨ
+  have hΨm : MemLp Ψ 2 :=
+    (memLp_finsetSum' _ fun j hj ↦ (hum' j hj).const_smul (h ^ j)).const_smul _
+  have key (n : ℕ) (hn : n ≤ k) :
+      MemLp (iteratedFDeriv ℝ n fun y ↦ g y • f y) 2 ∧
+        h ^ n * lpNorm (iteratedFDeriv ℝ n fun y ↦ g y • f y) 2 volume ≤
+          2 ^ k * B * ∑ j ∈ Finset.range (k + 1),
+            h ^ j * lpNorm (fun x ↦ ‖iteratedFDeriv ℝ j u x‖) 2 volume := by
+    have hle' (x : E) : ‖(h ^ n • iteratedFDeriv ℝ n fun y ↦ g y • f y) x‖ ≤ Ψ x := by
+      rw [Pi.smul_apply, norm_smul, Real.norm_of_nonneg (pow_nonneg hh.le n)]
+      simpa [hΨ, Finset.sum_apply] using hle n hn x
+    have hm : MemLp (h ^ n • iteratedFDeriv ℝ n fun y ↦ g y • f y) 2 :=
+      hΨm.of_le ((hgf.continuous_iteratedFDeriv (by exact_mod_cast hn)).const_smul _
+        |>.aestronglyMeasurable) (.of_forall fun x ↦ (hle' x).trans (le_abs_self _))
+    refine ⟨by simpa [(pow_pos hh n).ne'] using hm.const_smul (h ^ n)⁻¹, ?_⟩
+    rw [← lpNorm_const_smul_of_nonneg (pow_nonneg hh.le n)]
+    refine (lpNorm_mono_real hΨm hle').trans ?_
+    rw [hΨ, lpNorm_const_smul_of_nonneg (by positivity)]
+    refine mul_le_mul_of_nonneg_left ((lpNorm_sum_le (fun j hj ↦ (hum' j hj).const_smul _)
+      one_le_two).trans (Finset.sum_le_sum fun j _ ↦ ?_)) (by positivity)
+    rw [lpNorm_const_smul_of_nonneg (pow_nonneg hh.le j)]
+  refine ⟨fun i hi ↦ (key i hi).1, ?_⟩
+  have hsum : ∑ j ∈ Finset.range (k + 1), h ^ j * lpNorm (fun x ↦ ‖iteratedFDeriv ℝ j u x‖) 2
+      volume = ∑ j ∈ Finset.range (k + 1), h ^ j * lpNorm (iteratedFDeriv ℝ j u) 2 volume :=
+    Finset.sum_congr rfl fun j hj ↦ by
+      rw [lpNorm_norm (hum j (Nat.lt_succ_iff.1 (Finset.mem_range.1 hj))).aestronglyMeasurable]
+  rw [semiclassicalSobolevNorm, semiclassicalSobolevNorm, mul_left_comm]
+  refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg hh.le _)
+  calc ∑ n ∈ Finset.range (k + 1), h ^ n * lpNorm (iteratedFDeriv ℝ n fun y ↦ g y • f y) 2 volume
+      ≤ ∑ _n ∈ Finset.range (k + 1), 2 ^ k * B *
+          ∑ j ∈ Finset.range (k + 1), h ^ j * lpNorm (iteratedFDeriv ℝ j u) 2 volume :=
+        Finset.sum_le_sum fun n hn ↦ hsum ▸ (key n (Nat.lt_succ_iff.1 (Finset.mem_range.1 hn))).2
+    _ = _ := by
+        rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+        push_cast
+        ring
+
+/-- **Multipliers with semiclassical `Cᵏ` bounds.** Let `g` be a scalar function of class `Cᵏ`
+with `hⁱ ‖Dⁱ g‖ ≤ B` everywhere for `i ≤ k`, such as a gauge transformation or a cutoff varying on
+the scale `h`. For `h > 0` and `f` of class `Cᵏ` with square-integrable derivatives through
+order `k`, the derivatives of `g • f` through order `k` are square integrable and
+
+`‖g • f‖_{k,h} ≤ (k + 1) 2ᵏ B ‖f‖_{k,h}`.
+
+The constant depends only on `k` and `B`, not on `h`, the dimension or the target. -/
+theorem semiclassicalSobolevNorm_smul_le_of_le_left (hg : ContDiff ℝ k g) (hf : ContDiff ℝ k f)
+    (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) (hh : 0 < h)
+    (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i g x‖ ≤ B) :
+    (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun y ↦ g y • f y) 2) ∧
+      semiclassicalSobolevNorm k h (fun y ↦ g y • f y) ≤
+        (k + 1) * 2 ^ k * B * semiclassicalSobolevNorm k h f :=
+  memLp_and_semiclassicalSobolevNorm_smul_le hg hf hfm hh
+    (nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le hB 0)
+    fun _n hn ↦ hg.pow_mul_norm_iteratedFDeriv_smul_le_of_le_left hf hh.le hB hn
+
+/-- **Multiplication by a function with semiclassical `Cᵏ` bounds.** Let `f` be of class `Cᵏ` with
+`hⁱ ‖Dⁱ f‖ ≤ B` everywhere for `i ≤ k`. For `h > 0` and a scalar function `g` of class `Cᵏ` with
+square-integrable derivatives through order `k`, the derivatives of `g • f` through order `k` are
+square integrable and `‖g • f‖_{k,h} ≤ (k + 1) 2ᵏ B ‖g‖_{k,h}`. -/
+theorem semiclassicalSobolevNorm_smul_le_of_le_right (hg : ContDiff ℝ k g) (hf : ContDiff ℝ k f)
+    (hgm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i g) 2) (hh : 0 < h)
+    (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i f x‖ ≤ B) :
+    (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun y ↦ g y • f y) 2) ∧
+      semiclassicalSobolevNorm k h (fun y ↦ g y • f y) ≤
+        (k + 1) * 2 ^ k * B * semiclassicalSobolevNorm k h g :=
+  memLp_and_semiclassicalSobolevNorm_smul_le hg hf hgm hh
+    (nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le hB 0)
+    fun _n hn ↦ hg.pow_mul_norm_iteratedFDeriv_smul_le_of_le_right hf hh.le hB hn
+
+end Multiplier
 
 end TauCeti
