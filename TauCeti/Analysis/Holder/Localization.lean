@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Holder.Leibniz
 public import TauCeti.Analysis.Holder.Iterated
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Topology.MetricSpace.Bounded
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Topology.MetricSpace.Thickening
@@ -23,12 +25,19 @@ of `tsupport χ` lies in the open set, the Leibniz bound on balls of radius `δ`
 support, together with the supremum bound at larger distances, makes the top derivative of the
 cutoff product globally Hölder
 (`TauCeti.holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset`).
+
+A `C¹` map whose derivative is `α`-Hölder but possibly unbounded agrees on a ball with a `C¹` map
+whose derivative is bounded and `β`-Hölder, for every `β ≤ α` with `β ≤ 1`
+(`ContDiff.exists_eqOn_ball_holderWith_fderiv_and_norm_le`): precompose with a smooth map that is
+the identity on the ball and takes values in a larger closed ball
+(`TauCeti.exists_contDiff_eqOn_ball_id_and_mem_closedBall`). This lowers the Hölder exponent of
+boundary charts, which only matter near their centres.
 -/
 
 public section
 
 open Set Metric
-open scoped NNReal Topology
+open scoped ContDiff NNReal Topology
 
 namespace TauCeti
 
@@ -162,6 +171,54 @@ theorem holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset {k : ℕ} {s 
       exact (hball y hy).dist_le (mem_ball_self (by exact_mod_cast hδ)) (by rwa [mem_ball])
     rw [hzero x hx, hzero y hy, dist_self]
     positivity
+
+/-- **Localizing a `C^{1,α}` map to a bounded one.** Let `γ` be `C¹` with `α`-Hölder derivative,
+let `β ≤ α` with `β ≤ 1`, and let `B(c, r)` be a ball. Some `C¹` map `γ'` agrees with `γ` on
+`B(c, r)` and has a bounded, `β`-Hölder derivative. The map is `γ ∘ ρ` for the smooth map `ρ` of
+`TauCeti.exists_contDiff_eqOn_ball_id_and_mem_closedBall`, which is the identity on `B(c, r)` and
+takes values in `closedBall c (2 r)`, where the derivative of `γ` is bounded and `β`-Hölder.
+Without the change of `γ` far from `c`, its derivative need not be `β`-Hölder for `β < α`, since
+it may be unbounded. -/
+theorem _root_.ContDiff.exists_eqOn_ball_holderWith_fderiv_and_norm_le [FiniteDimensional ℝ E]
+    {γ : E → F} (hγ : ContDiff ℝ 1 γ) {K α β : ℝ≥0} (hK : HolderWith K α (fderiv ℝ γ))
+    (hβα : β ≤ α) (hβ1 : β ≤ 1) (c : E) {r : ℝ} (hr : 0 < r) :
+    ∃ γ' : E → F, ContDiff ℝ 1 γ' ∧ EqOn γ' γ (ball c r) ∧
+      ∃ K' M : ℝ≥0, HolderWith K' β (fderiv ℝ γ') ∧ ∀ x, ‖fderiv ℝ γ' x‖ ≤ M := by
+  obtain ⟨ρ, hρ, hρid, hρc, hσc⟩ := exists_contDiff_eqOn_ball_id_and_mem_closedBall c hr
+  set σ : E → E := fun x ↦ ρ x - c with hσ_def
+  have hσ : ContDiff ℝ ∞ σ := hρ.sub contDiff_const
+  obtain ⟨Lσ, hLσ⟩ := hσ.lipschitzWith_of_hasCompactSupport hσc (by simp)
+  obtain ⟨Cσ, hCσ, hCσb⟩ :=
+    (hσ.fderiv_right (m := 1) (by simp)).exists_holderWith_and_norm_le_of_hasCompactSupport
+      (hσc.fderiv ℝ) hβ1
+  have hρL : LipschitzWith Lσ ρ := LipschitzWith.of_dist_le_mul fun x y ↦ by
+    simpa only [hσ_def, dist_sub_right] using hLσ.dist_le_mul x y
+  -- The derivative of `γ` is bounded and `β`-Hölder on `closedBall c (2 r)`.
+  have hD := fun x (hx : x ∈ closedBall c (2 * r)) y (hy : y ∈ closedBall c (2 * r)) ↦
+    Metric.edist_le_diam_of_mem isBounded_closedBall hx hy
+  have hA := ((hK.holderOnWith (closedBall c (2 * r))).of_le hD hβα).comp_holderWith
+    (holderWith_one.2 hρL) hρc
+  rw [mul_one] at hA
+  set MA : ℝ≥0 := ⟨‖fderiv ℝ γ c‖ + K * (2 * r) ^ (α : ℝ), by positivity⟩
+  have hAb (x : E) : ‖(fderiv ℝ γ ∘ ρ) x‖ ≤ MA :=
+    calc ‖fderiv ℝ γ (ρ x)‖ ≤ ‖fderiv ℝ γ c‖ + K * dist (ρ x) c ^ (α : ℝ) :=
+          norm_le_norm_add_const_of_dist_le (hK.dist_le _ _)
+      _ ≤ ‖fderiv ℝ γ c‖ + K * (2 * r) ^ (α : ℝ) := by
+          gcongr
+          exact mem_closedBall.1 (hρc x)
+  -- The chain rule writes the derivative of `γ ∘ ρ` as a product of bounded Hölder maps.
+  have hfd : fderiv ℝ (γ ∘ ρ) = fun x ↦
+      ContinuousLinearMap.compL ℝ E E F ((fderiv ℝ γ ∘ ρ) x) (fderiv ℝ σ x) := by
+    funext x
+    rw [fderiv_comp x (hγ.differentiable one_ne_zero (ρ x)) (hρ.differentiable (by simp) x),
+      hσ_def, fderiv_sub_const, ContinuousLinearMap.compL_apply, Function.comp_apply]
+  have hH := (ContinuousLinearMap.compL ℝ E E F).holderWith_comp₂ hA hCσ hAb hCσb
+  rw [← hfd] at hH
+  refine ⟨γ ∘ ρ, hγ.comp (hρ.of_le (by simp)), fun x hx ↦ ?_, _, MA * Cσ, hH, fun x ↦ ?_⟩
+  · simp [hρid hx]
+  · simp only [hfd, ContinuousLinearMap.compL_apply]
+    exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+      (mul_le_mul (hAb x) (hCσb x) (norm_nonneg _) MA.coe_nonneg)
 
 namespace CkHolderSpace
 

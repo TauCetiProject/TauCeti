@@ -23,6 +23,8 @@ another boundary-regularity predicate. In coordinates tangent to a `C¹` boundar
 has derivative zero at the centre. Such descriptions give `Set.IsLipschitzDomainWith` with
 any prescribed positive Lipschitz constant. The chart radii may depend on the boundary point;
 neither boundedness of the domain nor compactness of its boundary is needed for this comparison.
+In any ambient space, `C¹` graphs at every frontier point make a set a Lipschitz domain whose
+constant may vary from chart to chart (`TauCeti.isLipschitzDomain_of_contDiffAt`).
 When the frontier is compact, `C¹` graphs at every frontier point, with no bound on their
 derivatives, already give a Lipschitz domain with some uniform constant
 (`TauCeti.exists_isLipschitzDomainWith_of_contDiffAt`), since finitely many charts cover the
@@ -72,6 +74,23 @@ theorem exists_isLipschitzChartWith_of_contDiffAt (ha : 0 < a) (hb : 0 < b)
     (fun z hz ↦ hgraph z (normalCylinder_mono le_rfl (min_le_left b r) hz))
   exact ⟨ψ, b', hb', min_le_left b r, heq, hchart⟩
 
+/-- **A `C¹` boundary is Lipschitz.** A set with a local graph description at every frontier
+point, by graphs that are `C¹` at the chart centres, is a Lipschitz domain. The Lipschitz constant
+may vary from chart to chart; when the frontier is compact a uniform one exists
+(`TauCeti.exists_isLipschitzDomainWith_of_contDiffAt`). -/
+theorem isLipschitzDomain_of_contDiffAt
+    (h : ∀ x ∈ frontier Omega,
+      ∃ (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (φ : E → ℝ) (a b : ℝ),
+        e x = 0 ∧ 0 < a ∧ 0 < b ∧ φ 0 = 0 ∧ ContDiffAt ℝ 1 φ 0 ∧
+          ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ φ z.snd < z.fst)) :
+    Omega.IsLipschitzDomain E := by
+  refine Set.isLipschitzDomain_iff_forall_exists_isLipschitzDomainAtWith.2 fun x hx ↦ ?_
+  obtain ⟨e, φ, a, b, hex, ha, hb, hφ0, hφ, hgraph⟩ := h x hx
+  obtain ⟨ψ, b', -, -, -, hchart⟩ :=
+    exists_isLipschitzChartWith_of_contDiffAt (L := ‖fderiv ℝ φ 0‖₊ + 1) ha hb hφ0 hφ
+      (lt_add_one _) hgraph
+  exact ⟨_, (Set.isLipschitzDomainAtWith_iff ..).2 ⟨e, ψ, a, b', hex, hchart⟩⟩
+
 end Chart
 
 variable {Omega : Set (WithLp 2 (ℝ × E))}
@@ -120,14 +139,8 @@ theorem exists_isLipschitzDomainWith_of_contDiffAt (hc : IsCompact (frontier Ome
       ∃ (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (φ : E → ℝ) (a b : ℝ),
         e x = 0 ∧ 0 < a ∧ 0 < b ∧ φ 0 = 0 ∧ ContDiffAt ℝ 1 φ 0 ∧
           ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ φ z.snd < z.fst)) :
-    ∃ L, Omega.IsLipschitzDomainWith L := by
-  refine Set.IsLipschitzDomain.exists_isLipschitzDomainWith
-    (Set.isLipschitzDomain_iff_forall_exists_isLipschitzDomainAtWith.2 fun x hx ↦ ?_) hc
-  obtain ⟨e, φ, a, b, hex, ha, hb, hφ0, hφ, hgraph⟩ := h x hx
-  obtain ⟨ψ, b', -, -, -, hchart⟩ :=
-    exists_isLipschitzChartWith_of_contDiffAt (L := ‖fderiv ℝ φ 0‖₊ + 1) ha hb hφ0 hφ
-      (lt_add_one _) hgraph
-  exact ⟨_, (Set.isLipschitzDomainAtWith_iff ..).2 ⟨e, ψ, a, b', hex, hchart⟩⟩
+    ∃ L, Omega.IsLipschitzDomainWith L :=
+  (isLipschitzDomain_of_contDiffAt h).exists_isLipschitzDomainWith hc
 
 /-- **A bounded open set with `Cⁿ` boundary, `n ≥ 1`, is a Lipschitz domain.** When `E` is
 finite-dimensional, a bounded set whose frontier has a `Cⁿ` local graph description at every

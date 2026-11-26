@@ -90,6 +90,8 @@ All in the `TauCeti.PDE` namespace.
   the interior Schauder estimate for `∇u` with a scalar datum `f ∈ L^q`.
 * `exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm`: its
   case `f = 0`, with exponent `α`.
+* `natCast_add_one_lt_of_le_one_sub_div`: admissible exponents `0 < β ≤ 1 - (n + 1) / q` exist
+  only for `q > n + 1`.
 
 ## References
 
@@ -409,6 +411,18 @@ theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderOnWith
     rw [← Real.rpow_natCast]
     push_cast
     ring_nf)
+
+/-- **Admissible exponents need `q > n + 1`.** The scalar datum `f ∈ L^q` costs `(n + 1) / q` of a
+derivative, so a positive exponent `β ≤ 1 - (n + 1) / q` exists only when `q > n + 1`. Here
+`(n + 1) / ∞ = 0`. -/
+theorem natCast_add_one_lt_of_le_one_sub_div {q : ℝ≥0∞} (hq : q ≠ 0) {β : ℝ} (hβ : 0 < β)
+    (hβq : β ≤ 1 - ((n : ℝ) + 1) / q.toReal) : (n : ℝ≥0∞) + 1 < q := by
+  rcases eq_or_ne q ⊤ with rfl | hqt
+  · simp
+  · have hq0 : 0 < q.toReal := ENNReal.toReal_pos hq hqt
+    refine (ENNReal.toReal_lt_toReal (by simp) hqt).1 ?_
+    rw [ENNReal.toReal_add (by simp) (by simp), ENNReal.toReal_natCast, ENNReal.toReal_one]
+    exact (div_lt_one hq0).1 (by linarith)
 
 /-- **The data on a small ball.** Let `f ∈ L^q(T)` with `q ≥ 2`, let `β ≤ α` and
 `β ≤ 1 - (n + 1) / q`, and let `Q` bound both `R^{α-β} K_G` and
