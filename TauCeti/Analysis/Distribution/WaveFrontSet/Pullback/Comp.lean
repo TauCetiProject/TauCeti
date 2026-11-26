@@ -270,6 +270,124 @@ private theorem tripleBump_apply (ψ : 𝓓(U, ℝ)) (ρ : ContDiffBump (0 : D))
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E']
+  [MeasurableSpace E'] [BorelSpace E'] in
+/-- If `ψ ⊗ ρ ⊗ σ` is supported in the domain of `(x, (y, z)) ↦ F (x, y) + z`, then
+`F p + z ∈ Ω'` for `p` in the support of `ψ ⊗ ρ` and `‖z‖ ≤ rOut σ`. -/
+private theorem add_mem_of_mem_tsupport_tensorBump {W : Opens (WithLp 2 (E × D))}
+    {F : WithLp 2 (E × D) → E'} (hF : ContinuousOn F W) (ψ : 𝓓(U, ℝ)) (ρ : ContDiffBump (0 : D))
+    (σ : ContDiffBump (0 : E'))
+    (hW₁ : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) ρ.rOut, toLp 2 (x, y) ∈ W)
+    (hW₃ : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) ρ.rOut, ∀ z ∈ closedBall (0 : E') σ.rOut,
+      toLp 2 (x, toLp 2 (y, z)) ∈ tripleDomain hF Ω')
+    {p : WithLp 2 (E × D)} (hp : p ∈ tsupport (tensorBump ψ ρ hW₁)) {z : E'}
+    (hz : z ∈ closedBall (0 : E') σ.rOut) : F p + z ∈ Ω' := by
+  obtain ⟨⟨x, y⟩, ⟨hx, hy⟩, rfl⟩ := tsupport_tensorBump_subset ψ ρ hW₁ hp
+  simpa using (mem_tripleDomain.1 (hW₃ x hx y hy z hz)).2
+
+/-- The fibre integral of `ψ ⊗ ρ ⊗ σ` along `(x, (y, z)) ↦ F (x, y) + z` is
+`w ↦ ∫ (ψ ⊗ ρ) p σ (w - F p) dp`. -/
+private theorem fiberIntegralCLM_tripleBump_apply {W : Opens (WithLp 2 (E × D))}
+    {F : WithLp 2 (E × D) → E'} (hF : ContDiffOn ℝ ∞ F W) (ψ : 𝓓(U, ℝ))
+    (ρ : ContDiffBump (0 : D)) (σ : ContDiffBump (0 : E'))
+    (hW₁ : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) ρ.rOut, toLp 2 (x, y) ∈ W)
+    (hW₃ : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) ρ.rOut, ∀ z ∈ closedBall (0 : E') σ.rOut,
+      toLp 2 (x, toLp 2 (y, z)) ∈ tripleDomain hF.continuousOn Ω') (w : E') :
+    fiberIntegralCLM volume volume (tripleAdd F) (contDiffOn_tripleAdd hF)
+        (mapsTo_tripleAdd hF.continuousOn) (surjective_fderiv_tripleAdd hF)
+        (tripleBump ψ ρ σ hW₃) w =
+      ∫ p, tensorBump ψ ρ hW₁ p * σ.normed volume (w - F p) :=
+  fiberIntegralCLM_apply_eq_integral volume volume _ _ _ tripleEquiv
+    measurePreserving_tripleEquiv (tensorBump ψ ρ hW₁).continuous
+    (tensorBump ψ ρ hW₁).hasCompactSupport W.isOpen (tensorBump ψ ρ hW₁).tsupport_subset
+    hF.continuousOn σ.continuous_normed σ.hasCompactSupport_normed
+    (fun v ↦ by simp [tripleBump_apply, tensorBump_apply, mul_assoc])
+    (fun _ _ ↦ by simp [tripleAdd]) w
+
+/-- The mollification by `σ` of the fibre integral of `ψ ⊗ ρ` along `F` stays in `Ω'` when
+`ψ ⊗ ρ ⊗ σ` is supported in the domain of `(x, (y, z)) ↦ F (x, y) + z`. -/
+private theorem closedBall_add_tsupport_fiberIntegralCLM_subset {W : Opens (WithLp 2 (E × D))}
+    {F : WithLp 2 (E × D) → E'} (hF : ContDiffOn ℝ ∞ F W) (hFW : MapsTo F W Ω')
+    (hsurj : ∀ p ∈ W, Surjective (fderiv ℝ F p)) (ψ : 𝓓(U, ℝ)) (ρ : ContDiffBump (0 : D))
+    (σ : ContDiffBump (0 : E'))
+    (hW₁ : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) ρ.rOut, toLp 2 (x, y) ∈ W)
+    (hW₃ : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) ρ.rOut, ∀ z ∈ closedBall (0 : E') σ.rOut,
+      toLp 2 (x, toLp 2 (y, z)) ∈ tripleDomain hF.continuousOn Ω') :
+    closedBall (0 : E') σ.rOut +
+      tsupport (fiberIntegralCLM volume volume F hF hFW hsurj (tensorBump ψ ρ hW₁)) ⊆
+        (Ω' : Set E') := by
+  rintro _ ⟨z, hz, t, ht, rfl⟩
+  obtain ⟨p, hp, rfl⟩ := tsupport_fiberIntegralCLM_subset volume volume hF hFW hsurj _ ht
+  dsimp only
+  rw [add_comm]
+  exact add_mem_of_mem_tsupport_tensorBump hF.continuousOn ψ ρ σ hW₁ hW₃ hp hz
+
+/-- **The fibre integral of `ψ ⊗ ρ ⊗ σ` is a mollification.** The fibre integral of `ψ ⊗ ρ ⊗ σ`
+along `(x, (y, z)) ↦ F (x, y) + z` is the mollification by `σ` of the fibre integral of `ψ ⊗ ρ`
+along `F`. -/
+private theorem fiberIntegralCLM_tripleBump_eq_mollify {W : Opens (WithLp 2 (E × D))}
+    {F : WithLp 2 (E × D) → E'} (hF : ContDiffOn ℝ ∞ F W) (hFW : MapsTo F W Ω')
+    (hsurj : ∀ p ∈ W, Surjective (fderiv ℝ F p)) (ψ : 𝓓(U, ℝ)) (ρ : ContDiffBump (0 : D))
+    (σ : ContDiffBump (0 : E'))
+    (hW₁ : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) ρ.rOut, toLp 2 (x, y) ∈ W)
+    (hW₃ : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) ρ.rOut, ∀ z ∈ closedBall (0 : E') σ.rOut,
+      toLp 2 (x, toLp 2 (y, z)) ∈ tripleDomain hF.continuousOn Ω') :
+    fiberIntegralCLM volume volume (tripleAdd F) (contDiffOn_tripleAdd hF)
+        (mapsTo_tripleAdd hF.continuousOn) (surjective_fderiv_tripleAdd hF)
+        (tripleBump ψ ρ σ hW₃) =
+      mollify (fiberIntegralCLM volume volume F hF hFW hsurj (tensorBump ψ ρ hW₁)) volume σ
+        (closedBall_add_tsupport_fiberIntegralCLM_subset hF hFW hsurj ψ ρ σ hW₁ hW₃) := by
+  ext w
+  rw [fiberIntegralCLM_tripleBump_apply hF ψ ρ σ hW₁, mollify_apply, convolution_eq_swap]
+  have hint := integral_fiberIntegralCLM_smul volume volume hF hFW hsurj (tensorBump ψ ρ hW₁)
+    (g := fun t ↦ σ.normed volume (w - t))
+    (σ.continuous_normed.comp (continuous_const.sub continuous_id)).continuousOn
+  simp only [smul_eq_mul] at hint
+  rw [← hint]
+  simp only [ContinuousLinearMap.lsmul_apply, smul_eq_mul, mul_comm]
+
+/-- **The pullback along `(x, (y, z)) ↦ F (x, y) + z` of `S` paired with `ψ ⊗ ρ ⊗ σ`** is the
+integral against `ψ ⊗ ρ` of the regularization `w ↦ S (σ (· - w))` of `S` composed with `F`. -/
+private theorem compCLMOfSubmersion_tripleBump_eq_integral {W : Opens (WithLp 2 (E × D))}
+    {F : WithLp 2 (E × D) → E'} (hF : ContDiffOn ℝ ∞ F W) (S : 𝓓'(Ω', ℂ)) (ψ : 𝓓(U, ℝ))
+    (ρ : ContDiffBump (0 : D)) (σ : ContDiffBump (0 : E'))
+    (hW₁ : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) ρ.rOut, toLp 2 (x, y) ∈ W)
+    (hW₃ : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) ρ.rOut, ∀ z ∈ closedBall (0 : E') σ.rOut,
+      toLp 2 (x, toLp 2 (y, z)) ∈ tripleDomain hF.continuousOn Ω') :
+    compCLMOfSubmersion volume volume (tripleAdd F) (contDiffOn_tripleAdd hF)
+        (mapsTo_tripleAdd hF.continuousOn) (surjective_fderiv_tripleAdd hF) S
+        (tripleBump ψ ρ σ hW₃) =
+      ∫ p, tensorBump ψ ρ hW₁ p • S.translatePairing (normedBumpTest σ) (F p) := by
+  rw [compCLMOfSubmersion_apply]
+  refine apply_eq_integral_smul_translatePairing_comp S (normedBumpTest σ)
+    (tensorBump ψ ρ hW₁).continuous (tensorBump ψ ρ hW₁).hasCompactSupport
+    (hF.continuousOn.mono (tensorBump ψ ρ hW₁).tsupport_subset) (fun p hp z hz ↦ ?_)
+    (fiberIntegralCLM_tripleBump_apply hF ψ ρ σ hW₁ hW₃)
+  have hz' : z ∈ closedBall (0 : E') σ.rOut := by rwa [← σ.tsupport_normed_eq (μ := volume)]
+  dsimp only
+  rw [add_comm]
+  exact add_mem_of_mem_tsupport_tensorBump hF.continuousOn ψ ρ σ hW₁ hW₃ hp hz'
+
+/-- **The pullback along `(x, z) ↦ g x + z` of `S` paired with `ψ ⊗ σ`** is the integral against
+`ψ` of the regularization `w ↦ S (σ (· - w))` of `S` composed with `g`. -/
+private theorem addSndPullback_tensorBump_eq_integral {g : E → E'} (hg : ContDiffOn ℝ ∞ g U)
+    (S : 𝓓'(Ω', ℂ)) (ψ : 𝓓(U, ℝ)) (σ : ContDiffBump (0 : E'))
+    (hW₂ : ∀ x ∈ tsupport ψ, ∀ z ∈ closedBall (0 : E') σ.rOut,
+      toLp 2 (x, z) ∈ addSndDomain hg.continuousOn Ω') :
+    addSndPullback hg S (tensorBump ψ σ hW₂) =
+      ∫ x, ψ x • S.translatePairing (normedBumpTest σ) (g x) := by
+  rw [addSndPullback_apply]
+  refine apply_eq_integral_smul_translatePairing_comp S (normedBumpTest σ) ψ.continuous
+    ψ.hasCompactSupport (hg.continuousOn.mono ψ.tsupport_subset) (fun x hx z hz ↦ ?_)
+    (fiberIntegralCLM_apply_eq_integral volume volume _ _ _ (MeasurableEquiv.toLp 2 (E × E')).symm
+      (volume_preserving_symm_measurableEquiv_toLp_prod E E') ψ.continuous ψ.hasCompactSupport
+      U.isOpen ψ.tsupport_subset hg.continuousOn σ.continuous_normed σ.hasCompactSupport_normed
+      (fun v ↦ by simp [tensorBump_apply]) (fun _ _ ↦ by simp))
+  have hz' : z ∈ closedBall (0 : E') σ.rOut := by rwa [← σ.tsupport_normed_eq (μ := volume)]
+  dsimp only
+  rw [add_comm]
+  simpa using (mem_addSndDomain.1 (hW₂ x hx z hz')).2
+
 /-- **The pullback along a submersion restricts to `E × {0}`.** Let `K` be a submersion from an
 open set `W` of `E × D` into `Ω'` with `U × {0} ⊆ W`, and let `g x = K (x, 0)` on `U`. If no
 covector of the wave front set of `S` lies in the normal set of `g`, then no covector of the wave
@@ -370,30 +488,6 @@ theorem pullbackInl_compCLMOfSubmersion {W : Opens (WithLp 2 (E × D))}
   set Ψ : ℕ → 𝓓(addSndDomain hg.continuousOn Ω', ℝ) := fun k ↦ tensorBump ψ (σ k) (hW₂ k)
   set Θ : ℕ → ℕ → 𝓓(tripleDomain hF.continuousOn Ω', ℝ) := fun n k ↦
     tripleBump ψ (ρ n) (σ k) (hW₃ n k)
-  -- The fibre integrals of `ψ ⊗ ρ_n ⊗ σ_k` along `K` and of `ψ ⊗ σ_k` along `(x, z) ↦ g x + z`.
-  have hfibK (n k : ℕ) (w : E') :
-      fiberIntegralCLM volume volume (tripleAdd F) hK hKΩ hKsurj (Θ n k) w =
-        ∫ p, Φ n p * (σ k).normed volume (w - F p) :=
-    fiberIntegralCLM_apply_eq_integral volume volume hK hKΩ hKsurj tripleEquiv
-      measurePreserving_tripleEquiv
-      (Φ n).continuous (Φ n).hasCompactSupport W.isOpen (Φ n).tsupport_subset hF.continuousOn
-      (σ k).continuous_normed (σ k).hasCompactSupport_normed
-      (fun v ↦ by simp [Θ, Φ, tripleBump_apply, mul_assoc]) (fun _ _ ↦ by simp [tripleAdd]) w
-  have hfibG (k : ℕ) (w : E') :
-      fiberIntegralCLM volume volume (addSnd g) (contDiffOn_addSnd hg)
-        (mapsTo_addSnd hg.continuousOn)
-        (surjective_fderiv_addSnd hg.continuousOn (hg.differentiableOn (by simp))) (Ψ k) w =
-        ∫ x, ψ x * (σ k).normed volume (w - g x) :=
-    fiberIntegralCLM_apply_eq_integral volume volume (contDiffOn_addSnd hg)
-      (mapsTo_addSnd hg.continuousOn)
-      (surjective_fderiv_addSnd hg.continuousOn (hg.differentiableOn (by simp)))
-      (MeasurableEquiv.toLp 2 (E × E')).symm
-      (volume_preserving_symm_measurableEquiv_toLp_prod E E') ψ.continuous ψ.hasCompactSupport
-      U.isOpen ψ.tsupport_subset hg.continuousOn (σ k).continuous_normed
-      (σ k).hasCompactSupport_normed (fun v ↦ by simp [Ψ]) (fun _ _ ↦ by simp) w
-  have hRapp (Θ' : 𝓓(tripleDomain hF.continuousOn Ω', ℝ)) :
-      R Θ' = S (fiberIntegralCLM volume volume (tripleAdd F) hK hKΩ hKsurj Θ') :=
-    compCLMOfSubmersion_apply volume volume hK hKΩ hKsurj S Θ'
   -- (1) Joint convergence to the restriction of `K^* S` to `E × {0}`.
   have hJ : Tendsto (fun p : ℕ × ℕ ↦ R (Θ p.1 p.2)) (atTop ×ˢ atTop)
       (𝓝 (R.pullbackInl hUq hRq ψ)) := by
@@ -405,29 +499,16 @@ theorem pullbackInl_compCLMOfSubmersion {W : Opens (WithLp 2 (E × D))}
     rw [add_zero] at h₀
     exact h₀
   -- (2) For fixed `n`, the fibre integrals along `K` are mollifications of those along `F`.
-  have hmol (n k : ℕ) : closedBall (0 : E') (σ k).rOut +
-      tsupport (fiberIntegralCLM volume volume F hF hFW hsurj (Φ n)) ⊆ (Ω' : Set E') := by
-    rintro _ ⟨z, hz, t, ht, rfl⟩
-    obtain ⟨p, hp, rfl⟩ := tsupport_fiberIntegralCLM_subset volume volume hF hFW hsurj (Φ n) ht
-    obtain ⟨⟨x, y⟩, ⟨hx, hy⟩, rfl⟩ := tsupport_tensorBump_subset ψ (ρ n) (hW₁ n) hp
-    dsimp only
-    rw [add_comm]
-    exact hmemΩ x hx y (hρlt n hy) z (hσle k hz)
   have hR1 (n : ℕ) : Tendsto (fun k ↦ R (Θ n k)) atTop
       (𝓝 (compCLMOfSubmersion volume volume F hF hFW hsurj S (Φ n))) := by
     rw [compCLMOfSubmersion_apply]
     refine (((map_continuous S).tendsto _).comp (tendsto_mollify _ volume
-      (ContDiffBump.tendsto_rOut_shrinking (half_pos hr)) (hmol n))).congr fun k ↦ ?_
-    rw [Function.comp_apply, hRapp]
-    congr 1
-    ext w
-    rw [hfibK, mollify_apply, convolution_eq_swap]
-    have hint := integral_fiberIntegralCLM_smul volume volume hF hFW hsurj (Φ n)
-      (g := fun t ↦ (σ k).normed volume (w - t))
-      ((σ k).continuous_normed.comp (continuous_const.sub continuous_id)).continuousOn
-    simp only [smul_eq_mul] at hint
-    rw [← hint]
-    simp only [σ, ContinuousLinearMap.lsmul_apply, smul_eq_mul, mul_comm]
+      (ContDiffBump.tendsto_rOut_shrinking (half_pos hr)) fun k ↦
+        closedBall_add_tsupport_fiberIntegralCLM_subset hF hFW hsurj ψ (ρ n) (σ k) (hW₁ n)
+          (hW₃ n k))).congr fun k ↦ ?_
+    rw [Function.comp_apply, compCLMOfSubmersion_apply volume volume hK hKΩ hKsurj S]
+    exact congrArg S (fiberIntegralCLM_tripleBump_eq_mollify hF hFW hsurj ψ (ρ n) (σ k) (hW₁ n)
+      (hW₃ n k)).symm
   have hR1' : Tendsto (fun n ↦ compCLMOfSubmersion volume volume F hF hFW hsurj S (Φ n)) atTop
       (𝓝 ((compCLMOfSubmersion volume volume F hF hFW hsurj S).pullbackInl hU
         (notMem_waveFrontSet_compCLMOfSubmersion_inl hF hFW hsurj hU hgF h) ψ)) :=
@@ -442,19 +523,10 @@ theorem pullbackInl_compCLMOfSubmersion {W : Opens (WithLp 2 (E × D))}
     dsimp only
     rw [add_comm]
     exact hmemΩ x hx y hy z (hσle k hz)
-  have hkeyK (n k : ℕ) : R (Θ n k) = ∫ p, Φ n p • T k (F p) := by
-    rw [hRapp]
-    refine apply_eq_integral_smul_translatePairing_comp S (normedBumpTest (σ k))
-      (Φ n).continuous (Φ n).hasCompactSupport (hF.continuousOn.mono (Φ n).tsupport_subset)
-      (fun p hp ↦ ?_) (hfibK n k)
-    obtain ⟨⟨x, y⟩, ⟨hx, hy⟩, rfl⟩ := tsupport_tensorBump_subset ψ (ρ n) (hW₁ n) hp
-    exact hadm k x hx y (hρlt n hy)
-  have hkeyG (k : ℕ) : addSndPullback hg S (Ψ k) = ∫ x, ψ x • T k (g x) := by
-    rw [addSndPullback_apply]
-    refine apply_eq_integral_smul_translatePairing_comp S (normedBumpTest (σ k))
-      ψ.continuous ψ.hasCompactSupport (hg.continuousOn.mono ψ.tsupport_subset)
-      (fun x hx ↦ ?_) (hfibG k)
-    simpa [hgF (ψ.tsupport_subset hx)] using hadm k x hx 0 (by simpa using hr)
+  have hkeyK (n k : ℕ) : R (Θ n k) = ∫ p, Φ n p • T k (F p) :=
+    compCLMOfSubmersion_tripleBump_eq_integral hF S ψ (ρ n) (σ k) (hW₁ n) (hW₃ n k)
+  have hkeyG (k : ℕ) : addSndPullback hg S (Ψ k) = ∫ x, ψ x • T k (g x) :=
+    addSndPullback_tensorBump_eq_integral hg S ψ (σ k) (hW₂ k)
   have hR2 (k : ℕ) : Tendsto (fun n ↦ R (Θ n k)) atTop (𝓝 (addSndPullback hg S (Ψ k))) := by
     simp_rw [hkeyK, hkeyG]
     -- `S_k ∘ F` is continuous near `supp ψ × {0}`, as `S_k` is smooth where it is defined.

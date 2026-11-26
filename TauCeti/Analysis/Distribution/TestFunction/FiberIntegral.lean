@@ -441,21 +441,24 @@ theorem fiberIntegralCLM_apply_eq_integral {X : Type*} [NormedAddCommGroup X] [N
   refine (Continuous.ae_eq_iff_eq ν φ.continuous hh).1 ?_
   refine ae_eq_of_integral_contDiff_smul_eq φ.continuous.locallyIntegrable hh.locallyIntegrable
     fun g hg hgc ↦ ?_
-  -- Integrability of the continuous compactly supported integrands below.
-  have hint₁ : Integrable (fun q : X × E' ↦ Ψ q.1 * (σ q.2 * g (Φ q.1 + q.2))) (μX.prod ν) := by
-    refine (hcont ((hσ.comp continuous_snd).continuousOn.mul (hg.continuous.comp_continuousOn
-      (hΦO.add continuousOn_snd)))).integrable_of_hasCompactSupport
-      (HasCompactSupport.intro (hΨc.isCompact.prod hσc.isCompact) fun q hq ↦ ?_)
+  -- Integrability of the continuous compactly supported integrands below: the products of
+  -- `Ψ q.1` with functions continuous on `O × E'` vanishing for `q.2` off a compact set `K`.
+  have hint {G : X × E' → ℝ} (hG : ContinuousOn G (O ×ˢ univ)) {K : Set E'} (hK : IsCompact K)
+      (hGK : ∀ q : X × E', q.2 ∉ K → G q = 0) :
+      Integrable (fun q : X × E' ↦ Ψ q.1 * G q) (μX.prod ν) := by
+    refine (hcont hG).integrable_of_hasCompactSupport
+      (HasCompactSupport.intro (hΨc.isCompact.prod hK) fun q hq ↦ ?_)
     rcases not_and_or.1 hq with hq | hq
     · simp [image_eq_zero_of_notMem_tsupport hq]
-    · simp [image_eq_zero_of_notMem_tsupport hq]
-  have hint₂ : Integrable (fun q : X × E' ↦ Ψ q.1 * (σ (q.2 - Φ q.1) * g q.2)) (μX.prod ν) := by
-    refine (hcont ((hσ.comp_continuousOn (continuousOn_snd.sub hΦO)).mul
-      (hg.continuous.comp continuous_snd).continuousOn)).integrable_of_hasCompactSupport
-      (HasCompactSupport.intro (hΨc.isCompact.prod hgc.isCompact) fun q hq ↦ ?_)
-    rcases not_and_or.1 hq with hq | hq
-    · simp [image_eq_zero_of_notMem_tsupport hq]
-    · simp [image_eq_zero_of_notMem_tsupport hq]
+    · simp [hGK q hq]
+  have hint₁ : Integrable (fun q : X × E' ↦ Ψ q.1 * (σ q.2 * g (Φ q.1 + q.2))) (μX.prod ν) :=
+    hint ((hσ.comp continuous_snd).continuousOn.mul (hg.continuous.comp_continuousOn
+      (hΦO.add continuousOn_snd))) hσc.isCompact fun q hq ↦ by
+        simp [image_eq_zero_of_notMem_tsupport hq]
+  have hint₂ : Integrable (fun q : X × E' ↦ Ψ q.1 * (σ (q.2 - Φ q.1) * g q.2)) (μX.prod ν) :=
+    hint ((hσ.comp_continuousOn (continuousOn_snd.sub hΦO)).mul
+      (hg.continuous.comp continuous_snd).continuousOn) hgc.isCompact fun q hq ↦ by
+        simp [image_eq_zero_of_notMem_tsupport hq]
   calc ∫ w, g w • φ w ∂ν = ∫ v, Θ v • g (f v) ∂μ := by
         rw [← integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj Θ hg.continuous.continuousOn]
         simp only [φ, smul_eq_mul, mul_comm]
