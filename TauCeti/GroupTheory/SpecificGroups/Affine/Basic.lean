@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GroupWithZero.Units.Fintype
-public import Mathlib.GroupTheory.SemidirectProduct
+public import TauCeti.GroupTheory.SemidirectProduct
 public import TauCeti.GroupTheory.TrivialIntersection
 
 /-!
@@ -66,10 +66,6 @@ theorem affineAction_apply_toAdd {F : Type*} [Ring F] (u : Fˣ) (x : Multiplicat
 multiplication. -/
 abbrev AffineGroup (F : Type*) [Ring F] :=
   Multiplicative F ⋊[affineAction F] Fˣ
-
-/-- A one-dimensional affine group over a finite ring is finite. -/
-instance {F : Type*} [Ring F] [Finite F] : Finite (AffineGroup F) :=
-  Finite.of_equiv (Multiplicative F × Fˣ) SemidirectProduct.equivProd.symm
 
 /-- An element `(b, a)` of the affine group sends `x` to `b + a * x`. -/
 instance {F : Type*} [Ring F] : SMul (AffineGroup F) F where

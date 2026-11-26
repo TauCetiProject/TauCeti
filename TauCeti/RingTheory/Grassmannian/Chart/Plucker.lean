@@ -40,6 +40,8 @@ determinant of the matrix with rows `u_x(m₁), …, u_x(mₖ)`
   surjective.
 * `Module.Grassmannian.pluckerBaseChange_chartHomEquiv_id`: the Plücker point of the universal
   point of the chart at `x` is the point classified by `pluckerChartHom R x`.
+* `Module.Grassmannian.pluckerBaseChange_mem_chart_iff`: over a field, the Plücker point of `N`
+  lies in the chart at `x₁ ∧ ⋯ ∧ xₖ` exactly when `N` lies in the chart at `x`.
 
 ## References
 
@@ -204,5 +206,49 @@ theorem pluckerBaseChange_chartHomEquiv_id (x : Fin k → M) :
   rw [SetLike.mem_coe, LinearMap.mem_ker] at hy
   rw [toSubmodule_chartHomEquiv_apply, LinearMap.mem_ker]
   exact (LinearMap.congr_fun key y).trans (by rw [LinearMap.comp_apply, hy, map_zero])
+
+end Module.Grassmannian
+
+/-! ### Charts of the Plücker point over a field -/
+
+namespace Module.Grassmannian
+
+variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M] {k : ℕ}
+  {K : Type*} [Field K] [Algebra R K]
+
+/-- **The Plücker point and the charts, over a field.** For a point `N` of `G(k, K ⊗[R] M; K)` over
+a field `K` and `x : Fin k → M`, the Plücker point of `N` lies in the chart of `G(1, ⋀ᵏ M)` at the
+wedge `x₁ ∧ ⋯ ∧ xₖ` exactly when `N` lies in the chart at `x`: the images of the `xᵢ` span the
+quotient exactly when their wedge spans its top exterior power. -/
+theorem pluckerBaseChange_mem_chart_iff (N : G(k, K ⊗[R] M; K)) (x : Fin k → M) :
+    pluckerBaseChange N ∈
+        chart K (fun _ : Fin 1 ↦ (1 : K) ⊗ₜ[R] _root_.exteriorPower.ιMulti R k x) ↔
+      N ∈ chart K (fun i ↦ (1 : K) ⊗ₜ[R] x i) := by
+  set q := N.toSubmodule.mkQ
+  set F := _root_.exteriorPower.map k q
+  set e := TauCeti.exteriorPower.equivBaseChange (R := R) (M := M) K k
+  set y : Fin k → K ⊗[R] M := fun i ↦ (1 : K) ⊗ₜ[R] x i
+  set w := _root_.exteriorPower.ιMulti K k y
+  have hF : LinearMap.range F = ⊤ :=
+    LinearMap.range_eq_top.2 (_root_.exteriorPower.map_surjective N.toSubmodule.mkQ_surjective)
+  have he : e.symm ((1 : K) ⊗ₜ[R] _root_.exteriorPower.ιMulti R k x) = w := by
+    rw [TauCeti.exteriorPower.equivBaseChange_symm_tmul_ιMulti, one_smul]
+  -- transport the chart condition on the Plücker point along `e`
+  have hsup : (pluckerBaseChange N).toSubmodule ⊔
+      Submodule.span K (Set.range fun _ : Fin 1 ↦ (1 : K) ⊗ₜ[R]
+        _root_.exteriorPower.ιMulti R k x) =
+      (LinearMap.ker F ⊔ Submodule.span K {w}).map e.toLinearMap := by
+    rw [toSubmodule_pluckerBaseChange, Submodule.map_sup, Submodule.map_span, Set.image_singleton,
+      ← he, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, Set.range_const]
+  -- pass to the quotient by `ker F`, which is `⋀ᵏ` of the universal quotient
+  have hker : LinearMap.ker F ⊔ Submodule.span K {w} = ⊤ ↔ Submodule.span K {F w} = ⊤ := by
+    rw [sup_comm, ← LinearMap.map_eq_top_iff hF, Submodule.map_span, Set.image_singleton]
+  -- pass to the universal quotient on the side of `N`
+  have hN : N.toSubmodule ⊔ Submodule.span K (Set.range y) = ⊤ ↔
+      Submodule.span K (Set.range (q ∘ y)) = ⊤ := by
+    rw [← Submodule.map_mkQ_eq_top, Submodule.map_span, ← Set.range_comp]
+  rw [mem_chart_iff_sup_eq_top, mem_chart_iff_sup_eq_top, hsup, Submodule.map_eq_top_iff, hker,
+    hN, _root_.exteriorPower.map_apply_ιMulti]
+  exact TauCeti.exteriorPower.span_singleton_ιMulti_eq_top_iff (finrank_quotient N) _
 
 end Module.Grassmannian
