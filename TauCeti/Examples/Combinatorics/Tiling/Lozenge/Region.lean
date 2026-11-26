@@ -17,7 +17,8 @@ public import TauCeti.Combinatorics.Tiling.Lozenge.Region
   `V(R₆) ∖ ∂R₆ = {0}`, and the edge count reads `18 = 2·6 + 6`.
 * **Regions spanned by vertex sets.** `Faces({(0,0), (1,0), (1,1), (0,1)}) = {W(0), B(0)}`,
   while `Faces({(0,0), (1,0)}) = ∅` although these two vertices are the endpoints of the edge
-  `((0,0), 1)`: tilings live on sets of faces, and a vertex set is used only through `Faces`.
+  `⟨(0, 0), 0⟩` (from `(0,0)` in direction `e₁`): tilings live on sets of faces, and a vertex
+  set is used only through `Faces`.
 -/
 
 public section
@@ -52,10 +53,7 @@ theorem ncard_boundaryEdges_white₀ : (boundaryEdges {white₀}).ncard = 3 := b
 /-- The boundary vertices of `W(0)` are its three vertices `(0,0)`, `(1,0)`, `(1,1)`. -/
 theorem boundaryVertices_white₀ : boundaryVertices {white₀} = {(0, 0), (1, 0), (1, 1)} := by
   ext ⟨x, y⟩
-  simp only [mem_boundaryVertices, boundaryEdges_white₀, TriFace.edges_mk_true, Finset.coe_insert,
-    Finset.coe_singleton, Set.mem_insert_iff, Set.mem_singleton_iff, exists_eq_or_imp,
-    exists_eq_left, TriEdge.endpoints_def, TriEdge.target_mk, Sym2.mem_iff]
-  simp [Prod.ext_iff]
+  simp [mem_boundaryVertices, boundaryEdges_white₀, TriEdge.endpoints_def, Prod.ext_iff]
   omega
 
 /-- The edge count `3 |R| = 2 |E°(R)| + |E∂(R)|` for `R = {W(0)}` reads `3 = 2·0 + 3`. -/
@@ -80,7 +78,7 @@ def outerEdges : Finset TriEdge :=
   {⟨(1, 0), 1⟩, ⟨(0, 1), 0⟩, ⟨(-1, 0), 2⟩, ⟨(-1, -1), 1⟩, ⟨(-1, -1), 0⟩, ⟨(0, -1), 2⟩}
 
 /-- The six neighbours of the origin. -/
-def neighboursOfZero : Set (ℤ × ℤ) := {(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)}
+def neighborsOfZero : Set (ℤ × ℤ) := {(1, 0), (1, 1), (0, 1), (-1, 0), (-1, -1), (0, -1)}
 
 /-- The interior edges of the unit hexagon are the six edges at the origin. -/
 theorem interiorEdges_hexagon : interiorEdges ↑hexagon = ↑edgesAtZero := by
@@ -105,28 +103,23 @@ theorem ncard_boundaryEdges_hexagon : (boundaryEdges ↑hexagon).ncard = 6 := by
   simp [outerEdges]
 
 /-- The boundary vertices of the unit hexagon are the six neighbours of the origin. -/
-theorem boundaryVertices_hexagon : boundaryVertices ↑hexagon = neighboursOfZero := by
+theorem boundaryVertices_hexagon : boundaryVertices ↑hexagon = neighborsOfZero := by
   ext ⟨x, y⟩
-  simp only [mem_boundaryVertices, boundaryEdges_hexagon, outerEdges, Finset.coe_insert,
-    Finset.coe_singleton, Set.mem_insert_iff, Set.mem_singleton_iff, exists_eq_or_imp,
-    exists_eq_left, TriEdge.endpoints_def, TriEdge.target_mk, Sym2.mem_iff, neighboursOfZero]
-  simp [Prod.ext_iff]
+  simp [mem_boundaryVertices, boundaryEdges_hexagon, outerEdges, TriEdge.endpoints_def,
+    neighborsOfZero, Prod.ext_iff]
   omega
 
 /-- The vertices of the unit hexagon are the origin and its six neighbours. -/
-theorem regionVertices_hexagon : regionVertices ↑hexagon = insert (0, 0) neighboursOfZero := by
+theorem regionVertices_hexagon : regionVertices ↑hexagon = insert (0, 0) neighborsOfZero := by
   ext ⟨x, y⟩
-  simp only [mem_regionVertices, vertexFaces_def, Finset.coe_insert, Finset.coe_singleton,
-    Set.mem_insert_iff, Set.mem_singleton_iff, exists_eq_or_imp, exists_eq_left,
-    neighboursOfZero]
-  simp [Prod.ext_iff]
+  simp [vertexFaces_def, neighborsOfZero, Prod.ext_iff]
   omega
 
 /-- The only vertex of the unit hexagon that is not a boundary vertex is the origin. -/
 theorem regionVertices_diff_boundaryVertices_hexagon :
     regionVertices ↑hexagon \ boundaryVertices ↑hexagon = {(0, 0)} := by
   rw [regionVertices_hexagon, boundaryVertices_hexagon, Set.insert_sdiff_of_notMem _
-    (by simp [neighboursOfZero]), Set.sdiff_self, insert_empty_eq]
+    (by simp [neighborsOfZero]), Set.sdiff_self, insert_empty_eq]
 
 /-- The edge count `3 |R| = 2 |E°(R)| + |E∂(R)|` for the unit hexagon reads `18 = 2·6 + 6`. -/
 example : 3 * hexagon.card = 2 * (interiorEdges ↑hexagon).ncard + (boundaryEdges ↑hexagon).ncard ∧
@@ -141,20 +134,14 @@ example : 3 * hexagon.card = 2 * (interiorEdges ↑hexagon).ncard + (boundaryEdg
 theorem facesOf_square :
     facesOf {(0, 0), (1, 0), (1, 1), (0, 1)} = {white₀, black₀} := by
   ext ⟨⟨a, b⟩, c⟩
-  cases c <;>
-    simp only [mem_facesOf, TriFace.vertices_mk_true, TriFace.vertices_mk_false,
-      Finset.forall_mem_insert, Finset.mem_singleton, forall_eq] <;>
-    simp [Prod.ext_iff] <;> omega
+  cases c <;> simp [mem_facesOf, or_imp, forall_and, Prod.ext_iff] <;> omega
 
 /-- The vertices `(0,0)` and `(1,0)` span no face, although they are the endpoints of the edge
-`((0,0), 1)`. -/
+`⟨(0, 0), 0⟩` from `(0,0)` in direction `e₁`. -/
 theorem facesOf_pair : facesOf {(0, 0), (1, 0)} = ∅ ∧
     (⟨(0, 0), 0⟩ : TriEdge).endpoints = s((0, 0), (1, 0)) := by
   refine ⟨?_, by simp [TriEdge.endpoints_def]⟩
   ext ⟨⟨a, b⟩, c⟩
-  cases c <;>
-    simp only [mem_facesOf, TriFace.vertices_mk_true, TriFace.vertices_mk_false,
-      Finset.forall_mem_insert, Finset.mem_singleton, forall_eq] <;>
-    simp [Prod.ext_iff] <;> omega
+  cases c <;> simp [mem_facesOf, or_imp, forall_and, Prod.ext_iff] <;> omega
 
 end TauCeti.Examples.LozengeRegion
