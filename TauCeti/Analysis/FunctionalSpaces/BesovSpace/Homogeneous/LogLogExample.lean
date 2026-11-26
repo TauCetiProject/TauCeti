@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Homogeneous.Critical
 public import TauCeti.Analysis.Sobolev.Local.LogLogExample
+public import TauCeti.Analysis.Calculus.BumpFunction.UnitDisc
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence.Local
@@ -23,8 +24,9 @@ proves the failure in the plane `ℂ = ℝ²`, where `n / 2 = 1`, with the class
 
 `f(z) = χ(z) log log (4 / ‖z‖)`
 
-(`TauCeti.logLogCutoff`), the function `TauCeti.logLogInterior` cut off by a smooth bump function
-`χ` equal to `1` on the closed unit disc and supported in the closed disc of radius `2`:
+(`TauCeti.logLogCutoff`), the function `TauCeti.logLogInterior` cut off by the smooth bump function
+`χ = TauCeti.unitDiscCutoff`, equal to `1` on the closed unit disc and supported in the closed disc
+of radius `2`:
 
 * `f ∈ L²(ℂ)`, and its tempered distribution lies in the Sobolev space `H¹ = H^{1,2}`
   (`TauCeti.memSobolev_logLogCutoffLp`), hence in `\dot H^1 = \dot B^1_{2,2}`
@@ -67,32 +69,18 @@ open scoped ENNReal Topology ContDiff SchwartzMap
 
 namespace TauCeti
 
-/-- The smooth bump function on `ℂ` equal to `1` on the closed unit disc and supported in the closed
-disc of radius `2`, which cuts off `TauCeti.logLogInterior`. -/
-def logLogCutoffBump : ContDiffBump (0 : ℂ) := ⟨1, 2, one_pos, one_lt_two⟩
-
-/-- The bump function `TauCeti.logLogCutoffBump` equals `1` on the closed unit disc. -/
-@[simp]
-theorem logLogCutoffBump_rIn : logLogCutoffBump.rIn = 1 :=
-  (rfl)
-
-/-- The bump function `TauCeti.logLogCutoffBump` is supported in the closed disc of radius `2`. -/
-@[simp]
-theorem logLogCutoffBump_rOut : logLogCutoffBump.rOut = 2 :=
-  (rfl)
-
-/-- The function `f(z) = χ(z) log log (4 / ‖z‖)`, with `χ = TauCeti.logLogCutoffBump`: a compactly
+/-- The function `f(z) = χ(z) log log (4 / ‖z‖)`, with `χ = TauCeti.unitDiscCutoff`: a compactly
 supported function in `H¹(ℝ²)` that is unbounded near the origin. -/
-def logLogCutoff (z : ℂ) : ℝ := logLogCutoffBump z * logLogInterior z
+def logLogCutoff (z : ℂ) : ℝ := unitDiscCutoff z * logLogInterior z
 
 /-- The defining formula of `TauCeti.logLogCutoff`. -/
-theorem logLogCutoff_def (z : ℂ) : logLogCutoff z = logLogCutoffBump z * logLogInterior z :=
+theorem logLogCutoff_def (z : ℂ) : logLogCutoff z = unitDiscCutoff z * logLogInterior z :=
   (rfl)
 
 /-- The function `χ(z) log log (4 / ‖z‖)` is supported in the closed disc of radius `2`. -/
 theorem tsupport_logLogCutoff_subset : tsupport logLogCutoff ⊆ closedBall 0 2 := by
-  have h := tsupport_mul_subset_left (f := (logLogCutoffBump : ℂ → ℝ)) (g := logLogInterior)
-  rwa [logLogCutoffBump.tsupport_eq, logLogCutoffBump_rOut] at h
+  have h := tsupport_mul_subset_left (f := (unitDiscCutoff : ℂ → ℝ)) (g := logLogInterior)
+  rwa [unitDiscCutoff.tsupport_eq, unitDiscCutoff_rOut] at h
 
 /-- The function `χ(z) log log (4 / ‖z‖)` is compactly supported. -/
 theorem hasCompactSupport_logLogCutoff : HasCompactSupport logLogCutoff :=
@@ -101,12 +89,12 @@ theorem hasCompactSupport_logLogCutoff : HasCompactSupport logLogCutoff :=
 /-- The function `χ(z) log log (4 / ‖z‖)` is measurable. -/
 @[fun_prop]
 theorem measurable_logLogCutoff : Measurable logLogCutoff :=
-  logLogCutoffBump.continuous.measurable.mul measurable_logLogInterior
+  unitDiscCutoff.continuous.measurable.mul measurable_logLogInterior
 
 /-- On the closed unit disc, `TauCeti.logLogCutoff` is `log log (4 / ‖z‖)`. -/
 theorem logLogCutoff_eq_of_mem_closedBall {z : ℂ} (hz : z ∈ closedBall (0 : ℂ) 1) :
     logLogCutoff z = logLogInterior z := by
-  rw [logLogCutoff_def, logLogCutoffBump.one_of_mem_closedBall hz, one_mul]
+  rw [logLogCutoff_def, unitDiscCutoff_of_norm_le_one (mem_closedBall_zero_iff.1 hz), one_mul]
 
 /-- The function `χ(z) log log (4 / ‖z‖)` is the value of an `L²` function whose tempered
 distribution lies in the Sobolev space `H¹ = H^{1,2}`. -/
@@ -119,16 +107,16 @@ private theorem exists_memSobolev_logLogCutoff :
     (memLp_logLogInterior (R := 3) (by norm_num))
     (memLp_fderiv_logLogInterior (R := 3) (by norm_num))
     (hasWeakFDerivOn_logLogInterior.mono fun z hz ↦ ball_subset_ball (by norm_num) hz)
-  have hsupp : tsupport logLogCutoffBump ⊆ U := by
-    rw [logLogCutoffBump.tsupport_eq]
-    rw [logLogCutoffBump_rOut]
+  have hsupp : tsupport unitDiscCutoff ⊆ U := by
+    rw [unitDiscCutoff.tsupport_eq]
+    rw [unitDiscCutoff_rOut]
     exact closedBall_subset_ball (by norm_num)
   have h1 : Wkp.value (p := 2) 1 w = W1p.value w := Wkp.value_one w
   have hw1 : (Wkp.value (p := 2) 1 w : ℂ → ℝ) =ᵐ[volume.restrict U] logLogInterior := by
     rw [h1]
     exact hw
   obtain ⟨g, hg, hgS⟩ := Distribution.exists_memSobolev_mul_of_wkp ENNReal.one_lt_two
-    ENNReal.ofNat_ne_top hw1 logLogCutoffBump.contDiff logLogCutoffBump.hasCompactSupport hsupp
+    ENNReal.ofNat_ne_top hw1 unitDiscCutoff.contDiff unitDiscCutoff.hasCompactSupport hsupp
   refine ⟨g, hg.trans (ae_of_all _ fun z ↦ ?_), by exact_mod_cast hgS⟩
   simp [logLogCutoff_def]
 
