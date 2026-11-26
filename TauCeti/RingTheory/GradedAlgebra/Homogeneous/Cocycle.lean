@@ -114,8 +114,8 @@ theorem mem_cocycleGrading_iff {u : A[T;T⁻¹]} {n : ℤ} {m : A} :
 instance cocycleGrading.gradedSMul (u : A[T;T⁻¹]) : SetLike.GradedSMul 𝒜 (cocycleGrading 𝒜 u) where
   smul_mem {i j a m} ha hm := by
     rw [smul_eq_mul, mem_cocycleGrading_iff, decomposeLaurent_mul_of_mem 𝒜 𝒜 ha, mul_assoc,
-      (mem_cocycleGrading_iff 𝒜).mp hm, vadd_eq_add, T_add, map_mul]
-    ring
+      (mem_cocycleGrading_iff 𝒜).mp hm]
+    simp [← mul_assoc, mul_right_comm _ (T i), add_comm]
 
 variable {𝒜} in
 /-- The coaction twisted by `u` recovers the components of an element of the direct sum of the
@@ -162,12 +162,9 @@ theorem IsGradingCocycle.coeff_mem_cocycleGrading {u : A[T;T⁻¹]} (hu : IsGrad
   | add m m' hm hm' => simpa [add_mul] using add_mem hm hm'
   | @homogeneous d m =>
     -- For `m` homogeneous of degree `d`, the coefficient is `m * u_{n - d}`.
-    rw [decomposeLaurent_of_mem 𝒜 m.property, mul_assoc, mul_comm (T d), coeff_C_mul,
-      coeff_mul_T, mem_cocycleGrading_iff, decomposeLaurent_mul_of_mem 𝒜 𝒜 m.property, mul_assoc,
-      hu.decomposeLaurent_coeff_mul, map_mul]
-    calc C (m : A) * T d * (C (u.coeff (n - d)) * T (n - d))
-        = C (m : A) * C (u.coeff (n - d)) * (T d * T (n - d)) := by ring
-      _ = C (m : A) * C (u.coeff (n - d)) * T n := by rw [← T_add, add_sub_cancel]
+    have hT : T (n - d) * T d = (T n : A[T;T⁻¹]) := by rw [← T_add, sub_add_cancel]
+    simp [decomposeLaurent_of_mem 𝒜 m.property, mul_right_comm _ (T d), coeff_mul_T,
+      decomposeLaurent_mul_of_mem 𝒜 𝒜 m.property, mul_assoc, hu.decomposeLaurent_coeff_mul, hT]
 
 /-- The pieces of the grading defined by a cocycle `u` form an internal direct sum. -/
 theorem isInternal_cocycleGrading {u : A[T;T⁻¹]} (hu : IsGradingCocycle 𝒜 u) :
