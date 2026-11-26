@@ -326,6 +326,12 @@ lemma listTensorPermIso_symm {l l' : List ι} (h : l.Perm l') :
   letI := auxLinearOrder ι
   sortPermIso_symm X h
 
+/-- The inverse of a reordering is the reverse reordering, as a morphism. -/
+@[simp]
+lemma listTensorPermIso_inv {l l' : List ι} (h : l.Perm l') :
+    (listTensorPermIso X h).inv = (listTensorPermIso X h.symm).hom :=
+  congrArg Iso.hom (listTensorPermIso_symm X h)
+
 /-- Reordering along an equality of lists is the transport along it. -/
 lemma listTensorPermIso_of_eq {l l' : List ι} (h : l = l') (h' : l.Perm l') :
     listTensorPermIso X h' = eqToIso (congrArg (listTensor X) h) := by
