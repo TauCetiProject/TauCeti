@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Hypergraph.PairColor.Approximation
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Energy.Stability
 public import TauCeti.Combinatorics.Hypergraph.Triadic.StrongTopRegularization
 import Mathlib.Combinatorics.SimpleGraph.Regularity.Equitabilise
+import TauCeti.Combinatorics.Hypergraph.PairColor.Const
 import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
@@ -316,9 +317,8 @@ private theorem exists_iterate (P₀ : Finpartition (univ : Finset V)) (hP₀ : 
   | zero =>
     -- Regularize the one-color skeleton on `P₀`.
     have h6 : 6 ≤ Fintype.card V := (le_max_right _ _).trans hj
-    let X : PairColorSystem (Fin 1) V := ⟨fun _ ↦ 0, id, fun _ ↦ rfl, fun _ ↦ rfl⟩
     obtain ⟨C, hCP, hCeq, hCreg, hCpol, hCcard, hCcol, -⟩ :=
-      H.exists_regularization P₀ hP₀ X hg hF ((le_max_left _ _).trans hj) h6
+      H.exists_regularization P₀ hP₀ (.const (0 : Fin 1)) hg hF ((le_max_left _ _).trans hj) h6
     refine Or.inr ⟨C, hCcard.trans (le_max_left _ _), hCcol ▸ le_max_of_le_right (by norm_num),
       ⟨hCP, hCeq, hCreg, hCpol⟩, by simpa using H.polyadEnergy_nonneg _⟩
   | succ j ih =>

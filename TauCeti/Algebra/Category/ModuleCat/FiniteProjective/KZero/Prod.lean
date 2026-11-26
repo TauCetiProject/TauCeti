@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Idempotent
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Map
 public import TauCeti.RingTheory.GrothendieckRing
 
 import TauCeti.Algebra.Ring.Prod
@@ -27,9 +27,9 @@ matrix over `R × S` is a pair of matrices of the same size over `R` and over `S
 those of `R` and `S` (`TauCeti.IdempotentMonoid.prodEquiv`), and passing to group completions
 gives the isomorphism of `K₀`. It sends the class `[eRⁿ]` of an idempotent `e` over `R × S` to the
 classes of its two components `e.map Prod.fst` and `e.map Prod.snd`. When `R` and `S` live in the
-same universe, its two components are the maps of `K₀` induced by the two projections, that is,
-extension of scalars along `R × S → R` and `R × S → S`. In particular the free module of rank one
-goes to the pair of free modules of rank one.
+same universe, its two components are the maps of `K₀` induced by the two projections
+(`TauCeti.KZero.map`), that is, extension of scalars along `R × S → R` and `R × S → S`. In
+particular the free module of rank one goes to the pair of free modules of rank one.
 
 The zero-ring value `K₀(0) = 0`, the empty case of the product formula, is the instance
 `TauCeti.FiniteProjectiveModules.subsingleton_splitK0` applied to `Rᵐᵒᵖ`.
@@ -165,30 +165,27 @@ variable (R S : Type u) [Ring R] [Ring S]
 two projections `R × S → R` and `R × S → S`, extension of scalars along them. -/
 theorem toAddMonoidHom_prodEquiv :
     (prodEquiv R S).toAddMonoidHom =
-      AddMonoidHom.prod
-        (SplitK0.map.{u, u}
-          (RingHom.op (RingHom.fst R S)).finiteProjectiveModulesExtendScalars)
-        (SplitK0.map.{u, u}
-          (RingHom.op (RingHom.snd R S)).finiteProjectiveModulesExtendScalars) := by
+      (map (RingHom.fst R S)).prod (map (RingHom.snd R S)) := by
+  -- On the idempotent model both sides take the two components of an idempotent over `R × S`.
   refine (AddMonoidHom.cancel_right (f := (IdempotentMonoid.kZeroEquiv (R × S)).toAddMonoidHom)
     (IdempotentMonoid.kZeroEquiv (R × S)).surjective).1 <|
       GrothendieckAddGroup.addHom_ext fun x ↦ ?_
+  induction x using IdempotentMonoid.ind with | mk n e he =>
   simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddMonoidHom.prod_apply,
-    IdempotentMonoid.kZeroEquiv_of, prodEquiv_toKZero, IdempotentMonoid.map_toKZero,
-    RingHom.toNonUnitalRingHom_fst, RingHom.toNonUnitalRingHom_snd]
+    map_kZeroEquiv_of_mk]
+  simp only [IdempotentMonoid.kZeroEquiv_of, prodEquiv_toKZero, IdempotentMonoid.map_mk,
+    NonUnitalRingHom.coe_fst, NonUnitalRingHom.coe_snd, RingHom.coe_fst, RingHom.coe_snd]
 
 /-- The first component of `TauCeti.KZero.prodEquiv` is the map of `K₀` induced by the first
 projection `R × S → R`, extension of scalars along it. -/
 theorem prodEquiv_apply_fst (x : KZero (R × S)) :
-    (prodEquiv R S x).1 =
-      SplitK0.map.{u, u} (RingHom.op (RingHom.fst R S)).finiteProjectiveModulesExtendScalars x :=
+    (prodEquiv R S x).1 = map (RingHom.fst R S) x :=
   congrArg Prod.fst (DFunLike.congr_fun (toAddMonoidHom_prodEquiv R S) x)
 
 /-- The second component of `TauCeti.KZero.prodEquiv` is the map of `K₀` induced by the second
 projection `R × S → S`, extension of scalars along it. -/
 theorem prodEquiv_apply_snd (x : KZero (R × S)) :
-    (prodEquiv R S x).2 =
-      SplitK0.map.{u, u} (RingHom.op (RingHom.snd R S)).finiteProjectiveModulesExtendScalars x :=
+    (prodEquiv R S x).2 = map (RingHom.snd R S) x :=
   congrArg Prod.snd (DFunLike.congr_fun (toAddMonoidHom_prodEquiv R S) x)
 
 end Components

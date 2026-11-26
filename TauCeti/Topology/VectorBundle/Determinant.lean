@@ -775,28 +775,40 @@ variable [TopologicalSpace B] [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
   [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
   [VectorBundle 𝕜 F E]
 
+/-- **The wedge of continuous families of vectors is continuous.** For a continuous map
+`f : Y → B` and continuous families `y ↦ sᵢ(y) ∈ E (f y)`, `r = finrank 𝕜 F`, the family
+`y ↦ s₁(y) ∧ ⋯ ∧ sᵣ(y)` in the determinant line of `E` is continuous. -/
+theorem continuous_totalSpaceMk_ιMulti {Y : Type*} [TopologicalSpace Y] {f : Y → B}
+    (hf : Continuous f) {s : Fin (finrank 𝕜 F) → ∀ y, E (f y)}
+    (hs : ∀ i, Continuous fun y ↦ TotalSpace.mk' F (f y) (s i y)) :
+    Continuous fun y ↦ TotalSpace.mk' 𝕜 (f y)
+      ((linearEquiv 𝕜 F E (f y)).symm (exteriorPower.ιMulti 𝕜 _ fun i ↦ s i y)) := by
+  refine continuous_iff_continuousAt.2 fun a ↦ (FiberBundle.continuousAt_totalSpace 𝕜 _).2
+    ⟨hf.continuousAt, ?_⟩
+  set t := trivializationAt F E (f a)
+  -- Near `a`, the chart coordinate of the wedge is the determinant of the coordinates of the `sᵢ`.
+  have hev : (fun y ↦ (trivializationAt 𝕜 (DetBundle 𝕜 F E) (f a)
+      ⟨f y, (linearEquiv 𝕜 F E (f y)).symm (exteriorPower.ιMulti 𝕜 _ fun i ↦ s i y)⟩).2) =ᶠ[𝓝 a]
+      fun y ↦ (Module.finBasis 𝕜 F).det fun i ↦ (t ⟨f y, s i y⟩).2 := by
+    filter_upwards [hf.continuousAt.preimage_mem_nhds
+      (t.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (f a)))] with y hy
+    rw [trivializationAt_eq, trivialization_apply_mk _ hy, chartCoord_ιMulti]
+  refine ContinuousAt.congr ?_ hev.symm
+  have hcoord : ContinuousAt (fun y ↦ fun i ↦ (t ⟨f y, s i y⟩).2) a :=
+    continuousAt_pi.2 fun i ↦ ((t.continuousOn.continuousAt (t.open_source.mem_nhds
+      ((t.mem_source).2 (mem_baseSet_trivializationAt F E (f a))))).comp
+        (hs i).continuousAt).snd
+  simpa only [Function.comp_def, Module.Basis.continuousDet_apply] using
+    (Module.finBasis 𝕜 F).continuousDet.coe_continuous.continuousAt.comp hcoord
+
 /-- **The wedge of continuous sections is a continuous section of the determinant line.** For
 continuous sections `s₁, …, sᵣ` of `E`, `r = finrank 𝕜 F`, the section `x ↦ s₁(x) ∧ ⋯ ∧ sᵣ(x)` of
 `det E` is continuous. -/
 theorem continuous_ιMulti {s : Fin (finrank 𝕜 F) → ∀ x, E x}
     (hs : ∀ i, Continuous fun x ↦ TotalSpace.mk' F x (s i x)) :
     Continuous fun x ↦ TotalSpace.mk' 𝕜 x
-      ((linearEquiv 𝕜 F E x).symm (exteriorPower.ιMulti 𝕜 _ fun i ↦ s i x)) := by
-  refine continuous_iff_continuousAt.2 fun a ↦ (FiberBundle.continuousAt_section 𝕜 a).2 ?_
-  set t := trivializationAt F E a
-  -- Near `a`, the chart coordinate of the wedge is the determinant of the coordinates of the `sᵢ`.
-  have hev : (fun x ↦ (trivializationAt 𝕜 (DetBundle 𝕜 F E) a
-      ⟨x, (linearEquiv 𝕜 F E x).symm (exteriorPower.ιMulti 𝕜 _ fun i ↦ s i x)⟩).2) =ᶠ[𝓝 a]
-      fun x ↦ (Module.finBasis 𝕜 F).det fun i ↦ (t ⟨x, s i x⟩).2 := by
-    filter_upwards [t.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E a)] with x hx
-    rw [trivializationAt_eq, trivialization_apply_mk _ hx, chartCoord_ιMulti]
-  refine ContinuousAt.congr ?_ hev.symm
-  have hcoord : ContinuousAt (fun x ↦ fun i ↦ (t ⟨x, s i x⟩).2) a :=
-    continuousAt_pi.2 fun i ↦ ((t.continuousOn.continuousAt (t.open_source.mem_nhds
-      ((t.mem_source).2 (mem_baseSet_trivializationAt F E a)))).comp
-        (hs i).continuousAt).snd
-  simpa only [Function.comp_def, Module.Basis.continuousDet_apply] using
-    (Module.finBasis 𝕜 F).continuousDet.coe_continuous.continuousAt.comp hcoord
+      ((linearEquiv 𝕜 F E x).symm (exteriorPower.ιMulti 𝕜 _ fun i ↦ s i x)) :=
+  continuous_totalSpaceMk_ιMulti continuous_id hs
 
 end Wedge
 

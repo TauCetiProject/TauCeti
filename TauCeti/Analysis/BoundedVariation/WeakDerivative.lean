@@ -10,7 +10,7 @@ public import TauCeti.Analysis.BoundedVariation.Space
 public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.BoundedVariation.Representation
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.MeasureTheory.Measure.Subtype
 
 /-!

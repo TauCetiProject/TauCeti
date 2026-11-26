@@ -39,7 +39,10 @@ Every holomorphic map solves the distributional equation.
 which rules out an almost-everywhere equal holomorphic representative on nonempty open sets.
 The equation passes to limits in `L¹` on the compact subsets of the domain
 (`hasWeakConjWirtingerDerivOn_of_tendsto_setLIntegral_enorm_sub`): this is how a solution
-obtained as a locally uniform limit of classical solutions inherits the equation weakly.
+obtained as a locally uniform limit of classical solutions inherits the equation weakly. In
+particular a locally uniform limit of `C¹` maps whose `\bar∂` is `L¹`-close on compact sets to
+locally uniformly convergent continuous maps solves the limiting equation weakly
+(`hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn`).
 
 ## References
 
@@ -400,5 +403,40 @@ theorem hasWeakConjWirtingerDerivOn_of_tendsto_setLIntegral_enorm_sub {ι : Type
   refine tendsto_nhds_unique ((hline 1).add ((hline I).const_smul I)) ?_
   simpa only [(h _).integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul φ] using
     hval.const_smul (-(2 : ℂ))
+
+/-- **Weak `\bar∂` equations of locally uniform limits.** Let `uᵢ` be `C¹` maps on `Ω` converging
+locally uniformly on `Ω` to `w`, and let `gᵢ`, continuous on `Ω`, converge locally uniformly on
+`Ω` to `g₀`. If the defects `\bar∂ uᵢ - gᵢ` tend to `0` in `L¹` on each compact subset of `Ω`, then
+`\bar∂ w = g₀` weakly on `Ω`. This is how an equation `\bar∂ u = g(u)` with a zeroth-order term
+depending continuously on `u`, satisfied up to vanishing remainders, passes to the limit. -/
+theorem hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn [CompleteSpace F]
+    [μ.IsAddHaarMeasure] {ι : Type*} {l : Filter ι} [l.NeBot] {u g : ι → ℂ → F} {w : ℂ → F}
+    (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω) (huw : TendstoLocallyUniformlyOn u w l Ω)
+    (hg : ∀ i, ContinuousOn (g i) Ω) (hgg : TendstoLocallyUniformlyOn g g₀ l Ω)
+    (hr : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → Filter.Tendsto
+      (fun i ↦ ∫⁻ z in K, ‖conjWirtingerDeriv (u i) z 1 - g i z‖ₑ ∂μ) l (nhds 0)) :
+    HasWeakConjWirtingerDerivOn μ Ω w g₀ := by
+  have hg₀ : ContinuousOn g₀ Ω := hgg.continuousOn (Filter.Frequently.of_forall hg)
+  have hK {v : ι → ℂ → F} {v₀ : ℂ → F} (hv : TendstoLocallyUniformlyOn v v₀ l Ω) {K : Set ℂ}
+      (hKΩ : K ⊆ Ω) (hK : IsCompact K) :
+      Filter.Tendsto (fun i ↦ ∫⁻ z in K, ‖v i z - v₀ z‖ₑ ∂μ) l (nhds 0) :=
+    ((tendstoLocallyUniformlyOn_iff_forall_isCompact Ω.isOpen).1 hv K hKΩ
+      hK).tendsto_setLIntegral_enorm_sub hK.measure_lt_top.ne
+  refine hasWeakConjWirtingerDerivOn_of_tendsto_setLIntegral_enorm_sub
+    ((huw.continuousOn (Filter.Frequently.of_forall fun i ↦
+      (hu i).continuousOn)).locallyIntegrableOn Ω.isOpen.measurableSet)
+    (hg₀.locallyIntegrableOn Ω.isOpen.measurableSet)
+    (fun i ↦ hasWeakConjWirtingerDerivOn_of_contDiffOn (hu i)) (fun _ hKΩ hK' ↦ hK huw hKΩ hK')
+    fun K hKΩ hK' ↦ ?_
+  -- On `K`, `\bar∂ uᵢ - g₀ = (\bar∂ uᵢ - gᵢ) + (gᵢ - g₀)`.
+  have hle (i : ι) : ∫⁻ z in K, ‖conjWirtingerDeriv (u i) z 1 - g₀ z‖ₑ ∂μ ≤
+      (∫⁻ z in K, ‖conjWirtingerDeriv (u i) z 1 - g i z‖ₑ ∂μ) + ∫⁻ z in K, ‖g i z - g₀ z‖ₑ ∂μ :=
+    le_trans (lintegral_mono fun z ↦ by
+        rw [← sub_add_sub_cancel _ (g i z)]
+        exact eNorm_add_le _ _)
+      (lintegral_add_right' _ ((((hg i).sub hg₀).mono
+        hKΩ).aestronglyMeasurable hK'.measurableSet).eNorm).le
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ ↦ zero_le) hle
+  simpa using (hr K hKΩ hK').add (hK hgg hKΩ hK')
 
 end TauCeti

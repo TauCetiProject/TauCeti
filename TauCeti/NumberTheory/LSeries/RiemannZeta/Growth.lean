@@ -41,6 +41,8 @@ the convexity exponent.
 
 * `TauCeti.LFunctions.LFunctionTrivChar₁_one_eq_zetaEntireCompletion_mul_inv_Gammaℝ` and
   `TauCeti.orderLE_LFunctionTrivChar₁_one`: the factorization and order at most one.
+* `TauCeti.LFunctions.logDeriv_zetaEntireCompletion_eq_add_logDeriv_Gammaℝ`: the factorization
+  in logarithmic-derivative form.
 * `TauCeti.hasVerticalStripGrowth_LFunctionTrivChar₁_one`: vertical-strip growth at large height.
 * `TauCeti.exists_norm_LFunctionTrivChar₁_one_le_rpow`: polynomial growth on vertical strips at
   every height.
@@ -83,6 +85,31 @@ theorem LFunctionTrivChar₁_one_eq_zetaEntireCompletion_mul_inv_Gammaℝ (s : �
   rw [LFunctionTrivChar₁_one_apply_of_ne_one hz1, zetaEntireCompletion_eq_mul hz0 hz1,
     riemannZeta_def_of_ne_zero hz0, Gammaℝ_add_two hz0]
   field_simp [hz0, hΓ, ofReal_ne_zero.mpr pi_ne_zero]
+
+/-- The shifted real gamma factor gives the difference between the logarithmic derivatives of
+zeta's entire completion and its pole-removed continuation. This applies at `0` and `1` too. -/
+theorem logDeriv_zetaEntireCompletion_eq_add_logDeriv_Gammaℝ {s : ℂ}
+    (hξ : zetaEntireCompletion s ≠ 0) (hΓ : Gammaℝ (s + 2) ≠ 0) :
+    logDeriv zetaEntireCompletion s = logDeriv (LFunctionTrivChar₁ 1) s +
+      logDeriv Gammaℝ (s + 2) := by
+  have hc : (2 * Real.pi : ℂ) ≠ 0 := mul_ne_zero two_ne_zero (ofReal_ne_zero.mpr Real.pi_ne_zero)
+  have hfactor := funext LFunctionTrivChar₁_one_eq_zetaEntireCompletion_mul_inv_Gammaℝ
+  have hinv : DifferentiableAt ℂ (Gammaℝ⁻¹) (s + 2) := differentiable_Gammaℝ_inv _
+  have hg : DifferentiableAt ℂ Gammaℝ (s + 2) := by
+    simpa only [inv_inv] using hinv.inv (inv_ne_zero hΓ)
+  have hshift : DifferentiableAt ℂ (fun z : ℂ ↦ z + 2) s := by fun_prop
+  have hfun := hg.comp s hshift
+  have hl : logDeriv (fun z : ℂ ↦ (Gammaℝ (z + 2))⁻¹) s = -logDeriv Gammaℝ (s + 2) := by
+    have hz := logDeriv_fun_zpow hfun (-1 : ℤ)
+    rw [logDeriv_comp (x := s) (g := fun z : ℂ ↦ z + 2) hg hshift] at hz
+    simpa [Function.comp_def, deriv_add_const] using hz
+  have hlog : logDeriv (LFunctionTrivChar₁ 1) s =
+      logDeriv zetaEntireCompletion s + -logDeriv Gammaℝ (s + 2) := by
+    rw [hfactor]
+    simp only [div_eq_mul_inv, logDeriv_mul_const _ _ (inv_ne_zero hc)]
+    rw [logDeriv_fun_mul (g := fun z : ℂ ↦ (Gammaℝ (z + 2))⁻¹) s hξ (inv_ne_zero hΓ)
+      (differentiable_zetaEntireCompletion s) (hfun.inv hΓ), hl]
+  linear_combination -hlog
 
 end TauCeti.LFunctions
 
