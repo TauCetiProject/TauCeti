@@ -39,6 +39,14 @@ theorem sign_eval_const (p : R[X]) {a b : R} (hab : a ≤ b)
   · rw [sign_pos h.1, sign_pos h.2]
   · rw [sign_neg h.1, sign_neg h.2]
 
+/-- A polynomial has the same sign at the two endpoints of a root-free unordered interval. -/
+theorem sign_eval_eq_of_forall_mem_uIcc (p : R[X]) {a b : R}
+    (hz : ∀ x ∈ Set.uIcc a b, p.eval x ≠ 0) :
+    SignType.sign (p.eval a) = SignType.sign (p.eval b) := by
+  rcases le_total a b with hab | hba
+  · exact p.sign_eval_const hab fun x hx => hz x (Set.Icc_subset_uIcc hx)
+  · exact (p.sign_eval_const hba fun x hx => hz x (Set.Icc_subset_uIcc' hx)).symm
+
 /-- Up to its next root to the right of `r`, a polynomial has its right-hand sign at `r`. -/
 theorem sign_eval_eq_derivSignRight (p : R[X]) {r b : R} (hrb : r < b)
     (hz : ∀ x ∈ Set.Ioc r b, p.eval x ≠ 0) :

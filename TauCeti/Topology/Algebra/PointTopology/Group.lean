@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Algebra.Equiv
+public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Topology.Algebra.PointTopology.Functoriality
 
@@ -54,8 +55,6 @@ its adelic points.
   group.
 * `BialgHom.continuous_mapDomain` and `AlgHom.continuous_mapValue`: functoriality of the points is
   continuous in the coordinate algebra and in continuous maps of coefficients.
-* `BialgEquiv.mapDomainContinuousMulEquiv`: bialgebra equivalences induce topological
-  multiplicative equivalences of convolution monoids of points.
 * `AlgHom.isEmbedding_mapValue`, `AlgHom.isClosedEmbedding_mapValue` and
   `AlgHom.isOpenEmbedding_mapValue`: change of coefficients along an embedding, closed embedding
   or open embedding of coefficient rings.
@@ -65,6 +64,11 @@ its adelic points.
   a closed embedding of groups of points over a T1 ring.
 * `ContinuousAlgEquiv.mapValueContinuousMulEquiv`: change of coefficients along an isomorphism of
   topological coefficient algebras, as an isomorphism of topological monoids of points.
+* `BialgEquiv.mapDomainContinuousMulEquiv`: pre-composition with an isomorphism of bialgebras, as
+  an isomorphism of topological monoids of points.
+* `TauCeti.PointTopology.coe_baseChangeConvHomeomorph_symm`: for a bialgebra, the inverse of the
+  base-change homeomorphism of points is the convolution-monoid isomorphism
+  `AlgHom.baseChangePointsMulEquiv`.
 
 ## References
 
@@ -225,25 +229,36 @@ theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_symm (e : R ≃A[k] R') :
     simp only [ContinuousAlgEquiv.mapValueContinuousMulEquiv_apply, ← MonoidHom.comp_apply,
       ← AlgHom.mapValue_comp, hcomp, AlgHom.mapValue_id, MonoidHom.id_apply]
 
-end Functoriality
-
-section DomainEquiv
-
-variable {k H₁ H₂ R : Type*} [CommSemiring k] [Semiring H₁] [Bialgebra k H₁] [Semiring H₂]
-  [Bialgebra k H₂] [CommSemiring R] [Algebra k R] [TopologicalSpace R]
-
-open TauCeti.PointTopology
-
-/-- A bialgebra equivalence `e : H₁ ≃ₐc[k] H₂` induces a topological multiplicative equivalence of
-the convolution monoids of points by precomposition, upgrading `BialgEquiv.mapDomainMulEquiv`. -/
+/-- An isomorphism `e : H₁ ≃ₐc[k] H₂` of bialgebras induces, by pre-composition, an isomorphism of
+topological monoids of points `WithConv (H₂ →ₐ[k] R) ≃ₜ* WithConv (H₁ →ₐ[k] R)`; it is
+`BialgEquiv.mapDomainMulEquiv` with its continuity in both directions. -/
 noncomputable def BialgEquiv.mapDomainContinuousMulEquiv (e : H₁ ≃ₐc[k] H₂) :
     WithConv (H₂ →ₐ[k] R) ≃ₜ* WithConv (H₁ →ₐ[k] R) where
   toMulEquiv := e.mapDomainMulEquiv
-  continuous_toFun :=
-    (BialgHom.continuous_mapDomain (e : H₁ →ₐc[k] H₂)).congr fun f ↦
-      (e.mapDomainMulEquiv_apply f).symm
-  continuous_invFun :=
-    (BialgHom.continuous_mapDomain (e.symm : H₂ →ₐc[k] H₁)).congr fun f ↦ by simp
+  continuous_toFun := (BialgHom.continuous_mapDomain _).congr fun x ↦
+    (e.mapDomainMulEquiv_apply x).symm
+  continuous_invFun := (BialgHom.continuous_mapDomain _).congr fun x ↦
+    (e.mapDomainMulEquiv_symm_apply x).symm
+
+/-- As a function, `mapDomainContinuousMulEquiv` is the pre-composition map `BialgHom.mapDomain`. -/
+theorem BialgEquiv.coe_mapDomainContinuousMulEquiv (e : H₁ ≃ₐc[k] H₂) :
+    ⇑(e.mapDomainContinuousMulEquiv (R := R)) = BialgHom.mapDomain (A := R) (e : H₁ →ₐc[k] H₂) :=
+  funext e.mapDomainMulEquiv_apply
+
+/-- The forward map of `mapDomainContinuousMulEquiv` is pre-composition with `e`. -/
+@[simp]
+theorem BialgEquiv.mapDomainContinuousMulEquiv_apply (e : H₁ ≃ₐc[k] H₂)
+    (x : WithConv (H₂ →ₐ[k] R)) :
+    e.mapDomainContinuousMulEquiv x = BialgHom.mapDomain (e : H₁ →ₐc[k] H₂) x :=
+  e.mapDomainMulEquiv_apply x
+
+/-- The inverse map of `mapDomainContinuousMulEquiv` is pre-composition with `e.symm`. -/
+@[simp]
+theorem BialgEquiv.mapDomainContinuousMulEquiv_symm_apply (e : H₁ ≃ₐc[k] H₂)
+    (x : WithConv (H₁ →ₐ[k] R)) :
+    (e.mapDomainContinuousMulEquiv (R := R)).symm x =
+      BialgHom.mapDomain (e.symm : H₂ →ₐc[k] H₁) x :=
+  e.mapDomainMulEquiv_symm_apply x
 
 /-- Forgetting continuity from `BialgEquiv.mapDomainContinuousMulEquiv` recovers
 `BialgEquiv.mapDomainMulEquiv`. -/
@@ -253,24 +268,15 @@ theorem BialgEquiv.toMulEquiv_mapDomainContinuousMulEquiv (e : H₁ ≃ₐc[k] H
         WithConv (H₂ →ₐ[k] R) ≃* WithConv (H₁ →ₐ[k] R)) =
       e.mapDomainMulEquiv := (rfl)
 
-/-- `BialgEquiv.mapDomainContinuousMulEquiv` acts by `BialgHom.mapDomain` in the forward
-direction. -/
-@[simp]
-theorem BialgEquiv.mapDomainContinuousMulEquiv_apply (e : H₁ ≃ₐc[k] H₂)
-    (f : WithConv (H₂ →ₐ[k] R)) :
-    e.mapDomainContinuousMulEquiv f = BialgHom.mapDomain (e : H₁ →ₐc[k] H₂) f :=
-  e.mapDomainMulEquiv_apply f
-
 /-- Inverting `BialgEquiv.mapDomainContinuousMulEquiv` is `mapDomainContinuousMulEquiv` of the
 inverse bialgebra equivalence. -/
-@[simp]
 theorem BialgEquiv.mapDomainContinuousMulEquiv_symm (e : H₁ ≃ₐc[k] H₂) :
     (e.mapDomainContinuousMulEquiv (R := R)).symm = e.symm.mapDomainContinuousMulEquiv :=
   ContinuousMulEquiv.ext fun f ↦ e.mapDomainContinuousMulEquiv.symm_apply_eq.2 <| by
     simp only [BialgEquiv.mapDomainContinuousMulEquiv_apply, ← MonoidHom.comp_apply,
       ← BialgHom.mapDomain_comp, BialgEquiv.symm_comp, BialgHom.mapDomain_id, MonoidHom.id_apply]
 
-end DomainEquiv
+end Functoriality
 
 section Range
 
@@ -320,3 +326,26 @@ theorem BialgHom.isClosedEmbedding_mapDomain_of_surjective {φ : H₁ →ₐc[k]
     (isHomeomorph_ofConv (k := k) (A := H₂) (R := R)).isClosedEmbedding
 
 end ClosedImmersion
+
+namespace TauCeti.PointTopology
+
+section BaseChangeMulEquiv
+
+variable {k K A R : Type*} [CommSemiring k] [CommSemiring K] [Algebra k K]
+  [Semiring A] [Bialgebra k A] [CommSemiring R] [Algebra k R] [Algebra K R]
+  [IsScalarTower k K R] [TopologicalSpace R] [IsTopologicalSemiring R]
+
+/-- For a bialgebra `A`, the inverse of `baseChangeConvHomeomorph` is the convolution-monoid
+isomorphism `AlgHom.baseChangePointsMulEquiv`, so base change of points is at once a homeomorphism
+and a monoid isomorphism. -/
+theorem coe_baseChangeConvHomeomorph_symm :
+    ⇑(baseChangeConvHomeomorph k K A R).symm =
+      AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) := by
+  funext x
+  rw [Homeomorph.symm_apply_eq]
+  ext a
+  simp
+
+end BaseChangeMulEquiv
+
+end TauCeti.PointTopology

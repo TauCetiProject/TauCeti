@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.LDL
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!

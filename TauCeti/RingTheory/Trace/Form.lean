@@ -6,6 +6,7 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 module
 
 public import Mathlib.RingTheory.Discriminant
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 public import TauCeti.RingTheory.NormTrace.Pi
 
 /-!
@@ -73,34 +74,12 @@ theorem Algebra.traceForm_pi_nondegenerate_iff {ι : Type*} [Finite ι] (L : ι 
     [∀ i, Module.Finite K (L i)] :
     (Algebra.traceForm K (∀ i, L i)).Nondegenerate ↔
       ∀ i, (Algebra.traceForm K (L i)).Nondegenerate := by
-  classical
   have := Fintype.ofFinite ι
-  have hsum (x y : ∀ i, L i) :
-      Algebra.traceForm K (∀ i, L i) x y = ∑ i, Algebra.traceForm K (L i) (x i) (y i) := by
+  have h : Algebra.traceForm K (∀ i, L i) =
+      LinearMap.BilinForm.pi fun i ↦ Algebra.traceForm K (L i) := by
+    ext x y
     simp [Algebra.traceForm_apply, Algebra.trace_pi]
-  have hsingle (x : ∀ i, L i) (i : ι) (z : L i) :
-      Algebra.traceForm K (∀ i, L i) x (Pi.single i z) = Algebra.traceForm K (L i) (x i) z := by
-    rw [hsum, Finset.sum_eq_single i]
-    · simp
-    · intro j _ hj
-      simp [Pi.single_eq_of_ne hj]
-    · simp
-  have hleft (i : ι) : (Algebra.traceForm K (L i)).Nondegenerate ↔
-      (Algebra.traceForm K (L i)).SeparatingLeft :=
-    LinearMap.IsRefl.nondegenerate_iff_separatingLeft (Algebra.traceForm_isSymm K).isRefl
-  refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-    (Algebra.traceForm_isSymm (R := K) (S := ∀ i, L i)).isRefl).trans
-      ((Iff.trans ?_ (forall_congr' hleft).symm))
-  constructor
-  · intro h i z hz
-    have hzero : (Pi.single i z : ∀ i, L i) = 0 := by
-      refine h _ fun y ↦ ?_
-      rw [(Algebra.traceForm_isSymm K).eq, hsingle, (Algebra.traceForm_isSymm K).eq]
-      exact hz (y i)
-    simpa using congr_fun hzero i
-  · intro h x hx
-    funext i
-    exact h i (x i) fun z ↦ by rw [← hsingle]; exact hx _
+  rw [h, LinearMap.BilinForm.nondegenerate_pi_iff]
 
 /-- An algebra over a reduced ring with nondegenerate trace form is reduced. -/
 theorem Algebra.isReduced_of_traceForm_nondegenerate {B : Type*} [IsReduced K] [CommRing B]

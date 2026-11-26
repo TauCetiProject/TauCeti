@@ -45,10 +45,11 @@ namespace AbstractMeasure
 
 open scoped AbstractMeasure
 
-variable (p : ℕ) [Fact p.Prime] (R : Type*) [NormedCommRing R]
+variable (p : ℕ) [Fact p.Prime] (R : Type*) [TopologicalSpace R]
 
-local instance : ContinuousMul C(ℤ_[p], R) :=
-  ContinuousMap.instContinuousMulOfLocallyCompactSpace
+section Indicator
+
+variable [Zero R] [One R]
 
 /-- The continuous characteristic function of the clopen subset `pℤ_p`. -/
 def pMultiplesIndicator : C(ℤ_[p], R) :=
@@ -67,6 +68,13 @@ theorem pMultiplesIndicator_eq_one {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) :
 theorem pMultiplesIndicator_eq_zero {x : ℤ_[p]} (hx : ¬(p : ℤ_[p]) ∣ x) :
     pMultiplesIndicator p R x = 0 := by
   simp [pMultiplesIndicator, PadicInt.toZMod_eq_zero_iff_dvd, hx]
+
+end Indicator
+
+variable {p R} [CommRing R] [IsTopologicalRing R]
+
+local instance : ContinuousMul C(ℤ_[p], R) :=
+  ContinuousMap.instContinuousMulOfLocallyCompactSpace
 
 /-- Restriction of a measure on `ℤ_p` to `pℤ_p`, extended by zero on the ambient carrier. -/
 def restrictMultiples : D(ℤ_[p], R) →ₗ[R] D(ℤ_[p], R) :=

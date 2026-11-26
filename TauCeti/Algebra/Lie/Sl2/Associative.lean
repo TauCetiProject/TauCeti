@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Sl2
 public import Mathlib.Algebra.Lie.UniversalEnveloping
 public import TauCeti.RingTheory.DividedPowers.Associative
 import Mathlib.Tactic.NoncommRing
@@ -39,7 +40,7 @@ closed under multiplication.
 
 The relations are stated with the hypotheses each one needs, and not as a bundled `IsSl2Triple`:
 the intended consumer is the universal enveloping algebra, where the image of the Cartan element
-is not known to be nonzero, so the `IsSl2Triple.h_ne_zero` field is unavailable there. The last
+is not known to be nonzero, so the `IsSl2Triple.h_ne_zero` field is unavailable there. A later
 section transports the individual bracket hypotheses through the canonical map to the enveloping
 algebra; a genuine `IsSl2Triple` supplies them through its bracket fields.
 
@@ -56,6 +57,13 @@ algebra; a genuine `IsSl2Triple` supplies them through its bracket fields.
   element past a divided power translates it by `∓2n`.
 * `TauCeti.Sl2.dividedPower_succ_e_mul_f` and `TauCeti.Sl2.dividedPower_succ_f_mul_e`: the
   reversed-product forms, with the Cartan factor on the left.
+* `TauCeti.Sl2.weyl_sl2_relations` and `TauCeti.Sl2.isSl2Triple_of_weyl`: if `d m = m d + 1`, then
+  `h = 2 m d`, `e = m`, `f = -m d²` satisfy the `sl₂` relations, and form an `sl₂` triple in a
+  nontrivial ring in which `2` is left regular. They also satisfy `h² + 2 h + 4 f e = 0`
+  (`TauCeti.Sl2.weyl_sq_add_two_mul_add_four_mul_eq_zero`).
+* `TauCeti.Sl2.ι_e_mul_ι_f_sub_mul`, `TauCeti.Sl2.ι_h_mul_ι_e_sub_mul` and
+  `TauCeti.Sl2.ι_h_mul_ι_f_sub_mul`: the bracket relations transported to the universal enveloping
+  algebra, in the form the commutation formulas take as hypotheses.
 * `TauCeti.Sl2.ι_e_mul_dividedPower_succ_ι_f` and
   `TauCeti.Sl2.ι_f_mul_dividedPower_succ_ι_e`: the two divided-power relations in a universal
   enveloping algebra over `ℚ`.
@@ -137,6 +145,53 @@ theorem f_mul_e_pow_succ (hef : E * F - F * E = H)
 
 end CommutingPowers
 
+section Weyl
+
+/-! ### The `sl₂` triple of a Weyl pair
+
+If `d m = m d + 1`, as for `d/dx` and multiplication by `x` on polynomials, then `H = 2 m d`,
+`E = m` and `F = -m d²` satisfy the `sl₂` relations, and `H² + 2 H + 4 F E = 0`. -/
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable {A : Type*} [Ring A] {m d : A}
+
+/-- The Weyl relation `d m = m d + 1`, multiplied on the right. -/
+theorem mul_mul_of_weyl (hdm : d * m = m * d + 1) (x : A) : d * (m * x) = m * (d * x) + x := by
+  rw [← mul_assoc, hdm, add_mul, one_mul, mul_assoc]
+
+/-- In a ring with `d m = m d + 1`, the elements `h = 2 m d`, `e = m`, `f = -m d²` satisfy the
+`sl₂` relations. -/
+theorem weyl_sl2_relations (hdm : d * m = m * d + 1) :
+    ⁅m, -(m * d * d)⁆ = 2 * (m * d) ∧ ⁅2 * (m * d), m⁆ = 2 • m ∧
+      ⁅2 * (m * d), -(m * d * d)⁆ = -(2 • -(m * d * d)) := by
+  refine ⟨?_, ?_, ?_⟩ <;>
+  · simp only [Ring.lie_def, mul_assoc, mul_mul_of_weyl hdm, hdm, mul_add, add_mul, mul_neg,
+      neg_mul, mul_one, two_mul, two_nsmul]
+    abel
+
+/-- In a ring with `d m = m d + 1`, the elements `h = 2 m d`, `e = m`, `f = -m d²` satisfy
+`h² + 2 h + 4 f e = 0`. -/
+theorem weyl_sq_add_two_mul_add_four_mul_eq_zero (hdm : d * m = m * d + 1) :
+    2 * (m * d) * (2 * (m * d)) + 2 * (2 * (m * d)) + 4 * (-(m * d * d) * m) = 0 := by
+  simp only [mul_assoc, mul_mul_of_weyl hdm, hdm, mul_add, add_mul, mul_neg, neg_mul, mul_one,
+    two_mul, show (4 : A) = 2 + 2 by norm_num]
+  abel
+
+/-- In a nontrivial ring in which `2` is left regular, the elements `h = 2 m d`, `e = m`,
+`f = -m d²` with `d m = m d + 1` form an `sl₂` triple. -/
+theorem isSl2Triple_of_weyl [Nontrivial A] (h2 : IsLeftRegular (2 : A))
+    (hdm : d * m = m * d + 1) : IsSl2Triple (2 * (m * d)) m (-(m * d * d)) := by
+  obtain ⟨h1, h2', h3⟩ := weyl_sl2_relations hdm
+  refine ⟨fun h ↦ ?_, h1, h2', h3⟩
+  have hmd : m * d = 0 := h2 (h.trans (mul_zero 2).symm)
+  have hm : m = 0 :=
+    calc m = m * d * m - m * (m * d) := by rw [mul_assoc, hdm]; noncomm_ring
+      _ = 0 := by rw [hmd, zero_mul, mul_zero, sub_zero]
+  simp [hm] at hdm
+
+end Weyl
+
 section DividedPowers
 
 variable {A : Type*} [Ring A] [Algebra ℚ A] {H E F : A}
@@ -206,17 +261,17 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable (R : Type*) [CommRing R] {L : Type*} [LieRing L] [LieAlgebra R L] {h e f : L}
 
 /-- The image of a bracket relation `⁅e, f⁆ = h` under the canonical map. -/
-private theorem ι_e_mul_ι_f_sub_mul (hef : ⁅e, f⁆ = h) :
+theorem ι_e_mul_ι_f_sub_mul (hef : ⁅e, f⁆ = h) :
     ι R e * ι R f - ι R f * ι R e = ι R h := by
   simpa only [LieRing.of_associative_ring_bracket, hef] using ((ι R).map_lie e f).symm
 
 /-- The image of a bracket relation `⁅h, e⁆ = 2 • e` under the canonical map. -/
-private theorem ι_h_mul_ι_e_sub_mul (hhe : ⁅h, e⁆ = 2 • e) :
+theorem ι_h_mul_ι_e_sub_mul (hhe : ⁅h, e⁆ = 2 • e) :
     ι R h * ι R e - ι R e * ι R h = 2 • ι R e := by
   simpa only [LieRing.of_associative_ring_bracket, hhe, map_nsmul] using ((ι R).map_lie h e).symm
 
 /-- The image of a bracket relation `⁅h, f⁆ = -(2 • f)` under the canonical map. -/
-private theorem ι_h_mul_ι_f_sub_mul (hhf : ⁅h, f⁆ = -(2 • f)) :
+theorem ι_h_mul_ι_f_sub_mul (hhf : ⁅h, f⁆ = -(2 • f)) :
     ι R h * ι R f - ι R f * ι R h = -(2 • ι R f) := by
   simpa only [LieRing.of_associative_ring_bracket, hhf, map_neg, map_nsmul] using
     ((ι R).map_lie h f).symm
