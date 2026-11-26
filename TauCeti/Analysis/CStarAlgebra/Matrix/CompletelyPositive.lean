@@ -9,7 +9,7 @@ public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Defect
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 
 /-!
 # Completely positive contractions from matrices to `M₁`

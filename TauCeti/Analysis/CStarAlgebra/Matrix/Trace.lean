@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basis
 public import TauCeti.Analysis.Matrix.Frobenius
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Kronecker

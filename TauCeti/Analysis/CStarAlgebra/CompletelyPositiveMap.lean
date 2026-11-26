@@ -9,7 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearMap
 
 /-!

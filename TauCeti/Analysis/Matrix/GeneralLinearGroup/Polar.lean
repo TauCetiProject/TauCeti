@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 public import TauCeti.Analysis.CStarAlgebra.Unitary.Polar
 public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.StableComponent
 

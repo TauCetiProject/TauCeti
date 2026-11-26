@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import Mathlib.Analysis.CStarAlgebra.Hom
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.CauchySchwarz
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basis
 
 /-!
 # Completely bounded maps between C⋆-algebras
@@ -284,17 +285,13 @@ variable {F A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
 
-private theorem norm_map_le (π : F) {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) A) :
-    ‖x.map (π : A →ₗ[ℂ] B)‖ ≤ 1 * ‖x‖ := by
-  simpa using norm_apply_le (CStarMatrix.mapₙₐ (n := Fin n) (ofClass π)) x
-
 /-- A star homomorphism of C⋆-algebras is completely bounded. -/
 theorem isCompletelyBounded (π : F) : (π : A →ₗ[ℂ] B).IsCompletelyBounded :=
-  ⟨1, zero_le_one, fun _ x => norm_map_le π x⟩
+  ⟨1, zero_le_one, fun _ x => by simpa using CStarMatrix.norm_map_le π x⟩
 
 /-- A star homomorphism of C⋆-algebras is a complete contraction. -/
 theorem cbNorm_le_one (π : F) : (π : A →ₗ[ℂ] B).cbNorm ≤ 1 :=
-  LinearMap.cbNorm_le_of_bound zero_le_one fun _ x => norm_map_le π x
+  LinearMap.cbNorm_le_of_bound zero_le_one fun _ x => by simpa using CStarMatrix.norm_map_le π x
 
 end NonUnitalStarAlgHom
 

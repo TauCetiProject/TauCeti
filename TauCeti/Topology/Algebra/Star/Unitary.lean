@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Star.Unitary
+public import Mathlib.Topology.Connected.PathConnected
+public import TauCeti.Algebra.Star.Projection.Unitary
 public import TauCeti.Algebra.Star.Unitary
 
 /-!
-# The unitary subgroup of units
+# The unitary subgroup of units and unitary conjugation paths
 
 Mathlib's `isClosed_unitary` says that the unitary elements of a topological star monoid `M` are
 a closed subset of `M`.  This file transfers that to the group of units: `unitarySubgroup Mˣ`,
 the unitary elements of `Mˣ` packaged as a subgroup, is closed in `Mˣ`.  It also shows that
-`unitarySubgroup Mˣ` is compact exactly when `unitary M` is.
+`unitarySubgroup Mˣ` is compact exactly when `unitary M` is, and packages conjugation along a
+unitary path from `1` as a path `Unitary.conjPath`, preserving star projections at every time.
 
 Closedness is immediate once Mathlib's `Units.unitary_eq` exhibits the subgroup as the
 preimage of `unitary M` under `Units.val`, which is continuous.  No hypothesis beyond the ones
@@ -38,6 +41,11 @@ from; see `TauCeti/Geometry/Lie/Subgroup/Unitary/Basic.lean`.
   to the unitary elements; `TauCeti.unitarySubgroupUnitsHomeomorph_apply` and
   `TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply` identify its maps.
 * `Unitary.continuous_toUnits`: the unitary-to-units homomorphism is continuous.
+* `Unitary.conjPath`: conjugating an element `p` along a path `δ : Path (1 : unitary M) u` gives
+  a continuous path from `p` to `(u : M) * p * star (u : M)`.
+* `IsStarProjection.conjPath` and `IsStarProjection.exists_path_of_joined_one_unitary`:
+  conjugating a star projection along a unitary path from `1` gives a continuous path of star
+  projections.
 * `TauCeti.mem_unitary_units_iff`: a unit is unitary exactly when its underlying element is.
 * `TauCeti.isClosed_unitarySubgroup_units`: the unitary subgroup of `Mˣ` is closed.
 * `TauCeti.isCompact_unitarySubgroup_units_iff`: the unitary subgroup of `Mˣ` is compact exactly
@@ -45,6 +53,8 @@ from; see `TauCeti/Geometry/Lie/Subgroup/Unitary/Basic.lean`.
 -/
 
 public section
+
+open scoped unitInterval
 
 namespace Unitary
 
@@ -58,7 +68,44 @@ theorem continuous_toUnits {M : Type*} [Monoid M] [StarMul M] [TopologicalSpace 
   · refine continuous_subtypeVal.star.congr fun u ↦ ?_
     simp only [← map_inv, val_toUnits_apply, ← star_eq_inv, coe_star, Pi.star_apply]
 
+/-- Conjugating an element `p` along a path `δ : Path (1 : unitary M) u` gives a continuous path
+from `p` to `(u : M) * p * star (u : M)`. -/
+def conjPath {M : Type*} [Monoid M] [StarMul M] [TopologicalSpace M] [ContinuousMul M]
+    [ContinuousStar M] {u : unitary M} (δ : Path (1 : unitary M) u) (p : M) :
+    Path p ((u : M) * p * star (u : M)) where
+  toFun t := (δ t : M) * p * star (δ t : M)
+  continuous_toFun := by fun_prop
+  source' := by simp
+  target' := by simp
+
+@[simp]
+theorem conjPath_apply {M : Type*} [Monoid M] [StarMul M] [TopologicalSpace M] [ContinuousMul M]
+    [ContinuousStar M] {u : unitary M} (δ : Path (1 : unitary M) u) (p : M) (t : I) :
+    conjPath δ p t = (δ t : M) * p * star (δ t : M) :=
+  (rfl)
+
 end Unitary
+
+namespace IsStarProjection
+
+variable {M : Type*} [Monoid M] [StarMul M] [TopologicalSpace M] [ContinuousMul M]
+  [ContinuousStar M]
+
+/-- Conjugating a star projection `p` along `δ : Path (1 : unitary M) u` produces a star projection
+at every time `t`. -/
+theorem conjPath {p : M} (hp : IsStarProjection p) {u : unitary M} (δ : Path (1 : unitary M) u)
+    (t : I) : IsStarProjection (Unitary.conjPath δ p t) := by
+  rw [Unitary.conjPath_apply]
+  exact hp.star_right_conjugate (δ t)
+
+/-- If `u : unitary M` lies in the path component of `1`, then a star projection `p` and
+`(u : M) * p * star (u : M)` are joined by a continuous path of star projections. -/
+theorem exists_path_of_joined_one_unitary {p : M} (hp : IsStarProjection p)
+    {u : unitary M} (hu : Joined (1 : unitary M) u) :
+    ∃ γ : Path p ((u : M) * p * star (u : M)), ∀ t, IsStarProjection (γ t) :=
+  let ⟨δ⟩ := hu; ⟨Unitary.conjPath δ p, hp.conjPath δ⟩
+
+end IsStarProjection
 
 namespace TauCeti
 
