@@ -66,7 +66,9 @@ Taking for `k` the inclusion of an open set `U ≤ Ω`, along which the pullback
 on `U`. Locality in the target is the same comparison for `ψ ⊗ ρₙ` on the two domains
 `{(x, y) | f x + y ∈ Ω''}` and `{(x, y) | f x + y ∈ Ω'}`. These results give locality and
 invariance under changes of coordinates in the source only; changes of coordinates in the target
-need composition with maps that are not submersions, which is not proved here.
+need composition with maps that are not submersions, which is
+`Distribution.pullback_eq_pullback_compCLMOfSubmersion` in
+`TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Comp`.
 
 ## Main declarations
 
