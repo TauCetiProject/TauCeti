@@ -10,31 +10,26 @@ public import TauCeti.Analysis.CStarAlgebra.Projection.Perturbation
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Unitization.Basic
 
 /-!
-# Homotopy invariance and zero maps for `K₀` of C⋆-algebras
+# Homotopy invariance of `K₀` of C⋆-algebras
 
-Let `A` and `B` be C⋆-algebras, possibly without unit, and let `φ_t : A → B` be a family of star
-homomorphisms indexed by a preconnected space `X` (for instance the unit interval) that is
-**pointwise continuous**: `t ↦ φ_t(a)` is continuous for every `a`. For a matrix projection `p`
-over `A`, the entrywise images `φ_t(p)` form a continuous family of projections, so any two of them
-are Murray–von Neumann equivalent (`Continuous.isMurrayVonNeumannEquivalent`). Hence all the
-`φ_t` induce the same homomorphism on the projection monoid `V(A)`
-(`TauCeti.ProjectionMonoid.map_eq_of_continuous`) and on its Grothendieck group
-(`TauCeti.ProjectionKZero.map_eq_of_continuous`).
+Let `B` be a C⋆-algebra, possibly without unit, and let `φ_t : A → B` be a family of star
+homomorphisms out of a star algebra `A`, indexed by a preconnected space `X` (for instance the unit
+interval), that is **pointwise continuous**: `t ↦ φ_t(a)` is continuous for every `a`. For a matrix
+projection `p` over `A`, the entrywise images `φ_t(p)` form a continuous family of projections over
+`B`, so any two of them are Murray–von Neumann equivalent
+(`Continuous.isMurrayVonNeumannEquivalent`). Hence all the `φ_t` induce the same homomorphism on
+the projection monoid `V(A)` (`TauCeti.ProjectionMonoid.map_eq_of_continuous`) and on its
+Grothendieck group (`TauCeti.ProjectionKZero.map_eq_of_continuous`).
 
 The unitizations `φ_t⁺ : A⁺ → B⁺` are again pointwise continuous in `t`, so the same holds for the
-operator `K₀`-group `K₀(A) = ker (K₀(A⁺) → K₀(ℂ))`: **homotopic star homomorphisms induce the same
+`K₀`-group `K₀(A) = ker (K₀(A⁺) → K₀(ℂ))`: **homotopic star homomorphisms induce the same
 homomorphism** `K₀(A) → K₀(B)` (`TauCeti.UnitizationKZero.map_eq_of_continuous`).
-
-The **zero homomorphism** `A → B` induces the zero map on `K₀`
-(`TauCeti.UnitizationKZero.map_zero`), for star algebras over any commutative star ring: its
-unitization factors through the augmentation `A⁺ → R`, which kills `K₀(A)`.
 
 ## Main statements
 
 * `TauCeti.ProjectionMonoid.map_eq_of_continuous`, `TauCeti.ProjectionKZero.map_eq_of_continuous`:
   homotopy invariance on `V(A)` and its Grothendieck group.
 * `TauCeti.UnitizationKZero.map_eq_of_continuous`: homotopy invariance of `K₀`.
-* `TauCeti.UnitizationKZero.map_zero`: the zero homomorphism induces zero on `K₀`.
 -/
 
 public section
@@ -42,12 +37,16 @@ public section
 namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X] [PreconnectedSpace X]
-  {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+  {B : Type*} [NonUnitalCStarAlgebra B]
+
+section
+
+variable {A : Type*} [NonUnitalSemiring A] [StarRing A]
 
 namespace ProjectionMonoid
 
 /-- **Homotopy invariance on `V(A)`.** A pointwise continuous family `φ` of star homomorphisms
-between C⋆-algebras, indexed by a preconnected space, induces the same homomorphism of projection
+into a C⋆-algebra, indexed by a preconnected space, induces the same homomorphism of projection
 monoids at any two parameters. -/
 theorem map_eq_of_continuous {φ : X → A →⋆ₙ+* B} (hφ : ∀ a, Continuous fun t ↦ φ t a)
     (x y : X) : map (φ x) = map (φ y) := by
@@ -64,7 +63,7 @@ end ProjectionMonoid
 namespace ProjectionKZero
 
 /-- **Homotopy invariance on the Grothendieck group of `V(A)`.** A pointwise continuous family `φ`
-of star homomorphisms between C⋆-algebras, indexed by a preconnected space, induces the same
+of star homomorphisms into a C⋆-algebra, indexed by a preconnected space, induces the same
 homomorphism `ProjectionKZero A →+ ProjectionKZero B` at any two parameters. -/
 theorem map_eq_of_continuous {φ : X → A →⋆ₙ+* B} (hφ : ∀ a, Continuous fun t ↦ φ t a)
     (x y : X) : map (φ x) = map (φ y) :=
@@ -73,10 +72,15 @@ theorem map_eq_of_continuous {φ : X → A →⋆ₙ+* B} (hφ : ∀ a, Continuo
 
 end ProjectionKZero
 
+end
+
 namespace UnitizationKZero
 
+variable {A : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [IsScalarTower ℂ A A]
+  [SMulCommClass ℂ A A] [StarModule ℂ A]
+
 /-- **Homotopy invariance of `K₀`.** A pointwise continuous family `φ` of star homomorphisms
-between C⋆-algebras, possibly without unit, indexed by a preconnected space, induces the same
+into a C⋆-algebra, possibly without unit, indexed by a preconnected space, induces the same
 homomorphism `K₀(A) →+ K₀(B)` at any two parameters. -/
 theorem map_eq_of_continuous {φ : X → A →⋆ₙₐ[ℂ] B} (hφ : ∀ a, Continuous fun t ↦ φ t a)
     (x y : X) : map (φ x) = map (φ y) := by
@@ -89,28 +93,6 @@ theorem map_eq_of_continuous {φ : X → A →⋆ₙₐ[ℂ] B} (hφ : ∀ a, Co
     · simpa [Unitization.snd_starMap] using hφ u.snd
   ext v
   rw [coe_map, coe_map, ProjectionKZero.map_eq_of_continuous h x y]
-
-end UnitizationKZero
-
-namespace UnitizationKZero
-
-variable {R A B : Type*} [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A]
-  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [StarModule R A]
-  [NonUnitalSemiring B] [StarRing B] [Module R B] [IsScalarTower R B B] [SMulCommClass R B B]
-  [StarModule R B]
-
-/-- **Zero maps.** The zero homomorphism `A → B` induces the zero homomorphism on `K₀`: its
-unitization is the augmentation `A⁺ → R` followed by the scalar inclusion `R → B⁺`. -/
-@[simp]
-theorem map_zero : map (0 : A →⋆ₙₐ[R] B) = 0 := by
-  have h : NonUnitalStarRingHom.ofClass (Unitization.starMap (0 : A →⋆ₙₐ[R] B)) =
-      (NonUnitalStarRingHom.ofClass (StarAlgHom.ofId R (Unitization R B))).comp
-        (NonUnitalStarRingHom.ofClass (Unitization.fstStarAlgHom R A)) :=
-    NonUnitalStarRingHom.ext fun u ↦ by ext <;> simp
-  ext v
-  rw [coe_map, h, ProjectionKZero.map_comp, AddMonoidHom.comp_apply, ← augmentation_def,
-    ← inl_def, (mem_iff _).1 v.property, _root_.map_zero, AddMonoidHom.zero_apply,
-    ZeroMemClass.coe_zero]
 
 end UnitizationKZero
 
