@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Action.Prod
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.Transitive
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Diagonal orbits and stabilizer orbits
@@ -22,6 +23,10 @@ the inverse sends the orbit of `(x, g • y)` to the stabilizer orbit of `g⁻¹
 
 The diagonal action on `X × Y` is free when the action on the first factor is
 (`TauCeti.isCancelSMul_prod`).
+
+Swapping the coordinates maps diagonal orbits to diagonal orbits
+(`TauCeti.MulAction.swap_mem_orbit_swap_iff`), identifying the diagonal orbit spaces of `X × Y` and
+`Y × X` (`TauCeti.MulAction.orbitRelQuotientProdComm`).
 
 When every orbit of every point stabilizer on `S` is finite (`TauCeti.FiniteStabilizerOrbits`),
 injectivity of the forward map shows that each diagonal orbit of `S × S` meets every row and every
@@ -91,6 +96,29 @@ theorem orbitRelQuotientStabilizerEquiv_symm_mk_smul [MulAction.IsPretransitive 
   rw [Equiv.symm_apply_eq, orbitRelQuotientStabilizerEquiv_mk]
   exact Quotient.sound' ⟨g, by simp⟩
 
+/-- Swapping the coordinates maps diagonal orbits of `X × Y` to diagonal orbits of `Y × X`. -/
+@[simp]
+theorem swap_mem_orbit_swap_iff {p q : X × Y} :
+    q.swap ∈ MulAction.orbit G p.swap ↔ q ∈ MulAction.orbit G p := by
+  simp only [MulAction.mem_orbit_iff, ← Prod.smul_swap, Prod.swap_inj]
+
+variable (G X Y) in
+/-- Swapping the coordinates identifies the diagonal orbits of `X × Y` with those of `Y × X`. -/
+def orbitRelQuotientProdComm :
+    MulAction.orbitRel.Quotient G (X × Y) ≃ MulAction.orbitRel.Quotient G (Y × X) :=
+  MulAction.orbitRelQuotientCongr (MulEquiv.refl G) (Equiv.prodComm X Y) fun g p ↦
+    Prod.smul_swap g p
+
+@[simp]
+theorem orbitRelQuotientProdComm_mk (p : X × Y) :
+    orbitRelQuotientProdComm G X Y (Quotient.mk'' p) = Quotient.mk'' p.swap :=
+  MulAction.orbitRelQuotientCongr_mk _ _ _ p
+
+@[simp]
+theorem orbitRelQuotientProdComm_symm :
+    (orbitRelQuotientProdComm G X Y).symm = orbitRelQuotientProdComm G Y X :=
+  Equiv.ext fun q ↦ Quotient.inductionOn' q fun _ ↦ by rw [Equiv.symm_apply_eq]; simp
+
 end TauCeti.MulAction
 
 namespace TauCeti
@@ -128,9 +156,8 @@ coordinates. -/
 theorem FiniteStabilizerOrbits.finite_setOf_mk_right_eq (x : S)
     (q : Quotient (orbitRel G (S × S))) :
     {y | Quotient.mk (orbitRel G (S × S)) (x, y) = q}.Finite :=
-  (finite_setOf_mk_left_eq x (Quotient.map' (s₁ := orbitRel G (S × S))
-    (s₂ := orbitRel G (S × S)) Prod.swap (by rintro _ b ⟨g, rfl⟩; exact ⟨g, rfl⟩) q)).subset
-    fun _ hy ↦ by subst hy; rw [Set.mem_ofPred_eq, Quotient.map'_mk'', Prod.swap_prod_mk]
+  (finite_setOf_mk_left_eq x (MulAction.orbitRelQuotientProdComm G S S q)).subset
+    fun _ hy ↦ by subst hy; exact (MulAction.orbitRelQuotientProdComm_mk (G := G) (x, _)).symm
 
 end FiniteStabilizerOrbits
 
