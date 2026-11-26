@@ -38,7 +38,7 @@ variable (K : Type*) [Field K] [NumberField K]
 /-- If the negative part of `ψ_K(x) - x`, weighted by `x ^ (-θ - 1)`, has integral at most
 `Y ^ η` on arbitrarily far-out windows `[Y, Y ^ L]` for each `η > 0`, then the Dedekind
 zeta function has no zeros to the right of `θ`. -/
-theorem zeroFreeRightOf_dedekindZetaC_of_primePsi_window_integral {θ L : ℝ}
+theorem zeroFreeRightOf_dedekindZetaC_of_primePsi_window_integral_lower {θ L : ℝ}
     (hθ : 0 ≤ θ) (hL : 1 < L)
     (hwin : ∀ η : ℝ, 0 < η → ∃ᶠ Y in atTop,
       (∫ x in Y..(Y ^ L), max (x - primePsi K univ x) 0 * x ^ (-(θ + 1))) ≤ Y ^ η) :
@@ -95,7 +95,7 @@ theorem zeroFreeRightOf_dedekindZetaC_of_primePsi_hasWindows_lower {θ L C : ℝ
     hwin.mono fun _ hx ↦ by
       rw [mem_ofPred_eq] at hx ⊢
       linarith
-  exact zeroFreeRightOf_dedekindZetaC_of_primePsi_window_integral K hθ hL
+  exact zeroFreeRightOf_dedekindZetaC_of_primePsi_window_integral_lower K hθ hL
     (fun _ hη ↦ hw.frequently_integral_mul_rpow_le_rpow hη)
 
 end TauCeti
