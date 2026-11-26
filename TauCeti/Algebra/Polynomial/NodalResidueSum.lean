@@ -21,12 +21,12 @@ nodes are strictly monotone or antitone in a linearly ordered commutative ring.
 
 ## Main results
 
-* `Lagrange.sum_eval_div_eval_derivative_nodal`: for monic `F` of degree `< card ι`,
-  `∑ i, F.eval (x i) / (derivative (nodal univ x)).eval (x i)` equals `1` if
-  `F.natDegree + 1 = card ι` and `0` otherwise.
-* `Lagrange.sum_eval_div_sub_mul_eval_derivative_nodal`: for `deg F < card ι` and `c` not a node,
-  `∑ i, F.eval (x i) / ((x i - c) * (derivative (nodal univ x)).eval (x i)) =
-  -(F.eval c / (nodal univ x).eval c)`.
+* `Lagrange.sum_eval_div_eval_derivative_nodal`: for `x` injective on `s : Finset ι` and `F` of
+  degree `< #s`, `∑ i ∈ s, F.eval (x i) / (derivative (nodal s x)).eval (x i) = F.coeff (#s - 1)`.
+* `Lagrange.sum_eval_div_sub_mul_eval_derivative_nodal`: for `x` injective on `s`, `deg F < #s`,
+  and `c ∉ x '' s`,
+  `∑ i ∈ s, F.eval (x i) / ((x i - c) * (derivative (nodal s x)).eval (x i)) =
+  -(F.eval c / (nodal s x).eval c)`.
 * `Lagrange.derivative_nodal_sign_of_strictAnti` and
   `Lagrange.derivative_nodal_sign_of_strictMono`: sign of `(derivative (nodal univ x)).eval (x i)`
   for strictly decreasing or increasing nodes `x : Fin M → K`.
@@ -51,36 +51,31 @@ namespace Lagrange
 
 section Residues
 
-variable {ι K : Type*} [Fintype ι] [Field K] {x : ι → K} {F : K[X]}
+variable {ι K : Type*} [Field K] {s : Finset ι} {x : ι → K} {F : K[X]}
 
-/-- For distinct nodes `x : ι → K` and a monic polynomial `F` with `F.natDegree < card ι`,
-the sum of residues `F(x i) / p'(x i)` equals `1` if `F.natDegree + 1 = card ι` and `0`
-otherwise. -/
-theorem sum_eval_div_eval_derivative_nodal (hx : Function.Injective x) (hF : F.Monic)
-    (hdeg : F.natDegree < Fintype.card ι) :
-    ∑ i : ι, F.eval (x i) / (derivative (nodal univ x)).eval (x i) =
-      if F.natDegree + 1 = Fintype.card ι then 1 else 0 := by
+/-- For nodes `x : ι → K` injective on `s : Finset ι` and a polynomial `F` with `F.degree < #s`,
+the sum of residues `F(x i) / p'(x i)` over `i ∈ s` equals `F.coeff (#s - 1)`. -/
+theorem sum_eval_div_eval_derivative_nodal (hx : Set.InjOn x s) (hdeg : F.degree < #s) :
+    ∑ i ∈ s, F.eval (x i) / (derivative (nodal s x)).eval (x i) = F.coeff (#s - 1) := by
   classical
-  simp_rw [eval_nodal_derivative_eval_node_eq (mem_univ _), eval_nodal]
-  rw [← coeff_eq_sum hx.injOn (degree_le_natDegree.trans_lt (Nat.cast_lt.2 hdeg)), card_univ]
-  split_ifs with htop
-  · rw [← htop, Nat.add_sub_cancel, hF.coeff_natDegree]
-  · exact coeff_eq_zero_of_natDegree_lt (by omega)
+  rw [coeff_eq_sum hx hdeg]
+  refine sum_congr rfl fun i hi ↦ ?_
+  rw [eval_nodal_derivative_eval_node_eq hi, eval_nodal]
 
-/-- For distinct nodes `x : ι → K`, `F` with `F.natDegree < card ι`, and `c` not a node, the sum
-of residues `F(x i) / ((x i - c) * p'(x i))` equals `-F(c) / p(c)`. -/
-theorem sum_eval_div_sub_mul_eval_derivative_nodal (hx : Function.Injective x) {c : K}
-    (hc : ∀ i : ι, c ≠ x i) (hdeg : F.natDegree < Fintype.card ι) :
-    ∑ i : ι, F.eval (x i) / ((x i - c) * (derivative (nodal univ x)).eval (x i)) =
-      -(F.eval c / (nodal univ x).eval c) := by
+/-- For nodes `x : ι → K` injective on `s : Finset ι`, `F` with `F.degree < #s`, and `c` not a
+node in `s`, the sum of residues `F(x i) / ((x i - c) * p'(x i))` over `i ∈ s` equals
+`-F(c) / p(c)`. -/
+theorem sum_eval_div_sub_mul_eval_derivative_nodal (hx : Set.InjOn x s) {c : K}
+    (hc : ∀ i ∈ s, c ≠ x i) (hdeg : F.degree < #s) :
+    ∑ i ∈ s, F.eval (x i) / ((x i - c) * (derivative (nodal s x)).eval (x i)) =
+      -(F.eval c / (nodal s x).eval c) := by
   classical
-  have hval : F.eval c = (nodal univ x).eval c *
-      ∑ i : ι, nodalWeight univ x i * (c - x i)⁻¹ * F.eval (x i) := by
-    rw [← eval_interpolate_not_at_node _ fun i _ ↦ hc i,
-      ← eq_interpolate hx.injOn (degree_le_natDegree.trans_lt (Nat.cast_lt.2 hdeg))]
-  rw [hval, mul_div_cancel_left₀ _ (eval_nodal_not_at_node fun i _ ↦ hc i), ← sum_neg_distrib]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [nodalWeight_eq_eval_derivative_nodal (mem_univ i), div_eq_mul_inv, ← neg_sub c (x i),
+  have hval : F.eval c = (nodal s x).eval c *
+      ∑ i ∈ s, nodalWeight s x i * (c - x i)⁻¹ * F.eval (x i) := by
+    rw [← eval_interpolate_not_at_node _ hc, ← eq_interpolate hx hdeg]
+  rw [hval, mul_div_cancel_left₀ _ (eval_nodal_not_at_node hc), ← sum_neg_distrib]
+  refine sum_congr rfl fun i hi ↦ ?_
+  rw [nodalWeight_eq_eval_derivative_nodal hi, div_eq_mul_inv, ← neg_sub c (x i),
     neg_mul, inv_neg, mul_inv]
   ring
 
