@@ -8,10 +8,9 @@ module
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Group.AddCircle
-public import TauCeti.Analysis.Fourier.Fejer.Basic
+public import TauCeti.Analysis.Fourier.Fejer
 import Mathlib.Analysis.Real.Pi.Bounds
 import TauCeti.Algebra.BigOperators.Intervals
-import TauCeti.Analysis.Fourier.Fejer.Finite
 import TauCeti.Analysis.InnerProductSpace.Gram.RowSum
 import TauCeti.Analysis.Normed.Group.AddCircle.Basic
 import TauCeti.Analysis.Normed.Group.AddCircle.Cosecant
