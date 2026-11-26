@@ -21,8 +21,8 @@ import Mathlib.RingTheory.Finiteness.Cardinality
 
 For an endomorphism `g` of a module `M` and a `g`-invariant submodule `W` (an element of Mathlib's
 `g.invtSubmodule`), `g` induces endomorphisms of `W` and of `M ⧸ W`. A map intertwining two
-endomorphisms pulls invariant submodules back to invariant submodules, and over a field or
-division ring it matches the invariant subspaces containing its kernel with those in its range.
+endomorphisms pulls invariant submodules back to invariant submodules, and over any ring it
+matches the invariant submodules containing its kernel with those in its range.
 The annihilator of a `g`-invariant subspace is invariant under the transpose of `g`.
 
 The block upper triangular endomorphism `(v, w) ↦ (a v + x w, b w)` of `V × W` has `V × 0` as an

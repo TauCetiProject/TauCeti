@@ -267,6 +267,8 @@ end Mul
 
 section Ring
 
+attribute [local instance low] Fintype.ofFinite
+
 variable {V : Type*} [AddCommGroup V] [Module k V]
 
 /-- The inclusion of a `g`-invariant subspace intertwines the restriction of `g` with `g`. -/
@@ -294,19 +296,16 @@ protected theorem mul_zero (F : HallAlgebra k) : F * 0 = 0 :=
 /-- The induction product distributes over sums on the right. -/
 protected theorem left_distrib (F G H : HallAlgebra k) : F * (G + H) = F * G + F * H := by
   refine ext_ofEnd fun _ g ↦ ?_
-  have := Fintype.ofFinite g.invtSubmodule
   simp [mul_ofEnd_eq_sum, mul_add, Finset.sum_add_distrib]
 
 /-- The induction product distributes over sums on the left. -/
 protected theorem right_distrib (F G H : HallAlgebra k) : (F + G) * H = F * H + G * H := by
   refine ext_ofEnd fun _ g ↦ ?_
-  have := Fintype.ofFinite g.invtSubmodule
   simp [mul_ofEnd_eq_sum, add_mul, Finset.sum_add_distrib]
 
-/-- The indicator of the classes of size `0` is a left unit: only `W = ⊥` contributes. -/
+/-- The indicator of the classes of size `0` is a left unit for the induction product. -/
 protected theorem one_mul (F : HallAlgebra k) : 1 * F = F := by
   refine ext_ofEnd fun _ g ↦ ?_
-  have := Fintype.ofFinite g.invtSubmodule
   -- Only `W = ⊥` contributes, and there the quotient map is the identity.
   rw [mul_ofEnd_eq_sum, Finset.sum_eq_single ⟨⊥, Module.End.invtSubmodule.bot_mem g⟩
     (fun W _ hW ↦ ?_) (by simp)]
@@ -315,10 +314,9 @@ protected theorem one_mul (F : HallAlgebra k) : 1 * F = F := by
   · have : W.val ≠ ⊥ := fun h ↦ hW (Subtype.ext h)
     simp [one_apply, Submodule.finrank_eq_zero, this]
 
-/-- The indicator of the classes of size `0` is a right unit: only `W = ⊤` contributes. -/
+/-- The indicator of the classes of size `0` is a right unit for the induction product. -/
 protected theorem mul_one (F : HallAlgebra k) : F * 1 = F := by
   refine ext_ofEnd fun _ g ↦ ?_
-  have := Fintype.ofFinite g.invtSubmodule
   -- Only `W = ⊤` contributes, and there the restriction is `g` itself.
   rw [mul_ofEnd_eq_sum, Finset.sum_eq_single ⟨⊤, Module.End.invtSubmodule.top_mem g⟩
     (fun W _ hW ↦ ?_) (by simp)]
@@ -368,7 +366,6 @@ private theorem mul_mul_ofEnd_term (F G H : HallAlgebra k) (g : Module.End k V)
     (F * G) (ofEnd (g.invtRestrict W.prop)) * H (ofEnd (g.invtQuot W.prop)) =
       ∑ U ∈ Finset.univ.filter (fun U : g.invtSubmodule ↦ U.val ≤ W.val),
         chainTerm F G H g U W := by
-  have := Fintype.ofFinite (g.invtRestrict W.prop).invtSubmodule
   -- The invariant subspaces of `g` on `W` are the invariant subspaces of `g` inside `W`.
   rw [mul_ofEnd_eq_sum, Finset.sum_mul,
     ← Finset.filter_true_of_mem (s := Finset.univ)
@@ -386,7 +383,6 @@ private theorem mul_ofEnd_mul_term (F G H : HallAlgebra k) (g : Module.End k V)
     F (ofEnd (g.invtRestrict U.prop)) * (G * H) (ofEnd (g.invtQuot U.prop)) =
       ∑ W ∈ Finset.univ.filter (fun W : g.invtSubmodule ↦ U.val ≤ W.val),
         chainTerm F G H g U W := by
-  have := Fintype.ofFinite (g.invtQuot U.prop).invtSubmodule
   -- The invariant subspaces of `g` on `V ⧸ U` are the images of those containing `U`.
   have key :=
     LinearMap.sum_invtSubmodule_comap U.val.mkQ (mkQ_invtQuot U.prop) (chainTerm F G H g U)
@@ -398,12 +394,10 @@ private theorem mul_ofEnd_mul_term (F G H : HallAlgebra k) (g : Module.End k V)
   rw [chainTerm, ofEnd_invtQuot_invtRestrict_comap_mkQ U.prop W'.prop,
     ofEnd_invtQuot_comap _ (mkQ_invtQuot U.prop) U.val.mkQ_surjective W'.prop, mul_assoc]
 
-/-- The induction product is associative: both sides are sums over chains `U ≤ W` of
-invariant subspaces. -/
+/-- The induction product is associative. -/
 protected theorem mul_assoc (F G H : HallAlgebra k) : F * G * H = F * (G * H) := by
   classical
   refine ext_ofEnd fun _ g ↦ ?_
-  have := Fintype.ofFinite g.invtSubmodule
   -- Both sides are sums over the chains `U ≤ W` of invariant subspaces.
   rw [mul_ofEnd_eq_sum, mul_ofEnd_eq_sum]
   simp only [mul_mul_ofEnd_term, mul_ofEnd_mul_term]
@@ -429,12 +423,9 @@ private theorem ofEnd_dualMap_dualAnnihilator {g : Module.End k V} {W : Submodul
       (LinearMap.dualMap_surjective_of_injective W.injective_subtype)
       (by simp [LinearMap.ker_dualMap_eq_dualAnnihilator_range]), ofEnd_dualMap]
 
-/-- The induction product is commutative: an endomorphism is similar to its transpose, and
-annihilators exchange invariant subspaces and quotients. -/
+/-- The induction product is commutative. -/
 protected theorem mul_comm (F H : HallAlgebra k) : F * H = H * F := by
   refine ext_ofEnd fun _ g ↦ ?_
-  have := Fintype.ofFinite g.invtSubmodule
-  have := Fintype.ofFinite (Module.End.invtSubmodule g.dualMap)
   -- Replace `g` by its transpose on the left; annihilators match the invariant subspaces of `g`
   -- and of its transpose, exchanging subspaces and quotients.
   conv_lhs => rw [← ofEnd_dualMap g]
@@ -461,14 +452,14 @@ noncomputable instance instCommRing : CommRing (HallAlgebra k) where
   right_distrib := HallAlgebra.right_distrib
   mul_comm := HallAlgebra.mul_comm
 
-/-- Scalars act pointwise; they come out of every term of the sum defining the product. -/
+/-- For finite `k`, the class functions on all square matrices form a `ℂ`-algebra under the
+induction product, with `ℂ` acting pointwise. -/
 noncomputable instance instAlgebra : Algebra ℂ (HallAlgebra k) :=
   Algebra.ofModule
     (fun a F H ↦ ext_ofEnd fun _ g ↦ by
-      have := Fintype.ofFinite g.invtSubmodule
+      -- Scalars come out of every term of the sum defining the product.
       simp [mul_ofEnd_eq_sum, Finset.mul_sum, mul_assoc])
     (fun a F H ↦ ext_ofEnd fun _ g ↦ by
-      have := Fintype.ofFinite g.invtSubmodule
       simp [mul_ofEnd_eq_sum, Finset.mul_sum, mul_left_comm])
 
 /-! ### The constant function `𝟙` is a unit -/
@@ -540,6 +531,8 @@ theorem eigenvalueSum_ofEnd (η : K → ℂ) {V : Type*} [AddCommGroup V] [Modul
 /-- *Green's cuspidal function* `C_η = (β_η · μ) ∗ 𝟙`, where `β_η · μ` is the pointwise product of
 the eigenvalue sum with the inverse `μ` of `𝟙`, and `∗` the induction product. -/
 noncomputable def greenCuspidal [Finite k] (η : K → ℂ) : HallAlgebra k :=
+  -- `HallAlgebra k` is by definition `SimilarityClass k → ℂ`, so the pointwise product is a
+  -- function into `ℂ`; the `show` makes `*` the induction product rather than the pointwise one.
   (show HallAlgebra k from fun c ↦ eigenvalueSum K η c * moebius c) * constOne
 
 end Green

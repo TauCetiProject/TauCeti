@@ -19,8 +19,8 @@ import TauCeti.LinearAlgebra.GeneralLinearGroup.SubmoduleOrbit
 For class functions `A`, `A′` on all square matrices over a finite field `k`, the inner product
 in rank `n` is `⟨A, A′⟩_n = |GL_n(k)|⁻¹ Σ_{g ∈ GL_n(k)} conj (A g) · A′ g`. For `f` and `d`, the
 function `∂_{d,f} A : a ↦ ⟨f, δA(a, ·)⟩_d` pairs `f` with the block average of `A`. It is the
-adjoint of multiplication by `f` when `f` lives in size `d`, and for cuspidal `f` it satisfies the
-Leibniz rule.
+adjoint of multiplication by `f` when `f` lives in size `d`, and for cuspidal `f` and `d ≠ 0`,
+`∂_{d,f}` is a derivation (it satisfies the Leibniz rule).
 
 ## Main definitions
 

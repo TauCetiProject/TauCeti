@@ -87,6 +87,7 @@ theorem card_stabilizer_mul_card_finrank_eq (U : Submodule K V) :
     Set.ext fun _ ↦ mem_orbit_units_iff
   rw [← Subgroup.card_mul_index (stabilizer (Module.End K V)ˣ U), index_stabilizer, h_orbit,
     ← Nat.card_coe_set_eq]
+  -- The coercion of the set `{Y | p Y}` to a type is by definition the subtype `{Y // p Y}`.
   rfl
 
 /-- The dimensions of the subspaces of `V` are `0, 1, …, dim V`. -/

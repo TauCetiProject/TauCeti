@@ -363,6 +363,8 @@ private theorem blockAverage_mul_eq_sum (F H : HallAlgebra k) :
   rw [← Fintype.sum_sigma (fun i ↦ mackeyTerm a b F H (mackeyParam a b i)),
     Fintype.sum_bijective _ ⟨mackeyParam_injective a b, mackeyParam_surjective a b⟩ _
       (mackeyTerm a b F H) fun _ ↦ rfl, Fintype.sum_sigma]
+  -- The two sides differ only in the binder `P` versus the pair `⟨P.1, P.2⟩` and in the
+  -- `Fintype` instance chosen for the product of the two index types.
   rfl
 
 /-- The right side of Mackey's formula as a sum over the pairs `P = (A, B)` of means over the
