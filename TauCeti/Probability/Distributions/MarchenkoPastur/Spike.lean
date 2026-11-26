@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import TauCeti.Probability.Distributions.MarchenkoPastur.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Real
 import TauCeti.Probability.Distributions.MarchenkoPastur.ResolventTransform
 
@@ -41,12 +40,10 @@ of the leading sample eigenvector with the spike.
 
 ## Main results
 
-* `TauCeti.Probability.resolventTransform_marchenkoPastur_real_quadratic_eq_zero`,
-  `TauCeti.Probability.marchenkoPasturCompanion_quadratic_eq_zero`: the quadratic equations of
-  the real transform and of the companion transform at real points off the support.
-* `TauCeti.Probability.two_mul_mul_resolventTransform_marchenkoPastur_add_eq_sqrt`,
-  `TauCeti.Probability.two_mul_mul_marchenkoPasturCompanion_add_eq_sqrt`: the choice of root
-  above the edge, which gives the closed form of both transforms there.
+* `TauCeti.Probability.marchenkoPasturCompanion_quadratic_eq_zero`: the quadratic equation of
+  the companion transform at real points off the support.
+* `TauCeti.Probability.two_mul_mul_marchenkoPasturCompanion_add_eq_sqrt`: the choice of root
+  above the edge, which gives the closed form of the companion transform there.
 * `TauCeti.Probability.neg_inv_one_add_sqrt_lt_marchenkoPasturCompanion`,
   `TauCeti.Probability.marchenkoPasturCompanion_neg`,
   `TauCeti.Probability.neg_inv_add_div_one_add_marchenkoPasturCompanion`,
@@ -56,8 +53,10 @@ of the leading sample eigenvector with the spike.
   `TauCeti.Probability.one_add_mul_marchenkoPasturCompanion_pos_iff`,
   `TauCeti.Probability.one_add_mul_marchenkoPasturCompanion_neg_iff`: the limiting secular
   equation of a spike and its sign.
+* `TauCeti.Probability.marchenkoPasturCompanion_mul_one_add_div_sub_one`: the value `-ℓ⁻¹` of the
+  companion transform at the outlier location.
 * `TauCeti.Probability.hasDerivAt_marchenkoPasturCompanion`,
-  `TauCeti.Probability.deriv_marchenkoPasturCompanion_mul`,
+  `TauCeti.Probability.deriv_marchenkoPasturCompanion_mul_two_mul_mul_marchenkoPasturCompanion_add`,
   `TauCeti.Probability.deriv_marchenkoPasturCompanion_mul_one_add_div_sub_one`,
   `TauCeti.Probability.inv_mul_mul_deriv_marchenkoPasturCompanion_mul_one_add_div_sub_one`: the
   derivative, its value at the outlier location and the limiting squared overlap.
@@ -101,98 +100,9 @@ theorem marchenkoPasturCompanion_ofReal (y : ℝ≥0) (x : ℝ) :
 
 variable {y : ℝ≥0} {x : ℝ}
 
-/-- A real point above the upper edge of `MP_y` is outside its support. -/
-private lemma notMem_support_marchenkoPastur (hx : (1 + √(y : ℝ)) ^ 2 < x) :
-    x ∉ (marchenkoPastur y).support := fun ht ↦ by
-  have := (support_marchenkoPastur_subset_Icc y ht).2
-  linarith
-
-/-- A real point outside the support of `MP_y` is outside its image in `ℝ` under `algebraMap`. -/
-private lemma notMem_image_algebraMap_support (hx : x ∉ (marchenkoPastur y).support) :
-    x ∉ algebraMap ℝ ℝ '' (marchenkoPastur y).support := by
-  simpa using hx
-
-/-- Off the support of `MP_y`, its real resolvent transform `m` satisfies the quadratic equation
-`y * x * (m * m) + (x + y - 1) * m + 1 = 0`. -/
-theorem resolventTransform_marchenkoPastur_real_quadratic_eq_zero
-    (hx : x ∉ (marchenkoPastur y).support) :
-    y * x * (resolventTransform (marchenkoPastur y) x * resolventTransform (marchenkoPastur y) x) +
-      (x + y - 1) * resolventTransform (marchenkoPastur y) x + 1 = 0 := by
-  have hz : (x : ℂ) ∉ ((↑) : ℝ → ℂ) '' (marchenkoPastur y).support := by
-    rintro ⟨t, ht, htx⟩
-    exact hx (Complex.ofReal_injective htx ▸ ht)
-  have h := resolventTransform_marchenkoPastur_quadratic_eq_zero hz
-  rw [Measure.resolventTransform_ofReal] at h
-  exact_mod_cast h
-
-/-- The discriminant `(x + y - 1)² - 4 y x` is positive above the upper edge of `MP_y`. -/
-private lemma discr_pos (hx : (1 + √(y : ℝ)) ^ 2 < x) : 0 < (x + y - 1) ^ 2 - 4 * y * x := by
-  have hr := Real.sq_sqrt y.coe_nonneg
-  have hr0 := Real.sqrt_nonneg (y : ℝ)
-  have hfac : (x + y - 1) ^ 2 - 4 * y * x =
-      (x - (1 + √(y : ℝ)) ^ 2) * (x - (1 - √(y : ℝ)) ^ 2) := by
-    linear_combination (2 * x + 2 - y - √(y : ℝ) ^ 2) * hr
-  rw [hfac]
-  exact mul_pos (by linarith) (by nlinarith)
-
-/-- Far above the edge, `2 y x m(x) + (x + y - 1)` is positive. -/
-private lemma two_mul_mul_resolventTransform_add_pos_of_far :
-    let x₀ : ℝ := 2 * (1 + √(y : ℝ)) ^ 2 + 3 * y + 1
-    0 < 2 * y * x₀ * resolventTransform (marchenkoPastur y) x₀ + (x₀ + y - 1) := by
-  intro x₀
-  set e := (1 + √(y : ℝ)) ^ 2
-  have he : 1 ≤ e := by nlinarith [Real.sqrt_nonneg (y : ℝ)]
-  have hy := y.coe_nonneg
-  have hb : ∀ᵐ t ∂marchenkoPastur y, t ≤ e := by
-    filter_upwards [ae_mem_Icc_zero_marchenkoPastur y] with t ht using ht.2
-  have hex : e < x₀ := by simp only [x₀]; linarith
-  set m := resolventTransform (marchenkoPastur y) x₀
-  have hm0 : m ≤ 0 := resolventTransform_nonpos_of_ae_le hb hex
-  have hlow : -(x₀ - e)⁻¹ ≤ m := by
-    simpa [div_eq_mul_inv] using neg_div_sub_le_resolventTransform_of_ae_le hb hex
-  have hd : 0 < x₀ - e := sub_pos.2 hex
-  have hmd : -1 ≤ m * (x₀ - e) := by
-    have := mul_le_mul_of_nonneg_right hlow hd.le
-    rwa [neg_mul, inv_mul_cancel₀ hd.ne'] at this
-  have hx₀d : x₀ - 2 * (x₀ - e) ≤ 0 := by simp only [x₀]; linarith
-  nlinarith [mul_nonneg hy (mul_nonneg_of_nonpos_of_nonpos hx₀d hm0),
-    mul_le_mul_of_nonneg_left hmd hy]
-
-/-- Above the upper edge of `MP_y`, its real resolvent transform `m` is the root of
-`y x m² + (x + y - 1) m + 1 = 0` given by `2 y x m + (x + y - 1) = √((x + y - 1)² - 4 y x)`: for
-`y > 0` this is `m(x) = (√((x + y - 1)² - 4 y x) - (x + y - 1)) / (2 y x)`, and for `y = 0` it is
-`m(x) = (1 - x)⁻¹`. -/
-theorem two_mul_mul_resolventTransform_marchenkoPastur_add_eq_sqrt
-    (hx : (1 + √(y : ℝ)) ^ 2 < x) :
-    2 * y * x * resolventTransform (marchenkoPastur y) x + (x + y - 1) =
-      √((x + y - 1) ^ 2 - 4 * y * x) := by
-  set e := (1 + √(y : ℝ)) ^ 2
-  set φ : ℝ → ℝ := fun x ↦ 2 * y * x * resolventTransform (marchenkoPastur y) x + (x + y - 1)
-  -- `φ` squares to the discriminant, so it does not vanish above the edge.
-  have hsq : ∀ x, e < x → φ x ^ 2 = (x + y - 1) ^ 2 - 4 * y * x := fun x hx ↦ by
-    linear_combination (4 * y * x) * resolventTransform_marchenkoPastur_real_quadratic_eq_zero
-      (notMem_support_marchenkoPastur hx)
-  have hcont : ContinuousOn φ (Ioi e) := by
-    have hm : ContinuousOn (resolventTransform (marchenkoPastur y) : ℝ → ℝ) (Ioi e) :=
-      fun x hx ↦ (hasDerivAt_resolventTransform x (notMem_image_algebraMap_support
-        (notMem_support_marchenkoPastur hx))).continuousAt.continuousWithinAt
-    fun_prop
-  -- `φ` is positive far above the edge, hence everywhere above it.
-  have hpos : 0 < φ x := by
-    by_contra! hneg
-    have hne : φ x ≠ 0 := fun h ↦ by
-      have := hsq x hx
-      rw [h] at this
-      linarith [discr_pos hx]
-    have hx₀ : e < 2 * e + 3 * y + 1 := by
-      have : 0 ≤ e := sq_nonneg _
-      linarith [y.coe_nonneg]
-    obtain ⟨x', hx', h0⟩ := isPreconnected_Ioi.intermediate_value hx hx₀ hcont
-      ⟨lt_of_le_of_ne hneg hne |>.le, (two_mul_mul_resolventTransform_add_pos_of_far (y := y)).le⟩
-    have := hsq x' hx'
-    rw [h0] at this
-    linarith [discr_pos (y := y) hx']
-  rw [← hsq x hx, Real.sqrt_sq hpos.le]
+/-- A real point above the upper edge of `MP_y` is positive. -/
+private lemma pos_of_one_add_sqrt_sq_lt (hx : (1 + √(y : ℝ)) ^ 2 < x) : 0 < x :=
+  (sq_nonneg _).trans_lt hx
 
 /-- Off the support of `MP_y` and away from `0`, the companion transform `s` satisfies the
 quadratic equation `x * (s * s) + (x + 1 - y) * s + 1 = 0`. -/
@@ -211,29 +121,33 @@ theorem marchenkoPasturCompanion_quadratic_eq_zero (hx : x ∉ (marchenkoPastur 
 private lemma marchenkoPasturCompanion_quadratic_eq_zero_of_lt (hx : (1 + √(y : ℝ)) ^ 2 < x) :
     x * (marchenkoPasturCompanion y x * marchenkoPasturCompanion y x) +
       (x + 1 - y) * marchenkoPasturCompanion y x + 1 = 0 :=
-  marchenkoPasturCompanion_quadratic_eq_zero (notMem_support_marchenkoPastur hx)
-    (by nlinarith [Real.sqrt_nonneg (y : ℝ)])
+  marchenkoPasturCompanion_quadratic_eq_zero (notMem_support_marchenkoPastur_of_lt hx)
+    (pos_of_one_add_sqrt_sq_lt hx).ne'
+
+/-- Away from `0`, `2 x s + (x + 1 - y)` for the companion transform `s` of `MP_y` is
+`2 y x m + (x + y - 1)` for its real resolvent transform `m`. -/
+private lemma two_mul_mul_marchenkoPasturCompanion_add_eq (hx0 : x ≠ 0) :
+    2 * x * marchenkoPasturCompanion y x + (x + 1 - y) =
+      2 * y * x * resolventTransform (marchenkoPastur y) x + (x + y - 1) := by
+  simp only [marchenkoPasturCompanion_def, RCLike.ofReal_real_eq_id, id]
+  field_simp
+  ring
 
 /-- Above the upper edge of `MP_y`, the companion transform `s` is the root of its quadratic
 equation given by `2 x s + (x + 1 - y) = √((x + 1 - y)² - 4 x)`. -/
 theorem two_mul_mul_marchenkoPasturCompanion_add_eq_sqrt (hx : (1 + √(y : ℝ)) ^ 2 < x) :
     2 * x * marchenkoPasturCompanion y x + (x + 1 - y) = √((x + 1 - y) ^ 2 - 4 * x) := by
-  have hx0 : x ≠ 0 := by nlinarith [Real.sqrt_nonneg (y : ℝ)]
-  have h := two_mul_mul_resolventTransform_marchenkoPastur_add_eq_sqrt hx
-  have hD : (x + 1 - y) ^ 2 - 4 * x = (x + y - 1) ^ 2 - 4 * y * x := by ring
-  rw [hD, ← h]
-  simp only [marchenkoPasturCompanion_def, RCLike.ofReal_real_eq_id, id]
-  field_simp
+  rw [two_mul_mul_marchenkoPasturCompanion_add_eq (pos_of_one_add_sqrt_sq_lt hx).ne',
+    two_mul_mul_resolventTransform_marchenkoPastur_add_eq_sqrt hx]
+  congr 1
   ring
 
 /-- Above the upper edge of `MP_y`, the companion transform lies strictly to the right of the
 midpoint `-(x + 1 - y) / (2 x)` of the two roots of its quadratic equation. -/
 private lemma two_mul_mul_marchenkoPasturCompanion_add_pos (hx : (1 + √(y : ℝ)) ^ 2 < x) :
     0 < 2 * x * marchenkoPasturCompanion y x + (x + 1 - y) := by
-  rw [two_mul_mul_marchenkoPasturCompanion_add_eq_sqrt hx]
-  apply Real.sqrt_pos.2
-  have := discr_pos hx
-  linarith [show (x + 1 - y) ^ 2 - 4 * x = (x + y - 1) ^ 2 - 4 * y * x by ring]
+  rw [two_mul_mul_marchenkoPasturCompanion_add_eq (pos_of_one_add_sqrt_sq_lt hx).ne']
+  exact two_mul_mul_resolventTransform_marchenkoPastur_add_pos hx
 
 /-- Above the upper edge of `MP_y`, the companion transform is negative. -/
 theorem marchenkoPasturCompanion_neg (hx : (1 + √(y : ℝ)) ^ 2 < x) :
@@ -244,7 +158,7 @@ theorem marchenkoPasturCompanion_neg (hx : (1 + √(y : ℝ)) ^ 2 < x) :
   have hx1 : 0 < x + 1 - y := by nlinarith
   set s := marchenkoPasturCompanion y x
   by_contra! hs
-  nlinarith [mul_nonneg (mul_nonneg (show 0 ≤ x by nlinarith) hs) hs, mul_nonneg hx1.le hs]
+  nlinarith [mul_nonneg (mul_nonneg (pos_of_one_add_sqrt_sq_lt hx).le hs) hs, mul_nonneg hx1.le hs]
 
 /-- Above the upper edge of `MP_y`, the companion transform `s` satisfies `-1 < (1 + √y) s`. -/
 private lemma neg_one_lt_mul_marchenkoPasturCompanion (hx : (1 + √(y : ℝ)) ^ 2 < x) :
@@ -331,14 +245,13 @@ theorem one_add_sqrt_sq_lt_mul_one_add_div_sub_one {ℓ : ℝ} (hℓ : 1 + √(y
   have : 0 < (ℓ - 1 - √(y : ℝ)) ^ 2 / (ℓ - 1) := div_pos (pow_pos (by linarith) 2) hu
   linarith
 
-/-- Two roots of `a t² + b t + 1 = 0` that both lie to the right of the midpoint `-b / (2a)` are
-equal. -/
-private lemma eq_of_quadratic_eq_zero {a b s t : ℝ} (hs : a * (s * s) + b * s + 1 = 0)
-    (ht : a * (t * t) + b * t + 1 = 0) (hs' : 0 < 2 * a * s + b) (ht' : 0 < 2 * a * t + b) :
-    s = t := by
-  have h : (s - t) * (a * (s + t) + b) = 0 := by linear_combination hs - ht
-  have hpos : 0 < a * (s + t) + b := by linarith
-  linarith [(mul_eq_zero.1 h).resolve_right hpos.ne']
+/-- At `s = -ℓ⁻¹` and the outlier location `ψ = ℓ (1 + y / (ℓ - 1))`, the quantity
+`2 ψ s + (ψ + 1 - y)` is `((ℓ - 1)² - y) / (ℓ - 1)`. -/
+private lemma two_mul_mul_neg_inv_add {ℓ : ℝ} (hℓ0 : ℓ ≠ 0) (hℓ1 : ℓ - 1 ≠ 0) :
+    2 * (ℓ * (1 + y / (ℓ - 1))) * -ℓ⁻¹ + (ℓ * (1 + y / (ℓ - 1)) + 1 - y) =
+      ((ℓ - 1) ^ 2 - y) / (ℓ - 1) := by
+  field_simp
+  ring
 
 /-- **The limiting secular equation of a spike.** Above the upper edge of `MP_y`, the equation
 `1 + ℓ s(x) = 0` in the companion transform `s` holds exactly when `ℓ > 1 + √y` and
@@ -377,13 +290,13 @@ theorem one_add_mul_marchenkoPasturCompanion_eq_zero_iff {ℓ : ℝ}
       ring
     have ht' : 0 < 2 * (ℓ * (1 + y / (ℓ - 1))) * -ℓ⁻¹ + (ℓ * (1 + y / (ℓ - 1)) + 1 - y) := by
       have hr := Real.sq_sqrt y.coe_nonneg
-      have key : 2 * (ℓ * (1 + y / (ℓ - 1))) * -ℓ⁻¹ + (ℓ * (1 + y / (ℓ - 1)) + 1 - y) =
-          ((ℓ - 1) ^ 2 - y) / (ℓ - 1) := by
-        field_simp
-        ring
-      rw [key]
+      rw [two_mul_mul_neg_inv_add hℓ0 hℓ1.ne']
       exact div_pos (by nlinarith) hℓ1
-    rw [eq_of_quadratic_eq_zero hq ht hP ht']
+    -- Both `s` and `-ℓ⁻¹` are roots to the right of the midpoint, so they coincide.
+    have h : (s - -ℓ⁻¹) * (ℓ * (1 + y / (ℓ - 1)) * (s + -ℓ⁻¹) + (ℓ * (1 + y / (ℓ - 1)) + 1 - y)) =
+        0 := by
+      linear_combination hq - ht
+    rw [sub_eq_zero.1 ((mul_eq_zero.1 h).resolve_right (by linarith))]
     field_simp
     ring
 
@@ -427,6 +340,16 @@ theorem one_add_mul_marchenkoPasturCompanion_neg_iff {ℓ : ℝ} (hx : (1 + √(
     · exact absurd (heq.1 h).2 hlt.ne
     · rcases hpos.1 h with h' | h' <;> linarith
 
+/-- For `ℓ > 1 + √y`, the companion transform of `MP_y` takes the value `-ℓ⁻¹` at the outlier
+location `ℓ (1 + y / (ℓ - 1))`. -/
+theorem marchenkoPasturCompanion_mul_one_add_div_sub_one {ℓ : ℝ} (hℓ : 1 + √(y : ℝ) < ℓ) :
+    marchenkoPasturCompanion y (ℓ * (1 + y / (ℓ - 1))) = -ℓ⁻¹ := by
+  have h := (one_add_mul_marchenkoPasturCompanion_eq_zero_iff
+    (one_add_sqrt_sq_lt_mul_one_add_div_sub_one hℓ)).2 ⟨hℓ, rfl⟩
+  have hℓ0 : ℓ ≠ 0 := by linarith [Real.sqrt_nonneg (y : ℝ)]
+  field_simp
+  linear_combination h
+
 /-- Off the support of `MP_y` and away from `0`, the companion transform has derivative
 `y ∫ (t - z)⁻² dMP_y(t) + (1 - y) z⁻²`. -/
 theorem hasDerivAt_marchenkoPasturCompanion {A : Type*} [RCLike A] {z : A}
@@ -446,13 +369,13 @@ theorem hasDerivAt_marchenkoPasturCompanion {A : Type*} [RCLike A] {z : A}
 /-- Off the support of `MP_y` and away from `0`, the derivative of the companion transform `s`
 satisfies `s' (2 x s + (x + 1 - y)) = -s (1 + s)`, obtained by differentiating the quadratic
 equation. -/
-theorem deriv_marchenkoPasturCompanion_mul (hx : x ∉ (marchenkoPastur y).support)
-    (hx0 : x ≠ 0) :
+theorem deriv_marchenkoPasturCompanion_mul_two_mul_mul_marchenkoPasturCompanion_add
+    (hx : x ∉ (marchenkoPastur y).support) (hx0 : x ≠ 0) :
     deriv (marchenkoPasturCompanion y) x *
         (2 * x * marchenkoPasturCompanion y x + (x + 1 - y)) =
       -(marchenkoPasturCompanion y x * (1 + marchenkoPasturCompanion y x)) := by
   obtain ⟨s', hs'⟩ : ∃ s', HasDerivAt (marchenkoPasturCompanion y : ℝ → ℝ) s' x :=
-    ⟨_, hasDerivAt_marchenkoPasturCompanion (notMem_image_algebraMap_support hx) hx0⟩
+    ⟨_, hasDerivAt_marchenkoPasturCompanion (by simpa using hx) hx0⟩
   rw [hs'.deriv]
   set S : ℝ → ℝ := marchenkoPasturCompanion y
   -- The quadratic expression vanishes near `x`, so its derivative there is `0`.
@@ -476,23 +399,15 @@ theorem deriv_marchenkoPasturCompanion_mul_one_add_div_sub_one {ℓ : ℝ}
     deriv (marchenkoPasturCompanion y) (ℓ * (1 + y / (ℓ - 1))) =
       (ℓ - 1) ^ 2 / (ℓ ^ 2 * ((ℓ - 1) ^ 2 - y)) := by
   have hψ := one_add_sqrt_sq_lt_mul_one_add_div_sub_one hℓ
-  have h0 := (one_add_mul_marchenkoPasturCompanion_eq_zero_iff hψ).2 ⟨hℓ, rfl⟩
-  have hd := deriv_marchenkoPasturCompanion_mul (notMem_support_marchenkoPastur hψ)
-    (by nlinarith [Real.sqrt_nonneg (y : ℝ)])
+  have hd := deriv_marchenkoPasturCompanion_mul_two_mul_mul_marchenkoPasturCompanion_add
+    (notMem_support_marchenkoPastur_of_lt hψ) (pos_of_one_add_sqrt_sq_lt hψ).ne'
   have hr := Real.sq_sqrt y.coe_nonneg
   have hℓ1 : 0 < ℓ - 1 := by linarith [Real.sqrt_nonneg (y : ℝ)]
   have hℓ0 : ℓ ≠ 0 := by linarith
   have hD : 0 < (ℓ - 1) ^ 2 - y := by nlinarith [Real.sqrt_nonneg (y : ℝ)]
-  have hP : 2 * (ℓ * (1 + y / (ℓ - 1))) * -ℓ⁻¹ + (ℓ * (1 + y / (ℓ - 1)) + 1 - y) =
-      ((ℓ - 1) ^ 2 - y) / (ℓ - 1) := by
-    field_simp
-    ring
-  generalize ℓ * (1 + y / (ℓ - 1)) = ψ at h0 hd hP ⊢
-  have hs : marchenkoPasturCompanion y ψ = -ℓ⁻¹ := by
-    field_simp
-    linear_combination h0
-  rw [hs, hP] at hd
-  set d := deriv (marchenkoPasturCompanion y) ψ
+  rw [marchenkoPasturCompanion_mul_one_add_div_sub_one hℓ, two_mul_mul_neg_inv_add hℓ0 hℓ1.ne']
+    at hd
+  set d := deriv (marchenkoPasturCompanion y) (ℓ * (1 + y / (ℓ - 1)))
   rw [eq_div_iff (by positivity)]
   field_simp at hd
   linear_combination hd
