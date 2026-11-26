@@ -111,16 +111,31 @@ private lemma exists_maximal_ideal_of_far (N : Submodule k C(X, k)) (φ : C(X, k
   rw [Submodule.mem_comap, LinearMap.toSpanSingleton_apply, Submodule.mem_sup]
   exact ⟨g, hg, (w : C(X, k)) * φ - g, hle, add_sub_cancel g ((w : C(X, k)) * φ)⟩
 
+/-- The closed set of points where every multiplier outside the prime ideal `m` has norm at
+least `1`. -/
+private def zeroSet {N : Submodule k C(X, k)} (m : Ideal (boundedMultipliers N)) [m.IsPrime] :
+    Set X :=
+  {x | ∀ f : m.primeCompl, 1 ≤ ‖(f : C(X, k)) x‖}
+
+private lemma isClosed_zeroSet {N : Submodule k C(X, k)} (m : Ideal (boundedMultipliers N))
+    [m.IsPrime] : IsClosed (zeroSet m) := by
+  have hZ_eq : zeroSet m = ⋂ f : m.primeCompl, {y | (1 : ℝ) ≤ ‖(f : C(X, k)) y‖} := by
+    ext y
+    simp only [zeroSet, mem_iInter, mem_ofPred_eq]
+  rw [hZ_eq]
+  exact isClosed_iInter fun f : m.primeCompl ↦
+    isClosed_le continuous_const (f : C(X, k)).continuous.norm
+
 private lemma exists_mul_norm_le_of_le_on_zeroSet {N : Submodule k C(X, k)}
     {m : Ideal (boundedMultipliers N)} [m.IsPrime] (g : C(X, k)) {r : ℝ} (hr : 0 < r)
-    (hg : ∀ x : X, (∀ f : m.primeCompl, 1 ≤ ‖(f : C(X, k)) x‖) → ‖g x‖ ≤ r) :
+    (hg : ∀ x ∈ zeroSet m, ‖g x‖ ≤ r) :
     ∃ f : m.primeCompl, ‖(f : C(X, k)) * g‖ ≤ r := by
   let P := m.primeCompl
   let U (f : P) : Set X := ((f : C(X, k)) * g) ⁻¹' closedBall 0 r
   have h_cover (x : X) : ∃ f : P, x ∈ U f := by
-    by_cases hx : ∀ f : P, 1 ≤ ‖(f : C(X, k)) x‖
+    by_cases hx : x ∈ zeroSet m
     · exact ⟨1, by simpa [U] using hg x hx⟩
-    · push Not at hx
+    · simp only [zeroSet, mem_ofPred_eq, not_forall, not_le] at hx
       obtain ⟨f, hf⟩ := hx
       obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (by positivity : 0 < r / (‖g x‖ + 1)) hf
       refine ⟨f ^ n, ?_⟩
@@ -151,20 +166,11 @@ private lemma exists_mul_norm_le_of_le_on_zeroSet {N : Submodule k C(X, k)}
 
 private lemma eq_on_zeroSet_of_mem_multiplier {N : Submodule k C(X, k)}
     {m : Ideal (boundedMultipliers N)} [m.IsMaximal] {u : C(X, k)}
-    (hu : u ∈ N.leftOrder) {x a : X}
-    (hx : ∀ f : m.primeCompl, 1 ≤ ‖(f : C(X, k)) x‖)
-    (ha : ∀ f : m.primeCompl, 1 ≤ ‖(f : C(X, k)) a‖) :
+    (hu : u ∈ N.leftOrder) {x a : X} (hx : x ∈ zeroSet m) (ha : a ∈ zeroSet m) :
     u x = u a := by
-  let Z : Set X := {y | ∀ f : m.primeCompl, 1 ≤ ‖(f : C(X, k)) y‖}
   let v : C(X, k) := u - ContinuousMap.const X (u a)
-  have hZ_closed : IsClosed Z := by
-    have hZ_eq : Z = ⋂ f : m.primeCompl, {y | (1 : ℝ) ≤ ‖(f : C(X, k)) y‖} := by
-      ext y
-      simp [Z]
-    rw [hZ_eq]
-    exact isClosed_iInter fun f : m.primeCompl ↦
-      isClosed_le continuous_const (f : C(X, k)).continuous.norm
-  obtain ⟨y, hy, h_max⟩ := hZ_closed.isCompact.exists_isMaxOn ⟨x, hx⟩ v.continuous.norm.continuousOn
+  obtain ⟨y, hy, h_max⟩ :=
+    (isClosed_zeroSet m).isCompact.exists_isMaxOn ⟨x, hx⟩ v.continuous.norm.continuousOn
   refine eq_of_norm_sub_le_zero ((h_max hx).trans (not_lt.1 fun h_pos ↦ ?_))
   obtain ⟨f, hf⟩ := exists_mul_norm_le_of_le_on_zeroSet (m := m) v h_pos h_max
   have hv_mult : v ∈ N.leftOrder :=
@@ -179,7 +185,10 @@ private lemma eq_on_zeroSet_of_mem_multiplier {N : Submodule k C(X, k)}
   have hw_mem : w ∈ m := by
     by_contra hw
     have h1 := ha ⟨w, hw⟩
-    simp [w, v] at h1
+    have hwa : (w : C(X, k)) a = 0 := by
+      simp only [w, v, ContinuousMap.smul_apply, ContinuousMap.mul_apply,
+        ContinuousMap.sub_apply, ContinuousMap.const_apply, sub_self, mul_zero, smul_zero]
+    rw [hwa, norm_zero] at h1
     linarith
   have hdiff_mem : f.val - w ∈ m := by
     by_contra hdw
@@ -205,9 +214,8 @@ theorem exists_mem_norm_sub_le_of_eq_on_multiplier_fibers (N : Submodule k C(X, 
   by_contra! h_far
   obtain ⟨m, hm, h_near⟩ := exists_maximal_ideal_of_far N φ hε h_far
   have : m.IsMaximal := hm
-  let Z : Set X := {x | ∀ f : m.primeCompl, 1 ≤ ‖(f : C(X, k)) x‖}
-  have hd_exists : ∃ d ∈ N, ∀ x ∈ Z, ‖(φ - d) x‖ ≤ ε := by
-    by_cases hZ : Z.Nonempty
+  have hd_exists : ∃ d ∈ N, ∀ x ∈ zeroSet m, ‖(φ - d) x‖ ≤ ε := by
+    by_cases hZ : (zeroSet m).Nonempty
     · obtain ⟨a, ha⟩ := hZ
       obtain ⟨d, hd, hφd⟩ := h_fiber a
       refine ⟨d, hd, fun x hx ↦ ?_⟩
