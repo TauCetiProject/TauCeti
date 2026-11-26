@@ -22,6 +22,11 @@ weight less than the sum of their weights. This is the weight bound needed to st
 monomials without lowering weight, and to construct finite weighted enveloping-algebra quotients.
 No characteristic or algebraic-closure hypothesis is used.
 
+A Lie homomorphism into a Lie algebra with `C c = ⊥` kills `C c` of its source
+(`LieHom.lowerCentralSeries_le_ker`), and the quotient `L ⧸ C c` itself has vanishing `c`-th
+term (`TauCeti.lowerCentralSeries_quotient_lowerCentralSeries_eq_bot`): it is the universal
+quotient of nilpotency class at most `c`.
+
 ## References
 
 * N. Jacobson, *Lie Algebras*, Interscience (1962), Chapters II and V, for the lower central
@@ -104,6 +109,48 @@ theorem _root_.Module.Basis.repr_lie_eq_zero_of_weight_lt {ι : Type*}
   omega
 
 end Bracket
+
+section Quotient
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing M] [LieAlgebra R M]
+
+/-- A Lie homomorphism into a Lie algebra whose `c`-th lower central term vanishes kills the
+`c`-th lower central term of its source, so it factors through the nilpotent quotient
+`L ⧸ lowerCentralSeries R L L c`. -/
+theorem _root_.LieHom.lowerCentralSeries_le_ker (f : L →ₗ⁅R⁆ M) {c : ℕ}
+    (hc : lowerCentralSeries R M M c = ⊥) : lowerCentralSeries R L L c ≤ f.ker := by
+  rw [← LieIdeal.map_eq_bot_iff, eq_bot_iff, ← hc]
+  exact LieIdeal.map_lowerCentralSeries_le c
+
+variable (R L) in
+/-- The quotient of `L` by its `c`-th lower central term has vanishing `c`-th lower central term:
+it is the largest quotient of `L` of nilpotency class at most `c`. -/
+theorem lowerCentralSeries_quotient_lowerCentralSeries_eq_bot (c : ℕ) :
+    lowerCentralSeries R (L ⧸ lowerCentralSeries R L L c) (L ⧸ lowerCentralSeries R L L c) c =
+      ⊥ := by
+  rw [← LieIdeal.lowerCentralSeries_map_eq c (LieIdeal.surjective_mkQ _), LieIdeal.map_eq_bot_iff,
+    LieIdeal.mkQ_ker]
+
+/-- A quotient of a nilpotent Lie algebra is nilpotent. -/
+instance [LieRing.IsNilpotent L] (I : LieIdeal R L) : LieRing.IsNilpotent (L ⧸ I) :=
+  (LieIdeal.surjective_mkQ I).lieAlgebra_isNilpotent
+
+end Quotient
+
+section NilpotencyLength
+
+variable (R L M : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] [AddCommGroup M] [Module R M]
+  [LieRingModule L M] [LieModule R L M]
+
+/-- The lower central series of a nilpotent Lie module vanishes at its nilpotency length. -/
+theorem _root_.LieModule.lowerCentralSeries_nilpotencyLength [LieModule.IsNilpotent L M] :
+    lowerCentralSeries R L M (nilpotencyLength L M) = ⊥ := by
+  rcases h : nilpotencyLength L M with _ | k
+  · rw [nilpotencyLength_eq_zero_iff] at h
+    exact ((LieSubmodule.subsingleton_iff R L M).mpr h).elim _ _
+  · exact ((nilpotencyLength_eq_succ_iff R L M k).mp h).1
+
+end NilpotencyLength
 
 section Basis
 
