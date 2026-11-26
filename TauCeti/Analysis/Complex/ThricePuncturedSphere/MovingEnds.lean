@@ -46,6 +46,10 @@ In the namespace `TauCeti.ThricePuncturedSphere`:
   lift of an input end is injective on every horizontal strip of height one.
 * `realChart_add_mul_cylindricalEndLift_add_one`: in real coordinates it has period one in the
   angular coordinate.
+* `det_fderiv_realChart_add_mul_cylindricalEndLift`: the Jacobian of the chart
+  `realChart (z ↦ c + a φ₀(z))` of an input end is `4π² |w - c|²`, and
+  `norm_symm_realChart_add_mul_cylindricalEndLift_sub_le`: its part `s ≥ 0` lies in the disc of
+  radius `‖a‖ / 2` about `c`.
 * `add_mul_cylindricalEndLift_mem_puncturedSphereTruncation` and
   `cylindricalEndLift_inf_mem_puncturedSphereTruncation`: the end pieces lie in `Σ_R`.
 * `exists_add_mul_cylindricalEndLift_eq`: the converse for the input ends; for the output end it
@@ -275,5 +279,33 @@ theorem realChart_add_mul_cylindricalEndLift_add_one (c a : ℂ) (s t : ℝ) :
   simp only [Complex.ofReal_add, Complex.ofReal_one] at h
   rw [TauCeti.Complex.realChart_mk, TauCeti.Complex.realChart_mk, Complex.ofReal_add,
     Complex.ofReal_one, h]
+
+/-- The Jacobian of the chart `ψ = realChart (z ↦ c + a φ₀(z))` of an input end is `4π² |w - c|²`
+at `w = ψ(ζ)`. -/
+theorem det_fderiv_realChart_add_mul_cylindricalEndLift (c a : ℂ) (ζ : ℝ × ℝ) :
+    (fderiv ℝ (realChart fun z ↦ c + a * zero.cylindricalEndLift z) ζ).det =
+      4 * π ^ 2 * ‖Complex.equivRealProdCLM.symm
+        (realChart (fun z ↦ c + a * zero.cylindricalEndLift z) ζ) - c‖ ^ 2 := by
+  rw [TauCeti.Complex.det_fderiv_realChart (hasDerivAt_add_mul_cylindricalEndLift c a _),
+    deriv_cylindricalEndLift, TauCeti.Complex.equivRealProdCLM_symm_realChart,
+    Complex.normSq_eq_norm_sq, endCenter_zero, sub_zero, add_sub_cancel_left, norm_mul, norm_neg,
+    norm_mul, norm_mul, Complex.norm_ofNat, Complex.norm_real, Real.norm_of_nonneg pi_pos.le,
+    norm_mul a]
+  ring
+
+/-- On the part `s ≥ 0` of the input end with center `c` and scale `a`, the point
+`ψ(ζ) = c + a φ₀(ζ)` of the chart `ψ = realChart (z ↦ c + a φ₀(z))` lies at distance at most
+`‖a‖ / 2` from `c`. -/
+theorem norm_symm_realChart_add_mul_cylindricalEndLift_sub_le (c a : ℂ) {ζ : ℝ × ℝ}
+    (hζ : 0 ≤ ζ.1) :
+    ‖Complex.equivRealProdCLM.symm (realChart (fun z ↦ c + a * zero.cylindricalEndLift z) ζ) -
+      c‖ ≤ ‖a‖ / 2 := by
+  rw [TauCeti.Complex.equivRealProdCLM_symm_realChart, norm_add_mul_cylindricalEndLift_sub]
+  have : Real.exp (-(2 * π * (Complex.equivRealProdCLM.symm ζ).re)) ≤ 1 :=
+    Real.exp_le_one_iff.2 (by
+      simp only [Complex.equivRealProdCLM_symm_apply_re]
+      nlinarith [pi_pos])
+  have := norm_nonneg a
+  nlinarith
 
 end TauCeti.ThricePuncturedSphere
