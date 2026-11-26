@@ -30,7 +30,7 @@ difference `(√(dμ/dκ) - √(dν/dκ))²` of their square roots.
 ## Main results
 
 * `MeasureTheory.Measure.ae_sqrt_toReal_rnDeriv_pos`: `√(dμ/dν) > 0` `μ`-almost everywhere when
-  `μ ≪ ν` for σ-finite `μ`.
+  `μ ≪ ν` for σ-finite `μ` admitting a Lebesgue decomposition with respect to `ν`.
 * `MeasureTheory.Measure.memLp_two_sqrt_toReal_rnDeriv`: `√(dμ/dν) ∈ L²(ν)` for finite `μ`.
 * `MeasureTheory.Measure.integrable_sqrt_toReal_rnDeriv_mul`: `√(dμ/dκ · dν/dκ)` is
   `κ`-integrable for finite `μ` and `ν`.

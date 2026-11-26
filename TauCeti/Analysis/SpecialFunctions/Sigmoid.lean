@@ -52,9 +52,12 @@ coefficients, as for option prices of linear growth in the spot `exp x`.
   derivative of the sigmoid is bounded, and Hölder continuous of every exponent `α ≤ 1`;
 * `Real.hasDerivAt_log_one_add_exp`, `Real.iteratedDeriv_succ_log_one_add_exp` — the derivatives
   of `x ↦ log (1 + exp x)` of positive order are those of the sigmoid;
-* `Real.hasDerivAt_two_mul_sigmoid_two_mul`, `Real.abs_sqrt_two_mul_sigmoid_two_mul_sub_one_le` —
-  the derivative of `x ↦ 2 * sigmoid (2 * x)` and the global bound
-  `|√(2 * sigmoid (2 * u)) - 1| ≤ |u|`.
+* `Real.four_mul_sigmoid_mul_one_sub_sigmoid_le_one`,
+  `Real.abs_four_mul_sigmoid_mul_one_sub_sigmoid_le_one`,
+  `Real.hasDerivAt_two_mul_sigmoid_two_mul`, and
+  `Real.abs_sqrt_two_mul_sigmoid_two_mul_sub_one_le` — the sharp upper bound
+  `4 * sigmoid x * (1 - sigmoid x) ≤ 1`, the derivative of `x ↦ 2 * sigmoid (2 * x)`, and the
+  global bound `|√(2 * sigmoid (2 * u)) - 1| ≤ |u|`.
 -/
 
 public section
@@ -183,6 +186,21 @@ theorem iteratedDeriv_succ_log_one_add_exp (n : ℕ) :
     iteratedDeriv (n + 1) (fun x => log (1 + exp x)) = iteratedDeriv n sigmoid := by
   rw [iteratedDeriv_succ', deriv_log_one_add_exp]
 
+/-- Four times the sigmoid derivative `4 * sigmoid x * (1 - sigmoid x)` is at most `1` (attaining
+`1` at `x = 0`). -/
+theorem four_mul_sigmoid_mul_one_sub_sigmoid_le_one (x : ℝ) :
+    4 * sigmoid x * (1 - sigmoid x) ≤ 1 := by
+  nlinarith [sq_nonneg (1 - 2 * sigmoid x)]
+
+/-- Four times the sigmoid derivative `4 * sigmoid x * (1 - sigmoid x)` has absolute value at most
+`1`. -/
+theorem abs_four_mul_sigmoid_mul_one_sub_sigmoid_le_one (x : ℝ) :
+    |4 * sigmoid x * (1 - sigmoid x)| ≤ 1 := by
+  have h0 : 0 ≤ 4 * sigmoid x * (1 - sigmoid x) :=
+    mul_nonneg (mul_nonneg (by norm_num) (sigmoid_nonneg x)) (sub_nonneg.mpr (sigmoid_le_one x))
+  rw [abs_of_nonneg h0]
+  exact four_mul_sigmoid_mul_one_sub_sigmoid_le_one x
+
 /-- The derivative of `x ↦ 2 * sigmoid (2 * x)` at `u` is
 `4 * sigmoid (2 * u) * (1 - sigmoid (2 * u))`, taking value `1` at `u = 0`. -/
 theorem hasDerivAt_two_mul_sigmoid_two_mul (u : ℝ) :
@@ -198,11 +216,8 @@ theorem abs_sqrt_two_mul_sigmoid_two_mul_sub_one_le (u : ℝ) :
   have hd : ∀ y ∈ Set.univ, DifferentiableAt ℝ (fun x ↦ 2 * sigmoid (2 * x)) y :=
     fun y _ ↦ (hasDerivAt_two_mul_sigmoid_two_mul y).differentiableAt
   have hb : ∀ y ∈ Set.univ, ‖deriv (fun x ↦ 2 * sigmoid (2 * x)) y‖ ≤ 1 := fun y _ ↦ by
-    have h0 : 0 ≤ 4 * sigmoid (2 * y) * (1 - sigmoid (2 * y)) :=
-      mul_nonneg (mul_nonneg (by norm_num) (sigmoid_pos _).le)
-        (sub_nonneg.mpr (sigmoid_le_one _))
-    rw [(hasDerivAt_two_mul_sigmoid_two_mul y).deriv, norm_eq_abs, abs_of_nonneg h0]
-    nlinarith [sq_nonneg (1 - 2 * sigmoid (2 * y))]
+    rw [(hasDerivAt_two_mul_sigmoid_two_mul y).deriv, norm_eq_abs]
+    exact abs_four_mul_sigmoid_mul_one_sub_sigmoid_le_one (2 * y)
   simpa [norm_eq_abs] using
     convex_univ.norm_image_sub_le_of_norm_deriv_le hd hb (Set.mem_univ 0) (Set.mem_univ u)
 

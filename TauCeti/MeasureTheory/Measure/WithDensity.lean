@@ -82,10 +82,8 @@ measure that is positive on nonempty open sets are equal.
   with `g` bounded above almost everywhere, is finite.
 * `MeasureTheory.withDensity_restrict_apply_compl`: a measure restricted to a measurable set and
   then weighted gives no mass to the complement of the set.
-* `MeasureTheory.isProbabilityMeasure_withDensity_ofReal` and
-  `MeasureTheory.isProbabilityMeasure_withDensity_ofReal_comp_sub_right`: weighting a measure by an
-  almost-everywhere nonnegative real density with integral `1` (or a right-translated copy against a
-  right-invariant measure) yields a probability measure.
+* `MeasureTheory.isProbabilityMeasure_withDensity_ofReal`: weighting a measure by an
+  almost-everywhere nonnegative real density with integral `1` yields a probability measure.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
   along a map injective and differentiable on a measurable set.
 * `TauCeti.MeasureTheory.map_sq_withDensity_restrict_Ioi`: its instance for squaring on the
@@ -405,17 +403,6 @@ theorem isProbabilityMeasure_withDensity_ofReal {α : Type*} [MeasurableSpace α
   rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
     ← ofReal_integral_eq_lintegral_ofReal (integrable_of_integral_eq_one hf1) hf,
     hf1, ENNReal.ofReal_one]⟩
-
-/-- Shifting an almost-everywhere nonnegative real density with unit integral against a
-right-invariant measure produces a probability measure. -/
-theorem isProbabilityMeasure_withDensity_ofReal_comp_sub_right {G : Type*} [MeasurableSpace G]
-    [AddGroup G] [MeasurableAdd G] {μ : Measure G} [μ.IsAddRightInvariant] {η : G → ℝ}
-    (hη : 0 ≤ᵐ[μ] η) (hη1 : ∫ x, η x ∂μ = 1) (c : G) :
-    IsProbabilityMeasure (μ.withDensity fun x ↦ ENNReal.ofReal (η (x - c))) := by
-  have := isProbabilityMeasure_withDensity_ofReal hη hη1
-  rw [← Measure.map_add_right_withDensity μ (fun x ↦ ENNReal.ofReal (η x)) c]
-  exact ⟨by rw [Measure.map_apply (measurable_add_const c) MeasurableSet.univ, Set.preimage_univ,
-    measure_univ]⟩
 
 end MeasureTheory
 

@@ -28,7 +28,8 @@ reference measure and back.
 
 The construction is purely measure-theoretic, so it is stated over an arbitrary `MeasurableSpace`.
 We also record the corresponding `L²` seminorm and membership identities for a square-root
-Radon–Nikodym derivative `√(dμ/dν)` when `μ ≪ ν`.
+Radon–Nikodym derivative `√(dμ/dν)` when `μ ≪ ν`, `μ` is σ-finite, and `μ` admits a Lebesgue
+decomposition against `ν`.
 
 ## Main definitions
 
@@ -43,9 +44,9 @@ Radon–Nikodym derivative `√(dμ/dν)` when `μ ≪ ν`.
 * `MeasureTheory.Measure.eLpNorm_sqrt_toReal_rnDeriv_smul`,
   `MeasureTheory.Measure.eLpNorm_mul_sqrt_toReal_rnDeriv`,
   `MeasureTheory.Measure.memLp_sqrt_toReal_rnDeriv_smul_iff`, and
-  `MeasureTheory.Measure.memLp_mul_sqrt_toReal_rnDeriv_iff` — scaling a (not necessarily
-  measurable) function by `√(dμ/dν)` preserves the `L²` seminorm and `L²` membership between `μ`
-  and `ν`.
+  `MeasureTheory.Measure.memLp_mul_sqrt_toReal_rnDeriv_iff` — under those measure hypotheses,
+  scaling a (not necessarily measurable) function by `√(dμ/dν)` preserves the `L²` seminorm and
+  `L²` membership between `μ` and `ν`.
 * `MeasureTheory.Measure.eLpNorm_sqrt_toReal_rnDeriv` and
   `MeasureTheory.Measure.eLpNorm_sqrt_toReal_rnDeriv_eq_one` — `√(dμ/dν)` has `L²(ν)` seminorm
   `(μ univ)^(1/2)` (and `1` for probability measures).
@@ -196,14 +197,16 @@ theorem eLpNorm_mul_sqrt_toReal_rnDeriv {μ ν : Measure α} [μ.HaveLebesgueDec
     eLpNorm (fun x ↦ f x * √((μ.rnDeriv ν x).toReal)) 2 ν = eLpNorm f 2 μ := by
   simpa [smul_eq_mul, mul_comm] using eLpNorm_sqrt_toReal_rnDeriv_smul hμν f
 
-/-- Scaling by `√(dμ/dν)` preserves `L²` membership between `μ` and `ν`. -/
+/-- For `μ ≪ ν` with `μ` σ-finite and admitting a Lebesgue decomposition with respect to `ν`,
+scaling by `√(dμ/dν)` preserves `L²` membership between `μ` and `ν`. -/
 theorem memLp_sqrt_toReal_rnDeriv_smul_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {μ ν : Measure α} [μ.HaveLebesgueDecomposition ν] [SigmaFinite μ] (hμν : μ ≪ ν) {f : α → E} :
     MemLp (fun x ↦ √((μ.rnDeriv ν x).toReal) • f x) 2 ν ↔ MemLp f 2 μ := by
   simp only [memLp_iff, eLpNorm_sqrt_toReal_rnDeriv_smul hμν f]
 
-/-- Scalar form of `MeasureTheory.Measure.memLp_sqrt_toReal_rnDeriv_smul_iff`: multiplying by
-`√(dμ/dν)` preserves `L²` membership between `μ` and `ν`. -/
+/-- Scalar form of `MeasureTheory.Measure.memLp_sqrt_toReal_rnDeriv_smul_iff`: for `μ ≪ ν` with `μ`
+σ-finite and admitting a Lebesgue decomposition with respect to `ν`, multiplying by `√(dμ/dν)`
+preserves `L²` membership between `μ` and `ν`. -/
 theorem memLp_mul_sqrt_toReal_rnDeriv_iff {μ ν : Measure α} [μ.HaveLebesgueDecomposition ν]
     [SigmaFinite μ] (hμν : μ ≪ ν) {f : α → ℝ} :
     MemLp (fun x ↦ f x * √((μ.rnDeriv ν x).toReal)) 2 ν ↔ MemLp f 2 μ := by

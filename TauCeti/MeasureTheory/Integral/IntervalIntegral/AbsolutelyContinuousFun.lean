@@ -47,7 +47,7 @@ fundamental-theorem results to curves.
   integration by parts with supplied almost-everywhere derivatives.
 * `AbsolutelyContinuousOnInterval.integral_div_eq_log_sub_log`: the fundamental theorem for the
   logarithmic derivative of a nonvanishing absolutely continuous real function.
-* `AbsolutelyContinuousOnInterval.ae_hasDerivAt_and_deriv_eq_zero_of_nonneg` and
+* `AbsolutelyContinuousOnInterval.ae_hasDerivAt_and_eq_zero_imp_deriv_eq_zero_of_nonneg` and
   `AbsolutelyContinuousOnInterval.sqrt_sub_sqrt_eq_intervalIntegral`: a nonnegative absolutely
   continuous real function has zero derivative almost everywhere on its zero set, and when
   `deriv η / (2 √η)` is interval integrable, `√(η b) - √(η a) = ∫_a^b deriv η / (2 √η)`.
@@ -64,15 +64,16 @@ fundamental-theorem results to curves.
   `|∫ s in t₀..t, ‖M s‖ * |Λ s| ^ n| = |Λ t| ^ (n + 1) / (n + 1)`, and
   `TauCeti.norm_integral_le_abs_integral_norm_pow_div_factorial_mul`, the resulting inductive step
   of factorial bounds on iterated integrals.
-* `TauCeti.absolutelyContinuousOnInterval_of_eq_integral` and
-  `TauCeti.ae_hasDerivAt_of_eq_integral`: a function represented as an indefinite interval integral
-  is absolutely continuous on every subinterval and is differentiable almost everywhere with the
-  integrand as its derivative.
+* `IntervalIntegrable.absolutelyContinuousOnInterval_of_eq_integral` and
+  `MeasureTheory.LocallyIntegrable.ae_hasDerivAt_of_eq_integral`: a function represented as an
+  indefinite interval integral is absolutely continuous on every subinterval and is differentiable
+  almost everywhere with the integrand as its derivative.
 
 ## References
 
 * P. J. Bickel, C. A. J. Klaassen, Y. Ritov, and J. A. Wellner, *Efficient and Adaptive Estimation
-  for Semiparametric Models*, Johns Hopkins University Press, 1993, Appendix A.5, Corollary 1.
+  for Semiparametric Models*, Johns Hopkins University Press, 1993, Appendix A.5, Corollary 1
+  (citing J. Hájek and Z. Šidák, *Theory of Rank Tests*, Academic Press, 1967).
 -/
 
 public section
@@ -245,7 +246,7 @@ theorem integral_div_eq_log_sub_log (hf : AbsolutelyContinuousOnInterval f a b)
 
 /-- If a nonnegative function `η : ℝ → ℝ` is absolutely continuous on `uIcc a b`, then for almost
 every `u ∈ uIoc a b`, `η` is differentiable at `u` and `η u = 0` implies `deriv η u = 0`. -/
-theorem ae_hasDerivAt_and_deriv_eq_zero_of_nonneg {η : ℝ → ℝ}
+theorem ae_hasDerivAt_and_eq_zero_imp_deriv_eq_zero_of_nonneg {η : ℝ → ℝ}
     (hac : AbsolutelyContinuousOnInterval η a b) (hη : ∀ x ∈ uIcc a b, 0 ≤ η x) :
     ∀ᵐ u ∂volume, u ∈ uIoc a b → HasDerivAt η (deriv η u) u ∧ (η u = 0 → deriv η u = 0) := by
   have hne_max : ∀ᵐ u ∂volume, u ≠ max a b := by simp [ae_iff, measure_singleton]
@@ -259,15 +260,16 @@ theorem ae_hasDerivAt_and_deriv_eq_zero_of_nonneg {η : ℝ → ℝ}
   exact hmin.deriv_eq_zero
 
 /-- **Increments of a square-root function** (Bickel–Klaassen–Ritov–Wellner, Appendix A.5,
-Corollary 1, part A). If `η : ℝ → ℝ` is nonnegative and absolutely continuous on `uIcc a b`, and
-`deriv η / (2 √η)` is interval integrable on `a..b`, then
+Corollary 1, part A, after Hájek–Šidák). If `η : ℝ → ℝ` is nonnegative and absolutely continuous on
+`uIcc a b`, and `deriv η / (2 √η)` is interval integrable on `a..b`, then
 `√(η b) - √(η a) = ∫ u in a..b, deriv η u / (2 √(η u))`. -/
 theorem sqrt_sub_sqrt_eq_intervalIntegral {η : ℝ → ℝ}
     (hac : AbsolutelyContinuousOnInterval η a b) (hη : ∀ x ∈ uIcc a b, 0 ≤ η x)
     (hint : IntervalIntegrable (fun u ↦ deriv η u / (2 * Real.sqrt (η u))) volume a b) :
     Real.sqrt (η b) - Real.sqrt (η a) = ∫ u in a..b, deriv η u / (2 * Real.sqrt (η u)) := by
-  -- Step 1: Differentiability and zero-minimum property a.e. on `uIoc a b`.
-  have hae := hac.ae_hasDerivAt_and_deriv_eq_zero_of_nonneg hη
+  -- Step 1: Differentiability and zero-minimum property a.e. on `uIoc a b` (following the direct
+  -- argument of Hájek–Šidák as cited in Bickel–Klaassen–Ritov–Wellner, Appendix A.5, Corollary 1).
+  have hae := hac.ae_hasDerivAt_and_eq_zero_imp_deriv_eq_zero_of_nonneg hη
   have hη_asm : AEStronglyMeasurable η (volume.restrict (uIoc a b)) :=
     (hac.continuousOn.mono uIoc_subset_uIcc).aestronglyMeasurable measurableSet_uIoc
   have hd_asm : AEStronglyMeasurable (deriv η) (volume.restrict (uIoc a b)) :=
@@ -497,11 +499,9 @@ theorem ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable
   rw [hFTC]
   abel
 
-namespace TauCeti
-
 /-- A function `f` that agrees on `uIcc a b` with `f c + ∫ t in c..x, f' t` (with `f'` interval
 integrable on `c..a` and `a..b`) is absolutely continuous on `uIcc a b`. -/
-theorem absolutelyContinuousOnInterval_of_eq_integral
+theorem IntervalIntegrable.absolutelyContinuousOnInterval_of_eq_integral
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {f f' : ℝ → F} {a b c : ℝ} (hca : IntervalIntegrable f' volume c a)
     (hab : IntervalIntegrable f' volume a b)
@@ -519,12 +519,10 @@ theorem absolutelyContinuousOnInterval_of_eq_integral
 
 /-- A function represented globally as an indefinite integral `f x = f c + ∫ t in c..x, f' t` of a
 locally integrable function `f'` has derivative `f' x` at Lebesgue-almost every `x`. -/
-theorem ae_hasDerivAt_of_eq_integral {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [CompleteSpace F] {f f' : ℝ → F} {c : ℝ} (hf' : LocallyIntegrable f' volume)
-    (heq : ∀ x, f x = f c + ∫ t in c..x, f' t) :
+theorem MeasureTheory.LocallyIntegrable.ae_hasDerivAt_of_eq_integral {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {f f' : ℝ → F} {c : ℝ}
+    (hf' : LocallyIntegrable f' volume) (heq : ∀ x, f x = f c + ∫ t in c..x, f' t) :
     ∀ᵐ x ∂volume, HasDerivAt f (f' x) x := by
-  filter_upwards [LocallyIntegrable.ae_hasDerivAt_integral hf'] with x hx
+  filter_upwards [_root_.LocallyIntegrable.ae_hasDerivAt_integral hf'] with x hx
   rw [funext heq]
   simpa [Pi.add_def] using (hasDerivAt_const x (f c)).add (hx c)
-
-end TauCeti

@@ -28,7 +28,9 @@ import TauCeti.MeasureTheory.Function.Lp.Translation
 import TauCeti.MeasureTheory.Function.WeightL2Isometry
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
 import TauCeti.MeasureTheory.Measure.Decomposition.Prod
+import TauCeti.MeasureTheory.Measure.Weighted
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -43,15 +45,20 @@ Measuring the remainder by Mathlib's `eLpNorm` in `ℝ≥0∞` avoids Bochner-in
 remainder that fails to be square integrable has infinite `L²(ν)` seminorm and cannot masquerade as
 `o(t)`. Likewise, `HasPathScore ν Q g` requires both `∀ t, Q t ≪ ν` and
 `∀ t, (Q t).HaveLebesgueDecomposition ν` (which holds automatically whenever `ν` is σ-finite and
-every `Q t` is s-finite), preventing `rnDeriv` from collapsing to its junk value `0`. Taking the
-right-hand limit `𝓝[>] 0` allows submodels whose parameter lies on a boundary at `t = 0`.
+every `Q t` is s-finite), preventing `rnDeriv` from collapsing to its junk value `0`. Densities are
+read into `ℝ` through `((Q t).rnDeriv ν x).toReal`, which agrees `ν`-almost everywhere with
+`(Q t).rnDeriv ν` whenever `Q t` is σ-finite (while mapping infinite density values to `0` on
+non-σ-finite measures). Taking the right-hand limit `𝓝[>] 0` allows submodels whose parameter lies
+on a boundary at `t = 0`.
 
 ## Main definitions
 
 * `TauCeti.HasPathScore ν Q g`: quadratic-mean differentiability of `t ↦ Q t` from the right at `0`
   with score `g : X → ℝ` relative to a dominating measure `ν`.
-* `TauCeti.tiltPath P g C t`: the bounded linear tilt `dP_t = (1 + t g) dP` for `|t| C < 1`, cut
-  off to `P` when `1 ≤ |t| C`.
+* `TauCeti.tiltPath P g C t`: the bounded linear tilt weighting `P` by
+  `ENNReal.ofReal (1 + t * g x)` for `|t| * C < 1` (which clips negative values in general, and
+  equals `1 + t * g x` `P`-almost everywhere inside the cutoff when `|g| ≤ C` `P`-almost
+  everywhere), cut off to `P` when `1 ≤ |t| * C`.
 
 ## Main statements
 
@@ -60,23 +67,28 @@ right-hand limit `𝓝[>] 0` allows submodels whose parameter lies on a boundary
   `Q 0`-almost-everywhere score equality and eventual right-hand path agreement, constant paths, and
   nonnegative left parameter rescaling.
 * `TauCeti.HasPathScore.memLp_mul_sqrt_toReal_rnDeriv`, `TauCeti.HasPathScore.memLp`,
-  `TauCeti.HasPathScore.tendsto_eLpNorm_sqrt_toReal_rnDeriv_sub`,
   `TauCeti.hasPathScore_iff_hasDerivWithinAt_sqrt_toReal_rnDeriv_toLp`,
-  `TauCeti.HasPathScore.hasDerivWithinAt_sqrt_toReal_rnDeriv_toLp`, and
+  `TauCeti.HasPathScore.hasDerivWithinAt_sqrt_toReal_rnDeriv_toLp`,
+  `TauCeti.HasPathScore.tendsto_eLpNorm_sqrt_toReal_rnDeriv_sub`, and
   `TauCeti.HasPathScore.integral_eq_zero`: every path score of a path of finite measures is square
-  integrable under `Q 0` (in particular `Q 0`-a.e. strongly measurable), is equivalent to right
-  differentiability of `t ↦ √(d(Q t)/dν)` in `L²(ν)` at `0`, implies `L²(ν)` right-continuity at
-  `0`, and has mean zero when each `Q t` is a probability measure.
-* `TauCeti.hasPathScore_iff_of_absolutelyContinuous`: `HasPathScore ν Q g` is independent of the
-  choice of σ-finite measure dominating every `Q t`.
-* `TauCeti.HasPathScore.ae_eq`: any two scores of the same path agree `Q 0`-almost everywhere.
-* `TauCeti.isProbabilityMeasure_tiltPath` and `TauCeti.hasPathScore_tiltPath`: bounded functions on
-  a finite measure space generate linear tilts whose path score is the tilting function (and are
-  probability measures when `P` is a probability measure and `∫ g ∂P = 0`).
+  integrable under `Q 0` (in particular `Q 0`-a.e. strongly measurable); when `Q t ≪ ν` with
+  Lebesgue decompositions and `g · √(d(Q 0)/dν) ∈ L²(ν)`, `HasPathScore ν Q g` is equivalent to
+  right differentiability of `t ↦ √(d(Q t)/dν)` in `L²(ν)` at `0` with right derivative
+  `(1 / 2) • (g · √(d(Q 0)/dν))`, hence implies `L²(ν)` right-continuity at `0` and mean zero under
+  `Q 0` when each `Q t` is a probability measure.
+* `TauCeti.hasPathScore_iff_of_absolutelyContinuous`: for a path of σ-finite measures,
+  `HasPathScore ν Q g` is independent of the choice of σ-finite measure dominating every `Q t`.
+* `TauCeti.HasPathScore.ae_eq`: when `Q 0` is σ-finite, any two scores of the same path agree
+  `Q 0`-almost everywhere.
+* `TauCeti.isProbabilityMeasure_tiltPath` and `TauCeti.hasPathScore_tiltPath`: `P`-a.e. strongly
+  measurable functions satisfying `|g| ≤ C` `P`-a.e. on a finite measure space generate linear tilts
+  whose path score is `g` (and are probability measures when `P` is a probability measure and
+  `∫ g ∂P = 0`).
 * `TauCeti.exists_hasPathScore_of_integral_eq_zero`: every square-integrable mean-zero function on
   a probability space is the score of a path of probability measures dominated by `P`.
-* `TauCeti.HasPathScore.prod`: the product of two differentiable paths of finite measures has
-  score `(x, y) ↦ g₁ x + g₂ y`.
+* `TauCeti.HasPathScore.prod`: the product of two differentiable paths of finite measures with
+  respect to σ-finite reference measures `ν₁` and `ν₂` has score `(x, y) ↦ g₁ x + g₂ y` relative to
+  `ν₁ ⊗ ν₂`.
 * `TauCeti.hasPathScore_location`: for an absolutely continuous nonnegative density `η` on `ℝ` with
   locally integrable derivative `η'` and finite Fisher information `∫ η'² / η`, the location path
   `t ↦ η(x - θ - t) dx` has score `x ↦ -(η'(x - θ) / η(x - θ))` relative to Lebesgue measure.
@@ -87,7 +99,7 @@ right-hand limit `𝓝[>] 0` allows submodels whose parameter lies on a boundary
   (eq. (25.13), Lemma 25.14, Example 25.16).
 * P. J. Bickel, C. A. J. Klaassen, Y. Ritov, and J. A. Wellner, *Efficient and Adaptive Estimation
   for Semiparametric Models*, Johns Hopkins University Press, 1993, §2.1 (Example 2) and Appendix
-  A.5 (Corollary 1).
+  A.5 (Corollary 1, citing J. Hájek and Z. Šidák, *Theory of Rank Tests*, Academic Press, 1967).
 -/
 
 public section
@@ -106,8 +118,10 @@ variable {X : Type*} [MeasurableSpace X]
 /-- The path `t ↦ Q t` of measures is differentiable in quadratic mean from the right at `0` with
 score `g`, relative to the dominating measure `ν`. Every `Q t` is required to be absolutely
 continuous with respect to `ν` and to admit a Lebesgue decomposition against `ν` (which holds
-automatically when `ν` is σ-finite and each `Q t` is s-finite), and the remainder is measured by
-`eLpNorm` in `ℝ≥0∞` so that a non-square-integrable remainder has infinite norm rather than `0`. -/
+automatically when `ν` is σ-finite and each `Q t` is s-finite). Densities are read into `ℝ` via
+`((Q t).rnDeriv ν x).toReal` (which agrees `ν`-a.e. with `(Q t).rnDeriv ν` when `Q t` is σ-finite,
+and maps `∞` to `0`), and the remainder is measured by `eLpNorm` in `ℝ≥0∞` so that a
+non-square-integrable remainder has infinite norm rather than `0`. -/
 def HasPathScore (ν : Measure X) (Q : ℝ → Measure X) (g : X → ℝ) : Prop :=
   (∀ t, Q t ≪ ν) ∧ (∀ t, (Q t).HaveLebesgueDecomposition ν) ∧
     Tendsto (fun t : ℝ ↦ ENNReal.ofReal t⁻¹ * eLpNorm (fun x ↦
@@ -228,49 +242,6 @@ theorem HasPathScore.memLp {ν : Measure X} {Q : ℝ → Measure X} [∀ t, IsFi
   have := h.haveLebesgueDecomposition 0
   exact (Measure.memLp_mul_sqrt_toReal_rnDeriv_iff (h.1 0)).mp h.memLp_mul_sqrt_toReal_rnDeriv
 
-/-- Along a path of finite measures with a path score, the square-root densities `√(d(Q t)/dν)`
-converge to `√(d(Q 0)/dν)` in `L²(ν)` as `t → 0⁺`. -/
-theorem HasPathScore.tendsto_eLpNorm_sqrt_toReal_rnDeriv_sub {ν : Measure X} {Q : ℝ → Measure X}
-    [∀ t, IsFiniteMeasure (Q t)] {g : X → ℝ} (h : HasPathScore ν Q g) :
-    Tendsto (fun t : ℝ ↦ eLpNorm (fun x ↦
-      Real.sqrt ((Q t).rnDeriv ν x).toReal - Real.sqrt ((Q 0).rnDeriv ν x).toReal) 2 ν)
-      (𝓝[>] 0) (𝓝 0) := by
-  have hprod_mem := h.memLp_mul_sqrt_toReal_rnDeriv
-  have h_zero1 : Tendsto (fun t : ℝ ↦ ENNReal.ofReal t * (ENNReal.ofReal t⁻¹ * eLpNorm (fun x ↦
-      √((Q t).rnDeriv ν x).toReal - √((Q 0).rnDeriv ν x).toReal
-        - t / 2 * g x * √((Q 0).rnDeriv ν x).toReal) 2 ν)) (𝓝[>] 0) (𝓝 0) := by
-    have ht0 : Tendsto ENNReal.ofReal (𝓝[>] (0 : ℝ)) (𝓝 0) := by
-      rw [← ENNReal.ofReal_zero]
-      exact (ENNReal.continuous_ofReal.tendsto 0).mono_left nhdsWithin_le_nhds
-    simpa using ENNReal.Tendsto.mul ht0 (Or.inr ENNReal.zero_ne_top) h.tendsto
-      (Or.inr ENNReal.zero_ne_top)
-  have h_zero2 : Tendsto (fun t : ℝ ↦ ENNReal.ofReal (t / 2) *
-      eLpNorm (fun x ↦ g x * √((Q 0).rnDeriv ν x).toReal) 2 ν) (𝓝[>] 0) (𝓝 0) := by
-    have ht0 : Tendsto (fun t : ℝ ↦ ENNReal.ofReal (t / 2)) (𝓝[>] (0 : ℝ)) (𝓝 0) := by
-      have hc : Continuous fun t : ℝ ↦ ENNReal.ofReal (t / 2) :=
-        ENNReal.continuous_ofReal.comp (by fun_prop)
-      simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
-    simpa using ENNReal.Tendsto.mul_const ht0 (Or.inr hprod_mem.eLpNorm_ne_top)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (by simpa only [add_zero] using h_zero1.add h_zero2) (Eventually.of_forall fun _ ↦ zero_le) ?_
-  filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-  have hmul : ENNReal.ofReal t * (ENNReal.ofReal t⁻¹ * eLpNorm (fun x ↦
-      √((Q t).rnDeriv ν x).toReal - √((Q 0).rnDeriv ν x).toReal
-        - t / 2 * g x * √((Q 0).rnDeriv ν x).toReal) 2 ν) =
-      eLpNorm (fun x ↦ √((Q t).rnDeriv ν x).toReal - √((Q 0).rnDeriv ν x).toReal
-        - t / 2 * g x * √((Q 0).rnDeriv ν x).toReal) 2 ν := by
-    rw [← mul_assoc, ← ENNReal.ofReal_mul ht.le, mul_inv_cancel₀ ht.ne', ENNReal.ofReal_one,
-      one_mul]
-  rw [hmul]
-  have heq : (fun x ↦ √((Q t).rnDeriv ν x).toReal - √((Q 0).rnDeriv ν x).toReal) =
-      (fun x ↦ √((Q t).rnDeriv ν x).toReal - √((Q 0).rnDeriv ν x).toReal
-        - t / 2 * g x * √((Q 0).rnDeriv ν x).toReal) +
-      ((t / 2) • fun x ↦ g x * √((Q 0).rnDeriv ν x).toReal) := by
-    ext x; simp [Pi.smul_apply, smul_eq_mul]; ring
-  rw [heq]
-  exact (eLpNorm_add_le one_le_two).trans_eq
-    (by rw [eLpNorm_const_smul, Real.eNorm_eq_ofReal (by positivity)])
-
 /-- **Hilbert-space characterization of path scores.** For a path `Q` of finite measures dominated
 by `ν` (with Lebesgue decompositions against `ν`) and a function `g` with
 `g · √(d(Q 0)/dν) ∈ L²(ν)`, `HasPathScore ν Q g` holds if and only if the curve `t ↦ √(d(Q t)/dν)`
@@ -313,6 +284,20 @@ theorem HasPathScore.hasDerivWithinAt_sqrt_toReal_rnDeriv_toLp {ν : Measure X}
   exact (hasPathScore_iff_hasDerivWithinAt_sqrt_toReal_rnDeriv_toLp h.1
     h.memLp_mul_sqrt_toReal_rnDeriv).mp h
 
+/-- Along a path of finite measures with a path score, the square-root densities `√(d(Q t)/dν)`
+converge to `√(d(Q 0)/dν)` in `L²(ν)` as `t → 0⁺`. -/
+theorem HasPathScore.tendsto_eLpNorm_sqrt_toReal_rnDeriv_sub {ν : Measure X} {Q : ℝ → Measure X}
+    [∀ t, IsFiniteMeasure (Q t)] {g : X → ℝ} (h : HasPathScore ν Q g) :
+    Tendsto (fun t : ℝ ↦ eLpNorm (fun x ↦
+      Real.sqrt ((Q t).rnDeriv ν x).toReal - Real.sqrt ((Q 0).rnDeriv ν x).toReal) 2 ν)
+      (𝓝[>] 0) (𝓝 0) := by
+  simpa only [Pi.sub_def] using
+    (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _
+      (fun t ↦ Measure.memLp_two_sqrt_toReal_rnDeriv (Q t) ν) _
+      (Measure.memLp_two_sqrt_toReal_rnDeriv (Q 0) ν)).mp
+      (h.hasDerivWithinAt_sqrt_toReal_rnDeriv_toLp.continuousWithinAt.tendsto.mono_left
+        (nhdsWithin_mono 0 Ioi_subset_Ici_self))
+
 /-- Every path score of a path of probability measures has mean zero under `Q 0`
 (van der Vaart, Lemma 25.14, first assertion). -/
 theorem HasPathScore.integral_eq_zero {ν : Measure X} {Q : ℝ → Measure X}
@@ -322,27 +307,25 @@ theorem HasPathScore.integral_eq_zero {ν : Measure X} {Q : ℝ → Measure X}
   set S : ℝ → Lp ℝ 2 ν := fun t ↦ (Measure.memLp_two_sqrt_toReal_rnDeriv (Q t) ν).toLp _
   have hG_mem := h.memLp_mul_sqrt_toReal_rnDeriv
   set G : Lp ℝ 2 ν := hG_mem.toLp _
-  have hd : HasDerivWithinAt (fun t ↦ inner ℝ (S t) (S t))
-      (inner ℝ (S 0) ((1 / 2 : ℝ) • G) + inner ℝ ((1 / 2 : ℝ) • G) (S 0)) (Ici 0) 0 :=
-    h.hasDerivWithinAt_sqrt_toReal_rnDeriv_toLp.inner ℝ
-      h.hasDerivWithinAt_sqrt_toReal_rnDeriv_toLp
-  have hconst : (fun t ↦ inner ℝ (S t) (S t)) = fun _ ↦ (1 : ℝ) := funext fun t ↦ by
-    rw [real_inner_self_eq_norm_sq, Lp.norm_toLp,
-      (Q t).eLpNorm_sqrt_toReal_rnDeriv_eq_one ν (h.1 t)]
+  have hd : HasDerivWithinAt (fun t ↦ ‖S t‖ ^ 2)
+      (2 * inner ℝ (S 0) ((1 / 2 : ℝ) • G)) (Ici 0) 0 :=
+    h.hasDerivWithinAt_sqrt_toReal_rnDeriv_toLp.norm_sq
+  have hconst : (fun t ↦ ‖S t‖ ^ 2) = fun _ ↦ (1 : ℝ) := funext fun t ↦ by
+    rw [Lp.norm_toLp, (Q t).eLpNorm_sqrt_toReal_rnDeriv_eq_one ν (h.1 t)]
     norm_num
-  have hd0 : HasDerivWithinAt (fun t ↦ inner ℝ (S t) (S t)) 0 (Ici 0) 0 :=
+  have hd0 : HasDerivWithinAt (fun t ↦ ‖S t‖ ^ 2) 0 (Ici 0) 0 :=
     hconst ▸ hasDerivWithinAt_const 0 (Ici 0) (1 : ℝ)
-  have h0 : inner ℝ (S 0) ((1 / 2 : ℝ) • G) + inner ℝ ((1 / 2 : ℝ) • G) (S 0) = 0 := by
+  have h0 : 2 * inner ℝ (S 0) ((1 / 2 : ℝ) • G) = 0 := by
     rw [← hd.derivWithin (uniqueDiffWithinAt_Ici 0), hd0.derivWithin (uniqueDiffWithinAt_Ici 0)]
-  have hGS : inner ℝ G (S 0) = 0 := by
-    simp only [inner_smul_right, inner_smul_left, RCLike.conj_to_real,
-      real_inner_comm G (S 0)] at h0
+  have hSG : inner ℝ (S 0) G = 0 := by
+    simp only [inner_smul_right] at h0
     linarith
-  rw [← integral_toReal_rnDeriv_mul (h.1 0), L2.inner_def] at *
-  refine (integral_congr_ae ?_).trans hGS
-  filter_upwards [hG_mem.coeFn_toLp,
-    (Measure.memLp_two_sqrt_toReal_rnDeriv (Q 0) ν).coeFn_toLp] with x hGx hSx
-  simp only [RCLike.inner_apply, RCLike.conj_to_real, S, G, hGx, hSx]
+  rw [L2.inner_def] at hSG
+  rw [← integral_toReal_rnDeriv_mul (h.1 0)]
+  refine (integral_congr_ae ?_).trans hSG
+  filter_upwards [(Measure.memLp_two_sqrt_toReal_rnDeriv (Q 0) ν).coeFn_toLp,
+    hG_mem.coeFn_toLp] with x hSx hGx
+  simp only [RCLike.inner_apply, RCLike.conj_to_real, S, G, hSx, hGx]
   linear_combination -g x * Real.mul_self_sqrt (ENNReal.toReal_nonneg (a := (Q 0).rnDeriv ν x))
 
 /-- **Independence of the dominating measure.** If every `Q t` is σ-finite and absolutely
@@ -371,7 +354,8 @@ theorem hasPathScore_iff_of_absolutelyContinuous {ν ν' : Measure X} [SigmaFini
   exact ⟨fun h ↦ ⟨fun t ↦ (hQρ t).trans hρμ, inferInstance, by simp_rw [← heq]; exact h.tendsto⟩,
     fun h ↦ ⟨hQρ, inferInstance, by simp_rw [heq]; exact h.tendsto⟩⟩
 
-/-- **Uniqueness of path scores.** Any two path scores of one path agree `Q 0`-almost everywhere. -/
+/-- **Uniqueness of path scores.** When `Q 0` is σ-finite, any two path scores of `Q` agree
+`Q 0`-almost everywhere. -/
 theorem HasPathScore.ae_eq {ν : Measure X} {Q : ℝ → Measure X} [SigmaFinite (Q 0)] {g g' : X → ℝ}
     (h : HasPathScore ν Q g) (h' : HasPathScore ν Q g') : g =ᵐ[Q 0] g' := by
   have := h.haveLebesgueDecomposition 0
@@ -415,9 +399,11 @@ section Constructions
 
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
 
-/-- The bounded linear tilt `dP_t = (1 + t g) dP` for `|t| C < 1`, cut off to `P` when
-`1 ≤ |t| C`. When `P` is a probability measure, `g` is a.e. strongly measurable, `|g| ≤ C` a.e.,
-and `∫ g ∂P = 0`, every `tiltPath P g C t` is a probability measure
+/-- The bounded linear tilt weighting `P` by `ENNReal.ofReal (1 + t * g x)` for `|t| * C < 1`, cut
+off to `P` when `1 ≤ |t| * C`. In general `ENNReal.ofReal` clips negative values of `1 + t * g x`;
+when `|g| ≤ C` `P`-almost everywhere, `1 + t * g x ≥ 0` `P`-almost everywhere inside the cutoff so
+no clipping occurs, and if moreover `P` is a probability measure, `g` is `P`-a.e. strongly
+measurable, and `∫ g ∂P = 0`, every `tiltPath P g C t` is a probability measure
 (`isProbabilityMeasure_tiltPath`). -/
 def tiltPath (P : Measure X) (g : X → ℝ) (C : ℝ) (t : ℝ) : Measure X :=
   if |t| * C < 1 then P.withDensity (fun x ↦ ENNReal.ofReal (1 + t * g x)) else P
@@ -432,7 +418,9 @@ theorem tiltPath_def (P : Measure X) (g : X → ℝ) (C : ℝ) (t : ℝ) :
 theorem tiltPath_zero (P : Measure X) (g : X → ℝ) (C : ℝ) : tiltPath P g C 0 = P := by
   simp [tiltPath]
 
-/-- Within the cutoff `|t| * C < 1`, `tiltPath P g C t` has density `1 + t * g` against `P`. -/
+/-- Within the cutoff `|t| * C < 1`, `tiltPath P g C t` weights `P` by
+`ENNReal.ofReal (1 + t * g x)` (which agrees `P`-almost everywhere with `1 + t * g x` when
+`|g| ≤ C` `P`-almost everywhere). -/
 theorem tiltPath_of_lt {P : Measure X} {g : X → ℝ} {C t : ℝ} (ht : |t| * C < 1) :
     tiltPath P g C t = P.withDensity (fun x ↦ ENNReal.ofReal (1 + t * g x)) := by
   simp [tiltPath, ht]
@@ -503,7 +491,7 @@ private theorem eLpNorm_tiltPath_remainder_le {P : Measure X} [IsFiniteMeasure P
   simp only [hxt, hx0, Pi.one_apply, ENNReal.toReal_one, Real.sqrt_one, mul_one,
     ENNReal.toReal_ofReal (by linarith [neg_abs_le (t * g x)] : 0 ≤ 1 + t * g x),
     Real.norm_eq_abs, htg_div]
-  exact (Real.abs_sqrt_one_add_sub_le (t * g x)).trans
+  exact (Real.abs_sqrt_one_add_sub_one_sub_div_two_le (t * g x)).trans
     (by rw [mul_pow]; nlinarith [sq_le_sq.mpr (hxC.trans (le_abs_self C)), sq_nonneg t])
 
 /-- A bounded `P`-almost-everywhere measurable function `g` on a finite measure space is the path
@@ -592,11 +580,9 @@ private theorem hasDerivAt_logisticPartition {P : Measure X} [IsProbabilityMeasu
     (Eventually.of_forall fun t ↦ by fun_prop) hk_int0
     (by simp only [zero_mul]; norm_num; exact hg₀_int.aestronglyMeasurable)
     (Eventually.of_forall fun x t _ ↦ by
-      have h0 : 0 ≤ 4 * Real.sigmoid (2 * (t * g₀ x)) * (1 - Real.sigmoid (2 * (t * g₀ x))) :=
-        mul_nonneg (mul_nonneg (by norm_num) (Real.sigmoid_pos _).le)
-          (sub_nonneg.mpr (Real.sigmoid_le_one _))
-      simp only [Real.norm_eq_abs, abs_mul, abs_of_nonneg h0]
-      nlinarith [sq_nonneg (1 - 2 * Real.sigmoid (2 * (t * g₀ x))), abs_nonneg (g₀ x)])
+      rw [Real.norm_eq_abs, abs_mul]
+      exact mul_le_of_le_one_left (abs_nonneg _)
+        (Real.abs_four_mul_sigmoid_mul_one_sub_sigmoid_le_one (2 * (t * g₀ x))))
     hg₀_int.norm
     (Eventually.of_forall fun x t _ ↦ by
       simpa [Function.comp_def] using (Real.hasDerivAt_two_mul_sigmoid_two_mul (t * g₀ x)).comp t
@@ -633,7 +619,7 @@ theorem exists_hasPathScore_of_integral_eq_zero (P : Measure X) [IsProbabilityMe
     ∃ Q : ℝ → Measure X, (∀ t, IsProbabilityMeasure (Q t)) ∧ Q 0 = P ∧
       (∀ t, Q t ≪ P) ∧ HasPathScore P Q g := by
   -- Step 1: Replace `g` by a measurable representative `g₀` and define the normalized logistic tilt
-  -- `d(Q t)/dP = Z(t)⁻¹ · 2 σ(2 t g₀)`, where `Z(t) = ∫ 2 σ(2 t g₀) dP`.
+  -- `Q t = P.weighted (w t)` with `w t x = 2 σ(2 t g₀ x)` and total mass `Z(t) = ∫ 2 σ(2 t g₀) dP`.
   set g₀ := hg.aestronglyMeasurable.aemeasurable.mk g
   have hg₀_meas : Measurable g₀ := hg.aestronglyMeasurable.aemeasurable.measurable_mk
   have hg₀_ae : g =ᵐ[P] g₀ := hg.aemeasurable.ae_eq_mk
@@ -645,15 +631,26 @@ theorem exists_hasPathScore_of_integral_eq_zero (P : Measure X) [IsProbabilityMe
       (hg₀_mem.integrable one_le_two) ((integral_congr_ae hg₀_ae.symm).trans hmean)
     simpa [hZ0] using (hd.inv (by rw [hZ0]; exact one_ne_zero)).sqrt
       (inv_ne_zero (by rw [hZ0]; exact one_ne_zero))
-  set Q : ℝ → Measure X := fun t ↦
-    P.withDensity (fun x ↦ ENNReal.ofReal ((Z t)⁻¹ * (2 * Real.sigmoid (2 * (t * g₀ x)))))
-  have hQ0 : Q 0 = P := by simp [Q, hZ0]
-  have hQ_ac (t : ℝ) : Q t ≪ P := withDensity_absolutelyContinuous _ _
-  have hQ_prob (t : ℝ) : IsProbabilityMeasure (Q t) := by
-    have hZ_pos := logisticPartition_pos P hg₀_meas t
-    refine isProbabilityMeasure_withDensity_ofReal (Eventually.of_forall fun _ ↦
-      mul_nonneg (inv_nonneg.mpr hZ_pos.le) (mul_nonneg zero_le_two (Real.sigmoid_pos _).le)) ?_
-    rw [integral_const_mul, inv_mul_cancel₀ hZ_pos.ne']
+  set w : ℝ → X → ℝ≥0 := fun t x ↦
+    ⟨2 * Real.sigmoid (2 * (t * g₀ x)), mul_nonneg zero_le_two (Real.sigmoid_nonneg _)⟩
+  have hw_meas (t : ℝ) : Measurable (w t) :=
+    (by fun_prop : Measurable fun x ↦ 2 * Real.sigmoid (2 * (t * g₀ x))).subtype_mk
+  have hw_coe (t : ℝ) (x : X) :
+      (w t x : ℝ≥0∞) = ENNReal.ofReal (2 * Real.sigmoid (2 * (t * g₀ x))) :=
+    (ENNReal.ofReal_eq_coe_nnreal (mul_nonneg zero_le_two (Real.sigmoid_nonneg _))).symm
+  have hw_lintegral (t : ℝ) : ∫⁻ x, (w t x : ℝ≥0∞) ∂P = ENNReal.ofReal (Z t) := by
+    simp_rw [hw_coe]
+    exact (ofReal_integral_eq_lintegral_ofReal (integrable_two_mul_sigmoid P hg₀_meas t)
+      (Eventually.of_forall fun _ ↦ mul_nonneg zero_le_two (Real.sigmoid_nonneg _))).symm
+  set Q : ℝ → Measure X := fun t ↦ P.weighted (w t)
+  have hQ0 : Q 0 = P := by
+    have hw0 : w 0 = 1 := funext fun x ↦ Subtype.ext (by simp [w])
+    simp only [Q, hw0, Measure.weighted_one]
+  have hQ_ac (t : ℝ) : Q t ≪ P := Measure.weighted_absolutelyContinuous
+  have hQ_prob (t : ℝ) : IsProbabilityMeasure (Q t) :=
+    Measure.isProbabilityMeasure_weighted_iff.mpr <| by
+      rw [hw_lintegral]
+      exact ⟨ENNReal.ofReal_pos.mpr (logisticPartition_pos P hg₀_meas t), ENNReal.ofReal_ne_top⟩
   refine ⟨Q, hQ_prob, hQ0, hQ_ac, ?_⟩
   suffices hscore₀ : HasPathScore P Q g₀ from hscore₀.congr_ae (hQ0 ▸ hg₀_ae.symm)
   -- Step 2: Split the scaled `L²(P)` remainder into the normalization term `(√(Z(t)⁻¹) - 1)/t`
@@ -664,20 +661,21 @@ theorem exists_hasPathScore_of_integral_eq_zero (P : Measure X) [IsProbabilityMe
   refine ⟨hQ_ac, inferInstance, tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
     (Eventually.of_forall fun _ ↦ zero_le) ?_⟩
   filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-  have hd_t : (Q t).rnDeriv P =ᵐ[P]
-      fun x ↦ ENNReal.ofReal ((Z t)⁻¹ * (2 * Real.sigmoid (2 * (t * g₀ x)))) :=
-    Measure.rnDeriv_withDensity P (by fun_prop)
+  have hd_t : (Q t).rnDeriv P =ᵐ[P] fun x ↦ (ENNReal.ofReal (Z t))⁻¹ * (w t x : ℝ≥0∞) := by
+    simpa only [Q, hw_lintegral] using P.rnDeriv_weighted (hw_meas t).aemeasurable
   have hd_0 : (Q 0).rnDeriv P =ᵐ[P] 1 := by rw [hQ0]; exact P.rnDeriv_self
   have hae : (t⁻¹ • fun x ↦ √((Q t).rnDeriv P x).toReal - √((Q 0).rnDeriv P x).toReal -
         t / 2 * g₀ x * √((Q 0).rnDeriv P x).toReal) =ᵐ[P]
       (fun x ↦ t⁻¹ * (√((Z t)⁻¹) - 1) * √(2 * Real.sigmoid (2 * (t * g₀ x)))) +
       (fun x ↦ t⁻¹ * (√(2 * Real.sigmoid (2 * (t * g₀ x))) - 1) - 1 / 2 * g₀ x) := by
     filter_upwards [hd_t, hd_0] with x hxt hx0
-    have hZ_nonneg : 0 ≤ (Z t)⁻¹ := inv_nonneg.mpr (logisticPartition_pos P hg₀_meas t).le
-    have hnonneg : 0 ≤ (Z t)⁻¹ * (2 * Real.sigmoid (2 * (t * g₀ x))) :=
-      mul_nonneg hZ_nonneg (mul_nonneg zero_le_two (Real.sigmoid_pos _).le)
+    have hZ_pos : 0 < Z t := logisticPartition_pos P hg₀_meas t
+    have hZ_nonneg : 0 ≤ (Z t)⁻¹ := inv_nonneg.mpr hZ_pos.le
+    have hsig_nonneg : 0 ≤ 2 * Real.sigmoid (2 * (t * g₀ x)) :=
+      mul_nonneg zero_le_two (Real.sigmoid_nonneg _)
     simp only [Pi.smul_apply, smul_eq_mul, Pi.add_apply, hxt, hx0, Pi.one_apply,
-      ENNReal.toReal_one, Real.sqrt_one, mul_one, ENNReal.toReal_ofReal hnonneg,
+      ENNReal.toReal_one, Real.sqrt_one, mul_one, hw_coe, ENNReal.toReal_mul, ENNReal.toReal_inv,
+      ENNReal.toReal_ofReal hZ_pos.le, ENNReal.toReal_ofReal hsig_nonneg,
       Real.sqrt_mul hZ_nonneg]
     have := ht.ne'; field_simp; ring
   rw [← Real.eNorm_eq_ofReal (inv_nonneg.mpr ht.le), ← eLpNorm_const_smul, eLpNorm_congr_ae hae]
@@ -793,7 +791,8 @@ private theorem hasPathScore_prod_of_measurable {ν₁ : Measure X} [SigmaFinite
   exact hsplit ▸ eLpNorm_add_le one_le_two
 
 /-- **Product paths.** The product of two paths of finite measures with scores `g₁` and `g₂`
-relative to `ν₁` and `ν₂` has path score `(x, y) ↦ g₁ x + g₂ y` relative to `ν₁ ⊗ ν₂`. -/
+relative to σ-finite reference measures `ν₁` and `ν₂` has path score `(x, y) ↦ g₁ x + g₂ y`
+relative to `ν₁ ⊗ ν₂`. -/
 theorem HasPathScore.prod {ν₁ : Measure X} [SigmaFinite ν₁] {ν₂ : Measure Y} [SigmaFinite ν₂]
     {Q₁ : ℝ → Measure X} {Q₂ : ℝ → Measure Y} [∀ t, IsFiniteMeasure (Q₁ t)]
     [∀ t, IsFiniteMeasure (Q₂ t)] {g₁ : X → ℝ} {g₂ : Y → ℝ}
@@ -818,44 +817,18 @@ section Location
 
 private theorem eLpNorm_location_remainder_le {s'₀ : ℝ → ℝ} (hs'₀_meas : Measurable s'₀) (θ t : ℝ) :
     eLpNorm (fun x ↦ ∫ u in Ioc (0 : ℝ) 1, (s'₀ (x - θ) - s'₀ (x - θ - t * u))) 2 volume ≤
-      eLpNorm (fun u ↦ eLpNorm (fun x ↦ s'₀ (x - t * u) - s'₀ x) 2 volume) 2
-        (volume.restrict (Ioc 0 1)) := by
-  set φ : ℝ × ℝ → ℝ := fun p ↦ s'₀ (p.2 - θ) - s'₀ (p.2 - θ - t * p.1)
-  have hφ : Measurable φ := by fun_prop
-  set μ₁ := volume.restrict (Ioc (0 : ℝ) 1)
-  have hμ₁_univ : μ₁ univ = 1 := by rw [Measure.restrict_apply_univ, Real.volume_Ioc]; norm_num
-  have hsec_le (x : ℝ) : ‖∫ u, φ (u, x) ∂μ₁‖ₑ ≤ ‖eLpNorm (fun u ↦ φ (u, x)) 2 μ₁‖ₑ := by
-    have hm : AEStronglyMeasurable (fun u ↦ φ (u, x)) μ₁ :=
-      (hφ.comp measurable_prodMk_right).aestronglyMeasurable
-    rw [eNorm_eq_self]
-    calc ‖∫ u, φ (u, x) ∂μ₁‖ₑ ≤ ∫⁻ u, ‖φ (u, x)‖ₑ ∂μ₁ := eNorm_integral_le_lintegral_eNorm _
-      _ = eLpNorm (fun u ↦ φ (u, x)) 1 μ₁ := (eLpNorm_one_eq_lintegral_eNorm hm).symm
-      _ ≤ eLpNorm (fun u ↦ φ (u, x)) 2 μ₁ *
-            μ₁ univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / (2 : ℝ≥0∞).toReal) :=
-          eLpNorm_le_eLpNorm_mul_rpow_measure_univ one_le_two hm
-      _ = eLpNorm (fun u ↦ φ (u, x)) 2 μ₁ := by rw [hμ₁_univ, ENNReal.one_rpow, mul_one]
-  have hint_m : AEStronglyMeasurable (fun x ↦ ∫ u, φ (u, x) ∂μ₁) volume :=
-    hφ.stronglyMeasurable.integral_prod_left'.aestronglyMeasurable
-  calc eLpNorm (fun x ↦ ∫ u, φ (u, x) ∂μ₁) 2 volume
-      ≤ eLpNorm (fun x ↦ eLpNorm (fun u ↦ φ (u, x)) 2 μ₁) 2 volume :=
-        eLpNorm_mono_eNorm hint_m hsec_le
-    _ = eLpNorm (fun p : ℝ × ℝ ↦ φ (p.2, p.1)) 2 (volume.prod μ₁) :=
-        (TauCeti.eLpNorm_prod_eq_eLpNorm_eLpNorm
-          (hφ.comp measurable_swap).aestronglyMeasurable).symm
-    _ = eLpNorm φ 2 (μ₁.prod volume) :=
-        eLpNorm_comp_measurePreserving hφ.aestronglyMeasurable
-          (Measure.measurePreserving_swap (μ := volume) (ν := μ₁))
-    _ = eLpNorm (fun u ↦ eLpNorm (fun x ↦ φ (u, x)) 2 volume) 2 μ₁ :=
-        TauCeti.eLpNorm_prod_eq_eLpNorm_eLpNorm hφ.aestronglyMeasurable
-    _ = eLpNorm (fun u ↦ eLpNorm (fun x ↦ s'₀ (x - t * u) - s'₀ x) 2 volume) 2 μ₁ := by
-        refine congrArg (fun f ↦ eLpNorm f 2 μ₁) (funext fun u ↦ ?_)
-        have hm : AEStronglyMeasurable (fun x ↦ s'₀ x - s'₀ (x - t * u)) volume := by fun_prop
-        have htr : eLpNorm (fun x ↦ φ (u, x)) 2 volume =
-            eLpNorm (fun x ↦ s'₀ x - s'₀ (x - t * u)) 2 volume := by
-          simpa [φ, Function.comp_def, sub_right_comm] using
-            eLpNorm_comp_measurePreserving hm (measurePreserving_sub_right volume θ)
-        rw [htr, ← eLpNorm_neg]
-        exact eLpNorm_congr_ae (Eventually.of_forall fun x ↦ by simp)
+      ∫⁻ u in Ioc (0 : ℝ) 1, eLpNorm (fun x ↦ s'₀ (x - t * u) - s'₀ x) 2 volume := by
+  have hF : Measurable (Function.uncurry fun x u : ℝ ↦ s'₀ (x - θ) - s'₀ (x - θ - t * u)) := by
+    fun_prop
+  refine (TauCeti.eLpNorm_integral_le_lintegral_eLpNorm_of_ne_top hF.aestronglyMeasurable
+    one_le_two ENNReal.ofNat_ne_top).trans_eq (lintegral_congr fun u ↦ ?_)
+  have hm : AEStronglyMeasurable (fun x ↦ s'₀ x - s'₀ (x - t * u)) volume := by fun_prop
+  have htr : eLpNorm (fun x ↦ s'₀ (x - θ) - s'₀ (x - θ - t * u)) 2 volume =
+      eLpNorm (fun x ↦ s'₀ x - s'₀ (x - t * u)) 2 volume := by
+    simpa only [Function.comp_def, sub_right_comm] using
+      eLpNorm_comp_measurePreserving hm (measurePreserving_sub_right volume θ)
+  rw [htr, ← eLpNorm_neg]
+  exact eLpNorm_congr_ae (Eventually.of_forall fun x ↦ by simp)
 
 private theorem integral_halfScore_eq_sqrt_sub_sqrt {η η' s'₀ : ℝ → ℝ} (hη : ∀ x, 0 ≤ η x)
     (hη' : ∀ a b, IntervalIntegrable η' volume a b) (hac : ∀ x, η x = η 0 + ∫ t in (0 : ℝ)..x, η' t)
@@ -864,12 +837,12 @@ private theorem integral_halfScore_eq_sqrt_sub_sqrt {η η' s'₀ : ℝ → ℝ}
   have hs'₀_ii : IntervalIntegrable s'₀ volume a b :=
     (hs'₀_mem.locallyIntegrable one_le_two).intervalIntegrable a b
   have hderiv_eq : deriv η =ᵐ[volume] η' :=
-    (ae_hasDerivAt_of_eq_integral (locallyIntegrable_iff_forall_intervalIntegrable.mpr hη')
+    ((locallyIntegrable_iff_forall_intervalIntegrable.mpr hη').ae_hasDerivAt_of_eq_integral
       hac).mono fun _ hx ↦ hx.deriv
   have hderiv_score_ae : (fun v ↦ deriv η v / (2 * √(η v))) =ᵐ[volume] s'₀ := by
     filter_upwards [hderiv_eq, hs'₀_ae] with x hx1 hx2 using by rw [hx1, hx2]
   have hac_int : AbsolutelyContinuousOnInterval η a b :=
-    absolutelyContinuousOnInterval_of_eq_integral (hη' 0 a) (hη' a b) (fun y _ ↦ hac y)
+    (hη' 0 a).absolutelyContinuousOnInterval_of_eq_integral (hη' a b) (fun y _ ↦ hac y)
   have hint_deriv : IntervalIntegrable (fun v ↦ deriv η v / (2 * √(η v))) volume a b :=
     hs'₀_ii.congr_ae (ae_restrict_of_ae hderiv_score_ae.symm)
   rw [intervalIntegral.integral_congr_ae (hderiv_score_ae.symm.mono fun _ hv _ ↦ hv)]
@@ -903,10 +876,11 @@ private theorem ae_location_remainder_eq {η η' s'₀ : ℝ → ℝ} (hη : ∀
     rw [← hxθ]
     rcases eq_or_ne (η (x - θ)) 0 with h0 | h0
     · simp [h0]
-    · have hsq : √(η (x - θ)) * √(η (x - θ)) = η (x - θ) := Real.mul_self_sqrt (hη _)
-      have hsr_ne : √(η (x - θ)) ≠ 0 := (Real.sqrt_pos.mpr (lt_of_le_of_ne (hη _) h0.symm)).ne'
-      nth_rw 1 [← hsq]
-      field_simp
+    · have hsr_ne : √(η (x - θ)) ≠ 0 := (Real.sqrt_pos.mpr (lt_of_le_of_ne (hη _) h0.symm)).ne'
+      calc -(η' (x - θ) / η (x - θ)) * √(η (x - θ))
+          = -(η' (x - θ) / (√(η (x - θ)) ^ 2)) * √(η (x - θ)) := by
+              rw [Real.sq_sqrt (hη _)]
+        _ = -2 * (η' (x - θ) / (2 * √(η (x - θ)))) := by field_simp
   have hsub_mul := intervalIntegral.integral_comp_sub_mul s'₀ ht0.ne' (x - θ) (a := 0) (b := 1)
   simp only [mul_zero, sub_zero, mul_one, smul_eq_mul] at hsub_mul
   rw [sub_sub x θ t] at hsub_mul
@@ -921,10 +895,11 @@ private theorem ae_location_remainder_eq {η η' s'₀ : ℝ → ℝ} (hη : ∀
     sub_zero, one_smul, hsub_mul, hint_eq, mul_assoc (t / 2), hscore_eq]
   have := ht0.ne'; field_simp; ring
 
-private theorem tendsto_eLpNorm_restrict_Ioc_sub {s'₀ : ℝ → ℝ} (hs'₀_meas : Measurable s'₀)
+private theorem tendsto_setLIntegral_Ioc_eLpNorm_sub {s'₀ : ℝ → ℝ}
     (hs'₀_mem : MemLp s'₀ 2 volume) :
-    Tendsto (fun t : ℝ ↦ eLpNorm (fun u ↦ eLpNorm (fun x ↦ s'₀ (x - t * u) - s'₀ x) 2 volume) 2
-      (volume.restrict (Ioc 0 1))) (𝓝[>] 0) (𝓝 0) := by
+    Tendsto (fun t : ℝ ↦
+      ∫⁻ u in Ioc (0 : ℝ) 1, eLpNorm (fun x ↦ s'₀ (x - t * u) - s'₀ x) 2 volume)
+      (𝓝[>] 0) (𝓝 0) := by
   have htr_lim : Tendsto (fun w : ℝ ↦ eLpNorm (fun x ↦ s'₀ (x - w) - s'₀ x) 2 volume)
       (𝓝 0) (𝓝 0) := by
     simpa only [Function.comp_def, sub_eq_add_neg] using
@@ -935,27 +910,17 @@ private theorem tendsto_eLpNorm_restrict_Ioc_sub {s'₀ : ℝ → ℝ} (hs'₀_m
   obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff.mp
     (ENNReal.tendsto_nhds_zero.mp htr_lim ε hε)
   filter_upwards [Ioo_mem_nhdsGT hδ] with t ⟨ht0, htδ⟩
-  set μ₁ := volume.restrict (Ioc (0 : ℝ) 1)
-  have hsec_m : AEStronglyMeasurable
-      (fun u ↦ eLpNorm (fun x ↦ s'₀ (x - t * u) - s'₀ x) 2 volume) μ₁ :=
-    (by fun_prop : Measurable fun p : ℝ × ℝ ↦
-      s'₀ (p.2 - t * p.1) - s'₀ p.2).aestronglyMeasurable.eLpNorm_prod_right
-  have hae_le : ∀ᵐ u ∂μ₁, ‖eLpNorm (fun x ↦ s'₀ (x - t * u) - s'₀ x) 2 volume‖ₑ ≤ ‖ε‖ₑ := by
-    rw [ae_restrict_iff' measurableSet_Ioc]
-    refine Eventually.of_forall fun u ⟨hu0, hu1⟩ ↦ ?_
-    simp only [eNorm_eq_self]
-    refine hball ?_
-    rw [Real.dist_eq, sub_zero, abs_of_pos (mul_pos ht0 hu0)]
-    nlinarith
-  refine (eLpNorm_mono_eNorm_ae hsec_m hae_le).trans ?_
-  rw [eLpNorm_const' ε two_ne_zero ENNReal.ofNat_ne_top, eNorm_eq_self,
-    Measure.restrict_apply_univ, Real.volume_Ioc]
-  norm_num
+  calc ∫⁻ u in Ioc (0 : ℝ) 1, eLpNorm (fun x ↦ s'₀ (x - t * u) - s'₀ x) 2 volume
+      ≤ ∫⁻ _ in Ioc (0 : ℝ) 1, ε :=
+        setLIntegral_mono' measurableSet_Ioc fun u ⟨hu0, hu1⟩ ↦ hball <| by
+          rw [Real.dist_eq, sub_zero, abs_of_pos (mul_pos ht0 hu0)]
+          nlinarith
+    _ = ε := by simp [Real.volume_Ioc]
 
 /-- **Path score of a location model** (Bickel–Klaassen–Ritov–Wellner, §2.1 Example 2 and Appendix
-A.5, Corollary 1, parts C–D). If `η : ℝ → ℝ` is nonnegative, absolutely continuous with derivative
-`η'`, and has finite Fisher information `∫ (η' x)² / η x dx`, then the location path
-`t ↦ volume.withDensity (x ↦ ENNReal.ofReal (η (x - (θ + t))))` has path score
+A.5, Corollary 1, parts C–D, after Hájek–Šidák). If `η : ℝ → ℝ` is nonnegative, absolutely
+continuous with derivative `η'`, and has finite Fisher information `∫ (η' x)² / η x dx`, then the
+location path `t ↦ volume.withDensity (x ↦ ENNReal.ofReal (η (x - (θ + t))))` has path score
 `x ↦ -(η' (x - θ) / η (x - θ))` relative to Lebesgue measure. -/
 theorem hasPathScore_location (η η' : ℝ → ℝ) (hη : ∀ x, 0 ≤ η x)
     (hη' : ∀ a b, IntervalIntegrable η' volume a b)
@@ -963,6 +928,8 @@ theorem hasPathScore_location (η η' : ℝ → ℝ) (hη : ∀ x, 0 ≤ η x)
     (hfisher : Integrable fun x ↦ η' x ^ 2 / η x) (θ : ℝ) :
     HasPathScore volume (fun t ↦ volume.withDensity fun x ↦ ENNReal.ofReal (η (x - (θ + t))))
       (fun x ↦ -(η' (x - θ) / η (x - θ))) := by
+  -- Following the direct argument of Hájek–Šidák as cited in Bickel–Klaassen–Ritov–Wellner,
+  -- Appendix A.5, Corollary 1:
   -- Step 1: Place the half-score `η' / (2 √η)` in `L²(ℝ)` from finite Fisher information and pick a
   -- measurable representative `s'₀`.
   refine ⟨fun _ ↦ withDensity_absolutelyContinuous _ _, inferInstance, ?_⟩
@@ -984,7 +951,7 @@ theorem hasPathScore_location (η η' : ℝ → ℝ) (hη : ∀ x, 0 ≤ η x)
   -- Step 2: Combine the FTC remainder identity (`ae_location_remainder_eq`), Minkowski's integral
   -- inequality (`eLpNorm_location_remainder_le`), and `L²` continuity of translation.
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (tendsto_eLpNorm_restrict_Ioc_sub hs'₀_meas hs'₀_mem) (Eventually.of_forall fun _ ↦ zero_le) ?_
+    (tendsto_setLIntegral_Ioc_eLpNorm_sub hs'₀_mem) (Eventually.of_forall fun _ ↦ zero_le) ?_
   filter_upwards [self_mem_nhdsWithin] with t (ht0 : 0 < t)
   simp only [add_zero]
   rw [← Real.eNorm_eq_ofReal (inv_nonneg.mpr ht0.le), ← eLpNorm_const_smul,
