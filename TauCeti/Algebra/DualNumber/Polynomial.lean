@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.Polynomial.Taylor
+public import Mathlib.RingTheory.DualNumber
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # Polynomials evaluated at `ε`
@@ -14,6 +17,21 @@ public import Mathlib.Algebra.Polynomial.Taylor
 Since `ε² = 0`, evaluating a polynomial `p` at the dual-number unit `ε` keeps only its first two
 coefficients: the classical part of `p(ε)` is the constant coefficient of `p` and its
 infinitesimal part is the linear coefficient.
+
+Evaluation at `ε` kills `X²`, and over a commutative ring it identifies the quotient `R[X] ⧸ (X²)`
+with the dual numbers, the class of `X` going to `ε`. Rings presented as such quotients, such as
+the truncated polynomial ring `k[t] ⧸ (t²)` of the cusp `k[t², t³]`, thereby inherit the API of
+`R[ε]`.
+
+## Main definitions
+
+* `DualNumber.quotientSpanXSqAlgEquiv`: the `R`-algebra isomorphism `R[X] ⧸ (X²) ≃ₐ[R] R[ε]`
+  induced by evaluation at `ε`.
+
+## Main results
+
+* `DualNumber.isLocalRing_quotientSpanXSq`: over a field `K`, the ring `K[X] ⧸ (X²)` is local,
+  like `K[ε]`.
 -/
 
 public section
@@ -21,6 +39,8 @@ public section
 open Polynomial
 
 namespace DualNumber
+
+section Eval
 
 variable {R B : Type*} [CommSemiring R] [CommRing B] [Algebra R B]
 
@@ -46,5 +66,60 @@ theorem fst_aeval_eps (p : R[X]) :
 theorem snd_aeval_eps (p : R[X]) :
     (aeval (eps : DualNumber B) p).snd = algebraMap R B (p.coeff 1) := by
   simp [aeval_eps, Algebra.algebraMap_eq_smul_one]
+
+end Eval
+
+section Quotient
+
+variable (R : Type*) [CommRing R]
+
+/-- Evaluation at `ε` kills the ideal `(X²)`. -/
+private theorem aeval_eps_eq_zero_of_mem {p : R[X]} (hp : p ∈ Ideal.span {(X : R[X]) ^ 2}) :
+    aeval (eps : DualNumber R) p = 0 := by
+  obtain ⟨q, rfl⟩ := Ideal.mem_span_singleton'.1 hp
+  simp
+
+/-- The class of `X` squares to zero in `R[X] ⧸ (X²)`. -/
+private theorem mk_X_mul_mk_X :
+    Ideal.Quotient.mk (Ideal.span {(X : R[X]) ^ 2}) X *
+      Ideal.Quotient.mk (Ideal.span {(X : R[X]) ^ 2}) X = 0 := by
+  rw [← map_mul, ← sq, Ideal.Quotient.eq_zero_iff_mem]
+  exact Ideal.subset_span rfl
+
+/-- **The dual numbers as a polynomial quotient.** Evaluation at `ε` identifies `R[X] ⧸ (X²)` with
+the dual numbers `R[ε]`, the class of `X` going to `ε`; the inverse sends `ε` to the class of
+`X`. -/
+noncomputable def quotientSpanXSqAlgEquiv :
+    (R[X] ⧸ Ideal.span {(X : R[X]) ^ 2}) ≃ₐ[R] DualNumber R :=
+  AlgEquiv.ofAlgHom (Ideal.Quotient.liftₐ _ (aeval eps) fun _ ↦ aeval_eps_eq_zero_of_mem R)
+    (lift ⟨(Algebra.ofId R _, Ideal.Quotient.mk _ X), mk_X_mul_mk_X R, fun _ ↦ Commute.all _ _⟩)
+    (algHom_ext (by
+      simp only [AlgHom.comp_apply, lift_apply_eps, AlgHom.id_apply]
+      rw [← Ideal.Quotient.mkₐ_eq_mk R, ← AlgHom.comp_apply, Ideal.Quotient.liftₐ_comp, aeval_X]))
+    (Ideal.Quotient.algHom_ext R (Polynomial.algHom_ext (by
+      rw [AlgHom.comp_assoc, Ideal.Quotient.liftₐ_comp]
+      simp)))
+
+/-- `DualNumber.quotientSpanXSqAlgEquiv` sends the class of `p` to `p(ε)`. -/
+@[simp]
+theorem quotientSpanXSqAlgEquiv_mk (p : R[X]) :
+    quotientSpanXSqAlgEquiv R (Ideal.Quotient.mk _ p) = aeval eps p := by
+  have h : (quotientSpanXSqAlgEquiv R : _ →ₐ[R] DualNumber R).comp
+      (Ideal.Quotient.mkₐ R (Ideal.span {(X : R[X]) ^ 2})) = aeval eps := by
+    rw [quotientSpanXSqAlgEquiv, AlgEquiv.toAlgHom_ofAlgHom, Ideal.Quotient.liftₐ_comp]
+  rw [← Ideal.Quotient.mkₐ_eq_mk R, ← h, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
+
+/-- The inverse of `DualNumber.quotientSpanXSqAlgEquiv` sends `ε` to the class of `X`. -/
+@[simp]
+theorem quotientSpanXSqAlgEquiv_symm_eps :
+    (quotientSpanXSqAlgEquiv R).symm eps = Ideal.Quotient.mk _ X := by
+  rw [AlgEquiv.symm_apply_eq, quotientSpanXSqAlgEquiv_mk, aeval_X]
+
+/-- Over a field `K`, the ring `K[X] ⧸ (X²)` is local, like the dual numbers `K[ε]`. -/
+instance isLocalRing_quotientSpanXSq (K : Type*) [Field K] :
+    IsLocalRing (K[X] ⧸ Ideal.span {(X : K[X]) ^ 2}) :=
+  (quotientSpanXSqAlgEquiv K).symm.toRingEquiv.isLocalRing
+
+end Quotient
 
 end DualNumber
