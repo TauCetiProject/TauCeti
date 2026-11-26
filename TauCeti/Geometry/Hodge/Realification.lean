@@ -146,10 +146,7 @@ theorem integralMapToComplex_realificationComplexEquiv (hℂ : IsBaseChange ℂ 
   | tmul z x =>
       induction x using TensorProduct.inductionOn with
       | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
-      | tmul r v =>
-          rw [realificationComplexEquiv_tmul_tmul, LinearMap.baseChange_tmul,
-            LinearMap.baseChange_tmul, realificationComplexEquiv_tmul_tmul, map_smul,
-            integralMapToComplex_apply_ι]
+      | tmul r v => simp [realificationComplexEquiv_tmul_tmul, integralMapToComplex_apply_ι]
 
 /-! ### The real points of the abstract complexification -/
 

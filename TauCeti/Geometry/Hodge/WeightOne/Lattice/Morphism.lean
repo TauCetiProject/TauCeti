@@ -54,12 +54,21 @@ theorem integralMapToComplex_commutes_latticeComplexification
     Hodge.integralMapToComplex hℂ ιℂ' f (J.latticeComplexification hℂ x) =
       J'.latticeComplexification hℂ' (Hodge.integralMapToComplex hℂ ιℂ' f x) := by
   obtain ⟨y, rfl⟩ := (Hodge.realificationComplexEquiv hℂ).surjective x
-  rw [← realificationComplexEquiv_baseChange_apply,
-    Hodge.integralMapToComplex_realificationComplexEquiv hℂ hℂ',
-    Hodge.integralMapToComplex_realificationComplexEquiv hℂ hℂ',
-    ← realificationComplexEquiv_baseChange_apply J' hℂ',
-    ← LinearMap.comp_apply, ← LinearMap.comp_apply, ← LinearMap.baseChange_comp,
-    ← LinearMap.baseChange_comp, hf]
+  -- Both sides are `ℂ ⊗ (ℝ ⊗ f)` composed with `ℂ ⊗ J` or `ℂ ⊗ J'`; `hf` swaps the two.
+  calc Hodge.integralMapToComplex hℂ ιℂ' f
+          (J.latticeComplexification hℂ (Hodge.realificationComplexEquiv hℂ y))
+      _ = Hodge.realificationComplexEquiv hℂ'
+          ((f.baseChange ℝ ∘ₗ J.toLinearMap).baseChange ℂ y) := by
+        rw [← realificationComplexEquiv_baseChange_apply,
+          Hodge.integralMapToComplex_realificationComplexEquiv, LinearMap.baseChange_comp,
+          LinearMap.comp_apply]
+      _ = Hodge.realificationComplexEquiv hℂ'
+          ((J'.toLinearMap ∘ₗ f.baseChange ℝ).baseChange ℂ y) := by rw [hf]
+      _ = J'.latticeComplexification hℂ'
+          (Hodge.integralMapToComplex hℂ ιℂ' f (Hodge.realificationComplexEquiv hℂ y)) := by
+        rw [Hodge.integralMapToComplex_realificationComplexEquiv hℂ hℂ',
+          ← realificationComplexEquiv_baseChange_apply, LinearMap.baseChange_comp,
+          LinearMap.comp_apply]
 
 /-- **The Hodge morphism of a complex-linear lattice map.** An integral linear map `f : V → V'`
 whose real extension is complex linear for `J` and `J'` is a morphism of the associated weight-one
