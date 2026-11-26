@@ -16,18 +16,18 @@ algebra is a matrix algebra over `k` has defect group `1`, and over an algebraic
 of characteristic `p` a block has defect group `1` exactly when its block algebra is a matrix
 algebra over `k` (Webb, Corollary 12.4.8, p. 242, with Theorem 9.6.1, p. 161).
 
-The route is the converse half of the defect-zero bullet of the roadmap. Write `E_{ij}` for the
-matrix units of `e k[G]`, transported from `M_n(k)`, and `f = E_{i₀ i₀}`. On the left ideal
-`k[G] f`, the simple module of the block, the identity is `∑_g g α g⁻¹` for the `k`-linear map
-`α w = w(1) f`, `w(1)` the coefficient of `w` at `1`: indeed `∑_g g (g⁻¹ w)(1) f = ∑_g w(g) g f =
-w f = w`. Every `k`-linear endomorphism of `k[G] f` is left multiplication by an element of the
-block algebra, and here `α` is left multiplication by `c = ∑_i λ_i E_{i₀ i}`, with
-`λ_i = E_{i i₀}(1)`. Hence `z = ∑_g g c g⁻¹`, an element of the block algebra, acts as the
-identity on each `E_{i i₀}`, so it is the identity `e` of `M_n(k)`.
+The proof unpacks Higman's criterion for the trivial subgroup so that no projectivity is needed.
+Write `E_{ij}` for the matrix units of `e k[G]`, transported from `M_n(k)`, and `f = E_{i₀ i₀}`. On
+the left ideal `k[G] f`, the simple module of the block, the identity is `∑_g g α g⁻¹` for the
+`k`-linear map `α w = w(1) f`, `w(1)` the coefficient of `w` at `1`: indeed `∑_g g (g⁻¹ w)(1) f =
+∑_g w(g) g f = w f = w`. Every `k`-linear endomorphism of `k[G] f` is left multiplication by an
+element of the block algebra, and here `α` is left multiplication by `c = ∑_i λ_i E_{i₀ i}`, with
+`λ_i = E_{i i₀}(1)`. Hence `z = ∑_g g c g⁻¹`, an element of the block algebra, acts as the identity
+on each `E_{i i₀}`, so it is the identity `e` of `M_n(k)`.
 
 ## Main results
 
-* `TauCeti.exists_sum_conjRepresentation_eq_of_algEquiv_matrix`: a central
+* `IsIdempotentElem.exists_sum_conjRepresentation_eq_of_algEquiv_matrix`: a central
   idempotent `e` of `k[G]` with `e k[G] ≅ M_n(k)` is a relative trace `Tr_1^G(a)`.
 * `TauCeti.IsBlockIdempotent.isDefectGroup_bot_of_algEquiv_matrix`: a block whose block algebra
   is `M_n(k)` has defect group `1`.
@@ -53,19 +53,6 @@ section Trace
 
 variable {k : Type u} {G : Type v} [CommRing k] [Group G] [Fintype G]
 
-omit [Fintype G] in
-/-- The coefficient of `g⁻¹ w` at `1` is the coefficient of `w` at `g`. -/
-private theorem coeff_of_inv_mul_one (g : G) (w : MonoidAlgebra k G) :
-    (of k G g⁻¹ * w).coeff 1 = w.coeff g := by
-  rw [of_apply, coeff_single_mul_apply, one_mul, inv_inv, mul_one]
-
-/-- `∑_g w(g) g = w` in `k[G]`. -/
-private theorem sum_coeff_smul_of (w : MonoidAlgebra k G) :
-    ∑ g : G, w.coeff g • of k G g = w := by
-  classical
-  ext h
-  simp [coeff_sum, of_apply, coeff_single]
-
 /-- If left multiplication by `c` sends every `w` of the left ideal `k[G] f` to `w(1) f`, then
 `∑_g g c g⁻¹` fixes every element of `k[G] f`. -/
 private theorem sum_conj_mul_of_forall {c f w : MonoidAlgebra k G}
@@ -80,35 +67,14 @@ private theorem sum_conj_mul_of_forall {c f w : MonoidAlgebra k G}
     _ = (∑ g : G, w.coeff g • of k G g) * f := by
         rw [Finset.sum_mul]
         refine Finset.sum_congr rfl fun g _ ↦ ?_
-        rw [hc _ (hgw g), coeff_of_inv_mul_one, mul_smul_comm, smul_mul_assoc]
-    _ = w := by rw [sum_coeff_smul_of, hw]
-
-/-- A matrix `X` with `X E_{i j₀} = E_{i j₀}` for every `i` is the identity. -/
-private theorem matrix_eq_one_of_mul_single {n : Type w} [Fintype n] [DecidableEq n]
-    {X : Matrix n n k} (j₀ : n) (hX : ∀ i, X * Matrix.single i j₀ 1 = Matrix.single i j₀ 1) :
-    X = 1 := by
-  ext a i
-  have := congrFun (congrFun (hX i) a) j₀
-  rw [Matrix.mul_single_apply_same, mul_one, Matrix.single_apply] at this
-  rw [this, Matrix.one_apply]
-  simp only [and_true, eq_comm]
-
-/-- Left multiplication by the row `∑_i l_i E_{j₀ i}` sends a matrix supported on column `j₀`
-to a multiple of `E_{j₀ j₀}`. -/
-private theorem sum_smul_single_mul_of_col {n : Type w} [Fintype n] [DecidableEq n] (j₀ : n)
-    (l : n → k) {X : Matrix n n k} (hX : ∀ i j, j ≠ j₀ → X i j = 0) :
-    (∑ i, l i • Matrix.single j₀ i 1) * X = (∑ i, X i j₀ * l i) • Matrix.single j₀ j₀ 1 := by
-  rw [Finset.sum_mul, Finset.sum_smul]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  ext a b
-  rw [Matrix.smul_mul, Matrix.smul_apply, Matrix.smul_apply, smul_eq_mul, smul_eq_mul]
-  by_cases ha : a = j₀
-  · rw [ha, Matrix.single_mul_apply_same, one_mul]
-    by_cases hb : b = j₀
-    · rw [hb, Matrix.single_apply_same, mul_one, mul_comm]
-    · rw [hX i b hb, Matrix.single_apply_of_col_ne _ _ (Ne.symm hb), mul_zero, mul_zero]
-  · rw [Matrix.single_mul_apply_of_ne 1 j₀ i a b ha,
-      Matrix.single_apply_of_row_ne (Ne.symm ha), mul_zero, mul_zero]
+        rw [hc _ (hgw g), mul_smul_comm, smul_mul_assoc]
+        simp
+    _ = w := by
+        conv_rhs => rw [← hw]
+        congr 1
+        classical
+        ext h
+        simp [coeff_sum, of_apply, coeff_single]
 
 variable {e : MonoidAlgebra k G} (he : IsIdempotentElem e)
 
@@ -144,7 +110,8 @@ private theorem exists_mul_eq_coeff_one_smul (hcen : e ∈ Set.center _) {n : Ty
     rw [← this, Matrix.mul_single_apply_of_ne 1 i₀ i₀ i j hj]
   have hxL : x.coeff 1 = ∑ i, ψ x' i i₀ * L (Matrix.single i i₀ 1) := by
     have : x.coeff 1 = L (ψ x') := by
-      simp only [L, LinearMap.coe_mk, AddHom.coe_mk, AlgEquiv.symm_apply_apply]; rfl
+      have hx' : x'.val = x := Subtype.coe_mk _ _
+      simp only [L, LinearMap.coe_mk, AddHom.coe_mk, AlgEquiv.symm_apply_apply, hx']
     rw [this, hL]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [Finset.sum_eq_single i₀ (fun j _ hj ↦ by rw [hXcol i j hj, zero_mul])
@@ -152,16 +119,22 @@ private theorem exists_mul_eq_coeff_one_smul (hcen : e ∈ Set.center _) {n : Ty
   have : ψ.symm (∑ i, L (Matrix.single i i₀ 1) • Matrix.single i₀ i 1) * x' =
       x.coeff 1 • ψ.symm (Matrix.single i₀ i₀ 1) := by
     apply ψ.injective
-    rw [map_mul, AlgEquiv.apply_symm_apply, sum_smul_single_mul_of_col i₀ _ hXcol, ← hxL,
-      map_smul, AlgEquiv.apply_symm_apply]
+    rw [map_mul, AlgEquiv.apply_symm_apply, map_smul, AlgEquiv.apply_symm_apply, hxL]
+    -- A row `∑_i l_i E_{i₀ i}` times a matrix supported on column `i₀` is a multiple of
+    -- `E_{i₀ i₀}`.
+    ext a b
+    by_cases ha : a = i₀ <;> by_cases hb : b = i₀ <;>
+      simp [ha, hb, hXcol, @eq_comm _ i₀, Matrix.sum_apply, Matrix.single_mul_apply_of_ne,
+        Finset.sum_mul, mul_comm]
   simpa only [_root_.IsIdempotentElem.Corner.val_mul,
     _root_.IsIdempotentElem.Corner.val_smul] using congrArg Subtype.val this
 
 /-- **A matrix corner is a relative trace from `1`.** If `e` is a central idempotent of `k[G]`,
 `G` a finite group, whose corner `e k[G]` is isomorphic to a matrix algebra `M_n(k)`, then
 `e = Tr_1^G(a) = ∑_g g a g⁻¹` for some `a ∈ k[G]`. -/
-theorem exists_sum_conjRepresentation_eq_of_algEquiv_matrix (hcen : e ∈ Set.center _)
-    {n : Type w} [Fintype n] [DecidableEq n] (ψ : he.Corner ≃ₐ[k] Matrix n n k) :
+theorem _root_.IsIdempotentElem.exists_sum_conjRepresentation_eq_of_algEquiv_matrix
+    (hcen : e ∈ Set.center _) {n : Type w} [Fintype n] [DecidableEq n]
+    (ψ : he.Corner ≃ₐ[k] Matrix n n k) :
     ∃ a : MonoidAlgebra k G, ∑ g : G, conjRepresentation k G g a = e := by
   have hcomm (x : MonoidAlgebra k G) : e * x = x * e := (Set.mem_center_iff.mp hcen).comm x
   rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
@@ -184,7 +157,14 @@ theorem exists_sum_conjRepresentation_eq_of_algEquiv_matrix (hcen : e ∈ Set.ce
       mul_assoc (of k G g) e, IsIdempotentElem.mul_corner_val]
   let z' : he.Corner := ⟨z, (Subsemigroup.mem_corner_iff he).2 ⟨hze, by rw [← hcomm, hze]⟩⟩
   have hz' : ψ z' = 1 := by
-    refine matrix_eq_one_of_mul_single i₀ fun i ↦ ?_
+    -- A matrix `X` with `X E_{i i₀} = E_{i i₀}` for every `i` is the identity.
+    suffices h : ∀ i, ψ z' * Matrix.single i i₀ 1 = Matrix.single i i₀ 1 by
+      ext a i
+      have := congrFun (congrFun (h i) a) i₀
+      rw [Matrix.mul_single_apply_same, mul_one, Matrix.single_apply] at this
+      rw [this, Matrix.one_apply]
+      simp only [and_true, eq_comm]
+    intro i
     have hEi : (E i i₀).val * (E i₀ i₀).val = (E i i₀).val := by
       rw [← _root_.IsIdempotentElem.Corner.val_mul]
       simp only [E, ← map_mul, Matrix.single_mul_single_same, mul_one]
@@ -197,24 +177,25 @@ end Trace
 
 namespace IsBlockIdempotent
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] {p : ℕ} [Fact p.Prime]
-  [CharP k p] {b : Subalgebra.center k (MonoidAlgebra k G)}
+variable {k : Type u} {G : Type v} [CommRing k] [IsArtinianRing k] [Group G] [Finite G] {p : ℕ}
+  [Fact p.Prime] [CharP k p] {b : Subalgebra.center k (MonoidAlgebra k G)}
 
 /-- **A matrix block has defect zero.** If the block algebra `e k[G]` of a block idempotent `e`
-of `k[G]`, `k` a field of characteristic `p`, is isomorphic to a matrix algebra `M_n(k)`, then `1`
-is a defect group of `e` (Webb, Corollary 12.4.8, p. 242). -/
+of `k[G]`, `k` an Artinian ring of characteristic `p`, is isomorphic to a matrix algebra `M_n(k)`,
+then `1` is a defect group of `e` (Webb, Corollary 12.4.8, p. 242). -/
 theorem isDefectGroup_bot_of_algEquiv_matrix (hb : IsBlockIdempotent b) {n : Type w}
     [Fintype n] [DecidableEq n] (ψ : hb.BlockAlgebra ≃ₐ[k] Matrix n n k) :
     IsDefectGroup k p (b : MonoidAlgebra k G) ⊥ := by
   have := Fintype.ofFinite G
   exact hb.isDefectGroup_bot_iff.2 <|
-    exists_sum_conjRepresentation_eq_of_algEquiv_matrix hb.isIdempotentElem_val b.property ψ
+    hb.isIdempotentElem_val.exists_sum_conjRepresentation_eq_of_algEquiv_matrix b.property ψ
 
 /-- **Defect zero over an algebraically closed field.** A block idempotent `e` of `k[G]`, `k` an
 algebraically closed field of characteristic `p`, has defect group `1` exactly when its block
 algebra `e k[G]` is a matrix algebra `M_n(k)` (Webb, Corollary 12.4.8, p. 242, with
 Theorem 9.6.1, p. 161). -/
-theorem isDefectGroup_bot_iff_exists_algEquiv_matrix [IsAlgClosed k] (hb : IsBlockIdempotent b) :
+theorem isDefectGroup_bot_iff_exists_algEquiv_matrix {k : Type u} [Field k] [IsAlgClosed k]
+    [CharP k p] {b : Subalgebra.center k (MonoidAlgebra k G)} (hb : IsBlockIdempotent b) :
     IsDefectGroup k p (b : MonoidAlgebra k G) ⊥ ↔
       ∃ n : ℕ, Nonempty (hb.BlockAlgebra ≃ₐ[k] Matrix (Fin n) (Fin n) k) := by
   refine ⟨fun hD ↦ ?_, fun ⟨n, ⟨ψ⟩⟩ ↦ hb.isDefectGroup_bot_of_algEquiv_matrix ψ⟩
