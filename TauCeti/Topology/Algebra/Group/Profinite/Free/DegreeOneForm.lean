@@ -10,7 +10,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Free.Graded
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 import Mathlib.Data.Nat.Choose.Dvd
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
-import TauCeti.Topology.Algebra.Group.Heisenberg
+import TauCeti.Topology.Algebra.Group.Heisenberg.Basic
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.ContinuousDual
 
 /-!
