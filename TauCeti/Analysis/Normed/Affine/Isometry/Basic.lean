@@ -45,8 +45,9 @@ isometries on both sides keeps the Hölder constant of its derivative.
 * `AffineIsometryEquiv.norm_iteratedFDeriv_comp_left`,
   `AffineIsometryEquiv.norm_iteratedFDeriv_comp_right`: composition with an affine isometry
   equivalence preserves the norms of iterated derivatives.
-* `AffineIsometry.holderWith_fderiv_comp_comp`: composing a map with affine isometries on both
-  sides keeps the Hölder constant of its derivative.
+* `AffineIsometry.holderOnWith_fderiv_comp_comp`, `AffineIsometry.holderWith_fderiv_comp_comp`:
+  composing a map with affine isometries on both sides keeps the Hölder constant of its
+  derivative, on a set and on the whole space.
 -/
 
 public section
@@ -144,26 +145,30 @@ variable {𝕜 E F G H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGro
   [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
   [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
 
-/-- Composing a differentiable map with affine isometries on both sides keeps the Hölder constant
-of its derivative: if `Df` is `α`-Hölder with constant `K`, so is `D(g ∘ f ∘ e)`, since
-`D(g ∘ f ∘ e)(x)` is `Df(e x)` composed on both sides with linear maps of norm at most one. -/
-theorem holderWith_fderiv_comp_comp (e : E →ᵃⁱ[𝕜] F) (g : G →ᵃⁱ[𝕜] H) {f : F → G}
-    (hf : Differentiable 𝕜 f) {K α : ℝ≥0} (hK : HolderWith K α (fderiv 𝕜 f)) :
-    HolderWith K α (fderiv 𝕜 (g ∘ f ∘ e)) := by
+/-- Composing a map with affine isometries on both sides keeps the Hölder constant of its
+derivative on a set: if `e` maps `s` into `t`, `f` is differentiable at the points of `t` and
+`Df` is `α`-Hölder on `t` with constant `K`, then `D(g ∘ f ∘ e)` is `α`-Hölder on `s` with constant
+`K`, since `D(g ∘ f ∘ e)(x)` is `Df(e x)` composed on both sides with linear maps of norm at most
+one. -/
+theorem holderOnWith_fderiv_comp_comp (e : E →ᵃⁱ[𝕜] F) (g : G →ᵃⁱ[𝕜] H) {f : F → G} {s : Set E}
+    {t : Set F} (hst : Set.MapsTo e s t) (hf : ∀ y ∈ t, DifferentiableAt 𝕜 f y) {K α : ℝ≥0}
+    (hK : HolderOnWith K α (fderiv 𝕜 f) t) :
+    HolderOnWith K α (fderiv 𝕜 (g ∘ f ∘ e)) s := by
   set A := e.toContinuousAffineMap
   set B := g.toContinuousAffineMap
-  have hd (x : E) : fderiv 𝕜 (g ∘ f ∘ e) x =
+  have hd (x : E) (hx : x ∈ s) : fderiv 𝕜 (g ∘ f ∘ e) x =
       B.contLinear.comp ((fderiv 𝕜 f (e x)).comp A.contLinear) :=
     ((B.hasFDerivAt (x := f (e x))).comp x
-      ((hf (e x)).hasFDerivAt.comp x (A.hasFDerivAt (x := x)))).fderiv
+      ((hf (e x) (hst hx)).hasFDerivAt.comp x (A.hasFDerivAt (x := x)))).fderiv
   have hAn : ‖A.contLinear‖ ≤ 1 := ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y => by
     rw [one_mul]
     exact (e.linearIsometry.norm_map y).le
   have hBn : ‖B.contLinear‖ ≤ 1 := ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y => by
     rw [one_mul]
     exact (g.linearIsometry.norm_map y).le
-  refine holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ y _ => ?_)
-  rw [hd, hd, dist_eq_norm, ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp]
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  rw [hd x hx, hd y hy, dist_eq_norm, ← ContinuousLinearMap.comp_sub,
+    ← ContinuousLinearMap.sub_comp]
   calc ‖B.contLinear.comp ((fderiv 𝕜 f (e x) - fderiv 𝕜 f (e y)).comp A.contLinear)‖
       ≤ ‖B.contLinear‖ * (‖fderiv 𝕜 f (e x) - fderiv 𝕜 f (e y)‖ * ‖A.contLinear‖) :=
         (ContinuousLinearMap.opNorm_comp_le _ _).trans
@@ -173,8 +178,16 @@ theorem holderWith_fderiv_comp_comp (e : E →ᵃⁱ[𝕜] F) (g : G →ᵃⁱ[�
           (mul_nonneg (norm_nonneg _) (norm_nonneg _)) zero_le_one
     _ = dist (fderiv 𝕜 f (e x)) (fderiv 𝕜 f (e y)) := by
         rw [one_mul, mul_one, dist_eq_norm]
-    _ ≤ K * dist (e x) (e y) ^ (α : ℝ) := hK.dist_le _ _
+    _ ≤ K * dist (e x) (e y) ^ (α : ℝ) := hK.dist_le (hst hx) (hst hy)
     _ = K * dist x y ^ (α : ℝ) := by rw [e.dist_map]
+
+/-- Composing a differentiable map with affine isometries on both sides keeps the Hölder constant
+of its derivative: if `Df` is `α`-Hölder with constant `K`, so is `D(g ∘ f ∘ e)`. -/
+theorem holderWith_fderiv_comp_comp (e : E →ᵃⁱ[𝕜] F) (g : G →ᵃⁱ[𝕜] H) {f : F → G}
+    (hf : Differentiable 𝕜 f) {K α : ℝ≥0} (hK : HolderWith K α (fderiv 𝕜 f)) :
+    HolderWith K α (fderiv 𝕜 (g ∘ f ∘ e)) :=
+  holderOnWith_univ.1 (holderOnWith_fderiv_comp_comp e g (Set.mapsTo_univ _ _) (fun y _ => hf y)
+    (holderOnWith_univ.2 hK))
 
 end Holder
 
