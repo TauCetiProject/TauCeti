@@ -153,6 +153,26 @@ private theorem holderOnWith_extendClosure
     rw [extendClosure_of_mem u hx, extendClosure_of_mem u hy]
     exact hu ⟨x, hx⟩ ⟨y, hy⟩
 
+/-- Bounded continuous functions on `closure Ω` that are `α`-Hölder with one constant, `α > 0`,
+extend to a family uniformly equicontinuous on `Ω`. -/
+private theorem uniformEquicontinuousOn_extendClosure {ι : Type*}
+    {u : ι → closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) →ᵇ ℝ} {C α : ℝ≥0}
+    (hα : 0 < α) (hu : ∀ i, HolderWith C α (u i)) :
+    UniformEquicontinuousOn (fun i => extendClosure (u i))
+      (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) :=
+  HolderOnWith.uniformEquicontinuousOn _ hα fun i =>
+    (holderOnWith_extendClosure (hu i)).mono subset_closure
+
+/-- Two bounded continuous functions on `closure Ω` whose extensions are within `c` of each other
+at each point of `Ω` are within `c` of each other in the uniform distance. -/
+private theorem dist_le_of_forall_dist_extendClosure_le
+    (u u' : closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) →ᵇ ℝ) {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))),
+      dist (extendClosure u x) (extendClosure u' x) ≤ c) :
+    dist u u' ≤ c :=
+  BoundedContinuousFunction.dist_le_of_forall_mem _ _ hc fun x hx => by
+    simpa only [extendClosure_of_mem _ (subset_closure hx)] using h x hx
+
 variable {A : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
   {lam Lam : ℝ}
 
@@ -369,16 +389,15 @@ theorem continuous_continuousFrozenSolution
       (extendClosure_ae_eq (hT v).2).symm
   have hunif := hmeas.tendstoUniformlyOn_of_uniformEquicontinuousOn Omega.isOpen
     (hb.isCompact_closure.totallyBounded.subset subset_closure)
-    (HolderOnWith.uniformEquicontinuousOn _ hα fun w =>
-      (holderOnWith_extendClosure (hT w).1).mono subset_closure)
+    (uniformEquicontinuousOn_extendClosure hα fun w => (hT w).1)
     (((holderOnWith_extendClosure (hT v).1).mono subset_closure).uniformContinuousOn hα)
   rw [ContinuousAt, Metric.tendsto_nhds]
   intro ε hε
   filter_upwards [Metric.tendstoUniformlyOn_iff.1 hunif (ε / 2) (half_pos hε)] with w hw
-  refine (BoundedContinuousFunction.dist_le_of_forall_mem _ _ (half_pos hε).le
+  refine (dist_le_of_forall_dist_extendClosure_le _ _ (half_pos hε).le
     fun x hx => ?_).trans_lt (half_lt_self hε)
   rw [dist_comm]
-  simpa only [extendClosure_of_mem _ (subset_closure hx)] using (hw x hx).le
+  exact (hw x hx).le
 
 /-- **The frozen-coefficient map is compact on `C(closure Ω)`.** Under the hypotheses of
 `TauCeti.PDE.eq_continuousFrozenSolution_iff`, the range of `continuousFrozenSolution A g ℓ` is
@@ -424,16 +443,14 @@ theorem isCompact_closure_range_continuousFrozenSolution
       (Eventually.of_forall fun k => (extendClosure_ae_eq (hT _).2).symm) .rfl
   have hcauchy := hmeas.uniformCauchySeqOn_of_uniformEquicontinuousOn Omega.isOpen
     (hb.isCompact_closure.totallyBounded.subset subset_closure)
-    (HolderOnWith.uniformEquicontinuousOn _ hα fun k =>
-      (holderOnWith_extendClosure (hT _).1).mono subset_closure)
+    (uniformEquicontinuousOn_extendClosure hα fun k => (hT _).1)
   rw [Metric.cauchySeq_iff']
   intro ε hε
   obtain ⟨N, hN⟩ := Metric.uniformCauchySeqOn_iff.1 hcauchy (ε / 2) (half_pos hε)
   refine ⟨N, fun k hk => ?_⟩
   simp only [comp_apply, ← hv]
-  refine (BoundedContinuousFunction.dist_le_of_forall_mem _ _ (half_pos hε).le
-    fun x hx => ?_).trans_lt (half_lt_self hε)
-  simpa only [extendClosure_of_mem _ (subset_closure hx)] using (hN k hk N le_rfl x hx).le
+  exact (dist_le_of_forall_dist_extendClosure_le _ _ (half_pos hε).le
+    fun x hx => (hN k hk N le_rfl x hx).le).trans_lt (half_lt_self hε)
 
 /-- **The fixed points of the frozen-coefficient map are the solutions.** Under the hypotheses of
 `TauCeti.PDE.eq_continuousFrozenSolution_iff`, `v ∈ C(closure Ω)` is a fixed point of

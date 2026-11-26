@@ -70,7 +70,7 @@ theorem exists_pos_forall_dist_lt_of_measure_lt (hU : IsOpen U) (hUt : TotallyBo
     by_contra! hle
     refine (Finset.inf_le (htf.mem_toFinset.2 hyt)).not_gt (hμ.trans_le' ?_)
     calc μ (U ∩ ball y (δ / 2)) = μ ((U ∩ ball y (δ / 2)) ∩ U) := by
-          rw [inter_assoc, inter_comm _ U, ← inter_assoc, inter_self]
+          rw [inter_eq_left.2 inter_subset_left]
       _ ≤ μ.restrict U (U ∩ ball y (δ / 2)) := Measure.le_restrict_apply _ _
       _ ≤ μ.restrict U {x | ε ≤ dist (f x) (g x)} := measure_mono hle
   have hxz : dist x z < δ := by
