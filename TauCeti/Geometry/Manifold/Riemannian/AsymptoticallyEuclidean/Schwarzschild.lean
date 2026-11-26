@@ -8,11 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Flux
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.WithMetric
 
-import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.Calculus.ContDiff.SymbolClass.Infinity
 import TauCeti.Analysis.InnerProductSpace.NormPow
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Smooth spatial Schwarzschild model manifold
@@ -51,7 +50,7 @@ public section
 
 noncomputable section
 
-open Bundle Filter Function Metric Set
+open Asymptotics Bornology Bundle Filter Function Metric Set
 open scoped ContDiff Manifold RealInnerProductSpace Topology
 
 namespace TauCeti
@@ -161,174 +160,85 @@ theorem schwarzschildModelFactor_of_lt_norm (n : ℕ) (c : ℝ)
   simp [schwarzschildModelFactor, schwarzschildBaseProfile, hx0,
     Real.smoothTransition.one_of_one_le h1]
 
-private theorem mul_norm_rpow_mem_Icc {n : ℕ} (hn : 3 ≤ n) (c : ℝ)
-    {y : EuclideanSpace ℝ (Fin n)} (hy : max 1 (2 * |c|) < ‖y‖) :
-    c * ‖y‖ ^ (2 - (n : ℝ)) ∈ Icc (-1 / 2 : ℝ) (1 / 2) := by
-  have h := abs_mul_norm_rpow_le_half hn c hy
-  exact ⟨by linarith [neg_abs_le (c * ‖y‖ ^ (2 - (n : ℝ)))], (le_abs_self _).trans h⟩
-
-private theorem abs_mul_one_add_rpow_le {s : ℝ} (hs : s ∈ Icc (-1 / 2 : ℝ) (1 / 2))
-    (a r : ℝ) : |a * (1 + s) ^ r| ≤ |a| * (2 : ℝ) ^ |r| := by
-  have hpos : 0 < 1 + s := by linarith [hs.left]
-  rw [abs_mul, abs_of_pos (Real.rpow_pos_of_pos hpos _)]
-  exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_abs hpos.le (by linarith [hs.right])
-    (by rw [inv_le_iff_one_le_mul₀ hpos]; linarith [hs.left]) r) (abs_nonneg a)
-
-private theorem hasFDerivAt_conformal_rpow {n : ℕ} (hn : 3 ≤ n) (c p : ℝ)
-    {y : EuclideanSpace ℝ (Fin n)} (hy : max 1 (2 * |c|) < ‖y‖) :
-    HasFDerivAt (fun z : EuclideanSpace ℝ (Fin n) ↦ (1 + c * ‖z‖ ^ (2 - (n : ℝ))) ^ p)
-      ((p * (1 + c * ‖y‖ ^ (2 - (n : ℝ))) ^ (p - 1) * c) •
-        fderiv ℝ (fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ (2 - (n : ℝ))) y) y := by
-  have hy0 : y ≠ 0 := norm_pos_iff.1 ((zero_lt_one.trans_le (le_max_left _ _)).trans hy)
-  have hvy : 0 < 1 + c * ‖y‖ ^ (2 - (n : ℝ)) := by
-    linarith [(mul_norm_rpow_mem_Icc hn c hy).left]
-  have hin : HasFDerivAt (fun z : EuclideanSpace ℝ (Fin n) ↦ 1 + c * ‖z‖ ^ (2 - (n : ℝ)))
-      (c • fderiv ℝ (fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ (2 - (n : ℝ))) y) y :=
-    (((hasFDerivAt_norm_rpow_of_ne (2 - (n : ℝ)) hy0).differentiableAt.hasFDerivAt).const_smul c
-      ).const_add 1
-  exact (hin.rpow_const (p := p) (Or.inl hvy.ne')).congr_fderiv <| by
-    ext v; simp [smul_smul, mul_assoc]
-
-private theorem exists_conformal_rpow_zero_first_decay {n : ℕ} (hn : 3 ≤ n) (c p : ℝ) :
-    ∃ C₀ : ℝ, ∀ x : EuclideanSpace ℝ (Fin n), max 1 (2 * |c|) < ‖x‖ →
-      |(1 + c * ‖x‖ ^ (2 - (n : ℝ))) ^ p - 1| ≤ C₀ * ‖x‖ ^ (-((n : ℝ) - 2)) ∧
-      ‖fderiv ℝ (fun y : EuclideanSpace ℝ (Fin n) ↦ (1 + c * ‖y‖ ^ (2 - (n : ℝ))) ^ p) x‖ ≤
-        C₀ * ‖x‖ ^ (-((n : ℝ) - 2) - 1) := by
+private theorem isSymbolAtInfinity_schwarzschildModelFactor_sub_one {n : ℕ} (hn : 3 ≤ n)
+    (c : ℝ) :
+    IsSymbolAtInfinity 2 (-((n : ℝ) - 2))
+      fun x : EuclideanSpace ℝ (Fin n) ↦ schwarzschildModelFactor n c x - 1 := by
   set q : ℝ := 2 - (n : ℝ)
-  set B₁ : ℝ := |p| * (2 : ℝ) ^ |p - 1|
-  refine ⟨B₁ * |c| * (1 + |q|), fun x hx ↦ ?_⟩
-  have hx0 : x ≠ 0 := norm_pos_iff.1 ((zero_lt_one.trans_le (le_max_left _ _)).trans hx)
-  have hsK : c * ‖x‖ ^ q ∈ Icc (-1 / 2 : ℝ) (1 / 2) := mul_norm_rpow_mem_Icc hn c hx
-  have h0K : (0 : ℝ) ∈ Icc (-1 / 2 : ℝ) (1 / 2) := by constructor <;> norm_num
-  have hb1 : |p * (1 + c * ‖x‖ ^ q) ^ (p - 1)| ≤ B₁ := abs_mul_one_add_rpow_le hsK p (p - 1)
-  have hmvt := (convex_Icc (-1 / 2 : ℝ) (1 / 2)).norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f := fun s : ℝ ↦ (1 + s) ^ p) (f' := fun s : ℝ ↦ p * (1 + s) ^ (p - 1)) (C := B₁)
-    (fun s hs ↦ ((((hasDerivAt_id' s).const_add 1).rpow_const (p := p)
-      (Or.inl (by linarith [hs.left]))).congr_deriv (by ring)).hasDerivWithinAt)
-    (fun s hs ↦ by simpa [Real.norm_eq_abs] using abs_mul_one_add_rpow_le hs p (p - 1)) h0K hsK
-  have h0 : |(1 + c * ‖x‖ ^ q) ^ p - 1| ≤ B₁ * |c| * ‖x‖ ^ q := by
-    simpa [Real.norm_eq_abs, abs_mul, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg x) q),
-      ← mul_assoc] using hmvt
-  have h1 : ‖fderiv ℝ (fun y : EuclideanSpace ℝ (Fin n) ↦ (1 + c * ‖y‖ ^ q) ^ p) x‖ ≤
-      B₁ * |c| * |q| * ‖x‖ ^ (q - 1) := by
-    rw [(hasFDerivAt_conformal_rpow hn c p hx).fderiv, norm_smul, norm_fderiv_norm_rpow_of_ne q hx0,
-      Real.norm_eq_abs, abs_mul]
-    calc |p * (1 + c * ‖x‖ ^ q) ^ (p - 1)| * |c| * (|q| * ‖x‖ ^ (q - 1))
-        ≤ B₁ * |c| * (|q| * ‖x‖ ^ (q - 1)) :=
-          mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hb1 (abs_nonneg c)) (by positivity)
-      _ = B₁ * |c| * |q| * ‖x‖ ^ (q - 1) := by ring
-  have hBc : 0 ≤ B₁ * |c| := by positivity
-  have hqn : -((n : ℝ) - 2) = q := by dsimp [q]; ring
-  rw [hqn]
-  exact ⟨h0.trans (mul_le_mul_of_nonneg_right
-      (le_mul_of_one_le_right hBc (by linarith [abs_nonneg q]))
-      (Real.rpow_nonneg (norm_nonneg x) _)),
-    h1.trans (mul_le_mul_of_nonneg_right
-      (mul_le_mul_of_nonneg_left (by linarith) hBc)
-      (Real.rpow_nonneg (norm_nonneg x) _))⟩
-
-private theorem fderiv_fderiv_conformal_rpow {n : ℕ} (hn : 3 ≤ n) (c p : ℝ)
-    {x : EuclideanSpace ℝ (Fin n)} (hx : max 1 (2 * |c|) < ‖x‖) :
-    fderiv ℝ (fderiv ℝ (fun y : EuclideanSpace ℝ (Fin n) ↦
-        (1 + c * ‖y‖ ^ (2 - (n : ℝ))) ^ p)) x =
-      (p * (1 + c * ‖x‖ ^ (2 - (n : ℝ))) ^ (p - 1) * c) •
-          fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ (2 - (n : ℝ))) x +
-        ((p * (p - 1) * (1 + c * ‖x‖ ^ (2 - (n : ℝ))) ^ (p - 2) * c ^ 2) •
-          fderiv ℝ (fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ (2 - (n : ℝ))) x).smulRight
-          (fderiv ℝ (fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ (2 - (n : ℝ))) x) := by
-  set q : ℝ := 2 - (n : ℝ)
-  have hx0 : x ≠ 0 := norm_pos_iff.1 ((zero_lt_one.trans_le (le_max_left 1 (2 * |c|))).trans hx)
-  have hev : fderiv ℝ (fun y : EuclideanSpace ℝ (Fin n) ↦ (1 + c * ‖y‖ ^ q) ^ p) =ᶠ[𝓝 x]
-      fun y ↦ (p * (1 + c * ‖y‖ ^ q) ^ (p - 1) * c) •
-        fderiv ℝ (fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ q) y := by
-    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hx] with y hy
-    exact (hasFDerivAt_conformal_rpow hn c p hy).fderiv
-  have hdψ : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin n) ↦ p * (1 + c * ‖y‖ ^ q) ^ (p - 1) * c)
-      ((p * (p - 1) * (1 + c * ‖x‖ ^ q) ^ (p - 2) * c ^ 2) •
-        fderiv ℝ (fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ q) x) x := by
-    have hp2 : p - 1 - 1 = p - 2 := by ring
-    have hrp := hasFDerivAt_conformal_rpow hn c (p - 1) hx
-    exact ((hrp.const_mul p).mul_const c).congr_fderiv (by ext v; simp [hp2]; ring)
-  have hdH : DifferentiableAt ℝ (fderiv ℝ fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ q) x :=
-    (((contDiffAt_norm ℝ (n := ∞) hx0).rpow_const_of_ne
-      (norm_ne_zero_iff.2 hx0)).fderiv_right (m := 1) (by simp)).differentiableAt_one
-  rw [hev.fderiv_eq, fderiv_fun_smul hdψ.differentiableAt hdH, hdψ.fderiv]
-
-private theorem exists_conformal_rpow_second_decay {n : ℕ} (hn : 3 ≤ n) (c p : ℝ) :
-    ∃ C₂ : ℝ, ∀ x : EuclideanSpace ℝ (Fin n), max 1 (2 * |c|) < ‖x‖ →
-      ‖fderiv ℝ (fderiv ℝ (fun y : EuclideanSpace ℝ (Fin n) ↦
-          (1 + c * ‖y‖ ^ (2 - (n : ℝ))) ^ p)) x‖ ≤
-        C₂ * ‖x‖ ^ (-((n : ℝ) - 2) - 2) := by
-  set q : ℝ := 2 - (n : ℝ)
-  set B₁ : ℝ := |p| * (2 : ℝ) ^ |p - 1|
-  set B₂ : ℝ := |p * (p - 1)| * (2 : ℝ) ^ |p - 2|
-  refine ⟨B₁ * |c| * (|q| * (|q - 2| + 1)) + B₂ * c ^ 2 * q ^ 2, fun x hx ↦ ?_⟩
-  have hx1 : 1 ≤ ‖x‖ := (le_max_left 1 (2 * |c|)).trans hx.le
-  have hx0 : x ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans_le hx1)
-  have hs := mul_norm_rpow_mem_Icc hn c hx
-  rw [fderiv_fderiv_conformal_rpow hn c p hx]
-  have ht1 : ‖(((p * (p - 1) * (1 + c * ‖x‖ ^ q) ^ (p - 2) * c ^ 2) •
-        fderiv ℝ (fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ q) x)).smulRight
-        (fderiv ℝ (fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ q) x)‖ ≤
-      B₂ * c ^ 2 * q ^ 2 * ‖x‖ ^ (q - 2) := by
-    refine (ContinuousLinearMap.norm_smulRight_apply _ _).le.trans ?_
-    rw [norm_smul, norm_fderiv_norm_rpow_of_ne q hx0, Real.norm_eq_abs, abs_mul, abs_sq]
-    have hqexp : ‖x‖ ^ (q - 1) * ‖x‖ ^ (q - 1) ≤ ‖x‖ ^ (q - 2) := by
-      rw [← Real.rpow_add (zero_lt_one.trans_le hx1)]
-      exact Real.rpow_le_rpow_of_exponent_le hx1
-        (by dsimp [q]; linarith [(Nat.ofNat_le_cast.2 hn : (3 : ℝ) ≤ n)])
-    calc |p * (p - 1) * (1 + c * ‖x‖ ^ q) ^ (p - 2)| * c ^ 2 *
-          (|q| * ‖x‖ ^ (q - 1)) * (|q| * ‖x‖ ^ (q - 1))
-        = |p * (p - 1) * (1 + c * ‖x‖ ^ q) ^ (p - 2)| * c ^ 2 * q ^ 2 *
-            (‖x‖ ^ (q - 1) * ‖x‖ ^ (q - 1)) := by rw [← sq_abs q]; ring
-      _ ≤ B₂ * c ^ 2 * q ^ 2 * ‖x‖ ^ (q - 2) := by
-          have := abs_mul_one_add_rpow_le hs (p * (p - 1)) (p - 2); gcongr
-  have ht2 : ‖(p * (1 + c * ‖x‖ ^ q) ^ (p - 1) * c) •
-        fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ q) x‖ ≤
-      B₁ * |c| * (|q| * (|q - 2| + 1)) * ‖x‖ ^ (q - 2) := by
-    refine (ContinuousLinearMap.opNorm_smul_le _ _).trans ?_
-    rw [Real.norm_eq_abs, abs_mul]
-    have hH : ‖fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ q) x‖ ≤
-        |q| * (|q - 2| + 1) * ‖x‖ ^ (q - 2) := by
-      rw [← norm_iteratedFDeriv_one (𝕜 := ℝ), norm_iteratedFDeriv_fderiv]
-      exact norm_iteratedFDeriv_two_norm_rpow_le q hx0
-    calc |p * (1 + c * ‖x‖ ^ q) ^ (p - 1)| * |c| *
-          ‖fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ (Fin n) ↦ ‖z‖ ^ q) x‖
-        ≤ B₁ * |c| * (|q| * (|q - 2| + 1) * ‖x‖ ^ (q - 2)) := by
-          have := abs_mul_one_add_rpow_le hs p (p - 1); gcongr
-      _ = B₁ * |c| * (|q| * (|q - 2| + 1)) * ‖x‖ ^ (q - 2) := by ring
-  have hqn : -((n : ℝ) - 2) - 2 = q - 2 := by dsimp [q]; ring
-  rw [hqn, add_mul]
-  exact (ContinuousLinearMap.opNorm_add_le _ _).trans (add_le_add ht2 ht1)
+  have h1 : ∀ᶠ x : EuclideanSpace ℝ (Fin n) in cobounded _, 1 ≤ ‖x‖ :=
+    eventually_cobounded_le_norm 1
+  -- First, `x ↦ ‖x‖ ^ (2 - n)` is a symbol of order `2 - n` and regularity `2` at infinity.
+  have hrpow : IsSymbolAtInfinity 2 q (fun x : EuclideanSpace ℝ (Fin n) ↦ ‖x‖ ^ q) := by
+    refine isSymbolAtInfinity_iff.2 ⟨h1.mono fun x hx ↦ ?_, fun j hj ↦ ?_⟩
+    · have hx0 : x ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans_le hx)
+      exact ((contDiffAt_norm ℝ (n := ∞) hx0).rpow_const_of_ne
+        (norm_ne_zero_iff.2 hx0)).of_le (by simp)
+    · interval_cases j
+      · exact IsBigO.of_bound 1 (h1.mono fun x _ ↦ by simp)
+      · refine IsBigO.of_bound |q| (h1.mono fun x hx ↦ ?_)
+        have hx0 : x ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans_le hx)
+        rw [norm_iteratedFDeriv_one, norm_fderiv_norm_rpow_of_ne q hx0, Nat.cast_one,
+          Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
+      · refine IsBigO.of_bound (|q| * (|q - 2| + 1)) (h1.mono fun x hx ↦ ?_)
+        have hx0 : x ≠ 0 := norm_pos_iff.1 (zero_lt_one.trans_le hx)
+        rw [Nat.cast_ofNat, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
+        exact norm_iteratedFDeriv_two_norm_rpow_le q hx0
+  -- Compose `x ↦ c * ‖x‖ ^ (2 - n)` with `s ↦ (1 + s) ^ (4 / (n - 2))`, which is smooth at `0`.
+  have hcmul : IsSymbolAtInfinity 2 q
+      (fun x : EuclideanSpace ℝ (Fin n) ↦ c * ‖x‖ ^ q - 0) := by
+    simpa only [smul_eq_mul, sub_zero] using hrpow.const_smul c
+  have hg : ContDiffAt ℝ (max 2 1 : ℕ) (fun s : ℝ ↦ (1 + s) ^ (4 / ((n : ℝ) - 2))) 0 :=
+    (contDiffAt_const.add contDiffAt_id).rpow_const_of_ne (by norm_num)
+  have hcomp := hcmul.comp_sub (by dsimp [q]; linarith [(Nat.ofNat_le_cast.2 hn : (3 : ℝ) ≤ n)]) hg
+  have hq : q = -((n : ℝ) - 2) := by dsimp [q]; ring
+  rw [hq] at hcomp
+  refine hcomp.congr ?_
+  filter_upwards [isBounded_def.1 (isBounded_closedBall (x := (0 : EuclideanSpace ℝ (Fin n)))
+    (r := max 1 (2 * |c|) + 1))] with x hx
+  rw [schwarzschildModelFactor_of_lt_norm n c (by simpa using hx), ← hq, add_zero, Real.one_rpow]
 
 private theorem exists_schwarzschildModelFactor_decay {n : ℕ} (hn : 3 ≤ n) (c : ℝ) :
     ∃ C : ℝ, ∀ m ≤ 2, ∀ x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) (max 1 (2 * |c|) + 1))ᶜ,
       ‖iteratedFDeriv ℝ m (fun y ↦ schwarzschildModelFactor n c y - 1) x‖ ≤
         C * ‖x‖ ^ (-((n : ℝ) - 2) - m) := by
-  obtain ⟨C₀, hC₀⟩ := exists_conformal_rpow_zero_first_decay hn c (4 / ((n : ℝ) - 2))
-  obtain ⟨C₂, hC₂⟩ := exists_conformal_rpow_second_decay hn c (4 / ((n : ℝ) - 2))
-  have hU : IsOpen {y : EuclideanSpace ℝ (Fin n) | max 1 (2 * |c|) + 1 < ‖y‖} :=
-    isOpen_lt continuous_const continuous_norm
-  refine ⟨max C₀ C₂, fun m hm x hx ↦ ?_⟩
-  have hx_lt : max 1 (2 * |c|) + 1 < ‖x‖ := by simpa using hx
-  have hx' : max 1 (2 * |c|) < ‖x‖ := by linarith
-  have hev : schwarzschildModelFactor n c =ᶠ[𝓝 x]
-      fun y ↦ (1 + c * ‖y‖ ^ (2 - (n : ℝ))) ^ (4 / ((n : ℝ) - 2)) :=
-    Filter.eventuallyEq_of_mem (hU.mem_nhds hx_lt) fun _ hy ↦
-      schwarzschildModelFactor_of_lt_norm n c hy
-  obtain ⟨h0, h1⟩ := hC₀ x hx'
-  have hnn (s : ℝ) : 0 ≤ ‖x‖ ^ s := Real.rpow_nonneg (norm_nonneg x) s
-  have hsub : fderiv ℝ (fun y ↦ schwarzschildModelFactor n c y - 1) =
-      fderiv ℝ (schwarzschildModelFactor n c) :=
-    funext fun _ ↦ fderiv_sub_const (1 : ℝ)
-  interval_cases m
-  · rw [norm_iteratedFDeriv_zero, Real.norm_eq_abs, hev.eq_of_nhds, Nat.cast_zero, sub_zero]
-    exact h0.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (hnn _))
-  · rw [norm_iteratedFDeriv_one, hsub, hev.fderiv_eq, Nat.cast_one]
-    exact h1.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (hnn _))
-  · rw [show (2 : ℕ) = 1 + 1 from rfl, ← norm_iteratedFDeriv_fderiv, hsub, norm_iteratedFDeriv_one,
-      hev.fderiv.fderiv_eq, Nat.cast_add, Nat.cast_one, show (1 : ℝ) + 1 = 2 by norm_num]
-    exact (hC₂ x hx').trans (mul_le_mul_of_nonneg_right (le_max_right _ _) (hnn _))
+  set R : ℝ := max 1 (2 * |c|) + 1
+  have hR : 0 < R := by dsimp [R]; linarith [le_max_left (1 : ℝ) (2 * |c|)]
+  set u : EuclideanSpace ℝ (Fin n) → ℝ := fun y ↦ schwarzschildModelFactor n c y - 1
+  have hu : ContDiff ℝ ∞ u := (contDiff_schwarzschildModelFactor hn c).sub contDiff_const
+  have hsym := isSymbolAtInfinity_schwarzschildModelFactor_sub_one hn c
+  -- Combine the asymptotic bound outside a large ball `R₁` with continuity on the compact annulus.
+  have hO (m : Fin 3) : iteratedFDeriv ℝ m u =O[𝓟 (closedBall 0 R)ᶜ]
+      fun x ↦ ‖x‖ ^ (-((n : ℝ) - 2) - (m : ℕ)) := by
+    obtain ⟨C₁, hC₁⟩ := (hsym.isBigO_iteratedFDeriv (Nat.le_of_lt_succ m.isLt)).bound
+    obtain ⟨R₁, -, hR₁⟩ := (hasBasis_cobounded_compl_closedBall
+      (0 : EuclideanSpace ℝ (Fin n))).eventually_iff.mp hC₁
+    let K : Set (EuclideanSpace ℝ (Fin n)) := closedBall 0 R₁ \ ball 0 R
+    have hK : IsCompact K := (isCompact_closedBall 0 R₁).diff isOpen_ball
+    have hF : ContinuousOn (iteratedFDeriv ℝ m u) K :=
+      (hu.continuous_iteratedFDeriv (by simp)).continuousOn
+    have hne (x : EuclideanSpace ℝ (Fin n)) (hx : x ∈ K) : ‖x‖ ≠ 0 :=
+      (hR.trans_le (not_lt.mp (mem_ball_zero_iff.not.mp hx.2))).ne'
+    have hG : ContinuousOn (fun x : EuclideanSpace ℝ (Fin n) ↦
+        ‖x‖ ^ (-((n : ℝ) - 2) - (m : ℕ))) K :=
+      continuous_norm.continuousOn.rpow_const fun x hx ↦ Or.inl (hne x hx)
+    have hG0 (x : EuclideanSpace ℝ (Fin n)) (hx : x ∈ K) :
+        ‖x‖ ^ (-((n : ℝ) - 2) - (m : ℝ)) ≠ 0 :=
+      (Real.rpow_pos_of_pos ((norm_nonneg x).lt_of_ne' (hne x hx)) _).ne'
+    refine (isBigO_sup.2 ⟨(hF.isBigO_principal hK (by simp : ‖(1 : ℝ)‖ ≠ 0)).trans
+      (hG.isBigO_rev_principal hK hG0 (1 : ℝ)), (isBigOWith_principal.2 hR₁).isBigO⟩).mono ?_
+    rw [sup_principal, principal_mono]
+    intro x hx
+    by_cases hx1 : x ∈ closedBall 0 R₁
+    · exact Or.inl ⟨hx1, mem_ball_zero_iff.not.2
+        (not_lt_of_ge (not_le.1 (mem_closedBall_zero_iff.not.1 hx)).le)⟩
+    · exact Or.inr hx1
+  choose C hC using fun m : Fin 3 ↦ isBigO_principal.1 (hO m)
+  refine ⟨Finset.univ.sup' Finset.univ_nonempty C, fun m hm x hx ↦ ?_⟩
+  have hm' := hC ⟨m, Nat.lt_succ_of_le hm⟩ x hx
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)] at hm'
+  exact hm'.trans (mul_le_mul_of_nonneg_right
+    (Finset.le_sup' C (Finset.mem_univ ⟨m, Nat.lt_succ_of_le hm⟩))
+    (Real.rpow_nonneg (norm_nonneg x) _))
 
 /-- The smooth conformally Euclidean Riemannian metric `schwarzschildModelFactor n c • g_eucl` on
 `ℝⁿ` (`3 ≤ n`), equal outside a ball to `(1 + c ‖x‖ ^ (2 - n)) ^ (4 / (n - 2)) • g_eucl`. -/

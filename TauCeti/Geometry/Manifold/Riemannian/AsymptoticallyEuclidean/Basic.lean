@@ -7,10 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
-import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -46,12 +44,8 @@ inside the ball carry no data. The size of the derivatives is measured by the op
   on the exterior of the closed ball of radius `R`.
 * `TauCeti.IsFiniteEndedAsymptoticallyEuclidean`: a finite nonempty family of such ends with
   pairwise disjoint images and compact remainder.
-* `TauCeti.IsAsymptoticallyEuclideanEnd.toPartialDiffeomorph` and
-  `TauCeti.IsAsymptoticallyEuclideanEnd.homeomorphImage`: an end as a partial diffeomorphism (on
-  a smooth manifold) or homeomorphism (on a `C¹` manifold) from the exterior of the ball onto its
-  open image.
-* `TauCeti.IsAsymptoticallyEuclideanEnd.endRadius`: the coordinate radius `‖φ⁻¹(·)‖` on the image
-  of an end, taking values in `Set.Ioi R`.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.toPartialDiffeomorph`: an end as a diffeomorphism from
+  the exterior of the ball onto its open image.
 
 ## Main results
 
@@ -66,8 +60,6 @@ inside the ball carry no data. The size of the derivatives is measured by the op
 * `TauCeti.IsAsymptoticallyEuclideanEnd.isOpen_image` and
   `TauCeti.IsAsymptoticallyEuclideanEnd.isPathConnected_image`: in dimension at least two, the
   image of an end is open and path-connected.
-* `TauCeti.IsAsymptoticallyEuclideanEnd.isProperMap_endRadius`: on a `C¹` manifold, the coordinate
-  radius `endRadius` on the image of an end is a proper map into `Set.Ioi R`.
 * `TauCeti.isAsymptoticallyEuclideanEnd_comp_iff` and
   `TauCeti.isFiniteEndedAsymptoticallyEuclidean_comp_iff`: both notions are invariant under
   Riemannian isometries.
@@ -75,9 +67,8 @@ inside the ball carry no data. The size of the derivatives is measured by the op
   `TauCeti.isFiniteEndedAsymptoticallyEuclidean_id`: the identity parametrization of flat
   Euclidean space of positive dimension is an end of every order, and a finite-ended structure
   with one end.
-* `TauCeti.not_isAsymptoticallyEuclideanEnd_smul` and
-  `TauCeti.not_isAsymptoticallyEuclideanEnd_two_smul`: a non-isometric homothety `x ↦ c • x`
-  (`|c| ≠ 1`, in particular `x ↦ 2 • x`) of flat Euclidean space is not an end of any positive
+* `TauCeti.not_isAsymptoticallyEuclideanEnd_two_smul`: the parametrization `x ↦ 2 • x` of flat
+  Euclidean space, whose pulled-back coefficients are `4 δ_ij`, is not an end of any positive
   order, although its coefficients are bounded.
 
 ## References
@@ -178,21 +169,6 @@ theorem pullbackMetricCoeff_id (x : EuclideanSpace ℝ (Fin n)) :
     pullbackMetricCoeff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) id x = 1 := by
   rw [pullbackMetricCoeff_eq_gram_fderiv, fderiv_id]
   exact Matrix.gram_eq_one_iff_orthonormal.2 (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal
-
-/-- Scaling a map into a real inner product space by `c : ℝ` scales its pulled-back metric
-coefficients by `c ^ 2`, without any differentiability hypothesis. -/
-theorem pullbackMetricCoeff_const_smul {G : Type*} [NormedAddCommGroup G]
-    [InnerProductSpace ℝ G] (c : ℝ) (φ : EuclideanSpace ℝ (Fin n) → G)
-    (x : EuclideanSpace ℝ (Fin n)) :
-    pullbackMetricCoeff 𝓘(ℝ, G) (fun y ↦ c • φ y) x =
-      c ^ 2 • pullbackMetricCoeff 𝓘(ℝ, G) φ x := by
-  have hd : fderiv ℝ (fun y ↦ c • φ y) x = c • fderiv ℝ φ x := by
-    rw [← Pi.smul_def, fderiv_const_smul_field, Pi.smul_apply]
-  ext i j
-  rw [pullbackMetricCoeff_eq_gram_fderiv, pullbackMetricCoeff_eq_gram_fderiv, hd,
-    Matrix.smul_apply, Matrix.gram_apply, Matrix.gram_apply]
-  simp only [smul_apply, real_inner_smul_left, real_inner_smul_right, smul_eq_mul]
-  ring
 
 /-! ### Asymptotically Euclidean ends -/
 
@@ -355,75 +331,6 @@ theorem toPartialDiffeomorph_symm_apply_apply [IsManifold I ∞ M]
     (hy : y ∈ (closedBall 0 R)ᶜ) : h.toPartialDiffeomorph.symm (φ y) = y := by
   simpa using h.toPartialDiffeomorph.left_inv (x := y) (by simpa using hy)
 
-private theorem isLocalDiffeomorphOn_one [IsManifold I 1 M]
-    (h : IsAsymptoticallyEuclideanEnd I t R φ) :
-    IsLocalDiffeomorphOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I 1 φ (closedBall 0 R)ᶜ := by
-  rintro ⟨x, hx⟩
-  obtain ⟨_, he⟩ := h.isInvertible_mfderiv x hx
-  exact isLocalDiffeomorphAt_of_mfderiv_eq (h.contMDiffOn.of_le (by simp))
-    isClosed_closedBall.isOpen_compl hx BoundarylessManifold.isInteriorPoint le_rfl he
-
-/-- On a `C¹` manifold, an end restricts to a homeomorphism from the coordinate exterior
-`(closedBall 0 R)ᶜ` onto its image `φ '' (closedBall 0 R)ᶜ`. -/
-def homeomorphImage [IsManifold I 1 M] (h : IsAsymptoticallyEuclideanEnd I t R φ) :
-    ((closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ : Set (EuclideanSpace ℝ (Fin n))) ≃ₜ
-      (φ '' (closedBall 0 R)ᶜ) :=
-  (h.isLocalDiffeomorphOn_one.partialDiffeomorphOfInjOn isClosed_closedBall.isOpen_compl
-    h.injOn).toOpenPartialHomeomorph.homeomorphOfImageSubsetSource
-    (by simp) (by simp)
-
-/-- Forward evaluation of `TauCeti.IsAsymptoticallyEuclideanEnd.homeomorphImage`. -/
-@[simp]
-theorem coe_homeomorphImage_apply [IsManifold I 1 M]
-    (h : IsAsymptoticallyEuclideanEnd I t R φ)
-    (x : ((closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ : Set (EuclideanSpace ℝ (Fin n)))) :
-    (h.homeomorphImage x : M) = φ x.val := by
-  simp [homeomorphImage]
-
-/-- Inverse evaluation of `TauCeti.IsAsymptoticallyEuclideanEnd.homeomorphImage`. -/
-@[simp]
-theorem coe_homeomorphImage_symm_apply [IsManifold I 1 M]
-    (h : IsAsymptoticallyEuclideanEnd I t R φ) (p : φ '' (closedBall 0 R)ᶜ) :
-    (h.homeomorphImage.symm p : EuclideanSpace ℝ (Fin n)) =
-      invFunOn φ (closedBall 0 R)ᶜ p.val := by
-  simp [homeomorphImage]
-
-/-- On a `C¹` manifold, the coordinate radius `‖φ⁻¹(p)‖` on the image of an asymptotically
-Euclidean end, taking values in `Set.Ioi R`. -/
-def endRadius [IsManifold I 1 M] (h : IsAsymptoticallyEuclideanEnd I t R φ)
-    (p : φ '' (closedBall 0 R)ᶜ) : Ioi R :=
-  ⟨‖(h.homeomorphImage.symm p).val‖,
-    not_le.mp (mem_closedBall_zero_iff.not.mp (h.homeomorphImage.symm p).property)⟩
-
-/-- Coercion of `TauCeti.IsAsymptoticallyEuclideanEnd.endRadius` to `ℝ`. Not tagged `@[simp]` so
-that `coe_endRadius_image_mk` simplifies `(h.endRadius ⟨φ x, _⟩ : ℝ)` directly to `‖x‖` without
-unfolding to `invFunOn`. -/
-theorem coe_endRadius [IsManifold I 1 M] (h : IsAsymptoticallyEuclideanEnd I t R φ)
-    (p : φ '' (closedBall 0 R)ᶜ) :
-    (h.endRadius p : ℝ) = ‖invFunOn φ (closedBall 0 R)ᶜ p.val‖ :=
-  congrArg norm (h.coe_homeomorphImage_symm_apply p)
-
-/-- Evaluating `h.endRadius` at `φ x` for `x ∈ (closedBall 0 R)ᶜ` recovers `‖x‖`. -/
-@[simp]
-theorem coe_endRadius_image_mk [IsManifold I 1 M] (h : IsAsymptoticallyEuclideanEnd I t R φ)
-    {x : EuclideanSpace ℝ (Fin n)} (hx : x ∈ (closedBall 0 R)ᶜ) :
-    (h.endRadius ⟨φ x, mem_image_of_mem φ hx⟩ : ℝ) = ‖x‖ := by
-  rw [coe_endRadius, h.injOn.leftInvOn_invFunOn hx]
-
-/-- **Properness of the end radius.** On a `C¹` manifold, the coordinate radius
-`h.endRadius : φ '' (closedBall 0 R)ᶜ → Set.Ioi R` is a proper map. -/
-theorem isProperMap_endRadius [IsManifold I 1 M] (h : IsAsymptoticallyEuclideanEnd I t R φ) :
-    IsProperMap h.endRadius := by
-  have hnorm : IsProperMap (norm : EuclideanSpace ℝ (Fin n) → ℝ) := by
-    simpa only [dist_zero] using isProperMap_dist (0 : EuclideanSpace ℝ (Fin n))
-  have heq : h.endRadius =
-      ((Ioi R).restrictPreimage (norm : EuclideanSpace ℝ (Fin n) → ℝ) ∘
-        Homeomorph.setCongr (by ext y; simp)) ∘ h.homeomorphImage.symm := by
-    ext p
-    simp [endRadius, Set.restrictPreimage, Homeomorph.setCongr]
-  exact heq ▸ ((hnorm.restrictPreimage (Ioi R)).comp (Homeomorph.setCongr _).isProperMap).comp
-    h.homeomorphImage.symm.isProperMap
-
 /-- In dimension at least two the image of an end is path-connected, as the image of the
 path-connected exterior of a ball. -/
 theorem isPathConnected_image (h : IsAsymptoticallyEuclideanEnd I t R φ) (hn : 1 < n) :
@@ -498,45 +405,42 @@ theorem isAsymptoticallyEuclideanEnd_id (hn : 0 < n) (t : ℝ) {R : ℝ} (hR : 0
     rw [← Pi.zero_def, iteratedFDeriv_zero]
     simp⟩
 
-/-- A non-isometric homothety `x ↦ c • x` (`|c| ≠ 1`) of flat Euclidean space is not an
-asymptotically Euclidean end of any positive order: its pulled-back coefficients `c ^ 2 δ_ij` have
-`g_ii - 1 = c ^ 2 - 1 ≠ 0`, which does not decay. -/
-theorem not_isAsymptoticallyEuclideanEnd_smul {t : ℝ} (ht : 0 < t) {c : ℝ} (hc : |c| ≠ 1)
-    (R : ℝ) :
-    ¬ IsAsymptoticallyEuclideanEnd 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) t R
-      (fun y : EuclideanSpace ℝ (Fin n) ↦ c • y) := by
-  intro h
-  obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
-  let i : Fin n := ⟨0, h.dim_pos⟩
-  have hd_pos : 0 < |c ^ 2 - 1| := by
-    rw [abs_pos, sub_ne_zero, ne_eq, sq_eq_one_iff]
-    rintro (rfl | rfl) <;> simp at hc
-  -- For large `s`, the point `s • eᵢ` lies outside the ball and `C s^(-t) < |c ^ 2 - 1|`.
-  obtain ⟨s, hsR, hs0, hsC⟩ := (eventually_gt_atTop R).and ((eventually_gt_atTop 0).and
-    (((tendsto_rpow_neg_atTop ht).const_mul C).eventually
-      (gt_mem_nhds (by simpa only [mul_zero] using hd_pos)))) |>.exists
-  have hnorm : ‖s • EuclideanSpace.basisFun (Fin n) ℝ i‖ = s := by
-    rw [norm_smul, (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal.left i, mul_one,
-      Real.norm_of_nonneg hs0.le]
-  have h0 := hC 0 (by norm_num) i i (s • EuclideanSpace.basisFun (Fin n) ℝ i)
-    (by rwa [mem_compl_iff, mem_closedBall_zero_iff, not_le, hnorm])
-  have hcoeff : pullbackMetricCoeff 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
-      (fun y : EuclideanSpace ℝ (Fin n) ↦ c • y)
-      (s • EuclideanSpace.basisFun (Fin n) ℝ i) i i = c ^ 2 := by
-    simpa using congrArg (fun A : Matrix (Fin n) (Fin n) ℝ ↦ A i i)
-      (pullbackMetricCoeff_const_smul c (id : EuclideanSpace ℝ (Fin n) → _)
-        (s • EuclideanSpace.basisFun (Fin n) ℝ i))
-  simp only [norm_iteratedFDeriv_zero, Matrix.sub_apply, hcoeff, Matrix.one_apply, ↓reduceIte,
-    Real.norm_eq_abs, hnorm, Nat.cast_zero, sub_zero] at h0
-  exact (not_lt_of_ge h0) hsC
+/-- The pulled-back coefficients of the dilation `x ↦ 2 • x` of flat Euclidean space are
+`4 δ_ij`. -/
+private theorem pullbackMetricCoeff_two_smul (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
+    pullbackMetricCoeff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (fun y ↦ (2 : ℝ) • y) x i j =
+      4 * if i = j then 1 else 0 := by
+  have hd : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin n) ↦ (2 : ℝ) • y)
+      ((2 : ℝ) • ContinuousLinearMap.id ℝ _) x :=
+    (hasFDerivAt_id x).const_smul (2 : ℝ)
+  rw [pullbackMetricCoeff_eq_gram_fderiv, hd.fderiv, Matrix.gram_apply]
+  simp only [FunLike.coe_smul, Pi.smul_apply, ContinuousLinearMap.coe_id', id_eq]
+  rw [real_inner_smul_left, real_inner_smul_right,
+    orthonormal_iff_ite.mp (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal i j]
+  ring
 
 /-- The dilation `x ↦ 2 • x` of flat Euclidean space is not an asymptotically Euclidean end of
 any positive order: its coefficients `4 δ_ij` are bounded, but `g_ii - 1 = 3` does not
 decay. -/
 theorem not_isAsymptoticallyEuclideanEnd_two_smul {t : ℝ} (ht : 0 < t) (R : ℝ) :
     ¬ IsAsymptoticallyEuclideanEnd 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) t R
-      (fun y : EuclideanSpace ℝ (Fin n) ↦ (2 : ℝ) • y) :=
-  not_isAsymptoticallyEuclideanEnd_smul ht (by norm_num) R
+      (fun y : EuclideanSpace ℝ (Fin n) ↦ (2 : ℝ) • y) := by
+  intro h
+  obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
+  let i : Fin n := ⟨0, h.dim_pos⟩
+  -- For large `s`, the point `s • eᵢ` lies outside the ball and `C s^(-t) < 3`.
+  obtain ⟨s, hsR, hs0, hsC⟩ := (eventually_gt_atTop R).and ((eventually_gt_atTop 0).and
+    (((tendsto_rpow_neg_atTop ht).const_mul C).eventually
+      (gt_mem_nhds (show C * 0 < 3 by norm_num)))) |>.exists
+  have hnorm : ‖s • EuclideanSpace.basisFun (Fin n) ℝ i‖ = s := by
+    rw [norm_smul, (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal.1 i, mul_one,
+      Real.norm_of_nonneg hs0.le]
+  have h0 := hC 0 (by norm_num) i i (s • EuclideanSpace.basisFun (Fin n) ℝ i)
+    (by rwa [mem_compl_iff, mem_closedBall_zero_iff, not_le, hnorm])
+  rw [norm_iteratedFDeriv_zero, Matrix.sub_apply, pullbackMetricCoeff_two_smul, Matrix.one_apply,
+    hnorm] at h0
+  norm_num at h0 hsC
+  linarith
 
 /-! ### Finite-ended asymptotically Euclidean manifolds -/
 

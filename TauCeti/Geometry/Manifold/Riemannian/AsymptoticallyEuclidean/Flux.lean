@@ -51,10 +51,7 @@ the metric `(1 + c |x| ^ (2 - n)) ^ (4 / (n - 2)) δ` has mass `2 c`
 Schwarzschild metric `(1 + m |x| ^ (2 - n) / 2) ^ (4 / (n - 2)) δ` has mass `m`. The coefficients
 `x_i x_j |x| ^ (-n)` have normalized flux `1 / 2` at every radius
 (`TauCeti.normalizedCoordinateFlux_mul_mul_rpow`), so the metric `δ_ij + ε x_i x_j |x| ^ (-n)`,
-whose coefficients are not of the conformal form `f δ_ij`, has mass `ε / 2`. Finally, on `ℝ³` the
-slow-decay conformal metric `(1 + (1 + |x| ^ 2) ^ (-3 / 8)) ^ 4 δ_ij` of order `t = 3 / 4 > 1 / 2`
-(without integrable scalar curvature) has normalized flux diverging to `+∞`
-(`TauCeti.tendsto_normalizedCoordinateFlux_conformal_one_add_one_add_sq_rpow_atTop`).
+whose coefficients are not of the conformal form `f δ_ij`, has mass `ε / 2`.
 
 ## References
 
@@ -430,69 +427,6 @@ theorem tendsto_normalizedCoordinateFlux_conformal_one_add_mul_rpow (hn : 3 ≤ 
       ring
   refine Tendsto.congr' heq ?_
   simpa using (hB.rpow_const (Or.inl one_ne_zero)).const_mul (2 * c)
-
-/-- For `r > 0`, the normalized coordinate flux in dimension `3` of the slow-decay conformally
-flat coefficients `(1 + (1 + |x| ^ 2) ^ (-3 / 8)) ^ 4 δ_ij` (decay order `t = 3 / 4 > (3 - 2) / 2`,
-with non-integrable scalar curvature `O(r ^ (-11 / 4))`) is
-`(3 / 2) (1 + (1 + r ^ 2) ^ (-3 / 8)) ^ 3 r ^ 3 (1 + r ^ 2) ^ (-11 / 8)`. -/
-theorem normalizedCoordinateFlux_conformal_one_add_one_add_sq_rpow {r : ℝ} (hr : 0 < r) :
-    normalizedCoordinateFlux (fun y : EuclideanSpace ℝ (Fin 3) ↦ fun i j ↦
-      if i = j then (1 + (1 + ‖y‖ ^ 2) ^ (-3 / 8 : ℝ)) ^ 4 else 0) r =
-      (3 / 2 : ℝ) * (1 + (1 + r ^ 2) ^ (-3 / 8 : ℝ)) ^ 3 * r ^ 3 *
-        (1 + r ^ 2) ^ (-11 / 8 : ℝ) := by
-  have h1r : 0 < 1 + r ^ 2 := by positivity
-  have hexp : (-3 / 8 : ℝ) - 1 = -11 / 8 := by norm_num
-  have hd_sq : HasDerivAt (fun s : ℝ ↦ 1 + s ^ 2) (2 * r) r :=
-    ((hasDerivAt_pow 2 r).const_add 1).congr_deriv (by ring)
-  have hd_rpow : HasDerivAt (fun s : ℝ ↦ (1 + s ^ 2) ^ (-3 / 8 : ℝ))
-      ((-3 / 8 : ℝ) * (1 + r ^ 2) ^ (-11 / 8 : ℝ) * (2 * r)) r :=
-    (hd_sq.rpow_const (p := -3 / 8) (Or.inl h1r.ne')).congr_deriv (by rw [hexp]; ring)
-  have hd : HasDerivAt (fun s : ℝ ↦ (1 + (1 + s ^ 2) ^ (-3 / 8 : ℝ)) ^ 4)
-      ((4 : ℝ) * (1 + (1 + r ^ 2) ^ (-3 / 8 : ℝ)) ^ 3 *
-        ((-3 / 8 : ℝ) * (1 + r ^ 2) ^ (-11 / 8 : ℝ) * (2 * r))) r :=
-    ((hd_rpow.const_add 1).pow 4).congr_deriv (by norm_num)
-  rw [normalizedCoordinateFlux_conformal_radial (by omega)
-    (fun s : ℝ ↦ (1 + (1 + s ^ 2) ^ (-3 / 8 : ℝ)) ^ 4) hr, hd.deriv]
-  ring
-
-/-- **Divergence of the ADM flux without integrable scalar curvature.** On `ℝ³`, the normalized
-coordinate flux of `(1 + (1 + |x| ^ 2) ^ (-3 / 8)) ^ 4 δ_ij` diverges to `+∞` as `r → ∞`, showing
-that decay order `t > (n - 2) / 2` alone does not make the ADM mass finite. -/
-theorem tendsto_normalizedCoordinateFlux_conformal_one_add_one_add_sq_rpow_atTop :
-    Tendsto (normalizedCoordinateFlux fun y : EuclideanSpace ℝ (Fin 3) ↦ fun i j ↦
-      if i = j then (1 + (1 + ‖y‖ ^ 2) ^ (-3 / 8 : ℝ)) ^ 4 else 0) atTop atTop := by
-  let c₀ : ℝ := (3 / 2) * (2 : ℝ) ^ (-11 / 8 : ℝ)
-  have hc₀ : 0 < c₀ := by positivity
-  have hdiv : Tendsto (fun r : ℝ ↦ c₀ * r ^ (1 / 4 : ℝ)) atTop atTop :=
-    (tendsto_rpow_atTop (by norm_num)).const_mul_atTop' hc₀
-  refine tendsto_atTop_mono' atTop ?_ hdiv
-  filter_upwards [eventually_ge_atTop (1 : ℝ)] with r hr
-  have hr0 : 0 < r := zero_lt_one.trans_le hr
-  rw [normalizedCoordinateFlux_conformal_one_add_one_add_sq_rpow hr0]
-  have hcube : 1 ≤ (1 + (1 + r ^ 2) ^ (-3 / 8 : ℝ)) ^ 3 := by
-    have hbase : 1 ≤ 1 + (1 + r ^ 2) ^ (-3 / 8 : ℝ) :=
-      le_add_of_nonneg_right (Real.rpow_nonneg (by positivity) _)
-    nlinarith [sq_nonneg (1 + (1 + r ^ 2) ^ (-3 / 8 : ℝ))]
-  have hrpow : (2 : ℝ) ^ (-11 / 8 : ℝ) * r ^ (-11 / 4 : ℝ) ≤ (1 + r ^ 2) ^ (-11 / 8 : ℝ) := by
-    have hle : 1 + r ^ 2 ≤ 2 * r ^ 2 := by nlinarith
-    have hanti := Real.rpow_le_rpow_of_nonpos (z := -11 / 8)
-      (by positivity : 0 < 1 + r ^ 2) hle (by norm_num)
-    have hmul : (2 * r ^ 2) ^ (-11 / 8 : ℝ) = (2 : ℝ) ^ (-11 / 8 : ℝ) * r ^ (-11 / 4 : ℝ) := by
-      rw [Real.mul_rpow zero_le_two (sq_nonneg r), ← Real.rpow_natCast r 2,
-        ← Real.rpow_mul hr0.le]
-      norm_num
-    exact hmul ▸ hanti
-  have hexp : r ^ 3 * r ^ (-11 / 4 : ℝ) = r ^ (1 / 4 : ℝ) := by
-    rw [← Real.rpow_natCast r 3, ← Real.rpow_add hr0]
-    norm_num
-  calc c₀ * r ^ (1 / 4 : ℝ)
-      = (3 / 2 : ℝ) * 1 * r ^ 3 * ((2 : ℝ) ^ (-11 / 8 : ℝ) * r ^ (-11 / 4 : ℝ)) := by
-          simp only [c₀, ← hexp]; ring
-    _ ≤ (3 / 2 : ℝ) * (1 + (1 + r ^ 2) ^ (-3 / 8 : ℝ)) ^ 3 * r ^ 3 *
-          (1 + r ^ 2) ^ (-11 / 8 : ℝ) := by
-          have h1 := mul_le_mul_of_nonneg_left hcube (by positivity : 0 ≤ (3 / 2 : ℝ))
-          have h2 := mul_le_mul_of_nonneg_right h1 (pow_nonneg hr0.le 3)
-          exact mul_le_mul h2 hrpow (by positivity) (by positivity)
 
 /-! ### A non-conformal perturbation -/
 
