@@ -11,7 +11,7 @@ import TauCeti.Analysis.PDE.Wave.MixedNorm
 import TauCeti.Analysis.PDE.Wave.TimeExponentTwo
 
 /-!
-# The free wave equation with data in homogeneous Besov spaces
+# Wave evolutions of data in homogeneous Besov spaces
 
 On a real inner product space `E` of dimension `n`, let `D = √(-Δ)` and let `Pⱼ`, `j ∈ ℤ`, be the
 homogeneous Littlewood–Paley blocks built from a bump function `φ`. The free wave equation
@@ -22,15 +22,17 @@ Strichartz estimate with the norms of the data in the homogeneous Besov spaces `
 `\dot B^{γ - 1}_{2,1}`
 (`ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum`).
 
-This file solves the equation for data in these Besov spaces themselves
-(`TauCeti.HomogeneousBesovSpace`), which are spaces of tempered distributions modulo those with
-spectrum at the origin, not of `L²` functions: the two terms of the solution are the dyadic series
+This file treats data in these Besov spaces themselves (`TauCeti.HomogeneousBesovSpace`), which
+are spaces of tempered distributions modulo those with spectrum at the origin, not of `L²`
+functions, so `cos(tD)` and `D⁻¹ sin(tD)` have no a priori meaning on them. It defines the
+evolutions of `f ∈ \dot B^γ_{2,1}` and `g ∈ \dot B^{γ - 1}_{2,1}` as the dyadic series
 
-`cos(tD) f = ∑ⱼ cos(tD) Pⱼ f` and `D⁻¹ sin(tD) g = ∑ⱼ D⁻¹ sin(tD) Pⱼ g`,
+`∑ⱼ cos(tD) Pⱼ f` and `∑ⱼ D⁻¹ sin(tD) Pⱼ g`,
 
-whose pieces are the evolutions of the `L²` blocks of the data. For each series there is
-`U : ℝ → L^r` such that the partial sums converge to `U(t)` in `L^r` for almost every time `t` and
-to `U` in `L^q_t L^r_x`, with
+whose pieces are the evolutions of the `L²` blocks of the data, and shows that these series
+converge, with the Strichartz bound. It does not show that the limits satisfy `∂ₜ²u = Δu` or
+attain the data. For each series there is `U : ℝ → L^r` such that the partial sums converge to
+`U(t)` in `L^r` for almost every time `t` and to `U` in `L^q_t L^r_x`, with
 
 `‖U‖_{L^q_t L^r_x} ≤ C ‖f‖_{\dot B^γ_{2,1}}`, respectively
 `‖U‖_{L^q_t L^r_x} ≤ C ‖g‖_{\dot B^{γ - 1}_{2,1}}`,
@@ -45,8 +47,8 @@ with `γ = n / 2 - n / r - 1 / 2`
 (`ContDiffBump.exists_tendsto_eLpNorm_eLpNorm_sub_sum_waveCosPropagator_block_of_le_endpoint` and
 its `D⁻¹ sin(tD)` counterpart). When the data are `L²` functions, the sums are
 `cos(tD) f` and `D⁻¹ sin(tD) g` for almost every `t`
-(`ContDiffBump.ae_ae_eq_apply_of_tendsto_eLpNorm_sub_sum_apply_block`), so this extends the
-solution of the free wave equation from `L²` data.
+(`ContDiffBump.ae_ae_eq_apply_of_tendsto_eLpNorm_sub_sum_apply_block`), so these evolutions extend
+the `L²` solution of the free wave equation.
 
 Each piece obeys the frequency-localized Strichartz estimate
 `‖cos(tD) Pⱼ x‖_{L^q_t L^r_x} ≤ C 2^{jγ} ‖x‖₂`, and its `D⁻¹ sin(tD)` counterpart with
@@ -134,7 +136,7 @@ end Admissible
 `γ = n / 2 - n / r`. There is `C` such that for every `f ∈ \dot B^γ_{2,1}` the dyadic series
 `∑ⱼ cos(tD) Pⱼ f` converges: to some `U : ℝ → L^r` in `L^r` for almost every `t` and in
 `L^∞_t L^r_x`, with `‖U‖_{L^∞_t L^r_x} ≤ C ‖f‖_{\dot B^γ_{2,1}}`. At `r = ∞` this bounds the
-solution uniformly in space and time for `f ∈ \dot B^{n/2}_{2,1}`. -/
+evolution uniformly in space and time for `f ∈ \dot B^{n/2}_{2,1}`. -/
 theorem exists_tendsto_eLpNorm_top_eLpNorm_sub_sum_waveCosPropagator_block (hr : 2 ≤ r) :
     ∃ C : ℝ≥0, ∀ f : HomogeneousBesovSpace ℂ φ ((Module.finrank ℝ E : ℝ) / 2 -
         Module.finrank ℝ E * (r⁻¹).toReal) 2 1,
