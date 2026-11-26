@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.VectorValued
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
 import TauCeti.Data.Fintype.BigOperators
+import TauCeti.LinearAlgebra.Alternating.Basic
 
 /-!
 # The divergence of a Bianchi family of two-forms in dimension four
@@ -33,9 +34,10 @@ file shows that the divergence of the Hodge dual of a Bianchi family vanishes
 
 the pointwise form of `d^* ⋆F = ± ⋆ d F = 0`. In coordinates,
 `(⋆T eᵢ) (a ∧ eᵢ) = ½ ∑ₖ ∑ₗ vol(a, eᵢ, eₖ, eₗ) T eᵢ (eₖ ∧ eₗ)`, and the coefficient
-`vol(a, eᵢ, eₖ, eₗ)` is invariant under cyclic permutations of `(i, k, l)`, so summing over all
-`(i, k, l)` only sees the cyclic sums of `T`, which vanish
-(`Fintype.sum_sum_sum_smul_eq_zero_of_cyclic`, in `TauCeti.Data.Fintype.BigOperators`).
+`vol(a, eᵢ, eₖ, eₗ)` is invariant under cyclic permutations of `(i, k, l)`
+(`AlternatingMap.map_fin_four_cycle`), so summing over all `(i, k, l)` only sees the cyclic sums
+of `T`, which vanish (`Fintype.sum_sum_sum_smul_eq_zero_of_cyclic`, in
+`TauCeti.Data.Fintype.BigOperators`).
 
 Consequently the divergence of a Bianchi family is carried equally by its self-dual and
 anti-self-dual parts `T⁺ = (T + ⋆T) / 2` and `T⁻ = (T - ⋆T) / 2`
@@ -84,18 +86,6 @@ variable {E W : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [AddCommGroup W] [Module ℝ W] (o : Orientation ℝ E (Fin 4)) (hkl : 2 + 2 = finrank ℝ E)
   {ι : Type*} [Fintype ι]
 
-omit [FiniteDimensional ℝ E] in
-/-- The volume form is invariant under a cyclic permutation of its last three arguments. -/
-private theorem volumeForm_cyclic (a u v w : E) :
-    o.volumeForm ![a, v, w, u] = o.volumeForm ![a, u, v, w] := by
-  have h₁ := o.volumeForm.map_swap ![a, v, w, u] (i := 1) (j := 3) (by decide)
-  have h₂ := o.volumeForm.map_swap (![a, v, w, u] ∘ Equiv.swap 1 3) (i := 2) (j := 3) (by decide)
-  have e : (![a, v, w, u] ∘ Equiv.swap 1 3) ∘ Equiv.swap 2 3 = ![a, u, v, w] := by
-    ext j
-    fin_cases j <;> rfl
-  rw [e, h₁, neg_neg] at h₂
-  exact h₂.symm
-
 /-- The Hodge dual of a `W`-valued two-form on `u ∧ w`, expanded over the ordered pairs of an
 orthonormal basis: `(⋆F) (u ∧ w) = ½ ∑ₖ ∑ₗ vol(u, w, eₖ, eₗ) F (eₖ ∧ eₗ)`. -/
 theorem vectorFormHodgeStar_apply_ιMulti_two (b : OrthonormalBasis ι ℝ E)
@@ -119,7 +109,8 @@ theorem sum_vectorFormHodgeStar_apply_ιMulti_eq_zero (b : OrthonormalBasis ι �
     ∑ i, o.vectorFormHodgeStar hkl (T (b i)) (ιMulti ℝ 2 ![a, b i]) = 0 := by
   simp_rw [o.vectorFormHodgeStar_apply_ιMulti_two hkl b, ← Finset.smul_sum]
   rw [Fintype.sum_sum_sum_smul_eq_zero_of_cyclic (fun i k l ↦ o.volumeForm ![a, b i, b k, b l])
-    (fun i k l ↦ T (b i) (ιMulti ℝ 2 ![b k, b l])) (fun i k l ↦ o.volumeForm_cyclic _ _ _ _)
+    (fun i k l ↦ T (b i) (ιMulti ℝ 2 ![b k, b l]))
+    (fun i k l ↦ o.volumeForm.map_fin_four_cycle _ _ _ _)
     (fun i k l ↦ hT _ _ _), smul_zero]
 
 /-- **The divergence of a Bianchi family is twice that of its self-dual part.** Under the Bianchi

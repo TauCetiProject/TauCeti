@@ -103,6 +103,7 @@ def derivCurvatureForm (x : M) :
     TangentSpace I x →ₗ[ℝ] ⋀[ℝ]^2 (TangentSpace I x) →ₗ[ℝ] (V x →ₗ[ℝ] V x) where
   toFun v := alternatingMapLinearEquiv
     (LinearMap.IsAlt.toAlternatingMap
+      -- `IsAlt` unfolds to `∀ u, B u u = 0`, the statement of `derivCurvatureTensor_self`.
       (show (cov.derivCurvatureTensor covT x v).IsAlt from cov.derivCurvatureTensor_self covT x v))
   map_add' v v' := by
     rw [← map_add]
