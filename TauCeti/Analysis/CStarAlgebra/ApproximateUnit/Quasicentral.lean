@@ -420,6 +420,7 @@ def quasicentralSet (I : TwoSidedIdeal A) (G : Finset I) (F : Finset A) (ε : �
     (∀ a ∈ F, ‖e * a - a * e‖ < ε)}
 
 /-- Explicit membership characterization of `TwoSidedIdeal.quasicentralSet`. -/
+@[simp]
 theorem mem_quasicentralSet_iff {I : TwoSidedIdeal A} {G : Finset I} {F : Finset A}
     {ε : ℝ} {e : A} :
     e ∈ I.quasicentralSet G F ε ↔
@@ -428,29 +429,34 @@ theorem mem_quasicentralSet_iff {I : TwoSidedIdeal A} {G : Finset I} {F : Finset
         (∀ a ∈ F, ‖e * a - a * e‖ < ε) :=
   Iff.rfl
 
-private theorem mem_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I} {F : Finset A}
+/-- An element of `I.quasicentralSet G F ε` lies in `I`. -/
+theorem mem_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I} {F : Finset A}
     {ε : ℝ} {e : A} (he : e ∈ I.quasicentralSet G F ε) : e ∈ I := by
   obtain ⟨hI, _, _, _, _⟩ := mem_quasicentralSet_iff.mp he
   exact hI
 
-private theorem nonneg_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I} {F : Finset A}
+/-- An element of `I.quasicentralSet G F ε` is nonnegative. -/
+theorem nonneg_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I} {F : Finset A}
     {ε : ℝ} {e : A} (he : e ∈ I.quasicentralSet G F ε) : 0 ≤ e := by
   obtain ⟨_, h₀, _, _, _⟩ := mem_quasicentralSet_iff.mp he
   exact h₀
 
-private theorem norm_le_one_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I}
+/-- An element of `I.quasicentralSet G F ε` is a contraction (`‖e‖ ≤ 1`). -/
+theorem norm_le_one_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I}
     {F : Finset A} {ε : ℝ} {e : A} (he : e ∈ I.quasicentralSet G F ε) : ‖e‖ ≤ 1 := by
   obtain ⟨_, _, h₁, _, _⟩ := mem_quasicentralSet_iff.mp he
   exact h₁
 
-private theorem norm_mul_sub_lt_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I}
+/-- An element of `I.quasicentralSet G F ε` fixes elements `x ∈ G` on the left within `ε`. -/
+theorem norm_mul_sub_lt_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I}
     {F : Finset A} {ε : ℝ} {e : A} (he : e ∈ I.quasicentralSet G F ε) {x : I} (hx : x ∈ G) :
     ‖e * (x : A) - x‖ < ε := by
   obtain ⟨_, _, _, hG, _⟩ := mem_quasicentralSet_iff.mp he
   obtain ⟨hleft, _⟩ := hG x hx
   exact hleft
 
-private theorem norm_sub_mul_lt_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I}
+/-- An element of `I.quasicentralSet G F ε` fixes elements `x ∈ G` on the right within `ε`. -/
+theorem norm_sub_mul_lt_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I}
     {F : Finset A} {ε : ℝ} {e : A} (he : e ∈ I.quasicentralSet G F ε) {x : I} (hx : x ∈ G) :
     ‖(x : A) * e - x‖ < ε := by
   obtain ⟨_, _, _, hG, _⟩ := mem_quasicentralSet_iff.mp he
@@ -789,18 +795,6 @@ theorem quasicentralSet_nonempty (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
           (div_lt_div_of_pos_left (sq_pos_of_pos hε) two_pos (by norm_num))
       _ = ε ^ 2 := add_halves _
   exact lt_of_pow_lt_pow_left₀ 2 hε.le hlt
-
-/-- Finite-set Arveson theorem for a subset `G : Finset A` contained in `I`. -/
-theorem exists_mem_nonneg_norm_le_one_norm_mul_sub_lt_norm_commutator_lt_of_subset
-    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
-    {G : Finset A} (hGI : (G : Set A) ⊆ I) (F : Finset A) {ε : ℝ} (hε : 0 < ε) :
-    ∃ e ∈ I, 0 ≤ e ∧ ‖e‖ ≤ 1 ∧
-      (∀ x ∈ G, ‖e * x - x‖ < ε ∧ ‖x * e - x‖ < ε) ∧
-      (∀ a ∈ F, ‖e * a - a * e‖ < ε) := by
-  classical
-  obtain ⟨e, he⟩ := I.quasicentralSet_nonempty (G.subtype (· ∈ I)) F hε
-  obtain ⟨heI, he₀, he₁, heG, heF⟩ := mem_quasicentralSet_iff.mp he
-  exact ⟨e, heI, he₀, he₁, fun x hx => heG ⟨x, hGI hx⟩ (Finset.mem_subtype.mpr hx), heF⟩
 
 /-- For every closed two-sided ideal `I` of a C⋆-algebra `A`, the canonical filter
 `I.quasicentralApproximateUnit` is proper (`NeBot`). -/
