@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finsupp.BigOperators
 public import TauCeti.Analysis.LaplaceTransform.Basic
 
 /-!
