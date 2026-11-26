@@ -1,0 +1,94 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.NumberTheory.Chebyshev
+
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
+
+/-!
+# Level bounds for the normalised Poincaré map
+
+A level chosen in a logarithmic window lies above the auxiliary primes. Its logarithm,
+together with the log-prime mass up to the second cutoff, fits within the error budget
+for rounding the local exponents in the rational normalizing factor.
+
+The window and budget are those of `New.Data.log_N_mem_Icc`, `New.Data.levelPrime_mem_Ioo`
+and `New.Data.sum_log_smallNonsplitPrimes_union_le` in lsernau/grh-lean, commit
+`72fead102f663d5c7a407964a13dc0cf9d977207`. We use Chebyshev's bound for the small primes,
+so the budget applies even before restricting to nonsplit primes.
+-/
+
+public section
+
+open Real Set
+
+namespace TauCeti.OneSidedBound
+
+/-- A logarithmic window of width `√L` above a point in `[mL, 24mL]` lies in `[mL, 25mL]`
+when `m ≥ 1` and `L ≥ 1`. -/
+theorem log_levelPrime_mem_Icc {m : ℕ} {L A N : ℝ} (hm : 0 < m) (hL : 1 ≤ L)
+    (hA : A ∈ Icc (m * L) (24 * m * L)) (hN : log N ∈ Icc A (A + √L)) :
+    log N ∈ Icc (m * L) (25 * m * L) := by
+  have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
+  have hsqrt := (sqrt_le_self_iff (x := L)).2 (Or.inr hL)
+  have hmul : L ≤ m * L := le_mul_of_one_le_left (by positivity) hm'
+  exact ⟨hA.1.trans hN.1, by linarith [hN.2, hA.2]⟩
+
+/-- The lower logarithmic bound for the level implies the corresponding power bound.
+In particular, the logarithmic hypothesis forces the level to be positive. -/
+theorem pow_le_levelPrime {b N m : ℕ} (hb : 1 < b) (hm : 0 < m)
+    (hN : m * log b ≤ log N) : b ^ m ≤ N := by
+  have hb' : (1 : ℝ) < b := by exact_mod_cast hb
+  have hpos : 0 < (m : ℝ) * log b :=
+    mul_pos (Nat.cast_pos.mpr hm) (log_pos hb')
+  have hN' : (0 : ℝ) < N := by
+    have hn := (log_pos_iff (Nat.cast_nonneg N)).mp (hpos.trans_le hN)
+    positivity
+  exact_mod_cast (log_le_log_iff (pow_pos (zero_lt_one.trans hb') _) hN').mp
+    ((log_pow (b : ℝ) m).trans_le hN)
+
+/-- An auxiliary prime in `[b^10, b^11]` is above `b²` and below a level whose logarithm
+is at least `m log b`, for a chain of length `m > 11`. -/
+theorem auxiliaryPrime_mem_Ioo {b p N m : ℕ} (hb : 1 < b) (hm : 11 < m)
+    (hp : p ∈ Icc (b ^ 10) (b ^ 11)) (hN : m * log b ≤ log N) : p ∈ Ioo (b ^ 2) N :=
+  have hpow := pow_le_levelPrime hb (by omega : 0 < m) hN
+  ⟨(pow_lt_pow_right₀ hb (by decide : 2 < 10)).trans_le hp.1,
+    hp.2.trans_lt ((pow_lt_pow_right₀ hb hm).trans_le hpow)⟩
+
+/-- At the separated cutoffs, the log-prime mass of the small primes plus the logarithm
+of the level fits in the rounding budget `b`. Here `X` is the second cutoff. -/
+theorem theta_add_log_levelPrime_le {X b N : ℝ} {m : ℕ} (hX : 2 ≤ X)
+    (hb : X ^ 18 ≤ b) (hm : (m : ℝ) ^ 2 ≤ 4 * X)
+    (hN : log N ≤ 30 * m * log b) : Chebyshev.theta X + log N ≤ b := by
+  have hX0 : 0 ≤ X := by linarith
+  have hb0 : 0 ≤ b := (pow_nonneg hX0 _).trans hb
+  have hpow : X ^ 9 ≤ √b := (le_sqrt (pow_nonneg hX0 _) hb0).2 (by simpa [← pow_mul] using hb)
+  have hwide : 256 * X ≤ √b := calc
+    256 * X = (2 : ℝ) ^ 8 * X := by norm_num
+    _ ≤ X ^ 8 * X := by gcongr
+    _ = X ^ 9 := by ring
+    _ ≤ √b := hpow
+  have hm' : (m : ℝ) ≤ 2 * X := by nlinarith [sq_nonneg (X - 1), sq_nonneg ((m : ℝ) - 2 * X)]
+  have hlog : log b ≤ 2 * √b := by
+    simpa [sqrt_eq_rpow, mul_comm] using (log_le_rpow_div hb0 (by norm_num : (0 : ℝ) < 1 / 2))
+  have hlevel : log N ≤ b / 2 := calc
+    log N ≤ 30 * m * log b := hN
+    _ ≤ 30 * m * (2 * √b) := by gcongr
+    _ ≤ 120 * X * √b := by nlinarith [mul_nonneg (sub_nonneg.mpr hm') (sqrt_nonneg b)]
+    _ ≤ (√b / 2) * √b := by gcongr; linarith
+    _ = b / 2 := by rw [div_mul_eq_mul_div, ← sq, sq_sqrt hb0]
+  have hsqrt : √b ≤ b := by
+    rw [sqrt_le_self_iff]
+    exact Or.inr ((one_le_pow₀ (by linarith : 1 ≤ X)).trans hb)
+  have hsmall : Chebyshev.theta X ≤ b / 2 := calc
+    Chebyshev.theta X ≤ log 4 * X := Chebyshev.theta_le_log4_mul_x hX0
+    _ ≤ 2 * X := mul_le_mul_of_nonneg_right log_four_le_two hX0
+    _ ≤ √b / 2 := by linarith
+    _ ≤ b / 2 := by gcongr
+  linarith
+
+end TauCeti.OneSidedBound
