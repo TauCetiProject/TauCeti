@@ -1,0 +1,143 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.RCLike.Basic
+public import TauCeti.LinearAlgebra.Matrix.Determinant.FrameGram
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Analysis.Matrix.Eigenvalues.Inertia
+import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
+import TauCeti.LinearAlgebra.Matrix.DotProduct
+
+/-!
+# The Gram determinant of two frames in `U(p, q)` is nonnegative
+
+Let `J = diag(1, …, 1, -1, …, -1)` be the Gram matrix of the Hermitian form of signature
+`(p, q)` on `𝕜^(p ⊕ q)`, over `ℝ` or `ℂ`. Let `F` and `F'` be frames of `n + 1` vectors of norms
+`-T` and `-T'` (`Matrix.det_gram_fromCols_of_frame`): the first `n` vectors of each are isotropic
+and orthogonal to the whole frame, and the last has norm `-T`, respectively `-T'`. Let
+`Z = Fᴴ * J * F'` be the matrix of the products `⟨F_a, F'_b⟩` and `D` its leading principal minor
+of order `n`. If `q ≤ n + 1` and `T ≥ 0`, then
+
+`T T' |D|² ≤ |det Z|²`
+
+(`Matrix.mul_mul_norm_det_submatrix_castSucc_sq_le`). For `n = 0` this is the reverse
+Cauchy–Schwarz inequality `T T' ≤ |⟨z, z'⟩|²` for two vectors `z`, `z'` of norms `-T`, `-T'` in a
+space of signature `(p, 1)`.
+
+The Gram determinant of the `2n + 2` vectors `F ∪ F'` is `(-1) ^ (n + 1) * (|det Z|² - T T' |D|²)`.
+On the span of the first frame the form is `-T |c_n|² ≤ 0`, and on the vectors whose image has
+vanishing `q` coordinates it is nonnegative. These two subspaces have dimensions `n + 1` and at
+least `2n + 2 - q ≥ n + 1`, so by the count of the indices of inertia of the Gram matrix
+(`Matrix.IsHermitian.neg_one_pow_finrank_mul_re_det_nonneg`) the sign of the Gram determinant is
+`(-1) ^ (n + 1)` unless it vanishes.
+
+## Main results
+
+* `Matrix.mul_mul_norm_det_submatrix_castSucc_sq_le`: the inequality for two frames.
+* `TauCeti.Matrix.indefiniteUnitaryGroup.mul_mul_norm_det_submatrix_castSucc_sq_le`: the
+  inequality for a frame and the image of a frame under an element of `U(p, q)`.
+
+## References
+
+The statement is the sign of the function `Gr` of the big cell of `U(p, q)` relative to a Bessel
+subgroup, used in the analysis of Bessel models of discrete series. The Gram determinant identity
+it rests on is adapted from grh-lean, see `TauCeti.LinearAlgebra.Matrix.Determinant.FrameGram`.
+-/
+
+public section
+
+open Fin LieAlgebra.Orthogonal Module
+
+namespace Matrix
+
+variable {p q 𝕜 : Type*} [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q] [RCLike 𝕜]
+  {n : ℕ} {F F' : Matrix (p ⊕ q) (Fin (n + 1)) 𝕜} {T T' : ℝ}
+
+/-- **The Gram determinant of two frames in `U(p, q)`.** Let `F` and `F'` be frames of norms
+`-T` and `-T'` for the form `J` of signature `(p, q)`, with `q ≤ n + 1` and `T ≥ 0`. With
+`Z = Fᴴ * J * F'` the matrix of the products `⟨F_a, F'_b⟩` and `D` its leading principal minor of
+order `n`, `T T' |D|² ≤ |det Z|²`: the Gram determinant of `F ∪ F'`, which is
+`(-1) ^ (n + 1) * (|det Z|² - T T' |D|²)`, has the sign `(-1) ^ (n + 1)` or vanishes. -/
+theorem mul_mul_norm_det_submatrix_castSucc_sq_le (hq : Fintype.card q ≤ n + 1) (hT : 0 ≤ T)
+    (hF : Fᴴ * indefiniteDiagonal p q 𝕜 * F = single (last n) (last n) (-(T : 𝕜)))
+    (hF' : F'ᴴ * indefiniteDiagonal p q 𝕜 * F' = single (last n) (last n) (-(T' : 𝕜))) :
+    T * T' * ‖((Fᴴ * indefiniteDiagonal p q 𝕜 * F').submatrix castSucc castSucc).det‖ ^ 2 ≤
+      ‖(Fᴴ * indefiniteDiagonal p q 𝕜 * F').det‖ ^ 2 := by
+  set J := indefiniteDiagonal p q 𝕜
+  set P := fromCols F F'
+  have hG : (Pᴴ * J * P).IsHermitian :=
+    isHermitian_conjTranspose_mul_mul P isHermitian_indefiniteDiagonal
+  -- The form is nonpositive on the span `W` of the first frame, of dimension `n + 1`.
+  set E : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1)) 𝕜 := fromRows 1 0
+  have hE : Function.Injective E.mulVecLin := fun c c' h => funext fun i => by
+    simpa [E, fromRows_mulVec] using congrFun h (Sum.inl i)
+  have hW (v) (hv : v ∈ LinearMap.range E.mulVecLin) :
+      RCLike.re (star v ⬝ᵥ (Pᴴ * J * P) *ᵥ v) ≤ 0 := by
+    obtain ⟨c, rfl⟩ := hv
+    have hPE : P * E = F := by simp [P, E, fromCols_mul_fromRows]
+    rw [mulVecLin_apply, ← star_dotProduct_conjTranspose_mul_mul_mulVec,
+      show Eᴴ * (Pᴴ * J * P) * E = (P * E)ᴴ * J * (P * E) by
+        simp only [conjTranspose_mul, Matrix.mul_assoc], hPE, hF]
+    simp only [dotProduct, Pi.star_apply, RCLike.star_def, single_mulVec, neg_mul,
+      Function.update_apply, Pi.zero_apply, mul_ite, mul_neg, ← mul_assoc, mul_zero,
+      Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, map_neg, RCLike.mul_re, RCLike.conj_re,
+      RCLike.ofReal_re, RCLike.conj_im, RCLike.ofReal_im, sub_zero, RCLike.mul_im, zero_add,
+      sub_neg_eq_add, neg_add_rev, add_neg_le_iff_le_add, ge_iff_le]
+    nlinarith [mul_nonneg hT (mul_self_nonneg (RCLike.re (c (last n)))),
+      mul_nonneg hT (mul_self_nonneg (RCLike.im (c (last n))))]
+  -- The form is nonnegative on the vectors `v` whose image `P v` has vanishing `q` coordinates.
+  set K := (P.submatrix Sum.inr id).mulVecLin
+  have hW' (v) (hv : v ∈ LinearMap.ker K) : 0 ≤ RCLike.re (star v ⬝ᵥ (Pᴴ * J * P) *ᵥ v) := by
+    have h_q (j : q) : (P *ᵥ v) (Sum.inr j) = 0 := congrFun (LinearMap.mem_ker.1 hv) j
+    rw [star_dotProduct_conjTranspose_mul_mul_mulVec,
+      star_dotProduct_indefiniteDiagonal_mulVec_self, RCLike.ofReal_re]
+    simp only [h_q, norm_zero, zero_pow two_ne_zero, Finset.sum_const_zero, sub_zero]
+    positivity
+  have h_ker : 2 * (n + 1) ≤ Fintype.card q + finrank 𝕜 (LinearMap.ker K) := by
+    have h := LinearMap.finrank_range_add_finrank_ker K
+    have h_range := Submodule.finrank_le (LinearMap.range K)
+    simp only [finrank_fintype_fun_eq_card, Fintype.card_sum, Fintype.card_fin] at h h_range
+    omega
+  have h_sign := hG.neg_one_pow_finrank_mul_re_det_nonneg hW hW' (by
+    rw [LinearMap.finrank_range_of_inj hE]
+    simp only [finrank_fintype_fun_eq_card, Fintype.card_sum, Fintype.card_fin]
+    omega)
+  rw [LinearMap.finrank_range_of_inj hE, finrank_fintype_fun_eq_card, Fintype.card_fin,
+    det_gram_fromCols_of_frame isHermitian_indefiniteDiagonal hF hF'] at h_sign
+  -- The Gram determinant is `(-1) ^ (n + 1)` times the real number `|det Z|² - T T' |D|²`.
+  have h_real (z : 𝕜) : z * star z = ((‖z‖ ^ 2 : ℝ) : 𝕜) := by
+    rw [RCLike.star_def, RCLike.mul_conj, RCLike.ofReal_pow]
+  rw [h_real, h_real, show ∀ a b : ℝ, (-1 : 𝕜) ^ (n + 1) * (a - T * T' * b) =
+      (((-1) ^ (n + 1) * (a - T * T' * b) : ℝ) : 𝕜) by intro a b; push_cast; ring,
+    RCLike.ofReal_re, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul,
+    sub_nonneg] at h_sign
+  exact h_sign
+
+end Matrix
+
+namespace TauCeti.Matrix.indefiniteUnitaryGroup
+
+open _root_.Matrix
+
+variable {p q 𝕜 : Type*} [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q] [RCLike 𝕜]
+  {n : ℕ} {F F' : _root_.Matrix (p ⊕ q) (Fin (n + 1)) 𝕜} {T T' : ℝ}
+
+/-- **The Gram determinant of a frame and the image of a frame under `U(p, q)`.** Let `F` and
+`F'` be frames of norms `-T` and `-T'` for the form `J` of signature `(p, q)`, with `q ≤ n + 1`
+and `T ≥ 0`, and let `x ∈ U(p, q)`. With `Z` the matrix of the products `⟨F_a, x F'_b⟩` and `D`
+its leading principal minor of order `n`, `T T' |D|² ≤ |det Z|²`. -/
+theorem mul_mul_norm_det_submatrix_castSucc_sq_le (hq : Fintype.card q ≤ n + 1) (hT : 0 ≤ T)
+    {x : GL (p ⊕ q) 𝕜} (hx : x ∈ indefiniteUnitaryGroup p q 𝕜)
+    (hF : Fᴴ * indefiniteDiagonal p q 𝕜 * F = single (last n) (last n) (-(T : 𝕜)))
+    (hF' : F'ᴴ * indefiniteDiagonal p q 𝕜 * F' = single (last n) (last n) (-(T' : 𝕜))) :
+    T * T' *
+        ‖((Fᴴ * indefiniteDiagonal p q 𝕜 * (x.val * F')).submatrix castSucc castSucc).det‖ ^ 2 ≤
+      ‖(Fᴴ * indefiniteDiagonal p q 𝕜 * (x.val * F')).det‖ ^ 2 :=
+  _root_.Matrix.mul_mul_norm_det_submatrix_castSucc_sq_le hq hT hF (by
+    rw [conjTranspose_mul_mul_mul_of_star_mul_mul_eq (mem_unitaryGroupOf_iff.1 hx), hF'])
+
+end TauCeti.Matrix.indefiniteUnitaryGroup
