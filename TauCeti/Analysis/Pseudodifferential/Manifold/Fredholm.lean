@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.CompactPerturbation
+public import TauCeti.Analysis.Fredholm.Regularity
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Parametrix
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Sobolev
 
 /-!
-# Elliptic operators on a compact manifold are Fredholm
+# Elliptic operators on a compact manifold are Fredholm, with index independent of the choices
 
 Let `M` be a compact manifold modelled on `ℝⁿ`, and let `P` be a classical pseudodifferential
 operator of order `m` on `M` (`TauCeti.classicalPseudodifferentialOperators`) that is elliptic
@@ -31,16 +32,40 @@ extension of `Q` to `H^{s - m}(M) → H^s(M)` inverts that of `P` up to the exte
 remainders to `H^s(M)` and `H^{s - m}(M)`, and operators of negative order are compact on Sobolev
 spaces by Rellich's theorem (`TauCeti.isCompactOperator_chartSobolevExtension_of_mem`).
 
+**Independence of the Sobolev order.** Let `s ≤ t`. The same parametrix, now inverting `P` modulo
+an operator `R` of order `-N` with `t ≤ s + N`, gives elliptic regularity on the Sobolev scale: if
+`u ∈ H^s(M)` and `P u ∈ H^{t - m}(M)`, then `u = Q (P u) - R u ∈ H^t(M)`
+(`TauCeti.IsClassicalElliptic.exists_chartSobolevInclusion_eq`). The inclusions
+`H^t(M) ⊆ H^s(M)` and `H^{t - m}(M) ⊆ H^{s - m}(M)` are injective with dense range and intertwine
+the two extensions of `P`, so the abstract comparison
+`ContinuousLinearMap.IsFredholm.index_eq_of_regularity` applies: the inclusion identifies the
+kernels, an element of `H^{t - m}(M)` is in the range of `P` on `H^t(M)` exactly when it is in the
+range of `P` on `H^s(M)`, and the index of `P : H^s(M) → H^{s - m}(M)` does not depend on `s`.
+
+**Independence of the chart partitions.** The Sobolev spaces of two chart partitions are
+isomorphic through `TauCeti.chartSobolevSpaceCongr`, which transports one extension of `P` to the
+other, so the index does not depend on the partitions either.
+
 ## Main results
 
 * `TauCeti.IsClassicalElliptic.isFredholm_chartSobolevExtension`: an elliptic classical
   pseudodifferential operator of order `m` on a compact manifold is Fredholm from `H^s(M)` to
   `H^{s - m}(M)`, for every real `s`.
+* `TauCeti.IsClassicalElliptic.exists_chartSobolevInclusion_eq`: elliptic regularity, if
+  `u ∈ H^s(M)` and `P u ∈ H^{t - m}(M)` for `s ≤ t`, then `u ∈ H^t(M)`.
+* `TauCeti.IsClassicalElliptic.map_ker_chartSobolevExtension`,
+  `TauCeti.IsClassicalElliptic.comap_range_chartSobolevExtension`: the kernel and the range of
+  `P` do not depend on the Sobolev order.
+* `TauCeti.IsClassicalElliptic.index_chartSobolevExtension_eq`: the index of
+  `P : H^s(M) → H^{s - m}(M)` does not depend on `s`.
+* `TauCeti.index_chartSobolevExtension_partitions_eq_of_mem`: the index of the extension of a
+  classical pseudodifferential operator does not depend on the chart partitions.
 
 ## References
 
 * M. F. Atiyah and I. M. Singer, *The index of elliptic operators: I*, Ann. of Math. 87 (1968),
-  484–530, §6 (the Fredholm property from a two-sided parametrix).
+  484–530, §6, pp. 517–519 (the Fredholm property from a two-sided parametrix, and the
+  independence of the index from the Sobolev order).
 * M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §§4 and 8.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Springer, 1985,
   Theorem 19.2.1.
@@ -96,5 +121,135 @@ theorem IsClassicalElliptic.isFredholm_chartSobolevExtension [CompactSpace M]
     exact isCompactOperator_chartSobolevExtension_of_mem hQP hψ (by push_cast; linarith)
   · rw [hTS]
     exact isCompactOperator_chartSobolevExtension_of_mem hPQ hφ (by push_cast; linarith)
+
+/-! ### Independence of the Sobolev order and of the chart partitions -/
+
+/-- The inclusions `H^t(M) ⊆ H^s(M)` and `H^{t - m}(M) ⊆ H^{s - m}(M)` intertwine the extensions
+`H^t(M) → H^{t - m}(M)` and `H^s(M) → H^{s - m}(M)` of a classical pseudodifferential operator `P`
+of order `m`. -/
+private theorem chartSobolevExtension_chartSobolevInclusion_apply
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1) {s t : ℝ} (hst : s ≤ t)
+    (x : chartSobolevSpace hc ψ t) :
+    chartSobolevExtension hc ψ hc' φ P s (s - m) (chartSobolevInclusion hc ψ hst x) =
+      chartSobolevInclusion hc' φ (by linarith : s - m ≤ t - m)
+        (chartSobolevExtension hc ψ hc' φ P t (t - m) x) :=
+  DFunLike.congr_fun
+    (chartSobolevExtension_comp_chartSobolevInclusion_eq_chartSobolevInclusion_comp_of_mem hP hψ
+      hst (by linarith) le_rfl le_rfl) x
+
+/-- **Elliptic regularity on the Sobolev scale.** On a compact manifold, let `P` be an elliptic
+classical pseudodifferential operator of order `m`, and let `s ≤ t`. If `x ∈ H^s(M)` and the
+extension of `P` maps `x` into `H^{t - m}(M) ⊆ H^{s - m}(M)`, then `x` lies in `H^t(M) ⊆ H^s(M)`. -/
+theorem IsClassicalElliptic.exists_chartSobolevInclusion_eq [CompactSpace M]
+    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) {s t : ℝ} (hst : s ≤ t)
+    {x : chartSobolevSpace hc ψ s} {y : chartSobolevSpace hc' φ (t - m)}
+    (hxy : chartSobolevExtension hc ψ hc' φ P s (s - m) x =
+      chartSobolevInclusion hc' φ (by linarith : s - m ≤ t - m) y) :
+    ∃ x', chartSobolevInclusion hc ψ hst x' = x := by
+  -- A parametrix `Q` of order `-m` with `R = Q ∘ P - 1` of order `-N`, where `t ≤ s + N`.
+  obtain ⟨Q, hQ, -, hR⟩ := hPe.exists_comp_sub_id_mem_classicalPseudodifferentialOperators ⌈t - s⌉₊
+  have hN : t ≤ s - -(⌈t - s⌉₊ : ℝ) := by linarith [Nat.le_ceil (t - s)]
+  -- Then `x = Q (P x) - R x`, where `Q (P x) = Q y` and `R x` both lie in `H^t(M)`.
+  refine ⟨chartSobolevExtension hc' φ hc ψ Q (t - m) t y -
+    chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s t x, ?_⟩
+  have hQs := exists_norm_chartReading_apply_le (hc' := hc) (φ := ψ) hQ hφ
+    (show s ≤ s - m - -m by linarith)
+  have hQt := exists_norm_chartReading_apply_le (hc' := hc) (φ := ψ) hQ hφ
+    (show t ≤ t - m - -m by linarith)
+  have hRt := exists_norm_chartReading_apply_le (hc' := hc) (φ := ψ) hR hψ hN
+  have hRs : chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s s =
+      chartSobolevExtension hc' φ hc ψ Q (s - m) s ∘L chartSobolevExtension hc ψ hc' φ P s (s - m) -
+        1 :=
+    chartSobolevExtension_eq _ fun u ↦ by
+      simp [chartSobolevExtension_toChartSobolevSpace hQs,
+        chartSobolevExtension_toChartSobolevSpace_of_mem (hc' := hc') (φ := φ) hP hψ le_rfl]
+  -- Included into `H^s(M)`, `Q y` is `Q (P x)` and `R x` is the extension of `R` to `H^s(M)`.
+  have hQy : chartSobolevInclusion hc ψ hst (chartSobolevExtension hc' φ hc ψ Q (t - m) t y) =
+      chartSobolevExtension hc' φ hc ψ Q (s - m) s
+        (chartSobolevExtension hc ψ hc' φ P s (s - m) x) := by
+    rw [hxy, ← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.comp_apply,
+      chartSobolevInclusion_comp_chartSobolevExtension hst hQt,
+      chartSobolevExtension_comp_chartSobolevInclusion _ hQs]
+  have hRx : chartSobolevInclusion hc ψ hst
+      (chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s t x) =
+        chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s s x :=
+    DFunLike.congr_fun (chartSobolevInclusion_comp_chartSobolevExtension hst hRt) x
+  rw [map_sub, hQy, hRx, hRs]
+  simp
+
+/-- **The kernel of an elliptic operator does not depend on the Sobolev order.** On a compact
+manifold, let `P` be an elliptic classical pseudodifferential operator of order `m`, and let
+`s ≤ t`. The inclusion `H^t(M) ⊆ H^s(M)` maps the kernel of the extension `H^t(M) → H^{t - m}(M)`
+of `P` onto the kernel of its extension `H^s(M) → H^{s - m}(M)`. -/
+theorem IsClassicalElliptic.map_ker_chartSobolevExtension [CompactSpace M]
+    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) {s t : ℝ} (hst : s ≤ t) :
+    (LinearMap.ker (chartSobolevExtension hc ψ hc' φ P t (t - m)).toLinearMap).map
+        (chartSobolevInclusion hc ψ hst).toLinearMap =
+      LinearMap.ker (chartSobolevExtension hc ψ hc' φ P s (s - m)).toLinearMap :=
+  LinearMap.map_ker_eq_ker_of_regularity
+    (chartSobolevExtension_chartSobolevInclusion_apply hP hψ hst)
+    (chartSobolevInclusion_injective hc' φ _)
+    fun _ _ h ↦ hPe.exists_chartSobolevInclusion_eq hP hψ hφ hst h
+
+/-- **Solvability does not depend on the Sobolev order.** On a compact manifold, let `P` be an
+elliptic classical pseudodifferential operator of order `m`, and let `s ≤ t`. An element `y` of
+`H^{t - m}(M)` is `P u` for some `u ∈ H^t(M)` exactly when it is `P u` for some `u ∈ H^s(M)`. -/
+theorem IsClassicalElliptic.comap_range_chartSobolevExtension [CompactSpace M]
+    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) {s t : ℝ} (hst : s ≤ t) :
+    (LinearMap.range (chartSobolevExtension hc ψ hc' φ P s (s - m)).toLinearMap).comap
+        (chartSobolevInclusion hc' φ (by linarith : s - m ≤ t - m)).toLinearMap =
+      LinearMap.range (chartSobolevExtension hc ψ hc' φ P t (t - m)).toLinearMap :=
+  LinearMap.comap_range_eq_range_of_regularity
+    (chartSobolevExtension_chartSobolevInclusion_apply hP hψ hst)
+    (chartSobolevInclusion_injective hc' φ _)
+    fun _ _ h ↦ hPe.exists_chartSobolevInclusion_eq hP hψ hφ hst h
+
+/-- **The index of an elliptic operator does not depend on the Sobolev order.** On a compact
+manifold, the extensions `H^s(M) → H^{s - m}(M)` and `H^t(M) → H^{t - m}(M)` of an elliptic
+classical pseudodifferential operator `P` of order `m` have the same index, for all real `s` and
+`t`. -/
+theorem IsClassicalElliptic.index_chartSobolevExtension_eq [CompactSpace M]
+    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s t : ℝ) :
+    (chartSobolevExtension hc ψ hc' φ P t (t - m)).index =
+      (chartSobolevExtension hc ψ hc' φ P s (s - m)).index := by
+  wlog hst : s ≤ t generalizing s t
+  · exact (this t s (le_of_not_ge hst)).symm
+  exact (hPe.isFredholm_chartSobolevExtension hP hψ hφ s).index_eq_of_regularity
+    (chartSobolevExtension_chartSobolevInclusion_apply hP hψ hst)
+    (chartSobolevInclusion_injective hc ψ hst) (chartSobolevInclusion_injective hc' φ _)
+    (denseRange_chartSobolevInclusion hc' φ _)
+    fun _ _ h ↦ hPe.exists_chartSobolevInclusion_eq hP hψ hφ hst h
+
+/-- **The index does not depend on the chart partitions.** Let `P` be a classical pseudodifferential
+operator of order `m` and `t ≤ s - m`. The extensions `H^s(M) → H^t(M)` of `P` between the Sobolev
+spaces of two pairs of chart partitions have the same index. -/
+theorem index_chartSobolevExtension_partitions_eq_of_mem {ι₂ κ₂ : Type*} [Fintype ι₂]
+    [Fintype κ₂]
+    {c₂ : ι₂ → OpenPartialHomeomorph M (CoordinateSpace n)}
+    {hc₂ : ∀ i, c₂ i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
+    {ψ₂ : ∀ i, 𝓓(⟨(c₂ i).target, (c₂ i).open_target⟩, ℝ)}
+    {c₂' : κ₂ → OpenPartialHomeomorph M (CoordinateSpace n)}
+    {hc₂' : ∀ j, c₂' j ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
+    {φ₂ : ∀ j, 𝓓(⟨(c₂' j).target, (c₂' j).open_target⟩, ℝ)}
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hψ₂ : ∀ x, ∑ i, (c₂ i).cutoffPullback (hc₂ i) (ψ₂ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1)
+    (hφ₂ : ∀ x, ∑ j, (c₂' j).cutoffPullback (hc₂' j) (φ₂ j) 1 x = 1) {s t : ℝ}
+    (ht : t ≤ s - m) :
+    (chartSobolevExtension hc₂ ψ₂ hc₂' φ₂ P s t).index =
+      (chartSobolevExtension hc ψ hc' φ P s t).index := by
+  rw [chartSobolevExtension_eq_chartSobolevSpaceCongr_comp hψ hψ₂ hφ hφ₂
+    (exists_norm_chartReading_apply_le hP hψ ht)]
+  simp
 
 end TauCeti
