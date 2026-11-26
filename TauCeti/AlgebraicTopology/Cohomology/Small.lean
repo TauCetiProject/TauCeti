@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Relative
-import TauCeti.Data.Set.Lattice
 
 /-!
 # Small-chain comparisons in singular cohomology
@@ -92,31 +91,17 @@ open TauCeti.ChainComplex
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   (k : Type*) [Ring k] [Linear k C] (M : C) {X : TopCat.{w}}
 
-/-- The singular simplices of `X` lying in `U` or in `V` compute the cohomology of `U ∪ V`, by the
-small-chain theorem for the cover of `U ∪ V` by `U` and `V`, which only needs to be open in
-`U ∪ V`. -/
+/-- The singular simplices of `X` lying in `U` or in `V` compute the cohomology of `U ∪ V`, since
+`TopCat.smallSingularSubcomplexToUnion` induces a chain homotopy equivalence when `U` and `V` are
+open in `U ∪ V`. -/
 lemma quasiIso_cochainComplexMap_smallSingularSubcomplexToUnion (U V : Set X)
     (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) :
     QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
       (smallSingularSubcomplexToUnion U V)) := by
-  obtain ⟨e, he⟩ := exists_iso_comp_smallSingularSubcomplexToUnion U V
-  have hcover : ∀ i, IsOpen (ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i) := by
-    intro i
-    fin_cases i
-    exacts [hU, hV]
-  have hcov : ⋃ i, ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i = Set.univ := by
-    rw [← Set.preimage_iUnion, Set.iUnion_vecCons_pair]
-    exact Set.eq_univ_of_forall fun x ↦ x.property
-  -- Restricting cochains to the small simplices of `U ∪ V` is an isomorphism on cohomology.
-  have hq : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M)
-      ((of ↥(U ∪ V)).smallSingularSubcomplex
-        (fun i ↦ ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i)).ι) :=
-    TauCeti.quasiIso_cochainComplexMap_smallSingularSubcomplex_ι R k M _ hcover hcov
-  rw [← he, SSet.cochainComplexMap_comp] at hq
-  have : IsIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) e.hom) :=
-    ⟨SSet.cochainComplexMap e.inv, by simp [← SSet.cochainComplexMap_comp],
-      by simp [← SSet.cochainComplexMap_comp]⟩
-  exact quasiIso_of_comp_right _ (SSet.cochainComplexMap e.hom)
+  have := ((smallSingularSubcomplexToUnionChainHomotopyEquiv R U V hU hV).linearYonedaFunctorMap k
+    M).quasiIso_hom
+  rwa [HomotopyEquiv.linearYonedaFunctorMap_hom,
+    smallSingularSubcomplexToUnionChainHomotopyEquiv_hom] at this
 
 /-- The cohomology of `X` relative to its singular simplices lying in `U` or in `V` is that of
 `(X, U ∪ V)`, by the small-chain theorem for the cover of `U ∪ V` by `U` and `V`, which only needs

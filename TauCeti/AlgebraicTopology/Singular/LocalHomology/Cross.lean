@@ -22,7 +22,7 @@ For `x₁ : V₁` and `x₂ : V₂`, pushing `TopCat.singularRelativeHomologyCro
 `Hₚ(V₁, V₁ ∖ {x₁}; R) ⊗ H_q(V₂, V₂ ∖ {x₂}; S) ⟶ Hₙ(V₁ × V₂, (V₁ × V₂) ∖ {(x₁, x₂)}; T)`
 (`p + q = n`), paired via `TopPair.singularKronecker` with `TauCeti.complSingletonPairCross` in
 `TauCeti.AlgebraicTopology.Cohomology.Local.Cross`: when `{x₁}ᶜ` and `{x₂}ᶜ` are open (in
-particular in `T₁` spaces) and `v ≫ u = 𝟙 (R ⊗ S)`, the Kronecker pairing is multiplicative
+particular in `T₁` spaces) and `v ≫ u = φ ⊗ₘ ψ`, the Kronecker pairing is multiplicative
 (`TauCeti.complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross`).
 Kronecker evaluation on `TauCeti.complSingletonPairHomologyCross` proves generator preservation and
 reflection for local cohomology cross products over arbitrary commutative rings without flatness or

@@ -36,7 +36,9 @@ For a subspace `A ⊆ U i` of a family `U : ι → Set X`, `TopCat.toSmallPair` 
 singular pairs `(X, A) ⟶ (X, X.smallSingularSubcomplex U)`. For two subsets `U` and `V` of `X`,
 `TopCat.smallSingularSubcomplexToUnion` and `TopCat.smallSingularSubcomplexPairToUnion` compare the
 singular simplices lying in `U` or in `V` with `U ∪ V` and `(X, U ∪ V)`, naturally along
-`TopCat.smallSingularSubcomplexPairMap`.
+`TopCat.smallSingularSubcomplexPairMap`. When `U` and `V` are open in `U ∪ V`,
+`TopCat.smallSingularSubcomplexToUnionChainHomotopyEquiv` exhibits the induced chain map as a
+chain homotopy equivalence.
 
 ## References
 
@@ -125,8 +127,7 @@ namespace TopCat
 
 section Union
 
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
-  {X : TopCat.{w}}
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] {X : TopCat.{w}}
 
 /-- The map of singular pairs `(X, A) ⟶ (X, X.smallSingularSubcomplex U)` for `A` contained in
 `U i`, with the identity on the singular simplicial set of `X`. -/
@@ -144,6 +145,8 @@ lemma toSmallPair_left {ι : Type*} (U : ι → Set X) {A : Set X} {i : ι} (h :
 lemma toSmallPair_right {ι : Type*} (U : ι → Set X) {A : Set X} {i : ι} (h : A ⊆ U i) :
     (toSmallPair U h).right = 𝟙 (toSSet.obj X) :=
   (rfl)
+
+section
 
 variable (U V : Set X)
 
@@ -221,6 +224,18 @@ lemma exists_iso_comp_smallSingularSubcomplexToUnion :
   rw [asIso_hom, ← cancel_mono f, Category.assoc, smallSingularSubcomplexToUnion_comp,
     SSet.Subcomplex.fromPreimage_ι]
 
+private lemma isOpen_preimage_subtypeVal_pair
+    (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V)))
+    (i : Fin 2) :
+    IsOpen (ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i) := by
+  fin_cases i
+  exacts [hU, hV]
+
+private lemma iUnion_preimage_subtypeVal_pair :
+    ⋃ i, ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i = Set.univ := by
+  rw [← Set.preimage_iUnion, Set.iUnion_vecCons_pair]
+  exact Set.eq_univ_of_forall fun x ↦ x.property
+
 lemma toSmallSingularSubcomplex_comp_smallSingularSubcomplexToUnion {A : Set X} {i : Fin 2}
     (h : A ⊆ ![U, V] i) (h' : A ⊆ U ∪ V) :
     toSmallSingularSubcomplex ![U, V] h ≫ smallSingularSubcomplexToUnion U V =
@@ -248,6 +263,22 @@ lemma smallSingularSubcomplexPairToUnion_right :
     (smallSingularSubcomplexPairToUnion U V).right = 𝟙 (toSSet.obj X) :=
   (rfl)
 
+lemma toSmallPair_comp_smallSingularSubcomplexPairToUnion {A : Set X} {i : Fin 2}
+    (h : A ⊆ ![U, V] i) (h' : A ⊆ U ∪ V) :
+    toSmallPair ![U, V] h ≫ smallSingularSubcomplexPairToUnion U V =
+      TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) h') := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
+  · rw [MorphismProperty.Comma.comp_left, TopPair.toSSetPair_map_ofSubsetMap_id_left]
+    exact toSmallSingularSubcomplex_comp_smallSingularSubcomplexToUnion U V h h'
+  · rw [MorphismProperty.Comma.comp_right, TopPair.toSSetPair_map_ofSubsetMap_id_right]
+    exact Category.comp_id _
+
+end
+
+section Preadditive
+
+variable [Preadditive C] (R : C) (U V : Set X)
+
 /-- The chain map induced by the ambient component of `TopCat.smallSingularSubcomplexPairToUnion`
 is the identity. Not `@[simp]`: `TopCat.smallSingularSubcomplexPairToUnion_right` already
 rewrites its left-hand side. -/
@@ -255,6 +286,53 @@ lemma chainComplexMap_smallSingularSubcomplexPairToUnion_right :
     SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).right R = 𝟙 _ :=
   (congrArg (SSet.chainComplexMap · R) (smallSingularSubcomplexPairToUnion_right U V)).trans
     (CategoryTheory.Functor.map_id _ _)
+
+/-- When `U` and `V` are open in `U ∪ V`, the chain map induced by
+`TopCat.smallSingularSubcomplexToUnion U V` is a chain homotopy equivalence. -/
+def smallSingularSubcomplexToUnionChainHomotopyEquiv
+    (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) :
+    _root_.HomotopyEquiv ((X.smallSingularSubcomplex ![U, V] : SSet).chainComplex R)
+      ((toSSet.obj (of ↥(U ∪ V))).chainComplex R) :=
+  let h := exists_iso_comp_smallSingularSubcomplexToUnion U V
+  let e := h.choose
+  have he : e.hom ≫ smallSingularSubcomplexToUnion U V = _ := h.choose_spec
+  let eChain : ((X.smallSingularSubcomplex ![U, V] : SSet).chainComplex R) ≅
+      (((of ↥(U ∪ V)).smallSingularSubcomplex
+        (fun i ↦ ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i) : SSet).chainComplex
+          R) :=
+    ((SSet.chainComplexFunctor C).obj R).mapIso e.symm
+  let E := (_root_.HomotopyEquiv.ofIso eChain).trans
+    (TauCeti.smallSingularChainHomotopyEquiv R
+      (fun i ↦ ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i)
+      (isOpen_preimage_subtypeVal_pair U V hU hV) (iUnion_preimage_subtypeVal_pair U V))
+  have hhom : SSet.chainComplexMap (smallSingularSubcomplexToUnion U V) R = E.hom := by
+    change SSet.chainComplexMap (smallSingularSubcomplexToUnion U V) R =
+      SSet.chainComplexMap e.inv R ≫
+        (TauCeti.smallSingularChainHomotopyEquiv R _ _ _).hom
+    rw [TauCeti.smallSingularChainHomotopyEquiv_hom, ← he,
+      ← ((SSet.chainComplexFunctor C).obj R).map_comp]
+    simp
+  { hom := SSet.chainComplexMap (smallSingularSubcomplexToUnion U V) R
+    inv := E.inv
+    homotopyHomInvId :=
+      (_root_.Homotopy.ofEq (congrArg (· ≫ E.inv) hhom)).trans E.homotopyHomInvId
+    homotopyInvHomId :=
+      (_root_.Homotopy.ofEq (congrArg (E.inv ≫ ·) hhom)).trans E.homotopyInvHomId }
+
+/-- The forward map of `TopCat.smallSingularSubcomplexToUnionChainHomotopyEquiv` is the chain map
+induced by `TopCat.smallSingularSubcomplexToUnion`. -/
+@[simp]
+lemma smallSingularSubcomplexToUnionChainHomotopyEquiv_hom
+    (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) :
+    (smallSingularSubcomplexToUnionChainHomotopyEquiv R U V hU hV).hom =
+      SSet.chainComplexMap (smallSingularSubcomplexToUnion U V) R :=
+  (rfl)
+
+end Preadditive
+
+section Abelian
+
+variable [Abelian C] (R : C) (U V : Set X)
 
 /-- The quotient map from the singular chains of `X` to its chains relative to the singular
 simplices lying in `U` or in `V`, followed by `TopCat.smallSingularSubcomplexPairToUnion`, is the
@@ -267,34 +345,13 @@ lemma chainComplexπ_smallSingularSubcomplexPairToUnion :
   rw [← SSetPair.chainComplexπ_naturality, chainComplexMap_smallSingularSubcomplexPairToUnion_right]
   exact Category.id_comp _
 
-lemma toSmallPair_comp_smallSingularSubcomplexPairToUnion {A : Set X} {i : Fin 2}
-    (h : A ⊆ ![U, V] i) (h' : A ⊆ U ∪ V) :
-    toSmallPair ![U, V] h ≫ smallSingularSubcomplexPairToUnion U V =
-      TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) h') := by
-  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
-  · rw [MorphismProperty.Comma.comp_left, TopPair.toSSetPair_map_ofSubsetMap_id_left]
-    exact toSmallSingularSubcomplex_comp_smallSingularSubcomplexToUnion U V h h'
-  · rw [MorphismProperty.Comma.comp_right, TopPair.toSSetPair_map_ofSubsetMap_id_right]
-    exact Category.comp_id _
-
 /-- The singular simplices of `X` lying in `U` or in `V` compute the homology of `U ∪ V`, by the
 small-chain theorem for the cover of `U ∪ V` by `U` and `V`, which only needs to be open in
 `U ∪ V`. -/
 lemma quasiIso_chainComplexMap_smallSingularSubcomplexToUnion
     (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) :
-    QuasiIso (SSet.chainComplexMap (smallSingularSubcomplexToUnion U V) R) := by
-  obtain ⟨e, he⟩ := exists_iso_comp_smallSingularSubcomplexToUnion U V
-  have hq := TauCeti.quasiIso_chainComplexMap_smallSingularSubcomplex_ι R
-    (fun i ↦ ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i)
-    (fun i ↦ by fin_cases i; exacts [hU, hV])
-    (by
-      rw [← Set.preimage_iUnion, Set.iUnion_vecCons_pair]
-      exact Set.eq_univ_of_forall fun x ↦ x.property)
-  have hcomp : SSet.chainComplexMap (e.hom ≫ smallSingularSubcomplexToUnion U V) R =
-      SSet.chainComplexMap e.hom R ≫ SSet.chainComplexMap (smallSingularSubcomplexToUnion U V) R :=
-    Functor.map_comp _ _ _
-  rw [← he, hcomp] at hq
-  exact quasiIso_of_comp_left (SSet.chainComplexMap e.hom R) _
+    QuasiIso (SSet.chainComplexMap (smallSingularSubcomplexToUnion U V) R) :=
+  (smallSingularSubcomplexToUnionChainHomotopyEquiv R U V hU hV).quasiIso_hom
 
 /-- For `U` and `V` open in `U ∪ V`, the quotient map from the relative chains of `X` modulo its
 singular simplices lying in `U` or in `V` to the relative chains of `(X, U ∪ V)` (killing all
@@ -318,6 +375,8 @@ lemma isIso_homologyMap_smallSingularSubcomplexPairToUnion
     IsIso (SSetPair.homologyMap (smallSingularSubcomplexPairToUnion U V) R n) := by
   have := quasiIso_chainComplexMap_smallSingularSubcomplexPairToUnion R U V hU hV
   infer_instance
+
+end Abelian
 
 section Naturality
 

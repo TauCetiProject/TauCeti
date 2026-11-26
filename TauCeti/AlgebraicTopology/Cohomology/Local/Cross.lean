@@ -24,10 +24,15 @@ projections:
 (`TauCeti.complSingletonPairCross`). It is natural in singleton-complement maps
 (`TauCeti.complSingletonPairCross_naturality`) and continuous linear equivalences at `0`
 (`ContinuousLinearEquiv.complSingletonPairCross_singularCohomologyMap_complZeroPairIso_hom`), and
-when `v ≫ u = 𝟙 (R ⊗ S)` it pairs multiplicatively with `TauCeti.complSingletonPairHomologyCross`
-(`TauCeti.complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross`). At
-chart points `xᵢ ∈ φᵢ.source` in `T₁` spaces `V₁`, `V₂` with `R₁, R₂, M₁, M₂ ≃ₗ[k] k` and
-isomorphisms `u, μ`, it produces a top-degree generator iff both factors generate.
+when `v ≫ u = φ ⊗ₘ ψ` (`v : R' ⊗ S' ⟶ T`, `u : T ⟶ R ⊗ S`, `φ : R' ⟶ R`, `ψ : S' ⟶ S`) it pairs
+multiplicatively with `TauCeti.complSingletonPairHomologyCross`
+(`TauCeti.complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross`). For
+open partial homeomorphisms `φ₁ : OpenPartialHomeomorph V₁ E₁` and
+`φ₂ : OpenPartialHomeomorph V₂ E₂` from `T₁` spaces `V₁`, `V₂` into finite-dimensional real normed
+spaces `E₁`, `E₂`, at chart points `xᵢ ∈ φᵢ.source` with `R₁, R₂, M₁, M₂ ≃ₗ[k] k`, isomorphisms
+`u, μ`, and input classes in the chart-target dimensions `Module.finrank ℝ E₁` and
+`Module.finrank ℝ E₂`, it produces a generator in degree
+`n = Module.finrank ℝ E₁ + Module.finrank ℝ E₂` iff both factors generate.
 
 ## Main definitions
 
@@ -39,8 +44,7 @@ isomorphisms `u, μ`, it produces a top-degree generator iff both factors genera
   `ContinuousLinearEquiv.complSingletonPairCross_singularCohomologyMap_complZeroPairIso_hom`:
   naturality.
 * `TauCeti.complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross`:
-  Kronecker multiplicativity `⟨g₁ × g₂, z₁ × z₂⟩ = μ (⟨g₁, z₁⟩ ⊗ ⟨g₂, z₂⟩)` when
-  `v ≫ u = 𝟙 (R ⊗ S)`.
+  Kronecker multiplicativity when `v ≫ u = φ ⊗ₘ ψ`.
 * Generator preservation and reflection:
 `span_singleton_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_openPartialHomeomorph_of_isIso`
   and its corollaries
@@ -139,27 +143,27 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [Monoid
   [MonoidalPreadditive C]
   [∀ (X : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft X)]
   [∀ (X : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight X)]
-  {R S T M N L : C} (k : Type*) [CommRing k] [Linear k C] [MonoidalLinear k C]
+  {R' S' R S T M N L : C} (k : Type*) [CommRing k] [Linear k C] [MonoidalLinear k C]
 
 private lemma complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross_eq
     {V₁ V₂ : Type w} [TopologicalSpace V₁] [TopologicalSpace V₂] (x₁ : V₁) (x₂ : V₂)
-    {v : R ⊗ S ⟶ T} {u : T ⟶ R ⊗ S} (μ : M ⊗ N ⟶ L)
+    {v : R' ⊗ S' ⟶ T} {u : T ⟶ R ⊗ S} (μ : M ⊗ N ⟶ L)
     {p q p' q' n : ℕ} (h : p + q = n) (h' : p' + q' = n)
     (hx₁ : IsOpen ({x₁}ᶜ : Set V₁)) (hx₂ : IsOpen ({x₂}ᶜ : Set V₂))
     [PreservesColimitsOfShape WalkingParallelPair
       (tensorLeft (((TopPair.ofSubset ({x₁}ᶜ : Set (TopCat.of V₁))).singularChainComplex
-        R).homology p))]
+        R').homology p))]
     [PreservesColimitsOfShape WalkingParallelPair
       (tensorRight (((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularChainComplex
-        S).cycles q))]
+        S').cycles q))]
     [PreservesColimitsOfShape WalkingParallelPair
-      (tensorRight (((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularChainComplex S).X
+      (tensorRight (((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularChainComplex S').X
         ((ComplexShape.down ℕ).prev q)))]
     (g₁ : (TopPair.ofSubset (X := TopCat.of V₁) ({x₁}ᶜ : Set V₁)).singularCohomology R k M p')
     (g₂ : (TopPair.ofSubset (X := TopCat.of V₂) ({x₂}ᶜ : Set V₂)).singularCohomology S k N q')
-    {rhs : (TopPair.ofSubset ({x₁}ᶜ : Set (TopCat.of V₁))).singularHomology R p ⊗
-        (TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularHomology S q ⟶ L}
-    (hrhs : TopCat.singularRelativeHomologyCross (TopCat.of V₁) (TopCat.of V₂) R S
+    {rhs : (TopPair.ofSubset ({x₁}ᶜ : Set (TopCat.of V₁))).singularHomology R' p ⊗
+        (TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularHomology S' q ⟶ L}
+    (hrhs : TopCat.singularRelativeHomologyCross (TopCat.of V₁) (TopCat.of V₂) R' S'
           ({x₁}ᶜ : Set (TopCat.of V₁)) ({x₂}ᶜ : Set (TopCat.of V₂)) p q n h ≫
         (TopPair.ofSubset (fst (TopCat.of V₁) (TopCat.of V₂) ⁻¹' ({x₁}ᶜ : Set V₁) ∪
           snd (TopCat.of V₁) (TopCat.of V₂) ⁻¹'
@@ -183,14 +187,25 @@ private lemma complSingletonPairHomologyCross_comp_singularKronecker_complSingle
     TopCat.ofHom_fst, TopCat.ofHom_snd]
   exact (Category.assoc _ _ _).trans ((whisker_eq _ (Category.assoc _ _ _)).trans hrhs)
 
-/-- **Kronecker multiplicativity of local cross products**: when `v ≫ u = 𝟙 (R ⊗ S)` and `{x₁}ᶜ`,
-`{x₂}ᶜ` are open, evaluating `complSingletonPairCross` via `TopPair.singularKronecker` on
-`complSingletonPairHomologyCross` gives the tensor product of the relative Kronecker evaluations
-followed by `μ`. -/
+/-- **Kronecker multiplicativity of local cross products**: when `v : R' ⊗ S' ⟶ T` and
+`u : T ⟶ R ⊗ S` satisfy `v ≫ u = φ ⊗ₘ ψ` (`φ : R' ⟶ R`, `ψ : S' ⟶ S`) and `{x₁}ᶜ`, `{x₂}ᶜ` are
+open, evaluating `complSingletonPairCross` via `TopPair.singularKronecker` on
+`complSingletonPairHomologyCross` precomposes the factor Kronecker evaluations with the homology
+coefficient maps induced by `φ` and `ψ` and composes with `μ`. -/
 theorem complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross
     {V₁ V₂ : Type w} [TopologicalSpace V₁] [TopologicalSpace V₂] (x₁ : V₁) (x₂ : V₂)
-    {v : R ⊗ S ⟶ T} {u : T ⟶ R ⊗ S} (hu : v ≫ u = 𝟙 (R ⊗ S)) (μ : M ⊗ N ⟶ L)
-    (p q n : ℕ) (h : p + q = n) (hx₁ : IsOpen ({x₁}ᶜ : Set V₁)) (hx₂ : IsOpen ({x₂}ᶜ : Set V₂))
+    {φ : R' ⟶ R} {ψ : S' ⟶ S} {v : R' ⊗ S' ⟶ T} {u : T ⟶ R ⊗ S} (hu : v ≫ u = φ ⊗ₘ ψ)
+    (μ : M ⊗ N ⟶ L) (p q n : ℕ) (h : p + q = n) (hx₁ : IsOpen ({x₁}ᶜ : Set V₁))
+    (hx₂ : IsOpen ({x₂}ᶜ : Set V₂))
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorLeft (((TopPair.ofSubset ({x₁}ᶜ : Set (TopCat.of V₁))).singularChainComplex
+        R').homology p))]
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorRight (((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularChainComplex
+        S').cycles q))]
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorRight (((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularChainComplex S').X
+        ((ComplexShape.down ℕ).prev q)))]
     [PreservesColimitsOfShape WalkingParallelPair
       (tensorLeft (((TopPair.ofSubset ({x₁}ᶜ : Set (TopCat.of V₁))).singularChainComplex
         R).homology p))]
@@ -205,9 +220,12 @@ theorem complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPai
     complSingletonPairHomologyCross x₁ x₂ v p q n h ≫
         (TopPair.ofSubset ({(x₁, x₂)}ᶜ : Set (TopCat.of (V₁ × V₂)))).singularKronecker
           (R := T) (M := L) k n (complSingletonPairCross k x₁ x₂ u μ p q n h hx₁ hx₂ g₁ g₂) =
-      ((TopPair.ofSubset ({x₁}ᶜ : Set (TopCat.of V₁))).singularKronecker (R := R) (M := M) k p g₁ ⊗ₘ
-        (TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularKronecker (R := S) (M := N) k q
-          g₂) ≫ μ := by
+      (((TopPair.ofSubset ({x₁}ᶜ : Set (TopCat.of V₁))).singularHomologyCoefficientMap φ p ≫
+          (TopPair.ofSubset ({x₁}ᶜ : Set (TopCat.of V₁))).singularKronecker (R := R) (M := M) k p
+            g₁) ⊗ₘ
+        ((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularHomologyCoefficientMap ψ q ≫
+          (TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularKronecker (R := S) (M := N) k q
+            g₂)) ≫ μ := by
   refine complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross_eq
     k x₁ x₂ μ h h hx₁ hx₂ g₁ g₂ ?_
   rw [TopPair.singularHomologyCoefficientMap_def]
@@ -216,14 +234,23 @@ theorem complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPai
     (Set.compl_singleton_prodMk_eq_union x₁ x₂).subset
     (Set.compl_singleton_prodMk_eq_union x₁ x₂).superset hu μ p q n h g₁ g₂
 
-/-- **Off-diagonal vanishing for local cross products**: when `p ≠ p'`, `v ≫ u = 𝟙 (R ⊗ S)`, and
+/-- **Off-diagonal vanishing for local cross products**: when `p ≠ p'`, `v ≫ u = φ ⊗ₘ ψ`, and
 `{x₁}ᶜ`, `{x₂}ᶜ` are open, `complSingletonPairCross` in bidegree `(p', q')` evaluates to zero under
 `TopPair.singularKronecker` on `complSingletonPairHomologyCross` in bidegree `(p, q)`. -/
 theorem complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross_of_ne
     {V₁ V₂ : Type w} [TopologicalSpace V₁] [TopologicalSpace V₂] (x₁ : V₁) (x₂ : V₂)
-    {v : R ⊗ S ⟶ T} {u : T ⟶ R ⊗ S} (hu : v ≫ u = 𝟙 (R ⊗ S)) (μ : M ⊗ N ⟶ L)
-    {p q p' q' n : ℕ} (h : p + q = n) (h' : p' + q' = n) (hp : p ≠ p')
+    {φ : R' ⟶ R} {ψ : S' ⟶ S} {v : R' ⊗ S' ⟶ T} {u : T ⟶ R ⊗ S} (hu : v ≫ u = φ ⊗ₘ ψ)
+    (μ : M ⊗ N ⟶ L) {p q p' q' n : ℕ} (h : p + q = n) (h' : p' + q' = n) (hp : p ≠ p')
     (hx₁ : IsOpen ({x₁}ᶜ : Set V₁)) (hx₂ : IsOpen ({x₂}ᶜ : Set V₂))
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorLeft (((TopPair.ofSubset ({x₁}ᶜ : Set (TopCat.of V₁))).singularChainComplex
+        R').homology p))]
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorRight (((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularChainComplex
+        S').cycles q))]
+    [PreservesColimitsOfShape WalkingParallelPair
+      (tensorRight (((TopPair.ofSubset ({x₂}ᶜ : Set (TopCat.of V₂))).singularChainComplex S').X
+        ((ComplexShape.down ℕ).prev q)))]
     [PreservesColimitsOfShape WalkingParallelPair
       (tensorLeft (((TopPair.ofSubset ({x₁}ᶜ : Set (TopCat.of V₁))).singularChainComplex
         R).homology p))]
@@ -293,11 +320,12 @@ private lemma span_singleton_complSingletonPairCross_symm_one_eq_top
       (Module.finrank ℝ (E₁ × E₂)) g₀).hom z = μ.hom (eM₁.symm 1 ⊗ₜ[k] eM₂.symm 1) := by
     have hk := congrArg (fun f ↦ f.hom (z₁ ⊗ₜ[k] z₂))
       (complSingletonPairHomologyCross_comp_singularKronecker_complSingletonPairCross k x₁ x₂
-        (IsIso.inv_hom_id u) μ _ _ _ Module.finrank_prod.symm
-        isOpen_compl_singleton isOpen_compl_singleton
+        ((IsIso.inv_hom_id u).trans (MonoidalCategory.id_tensorHom_id R₁ R₂).symm) μ _ _ _
+        Module.finrank_prod.symm isOpen_compl_singleton isOpen_compl_singleton
         ((φ₁.singularCohomologyComplSingletonFinrankEquivOfLinearEquiv hx₁ eR₁ eM₁).symm 1)
         ((φ₂.singularCohomologyComplSingletonFinrankEquivOfLinearEquiv hx₂ eR₂ eM₂).symm 1))
-    simp only [z₁, z₂, ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_tensorHom] at hk
+    simp only [z₁, z₂, TopPair.singularHomologyCoefficientMap_id, Category.id_comp,
+      ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_tensorHom] at hk
     open OpenPartialHomeomorph in
     rw [TensorProduct.map_tmul,
       singularKronecker_singularCohomologyComplSingletonFinrankEquivOfLinearEquiv_symm,
@@ -315,7 +343,11 @@ private lemma span_singleton_complSingletonPairCross_symm_one_eq_top
   simp [vM, hinv]
 
 /-- **Local cross products preserve and reflect generators at chart points in `T₁` spaces** for
-`R₁, R₂, M₁, M₂ ≃ₗ[k] k` and isomorphism pairings `u : R₃ ⟶ R₁ ⊗ R₂`, `μ : M₁ ⊗ M₂ ⟶ M₃`. -/
+open partial homeomorphisms `φ₁ : OpenPartialHomeomorph V₁ E₁`,
+`φ₂ : OpenPartialHomeomorph V₂ E₂` into finite-dimensional real normed spaces `E₁`, `E₂`, with
+input classes in the chart-target dimensions `Module.finrank ℝ E₁` and `Module.finrank ℝ E₂`
+(summing to `n`), equivalences `R₁, R₂, M₁, M₂ ≃ₗ[k] k`, and isomorphism pairings
+`u : R₃ ⟶ R₁ ⊗ R₂`, `μ : M₁ ⊗ M₂ ⟶ M₃`. -/
 theorem
   span_singleton_complSingletonPairCross_eq_top_iff_of_linearEquiv_of_openPartialHomeomorph_of_isIso
     {k : Type w} [CommRing k]

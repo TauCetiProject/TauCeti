@@ -14,10 +14,12 @@ import TauCeti.CategoryTheory.Monoidal.Category
 # The relative Eilenberg–Zilber theorem for singular chains
 
 For topological spaces `X` and `Y`, subsets `A ⊆ X` and `B ⊆ Y`, and coefficient objects `R` and
-`S` in an abelian monoidal category `C`, let `C(X × Y; fst⁻¹(A) + snd⁻¹(B); R ⊗ S)` denote the
-quotient of `C(X × Y; R ⊗ S)` modulo singular simplices lying wholly in `A × Y` or wholly in
-`X × B` (the chain complex of `(X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]`).
-The relative Alexander–Whitney map
+`S` in an abelian monoidal preadditive category `C` with `w`-indexed coproducts whose tensor
+functors `tensorLeft` and `tensorRight` preserve `w`-indexed discrete colimits, let
+`C(X × Y; fst⁻¹(A) + snd⁻¹(B); R ⊗ S)` denote the quotient of `C(X × Y; R ⊗ S)` modulo singular
+simplices lying wholly in `A × Y` or wholly in `X × B` (the relative chain complex of the pair
+`((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair`). The relative
+Alexander–Whitney map
 `TopCat.relativeAlexanderWhitney X Y A B R S :
   C(X × Y; fst⁻¹(A) + snd⁻¹(B); R ⊗ S) ⟶ C(X, A; R) ⊗ C(Y, B; S)`
 and the relative shuffle map `TopCat.relativeShuffle X Y A B R S` form a chain homotopy
@@ -66,6 +68,20 @@ namespace TopCat
 attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
 attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 
+section
+
+variable {C : Type u} [Category.{v} C] [Preadditive C]
+
+private lemma comp_homotopy_hom_comp_eq_zero {K' K Z : ChainComplex C ℕ}
+    {f : K' ⟶ K} {π : K ⟶ Z} {φ₁ ψ₁ : K' ⟶ K'} {φ₂ ψ₂ : K ⟶ K}
+    {H₁ : _root_.Homotopy φ₁ ψ₁} {H₂ : _root_.Homotopy φ₂ ψ₂} {i j : ℕ}
+    (hnat : f.f i ≫ H₂.hom i j = H₁.hom i j ≫ f.f j) (hp : f ≫ π = 0) :
+    f.f i ≫ H₂.hom i j ≫ π.f j = 0 := by
+  rw [← Category.assoc, hnat, Category.assoc, ← HomologicalComplex.comp_f, hp,
+    HomologicalComplex.zero_f, comp_zero]
+
+end
+
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C]
   [MonoidalCategory C] [MonoidalPreadditive C]
   [∀ (T : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft T)]
@@ -77,9 +93,9 @@ private lemma tensorHom_f_comp_shuffleAlexanderWhitneyHomotopy_hom_comp_eq_zero
     (p : K.chainComplex R ⊗ L.chainComplex S ⟶ Z)
     (hp : (SSet.chainComplexMap f R ⊗ₘ SSet.chainComplexMap g S) ≫ p = 0) (i j : ℕ) :
     (SSet.chainComplexMap f R ⊗ₘ SSet.chainComplexMap g S).f i ≫
-        (SSet.shuffleAlexanderWhitneyHomotopy K L R S).hom i j ≫ p.f j = 0 := by
-  rw [SSet.shuffleAlexanderWhitneyHomotopy_hom_naturality_assoc R S f g i j,
-    ← HomologicalComplex.comp_f, hp, HomologicalComplex.zero_f, comp_zero]
+        (SSet.shuffleAlexanderWhitneyHomotopy K L R S).hom i j ≫ p.f j = 0 :=
+  comp_homotopy_hom_comp_eq_zero
+    (SSet.shuffleAlexanderWhitneyHomotopy_hom_naturality R S f g i j) hp
 
 private lemma chainComplexMap_tensorHom_id_comp_shuffleAlexanderWhitneyHomotopy_hom_comp
     (i j : ℕ) :
@@ -235,15 +251,10 @@ private lemma chainComplexMap_smallSingularSubcomplex_ι_comp_ambientHomotopy_ho
         (alexanderWhitneyShuffleHomotopy X Y R S).hom i j ≫
         (((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ
           (R ⊗ S)).f j = 0 := by
-    have hnat := alexanderWhitneyShuffleHomotopy_hom_naturality f g (R := R) (S := S) i j
-    have hz : (SSet.chainComplexMap (toSSet.map (f ⊗ₘ g)) (R ⊗ S)).f j ≫
-        (((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ
-          (R ⊗ S)).f j = 0 := by
-      have hz₀ := congrArg (HomologicalComplex.Hom.f · j) hzero
-      rwa [HomologicalComplex.zero_f] at hz₀
-    rw [← hτ, ← SSet.ι_chainComplexMap_f_assoc]
-    exact (whisker_eq _ ((Category.assoc _ _ _).symm.trans <| (eq_whisker hnat _).trans <|
-      (Category.assoc _ _ _).trans <| (whisker_eq _ hz).trans comp_zero)).trans comp_zero
+    rw [← hτ, ← SSet.ι_chainComplexMap_f_assoc,
+      comp_homotopy_hom_comp_eq_zero
+        (alexanderWhitneyShuffleHomotopy_hom_naturality f g (R := R) (S := S) i j) hzero,
+      comp_zero]
   fin_cases k
   · have hind : Topology.IsInducing ((TopPair.ofSubset A).map ⊗ₘ 𝟙 Y) :=
       (TopPair.ofSubset A).isEmbedding_map.isInducing.prodMap Topology.IsInducing.id
@@ -323,9 +334,9 @@ lemma relativeEilenbergZilberHomotopyEquiv_inv :
     (relativeEilenbergZilberHomotopyEquiv X Y A B R S).inv = relativeShuffle X Y A B R S :=
   (rfl)
 
-/-- `TopCat.relativeShuffle` is a quasi-isomorphism, being the inverse of
-`TopCat.relativeEilenbergZilberHomotopyEquiv`. -/
-instance quasiIso_relativeShuffle [CategoryWithHomology C] :
+/-- `TopCat.relativeShuffle` is a quasi-isomorphism, being the homotopy inverse of
+`TopCat.relativeAlexanderWhitney` in `TopCat.relativeEilenbergZilberHomotopyEquiv`. -/
+instance quasiIso_relativeShuffle :
     QuasiIso (relativeShuffle X Y A B R S) := by
   rw [← relativeEilenbergZilberHomotopyEquiv_inv]
   infer_instance

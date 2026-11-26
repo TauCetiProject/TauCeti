@@ -13,7 +13,9 @@ public import TauCeti.AlgebraicTopology.Singular.Shuffle.Relative
 # The relative cross product in singular homology
 
 For subsets `A ⊆ X` and `B ⊆ Y` and coefficient objects `R` and `S` in an abelian monoidal
-category `C`, `TopCat.singularRelativeHomologyCross` is the relative homology cross product
+preadditive category `C` with `w`-indexed coproducts whose tensor functors `tensorLeft` and
+`tensorRight` preserve `w`-indexed discrete colimits, `TopCat.singularRelativeHomologyCross` is the
+relative homology cross product
 
 `Hₚ(X, A; R) ⊗ H_q(Y, B; S) ⟶ Hₙ(X × Y, A × Y ∪ X × B; R ⊗ S)` (`p + q = n`),
 

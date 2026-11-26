@@ -14,7 +14,9 @@ import TauCeti.CategoryTheory.Monoidal.Category
 # Relative shuffle maps on singular chains
 
 Let `X` and `Y` be topological spaces with subsets `A ⊆ X` and `B ⊆ Y`, and let `R` and `S` be
-coefficient objects in an abelian monoidal category `C`. This file descends the singular shuffle map
+coefficient objects in an abelian monoidal preadditive category `C` with `w`-indexed coproducts
+whose tensor functors `tensorLeft` and `tensorRight` preserve `w`-indexed discrete colimits. This
+file descends the singular shuffle map
 `TopCat.shuffle X Y R S : C(X; R) ⊗ C(Y; S) ⟶ C(X × Y; R ⊗ S)` to the three relative settings:
 
 * `TopCat.shuffleRel`: the relative shuffle map

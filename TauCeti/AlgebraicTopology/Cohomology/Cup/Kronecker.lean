@@ -14,14 +14,18 @@ public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber.Relative
 
 For open `A ⊆ X` and `B ⊆ Y`, `TauCeti.singularRelativeCross` and
 `TopCat.singularRelativeHomologyCross` are dual under `TopPair.singularKronecker` with no sign
-(`⟨a × b, x × y⟩ = μ (⟨a, x⟩ ⊗ ⟨b, y⟩)` in matching bidegrees, `0` when `p ≠ p'`), extending to
-`TopCat.singularRelativeCupPullback` along `fst` and `snd` when `Z = fst⁻¹(A) ∪ snd⁻¹(B)` and
-`v ≫ u = 𝟙 (R ⊗ S)`. This Kronecker multiplicativity detects local-cohomology and Thom-pair
-cross-product generators in `TauCeti.AlgebraicTopology.Cohomology.Local.Cross` and
-`TauCeti.Topology.VectorBundle.Thom.Prod` over arbitrary commutative rings without flatness or
-Künneth hypotheses. Each theorem assumes discrete colimit preservation for
-`tensorLeft`/`tensorRight` and `WalkingParallelPair` colimit preservation for `tensorLeft` of
-`Hₚ(X, A; R)` and `tensorRight` of `Z_q(Y, B; S)` and `C_{q+1}(Y, B; S)`.
+(`⟨a × b, x × y⟩ = μ (⟨a, x⟩ ⊗ ⟨b, y⟩)` in matching bidegrees, `0` when `p ≠ p'`). When
+`Z = fst⁻¹(A) ∪ snd⁻¹(B)` and `v : R' ⊗ S' ⟶ T`, `u : T ⟶ R ⊗ S` satisfy `v ≫ u = φ ⊗ₘ ψ`
+(`φ : R' ⟶ R`, `ψ : S' ⟶ S`), pushing `TopCat.singularRelativeHomologyCross` forward along the
+coefficient map induced by `v` and the identity-induced map to `(X × Y, Z)` and pairing with
+`TopCat.singularRelativeCupPullback` along `u` precomposes the factor evaluations with the homology
+coefficient maps induced by `φ` and `ψ` (and gives `0` when `p ≠ p'`). This Kronecker
+multiplicativity detects local-cohomology and Thom-pair cross-product generators in
+`TauCeti.AlgebraicTopology.Cohomology.Local.Cross` and `TauCeti.Topology.VectorBundle.Thom.Prod`
+over arbitrary commutative rings without flatness or Künneth hypotheses. Each theorem assumes
+discrete colimit preservation for `tensorLeft`/`tensorRight` and `WalkingParallelPair` colimit
+preservation for `tensorLeft` of `Hₚ(X, A; R)` and `tensorRight` of `Z_q(Y, B; S)` and
+`C_{q+1}(Y, B; S)` (and likewise for `R'` and `S'` in the cup-pullback pairings).
 
 ## Main results
 
@@ -31,9 +35,10 @@ Künneth hypotheses. Each theorem assumes discrete colimit preservation for
   off-diagonal vanishing (`p ≠ p'`) for relative cross products.
 * `TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCupPullback` and
   `TopCat.singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCupPullback_of_ne`:
-  the corresponding diagonal and off-diagonal Kronecker pairings for
-  `TopCat.singularRelativeCupPullback` along `fst` and `snd` with split chain-coefficient pairing
-  `v ≫ u = 𝟙 (R ⊗ S)`.
+  the corresponding diagonal and off-diagonal Kronecker pairings obtained by pushing
+  `TopCat.singularRelativeHomologyCross` forward along `v` and the identity-induced map to the
+  pair with subspace `Z`, then pairing with `TopCat.singularRelativeCupPullback` along `u` when
+  `v ≫ u = φ ⊗ₘ ψ`.
 
 ## References
 
@@ -56,22 +61,25 @@ attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C]
   [MonoidalCategory C] [MonoidalPreadditive C]
-  {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C] {R S T M N L : C}
+  {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C] {R' S' R S T M N L : C}
 
 private lemma homologyMap_comp_singularKronecker_singularRelativeCupPullback
     (X Y : TopCat.{w}) {A : Set X} {B : Set Y} (hA : IsOpen A) (hB : IsOpen B)
     {Z : Set ↥(X ⊗ Y)} (hZ : Z ⊆ fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)
     (hZ' : fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B ⊆ Z)
-    {v : R ⊗ S ⟶ T} {u : T ⟶ R ⊗ S} (hu : v ≫ u = 𝟙 (R ⊗ S)) (μ : M ⊗ N ⟶ L)
-    (p q n : ℕ) (h : p + q = n) (a : (TopPair.ofSubset A).singularCohomology R k M p)
+    {φ : R' ⟶ R} {ψ : S' ⟶ S} {v : R' ⊗ S' ⟶ T} {u : T ⟶ R ⊗ S} (hu : v ≫ u = φ ⊗ₘ ψ)
+    (μ : M ⊗ N ⟶ L) (p q n : ℕ) (h : p + q = n)
+    (a : (TopPair.ofSubset A).singularCohomology R k M p)
     (b : (TopPair.ofSubset B).singularCohomology S k N q) :
     (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularHomologyCoefficientMap v n ≫
       TopPair.singularHomologyMap (TopPair.ofSubsetMap (B := fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)
         (B' := Z) (𝟙 (X ⊗ Y)) fun _ hx ↦ hZ' hx) T n ≫
       (TopPair.ofSubset Z).singularKronecker (R := T) (M := L) k n
         (singularRelativeCupPullback k u μ (fst X Y) (snd X Y) hA hB hZ p q n h a b) =
-      (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularKronecker (R := R ⊗ S) (M := L)
-        k n (TauCeti.singularRelativeCross k X Y hA hB μ p q n h a b) := by
+      (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularHomologyCoefficientMap
+          (φ ⊗ₘ ψ) n ≫
+        (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularKronecker (R := R ⊗ S) (M := L)
+          k n (TauCeti.singularRelativeCross k X Y hA hB μ p q n h a b) := by
   let P := TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)
   let i₁ := TopPair.ofSubsetMap (B := fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) (B' := Z) (𝟙 _) fun _ h ↦ hZ' h
   let i₂ := TopPair.ofSubsetMap (B := Z) (B' := fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) (𝟙 _) fun _ h ↦ hZ h
@@ -79,14 +87,15 @@ private lemma homologyMap_comp_singularKronecker_singularRelativeCupPullback
     (Category.comp_id _)).trans (TopPair.ofSubsetMap_id fun _ hx ↦ hx)
   have hidZ : TopPair.singularHomologyMap i₁ T n ≫ TopPair.singularHomologyMap i₂ T n = 𝟙 _ := by
     rw [← TopPair.singularHomologyMap_comp, hpair, TopPair.singularHomologyMap_id]
-  have hvu : P.singularHomologyCoefficientMap v n ≫ P.singularHomologyCoefficientMap u n = 𝟙 _ := by
-    rw [← P.singularHomologyCoefficientMap_comp, hu, P.singularHomologyCoefficientMap_id]
+  have hvu : P.singularHomologyCoefficientMap v n ≫ P.singularHomologyCoefficientMap u n =
+      P.singularHomologyCoefficientMap (φ ⊗ₘ ψ) n := by
+    rw [← P.singularHomologyCoefficientMap_comp, hu]
   rw [singularRelativeCupPullback_apply, TopPair.singularKronecker_naturality,
     ← Category.assoc (TopPair.singularHomologyMap i₁ T n), hidZ, Category.id_comp,
     singularRelativeCup_eq_homologyMap_singularRelativeCup,
     ← TauCeti.singularRelativeCross_apply k X Y hA hB,
     TopPair.singularKronecker_singularCohomologyChainCoefficientMap]
-  exact (Category.assoc _ _ _).symm.trans ((eq_whisker hvu _).trans (Category.id_comp _))
+  exact (Category.assoc _ _ _).symm.trans (eq_whisker hvu _)
 
 variable [∀ (Z : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorLeft Z)]
   [∀ (Z : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight Z)]
@@ -184,13 +193,23 @@ theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCro
     X Y hA hB μ h h' a b).trans
     (ChainComplex.homologyCross_comp_kronecker_cup_of_ne _ _ μ p q h h' hp a b)
 
-/-- **The Kronecker pairing of `TopCat.singularRelativeCupPullback` along `fst` and `snd`** when
-`v ≫ u = 𝟙 (R ⊗ S)` and `Z` agrees with `fst⁻¹(A) ∪ snd⁻¹(B)`. -/
+/-- **The Kronecker pairing of `TopCat.singularRelativeCupPullback` along `fst` and `snd`**:
+when `v : R' ⊗ S' ⟶ T` and `u : T ⟶ R ⊗ S` satisfy `v ≫ u = φ ⊗ₘ ψ` (`φ : R' ⟶ R`, `ψ : S' ⟶ S`)
+and `Z` agrees with `fst⁻¹(A) ∪ snd⁻¹(B)`, pushing `TopCat.singularRelativeHomologyCross` forward
+along `v` and the identity-induced map to the pair with subspace `Z`, then pairing with the
+cup-pullback along `u`, precomposes the factor Kronecker evaluations with the homology coefficient
+maps induced by `φ` and `ψ`. -/
 theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCupPullback
     {Z : Set ↥(X ⊗ Y)} (hZ : Z ⊆ fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)
     (hZ' : fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B ⊆ Z)
-    {v : R ⊗ S ⟶ T} {u : T ⟶ R ⊗ S} (hu : v ≫ u = 𝟙 (R ⊗ S)) (μ : M ⊗ N ⟶ L)
-    (p q n : ℕ) (h : p + q = n)
+    {φ : R' ⟶ R} {ψ : S' ⟶ S} {v : R' ⊗ S' ⟶ T} {u : T ⟶ R ⊗ S} (hu : v ≫ u = φ ⊗ₘ ψ)
+    (μ : M ⊗ N ⟶ L) (p q n : ℕ) (h : p + q = n)
+    [PreservesColimitsOfShape WalkingParallelPair (tensorLeft
+      (((TopPair.ofSubset A).singularChainComplex R').homology p))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight
+      (((TopPair.ofSubset B).singularChainComplex S').cycles q))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight
+      (((TopPair.ofSubset B).singularChainComplex S').X ((ComplexShape.down ℕ).prev q)))]
     [PreservesColimitsOfShape WalkingParallelPair (tensorLeft
       (((TopPair.ofSubset A).singularChainComplex R).homology p))]
     [PreservesColimitsOfShape WalkingParallelPair (tensorRight
@@ -199,9 +218,9 @@ theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCup
       (((TopPair.ofSubset B).singularChainComplex S).X ((ComplexShape.down ℕ).prev q)))]
     (a : (TopPair.ofSubset A).singularCohomology R k M p)
     (b : (TopPair.ofSubset B).singularCohomology S k N q) :
-    singularRelativeHomologyCross X Y R S A B p q n h ≫
+    singularRelativeHomologyCross X Y R' S' A B p q n h ≫
         homologyMap (K := (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplex
-            (R ⊗ S))
+            (R' ⊗ S'))
           (L := (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplex T)
           (((SSetPair.chainComplexFunctor C).map v).app
             (TopPair.toSSetPair.obj (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)))) n ≫
@@ -209,20 +228,33 @@ theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCup
           (B' := Z) (𝟙 (X ⊗ Y)) fun _ hx ↦ hZ' hx) T n ≫
         (TopPair.ofSubset Z).singularKronecker (R := T) (M := L) k n
           (singularRelativeCupPullback k u μ (fst X Y) (snd X Y) hA hB hZ p q n h a b) =
-      ((TopPair.ofSubset A).singularKronecker (R := R) (M := M) k p a ⊗ₘ
-        (TopPair.ofSubset B).singularKronecker (R := S) (M := N) k q b) ≫ μ :=
-  (whisker_eq _ (homologyMap_comp_singularKronecker_singularRelativeCupPullback
-    X Y hA hB hZ hZ' hu μ p q n h a b)).trans
-    (singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross
-      X Y hA hB μ p q n h a b)
+      (((TopPair.ofSubset A).singularHomologyCoefficientMap φ p ≫
+          (TopPair.ofSubset A).singularKronecker (R := R) (M := M) k p a) ⊗ₘ
+        ((TopPair.ofSubset B).singularHomologyCoefficientMap ψ q ≫
+          (TopPair.ofSubset B).singularKronecker (R := S) (M := N) k q b)) ≫ μ := by
+  refine (whisker_eq _ (homologyMap_comp_singularKronecker_singularRelativeCupPullback
+    X Y hA hB hZ hZ' hu μ p q n h a b)).trans ?_
+  rw [← Category.assoc, ← singularRelativeHomologyCross_coefficient_naturality X Y A B φ ψ p q n h,
+    Category.assoc,
+    singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross
+      X Y hA hB μ p q n h a b,
+    tensorHom_comp_tensorHom_assoc]
 
-/-- **Off-diagonal vanishing for the Kronecker pairing of `TopCat.singularRelativeCupPullback` along
-`fst` and `snd`** (`p ≠ p'`, `v ≫ u = 𝟙 (R ⊗ S)`, `Z = fst⁻¹(A) ∪ snd⁻¹(B)`). -/
+/-- **Off-diagonal vanishing for the Kronecker pairing of `TopCat.singularRelativeCupPullback`
+along `fst` and `snd`** (`p ≠ p'`, `v ≫ u = φ ⊗ₘ ψ`, `Z = fst⁻¹(A) ∪ snd⁻¹(B)`): pushing
+`TopCat.singularRelativeHomologyCross` forward along `v` and the identity-induced map to the pair
+with subspace `Z`, then pairing with the cup-pullback along `u`, vanishes. -/
 theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCupPullback_of_ne
     {Z : Set ↥(X ⊗ Y)} (hZ : Z ⊆ fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)
     (hZ' : fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B ⊆ Z)
-    {v : R ⊗ S ⟶ T} {u : T ⟶ R ⊗ S} (hu : v ≫ u = 𝟙 (R ⊗ S)) (μ : M ⊗ N ⟶ L)
-    {p q p' q' n : ℕ} (h : p + q = n) (h' : p' + q' = n) (hp : p ≠ p')
+    {φ : R' ⟶ R} {ψ : S' ⟶ S} {v : R' ⊗ S' ⟶ T} {u : T ⟶ R ⊗ S} (hu : v ≫ u = φ ⊗ₘ ψ)
+    (μ : M ⊗ N ⟶ L) {p q p' q' n : ℕ} (h : p + q = n) (h' : p' + q' = n) (hp : p ≠ p')
+    [PreservesColimitsOfShape WalkingParallelPair (tensorLeft
+      (((TopPair.ofSubset A).singularChainComplex R').homology p))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight
+      (((TopPair.ofSubset B).singularChainComplex S').cycles q))]
+    [PreservesColimitsOfShape WalkingParallelPair (tensorRight
+      (((TopPair.ofSubset B).singularChainComplex S').X ((ComplexShape.down ℕ).prev q)))]
     [PreservesColimitsOfShape WalkingParallelPair (tensorLeft
       (((TopPair.ofSubset A).singularChainComplex R).homology p))]
     [PreservesColimitsOfShape WalkingParallelPair (tensorRight
@@ -231,19 +263,22 @@ theorem singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCup
       (((TopPair.ofSubset B).singularChainComplex S).X ((ComplexShape.down ℕ).prev q)))]
     (a : (TopPair.ofSubset A).singularCohomology R k M p')
     (b : (TopPair.ofSubset B).singularCohomology S k N q') :
-    singularRelativeHomologyCross X Y R S A B p q n h ≫
+    singularRelativeHomologyCross X Y R' S' A B p q n h ≫
         homologyMap (K := (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplex
-            (R ⊗ S))
+            (R' ⊗ S'))
           (L := (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplex T)
           (((SSetPair.chainComplexFunctor C).map v).app
             (TopPair.toSSetPair.obj (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)))) n ≫
         TopPair.singularHomologyMap (TopPair.ofSubsetMap (B := fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)
           (B' := Z) (𝟙 (X ⊗ Y)) fun _ hx ↦ hZ' hx) T n ≫
         (TopPair.ofSubset Z).singularKronecker (R := T) (M := L) k n
-          (singularRelativeCupPullback k u μ (fst X Y) (snd X Y) hA hB hZ p' q' n h' a b) = 0 :=
-  (whisker_eq _ (homologyMap_comp_singularKronecker_singularRelativeCupPullback
-    X Y hA hB hZ hZ' hu μ p' q' n h' a b)).trans
-    (singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross_of_ne
-      X Y hA hB μ h h' hp a b)
+          (singularRelativeCupPullback k u μ (fst X Y) (snd X Y) hA hB hZ p' q' n h' a b) = 0 := by
+  refine (whisker_eq _ (homologyMap_comp_singularKronecker_singularRelativeCupPullback
+    X Y hA hB hZ hZ' hu μ p' q' n h' a b)).trans ?_
+  rw [← Category.assoc, ← singularRelativeHomologyCross_coefficient_naturality X Y A B φ ψ p q n h,
+    Category.assoc,
+    singularRelativeHomologyCross_comp_singularKronecker_singularRelativeCross_of_ne
+      X Y hA hB μ h h' hp a b,
+    comp_zero]
 
 end TopCat
