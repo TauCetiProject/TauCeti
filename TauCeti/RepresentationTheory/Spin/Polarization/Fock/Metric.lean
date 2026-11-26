@@ -79,9 +79,8 @@ of `W` exist: `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonorma
 * `TauCeti.AlmostComplexStructure.fockGramForm_wedge_left`,
   `TauCeti.AlmostComplexStructure.fockGramForm_contract_left`,
   `TauCeti.AlmostComplexStructure.fockGramForm_fockAction_left`,
-  `TauCeti.AlmostComplexStructure.fockGramForm_fockAction_ι_one_tmul_left`,
-  `TauCeti.AlmostComplexStructure.fockGramForm_realFockAction_left`, and
-  `TauCeti.AlmostComplexStructure.fockGramForm_realFockAction_ι_left`: basis-free
+  `TauCeti.AlmostComplexStructure.fockGramForm_fockAction_ι_one_tmul_left`, and
+  `TauCeti.AlmostComplexStructure.fockGramForm_realFockAction_left`: basis-free
   creation/annihilation adjointness, `*`-representation properties, and skew-Hermitian real-vector
   action.
 * `TauCeti.AlmostComplexStructure.fockGramForm_degreeScaling_of_mem_exteriorPower`,
@@ -389,13 +388,6 @@ theorem fockGramForm_realFockAction_left (a : CliffordAlgebra Q)
       J.fockGramForm hQJ hQ s (J.realFockAction hQJ hQ (star a) t) := by
   rw [realFockAction_apply, realFockAction_apply, J.fockGramForm_fockAction_left hQJ hQ,
     conjStar_ofBaseChangeAux]
-
-/-- **Every real Clifford generator `ι Q v` acts skew-Hermitianly** for `J.fockGramForm`. -/
-theorem fockGramForm_realFockAction_ι_left (v : V)
-    (s t : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W) :
-    J.fockGramForm hQJ hQ (J.realFockAction hQJ hQ (CliffordAlgebra.ι Q v) s) t =
-      -J.fockGramForm hQJ hQ s (J.realFockAction hQJ hQ (CliffordAlgebra.ι Q v) t) := by
-  rw [J.fockGramForm_realFockAction_left hQJ hQ, star_ι, map_neg, LinearMap.neg_apply, map_neg]
 
 /-- On `⋀[ℂ]^p W`, the pullback of `J.fockGramForm` along the degree scaling by `√2` rescales by
 `2 ^ p`. -/
