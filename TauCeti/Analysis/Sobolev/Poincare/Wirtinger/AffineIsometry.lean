@@ -21,9 +21,9 @@ admissible constants of the inequality, and hence its optimal constant, are inva
 motions of the pair `(V, S)`. The equivalence holds for every constant `C` and every exponent
 `1 ≤ p ≤ ∞`, and needs no regularity, connectedness or boundedness of `V`. Whether some finite
 constant exists is a separate question, answered for instance by
-`TauCeti.W1p.exists_eLpNorm_value_sub_setAverage_le_of_isCompactOperator` on a bounded connected
-Lipschitz domain. Taking `S = V`, so that `g⁻¹(S) = U`, gives the invariance of the inequality for
-the mean over the whole domain.
+`TauCeti.W1p.exists_eLpNorm_value_sub_setAverage_le_of_isLipschitzDomainWith` on a bounded
+connected Lipschitz domain. Taking `S = V`, so that `g⁻¹(S) = U`, gives the invariance of the
+inequality for the mean over the whole domain.
 
 Precomposition `u ↦ u ∘ g` (`TauCeti.W1p.compAffineIsometryEquivL`) preserves each of the three
 quantities in the inequality: the `Lᵖ` norm of the deviation from a constant
