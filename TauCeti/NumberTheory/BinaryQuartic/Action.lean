@@ -50,9 +50,57 @@ theorem eval_def (f : BinaryQuartic R) (x y : R) :
       f 0 * x ^ 4 + f 1 * x ^ 3 * y + f 2 * x ^ 2 * y ^ 2 + f 3 * x * y ^ 3 + f 4 * y ^ 4 :=
   (rfl)
 
+/-- Evaluating the zero quartic gives zero. -/
+@[simp] theorem eval_zero (x y : R) : eval (0 : BinaryQuartic R) x y = 0 := by
+  simp [eval_def]
+
+/-- Evaluation is additive in the form. -/
+@[simp] theorem eval_add (f g : BinaryQuartic R) (x y : R) :
+    eval (f + g) x y = eval f x y + eval g x y := by
+  simp only [eval_def, Pi.add_apply]
+  ring
+
+/-- Evaluation commutes with coefficientwise scalar multiplication. -/
+@[simp] theorem eval_smul (r : R) (f : BinaryQuartic R) (x y : R) :
+    eval (r • f) x y = r * eval f x y := by
+  simp only [eval_def, Pi.smul_apply, smul_eq_mul]
+  ring
+
+/-- Evaluation commutes with base change of coefficients and coordinates. -/
+@[simp] theorem eval_comp (φ : R →+* S) (f : BinaryQuartic R) (x y : R) :
+    eval (φ ∘ f) (φ x) (φ y) = φ (eval f x y) := by
+  simp [eval_def]
+
 /-- The homogeneous polynomial represented by a binary quartic. -/
 noncomputable def toMvPolynomial (f : BinaryQuartic R) : MvPolynomial (Fin 2) R :=
   eval (MvPolynomial.C ∘ f) (MvPolynomial.X 0) (MvPolynomial.X 1)
+
+/-- The formal polynomial is evaluation at the two polynomial variables. -/
+theorem toMvPolynomial_def (f : BinaryQuartic R) :
+    toMvPolynomial f = eval (MvPolynomial.C ∘ f) (MvPolynomial.X 0) (MvPolynomial.X 1) :=
+  (rfl)
+
+/-- The formal polynomial of the zero quartic is zero. -/
+@[simp] theorem toMvPolynomial_zero : toMvPolynomial (0 : BinaryQuartic R) = 0 := by
+  simp [toMvPolynomial_def, eval_def]
+
+/-- Conversion to a formal polynomial is additive. -/
+@[simp] theorem toMvPolynomial_add (f g : BinaryQuartic R) :
+    toMvPolynomial (f + g) = toMvPolynomial f + toMvPolynomial g := by
+  simp only [toMvPolynomial_def, eval_def, Function.comp_apply, Pi.add_apply, map_add]
+  ring
+
+/-- Conversion to a formal polynomial commutes with coefficientwise scaling. -/
+@[simp] theorem toMvPolynomial_smul (r : R) (f : BinaryQuartic R) :
+    toMvPolynomial (r • f) = r • toMvPolynomial f := by
+  simp only [toMvPolynomial_def, eval_def, Function.comp_apply, Pi.smul_apply,
+    smul_eq_mul, map_mul, MvPolynomial.smul_eq_C_mul]
+  ring
+
+/-- Conversion to a formal polynomial commutes with base change of coefficients. -/
+@[simp] theorem toMvPolynomial_comp (φ : R →+* S) (f : BinaryQuartic R) :
+    toMvPolynomial (φ ∘ f) = MvPolynomial.map φ (toMvPolynomial f) := by
+  simp [toMvPolynomial_def, eval_def]
 
 /-- Evaluating the polynomial of a quartic agrees with evaluating its coefficient expression. -/
 @[simp] theorem eval_toMvPolynomial (f : BinaryQuartic R) (x : Fin 2 → R) :
@@ -200,8 +248,14 @@ instance : DistribMulAction (GL (Fin 2) R) (BinaryQuartic R) where
 theorem smul_eq_subst (g : GL (Fin 2) R) (f : BinaryQuartic R) :
     g • f = subst (g : Matrix (Fin 2) (Fin 2) R) f := (rfl)
 
+/-- Evaluating the ordinary action substitutes the columns of the acting matrix. -/
+@[simp] theorem eval_smul_generalLinearGroup (g : GL (Fin 2) R) (f : BinaryQuartic R)
+    (x y : R) :
+    eval (g • f) x y = eval f (g 0 0 * x + g 1 0 * y) (g 0 1 * x + g 1 1 * y) := by
+  rw [smul_eq_subst, eval_subst]
+
 /-- Base change of coefficients commutes with the ordinary `GL₂` action. -/
-@[simp] theorem map_smul (f : BinaryQuartic R) (φ : R →+* S) (g : GL (Fin 2) R) :
+@[simp] theorem smul_comp (f : BinaryQuartic R) (φ : R →+* S) (g : GL (Fin 2) R) :
     Units.map (φ.mapMatrix (m := Fin 2) : Matrix (Fin 2) (Fin 2) R →*
       Matrix (Fin 2) (Fin 2) S) g • (φ ∘ f) = φ ∘ (g • f) := by
   rw [smul_eq_subst, smul_eq_subst, Units.coe_map]
