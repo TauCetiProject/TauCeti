@@ -39,7 +39,7 @@ nilpotent, and an idempotent of this form is `0` or `F(e)`
   `x e` is nilpotent whenever `φ(x) = 0`.
 * `IsIdempotentElem.eq_zero_or_eq_of_eq_algebraMap_mul_add`: an idempotent `c β + m`, with `β` a
   nonzero idempotent and `m` nilpotent with `m β = m`, is `0` or `β`.
-* `TauCeti.IsPrimitiveIdempotent.isPrimitiveIdempotent_map_of_span_eq_top`: such an `e` stays
+* `TauCeti.IsPrimitiveIdempotent.map_of_span_eq_top`: such an `e` stays
   primitive under a ring homomorphism `F`, compatible with a field homomorphism `k → k'`, whose
   image spans the target over `k'`, provided `F e ≠ 0`.
 
@@ -134,7 +134,7 @@ commutative Artinian `k`-algebra `A` with a `k`-algebra homomorphism `φ : A →
 `F : A → A'` a ring homomorphism to a commutative `k'`-algebra, compatible with a field
 homomorphism `f : k → k'`, whose image spans `A'` over `k'`. If `F e ≠ 0`, then `F e` is
 primitive. -/
-theorem IsPrimitiveIdempotent.isPrimitiveIdempotent_map_of_span_eq_top [IsArtinianRing A]
+theorem IsPrimitiveIdempotent.map_of_span_eq_top [IsArtinianRing A]
     {k' A' : Type*} [Field k'] [CommRing A'] [Algebra k' A'] (he : IsPrimitiveIdempotent e)
     {φ : A →ₐ[k] k} (hφ : φ e = 1) (f : k →+* k') (F : A →+* A')
     (hF : ∀ r, F (algebraMap k A r) = algebraMap k' A' (f r))
