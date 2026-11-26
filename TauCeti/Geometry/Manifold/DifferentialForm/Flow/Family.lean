@@ -467,7 +467,7 @@ theorem mpullback_prodMk_mlieDerivForm_vertical (t : ℝ) (x : M)
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y
         (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α y)) x :=
     hα.mpullback_form hι.contMDiffAt (by norm_num)
-  have hR₀ := hasDerivAt_mpullback_timeDependentFlowOf_self hX t x
+  have hR₀ := hasDerivAt_mpullback_timeDependentFlowOf_self (hX.of_le one_le_two) t x
     (hslice.mdifferentiableAt one_ne_zero)
   have hR := HasDerivAt.comp_const_add t (0 : ℝ) (by rwa [add_zero])
   have hdom : ∀ᶠ r in 𝓝 (0 : ℝ), ((t, t + r), x) ∈ timeDependentFlowDomain X :=

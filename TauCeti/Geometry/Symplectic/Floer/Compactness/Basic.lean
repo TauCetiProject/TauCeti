@@ -134,9 +134,13 @@ the parameter adjoined. It applies to the rescaled solutions at a bubbling point
 form a family over the centres and scales of the rescaling
 (`TauCeti.Geometry.Symplectic.Floer.Rescaling.Bubble`).
 
-The limit off the bubbling points is only shown to be continuous here; its regularity, the
-rescaled bubbles at the points of `Z` (spheres for the structure `J(z, ·)` frozen at the bubbling
-point), and breaking along cylindrical ends are not treated in this file.
+For smooth solutions, the convergence off `Z` in the unparametrized coordinate statement is
+upgraded to convergence in `C¹` to a `C¹` solution in `TauCeti.Geometry.Symplectic.Floer.WeakLimit`
+(`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`), by
+`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer`. For the Floer energy this upgrade is in
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Limit`; the parametric versions are not upgraded.
+The rescaled bubbles at the points of `Z` (spheres for the structure `J(z, ·)` frozen at the
+bubbling point) and breaking along cylindrical ends are not treated in this file.
 
 ## References
 

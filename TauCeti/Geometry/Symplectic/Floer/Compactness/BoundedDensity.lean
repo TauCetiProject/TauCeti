@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.Euclidean
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Analysis.Normed.Operator.Prod
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.CompactCover
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.Compactness.Compact
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace

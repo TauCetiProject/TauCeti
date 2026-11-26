@@ -444,7 +444,8 @@ theorem IsNondegenerate.exists_pos_forall_pi_mul_sq_mul_floerEnergyDensity_le_in
     fun q hq ↦ ⟨hKαt hq.2.2, hCDKW ⟨hq.1, hq.2.1, ⟨q.2.2, hq.2.2, rfl⟩⟩⟩
   obtain ⟨A, hA, B, hB, C₀, hC₀, D₀, hD₀, hbd⟩ :=
     hω.exists_forall_norm_fderiv_extChartAt_comp_sq_le_and_floerEnergyDensity_le α hC hD hKα hKαt
-      ((Floer.contDiffOn_almostComplexInChartAt (n := 2) (by simp) α hJ).continuousOn.mono hCDKWα)
+      ((Floer.contDiffOn_almostComplexInChartAt_of_contMDiffOn (n := 2) (by simp)
+        α hJ).continuousOn.mono hCDKWα)
       ((ω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2) (by simp) α hXsM).continuousOn.mono
         hCDKWα)
       ((ω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2) (by simp) α hXtM).continuousOn.mono

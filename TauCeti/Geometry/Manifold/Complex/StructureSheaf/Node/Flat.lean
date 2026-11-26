@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Node.NormalForm
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.OffNodeChart
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Flat
-import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 
 /-!
 # Flatness of the smoothing family `xy = s(b)` over its base
@@ -47,20 +46,6 @@ namespace TauCeti.holomorphicStructureSheaf
 
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- The associator `((b, x), y) ↦ (b, x, y)` carries the local equation of `N_s` in the
-coordinates of `OffNodeChart` to the node equation in the coordinates of `Node.NormalForm`. -/
-private theorem stalkPrecomp_assoc_smoothingEquation (b : E)
-    (s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk b) :
-    stalkPrecomp 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) (fun z ↦ (z.1.1, z.1.2, z.2))
-        (contMDiff_iff_contDiff.mpr (by fun_prop)) ((b, 0), 0)
-        (smoothingEquation (b, 0, 0) s) = nodeEquation b 0 0 s := by
-  obtain ⟨S, -, hS⟩ := exists_toFilterGerm_eq b s
-  apply toFilterGerm_nhds_injective ((b, (0 : ℂ)), (0 : ℂ))
-  rw [toFilterGerm_stalkPrecomp, toFilterGerm_smoothingEquation (S := S) (hS _ le_rfl),
-    toFilterGerm_nodeEquation b 0 0 s (hS _ le_rfl), Germ.coe_compTendsto]
-  -- Both sides are the germ of `((b, x), y) ↦ x * y - S b`.
-  rfl
-
 variable [FiniteDimensional ℂ E]
 
 /-- **The node is flat over the base.** For every holomorphic base germ `s`, pulling base germs
@@ -81,16 +66,11 @@ private theorem flat_quotientMk_comp_stalkPrecomp_smoothingEquation_node (b : E)
     ((Ideal.Quotient.mk (Ideal.span {smoothingEquation (b, 0, 0) s})).comp
       (stalkPrecomp 𝓘(ℂ, E × ℂ × ℂ) (E × ℂ × ℂ) Prod.fst
         (contMDiff_iff_contDiff.mpr contDiff_fst) (b, 0, 0))).Flat := by
-  have hP : Function.Bijective (stalkPrecomp 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ)
-      (fun z ↦ (z.1.1, z.1.2, z.2)) (contMDiff_iff_contDiff.mpr (by fun_prop)) ((b, 0), 0)) := by
-    rw [← stalkPullback_eq_stalkPrecomp]
-    exact stalkPullback_bijective _ (g := fun q : E × ℂ × ℂ ↦ ((q.1, q.2.1), q.2.2))
-      (.of_forall fun _ ↦ (contMDiff_iff_contDiff.mpr (by fun_prop)).contMDiffAt)
-      (.of_forall fun _ ↦ rfl) (.of_forall fun _ ↦ rfl)
   let Q := Ideal.quotientEquiv (Ideal.span {smoothingEquation (b, 0, 0) s})
-    (Ideal.span {nodeEquation b 0 0 s}) (RingEquiv.ofBijective _ hP) (by
+    (Ideal.span {nodeEquation b 0 0 s})
+    (RingEquiv.ofBijective _ (stalkPrecomp_assoc_bijective ((b, 0), 0))) (by
       rw [Ideal.map_span, Set.image_singleton]
-      exact congrArg (Ideal.span {·}) (stalkPrecomp_assoc_smoothingEquation b s).symm)
+      exact congrArg (Ideal.span {·}) (stalkPrecomp_assoc_smoothingEquation b 0 0 s).symm)
   have key : Q.toRingHom.comp ((Ideal.Quotient.mk _).comp
       (stalkPrecomp 𝓘(ℂ, E × ℂ × ℂ) (E × ℂ × ℂ) Prod.fst
         (contMDiff_iff_contDiff.mpr contDiff_fst) (b, 0, 0))) =

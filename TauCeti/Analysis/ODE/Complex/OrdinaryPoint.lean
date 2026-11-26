@@ -12,7 +12,7 @@ import TauCeti.Analysis.Analytic.Constructions
 import TauCeti.Analysis.Analytic.TaylorSeries
 import TauCeti.Analysis.Calculus.FDeriv.Analytic
 import TauCeti.Analysis.Calculus.FDeriv.Matrix
-import TauCeti.Analysis.Complex.TaylorSeries
+import TauCeti.Analysis.Complex.Taylor.Basic
 import TauCeti.Analysis.ODE.Complex.LinearSystem
 
 /-!

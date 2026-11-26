@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
@@ -29,6 +29,9 @@ corner points. No invertibility, finite dimensionality, or completeness is requi
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
 Its underlying rough form is the existing `TauCeti.mpullback`. Restriction to an open subset does
 not change the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`).
+Pullback commutes with wedge products and wedge powers
+(`TauCeti.SmoothForm.mpullback_wedge`, `TauCeti.SmoothForm.mpullback_wedgePow`); for wedge powers
+this holds pointwise along any map (`TauCeti.mpullback_wedgePow_apply`).
 A product map `Prod.map f g` pulls a form pulled back from either factor back through the
 corresponding component (`TauCeti.SmoothForm.mpullback_prodMap_mpullback_fst`,
 `TauCeti.SmoothForm.mpullback_prodMap_mpullback_snd`), and so the wedge of two such forms
@@ -38,8 +41,10 @@ form pulled back from each factor is the product of their values
 (`TauCeti.SmoothForm.wedge_mpullback_fst_snd_apply_append`). Pullback along a smooth map
 with a smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms
 of `M` preserving a smooth form form a subgroup of the diffeomorphism group, its stabilizer
-(`TauCeti.SmoothForm.diffeomorphStabilizer`). A diffeomorphism in the stabilizer of a two-form
-preserves its values on pushed-forward tangent vectors
+(`TauCeti.SmoothForm.diffeomorphStabilizer`). Stabilizers are natural under intertwining maps: if
+a smooth map `g` satisfies `g ∘ f' = f ∘ g` and `f` preserves `σ`, then `f'` preserves `g^* σ`
+(`TauCeti.SmoothForm.mem_diffeomorphStabilizer_mpullback_of_semiconj`). A diffeomorphism in the
+stabilizer of a two-form preserves its values on pushed-forward tangent vectors
 (`TauCeti.SmoothForm.eval₂_mfderiv_of_mem_diffeomorphStabilizer`,
 `TauCeti.SmoothForm.eval₂_mfderiv_left_of_mem_diffeomorphStabilizer`).
 
@@ -323,11 +328,7 @@ evaluated on the image of `v` under the differential. -/
 theorem mpullback_apply_one (f : M → M') (hf : ContMDiff I I' ∞ f)
     (φ : SmoothForm I' M' F 1) (x : M) (v : TangentSpace I x) :
     (mpullback f hf φ).val x ![v] = φ.val (f x) ![mfderiv I I' f x v] := by
-  rw [mpullback_apply]
-  congr 1
-  ext i
-  fin_cases i
-  rfl
+  rw [coe_mpullback, TauCeti.mpullback_apply_one]
 
 /-- Pullback of smooth forms along a surjective smooth map whose derivatives are all surjective is
 injective. -/
@@ -496,6 +497,15 @@ theorem coe_mpullback_subtype_val_apply {U : TopologicalSpace.Opens M} (σ : Smo
     (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ).val x = σ.val x :=
   TauCeti.mpullback_subtype_val_apply σ.val x
 
+/-- Pulling a smooth form back along a map `f` restricted to an open subset `U` evaluates tangent
+vectors at `x ∈ U` through the differential of `f` itself. -/
+theorem mpullback_comp_subtypeVal_apply {U : TopologicalSpace.Opens M} {f : M → M'}
+    (hf : ContMDiff I I' ∞ (f ∘ (Subtype.val : U → M))) (φ : SmoothForm I' M' F k) (x : U)
+    (v : Fin k → TangentSpace I x) :
+    (mpullback _ hf φ).val x v = φ.val (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
+  rw [mpullback_apply]
+  exact congrArg (φ.val (f x)) (funext fun i ↦ Manifold.mfderiv_comp_subtype_val_apply (v i))
+
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}
     (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I' I ∞ g) (hfg : Function.RightInverse g f) :
@@ -601,6 +611,15 @@ theorem mem_diffeomorphStabilizer_iff_forall {σ : SmoothForm I M F k} {φ : M �
     φ ∈ diffeomorphStabilizer σ ↔ ∀ x, TauCeti.mpullback I I φ σ.val x = σ.val x := by
   rw [mem_diffeomorphStabilizer, Subtype.ext_iff, coe_mpullback, funext_iff]
 
+/-- **Naturality of stabilizers.** If a smooth map `g` intertwines two diffeomorphisms,
+`g ∘ f' = f ∘ g`, and `f` preserves `σ`, then `f'` preserves the pullback `g^* σ`. -/
+theorem mem_diffeomorphStabilizer_mpullback_of_semiconj {σ : SmoothForm I M F k} {g : M' → M}
+    (hg : ContMDiff I' I ∞ g) {f' : M' ≃ₘ⟮I', I'⟯ M'} {f : M ≃ₘ⟮I, I⟯ M}
+    (h : Function.Semiconj g f' f) (hf : f ∈ diffeomorphStabilizer σ) :
+    f' ∈ diffeomorphStabilizer (mpullback g hg σ) := by
+  rw [mem_diffeomorphStabilizer] at hf ⊢
+  rw [mpullback_mpullback_of_comp_eq f'.contMDiff hg hg f.contMDiff h.comp_eq, hf]
+
 /-- A diffeomorphism preserving a two-form `τ` preserves its values on pushed-forward tangent
 vectors: `τ(dφ a, dφ b) = τ(a, b)`. -/
 theorem eval₂_mfderiv_of_mem_diffeomorphStabilizer {τ : SmoothForm I M F 2}
@@ -648,6 +667,31 @@ theorem mpullback_wedge (f : M → M') (hf : ContMDiff I I' ∞ f)
       SmoothForm.wedge (mpullback (k := k) f hf φ) (mpullback (k := l) f hf ψ) := by
   simpa only [SmoothForm.wedge_def] using
     mpullback_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) f hf φ ψ
+
+omit [IsManifold I 1 M] in
+/-- Pullback along any map commutes with wedge powers pointwise: at each point, the rough pullback
+of `φ ^ m` is the `m`-th wedge power of the value of the pullback of `φ`. No smoothness of the map
+is needed. -/
+theorem _root_.TauCeti.mpullback_wedgePow_apply (f : M → M') (φ : SmoothForm I' M' ℝ k) (m : ℕ)
+    (x : M) :
+    TauCeti.mpullback I I' f (φ.wedgePow m).val x =
+      (TauCeti.mpullback I I' f φ.val x).wedgePow m := by
+  -- At each point, the pullback is precomposition with the differential `df_x`.
+  have hx : TauCeti.mpullback I I' f φ.val x =
+      (φ.val (f x)).compContinuousLinearMap (mfderiv I I' f x) := by
+    ext w
+    rw [TauCeti.mpullback_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      Function.comp_def]
+  ext v
+  rw [TauCeti.mpullback_apply, wedgePow_apply, hx,
+    ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
+
+/-- Smooth real-valued pullback commutes with wedge powers: `f^* (φ ^ m) = (f^* φ) ^ m`. -/
+theorem mpullback_wedgePow (f : M → M') (hf : ContMDiff I I' ∞ f) (φ : SmoothForm I' M' ℝ k)
+    (m : ℕ) : mpullback f hf (φ.wedgePow m) = (mpullback f hf φ).wedgePow m :=
+  Subtype.ext (funext fun x ↦ by
+    rw [coe_mpullback, TauCeti.mpullback_wedgePow_apply, wedgePow_apply, coe_mpullback])
 
 /-- A product map `Prod.map f g` pulls the wedge of a form pulled back from the first factor and a
 form pulled back from the second factor back to the wedge of their pullbacks along `f` and `g`. -/

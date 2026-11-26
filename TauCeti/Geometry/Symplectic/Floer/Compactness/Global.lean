@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.UniformSpace.CompactConvergence
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.EnergyQuantization
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
+import TauCeti.Geometry.Manifold.ExtChartAt.CompactCover
 import TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity
 import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence.Manifold
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
@@ -148,7 +149,8 @@ private theorem chart_eventually_norm_fderiv_le [I.Boundaryless] [T2Space M]
   obtain ⟨A_α, hAα, B_α, hBα, _, _, _, _, hcbd⟩ :=
     hω.exists_forall_norm_fderiv_extChartAt_comp_sq_le_and_floerEnergyDensity_le α hC hD hKα'_comp
       hKα'_tgt
-      ((Floer.contDiffOn_almostComplexInChartAt (n := 2) (by simp) α hJ).continuousOn.mono hWα_sub)
+      ((Floer.contDiffOn_almostComplexInChartAt_of_contMDiffOn (n := 2) (by simp)
+        α hJ).continuousOn.mono hWα_sub)
       ((ω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2) (by simp) α hXsM).continuousOn.mono
         hWα_sub)
       ((ω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2) (by simp) α hXtM).continuousOn.mono

@@ -10,6 +10,8 @@ public import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.Harmonic.Bounds
+import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
+import TauCeti.NumberTheory.Divisors
 
 /-!
 # Bounds for divisor sums
@@ -36,7 +38,10 @@ gives the same subpolynomial bound for every fixed order, including order zero.
 The ordered divisor functions also satisfy coefficient-one harmonic and summatory mean
 bounds, with natural cutoffs including zero and real cutoffs at least one. The pointwise
 coefficient comparisons give explicit mean bounds for three to the number of distinct prime
-factors and for the squared ordinary divisor count.
+factors and for the squared ordinary divisor count. The ordinary divisor count itself satisfies
+`∑_{n ≤ Z} σ₀(n) ≤ Z (1 + log Z)`. Over the integers, the pairs `(c, d)` with `d ∣ c` and
+`0 < |c| < Y` therefore number at most `4 Y (1 + log Y)`, where a pointwise bound for each
+`σ₀(|c|)` would lose a power of `Y`.
 
 These mean bounds extend Arend Mellendijk's 2023 formalization of the squarefree divisor
 majorants in [Prime Number Theorem and More][PNT-Aux]. Heath-Brown's Lemma 3.1, in notes by
@@ -327,4 +332,60 @@ theorem sum_Ioc_sigma_zero_sq_le_mul_one_add_log_cube {Z : ℝ} (hZ : 1 ≤ Z) :
   refine le_trans (sum_le_sum fun n _ ↦ ?_) (sum_Ioc_zeta_pow_le_mul_one_add_log_pow 4 hZ)
   exact_mod_cast sigma_zero_sq_le_zeta_pow_four n
 
+/-- The summatory divisor function satisfies `∑_{n ≤ Z} σ₀(n) ≤ Z (1 + log Z)` for `Z ≥ 1`. -/
+theorem sum_Ioc_sigma_zero_le_mul_one_add_log {Z : ℝ} (hZ : 1 ≤ Z) :
+    (∑ n ∈ Ioc 0 ⌊Z⌋₊, (sigma 0 n : ℝ)) ≤ Z * (1 + Real.log Z) := by
+  simpa only [sq, zeta_mul_zeta, Nat.add_one_sub_one, pow_one] using
+    sum_Ioc_zeta_pow_le_mul_one_add_log_pow 2 hZ
+
 end ArithmeticFunction
+
+namespace TauCeti
+
+open Finset
+
+/-- An integer pair `(c, d)` with `d ∣ c` and `0 < |c| < Y` has `c = ±a` for a natural number
+`0 < a ≤ Y`, and `d` an integer divisor of `a`. -/
+private theorem setOf_ne_zero_and_abs_lt_and_dvd_subset (Y : ℝ) :
+    {p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1} ⊆
+      ↑((Ioc 0 ⌊Y⌋₊).biUnion fun a : ℕ ↦ ({(a : ℤ), -(a : ℤ)} : Finset ℤ) ×ˢ (a : ℤ).divisors) := by
+  rintro ⟨c, d⟩ ⟨hc, hcY, hd⟩
+  simp only [coe_biUnion, coe_Ioc, Set.mem_iUnion, Set.mem_Ioc, coe_product, Set.mem_prod,
+    mem_coe, mem_insert, mem_singleton, Int.mem_divisors, exists_prop]
+  refine ⟨c.natAbs, ⟨Int.natAbs_pos.mpr hc, Nat.le_floor ?_⟩, Int.natAbs_eq c,
+    Int.dvd_natAbs.mpr hd, by simpa using hc⟩
+  rw [Nat.cast_natAbs, Int.cast_abs]
+  exact hcY.le
+
+/-- There are finitely many integer pairs `(c, d)` with `d ∣ c` and `0 < |c| < Y`. -/
+theorem finite_setOf_ne_zero_and_abs_lt_and_dvd (Y : ℝ) :
+    {p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}.Finite :=
+  (finite_toSet _).subset (setOf_ne_zero_and_abs_lt_and_dvd_subset Y)
+
+/-- The integer pairs `(c, d)` with `d ∣ c` and `0 < |c| < Y` number at most `4 Y (1 + log Y)`
+for `Y ≥ 1`. This is the summatory divisor bound over the integers, both signs of `c` and of
+`d` being counted. -/
+theorem ncard_setOf_ne_zero_and_abs_lt_and_dvd_le {Y : ℝ} (hY : 1 ≤ Y) :
+    ({p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}.ncard : ℝ) ≤
+      4 * (Y * (1 + Real.log Y)) := by
+  classical
+  -- Each `a` contributes two signs of `c` and the `2 σ₀(a)` integer divisors of `a`.
+  have hcard : {p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}.ncard ≤
+      ∑ a ∈ Ioc 0 ⌊Y⌋₊, 4 * ArithmeticFunction.sigma 0 a := by
+    refine (Set.ncard_le_ncard (setOf_ne_zero_and_abs_lt_and_dvd_subset Y)
+      (finite_toSet _)).trans ?_
+    rw [Set.ncard_coe_finset]
+    refine card_biUnion_le.trans (sum_le_sum fun a _ ↦ ?_)
+    rw [card_product, Int.card_divisors, Int.natAbs_natCast,
+      ArithmeticFunction.sigma_zero_apply]
+    have := Nat.mul_le_mul_right (2 * #a.divisors)
+      (card_le_two : #({(a : ℤ), -(a : ℤ)} : Finset ℤ) ≤ 2)
+    omega
+  calc ({p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}.ncard : ℝ)
+      ≤ ∑ a ∈ Ioc 0 ⌊Y⌋₊, 4 * (ArithmeticFunction.sigma 0 a : ℝ) := by exact_mod_cast hcard
+    _ = 4 * ∑ a ∈ Ioc 0 ⌊Y⌋₊, (ArithmeticFunction.sigma 0 a : ℝ) := (mul_sum _ _ _).symm
+    _ ≤ 4 * (Y * (1 + Real.log Y)) := by
+        gcongr
+        exact ArithmeticFunction.sum_Ioc_sigma_zero_le_mul_one_add_log hY
+
+end TauCeti

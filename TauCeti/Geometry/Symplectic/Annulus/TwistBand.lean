@@ -24,8 +24,9 @@ Let `F = (X, Y)` be a map of the plane, `C²` on a strip `ℝ × J` over an open
 area-preserving twist diffeomorphism of the annulus `(ℝ / ℤ) × [0, 1]`, extended to an open collar
 `J ⊇ [0, 1]`. This file shows that the twist coordinates `G(x, y) = (x, X(x, y))`
 (`TauCeti.stripTwistCoord`) identify the strip with a *band* in the `(x, X)`-plane, and transports
-the generating function `S` of `TauCeti.stripGeneratingFunction` to a single function on the whole
-band, satisfying the generating equations everywhere.
+functions on the strip, such as the generating function `S` of `TauCeti.stripGeneratingFunction`,
+to functions on the whole band. When `F` preserves area and the line `y = 0`, the transport of
+that generating function satisfies the generating equations everywhere on the band.
 
 * Each vertical slice `t ↦ X(x, t)` has a derivative of constant sign on `J`, by Darboux's
   theorem, so it is strictly monotone or strictly antitone
@@ -36,13 +37,22 @@ band, satisfying the generating equations everywhere.
   (`TauCeti.image_stripTwistCoord_preimage_snd_uIcc`). For `[c, d] = [0, 1]` this is the
   boundary-graph band of the twist map.
 * By the inverse function theorem, `G` is a `C^n` local diffeomorphism on the open strip when `F`
-  is `C^n`, `1 ≤ n` (`TauCeti.isLocalDiffeomorphOn_stripTwistCoord`). Being injective, it is a
-  `C^n` diffeomorphism from the strip onto an open band
-  (`IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn`), with inverse `Function.invFunOn G (ℝ × J)`.
+  is `C^n`, `1 ≤ n` (`TauCeti.isLocalDiffeomorphOn_stripTwistCoord`), so the band `G(ℝ × J)` is
+  open (`TauCeti.isOpen_image_stripTwistCoord`). Being injective, `G` is a `C^n` diffeomorphism
+  from the strip onto that band (`IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn`), with inverse
+  `Function.invFunOn G (ℝ × J)`.
 
-The **band generating function** `S'(x, X) = S(G⁻¹(x, X))`
+The **band generating function** `S'(x, X) = S(G⁻¹(x, X))` of a function `S` on the strip
 (`TauCeti.stripBandGeneratingFunction`) is then defined on an open neighbourhood of the closed
-band, and when `F` preserves area and the line `y = 0`:
+band. It recovers `S` through the twist coordinates
+(`TauCeti.stripBandGeneratingFunction_stripTwistCoord`), and when `F` commutes with
+`(x, y) ↦ (x + a, y)` on the strip and `S` is invariant under that translation, as for a lift of an
+annulus map with `a = 1`, the band is invariant under the simultaneous translation
+`(x, X) ↦ (x + a, X + a)` (`TauCeti.add_mem_image_stripTwistCoord_iff`) and `S'` is periodic with
+period `(a, a)` on all of `ℝ × ℝ` (`TauCeti.periodic_stripBandGeneratingFunction`).
+
+For `S` the generating function `TauCeti.stripGeneratingFunction F`, when `F` preserves area and
+the line `y = 0`:
 
 * it satisfies the generating equations `∂₁ S'(x, X) = -y`, `∂₂ S'(x, X) = Y` at every point
   `(x, X) = G(x, y)` of the band (`TauCeti.hasFDerivAt_stripBandGeneratingFunction`), so it
@@ -54,10 +64,8 @@ band, and when `F` preserves area and the line `y = 0`:
 * it vanishes on the lower boundary graph `X = X(x, 0)`
   (`TauCeti.stripBandGeneratingFunction_stripTwistCoord_mk_zero`), which fixes its additive
   constant;
-* when `F` commutes with `(x, y) ↦ (x + a, y)` on the strip, as a lift of an annulus map does for
-  `a = 1`, the band is invariant under the simultaneous translation `(x, X) ↦ (x + a, X + a)`
-  (`TauCeti.add_mem_image_stripTwistCoord_iff`), and the band generating function is periodic
-  with period `(a, a)` on all of `ℝ × ℝ` (`TauCeti.periodic_stripBandGeneratingFunction`);
+* `S` is invariant under `(x, y) ↦ (x + a, y)` on the strip when `F` commutes with it there
+  (`TauCeti.stripGeneratingFunction_add_fst_of_mem`), so the band generating function is periodic;
 * its second derivative is `d²S'(v, w) = (X_x v₁ w₁ - v₁ w₂ - v₂ w₁ + Y_y v₂ w₂) / X_y`
   (`TauCeti.fderiv_fderiv_stripBandGeneratingFunction_apply`), so its mixed derivative
   `∂₁ ∂₂ S' = -1 / ∂_y X` has the sign opposite to that of the twist.
@@ -65,6 +73,9 @@ band, and when `F` preserves area and the line `y = 0`:
 These are the global generating functions of the twist factors in the generating-function proof of
 the Poincaré–Birkhoff theorem. With the convention `y = -∂₁ S'`, `Y = ∂₂ S'`, a positive twist
 `(x, y) ↦ (x + c y, y)`, `c > 0`, has the generator `(X - x)² / (2c)`, with `∂₁ ∂₂ S' = -1 / c`.
+More generally, the band generating function of the affine shear
+`(x, y) ↦ (x + a + c y, y)` over the whole plane is `(X - x - a)² / (2c)`
+(`TauCeti.stripBandGeneratingFunction_affineShear`).
 
 ## References
 
@@ -167,6 +178,15 @@ theorem isLocalDiffeomorphOn_stripTwistCoord {n : WithTop ℕ∞} (hn : 1 ≤ n)
     (fun r hr ↦ (contDiffAt_stripTwistCoord (hF r hr)).contDiffWithinAt)
     (hJ.preimage continuous_snd) hq hn he.hasFDerivAt.fderiv.symm
 
+/-- **The band is open.** On a strip `ℝ × J` over an open set `J`, where `F` is `C^n`, `1 ≤ n`, and
+twists, the image `G(ℝ × J)` of the strip under the twist coordinates is open. -/
+theorem isOpen_image_stripTwistCoord {n : WithTop ℕ∞} (hn : 1 ≤ n) (hJ : IsOpen J)
+    (hF : ∀ q ∈ Prod.snd ⁻¹' J, ContDiffAt ℝ n F q)
+    (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) :
+    IsOpen (stripTwistCoord F '' (Prod.snd ⁻¹' J)) :=
+  (isLocalDiffeomorphOn_stripTwistCoord hn hJ hF htwist).isLocalHomeomorphOn.isOpen_image
+    (hJ.preimage continuous_snd)
+
 /-- The inverse of the twist coordinates on a strip over an open interval, where `F` is `C^n` and
 twists, is `C^n` at every point of the band. -/
 private theorem contDiffAt_invFunOn_stripTwistCoord {n : WithTop ℕ∞} (hn : 1 ≤ n)
@@ -178,38 +198,46 @@ private theorem contDiffAt_invFunOn_stripTwistCoord {n : WithTop ℕ∞} (hn : 1
   have hinj := injOn_stripTwistCoord hJc htwist
   have hd := isLocalDiffeomorphOn_stripTwistCoord hn hJ hF htwist
   exact (contMDiffOn_iff_contDiffOn.1 (hd.contMDiffOn_invFunOn hS hinj)).contDiffAt
-    ((hd.isLocalHomeomorphOn.isOpen_image hS).mem_nhds (mem_image_of_mem _ hq))
+    ((isOpen_image_stripTwistCoord hn hJ hF htwist).mem_nhds (mem_image_of_mem _ hq))
 
 /-! ### The generating function on the band -/
 
-/-- The **generating function on the twist band** of `F` over the strip `ℝ × J`: the function
-`S'(x, X) = S(x, y)` of the twist coordinates `(x, X) = (x, X(x, y))` of a point `(x, y)` of the
-strip, where `S` is `TauCeti.stripGeneratingFunction F`. Its value off the band is unspecified. -/
-def stripBandGeneratingFunction (F : ℝ × ℝ → ℝ × ℝ) (J : Set ℝ) (z : ℝ × ℝ) : ℝ :=
-  stripGeneratingFunction F (invFunOn (stripTwistCoord F) (Prod.snd ⁻¹' J) z)
+/-- The **generating function on the twist band** of `F` over the strip `ℝ × J` with primitive
+`S`: the function `S'(x, X) = S(x, y)` of the twist coordinates `(x, X) = (x, X(x, y))` of a point
+`(x, y)` of the strip. For `S = TauCeti.stripGeneratingFunction F` this is the generating function
+of an area-preserving `F` on the band; for the primitive `S` of `F*λ - λ` of a map which is exact
+for a primitive `λ` of the area form, it is the generating function of that map. Its value off the
+band is unspecified. -/
+def stripBandGeneratingFunction (F : ℝ × ℝ → ℝ × ℝ) (J : Set ℝ) (S : ℝ × ℝ → ℝ) (z : ℝ × ℝ) :
+    ℝ :=
+  S (invFunOn (stripTwistCoord F) (Prod.snd ⁻¹' J) z)
+
+variable {S : ℝ × ℝ → ℝ}
 
 theorem stripBandGeneratingFunction_def (z : ℝ × ℝ) :
-    stripBandGeneratingFunction F J z =
-      stripGeneratingFunction F (invFunOn (stripTwistCoord F) (Prod.snd ⁻¹' J) z) :=
+    stripBandGeneratingFunction F J S z = S (invFunOn (stripTwistCoord F) (Prod.snd ⁻¹' J) z) :=
   (rfl)
 
-/-- Where the twist coordinates are injective on the strip, the band generating function at
-`(x, X(x, y))` is the generating function at `(x, y)`. -/
+/-- Where the twist coordinates are injective on the strip, the band generating function with
+primitive `S` at `(x, X(x, y))` is `S(x, y)`. -/
 theorem stripBandGeneratingFunction_stripTwistCoord
     (hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' J)) {q : ℝ × ℝ} (hq : q ∈ Prod.snd ⁻¹' J) :
-    stripBandGeneratingFunction F J (stripTwistCoord F q) = stripGeneratingFunction F q := by
+    stripBandGeneratingFunction F J S (stripTwistCoord F q) = S q := by
   rw [stripBandGeneratingFunction_def, hinj.leftInvOn_invFunOn hq]
 
-/-- The band generating function vanishes on the lower boundary graph `X = X(x, 0)`, the image
-of the line `y = 0` under the twist coordinates. -/
+/-- The band generating function with primitive `TauCeti.stripGeneratingFunction F` vanishes on
+the lower boundary graph `X = X(x, 0)`, the image of the line `y = 0` under the twist
+coordinates. -/
 theorem stripBandGeneratingFunction_stripTwistCoord_mk_zero
     (hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' J)) (h0 : 0 ∈ J) (x : ℝ) :
-    stripBandGeneratingFunction F J (stripTwistCoord F (x, 0)) = 0 := by
-  simpa using stripBandGeneratingFunction_stripTwistCoord hinj (q := (x, 0)) (mem_preimage.2 h0)
+    stripBandGeneratingFunction F J (stripGeneratingFunction F) (stripTwistCoord F (x, 0)) =
+      0 := by
+  simpa using stripBandGeneratingFunction_stripTwistCoord (S := stripGeneratingFunction F) hinj
+    (q := (x, 0)) (mem_preimage.2 h0)
 
 /-- If `F` commutes at `q` with the translation `(x, y) ↦ (x + a, y)`, then the twist coordinates
 of `q + (a, 0)` are those of `q` translated by `(a, a)`. -/
-private theorem stripTwistCoord_add_fst {a : ℝ} {q : ℝ × ℝ}
+theorem stripTwistCoord_add_fst {a : ℝ} {q : ℝ × ℝ}
     (h : F (q + (a, 0)) = F q + (a, 0)) :
     stripTwistCoord F (q + (a, 0)) = stripTwistCoord F q + (a, a) := by
   ext <;> simp [h]
@@ -227,44 +255,52 @@ theorem add_mem_image_stripTwistCoord_iff {a : ℝ}
     rw [← stripTwistCoord_add_fst (hFa _ hq'), sub_add_cancel, hqz]
   · rw [stripTwistCoord_add_fst (hFa q hq), hqz]
 
-/-- **Periodicity of the band generating function.** Let `J` be an open interval containing `0`.
-If `F` commutes on the strip `ℝ × J` with the translation `(x, y) ↦ (x + a, y)`, as a lift of an
-annulus map does for `a = 1`, and the twist coordinates are injective there, then the band
-generating function is periodic with period `(a, a)` on all of `ℝ × ℝ`: it is invariant under the
-simultaneous translation `(x, X) ↦ (x + a, X + a)` of the band, and off the band, which is
-invariant under the translation (`TauCeti.add_mem_image_stripTwistCoord_iff`), it takes the same
-unspecified value at `z` and `z + (a, a)`. -/
-theorem periodic_stripBandGeneratingFunction (hJ : IsOpen J) (hJc : J.OrdConnected)
-    (h0 : 0 ∈ J) (hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' J)) {a : ℝ}
-    (hFa : ∀ q ∈ Prod.snd ⁻¹' J, F (q + (a, 0)) = F q + (a, 0)) :
-    Periodic (stripBandGeneratingFunction F J) (a, a) := by
+/-- **Periodicity of the band generating function.** If `F` commutes on the strip `ℝ × J` with the
+translation `(x, y) ↦ (x + a, y)`, as a lift of an annulus map does for `a = 1`, the twist
+coordinates are injective there and the primitive `S` is invariant under the translation on the
+strip, then the band generating function is periodic with period `(a, a)` on all of `ℝ × ℝ`: it is
+invariant under the simultaneous translation `(x, X) ↦ (x + a, X + a)` of the band, and off the
+band, which is invariant under the translation (`TauCeti.add_mem_image_stripTwistCoord_iff`), it
+takes the same unspecified value at `z` and `z + (a, a)`. For the generating function of an
+area-preserving map, the invariance of `S` is
+`TauCeti.stripGeneratingFunction_add_fst_of_mem`. -/
+theorem periodic_stripBandGeneratingFunction (hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' J))
+    {a : ℝ} (hFa : ∀ q ∈ Prod.snd ⁻¹' J, F (q + (a, 0)) = F q + (a, 0))
+    (hS : ∀ q ∈ Prod.snd ⁻¹' J, S (q + (a, 0)) = S q) :
+    Periodic (stripBandGeneratingFunction F J S) (a, a) := by
   intro z
   by_cases hz : z ∈ stripTwistCoord F '' (Prod.snd ⁻¹' J)
   · obtain ⟨q, hq, rfl⟩ := hz
     have hqa : q + (a, 0) ∈ Prod.snd ⁻¹' J := by simpa using hq
     rw [← stripTwistCoord_add_fst (hFa q hq), stripBandGeneratingFunction_stripTwistCoord hinj hqa,
-      stripBandGeneratingFunction_stripTwistCoord hinj hq]
-    -- The vertical segment below `q` lies in the open strip, where `F` commutes with the
-    -- translation.
-    refine stripGeneratingFunction_add_fst_of_eventuallyEq fun t ht ↦ ?_
-    have ht' : (q.1, t) ∈ Prod.snd ⁻¹' J :=
-      mem_preimage.2 (hJc.uIcc_subset h0 (mem_preimage.1 hq) (uIoo_subset_uIcc_self ht))
-    exact eventually_of_mem ((hJ.preimage continuous_snd).mem_nhds ht') hFa
+      stripBandGeneratingFunction_stripTwistCoord hinj hq, hS q hq]
   · rw [stripBandGeneratingFunction_def, stripBandGeneratingFunction_def,
       invFunOn_neg ((add_mem_image_stripTwistCoord_iff hFa z).not.2 hz), invFunOn_neg hz]
+
+/-- Let `J` be an open interval containing `0`. If `F` commutes on the strip `ℝ × J` with the
+translation `(x, y) ↦ (x + a, y)`, its generating function is invariant under that translation on
+the strip: the vertical segment below a point of the strip lies in the open strip. -/
+theorem stripGeneratingFunction_add_fst_of_mem (hJ : IsOpen J) (hJc : J.OrdConnected)
+    (h0 : 0 ∈ J) {a : ℝ} (hFa : ∀ q ∈ Prod.snd ⁻¹' J, F (q + (a, 0)) = F q + (a, 0))
+    {q : ℝ × ℝ} (hq : q ∈ Prod.snd ⁻¹' J) :
+    stripGeneratingFunction F (q + (a, 0)) = stripGeneratingFunction F q :=
+  stripGeneratingFunction_add_fst_of_eventuallyEq fun _ ht ↦
+    eventually_of_mem ((hJ.preimage continuous_snd).mem_nhds (mem_preimage.2
+      (hJc.uIcc_subset h0 (mem_preimage.1 hq) (uIoo_subset_uIcc_self ht)))) hFa
 
 /-- **The generating equations on the band.** Let the twist coordinates be injective on the strip
 `ℝ × J` over an open set `J`, and let `p = (x, y)` be a point of the strip at which `F = (X, Y)`
 twists, such that `F` is `C²` along the segment from `(x, 0)` to `p`, maps `(x, 0)` to the line
 `y = 0` and preserves area at the interior points of that segment. Then the band generating
-function has derivative `Y(p) dX - y dx` at `(x, X(p))`: `∂₁ S'(x, X) = -y` and
+function with primitive `TauCeti.stripGeneratingFunction F` has derivative `Y(p) dX - y dx` at
+`(x, X(p))`: `∂₁ S'(x, X) = -y` and
 `∂₂ S'(x, X) = Y(p)`. -/
 theorem hasFDerivAt_stripBandGeneratingFunction (hJ : IsOpen J)
     (hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' J)) {p : ℝ × ℝ} (hp : p ∈ Prod.snd ⁻¹' J)
     (hF : ∀ t ∈ [[0, p.2]], ContDiffAt ℝ 2 F (p.1, t)) (hY : (F (p.1, 0)).2 = 0)
     (hdet : ∀ t ∈ uIoo 0 p.2, (fderiv ℝ F (p.1, t)).det = 1)
     (htwist : (fderiv ℝ F p (0, 1)).1 ≠ 0) :
-    HasFDerivAt (stripBandGeneratingFunction F J)
+    HasFDerivAt (stripBandGeneratingFunction F J (stripGeneratingFunction F))
       ((F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ - p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ)
       (stripTwistCoord F p) :=
   hasFDerivAt_of_eventuallyEq_stripGeneratingFunction hF hY hdet htwist <|
@@ -273,13 +309,15 @@ theorem hasFDerivAt_stripBandGeneratingFunction (hJ : IsOpen J)
 
 /-- **Band generating functions generate.** Let `F` be `C²` on a strip `ℝ × J` over an open
 interval `J ∋ 0`, preserve the area form `dx ∧ dy` and the line `y = 0` there, and twist,
-`∂_y X ≠ 0`. Then its band generating function generates it on the strip over the band
+`∂_y X ≠ 0`. Then its band generating function with primitive
+`TauCeti.stripGeneratingFunction F` generates it on the strip over the band
 `G(ℝ × J)` of twist coordinates, in the sense of `TauCeti.IsStripGenerating`. -/
 theorem isStripGenerating_stripBandGeneratingFunction (hJ : IsOpen J) (hJc : J.OrdConnected)
     (h0 : (0 : ℝ) ∈ J) (hF : ∀ q ∈ Prod.snd ⁻¹' J, ContDiffAt ℝ 2 F q)
     (hY : ∀ x, (F (x, 0)).2 = 0) (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) :
-    IsStripGenerating (stripBandGeneratingFunction F J) F (Prod.snd ⁻¹' J)
+    IsStripGenerating (stripBandGeneratingFunction F J (stripGeneratingFunction F)) F
+      (Prod.snd ⁻¹' J)
       (stripTwistCoord F '' (Prod.snd ⁻¹' J)) where
   mapsTo p hp := by simpa using mem_image_of_mem (stripTwistCoord F) hp
   surjOn _ := by simp
@@ -289,12 +327,14 @@ theorem isStripGenerating_stripBandGeneratingFunction (hJ : IsOpen J) (hJc : J.O
       (fun _ ht ↦ hdet _ (hJc.uIcc_subset h0 hp (uIoo_subset_uIcc_self ht))) (htwist p hp)
 
 /-- On a strip `ℝ × J` over an open interval `J` containing `0`, where `F` is `C^(n + 1)` and
-twists, the band generating function is `C^n` at every point of the band. -/
+twists, the band generating function with primitive `TauCeti.stripGeneratingFunction F` is `C^n`
+at every point of the band. -/
 theorem contDiffAt_stripBandGeneratingFunction {n : ℕ∞} (hJ : IsOpen J) (hJc : J.OrdConnected)
     (h0 : 0 ∈ J) (hF : ∀ q ∈ Prod.snd ⁻¹' J, ContDiffAt ℝ (n + 1) F q)
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) {q : ℝ × ℝ}
     (hq : q ∈ Prod.snd ⁻¹' J) :
-    ContDiffAt ℝ n (stripBandGeneratingFunction F J) (stripTwistCoord F q) := by
+    ContDiffAt ℝ n (stripBandGeneratingFunction F J (stripGeneratingFunction F))
+      (stripTwistCoord F q) := by
   have hn : 1 ≤ ((n + 1 : ℕ∞) : WithTop ℕ∞) := by simp
   have hinj := injOn_stripTwistCoord hJc htwist
   have hS : ContDiffAt ℝ n (stripGeneratingFunction F) q :=
@@ -328,14 +368,14 @@ private theorem fderiv_stripBandGeneratingFunction_eventuallyEq (hJ : IsOpen J)
     (hY : ∀ x, (F (x, 0)).2 = 0) (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) {q : ℝ × ℝ}
     (hq : q ∈ Prod.snd ⁻¹' J) :
-    fderiv ℝ (stripBandGeneratingFunction F J) =ᶠ[𝓝 (stripTwistCoord F q)]
+    fderiv ℝ (stripBandGeneratingFunction F J (stripGeneratingFunction F))
+      =ᶠ[𝓝 (stripTwistCoord F q)]
       fun z ↦ (F (invFunOn (stripTwistCoord F) (Prod.snd ⁻¹' J) z)).2 •
           ContinuousLinearMap.snd ℝ ℝ ℝ -
         (invFunOn (stripTwistCoord F) (Prod.snd ⁻¹' J) z).2 • ContinuousLinearMap.fst ℝ ℝ ℝ := by
-  have hS : IsOpen (Prod.snd ⁻¹' J : Set (ℝ × ℝ)) := hJ.preimage continuous_snd
   have hinj := injOn_stripTwistCoord hJc htwist
-  have hband := ((isLocalDiffeomorphOn_stripTwistCoord one_le_two hJ hF
-    htwist).isLocalHomeomorphOn.isOpen_image hS).mem_nhds (mem_image_of_mem _ hq)
+  have hband :=
+    (isOpen_image_stripTwistCoord one_le_two hJ hF htwist).mem_nhds (mem_image_of_mem _ hq)
   filter_upwards [hband]
   rintro _ ⟨r, hr, rfl⟩
   have hseg : [[0, r.2]] ⊆ J := hJc.uIcc_subset h0 (mem_preimage.1 hr)
@@ -358,7 +398,8 @@ theorem fderiv_fderiv_stripBandGeneratingFunction_apply (hJ : IsOpen J) (hJc : J
     (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
     (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) {q : ℝ × ℝ}
     (hq : q ∈ Prod.snd ⁻¹' J) (v w : ℝ × ℝ) :
-    fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J)) (stripTwistCoord F q) v w =
+    fderiv ℝ (fderiv ℝ (stripBandGeneratingFunction F J (stripGeneratingFunction F)))
+        (stripTwistCoord F q) v w =
       ((fderiv ℝ F q (1, 0)).1 * v.1 * w.1 - v.1 * w.2 - v.2 * w.1 +
         (fderiv ℝ F q (0, 1)).2 * v.2 * w.2) / (fderiv ℝ F q (0, 1)).1 := by
   set S := Prod.snd ⁻¹' J
@@ -406,5 +447,43 @@ theorem fderiv_fderiv_stripBandGeneratingFunction_apply (hJ : IsOpen J) (hJc : J
     ContinuousLinearMap.coe_snd', ContinuousLinearMap.coe_fst']
   field_simp
   linear_combination (-(v.1 * w.2)) * hdetq
+
+
+/-! ### Affine shears -/
+
+/-- **The band generating function of an affine shear.** The band generating function of the
+affine shear `(x, y) ↦ (x + a + c y, y)` over the whole plane is
+`S'(x, X) = (X - x - a)² / (2c)`. For `c ≠ 0` the shear twists everywhere; for `c = 0` both sides
+are `0`, since the strip generating function `c y² / 2` vanishes and `x / 0 = 0`. For instance the
+negative twist `(x, y) ↦ (x - (6y + 1) / 8, y)` (`a = -1 / 8`, `c = -3 / 4`) has the generator
+`-(2/3) (x - X)² + (x - X) / 6 - 1 / 96`. -/
+theorem stripBandGeneratingFunction_affineShear (a c : ℝ) (z : ℝ × ℝ) :
+    stripBandGeneratingFunction (fun q : ℝ × ℝ ↦ (q.1 + a + c * q.2, q.2)) univ
+        (stripGeneratingFunction fun q : ℝ × ℝ ↦ (q.1 + a + c * q.2, q.2)) z =
+      (z.2 - z.1 - a) ^ 2 / (2 * c) := by
+  obtain rfl | hc := eq_or_ne c 0
+  · rw [stripBandGeneratingFunction_def, stripGeneratingFunction_affineShear]
+    simp
+  set F : ℝ × ℝ → ℝ × ℝ := fun q ↦ (q.1 + a + c * q.2, q.2)
+  have hinj : InjOn (stripTwistCoord F) (Prod.snd ⁻¹' univ) := by
+    rintro ⟨x, y⟩ - ⟨x', y'⟩ - h
+    simp only [stripTwistCoord_apply, F, Prod.mk.injEq] at h
+    obtain ⟨rfl, h⟩ := h
+    simpa [hc] using h
+  -- The point of the plane over `z` is `(z.1, (z.2 - z.1 - a) / c)`.
+  have hz : stripTwistCoord F (z.1, (z.2 - z.1 - a) / c) = z := by
+    ext
+    · simp
+    · simp only [stripTwistCoord_apply, F]
+      field_simp
+      ring
+  calc stripBandGeneratingFunction F univ (stripGeneratingFunction F) z
+      = stripBandGeneratingFunction F univ (stripGeneratingFunction F)
+          (stripTwistCoord F (z.1, (z.2 - z.1 - a) / c)) := by
+        rw [hz]
+    _ = (z.2 - z.1 - a) ^ 2 / (2 * c) := by
+        rw [stripBandGeneratingFunction_stripTwistCoord hinj (mem_preimage.2 (mem_univ _)),
+          stripGeneratingFunction_affineShear]
+        field_simp
 
 end TauCeti

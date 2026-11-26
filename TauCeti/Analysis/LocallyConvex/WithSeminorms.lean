@@ -24,11 +24,16 @@ as it is absolutely summable for every seminorm of the family
 (`WithSeminorms.summable_of_summable_seminorm`), and a continuous seminorm of its sum is at most
 the sum of the seminorms of its terms (`Seminorm.map_tsum_le`). These are the locally convex
 analogues of `Summable.of_norm` and `norm_tsum_le_tsum_norm`.
+
+For an arbitrary family of seminorms, a sequence is Cauchy if and only if it is Cauchy for every
+seminorm of the family (`WithSeminorms.cauchySeq_iff`). For a countable family the uniformity is
+countably generated, so the space is complete if and only if every sequence that is Cauchy for
+each seminorm converges (`WithSeminorms.completeSpace_iff`).
 -/
 
 public section
 
-open Filter
+open Filter Topology Uniformity
 
 namespace Seminorm
 
@@ -72,7 +77,36 @@ end Seminorm
 namespace WithSeminorms
 
 variable {𝕜 E ι β : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
-  [UniformSpace E] [IsUniformAddGroup E] [CompleteSpace E] {p : SeminormFamily 𝕜 E ι}
+  [UniformSpace E] [IsUniformAddGroup E] {p : SeminormFamily 𝕜 E ι}
+
+/-- In a uniform additive group whose topology is induced by a family of seminorms, a sequence
+is Cauchy if and only if it is Cauchy for every seminorm of the family. -/
+theorem cauchySeq_iff {F : Type*} [SemilatticeSup F] [Nonempty F] (hp : WithSeminorms p)
+    {u : F → E} :
+    CauchySeq u ↔ ∀ i, ∀ ε > 0, ∃ N, ∀ m ≥ N, ∀ n ≥ N, p i (u m - u n) < ε := by
+  rw [cauchySeq_iff_tendsto, uniformity_eq_comap_nhds_zero, tendsto_comap_iff, hp.tendsto_nhds]
+  refine forall₃_congr fun i ε _ ↦ ?_
+  simp only [Function.comp_apply, Prod.map_fst, Prod.map_snd, sub_zero]
+  rw [eventually_atTop_prod_self']
+  exact exists_congr fun N ↦ forall₂_congr fun m _ ↦ forall₂_congr fun n _ ↦ by
+    rw [map_sub_rev]
+
+/-- **Completeness criterion for countably many seminorms.** A uniform additive group whose
+topology is induced by a countable family of seminorms is complete if and only if every sequence
+which is Cauchy for every seminorm of the family converges. -/
+theorem completeSpace_iff [Countable ι] (hp : WithSeminorms p) :
+    CompleteSpace E ↔ ∀ u : ℕ → E,
+      (∀ i, ∀ ε > 0, ∃ N, ∀ m ≥ N, ∀ n ≥ N, p i (u m - u n) < ε) →
+        ∃ x, Tendsto u atTop (𝓝 x) := by
+  have : (𝓝 (0 : E)).IsCountablyGenerated := by
+    rw [p.withSeminorms_iff_nhds_eq_iInf.mp hp]
+    infer_instance
+  have : (𝓤 E).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
+  simp_rw [← hp.cauchySeq_iff]
+  exact ⟨fun _ u hu ↦ cauchySeq_tendsto_of_complete hu,
+    UniformSpace.complete_of_cauchySeq_tendsto⟩
+
+variable [CompleteSpace E]
 
 /-- In a complete space whose topology is given by the seminorm family `p`, a series that is
 absolutely summable for every seminorm `p i` is summable. -/

@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 import TauCeti.Analysis.Hofer
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.CompactCover
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Euclidean
 import TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity
 import TauCeti.Geometry.Symplectic.Floer.Compactness.MeanValue
