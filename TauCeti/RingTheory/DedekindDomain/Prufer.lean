@@ -39,8 +39,9 @@ decomposition and inertia groups, and Frobenius elements.
 
 * `IsDedekindDomain.preValuationRing_atPrime`: the localizations of a Dedekind domain at its
   primes are valuation rings.
-* `Ideal.valuationSubringAtPrime_asIdeal`: at a nonzero prime, the localization as a valuation
-  subring is Mathlib's `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime`.
+* `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_asIdeal`: at a nonzero prime, the
+  localization as a valuation subring is Mathlib's
+  `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime`.
 * `IsIntegralClosure.preValuationRing_atPrime`: the same for the integral closure of a Dedekind
   domain in a separable algebraic extension of its fraction field.
 
@@ -75,8 +76,9 @@ instance IsDedekindDomain.preValuationRing_atPrime {C : Type*} [CommRing C] [IsD
 /-- At a nonzero prime `v` of a Dedekind domain `C` with fraction field `L`, the localization at
 `v.asIdeal` realized inside `L` is Mathlib's `HeightOneSpectrum.valuationSubringAtPrime`. So the
 `Ideal.valuationSubringAtPrime` and `ValuationSubring.IsCenteredAt` API applies to it. -/
-theorem Ideal.valuationSubringAtPrime_asIdeal {C L : Type*} [CommRing C] [IsDedekindDomain C]
-    [Field L] [Algebra C L] [IsFractionRing C L] (v : IsDedekindDomain.HeightOneSpectrum C) :
+theorem IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_asIdeal {C L : Type*}
+    [CommRing C] [IsDedekindDomain C] [Field L] [Algebra C L] [IsFractionRing C L]
+    (v : HeightOneSpectrum C) :
     v.asIdeal.valuationSubringAtPrime L =
       IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime L v := by
   ext x

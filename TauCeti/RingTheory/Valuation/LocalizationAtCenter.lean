@@ -14,7 +14,6 @@ public import TauCeti.RingTheory.Localization.AsSubring
 public import TauCeti.RingTheory.Valuation.Center
 import TauCeti.RingTheory.Frobenius
 import TauCeti.RingTheory.Valuation.RamificationGroup
-import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
 # Valuation subrings centred at a prime, and the localization at the centre
@@ -41,11 +40,14 @@ algebraic closure of `ℚ`: its localizations at primes are valuation rings
 (`IsIntegralClosure.preValuationRing_atPrime` in `TauCeti/RingTheory/DedekindDomain/Prufer.lean`).
 For Dedekind `B` itself, at a nonzero prime, the localization is Mathlib's
 `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime`
-(`Ideal.valuationSubringAtPrime_asIdeal`, in the same file).
+(`IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_asIdeal`, in the same file).
+
+The predicate `ValuationSubring.IsCenteredAt A P` (`A` contains `B` and `P` is its centre on `B`)
+and its equivariance `ValuationSubring.IsCenteredAt.smul` are in
+`TauCeti/RingTheory/Valuation/Center.lean`.
 
 ## Main definitions
 
-* `ValuationSubring.IsCenteredAt A P`: `A` contains `B` and `P` is its centre on `B`.
 * `Ideal.valuationSubringAtPrime L P`: for `B_P` a valuation ring, `B_P` as a valuation subring
   of `L`.
 * `ValuationSubring.equivPrimeSpectrum`: for `B` all of whose localizations at primes are
@@ -55,7 +57,6 @@ For Dedekind `B` itself, at a nonzero prime, the localization is Mathlib's
 
 * `ValuationSubring.IsCenteredAt.eq_valuationSubringAtPrime`: a valuation subring centred at `P`
   is `B_P`.
-* `ValuationSubring.IsCenteredAt.smul`: the centre of `g • A` is `g • P`.
 * `Ideal.smul_valuationSubringAtPrime` and `ValuationSubring.coe_equivPrimeSpectrum_symm_smul`:
   `g • B_P = B_{g • P}`, so the correspondence with primes is equivariant.
 * `ValuationSubring.IsCenteredAt.stabilizer_eq`: the stabilizers of `A` and of `P` agree.
@@ -79,65 +80,6 @@ public section
 open scoped Pointwise nonZeroDivisors
 
 variable {B L : Type*} [CommRing B] [Field L] [Algebra B L]
-
-namespace ValuationSubring
-
-/-- **A valuation subring centred at a prime.** The valuation subring `A` of `L` contains the
-image of `B`, and the elements of `B` that are nonunits of `A` form the ideal `P`. Then `P` is
-prime (`ValuationSubring.IsCenteredAt.isPrime`); it is Tau Ceti's `Valuation.centerIdeal` of the
-valuation of `A` (`ValuationSubring.IsCenteredAt.eq_centerIdeal`). -/
-structure IsCenteredAt (A : ValuationSubring L) (P : Ideal B) : Prop where
-  /-- The valuation subring contains the image of `B`. -/
-  algebraMap_mem (b : B) : algebraMap B L b ∈ A
-  /-- An element of `B` lies in `P` exactly when its image is a nonunit of `A`. -/
-  algebraMap_mem_nonunits_iff (b : B) : algebraMap B L b ∈ A.nonunits ↔ b ∈ P
-
-/-- A valuation subring containing the image of `B` is centred at the centre ideal of its
-valuation. -/
-theorem isCenteredAt_centerIdeal (A : ValuationSubring L)
-    (hA : ∀ b : B, A.valuation (algebraMap B L b) ≤ 1) :
-    A.IsCenteredAt (A.valuation.centerIdeal B hA) where
-  algebraMap_mem b := (A.valuation_le_one_iff _).mp (hA b)
-  algebraMap_mem_nonunits_iff b := by rw [mem_nonunits_iff, Valuation.mem_centerIdeal]
-
-namespace IsCenteredAt
-
-variable {A : ValuationSubring L} {P Q : Ideal B}
-
-/-- The valuation of `A` is at most `1` on the image of `B`. -/
-theorem valuation_algebraMap_le_one (h : A.IsCenteredAt P) (b : B) :
-    A.valuation (algebraMap B L b) ≤ 1 :=
-  (A.valuation_le_one_iff _).mpr (h.algebraMap_mem b)
-
-/-- The valuation of `A` is below `1` exactly on the image of `P`. -/
-theorem valuation_algebraMap_lt_one_iff (h : A.IsCenteredAt P) (b : B) :
-    A.valuation (algebraMap B L b) < 1 ↔ b ∈ P := by
-  rw [← mem_nonunits_iff, h.algebraMap_mem_nonunits_iff]
-
-/-- The valuation of `A` is `1` exactly on the image of the complement of `P`. -/
-theorem valuation_algebraMap_eq_one_iff (h : A.IsCenteredAt P) (b : B) :
-    A.valuation (algebraMap B L b) = 1 ↔ b ∉ P := by
-  rw [← h.valuation_algebraMap_lt_one_iff, not_lt, le_antisymm_iff,
-    and_iff_right (h.valuation_algebraMap_le_one b)]
-
-/-- The centre is Tau Ceti's `Valuation.centerIdeal` of the valuation of `A`. -/
-theorem eq_centerIdeal (h : A.IsCenteredAt P) :
-    P = A.valuation.centerIdeal B h.valuation_algebraMap_le_one := by
-  ext b
-  rw [Valuation.mem_centerIdeal, h.valuation_algebraMap_lt_one_iff]
-
-/-- The centre of a valuation subring is a prime ideal. -/
-theorem isPrime (h : A.IsCenteredAt P) : P.IsPrime :=
-  h.eq_centerIdeal ▸ Valuation.isPrime_centerIdeal _
-
-/-- A valuation subring has only one centre. -/
-theorem unique (h : A.IsCenteredAt P) (h' : A.IsCenteredAt Q) : P = Q := by
-  ext b
-  rw [← h.algebraMap_mem_nonunits_iff, h'.algebraMap_mem_nonunits_iff]
-
-end IsCenteredAt
-
-end ValuationSubring
 
 namespace Ideal
 
@@ -171,8 +113,10 @@ variable [PreValuationRing (Localization.AtPrime P)]
 /-- **The localization at a prime as a valuation subring.** When the localization `B_P` is a
 valuation ring, it is realized inside the fraction field `L` as a valuation subring, whose
 elements are the fractions `a / s` with `s ∉ P` (`Ideal.mem_valuationSubringAtPrime_iff`). It is a
-`B`-algebra and a localization of `B` at `P.primeCompl` (`IsLocalization`). -/
-noncomputable def valuationSubringAtPrime : ValuationSubring L :=
+`B`-algebra and a localization of `B` at `P.primeCompl` (`IsLocalization`). It is exposed, as in
+Mathlib's `HeightOneSpectrum.valuationSubringAtPrime`, so that these instances are those of
+`Localization.subalgebra.ofField`. -/
+@[expose] noncomputable def valuationSubringAtPrime : ValuationSubring L :=
   .ofSubring (Localization.subalgebra.ofField L P.primeCompl
     (P.primeCompl_le_nonZeroDivisors_of_isFractionRing L)).toSubring
     ((P.preValuationRing_atPrime_iff L).mp inferInstance)
@@ -216,10 +160,12 @@ theorem isCenteredAt_valuationSubringAtPrime : (P.valuationSubringAtPrime L).IsC
         linear_combination hbs
       exact IsFractionRing.injective B L this ▸ P.mul_mem_left a hb
 
-/-- `B_P`, realized inside `L`, is a `B`-algebra through the algebra map `B → L`. -/
+/-- `B_P`, realized inside `L`, is a `B`-algebra through the algebra map `B → L`: the algebra
+structure of Mathlib's `Localization.subalgebra.ofField`, whose underlying subring `B_P` is by
+definition (`Ideal.valuationSubringAtPrime_toSubring`). -/
 noncomputable instance : Algebra B (P.valuationSubringAtPrime L) :=
-  ((algebraMap B L).codRestrict _
-    (isCenteredAt_valuationSubringAtPrime (P := P)).algebraMap_mem).toAlgebra
+  (Localization.subalgebra.ofField L P.primeCompl
+    (P.primeCompl_le_nonZeroDivisors_of_isFractionRing L)).algebra'
 
 /-- The algebra map `B → B_P`, followed by the inclusion of `B_P` into `L`, is the algebra map
 `B → L`. -/
@@ -232,22 +178,11 @@ theorem coe_algebraMap_valuationSubringAtPrime (b : B) :
 instance : IsScalarTower B (P.valuationSubringAtPrime L) L :=
   .of_algebraMap_eq fun b ↦ (coe_algebraMap_valuationSubringAtPrime (P := P) b).symm
 
-/-- `B_P`, realized inside `L`, is a localization of `B` at the complement of `P`. -/
-instance : IsLocalization P.primeCompl (P.valuationSubringAtPrime L) where
-  map_units s := by
-    rw [ValuationSubring.valuation_eq_one_iff, coe_algebraMap_valuationSubringAtPrime]
-    exact (isCenteredAt_valuationSubringAtPrime.valuation_algebraMap_eq_one_iff (s : B)).mpr
-      s.property
-  surj x := by
-    obtain ⟨a, s, hs, hx⟩ := mem_valuationSubringAtPrime_iff.mp x.property
-    refine ⟨(a, ⟨s, hs⟩), Subtype.ext ?_⟩
-    have := algebraMap_ne_zero_of_notMem (K := L) hs
-    simp only [MulMemClass.coe_mul, coe_algebraMap_valuationSubringAtPrime]
-    rw [hx]
-    field_simp
-  exists_of_eq {x y} h := ⟨1, by
-    have : algebraMap B L x = algebraMap B L y := by simpa using congrArg Subtype.val h
-    rw [IsFractionRing.injective B L this]⟩
+/-- `B_P`, realized inside `L`, is a localization of `B` at the complement of `P`: this is
+Mathlib's `Localization.subalgebra.isLocalization_ofField`. -/
+instance : IsLocalization P.primeCompl (P.valuationSubringAtPrime L) :=
+  Localization.subalgebra.isLocalization_ofField L P.primeCompl
+    (P.primeCompl_le_nonZeroDivisors_of_isFractionRing L)
 
 end Ideal
 
@@ -321,7 +256,7 @@ noncomputable def equivPrimeSpectrum [IsFractionRing B L]
     exact PrimeSpectrum.ext
       (Ideal.isCenteredAt_valuationSubringAtPrime.eq_centerIdeal (B := B) (L := L)).symm
 
-/-- The centre of the valuation subring corresponding to a prime is that prime. -/
+/-- The prime corresponding to a valuation subring containing `B` is its centre on `B`. -/
 @[simp]
 theorem asIdeal_equivPrimeSpectrum_apply [IsFractionRing B L]
     (hB : ∀ (P : Ideal B) [P.IsPrime], PreValuationRing (Localization.AtPrime P))
@@ -344,25 +279,7 @@ theorem coe_equivPrimeSpectrum_symm_apply [IsFractionRing B L]
 namespace IsCenteredAt
 
 variable {G : Type*} [Group G] [MulSemiringAction G B] [MulSemiringAction G L]
-  [SMulDistribClass G B L] {A : ValuationSubring L} {P : Ideal B}
-
-/-- **Equivariance of the centre**: if `A` is centred at `P`, then `g • A` is centred at
-`g • P`. -/
-theorem smul (h : A.IsCenteredAt P) (g : G) : (g • A).IsCenteredAt (g • P) where
-  algebraMap_mem b := by
-    rw [mem_pointwise_smul_iff_inv_smul_mem, ← algebraMap.smul']
-    exact h.algebraMap_mem _
-  algebraMap_mem_nonunits_iff b := by
-    rw [Ideal.mem_pointwise_smul_iff_inv_smul_mem, ← h.algebraMap_mem_nonunits_iff,
-      algebraMap.smul', ← smul_mem_nonunits_pointwise_smul_iff (g := g) (x := g⁻¹ • _),
-      smul_inv_smul]
-
-/-- The stabilizer of a valuation subring stabilizes its centre. -/
-theorem stabilizer_le (h : A.IsCenteredAt P) :
-    MulAction.stabilizer G A ≤ MulAction.stabilizer G P := fun g hg ↦
-  ((MulAction.mem_stabilizer_iff.mp hg ▸ h.smul g).unique h)
-
-variable [IsFractionRing B L]
+  [SMulDistribClass G B L] [IsFractionRing B L] {A : ValuationSubring L} {P : Ideal B}
 
 /-- **The stabilizer of a valuation subring is the stabilizer of its centre** `P`, when `B_P` is a
 valuation ring. -/
@@ -373,14 +290,6 @@ theorem stabilizer_eq (h : A.IsCenteredAt P) [P.IsPrime]
   have h' := h.smul g
   rw [MulAction.mem_stabilizer_iff.mp hg] at h'
   exact h'.eq h
-
-omit [IsFractionRing B L] in
-/-- If `g` raises every element of `A` to the `q`-th power modulo the nonunits of `A`, it raises
-every element of `B` to the `q`-th power modulo the centre. -/
-theorem smul_sub_pow_mem_of_forall (h : A.IsCenteredAt P) {g : G} {q : ℕ}
-    (hg : ∀ x ∈ A, g • x - x ^ q ∈ A.nonunits) (b : B) : g • b - b ^ q ∈ P := by
-  rw [← h.algebraMap_mem_nonunits_iff, map_sub, map_pow, algebraMap.smul']
-  exact hg _ (h.algebraMap_mem b)
 
 /-- **Frobenius elements at a valuation subring and at its centre.** When `B_P` is a valuation
 ring, `g` raises every element of `B` to the `q`-th power modulo `P` exactly when it raises every
