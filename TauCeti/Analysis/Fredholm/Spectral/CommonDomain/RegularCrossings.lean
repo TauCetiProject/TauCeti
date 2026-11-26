@@ -13,6 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Spectrum
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Topology.Order.Interval
 
 /-!
 # The regular-crossing formula on a compactly embedded common domain
@@ -114,33 +115,16 @@ theorem domainCrossingForm_apply (ι A A' : D →L[ℝ] H) (x : A.ker) :
 
 variable {ι A A' : D →L[ℝ] H} {c : ℝ}
 
-/-- Over `ℝ` the coercion `RCLike.ofReal` is the identity, so the shift `(c : 𝕜) • ι - A` of the
-`RCLike` shifted resolvent theory at `𝕜 = ℝ` is the real shift `c • ι - A`. -/
-private theorem isInvertible_ofReal_smul_sub_iff :
-    ((RCLike.ofReal c : ℝ) • ι - A).IsInvertible ↔ (c • ι - A).IsInvertible := by
-  rw [RCLike.ofReal_real_eq_id, id]
-
-/-- At an invertible shift `c ι - A`, `ι` is injective on the kernel of `A`: a vector `x` with
-`A x = 0` and `ι x = 0` is sent to `0` by `c ι - A`. -/
-private theorem injective_comp_subtype_ker (h : (c • ι - A).IsInvertible) :
-    Function.Injective ((ι : D →ₗ[ℝ] H) ∘ₗ A.ker.subtype) := by
-  rw [← LinearMap.ker_eq_bot, eq_bot_iff]
-  rintro ⟨x, hx⟩ hιx
-  have hAx : A x = 0 := hx
-  rw [LinearMap.mem_ker] at hιx
-  simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype, coe_coe] at hιx
-  simpa using h.injective (a₁ := x) (a₂ := 0) (by simp [hAx, hιx])
-
 /-- At an invertible shift `c ι - A` with `c ≠ 0`, `x ↦ ι x` is a linear equivalence from the
 kernel of `A` onto the kernel of the bilinear form of the shifted resolvent transform. -/
 private noncomputable def kerEquivKerShiftedResolventTransform (h : (c • ι - A).IsInvertible)
     (hc : c ≠ 0) :
     A.ker ≃ₗ[ℝ] (((innerSL ℝ).comp (ι.shiftedResolventTransform A c) : H →L[ℝ] H →L[ℝ] ℝ) :
       H →ₗ[ℝ] H →L[ℝ] ℝ).ker :=
-  (LinearEquiv.ofInjective _ (injective_comp_subtype_ker h)).trans <| LinearEquiv.ofEq _ _ <| by
-    rw [ker_innerSL_comp, ker_shiftedResolventTransform (isInvertible_ofReal_smul_sub_iff.2 h) hc,
-      LinearMap.range_comp,
-      Submodule.range_subtype]
+  (LinearEquiv.ofInjective _ (injective_comp_subtype_ker_of_injective_smul_sub h.injective)).trans
+    (LinearEquiv.ofEq _ _ <| by
+      rw [ker_innerSL_comp, ker_shiftedResolventTransform (isInvertible_ofReal_smul_sub_iff.2 h) hc,
+        LinearMap.range_comp, Submodule.range_subtype])
 
 private theorem kerEquivKerShiftedResolventTransform_apply (h : (c • ι - A).IsInvertible)
     (hc : c ≠ 0) (x : A.ker) :
@@ -300,7 +284,8 @@ theorem eventually_ker_eq_bot_of_domainCrossingForm_nondegenerate (hι : IsCompa
   have hιx : ι x = 0 := by
     have hmem := Submodule.mem_map_of_mem (f := (ι : D →ₗ[ℝ] H)) hx
     rwa [hτ, Submodule.mem_bot] at hmem
-  simpa using injective_comp_subtype_ker hinv (a₁ := ⟨x, hx⟩) (a₂ := 0) (by simp [hιx])
+  simpa using injective_comp_subtype_ker_of_injective_smul_sub hinv.injective
+    (a₁ := ⟨x, hx⟩) (a₂ := 0) (by simp [hιx])
 
 /-- **A path without crossings has no spectral flow.** If every `A t` with `t ∈ [a, b]` is
 injective, the spectral flow of `A` from `a` to `b` vanishes. -/
@@ -313,23 +298,6 @@ theorem domainSpectralFlow_eq_zero_of_forall_ker_eq_bot (hι : IsCompactOperator
     obtain ⟨c₀, hc₀⟩ := h₀ t ht
     exact (isInvertible_iff_injective_of_isInvertible_smul_sub hι hc₀).2
       (LinearMap.ker_eq_bot.1 (hker t ht))
-
-omit [CompleteSpace D] [CompleteSpace H] in
-/-- At an interior time of `[a, b]`, a path continuous and symmetric on `[a, b]` is continuous and
-symmetric at all nearby times. -/
-private theorem eventually_continuousAt_and_symm {a b : ℝ} (hA : ContinuousOn A (Icc a b))
-    (hsymm : ∀ t ∈ Icc a b, ∀ x y, ⟪A t x, ι y⟫_ℝ = ⟪ι x, A t y⟫_ℝ) {t₀ : ℝ}
-    (ht₀ : t₀ ∈ Ioo a b) :
-    (∀ᶠ t in 𝓝 t₀, ContinuousAt A t) ∧ ∀ᶠ t in 𝓝 t₀, ∀ x y, ⟪A t x, ι y⟫_ℝ = ⟪ι x, A t y⟫_ℝ :=
-  ⟨eventually_of_mem (Ioo_mem_nhds ht₀.1 ht₀.2) fun _ ht ↦
-      hA.continuousAt (Icc_mem_nhds ht.1 ht.2),
-    eventually_of_mem (Icc_mem_nhds ht₀.1 ht₀.2) hsymm⟩
-
-omit [CompleteSpace D] [CompleteSpace H] in
-/-- A crossing in `[a, b]` of a path injective at both endpoints lies in `(a, b)`. -/
-private theorem mem_Ioo_of_ker_ne_bot {a b : ℝ} (ha : (A a).ker = ⊥) (hb : (A b).ker = ⊥)
-    {t : ℝ} (ht : t ∈ Icc a b) (hnt : (A t).ker ≠ ⊥) : t ∈ Ioo a b :=
-  ⟨lt_of_le_of_ne ht.1 fun h ↦ hnt (h ▸ ha), lt_of_le_of_ne ht.2 fun h ↦ hnt (h ▸ hb)⟩
 
 /-- **A path with regular crossings has finitely many crossings.** Let `ι` be compact and `A` a
 continuous path of operators symmetric through `ι` over `[a, b]`, each with an invertible shift,
@@ -358,8 +326,8 @@ theorem finite_setOf_ker_ne_bot_of_domainCrossingForm (hι : IsCompactOperator �
     filter_upwards [nhdsWithin_le_nhds hopen] with t ht htI
     exact LinearMap.ker_eq_bot.2 (ht htI).injective
   · -- A crossing lies in `(a, b)`, and regular crossings are isolated.
-    have hz' : z ∈ Ioo a b := mem_Ioo_of_ker_ne_bot ha hb hz hnz
-    obtain ⟨hcont, hsymm'⟩ := eventually_continuousAt_and_symm hA hsymm hz'
+    have hz' : z ∈ Ioo a b := mem_Ioo_of_mem_Icc_of_not (fun t ↦ (A t).ker = ⊥) ha hb hz hnz
+    obtain ⟨hcont, hsymm'⟩ := hA.eventually_continuousAt_and_eventually_of_mem_Ioo hsymm hz'
     filter_upwards [eventually_ker_eq_bot_of_domainCrossingForm_nondegenerate hι hcont hsymm'
       (h₀ z hz) (hderiv z hz' hnz) (hreg z hz' hnz)] with t ht _ using ht
 
@@ -374,7 +342,7 @@ private theorem exists_domainSpectralFlow_eq_sigPos_sub_sigNeg_domainCrossingFor
     (hlt : ∀ x ∈ S, x < s) :
     ∃ t₁ t₂, t₁ ∈ Ioo a s ∧ (∀ x ∈ S, x < t₁) ∧ t₂ ∈ Ioo s b ∧ domainSpectralFlow ι A t₁ t₂ =
       (sigPos (ι.domainCrossingForm (A s) A') : ℤ) - sigNeg (ι.domainCrossingForm (A s) A') := by
-  obtain ⟨hcont, hsymm'⟩ := eventually_continuousAt_and_symm hA hsymm hs
+  obtain ⟨hcont, hsymm'⟩ := hA.eventually_continuousAt_and_eventually_of_mem_Ioo hsymm hs
   have hleft : ∀ᶠ t in 𝓝[<] s, t ∈ Ioo a s ∧ ∀ x ∈ S, x < t :=
     (eventually_mem_set.2 (Ioo_mem_nhdsLT hs.1)).and <| (eventually_all_finset S).2 fun x hx ↦
       (eventually_mem_set.2 (Ioo_mem_nhdsLT (hlt x hx))).mono fun t ht ↦ ht.1
@@ -463,7 +431,7 @@ theorem domainSpectralFlow_eq_finsum_sigPos_sub_sigNeg_domainCrossingForm
     (fun t ht htS ↦ not_not.1 fun hnt ↦ htS ((hS t).2 ⟨ht, hnt⟩))
     (fun t htS ↦ by
       obtain ⟨ht, hnt⟩ := (hS t).1 htS
-      have hIoo := mem_Ioo_of_ker_ne_bot ha hb ht hnt
+      have hIoo := mem_Ioo_of_mem_Icc_of_not (fun t ↦ (A t).ker = ⊥) ha hb ht hnt
       exact ⟨hIoo, hderiv t hIoo hnt, hreg t hIoo hnt⟩)]
   refine (finsum_mem_eq_sum_of_inter_support_eq _ ?_).symm
   ext t
@@ -476,6 +444,7 @@ theorem domainSpectralFlow_eq_finsum_sigPos_sub_sigNeg_domainCrossingForm
     have hneg := sigPos_le_finrank (-ι.domainCrossingForm (A t) (A' t))
     rw [sigPos_neg] at hneg
     omega
-  exact ⟨fun ht ↦ ⟨Ioo_subset_Icc_self ht, hnt⟩, fun ⟨ht, _⟩ ↦ mem_Ioo_of_ker_ne_bot ha hb ht hnt⟩
+  exact ⟨fun ht ↦ ⟨Ioo_subset_Icc_self ht, hnt⟩,
+    fun ⟨ht, _⟩ ↦ mem_Ioo_of_mem_Icc_of_not (fun t ↦ (A t).ker = ⊥) ha hb ht hnt⟩
 
 end TauCeti

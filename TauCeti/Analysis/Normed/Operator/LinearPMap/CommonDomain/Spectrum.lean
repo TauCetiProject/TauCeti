@@ -37,7 +37,9 @@ eigenvalues away from `0` transfer to the shifts:
 Neither injectivity of `ι` nor completeness of `H` is assumed. When `ι` is injective and `H` is
 complete these are statements about the partial operator
 `ContinuousLinearMap.domainOperator ι A hι` with domain `range ι`: its spectrum meets every bounded
-set in finitely many points (`ContinuousLinearMap.finite_inter_spectrum_domainOperator`).
+set in finitely many points (`ContinuousLinearMap.finite_inter_spectrum_domainOperator`). An
+injective shift makes `ι` injective on the kernel of `A`, where the shift agrees with `c • ι`
+(`ContinuousLinearMap.injective_comp_subtype_ker_of_injective_smul_sub`).
 
 Over `ℝ` or `ℂ`, the admissible real shifts, the real `c` at which `(c : 𝕜) • ι - A` is
 invertible, are dense (`ContinuousLinearMap.eventually_isInvertible_ofReal_smul_sub`,
@@ -146,6 +148,17 @@ theorem isInvertible_iff_injective_of_isInvertible_smul_sub [CompleteSpace D]
   have h := (isInvertible_smul_sub_iff_injective (c := 0) hcpt h₀).2 fun x y hxy ↦
     hinj (by simpa using hxy)
   rwa [zero_smul, zero_sub, isInvertible_neg_iff] at h
+
+/-- If a shift `c • ι - A` is injective, `ι` is injective on the kernel of `A`: a vector killed by
+both `A` and `ι` is killed by `c • ι - A`. -/
+theorem injective_comp_subtype_ker_of_injective_smul_sub (h : Injective (c • ι - A)) :
+    Injective ((ι : D →ₗ[𝕜] H) ∘ₗ A.ker.subtype) := by
+  rw [← LinearMap.ker_eq_bot, eq_bot_iff]
+  rintro ⟨x, hx⟩ hιx
+  have hAx : A x = 0 := hx
+  rw [LinearMap.mem_ker] at hιx
+  simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype, coe_coe] at hιx
+  simpa using h (a₁ := x) (a₂ := 0) (by simp [hAx, hιx])
 
 /-- **Discreteness of the spectrum over a compactly embedded domain.** If `ι` is compact and one
 shift `c₀ • ι - A` is invertible, only finitely many shifts `c • ι - A` with `c` in a bounded set

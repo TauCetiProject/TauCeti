@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Fredholm.Spectral.Crossing
 import TauCeti.Analysis.Fredholm.SelfAdjoint
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Topology.Order.Interval
 
 /-!
 # The regular-crossing formula for the spectral flow
@@ -74,21 +75,6 @@ namespace TauCeti
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
   {A A' : ℝ → H →L[ℝ] H} {a b : ℝ}
 
-/-- At an interior time of `[a, b]`, a path continuous and self-adjoint on `[a, b]` is continuous
-and self-adjoint at all nearby times. -/
-private theorem eventually_continuousAt_and_isSelfAdjoint (hA : ContinuousOn A (Icc a b))
-    (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t)) {t₀ : ℝ} (ht₀ : t₀ ∈ Ioo a b) :
-    (∀ᶠ t in 𝓝 t₀, ContinuousAt A t) ∧ ∀ᶠ t in 𝓝 t₀, IsSelfAdjoint (A t) :=
-  ⟨eventually_of_mem (Ioo_mem_nhds ht₀.1 ht₀.2) fun _ ht ↦
-      hA.continuousAt (Icc_mem_nhds ht.1 ht.2),
-    eventually_of_mem (Icc_mem_nhds ht₀.1 ht₀.2) hsa⟩
-
-omit [CompleteSpace H] in
-/-- A crossing in `[a, b]` of a path injective at both endpoints lies in `(a, b)`. -/
-private theorem mem_Ioo_of_ker_ne_bot (ha : (A a).ker = ⊥) (hb : (A b).ker = ⊥) {t : ℝ}
-    (ht : t ∈ Icc a b) (hnt : (A t).ker ≠ ⊥) : t ∈ Ioo a b :=
-  ⟨lt_of_le_of_ne ht.1 fun h ↦ hnt (h ▸ ha), lt_of_le_of_ne ht.2 fun h ↦ hnt (h ▸ hb)⟩
-
 /-- A continuous path of self-adjoint Fredholm operators on a real Hilbert space that is injective,
 hence invertible, at every time of `[a, b]` has no spectral flow over `[a, b]`. -/
 theorem spectralFlow_eq_zero_of_forall_ker_eq_bot (hab : a ≤ b) (hA : ContinuousOn A (Icc a b))
@@ -123,8 +109,8 @@ theorem finite_setOf_ker_ne_bot (hA : ContinuousOn A (Icc a b))
     filter_upwards [nhdsWithin_le_nhds hopen] with t ht htI
     exact LinearMap.ker_eq_bot.2 (isInvertible_iff_isUnit.2 (ht htI)).injective
   · -- A crossing lies in `(a, b)`, and regular crossings are isolated.
-    have hz' : z ∈ Ioo a b := mem_Ioo_of_ker_ne_bot ha hb hz hnz
-    obtain ⟨hcont, hsa'⟩ := eventually_continuousAt_and_isSelfAdjoint hA hsa hz'
+    have hz' : z ∈ Ioo a b := mem_Ioo_of_mem_Icc_of_not (fun t ↦ (A t).ker = ⊥) ha hb hz hnz
+    obtain ⟨hcont, hsa'⟩ := hA.eventually_continuousAt_and_eventually_of_mem_Ioo hsa hz'
     filter_upwards [eventually_ker_eq_bot_of_crossingForm_nondegenerate hcont hsa' (hF z hz)
       (hderiv z hz' hnz) (hreg z hz' hnz)] with t ht _ using ht
 
@@ -148,7 +134,8 @@ private theorem spectralFlow_eq_sum_crossingForm_of_finset (S : Finset ℝ) :
   | insert s S hlt ih =>
     intro b _ hA hsa hF hker hS
     obtain ⟨⟨has, hsb⟩, hd, hΓ⟩ := hS s (Finset.mem_insert_self s S)
-    obtain ⟨hcont, hsa'⟩ := eventually_continuousAt_and_isSelfAdjoint hA hsa ⟨has, hsb⟩
+    obtain ⟨hcont, hsa'⟩ :=
+      hA.eventually_continuousAt_and_eventually_of_mem_Ioo hsa ⟨has, hsb⟩
     -- Choose `t₁ < s < t₂`, with `t₁` above every other crossing, such that the spectral flow from
     -- `t₁` to `t₂` is the signature of the crossing form at `s`.
     have hleft : ∀ᶠ t in 𝓝[<] s, t ∈ Ioo a s ∧ ∀ x ∈ S, x < t :=
@@ -207,7 +194,7 @@ theorem spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm (hab : a ≤ b)
     (fun t ht htS ↦ not_not.1 fun hnt ↦ htS ((hS t).2 ⟨ht, hnt⟩))
     (fun t htS ↦ by
       obtain ⟨ht, hnt⟩ := (hS t).1 htS
-      have hIoo := mem_Ioo_of_ker_ne_bot ha hb ht hnt
+      have hIoo := mem_Ioo_of_mem_Icc_of_not (fun t ↦ (A t).ker = ⊥) ha hb ht hnt
       exact ⟨hIoo, hderiv t hIoo hnt, hreg t hIoo hnt⟩)]
   refine (finsum_mem_eq_sum_of_inter_support_eq _ ?_).symm
   ext t
@@ -216,6 +203,7 @@ theorem spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm (hab : a ≤ b)
   -- Only crossings contribute: at an injective time the crossing form lives on the zero space.
   have hnt : (A t).ker ≠ ⊥ := fun hnt ↦ hft <|
     sigPos_sub_sigNeg_crossingForm_eq_zero_of_ker_eq_bot (by rwa [ker_innerSL_comp]) _
-  exact ⟨fun ht ↦ ⟨Ioo_subset_Icc_self ht, hnt⟩, fun ⟨ht, _⟩ ↦ mem_Ioo_of_ker_ne_bot ha hb ht hnt⟩
+  exact ⟨fun ht ↦ ⟨Ioo_subset_Icc_self ht, hnt⟩,
+    fun ⟨ht, _⟩ ↦ mem_Ioo_of_mem_Icc_of_not (fun t ↦ (A t).ker = ⊥) ha hb ht hnt⟩
 
 end TauCeti

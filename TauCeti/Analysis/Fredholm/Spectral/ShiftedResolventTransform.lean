@@ -280,6 +280,13 @@ theorem ContinuousOn.shiftedResolventTransform {𝕜 D H X : Type*} [RCLike 𝕜
   simp only [ContinuousLinearMap.shiftedResolventTransform_def]
   exact hcomp.const_smul (c : 𝕜)
 
+/-- Over `ℝ` the coercion `RCLike.ofReal` is the identity, so at `𝕜 = ℝ` the shift
+`(c : 𝕜) • ι - A` of the shifted resolvent transform is the real shift `c • ι - A`. -/
+theorem ContinuousLinearMap.isInvertible_ofReal_smul_sub_iff {D H : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] [NormedAddCommGroup H] [NormedSpace ℝ H] {ι A : D →L[ℝ] H} {c : ℝ} :
+    ((RCLike.ofReal c : ℝ) • ι - A).IsInvertible ↔ (c • ι - A).IsInvertible := by
+  rw [RCLike.ofReal_real_eq_id, id]
+
 /-- **The derivative of the shifted resolvent transforms.** Let `A` be a path of operators on a
 common Banach domain `D`, embedded in a real Hilbert space `H` by `ι`, with derivative `A'` at `t₀`,
 and let `c ι - A t₀` be invertible. Then the shifted resolvent transforms at `c` have derivative
@@ -300,9 +307,9 @@ theorem HasDerivAt.shiftedResolventTransform {D H : Type*} [NormedAddCommGroup D
     (HasDerivAt.continuousAt hsub).eventually h.eventually_nhds
   refine HasDerivAt.congr_deriv (HasDerivAt.congr_of_eventuallyEq (HasDerivAt.sub_const
     (c • (1 : H →L[ℝ] H)) (HasDerivAt.const_smul (c ^ 2) hR)) ?_) ?_
-  · -- Over `𝕜 = ℝ` the coercion `(c : 𝕜)` of the shift is the identity, so `ht` applies as is.
-    filter_upwards [hinv] with t ht
-    exact ι.shiftedResolventTransform_eq_sub ht
+  · filter_upwards [hinv] with t ht
+    simpa only [RCLike.ofReal_real_eq_id, id_eq, Pi.smul_apply] using
+      ι.shiftedResolventTransform_eq_sub (ContinuousLinearMap.isInvertible_ofReal_smul_sub_iff.2 ht)
   · simp
 
 namespace TauCeti
