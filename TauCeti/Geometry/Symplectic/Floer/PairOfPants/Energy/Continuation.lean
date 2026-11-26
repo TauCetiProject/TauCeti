@@ -115,6 +115,10 @@ namespace `SmoothTwoForm`).
 * `SmoothTwoForm.IsNondegenerate.neg_sum_le_integral_add_sum_of_pairOfPantsContinuationPerturbation`
   and its truncated version: the lower bound on the topological energy of a Floer solution, for a
   manifold target, uniform in the neck positions.
+* `IsNondegenerate.setIntegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le`, in the
+  namespace `SmoothTwoForm`: the energy of a Floer solution over any part of `S` is at most its
+  topological energy plus `∑ q, (B_q + D_q)`, for a manifold target, uniform in the neck
+  positions.
 * `IsNondegenerate.lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_eq` and
   `IsNondegenerate.lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le`, in the
   namespace `SmoothTwoForm`: the energy identity and the energy bound of a Floer solution, for a
@@ -822,6 +826,60 @@ theorem neg_sum_le_integral_add_sum_of_pairOfPantsContinuationPerturbation
   rw [hω.integral_floerEnergyDensity_pairOfPantsContinuationPerturbation hG hH hGs hHs hHB hu hx hE
     hA] at hpos
   linarith
+
+/-- **A solution of bounded topological energy has bounded energy over every part of `S`, along
+the pair of pants with continuation necks, for a manifold target.** Let `u` solve the Floer
+equation on `S` for almost complex structures tamed by the two-form, under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsContinuationPerturbation`,
+with `|G_q|, |H_q| ≤ B_q`, `|H_q - G_q| ≤ D_q`, and with symplectic area plus the Hamiltonian terms
+at the asymptotic orbits at most `A`. Then over every subset `Ω ⊆ S` the energy is at most
+`A + ∑ q, (B_q + D_q)`, whatever the neck positions; this is the energy bound that compactness of
+the family consumes. -/
+theorem setIntegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le
+    (hω : ω.IsNondegenerate) (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (G q)))
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B D : Puncture → ℝ} (hGB : ∀ q t x, |G q t x| ≤ B q) (hHB : ∀ q t x, |H q t x| ≤ B q)
+    (hD : ∀ q t x, |H q t x - G q t x| ≤ D q) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x : Puncture → ℝ → M}
+    (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x q t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity
+      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦
+        pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u) thricePuncturedSphereReal)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedMFDeriv
+          (fun z x ↦
+            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦
+            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x
+              Complex.I)
+          u z).toLinearMap)
+    {A : ℝ}
+    (htop : (∫ z in thricePuncturedSphereReal,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t) ≤ A)
+    {Ω : Set (ℝ × ℝ)} (hΩ : Ω ⊆ thricePuncturedSphereReal) :
+    ∫ z in Ω, ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z ≤
+      A + ∑ q, (B q + D q) := by
+  have habs := hω.abs_integral_floerEnergyDensity_pairOfPantsContinuationPerturbation_sub_le hG hH
+    hGs hHs hGB hHB hD hu hx hE hA
+  refine (hω.setIntegral_floerEnergyDensity_mono_set hΩ
+    isOpen_thricePuncturedSphereReal.measurableSet hE hJ hfloer).trans ?_
+  linarith [(abs_sub_le_iff.1 habs).1]
 
 /-- **The energy identity for the pair of pants with continuation necks, for a manifold target,
 in terms of the limits of the end integrals.** Let `u` be a map which is `C¹` on `S` and solves the
