@@ -164,7 +164,7 @@ theorem exists_hasWeakLineDerivOn_flux_and_energyFormH1_eq_of_wkp_two
     refine (HasWeakLineDerivOn.sum Finset.univ fun j _ ↦ ?_).congr_ae_deriv
       (hg i).coeFn_toLp.symm
     simpa only [g, smul_eq_mul, innerSL_apply_apply] using
-      W1p.hasWeakLineDerivOn_smul_inner_gradient ha hD i j
+      W1p.hasWeakLineDerivOn_smul_inner_gradient (v := e i) (ha i j) (hD j)
   exact ⟨d, hd, energyFormH1_eq_setIntegral_neg_sum_of_hasWeakLineDerivOn
     (memLp_energyIntegrand_of_abs_apply_le (fun i j ↦ (ha i j).continuousOn)
       fun i j x hx ↦ (haM i j x hx).1) hd⟩

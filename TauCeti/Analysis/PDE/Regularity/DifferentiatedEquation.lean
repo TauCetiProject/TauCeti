@@ -169,7 +169,8 @@ private theorem integrable_smul_sum_sum {B : EuclideanSpace ℝ ι → Matrix ι
       (fderiv ℝ (fun y => B y i j) x (EuclideanSpace.basisFun ι ℝ i) *
           ⟪W1p.gradient u x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ +
         B x i j * ⟪W1p.gradient (D j) x, EuclideanSpace.basisFun ι ℝ i⟫_ℝ)) mu := by
-  have hL := W1p.hasWeakLineDerivOn_smul_inner_gradient hB hD
+  have hL (i j : ι) := W1p.hasWeakLineDerivOn_smul_inner_gradient
+    (v := EuclideanSpace.basisFun ι ℝ i) (hB i j) (hD j)
   refine (integrable_finsetSum Finset.univ fun i _ => integrable_finsetSum Finset.univ fun j _ =>
     φ.integrable_smul (hL i j).locallyIntegrableOn_deriv).congr
       (Filter.Eventually.of_forall fun x => ?_)
@@ -194,7 +195,8 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn
         (fderiv ℝ (fun y => B y i j) x (EuclideanSpace.basisFun ι ℝ i) *
             ⟪W1p.gradient u x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ +
           B x i j * ⟪W1p.gradient (D j) x, EuclideanSpace.basisFun ι ℝ i⟫_ℝ)) * φ x ∂mu := by
-  have hL := W1p.hasWeakLineDerivOn_smul_inner_gradient hB hD
+  have hL (i j : ι) := W1p.hasWeakLineDerivOn_smul_inner_gradient
+    (v := EuclideanSpace.basisFun ι ℝ i) (hB i j) (hD j)
   have hint : ∀ i j, Integrable (fun x => (φ : EuclideanSpace ℝ ι → ℝ) x •
       (B x i j • innerSL ℝ (W1p.gradient (D j) x) (EuclideanSpace.basisFun ι ℝ i) +
         fderiv ℝ (fun y => B y i j) x (EuclideanSpace.basisFun ι ℝ i) •
