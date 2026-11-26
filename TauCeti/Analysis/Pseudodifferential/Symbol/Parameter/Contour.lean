@@ -63,11 +63,17 @@ at every order (`hasFTaylorSeriesUpToOn_integral_of_le_bound`).
 * `TauCeti.ParameterSymbol.coefficient_contourIntegral`: its coefficient.
 * `TauCeti.ParameterSymbol.mixedDeriv_contourIntegral`: its mixed derivatives are the integrals of
   the mixed derivatives of the symbols `a(·, ·, γ(t))`.
+* `TauCeti.ParameterSymbol.hasCompactSpatialSupport_contourIntegral`: it vanishes at the positions
+  outside a compact set when `a` does.
 * `TauCeti.ParameterSymbol.contourIntegral_add`, `TauCeti.ParameterSymbol.contourIntegral_smul`,
   `TauCeti.ParameterSymbol.contourIntegral_neg`, `TauCeti.ParameterSymbol.contourIntegral_sub`:
   it is linear in `a`, so a parametrix may be integrated term by term.
 * `TauCeti.ParameterSymbol.contourIntegralₗ`: the contour integral as a `ℂ`-linear map, with
   `TauCeti.ParameterSymbol.contourIntegral_sum` for finite sums.
+* `TauCeti.ParameterSymbol.exists_integrable_norm_mul_one_add_sqrt_rpow_le`: the bound by an
+  integrable function of the weight `‖g t‖ (1 + ‖γ t‖ ^ (1 / 2)) ^ μ` along the path, which also
+  controls the quantized integrands
+  (`TauCeti.ParameterSymbol.quantizeSchwartzValue_contourIntegral`).
 
 ## References
 
@@ -307,6 +313,33 @@ private theorem parameterWeight_rpow_le {c : ℝ} (hc : ∀ t, 1 + |t| ≤ c * (
         rw [Real.div_rpow hS.le (by positivity), Real.rpow_neg (by positivity), div_eq_mul_inv,
           mul_comm]
 
+/-- **The weight along the path is integrable.** Let `γ` go to infinity at least linearly,
+`1 + |t| ≤ c (1 + ‖γ t‖)`, and let `‖g t‖ ≤ C (|t| ^ σ + (1 + |t|) ^ σ)`. For `μ ≤ 0` with `-1 < σ`
+and `σ + μ / 2 < -1`, the function `t ↦ ‖g t‖ (1 + ‖γ t‖ ^ (1 / 2)) ^ μ` is dominated by an
+integrable function. A parameter-dependent symbol of order `μ ≤ 0` has size at most a multiple of
+`(1 + ‖z‖ ^ (1 / 2)) ^ μ` at the spectral parameter `z`, uniformly in the frequency, so this bounds
+the integrand `g(t) a(x, ξ, γ(t))` of a contour integral, and the operators `g(t) Op(a(γ t))`,
+by one integrable function of the time. -/
+theorem exists_integrable_norm_mul_one_add_sqrt_rpow_le
+    (hγc : ∃ c, ∀ t, 1 + |t| ≤ c * (1 + ‖γ t‖))
+    (hgσ : ∃ C, ∀ t, ‖g t‖ ≤ C * (|t| ^ σ + (1 + |t|) ^ σ)) (hσ : -1 < σ) {μ : ℝ} (hμ : μ ≤ 0)
+    (hσμ : σ + μ / 2 < -1) :
+    ∃ G : ℝ → ℝ, Integrable G ∧ ∀ t, ‖g t‖ * (1 + Real.sqrt ‖γ t‖) ^ μ ≤ G t := by
+  obtain ⟨c, hc⟩ := hγc
+  obtain ⟨C, hC⟩ := hgσ
+  refine ⟨fun t ↦ C * (1 + Real.sqrt c) ^ (-μ) * lineWeight σ μ 1 t,
+    (integrable_lineWeight hσ hμ hσμ le_rfl).const_mul _, fun t ↦ ?_⟩
+  -- The parameter weight at the zero frequency is `1 + ‖γ t‖ ^ (1 / 2)`.
+  have hw := parameterWeight_rpow_le hc hμ (0 : CoordinateSpace 0) t
+  simp only [parameterWeight_def, norm_zero, add_zero, ne_eq, OfNat.ofNat_ne_zero,
+    not_false_eq_true, zero_pow] at hw
+  calc ‖g t‖ * (1 + Real.sqrt ‖γ t‖) ^ μ ≤ (C * (|t| ^ σ + (1 + |t|) ^ σ)) *
+        ((1 + Real.sqrt c) ^ (-μ) * (Real.sqrt 1 + Real.sqrt (1 + |t|)) ^ μ) :=
+        mul_le_mul (hC t) hw (by positivity) ((norm_nonneg _).trans (hC t))
+    _ = C * (1 + Real.sqrt c) ^ (-μ) * lineWeight σ μ 1 t := by
+        rw [lineWeight]
+        ring
+
 /-- At each point of the path the integrand is smooth in the position and the frequency. -/
 private theorem contDiff_smul_coefficient (t : ℝ) :
     ContDiff ℝ ∞ fun q ↦ g t • a.coefficient (q, γ t) :=
@@ -544,6 +577,14 @@ theorem mixedDeriv_contourIntegral (α β : List (Fin n)) (x ξ : CoordinateSpac
     funext (a.coefficient_toSymbol z)
   simp only [hI, hz]
   exact a.mixedDeriv_integral_smul_coefficient hγ hγΛ hg hγc hgσ hσ hm α β x ξ
+
+/-- If a parameter-dependent symbol vanishes at the positions outside a compact set `K`, for every
+frequency and spectral parameter, then so does its contour integral. -/
+theorem hasCompactSpatialSupport_contourIntegral {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    (ha : ∀ x ∉ K, ∀ ξ z, a.coefficient ((x, ξ), z) = 0) :
+    (a.contourIntegral hγ hγΛ hg hγc hgσ hσ hm).HasCompactSpatialSupport :=
+  Symbol.hasCompactSpatialSupport_iff.2 ⟨K, hK, fun x hx ξ ↦ by
+    simp [coefficient_contourIntegral, ha x hx]⟩
 
 /-- The contour integral of the zero symbol is the zero symbol. -/
 @[simp]

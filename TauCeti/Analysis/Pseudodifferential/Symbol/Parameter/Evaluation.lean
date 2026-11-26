@@ -35,6 +35,13 @@ outside a fixed compact set of positions, is
 frequency estimates of order `m` hold with a constant that depends on `z`, since then the weight is
 at most a multiple of `⟨ξ⟩`.
 
+The symbols `a(z)` depend continuously on `z ∈ Λ` as soon as they are viewed in a class of strictly
+larger order `m' > m` (`TauCeti.ParameterSymbol.continuousOn_inclusion_toSymbol`): at high
+frequencies the difference `a(z) - a(z₀)` is small relative to `⟨ξ⟩ ^ m'` because it has order `m`,
+uniformly for `z` near `z₀`, and at bounded frequencies the coefficient is uniformly continuous.
+Combined with the continuity of quantization in the symbol, this makes `z ↦ Op(a(z))` continuous in
+operator norm, as needed to integrate the operators along a contour.
+
 ## Main declarations
 
 * `TauCeti.ParameterSymbol.exists_norm_mixedDeriv_coefficient_le`: the estimates of the mixed
@@ -44,6 +51,8 @@ at most a multiple of `⟨ξ⟩`.
   it is linear in the symbol and commutes with the order inclusions and the composition.
 * `TauCeti.ParameterSymbol.exists_seminorm_inclusion_toSymbol_le`: the decay of its seminorms of
   order `m' ∈ [m, 0]` in the spectral parameter.
+* `TauCeti.ParameterSymbol.continuousOn_inclusion_toSymbol`: its continuity in the spectral
+  parameter, in the topology of the symbols of any order `m' > m`.
 
 ## References
 
@@ -54,8 +63,8 @@ public section
 
 noncomputable section
 
-open Set
-open scoped ContDiff
+open Set Filter
+open scoped ContDiff Topology
 
 namespace TauCeti
 
@@ -251,6 +260,148 @@ theorem exists_seminorm_inclusion_toSymbol_le (a : ParameterSymbol n Λ V W m) (
             (parameterWeight_rpow_le_one_add_sqrt_rpow ξ z (by linarith)) (by positivity)
             (by positivity)) hC
     _ = _ := by ring
+
+/-! ### Continuity in the spectral parameter -/
+
+/-- The mixed derivatives of the coefficient in the position and the frequency depend jointly
+continuously on the spectral parameter in `Λ`, the position and the frequency. -/
+private theorem continuousOn_mixedDeriv_coefficient (a : ParameterSymbol n Λ V W m)
+    (α β : List (Fin n)) :
+    ContinuousOn (fun p : ℂ × (CoordinateSpace n × CoordinateSpace n) =>
+      mixedDeriv α β (fun q => a.coefficient (q, p.1)) p.2.1 p.2.2) ((Λ : Set ℂ) ×ˢ univ) := by
+  have hN : ((mixedDirections α β).length : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
+  refine fun p hp => ContinuousAt.continuousWithinAt ?_
+  -- Near `p`, the mixed derivative is a derivative of the coefficient of order
+  -- `|α| + |β|`, restricted to the position and frequency directions.
+  have heq : (fun p : ℂ × (CoordinateSpace n × CoordinateSpace n) =>
+      mixedDeriv α β (fun q => a.coefficient (q, p.1)) p.2.1 p.2.2) =ᶠ[𝓝 p]
+      fun p => (ContinuousMultilinearMap.compContinuousLinearMapL
+        (fun _ => ContinuousLinearMap.inl ℝ (CoordinateSpace n × CoordinateSpace n) ℂ)
+        (iteratedFDeriv ℝ (mixedDirections α β).length a.coefficient (p.2, p.1)))
+        fun i => (mixedDirections α β).get i := by
+    filter_upwards [(Λ.isOpen.preimage continuous_fst).mem_nhds hp.1] with p hp'
+    rw [mixedDeriv_eq_iteratedFDeriv α β ((a.contDiff_coefficient_slice p.1).of_le
+      (by exact_mod_cast le_top)),
+      (a.contDiffAt_coefficient (p := (p.2, p.1)) hp').iteratedFDeriv_prod_left _ hN]
+    rfl
+  refine ContinuousAt.congr ?_ heq.symm
+  have hc : ContinuousAt (fun p : ℂ × (CoordinateSpace n × CoordinateSpace n) =>
+      iteratedFDeriv ℝ (mixedDirections α β).length a.coefficient (p.2, p.1)) p :=
+    ((a.contDiffAt_coefficient (p := (p.2, p.1)) hp.1).continuousAt_iteratedFDeriv hN).comp
+      (f := Prod.swap) continuous_swap.continuousAt
+  exact ((ContinuousMultilinearMap.apply ℝ _ _ _).continuous.comp
+    (ContinuousMultilinearMap.compContinuousLinearMapL _).continuous).continuousAt.comp hc
+
+/-- **High frequencies.** For `m < m'`, near a spectral parameter `z₀ ∈ Λ` the derivatives
+`∂ₓ^α ∂_ξ^β a((x, ξ), z)` and `∂ₓ^α ∂_ξ^β a((x, ξ), z₀)` differ by at most `ε ⟨ξ⟩ ^ (m' - |β|)` at
+the positions of a compact set and all large frequencies: each of them is bounded by a multiple of
+`⟨ξ⟩ ^ (m - |β|)`, uniformly for `z` near `z₀`. -/
+private theorem exists_eventually_norm_sub_mixedDeriv_le_of_le_norm (a : ParameterSymbol n Λ V W m)
+    (h : m < m') {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) {z₀ : ℂ}
+    (hz₀ : z₀ ∈ Λ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ R : ℝ, ∀ᶠ z in 𝓝 z₀, ∀ x ∈ K, ∀ ξ : CoordinateSpace n, R ≤ ‖ξ‖ →
+      ‖mixedDeriv α β (fun q => a.coefficient (q, z)) x ξ -
+          mixedDeriv α β (fun q => a.coefficient (q, z₀)) x ξ‖ ≤
+        ε * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
+  set μ := m - β.length
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 Λ.isOpen z₀ hz₀
+  obtain ⟨D, hD0, hD⟩ := a.exists_norm_mixedDeriv_coefficient_le hK α β
+  set E := (3 * (1 + (‖z₀‖ + r))) ^ (|μ| / 2)
+  -- On the ball around `z₀`, the derivatives are bounded by `D E ⟨ξ⟩ ^ μ`.
+  have hbound : ∀ z ∈ Metric.ball z₀ r, ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (fun q => a.coefficient (q, z)) x ξ‖ ≤
+        D * E * (1 + ‖ξ‖ ^ 2) ^ (μ / 2) := fun z hz x hx ξ => by
+    have hz' : ‖z‖ ≤ ‖z₀‖ + r := by
+      have := norm_le_norm_add_norm_sub' z z₀
+      rw [← dist_eq_norm] at this
+      linarith [Metric.mem_ball.1 hz]
+    refine (hD x hx ξ z (hball hz)).trans ?_
+    rw [mul_assoc]
+    refine mul_le_mul_of_nonneg_left ((parameterWeight_rpow_le_mul_one_add_norm_sq_rpow ξ z μ).trans
+      (mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (by positivity) (by linarith)
+        (by positivity)) (by positivity))) hD0
+  -- The factor `⟨ξ⟩ ^ (m - m')` tends to `0`.
+  have ht : Tendsto (fun R : ℝ => 2 * (D * E) * (1 + R ^ 2) ^ ((m - m') / 2)) atTop (𝓝 0) := by
+    have h1 : Tendsto (fun R : ℝ => 1 + R ^ 2) atTop atTop :=
+      tendsto_atTop_add_const_left _ _ (tendsto_pow_atTop two_ne_zero)
+    have h2 := (tendsto_rpow_neg_atTop (y := (m' - m) / 2) (by linarith)).comp h1
+    simpa [Function.comp_def, show -((m' - m) / 2) = (m - m') / 2 by ring] using
+      h2.const_mul (2 * (D * E))
+  obtain ⟨R, hR⟩ := eventually_atTop.1 (ht.eventually (ge_mem_nhds hε))
+  refine ⟨R, ?_⟩
+  filter_upwards [Metric.ball_mem_nhds z₀ hr] with z hzr x hx ξ hξ
+  have hsplit : (1 + ‖ξ‖ ^ 2) ^ (μ / 2) =
+      (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - m') / 2) := by
+    rw [← Real.rpow_add (by positivity)]
+    congr 1
+    simp only [μ]
+    ring
+  calc _ ≤ ‖mixedDeriv α β (fun q => a.coefficient (q, z)) x ξ‖ +
+        ‖mixedDeriv α β (fun q => a.coefficient (q, z₀)) x ξ‖ := norm_sub_le _ _
+    _ ≤ D * E * (1 + ‖ξ‖ ^ 2) ^ (μ / 2) + D * E * (1 + ‖ξ‖ ^ 2) ^ (μ / 2) :=
+        add_le_add (hbound z hzr x hx ξ) (hbound z₀ (Metric.mem_ball_self hr) x hx ξ)
+    _ = 2 * (D * E) * (1 + ‖ξ‖ ^ 2) ^ ((m - m') / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
+        rw [hsplit]
+        ring
+    _ ≤ ε * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) :=
+        mul_le_mul_of_nonneg_right (hR ‖ξ‖ hξ) (by positivity)
+
+/-- **Bounded frequencies.** Near a spectral parameter `z₀ ∈ Λ`, the derivatives
+`∂ₓ^α ∂_ξ^β a((x, ξ), z)` and `∂ₓ^α ∂_ξ^β a((x, ξ), z₀)` differ by less than `ε ⟨ξ⟩ ^ r` at the
+positions of a compact set and the frequencies of a ball, by uniform continuity on a compact set. -/
+private theorem eventually_norm_sub_mixedDeriv_lt_of_norm_le (a : ParameterSymbol n Λ V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) {z₀ : ℂ}
+    (hz₀ : z₀ ∈ Λ) {ε : ℝ} (hε : 0 < ε) (r R : ℝ) :
+    ∀ᶠ z in 𝓝 z₀, ∀ x ∈ K, ∀ ξ : CoordinateSpace n, ‖ξ‖ ≤ R →
+      ‖mixedDeriv α β (fun q => a.coefficient (q, z)) x ξ -
+          mixedDeriv α β (fun q => a.coefficient (q, z₀)) x ξ‖ < ε * (1 + ‖ξ‖ ^ 2) ^ r := by
+  -- The derivatives divided by `⟨ξ⟩ ^ (2 r)` are jointly continuous.
+  set G : ℂ → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W :=
+    fun z q => ((1 + ‖q.2‖ ^ 2) ^ r)⁻¹ • mixedDeriv α β (fun q => a.coefficient (q, z)) q.1 q.2
+  have hG : ContinuousOn (Function.uncurry G) ((Λ : Set ℂ) ×ˢ (K ×ˢ Metric.closedBall 0 R)) := by
+    have hw : ContinuousOn (fun p : ℂ × (CoordinateSpace n × CoordinateSpace n) =>
+        ((1 + ‖p.2.2‖ ^ 2) ^ r)⁻¹) univ :=
+      ((Continuous.rpow_const (by fun_prop) fun _ => Or.inl (by positivity)).continuousOn).inv₀
+        fun _ _ => (by positivity)
+    exact (hw.mono (subset_univ _)).smul ((a.continuousOn_mixedDeriv_coefficient α β).mono
+      (prod_mono le_rfl (subset_univ _)))
+  obtain ⟨v, hv, hvG⟩ := (hK.prod (isCompact_closedBall 0 R)).mem_uniformity_of_prod hG hz₀
+    (Metric.dist_mem_uniformity hε)
+  rw [Λ.isOpen.nhdsWithin_eq hz₀] at hv
+  filter_upwards [hv] with z hzv x hx ξ hξ
+  have hw : 0 < (1 + ‖ξ‖ ^ 2) ^ r := by positivity
+  have h' := hvG z hzv (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩
+  rw [Set.mem_ofPred_eq, dist_eq_norm] at h'
+  have h'' : ((1 + ‖ξ‖ ^ 2) ^ r)⁻¹ * ‖mixedDeriv α β (fun q => a.coefficient (q, z)) x ξ -
+      mixedDeriv α β (fun q => a.coefficient (q, z₀)) x ξ‖ < ε := by
+    simpa only [G, ← smul_sub, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hw.le)] using h'
+  rwa [inv_mul_lt_iff₀ hw, mul_comm] at h''
+
+/-- **Continuity in the spectral parameter.** For `m < m'`, the symbols `a(z)` of a
+parameter-dependent symbol of order `m` at the spectral parameters `z ∈ Λ`, viewed as symbols of
+order `m'`, depend continuously on `z` in the topology of `S^{m'}`. -/
+theorem continuousOn_inclusion_toSymbol (a : ParameterSymbol n Λ V W m) (h : m < m') :
+    ContinuousOn (fun z => Symbol.inclusion h.le (a.toSymbol z)) Λ := by
+  refine fun z₀ hz₀ => ContinuousAt.continuousWithinAt ?_
+  rw [ContinuousAt, Symbol.withSeminorms.tendsto_nhds]
+  rintro ⟨K, α, β⟩ ε hε
+  rw [Symbol.seminormFamily_apply]
+  -- Split the frequencies at a radius `R` beyond which the order gap makes both terms small.
+  obtain ⟨R, hR⟩ := a.exists_eventually_norm_sub_mixedDeriv_le_of_le_norm h K.isCompact α β hz₀
+    (half_pos hε)
+  filter_upwards [hR, a.eventually_norm_sub_mixedDeriv_lt_of_norm_le K.isCompact α β hz₀
+    (half_pos hε) ((m' - β.length) / 2) R] with z hzR hzr
+  refine (Symbol.seminorm_le_bound K α β _ (half_pos hε).le fun x hx ξ => ?_).trans_lt
+    (half_lt_self hε)
+  have hneg : ContDiff ℝ ∞ (-(Symbol.inclusion h.le (a.toSymbol z₀)).coefficient) :=
+    (Symbol.contDiff_coefficient _).neg
+  have hc (w : ℂ) : (Symbol.inclusion h.le (a.toSymbol w)).coefficient =
+      fun q => a.coefficient (q, w) := funext fun q => by simp
+  rw [Symbol.coefficient_sub, sub_eq_add_neg, mixedDeriv_add (Symbol.contDiff_coefficient _) hneg,
+    mixedDeriv_neg, ← sub_eq_add_neg, hc, hc]
+  rcases le_or_gt R ‖ξ‖ with hξ | hξ
+  · exact hzR x hx ξ hξ
+  · exact (hzr x hx ξ hξ.le).le
 
 end ParameterSymbol
 
