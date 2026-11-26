@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Parabolic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.PointMaps
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Points
 public import Mathlib.LinearAlgebra.Matrix.Block
 
 /-!
@@ -63,21 +63,6 @@ variable {R : Type u} [CommRing R] {N : ℕ}
 section Points
 
 variable {A : Type v} [CommRing A] [Algebra R A]
-
-/-- The abstract cocharacter action agrees with the concrete weight cocharacter on points. -/
-theorem pointsHom_weightCocharacter (w : Fin N → ℤ) (t : Aˣ) :
-    Cocharacter.pointsHom A (weightCocharacter (R := R) w) t =
-      weightCocharacterPoints w
-        ((MultiplicativeGroup.pointsMulEquiv (R := R) (A := A)).symm t) := by
-  rw [Cocharacter.pointsHom_apply, mapDomain_weightCocharacter,
-    ← MultiplicativeGroup.pointsMulEquiv_symm_apply]
-
-/-- The cocharacter with weights `w` sends `t` to `diag(t ^ w i)`. -/
-theorem pointsMulEquiv_pointsHom_weightCocharacter (w : Fin N → ℤ) (t : Aˣ) :
-    pointsMulEquiv N (Cocharacter.pointsHom A (weightCocharacter (R := R) w) t) =
-      diagGL (weightDiagonalUnits w t) := by
-  rw [pointsHom_weightCocharacter, pointsMulEquiv_weightCocharacterPoints,
-    MulEquiv.apply_symm_apply]
 
 /-- Conjugation by the weight cocharacter is conjugation by the diagonal matrix
 `diag(T ^ w i)`. -/

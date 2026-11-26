@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.List.Infix
 public import Mathlib.Data.List.Rotate
+public import Mathlib.Logic.Equiv.Defs
 
 /-!
 # Prefixes of repeated lists, prefix chains, and infixes of concatenations
@@ -15,7 +16,8 @@ Concatenating fewer copies of a list gives a prefix of concatenating more copies
 length `|l|` of `m` concatenated copies of `l` starting at position `d` is the rotation of `l` by
 `d`. A list which, followed by an entry `y`, begins with `k` copies of an entry `x ≠ y` itself
 begins with these `k` copies. A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an
-infix of `l₂`. An injective map preserves and reflects infixes.
+infix of `l₂`. An injective map preserves and reflects infixes. A bijection of lists preserving
+and reflecting prefixes preserves the parent `l ↦ l.dropLast`.
 -/
 
 public section
@@ -100,4 +102,43 @@ theorem infix_map_iff_of_injective {β : Type*} {f : α → β} (hf : Function.I
     {l₁ l₂ : List α} : l₁.map f <:+: l₂.map f ↔ l₁ <:+: l₂ :=
   ⟨fun h ↦ by obtain ⟨l, hl, he⟩ := infix_map_iff.1 h; rwa [hf.list_map he], fun h ↦ h.map f⟩
 
+/-- A proper prefix of `l₂` is a prefix of `l₂.dropLast`. -/
+theorem IsPrefix.prefix_dropLast {l₁ l₂ : List α} (h : l₁ <+: l₂) (hne : l₁ ≠ l₂) :
+    l₁ <+: l₂.dropLast := by
+  have hlen : l₁.length ≠ l₂.length := fun he => hne (h.eq_of_length he)
+  have := h.length_le
+  exact prefix_of_prefix_length_le h (dropLast_prefix l₂) (by rw [length_dropLast]; omega)
+
+/-- A nonempty list differs from its `dropLast`. -/
+theorem dropLast_ne_self {l : List α} (hl : l ≠ []) : l.dropLast ≠ l := fun h => by
+  have := congrArg length h
+  rw [length_dropLast] at this
+  have := length_pos_of_ne_nil hl
+  omega
+
+/-- **The parent is the greatest proper prefix.** A proper prefix `l'` of `l` of which every proper
+prefix of `l` is a prefix is `l.dropLast`. -/
+theorem eq_dropLast_of_forall_prefix {l l' : List α} (h : l' <+: l) (hne : l' ≠ l)
+    (hmax : ∀ m, m <+: l → m ≠ l → m <+: l') : l' = l.dropLast := by
+  have hl : l ≠ [] := by
+    rintro rfl
+    exact hne (prefix_nil.1 h)
+  have h₁ := h.prefix_dropLast hne
+  have h₂ := hmax _ (dropLast_prefix l) (dropLast_ne_self hl)
+  exact h₁.eq_of_length (le_antisymm h₁.length_le h₂.length_le)
+
 end List
+
+/-- **A prefix-preserving bijection of lists preserves the parent.** If a bijection `Ψ` between
+lists preserves and reflects the prefix relation, then `Ψ l.dropLast = (Ψ l).dropLast`. -/
+theorem Equiv.map_dropLast_of_prefix_iff {α β : Type*} (Ψ : List α ≃ List β)
+    (h : ∀ l l', Ψ l <+: Ψ l' ↔ l <+: l') (l : List α) : Ψ l.dropLast = (Ψ l).dropLast := by
+  have hnil : Ψ [] = [] := by
+    obtain ⟨l', hl'⟩ := Ψ.surjective []
+    exact List.prefix_nil.1 (hl' ▸ (h [] l').2 (List.nil_prefix))
+  rcases eq_or_ne l [] with rfl | hl
+  · rw [List.dropLast_nil, hnil, List.dropLast_nil]
+  refine List.eq_dropLast_of_forall_prefix ((h _ _).2 (List.dropLast_prefix l))
+    (fun he => List.dropLast_ne_self hl (Ψ.injective he)) fun m hm hne => ?_
+  obtain ⟨m, rfl⟩ := Ψ.surjective m
+  exact (h _ _).2 (((h _ _).1 hm).prefix_dropLast fun he => hne (he ▸ rfl))

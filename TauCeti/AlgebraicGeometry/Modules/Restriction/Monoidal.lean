@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Tensor
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Monoidal
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Pushforward
 import TauCeti.CategoryTheory.Monoidal.Functor
