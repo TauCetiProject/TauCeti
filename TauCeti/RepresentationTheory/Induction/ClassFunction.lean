@@ -65,6 +65,8 @@ and to deduce `TauCeti.character_ind` from `Subgroup.indClassFun_eq_natCard_inv_
 * `Subgroup.natCard_nsmul_indClassFun`: for a conjugation-invariant function `f`, the additive
   group-sum form `|S| • (Ind f)(g) = ∑_{x ∈ G} f(x⁻¹gx)`, and its averaged corollary
   `Subgroup.indClassFun_eq_natCard_inv_mul_sum`.
+* `Subgroup.indClassFun_apply_eq_zero_of_notMem`: induction from a normal subgroup vanishes
+  outside the subgroup.
 * `Subgroup.indClassFun_comp_subtype_apply_of_normal`: inducing the restriction of a
   conjugation-invariant function to a normal subgroup multiplies it by the index on the subgroup
   and gives zero outside it.
@@ -463,6 +465,15 @@ theorem natCard_nsmul_indClassFun (S : Subgroup G) [Fintype G] {f : S → k}
         rw [← e.symm.sum_comp (fun x => Function.indTerm f g x), Fintype.sum_prod_type]
     -- the remaining step only unfolds the summand
     _ = _ := rfl
+
+/-- Induction from a finite-index normal subgroup vanishes outside it, even for an inducing
+function that is not conjugation-invariant. -/
+theorem indClassFun_apply_eq_zero_of_notMem (N : Subgroup G) [N.Normal] [N.FiniteIndex]
+    (f : N → k) {g : G} (hg : g ∉ N) : N.indClassFun f g = 0 := by
+  classical
+  rw [N.indClassFun_apply]
+  refine Finset.sum_eq_zero fun q _ => dite_eq_right fun h => hg ?_
+  simpa [mul_assoc] using (inferInstance : N.Normal).conj_mem _ h q.out
 
 /-- Inducing the restriction of a conjugation-invariant function to a normal subgroup of finite
 index multiplies it by the index on the subgroup and gives zero outside it. -/
