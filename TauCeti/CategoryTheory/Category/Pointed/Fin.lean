@@ -151,6 +151,17 @@ lemma Hom.isActive_iff (f : m ⟶ n) :
     f.IsActive ↔ ∀ i : Fin (m.len + 1), f.toFun i = 0 → i = 0 :=
   Iff.rfl
 
+/-- Along an inert map, every element other than the basepoint has exactly one preimage. -/
+lemma Hom.IsInert.existsUnique {f : m ⟶ n} (hf : f.IsInert) {j : Fin (n.len + 1)} (hj : j ≠ 0) :
+    ∃! i, f.toFun i = j :=
+  hf j hj
+
+/-- An inert map is injective on each fibre over an element `j.succ` other than the basepoint;
+the elements of the source other than the basepoint are indexed by `Fin.succ`. -/
+lemma Hom.IsInert.eq_of_toFun_succ_eq {f : m ⟶ n} (hf : f.IsInert) {i i' : Fin m.len}
+    {j : Fin n.len} (hi : f.toFun i.succ = j.succ) (hi' : f.toFun i'.succ = j.succ) : i = i' :=
+  Fin.succ_injective _ ((hf.existsUnique (Fin.succ_ne_zero j)).unique hi hi')
+
 /-- The inert maps of `FinPointed`. -/
 def inert : MorphismProperty FinPointed.{u} := fun _ _ f ↦ f.IsInert
 

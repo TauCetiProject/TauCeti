@@ -148,6 +148,17 @@ structure LM : Type u where
 
 namespace LM
 
+/-- Two objects of `LM^⊗` are equal when they have the same length and, along the resulting
+identification of their elements, the same colors. The colors depend on the length, so no
+`ext_iff` form is generated. -/
+@[ext (iff := false)]
+lemma ext {X Y : LM.{u}} (hlen : X.len = Y.len)
+    (hcolor : ∀ i, X.color i = Y.color (Fin.cast hlen i)) : X = Y := by
+  obtain ⟨n, c⟩ := X
+  obtain ⟨n', c'⟩ := Y
+  obtain rfl : n = n' := hlen
+  exact congrArg (LM.mk n) (funext hcolor)
+
 /-- The underlying object of `Assoc^⊗`, forgetting the colors. -/
 abbrev toAssocObj (X : LM.{u}) : Assoc.{u} := Assoc.mk X.len
 
@@ -266,7 +277,7 @@ def homLiftEquiv (g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len) :
       ((Assoc.homLiftEquiv (X := X.toAssocObj) (Y := Y.toAssocObj) g).symm F).val)
       (funext fun j ↦ Subtype.ext ?_)) h
     rw [Assoc.homLiftEquiv_apply_val]
-    rfl
+    exact (comp_toAssoc _ _).trans (congrArg _ (ρ_toAssoc j))
   right_inv f := by
     refine funext fun j ↦ Subtype.ext (hom_ext ?_)
     have h := congrArg Subtype.val (congrFun
@@ -379,8 +390,7 @@ lemma pushforwardColor_eq_of_isInert (X : LM.{u}) {k : ℕ}
     (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k) (hf : f.IsInert)
     {i : Fin X.len} {j : Fin k} (hi : f.toFun i.succ = j.succ) :
     X.pushforwardColor f j = X.color i :=
-  X.pushforwardColor_eq_of_unique f hi fun _ hi' ↦ Fin.succ_injective _
-    (((FinPointed.Hom.isInert_iff f).1 hf j.succ (Fin.succ_ne_zero j)).unique hi' hi)
+  X.pushforwardColor_eq_of_unique f hi fun _ hi' ↦ hf.eq_of_toFun_succ_eq hi' hi
 
 /-- The lift of a map `f : ⟨n⟩ ⟶ ⟨k⟩` of `Fin_*` with source `X` each of whose fibres over the
 elements other than the basepoint contains at most one input colored `m`. Its target is `⟨k⟩`
@@ -398,14 +408,22 @@ def Hom.ofBase (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointe
       nodup_word j := ((List.nodup_finRange _).filter _).append ((List.nodup_finRange _).filter _)
         (List.disjoint_left.2 fun i hi hi' ↦ by simp_all) }
   isProfile j := by
-    change IsProfile (X.pushforwardColor f j) _
+    -- The target is a constructor application, so its color at `j` reduces to
+    -- `X.pushforwardColor f j`.
     dsimp only
+    -- The prefix of inputs colored `a` contains no color `m`.
+    have hA : .m ∉ ((List.finRange X.len).filter
+        (fun i ↦ f.toFun i.succ = j.succ ∧ X.color i = .a)).map X.color := by
+      simp +contextual
     cases hc : X.pushforwardColor f j with
     | a =>
       rw [pushforwardColor_eq_a_iff] at hc
-      simp only [isProfile_a, List.map_append, List.mem_append, List.mem_map, List.mem_filter,
-        List.mem_finRange, true_and, decide_eq_true_eq, not_or, not_exists, not_and]
-      exact ⟨fun i hi hi' ↦ by simp [hi.2] at hi', fun i hi _ ↦ by simp [hc i hi.1] at hi⟩
+      -- No input over `j` is colored `m`, so the suffix of inputs colored `m` is empty.
+      have hM : (List.finRange X.len).filter
+          (fun i ↦ f.toFun i.succ = j.succ ∧ X.color i = .m) = [] :=
+        List.filter_eq_nil_iff.2 fun i _ ↦ by simp +contextual [hc i]
+      rw [isProfile_a, hM, List.append_nil]
+      exact hA
     | m =>
       obtain ⟨i₀, hi₀, hc₀⟩ := (X.pushforwardColor_eq_m_iff f j).1 hc
       -- The only input colored `m` over `j` is `i₀`.
@@ -416,10 +434,7 @@ def Hom.ofBase (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointe
             simp only [List.mem_filter, List.mem_finRange, true_and, decide_eq_true_eq,
               List.mem_singleton]
             exact ⟨fun h ↦ hf j i i₀ h.1 hi₀ h.2 hc₀, fun h ↦ h ▸ ⟨hi₀, hc₀⟩⟩)
-      refine ⟨((List.finRange X.len).filter
-        (fun i ↦ f.toFun i.succ = j.succ ∧ X.color i = .a)).map X.color, ?_, ?_⟩
-      · simp +contextual
-      · rw [hM, List.map_append, List.map_singleton, hc₀]
+      exact ⟨_, hA, by rw [hM, List.map_append, List.map_singleton, hc₀]⟩
 
 @[simp]
 lemma Hom.ofBase_toAssoc_base (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
@@ -428,14 +443,24 @@ lemma Hom.ofBase_toAssoc_base (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.le
     (Hom.ofBase X f hf).toAssoc.base = f :=
   (rfl)
 
+/-- The word of `Hom.ofBase` over an output lists the inputs colored `a` over it increasingly,
+followed by the input colored `m` over it if there is one. -/
+lemma Hom.ofBase_toAssoc_word (X : LM.{u}) {k : ℕ}
+    (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
+    (hf : ∀ (j : Fin k) (i i' : Fin X.len), f.toFun i.succ = j.succ → f.toFun i'.succ = j.succ →
+      X.color i = .m → X.color i' = .m → i = i') (j : Fin k) :
+    (Hom.ofBase X f hf).toAssoc.word j =
+      (List.finRange X.len).filter (fun i ↦ f.toFun i.succ = j.succ ∧ X.color i = .a) ++
+        (List.finRange X.len).filter (fun i ↦ f.toFun i.succ = j.succ ∧ X.color i = .m) :=
+  (rfl)
+
 /-- The lift of an inert map `f : ⟨n⟩ ⟶ ⟨k⟩` of `Fin_*` with source `X`: its target is `⟨k⟩`
 colored along `f`, and its words are the one-letter fibres of `f`. It is `Hom.ofBase`, whose
 fibre condition holds since the fibres of `f` over the elements other than the basepoint are
 singletons. -/
 def Hom.ofInert (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
     (hf : f.IsInert) : X ⟶ ⟨k, X.pushforwardColor f⟩ :=
-  Hom.ofBase X f fun j _ _ hi hi' _ _ ↦ Fin.succ_injective _
-    (((FinPointed.Hom.isInert_iff f).1 hf j.succ (Fin.succ_ne_zero j)).unique hi hi')
+  Hom.ofBase X f fun _ _ _ hi hi' _ _ ↦ hf.eq_of_toFun_succ_eq hi hi'
 
 @[simp]
 lemma Hom.ofInert_toAssoc (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
@@ -478,8 +503,10 @@ theorem exists_hom_toAssoc_base_eq_iff (X : LM.{u}) {k : ℕ}
   refine ⟨fun ⟨φ, hφ⟩ j i i' hi hi' hc hc' ↦ ?_, fun hf ↦ ⟨Hom.ofBase X f hf, rfl⟩⟩
   -- The word of `φ` over `j` is `w ++ [x]`, where no input of `w` is colored `m`.
   have hp := φ.isProfile j
-  rw [show (⟨k, X.pushforwardColor f⟩ : LM.{u}).color j = .m from
-    (X.pushforwardColor_eq_m_iff f j).2 ⟨i, hi, hc⟩, isProfile_m] at hp
+  -- The target is a constructor application, so its color at `j` reduces to
+  -- `X.pushforwardColor f j`, which is `m` since the input `i` over `j` is colored `m`.
+  dsimp only at hp
+  rw [(X.pushforwardColor_eq_m_iff f j).2 ⟨i, hi, hc⟩, isProfile_m] at hp
   obtain ⟨l, hl, hw⟩ := hp
   obtain ⟨w, w', hww', rfl, hw'⟩ := List.map_eq_append_iff.1 hw
   obtain ⟨x, rfl, -⟩ := List.map_eq_singleton_iff.1 hw'

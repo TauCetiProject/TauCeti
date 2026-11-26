@@ -32,7 +32,8 @@ element other than the basepoint can be ordered (`Assoc.Hom.ofBase` orders them 
 Over an inert map every fibre over an element other than the basepoint has exactly one element,
 so the order is unique, and every morphism over an inert map is strongly coCartesian for
 `Assoc.toFinPointed`: these are the coCartesian lifts of inert maps required of an `∞`-operad.
-The fibre over the basepoint carries no order and may have any number of elements.
+The fibre over the basepoint carries no order: it always contains the basepoint of the source,
+but need not be a singleton.
 
 ## Main definitions
 
@@ -49,8 +50,9 @@ The fibre over the basepoint carries no order and may have any number of element
 * `TauCeti.Assoc.Hom.ext_of_base_eq`: a morphism whose fibres over the elements other than the
   basepoint have at most one element is determined by its underlying map; in particular so is a
   morphism over an inert map (`TauCeti.Assoc.Hom.ext_of_isInert`).
-* `TauCeti.Assoc.Hom.epi_of_surjective`: a morphism over a surjective map is an epimorphism; in
-  particular so is a morphism over an inert map (`TauCeti.Assoc.Hom.epi_of_isInert`).
+* `TauCeti.Assoc.Hom.isSplitEpi_of_surjective`: a morphism over a surjective map is a split
+  epimorphism, hence an epimorphism (`TauCeti.Assoc.Hom.epi_of_surjective`); in particular so is
+  a morphism over an inert map (`TauCeti.Assoc.Hom.epi_of_isInert`).
 * `TauCeti.Assoc.isStronglyCocartesian_of_isInert`: every morphism over an inert map is strongly
   coCartesian for `Assoc.toFinPointed`.
 
@@ -156,6 +158,8 @@ instance : SmallCategory Assoc.{u} where
 
 variable {X Y Z : Assoc.{u}}
 
+/-- Two morphisms of `Assoc^⊗` with the same words over every output other than the basepoint are
+equal: the words also determine the underlying pointed maps, so these need not be compared. -/
 @[ext]
 lemma hom_ext {f g : X ⟶ Y} (h : ∀ j, f.word j = g.word j) : f = g :=
   Hom.ext h
@@ -200,21 +204,47 @@ lemma isHomLift_iff {f : X ⟶ Y} {g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk
   -- lengths.
   isHomLift_iff_map_eq (p := toFinPointed) (a := X) (b := Y)
 
-/-- The canonical inert projection selecting the output `j`. -/
-def ρ (j : Fin Y.len) : Y ⟶ mk 1 where
-  base := FinPointed.ρ j
-  word _ := [j]
-  mem_word_iff i k := by
-    have : k = 0 := Subsingleton.elim _ _
-    subst k
-    simp [FinPointed.ρ_toFun, Fin.ext_iff]
-  nodup_word _ := List.nodup_singleton _
+namespace Hom
+
+/-- The lift of a map of `Fin_*` to `Assoc^⊗` ordering increasingly every fibre over an element
+other than the basepoint. -/
+def ofBase (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len) : X ⟶ Y where
+  base := f
+  word j := (List.finRange X.len).filter fun i ↦ f.toFun i.succ = j.succ
+  mem_word_iff i j := by simp
+  nodup_word _ := (List.nodup_finRange _).filter _
+
+@[simp]
+lemma ofBase_base (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len) : (ofBase f).base = f :=
+  (rfl)
+
+lemma ofBase_word (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len) (j : Fin Y.len) :
+    (ofBase f).word j = (List.finRange X.len).filter fun i ↦ f.toFun i.succ = j.succ :=
+  (rfl)
+
+/-- The word over `j` is the one-letter word `i` exactly when `i.succ` is the only element sent to
+`j.succ`. -/
+lemma word_eq_singleton_iff {f : X ⟶ Y} {i : Fin X.len} {j : Fin Y.len} :
+    f.word j = [i] ↔ ∀ i', f.base.toFun i'.succ = j.succ ↔ i' = i := by
+  refine ⟨fun h i' ↦ by rw [← f.mem_word_iff, h, List.mem_singleton], fun h ↦ ?_⟩
+  exact List.Perm.eq_singleton ((List.perm_ext_iff_of_nodup (f.nodup_word j)
+    (List.nodup_singleton i)).2 fun i' ↦ by rw [f.mem_word_iff, List.mem_singleton, h])
+
+end Hom
+
+/-- The canonical inert projection selecting the output `j`: the lift `Hom.ofBase` of the inert
+projection `FinPointed.ρ j`. -/
+def ρ (j : Fin Y.len) : Y ⟶ mk 1 :=
+  Hom.ofBase (FinPointed.ρ j)
 
 @[simp]
 lemma ρ_base (j : Fin Y.len) : (ρ j).base = FinPointed.ρ j := (rfl)
 
 @[simp]
-lemma ρ_word (j : Fin Y.len) (k : Fin 1) : (ρ j).word k = [j] := (rfl)
+lemma ρ_word (j : Fin Y.len) (k : Fin 1) : (ρ j).word k = [j] :=
+  Hom.word_eq_singleton_iff.2 fun i ↦ by
+    rw [Subsingleton.elim k 0]
+    simp [ρ, FinPointed.ρ_toFun]
 
 /-- Lifts of a fixed pointed map are equivalent to families of its single-output lifts.
 The forward map postcomposes with the canonical inert projections; the inverse assembles
@@ -257,22 +287,6 @@ lemma homLiftEquiv_symm_apply_word
 
 namespace Hom
 
-/-- The lift of a map of `Fin_*` to `Assoc^⊗` ordering increasingly every fibre over an element
-other than the basepoint. -/
-def ofBase (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len) : X ⟶ Y where
-  base := f
-  word j := (List.finRange X.len).filter fun i ↦ f.toFun i.succ = j.succ
-  mem_word_iff i j := by simp
-  nodup_word _ := (List.nodup_finRange _).filter _
-
-@[simp]
-lemma ofBase_base (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len) : (ofBase f).base = f :=
-  (rfl)
-
-lemma ofBase_word (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len) (j : Fin Y.len) :
-    (ofBase f).word j = (List.finRange X.len).filter fun i ↦ f.toFun i.succ = j.succ :=
-  (rfl)
-
 /-- A fibre over an element `j.succ` other than the basepoint with exactly one element is a
 one-letter word. -/
 lemma exists_word_eq_singleton {f : X ⟶ Y} {j : Fin Y.len}
@@ -280,16 +294,14 @@ lemma exists_word_eq_singleton {f : X ⟶ Y} {j : Fin Y.len}
   obtain ⟨i', hi', huniq⟩ := hf
   obtain ⟨i, rfl⟩ :=
     FinPointed.exists_eq_succ_of_toFun_ne_zero fun h ↦ Fin.succ_ne_zero j (hi'.symm.trans h)
-  refine ⟨i, List.Perm.eq_singleton ((List.perm_ext_iff_of_nodup (f.nodup_word j)
-    (List.nodup_singleton i)).2 fun i'' ↦ ?_)⟩
-  rw [f.mem_word_iff, List.mem_singleton]
-  exact ⟨fun h ↦ Fin.succ_injective _ (huniq _ h), fun h ↦ h ▸ hi'⟩
+  exact ⟨i, word_eq_singleton_iff.2 fun i'' ↦
+    ⟨fun h ↦ Fin.succ_injective _ (huniq _ h), fun h ↦ h ▸ hi'⟩⟩
 
 /-- Over an inert map, every fibre over an element other than the basepoint is a one-letter
 word. -/
 lemma exists_word_eq_singleton_of_isInert {f : X ⟶ Y} (hf : f.base.IsInert) (j : Fin Y.len) :
     ∃ i, f.word j = [i] :=
-  exists_word_eq_singleton ((FinPointed.Hom.isInert_iff _).1 hf j.succ (Fin.succ_ne_zero j))
+  exists_word_eq_singleton (hf.existsUnique (Fin.succ_ne_zero j))
 
 /-- A morphism of `Assoc^⊗` whose fibres over the elements other than the basepoint have at most
 one element each is determined by its underlying map, since such fibres carry only one order. -/
@@ -312,8 +324,7 @@ lemma ext_of_base_eq {f g : X ⟶ Y} (h : f.base = g.base)
 /-- A morphism of `Assoc^⊗` over an inert map is determined by that map: its fibres over the
 elements other than the basepoint have one element each, so they carry only one order. -/
 lemma ext_of_isInert {f g : X ⟶ Y} (h : f.base = g.base) (hf : f.base.IsInert) : f = g :=
-  ext_of_base_eq h fun j _ _ hi hi' ↦ Fin.succ_injective _
-    (((FinPointed.Hom.isInert_iff _).1 hf j.succ (Fin.succ_ne_zero j)).unique hi hi')
+  ext_of_base_eq h fun _ _ _ ↦ hf.eq_of_toFun_succ_eq
 
 /-- Precomposing with a morphism whose words are the letters `σ j` relabels words along `σ`. -/
 lemma comp_word_of_word_eq_singleton {φ : X ⟶ Y} {σ : Fin Y.len → Fin X.len}
@@ -322,10 +333,11 @@ lemma comp_word_of_word_eq_singleton {φ : X ⟶ Y} {σ : Fin Y.len → Fin X.le
   rw [comp_word, List.map_eq_flatMap]
   exact List.flatMap_congr fun j _ ↦ hσ j
 
-/-- A morphism of `Assoc^⊗` over a surjective map is a split epimorphism, hence an
-epimorphism: a pointed section of the map lifts by `Hom.ofBase`, and its composite with the
-morphism lies over the identity, so it is the identity. -/
-lemma epi_of_surjective {φ : X ⟶ Y} (hφ : Function.Surjective φ.base.toFun) : Epi φ := by
+/-- A morphism of `Assoc^⊗` over a surjective map is a split epimorphism: a pointed section of the
+map lifts by `Hom.ofBase`, and its composite with the morphism lies over the identity, so it is
+the identity. -/
+lemma isSplitEpi_of_surjective {φ : X ⟶ Y} (hφ : Function.Surjective φ.base.toFun) :
+    IsSplitEpi φ := by
   choose s hs using hφ
   let t : FinPointed.mk.{u} Y.len ⟶ FinPointed.mk X.len :=
     ⟨fun j ↦ if j = 0 then 0 else s j, by simp⟩
@@ -335,14 +347,19 @@ lemma epi_of_surjective {φ : X ⟶ Y} (hφ : Function.Surjective φ.base.toFun)
   have hsec : ofBase t ≫ φ = 𝟙 Y := ext_of_base_eq hb fun j i i' hi hi' ↦ by
     rw [hb, id_base, FinPointed.id_toFun] at hi hi'
     exact Fin.succ_injective _ (hi.trans hi'.symm)
-  have : IsSplitEpi φ := ⟨⟨ofBase t, hsec⟩⟩
-  infer_instance
+  exact ⟨⟨ofBase t, hsec⟩⟩
+
+/-- A morphism of `Assoc^⊗` over a surjective map is an epimorphism, being a split epimorphism
+(`Hom.isSplitEpi_of_surjective`). -/
+lemma epi_of_surjective {φ : X ⟶ Y} (hφ : Function.Surjective φ.base.toFun) : Epi φ :=
+  have := isSplitEpi_of_surjective hφ
+  inferInstance
 
 /-- A morphism of `Assoc^⊗` over an inert map is an epimorphism, since inert maps are
 surjective. -/
 lemma epi_of_isInert {φ : X ⟶ Y} (hφ : φ.base.IsInert) : Epi φ :=
   epi_of_surjective fun j ↦ if hj : j = 0 then ⟨0, hj ▸ φ.base.map_zero⟩ else
-    ((FinPointed.Hom.isInert_iff _).1 hφ j hj).exists
+    (hφ.existsUnique hj).exists
 
 end Hom
 
@@ -366,6 +383,8 @@ theorem isStronglyCocartesian_of_isInert (φ : X ⟶ Y) (hφ : φ.base.IsInert) 
   have hword {k : Fin Z.len} {i : Fin X.len} :
       i ∈ φ'.word k ↔ g.toFun (φ.base.toFun i.succ) = k.succ := by
     rw [φ'.mem_word_iff, hφ', FinPointed.comp_toFun]
+    -- The two sides agree up to `toFinPointed_obj`: `toFinPointed.obj Z` is `FinPointed.mk Z.len`
+    -- by definition, so their elements are the same.
     exact Iff.rfl
   -- Every letter `i` of a word of `φ'` is sent by `φ` to some `j + 1`.
   have hcover {k : Fin Z.len} {i : Fin X.len} (hi : i ∈ φ'.word k) : ∃ j, τ i = some j := by
@@ -389,9 +408,8 @@ theorem isStronglyCocartesian_of_isInert (φ : X ⟶ Y) (hφ : φ.base.IsInert) 
         (hτσ hi).symm.trans (hτσ hi') }
   have hfac : φ ≫ χ = φ' := by
     refine hom_ext fun k ↦ ?_
-    rw [Hom.comp_word_of_word_eq_singleton hσ, List.map_filterMap]
-    conv_rhs => rw [← List.filterMap_some (l := φ'.word k)]
-    refine List.filterMap_congr rfl fun i hi ↦ ?_
+    rw [Hom.comp_word_of_word_eq_singleton hσ, List.map_filterMap,
+      (List.filterMap_eq_map_iff_forall_eq_some (g := id)).2 fun i hi ↦ ?_, List.map_id]
     obtain ⟨j, hj⟩ := hcover hi
     simp [hj, hτσ hj]
   have := Hom.epi_of_isInert hφ
