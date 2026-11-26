@@ -36,19 +36,25 @@ compatible with the two choices made in defining it.
 ## Main definitions
 
 * `TauCeti.SpectralAlgClosure.mapOfAlgebra K L`: the embedding `K^alg → L^alg` given by the
-  `AlgebraicClosure K`-algebra structure of `AlgebraicClosure L`, on the normed synonyms.
+  `AlgebraicClosure K`-algebra structure of `AlgebraicClosure L`, on the normed synonyms, and
+  `TauCeti.SpectralAlgClosure.mapOfAlgebraEquiv K L` the same map as a ring isomorphism when `L`
+  is algebraic over `K`.
+* `TauCeti.SpectralAlgClosure.completionMapOfAlgebra K L`: its extension `C_K →+* C_L`, and
+  `TauCeti.SpectralAlgClosure.completionMapOfAlgebraEquiv K L` the isomorphism `C_K ≃+* C_L` when
+  `L` is algebraic over `K`.
 
 ## Main results
 
-* `Field.absoluteGaloisGroup.toContinuousAlgEquiv_eq_completion`: `σ_C` is the completion of `σ`.
 * `Field.absoluteGaloisGroup.completion_toContinuousAlgEquiv_apply`: change of algebraic closure,
   `τ_C ∘ σ_C = (τ σ τ⁻¹)_C ∘ τ_C`.
-* `TauCeti.SpectralAlgClosure.isometry_mapOfAlgebra`: the embedding `K^alg → L^alg` is an
-  isometry; `TauCeti.SpectralAlgClosure.bijective_mapOfAlgebra` and
-  `TauCeti.SpectralAlgClosure.bijective_completion_map_mapOfAlgebra`: it and its extension
-  `C_K → C_L` are bijective when `L` is algebraic over `K`.
-* `Field.absoluteGaloisGroup.map_toContinuousAlgEquiv_mapOfAlgebra`: change of base field, the
-  extension `C_K → C_L` of the embedding intertwines `(g|_{K^alg})_C` with `g_C` for `g ∈ G_L`.
+* `TauCeti.SpectralAlgClosure.mapOfAlgebra_algebraMap`: the embedding `K^alg → L^alg` is
+  `K`-linear; `TauCeti.SpectralAlgClosure.isometry_mapOfAlgebra`: it is an isometry;
+  `TauCeti.SpectralAlgClosure.mapOfAlgebra_bijective` and
+  `TauCeti.SpectralAlgClosure.completionMapOfAlgebra_bijective`: it and its extension `C_K → C_L`
+  are bijective when `L` is algebraic over `K`.
+* `Field.absoluteGaloisGroup.completionMapOfAlgebra_toContinuousAlgEquiv_mapOfAlgebra`: change of
+  base field, the extension `C_K → C_L` of the embedding intertwines `(g|_{K^alg})_C` with `g_C`
+  for `g ∈ G_L`.
 
 ## References
 
@@ -65,13 +71,6 @@ open TauCeti UniformSpace SpectralAlgClosure
 namespace Field.absoluteGaloisGroup
 
 variable {K : Type*} [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K]
-
-/-- `σ_C` is the completion `AlgEquiv.completion` of `σ`, viewed as an automorphism of
-`SpectralAlgClosure K`. -/
-theorem toContinuousAlgEquiv_eq_completion (σ : Field.absoluteGaloisGroup K) :
-    σ.toContinuousAlgEquiv = (absoluteGaloisGroupEquiv K σ).completion :=
-  ContinuousAlgEquiv.ext <| funext fun x ↦ by
-    rw [toContinuousAlgEquiv_apply, AlgEquiv.completion_apply]
 
 /-- **Change of algebraic closure.** Let `E` be a normed field algebraic over `K` and
 `τ : K^alg ≃ₐ[K] E` a `K`-isomorphism. The completion `τ_C` of `τ` intertwines `σ_C` with the
@@ -107,17 +106,33 @@ theorem mapOfAlgebra_apply (x : SpectralAlgClosure K) :
       algEquiv L (algebraMap (AlgebraicClosure K) (AlgebraicClosure L) ((algEquiv K).symm x)) :=
   (rfl)
 
-/-- `SpectralAlgClosure.mapOfAlgebra K L` is bijective when `L` is algebraic over `K`: then
-`AlgebraicClosure L` is algebraic over the algebraically closed field `AlgebraicClosure K`. -/
-theorem bijective_mapOfAlgebra [Algebra K L] [Algebra.IsAlgebraic K L]
-    [IsScalarTower K (AlgebraicClosure K) (AlgebraicClosure L)] :
-    Function.Bijective (mapOfAlgebra K L) := by
-  have : Algebra.IsIntegral K (AlgebraicClosure L) := Algebra.IsIntegral.trans L
-  have : Algebra.IsIntegral (AlgebraicClosure K) (AlgebraicClosure L) :=
-    Algebra.IsIntegral.tower_top K
-  exact (algEquiv L).bijective.comp <|
-    (IsAlgClosed.algebraMap_bijective_of_isIntegral (k := AlgebraicClosure K)).comp
-      (algEquiv K).symm.bijective
+/-- `SpectralAlgClosure.mapOfAlgebra K L` is `K`-linear: it sends the image of `c : K` in `K^alg`
+to the image of `c` in `L^alg`, through `L`. -/
+theorem mapOfAlgebra_algebraMap [Algebra K L]
+    [IsScalarTower K (AlgebraicClosure K) (AlgebraicClosure L)] (c : K) :
+    mapOfAlgebra K L (algebraMap K (SpectralAlgClosure K) c) =
+      algebraMap L (SpectralAlgClosure L) (algebraMap K L c) := by
+  rw [mapOfAlgebra_apply, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply,
+    IsScalarTower.algebraMap_apply K L (AlgebraicClosure L), AlgEquiv.commutes]
+
+variable [Algebra K L] [Algebra.IsAlgebraic K L]
+  [IsScalarTower K (AlgebraicClosure K) (AlgebraicClosure L)]
+
+/-- `SpectralAlgClosure.mapOfAlgebra K L` is bijective when `L` is algebraic over `K`
+(`TauCeti.algebraMap_algebraicClosure_bijective`). -/
+theorem mapOfAlgebra_bijective : Function.Bijective (mapOfAlgebra K L) :=
+  (algEquiv L).bijective.comp <|
+    (algebraMap_algebraicClosure_bijective K L).comp (algEquiv K).symm.bijective
+
+/-- `SpectralAlgClosure.mapOfAlgebra K L` as a ring isomorphism `SpectralAlgClosure K ≃+*
+SpectralAlgClosure L`, when `L` is algebraic over `K`. -/
+def mapOfAlgebraEquiv : SpectralAlgClosure K ≃+* SpectralAlgClosure L :=
+  RingEquiv.ofBijective (mapOfAlgebra K L) (mapOfAlgebra_bijective K L)
+
+/-- `SpectralAlgClosure.mapOfAlgebraEquiv K L` is `SpectralAlgClosure.mapOfAlgebra K L`. -/
+@[simp]
+theorem coe_mapOfAlgebraEquiv : ⇑(mapOfAlgebraEquiv K L) = mapOfAlgebra K L :=
+  (rfl)
 
 end Field
 
@@ -134,39 +149,63 @@ theorem isometry_mapOfAlgebra : Isometry (mapOfAlgebra K L) := by
   -- `SpectralAlgClosure L` is a synonym of `AlgebraicClosure L`, whose `K`-algebra structure
   -- comes from that of `L`.
   let : Algebra K (SpectralAlgClosure L) := inferInstanceAs (Algebra K (AlgebraicClosure L))
+  have h (c : K) : algebraMap K (SpectralAlgClosure L) c =
+      algebraMap L (SpectralAlgClosure L) (algebraMap K L c) :=
+    IsScalarTower.algebraMap_apply K L (AlgebraicClosure L) c
   let : NormedAlgebra K (SpectralAlgClosure L) :=
     { norm_smul_le c x := by
         -- `K` acts on `L^alg` through `L`, and `‖algebraMap L L^alg l‖ = ‖l‖`.
-        have h : algebraMap K (SpectralAlgClosure L) c =
-            algebraMap L (SpectralAlgClosure L) (algebraMap K L c) :=
-          IsScalarTower.algebraMap_apply K L (AlgebraicClosure L) c
         rw [Algebra.smul_def, norm_mul, h, norm_algebraMap', norm_algebraMap'] }
   let f : SpectralAlgClosure K →ₐ[K] SpectralAlgClosure L :=
-    { mapOfAlgebra K L with
-      commutes' c := by
-        simp only [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
-          MonoidHom.coe_ofClass, mapOfAlgebra_apply, algEquiv_symm_apply, algEquiv_apply]
-        exact (IsScalarTower.algebraMap_apply K (AlgebraicClosure K) (AlgebraicClosure L) c).symm }
+    { toRingHom := mapOfAlgebra K L
+      commutes' c := (mapOfAlgebra_algebraMap K L c).trans (h c).symm }
   exact f.isometry
 
+/-- The extension `C_K →+* C_L` of the embedding `K^alg → L^alg`: the completion of
+`SpectralAlgClosure.mapOfAlgebra K L`, which is an isometry (`isometry_mapOfAlgebra`). -/
+def completionMapOfAlgebra : CompletedAlgClosure K →+* CompletedAlgClosure L :=
+  Completion.mapRingHom (mapOfAlgebra K L) (isometry_mapOfAlgebra K L).continuous
+
+/-- `SpectralAlgClosure.completionMapOfAlgebra K L` is the completion of the embedding. -/
+theorem completionMapOfAlgebra_apply (x : CompletedAlgClosure K) :
+    completionMapOfAlgebra K L x = Completion.map (mapOfAlgebra K L) x :=
+  Completion.mapRingHom_apply _ _
+
+/-- `SpectralAlgClosure.completionMapOfAlgebra K L` extends the embedding `K^alg → L^alg`. -/
+@[simp]
+theorem completionMapOfAlgebra_coe (a : SpectralAlgClosure K) :
+    completionMapOfAlgebra K L a = (mapOfAlgebra K L a : CompletedAlgClosure L) := by
+  rw [completionMapOfAlgebra_apply,
+    Completion.map_coe (isometry_mapOfAlgebra K L).uniformContinuous]
+
+/-- `SpectralAlgClosure.completionMapOfAlgebra K L` is an isometry. -/
+theorem isometry_completionMapOfAlgebra : Isometry (completionMapOfAlgebra K L) :=
+  funext (completionMapOfAlgebra_apply K L) ▸ (isometry_mapOfAlgebra K L).completion_map
+
+section Algebraic
+
+variable [Algebra.IsAlgebraic K L]
+
 /-- **`C_K` is also the completed algebraic closure of `L`** when `L` is algebraic over `K`: the
-extension `C_K → C_L` of the embedding `K^alg → L^alg` is bijective, as the completion
-`UniformSpace.Completion.mapEquiv` of a uniform isomorphism. It is an isometry by
-`isometry_mapOfAlgebra` and `Isometry.completion_map`. -/
-theorem bijective_completion_map_mapOfAlgebra [Algebra.IsAlgebraic K L] :
-    Function.Bijective (Completion.map (mapOfAlgebra K L)) := by
-  let e : SpectralAlgClosure K ≃ᵤ SpectralAlgClosure L :=
-    { Equiv.ofBijective _ (bijective_mapOfAlgebra K L) with
-      uniformContinuous_toFun := (isometry_mapOfAlgebra K L).uniformContinuous
-      uniformContinuous_invFun := ((isometry_mapOfAlgebra K L).right_inv
-        (Equiv.ofBijective _ (bijective_mapOfAlgebra K L)).apply_symm_apply).uniformContinuous }
-  have h : Completion.map (mapOfAlgebra K L) = Completion.mapEquiv e :=
-    Completion.ext Completion.continuous_map (Completion.mapEquiv e).continuous fun a ↦ by
-      -- `e` is `mapOfAlgebra K L` as a function, by construction.
-      rw [Completion.mapEquiv_coe,
-        Completion.map_coe (isometry_mapOfAlgebra K L).uniformContinuous]
-      rfl
-  exact h ▸ (Completion.mapEquiv e).bijective
+isomorphism `C_K ≃+* C_L` extending `SpectralAlgClosure.mapOfAlgebraEquiv K L`, an isometry in
+both directions. -/
+def completionMapOfAlgebraEquiv : CompletedAlgClosure K ≃+* CompletedAlgClosure L :=
+  Completion.mapRingEquiv (mapOfAlgebraEquiv K L) (isometry_mapOfAlgebra K L).continuous
+    ((isometry_mapOfAlgebra K L).right_inv (mapOfAlgebraEquiv K L).apply_symm_apply).continuous
+
+/-- The isomorphism `C_K ≃+* C_L` is `SpectralAlgClosure.completionMapOfAlgebra K L`. -/
+@[simp]
+theorem coe_completionMapOfAlgebraEquiv :
+    ⇑(completionMapOfAlgebraEquiv K L) = completionMapOfAlgebra K L :=
+  funext fun x ↦ (Completion.mapRingEquiv_apply _ _ _ x).trans
+    (completionMapOfAlgebra_apply K L x).symm
+
+/-- The extension `C_K → C_L` of the embedding `K^alg → L^alg` is bijective when `L` is algebraic
+over `K`. -/
+theorem completionMapOfAlgebra_bijective : Function.Bijective (completionMapOfAlgebra K L) :=
+  coe_completionMapOfAlgebraEquiv K L ▸ (completionMapOfAlgebraEquiv K L).bijective
+
+end Algebraic
 
 end TauCeti.SpectralAlgClosure
 
@@ -180,16 +219,15 @@ variable {K L : Type*} [NontriviallyNormedField K] [CompleteSpace K] [IsUltramet
 /-- **Change of base field.** For `g ∈ G_L`, the extension `C_K → C_L` of the embedding
 `K^alg → L^alg` intertwines the extension to `C_K` of the restriction
 `Field.absoluteGaloisGroup.mapOfAlgebra K L g ∈ G_K` with the extension `g_C` of `g` to `C_L`. -/
-theorem map_toContinuousAlgEquiv_mapOfAlgebra (g : Field.absoluteGaloisGroup L)
-    (x : CompletedAlgClosure K) :
-    Completion.map (SpectralAlgClosure.mapOfAlgebra K L)
+theorem completionMapOfAlgebra_toContinuousAlgEquiv_mapOfAlgebra
+    (g : Field.absoluteGaloisGroup L) (x : CompletedAlgClosure K) :
+    completionMapOfAlgebra K L
         ((Field.absoluteGaloisGroup.mapOfAlgebra K L g).toContinuousAlgEquiv x) =
-      g.toContinuousAlgEquiv (Completion.map (SpectralAlgClosure.mapOfAlgebra K L) x) := by
-  have hu := (isometry_mapOfAlgebra K L).uniformContinuous
-  refine Completion.induction_on x (isClosed_eq
-    (Completion.continuous_map.comp (ContinuousAlgEquiv.continuous _))
-    ((ContinuousAlgEquiv.continuous _).comp Completion.continuous_map)) fun a ↦ ?_
-  rw [toContinuousAlgEquiv_coe, Completion.map_coe hu, Completion.map_coe hu,
+      g.toContinuousAlgEquiv (completionMapOfAlgebra K L x) := by
+  have hc := (isometry_completionMapOfAlgebra K L).continuous
+  refine Completion.induction_on x (isClosed_eq (hc.comp (ContinuousAlgEquiv.continuous _))
+    ((ContinuousAlgEquiv.continuous _).comp hc)) fun a ↦ ?_
+  rw [toContinuousAlgEquiv_coe, completionMapOfAlgebra_coe, completionMapOfAlgebra_coe,
     toContinuousAlgEquiv_coe, absoluteGaloisGroupEquiv_apply, absoluteGaloisGroupEquiv_apply]
   simp only [SpectralAlgClosure.mapOfAlgebra_apply, AlgEquiv.symm_apply_apply]
   -- `σ.toAlgHom` is the coercion of `σ` as an element of `Gal(AlgebraicClosure K/K)`, the form in
