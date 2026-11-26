@@ -124,16 +124,17 @@ theorem add_mulLeft_pow_char (D : Derivation R A A) (a : A) :
     rw [this, ZMod.inv_neg_one]
     exact ZMod.val_neg_one (q + 1)
   have hq : (q : A) + 2 = 0 := by exact_mod_cast CharP.cast_eq_zero A (q + 2)
+  have hq1 : q + 2 - 1 = q + 1 := by omega
   -- Jacobson's sum collapses to its only nonzero term, indexed by `j = q`.
   have hcollapse : TauCeti.LieAlgebra.jacobson (q + 2) D.toLinearMap (LinearMap.mulLeft R a) =
       (q + 1) • -LinearMap.mulLeft R (D^[q + 1] a) := by
-    rw [TauCeti.LieAlgebra.jacobson_def, show q + 2 - 1 = q + 1 from rfl,
+    rw [TauCeti.LieAlgebra.jacobson_def, hq1,
       sum_eq_single_of_mem q (by simp) fun j _ hj ↦ by
         simp [jacobsonCoeff_toLinearMap_mulLeft, hj],
       jacobsonCoeff_toLinearMap_mulLeft, hinv]
     simp only [↓reduceIte]
   rw [TauCeti.LieAlgebra.add_pow_eq_jacobson, LinearMap.pow_mulLeft, ← toLinearMap_pPow,
-    hcollapse, add_assoc, show q + 2 - 1 = q + 1 from rfl]
+    hcollapse, add_assoc, hq1]
   congr 1
   ext b
   simp only [LinearMap.add_apply, LinearMap.mulLeft_apply, LinearMap.smul_apply,
@@ -178,16 +179,22 @@ open scoped Nat
 
 variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
 
+/-- Katz's projector truncated at `n`: with `∇ = D + a`, the element
+`∑_{k < n} (-x) ^ k / k! * ∇ ^ k m`. For `n = p` it is the projector `P` of the implementation
+notes. -/
+private noncomputable def projector (D : Derivation R A A) (x a : A) (n : ℕ) (m : A) : A :=
+  ∑ k ∈ range n, (-1) ^ k * (Ring.inverse (k ! : A) * x ^ k) *
+    ((D.toLinearMap + LinearMap.mulLeft R a) ^ k) m
+
 /-- The partial sums of Katz's projector: with `∇ = D + a` and `D x = 1`, the element
 `∑_{k ≤ n} (-1) ^ k x ^ k / k! * ∇ ^ k m` is killed by `∇` up to the boundary term
 `(-1) ^ n x ^ n / n! * ∇ ^ (n + 1) m`. -/
-private theorem add_mulLeft_apply_sum_projector (D : Derivation R A A) {x : A} (hx : D x = 1)
+private theorem add_mulLeft_apply_projector (D : Derivation R A A) {x : A} (hx : D x = 1)
     (a m : A) {n : ℕ} (hn : IsUnit (n ! : A)) :
-    (D.toLinearMap + LinearMap.mulLeft R a)
-        (∑ k ∈ range (n + 1), (-1) ^ k * (Ring.inverse (k ! : A) * x ^ k) *
-          ((D.toLinearMap + LinearMap.mulLeft R a) ^ k) m) =
+    (D.toLinearMap + LinearMap.mulLeft R a) (projector D x a (n + 1) m) =
       (-1) ^ n * (Ring.inverse (n ! : A) * x ^ n) *
         ((D.toLinearMap + LinearMap.mulLeft R a) ^ (n + 1)) m := by
+  unfold projector
   set N := D.toLinearMap + LinearMap.mulLeft R a
   -- The Leibniz rule for `N`: `N (f * y) = D f * y + f * N y`.
   have hN (f y : A) : N (f * y) = D f * y + f * N y := by
@@ -218,9 +225,7 @@ private theorem sum_projector_eq (D : Derivation R A A) (x a m : A) {p : ℕ}
     (hp : IsUnit ((p - 1)! : A))
     (hN : (D.toLinearMap + LinearMap.mulLeft R a) ^ p = 0) :
     ∑ j ∈ range p, Ring.inverse (j ! : A) * x ^ j *
-        ∑ k ∈ range p, (-1) ^ k * (Ring.inverse (k ! : A) * x ^ k) *
-          ((D.toLinearMap + LinearMap.mulLeft R a) ^ k)
-            (((D.toLinearMap + LinearMap.mulLeft R a) ^ j) m) = m := by
+        projector D x a p (((D.toLinearMap + LinearMap.mulLeft R a) ^ j) m) = m := by
   set N := D.toLinearMap + LinearMap.mulLeft R a
   rcases Nat.eq_zero_or_pos p with rfl | hp0
   · -- For `p = 0`, `∇ ^ 0 = 1 = 0`, so `m = 0`.
@@ -232,11 +237,10 @@ private theorem sum_projector_eq (D : Derivation R A A) (x a m : A) {p : ℕ}
   -- The summand indexed by `(j, k)` only depends on `n = j + k`, and vanishes once `p ≤ n`.
   let F (j k : ℕ) : A :=
     (-1) ^ k * (Ring.inverse (j ! : A) * Ring.inverse (k ! : A)) * (x ^ (j + k) * (N ^ (j + k)) m)
-  have hF : ∀ j ∈ range p, Ring.inverse (j ! : A) * x ^ j *
-      ∑ k ∈ range p, (-1) ^ k * (Ring.inverse (k ! : A) * x ^ k) * (N ^ k) ((N ^ j) m) =
-        ∑ k ∈ range (p - j), F j k := by
+  have hF : ∀ j ∈ range p, Ring.inverse (j ! : A) * x ^ j * projector D x a p ((N ^ j) m) =
+      ∑ k ∈ range (p - j), F j k := by
     intro j _
-    rw [mul_sum, ← sum_subset (range_subset_range.mpr (Nat.sub_le p j))]
+    rw [projector, mul_sum, ← sum_subset (range_subset_range.mpr (Nat.sub_le p j))]
     · refine sum_congr rfl fun k _ ↦ ?_
       simp only [F]
       rw [hpow, pow_add x]
@@ -288,15 +292,15 @@ theorem exists_unit_horizontal_iff (p : ℕ) [Fact p.Prime] [CharP A p] [IsLocal
     (IsUnit.natCast_factorial_iff_of_charP p).mpr (Nat.sub_lt hp.pos one_pos)
   -- By Taylor's formula at `m = 1`, a sum of `p` multiples of horizontal elements is `1`; since
   -- `A` is local, one of them is a unit.
-  obtain ⟨j, -, hj⟩ : ∃ j ∈ range p, IsUnit (Ring.inverse (j ! : A) * x ^ j *
-      ∑ k ∈ range p, (-1) ^ k * (Ring.inverse (k ! : A) * x ^ k) * (N ^ k) ((N ^ j) 1)) := by
+  obtain ⟨j, -, hj⟩ : ∃ j ∈ range p,
+      IsUnit (Ring.inverse (j ! : A) * x ^ j * projector D x a p ((N ^ j) 1)) := by
     by_contra! H
     have hmem := Ideal.sum_mem (IsLocalRing.maximalIdeal A) fun j hj ↦
       (IsLocalRing.mem_maximalIdeal _).mpr (H j hj)
     rw [sum_projector_eq D x a 1 hfac hN] at hmem
     exact (IsLocalRing.mem_maximalIdeal _).mp hmem isUnit_one
   refine ⟨(isUnit_of_mul_isUnit_right hj).unit, ?_⟩
-  have hproj := add_mulLeft_apply_sum_projector D hx a ((N ^ j) 1) hfac
+  have hproj := add_mulLeft_apply_projector D hx a ((N ^ j) 1) hfac
   rw [Nat.sub_add_cancel hp.pos, hN, LinearMap.zero_apply, mul_zero] at hproj
   rw [IsUnit.unit_spec]
   simpa only [N, LinearMap.add_apply, coeFn_coe, LinearMap.mulLeft_apply] using hproj
