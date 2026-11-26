@@ -14,7 +14,8 @@ public import Mathlib.Topology.Homotopy.Basic
 Let `c : N × [0, 1) → M` be a collar of `f : N → M` (`TauCeti.IsCollar`). For `t : ℝ`, the part
 `TauCeti.collarPart c t = c(N × [0, t))` of depth less than `t` is open, contains the boundary
 `f(N)` when `0 < t`, and increases with `t`. Every point outside `f(N)` lies outside the collar of
-some positive depth.
+some positive depth, and if `N` is compact and `M` is Hausdorff, every compact set missing `f(N)`
+misses the collar of some positive depth (`TauCeti.IsCollar.exists_disjoint_collarPart`).
 
 The collar coordinates `TauCeti.IsCollar.collarCoord` of a point `x` of `c(N × [0, t))` are the
 unique `p` with `c p = x`. Scaling the depth coordinate from `1` down to `0` deforms
@@ -28,6 +29,13 @@ deformation used by Hatcher to show that the collar has no homology relative to 
 * `TauCeti.IsCollar.collarRetraction`: the retraction of the collar onto the boundary.
 * `TauCeti.IsCollar.collarDeformation`: the deformation of the collar onto the boundary, relative
   to the boundary.
+
+## Main results
+
+* `TauCeti.IsCollar.isCompact_preimage_compl_collarPart`: if `M` is compact, the complement of the
+  collar of positive depth is compact, read in an embedded complement of the boundary.
+* `TauCeti.IsCollar.exists_disjoint_collarPart`: a compact set missing the boundary misses the
+  collar of some positive depth.
 
 ## References
 
@@ -91,6 +99,15 @@ lemma compl_collarPart_subset_range {M' : Type*} {ι : M' → M} (hιf : range �
   rw [hιf]
   exact compl_subset_compl.2 (hc.range_subset_collarPart ht)
 
+/-- For a compact space `M` and `0 < t`, the points of `M'` outside the collar of depth less
+than `t` form a compact set `ι⁻¹(M ∖ Cₜ)`, when `ι` is an inducing map (such as an embedding) onto
+the complement of the boundary `f(N)`, such as the interior of a manifold with boundary. -/
+lemma isCompact_preimage_compl_collarPart [CompactSpace M] {M' : Type*} [TopologicalSpace M']
+    {ι : M' → M} (hι : IsInducing ι) (hιf : range ι = (range f)ᶜ) {t : ℝ} (ht : 0 < t) :
+    IsCompact (ι ⁻¹' (collarPart c t)ᶜ) :=
+  hι.isCompact_preimage' (hc.isOpen_collarPart t).isClosed_compl.isCompact
+    (hc.compl_collarPart_subset_range hιf ht)
+
 /-- Every point outside the boundary lies outside the collar of some positive depth. -/
 lemma exists_notMem_collarPart {x : M} (hx : x ∉ range f) : ∃ t, 0 < t ∧ x ∉ collarPart c t := by
   by_cases hxc : x ∈ range c
@@ -104,6 +121,36 @@ lemma exists_notMem_collarPart {x : M} (hx : x ∉ range f) : ∃ t, 0 < t ∧ x
     exact ⟨q.2, hq, (lt_irrefl (q.2 : ℝ)) ∘
       (apply_mem_collarPart_iff hc.isOpenEmbedding.injective).1⟩
   · exact ⟨1, one_pos, fun ⟨p, _, hp⟩ ↦ hxc ⟨p, hp⟩⟩
+
+/-- **A compact set missing the boundary misses the collar of some positive depth.** -/
+lemma exists_disjoint_collarPart [CompactSpace N] [T2Space M] {S : Set M} (hS : IsCompact S)
+    (hSf : Disjoint S (range f)) : ∃ t, 0 < t ∧ Disjoint S (collarPart c t) := by
+  -- The complements of the collars of depth at most `s ∈ (0, 1)` form a directed open cover of
+  -- the complement of the boundary.
+  let U : Ioo (0 : ℝ) 1 → Set M := fun s ↦ (c '' {p | (p.2 : ℝ) ≤ s})ᶜ
+  have hU (s : Ioo (0 : ℝ) 1) : IsOpen (U s) :=
+    (hc.isCompact_image_le s.property.2).isClosed.isOpen_compl
+  have hmono {s s' : Ioo (0 : ℝ) 1} (h : (s : ℝ) ≤ s') : U s' ⊆ U s :=
+    compl_subset_compl.2 (image_mono fun _ hp ↦ le_trans hp h)
+  have hdir : Directed (· ⊆ ·) U := fun s s' ↦
+    ⟨⟨min s s', lt_min s.property.1 s'.property.1,
+        (min_le_left _ _).trans_lt s.property.2⟩,
+      hmono (min_le_left _ _), hmono (min_le_right _ _)⟩
+  have hcover : S ⊆ ⋃ s, U s := by
+    intro x hx
+    -- A point of `S` lies outside the collar of some depth `t > 0`, so outside that of depth
+    -- at most `s = min (t / 2) (1 / 2) < t`.
+    obtain ⟨t, ht, hxt⟩ := hc.exists_notMem_collarPart (hSf.notMem_of_mem_left hx)
+    have hst : min (t / 2) (1 / 2) < t := (min_le_left _ _).trans_lt (half_lt_self ht)
+    refine mem_iUnion.2 ⟨⟨min (t / 2) (1 / 2), lt_min (half_pos ht) one_half_pos,
+      (min_le_right _ _).trans_lt one_half_lt_one⟩, fun hxs ↦ hxt ?_⟩
+    obtain ⟨p, hp, rfl⟩ := hxs
+    exact ⟨p, lt_of_le_of_lt hp hst, rfl⟩
+  have : Nonempty (Ioo (0 : ℝ) 1) := ⟨⟨1 / 2, by norm_num, by norm_num⟩⟩
+  obtain ⟨s, hs⟩ := hS.elim_directed_cover U hU hcover hdir
+  refine ⟨s, s.property.1, disjoint_left.2 fun x hx hxc ↦ ?_⟩
+  obtain ⟨p, hp, rfl⟩ := mem_collarPart_iff.1 hxc
+  exact hs hx ⟨p, hp.le, rfl⟩
 
 /-- The collar coordinates of a point of the collar of depth less than `t`. -/
 def collarCoord (t : ℝ) : C(collarPart c t, N × Ico (0 : ℝ) 1) :=

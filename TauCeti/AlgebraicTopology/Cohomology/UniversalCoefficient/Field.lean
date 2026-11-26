@@ -78,16 +78,14 @@ a class to the linear form underlying its Kronecker pairing
 def singularCohomologyDualEquiv (n : ℕ) :
     X.singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n ≃ₗ[k]
       Dual k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (ModuleCat.of k k)).obj X) :=
-  X.singularKroneckerEquivOfProjectiveHomology _ _ n ≪≫ₗ ModuleCat.homLinearEquiv
+  X.singularKroneckerLinearEquivOfProjectiveHomology _ _ n
 
 /-- The equivalence `TopCat.singularCohomologyDualEquiv` is the Kronecker map. -/
 @[simp]
 lemma singularCohomologyDualEquiv_apply (n : ℕ)
     (α : X.singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n) :
-    X.singularCohomologyDualEquiv n α = (X.singularKronecker k n α).hom := by
-  rw [singularCohomologyDualEquiv, LinearEquiv.trans_apply,
-    singularKroneckerEquivOfProjectiveHomology_apply]
-  exact ModuleCat.homLinearEquiv_apply _
+    X.singularCohomologyDualEquiv n α = (X.singularKronecker k n α).hom :=
+  X.singularKroneckerLinearEquivOfProjectiveHomology_apply _ _ n α
 
 /-- The inverse of `TopCat.singularCohomologyDualEquiv` sends a linear form `φ` to the class whose
 Kronecker pairing is `φ`. -/
@@ -95,8 +93,9 @@ Kronecker pairing is `φ`. -/
 lemma singularKronecker_singularCohomologyDualEquiv_symm (n : ℕ)
     (φ : Dual k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (ModuleCat.of k k)).obj X)) :
     X.singularKronecker k n ((X.singularCohomologyDualEquiv n).symm φ) = ModuleCat.ofHom φ := by
-  ext x
-  rw [← singularCohomologyDualEquiv_apply, LinearEquiv.apply_symm_apply, ModuleCat.hom_ofHom]
+  rw [singularCohomologyDualEquiv]
+  exact X.singularKronecker_singularKroneckerLinearEquivOfProjectiveHomology_symm
+    (ModuleCat.of k k) (ModuleCat.of k k) n φ
 
 variable {X} in
 /-- **Naturality of the universal coefficient isomorphism over a field**: for a continuous map
@@ -183,16 +182,14 @@ its relative Kronecker pairing (`TopPair.singularCohomologyDualEquiv_apply`). -/
 def singularCohomologyDualEquiv (n : ℕ) :
     P.singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n ≃ₗ[k]
       Dual k (P.singularHomology (C := ModuleCat.{w} k) (ModuleCat.of k k) n) :=
-  P.singularKroneckerEquivOfProjectiveHomology _ _ n ≪≫ₗ ModuleCat.homLinearEquiv
+  P.singularKroneckerLinearEquivOfProjectiveHomology _ _ n
 
 /-- The equivalence `TopPair.singularCohomologyDualEquiv` is the relative Kronecker map. -/
 @[simp]
 lemma singularCohomologyDualEquiv_apply (n : ℕ)
     (α : P.singularCohomology (ModuleCat.of k k) k (ModuleCat.of k k) n) :
-    P.singularCohomologyDualEquiv n α = (P.singularKronecker k n α).hom := by
-  rw [singularCohomologyDualEquiv, LinearEquiv.trans_apply,
-    singularKroneckerEquivOfProjectiveHomology_apply]
-  exact ModuleCat.homLinearEquiv_apply _
+    P.singularCohomologyDualEquiv n α = (P.singularKronecker k n α).hom :=
+  P.singularKroneckerLinearEquivOfProjectiveHomology_apply _ _ n α
 
 /-- The inverse of `TopPair.singularCohomologyDualEquiv` sends a linear form `φ` to the class whose
 Kronecker pairing is `φ`. -/
@@ -200,8 +197,9 @@ Kronecker pairing is `φ`. -/
 lemma singularKronecker_singularCohomologyDualEquiv_symm (n : ℕ)
     (φ : Dual k (P.singularHomology (C := ModuleCat.{w} k) (ModuleCat.of k k) n)) :
     P.singularKronecker k n ((P.singularCohomologyDualEquiv n).symm φ) = ModuleCat.ofHom φ := by
-  ext x
-  rw [← singularCohomologyDualEquiv_apply, LinearEquiv.apply_symm_apply, ModuleCat.hom_ofHom]
+  rw [singularCohomologyDualEquiv]
+  exact P.singularKronecker_singularKroneckerLinearEquivOfProjectiveHomology_symm
+    (ModuleCat.of k k) (ModuleCat.of k k) n φ
 
 variable {P} in
 /-- **Naturality of the relative universal coefficient isomorphism over a field**: for a map of

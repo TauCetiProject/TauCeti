@@ -11,7 +11,7 @@ public import Mathlib.Data.Nat.Cast.Basic
 import Mathlib.Algebra.Module.NatInt
 
 /-!
-# Powers of `x + y` for a square-zero element `x`
+# Square-zero elements: powers of `x + y` and the inverse of `1 + x`
 
 In any semiring, if `x * x = 0` and `x` commutes with `y`, then only the terms of degree at most
 one in `x` survive in the binomial expansion:
@@ -21,6 +21,8 @@ only when `n • x = 0`, so `x = 0` whenever `n` is invertible. For an endomorph
 `N ∘ N = 0`, this says that a unipotent element of order invertible in the base field is the
 identity.
 
+Also, in a ring, `1 + x` is a unit with inverse `1 - x` when `x * x = 0`.
+
 ## Main results
 
 * `Commute.add_pow_succ_of_mul_self_eq_zero`: if `x` commutes with `y` and `x * x = 0`, then
@@ -28,6 +30,9 @@ identity.
 * `TauCeti.one_add_pow_of_sq_eq_zero`: `(1 + x) ^ n = 1 + n • x` when `x ^ 2 = 0`.
 * `TauCeti.eq_zero_of_one_add_pow_eq_one_of_sq_eq_zero`: if `x ^ 2 = 0`, `(1 + x) ^ n = 1` and
   `n` is a unit, then `x = 0`.
+* `TauCeti.one_sub_mul_one_add_of_mul_self_eq_zero`,
+  `TauCeti.one_add_mul_one_sub_of_mul_self_eq_zero`: `(1 ∓ x) (1 ± x) = 1` when `x * x = 0`, so
+  `1 + x` is a unit with inverse `1 - x`.
 -/
 
 public section
@@ -71,5 +76,15 @@ theorem eq_zero_of_one_add_pow_eq_one_of_sq_eq_zero [Ring A] {x : A} (hx : x ^ 2
     (hn : IsUnit (n : A)) (h : (1 + x) ^ n = 1) : x = 0 := by
   rw [one_add_pow_of_sq_eq_zero hx, add_eq_left, nsmul_eq_mul] at h
   exact hn.mul_right_eq_zero.1 h
+
+/-- `1 - x` is a left inverse of `1 + x` when `x * x = 0`. -/
+theorem one_sub_mul_one_add_of_mul_self_eq_zero [Ring A] {x : A} (hx : x * x = 0) :
+    (1 - x) * (1 + x) = 1 := by
+  rw [← (Commute.one_left x).mul_self_sub_mul_self_eq', one_mul, hx, sub_zero]
+
+/-- `1 - x` is a right inverse of `1 + x` when `x * x = 0`. -/
+theorem one_add_mul_one_sub_of_mul_self_eq_zero [Ring A] {x : A} (hx : x * x = 0) :
+    (1 + x) * (1 - x) = 1 := by
+  rw [← (Commute.one_left x).mul_self_sub_mul_self_eq, one_mul, hx, sub_zero]
 
 end TauCeti
