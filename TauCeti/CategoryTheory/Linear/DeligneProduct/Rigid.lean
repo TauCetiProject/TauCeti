@@ -13,7 +13,9 @@ public import TauCeti.CategoryTheory.Monoidal.Envelope.Mat.Rigid
 
 In the linear tensor product of two rigid monoidal linear categories, duals of pairs are
 componentwise and their evaluations and coevaluations are pure tensors. The matrix-category
-duality then equips the Deligne product with duals of all finite families of pairs.
+duality then equips the Deligne product with duals of all finite families of pairs. For a pure
+object, the dual is again pure, and evaluation and coevaluation are one-entry matrices of the
+corresponding pure tensors.
 -/
 
 public section
@@ -138,3 +140,83 @@ theorem leftDual_coevaluation [LeftRigidCategory C] [LeftRigidCategory D]
   (rfl)
 
 end TauCeti.LinearTensor
+
+namespace TauCeti.DeligneProduct
+
+variable {k : Type w} [CommSemiring k]
+  {C : Type u₁} [Category.{v₁} C] [Preadditive C] [Linear k C] [MonoidalCategory C]
+  [MonoidalPreadditive C] [MonoidalLinear k C]
+  {D : Type u₂} [Category.{v₂} D] [Preadditive D] [Linear k D] [MonoidalCategory D]
+  [MonoidalPreadditive D] [MonoidalLinear k D]
+
+-- Simplify the duality operations before rewriting the pure objects as matrix embeddings.
+section RightDual
+
+variable [RightRigidCategory C] [RightRigidCategory D]
+
+/-- The chosen right dual of a pure object is the pure object of the right duals. -/
+@[simp↓]
+theorem rightDual_bifunctor_obj_obj (X : C) (Y : D) :
+    (((bifunctor k C D).obj X).obj Y)ᘁ = ((bifunctor k C D).obj Xᘁ).obj Yᘁ :=
+  (rfl)
+
+/-- The evaluation of a pure object against its right dual is the one-entry matrix whose entry
+is the pure tensor of the evaluations in the factors. -/
+@[simp↓]
+theorem evaluation_rightDual_bifunctor_obj_obj (X : C) (Y : D) :
+    ε_ (((bifunctor k C D).obj X).obj Y) ((((bifunctor k C D).obj X).obj Y)ᘁ) =
+      fun _ _ ↦ LinearTensor.tmul (ε_ X Xᘁ) (ε_ Y Yᘁ) := by
+  ext ⟨⟨⟩, ⟨⟩⟩ u
+  rw [Mat_.evaluation_rightDual_apply, Mat_.id_apply_self, id_whiskerRight, Category.id_comp]
+  exact LinearTensor.rightDual_evaluation ⟨X, Y⟩
+
+/-- The coevaluation of a pure object with its right dual is the one-entry matrix whose entry
+is the pure tensor of the coevaluations in the factors. -/
+@[simp↓]
+theorem coevaluation_rightDual_bifunctor_obj_obj (X : C) (Y : D) :
+    η_ (((bifunctor k C D).obj X).obj Y) ((((bifunctor k C D).obj X).obj Y)ᘁ) =
+      fun _ _ ↦ LinearTensor.tmul (η_ X Xᘁ) (η_ Y Yᘁ) := by
+  ext u ⟨⟨⟩, ⟨⟩⟩
+  rw [Mat_.coevaluation_rightDual_apply, Mat_.id_apply_self]
+  let P : LinearTensor k C D := ⟨X, Y⟩
+  -- Identify the singleton summands before rewriting the whiskered identity.
+  change η_ P Pᘁ ≫ P ◁ 𝟙 (Pᘁ) = _
+  rw [whiskerLeft_id, Category.comp_id]
+  exact LinearTensor.rightDual_coevaluation P
+
+end RightDual
+
+section LeftDual
+
+variable [LeftRigidCategory C] [LeftRigidCategory D]
+
+/-- The chosen left dual of a pure object is the pure object of the left duals. -/
+@[simp↓]
+theorem leftDual_bifunctor_obj_obj (X : C) (Y : D) :
+    (ᘁ(((bifunctor k C D).obj X).obj Y) : DeligneProduct k C D) =
+      ((bifunctor k C D).obj (ᘁX)).obj (ᘁY) :=
+  (rfl)
+
+/-- The evaluation of a pure object against its left dual is the one-entry matrix whose entry
+is the pure tensor of the evaluations in the factors. -/
+@[simp↓]
+theorem evaluation_leftDual_bifunctor_obj_obj (X : C) (Y : D) :
+    ε_ (ᘁ(((bifunctor k C D).obj X).obj Y)) (((bifunctor k C D).obj X).obj Y) =
+      fun _ _ ↦ LinearTensor.tmul (ε_ (ᘁX) X) (ε_ (ᘁY) Y) := by
+  ext ⟨⟨⟩, ⟨⟩⟩ u
+  rw [Mat_.evaluation_leftDual_apply, Mat_.id_apply_self, id_whiskerRight, Category.id_comp]
+  exact LinearTensor.leftDual_evaluation ⟨X, Y⟩
+
+/-- The coevaluation of a pure object with its left dual is the one-entry matrix whose entry
+is the pure tensor of the coevaluations in the factors. -/
+@[simp↓]
+theorem coevaluation_leftDual_bifunctor_obj_obj (X : C) (Y : D) :
+    η_ (ᘁ(((bifunctor k C D).obj X).obj Y)) (((bifunctor k C D).obj X).obj Y) =
+      fun _ _ ↦ LinearTensor.tmul (η_ (ᘁX) X) (η_ (ᘁY) Y) := by
+  ext u ⟨⟨⟩, ⟨⟩⟩
+  rw [Mat_.coevaluation_leftDual_apply, Mat_.id_apply_self, whiskerLeft_id, Category.comp_id]
+  exact LinearTensor.leftDual_coevaluation ⟨X, Y⟩
+
+end LeftDual
+
+end TauCeti.DeligneProduct
