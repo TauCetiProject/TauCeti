@@ -72,17 +72,7 @@ lemma δ_app_pullbackSections_μ (N : X.Modules) (x : Γ(M, U)) (y : Γ(N, U)) :
           (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) M N (x ⊗ₜ y))) =
       Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor (g ⁻¹ᵁ U)) _ _
         (pullbackSections g M U x ⊗ₜ pullbackSections g N U y) := by
-  -- The unit of the adjunction is monoidal; the tensor map of sections is natural, and that of
-  -- pushforward is the identity on pure tensors of sections over the inverse image.
-  have h := congr($((pullbackPushforwardAdjunction g).unit_app_tensor_comp_map_δ M N).app U
-    (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) M N (x ⊗ₜ y)))
-  have hn := congr($(Functor.LaxMonoidal.μ_natural (Scheme.Modules.sectionsFunctor U)
-    ((pullbackPushforwardAdjunction g).unit.app M)
-    ((pullbackPushforwardAdjunction g).unit.app N)) (x ⊗ₜ y))
-  have hp := SheafOfModules.pushforward_μ_app_tmul.{u} g.toRingCatSheafHom
-    ((pullback g).obj M) ((pullback g).obj N) (op U) (pullbackSections g M U x)
-      (pullbackSections g N U y)
-  exact h.trans ((congrArg _ hn.symm).trans hp)
+  exact SheafOfModules.pullback_δ_app_unit_tmul g.toRingCatSheafHom M N (op U) x y
 /-- The identification `g^* 𝒪_X ≅ 𝒪_Y` sends the pullback of a function `r` on `U` to the
 function `g^♯ r` on `g⁻¹ U`. -/
 lemma pullbackObjUnitIso_hom_app_pullbackSections_ε (r : Γ(X, U)) :

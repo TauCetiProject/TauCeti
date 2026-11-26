@@ -153,24 +153,9 @@ theorem exists_isBlock_superset (hconn : (G.induce B).Connected)
           · obtain ⟨v, hv⟩ := (hc hD).1.nonempty
             exact ⟨v, hDC hv, hv⟩
       · exact fun hC ↦ (hc hC).1
-    · apply not_isCutVertex_induce_of_exists_walk
-      intro x hx a ha b hb hax hbx
-      let F : Set V := {x, a, b}
-      have hF : F.Finite := by simp [F]
-      have hFU : F ⊆ ⋃₀ c := by
-        intro y hy
-        simp only [F, Set.mem_insert_iff, Set.mem_singleton_iff] at hy
-        rcases hy with rfl | rfl | rfl
-        · exact hx
-        · exact ha
-        · exact hb
-      obtain ⟨C, hC, hFC⟩ := hchain.directedOn.exists_mem_subset_of_finite_of_subset_sUnion
-        hne hF hFU
-      have haC : a ∈ C := hFC (by simp [F])
-      have hbC : b ∈ C := hFC (by simp [F])
-      obtain ⟨p, hp⟩ := exists_walk_forall_mem_support_mem_and_ne
-        (hc hC).1 (hc hC).2 haC hbC hax hbx
-      exact ⟨p, fun y hy ↦ ⟨Set.mem_sUnion_of_mem ((hp y hy).1) hC, (hp y hy).2⟩⟩
+    · intro x
+      exact not_isCutVertex_induce_sUnion_of_directedOn hchain.directedOn
+        (fun C hC hx ↦ (hc hC).2 ⟨x, hx⟩)
   obtain ⟨C, hBC, hC⟩ := zorn_subset_nonempty P hchain B hBP
   exact ⟨C, by simpa only [IsBlock, P, Set.mem_ofPred_eq] using hC, hBC⟩
 
