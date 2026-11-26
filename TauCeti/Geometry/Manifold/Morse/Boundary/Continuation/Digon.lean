@@ -133,6 +133,13 @@ theorem isContinuationFamily_const_iff {V : (z : M × ℝ) → TangentSpace (�
       eventually_fst_eq_left := h.eventually_fst_eq_left.mono fun _ h _ _ ↦ h
       eventually_fst_eq_right := h.eventually_fst_eq_right.mono fun _ h _ _ ↦ h }⟩
 
+/-- The space component of `(1 - λ) • v + λ • w`, for tangent vectors `v` and `w` of `M × ℝ`. -/
+private theorem fst_one_sub_smul_add_smul {z : M × ℝ}
+    (v w : TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ)) z) (l : ℝ) :
+    ((1 - l) • v + l • w : E × ℝ).1 = (1 - l) • (v : E × ℝ).1 + l • (w : E × ℝ).1 :=
+  -- The operations of the tangent space are those of `E × ℝ`.
+  rfl
+
 /-- **The family joining two continuations.** Two continuation fields `V₀` and `V₁` from `X₀` to
 `X₁` at the same rate `C` are joined by the family `(1 - λ) • V₀ + λ • V₁` of continuation
 fields, with `V₀` at `λ = 0` and `V₁` at `λ = 1`. -/
@@ -149,18 +156,12 @@ theorem IsContinuationField.isContinuationFamily_one_sub_smul_add_smul
       _ = C * z.2 * (1 - z.2 ^ 2) := by rw [h₀', h₁']; ring
   eventually_fst_eq_left := by
     filter_upwards [h₀.eventually_fst_eq_left, h₁.eventually_fst_eq_left] with t ht₀ ht₁ l _ x
-    -- The operations of the tangent space are those of `E × ℝ`.
-    have hsum : ((1 - l) • V₀ (x, t) + l • V₁ (x, t) : E × ℝ).1 =
-        (1 - l) • (V₀ (x, t) : E × ℝ).1 + l • (V₁ (x, t) : E × ℝ).1 := rfl
-    have hcomb (v : E) : (1 - l) • v + l • v = v := by rw [← add_smul, sub_add_cancel, one_smul]
-    exact hsum.trans (by rw [ht₀ x, ht₁ x]; exact hcomb _)
+    rw [fst_one_sub_smul_add_smul, ht₀ x, ht₁ x]
+    exact Convex.combo_self (sub_add_cancel 1 l) _
   eventually_fst_eq_right := by
     filter_upwards [h₀.eventually_fst_eq_right, h₁.eventually_fst_eq_right] with t ht₀ ht₁ l _ x
-    -- The operations of the tangent space are those of `E × ℝ`.
-    have hsum : ((1 - l) • V₀ (x, t) + l • V₁ (x, t) : E × ℝ).1 =
-        (1 - l) • (V₀ (x, t) : E × ℝ).1 + l • (V₁ (x, t) : E × ℝ).1 := rfl
-    have hcomb (v : E) : (1 - l) • v + l • v = v := by rw [← add_smul, sub_add_cancel, one_smul]
-    exact hsum.trans (by rw [ht₀ x, ht₁ x]; exact hcomb _)
+    rw [fst_one_sub_smul_add_smul, ht₀ x, ht₁ x]
+    exact Convex.combo_self (sub_add_cancel 1 l) _
 
 namespace IsContinuationFamily
 
@@ -299,37 +300,6 @@ theorem eventually_bijOn_morseDigonSlice {σ : ℝ} (hσ : intervalBaseOrbit C �
     · simp [flow_trans hVs hl, timeDependentFlowOf_self]
 
 include hV hX₀ hX₁ hC hVs in
-/-- **The continuation trajectories of a field of the family through the transition maps.** Let `V`
-be a family of `C¹` continuation fields from `X₀` to `X₁` at rate `C > 0`, and let `φ^λ` be the
-time-dependent flow of the space component of `V λ` along the base trajectory. For every
-`λ ∈ [0, 1]`, every sufficiently negative time `a` and every sufficiently positive time `b`, the
-continuation trajectories of `V λ` from `(p, 0)` to `(q, 1)` are as many as the points of
-`W^u_{X₀}(p) ∩ (φ^λ_{a, b})⁻¹ (W^s_{X₁}(q))`, for all `p` and `q` at once. -/
-theorem eventually_ncard_morseContinuationSlice_eq {l : ℝ} (hl : l ∈ Icc (0 : ℝ) 1) :
-    ∀ᶠ a in atBot, ∀ᶠ b in atTop, ∀ p q : M, (morseContinuationSlice (V l) p q).ncard =
-      (hX₀.flow.unstableSet p ∩ timeDependentFlowOf (continuationSpaceField C (V l)) a b ⁻¹'
-        hX₁.flow.stableSet q).ncard := by
-  obtain ⟨σ, hσ⟩ := exists_intervalBaseOrbit_eq hC.ne' (by norm_num : (1 / 2 : ℝ) ∈ Ioo 0 1)
-  filter_upwards [hV.eventually_morseDigonSlice_eq hX₀ hX₁ hC hVs hσ] with a ha
-  filter_upwards [ha] with b hb p q
-  have hY := contMDiff_continuationSpaceField (C := C) (hVs l hl)
-  have hcomp := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY
-  -- The slice of `V λ` is the preimage of the intersection under the diffeomorphism `φ^λ_{σ, a}`.
-  have hslice : morseContinuationSlice (V l) p q =
-      timeDependentFlowOf (continuationSpaceField C (V l)) σ a ⁻¹' (hX₀.flow.unstableSet p ∩
-        timeDependentFlowOf (continuationSpaceField C (V l)) a b ⁻¹' hX₁.flow.stableSet q) := by
-    ext x
-    have hx := congrArg ((l, x) ∈ ·) (hb p q)
-    simp only [mem_morseDigonSlice, hl, true_and, eq_iff_iff, Set.mem_ofPred_eq] at hx
-    rw [hx]
-    simp [flow_trans hVs hl]
-  set Φ := (timeDependentFlowDiffeomorph hcomp le_rfl hY σ a).toEquiv
-  have hΦ : ⇑Φ = timeDependentFlowOf (continuationSpaceField C (V l)) σ a :=
-    funext (timeDependentFlowDiffeomorph_apply hcomp le_rfl hY σ a)
-  rw [hslice, ← hΦ, Set.ncard_preimage_of_injective_subset_range Φ.injective
-    fun y _ ↦ Φ.surjective y]
-
-include hV hX₀ hX₁ hC hVs in
 /-- **The digon homotopy through the transition maps.** Let `V` be a family of `C¹` continuation
 fields from `X₀` to `X₁` at rate `C > 0`, between pseudo-gradients adapted to Morse functions `f₀`
 and `f₁`. For every sufficiently negative time `a` and every sufficiently positive time `b`, the
@@ -377,9 +347,11 @@ theorem eventually_morseBoundary_comp_morseDegreeOneMap_morseDigonSlice_add_eq_i
             (hX₀.flow.unstableSet p ∩ timeDependentFlowOf (continuationSpaceField C (V 1)) a b ⁻¹'
               hX₁.flow.stableSet q).ncard)) := by
   obtain ⟨σ, hσ⟩ := exists_intervalBaseOrbit_eq hC.ne' (by norm_num : (1 / 2 : ℝ) ∈ Ioo 0 1)
+  have h0 : (0 : ℝ) ∈ Icc 0 1 := left_mem_Icc.2 zero_le_one
+  have h1 : (1 : ℝ) ∈ Icc 0 1 := right_mem_Icc.2 zero_le_one
   filter_upwards [hV.eventually_bijOn_morseDigonSlice hX₀ hX₁ hC hVs hσ,
-    hV.eventually_ncard_morseContinuationSlice_eq hX₀ hX₁ hC hVs (left_mem_Icc.2 zero_le_one),
-    hV.eventually_ncard_morseContinuationSlice_eq hX₀ hX₁ hC hVs (right_mem_Icc.2 zero_le_one)]
+    (hV.isContinuationField h0).eventually_ncard_morseContinuationSlice_eq hX₀ hX₁ hC (hVs 0 h0),
+    (hV.isContinuationField h1).eventually_ncard_morseContinuationSlice_eq hX₀ hX₁ hC (hVs 1 h1)]
     with a hg h₀' h₁'
   filter_upwards [hg, h₀', h₁'] with b hg h₀' h₁'
   rw [morseBoundary_comp_morseDegreeOneMap_morseDigonSlice_add_eq_iff h₀ hf₀ h₁ hf₁ hfin]

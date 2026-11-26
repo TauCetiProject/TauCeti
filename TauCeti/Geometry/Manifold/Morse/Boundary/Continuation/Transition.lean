@@ -44,8 +44,9 @@ the slices of the continuation map
 Since `φ_{σ, b} = φ_{a, b} ∘ φ_{σ, a}` and `φ_{σ, a}` is a bijection, the slice of `(p, q)` is in
 bijection with the intersection `W^u(p) ∩ Φ⁻¹ (W^s(q))` for the single transition map
 `Φ = φ_{a, b}` of the slab, a diffeomorphism of `M` carrying the very negative level of the slab to
-the very positive one; the same `Φ` serves all pairs of critical points. So the coefficients of the
-mod-two continuation map are intersection counts of the unstable manifolds of `X₀` with the
+the very positive one; the same `Φ` serves all pairs of critical points
+(`TauCeti.IsContinuationField.eventually_ncard_morseContinuationSlice_eq`). So the coefficients
+of the mod-two continuation map are intersection counts of the unstable manifolds of `X₀` with the
 preimages under `Φ` of the stable manifolds of `X₁`
 (`TauCeti.IsContinuationField.eventually_morseContinuationCoeff_eq_ncard_inter_preimage`). In
 this form the transversality condition for continuations is the transversality of `W^u(p)` and
@@ -77,6 +78,8 @@ this form the transversality condition for continuations is the transversality o
   continuation map are preimages of unstable and stable manifolds under the transition maps, for
   times `a` and `b` beyond given windows on which the space component is `X₀` and `X₁`, and so
   for all sufficiently negative `a` and sufficiently positive `b`.
+* `TauCeti.IsContinuationField.eventually_ncard_morseContinuationSlice_eq`: the slices have as
+  many points as `W^u(p) ∩ φ_{a, b}⁻¹ (W^s(q))`.
 * `TauCeti.IsContinuationField.eventually_morseContinuationCoeff_eq_ncard_inter_preimage`: the
   continuation coefficients count the points of `W^u(p) ∩ φ_{a, b}⁻¹ (W^s(q))` modulo two.
 * `TauCeti.continuationTransition`: the transition map `φ_{a, b}` of a smooth field on `M × ℝ`,
@@ -376,6 +379,35 @@ theorem eventually_morseContinuationSlice_eq_preimage {σ : ℝ}
     (fun s hs ↦ hb₀ s hs.le) ha hb
 
 include hV hX₀ hX₁ hC hVs in
+/-- **The continuation slices count the intersections through the transition maps.** Let `V` be a
+`C¹` continuation field from `X₀` to `X₁` at rate `C > 0`, and let `φ` be the time-dependent flow
+of its space component `continuationSpaceField C V` along the base trajectory. Then for every
+sufficiently negative time `a` and every sufficiently positive time `b`, the continuation
+trajectories from `(p, 0)` to `(q, 1)` are as many as the points of the unstable manifold of `p`
+for `X₀` which the transition map `φ_{a, b}` of the slab carries into the stable manifold of `q`
+for `X₁`, for all `p` and `q` at once. -/
+theorem eventually_ncard_morseContinuationSlice_eq :
+    ∀ᶠ a in atBot, ∀ᶠ b in atTop, ∀ p q : M, (morseContinuationSlice V p q).ncard =
+      (hX₀.flow.unstableSet p ∩
+        timeDependentFlowOf (continuationSpaceField C V) a b ⁻¹' hX₁.flow.stableSet q).ncard := by
+  have hY := contMDiff_continuationSpaceField (C := C) hVs
+  have hcomp := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY
+  obtain ⟨σ, hσ⟩ := exists_intervalBaseOrbit_eq hC.ne' (by norm_num : (1 / 2 : ℝ) ∈ Ioo 0 1)
+  filter_upwards [hV.eventually_morseContinuationSlice_eq_preimage hX₀ hX₁ hC hVs hσ] with a ha
+  filter_upwards [ha] with b hb p q
+  set φ := timeDependentFlowOf (continuationSpaceField C V)
+  -- The slice is the preimage of `W^u(p) ∩ φ_{a, b}⁻¹ (W^s(q))` under the diffeomorphism
+  -- `φ_{σ, a}`.
+  have hpre : φ σ a ⁻¹' hX₀.flow.unstableSet p ∩ φ σ b ⁻¹' hX₁.flow.stableSet q =
+      φ σ a ⁻¹' (hX₀.flow.unstableSet p ∩ φ a b ⁻¹' hX₁.flow.stableSet q) := by
+    ext x
+    simp [φ, timeDependentFlowOf_trans hcomp hY]
+  set Φ := (timeDependentFlowDiffeomorph hcomp le_rfl hY σ a).toEquiv
+  have hΦ : ⇑Φ = φ σ a := funext (timeDependentFlowDiffeomorph_apply hcomp le_rfl hY σ a)
+  rw [hb, hpre, ← hΦ,
+    Set.ncard_preimage_of_injective_subset_range Φ.injective fun y _ ↦ Φ.surjective y]
+
+include hV hX₀ hX₁ hC hVs in
 /-- **The continuation coefficients are intersection counts.** Let `V` be a `C¹` continuation
 field from `X₀` to `X₁` at rate `C > 0`, between pseudo-gradients adapted to Morse functions `f₀`
 and `f₁`, and let `φ` be the time-dependent flow of its space component
@@ -391,22 +423,9 @@ theorem eventually_morseContinuationCoeff_eq_ncard_inter_preimage :
         morseContinuationCoeff f₀ f₁ V p q = ((hX₀.flow.unstableSet p ∩
           timeDependentFlowOf (continuationSpaceField C V) a b ⁻¹' hX₁.flow.stableSet q).ncard :
             ZMod 2) := by
-  have hY := contMDiff_continuationSpaceField (C := C) hVs
-  have hcomp := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY
-  obtain ⟨σ, hσ⟩ := exists_intervalBaseOrbit_eq hC.ne' (by norm_num : (1 / 2 : ℝ) ∈ Ioo 0 1)
-  filter_upwards [hV.eventually_morseContinuationSlice_eq_preimage hX₀ hX₁ hC hVs hσ] with a ha
+  filter_upwards [hV.eventually_ncard_morseContinuationSlice_eq hX₀ hX₁ hC hVs] with a ha
   filter_upwards [ha] with b hb p q hind
-  set φ := timeDependentFlowOf (continuationSpaceField C V)
-  -- The slice is the preimage of `W^u(p) ∩ φ_{a, b}⁻¹ (W^s(q))` under the diffeomorphism
-  -- `φ_{σ, a}`.
-  have hpre : φ σ a ⁻¹' hX₀.flow.unstableSet p ∩ φ σ b ⁻¹' hX₁.flow.stableSet q =
-      φ σ a ⁻¹' (hX₀.flow.unstableSet p ∩ φ a b ⁻¹' hX₁.flow.stableSet q) := by
-    ext x
-    simp [φ, timeDependentFlowOf_trans hcomp hY]
-  set Φ := (timeDependentFlowDiffeomorph hcomp le_rfl hY σ a).toEquiv
-  have hΦ : ⇑Φ = φ σ a := funext (timeDependentFlowDiffeomorph_apply hcomp le_rfl hY σ a)
-  rw [TauCeti.morseContinuationCoeff_eq_ncard hind, hb, hpre, ← hΦ,
-    Set.ncard_preimage_of_injective_subset_range Φ.injective fun y _ ↦ Φ.surjective y]
+  rw [TauCeti.morseContinuationCoeff_eq_ncard hind, hb]
 
 end IsContinuationField
 
