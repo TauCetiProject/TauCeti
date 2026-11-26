@@ -15,7 +15,9 @@ public import Mathlib.Topology.LocallyConstant.Algebra
 Mathlib equips `LocallyConstant X Y` with the pointwise actions on `Y`. This file
 records that the pointwise actions inherit scalar towers and commuting actions from `Y`, which
 is what makes `LocallyConstant X N` a target for linear maps out of tensor products such as
-`N ⊗[R] M` with its `S`-module structure.
+`N ⊗[R] M` with its `S`-module structure, and that evaluation commutes with finite sums
+(`LocallyConstant.finsetSum_apply`). On a finite discrete space every locally constant function
+is a combination of characteristic functions of points (`LocallyConstant.sum_smul_charFn`).
 
 It also packages precomposition with a locally constant map `π : X → Y` as a linear map
 `IsLocallyConstant.funLeft` from all functions on `Y` to locally constant functions on `X`, the
@@ -38,6 +40,23 @@ instance [SMul A B] [SMul A Y] [SMul B Y] [IsScalarTower A B Y] :
 instance [SMul A Y] [SMul B Y] [SMulCommClass A B Y] :
     SMulCommClass A B (LocallyConstant X Y) :=
   ⟨fun _ _ _ ↦ ext fun _ ↦ smul_comm _ _ _⟩
+
+@[simp, norm_cast]
+theorem coe_finsetSum {ι : Type*} [AddCommMonoid Y] (s : Finset ι) (f : ι → LocallyConstant X Y) :
+    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
+  map_sum coeFnAddMonoidHom f s
+
+theorem finsetSum_apply {ι : Type*} [AddCommMonoid Y] (s : Finset ι) (f : ι → LocallyConstant X Y)
+    (x : X) : (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
+  simp
+
+/-- A locally constant function on a finite discrete space is the sum of its values times the
+characteristic functions of the points. -/
+theorem sum_smul_charFn [Fintype X] [DiscreteTopology X] [Semiring Y] (f : LocallyConstant X Y) :
+    ∑ x, f x • charFn Y (isClopen_discrete {x}) = f := by
+  classical
+  ext y
+  simp [coe_charFn, Set.indicator_apply]
 
 end LocallyConstant
 

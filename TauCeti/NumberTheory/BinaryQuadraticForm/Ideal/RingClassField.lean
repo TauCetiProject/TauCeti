@@ -203,6 +203,14 @@ theorem finrank_ringClassField_neg_twenty_three_eq_three :
   rw [finrank_ringClassField_eq_card_primitiveReducedForms]
   decide +kernel
 
+/-- **The ring class field of `ℤ[2i]` is trivial.** The order `ℤ[2i] = ℤ + 2ℤ[i]` of
+discriminant `-16` has the single primitive reduced form `x² + 4 y²`, so its Picard group is
+trivial and its ring class field is `ℚ(√(-16)) = ℚ(i)` itself. -/
+theorem ringClassField_neg_sixteen_eq_bot :
+    ringClassField (QuadraticOrder.numberFieldOrder (-(16 : ℕ)) (by decide)) = ⊥ := by
+  rw [← IntermediateField.finrank_eq_one_iff, finrank_ringClassField_eq_card_primitiveReducedForms]
+  decide +kernel
+
 /-- **A ring class field of a nonmaximal order.** The order `ℤ[3i]` of discriminant `-36` has a
 ring class field of degree two over `ℚ(√(-36)) = ℚ(i)`, certified by the two primitive reduced forms
 `x² + 9 y²` and `2 x² + 2 x y + 5 y²`, although `ℚ(i)` itself has class number one. -/

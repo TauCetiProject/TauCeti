@@ -59,6 +59,8 @@ imposed on the analytic record.
 * `AnalyticLFunctionData.dual_dual`, `degree_dual`, `gammaFactor_dual`, `exists_shift_norm_le`.
 * `HasDirichletAgreement.dual`, `HasMeromorphicContinuation.dual`, `HasFunctionalEquation.dual`.
 * `HasFunctionalEquation.eventuallyEq`: the functional equation as germs at every point.
+* `HasFunctionalEquation.meromorphicOrderAt_completed_one_sub`: the functional equation reflects
+  meromorphic orders of the completed functions across the critical line.
 
 ## References
 
@@ -225,6 +227,11 @@ structure HasFunctionalEquation : Prop where
 
 variable {d}
 
+/-- The root number of a card satisfying the functional equation is nonzero. -/
+theorem HasFunctionalEquation.rootNumber_ne_zero (h : d.HasFunctionalEquation) :
+    d.rootNumber ≠ 0 :=
+  norm_ne_zero_iff.mp (by simp [h.norm_rootNumber])
+
 /-- The dual of a card that agrees with a Dirichlet series agrees with the conjugate series. -/
 theorem HasDirichletAgreement.dual (h : d.HasDirichletAgreement) :
     d.dual.HasDirichletAgreement where
@@ -309,6 +316,19 @@ theorem HasFunctionalEquation.eventuallyEq (h : d.HasFunctionalEquation) (s : �
   simp only [Set.mem_sdiff, Set.mem_univ, Set.mem_union, Finset.mem_coe, Finsupp.mem_support_iff,
     Set.mem_preimage, true_and, not_or, not_not] at hz
   exact h.completed_eq z hz.1 hz.2
+
+/-- The functional equation carries the meromorphic order of the dual completed function at `s`
+to that of the completed function at `1 - s`, including at poles. -/
+theorem HasFunctionalEquation.meromorphicOrderAt_completed_one_sub
+    (h : d.HasFunctionalEquation) (s : ℂ) :
+    meromorphicOrderAt d.completed (1 - s) = meromorphicOrderAt d.dual.completed s := by
+  have hsmul : (fun z ↦ d.rootNumber * d.dual.completed (1 - z)) =
+      d.rootNumber • (d.dual.completed ∘ fun z ↦ 1 - z) := by
+    ext z
+    simp [Function.comp_def, smul_eq_mul]
+  rw [meromorphicOrderAt_congr (h.eventuallyEq (1 - s)), hsmul,
+    meromorphicOrderAt_const_smul_eq_meromorphicOrderAt h.rootNumber_ne_zero,
+    meromorphicOrderAt_comp_of_deriv_ne_zero (by fun_prop) (by simp), sub_sub_cancel]
 
 end AnalyticLFunctionData
 

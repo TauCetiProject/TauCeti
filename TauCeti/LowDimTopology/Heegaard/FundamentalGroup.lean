@@ -79,7 +79,7 @@ private theorem exists_fg_rank_le {A : Set M} (e : A ≃ₜ handlebody s.genus) 
   let φ := e.toHomotopyEquiv.fundamentalGroupMulEquiv x
   have : Group.FG (FundamentalGroup A x) :=
     Group.fg_of_surjective (f := φ.symm.toMonoidHom) φ.symm.surjective
-  exact ⟨this, (Group.rank_congr φ).trans_le (rank_fundamentalGroup_handlebody_le _)⟩
+  exact ⟨this, (Group.rank_congr φ).trans_le (rank_fundamentalGroup_handlebody _).le⟩
 
 /-- **The cover of the van Kampen argument.** If `W` is relatively open in the second handlebody
 and contains the Heegaard surface, then the interiors of the union of the first handlebody with

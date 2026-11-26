@@ -70,58 +70,22 @@ theorem exists_nonneg_geometricRepresentation_of_mem_parabolic_pair {i j : I} {v
     ∃ a b : ℝ, 0 ≤ a ∧ 0 ≤ b ∧
       cs.geometricRepresentation v (Finsupp.single i 1) =
         a • Finsupp.single i 1 + b • Finsupp.single j 1 := by
-  have hlen := cs.not_isRightDescent_iff.mp hvi
-  -- a reduced alternating word for `v` ending in `i` would make `i` a right descent
-  have hword : cs.wordProd (alternatingWord i j (cs.length v)) = v := by
-    refine (cs.wordProd_alternatingWord_eq_of_mem_parabolic_pair hv).elim id fun h ↦ ?_
-    rcases hk : cs.length v with - | k
-    · simp [cs.length_eq_zero_iff.mp hk, alternatingWord]
-    · rw [hk, alternatingWord_succ, wordProd_concat] at h
-      have hle := cs.length_wordProd_le (alternatingWord i j k)
-      rw [length_alternatingWord] at hle
-      rw [← h, cs.simple_mul_simple_cancel_right, h] at hlen
-      omega
-  -- appending `i` still gives a reduced word, so the alternating word stops before the braid length
-  have hred : cs.IsReduced (alternatingWord j i (cs.length v + 1)) := by
-    rw [IsReduced, alternatingWord_succ, wordProd_concat, hword, hlen, List.concat_eq_append,
-      List.length_append, length_alternatingWord, List.length_singleton]
-  have hk : cs.length v < M i j ∨ M i j = 0 := by
-    by_contra hcon
-    rw [not_or, not_lt] at hcon
-    rw [← M.symmetric j i] at hcon
-    exact cs.not_isReduced_alternatingWord j i hcon.2 (by omega) hred
+  have hword := cs.wordProd_alternatingWord_eq_of_mem_parabolic_pair_of_not_isRightDescent hv hvi
+  have hk := or_iff_not_imp_right.mpr fun hM ↦
+    cs.length_lt_of_mem_parabolic_pair_of_not_isRightDescent hM hv hvi
   rw [← hword]
   exact cs.rankTwo_nonnegative i j hk
 
 /-- An element without right descent at `i` sends `αᵢ` to a vector with nonnegative coefficients. -/
 private theorem geometricRepresentation_single_nonneg {w : W} {i : I}
     (h : ¬cs.IsRightDescent w i) : 0 ≤ cs.geometricRepresentation w (Finsupp.single i 1) := by
-  induction hn : cs.length w using Nat.strong_induction_on generalizing w i with
-  | _ n ih =>
-    rcases eq_or_ne w 1 with rfl | hw
-    · simp
-    -- a right descent `j` of `w` factors `w = u * v` along the standard parabolic subgroup on
-    -- `{i, j}`, where lengths add and `u` is strictly shorter than `w`, which sets up the induction
-    obtain ⟨j, hj⟩ := cs.exists_rightDescent_of_ne_one hw
-    obtain ⟨⟨u, v⟩, ⟨hu, hv, huv⟩, -⟩ := cs.existsUnique_isMinimalCosetRep_mul {i, j} w
-    dsimp only at hu hv huv
-    subst huv
-    have hu' := cs.isMinimalCosetRep_iff.mp hu
-    have hlen := cs.length_mul_of_isMinimalCosetRep hu hv
-    have hv₁ : v ≠ 1 := by
-      rintro rfl
-      exact hu' j (by simp) (by simpa using hj)
-    have hvpos : 0 < cs.length v := Nat.pos_of_ne_zero (mt cs.length_eq_zero_iff.mp hv₁)
-    have hvi : ¬cs.IsRightDescent v i := fun hd ↦ h <| by
-      rw [IsRightDescent] at hd ⊢
-      rw [mul_assoc, cs.length_mul_of_isMinimalCosetRep hu
-        (mul_mem hv (cs.simple_mem_parabolic (by simp))), hlen]
-      omega
-    obtain ⟨a, b, ha, hb, hab⟩ :=
-      cs.exists_nonneg_geometricRepresentation_of_mem_parabolic_pair hv hvi
-    rw [map_mul, mul_apply_eq_comp, hab, map_add, map_smul, map_smul]
-    exact add_nonneg (smul_nonneg ha (ih _ (by omega) (hu' i (by simp)) rfl))
-      (smul_nonneg hb (ih _ (by omega) (hu' j (by simp)) rfl))
+  refine cs.parabolic_pair_induction
+    (P := fun w i ↦ 0 ≤ cs.geometricRepresentation w (Finsupp.single i 1)) (fun _ ↦ by simp)
+    (fun hv hvi hu hu' ↦ ?_) h
+  obtain ⟨a, b, ha, hb, hab⟩ :=
+    cs.exists_nonneg_geometricRepresentation_of_mem_parabolic_pair hv hvi
+  rw [map_mul, mul_apply_eq_comp, hab, map_add, map_smul, map_smul]
+  exact add_nonneg (smul_nonneg ha hu) (smul_nonneg hb hu')
 
 private theorem geometricRepresentation_single_pos {w : W} {i : I}
     (h : ¬cs.IsRightDescent w i) : 0 < cs.geometricRepresentation w (Finsupp.single i 1) :=

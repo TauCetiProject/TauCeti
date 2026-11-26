@@ -24,6 +24,15 @@ constants and variables.
 evaluation, and agrees with that evaluation whenever the coefficient map is contractive.
 The construction commutes with bounded coefficient maps and continuous maps of target rings.
 
+More generally, `RingHom.restrictedEval₂OfPowBound` evaluates at arguments whose monomials are
+bounded by a constant multiple of the monomials in the radii,
+`‖∏ i, a i ^ t i‖ ≤ D * ∏ i, c i ^ t i`. Such arguments may have norm larger than the radii, as a
+nilpotent element or a root of a monic polynomial with small coefficients may. Evaluation then
+has bound `C * D`, and is again the unique continuous ring homomorphism with the prescribed values
+on constants and variables. This is the form needed to map the algebra of a polydisc into a
+quotient of another one, where the images of the variables are only known to have small spectral
+radius.
+
 ## References
 
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.1.
@@ -37,7 +46,7 @@ open MvPowerSeries
 open TauCeti.Huber
 open TauCeti.MvPowerSeries (restrictedMap coe_restrictedMap norm_restrictedMap_le
   continuous_restrictedMap polynomialToRestricted restrictedMap_polynomialToRestricted
-  denseRange_polynomialToRestricted)
+  isRestricted_subring_ringHom_ext_of_continuous)
 
 variable {k : ℕ} {R S : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S]
@@ -118,16 +127,9 @@ bounded evaluation. Uniqueness requires continuity, but not a supplied norm boun
 theorem eq_restrictedEval₂OfBound (ψ : IsRestricted.subring (R := R) c →+* S)
     (hψ : Continuous ψ) (hC : ∀ r, ψ (algebraMap R _ r) = φ r)
     (hX : ∀ i, ψ ⟨X i, isRestricted_X c i⟩ = a i) :
-    ψ = restrictedEval₂OfBound φ a hφ ha := by
-  have hp : ψ.comp (polynomialToRestricted c).toRingHom =
-      (restrictedEval₂OfBound φ a hφ ha).comp (polynomialToRestricted c).toRingHom := by
-    apply MvPolynomial.ringHom_ext
-    · intro r
-      simp [← MvPolynomial.algebraMap_eq, hC]
-    · intro i
-      simpa using (hX i).trans (restrictedEval₂OfBound_X φ a hφ ha i).symm
-  exact DFunLike.coe_injective (denseRange_polynomialToRestricted.equalizer hψ
-    (continuous_restrictedEval₂OfBound φ a hφ ha) (funext (DFunLike.congr_fun hp)))
+    ψ = restrictedEval₂OfBound φ a hφ ha :=
+  isRestricted_subring_ringHom_ext_of_continuous hψ (continuous_restrictedEval₂OfBound φ a hφ ha)
+    (by simp [hC]) (by simp [hX])
 
 include hφ ha in
 /-- The universal property at bounded arguments for an arbitrary bounded coefficient map. -/
@@ -173,5 +175,134 @@ theorem map_restrictedEval₂OfBound [CompleteSpace T] (θ : S →+* T) (hθ : C
     (hasSum_restrictedEval₂OfBound (θ.comp φ) (θ ∘ a) hθφ hθa f)
 
 end Naturality
+
+section PowerBound
+
+/-! ### Arguments with bounded powers
+
+The arguments need not lie in the polydisc of radii `c` itself: it suffices that their monomials
+are bounded by a constant multiple of the corresponding monomials in the radii,
+`‖∏ i, a i ^ t i‖ ≤ D * ∏ i, c i ^ t i`. For instance a nilpotent element of large norm can be
+substituted for a variable of any radius. -/
+
+variable {D : ℝ} (hpow : ∀ t : Fin k →₀ ℕ, ‖∏ i, a i ^ t i‖ ≤ D * t.prod (c · ^ ·))
+
+omit [IsUltrametricDist R] [IsUltrametricDist S] [CompleteSpace S] in
+include hφ hpow in
+/-- A monomial value `φ(fₜ) aᵗ` at arguments with bounded powers is bounded by `C * D` times the
+weighted coefficient norm `‖fₜ‖ cᵗ`. -/
+private theorem norm_weightedEvalTerm_le_of_powBound (f : MvPowerSeries (Fin k) R)
+    (t : Fin k →₀ ℕ) :
+    ‖weightedEvalTerm φ a f t‖ ≤ C * D * (‖coeff t f‖ * t.prod (c · ^ ·)) := by
+  rw [weightedEvalTerm_def]
+  calc _ ≤ ‖φ (coeff t f)‖ * ‖∏ i, a i ^ t i‖ := norm_mul_le _ _
+    _ ≤ C * ‖coeff t f‖ * (D * t.prod (c · ^ ·)) :=
+      mul_le_mul (hφ _) (hpow t) (norm_nonneg _) ((norm_nonneg _).trans (hφ _))
+    _ = _ := by ring
+
+omit [IsUltrametricDist R] in
+include hφ hpow in
+/-- The monomial values of a restricted series at arguments with bounded powers are summable. -/
+theorem _root_.MvPowerSeries.IsRestricted.summable_weightedEvalTerm_of_powBound
+    {f : MvPowerSeries (Fin k) R} (hf : IsRestricted c f) : Summable (weightedEvalTerm φ a f) := by
+  refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
+    (squeeze_zero_norm (norm_weightedEvalTerm_le_of_powBound φ a hφ hpow f) ?_)
+  simpa using hf.const_mul (C * D)
+
+/-- **Evaluation at arguments with bounded powers.** For a coefficient homomorphism `φ` bounded by
+`C` and arguments whose monomials satisfy `‖∏ i, a i ^ t i‖ ≤ D * ∏ i, c i ^ t i`, the ring
+homomorphism `R{X/c} → S` sending `f = ∑ₜ fₜ Xᵗ` to `f(a) = ∑ₜ φ(fₜ) aᵗ`. -/
+noncomputable def restrictedEval₂OfPowBound : IsRestricted.subring (R := R) c →+* S where
+  toFun f := weightedEval φ a f
+  map_one' := by simpa using weightedEval_C φ a 1
+  map_mul' f g := by
+    -- the ultrametric norm makes `S` a nonarchimedean ring, for the summability of products
+    have : NonarchimedeanRing S :=
+      { toIsTopologicalRing := inferInstance
+        is_nonarchimedean := NonarchimedeanAddGroup.is_nonarchimedean }
+    have hf := f.property.summable_weightedEvalTerm_of_powBound φ a hφ hpow
+    have hg := g.property.summable_weightedEvalTerm_of_powBound φ a hφ hpow
+    exact weightedEval_mul_of_summable hf hg (hf.mul_of_nonarchimedean hg)
+  map_zero' := weightedEval_zero φ a
+  map_add' f g := weightedEval_add_of_summable
+    (f.property.summable_weightedEvalTerm_of_powBound φ a hφ hpow)
+    (g.property.summable_weightedEvalTerm_of_powBound φ a hφ hpow)
+
+/-- Evaluation at arguments with bounded powers is the usual convergent monomial sum. -/
+theorem restrictedEval₂OfPowBound_apply (f : IsRestricted.subring (R := R) c) :
+    restrictedEval₂OfPowBound φ a hφ hpow f = weightedEval φ a f :=
+  (rfl)
+
+/-- The monomial sum converges to the evaluation at arguments with bounded powers. -/
+theorem hasSum_restrictedEval₂OfPowBound (f : IsRestricted.subring (R := R) c) :
+    HasSum (weightedEvalTerm φ a f) (restrictedEval₂OfPowBound φ a hφ hpow f) := by
+  rw [restrictedEval₂OfPowBound_apply, weightedEval_def]
+  exact (f.property.summable_weightedEvalTerm_of_powBound φ a hφ hpow).hasSum
+
+/-- Evaluation at arguments with bounded powers extends the coefficient map on constants. -/
+@[simp]
+theorem restrictedEval₂OfPowBound_algebraMap (r : R) :
+    restrictedEval₂OfPowBound φ a hφ hpow (algebraMap R _ r) = φ r := by
+  rw [restrictedEval₂OfPowBound_apply, coe_algebraMap_isRestrictedSubring, weightedEval_C]
+
+/-- Evaluation at arguments with bounded powers sends the variable `X i` to `a i`. -/
+@[simp]
+theorem restrictedEval₂OfPowBound_X (i : Fin k) :
+    restrictedEval₂OfPowBound φ a hφ hpow ⟨X i, isRestricted_X c i⟩ = a i := by
+  rw [restrictedEval₂OfPowBound_apply, weightedEval_X]
+
+/-- On polynomials, evaluation at arguments with bounded powers is polynomial evaluation. -/
+@[simp]
+theorem restrictedEval₂OfPowBound_polynomial (p : MvPolynomial (Fin k) R) :
+    restrictedEval₂OfPowBound φ a hφ hpow (polynomialToRestricted c p) =
+      MvPolynomial.eval₂ φ a p := by
+  rw [← MvPolynomial.coe_eval₂Hom]
+  refine DFunLike.congr_fun (MvPolynomial.ringHom_ext
+    (f := (restrictedEval₂OfPowBound φ a hφ hpow).comp (polynomialToRestricted c).toRingHom)
+    (fun r ↦ ?_) fun i ↦ ?_) p
+  · simp [← MvPolynomial.algebraMap_eq]
+  · simp [TauCeti.MvPowerSeries.polynomialToRestricted_X]
+
+/-- When the arguments lie in the polydisc of radii `c`, the evaluation at arguments with bounded
+powers is the bounded evaluation `restrictedEval₂OfBound`. -/
+theorem restrictedEval₂OfPowBound_eq_restrictedEval₂OfBound :
+    restrictedEval₂OfPowBound φ a hφ hpow = restrictedEval₂OfBound φ a hφ ha := by
+  ext f
+  rw [restrictedEval₂OfPowBound_apply, restrictedEval₂OfBound_apply]
+
+variable [∀ i, Fact (0 < c i)]
+
+/-- Evaluation at arguments with bounded powers increases the Gauss norm by at most `C * D`. -/
+theorem norm_restrictedEval₂OfPowBound_le (f : IsRestricted.subring (R := R) c) :
+    ‖restrictedEval₂OfPowBound φ a hφ hpow f‖ ≤ C * D * ‖f‖ := by
+  rcases lt_or_ge C 0 with hC | hC
+  · -- a negative bound `C` forces every coefficient, hence `f`, to vanish
+    have hR (r : R) : r = 0 :=
+      norm_le_zero_iff.mp (by nlinarith [norm_nonneg (φ r), hφ r, norm_nonneg r])
+    obtain rfl : f = 0 := Subtype.ext (MvPowerSeries.ext fun t ↦ hR _)
+    simp
+  -- the constant monomial gives `‖1‖ ≤ D`, so `D` is nonnegative
+  have hD : 0 ≤ D := by simpa using (norm_nonneg _).trans (hpow 0)
+  rw [restrictedEval₂OfPowBound_apply, weightedEval_def]
+  exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun t ↦
+    (norm_weightedEvalTerm_le_of_powBound φ a hφ hpow _ t).trans
+      (mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) (mul_nonneg hC hD))
+
+/-- Evaluation at arguments with bounded powers is continuous for the Gauss norm. -/
+@[continuity]
+theorem continuous_restrictedEval₂OfPowBound :
+    Continuous (restrictedEval₂OfPowBound φ a hφ hpow) :=
+  AddMonoidHomClass.continuous_of_bound _ (C * D) (norm_restrictedEval₂OfPowBound_le φ a hφ hpow)
+
+/-- A continuous homomorphism with the prescribed values on constants and variables is the
+evaluation at arguments with bounded powers. -/
+theorem eq_restrictedEval₂OfPowBound (ψ : IsRestricted.subring (R := R) c →+* S)
+    (hψ : Continuous ψ) (hC : ∀ r, ψ (algebraMap R _ r) = φ r)
+    (hX : ∀ i, ψ ⟨X i, isRestricted_X c i⟩ = a i) :
+    ψ = restrictedEval₂OfPowBound φ a hφ hpow :=
+  isRestricted_subring_ringHom_ext_of_continuous hψ
+    (continuous_restrictedEval₂OfPowBound φ a hφ hpow) (by simp [hC]) (by simp [hX])
+
+end PowerBound
 
 end RingHom

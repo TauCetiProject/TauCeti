@@ -51,8 +51,7 @@ theorem spinSixSpecialLinearToIsometryGroup_det
     simpa only [LinearEquiv.coe_coe, Representation.exteriorPower_apply, hrep] using
       spinSixSpecialLinearToIsometryGroup_apply K g x
   simp only [LinearEquiv.coe_det, hmap, Units.val_one]
-  rw [(Pi.basisFun K (Fin 4)).det_exteriorPower_two, LinearMap.det_toLin', g.property]
-  exact one_pow 3
+  rw [LinearMap.det_exteriorPower_map _ two_pos, LinearMap.det_toLin', g.property, one_pow]
 
 /-- The exterior-square action of `SL₄`, as a homomorphism to the determinant-one
 isometries of the wedge form. -/

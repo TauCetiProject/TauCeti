@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.LocallyClosed
 public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 public import TauCeti.Topology.PartialHomeomorph.Basic
@@ -37,6 +38,13 @@ or target are also sent to locally closed subsets of the ambient space.
 * `OpenPartialHomeomorph.isLocallyClosed_image_of_subset_source`,
   `OpenPartialHomeomorph.isLocallyClosed_image_symm_of_subset_target`: an open partial homeomorphism
   and its inverse preserve locally closed subsets contained in their source or target.
+* `OpenPartialHomeomorph.mem_source_and_apply_eq_of_eqOn_symm`: if the inverses of two open
+  partial homeomorphisms agree on a subset `s` of the second target, a point of the first source
+  mapped into `s` lies in the second source, with the same image.
+* `OpenPartialHomeomorph.sourceRestrict`: the restriction of an open partial homeomorphism to its
+  source, as a continuous map.
+* `OpenPartialHomeomorph.isOpenEmbedding_domRestrict`: its restriction to an open subset of the
+  source is an open embedding.
 * `Topology.IsOpenEmbedding.of_continuousOn_inverse`: a continuous map with a continuous inverse
   on an open set containing its range is an open embedding, being an open partial homeomorphism
   with source the whole space.
@@ -74,6 +82,47 @@ ambient source space. -/
 theorem isLocallyClosed_image_symm_of_subset_target {s : Set Y} (hs : IsLocallyClosed s)
     (hst : s ⊆ e.target) : IsLocallyClosed (e.symm '' s) :=
   e.symm.isLocallyClosed_image_of_subset_source hs hst
+
+/-- Every point is in the source of the identity partial homeomorphism. -/
+theorem mem_refl_source (x : X) : x ∈ (OpenPartialHomeomorph.refl X).source :=
+  Set.mem_univ x
+
+/-- **Charts with the same inverse on a set.** If the inverses of `e₁` and `e₂` agree on a subset
+`s` of the target of `e₂`, a point of the source of `e₁` mapped into `s` by `e₁` lies in the source
+of `e₂`, and `e₂` maps it to the same point. -/
+theorem mem_source_and_apply_eq_of_eqOn_symm {e₁ e₂ : OpenPartialHomeomorph X Y} {s : Set Y}
+    (hs : s ⊆ e₂.target) (h : Set.EqOn e₁.symm e₂.symm s) {x : X} (hx : x ∈ e₁.source)
+    (hxs : e₁ x ∈ s) :
+    x ∈ e₂.source ∧ e₂ x = e₁ x := by
+  have hx' : e₂.symm (e₁ x) = x := by rw [← h hxs, e₁.left_inv hx]
+  refine ⟨hx' ▸ e₂.map_target (hs hxs), ?_⟩
+  conv_lhs => rw [← hx']
+  exact e₂.right_inv (hs hxs)
+
+/-- The restriction of an open partial homeomorphism to its source, as a continuous map. -/
+def sourceRestrict : C(e.source, Y) :=
+  ⟨e.source.domRestrict e, e.continuousOn.domRestrict⟩
+
+/-- Restricting to the source agrees pointwise with the partial homeomorphism. -/
+@[simp]
+theorem sourceRestrict_apply (x : e.source) : e.sourceRestrict x = e x :=
+  (rfl)
+
+/-- The restriction to the source is an open embedding. -/
+theorem isOpenEmbedding_sourceRestrict : Topology.IsOpenEmbedding e.sourceRestrict :=
+  e.isOpenEmbedding_restrict
+
+/-- The restriction of an open partial homeomorphism to an open subset of its source is an open
+embedding. -/
+theorem isOpenEmbedding_domRestrict {U : Set X} (hU : IsOpen U) (hUs : U ⊆ e.source) :
+    Topology.IsOpenEmbedding (U.domRestrict e) :=
+  e.isOpenEmbedding_restrict.comp
+    (Topology.IsOpenEmbedding.inclusion hUs (hU.preimage continuous_subtypeVal))
+
+/-- A point of the source is the only point of the source that `e` sends to its image. -/
+theorem sourceRestrict_preimage {a : X} (ha : a ∈ e.source) :
+    e.sourceRestrict ⁻¹' {e a} ⊆ ContinuousMap.subtypeVal e.source ⁻¹' {a} :=
+  fun x hx ↦ e.injOn x.property ha hx
 
 end OpenPartialHomeomorph
 

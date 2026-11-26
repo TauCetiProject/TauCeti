@@ -195,6 +195,10 @@ private theorem setIntegral_sobolev_le_three_mul_add {ξ ξp ξm ξ₀ : ℝ × 
   have := hξp.continuous
   have := hξm.continuous
   have := hξ₀.continuous
+  have hc {η : ℝ × ℝ → V} (hη : ContDiff ℝ 2 η) : Continuous fun z ↦
+      ‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2 :=
+    by simpa only [funext (Floer.sobolevDensity_apply η)] using
+      Floer.continuous_sobolevDensity (hη.of_le one_le_two)
   -- The pointwise splitting of the energy density.
   have hE (z : ℝ × ℝ) :
       ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2 ≤
@@ -224,14 +228,14 @@ private theorem setIntegral_sobolev_le_three_mul_add {ξ ξp ξm ξ₀ : ℝ × 
           ‖ξm z‖ ^ 2) +
         (‖fderiv ℝ ξ₀ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ₀ z stdComplexLineImag‖ ^ 2 +
           ‖ξ₀ z‖ ^ 2)) :=
-      setIntegral_mono_on (Floer.continuous_sobolev (hξ.of_le one_le_two)).integrableOn_Icc_prod_Icc
+      setIntegral_mono_on (hc hξ).integrableOn_Icc_prod_Icc
         (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
         (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ hE z
     _ = _ := by
       rw [integral_const_mul, integral_add (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
-          (Floer.continuous_sobolev (hξ₀.of_le one_le_two)).integrableOn_Icc_prod_Icc,
-        integral_add (Floer.continuous_sobolev (hξp.of_le one_le_two)).integrableOn_Icc_prod_Icc
-          (Floer.continuous_sobolev (hξm.of_le one_le_two)).integrableOn_Icc_prod_Icc]
+          (hc hξ₀).integrableOn_Icc_prod_Icc,
+        integral_add (hc hξp).integrableOn_Icc_prod_Icc
+          (hc hξm).integrableOn_Icc_prod_Icc]
 
 omit [FiniteDimensional ℝ V] in
 /-- **The window of a piece near `+∞`.** If `ξ` vanishes for `s ∉ (a, b)` and `β` vanishes for
@@ -354,6 +358,9 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_add_of_ends
   obtain ⟨hβpc, hβp1, hβpM, hβpT⟩ := hβ βp (by simp)
   obtain ⟨hβmc, hβm1, hβmM, hβmT⟩ := hβ βm (by simp)
   obtain ⟨hβ₀c, hβ₀1, hβ₀M, hβ₀T'⟩ := hβ β₀ (by simp)
+  replace hβpc := contDiff_infty.1 hβpc 2
+  replace hβmc := contDiff_infty.1 hβmc 2
+  replace hβ₀c := contDiff_infty.1 hβ₀c 2
   -- The estimate on the compact cylinder `[-T, T] × [0, 1]`.
   obtain ⟨C₀, hC₀, hcore⟩ := exists_forall_setIntegral_norm_fderiv_sq_le_of_periodic
     (a := -T) (b := T) (by linarith) (fun z _ ↦ hJ z) hJc.continuousOn hAc.continuousOn

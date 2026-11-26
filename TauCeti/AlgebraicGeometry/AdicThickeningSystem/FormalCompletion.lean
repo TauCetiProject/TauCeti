@@ -91,8 +91,8 @@ variable (X : Scheme.{u}) (I : X.IdealSheafData)
 /-- The level maps of the tower `n ↦ V(I ^ (n + 1))` are the inclusions `V(I) ⟶ V(I ^ (n + 1))`. -/
 private lemma levelMap_inclusion_eq (n : ℕ) :
     TauCeti.AlgebraicGeometry.levelMap (fun k ↦ (I ^ (k + 1)).subscheme)
-        (fun k ↦ inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (k + 1) 1))) n =
-      inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_left 1 n)) := by
+        (fun k ↦ inclusion (I.pow_le_pow_right (Nat.le_add_right (k + 1) 1))) n =
+      inclusion (I.pow_le_pow_right (Nat.le_add_left 1 n)) := by
   induction n with
   | zero => rw [TauCeti.AlgebraicGeometry.levelMap_zero, inclusion_id]
   | succ n ih => rw [TauCeti.AlgebraicGeometry.levelMap_succ, ih, inclusion_comp]
@@ -108,10 +108,10 @@ Stacks, Lemma 87.14.2 (0AIZ) and Definition 87.14.3 (0AMC). -/
 @[stacks 0AMC, expose, simps X]
 noncomputable def formalCompletion : AdicThickeningSystem.{u} where
   X n := (I ^ (n + 1)).subscheme
-  ι n := inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (n + 1) 1))
+  ι n := inclusion (I.pow_le_pow_right (Nat.le_add_right (n + 1) 1))
   isThickening n := by
     have := IsFirstOrderThickening.inclusion_pow_succ
-      (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (n + 1) 1) :
+      (I.pow_le_pow_right (Nat.le_add_right (n + 1) 1) :
         I ^ (n + 2) ≤ I ^ (n + 1))
     infer_instance
   adic n := by
@@ -121,7 +121,7 @@ noncomputable def formalCompletion : AdicThickeningSystem.{u} where
 closed subschemes. -/
 theorem formalCompletion_ι (n : ℕ) :
     (X.formalCompletion I).ι n =
-      inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_right (n + 1) 1)) :=
+      inclusion (I.pow_le_pow_right (Nat.le_add_right (n + 1) 1)) :=
   (rfl)
 
 /-- The `n`-th reduction of the formal completion is the infinitesimal neighbourhood
@@ -134,7 +134,7 @@ theorem formalCompletion_reduction (n : ℕ) :
 `V(I ^ (m + 1)) ⟶ V(I ^ (n + 1))`. -/
 theorem formalCompletion_transition {m n : ℕ} (h : m ≤ n) :
     (X.formalCompletion I).transition h =
-      inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.add_le_add_right h 1)) := by
+      inclusion (I.pow_le_pow_right (Nat.add_le_add_right h 1)) := by
   induction n with
   | zero =>
     obtain rfl : m = 0 := by omega
@@ -150,7 +150,7 @@ theorem formalCompletion_transition {m n : ℕ} (h : m ≤ n) :
 subschemes. -/
 theorem formalCompletion_levelMap (n : ℕ) :
     (X.formalCompletion I).levelMap n =
-      inclusion (pow_le_pow_of_le_one bot_le le_top (Nat.le_add_left 1 n)) := by
+      inclusion (I.pow_le_pow_right (Nat.le_add_left 1 n)) := by
   rw [AdicThickeningSystem.levelMap_eq_transition, formalCompletion_transition]
 
 namespace formalCompletion
