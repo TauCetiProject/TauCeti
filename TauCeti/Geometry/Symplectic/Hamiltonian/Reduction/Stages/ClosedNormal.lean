@@ -40,10 +40,9 @@ for arbitrary presentations of the reduced spaces) takes as input.
   (`IsEquivariantMomentMap.existsUnique_isSymplectic_mpullback_quotientMk_subtypeLevel`). The
   fibres of `π₁` are the `N`-orbits
   (`IsEquivariantMomentMap.quotientMk_eq_quotientMk_iff_subtypeLevel`), so its vertical directions
-  are the orbit directions `𝔫 · z`, the kernel of `dπ₁` at a free point of a submersion with orbit
-  fibres (`ProperSMul.ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt`), which is what the
-  descent of `i₁^* σ` (`IsEquivariantMomentMap.existsUnique_isSymplectic_mpullback_eq_mpullback`)
-  needs.
+  are the orbit directions `𝔫 · z`, the kernel of `dπ₁`
+  (`Subgroup.ker_mfderiv_orbitRelQuotientMkOfIsClosed`), which is what the descent of `i₁^* σ`
+  (`IsEquivariantMomentMap.existsUnique_isSymplectic_mpullback_eq_mpullback`) needs.
 * **The residual moment map.** The quotient Lie group `G ⧸ N` acts smoothly on `Z₁ ⧸ N` by
   `[g] • [z] = [g • z]` (`Subgroup.contMDiffSMul_orbitRelQuotientOfIsClosed`), so `π₁` is
   equivariant (`IsEquivariantMomentMap.quotientMk_eq_smul_quotientMk_subtypeLevel`). For every form
@@ -337,7 +336,6 @@ private theorem ker_mfderiv_quotientMk_subtypeLevel [ProperSMul G M]
     ((hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN
   have := d.contMDiffSMul (I'' := 𝓘(ℝ, Fin n₁ → ℝ))
     (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0)
-  have hfib := hμ.quotientMk_eq_quotientMk_iff_subtypeLevel hN
   have hsmul := hμ.coe_smul_subtypeLevelMulAction_subgroup hN
   intro z
   have hemb := (hμ.comp_subtype_ofIsClosed hN).isSmoothEmbedding_coe_levelSubMulAction hreg hn₁
@@ -354,18 +352,7 @@ private theorem ker_mfderiv_quotientMk_subtypeLevel [ProperSMul G M]
         (n := ∞) z).mdifferentiableAt (by simp))
       (fun n ↦ hsmul n z) ξ
   -- The kernel of `dπ₁` is the orbit tangent space `𝔫 · z` of `N` acting on the level.
-  -- `ProperSMul.ker_mfderiv_quotientMk` is stated for the charts
-  -- `ProperSMul.orbitRelQuotientChartedSpace`, while the first-stage space carries the
-  -- closed-subgroup charts `Subgroup.orbitRelQuotientChartedSpaceOfIsClosed`, whose definition is
-  -- not exposed here; so this applies the kernel criterion to the closed-subgroup submersion.
-  rw [ProperSMul.ker_mfderiv_eq_orbitTangent_fundamental_of_isSubmersionAt (I := 𝓘(ℝ,
-      (Lie.lieSubalgebraOfSubgroup (I := I) N).toSubmodule)) (G := N)
-      (IsCancelSMul.stabilizer_eq_bot z) ((Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed
-        (I := I) (I' := 𝓘(ℝ, Fin n₁ → ℝ))
-        (M := (hμ.comp_subtype_ofIsClosed hN).levelSubMulAction 0) hN).isSubmersionAt z) (by simp)
-      (Filter.Eventually.of_forall fun _ ↦ MulAction.orbitRel.Quotient.quotient_smul_eq)
-      (Filter.Eventually.of_forall fun yz h ↦ (hfib yz.1 yz.2).1 h |>.imp fun k hk ↦
-        Subtype.ext ((hsmul k yz.2).trans hk)),
+  rw [Subgroup.ker_mfderiv_orbitRelQuotientMkOfIsClosed (I := I) (I' := 𝓘(ℝ, Fin n₁ → ℝ)) hN z,
     lieAnnihilator_zero, LieSubalgebra.top_toSubmodule, Submodule.map_top,
     ← InfinitesimalAction.orbitTangent_eq_range]
   ext v
