@@ -586,10 +586,10 @@ theorem twistedHatDifferential_comp_self_eq_zero_iff (r r' : H.ReferenceDomains)
         H.twistedHatDifferential r' χ ∘ₗ H.twistedHatDifferential r' χ = 0 from
     ⟨h r r', h r' r⟩
   intro r r' hd
-  refine LinearMap.ext fun c => ?_
-  obtain ⟨m, rfl⟩ := (ReferenceDomains.changeEquiv (ReferenceDomains.rebase_base r' r)).surjective c
-  simpa [ReferenceDomains.changeEquiv_rebase_twistedHatDifferential] using
-    congr(ReferenceDomains.changeEquiv (ReferenceDomains.rebase_base r' r) ($hd m))
+  rw [((ReferenceDomains.changeEquiv (ReferenceDomains.rebase_base r' r)).eq_conjRingEquiv_apply_iff
+    (H.twistedHatDifferential r χ) (e := H.twistedHatDifferential r' χ)).mpr
+      (LinearMap.ext (ReferenceDomains.changeEquiv_rebase_twistedHatDifferential r r')).symm]
+  exact (ReferenceDomains.changeEquiv _).conjRingEquiv_apply_comp_self hd
 
 end Change
 
