@@ -29,9 +29,18 @@ This is the algebraic form of the trace-preserving conditional expectation onto 
 No positivity is assumed. The construction applies, for instance, to the quotients of the
 Temperley–Lieb tower by the radicals of its Markov trace, whose trace pairings are nondegenerate.
 
+For a subalgebra `C` of `A`, `Subalgebra.traceExpectation C τ : A →ₗ[K] A` is the same
+construction along the inclusion of `C`, followed by that inclusion. When `C` is finite-dimensional
+and the trace pairing of `τ` is nondegenerate on `C`, it is the idempotent with image `C` whose
+kernel is the orthogonal complement of `C` for the trace pairing. For a tracial `τ` it is
+self-adjoint for that pairing, and expectations onto nested subalgebras satisfy the tower property.
+These are the expectations compared in commuting squares.
+
 ## Main definitions
 
 * `LinearMap.traceExpectation`: the trace-preserving conditional expectation `A → B`.
+* `Subalgebra.traceExpectation`: the trace-preserving conditional expectation onto a subalgebra,
+  as an endomorphism of the ambient algebra.
 
 ## Main results
 
@@ -42,6 +51,11 @@ Temperley–Lieb tower by the radicals of its Markov trace, whose trace pairings
 * `LinearMap.apply_traceExpectation`, `LinearMap.traceExpectation_algHom`: trace preservation and
   the retraction property.
 * `LinearMap.eq_traceExpectation`: uniqueness among right `B`-linear trace-preserving maps.
+* `Subalgebra.traceExpectation_eq_iff`: the expectation onto `C` is characterized by pairing
+  against `C`.
+* `Subalgebra.apply_mul_traceExpectation`: self-adjointness for a tracial functional.
+* `Subalgebra.traceExpectation_traceExpectation_of_le`: the tower property.
+* `Subalgebra.traceExpectation_map`: transport along trace-preserving algebra isomorphisms.
 
 ## References
 
@@ -143,3 +157,134 @@ theorem traceExpectation_star [StarRing K] [StarRing A] [StarRing B]
     _ = τ (star a * f y) := by rw [← hτs, star_mul, star_star, hτc]
 
 end LinearMap
+
+/-! ### Expectations onto subalgebras -/
+
+namespace Subalgebra
+
+variable {K A A' : Type*} [Field K] [Ring A] [Algebra K A] [Ring A'] [Algebra K A']
+
+open scoped Classical in
+/-- The trace-preserving conditional expectation of `A` onto a subalgebra `C`, as an endomorphism
+of `A`. When `C` is finite-dimensional and the trace pairing `(x, y) ↦ τ (x * y)` is nondegenerate
+on `C`, the value `C.traceExpectation τ a` is the unique `c ∈ C` with `τ (c * y) = τ (a * y)` for
+every `y ∈ C` (`Subalgebra.traceExpectation_eq_iff`). It is then `LinearMap.traceExpectation`
+along the inclusion of `C`, followed by that inclusion. Otherwise it is `0`. -/
+noncomputable def traceExpectation (C : Subalgebra K A) (τ : A →ₗ[K] K) : A →ₗ[K] A :=
+  if h : FiniteDimensional K C ∧ ∀ x ∈ C, (∀ y ∈ C, τ (x * y) = 0) → x = 0 then
+    haveI := h.1
+    C.val.toLinearMap ∘ₗ (τ ∘ₗ C.val.toLinearMap).traceExpectation
+      (fun x hx ↦ Subtype.ext <| h.2 x x.property fun y hy ↦ hx ⟨y, hy⟩) τ C.val
+  else 0
+
+variable {C D : Subalgebra K A} {τ : A →ₗ[K] K}
+
+/-- The expectation onto `C` takes values in `C`. -/
+@[simp]
+theorem traceExpectation_mem (a : A) : C.traceExpectation τ a ∈ C := by
+  unfold traceExpectation
+  split_ifs <;> simp
+
+variable [FiniteDimensional K C] (hC : ∀ x ∈ C, (∀ y ∈ C, τ (x * y) = 0) → x = 0)
+include hC
+
+/-- On a finite-dimensional subalgebra with nondegenerate trace pairing, the expectation is
+`LinearMap.traceExpectation` along the inclusion. -/
+theorem traceExpectation_apply (a : A) :
+    C.traceExpectation τ a = (τ ∘ₗ C.val.toLinearMap).traceExpectation
+      (fun x hx ↦ Subtype.ext <| hC x x.property fun y hy ↦ hx ⟨y, hy⟩) τ C.val a := by
+  rw [traceExpectation, dite_eq_left ⟨inferInstance, hC⟩]
+  rfl
+
+/-- The defining identity of the expectation onto `C`: pairing against elements of `C` does not
+see the difference between `a` and its expectation. -/
+theorem apply_traceExpectation_mul (a : A) {y : A} (hy : y ∈ C) :
+    τ (C.traceExpectation τ a * y) = τ (a * y) := by
+  rw [traceExpectation_apply hC]
+  simpa using LinearMap.apply_traceExpectation_mul (τ ∘ₗ C.val.toLinearMap) _ τ C.val a ⟨y, hy⟩
+
+/-- The defining identity characterizes the expectation onto `C`. -/
+theorem traceExpectation_eq_iff {a c : A} (hc : c ∈ C) :
+    C.traceExpectation τ a = c ↔ ∀ y ∈ C, τ (c * y) = τ (a * y) := by
+  refine ⟨fun h y hy ↦ h ▸ apply_traceExpectation_mul hC a hy, fun h ↦ ?_⟩
+  rw [← sub_eq_zero]
+  refine hC _ (sub_mem (traceExpectation_mem a) hc) fun y hy ↦ ?_
+  rw [sub_mul, map_sub, apply_traceExpectation_mul hC a hy, h y hy, sub_self]
+
+/-- The expectation onto `C` vanishes exactly on the elements orthogonal to `C` for the trace
+pairing. -/
+theorem traceExpectation_eq_zero_iff {a : A} :
+    C.traceExpectation τ a = 0 ↔ ∀ y ∈ C, τ (a * y) = 0 := by
+  simp [traceExpectation_eq_iff hC (zero_mem C), eq_comm]
+
+/-- The expectation onto `C` fixes `C`. -/
+theorem traceExpectation_of_mem {a : A} (ha : a ∈ C) : C.traceExpectation τ a = a :=
+  (traceExpectation_eq_iff hC ha).mpr fun _ _ ↦ rfl
+
+/-- The expectation onto `C` is idempotent. -/
+theorem traceExpectation_traceExpectation (a : A) :
+    C.traceExpectation τ (C.traceExpectation τ a) = C.traceExpectation τ a :=
+  traceExpectation_of_mem hC (traceExpectation_mem a)
+
+/-- The expectation onto `C` is unital. -/
+theorem traceExpectation_one : C.traceExpectation τ 1 = 1 :=
+  traceExpectation_of_mem hC C.one_mem
+
+/-- The expectation onto `C` preserves `τ`. -/
+theorem apply_traceExpectation (a : A) : τ (C.traceExpectation τ a) = τ a := by
+  simpa using apply_traceExpectation_mul hC a C.one_mem
+
+/-- The expectation onto `C` is right `C`-linear. -/
+theorem traceExpectation_mul_of_mem_right (a : A) {y : A} (hy : y ∈ C) :
+    C.traceExpectation τ (a * y) = C.traceExpectation τ a * y :=
+  (traceExpectation_eq_iff hC (mul_mem (traceExpectation_mem a) hy)).mpr fun z hz ↦ by
+    rw [mul_assoc, apply_traceExpectation_mul hC a (mul_mem hy hz), mul_assoc]
+
+/-- For a tracial functional, the expectation onto `C` is left `C`-linear. -/
+theorem traceExpectation_mul_of_mem_left (hτ : ∀ a b, τ (a * b) = τ (b * a)) {x : A}
+    (hx : x ∈ C) (a : A) : C.traceExpectation τ (x * a) = x * C.traceExpectation τ a :=
+  (traceExpectation_eq_iff hC (mul_mem hx (traceExpectation_mem a))).mpr fun z hz ↦
+    calc τ (x * C.traceExpectation τ a * z) = τ (C.traceExpectation τ a * (z * x)) := by
+          rw [mul_assoc, hτ, mul_assoc]
+      _ = τ (a * (z * x)) := apply_traceExpectation_mul hC a (mul_mem hz hx)
+      _ = τ (x * a * z) := by rw [hτ, mul_assoc, hτ]
+
+/-- For a tracial functional, the expectation onto `C` is self-adjoint for the trace pairing. -/
+theorem apply_mul_traceExpectation (hτ : ∀ a b, τ (a * b) = τ (b * a)) (a b : A) :
+    τ (a * C.traceExpectation τ b) = τ (C.traceExpectation τ a * b) := by
+  rw [← apply_traceExpectation_mul hC a (traceExpectation_mem b), hτ,
+    apply_traceExpectation_mul hC b (traceExpectation_mem a), hτ]
+
+omit [FiniteDimensional K C] in
+/-- The tower property: expecting onto a larger subalgebra `D` first does not change the
+expectation onto `C`. -/
+theorem traceExpectation_traceExpectation_of_le [FiniteDimensional K C] [FiniteDimensional K D]
+    (hD : ∀ x ∈ D, (∀ y ∈ D, τ (x * y) = 0) → x = 0) (hCD : C ≤ D) (a : A) :
+    C.traceExpectation τ (D.traceExpectation τ a) = C.traceExpectation τ a :=
+  (traceExpectation_eq_iff hC (traceExpectation_mem a)).mpr fun y hy ↦ by
+    rw [apply_traceExpectation_mul hC a hy, apply_traceExpectation_mul hD a (hCD hy)]
+
+omit [FiniteDimensional K C] in
+/-- The tower property as an identity of linear maps. -/
+theorem traceExpectation_comp_traceExpectation_of_le [FiniteDimensional K C]
+    [FiniteDimensional K D] (hD : ∀ x ∈ D, (∀ y ∈ D, τ (x * y) = 0) → x = 0) (hCD : C ≤ D) :
+    C.traceExpectation τ ∘ₗ D.traceExpectation τ = C.traceExpectation τ :=
+  LinearMap.ext <| traceExpectation_traceExpectation_of_le hC hD hCD
+
+/-- A trace-preserving algebra isomorphism `e` carries the expectation onto `C` to the
+expectation onto the image of `C`. -/
+theorem traceExpectation_map (e : A ≃ₐ[K] A') {τ' : A' →ₗ[K] K} (he : ∀ a, τ' (e a) = τ a)
+    (a : A) :
+    (C.map (e : A →ₐ[K] A')).traceExpectation τ' (e a) = e (C.traceExpectation τ a) := by
+  have : FiniteDimensional K (C.map (e : A →ₐ[K] A')) :=
+    (e.subalgebraMap C).toLinearEquiv.finiteDimensional
+  have hC' : ∀ x ∈ C.map (e : A →ₐ[K] A'), (∀ y ∈ C.map (e : A →ₐ[K] A'), τ' (x * y) = 0) →
+      x = 0 := by
+    rintro _ ⟨x, hx, rfl⟩ h
+    rw [hC x hx fun y hy ↦ ?_, map_zero]
+    simpa [← he] using h (e y) ⟨y, hy, rfl⟩
+  refine (traceExpectation_eq_iff hC' ⟨_, traceExpectation_mem a, rfl⟩).mpr ?_
+  rintro _ ⟨y, hy, rfl⟩
+  simp [← map_mul, he, apply_traceExpectation_mul hC a hy]
+
+end Subalgebra
