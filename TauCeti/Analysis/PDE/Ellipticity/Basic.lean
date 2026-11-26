@@ -16,6 +16,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.Matrix.Contraction
+public import TauCeti.Analysis.PDE.Ellipticity.SymmetricPart
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
@@ -132,8 +133,6 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.UniformlyEllipticOn.add_bounded`: adding a bounded coefficient
   perturbation preserves uniform ellipticity with lower constant `λ - μ` when the
   perturbation size `μ` is smaller than `λ`.
-* `TauCeti.PDE.coefficientSymmetricPart`: the symmetric part `(A + Aᵀ) / 2` of a
-  coefficient matrix.
 * `TauCeti.PDE.UniformlyEllipticOn.transpose` and
   `TauCeti.PDE.UniformlyEllipticOn.coefficientSymmetricPart`: transposing or replacing a
   coefficient field by its symmetric part preserves uniform ellipticity with the same
@@ -151,41 +150,6 @@ namespace TauCeti
 namespace PDE
 
 open Matrix
-
-/-! ### Symmetric part of a coefficient matrix -/
-
-section SymmetricPart
-
-variable {n : Type*}
-
-/-- The symmetric part `(A + Aᵀ) / 2` of a coefficient matrix.
-
-For energy estimates the diagonal quadratic form of `A` agrees with that of
-`coefficientSymmetricPart A`, while the resulting matrix is symmetric. This is the
-finite-dimensional bookkeeping needed before the integrated energy form is specialized to
-self-adjoint elliptic operators. -/
-noncomputable def coefficientSymmetricPart (A : Matrix n n ℝ) : Matrix n n ℝ :=
-  (1 / 2 : ℝ) • (A + Aᵀ)
-
-/-- The symmetric part of a coefficient matrix is symmetric. -/
-lemma coefficientSymmetricPart_isSymm (A : Matrix n n ℝ) : (coefficientSymmetricPart A).IsSymm :=
-  (isSymm_add_transpose_self A).smul (1 / 2 : ℝ)
-
-/-- The entries of the symmetric part are the averages of opposite entries. -/
-@[simp]
-lemma coefficientSymmetricPart_apply (A : Matrix n n ℝ) (i j : n) :
-    coefficientSymmetricPart A i j = (A i j + A j i) / 2 := by
-  simp [coefficientSymmetricPart, div_eq_mul_inv, mul_comm]
-
-/-- A symmetric coefficient matrix is unchanged by taking its symmetric part. -/
-@[simp]
-lemma coefficientSymmetricPart_eq_self_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSymm) :
-    coefficientSymmetricPart A = A := by
-  ext i j
-  rw [coefficientSymmetricPart_apply, hA.apply i j]
-  ring
-
-end SymmetricPart
 
 /-! ### The matrix bilinear form -/
 
@@ -247,7 +211,7 @@ lemma matrixBilinearForm_coefficientSymmetricPart_apply (A : Matrix n n ℝ)
     (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm (coefficientSymmetricPart A) η ξ =
       (matrixBilinearForm A η ξ + matrixBilinearForm A ξ η) / 2 := by
-  rw [coefficientSymmetricPart, matrixBilinearForm_smul_apply, matrixBilinearForm_add_apply,
+  rw [coefficientSymmetricPart_def, matrixBilinearForm_smul_apply, matrixBilinearForm_add_apply,
     matrixBilinearForm_transpose_apply]
   ring
 
@@ -566,8 +530,8 @@ lemma toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (A : Matrix n n ℝ)
 @[simp]
 lemma toQuadraticForm'_coefficientSymmetricPart (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     (coefficientSymmetricPart A).toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
-  rw [coefficientSymmetricPart, toQuadraticForm'_smul, toQuadraticForm'_add_transpose, smul_smul,
-    one_div_mul_cancel two_ne_zero, one_smul]
+  rw [coefficientSymmetricPart_def, toQuadraticForm'_smul, toQuadraticForm'_add_transpose,
+    smul_smul, one_div_mul_cancel two_ne_zero, one_smul]
 
 /-- A pointwise absorption estimate for matrix bilinear forms. If the quadratic form is
 bounded below at `g` by `λ ‖g‖²` and the bilinear form at `(q, g)` is bounded by

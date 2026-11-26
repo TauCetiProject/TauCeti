@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.PrimeFactors.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
@@ -175,6 +176,15 @@ half-plane. At the possible pole `1`, require the original character to be nonpr
     (changeLevel hMN χ).LFunction s = 0 ↔ χ.LFunction s = 0 := by
   rw [LFunction_changeLevel hMN χ h, mul_eq_zero]
   simp [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs.ne']
+
+/-- A Dirichlet character and its inducing primitive character have the same zeros of the
+continued L-function in the open right half-plane. At the possible pole `1`, require the primitive
+character to be nonprincipal. -/
+theorem LFunction_primitiveCharacter_eq_zero_iff {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
+    {s : ℂ} (hs : 0 < s.re) (h : χ.primitiveCharacter ≠ 1 ∨ s ≠ 1) :
+    χ.primitiveCharacter.LFunction s = 0 ↔ χ.LFunction s = 0 := by
+  conv_rhs => rw [← χ.changeLevel_primitiveCharacter]
+  exact (LFunction_changeLevel_eq_zero_iff _ χ.conductor_dvd_level hs h).symm
 
 /-- Raising the level preserves the meromorphic order of the continued L-function at every point of
 the open right half-plane `Re(s) > 0`, including `s = 1` for principal characters. -/

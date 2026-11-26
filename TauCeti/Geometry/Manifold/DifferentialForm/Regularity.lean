@@ -63,7 +63,8 @@ differentiation commutes with this extension.
   is a `C^n` function.
 * `TauCeti.SmoothForm.ofFunction`: the `0`-form of a smooth function as a smooth form, which for a
   real function `u` is `u` times the constant `0`-form `1`
-  (`TauCeti.SmoothForm.ofFunction_eq_funSMulₗ_one`), and conversely
+  (`TauCeti.SmoothForm.ofFunction_eq_funSMulₗ_one`), `TauCeti.SmoothForm.isSmoothForm_const`
+  (constant smooth forms are `C^n` for every `n`, including `ω`), and conversely
   `TauCeti.SmoothForm.contMDiff_apply_zero`: the function underlying a smooth `0`-form is smooth,
   and every smooth `0`-form is the `0`-form of that function (`TauCeti.SmoothForm.eq_ofFunction`);
   `TauCeti.SmoothForm.mextDerivₗ_cast` shows `mextDerivₗ` commutes with casts of the degree and
@@ -648,6 +649,21 @@ theorem ofFunction_eq_funSMulₗ_one [IsManifold I 1 M] (u : C^∞⟮I, M; ℝ�
   funext x
   ext v
   simp [RoughForm.ofFunction_apply, ContMDiffMap.const_apply]
+
+/-- A constant smooth form on a normed space has `C^n` regularity for every
+`n : WithTop ℕ∞`, including `ω`. -/
+theorem isSmoothForm_const {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
+    (A : V [⋀^Fin k]→L[ℝ] F) (n : WithTop ℕ∞) :
+    IsSmoothForm 𝓘(ℝ, V) n (const A).val := by
+  have hconst : (const A).val = fun _ : V ↦ A := by
+    ext z v
+    rw [const_apply]
+    -- `TangentSpace 𝓘(ℝ, V) z` is definitionally `V`, on which
+    -- `NormedSpace.fromTangentSpace z` is the identity.
+    rfl
+  rw [hconst]
+  exact isSmoothForm_modelSpace_iff.2 contDiff_const
 
 /-- The exterior derivative of a smooth form is a smooth section. -/
 theorem contMDiff_mextDeriv [IsManifold I 2 M] (φ : SmoothForm I M F k) :

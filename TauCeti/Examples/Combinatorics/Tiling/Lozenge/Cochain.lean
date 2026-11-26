@@ -5,18 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.Cochain
+public import TauCeti.Combinatorics.Tiling.Lozenge.Hole
 
 /-!
 # Regression examples: edge cochains and simply connected regions
 
 * A single face `W(0)` is simply connected.
-* The ring `R_ring` of the twelve faces other than `W(0)` that meet `W(0)` is not simply
-  connected: the cochain equal to `1` on the edges `((i, 0), 2)` and `((i, 0), 3)` for `i ≥ 1`
-  (those crossed by the path of faces `B(1,0), W(1,0), B(2,0), W(2,0), …`) and `0` elsewhere is
-  closed on every face except `W(0)`, while it sums to `1` around the boundary of `W(0)`, whose
-  three edges are edges of `R_ring`. The same cochain shows that the plane minus `W(0)` is not
-  simply connected, so the simple connectivity of the plane needs every face.
+* The ring `R_ring` of the twelve faces other than `W(0)` that meet `W(0)` is connected but not
+  simply connected: the ray cochain `TauCeti.rayCochain W(0)`, equal to `1` on the edges
+  `((i, 0), 2)` and `((i, 0), 3)` for `i ≥ 1` (those crossed by the path of faces `B(1,0), W(1,0),
+  B(2,0), W(2,0), …`) and `0` elsewhere, is closed on every face except `W(0)`, while it sums to
+  `1` around the boundary of `W(0)`, whose three edges are edges of `R_ring`. The same cochain
+  shows that the plane minus `W(0)` is not simply connected, so the simple connectivity of the
+  plane needs every face.
 * The unit hexagon around `0` is simply connected, by shelling in the order `W(0)`, `B(0)`,
   `W(−e₁)`, `B(−e₃)`, `W(−e₃)` (each glued along one edge, adding one new vertex) and `B(−e₂)`
   (glued along two edges).
@@ -35,56 +36,92 @@ open TauCeti
 example : IsSimplyConnectedRegion {(⟨(0, 0), true⟩ : TriFace)} :=
   isSimplyConnectedRegion_singleton _
 
-/-- The cochain equal to `1` on the edges `((i, 0), 2)` and `((i, 0), 3)` for `i ≥ 1`, and `0`
-elsewhere. -/
-def ringCochain (e : TriEdge) : ℤ :=
-  if e.k ≠ 0 ∧ 1 ≤ e.v.1 ∧ e.v.2 = 0 then 1 else 0
+/-- The ray cochain of `W(0)`, equal to `1` on the edges `((i, 0), 2)` and `((i, 0), 3)` for
+`i ≥ 1` and `0` elsewhere, is closed on every face other than `W(0)`. -/
+theorem isClosedCochainOn_rayCochain_whiteZero :
+    IsClosedCochainOn {f | f ≠ ⟨(0, 0), true⟩} (rayCochain ⟨(0, 0), true⟩) :=
+  isClosedCochainOn_iff_faceSum.2 fun _ hf => faceSum_rayCochain_of_ne hf
 
-/-- `ringCochain` is closed on every face other than `W(0)`. -/
-theorem isClosedCochainOn_ringCochain :
-    IsClosedCochainOn {f | f ≠ ⟨(0, 0), true⟩} ringCochain := by
-  refine isClosedCochainOn_def.2 ?_
-  rintro ⟨⟨x, y⟩, _ | _⟩ hf
-  · simp only [TriFace.edge_mk_false, ringCochain]
-    split_ifs <;> simp_all
-  · simp only [Set.mem_ofPred_eq, ne_eq, TriFace.mk.injEq, Prod.mk.injEq, and_true] at hf
-    simp only [TriFace.edge_mk_true, ringCochain]
-    split_ifs <;> simp_all <;> omega
-
-/-- `ringCochain` is not exact on any region containing the three faces `B(0, −1)`, `B(1, 0)` and
-`B(0, 0)`, which carry the three edges of `W(0)`. -/
-theorem not_isExactCochainOn_ringCochain {R : Set TriFace} (h₁ : ⟨(0, -1), false⟩ ∈ R)
-    (h₂ : ⟨(1, 0), false⟩ ∈ R) (h₃ : ⟨(0, 0), false⟩ ∈ R) : ¬ IsExactCochainOn R ringCochain := by
+/-- The ray cochain of `W(0)` is not exact on any region containing the three faces `B(0, −1)`,
+`B(1, 0)` and `B(0, 0)`, which carry the three edges of `W(0)`. -/
+theorem not_isExactCochainOn_rayCochain_whiteZero {R : Set TriFace} (h₁ : ⟨(0, -1), false⟩ ∈ R)
+    (h₂ : ⟨(1, 0), false⟩ ∈ R) (h₃ : ⟨(0, 0), false⟩ ∈ R) :
+    ¬ IsExactCochainOn R (rayCochain ⟨(0, 0), true⟩) := by
   intro h
   obtain ⟨g, hg⟩ := isExactCochainOn_def.1 h
   rw [isCochainPrimitiveOn_def] at hg
   have e₁ := hg ⟨(0, 0), 0⟩ (mem_regionEdges_iff.2 (Or.inr (by simpa using h₁)))
   have e₂ := hg ⟨(1, 0), 1⟩ (mem_regionEdges_iff.2 (Or.inr (by simpa using h₂)))
   have e₃ := hg ⟨(0, 0), 2⟩ (mem_regionEdges_iff.2 (Or.inr (by simpa using h₃)))
-  simp only [ringCochain, TriEdge.target_mk, latticeDir_zero, latticeDir_one,
+  simp only [rayCochain_def, TriEdge.target_mk, latticeDir_zero, latticeDir_one,
     latticeDir_two] at e₁ e₂ e₃
   norm_num at e₁ e₂ e₃
   omega
 
 /-- The plane minus `W(0)` is not simply connected. -/
 example : ¬ IsSimplyConnectedRegion {f | f ≠ ⟨(0, 0), true⟩} := fun h =>
-  not_isExactCochainOn_ringCochain (by simp) (by simp) (by simp)
-    (h.isExactCochainOn_of_isClosedCochainOn _ isClosedCochainOn_ringCochain)
+  not_isExactCochainOn_rayCochain_whiteZero (by simp) (by simp) (by simp)
+    (h.isExactCochainOn_of_isClosedCochainOn _ isClosedCochainOn_rayCochain_whiteZero)
 
 /-- The ring `R_ring` of the twelve faces other than `W(0)` that meet `W(0)`. -/
-def ringRegion : Set TriFace :=
+@[expose] def ringRegion : Set TriFace :=
   {⟨(-1, 0), true⟩, ⟨(-1, -1), true⟩, ⟨(0, -1), true⟩, ⟨(1, 0), true⟩, ⟨(1, 1), true⟩,
     ⟨(0, 1), true⟩, ⟨(0, 0), false⟩, ⟨(0, -1), false⟩, ⟨(-1, -1), false⟩, ⟨(1, -1), false⟩,
     ⟨(1, 0), false⟩, ⟨(1, 1), false⟩}
 
+/-- The ring `R_ring` listed face by face, each face sharing a vertex with an earlier one: first
+`B(0)`, then faces at the vertex `0` or at `e₃`, both vertices of `B(0)`, or at `e₁`, a vertex of
+`B(0, −1)`. -/
+theorem ringRegion_eq : ringRegion =
+    insert ⟨(1, -1), false⟩ (insert ⟨(0, -1), true⟩ (insert ⟨(1, 1), false⟩
+      (insert ⟨(1, 0), false⟩ (insert ⟨(1, 0), true⟩ (insert ⟨(0, 1), true⟩
+        (insert ⟨(1, 1), true⟩ (insert ⟨(0, -1), false⟩ (insert ⟨(-1, -1), false⟩
+          (insert ⟨(-1, -1), true⟩ (insert ⟨(-1, 0), true⟩ {⟨(0, 0), false⟩})))))))))) := by
+  ext f
+  simp only [ringRegion, Set.mem_insert_iff, Set.mem_singleton_iff]
+  tauto
+
+/-- **The ring `R_ring` is connected**, although it is not simply connected (below). -/
+theorem isConnectedRegion_ringRegion : IsConnectedRegion ringRegion := by
+  rw [ringRegion_eq]
+  have hB₀ : ∀ S : Set TriFace, (⟨(0, 0), false⟩ : TriFace) ∈ S →
+      (0, 0) ∈ regionVertices S ∧ (1, 1) ∈ regionVertices S := fun S hS =>
+    ⟨mem_regionVertices.2 ⟨_, hS, by simp⟩, mem_regionVertices.2 ⟨_, hS, by simp⟩⟩
+  have hB₁ : ∀ S : Set TriFace, (⟨(0, -1), false⟩ : TriFace) ∈ S → (1, 0) ∈ regionVertices S :=
+    fun S hS => mem_regionVertices.2 ⟨_, hS, by simp⟩
+  refine IsConnectedRegion.insert_of_mem_regionVertices (u := (1, 0)) ?_ (by simp)
+    (hB₁ _ (by simp))
+  refine IsConnectedRegion.insert_of_mem_regionVertices (u := (1, 0)) ?_ (by simp)
+    (hB₁ _ (by simp))
+  refine IsConnectedRegion.insert_of_mem_regionVertices (u := (1, 1)) ?_ (by simp)
+    (hB₀ _ (by simp)).2
+  refine IsConnectedRegion.insert_of_mem_regionVertices (u := (1, 1)) ?_ (by simp)
+    (hB₀ _ (by simp)).2
+  refine IsConnectedRegion.insert_of_mem_regionVertices (u := (1, 0)) ?_ (by simp)
+    (hB₁ _ (by simp))
+  refine IsConnectedRegion.insert_of_mem_regionVertices (u := (1, 1)) ?_ (by simp)
+    (hB₀ _ (by simp)).2
+  refine IsConnectedRegion.insert_of_mem_regionVertices (u := (1, 1)) ?_ (by simp)
+    (hB₀ _ (by simp)).2
+  refine IsConnectedRegion.insert_of_mem_regionVertices (u := (0, 0)) ?_ (by simp)
+    (hB₀ _ (by simp)).1
+  refine IsConnectedRegion.insert_of_mem_regionVertices (u := (0, 0)) ?_ (by simp)
+    (hB₀ _ (by simp)).1
+  refine IsConnectedRegion.insert_of_mem_regionVertices (u := (0, 0)) ?_ (by simp)
+    (hB₀ _ (by simp)).1
+  refine IsConnectedRegion.insert_of_mem_regionVertices (u := (0, 0)) ?_ (by simp)
+    (hB₀ _ (by simp)).1
+  exact isConnectedRegion_singleton _
+
 /-- The ring around `W(0)` is not simply connected. -/
 example : ¬ IsSimplyConnectedRegion ringRegion := fun h =>
-  not_isExactCochainOn_ringCochain (by simp [ringRegion]) (by simp [ringRegion])
+  not_isExactCochainOn_rayCochain_whiteZero (by simp [ringRegion]) (by simp [ringRegion])
     (by simp [ringRegion])
-    (h.isExactCochainOn_of_isClosedCochainOn _ (isClosedCochainOn_ringCochain.mono fun f hf => by
-      simp only [ringRegion, Set.mem_insert_iff, Set.mem_singleton_iff] at hf
-      rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp))
+    (h.isExactCochainOn_of_isClosedCochainOn _
+      (isClosedCochainOn_rayCochain_whiteZero.mono fun f hf => by
+        simp only [ringRegion, Set.mem_insert_iff, Set.mem_singleton_iff] at hf
+        rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+          simp))
 
 /-- The unit hexagon around `0` is simply connected, by shelling. -/
 example : IsSimplyConnectedRegion

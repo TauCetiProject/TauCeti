@@ -26,7 +26,11 @@ additively as in the usual notation `[u]`:
   triangular matrix with diagonal blocks `u` and `v` is `[u] + [v]`, whatever its off-diagonal
   block;
 * a class is trivial exactly when `u ⊕ 1` is elementary for an identity block of some size;
-* the class of an invertible diagonal matrix is the sum of the classes of its entries.
+* the class of an invertible diagonal matrix is the sum of the classes of its entries, so the
+  scalar matrix `a • 1` of size `n` has class `n [a]`;
+* `[1 + ab] = [1 + ba]` whenever both are units, so a unit `1 + ab` with `ba = 0` has trivial class.
+  Over the `ι × ι` matrices over a nontrivial ring, with `ι` of size at least two, this makes the
+  unit-to-`K₁` map `TauCeti.AlgebraicK1.ofUnits` non-injective.
 
 It then computes `K₁` of the zero ring, which is trivial, and of a product of two rings,
 `K₁(A × B) ≅ K₁(A) × K₁(B)` through the two projections. The latter holds because an invertible
@@ -59,8 +63,12 @@ product of the classes of the matrices `(u, 1)` and `(1, v)`.
   with invertible diagonal blocks `u` and `v` has class `[u] + [v]`.
 * `TauCeti.AlgebraicK1.mkOfFintype_eq_one_iff`: `[u]` is trivial exactly when `u ⊕ 1` is
   elementary for an identity block of some size.
-* `TauCeti.AlgebraicK1.mkOfFintype_scalar`, `TauCeti.AlgebraicK1.mkOfFintype_diagGL`: the class of
+* `TauCeti.AlgebraicK1.mkOfFintype_diagGL`, `TauCeti.AlgebraicK1.mkOfFintype_scalar`: the class of
   an invertible diagonal matrix is the sum of the classes of its diagonal entries.
+* `TauCeti.AlgebraicK1.ofUnits_eq_ofUnits_of_coe_eq_one_add_mul`: `[1 + ab] = [1 + ba]`.
+* `TauCeti.AlgebraicK1.ofUnits_eq_one_of_coe_eq_one_add_mul`: `[1 + ab] = 0` when `ba = 0`.
+* `TauCeti.AlgebraicK1.not_injective_ofUnits_matrix`: over a matrix ring of size at least two
+  over a nontrivial ring, the class map on units is not injective.
 * `TauCeti.AlgebraicK1.instSubsingleton`: `K₁` of the zero ring is trivial.
 * `TauCeti.AlgebraicK1.prodEquiv_apply`, `TauCeti.AlgebraicK1.prodEquiv_symm_mk`: the isomorphism
   `K₁(A × B) ≃* K₁(A) × K₁(B)` and its inverse on classes.
@@ -265,16 +273,6 @@ theorem mkOfFintype_eq_mul_of_coe_eq_fromBlocks_zero₁₂ {g : GL (ι ⊕ κ) A
 
 /-! ## Diagonal matrices and the determinant -/
 
-/-- Over an index type with exactly one element, the class of the scalar matrix `(a)` is the
-class `AlgebraicK1.ofUnits A a` of the unit `a`. -/
-@[simp]
-theorem mkOfFintype_scalar [Unique ι] (a : Aˣ) :
-    mkOfFintype A ι (GeneralLinearGroup.scalar ι a) = ofUnits A a := by
-  rw [mkOfFintype_eq_mk_reindexGL (Equiv.ofUnique ι (Fin 1)), ofUnits_apply]
-  congr 1
-  ext i j
-  simp [Subsingleton.elim i j]
-
 /-- The class of the diagonal matrix with one diagonal entry `a` and all others `1` is the class
 of the unit `a`. -/
 private theorem mkOfFintype_diagGL_mulSingle (i : ι) (a : Aˣ) :
@@ -285,7 +283,12 @@ private theorem mkOfFintype_diagGL_mulSingle (i : ι) (a : Aˣ) :
     ext (⟨j, rfl⟩ | ⟨j, hj⟩) (⟨l, hl⟩ | ⟨l, hl⟩) <;>
       simp_all [Pi.mulSingle_apply, Matrix.one_apply, Matrix.diagonal_apply, Ne.symm]
   rw [← mkOfFintype_reindexGL (Equiv.sumCompl (· = i)).symm, hblock,
-    mkOfFintype_fromBlocksGL_one, mkOfFintype_scalar]
+    mkOfFintype_fromBlocksGL_one,
+    mkOfFintype_eq_mk_reindexGL (Equiv.ofUnique {j // j = i} (Fin 1)), ofUnits_apply]
+  -- both `1 × 1` matrices have the single entry `a`
+  congr 1
+  ext j l
+  simp [Subsingleton.elim j l]
 
 /-- The class of the invertible diagonal matrix with diagonal entries `t i` is the product of the
 classes of the units `t i`. -/
@@ -299,6 +302,68 @@ theorem mkOfFintype_diagGL (t : ι → Aˣ) :
       simp [mkOfFintype_diagGL_mulSingle, MonoidHom.finsetProd_apply, Pi.mulSingle_apply,
         apply_ite]
   simpa [MonoidHom.finsetProd_apply] using DFunLike.congr_fun h t
+
+/-- **The class of a scalar matrix**: the class of the scalar matrix `a • 1` over `ι` is
+`[a]ⁿ`, where `n` is the number of elements of `ι`. In particular, over an index type with exactly
+one element it is the class `TauCeti.AlgebraicK1.ofUnits A a` of the unit `a`. -/
+@[simp]
+theorem mkOfFintype_scalar (a : Aˣ) :
+    mkOfFintype A ι (GeneralLinearGroup.scalar ι a) = ofUnits A a ^ Fintype.card ι := by
+  rw [← diagGL_const, mkOfFintype_diagGL, Finset.prod_const, Finset.card_univ]
+
+/-! ## The classes of `1 + ab` and `1 + ba` -/
+
+/-- **`[1 + ab] = [1 + ba]` in `K₁`**: if `1 + a b` and `1 + b a` are the units `u` and `v` of a
+possibly noncommutative ring `A`, then `u` and `v` have the same class in `K₁(A)`. -/
+theorem ofUnits_eq_ofUnits_of_coe_eq_one_add_mul {u v : Aˣ} {a b : A} (hu : (u : A) = 1 + a * b)
+    (hv : (v : A) = 1 + b * a) : ofUnits A u = ofUnits A v := by
+  -- `v⁻¹ = 1 - b u⁻¹ a`, and the elementary matrix
+  -- `[[1, a], [0, 1]] [[1, 0], [b, 1]] [[1, -u⁻¹ a], [0, 1]]` is the lower triangular matrix
+  -- `[[u, 0], [b, v⁻¹]]`, whose class is `[u] - [v]`.
+  have hvinv : ((v⁻¹ : Aˣ) : A) = 1 - b * (↑u⁻¹ * a) := by
+    refine Units.inv_eq_of_mul_eq_one_right ?_
+    calc (v : A) * (1 - b * (↑u⁻¹ * a)) = 1 + b * a - b * ((1 + a * b) * ↑u⁻¹) * a := by
+          rw [hv]; noncomm_ring
+      _ = 1 := by rw [← hu, Units.mul_inv]; noncomm_ring
+  -- the `1 × 1` block matrix with entry `x`
+  let c : A → Matrix Unit Unit A := fun x ↦ of fun _ _ ↦ x
+  have hg : ((upperBlockGL (c a) * lowerBlockGL (c b) * upperBlockGL (c (-(↑u⁻¹ * a))) :
+      GL (Unit ⊕ Unit) A) : Matrix (Unit ⊕ Unit) (Unit ⊕ Unit) A) =
+      fromBlocks (GeneralLinearGroup.scalar Unit u : GL Unit A) 0 (c b)
+        (GeneralLinearGroup.scalar Unit v⁻¹ : GL Unit A) := by
+    -- keep `scalar Unit v⁻¹` rather than `(scalar Unit v)⁻¹`, so that `hvinv` applies
+    ext (_ | _) (_ | _) <;>
+      simp [c, coe_upperBlockGL, coe_lowerBlockGL, fromBlocks_multiply, Matrix.mul_apply,
+        -map_inv, ← hu, hvinv, neg_add_eq_sub]
+  -- the left side of `hg` is a product of elementary matrices
+  have hE := elementarySubgroup_le_ker_mkOfFintype <| mul_mem (mul_mem
+    (upperBlockGL_mem_elementarySubgroup (c a)) (lowerBlockGL_mem_elementarySubgroup (c b)))
+    (upperBlockGL_mem_elementarySubgroup (c (-(↑u⁻¹ * a))))
+  rw [MonoidHom.mem_ker, mkOfFintype_eq_mul_of_coe_eq_fromBlocks_zero₁₂ hg] at hE
+  simpa [mul_inv_eq_one] using hE
+
+/-- A unit `u = 1 + a b` with `b a = 0` has trivial class in `K₁(A)`, since `[1 + ab] = [1 + ba]`.
+Over a noncommutative ring such a unit can differ from `1`
+(`TauCeti.AlgebraicK1.not_injective_ofUnits_matrix`). -/
+theorem ofUnits_eq_one_of_coe_eq_one_add_mul {u : Aˣ} {a b : A} (hu : (u : A) = 1 + a * b)
+    (hba : b * a = 0) : ofUnits A u = 1 := by
+  rw [ofUnits_eq_ofUnits_of_coe_eq_one_add_mul (v := 1) hu (by simp [hba]), map_one]
+
+/-- Over the `ι × ι` matrices over a nontrivial ring, for `ι` with two distinct elements, the
+homomorphism `TauCeti.AlgebraicK1.ofUnits` is not injective: an elementary matrix `1 + Eᵢⱼ` with
+`i ≠ j` is a unit of the matrix ring different from `1` whose class in `K₁` is trivial. -/
+theorem not_injective_ofUnits_matrix [Nontrivial ι] [Nontrivial A] :
+    ¬ Function.Injective (ofUnits (Matrix ι ι A)) := by
+  obtain ⟨i, j, hij⟩ := exists_pair_ne ι
+  intro h
+  -- `1 + Eᵢⱼ = 1 + Eᵢᵢ Eᵢⱼ`, and `Eᵢⱼ Eᵢᵢ = 0`
+  have hone : transvectionUnit hij (1 : A) = 1 := h <| by
+    rw [map_one]
+    refine ofUnits_eq_one_of_coe_eq_one_add_mul (a := single i i 1) (b := single i j 1) ?_ ?_
+    · rw [coe_transvectionUnit_eq_one_add_single, single_mul_single_same, one_mul]
+    · exact single_mul_single_of_ne (h := hij.symm) ..
+  have hentry := congr_arg (fun g : GL ι A ↦ (g : Matrix ι ι A) i j) hone
+  simp [coe_transvectionUnit_eq_one_add_single, hij] at hentry
 
 /-! ## The zero ring -/
 
