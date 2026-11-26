@@ -74,11 +74,8 @@ theorem exists_rootOfUnity_mul_extension_eq_on_coset_of_norm_eq_one
   -- times `χ i`.
   have hcoset (n : N) : X (x * n) = ∑ i, ((b i : K) : ℂ) * χ i (x * n) := by
     have hn : x * n ∉ N := fun h => hx ((N.mul_mem_cancel_right n.property).mp h)
-    have hind : N.indClassFun Y (x * n) = 0 := by
-      rw [Subgroup.indClassFun_apply]
-      refine sum_eq_zero fun q _ => dite_eq_right fun h => hn ?_
-      simpa [mul_assoc] using (inferInstance : N.Normal).conj_mem _ h (Quotient.out q)
-    rw [congrFun hXsum (x * n), Pi.add_apply, hind, add_zero, Finset.sum_apply]
+    rw [congrFun hXsum (x * n), Pi.add_apply, N.indClassFun_apply_eq_zero_of_not_mem Y hn,
+      add_zero, Finset.sum_apply]
     refine sum_congr rfl fun i _ => ?_
     rw [Finset.sum_apply, hb, sum_mul]
     have hq : QuotientGroup.mk' N (x * n) = QuotientGroup.mk' N x :=
