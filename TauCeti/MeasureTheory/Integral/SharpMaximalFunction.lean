@@ -711,7 +711,7 @@ private theorem volume_ball_sqrt_card_mul_div_volume_ball (c : ι → ℝ) (c' :
 /-- The sharp maximal function of `f` read in coordinates, for sup-distance balls, is at most a
 fixed multiple of the sharp maximal function of `f` for Euclidean balls. -/
 private theorem sharpMaximalFunction_comp_toLp_le {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] [CompleteSpace F] {f : EuclideanSpace ℝ ι → F} (hf : Integrable f)
+    [NormedSpace ℝ F] [CompleteSpace F] {f : EuclideanSpace ℝ ι → F} (hf : LocallyIntegrable f)
     (y : ι → ℝ) :
     sharpMaximalFunction volume (fun z => f (WithLp.toLp 2 z)) y ≤
       2 * (ENNReal.ofReal (√(Fintype.card ι) ^ Fintype.card ι) *
@@ -730,7 +730,9 @@ private theorem sharpMaximalFunction_comp_toLp_le {F : Type*} [NormedAddCommGrou
   rw [← setLAverage_enorm_sub_setAverage_comp_preimage_of_map_eq_smul he one_ne_zero
     ENNReal.one_ne_top]
   -- Compare with the oscillation about the Euclidean average `f_B`, and enlarge `S` to `B`.
-  refine (setLAverage_enorm_sub_setAverage_le (s := S) hf.integrableOn (⨍ x in B, f x)).trans ?_
+  have hfS : IntegrableOn f S := (hf.integrableOn_isCompact (isCompact_closedBall _ _)).mono_set
+    (hSB.trans ball_subset_closedBall)
+  refine (setLAverage_enorm_sub_setAverage_le hfS (⨍ x in B, f x)).trans ?_
   rw [mul_assoc]
   gcongr 2 * ?_
   refine (setLAverage_le_div_mul_setLAverage_of_subset hSB measure_ball_lt_top.ne).trans ?_
@@ -742,16 +744,18 @@ private theorem sharpMaximalFunction_comp_toLp_le {F : Type*} [NormedAddCommGrou
 /- This transport from the sup-distance version is shared with
 https://github.com/TauCetiProject/TauCeti/pull/33788. -/
 /-- **The Fefferman–Stein inequality for Euclidean balls.** For `1 < p < ∞` there is a constant
-`C`, depending only on `ι` and `p`, such that every integrable `f` on `EuclideanSpace ℝ ι`,
-`ι` nonempty, with values in any real Banach space, satisfies
+`C`, depending only on `ι` and `p`, such that every `f ∈ L^p₀(EuclideanSpace ℝ ι)` for some
+`1 ≤ p₀ ≤ p`, `ι` nonempty, with values in any real Banach space, satisfies
 
 `∫ ‖f‖^p ≤ C ∫ (f^#)^p`,
 
-where `f^#` is the sharp maximal function for the balls of the Euclidean distance. -/
+where `f^#` is the sharp maximal function for the balls of the Euclidean distance. The case
+`p₀ = 1` is that of an integrable `f`, and `p₀ = p` that of `f ∈ Lᵖ`. -/
 theorem exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow {p : ℝ}
     (hp : 1 < p) :
     ∃ C : ℝ≥0, ∀ {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-      (f : EuclideanSpace ℝ ι → F), Integrable f →
+      {f : EuclideanSpace ℝ ι → F} {p₀ : ℝ≥0∞}, MemLp f p₀ volume → 1 ≤ p₀ →
+        p₀ ≤ ENNReal.ofReal p →
         ∫⁻ x, ‖f x‖ₑ ^ p ≤ C * ∫⁻ x, sharpMaximalFunction volume f x ^ p := by
   have hp0 : 0 ≤ p := zero_le_one.trans hp.le
   set T : (ι → ℝ) → EuclideanSpace ℝ ι := WithLp.toLp 2
@@ -763,45 +767,51 @@ theorem exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow {
     (ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_ball_lt_top.ne)
     (measure_ball_pos _ _ one_pos).ne')
   set C₀ : ℝ≥0∞ := ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p))
-  refine ⟨(C₀ * K ^ p).toNNReal, fun {F} _ _ _ f hf => ?_⟩
+  refine ⟨(C₀ * K ^ p).toNNReal, fun {F} _ _ _ f p₀ hf hp₀ hp₀p => ?_⟩
   rw [ENNReal.coe_toNNReal (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     (ENNReal.rpow_ne_top_of_nonneg hp0 hK))]
+  have hp₀_top : p₀ ≠ ∞ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hp₀p
+  -- The sup-distance inequality, applied to `f ∘ T ∈ L^p₀`, with `p₀` read as a real exponent.
+  have hfT := hf.comp_measurePreserving hT
   calc ∫⁻ x, ‖f x‖ₑ ^ p
       = ∫⁻ y, ‖f (T y)‖ₑ ^ p := (hT.lintegral_comp_emb hTe (fun x => ‖f x‖ₑ ^ p)).symm
     _ ≤ C₀ * ∫⁻ y, sharpMaximalFunction volume (fun z => f (T z)) y ^ p :=
         lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow
-          (hT.integrable_comp_of_integrable hf).aestronglyMeasurable le_rfl hp.le hp
-          (by simpa using (hT.integrable_comp_of_integrable hf).hasFiniteIntegral.ne)
+          hfT.aestronglyMeasurable (by simpa using ENNReal.toReal_mono hp₀_top hp₀)
+          (ENNReal.toReal_le_of_le_ofReal hp0 hp₀p) hp
+          (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top (zero_lt_one.trans_le hp₀).ne' hp₀_top
+            hfT.eLpNorm_lt_top).ne
     _ ≤ C₀ * ∫⁻ y, (K * sharpMaximalFunction volume f (T y)) ^ p := by
         gcongr with y
-        exact sharpMaximalFunction_comp_toLp_le hf y
+        exact sharpMaximalFunction_comp_toLp_le (hf.locallyIntegrable hp₀) y
     _ = C₀ * K ^ p * ∫⁻ x, sharpMaximalFunction volume f x ^ p := by
         simp_rw [ENNReal.mul_rpow_of_nonneg _ _ hp0]
         rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hp0 hK), mul_assoc,
           hT.lintegral_comp_emb hTe (fun x => sharpMaximalFunction volume f x ^ p)]
 
 /-- **The Fefferman–Stein inequality for Euclidean balls**, in terms of `Lᵖ` seminorms. For
-`1 < p < ∞` there is a constant `C`, depending only on `ι` and `p`, such that every integrable `f`
-on `EuclideanSpace ℝ ι`, `ι` nonempty, with values in any real Banach space, satisfies
-`‖f‖_p ≤ C ‖f^#‖_p`, where `f^#` is the sharp maximal function for the balls of the Euclidean
-distance. -/
+`1 < p < ∞` there is a constant `C`, depending only on `ι` and `p`, such that every
+`f ∈ L^p₀(EuclideanSpace ℝ ι)` for some `1 ≤ p₀ ≤ p`, `ι` nonempty, with values in any real
+Banach space, satisfies `‖f‖_p ≤ C ‖f^#‖_p`, where `f^#` is the sharp maximal function for the
+balls of the Euclidean distance. The case `p₀ = 1` is that of an integrable `f`, and `p₀ = p`
+that of `f ∈ Lᵖ`. -/
 theorem exists_eLpNorm_le_mul_eLpNorm_sharpMaximalFunction {p : ℝ≥0∞} (hp : 1 < p)
     (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-      (f : EuclideanSpace ℝ ι → F), Integrable f →
+      {f : EuclideanSpace ℝ ι → F} {p₀ : ℝ≥0∞}, MemLp f p₀ volume → 1 ≤ p₀ → p₀ ≤ p →
         eLpNorm f p volume ≤ C * eLpNorm (sharpMaximalFunction volume f) p volume := by
   have hp₀ : p ≠ 0 := (zero_lt_one.trans hp).ne'
   have hpr : 1 < p.toReal := by
     simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
   obtain ⟨C, hC⟩ :=
     exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow (ι := ι) hpr
-  refine ⟨C ^ (1 / p.toReal), fun {F} _ _ _ f hf => ?_⟩
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top hf.1,
+  refine ⟨C ^ (1 / p.toReal), fun {F} _ _ _ f p₀ hf h1 hp₀p => ?_⟩
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top hf.aestronglyMeasurable,
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top
       (measurable_sharpMaximalFunction volume f).aestronglyMeasurable,
     ENNReal.coe_rpow_of_nonneg _ (by positivity), ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
   refine ENNReal.rpow_le_rpow ?_ (by positivity)
-  simpa only [eNorm_eq_self] using hC f hf
+  simpa only [eNorm_eq_self] using hC hf h1 (hp₀p.trans_eq (ENNReal.ofReal_toReal hp_top).symm)
 
 end Euclidean
 
