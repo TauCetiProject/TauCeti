@@ -20,7 +20,8 @@ of `TauCeti.AlgebraicGeometry.IsOrdinaryNodeOrSmoothAt`. Equivalently, the same 
 change to any field extension of `k`, for instance an algebraic closure. Over an algebraic closure
 of `k`, the nodes are moreover split. When `X_k` has pure relative dimension one, it is also
 equivalent to ask, at each singular point of `X_k`, for a point above it that is an ordinary node
-after some auxiliary finite separable extension of the base field `k`.
+after some auxiliary finite separable extension of the base field `k`, together with finite
+separability of the singular point's own residue field over `k`.
 
 Geometric reducedness of the special fibre is not assumed separately, and the geometric
 irreducible components need not be smooth: a component may cross itself at an ordinary
@@ -34,13 +35,13 @@ All statements are in the namespace `TauCeti.Model`.
   `prestableFamily_toBase_iff_geometricallyConnected_and_forall_isOrdinaryNodeOrSmoothAt`
 * The prestable criterion after base change to a field extension of the residue field:
   `prestableFamily_toBase_iff_geometricallyConnected_and_forall_baseChange_isOrdinaryNodeOrSmoothAt`
-* The equivalent criterion with auxiliary finite separable base-field extensions at the singular
-  points, for a special fibre of pure relative dimension one:
-  `prestableFamily_toBase_iff_forall_notMem_smoothLocus_exists_isSeparable_isOrdinaryNodeOrSmoothAt`
+* The equivalent criterion with finite separable residue fields and auxiliary finite separable
+  base-field extensions at singular points, for a special fibre of pure relative dimension one:
+  `prestableFamily_toBase_iff_geometricallyConnected_and_singularResidueFields_and_nodeCharts`
 
 ## References
 
-* [The Stacks Project, Section 55.18, Semistable reduction](https://stacks.math.columbia.edu/tag/0CDL)
+* [Stacks Project, §55.18, Semistable reduction](https://stacks.math.columbia.edu/tag/0CDL)
 * [The Stacks Project, Section 53.19, Tag 0C46](https://stacks.math.columbia.edu/tag/0C46)
 -/
 
@@ -90,21 +91,30 @@ points.** Let `M` be a proper model of a prestable curve over a discrete valuati
 special fibre has pure relative dimension one. Then `M` is a prestable model exactly when its
 special fibre is geometrically connected and each point outside the smooth locus of the special
 fibre has, after some finite separable extension `L` of the residue field depending on the point,
-a point above it that is a smooth point or an ordinary node. -/
--- The name omits the geometric connectedness conjunct to fit the 100-character line limit.
+a point above it that is a smooth point or an ordinary node, and the singular point's own
+residue field is finite separable over the residue field of `R`. The statement uses its
+canonical identification with the residue field of `Spec k` at the image point. -/
 theorem
-    prestableFamily_toBase_iff_forall_notMem_smoothLocus_exists_isSeparable_isOrdinaryNodeOrSmoothAt
+    prestableFamily_toBase_iff_geometricallyConnected_and_singularResidueFields_and_nodeCharts
     (M : Model R K C toK) [M.IsProper] [PrestableFamily toK]
     [PureRelativeDimension 1 (specialFiber R M.toBase).hom] :
     PrestableFamily M.toBase ↔ GeometricallyConnected (specialFiber R M.toBase).hom ∧
-      ∀ x ∉ (specialFiber R M.toBase).hom.smoothLocus, ∃ (L : Type u) (_ : Field L)
-        (_ : Algebra (IsLocalRing.ResidueField R) L)
-        (_ : FiniteDimensional (IsLocalRing.ResidueField R) L)
-        (_ : Algebra.IsSeparable (IsLocalRing.ResidueField R) L)
-        (y : ↥(pullback (Spec.algebraMap (IsLocalRing.ResidueField R) L)
-          (specialFiber R M.toBase).hom)),
-        pullback.snd _ (specialFiber R M.toBase).hom y = x ∧
-          IsOrdinaryNodeOrSmoothAt (pullback.fst _ (specialFiber R M.toBase).hom) y := by
+      ∀ x ∉ (specialFiber R M.toBase).hom.smoothLocus,
+        letI := ((specialFiber R M.toBase).hom.residueFieldMap x).hom.toAlgebra
+        Module.Finite
+            ((Spec (.of (IsLocalRing.ResidueField R))).residueField
+              ((specialFiber R M.toBase).hom x)) ((specialFiber R M.toBase).left.residueField x) ∧
+          Algebra.IsSeparable
+            ((Spec (.of (IsLocalRing.ResidueField R))).residueField
+              ((specialFiber R M.toBase).hom x)) ((specialFiber R M.toBase).left.residueField x) ∧
+          ∃ (L : Type u) (_ : Field L)
+            (_ : Algebra (IsLocalRing.ResidueField R) L)
+            (_ : FiniteDimensional (IsLocalRing.ResidueField R) L)
+            (_ : Algebra.IsSeparable (IsLocalRing.ResidueField R) L)
+            (y : ↥(pullback (Spec.algebraMap (IsLocalRing.ResidueField R) L)
+              (specialFiber R M.toBase).hom)),
+            pullback.snd _ (specialFiber R M.toBase).hom y = x ∧
+              IsOrdinaryNodeOrSmoothAt (pullback.fst _ (specialFiber R M.toBase).hom) y := by
   rw [M.prestableFamily_toBase_iff_geometricallyConnected_and_atWorstNodal,
     atWorstNodalOfRelativeDimensionOne_iff_notMem_smoothLocus_isSeparable_isOrdinaryNodeOrSmoothAt]
 

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Locality
 import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Base
+import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Smooth
+import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 
 /-!
@@ -296,6 +298,58 @@ theorem AtWorstNodalOfRelativeDimensionOne.syntomic
   rw [← MorphismProperty.cancel_right_of_respectsIso
     (P := @SyntomicOfRelativeDimension 1) (f ∣_ U.val) e.hom]
   exact he.syntomic
+
+/-- At a singular point of a nodal relative curve, the residue field is finite separable over
+the residue field of its image in the base. Over a field `k`, the latter is canonically `k`.
+The singular subscheme is unramified over the base, and its residue field contains that of the
+ambient curve. -/
+theorem AtWorstNodalOfRelativeDimensionOne.finite_separable_residueField_of_notMem_smoothLocus
+    {R : Type u} [CommRing R] {X : Scheme.{u}} {f : X ⟶ Spec (.of R)}
+    (hf : AtWorstNodalOfRelativeDimensionOne f) {x : X}
+    (hx : letI := hf.syntomic; x ∉ f.smoothLocus) :
+    letI := (f.residueFieldMap x).hom.toAlgebra
+    Module.Finite ((Spec (.of R)).residueField (f x)) (X.residueField x) ∧
+      Algebra.IsSeparable ((Spec (.of R)).residueField (f x)) (X.residueField x) := by
+  let : X.Over (Spec (.of R)) := ⟨f⟩
+  have : SyntomicOfRelativeDimension 1 f := hf.syntomic
+  have hAffine : AffineAtWorstNodalOfRelativeDimensionOne f :=
+    (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)).mp hf
+  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := ‹SyntomicOfRelativeDimension 1 f›
+  have : Flat (X ↘ Spec (.of R)) := SyntomicOfRelativeDimension.flat 1 _
+  have : PureRelativeDimension 1 (X ↘ Spec (.of R)) := .of_syntomicOfRelativeDimension _
+  let I := X.singularLocus R
+  have : Unramified (I.subschemeι ≫ f) := hAffine.unramified_singularLocus
+  have hxI : x ∈ Set.range I.subschemeι := by
+    rw [Scheme.IdealSheafData.range_subschemeι]
+    exact (X.mem_support_singularLocus_iff_notMem_smoothLocus (R := R) x).2 hx
+  obtain ⟨z, rfl⟩ := hxI
+  let k := (Spec (.of R)).residueField (f (I.subschemeι z))
+  let L := X.residueField (I.subschemeι z)
+  let E := I.subscheme.residueField z
+  let := (f.residueFieldMap (I.subschemeι z)).hom.toAlgebra
+  let := (I.subschemeι.residueFieldMap z).hom.toAlgebra
+  let : Algebra k E :=
+    (f.residueFieldMap (I.subschemeι z) ≫ I.subschemeι.residueFieldMap z).hom.toAlgebra
+  have : IsScalarTower k L E :=
+    .of_algebraMap_eq fun r ↦ by
+      simp only [RingHom.algebraMap_toAlgebra, CommRingCat.hom_comp, RingHom.comp_apply]
+  -- The composite residue-field map gives the same algebra structure as this tower.
+  have : Module.Finite k E := by
+    convert! Scheme.Hom.finite_residueField (I.subschemeι ≫ f) z using 1
+    congr 1
+    rw [Scheme.residueFieldMap_comp]
+    rfl
+  have : Algebra.IsSeparable k E := by
+    have hh : letI := ((I.subschemeι ≫ f).residueFieldMap z).hom.toAlgebra
+        Algebra.IsSeparable ((Spec (.of R)).residueField ((I.subschemeι ≫ f) z))
+          E := inferInstance
+    convert! hh using 1
+    rw [Scheme.residueFieldMap_comp]
+    rfl
+  exact ⟨FiniteDimensional.of_injective
+    (IsScalarTower.toAlgHom k L E).toLinearMap
+    (algebraMap L E).injective,
+    Algebra.isSeparable_tower_bot_of_isSeparable _ _ E⟩
 
 /-- An étale neighbourhood of a nodal relative curve is a nodal relative curve. -/
 theorem AtWorstNodalOfRelativeDimensionOne.comp_of_etale
