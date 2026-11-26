@@ -50,7 +50,9 @@ theorem hasDerivAt_abs_rpow_mul_self {p : ℝ} (hp : 0 ≤ p) (x : ℝ) :
   · have h : |x| ^ (p - 2) * (x * x) = |x| ^ p := by
       rw [← abs_mul_abs_self, ← sq, ← Real.rpow_natCast, ← Real.rpow_add (abs_pos.2 hx)]
       norm_num
-    simp
+    simp only [add_apply, smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul, mul_one,
+      ContinuousLinearMap.smulRight_apply, coe_innerSL_apply, RCLike.inner_apply, conj_trivial,
+      one_mul]
     linear_combination p * h
 
 /-- The third derivative of `|x| ^ p`, for `p > 3`, is the odd power
@@ -81,7 +83,8 @@ theorem iteratedFDeriv_three_abs_rpow_three_add {β : ℝ} (hβ : 0 < β) :
   rw [iteratedFDeriv_eq_equiv_comp, iteratedDeriv_three_abs_rpow (by linarith)]
   funext x
   rw [Function.comp_apply, show (3 : ℝ) + β - 4 = β - 1 by ring]
-  ring_nf
+  congr 1
+  ring
 
 /-- The third derivative of `|x| ^ (3 + β)` is globally `β`-Hölder, for `0 < β ≤ 1`. -/
 theorem memHolder_iteratedFDeriv_abs_rpow_three_add {β : ℝ≥0} (hβ₀ : 0 < β) (hβ₁ : β ≤ 1) :
