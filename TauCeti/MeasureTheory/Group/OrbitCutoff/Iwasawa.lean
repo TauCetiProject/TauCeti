@@ -32,6 +32,13 @@ on `M` whose unfolding along `Δ` is the Haar measure of `M`.
 * `MeasureTheory.exists_integral_cutoffMeasure_iwasawa`: integration over `Γ \ G` in Iwasawa
   coordinates.
 
+The general facts these proofs use are stated in reusable form: measurable choice of rescaling
+factors (`MeasureTheory.exists_measurable_mul_eq_of_scale`), division of an integral formula by a
+factor `c ∈ (0, ∞]` of the measure (`MeasureTheory.exists_integral_eq_mul_of_smul_measure`), the
+splitting `D × (Γ ∩ N) ≃ Γ` of a subgroup along a complement
+(`Subgroup.exists_equiv_prod_subgroupOf`), and the averaged change of variables `x = b(p) y k⁻¹`
+for a two-sided invariant measure (`MeasureTheory.lintegral_mul_lintegral_translate`).
+
 ## References
 
 * A. W. Knapp, *Lie groups beyond an introduction*, second edition, Birkhäuser, 2002, Proposition
@@ -53,10 +60,12 @@ open scoped ENNReal Pointwise
 
 namespace MeasureTheory
 
-/-- Let `J f` be measurable for measurable `f`, and let each `J f y` differ from `J f x₀` by a
-finite nonzero factor depending on `y` only. For measurable `β` there is a measurable `g` with
-`g y * J f y = β y * J f x₀`. -/
-private theorem exists_measurable_mul_eq_of_scale {X : Type*} [MeasurableSpace X]
+/-- **Measurable rescaling of a family of functions.** Let `J` send measurable functions
+`X → ℝ≥0∞` to measurable functions, and suppose that at each point `y` every `J f y` differs from
+`J f x₀` by the same finite nonzero factor `r y` (independent of `f`). Then for every measurable
+`β` there is a measurable `g` with `g y * J f y = β y * J f x₀` for all `y` and measurable `f`:
+the factors `y ↦ r y` can be chosen measurably. -/
+theorem exists_measurable_mul_eq_of_scale {X : Type*} [MeasurableSpace X]
     {J : (X → ℝ≥0∞) → X → ℝ≥0∞} {x₀ : X} (hJ : ∀ f, Measurable f → Measurable (J f))
     (h_scale : ∀ y, ∃ r : ℝ≥0∞, r ≠ 0 ∧ r ≠ ∞ ∧ ∀ f, Measurable f → r * J f y = J f x₀)
     {β : X → ℝ≥0∞} (hβ : Measurable β) :
@@ -78,10 +87,11 @@ private theorem exists_measurable_mul_eq_of_scale {X : Type*} [MeasurableSpace X
     rw [← hs f hf, ENNReal.mul_div_cancel_right hx_zero hx_top]
   simp only [h_div, mul_assoc, hs φ hφ]
 
-/-- Dividing an integral formula by a factor `c ∈ (0, ∞]` of the measure: for finite nonzero `V`
-there is `a ≠ 0` such that if `F` is integrable for `c • q` with integral `V I`, then `F` is
-integrable for `q` with integral `a I`. -/
-private theorem exists_integral_eq_mul_of_smul_measure {X E : Type*} [MeasurableSpace X]
+/-- **Dividing an integral formula by a factor of the measure.** For `c ∈ (0, ∞]` and finite
+nonzero `V` there is a real `a ≠ 0` such that whenever `F` is integrable for `c • q` with
+`∫ F ∂(c • q) = V • I`, then `F` is integrable for `q` with `∫ F ∂q = a • I`. For `c = ∞` this
+uses that a function integrable for `∞ • q` vanishes `q`-almost everywhere. -/
+theorem exists_integral_eq_mul_of_smul_measure {X E : Type*} [MeasurableSpace X]
     [NormedAddCommGroup E] [NormedSpace ℝ E] (q : Measure X) {c V : ℝ≥0∞} (hc : c ≠ 0)
     (hV_zero : V ≠ 0) (hV_top : V ≠ ∞) :
     ∃ a ≠ (0 : ℝ), ∀ (F : X → E) (I : E), Integrable F (c • q) →
@@ -103,11 +113,12 @@ private theorem exists_integral_eq_mul_of_smul_measure {X E : Type*} [Measurable
     rw [integral_smul_measure] at h_eq
     rw [div_eq_inv_mul, mul_smul, ← h_eq, smul_smul, inv_mul_cancel₀ hc_real, one_smul]
 
-/-- If `i(a) ∈ N` only for `a = 1`, `δ` is injective, and `Γ` contains every `i(δ d)` and lies in
-the union of the `N i(δ d)⁻¹`, then every element of `Γ` is uniquely `i(δ d) γ` with
-`γ ∈ Γ ∩ N`. -/
-private theorem exists_equiv_prod_subgroupOf {G M D : Type*} [Group G] [Group M] {N Γ : Subgroup G}
-    {i : M →* G}
+/-- **Splitting a subgroup along a complement.** Let `i : M →* G` meet the subgroup `N` only in
+`i(1)`, and let `δ : D → M` be injective. If the subgroup `Γ` contains every `i(δ d)` and every
+`g ∈ Γ` has some `g i(δ d) ∈ N`, then `(d, γ) ↦ i(δ d) γ` is a bijection
+`D × (Γ ∩ N) ≃ Γ`. -/
+theorem _root_.Subgroup.exists_equiv_prod_subgroupOf {G M D : Type*} [Group G] [Group M]
+    {N Γ : Subgroup G} {i : M →* G}
     (h_triv : ∀ a : M, i a ∈ N → a = 1) {δ : D → M} (hδ : δ.Injective)
     (hδ_mem : ∀ d, i (δ d) ∈ Γ) (hΓ : ∀ g ∈ Γ, ∃ d, g * i (δ d) ∈ N) :
     ∃ e : D × Γ.subgroupOf N ≃ Γ, ∀ d (γ : Γ.subgroupOf N), (e (d, γ) : G) = i (δ d) * (γ : N) := by
@@ -192,9 +203,11 @@ variable [LocallyCompactSpace G] [SecondCountableTopology G] [T2Space G] [Locall
   [SecondCountableTopology M] [ν.IsHaarMeasure] [lam.IsHaarMeasure]
 
 omit [LocallyCompactSpace G] [T2Space G] [CompactSpace K] in
-/-- Change of variables `x = b(p) y k⁻¹` for a two-sided invariant measure `μ`, averaged over an
-s-finite measure `π` on the pairs `(p, k)`. -/
-private theorem lintegral_mul_lintegral_translate {P : Type*} [MeasurableSpace P] (μ : Measure G)
+/-- **Change of variables `x = b(p) y k⁻¹`, averaged over a measure on the translations.** For a
+left and right invariant s-finite measure `μ` on `G`, a measurable `b : P → G`, a subgroup `K` and
+an s-finite measure `π` on `P × K`,
+`∫ g(y) ∫ f(b(p) y k⁻¹) dπ(p, k) dμ(y) = ∫ (∫ g(b(p)⁻¹ x k) dπ(p, k)) f(x) dμ(x)`. -/
+theorem lintegral_mul_lintegral_translate {P : Type*} [MeasurableSpace P] (μ : Measure G)
     [μ.IsMulLeftInvariant] [μ.IsMulRightInvariant] [SFinite μ] {π : Measure (P × K)} [SFinite π]
     {b : P → G} (hb : Measurable b) {g f : G → ℝ≥0∞} (hg : Measurable g) (hf : Measurable f) :
     ∫⁻ y, g y * ∫⁻ h, f (b h.1 * y * h.2⁻¹) ∂π ∂μ =
@@ -288,7 +301,7 @@ private theorem ofReal_mul_lintegral_cutoffMeasure_tsum {Γ : Subgroup G} [Discr
   have : LocallyCompactSpace N := hN.locallyCompactSpace
   have : SecondCountableTopology N := TopologicalSpace.Subtype.secondCountableTopology (N : Set G)
   have : lam.IsInvInvariant := isInvInvariant_of_isMulRightInvariant lam
-  obtain ⟨e, he⟩ := exists_equiv_prod_subgroupOf h_triv hδ hδ_mem hΓ
+  obtain ⟨e, he⟩ := Subgroup.exists_equiv_prod_subgroupOf h_triv hδ hδ_mem hΓ
   simp only [← e.tsum_eq, tsum_prod', he]
   have : Countable (Γ.subgroupOf N) := countable_of_Lindelof_of_discrete
   rw [lintegral_tsum fun d ↦ (Measurable.tsum fun γ ↦ by fun_prop).aemeasurable,
