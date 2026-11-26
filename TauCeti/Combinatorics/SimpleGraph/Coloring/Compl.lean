@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.Coloring.IndepNum
 
+import TauCeti.Combinatorics.SimpleGraph.Degree
+
 /-!
 # The chromatic numbers of a graph and its complement
 
@@ -74,15 +76,6 @@ private lemma IsBddColoringOn.exists_insert [DecidableEq V] {H : SimpleGraph V}
         obtain ⟨w, hw, hvw, rfl⟩ := h c (mem_range.mp hc)
         exact mem_image_of_mem f (mem_filter.mpr ⟨hw, hvw⟩)
       _ ≤ #{w ∈ s | H.Adj v w} := card_image_le
-
-/-- A vertex outside `s` is adjacent, in exactly one of `G` and `Gᶜ`, to each vertex of `s`. -/
-private lemma card_filter_adj_add_card_filter_compl_adj [DecidableEq V] [DecidableRel G.Adj]
-    {s : Finset V} {v : V} (hv : v ∉ s) :
-    #{w ∈ s | G.Adj v w} + #{w ∈ s | Gᶜ.Adj v w} = #s := by
-  rw [← card_filter_add_card_filter_not (s := s) (G.Adj v)]
-  congr 2
-  refine filter_congr fun w hw ↦ ?_
-  simp [compl_adj, show v ≠ w from fun hvw ↦ hv (hvw ▸ hw)]
 
 /-- The vertices of each finite set `s` can be coloured properly for `G` and for `Gᶜ` with at
 most `#s + 1` colours in total. -/

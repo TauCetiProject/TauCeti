@@ -34,10 +34,9 @@ variable {V α : Type*} {G : SimpleGraph V} {k : ℕ}
 theorem Coloring.card_le_card_mul_indepNum [Fintype V] [Fintype α] (C : G.Coloring α) :
     Fintype.card V ≤ Fintype.card α * G.indepNum := by
   classical
-  rw [← Finset.card_univ, Finset.card_eq_sum_card_fiberwise (f := C) (t := univ)
-    fun _ _ ↦ mem_univ _, ← Finset.card_univ (α := α), ← smul_eq_mul]
-  refine Finset.sum_le_card_nsmul _ _ _ fun c _ ↦ IsIndepSet.card_le_indepNum ?_
-  simpa [Coloring.colorClass] using C.isIndepSet_colorClass c
+  simpa [mul_comm] using card_le_mul_card_image_of_maps_to (f := C) (s := univ) (t := univ)
+    (fun _ _ ↦ mem_univ _) G.indepNum fun c _ ↦ IsIndepSet.card_le_indepNum
+      (by simpa [Coloring.colorClass] using C.isIndepSet_colorClass c)
 
 /-- A finite graph that is colourable with `k` colours has at most `k * G.indepNum` vertices. -/
 theorem Colorable.card_le_mul_indepNum [Fintype V] (h : G.Colorable k) :
