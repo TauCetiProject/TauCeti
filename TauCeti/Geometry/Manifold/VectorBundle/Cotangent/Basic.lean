@@ -70,8 +70,11 @@ Pairing a covector field along a map `u` with the image of a tangent field under
 
 In a chart `c` into a normed space, differentiable with its inverse, a covector `ξ` at `x` is read
 as the covector `ξ ∘ D(c⁻¹)(c x)` of the model space, and this reading is a bijection
-(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective`); in particular only the zero
-covector is read as zero (`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_eq_zero_iff`).
+(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective`), so it vanishes exactly when
+`ξ` does (`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_eq_zero_iff`). If charts `c`
+of `M` and `φ` of `N` read a map `ι : N → M` as a continuous linear map `L`, then by the chain rule
+a covector at `ι y` vanishes on the image of `dι_y` exactly when its reading in `c` vanishes on the
+range of `L` (`TauCeti.comp_mfderiv_eq_zero_iff_of_eq_linearMap`).
 
 The construction follows the Zulip discussion `Cotangent Bundle as a Manifold` in the channel
 `Is there code for X?`, which observed that Mathlib's continuous-linear-map bundle operations
@@ -527,3 +530,69 @@ theorem comp_mfderiv_symm_eq_zero_iff (hc : c.MDifferentiable I 𝓘(𝕜, G)) {
   (comp_mfderiv_symm_bijective hc hx).1.eq_iff' (ContinuousLinearMap.zero_comp _)
 
 end OpenPartialHomeomorph.MDifferentiable
+
+namespace TauCeti
+
+variable {𝕜 E H G E' H' : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*}
+  [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+
+open Filter Topology in
+/-- **Conormal covectors in charts straightening a map.** Let `c` and `φ` be open partial
+homeomorphisms of `M` into `G` and of `N` into `E'` in which a map `ι : N → M` reads as a
+continuous linear map `L`: `c ∘ ι = L ∘ φ` on the source of `φ`. A covector `ξ` at `ι y₀`
+vanishes on the image of `dι_{y₀}` exactly when its reading `ξ ∘ D(c⁻¹)(c (ι y₀))` in `c` vanishes
+on the range of `L`, since near `y₀` the map `ι` is `c⁻¹ ∘ L ∘ φ`. -/
+theorem comp_mfderiv_eq_zero_iff_of_eq_linearMap {ι : N → M} {y₀ : N}
+    (hι : MDifferentiableAt J I ι y₀) {c : OpenPartialHomeomorph M G}
+    {φ : OpenPartialHomeomorph N E'} {L : E' →L[𝕜] G}
+    (hc : MDifferentiableAt 𝓘(𝕜, G) I c.symm (c (ι y₀)))
+    (hφ : MDifferentiableAt J 𝓘(𝕜, E') φ y₀) (hφs : MDifferentiableAt 𝓘(𝕜, E') J φ.symm (φ y₀))
+    (hy₀ : y₀ ∈ φ.source) (hmaps : Set.MapsTo ι φ.source c.source)
+    (hcL : ∀ y ∈ φ.source, c (ι y) = L (φ y)) (ξ : TangentSpace I (ι y₀) →L[𝕜] 𝕜) :
+    ξ ∘L mfderiv J I ι y₀ = 0 ↔ ∀ u, ξ (mfderiv 𝓘(𝕜, G) I c.symm (c (ι y₀)) (L u)) = 0 := by
+  have hu₀ : L (φ y₀) = c (ι y₀) := (hcL y₀ hy₀).symm
+  have hc' : MDifferentiableAt 𝓘(𝕜, G) I c.symm (L (φ y₀)) := hu₀ ▸ hc
+  -- Near `y₀`, `ι = (c⁻¹ ∘ L) ∘ φ`, and near `φ y₀`, `c⁻¹ ∘ L = ι ∘ φ⁻¹`.
+  have h₁ : ι =ᶠ[𝓝 y₀] (c.symm ∘ L) ∘ φ :=
+    eventually_of_mem (φ.open_source.mem_nhds hy₀) fun y hy ↦ by
+      simp [← hcL y hy, c.left_inv (hmaps hy)]
+  have h₂ : c.symm ∘ L =ᶠ[𝓝 (φ y₀)] ι ∘ φ.symm :=
+    eventually_of_mem (φ.open_target.mem_nhds (φ.map_source hy₀)) fun u hu ↦ by
+      have h := hcL _ (φ.map_target hu)
+      rw [φ.right_inv hu] at h
+      simp [← h, c.left_inv (hmaps (φ.map_target hu))]
+  have hDg : mfderiv 𝓘(𝕜, E') I (c.symm ∘ L) (φ y₀) =
+      mfderiv 𝓘(𝕜, G) I c.symm (L (φ y₀)) ∘L L := by
+    rw [mfderiv_comp _ hc' L.mdifferentiableAt, L.mfderiv_eq]
+    -- `L.mfderiv_eq` reads `L` as a map out of `E'`, which is the tangent space
+    -- `TangentSpace 𝓘(𝕜, E') (φ y₀)` by definition.
+    rfl
+  have hDι : mfderiv J I ι y₀ =
+      mfderiv 𝓘(𝕜, E') I (c.symm ∘ L) (φ y₀) ∘L mfderiv J 𝓘(𝕜, E') φ y₀ := by
+    rw [h₁.mfderiv_eq, mfderiv_comp y₀ (hc'.comp _ L.mdifferentiableAt) hφ]
+    -- `Filter.EventuallyEq.mfderiv_eq` inserts `tangentSpaceCast` between the tangent spaces at
+    -- the two equal points `((c⁻¹ ∘ L) ∘ φ) y₀` and `ι y₀`; it is the identity map by definition.
+    rfl
+  have hDι' : mfderiv 𝓘(𝕜, E') I (c.symm ∘ L) (φ y₀) =
+      mfderiv J I ι y₀ ∘L mfderiv 𝓘(𝕜, E') J φ.symm (φ y₀) := by
+    rw [h₂.mfderiv_eq, mfderiv_comp (φ y₀) (by rwa [φ.left_inv hy₀]) hφs, φ.left_inv hy₀]
+    -- As for `hDι`, the `tangentSpaceCast` from `Filter.EventuallyEq.mfderiv_eq` is the identity.
+    rfl
+  -- Read in `c`, the covector pairs with `L u` as `ξ` with the differential of `c⁻¹ ∘ L`.
+  have hkey (u : E') : ξ (mfderiv 𝓘(𝕜, E') I (c.symm ∘ L) (φ y₀) u) =
+      ξ (mfderiv 𝓘(𝕜, G) I c.symm (c (ι y₀)) (L u)) := by
+    rw [hDg, hu₀]
+    exact congrArg ξ (ContinuousLinearMap.comp_apply (mfderiv 𝓘(𝕜, G) I c.symm (c (ι y₀))) L u)
+  simp only [ContinuousLinearMap.ext_iff, ContinuousLinearMap.comp_apply, zero_apply]
+  -- The compositions below are only well typed after unfolding the tangent spaces to the model
+  -- spaces, so `ContinuousLinearMap.comp_apply` is applied as a term rather than by `rw`.
+  refine ⟨fun h u ↦ ?_, fun h v ↦ ?_⟩
+  · rw [← hkey, hDι']
+    exact (congrArg ξ (ContinuousLinearMap.comp_apply _ _ _)).trans (h _)
+  · rw [hDι]
+    exact (congrArg ξ (ContinuousLinearMap.comp_apply _ _ _)).trans ((hkey _).trans (h _))
+
+end TauCeti
