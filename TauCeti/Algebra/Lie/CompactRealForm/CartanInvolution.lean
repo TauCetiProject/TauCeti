@@ -86,6 +86,12 @@ theorem restrictRealForm_involutive :
     Function.Involutive (hσ.restrictRealForm hτ hcomm) :=
   fun x => Subtype.ext (hτ.apply_apply (x : L))
 
+/-- The restriction of `τ` to `Fix σ` is its own inverse. -/
+@[simp]
+theorem restrictRealForm_symm :
+    (hσ.restrictRealForm hτ hcomm).symm = hσ.restrictRealForm hτ hcomm :=
+  (rfl)
+
 end IsLieConjugation
 
 namespace IsCompactConjugation
@@ -95,14 +101,11 @@ compact conjugation commuting with the conjugation `σ`, then `θ = στ|_{Fix �
 involution of the real form `Fix σ`: `B(X, θ X) = -H_τ(X, X) < 0` for `X ≠ 0`. -/
 theorem isCartanInvolution_restrictRealForm (hσ : IsLieConjugation σ)
     (hτ : IsCompactConjugation τ) (hcomm : ∀ x, σ (τ x) = τ (σ x)) :
-    (hσ.restrictRealForm hτ.toIsLieConjugation hcomm).IsCartanInvolution := by
-  refine LieEquiv.isCartanInvolution_iff.mpr
-    ⟨hσ.restrictRealForm_involutive hτ.toIsLieConjugation hcomm, fun x hx => ?_⟩
-  have hpos := hτ.pos x (by simpa using hx)
-  rw [LinearMap.killingHermitianForm_def,
-    ← IsLieConjugation.coe_restrictRealForm_apply hσ hτ.toIsLieConjugation hcomm,
-    ← hσ.killingForm_realForm, ← Complex.ofReal_neg, Complex.zero_lt_real] at hpos
-  linarith
+    (hσ.restrictRealForm hτ.toIsLieConjugation hcomm).IsCartanInvolution :=
+  LieEquiv.isCartanInvolution_iff.mpr
+    ⟨hσ.restrictRealForm_involutive hτ.toIsLieConjugation hcomm, fun _ hx =>
+      hτ.killingForm_realForm_neg hσ (hσ.coe_restrictRealForm_apply hτ.toIsLieConjugation hcomm _)
+        hx⟩
 
 end IsCompactConjugation
 
