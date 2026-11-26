@@ -18,8 +18,8 @@ Let `f : X → β` be any function to a preorder. If `a < f ≤ b` everywhere, t
 the singular homology of `X` (`TauCeti.singularHomologyIsoSublevelPair`). No continuity
 or regularity of `f` is needed. Since the subspace is empty, the comparison is the quotient map
 `TopPair.singularHomologyπ`, an isomorphism by `TauCeti.AlgebraicTopology.Singular.Empty`.
-More generally, if only `f ≤ b` everywhere but the sublevel `{f ≤ a}` is contractible, the pair is
-`(X, {f ≤ a})` and its relative homology is the homology of `X` in positive degrees
+Similarly, if `f ≤ b` everywhere and the sublevel `{f ≤ a}` is contractible (hence nonempty), the
+pair is `(X, {f ≤ a})` and its relative homology is the homology of `X` in positive degrees
 (`TauCeti.singularHomologyIsoSublevelPairOfContractibleSpace`). This reads the homology of `X` off
 the band above a contractible sublevel, as for the height function on a sphere, whose sublevels
 below the maximum are contractible.
