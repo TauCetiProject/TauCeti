@@ -9,7 +9,6 @@ public import TauCeti.Analysis.AbsoluteValue.Place
 public import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace
 public import TauCeti.NumberTheory.NumberField.PlacesOver.Relative
 
-import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 import TauCeti.NumberTheory.NumberField.Global.Places.Rat
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
@@ -64,14 +63,6 @@ namespace NumberField
 namespace InfinitePlace
 
 variable {L : Type*} [Field L] [CharZero L]
-
-/-- An infinite place restricts to the real absolute value on `ℚ`. -/
-@[simp]
-theorem under_rat (v : InfinitePlace L) : v.val.under ℚ = Rat.AbsoluteValue.real := by
-  ext q
-  rw [AbsoluteValue.under_apply, ← coe_apply, ← v.norm_embedding_eq, eq_ratCast (algebraMap ℚ L),
-    map_ratCast, Complex.norm_ratCast]
-  rfl
 
 /-- The place underlying an infinite place. -/
 def toPlace (v : InfinitePlace L) : Place L :=
@@ -131,7 +122,8 @@ places. -/
 @[simp]
 theorem InfinitePlace.toPlace_smul {k L : Type*} [Field k] [Field L] [CharZero L] [Algebra k L]
     (σ : L ≃ₐ[k] L) (v : InfinitePlace L) : (σ • v).toPlace = σ • v.toPlace :=
-  (rfl)
+  Place.val_injective <| AbsoluteValue.ext fun x ↦ by
+    simp [← coe_apply, AlgEquiv.smul_def, AlgEquiv.aut_inv]
 
 /-! ### Finite places -/
 
@@ -139,22 +131,13 @@ namespace FinitePlace
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- The finite place of `ℚ` below a finite place of a number field. -/
-private noncomputable def underRat (v : FinitePlace K) : FinitePlace ℚ :=
-  FinitePlace.mk ⟨v.maximalIdeal.asIdeal.under (𝓞 ℚ), inferInstance,
-    Ideal.under_ne_bot (𝓞 ℚ) v.maximalIdeal.ne_bot⟩
-
-private instance (v : FinitePlace K) : v.LiesOver v.underRat := by
-  rw [FinitePlace.LiesOver, underRat, maximalIdeal_mk]
-  exact ⟨rfl⟩
-
 /-- The local-degree root over `ℚ` of a finite place restricts to a `p`-adic absolute value on
 `ℚ`. -/
 theorem isStandard_under_relativeAbsValue (v : FinitePlace K) :
     Rat.AbsoluteValue.IsStandard ((v.relativeAbsValue ℚ).under ℚ) := by
-  have : Fact (primesEquiv v.underRat.maximalIdeal : ℕ).Prime :=
-    ⟨(primesEquiv v.underRat.maximalIdeal).property⟩
-  rw [LiesOver.under_eq (v.relativeAbsValue ℚ) v.underRat.val, val_eq_padic]
+  have : Fact (primesEquiv (v.under ℚ).maximalIdeal : ℕ).Prime :=
+    ⟨(primesEquiv (v.under ℚ).maximalIdeal).property⟩
+  rw [LiesOver.under_eq (v.relativeAbsValue ℚ) (v.under ℚ).val, val_eq_padic]
   exact .padic _
 
 /-- The place attached to a finite place `v` of a number field: its local-degree root over `ℚ`,
@@ -171,7 +154,7 @@ theorem isEquiv_toPlace (v : FinitePlace K) : v.val.IsEquiv v.toPlace.val :=
 
 /-- The place attached to a finite place is nonarchimedean. -/
 theorem isNonarchimedean_toPlace (v : FinitePlace K) : IsNonarchimedean v.toPlace.val :=
-  (isNonarchimedean_iff_of_liesOver (v.relativeAbsValue ℚ) v.underRat.val).mpr v.underRat.add_le
+  (isNonarchimedean_iff_of_liesOver (v.relativeAbsValue ℚ) (v.under ℚ).val).mpr (v.under ℚ).add_le
 
 theorem toPlace_injective : Function.Injective (toPlace : FinitePlace K → Place K) :=
   fun _ _ h ↦ relativeAbsValue_injective (congrArg Subtype.val h)

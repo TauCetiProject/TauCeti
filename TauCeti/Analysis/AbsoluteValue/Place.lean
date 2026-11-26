@@ -56,6 +56,15 @@ The comparisons with Mathlib's `NumberField.InfinitePlace` and `NumberField.Fini
 * `AbsoluteValue.Place.under_smul`: the action does not change the restriction to a subfield that
   the group fixes pointwise.
 
+## Acknowledgments
+
+Using absolute values for the places of algebraic extensions of `ℚ`, so that finite and infinite
+places are one type, follows the advice of Thomas Browning and Jz Pan on the Lean Zulip, in the
+Riemann-Hypothesis channel, topic Library design discrepancies between RH/Mathlib/TauCeti:
+<https://leanprover.zulipchat.com/#narrow/channel/658556-Riemann-Hypothesis/topic/Library.20design.20discrepancies.20between.20RH.2FMathlib.2FTauCeti/near/643780662>
+and
+<https://leanprover.zulipchat.com/#narrow/channel/658556-Riemann-Hypothesis/topic/Library.20design.20discrepancies.20between.20RH.2FMathlib.2FTauCeti/near/643806146>.
+
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Springer, 1999, Ch. II, §§3 and 8.
@@ -133,11 +142,6 @@ theorem subsingleton_setOf_isEquiv (u : AbsoluteValue L ℝ) :
 
 /-! ### Finite and infinite places -/
 
-/-- The real absolute value on `ℚ` is archimedean. -/
-private theorem not_isNonarchimedean_real : ¬ IsNonarchimedean Rat.AbsoluteValue.real := by
-  rw [isNonarchimedean_iff_forall_natCast_le_one]
-  exact fun h ↦ absurd (h 2) (by simp [Rat.AbsoluteValue.real])
-
 /-- A place is finite if and only if its restriction to `ℚ` is a `p`-adic absolute value. -/
 theorem isNonarchimedean_iff (w : Place L) :
     IsNonarchimedean w.val ↔
@@ -145,7 +149,7 @@ theorem isNonarchimedean_iff (w : Place L) :
   rw [isNonarchimedean_iff_of_liesOver w.val (w.val.under ℚ)]
   rcases Rat.AbsoluteValue.isStandard_iff.mp w.isStandard_under with h | h
   · rw [h]
-    refine iff_of_false not_isNonarchimedean_real ?_
+    refine iff_of_false Rat.AbsoluteValue.not_isNonarchimedean_real ?_
     rintro ⟨p, _, hp⟩
     exact Rat.AbsoluteValue.not_real_isEquiv_padic p (hp ▸ .rfl)
   · refine iff_of_true ?_ h
