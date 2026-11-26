@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Fibration
-public import TauCeti.Geometry.Symplectic.Hamiltonian.LiouvilleArnold.Torus
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
+import TauCeti.Geometry.Manifold.ContMDiff.Pi
+import TauCeti.Geometry.Symplectic.Hamiltonian.LiouvilleArnold.Torus
 
 /-!
 # The period lattice of a regular Lagrangian torus fibration
@@ -29,6 +30,11 @@ The flows of pulled-back functions commute, since the fibres are Lagrangian, so 
 the vector group `T*_b B` (`IsLagrangianTorusFibration.fiberAction_add`), and it is transitive
 (`IsLagrangianTorusFibration.exists_fiberAction_eq`). It is packaged as an additive action
 (`IsLagrangianTorusFibration.fiberAddAction`), so that Mathlib's orbit and stabilizer API applies.
+More generally `t • dg_b` acts by the time-`t` map of the same flow
+(`IsLagrangianTorusFibration.coe_fiberAction_smul_eq_flowOf`). The orbit maps `α ↦ α • x` are
+smooth immersions of `T*_b B` into `M`, whose derivative sends `dg_b` to the Hamiltonian vector of
+`g ∘ π` (`IsLagrangianTorusFibration.mfderiv_fiberAction_apply`,
+`IsLagrangianTorusFibration.injective_mfderiv_fiberAction_apply`).
 
 The period lattice `Λ_b` (`IsLagrangianTorusFibration.periodLattice`) is the subgroup of the
 covectors acting trivially on the fibre. Since the action is transitive and commutative, a covector
@@ -70,6 +76,9 @@ here. Its model, for a lattice spanned by global closed one-forms, is
   map of the Hamiltonian flow of `g ∘ π`.
 * `IsLagrangianTorusFibration.fiberAction_add`, `IsLagrangianTorusFibration.exists_fiberAction_eq`:
   the action is an action of the additive group `T*_b B`, and it is transitive.
+* `IsLagrangianTorusFibration.contMDiff_fiberAction_apply`,
+  `IsLagrangianTorusFibration.injective_mfderiv_fiberAction_apply`: the orbit maps are smooth
+  immersions.
 * `IsLagrangianTorusFibration.mem_periodLattice_iff_fiberAction_eq`,
   `IsLagrangianTorusFibration.mem_periodLattice_iff_flowOf_eq`: the period lattice is the
   stabilizer of any point of the fibre.
@@ -101,41 +110,28 @@ open scoped ContDiff Manifold Topology
 namespace TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration
 
 variable {E H M F H' B : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [T2Space M] [BoundarylessManifold I M] [I.Boundaryless]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [TopologicalSpace H']
-  {J : ModelWithCorners ℝ F H'} [TopologicalSpace B] [ChartedSpace H' B] [IsManifold J ∞ B]
-  [T2Space B]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ F H'} [TopologicalSpace B] [ChartedSpace H' B]
   {σ : SmoothTwoForm I M} {hσ : σ.IsNondegenerate} {π : M → B}
-
-variable (h : hσ.IsLagrangianTorusFibration J π) (hσc : σ.IsClosed)
 
 /-! ### The Hamiltonian flow action of functions on the base -/
 
 section FlowAction
 
-variable {ι : Type*} [Fintype ι] {κ : B → ι → ℝ}
+variable [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [IsManifold J 1 B]
+  {ι : Type*} [Fintype ι] {κ : B → ι → ℝ}
 
-omit [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] [FiniteDimensional ℝ F]
-  [IsManifold J ∞ B] [T2Space B] in
-include h in
-/-- **Pulled-back functions Poisson-commute everywhere.** For `κ : B → ℝ^ι` differentiable on the
-base, the components of `κ ∘ π` Poisson-commute at every point of `M`. -/
-theorem poissonBracket_comp_apply_eq_zero_of_mdifferentiable
-    (hκ : MDifferentiable J 𝓘(ℝ, ι → ℝ) κ) (i j : ι) (y : M) :
-    σ.poissonBracket ((κ ∘ π) · i) ((κ ∘ π) · j) y = 0 :=
-  h.poissonBracket_comp_apply_eq_zero (hκ (π y)) i j
-
-omit [I.Boundaryless] [FiniteDimensional ℝ F] [T2Space B] in
-include h in
 /-- The components of `κ ∘ π` have complete Hamiltonian vector fields, for a `C²` map
 `κ : B → ℝ^ι`: their integral curves stay in the compact fibres of `π`. -/
 theorem isCompleteVectorField_hamiltonianVectorField_comp_apply
-    (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) 2 κ) (i : ι) :
+    (h : hσ.IsLagrangianTorusFibration J π) (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) 2 κ) (i : ι) :
     IsCompleteVectorField (σ.hamiltonianVectorField ((κ ∘ π) · i)) :=
   h.isCompleteVectorField_hamiltonianVectorField_comp (g := fun b ↦ κ b i) h.isProperMap
     (contMDiff_pi_module_iff.1 hκ i)
+
+variable [I.Boundaryless] (h : hσ.IsLagrangianTorusFibration J π) (hσc : σ.IsClosed)
 
 /-- **The Hamiltonian flow action of functions on the base.** For a smooth map `κ : B → ℝ^ι`, the
 vector `v ∈ ℝ^ι` acts on `M` by the time-one map of the Hamiltonian flow of `v ⬝ᵥ (κ ∘ π)`
@@ -147,7 +143,6 @@ def hamiltonianFlowActionComp (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ) (
     (h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable (hκ.mdifferentiable (by simp)))
     (h.isCompleteVectorField_hamiltonianVectorField_comp_apply (hκ.of_le (by simp))) v).toMul
 
-omit [FiniteDimensional ℝ F] [T2Space B] in
 /-- The vector `v` acts by the time-one map of the Hamiltonian flow of `v ⬝ᵥ (κ ∘ π)`. -/
 theorem hamiltonianFlowActionComp_apply (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ) (v : ι → ℝ) (x : M) :
     h.hamiltonianFlowActionComp hσc hκ v x =
@@ -155,21 +150,18 @@ theorem hamiltonianFlowActionComp_apply (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ)
   rw [(⟨hσc, hσ⟩ : σ.IsSymplectic).flowOf_hamiltonianVectorField_dotProduct, one_smul,
     hamiltonianFlowActionComp]
 
-omit [FiniteDimensional ℝ F] [T2Space B] in
 /-- The zero vector acts as the identity. -/
 @[simp]
 theorem hamiltonianFlowActionComp_zero (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ) (x : M) :
     h.hamiltonianFlowActionComp hσc hκ 0 x = x :=
   (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction_zero_apply _ _ _ x
 
-omit [FiniteDimensional ℝ F] [T2Space B] in
 /-- The action of `v + w` is the action of `v` after that of `w`. -/
 theorem hamiltonianFlowActionComp_add (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ) (v w : ι → ℝ) (x : M) :
     h.hamiltonianFlowActionComp hσc hκ (v + w) x =
       h.hamiltonianFlowActionComp hσc hκ v (h.hamiltonianFlowActionComp hσc hκ w x) :=
   (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction_add_apply _ _ _ v w x
 
-omit [FiniteDimensional ℝ F] [T2Space B] in
 /-- Two vectors act alike on `x` exactly when their difference fixes `x`. -/
 theorem hamiltonianFlowActionComp_apply_eq_iff (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ)
     {v w : ι → ℝ} {x : M} :
@@ -178,14 +170,12 @@ theorem hamiltonianFlowActionComp_apply_eq_iff (hκ : ContMDiff J 𝓘(ℝ, ι �
   ((⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction_apply_eq_iff _ _ _).trans
     (IsSymplectic.mem_hamiltonianFlowStabilizer _ _ _ _)
 
-omit [FiniteDimensional ℝ F] [T2Space B] in
 /-- The Hamiltonian flow action of `κ ∘ π` is smooth jointly in the vector and the point. -/
 theorem contMDiff_hamiltonianFlowActionComp_uncurry (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ) :
     ContMDiff (𝓘(ℝ, ι → ℝ).prod I) I ∞
       fun p : (ι → ℝ) × M ↦ h.hamiltonianFlowActionComp hσc hκ p.1 p.2 :=
   (⟨hσc, hσ⟩ : σ.IsSymplectic).contMDiff_hamiltonianFlowAction_uncurry _ _ _
 
-omit [FiniteDimensional ℝ F] [T2Space B] in
 /-- **Moving a map by the Hamiltonian flow action of `κ ∘ π`.** For maps `f : N → ℝ^ι` and
 `g : N → M`, differentiable at `n`, the map `n ↦ f n • g n` pulls `σ` back to
 `g^* σ + ∑ᵢ dfᵢ ∧ d(κᵢ ∘ π ∘ g)` at `n`. This is
@@ -207,9 +197,18 @@ theorem eval₂_mfderiv_hamiltonianFlowActionComp_comp {E'' H'' N : Type*}
 
 end FlowAction
 
-variable (b : B)
-
 /-! ### Coordinates around a fibre and their Hamiltonian flow action -/
+
+/-- The number of coordinates is half the dimension of `M`. -/
+private theorem two_mul_card_eq [FiniteDimensional ℝ E] (h : hσ.IsLagrangianTorusFibration J π)
+    (x : M) : 2 * Fintype.card (Fin (finrank ℝ F)) = finrank ℝ E :=
+  have : Nonempty M := ⟨x⟩
+  h.two_mul_card_fin_finrank
+
+section Coordinates
+
+variable [FiniteDimensional ℝ F] [IsManifold J ∞ B] [T2Space B]
+  (h : hσ.IsLagrangianTorusFibration J π) (b : B)
 
 /-- The coordinates around the fibre over `b` chosen by `exists_coordinates`. -/
 private def coord : B → Fin (finrank ℝ F) → ℝ :=
@@ -219,7 +218,6 @@ private def coord : B → Fin (finrank ℝ F) → ℝ :=
 private def coordEquiv : F ≃L[ℝ] (Fin (finrank ℝ F) → ℝ) :=
   (h.exists_coordinates b).choose_spec.choose
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
 private theorem coord_spec :
     ContMDiff J 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) ∞ (h.coord b) ∧
       mfderiv J 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) (h.coord b) b =
@@ -229,20 +227,17 @@ private theorem coord_spec :
         connectedComponentIn ((h.coord b ∘ π) ⁻¹' {h.coord b (π x)}) x = π ⁻¹' {b} :=
   (h.exists_coordinates b).choose_spec.choose_spec
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
 /-- The fibre over `b` is the connected component of each of its points in its level of the
 coordinates `coord ∘ π`. -/
 private theorem connectedComponentIn_coord_comp (x : π ⁻¹' {b}) :
     connectedComponentIn ((h.coord b ∘ π) ⁻¹' {(h.coord b ∘ π) x}) x = π ⁻¹' {b} :=
   (h.coord_spec b).2.2.2 x x.property
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
 /-- The coordinates `coord ∘ π` are regular along the fibre over `b`. -/
 private theorem isRegularPoint_coord_comp {y : M} (hy : y ∈ π ⁻¹' {b}) :
     IsRegularPoint I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) (h.coord b ∘ π) y :=
   (h.coord_spec b).2.2.1 y hy
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
 /-- The coordinates `coord ∘ π` are regular on the connected component of a point of the fibre
 in its level. -/
 private theorem isRegularPoint_coord_comp_of_mem_connectedComponentIn (x : π ⁻¹' {b}) :
@@ -250,37 +245,9 @@ private theorem isRegularPoint_coord_comp_of_mem_connectedComponentIn (x : π �
       IsRegularPoint I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) (h.coord b ∘ π) y := fun _ hy ↦
   h.isRegularPoint_coord_comp b ((h.connectedComponentIn_coord_comp b x).subset hy)
 
-omit [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] [FiniteDimensional ℝ F]
-  [IsManifold J ∞ B] [T2Space B] in
-include h in
-/-- The number of coordinates is half the dimension of `M`. -/
-private theorem two_mul_card_eq (x : M) :
-    2 * Fintype.card (Fin (finrank ℝ F)) = finrank ℝ E :=
-  have : Nonempty M := ⟨x⟩
-  h.two_mul_card_fin_finrank
-
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
 private theorem contMDiff_coord_comp :
     ContMDiff I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) ∞ (h.coord b ∘ π) :=
   (h.coord_spec b).1.comp h.contMDiff
-
-omit [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
-private theorem poissonBracket_coord_comp (i j : Fin (finrank ℝ F)) (y : M) :
-    σ.poissonBracket ((h.coord b ∘ π) · i) ((h.coord b ∘ π) · j) y = 0 :=
-  h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable
-    ((h.coord_spec b).1.mdifferentiable (by simp)) i j y
-
-omit [I.Boundaryless] in
-private theorem isCompleteVectorField_coord_comp (i : Fin (finrank ℝ F)) :
-    IsCompleteVectorField (σ.hamiltonianVectorField ((h.coord b ∘ π) · i)) :=
-  h.isCompleteVectorField_hamiltonianVectorField_comp_apply ((h.coord_spec b).1.of_le (by simp)) i
-
-/-- The stabilizer of `x` for the Hamiltonian flow action of the coordinates `coord ∘ π`. -/
-private abbrev coordStabilizer (x : M) : AddSubgroup (Fin (finrank ℝ F) → ℝ) :=
-  (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer (h.contMDiff_coord_comp b)
-    (h.poissonBracket_coord_comp b)
-    (h.isCompleteVectorField_coord_comp b)
-    x
 
 /-- The coordinates of a covector at `b` in the basis dual to the coordinates `coord`. -/
 private def dualCoord : (F →L[ℝ] ℝ) ≃L[ℝ] (Fin (finrank ℝ F) → ℝ) :=
@@ -288,10 +255,51 @@ private def dualCoord : (F →L[ℝ] ℝ) ≃L[ℝ] (Fin (finrank ℝ F) → ℝ
     (LinearMap.toContinuousLinearMap.symm.trans
       (dotProductEquiv ℝ (Fin (finrank ℝ F))).symm)).toContinuousLinearEquiv
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
 private theorem dualCoord_apply (α : F →L[ℝ] ℝ) (i : Fin (finrank ℝ F)) :
     h.dualCoord b α i = α ((h.coordEquiv b).symm (Pi.single i 1)) := by
   simp [dualCoord, dotProductEquiv]
+
+/-- A covector `α` at `b` is the differential at `b` of the function `v ⬝ᵥ coord`, where `v` are the
+dual coordinates of `α`. -/
+private theorem mvfderiv_dualCoord_dotProduct_coord (α : F →L[ℝ] ℝ) :
+    mvfderiv J (fun c ↦ h.dualCoord b α ⬝ᵥ h.coord b c) b = α := by
+  let φ : (Fin (finrank ℝ F) → ℝ) →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
+    (dotProductEquiv ℝ (Fin (finrank ℝ F)) (h.dualCoord b α))
+  have h2 : φ.comp (h.coordEquiv b : F →L[ℝ] Fin (finrank ℝ F) → ℝ) = α :=
+    (h.dualCoord b).injective (funext fun i ↦ by simp [φ, dualCoord_apply])
+  -- The chain rule for the linear map `φ`, with `d(coord)_b = coordEquiv`.
+  refine ContinuousLinearMap.ext fun w ↦
+    (φ.mvfderiv_comp_apply (((h.coord_spec b).1 b).mdifferentiableAt (by simp)) w).trans ?_
+  rw [mvfderiv_apply_eq_mfderiv_apply, (h.coord_spec b).2.1]
+  exact (φ.comp_apply _ w).symm.trans (DFunLike.congr_fun h2 w)
+
+variable [FiniteDimensional ℝ E]
+
+private theorem poissonBracket_coord_comp (i j : Fin (finrank ℝ F)) (y : M) :
+    σ.poissonBracket ((h.coord b ∘ π) · i) ((h.coord b ∘ π) · j) y = 0 :=
+  h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable
+    ((h.coord_spec b).1.mdifferentiable (by simp)) i j y
+
+variable [T2Space M] [BoundarylessManifold I M]
+
+private theorem isCompleteVectorField_coord_comp (i : Fin (finrank ℝ F)) :
+    IsCompleteVectorField (σ.hamiltonianVectorField ((h.coord b ∘ π) · i)) :=
+  h.isCompleteVectorField_hamiltonianVectorField_comp_apply ((h.coord_spec b).1.of_le (by simp)) i
+
+end Coordinates
+
+section FiberAction
+
+variable [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless]
+  [FiniteDimensional ℝ F] [IsManifold J ∞ B] [T2Space B]
+  (h : hσ.IsLagrangianTorusFibration J π) (hσc : σ.IsClosed) (b : B)
+
+/-- The stabilizer of `x` for the Hamiltonian flow action of the coordinates `coord ∘ π`. -/
+private abbrev coordStabilizer (x : M) : AddSubgroup (Fin (finrank ℝ F) → ℝ) :=
+  (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer (h.contMDiff_coord_comp b)
+    (h.poissonBracket_coord_comp b)
+    (h.isCompleteVectorField_coord_comp b)
+    x
 
 /-! ### The action of the cotangent space on a fibre -/
 
@@ -306,23 +314,22 @@ def fiberAction (α : F →L[ℝ] ℝ) (x : π ⁻¹' {b}) : π ⁻¹' {b} :=
 private theorem coe_fiberAction (α : F →L[ℝ] ℝ) (x : π ⁻¹' {b}) :
     (h.fiberAction hσc b α x : M) =
       h.hamiltonianFlowActionComp hσc (h.coord_spec b).1 (h.dualCoord b α) x :=
-  (rfl)
+  rfl
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
-/-- A covector `α` at `b` is the differential at `b` of the function `v ⬝ᵥ coord`, where `v` are the
-dual coordinates of `α`. -/
-private theorem mvfderiv_dualCoord_dotProduct_coord (α : F →L[ℝ] ℝ) :
-    mvfderiv J (fun c ↦ h.dualCoord b α ⬝ᵥ h.coord b c) b = α := by
-  classical
-  let φ : (Fin (finrank ℝ F) → ℝ) →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
-    (dotProductEquiv ℝ (Fin (finrank ℝ F)) (h.dualCoord b α))
-  have h2 : φ.comp (h.coordEquiv b : F →L[ℝ] Fin (finrank ℝ F) → ℝ) = α :=
-    (h.dualCoord b).injective (funext fun i ↦ by simp [φ, dualCoord_apply])
-  -- The chain rule for the linear map `φ`, with `d(coord)_b = coordEquiv`.
-  refine ContinuousLinearMap.ext fun w ↦
-    (φ.mvfderiv_comp_apply (((h.coord_spec b).1 b).mdifferentiableAt (by simp)) w).trans ?_
-  rw [mvfderiv_apply_eq_mfderiv_apply, (h.coord_spec b).2.1]
-  exact (φ.comp_apply _ w).symm.trans (DFunLike.congr_fun h2 w)
+/-- **A line of covectors through `dg_b` acts by the Hamiltonian flow of `g ∘ π`.** For every
+`C²` function `g` on `B` with differential `α` at `b`, the action of `t • α` moves each point `x` of
+the fibre over `b` to the time-`t` image of `x` under the flow of the Hamiltonian vector field of
+`g ∘ π`. -/
+theorem coe_fiberAction_smul_eq_flowOf {α : F →L[ℝ] ℝ} {g : B → ℝ}
+    (hg : ContMDiff J 𝓘(ℝ) 2 g) (hgα : mvfderiv J g b = α) (t : ℝ) (x : π ⁻¹' {b}) :
+    (h.fiberAction hσc b (t • α) x : M) = flowOf (σ.hamiltonianVectorField (g ∘ π)) t x := by
+  have hφ : ContMDiff J 𝓘(ℝ) 2 fun c ↦ h.dualCoord b α ⬝ᵥ h.coord b c :=
+    contMDiff_const.dotProduct ((h.coord_spec b).1.of_le (by simp))
+  have hx : π x = b := x.property
+  rw [coe_fiberAction, map_smul, hamiltonianFlowActionComp,
+    ← IsSymplectic.flowOf_hamiltonianVectorField_dotProduct]
+  exact h.flowOf_hamiltonianVectorField_comp_eq h.isProperMap hφ hg
+    (by rw [hx, h.mvfderiv_dualCoord_dotProduct_coord b α, hgα]) t
 
 /-- **A covector `dg_b` acts by the time-one map of the Hamiltonian flow of `g ∘ π`.** For every
 `C²` function `g` on `B` with differential `α` at `b`, the action of `α` moves each point `x` of
@@ -331,18 +338,7 @@ the fibre over `b` to the time-one image of `x` under the flow of the Hamiltonia
 theorem coe_fiberAction_eq_flowOf {α : F →L[ℝ] ℝ} {g : B → ℝ}
     (hg : ContMDiff J 𝓘(ℝ) 2 g) (hgα : mvfderiv J g b = α) (x : π ⁻¹' {b}) :
     (h.fiberAction hσc b α x : M) = flowOf (σ.hamiltonianVectorField (g ∘ π)) 1 x := by
-  classical
-  -- The covector `α` is the differential at `b` of the function `v ⬝ᵥ coord`, where `v` are the
-  -- dual coordinates of `α`.
-  let φ : (Fin (finrank ℝ F) → ℝ) →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
-    (dotProductEquiv ℝ (Fin (finrank ℝ F)) (h.dualCoord b α))
-  have hφ : ContMDiff J 𝓘(ℝ) 2 (φ ∘ h.coord b) :=
-    (φ.contMDiff.comp (h.coord_spec b).1).of_le (by simp)
-  have hdφ : mvfderiv J (φ ∘ h.coord b) b = α := h.mvfderiv_dualCoord_dotProduct_coord b α
-  have hx : π x = b := x.property
-  rw [coe_fiberAction, hamiltonianFlowActionComp_apply]
-  exact h.flowOf_hamiltonianVectorField_comp_eq h.isProperMap hφ hg
-    (by rw [hx, hdφ, hgα]) 1
+  simpa using h.coe_fiberAction_smul_eq_flowOf hσc b hg hgα 1 x
 
 /-- The zero covector acts as the identity on the fibre. -/
 @[simp]
@@ -396,6 +392,80 @@ theorem isPretransitive_fiberAddAction :
   letI := h.fiberAddAction hσc b
   ⟨h.exists_fiberAction_eq hσc b⟩
 
+/-! ### The orbit maps of the action -/
+
+/-- The orbit map of a point of the fibre is the orbit map of the coordinate flow action, composed
+with the dual coordinates. -/
+private theorem fiberAction_apply_eq_comp (x : π ⁻¹' {b}) :
+    (fun α ↦ (h.fiberAction hσc b α x : M)) =
+      (fun v ↦ h.hamiltonianFlowActionComp hσc (h.coord_spec b).1 v x) ∘ h.dualCoord b :=
+  rfl
+
+/-- The orbit map of a point of the fibre is the orbit map of the coordinate flow action, read in
+dual coordinates. -/
+private theorem hasMFDerivAt_fiberAction_apply (x : π ⁻¹' {b}) (α : F →L[ℝ] ℝ) :
+    HasMFDerivAt 𝓘(ℝ, F →L[ℝ] ℝ) I (fun α ↦ (h.fiberAction hσc b α x : M)) α
+      ((mfderiv 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) I
+          (fun v ↦ h.hamiltonianFlowActionComp hσc (h.coord_spec b).1 v x)
+          (h.dualCoord b α)).comp (h.dualCoord b : (F →L[ℝ] ℝ) →L[ℝ] Fin (finrank ℝ F) → ℝ)) := by
+  rw [h.fiberAction_apply_eq_comp hσc b x]
+  exact (((⟨hσc, hσ⟩ : σ.IsSymplectic).contMDiff_hamiltonianFlowAction_apply _ _ _
+    x).mdifferentiableAt (by simp)).hasMFDerivAt.comp α
+    (h.dualCoord b : (F →L[ℝ] ℝ) →L[ℝ] Fin (finrank ℝ F) → ℝ).hasMFDerivAt
+
+/-- **The orbit maps of the action of `T*_b B` are smooth.** -/
+theorem contMDiff_fiberAction_apply (x : π ⁻¹' {b}) :
+    ContMDiff 𝓘(ℝ, F →L[ℝ] ℝ) I ∞ fun α ↦ (h.fiberAction hσc b α x : M) := by
+  rw [h.fiberAction_apply_eq_comp hσc b x]
+  exact ((⟨hσc, hσ⟩ : σ.IsSymplectic).contMDiff_hamiltonianFlowAction_apply _ _ _ x).comp
+    (h.dualCoord b : (F →L[ℝ] ℝ) →L[ℝ] Fin (finrank ℝ F) → ℝ).contMDiff
+
+/-- The orbit maps of the action of `T*_b B` are continuous. -/
+theorem continuous_fiberAction_apply (x : π ⁻¹' {b}) :
+    Continuous fun α ↦ h.fiberAction hσc b α x :=
+  (h.contMDiff_fiberAction_apply hσc b x).continuous.subtype_mk _
+
+/-- **The derivative of an orbit map of the action of `T*_b B`.** For any `g : B → ℝ` with
+`dg_b = β`, the derivative at `α` of the orbit map `α ↦ fiberAction α x` sends `β` to the
+Hamiltonian vector of `g ∘ π` at `fiberAction α x`. -/
+theorem mfderiv_fiberAction_apply (x : π ⁻¹' {b}) (α : F →L[ℝ] ℝ) {β : F →L[ℝ] ℝ} {g : B → ℝ}
+    (hgβ : mvfderiv J g b = β) :
+    mfderiv 𝓘(ℝ, F →L[ℝ] ℝ) I (fun α ↦ (h.fiberAction hσc b α x : M)) α β =
+      σ.hamiltonianVectorField (g ∘ π) (h.fiberAction hσc b α x) := by
+  have hy : π (h.fiberAction hσc b α x) = b := (h.fiberAction hσc b α x).property
+  by_cases hg : MDifferentiableAt J 𝓘(ℝ) g b
+  · set w := h.dualCoord b β
+    have hd : MDifferentiableAt J 𝓘(ℝ) (fun c ↦ w ⬝ᵥ h.coord b c) b :=
+      (contMDiffAt_const.dotProduct ((h.coord_spec b).1 b)).mdifferentiableAt (by simp)
+    rw [(h.hasMFDerivAt_fiberAction_apply hσc b x α).mfderiv]
+    -- The velocity is the Hamiltonian vector of `w ⬝ᵥ (coord ∘ π)`, and `d(w ⬝ᵥ coord)_b = β`.
+    refine ((⟨hσc, hσ⟩ : σ.IsSymplectic).mfderiv_hamiltonianFlowAction_apply _ _ _ x _ w).trans <|
+      (hamiltonianVectorField_dotProduct (fun i ↦ (contMDiff_pi_module_iff.1
+        (h.contMDiff_coord_comp b) i).mdifferentiableAt (by simp)) w).symm.trans ?_
+    exact hamiltonianVectorField_comp_eq_of_mvfderiv_eq (g := fun c ↦ w ⬝ᵥ h.coord b c)
+      (x := (h.fiberAction hσc b α x : M))
+      (h.mdifferentiableAt _) (by rw [hy]; exact hd) (by rw [hy]; exact hg)
+      (by rw [hy, h.mvfderiv_dualCoord_dotProduct_coord b β, hgβ])
+  · -- If `g` is not differentiable at `b`, neither is `g ∘ π` at `fiberAction α x`, so both
+    -- sides vanish.
+    have hβ : β = 0 := by
+      rw [← hgβ, mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg]
+      -- `TangentSpace J b` is a type synonym of `F`.
+      rfl
+    have hgπ : ¬ MDifferentiableAt I 𝓘(ℝ) (g ∘ π) (h.fiberAction hσc b α x) :=
+      ((h.isSubmersion.isSubmersionAt _).mdifferentiableAt_comp_iff (by simp)).not.mpr
+        (by rwa [hy])
+    rw [hβ, σ.hamiltonianVectorField_eq_zero_of_not_mdifferentiableAt hgπ]
+    exact map_zero _
+
+/-- **The orbit maps of the action of `T*_b B` are immersions.** -/
+theorem injective_mfderiv_fiberAction_apply (x : π ⁻¹' {b}) (α : F →L[ℝ] ℝ) :
+    Injective (mfderiv 𝓘(ℝ, F →L[ℝ] ℝ) I (fun α ↦ (h.fiberAction hσc b α x : M)) α) := by
+  rw [(h.hasMFDerivAt_fiberAction_apply hσc b x α).mfderiv]
+  exact ((⟨hσc, hσ⟩ : σ.IsSymplectic).injective_mfderiv_hamiltonianFlowAction_apply _ _ _
+    (h.isRegularPoint_coord_comp b (h.fiberAction hσc b α x).property)).comp
+    (h.dualCoord b).injective
+
 /-! ### The period lattice -/
 
 /-- **The period lattice** `Λ_b ⊆ T*_b B` of the fibration at `b`: the subgroup of the covectors
@@ -446,39 +516,28 @@ complete Hamiltonian vector fields, and let `x` be a point of the fibre over `b`
 for the Hamiltonian flow action of `κ ∘ π`. -/
 theorem mem_periodLattice_iff_mem_hamiltonianFlowStabilizer {ι : Type*} [Fintype ι]
     {κ : B → ι → ℝ} (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ)
-    (hcomm : ∀ i j y, σ.poissonBracket ((κ ∘ π) · i) ((κ ∘ π) · j) y = 0)
-    (hc : ∀ i, IsCompleteVectorField (σ.hamiltonianVectorField ((κ ∘ π) · i)))
     (x : π ⁻¹' {b}) (v : ι → ℝ) {α : F →L[ℝ] ℝ} (hα : mvfderiv J (fun c ↦ v ⬝ᵥ κ c) b = α) :
     α ∈ h.periodLattice hσc b ↔
-      v ∈ (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer (hκ.comp h.contMDiff) hcomm hc x
-    := by
-  classical
-  have hg : ContMDiff J 𝓘(ℝ) 2 fun c ↦ v ⬝ᵥ κ c :=
-    ((LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι v)).contMDiff.comp hκ).of_le
-      (by simp)
-  rw [h.mem_periodLattice_iff_flowOf_eq hσc b hg hα x,
-    IsSymplectic.mem_hamiltonianFlowStabilizer]
-  -- The time-one map of the flow of `v ⬝ᵥ (κ ∘ π)` is the action of `v`.
-  have hflow := (⟨hσc, hσ⟩ : σ.IsSymplectic).flowOf_hamiltonianVectorField_dotProduct
-    (hκ.comp h.contMDiff) hcomm hc v 1 x
-  rw [one_smul] at hflow
-  exact iff_of_eq (congrArg (· = (x : M)) hflow)
+      v ∈ (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer (hκ.comp h.contMDiff)
+        (h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable (hκ.mdifferentiable (by simp)))
+        (h.isCompleteVectorField_hamiltonianVectorField_comp_apply (hκ.of_le (by simp))) x := by
+  rw [h.mem_periodLattice_iff_flowOf_eq hσc b (contMDiff_const.dotProduct (hκ.of_le (by simp)))
+    hα x, IsSymplectic.mem_hamiltonianFlowStabilizer]
+  exact iff_of_eq (congrArg (· = (x : M)) (h.hamiltonianFlowActionComp_apply hσc hκ v x).symm)
 
 /-- The period lattice is the stabilizer of the coordinate flow action, read in dual coordinates. -/
-private theorem mem_periodLattice_iff_mem_coordStabilizer {α : F →L[ℝ] ℝ}
-    (x : π ⁻¹' {b}) :
+private theorem mem_periodLattice_iff_mem_coordStabilizer {α : F →L[ℝ] ℝ} (x : π ⁻¹' {b}) :
     α ∈ h.periodLattice hσc b ↔ h.dualCoord b α ∈ h.coordStabilizer hσc b x :=
-  h.mem_periodLattice_iff_mem_hamiltonianFlowStabilizer hσc b (h.coord_spec b).1
-    (h.poissonBracket_coord_comp b) (h.isCompleteVectorField_coord_comp b) x _
+  h.mem_periodLattice_iff_mem_hamiltonianFlowStabilizer hσc b (h.coord_spec b).1 x _
     (h.mvfderiv_dualCoord_dotProduct_coord b α)
 
 /-- Two covectors act alike on a point of the fibre exactly when they differ by an element of the
 period lattice. -/
 theorem fiberAction_eq_fiberAction_iff {α β : F →L[ℝ] ℝ} (x : π ⁻¹' {b}) :
     h.fiberAction hσc b α x = h.fiberAction hσc b β x ↔ -α + β ∈ h.periodLattice hσc b := by
-  rw [Subtype.ext_iff, coe_fiberAction, coe_fiberAction, hamiltonianFlowActionComp_apply_eq_iff,
-    ← map_neg, ← map_add, ← coe_fiberAction, ← Subtype.ext_iff,
-    h.mem_periodLattice_iff_fiberAction_eq hσc b x]
+  let _ := h.fiberAddAction hσc b
+  rw [h.periodLattice_eq_stabilizer hσc b x, AddAction.mem_stabilizer_iff, add_vadd,
+    neg_vadd_eq_iff, eq_comm, fiberAddAction_vadd, fiberAddAction_vadd]
 
 /-- The dual coordinates map the period lattice onto the stabilizer of a point of the fibre for the
 coordinate flow action. -/
@@ -567,5 +626,7 @@ theorem quotientPeriodLatticeHomeomorph_mk (x : π ⁻¹' {b}) (α : F →L[ℝ]
       ContinuousLinearEquiv.toContinuousAddEquiv_coe, coe_fiberAction, hamiltonianFlowActionComp]
     -- `Homeomorph.setCongr` does not change the underlying point.
     exact IsSymplectic.coe_quotientHamiltonianFlowStabilizerHomeomorph_mk _ _ _ _ _ _ _
+
+end FiberAction
 
 end TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration

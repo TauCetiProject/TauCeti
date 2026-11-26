@@ -10,7 +10,9 @@ public import Mathlib.Probability.Process.Indistinguishable
 public import TauCeti.Probability.BrownianMotion.Filtered
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.TimeMeasure
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
+import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Process.Predictable.Basic
@@ -27,10 +29,13 @@ elementary integrals at `t` converge in probability to `I t`. Square energy is a
 integral, so an infinite energy is never read as the default value zero of a divergent Bochner
 integral. The heights need not be bounded; bounded approximants are a special case.
 
-Against a pre-Brownian motion relative to the filtration, any limit in probability of the
-elementary integrals of simple holdings approximating the integrand on `(0,t]` in square energy
-in probability agrees almost surely with the Itô integral at `t`
-(`TauCeti.Probability.IsItoIntegral.ae_eq_of_tendstoInMeasure`). Such a sequence and the one
+Against a pre-Brownian motion relative to the filtration, the elementary integrals of any simple
+holdings approximating the integrand on `(0,t]` in square energy in probability converge in
+probability to the Itô integral at `t`
+(`TauCeti.Probability.IsItoIntegral.tendstoInMeasure_simpleGains`), and also at every earlier
+time (`TauCeti.Probability.IsItoIntegral.tendstoInMeasure_simpleGains_of_le`); so any limit in
+probability of them agrees almost surely with the Itô integral at `t`
+(`TauCeti.Probability.IsItoIntegral.ae_eq_of_tendstoInMeasure`). Such approximants and the ones
 witnessing the Itô integral are compared on one common grid. Their difference has square energy
 converging to zero in probability, so its elementary integral at `t` converges to zero in
 probability by the energy estimate
@@ -42,9 +47,15 @@ usual conditions on the filtration are needed. Conversely, the predicate is inva
 indistinguishability (`TauCeti.Probability.IsItoIntegral.congr`), so it determines its
 integrals exactly up to indistinguishability (`TauCeti.Probability.isItoIntegral_iff_indist`).
 
+Against an adapted integrator the Itô integral is almost everywhere strongly measurable at each
+time (`TauCeti.Probability.IsItoIntegral.aestronglyMeasurable`).
+
 The elementary integral of a simple holding is its Itô integral against every process with
 almost surely continuous paths (`TauCeti.Probability.isItoIntegral_simpleGains`). Existence of
 the integral is not proved here.
+
+The predicate transfers to an absolutely continuous finite measure with the same driver
+and approximants; this does not assert that the driver is still Brownian.
 
 ## References
 
@@ -86,6 +97,16 @@ structure IsItoIntegral (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H I :
         atTop (𝓝 0)) ∧
     TendstoInMeasure P (fun k ↦ Finance.simpleGains (τ k) (n k) (a k) W t) atTop (I t)
 
+/-- An Itô integral with respect to a fixed driver is still an Itô integral under an
+absolutely continuous finite measure. The same simple holdings witness the approximation. -/
+theorem IsItoIntegral.mono_ac {Q : Measure Ω} [IsFiniteMeasure Q]
+    (hI : IsItoIntegral ℱ P W H I) (hQP : Q ≪ P) : IsItoIntegral ℱ Q W H I where
+  isStronglyPredictable := hI.isStronglyPredictable
+  ae_continuous := hQP.ae_le hI.ae_continuous
+  exists_approx t := by
+    obtain ⟨n, τ, a, hτ, ha, hE, hG⟩ := hI.exists_approx t
+    exact ⟨n, τ, a, hτ, ha, fun ε hε ↦ hQP.tendsto_measure_zero (hE ε hε), hG.mono_ac hQP⟩
+
 /-- Two sequences of predictable processes approximating the same predictable process in
 square energy in probability on `(0,t]` approximate each other there. -/
 private theorem tendsto_measure_le_lintegral_sub (hH : IsStronglyPredictable ℱ H)
@@ -117,20 +138,18 @@ private theorem tendsto_measure_le_lintegral_sub (hH : IsStronglyPredictable ℱ
     _ = 4 * (ε / 4) := by ring
     _ ≤ ε := ENNReal.mul_div_le
 
-/-- **Identification of the Itô integral at a time.** Against a pre-Brownian motion relative
-to the filtration, if simple holdings with heights known at the left endpoints of their
-intervals approximate the integrand on `(0,t]` in square energy in probability, then every
-limit in probability of their elementary integrals at `t` agrees almost surely with the Itô
-integral at `t`. -/
-theorem IsItoIntegral.ae_eq_of_tendstoInMeasure (hW : IsFilteredPreBrownianReal ℱ W P)
+/-- **Convergence to the Itô integral.** Against a pre-Brownian motion relative to the
+filtration, if simple holdings with heights known at the left endpoints of their intervals
+approximate the integrand on `(0,t]` in square energy in probability, then their elementary
+integrals at `t` converge in probability to the Itô integral at `t`. -/
+theorem IsItoIntegral.tendstoInMeasure_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0} {m : ℕ → ℕ} {σ : ℕ → ℕ → ℝ≥0}
-    {b : ℕ → ℕ → Ω → ℝ} {X : Ω → ℝ} (hσ : ∀ k, MonotoneOn (σ k) (Iic (m k)))
+    {b : ℕ → ℕ → Ω → ℝ} (hσ : ∀ k, MonotoneOn (σ k) (Iic (m k)))
     (hb : ∀ k j, j < m k → StronglyMeasurable[ℱ (σ k j)] (b k j))
     (hLH : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
       ∫⁻ s, ‖Finance.simpleHolding (σ k) (m k) (b k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t})
-        atTop (𝓝 0))
-    (hLX : TendstoInMeasure P (fun k ↦ Finance.simpleGains (σ k) (m k) (b k) W t) atTop X) :
-    I t =ᵐ[P] X := by
+        atTop (𝓝 0)) :
+    TendstoInMeasure P (fun k ↦ Finance.simpleGains (σ k) (m k) (b k) W t) atTop (I t) := by
   obtain ⟨n, τ, a, hτ, ha, hKH, hKI⟩ := hI.exists_approx t
   choose N ρ c _ hρ hc hhold hgain using fun k ↦
     Finance.exists_simpleHolding_simpleGains_eq_sub ℱ (hτ k) (hσ k) (ha k) (hb k)
@@ -145,15 +164,49 @@ theorem IsItoIntegral.ae_eq_of_tendstoInMeasure (hW : IsFilteredPreBrownianReal 
         (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k)) t hKH hLH
     exact (hW.tendstoInMeasure_simpleGains_of_energy (fun k ↦ (hρ k).monotoneOn) hc t
       henergy).congr_left fun k ↦ ae_of_all _ fun ω ↦ hgain k W t ω
-  -- Compare almost surely convergent subsequences of the three sequences.
-  obtain ⟨ns, hns, hK⟩ := hKI.exists_seq_tendsto_ae
-  obtain ⟨ns', hns', hL⟩ := (hLX.comp hns.tendsto_atTop).exists_seq_tendsto_ae
-  obtain ⟨ns'', hns'', hD⟩ :=
-    ((hdiff.comp hns.tendsto_atTop).comp hns'.tendsto_atTop).exists_seq_tendsto_ae
-  filter_upwards [hK, hL, hD] with ω hKω hLω hDω
-  have hsub := (hKω.comp (hns'.tendsto_atTop.comp hns''.tendsto_atTop)).sub
-    (hLω.comp hns''.tendsto_atTop)
-  exact sub_eq_zero.mp (tendsto_nhds_unique hsub hDω)
+  simpa using hKI.sub hdiff
+
+/-- **Identification of the Itô integral at a time.** Against a pre-Brownian motion relative
+to the filtration, if simple holdings with heights known at the left endpoints of their
+intervals approximate the integrand on `(0,t]` in square energy in probability, then every
+limit in probability of their elementary integrals at `t` agrees almost surely with the Itô
+integral at `t`. -/
+theorem IsItoIntegral.ae_eq_of_tendstoInMeasure (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0} {m : ℕ → ℕ} {σ : ℕ → ℕ → ℝ≥0}
+    {b : ℕ → ℕ → Ω → ℝ} {X : Ω → ℝ} (hσ : ∀ k, MonotoneOn (σ k) (Iic (m k)))
+    (hb : ∀ k j, j < m k → StronglyMeasurable[ℱ (σ k j)] (b k j))
+    (hLH : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
+      ∫⁻ s, ‖Finance.simpleHolding (σ k) (m k) (b k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t})
+        atTop (𝓝 0))
+    (hLX : TendstoInMeasure P (fun k ↦ Finance.simpleGains (σ k) (m k) (b k) W t) atTop X) :
+    I t =ᵐ[P] X :=
+  tendstoInMeasure_ae_unique (hI.tendstoInMeasure_simpleGains hW hσ hb hLH) hLX
+
+/-- Simple holdings approximating the integrand on `(0,t]` in square energy in probability
+also approximate it on `(0,s]` for every `s ≤ t`. So, against a pre-Brownian motion relative to
+the filtration, their elementary integrals at `s` converge in probability to the Itô integral
+at `s`. -/
+theorem IsItoIntegral.tendstoInMeasure_simpleGains_of_le (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) {s t : ℝ≥0} (hst : s ≤ t) {m : ℕ → ℕ}
+    {σ : ℕ → ℕ → ℝ≥0} {b : ℕ → ℕ → Ω → ℝ} (hσ : ∀ k, MonotoneOn (σ k) (Iic (m k)))
+    (hb : ∀ k j, j < m k → StronglyMeasurable[ℱ (σ k j)] (b k j))
+    (hLH : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
+      ∫⁻ u, ‖Finance.simpleHolding (σ k) (m k) (b k) u ω - H u ω‖ₑ ^ 2 ∂timeMeasure t})
+        atTop (𝓝 0)) :
+    TendstoInMeasure P (fun k ↦ Finance.simpleGains (σ k) (m k) (b k) W s) atTop (I s) :=
+  hI.tendstoInMeasure_simpleGains hW hσ hb fun ε hε ↦
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hLH ε hε) (fun _ ↦ zero_le)
+      fun k ↦ measure_mono fun ω hω ↦ by
+        simp only [mem_ofPred_eq] at hω ⊢
+        exact hω.trans (lintegral_mono' (timeMeasure_mono hst) le_rfl)
+
+/-- Against an adapted integrator, an Itô integral is almost everywhere strongly measurable at
+each time, as a limit in probability of elementary integrals. -/
+theorem IsItoIntegral.aestronglyMeasurable (hW : Adapted ℱ W) (hI : IsItoIntegral ℱ P W H I)
+    (t : ℝ≥0) : AEStronglyMeasurable (I t) P := by
+  obtain ⟨n, τ, a, hτ, ha, -, hKI⟩ := hI.exists_approx t
+  exact hKI.aestronglyMeasurable fun k ↦ ((Finance.stronglyAdapted_simpleGains (hτ k) (ha k)
+    hW.stronglyAdapted t).mono (ℱ.le t)).aestronglyMeasurable
 
 /-- **Uniqueness of the Itô integral.** Against a pre-Brownian motion relative to the
 filtration, two Itô integrals of the same integrand are indistinguishable. Neither path

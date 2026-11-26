@@ -16,9 +16,10 @@ Let `N` be a normal subgroup of `G` and let `ρ` be an irreducible representatio
 Given one minimal `N`-stable subspace to start from, restricting `ρ` to `N` breaks it into
 irreducible constituents (`Representation.isSemisimpleRepresentation_comp_subtype_of_isAtom`; for a
 finite-dimensional `V` such a subspace always exists, and then no hypothesis is needed, which is
-`Representation.isSemisimpleRepresentation_comp_subtype`).  This file identifies which constituents
-occur: **they are the translates of any one of them**, up to isomorphism of `N`-representations.
-Equivalently, `G` permutes the isotypic components of the restriction transitively.
+`Representation.isSemisimpleRepresentation_comp_subtype_of_isIrreducible`).  This file identifies
+which constituents occur: **they are the translates of any one of them**, up to isomorphism of
+`N`-representations. Equivalently, `G` permutes the isotypic components of the restriction
+transitively.
 
 The argument is short because the two halves it needs are already in place.  The translates
 `Representation.conjSubrep ρ g σ` of a minimal `N`-stable subspace `σ` are again minimal

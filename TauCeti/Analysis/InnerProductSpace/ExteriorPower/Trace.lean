@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.BilinearForm.End
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 
 /-!
 # Ordered-pair contractions on the exterior square
@@ -16,13 +16,17 @@ For an orthonormal basis `b`, the wedges `b i ∧ b j` indexed by all ordered pa
 redundant family: each increasing pair occurs twice, with opposite signs, and diagonal wedges
 vanish. Consequently their rank-one operators sum to twice the identity on `Λ² E`.
 
-This gives trace and double-contraction formulas using all ordered pairs instead of the increasing
-pairs indexing Mathlib's `OrthonormalBasis.exteriorPower`, both for arbitrary endomorphisms
-(`LinearMap.trace`) and for bilinear forms (`TauCeti.bilinFormTrace`), as well as bilinear maps
-(`OrthonormalBasis.sum_apply_mul_eq_half_sum_ιMulti`,
-`OrthonormalBasis.sum_sum_apply_mul_eq_quarter_sum_ιMulti`, and
-`OrthonormalBasis.sum_inner_mul_inner_smul_ιMulti_two`), fixing the factor of two in curvature
-contractions.
+This gives a trace formula using all ordered pairs instead of the increasing pairs indexing
+Mathlib's `OrthonormalBasis.exteriorPower`. It applies to arbitrary endomorphisms, without a
+self-adjointness assumption, and fixes the factor of two in curvature contractions.
+
+Evaluated on a two-vector, the same identity gives its coordinates over all ordered pairs,
+`∑ₚ ∑_q ⟪x, bₚ ∧ b_q⟫ • (bₚ ∧ b_q) = 2 • x` (`OrthonormalBasis.sum_sum_inner_smul_ιMulti_two`),
+and the inner product `∑ₚ ∑_q ⟪x, bₚ ∧ b_q⟫ ⟪y, bₚ ∧ b_q⟫ = 2 ⟪x, y⟫`
+(`OrthonormalBasis.sum_sum_inner_ιMulti_two_mul_inner_ιMulti_two`). Through the skew endomorphism
+`A_X = TauCeti.twoVectorContraction X`, the latter says that the inner product of `⋀² E` is the
+trace form `-½ tr (A_X A_Y)` of the orthogonal Lie algebra
+(`TauCeti.trace_twoVectorContraction_mul_twoVectorContraction`).
 -/
 
 public section
@@ -38,6 +42,25 @@ open exteriorPower
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {ι : Type*} [Fintype ι]
+
+/-- The rank-one operators associated to all ordered wedges of an orthonormal basis sum to
+twice the identity on the exterior square. -/
+theorem sum_rankOne_ιMulti_two (b : OrthonormalBasis ι ℝ E) :
+    (∑ i, ∑ j, (InnerProductSpace.rankOne ℝ (ιMulti ℝ 2 ![b i, b j])
+      (ιMulti ℝ 2 ![b i, b j])).toLinearMap) = (2 : ℝ) • LinearMap.id := by
+  classical
+  apply linearMap_ext_inner_ιMulti_two
+  intro a c u v
+  simp only [LinearMap.sum_apply, ContinuousLinearMap.coe_coe,
+    InnerProductSpace.rankOne_apply, sum_inner, real_inner_smul_left,
+    LinearMap.smul_apply, LinearMap.id_apply, inner_ιMulti_two]
+  have hp (x y : E) : (∑ i, ⟪b i, x⟫ * ⟪b i, y⟫) = ⟪x, y⟫ := by
+    simpa only [real_inner_comm x] using b.sum_inner_mul_inner x y
+  -- Expand the two Gram determinants and contract each factor by Parseval.
+  simp_rw [sub_mul, mul_sub, sum_sub_distrib]
+  simp_rw [mul_mul_mul_comm (⟪b _, _⟫) (⟪b _, _⟫) (⟪b _, _⟫) (⟪b _, _⟫)]
+  simp_rw [← mul_sum, hp, ← sum_mul, hp]
+  ring
 
 /-- The sum of the diagonal coefficients of an endomorphism against all ordered basis wedges
 is twice its trace. In contrast, the increasing wedges form an orthonormal basis and count
@@ -61,80 +84,43 @@ theorem sum_inner_ιMulti_two_eq_two_mul_trace (b : OrthonormalBasis ι ℝ E)
     LinearMap.comp_smul, LinearMap.comp_id, map_smul, smul_eq_mul,
     real_inner_comm] using h
 
-/-- The sum of the diagonal values of a bilinear form on `⋀² E` against all ordered basis wedges
-is twice its metric trace. -/
-theorem sum_bilinForm_ιMulti_two_eq_two_mul_bilinFormTrace (b : OrthonormalBasis ι ℝ E)
-    (B : LinearMap.BilinForm ℝ (⋀[ℝ]^2 E)) :
-    (∑ i, ∑ j, B (ιMulti ℝ 2 ![b i, b j]) (ιMulti ℝ 2 ![b i, b j])) =
-      2 * TauCeti.bilinFormTrace B := by
-  simp_rw [← B.inner_bilinFormToEnd_left]
-  rw [b.sum_inner_ιMulti_two_eq_two_mul_trace, B.trace_bilinFormToEnd]
+/-- **Coordinates of a two-vector over all ordered pairs.** For an orthonormal basis `b` of `E`,
+`∑ₚ ∑_q ⟪x, bₚ ∧ b_q⟫ • (bₚ ∧ b_q) = 2 • x`: each unordered pair `{p, q}` contributes twice. -/
+theorem sum_sum_inner_smul_ιMulti_two (b : OrthonormalBasis ι ℝ E) (x : ⋀[ℝ]^2 E) :
+    ∑ p, ∑ q, ⟪x, ιMulti ℝ 2 ![b p, b q]⟫ • ιMulti ℝ 2 ![b p, b q] = (2 : ℝ) • x := by
+  simpa [LinearMap.sum_apply, InnerProductSpace.rankOne_apply, real_inner_comm] using
+    LinearMap.congr_fun b.sum_rankOne_ιMulti_two x
 
-/-- Contracting two linear functionals on `⋀² E` against an orthonormal basis `e` of `⋀² E`
-equals half the sum of their products over all ordered wedges `b i ∧ b j` of an orthonormal basis
-`b` of `E`. -/
-theorem sum_apply_mul_eq_half_sum_ιMulti {ι' : Type*} [Fintype ι']
-    (e : OrthonormalBasis ι' ℝ (⋀[ℝ]^2 E)) (b : OrthonormalBasis ι ℝ E)
-    (f g : ⋀[ℝ]^2 E →ₗ[ℝ] ℝ) :
-    (∑ α, f (e α) * g (e α)) =
-      (1 / 2 : ℝ) * ∑ i, ∑ j, f (ιMulti ℝ 2 ![b i, b j]) * g (ιMulti ℝ 2 ![b i, b j]) := by
-  have h2 := b.sum_bilinForm_ιMulti_two_eq_two_mul_bilinFormTrace ((LinearMap.mul ℝ ℝ).compl₁₂ f g)
-  rw [TauCeti.bilinFormTrace_eq_sum _ e] at h2
-  simp only [LinearMap.compl₁₂_apply, LinearMap.mul_apply'] at h2
-  rw [h2]
-  ring
-
-/-- Contracting two bilinear maps on `⋀² E` against an orthonormal basis `e` of `⋀² E` equals
-a quarter of the double sum over all pairs of ordered wedges `b i ∧ b j` and `b k ∧ b l` of an
-orthonormal basis `b` of `E`. -/
-theorem sum_sum_apply_mul_eq_quarter_sum_ιMulti {ι' : Type*} [Fintype ι']
-    (e : OrthonormalBasis ι' ℝ (⋀[ℝ]^2 E)) (b : OrthonormalBasis ι ℝ E)
-    (Φ₁ Φ₂ : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^2 E →ₗ[ℝ] ℝ) :
-    (∑ α, ∑ β, Φ₁ (e α) (e β) * Φ₂ (e α) (e β)) =
-      (1 / 4 : ℝ) * ∑ p : ι × ι, ∑ q : ι × ι,
-        Φ₁ (ιMulti ℝ 2 ![b p.1, b p.2]) (ιMulti ℝ 2 ![b q.1, b q.2]) *
-          Φ₂ (ιMulti ℝ 2 ![b p.1, b p.2]) (ιMulti ℝ 2 ![b q.1, b q.2]) := by
-  have hinner (x : ⋀[ℝ]^2 E) :
-      (∑ β, Φ₁ x (e β) * Φ₂ x (e β)) =
-        (1 / 2 : ℝ) * ∑ q : ι × ι,
-          Φ₁ x (ιMulti ℝ 2 ![b q.1, b q.2]) * Φ₂ x (ιMulti ℝ 2 ![b q.1, b q.2]) := by
-    rw [Fintype.sum_prod_type]
-    exact e.sum_apply_mul_eq_half_sum_ιMulti b (Φ₁ x) (Φ₂ x)
-  simp_rw [hinner, ← Finset.mul_sum]
-  rw [Finset.sum_comm]
-  have houter (q : ι × ι) :
-      (∑ α, Φ₁ (e α) (ιMulti ℝ 2 ![b q.1, b q.2]) *
-          Φ₂ (e α) (ιMulti ℝ 2 ![b q.1, b q.2])) =
-        (1 / 2 : ℝ) * ∑ p : ι × ι,
-          Φ₁ (ιMulti ℝ 2 ![b p.1, b p.2]) (ιMulti ℝ 2 ![b q.1, b q.2]) *
-            Φ₂ (ιMulti ℝ 2 ![b p.1, b p.2]) (ιMulti ℝ 2 ![b q.1, b q.2]) := by
-    rw [Fintype.sum_prod_type]
-    exact e.sum_apply_mul_eq_half_sum_ιMulti b
-      (Φ₁.flip (ιMulti ℝ 2 ![b q.1, b q.2])) (Φ₂.flip (ιMulti ℝ 2 ![b q.1, b q.2]))
-  simp_rw [houter, ← Finset.mul_sum]
-  rw [Finset.sum_comm]
-  ring
-
-/-- Contracting a bilinear map `Φ` on `⋀² E` against all pairs of ordered basis wedges of an
-orthonormal basis `b` scales `Φ x y` by `4`. -/
-theorem sum_inner_mul_inner_smul_ιMulti_two {M : Type*} [AddCommGroup M] [Module ℝ M]
-    (b : OrthonormalBasis ι ℝ E) (Φ : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^2 E →ₗ[ℝ] M) (x y : ⋀[ℝ]^2 E) :
-    (∑ i, ∑ j, ∑ k, ∑ l,
-      (⟪ιMulti ℝ 2 ![b i, b j], x⟫ * ⟪ιMulti ℝ 2 ![b k, b l], y⟫) •
-        Φ (ιMulti ℝ 2 ![b i, b j]) (ιMulti ℝ 2 ![b k, b l])) =
-      (4 : ℝ) • Φ x y := by
-  have h :
-      Φ (∑ i, ∑ j, ⟪ιMulti ℝ 2 ![b i, b j], x⟫ • ιMulti ℝ 2 ![b i, b j])
-        (∑ k, ∑ l, ⟪ιMulti ℝ 2 ![b k, b l], y⟫ • ιMulti ℝ 2 ![b k, b l]) =
-      ∑ i, ∑ j, ∑ k, ∑ l,
-        (⟪ιMulti ℝ 2 ![b i, b j], x⟫ * ⟪ιMulti ℝ 2 ![b k, b l], y⟫) •
-          Φ (ιMulti ℝ 2 ![b i, b j]) (ιMulti ℝ 2 ![b k, b l]) := by
-    set Y := ∑ k, ∑ l, ⟪ιMulti ℝ 2 ![b k, b l], y⟫ • ιMulti ℝ 2 ![b k, b l]
-    simp only [map_sum, LinearMap.sum_apply, map_smul, LinearMap.smul_apply]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    simp only [Y, map_sum, map_smul, Finset.smul_sum, smul_smul]
-  rw [← h, b.sum_inner_smul_ιMulti_two x, b.sum_inner_smul_ιMulti_two y]
-  simp only [map_smul, LinearMap.smul_apply, smul_smul]
-  norm_num
+/-- **The inner product of two-vectors in coordinates over all ordered pairs.** For an orthonormal
+basis `b` of `E`, `∑ₚ ∑_q ⟪x, bₚ ∧ b_q⟫ ⟪y, bₚ ∧ b_q⟫ = 2 ⟪x, y⟫`. -/
+theorem sum_sum_inner_ιMulti_two_mul_inner_ιMulti_two (b : OrthonormalBasis ι ℝ E)
+    (x y : ⋀[ℝ]^2 E) :
+    ∑ p, ∑ q, ⟪x, ιMulti ℝ 2 ![b p, b q]⟫ * ⟪y, ιMulti ℝ 2 ![b p, b q]⟫ = 2 * ⟪x, y⟫ := by
+  have h := congrArg (⟪·, y⟫) (b.sum_sum_inner_smul_ιMulti_two x)
+  simp only [sum_inner, real_inner_smul_left] at h
+  rw [← h]
+  simp only [real_inner_comm _ y]
 
 end OrthonormalBasis
+
+namespace TauCeti
+
+open exteriorPower
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **The inner product of bivectors is the trace form of `so(V)`**:
+`tr (A_X A_Y) = -2 ⟪X, Y⟫`, that is `⟪X, Y⟫ = -½ tr (A_X A_Y)`. -/
+theorem trace_twoVectorContraction_mul_twoVectorContraction (X Y : ⋀[ℝ]^2 V) :
+    LinearMap.trace ℝ V (twoVectorContraction X * twoVectorContraction Y) = -2 * ⟪X, Y⟫ := by
+  let b := stdOrthonormalBasis ℝ V
+  have h := b.sum_sum_inner_ιMulti_two_mul_inner_ιMulti_two X Y
+  simp only [← inner_twoVectorContraction_apply, b.real_sum_inner_mul_inner] at h
+  have hp (p) : ⟪b p, (twoVectorContraction X * twoVectorContraction Y) (b p)⟫ =
+      -⟪twoVectorContraction X (b p), twoVectorContraction Y (b p)⟫ := by
+    rw [mul_apply_eq_comp, inner_twoVectorContraction_apply_left X (b p), neg_neg]
+  rw [LinearMap.trace_eq_sum_inner _ b]
+  simp only [hp, Finset.sum_neg_distrib, h]
+  ring
+
+end TauCeti

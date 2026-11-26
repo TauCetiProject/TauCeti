@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Complex.Order
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
+public import Mathlib.LinearAlgebra.SesquilinearForm.Star
 
 /-!
 # Sesquilinear forms on inner product spaces
@@ -30,6 +31,10 @@ This is the full-endomorphism-algebra form of the uniqueness of an invariant met
 
 The comparison uses Mathlib's rank-one operators: their adjoints exchange the two vectors.
 It does not assume that the form being compared is already represented by an operator.
+
+Conversely, a positive definite Hermitian form `h` on a vector space makes it an inner product
+space with inner product `h` (`LinearMap.IsSymm.innerProductCore`), and a sesquilinear form which
+is real diagonal in some basis is Hermitian (`LinearMap.isSymm_of_basis_diag`).
 -/
 
 public section
@@ -156,5 +161,53 @@ theorem existsUnique_pos_mul_inner_of_adjoint [Nontrivial E]
     have h := hr u u
     rw [inner_self_eq_one_of_norm_eq_one hu, mul_one, hc] at h
     exact (RCLike.ofReal_injective h).symm
+
+section InnerProductCore
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E] {h : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜}
+
+/-- The inner product structure on `E` given by a positive definite Hermitian form `h`: the inner
+product `⟪u, v⟫` is `h u v`. -/
+@[instance_reducible]
+def IsSymm.innerProductCore (hh : h.IsSymm) (hpos : ∀ v, v ≠ 0 → 0 < RCLike.re (h v v)) :
+    InnerProductSpace.Core 𝕜 E where
+  inner u v := h u v
+  conj_inner_symm u v := hh.eq v u
+  re_inner_nonneg v := by
+    rcases eq_or_ne v 0 with rfl | hv
+    · simp
+    · exact (hpos v hv).le
+  add_left u u' v := by simp
+  smul_left u v c := by simp
+  definite v hv := by
+    by_contra hne
+    exact (hpos v hne).ne' (by simpa using congrArg RCLike.re hv)
+
+/-- The inner product of `IsSymm.innerProductCore` is the form. -/
+theorem IsSymm.innerProductCore_inner (hh : h.IsSymm)
+    (hpos : ∀ v, v ≠ 0 → 0 < RCLike.re (h v v)) (u v : E) :
+    @inner 𝕜 E (hh.innerProductCore hpos).toInner u v = h u v :=
+  (rfl)
+
+/-- The inner product of the inner product space built from `IsSymm.innerProductCore` is the
+form. -/
+theorem IsSymm.inner_ofCore_innerProductCore (hh : h.IsSymm)
+    (hpos : ∀ v, v ≠ 0 → 0 < RCLike.re (h v v)) (u v : E) :
+    letI := (hh.innerProductCore hpos).toNormedAddCommGroup
+    letI := InnerProductSpace.ofCore (hh.innerProductCore hpos).toCore
+    inner 𝕜 u v = h u v :=
+  (rfl)
+
+/-- **A sesquilinear form which is real diagonal in a basis is Hermitian.** -/
+theorem isSymm_of_basis_diag {ι : Type*} [DecidableEq ι] {B : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜}
+    (bs : Module.Basis ι 𝕜 E) {w : ι → ℝ}
+    (hB : ∀ i j, B (bs i) (bs j) = if i = j then (w i : 𝕜) else 0) : B.IsSymm := by
+  refine (LinearMap.isSymm_iff_basis bs).2 fun i j ↦ ?_
+  rw [hB, hB]
+  by_cases hij : i = j
+  · subst hij; simp
+  · simp [hij, Ne.symm hij]
+
+end InnerProductCore
 
 end LinearMap

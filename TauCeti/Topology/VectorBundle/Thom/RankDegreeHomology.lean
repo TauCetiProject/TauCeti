@@ -54,6 +54,10 @@ so for the negative bundle of a Morse–Bott critical submanifold of index `r` t
 relative homology across its critical level in degree `r`, the lowest degree in which it can be
 nonzero.
 
+Without an orientation and over an arbitrary ring, the group in the rank degree is
+the zeroth homology of `B` twisted by the orientation local system of `E`; this is
+`TauCeti.Topology.VectorBundle.Orientation.RankDegreeHomology`.
+
 ## The proof
 
 Both cases are instances of one argument, for a family of fibre classes which every chosen
@@ -78,6 +82,9 @@ homology of Thom pairs (`TauCeti.isIso_of_isColimit_biUnion_baseSet`).
 
 * `TauCeti.singularHomologyMap_prodThomPairFiberMap_complZeroPairPointHom_one`: the fibre inclusion
   over a point carries the point class of `1` to the class of the point, for any ring `K`.
+* `Bundle.Trivialization.singularHomologyMap_thomPairOverIso_hom_fiberThomPairOverMap`: a linear
+  trivialization reading a fibre class as `c` times the point class of `1` carries its image in
+  `Hᵣ(E|_W, E₀|_W; K)` to `c` times the class of the point.
 * `TauCeti.thomPairSingularHomologyFinrankIso`: `Hᵣ(E, E₀; K) ≅ H₀(B; K)` for `r` the rank and `K`
   a commutative ring whose only unit is `1`.
 * `TauCeti.thomPairSingularHomologyFinrankIso_hom_apply`: it sends the fibre class over `b` to the
@@ -123,6 +130,37 @@ theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairPointHom_one
     (ModuleCat.of K K) W F (finrank ℝ F) rfl x) (1 : K)
 
 end Fiber
+
+section TrivializationFiber
+
+variable {K : Type w} [Ring K] {B : Type w} [TopologicalSpace B] {F : Type w}
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] {E : B → Type w}
+  [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)]
+  [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+
+/-- Let `e` be a linear trivialization whose base set contains `W`. If `e` reads a class `z` of the
+fibre pair over `x ∈ W` as `c` times the point class of `1`, then the identification of
+`(E|_W, E₀|_W)` with the Thom pair of `W × F` sends the fibre class of `z` to `c` times the class of
+`x` under `Hᵣ(W × F, W × (F ∖ {0}); K) ≅ H₀(W; K)`. -/
+theorem _root_.Bundle.Trivialization.singularHomologyMap_thomPairOverIso_hom_fiberThomPairOverMap
+    (e : Trivialization F (π F E)) [e.IsLinear ℝ] {W : Set B} (hW : W ⊆ e.baseSet) (x : W)
+    {z : ((TopPair.ofSubset (X := TopCat.of (E x)) ({0}ᶜ : Set (E x))).singularHomology
+      (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K)} {c : K}
+    (hz : TopPair.singularHomologyMap
+        (e.continuousLinearEquivAt ℝ x (hW x.property)).complZeroPairIso.hom (ModuleCat.of K K)
+        (finrank ℝ F) z =
+      c • complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)) :
+    TopPair.singularHomologyMap (e.thomPairOverIso ℝ hW).hom (ModuleCat.of K K) (finrank ℝ F)
+        (TopPair.singularHomologyMap (fiberThomPairOverMap F E x.property) (ModuleCat.of K K)
+          (finrank ℝ F) z) =
+      c • (prodThomPairSingularHomologyIso (ModuleCat.of K K) W F 0 (finrank ℝ F)).inv
+        (singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of W) x 1) := by
+  rw [← ConcreteCategory.comp_apply, ← TopPair.singularHomologyMap_comp,
+    e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW x.property,
+    TopPair.singularHomologyMap_comp, ConcreteCategory.comp_apply, hz, map_smul, Subtype.coe_eta,
+    singularHomologyMap_prodThomPairFiberMap_complZeroPairPointHom_one]
+
+end TrivializationFiber
 
 section Bundle
 
@@ -189,11 +227,9 @@ private theorem singularHomologyMap_thomPairOverIso_fiberClassOver
     TopPair.singularHomologyMap ((trivializationAt F E c).thomPairOverIso ℝ hW).hom
         (ModuleCat.of K K) (finrank ℝ F) (fiberClassOver g W x) =
       (ε c x : K) • (prodThomPairSingularHomologyIso (ModuleCat.of K K) W F 0 (finrank ℝ F)).inv
-        (singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of W) x 1) := by
-  rw [fiberClassOver, ← ConcreteCategory.comp_apply, ← TopPair.singularHomologyMap_comp,
-    Bundle.Trivialization.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ _ hW x.property,
-    TopPair.singularHomologyMap_comp, ConcreteCategory.comp_apply, hg.map_eq c x (hW x.property),
-    map_smul, Subtype.coe_eta, singularHomologyMap_prodThomPairFiberMap_complZeroPairPointHom_one]
+        (singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of W) x 1) :=
+  (trivializationAt F E c).singularHomologyMap_thomPairOverIso_hom_fiberThomPairOverMap hW x
+    (hg.map_eq c x (hW x.property))
 
 /-- **The fibre classes are constant along paths**: near each point `b` they are read through the
 chosen trivialization at `b` as multiples of the classes of the points by the locally constant unit
@@ -438,87 +474,24 @@ variable {K : Type w} [CommRing K] {B : Type w} [TopologicalSpace B] {F : Type w
   {γ : ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology (ModuleCat.of K K)
     (finrank ℝ F) : ModuleCat.{w} K)}
 
-open scoped Classical in
-variable (γ) in
-/-- The class of the fibre pair `(E_b, E_b ∖ {0})` which the trivialization at `b` reads as `γ`
-if it reads the orientation `o b` as `ω`, and as `-γ` otherwise. -/
-private def orientedFiberGenerator (b : B) :
-    ((TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).singularHomology
-      (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K) :=
-  if (trivializationAt F E b).mapOrientation ι (mem_baseSet_trivializationAt F E b) (o b) = ω then
-    TopPair.singularHomologyMap ((trivializationAt F E b).continuousLinearEquivAt ℝ b
-      (mem_baseSet_trivializationAt F E b)).complZeroPairIso.inv (ModuleCat.of K K) (finrank ℝ F) γ
-  else
-    -TopPair.singularHomologyMap ((trivializationAt F E b).continuousLinearEquivAt ℝ b
-      (mem_baseSet_trivializationAt F E b)).complZeroPairIso.inv (ModuleCat.of K K) (finrank ℝ F) γ
-
-open scoped Classical in
 include hι in
-/-- Every linear trivialization reads the oriented fibre generator as `γ` if it reads the
-orientation as `ω`, and as `-γ` otherwise. -/
-private theorem singularHomologyMap_complZeroPairIso_hom_orientedFiberGenerator
-    (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet) :
-    TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom
-        (ModuleCat.of K K) (finrank ℝ F) (o.orientedFiberGenerator ω γ b) =
-      if e.mapOrientation ι hb (o b) = ω then γ else -γ := by
-  rw [orientedFiberGenerator]
-  have hb₀ := mem_baseSet_trivializationAt F E b
-  -- The trivialization at `b` reads its own pull-back of `γ` as `γ`.
-  have h₀ : TopPair.singularHomologyMap
-      ((trivializationAt F E b).continuousLinearEquivAt ℝ b hb₀).complZeroPairIso.hom
-        (ModuleCat.of K K) (finrank ℝ F) (TopPair.singularHomologyMap
-          ((trivializationAt F E b).continuousLinearEquivAt ℝ b hb₀).complZeroPairIso.inv
-            (ModuleCat.of K K) (finrank ℝ F) γ) = γ :=
-    (TopPair.singularHomologyMapIso _
-      ((trivializationAt F E b).continuousLinearEquivAt ℝ b hb₀).complZeroPairIso
-        _).inv_hom_id_apply γ
-  have hne : -ω ≠ ω := (Module.Ray.ne_neg_self ω).symm
-  -- Compare `e` with the trivialization at `b`: they induce equal maps if they read `o b` alike,
-  -- and opposite ones otherwise.
-  have hι' : Nat.card ι = finrank ℝ F := Nat.card_eq_fintype_card.trans hι
-  rcases Orientation.eq_or_eq_neg ((trivializationAt F E b).mapOrientation ι hb₀ (o b)) ω hι'
-    with h | h <;> rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι' with h' | h'
-  · rw [Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq
-      _ e hb₀ hb hι _ (h'.trans h.symm)]
-    simp [h, h', h₀]
-  · rw [Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg
-      _ e hb₀ hb hι _ (by rw [h, h'])]
-    simp [h, h', h₀, hne]
-  · rw [Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_neg_of_mapOrientation_eq_neg
-      _ e hb₀ hb hι _ (by rw [h, h']; exact (neg_neg ω).symm)]
-    simp [h, h', h₀, hne]
-  · rw [Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq
-      _ e hb₀ hb hι _ (h'.trans h.symm)]
-    simp [h, h', h₀, hne]
-
-open scoped Classical in
-include hι in
-/-- Every linear trivialization pulls `γ` back to the oriented fibre generator if it reads the
-orientation as `ω`, and to its negative otherwise. -/
-private theorem singularHomologyMap_complZeroPairIso_inv_eq_orientedFiberGenerator
-    (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet) :
+/-- A linear trivialization reading an orientation `o'` of `E_b` as `ω` pulls a class
+`γ = a • γ₀` of `Hᵣ(F, F ∖ {0}; K)` back to `a` times the generator of `o'`. -/
+private theorem singularHomologyMap_complZeroPairIso_inv_eq_smul_orientedFiberGenerator {a : K}
+    (ha : γ = a • complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K))
+    (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet)
+    {o' : Orientation ℝ (E b) ι} (h : e.mapOrientation ι hb o' = ω) :
     TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv
-        (ModuleCat.of K K) (finrank ℝ F) γ =
-      if e.mapOrientation ι hb (o b) = ω then o.orientedFiberGenerator ω γ b
-      else -o.orientedFiberGenerator ω γ b := by
-  apply (ModuleCat.mono_iff_injective (TopPair.singularHomologyMap
-    (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom (ModuleCat.of K K)
-      (finrank ℝ F))).1 inferInstance
-  refine ((TopPair.singularHomologyMapIso _ (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso
-    _).inv_hom_id_apply γ).trans ?_
-  split_ifs with h
-  · rw [o.singularHomologyMap_complZeroPairIso_hom_orientedFiberGenerator hι ω e hb, ite_eq_left h]
-  · rw [map_neg, o.singularHomologyMap_complZeroPairIso_hom_orientedFiberGenerator hι ω e hb,
-      ite_eq_right h, neg_neg]
+        (ModuleCat.of K K) (finrank ℝ F) γ = a • orientedFiberGenerator K ω o' := by
+  rw [ha, map_smul, orientedFiberGenerator_of_mapOrientation_eq ω hι e hb h]
 
 open scoped Classical in
 include hι in
-/-- The oriented fibre generators of a generator `γ = u • γ₀` of `Hᵣ(F, F ∖ {0}; K)` are read in
-the trivialization at `c` as `γ₀` multiplied by `u` or `-u`, according to the reading of the
-orientation, which is locally constant. -/
-private theorem isLocalFiberGenerator_orientedFiberGenerator {u : Kˣ}
-    (hu : γ = (u : K) • complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)) :
-    IsLocalFiberGenerator K F E (o.orientedFiberGenerator ω γ) fun c x ↦
+/-- The multiples by a unit `u` of the generators of the orientations `o b` are read in the
+trivialization at `c` as the point class of `1` multiplied by `u` or `-u`, according to the
+reading of the orientation, which is locally constant. -/
+private theorem isLocalFiberGenerator_smul_orientedFiberGenerator (u : Kˣ) :
+    IsLocalFiberGenerator K F E (fun b ↦ (u : K) • orientedFiberGenerator K ω (o b)) fun c x ↦
       if hx : x ∈ (trivializationAt F E c).baseSet then
         if (trivializationAt F E c).mapOrientation ι hx (o x) = ω then u else -u
       else u where
@@ -527,11 +500,17 @@ private theorem isLocalFiberGenerator_orientedFiberGenerator {u : Kˣ}
       (trivializationAt F E c).open_baseSet.mem_nhds hb] with x hx hxb
     simp only [dite_eq_left hxb, dite_eq_left hb, hx hxb]
   map_eq c x hx := by
-    simp only [o.singularHomologyMap_complZeroPairIso_hom_orientedFiberGenerator hι ω _ hx,
-      dite_eq_left hx]
-    split_ifs
-    · exact hu
-    · rw [hu, Units.val_neg, neg_smul]
+    have hinv := (TopPair.singularHomologyMapIso (ModuleCat.of K K)
+      ((trivializationAt F E c).continuousLinearEquivAt ℝ x hx).complZeroPairIso
+        (finrank ℝ F)).inv_hom_id_apply
+    simp only [map_smul, dite_eq_left hx]
+    split_ifs with h
+    · rw [orientedFiberGenerator_of_mapOrientation_eq ω hι _ hx h]
+      exact congrArg _ (hinv _)
+    · rw [orientedFiberGenerator_of_mapOrientation_eq_neg ω hι _ hx
+        ((Orientation.eq_or_eq_neg _ ω (Nat.card_eq_fintype_card.trans hι)).resolve_left h),
+        map_neg, Units.val_neg, neg_smul, smul_neg]
+      exact congrArg (fun y ↦ -((u : K) • y)) (hinv _)
 
 /-- **The homology of the Thom pair of an oriented bundle in the rank degree**: for a real vector
 bundle `E → B` of rank `r` with an orientation `o`, with Thom pair `(E, E₀)`, and any commutative
@@ -546,8 +525,8 @@ def thomPairSingularHomologyFinrankIso (hγ : Submodule.span K {γ} = ⊤) :
     (thomPair F E).singularHomology (ModuleCat.of K K) (finrank ℝ F) ≅
       ((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).obj (TopCat.of B) :=
   thomPairSingularHomologyFinrankIsoOfIsLocalFiberGenerator
-    (o.isLocalFiberGenerator_orientedFiberGenerator hι ω
-      (exists_eq_units_smul_complZeroPairPointHom_one F K hγ).choose_spec)
+    (o.isLocalFiberGenerator_smul_orientedFiberGenerator hι ω
+      (exists_eq_units_smul_complZeroPairPointHom_one F K hγ).choose)
 
 /-- The oriented isomorphism `Hᵣ(E, E₀; K) ≅ H₀(B; K)` sends the class of the fibre pair over `b`
 which a linear trivialization reading `o b` as `ω` reads as `γ` to the class of `b`. -/
@@ -559,7 +538,8 @@ theorem thomPairSingularHomologyFinrankIso_hom_apply_of_mapOrientation_eq
           (TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv
             (ModuleCat.of K K) (finrank ℝ F) γ)) =
       singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of B) b 1 := by
-  rw [o.singularHomologyMap_complZeroPairIso_inv_eq_orientedFiberGenerator hι ω e hb, ite_eq_left h]
+  rw [singularHomologyMap_complZeroPairIso_inv_eq_smul_orientedFiberGenerator hι ω
+    (exists_eq_units_smul_complZeroPairPointHom_one F K hγ).choose_spec e hb h]
   exact thomPairSingularHomologyFinrankIsoOfIsLocalFiberGenerator_hom_apply _ b
 
 /-- The oriented isomorphism `Hᵣ(E, E₀; K) ≅ H₀(B; K)` sends the class of the fibre pair over `b`
@@ -572,8 +552,10 @@ theorem thomPairSingularHomologyFinrankIso_hom_apply_of_mapOrientation_eq_neg
           (TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.inv
             (ModuleCat.of K K) (finrank ℝ F) γ)) =
       -singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of B) b 1 := by
-  rw [o.singularHomologyMap_complZeroPairIso_inv_eq_orientedFiberGenerator hι ω e hb,
-    ite_eq_right (h.trans_ne (Module.Ray.ne_neg_self ω).symm), map_neg, map_neg]
+  rw [singularHomologyMap_complZeroPairIso_inv_eq_smul_orientedFiberGenerator hι ω
+      (exists_eq_units_smul_complZeroPairPointHom_one F K hγ).choose_spec e hb (o' := -o b)
+      (by rw [Trivialization.mapOrientation_neg, h]; exact neg_neg ω),
+    orientedFiberGenerator_neg ω hι, smul_neg, map_neg, map_neg]
   exact congrArg Neg.neg (thomPairSingularHomologyFinrankIsoOfIsLocalFiberGenerator_hom_apply _ b)
 
 end VectorBundleOrientation

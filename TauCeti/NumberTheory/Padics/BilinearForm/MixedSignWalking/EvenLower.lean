@@ -92,7 +92,7 @@ theorem equivalent_toBilin'_two_unary_hyperbolic (k : ℕ) {a : ℤ_[2]} (ha : I
       (toBilin' ((2 : ℤ_[2]) ^ k • !![10 * a, 0, 0; 0, 2, 1; 0, 1, 2])) := by
   simp only [map_smul]
   exact (LinearMap.BilinForm.equivalent_smul_iff
-    (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k two_ne_zero))).mpr
+    (IsRegular.of_ne_zero (pow_ne_zero k two_ne_zero))).mpr
       (even_lower_sign_walking_hyperbolic ha)
 
 /-- **Mixed-type sign walking with `V` at the lower scale.** The adjacent constituents
@@ -103,7 +103,7 @@ theorem equivalent_toBilin'_two_unary_anisotropic (k : ℕ) {a : ℤ_[2]} (ha : 
       (toBilin' ((2 : ℤ_[2]) ^ k • !![10 * a, 0, 0; 0, 0, 1; 0, 1, 0])) := by
   simp only [map_smul]
   exact (LinearMap.BilinForm.equivalent_smul_iff
-    (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k two_ne_zero))).mpr
+    (IsRegular.of_ne_zero (pow_ne_zero k two_ne_zero))).mpr
       (even_lower_sign_walking_anisotropic ha)
 
 end TauCeti

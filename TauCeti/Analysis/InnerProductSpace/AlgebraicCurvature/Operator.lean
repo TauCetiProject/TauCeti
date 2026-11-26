@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
-public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.ExteriorSquare
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic

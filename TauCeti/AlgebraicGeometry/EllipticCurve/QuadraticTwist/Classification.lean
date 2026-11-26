@@ -10,6 +10,8 @@ public import Mathlib.FieldTheory.Galois.Infinite
 public import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.Basic
 public import TauCeti.FieldTheory.Galois.FixedField
 
+import TauCeti.Data.Nat.Cast.Basic
+
 /-!
 # The twists of an elliptic curve with `j ∉ {0, 1728}` are its quadratic twists
 
@@ -23,8 +25,8 @@ Every quadratic twist is a twist: it has the same `j`-invariant
 (`WeierstrassCurve.j_quadraticTwist`), and it is not isomorphic to `E` over `K`
 (`WeierstrassCurve.not_exists_smul_quadraticTwist_eq`). So `L ↦ E.quadraticTwist L` is a
 bijection from the quadratic subextensions of `Ω/K` onto the `K`-isomorphism classes of twists of
-`E` other than the class of `E`. The results hold in every characteristic, including `2`, where
-the quadratic extensions are of Artin–Schreier type. In characteristic other than `2` and `3`
+`E` other than the class of `E`. The classification holds in every characteristic, including `2`,
+where the quadratic extensions are of Artin–Schreier type. In characteristic other than `2` and `3`
 this is the classification of twists by `K^×/(K^×)²` of Silverman, X.5.4.
 
 ## Main results
@@ -38,6 +40,10 @@ this is the classification of twists by `K^×/(K^×)²` of Silverman, X.5.4.
 * `WeierstrassCurve.exists_smul_eq_or_exists_smul_eq_quadraticTwist_of_j_eq`: an elliptic curve
   over `K` with the same `j`-invariant as `E` is isomorphic over `K` to `E` or to the quadratic
   twist of `E` by a quadratic subextension of a separable closure of `K`.
+* `WeierstrassCurve.exists_smul_quadraticTwistOf_eq_of_j_eq`: the same, with the twist written as
+  the twist by parameters `(t, n)` with `t² - 4n ≠ 0`.
+* `WeierstrassCurve.exists_eq_sq_mul_of_smul_quadraticTwistOf`: in characteristic other than `2`,
+  if the twists by `(0, -d)` and `(0, -d')` are isomorphic over `K`, then `d' / d` is a square.
 
 ## References
 
@@ -221,6 +227,50 @@ theorem exists_smul_eq_or_exists_smul_eq_quadraticTwist_of_j_eq [IsSepClosure K 
   obtain ⟨ρ, hρ⟩ := exists_variableChange_of_j_eq (E'.baseChange Ω) (E.baseChange Ω)
     (by simp only [baseChange, map_j, hj])
   exact E.exists_smul_eq_or_exists_smul_eq_quadraticTwist_of_smul_baseChange_eq hj₀ hj₁₇₂₈ hρ
+
+/-- **The twists of `E` are its twists by parameters**, when `j(E) ∉ {0, 1728}`. An elliptic curve
+`E'` over `K` with `j(E') = j(E)` is isomorphic over `K` to the twist of `E` by parameters `(t, n)`
+with nonzero discriminant `t² - 4n`. -/
+theorem exists_smul_quadraticTwistOf_eq_of_j_eq (hj₀ : E.j ≠ 0) (hj₁₇₂₈ : E.j ≠ 1728)
+    (E' : WeierstrassCurve K) [E'.IsElliptic] (hj : E'.j = E.j) :
+    ∃ t n : K, t ^ 2 - 4 * n ≠ 0 ∧ ∃ C : VariableChange K, C • E.quadraticTwistOf t n = E' := by
+  rcases E.exists_smul_eq_or_exists_smul_eq_quadraticTwist_of_j_eq (Ω := SeparableClosure K)
+    hj₀ hj₁₇₂₈ E' hj with ⟨C, hC⟩ | ⟨L, _, C, hC⟩
+  · exact ⟨1, 0, by norm_num, C⁻¹, by rw [quadraticTwistOf_one_zero, ← hC, inv_smul_smul]⟩
+  · obtain ⟨θ, -, hθ⟩ := E.exists_quadraticTwist_eq L
+    rw [hθ] at hC
+    refine ⟨_, _, ?_, C⁻¹, by rw [← hC, inv_smul_smul]⟩
+    -- the twist is isomorphic to the elliptic curve `E'`, so its discriminant is a unit
+    have : (E.quadraticTwistOf (Algebra.trace K L θ) (Algebra.norm K θ)).IsElliptic :=
+      hC ▸ inferInstance
+    exact ((E.isElliptic_quadraticTwistOf_iff _ _).mp this).1.ne_zero
+
+/-- **Isomorphic twists differ by a square**, when `j(E) ∉ {0, 1728}`. In characteristic other
+than `2`, if the twists of `E` by `(0, -d)` and by `(0, -d')` are isomorphic over `K`, then
+`d' / d` is a square in `K`: compare `c₄` and `c₆`, which are nonzero. -/
+theorem exists_eq_sq_mul_of_smul_quadraticTwistOf (hj₀ : E.j ≠ 0) (hj₁₇₂₈ : E.j ≠ 1728)
+    {d d' : K} (hd : d ≠ 0) (h2 : (2 : K) ≠ 0) {C : VariableChange K}
+    (hC : C • E.quadraticTwistOf 0 (-d) = E.quadraticTwistOf 0 (-d')) :
+    ∃ w : K, d' = w ^ 2 * d := by
+  have hc₄ : E.c₄ ≠ 0 := fun h ↦ hj₀ (E.j_eq_zero h)
+  have hc₆ : E.c₆ ≠ 0 := fun h ↦ hj₁₇₂₈ (E.j_eq_1728_iff.mpr h)
+  have h₄ := congrArg c₄ hC
+  have h₆ := congrArg c₆ hC
+  simp only [variableChange_c₄, variableChange_c₆, c₄_quadraticTwistOf,
+    c₆_quadraticTwistOf] at h₄ h₆
+  refine ⟨((C.u⁻¹ : Kˣ) : K), ?_⟩
+  -- with `x = 4d'`, `y = 4d` and `z = u⁻¹`: `x² = z⁴y²` and `x³ = z⁶y³`, so `x = z²y`
+  set z : K := ((C.u⁻¹ : Kˣ) : K)
+  have h₄' : (4 * d') ^ 2 = z ^ 4 * (4 * d) ^ 2 := mul_right_cancel₀ hc₄ (by linear_combination -h₄)
+  have h₆' : (4 * d') ^ 3 = z ^ 6 * (4 * d) ^ 3 := mul_right_cancel₀ hc₆ (by linear_combination -h₆)
+  have h4 := mt TauCeti.four_eq_zero_iff_two_eq_zero.1 h2
+  have hs : z ^ 2 * (4 * d) ≠ 0 :=
+    mul_ne_zero (pow_ne_zero 2 (Units.ne_zero _)) (mul_ne_zero h4 hd)
+  have hx2 : (4 * d') ^ 2 = (z ^ 2 * (4 * d)) ^ 2 := by rw [h₄']; ring
+  have hx : (4 * d' - z ^ 2 * (4 * d)) * (4 * d') ^ 2 = 0 := by
+    linear_combination h₆' - z ^ 2 * (4 * d) * hx2
+  have hx' := sub_eq_zero.mp ((mul_eq_zero.mp hx).resolve_right (hx2 ▸ pow_ne_zero 2 hs))
+  exact mul_left_cancel₀ h4 (by linear_combination hx')
 
 end WeierstrassCurve
 

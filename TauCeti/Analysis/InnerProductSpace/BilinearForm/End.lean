@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Normed.Operator.LinearIsometry
 
 /-!
@@ -19,8 +20,11 @@ On a finite-dimensional real inner product space `E`, `TauCeti.bilinFormToEnd` i
 equivalence `BilinForm ℝ E ≃ₗ[ℝ] Module.End ℝ E` identifying each bilinear form `B` with the
 endomorphism `B♯` satisfying `⟪B♯ u, v⟫ = B u v`, inverse to metric lowering
 `A ↦ (innerₗ E).comp A`. It carries `innerₗ E` to `LinearMap.id`, converts `B.IsSymm` to
-`(B♯).IsSymmetric`, identifies `LinearMap.trace` with `TauCeti.bilinFormTrace`, pulls back
+`(B♯).IsSymmetric`, identifies `LinearMap.trace` with `LinearMap.BilinMap.metricTrace` and the
+trace of a composite `h♯ ∘ k♯` with the full contraction of `h` and `k`, pulls back
 `B.compl₁₂ f g` via `LinearMap.adjoint g`, and is equivariant under linear isometric equivalences.
+For a continuous metric `g` equal to the inner product, `B♯` is `g⁻¹ ∘ B`, the composition of `B`
+with the inverse of `g` regarded as a map to the dual.
 
 ## Main definitions
 
@@ -29,14 +33,17 @@ endomorphism `B♯` satisfying `⟪B♯ u, v⟫ = B u v`, inverse to metric lowe
 
 ## Main results
 
-* `LinearMap.BilinForm.inner_bilinFormToEnd_left`, `LinearMap.bilinFormToEnd_symm_apply`,
+* `LinearMap.BilinForm.inner_bilinFormToEnd_left`, `LinearMap.BilinForm.inner_bilinFormToEnd_right`,
+  `LinearMap.bilinFormToEnd_symm_apply`,
   `LinearMap.BilinForm.innerₗ_comp_bilinFormToEnd`, `LinearMap.bilinFormToEnd_innerₗ_comp`, and
   `TauCeti.bilinFormToEnd_innerₗ`: pairing and inverse laws.
 * `TauCeti.isSymmetric_bilinFormToEnd_iff`, `LinearMap.BilinForm.trace_bilinFormToEnd`,
+  `LinearMap.BilinForm.trace_bilinFormToEnd_comp_bilinFormToEnd`,
   `LinearMap.BilinForm.bilinFormToEnd_compl₁₂`,
-  `LinearIsometry.bilinFormTrace_comp_adjoint`,
   `LinearIsometryEquiv.comp_bilinFormToEnd_compl₁₂`, and
   `LinearIsometryEquiv.comp_bilinFormToEnd_of_eq`: symmetry, trace, pullback, and equivariance.
+* `ContinuousLinearMap.toLinearMap_inverse_comp_eq_bilinFormToEnd`: raising an index with the
+  inverse of a continuous bilinear form `g` equal to the inner product is `bilinFormToEnd`.
 -/
 
 public section
@@ -84,17 +91,36 @@ open TauCeti
     ⟪bilinFormToEnd B u, v⟫ = B u v := by
   simp [bilinFormToEnd, InnerProductSpace.toDual_symm_apply]
 
+/-- Pairing `v` with `bilinFormToEnd B u` recovers `B u v`. -/
+@[simp] theorem inner_bilinFormToEnd_right (B : BilinForm ℝ E) (u v : E) :
+    ⟪v, bilinFormToEnd B u⟫ = B u v := by
+  rw [real_inner_comm, inner_bilinFormToEnd_left]
+
 /-- Lowering `bilinFormToEnd B` with `innerₗ E` recovers `B`. -/
 @[simp] theorem innerₗ_comp_bilinFormToEnd (B : BilinForm ℝ E) :
     (innerₗ E).comp (bilinFormToEnd B) = B := by
   rw [← (bilinFormToEnd B).bilinFormToEnd_symm_apply, LinearEquiv.symm_apply_apply]
 
-/-- The operator trace of `bilinFormToEnd B` equals the metric trace `bilinFormTrace B`. -/
+/-- The operator trace of `bilinFormToEnd B` equals the metric trace
+`LinearMap.BilinMap.metricTrace B`. -/
 @[simp] theorem trace_bilinFormToEnd (B : BilinForm ℝ E) :
-    LinearMap.trace ℝ E (bilinFormToEnd B) = bilinFormTrace B := by
+    LinearMap.trace ℝ E (bilinFormToEnd B) = LinearMap.BilinMap.metricTrace B := by
   let b := stdOrthonormalBasis ℝ E
-  rw [LinearMap.trace_eq_sum_inner _ b, bilinFormTrace_eq_sum B b]
+  rw [LinearMap.trace_eq_sum_inner _ b, LinearMap.BilinMap.metricTrace_eq_sum B b]
   exact Finset.sum_congr rfl fun i _ ↦ by rw [real_inner_comm, B.inner_bilinFormToEnd_left]
+
+/-- For a symmetric bilinear form `h`, the operator trace of `h♯ ∘ k♯` is the full contraction
+`∑ᵢⱼ h(eᵢ, eⱼ) k(eᵢ, eⱼ)` in every orthonormal basis `(eᵢ)`. -/
+theorem trace_bilinFormToEnd_comp_bilinFormToEnd {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) {h : BilinForm ℝ E} (hh : h.IsSymm) (k : BilinForm ℝ E) :
+    LinearMap.trace ℝ E (bilinFormToEnd h ∘ₗ bilinFormToEnd k) =
+      ∑ i, ∑ j, h (b i) (b j) * k (b i) (b j) := by
+  rw [LinearMap.trace_eq_sum_inner _ b]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [LinearMap.comp_apply, inner_bilinFormToEnd_right, hh.eq,
+    ← b.sum_repr' (bilinFormToEnd k (b i)), map_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [map_smul, smul_eq_mul, inner_bilinFormToEnd_right, mul_comm]
 
 /-- Metric index raising pulls back `B.compl₁₂ f g` via `LinearMap.adjoint g`. -/
 theorem bilinFormToEnd_compl₁₂ {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -122,6 +148,25 @@ namespace TauCeti
 
 end TauCeti
 
+namespace ContinuousLinearMap
+
+open TauCeti
+
+/-- If `g` is the inner product, raising the first index of `B` with `g` is metric index raising
+`TauCeti.bilinFormToEnd` of `B`. -/
+theorem toLinearMap_inverse_comp_eq_bilinFormToEnd (g : E →L[ℝ] E →L[ℝ] ℝ)
+    (hg : ∀ v w, g v w = ⟪v, w⟫) (B : E →L[ℝ] E →L[ℝ] ℝ) :
+    ((g.inverse ∘L B : E →L[ℝ] E) : E →ₗ[ℝ] E) = bilinFormToEnd B.toBilinForm := by
+  have hinv : g.IsInvertible :=
+    InnerProductSpace.isInvertible_of_apply_apply_eq_mul_inner (c := 1) one_ne_zero
+      (by simpa only [one_mul] using hg)
+  rw [← LinearMap.bilinFormToEnd_innerₗ_comp ((g.inverse ∘L B : E →L[ℝ] E) : E →ₗ[ℝ] E)]
+  refine congrArg bilinFormToEnd (LinearMap.ext₂ fun v w ↦ ?_)
+  rw [LinearMap.comp_apply, coe_coe, comp_apply, innerₗ_apply_apply, ← hg, toBilinForm_apply]
+  exact congrArg (fun φ ↦ φ w) (hinv.self_apply_inverse (B v))
+
+end ContinuousLinearMap
+
 namespace LinearIsometryEquiv
 
 open TauCeti
@@ -148,25 +193,3 @@ theorem comp_bilinFormToEnd_of_eq {F : Type*} [NormedAddCommGroup F]
   exact e.comp_bilinFormToEnd_compl₁₂ B₂
 
 end LinearIsometryEquiv
-
-namespace LinearIsometry
-
-open TauCeti
-
-/-- Pulling back a bilinear form along the adjoint of a linear isometry preserves its metric
-trace. -/
-theorem bilinFormTrace_comp_adjoint {W V : Type*} [NormedAddCommGroup W]
-    [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] (f : W →ₗᵢ[ℝ] V) (B : BilinForm ℝ W) :
-    bilinFormTrace
-        (B.comp (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap
-          (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap) =
-      bilinFormTrace B := by
-  -- Convert metric traces to `bilinFormToEnd` traces, then apply trace cyclicity and `f* ∘ f = id`.
-  rw [← LinearMap.BilinForm.trace_bilinFormToEnd, ← LinearMap.BilinForm.trace_bilinFormToEnd,
-    LinearMap.BilinForm.comp, B.bilinFormToEnd_compl₁₂,
-    ← ContinuousLinearMap.adjoint_toLinearMap, LinearMap.adjoint_adjoint,
-    f.toLinearMap_toContinuousLinearMap]
-  simp [LinearMap.trace_comp_cycle, f.adjoint_comp_self']
-
-end LinearIsometry

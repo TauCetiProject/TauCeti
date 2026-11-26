@@ -43,7 +43,9 @@ finite-dimensional vector space; here the scalars form any commutative semiring.
 * `Module.Basis.isUnit_det_of_isPerfPair`: the Gram matrix of a perfect pairing in finite bases has
   unit determinant.
 * `LinearMap.leftDualBasis`: the left dual basis of a finite basis for a perfect pairing, with
-  `LinearMap.apply_leftDualBasis`, `LinearMap.eq_leftDualBasis_iff` and the reconstruction
+  `LinearMap.apply_leftDualBasis`, `LinearMap.eq_leftDualBasis_iff`, the left dual of a pairing
+  given by a bijection of the index sets `LinearMap.coe_leftDualBasis_eq_comp_symm` and its
+  anti-diagonal case `LinearMap.coe_leftDualBasis_eq_comp_rev`, and the reconstruction
   `LinearMap.sum_apply_smul_leftDualBasis`.
 -/
 
@@ -138,6 +140,28 @@ theorem eq_leftDualBasis_iff (e : Basis ι R N) {f : ι → M} :
     f = p.leftDualBasis e ↔ ∀ i j, p (f i) (e j) = if j = i then 1 else 0 := by
   refine ⟨fun h ↦ h ▸ p.apply_leftDualBasis e, fun h ↦ funext fun i ↦ ?_⟩
   exact (IsPerfPair.bijective_left p).injective (e.ext fun j ↦ by rw [h, apply_leftDualBasis])
+
+/-- If `p (f k) (e j)` is `1` when `j = σ k` and `0` otherwise, for a bijection `σ` of the index
+sets, then the left dual basis of `e` is the family `f` reindexed along `σ`: `e^i = f (σ⁻¹ i)`. -/
+theorem coe_leftDualBasis_eq_comp_symm {κ : Type*} (e : Basis ι R N) {f : κ → M} (σ : κ ≃ ι)
+    (h : ∀ k j, p (f k) (e j) = if j = σ k then 1 else 0) :
+    ⇑(p.leftDualBasis e) = f ∘ σ.symm :=
+  ((p.eq_leftDualBasis_iff e).2 fun i j ↦ by
+    rw [Function.comp_apply, h, Equiv.apply_symm_apply]).symm
+
+/-- For the anti-diagonal pairing, with `p (f i) (e j)` equal to `1` when `i + j = n` and `0`
+otherwise, the left dual basis of `e` is the family `f` reversed: `e^j = f (n - j)`. -/
+theorem coe_leftDualBasis_eq_comp_rev {n : ℕ} (e : Basis (Fin (n + 1)) R N)
+    {f : Fin (n + 1) → M}
+    (h : ∀ i j : Fin (n + 1), p (f i) (e j) = if (i : ℕ) + j = n then 1 else 0) :
+    ⇑(p.leftDualBasis e) = f ∘ Fin.rev := by
+  rw [p.coe_leftDualBasis_eq_comp_symm e Fin.revPerm fun i j ↦ ?_, Fin.revPerm_symm]
+  · funext i
+    rw [Function.comp_apply, Function.comp_apply, Fin.revPerm_apply]
+  rw [h]
+  refine if_congr ?_ rfl rfl
+  rw [Fin.revPerm_apply, Fin.ext_iff, Fin.val_rev]
+  omega
 
 /-- The coordinates of `x ∈ M` in the left dual basis of `e` are the pairings `p x (e_i)`. -/
 @[simp]
