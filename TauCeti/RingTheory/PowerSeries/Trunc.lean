@@ -64,6 +64,8 @@ This file collects facts used to compare power series to a finite order `m`:
   one of degree at most `m`.
 * `PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero`: at an element with a vanishing `n`th power,
   the truncation below `n` evaluates like any polynomial with the same coefficients below `n`.
+* `PowerSeries.exists_mul_toPowerSeries_shift`: shifting the starting index of a generating series
+  preserves polynomiality after right multiplication by a fixed polynomial.
 -/
 
 public section
@@ -235,6 +237,54 @@ theorem eq_of_forall_X_pow_dvd_sub {a b : R⟦X⟧} (h : ∀ n : ℕ, X ^ (n + 1
   ext n
   rw [← sub_eq_zero, ← map_sub]
   exact X_pow_dvd_iff.1 (h n) n (Nat.lt_succ_self n)
+
+/-- Shifting the starting index of a generating series preserves polynomiality after right
+multiplication by any fixed polynomial `q`. -/
+theorem exists_mul_toPowerSeries_shift {f : ℤ → R} (q : Polynomial R) {d₁ : ℤ} {h : Polynomial R}
+    (hh : (mk fun n : ℕ ↦ f (d₁ + n)) * q.toPowerSeries = h.toPowerSeries) (d₀ : ℤ) :
+    ∃ h' : Polynomial R, (mk fun n : ℕ ↦ f (d₀ + n)) * q.toPowerSeries = h'.toPowerSeries := by
+  have hshift (a b : ℤ) (hab : a ≤ b) :
+      (mk fun i : ℕ ↦ coeff (i + (b - a).toNat) (mk fun n : ℕ ↦ f (a + n))) =
+        mk fun n : ℕ ↦ f (b + n) := by
+    ext i
+    simp only [coeff_mk]
+    congr 1
+    omega
+  have hsub (p₁ p₂ : Polynomial R) :
+      (p₁ - p₂).toPowerSeries = p₁.toPowerSeries - p₂.toPowerSeries :=
+    map_sub Polynomial.coeToPowerSeries.ringHom p₁ p₂
+  rcases le_total d₀ d₁ with hle | hle
+  · let k : ℕ := (d₁ - d₀).toNat
+    let φ := mk fun n : ℕ ↦ f (d₀ + n)
+    refine ⟨trunc k φ * q + Polynomial.X ^ k * h, ?_⟩
+    have hsplit : φ = (trunc k φ).toPowerSeries + X ^ k * (mk fun n : ℕ ↦ f (d₁ + n)) := by
+      conv_lhs => rw [eq_X_pow_mul_shift_add_trunc k φ, add_comm, hshift d₀ d₁ hle]
+    dsimp only [φ] at hsplit
+    conv_lhs => rw [hsplit, add_mul, mul_assoc, hh]
+    dsimp only [φ]
+    rw [Polynomial.coe_add, Polynomial.coe_mul, Polynomial.coe_mul, Polynomial.coe_pow,
+      Polynomial.coe_X]
+  · let k : ℕ := (d₀ - d₁).toNat
+    let φ := mk fun n : ℕ ↦ f (d₁ + n)
+    let r : Polynomial R := h - trunc k φ * q
+    let S : R⟦X⟧ := (mk fun n : ℕ ↦ f (d₀ + n)) * q.toPowerSeries
+    have hXS : X ^ k * S = r.toPowerSeries := by
+      have hsplit : φ = (trunc k φ).toPowerSeries + X ^ k * (mk fun n : ℕ ↦ f (d₀ + n)) := by
+        conv_lhs => rw [eq_X_pow_mul_shift_add_trunc k φ, add_comm, hshift d₁ d₀ hle]
+      have h1 : (trunc k φ).toPowerSeries * q.toPowerSeries + X ^ k * S = h.toPowerSeries := by
+        calc
+          (trunc k φ).toPowerSeries * q.toPowerSeries + X ^ k * S
+              = ((trunc k φ).toPowerSeries + X ^ k * (mk fun n : ℕ ↦ f (d₀ + n))) *
+                  q.toPowerSeries := by simp [S, add_mul, mul_assoc]
+          _ = φ * q.toPowerSeries := by rw [← hsplit]
+          _ = h.toPowerSeries := hh
+      simpa [r, hsub] using eq_sub_of_add_eq' h1
+    refine ⟨trunc (r.natDegree + 1) S, (coe_trunc_eq_self_of_coeff_eq_zero fun n hn ↦ ?_).symm⟩
+    have hcoeff : coeff n S = r.coeff (n + k) := by
+      have h1 := congrArg (coeff (n + k)) hXS
+      rwa [coeff_X_pow_mul, Polynomial.coeff_coe] at h1
+    rw [hcoeff]
+    exact Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
 
 /-- A power series is congruent to its truncation below degree `n` modulo `X ^ n`. -/
 theorem X_pow_dvd_sub_trunc (n : ℕ) (φ : R⟦X⟧) : X ^ n ∣ φ - (trunc n φ : R⟦X⟧) :=

@@ -15,7 +15,9 @@ import TauCeti.LinearAlgebra.Dual.FiniteProjective
 A finitely generated module over a left Artinian ring has finite length, which is one implication of
 Mathlib's `IsArtinianRing.tfae`. The ring need not be commutative. The same holds over the base of
 any finite extension, in particular for a finitely generated module over an Artin algebra. Over an
-Artin algebra this applies to the dual `Hom_A(P, A)` of a finitely generated module.
+Artin algebra this applies to the dual `Hom_A(P, A)` of a finitely generated module. Conversely, for
+a finite-length module `N` over a commutative ring `A`, the quotient `A ⧸ Module.annihilator A N` is
+an Artinian ring (`TauCeti.isArtinianRing_quotient_annihilator`).
 -/
 
 public section
@@ -50,5 +52,27 @@ theorem isFiniteLength_dual (R : Type u) [CommRing R] [IsArtinianRing R] (A : Ty
   have : IsNoetherian R (Module.Dual A P) :=
     isNoetherian_of_injective (f.lcomp R A) fun _ _ h ↦ (LinearMap.cancel_right hf).mp h
   exact isFiniteLength_of_finite R _
+
+/-- The quotient of a commutative ring by the annihilator of a finite-length module is Artinian. -/
+theorem isArtinianRing_quotient_annihilator {A N : Type*} [CommRing A] [AddCommGroup N]
+    [Module A N] (hfl : IsFiniteLength A N) :
+    IsArtinianRing (A ⧸ Module.annihilator A N) := by
+  have : IsNoetherian A N := (isFiniteLength_iff_isNoetherian_isArtinian.mp hfl).1
+  have : IsArtinian A N := (isFiniteLength_iff_isNoetherian_isArtinian.mp hfl).2
+  obtain ⟨T, hT⟩ := Module.Finite.fg_top (R := A) (M := N)
+  let φ : A →ₗ[A] (T → N) :=
+    { toFun := fun a t ↦ a • t.val
+      map_add' := fun a b ↦ funext fun _ ↦ add_smul a b _
+      map_smul' := fun r a ↦ funext fun _ ↦ mul_smul r a _ }
+  have hker : LinearMap.ker φ = Module.annihilator A N := by
+    ext a
+    rw [LinearMap.mem_ker, funext_iff, ← Submodule.annihilator_top (R := A) (M := N), ← hT,
+      Submodule.mem_annihilator_span]
+    exact Iff.rfl
+  have hinj : Function.Injective ((Module.annihilator A N).liftQ φ (le_of_eq hker.symm)) := by
+    rw [← LinearMap.ker_eq_bot, Submodule.ker_liftQ_eq_bot']
+    exact hker.symm
+  have : IsArtinian A (A ⧸ Module.annihilator A N) := isArtinian_of_injective _ hinj
+  exact isArtinian_of_tower A (M := A ⧸ Module.annihilator A N) this
 
 end TauCeti
