@@ -176,12 +176,10 @@ theorem isUnitary_of_isComplexLinear_of_opNorm_le_one (U : StronglyContinuousGro
     (hlin : U.toSemigroup.IsComplexLinear) (h : ∀ t : ℝ, ‖U t‖ ≤ 1) : U.IsUnitary := by
   refine IsUnitary.intro fun t x y => ?_
   let L : H →ₗᵢ[ℂ] H :=
-    { toLinearMap :=
-        { toFun := U t
-          map_add' := (U t).map_add
-          map_smul' := U.map_smul_of_isComplexLinear hlin t }
-      norm_map' := U.norm_map_apply_eq_of_norm_le_one t (h t) (h (-t)) }
-  exact L.inner_map_map x y
+    { toLinearMap := U.complexLinearOperator hlin t
+      norm_map' x := by
+        simpa using U.norm_map_apply_eq_of_norm_le_one t (h t) (h (-t)) x }
+  simpa [L] using L.inner_map_map x y
 
 /-- A complex-linear contraction semigroup and an inverse contraction semigroup glue into a
 unitary C₀-group (complex linearity of the inverse half follows from the group law). -/

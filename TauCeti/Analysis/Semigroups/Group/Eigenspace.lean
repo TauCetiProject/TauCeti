@@ -47,10 +47,7 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
 /-- The complex submodule of vectors fixed by every operator `U t` of a complex-linear C₀-group. -/
 def fixedSubmodule (U : StronglyContinuousGroup X) (hU : U.toSemigroup.IsComplexLinear) :
     Submodule ℂ X :=
-  ⨅ t : ℝ, LinearMap.fixedSubmodule
-    { toFun := U t
-      map_add' := (U t).map_add
-      map_smul' := U.map_smul_of_isComplexLinear hU t }
+  ⨅ t : ℝ, LinearMap.fixedSubmodule (U.complexLinearOperator hU t : X →ₗ[ℂ] X)
 
 /-- Membership in `fixedSubmodule` means being fixed by `U t` at every real time `t`. -/
 @[simp]
