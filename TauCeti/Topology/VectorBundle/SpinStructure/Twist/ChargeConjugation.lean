@@ -111,17 +111,12 @@ local notation "πᶜ" => MonoidHom.comp
   (spinCGroup.toSpecialOrthogonal (realCliffordForm n 0) hQ)
 
 /-- Charge conjugation covers the identity rotation, `πᶜ ∘ χ = πᶜ`. -/
-local notation "hπχ" => Eq.trans (MonoidHom.comp_assoc _ _ _)
-  (congrArg (MonoidHom.comp
-      (Subgroup.subtype (QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0))))
-    (spinCGroup.toSpecialOrthogonal_comp_chargeConj (realCliffordForm n 0) hQ))
+local notation "hπχ" =>
+  spinCGroup.subtype_comp_toSpecialOrthogonal_comp_chargeConj (realCliffordForm n 0) hQ
 
 /-- Multiplication by the central circle covers the first projection, `πᶜ ∘ μ = πᶜ ∘ fst`. -/
-local notation "hπμ" => Eq.trans (MonoidHom.comp_assoc _ _ _) <| Eq.trans
-  (congrArg (MonoidHom.comp
-      (Subgroup.subtype (QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0))))
-    (spinCGroup.toSpecialOrthogonal_comp_mulCircle (realCliffordForm n 0) hQ))
-  (Eq.symm (MonoidHom.comp_assoc _ _ _))
+local notation "hπμ" =>
+  spinCGroup.subtype_comp_toSpecialOrthogonal_comp_mulCircle (realCliffordForm n 0) hQ
 
 /-! ### Charge conjugation is the twist by the inverse determinant -/
 
@@ -221,9 +216,10 @@ private theorem twistChargeConjTwistMap_smul (x : X) (z : FiberProd s.P Q x)
   refine (Extend.inl_smul μ hμ (P := FiberProd s.P (s.inverseDeterminantTwistBundle Q))
     (FiberProd.mk z.fst (Extend.inl ψ hψ z)) (g.1, ψ g)).trans ?_
   have hg : μ (g.1, ψ g) = (χ).comp μ g := by
-    rw [MonoidHom.comp_apply, MonoidHom.coe_ofClass, spinCGroup.mulCircle_apply,
-      spinCGroup.mulCircle_apply, spinCGroup.chargeConj_mul_ofCircle, MonoidHom.inv_apply,
-      MonoidHom.mul_apply, MonoidHom.comp_apply, MonoidHom.coe_fst, MonoidHom.coe_snd, mul_inv]
+    obtain ⟨a, w⟩ := g
+    simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, MonoidHom.inv_apply,
+      MonoidHom.mul_apply, MonoidHom.coe_fst, MonoidHom.coe_snd, spinCGroup.mulCircle_apply,
+      spinCGroup.chargeConj_mul_ofCircle, mul_inv]
   rw [hg]
   -- As above, the fibres `FiberProd s.P _ x` and `(s.fiberProd Circle _).P x` agree by unfolding.
   rfl
@@ -242,7 +238,9 @@ and determinant line `L`, and a principal `U(1)`-bundle `Q` with line `E`, the c
 `s ⊗ E` is equivalent to the twist of `s` by the principal `U(1)`-bundle `(P ×_X Q) ×_ψ U(1)`,
 which has the transition functions of `L⁻¹ ⊗ E⁻¹`: `conj (s ⊗ E) ≃ s ⊗ (L⁻¹ ⊗ E⁻¹)`, by
 `[[(p, q), 1], h] ↦ [(p, [(p, q), 1]), h]`. For the canonical `Spinᶜ` structure of an almost
-Hermitian four-manifold, where `L = K⁻¹`, this is `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`. -/
+Hermitian four-manifold, where `L = K⁻¹`, this would give `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`
+once `(P ×_X Q) ×_ψ U(1)` is identified with the circle bundle of `K ⊗ E⁻¹`, which is not yet
+done. -/
 def twistChargeConjEquivTwist :
     (s.twist Q).chargeConj.Equiv (s.twist (s.inverseDeterminantTwistBundle Q)) :=
   ((s.fiberProd Circle Q).extendCompEquiv μ hμ hπμ

@@ -100,8 +100,7 @@ fibre `(s.twist L).P x` unfolds to the fibre of the extension downstream. -/
 noncomputable def twist (s : SpinCStructure F V n) : SpinCStructure F V n :=
   (s.fiberProd Circle L).extend (spinCGroup.mulCircle _ hQ)
     (spinCGroup.continuous_mulCircle _ _)
-    (by rw [MonoidHom.comp_assoc, spinCGroup.toSpecialOrthogonal_comp_mulCircle,
-      MonoidHom.comp_assoc])
+    (spinCGroup.subtype_comp_toSpecialOrthogonal_comp_mulCircle _ hQ)
     spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
 
 variable {L} (s : SpinCStructure F V n)

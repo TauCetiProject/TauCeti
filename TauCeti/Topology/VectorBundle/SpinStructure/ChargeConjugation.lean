@@ -39,9 +39,11 @@ charge conjugation is involutive: `[[p, h], k] ↦ p • χ(h) k` is an equivale
 `TauCeti.SpinCStructure.twist`. Since `χ x = x [1, (det x)⁻¹]`
 (`CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`), `s.chargeConj` is equivalent
 to the twist of `s` by the inverse of the `U(1)`-bundle of its determinant line, and the charge
-conjugate of `s ⊗ E` to `s ⊗ (L⁻¹ ⊗ E⁻¹)`; on a symplectic four-manifold the latter is
-`conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`. These equivalences are in
-`TauCeti.Topology.VectorBundle.SpinStructure.Twist.ChargeConjugation`; the identity
+conjugate of `s ⊗ E` to `s ⊗ (L⁻¹ ⊗ E⁻¹)`. These equivalences are in
+`TauCeti.Topology.VectorBundle.SpinStructure.Twist.ChargeConjugation`, with `L⁻¹ ⊗ E⁻¹` realised
+as a circle bundle built from `P` and the circle bundle of `E`. On a symplectic four-manifold the
+latter would become `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` once that circle bundle is identified with
+the circle bundle of `K ⊗ E⁻¹`, which is not yet done. The identity
 `c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about determinant classes.
 
 ## Main definitions
@@ -97,12 +99,10 @@ local notation "χ" => MonoidHom.ofClass (spinCGroup.chargeConj (realCliffordFor
 local notation "hχ" => spinCGroup.continuous_chargeConj (realCliffordForm n 0) hQ
 
 /-- Charge conjugation covers the identity rotation, `πᶜ ∘ χ = πᶜ`
-(`CliffordAlgebra.spinCGroup.toSpecialOrthogonal_comp_chargeConj`): the compatibility
-hypothesis of `TauCeti.OrthonormalFrameLift.extendSpinC` for `χ`. -/
-local notation "hπχ" => Eq.trans (MonoidHom.comp_assoc _ _ _)
-  (congrArg (MonoidHom.comp
-      (Subgroup.subtype (QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0))))
-    (spinCGroup.toSpecialOrthogonal_comp_chargeConj (realCliffordForm n 0) hQ))
+(`CliffordAlgebra.spinCGroup.subtype_comp_toSpecialOrthogonal_comp_chargeConj`): the
+compatibility hypothesis of `TauCeti.OrthonormalFrameLift.extendSpinC` for `χ`. -/
+local notation "hπχ" =>
+  spinCGroup.subtype_comp_toSpecialOrthogonal_comp_chargeConj (realCliffordForm n 0) hQ
 
 section Structure
 
