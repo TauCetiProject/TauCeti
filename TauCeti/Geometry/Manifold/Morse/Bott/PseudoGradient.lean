@@ -392,11 +392,12 @@ theorem strictAnti_comp (hX : IsBottAdaptedPseudoGradient f X) (hγ : IsMIntegra
       (by_contra fun h ↦ hcrit t (mfderiv_zero_of_not_mdifferentiableAt h)) (hγ t))
     fun t ↦ hX.mvfderiv_apply_lt_zero _ (hcrit t)
 
-/-- **`f` is differentiable.** Where `mfderiv` is nonzero, `f` is differentiable by definition of
-`mfderiv`; a zero of the derivative has a Morse–Bott chart, in which `f` is the smooth quadratic
-normal form. -/
+/-- **`f` is differentiable.** If `X` is adapted to `f` in the Morse–Bott sense, then `f` is
+differentiable; this need not be assumed separately. -/
 theorem mdifferentiable (hX : IsBottAdaptedPseudoGradient f X) : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f :=
   fun p ↦ by
+  -- Where `mfderiv` is nonzero, `f` is differentiable by definition of `mfderiv`; a zero of the
+  -- derivative has a Morse–Bott chart, in which `f` is the smooth quadratic normal form.
   by_contra hd
   obtain ⟨φ, -⟩ := hX.exists_morseBottChart p (mfderiv_zero_of_not_mdifferentiableAt hd)
   exact hd ((φ.contMDiffAt φ.mem_source).mdifferentiableAt (by simp))

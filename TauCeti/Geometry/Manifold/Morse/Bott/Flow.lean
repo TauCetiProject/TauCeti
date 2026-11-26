@@ -411,12 +411,14 @@ theorem exists_forall_mem_stableSet_iff (φ : MorseBottChart E f x)
     rw [hproj h0, φ.toChart_symm_coord_symm_coord hp] at hlim
     exact Flow.mem_stableSet.2 hlim
 
-/-- **Every orbit converges forward in time to a critical point.** The critical points of `f` need
-not be isolated. The ω-limit set of an orbit consists of critical points at a single level `c`; once
-the orbit comes close to one of them, it lies on the stable slice of its Morse–Bott chart, since it
-never goes below the level `c`, and it converges along the linear flow. -/
+/-- **Every orbit converges forward in time to a critical point.** For every `y`, the forward
+orbit `t ↦ hX.flow t y` converges to a single critical point of `f`, even though the critical points
+of `f` need not be isolated. -/
 theorem exists_tendsto_atTop (y : M) :
     ∃ p, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atTop (𝓝 p) := by
+  -- The ω-limit set of the orbit consists of critical points at a single level; once the orbit
+  -- comes close to one of them, it lies on the stable slice of its Morse–Bott chart, since it never
+  -- goes below that level, and it converges along the linear flow.
   set γ : ℝ → M := fun t ↦ hX.flow t y
   have hfc : Continuous f := hX.mdifferentiable.continuous
   -- A cluster point `p` of the orbit is a critical point, as `f` is constant along its orbit.
@@ -443,11 +445,12 @@ theorem exists_tendsto_atTop (y : M) :
       (tendsto_atTop_add_const_right _ (-t₀) tendsto_id)).congr fun t ↦ ?_⟩
   simp only [comp_apply, id_eq, γ, ← Flow.map_add, neg_add_cancel_right]
 
-/-- **Every orbit converges backward in time to a critical point**: apply
-`TauCeti.IsBottAdaptedPseudoGradient.exists_tendsto_atTop` to the reversed pseudo-gradient `-X`,
-adapted to `-f`, whose flow is the reversed flow. -/
+/-- **Every orbit converges backward in time to a critical point.** For every `y`, the backward
+orbit `t ↦ hX.flow t y` converges, as `t → -∞`, to a single critical point of `f`. -/
 theorem exists_tendsto_atBot (y : M) :
     ∃ p, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atBot (𝓝 p) := by
+  -- Apply `exists_tendsto_atTop` to the reversed pseudo-gradient `-X`, adapted to `-f`, whose flow
+  -- is the reversed flow.
   obtain ⟨p, hp, hlim⟩ := hX.neg.exists_tendsto_atTop y
   refine ⟨p, mfderiv_neg_eq_zero_iff.1 hp, ?_⟩
   rw [hX.neg_flow] at hlim
