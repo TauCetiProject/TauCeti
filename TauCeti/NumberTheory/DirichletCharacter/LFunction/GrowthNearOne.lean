@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Entire
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 import Mathlib.Analysis.Complex.Hadamard
-import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
@@ -127,8 +127,8 @@ theorem norm_LSeries_le_mul_norm_regularizedLFunction (hs : 1 < s.re) (hl : 1 �
       rw [χ.regularizedLFunction_eq_LSeries hs, norm_mul, norm_div]
       ring
 
-/-- On the strip `Re z ≥ a` with `a ≥ 1 / 2` and `Re (z - (s - 2)) ≥ 1`, the quotient
-`f_χ(z) / (z - (s - 2))` is at most `e^{3l}` when `N ≤ e^l`, `‖s‖ ≤ 3 e^l` and `l ≥ 10¹⁰`. -/
+/-- If `Re z ≥ 1 / 2` and `‖z - (s - 2)‖ ≥ 1`, then `‖f_χ(z) / (z - (s - 2))‖ ≤ e^{3l}` when
+`N ≤ e^l`, `‖s‖ ≤ 3 e^l` and `l ≥ 10¹⁰`. -/
 private theorem norm_div_le_exp_cube (hl : 10 ^ 10 ≤ l) (hN : N ≤ rexp l)
     (h_norm : ‖s‖ ≤ 3 * rexp l) {z : ℂ} (hz : 1 / 2 ≤ z.re) (h_denom : 1 ≤ ‖z - (s - 2)‖) :
     ‖χ.regularizedLFunction z / (z - (s - 2))‖ ≤ rexp l ^ 3 := by

@@ -14,7 +14,7 @@ import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
 import TauCeti.NumberTheory.PrimeFactors.Bounds
 
 /-!
-# A level-dependent bound for continued Dirichlet L-functions
+# Bounds for Dirichlet L-functions and their Dirichlet series
 
 Cancellation over a full period bounds the partial sums of a nonprincipal character of level
 `N` by `N`, so they are `O(1)` (`DirichletCharacter.isBigO_sum_Icc_one`). Partial summation then
@@ -33,8 +33,9 @@ bound with the fractional-part bound on `riemannZeta` and the Euler-factor bound
 `‖L(s, χ)‖ ≤ N (‖s - 1‖⁻¹ + 1 + ‖s‖ / Re(s))` on `Re(s) > 0` (away from `s = 1` when `χ = 1`) for
 every character `χ` of level `N`, principal or nonprincipal.
 
-The function being bounded is the native analytic continuation, not the Dirichlet series
-(which need not converge absolutely in this half-plane). No zero-free hypothesis is required.
+The bounds on `Re(s) > 0` above are for the native analytic continuation, not the Dirichlet
+series (which need not converge absolutely in this half-plane). No zero-free hypothesis is
+required.
 
 On `Re(s) ≥ 1 + 1 / A`, where the Dirichlet series converges absolutely, comparison with
 `ζ(Re s) < 1 + 1 / (Re s - 1)` gives `‖L(s, χ)‖ ≤ 1 + A`
