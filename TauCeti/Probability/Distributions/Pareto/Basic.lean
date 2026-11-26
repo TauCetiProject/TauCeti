@@ -10,6 +10,7 @@ public import Mathlib.Probability.Distributions.Pareto
 public import Mathlib.Probability.HasLaw
 
 import TauCeti.Probability.Moments.IntegrableExpMul
+import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Distributions.Pareto.PDF
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
@@ -170,6 +171,7 @@ theorem integral_rpow_paretoMeasure (ht : 0 < t) (hr : 0 < r) (hq : q < r) :
 
 /-- A natural power is integrable under a nondegenerate Pareto law exactly when its exponent is
 below the shape parameter. -/
+@[simp]
 theorem integrable_pow_paretoMeasure_iff (ht : 0 < t) (hr : 0 < r) (n : ℕ) :
     Integrable (fun x : ℝ ↦ x ^ n) (paretoMeasure t r) ↔ (n : ℝ) < r := by
   simpa only [Real.rpow_natCast] using
@@ -209,7 +211,6 @@ theorem integral_sq_paretoMeasure (ht : 0 < t) (hr : 2 < r) :
   simpa [Real.rpow_two] using h
 
 /-- Squaring is integrable under a Pareto law exactly when the shape exceeds `2`. -/
-@[simp]
 theorem integrable_sq_paretoMeasure_iff (ht : 0 < t) (hr : 0 < r) :
     Integrable (fun x : ℝ => x ^ 2) (paretoMeasure t r) ↔ 2 < r := by
   simpa [Real.rpow_two] using integrable_rpow_paretoMeasure_iff ht hr 2
@@ -317,12 +318,6 @@ open TauCeti.Probability
 
 variable {t r q : ℝ} {n : ℕ} {Ω : Type*} [MeasurableSpace Ω]
   {P : Measure Ω} {X : Ω → ℝ}
-
-private theorem integrable_comp_iff (hX : HasLaw X (paretoMeasure t r) P)
-    {f : ℝ → ℝ} (hf : AEStronglyMeasurable f (paretoMeasure t r)) :
-    Integrable (f ∘ X) P ↔ Integrable f (paretoMeasure t r) := by
-  rw [← hX.map_eq] at hf ⊢
-  exact (integrable_map_measure hf hX.aemeasurable).symm
 
 /-- A real power of a Pareto random variable is integrable exactly below the shape parameter. -/
 theorem integrable_rpow_paretoMeasure_iff (hX : HasLaw X (paretoMeasure t r) P)
