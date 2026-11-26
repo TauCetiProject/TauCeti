@@ -87,21 +87,52 @@ theorem tsupport_externalTensor_subset (s : BundleTest I F V) (t : BundleTest J 
   rw [externalTensor, LinearEquiv.symm_apply_apply]
   simpa only [tsupport_def] using ContMDiffSection.tsupport_externalTensor_subset _ _
 
+/-- The external tensor product with the zero test on the left vanishes. -/
+@[simp]
+theorem zero_externalTensor (t : BundleTest J G W) :
+    (0 : BundleTest I F V).externalTensor t = 0 :=
+  BundleTest.ext fun p ↦ by
+    simp only [externalTensor_apply, zero_apply]; exact TensorProduct.zero_tmul _ _
+
+/-- The external tensor product with the zero test on the right vanishes. -/
+@[simp]
+theorem externalTensor_zero (s : BundleTest I F V) :
+    s.externalTensor (0 : BundleTest J G W) = 0 :=
+  BundleTest.ext fun p ↦ by
+    simp only [externalTensor_apply, zero_apply]; exact TensorProduct.tmul_zero _ _
+
+/-- The external tensor product of bundle tests is additive in its first factor. -/
+theorem add_externalTensor (s s' : BundleTest I F V) (t : BundleTest J G W) :
+    (s + s').externalTensor t = s.externalTensor t + s'.externalTensor t :=
+  BundleTest.ext fun p ↦ by
+    simp only [externalTensor_apply, add_apply]; exact TensorProduct.add_tmul _ _ _
+
+/-- The external tensor product of bundle tests is additive in its second factor. -/
+theorem externalTensor_add (s : BundleTest I F V) (t t' : BundleTest J G W) :
+    s.externalTensor (t + t') = s.externalTensor t + s.externalTensor t' :=
+  BundleTest.ext fun p ↦ by
+    simp only [externalTensor_apply, add_apply]; exact TensorProduct.tmul_add _ _ _
+
+/-- The external tensor product of bundle tests is homogeneous in its first factor. -/
+theorem smul_externalTensor (a : ℝ) (s : BundleTest I F V) (t : BundleTest J G W) :
+    (a • s).externalTensor t = a • s.externalTensor t :=
+  BundleTest.ext fun p ↦ by
+    simpa only [externalTensor_apply, smul_apply, one_smul, mul_one] using
+      ExternalTensor.smul_tmul_smul a 1 (s p.1) (t p.2)
+
+/-- The external tensor product of bundle tests is homogeneous in its second factor. -/
+theorem externalTensor_smul (a : ℝ) (s : BundleTest I F V) (t : BundleTest J G W) :
+    s.externalTensor (a • t) = a • s.externalTensor t :=
+  BundleTest.ext fun p ↦ by
+    simpa only [externalTensor_apply, smul_apply, one_smul, one_mul] using
+      ExternalTensor.smul_tmul_smul 1 a (s p.1) (t p.2)
+
 /-- The external tensor product of bundle tests, as a bilinear map. -/
 def externalTensorₗ :
     BundleTest I F V →ₗ[ℝ] BundleTest J G W →ₗ[ℝ]
       BundleTest (I.prod J) (ProjectiveTensor ℝ F G) (ExternalTensor ℝ V W) :=
-  LinearMap.mk₂ ℝ externalTensor
-    (fun _ _ _ ↦ BundleTest.ext fun p ↦ by
-      simp only [externalTensor_apply, add_apply]; exact TensorProduct.add_tmul _ _ _)
-    (fun a s _ ↦ BundleTest.ext fun p ↦ by
-      simpa only [externalTensor_apply, smul_apply, one_smul, mul_one] using
-        ExternalTensor.smul_tmul_smul a 1 (s p.1) _)
-    (fun _ _ _ ↦ BundleTest.ext fun p ↦ by
-      simp only [externalTensor_apply, add_apply]; exact TensorProduct.tmul_add _ _ _)
-    (fun a _ t ↦ BundleTest.ext fun p ↦ by
-      simpa only [externalTensor_apply, smul_apply, one_smul, one_mul] using
-        ExternalTensor.smul_tmul_smul 1 a _ (t p.2))
+  LinearMap.mk₂ ℝ externalTensor add_externalTensor smul_externalTensor externalTensor_add
+    externalTensor_smul
 
 @[simp]
 theorem externalTensorₗ_apply (s : BundleTest I F V) (t : BundleTest J G W) :

@@ -405,18 +405,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [FiberBundle F V] [VectorBundle ℝ F V]
   {n : ℕ∞} [ContMDiffVectorBundle n F V I]
 
-omit [NormedSpace ℝ F] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
-  [ContMDiffVectorBundle n F V I] in
-/-- Chart cutoffs whose chart sources lie in the base sets of the trivializations at their
-indices. -/
-private theorem exists_chartCutoffs_source_subset :
-    ∃ A : TauCeti.ChartCutoffs I M n M,
-      ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet := by
-  obtain ⟨A, hA⟩ := TauCeti.ChartCutoffs.exists_chart_eq (testChart F I V)
-    (contMDiffOn_testChart (n := n) V) (contMDiffOn_testChart_symm (n := n) V)
-    (mem_testChart_source V)
-  exact ⟨A, hA ▸ testChart_source_subset V⟩
-
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [SigmaCompactSpace M] [IsManifold I ∞ M] in
 /-- Every section supported in the compact set `K` is a finite sum of chart extensions of its
 chart localizations along chart cutoffs. -/
@@ -443,7 +431,8 @@ theorem span_iUnion_range_chartTestSection_eq_top :
   refine Submodule.eq_top_iff'.2 fun s ↦ ?_
   let K : Compacts M := ⟨_, mem_compactlySupported.1 s.property⟩
   let σ : supportedIn I F n V K := ⟨s, mem_supportedIn.2 subset_rfl⟩
-  obtain ⟨A, hA⟩ := exists_chartCutoffs_source_subset (I := I) (F := F) (V := V) (n := n)
+  obtain ⟨A, hA⟩ := TauCeti.ChartCutoffs.exists_source_subset (I := I) (n := n)
+    (fun x ↦ (trivializationAt F V x).open_baseSet) (FiberBundle.mem_baseSet_trivializationAt' ·)
   have hs : s = ofSupportedIn K σ := Subtype.ext (ofSupportedIn_apply K σ).symm
   rw [hs, ofSupportedIn_eq_sum A hA K σ]
   refine Submodule.sum_mem _ fun x _ ↦ Submodule.subset_span (mem_iUnion.2
@@ -472,7 +461,8 @@ theorem compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSectio
     continuous_chartTestSection _ _ p.contMDiffOn_chart p.source_subset e U hU)
   -- Each fixed-compact stage is a finite sum of continuous factorizations through the chart
   -- extensions of test charts at points of `M`.
-  obtain ⟨A, hA⟩ := exists_chartCutoffs_source_subset (I := I) (F := F) (V := V) (n := n)
+  obtain ⟨A, hA⟩ := TauCeti.ChartCutoffs.exists_source_subset (I := I) (n := n)
+    (fun x ↦ (trivializationAt F V x).open_baseSet) (FiberBundle.mem_baseSet_trivializationAt' ·)
   let p : M → ChartTestData I F V n := fun x ↦ ⟨trivializationAt F V x, A.chart x,
     A.contMDiffOn_chart x, hA x⟩
   let := TauCeti.finalLocallyConvexTopology

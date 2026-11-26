@@ -119,23 +119,33 @@ instance : MemTrivializationAtlas (t.externalTensor 𝕜 t') :=
 
 variable {𝕜 t t'}
 
+omit [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [∀ y, TopologicalSpace (W y)]
+  [FiberBundle G W] [MemTrivializationAtlas t] [MemTrivializationAtlas t'] in
+/-- The product of the base sets of `t` and `t'` is the intersection of the base sets of their
+pullbacks along the two projections of `M × N`. -/
+private theorem prod_baseSet_eq_inter_pullback :
+    t.baseSet ×ˢ t'.baseSet = (t.pullback (ContinuousMap.fst : C(M × N, M))).baseSet ∩
+      (t'.pullback (ContinuousMap.snd : C(M × N, N))).baseSet := by
+  rw [pullback_baseSet, pullback_baseSet, ContinuousMap.fst_apply, ContinuousMap.snd_apply,
+    Set.prod_eq]
+
 /-- The base set of the trivialization of `V ⊠ W` induced by `t` and `t'` is the product of their
 base sets. -/
 @[simp]
 theorem baseSet_externalTensor : (t.externalTensor 𝕜 t').baseSet = t.baseSet ×ˢ t'.baseSet := by
-  rw [externalTensor, baseSet_tensorProduct, pullback_baseSet, pullback_baseSet, Set.prod_eq]
-  -- The coercions of `ContinuousMap.fst` and `ContinuousMap.snd` are `Prod.fst` and `Prod.snd`.
-  rfl
+  rw [externalTensor, baseSet_tensorProduct, prod_baseSet_eq_inter_pullback]
 
 /-- Over the product of the base sets, the trivialization of `V ⊠ W` induced by `t` and `t'`
 reads the pure tensor `v ⊗ w` of vectors `v ∈ V x` and `w ∈ W y` as `t v ⊗ t' w`. -/
+@[simp]
 theorem externalTensor_apply_mk_tmul {p : M × N} (hp : p ∈ t.baseSet ×ˢ t'.baseSet) (v : V p.1)
     (w : W p.2) :
     t.externalTensor 𝕜 t' ⟨p, (v ⊗ₜ[𝕜] w : ExternalTensor 𝕜 V W p)⟩ =
       (p, ProjectiveTensor.mk ((t ⟨p.1, v⟩).2 ⊗ₜ[𝕜] (t' ⟨p.2, w⟩).2)) := by
   refine (Bundle.Trivialization.tensorProduct_apply_mk_tmul
     (e₁ := t.pullback (ContinuousMap.fst : C(M × N, M)))
-    (e₂ := t'.pullback (ContinuousMap.snd : C(M × N, N))) (by exact hp) v w).trans ?_
+    (e₂ := t'.pullback (ContinuousMap.snd : C(M × N, N)))
+    (by rwa [prod_baseSet_eq_inter_pullback] at hp) v w).trans ?_
   -- The pulled-back trivializations read `v` and `w` as `t` and `t'` do at `p.1` and `p.2`.
   simp only [pullback_apply]
   rfl
@@ -146,8 +156,10 @@ theorem externalTensor_symm_apply_tmul {p : M × N} (hp : p ∈ t.baseSet ×ˢ t
     (w : G) :
     (t.externalTensor 𝕜 t').symm p (ProjectiveTensor.mk (v ⊗ₜ[𝕜] w)) =
       (t.symm p.1 v ⊗ₜ[𝕜] t'.symm p.2 w : ExternalTensor 𝕜 V W p) := by
-  rw [externalTensor, Bundle.Trivialization.tensorProduct_symm_apply_tmul (by exact hp),
-    symm_pullback _ _ hp.1, symm_pullback _ _ hp.2]
+  rw [externalTensor, Bundle.Trivialization.tensorProduct_symm_apply_tmul
+      (by rwa [prod_baseSet_eq_inter_pullback] at hp),
+    symm_pullback t ContinuousMap.fst (b := p) (by rw [ContinuousMap.fst_apply]; exact hp.1),
+    symm_pullback t' ContinuousMap.snd (b := p) (by rw [ContinuousMap.snd_apply]; exact hp.2)]
   -- The fibres `(fst *ᵖ V) p` and `(snd *ᵖ W) p` of the pullbacks are `V p.1` and `W p.2` by
   -- definition, so both sides are the same pure tensor.
   rfl
