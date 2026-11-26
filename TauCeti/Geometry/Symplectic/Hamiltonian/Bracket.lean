@@ -36,20 +36,28 @@ fields with closed contractions `ι_X σ` and `ι_Y σ`, is a Hamiltonian vector
 (`TauCeti.SmoothTwoForm.isHamiltonianVectorField_mlieBracket`), although `X` and `Y` themselves
 need not be Hamiltonian.
 
-For a nondegenerate closed form on a finite-dimensional manifold, where the Poisson bracket is
-`{f, g} = σ(X_f, X_g) = df(X_g)`, this says
+Suppose moreover that the model space is complete and that every flat map `v ↦ σ(v, ·)` is
+invertible, as for a strongly nondegenerate form on a Banach manifold or for any nondegenerate form
+in finite dimension. Then every `C²` function `f` has the Hamiltonian vector field
+`X_f = (σ♭)⁻¹ df`, the Poisson bracket is `{f, g} = σ(X_f, X_g) = df(X_g)`, and the identity above
+says
 
 `X_{{f, g}} = -[X_f, X_g]`
 
-(`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_poissonBracket`): the map
+(`TauCeti.SmoothTwoForm.hamiltonianVectorField_poissonBracket_of_isInvertible`): the map
 `f ↦ -X_f` takes Poisson brackets to Lie brackets of vector fields. It gives the identity
 `{f, {g, k}} = {{f, g}, k} - {{f, k}, g}` and the **Jacobi identity**
 `{f, {g, k}} + {g, {k, f}} + {k, {f, g}} = 0` for `C²` functions
-(`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_poissonBracket` and
-`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_jacobi`). The same identity shows that
+(`TauCeti.SmoothTwoForm.poissonBracket_poissonBracket_of_isInvertible` and
+`TauCeti.SmoothTwoForm.poissonBracket_jacobi_of_isInvertible`). The same identity shows that
 the Hamiltonian vector fields of two functions commute at every point near which the functions
 Poisson-commute
-(`TauCeti.SmoothTwoForm.IsNondegenerate.mlieBracket_hamiltonianVectorField_eq_zero`).
+(`TauCeti.SmoothTwoForm.mlieBracket_hamiltonianVectorField_eq_zero_of_isInvertible`). For a
+nondegenerate form on a finite-dimensional manifold the flat maps are invertible, which gives the
+forms `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_poissonBracket`,
+`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_poissonBracket`,
+`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_jacobi` and
+`TauCeti.SmoothTwoForm.IsNondegenerate.mlieBracket_hamiltonianVectorField_eq_zero`.
 
 ## References
 
@@ -57,6 +65,8 @@ Poisson-commute
   Section 3.1 (Lie brackets of symplectic and Hamiltonian vector fields, and the Poisson bracket).
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
   Springer, 2001, Section 18.3 (the Poisson bracket and its Jacobi identity).
+* R. Abraham, J. E. Marsden, *Foundations of Mechanics*, 2nd ed., Benjamin/Cummings, 1978,
+  Section 3.3 (Poisson brackets and the Jacobi identity on strongly symplectic Banach manifolds).
 -/
 
 public section
@@ -253,6 +263,77 @@ theorem isHamiltonianVectorField_mlieBracket (hσ : σ.IsClosed)
   simp only [SmoothBundleForm.eval₂_apply]
   linarith
 
+section IsInvertible
+
+variable [CompleteSpace E] (hflat : ∀ x, (σ.flat x).IsInvertible)
+include hflat
+
+/-- On a Banach manifold, if `σ` is closed and every flat map of `σ` is invertible, the Hamiltonian
+vector field of the Poisson bracket of two `C²` functions is `X_{{f, g}} = -[X_f, X_g]`. -/
+theorem hamiltonianVectorField_poissonBracket_of_isInvertible (hσ : σ.IsClosed)
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) (hg : ContMDiff I 𝓘(ℝ) 2 g) :
+    σ.hamiltonianVectorField (σ.poissonBracket f g) =
+      -mlieBracket I (σ.hamiltonianVectorField f) (σ.hamiltonianVectorField g) := by
+  refine ((isHamiltonianVectorField_iff_eq_of_isInvertible hflat).1 ?_).symm
+  rw [show σ.poissonBracket f g = _ from funext (σ.poissonBracket_def f g)]
+  exact (isHamiltonianVectorField_hamiltonianVectorField_of_isInvertible hflat f).neg_mlieBracket hσ
+    (isHamiltonianVectorField_hamiltonianVectorField_of_isInvertible hflat g) hf hg
+    (mdifferentiable_hamiltonianVectorField_of_isInvertible hflat hf)
+    (mdifferentiable_hamiltonianVectorField_of_isInvertible hflat hg)
+
+/-- **Locally Poisson-commuting functions have commuting Hamiltonian vector fields.** On a Banach
+manifold, if `σ` is closed and every flat map of `σ` is invertible, and the Poisson bracket of the
+`C²` functions `f` and `g` vanishes near `x`, then the Lie bracket `[X_f, X_g]` vanishes at `x`. -/
+theorem mlieBracket_hamiltonianVectorField_eq_zero_of_isInvertible (hσ : σ.IsClosed)
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) (hg : ContMDiff I 𝓘(ℝ) 2 g)
+    (hfg : σ.poissonBracket f g =ᶠ[𝓝 x] fun _ ↦ 0) :
+    mlieBracket I (σ.hamiltonianVectorField f) (σ.hamiltonianVectorField g) x = 0 := by
+  have h0 := hamiltonianVectorField_eq_zero_of_eventuallyEq (σ := σ) hfg
+  rwa [hamiltonianVectorField_poissonBracket_of_isInvertible hflat hσ hf hg, Pi.neg_apply,
+    neg_eq_zero] at h0
+
+/-- On a Banach manifold, if `σ` is closed and every flat map of `σ` is invertible, the Poisson
+bracket of `C²` functions satisfies `{f, {g, k}} = {{f, g}, k} - {{f, k}, g}`. -/
+theorem poissonBracket_poissonBracket_of_isInvertible (hσ : σ.IsClosed) {k : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) (hg : ContMDiff I 𝓘(ℝ) 2 g) (hk : ContMDiff I 𝓘(ℝ) 2 k) (x : M) :
+    σ.poissonBracket f (σ.poissonBracket g k) x =
+      σ.poissonBracket (σ.poissonBracket f g) k x -
+        σ.poissonBracket (σ.poissonBracket f k) g x := by
+  -- With `{f, g} = σ(X_f, X_g)` and `X_{{f, g}} = -[X_f, X_g]`, this is the Jacobi identity for
+  -- the Hamiltonian vector fields `X_f`, `X_g`, `X_k`.
+  have hJ := (isHamiltonianVectorField_hamiltonianVectorField_of_isInvertible hflat f
+    ).eval₂_mlieBracket_jacobi hσ
+    (isHamiltonianVectorField_hamiltonianVectorField_of_isInvertible hflat g)
+    (isHamiltonianVectorField_hamiltonianVectorField_of_isInvertible hflat k) (hf x) (hg x) (hk x)
+    (mdifferentiable_hamiltonianVectorField_of_isInvertible hflat hf x)
+    (mdifferentiable_hamiltonianVectorField_of_isInvertible hflat hg x)
+    (mdifferentiable_hamiltonianVectorField_of_isInvertible hflat hk x)
+  rw [mlieBracket_swap_apply (V := σ.hamiltonianVectorField k),
+    SmoothBundleForm.eval₂_neg_left] at hJ
+  rw [poissonBracket_def, poissonBracket_def, poissonBracket_def,
+    hamiltonianVectorField_poissonBracket_of_isInvertible hflat hσ hg hk,
+    hamiltonianVectorField_poissonBracket_of_isInvertible hflat hσ hf hg,
+    hamiltonianVectorField_poissonBracket_of_isInvertible hflat hσ hf hk, Pi.neg_apply,
+    Pi.neg_apply, Pi.neg_apply, SmoothBundleForm.eval₂_neg_right, SmoothBundleForm.eval₂_neg_left,
+    SmoothBundleForm.eval₂_neg_left, SmoothBundleForm.eval₂_swap σ x (σ.hamiltonianVectorField f x)]
+  linear_combination hJ
+
+/-- **The Jacobi identity for the Poisson bracket.** On a Banach manifold, if `σ` is closed and
+every flat map of `σ` is invertible, then `{f, {g, k}} + {g, {k, f}} + {k, {f, g}} = 0` for `C²`
+functions `f`, `g`, `k`. -/
+theorem poissonBracket_jacobi_of_isInvertible (hσ : σ.IsClosed) {k : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) (hg : ContMDiff I 𝓘(ℝ) 2 g) (hk : ContMDiff I 𝓘(ℝ) 2 k) (x : M) :
+    σ.poissonBracket f (σ.poissonBracket g k) x + σ.poissonBracket g (σ.poissonBracket k f) x +
+      σ.poissonBracket k (σ.poissonBracket f g) x = 0 := by
+  have hkf : σ.poissonBracket k f = -σ.poissonBracket f k :=
+    funext fun y ↦ by rw [Pi.neg_apply, neg_poissonBracket]
+  rw [poissonBracket_poissonBracket_of_isInvertible hflat hσ hf hg hk, hkf,
+    poissonBracket_neg_right, ← neg_poissonBracket,
+    ← neg_poissonBracket σ (σ.poissonBracket f k)]
+  ring
+
+end IsInvertible
+
 namespace IsNondegenerate
 
 variable [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
@@ -263,21 +344,16 @@ of the Poisson bracket of two `C²` functions is `X_{{f, g}} = -[X_f, X_g]`. -/
 theorem hamiltonianVectorField_poissonBracket (hσ : σ.IsClosed) (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hg : ContMDiff I 𝓘(ℝ) 2 g) :
     σ.hamiltonianVectorField (σ.poissonBracket f g) =
-      -mlieBracket I (σ.hamiltonianVectorField f) (σ.hamiltonianVectorField g) := by
-  refine (h.isHamiltonianVectorField_iff_eq.1 ?_).symm
-  rw [show σ.poissonBracket f g = _ from funext (σ.poissonBracket_def f g)]
-  exact (h.isHamiltonianVectorField_hamiltonianVectorField f).neg_mlieBracket hσ
-    (h.isHamiltonianVectorField_hamiltonianVectorField g) hf hg
-    (h.mdifferentiable_hamiltonianVectorField hf) (h.mdifferentiable_hamiltonianVectorField hg)
+      -mlieBracket I (σ.hamiltonianVectorField f) (σ.hamiltonianVectorField g) :=
+  hamiltonianVectorField_poissonBracket_of_isInvertible h.isInvertible_flat hσ hf hg
 
 /-- **Locally Poisson-commuting functions have commuting Hamiltonian vector fields.** For a
 nondegenerate closed form on a finite-dimensional manifold and `C²` functions `f` and `g` whose
 Poisson bracket vanishes near `x`, the Lie bracket `[X_f, X_g]` vanishes at `x`. -/
 theorem mlieBracket_hamiltonianVectorField_eq_zero (hσ : σ.IsClosed) (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hg : ContMDiff I 𝓘(ℝ) 2 g) (hfg : σ.poissonBracket f g =ᶠ[𝓝 x] fun _ ↦ 0) :
-    mlieBracket I (σ.hamiltonianVectorField f) (σ.hamiltonianVectorField g) x = 0 := by
-  have h0 := hamiltonianVectorField_eq_zero_of_eventuallyEq (σ := σ) hfg
-  rwa [h.hamiltonianVectorField_poissonBracket hσ hf hg, Pi.neg_apply, neg_eq_zero] at h0
+    mlieBracket I (σ.hamiltonianVectorField f) (σ.hamiltonianVectorField g) x = 0 :=
+  mlieBracket_hamiltonianVectorField_eq_zero_of_isInvertible h.isInvertible_flat hσ hf hg hfg
 
 /-- For a nondegenerate closed form on a finite-dimensional manifold, the Poisson bracket of `C²`
 functions satisfies `{f, {g, k}} = {{f, g}, k} - {{f, k}, g}`. -/
@@ -285,23 +361,8 @@ theorem poissonBracket_poissonBracket (hσ : σ.IsClosed) {k : M → ℝ} (hf : 
     (hg : ContMDiff I 𝓘(ℝ) 2 g) (hk : ContMDiff I 𝓘(ℝ) 2 k) (x : M) :
     σ.poissonBracket f (σ.poissonBracket g k) x =
       σ.poissonBracket (σ.poissonBracket f g) k x -
-        σ.poissonBracket (σ.poissonBracket f k) g x := by
-  -- With `{f, g} = σ(X_f, X_g)` and `X_{{f, g}} = -[X_f, X_g]`, this is the Jacobi identity for
-  -- the Hamiltonian vector fields `X_f`, `X_g`, `X_k`.
-  have hJ := (h.isHamiltonianVectorField_hamiltonianVectorField f).eval₂_mlieBracket_jacobi hσ
-    (h.isHamiltonianVectorField_hamiltonianVectorField g)
-    (h.isHamiltonianVectorField_hamiltonianVectorField k) (hf x) (hg x) (hk x)
-    (h.mdifferentiable_hamiltonianVectorField hf x) (h.mdifferentiable_hamiltonianVectorField hg x)
-    (h.mdifferentiable_hamiltonianVectorField hk x)
-  rw [mlieBracket_swap_apply (V := σ.hamiltonianVectorField k),
-    SmoothBundleForm.eval₂_neg_left] at hJ
-  rw [poissonBracket_def, poissonBracket_def, poissonBracket_def,
-    h.hamiltonianVectorField_poissonBracket hσ hg hk,
-    h.hamiltonianVectorField_poissonBracket hσ hf hg,
-    h.hamiltonianVectorField_poissonBracket hσ hf hk, Pi.neg_apply, Pi.neg_apply, Pi.neg_apply,
-    SmoothBundleForm.eval₂_neg_right, SmoothBundleForm.eval₂_neg_left,
-    SmoothBundleForm.eval₂_neg_left, SmoothBundleForm.eval₂_swap σ x (σ.hamiltonianVectorField f x)]
-  linear_combination hJ
+        σ.poissonBracket (σ.poissonBracket f k) g x :=
+  poissonBracket_poissonBracket_of_isInvertible h.isInvertible_flat hσ hf hg hk x
 
 /-- **The Jacobi identity for the Poisson bracket.** For a nondegenerate closed form on a
 finite-dimensional manifold and `C²` functions `f`, `g`, `k`,
@@ -309,12 +370,8 @@ finite-dimensional manifold and `C²` functions `f`, `g`, `k`,
 theorem poissonBracket_jacobi (hσ : σ.IsClosed) {k : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hg : ContMDiff I 𝓘(ℝ) 2 g) (hk : ContMDiff I 𝓘(ℝ) 2 k) (x : M) :
     σ.poissonBracket f (σ.poissonBracket g k) x + σ.poissonBracket g (σ.poissonBracket k f) x +
-      σ.poissonBracket k (σ.poissonBracket f g) x = 0 := by
-  have hkf : σ.poissonBracket k f = -σ.poissonBracket f k :=
-    funext fun y ↦ by rw [Pi.neg_apply, neg_poissonBracket]
-  rw [h.poissonBracket_poissonBracket hσ hf hg hk, hkf, poissonBracket_neg_right,
-    ← neg_poissonBracket, ← neg_poissonBracket σ (σ.poissonBracket f k)]
-  ring
+      σ.poissonBracket k (σ.poissonBracket f g) x = 0 :=
+  poissonBracket_jacobi_of_isInvertible h.isInvertible_flat hσ hf hg hk x
 
 end IsNondegenerate
 

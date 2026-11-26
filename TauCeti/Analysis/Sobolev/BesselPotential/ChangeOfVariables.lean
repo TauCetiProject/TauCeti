@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
-import TauCeti.Algebra.Order.Floor.Abs
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
@@ -62,7 +61,8 @@ A real order `s` that is not an integer lies between `⌊s⌋` and `⌊s⌋ + 1`
 complex interpolation space `[H^{⌊s⌋,p}, H^{⌊s⌋+1,p}]_θ` with `θ = s - ⌊s⌋`
 (`TauCeti.CompatibleCouple.besselPotentialSpaceComplexMethodContinuousLinearEquiv`). A continuous
 linear map of tempered distributions preserving both endpoint spaces therefore preserves
-`H^{s,p}` (`TemperedDistribution.MemSobolev.map_of_memSobolev_of_memSobolev`).
+`H^{s,p}` (`TemperedDistribution.MemSobolev.map_of_memSobolev_of_memSobolev`, applied through
+`TemperedDistribution.MemSobolev.map_of_forall_intCast`).
 In particular the real `H^{s,p}` functions of every real order are invariant under linear
 automorphisms of `E`.
 
@@ -286,34 +286,10 @@ theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le_natCeil (hp : 1 < p) (hp_to
     (hΨ : (Φ.symm : E → E).HasTemperateGrowth)
     (hΦb : ∀ n, 1 ≤ n → n ≤ ⌈|s|⌉₊ → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
     (hΨb : ∀ n, 1 ≤ n → n ≤ ⌈|s|⌉₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C)
-    {T : 𝓢'(E, F)} (hT : MemSobolev s p T) : MemSobolev s p (compCLM F Φ hΦ hΨ T) := by
-  rcases eq_or_ne (Int.fract s) 0 with hs | hs
-  · -- An integer order `s = ⌊s⌋`, for which `⌈|s|⌉ = |⌊s⌋|`.
-    have hk : (⌊s⌋ : ℝ) = s := (sub_eq_zero.1 ((Int.self_sub_floor s).trans hs)).symm
-    have hc : ⌈|((⌊s⌋ : ℤ) : ℝ)|⌉₊ = (⌊s⌋).natAbs := by
-      rw [← Int.cast_abs, Int.abs_eq_natAbs, Int.cast_natCast, Nat.ceil_natCast]
-    rw [hk] at hc
-    rw [← hk] at hT ⊢
-    exact hT.compCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top hΦ hΨ (hc ▸ hΦb) (hc ▸ hΨb)
-  -- Otherwise interpolate between the integer orders `⌊s⌋` and `⌊s⌋ + 1`.
-  have h₀ := Int.natAbs_floor_le_natCeil_abs s
-  have h₁ := Int.natAbs_floor_add_one_le_natCeil_abs hs
-  have hθ : s = (1 - Int.fract s) * ((⌊s⌋ : ℤ) : ℝ) + Int.fract s * ((⌊s⌋ + 1 : ℤ) : ℝ) := by
-    rw [← Int.self_sub_floor]
-    push_cast
-    ring
-  have hθ' : Int.fract s ∈ Set.Ioo (0 : ℝ) 1 :=
-    ⟨(Int.fract_nonneg s).lt_of_ne' hs, Int.fract_lt_one s⟩
-  have hp' :
-      p⁻¹ = ENNReal.ofReal (1 - Int.fract s) * p⁻¹ + ENNReal.ofReal (Int.fract s) * p⁻¹ := by
-    rw [← add_mul, ← ENNReal.ofReal_add (by linarith [hθ'.2]) hθ'.1.le, sub_add_cancel,
-      ENNReal.ofReal_one, one_mul]
-  rw [hθ] at hT ⊢
-  exact MemSobolev.map_of_memSobolev_of_memSobolev hp hp_top hp hp_top hθ' hp' _
-    (fun _ hu ↦ hu.compCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top hΦ hΨ
-      (fun n hn₁ hn₂ ↦ hΦb n hn₁ (hn₂.trans h₀)) (fun n hn₁ hn₂ ↦ hΨb n hn₁ (by omega)))
-    (fun _ hu ↦ hu.compCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top hΦ hΨ
-      (fun n hn₁ hn₂ ↦ hΦb n hn₁ (hn₂.trans h₁)) (fun n hn₁ hn₂ ↦ hΨb n hn₁ (by omega))) hT
+    {T : 𝓢'(E, F)} (hT : MemSobolev s p T) : MemSobolev s p (compCLM F Φ hΦ hΨ T) :=
+  hT.map_of_forall_intCast hp hp_top _ fun _ hk _ hu ↦
+    hu.compCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top hΦ hΨ
+      (fun n hn₁ hn₂ ↦ hΦb n hn₁ (hn₂.trans hk)) fun n hn₁ hn₂ ↦ hΨb n hn₁ (by omega)
 
 end Pullback
 

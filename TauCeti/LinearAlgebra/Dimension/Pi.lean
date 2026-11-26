@@ -24,7 +24,8 @@ multiplicities show up as dimensions over residue division rings.
 
 Over a domain `R`, a finite product of nonzero ideals has rank the number of factors
 (`Module.rank_pi_ideal`): it sits between `Rⁿ` and a copy of `Rⁿ` scaled into it. Hence so does
-any module isomorphic to such a product (`Module.finrank_eq_card_of_linearEquiv_pi`).
+any module isomorphic to such a product (`Module.finrank_eq_card_of_linearEquiv_pi`); in particular
+a nonzero ideal has rank one (`Ideal.finrank_eq_one_of_ne_bot`).
 -/
 
 public section
@@ -97,5 +98,10 @@ theorem Module.finrank_eq_card_of_linearEquiv_pi {M : Type*} [AddCommGroup M] [M
     Module.finrank R M = Fintype.card ι := by
   rw [e.finrank_eq]
   exact Module.finrank_eq_of_rank_eq (Module.rank_pi_ideal hJ)
+
+/-- A nonzero ideal of a domain has rank one. -/
+theorem Ideal.finrank_eq_one_of_ne_bot {I : Ideal R} (hI : I ≠ ⊥) : Module.finrank R I = 1 :=
+  Module.finrank_eq_card_of_linearEquiv_pi (J := fun _ : Unit ↦ I) (fun _ ↦ hI)
+    (LinearEquiv.piUnique R fun _ : Unit ↦ I).symm
 
 end Rank

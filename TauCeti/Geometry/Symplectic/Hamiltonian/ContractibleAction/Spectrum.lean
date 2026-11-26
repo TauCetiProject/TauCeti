@@ -152,18 +152,17 @@ variable [FiniteDimensional ℝ E]
 
 /-- **The spectrum of a nondegenerate Hamiltonian is finite.** Let `σ` be a nondegenerate weakly
 exact two-form on a compact boundaryless manifold modelled on a finite-dimensional space, and `H`
-a time-dependent Hamiltonian, jointly `C²` and `1`-periodic in time, whose contractible
-`1`-periodic orbits are all nondegenerate. Then the contractible action spectrum of `H` is
-finite. -/
+a jointly `C²` time-dependent Hamiltonian whose contractible `1`-periodic orbits are all
+nondegenerate. Then the contractible action spectrum of `H` is finite. -/
 theorem finite_contractibleActionSpectrum [CompactSpace M] [T2Space M] [BoundarylessManifold I M]
     (h : σ.IsNondegenerate) (hω : IsWeaklyExact σ.val) {Ham : ℝ → M → ℝ}
-    (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry Ham)) (hP : Periodic Ham 1)
+    (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry Ham))
     (hnd : ∀ γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (Ham t)) 1,
       IsNondegenerateFixedPt I
         (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (Ham t)) 0 1) (γ 0)) :
     (σ.contractibleActionSpectrum Ham).Finite :=
   contractibleActionSpectrum_eq_image hω Ham ▸
-    ((h.finite_contractiblePeriodicSolutions_hamiltonianVectorField hH hP hnd).subset
+    ((h.finite_contractiblePeriodicSolutions_hamiltonianVectorField hH hnd).subset
       (sep_subset _ _)).image _
 
 variable {F : M → ℝ} {s : ℝ}

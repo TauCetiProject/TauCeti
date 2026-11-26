@@ -18,6 +18,8 @@ estimate that controls the symbol `∏ i ∈ s, ⟪m i, η⟫` of an iterated di
 ## Main declarations
 
 * `TauCeti.norm_prod_inner_le`: `‖∏ i ∈ s, ⟪m i, η⟫‖ ≤ (∏ i ∈ s, ‖m i‖) ‖η‖ ^ #s`.
+* `TauCeti.prod_inner_sub_right_eq_sum_powerset`: powerset expansion of
+  `∏ i ∈ s, ⟪m i, x - z⟫` into products of `⟪m i, x⟫` and `-⟪m i, z⟫`.
 -/
 
 public section
@@ -32,5 +34,14 @@ theorem norm_prod_inner_le (s : Finset ι) (m : ι → E) (η : E) :
     ‖∏ i ∈ s, inner 𝕜 (m i) η‖ ≤ (∏ i ∈ s, ‖m i‖) * ‖η‖ ^ s.card := by
   rw [norm_prod, Finset.prod_mul_pow_card]
   exact Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ norm_inner_le_norm _ _
+
+/-- **Powerset expansion of a product of shifted inner products**: expanding each factor
+`⟪m i, x - z⟫_𝕜 = ⟪m i, x⟫_𝕜 + (-⟪m i, z⟫_𝕜)` gives a sum over subsets `t ⊆ s`. -/
+theorem prod_inner_sub_right_eq_sum_powerset [DecidableEq ι] (s : Finset ι) (m : ι → E)
+    (x z : E) :
+    (∏ i ∈ s, inner 𝕜 (m i) (x - z)) =
+      ∑ t ∈ s.powerset, (∏ i ∈ t, inner 𝕜 (m i) x) * ∏ i ∈ s \ t, -inner 𝕜 (m i) z := by
+  simp_rw [inner_sub_right, sub_eq_add_neg]
+  exact Finset.prod_add _ _ _
 
 end TauCeti

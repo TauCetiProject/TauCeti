@@ -11,6 +11,7 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Data.Sym.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Substitution
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+import TauCeti.RingTheory.Polynomial.Vieta
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 
@@ -207,16 +208,9 @@ the unordered tuple of those roots: a full set of simple roots pins the polynomi
 theorem toMonic_ofFn_eq_of_forall_isRoot {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n)
     {w : Fin n → R} (hw : Function.Injective w) (hroot : ∀ i, (p : R[X]).IsRoot (w i)) :
     (toMonic (Sym.ofFn w) : R[X]) = p := by
-  have hle : (Sym.ofFn w : Multiset R) ≤ p.roots := by
-    refine (Multiset.le_iff_subset (by rw [Sym.coe_ofFn]; simpa using List.nodup_ofFn.2 hw)).2
-      fun a ha => ?_
-    obtain ⟨i, rfl⟩ := Sym.mem_ofFn.1 (by simpa using ha)
-    exact (mem_roots' (p := p)).2 ⟨hp.ne_zero, hroot i⟩
-  have hcard : Multiset.card (Sym.ofFn w : Multiset R) = n := Sym.card_coe
-  have hroots : (Sym.ofFn w : Multiset R) = p.roots :=
-    Multiset.eq_of_le_of_card_le hle (by rw [hcard, ← hdeg]; exact p.card_roots')
-  rw [coe_toMonic, ofMultiset_apply, hroots]
-  exact prod_multiset_X_sub_C_of_monic_of_roots_card_eq hp (by rw [← hroots, hcard, hdeg])
+  rw [eq_prod_X_sub_C_of_monic_of_isRoot (s := Finset.univ) hp (by simp [hdeg]) hw.injOn
+    fun i _ => hroot i]
+  simp [coe_toMonic, ofMultiset_apply, Sym.coe_ofFn, List.prod_ofFn]
 
 end Domain
 
@@ -331,6 +325,13 @@ theorem toMonic_coeffEquiv_symm (c : Fin n → K) :
     TauCeti.Polynomial.monicOfCoeff_coeff (monic_toMonic ((coeffEquiv K n).symm c))
       (natDegree_toMonic (s := (coeffEquiv K n).symm c))
 
+/-- The monic polynomial of a tuple is the monic polynomial whose lower coefficients are the
+coordinates of the tuple in the elementary symmetric chart. This is `Sym.toMonic_coeffEquiv_symm`
+read at `s = (coeffEquiv K n).symm (coeffEquiv K n s)`. -/
+theorem toMonic_eq_monicOfCoeff_coeffEquiv (s : Sym K n) :
+    (toMonic s : K[X]) = TauCeti.Polynomial.monicOfCoeff (coeffEquiv K n s) := by
+  simpa using toMonic_coeffEquiv_symm (coeffEquiv K n s)
+
 /-- The inverse chart sends a coefficient tuple to the root multiset of the monic polynomial it
 determines. -/
 @[simp]
@@ -351,9 +352,8 @@ constant coordinate. In degree zero it reads `1 = 0`, so its locus is empty. -/
 theorem mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero {a : K} {s : Sym K n} :
     s ∈ Sym.basepointDivisor a ↔ a ^ n + ∑ i : Fin n, coeffEquiv K n s i * a ^ (i : ℕ) = 0 := by
   simp only [Sym.mem_basepointDivisor]
-  have h := toMonic_coeffEquiv_symm (coeffEquiv K n s)
-  rw [Equiv.symm_apply_apply] at h
-  rw [← _root_.Sym.mem_coe, mem_iff_isRoot, h, IsRoot.def, TauCeti.Polynomial.eval_monicOfCoeff]
+  rw [← _root_.Sym.mem_coe, mem_iff_isRoot, toMonic_eq_monicOfCoeff_coeffEquiv, IsRoot.def,
+    TauCeti.Polynomial.eval_monicOfCoeff]
 
 /-- In degree one the chart is negation: the single coordinate of a one-point tuple is minus that
 point. -/

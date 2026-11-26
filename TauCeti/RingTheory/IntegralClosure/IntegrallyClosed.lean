@@ -47,6 +47,8 @@ of `u`.
   closed in every domain algebra.
 * `IsIntegrallyClosedIn.pow_dvd_pow_iff`: for `a ∈ R` invertible in `A` and `n ≠ 0`,
   `a ^ n ∣ b ^ n ↔ a ∣ b` in `R`.
+* `IsIntegrallyClosedIn.exists_algebraMap_eq_of_pow_eq_algebraMap`: an element of `A` some nonzero
+  power of which is the image of a unit of `R` is itself the image of a unit of `R`.
 * `IsIntegrallyClosedIn.of_ringEquiv`: transport along a semilinear ring isomorphism.
 * `IsIntegrallyClosedIn.of_isLocalization_of_le_powers`: `R` is integrally closed in its
   localization at any submonoid of the powers of a nonzerodivisor `x` with `R ⧸ (x)` reduced.
@@ -113,6 +115,15 @@ theorem pow_dvd_pow_iff {n : ℕ} (hn : n ≠ 0) {a b : R} (ha : IsUnit (algebra
     (hpow ▸ isIntegral_algebraMap)
   refine ⟨d, IsIntegralClosure.algebraMap_injective R R A ?_⟩
   simp [hd, ← hu, mul_left_comm (u : A)]
+
+/-- If `R` is integrally closed in `A`, an element of `A` some nonzero power of which is the image
+of a unit of `R` is itself the image of a unit of `R`. -/
+theorem exists_algebraMap_eq_of_pow_eq_algebraMap {n : ℕ} (hn : n ≠ 0) {x : A} {w : Rˣ}
+    (h : x ^ n = algebraMap R A w) : ∃ v : Rˣ, algebraMap R A v = x := by
+  obtain ⟨a, rfl⟩ := exists_algebraMap_eq_of_isIntegral_pow (Nat.pos_of_ne_zero hn)
+    (h ▸ isIntegral_algebraMap)
+  have ha : a ^ n = w := IsIntegralClosure.algebraMap_injective R R A (by rw [map_pow, h])
+  exact ⟨((isUnit_pow_iff hn).mp (ha ▸ w.isUnit)).unit, rfl⟩
 
 /-- If `k` is integrally closed in `A`, an element of `A` outside the line `k ∙ 1` is
 transcendental over `k`. -/

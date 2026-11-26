@@ -7,10 +7,13 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
+public import TauCeti.Algebra.Homology.HomotopyCategory.Bifunctor
 public import TauCeti.Algebra.Homology.LinearHomComplex.Basic
+public import TauCeti.Algebra.Homology.LinearHomComplex.Homotopy
 public import TauCeti.Algebra.Homology.Monoidal.Braiding
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.Basic
 public import Mathlib.Algebra.Homology.HomotopyCategory.KInjective
+public import Mathlib.CategoryTheory.Localization.Adjunction
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 
@@ -29,7 +32,11 @@ differential `d (x ⊗ y) = d x ⊗ y + (-1)^p x ⊗ d y` of the tensor product,
 natural in `K`, `L` and `M`. In degree zero its cocycles are the morphisms of complexes, and two
 morphisms are homotopic exactly when their cocycles differ by a coboundary. So currying is a
 bijection `(K ⊗ L ⟶ M) ≃ (K ⟶ Hom(L, M))`, which makes tensoring on the right with `L` left
-adjoint to `Hom(L, -)`, and it preserves the homotopy relation.
+adjoint to `Hom(L, -)`, and it preserves the homotopy relation. Both functors descend to homotopy
+categories, where `- ⊗ L` is the totalized tensor bifunctor
+`CategoryTheory.Functor.map₂HomotopyCategory` and `Hom(L, -)` is
+`TauCeti.linearHomComplexHomotopyFunctor`, so the adjunction descends along the localization
+`HomotopyCategory.quotient` (`CategoryTheory.Adjunction.localization`).
 
 This is the input from which the derived tensor-Hom adjunction on unbounded derived categories of
 modules is built: if `L` is K-flat and `I` is K-injective, then `Hom(L, I)` is K-injective, because
@@ -46,6 +53,8 @@ a map from an acyclic complex `A` to `Hom(L, I)` uncurries to a map from the acy
   `TauCeti.linearHomComplexHomEquivHomotopy`, the corresponding bijection of homotopies.
 * `TauCeti.tensorRightLinearHomComplexAdjunction`: the adjunction `- ⊗ L ⊣ Hom(L, -)` on cochain
   complexes of `R`-modules.
+* `TauCeti.tensorRightLinearHomComplexHomotopyAdjunction`: the same adjunction on homotopy
+  categories.
 
 ## Main results
 
@@ -482,6 +491,63 @@ def tensorRightLinearHomComplexAdjunction :
 lemma tensorRightLinearHomComplexAdjunction_homEquiv (K M : CochainComplex (ModuleCat.{v} R) ℤ) :
     (tensorRightLinearHomComplexAdjunction L).homEquiv K M = linearHomComplexHomEquiv K L M := by
   rw [tensorRightLinearHomComplexAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
+
+/-- On homotopy categories, tensoring on the right with the class of `L` is induced by tensoring
+complexes on the right with `L`. The square commutes on the nose, by
+`Functor.map₂HomotopyCategory`. -/
+private instance catCommSqTensorRightQuotient :
+    CatCommSq (tensorRight L) (HomotopyCategory.quotient (ModuleCat.{v} R) (.up ℤ))
+      (HomotopyCategory.quotient _ _)
+      (((curriedTensor (ModuleCat.{v} R)).map₂HomotopyCategory (.up ℤ) (.up ℤ) (.up ℤ)).flip.obj
+        ((HomotopyCategory.quotient _ _).obj L)) :=
+  ⟨Iso.refl _⟩
+
+/-- On homotopy categories, the `R`-linear Hom complex out of the class of `L` is induced by the
+`R`-linear Hom complex out of `L`. The square commutes on the nose, by
+`linearHomComplexHomotopyFunctor`. -/
+private instance catCommSqLinearHomComplexFunctorQuotient :
+    CatCommSq ((linearHomComplexFunctor R).obj (Opposite.op L))
+      (HomotopyCategory.quotient (ModuleCat.{v} R) (.up ℤ)) (HomotopyCategory.quotient _ _)
+      ((linearHomComplexHomotopyFunctor R (ModuleCat.{v} R)).obj
+        (Opposite.op ((HomotopyCategory.quotient _ _).obj L))) :=
+  ⟨Iso.refl _⟩
+
+/-- **Tensor–Hom adjunction on homotopy categories.** Tensoring on the right with `L` is left
+adjoint to the `R`-linear Hom complex out of `L` on the homotopy category of complexes of
+`R`-modules: it is the localization (`Adjunction.localization`) of
+`tensorRightLinearHomComplexAdjunction` along `HomotopyCategory.quotient`, the localization at
+homotopy equivalences. -/
+def tensorRightLinearHomComplexHomotopyAdjunction :
+    ((curriedTensor (ModuleCat.{v} R)).map₂HomotopyCategory (.up ℤ) (.up ℤ) (.up ℤ)).flip.obj
+        ((HomotopyCategory.quotient _ _).obj L) ⊣
+      (linearHomComplexHomotopyFunctor R (ModuleCat.{v} R)).obj
+        (Opposite.op ((HomotopyCategory.quotient _ _).obj L)) :=
+  (tensorRightLinearHomComplexAdjunction L).localization (HomotopyCategory.quotient _ _)
+    (homotopyEquivalences _ _) (HomotopyCategory.quotient _ _) (homotopyEquivalences _ _) _ _
+
+/-- On homotopy classes of chain maps, the adjunction on homotopy categories is currying. -/
+lemma tensorRightLinearHomComplexHomotopyAdjunction_homEquiv_quotient_map
+    {K M : CochainComplex (ModuleCat.{v} R) ℤ} (f : K ⊗ L ⟶ M) :
+    (tensorRightLinearHomComplexHomotopyAdjunction L).homEquiv
+        ((HomotopyCategory.quotient _ _).obj K) ((HomotopyCategory.quotient _ _).obj M)
+        ((HomotopyCategory.quotient _ _).map f) =
+      (HomotopyCategory.quotient _ _).map (linearHomComplexHomEquiv K L M f) := by
+  have h : linearHomComplexHomEquiv K L M f =
+      (tensorRightLinearHomComplexAdjunction L).unit.app K ≫
+        ((linearHomComplexFunctor R).obj (Opposite.op L)).map f := by
+    rw [← tensorRightLinearHomComplexAdjunction_homEquiv]
+    exact Adjunction.homEquiv_unit _ _ _ _
+  refine ((tensorRightLinearHomComplexHomotopyAdjunction L).homEquiv_unit _ _ _).trans
+    (Eq.trans ?_ (congrArg _ h.symm))
+  simp only [tensorRightLinearHomComplexHomotopyAdjunction, Adjunction.localization_unit_app,
+    CatCommSq.iso, Iso.refl_hom, NatTrans.id_app]
+  -- Both comparison squares are identities. Their objects agree with those of the adjacent
+  -- morphisms only up to `Functor.comp_obj` and `linearHomComplexHomotopyFunctor_obj_obj`, so the
+  -- identities are removed with `erw`.
+  erw [Category.id_comp, CategoryTheory.Functor.map_id, Category.comp_id]
+  -- The image of `quotient.map f` is `quotient.map` of the postcomposition with `f`, by
+  -- `linearHomComplexHomotopyFunctor_obj_map`.
+  exact (Functor.map_comp _ _ _).symm
 
 variable {L}
 

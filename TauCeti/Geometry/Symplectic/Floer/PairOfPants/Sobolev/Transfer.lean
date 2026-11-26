@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.JetOperator
 public import TauCeti.Analysis.Sobolev.Conformal
 import TauCeti.Algebra.Ring.Periodic
 import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
@@ -48,7 +49,9 @@ by multiplication by the **conformal scale** `r(ζ) = 2π |φ'_q(ζ) - c_q|`
   `TauCeti.Floer.endTransferSection_mem_testSection`). By the chain rule its conformal jet
   `(√ρ ξ', ∂s ξ', ∂t ξ')` at `φ'_q(ζ)` is `1 / r(ζ)` times a linear image of the jet
   `(ξ, ∂s ξ, ∂t ξ)` of `ξ` at `ζ`, under the **jet coefficient of the transfer**
-  `TauCeti.Floer.endTransferCoeff` (`jet_smul_comp_positiveEndCoord_positiveEndChart`).
+  `TauCeti.Floer.endTransferCoeff` (`jet_smul_comp_positiveEndCoord_positiveEndChart`). This
+  coefficient is `β(φ'_q)` times the one for the cutoff `1`, plus a term that only reads the value
+  of a jet and involves the derivative of `β` (`TauCeti.Floer.endTransferCoeff_apply_eq_smul_add`).
 * **Transfer of `W^{1,2}`.** If `|β|`, `|w - c_q| √ρ |β|` and `|w - c_q| ‖dβ‖` are bounded, the jet
   coefficient is essentially bounded (`TauCeti.Floer.memLp_endTransferCoeff`), and its first-order
   operator followed by the `L²` isometry, `TauCeti.Floer.endTransfer`, sends the jet of every test
@@ -60,10 +63,10 @@ by multiplication by the **conformal scale** `r(ζ) = 2π |φ'_q(ζ) - c_q|`
   after the first-order operator on the strip with coefficient field
   `ζ ↦ M(φ'_q(ζ)) ∘ endTransferCoeff q β ζ` (`TauCeti.Floer.jetOperator_endTransfer`). This holds
   for every `L²` jet, so the operator on `S` read along an end chart is a first-order operator on
-  the strip with an essentially bounded coefficient field. Applying the cylinder theory (invertible
-  models, compactness of zeroth-order terms vanishing at the ends) to it still needs that this
-  coefficient field converges to a stationary model along the end, with a zeroth-order remainder
-  vanishing at the end; this file does not prove that.
+  the strip with an essentially bounded coefficient field. For the linearized Floer operator of a
+  pair of pants, this coefficient field and its convergence to a model built from the stationary
+  cylinder operator at the asymptotic orbit are in
+  `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.End.Model`.
 
 ## References
 
@@ -342,6 +345,21 @@ theorem endTransferCoeff_apply (q : Puncture) (β : ℝ × ℝ → ℝ) (ζ : �
             positiveEndChartScale q ζ) • v.2.2) := by
   refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp [endTransferCoeff]
 
+/-- **The jet coefficient of the transfer splits off the cutoff.** The jet coefficient of the
+transfer along an end chart with a cutoff `β` is `β(w)` times the jet coefficient of the transfer
+with the cutoff `1`, plus a term which only reads the value of the jet: at `w = φ'_q(ζ)` with
+conformal scale `r`, the jet `(x, y, z)` goes to `(0, r ∂sβ(w) x, r ∂tβ(w) x)`. -/
+theorem endTransferCoeff_apply_eq_smul_add (q : Puncture) (β : ℝ × ℝ → ℝ) (ζ : ℝ × ℝ)
+    (v : V × V × V) :
+    endTransferCoeff q β ζ v =
+      β (positiveEndChart q ζ) • endTransferCoeff q (fun _ ↦ 1) ζ v +
+        (0, (positiveEndChartScale q ζ * fderiv ℝ β (positiveEndChart q ζ) (1, 0)) • v.1,
+          (positiveEndChartScale q ζ * fderiv ℝ β (positiveEndChart q ζ) (0, 1)) • v.1) := by
+  simp only [endTransferCoeff_apply, fderiv_const_apply, zero_apply,
+    mul_zero, zero_smul, zero_add, mul_one]
+  refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp only [Prod.fst_add, Prod.snd_add, Prod.smul_fst,
+    Prod.smul_snd, add_zero] <;> module
+
 /-- A `C¹` section of the cylinder of period one in the angular coordinate, read in the positive
 end coordinates of an end, is differentiable at every point of the image of the positive end
 chart. -/
@@ -590,6 +608,15 @@ theorem endTransferSection_mem_testSection (q : Puncture) {β : ℝ × ℝ → �
         (periodic_zero_prodMk_iff.2 hξp) hzc)).congr_of_eventuallyEq
       (endTransferSection_eventuallyEq q β ξ hzc)
 
+/-- Read along the end chart, a continuous cutoff `β` with `|β| ≤ B` away from the center `c_q` of
+the end is essentially bounded on the strip. -/
+theorem memLp_comp_positiveEndChart (q : Puncture) {β : ℝ × ℝ → ℝ} (hβ : Continuous β)
+    {B : ℝ} (hB : ∀ z, Complex.equivRealProdCLM.symm z ≠ q.endCenter → |β z| ≤ B) :
+    MemLp (fun ζ ↦ β (positiveEndChart q ζ)) ∞ StripSobolev.stripMeasure :=
+  memLp_top_of_bound (hβ.comp (contDiff_positiveEndChart q 0).continuous
+    |>.aestronglyMeasurable) B (ae_of_all _ fun ζ ↦ by
+      simpa using hB _ (equivRealProdCLM_symm_positiveEndChart_ne_endCenter q ζ))
+
 /-- The jet coefficient of the transfer along an end chart is essentially bounded, for a `C¹` cutoff
 `β` vanishing near every point of the plane outside `S` other than the center `c_q` of the end, if
 `|β|`, `|w - c_q| √ρ |β|` and `|w - c_q| ‖dβ‖` are bounded by `B` away from `c_q`. -/
@@ -701,9 +728,7 @@ theorem jetOperator_endTransfer {W : Type*} [NormedAddCommGroup W] [NormedSpace 
         (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) f) := by
   have hMφ : MemLp (fun ζ ↦ (M (positiveEndChart q ζ)).comp (endTransferCoeff q β ζ)) ∞
       StripSobolev.stripMeasure :=
-    (hM.comp_quasiMeasurePreserving_top (quasiMeasurePreserving_positiveEndChart q)).of_bilin
-      (fun A B ↦ A.comp B) 1 hN (ContinuousLinearMap.compL ℝ (V × V × V) (V × V × V) W).continuous₂
-      (ae_of_all _ fun _ ↦ by simpa using ContinuousLinearMap.opNNNorm_comp_le _ _)
+    (hM.comp_quasiMeasurePreserving_top (quasiMeasurePreserving_positiveEndChart q)).clm_comp ∞ hN
   refine Lp.ext ?_
   filter_upwards [coeFn_jetOperator hM (endTransfer q β f), coeFn_endTransfer q hN f,
     coeFn_positiveEndChartLp q (jetOperator StripSobolev.stripMeasure

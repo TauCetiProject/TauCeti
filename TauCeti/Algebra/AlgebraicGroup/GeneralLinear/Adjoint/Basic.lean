@@ -86,6 +86,19 @@ def counitPointsMulEquiv :
   (Bialgebra.CounitAlgebra.pointsMulEquiv R (coordinateHopfAlgebra R n) B).trans
     (pointsMulEquiv (R := R) (A := B) n)
 
+/-- A convolution product of linear maps on `O(GLₙ)`, evaluated on a generic matrix entry, is the
+matrix product of their values: the comultiplication of `Xᵢⱼ` is `∑ₖ Xᵢₖ ⊗ Xₖⱼ`. -/
+theorem ofConv_convMul_apply_X {A : Type*} [Semiring A] [Algebra R A]
+    (f h : WithConv (coordinateHopfAlgebra R n →ₗ[R] A)) (i j : Fin n) :
+    (f * h).ofConv (coordinateHopfAlgebraAlgEquiv R n
+        (coordinateRingMap R n (MvPolynomial.X (i, j)))) =
+      ∑ k : Fin n,
+        f.ofConv (coordinateHopfAlgebraAlgEquiv R n
+            (coordinateRingMap R n (MvPolynomial.X (i, k)))) *
+          h.ofConv (coordinateHopfAlgebraAlgEquiv R n
+            (coordinateRingMap R n (MvPolynomial.X (k, j)))) := by
+  simp
+
 variable
   (g : WithConv (coordinateHopfAlgebra R n →ₐ[R]
     Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B))
@@ -120,21 +133,6 @@ theorem counitPointsMulEquiv_inv_apply (i j : Fin n) :
         ((g⁻¹).ofConv (coordinateHopfAlgebraAlgEquiv R n
           (coordinateRingMap R n (MvPolynomial.X (i, j))))) := by
   rw [← map_inv (counitPointsMulEquiv n) g, counitPointsMulEquiv_apply]
-
-/-- A convolution product of counit-valued linear maps, evaluated on a generic matrix entry, is
-the matrix product of their values: the comultiplication of `Xᵢⱼ` is `∑ₖ Xᵢₖ ⊗ Xₖⱼ`. -/
-private theorem ofConv_convMul_apply_X
-    (f h : WithConv (coordinateHopfAlgebra R n →ₗ[R]
-      Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B))
-    (i j : Fin n) :
-    (f * h).ofConv (coordinateHopfAlgebraAlgEquiv R n
-        (coordinateRingMap R n (MvPolynomial.X (i, j)))) =
-      ∑ k : Fin n,
-        f.ofConv (coordinateHopfAlgebraAlgEquiv R n
-            (coordinateRingMap R n (MvPolynomial.X (i, k)))) *
-          h.ofConv (coordinateHopfAlgebraAlgEquiv R n
-            (coordinateRingMap R n (MvPolynomial.X (k, j)))) := by
-  simp
 
 /-- **The adjoint action of `GLₙ` on its tangent space is conjugation of matrices.**
 

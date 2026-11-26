@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.Reduction
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 public import Mathlib.RingTheory.TensorProduct.Free
 
 /-!
@@ -45,6 +46,7 @@ the coefficient ring.
 * `TauCeti.ContinuousRep.IsLiftOf.trans_iff`: two markings of the same lift differ by an
   automorphism of `V` commuting with `ρbar`, and every such automorphism gives a second marking.
 * `TauCeti.ContinuousRep.IsLiftOf.baseChange`: scalar extension along a local homomorphism.
+* `TauCeti.ContinuousRep.IsLiftOf.res`: restriction along a continuous monoid homomorphism.
 * `TauCeti.ContinuousRep.IsLiftOf.toIso`, `TauCeti.ContinuousRep.Iso.isLiftOf`: marked lifts are
   isomorphisms between the reduction and `ρbar`.
 * `TauCeti.ContinuousRep.isLiftOf_iff_toMatrix`: the frame description.
@@ -98,6 +100,12 @@ marking. -/
 theorem isLiftOf_trivial (ι : ResidueField A ⊗[A] M ≃ₗ[ResidueField A] V) :
     IsLiftOf (trivial Γ A M) (trivial Γ (ResidueField A) V) ι :=
   isLiftOf_iff_tmul.2 fun _ _ ↦ by simp
+
+/-- **Restriction of a marked lift**: if `ρ` lifts `ρbar` with the marking `ι`, then `Res_φ ρ`
+lifts `Res_φ ρbar` with the same marking, for every continuous monoid homomorphism `φ`. -/
+theorem IsLiftOf.res {Γ' : Type*} [Monoid Γ'] [TopologicalSpace Γ'] (h : IsLiftOf ρ ρbar ι)
+    (φ : Γ' →ₜ* Γ) : IsLiftOf (ρ.res φ) (ρbar.res φ) ι :=
+  isLiftOf_iff_tmul.2 fun g m ↦ by simpa using isLiftOf_iff_tmul.1 h (φ g) m
 
 /-- **Changing the marking of a lift.** If `ρ` lifts `ρbar` with the marking `ι`, then `ι`
 followed by an automorphism `s` of `V` marks the same lift exactly when `s` commutes with every

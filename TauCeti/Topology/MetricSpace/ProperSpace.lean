@@ -35,6 +35,9 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
 * `CompactExhaustion.closedBall`: the closed balls of natural radius about a point, as a
   `CompactExhaustion` of a proper space; a point `x` first enters it at the index `⌈dist x p⌉₊`
   (`CompactExhaustion.find_closedBall`).
+* `ContinuousOn.exists_closedBall_subset_and_le_dist`: inside a neighbourhood of an isolated point
+  of a fibre in a proper pseudometric space on which `f` is continuous, a closed ball isolating the
+  point with a positive lower bound on `dist (f z) (f x)` on its boundary sphere.
 
 ## References
 
@@ -97,6 +100,29 @@ theorem properSpace_iff_exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist (p
       ∀ q : ℕ → α, (∀ n, q n ∉ K n) → Tendsto (fun n ↦ dist p (q n)) atTop atTop :=
   ⟨fun _ ↦ exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist p,
     fun ⟨_, hKc, _, _, hK⟩ ↦ properSpace_of_isCompact_of_tendsto_dist hKc hK⟩
+
+/-- Inside any neighbourhood `U` of an isolated point `x` of `f⁻¹(f x)` on which `f` is
+continuous, there is a closed ball about `x` contained in `U` whose only solution of `f z = f x`
+is `x`, and a positive lower bound for `dist (f z) (f x)` on its boundary sphere. -/
+theorem _root_.ContinuousOn.exists_closedBall_subset_and_le_dist [ProperSpace α] {β : Type*}
+    [MetricSpace β] {f : α → β} {x : α} {U : Set α} (hf : ContinuousOn f U) (hU : U ∈ 𝓝 x)
+    (hiso : ∀ᶠ z in 𝓝[≠] x, f z ≠ f x) :
+    ∃ r > 0, ∃ δ > 0, closedBall x r ⊆ U ∧ (∀ z ∈ sphere x r, δ ≤ dist (f z) (f x)) ∧
+      (∀ z ∈ closedBall x r, f z = f x → z = x) := by
+  obtain ⟨R, hR, hRU⟩ := Metric.eventually_nhds_iff_ball.1
+    (Filter.Eventually.and hU (eventually_nhdsWithin_iff.1 hiso))
+  have hr : 0 < R / 2 := half_pos hR
+  have hrR : closedBall x (R / 2) ⊆ ball x R := closedBall_subset_ball (half_lt_self hR)
+  have hU' : closedBall x (R / 2) ⊆ U := fun z hz ↦ (hRU z (hrR hz)).1
+  have hiso' (z : α) (hz : z ∈ closedBall x (R / 2)) (hfz : f z = f x) : z = x :=
+    by_contra fun hzx ↦ (hRU z (hrR hz)).2 hzx hfz
+  have hcont : ContinuousOn (fun z ↦ dist (f z) (f x)) (sphere x (R / 2)) :=
+    (continuous_id.dist (continuous_const (y := f x))).comp_continuousOn
+      (hf.mono (sphere_subset_closedBall.trans hU'))
+  obtain ⟨δ, hδ, hfδ⟩ := (isCompact_sphere x (R / 2)).exists_forall_le' hcont
+    fun z hz ↦ dist_pos.2 fun h ↦
+      hr.ne' (by rw [← mem_sphere.1 hz, hiso' z (sphere_subset_closedBall hz) h, dist_self])
+  exact ⟨R / 2, hr, δ, hδ, hU', hfδ, hiso'⟩
 
 end TauCeti
 

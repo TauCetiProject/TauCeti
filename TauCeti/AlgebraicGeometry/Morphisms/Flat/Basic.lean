@@ -31,6 +31,7 @@ the generic fibre.
 
 ## Main results
 
+* `TauCeti.flat_respectsIso`: flat morphisms of schemes respect isomorphisms.
 * `AlgebraicGeometry.Scheme.Hom.flat_restrict_iff`: the stalk criterion for flatness of a
   restriction.
 * `AlgebraicGeometry.flat_stalkMap_iff`: on affine opens `x ∈ V ⊆ f⁻¹ U`, the stalk map at `x` is
@@ -58,6 +59,13 @@ open AlgebraicGeometry
 namespace TauCeti
 
 universe u
+
+open CategoryTheory in
+/-- Flat morphisms of schemes respect isomorphisms. -/
+instance flat_respectsIso :
+    MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) :=
+  MorphismProperty.respectsIso_of_isStableUnderComposition
+    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
 
 /-- A flat morphism between irreducible schemes sends the generic point to the generic point. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.genericPoint_eq_of_flat {X Y : Scheme.{u}} (f : X ⟶ Y)
