@@ -58,8 +58,7 @@ For `x` in the fundamental alcove, the length of `f ∈ W_aff` is the number of 
 `αⱼ - k` positive at `x` and negative at `f x` (`RootPairing.separatingAffineRoots`), that is the
 number of affine root hyperplanes separating the fundamental alcove from its image under `f`.
 A wall reflection changes this number by exactly one
-(`RootPairing.ncard_separatingAffineRoots_affineCoreflection_add_one_of_root'_neg` and
-`RootPairing.ncard_separatingAffineRoots_affineCoreflection_add_one_of_one_lt_root'_highestRoot`),
+(`RootPairing.ncard_separatingAffineRoots_affineCoreflection_add_one_of_affineSimpleRoot_neg`),
 so it is at most the length; descending through the walls separating `f x` from the alcove shows
 that it is at least the length.
 
@@ -116,6 +115,12 @@ variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [Module R M] [Module 
 private noncomputable def wallReflection : Option b.support → N ≃ᵃ[R] N
   | none => P.affineCoreflection b.highestRoot 1
   | some i => P.affineCoreflection i 0
+
+/-- The wall reflection at `k`, written as in the wall words of the alcove descent. -/
+private lemma wallReflection_eq_elim (k : Option b.support) :
+    b.wallReflection k =
+      k.elim (P.affineCoreflection b.highestRoot 1) (fun i ↦ P.affineCoreflection i 0) := by
+  rcases k with _ | i <;> rfl
 
 private lemma wallReflection_mem (k : Option b.support) :
     b.wallReflection k ∈ P.affineWeylGroup := by
@@ -439,20 +444,6 @@ lemma coe_affineWeylCoxeterSystem_simple_some (i : b.support) :
 
 /-! ### The length -/
 
-omit [DecidableEq ι] in
-/-- The wall reflection at `k` removes one separating affine root from a point on the far side of
-the wall. -/
-private lemma ncard_separatingAffineRoots_wallReflection_add_one {x y : N}
-    (hx : x ∈ fundamentalAlcove P b) (hy : ∀ j, ∃ n : ℤ, (n : R) < P.root' j y)
-    {k : Option b.support} (hky : b.affineSimpleRoot k y < 0) :
-    (P.separatingAffineRoots x (b.wallReflection k y)).ncard + 1 =
-      (P.separatingAffineRoots x y).ncard := by
-  rcases k with _ | i
-  · exact ncard_separatingAffineRoots_affineCoreflection_add_one_of_one_lt_root'_highestRoot b hx
-      hy (by simpa using hky)
-  · exact ncard_separatingAffineRoots_affineCoreflection_add_one_of_root'_neg b hx hy i.property
-      (by simpa using hky)
-
 /-- Multiplying by a simple reflection on the left changes the number of separating affine roots by
 at most one. -/
 private lemma ncard_separatingAffineRoots_simple_mul_le {x : N} (hx : x ∈ fundamentalAlcove P b)
@@ -471,12 +462,14 @@ private lemma ncard_separatingAffineRoots_simple_mul_le {x : N} (hx : x ∈ fund
     · simpa using hy i 0
   have hbdd := b.exists_intCast_lt_root'_apply hx f.property
   rcases hk.lt_or_gt with hk | hk
-  · have := b.ncard_separatingAffineRoots_wallReflection_add_one hx hbdd hk
+  · have := ncard_separatingAffineRoots_affineCoreflection_add_one_of_affineSimpleRoot_neg b hx
+      hbdd hk
+    rw [← b.wallReflection_eq_elim] at this
     omega
-  · have := b.ncard_separatingAffineRoots_wallReflection_add_one hx
+  · have := ncard_separatingAffineRoots_affineCoreflection_add_one_of_affineSimpleRoot_neg b hx
       (P.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup (b.wallReflection_mem k) hbdd)
       (by rw [affineSimpleRoot_wallReflection]; linarith)
-    rw [wallReflection_wallReflection] at this
+    rw [← b.wallReflection_eq_elim, wallReflection_wallReflection] at this
     omega
 
 /-- **The length in the affine Weyl group counts the separating hyperplanes.** For a point `x` of

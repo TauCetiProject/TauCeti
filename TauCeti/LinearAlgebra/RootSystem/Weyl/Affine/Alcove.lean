@@ -63,8 +63,7 @@ chambers.
   by the reflections in the walls of the alcove**, `s_{αᵢ,0}` and `s_{θ,1}`; and so, over an
   archimedean ring, `RootPairing.exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove`:
   every point is carried into it by the affine Weyl group.
-* `RootPairing.ncard_separatingAffineRoots_affineCoreflection_add_one_of_root'_neg` and
-  `RootPairing.ncard_separatingAffineRoots_affineCoreflection_add_one_of_one_lt_root'_highestRoot`:
+* `RootPairing.ncard_separatingAffineRoots_affineCoreflection_add_one_of_affineSimpleRoot_neg`:
   the reflection in a wall separating a point from the fundamental alcove lowers the number of
   affine root hyperplanes separating it from the alcove by exactly one, when every root is bounded
   below by an integer at the point.
@@ -377,7 +376,8 @@ theorem exists_wallWord_apply_mem_closedFundamentalAlcove {x y : N}
       f y ∈ closedFundamentalAlcove P b ∧ ω.length = (P.separatingAffineRoots x y).ncard := by
   obtain ⟨ω, hω, hcount⟩ := exists_wallWord_apply_mem_closedFundamentalAlcove_aux b hy
   refine ⟨ω, hω, ?_⟩
-  have hend := separatingAffineRoots_eq_empty_of_mem_closedFundamentalAlcove hx hω
+  have hend := separatingAffineRoots_eq_empty_of_mem_closedFundamentalAlcove
+    (fundamentalAlcove_subset_closedFundamentalAlcove P b hx) hω
   rw [separatingAffineRoots_eq_sepSet b hx] at hend ⊢
   rwa [hend, Set.ncard_empty, add_zero] at hcount
 
@@ -399,33 +399,29 @@ theorem exists_mem_apply_mem_closedFundamentalAlcove_of_affineCoreflection_mem
   | none => exact hθ
   | some i => exact hG i i.property
 
-/-- **Reflecting in a simple wall removes one separating hyperplane.** For a point `x` of the
-fundamental alcove and a point `y` on the far side of the wall `αᵢ = 0`, at which every root is
-bounded below by an integer, the reflection in that
-wall carries `y` to a point separated from `x` by exactly one fewer affine root hyperplane. -/
-theorem ncard_separatingAffineRoots_affineCoreflection_add_one_of_root'_neg {x y : N}
-    (hx : x ∈ fundamentalAlcove P b) (hy : ∀ j, ∃ n : ℤ, (n : R) < P.root' j y) {i : ι}
-    (hi : i ∈ b.support) (hiy : P.root' i y < 0) :
-    (P.separatingAffineRoots x (P.affineCoreflection i 0 y)).ncard + 1 =
+/-- **Reflecting in a wall removes one separating hyperplane.** For a point `x` of the fundamental
+alcove and a point `y` on the far side of the wall at the node `k` of the affine Dynkin diagram,
+where the affine simple root `aₖ` is negative, and at which every root is bounded below by an
+integer, the reflection in that wall (`s_{θ,1}` at `none`, `s_{αᵢ,0}` at `some i`) carries `y` to a
+point separated from `x` by exactly one fewer affine root hyperplane. -/
+theorem ncard_separatingAffineRoots_affineCoreflection_add_one_of_affineSimpleRoot_neg {x y : N}
+    (hx : x ∈ fundamentalAlcove P b) (hy : ∀ j, ∃ n : ℤ, (n : R) < P.root' j y)
+    {k : Option b.support} (hky : b.affineSimpleRoot k y < 0) :
+    (P.separatingAffineRoots x (k.elim (P.affineCoreflection b.highestRoot 1)
+        (fun i ↦ P.affineCoreflection i 0) y)).ncard + 1 =
       (P.separatingAffineRoots x y).ncard := by
   rw [separatingAffineRoots_eq_sepSet b hx, separatingAffineRoots_eq_sepSet b hx]
-  simpa using ncard_sepSet_affineCoreflection_add_one b (j₀ := i) (c := 0)
-    (fun p ↦ isAffinePos_wallPerm_simple b hi) hy (.inl rfl)
-    ⟨.inr ⟨rfl, b.isPos_of_mem_support hi⟩, by simpa using hiy⟩
-
-/-- **Reflecting in the wall `θ = 1` removes one separating hyperplane.** For a point `x` of the
-fundamental alcove and a point `y` beyond the wall `θ = 1`, at which every root is bounded below
-by an integer, the reflection in that wall carries
-`y` to a point separated from `x` by exactly one fewer affine root hyperplane. -/
-theorem ncard_separatingAffineRoots_affineCoreflection_add_one_of_one_lt_root'_highestRoot
-    {x y : N} (hx : x ∈ fundamentalAlcove P b) (hy : ∀ j, ∃ n : ℤ, (n : R) < P.root' j y)
-    (hθy : 1 < P.root' b.highestRoot y) :
-    (P.separatingAffineRoots x (P.affineCoreflection b.highestRoot 1 y)).ncard + 1 =
-      (P.separatingAffineRoots x y).ncard := by
-  rw [separatingAffineRoots_eq_sepSet b hx, separatingAffineRoots_eq_sepSet b hx]
-  simpa using ncard_sepSet_affineCoreflection_add_one b (j₀ := b.highestRoot) (c := 1)
-    (fun p ↦ isAffinePos_wallPerm_highestRoot b) hy (.inr rfl)
-    ⟨.inl (by omega), by simpa [root'_reflectionPerm_self] using hθy⟩
+  rcases k with _ | ⟨i, hi⟩
+  · have hθy : 1 < P.root' b.highestRoot y := by
+      rw [Base.affineSimpleRoot_none] at hky
+      linarith
+    simpa using ncard_sepSet_affineCoreflection_add_one b (j₀ := b.highestRoot) (c := 1)
+      (fun p ↦ isAffinePos_wallPerm_highestRoot b) hy (.inr rfl)
+      ⟨.inl (by omega), by simpa [root'_reflectionPerm_self] using hθy⟩
+  · rw [Base.affineSimpleRoot_some] at hky
+    simpa using ncard_sepSet_affineCoreflection_add_one b (j₀ := i) (c := 0)
+      (fun p ↦ isAffinePos_wallPerm_simple b hi) hy (.inl rfl)
+      ⟨.inr ⟨rfl, b.isPos_of_mem_support hi⟩, by simpa using hky⟩
 
 section Transitivity
 

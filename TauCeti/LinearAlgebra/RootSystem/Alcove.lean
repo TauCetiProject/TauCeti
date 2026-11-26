@@ -73,7 +73,7 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 * `RootPairing.mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove`: the fundamental alcove is
   the part of the closed fundamental alcove lying on no affine root hyperplane.
 * `RootPairing.separatingAffineRoots_eq_empty_of_mem_closedFundamentalAlcove`: no affine root
-  separates a point of the fundamental alcove from a point of the closed fundamental alcove.
+  separates two points of the closed fundamental alcove.
 * `RootPairing.convex_fundamentalAlcove`: the fundamental alcove is convex.
 * `RootPairing.mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos`: the fundamental alcove is
   the set of points at which every affine simple root is positive.
@@ -290,31 +290,36 @@ section SeparatingAffineRootsAlcove
 variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [Nonempty ι] [P.IsCrystallographic]
   [P.IsReduced] [P.IsIrreducible] {P b}
 
-/-- **No affine root separates a point of the fundamental alcove from a point of the closed
-fundamental alcove.** An affine root `αⱼ - k` positive at a point of the alcove has `k ≤ 0`, and
-`k = 0` only for a positive root `αⱼ`; every root is at least `-1` on the closed alcove, and every
-positive root is nonnegative there. -/
+/-- **No affine root separates two points of the closed fundamental alcove.** An affine root
+`αⱼ - k` positive at a point of the closed alcove has `k ≤ 0`, since every root is at most `1`
+there, and `k = 0` only for a positive root `αⱼ`, since every negative root is nonpositive there;
+every root is at least `-1` on the closed alcove, and every positive root is nonnegative there. -/
 theorem separatingAffineRoots_eq_empty_of_mem_closedFundamentalAlcove {x y : N}
-    (hx : x ∈ fundamentalAlcove P b) (hy : y ∈ closedFundamentalAlcove P b) :
+    (hx : x ∈ closedFundamentalAlcove P b) (hy : y ∈ closedFundamentalAlcove P b) :
     P.separatingAffineRoots x y = ∅ := by
   refine Set.eq_empty_of_forall_notMem fun ⟨j, k⟩ ⟨hxk, hyk⟩ ↦ ?_
-  have hk : k < 1 := by exact_mod_cast hxk.trans (root'_lt_one_of_mem_fundamentalAlcove hx j)
+  have hk : k < 1 := by
+    exact_mod_cast hxk.trans_le ((root'_le_root'_highestRoot hx.1 j).trans hx.2)
   have hk' : k ≤ -1 ∨ k = 0 := by omega
+  let := P.indexNeg
   rcases hk' with hk | rfl
   · -- The root `-αⱼ` is at most `θ`, hence at most `1`, on the closed alcove.
-    let := P.indexNeg
     have h := (root'_le_root'_highestRoot hy.1 (-j)).trans hy.2
     simp only [root', root_neg_index, map_neg, LinearMap.neg_apply] at h
     have hk : (k : R) ≤ -1 := by exact_mod_cast hk
     simp only [root'] at hyk
     linarith
-  · have hj : b.IsPos j := by
-      by_contra hj
-      exact (root'_neg_of_not_isPos hx.1 hj).not_gt (by simpa using hxk)
-    have h := toLinearMap_apply_nonneg_of_mem_posRootCone hy.1
-      (TauCeti.root_mem_posRootCone_of_mem_posRoots P b ((TauCeti.mem_posRoots P b j).mpr hj))
-    simp only [root', Int.cast_zero] at hyk
-    exact h.not_gt hyk
+  · -- A root is nonnegative on the closed alcove when positive, and nonpositive when negative.
+    by_cases hj : b.IsPos j
+    · have h := toLinearMap_apply_nonneg_of_mem_posRootCone hy.1
+        (TauCeti.root_mem_posRootCone_of_mem_posRoots P b ((TauCeti.mem_posRoots P b j).mpr hj))
+      simp only [root', Int.cast_zero] at hyk
+      exact h.not_gt hyk
+    · have h := toLinearMap_apply_nonneg_of_mem_posRootCone hx.1
+        (TauCeti.root_mem_posRootCone_of_mem_posRoots P b
+          ((TauCeti.mem_posRoots P b (-j)).mpr ((Base.IsPos.neg_iff_not b j).mpr hj)))
+      simp only [root', root_neg_index, map_neg, LinearMap.neg_apply, Int.cast_zero] at h hxk
+      linarith
 
 end SeparatingAffineRootsAlcove
 
