@@ -36,6 +36,12 @@ degree `2 c₁(γ)` of `e^γ` enters `n - μ` with the opposite sign. So `q^A v 
 preserves the total degree (`TauCeti.Floer.map_neg_mem_gradeByCoeff`), whereas `q^A v ↦ e^(q A) v`
 would change it by `-4 c₁(A)` (`TauCeti.Floer.single_mem_gradeByCoeff_add_iff`).
 
+For a class `A` of positive area the comparison sends the quantum geometric series
+`∑ₖ r q^(k A)` to the Floer geometric series `∑ₖ r e^(-k q A)`
+(`coefficientComparison_geometric`), whose terms have valuations `k ω(A)` tending to infinity.
+This is why the Floer valuation is `-Ω`: the quantum corrections in the multiples of a class of
+positive area land in the Floer Novikov ring.
+
 The construction reuses `NovikovSeries.mapRingHom`; no augmentation at `q = 1` is involved.
 
 ## References
@@ -196,6 +202,24 @@ theorem coefficientComparison_mem_periodFiltration {C : ℝ} {a : NovikovSeries 
 end Ring
 
 end Comparison
+
+section Geometric
+
+variable [AddGroup S] [AddCommGroup Γ] {ω : S →+ ℝ} {Ω : Γ →+ ℝ} [Semiring R] (q : S →+ Γ)
+  (hω : ∀ A, Ω (q A) = ω A)
+
+/-- **The comparison of a geometric series.** A class `A` of positive area gives the quantum
+geometric series `∑ₖ r q^(k A)`, and the comparison sends it to the Floer geometric series
+`∑ₖ r e^(-k q A)`, whose exponent `-q A` has positive valuation `ω A`. So the quantum corrections
+in the multiples of a class of positive area land in the Floer Novikov ring. -/
+@[simp]
+theorem coefficientComparison_geometric {A : S} (hA : 0 < ω A) (r : R) :
+    coefficientComparison q hω (geometric ω hA r) =
+      geometric (-Ω) (h := -q A) (by simpa [hω] using hA) r := by
+  rw [coefficientComparison_apply, map_geometric]
+  simp only [AddMonoidHom.neg_apply, RingHom.toAddMonoidHom_id, AddMonoidHom.id_apply]
+
+end Geometric
 
 section PeriodGroup
 
