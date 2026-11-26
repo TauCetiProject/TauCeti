@@ -145,6 +145,8 @@ gives a set of measure one.
   `‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}` in dimension `n`, `2 ≤ q`.
 * `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
   linear part has `|det| = 1` preserves an additive Haar measure.
+* `ContinuousLinearEquiv.measurePreserving_map_symm`: a continuous linear equivalence `e` carries
+  `μ.map e.symm` to `μ`.
 * `ContinuousLinearEquiv.quasiMeasurePreserving_restrict`: a continuous linear automorphism mapping
   `s` into `t` is quasi measure preserving between the restrictions of an additive Haar measure to
   `s` and to `t`.
@@ -915,6 +917,14 @@ theorem measurePreserving_of_abs_det_eq_one
 end ContinuousAffineMap
 
 namespace ContinuousLinearEquiv
+
+/-- A continuous linear equivalence `e` carries the pushforward `μ.map e.symm` back to `μ`, so it
+transports integrals for `μ.map e.symm` to integrals for `μ` without a Jacobian. -/
+theorem measurePreserving_map_symm {R E F : Type*} [Semiring R] [TopologicalSpace E]
+    [AddCommMonoid E] [Module R E] [MeasurableSpace E] [BorelSpace E] [TopologicalSpace F]
+    [AddCommMonoid F] [Module R F] [MeasurableSpace F] [BorelSpace F] (e : E ≃L[R] F)
+    (μ : Measure F) : MeasurePreserving e (μ.map e.symm) μ := by
+  simpa using e.symm.toHomeomorph.toMeasurableEquiv.measurePreserving_symm μ
 
 /-- A continuous linear automorphism `e` of a finite-dimensional real normed space that maps `s`
 into `t` is quasi measure preserving between the restrictions of an additive Haar measure to `s`
