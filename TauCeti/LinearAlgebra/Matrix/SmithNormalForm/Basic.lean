@@ -39,6 +39,9 @@ factors by minors is in `TauCeti.LinearAlgebra.Matrix.InvariantFactor`.
   divisibility chain.
 * `Matrix.exists_mul_mul_eq_diagonal_of_preValuationRing`: the same for matrices indexed by any
   finite type, without the divisibility chain.
+* `Matrix.exists_mul_mul_eq_of_mul_submatrix_mul_eq`: over any commutative ring, if a matrix with
+  permuted rows and columns is equivalent to `D` by transformations of unit determinant, so is the
+  matrix itself.
 
 ## References
 
@@ -60,10 +63,11 @@ namespace Matrix
 
 variable {R : Type*} [CommRing R]
 
-/-- Permuting the rows and the columns of `A` does not change the existence of a Smith normal form:
-if `L * A.submatrix σ τ * Q = D`, then `L' * A * Q' = D` with the permuted matrices `L'` and `Q'`,
-whose determinants are those of `L` and `Q` up to sign. -/
-private theorem exists_mul_mul_submatrix_eq {n : Type*} [Fintype n] [DecidableEq n]
+/-- **Equivalence is unchanged by permuting rows and columns.** If `L * A.submatrix σ τ * Q = D`
+with `L`, `Q` of unit determinant, then `L' * A * Q' = D` for some `L'`, `Q'` of unit determinant,
+namely `L` with its columns permuted by `σ⁻¹` and `Q` with its rows permuted by `τ⁻¹`, whose
+determinants are those of `L` and `Q` up to sign. The matrix `D` is arbitrary. -/
+theorem exists_mul_mul_eq_of_mul_submatrix_mul_eq {n : Type*} [Fintype n] [DecidableEq n]
     {A L Q D : Matrix n n R} (σ τ : Equiv.Perm n) (hL : IsUnit L.det) (hQ : IsUnit Q.det)
     (h : L * A.submatrix σ τ * Q = D) :
     ∃ L' Q' : Matrix n n R, IsUnit L'.det ∧ IsUnit Q'.det ∧ L' * A * Q' = D := by
@@ -133,7 +137,7 @@ theorem exists_smith_normal_form_of_preValuationRing [PreValuationRing R] :
     -- a Smith normal form of the remaining block, scaled by the corner entry
     obtain ⟨L', Q', s', hL', hQ', hs', h'⟩ := exists_smith_normal_form_of_preValuationRing
       (of fun k l : Fin n ↦ w k.succ l.succ - w k.succ 0 * w 0 l.succ)
-    refine exists_mul_mul_submatrix_eq (Equiv.swap 0 i) (Equiv.swap 0 j)
+    refine exists_mul_mul_eq_of_mul_submatrix_mul_eq (Equiv.swap 0 i) (Equiv.swap 0 j)
       (L := cornerBlockSucc 1 L' * L₁) (Q := Q₁ * cornerBlockSucc 1 Q')
       (D := diagonal (Fin.cons (A' 0 0) (A' 0 0 • s'))) ?_ ?_ ?_ |>.imp fun L ⟨Q, h⟩ ↦
       ⟨Q, Fin.cons (A' 0 0) (A' 0 0 • s'), h.1, h.2.1, fun a b hab ↦ ?_, h.2.2⟩
