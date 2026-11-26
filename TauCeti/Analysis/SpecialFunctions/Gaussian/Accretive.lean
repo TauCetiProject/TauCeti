@@ -11,14 +11,12 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Matrix.Order
 import Mathlib.Analysis.Matrix.Spectrum
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
-import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 import Mathlib.MeasureTheory.Integral.Pi
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import Mathlib.RingTheory.Complex
-import Mathlib.RingTheory.Norm.Transitivity
 import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Reproducing
+import TauCeti.LinearAlgebra.Complex.Determinant
 
 /-!
 # Complex Gaussian integral for accretive matrices
@@ -32,7 +30,8 @@ Using this congruence together with the complex change-of-variables formula for 
 measures (`TauCeti.map_mulVec_addHaar_eq_smul`), we evaluate the multivariate complex Gaussian
 integral with linear shift:
 `∫ x : ι → ℂ, exp (-(star x ⬝ᵥ A *ᵥ (x - a))) = π ^ Fintype.card ι * A.det⁻¹`
-(`TauCeti.integral_cexp_neg_star_dotProduct_mulVec`).
+(`TauCeti.integral_cexp_neg_star_dotProduct_mulVec`). After the substitution the integrand is a
+diagonal complex Gaussian, evaluated by `TauCeti.integral_cexp_neg_sum_mul_norm_sq_add`.
 
 ## Main results
 
@@ -44,8 +43,6 @@ integral with linear shift:
 * `TauCeti.map_mulVec_addHaar_eq_smul`: pushforward of an additive Haar measure on `ι → ℂ` by an
   invertible complex matrix `u` scales the measure by `‖u.det‖⁻²`.
 * `TauCeti.lintegral_eq_norm_det_sq_mul_lintegral_mulVec`: Lebesgue change of variables on `ι → ℂ`.
-* `TauCeti.integral_cexp_neg_star_mul`: one-dimensional complex Gaussian integral
-  `∫ z : ℂ, exp (-(star z * (d * (z - a)))) = π / d` for `0 < d.re`.
 * `TauCeti.integral_cexp_neg_star_dotProduct_mulVec`: multivariate complex Gaussian integral for an
   accretive matrix `A` with linear shift `a`.
 -/
@@ -53,7 +50,7 @@ integral with linear shift:
 public section
 
 open MeasureTheory Matrix Complex Finset CStarAlgebra
-open scoped ComplexOrder MatrixOrder NNReal
+open scoped ComplexConjugate ComplexOrder MatrixOrder NNReal
 
 namespace Matrix
 
@@ -117,7 +114,7 @@ theorem map_mulVec_addHaar_eq_smul [DecidableEq ι] {μ : Measure (ι → ℂ)} 
     μ.map (fun x : ι → ℂ ↦ u *ᵥ x) = (ENNReal.ofReal (‖u.det‖ ^ 2))⁻¹ • μ := by
   let f : (ι → ℂ) →ₗ[ℝ] (ι → ℂ) := u.toLin'.restrictScalars ℝ
   have h_det : LinearMap.det f = ‖u.det‖ ^ 2 := by
-    simp [f, LinearMap.det_restrictScalars, Algebra.norm_complex_eq, ← Complex.sq_norm]
+    rw [LinearMap.det_restrictScalars_eq_normSq, LinearMap.det_toLin', Complex.normSq_eq_norm_sq]
   change μ.map f = _
   simp [μ.map_linearMap_addHaar_eq_smul_addHaar, h_det, hu]
 
@@ -132,25 +129,6 @@ theorem lintegral_eq_norm_det_sq_mul_lintegral_mulVec [DecidableEq ι] {μ : Mea
   rw [← h_emb.lintegral_map, map_mulVec_addHaar_eq_smul hu]
   simp [ENNReal.mul_inv_cancel_left, hu]
 
-/-- One-dimensional complex Gaussian integral: if `0 < d.re`, then
-`∫ z : ℂ, exp (-(star z * (d * (z - a)))) = π / d`. -/
-theorem integral_cexp_neg_star_mul {d : ℂ} (hd : 0 < d.re) (a : ℂ) :
-    ∫ z : ℂ, exp (-(star z * (d * (z - a)))) = Real.pi / d := by
-  let c : Fin 2 → ℂ := (d * a) • ![1, -I]
-  let g (v : Fin 2 → ℝ) : ℂ := exp (-d * ∑ i : Fin 2, (v i : ℂ) ^ 2 + ∑ i : Fin 2, c i * v i)
-  have h_exponent (z : ℂ) : -(star z * (d * (z - a))) =
-      -d * ((z.re : ℂ) ^ 2 + (z.im : ℂ) ^ 2) + (d * a * z.re - I * (d * a) * z.im) := by
-    rw [show star z = z.re - z.im * I by simp [Complex.ext_iff]]
-    linear_combination (z.re - z.im * I) * d * re_add_im z + d * z.im ^ 2 * I_sq
-  have h_coeff : ∑ i : Fin 2, c i ^ 2 = 0 := by simp [c, mul_pow]
-  calc
-    _ = ∫ z : ℂ, g (measurableEquivPi z) := by
-      simp only [h_exponent]
-      simp [g, c, sub_eq_add_neg, mul_comm]
-    _ = ∫ v : Fin 2 → ℝ, g v := volume_preserving_equiv_pi.integral_comp' g
-    _ = Real.pi / d := by
-      simpa [h_coeff, g] using GaussianFourier.integral_cexp_neg_mul_sum_add hd c
-
 /-- Multivariate complex Gaussian integral for a strictly accretive matrix `A`:
 `∫ x : ι → ℂ, exp (-(star x ⬝ᵥ A *ᵥ (x - a))) = π ^ Fintype.card ι * A.det⁻¹`. -/
 theorem integral_cexp_neg_star_dotProduct_mulVec [DecidableEq ι] {A : Matrix ι ι ℂ}
@@ -158,19 +136,27 @@ theorem integral_cexp_neg_star_dotProduct_mulVec [DecidableEq ι] {A : Matrix ι
     ∫ x : ι → ℂ, exp (-(star x ⬝ᵥ A *ᵥ (x - a))) = (Real.pi : ℂ) ^ Fintype.card ι * A.det⁻¹ := by
   obtain ⟨p, d, rfl, hd⟩ := hA.exists_eq_conjTranspose_mul_diagonal_mul
   set P : Matrix ι ι ℂ := (p : Matrix ι ι ℂ)
-  let g (i : ι) (z : ℂ) : ℂ := exp (-(star z * (d i * (z - (P *ᵥ a) i))))
+  let g (y : ι → ℂ) : ℂ := exp (-∑ i, d i * (‖y i‖ : ℂ) ^ 2 + ∑ i, (0 : ι → ℂ) i * y i +
+    ∑ i, (d i * (P *ᵥ a) i) * conj (y i))
   have h_form (x : ι → ℂ) :
-      exp (-(star x ⬝ᵥ (Pᴴ * diagonal d * P) *ᵥ (x - a))) = ∏ i : ι, g i ((P *ᵥ x) i) := by
+      exp (-(star x ⬝ᵥ (Pᴴ * diagonal d * P) *ᵥ (x - a))) = g (P *ᵥ x) := by
     rw [← mulVec_mulVec, ← mulVec_mulVec, dotProduct_mulVec, vecMul_conjTranspose, star_star,
       mulVec_sub]
-    simp [g, dotProduct, mulVec_diagonal, ← exp_sum]
-  have h_prod : ∫ y : ι → ℂ, ∏ i : ι, g i (y i) = ∏ i : ι, Real.pi / d i := by
-    rw [integral_fintype_prod_volume_eq_prod g]
-    exact Finset.prod_congr rfl fun i _ ↦ integral_cexp_neg_star_mul (hd i) _
+    simp only [g, dotProduct, mulVec_diagonal, Pi.star_apply, Pi.sub_apply, Pi.zero_apply,
+      zero_mul, Finset.sum_const_zero, add_zero, ← mul_conj']
+    congr 1
+    rw [neg_add_eq_sub, ← Finset.sum_sub_distrib, ← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    simp only [RCLike.star_def]
+    ring
+  have h_prod : ∫ y : ι → ℂ, g y = ∏ i : ι, Real.pi / d i := by
+    simp only [g]
+    rw [integral_cexp_neg_sum_mul_norm_sq_add hd]
+    simp
   have h_det : (Pᴴ * diagonal d * P).det = ‖P.det‖ ^ 2 * ∏ i : ι, d i := by
     simp [← mul_conj', mul_comm, mul_left_comm]
   calc
-    _ = ∫ y : ι → ℂ, ∏ i : ι, g i (y i) ∂volume.map (fun x : ι → ℂ ↦ P *ᵥ x) := by
+    _ = ∫ y : ι → ℂ, g y ∂volume.map (fun x : ι → ℂ ↦ P *ᵥ x) := by
       rw [integral_map (by fun_prop) (Continuous.aestronglyMeasurable (by fun_prop)), funext h_form]
     _ = ((‖P.det‖ ^ 2 : ℝ) : ℂ)⁻¹ * ∏ i : ι, (Real.pi : ℂ) / d i := by
       rw [map_mulVec_addHaar_eq_smul p.det_ne_zero]
