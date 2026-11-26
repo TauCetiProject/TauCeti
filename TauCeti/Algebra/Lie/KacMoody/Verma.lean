@@ -60,7 +60,7 @@ a generalized Cartan matrix.
 * `TauCeti.KacMoody.vermaGenerator_ne_zero` and `TauCeti.KacMoody.vermaIdeal_ne_top`: for a
   generalized Cartan matrix, `v_λ ≠ 0` and the left ideal is proper.
 * `TauCeti.KacMoody.span_range_negativeWord_vermaGenerator_eq_top`,
-  `TauCeti.KacMoody.weightSpace_vermaModule_self` and
+  `TauCeti.KacMoody.weightSpace_vermaModule_self_eq_span_singleton` and
   `TauCeti.KacMoody.finrank_weightSpace_vermaModule_self`: the lowering words span `M(λ)`, and in
   characteristic zero its weight space of `λ` is spanned by `v_λ`, and is one-dimensional for a
   generalized Cartan matrix.
@@ -224,7 +224,7 @@ variable [CharZero K]
 /-- Over a field of characteristic zero, the weight space of `lam` in `M(lam)` is spanned by the
 canonical generator. It is one-dimensional for a generalized Cartan matrix
 (`TauCeti.KacMoody.finrank_weightSpace_vermaModule_self`). -/
-theorem weightSpace_vermaModule_self :
+theorem weightSpace_vermaModule_self_eq_span_singleton :
     weightSpace R (VermaModule R lam) lam = K ∙ vermaGenerator R lam :=
   weightSpace_self_eq_span_singleton (vermaGenerator_mem_weightSpace R lam)
     (lie_positiveGenerator_vermaGenerator R lam) (lieSpan_cyclicGenerator_eq_top _)
@@ -240,7 +240,7 @@ in `M(lam)` is one-dimensional. -/
 theorem finrank_weightSpace_vermaModule_self (hdiag : ∀ i, A i i = 2)
     (hneg : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 → A j i = 0) :
     Module.finrank K (weightSpace R (VermaModule R lam) lam) = 1 := by
-  rw [weightSpace_vermaModule_self, finrank_span_singleton]
+  rw [weightSpace_vermaModule_self_eq_span_singleton, finrank_span_singleton]
   exact vermaGenerator_ne_zero lam hdiag hneg hzero
 
 end KacMoody
