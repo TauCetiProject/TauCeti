@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Chebyshev
+public import TauCeti.NumberTheory.Chebyshev.FinitePrimeSums
 public import TauCeti.NumberTheory.Padics.PadicNorm
 
 /-!
@@ -93,24 +93,7 @@ theorem log_inverseGainFactor_insert_le (S : Finset Nat.Primes) (N : Nat.Primes)
     (hN : 0 ≤ gain N) (hB : ∑ p ∈ insert N S, loss p * Real.log p.val ≤ B) :
     Real.log (inverseGainFactor (insert N S) gain loss : ℝ) ≤
       -(∑ p ∈ S, gain p * Real.log p.val) + B + Chebyshev.theta X + Real.log N.val := by
-  have hsmall : (∑ p ∈ S, Real.log p.val) ≤ Chebyshev.theta X := by
-    let e : Nat.Primes ↪ ℕ := ⟨Subtype.val, Nat.Primes.coe_nat_injective⟩
-    calc
-      _ = ∑ n ∈ S.map e, Real.log (n : ℝ) := (Finset.sum_map S e _).symm
-      _ ≤ Chebyshev.theta X := by
-        rw [Chebyshev.theta_eq_sum_primesLE]
-        refine Finset.sum_le_sum_of_subset_of_nonneg ?_ (fun p hp _ ↦ ?_)
-        · intro p hp
-          obtain ⟨q, hq, rfl⟩ := Finset.mem_map.mp hp
-          exact Nat.mem_primesLE.mpr ⟨Nat.le_floor (hS q hq), q.property⟩
-        · exact Real.log_nonneg (by exact_mod_cast (Nat.mem_primesLE.mp hp).2.one_le)
-  have hcost : (∑ p ∈ insert N S, Real.log p.val) ≤ Chebyshev.theta X + Real.log N.val := by
-    by_cases hmem : N ∈ S
-    · rw [Finset.insert_eq_of_mem hmem]
-      exact hsmall.trans (le_add_of_nonneg_right
-        (Real.log_nonneg (by exact_mod_cast N.property.one_le)))
-    · rw [Finset.sum_insert hmem, add_comm]
-      exact add_le_add_left hsmall _
+  have hcost := S.sum_insert_prime_log_le_theta_add_log N hS
   have hgain : (∑ p ∈ S, gain p * Real.log p.val) ≤
       ∑ p ∈ insert N S, gain p * Real.log p.val := by
     by_cases hmem : N ∈ S
