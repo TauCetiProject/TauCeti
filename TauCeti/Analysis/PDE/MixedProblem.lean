@@ -277,12 +277,10 @@ theorem isMinOn_iff_mixedSolutionL_eq
         energyFormH1 a b c (g + (w : W1p mu Omega 2)) (g + (w : W1p mu Omega 2)) / 2 - ℓ w)
       univ w₀ ↔
       mixedSolutionL hcoeff hcoercive (g, ℓ) = g + (w₀ : W1p mu Omega 2) := by
-  have hnonneg (w : W1pVanishingOn mu Omega 2 Γ) :
-      0 ≤ energyFormH1 a b c (w : W1p mu Omega 2) (w : W1p mu Omega 2) := by
-    simpa only [energyFormH1LVanishingOn_apply] using hcoercive.apply_self_nonneg w
-  rw [isMinOn_w1pVanishingOn_iff_forall_energyFormH1_eq hcoeff hsymm hnonneg,
-    mixedSolutionL_eq_iff, add_sub_cancel_left]
-  exact (and_iff_right w₀.property).symm
+  rw [mixedSolutionL_eq]
+  simpa only [energyFormH1L_apply, Submodule.subtypeL_apply] using
+    (isCoercive_bilinearComp hcoeff hcoercive).isMinOn_iff_solutionWithLifting_eq
+      (fun v w => by simpa only [energyFormH1L_apply] using hsymm v w) g ℓ w₀
 
 include hcoercive in
 /-- **The energy of the mixed problem has exactly one minimizer.** If the energy form is symmetric
