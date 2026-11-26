@@ -172,15 +172,15 @@ def loopSpaceHomeomorph [PathConnectedSpace (Ω E e)] :
 
 @[simp]
 theorem coe_loopSpaceHomeomorph_apply [PathConnectedSpace (Ω E e)] (γ : Ω E e) :
-    (hp.loopSpaceHomeomorph e γ : Ω B (p e)) = γ.map hp.continuous :=
-  (rfl)
+    (hp.loopSpaceHomeomorph e γ : Ω B (p e)) = γ.map hp.continuous := by
+  simp [loopSpaceHomeomorph]
 
 /-- The inverse of `loopSpaceHomeomorph` lifts a loop: the lift lies over it. -/
 @[simp]
 theorem map_loopSpaceHomeomorph_symm_apply [PathConnectedSpace (Ω E e)]
     (δ : pathComponent (Path.refl (p e))) :
-    ((hp.loopSpaceHomeomorph e).symm δ).map hp.continuous = δ :=
-  map_liftLoop hp e δ
+    ((hp.loopSpaceHomeomorph e).symm δ).map hp.continuous = δ := by
+  simp [loopSpaceHomeomorph]
 
 end LoopSpace
 
@@ -281,15 +281,16 @@ def mooreLoopSpaceHomeomorph [PathConnectedSpace (MooreLoopSpace E e)] :
 @[simp]
 theorem coe_mooreLoopSpaceHomeomorph_apply [PathConnectedSpace (MooreLoopSpace E e)]
     (γ : MooreLoopSpace E e) :
-    (hp.mooreLoopSpaceHomeomorph e γ : MooreLoopSpace B (p e)) = MooreLoopSpace.map p rfl γ :=
-  (rfl)
+    (hp.mooreLoopSpaceHomeomorph e γ : MooreLoopSpace B (p e)) =
+      MooreLoopSpace.map p rfl γ := by
+  simp [mooreLoopSpaceHomeomorph]
 
 /-- The inverse of `mooreLoopSpaceHomeomorph` lifts a Moore loop: the lift lies over it. -/
 @[simp]
 theorem map_mooreLoopSpaceHomeomorph_symm_apply [PathConnectedSpace (MooreLoopSpace E e)]
     (δ : pathComponent (1 : MooreLoopSpace B (p e))) :
-    MooreLoopSpace.map p rfl ((hp.mooreLoopSpaceHomeomorph e).symm δ) = δ :=
-  map_mooreLiftLoop hp e δ
+    MooreLoopSpace.map p rfl ((hp.mooreLoopSpaceHomeomorph e).symm δ) = δ := by
+  simp [mooreLoopSpaceHomeomorph]
 
 end MooreLoopSpace
 

@@ -91,6 +91,14 @@ theorem coe_loopSpaceSphereHomeomorph_apply
   have := pathConnectedSpace_loopSpace hn x
   (isCoveringMap_mk n).coe_loopSpaceHomeomorph_apply x γ
 
+/-- The inverse of `loopSpaceSphereHomeomorph` lifts a contractible loop of `ℝPⁿ` to `Sⁿ`: the
+lift lies over it. -/
+@[simp]
+theorem map_loopSpaceSphereHomeomorph_symm_apply (δ : pathComponent (Path.refl (mk n x))) :
+    ((loopSpaceSphereHomeomorph hn x).symm δ).map (continuous_mk n) = δ :=
+  have := pathConnectedSpace_loopSpace hn x
+  (isCoveringMap_mk n).map_loopSpaceHomeomorph_symm_apply x δ
+
 /-- **The contractible Moore loops of `ℝPⁿ` are the Moore loops of `Sⁿ`**: for `n ≥ 2`, the Moore
 loop map of the projection `Sⁿ → ℝPⁿ` is a homeomorphism from the Moore loop space of `Sⁿ` at `x`
 onto the path component of the unit in the Moore loop space of `ℝPⁿ` at the image of `x`. -/
@@ -108,6 +116,17 @@ theorem coe_mooreLoopSpaceSphereHomeomorph_apply
   have := pathConnectedSpace_mooreLoopSpace_sphere finrank_euclideanSpace_fin hn x
   IsCoveringMap.coe_mooreLoopSpaceHomeomorph_apply (p := ⟨mk n, continuous_mk n⟩)
     (isCoveringMap_mk n) x γ
+
+/-- The inverse of `mooreLoopSpaceSphereHomeomorph` lifts a contractible Moore loop of `ℝPⁿ` to
+`Sⁿ`: the lift lies over it. -/
+@[simp]
+theorem map_mooreLoopSpaceSphereHomeomorph_symm_apply
+    (δ : pathComponent (1 : MooreLoopSpace (RealProjectiveSpace n) (mk n x))) :
+    MooreLoopSpace.map ⟨mk n, continuous_mk n⟩ (rfl : _ = mk n x)
+      ((mooreLoopSpaceSphereHomeomorph hn x).symm δ) = δ :=
+  have := pathConnectedSpace_mooreLoopSpace_sphere finrank_euclideanSpace_fin hn x
+  IsCoveringMap.map_mooreLoopSpaceHomeomorph_symm_apply (p := ⟨mk n, continuous_mk n⟩)
+    (isCoveringMap_mk n) x δ
 
 variable (R : Type) [Ring R]
 

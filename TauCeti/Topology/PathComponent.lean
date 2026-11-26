@@ -89,7 +89,7 @@ instance instLocallyPathConnectedSpaceSubtypePathComponent [LocallyPathConnected
 
 /-- In a path-connected space, the path component of any point is the whole space: the
 inclusion of the path component of `x₀` is a homeomorphism onto `X`, and this is its inverse. -/
-@[expose] def _root_.Homeomorph.pathComponentOfPathConnectedSpace [PathConnectedSpace X] :
+def _root_.Homeomorph.pathComponentOfPathConnectedSpace [PathConnectedSpace X] :
     X ≃ₜ pathComponent x₀ :=
   (Homeomorph.Set.univ X).symm.trans <|
     Homeomorph.setCongr (Set.eq_univ_of_forall (PathConnectedSpace.joined x₀)).symm
@@ -97,6 +97,11 @@ inclusion of the path component of `x₀` is a homeomorphism onto `X`, and this 
 @[simp]
 theorem _root_.Homeomorph.coe_pathComponentOfPathConnectedSpace_apply [PathConnectedSpace X]
     (x : X) : (Homeomorph.pathComponentOfPathConnectedSpace x₀ x : X) = x :=
+  (rfl)
+
+@[simp]
+theorem _root_.Homeomorph.coe_pathComponentOfPathConnectedSpace_symm_apply [PathConnectedSpace X]
+    (y : pathComponent x₀) : ((Homeomorph.pathComponentOfPathConnectedSpace x₀).symm y : X) = y :=
   (rfl)
 
 /-- The basepoint of `X`, viewed as a point of its own path component. -/
