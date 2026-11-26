@@ -30,7 +30,8 @@ generated submodule of the original module already spans that scalar extension
 (`Submodule.exists_fg_baseChange_eq_top`). A linear map of scalar factors carries one scalar
 extension of a submodule into another (`Submodule.map_mem_baseChange`), and for an algebra map
 `f : A →ₐ[R] B` the `B`-span of the image of `span A s` under `f ⊗ id` equals the `B`-span of the
-image of `s` (`Submodule.span_rTensor_image_span`).
+image of `s` (`Submodule.span_rTensor_image_span`). In particular, if a family `X` spans `M` over
+`R`, then the tensors `1 ⊗ X i` span `A ⊗[R] M` over `A` (`TauCeti.span_one_tmul_eq_top`).
 -/
 
 public section
@@ -233,3 +234,15 @@ theorem baseChange_pow (p : Submodule R B) (n : ℕ) :
     (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) (p : Set B) n)
 
 end Submodule
+
+namespace TauCeti
+
+/-- **A spanning family stays spanning after extension of scalars**: if `X` spans the
+`R`-module `M`, then the tensors `1 ⊗ X i` span `A ⊗[R] M` over `A`. -/
+theorem span_one_tmul_eq_top {R A M ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] {X : ι → M} (hX : Submodule.span R (Set.range X) = ⊤) :
+    Submodule.span A (Set.range fun i ↦ (1 : A) ⊗ₜ[R] X i) = ⊤ := by
+  have h := congrArg (Submodule.baseChange A) hX
+  rwa [Submodule.baseChange_span, Submodule.baseChange_top, ← Set.range_comp] at h
+
+end TauCeti
