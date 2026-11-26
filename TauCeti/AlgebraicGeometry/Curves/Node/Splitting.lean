@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.Node.Blowup
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Splitting
 public import TauCeti.AlgebraicGeometry.IrreducibleComponents.Geometric
+import TauCeti.AlgebraicGeometry.Scheme.SpecAlgHom
 
 /-!
 # Splitting the nodes, branches and geometric components of a proper nodal curve
@@ -102,12 +103,10 @@ theorem exists_split_branchScheme {K : Type u} [Field K]
   have := X'.etale_branchSchemeToSingularLocus hnodal'
   -- The nodes and branches of `X'` are base changes along `Spec F ⟶ Spec L` of those of the
   -- base change of `X` to `L`, hence split over `F`.
-  have hKF : Spec.algebraMap K F = Spec.algebraMap L F ≫ Spec.algebraMap K L := by
-    rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
   have Hbase := (Scheme.isPullback_singularLocus_subschemeι H).flip.paste_vert H
   obtain ⟨f, Hbr⟩ := Scheme.exists_isPullback_branchSchemeToSingularLocus H
   have Hbr' := Hbr.paste_vert Hbase
-  rw [hKF] at Hbase Hbr'
+  rw [← Spec.algebraMap_comp_algebraMap K L F] at Hbase Hbr'
   have hS := Over.w eS.hom
   have hB := Over.w eB.hom
   simp only [Over.mk_hom] at hS hB
@@ -168,10 +167,8 @@ theorem exists_split_branchScheme_irreducibleComponents {K : Type u} [Field K]
     rw [RingHom.algebraMap_toAlgebra, RingHom.comp_assoc,
       ← IsScalarTower.algebraMap_eq, ← IsScalarTower.algebraMap_eq])
   -- Compare the base change over `F` with the curve over `L₁`.
-  have hKF : Spec.algebraMap K F = Spec.algebraMap L₁ F ≫ Spec.algebraMap K L₁ := by
-    rw [← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
   refine ⟨hsplit F X' _ g H, ?_⟩
-  rw [hKF] at H
+  rw [← Spec.algebraMap_comp_algebraMap K L₁ F] at H
   exact hcomp F (IsPullback.of_right' H (IsPullback.of_hasPullback _ _))
 
 end AlgebraicGeometry.Scheme

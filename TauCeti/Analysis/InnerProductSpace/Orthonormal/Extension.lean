@@ -17,10 +17,43 @@ orthonormal four-frame (`Orthonormal.exists_fin_four_extension`). The span of an
 linear map into a space of dimension at most `l`
 (`Orthonormal.exists_orthonormalBasis_span_apply_castAdd_eq_zero`). In a space of dimension
 `n + 1`, every unit vector is the first vector of an orthonormal basis indexed by `Fin (n + 1)`
-(`TauCeti.exists_orthonormalBasis_fin_apply_zero_eq`).
+(`TauCeti.exists_orthonormalBasis_fin_apply_zero_eq`), and more generally every orthonormal
+`k`-frame consists of the first `k` vectors of an orthonormal basis indexed by `Fin n`
+(`TauCeti.exists_orthonormalBasis_fin_apply_castLE_eq`). In the same way an orthonormal `k`-frame
+in the span of an orthonormal `n`-frame `v` consists of the first `k` vectors of an orthonormal
+`n`-frame with the span of `v` (`Orthonormal.exists_orthonormal_span_eq_apply_castLE_eq`).
 -/
 
 public section
+
+namespace TauCeti
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- In a finite-dimensional space of dimension `n`, every orthonormal family `e` of `k` vectors
+consists of the first `k` vectors of an orthonormal basis indexed by `Fin n`. -/
+theorem exists_orthonormalBasis_fin_apply_castLE_eq [FiniteDimensional 𝕜 E] {k n : ℕ}
+    (hn : Module.finrank 𝕜 E = n) (hkn : k ≤ n) {e : Fin k → E} (he : Orthonormal 𝕜 e) :
+    ∃ b : OrthonormalBasis (Fin n) 𝕜 E, ∀ i, b (Fin.castLE hkn i) = e i := by
+  classical
+  let v : Fin n → E := fun j ↦ if h : (j : ℕ) < k then e ⟨j, h⟩ else 0
+  have hv : Orthonormal 𝕜 ((Set.range (Fin.castLE hkn)).domRestrict v) := by
+    rw [orthonormal_iff_ite]
+    rintro ⟨_, i, rfl⟩ ⟨_, j, rfl⟩
+    simp [v, Set.domRestrict, Subtype.ext_iff, orthonormal_iff_ite.1 he i j, Fin.ext_iff]
+  obtain ⟨b, hb⟩ := hv.exists_orthonormalBasis_extension_of_card_eq (by simp [hn])
+  exact ⟨b, fun i ↦ (hb _ (Set.mem_range_self i)).trans (by simp [v])⟩
+
+/-- In a space of dimension `n + 1`, every unit vector `e` is the first vector of an orthonormal
+basis indexed by `Fin (n + 1)`. -/
+theorem exists_orthonormalBasis_fin_apply_zero_eq {n : ℕ} (hn : Module.finrank 𝕜 E = n + 1)
+    {e : E} (he : ‖e‖ = 1) : ∃ b : OrthonormalBasis (Fin (n + 1)) 𝕜 E, b 0 = e := by
+  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_eq_succ hn
+  obtain ⟨b, hb⟩ := exists_orthonormalBasis_fin_apply_castLE_eq hn (Nat.le_add_left 1 n)
+    (e := fun _ : Fin 1 ↦ e) ⟨fun _ ↦ he, fun i j hij ↦ (hij (Subsingleton.elim i j)).elim⟩
+  exact ⟨b, by simpa using hb 0⟩
+
+end TauCeti
 
 namespace Orthonormal
 
@@ -51,7 +84,6 @@ theorem exists_orthonormalBasis_span_apply_castAdd_eq_zero {k l : ℕ} {u : Fin 
       ∀ i, q (c (Fin.castAdd l i)) = 0 := by
   -- The kernel of `q` on the span has dimension at least `k`; an orthonormal `k`-frame in it is
   -- extended to an orthonormal basis of the span.
-  classical
   let W := Submodule.span 𝕜 (Set.range u)
   have : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range u)
   have hW : Module.finrank 𝕜 W = k + l := by
@@ -66,35 +98,29 @@ theorem exists_orthonormalBasis_span_apply_castAdd_eq_zero {k l : ℕ} {u : Fin 
   have ha : Orthonormal 𝕜 a :=
     (B.orthonormal.comp _ (Fin.castLE_injective hK)).comp_linearIsometry
       (LinearMap.ker L).subtypeₗᵢ
-  let v : Fin (k + l) → W := Fin.append a 0
-  have hv : Orthonormal 𝕜 ((Set.range (Fin.castAdd l)).domRestrict v) := by
-    rw [orthonormal_iff_ite]
-    rintro ⟨_, i, rfl⟩ ⟨_, j, rfl⟩
-    simp [v, Set.domRestrict, Subtype.ext_iff, orthonormal_iff_ite.1 ha i j]
-  obtain ⟨c, hc⟩ := hv.exists_orthonormalBasis_extension_of_card_eq (by simp [hW])
+  obtain ⟨c, hc⟩ := TauCeti.exists_orthonormalBasis_fin_apply_castLE_eq hW
+    (Nat.le_add_right k l) ha
   refine ⟨c, fun i ↦ ?_⟩
-  have hci : c (Fin.castAdd l i) = a i := (hc _ (Set.mem_range_self i)).trans (Fin.append_left ..)
-  rw [hci, ← LinearMap.domRestrict_apply]
+  rw [Fin.castAdd, hc, ← LinearMap.domRestrict_apply]
   exact LinearMap.mem_ker.1 (B (Fin.castLE hK i)).property
 
+/-- An orthonormal family `e` of `k` vectors in the span of an orthonormal family `v` of `n ≥ k`
+vectors consists of the first `k` vectors of an orthonormal family of `n` vectors with the same
+span as `v`. -/
+theorem exists_orthonormal_span_eq_apply_castLE_eq {n : ℕ} {v : Fin n → E} (hv : Orthonormal 𝕜 v)
+    {k : ℕ} (hkn : k ≤ n) {e : Fin k → E} (he : Orthonormal 𝕜 e)
+    (hev : ∀ i, e i ∈ Submodule.span 𝕜 (Set.range v)) :
+    ∃ w : Fin n → E, Orthonormal 𝕜 w ∧
+      Submodule.span 𝕜 (Set.range w) = Submodule.span 𝕜 (Set.range v) ∧
+      ∀ i, w (Fin.castLE hkn i) = e i := by
+  set W := Submodule.span 𝕜 (Set.range v)
+  have : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
+  have hW : Module.finrank 𝕜 W = n := by simpa using finrank_span_eq_card hv.linearIndependent
+  obtain ⟨b, hb⟩ := TauCeti.exists_orthonormalBasis_fin_apply_castLE_eq hW hkn
+    (e := fun i ↦ ⟨e i, hev i⟩) (W.subtypeₗᵢ.orthonormal_comp_iff.1 he)
+  refine ⟨W.subtype ∘ b, ?_, ?_, fun i ↦ by simp [hb]⟩
+  · simpa only [Submodule.coe_subtypeₗᵢ] using b.orthonormal.comp_linearIsometry W.subtypeₗᵢ
+  · rw [Set.range_comp, ← b.coe_toBasis, ← Submodule.map_span, b.toBasis.span_eq,
+      Submodule.map_top, W.range_subtype]
+
 end Orthonormal
-
-namespace TauCeti
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- In a space of dimension `n + 1`, every unit vector `e` is the first vector of an orthonormal
-basis indexed by `Fin (n + 1)`. -/
-theorem exists_orthonormalBasis_fin_apply_zero_eq {n : ℕ} (hn : Module.finrank 𝕜 E = n + 1)
-    {e : E} (he : ‖e‖ = 1) : ∃ b : OrthonormalBasis (Fin (n + 1)) 𝕜 E, b 0 = e := by
-  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_eq_succ hn
-  obtain ⟨b, hb⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq (𝕜 := 𝕜)
-    (ι := Fin (n + 1)) (by simp [hn]) (v := fun _ ↦ e) (s := {0}) <| by
-      rw [orthonormal_iff_ite]
-      rintro ⟨i, hi⟩ ⟨j, hj⟩
-      simp only [Set.mem_singleton_iff] at hi hj
-      subst hi hj
-      simp [he]
-  exact ⟨b, hb 0 rfl⟩
-
-end TauCeti

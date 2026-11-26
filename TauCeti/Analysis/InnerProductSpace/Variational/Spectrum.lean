@@ -142,6 +142,17 @@ theorem isMinOn_quadraticEnergy_iff_eq_formSolutionMap (hB : IsCoercive B)
   rw [formSolutionMap_apply]
   exact hB.isMinOn_quadraticEnergy_iff_eq_solutionOfFunctional hsymm _
 
+/-- Value of `B.quadraticEnergy ((innerSL ℝ h).comp J)` at `hB.formSolutionMap J h` (its global
+minimum value when `B` is symmetric), stated in `simp`-normal form for
+`ContinuousLinearMap.toSesqForm J h` (`ContinuousLinearMap.toSesqForm_apply_coe`). -/
+@[simp]
+theorem quadraticEnergy_innerSL_comp_formSolutionMap (hB : IsCoercive B) (J : V →L[ℝ] H) (h : H) :
+    B.quadraticEnergy ((innerSL ℝ h).comp J) (hB.formSolutionMap J h) =
+      -⟪h, J (hB.formSolutionMap J h)⟫_ℝ := by
+  rw [ContinuousLinearMap.quadraticEnergy_real_apply, hB.apply_formSolutionMap]
+  simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply]
+  ring
+
 /-- The form perturbation operator on `V` is the solution map precomposed with `J`, where the
 solution operator on `H` is the same pair of maps composed in the other order. -/
 theorem formPerturbationOperator_eq_comp (hB : IsCoercive B) (J : V →L[ℝ] H) :

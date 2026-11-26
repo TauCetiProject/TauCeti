@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.RingTheory.QuotSMulTop
 public import Mathlib.RingTheory.Regular.Category
 
@@ -17,6 +18,9 @@ For a module `M` over a commutative ring `R` and an element `r` regular on `M`, 
 `M ⟶ M ⧸ r M` in Mathlib's short exact sequence `0 ⟶ M ⟶ M ⟶ M ⧸ r M ⟶ 0`, with first map
 multiplication by `r`, is a split epimorphism exactly when `r M = M`
 (`IsSMulRegular.isSplitEpi_smulShortComplex_g_iff`).
+
+The first two terms of this sequence are `M` itself, so they are projective when `M` is
+(`ModuleCat.smulShortComplex_X₁_projective`, `ModuleCat.smulShortComplex_X₂_projective`).
 -/
 
 public section
@@ -24,6 +28,20 @@ public section
 universe v u
 
 open CategoryTheory Limits Pointwise
+
+namespace ModuleCat
+
+variable {R : Type u} [CommRing R] (M : ModuleCat.{v} R) [Projective M] (r : R)
+
+/-- The first term of `ModuleCat.smulShortComplex M r` is `M`, so it is projective when `M` is. -/
+instance smulShortComplex_X₁_projective : Projective (M.smulShortComplex r).X₁ :=
+  inferInstanceAs (Projective M)
+
+/-- The middle term of `ModuleCat.smulShortComplex M r` is `M`, so it is projective when `M` is. -/
+instance smulShortComplex_X₂_projective : Projective (M.smulShortComplex r).X₂ :=
+  inferInstanceAs (Projective M)
+
+end ModuleCat
 
 namespace IsSMulRegular
 

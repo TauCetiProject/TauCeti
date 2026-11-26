@@ -13,10 +13,14 @@ public import Mathlib.Topology.Order.Compact
 import Mathlib.Order.SuccPred.IntervalSucc
 
 /-!
-# Finiteness, trimming and fixed points of measure-preserving maps
+# Restriction, finiteness, trimming and fixed points of measure-preserving maps
 
 ## Main results
 
+* `MeasureTheory.MeasurePreserving.restrict_of_preimage_eq` and
+  `MeasureTheory.MeasurePreserving.symm_restrict_of_preimage_eq` — a measure-preserving map, and
+  the inverse of a measure-preserving measurable equivalence, preserve the measures restricted to
+  `t = f ⁻¹' s` and `s`.
 * `MeasureTheory.MeasurePreserving.isFiniteMeasure` — a finite source measure makes the target of
   a measure-preserving map finite.
 * `MeasureTheory.MeasurePreserving.trim_comap` — a measure-preserving map preserves the measures
@@ -33,6 +37,19 @@ namespace MeasureTheory.MeasurePreserving
 variable {α β : Type*} {m : MeasurableSpace β}
   [mα : MeasurableSpace α] [mβ : MeasurableSpace β]
   {μ : Measure α} {ν : Measure β} {f g : α → β}
+
+/-- If `t = f ⁻¹' s` for a measurable `s`, a measure-preserving `f` is measure-preserving between
+the restrictions of the measures to `t` and to `s`. -/
+theorem restrict_of_preimage_eq (hf : MeasurePreserving f μ ν) {s : Set β} {t : Set α}
+    (hs : MeasurableSet s) (hts : t = f ⁻¹' s) :
+    MeasurePreserving f (μ.restrict t) (ν.restrict s) :=
+  hts ▸ hf.restrict_preimage hs
+
+/-- If `t = e ⁻¹' s`, the inverse of a measure-preserving measurable equivalence `e` is
+measure-preserving between the restrictions of the measures to `s` and to `t`. -/
+theorem symm_restrict_of_preimage_eq (e : α ≃ᵐ β) (he : MeasurePreserving e μ ν) {s : Set β}
+    {t : Set α} (hts : t = e ⁻¹' s) : MeasurePreserving e.symm (ν.restrict s) (μ.restrict t) :=
+  (hts ▸ he.restrict_preimage_emb e.measurableEmbedding s).symm e
 
 /-- A finite source measure makes the target of a measure-preserving map finite. -/
 theorem isFiniteMeasure [IsFiniteMeasure μ] (hf : MeasurePreserving f μ ν) : IsFiniteMeasure ν :=

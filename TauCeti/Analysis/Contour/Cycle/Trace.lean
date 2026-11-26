@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Cycle.Basic
-import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Trace
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
@@ -31,6 +30,6 @@ theorem addHaar_trace_eq_zero (C : Cycle) (μ : Measure ℂ) [μ.IsAddHaarMeasur
     simp only [mem_trace_iff, mem_iUnion, exists_prop]
   rw [ht]
   exact (measure_biUnion_null_iff (FreeAddCommGroup.support C).countable_toSet).mpr fun γ _ ↦
-    γ.isPiecewiseC1On.absolutelyContinuousOnInterval.addHaar_image_uIcc_eq_zero μ (by simp)
+    γ.absolutelyContinuousOnInterval.addHaar_image_uIcc_eq_zero μ (by simp)
 
 end TauCeti.Contour.Cycle

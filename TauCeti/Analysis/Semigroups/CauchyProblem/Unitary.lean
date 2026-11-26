@@ -45,6 +45,8 @@ the weak formulation.
 
 * `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.inner_eq_of_isForcedMildSolution`: a
   mild solution is a weak solution.
+* `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.exists_mem_domain_complexGenerator_eq`:
+  the weak formulation at a single time `t` puts `∫_{(0,t]} u` in the domain of the generator.
 * `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.isForcedMildSolution_of_forall_inner_eq`:
   a continuous weak solution is a mild solution.
 * `TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.isForcedMildSolution_iff_forall_inner_eq`:
@@ -100,11 +102,13 @@ theorem inner_eq_of_isForcedMildSolution (hU : U.IsUnitary)
     (hu.locallyIntegrableOn.integrableOn_Ioc_of_Ici t) _ _).2 ?_
   linear_combination hskew
 
-/-- The weak formulation at a time `t ≥ 0` identifies the generator on the time integral: the
-time integral `∫_{(0,t]} u` lies in the domain of `A`, where `A` takes the value
-`u t - x - ∫_{(0,t]} F`. -/
-private theorem exists_mem_domain_complexGenerator_eq (hU : U.IsUnitary)
-    (hF : LocallyIntegrableOn F (Ici 0)) (hu : ContinuousOn u (Ici 0)) {t : ℝ}
+/-- **The weak formulation at a single time identifies the generator on the time integral.** If
+`u` and `F` are integrable on `(0, t]` and the weak formulation
+`⟪ψ, u t⟫ = ⟪ψ, x⟫ - ∫_{(0,t]} ⟪A ψ, u s⟫ ds + ∫_{(0,t]} ⟪ψ, F s⟫ ds` holds at time `t` for every
+`ψ` in the domain of `A`, then the time integral `∫_{(0,t]} u` lies in the domain of `A`, where
+`A` takes the value `u t - x - ∫_{(0,t]} F`. -/
+theorem exists_mem_domain_complexGenerator_eq (hU : U.IsUnitary) {t : ℝ}
+    (hF : IntegrableOn F (Ioc 0 t)) (hu : IntegrableOn u (Ioc 0 t))
     (h : ∀ ψ : (U.complexGenerator hU).domain,
       ⟪(ψ : H), u t⟫_ℂ = ⟪(ψ : H), x⟫_ℂ - (∫ s in Ioc 0 t, ⟪U.complexGenerator hU ψ, u s⟫_ℂ) +
         ∫ s in Ioc 0 t, ⟪(ψ : H), F s⟫_ℂ) :
@@ -119,9 +123,7 @@ private theorem exists_mem_domain_complexGenerator_eq (hU : U.IsUnitary)
   have hadj : ∀ ψ : A.domain, ⟪-w, (ψ : H)⟫_ℂ = ⟪∫ s in Ioc 0 t, u s, A ψ⟫_ℂ := by
     intro ψ
     have hval : ⟪A ψ, ∫ s in Ioc 0 t, u s⟫_ℂ = -⟪(ψ : H), w⟫_ℂ :=
-      (inner_eq_iff_inner_integral_eq
-        ((hu.locallyIntegrableOn measurableSet_Ici).integrableOn_Ioc_of_Ici t)
-        (hF.integrableOn_Ioc_of_Ici t) _ _).1 (h ψ)
+      (inner_eq_iff_inner_integral_eq hu hF _ _).1 (h ψ)
     calc ⟪-w, (ψ : H)⟫_ℂ = (starRingEnd ℂ) ⟪(ψ : H), -w⟫_ℂ := (inner_conj_symm _ _).symm
       _ = (starRingEnd ℂ) ⟪A ψ, ∫ s in Ioc 0 t, u s⟫_ℂ := by rw [inner_neg_right, hval]
       _ = ⟪∫ s in Ioc 0 t, u s, A ψ⟫_ℂ := inner_conj_symm _ _
@@ -151,7 +153,8 @@ theorem isForcedMildSolution_of_forall_inner_eq (hU : U.IsUnitary)
     IsForcedMildSolution U.toSemigroup.generator F x u := by
   rw [← generator_def, ← U.complexGenerator_restrictScalars hU]
   have key (t : ℝ) (ht : 0 ≤ t) :=
-    exists_mem_domain_complexGenerator_eq hU hF hu fun ψ ↦ h ψ t ht
+    exists_mem_domain_complexGenerator_eq hU (hF.integrableOn_Ioc_of_Ici t)
+      ((hu.locallyIntegrableOn measurableSet_Ici).integrableOn_Ioc_of_Ici t) fun ψ ↦ h ψ t ht
   refine isForcedMildSolution_iff.2 ⟨inferInstance, hF, hu, ?_, fun t ht ↦ ?_⟩
   · -- At `t = 0` the time integrals vanish, so the identified value `u 0 - x` is `A 0 = 0`.
     obtain ⟨hv, hAv⟩ := key 0 le_rfl

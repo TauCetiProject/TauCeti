@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Geometry.Symplectic.Liouville.Domain
-import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Symplectic.Liouville.Scaling
 import TauCeti.Geometry.Symplectic.Manifold.Flat
 
@@ -107,19 +106,9 @@ theorem flowOf_notMem (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z
   -- The open set `{f < c}` lies in the interior of `W = {f ≤ c}`, so `c ≤ f x`.
   have hcx : c ≤ f x := not_lt.1 fun hlt ↦ hx <|
     interior_maximal (fun _ hy ↦ le_of_lt hy) (isOpen_lt hf continuous_const) hlt
-  -- The trajectory is an integral curve on its open interval of existence, which contains
-  -- `[0, t]`, and it crosses the level `f⁻¹(c)` only upwards.
-  have hdom : {τ | (τ, x) ∈ flowDomain Z} = maximalIntegralCurveInterval Z x :=
-    ext fun _ ↦ mem_flowDomain
-  have hs : IsOpen {τ | (τ, x) ∈ flowDomain Z} := hdom ▸ isOpen_maximalIntegralCurveInterval
-  have hIcc : Icc 0 t ⊆ {τ | (τ, x) ∈ flowDomain Z} := hdom ▸
-    ordConnected_maximalIntegralCurveInterval.out
-      (mem_flowDomain.1 (mem_flowDomain_zero_of_mem htx)) (mem_flowDomain.1 htx)
-  have hlt := (isMIntegralCurveOn_flowOf hZs x).lt_apply_of_le_apply hs hIcc
-    (hf.comp_continuousOn ((isMIntegralCurveOn_flowOf hZs x).continuousOn.mono hIcc))
-    (fun τ _ hτ ↦ ⟨(hfc _ hτ).1.mdifferentiableAt (by simp), (hfc _ hτ).2⟩)
-    (by rwa [flowOf_zero Z]) ⟨ht, le_rfl⟩
-  exact not_le.2 hlt
+  -- The trajectory crosses the level `f⁻¹(c)` only upwards.
+  exact not_le.2 <| lt_apply_flowOf_of_le_apply hZs hf
+    (fun y hy ↦ ⟨(hfc y hy).1.mdifferentiableAt (by simp), (hfc y hy).2⟩) hcx ht htx
 
 /-- **The Liouville trajectories through the boundary are disjoint.** If the Liouville field `Z`
 of a Liouville domain `W` is complete, then `(y, t) ↦ ψ_t(y)` is injective on `∂W × ℝ`, where `ψ`

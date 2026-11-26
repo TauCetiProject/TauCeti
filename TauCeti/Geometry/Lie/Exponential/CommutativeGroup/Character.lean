@@ -53,6 +53,8 @@ a character `χ` acts by `exp(ξ) · z = e^{i α_χ(ξ)} z`.
 ## Main definitions
 
 * `TauCeti.periodLattice I G`: the period lattice `Λ_ℤ = (2π)⁻¹ ker(exp)`.
+* `TauCeti.periodLatticeMap I G`: the period lattice, read in the Lie algebra `T₁G` of tangent
+  vectors at the identity, where `TauCeti.mulInvariantExp` is the exponential.
 * `ContinuousMonoidHom.lieWeight χ`: the real weight `α_χ` of a circle character.
 
 ## Main results
@@ -60,6 +62,8 @@ a character `χ` acts by `exp(ξ) · z = e^{i α_χ(ξ)} z`.
 * `TauCeti.mem_periodLattice`: `X ∈ Λ_ℤ ↔ exp(2π X) = 1`.
 * `TauCeti.isZLattice_periodLattice`, `TauCeti.isIntegralLattice_periodLattice`: for compact `G`,
   the period lattice is a full lattice, and `𝔤` is its real scalar extension.
+* `TauCeti.mulInvariantExp_two_pi_smul_eq_one_iff`, `TauCeti.isIntegralLattice_periodLatticeMap`:
+  the same description and integrality of the period lattice in `T₁G`.
 * `ContinuousMonoidHom.lieMap_mem_periodLattice`: continuous homomorphisms preserve period lattices.
 * `ContinuousMonoidHom.apply_lieExp_eq_circleExp_lieWeight`, `ContinuousMonoidHom.eq_lieWeight`:
   the defining identity `χ (exp X) = Circle.exp (α_χ X)`, and uniqueness of a functional
@@ -144,6 +148,39 @@ instance discreteTopology_periodLattice : DiscreteTopology (periodLattice I G) :
     (by fun_prop)
     (fun X Y h ↦ Subtype.ext (smul_right_injective _ two_pi_pos.ne' (congrArg Subtype.val h)))
 
+/-! ### The period lattice in the Lie algebra -/
+
+variable (I G) in
+/-- The period lattice `Λ_ℤ = {X | exp (2π X) = 1}` (`TauCeti.periodLattice`), a lattice of
+left-invariant derivations, mapped into the Lie algebra `𝔤 = T₁G` of tangent vectors at `1`. -/
+noncomputable def periodLatticeMap : periodLattice I G →+ E :=
+  ((leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint).toLinearMap.toAddMonoidHom.comp
+      (periodLattice I G).subtype : periodLattice I G →+ GroupLieAlgebra I G)
+
+variable (I G) in
+@[simp]
+theorem periodLatticeMap_apply (X : periodLattice I G) :
+    periodLatticeMap I G X = leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
+      BoundarylessManifold.isInteriorPoint X :=
+  (rfl)
+
+variable (I G) in
+/-- `exp (2π ξ) = 1` exactly when `ξ` lies in the period lattice. -/
+theorem mulInvariantExp_two_pi_smul_eq_one_iff (ξ : E) :
+    mulInvariantExp (I := I) (G := G) ((2 * π) • ξ) = 1 ↔ ξ ∈ Set.range (periodLatticeMap I G) := by
+  let ε := leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint
+  -- `exp (2π ε X) = lieExp (2π X)`, where the scalar multiplications of `E` and `𝔤` agree.
+  have hexp (X : LeftInvariantDerivation I G) :
+      mulInvariantExp (I := I) (G := G) ((2 * π) • (ε X : E)) = lieExp ((2 * π) • X) := by
+    rw [lieExp_eq_mulInvariantExp, map_smul]
+  refine ⟨fun hξ ↦ ?_, ?_⟩
+  · obtain ⟨X, rfl⟩ := ε.surjective ξ
+    exact ⟨⟨X, mem_periodLattice.2 ((hexp X).symm.trans hξ)⟩, rfl⟩
+  · rintro ⟨X, rfl⟩
+    exact (hexp X).trans (mem_periodLattice.1 X.property)
+
 section Compact
 
 variable [IsTopologicalGroup G] [CompactSpace G]
@@ -173,6 +210,13 @@ period lattice.** -/
 theorem isIntegralLattice_periodLattice :
     Toric.IsIntegralLattice (periodLattice I G).subtype :=
   Toric.isIntegralLattice_subtype_of_isZLattice (periodLattice I G).toIntSubmodule
+
+variable (I G) in
+/-- The period lattice of a compact commutative Lie group, read in `𝔤`, is an integral lattice. -/
+theorem isIntegralLattice_periodLatticeMap : Toric.IsIntegralLattice (periodLatticeMap I G) :=
+  (Toric.isIntegralLattice_congr (AddEquiv.refl _)
+    (leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
+      BoundarylessManifold.isInteriorPoint) fun _ ↦ rfl).1 isIntegralLattice_periodLattice
 
 end Compact
 
@@ -396,10 +440,9 @@ theorem exists_lieWeight_eq {α : Module.Dual ℝ (LeftInvariantDerivation I G)}
     ∃ χ : G →ₜ* Circle, lieWeight χ = α := by
   -- `X ↦ Circle.exp (α X)` kills the kernel of the exponential, so it factors through
   -- `𝔤 ⧸ ker(exp) ≃ G`.
-  let N := (lieExpAddMonoidHom (I := I) (G := G)).ker
   let φ : LeftInvariantDerivation I G →+ Additive Circle :=
     Circle.expHom.comp α.toAddMonoidHom
-  have hN : N ≤ φ.ker := by
+  have hN : (lieExpAddMonoidHom (I := I) (G := G)).ker ≤ φ.ker := by
     intro X hX
     obtain ⟨n, hn⟩ := hα _ (inv_two_pi_smul_mem_periodLattice_iff.2 hX)
     rw [map_smul, smul_eq_mul] at hn
@@ -408,25 +451,10 @@ theorem exists_lieWeight_eq {α : Module.Dual ℝ (LeftInvariantDerivation I G)}
       linarith
     rw [AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, hαX]
     exact Circle.exp_int_mul_two_pi n
-  let ψ := QuotientAddGroup.lift N φ hN
-  have hψmk : ⇑ψ ∘ QuotientAddGroup.mk = Additive.ofMul ∘ Circle.exp ∘ α := by
-    funext X
-    simp only [ψ, φ, Function.comp_apply, QuotientAddGroup.lift_mk, AddMonoidHom.comp_apply,
-      Circle.expHom_apply, LinearMap.toAddMonoidHom_coe]
-  have hψ : Continuous ψ := by
-    rw [(QuotientAddGroup.isQuotientMap_mk N).continuous_iff, hψmk]
-    exact continuous_ofMul.comp (Circle.exp.continuous.comp α.continuous_of_finiteDimensional)
-  let e := lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)
-  let χ : G →ₜ* Circle :=
-    { toFun := fun g ↦ Additive.toMul (ψ (e.symm (Additive.ofMul g)))
-      map_one' := by rw [ofMul_one, map_zero, map_zero, toMul_zero]
-      map_mul' := fun g h ↦ by rw [ofMul_mul, map_add, map_add, toMul_add]
-      continuous_toFun := continuous_toMul.comp
-        (hψ.comp (e.symm.continuous.comp continuous_ofMul)) }
-  have hχ (g : G) : χ g = Additive.toMul (ψ (e.symm (Additive.ofMul g))) := rfl
-  refine ⟨χ, (eq_lieWeight fun X ↦ ?_).symm⟩
-  rw [hχ, lieExpQuotientKerContinuousAddEquiv_symm_apply, ← Function.comp_apply (f := ⇑ψ), hψmk,
-    Function.comp_apply, Function.comp_apply, toMul_ofMul]
+  have hφ : Continuous φ :=
+    continuous_ofMul.comp (Circle.exp.continuous.comp α.continuous_of_finiteDimensional)
+  refine ⟨lieExpLift φ hφ hN, (eq_lieWeight fun X ↦ ?_).symm⟩
+  simp [φ]
 
 /-- **The character lattice is dual to the period lattice.** On a connected commutative Lie group,
 the weights of continuous characters are exactly the real-linear functionals taking integer values

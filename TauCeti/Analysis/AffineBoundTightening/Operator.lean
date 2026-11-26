@@ -185,6 +185,30 @@ theorem inverseHi_of_zero {A : Matrix (Fin m) (Fin n) ℝ} {q : Raw n m} {i : Fi
     (h : A i j = 0) : inverseHi A q i j = q.2 (.inl j) := by
   simp [inverseHi, h]
 
+/-- A variable lower endpoint dominates its lower inverse candidate exactly when it dominates the
+positive-coefficient and negative-coefficient formulas, each imposed only in its own sign branch. -/
+theorem inverseLo_le_fst_inl_iff {A : Matrix (Fin m) (Fin n) ℝ} {q : Raw n m} {i : Fin m}
+    {j : Fin n} :
+    inverseLo A q i j ≤ q.1 (.inl j) ↔
+      (0 < A i j → (q.1 (.inr i) - restHi A q i j) / A i j ≤ q.1 (.inl j)) ∧
+      (A i j < 0 → (q.2 (.inr i) - restLo A q i j) / A i j ≤ q.1 (.inl j)) := by
+  rcases lt_trichotomy (A i j) 0 with ha | ha | ha
+  · simp [inverseLo_of_neg ha, ha, not_lt_of_gt ha]
+  · simp [inverseLo_of_zero ha, ha]
+  · simp [inverseLo_of_pos ha, ha, not_lt_of_gt ha]
+
+/-- A variable upper endpoint lies below its upper inverse candidate exactly when it lies below the
+positive-coefficient and negative-coefficient formulas, each imposed only in its own sign branch. -/
+theorem snd_inl_le_inverseHi_iff {A : Matrix (Fin m) (Fin n) ℝ} {q : Raw n m} {i : Fin m}
+    {j : Fin n} :
+    q.2 (.inl j) ≤ inverseHi A q i j ↔
+      (0 < A i j → q.2 (.inl j) ≤ (q.2 (.inr i) - restLo A q i j) / A i j) ∧
+      (A i j < 0 → q.2 (.inl j) ≤ (q.1 (.inr i) - restHi A q i j) / A i j) := by
+  rcases lt_trichotomy (A i j) 0 with ha | ha | ha
+  · simp [inverseHi_of_neg ha, ha, not_lt_of_gt ha]
+  · simp [inverseHi_of_zero ha, ha]
+  · simp [inverseHi_of_pos ha, ha, not_lt_of_gt ha]
+
 /-- Lower inverse candidates increase under endpoint containment. -/
 theorem Within.inverseLo_le {A : Matrix (Fin m) (Fin n) ℝ} {q r : Raw n m} (h : Within q r)
     (i : Fin m) (j : Fin n) : inverseLo A r i j ≤ inverseLo A q i j := by
@@ -832,6 +856,12 @@ theorem graph_survives (A : Matrix (Fin m) (Fin n) ℝ) (q₀ : Raw n m)
     graph A x ∈ (publicRun A q₀ k : Set (Coord n m → ℝ)) := by
   rw [publicRun_eq_pack_rawRun, coe_pack]
   exact graph_mem_Icc_rawRun A q₀ x hx k
+
+/-- The singleton box at an initially enclosed graph point is fixed by `step A q₀`. -/
+theorem isFixedPt_step_graph {A : Matrix (Fin m) (Fin n) ℝ} {q₀ : Raw n m} {x : Fin n → ℝ}
+    (hx : graph A x ∈ Icc q₀.1 q₀.2) :
+    Function.IsFixedPt (step A q₀) (graph A x, graph A x) :=
+  (step_within_self A q₀ _).antisymm (within_iff.mpr (graph_mem_Icc_step ⟨le_rfl, le_rfl⟩ hx))
 
 /-- Supplying an initially enclosed graph point witnesses nonemptiness of every public iterate. -/
 theorem coe_publicRun_nonempty_of_graph {A : Matrix (Fin m) (Fin n) ℝ} {q₀ : Raw n m}

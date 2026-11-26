@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.CharGroupRing.Basic
+public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.Ideal.Quotient.Index
 import Mathlib.Algebra.Regular.Pi
@@ -80,6 +81,13 @@ theorem finite_quotient [Finite (O ⧸ Ideal.span {(Nat.card G : O)})] :
   let : Finite ((Ψ → O) ⧸ I • N) := Submodule.finite_quotient_smul I
     (Module.Finite.fg_top (R := O) (M := Ψ → O))
   exact Finite.of_surjective (Submodule.factor hle) (Submodule.factor_surjective hle)
+
+/-- When the coefficient ring modulo the group order is finite, the character group ring has finite
+additive index inside `Ψ → O`. -/
+instance instFiniteIndex [Finite (O ⧸ Ideal.span {(Nat.card G : O)})] :
+    (charGroupRing Ψ).toSubring.toAddSubgroup.FiniteIndex :=
+  @AddSubgroup.finiteIndex_of_finite_quotient _ _
+    (charGroupRing Ψ).toSubring.toAddSubgroup (finite_quotient Ψ)
 
 /-- When the group order is nonzero in the coefficient domain, the non-zero-divisors of the
 character group ring are exactly the elements whose character coordinates are all nonzero. -/

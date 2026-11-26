@@ -8,7 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
 public import Mathlib.Analysis.Calculus.Deriv.Prod
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import TauCeti.Analysis.InnerProductSpace.QuadraticForm.TwoVector
+import Mathlib.Analysis.Calculus.Deriv.ZPow
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
@@ -22,7 +25,8 @@ Hamiltonian (`TauCeti.centralForceHamiltonian`). Away from the collision set `q 
 momentum bivector `q ∧ p`. In the plane `ℓ²` is the square of the angular momentum
 `L = q₁p₂ - q₂p₁` (`TauCeti.sq_angularMomentum`).
 
-The kinetic energy splits as `‖p‖² = p_r² + ℓ² / r²`, so
+The kinetic energy splits as `‖p‖² = p_r² + ℓ² / r²`; in particular `ℓ² = 0` exactly when the
+momentum is radial, `p = p_r (q / ‖q‖)` (`TauCeti.sq_sub_inner_sq_eq_zero_iff`). So
 
 `H(q, p) = p_r² / (2m) + U_ℓ(r)`, with the *effective potential* `U_ℓ(r) = ℓ² / (2 m r²) + U(r)`
 
@@ -63,6 +67,7 @@ Two consequences describe the qualitative radial motion:
 
 ## Main results
 
+* `TauCeti.sq_sub_inner_sq_eq_zero_iff`: zero angular momentum means radial momentum.
 * `TauCeti.centralForceHamiltonian_radialProjection`: `H(q, p) = H_ℓ(r, p_r)`.
 * `TauCeti.centralForceHamiltonian_eq_radialMomentum_sq_div_add_effectivePotential`:
   `H(q, p) = p_r² / (2m) + U_ℓ(‖q‖)`.
@@ -72,6 +77,7 @@ Two consequences describe the qualitative radial motion:
   projection carries `X_H` to `X_{H_ℓ}`.
 * `TauCeti.hasDerivAt_radialProjection_comp`: integral curves of `H` project to integral curves
   of `H_ℓ`.
+* `TauCeti.iteratedDeriv_two_effectivePotential`: `U_ℓ''(r) = 3 ℓ² / (m r⁴) + U''(r)`.
 * `TauCeti.effectivePotential_le_centralForceHamiltonian`,
   `TauCeti.centralForceHamiltonian_eq_effectivePotential_iff`: the effective potential bounds the
   energy, with equality exactly at the radial turning points.
@@ -160,6 +166,28 @@ theorem hasDerivAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {U' r : �
     · field_simp
       ring
 
+/-- Away from `r = 0`, the second derivative of the effective potential is
+`U_ℓ''(r) = 3 ℓ² / (m r⁴) + U''(r)`. -/
+theorem iteratedDeriv_two_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ}
+    (hU : ContDiffAt ℝ 2 U r) (hr : r ≠ 0) :
+    iteratedDeriv 2 (effectivePotential m ℓ U) r =
+      3 * ℓ ^ 2 / (m * r ^ 4) + iteratedDeriv 2 U r := by
+  -- The centrifugal term is `ℓ² / (2m)` times `r⁻²`.
+  have h : effectivePotential m ℓ U = (fun s ↦ ℓ ^ 2 / (2 * m) * s ^ (-2 : ℤ)) + U := by
+    funext s
+    simp only [effectivePotential, Pi.add_apply, zpow_neg]
+    norm_cast
+    ring
+  have hc : ContDiffAt ℝ 2 (fun s : ℝ ↦ ℓ ^ 2 / (2 * m) * s ^ (-2 : ℤ)) r := by
+    simp only [zpow_neg]
+    norm_cast
+    exact contDiffAt_const.mul ((contDiffAt_id.pow 2).inv (pow_ne_zero 2 hr))
+  rw [h, iteratedDeriv_add hc hU, iteratedDeriv_const_mul_field, iteratedDeriv_eq_iterate,
+    iter_deriv_zpow]
+  simp [Finset.prod_range_succ, zpow_neg]
+  field_simp
+  ring
+
 /-- Away from `r = 0`, the effective potential is continuous wherever `U` is. -/
 theorem continuousAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ} (hU : ContinuousAt U r)
     (hr : r ≠ 0) :
@@ -169,6 +197,15 @@ theorem continuousAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ
   rw [hUℓ]
   exact (continuousAt_const.div (continuousAt_id.pow 2) (pow_ne_zero 2 hr)).add hU
 
+/-- Away from `r = 0`, the effective potential is `Cⁿ` wherever `U` is. -/
+theorem contDiffAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ} {n : WithTop ℕ∞}
+    (hU : ContDiffAt ℝ n U r) (hr : r ≠ 0) :
+    ContDiffAt ℝ n (effectivePotential m ℓ U) r := by
+  have hUℓ : effectivePotential m ℓ U = fun r ↦ ℓ ^ 2 / (2 * m) * (r ^ 2)⁻¹ + U r :=
+    funext fun r ↦ by rw [effectivePotential_apply, ← div_eq_mul_inv, div_div]
+  rw [hUℓ]
+  exact (contDiffAt_const.mul ((contDiffAt_id.pow 2).inv (pow_ne_zero 2 hr))).add hU
+
 /-- Away from `r = 0`, `r` is a critical point of the effective potential exactly when
 `U'(r) = ℓ² / (m r³)`. -/
 theorem hasDerivAt_effectivePotential_zero_iff {m ℓ : ℝ} {U : ℝ → ℝ} {U' r : ℝ}
@@ -176,6 +213,14 @@ theorem hasDerivAt_effectivePotential_zero_iff {m ℓ : ℝ} {U : ℝ → ℝ} {
     HasDerivAt (effectivePotential m ℓ U) 0 r ↔ U' = ℓ ^ 2 / (m * r ^ 3) := by
   have h := hasDerivAt_effectivePotential (m := m) (ℓ := ℓ) hU hr
   exact ⟨fun h' ↦ sub_eq_zero.1 (h.unique h'), fun h' ↦ by rwa [h', sub_self] at h⟩
+
+/-- Away from `r = 0`, at a point where `U` is differentiable, `r` is a critical point of the
+effective potential exactly when the force balances the centrifugal term,
+`U'(r) = ℓ² / (m r³)`. -/
+theorem deriv_effectivePotential_eq_zero_iff {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ}
+    (hU : DifferentiableAt ℝ U r) (hr : r ≠ 0) :
+    deriv (effectivePotential m ℓ U) r = 0 ↔ deriv U r = ℓ ^ 2 / (m * r ^ 3) := by
+  rw [(hasDerivAt_effectivePotential (m := m) (ℓ := ℓ) hU.hasDerivAt hr).deriv, sub_eq_zero]
 
 /-- On the closed half-line `r ≥ 0`, the reduced Hamiltonian, the one-dimensional central-force
 Hamiltonian of the effective potential, is `H_ℓ(r, p_r) = p_r² / (2m) + ℓ² / (2 m r²) + U(r)`. -/
@@ -216,6 +261,26 @@ theorem norm_snd_sq_eq_radialMomentum_sq_add {x : V × V} (hq : x.1 ≠ 0) :
   rw [radialMomentum]
   field_simp
   ring
+
+/-- **Zero angular momentum means radial momentum.** Away from the collision set, the squared
+angular momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` vanishes exactly when the momentum is the radial
+momentum times the unit vector `q / ‖q‖`, `p = p_r (q / ‖q‖)`. -/
+theorem sq_sub_inner_sq_eq_zero_iff {x : V × V} (hq : x.1 ≠ 0) :
+    ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 = 0 ↔
+      x.2 = radialMomentum x • ‖x.1‖⁻¹ • x.1 := by
+  have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
+  -- The tangential part `p - p_r (q / ‖q‖)` has squared length `‖p‖² - p_r² = ℓ² / ‖q‖²`.
+  have h : ‖x.2 - radialMomentum x • ‖x.1‖⁻¹ • x.1‖ ^ 2 =
+      (‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) / ‖x.1‖ ^ 2 := by
+    rw [← sub_eq_iff_eq_add'.2 (norm_snd_sq_eq_radialMomentum_sq_add hq), norm_sub_sq_real]
+    simp only [norm_smul, norm_inv, Real.norm_eq_abs, abs_norm, mul_pow, sq_abs,
+      real_inner_smul_right, real_inner_comm, radialMomentum]
+    field_simp
+    ring
+  have h' : x.2 = radialMomentum x • ‖x.1‖⁻¹ • x.1 ↔
+      ‖x.2 - radialMomentum x • ‖x.1‖⁻¹ • x.1‖ ^ 2 = 0 := by
+    rw [pow_eq_zero_iff two_ne_zero, norm_eq_zero, sub_eq_zero]
+  rw [h', h, div_eq_zero_iff, or_iff_left (pow_ne_zero 2 hr)]
 
 /-- **The energy in radial form.** Away from the collision set, a central-force Hamiltonian is the
 reduced Hamiltonian `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)` of the radial projection, for `ℓ²` the
@@ -289,6 +354,11 @@ theorem hasFDerivAt_radialProjection {x : V × V} (hq : x.1 ≠ 0) :
   · simp [real_inner_comm]
     field_simp
     ring
+
+/-- The radial projection `(q, p) ↦ (‖q‖, p_r)` is continuous away from the collision set. -/
+theorem continuousAt_radialProjection {x : V × V} (hq : x.1 ≠ 0) :
+    ContinuousAt radialProjection x :=
+  (hasFDerivAt_radialProjection hq).continuousAt
 
 /-! ### Uniform circular motion -/
 

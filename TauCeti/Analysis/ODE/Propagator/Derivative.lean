@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.Propagator
 import Mathlib.Analysis.Complex.Schwarz
-import TauCeti.Analysis.ODE.Propagator.Holomorphic
+import TauCeti.Analysis.ODE.Propagator.Holomorphic.Basic
 import TauCeti.Analysis.ODE.VariationOfConstants
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 

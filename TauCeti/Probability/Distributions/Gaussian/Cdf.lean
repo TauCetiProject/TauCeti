@@ -10,6 +10,7 @@ public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.CDF
 public import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Analysis.SpecialFunctions.Erf.Inequalities
+import TauCeti.Analysis.SpecialFunctions.Erf.Series
 import TauCeti.Analysis.Real.Sqrt
 import TauCeti.MeasureTheory.Measure.Real
 import TauCeti.MeasureTheory.Measure.Tail
@@ -78,6 +79,11 @@ over `Set.Iic x` is then the limit of those interval integrals, using
 * `TauCeti.Probability.one_sub_cdf_gaussianReal_le_exp_div_two` and
   `TauCeti.Probability.one_sub_cdf_gaussianReal_lt_exp_div_two` — the bound
   `1 − Φ(r) ≤ e^{−r²/2}/2` for `r ≥ 0`, strict for `r > 0`; at `r = 0` both sides are `1/2`.
+* `TauCeti.Probability.mul_sum_range_two_mul_le_cdf_gaussianReal_sub_half` and
+  `TauCeti.Probability.cdf_gaussianReal_sub_half_le_mul_sum_range_two_mul_add_one` — for
+  `0 ≤ r` with `r² ≤ 6`, the partial sums of the alternating series
+  `Φ(r) − 1/2 = (r / √(2π)) ∑ₙ (-1)ⁿ (r²/2)ⁿ / (n! (2n + 1))` with an even or odd number of terms
+  bound `Φ(r) − 1/2` from below or above.
 * `TauCeti.Probability.measureReal_le_of_hasLaw_gaussianReal` — the random-variable corollary.
 
 ## References
@@ -469,6 +475,40 @@ theorem one_sub_cdf_gaussianReal_lt_exp_div_two {r : ℝ} (hr : 0 < r) :
   rw [Real.div_sqrt_sq zero_le_two, ← neg_div] at h
   rw [one_sub_cdf_gaussianReal_eq_erfc]
   gcongr
+
+/-- For `0 ≤ r` with `r² ≤ 6`, partial sums with an even number of terms of the alternating series
+`Φ(r) − 1/2 = (r / √(2π)) ∑ₙ (-1)ⁿ (r²/2)ⁿ / (n! (2n + 1))` are lower bounds. This is
+`TauCeti.Real.mul_sum_range_two_mul_le_erf` at `r/√2`. -/
+theorem mul_sum_range_two_mul_le_cdf_gaussianReal_sub_half {r : ℝ} (hr : 0 ≤ r)
+    (hr6 : r ^ 2 ≤ 6) (k : ℕ) :
+    r / √(2 * π) * ∑ i ∈ Finset.range (2 * k),
+        (-1) ^ i * (r ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) ≤
+      cdf (gaussianReal 0 1) r - 1 / 2 := by
+  have h := TauCeti.Real.mul_sum_range_two_mul_le_erf (x := r / √2) (by positivity)
+    (by rw [Real.div_sqrt_sq zero_le_two]; linarith) k
+  have hc : r / √(2 * π) = 2 * (r / √2) / √π / 2 := by
+    rw [Real.sqrt_mul zero_le_two]
+    field_simp
+  rw [Real.div_sqrt_sq zero_le_two] at h
+  rw [cdf_gaussianReal_zero_one, hc]
+  linarith
+
+/-- For `0 ≤ r` with `r² ≤ 6`, partial sums with an odd number of terms of the alternating series
+`Φ(r) − 1/2 = (r / √(2π)) ∑ₙ (-1)ⁿ (r²/2)ⁿ / (n! (2n + 1))` are upper bounds. This is
+`TauCeti.Real.erf_le_mul_sum_range_two_mul_add_one` at `r/√2`. -/
+theorem cdf_gaussianReal_sub_half_le_mul_sum_range_two_mul_add_one {r : ℝ} (hr : 0 ≤ r)
+    (hr6 : r ^ 2 ≤ 6) (k : ℕ) :
+    cdf (gaussianReal 0 1) r - 1 / 2 ≤
+      r / √(2 * π) * ∑ i ∈ Finset.range (2 * k + 1),
+        (-1) ^ i * (r ^ 2 / 2) ^ i / (i.factorial * (2 * i + 1)) := by
+  have h := TauCeti.Real.erf_le_mul_sum_range_two_mul_add_one (x := r / √2) (by positivity)
+    (by rw [Real.div_sqrt_sq zero_le_two]; linarith) k
+  have hc : r / √(2 * π) = 2 * (r / √2) / √π / 2 := by
+    rw [Real.sqrt_mul zero_le_two]
+    field_simp
+  rw [Real.div_sqrt_sq zero_le_two] at h
+  rw [cdf_gaussianReal_zero_one, hc]
+  linarith
 
 /-- A random variable with a Gaussian law of nonzero variance has the error-function cumulative
 distribution function. -/

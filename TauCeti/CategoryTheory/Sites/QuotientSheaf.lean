@@ -39,6 +39,8 @@ the big fppf site of `Scheme.{u}`, where Mathlib's sheafification lands in `Type
 * `TauCeti.CategoryTheory.quotientSheaf.isColimit`: `π` is the coequaliser of `h_R ⇉ h_U` in
   `J`-sheaves.
 * `TauCeti.CategoryTheory.quotientSheaf.isLocallySurjective_π`: `π` is `J`-locally surjective.
+* `TauCeti.CategoryTheory.quotientSheaf.isIso_π_self`: for the pre-relation `(s, s)`, `π` is an
+  isomorphism, with inverse `TauCeti.CategoryTheory.quotientSheaf.inv_π_self`.
 * `TauCeti.CategoryTheory.quotientSheaf.kernelPair`: for an equivalence relation, `h_R ⇉ h_U` is
   the kernel pair of `π`, that is, `h_R = h_U ×_{U/R} h_U`.
 
@@ -97,6 +99,17 @@ theorem quotientSheaf.condition :
   simp only [ObjectProperty.FullSubcategory.comp_hom, quotientSheaf.π_hom]
   exact quotientPresheaf.uliftπ_condition_assoc.{w} s t _
 
+/-- For any `g : U' ⟶ U`, the composite `h_{U'} ⟶ h_U ⟶ U/R` is invariant under the restriction
+`TauCeti.CategoryTheory.restrictRel g t s` of the pre-relation along `g`. -/
+theorem quotientSheaf.restrictRel_condition {U' : C} (g : U' ⟶ U) [HasPullback g t]
+    [HasPullback (pullback.snd g t ≫ s) g] :
+    J.uliftYoneda.{w}.map (restrictRel.fst g t s) ≫ J.uliftYoneda.{w}.map g ≫
+        quotientSheaf.π.{w} J s t =
+      J.uliftYoneda.{w}.map (restrictRel.snd g t s) ≫ J.uliftYoneda.{w}.map g ≫
+        quotientSheaf.π.{w} J s t := by
+  simp only [← Functor.map_comp_assoc, ← restrictRel.proj_p₁, ← restrictRel.proj_p₂]
+  simp only [Functor.map_comp, Category.assoc, quotientSheaf.condition]
+
 variable {J s t}
 
 /-- A morphism `φ : h_U ⟶ F` to a `J`-sheaf which agrees on `t r` and `s r` for every point `r`
@@ -150,6 +163,25 @@ noncomputable def quotientSheaf.isColimit :
 /-- The projection onto the quotient sheaf is an epimorphism of `J`-sheaves. -/
 instance quotientSheaf.epi_π : Epi (quotientSheaf.π.{w} J s t) :=
   ⟨fun _ _ h ↦ quotientSheaf.hom_ext h⟩
+
+/-- For the pre-relation `(s, s)`, which relates each point only to itself, the projection
+`h_U ⟶ U/R` is an isomorphism: the quotient sheaf is `h_U`. -/
+instance quotientSheaf.isIso_π_self : IsIso (quotientSheaf.π.{w} J s s) :=
+  isIso_colimit_cocone_parallelPair_of_self (quotientSheaf.isColimit.{w} J s s)
+
+/-- For the pre-relation `(s, s)`, the inverse of the projection `h_U ⟶ U/R` is the factorisation
+of the identity of `h_U` through the quotient sheaf. -/
+@[simp]
+theorem quotientSheaf.inv_π_self :
+    inv (quotientSheaf.π.{w} J s s) = quotientSheaf.desc (𝟙 _) rfl :=
+  IsIso.inv_eq_of_hom_inv_id (quotientSheaf.π_desc _ _)
+
+/-- For the pre-relation `(s, s)`, the factorisation of the identity of `h_U` through the quotient
+sheaf, composed with the projection, is the identity of `U/R`. -/
+@[reassoc (attr := simp)]
+theorem quotientSheaf.desc_π_self :
+    quotientSheaf.desc (𝟙 _) rfl ≫ quotientSheaf.π.{w} J s s = 𝟙 _ := by
+  rw [← quotientSheaf.inv_π_self, IsIso.inv_hom_id]
 
 /-- The projection onto the quotient sheaf is `J`-locally surjective: every section of `U/R` is,
 `J`-locally, the class of a point of `U`. -/

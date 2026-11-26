@@ -115,7 +115,7 @@ theorem exists_subseq_tendsto_broken_of_tendsto_mem_stableSet (h : hX.IsMorseSma
       hX.exists_tendsto_mem_unstableSet_of_tendsto_mem_stableSet hf hy hv
         (Frequently.of_forall fun j ↦ (Flow.disjoint_stableSet hbr).notMem_of_mem_right (hvr j))
     obtain ⟨ψ, hψ, hn₁ψ⟩ := strictMono_subseq_of_tendsto_atTop hn₁
-    obtain ⟨b', -, hwb'⟩ := hX.exists_tendsto_atTop hf w
+    obtain ⟨b', -, hwb'⟩ := hX.exists_tendsto_atTop w
     have hwb' : w ∈ hX.flow.stableSet b' := Flow.mem_stableSet.2 hwb'
     have hbb' : b ≠ b' := by
       rintro rfl

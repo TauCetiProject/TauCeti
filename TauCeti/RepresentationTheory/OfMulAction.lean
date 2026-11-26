@@ -18,7 +18,8 @@ free `k`-module `k[X]` commute with each other. For the left and right multiplic
 a group `G`, that is, commuting actions of `G` and `Gᵐᵒᵖ`, this makes `k[X]` a `k[G]`-bimodule.
 On `k[G]` itself, the left regular representation `Representation.ofMulAction k G G` is left
 multiplication by the monomials `single g 1`. Its equivariant endomorphism corresponding to
-`x : k[G]` under `Rep.leftRegularHomEquiv` is right multiplication by `x`.
+`x : k[G]` under `Rep.leftRegularHomEquiv` is right multiplication by `x`, and the morphism
+`Rep.leftRegularHom A x` from `k[G]` to a representation `A` is `a ↦ a • x`.
 
 When `G` and `H` are groups, `G` permutes the `H`-orbits, and the orbit sums of `k[X]` along the
 `H`-orbits are equivariant: the sum of the coefficients of `g • v` along the `H`-orbit of `g • x`
@@ -60,6 +61,8 @@ Galois group.
   regular representation, as an intertwining map, is right multiplication by its value at `1`.
 * `Rep.leftRegularHomEquiv_symm_apply`: equivariant endomorphisms of the left regular
   representation are right multiplications.
+* `Rep.leftRegularHom_hom_apply`: the morphism `Rep.leftRegularHom A x` out of the left regular
+  representation sends `a : k[G]` to `a • x`.
 * `TauCeti.mapDomain_orbitRel_mk_coeff_ofMulAction`: the orbit sums of `k[X]` are invariant
   under the permutation representation.
 * `TauCeti.mapDomain_orbitRel_mk_coeff_ofMulAction_smul`: for commuting actions of `G` and `H`,
@@ -185,6 +188,18 @@ theorem _root_.Rep.leftRegularHomEquiv_symm_apply (x a : k[G]) :
       TauCeti.single_mul_eq_smul_ofMulAction, one_smul]
   | add a b ha hb => rw [map_add, ha, hb, add_mul]
   | smul c a ha => rw [map_smul, ha, smul_mul_assoc]
+
+/-- The morphism `Rep.leftRegularHom A x : k[G] ⟶ A` sends `a` to `a • x`, where `k[G]` acts on
+`A` through `Representation.asAlgebraHom`. Not `@[simp]`: `Rep.leftRegularHom` is an abbreviation,
+so `simp` unfolds the left-hand side before this lemma could fire. -/
+theorem _root_.Rep.leftRegularHom_hom_apply {A : Rep k G} (x : A) (a : k[G]) :
+    (Rep.leftRegularHom A x).hom a = A.ρ.asAlgebraHom a x := by
+  induction a using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add a b ha hb => rw [map_add, ha, hb, map_add, LinearMap.add_apply]
+  | single g r =>
+    rw [asAlgebraHom_single, LinearMap.smul_apply]
+    exact Rep.leftRegularHom_hom_single g x r
 
 end LeftRegular
 

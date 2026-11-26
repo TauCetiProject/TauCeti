@@ -32,13 +32,17 @@ nonzero algebraic integer with bounded conjugates bounds such a sum of prime log
 * `NumberField.RingOfIntegers.one_le_abs_norm`: `1 ≤ |N(α)|` for every nonzero `α : 𝓞 K`.
 * `NumberField.RingOfIntegers.dvd_natAbs_norm`: every `α : 𝓞 K` divides `|N(α)|`.
 * `NumberField.RingOfIntegers.intCast_dvd_intCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` for `m n : ℤ`.
-* `NumberField.RingOfIntegers.natCast_dvd_natCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` for `m n : ℕ`.
+* `NumberField.RingOfIntegers.natCast_dvd_natCast`,
+  `NumberField.RingOfIntegers.span_natCast_eq_span_natCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` and
+  `Ideal.span {(m : 𝓞 K)} = Ideal.span {(n : 𝓞 K)} ↔ m = n` for `m n : ℕ`.
 * `NumberField.RingOfIntegers.isUnit_intCast`, `NumberField.RingOfIntegers.isUnit_natCast`,
   `NumberField.RingOfIntegers.isUnit_natCast_iff`: `IsUnit (m : 𝓞 K) ↔ IsUnit m` for `m : ℤ` or
   `m : ℕ` (and `↔ m = 1` for `m : ℕ`).
 * `NumberField.RingOfIntegers.isCoprime_intCast`, `NumberField.RingOfIntegers.isCoprime_natCast`:
   coprimality between integers or natural numbers is the same in `𝓞 K` as in `ℤ` or `ℕ`.
 * `NumberField.RingOfIntegers.charP_quotient_span_natCast`: `𝓞 K / n 𝓞 K` has characteristic `n`.
+* `NumberField.RingOfIntegers.natCard_quotient_span_natCast`:
+  `Nat.card (𝓞 K / n 𝓞 K) = n ^ [K : ℚ]`, so `𝓞 K / n 𝓞 K` has `n ^ [K : ℚ]` elements for `n ≠ 0`.
 * `NumberField.prod_norm_embedding_eq_abs_norm`: `∏ σ, ‖σ x‖ = |N(x)|` for `x : K`.
 * `NumberField.RingOfIntegers.pow_finrank_mul_dvd_norm`: `m ^ (finrank ℚ K * e) ∣ norm ℤ a`
   whenever `(m : 𝓞 K) ^ e ∣ a`.
@@ -85,6 +89,14 @@ theorem intCast_dvd_intCast {m n : ℤ} : (m : 𝓞 K) ∣ (n : 𝓞 K) ↔ m �
 theorem natCast_dvd_natCast {m n : ℕ} : (m : 𝓞 K) ∣ (n : 𝓞 K) ↔ m ∣ n := by
   simpa using (intCast_dvd_intCast (K := K) (m := m) (n := n)).trans Int.natCast_dvd_natCast
 
+/-- Natural numbers generate equal ideals in `𝓞 K` if and only if they are equal. -/
+@[simp]
+theorem span_natCast_eq_span_natCast {m n : ℕ} :
+    Ideal.span {(m : 𝓞 K)} = Ideal.span {(n : 𝓞 K)} ↔ m = n := by
+  rw [le_antisymm_iff, Ideal.span_singleton_le_span_singleton,
+    Ideal.span_singleton_le_span_singleton, natCast_dvd_natCast, natCast_dvd_natCast,
+    and_comm, Nat.dvd_antisymm_iff]
+
 /-- A rational integer is a unit in `𝓞 K` if and only if it is a unit in `ℤ`. -/
 @[simp, norm_cast]
 theorem isUnit_intCast {m : ℤ} : IsUnit (m : 𝓞 K) ↔ IsUnit m := by
@@ -120,6 +132,15 @@ instance charP_quotient_span_natCast (n : ℕ) : CharP (𝓞 K ⧸ Ideal.span {(
   ⟨fun m ↦ by
     rw [← map_natCast (Ideal.Quotient.mk _), Ideal.Quotient.eq_zero_iff_mem,
       Ideal.mem_span_singleton, natCast_dvd_natCast]⟩
+
+/-- `Nat.card (𝓞 K ⧸ m 𝓞 K) = m ^ [K : ℚ]`: for `m ≠ 0` the quotient of `𝓞 K` by the natural
+number `m` has `m ^ [K : ℚ]` elements; for `m = 0` the quotient is infinite and both sides are
+`0`. This is `Ideal.absNorm_span_natCast` with the rank of `𝓞 K` over `ℤ` written as
+`[K : ℚ]`. -/
+theorem natCard_quotient_span_natCast (m : ℕ) :
+    Nat.card (𝓞 K ⧸ Ideal.span {(m : 𝓞 K)}) = m ^ finrank ℚ K := by
+  rw [← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, Ideal.absNorm_span_natCast,
+    RingOfIntegers.rank]
 
 /-- If `(m : 𝓞 K) ^ e` divides `a` for an integer `m`, then `m ^ (finrank ℚ K * e)` divides the
 integral norm of `a`. -/
