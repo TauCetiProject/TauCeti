@@ -541,6 +541,8 @@ private theorem mul_eq_of_conjTranspose_mul_self
     (hp : IsStarProjection p) (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) :
     v * p = v ∧ p * v.conjTranspose = v.conjTranspose ∧
       q * v = v ∧ v.conjTranspose * q = v.conjTranspose := by
+  let _ : PartialOrder A := CStarAlgebra.spectralOrder A
+  let _ : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
   have hvvv : v * v.conjTranspose * v = v :=
     mul_conjTranspose_mul_self_of_isIdempotentElem (hv₁.symm ▸ hp.isIdempotentElem)
   have hvvv' : v.conjTranspose * v * v.conjTranspose = v.conjTranspose :=

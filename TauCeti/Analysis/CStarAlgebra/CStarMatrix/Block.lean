@@ -357,24 +357,13 @@ end BlocksAndReindex
 
 section RectangularProperStar
 
-variable {l m n A : Type*} [NonUnitalCStarAlgebra A]
-
-/-- Rectangular matrix multiplication corresponds to composition of `toCLM` operators in reverse
-order: `toCLM (M * N) = (toCLM N).comp (toCLM M)`. -/
-@[simp]
-theorem toCLM_mul [Fintype l] [Fintype m] (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    toCLM (M * N) = (toCLM N).comp (toCLM M) := by
-  ext v k
-  simp only [ContinuousLinearMap.comp_apply, toCLM_apply_eq_sum,
-    WithCStarModule.equiv_symm_pi_apply, mul_apply, Finset.mul_sum, Finset.sum_mul, mul_assoc]
-  exact Finset.sum_comm
+variable {m n A : Type*} [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A]
+  [IsProperStar A]
 
 /-- For a rectangular `CStarMatrix`, `M.conjTranspose * M = 0` iff `M = 0`. -/
 @[simp]
 theorem conjTranspose_mul_self_eq_zero [Fintype m] {M : CStarMatrix m n A} :
     M.conjTranspose * M = 0 ↔ M = 0 := by
-  let _ : PartialOrder A := CStarAlgebra.spectralOrder A
-  let _ : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
   rw [← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_mul, ofMatrix_symm_conjTranspose,
     ← ofMatrix.symm.injective.eq_iff (a := M)]
   exact Matrix.conjTranspose_mul_self_eq_zero
@@ -383,13 +372,11 @@ theorem conjTranspose_mul_self_eq_zero [Fintype m] {M : CStarMatrix m n A} :
 @[simp]
 theorem self_mul_conjTranspose_eq_zero [Fintype n] {M : CStarMatrix m n A} :
     M * M.conjTranspose = 0 ↔ M = 0 := by
-  let _ : PartialOrder A := CStarAlgebra.spectralOrder A
-  let _ : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
   rw [← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_mul, ofMatrix_symm_conjTranspose,
     ← ofMatrix.symm.injective.eq_iff (a := M)]
   exact Matrix.self_mul_conjTranspose_eq_zero
 
-/-- Square `CStarMatrix`es over a C⋆-algebra have a proper star. -/
+/-- Square `CStarMatrix`es over a star-ordered ring with proper star have a proper star. -/
 instance instIsProperStar [Fintype n] : IsProperStar (CStarMatrix n n A) where
   eq_zero_of_star_mul_self_eq_zero := by simp [star_eq_conjTranspose]
 
@@ -398,8 +385,6 @@ instance instIsProperStar [Fintype n] : IsProperStar (CStarMatrix n n A) where
 theorem mul_conjTranspose_mul_self_of_isIdempotentElem [Fintype m] [Fintype n]
     {v : CStarMatrix m n A} (hv : IsIdempotentElem (v.conjTranspose * v)) :
     v * v.conjTranspose * v = v := by
-  let _ : PartialOrder A := CStarAlgebra.spectralOrder A
-  let _ : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
   simpa only [← mul_assoc_rectangular] using mul_eq_self_of_conjTranspose_mul_eq v hv rfl
 
 /-- Dual rectangular partial-isometry identity: if `v.conjTranspose * v` is idempotent, then
@@ -422,6 +407,17 @@ theorem isStarProjection_mul_conjTranspose_self_of_isIdempotentElem [Fintype m] 
     rw [isSelfAdjoint_iff, star_eq_conjTranspose, conjTranspose_mul, conjTranspose_conjTranspose]
 
 end RectangularProperStar
+
+/-- Rectangular matrix multiplication corresponds to composition of `toCLM` operators in reverse
+order: `toCLM (M * N) = (toCLM N).comp (toCLM M)`. -/
+@[simp]
+theorem toCLM_mul {l m n A : Type*} [NonUnitalCStarAlgebra A] [Fintype l] [Fintype m]
+    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
+    toCLM (M * N) = (toCLM N).comp (toCLM M) := by
+  ext v k
+  simp only [ContinuousLinearMap.comp_apply, toCLM_apply_eq_sum,
+    WithCStarModule.equiv_symm_pi_apply, mul_apply, Finset.mul_sum, Finset.sum_mul, mul_assoc]
+  exact Finset.sum_comm
 
 section RectangularNorm
 
