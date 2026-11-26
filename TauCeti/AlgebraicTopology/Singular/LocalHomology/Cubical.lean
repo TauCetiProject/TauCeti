@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.BoundaryFundamentalClass
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.Dense
 
 /-!
 # Generators of local cubical homology
@@ -26,6 +27,10 @@ and relative singular homology
 * `TauCeti.eq_of_span_cubicalHomology_eq_top`: the local cubical homology of a manifold in top
   degree has a single generator when `1` is the only unit of the coefficients, the cubical form of
   `TauCeti.eq_of_span_localHomology_eq_top`.
+* `TauCeti.homologyMap_cubicalChainComplexMap_eq_zero_of_isPreconnected`: the local classes of a
+  relative cubical class along an open set vanish on a preconnected subset as soon as they vanish
+  at one of its points, the cubical form of
+  `TauCeti.localHomologyRestriction_eq_zero_of_isPreconnected`.
 -/
 
 public section
@@ -106,5 +111,42 @@ theorem eq_of_span_cubicalHomology_eq_top [IsDedekindFiniteMonoid k] [Subsinglet
   exact hinj (eq_of_span_localHomology_eq_top k hm
     ((ModuleCat.span_singleton_apply_eq_top_iff _).2 hv)
     ((ModuleCat.span_singleton_apply_eq_top_iff _).2 hw))
+
+/-- **The local classes of a cubical class along an open set vanish on whole preconnected sets.**
+Let `Y` be a manifold, `U ⊆ Y` open, `θ` a class of the relative cubical homology
+`Hₘ(Y, Y ∖ U; k)`, and `S ⊆ U` preconnected. If the image of `θ` in the local cubical homology
+`Hₘ(Y, Y ∖ {x}; k)` vanishes at one point `x` of `S`, it vanishes at every point of `S`. This is the
+cubical form of `TauCeti.localHomologyRestriction_eq_zero_of_isPreconnected`. -/
+theorem homologyMap_cubicalChainComplexMap_eq_zero_of_isPreconnected {Y : Type u}
+    [TopologicalSpace Y] [T2Space Y] {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [ChartedSpace E Y] {U S : Set Y} (hU : IsOpen U)
+    (hS : IsPreconnected S) (hSU : S ⊆ U) {m : ℕ}
+    {θ : ((TopPair.ofSubset (X := TopCat.of Y) Uᶜ).cubicalChainComplex k).homology m}
+    {x y : Y} (hx : x ∈ S) (hy : y ∈ S)
+    (hθ : (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
+      (TopPair.ofSubsetMap (𝟙 (TopCat.of Y))
+        (compl_subset_compl.2 (singleton_subset_iff.2 (hSU hx))))) m).hom θ = 0) :
+    (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
+      (TopPair.ofSubsetMap (𝟙 (TopCat.of Y))
+        (compl_subset_compl.2 (singleton_subset_iff.2 (hSU hy))))) m).hom θ = 0 := by
+  -- Through the comparison with singular homology, the cubical local classes of `θ` are the
+  -- singular local classes of its singular counterpart.
+  have key (z : Y) (hz : z ∈ U) :
+      (TopPair.singularCubicalHomologyIso k (TopPair.ofSubset (X := TopCat.of Y) {z}ᶜ) m).inv.hom
+        ((HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
+          (TopPair.ofSubsetMap (𝟙 (TopCat.of Y))
+            (compl_subset_compl.2 (singleton_subset_iff.2 hz)))) m).hom θ) =
+      localHomologyRestriction (ModuleCat.of k k) (singleton_subset_iff.2 hz) m
+        ((TopPair.singularCubicalHomologyIso k (TopPair.ofSubset (X := TopCat.of Y) Uᶜ) m).inv.hom
+          θ) := by
+    rw [localHomologyRestriction_def]
+    exact congr(($(TopPair.singularCubicalHomologyIso_inv_naturality k
+      (TopPair.ofSubsetMap (𝟙 (TopCat.of Y))
+        (compl_subset_compl.2 (singleton_subset_iff.2 hz))) m)).hom θ)
+  apply (ModuleCat.mono_iff_injective (TopPair.singularCubicalHomologyIso k
+    (TopPair.ofSubset (X := TopCat.of Y) {y}ᶜ) m).inv).1 inferInstance
+  refine ((key y (hSU hy)).trans ?_).trans (map_zero _).symm
+  refine localHomologyRestriction_eq_zero_of_isPreconnected (E := E) _ hU hS hSU hx hy ?_
+  rw [← key x (hSU hx), hθ, map_zero]
 
 end TauCeti
