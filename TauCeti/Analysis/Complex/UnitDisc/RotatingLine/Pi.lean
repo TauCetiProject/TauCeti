@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Isomorphism
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # The augmented disc problem in `ℂⁿ` with rotating-line boundary values
@@ -121,21 +122,13 @@ private theorem eq_of_forall_projAugL_eq
   exact Prod.ext (HolderSpace.ext_compLeftL_proj fun i ↦ (h i).1)
     (Prod.ext (funext fun i ↦ (h i).2.1) (funext fun i ↦ (h i).2.2))
 
-omit [Fintype ι] in
-/-- The complex coordinate projection of `ι → ℂ`, viewed as a real-linear map, is the real
-coordinate projection. -/
-private theorem restrictScalars_proj (i : ι) :
-    (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).restrictScalars ℝ =
-      .proj (R := ℝ) i :=
-  ContinuousLinearMap.ext fun _ ↦ rfl
-
 /-- The augmented operator of a coordinate is the coordinate of the augmented operator. -/
 private theorem augmentedConjWirtingerDerivL_compLeftL_proj (i : ι)
     (u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)) :
     augmentedConjWirtingerDerivL α ℂ
         (compLeftL 1 α (unitBallOpens ℂ) (.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) u) =
       projAugL i (augmentedConjWirtingerDerivL α (ι → ℂ) u) := by
-  simpa only [restrictScalars_proj] using
+  simpa only [ContinuousLinearMap.restrictScalars_proj] using
     augmentedConjWirtingerDerivL_compLeftL (ContinuousLinearMap.proj (R := ℂ) i) u
 
 /-! ### Surjectivity and injectivity -/
