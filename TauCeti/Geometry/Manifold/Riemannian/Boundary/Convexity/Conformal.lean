@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Convexity.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Conformal.Basic
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Convexity of the boundary under a conformal change of metric
@@ -64,6 +65,28 @@ def conformalBoundaryForm (hk : 1 ≤ k) (q : (𝓡∂ (n + 1)).boundary M) :
   boundarySecondFundamentalForm q -
     ((2 * f q)⁻¹ * mvfderiv (𝓡∂ (n + 1)) f q (inwardUnitNormal q)) • boundaryInducedForm q
 
+/-- The defining formula of `Bundle.ContMDiffRiemannianMetric.conformalBoundaryForm`. -/
+@[simp]
+theorem conformalBoundaryForm_apply (hk : 1 ≤ k) (q : (𝓡∂ (n + 1)).boundary M)
+    (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    conformalBoundaryForm g f hk q u w =
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+          ⟨g.toRiemannianMetric⟩;
+        letI : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+          (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) := IsContMDiffRiemannianBundle.of_le hk;
+        boundarySecondFundamentalForm q u w -
+          (2 * f q)⁻¹ * mvfderiv (𝓡∂ (n + 1)) f q (inwardUnitNormal q) *
+            boundaryInducedForm q u w) :=
+  (rfl)
+
+/-- `Bundle.ContMDiffRiemannianMetric.conformalBoundaryForm` is symmetric. -/
+theorem conformalBoundaryForm_isSymm (hk : 1 ≤ k) (q : (𝓡∂ (n + 1)).boundary M) :
+    (conformalBoundaryForm g f hk q).IsSymm := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) := ⟨g.toRiemannianMetric⟩
+  let _ : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) := IsContMDiffRiemannianBundle.of_le hk
+  exact (boundarySecondFundamentalForm_isSymm q).sub ((boundaryInducedForm_isSymm q).smul _)
+
 /-- The second fundamental form of the boundary for `ĝ = f g` is `√(f q)` times
 `Bundle.ContMDiffRiemannianMetric.conformalBoundaryForm`. -/
 theorem boundarySecondFundamentalForm_rescale_eq_smul (hk : 1 ≤ k)
@@ -77,13 +100,12 @@ theorem boundarySecondFundamentalForm_rescale_eq_smul (hk : 1 ≤ k)
   ext u w
   rw [boundarySecondFundamentalForm_rescale g hf hf_pos hk q u w]
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) := ⟨g.toRiemannianMetric⟩
-  simp [conformalBoundaryForm, boundaryInducedForm_apply, inner_riemannianBundle]
+  simp [conformalBoundaryForm_apply, boundaryInducedForm_apply, inner_riemannianBundle]
 
 /-- For `f = e^{2φ}`, the coefficient `(2 f q)⁻¹ df_q(ν_in)` of
 `Bundle.ContMDiffRiemannianMetric.conformalBoundaryForm` is `dφ_q(ν_in)`: the form is
 `II_q - dφ_q(ν_in) h_q`. -/
-theorem conformalBoundaryForm_exp (hk : 1 ≤ k) {φ : M → ℝ} {q : (𝓡∂ (n + 1)).boundary M}
-    (hφ : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) φ q) :
+theorem conformalBoundaryForm_exp (hk : 1 ≤ k) (φ : M → ℝ) (q : (𝓡∂ (n + 1)).boundary M) :
     conformalBoundaryForm g (fun x ↦ Real.exp (2 * φ x)) hk q =
       (letI : RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
           ⟨g.toRiemannianMetric⟩;
@@ -91,6 +113,17 @@ theorem conformalBoundaryForm_exp (hk : 1 ≤ k) {φ : M → ℝ} {q : (𝓡∂ 
           (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) := IsContMDiffRiemannianBundle.of_le hk;
         boundarySecondFundamentalForm q -
           mvfderiv (𝓡∂ (n + 1)) φ q (inwardUnitNormal q) • boundaryInducedForm q) := by
+  rcases em' (MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) φ q) with hφ | hφ
+  · -- Then `e^{2φ}` is not differentiable at `q` either, as `φ = 2⁻¹ log e^{2φ}`: both
+    -- derivatives vanish.
+    have hf : ¬MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) (fun x ↦ Real.exp (2 * φ x)) q := by
+      refine fun h ↦ hφ ?_
+      convert ((Real.differentiableAt_log (Real.exp_pos (2 * φ q)).ne').const_mul
+        (2⁻¹ : ℝ)).comp_mdifferentiableAt (f := fun x ↦ Real.exp (2 * φ x)) h using 1
+      ext x
+      simp [Real.log_exp]
+    simp [conformalBoundaryForm, mvfderiv_eq_zero_iff.2 (mfderiv_zero_of_not_mdifferentiableAt hφ),
+      mvfderiv_eq_zero_iff.2 (mfderiv_zero_of_not_mdifferentiableAt hf)]
   have hexp : HasDerivAt (fun t : ℝ ↦ Real.exp (2 * t)) (Real.exp (2 * φ q) * (2 * 1)) (φ q) :=
     ((hasDerivAt_id (φ q)).const_mul 2).exp
   have hd := mvfderiv_scalar_comp (I := 𝓡∂ (n + 1)) hφ hexp.differentiableAt
