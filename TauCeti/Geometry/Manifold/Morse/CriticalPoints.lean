@@ -694,6 +694,14 @@ theorem IsMorse.finite_criticalPoints_inter (hf : IsMorse I f) {K : Set M} (hK :
     (hf.contMDiff.of_le (by simp)) hK
     fun _ hx ↦ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx.1
 
+/-- A Morse function whose band `f⁻¹[c - δ, c + δ]` is compact, for some `0 ≤ δ`, has finitely
+many critical points on the level `f⁻¹(c)`. -/
+theorem IsMorse.finite_criticalPoints_inter_level (hf : IsMorse I f) {c δ : ℝ} (hδ : 0 ≤ δ)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) :
+    (criticalPoints I f ∩ f ⁻¹' {c}).Finite :=
+  (hf.finite_criticalPoints_inter hcompact).subset
+    (inter_subset_inter_right _ (preimage_mono (by simp [hδ])))
+
 /-- **Isolation of a nondegenerate critical point.** If `x` is either a regular point or a
 nondegenerate critical point of a function `f` which is `C¹` at `x`, then no critical point of `f`
 other than `x` lies near `x`: a regular point has a neighbourhood free of critical points, and a
