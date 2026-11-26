@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Calculus.LogDeriv
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
 import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
 import TauCeti.Analysis.Meromorphic.Conj
-import TauCeti.NumberTheory.LSeries.Conjugate
 
 /-!
 # The Euler–Kronecker constant
@@ -108,14 +107,10 @@ theorem dedekindZetaPoleRemoved_conj (s : ℂ) :
   · intro z hz
     have hz' : 1 < (conj z).re := by simpa only [conj_re] using mem_ofPred.mp hz
     have hne {w : ℂ} (hw : 1 < w.re) : w ≠ 1 := by rintro rfl; simp at hw
-    rw [Function.comp_apply, Function.comp_apply,
+    simp only [Function.comp_apply,
       dedekindZetaPoleRemoved_apply_of_ne_one K (hne hz),
       dedekindZetaPoleRemoved_apply_of_ne_one K (hne hz'), dedekindZetaC_eq_dedekindZeta K hz,
-      dedekindZetaC_eq_dedekindZeta K hz', map_mul, map_sub, map_one, conj_conj]
-    congr 1
-    simpa only [dedekindZeta, Pi.star_def, Complex.star_def, map_natCast, conj_conj] using
-      TauCeti.LSeries.LSeries_star
-        (fun n ↦ (Nat.card {I : Ideal (𝓞 K) // Ideal.absNorm I = n} : ℂ)) (conj z)
+      dedekindZetaC_eq_dedekindZeta K hz', dedekindZeta_conj, map_mul, map_sub, map_one, conj_conj]
 
 /-- Subtracting the principal part of `ζ_K′/ζ_K` gives the logarithmic derivative of the
 pole-removed function as a punctured germ at `1`. -/

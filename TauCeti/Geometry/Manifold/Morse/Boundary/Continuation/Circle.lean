@@ -74,7 +74,9 @@ satisfy `2 δ ∫_{1/6}^{5/6} (t (1 - t²))⁻¹ dt < π / 12`.
   `Φ_{Γ₁} = Φ_{Γ₂} = I` but `Φ_{Γ₂ * Γ₁} = S`: continuation maps do not compose strictly.
 
 The maps here are the mod-two continuation maps; the integral continuation maps, with their signs,
-and the chain homotopy between `I` and `S` are not treated.
+are not treated. On the integral Morse complex with differential `I - S`, the exchange `S` is chain
+homotopic to the identity through `K = -I`
+(`TauCeti.IsAdaptedPseudoGradient.circleCosTwoExchangeHomotopy`).
 
 ## References
 

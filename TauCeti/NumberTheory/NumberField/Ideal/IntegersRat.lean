@@ -114,6 +114,10 @@ theorem Rat.algebraMap_int_ringOfIntegers_eq :
 theorem Rat.algebraMap_int_ringOfIntegers_bijective : Function.Bijective (algebraMap ℤ (𝓞 ℚ)) :=
   Rat.algebraMap_int_ringOfIntegers_eq ▸ Rat.ringOfIntegersEquiv.symm.bijective
 
+/-- `𝓞 ℚ` is formally unramified over `ℤ`, since the structure map is surjective. -/
+instance Rat.formallyUnramified_int_ringOfIntegers : Algebra.FormallyUnramified ℤ (𝓞 ℚ) :=
+  .of_surjective (Algebra.ofId ℤ (𝓞 ℚ)) Rat.algebraMap_int_ringOfIntegers_bijective.surjective
+
 namespace Ideal
 
 section Ring

@@ -54,10 +54,9 @@ on the product fields `(ξ^L, α)` and `(η^L, β)`, where `ξ^L` is the left-in
 `(g, a)`, whose derivative along `(η^L, β)` is `β ξ`, and the bracket of the two fields is
 `(⁅ξ, η⁆^L, 0)`.
 
-Pulling the left-trivialized forms back along `id × f` for a smooth map `f : N → 𝔤*` gives the
-one-form `⟨f, θ⟩` on `G × N`, which sends `(v, u)` at `(g, n)` to `f n (θ_g v)`
-(`TauCeti.CotangentBundle.mpullback_prodMap_leftTrivialization_liouvilleForm_apply`), and the
-two-form `-d⟨f, θ⟩`, which pairs `(v, u)` and `(w, u')` at `(g, n)` to
+Pulling the left-trivialized symplectic form back along `id × f` for a smooth map `f : N → 𝔤*`
+gives the two-form `-d⟨f, θ⟩` on `G × N`, where the one-form `⟨f, θ⟩` sends `(v, u)` at `(g, n)`
+to `f n (θ_g v)`. It pairs `(v, u)` and `(w, u')` at `(g, n)` to
 `df_n u' (θ_g v) - df_n u (θ_g w) + f n ⁅θ_g v, θ_g w⁆`
 (`TauCeti.CotangentBundle.eval₂_mpullback_prodMap_leftTrivialization_symplecticForm`). With
 `f (η, v) = ν + η + μ_V v` on `N = 𝔪* × V` this is the form `-d⟨ν + η + μ_V(v), θ⟩` on
@@ -86,9 +85,8 @@ two-form `-d⟨f, θ⟩`, which pairs `(v, u)` and `(w, u')` at `(g, n)` to
   pairs `(v, α)` and `(w, β)` to `β (θ v) - α (θ w) + a ⁅θ v, θ w⁆`.
 * `TauCeti.CotangentBundle.isSymplectic_mpullback_leftTrivialization_symplecticForm`: this form is
   symplectic on `G × 𝔤*`.
-* `TauCeti.CotangentBundle.mpullback_prodMap_leftTrivialization_liouvilleForm_apply`,
-  `TauCeti.CotangentBundle.eval₂_mpullback_prodMap_leftTrivialization_symplecticForm`: the
-  one-form `⟨f, θ⟩` and the two-form `-d⟨f, θ⟩` on `G × N`, the pullbacks along `id × f`.
+* `TauCeti.CotangentBundle.eval₂_mpullback_prodMap_leftTrivialization_symplecticForm`: the
+  two-form `-d⟨f, θ⟩` on `G × N`, the pullback along `id × f`.
 
 ## References
 
@@ -305,23 +303,6 @@ theorem mpullback_leftTrivialization_liouvilleForm_apply (p : G × (E →L[ℝ] 
     (fun q ↦ proj_leftTrivialization q)
     (((leftTrivialization I G).contMDiff p).mdifferentiableAt (by simp)), mfderiv_fst]
   exact leftTrivialization_snd_apply p (v 0).1
-
-/-- **The one-form `⟨f, θ⟩` on `G × N`.** Pulling the left-trivialized Liouville form back along
-`id × f` for a smooth map `f : N → 𝔤*` gives the one-form that sends a tangent vector `(v, u)` at
-`(g, n)` to `f n (θ v)`, where `θ = d(L_{g⁻¹})_g`. -/
-theorem mpullback_prodMap_leftTrivialization_liouvilleForm_apply {EN HN : Type*}
-    [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
-    {IN : ModelWithCorners ℝ EN HN} {N : Type*} [TopologicalSpace N] [ChartedSpace HN N]
-    [IsManifold IN 1 N] {f : N → E →L[ℝ] ℝ} (hf : ContMDiff IN 𝓘(ℝ, E →L[ℝ] ℝ) ∞ f) (p : G × N)
-    (v : Fin 1 → TangentSpace (I.prod IN) p) :
-    (SmoothForm.mpullback (Prod.map id f) (contMDiff_id.prodMap hf)
-      (SmoothForm.mpullback (leftTrivialization I G) (leftTrivialization I G).contMDiff
-        (liouvilleForm I G))).val p v = f p.2 (mfderiv I I (p.1⁻¹ * ·) p.1 (v 0).1) := by
-  rw [SmoothForm.coe_mpullback, mpullback_apply, mpullback_leftTrivialization_liouvilleForm_apply,
-    mfderiv_prodMap mdifferentiableAt_id ((hf p.2).mdifferentiableAt (by simp)), mfderiv_id]
-  -- `ContinuousLinearMap.prodMap` acts componentwise and `Prod.map id f p = (p.1, f p.2)`, both
-  -- definitionally.
-  rfl
 
 /-- The canonical symplectic form of `T*G`, read in the left trivialization, is a symplectic form
 on `G × 𝔤*`. -/
