@@ -645,6 +645,16 @@ theorem isSectionClassicalEllipticAt_of_subsingleton [Subsingleton (CoordinateSp
     inferInstanceAs (Subsingleton (CoordinateSpace n))
   exact absurd (ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0]) hξ
 
+/-- Between bundles whose model fibres are both trivial, every operator is elliptic at every point:
+every linear map between the trivial fibres is bijective. -/
+theorem isSectionClassicalEllipticAt_of_subsingleton_fibre [Subsingleton V] [Subsingleton W]
+    (x : M) : IsSectionClassicalEllipticAt m P x := fun _ _ ↦ by
+  have : Subsingleton (E x) := ((trivializationAt V E x).continuousLinearEquivAt ℂ x
+    (FiberBundle.mem_baseSet_trivializationAt V E x)).toEquiv.subsingleton
+  have : Subsingleton (F x) := ((trivializationAt W F x).continuousLinearEquivAt ℂ x
+    (FiberBundle.mem_baseSet_trivializationAt W F x)).toEquiv.subsingleton
+  exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+
 omit [FiniteDimensional ℂ W] in
 /-- **The identity is elliptic** of order `0`: its principal symbol at a nonzero covector is the
 identity of the fibre. -/
