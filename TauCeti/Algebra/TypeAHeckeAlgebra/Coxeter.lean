@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.ReducedWord
+public import TauCeti.Algebra.TypeAHeckeAlgebra.Finite
 public import TauCeti.GroupTheory.Coxeter.Hecke.Basic
 public import TauCeti.GroupTheory.Coxeter.Matrix
 
@@ -17,9 +17,10 @@ parameter `q - q⁻¹`, the braid relation for adjacent generators and commutati
 generators. These are exactly the relations of the Iwahori–Hecke algebra
 `(CoxeterMatrix.A (n - 1)).HeckeAlgebra (q - q⁻¹)` of the type-A Coxeter matrix, whose braid
 relations have length `3` for adjacent and `2` for distant indices. The generator-preserving map
-`TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra` is therefore an isomorphism, and it matches the
-reduced-word elements `T_w` of the two algebras
-(`TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra_Tw`).
+`TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra` is therefore an isomorphism. Through it the
+reduced-word elements `T_w`, the regular representation and the basis theorem of the type-A Hecke
+algebra are obtained from those of the general Hecke algebra, in
+`TauCeti.Algebra.TypeAHeckeAlgebra.ReducedWord` and `TauCeti.Algebra.TypeAHeckeAlgebra.Basis`.
 
 ## Main definitions
 
@@ -28,9 +29,10 @@ reduced-word elements `T_w` of the two algebras
 
 ## Main results
 
+* `TauCeti.TypeAHeckeAlgebra.prod_map_T_braidWord`: the generators of the type-A Hecke algebra
+  satisfy the braid relations of the type-A Coxeter matrix.
 * `TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra_T` and
   `TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra_symm_T`: the isomorphism preserves generators.
-* `TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra_Tw`: it preserves the elements `T_w`.
 -/
 
 public section
@@ -40,6 +42,20 @@ namespace TauCeti
 namespace TypeAHeckeAlgebra
 
 open CoxeterSystem
+
+/-- The Hecke generators satisfy every braid relation of the type-A Coxeter matrix: for all
+`i` and `j`, the two alternating words in `T i` and `T j` whose length is the Coxeter-matrix
+entry at `(i, j)` have the same product. -/
+theorem prod_map_T_braidWord {R : Type*} [CommRing R] {q : Rˣ} {n : ℕ} (i j : Fin (n - 1)) :
+    ((braidWord (CoxeterMatrix.A (n - 1)) i j).map (T (R := R) q)).prod =
+      ((braidWord (CoxeterMatrix.A (n - 1)) j i).map (T q)).prod := by
+  have hgen (k : Fin (n - 1)) :
+      ((Units.coeHom _).comp (braidHom R q n)) (ArtinGroup.gen (CoxeterMatrix.A (n - 1)) k) =
+        T q k := by
+    simp [← BraidGroup.sigma_eq_gen]
+  have h := congrArg ((Units.coeHom _).comp (braidHom R q n))
+    (ArtinGroup.prod_map_gen_braidWord (CoxeterMatrix.A (n - 1)) i j)
+  simpa only [map_list_prod, List.map_map, Function.comp_def, hgen] using h
 
 variable (R : Type*) [CommRing R] (q : Rˣ) (n : ℕ)
 
@@ -82,17 +98,6 @@ theorem algEquivHeckeAlgebra_T (i : Fin (n - 1)) :
 theorem algEquivHeckeAlgebra_symm_T (i : Fin (n - 1)) :
     (algEquivHeckeAlgebra R q n).symm (CoxeterMatrix.HeckeAlgebra.T _ _ i) = T q i :=
   CoxeterMatrix.HeckeAlgebra.lift_T _ _ _ i
-
-/-- The isomorphism `TauCeti.TypeAHeckeAlgebra.algEquivHeckeAlgebra` takes the element `T_w` of the
-type-A Hecke algebra to the element `T_w` of the Hecke algebra of the Coxeter matrix. -/
-@[simp]
-theorem algEquivHeckeAlgebra_Tw {W : Type*} [Group W]
-    (cs : CoxeterSystem (CoxeterMatrix.A (n - 1)) W) (w : W) :
-    algEquivHeckeAlgebra R q n (Tw q cs w) = CoxeterMatrix.HeckeAlgebra.Tw _ cs w := by
-  obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced w
-  rw [Tw_wordProd cs hω, CoxeterMatrix.HeckeAlgebra.Tw_wordProd hω, map_list_prod, List.map_map]
-  congr 1
-  exact List.map_congr_left fun i _ ↦ algEquivHeckeAlgebra_T i
 
 end TypeAHeckeAlgebra
 

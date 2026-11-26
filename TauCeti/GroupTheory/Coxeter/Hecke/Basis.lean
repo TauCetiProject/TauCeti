@@ -53,7 +53,8 @@ group (`CoxeterMatrix.HeckeAlgebra.finrank_eq_natCard`).
 * J. E. Humphreys, *Reflection Groups and Coxeter Groups*, CUP (1990), Section 7.3.
 * M. Geck and G. Pfeiffer, *Characters of Finite Coxeter Groups and Iwahori-Hecke Algebras*,
   OUP (2000), Section 4.4.
-* The argument follows `TauCeti.Algebra.TypeAHeckeAlgebra.Basis`, its type-A case.
+* The argument is adapted from the earlier Tau Ceti proof of the type-A case; the type-A basis
+  theorem in `TauCeti.Algebra.TypeAHeckeAlgebra.Basis` is now derived from this file.
 -/
 
 public section
@@ -151,22 +152,13 @@ theorem basisTw_repr_T_mul (i : B) (x : M.HeckeAlgebra c) (w : W) :
       (if cs.IsLeftDescent w i then c • b.coord w else 0) + b.coord (cs.simple i * w) := by
     apply b.ext
     intro v
-    have heq : cs.simple i * v = w ↔ v = cs.simple i * w := by
-      constructor
-      · intro hv; rw [← hv, cs.simple_mul_simple_cancel_left]
-      · intro hv; rw [hv, cs.simple_mul_simple_cancel_left]
     simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, b, coe_basisTw]
-    by_cases hv : cs.IsLeftDescent v i
-    · rw [T_mul_Tw_of_isLeftDescent hv]
-      by_cases hw : cs.IsLeftDescent w i
-      · simp [hw, ← coe_basisTw, Finsupp.single_apply, heq]
-      · have hvw : v ≠ w := by rintro rfl; exact hw hv
-        simp [hw, hvw, ← coe_basisTw, Finsupp.single_apply, heq]
-    · rw [T_mul_Tw_of_not_isLeftDescent hv]
-      by_cases hw : cs.IsLeftDescent w i
-      · have hvw : v ≠ w := by rintro rfl; exact hv hw
-        simp [hw, hvw, ← coe_basisTw, Finsupp.single_apply, heq]
-      · simp [hw, ← coe_basisTw, Finsupp.single_apply, heq]
+    by_cases hv : cs.IsLeftDescent v i <;>
+      simp only [hv, not_false_eq_true, T_mul_Tw_of_isLeftDescent,
+        T_mul_Tw_of_not_isLeftDescent] <;>
+      by_cases hw : cs.IsLeftDescent w i <;>
+      simp [hw, ← coe_basisTw, Finsupp.single_apply, ← eq_inv_mul_iff_mul_eq] <;>
+      split_ifs <;> simp_all
   by_cases hw : cs.IsLeftDescent w i <;>
     simpa [b, hw] using LinearMap.congr_fun h x
 
@@ -181,22 +173,13 @@ theorem basisTw_repr_mul_T (x : M.HeckeAlgebra c) (i : B) (w : W) :
       (if cs.IsRightDescent w i then c • b.coord w else 0) + b.coord (w * cs.simple i) := by
     apply b.ext
     intro v
-    have heq : v * cs.simple i = w ↔ v = w * cs.simple i := by
-      constructor
-      · intro hv; rw [← hv, cs.simple_mul_simple_cancel_right]
-      · intro hv; rw [hv, cs.simple_mul_simple_cancel_right]
     simp only [LinearMap.comp_apply, LinearMap.mulRight_apply, b, coe_basisTw]
-    by_cases hv : cs.IsRightDescent v i
-    · rw [Tw_mul_T_of_isRightDescent hv]
-      by_cases hw : cs.IsRightDescent w i
-      · simp [hw, ← coe_basisTw, Finsupp.single_apply, heq]
-      · have hvw : v ≠ w := by rintro rfl; exact hw hv
-        simp [hw, hvw, ← coe_basisTw, Finsupp.single_apply, heq]
-    · rw [Tw_mul_T_of_not_isRightDescent hv]
-      by_cases hw : cs.IsRightDescent w i
-      · have hvw : v ≠ w := by rintro rfl; exact hv hw
-        simp [hw, hvw, ← coe_basisTw, Finsupp.single_apply, heq]
-      · simp [hw, ← coe_basisTw, Finsupp.single_apply, heq]
+    by_cases hv : cs.IsRightDescent v i <;>
+      simp only [hv, not_false_eq_true, Tw_mul_T_of_isRightDescent,
+        Tw_mul_T_of_not_isRightDescent] <;>
+      by_cases hw : cs.IsRightDescent w i <;>
+      simp [hw, ← coe_basisTw, Finsupp.single_apply, ← eq_mul_inv_iff_mul_eq] <;>
+      split_ifs <;> simp_all
   by_cases hw : cs.IsRightDescent w i <;>
     simpa [b, hw] using LinearMap.congr_fun h x
 
