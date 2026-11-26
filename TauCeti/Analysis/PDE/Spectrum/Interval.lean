@@ -84,7 +84,6 @@ Rellich compactness on `(a, b)` comes from Rellich compactness on a ball, which 
   `L²(a, b)`.
 * `TauCeti.PDE.exists_ne_zero_and_forall_inner_gradient_eq_intervalDomain_iff`: the Neumann
   eigenvalues of `-Δ` on `(a, b)` are the numbers `(k π / (b - a))²` with `k ≥ 0`.
-* `TauCeti.PDE.isCompactOperator_valueL_intervalDomain`: Rellich compactness on `(a, b)`.
 * `TauCeti.PDE.spectrum_mixedOperator_laplacian_empty_intervalDomain`: the spectrum of the
   Neumann Laplacian `-Δ_∅` on `(a, b)` is `{(k π / (b - a))² | k ≥ 0}`.
 
@@ -240,7 +239,7 @@ private theorem coe_intervalDomain_eq_ball :
 
 /-- **Rellich compactness on an interval.** For `1 ≤ p ≤ ∞`, the value map
 `W^{1,p}(a, b) → Lᵖ(a, b)` is a compact operator. -/
-theorem isCompactOperator_valueL_intervalDomain {p : ℝ≥0∞} [Fact (1 ≤ p)] :
+private theorem isCompactOperator_valueL_intervalDomain {p : ℝ≥0∞} [Fact (1 ≤ p)] :
     IsCompactOperator (W1p.valueL (mu := volume) (Omega := intervalDomain a b) (p := p)) := by
   have h : intervalDomain a b =
       ⟨Metric.ball (lineEquiv ((a + b) / 2)) ((b - a) / 2), Metric.isOpen_ball⟩ :=
@@ -594,7 +593,7 @@ private theorem comp_lineEquiv_eventuallyEq_cosineMode {χ : EuclideanSpace ℝ 
   filter_upwards [lineEquiv.continuous.continuousAt.preimage_mem_nhds
     (isOpen_interior.mem_nhds hmem)] with s hs
   rw [Function.comp_apply, LinearIsometryEquiv.symm_apply_apply,
-    show χ (lineEquiv s) = 1 from interior_subset hs, one_mul]
+    Set.mem_singleton_iff.1 (Set.mem_preimage.1 (interior_subset hs)), one_mul]
 
 /-- The pairing of the gradients of the cosine-mode test function `φ` and of any test function
 `ψ`, read on the line, is the product `c' (ψ ∘ lineEquiv)'` of derivatives on the real interval. -/
@@ -694,7 +693,7 @@ theorem exists_value_ae_eq_cos_and_forall_inner_gradient_eq (hab : a < b) (k : �
     ⟨fun x => χ x * cosineMode a b k (lineEquiv.symm x),
       hχ.mul ((by unfold cosineMode; fun_prop : ContDiff ℝ ∞ (cosineMode a b k)).comp
         lineEquiv.symm.contDiff), hχc.mul_right, fun _ _ => trivial⟩
-  have hφ : ⇑φ = fun x => χ x * cosineMode a b k (lineEquiv.symm x) := rfl
+  have hφ : ⇑φ = fun x => χ x * cosineMode a b k (lineEquiv.symm x) := TestFunction.coe_mk
   refine ⟨⟨_, W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule (φ := φ)
     (by rw [closure_empty]; exact disjoint_empty _)⟩, ?_, ?_⟩
   · filter_upwards [W1p.value_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := 2)
@@ -702,7 +701,8 @@ theorem exists_value_ae_eq_cos_and_forall_inner_gradient_eq (hab : a < b) (k : �
       ae_restrict_mem (intervalDomain a b).isOpen.measurableSet] with x h1 hx
     rw [h1, hφ]
     beta_reduce
-    rw [show χ x = 1 from interior_subset (hχΩ hx), one_mul, lineEquiv_symm_apply]
+    rw [Set.mem_singleton_iff.1 (Set.mem_preimage.1 (interior_subset (hχΩ hx))), one_mul,
+      lineEquiv_symm_apply]
   -- The identity holds on the generators of `H¹_∅(a, b)`, and it is a closed condition.
   intro v
   have hclosed : IsClosed {w : W1p volume (intervalDomain a b) 2 |
@@ -815,7 +815,8 @@ theorem exists_ne_zero_and_forall_inner_gradient_eq_intervalDomain_iff (hab : a 
 
 /-- **The spectrum of the Neumann Laplacian on an interval.** The mixed Laplacian `-Δ_∅` on
 `(a, b)`, the self-adjoint realization of `-d²/dx²` with the Neumann condition `u' = 0` at both
-ends, has spectrum `{(k π / (b - a))² | k ≥ 0}`; its eigenfunctions are the cosine modes. -/
+ends, has spectrum `{(k π / (b - a))² | k ≥ 0}`. Each cosine mode is an eigenfunction
+(`TauCeti.PDE.exists_value_ae_eq_cos_and_forall_inner_gradient_eq`). -/
 theorem spectrum_mixedOperator_laplacian_empty_intervalDomain (hab : a < b) :
     (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := volume)
       (Omega := intervalDomain a b) (1 : Matrix (Fin 1) (Fin 1) ℝ)) ∅).spectrum =

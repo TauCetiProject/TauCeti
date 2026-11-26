@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Compactness
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Components
 import TauCeti.Analysis.Sobolev.LipschitzDomain.SobolevEmbedding
@@ -195,9 +196,7 @@ theorem W1p.exists_isCompactOperator_of_isLipschitzDomainWith {q : ℝ≥0∞}
 
 /-- **Rellich–Kondrachov on a Euclidean ball.** On an open ball of a nontrivial finite-dimensional
 real inner product space `F`, the value map `W^{1,p}(B) → Lᵖ(B)` is a compact operator for
-`1 ≤ p ≤ ∞`. A linear isometry of `F` onto a model space `ℝ × E` carries the ball onto a ball,
-which is a bounded Lipschitz domain (`TauCeti.isLipschitzDomainWith_ball`); an empty ball is
-trivial. -/
+`1 ≤ p ≤ ∞`. -/
 theorem W1p.isCompactOperator_valueL_ball {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [Nontrivial F] [MeasurableSpace F]
     [BorelSpace F] (c : F) (r : ℝ) :
@@ -210,22 +209,15 @@ theorem W1p.isCompactOperator_valueL_ball {F : Type*} [NormedAddCommGroup F]
     have : Subsingleton (Lp ℝ p ((volume : Measure F).restrict (Metric.ball c r))) :=
       ⟨fun x y => Lp.ext (ae_iff.2 (by simp [hzero]))⟩
     exact ⟨univ, isCompact_univ, by simp⟩
-  -- A linear isometry onto `ℝ × (ℝ ∙ ν)ᗮ` for a unit vector `ν`.
-  obtain ⟨v, hv⟩ := exists_ne (0 : F)
-  let ν : F := ‖v‖⁻¹ • v
-  have hν : ‖ν‖ = 1 := by simp [ν, norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.mpr hv)]
-  let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × (ℝ ∙ ν)ᗮ) := (ℝ ∙ ν).orthogonalDecomposition.trans
-    (LinearIsometryEquiv.withLpProdCongr 2
-      (LinearIsometryEquiv.toSpanUnitSingleton ν hν).symm
-      (LinearIsometryEquiv.refl ℝ (ℝ ∙ ν)ᗮ))
+  -- A linear isometry onto `ℝ × (ℝ ∙ ν)ᗮ` for a unit vector `ν` carries the ball onto a ball,
+  -- which is a bounded Lipschitz domain.
+  obtain ⟨ν, hν⟩ := exists_norm_eq F zero_le_one
+  let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × (ℝ ∙ ν)ᗮ) :=
+    (orthogonalLineIsometry ν hν).symm.trans (LinearIsometryEquiv.withLpProdComm 2 ℝ _ _)
   exact W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv
     (Ω := ⟨Metric.ball (e c) r, Metric.isOpen_ball⟩) (isLipschitzDomainWith_ball (e c) hr one_pos)
-    Metric.isBounded_ball e.toAffineIsometryEquiv (by
-      ext x
-      simp only [Opens.coe_mk, mem_preimage, Metric.mem_ball]
-      have hc : e.toAffineIsometryEquiv.symm (e c) = c :=
-        e.toAffineIsometryEquiv.symm_apply_apply c
-      rw [← e.toAffineIsometryEquiv.symm.dist_map x (e c), hc])
+    Metric.isBounded_ball e.toAffineIsometryEquiv
+    (e.symm.preimage_ball c r).symm
 
 end TauCeti
 
