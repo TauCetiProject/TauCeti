@@ -11,11 +11,11 @@ public import TauCeti.Analysis.CStarAlgebra.TracePairing.Basic
 # Checks for the naturality of the trace pairing along `ℂ → ℂ²`
 
 Take `φ : ℂ → ℂ²`, `λ ↦ (λ, 0)`, and the positive tracial functional `τ(a, b) = b` on `ℂ²`,
-`TauCeti.sndTracialFunctional` (OperatorKTheory K1.5, fourth Check). The pullback `τ ∘ φ` is the
-zero functional (`TauCeti.sndTracialFunctional_comp_inl`): a positive tracial functional that is
-not a state (`TauCeti.not_isTracialState_sndTracialFunctional_comp_inl`). Both sides of the
-naturality `(τ ∘ φ)_* = τ_* ∘ φ_*` vanish at `[1]`: `(τ ∘ φ)_* [1] = 0 = τ(1, 0) = τ_* (φ_* [1])`.
-A pairing defined only for tracial states would leave the left side undefined.
+`TauCeti.sndTracialFunctional`. The pullback `τ ∘ φ` is the zero functional
+(`TauCeti.sndTracialFunctional_comp_inl`): a positive tracial functional that is not a state
+(`TauCeti.not_isTracialState_sndTracialFunctional_comp_inl`). Both sides of the naturality
+`(τ ∘ φ)_* = τ_* ∘ φ_*` vanish at `[1]`: `(τ ∘ φ)_* [1] = 0 = τ(1, 0) = τ_* (φ_* [1])`. A pairing
+defined only for tracial states would leave the left side undefined.
 -/
 
 public section

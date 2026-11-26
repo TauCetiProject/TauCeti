@@ -11,9 +11,9 @@ public import TauCeti.Analysis.CStarAlgebra.TracePairing.Basic
 /-!
 # Checks for the trace pairing of the normalized trace of `Mₙ(ℂ)`
 
-Take `A = Mₙ(ℂ)`, `n ≥ 1`, with its normalized trace `τ = tr / n`, a tracial state
-(OperatorKTheory K1.5, first Check). The rank-one projection `e₀₀ = CStarMatrix.matrixUnit 0 0`
-of `A`, a `1 × 1` matrix over `A`, pairs to `1 / n`, while the identity of `M_k(A)` pairs to `k`:
+Take `A = Mₙ(ℂ)`, `n ≥ 1`, with its normalized trace `τ = tr / n`, a tracial state. The
+rank-one projection `e₀₀ = CStarMatrix.matrixUnit 0 0` of `A`, a `1 × 1` matrix over `A`, pairs
+to `1 / n`, while the identity of `M_k(A)` pairs to `k`:
 the pairing uses the unnormalized matrix trace over `A`, so the size `k` of the matrix over `A` is
 not divided out, only the normalization of `τ` on `A` itself.
 -/
@@ -29,8 +29,7 @@ variable (n : ℕ)
 
 /-- The normalized trace `tr / n` of `Mₙ(ℂ)` as a positive tracial functional. -/
 noncomputable def normalizedTrace : PositiveTracialFunctional (CStarMatrix (Fin n) (Fin n) ℂ) :=
-  .ofMapMulComm (CStarMatrix.normalizedTraceMap (Fin n)) fun x y ↦ by
-    simpa only [CStarMatrix.normalizedTraceMap_apply] using CStarMatrix.normalizedTrace_mul_comm x y
+  .ofMapMulComm (CStarMatrix.normalizedTraceMap (Fin n)) CStarMatrix.normalizedTraceMap_mul_comm
 
 @[simp]
 theorem normalizedTrace_apply (x : CStarMatrix (Fin n) (Fin n) ℂ) :
@@ -51,7 +50,7 @@ theorem isStarProjection_of_matrixUnit :
     simp [h.isSelfAdjoint.star_eq]
 
 /-- The rank-one projection `e₀₀` pairs to `1 / n` under the normalized trace. -/
-theorem kZeroPairing_of_mk_matrixUnit :
+theorem normalizedTrace_kZeroPairing_of_mk_matrixUnit :
     (normalizedTrace n).kZeroPairing
       (GrothendieckAddGroup.of (ProjectionMonoid.mk _ (isStarProjection_of_matrixUnit n))) =
         1 / n := by
@@ -59,11 +58,11 @@ theorem kZeroPairing_of_mk_matrixUnit :
   simp [CStarMatrix.normalizedTrace_matrixUnit]
 
 /-- The identity of `M_k(Mₙ(ℂ))` pairs to `k` under the normalized trace. -/
-theorem kZeroPairing_of_mk_one (k : ℕ) :
+theorem normalizedTrace_kZeroPairing_of_mk_one (k : ℕ) :
     (normalizedTrace n).kZeroPairing (GrothendieckAddGroup.of
       (ProjectionMonoid.mk (1 : Matrix (Fin k) (Fin k) (CStarMatrix (Fin n) (Fin n) ℂ))
         (.one _))) = k := by
-  rw [PositiveTracialFunctional.kZeroPairing_of_mk_one, normalizedTrace_apply,
-    CStarMatrix.normalizedTrace_one, Complex.one_re, mul_one]
+  rw [PositiveTracialFunctional.kZeroPairing_of_mk_one]
+  simp [CStarMatrix.normalizedTrace_one]
 
 end TauCeti.NormalizedTracePairingExample
