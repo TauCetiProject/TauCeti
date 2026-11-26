@@ -13,8 +13,8 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.Analysis.Calculus.Deriv.PositivePart
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # Pathwise solutions and uniqueness of Dyson Brownian motion
@@ -245,7 +245,7 @@ theorem sum_sub_sq_eq (hX : IsDysonPath n x w X) (hY : IsDysonPath n y w Y) (s t
         (dysonDrift n (X r.toNNReal) i - dysonDrift n (Y r.toNNReal) i) *
           (X r.toNNReal i - Y r.toNNReal i) := by
   simpa only [Real.toNNReal_coe] using
-    TauCeti.intervalIntegral.sum_sq_sub_eq_of_eq_add_integral (Finset.univ : Finset (Fin n))
+    TauCeti.intervalIntegral.sum_sub_sq_eq_of_eq_add_integral (Finset.univ : Finset (Fin n))
       (fun i _ ↦ hX.intervalIntegrable_dysonDrift s i)
       (fun i _ ↦ hX.intervalIntegrable_dysonDrift t i)
       (fun i _ ↦ hY.intervalIntegrable_dysonDrift s i)
@@ -259,7 +259,7 @@ theorem sum_sub_sq_le_of_le (hX : IsDysonPath n x w X) (hY : IsDysonPath n y w Y
     {s t : ℝ≥0} (hst : s ≤ t) :
     ∑ i : Fin n, (X t i - Y t i) ^ 2 ≤ ∑ i : Fin n, (X s i - Y s i) ^ 2 := by
   simpa only [Real.toNNReal_coe] using
-    TauCeti.intervalIntegral.sum_sq_sub_le_of_eq_add_integral (Finset.univ : Finset (Fin n))
+    TauCeti.intervalIntegral.sum_sub_sq_le_of_eq_add_integral (Finset.univ : Finset (Fin n))
       (NNReal.coe_le_coe.2 hst)
       (fun i _ ↦ hX.intervalIntegrable_dysonDrift s i)
       (fun i _ ↦ hX.intervalIntegrable_dysonDrift t i)

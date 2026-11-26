@@ -11,7 +11,7 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.ODE.Gronwall
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.ODE.Nonautonomous
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
 # Globally Lipschitz chamber truncations of Dyson Brownian motion
@@ -327,7 +327,7 @@ theorem sum_truncatedDysonPath_sub_sq_eq {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x 
           (truncatedDysonPath hε n x w hw r.toNNReal i -
             truncatedDysonPath hε n y w hw r.toNNReal i) := by
   simpa only [Real.toNNReal_coe] using
-    TauCeti.intervalIntegral.sum_sq_sub_eq_of_eq_add_integral (Finset.univ : Finset (Fin n))
+    TauCeti.intervalIntegral.sum_sub_sq_eq_of_eq_add_integral (Finset.univ : Finset (Fin n))
       (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw s i)
       (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw t i)
       (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n y w hw s i)
@@ -344,7 +344,7 @@ theorem sum_truncatedDysonPath_sub_sq_le {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x 
       ∑ i : Fin n,
         (truncatedDysonPath hε n x w hw s i - truncatedDysonPath hε n y w hw s i) ^ 2 := by
   simpa only [Real.toNNReal_coe] using
-    TauCeti.intervalIntegral.sum_sq_sub_le_of_eq_add_integral (Finset.univ : Finset (Fin n))
+    TauCeti.intervalIntegral.sum_sub_sq_le_of_eq_add_integral (Finset.univ : Finset (Fin n))
       (NNReal.coe_le_coe.2 hst)
       (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw s i)
       (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw t i)
