@@ -10,7 +10,8 @@ public import Mathlib.LinearAlgebra.Matrix.ElementaryRowOperations
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.BlockDiagonal
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Diagonal
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Triangular
 public import TauCeti.LinearAlgebra.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.LDU
 import Mathlib.Order.Interval.Finset.Basic
@@ -46,7 +47,6 @@ the character in the Levi subgroup is the diagonal copy of `GL_c`.
 ## Main declarations
 
 * `Matrix.adjacentBlockTrace`: the sum of the traces of the blocks just above the diagonal.
-* `TauCeti.blockUpperUnitriangularGroup`: the subgroup `U_(c^k)` of `GL (n × ι) R`.
 * `TauCeti.BlockUpperUnitriangularGroup.submatrix_coe_mul_of_covBy`: adjacent blocks of a product
   are the sums of the adjacent blocks of the factors.
 * `TauCeti.BlockUpperUnitriangularGroup.adjacentTraceChar`: the character `ψ_(k,c)`.
@@ -146,35 +146,14 @@ end Matrix
 
 namespace TauCeti
 
-variable (n ι R : Type*) [Fintype n] [DecidableEq n] [Fintype ι] [LinearOrder ι] [CommRing R]
-
-/-- The block upper-unitriangular subgroup of `GL (n × ι) R`: invertible matrices that are block
-unitriangular (`Matrix.BlockUnitriangular`) for the block index `Prod.snd`, so their blocks below
-the diagonal vanish and their diagonal blocks are the identity. For `ι = Fin k` and `n = Fin c` it
-is the unipotent radical `U_(c^k)` of the standard parabolic subgroup of `GL_(kc)` with `k`
-diagonal blocks of size `c`. -/
-def blockUpperUnitriangularGroup : Subgroup (GL (n × ι) R) where
-  carrier := {g | (g : Matrix (n × ι) (n × ι) R).BlockUnitriangular Prod.snd}
-  one_mem' := blockUnitriangular_one
-  mul_mem' {g h} hg hh := by
-    simpa only [Set.mem_ofPred_eq, Units.val_mul] using hg.mul hh
-  inv_mem' {g} hg := by
-    simpa only [Set.mem_ofPred_eq, coe_units_inv] using hg.inv
-
-variable {n ι R}
-
-@[simp]
-theorem mem_blockUpperUnitriangularGroup_iff {g : GL (n × ι) R} :
-    g ∈ blockUpperUnitriangularGroup n ι R ↔
-      (g : Matrix (n × ι) (n × ι) R).BlockUnitriangular Prod.snd :=
-  Iff.rfl
+variable {n ι R : Type*} [Fintype n] [DecidableEq n] [Fintype ι] [LinearOrder ι] [CommRing R]
 
 /-- A transvection whose off-diagonal entry lies in a strictly later block column than its row
 belongs to the block upper-unitriangular group. -/
 theorem transvection_mem_blockUpperUnitriangularGroup {p q : n × ι} (hpq : p.2 < q.2)
     (h : p ≠ q) (t : R) :
-    GeneralLinearGroup.transvection p q h t ∈ blockUpperUnitriangularGroup n ι R := by
-  rw [mem_blockUpperUnitriangularGroup_iff, blockUnitriangular_iff]
+    GeneralLinearGroup.transvection p q h t ∈ unitriangularSubgroup (Prod.snd : n × ι → ι) R := by
+  rw [mem_unitriangularSubgroup, blockUnitriangular_iff]
   refine ⟨by simpa using blockTriangular_transvection (b := Prod.snd) hpq.le t,
     fun x y hxy => ?_⟩
   have hxy' : ¬(p = x ∧ q = y) := by
@@ -184,15 +163,15 @@ theorem transvection_mem_blockUpperUnitriangularGroup {p q : n × ι} (hpq : p.2
 
 namespace BlockUpperUnitriangularGroup
 
-theorem blockUnitriangular (u : blockUpperUnitriangularGroup n ι R) :
+theorem blockUnitriangular (u : unitriangularSubgroup (Prod.snd : n × ι → ι) R) :
     ((u : GL (n × ι) R) : Matrix (n × ι) (n × ι) R).BlockUnitriangular Prod.snd :=
-  u.property
+  (mem_unitriangularSubgroup (lev := Prod.snd)).1 u.property
 
 /-- One block above the diagonal, a product of block upper-unitriangular matrices has the sum of
 the blocks of its factors. -/
-theorem submatrix_coe_mul_of_covBy (u v : blockUpperUnitriangularGroup n ι R) {i j : ι}
+theorem submatrix_coe_mul_of_covBy (u v : unitriangularSubgroup (Prod.snd : n × ι → ι) R) {i j : ι}
     (hij : i ⋖ j) :
-    (((u * v : blockUpperUnitriangularGroup n ι R) : GL (n × ι) R) :
+    (((u * v : unitriangularSubgroup (Prod.snd : n × ι → ι) R) : GL (n × ι) R) :
         Matrix (n × ι) (n × ι) R).submatrix (·, i) (·, j) =
       ((u : GL (n × ι) R) : Matrix (n × ι) (n × ι) R).submatrix (·, i) (·, j) +
         ((v : GL (n × ι) R) : Matrix (n × ι) (n × ι) R).submatrix (·, i) (·, j) := by
@@ -201,8 +180,8 @@ theorem submatrix_coe_mul_of_covBy (u v : blockUpperUnitriangularGroup n ι R) {
     (i := (a, i)) (j := (b, j)) hij]
 
 /-- The adjacent block trace is additive on block upper-unitriangular matrices. -/
-theorem adjacentBlockTrace_coe_mul (u v : blockUpperUnitriangularGroup n ι R) :
-    adjacentBlockTrace (((u * v : blockUpperUnitriangularGroup n ι R) : GL (n × ι) R) :
+theorem adjacentBlockTrace_coe_mul (u v : unitriangularSubgroup (Prod.snd : n × ι → ι) R) :
+    adjacentBlockTrace (((u * v : unitriangularSubgroup (Prod.snd : n × ι → ι) R) : GL (n × ι) R) :
         Matrix (n × ι) (n × ι) R) =
       adjacentBlockTrace ((u : GL (n × ι) R) : Matrix (n × ι) (n × ι) R) +
         adjacentBlockTrace ((v : GL (n × ι) R) : Matrix (n × ι) (n × ι) R) := by
@@ -213,13 +192,13 @@ theorem adjacentBlockTrace_coe_mul (u v : blockUpperUnitriangularGroup n ι R) :
   · rfl
 
 /-- The adjacent block trace as a homomorphism to the additive group of the coefficients. -/
-def adjacentTraceHom : blockUpperUnitriangularGroup n ι R →* Multiplicative R where
+def adjacentTraceHom : unitriangularSubgroup (Prod.snd : n × ι → ι) R →* Multiplicative R where
   toFun u := .ofAdd (adjacentBlockTrace ((u : GL (n × ι) R) : Matrix (n × ι) (n × ι) R))
   map_one' := by simp
   map_mul' u v := by rw [adjacentBlockTrace_coe_mul, ofAdd_add]
 
 @[simp]
-theorem adjacentTraceHom_apply (u : blockUpperUnitriangularGroup n ι R) :
+theorem adjacentTraceHom_apply (u : unitriangularSubgroup (Prod.snd : n × ι → ι) R) :
     adjacentTraceHom u =
       .ofAdd (adjacentBlockTrace ((u : GL (n × ι) R) : Matrix (n × ι) (n × ι) R)) :=
   (rfl)
@@ -229,11 +208,13 @@ variable {M : Type*} [Monoid M]
 /-- The character `u ↦ ψ (∑ᵢ tr u_(i,i+1))` of the block upper-unitriangular group attached to
 an additive character `ψ`. For `ι = Fin k`, `n = Fin c` and a nontrivial `ψ` this is the character
 `ψ_(k,c)` of `U_(c^k)` defining `(k,c)` functionals. -/
-def adjacentTraceChar (ψ : AddChar R M) : blockUpperUnitriangularGroup n ι R →* M :=
+def adjacentTraceChar (ψ : AddChar R M) :
+    unitriangularSubgroup (Prod.snd : n × ι → ι) R →* M :=
   ψ.toMonoidHom.comp adjacentTraceHom
 
 @[simp]
-theorem adjacentTraceChar_apply (ψ : AddChar R M) (u : blockUpperUnitriangularGroup n ι R) :
+theorem adjacentTraceChar_apply (ψ : AddChar R M)
+    (u : unitriangularSubgroup (Prod.snd : n × ι → ι) R) :
     adjacentTraceChar ψ u =
       ψ (adjacentBlockTrace ((u : GL (n × ι) R) : Matrix (n × ι) (n × ι) R)) :=
   (rfl)
@@ -248,29 +229,17 @@ end BlockUpperUnitriangularGroup
 
 /-- Conjugation by a Levi element preserves the block upper-unitriangular group. -/
 theorem blockDiagonalGL_mul_mul_inv_mem (g : ι → GL n R) {u : GL (n × ι) R}
-    (hu : u ∈ blockUpperUnitriangularGroup n ι R) :
+    (hu : u ∈ unitriangularSubgroup (Prod.snd : n × ι → ι) R) :
     blockDiagonalGL n ι R g * u * (blockDiagonalGL n ι R g)⁻¹ ∈
-      blockUpperUnitriangularGroup n ι R := by
-  rw [mem_blockUpperUnitriangularGroup_iff] at hu ⊢
-  refine blockUnitriangular_iff.mpr ⟨?_, fun x y hxy => ?_⟩
-  · simp only [Units.val_mul, coe_blockDiagonalGL, coe_blockDiagonalGL_inv]
-    exact ((blockTriangular_blockDiagonal _).mul hu.blockTriangular).mul
-      (blockTriangular_blockDiagonal _)
-  · obtain ⟨a, i⟩ := x
-    obtain ⟨b, i'⟩ := y
-    obtain rfl : i = i' := hxy
-    have hu1 : (u : Matrix (n × ι) (n × ι) R).submatrix (·, i) (·, i) = 1 := by
-      ext c d
-      simpa [Matrix.one_apply] using hu.apply_of_eq (i := (c, i)) (j := (d, i)) rfl
-    have h := congr_fun₂ (submatrix_blockDiagonalGL_mul_mul_inv g
-      (u : Matrix (n × ι) (n × ι) R) i i) a b
-    rw [hu1, Matrix.mul_one, Units.mul_inv, submatrix_apply] at h
-    rw [Units.val_mul, Units.val_mul, h]
-    simp [Matrix.one_apply]
+      unitriangularSubgroup (Prod.snd : n × ι → ι) R := by
+  have hd : (blockDiagonalGL n ι R g)⁻¹ ∈ blockTriangularGroup R (Prod.snd : n × ι → ι) :=
+    inv_mem (by simpa [mem_blockTriangularGroup_iff] using blockTriangular_blockDiagonal _)
+  simpa using conj_mem_unitriangularSubgroup hd hu
 
 theorem blockDiagonalGL_mem_normalizer (g : ι → GL n R) :
     blockDiagonalGL n ι R g ∈
-      Subgroup.normalizer (blockUpperUnitriangularGroup n ι R : Set (GL (n × ι) R)) := by
+      Subgroup.normalizer (unitriangularSubgroup (Prod.snd : n × ι → ι) R : Set (GL (n × ι) R)) :=
+  by
   refine Subgroup.mem_normalizer_iff.mpr fun u =>
     ⟨blockDiagonalGL_mul_mul_inv_mem g, fun hu => ?_⟩
   have := blockDiagonalGL_mul_mul_inv_mem g⁻¹ hu
@@ -281,22 +250,24 @@ namespace BlockUpperUnitriangularGroup
 
 /-- The conjugation action of the block-diagonal Levi subgroup on the block upper-unitriangular
 group. -/
-def blockDiagonalConj : (ι → GL n R) →* MulAut (blockUpperUnitriangularGroup n ι R) :=
-  (blockUpperUnitriangularGroup n ι R).normalizerMonoidHom.comp
+def blockDiagonalConj :
+    (ι → GL n R) →* MulAut (unitriangularSubgroup (Prod.snd : n × ι → ι) R) :=
+  (unitriangularSubgroup (Prod.snd : n × ι → ι) R).normalizerMonoidHom.comp
     ((blockDiagonalGL n ι R).codRestrict _ blockDiagonalGL_mem_normalizer)
 
 @[simp]
-theorem coe_blockDiagonalConj_apply (g : ι → GL n R) (u : blockUpperUnitriangularGroup n ι R) :
-    ((blockDiagonalConj g u : blockUpperUnitriangularGroup n ι R) : GL (n × ι) R) =
+theorem coe_blockDiagonalConj_apply (g : ι → GL n R)
+    (u : unitriangularSubgroup (Prod.snd : n × ι → ι) R) :
+    ((blockDiagonalConj g u : unitriangularSubgroup (Prod.snd : n × ι → ι) R) : GL (n × ι) R) =
       blockDiagonalGL n ι R g * u * (blockDiagonalGL n ι R g)⁻¹ := by
   simp [blockDiagonalConj]
 
 /-- The adjacent block trace of a Levi conjugate: the block `u_(i,j)` is replaced by
 `gᵢ u_(i,j) gⱼ⁻¹`, which has the trace of `gⱼ⁻¹ gᵢ u_(i,j)`. -/
 theorem adjacentBlockTrace_blockDiagonalConj (g : ι → GL n R)
-    (u : blockUpperUnitriangularGroup n ι R) :
+    (u : unitriangularSubgroup (Prod.snd : n × ι → ι) R) :
     adjacentBlockTrace
-        (((blockDiagonalConj g u : blockUpperUnitriangularGroup n ι R) : GL (n × ι) R) :
+        (((blockDiagonalConj g u : unitriangularSubgroup (Prod.snd : n × ι → ι) R) : GL (n × ι) R) :
           Matrix (n × ι) (n × ι) R) =
       ∑ i, ∑ j, if i ⋖ j then
         (((g j)⁻¹ * g i : GL n R) * ((u : GL (n × ι) R) : Matrix (n × ι) (n × ι) R).submatrix
