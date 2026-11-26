@@ -160,6 +160,7 @@ private theorem homologyOneLinearEquivOfNeg_apply (x) :
 include e hφ in
 /-- The `ℤ` coordinate of `TauCeti.MappingTorus.homologyOneLinearEquivOfNeg` is the Wang class
 `ε ∘ δ : H₁(T_φ; ℤ) → ℤ`. -/
+@[simp]
 theorem homologyOneLinearEquivOfNeg_apply_fst (x) :
     (homologyOneLinearEquivOfNeg φ e hφ x).1 = (wangClass (ModuleCat.of ℤ ℤ) φ).hom x := by
   have : ((wangSplitting φ).val x).2 = wangδ φ (ModuleCat.of ℤ ℤ) 0 x :=
@@ -169,6 +170,7 @@ theorem homologyOneLinearEquivOfNeg_apply_fst (x) :
 include hφ in
 /-- `TauCeti.MappingTorus.homologyOneLinearEquivOfNeg` sends the image of `y ∈ H₁(F; ℤ)` under the
 fibre inclusion to `(0, e y mod 2)`. -/
+@[simp]
 theorem homologyOneLinearEquivOfNeg_homologyMap_fibreInclusionChainMap (y) :
     homologyOneLinearEquivOfNeg φ e hφ
         (homologyMap (fibreInclusionChainMap φ (ModuleCat.of ℤ ℤ)) 1 y) = (0, (e y : ZMod 2)) := by
@@ -209,11 +211,13 @@ theorem homologyMap_monodromyChainMap_one_eq_neg {A : Type u} [Category.{v} A]
         Complex.conjAe.toLinearEquiv.toLinearMap :=
       LinearMap.ext fun z ↦ by simp
     rw [this, Complex.det_conjAe]
-  rw [MappingTorus.monodromyChainMap_def, h]
-  -- The homology map of the singular chain map is by definition the map on singular homology,
-  -- so the two identities below agree up to unfolding `singularHomologyFunctor`.
-  exact (singularHomologyFunctor_map_unitSphereMap R (n := 0) Complex.finrank_real_complex
-    _).trans (by simp [hdet]; rfl)
+  rw [MappingTorus.monodromyChainMap_def, h, ← singularHomologyFunctor_obj_map_eq_homologyMap,
+    singularHomologyFunctor_map_unitSphereMap R (n := 0) Complex.finrank_real_complex, hdet,
+    sign_neg neg_one_lt_zero, SignType.coe_neg_one, neg_one_zsmul]
+  -- The two sides are `-𝟙` of the singular homology object and of the homology of the singular
+  -- chain complex. These objects agree by unfolding `singularHomologyFunctor`, an identification
+  -- of objects rather than morphisms, so no rewrite closes the goal.
+  rfl
 
 /-- The unit circle of `ℂ` is path-connected. -/
 private theorem pathConnectedSpace_sphere : PathConnectedSpace (sphere (0 : ℂ) 1) :=
@@ -238,10 +242,14 @@ private def isoMappingTorus :
 def singularHomologyZeroLinearEquiv :
     ((singularHomologyFunctor (ModuleCat.{0} ℤ) 0).obj (ModuleCat.of ℤ ℤ)).obj
       (TopCat.of KleinBottle) ≃ₗ[ℤ] ℤ :=
-  have : PathConnectedSpace KleinBottle :=
-    (SmoothMappingTorus.homeomorphMappingTorus conjCircleDiffeomorph).symm.surjective
-      |>.pathConnectedSpace (SmoothMappingTorus.homeomorphMappingTorus _).symm.continuous
   (asIso ((TopCat.of KleinBottle).singularHomology₀ε (ModuleCat.of ℤ ℤ))).toLinearEquiv
+
+/-- `H₀(K; ℤ) ≃ ℤ` is the augmentation. -/
+@[simp]
+theorem singularHomologyZeroLinearEquiv_apply (x) :
+    singularHomologyZeroLinearEquiv x =
+      (TopCat.of KleinBottle).singularHomology₀ε (ModuleCat.of ℤ ℤ) x :=
+  (rfl)
 
 /-- **`H₁` of the Klein bottle.** `H₁(K; ℤ) ≃ ℤ × ℤ/2`. -/
 def singularHomologyOneLinearEquiv :
@@ -281,9 +289,10 @@ private theorem singularHomologyOneLinearEquiv_singularHomologyMap_mk_zero (y) :
   rw [singularHomologyOneLinearEquiv_apply]
   have hfib := MappingTorus.homologyOneLinearEquivOfNeg_homologyMap_fibreInclusionChainMap _
     circleHomologyOneLinearEquiv (homologyMap_monodromyChainMap_one_eq_neg _) y
-  rw [MappingTorus.fibreInclusionChainMap_def] at hfib
-  -- The homology map of the singular chain map is by definition the map on singular homology.
-  exact (congrArg (MappingTorus.homologyOneLinearEquivOfNeg _ _ _) key.symm).trans hfib
+  rw [MappingTorus.fibreInclusionChainMap_def,
+    ← singularHomologyFunctor_obj_map_eq_homologyMap] at hfib
+  rw [← key]
+  exact hfib
 
 /-- **The free coordinate of `H₁` of the Klein bottle is the degree over the base circle.** The
 first coordinate of `H₁(K; ℤ) ≃ ℤ × ℤ/2` is the map induced by the projection `K → ℝ/ℤ`, followed
@@ -302,8 +311,8 @@ theorem singularHomologyOneLinearEquiv_apply_fst (x) :
       simp [isoMappingTorus]
   rw [singularHomologyOneLinearEquiv_apply, MappingTorus.homologyOneLinearEquivOfNeg_apply_fst,
     MappingTorus.wangClass_eq_singularHomologyMap_proj_comp_circleWangClass, ← h,
-    Functor.map_comp]
-  rfl
+    Functor.map_comp, ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply,
+    LinearMap.comp_apply]
 
 /-- **The fibre circle of the Klein bottle carries the torsion of `H₁`.** Under
 `H₁(K; ℤ) ≃ ℤ × ℤ/2`, the image of `H₁(S¹; ℤ)` under the fibre inclusion `z ↦ [0, z]` is the

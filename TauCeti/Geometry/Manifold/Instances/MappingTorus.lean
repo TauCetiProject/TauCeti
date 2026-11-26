@@ -46,7 +46,9 @@ has least period `d`.
 Tau Ceti's topological mapping torus `TauCeti.MappingTorus` of a homeomorphism `ψ` identifies
 `(ψ x, t + 1)` with `(x, t)`. The smooth mapping torus of `φ` is homeomorphic to the topological
 mapping torus of `φ⁻¹` (`TauCeti.SmoothMappingTorus.homeomorphMappingTorus`), compatibly with the
-projections to the circle, so the topological results for `TauCeti.MappingTorus` apply to `Y_φ`.
+projections to the circle, so the topological results for `TauCeti.MappingTorus` apply to `Y_φ`;
+for instance, `Y_φ` is path-connected when `M` is
+(`TauCeti.SmoothMappingTorus.instPathConnectedSpace`).
 
 ## Main definitions
 
@@ -655,6 +657,12 @@ theorem proj_homeomorphMappingTorus (z : SmoothMappingTorus φ) :
     MappingTorus.proj _ (homeomorphMappingTorus φ z) = proj φ z := by
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
   simp
+
+/-- The mapping torus of a diffeomorphism of a path-connected manifold is path-connected. -/
+instance instPathConnectedSpace [PathConnectedSpace M] :
+    PathConnectedSpace (SmoothMappingTorus φ) :=
+  (homeomorphMappingTorus φ).symm.surjective.pathConnectedSpace
+    (homeomorphMappingTorus φ).symm.continuous
 
 /-- The projection of the mapping torus to the circle is continuous. -/
 theorem continuous_proj : Continuous (proj φ) := by
