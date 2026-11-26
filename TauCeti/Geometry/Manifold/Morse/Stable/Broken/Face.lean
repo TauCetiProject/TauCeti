@@ -27,8 +27,8 @@ systems of fundamental classes require
 
 * Every point of `∂L(x, y)` is the concatenation, at its first break `z`, of an unbroken
   trajectory and a broken one
-  (`IsAdaptedPseudoGradient.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_boundary`), so
-  `∂L(x, y)` is the union of the faces
+  (`exists_morseBrokenTrajectorySpaceComp_eq_of_mem_morseBrokenTrajectorySpaceBoundary`
+  in `IsAdaptedPseudoGradient`), so `∂L(x, y)` is the union of the faces
   (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceBoundary_eq_iUnion`).
 * Concatenation at any point `z` whose value is not a level is an embedding
   (`TauCeti.IsAdaptedPseudoGradient.isEmbedding_morseBrokenTrajectorySpaceConcat`): restricting a
@@ -67,8 +67,8 @@ the gluing of broken trajectories and are not proved here.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `exists_morseBrokenTrajectorySpaceComp_eq_of_mem_boundary`: the first break of a broken
-  trajectory.
+* `exists_morseBrokenTrajectorySpaceComp_eq_of_mem_morseBrokenTrajectorySpaceBoundary`: the
+  first break of a broken trajectory.
 * `morseBrokenTrajectorySpaceBoundary_eq_iUnion`: the boundary is the union of the faces.
 * `isEmbedding_morseBrokenTrajectorySpaceConcat`, `isEmbedding_morseBrokenTrajectorySpaceComp`:
   concatenation is an embedding.
@@ -114,7 +114,7 @@ include hc in
 trajectory space from `x` to `y` is the concatenation, at some critical point `z`, of an unbroken
 trajectory from `x` to `z` and a broken trajectory from `z` to `y`: the point `z` is the end of the
 first component. -/
-theorem exists_morseBrokenTrajectorySpaceComp_eq_of_mem_boundary
+theorem exists_morseBrokenTrajectorySpaceComp_eq_of_mem_morseBrokenTrajectorySpaceBoundary
     {x y : criticalPoints 𝓘(ℝ, E) f} {w : hX.morseBrokenTrajectorySpace c x y}
     (hw : w ∈ hX.morseBrokenTrajectorySpaceBoundary c x y) :
     ∃ (z : criticalPoints 𝓘(ℝ, E) f) (a : hX.morseBrokenTrajectorySpace c x z)
@@ -223,7 +223,7 @@ theorem morseBrokenTrajectorySpaceBoundary_eq_iUnion (x y : criticalPoints 𝓘(
   constructor
   · intro hw
     obtain ⟨z, a, b, -, hab⟩ :=
-      hX.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_boundary hc hw
+      hX.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_morseBrokenTrajectorySpaceBoundary hc hw
     exact ⟨z, (a, b), hab⟩
   · rintro ⟨z, p, rfl⟩
     exact hX.morseBrokenTrajectorySpaceComp_mem_morseBrokenTrajectorySpaceBoundary hc hdense x z y p
@@ -320,14 +320,14 @@ theorem image_morseBrokenTrajectorySpaceComp_compl_prod_compl
   refine ⟨(a, b), ⟨fun ha ↦ ?_, fun hb ↦ ?_⟩, rfl⟩
   · -- A break of the first factor at `z''` is a break of the concatenation at `z''`.
     obtain ⟨z'', a₁, a₂, -, rfl⟩ :=
-      hX.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_boundary hc ha
+      hX.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_morseBrokenTrajectorySpaceBoundary hc ha
     exact hw' z''
       (fun h ↦ (mem_morseBrokenTrajectorySpace.1 a₂.property).1 (congrArg Subtype.val h))
       ⟨(a₁, hX.morseBrokenTrajectorySpaceComp hc z'' z₀ y (a₂, b)),
         (hX.morseBrokenTrajectorySpaceComp_assoc hc x z'' z₀ y a₁ a₂ b).symm⟩
   · -- A break of the second factor at `z''` is a break of the concatenation at `z''`.
     obtain ⟨z'', b₁, b₂, -, rfl⟩ :=
-      hX.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_boundary hc hb
+      hX.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_morseBrokenTrajectorySpaceBoundary hc hb
     exact hw' z''
       (fun h ↦ (mem_morseBrokenTrajectorySpace.1 b₁.property).1 (congrArg Subtype.val h.symm))
       ⟨(hX.morseBrokenTrajectorySpaceComp hc x z₀ z'' (a, b₁), b₂),
@@ -441,7 +441,8 @@ theorem dense_morseBrokenTrajectorySpaceComp_image (x y : criticalPoints 𝓘(�
         ((hX.morseBrokenTrajectorySpaceBoundary c x z)ᶜ ×ˢ
           (hX.morseBrokenTrajectorySpaceBoundary c z y)ᶜ)} := by
   refine Subtype.dense_iff.2 fun w hw ↦ ?_
-  obtain ⟨z, a, b, ha, rfl⟩ := hX.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_boundary hc hw
+  obtain ⟨z, a, b, ha, rfl⟩ :=
+    hX.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_morseBrokenTrajectorySpaceBoundary hc hw
   obtain ⟨hzy, hb⟩ := mem_morseBrokenTrajectorySpace.1 b.property
   -- The second factor is a limit of unbroken trajectories.
   have hbcl : b ∈ closure (hX.morseBrokenTrajectorySpaceBoundary c z y)ᶜ := by
