@@ -302,8 +302,10 @@ theorem exists_esymm_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn {m
   -- Along the sequence, the tuple of `D n z` is `R n z`.
   have hR (n : ℕ) (z : ℂ) (hz : z ∈ U) :
       ((Sym.ofEsymm (D n z) : Sym ℂ m) : Multiset ℂ) = R n z := by
-    rw [← (Sym.eq_ofEsymm_iff (s := Sym.mk (R n z) (hcard n z hz))).2 fun i ↦
-      (hbR n _ (hmem i) z hz).symm, Sym.coe_mk]
+    have hD : D n z = fun i : Fin m ↦
+        ((Sym.mk (R n z) (hcard n z hz) : Sym ℂ m) : Multiset ℂ).esymm ((i : ℕ) + 1) :=
+      funext fun i ↦ hbR n _ (hmem i) z hz
+    rw [hD, Sym.ofEsymm_esymm, Sym.coe_mk]
   refine ⟨fun z ↦ Sym.ofEsymm (D₀ z), fun z _ ↦ (Sym.ofEsymm (D₀ z)).card_coe,
     fun j hj z _ ↦ (Sym.esymm_ofEsymm_of_mem hj (c · z)).symm, fun j hj ↦ ?_⟩
   -- The limiting zeroth-order term is that of the limiting coefficients and forms.

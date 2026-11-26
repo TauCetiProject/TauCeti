@@ -57,7 +57,8 @@ are separate later steps.
   functions and `Sym.coeffEquiv_symm_apply` describing the inverse as a root-taking map.
 * `Sym.ofEsymm`: the inverse chart in unsigned coordinates, the unordered tuple with prescribed
   elementary symmetric functions (`Sym.esymm_ofEsymm`, `Sym.esymm_ofEsymm_of_mem`), which they
-  determine (`Sym.eq_ofEsymm_iff`); `Sym.coeffEquiv_ofEsymm` gives its chart coordinates.
+  determine (`Sym.eq_ofEsymm_iff`, `Sym.ofEsymm_esymm`); `Sym.coeffEquiv_ofEsymm` gives its chart
+  coordinates.
 * `Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero`: membership in the basepoint
   divisor is characterized by an affine equation in the chart.
 * `Sym.coeffEquiv_one_apply` and `Sym.coeffEquiv_two_apply`: the chart in degrees
@@ -419,6 +420,12 @@ theorem eq_ofEsymm_iff {s : Sym K n} {d : Fin n → K} :
   funext i
   rw [coeffEquiv_ofEsymm, coeffEquiv_apply, ← h, Fin.val_rev,
     show n - ((i : ℕ) + 1) + 1 = n - (i : ℕ) by omega]
+
+/-- Rebuilding an unordered tuple from its own elementary symmetric functions gives it back. -/
+@[simp]
+theorem ofEsymm_esymm (s : Sym K n) :
+    ofEsymm (fun i : Fin n => (s : Multiset K).esymm ((i : ℕ) + 1)) = s :=
+  (eq_ofEsymm_iff.2 fun _ => rfl).symm
 
 end AlgClosed
 
