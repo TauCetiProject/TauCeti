@@ -11,6 +11,7 @@ public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.RingTheory.Etale.Finite
 public import TauCeti.Algebra.GroupAction.AlgHom
 import Mathlib.FieldTheory.Galois.Infinite
+import Mathlib.RingTheory.TensorProduct.Pi
 import TauCeti.Algebra.Algebra.Pi
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.Algebra.TensorProduct.Galois
@@ -125,11 +126,10 @@ section CommRing
 
 variable (K Ω A : Type*) [Field K] [Field Ω] [Algebra K Ω] [CommRing A] [Algebra K A]
 
-/-- **An étale algebra splits over a separably closed field.** For an étale algebra `A` over a
-field `K` and a separably closed field `Ω` over `K`, evaluation at the `Ω`-valued points of `A`
-is an isomorphism of `Ω`-algebras `Ω ⊗[K] A ≃ₐ[Ω] ((A →ₐ[K] Ω) → Ω)`, sending `ω ⊗ a` to
-`φ ↦ ω * φ a` (`tensorProductEquivPi_tmul`). -/
-noncomputable def tensorProductEquivPi [IsSepClosed Ω] [Algebra.Etale K A] :
+/-- If `Ω ⊗[K] A` is totally split, evaluation identifies it with the algebra of functions on
+the `Ω`-valued points of `A`. It sends `ω ⊗ a` to `φ ↦ ω * φ a`. In particular, this applies
+to an étale `K`-algebra over a separably closed extension `Ω`. -/
+noncomputable def tensorProductEquivPi [IsFiniteSplit Ω (Ω ⊗[K] A)] :
     Ω ⊗[K] A ≃ₐ[Ω] ((A →ₐ[K] Ω) → Ω) :=
   AlgEquiv.ofBijective (AlgHom.pi fun φ ↦ TensorProduct.liftEquivRight K Ω A Ω φ) <| by
     -- Points of `A` with values in `Ω` are the characters of the totally split `Ω`-algebra
@@ -146,9 +146,35 @@ variable {K Ω A}
 
 /-- The splitting sends `ω ⊗ a` to the function `φ ↦ ω * φ a`. -/
 @[simp]
-theorem tensorProductEquivPi_tmul [IsSepClosed Ω] [Algebra.Etale K A] (ω : Ω) (a : A)
+theorem tensorProductEquivPi_tmul [IsFiniteSplit Ω (Ω ⊗[K] A)] (ω : Ω) (a : A)
     (φ : A →ₐ[K] Ω) : tensorProductEquivPi K Ω A (ω ⊗ₜ a) φ = ω * φ a := by
   simp [tensorProductEquivPi]
+
+section BaseChange
+
+variable (K Ω A) (T : Type*) [CommRing T] [Algebra K T] [Algebra Ω T]
+  [IsScalarTower K Ω T] [IsFiniteSplit Ω (Ω ⊗[K] A)]
+
+/-- If `Ω` splits `A`, extending scalars to any `Ω`-algebra `T` gives the algebra of
+`T`-valued functions on the `Ω`-points of `A`. -/
+noncomputable def tensorProductEquivPiBaseChange :
+    T ⊗[K] A ≃ₐ[T] ((A →ₐ[K] Ω) → T) := by
+  classical
+  let e := TensorProduct.liftEquivRight K Ω A Ω
+  letI : Finite (A →ₐ[K] Ω) := Finite.of_injective e e.injective
+  letI := Fintype.ofFinite (A →ₐ[K] Ω)
+  exact (TensorProduct.cancelBaseChange K Ω T T A).symm.trans <|
+    (TensorProduct.congr AlgEquiv.refl (tensorProductEquivPi K Ω A)).trans <|
+    Algebra.TensorProduct.piScalarRight Ω T T (A →ₐ[K] Ω)
+
+/-- The coordinate at `φ` of a pure tensor `t ⊗ a` is the product of `t`
+with the image of `φ a` in `T`. -/
+@[simp]
+theorem tensorProductEquivPiBaseChange_tmul (t : T) (a : A) (φ : A →ₐ[K] Ω) :
+    tensorProductEquivPiBaseChange K Ω A T (t ⊗ₜ[K] a) φ = algebraMap Ω T (φ a) * t := by
+  simp [tensorProductEquivPiBaseChange, Algebra.smul_def]
+
+end BaseChange
 
 variable (K Ω A) in
 /-- **The `Ω`-valued points of an étale algebra separate its elements**, for a separably closed

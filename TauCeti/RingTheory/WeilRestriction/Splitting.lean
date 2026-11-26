@@ -22,11 +22,12 @@ containing `K`. The points of the Weil restriction `Res_{B/K} C` with values in 
 
 where `C_τ(Ω)` is the set of `Ω`-points of `C` for the `B`-algebra structure on `Ω` given by `τ`,
 that is, of ring maps `f : C → Ω` with `f ∘ algebraMap B C = τ`. This is the statement on
-`Ω`-points that over `Ω` the Weil restriction is the product of the conjugates of `Spec C` by the
-embeddings of `B`; the corresponding isomorphism of `Ω`-algebras is not constructed here. An
-automorphism `σ` of `Ω` over `K` acts on both sides: on points of the Weil restriction by
-postcomposition, and on the tuples by permuting the factors and applying `σ`, the `τ`-component of
-the image of a point being `σ` composed with its `σ⁻¹ • τ`-component.
+`Ω`-points that over `Ω` the Weil restriction is the product of the conjugates of `Spec C` along the
+maps `B →ₐ[K] Ω`. The coordinate-algebra isomorphism is in
+`TauCeti.RingTheory.WeilRestriction.BaseChangeSplitting`. An automorphism `σ` of `Ω` over `K` acts
+on the points of the Weil restriction by postcomposition and on the tuples by permuting the
+factors and applying `σ`. The `τ`-component of the image of a point is `σ` composed with its
+`σ⁻¹ • τ`-component.
 
 Over a separable closure, this splitting compares a Weil restriction with the product of the
 conjugates of `C`, as needed for the dimension, the reductivity and the character lattices of Weil
