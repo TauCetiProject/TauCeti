@@ -84,8 +84,7 @@ theorem primeCount_rat_univ (x : ℝ) :
 /-- The sum of the von Mangoldt weights of all prime ideal powers over `ℚ` is Mathlib's
 Chebyshev function `ψ`. -/
 @[simp] theorem primePsi_rat_univ (x : ℝ) : primePsi ℚ Set.univ x = Chebyshev.psi x := by
-  rw [primePsi_eq_sum_Icc, Chebyshev.psi]
-  rw [← Finset.Icc_succ_left_eq_Ioc 0]
+  rw [primePsi_eq_sum_Icc, Chebyshev.psi, ← Finset.Icc_add_one_left_eq_Ioc, zero_add]
   exact Finset.sum_congr rfl fun n _ ↦ primeVonMangoldtCoeff_rat_univ n
 
 end TauCeti
