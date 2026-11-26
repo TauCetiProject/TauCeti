@@ -256,6 +256,7 @@ theorem exists_measure_closedBall_le_mul_one_add_mul_deriv_add_of_frame {K C H L
           σ / 2 * (1 + C' * σ) * (1 + C / √r) * deriv (fun s ↦ ((μ.withDensity fun x ↦
               ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|)) (closedBall c s)).toReal) σ +
             K' * σ ^ 4 := by
+  -- The constants use `|R|` so that `C'` and `K'` are nonnegative with no sign hypothesis on `R`.
   set M := L * |R|
   set K₁ := (1 + C) * K + √2 * H / 2 + C with hK₁d
   set K₂ := (2 + C) * (K + 1) + H
@@ -302,6 +303,7 @@ theorem exists_measure_closedBall_le_mul_one_add_mul_deriv_add_of_frame {K C H L
     hF hdF hδc (fun x _ ↦ mul_nonneg (by linarith) (abs_nonneg _)) hω
     (fun x hx ↦ hFG x (hσR hx)) (fun x hx ↦ hSω x (hσR hx)) (fun x hx ↦ hS x (hσR hx))
     (fun x hx ↦ hGB x (hσR hx)) (fun x hx ↦ hGn x (hσR hx)) hσ
+  -- `0 < σ < R` gives `R = |R|`, and `R` occurs in `h` only inside the constants.
   rwa [← abs_of_pos (hσ.1.trans hσ.2)] at h
 
 /-! ### Quadratic bounds for the defect energy in a Darboux chart -/
