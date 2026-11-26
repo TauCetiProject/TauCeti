@@ -135,16 +135,13 @@ private theorem foldLower_apply (z : ℝ × ℝ) : foldLower z = (z.1 / 2, -z.2 
 
 private theorem abs_det_fderiv_foldUpper (w : ℝ × ℝ) :
     |(fderiv ℝ foldUpper w).det| = 1 / 4 := by
-  rw [foldUpper.fderiv, ContinuousLinearMap.det, foldUpper, ContinuousLinearMap.coe_prodMap,
-    LinearMap.det_prodMap, ContinuousLinearMap.toLinearMap_smul, LinearMap.det_smul]
-  norm_num
+  rw [foldUpper.fderiv]
+  norm_num [foldUpper, ContinuousLinearMap.det]
 
 private theorem abs_det_fderiv_foldLower (w : ℝ × ℝ) :
     |(fderiv ℝ foldLower w).det| = 1 / 4 := by
-  rw [foldLower.fderiv, ContinuousLinearMap.det, foldLower, ContinuousLinearMap.coe_prodMap,
-    LinearMap.det_prodMap, ContinuousLinearMap.toLinearMap_smul,
-    ContinuousLinearMap.toLinearMap_smul, LinearMap.det_smul, LinearMap.det_smul]
-  norm_num
+  rw [foldLower.fderiv]
+  norm_num [foldLower, ContinuousLinearMap.det, LinearMap.det_prodMap]
 
 private theorem injective_foldUpper : Injective foldUpper := fun x y h ↦ by
   simp only [foldUpper_apply, Prod.mk.injEq] at h
@@ -212,10 +209,11 @@ private theorem isComplexLinearMap_of_apply_eq_smul_iff {V W : Type*} [AddCommGr
         IsComplexLinearMap (AlmostComplexStructure.product ℝ) J₂ B := by
   have h2 : (2⁻¹ : ℝ) ≠ 0 := by norm_num
   rw [isComplexLinearMap_stdComplexLine_iff, isComplexLinearMap_stdComplexLine_iff,
-    isComplexLinearMap_stdComplexLine_iff, hF, hF, reflect_stdComplexLineImag,
-    reflect_stdComplexLineReal, map_neg, AlmostComplexStructure.prod_apply, Prod.ext_iff]
-  simp only [AlmostComplexStructure.neg_apply, AlmostComplexStructure.apply_smul]
-  rw [(smul_right_injective V h2).eq_iff, (smul_right_injective W h2).eq_iff, neg_inj]
+    isComplexLinearMap_stdComplexLine_iff]
+  -- The reflection negates the imaginary unit and fixes the real one, and the factor `½` cancels.
+  simp only [hF, reflect_stdComplexLineImag, reflect_stdComplexLineReal, map_neg,
+    AlmostComplexStructure.prod_apply, AlmostComplexStructure.neg_apply,
+    AlmostComplexStructure.apply_smul, Prod.ext_iff, smul_right_inj h2, neg_inj]
 
 /-! ### The differential of the fold and the Cauchy–Riemann equation -/
 
