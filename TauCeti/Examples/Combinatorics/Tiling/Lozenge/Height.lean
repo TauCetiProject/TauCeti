@@ -75,6 +75,9 @@ example : tilingHeight (typeTiling 2) = 0 := by
 def halfSumHeight (v : ℤ × ℤ) : ℤ :=
   (v.1 + v.2) / 2
 
+theorem halfSumHeight_apply (v : ℤ × ℤ) : halfSumHeight v = (v.1 + v.2) / 2 := by
+  rw [halfSumHeight]
+
 /-- `⌊(x + y)/2⌋` is a height function. -/
 theorem isHeightFunction_halfSumHeight : IsHeightFunction halfSumHeight := by
   rw [isHeightFunction_def]
