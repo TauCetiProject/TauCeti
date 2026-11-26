@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.MetricDerivative.Basic
 import Mathlib.Analysis.Normed.Affine.AddTorsor
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Reparam
 
 /-!
 # Gluing absolutely continuous curves
@@ -15,7 +16,9 @@ Absolute continuity on adjacent intervals implies absolute continuity on their u
 pseudometric space. This permits splitting and reassembling raw curves with either orientation,
 and gluing finite subdivisions, including subdivisions into affine cells
 (`TauCeti.absolutelyContinuousOnInterval_add_smul`) in a real seminormed space. In particular a
-polygonal curve (`TauCeti.IsPolygonalOnInterval`) is absolutely continuous.
+polygonal curve (`TauCeti.IsPolygonalOnInterval`) is absolutely continuous. Gluing a curve on
+`[a, b]` to its mirror image also gives the even reflection `t ↦ γ (b - |t - b|)` in `b`, absolutely
+continuous on `[a, 2b - a]` (`AbsolutelyContinuousOnInterval.comp_sub_abs_sub`).
 -/
 
 public section
@@ -79,6 +82,25 @@ theorem trans (h₁ : AbsolutelyContinuousOnInterval γ a c)
   · apply h₂.mono
     rw [uIcc_of_le hab, uIcc_of_le ((le_of_not_ge hac).trans hab)]
     exact Icc_subset_Icc (le_of_not_ge hac) le_rfl
+
+/-- The even reflection `t ↦ γ (b - |t - b|)` in `b` of a curve absolutely continuous on `[a, b]`
+is absolutely continuous on `[a, 2b - a]`: it is `γ` on `[a, b]` and `t ↦ γ (2b - t)` on
+`[b, 2b - a]`. -/
+theorem comp_sub_abs_sub (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a ≤ b) :
+    AbsolutelyContinuousOnInterval (fun t ↦ γ (b - |t - b|)) a (2 * b - a) := by
+  have hbc : b ≤ 2 * b - a := by linarith
+  have hmap : MapsTo (fun t : ℝ ↦ -1 * t + 2 * b) (uIcc b (2 * b - a)) (uIcc a b) := by
+    intro t ht
+    rw [uIcc_of_le hbc] at ht
+    rw [uIcc_of_le hab]
+    constructor <;> linarith [ht.1, ht.2]
+  refine (hγ.congr fun t ht ↦ ?_).trans ((hγ.comp_affine (-1) (2 * b) hmap).congr fun t ht ↦ ?_)
+  · rw [uIcc_of_le hab] at ht
+    rw [abs_of_nonpos (sub_nonpos.2 ht.2), sub_neg_eq_add, add_sub_cancel]
+  · rw [uIcc_of_le hbc] at ht
+    rw [Function.comp_apply, abs_of_nonneg (sub_nonneg.2 ht.1)]
+    congr 1
+    ring
 
 /-- Absolute continuity can be checked on the two pieces of a parameter interval. -/
 theorem _root_.TauCeti.absolutelyContinuousOnInterval_iff_and (hc : c ∈ uIcc a b) :
