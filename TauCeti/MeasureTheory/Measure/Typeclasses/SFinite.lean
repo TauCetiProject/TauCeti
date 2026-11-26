@@ -26,7 +26,7 @@ compact sets are replaced by their measurable envelopes.
 * `IsSigmaCompact.sigmaFinite_comap_subtype`: a measure that is finite on compact sets has σ-finite
   pullback `μ.comap (↑)` to every measurable σ-compact set.
 * `Measure.sigmaFinite_restrict_iUnion`: the restriction to a countable union of finite-measure
-  measurable sets is sigma-finite.
+  sets is sigma-finite.
 -/
 
 public section
@@ -34,14 +34,21 @@ public section
 open Set MeasureTheory
 open scoped ENNReal
 
-/-- Restriction to a countable union of finite-measure measurable sets is sigma-finite. -/
+/-- Restriction to a countable union of finite-measure sets is sigma-finite. -/
 theorem MeasureTheory.Measure.sigmaFinite_restrict_iUnion {α : Type*} [MeasurableSpace α]
-    (μ : Measure α) (s : ℕ → Set α) (hs : ∀ n, MeasurableSet (s n))
-    (hfin : ∀ n, μ (s n) < ∞) : SigmaFinite (μ.restrict (⋃ n, s n)) := by
-  refine ⟨⟨⟨fun n ↦ s n ∪ (⋃ n, s n)ᶜ, fun _ ↦ trivial, fun n ↦ ?_, ?_⟩⟩⟩
-  · simpa only [Measure.restrict_apply ((hs n).union (MeasurableSet.iUnion hs).compl),
-      union_inter_distrib_right, compl_inter_self, union_empty,
-      inter_eq_left.mpr (subset_iUnion s n)] using hfin n
+    (μ : Measure α) (s : ℕ → Set α) (hfin : ∀ n, μ (s n) < ∞) :
+    SigmaFinite (μ.restrict (⋃ n, s n)) := by
+  -- Cover the supporting sets by measurable envelopes of the same finite measure.
+  let T := fun n ↦ toMeasurable μ (s n)
+  have hsT : ⋃ n, s n ⊆ ⋃ n, T n := iUnion_mono fun n ↦ subset_toMeasurable μ (s n)
+  refine ⟨⟨⟨fun n ↦ T n ∪ (⋃ n, T n)ᶜ, fun _ ↦ trivial, fun n ↦ ?_, ?_⟩⟩⟩
+  · have hmeas : MeasurableSet (T n ∪ (⋃ n, T n)ᶜ) :=
+      (measurableSet_toMeasurable μ _).union (MeasurableSet.iUnion fun n ↦
+        measurableSet_toMeasurable μ _).compl
+    rw [Measure.restrict_apply hmeas, union_inter_distrib_right,
+      (disjoint_compl_left.mono_right hsT).inter_eq, union_empty]
+    exact (measure_mono inter_subset_left).trans_lt
+      ((measure_toMeasurable (s n)).trans_lt (hfin n))
   · rw [← iUnion_union, union_compl_self]
 
 variable {α : Type*} [MeasurableSpace α] [TopologicalSpace α] {μ : Measure α}
@@ -50,20 +57,7 @@ variable {α : Type*} [MeasurableSpace α] [TopologicalSpace α] {μ : Measure �
 theorem IsSigmaCompact.sigmaFinite_restrict [IsFiniteMeasureOnCompacts μ] {s : Set α}
     (hs : IsSigmaCompact s) : SigmaFinite (μ.restrict s) := by
   obtain ⟨K, hK, rfl⟩ := hs
-  -- Compact sets need not be measurable, so cover by their measurable envelopes `T n`.
-  set T := fun n ↦ toMeasurable μ (K n)
-  have hKT : ⋃ n, K n ⊆ ⋃ n, T n := iUnion_mono fun n ↦ subset_toMeasurable μ (K n)
-  -- The sets `T n ∪ (⋃ n, T n)ᶜ` cover the space, and each has finite measure for the
-  -- restriction, since its trace on `⋃ n, K n` lies in `T n`.
-  refine ⟨⟨⟨fun n ↦ T n ∪ (⋃ n, T n)ᶜ, fun _ ↦ trivial, fun n ↦ ?_, ?_⟩⟩⟩
-  · have hmeas : MeasurableSet (T n ∪ (⋃ n, T n)ᶜ) :=
-      (measurableSet_toMeasurable μ _).union (MeasurableSet.iUnion fun n ↦
-        measurableSet_toMeasurable μ _).compl
-    rw [Measure.restrict_apply hmeas, union_inter_distrib_right,
-      (disjoint_compl_left.mono_right hKT).inter_eq, union_empty]
-    exact (measure_mono inter_subset_left).trans_lt
-      ((measure_toMeasurable (K n)).trans_lt (hK n).measure_lt_top)
-  · rw [← iUnion_union, union_compl_self]
+  exact μ.sigmaFinite_restrict_iUnion K fun n ↦ (hK n).measure_lt_top
 
 /-- A measure that is finite on compact sets has σ-finite pullback `μ.comap (↑)` to every measurable
 σ-compact set. -/
