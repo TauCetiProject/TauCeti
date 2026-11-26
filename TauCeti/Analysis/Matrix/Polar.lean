@@ -79,10 +79,7 @@ theorem det_sqrt_mul_star (A : Matrix n n 𝕜) : (CFC.sqrt (A * star A)).det = 
 /-- The determinant of the positive factor `√(Aᴴ A)` of the right polar decomposition is
 `‖det A‖`; this holds for every square matrix `A`, invertible or not. -/
 theorem det_sqrt_star_mul (A : Matrix n n 𝕜) : (CFC.sqrt (star A * A)).det = ‖A.det‖ := by
-  have hAA : (star A * A).PosSemidef := nonneg_iff_posSemidef.1 (star_mul_self_nonneg _)
-  rw [CFC.sqrt_eq_rpow, hAA.det_rpow, det_mul, star_eq_conjTranspose, det_conjTranspose,
-    RCLike.star_def, RCLike.conj_mul, ← RCLike.ofReal_pow, RCLike.ofReal_re, ← Real.sqrt_eq_rpow,
-    Real.sqrt_sq (norm_nonneg _)]
+  simpa [star_eq_conjTranspose, det_conjTranspose] using det_sqrt_mul_star (star A)
 
 namespace GeneralLinearGroup
 
