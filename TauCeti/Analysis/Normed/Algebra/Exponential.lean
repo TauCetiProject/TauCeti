@@ -31,8 +31,8 @@ Baker--Campbell--Hausdorff expansion.
 * `RCLike.exp_ofReal`: the exponential on real scalars in real or complex normed fields.
 * `RCLike.norm_exp`: the norm of the exponential of a real or complex scalar is the real
   exponential of its real part.
-* `IsIdempotentElem.exp_mul`: for an idempotent `P` commuting with `a`,
-  `exp (P * a) = P * exp a + 1 - P`.
+* `IsIdempotentElem.exp_mul`, `IsIdempotentElem.exp_smul`: for an idempotent `P` commuting with
+  `a`, `exp (P * a) = P * exp a + 1 - P`; in particular `exp (z • P) = 1 + (exp z - 1) • P`.
 * `NormedSpace.exp_real_smul_one`: the exponential of a real scalar multiple of the unit.
 * `NormedSpace.contDiff_exp`: the exponential is smooth of every order, including analytic.
 * `NormedSpace.tendsto_exp_nhds_zero_nhds_one`: the exponential tends to `1` at the origin.
@@ -172,6 +172,18 @@ theorem _root_.IsIdempotentElem.exp_mul [NormedAlgebra ℚ 𝔸] [CompleteSpace 
   rw [hf] at h
   rw [(exp_series_hasSum_exp' (𝕂 := ℚ) (P * a)).unique h]
   simp only [Nat.factorial_zero, Nat.cast_one, inv_one, pow_zero, one_smul, mul_one]
+  abel
+
+/-- Exponential of a scalar multiple of an idempotent in a complete normed algebra:
+`exp (z • P) = 1 + (exp z - 1) • P`. -/
+theorem _root_.IsIdempotentElem.exp_smul {𝕜 : Type*} [RCLike 𝕜] [NormedAlgebra 𝕜 𝔸]
+    [CompleteSpace 𝔸] {P : 𝔸} (hP : IsIdempotentElem P) (z : 𝕜) :
+    exp (z • P) = 1 + (exp z - 1) • P := by
+  let +nondep : NormedAlgebra ℚ 𝔸 := .restrictScalars ℚ 𝕜 𝔸
+  have hzP : z • P = P * (z • 1) := by rw [mul_smul_comm, mul_one]
+  rw [hzP, hP.exp_mul ((Commute.one_right P).smul_right z), ← Algebra.algebraMap_eq_smul_one,
+    ← algebraMap_exp_comm, Algebra.algebraMap_eq_smul_one, mul_smul_comm, mul_one, sub_smul,
+    one_smul]
   abel
 
 /-! ### Norm bounds by a scalar exponential -/

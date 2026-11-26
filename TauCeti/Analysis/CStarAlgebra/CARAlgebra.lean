@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Star.StarAlgHom
 public import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Basic
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 import Mathlib.Analysis.Normed.Ring.Units
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Ideal
 import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
 
