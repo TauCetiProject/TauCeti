@@ -98,6 +98,13 @@ theorem untilt_dvd_untilt_iff [IsDomain V] [IsIntegrallyClosed V] {x y : PreTilt
     x.untilt ∣ y.untilt ↔ x ∣ y :=
   ⟨dvd_of_untilt_dvd_untilt, map_dvd untilt⟩
 
+/-- **Units in the tilt are detected by the sharp map.** For a `p`-adically complete integrally
+closed domain `V` and `x ∈ V♭`, `x♯` is a unit of `V` if and only if `x` is a unit of `V♭`. -/
+@[simp]
+theorem isUnit_untilt_iff [IsDomain V] [IsIntegrallyClosed V] {x : PreTilt V p} :
+    IsUnit x.untilt ↔ IsUnit x := by
+  simpa only [isUnit_iff_dvd_one, map_one] using untilt_dvd_untilt_iff (x := x) (y := 1)
+
 /-- **The tilt of a `p`-adically complete valuation ring is a valuation ring.** -/
 instance instValuationRing [IsDomain V] [ValuationRing V] : ValuationRing (PreTilt V p) :=
   (ValuationRing.iff_dvd_total).mpr
