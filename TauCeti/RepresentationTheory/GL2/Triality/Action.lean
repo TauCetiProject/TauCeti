@@ -81,13 +81,13 @@ private noncomputable def tripleBasis :
   ((Matrix.stdBasis R (Fin 2) (Fin 2)).tensorProduct (Pi.basisFun R (Fin 2))).reindex
     tripleIndexEquiv
 
-/-- The coordinates of `x₀ x₂ᵀ ⊗ x₁` in the triple basis are the products of the coordinates of
+/-- The coordinates of `a cᵀ ⊗ b` in the triple basis are the products of the coordinates of
 the three vectors. -/
-private theorem tripleBasis_repr_vecMulVec_tmul (x : Fin 3 → Fin 2 → R) (i : Fin 3 → Fin 2) :
-    (tripleBasis R).repr (vecMulVec (x 0) (x 2) ⊗ₜ x 1) i = ∏ k, x k (i k) := by
+private theorem tripleBasis_repr_vecMulVec_tmul (a b c : Fin 2 → R) (i : Fin 3 → Fin 2) :
+    (tripleBasis R).repr (vecMulVec a c ⊗ₜ b) i = ∏ k, ![a, b, c] k (i k) := by
   simp only [tripleBasis, Module.Basis.repr_reindex_apply, tripleIndexEquiv_symm_apply,
     Module.Basis.tensorProduct_repr_tmul_apply, stdBasis_repr_apply, Pi.basisFun_repr,
-    vecMulVec_apply, smul_eq_mul, Fin.prod_univ_three]
+    vecMulVec_apply, smul_eq_mul, Fin.prod_univ_three, cons_val]
   ring
 
 /-- The identification of `M₂(R) ⊗[R] R²` with the triple tensor power of `R²`, sending
@@ -100,10 +100,10 @@ noncomputable def tripleTensorEquiv :
 
 variable {R}
 
-/-- The identification sends `x₀ x₂ᵀ ⊗ x₁` to the pure tensor `x₀ ⊗ x₁ ⊗ x₂`. -/
+/-- The identification sends `a cᵀ ⊗ b` to the pure tensor `a ⊗ b ⊗ c`. -/
 @[simp]
-theorem tripleTensorEquiv_vecMulVec_tmul (x : Fin 3 → Fin 2 → R) :
-    tripleTensorEquiv R (vecMulVec (x 0) (x 2) ⊗ₜ x 1) = ⨂ₜ[R] k, x k := by
+theorem tripleTensorEquiv_vecMulVec_tmul (a b c : Fin 2 → R) :
+    tripleTensorEquiv R (vecMulVec a c ⊗ₜ b) = ⨂ₜ[R] k, ![a, b, c] k := by
   refine (Basis.piTensorProduct fun _ : Fin 3 ↦ Pi.basisFun R (Fin 2)).repr.injective
     (Finsupp.ext fun i ↦ ?_)
   simp [tripleTensorEquiv, tripleBasis_repr_vecMulVec_tmul]
@@ -113,15 +113,17 @@ theorem tripleTensorEquiv_vecMulVec_tmul (x : Fin 3 → Fin 2 → R) :
 theorem tripleTensorEquiv_symm_tprod (x : Fin 3 → Fin 2 → R) :
     (tripleTensorEquiv R).symm (⨂ₜ[R] k, x k) = vecMulVec (x 0) (x 2) ⊗ₜ x 1 := by
   rw [LinearEquiv.symm_apply_eq, tripleTensorEquiv_vecMulVec_tmul]
+  congr 1
+  ext k
+  fin_cases k <;> rfl
 
-/-- Linear maps out of `M₂(R) ⊗[R] R²` agreeing on the tensors `x₀ x₂ᵀ ⊗ x₁` are equal. -/
+/-- Linear maps out of `M₂(R) ⊗[R] R²` agreeing on the tensors `a cᵀ ⊗ b` are equal. -/
 theorem linearMap_ext_vecMulVec_tmul {N : Type*} [AddCommMonoid N] [Module R N]
     {f g : Matrix (Fin 2) (Fin 2) R ⊗[R] (Fin 2 → R) →ₗ[R] N}
-    (h : ∀ x : Fin 3 → Fin 2 → R, f (vecMulVec (x 0) (x 2) ⊗ₜ x 1) =
-      g (vecMulVec (x 0) (x 2) ⊗ₜ x 1)) : f = g := by
+    (h : ∀ a b c : Fin 2 → R, f (vecMulVec a c ⊗ₜ b) = g (vecMulVec a c ⊗ₜ b)) : f = g := by
   refine (LinearMap.cancel_right (tripleTensorEquiv R).symm.surjective).mp
     (PiTensorProduct.ext (MultilinearMap.ext fun x ↦ ?_))
-  simpa using h x
+  simpa using h (x 0) (x 1) (x 2)
 
 section Action
 
@@ -148,20 +150,21 @@ theorem tripleTensorEquiv_representation (w : WreathProduct (GL (Fin 2) R) (Fin 
       (stdRep R 2).wreathTensor (Fin 3) w (tripleTensorEquiv R y) := by
   simp [representation, LinearEquiv.conjAlgEquiv_apply]
 
-/-- The triality representation on the tensors `x₀ x₂ᵀ ⊗ x₁`: the factor in position `k` moves to
-position `σ k`, for the permutation `σ` of `w`, and the matrix of `w` in each position is then
-applied. -/
+/-- The triality representation on the tensors `a cᵀ ⊗ b`: the factor in position `k` of
+`![a, b, c]` moves to position `σ k`, for the permutation `σ` of `w`, and the matrix of `w` in each
+position is then applied. -/
 theorem representation_vecMulVec_tmul (w : WreathProduct (GL (Fin 2) R) (Fin 3))
-    (x : Fin 3 → Fin 2 → R) :
-    representation R w (vecMulVec (x 0) (x 2) ⊗ₜ x 1) =
-      vecMulVec ((w.left 0 : Matrix (Fin 2) (Fin 2) R) *ᵥ x (w.right⁻¹ 0))
-          ((w.left 2 : Matrix (Fin 2) (Fin 2) R) *ᵥ x (w.right⁻¹ 2)) ⊗ₜ
-        ((w.left 1 : Matrix (Fin 2) (Fin 2) R) *ᵥ x (w.right⁻¹ 1)) := by
-  have h := tripleTensorEquiv_vecMulVec_tmul fun k ↦
-    (w.left k : Matrix (Fin 2) (Fin 2) R) *ᵥ x (w.right⁻¹ k)
+    (a b c : Fin 2 → R) :
+    representation R w (vecMulVec a c ⊗ₜ b) =
+      vecMulVec ((w.left 0 : Matrix (Fin 2) (Fin 2) R) *ᵥ ![a, b, c] (w.right⁻¹ 0))
+          ((w.left 2 : Matrix (Fin 2) (Fin 2) R) *ᵥ ![a, b, c] (w.right⁻¹ 2)) ⊗ₜ
+        ((w.left 1 : Matrix (Fin 2) (Fin 2) R) *ᵥ ![a, b, c] (w.right⁻¹ 1)) := by
   apply (tripleTensorEquiv R).injective
-  rw [h]
-  simp
+  rw [tripleTensorEquiv_representation, tripleTensorEquiv_vecMulVec_tmul,
+    tripleTensorEquiv_vecMulVec_tmul]
+  simp only [Representation.wreathTensor_apply_tprod, stdRep_apply]
+  refine congrArg _ (funext fun k ↦ ?_)
+  fin_cases k <;> rfl
 
 /-- A triple of invertible matrices acts on `M₂(R) ⊗[R] R²` by `m ⊗ v ↦ g₀ m g₂ᵀ ⊗ g₁ v`. -/
 @[simp]
@@ -174,7 +177,7 @@ theorem representation_inl_tmul (g : Fin 3 → GL (Fin 2) R) (m : Matrix (Fin 2)
       (LinearMap.mulLeft R (g 0 : Matrix (Fin 2) (Fin 2) R) ∘ₗ
         LinearMap.mulRight R (g 2 : Matrix (Fin 2) (Fin 2) R)ᵀ)
       (Matrix.toLin' (g 1 : Matrix (Fin 2) (Fin 2) R)) :=
-    linearMap_ext_vecMulVec_tmul fun x ↦ by
+    linearMap_ext_vecMulVec_tmul fun a b c ↦ by
       simp [representation_vecMulVec_tmul, mul_vecMulVec, vecMulVec_mul,
         vecMul_transpose]
   simp [h, Matrix.mul_assoc]
@@ -187,7 +190,7 @@ theorem representation_inr_swap_tmul (m : Matrix (Fin 2) (Fin 2) R) (v : Fin 2 �
   have h : representation R (SemidirectProduct.inr (Equiv.swap 0 2)) =
       TensorProduct.map (Matrix.transposeLinearEquiv (Fin 2) (Fin 2) R R).toLinearMap
         LinearMap.id :=
-    linearMap_ext_vecMulVec_tmul fun x ↦ by
+    linearMap_ext_vecMulVec_tmul fun a b c ↦ by
       simp [representation_vecMulVec_tmul, transpose_vecMulVec, Equiv.swap_apply_of_ne_of_ne]
   simp [h]
 
