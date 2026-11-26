@@ -49,6 +49,9 @@ With this sign the closed unit ball has `II = h`, the induced metric. The bounda
 * `TauCeti.boundarySecondFundamentalForm_apply_eq_inner_of_eq_outwardUnitNormal`: for every vector
   field `N` differentiable at `q` and equal to `ν_out` along `∂M` near `q`,
   `II_q(u, w) = ⟨∇_{dι u} N, dι w⟩`.
+* `TauCeti.inner_leviCivitaConnection_of_eq_inwardUnitNormal`: for every vector field `N`
+  differentiable at `q` and equal to `ν_in` along `∂M` near `q`,
+  `⟨∇_{dι u} N, dι w⟩ = -II_q(u, w)`; the inward normal reverses the sign of `II`.
 
 ## References
 
@@ -283,6 +286,30 @@ theorem boundarySecondFundamentalForm_apply_eq_inner_of_eq_outwardUnitNormal
   rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt,
     ← hWq, ← hNν.self_of_nhds, real_inner_comm (N q)]
   linarith
+
+/-- **The inward normal reverses the sign of the second fundamental form.** For every vector
+field `N` on `M`, differentiable at `q ∈ ∂M` and equal to the inward unit normal at the boundary
+points near `q`, `⟨∇_{dι u} N, dι w⟩ = -II_q(u, w)`. -/
+theorem inner_leviCivitaConnection_of_eq_inwardUnitNormal
+    (q : (𝓡∂ (n + 1)).boundary M) (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)
+    {N : (y : M) → TangentSpace (𝓡∂ (n + 1)) y} (hN : MDiffAt (T% N) (q : M))
+    (hNν : ∀ᶠ p : (𝓡∂ (n + 1)).boundary M in 𝓝 q, N p = inwardUnitNormal p) :
+    ⟪CovariantDerivative.leviCivitaConnection (𝓡∂ (n + 1)) M N q
+        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u),
+      mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w⟫_ℝ =
+      -boundarySecondFundamentalForm q u w := by
+  -- `-N` extends the outward unit normal.
+  have hN' : MDiffAt (T% ((-1 : ℝ) • N)) (q : M) :=
+    mdifferentiableAt_const.smul_section hN
+  have hNν' : ∀ᶠ p : (𝓡∂ (n + 1)).boundary M in 𝓝 q,
+      ((-1 : ℝ) • N) (p : M) = outwardUnitNormal p := by
+    filter_upwards [hNν] with p hp
+    rw [Pi.smul_apply, hp, neg_one_smul, neg_inwardUnitNormal]
+  rw [boundarySecondFundamentalForm_apply_eq_inner_of_eq_outwardUnitNormal q u w hN' hNν',
+    (CovariantDerivative.leviCivitaConnection (𝓡∂ (n + 1)) M).isCovariantDerivativeOn.smul_const
+      (s := Set.univ) (-1 : ℝ) hN, neg_one_smul, neg_apply, inner_neg_left, neg_neg]
 
 /-! ### The induced metric -/
 
