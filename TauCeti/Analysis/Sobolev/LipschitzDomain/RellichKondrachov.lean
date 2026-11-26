@@ -207,15 +207,13 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDim
 real inner product space and `U ⊆ F` a bounded open set satisfying the intrinsic Lipschitz-domain
 condition `(U : Set F).IsLipschitzDomain E'` for some normed tangential model space `E'`. For every
 additive Haar measure `μ` on `F` and `1 ≤ p ≤ ∞`, the value map `W^{1,p}(U) → Lᵖ(U)` is a compact
-operator.
-
-When `frontier U` is nonempty, a boundary chart carries `U` onto a Lipschitz domain of the model
-space `ℝ × E'`, where this is `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`; the
-change of Haar measure is `TauCeti.W1p.isCompactOperator_valueL_of_addHaar`. When `frontier U` is
-empty, `closure U ⊆ U` is compact and local Rellich compactness applies. -/
+operator. -/
 theorem W1p.isCompactOperator_valueL_of_isLipschitzDomain
     (hU : (U : Set F).IsLipschitzDomain E') (hb : IsBounded (U : Set F)) :
     IsCompactOperator (W1p.valueL (mu := mu) (Omega := U) (p := p)) := by
+  -- When `frontier U` is empty, `closure U ⊆ U` is compact and local Rellich compactness applies.
+  -- Otherwise a boundary chart carries `U` onto a Lipschitz domain of the model space `ℝ × E'`,
+  -- followed by a change of Haar measure.
   rcases (frontier (U : Set F)).eq_empty_or_nonempty with hfr | hne
   · have hcl : closure (U : Set F) ⊆ U :=
       (isClopen_iff_frontier_eq_empty.mpr hfr).isClosed.closure_subset
@@ -232,10 +230,8 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomain
   have _ : BorelSpace E' := ⟨rfl⟩
   let V : Opens (WithLp 2 (ℝ × E')) := ⟨g '' U, ((isLipschitzDomainWith_iff _ _).1 hL).1⟩
   exact W1p.isCompactOperator_valueL_of_addHaar (nu := volume)
-    (W1p.isCompactOperator_valueL_of_affineIsometryEquiv (V := V) g
-      (g.toHomeomorph.toEquiv.preimage_image _).symm
-      (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hL
-        (g.lipschitzWith.isBounded_image hb)))
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_of_affineIsometryEquiv (Ω := V) hL
+      (g.lipschitzWith.isBounded_image hb) g (g.toHomeomorph.image_eq_preimage_symm U))
 
 end Intrinsic
 

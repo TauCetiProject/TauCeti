@@ -289,7 +289,7 @@ theorem exists_hilbertBasis_nat_isMixedEigenvalue_monotone [Nonempty ι]
 
 variable (mu Omega Γ a b c) in
 /-- **The `k`-th mixed eigenvalue** of the divergence-form operator with coefficients `a, b, c` on
-`Ω`, with the Dirichlet condition on `Γ`, counted from `k = 0` with multiplicity, by the
+`Ω`, with the Dirichlet condition on `closure Γ`, counted from `k = 0` with multiplicity, by the
 Courant–Fischer min–max principle: the infimum of the constants `C` such that
 `a(v, v) ≤ C ‖v‖²_{L²(Ω)}` for every `v` in some subspace `W` of `H¹_Γ(Ω)` whose values span a
 subspace of `L²(Ω)` of dimension at least `k + 1`.
