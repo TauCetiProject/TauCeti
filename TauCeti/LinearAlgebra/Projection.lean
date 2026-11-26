@@ -24,7 +24,9 @@ sum to the identity, `TauCeti.sum_coe_internalProjection`.
 
 For a single complementary pair `F₀`, `F₁`, the projection onto `F₁` also computes any linear map
 vanishing on `F₀` from its values on a basis of `F₁`
-(`Submodule.apply_eq_sum_repr_projectionOnto`).
+(`Submodule.apply_eq_sum_repr_projectionOnto`). When `F₀` is the kernel of a linear form `f` and
+`F₁` the line spanned by a vector `v` with `f v = 1`, the projection onto `F₀` is
+`w ↦ w - f w • v` (`Submodule.projection_ker_span_singleton_apply`).
 
 Moving a map `f : α → M` by multiples of a vector `d` which lies on none of its secant lines keeps
 it injective (`TauCeti.injective_sub_smul`). This is the algebraic step of projecting along a
@@ -49,6 +51,8 @@ remains injective.
   summands commutes with the projections.
 * `Submodule.apply_eq_sum_repr_projectionOnto`: a linear map vanishing on `F₀` is determined by
   its values on a basis of a complement of `F₀`.
+* `Submodule.projection_ker_span_singleton_apply`: the projection onto the kernel of a linear
+  form `f` along a vector `v` with `f v = 1` is `w ↦ w - f w • v`.
 * `TauCeti.injective_sub_smul`: `x ↦ f x - a x • d` is injective when no secant of `f` is a
   multiple of `d`.
 
@@ -213,5 +217,15 @@ theorem apply_eq_sum_repr_projectionOnto {ι : Type*} [Fintype ι] {F₀ F₁ : 
     simpa using LinearMap.congr_fun (subtype_comp_projectionOnto_add_eq_id hF) v
   conv_lhs => rw [← hpq, map_add, hD, zero_add, ← b.sum_repr (F₁.projectionOnto F₀ hF.symm v)]
   simp only [coe_sum, coe_smul, map_sum, map_smul]
+
+/-- The projection onto the kernel of a linear form `f` along the line spanned by a vector `v` with
+`f v = 1` is `w ↦ w - f w • v`. -/
+theorem projection_ker_span_singleton_apply {f : V →ₗ[R] R} {v : V} (hv : f v = 1)
+    (h : IsCompl (LinearMap.ker f) (R ∙ v)) (w : V) :
+    (LinearMap.ker f).projection (R ∙ v) h w = w - f w • v := by
+  have hk : w - f w • v ∈ LinearMap.ker f := by simp [hv]
+  conv_lhs => rw [← sub_add_cancel w (f w • v)]
+  rw [map_add, projection_apply_of_mem_left h hk,
+    projection_apply_of_mem_right h (smul_mem _ _ (mem_span_singleton_self v)), add_zero]
 
 end Submodule
