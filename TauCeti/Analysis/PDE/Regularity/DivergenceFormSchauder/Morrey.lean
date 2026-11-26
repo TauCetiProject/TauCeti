@@ -213,17 +213,18 @@ private theorem exists_holderWith_and_setIntegral_inner_add_gradient_eq {α : �
                 ∫ x in Omega, h x * φ x := by
   obtain ⟨C₀, hC₀⟩ := exists_holderWith_and_integral_inner_gradient_eq_of_morreyNormPow_le
     (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) hα hα1
-  refine ⟨C₀ * 2 ^ ((n : ℝ) + α), fun {Omega h Kh} hΩ hh hhM => ?_⟩
+  refine ⟨C₀ * Real.toNNReal (2 ^ ((n : ℝ) + α)), fun {Omega h Kh} hΩ hh hhM => ?_⟩
   have hΩm := Omega.isOpen.measurableSet
   -- The extension of `h` by zero is a compactly supported Morrey function on the whole space.
-  obtain ⟨H, hH, hHeq⟩ := hC₀ ((Omega : Set _).indicator h) (2 ^ ((n : ℝ) + α) * Kh)
+  obtain ⟨H, hH, hHeq⟩ := hC₀ ((Omega : Set _).indicator h) (Real.toNNReal (2 ^ ((n : ℝ) + α)) * Kh)
     ((aestronglyMeasurable_indicator_iff hΩm).2 hh)
     (HasCompactSupport.intro' hΩ.isCompact_closure isClosed_closure fun x hx =>
       indicator_of_notMem (fun hx' => hx (subset_closure hx')) h)
     (by
-      rw [finrank_euclideanSpace_fin, Nat.cast_add, Nat.cast_one, add_sub_cancel_right,
-        ENNReal.coe_mul, ← ENNReal.ofReal_coe_nnreal, NNReal.coe_rpow, NNReal.coe_ofNat]
-      exact (morreyNormPow_univ_indicator_le one_pos).trans (by gcongr))
+      simp only [finrank_euclideanSpace_fin, Nat.cast_add_one, add_sub_cancel_right,
+        ENNReal.coe_mul]
+      -- `ENNReal.ofReal r` is by definition the coercion of `r.toNNReal`.
+      exact (morreyNormPow_univ_indicator_le one_pos).trans (mul_le_mul' le_rfl hhM))
   refine ⟨H, by rwa [mul_assoc], fun {G} hG φ => ?_⟩
   rw [setIntegral_inner_add_gradient_eq hG (hH.continuous hα) hHeq]
   congr 1
@@ -300,8 +301,7 @@ theorem exists_holderOnWith_gradient_ball_inter_closure_of_graph_of_morreyNormPo
   have hQ := mul_add_mul_add_add_le κ.coe_nonneg C.coe_nonneg KG.coe_nonneg Kh.coe_nonneg hF
     (norm_nonneg u)
   refine ⟨g, hg, hghol.mono_const ?_, fun y hy => (hgb y hy).trans (by push_cast; exact hQ)⟩
-  rw [← NNReal.coe_le_coe, NNReal.coe_mul, NNReal.coe_mul, Real.coe_toNNReal _ (by positivity),
-    Real.coe_toNNReal _ (by positivity)]
+  simp (disch := positivity) only [← NNReal.coe_le_coe, NNReal.coe_mul, Real.coe_toNNReal]
   push_cast
   exact hQ
 
