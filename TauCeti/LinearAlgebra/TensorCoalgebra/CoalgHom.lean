@@ -574,6 +574,31 @@ theorem IsCoalgHom.bijective_of_letter_comp_comp_ofLetter_bijective
 
 end Unipotent
 
+section SubFiltration
+
+variable {R : Type uR} {M : Type uM} {N : Type uN} [CommRing R] [AddCommMonoid M] [Module R M]
+  [AddCommGroup N] [Module R N]
+
+/-- If two coalgebra morphisms agree on `filtration n` at letters, their difference on
+`filtration (n + 1)` takes single-letter values. -/
+theorem IsCoalgHom.sub_apply_eq_ofLetter_of_mem_filtration
+    {F₁ F₂ : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R N} (h₁ : IsCoalgHom R F₁)
+    (h₂ : IsCoalgHom R F₂) {n : ℕ}
+    (hl : ∀ w ∈ filtration R M n, letter R N (F₁ w) = letter R N (F₂ w))
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M (n + 1)) :
+    F₁ z - F₂ z = ofLetter R N (letter R N (F₁ z) - letter R N (F₂ z)) := by
+  refine eq_of_deconcatenation_eq_of_letter_eq R N ?_ (by rw [map_sub, letter_ofLetter])
+  obtain ⟨w, hw⟩ := map_deconcatenation_filtration_succ_le R M n ⟨z, hz, rfl⟩
+  rw [deconcatenation_ofLetter, map_sub, h₁.deconcatenation_apply, h₂.deconcatenation_apply, ← hw,
+    sub_eq_zero]; clear hw
+  induction w using TensorProduct.inductionOn with
+  | tmul u v =>
+      simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype]
+      rw [h₁.apply_eq_of_mem_filtration h₂ hl u.2, h₁.apply_eq_of_mem_filtration h₂ hl v.2]
+  | add _ _ hu hv => simp only [map_add, hu, hv]
+
+end SubFiltration
+
 end ReducedTensorWords
 
 end TauCeti

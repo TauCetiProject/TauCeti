@@ -292,6 +292,12 @@ theorem linearPart_m_one (f : AInfinityHom AA BB) (a : A) :
     ReducedTensorWords.letter_ofLetter, ReducedTensorWords.letter_ofLetter] at h
   exact h.symm
 
+/-- The linear part of an `A∞` morphism intertwines the unary differentials. -/
+theorem differential_comp_linearPart (f : AInfinityHom AA BB) :
+    BB.differential ∘ₗ f.linearPart = f.linearPart ∘ₗ AA.differential :=
+  LinearMap.ext fun a ↦ by
+    simp only [LinearMap.comp_apply, AInfinityAlgebra.differential_apply, f.linearPart_m_one]
+
 @[simp]
 theorem linearPart_id (AA : AInfinityAlgebra R A) :
     (AInfinityHom.id AA).linearPart = LinearMap.id := by
