@@ -36,8 +36,8 @@ product only changes by the term `χ' u`
 ## Main declarations
 
 * `TauCeti.ParabolicCkHolderSpace.compSlabTime`: the map `(x, t) ↦ g t` in `C_{par,b}^{k+α}`, with
-  its values `compSlabTime_apply` and fields `mixedDerivL_zero_compSlabTime_apply` and
-  `mixedDerivL_succ_compSlabTime`.
+  its values `compSlabTime_apply`, fields `mixedDerivL_zero_compSlabTime_apply` and
+  `mixedDerivL_succ_compSlabTime`, and time derivative `timeDerivL_compSlabTime`.
 * `TauCeti.ParabolicCkHolderSpace.norm_compSlabTime_le`: its norm bound.
 * `ParabolicCkHolderSpace.parabolicOperatorL_compParabolicCkHolder₂_lsmul_compSlabTime_apply`:
   the parabolic operator applied to the product of a map of time with a map of order `k + 2`.
@@ -230,6 +230,16 @@ theorem mixedDerivL_succ_compSlabTime (r m : ℕ) :
 theorem spatialFDerivL_compSlabTime {k : ℕ} (hg : ContDiff ℝ ((k + 1) / 2 + 1 : ℕ) g) :
     spatialFDerivL k α E F hab (compSlabTime hα hg) = 0 :=
   ext fun p ↦ ContinuousLinearMap.ext fun v ↦ by simp [spatialFDerivL_apply]
+
+/-- The time derivative of the map `(x, t) ↦ g t` is the map `(x, t) ↦ g' t`. -/
+@[simp]
+theorem timeDerivL_compSlabTime {k : ℕ} (hg : ContDiff ℝ ((k + 2) / 2 + 1 : ℕ) g) :
+    timeDerivL k α E F hab (compSlabTime hα hg) =
+      compSlabTime hα
+        (hg.of_le (by exact_mod_cast (by omega : k / 2 + 1 + 1 ≤ (k + 2) / 2 + 1))).deriv' := by
+  ext p
+  rw [timeDerivL_apply, mixedDerivL_zero_compSlabTime_apply hα hg (by omega), compSlabTime_apply]
+  simp [iteratedDeriv_one]
 
 /-- **The norm of a map of time alone.** If `M` bounds `g, g', …, g⁽⌊k/2⌋⁺¹⁾` on `[a, b]`, then
 the norm of `(x, t) ↦ g t` in `C_{par,b}^{k+α}(E × [a, b])` is at most `9 (k + 1)² M`, whatever
