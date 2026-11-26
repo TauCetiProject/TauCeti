@@ -19,8 +19,8 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Von
 Subtract the linear main term from the norm-regrouped Riesz sum of a primitive character's
 von Mangoldt coefficients. For the trivial character, subtract instead the logarithmic and
 linear main terms associated with the simple pole of the Dedekind zeta function.
-The remainders are continuous, respect conjugation, and have absolutely convergent Mellin
-integrals on `Re s > 1`.
+The remainders are continuous, respect conjugation, and for `Re s > 1` their Mellin integrals
+`∫_1^∞ R(y) y ^ (-s - 1) dy` converge absolutely.
 
 The rational normalization is that of Levent Alpöge's `Deduction.Gchi`
 (<https://github.com/leanprover-community/riemann-hypothesis>).
@@ -61,14 +61,12 @@ theorem rieszCoeff_def (ψ : PrimitiveRayClassCharacter K) : ψ.rieszCoeff =
     IdealArithmeticFunction.vonMangoldtTransform_star, normCoeff_star_apply, Complex.star_def]
 
 /-- The twisted von Mangoldt coefficients have an absolutely convergent Dirichlet series on
-`Re s > 1`. -/
+`Re s > 1`: the case of `ψ`'s unitary weight in
+`UnitaryIdealWeight.LSeriesSummable_normCoeff_vonMangoldtTransform`. -/
 theorem LSeriesSummable_rieszCoeff (ψ : PrimitiveRayClassCharacter K) {s : ℂ} (hs : 1 < s.re) :
     LSeriesSummable ψ.rieszCoeff s := by
   rw [rieszCoeff_def]
-  exact LSeriesSummable_normCoeff K <|
-    IdealArithmeticFunction.summable_idealTerm_vonMangoldtTransform <|
-      idealAbscissaOfAbsConv_lt_re_of_bounded (C := 1)
-        (fun I ↦ by simpa using ψ.character.toUnitaryIdealWeight.norm_le_one (I : Ideal (𝓞 K))) hs
+  exact ψ.character.toUnitaryIdealWeight.LSeriesSummable_normCoeff_vonMangoldtTransform hs
 
 /-- The first Riesz sum of the twisted von Mangoldt coefficients with its main term removed.
 The trivial character uses the logarithmic term and the Euler–Kronecker constant of `K`; the
@@ -115,10 +113,7 @@ theorem rieszRemainder_of_ne_one (ψ : PrimitiveRayClassCharacter K) (hψ : ψ �
       rw [← rieszCoeff_inv, inv_one]
     simp only [inv_one, rieszRemainder_one, map_add, conj_ofReal, ← rieszCoeff_one,
       ← rieszSum_conj, hcoeff]
-  · have hinv : ψ⁻¹ ≠ 1 := by
-      intro h
-      apply hψ
-      simpa only [inv_inv, inv_one] using congrArg Inv.inv h
+  · have hinv : ψ⁻¹ ≠ 1 := (inv_injective.eq_iff' inv_one).not.mpr hψ
     have hcoeff : ψ⁻¹.rieszCoeff = fun n ↦ conj (ψ.rieszCoeff n) := funext (ψ.rieszCoeff_inv)
     have hlog : logDeriv (heckeLFunctionC ψ.character⁻¹) 1 =
         conj (logDeriv (heckeLFunctionC ψ.character) 1) := by
@@ -134,8 +129,6 @@ theorem exists_norm_rieszRemainder_le_rpow (ψ : PrimitiveRayClassCharacter K) {
   have hsum (y : ℝ) (hy : 1 ≤ y) : ‖rieszSum ψ.rieszCoeff y‖ ≤ M * y ^ σ := by
     simpa only [M, mul_comm] using norm_rieszSum_le hσ.le (zero_le_one.trans hy)
       (ψ.LSeriesSummable_rieszCoeff (s := (σ : ℂ)) (by simpa using hσ))
-  have hpow (y : ℝ) (hy : 1 ≤ y) : y ≤ y ^ σ := by
-    simpa only [Real.rpow_one] using Real.rpow_le_rpow_of_exponent_le hy hσ.le
   by_cases hψ : ψ = 1
   · refine ⟨M + |1 + NumberField.eulerKroneckerConstant K| + (σ - 1)⁻¹, fun y hy ↦ ?_⟩
     have hy₀ : 0 ≤ y := zero_le_one.trans hy
@@ -155,7 +148,8 @@ theorem exists_norm_rieszRemainder_le_rpow (ψ : PrimitiveRayClassCharacter K) {
       refine (abs_sub _ _).trans ?_
       rw [abs_mul, abs_mul, abs_of_nonneg hy₀, abs_of_nonneg (Real.log_nonneg hy)]
       rw [mul_comm y |1 + NumberField.eulerKroneckerConstant K|]
-      exact add_le_add (mul_le_mul_of_nonneg_left (hpow y hy) (abs_nonneg _)) hlog
+      exact add_le_add
+        (mul_le_mul_of_nonneg_left (Real.self_le_rpow_of_one_le hy hσ.le) (abs_nonneg _)) hlog
     rw [hψ, rieszRemainder_one, ← rieszCoeff_one]
     have hsum' : ‖rieszSum (1 : PrimitiveRayClassCharacter K).rieszCoeff y‖ ≤ M * y ^ σ := by
       simpa only [← hψ] using hsum y hy
@@ -166,7 +160,7 @@ theorem exists_norm_rieszRemainder_le_rpow (ψ : PrimitiveRayClassCharacter K) {
     refine (norm_add_le _ _).trans (add_le_add (hsum y hy) ?_)
     rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (zero_le_one.trans hy),
       mul_comm y]
-    exact mul_le_mul_of_nonneg_left (hpow y hy) (norm_nonneg D)
+    exact mul_le_mul_of_nonneg_left (Real.self_le_rpow_of_one_le hy hσ.le) (norm_nonneg D)
 
 /-- The Mellin integrand of the first Riesz remainder is absolutely integrable on the upper
 ray for `Re s > 1`. -/
