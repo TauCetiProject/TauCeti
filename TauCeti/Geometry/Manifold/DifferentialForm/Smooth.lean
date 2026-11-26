@@ -319,6 +319,11 @@ theorem eval₂_neg (φ : SmoothBundleForm I F V 2) (x : M) (v w : TangentSpace 
     (-φ).eval₂ x v w = -φ.eval₂ x v w :=
   (rfl)
 
+/-- Evaluation of a difference of degree-two forms is the difference of the evaluations. -/
+theorem eval₂_sub (φ ψ : SmoothBundleForm I F V 2) (x : M) (v w : TangentSpace I x) :
+    (φ - ψ).eval₂ x v w = φ.eval₂ x v w - ψ.eval₂ x v w := by
+  rw [sub_eq_add_neg, eval₂_add, eval₂_neg, ← sub_eq_add_neg]
+
 /-- Ordered-pair evaluation is additive in its first tangent argument. -/
 theorem eval₂_add_left (φ : SmoothBundleForm I F V 2) (x : M)
     (v v' w : TangentSpace I x) :
