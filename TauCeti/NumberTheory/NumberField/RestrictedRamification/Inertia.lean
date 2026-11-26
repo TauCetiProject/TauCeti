@@ -204,11 +204,8 @@ theorem localToGaloisGroupS_eq_one_of_mem_inertia {S : Set (HeightOneSpectrum (�
     (hg : g ∈ separableClosureInertiaSubgroup (v.adicCompletion K)) :
     localToGaloisGroupS K S v τ g = 1 := by
   rw [localToGaloisGroupS_apply]
-  have hmem : absoluteGaloisGroupMap τ g ∈
-      (restrictionS K (SeparableClosure K) S).toMonoidHom.ker := by
-    rw [ker_restrictionS]
-    exact absoluteGaloisGroupMap_mem_fixingSubgroup_maxUnramifiedOutside K hv τ hg
-  exact MonoidHom.mem_ker.1 hmem
+  exact (restrictionS_eq_one_iff K (SeparableClosure K) S).2
+    (absoluteGaloisGroupMap_mem_fixingSubgroup_maxUnramifiedOutside K hv τ hg)
 
 private theorem ramificationIdx_eq_one_of_inertia_le_fixingSubgroup
     {S : Set (HeightOneSpectrum (𝓞 K))} {L : IntermediateField K (SeparableClosure K)}
