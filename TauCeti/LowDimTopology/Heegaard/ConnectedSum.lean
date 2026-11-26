@@ -518,31 +518,19 @@ theorem single_mem_hatDomains_sumCircleTimesSphere (x : H.Generator) (k : Fin 2)
     · fin_cases k <;> fin_cases m <;> simp
   · fin_cases k <;> simp
 
-/-- When `r₀` contains a basepoint, a domain of the connected sum is counted by its hat
-differential from `(x, i)` to `(y, j)` exactly when its restriction to the old regions is a
-nonnegative domain from `x` to `y` avoiding the basepoints, its multiplicities on the two bigons
-are nonnegative with sum `j - i`, and the Maslov index of the restriction plus that sum is one. -/
-private theorem mem_hatDomains_sumCircleTimesSphere_addBasepointGenerator_iff
-    (hr₀ : r₀ ∈ Set.range H.basepoint) {x y : H.Generator} {i j : Fin 2}
-    {D : Region ⊕ Fin 2 → ℤ} :
-    D ∈ (H.sumCircleTimesSphere r₀).hatDomains (sumCircleTimesSphereEuler χ r₀)
-        (H.addBasepointGenerator r₀ x i) (H.addBasepointGenerator r₀ y j) ↔
-      H.IsDomainBetween x y (D ∘ Sum.inl) ∧ (∀ z, D (Sum.inl (H.basepoint z)) = 0) ∧
-        0 ≤ D ∘ Sum.inl ∧ 0 ≤ D (Sum.inr 0) ∧ 0 ≤ D (Sum.inr 1) ∧
-          D (Sum.inr 0) + D (Sum.inr 1) = (j : ℤ) - i ∧
-            H.maslovIndex χ x y (D ∘ Sum.inl) + D (Sum.inr 0) + D (Sum.inr 1) = 1 := by
-  obtain ⟨z₀, rfl⟩ := hr₀
-  rw [mem_hatDomains_iff, isDomainBetween_sumCircleTimesSphere_iff,
-    maslovIndex_sumCircleTimesSphere]
-  simp only [Pi.le_def, Sum.forall, Pi.zero_apply, Function.comp_apply, Fin.forall_fin_two]
-  constructor
-  · rintro ⟨⟨hD, hs⟩, hz, ⟨hD0, h0, h1⟩, hμ⟩
-    have hr : D (Sum.inl (H.basepoint z₀)) = 0 := hz z₀
-    rw [hr] at hs hμ
-    exact ⟨hD, hz, hD0, h0, h1, by simpa using hs, by simpa using hμ⟩
-  · rintro ⟨hD, hz, hD0, h0, h1, hs, hμ⟩
-    have hr : D (Sum.inl (H.basepoint z₀)) = 0 := hz z₀
-    exact ⟨⟨hD, by simpa [hr] using hs⟩, hz, ⟨hD0, h0, h1⟩, by simpa [hr] using hμ⟩
+/-- When `r₀` contains a basepoint, a description of the domains counted by the hat differential
+of the diagram with an added basepoint as an image `f '' T` gives one of the connected sum as
+`g '' T`, as soon as each `g t` pulls back to `f t`. -/
+private theorem hatDomains_sumCircleTimesSphere_eq_image {α : Type*}
+    (hr₀ : r₀ ∈ Set.range H.basepoint) {x y : (H.addBasepoint r₀).Generator} {T : Set α}
+    {f : α → Region ⊕ Fin 3 → ℤ} {g : α → Region ⊕ Fin 2 → ℤ}
+    (hf : (H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀) x y = f '' T)
+    (hfg : ∀ t ∈ T, g t ∘ sumCircleTimesSphereRegion r₀ = f t) :
+    (H.sumCircleTimesSphere r₀).hatDomains (sumCircleTimesSphereEuler χ r₀) x y = g '' T := by
+  refine Set.image_injective.mpr (sumCircleTimesSphereRegion_surjective r₀).injective_comp_right ?_
+  rw [← H.hatDomains_addBasepoint_eq_image_hatDomains_sumCircleTimesSphere r₀ hr₀, hf,
+    Set.image_image]
+  exact (Set.image_congr hfg).symm
 
 /-- Between generators with the same new point, the domains counted by the hat differential of
 the connected sum with `S¹ × S²` in a region containing a basepoint are those of the original
@@ -552,21 +540,15 @@ theorem hatDomains_sumCircleTimesSphere_self (hr₀ : r₀ ∈ Set.range H.basep
     (H.sumCircleTimesSphere r₀).hatDomains (sumCircleTimesSphereEuler χ r₀)
         (H.addBasepointGenerator r₀ x i) (H.addBasepointGenerator r₀ y i) =
       (fun E : Region → ℤ => (Sum.elim E 0 : Region ⊕ Fin 2 → ℤ)) '' H.hatDomains χ x y := by
-  ext D
-  rw [H.mem_hatDomains_sumCircleTimesSphere_addBasepointGenerator_iff r₀ hr₀]
-  constructor
-  · rintro ⟨hD, hz, hD0, h0, h1, hs, hμ⟩
-    have h0' : D (Sum.inr 0) = 0 := by omega
-    have h1' : D (Sum.inr 1) = 0 := by omega
-    refine ⟨D ∘ Sum.inl, mem_hatDomains_iff.mpr ⟨hD, hz, hD0, by simpa [h0', h1'] using hμ⟩, ?_⟩
-    funext s
-    rcases s with s | k
-    · rfl
-    · fin_cases k <;> simp [h0', h1']
-  · rintro ⟨E, hE, rfl⟩
-    obtain ⟨hE, hz, hE0, hμ⟩ := mem_hatDomains_iff.mp hE
-    exact ⟨by simpa using hE, by simpa using hz, by simpa using hE0, by simp, by simp, by simp,
-      by simpa using hμ⟩
+  refine H.hatDomains_sumCircleTimesSphere_eq_image r₀ hr₀
+    (H.hatDomains_addBasepoint_self r₀ hr₀ x y i) fun E hE => ?_
+  obtain ⟨z₀, rfl⟩ := hr₀
+  -- The lens is pulled back from `r₀`, where `E` vanishes because `r₀` contains a basepoint.
+  have hz : E (H.basepoint z₀) = 0 := (mem_hatDomains_iff.mp hE).2.1 z₀
+  funext s
+  rcases s with s | k
+  · rfl
+  · fin_cases k <;> simp [hz]
 
 /-- From the new point `p` to the new point `q`, a domain counted by the hat differential of the
 connected sum with `S¹ × S²` in a region containing a basepoint is a nonnegative domain of Maslov
@@ -579,29 +561,16 @@ theorem hatDomains_sumCircleTimesSphere_zero_one (hr₀ : r₀ ∈ Set.range H.b
       (fun c : (Region → ℤ) × Fin 2 => Sum.elim c.1 (Pi.single c.2 1)) ''
         ({E | H.IsDomainBetween x y E ∧ (∀ z, E (H.basepoint z) = 0) ∧ 0 ≤ E ∧
           H.maslovIndex χ x y E = 0} ×ˢ Set.univ) := by
-  ext D
-  rw [H.mem_hatDomains_sumCircleTimesSphere_addBasepointGenerator_iff r₀ hr₀]
-  constructor
-  · rintro ⟨hD, hz, hD0, h0, h1, hs, hμ⟩
-    simp only [Fin.isValue, Fin.val_one, Fin.val_zero, Nat.cast_one, Nat.cast_zero,
-      sub_zero] at hs
-    obtain ⟨k, hk0, hk1⟩ : ∃ k : Fin 2, D (Sum.inr 0) = (Pi.single k 1 : Fin 2 → ℤ) 0 ∧
-        D (Sum.inr 1) = (Pi.single k 1 : Fin 2 → ℤ) 1 := by
-      rcases (by omega : D (Sum.inr 0) = 1 ∧ D (Sum.inr 1) = 0 ∨
-          D (Sum.inr 0) = 0 ∧ D (Sum.inr 1) = 1) with h | h
-      · exact ⟨0, by simpa using h⟩
-      · exact ⟨1, by simpa using h⟩
-    refine ⟨⟨D ∘ Sum.inl, k⟩, ⟨⟨hD, hz, hD0, ?_⟩, Set.mem_univ _⟩, ?_⟩
-    · have : (D (Sum.inr 0) : ℚ) + D (Sum.inr 1) = 1 := by exact_mod_cast hs
-      linarith
-    · funext s
-      rcases s with s | m
-      · rfl
-      · fin_cases m <;> fin_cases k <;> simp_all
-  · rintro ⟨⟨E, k⟩, ⟨⟨hE, hz, hE0, hμ⟩, -⟩, rfl⟩
-    fin_cases k <;>
-      exact ⟨by simpa using hE, by simpa using hz, by simpa using hE0, by simp, by simp, by simp,
-        by simp [hμ]⟩
+  refine H.hatDomains_sumCircleTimesSphere_eq_image r₀ hr₀
+    (H.hatDomains_addBasepoint_zero_one r₀ hr₀ x y) ?_
+  rintro ⟨E, k⟩ ⟨⟨-, hz, -⟩, -⟩
+  obtain ⟨z₀, rfl⟩ := hr₀
+  -- As before, the lens is pulled back from `r₀`, where `E` vanishes.
+  have hz₀ : E (H.basepoint z₀) = 0 := hz z₀
+  funext s
+  rcases s with s | m
+  · rfl
+  · fin_cases m <;> fin_cases k <;> simp [hz₀]
 
 /-- No domain counted by the hat differential of the connected sum with `S¹ × S²` in a region
 containing a basepoint runs from the new point `q` to the new point `p`. -/
@@ -609,13 +578,9 @@ theorem hatDomains_sumCircleTimesSphere_one_zero (hr₀ : r₀ ∈ Set.range H.b
     (x y : H.Generator) :
     (H.sumCircleTimesSphere r₀).hatDomains (sumCircleTimesSphereEuler χ r₀)
         (H.addBasepointGenerator r₀ x 1) (H.addBasepointGenerator r₀ y 0) = ∅ := by
-  ext D
-  simp only [H.mem_hatDomains_sumCircleTimesSphere_addBasepointGenerator_iff r₀ hr₀,
-    Set.mem_empty_iff_false, iff_false]
-  rintro ⟨-, -, -, h0, h1, hs, -⟩
-  simp at hs
-  omega
-
+  rw [← Set.image_eq_empty (f := (· ∘ sumCircleTimesSphereRegion r₀)),
+    ← H.hatDomains_addBasepoint_eq_image_hatDomains_sumCircleTimesSphere r₀ hr₀,
+    H.hatDomains_addBasepoint_one_zero r₀ hr₀]
 
 end Hat
 
