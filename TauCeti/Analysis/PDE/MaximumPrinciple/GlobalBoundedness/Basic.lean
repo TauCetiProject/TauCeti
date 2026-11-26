@@ -220,7 +220,7 @@ private theorem toReal_eLpNorm_posPartAbove_le
     mul_norm_gradient_posPartAbove_sq_le hcoeff hc_nonneg hκ hu hk hboundary hkl
   -- The Sobolev inequality, in real form.
   have hsob := hS w hw0
-  have hwLp : MemLp (W1p.value w) s ν := lt_of_le_of_lt hsob (by finiteness)
+  have hwLp : MemLp (W1p.value w) s ν := W1p.memLp_value_of_eLpNorm_le hsob
   have hsobR : (eLpNorm (W1p.value w) s ν).toReal ≤ S * ‖W1p.gradient w‖ :=
     W1p.toReal_eLpNorm_value_le_mul_norm_gradient hsob
   -- Hölder's inequality on the superlevel set `{u > l}`, off which `w` vanishes.
@@ -560,7 +560,7 @@ private theorem toReal_eLpNorm_posPartAbove_le_of_mul_norm_gradient_sq_le
   have h2q : 2 / (q : ℝ) = 2 * (q : ℝ)⁻¹ := by ring
   -- The Sobolev inequality, in real form.
   have hsob := hS w hw0
-  have hwLp : MemLp (W1p.value w) s ν := lt_of_le_of_lt hsob (by finiteness)
+  have hwLp : MemLp (W1p.value w) s ν := W1p.memLp_value_of_eLpNorm_le hsob
   have hsobR : (eLpNorm (W1p.value w) s ν).toReal ≤ S * ‖W1p.gradient w‖ :=
     W1p.toReal_eLpNorm_value_le_mul_norm_gradient hsob
   -- `w` and `∇w` vanish off `A = {u > l}`.
