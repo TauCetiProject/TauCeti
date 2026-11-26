@@ -27,8 +27,8 @@ The proof has two steps:
    `(k → O) ⧸ Submodule.span O (Set.range M.row)` has length equal to the least valuation of a
    maximal minor `(M.submatrix f id).det` (`Matrix.isLeast_length_quotient_span_range_row`): every
    choice of `k` rows spans a sublattice whose colength is the valuation of the corresponding minor
-   (`Matrix.length_quotient_span_range_eq_addVal_det`), while if the quotient has finite length it
-   is spanned by the rows of a square matrix
+   (`Matrix.length_quotient_span_range_eq_addVal_det`), while if the quotient has finite length
+   the row submodule is spanned by the rows of a square matrix
    (`IsDiscreteValuationRing.exists_matrix_span_range_row_eq`) whose determinant is divisible by
    any common divisor of those minors (`Matrix.dvd_det_of_forall_row_mem_span`).
 
