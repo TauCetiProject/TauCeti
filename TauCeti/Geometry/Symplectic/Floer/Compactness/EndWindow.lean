@@ -19,8 +19,9 @@ are the translates by `(m, 0)`, for `m ∈ ℕ`, of two end windows
 `TauCeti.Floer.endWindow T b = (T + 1, T + 3) × (c - 2/5, c + 2/5)`, with `c = 0` for `b = false`
 and `c = 1/2` for `b = true`.
 
-This file records the bookkeeping that does not depend on a chart of the end: the end windows are
-open, their closures translated by `(m, 0)`, `m ≥ 0`, lie beyond `T` in a band of angular width one
+This file records the bookkeeping that does not depend on a chart of the end: membership in an end
+window is characterized by `TauCeti.Floer.mem_endWindow_iff`, the end windows are open, their
+closures translated by `(m, 0)`, `m ≥ 0`, lie beyond `T` in a band of angular width one
 (`TauCeti.Floer.add_mem_Ioi_prod_Ioo`), and every point `(s, t)` with `s > T + 1` is the translate
 of a point of an end window by `(m, k)` for some `m ∈ ℕ` and `k ∈ ℤ`
 (`TauCeti.Floer.exists_sub_mem_endWindow`). A chart of the end that is periodic of period one in
@@ -38,6 +39,14 @@ cylindrical end, with `c = 0` for `b = false` and `c = 1/2` for `b = true`. -/
 noncomputable def endWindow (T : ℝ) (b : Bool) : Set (ℝ × ℝ) :=
   Ioo (T + 1) (T + 3) ×ˢ
     Ioo ((bif b then 1 / 2 else 0) - 2 / 5) ((bif b then 1 / 2 else 0) + 2 / 5)
+
+/-- Membership in an end window: `(s, t) ∈ endWindow T b` if and only if `T + 1 < s < T + 3`
+and `c - 2/5 < t < c + 2/5`, with `c = 0` for `b = false` and `c = 1/2` for `b = true`. -/
+@[simp]
+theorem mem_endWindow_iff {T : ℝ} {b : Bool} {y : ℝ × ℝ} :
+    y ∈ endWindow T b ↔ T + 1 < y.1 ∧ y.1 < T + 3 ∧
+      (bif b then 1 / 2 else 0) - 2 / 5 < y.2 ∧ y.2 < (bif b then 1 / 2 else 0) + 2 / 5 := by
+  rw [endWindow, mem_prod, mem_Ioo, mem_Ioo, and_assoc]
 
 /-- The end windows are open. -/
 theorem isOpen_endWindow (T : ℝ) (b : Bool) : IsOpen (endWindow T b) :=
@@ -77,12 +86,13 @@ theorem exists_sub_mem_endWindow {T s : ℝ} (hs : T + 1 < s) (t : ℝ) :
   have hf₀ : 0 ≤ t - ⌊t⌋ := Int.self_sub_floor t ▸ Int.fract_nonneg t
   have hf₁ : t - ⌊t⌋ < 1 := Int.self_sub_floor t ▸ Int.fract_lt_one t
   by_cases h₁ : t - ⌊t⌋ < 2 / 5
-  · exact ⟨m, ⌊t⌋, false, ⟨hm₁, hm₂⟩, by simp only [Bool.cond_false]; linarith,
-      by simp only [Bool.cond_false]; linarith⟩
+  · exact ⟨m, ⌊t⌋, false, mem_endWindow_iff.2 ⟨hm₁, hm₂, by simp only [Bool.cond_false]; linarith,
+      by simp only [Bool.cond_false]; linarith⟩⟩
   by_cases h₂ : t - ⌊t⌋ < 9 / 10
-  · exact ⟨m, ⌊t⌋, true, ⟨hm₁, hm₂⟩, by simp only [Bool.cond_true]; linarith,
-      by simp only [Bool.cond_true]; linarith⟩
-  · exact ⟨m, ⌊t⌋ + 1, false, ⟨hm₁, hm₂⟩, by push_cast; simp only [Bool.cond_false]; linarith,
-      by push_cast; simp only [Bool.cond_false]; linarith⟩
+  · exact ⟨m, ⌊t⌋, true, mem_endWindow_iff.2 ⟨hm₁, hm₂, by simp only [Bool.cond_true]; linarith,
+      by simp only [Bool.cond_true]; linarith⟩⟩
+  · exact ⟨m, ⌊t⌋ + 1, false, mem_endWindow_iff.2 ⟨hm₁, hm₂,
+      by push_cast; simp only [Bool.cond_false]; linarith,
+      by push_cast; simp only [Bool.cond_false]; linarith⟩⟩
 
 end TauCeti.Floer

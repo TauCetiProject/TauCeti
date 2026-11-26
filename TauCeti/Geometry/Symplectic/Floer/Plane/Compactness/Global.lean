@@ -344,9 +344,9 @@ private theorem exists_pos_forall_window (hω : ω.IsNondegenerate) (p : PSSPlan
       he_inj hc hJendc hL'
       (D := Icc (T + 1) (T + 3) ×ˢ Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5)
         ((bif b then 1 / 2 else 0) + 2 / 5)) (isCompact_Icc.prod isCompact_Icc)
-      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2) fun y hy ↦ by
-        have h := add_mem_Ioi_prod_Ioo (T := T) (m := 0) le_rfl hy
-        rwa [Prod.mk_zero_zero, add_zero, ← max_eq_left hT] at h
+      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2) fun y hy ↦
+        prod_mono_left (Ioi_subset_Ioi (max_le le_rfl hT)) <| by
+          simpa using add_mem_Ioi_prod_Ioo (T := T) (m := 0) le_rfl hy
   obtain ⟨δc, hδc, hconvc⟩ :=
     hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pssPlanePerturbation
       p hH hHs hB isOpen_univ (isCompact_setOf_norm_equivRealProdCLM_symm_le _) (subset_univ _)

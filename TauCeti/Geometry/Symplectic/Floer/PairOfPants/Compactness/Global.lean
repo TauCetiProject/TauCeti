@@ -348,9 +348,9 @@ private theorem exists_pos_forall_window (ω : SymplecticForm V) (hH : ∀ q, Pe
       (hHs q) (hJqt q) (hJq q) (fun s t x hs ↦ hJe q s t x ((le_max_left _ _).trans hs))
       (D := Icc (max T₀ 2 + 1) (max T₀ 2 + 3) ×ˢ Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5)
         ((bif b then 1 / 2 else 0) + 2 / 5)) (isCompact_Icc.prod isCompact_Icc)
-      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2) (fun y hy ↦ by
-        have h := add_mem_Ioi_prod_Ioo (m := 0) le_rfl hy
-        rwa [Prod.mk_zero_zero, add_zero, ← max_eq_left (by linarith : (0 : ℝ) ≤ max T₀ 2)] at h)
+      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2) (fun y hy ↦
+        prod_mono_left (Ioi_subset_Ioi (max_le le_rfl (by linarith))) <| by
+          simpa using add_mem_Ioi_prod_Ioo (m := 0) le_rfl hy)
       hK
   obtain ⟨δc, hδc, hconvc⟩ :=
     exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPantsPerturbation ω hH
@@ -377,8 +377,8 @@ private theorem exists_pos_forall_window (ω : SymplecticForm V) (hH : ∀ q, Pe
     obtain ⟨hc', v', hv'⟩ :=
       concentration_and_tendstoLocallyUniformlyOn_image_positiveEndChart_add ω hH hHd
         (fun k ↦ (hu (ψ k)).differentiableOn (by norm_num)) hT (isOpen_endWindow _ b)
-        (fun y hy ↦ max_eq_left (by linarith : (0 : ℝ) ≤ max T₀ 2) ▸ add_mem_Ioi_prod_Ioo
-          (Nat.cast_nonneg m) (endWindow_subset_Icc_prod_Icc _ b hy)) hZΩ
+        (fun y hy ↦ prod_mono_left (Ioi_subset_Ioi (max_le le_rfl (by linarith)))
+          (add_mem_Ioi_prod_Ioo (Nat.cast_nonneg m) (endWindow_subset_Icc_prod_Icc _ b hy))) hZΩ
         (fun z hz ε hε ↦ (hc z hz ε hε).mono fun n hn ↦ ((min_le_right _ _).trans
           (Finset.inf'_le (fun p : Puncture × Bool ↦ δe p.1 p.2) (Finset.mem_univ (q, b)))).trans
             hn) hv
@@ -658,9 +658,9 @@ private theorem exists_pos_forall_window
       he_inj hc (hq q).2.2.1 (hq q).2.2.2.choose_spec
       (D := Icc (T + 1) (T + 3) ×ˢ Icc ((bif b then (1 / 2 : ℝ) else 0) - 2 / 5)
         ((bif b then 1 / 2 else 0) + 2 / 5)) (isCompact_Icc.prod isCompact_Icc)
-      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2) (fun y hy ↦ by
-        have h := add_mem_Ioi_prod_Ioo (m := 0) le_rfl hy
-        rwa [Prod.mk_zero_zero, add_zero, ← max_eq_left (by linarith : (0 : ℝ) ≤ T)] at h)
+      (t₀ := (bif b then 1 / 2 else 0) - 1 / 2) (fun y hy ↦
+        prod_mono_left (Ioi_subset_Ioi (max_le le_rfl (by linarith))) <| by
+          simpa using add_mem_Ioi_prod_Ioo (m := 0) le_rfl hy)
   obtain ⟨δc, hδc, hconvc⟩ :=
     hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pairOfPantsPerturbation
       hH hHs hB hJ hJt hed he_inj (isCompact_preimage_truncation (T + 2))
@@ -681,8 +681,8 @@ private theorem exists_pos_forall_window
       (fun q ↦ (hHs q).of_le (by norm_num)) hB hJt ((hu k).of_le (by norm_num)) (hfl k) (hx k)
       (hE k) (hA k) (htop k)
     have hΩT (y : ℝ × ℝ) (hy : y ∈ endWindow T b) :=
-      max_eq_left (by linarith : (0 : ℝ) ≤ T) ▸
-        add_mem_Ioi_prod_Ioo (Nat.cast_nonneg m) (endWindow_subset_Icc_prod_Icc T b hy)
+      prod_mono_left (Ioi_subset_Ioi (max_le le_rfl (by linarith : (0 : ℝ) ≤ T)))
+        (add_mem_Ioi_prod_Ioo (Nat.cast_nonneg m) (endWindow_subset_Icc_prod_Icc T b hy))
     obtain ⟨φ, hφ, Z, hZΩ, -, hc, -, v, -, hv, -⟩ := hconve q b (Ω := endWindow T b)
       (u := u ∘ ψ) (R := fun _ ↦ (m : ℝ)) (isOpen_endWindow _ b)
       (endWindow_subset_Icc_prod_Icc _ b) (fun _ ↦ Nat.cast_nonneg m)
