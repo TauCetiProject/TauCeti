@@ -5,28 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.ModularLambda.Basic
-public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 public import Mathlib.NumberTheory.ModularForms.QExpansion
-import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
-public import TauCeti.Combinatorics.Enumerative.Pentagonal.PowerSeries
-public import Mathlib.RingTheory.PowerSeries.Expand
-public import Mathlib.RingTheory.PowerSeries.Inverse
-import TauCeti.Analysis.Analytic.PowerSubstitution
+public import TauCeti.NumberTheory.ModularForms.ModularLambda.Basic
+public import TauCeti.NumberTheory.ModularForms.ModularLambda.Coordinate
 import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
-import TauCeti.Analysis.SpecialFunctions.QPochhammer
 import TauCeti.Combinatorics.Enumerative.Pentagonal.EulerFunction
+import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 import TauCeti.RingTheory.MvPowerSeries.Inverse
 
 /-!
-# The integral coordinate of the modular lambda function
+# The integral `q`-expansion of the modular lambda function
 
-The normalized modular function `λ / 16` has integral coefficients in the nome
-`q = exp (π i τ)`. With `E(q) = ∏_{n ≥ 1} (1 - q^n)`, the normalized series is
-`q (E(q) E(q⁴)² / E(q²)³)⁸`. Its linear coefficient is one, so this defines a strict
-`FormalCoordinate ℤ`. The coordinate inverse represents `q` as a series in `λ / 16`,
-and `FormalCoordinate.substAlgEquiv` gives the change of variables over any commutative
-ring after base change.
+In the nome `q = exp (π i τ)`, the normalized modular function `λ / 16` has expansion
+`q (E(q) E(q⁴)² / E(q²)³)⁸`, where `E(q) = ∏_{n ≥ 1} (1 - q^n)`. This is the
+complex image of the integral formal coordinate.
+
+## Main results
+
+* `TauCeti.ModularForm.analyticAt_cuspFunction_modularLambda_div_sixteen`: the cusp function
+  of `λ / 16` is analytic at zero.
+* `TauCeti.ModularForm.modularLambdaCoordinate_map_eq_qExpansion`: the width-two expansion
+  is obtained by mapping the integral coordinate to `ℂ`.
 
 ## References
 
@@ -40,50 +39,6 @@ open Complex Topology PowerSeries
 open scoped UpperHalfPlane
 
 namespace TauCeti.ModularForm
-
-/-- The strict integral coordinate underlying the normalized modular lambda function. -/
-def modularLambdaCoordinate : FormalCoordinate ℤ where
-  toPowerSeries := X * (pentagonalSeries ℤ * ((pentagonalSeries ℤ).expand 4 (by decide)) ^ 2 *
-    ((pentagonalSeries ℤ).expand 2 two_ne_zero).invOfUnit 1 ^ 3) ^ 8
-  constantCoeff_toPowerSeries := by simp
-  isUnit_coeff_one := by simp [constantCoeff_invOfUnit]
-
-/-- The normalized series is the integral Euler quotient, expressed using the inverse of its
-unit denominator. -/
-theorem modularLambdaCoordinate_toPowerSeries :
-    modularLambdaCoordinate.toPowerSeries = X *
-      ((pentagonalSeries ℤ) * ((pentagonalSeries ℤ).expand 4 (by decide)) ^ 2 *
-        ((pentagonalSeries ℤ).expand 2 two_ne_zero).invOfUnit 1 ^ 3) ^ 8 := by
-  rw [modularLambdaCoordinate]
-
-/-- The normalized modular lambda series has linear coefficient one. -/
-@[simp]
-theorem modularLambdaCoordinate_coeff_one :
-    coeff 1 modularLambdaCoordinate.toPowerSeries = 1 := by
-  simp [modularLambdaCoordinate_toPowerSeries, constantCoeff_invOfUnit]
-
-/-- The quadratic coefficient of the normalized modular lambda series is `-8`. -/
-@[simp]
-theorem modularLambdaCoordinate_coeff_two :
-    coeff 2 modularLambdaCoordinate.toPowerSeries = -8 := by
-  let E := pentagonalSeries ℤ
-  let E₂ := E.expand 2 two_ne_zero
-  let E₄ := E.expand 4 (by decide)
-  have h₀ : constantCoeff E = 1 := constantCoeff_pentagonalSeries ℤ
-  have h₁ : coeff 1 E = -1 := by
-    have hone : pentagonal 1 = 1 := by norm_num [pentagonal_def]
-    simpa [hone, Int.coe_negOnePow] using coeff_pentagonalSeries_pentagonal ℤ 1
-  have h₂ : coeff 1 E₂ = 0 := coeff_expand_of_not_dvd _ _ _ (by decide)
-  have h₄ : coeff 1 E₄ = 0 := coeff_expand_of_not_dvd _ _ _ (by decide)
-  have hi : coeff 1 (E₂.invOfUnit 1) = 0 := by
-    have h := congrArg (coeff 1) (mul_invOfUnit (φ := E₂) (u := 1) (by simp [E₂, h₀]))
-    rw [coeff_one_mul, h₂, zero_mul, zero_add] at h
-    simpa [E₂, h₀] using h
-  have hmain : modularLambdaCoordinate.toPowerSeries =
-      X * (E * E₄ ^ 2 * (E₂.invOfUnit 1) ^ 3) ^ 8 :=
-    modularLambdaCoordinate_toPowerSeries
-  rw [hmain, coeff_succ_X_mul]
-  norm_num [coeff_one_pow, coeff_one_mul, h₀, h₁, hi, h₄, E₄, constantCoeff_invOfUnit]
 
 private theorem modularLambda_div_sixteen_eq_euler {τ : ℂ} (hτ : 0 < τ.im) :
     modularLambda τ / 16 = cexp (Real.pi * I * τ) *
@@ -112,11 +67,17 @@ private def normalizedLambdaEuler : ℂ → ℂ :=
   (fun q ↦ q) * (eulerFunction * (fun q : ℂ ↦ eulerFunction (q ^ 4)) ^ 2 *
     (fun q : ℂ ↦ eulerFunction (q ^ 2))⁻¹ ^ 3) ^ 8
 
+-- Use the same analyticity rules for the product and the Taylor rewrites of its factors.
+local macro "prove_lambda_euler_analytic" : tactic =>
+  `(tactic| (
+    have hE := analyticAt_eulerFunction_zero (𝕜 := ℂ)
+    have h₂ := analyticAt_eulerFunction_comp_pow (𝕜 := ℂ) 2
+    have h₄ := analyticAt_eulerFunction_comp_pow (𝕜 := ℂ) 4
+    fun_prop (disch := simp)))
+
 private theorem analyticAt_normalizedLambdaEuler : AnalyticAt ℂ normalizedLambdaEuler 0 := by
-  have h₂ := analyticAt_eulerFunction_comp_pow (𝕜 := ℂ) 2 two_ne_zero
-  have h₄ := analyticAt_eulerFunction_comp_pow (𝕜 := ℂ) 4 (by decide)
-  exact analyticAt_id.mul (((analyticAt_eulerFunction_zero.mul (h₄.pow 2)).mul
-    ((h₂.inv (by simp)).pow 3)).pow 8)
+  unfold normalizedLambdaEuler
+  prove_lambda_euler_analytic
 
 private theorem cuspFunction_modularLambda_div_sixteen_eventuallyEq :
     UpperHalfPlane.cuspFunction 2 (fun τ : ℍ ↦ modularLambda τ / 16) =ᶠ[𝓝 0]
@@ -140,26 +101,13 @@ theorem analyticAt_cuspFunction_modularLambda_div_sixteen :
 theorem modularLambdaCoordinate_map_eq_qExpansion :
     modularLambdaCoordinate.toPowerSeries.map (Int.castRingHom ℂ) =
       UpperHalfPlane.qExpansion 2 (fun τ : ℍ ↦ modularLambda τ / 16) := by
-  have hE : AnalyticAt ℂ (eulerFunction : ℂ → ℂ) 0 := analyticAt_eulerFunction_zero
-  have h₂ := analyticAt_eulerFunction_comp_pow (𝕜 := ℂ) 2 two_ne_zero
-  have h₄ := analyticAt_eulerFunction_comp_pow (𝕜 := ℂ) 4 (by decide)
-  have hne : eulerFunction ((0 : ℂ) ^ 2) ≠ 0 := by simp
-  have hId : AnalyticAt ℂ (fun q : ℂ ↦ q) 0 := analyticAt_id
-  have hInv := h₂.inv hne
-  have hSquare := h₄.pow 2
-  have hCube := hInv.pow 3
-  have hNumerator := hE.mul hSquare
-  have hProduct := hNumerator.mul hCube
-  have hPower := hProduct.pow 8
-  have hTaylor (k : ℕ) (hk : k ≠ 0) :
-      taylorSeries (fun q : ℂ ↦ eulerFunction (q ^ k)) 0 = (pentagonalSeries ℂ).expand k hk := by
-    rw [taylorSeries_comp_pow hE k hk, taylorSeries_eulerFunction]
   rw [TauCeti.UpperHalfPlane.qExpansion_eq_taylorSeries
     analyticAt_cuspFunction_modularLambda_div_sixteen,
     taylorSeries_congr cuspFunction_modularLambda_div_sixteen_eventuallyEq]
-  simp (disch := assumption) only
+  have hId : AnalyticAt ℂ (fun q : ℂ ↦ q) 0 := analyticAt_id
+  simp (disch := first | assumption | decide | prove_lambda_euler_analytic | (simp; done)) only
     [normalizedLambdaEuler, taylorSeries_mul, taylorSeries_pow, taylorSeries_inv, taylorSeries_id,
-      taylorSeries_eulerFunction, hTaylor 2 two_ne_zero, hTaylor 4 (by decide)]
+      taylorSeries_eulerFunction, taylorSeries_eulerFunction_comp_pow]
   rw [modularLambdaCoordinate_toPowerSeries]
   simp only [map_mul, map_pow, map_X, map_invOfUnit_ringHom, map_one, map_expand,
     map_pentagonalSeries]

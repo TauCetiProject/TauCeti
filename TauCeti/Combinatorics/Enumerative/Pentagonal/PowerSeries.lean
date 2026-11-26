@@ -10,7 +10,14 @@ public import Mathlib.Combinatorics.Enumerative.Pentagonal.PowerSeries
 /-!
 # The formal pentagonal series
 
-The pentagonal series has constant coefficient one and is preserved by coefficient ring maps.
+The pentagonal series has constant coefficient one, linear coefficient minus one, and is preserved
+by coefficient ring maps.
+
+## Main results
+
+* `PowerSeries.map_pentagonalSeries`: coefficient ring maps preserve the pentagonal series.
+* `PowerSeries.constantCoeff_pentagonalSeries`: the constant coefficient is one.
+* `PowerSeries.coeff_one_pentagonalSeries`: the linear coefficient is minus one.
 -/
 
 public section
@@ -35,5 +42,12 @@ theorem constantCoeff_pentagonalSeries (R : Type*) [CommRing R] :
   have hzero : pentagonal 0 = 0 := by norm_num [pentagonal_def]
   simpa [hzero, coeff_zero_eq_constantCoeff_apply] using
     coeff_pentagonalSeries_pentagonal R 0
+
+/-- The linear coefficient of the pentagonal series is minus one. -/
+@[simp]
+theorem coeff_one_pentagonalSeries (R : Type*) [CommRing R] :
+    coeff 1 (pentagonalSeries R) = -1 := by
+  have hone : pentagonal 1 = 1 := by norm_num [pentagonal_def]
+  simpa [hone] using coeff_pentagonalSeries_pentagonal R 1
 
 end PowerSeries
