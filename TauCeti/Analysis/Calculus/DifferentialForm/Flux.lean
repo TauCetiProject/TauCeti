@@ -14,43 +14,30 @@ import TauCeti.Topology.Algebra.Module.Alternating.Topology
 /-!
 # Coordinate flux forms, exterior divergence, and affine cofactor pullback
 
-On the coordinate space `Fin (n + 1) → ℝ`, a family of vector-valued components
-`F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E` determines the *flux `n`-form*
-
-`fluxForm F x = ∑ i, (-1)^i F i x dx₀ ∧ ⋯ ∧ dx̂ᵢ ∧ ⋯ ∧ dxₙ`,
-
-built from the coordinate `(n × n)` minor forms `coordMinorForm i` from
-`TauCeti.Analysis.Calculus.DifferentialForm.Coordinates`. On the standard coordinate `n`-tuple
-omitting `eⱼ`, `fluxForm F x` evaluates to `(-1)^j • F j x`, so its signed omission coefficients
-(`ContinuousAlternatingMap.signedRemoveNth`) are literally `j ↦ F j x`. Consequently, whenever
-every `F i` is differentiable at `x`, the exterior derivative of `fluxForm F` at `x` is the
-divergence times the standard volume `(n + 1)`-form `(Pi.basisFun ℝ (Fin (n + 1))).continuousDet`:
-`(Pi.basisFun ℝ (Fin (n + 1))).continuousDet.smulRight (∑ i, fderiv ℝ (F i) x (Pi.single i 1))`.
-
-Under an invertible affine map `u ↦ p + L u` with `L : (Fin (n + 1) → ℝ) ≃L[ℝ] (Fin (n + 1) → ℝ)`,
-three-column Laplace/cofactor expansion of `coordMinorForm` identifies the linear pullback of
-`fluxForm F (p + L u)` along `L` with `fluxForm (L.affineFluxPullback p F) u`, with no regularity
-assumptions on `F`. Consuming Mathlib's `extDeriv_pullback` along the smooth affine map
-`u ↦ p + L u` then yields the exterior derivative of the pulled-back flux form at any point `u`
-where each `F i` is merely differentiable at `p + L u`.
+On `Fin (n + 1) → ℝ`, components `F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E` define the flux `n`-form
+`fluxForm F x = ∑ i, (-1)^i F i x dx₀ ∧ ⋯ ∧ dx̂ᵢ ∧ ⋯ ∧ dxₙ` from `coordMinorForm i`. Its signed
+omission evaluations (`ContinuousAlternatingMap.signedRemoveNth`) recover `j ↦ F j x`, so component
+differentiability characterizes form differentiability and the exterior derivative of `fluxForm F`
+is the divergence tensored with `(Pi.basisFun ℝ (Fin (n + 1))).continuousDet`. Along an invertible
+affine map `u ↦ p + L u`, Laplace cofactor expansion identifies the pullback of `fluxForm F` with
+`fluxForm (L.affineFluxPullback p F)` unconditionally, and `extDeriv_pullback` gives its exterior
+derivative wherever each `F i` is differentiable at `p + L u`.
 
 ## Main declarations
 
 * `TauCeti.fluxForm`: the `E`-valued flux `n`-form `∑ i, (-1)^i F i dx₀ ∧ ⋯ ∧ dx̂ᵢ ∧ ⋯ ∧ dxₙ`.
-* `TauCeti.differentiableAt_fluxForm_iff`: `fluxForm F` is differentiable at `x` iff every
-  component `F i` is differentiable at `x`.
+* `TauCeti.differentiableWithinAt_fluxForm_iff`, `TauCeti.differentiableAt_fluxForm_iff`:
+  `fluxForm F` is differentiable within `s` or at `x` iff every component `F i` is.
 * `TauCeti.extDerivWithin_fluxForm`, `TauCeti.extDeriv_fluxForm`: exterior derivative of
   `fluxForm F` as divergence times `(Pi.basisFun ℝ (Fin (n + 1))).continuousDet`.
-* `ContinuousLinearEquiv.fluxForm_comp_affine`: affine pullback of `fluxForm F` equals
-  `fluxForm (L.affineFluxPullback p F)`.
-* `ContinuousLinearEquiv.extDeriv_fluxForm_affineFluxPullback`: exterior derivative of the
-  affine-pulled-back flux form via `extDeriv_pullback`.
+* `ContinuousLinearEquiv.fluxForm_comp_affine`,
+  `ContinuousLinearEquiv.extDeriv_fluxForm_affineFluxPullback`: affine cofactor pullback of
+  `fluxForm` and its exterior derivative.
 
 ## References
 
-* M. Spivak, *Calculus on Manifolds*, Chapter 4 (coordinate differential forms and Stokes' theorem).
-* P. G. Ciarlet, *Mathematical Elasticity, Vol. I*, North-Holland (1988), §1.7 (Piola / cofactor
-  transform of flux fields).
+* M. Spivak, *Calculus on Manifolds*, Chapter 4; P. G. Ciarlet, *Mathematical Elasticity, Vol. I*,
+  North-Holland (1988), §1.7.
 -/
 
 public section
@@ -124,6 +111,18 @@ theorem differentiableWithinAt_fluxForm {F : Fin (n + 1) → (Fin (n + 1) → �
   exact (((coordMinorForm i).smulRightCLM (F := E)).differentiableAt.comp_differentiableWithinAt x
     (hF i)).const_smul ((-1 : ℝ) ^ (i : ℕ))
 
+/-- The flux form `fluxForm F` is differentiable within `s` at `x` if and only if every component
+field `F i` is differentiable within `s` at `x`: the continuous linear omission map
+`signedRemoveNth` recovers the component fields without any `UniqueDiffWithinAt` assumption. -/
+theorem differentiableWithinAt_fluxForm_iff {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
+    {s : Set (Fin (n + 1) → ℝ)} {x : Fin (n + 1) → ℝ} :
+    DifferentiableWithinAt ℝ (fluxForm F) s x ↔ ∀ i, DifferentiableWithinAt ℝ (F i) s x := by
+  refine ⟨fun hd ↦ ?_, differentiableWithinAt_fluxForm⟩
+  let e : Fin (n + 1) → Fin (n + 1) → ℝ := fun k ↦ Pi.single k 1
+  let S := ContinuousAlternatingMap.signedRemoveNth (𝕜 := ℝ) (F := E) e
+  have heq : S ∘ fluxForm F = fun y i ↦ F i y := funext fun y ↦ signedRemoveNth_fluxForm F y
+  exact differentiableWithinAt_pi.mp (heq ▸ S.differentiableAt.comp_differentiableWithinAt x hd)
+
 /-- If every component field `F i` is differentiable at `x`, then `fluxForm F` is differentiable
 at `x`. -/
 theorem differentiableAt_fluxForm {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
@@ -138,14 +137,7 @@ component fields from the form. -/
 theorem differentiableAt_fluxForm_iff {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
     {x : Fin (n + 1) → ℝ} :
     DifferentiableAt ℝ (fluxForm F) x ↔ ∀ i, DifferentiableAt ℝ (F i) x := by
-  refine ⟨fun hd ↦ ?_, differentiableAt_fluxForm⟩
-  let e : Fin (n + 1) → Fin (n + 1) → ℝ := fun k ↦ Pi.single k 1
-  have hcomp : DifferentiableAt ℝ
-      (ContinuousAlternatingMap.signedRemoveNth (𝕜 := ℝ) (F := E) e ∘ fluxForm F) x :=
-    ((ContinuousAlternatingMap.signedRemoveNth (𝕜 := ℝ) (F := E) e).differentiableAt.comp x hd)
-  have heq : ContinuousAlternatingMap.signedRemoveNth (𝕜 := ℝ) (F := E) e ∘ fluxForm F =
-      fun y i ↦ F i y := funext fun y ↦ signedRemoveNth_fluxForm F y
-  exact differentiableAt_pi.mp (heq ▸ hcomp)
+  simp only [← differentiableWithinAt_univ, differentiableWithinAt_fluxForm_iff]
 
 /-- If every component field `F i` is `C^r` on `s`, then `fluxForm F` is `C^r` on `s`. -/
 theorem contDiffOn_fluxForm {r : WithTop ℕ∞} {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
@@ -221,26 +213,7 @@ namespace ContinuousLinearEquiv
 open TauCeti
 
 variable {n : ℕ} (L : (Fin (n + 1) → ℝ) ≃L[ℝ] (Fin (n + 1) → ℝ))
-
-/-- Under an invertible linear change of tangent coordinates, each signed `n × n` coordinate minor
-expands in the parameter coordinate minors with the cofactor matrix `det L • L⁻¹`. -/
-theorem signed_coordMinorForm_map (i : Fin (n + 1)) (v : Fin n → Fin (n + 1) → ℝ) :
-    (-1 : ℝ) ^ (i : ℕ) * coordMinorForm i (fun r ↦ L (v r)) =
-      LinearMap.det (L : (Fin (n + 1) → ℝ) →ₗ[ℝ] Fin (n + 1) → ℝ) *
-        ∑ j : Fin (n + 1), (-1 : ℝ) ^ (j : ℕ) * L.symm (Pi.single i 1) j * coordMinorForm j v := by
-  have hlhs := sum_signed_mul_coordMinorForm (Pi.single i (1 : ℝ)) (fun r ↦ L (v r))
-  simp only [Pi.single_apply, mul_ite, mul_one, mul_zero, ite_mul, zero_mul,
-    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte] at hlhs
-  rw [hlhs, ← Pi.basisFun_det_apply]
-  have hdet := (Pi.basisFun ℝ (Fin (n + 1))).det_comp L.toLinearMap
-    (Fin.cons (L.symm (Pi.single i 1)) v)
-  have hcons : (L.toLinearMap ∘ Fin.cons (L.symm (Pi.single i 1)) v) =
-      Fin.cons (Pi.single i 1) (fun r ↦ L (v r)) := by
-    ext k
-    refine Fin.cases ?_ (fun r ↦ ?_) k <;> simp
-  rw [← hcons, hdet, Pi.basisFun_det_apply, ← sum_signed_mul_coordMinorForm]
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (p : Fin (n + 1) → ℝ)
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (p : Fin (n + 1) → ℝ)
 
 /-- Pulling `fluxForm F (p + L u)` back along `L` produces the flux form of the cofactor pullback
 `L.affineFluxPullback p F` at `u`, with no regularity hypotheses on `F`. -/

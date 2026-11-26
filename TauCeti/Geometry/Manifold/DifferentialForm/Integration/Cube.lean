@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Instances.Cube
+public import TauCeti.Geometry.Manifold.Orientation.Cube
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
@@ -14,30 +14,22 @@ import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 /-!
 # Oriented top-form integration on unit cubes and affine cube images
 
-The closed unit cube `Icc (0 : ι → ℝ) 1` carries a canonical orientation
-`TauCeti.unitCubeOrientation` determined by `Pi.basisFun ℝ ι`. More generally, for an injective
-continuous linear map `M : (ι → ℝ) →L[ℝ] E`, a base point `q₀ : E`, and a sign `s : ℤˣ`, the
-compact affine cube `(fun u ↦ q₀ + M u) '' Icc 0 1` carries the signed parameter orientation
-`ContinuousLinearMap.unitCubeImageOrientation`.
-
-Pulling an ambient `k`-form `ω` on `E` back along `Subtype.val` to `(fun u ↦ q₀ + M u) '' Icc 0 1`
-produces a `C^r` form whenever `ω` is `C^r` on that compact image (in particular, a `C^0` form
-whenever `ω` is continuous on the image, even if `ω` has singularities elsewhere in `E`). In top
-degree `ι = Fin k`, `integralTopForm` against the `s`-signed parameter orientation equals `(s : ℝ)`
-times the Lebesgue integral over `Icc (0 : Fin k → ℝ) 1` of `ω (q₀ + M u)` evaluated on the column
-vectors `r ↦ M (Pi.single r 1)` unconditionally for any rough form `ω` (with both sides equal to
-`0` when non-integrable).
+Pulling an ambient `k`-form `ω` on `E` back along `Subtype.val` to an injective affine cube image
+`(fun u ↦ q₀ + M u) '' Icc 0 1` produces a `C^r` form whenever `ω` is `C^r` on that compact image
+(in particular, a `C^0` form whenever `ω` is continuous on the image, even if `ω` has singularities
+elsewhere in `E`). In top degree `ι = Fin k`, `integralTopForm` against
+`ContinuousLinearMap.unitCubeImageOrientation` with sign `s : ℤˣ` equals `(s : ℝ)` times the
+Lebesgue integral over `Icc (0 : Fin k → ℝ) 1` of `ω (q₀ + M u)` evaluated on the column vectors
+`r ↦ M (Pi.single r 1)` unconditionally for any rough form `ω` (with both sides `0` when
+non-integrable).
 
 ## Main declarations
 
-* `TauCeti.unitCubeOrientation`: the canonical coordinate orientation on `Icc (0 : ι → ℝ) 1`.
 * `TauCeti.integrableTopForm_unitCube_iff`, `TauCeti.integralTopForm_unitCube`: coordinate
   integrability and Lebesgue integral formula on the closed unit cube.
 * `ContinuousLinearMap.isSmoothForm_mpullback_unitCubeImage_of_contDiffOn`,
   `ContinuousLinearMap.isSmoothForm_mpullback_unitCubeImage_of_continuousOn`: regularity of forms
   pulled back to an injective affine cube image.
-* `ContinuousLinearMap.unitCubeImageOrientation`: the `s`-signed parameter orientation on an
-  injective affine cube image.
 * `ContinuousLinearMap.integrableTopForm_mpullback_unitCubeImage_iff`,
   `ContinuousLinearMap.integralTopForm_mpullback_unitCubeImage`: integrability characterization and
   unconditional parameter-integral formula for pulled-back top forms.
@@ -55,50 +47,6 @@ open MeasureTheory Set Function
 open scoped Manifold Topology
 
 namespace TauCeti
-
-section UnitCubeOrientation
-
-variable (ι : Type*) [Fintype ι]
-
-/-- The canonical orientation lift on the closed unit cube `Icc (0 : ι → ℝ) 1`, with model
-orientation `(Pi.basisFun ℝ ι).orientation` and chart sign `1`. -/
-def unitCubeOrientationLift :
-    Manifold.OrientationLift (modelWithCornersUnitCube ι) (Icc (0 : ι → ℝ) 1) ι :=
-  open scoped Classical in
-  Manifold.OrientationLift.ofHasGroupoid (Pi.basisFun ℝ ι).orientation (by simp)
-
-/-- The canonical coordinate orientation of the closed unit cube `Icc (0 : ι → ℝ) 1`. -/
-def unitCubeOrientation :
-    Manifold.Orientation (modelWithCornersUnitCube ι) (Icc (0 : ι → ℝ) 1) ι :=
-  Manifold.Orientation.mk (unitCubeOrientationLift ι)
-
-variable {ι}
-
-@[simp]
-theorem unitCubeOrientationLift_modelOrientation [DecidableEq ι] :
-    (unitCubeOrientationLift ι).modelOrientation = (Pi.basisFun ℝ ι).orientation := by
-  simp only [unitCubeOrientationLift, Manifold.OrientationLift.ofHasGroupoid_modelOrientation]
-  congr!
-
-@[simp]
-theorem unitCubeOrientationLift_signAt (α x : Icc (0 : ι → ℝ) 1) :
-    (unitCubeOrientationLift ι).signAt α x = 1 := by
-  have hx : x ∈ (chartAt (Icc (0 : ι → ℝ) 1) α).source := by simp
-  rw [Manifold.OrientationLift.signAt_of_mem _ hx, unitCubeOrientationLift,
-    Manifold.OrientationLift.ofHasGroupoid_sign]
-
-/-- At every point of the closed unit cube, including faces, edges, and corners, the canonical
-tangent orientation read in the model space is `(Pi.basisFun ℝ ι).orientation`. -/
-theorem map_orientationAt_unitCubeOrientation [DecidableEq ι] (x : Icc (0 : ι → ℝ) 1) :
-    _root_.Orientation.map ι (tangentSpaceCastModel (modelWithCornersUnitCube ι) x).toLinearEquiv
-      ((unitCubeOrientation ι).orientationAt x) = (Pi.basisFun ℝ ι).orientation := by
-  have hsign : (unitCubeOrientationLift ι).sign x ⟨x, mem_chart_source _ x⟩ = 1 := by
-    rw [unitCubeOrientationLift, Manifold.OrientationLift.ofHasGroupoid_sign]
-  rw [unitCubeOrientation, Manifold.Orientation.map_tangentSpaceCastModel_orientationAt_mk, hsign,
-    unitCubeOrientationLift_modelOrientation]
-  simp
-
-end UnitCubeOrientation
 
 private theorem eqOn_signedInChartAt_unitCube {k : ℕ}
     (φ : RoughForm (modelWithCornersUnitCube (Fin k)) (Icc (0 : Fin k → ℝ) 1) ℝ k)
@@ -136,7 +84,7 @@ theorem integralTopForm_unitCube {k : ℕ}
   let B := Pi.basisFun ℝ (Fin k)
   let l := unitCubeOrientationLift (Fin k)
   by_cases hi : IntegrableTopForm φ
-  · rw [unitCubeOrientation,
+  · rw [unitCubeOrientation_eq_mk,
       integralTopForm_eq_chartIntegral l φ hi α
         (by rw [extChartAt_unitCube_source]; exact subset_univ _),
       l.chartIntegral_eq_const_mul_unsigned φ B α 1 (fun x _ ↦ unitCubeOrientationLift_signAt α x),
@@ -220,8 +168,7 @@ theorem isSmoothForm_mpullback_unitCubeImage_of_contDiffOn (hM : Injective M) (q
       (mpullback (modelWithCornersUnitCube ι) 𝓘(ℝ, E)
         (Subtype.val : ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1) → E) ω).inChartAt x u =
         C (ω (q₀ + M u)) := fun u hu ↦ by
-    rw [M.inChartAt_mpullback_unitCubeImage hM q₀ ω x hu]
-    ext v
+    rw [M.inChartAt_mpullback_unitCubeImage hM q₀ ω x hu]; ext v
     exact congrArg (ω (q₀ + M u)) <|
       funext fun i ↦ NormedSpace.fromTangentSpace_symm_apply (q₀ + M u) (M (v i))
   exact (hcomp _ hx).congr heq (heq _ hx)
@@ -229,14 +176,12 @@ theorem isSmoothForm_mpullback_unitCubeImage_of_contDiffOn (hM : Injective M) (q
 /-- An ambient `k`-form that is continuous on `(fun u ↦ q₀ + M u) '' Icc 0 1` pulls back along
 `Subtype.val` to a `C^0` form on that compact affine cube. -/
 theorem isSmoothForm_mpullback_unitCubeImage_of_continuousOn (hM : Injective M) (q₀ : E)
-    {ω : RoughForm 𝓘(ℝ, E) E F k}
-    (hω : ContinuousOn (X := E) (Y := E [⋀^Fin k]→L[ℝ] F) ω
+    {ω : RoughForm 𝓘(ℝ, E) E F k} (hω : ContinuousOn (X := E) (Y := E [⋀^Fin k]→L[ℝ] F) ω
       ((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1)) :
     letI := M.unitCubeImageChartedSpace hM q₀
     letI := M.isManifold_unitCubeImageChartedSpace hM q₀ 1
-    IsSmoothForm (modelWithCornersUnitCube ι) 0
-      (mpullback (modelWithCornersUnitCube ι) 𝓘(ℝ, E)
-        (Subtype.val : ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1) → E) ω) :=
+    IsSmoothForm (modelWithCornersUnitCube ι) 0 (mpullback (modelWithCornersUnitCube ι) 𝓘(ℝ, E)
+      (Subtype.val : ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1) → E) ω) :=
   M.isSmoothForm_mpullback_unitCubeImage_of_contDiffOn hM q₀ (contDiffOn_zero.mpr hω)
 
 /-- A globally `C^r` ambient `k`-form pulls back along `Subtype.val` to a `C^r` form on an
@@ -245,113 +190,12 @@ theorem isSmoothForm_mpullback_unitCubeImage (hM : Injective M) (q₀ : E)
     {r : WithTop ℕ∞} {ω : RoughForm 𝓘(ℝ, E) E F k} (hω : IsSmoothForm 𝓘(ℝ, E) r ω) :
     letI := M.unitCubeImageChartedSpace hM q₀
     letI := M.isManifold_unitCubeImageChartedSpace hM q₀ 1
-    IsSmoothForm (modelWithCornersUnitCube ι) r
-      (mpullback (modelWithCornersUnitCube ι) 𝓘(ℝ, E)
-        (Subtype.val : ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1) → E) ω) :=
+    IsSmoothForm (modelWithCornersUnitCube ι) r (mpullback (modelWithCornersUnitCube ι) 𝓘(ℝ, E)
+      (Subtype.val : ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1) → E) ω) :=
   M.isSmoothForm_mpullback_unitCubeImage_of_contDiffOn hM q₀
     (isSmoothForm_modelSpace_iff.mp hω).contDiffOn
 
 end PullbackRegularity
-
-section Orientation
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {ι : Type*} [Fintype ι] (M : (ι → ℝ) →L[ℝ] E)
-
-/-- The `s`-signed parameter orientation lift on `(fun u ↦ q₀ + M u) '' Icc 0 1`, with model
-orientation `(Pi.basisFun ℝ ι).orientation` and constant chart sign `s : ℤˣ`. -/
-def unitCubeImageOrientationLift (hM : Injective M) (q₀ : E) (s : ℤˣ) :
-    letI := M.unitCubeImageChartedSpace hM q₀
-    Manifold.OrientationLift (modelWithCornersUnitCube ι)
-      ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1) ι :=
-  letI := M.unitCubeImageChartedSpace hM q₀
-  letI := M.isManifold_unitCubeImageChartedSpace hM q₀ 1
-  letI := M.hasGroupoid_orientationPreserving_unitCubeImageChartedSpace hM q₀
-  open scoped Classical in
-  let l₀ := Manifold.OrientationLift.ofHasGroupoid
-    (I := modelWithCornersUnitCube ι)
-    (M := ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1))
-    (Pi.basisFun ℝ ι).orientation (by simp)
-  if s = 1 then l₀ else (-l₀).flip
-
-/-- The `s`-signed parameter orientation on `(fun u ↦ q₀ + M u) '' Icc 0 1`. -/
-def unitCubeImageOrientation (hM : Injective M) (q₀ : E) (s : ℤˣ) :
-    letI := M.unitCubeImageChartedSpace hM q₀
-    Manifold.Orientation (modelWithCornersUnitCube ι)
-      ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1) ι :=
-  letI := M.unitCubeImageChartedSpace hM q₀
-  Manifold.Orientation.mk (M.unitCubeImageOrientationLift hM q₀ s)
-
-theorem unitCubeImageOrientationLift_modelOrientation [DecidableEq ι] (hM : Injective M) (q₀ : E)
-    (s : ℤˣ) :
-    letI := M.unitCubeImageChartedSpace hM q₀
-    (M.unitCubeImageOrientationLift hM q₀ s).modelOrientation = (Pi.basisFun ℝ ι).orientation := by
-  let := M.unitCubeImageChartedSpace hM q₀
-  let := M.isManifold_unitCubeImageChartedSpace hM q₀ 1
-  let := M.hasGroupoid_orientationPreserving_unitCubeImageChartedSpace hM q₀
-  dsimp only [unitCubeImageOrientationLift]
-  split_ifs
-  · simp only [Manifold.OrientationLift.ofHasGroupoid_modelOrientation]
-    congr!
-  · simp only [Manifold.OrientationLift.flip_modelOrientation,
-      Manifold.OrientationLift.neg_modelOrientation,
-      Manifold.OrientationLift.ofHasGroupoid_modelOrientation]
-    refine (_root_.neg_neg (G := _root_.Orientation ℝ (ι → ℝ) ι) _).trans ?_
-    congr!
-
-theorem unitCubeImageOrientationLift_sign (hM : Injective M) (q₀ : E) (s : ℤˣ)
-    (α : ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1))
-    (x : (letI := M.unitCubeImageChartedSpace hM q₀
-      (chartAt (Icc (0 : ι → ℝ) 1) α).source)) :
-    letI := M.unitCubeImageChartedSpace hM q₀
-    (M.unitCubeImageOrientationLift hM q₀ s).sign α x = s := by
-  let := M.unitCubeImageChartedSpace hM q₀
-  let := M.isManifold_unitCubeImageChartedSpace hM q₀ 1
-  let := M.hasGroupoid_orientationPreserving_unitCubeImageChartedSpace hM q₀
-  dsimp only [unitCubeImageOrientationLift]
-  rcases Int.units_eq_one_or s with rfl | rfl <;> simp
-
-theorem unitCubeImageOrientationLift_signAt (hM : Injective M) (q₀ : E) (s : ℤˣ)
-    (α x : ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1)) :
-    letI := M.unitCubeImageChartedSpace hM q₀
-    (M.unitCubeImageOrientationLift hM q₀ s).signAt α x = s := by
-  let := M.unitCubeImageChartedSpace hM q₀
-  have hx : x ∈ (chartAt (Icc (0 : ι → ℝ) 1) α).source := by
-    simp [M.chartAt_unitCubeImage_source hM q₀ α]
-  exact (Manifold.OrientationLift.signAt_of_mem _ hx).trans
-    (M.unitCubeImageOrientationLift_sign hM q₀ s α ⟨x, hx⟩)
-
-theorem unitCubeImageOrientation_neg (hM : Injective M) (q₀ : E) (s : ℤˣ) :
-    letI := M.unitCubeImageChartedSpace hM q₀
-    M.unitCubeImageOrientation hM q₀ (-s) = -(M.unitCubeImageOrientation hM q₀ s) := by
-  let := M.unitCubeImageChartedSpace hM q₀
-  let := M.isManifold_unitCubeImageChartedSpace hM q₀ 1
-  let := M.hasGroupoid_orientationPreserving_unitCubeImageChartedSpace hM q₀
-  have h1 : M.unitCubeImageOrientation hM q₀ (-1) = -(M.unitCubeImageOrientation hM q₀ 1) := by
-    dsimp only [unitCubeImageOrientation, unitCubeImageOrientationLift]
-    have hn : (-1 : ℤˣ) ≠ 1 := by decide
-    simp [hn, Manifold.Orientation.mk_eq_mk_iff (I := modelWithCornersUnitCube ι)]
-  rcases Int.units_eq_one_or s with rfl | rfl
-  · exact h1
-  · rw [_root_.neg_neg, h1, _root_.neg_neg]
-
-/-- At every point of `(fun u ↦ q₀ + M u) '' Icc 0 1`, including faces, edges, and corners, the
-tangent orientation of `M.unitCubeImageOrientation hM q₀ s` read in the model space `ι → ℝ` is
-`(Pi.basisFun ℝ ι).orientation` when `s = 1` and its negation when `s = -1`. -/
-theorem map_orientationAt_unitCubeImageOrientation [DecidableEq ι] (hM : Injective M) (q₀ : E)
-    (s : ℤˣ) (x : ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1)) :
-    letI := M.unitCubeImageChartedSpace hM q₀
-    letI := M.isManifold_unitCubeImageChartedSpace hM q₀ 1
-    _root_.Orientation.map ι (tangentSpaceCastModel (modelWithCornersUnitCube ι) x).toLinearEquiv
-      ((M.unitCubeImageOrientation hM q₀ s).orientationAt x) =
-      if s = 1 then (Pi.basisFun ℝ ι).orientation else -(Pi.basisFun ℝ ι).orientation := by
-  let := M.unitCubeImageChartedSpace hM q₀
-  let := M.isManifold_unitCubeImageChartedSpace hM q₀ 1
-  rw [unitCubeImageOrientation, Manifold.Orientation.map_tangentSpaceCastModel_orientationAt_mk,
-    M.unitCubeImageOrientationLift_sign hM q₀ s x ⟨x, mem_chart_source _ x⟩,
-    M.unitCubeImageOrientationLift_modelOrientation hM q₀ s]
-
-end Orientation
 
 section Integration
 
@@ -431,7 +275,7 @@ theorem integralTopForm_mpullback_unitCubeImage (hM : Injective M) (q₀ : E) (s
       ⟨q₀ + M 0, mem_image_of_mem _ ⟨le_rfl, zero_le_one⟩⟩
     let B := Pi.basisFun ℝ (Fin k)
     let l := M.unitCubeImageOrientationLift hM q₀ s
-    rw [unitCubeImageOrientation,
+    rw [M.unitCubeImageOrientation_eq_mk hM q₀ s,
       integralTopForm_eq_chartIntegral l φ hi α
         (by rw [M.extChartAt_unitCubeImage_source hM q₀ α]; exact subset_univ _),
       l.chartIntegral_eq_const_mul_unsigned φ B α s

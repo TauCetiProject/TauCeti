@@ -19,8 +19,9 @@ within-set identity is shared by the full-space and half-space Stokes proofs.
 
 This file also defines the real coordinate `n`-minor forms `TauCeti.coordMinorForm` on
 `Fin (n + 1) → ℝ` (`dx₀ ∧ ⋯ ∧ dx̂ᵢ ∧ ⋯ ∧ dxₙ`), together with standard-basis omission evaluation
-(`TauCeti.coordMinorForm_removeNth_single`) and row-zero Laplace expansion
-(`TauCeti.sum_signed_mul_coordMinorForm`).
+(`TauCeti.coordMinorForm_removeNth_single`), row-zero Laplace expansion
+(`TauCeti.sum_signed_mul_coordMinorForm`), and cofactor transformation under invertible linear maps
+(`ContinuousLinearEquiv.signed_coordMinorForm_map`).
 -/
 
 public section
@@ -112,3 +113,30 @@ theorem coordMinorForm_removeNth_single {n : ℕ} (i j : Fin (n + 1)) :
 end MinorForm
 
 end TauCeti
+
+namespace ContinuousLinearEquiv
+
+open TauCeti
+
+/-- Under an invertible linear change of tangent coordinates, each signed `n × n` coordinate minor
+expands in the parameter coordinate minors with the cofactor matrix `det L • L⁻¹`. -/
+theorem signed_coordMinorForm_map {n : ℕ} (L : (Fin (n + 1) → ℝ) ≃L[ℝ] (Fin (n + 1) → ℝ))
+    (i : Fin (n + 1)) (v : Fin n → Fin (n + 1) → ℝ) :
+    (-1 : ℝ) ^ (i : ℕ) * coordMinorForm i (fun r ↦ L (v r)) =
+      LinearMap.det (L : (Fin (n + 1) → ℝ) →ₗ[ℝ] Fin (n + 1) → ℝ) *
+        ∑ j : Fin (n + 1), (-1 : ℝ) ^ (j : ℕ) * L.symm (Pi.single i 1) j * coordMinorForm j v := by
+  have hlhs := sum_signed_mul_coordMinorForm (Pi.single i (1 : ℝ)) (fun r ↦ L (v r))
+  simp only [Pi.single_apply, mul_ite, mul_one, mul_zero, ite_mul, zero_mul,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte] at hlhs
+  rw [hlhs, ← Pi.basisFun_det_apply]
+  have hdet := (Pi.basisFun ℝ (Fin (n + 1))).det_comp L.toLinearMap
+    (Fin.cons (L.symm (Pi.single i 1)) v)
+  have hcons : (L.toLinearMap ∘ Fin.cons (L.symm (Pi.single i 1)) v) =
+      Fin.cons (Pi.single i 1) (fun r ↦ L (v r)) := by
+    ext k
+    refine Fin.cases ?_ (fun r ↦ ?_) k <;> simp
+  rw [← hcons, hdet, Pi.basisFun_det_apply, ← sum_signed_mul_coordMinorForm]
+
+end ContinuousLinearEquiv
+
+end
