@@ -49,7 +49,10 @@ initial value `(1, 0)`, and its second column `(B, D)` the Dirichlet solution, w
 * `TauCeti.differentiable_diracFundamentalMatrix_apply`: the entries `A, B, C, D` of `M_q(t, ·)`
   are entire functions of the spectral parameter;
 * `TauCeti.det_diracFundamentalMatrix`: `det M_q(t, z) = 1`, by Liouville's formula, since the
-  coefficient is trace-free (`TauCeti.trace_diracCoeff`);
+  coefficient is trace-free (`TauCeti.trace_diracCoeff`), so a column of `M_q(t, z)` never
+  vanishes (`TauCeti.norm_sq_add_norm_sq_diracFundamentalMatrix_pos`) and, for `t > 0`, its
+  squared norm has positive integral over `[0, t]`
+  (`TauCeti.integral_norm_sq_diracFundamentalMatrix_pos`);
 * `TauCeti.diracFundamentalMatrix_zero_potential`: for `q = 0`,
   `M_0(t, z) = [[cos tz, -sin tz], [sin tz, cos tz]]`;
 * `TauCeti.diracFundamentalMatrix_ofReal_const_zero`: for a real constant `q = c`,
@@ -267,6 +270,43 @@ theorem det_diracFundamentalMatrix (hq : IntegrableOn q (uIcc 0 t)) (z : ℂ) :
   rw [← det_toEuclideanCLM, toEuclideanCLM_diracFundamentalMatrix, ContinuousLinearMap.det,
     det_propagator (integrableOn_toEuclideanCLM_diracCoeff hq z) left_mem_uIcc right_mem_uIcc]
   simp
+
+/-- A column of the fundamental matrix never vanishes, since `det M_q(t, z) = 1`: if `q` is
+integrable on `[0, t]` (or `[t, 0]`), then `|X₀(t, z)|² + |X₁(t, z)|² > 0` for the `j`-th column
+`X = (X₀, X₁)`. -/
+theorem norm_sq_add_norm_sq_diracFundamentalMatrix_pos (hq : IntegrableOn q (uIcc 0 t)) (z : ℂ)
+    (j : Fin 2) :
+    0 < ‖diracFundamentalMatrix q t z 0 j‖ ^ 2 + ‖diracFundamentalMatrix q t z 1 j‖ ^ 2 := by
+  by_contra! h
+  have h0 : diracFundamentalMatrix q t z 0 j = 0 := by
+    rw [← norm_eq_zero]
+    nlinarith [sq_nonneg ‖diracFundamentalMatrix q t z 0 j‖,
+      sq_nonneg ‖diracFundamentalMatrix q t z 1 j‖, norm_nonneg (diracFundamentalMatrix q t z 0 j)]
+  have h1 : diracFundamentalMatrix q t z 1 j = 0 := by
+    rw [← norm_eq_zero]
+    nlinarith [sq_nonneg ‖diracFundamentalMatrix q t z 0 j‖,
+      sq_nonneg ‖diracFundamentalMatrix q t z 1 j‖, norm_nonneg (diracFundamentalMatrix q t z 1 j)]
+  have hdet := det_diracFundamentalMatrix hq z
+  rw [det_fin_two] at hdet
+  fin_cases j <;> simp_all
+
+/-- For `t > 0` and `q` integrable on `[0, t]`, the `j`-th column `X` of the fundamental matrix
+satisfies `∫₀ᵗ |X(s, z)|² ds > 0`. -/
+theorem integral_norm_sq_diracFundamentalMatrix_pos (hq : IntegrableOn q (Icc 0 t)) (ht : 0 < t)
+    (z : ℂ) (j : Fin 2) :
+    0 < ∫ s in (0 : ℝ)..t,
+      (‖diracFundamentalMatrix q s z 0 j‖ ^ 2 + ‖diracFundamentalMatrix q s z 1 j‖ ^ 2) := by
+  have hc (i : Fin 2) : ContinuousOn (fun s ↦ diracFundamentalMatrix q s z i j) (Icc 0 t) := by
+    have := (continuous_apply i).comp_continuousOn
+      (continuousOn_diracFundamentalMatrix_mulVec hq z (Pi.single j 1))
+    simpa [Function.comp_def, mulVec_single] using this
+  refine intervalIntegral.intervalIntegral_pos_of_pos_on ?_ (fun s hs ↦ ?_) ht
+  · refine ContinuousOn.intervalIntegrable ?_
+    rw [uIcc_of_le ht.le]
+    exact (((hc 0).norm).pow 2).add (((hc 1).norm).pow 2)
+  · refine norm_sq_add_norm_sq_diracFundamentalMatrix_pos (hq.mono_set ?_) z j
+    rw [uIcc_of_le hs.1.le]
+    exact Icc_subset_Icc_right hs.2.le
 
 /-- **The free Dirac system.** For the zero potential the fundamental matrix is the rotation
 `M_0(t, z) = [[cos tz, -sin tz], [sin tz, cos tz]]`. -/

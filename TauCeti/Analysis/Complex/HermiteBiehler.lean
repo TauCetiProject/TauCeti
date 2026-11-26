@@ -19,7 +19,8 @@ the condition is stated as `‖H (conj z)‖ < ‖H z‖`.
 These are the functions from which de Branges spaces and meromorphic inner functions are built.
 The basic consequences recorded here are that a Hermite–Biehler function has no zeros in the
 upper half-plane (`TauCeti.IsHermiteBiehler.ne_zero`) and that the quotient `H#/H` is bounded
-by `1` there (`TauCeti.IsHermiteBiehler.norm_div_lt_one`).
+by `1` there (`TauCeti.IsHermiteBiehler.norm_div_lt_one`). A constant function is not
+Hermite–Biehler (`TauCeti.not_isHermiteBiehler_const`).
 
 ## References
 
@@ -70,5 +71,9 @@ theorem norm_div_lt_one (hH : IsHermiteBiehler H) {z : ℂ} (hz : 0 < z.im) :
   exact hH.norm_lt hz
 
 end IsHermiteBiehler
+
+/-- A constant function is not Hermite–Biehler, since `|H#(z)| = |H(z)|` for a constant `H`. -/
+theorem not_isHermiteBiehler_const (c : ℂ) : ¬ IsHermiteBiehler fun _ ↦ c := fun h ↦
+  (h.norm_lt (z := Complex.I) (by simp)).false
 
 end TauCeti

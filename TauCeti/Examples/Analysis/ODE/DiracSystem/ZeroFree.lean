@@ -18,7 +18,8 @@ public import TauCeti.Analysis.ODE.DiracSystem.ZeroFree
   (`TauCeti.Examples.HermiteBiehler.isHermiteBiehler_cexp_iff`): at `z = x + iy`,
   `|e^{-itz}| = e^{ty}` and `|e^{-it conj z}| = e^{-ty}`.
 * **Time `0`.** At `t = 0` the fundamental matrix is the identity, so `E(0, ·) = 1` and the
-  Dirichlet function `F(0, ·) = -i` are constant, and a constant has `|H#| = |H|`: the hypothesis
+  Dirichlet function `F(0, ·) = -i` are constant, and a constant has `|H#| = |H|`
+  (`TauCeti.not_isHermiteBiehler_const`): the hypothesis
   `t > 0` of `TauCeti.isHermiteBiehler_diracFundamentalMatrix` is needed
   (`TauCeti.Examples.HermiteBiehler.not_isHermiteBiehler_diracFundamentalMatrix_zero`).
 -/
@@ -28,10 +29,6 @@ public section
 open Complex ComplexConjugate
 
 namespace TauCeti.Examples.HermiteBiehler
-
-/-- A constant function is not Hermite–Biehler, since `|H#(z)| = |H(z)|` for a constant `H`. -/
-theorem not_isHermiteBiehler_const (c : ℂ) : ¬ IsHermiteBiehler fun _ ↦ c := fun h ↦
-  (h.norm_lt (z := I) (by simp)).false
 
 /-- `z + i` is Hermite–Biehler: for `Im z > 0`, `|conj z + i| < |z + i|`. -/
 theorem isHermiteBiehler_add_I : IsHermiteBiehler fun z ↦ z + I := by
