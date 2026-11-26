@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
-public import TauCeti.CategoryTheory.Linear.FullyFaithful
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedProjective
 
 /-!
@@ -291,31 +290,13 @@ theorem gradedFiniteProjectiveModules_gradedArrowSum [Finite ((j : Q) × (i ⟶ 
 def gradedArrowSumHomShiftOneEquiv
     (Y : GradedModuleCat.{max u v w} (integerGrade k Q)) :
     (gradedArrowSum k Q i ⟶ Y.shiftObj 1) ≃ₗ[k]
-      ∀ a : (j : Q) × (i ⟶ j), ↥(vertexIdempotent k a.1 • Y.grading.piece 0) := by
-  let _ := integerGradedAlgebra k Q
-  let M : (j : Q) × (i ⟶ j) → GradedModuleCat.{max u v w} (integerGrade k Q) :=
-    fun a => (gradedVertexProjective k Q a.1).shiftObj 1
-  let c := GradedModuleCat.coproductCofan.{w, max u v w, max u v w, max u v} M
-  let eCoprod : (gradedArrowSum k Q i ⟶ Y.shiftObj 1) ≃ₗ[k]
-      ∀ a : (j : Q) × (i ⟶ j), (M a ⟶ Y.shiftObj 1) :=
-    { toFun := fun f a => c.inj a ≫ f
-      map_add' := fun _ _ => funext fun _ => by simp
-      map_smul' := fun _ _ => funext fun _ => by simp
-      invFun := fun g =>
-        GradedModuleCat.coproductDesc.{w, max u v w, max u v w, max u v} M
-          (Limits.Cofan.mk (Y.shiftObj 1) g)
-      left_inv := fun f =>
-        (GradedModuleCat.coproductCofanIsColimit.{w, max u v w, max u v w, max u v} M).hom_ext
-          fun ⟨a⟩ =>
-            GradedModuleCat.coproductCofan_inj_desc.{w, max u v w, max u v w, max u v} M
-              (Limits.Cofan.mk (Y.shiftObj 1) fun b => c.inj b ≫ f) a
-      right_inv := fun g => funext fun a =>
-        GradedModuleCat.coproductCofan_inj_desc.{w, max u v w, max u v w, max u v} M
-          (Limits.Cofan.mk (Y.shiftObj 1) g) a }
-  exact eCoprod.trans <|
+      ∀ a : (j : Q) × (i ⟶ j), ↥(vertexIdempotent k a.1 • Y.grading.piece 0) :=
+  (GradedModuleCat.directSumObjHomEquiv.{w, max u v w, max u v w, max u v}
+      (fun a : (j : Q) × (i ⟶ j) => (gradedVertexProjective k Q a.1).shiftObj 1)
+      (Y.shiftObj 1)).trans <|
     LinearEquiv.piCongrRight fun a =>
-      ((GradedModuleCat.shift (integerGrade k Q)).functor.homLinearEquiv k
-        (gradedVertexProjective k Q a.1) Y).symm.trans
+      (GradedModuleCat.shiftObjHomEquiv (integerGrade k Q)
+        (gradedVertexProjective k Q a.1) Y 1).trans
         (gradedVertexProjectiveHomEquiv k Q a.1 Y)
 
 /-- At an arrow `a : i ⟶ j`, `gradedArrowSumHomShiftOneEquiv` evaluates `f` on the summand
@@ -329,18 +310,7 @@ theorem coe_gradedArrowSumHomShiftOneEquiv_apply
         (((GradedModuleCat.coproductCofan fun b : (j : Q) × (i ⟶ j) =>
             (gradedVertexProjective k Q b.1).shiftObj 1).inj a).hom
           (gradedVertexProjectiveGenerator k Q a.1)) := by
-  let _ := integerGradedAlgebra k Q
-  let c := GradedModuleCat.coproductCofan fun b : (j : Q) × (i ⟶ j) =>
-    (gradedVertexProjective k Q b.1).shiftObj 1
-  have hpre := congrArg
-    (fun φ : (gradedVertexProjective k Q a.1).shiftObj 1 ⟶ Y.shiftObj 1 =>
-      φ.hom (gradedVertexProjectiveGenerator k Q a.1))
-    ((GradedModuleCat.shift (integerGrade k Q)).functor.map_preimage (c.inj a ≫ f))
-  dsimp only [gradedArrowSumHomShiftOneEquiv]
-  erw [LinearEquiv.trans_apply, LinearEquiv.piCongrRight_apply,
-    LinearEquiv.trans_apply, coe_gradedVertexProjectiveHomEquiv_apply,
-    Functor.homLinearEquiv_symm_apply]
-  simpa [c] using hpre
+  simp [gradedArrowSumHomShiftOneEquiv]
 
 /-- Precomposing the inverse of `gradedArrowSumHomShiftOneEquiv` with the `a`th coproduct injection
 gives the shifted map corresponding to `v a`. -/
@@ -354,15 +324,7 @@ theorem coproductCofan_inj_comp_gradedArrowSumHomShiftOneEquiv_symm
       (gradedArrowSumHomShiftOneEquiv k Q i Y).symm v =
       (GradedModuleCat.shiftFunctor 1).map
         ((gradedVertexProjectiveHomEquiv k Q a.1 Y).symm (v a)) := by
-  dsimp only [gradedArrowSumHomShiftOneEquiv]
-  erw [LinearEquiv.symm_trans_apply]
-  change (GradedModuleCat.coproductCofan _).inj a ≫
-    GradedModuleCat.coproductDesc _ (Limits.Cofan.mk (Y.shiftObj 1) _) = _
-  rw [GradedModuleCat.coproductCofan_inj_desc]
-  change ((LinearEquiv.piCongrRight _).symm v) a = _
-  erw [LinearEquiv.piCongrRight_symm, LinearEquiv.piCongrRight_apply,
-    LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm, Functor.homLinearEquiv_apply]
-  rfl
+  simp [gradedArrowSumHomShiftOneEquiv]
 
 /-- On a direct-sum generator in summand `a`, the inverse of `gradedArrowSumHomShiftOneEquiv`
 acts by scalar multiplication on `v a`. -/
@@ -399,8 +361,12 @@ def gradedArrowSumToVertexProjective : gradedArrowSum k Q i ⟶ gradedVertexProj
       rw [← DirectSum.lof_eq_of (pathAlgebra k Q), DirectSum.toModule_lof, add_zero]
       exact GradedModuleCat.map_mem _ (hx a)
 
-open Classical in
-private theorem gradedVertexProjectiveSubtype_gradedArrowSumToVertexProjective_eq_sum_support
+/-- On elements, `⨁_{a : i ⟶ j} (kQ eⱼ){1} ⟶ kQ eᵢ` sends a finitely supported family `y` to
+`∑ a ∈ y.support, y_a a`, without any finiteness assumption on outgoing arrows. -/
+theorem gradedVertexProjectiveSubtype_gradedArrowSumToVertexProjective_eq_sum_support
+    [hdec : DecidableEq ((j : Q) × (i ⟶ j))]
+    [∀ (a : (j : Q) × (i ⟶ j))
+      (x : (gradedVertexProjective k Q a.1).shiftObj 1), Decidable (x ≠ 0)]
     (y : gradedArrowSum k Q i) :
     gradedVertexProjectiveSubtype k Q i ((gradedArrowSumToVertexProjective k Q i).hom y) =
       ∑ a ∈ y.support, gradedVertexProjectiveSubtype k Q a.1 (y a) * ofArrow a.2 := by
@@ -408,19 +374,20 @@ private theorem gradedVertexProjectiveSubtype_gradedArrowSumToVertexProjective_e
   rw [map_sum, map_sum]
   refine Finset.sum_congr rfl fun a _ => ?_
   rw [← gradedVertexProjectiveSubtype_gradedVertexProjectiveArrowHom_hom_apply]
+  let _ := Classical.decEq ((j : Q) × (i ⟶ j))
+  obtain rfl : hdec = Classical.decEq _ := Subsingleton.elim _ _
   exact congrArg _ (DirectSum.toModule_lof _ _ _)
 
-/-- On elements, `⨁_{a : i ⟶ j} (kQ eⱼ){1} ⟶ kQ eᵢ` sends a family `(x_a)` to `∑_a x_a a`. -/
+/-- On elements, when `i` has finitely many outgoing arrows,
+`⨁_{a : i ⟶ j} (kQ eⱼ){1} ⟶ kQ eᵢ` sends a family `(x_a)` to `∑_a x_a a`. -/
 theorem gradedVertexProjectiveSubtype_gradedArrowSumToVertexProjective_hom_apply
     [Fintype ((j : Q) × (i ⟶ j))] (y : gradedArrowSum k Q i) :
     gradedVertexProjectiveSubtype k Q i ((gradedArrowSumToVertexProjective k Q i).hom y) =
       ∑ a, gradedVertexProjectiveSubtype k Q a.1 (y a) * ofArrow a.2 := by
   classical
-  conv_lhs => rw [← DirectSum.sum_univ_of y]
-  rw [map_sum, map_sum]
-  refine Finset.sum_congr rfl fun a _ => ?_
-  rw [← gradedVertexProjectiveSubtype_gradedVertexProjectiveArrowHom_hom_apply]
-  exact congrArg _ (DirectSum.toModule_lof _ _ _)
+  rw [gradedVertexProjectiveSubtype_gradedArrowSumToVertexProjective_eq_sum_support]
+  refine Finset.sum_subset (Finset.subset_univ _) fun a _ ha => ?_
+  rw [DFinsupp.notMem_support_iff.mp ha, map_zero, zero_mul]
 
 /-- The composite `⨁_{a : i ⟶ j} (kQ eⱼ){1} ⟶ kQ eᵢ ⟶ Sᵢ` vanishes: every `∑_a x_a a` lies in
 the left ideal generated by the arrows out of `i`. -/

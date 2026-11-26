@@ -241,7 +241,7 @@ theorem gradedVertexProjectiveClassBasis_repr_finiteProjectiveTerm_zero
           ((gradedVertexSimpleProjectiveResolution k Q i).finiteProjectiveTerm 0)) j =
       if i = j then 1 else 0 := by
   rw [laurentK0_finiteProjectiveTerm_gradedVertexSimpleProjectiveResolution_zero,
-    ← gradedVertexProjectiveClassBasis_apply, Module.Basis.repr_self, Finsupp.single_apply]
+    gradedVertexProjectiveClassBasis_repr_gradedVertexProjectiveClass, Finsupp.single_apply]
 
 /-- In `gradedVertexProjectiveClassBasis`, the `j`th coordinate of `[P₁(Sᵢ)]` is
 `#{a : i ⟶ j} · q`: rows are projectives and columns are resolved simples, so the shift exponent
@@ -260,9 +260,7 @@ theorem gradedVertexProjectiveClassBasis_repr_finiteProjectiveTerm_one (i j : Q)
     finite_hom_of_module_finite_pathAlgebra k Q inferInstance
   rw [laurentK0_finiteProjectiveTerm_gradedVertexSimpleProjectiveResolution_one_eq_sum,
     map_sum, Finsupp.finsetSum_apply]
-  simp_rw [map_smul, ← gradedVertexProjectiveClassBasis_apply, Module.Basis.repr_self,
-    Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero]
-  simp
+  simp [Finsupp.single_apply]
 
 /-- From homological degree `2` on, all coordinates of `[P_{n+2}(Sᵢ)]` vanish. -/
 theorem gradedVertexProjectiveClassBasis_repr_finiteProjectiveTerm_add_two (i j : Q) (n : ℕ) :
