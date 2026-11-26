@@ -290,8 +290,10 @@ private theorem commutator_powClosure_eq_bot [hp : Fact p.Prime] [Finite G] (hG 
     · exact (hN.map hq).commutator_powClosure_eq_bot_of_odd (hp.out.odd_of_ne_two hp2)
         (by simpa [hp2] using hexp') hcent'
   exact hG.eq_bot_of_le_commutator_top <| by
-    change M ≤ L
-    rw [← QuotientGroup.ker_mk' L, ← Subgroup.map_eq_bot_iff, ← hM']; exact hbot'
+    have hML : M ≤ L := by
+      rw [← QuotientGroup.ker_mk' L, ← Subgroup.map_eq_bot_iff, ← hM']
+      exact hbot'
+    exact hML
 
 /-- **Powerfully embedded subgroups are stable under `p`-th powers** (Dixon–du Sautoy–Mann–Segal,
 Theorem 2.7): in a finite `p`-group, if `N` is powerfully embedded in `G`, then `N.powClosure p`
@@ -305,10 +307,11 @@ theorem powClosure [Fact p.Prime] [Finite G] (hG : IsPGroup p G)
   have hq : Function.Surjective q := QuotientGroup.mk'_surjective K
   have hexp : ((N.map q).powClosure p).powClosure (if p = 2 then 4 else p) = ⊥ := by
     rw [← powClosure_map, ← powClosure_map, Subgroup.map_eq_bot_iff, QuotientGroup.ker_mk']
-  change ⁅N.powClosure p, (⊤ : Subgroup G)⁆ ≤ K
-  rw [← QuotientGroup.ker_mk' K, ← Subgroup.map_eq_bot_iff, map_commutator, powClosure_map,
-    Subgroup.map_top, MonoidHom.range_eq_top.mpr hq]
-  exact (hN.map hq).commutator_powClosure_eq_bot (hG.to_quotient K) hexp
+  have hle : ⁅N.powClosure p, (⊤ : Subgroup G)⁆ ≤ K := by
+    rw [← QuotientGroup.ker_mk' K, ← Subgroup.map_eq_bot_iff, map_commutator, powClosure_map,
+      Subgroup.map_top, MonoidHom.range_eq_top.mpr hq]
+    exact (hN.map hq).commutator_powClosure_eq_bot (hG.to_quotient K) hexp
+  exact hle
 
 /-! ### Lower `p`-central series of a finite powerful `p`-group -/
 

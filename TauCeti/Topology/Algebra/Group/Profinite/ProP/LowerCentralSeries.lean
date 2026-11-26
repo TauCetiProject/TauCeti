@@ -56,6 +56,8 @@ with it. This is the bonding operation of a levelwise comparison along the lower
   `TauCeti.IsTopologicallyFinitelyGenerated.finite_quotient_pLowerCentralSeries`,
   `TauCeti.IsTopologicallyFinitelyGenerated.finite_gradedPiece` and, for a pro-`p` group,
   `TauCeti.IsProP.isPGroup_quotient_pLowerCentralSeries`.
+* `TauCeti.map_mk_pLowerCentralSeries_openNormalSubgroup`: the quotient map modulo an open normal
+  subgroup carries `λ_k(G)` onto `λ_k(G ⧸ U)`.
 * `TauCeti.IsProP.exists_pLowerCentralSeries_le`: in a pro-`p` group every open normal subgroup
   contains a term of the lower `p`-series, so `TauCeti.IsProP.iInf_pLowerCentralSeries_eq_bot`.
   Since the closed lower central series lies termwise below it, also
@@ -224,6 +226,18 @@ theorem IsProP.isPGroup_quotient_pLowerCentralSeries (hG : IsProP p G)
 open Filter Topology
 
 omit [TotallyDisconnectedSpace G] in
+/-- For an open normal subgroup `U` of a compact group `G`, the image of `λ_k(G)` in `G ⧸ U` is
+the `k`-th term of the lower `p`-central series of `G ⧸ U`. -/
+theorem map_mk_pLowerCentralSeries_openNormalSubgroup (U : OpenNormalSubgroup G) (k : ℕ) :
+    (pLowerCentralSeries p G k).map (QuotientGroup.mk' U.toSubgroup) =
+      (⊤ : Subgroup (G ⧸ U.toSubgroup)).pLowerCentralSeries p k := by
+  have := QuotientGroup.discreteTopology (hN := U.isOpen)
+  rw [(QuotientGroup.mk' U.toSubgroup).map_pLowerCentralSeries_eq_of_surjective
+      QuotientGroup.continuous_mk QuotientGroup.continuous_mk.isClosedMap
+      (QuotientGroup.mk'_surjective _),
+    pLowerCentralSeries_eq_of_discreteTopology]
+
+omit [TotallyDisconnectedSpace G] in
 /-- **Cofinality of the lower `p`-series.** In a compact pro-`p` group every open normal subgroup
 contains a term of the lower `p`-series. No finite generation is needed. -/
 theorem IsProP.exists_pLowerCentralSeries_le (hG : IsProP p G) (hp : p.Prime)
@@ -232,10 +246,7 @@ theorem IsProP.exists_pLowerCentralSeries_le (hG : IsProP p G) (hp : p.Prime)
   obtain ⟨k, hk⟩ := ((isProP_iff.mp hG U).to_subgroup ⊤).exists_pLowerCentralSeries_eq_bot
   refine ⟨k, ?_⟩
   rw [← QuotientGroup.ker_mk' U.toSubgroup, ← Subgroup.map_eq_bot_iff,
-    (QuotientGroup.mk' U.toSubgroup).map_pLowerCentralSeries_eq_of_surjective
-      QuotientGroup.continuous_mk QuotientGroup.continuous_mk.isClosedMap
-      (QuotientGroup.mk'_surjective _),
-    pLowerCentralSeries_eq_of_discreteTopology, hk]
+    map_mk_pLowerCentralSeries_openNormalSubgroup U k, hk]
 
 /-- In a pro-`p` group the terms of the lower `p`-series have trivial intersection. -/
 theorem IsProP.iInf_pLowerCentralSeries_eq_bot (hG : IsProP p G) (hp : p.Prime) :
