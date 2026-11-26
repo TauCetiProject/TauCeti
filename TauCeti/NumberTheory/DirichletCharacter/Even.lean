@@ -227,8 +227,9 @@ theorem two_mul_card_even (hn : 2 < n) :
   rw [Nat.totient_one, mul_one] at h
   rw [← h, ← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
   refine congrArg _ (Nat.card_congr ((Equiv.prodUnique _ _).subtypeEquiv fun q ↦ ?_)).symm
-  rw [Subsingleton.elim q.2 1, MulChar.one_apply isUnit_one.neg, mul_one]
-  rfl
+  rw [Subsingleton.elim q.2 1, MulChar.one_apply isUnit_one.neg, mul_one, Equiv.prodUnique_apply]
+  -- `χ.Even` is by definition `χ (-1) = 1`.
+  exact Iff.rfl
 
 open scoped Classical in
 /-- There are `φ(n) / 2 - 1` even nontrivial Dirichlet characters of level `n`, when the values
