@@ -22,9 +22,10 @@ the underlying laws.
 
 ## Main declarations
 
-* `AlgHom.fromBlocks ρ₁ ρ₂`: the block-diagonal representation `x ↦ diag(ρ₁ x, ρ₂ x)`.
-* `TauCeti.Determinant.toLaw_algHomDet_fromBlocks`: its determinant law is the product of
-  the determinant laws of `ρ₁` and `ρ₂`.
+* `TauCeti.Determinant.toLaw_algHomDet_fromBlocks`: the determinant law of
+  `x ↦ diag(ρ₁ x, ρ₂ x)` is the product of the determinant laws of `ρ₁` and `ρ₂`.
+* `TauCeti.Determinant.algHomDet_fromBlocks_apply`: its value,
+  `det diag(ρ₁ x, ρ₂ x) = det ρ₁(x) · det ρ₂(x)`.
 
 ## References
 
