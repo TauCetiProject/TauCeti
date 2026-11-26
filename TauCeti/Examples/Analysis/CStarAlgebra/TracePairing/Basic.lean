@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.TracePairing
+public import TauCeti.Analysis.CStarAlgebra.TracePairing.Basic
 
 /-!
 # Checks for the trace pairing with `K₀`
@@ -25,6 +25,10 @@ namespace TauCeti.TracePairingExample
 /-- The identity of `ℂ` as a positive tracial functional. -/
 noncomputable def idTrace : PositiveTracialFunctional ℂ :=
   .ofMapMulComm (PositiveContinuousLinearMap.id ℂ ℂ) fun a b ↦ by simp [mul_comm]
+
+@[simp]
+theorem idTrace_apply (z : ℂ) : idTrace z = z := by
+  simp [idTrace]
 
 /-- The identity matrix of size `k` pairs to `k` with the identity trace on `ℂ`. -/
 theorem idTrace_kZeroPairing_of_mk_one (k : ℕ) :
