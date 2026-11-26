@@ -451,8 +451,8 @@ theorem toSpecialOrthogonal_unitarySpinCLift_apply (g : Subgroup.centralizer {J�
     e.toSpecialOrthogonal_centralizerSpinCLift_apply,
     OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply_eq_repr_symm,
     OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply_eq_repr_symm] at h
+  rw [EuclideanSpace.basisFun_repr_symm_apply] at h
   rw [unitarySpinCLift, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
-  -- The coordinates of the standard basis of `ℝ⁴` are the identity.
   exact congrArg WithLp.ofLp h.symm
 
 /-- **The determinant character of `unitarySpinCLift g` is the complex determinant of `g`**, the
@@ -506,10 +506,8 @@ theorem realSpinCGroupHom_unitarySpinCLift {V : Type*} [NormedAddCommGroup V]
     have hv := b.toSpecialOrthogonal_realSpinCGroupHom_apply hQ
       (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀ (c.symm y) w.ofLp
     rw [← OrthonormalBasis.coe_realSpinCGroupEquiv, MulEquiv.apply_symm_apply] at hy
-    -- The coordinates of the standard basis of `ℝ⁴` are the identity.
-    have hE : ∀ u, (EuclideanSpace.basisFun (Fin 4) ℝ).repr.symm u = u := fun _ ↦ rfl
     simp only [OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply_eq_repr_symm,
-      WithLp.toLp_ofLp, hE] at hy hv
+      WithLp.toLp_ofLp, EuclideanSpace.basisFun_repr_symm_apply] at hy hv
     rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hv,
       OrthonormalBasis.complexCoords_map_apply, OrthonormalBasis.complexCoords_map_apply, ← hy,
       e.complexCoords_toSpecialOrthogonal_spinCUnitary_apply]
