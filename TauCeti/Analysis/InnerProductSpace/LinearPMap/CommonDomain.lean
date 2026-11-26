@@ -41,6 +41,30 @@ noncomputable section
 
 open Function
 
+namespace LinearMap
+
+variable {𝕜 D D' H K : Type*} [RCLike 𝕜] [AddCommMonoid D] [Module 𝕜 D]
+  [AddCommMonoid D'] [Module 𝕜 D'] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+  [NormedAddCommGroup K] [InnerProductSpace 𝕜 K]
+  {ι : D →ₗ[𝕜] H} {A : D →ₗ[𝕜] K} {ι' : D' →ₗ[𝕜] K} {B : D' →ₗ[𝕜] H}
+  {hι : Injective ι} {hι' : Injective ι'}
+
+/-- Operators on injectively embedded domains are formally adjoint exactly when their values
+satisfy the inner product identity on the original domains. -/
+theorem isFormalAdjoint_domainOperator_iff :
+    (ι.domainOperator A hι).IsFormalAdjoint (ι'.domainOperator B hι') ↔
+      ∀ x y, inner 𝕜 (A x) (ι' y) = inner 𝕜 (ι x) (B y) := by
+  refine ⟨fun h x y ↦ ?_, fun h ↦ ?_⟩
+  · simpa only [domainOperator_apply_mk] using
+      h ⟨ι x, apply_mem_domain_domainOperator _ _ hι x⟩
+        ⟨ι' y, apply_mem_domain_domainOperator _ _ hι' y⟩
+  · rintro ⟨_, hx⟩ ⟨_, hy⟩
+    obtain ⟨x, rfl⟩ := (mem_domain_domainOperator_iff _ _ hι).1 hx
+    obtain ⟨y, rfl⟩ := (mem_domain_domainOperator_iff _ _ hι').1 hy
+    simpa only [domainOperator_apply_mk] using h x y
+
+end LinearMap
+
 namespace ContinuousLinearMap
 
 section InnerProduct
@@ -58,15 +82,8 @@ variable [AddCommGroup D] [Module 𝕜 D] [TopologicalSpace D] {ι A : D →L[�
 theorem isFormalAdjoint_domainOperator_iff :
     (ι.toLinearMap.domainOperator A.toLinearMap hι).IsFormalAdjoint
         (ι.toLinearMap.domainOperator A.toLinearMap hι) ↔
-      ∀ x y, ⟪A x, ι y⟫ = ⟪ι x, A y⟫ := by
-  refine ⟨fun h x y ↦ ?_, fun h ↦ ?_⟩
-  · convert h ⟨ι x, LinearMap.apply_mem_domain_domainOperator _ _ hι x⟩
-      ⟨ι y, LinearMap.apply_mem_domain_domainOperator _ _ hι y⟩ using 2 <;>
-      exact (LinearMap.domainOperator_apply_mk _ _ hι _ _).symm
-  · rintro ⟨_, hx⟩ ⟨_, hy⟩
-    obtain ⟨x, rfl⟩ := (LinearMap.mem_domain_domainOperator_iff _ _ hι).1 hx
-    obtain ⟨y, rfl⟩ := (LinearMap.mem_domain_domainOperator_iff _ _ hι).1 hy
-    convert h x y using 2 <;> exact LinearMap.domainOperator_apply_mk _ _ hι _ _
+      ∀ x y, ⟪A x, ι y⟫ = ⟪ι x, A y⟫ :=
+  LinearMap.isFormalAdjoint_domainOperator_iff
 
 /-- **Self-adjointness on a common domain.** On a Hilbert space `H`, if `⟪A x, ι y⟫ = ⟪ι x, A y⟫`
 for all `x y : D` and the shift `c • ι - A` is surjective at a real scalar `c`, then

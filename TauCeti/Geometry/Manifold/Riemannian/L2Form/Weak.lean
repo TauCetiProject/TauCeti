@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.CommonDomain
 public import TauCeti.Geometry.Manifold.Riemannian.L2Form.Adjoint
 public import TauCeti.Geometry.Manifold.Riemannian.L2Form.Density
-public import TauCeti.LinearAlgebra.LinearPMap.CommonDomain
 
 /-!
 # The weak exterior derivative and codifferential on `L²` forms
@@ -118,12 +117,8 @@ theorem isFormalAdjoint_toL2Operator
     {S : compactlySupportedForms I M k' →ₗ[ℝ] compactlySupportedForms I M k}
     (h : ∀ α β, ⟪toL2Form I M k' (T α), toL2Form I M k' β⟫_ℝ =
       ⟪toL2Form I M k α, toL2Form I M k (S β)⟫_ℝ) :
-    (toL2Operator T).IsFormalAdjoint (toL2Operator S) := by
-  rintro ⟨u, hu⟩ ⟨v, hv⟩
-  obtain ⟨α, rfl⟩ := (LinearMap.mem_domain_domainOperator_iff _ _ _).1 hu
-  obtain ⟨β, rfl⟩ := (LinearMap.mem_domain_domainOperator_iff _ _ _).1 hv
-  rw [toL2Operator_apply, toL2Operator_apply]
-  exact h α β
+    (toL2Operator T).IsFormalAdjoint (toL2Operator S) :=
+  LinearMap.isFormalAdjoint_domainOperator_iff.2 h
 
 end Operator
 
