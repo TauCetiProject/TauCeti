@@ -31,7 +31,8 @@ constructed here.
   groups.
 * `CategoryTheory.Sheaf.Torsor.mul P Q`: the contracted product `P ∧ Q`.
 * `CategoryTheory.Sheaf.Torsor.mulMk p q`: the class `[p, q]`, with `Torsor.mulMk_smul_left`,
-  `Torsor.mulMk_smul_right` and `Torsor.mulMk_eq_mulMk_iff`.
+  `Torsor.mulMk_smul_right` and `Torsor.mulMk_eq_mulMk_iff`; every section of `P ∧ Q` is locally
+  such a class (`Torsor.isLocallySurjective_toMul`).
 * `CategoryTheory.Sheaf.Torsor.mulLift`: the morphism `P ∧ Q ⟶ R` induced by a bi-equivariant
   morphism `P × Q ⟶ R`; `Torsor.mul_hom_ext` is its uniqueness.
 * `CategoryTheory.Sheaf.Torsor.mulMap`: the contracted product of morphisms of torsors.
@@ -191,6 +192,17 @@ lemma mulMk_eq_mulMk_iff {U : Cᵒᵖ} {p p' : P.sheaf.obj.obj U} {q q' : Q.shea
   · rintro ⟨a, rfl, rfl⟩
     rw [mulMk_smul_left, mulMk_smul_right]
 
+/-- Every section of the contracted product is locally a class `[p, q]`: over each object over
+which both `P` and `Q` have a section, it is the class of a pair of sections. -/
+instance isLocallySurjective_toMul : Presheaf.IsLocallySurjective J (toMul P Q).hom := by
+  refine ⟨fun {U} x ↦ J.superset_covering ?_ ((P.prod Q).coversTop U)⟩
+  rintro V a ⟨⟨W, ⟨y⟩⟩, ⟨b⟩⟩
+  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq (G.obj.obj (op V))
+    (mulMk (P.sheaf.obj.map b.op y.1) (Q.sheaf.obj.map b.op y.2))
+    ((P.mul Q).sheaf.obj.map a.op x)
+  exact ⟨(g • P.sheaf.obj.map b.op y.1, Q.sheaf.obj.map b.op y.2), by
+    rw [toMul_hom_app, mulMk_smul_left, hg]⟩
+
 /-! ### Functoriality -/
 
 section Functoriality
@@ -269,6 +281,15 @@ lemma trivialMulIso_hom_hom_hom_app_mulMk {U : Cᵒᵖ} (a : (trivial G).sheaf.o
   rw [trivialMulIso, asIso_hom]
   exact mulLift_hom_app_mulMk _ _ _ _ _
 
+/-- The inverse of the isomorphism `G ∧ P ≅ P` sends `p` to `[1, p]`. -/
+@[simp]
+lemma trivialMulIso_inv_hom_hom_app {U : Cᵒᵖ} (p : P.sheaf.obj.obj U) :
+    (trivialMulIso P).inv.hom.hom.app U p = mulMk (P := trivial G) (1 : G.obj.obj U) p :=
+  (congrArg ((trivialMulIso P).inv.hom.hom.app U)
+    ((trivialMulIso_hom_hom_hom_app_mulMk _ p).trans (one_smul (G.obj.obj U) p))).symm.trans
+    (congrArg (fun k ↦ k.hom.hom.app U (mulMk (P := trivial G) (1 : G.obj.obj U) p))
+      (trivialMulIso P).hom_inv_id)
+
 variable (P) in
 /-- The trivial torsor is a right unit for the contracted product: `P ∧ G ≅ P`,
 `[p, a] ↦ a • p`. -/
@@ -284,6 +305,15 @@ lemma mulTrivialIso_hom_hom_hom_app_mulMk {U : Cᵒᵖ} (p : P.sheaf.obj.obj U)
       @HSMul.hSMul (G.obj.obj U) (P.sheaf.obj.obj U) _ _ a p := by
   rw [mulTrivialIso, asIso_hom]
   exact mulLift_hom_app_mulMk _ _ _ _ _
+
+/-- The inverse of the isomorphism `P ∧ G ≅ P` sends `p` to `[p, 1]`. -/
+@[simp]
+lemma mulTrivialIso_inv_hom_hom_app {U : Cᵒᵖ} (p : P.sheaf.obj.obj U) :
+    (mulTrivialIso P).inv.hom.hom.app U p = mulMk (Q := trivial G) p (1 : G.obj.obj U) :=
+  (congrArg ((mulTrivialIso P).inv.hom.hom.app U)
+    ((mulTrivialIso_hom_hom_hom_app_mulMk p _).trans (one_smul (G.obj.obj U) p))).symm.trans
+    (congrArg (fun k ↦ k.hom.hom.app U (mulMk (Q := trivial G) p (1 : G.obj.obj U)))
+      (mulTrivialIso P).hom_inv_id)
 
 end Unit
 
@@ -311,6 +341,14 @@ lemma mulCommIso_hom_hom_hom_app_mulMk {U : Cᵒᵖ} (p : P.sheaf.obj.obj U)
     (mulCommIso P Q).hom.hom.hom.app U (mulMk p q) = mulMk q p := by
   rw [mulCommIso, asIso_hom]
   exact mulLift_hom_app_mulMk _ _ _ _ _
+
+/-- The inverse of the isomorphism `P ∧ Q ≅ Q ∧ P` sends `[q, p]` to `[p, q]`. -/
+@[simp]
+lemma mulCommIso_inv_hom_hom_app_mulMk {U : Cᵒᵖ} (p : P.sheaf.obj.obj U)
+    (q : Q.sheaf.obj.obj U) :
+    (mulCommIso P Q).inv.hom.hom.app U (mulMk q p) = mulMk p q := by
+  rw [← mulCommIso_hom_hom_hom_app_mulMk p q]
+  exact congrArg (fun k ↦ k.hom.hom.app U (mulMk p q)) (mulCommIso P Q).hom_inv_id
 
 end Comm
 
