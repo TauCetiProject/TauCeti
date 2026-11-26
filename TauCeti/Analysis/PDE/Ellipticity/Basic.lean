@@ -1199,6 +1199,17 @@ open scoped ContDiff Gradient InnerProductSpace NNReal
 
 variable {n : Type*} [Fintype n]
 
+/-- A matrix bilinear form evaluated at the `i`-th standard basis vector in its first argument
+is the contraction of the `i`-th row with the second argument. -/
+theorem matrixBilinearForm_basisFun_left {A : Matrix n n ℝ} (i : n)
+    (ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm A (EuclideanSpace.basisFun n ℝ i) ξ =
+      ∑ j, A i j * ⟪ξ, EuclideanSpace.basisFun n ℝ j⟫_ℝ := by
+  classical
+  simp only [EuclideanSpace.inner_basisFun_real]
+  simp [matrixBilinearForm_apply, dotProduct, Matrix.mulVec, EuclideanSpace.basisFun_apply,
+    PiLp.single_apply]
+
 /-- Expanding the first argument of a matrix bilinear form in an orthonormal basis. -/
 theorem sum_inner_mul_matrixBilinearForm {A : Matrix n n ℝ} (ξ η : EuclideanSpace ℝ n) :
     ∑ i, ⟪ξ, EuclideanSpace.basisFun n ℝ i⟫_ℝ *
