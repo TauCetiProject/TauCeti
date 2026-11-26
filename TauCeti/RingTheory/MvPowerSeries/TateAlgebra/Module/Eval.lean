@@ -66,8 +66,8 @@ the finite set `𝔽_p`.
 * `TauCeti.MvPowerSeries.IsRestrictedFamily.eq_zero_of_familyEval_eq_zero`: a restricted family
   vanishing on a product of infinite subsets of the closed polydisc is zero, given a jointly
   injective family of functionals into field extensions.
-* `TauCeti.MvPowerSeries.IsRestrictedFamily.eq_zero_of_familyEval_padicInt_eq_zero`: its
-  specialisation to unit-radius series over `ℚ_p` evaluated on `ℤ_pⁿ`.
+* `TauCeti.MvPowerSeries.IsRestrictedFamily.eq_zero_of_familyEval_padicInt_eq_zero`: coefficient
+  recovery from the image of `ℤ_pⁿ` in a normed extension of `ℚ_p`.
 
 ## References
 
@@ -297,24 +297,27 @@ theorem IsRestrictedFamily.eq_zero_of_familyEval_eq_zero [Finite σ] (φ : ∀ j
     vanishingPrinciple_of_equiv vanishingPrinciple_pempty
     (vanishingPrinciple_option φ hφ) σ c a S ha hS hSc h
 
-/-- **Coefficient recovery on `ℤ_pⁿ`.** Let `E` be an ultrametric Banach space over `ℚ_p` with a
-jointly injective family of continuous linear maps into normed field extensions of `ℚ_p`.
-A unit-radius restricted family in finitely many variables with values in `E`, vanishing at every
-point of `ℤ_pⁿ`, is zero. -/
+/-- **Coefficient recovery on `ℤ_pⁿ`.** Let `E` be an ultrametric Banach space over a normed
+extension `K` of `ℚ_p`, with a jointly injective family of continuous `ℚ_p`-linear maps into
+normed field extensions of `ℚ_p`. A unit-radius restricted family in finitely many variables
+with values in `E` that vanishes on the image of `ℤ_pⁿ` in `K` is zero. -/
 theorem IsRestrictedFamily.eq_zero_of_familyEval_padicInt_eq_zero {p : ℕ} [Fact p.Prime]
-    [Finite σ] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℚ_[p] E] [IsUltrametricDist E]
+    [Finite σ] {K E : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] [NormedAddCommGroup E]
+    [NormedSpace K E] [NormedSpace ℚ_[p] E] [IsScalarTower ℚ_[p] K E] [IsUltrametricDist E]
     [CompleteSpace E] {ι : Type*} {L : ι → Type*} [∀ j, NormedField (L j)]
     [∀ j, NormedAlgebra ℚ_[p] (L j)] (φ : ∀ j, E →L[ℚ_[p]] L j)
     (hφ : ∀ e, (∀ j, φ j e = 0) → e = 0) {a : (σ →₀ ℕ) → E}
     (ha : IsRestrictedFamily (fun _ ↦ 1) a)
-    (h : ∀ x : σ → ℤ_[p], familyEval (fun i ↦ (x i : ℚ_[p])) a = 0) : a = 0 := by
+    (h : ∀ x : σ → ℤ_[p], familyEval (fun i ↦ algebraMap ℚ_[p] K (x i : ℚ_[p])) a = 0) :
+    a = 0 := by
   have : Infinite ℤ_[p] := .of_injective (fun n : ℕ ↦ (n : ℤ_[p])) Nat.cast_injective
   refine ha.eq_zero_of_familyEval_eq_zero φ hφ (S := fun _ ↦ Set.range ((↑) : ℤ_[p] → ℚ_[p]))
     (fun _ ↦ Set.infinite_range_of_injective (α := ℤ_[p]) fun _ _ ↦ PadicInt.ext) ?_ fun x hx ↦ ?_
   · rintro - - ⟨z, rfl⟩
     exact PadicInt.norm_le_one z
   · choose z hz using fun i ↦ hx i (Set.mem_univ i)
-    simpa [hz] using h z
+    convert h z using 1
+    simp only [familyEval_def, ← hz, ← map_pow, ← map_finsuppProd, algebraMap_smul]
 
 end Injective
 

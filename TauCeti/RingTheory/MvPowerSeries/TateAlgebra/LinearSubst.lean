@@ -47,6 +47,14 @@ noncomputable def restrictedLinearSubst (A : Matrix (Fin k) (Fin m) R)
     (fun i ↦ polynomialToRestricted s (∑ j, MvPolynomial.C (A i j) * MvPolynomial.X j))
     (fun i ↦ norm_polynomialToRestricted_sum_C_mul_X_le (Fact.out : 0 < r i).le (hA i))
 
+/-- Linear pullback sends each variable to the linear form in the corresponding matrix row. -/
+@[simp]
+theorem restrictedLinearSubst_X (A : Matrix (Fin k) (Fin m) R)
+    (hA : ∀ i j, ‖A i j‖ * s j ≤ r i) (i : Fin k) :
+    restrictedLinearSubst A hA ⟨X i, isRestricted_monomial r (Finsupp.single i 1) 1⟩ =
+      polynomialToRestricted s (∑ j, MvPolynomial.C (A i j) * MvPolynomial.X j) :=
+  restrictedAnalyticSubst_X _ _ i
+
 /-- Pullback along a bounded linear map does not increase Gauss norms. -/
 theorem norm_restrictedLinearSubst_le (A : Matrix (Fin k) (Fin m) R)
     (hA : ∀ i j, ‖A i j‖ * s j ≤ r i) (f : IsRestricted.subring (R := R) r) :
@@ -54,6 +62,7 @@ theorem norm_restrictedLinearSubst_le (A : Matrix (Fin k) (Fin m) R)
   norm_restrictedAnalyticSubst_le _ _ f
 
 /-- Linear pullback agrees with formal substitution of the linear forms given by the rows. -/
+@[simp]
 theorem coe_restrictedLinearSubst (A : Matrix (Fin k) (Fin m) R)
     (hA : ∀ i j, ‖A i j‖ * s j ≤ r i) (f : IsRestricted.subring (R := R) r) :
     (restrictedLinearSubst A hA f : MvPowerSeries (Fin m) R) =

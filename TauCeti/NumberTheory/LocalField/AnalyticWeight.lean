@@ -11,15 +11,16 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.WeightCharacter
 import TauCeti.Analysis.Normed.Ring.UnitBall
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
+import Mathlib.Algebra.Order.Field.Pi
 
 /-!
 # Uniqueness of local analytic weights
 
 Over a finite extension of `ℚ_p`, the character on the units determines its restricted
-expansion near `1` in the coordinates of the full family of embeddings. Consequently
-the automorphy factor and slash action associated to an analytic weight are independent of
-the choice of expansion. The coefficients can be separated by bounded linear functionals,
-so the uniqueness statement applies to suitable nonreduced Banach algebras as well.
+expansion near `1` in the coordinates of the full family of embeddings when bounded
+`ℚ_p`-linear maps into normed fields jointly separate the points of the coefficient
+algebra. At fixed polyradii this also determines the associated automorphy factor and
+slash action.
 -/
 
 public section
@@ -30,41 +31,40 @@ open _root_.MvPowerSeries
 
 variable {p : ℕ} [Fact p.Prime] {F K R : Type*}
   [NormedField F] [IsUltrametricDist F] [NormedAlgebra ℚ_[p] F] [FiniteDimensional ℚ_[p] F]
-  [NormedField K] [IsUltrametricDist K] [NormedAlgebra ℚ_[p] K]
+  [NormedField K] [NormedAlgebra ℚ_[p] K]
   [NormedCommRing R] [NormedAlgebra K R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
+  [NormedSpace ℚ_[p] R] [IsScalarTower ℚ_[p] K R]
   {k : ℕ} {r s : Fin k → ℝ}
+
+private theorem exists_common_radius [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s i)] :
+    ∃ ε : ℝ, 0 < ε ∧ ε < 1 ∧ (∀ i, ε ≤ r i) ∧ (∀ i, ε ≤ s i) := by
+  obtain ⟨δ, hδ, hδrs⟩ := Pi.exists_forall_pos_add_lt
+    (x := fun _ ↦ (0 : ℝ)) (y := fun i ↦ min (r i) (s i))
+    (fun i ↦ lt_min (Fact.out : 0 < r i) (Fact.out : 0 < s i))
+  simp only [zero_add, lt_min_iff] at hδrs
+  refine ⟨min δ (1 / 2), lt_min hδ (by norm_num),
+    (min_le_right _ _).trans_lt (by norm_num), ?_, ?_⟩
+  · exact fun i ↦ (min_le_left _ _).trans (hδrs i).1.le
+  · exact fun i ↦ (min_le_left _ _).trans (hδrs i).2.le
 
 /-- Expansions of the same local unit character have the same formal coefficients, even when
 the polyradii at which the two series are restricted differ. The coordinates come from the full
-family of embeddings, and bounded linear functionals separate the coefficients over `K`. -/
+family of embeddings. The bounded `ℚ_p`-linear maps `φ j : R → L j` must jointly separate the
+points of `R`. -/
 theorem coe_expansion_eq_of_char_eq [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s i)]
     (σ : Fin k → F →ₐ[ℚ_[p]] K) (hσ : Function.Injective σ) (hk : Module.finrank ℚ_[p] F = k)
-    {ι : Type*} {L : ι → Type*} [∀ j, NormedField (L j)] [∀ j, NormedAlgebra K (L j)]
-    (φ : ∀ j, R →L[K] L j) (hφ : ∀ a, (∀ j, φ j a = 0) → a = 0)
+    {ι : Type*} {L : ι → Type*} [∀ j, NormedField (L j)] [∀ j, NormedAlgebra ℚ_[p] (L j)]
+    (φ : ∀ j, R →L[ℚ_[p]] L j) (hφ : ∀ a, (∀ j, φ j a = 0) → a = 0)
     {κ : AnalyticWeight R (fun i ↦
       (algebraMap K R).comp ((σ i).toRingHom.comp (Subring.unitClosedBall F).subtype)) r}
     {κ' : AnalyticWeight R (fun i ↦
       (algebraMap K R).comp ((σ i).toRingHom.comp (Subring.unitClosedBall F).subtype)) s}
     (hchar : κ.char = κ'.char) :
     (κ.expansion : MvPowerSeries (Fin k) R) = κ'.expansion := by
-  let t := fun i ↦ min (r i) (s i)
-  let radii := insert (1 / 2 : ℝ) (Finset.univ.image t)
-  let ε := radii.inf' (Finset.insert_nonempty _ _) id
-  have hε : 0 < ε := by
-    dsimp only [ε]
-    rw [Finset.lt_inf'_iff]
-    intro u hu
-    rcases Finset.mem_insert.mp hu with rfl | hu
-    · norm_num
-    · obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hu
-      exact lt_min (Fact.out : 0 < r i) (Fact.out : 0 < s i)
-  have hεt i : ε ≤ t i :=
-    Finset.inf'_le id (Finset.mem_insert_of_mem (Finset.mem_image_of_mem t (Finset.mem_univ i)))
-  have hε1 : ε < 1 :=
-    (Finset.inf'_le id (Finset.mem_insert_self _ _)).trans_lt (by norm_num : (1 / 2 : ℝ) < 1)
+  obtain ⟨ε, hε, hε1, hεr, hεs⟩ := exists_common_radius (r := r) (s := s)
   let c : Fin k → ℝ := fun _ ↦ ε
-  have hcr : c ≤ r := fun i ↦ (hεt i).trans (min_le_left _ _)
-  have hcs : c ≤ s := fun i ↦ (hεt i).trans (min_le_right _ _)
+  have hcr : c ≤ r := hεr
+  have hcs : c ≤ s := hεs
   let f := restrictedRadiusHom (fun _ ↦ hε.le) hcr κ.expansion
   let g := restrictedRadiusHom (fun _ ↦ hε.le) hcs κ'.expansion
   have hbound (y : F) (hy : ‖y‖ ≤ ε) (i : Fin k) : ‖algebraMap K R (σ i y)‖ ≤ c i := by
@@ -73,7 +73,7 @@ theorem coe_expansion_eq_of_char_eq [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s 
   suffices hfg : f = g by
     simpa [f, g] using congrArg (fun w : IsRestricted.subring (R := R) c ↦ w.val) hfg
   apply sub_eq_zero.mp
-  refine eq_zero_of_restrictedEval₂_padicEmbeddings_eq_zero (r := c) (hr := fun _ ↦ ⟨hε⟩)
+  refine eq_zero_of_restrictedEval₂_algHom_eq_zero (r := c) (hr := fun _ ↦ ⟨hε⟩)
     σ hσ hk hε φ hφ (f - g) hbound ?_
   intro y hy
   let : CompleteSpace F := FiniteDimensional.completeSpace ℚ_[p] F
@@ -100,8 +100,8 @@ theorem coe_expansion_eq_of_char_eq [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s 
 automorphy factor and slash action. -/
 theorem eq_of_char_eq [∀ i, Fact (0 < r i)] (σ : Fin k → F →ₐ[ℚ_[p]] K)
     (hσ : Function.Injective σ) (hk : Module.finrank ℚ_[p] F = k)
-    {ι : Type*} {L : ι → Type*} [∀ j, NormedField (L j)] [∀ j, NormedAlgebra K (L j)]
-    (φ : ∀ j, R →L[K] L j) (hφ : ∀ a, (∀ j, φ j a = 0) → a = 0)
+    {ι : Type*} {L : ι → Type*} [∀ j, NormedField (L j)] [∀ j, NormedAlgebra ℚ_[p] (L j)]
+    (φ : ∀ j, R →L[ℚ_[p]] L j) (hφ : ∀ a, (∀ j, φ j a = 0) → a = 0)
     {κ κ' : AnalyticWeight R (fun i ↦
       (algebraMap K R).comp ((σ i).toRingHom.comp (Subring.unitClosedBall F).subtype)) r}
     (hchar : κ.char = κ'.char) : κ = κ' :=

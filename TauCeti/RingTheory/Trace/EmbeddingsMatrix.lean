@@ -7,8 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.RingTheory.Trace.Basic
+public import Mathlib.Analysis.Normed.Algebra.Basic
+import Mathlib.LinearAlgebra.Basis.SMul
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
 # Linear independence of the rows of an embeddings matrix
@@ -40,6 +43,8 @@ matrix in a basis and the embeddings matrix of that basis.
 * `Algebra.linearIndependent_embeddingsMatrix_row_iff`: the converse also holds.
 * `Module.Basis.embeddingsMatrix_eq_transpose_mul`: the embeddings matrix of `y` is the transposed
   coordinate matrix of `y` in a basis `b` times the embeddings matrix of `b`.
+* `TauCeti.exists_small_embedding_matrix`: an invertible embedding matrix can be formed using
+  elements of arbitrarily small norm.
 
 ## References
 
@@ -111,3 +116,29 @@ theorem embeddingsMatrix_eq_transpose_mul [Fintype ι] {A B : Type*} (C : Type*)
   simp [Matrix.mul_apply, toMatrix_apply, Algebra.smul_def]
 
 end Module.Basis
+
+namespace TauCeti
+
+/-- For a full family of distinct embeddings, there is an invertible matrix of their values
+on a basis whose elements have norm less than any given positive bound. -/
+theorem exists_small_embedding_matrix {F K Ω : Type*} [NontriviallyNormedField F]
+    [NormedField K] [NormedAlgebra F K] [FiniteDimensional F K] [Field Ω] [Algebra F Ω]
+    {k : ℕ} (σ : Fin k → K →ₐ[F] Ω) (hσ : Function.Injective σ)
+    (hk : Module.finrank F K = k) {ε : ℝ} (hε : 0 < ε) :
+    ∃ b : Fin k → K, (∀ j, ‖b j‖ < ε) ∧ IsUnit (Matrix.of (fun i j ↦ σ i (b j))) := by
+  let b := Module.finBasisOfFinrankEq F K hk
+  have h (j : Fin k) : ∃ c : F, 0 < ‖c‖ ∧ ‖c‖ * ‖b j‖ < ε := by
+    have hpos : 0 < ‖b j‖ + 1 := by positivity
+    obtain ⟨c, hc, hc'⟩ := NormedField.exists_norm_lt F (div_pos hε hpos)
+    refine ⟨c, hc, ?_⟩
+    exact (mul_le_mul_of_nonneg_left (by simp) hc.le).trans_lt ((lt_div_iff₀ hpos).mp hc')
+  choose c hc hc' using h
+  let e := b.unitsSMul (fun j ↦ Units.mk0 (c j) (norm_pos_iff.mp (hc j)))
+  refine ⟨e, fun j ↦ ?_, ?_⟩
+  · simpa [e, Module.Basis.unitsSMul_apply, Units.smul_def, norm_smul] using hc' j
+  · rw [← Matrix.linearIndependent_row_iff_isUnit]
+    have h := (linearIndependent_algHom_toLinearMap F K Ω).comp σ hσ
+    exact h.map' (e.constr Ω).symm.toLinearMap
+      (LinearMap.ker_eq_bot.mpr (e.constr Ω).symm.injective)
+
+end TauCeti
