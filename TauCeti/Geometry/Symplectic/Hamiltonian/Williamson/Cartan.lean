@@ -250,16 +250,9 @@ private theorem IsDarbouxBasis.hamiltonianEnd_apply_castAdd (hb : ω.IsDarbouxBa
         (b (Fin.castAdd _ k, a)) := by
   obtain ⟨hell, hhyp⟩ := hb.polar_castAdd hR
   obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
-  · rw [hb.hamiltonianEnd_sum_smul_williamsonBlocks_apply_castAdd_fst]
-    refine ω.hamiltonianEnd_apply_eq_of_basis b fun ⟨P', a'⟩ ↦ ?_
-    by_cases hP : P' = Fin.castAdd _ k
-    · subst hP
-      obtain rfl | rfl : a' = 0 ∨ a' = 1 := by omega
-      all_goals by_cases hk : k ∈ t <;>
-        simp [williamsonCoeff, hk, hb.apply_fst, hb.apply_snd, hell, hhyp]
-    · rw [hb.polar_castAdd_of_ne hR hP]
-      split_ifs <;> simp [hb.apply_fst, hb.apply_snd, hP]
-  · rw [hb.hamiltonianEnd_sum_smul_williamsonBlocks_apply_castAdd_snd]
+  all_goals
+    simp only [hb.hamiltonianEnd_sum_smul_williamsonBlocks_apply_castAdd_fst,
+      hb.hamiltonianEnd_sum_smul_williamsonBlocks_apply_castAdd_snd]
     refine ω.hamiltonianEnd_apply_eq_of_basis b fun ⟨P', a'⟩ ↦ ?_
     by_cases hP : P' = Fin.castAdd _ k
     · subst hP
@@ -373,6 +366,9 @@ theorem isCartanSubalgebra_iff_exists_isDarbouxBasis_eq_map_span_williamsonBlock
     simp [Q]
   rw [hH, isNondegenerateQuadraticFamily_iff_exists_isDarbouxBasis_span_eq_span_williamsonBlocks,
     hspan]
-  simp only [Submodule.map_symm_eq_iff, eq_comm]
+  refine exists_congr fun _ ↦ exists_congr fun _ ↦ exists_congr fun _ ↦ exists_congr fun _ ↦
+    and_congr_right' ?_
+  rw [Submodule.map_symm_eq_iff]
+  exact eq_comm
 
 end TauCeti.SymplecticForm

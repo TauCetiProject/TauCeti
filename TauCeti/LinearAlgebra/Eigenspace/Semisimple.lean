@@ -103,8 +103,7 @@ theorem isSemisimple_of_pow_three_eq_smul {K M : Type*} [Field K] [NeZero (2 : K
     refine ⟨C c⁻¹ * X, -C c⁻¹, ?_⟩
     have hc' : C c⁻¹ * C c = (1 : K[X]) := by rw [← C_mul, inv_mul_cancel₀ hc, C_1]
     linear_combination hc'
-  · rw [map_mul, map_sub, map_pow, aeval_X, aeval_C, Algebra.algebraMap_eq_smul_one, mul_sub,
-      ← pow_succ', h, mul_smul_one, sub_self]
+  · simp [mul_sub, ← pow_succ', h, Algebra.algebraMap_eq_smul_one]
 
 end TauCeti
 
