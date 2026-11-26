@@ -19,7 +19,9 @@ On an additive group, measurability of subtraction gives measurability of transl
 A `SetLike` subobject closed under multiplication (`MulMemClass`) or inversion (`InvMemClass`)
 inherits `MeasurableMul`, `MeasurableMul₂`, and `MeasurableInv` (and their additive counterparts)
 from the ambient measurable space with respect to the subtype σ-algebra. Likewise the restriction of
-a jointly measurable action to an invariant subset (a `SubMulAction`) is jointly measurable.
+a jointly measurable action to an invariant subset (a `SubMulAction`) is jointly measurable, and
+the diagonal action on a product of spaces with measurable constant scalar multiplications has
+measurable constant scalar multiplications.
 
 ## Main declarations
 
@@ -31,6 +33,8 @@ a jointly measurable action to an invariant subset (a `SubMulAction`) is jointly
   `InvMemClass` / `NegMemClass` subobjects.
 * `SubMulAction.instMeasurableSMul₂`, `SubAddAction.instMeasurableVAdd₂`: the jointly measurable
   action on a `SubMulAction` / `SubAddAction`.
+* `Prod.instMeasurableConstSMul`, `Prod.instMeasurableConstVAdd`: the diagonal action on a
+  product of spaces with measurable constant scalar multiplications.
 * `TauCeti.measurableAdd_of_measurableSub`: on an additive group, separately measurable
   subtraction gives separately measurable addition.
 * `TauCeti.measurableAdd₂_of_measurableSub₂`: on an additive group, jointly measurable subtraction
@@ -66,6 +70,15 @@ instance SubMulAction.instMeasurableSMul₂ {G X : Type*} [SMul G X] [Measurable
     [MeasurableSpace X] [MeasurableSMul₂ G X] (p : SubMulAction G X) : MeasurableSMul₂ G p :=
   ⟨(measurable_smul.comp (measurable_fst.prodMk (measurable_subtypeVal.comp
     measurable_snd))).subtype_mk⟩
+
+/-- The diagonal action on a product of two spaces with measurable constant scalar
+multiplications has measurable constant scalar multiplications. -/
+@[to_additive /-- The diagonal additive action on a product of two spaces with measurable
+constant translations has measurable constant translations. -/]
+instance Prod.instMeasurableConstSMul {M X Y : Type*} [SMul M X] [SMul M Y] [MeasurableSpace X]
+    [MeasurableSpace Y] [MeasurableConstSMul M X] [MeasurableConstSMul M Y] :
+    MeasurableConstSMul M (X × Y) :=
+  ⟨fun c ↦ (measurable_fst.const_smul c).prodMk (measurable_snd.const_smul c)⟩
 
 namespace TauCeti
 
