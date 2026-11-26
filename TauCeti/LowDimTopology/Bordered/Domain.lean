@@ -596,7 +596,8 @@ theorem apply_borderRegion_castSucc (D : Region → ℤ) (i : Fin n) :
     have : ({y | y < (⟨0, hk⟩ : Fin n)} : Finset (Fin n)) = ∅ := by
       ext y
       simp [Fin.lt_def]
-    simp [this, Fin.castSucc, Fin.castAdd, Fin.castLE]
+    have h0 : (⟨0, hk⟩ : Fin n).castSucc = 0 := by ext; simp
+    simp [this, h0]
   | succ k ih =>
     have hset : ({y | y < (⟨k + 1, hk⟩ : Fin n)} : Finset (Fin n)) =
         insert ⟨k, by omega⟩ ({y | y < (⟨k, by omega⟩ : Fin n)} : Finset (Fin n)) := by

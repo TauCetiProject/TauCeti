@@ -131,10 +131,25 @@ def cornerRegion (p : Point) : Fin 4 → Region :=
   ![H.alphaLeft (H.alphaNext.symm (.inl p)), H.alphaRight (H.alphaNext.symm (.inl p)),
     H.alphaLeft (.inl p), H.alphaRight (.inl p)]
 
+theorem cornerRegion_eq (p : Point) :
+    H.cornerRegion p =
+      ![H.alphaLeft (H.alphaNext.symm (.inl p)), H.alphaRight (H.alphaNext.symm (.inl p)),
+        H.alphaLeft (.inl p), H.alphaRight (.inl p)] :=
+  (rfl)
+
 /-- The two regions with a corner at the end `i` of an `α`-arc on the boundary: the regions
 beside the intervals of `∂Σ` below and above `i`. -/
 def borderCornerRegion (i : Fin n) : Fin 2 → Region :=
   ![H.borderRegion i.castSucc, H.borderRegion i.succ]
+
+@[simp]
+theorem borderCornerRegion_zero (i : Fin n) :
+    H.borderCornerRegion i 0 = H.borderRegion i.castSucc :=
+  (rfl)
+
+@[simp]
+theorem borderCornerRegion_one (i : Fin n) : H.borderCornerRegion i 1 = H.borderRegion i.succ :=
+  (rfl)
 
 /-- The point measure `n_p(D)`: the average multiplicity of the domain `D` at the four corners
 at the intersection point `p`. -/
@@ -153,7 +168,7 @@ theorem pointMeasure_apply (D : Region → ℤ) (p : Point) :
       ((D (H.alphaLeft (H.alphaNext.symm (.inl p))) : ℚ) +
         D (H.alphaRight (H.alphaNext.symm (.inl p))) + D (H.alphaLeft (.inl p)) +
           D (H.alphaRight (.inl p))) / 4 := by
-  simp [pointMeasure_apply_eq_sum, cornerRegion, Fin.sum_univ_four]
+  simp [pointMeasure_apply_eq_sum, cornerRegion_eq, Fin.sum_univ_four]
 
 /-- The four corners at a crossing are also the regions on the two sides of the `β`-segment
 ending there and of the `β`-segment starting there, so the point measure can be read off along
@@ -339,6 +354,14 @@ theorem cornerCount_eq_card (r : Region) :
 
 variable [Fintype Region]
 
+/-- Summing `D` over a finite family of corners, the corner `c` lying in the region `f c`, counts
+each region with its number of corners. -/
+private theorem sum_mul_card_fiber {ι : Type*} [Fintype ι] (f : ι → Region) (D : Region → ℤ) :
+    ∑ r, (D r : ℚ) * #{c | f c = r} = ∑ c, (D (f c) : ℚ) := by
+  rw [← sum_fiberwise univ f fun c => (D (f c) : ℚ)]
+  refine sum_congr rfl fun r _ => ?_
+  rw [sum_congr rfl fun c hc => by rw [(mem_filter.mp hc).2], sum_const, nsmul_eq_mul, mul_comm]
+
 /-- The Euler measure `e(D) = ∑ D(R) (χ(R) - k(R) / 4)` of a domain, where `χ(R)` is the Euler
 characteristic of the region `R`, supplied as `χ`, and `k(R)` is its number of corners, at the
 intersection points and at the ends of the arcs. -/
@@ -360,20 +383,17 @@ theorem eulerMeasure_eq_sub_sum_pointMeasure (χ : Region → ℤ) (D : Region �
       (∑ i, H.borderPointMultiplicity D i) / 2 := by
   have hcorner : ∑ r, (D r : ℚ) * #{c : Point × Fin 4 | H.cornerRegion c.1 c.2 = r} =
       ∑ p, 4 * H.pointMeasure D p := by
-    simp_rw [card_filter, Nat.cast_sum, mul_sum]
-    rw [sum_comm, Fintype.sum_prod_type]
+    rw [sum_mul_card_fiber fun c : Point × Fin 4 => H.cornerRegion c.1 c.2,
+      Fintype.sum_prod_type]
     refine sum_congr rfl fun p _ => ?_
     rw [pointMeasure_apply_eq_sum, mul_div_cancel₀ _ four_ne_zero]
-    simp [Nat.cast_ite]
   have hborder : ∑ r, (D r : ℚ) * #{c : Fin n × Fin 2 | H.borderCornerRegion c.1 c.2 = r} =
       ∑ i, 2 * H.borderPointMultiplicity D i := by
-    simp_rw [card_filter, Nat.cast_sum, mul_sum]
-    rw [sum_comm, Fintype.sum_prod_type]
+    rw [sum_mul_card_fiber fun c : Fin n × Fin 2 => H.borderCornerRegion c.1 c.2,
+      Fintype.sum_prod_type]
     refine sum_congr rfl fun i _ => ?_
-    rw [borderPointMultiplicity_apply, mul_div_cancel₀ _ two_ne_zero]
-    simp only [Nat.cast_ite, Nat.cast_one, Nat.cast_zero, mul_ite, mul_one, mul_zero, sum_ite_eq,
-      mem_univ, ite_true, Fin.sum_univ_two]
-    simp [borderCornerRegion]
+    rw [borderPointMultiplicity_apply, mul_div_cancel₀ _ two_ne_zero, Fin.sum_univ_two,
+      borderCornerRegion_zero, borderCornerRegion_one]
   have h (r : Region) : (D r : ℚ) * (χ r - H.cornerCount r / 4) =
       χ r * D r - D r * #{c : Point × Fin 4 | H.cornerRegion c.1 c.2 = r} / 4 -
         D r * #{c : Fin n × Fin 2 | H.borderCornerRegion c.1 c.2 = r} / 4 := by
