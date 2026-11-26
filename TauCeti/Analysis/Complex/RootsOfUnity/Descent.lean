@@ -38,6 +38,8 @@ invariant under the rotations (`TauCeti.descendPow_pow`), and it undoes pulling 
 * `TauCeti.descendPow_pow`: `descendPow m f (u ^ m) = f u` when `f` is invariant at `u`.
 * `TauCeti.eq_descendPow_iff`: the criterion for a globally invariant function to factor
   through the power map.
+* `TauCeti.continuousOn_descendPow`: the descent of a function continuous and invariant on an
+  open set `s` is continuous on `(· ^ m) '' s`.
 * `TauCeti.differentiableOn_descendPow`: the descent of a function holomorphic and invariant on
   an open set `s` is holomorphic on the open set `(· ^ m) '' s`.
 * `TauCeti.analyticAt_descendPow` and `TauCeti.meromorphicAt_descendPow`: the descent of a function
@@ -125,12 +127,24 @@ theorem differentiableAt_descendPow_pow [AddCommGroup E] [Module ℂ E] [Topolog
     DifferentiableAt ℂ (descendPow m f) (u ^ m) := by
   -- A holomorphic branch `ρ` of the `m`-th root near `u ^ m`, with `ρ (u ^ m) = u`.
   obtain ⟨ρ, hρ, hρw, hρpow⟩ :=
-    exists_differentiableAt_pow_eq (NeZero.ne m) (pow_ne_zero m hu) (rfl : u ^ m = u ^ m)
+    exists_analyticAt_pow_eq (NeZero.ne m) (pow_ne_zero m hu) (rfl : u ^ m = u ^ m)
   have hρt := hρ.continuousAt.tendsto
   rw [hρw] at hρt
   have heq : descendPow m f =ᶠ[𝓝 (u ^ m)] f ∘ ρ := (hρt.eventually hf).mono fun v hv ↦ by
     rw [Function.comp_apply, ← descendPow_pow hv, hρpow]
-  exact ((by rwa [hρw] : DifferentiableAt ℂ f (ρ (u ^ m))).comp _ hρ).congr_of_eventuallyEq heq
+  exact ((by rwa [hρw] : DifferentiableAt ℂ f (ρ (u ^ m))).comp _
+    hρ.differentiableAt).congr_of_eventuallyEq heq
+
+/-- The descent of a function continuous on an open set `s` and invariant under the `m`-th roots
+of unity at every point of `s` is continuous on `(· ^ m) '' s`, since `u ↦ u ^ m` is an open map. -/
+theorem continuousOn_descendPow [TopologicalSpace E] {s : Set ℂ} {f : ℂ → E} (hs : IsOpen s)
+    (hfc : ContinuousOn f s) (hf : ∀ u ∈ s, ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = f u) :
+    ContinuousOn (descendPow m f) ((· ^ m) '' s) := by
+  rintro _ ⟨u, hu, rfl⟩
+  have heq : f =ᶠ[𝓝 u] descendPow m f ∘ (· ^ m) :=
+    (hs.eventually_mem hu).mono fun v hv ↦ (descendPow_pow (hf v hv)).symm
+  exact ((Complex.isOpenQuotientMap_pow m).continuousAt_comp_iff.1
+    ((hfc.continuousAt (hs.mem_nhds hu)).congr_of_eventuallyEq heq.symm)).continuousWithinAt
 
 variable [NormedAddCommGroup E] [NormedSpace ℂ E]
 

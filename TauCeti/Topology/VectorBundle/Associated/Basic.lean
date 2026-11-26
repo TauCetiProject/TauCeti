@@ -159,6 +159,11 @@ theorem mk_zero {b : B} (p : P b) : mk G p (0 : F) = 0 := by
   -- `instAddCommGroup` uses the model zero as the fibre zero.
   rfl
 
+/-- Classes in a fixed principal frame respect negation. -/
+@[simp]
+theorem mk_neg {b : B} (p : P b) (v : F) : mk G p (-v) = -mk G p v :=
+  eq_neg_of_add_eq_zero_left (by rw [← mk_add, neg_add_cancel, mk_zero])
+
 /-- Changing a principal frame transforms the vector coordinate by the division element. -/
 @[simp]
 theorem mkContinuousLinearEquiv_symm_apply_mk {b : B} (p q : P b) (v : F) :

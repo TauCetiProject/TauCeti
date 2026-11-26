@@ -54,6 +54,7 @@ its iterated partial derivatives in `Xᵢ` vanishing there too.
 
 ## Main results
 
+* `MvPolynomial.pderiv_X_mul_of_ne`: multiplication by `Xᵢ` commutes with `∂/∂Xⱼ` for `j ≠ i`.
 * `MvPolynomial.pderiv_aeval`: the chain rule, summed over all variables of a finite type.
 * `MvPolynomial.derivative_aeval`: the chain rule for a substitution of univariate polynomials.
 * `MvPolynomial.pderiv_aeval_of_vars_subset`: the chain rule, summed over a finite set containing
@@ -107,6 +108,12 @@ namespace MvPolynomial
 section CommSemiring
 
 variable {R σ τ : Type*} [CommSemiring R]
+
+/-- Multiplication by a variable `Xᵢ` commutes with the partial derivative along another
+variable `Xⱼ`. -/
+theorem pderiv_X_mul_of_ne {i j : σ} (hij : i ≠ j) (p : MvPolynomial σ R) :
+    pderiv j (X i * p) = X i * pderiv j p := by
+  rw [Derivation.leibniz, pderiv_X_of_ne hij, smul_zero, add_zero, smul_eq_mul]
 
 /-- **The chain rule**: `∂/∂Y_j (p(f)) = ∑ᵢ (∂p/∂Xᵢ)(f) · ∂fᵢ/∂Y_j` for a substitution
 `Xᵢ ↦ fᵢ` of polynomials in the variables `Y`. -/

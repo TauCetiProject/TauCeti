@@ -955,16 +955,10 @@ theorem exists_homotopyEquiv_pushout_sigma_negativeDiscBundle [T2Space M]
               (Limits.Sigma.desc (fun k : {k // ∀ s, f (i k s) = c} ↦ TopCat.ofHom (α k)) ≫
                 TopCat.ofHom r) z) : M) = z := by
   -- The pieces on the level `c` lie in the compact band, so they are finitely many and compact.
-  have hsub (k : {k // ∀ s, f (i k s) = c}) : range (i k) ⊆ f ⁻¹' Icc a b := by
-    rintro _ ⟨s, rfl⟩
-    rw [mem_preimage, k.property s]
-    exact ⟨hac.le, hcb.le⟩
   have (k : ι) : Nonempty (S k) := h.nonempty k
-  have : Finite {k // ∀ s, f (i k s) = c} :=
-    ((h.finite_setOf_range_subset hcompact).subset (t := {k | ∀ s, f (i k s) = c})
-      fun k hk ↦ hsub ⟨k, hk⟩).to_subtype
+  have := h.finite_subtype_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ fun _ ↦ id
   have (k : {k // ∀ s, f (i k s) = c}) : CompactSpace (S k) :=
-    h.compactSpace_of_range_subset hcompact (hsub k)
+    h.compactSpace_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ k.property
   exact SmoothEmbedding.exists_homotopyEquiv_pushout_sigma_negativeDiscBundle
     (ι := {k // ∀ s, f (i k s) = c}) (S := fun k ↦ S k) (P := fun k ↦ P k) (J := fun k ↦ J k)
     (i := fun k ↦ i k) hn (fun k ↦ h.isNondegenerateCriticalSubmanifold k) h.contMDiff

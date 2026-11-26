@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.ImplicitAtlas.DeformationSpace
+public import TauCeti.Topology.ImplicitAtlas.DeformationSpace.Basic
 public import TauCeti.Topology.ImplicitAtlas.Boundary
+public import TauCeti.Topology.ImplicitAtlas.CellLike
 public import TauCeti.Topology.ImplicitAtlas.Smooth
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.Topology.UnitInterval
@@ -15,6 +16,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Geometry.Manifold.Boundary.Charts
 import TauCeti.Geometry.Manifold.Boundary.Invariance
+import TauCeti.Geometry.Manifold.Instances.Icc.Boundary
 import TauCeti.Topology.Homeomorph.Prod
 
 /-!
@@ -40,7 +42,11 @@ for the virtual fundamental class.
   `[0, 1]` is an implicit atlas with boundary `{0, 1}` of virtual dimension `1` with an empty index
   set: the manifold atlas with boundary of `[0, 1]`, whose manifold boundary is `{0, 1}`. Its
   boundary restriction, an atlas of virtual dimension `0` on `{0, 1}`, is regular everywhere
-  (`TauCeti.ImplicitAtlasWithBoundary.regLocus_boundaryAtlas_unitIntervalAtlas`).
+  (`TauCeti.ImplicitAtlasWithBoundary.regLocus_boundaryAtlas_unitIntervalAtlas`). Stratified by
+  `{0} < (0, 1) > {1}` (`TauCeti.unitIntervalStratum`), with the two endpoints as boundary faces,
+  it is a cell-like stratified atlas
+  (`TauCeti.ImplicitAtlasWithBoundary.unitIntervalCellLikeStratification`, Pardon,
+  Definition 6.1.6).
 * **Single-chart atlases on a point** (`TauCeti.ImplicitAtlas.pointAtlas`). Let a finite group
   `Γ` act on a Hausdorff topological `n`-manifold `Y` and on a finite-dimensional real
   representation `E`, and let `s : Y → E` be a continuous equivariant map whose only zero is
@@ -71,6 +77,10 @@ The single-chart atlases on a point realize the following test atlases.
   and trivially on `E_α = ℝ`. The regular point `0` of `X_α` is fixed by the reflection
   (`TauCeti.ImplicitAtlas.coe_pointAct_unitsIntAction_neg_one`), which reverses the orientation of
   `X_α` and preserves that of `E_α`.
+* **The odd reflection atlas** (`TauCeti.ImplicitAtlas.oddReflectionAtlas`): `s(x) = xᵐ` for an
+  odd `m`, such as `s(x) = x`, with `Γ_α = ℤˣ` acting by `x ↦ ±x` on both `X_α = ℝ` and
+  `E_α = ℝ` (`Representation.ofDistribMulAction`). The reflection reverses the orientations of
+  both.
 * **The atlas `s = 0` on a point** (`TauCeti.ImplicitAtlas.zeroAtlas`): an arbitrary finite group
   `Γ_α` acting trivially on the point `X_α = ℝ⁰`, an arbitrary obstruction representation `E_α`
   and `s_α = 0`, of virtual dimension `-dim E_α`. The next two atlases are instances of it.
@@ -94,7 +104,7 @@ The single-chart atlases on a point realize the following test atlases.
   Definitions 3.1.1 and 3.2.1 (implicit atlases with boundary). The atlas `s(x) = xᵐ` on `ℝ`
   is Pardon's Example 2.3.2, and `s(z) = zᵐ` on `ℂ` is its complex analogue. The ineffective
   point, a trivial `ℤ/2` action on a point, is Pardon's example in §2.3.3 (p. 20). The
-  reflection atlas, the point of virtual dimension `-1` and the isotropy theorem are constructed
+  reflection atlases, the point of virtual dimension `-1` and the isotropy theorem are constructed
   here as implicit atlases in the sense of Definition 3.1.1; they are not taken from a numbered
   example of Pardon.
 -/
@@ -288,9 +298,7 @@ noncomputable def unitIntervalAtlas :
   boundary_empty := (rfl)
   footprintMap_mem_boundary_iff _ _ _ _ := Iff.rfl
   exists_openPartialHomeomorph _ _ h x hx := by
-    let : ChartedSpace (EuclideanHalfSpace (0 + 1)) unitInterval := instIccChartedSpace 0 1
-    -- The manifold boundary of `[0, 1]` is `{0, 1}`.
-    have hbd : (𝓡∂ (0 + 1)).boundary unitInterval = {0, 1} := boundary_Icc
+    have hbd : (𝓡∂ (0 + 1)).boundary unitInterval = {0, 1} := boundary_unitInterval
     rcases (ofChartedSpace Γ E ρ 0 unitInterval).exists_openPartialHomeomorph h x hx with
       ⟨n, hn, e, hxe, hdisj, he⟩ | ⟨n, hn, e, hxe, hbde, he⟩
     · exact Or.inl ⟨n, by simpa using hn, e, hxe, hbd ▸ hdisj, he⟩
@@ -310,6 +318,37 @@ theorem boundary_unitIntervalAtlas (I : Finset A) :
 theorem regLocus_boundaryAtlas_unitIntervalAtlas (I : Finset A) :
     (unitIntervalAtlas Γ E ρ).boundaryAtlas.regLocus I = univ := by
   simp
+
+/-- **The interval as a cell-like stratified atlas.** The interval atlas `[0, 1]`, stratified by
+`{0} < (0, 1) > {1}` (`TauCeti.unitIntervalStratum`, indexed by the subsets of `Bool` with dimension
+one less than their cardinality), with the proper subsets as boundary faces. -/
+noncomputable def unitIntervalCellLikeStratification :
+    (unitIntervalAtlas Γ E ρ).CellLikeStratification (Set Bool) (fun P ↦ (P.ncard : ℤ) - 1)
+      (LowerSet.Iio univ) where
+  stratum _ := unitIntervalStratum
+  isStratification_stratum _ := isCellLike_unitIntervalStratum.isStratification
+  stratum_act _ _ _ := rfl
+  boundary_eq_preimage _ := by
+    rw [boundary_unitIntervalAtlas, LowerSet.coe_Iio, preimage_unitIntervalStratum_Iio_univ]
+  stratum_footprintMap I J _ x := by
+    -- The only finite set of indices is `∅`, and `ψ_∅∅` is the identity.
+    obtain rfl := Finset.eq_empty_of_isEmpty I
+    obtain rfl := Finset.eq_empty_of_isEmpty J
+    exact congrArg unitIntervalStratum ((unitIntervalAtlas Γ E ρ).footprintMap_self ∅ x.val)
+  isCellLikeOn_regLocus I := by
+    simpa [Finset.eq_empty_of_isEmpty I] using isCellLike_unitIntervalStratum.isCellLikeOn_univ
+  exists_openPartialHomeomorph_stratum I J _ x _ := by
+    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.val⟩
+    refine ⟨unitInterval, inferInstance, unitIntervalStratum,
+      by simpa [Finset.eq_empty_of_isEmpty I] using isCellLike_unitIntervalStratum,
+      (Homeomorph.prodUnique unitInterval ((α : ↥(J \ I)) → E α)).symm.toOpenPartialHomeomorph,
+      by simp, fun _ _ ↦ Subsingleton.elim _ _, fun y _ ↦ by simp⟩
+
+/-- The interval atlas is stratified by `TauCeti.unitIntervalStratum` in each thickening. -/
+@[simp]
+theorem stratum_unitIntervalCellLikeStratification (I : Finset A) :
+    (unitIntervalCellLikeStratification Γ E ρ).stratum I = unitIntervalStratum :=
+  (rfl)
 
 end UnitInterval
 
@@ -444,7 +483,7 @@ theorem pointAct_one (hσ : ∀ g, (1 : Γ →* (Y ≃ₜ Y)) g y₀ = y₀) :
   simp
 
 /-- A thickening at a nonempty index set is all of `Y`. -/
-private def pointThickeningHomeomorph {J : Finset Unit} (hJ : J.Nonempty) :
+def pointThickeningHomeomorph {J : Finset Unit} (hJ : J.Nonempty) :
     PointThickening Y y₀ J ≃ₜ Y where
   toFun := Subtype.val
   invFun y := ⟨y, fun h ↦ (hJ.ne_empty h).elim⟩
@@ -452,6 +491,16 @@ private def pointThickeningHomeomorph {J : Finset Unit} (hJ : J.Nonempty) :
   right_inv _ := rfl
   continuous_toFun := continuous_subtypeVal
   continuous_invFun := continuous_id.subtype_mk _
+
+@[simp]
+theorem coe_pointThickeningHomeomorph {J : Finset Unit} (hJ : J.Nonempty) :
+    ⇑(pointThickeningHomeomorph (y₀ := y₀) hJ) = Subtype.val :=
+  (rfl)
+
+@[simp]
+theorem coe_pointThickeningHomeomorph_symm_apply {J : Finset Unit} (hJ : J.Nonempty) (y : Y) :
+    ((pointThickeningHomeomorph (y₀ := y₀) hJ).symm y : Y) = y :=
+  (rfl)
 
 /-- An equivariant map `s` whose only zero is `y₀` forces `y₀` to be a fixed point. -/
 theorem apply_eq_self_of_equivariant {E : Type*} [AddCommGroup E] [Module ℝ E]
@@ -824,6 +873,63 @@ theorem coe_pointAct_unitsIntAction_neg_one (hσ : ∀ u, unitsIntAction u 0 = 0
     (x : PointThickening ℝ 0 {()}) :
     (pointAct unitsIntAction hσ {()} (fun _ ↦ -1) x : ℝ) = -x := by
   simp [pointComponent_of_mem (Finset.mem_singleton_self ())]
+
+/-- **The odd reflection atlas.** The implicit atlas of virtual dimension `0` on the point
+`X = {0}` with one index `α`, group `Γ_α = ℤˣ = {±1}` acting by `x ↦ ±x` both on the thickening
+`X_α = ℝ` and on the obstruction space `E_α = ℝ`, and the equivariant Kuranishi map
+`s_α(x) = xᵐ` for an odd `m`; `m = 1` gives the transverse section `s_α(x) = x`. As in
+`TauCeti.ImplicitAtlas.reflectionAtlas` the reflection fixes the regular point `0` of `X_α` and
+reverses the orientation of `X_α`, but here it reverses the orientation of `E_α` as well. -/
+noncomputable def oddReflectionAtlas (hm : Odd m) :
+    ImplicitAtlas (fun _ : Unit ↦ ℤˣ) (fun _ ↦ ℝ)
+      (fun _ ↦ Representation.ofDistribMulAction ℝ ℤˣ ℝ) (PointThickening ℝ 0)
+      (pointAct unitsIntAction fun _ ↦ by simp) (PointThickening ℝ 0 ∅) 0 :=
+  letI := realChartedSpace
+  pointAtlas (Representation.ofDistribMulAction ℝ ℤˣ ℝ) unitsIntAction (fun x : ℝ ↦ x ^ m)
+    (continuous_pow m)
+    (fun u _ ↦ by rcases Int.units_eq_one_or u with rfl | rfl <;> simp [hm.neg_pow])
+    (fun _ ↦ pow_eq_zero_iff hm.pos.ne') 1 (by simp)
+
+/-- The Kuranishi map of `TauCeti.ImplicitAtlas.oddReflectionAtlas` is `s_α(x) = xᵐ`. -/
+@[simp]
+theorem kuranishi_oddReflectionAtlas (hm : Odd m) :
+    (oddReflectionAtlas hm).kuranishi = pointKuranishi 0 fun x : ℝ ↦ x ^ m :=
+  (rfl)
+
+/-- The regular locus of `X_I` in `TauCeti.ImplicitAtlas.oddReflectionAtlas` is everything for
+`I = {α}` and empty for `I = ∅`. -/
+theorem regLocus_oddReflectionAtlas (hm : Odd m) (I : Finset Unit) :
+    (oddReflectionAtlas hm).regLocus I = {_x | I.Nonempty} :=
+  (rfl)
+
+/-- The regular locus of `X_∅` in `TauCeti.ImplicitAtlas.oddReflectionAtlas` is empty. -/
+@[simp]
+theorem regLocus_oddReflectionAtlas_empty (hm : Odd m) :
+    (oddReflectionAtlas hm).regLocus ∅ = ∅ :=
+  letI := realChartedSpace
+  regLocus_pointAtlas_empty ..
+
+/-- The footprint maps of `TauCeti.ImplicitAtlas.oddReflectionAtlas` keep the real coordinate. -/
+@[simp]
+theorem coe_footprintMap_oddReflectionAtlas (hm : Odd m) {I J : Finset Unit} (h : I ⊆ J)
+    (x : kuranishiZeroSet (E := fun _ : Unit ↦ ℝ) (oddReflectionAtlas hm).kuranishi I J) :
+    ((oddReflectionAtlas hm).footprintMap h x : ℝ) = ((x : PointThickening ℝ 0 J) : ℝ) :=
+  (rfl)
+
+/-- The footprint `V_∅` of `TauCeti.ImplicitAtlas.oddReflectionAtlas` is empty, since the regular
+locus of `X_∅` is. -/
+@[simp]
+theorem footprint_oddReflectionAtlas_empty (hm : Odd m) :
+    (oddReflectionAtlas hm).footprint ∅ = ∅ :=
+  letI := realChartedSpace
+  footprint_pointAtlas_empty ..
+
+/-- The footprint `V_α` of `TauCeti.ImplicitAtlas.oddReflectionAtlas` is the whole point. -/
+@[simp]
+theorem footprint_oddReflectionAtlas_singleton (hm : Odd m) :
+    (oddReflectionAtlas hm).footprint {()} = univ :=
+  letI := realChartedSpace
+  footprint_pointAtlas_singleton ..
 
 /-! #### The atlas `s = 0` on a point -/
 

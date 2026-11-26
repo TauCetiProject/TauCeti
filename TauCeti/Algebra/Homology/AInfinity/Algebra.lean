@@ -237,6 +237,11 @@ theorem m_eq_desuspension (𝒜 : AInfinityAlgebra R A) :
     𝒜.m = AInfinity.desuspension 𝒜.grading 𝒜.taylor :=
   𝒜.taylor_isSuspension.eq_desuspension 𝒜.m_zero
 
+/-- `A∞` algebras are determined by their grading and Taylor map. -/
+theorem ext_of_taylor {𝒜 𝒜' : AInfinityAlgebra R A} (hG : 𝒜.grading = 𝒜'.grading)
+    (h : 𝒜.taylor = 𝒜'.taylor) : 𝒜 = 𝒜' :=
+  ext hG (by rw [m_eq_desuspension, m_eq_desuspension, hG, h])
+
 /-- Every `A∞` algebra is built from its own Taylor map. -/
 @[simp]
 theorem ofTaylor_self (𝒜 : AInfinityAlgebra R A) :
@@ -529,6 +534,14 @@ theorem taylor_of_tprod (𝒜 : AInfinityAlgebra R A) (n : {n : ℕ // 0 < n}) (
       𝒜.m n.val fun i ↦ 𝒜.grading.koszulTwist ((n.val : ℤ) - 1 - i) (x i) := by
   rw [𝒜.taylor_isSuspension.taylor_eq (AInfinity.isSuspension_suspensionTaylor _ _),
     AInfinity.suspensionTaylor_of_tprod]
+
+/-- In positive arity, `𝒜.m n x` evaluates `𝒜.taylor` on the pure tensor word whose `i`-th
+letter is twisted by `koszulTwist ((n : ℤ) - 1 - i)`. -/
+theorem m_apply_eq_taylor_of_tprod_koszulTwist (𝒜 : AInfinityAlgebra R A) {n : ℕ} (hn : 0 < n)
+    (x : Fin n → A) :
+    𝒜.m n x = 𝒜.taylor (ReducedTensorWords.of R A ⟨n, hn⟩
+      (PiTensorProduct.tprod R fun i ↦ 𝒜.grading.koszulTwist ((n : ℤ) - 1 - i) (x i))) := by
+  rw [𝒜.m_eq_desuspension, AInfinity.desuspension_apply _ _ hn]
 
 /-- The suspended Taylor map sends the word of the first `n` letters of a natural-indexed family of
 homogeneous letters to the piece of their total suspended degree plus one. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 
 /-!
 # The unitary subgroup of the general linear group
@@ -30,6 +31,8 @@ subgroup is the orthogonal group: these are the matrices whose transpose is a tw
 * `TauCeti.coe_inv_eq_transpose_of_mem_unitarySubgroup` and
   `TauCeti.transpose_mul_self_of_mem_unitarySubgroup`: over a ring with trivial star, a unitary
   invertible matrix is inverted by its transpose.
+* `Equiv.star_reindexGL`, `Equiv.map_reindexGL_unitarySubgroup`: reindexing rows and columns
+  commutes with the star and maps the unitary subgroup onto the unitary subgroup.
 -/
 
 public section
@@ -85,3 +88,26 @@ theorem transpose_mul_self_of_mem_unitarySubgroup (hg : g ∈ unitarySubgroup (G
   rw [← coe_inv_eq_transpose_of_mem_unitarySubgroup hg, Units.inv_mul]
 
 end TauCeti
+
+namespace Equiv
+
+variable {n p : Type*} [Fintype n] [DecidableEq n] [Fintype p] [DecidableEq p]
+  (e : n ≃ p) (R : Type*) [Semiring R] [StarRing R]
+
+/-- Reindexing commutes with the star operation of the general linear group, the conjugate
+transpose. -/
+@[simp]
+theorem star_reindexGL (M : GL n R) : star (e.reindexGL R M) = e.reindexGL R (star M) :=
+  Units.ext <| by
+    simp [Matrix.star_eq_conjTranspose, Matrix.conjTranspose_submatrix]
+
+/-- **Reindexing preserves the unitary subgroup** of the general linear group. For a trivial star
+operation this is the orthogonal subgroup. -/
+@[simp]
+theorem map_reindexGL_unitarySubgroup :
+    (unitarySubgroup (GL n R)).map (e.reindexGL R) = unitarySubgroup (GL p R) := by
+  ext M
+  rw [mem_map_reindexGL_iff]
+  simp [mem_unitarySubgroup_iff, Unitary.mem_iff, ← map_mul]
+
+end Equiv

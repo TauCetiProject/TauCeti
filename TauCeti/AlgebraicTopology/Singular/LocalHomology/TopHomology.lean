@@ -233,6 +233,20 @@ theorem mem_range_localHomologySystemCone_π_app_iff [CompactSpace M] {n : ℕ}
     refine ⟨γ, (hγ x.as (mem_univ _)).trans ?_⟩
     simpa only [Joined.refl x.as, dite_true] using hz (p (Joined.refl x.as))
 
+/-- **Global classes are fixed by transport along loops.** On a compact manifold `M` of
+dimension `n`, the image of a class of `Hₙ(M; N)` in the local homology `Hₙ(M, M ∖ {x}; N)` is
+fixed by the transport of local homology along every loop at `x`. -/
+theorem localHomologyTransport_singularHomologyToLocalHomology [CompactSpace M] {n : ℕ}
+    (hn : finrank ℝ E = n) (x : M)
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} Λ))
+    (g : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk x) :
+    localHomologyTransport N M E n g (singularHomologyToLocalHomology N x n μ) =
+      singularHomologyToLocalHomology N x n μ :=
+  (mem_range_localHomologySystemCone_π_app_iff N hn (FundamentalGroupoid.mk x) _).1
+    ⟨((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ N n).hom μ, by
+      rw [localHomologySystemCone_π_app]
+      exact (singularHomologyToLocalHomology_apply N x μ).symm⟩ g
+
 /-- **Nonzero top homology maps onto local homology.** Let `M` be a compact connected manifold of
 dimension `n`, and `N` a module free of rank one over a domain `Λ`. If `Hₙ(M; N)` is nonzero, then
 the restriction `Hₙ(M; N) → Hₙ(M, M ∖ {x}; N)` to the local homology at any point `x` is surjective,
@@ -248,19 +262,13 @@ theorem singularHomologyToLocalHomology_surjective_of_ne_zero [IsDomain Λ] (eN 
   have hμx : singularHomologyToLocalHomology N x n μ ≠ 0 := by
     rw [← map_zero (singularHomologyToLocalHomology N x n)]
     exact (singularHomologyToLocalHomology_injective N hn x).ne hμ
-  have hfix (g : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk x) :
-      localHomologyTransport N M E n g (singularHomologyToLocalHomology N x n μ) =
-        singularHomologyToLocalHomology N x n μ :=
-    (mem_range_localHomologySystemCone_π_app_iff N hn (FundamentalGroupoid.mk x) _).1
-      ⟨((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ N n).hom μ, by
-        rw [localHomologySystemCone_π_app]
-        exact (singularHomologyToLocalHomology_apply N x μ).symm⟩ g
   -- Hence every local class is fixed by transport along loops, and comes from a global class.
   intro z
   obtain ⟨γ, hγ⟩ := (mem_range_localHomologySystemCone_π_app_iff N hn
     (FundamentalGroupoid.mk x) z).2 fun g ↦
       LinearMap.congr_fun (LinearMap.eq_id_of_apply_eq_self (localHomologyTransport N M E n g).hom
-        (localHomologySingletonLinearEquiv N hn eN x) hμx (hfix g)) z
+        (localHomologySingletonLinearEquiv N hn eN x) hμx
+          (localHomologyTransport_singularHomologyToLocalHomology N hn x μ g)) z
   obtain ⟨γ', rfl⟩ := (singularHomologyπ_compl_univ_bijective M N n).2 γ
   exact ⟨γ', by
     rw [← hγ, localHomologySystemCone_π_app]

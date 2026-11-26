@@ -39,6 +39,8 @@ The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear To
   maps to the barycenter of the face it represents.
 * `AbstractSimplicialComplex.barycentricSubdivisionLinearMap_apply`: the coordinates of a linear
   combination of face barycenters.
+* `AbstractSimplicialComplex.support_barycentricSubdivisionRealizationMap_subset`: the realization
+  map sends the closed simplex of a chain of faces of `σ` into the closed simplex of `σ`.
 * `AbstractSimplicialComplex.barycentricSubdivisionFaceMap_apply`: the coordinates of the face map.
 * `AbstractSimplicialComplex.continuous_barycentricSubdivisionFaceMap`: the face map is continuous.
 * `AbstractSimplicialComplex.barycentricSubdivisionRealizationMap_comp_faceInclusion`: on a
@@ -185,6 +187,33 @@ theorem barycentricSubdivisionRealizationMap_vertex (K : AbstractSimplicialCompl
         K.toPreAbstractSimplicialComplex) σ) : ι →₀ ℝ) = faceBarycenter K σ := by
   rw [barycentricSubdivisionRealizationMap_val, vertex_val,
     barycentricSubdivisionLinearMap_single]
+
+/-- The coordinates of the image in `|K|` of a point of the closed simplex of `sd K` spanned by
+`ρ`: the weighted sum of the coordinates of the barycenters of the faces in `ρ`. -/
+theorem barycentricSubdivisionRealizationMap_apply_eq_sum (K : AbstractSimplicialComplex ι)
+    {ρ : Finset (Face K)}
+    {x : Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
+      K.toPreAbstractSimplicialComplex)} (hx : x.val.support ⊆ ρ) (v : ι) :
+    (barycentricSubdivisionRealizationMap K x : ι →₀ ℝ) v =
+      ∑ τ ∈ ρ, x.val τ * faceBarycenter K τ v := by
+  rw [barycentricSubdivisionRealizationMap_val, barycentricSubdivisionLinearMap_apply]
+  simp only [← faceBarycenter_apply]
+  exact Finset.sum_subset hx fun τ _ hτ => by simp [Finsupp.notMem_support_iff.mp hτ]
+
+/-- The image in `|K|` of the closed simplex of `sd K` spanned by `ρ` lies in the closed simplex of
+every finite set `σ` containing all faces in `ρ`. -/
+theorem support_barycentricSubdivisionRealizationMap_subset (K : AbstractSimplicialComplex ι)
+    {ρ : Finset (Face K)} {σ : Finset ι} (hρσ : ∀ τ ∈ ρ, τ.val ⊆ σ)
+    {x : Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
+      K.toPreAbstractSimplicialComplex)} (hx : x.val.support ⊆ ρ) :
+    (barycentricSubdivisionRealizationMap K x : ι →₀ ℝ).support ⊆ σ := by
+  intro v hv
+  by_contra hvσ
+  refine Finsupp.mem_support_iff.mp hv
+    ((barycentricSubdivisionRealizationMap_apply_eq_sum K hx v).trans
+      (Finset.sum_eq_zero fun τ hτ => ?_))
+  have hvτ : v ∉ τ.val := fun h => hvσ (hρσ τ hτ h)
+  simp [hvτ]
 
 /-- Restriction of the barycentric-subdivision realization map to a simplex `ρ` of the
 subdivision, a family of faces of `σ`, is the barycentric-subdivision face map followed by the
