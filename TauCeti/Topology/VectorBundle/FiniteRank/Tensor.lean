@@ -22,7 +22,10 @@ a continuous fibrewise linear map whose fibre maps are the Kronecker products of
 (`FiniteRankBundleCore.fiberMap_tensorHom`). The construction is a bifunctor: it preserves
 identities and composition, is additive in each variable, preserves isomorphisms, and commutes
 strictly with pullback along continuous maps of bases (`pullback_tensor`,
-`pullbackMap_tensorHom`). The base is arbitrary, and the scalar field need not be complete.
+`pullbackMap_tensorHom`). Sections `s₁` of `A` and `s₂` of `D` have a coordinate pure tensor
+`pureTensorSection A D s₁ s₂`, which is continuous when `s₁` and `s₂` are
+(`continuous_pureTensorSection`) and commutes with `tensorHom` and `pullback`. The base is
+arbitrary, and the scalar field need not be complete.
 
 The construction uses Mathlib's coordinate cores and the coordinate morphisms
 `VectorBundleCore.CoordinateHom`.
@@ -30,7 +33,7 @@ The construction uses Mathlib's coordinate cores and the coordinate morphisms
 
 public section
 
-open CategoryTheory VectorBundleCore Set
+open Bundle CategoryTheory VectorBundleCore Set
 
 namespace TauCeti.FiniteRankBundleCore
 
@@ -215,5 +218,73 @@ variable {X : Type*} {Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
   exact Eq.symm (fiberMap_tensorHom _ _ x)
 
 end Pullback
+
+section Sections
+
+/-- The pure tensor `s₁ ⊗ s₂` of a section `s₁` of `A` and a section `s₂` of `D`, as a section of
+`tensor A D` with entry `s₁ x i * s₂ x j` at `finProdFinEquiv (i, j)`. -/
+def pureTensorSection (A D : FiniteRankBundleCore 𝕜 B)
+    (s₁ : ∀ x, A.core.Fiber x) (s₂ : ∀ x, D.core.Fiber x)
+    (x : B) : (tensor A D).core.Fiber x :=
+  fun k ↦ s₁ x (finProdFinEquiv.symm k).1 * s₂ x (finProdFinEquiv.symm k).2
+
+@[simp] theorem pureTensorSection_apply_finProdFinEquiv (A D : FiniteRankBundleCore 𝕜 B)
+    (s₁ : ∀ x, A.core.Fiber x) (s₂ : ∀ x, D.core.Fiber x)
+    (x : B) (i : Fin A.rank) (j : Fin D.rank) :
+    pureTensorSection A D s₁ s₂ x (finProdFinEquiv (i, j)) = s₁ x i * s₂ x j := by
+  simp [pureTensorSection]
+
+/-- `tensorHom f g` acts on a pure tensor section factorwise. -/
+theorem fiberMap_tensorHom_pureTensorSection (f : A ⟶ A') (g : D ⟶ D')
+    (s₁ : ∀ x, A.core.Fiber x) (s₂ : ∀ x, D.core.Fiber x) (x : B) :
+    (tensorHom f g).fiberMap x (pureTensorSection A D s₁ s₂ x) =
+      pureTensorSection A' D' (fun y ↦ f.fiberMap y (s₁ y)) (fun y ↦ g.fiberMap y (s₂ y)) x := by
+  rw [fiberMap_tensorHom]
+  exact ContinuousLinearMap.kronecker_apply_mul (f.fiberMap x) (g.fiberMap x) (s₁ x) (s₂ x)
+
+/-- In chart `i` of `tensor A D`, the fibre coordinate of `pureTensorSection A D s₁ s₂` is the
+coordinatewise product of the chart coordinates of `s₁` and `s₂`. -/
+theorem localTriv_pureTensorSection_snd (A D : FiniteRankBundleCore 𝕜 B)
+    (s₁ : ∀ x, A.core.Fiber x) (s₂ : ∀ x, D.core.Fiber x) (i x : B) :
+    ((tensor A D).core.localTriv i ⟨x, pureTensorSection A D s₁ s₂ x⟩).2 =
+      fun k ↦ (A.core.localTriv i ⟨x, s₁ x⟩).2 (finProdFinEquiv.symm k).1 *
+        (D.core.localTriv i ⟨x, s₂ x⟩).2 (finProdFinEquiv.symm k).2 := by
+  simp only [localTriv_apply, indexAt_eq, coordChange_tensor]
+  exact ContinuousLinearMap.kronecker_apply_mul _ _ (s₁ x) (s₂ x)
+
+/-- The pure tensor of two continuous sections of `A` and `D` is a continuous section of
+`tensor A D`. -/
+theorem continuous_pureTensorSection (A D : FiniteRankBundleCore 𝕜 B)
+    {s₁ : ∀ x, A.core.Fiber x} {s₂ : ∀ x, D.core.Fiber x}
+    (hs₁ : Continuous fun x ↦ TotalSpace.mk' (Fin A.rank → 𝕜) x (s₁ x))
+    (hs₂ : Continuous fun x ↦ TotalSpace.mk' (Fin D.rank → 𝕜) x (s₂ x)) :
+    Continuous fun x ↦
+      TotalSpace.mk' (Fin (tensor A D).rank → 𝕜) x (pureTensorSection A D s₁ s₂ x) := by
+  refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
+  have hc₁ : ContinuousAt (fun x ↦ (A.core.localTriv x₀ ⟨x, s₁ x⟩).2) x₀ := by
+    have h := ((FiberBundle.continuousAt_totalSpace _ _).1 (hs₁.continuousAt (x := x₀))).2
+    rwa [show (TotalSpace.mk' (Fin A.rank → 𝕜) x₀ (s₁ x₀)).proj = x₀ from rfl,
+      A.trivializationAt_core x₀] at h
+  have hc₂ : ContinuousAt (fun x ↦ (D.core.localTriv x₀ ⟨x, s₂ x⟩).2) x₀ := by
+    have h := ((FiberBundle.continuousAt_totalSpace _ _).1 (hs₂.continuousAt (x := x₀))).2
+    rwa [show (TotalSpace.mk' (Fin D.rank → 𝕜) x₀ (s₂ x₀)).proj = x₀ from rfl,
+      D.trivializationAt_core x₀] at h
+  rw [FiberBundle.continuousAt_totalSpace]
+  refine ⟨continuousAt_id, ?_⟩
+  rw [show (TotalSpace.mk' (Fin (tensor A D).rank → 𝕜) x₀
+    (pureTensorSection A D s₁ s₂ x₀)).proj = x₀ from rfl, (tensor A D).trivializationAt_core x₀]
+  refine (continuousAt_pi.2 fun k ↦
+    (((continuous_apply (finProdFinEquiv.symm k).1).continuousAt.comp hc₁).mul
+      ((continuous_apply (finProdFinEquiv.symm k).2).continuousAt.comp hc₂))).congr
+    (Filter.Eventually.of_forall fun x ↦ (localTriv_pureTensorSection_snd A D s₁ s₂ x₀ x).symm)
+
+/-- Pulling back sections commutes strictly with forming `pureTensorSection`. -/
+@[simp] theorem pullback_pureTensorSection {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
+    (s₁ : ∀ y, A.core.Fiber y) (s₂ : ∀ y, D.core.Fiber y) :
+    pureTensorSection (A.pullback f) (D.pullback f) (fun x ↦ s₁ (f x)) (fun x ↦ s₂ (f x)) =
+      fun x ↦ pureTensorSection A D s₁ s₂ (f x) := (rfl)
+
+end Sections
 
 end TauCeti.FiniteRankBundleCore

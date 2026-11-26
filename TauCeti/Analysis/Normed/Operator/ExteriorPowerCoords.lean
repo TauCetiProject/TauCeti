@@ -17,15 +17,19 @@ public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Kronecker
 For a continuous linear operator `g` between coordinate spaces over a normed field,
 `g.exteriorPowerCoords j` is its `j`th exterior power read in the coordinates
 `exteriorPower.piEquiv`, that is, the `j`th compound matrix of `g`, as a continuous linear operator
-between the coordinate spaces of dimensions `m.choose j` and `n.choose j`. The construction
-preserves identities and composition, is homogeneous of degree `j` in the operator
-(`ContinuousLinearMap.exteriorPowerCoords_smul`), sends reindexings of coordinates to reindexings
+between the coordinate spaces of dimensions `m.choose j` and `n.choose j`. The construction acts on
+pure wedges by applying `g` to each factor
+(`ContinuousLinearMap.exteriorPowerCoords_piEquiv_ιMulti`), preserves identities and composition, is
+homogeneous of degree `j` in the operator (`ContinuousLinearMap.exteriorPowerCoords_smul`), sends
+reindexings of coordinates to reindexings
 (`ContinuousLinearMap.exteriorPowerCoords_piCongrLeft_finCongr`), turns a Kronecker product
 `(c • id) ⊗ g` with one-dimensional first factor into `(c ^ j • id) ⊗ ⋀^j g` up to reindexing
 (`ContinuousLinearMap.piCongrLeft_comp_exteriorPowerCoords_kronecker`), and it depends continuously
 on the operator (`ContinuousLinearMap.continuous_exteriorPowerCoords`), even by a `C^k` or analytic
 map (`ContinuousLinearMap.contDiff_exteriorPowerCoords`), since its matrix entries are minors of the
-matrix of `g`. It can therefore be applied to continuous, smooth or holomorphic families of
+matrix of `g`. Consequently, pure wedges in coordinates also depend `C^k` (including analytically)
+on the `j`-tuple of vectors (`exteriorPower.contDiff_piEquiv_ιMulti`). It can therefore be applied
+to continuous, smooth or holomorphic families of
 transition matrices. For an endomorphism of `Fin m → 𝕜` the compound matrix in the top degree `m` is
 multiplication by the determinant (`ContinuousLinearMap.exteriorPowerCoords_self`).
 
@@ -54,6 +58,20 @@ noncomputable def exteriorPowerCoords (j : ℕ) (g : (Fin m → 𝕜) →L[𝕜]
     (v : Fin (m.choose j) → 𝕜) :
     g.exteriorPowerCoords j v = (g : (Fin m → 𝕜) →ₗ[𝕜] (Fin n → 𝕜)).exteriorPowerCoords j v :=
   (rfl)
+
+/-- In the standard coordinates `exteriorPower.piEquiv`, `g.exteriorPowerCoords j` acts on a pure
+wedge by applying `g` to each factor.
+
+This is intentionally not a `simp` lemma: `ContinuousLinearMap.exteriorPowerCoords_apply`,
+`LinearMap.exteriorPowerCoords_piEquiv`, `exteriorPower.map_apply_ιMulti`, and
+`ContinuousLinearMap.coe_coe` already perform this simplification. -/
+theorem exteriorPowerCoords_piEquiv_ιMulti (j : ℕ) (g : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜))
+    (u : Fin j → Fin m → 𝕜) :
+    g.exteriorPowerCoords j (exteriorPower.piEquiv 𝕜 m j (exteriorPower.ιMulti 𝕜 j u)) =
+      exteriorPower.piEquiv 𝕜 n j (exteriorPower.ιMulti 𝕜 j (g ∘ u)) := by
+  rw [exteriorPowerCoords_apply, LinearMap.exteriorPowerCoords_piEquiv,
+    exteriorPower.map_apply_ιMulti]
+  rfl
 
 @[simp] theorem exteriorPowerCoords_id (j m : ℕ) :
     (ContinuousLinearMap.id 𝕜 (Fin m → 𝕜)).exteriorPowerCoords j =
@@ -154,6 +172,29 @@ end ContinuousLinearMap
 namespace exteriorPower
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {m n : ℕ}
+
+private noncomputable def tupleToCLM (j m : ℕ) :
+    (Fin j → Fin m → 𝕜) →L[𝕜] ((Fin j → 𝕜) →L[𝕜] (Fin m → 𝕜)) :=
+  ∑ k : Fin j,
+    (ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 (Fin j → 𝕜) (Fin m → 𝕜)
+      (ContinuousLinearMap.proj k)).comp
+      (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : Fin j ↦ Fin m → 𝕜) k)
+
+/-- In the standard coordinates `exteriorPower.piEquiv`, the exterior product of `j` vectors
+depends `C^k` (including analytically) on the `j`-tuple of vectors. -/
+theorem contDiff_piEquiv_ιMulti (j m : ℕ) {k : WithTop ℕ∞} :
+    ContDiff 𝕜 k (fun u : Fin j → Fin m → 𝕜 ↦ piEquiv 𝕜 m j (ιMulti 𝕜 j u)) := by
+  have h_eq (u : Fin j → Fin m → 𝕜) :
+      piEquiv 𝕜 m j (ιMulti 𝕜 j u) =
+        (tupleToCLM 𝕜 j m u).exteriorPowerCoords j
+          (piEquiv 𝕜 j j (ιMulti 𝕜 j fun l ↦ Pi.single l 1)) := by
+    rw [ContinuousLinearMap.exteriorPowerCoords_piEquiv_ιMulti]
+    congr 2
+    ext l : 1
+    simp [tupleToCLM, Pi.single_apply]
+  simp_rw [h_eq]
+  exact ((ContinuousLinearMap.contDiff_exteriorPowerCoords j j m).comp
+    (tupleToCLM 𝕜 j m).contDiff).clm_apply contDiff_const
 
 /-- `exteriorPower.piZeroEquiv` as a continuous linear equivalence. -/
 noncomputable def piZeroContinuousEquiv (m : ℕ) : (Fin (m.choose 0) → 𝕜) ≃L[𝕜] (Fin 1 → 𝕜) :=

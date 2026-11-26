@@ -77,12 +77,17 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   (`TauCeti.MulAction.card_le_card_orbitRelQuotient_closure_of_surjective`).
 * `TauCeti.MulAction.orbitRelQuotientRec`: a `G`-invariant section of the pullback of a family
   `V` over the orbit space descends to a section of `V`, uniquely
-  (`TauCeti.MulAction.eq_orbitRelQuotientRec_iff`), and every section of `V` is the descent of its
-  pullback (`TauCeti.MulAction.orbitRelQuotientRec_apply_mk`).
+  (`TauCeti.MulAction.eq_orbitRelQuotientRec_iff`), every section of `V` is the descent of its
+  pullback (`TauCeti.MulAction.orbitRelQuotientRec_apply_mk`), and descent commutes with unary,
+  binary, and indexed-tuple fibrewise operations (`TauCeti.MulAction.orbitRelQuotientRec_map`,
+  `TauCeti.MulAction.orbitRelQuotientRec_map₂`, `TauCeti.MulAction.orbitRelQuotientRec_pi`).
 * `MulActionHom.orbitRelQuotientMap` and `AddActionHom.orbitRelQuotientMap`: an equivariant map
   induces a map of orbit spaces, functorially. An injection induces an injection when the
   acting-group map is surjective; its image consists of the orbits meeting the image upstairs.
-  Descent is natural along it (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`).
+  Both map and section descent are natural along it
+  (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`,
+  `MulActionHom.orbitRelQuotientRec_orbitRelQuotientMap`, with invariance closure
+  `MulActionHom.comp_smul_heq`).
 * `SubMulAction.orbitRelQuotientMap`: for an `H`-invariant subset `S` of `X`, the map
   `S / H → X / G` sending an `H`-orbit to its `G`-orbit; it is injective when `S` is a slice for
   `H`, that is when every element of `G` carrying a point of `S` into `S` lies in `H`
@@ -1031,6 +1036,94 @@ theorem MulAction.orbitRelQuotientRec_apply_mk (s : ∀ q : MulAction.orbitRel.Q
       (MulAction.apply_mk_smul_heq s) = s :=
   (MulAction.eq_orbitRelQuotientRec_iff.2 fun _ ↦ rfl).symm
 
+/-- For a constant family, section descent `MulAction.orbitRelQuotientRec` agrees with
+`MulAction.orbitRelQuotientLift`. -/
+@[simp]
+theorem MulAction.orbitRelQuotientRec_const {Y : Type*} {f : X → Y}
+    (hf : ∀ (g : G) (x : X), f (g • x) = f x) :
+    MulAction.orbitRelQuotientRec (V := fun _ ↦ Y) f (fun g x ↦ heq_of_eq (hf g x)) =
+      MulAction.orbitRelQuotientLift f hf :=
+  funext fun q ↦ Quotient.inductionOn q fun _ ↦ rfl
+
+/-- Applying a fibrewise operation over the orbit space to a `G`-invariant section upstairs
+produces a `G`-invariant section. -/
+theorem MulAction.apply_smul_heq {W : MulAction.orbitRel.Quotient G X → Sort*}
+    (F : ∀ q, V q → W q) (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x) (g : G) (x : X) :
+    F (Quotient.mk (MulAction.orbitRel G X) (g • x)) (t (g • x)) ≍
+      F (Quotient.mk (MulAction.orbitRel G X) x) (t x) := by
+  have key : ∀ {q₁ q₂ : MulAction.orbitRel.Quotient G X}, q₁ = q₂ →
+      ∀ {v₁ : V q₁} {v₂ : V q₂}, v₁ ≍ v₂ → F q₁ v₁ ≍ F q₂ v₂ := by
+    rintro _ _ rfl _ _ ⟨⟩
+    rfl
+  exact key (Quotient.sound ⟨g, rfl⟩) (ht g x)
+
+/-- **Descent commutes with fibrewise unary operations.** Descending the fibrewise image of a
+`G`-invariant section agrees with applying the operation to the descended section. -/
+theorem MulAction.orbitRelQuotientRec_map {W : MulAction.orbitRel.Quotient G X → Sort*}
+    (F : ∀ q, V q → W q) (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x)
+    (q : MulAction.orbitRel.Quotient G X) :
+    MulAction.orbitRelQuotientRec (fun x ↦ F (Quotient.mk (MulAction.orbitRel G X) x) (t x))
+        (MulAction.apply_smul_heq F ht) q =
+      F q (MulAction.orbitRelQuotientRec t ht q) :=
+  Quotient.inductionOn q fun _ ↦ rfl
+
+/-- Applying a binary fibrewise operation over the orbit space to two `G`-invariant sections
+upstairs produces a `G`-invariant section. -/
+theorem MulAction.apply₂_smul_heq {V₂ W : MulAction.orbitRel.Quotient G X → Sort*}
+    (F : ∀ q, V q → V₂ q → W q)
+    {t₂ : ∀ x : X, V₂ (Quotient.mk (MulAction.orbitRel G X) x)}
+    (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x)
+    (ht₂ : ∀ (g : G) (x : X), t₂ (g • x) ≍ t₂ x) (g : G) (x : X) :
+    F (Quotient.mk (MulAction.orbitRel G X) (g • x)) (t (g • x)) (t₂ (g • x)) ≍
+      F (Quotient.mk (MulAction.orbitRel G X) x) (t x) (t₂ x) := by
+  have key : ∀ {q₁ q₂ : MulAction.orbitRel.Quotient G X}, q₁ = q₂ →
+      ∀ {v₁ : V q₁} {v₂ : V q₂} {w₁ : V₂ q₁} {w₂ : V₂ q₂},
+        v₁ ≍ v₂ → w₁ ≍ w₂ → F q₁ v₁ w₁ ≍ F q₂ v₂ w₂ := by
+    rintro _ _ rfl _ _ _ _ ⟨⟩ ⟨⟩
+    rfl
+  exact key (Quotient.sound ⟨g, rfl⟩) (ht g x) (ht₂ g x)
+
+/-- **Descent commutes with fibrewise binary operations** (such as Hom/dual evaluation and pure
+tensors): descending the fibrewise combination of two `G`-invariant sections agrees with combining
+their descents. -/
+theorem MulAction.orbitRelQuotientRec_map₂ {V₂ W : MulAction.orbitRel.Quotient G X → Sort*}
+    (F : ∀ q, V q → V₂ q → W q)
+    {t₂ : ∀ x : X, V₂ (Quotient.mk (MulAction.orbitRel G X) x)}
+    (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x)
+    (ht₂ : ∀ (g : G) (x : X), t₂ (g • x) ≍ t₂ x)
+    (q : MulAction.orbitRel.Quotient G X) :
+    MulAction.orbitRelQuotientRec
+        (fun x ↦ F (Quotient.mk (MulAction.orbitRel G X) x) (t x) (t₂ x))
+        (MulAction.apply₂_smul_heq F ht ht₂) q =
+      F q (MulAction.orbitRelQuotientRec t ht q) (MulAction.orbitRelQuotientRec t₂ ht₂ q) :=
+  Quotient.inductionOn q fun _ ↦ rfl
+
+/-- Bundling an indexed family of `G`-invariant sections upstairs gives a `G`-invariant section of
+the family of dependent products. -/
+theorem MulAction.pi_smul_heq {ι : Sort*}
+    {W : ι → MulAction.orbitRel.Quotient G X → Sort*}
+    {s : ∀ (i : ι) (x : X), W i (Quotient.mk (MulAction.orbitRel G X) x)}
+    (hs : ∀ (i : ι) (g : G) (x : X), s i (g • x) ≍ s i x) (g : G) (x : X) :
+    (fun i ↦ s i (g • x) : ∀ i, W i (Quotient.mk (MulAction.orbitRel G X) (g • x))) ≍
+      (fun i ↦ s i x : ∀ i, W i (Quotient.mk (MulAction.orbitRel G X) x)) := by
+  have key : ∀ {q₁ q₂ : MulAction.orbitRel.Quotient G X}, q₁ = q₂ →
+      ∀ {u : ∀ i, W i q₁} {v : ∀ i, W i q₂}, (∀ i, u i ≍ v i) → u ≍ v := by
+    rintro _ _ rfl u v huv
+    exact heq_of_eq (funext fun i ↦ eq_of_heq (huv i))
+  exact key (Quotient.sound ⟨g, rfl⟩) fun i ↦ hs i g x
+
+/-- **Descent commutes with indexed tuples of sections**: descending an indexed family of
+`G`-invariant sections agrees componentwise with the tuple of their descents. -/
+theorem MulAction.orbitRelQuotientRec_pi {ι : Sort*}
+    {W : ι → MulAction.orbitRel.Quotient G X → Sort*}
+    {s : ∀ (i : ι) (x : X), W i (Quotient.mk (MulAction.orbitRel G X) x)}
+    (hs : ∀ (i : ι) (g : G) (x : X), s i (g • x) ≍ s i x)
+    (q : MulAction.orbitRel.Quotient G X) :
+    MulAction.orbitRelQuotientRec (V := fun q' ↦ ∀ i, W i q')
+        (fun x i ↦ s i x) (MulAction.pi_smul_heq hs) q =
+      fun i ↦ MulAction.orbitRelQuotientRec (s i) (hs i) q :=
+  Quotient.inductionOn q fun _ ↦ rfl
+
 end Rec
 
 end TauCeti
@@ -1128,6 +1221,15 @@ namespace MulActionHom
 
 open TauCeti
 
+/-- Pulling back an `H`-invariant dependent function along `φ : X →ₑ[σ] Y` gives a `G`-invariant
+dependent function. -/
+@[to_additive /-- Pulling back an `H`-invariant dependent function along an equivariant map gives a
+`G`-invariant dependent function. -/]
+theorem comp_smul_heq {G X H Y : Type*} [SMul G X] [SMul H Y] {σ : G → H} {W : Y → Sort*}
+    (φ : X →ₑ[σ] Y) {t : ∀ y : Y, W y} (ht : ∀ (h : H) (y : Y), t (h • y) ≍ t y) (g : G) (x : X) :
+    t (φ (g • x)) ≍ t (φ x) :=
+  (congr_arg_heq t (map_smulₛₗ φ g x)).trans (ht (σ g) (φ x))
+
 variable {G X : Type*} [Group G] [MulAction G X] {H Y : Type*} [Group H] [MulAction H Y]
   {σ : G → H}
 
@@ -1212,6 +1314,26 @@ theorem orbitRelQuotientLift_comp_orbitRelQuotientMap {Z : Type*} (φ : X →ₑ
   ext q
   induction q using Quotient.inductionOn with
   | h x => rfl
+
+/-- **Dependent naturality of section descent.** For a `σ`-equivariant map `φ : X → Y`, an
+`H`-invariant section `t` over `Y`, and a `G`-invariant section `t'` of `V ∘ φ.orbitRelQuotientMap`
+over `X` agreeing fibrewise with `t ∘ φ`, the `G`-descent of `t'` agrees with pulling back the
+`H`-descent of `t` along `φ.orbitRelQuotientMap`. -/
+theorem orbitRelQuotientRec_orbitRelQuotientMap
+    {V : MulAction.orbitRel.Quotient H Y → Sort*} (φ : X →ₑ[σ] Y)
+    {t : ∀ y : Y, V (Quotient.mk (MulAction.orbitRel H Y) y)}
+    {ht : ∀ (h : H) (y : Y), t (h • y) ≍ t y}
+    {t' : ∀ x : X, V (φ.orbitRelQuotientMap (Quotient.mk (MulAction.orbitRel G X) x))}
+    {ht' : ∀ (g : G) (x : X), t' (g • x) ≍ t' x}
+    (hφt : ∀ x : X, t' x ≍ t (φ x))
+    (q : MulAction.orbitRel.Quotient G X) :
+    MulAction.orbitRelQuotientRec (V := fun q' ↦ V (φ.orbitRelQuotientMap q')) t' ht' q =
+      MulAction.orbitRelQuotientRec t ht (φ.orbitRelQuotientMap q) := by
+  induction q using Quotient.inductionOn with
+  | h x =>
+    rw [MulAction.orbitRelQuotientRec_mk]
+    exact eq_of_heq ((hφt x).trans
+      (congr_arg_heq (MulAction.orbitRelQuotientRec t ht) (φ.orbitRelQuotientMap_mk x)).symm)
 
 end MulActionHom
 

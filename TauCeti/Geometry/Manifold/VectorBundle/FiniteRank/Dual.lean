@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Dual
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.CoordinateHom
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
@@ -22,7 +22,9 @@ bundle of continuous linear maps to the trivial line. Its underlying homeomorphi
 with those coefficients. It is `𝕜`-linear on fibres (complex-linear, not conjugate-linear,
 when `𝕜 = ℂ`).
 The naturality formula `dualFiberEquiv_fiberMap_dualMap` for the underlying identification
-also describes this diffeomorphism.
+also describes this diffeomorphism; transposing a `C^n` bundle map preserves `C^n` regularity
+(`contMDiffOn_inChartCoordinates_dualMap`, `contMDiff_totalSpaceMap_dualMap`), and pairing `C^n`
+dual and primal sections produces a `C^n` scalar function (`contMDiff_dualFiberEquiv_section`).
 
 No regularity of the base atlas or transitions is needed for the comparison itself: its
 expression in the corresponding bundle charts is a fixed continuous linear equivalence.
@@ -119,5 +121,50 @@ theorem dualTotalSpaceDiffeomorph_symm_apply (A : FiniteRankBundleCore 𝕜 B)
     (A.dualTotalSpaceDiffeomorph I n).symm p =
       ⟨p.proj, (dualFiberEquiv A p.proj).symm p.snd⟩ :=
   bundleDiffeomorph_symm_apply _ _ p
+
+/-- Transposing a bundle map whose chart operators are `C^n` gives `C^n` chart operators on the
+dual cores, without `IsContMDiff` hypotheses on the cores. -/
+theorem contMDiffOn_inChartCoordinates_dualMap {A D : FiniteRankBundleCore 𝕜 B} (f : A ⟶ D)
+    (hf : ∀ i j, ContMDiffOn I 𝓘(𝕜, (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) n
+      (fun x ↦ A.core.inChartCoordinates D.core i j x (f.fiberMap x))
+      (A.core.baseSet i ∩ D.core.baseSet j)) (i j : B) :
+    ContMDiffOn I 𝓘(𝕜, (Fin D.dual.rank → 𝕜) →L[𝕜] (Fin A.dual.rank → 𝕜)) n
+      (fun x ↦ D.dual.core.inChartCoordinates A.dual.core i j x ((dualMap f).fiberMap x))
+      (D.dual.core.baseSet i ∩ A.dual.core.baseSet j) := by
+  have ht := (ContinuousLinearMap.piTransposeL 𝕜 (Fin A.rank) (Fin D.rank)).contMDiff
+    |>.comp_contMDiffOn ((hf j i).mono
+      fun _ (hx : _ ∈ D.core.baseSet i ∩ A.core.baseSet j) ↦ ⟨hx.2, hx.1⟩)
+  refine ht.congr fun x hx ↦ ?_
+  rw [← (dualMap f).operator_eq i j ⟨x, hx⟩, operator_dualMap,
+    f.operator_eq j i ⟨x, hx.2, hx.1⟩]
+  simp only [Function.comp_apply, ContinuousLinearMap.piTransposeL_apply]
+
+/-- Transposing a `C^n` bundle map between `C^n` finite-rank cores yields a `C^n` map on dual
+total spaces. Over complex manifolds at `n = ∞`, the transpose of a holomorphic bundle map is
+holomorphic. -/
+theorem contMDiff_totalSpaceMap_dualMap {A D : FiniteRankBundleCore 𝕜 B}
+    [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] (f : A ⟶ D)
+    (hf : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
+      f.totalSpaceMap) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin D.dual.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin A.dual.rank → 𝕜)) n
+      (dualMap f).totalSpaceMap :=
+  (dualMap f).contMDiff_totalSpaceMap
+    (contMDiffOn_inChartCoordinates_dualMap f (f.contMDiff_totalSpaceMap_iff.mp hf))
+
+/-- Pairing a `C^n` dual section with a `C^n` primal section via `dualFiberEquiv` yields a `C^n`
+scalar function, without `IsContMDiff` hypotheses on `A`. -/
+theorem contMDiff_dualFiberEquiv_section (A : FiniteRankBundleCore 𝕜 B)
+    {w : ∀ x, A.dual.core.Fiber x} {v : ∀ x, A.core.Fiber x}
+    (hw : ContMDiff I (I.prod 𝓘(𝕜, Fin A.dual.rank → 𝕜)) n
+      fun x ↦ TotalSpace.mk' (Fin A.dual.rank → 𝕜) x (w x))
+    (hv : ContMDiff I (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
+      fun x ↦ TotalSpace.mk' (Fin A.rank → 𝕜) x (v x)) :
+    ContMDiff I 𝓘(𝕜, 𝕜) n fun x ↦ dualFiberEquiv A x (w x) (v x) := by
+  have htot : ContMDiff I (I.prod 𝓘(𝕜, 𝕜)) n
+      (fun x ↦ TotalSpace.mk' 𝕜 (E := Trivial B 𝕜) x (dualFiberEquiv A x (w x) (v x))) :=
+    ((A.contMDiff_dualFiberEquiv (I := I) (n := n)).comp hw).clm_bundle_apply hv
+  intro x
+  simpa only [Function.comp_def, Trivial.fiberBundle_trivializationAt',
+    Trivial.trivialization_apply] using (Bundle.contMDiffAt_totalSpace_iff.1 (htot x)).2
 
 end TauCeti.FiniteRankBundleCore
