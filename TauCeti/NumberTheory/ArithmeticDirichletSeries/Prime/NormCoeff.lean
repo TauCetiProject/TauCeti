@@ -171,14 +171,7 @@ theorem norm_sum_normCoeff_vonMangoldtTransform_le (f : IdealArithmeticFunction 
     (hf : ∀ A : (Ideal (𝓞 K))⁰, IsPrimePow (A : Ideal (𝓞 K)) → ‖f A‖ ≤ 1) (x : ℝ) :
     ‖∑ n ∈ Finset.Icc 1 ⌊x⌋₊, normCoeff K f.vonMangoldtTransform n‖ ≤
       (Module.finrank ℚ K : ℝ) * Chebyshev.psi x := by
-  have hz : Λ 0 = 0 := ArithmeticFunction.map_zero
-  rw [Chebyshev.psi_eq_sum_Icc, Finset.Icc_eq_cons_Ioc (Nat.zero_le _), Finset.sum_cons,
-    hz, zero_add, Finset.mul_sum]
-  have hI : Finset.Ioc 0 ⌊x⌋₊ = Finset.Icc 1 ⌊x⌋₊ := by
-    ext n
-    simp only [Finset.mem_Icc, Finset.mem_Ioc]
-    omega
-  rw [hI]
+  rw [Chebyshev.psi, Finset.mul_sum, ← Finset.Icc_add_one_left_eq_Ioc]
   exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun n _ ↦
     f.norm_normCoeff_vonMangoldtTransform_le hf n)
 
