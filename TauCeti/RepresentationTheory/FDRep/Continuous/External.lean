@@ -26,11 +26,14 @@ coefficient `g ↦ f (ρ_V g v)` of `V` is the matrix coefficient `g ↦ (f ⊗ 
 of `V ⊠ W` divided by `μ w`, for a vector `w` and a linear form `μ` with `μ w ≠ 0`
 (`FDRep.isContinuous_left_of_isContinuous_externalTensor`), and symmetrically for `W`. Combined
 with the classification of simple representations of `G × H` by external tensor products
-(`FDRep.externalTensor_classification`), this shows that over an algebraically closed field the
-continuous simple representations of `G × H` are exactly the external tensor products of
+(`FDRep.externalTensor_classification`), this shows that over an algebraically closed field every
+continuous simple representation of `G × H` is isomorphic to an external tensor product of
 continuous simple representations of `G` and of `H`
-(`FDRep.exists_isContinuous_iso_externalTensor`). For compact groups over `ℂ` these are the
-irreducible classes of the representation ring `R(G × H)`.
+(`FDRep.exists_isContinuous_iso_externalTensor`). Conversely, such an external tensor product is
+continuous by `FDRep.isContinuous_externalTensor` and simple by
+`Representation.isIrreducible_externalTensor`, so the continuous simple representations of `G × H`
+are exactly these. For compact groups over `ℂ` these are the irreducible classes of the
+representation ring `R(G × H)`.
 
 ## Main statements
 
