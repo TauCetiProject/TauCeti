@@ -81,6 +81,7 @@ theorem meromorphicAt_invChart_zpow {y : OnePoint ℂ} (hy : y ≠ ((0 : ℂ) : 
     (by simpa [invChart_source] using hy)
 
 /-- The `m`-th power of the inverted coordinate has order `m` at `∞`. -/
+@[simp]
 theorem meromorphicOrderAt_invChart_zpow_infty (m : ℤ) :
     TauCeti.RiemannSurface.meromorphicOrderAt (fun y ↦ invChart y ^ m) (∞ : OnePoint ℂ) = m := by
   have h := invChart.meromorphicOrderAt_coordinate_zpow invChart_mem_maximalAtlas 0 m
