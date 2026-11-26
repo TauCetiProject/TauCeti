@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Perfectoid.Cyclotomic.Level
 public import TauCeti.RingTheory.WittVector.RegularSequence
 
+import Mathlib.RingTheory.WittVector.Identities
+
 /-!
 # Regularity of the cyclotomic periods
 
@@ -125,16 +127,6 @@ theorem isRegular_natCast_xiLevel (ε : PreTilt A p)
   obtain ⟨c, hc⟩ := xi_dvd_xiLevel p ε hr
   rw [hc, map_mul, fontaineTheta_xi_eq_zero ε hε, zero_mul]
 
-omit [IsDomain A] [IsAdicComplete (Ideal.span {(p : A)}) A] in
-/-- The zeroth Witt coordinate of `φ^r(x)` is the `p ^ r`-th power of that of `x`. -/
-private theorem coeff_zero_iterate_frobeniusEquiv (x : WittVector p (PreTilt A p)) (r : ℕ) :
-    ((frobeniusEquiv p (PreTilt A p))^[r] x).coeff 0 = x.coeff 0 ^ p ^ r := by
-  induction r with
-  | zero => simp
-  | succ r ih =>
-    rw [Function.iterate_succ_apply', pow_succ, pow_mul, ← ih]
-    exact coeff_frobenius_charP p _ 0
-
 /-- **The regular pair `(p, xiTilde)`.** -/
 theorem isRegular_natCast_xiTilde (ε : PreTilt A p)
     (hε : IsPrimitiveRoot
@@ -153,7 +145,7 @@ theorem isRegular_natCast_xiTildeLevel (ε : PreTilt A p)
       [(p : WittVector p (PreTilt A p)), xiTildeLevel p ε r] := by
   refine isRegular_natCast_cons_singleton_of_map_eq_zero _ (mem_nonZeroDivisors_of_ne_zero ?_)
     (fontaineThetaShifted A p) ?_
-  · rw [← iterate_frobeniusEquiv_xiLevel, coeff_zero_iterate_frobeniusEquiv]
+  · rw [← iterate_frobeniusEquiv_xiLevel, WittVector.frobeniusEquiv_apply, iterate_frobenius_coeff]
     exact pow_ne_zero _ (coeff_zero_xiLevel_ne_zero p (ε.ne_one_of_isPrimitiveRoot hε) r)
   · obtain ⟨c, hc⟩ := xiTilde_dvd_xiTildeLevel p ε hr
     rw [hc, map_mul, fontaineThetaShifted_xiTilde_eq_zero ε hε, zero_mul]

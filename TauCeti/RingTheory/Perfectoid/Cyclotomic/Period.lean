@@ -13,6 +13,7 @@ public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import Mathlib.Topology.Algebra.Valued.ValuedField
 
 import TauCeti.RingTheory.WittVector.Frobenius
+import TauCeti.RingTheory.WittVector.Units
 
 /-!
 # Cyclotomic periods
@@ -20,6 +21,22 @@ import TauCeti.RingTheory.WittVector.Frobenius
 The periods `μ = [ε] - 1`, `ξ = ∑ j < p, [ε^(1/p)]^j`, and `xiTilde = φ(ξ)`
 are defined in Witt vectors without division. When the sharp of `ε^(1/p)` is a primitive
 `p`-th root of unity, `ξ` generates Fontaine's kernel on perfectoid integer rings.
+
+Frobenius acts on `μ` and `xiTilde` by replacing `ε` with `ε ^ p`, and the zeroth Witt coordinate
+of `μ` is `ε - 1`, so `μ ≠ 0` for `ε ≠ 1`.
+
+## Main results
+
+* `TauCeti.Perfectoid.mu_eq_xi_mul_frobeniusEquiv_symm`: `μ = ξ * φ^(-1)(μ)`.
+* `TauCeti.Perfectoid.iterate_frobeniusEquiv_mu`: `φ^j(μ(ε)) = μ(ε ^ p ^ j)`.
+* `TauCeti.Perfectoid.iterate_frobeniusEquiv_xiTilde`: `φ^j(xiTilde(ε)) = xiTilde(ε ^ p ^ j)`.
+* `TauCeti.Perfectoid.coeff_zero_mu`: the zeroth Witt coordinate of `μ` is `ε - 1`.
+* `TauCeti.Perfectoid.mu_ne_zero`: for `ε ≠ 1`, `μ ≠ 0`.
+* `TauCeti.Perfectoid.map_xi`: base change of `ξ` between perfect rings.
+* `PreTilt.fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero`,
+  `PreTilt.fontaineTheta_iterate_frobeniusEquiv_succ_xi`: values of `θ ∘ φ^j` on `μ` and `ξ`.
+* `PreTilt.ker_fontaineTheta_eq_span_xi`: `ξ` generates Fontaine's kernel on the valuation ring
+  of a complete perfectoid field.
 
 ## References
 
@@ -85,7 +102,56 @@ omit [CharP S p] [PerfectRing S p] in
 @[simp]
 theorem mu_one : mu p (1 : S) = 0 := by simp [mu_eq]
 
+/-- Iterated Frobenius on `μ` replaces `ε` by `ε ^ p ^ j`. -/
+theorem iterate_frobeniusEquiv_mu (ε : S) (j : ℕ) :
+    ((frobeniusEquiv p S)^[j]) (mu p ε) = mu p (ε ^ p ^ j) := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    rw [Function.iterate_succ_apply', ih]
+    simp only [mu_eq, map_sub, map_one, WittVector.frobeniusEquiv_apply, frobenius_teichmuller,
+      ← map_pow, ← pow_mul, ← pow_succ]
+
+/-- Iterated Frobenius on `xiTilde` replaces `ε` by `ε ^ p ^ j`. -/
+theorem iterate_frobeniusEquiv_xiTilde (ε : S) (j : ℕ) :
+    ((frobeniusEquiv p S)^[j]) (xiTilde p ε) = xiTilde p (ε ^ p ^ j) := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    have h (δ : S) : frobeniusEquiv p S (xiTilde p δ) = xiTilde p (δ ^ p) := by
+      simp only [xiTilde_eq_sum, map_sum, map_pow, WittVector.frobeniusEquiv_apply,
+        frobenius_teichmuller]
+    rw [Function.iterate_succ_apply', ih, h, ← pow_mul, ← pow_succ]
+
+omit [CharP S p] [PerfectRing S p] in
+/-- The zeroth Witt coordinate of `μ = [ε] - 1` is `ε - 1`. -/
+@[simp]
+theorem coeff_zero_mu (ε : S) : (mu p ε).coeff 0 = ε - 1 := by
+  simp [mu_eq, sub_coeff_zero]
+
+omit [CharP S p] [PerfectRing S p] in
+/-- For `ε ≠ 1`, the zeroth Witt coordinate of `μ` is nonzero. -/
+theorem coeff_zero_mu_ne_zero {ε : S} (hε : ε ≠ 1) : (mu p ε).coeff 0 ≠ 0 := by
+  rwa [coeff_zero_mu, sub_ne_zero]
+
+omit [CharP S p] [PerfectRing S p] in
+/-- For `ε ≠ 1`, `μ` is nonzero. -/
+theorem mu_ne_zero {ε : S} (hε : ε ≠ 1) : mu p ε ≠ 0 :=
+  fun h ↦ coeff_zero_mu_ne_zero p hε (by rw [h, zero_coeff])
+
 end Periods
+
+section Naturality
+
+variable (p : ℕ) [Fact p.Prime] {S T : Type*} [CommRing S] [CharP S p] [PerfectRing S p]
+  [CommRing T] [CharP T p] [PerfectRing T p]
+
+/-- Base change of `ξ` between perfect rings replaces `ε` by its image. -/
+@[simp]
+theorem map_xi (f : S →+* T) (ε : S) : WittVector.map f (xi p ε) = xi p (f ε) := by
+  simp [xi_eq, map_sum, map_teichmuller, RingHom.map_frobeniusEquiv_symm]
+
+end Naturality
 
 end TauCeti.Perfectoid
 
@@ -168,6 +234,19 @@ theorem fontaineThetaShifted_xiTilde_eq_zero [IsDomain A] (ε : PreTilt A p)
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
     fontaineThetaShifted A p (xiTilde p ε) = 0 := by
   rw [fontaineThetaShifted_xiTilde, fontaineTheta_xi_eq_zero ε hε]
+
+/-- If `ε♯ = 1`, then Fontaine's map kills every Frobenius iterate of `μ`. -/
+theorem fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero (ε : PreTilt A p) (hε : ε.untilt = 1)
+    (j : ℕ) : fontaineTheta A p (((frobeniusEquiv p (PreTilt A p))^[j]) (mu p ε)) = 0 := by
+  rw [iterate_frobeniusEquiv_mu]
+  exact fontaineTheta_mu_eq_zero _ (by rw [map_pow, hε, one_pow])
+
+/-- If `ε♯ = 1`, then Fontaine's map sends `φ^(j + 1)(ξ)` to `p`. -/
+theorem fontaineTheta_iterate_frobeniusEquiv_succ_xi (ε : PreTilt A p) (hε : ε.untilt = 1)
+    (j : ℕ) :
+    fontaineTheta A p (((frobeniusEquiv p (PreTilt A p))^[j + 1]) (xi p ε)) = p := by
+  rw [Function.iterate_succ_apply, ← xiTilde_eq, iterate_frobeniusEquiv_xiTilde]
+  exact fontaineTheta_xiTilde _ (by rw [map_pow, hε, one_pow])
 
 end FontaineValues
 
