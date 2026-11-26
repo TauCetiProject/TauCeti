@@ -99,9 +99,10 @@ This is the output of the choice of centres and scales at a bubbling point,
 `TauCeti.SmoothTwoForm.exists_rescale_isComplexLinearMap_perturbedMFDeriv`, with `A = 4`. Then a
 subsequence of the rescaled maps converges, locally uniformly on `ℝ × ℝ` after applying `e` and
 pointwise in `M`, to a continuous map `v : ℝ × ℝ → M` with values in `K`. This statement gives
-only the continuity of the limit; under `C¹` hypotheses on `J` and `K`,
-`IsNondegenerate.exists_rescale_tendstoLocallyUniformly_fderiv_extChartAt_comp` shows the bubble is
-`C¹`, holomorphic and nonconstant. -/
+only the continuity of the limit. Under `C¹` hypotheses on the chart readings of `J` and of the
+Hamiltonian vector fields of `Ks`, `Kt`,
+`IsNondegenerate.exists_rescale_tendstoLocallyUniformly_fderiv_extChartAt_comp` gives a subsequence
+along which the rescaled maps converge in `C¹` to a holomorphic, nonconstant bubble. -/
 theorem IsNondegenerate.exists_strictMono_tendstoLocallyUniformly_comp_rescale
     (hω : ω.IsNondegenerate) {K : Set M} (hK : IsCompact K)
     (he : ∀ x ∈ K, MDifferentiableAt I 𝓘(ℝ, F) e x) (he_inj : InjOn e K)
@@ -174,9 +175,10 @@ with `εᵢ → 0` and radii `Rᵢ → ∞` with `εᵢ Rᵢ → 0`, such that t
 `w ↦ uᵢ(cᵢ + εᵢ w)` eventually have energy density one at the origin for the rescaled perturbation
 `εᵢ K(cᵢ + εᵢ w)`, and a subsequence of them converges, locally uniformly on `ℝ × ℝ` after applying
 `e` and pointwise in `M`, to a continuous map `v : ℝ × ℝ → M` with values in `K`. Under `C¹`
-hypotheses on `J` and `K`,
-`IsNondegenerate.exists_rescale_tendstoLocallyUniformly_fderiv_extChartAt_comp` upgrades the
-convergence to `C¹` and shows the limit is holomorphic for the frozen `J(z₀, ·)` and nonconstant. -/
+hypotheses on the chart readings of `J` and of the Hamiltonian vector fields of `Ks`, `Kt`,
+`IsNondegenerate.exists_rescale_tendstoLocallyUniformly_fderiv_extChartAt_comp` gives a subsequence
+along which the rescaled maps converge in `C¹` to a bubble that is holomorphic for the frozen
+`J(z₀, ·)` and nonconstant. -/
 theorem IsNondegenerate.exists_rescale_tendstoLocallyUniformly_comp (hω : ω.IsNondegenerate)
     {K : Set M} (hK : IsCompact K) (he : ∀ x ∈ K, MDifferentiableAt I 𝓘(ℝ, F) e x)
     (he_inj : InjOn e K)
