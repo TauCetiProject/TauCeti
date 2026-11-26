@@ -324,7 +324,7 @@ theorem eq_of_eq_smul_of_trace_eq_trace_inv {n K : Type*} [Fintype n] [Decidable
 
 section MulMulConjTranspose
 
-variable {m n R : Type*} [Fintype n] [CommRing R] [PartialOrder R] [StarRing R]
+variable {m n R : Type*} [Fintype n] [Ring R] [PartialOrder R] [StarRing R]
 
 /-- A congruence `M S Mᴴ` of a positive definite matrix `S` vanishes only when `M` does: the
 diagonal entry in row `i` is the quadratic form of `S` at the conjugate of the `i`-th row. -/
