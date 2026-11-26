@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Complex.Line
 public import TauCeti.Geometry.Symplectic.Prod.Basic
 import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Normed.Ring.ProdSubProd
+import TauCeti.Geometry.Symplectic.Complex.HolomorphicGraph
 
 /-!
 # Splitting a tangency into transverse intersections
@@ -53,9 +54,11 @@ intersection numbers are computed as in
 For small `ε` the perturbed graph is moreover a symplectic curve: the standard symplectic form
 `ω ⊕ ω` of `ℂ²` is positive on the image of the oriented frame `(1, I)` under the derivative of
 `z ↦ (z, g z)` at every point
-(`TauCeti.eventually_forall_prod_stdComplexSymplecticForm_fderiv_tangencySplitting_pos`). Away from
-the annulus where the cutoff varies the perturbation is holomorphic, and on that compact annulus it
-is close to `z ^ k` in `C¹`.
+(`TauCeti.eventually_forall_prod_stdComplexSymplecticForm_fderiv_tangencySplitting_pos`). For
+`ε = 0` this is the graph of the holomorphic function `z ^ k`, which is a symplectic curve
+(`DifferentiableAt.prod_stdComplexSymplecticForm_fderiv_pos`). The positivity persists for small `ε`
+by continuity in `(ε, z)` on the compact closed ball of radius `β.rOut`, and outside that ball the
+perturbation is `z ^ k`.
 
 ## Main declarations
 
@@ -280,37 +283,11 @@ theorem deriv_tangencySplitting_ne_zero (hε₀ : ε ≠ 0)
 
 /-! ### The perturbed graph is a symplectic curve -/
 
-/-- The standard symplectic form `ω ⊕ ω` of `ℂ²` on the vectors `(1, a)` and `(I, b)`. -/
-private theorem prod_stdComplexSymplecticForm_one_I (a b : ℂ) :
-    stdComplexSymplecticForm.prod stdComplexSymplecticForm (1, a) (Complex.I, b) =
-      1 + ((starRingEnd ℂ) a * b).im := by
-  rw [SymplecticForm.prod_apply, stdComplexSymplecticForm_eq_im_conj_mul,
-    stdComplexSymplecticForm_eq_im_conj_mul]
-  simp
-
-/-- Where a function is `z ^ k` near `z`, its graph is a symplectic curve at `z`: the form
-`ω ⊕ ω` is `1 + ‖k z ^ (k - 1)‖² > 0` on the images of `1` and `I`. -/
-private theorem prod_stdComplexSymplecticForm_fderiv_pow_pos (z : ℂ) :
-    0 < stdComplexSymplecticForm.prod stdComplexSymplecticForm
-      (1, fderiv ℝ (· ^ k) z 1) (Complex.I, fderiv ℝ (· ^ k) z Complex.I) := by
-  have h := ((hasDerivAt_pow k z).hasFDerivAt.restrictScalars ℝ).fderiv
-  set c : ℂ := k * z ^ (k - 1)
-  rw [h, prod_stdComplexSymplecticForm_one_I]
-  simp only [ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.toSpanSingleton_apply,
-    smul_eq_mul, one_mul]
-  have hc : ((starRingEnd ℂ) c * (Complex.I * c)).im = Complex.normSq c := by
-    rw [mul_left_comm, ← Complex.normSq_eq_conj_mul_self]
-    simp
-  rw [hc]
-  linarith [Complex.normSq_nonneg c]
-
 variable (β k) in
 /-- **The perturbed graph is a symplectic curve.** For every small enough `ε`, the graph
 `z ↦ (z, g z)` of the perturbation `g = tangencySplitting β k ε` is positive for the standard
 symplectic form `ω ⊕ ω` of `ℂ²`: at every point `z` the form is positive on the images
-`(1, Dg 1)` and `(I, Dg I)` of the oriented frame `(1, I)` under the derivative of the graph. The
-perturbation is holomorphic away from the annulus where the cutoff varies, and there it is close
-to `z ^ k` in `C¹` when `ε` is small. -/
+`(1, Dg 1)` and `(I, Dg I)` of the oriented frame `(1, I)` under the derivative of the graph. -/
 theorem eventually_forall_prod_stdComplexSymplecticForm_fderiv_tangencySplitting_pos :
     ∀ᶠ ε : ℂ in 𝓝 0, ∀ z : ℂ, 0 < stdComplexSymplecticForm.prod stdComplexSymplecticForm
       (1, fderiv ℝ (tangencySplitting β k ε) z 1)
@@ -328,7 +305,9 @@ theorem eventually_forall_prod_stdComplexSymplecticForm_fderiv_tangencySplitting
     intro ε z v
     have h := ((hG.differentiable one_ne_zero) (ε, z)).hasFDerivAt.comp z
       ((hasFDerivAt_const ε z).prodMk (hasFDerivAt_id z))
-    rw [show tangencySplitting β k ε = G ∘ fun z ↦ (ε, z) from rfl, h.fderiv]
+    -- Unfolding `G`, the perturbation for this `ε` is `G` composed with `z ↦ (ε, z)`.
+    have hGcomp : tangencySplitting β k ε = G ∘ fun z ↦ (ε, z) := funext fun _ ↦ rfl
+    rw [hGcomp, h.fderiv]
     simp
   set Φ : ℂ × ℂ → ℝ := fun q ↦ stdComplexSymplecticForm.prod stdComplexSymplecticForm
     (1, fderiv ℝ G q (0, 1)) (Complex.I, fderiv ℝ G q (0, Complex.I))
@@ -342,7 +321,7 @@ theorem eventually_forall_prod_stdComplexSymplecticForm_fderiv_tangencySplitting
   -- persists for small `ε` on the closed ball where the cutoff is supported.
   have hΦ₀ : ∀ y, 0 < Φ (0, y) := fun y ↦ by
     simp only [Φ, ← hpartial, tangencySplitting_zero_right]
-    exact prod_stdComplexSymplecticForm_fderiv_pow_pos y
+    exact (differentiableAt_pow k).prod_stdComplexSymplecticForm_fderiv_pos
   have hev := (isCompact_closedBall (0 : ℂ) β.rOut).eventually_forall_of_forall_eventually
     (x₀ := (0 : ℂ)) (P := fun ε z ↦ 0 < Φ (ε, z))
     fun y _ ↦ hΦ.continuousAt.eventually (lt_mem_nhds (hΦ₀ y))
@@ -355,7 +334,7 @@ theorem eventually_forall_prod_stdComplexSymplecticForm_fderiv_tangencySplitting
         with w hw
       exact tangencySplitting_eq_pow_of_rOut_le hw.le
     rw [hpow.fderiv_eq]
-    exact prod_stdComplexSymplecticForm_fderiv_pow_pos z
+    exact (differentiableAt_pow k).prod_stdComplexSymplecticForm_fderiv_pos
 
 /-! ### Local intersection numbers -/
 
@@ -389,16 +368,15 @@ theorem localIndex_eq_one_of_apply_eq_sub_graph_tangencySplitting {F : C(ℂ × 
     (hF : ∀ p, F p = (p.1, 0) - (p.2, tangencySplitting β k ε p.2)) (hε₀ : ε ≠ 0)
     (hε : (β.rIn + k * ‖ε‖) ^ k < 2 * β.rIn ^ k) {j : ℕ} (hj : j < k) :
     o.localIndex o F (-(j * ε), -(j * ε)) = 1 := by
-  set P : ℂ → ℂ := fun z ↦ ∏ i ∈ range k, (z + i * ε)
+  set P : ℂ → ℂ := fun z ↦ ∏ i ∈ range k, (z + i * ε) with hPdef
   have hjk := norm_neg_mul_lt_rIn hε hj
   -- Near the intersection the perturbation is the polynomial `P`, whose graph is holomorphic.
   let G : C(ℂ × ℂ, ℂ × ℂ) := ⟨fun p ↦ (p.1, 0) - (p.2, P p.2), by fun_prop⟩
   have hFG : F =ᶠ[𝓝 (-(j * ε), -(j * ε))] G := by
     filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
       (tangencySplitting_eventuallyEq_prod (k := k) (ε := ε) hjk)] with p hp
-    rw [hF]
-    simp only [G, ContinuousMap.coe_mk]
-    rw [show tangencySplitting β k ε p.2 = P p.2 from hp]
+    rw [Set.mem_preimage, Set.mem_ofPred_eq] at hp
+    simp only [hF, G, ContinuousMap.coe_mk, hPdef, hp]
   have hP0 : P (-(j * ε)) = 0 := prod_eq_zero (mem_range.2 hj) (by ring)
   rw [o.localIndex_congr o hn hFG,
     o.localIndex_eq_analyticOrderNatAt_sub_of_apply_eq_graph_sub_graph hn (f := fun _ ↦ 0) (g := P)
