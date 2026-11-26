@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Strip.Jet
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Sobolev.Morrey.Basic
 import TauCeti.MeasureTheory.Measure.Haar.Prod
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
 # Morrey's estimate on the strip, up to the boundary
@@ -34,12 +35,12 @@ closed strip.
 The proof applies Morrey's bound for star-convex domains
 (`TauCeti.exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv`) at a point `z = (s, t)` of the open
 strip, on the open rectangle `(s - 1, s + 1) × (0, 1)`. This rectangle is convex, lies inside the
-strip and inside the unit ball about `z` for the sup norm, and has area `2` whatever `z`, so the
-constant does not depend on `z`. Unlike on the cylinder
-(`TauCeti.CylinderSobolev.exists_enorm_le_mul_eLpNorm_jet`), where every unit ball meets the
-fundamental domain in a full square by periodicity, the rectangle stays on one side of each
-boundary line, which is why `z` is first taken in the open strip; the bound then extends to the
-boundary lines by continuity.
+strip, and meets the unit ball about `z` for the sup norm in area at least `1` whatever `z`
+(`TauCeti.ofReal_mul_ofReal_le_volume_Ioo_prod_Ioo_inter_ball`), so the constant does not depend
+on `z`. Unlike on the cylinder (`TauCeti.CylinderSobolev.exists_enorm_le_mul_eLpNorm_jet`),
+where every unit ball meets the fundamental domain in a full square by periodicity, the rectangle
+stays on one side of each boundary line, which is why `z` is first taken in the open strip; the
+bound then extends to the boundary lines by continuity.
 
 ## References
 
@@ -57,21 +58,6 @@ open scoped ENNReal NNReal
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- The open rectangle `(s - 1, s + 1) × (0, 1)` about a point `(s, t)` of the open strip lies
-in the unit ball about it, for the sup norm of `ℝ × ℝ`. -/
-private theorem Ioo_prod_Ioo_subset_ball {z : ℝ × ℝ} (hz : z.2 ∈ Ioo (0 : ℝ) 1) :
-    Ioo (z.1 - 1) (z.1 + 1) ×ˢ Ioo (0 : ℝ) 1 ⊆ ball z 1 := by
-  rintro ⟨a, b⟩ ⟨⟨ha₁, ha₂⟩, hb₁, hb₂⟩
-  dsimp only at ha₁ ha₂ hb₁ hb₂
-  simp only [mem_ball, Prod.dist_eq, Real.dist_eq, max_lt_iff, abs_lt]
-  exact ⟨⟨by linarith, by linarith⟩, by linarith [hz.1, hz.2], by linarith [hz.1, hz.2]⟩
-
-/-- The open rectangle `(s - 1, s + 1) × (0, 1)` has area `2`. -/
-private theorem volume_Ioo_prod_Ioo (s : ℝ) :
-    volume (Ioo (s - 1) (s + 1) ×ˢ Ioo (0 : ℝ) 1) = ENNReal.ofReal 2 := by
-  rw [Measure.volume_eq_prod, Measure.prod_prod, Real.volume_Ioo, Real.volume_Ioo]
-  norm_num [ENNReal.ofReal_one]
-
 /-- **Morrey's estimate on the strip, up to the boundary.** For `p > 2` there is a constant `C`
 such that every `ξ` which is `C¹` on the open strip `ℝ × (0, 1)` and continuous on the closed strip
 satisfies `‖ξ z‖ ≤ C ‖jet ξ‖_{Lᵖ(ℝ × [0, 1])}` at every point `z` of the closed strip. -/
@@ -82,9 +68,9 @@ theorem exists_enorm_le_mul_eLpNorm_jet [CompleteSpace V] {p : ℝ≥0} (hp : 2 
   have hn : finrank ℝ (ℝ × ℝ) = 2 := by simp
   have hp' : (finrank ℝ (ℝ × ℝ) : ℝ≥0) < p := by rw [hn]; exact_mod_cast hp
   have hp1 : 1 ≤ p := le_of_lt (lt_of_le_of_lt (by norm_num) hp)
-  -- Morrey's bound for domains meeting the unit ball about the point in area at least `2`.
+  -- Morrey's bound for domains meeting the unit ball about the point in area at least `1`.
   obtain ⟨C, hC⟩ := exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv (μ := volume) (F := V) hp1 hp'
-    1 (m := ENNReal.ofReal 2) (by norm_num)
+    1 (m := ENNReal.ofReal 1 * ENNReal.ofReal 1) (by norm_num)
   refine ⟨3 * C, fun {ξ} hξ hξc ↦ ?_⟩
   -- The bound at the points of the open strip, from the rectangle `(s - 1, s + 1) × (0, 1)`.
   have hint : ∀ z ∈ (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1,
@@ -95,8 +81,9 @@ theorem exists_enorm_le_mul_eLpNorm_jet [CompleteSpace V] {p : ℝ≥0} (hp : 2 
     have hzΩ : z ∈ Ω := ⟨⟨by linarith, by linarith⟩, hz.2⟩
     have hΩs : Ω ⊆ univ ×ˢ Ioo 0 1 := prod_mono (subset_univ _) subset_rfl
     have hξΩ : ContDiffOn ℝ 1 ξ Ω := hξ.mono hΩs
-    have hΩm : ENNReal.ofReal 2 ≤ volume (Ω ∩ ball z 1) := by
-      rw [inter_eq_left.2 (Ioo_prod_Ioo_subset_ball hz.2), volume_Ioo_prod_Ioo]
+    have hΩm : ENNReal.ofReal 1 * ENNReal.ofReal 1 ≤ volume (Ω ∩ ball z 1) :=
+      ofReal_mul_ofReal_le_volume_Ioo_prod_Ioo_inter_ball le_rfl (by linarith) le_rfl
+        (by norm_num) ⟨⟨by linarith, by linarith⟩, Ioo_subset_Icc_self hz.2⟩
     -- The `Lᵖ` norms over the rectangle are controlled by the jet on the strip.
     have hμ : volume.restrict Ω ≤ stripMeasure :=
       Measure.restrict_mono (hΩs.trans (prod_mono subset_rfl Ioo_subset_Icc_self)) le_rfl
