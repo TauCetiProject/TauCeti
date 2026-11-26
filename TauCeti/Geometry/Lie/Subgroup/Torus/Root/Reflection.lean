@@ -14,6 +14,7 @@ import TauCeti.Algebra.Lie.InvariantForm.RankOne
 import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import TauCeti.Geometry.Lie.Subgroup.Weyl.Faithful
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # Rank-one representatives of root reflections
@@ -184,17 +185,6 @@ section MaximalTorus
 
 variable [CompactSpace G]
 
-/-- For a positive definite form `B`, an element `c` of a subspace `t` that is `B`-orthogonal to
-`ker α` is determined by `α c`: `c - c'` lies in `ker α` and is `B`-orthogonal to itself. -/
-private theorem eq_of_forall_apply_eq_zero_of_posDef {L : Type*} [AddCommGroup L] [Module ℝ L]
-    {B : LinearMap.BilinForm ℝ L} (hBp : B.toQuadraticMap.PosDef) {t : Submodule ℝ L}
-    {α : Dual ℝ t} {c c' : t} (hcc' : α c = α c') (hc : ∀ X, α X = 0 → B (X : L) c = 0)
-    (hc' : ∀ X, α X = 0 → B (X : L) c' = 0) : c = c' := by
-  have hd : α (c - c') = 0 := by rw [map_sub, hcc', sub_self]
-  have hdd : B (c - c' : t) ((c : L) - c') = 0 := by rw [map_sub, hc _ hd, hc' _ hd, sub_zero]
-  rw [← Submodule.coe_sub, ← LinearMap.BilinMap.toQuadraticMap_apply] at hdd
-  exact sub_eq_zero.mp (Submodule.coe_eq_zero.mp (hBp.anisotropic _ hdd))
-
 /-- A nonzero root plane of a maximal torus with nonzero root contains a normalized root pair: the
 images `x, y` of `ê₀, ê₁` under its rank-one homomorphism `so(3) → 𝔤`. -/
 private theorem IsMaximalTorus.exists_lie_eq_smul_of_isRootPlane {T : Subgroup G}
@@ -262,7 +252,8 @@ theorem IsMaximalTorus.exists_weylAdjointRepresentation_eq_reflection {T : Subgr
   have hn := lieExp_pi_smul_mem_normalizer_of_lie_eq_smul hT.isTorus.isClosed
     hT.isTorus.isConnected.isPreconnected hx hxy hα₁
   refine ⟨c, hc, hcB, fun c' hc' hc'B ↦ ?_, ⟨_, hn⟩, ?_, fun X hX ↦ ?_⟩
-  · exact eq_of_forall_apply_eq_zero_of_posDef hBp (hc'.trans hc.symm) hc'B hcB
+  · exact LinearMap.BilinForm.eq_of_apply_eq_of_forall_ker_orthogonal hBp.anisotropic
+      (hc'.trans hc.symm) hc'B hcB
   · refine LinearMap.ext fun X ↦ Subtype.ext ?_
     rw [LinearEquiv.coe_coe, Module.reflection_apply,
       Subgroup.coe_weylAdjointRepresentation_mk_apply,
