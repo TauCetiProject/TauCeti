@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 public import TauCeti.MeasureTheory.Function.L2Space.MeanZero
 public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
-import TauCeti.Analysis.InnerProductSpace.RangeProjection
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 
 /-!
@@ -206,18 +205,6 @@ end InnerProduct
 
 end PullbackL2
 
-/-- Coercing Mathlib's `condExpL2` to `Lp E 2 μ` gives the orthogonal projection onto
-`lpMeas E 𝕜 m 2 μ`. -/
-private theorem coe_condExpL2_eq_starProjection {α : Type*} {m : MeasurableSpace α}
-    [m0 : MeasurableSpace α] {μ : Measure α} (E 𝕜 : Type*) [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] (hm : m ≤ m0)
-    [Fact (m ≤ m0)] (b : Lp E 2 μ) :
-    (condExpL2 E 𝕜 hm b : Lp E 2 μ) = (lpMeas E 𝕜 m 2 μ).starProjection b := by
-  symm
-  refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero (SetLike.coe_mem _) fun g hg ↦ ?_
-  rw [inner_sub_left,
-    inner_condExpL2_eq_inner_fun hm b g (mem_lpMeas_iff_aestronglyMeasurable.mp hg), sub_self]
-
 section CondExpOperator
 
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
@@ -335,18 +322,20 @@ theorem pullbackL2_condExpOperator_eq_condExpL2 (η : Measure Y) (𝕜 : Type*) 
     (m : Y → X) (hm : Measurable m) (b : Lp E 2 η) :
     pullbackL2 η 𝕜 m hm (condExpOperator η 𝕜 m hm b) =
       (condExpL2 E 𝕜 hm.comap_le b : Lp E 2 η) := by
-  have : Fact (MeasurableSpace.comap m inferInstance ≤ (inferInstance : MeasurableSpace Y)) :=
-    ⟨hm.comap_le⟩
-  let := ContinuousLinearMap.hasOrthogonalProjection_range_of_isometry
-    (isometry_pullbackL2 η 𝕜 (E := E) m hm)
-  have hproj : pullbackL2 η 𝕜 m hm (condExpOperator η 𝕜 m hm b) =
-      (pullbackL2 η 𝕜 m hm).range.starProjection b := by
-    simpa only [condExpOperator_def, ContinuousLinearMap.comp_apply] using
-      congr($(ContinuousLinearMap.comp_adjoint_eq_starProjection_range
-        (isometry_pullbackL2 η 𝕜 m hm)) b)
-  rw [hproj, coe_condExpL2_eq_starProjection E 𝕜 hm.comap_le b]
-  -- `Submodule.HasOrthogonalProjection` is a `Prop`, so `simp_rw` unifies the projection instances.
-  simp_rw [range_pullbackL2]
+  set d : Lp E 2 η :=
+    pullbackL2 η 𝕜 m hm (condExpOperator η 𝕜 m hm b) - (condExpL2 E 𝕜 hm.comap_le b : Lp E 2 η)
+  have hd_mem : d ∈ lpMeas E 𝕜 (MeasurableSpace.comap m inferInstance) 2 η := by
+    refine Submodule.sub_mem _ ?_ (SetLike.coe_mem _)
+    rw [← range_pullbackL2]
+    exact LinearMap.mem_range_self _ _
+  obtain ⟨g, hg⟩ : d ∈ (pullbackL2 η 𝕜 m hm).range := (range_pullbackL2 η 𝕜 E m hm).symm ▸ hd_mem
+  have h1 : ⟪pullbackL2 η 𝕜 m hm (condExpOperator η 𝕜 m hm b), d⟫_𝕜 = ⟪b, d⟫_𝕜 := by
+    rw [← hg, ContinuousLinearMap.coe_coe, inner_pullbackL2, inner_condExpOperator_left]
+  have h2 : ⟪(condExpL2 E 𝕜 hm.comap_le b : Lp E 2 η), d⟫_𝕜 = ⟪b, d⟫_𝕜 :=
+    inner_condExpL2_eq_inner_fun hm.comap_le b d (mem_lpMeas_iff_aestronglyMeasurable.mp hd_mem)
+  have hd_zero : ⟪d, d⟫_𝕜 = 0 := by
+    rw [inner_sub_left, h1, h2, sub_self]
+  exact sub_eq_zero.mp (inner_self_eq_zero.mp hd_zero)
 
 /-- For an integrable `L²` function `b` and a σ-finite conditioning measure `η.trim hm.comap_le`,
 applying `pullbackL2` to `condExpOperator η 𝕜 m hm b` yields the conditional expectation
