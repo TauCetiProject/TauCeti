@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.Spectral.CommonDomain
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Fredholm
+import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
 import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Family
 
 /-!
@@ -72,16 +73,6 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddComm
   [InnerProductSpace ℝ H] {ι : D →L[ℝ] H} {A : ℝ → D →L[ℝ] H}
 
 /-! ### Truncations of a path -/
-
-/-- The limit of a path of `ι`-symmetric operators is `ι`-symmetric. -/
-private theorem inner_apply_eq_of_tendsto {l : Filter ℝ} [l.NeBot] {B : D →L[ℝ] H}
-    (hA : Tendsto A l (𝓝 B)) (hSymm : ∀ s x y, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ) (x y : D) :
-    ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ := by
-  have h₁ : Tendsto (fun s ↦ ⟪A s x, ι y⟫_ℝ) l (𝓝 ⟪B x, ι y⟫_ℝ) :=
-    (((ContinuousLinearMap.apply ℝ H x).continuous.tendsto B).comp hA).inner tendsto_const_nhds
-  have h₂ : Tendsto (fun s ↦ ⟪ι x, A s y⟫_ℝ) l (𝓝 ⟪ι x, B y⟫_ℝ) :=
-    tendsto_const_nhds.inner (((ContinuousLinearMap.apply ℝ H y).continuous.tendsto B).comp hA)
-  exact tendsto_nhds_unique h₁ (h₂.congr fun s ↦ (hSymm s x y).symm)
 
 /-- Two `L∞` classes whose representatives are everywhere within `C` are within `C`. -/
 private theorem norm_sub_le_of_forall_norm_sub_le {F G : Lp (D →L[ℝ] H) ∞ μ₀}
@@ -202,8 +193,10 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible
     (htop : Tendsto A atTop (𝓝 Btop))
     (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
     (familyDomainTrajectoryOperator (p := 2) ι AL).index = 0 := by
-  have hSymmbot := inner_apply_eq_of_tendsto hbot hSymm
-  have hSymmtop := inner_apply_eq_of_tendsto htop hSymm
+  have hSymmbot (x y : D) : ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ :=
+    ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot (.of_forall (hSymm · x y))
+  have hSymmtop (x y : D) : ⟪Btop x, ι y⟫_ℝ = ⟪ι x, Btop y⟫_ℝ :=
+    ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop (.of_forall (hSymm · x y))
   -- The truncations `s ↦ A (min s t)` are essentially bounded, by the `L∞` norm of `A`.
   have : (μ₀).IsOpenPosMeasure := by
     rw [Opens.coe_top, Measure.restrict_univ]
@@ -279,7 +272,10 @@ theorem index_familyDomainTrajectoryOperator_eq_of_forall_isInvertible (hι : Is
       (familyDomainTrajectoryOperator (p := 2) ι AL).index := by
   -- Catenate `A` with `γ`; the operator of `γ` has index zero.
   rw [index_familyDomainTrajectoryOperator_eq_add hι hSymm₀ hB₀
-    (inner_apply_eq_of_tendsto hγbot hγSymm) hB₁ (inner_apply_eq_of_tendsto hγtop hγSymm) hB₂ h₁₂
+    (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hγbot
+      (.of_forall (hγSymm · x y))) hB₁
+    (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hγtop
+      (.of_forall (hγSymm · x y))) hB₂ h₁₂
     hAL hbot htop hc hγL hγbot hγtop hγc hAL' hbot' htop' hc',
     index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible hι hγ hγSymm hγinv hB₁ hB₂
       hγL hγbot hγtop hγc, add_zero]
