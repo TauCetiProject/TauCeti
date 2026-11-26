@@ -57,6 +57,8 @@ only along a null frontier, is itself a fundamental domain.
   positive, invariant under conjugation, and multiplied by the index on passing to a subgroup.
 * `MeasureTheory.covolume_eq_index_mul_covolume`: the same multiplicativity at finite index, with
   the index as a natural number.
+* `MeasureTheory.covolume_smul_measure`: for an invariant measure, scaling the measure by `c`
+  scales the covolume by `c`.
 
 Ported from the
 [AINTLIB `LeanModularForms` project](https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms),

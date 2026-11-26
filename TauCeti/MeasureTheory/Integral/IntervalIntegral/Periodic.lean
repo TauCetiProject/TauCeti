@@ -45,6 +45,10 @@ over `[0, T/2]` (`intervalIntegral.integral_eq_two_smul_of_even`). If `T ≠ 0` 
 integrable on `[0, T/2]`, then `f` is not integrable from `t` to `t + n T` for any integer
 `n ≠ 0`, and both sides of these identities are `0`.
 
+The file also records the lattice `θℤ ⊂ ℝ`: for `θ > 0` the interval `[t, t + θ)` is a fundamental
+domain for `θℤ`, so `θℤ` has covolume `θ`, and unfolding over `[0, 1)` gives Weil's formula
+`∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` for `ℤ ⊂ ℝ`.
+
 ## Main declarations
 
 * `AddCircle.map_volume_le_of_lift` and `AddCircle.map_haarAddCircle_le_of_lift`: if `c ≤ F'`
@@ -62,6 +66,12 @@ integrable on `[0, T/2]`, then `f` is not integrable from `t` to `t + n T` for a
 * `AddCircle.measurePreserving_of_lift`: a measure-preserving map of `ℝ × Y` commuting with the
   translation by `T` of the first coordinate descends to a measure-preserving map of
   `AddCircle T × Y`.
+* `isAddFundamentalDomain_Ico_zmultiples_op`: `[t, t + θ)` is a fundamental domain for the right
+  translation action of `θℤ` on `ℝ`, the `Ico` companion of Mathlib's `isAddFundamentalDomain_Ioc'`.
+* `addCovolume_zmultiples_op` and `addCovolume_zmultiples_one_op`: the covolume of `θℤ` in `ℝ` is
+  `θ`, and that of `ℤ` is `1`.
+* `lintegral_eq_setLIntegral_Ico_tsum_add_intCast`: Weil's formula
+  `∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` for `ℤ ⊂ ℝ` and measurable `f : ℝ → [0, ∞]`.
 * `Function.Periodic.eqOn_zero_of_intervalIntegral_eq_zero`: a continuous periodic function which
   is nonnegative over a period and has integral zero over a period vanishes inside that period.
 * `Function.Periodic.intervalIntegral_neg_div_two_eq`: the integral of a `T`-periodic function
@@ -303,6 +313,48 @@ theorem measurePreserving_of_lift [SFinite ν] {f : ℝ × Y → ℝ × Y}
 end Descent
 
 end AddCircle
+
+/-! ### The lattice `θℤ ⊂ ℝ` -/
+
+/-- **`[t, t + θ)` is a fundamental domain for `θℤ` acting on `ℝ` by right translation.**
+
+Adapted from Mathlib's `isAddFundamentalDomain_Ioc'`
+(`Mathlib/MeasureTheory/Integral/IntervalIntegral/Periodic.lean`), with `Ioc` replaced by `Ico`. -/
+theorem isAddFundamentalDomain_Ico_zmultiples_op {θ : ℝ} (hθ : 0 < θ) (t : ℝ)
+    (μ : Measure ℝ := by volume_tac) :
+    IsAddFundamentalDomain (AddSubgroup.op <| .zmultiples θ) (Ico t (t + θ)) μ := by
+  refine IsAddFundamentalDomain.mk' nullMeasurableSet_Ico fun x => ?_
+  refine ((AddSubgroup.zmultiplesEquivInt hθ.ne').symm.toEquiv.trans
+    (AddSubgroup.equivOp _)).bijective.existsUnique_iff.2 ?_
+  simpa [AddSubgroup.vadd_def, AddSubgroup.coe_zmultiplesEquivInt_symm_apply] using
+    existsUnique_add_zsmul_mem_Ico hθ x t
+
+/-- **The covolume of `θℤ` in `ℝ` is `θ`** for Lebesgue measure. -/
+theorem addCovolume_zmultiples_op {θ : ℝ} (hθ : 0 < θ) :
+    addCovolume (AddSubgroup.op <| .zmultiples θ) ℝ volume = ENNReal.ofReal θ := by
+  have h := (isAddFundamentalDomain_Ico_zmultiples_op hθ 0 volume).covolume_eq_volume volume
+  rw [h, Real.volume_Ico]
+  simp
+
+/-- **The covolume of `ℤ` in `ℝ` is `1`.** -/
+theorem addCovolume_zmultiples_one_op :
+    addCovolume (AddSubgroup.op <| .zmultiples (1 : ℝ)) ℝ volume = 1 := by
+  simp [addCovolume_zmultiples_op one_pos]
+
+/-- **Weil's formula for `ℤ ⊂ ℝ`**: `∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` for measurable
+`f : ℝ → [0, ∞]`. -/
+theorem lintegral_eq_setLIntegral_Ico_tsum_add_intCast {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
+    ∫⁻ x, f x = ∫⁻ x in Ico (0 : ℝ) 1, ∑' n : ℤ, f (x + n) := by
+  have hD := isAddFundamentalDomain_Ico_zmultiples_op one_pos 0 (volume : Measure ℝ)
+  rw [zero_add] at hD
+  let e : ℤ ≃ (AddSubgroup.zmultiples (1 : ℝ)).op :=
+    (AddSubgroup.zmultiplesEquivInt one_ne_zero).symm.toEquiv.trans (AddSubgroup.equivOp _)
+  rw [hD.lintegral_eq_tsum'', ← lintegral_tsum (f := fun g x => f (g +ᵥ x)) fun g =>
+    (hf.comp (measurable_const_vadd _)).aemeasurable]
+  refine setLIntegral_congr_fun measurableSet_Ico fun x _ => ?_
+  rw [← e.tsum_eq]
+  refine tsum_congr fun n => congrArg f ?_
+  simp [e, AddSubgroup.vadd_def, AddSubgroup.coe_zmultiplesEquivInt_symm_apply]
 
 /-- A continuous `T`-periodic function which is nonnegative on `[a, a + T]` and whose integral over
 a period vanishes, vanishes on `(a, a + T)`. -/
