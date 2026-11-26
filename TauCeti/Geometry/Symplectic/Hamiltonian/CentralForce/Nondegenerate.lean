@@ -550,6 +550,17 @@ private theorem fderiv_centralForceEnergyMomentum_fderivPolarCanonicalEquiv (hm 
     hr.ne').differentiableAt one_ne_zero), hy₀, ContinuousLinearMap.comp_apply,
     fderivPolarCanonicalEquiv_apply]
 
+/-- At a point of a circular orbit, `(h, l) ↦ h - Ω l` kills the image of `dF`, so `H - Ω L` is
+critical there. -/
+private theorem criticalFunctional_comp_fderiv_centralForceEnergyMomentum (hm : m ≠ 0) {q p : V}
+    (hq : q ≠ 0) (hqp : ⟪q, p⟫_ℝ = 0) (hU : DifferentiableAt ℝ U ‖q‖)
+    (hcrit : HasDerivAt (effectivePotential m (angularMomentum (b 0) (b 1) (q, p)) U) 0 ‖q‖) :
+    (criticalFunctional (angularMomentum (b 0) (b 1) (q, p) / (m * ‖q‖ ^ 2))).comp
+      (fderiv ℝ (centralForceEnergyMomentum b m U) (q, p)) = 0 := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  obtain ⟨u, rfl⟩ := (fderivPolarCanonicalEquiv b p hq).surjective v
+  simp [fderiv_centralForceEnergyMomentum_fderivPolarCanonicalEquiv b hm hq hqp hU hcrit]
+
 /-- At a point of a circular orbit, the Hessian of `H - Ω L` is that of its polar version, read
 through the derivative of the polar parametrization. -/
 private theorem hessianQuadraticForm_criticalFunctional_comp_fderivPolarCanonicalEquiv
@@ -572,10 +583,8 @@ private theorem hessianQuadraticForm_criticalFunctional_comp_fderivPolarCanonica
       0 := by
     rw [fderiv_comp _ (criticalFunctional Ω).differentiableAt (hFc.differentiableAt two_ne_zero),
       ContinuousLinearMap.fderiv, hy₀]
-    refine ContinuousLinearMap.ext fun v ↦ ?_
-    obtain ⟨u, rfl⟩ := (fderivPolarCanonicalEquiv b p hq).surjective v
-    simp [F, fderiv_centralForceEnergyMomentum_fderivPolarCanonicalEquiv b hm hq hqp
-      (hU.differentiableAt two_ne_zero) hcrit, Ω]
+    exact criticalFunctional_comp_fderiv_centralForceEnergyMomentum b hm hq hqp
+      (hU.differentiableAt two_ne_zero) hcrit
   have key := hessianQuadraticForm_comp ((criticalFunctional Ω).contDiff.contDiffAt.comp _ hFc)
     (contDiffAt_polarCanonical (b 0) (b 1) hr.ne') hfc
   have hev : (criticalFunctional Ω ∘ F) ∘ polarCanonical (b 0) (b 1) =ᶠ[𝓝 (polarPoint b q p)]
@@ -682,28 +691,33 @@ theorem polar_hessianQuadraticForm_centralForceHamiltonian_sub_eq_zero (hm : m �
           angularMomentum (b 0) (b 1) (q, p) / (m * ‖q‖ ^ 2) * angularMomentum (b 0) (b 1) x)
           (q, p)) w u = 0 := by
   set Ω := angularMomentum (b 0) (b 1) (q, p) / (m * ‖q‖ ^ 2)
-  set e := fderivPolarCanonicalEquiv b p hq
-  have hd := hU.differentiableAt two_ne_zero
-  have hker := fderivPolarCanonicalEquiv_mem_ker_iff b hm hq hqp hd hcrit
-  obtain ⟨a, ha⟩ : ∃ a, HasDerivAt
-      (deriv (effectivePotential m (angularMomentum (b 0) (b 1) (q, p)) U)) a ‖q‖ :=
-    ⟨_, ((((contDiffAt_effectivePotential hU (norm_ne_zero_iff.2 hq)).fderiv_right (m := 1)
-      (by norm_num)).differentiableAt one_ne_zero).clm_apply (differentiableAt_const 1)).hasDerivAt⟩
+  set F := centralForceEnergyMomentum b m U
+  have : FiniteDimensional ℝ V := Module.Finite.of_basis b.toBasis
   have hfun : (fun x ↦ centralForceHamiltonian m U x - Ω * angularMomentum (b 0) (b 1) x) =
-      criticalFunctional Ω ∘ centralForceEnergyMomentum b m U := funext fun x ↦ by simp
+      criticalFunctional Ω ∘ F := funext fun x ↦ by simp [F]
+  -- Every `ℓ' ∘ F` is a combination of `H` and `L`, so it Poisson-commutes with `H - Ω L`.
+  have hcomm (ℓ' : (Fin 2 → ℝ) →L[ℝ] ℝ) :
+      stdSymplecticForm.poissonBracket (ℓ' ∘ F) (criticalFunctional Ω ∘ F) =ᶠ[𝓝 (q, p)] 0 := by
+    refine .of_forall fun y ↦ ?_
+    obtain ⟨c₀, c₁, h₁⟩ : ∃ c₀ c₁ : ℝ, ℓ' ∘ F = fun y ↦ c₀ * centralForceHamiltonian m U y +
+        c₁ * angularMomentum (b 0) (b 1) y := ⟨ℓ' fun j ↦ if 0 = j then 1 else 0,
+          ℓ' fun j ↦ if 1 = j then 1 else 0, funext fun y ↦ by
+      rw [Function.comp_apply, ← ContinuousLinearMap.coe_coe,
+        LinearMap.pi_apply_eq_sum_univ, Fin.sum_univ_two]
+      simp [F]
+      ring⟩
+    have h₂ : criticalFunctional Ω ∘ F = fun y ↦ 1 * centralForceHamiltonian m U y +
+        -Ω * angularMomentum (b 0) (b 1) y := funext fun y ↦ by
+      simp [F]
+      ring
+    rw [h₁, h₂, poissonBracket_comb,
+      stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum, mul_zero,
+      Pi.zero_apply]
   rw [hfun]
-  intro w hw u hu
-  obtain ⟨w, rfl⟩ := e.surjective w
-  obtain ⟨u, rfl⟩ := e.surjective u
-  have hw₂ := (hker w).1 hw.1
-  have hQ := hessianQuadraticForm_criticalFunctional_comp_fderivPolarCanonicalEquiv b hm hq hqp hU
-    hcrit
-  rw [QuadraticMap.polar, ← map_add e w u, hQ, hQ, hQ, ← QuadraticMap.polar, polarPoint]
-  exact polar_hessianQuadraticForm_comp_polarEnergyMomentum_eq_zero (norm_ne_zero_iff.2 hq) hm hU
-    hcrit ha _ (criticalFunctional_comp_polarDerivative Ω) w
-    ⟨(mem_ker_polarDerivative_iff Ω w).2 hw₂, (mem_orthogonal_ker_polarDerivative_iff Ω hw₂).2
-      ((fderivPolarCanonicalEquiv_mem_orthogonal_iff b hm hq hqp hd hcrit hw₂).1 hw.2)⟩
-    u ((mem_ker_polarDerivative_iff Ω u).2 ((hker u).1 hu))
+  exact fun w hw u _ ↦ stdSymplecticForm.polar_hessianQuadraticForm_eq_zero_of_mem_orthogonal
+    (contDiffAt_centralForceEnergyMomentum b hU hq)
+    (criticalFunctional_comp_fderiv_centralForceEnergyMomentum b hm hq hqp
+      (hU.differentiableAt two_ne_zero) hcrit) hcomm hw.2 u
 
 /-- At a point `x = (q, p)` of a circular orbit as in
 `TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`, with angular momentum `ℓ` and angular
