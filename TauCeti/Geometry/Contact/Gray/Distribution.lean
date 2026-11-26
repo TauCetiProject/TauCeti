@@ -372,7 +372,10 @@ theorem IsContMDiffDistribution.top_prod {n : ℕ∞ω} {k : ℕ}
     refine (hX.linearIndependent hq).finCons ?_
     rw [hX.span_eq hq]
     rintro ⟨v, -, hv⟩
-    exact zero_ne_one (congrArg Prod.fst hv : (0 : ℝ) = 1)
+    -- `T_q (ℝ × M)` is `ℝ × E` by definition, and `inr v = (0, v)`. Since `inr` is coerced here
+    -- with codomain `TangentSpace`, `LinearMap.inr_apply` does not fire, so state this explicitly.
+    have hv' : ((0 : ℝ), v) = ((1 : ℝ), (0 : E)) := hv
+    simp at hv'
   · rw [hcons, Fin.range_cons, Submodule.span_insert, hX.span_eq hq]
     refine le_antisymm (sup_le ?_ ?_) ?_
     · exact (Submodule.span_singleton_le_iff_mem _ _).2 ⟨trivial, zero_mem _⟩
