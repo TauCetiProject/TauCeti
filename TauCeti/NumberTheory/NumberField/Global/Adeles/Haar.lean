@@ -14,6 +14,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Adeles.LocallyCompact
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.HaarCharacter
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Haar
+import TauCeti.NumberTheory.NumberField.Global.Places.PowerClasses
 
 /-!
 # Normalized Haar measures on the adeles and the idele norm as a Haar character
@@ -117,7 +118,8 @@ theorem finiteAdeleHaar_integralAdeles :
 `finiteAdeleHaar`. -/
 theorem eq_finiteAdeleHaar {μ : Measure (FiniteAdeleRing (𝓞 K) K)} [μ.IsAddHaarMeasure]
     (hμ : μ (FiniteAdeleRing.integralAdeles (𝓞 K) K) = 1) : μ = finiteAdeleHaar K :=
-  ((addHaarMeasure_eq_iff (FiniteAdeleRing.integralAdelesPositiveCompacts (𝓞 K) K) μ).2 hμ).symm
+  ((addHaarMeasure_eq_iff (FiniteAdeleRing.integralAdelesPositiveCompacts (𝓞 K) K) μ).2
+    (by rwa [FiniteAdeleRing.coe_integralAdelesPositiveCompacts])).symm
 
 /-- **`finiteAdeleHaar` is a restricted product of local Haar measures**: it is the restricted
 product of the normalized additive Haar measures `μ_v` on the local fields `K_v`, those with
@@ -137,13 +139,13 @@ idele `a` scales Haar measure on `𝔸_{K,f}` by `∏ᶠ_v ‖a_v‖`. This is
 `IsDedekindDomain.FiniteAdeleRing.distribHaarChar_eq_finprod`, whose local factors `|a_v|_v` are
 the norms `‖a_v‖` (`IsDedekindDomain.HeightOneSpectrum.coe_normalizedAbsoluteValue_adicCompletion`).
 -/
-@[simp]
 theorem distribHaarChar_finiteAdeleRing (a : (FiniteAdeleRing (𝓞 K) K)ˣ) :
     distribHaarChar (FiniteAdeleRing (𝓞 K) K) a =
       ∏ᶠ v : HeightOneSpectrum (𝓞 K), ‖(a : FiniteAdeleRing (𝓞 K) K) v‖₊ := by
   rw [FiniteAdeleRing.distribHaarChar_eq_finprod]
   refine finprod_congr fun v ↦ NNReal.eq ?_
-  simpa using v.coe_normalizedAbsoluteValue_adicCompletion ((a : FiniteAdeleRing (𝓞 K) K) v)
+  rw [coe_nnNorm, ← v.coe_normalizedAbsoluteValue_adicCompletion]
+  norm_cast
 
 /-! ### The infinite adeles -/
 
