@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.DeRham.Integration.Bijective
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.FubiniStudySphere
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Sphere.Hurewicz
-public import TauCeti.Geometry.Manifold.SmoothSingular.Sphere
 
 /-!
 # The area of a map of the Riemann sphere is a homological period
