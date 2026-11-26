@@ -142,11 +142,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_realChart_endShift (ω : Smooth
       (ω.perturbedMFDeriv (fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x Complex.I)
         (u ∘ realChart (q.endShift (R - 1))) w).toLinearMap := by
-  -- The components of `K_R` are differentiable in the target point.
-  have hK (z : ℝ × ℝ) (v : ℂ) : MDifferentiable I 𝓘(ℝ)
-      fun y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y v := by
-    rw [cappedComparisonPerturbation_of_two_le H hR]
-    exact mdifferentiable_cappedPerturbation_target hH hHs 1 (R - 1) _ v
+  have hK := mdifferentiable_cappedComparisonPerturbation_target hH hHs R
   rw [equivRealProdCLM_symm_realChart, h₀.cappedComparisonAlmostComplex_of_two_le J hJ hR,
     h₀.cappedAlmostComplex_endShift J hJ hJp 1 (by linarith) hw] at h
   have h' := ω.isComplexLinearMap_perturbedMFDeriv_perturbationPullback
@@ -181,11 +177,7 @@ theorem integral_floerEnergyDensity_image_endShift (ω : SmoothTwoForm I M)
         (fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x Complex.I)
         (u ∘ realChart (q.endShift (R - 1))) w := by
-  -- The components of `K_R` are differentiable in the target point.
-  have hK (z : ℝ × ℝ) (v : ℂ) : MDifferentiable I 𝓘(ℝ)
-      fun y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y v := by
-    rw [cappedComparisonPerturbation_of_two_le H hR]
-    exact mdifferentiable_cappedPerturbation_target hH hHs 1 (R - 1) _ v
+  have hK := mdifferentiable_cappedComparisonPerturbation_target hH hHs R
   rw [ω.integral_floerEnergyDensity_image hΩm (realChart_injective (q.endShift_injective _)).injOn
     (fun w _ ↦ (q.contDiff_realChart_endShift (R - 1) (n := 1)).differentiable one_ne_zero w)
     (fun w _ ↦ det_fderiv_realChart_nonneg (q.hasDerivAt_endShift _ _)) hu
