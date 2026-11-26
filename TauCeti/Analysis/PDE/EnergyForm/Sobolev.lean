@@ -114,6 +114,8 @@ estimates do not see the boundary.
   the energy form at the functions of `H¹₀(Ω)`.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_energyIntegrand_jetField`: the energy density of
   two Sobolev functions is integrable.
+* `TauCeti.PDE.UniformlyEllipticOn.memLp_energyIntegrand_zero_drift`: without drift, the energy
+  density of uniformly elliptic coefficients with a bounded mass coefficient is bounded.
 * `TauCeti.PDE.integrable_value_mul_inner_gradient`: the density `u ⟪e, ∇w⟫` of a bounded
   lower-order term in divergence form is integrable, and
   `TauCeti.PDE.integral_value_sub_mul_inner_gradient`: its integral is linear in `u`.
@@ -1050,6 +1052,20 @@ theorem integrable_energyIntegrand_jetField
   PDE.integrable_energyIntegrand_jetField
     (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound) u v
+
+omit [mu.IsAddHaarMeasure] in
+/-- Uniformly elliptic measurable principal coefficients, no drift and a bounded measurable mass
+coefficient define an essentially bounded field of pointwise energy forms: the case `b = 0` of
+`TauCeti.PDE.memLp_energyIntegrand_of_bounds`. -/
+theorem memLp_energyIntegrand_zero_drift
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) :
+    MemLp (fun x => energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) (c x))
+      ⊤ (mu.restrict Omega) :=
+  memLp_energyIntegrand_of_bounds h.upper_nonneg ha aestronglyMeasurable_zero hc
+    (fun _x hx eta xi => h.upper_bound hx eta xi) (beta := 0) (fun _ _ => by simp) hc_bound
 
 /-- The density `⟨a ∇u, ∇w⟩` of the principal energy form is integrable on `Ω` for a measurable
 uniformly elliptic `a` and `u, w ∈ H¹(Ω)`. -/

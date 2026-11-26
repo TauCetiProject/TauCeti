@@ -72,6 +72,7 @@ infinite measure, since `l ≤ |u|` where `v` or `∇v` is not zero.
 
 ## Main declarations
 
+* `TauCeti.PDE.neg_integral_inner_mul_le`: if `‖b‖ ≤ w`, then `-∫ ⟪b, g⟫ f ≤ ∫ w ‖g‖ |f|`.
 * `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le`: the weak maximum
   principle under a Sobolev inequality on `H¹₀(Ω)` with an exponent `q > 2`.
 * `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_measure_ne_top`: the weak maximum principle
@@ -111,6 +112,20 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c : EuclideanSpace ℝ ι → ℝ} {lam Lam beta gamma : ℝ}
+
+/-- **Bounding the drift pairing.** If `‖b‖ ≤ w` almost everywhere, then minus the pairing
+`∫ ⟪b, g⟫ f` of a drift `b` with a vector field `g` and a function `f` is at most
+`∫ w ‖g‖ |f|`. -/
+theorem neg_integral_inner_mul_le {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] {b g : α → E} {f w : α → ℝ}
+    (hint : Integrable (fun x ↦ w x * (‖g x‖ * ‖f x‖)) μ) (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ w x) :
+    -∫ x, ⟪b x, g x⟫_ℝ * f x ∂μ ≤ ∫ x, w x * (‖g x‖ * ‖f x‖) ∂μ := by
+  refine (neg_le_abs _).trans ?_
+  rw [← Real.norm_eq_abs]
+  refine norm_integral_le_of_norm_le hint (hb.mono fun x hx ↦ ?_)
+  rw [norm_mul, ← mul_assoc]
+  exact mul_le_mul_of_nonneg_right ((norm_inner_le_norm _ _).trans
+    (mul_le_mul_of_nonneg_right hx (norm_nonneg _))) (norm_nonneg _)
 
 variable [DecidableEq ι]
 

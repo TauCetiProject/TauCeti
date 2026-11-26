@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Drift
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.PDE.EnergyForm.LowerOrder
+import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.L2Space
 
@@ -142,8 +143,7 @@ private theorem half_mul_norm_gradient_posPartAbove_sq_le_of_drift
     W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl hboundary
   have hfs : MemLp f s ν :=
     memLp_iff.2 ((hS w hw0).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top eNorm_lt_top))
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha aestronglyMeasurable_zero hc
-    (fun x hx eta xi ↦ h.upper_bound hx eta xi) (beta := 0) (fun x _ ↦ by simp) hc_bound
+  have hcoeff := h.memLp_energyIntegrand_zero_drift ha hc hc_bound
   have hc_ae : ∀ᵐ x ∂ν, 0 ≤ c x :=
     (ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx ↦ hc_nonneg x hx
   -- The subsolution inequality tested against `w`, where the drift term only sees `w`.
@@ -160,14 +160,8 @@ private theorem half_mul_norm_gradient_posPartAbove_sq_le_of_drift
   have : p.HolderTriple s 2 := ⟨hps⟩
   have hint : Integrable (fun x ↦ ‖b x‖ * (‖G x‖ * ‖f x‖)) ν :=
     hb.integrable_norm_mul_norm_mul_norm (r := 2) (s := 2) (Lp.memLp G) hfs
-  have hneg : -∫ x in Omega, ⟪b x, G x⟫ * f x ∂mu ≤ ∫ x, ‖b x‖ * (‖G x‖ * ‖f x‖) ∂ν := by
-    refine (neg_le_abs _).trans ((Real.norm_eq_abs _).symm.le.trans
-      ((norm_integral_le_integral_norm _).trans
-      (integral_mono_of_nonneg (ae_of_all _ fun x ↦ norm_nonneg _) hint
-        (ae_of_all _ fun x ↦ ?_))))
-    dsimp only
-    rw [norm_mul, ← mul_assoc]
-    exact mul_le_mul_of_nonneg_right (norm_inner_le_norm _ _) (norm_nonneg _)
+  have hneg : -∫ x in Omega, ⟪b x, G x⟫ * f x ∂mu ≤ ∫ x, ‖b x‖ * (‖G x‖ * ‖f x‖) ∂ν :=
+    neg_integral_inner_mul_le hint (ae_of_all _ fun _ ↦ le_rfl)
   -- Hölder's inequality on `A = {u > l}`, off which `∇w` vanishes, and the Sobolev inequality.
   set A := {x | l < W1p.value u x}
   have hA : MeasurableSet A :=
@@ -263,12 +257,8 @@ private theorem exists_ae_value_le_of_drift [Nonempty ι]
     rwa [hempty, measure_empty] at hlim
   -- So does the drift on them, since `p < ∞`.
   have hT : Tendsto (fun j => S * eLpNorm b p (ν.restrict (T j))) atTop (𝓝 0) := by
-    have hdrift : Tendsto (fun j => eLpNorm b p (ν.restrict (T j))) atTop (𝓝 0) :=
-      tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-        ((hbp.tendsto_eLpNorm_restrict_zero hp1 hptop).comp hmeas)
-        (Eventually.of_forall fun _ ↦ bot_le)
-        (Eventually.of_forall fun j ↦ le_iSup_of_le (T j) (le_iSup_of_le le_rfl le_rfl))
-    simpa using ENNReal.Tendsto.const_mul hdrift (Or.inr ENNReal.coe_ne_top)
+    simpa using ENNReal.Tendsto.const_mul
+      (hbp.tendsto_eLpNorm_restrict_of_tendsto_measure hp1 hptop hmeas) (Or.inr ENNReal.coe_ne_top)
   obtain ⟨j, hj⟩ := (hT.eventually (ge_mem_nhds (ENNReal.ofReal_pos.2 (half_pos hlam))))
     |>.exists_forall_of_atTop
   -- Above the level `l₀ = max k j` the drift is absorbed.
@@ -677,8 +667,7 @@ private theorem mul_norm_gradient_posPartAbove_sq_le_of_driftTransform
   have htest := hu ⟨θ, hθmem⟩ hθ_nonneg
   -- Integrability of the terms. The drift term is integrable since `b, ∇u ∈ L²` and `θ` is
   -- bounded.
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha aestronglyMeasurable_zero hc
-    (fun x hx eta xi ↦ h.upper_bound hx eta xi) (beta := 0) (fun x _ ↦ by simp) hc_bound
+  have hcoeff := h.memLp_energyIntegrand_zero_drift ha hc hc_bound
   have hq2' : (2 : ℝ≥0∞) ≤ q := by
     have : (2 : ℝ≥0) ≤ q := by exact_mod_cast hq
     exact_mod_cast this
@@ -1208,9 +1197,8 @@ theorem exists_ae_value_le_add_of_drift [Nonempty ι] {q : ℝ≥0} (hq : 2 < (q
       refine (mul_le_mul_of_nonneg_right hbq (by positivity)).trans (le_of_eq_of_le ?_
         (hsmall.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hlam.le)))
       rw [mul_assoc, ← Real.rpow_add' measureReal_nonneg (by simp [hn0.ne']), add_sub_cancel]
-  have hab := memLp_energyIntegrand_of_bounds h.upper_nonneg ha aestronglyMeasurable_zero
-    aestronglyMeasurable_zero (fun x hx eta xi ↦ h.upper_bound hx eta xi) (beta := 0) (gamma := 0)
-    (fun x _ ↦ by simp) (fun x _ ↦ by simp)
+  have hab := h.memLp_energyIntegrand_zero_drift ha aestronglyMeasurable_zero (gamma := 0)
+    fun x _ ↦ by simp
   refine hbound hk hOmega h ha hc hc_bound hc_nonneg
     (MemLp.of_bound hb (max beta 0) hb_ae) hsmall' hg hF (fun v hv => ?_) hboundary
   rw [← energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner hab
