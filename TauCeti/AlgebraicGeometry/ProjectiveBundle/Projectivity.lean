@@ -15,8 +15,9 @@ Use `ProjectiveBundles.projectiveBundle.affineOpenIso` to identify the restricti
 affine open `U` with `Proj (Sym Γ(E, U))` over `Spec Γ(S, U)`.
 `ProjectiveBundles.projectiveBundle.isProjectiveOver_affineOpen` gives projectivity when
 `Γ(E, U)` is finite, by `AlgebraicGeometry.Scheme.isProjectiveOver_proj` and
-`AlgebraicGeometry.Scheme.IsProjectiveOver.of_isClosedImmersion`. For a finite-type
-quasi-coherent module this finiteness holds on every affine open. Apply
+`AlgebraicGeometry.Scheme.IsProjectiveOver.of_isClosedImmersion`.
+`ProjectiveBundles.projectiveBundle.isProjectiveOver_affineOpen_of_isFiniteType` gives
+projectivity on every affine open for a finite-type quasi-coherent module. Apply
 `AlgebraicGeometry.Scheme.IsProjectiveOver.exists_isClosedImmersion_pi` to obtain a closed
 immersion into projective space with finitely many coordinates over `Γ(S, U)`.
 
@@ -56,5 +57,14 @@ theorem isProjectiveOver_affineOpen
     (Over.forget _).mapIso (affineOpenIso F hU)
   have : e.hom.IsOver (Spec (.of Γ(S, U))) := ⟨Over.w (affineOpenIso F hU).hom⟩
   exact Scheme.IsProjectiveOver.of_isClosedImmersion Γ(S, U) e.hom
+
+/-- A projective bundle of a finite-type quasi-coherent sheaf is projective over each affine
+open of the base. See Stacks, Section 27.21 and Definition 29.44.1. -/
+theorem isProjectiveOver_affineOpen_of_isFiniteType [F.obj.IsFiniteType] :
+    @Scheme.IsProjectiveOver Γ(S, U) _ (pullback hU.fromSpec (projection S F.obj))
+      (OverClass.ofHom (pullback.fst hU.fromSpec (projection S F.obj))) := by
+  have : Module.Finite Γ(S, U) ((Scheme.Modules.sectionsFunctor U).obj F.obj) :=
+    Scheme.Modules.finite_sections_of_isAffineOpen F.obj U hU
+  exact isProjectiveOver_affineOpen F hU
 
 end TauCeti.AlgebraicGeometry.ProjectiveBundles.projectiveBundle

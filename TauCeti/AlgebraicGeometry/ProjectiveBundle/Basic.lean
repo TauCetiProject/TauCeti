@@ -109,7 +109,7 @@ variable {U : S.Opens} (hU : IsAffineOpen U)
 def affineOpenIso :
     Over.mk (pullback.fst hU.fromSpec (projection S F.obj)) ≅
       Over.mk (TauCeti.SymmetricAlgebra.projToSpec Γ(S, U)
-        ((Scheme.Modules.sectionsFunctor U).obj F.obj)) := by
+        ((Scheme.Modules.sectionsFunctor U).obj F.obj)) :=
   let A := ((gradedSymmetricAlgebra S).obj F).obj
   let M := (Scheme.Modules.sectionsFunctor U).obj F.obj
   let chartIso := Proj.mapIsoOverOfAlgEquiv _ _ (gradedSymmetricAlgebraSectionsEquiv F hU)
@@ -119,7 +119,7 @@ def affineOpenIso :
       Over.mk (TauCeti.SymmetricAlgebra.projToSpec Γ(S, U) M) :=
     Over.isoMk (Iso.refl _) ((Category.id_comp _).trans
       (Proj.toSpecCoeff_homogeneousSubmodule Γ(S, U) M).symm)
-  exact (A.isPullback_relativeProjCover_fromSpec ⟨U, hU⟩).isoOverPullback.symm ≪≫
+  (A.isPullback_relativeProjCover_fromSpec ⟨U, hU⟩).isoOverPullback.symm ≪≫
     chartIso ≪≫ coeffIso
 
 /-- The inverse affine comparison followed by the projection to the projective bundle is the
@@ -134,9 +134,13 @@ theorem affineOpenIso_inv_left_snd :
   let e := Proj.mapIsoOverOfAlgEquiv _ _ (gradedSymmetricAlgebraSectionsEquiv F hU)
     (gradedSymmetricAlgebraSectionsEquiv_mem_grade_iff F hU)
   calc
-    _ = ((𝟙 _ ≫ e.inv.left) ≫ h.isoOverPullback.hom.left) ≫ pullback.snd _ _ := rfl
-    _ = _ := by
-      rw [Category.id_comp, Category.assoc, h.isoOverPullback_hom_left_comp_snd]
+    _ = (e.inv.left ≫ h.isoOverPullback.hom.left) ≫ pullback.snd _ _ := by
+      simp only [affineOpenIso, Iso.trans, Iso.symm]
+      -- Taking left components preserves composition, and the coefficient comparison is
+      -- built from the identity on the underlying projective spectrum.
+      exact congrArg (fun f ↦ (f ≫ h.isoOverPullback.hom.left) ≫ pullback.snd _ _)
+        (Category.id_comp e.inv.left)
+    _ = _ := by rw [Category.assoc, h.isoOverPullback_hom_left_comp_snd]
 
 end Affine
 
