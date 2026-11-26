@@ -55,7 +55,9 @@ the signed count is therefore the cellular Euler characteristic `TauCeti.eulerCh
 (`TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar`), so the number of
 critical points has the parity of `eulerChar M`
 (`TauCeti.IsMorse.toNat_totalCriticalCount_modEq_eulerChar`), and `eulerChar M` vanishes in odd
-dimension (`TauCeti.eulerChar_eq_zero_of_odd_finrank`). On `Sⁿ` the
+dimension (`TauCeti.eulerChar_eq_zero_of_odd_finrank`). If all critical points have even index,
+`eulerChar M` is the number of critical points
+(`TauCeti.IsMorse.eulerChar_eq_ncard_criticalPoints_of_even`). On `Sⁿ` the
 signed count of every Morse function is `1 + (-1) ^ n`
 (`TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_sphere`).
 
@@ -207,6 +209,18 @@ theorem IsMorse.toNat_totalCriticalCount_modEq_eulerChar [FiniteCWType M] (hf : 
   rw [← hf.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar]
   exact toNat_totalCriticalCount_modEq_sum_range_neg_one_pow_mul_toNat_criticalCount
     hf.finite_criticalPoints le_rfl
+
+/-- **With only even indices, the Euler characteristic counts critical points.** For a Morse
+function on a compact boundaryless manifold `M` of finite CW type all of whose critical points have
+even index, `χ(M)` is the number of critical points: none of them is counted negatively. -/
+theorem IsMorse.eulerChar_eq_ncard_criticalPoints_of_even [FiniteCWType M] (hf : IsMorse I f)
+    (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x)) :
+    eulerChar M = (criticalPoints I f).ncard := by
+  rw [← hf.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar,
+    sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum hf.finite_criticalPoints le_rfl,
+    Finset.sum_congr rfl fun x hx ↦
+      (heven x (hf.finite_criticalPoints.mem_toFinset.1 hx)).neg_one_pow,
+    Finset.sum_const, ncard_eq_toFinset_card _ hf.finite_criticalPoints, nsmul_one]
 
 variable (I M) in
 include I in
