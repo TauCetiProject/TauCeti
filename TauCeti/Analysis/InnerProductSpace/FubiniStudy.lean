@@ -49,6 +49,8 @@ preserved by linear isometries, so unitary maps act by isometries of the project
   `z` are added to its arguments.
 * `TauCeti.fubiniStudyHermitian_smul_apply_smul_smul`: `H_{cz}(cv, cw) = H_z(v, w)` for `c ≠ 0`.
 * `LinearIsometry.fubiniStudyHermitian_map_map_map`: linear isometries preserve `H`.
+* `TauCeti.im_fubiniStudyHermitian_of_re_inner_eq_zero`: at a unit vector `z`, on representatives
+  real-orthogonal to `z`, the imaginary part of `H_z(v, w)` is `Im ⟪v, w⟫ / π`.
 
 ## References
 
@@ -208,5 +210,18 @@ theorem _root_.LinearIsometry.fubiniStudyHermitian_map_map_map (f : E →ₗᵢ[
     (z v w : E) :
     fubiniStudyHermitian 𝕜 (f z) (f v) (f w) = fubiniStudyHermitian 𝕜 z v w := by
   simp only [fubiniStudyHermitian_apply, LinearIsometry.inner_map_map, LinearIsometry.norm_map]
+
+/-- **The imaginary part on representatives tangent to the sphere.** At a unit vector `z`, on
+representatives `v`, `w` real-orthogonal to `z`, the imaginary part of the homogeneous
+Fubini–Study form is `Im ⟪v, w⟫ / π`: the inner products `⟪v, z⟫` and `⟪z, w⟫` are then purely
+imaginary, so their product is real. This is the Fubini–Study symplectic form read on the unit
+sphere. -/
+theorem im_fubiniStudyHermitian_of_re_inner_eq_zero {z v w : E} (hz : ‖z‖ = 1)
+    (hv : re ⟪z, v⟫_𝕜 = 0) (hw : re ⟪z, w⟫_𝕜 = 0) :
+    im (fubiniStudyHermitian 𝕜 z v w) = im ⟪v, w⟫_𝕜 / π := by
+  have hvz : im (⟪v, z⟫_𝕜 * ⟪z, w⟫_𝕜) = 0 := by
+    rw [← inner_conj_symm, mul_im, conj_re, conj_im, hv, hw]
+    ring
+  simp [fubiniStudyHermitian_apply, hz, hvz, div_im, normSq_apply, mul_div_mul_right, pi_ne_zero]
 
 end TauCeti

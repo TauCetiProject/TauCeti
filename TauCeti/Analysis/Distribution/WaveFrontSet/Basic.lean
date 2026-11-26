@@ -143,6 +143,18 @@ theorem localFourier_smul (c : ℂ) (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (�
     (c • T).localFourier φ η = c * T.localFourier φ η :=
   complexPairing_smul c T _
 
+/-- The localized Fourier transform of the negative of a distribution is the negative. -/
+@[simp]
+theorem localFourier_neg (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    (-T).localFourier φ η = -T.localFourier φ η := by
+  rw [← neg_one_smul ℂ T, localFourier_smul, neg_one_mul]
+
+/-- The localized Fourier transform of a difference of distributions is the difference. -/
+@[simp]
+theorem localFourier_sub (T S : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    (T - S).localFourier φ η = T.localFourier φ η - S.localFourier φ η := by
+  rw [sub_eq_add_neg, localFourier_add, localFourier_neg, ← sub_eq_add_neg]
+
 /-- The localized Fourier transform of the zero distribution vanishes. -/
 @[simp]
 theorem localFourier_zero (φ : 𝓓(Ω, ℂ)) (η : E) : (0 : 𝓓'(Ω, ℂ)).localFourier φ η = 0 := by
