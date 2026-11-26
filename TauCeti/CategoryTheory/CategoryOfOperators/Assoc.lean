@@ -41,6 +41,7 @@ coCartesian for `Assoc.toFinPointed`: these are the coCartesian lifts of inert m
 
 ## Main results
 
+* `TauCeti.Assoc.homLiftEquiv`: lifts over a fixed pointed map decompose into single-output lifts.
 * `TauCeti.Assoc.Hom.ext_of_isInert`: a morphism over an inert map is determined by that map.
 * `TauCeti.Assoc.Hom.epi_of_isInert`: a morphism over an inert map is an epimorphism.
 * `TauCeti.Assoc.isStronglyCocartesian_of_isInert`: every morphism over an inert map is strongly
@@ -98,9 +99,8 @@ lemma base_toFun_succ_eq_zero_iff (f : Hom X Y) (i : Fin X.len) :
   · exact h0
   · exact absurd hj (h j)
 
-/-- Two morphisms with the same words are equal: the words determine the underlying map. See
-`Assoc.hom_ext` for the same statement about morphisms of the category `Assoc^⊗`. -/
-lemma ext {f g : Hom X Y} (h : ∀ j, f.word j = g.word j) : f = g := by
+/-- The words determine the underlying map, before installing the category structure. -/
+private lemma ext {f g : Hom X Y} (h : ∀ j, f.word j = g.word j) : f = g := by
   have hb : f.base = g.base := by
     refine FinPointed.hom_ext fun i ↦ ?_
     induction i using Fin.cases with
@@ -143,9 +143,9 @@ instance : SmallCategory Assoc.{u} where
         intro j j' hne i hi hi'
         rw [f.mem_word_iff] at hi hi'
         exact hne (Fin.succ_injective _ (hi.symm.trans hi')) }
-  id_comp f := Hom.ext fun _ ↦ List.flatMap_singleton' _
-  comp_id f := Hom.ext fun _ ↦ List.flatMap_singleton _ _
-  assoc f g h := Hom.ext fun _ ↦ List.flatMap_assoc.symm
+  id_comp f := by exact Hom.ext fun _ ↦ List.flatMap_singleton' _
+  comp_id f := by exact Hom.ext fun _ ↦ List.flatMap_singleton _ _
+  assoc f g h := by exact Hom.ext fun _ ↦ List.flatMap_assoc.symm
 
 variable {X Y Z : Assoc.{u}}
 
@@ -193,6 +193,61 @@ lemma isHomLift_iff {f : X ⟶ Y} {g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk
   -- `IsHomLift.eq_of_isHomLift` requires.
   have : toFinPointed.IsHomLift (R := toFinPointed.obj X) (S := toFinPointed.obj Y) g f := h
   exact (IsHomLift.eq_of_isHomLift (p := toFinPointed) g f).symm
+
+/-- The canonical inert projection selecting the output `j`. -/
+def ρ (j : Fin Y.len) : Y ⟶ mk 1 where
+  base := FinPointed.ρ j
+  word _ := [j]
+  mem_word_iff i k := by
+    have : k = 0 := Subsingleton.elim _ _
+    subst k
+    simp [FinPointed.ρ_toFun, Fin.ext_iff]
+  nodup_word _ := List.nodup_singleton _
+
+@[simp]
+lemma ρ_base (j : Fin Y.len) : (ρ j).base = FinPointed.ρ j := (rfl)
+
+@[simp]
+lemma ρ_word (j : Fin Y.len) (k : Fin 1) : (ρ j).word k = [j] := (rfl)
+
+/-- Lifts of a fixed pointed map are equivalent to families of its single-output lifts.
+The forward map postcomposes with the canonical inert projections; the inverse assembles
+one ordered fibre from each member of the family. This includes an empty target. -/
+def homLiftEquiv (g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len) :
+    {f : X ⟶ Y // toFinPointed.IsHomLift g f} ≃
+      ((j : Fin Y.len) → {f : X ⟶ mk 1 //
+        toFinPointed.IsHomLift (g ≫ FinPointed.ρ j) f}) where
+  toFun f j := ⟨f.val ≫ ρ j, isHomLift_iff.2 (by
+    simp [isHomLift_iff.1 f.property])⟩
+  invFun f := ⟨
+    { base := g
+      word j := (f j).val.word 0
+      mem_word_iff i j := by
+        rw [(f j).val.mem_word_iff, isHomLift_iff.1 (f j).property]
+        simp [FinPointed.ρ_toFun]
+      nodup_word j := (f j).val.nodup_word 0 }, isHomLift_iff.2 rfl⟩
+  left_inv f := Subtype.ext (hom_ext fun j ↦ by simp)
+  right_inv f := by
+    funext j
+    apply Subtype.ext
+    apply hom_ext
+    intro k
+    have : k = 0 := Subsingleton.elim _ _
+    subst k
+    simp
+
+@[simp]
+lemma homLiftEquiv_apply_val
+    (g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len)
+    (f : {f : X ⟶ Y // toFinPointed.IsHomLift g f}) (j : Fin Y.len) :
+    (homLiftEquiv g f j).val = f.val ≫ ρ j := (rfl)
+
+@[simp]
+lemma homLiftEquiv_symm_apply_word
+    (g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len)
+    (f : (j : Fin Y.len) → {f : X ⟶ mk 1 //
+      toFinPointed.IsHomLift (g ≫ FinPointed.ρ j) f}) (j : Fin Y.len) :
+    ((homLiftEquiv g).symm f).val.word j = (f j).val.word 0 := (rfl)
 
 namespace Hom
 
