@@ -32,6 +32,7 @@ the generic fibre.
 
 ## Main results
 
+* `TauCeti.flat_respectsIso`: flat morphisms of schemes respect isomorphisms.
 * `AlgebraicGeometry.Scheme.Hom.flat_restrict_iff`: the stalk criterion for flatness of a
   restriction.
 * `AlgebraicGeometry.flat_stalkMap_iff`: on affine opens `x ∈ V ⊆ f⁻¹ U`, the stalk map at `x` is
@@ -47,9 +48,8 @@ the generic fibre.
   schemes sends the generic point to the generic point.
 * `AlgebraicGeometry.IsDominant.of_flat` and `AlgebraicGeometry.IsDominant.of_isPullback_of_flat`:
   flat morphisms between irreducible schemes and flat pullbacks of dominant morphisms are dominant.
-* `TauCeti.AlgebraicGeometry.isDominant_of_isPullback_spec` and
-  `TauCeti.AlgebraicGeometry.isDominant_of_baseChange`: dominance of base-change projections and
-  base-changed dominant morphisms along field extensions.
+* `TauCeti.isDominant_of_isPullback_spec` and `TauCeti.isDominant_of_baseChange`: dominance of
+  base-change projections and base-changed dominant morphisms along field extensions.
 
 ## References
 
@@ -64,6 +64,13 @@ open AlgebraicGeometry
 namespace TauCeti
 
 universe u
+
+open CategoryTheory in
+/-- Flat morphisms of schemes respect isomorphisms. -/
+instance flat_respectsIso :
+    MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) :=
+  MorphismProperty.respectsIso_of_isStableUnderComposition
+    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
 
 /-- A flat morphism between irreducible schemes sends the generic point to the generic point. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.genericPoint_eq_of_flat {X Y : Scheme.{u}} (f : X ⟶ Y)
@@ -175,7 +182,7 @@ theorem IsDominant.of_isPullback_of_flat {X Y X' Y' : Scheme.{u}} [IrreducibleSp
 
 end AlgebraicGeometry
 
-namespace TauCeti.AlgebraicGeometry
+namespace TauCeti
 
 open CategoryTheory
 
@@ -206,4 +213,4 @@ theorem isDominant_of_baseChange {k K : Type u} [Field k] [Field K] [Algebra k K
   have : Flat g₂ := MorphismProperty.of_isPullback (P := @Flat) H₂.flip inferInstance
   IsDominant.of_isPullback_of_flat (IsPullback.of_bot (by simpa [comp_over] using H₁) hf'.symm H₂)
 
-end TauCeti.AlgebraicGeometry
+end TauCeti

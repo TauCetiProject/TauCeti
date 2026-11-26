@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Etale.Kaehler
 public import Mathlib.RingTheory.Kaehler.TensorProduct
 public import Mathlib.RingTheory.LocalProperties.Submodule
+import TauCeti.RingTheory.Finiteness.Nakayama
+import TauCeti.RingTheory.Localization.Module
 
 /-!
 # Localization of Kähler differentials
@@ -31,6 +33,11 @@ In a pushout `B = S ⊗[R] A` of commutative rings and a prime `q` of `B` over `
 differentials commute with base change and localization:
 `B_q ⊗[A_p] Ω[A_p ⁄ R] ≃ₗ[B_q] Ω[B_q ⁄ S]`.
 
+Differentials forming a basis along a closed subscheme `V(J)` form a basis on a neighbourhood
+of it: if `Ω[A⁄R]` is finite projective and the classes of `D xᵢ` form a basis of
+`Ω[A⁄R] ⧸ J • Ω[A⁄R]` over `A ⧸ J`, then the `D xᵢ` form a basis of `Ω[A[1/g]⁄R]` for some
+`g ≡ 1 (mod J)`. This is Nakayama's lemma for the map `Aⁿ → Ω[A⁄R]` they define.
+
 ## Main results
 
 * `TauCeti.KaehlerDifferential.range_map_eq_localized₀_range`: localization of differentials
@@ -42,12 +49,18 @@ differentials commute with base change and localization:
 * `TauCeti.KaehlerDifferential.atPrimePushoutEquiv`: base change and localization of Kähler
   differentials at a prime in a pushout `B = S ⊗[R] A`, with pure-tensor formula
   `TauCeti.KaehlerDifferential.atPrimePushoutEquiv_tmul_D`.
+* `TauCeti.KaehlerDifferential.exists_sub_one_mem_and_basis_localizationAway`: if `Ω[A⁄R]` is
+  finite projective and differentials `D xᵢ` reduce to a basis of `Ω[A⁄R] ⧸ J • Ω[A⁄R]`, they
+  form a basis of `Ω[A[1/g]⁄R]` for some `g ≡ 1 (mod J)`.
 
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Chapter II, Section 8.
 * The Stacks Project, Tag 00RM (localization of differentials) and Tag 031J
   (projectivity of differentials of a formally smooth algebra).
+* The Stacks Project, Lemma 15.9.14 (Tag 07M7): the proof of its free case contains the step
+  where a lifted basis of `Ω[A⁄R] ⧸ J • Ω[A⁄R]` becomes a basis after inverting some
+  `g ≡ 1 (mod J)`.
 -/
 
 public section
@@ -213,6 +226,66 @@ theorem atPrimePushoutEquiv_tmul_D (q : Ideal B) [q.IsPrime]
     _ = b • D S Bq (algebraMap Ap Bq a) := by rw [hOne]
 
 end Pushout
+
+section Basis
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+
+/-- **Differentials forming a basis along `V(J)` form a basis nearby.** Let `Ω[A⁄R]` be finite
+projective, as when `A` is smooth over `R`, and let `D xᵢ` be differentials whose classes form a
+basis of `Ω[A⁄R] ⧸ J • Ω[A⁄R]` over `A ⧸ J`. Then for some `g ≡ 1 (mod J)` the `D xᵢ` form a basis
+of `Ω[A[1/g]⁄R]`.
+
+This is a step of the proof of Stacks Lemma 15.9.14 (Tag 07M7). The proof is adapted from the end
+of Mathlib's `Algebra.IsSmoothAt.exists_notMem_isStandardSmooth`, with the prime replaced by the
+condition `g ≡ 1 (mod J)`. -/
+theorem exists_sub_one_mem_and_basis_localizationAway [Module.Finite A Ω[A⁄R]]
+    [Module.Projective A Ω[A⁄R]] (J : Ideal A) {ι : Type*} [Finite ι] {x : ι → A}
+    (b : Module.Basis ι (A ⧸ J) (Ω[A⁄R] ⧸ J • (⊤ : Submodule A Ω[A⁄R])))
+    (hb : ∀ i, b i = Submodule.Quotient.mk (D R A (x i))) :
+    ∃ g : A, g - 1 ∈ J ∧ ∃ b' : Module.Basis ι (Localization.Away g) Ω[Localization.Away g⁄R],
+      ∀ i, b' i = D R _ (algebraMap A _ (x i)) := by
+  classical
+  have := Fintype.ofFinite ι
+  let mkQ := (J • (⊤ : Submodule A Ω[A⁄R])).mkQ
+  let φ : (ι →₀ A) →ₗ[A] Ω[A⁄R] := Finsupp.linearCombination A fun i ↦ D R A (x i)
+  have hφ (v : ι →₀ A) : mkQ (φ v) = ∑ i, Ideal.Quotient.mk J (v i) • b i := by
+    simp [mkQ, φ, Finsupp.linearCombination_apply, Finsupp.sum_fintype, hb, map_sum]
+  -- `φ` is surjective modulo `J`, and its kernel lies in `J • Aⁿ` as `b` is linearly independent.
+  have hrange : LinearMap.range φ ⊔ J • ⊤ = ⊤ := by
+    refine eq_top_iff.mpr fun ω _ ↦ ?_
+    choose c hc using fun i ↦ Ideal.Quotient.mk_surjective (b.repr (mkQ ω) i)
+    let v : ι →₀ A := Finsupp.equivFunOnFinite.symm c
+    have hv : mkQ (ω - φ v) = 0 := by
+      rw [map_sub, hφ, sub_eq_zero]
+      simp [v, hc]
+    rw [← sub_add_cancel ω (φ v)]
+    exact add_mem (Submodule.mem_sup_right ((Submodule.Quotient.mk_eq_zero _).mp hv))
+      (Submodule.mem_sup_left ⟨v, rfl⟩)
+  have hker : LinearMap.ker φ ≤ J • ⊤ := fun v hv ↦ by
+    have hvi (i : ι) : v i ∈ J := by
+      have := hφ v
+      rw [LinearMap.mem_ker.mp hv, map_zero, eq_comm] at this
+      exact Ideal.Quotient.eq_zero_iff_mem.mp
+        (Fintype.linearIndependent_iff.mp b.linearIndependent _ this i)
+    rw [← Finsupp.sum_single v, Finsupp.sum]
+    exact sum_mem fun i _ ↦ by
+      simpa using
+        Submodule.smul_mem_smul (hvi i) (Submodule.mem_top (x := Finsupp.single i (1 : A)))
+  -- Nakayama's lemma gives `g ≡ 1 (mod J)` such that `φ` is bijective after inverting `g`.
+  obtain ⟨g, hgJ, hgr, hgk⟩ :=
+    φ.exists_sub_one_mem_and_smul_mem_range_and_smul_eq_zero J hrange hker
+  let W := Localization.Away g
+  let l₁ : (ι →₀ A) →ₗ[A] (ι →₀ W) := Finsupp.mapRange.linearMap (Algebra.linearMap A W)
+  let l₂ : Ω[A⁄R] →ₗ[A] Ω[W⁄R] := map R R A W
+  let φW : (ι →₀ W) →ₗ[W] Ω[W⁄R] := IsLocalizedModule.mapExtendScalars (.powers g) l₁ l₂ W φ
+  have hφW : Function.Bijective φW :=
+    (IsLocalizedModule.map_bijective_iff_localizedModuleMap_bijective l₁ l₂).mpr
+      (LocalizedModule.bijective_map_of_smul_mem_range (Submonoid.mem_powers g) hgr hgk)
+  refine ⟨g, hgJ, .ofRepr (LinearEquiv.ofBijective φW hφW).symm, fun i ↦ ?_⟩
+  simp [W, φW, l₁, l₂, IsLocalizedModule.map_linearCombination, φ]
+
+end Basis
 
 end KaehlerDifferential
 

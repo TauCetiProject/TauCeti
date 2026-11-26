@@ -35,6 +35,10 @@ the base, stalk, and function-field algebra structures form a scalar tower.
   dominant morphism over the affine base is a `k`-algebra map of function fields.
 * `Scheme.Hom.residueFieldMap_algebraMap`: the residue field maps of a morphism over the affine
   base are compatible with the base-ring algebra structures.
+* `Scheme.Hom.stalkMap_algebraMap`: the stalk maps of a morphism over the affine base are
+  compatible with the base-ring algebra structures.
+* `Scheme.Hom.stalkAlgEquivOfIsOpenImmersion`: an open immersion over `Spec k` identifies the
+  local rings as `k`-algebras.
 * `Scheme.baseStalkResidueFieldIsScalarTower`: compatibility of the base, stalk, and residue-field
   algebra structures.
 * `Scheme.baseStalkFunctionFieldIsScalarTower`: compatibility of the base, stalk, and
@@ -530,6 +534,38 @@ theorem residueFieldMap_algebraMap (f : X ⟶ Y)
   exact congr($(Spec.map_injective h) c)
 
 end ResidueFieldMap
+
+section StalkMap
+
+variable (k : Type u) [CommRing k] {X Y : Scheme.{u}} [X.Over (Spec (.of k))]
+  [Y.Over (Spec (.of k))]
+
+/-- The stalk maps of a morphism over `Spec k` are compatible with the `k`-algebra structures of
+the stalks. -/
+theorem stalkMap_algebraMap (f : X ⟶ Y) [f.IsOver (Spec (.of k))] (x : X) (c : k) :
+    f.stalkMap x (algebraMap k (Y.presheaf.stalk (f x)) c) =
+      algebraMap k (X.presheaf.stalk x) c := by
+  have h : Spec.map (CommRingCat.ofHom (algebraMap k (Y.presheaf.stalk (f x))) ≫
+      f.stalkMap x) = Spec.map (CommRingCat.ofHom (algebraMap k (X.presheaf.stalk x))) := by
+    rw [Spec.map_comp, ← Scheme.fromSpecStalk_comp_over, ← Scheme.fromSpecStalk_comp_over,
+      ← Category.assoc, Scheme.SpecMap_stalkMap_fromSpecStalk, Category.assoc, comp_over]
+  exact congr($(Spec.map_injective h) c)
+
+/-- An open immersion `f : X ⟶ Y` over `Spec k` identifies the local ring of `Y` at `f x` with
+the local ring of `X` at `x`, as `k`-algebras. -/
+def stalkAlgEquivOfIsOpenImmersion (f : X ⟶ Y) [IsOpenImmersion f] [f.IsOver (Spec (.of k))]
+    (x : X) : Y.presheaf.stalk (f x) ≃ₐ[k] X.presheaf.stalk x :=
+  AlgEquiv.ofRingEquiv (f := (asIso (f.stalkMap x)).commRingCatIsoToRingEquiv)
+    (stalkMap_algebraMap k f x)
+
+/-- `stalkAlgEquivOfIsOpenImmersion` is the stalk map. -/
+@[simp]
+lemma stalkAlgEquivOfIsOpenImmersion_apply (f : X ⟶ Y) [IsOpenImmersion f]
+    [f.IsOver (Spec (.of k))] (x : X) (a : Y.presheaf.stalk (f x)) :
+    f.stalkAlgEquivOfIsOpenImmersion k x a = f.stalkMap x a :=
+  (rfl)
+
+end StalkMap
 
 end AlgebraicGeometry.Scheme.Hom
 

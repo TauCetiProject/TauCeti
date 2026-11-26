@@ -146,7 +146,7 @@ namespace IsSymplectic
 variable [I.Boundaryless] (hσ : σ.IsSymplectic) (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
   (hc : IsCompleteVectorField
     (timeDependentSuspensionField fun t ↦ σ.hamiltonianVectorField (H t)))
-  (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+  (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
     (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
 include hσ hH hc hX
 
@@ -163,7 +163,7 @@ theorem floerEnergyDensity_timeDependentFlowOf (s : ℝ) {v : ℝ × ℝ → M} 
     (mfderiv 𝓘(ℝ, ℝ × ℝ) I v z stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I v z stdComplexLineImag)
   simp only [IsNondegenerate.symplecticFormAt_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
     timeDependentFlowMFDerivEquiv_apply] at h
-  rw [floerEnergyDensity_def, perturbedMFDeriv_timeDependentFlowOf (hX.of_le one_le_two) hc s hv]
+  rw [floerEnergyDensity_def, perturbedMFDeriv_timeDependentFlowOf hX hc s hv]
   exact h
 
 end IsSymplectic

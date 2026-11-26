@@ -41,7 +41,7 @@ theorem IsCurveOver.of_isPullback {k L : Type u} [Field k] [Field L] [Algebra k 
     X'.IsCurveOver L := by
   have hInt : IsIntegral X' := GeometricallyIntegral.geometrically_isIntegral _ _ _ HX
   have hProp : IsProper (X' ↘ Spec (.of L)) := MorphismProperty.of_isPullback HX inferInstance
-  have hDom : IsDominant gX := TauCeti.AlgebraicGeometry.isDominant_of_isPullback_spec HX
+  have hDom : IsDominant gX := TauCeti.isDominant_of_isPullback_spec HX
   let _ : Algebra X.functionField X'.functionField := gX.functionFieldMap.hom.toAlgebra
   let _ : Algebra k X'.functionField :=
     ((algebraMap L X'.functionField).comp (algebraMap k L)).toAlgebra

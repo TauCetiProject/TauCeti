@@ -121,7 +121,7 @@ private theorem memLp_testFunction_smul {s : ℝ≥0∞} {W : ℂ → V} (c : �
 
 /-- The field `F = η + (∂_t J) ξ - S ξ` is locally `Lˢ` when `η` is, for a Hölder triple
 `1/p + 1/q = 1/t` with `s ≤ t`. -/
-private theorem IsWeakCRSolution.memLpLoc_divergenceForm_fst {s t : ℝ≥0∞}
+theorem IsWeakCRSolution.memLpLoc_divergenceForm_fst {s t : ℝ≥0∞}
     [ENNReal.HolderTriple p q t] (h : IsWeakCRSolution q Ω J DJ S ξ η)
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hst : s ≤ t) (hη : MemLpLoc s Ω η) :
     MemLpLoc s Ω (fun z => η z + DJ z I (ξ z) - S z (ξ z)) :=
@@ -130,7 +130,7 @@ private theorem IsWeakCRSolution.memLpLoc_divergenceForm_fst {s t : ℝ≥0∞}
 
 /-- The field `G = -J F - (∂_s J) ξ - (∂_t J) (J ξ)` is locally `Lˢ` when `η` is and `J` is
 locally bounded, for a Hölder triple `1/p + 1/q = 1/t` with `s ≤ t`. -/
-private theorem IsWeakCRSolution.memLpLoc_divergenceForm_snd {s t : ℝ≥0∞}
+theorem IsWeakCRSolution.memLpLoc_divergenceForm_snd {s t : ℝ≥0∞}
     [ENNReal.HolderTriple p q t] (h : IsWeakCRSolution q Ω J DJ S ξ η)
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hJ : MemLpLoc ⊤ Ω J) (hst : s ≤ t)
     (hη : MemLpLoc s Ω η) :

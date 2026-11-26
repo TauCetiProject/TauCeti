@@ -645,4 +645,24 @@ noncomputable def integralIdealsPrimeToInclusion {𝔪 𝔫 : Modulus K} (h : �
     ((integralIdealsPrimeToInclusion h I : integralIdealsPrimeTo 𝔪) : Ideal (𝓞 K)) =
       (I : Ideal (𝓞 K)) := (rfl)
 
+/-- If `(a)` is prime to `𝔪.support`, `b ≠ 0`, and `b - a ∈ 𝔪.finitePart`, then `(b)` is also
+prime to `𝔪.support`. -/
+theorem isPrimeTo_span_of_sub_mem {𝔪 : Modulus K} {a b : 𝓞 K} (hb0 : b ≠ 0)
+    (hsub : b - a ∈ 𝔪.finitePart) (ha : (Ideal.span {a}).IsPrimeTo 𝔪.support) :
+    (Ideal.span {b}).IsPrimeTo 𝔪.support := by
+  refine Ideal.isPrimeTo_iff.mpr ⟨mt Ideal.span_singleton_eq_bot.mp hb0, fun 𝔭 h𝔭 hdvd ↦ ?_⟩
+  have h𝔭m : 𝔪.finitePart ≤ 𝔭.asIdeal := Ideal.dvd_iff_le.mp ((𝔪.mem_support_iff 𝔭).mp h𝔭)
+  have hb_mem : b ∈ 𝔭.asIdeal := Ideal.dvd_iff_le.mp hdvd (Ideal.mem_span_singleton_self b)
+  have ha_mem : a ∈ 𝔭.asIdeal := by
+    simpa only [sub_sub_cancel] using 𝔭.asIdeal.sub_mem hb_mem (h𝔭m hsub)
+  exact (Ideal.isPrimeTo_iff.mp ha).2 𝔭 h𝔭 (Ideal.dvd_span_singleton.mpr ha_mem)
+
+/-- For nonzero `a b : 𝓞 K` congruent modulo `𝔪.finitePart`, `(b)` is prime to `𝔪.support` if and
+only if `(a)` is. -/
+theorem isPrimeTo_span_iff_of_sub_mem {𝔪 : Modulus K} {a b : 𝓞 K} (ha0 : a ≠ 0) (hb0 : b ≠ 0)
+    (hsub : b - a ∈ 𝔪.finitePart) :
+    (Ideal.span {b}).IsPrimeTo 𝔪.support ↔ (Ideal.span {a}).IsPrimeTo 𝔪.support :=
+  ⟨isPrimeTo_span_of_sub_mem ha0 (by simpa only [neg_sub] using 𝔪.finitePart.neg_mem hsub),
+    isPrimeTo_span_of_sub_mem hb0 hsub⟩
+
 end TauCeti.GlobalNumberFields
