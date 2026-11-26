@@ -59,15 +59,11 @@ theorem isClosed_mpullback_prodMk_timeDeriv (σ : SmoothForm (𝓘(ℝ, ℝ).pro
   set τ := mextDerivₗ (𝓘(ℝ, ℝ).prod I) (k + 1) σ
   -- Its slices `ι_u^* dσ = d σ_u` all vanish.
   have hτ (u : ℝ) : (SmoothForm.mpullback (Prod.mk u) (hι u) τ).val = 0 := by
-    rw [SmoothForm.coe_mpullback, mextDerivₗ_apply,
-      mpullback_mextDeriv ((hι u).of_le (by simp))
-        ((isSmoothBundleForm_def 1 _).mpr (σ.isSmoothForm.of_le (by simp)).contMDiff),
-      ← SmoothForm.coe_mpullback (hf := hι u)]
+    rw [← SmoothForm.mextDerivₗ_mpullback, mextDerivₗ_apply]
     exact (SmoothForm.isClosed_def _).mp (hσ u)
-  rw [SmoothForm.isClosed_def, SmoothForm.coe_mpullback,
-    ← mpullback_mextDeriv ((hι t).of_le (by simp))
-      ((isSmoothBundleForm_def 1 _).mpr (σ.timeDeriv.isSmoothForm.of_le (by simp)).contMDiff),
-    SmoothForm.coe_timeDeriv, mextDeriv_mlieDerivForm (V := fun _ ↦ ((1 : ℝ), (0 : E))) σ
+  rw [SmoothForm.isClosed_def, ← mextDerivₗ_apply, SmoothForm.mextDerivₗ_mpullback (hf := hι t),
+    SmoothForm.coe_mpullback, mextDerivₗ_apply, SmoothForm.coe_timeDeriv,
+    mextDeriv_mlieDerivForm (V := fun _ ↦ ((1 : ℝ), (0 : E))) σ
       (contMDiff_const_prod_field 1 (X := 0)
       ((contMDiff_zeroSection ℝ (TangentSpace I)).comp contMDiff_snd))]
   -- The slice at `t` of `∂_t dσ` is the velocity of the vanishing slices of `dσ`.

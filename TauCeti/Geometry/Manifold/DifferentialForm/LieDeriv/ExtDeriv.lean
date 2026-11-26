@@ -26,8 +26,8 @@ derivative of a closed smooth form along a smooth vector field is closed.
 
 ## References
 
-* John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer, 2012, Proposition 14.35
-  (Cartan's formula and the commutation of the Lie derivative with `d`).
+* John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer, 2012, Theorem 14.35
+  (Cartan's formula) and Corollary 14.36 (the Lie derivative commutes with `d`).
 -/
 
 public section

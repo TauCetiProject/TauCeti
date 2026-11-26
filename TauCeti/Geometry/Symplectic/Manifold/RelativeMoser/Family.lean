@@ -27,7 +27,9 @@ time-dependent vector field `X` with these properties:
   restriction of `σ_s`: `(φ_{s,t}^* σ_t)ₓ = (σ_s)ₓ`.
 
 No compactness of `Q` or of `M`, and no completeness of the flow, is assumed: the conclusion holds
-along the domain of the flow, which is open and contains every `((s, t), f q)`.
+along the domain of the flow, which is open and contains every `((s, t), f q)`. The parent module
+`TauCeti.Geometry.Symplectic.Manifold.RelativeMoser` treats instead the affine path between two
+forms near a compact submanifold.
 
 The proof feeds relative primitives of the velocity into Moser's field. The slices of the
 velocity are closed, since the slices of `σ` are
