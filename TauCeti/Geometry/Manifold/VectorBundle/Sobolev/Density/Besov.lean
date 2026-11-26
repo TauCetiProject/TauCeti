@@ -54,7 +54,8 @@ functional `R w : s ↦ Re w (sᵢⱼ)` reconstructed from `w ∈ B^s_{p,q}(E, �
   `B^s_{p,q}` there (`Distribution.IsLocallyMemBesovAt.re`), since the Littlewood–Paley blocks
   commute with complex conjugation.
 * Otherwise `χᵢ` vanishes near `x`, and so does `R w`: its components in a chart at `x` vanish near
-  the image of `x` (`Distribution.isLocallyMemBesovAt_of_notMem_dsupport`).
+  the image of `x` (`TauCeti.SquareChartPartition.isLocallyAt_reconstruction_single_of_notMem`,
+  with `Distribution.isLocallyMemBesovAt_of_notMem_dsupport`).
 
 The reconstruction then defines a linear map from `∏ᵢⱼ B^s_{p,q}(E, ℂ)` to the Banach space
 `B^s_{p,q}` of `A`, which is continuous by the closed graph theorem: the functional represented by
@@ -129,34 +130,6 @@ private theorem isLocallyMemBesovAt_reconstruction_single_of_mem [DecidableEq ι
   exact (((hw.smulLeftCLM_testFunction (A.chartCutoff i)).smul _).isLocallyMemBesovAt_toDistribution
     ((A.chartData i).chart.map_source hxs)).re
 
-/-- Away from the support of `χᵢ`, the functional `s ↦ Re w (sᵢⱼ)` vanishes, and so do its
-components near the image of `x` in a chart of the partition at `x`. -/
-private theorem isLocallyMemBesovAt_reconstruction_single_of_notMem [DecidableEq ι] (i : ι)
-    (j : Fin (Module.finrank ℝ F)) (w : 𝓢'(E, ℂ)) {x : M} (hx : x ∉ tsupport (A.cutoff i)) :
-    BundleTest.IsLocallyMemBesovAt φ s p q (A.reconstruction (Pi.single (i, j) w)) x := by
-  obtain ⟨i', hi'⟩ : ∃ i', A.cutoff i' x ≠ 0 := by
-    by_contra! h
-    simpa [h] using A.sum_sq_cutoff x
-  set c := (A.chartData i').chart
-  have hxs : x ∈ c.source := A.tsupport_cutoff_subset i' (subset_tsupport _ hi')
-  refine (BundleTest.isLocallyMemBesovAt_iff _ (A.chartData i').contMDiffOn_chart
-    (A.contMDiffOn_chart_symm i') (A.chartData i').source_subset hxs).2 fun v ↦ ?_
-  refine isLocallyMemBesovAt_of_notMem_dsupport (c.map_source hxs) ?_
-  rw [notMem_dsupport_iff]
-  refine ⟨c.target ∩ c.symm ⁻¹' (tsupport (A.cutoff i))ᶜ, fun ψ hψ ↦ ?_,
-    c.isOpen_inter_preimage_symm (_root_.isClosed_tsupport _).isOpen_compl, c.map_source hxs,
-    by rwa [mem_preimage, c.left_inv hxs]⟩
-  rw [Bundle.Trivialization.chartComponent_apply, reconstruction_single_apply,
-    A.testLocalization_eq_zero i j fun z hz ↦ ?_]
-  · simp
-  -- The extended test vanishes where `χᵢ` does not, since `ψ` vanishes there in the chart.
-  by_cases hz' : z ∈ c.source
-  · rw [Bundle.Trivialization.chartTestCLM_apply_of_mem _ _ _ _ _ hz']
-    have hψz : ψ (c z) = 0 := image_eq_zero_of_notMem_tsupport fun h ↦
-      (hψ h).2 (by rw [c.left_inv hz']; exact subset_tsupport _ hz)
-    simp [TestFunction.postcompCLM_apply, hψz]
-  · exact Bundle.Trivialization.chartTestCLM_apply_of_notMem _ _ _ _ _ hz'
-
 /-- The functional `s ↦ Re w (sᵢⱼ)` reconstructed from `w ∈ B^s_{p,q}(E, ℂ)` in the slot `(i, j)`
 is `B^s_{p,q}` near every point of `M`. -/
 private theorem isLocallyMemBesovAt_reconstruction_single [DecidableEq ι]
@@ -164,7 +137,8 @@ private theorem isLocallyMemBesovAt_reconstruction_single [DecidableEq ι]
     BundleTest.IsLocallyMemBesovAt φ s p q (A.reconstruction (Pi.single k w)) x := by
   by_cases hx : x ∈ tsupport (A.cutoff k.1)
   · exact A.isLocallyMemBesovAt_reconstruction_single_of_mem φ k.1 k.2 hw hx
-  · exact A.isLocallyMemBesovAt_reconstruction_single_of_notMem φ k.1 k.2 w hx
+  · exact BundleTest.isLocallyMemBesovAt_def.2 <| A.isLocallyAt_reconstruction_single_of_notMem
+      isLocallyMemBesovAt_of_notMem_dsupport k.1 k.2 w hx
 
 /-- **Reconstructions of `B^s_{p,q}` tuples are `B^s_{p,q}`.** For tempered distributions `vᵢⱼ`
 in `B^s_{p,q}(E, ℂ)`, one for each chart and each basis vector of the model fibre, the

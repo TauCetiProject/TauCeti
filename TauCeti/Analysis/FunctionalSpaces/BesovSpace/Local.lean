@@ -164,15 +164,7 @@ theorem isLocallyMemBesovAt_conj_iff :
 /-- The real part of a distribution `B^s_{p,q}` near `x` is `B^s_{p,q}` near `x`. -/
 theorem IsLocallyMemBesovAt.re (h : T.IsLocallyMemBesovAt φ s p q x) :
     (mapCLM (Complex.ofRealCLM ∘L Complex.reCLM) T).IsLocallyMemBesovAt φ s p q x := by
-  -- The real part is the average of `T` and its complex conjugate.
-  have hre : mapCLM (Complex.ofRealCLM ∘L Complex.reCLM) T =
-      (2⁻¹ : ℂ) • (T + mapCLM Complex.conjCLE.toContinuousLinearMap T) := by
-    ext ψ
-    simp only [mapCLM_apply, ContinuousLinearMap.comp_apply, Complex.reCLM_apply,
-      Complex.ofRealCLM_apply, FunLike.coe_smul, FunLike.coe_add, Pi.smul_apply, Pi.add_apply,
-      ContinuousLinearEquiv.coe_coe, Complex.conjCLE_apply, smul_eq_mul, Complex.re_eq_add_conj]
-    ring
-  rw [hre]
+  rw [mapCLM_ofRealCLM_comp_reCLM]
   exact (h.add (isLocallyMemBesovAt_conj_iff.2 h)).smul _
 
 /-- A distribution is `B^s_{p,q}` near every point of `Ω` outside its support. -/

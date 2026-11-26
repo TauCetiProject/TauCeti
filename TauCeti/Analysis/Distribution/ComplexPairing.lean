@@ -48,6 +48,8 @@ continuous linear maps of the values act functorially.
 * `Distribution.mapCLM_conj_mapCLM_conj`: conjugating a complex distribution twice gives it
   back, and `Distribution.complexPairing_mapCLM_conjCLE`: the extension of the conjugate of `T` is
   the conjugate of the extension of `T` at the conjugate test function.
+* `Distribution.mapCLM_ofRealCLM_comp_reCLM`: the real part of a complex distribution is the
+  average of the distribution and its complex conjugate.
 * `Distribution.mapCLM_id`, `Distribution.mapCLM_mapCLM`: continuous linear maps of the values
   act functorially.
 * `Distribution.mapCLM_restrictScalars_eq_smul`, `Distribution.mapCLM_restrictScalars_smul`,
@@ -226,6 +228,16 @@ theorem mapCLM_conj_mapCLM_conj (T : 𝓓'^{n}(Ω, ℂ)) :
     mapCLM conjCLE.toContinuousLinearMap (mapCLM conjCLE.toContinuousLinearMap T) = T := by
   ext φ
   simp [mapCLM_apply]
+
+/-- The real part of a complex distribution is the average of the distribution and its complex
+conjugate. -/
+theorem mapCLM_ofRealCLM_comp_reCLM (T : 𝓓'^{n}(Ω, ℂ)) :
+    mapCLM (ofRealCLM ∘L reCLM) T = (2⁻¹ : ℂ) • (T + mapCLM conjCLE.toContinuousLinearMap T) := by
+  ext φ
+  simp only [mapCLM_apply, ContinuousLinearMap.comp_apply, reCLM_apply, ofRealCLM_apply,
+    FunLike.coe_smul, FunLike.coe_add, Pi.smul_apply, Pi.add_apply, ContinuousLinearEquiv.coe_coe,
+    conjCLE_apply, smul_eq_mul, re_eq_add_conj]
+  ring
 
 /-- The complex-linear extension of `T` depends only on the germ of the test function along the
 support of `T`. -/
