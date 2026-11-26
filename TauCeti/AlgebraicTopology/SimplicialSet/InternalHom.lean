@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutP
 public import TauCeti.AlgebraicTopology.SimplicialSet.Fiber
 public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 public import TauCeti.CategoryTheory.Monoidal.Closed.Cartesian
+public import TauCeti.CategoryTheory.Monoidal.Closed.Curry
 
 /-!
 # Simplices of internal homs and functors over a base
@@ -170,6 +171,15 @@ lemma pre_app_app_ihomObj₀Equiv_symm {Y : SSet.{u}} (f : X ⟶ Y) (g : Y ⟶ Z
   apply yonedaEquiv.symm.injective
   rw [← yonedaEquiv_symm_comp, yonedaEquiv_symm_ihomObj₀Equiv_symm,
     yonedaEquiv_symm_ihomObj₀Equiv_symm, curry_pre_app, whiskerRight_fst_assoc]
+
+/-- Precomposition `Fun(Y, Z) ⟶ Fun(X, Z)` with `f : X ⟶ Y` sends the vertex given by the global
+element `curry' g` to the vertex given by `curry' (f ≫ g)`. -/
+@[simp]
+lemma pre_app_app_unitHomEquiv_curry' {Y : SSet.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    ((pre f).app Z).app _ (unitHomEquiv _ (curry' g)) = unitHomEquiv _ (curry' (f ≫ g)) := by
+  rw [← curry'_pre_app]
+  -- `unitHomEquiv` evaluates a global element at the unique vertex of the point.
+  rfl
 
 /-- Restricting the homotopy defined by a `1`-simplex `s` of `Fun(X, Z)` to an end of the cylinder
 gives the map corresponding to the matching face of `s`. -/

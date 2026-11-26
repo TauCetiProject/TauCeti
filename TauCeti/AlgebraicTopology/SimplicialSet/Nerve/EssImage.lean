@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.NerveAdjunction
+public import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
+public import Mathlib.CategoryTheory.Monoidal.Closed.Ideal
 public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 
@@ -43,6 +45,9 @@ category that corresponds to the identity functor under Mathlib's
   exactly when it is strict Segal.
 * `SSet.isIso_nerveAdjunction_unit_app_iff`: the unit of `nerveAdjunction` at `X` is an isomorphism
   exactly when `X` is strict Segal.
+* `SSet.exponentialIdeal_nerveFunctor`: nerves form an exponential ideal, since the homotopy
+  category functor preserves binary products. Hence every function complex `Fun(X, N C)` into a
+  nerve is strict Segal (`SSet.isStrictSegal_ihom_nerve`).
 
 ## References
 
@@ -130,5 +135,20 @@ theorem isIso_nerveAdjunction_unit_app_iff {X : SSet.{u}} :
 categories is an isomorphism when `X` is strict Segal. -/
 instance isIso_nerveAdjunction_unit_app : IsIso (nerveAdjunction.unit.app X) :=
   isIso_nerveAdjunction_unit_app_iff.2 ‹_›
+
+/-- The essential image of the nerve is an exponential ideal of simplicial sets: the homotopy
+category functor, its reflector, preserves binary products. -/
+instance exponentialIdeal_nerveFunctor : ExponentialIdeal nerveFunctor.{u, u} :=
+  have : Limits.PreservesLimitsOfShape (Discrete Limits.WalkingPair)
+      (reflector nerveFunctor.{u, u}) :=
+    inferInstanceAs (Limits.PreservesLimitsOfShape (Discrete Limits.WalkingPair) hoFunctor)
+  inferInstance
+
+/-- A function complex `Fun(X, N C)` into the nerve of a category is strict Segal: it is isomorphic
+to a nerve, as nerves form an exponential ideal. -/
+instance isStrictSegal_ihom_nerve (X : SSet.{u}) (C : Type u) [Category.{u} C] :
+    ((ihom X).obj (nerve C)).IsStrictSegal :=
+  mem_essImage_nerveFunctor_iff.1
+    (ExponentialIdeal.exp_closed (nerveFunctor.obj_mem_essImage (Cat.of C)) X)
 
 end SSet
