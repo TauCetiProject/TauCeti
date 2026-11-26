@@ -406,16 +406,16 @@ theorem label_quotientGroupoidMap_app_map (φ : K ⟶ K') (X : LocallyDiscrete C
 @[simp]
 theorem label_quotientGroupoidMap_naturality_hom_app (φ : K ⟶ K') {X Y : LocallyDiscrete Cᵒᵖ}
     (f : X ⟶ Y) (M : (quotientGroupoid K).obj X) :
-    label (((quotientGroupoidMap φ).naturality f).hom.toNatTrans.app M) = 0 :=
-  label_homMk _ _
+    label (((quotientGroupoidMap φ).naturality f).hom.toNatTrans.app M) = 0 := by
+  simp [quotientGroupoidMap]
 
 /-- The inverses of the naturality isomorphisms of the strong transformation induced by `φ` are
 labelled by `0`. -/
 @[simp]
 theorem label_quotientGroupoidMap_naturality_inv_app (φ : K ⟶ K') {X Y : LocallyDiscrete Cᵒᵖ}
     (f : X ⟶ Y) (M : (quotientGroupoid K).obj X) :
-    label (((quotientGroupoidMap φ).naturality f).inv.toNatTrans.app M) = 0 :=
-  (label_homMk _ _).trans neg_zero
+    label (((quotientGroupoidMap φ).naturality f).inv.toNatTrans.app M) = 0 := by
+  simp [quotientGroupoidMap]
 
 /-- **Quasi-isomorphism invariance.** The functor between the fibres over `X` induced by `φ` is an
 equivalence exactly when `φ` is a quasi-isomorphism over `X`: `φ⁰` restricts to a bijection
@@ -478,8 +478,12 @@ theorem label_quotientGroupoidMapIsoOfHomotopy_hom_app {φ ψ : K ⟶ K'}
     (h₁ : ∀ U, (φ.app U).right.hom - (ψ.app U).right.hom = (K'.obj U).hom.hom.comp (s.app U).hom)
     (X : LocallyDiscrete Cᵒᵖ) (M : (quotientGroupoid K).obj X) :
     label (((quotientGroupoidMapIsoOfHomotopy s h₀ h₁).hom.as.app X).toNatTrans.app M) =
-      -(s.app X.as).hom ((objEquiv X).symm M) :=
-  label_mapIsoOfHomotopy_hom_app s h₀ h₁ X M
+      -(s.app X.as).hom ((objEquiv X).symm M) := by
+  -- The component is `Cat.Hom.isoMk` of the isomorphism of functors between fibres. `simp` cannot
+  -- rewrite it with `label_mapIsoOfHomotopy_hom_app`, whose statement types that isomorphism on
+  -- the underlying `AddMonoidHom.QuotientGroupoid` fibres, so the lemma is applied directly.
+  dsimp only [quotientGroupoidMapIsoOfHomotopy, StrongTrans.isoMk_hom_as_app]
+  exact label_mapIsoOfHomotopy_hom_app s h₀ h₁ X M
 
 open scoped StrongTrans in
 /-- The component at `x` over `X` of the inverse of the modification induced by a chain homotopy
