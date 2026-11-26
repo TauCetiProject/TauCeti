@@ -8,9 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Stable.Frame
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.LinearAlgebra.Orientation.Exact.Basic
-import TauCeti.Geometry.Manifold.Orientation.Family
+import TauCeti.Geometry.Manifold.Orientation.Flow
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.LinearAlgebra.Orientation.Basic
+import TauCeti.LinearAlgebra.Orientation.Prod
 
 /-!
 # Orientations of the manifold along stable and unstable manifolds
@@ -72,6 +73,10 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `complementaryOrientation`, `reindex_unstableFrameOrientation_complementaryOrientation`,
   `complementaryOrientation_eq_iff`: the orientation of `V⁺` completing an orientation of `V⁻` to
   that of `o` at `x`, and its characterization.
+* `map_unstableFrame_eq_orientationAt_iff`: at a critical point of top index, the unstable frame
+  compares orientations with an ambient orientation in the same way across `W^u(p)`.
+* `map_stableComparison_eq_neg`: on opposite stable rays of a Morse chart at index `n - 1`,
+  `v ↦ (df_z v, N_q v)` transports an ambient orientation to opposite orientations.
 
 ## References
 
@@ -103,14 +108,13 @@ variable (hX : IsAdaptedPseudoGradient f X)
 pseudo-gradient preserves every orientation of `M`, since it is joined to the identity by the
 flow. -/
 theorem isOrientationPreservingAt_flow (o : Manifold.Orientation 𝓘(ℝ, E) M ι) (t : ℝ) (y : M) :
-    o.IsOrientationPreservingAt o (hX.flow t) y :=
-  Manifold.Orientation.isOrientationPreservingAt_of_family_eq_id o
-    (hX.contMDiff_flow_uncurry.of_le (by simp)) y
-    (fun s ↦ by
-      have hc : (hX.flowDiffeomorph s : M → M) = fun z ↦ hX.flow s z :=
-        funext (hX.flowDiffeomorph_apply s)
-      exact hc ▸ (hX.flowDiffeomorph s).isInvertible_mfderiv (by simp) (x := y))
-    (funext fun z ↦ hX.flow.map_zero_apply z) t
+    o.IsOrientationPreservingAt o (hX.flow t) y := by
+  have hflow : (hX.flow t : M → M) =
+      globalFlow X (hX.contMDiff.of_le (by simp)) hX.isCompleteVectorField t :=
+    funext fun z ↦ by simp [hX.flow_apply]
+  rw [hflow]
+  exact Manifold.Orientation.isOrientationPreservingAt_globalFlow o
+    (hX.contMDiff.of_le (by simp)) hX.isCompleteVectorField t y
 
 variable {hX} {φ : MorseChart E f x}
 
@@ -565,6 +569,146 @@ theorem complementaryOrientation_eq_iff (hf : IsMorse 𝓘(ℝ, E) f)
   rw [complementaryOrientation, Orientation.cokerOfExact_eq_iff, ← h,
     Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl, Orientation.reindex_refl,
     Equiv.refl_apply, unstableFrameOrientation_def]
+
+end IsAdaptedPseudoGradient
+
+namespace IsAdaptedPseudoGradient
+
+variable {hX : IsAdaptedPseudoGradient f X}
+
+/-- **The orientation of `M` along an unstable manifold.** Let `p` be a critical point and `op` an
+orientation of the coordinates of negative weight of a Morse chart at `p` in which `X` is linear.
+At every point `y` of `W^u(p)` where the unstable frame is an isomorphism, as it is when `p` has
+index `n`, the unstable frame carries `op` to the orientation of `M` exactly when it does so at
+`p`. -/
+theorem map_unstableFrame_eq_orientationAt_iff (hf : IsMorse 𝓘(ℝ, E) f) {p : M}
+    {φ : MorseChart E f p}
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
+    (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (Module.finrank ℝ E)))
+    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (Module.finrank ℝ E))) {y : M}
+    (hy : y ∈ hX.flow.unstableSet p) (hby : Bijective (hX.unstableFrame φ y))
+    (hbp : Bijective (hX.unstableFrame φ p)) :
+    Orientation.map _ (LinearEquiv.ofBijective (hX.unstableFrame φ y).toLinearMap hby) op =
+        oM.orientationAt y ↔
+      Orientation.map _ (LinearEquiv.ofBijective (hX.unstableFrame φ p).toLinearMap hbp) op =
+        oM.orientationAt p := by
+  obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφ hf hy).exists
+  obtain ⟨eDy, heDy⟩ := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ)
+    ((hX.mem_linearBackwardTimes φ).1 hT).1
+  obtain ⟨eDp, heDp⟩ := isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source
+  let Ly : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E := eDy.toLinearEquiv
+  let Lp : TangentSpace 𝓘(ℝ, E) p ≃ₗ[ℝ] E := eDp.toLinearEquiv
+  -- Read both tangent spaces in the model space `E`, through `φ ∘ Φ_{-T}` and `φ`: there `oM`
+  -- gives the same orientation at `y` and at `p`.
+  refine Orientation.eq_iff_eq_of_map_eq Ly Lp ?_
+    (map_orientationAt_eq_of_mem_linearBackwardTimes hφ oM hy hT eDy heDy eDp heDp)
+  -- So do the frames, since there the frame at `y` is `e^{-T}` times the frame at `p`.
+  have hL : (LinearEquiv.ofBijective (hX.unstableFrame φ y).toLinearMap hby).trans Ly =
+      ((LinearEquiv.smulOfNeZero ℝ _ (Real.exp (-T)) (Real.exp_pos _).ne').trans
+        (LinearEquiv.ofBijective (hX.unstableFrame φ p).toLinearMap hbp)).trans Lp := by
+    ext c
+    have h := mfderiv_unstableFrame_eq_exp_smul_self hφ hp hT c
+    rw [← heDy, ← heDp, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe] at h
+    rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+      LinearEquiv.smulOfNeZero_apply, map_smul, map_smul]
+    exact h
+  rw [← Orientation.map_trans, hL, Orientation.map_trans, Orientation.map_trans,
+    Orientation.map_smulOfNeZero_of_pos _ (Real.exp_pos _)]
+
+/-- **The stable comparison map along a stable ray.** Let `z` be a point of the Morse chart at
+`q` with linear forward flow at time `0` whose chart image is `b • u₀` for a vector `u₀` in the
+stable subspace, at which the chart preserves `oM` and `oE`. The map `v ↦ (df_z v, N_q v)`, read
+through the chart, is an isomorphism `Ψ` of `E` with `ℝ × V_q` whose second component is the
+coordinates of negative weight, and which sends `u₀` to `(a, 0)` with `a * b > 0`. -/
+private theorem exists_linearEquiv_stableComparison {q : M} {φ : MorseChart E f q}
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {u₀ : E} (hu₀ : u₀ ∈ φ.stableSubspace)
+    {oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (Module.finrank ℝ E))}
+    {oE : Manifold.Orientation 𝓘(ℝ, E) E (Fin (Module.finrank ℝ E))}
+    {oE₀ : Orientation ℝ E (Fin (Module.finrank ℝ E))} (hoE : ∀ x, oE.orientationAt x = oE₀)
+    {z : M} (hz : 0 ∈ hX.linearForwardTimes φ z) {b : ℝ} (hb : φ.toChart z = b • u₀)
+    (hb0 : b ≠ 0) (hcrit : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z ≠ 0)
+    (hpres : oM.IsOrientationPreservingAt oE φ.toChart z)
+    (hA : Bijective ((mvfderiv 𝓘(ℝ, E) f z).prod (hX.stableNormal φ z))) :
+    ∃ Ψ : E ≃ₗ[ℝ] ℝ × ({i // φ.weight i < 0} → ℝ),
+      Orientation.map _
+          (LinearEquiv.ofBijective ((mvfderiv 𝓘(ℝ, E) f z).prod (hX.stableNormal φ z)).toLinearMap
+            hA) (oM.orientationAt z) = Orientation.map _ Ψ oE₀ ∧
+      (∀ u, (Ψ u).2 = φ.negativeCoord u) ∧ ∃ a, Ψ u₀ = (a, 0) ∧ 0 < a * b := by
+  obtain ⟨e, he, hmap⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).1 hpres
+  have hsrc : z ∈ φ.toChart.source := by simpa using ((mem_linearForwardTimes hX φ).1 hz).1
+  set 𝒜 :=
+    LinearEquiv.ofBijective ((mvfderiv 𝓘(ℝ, E) f z).prod (hX.stableNormal φ z)).toLinearMap hA
+  let eE : TangentSpace 𝓘(ℝ, E) z ≃ₗ[ℝ] E := e.toLinearEquiv
+  have he' (v : TangentSpace 𝓘(ℝ, E) z) : eE v = mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart z v :=
+    DFunLike.congr_fun he v
+  set Ψ : E ≃ₗ[ℝ] ℝ × ({i // φ.weight i < 0} → ℝ) := eE.symm.trans 𝒜
+  have hΨ (u : E) : (Ψ u).1 = mvfderiv 𝓘(ℝ, E) f z (eE.symm u) ∧
+      (Ψ u).2 = hX.stableNormal φ z (eE.symm u) := by
+    change (𝒜 (eE.symm u)).1 = _ ∧ (𝒜 (eE.symm u)).2 = _
+    simp only [𝒜, LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe,
+      ContinuousLinearMap.prod_apply, and_self]
+  refine ⟨Ψ, ?_, fun u ↦ ?_, ?_⟩
+  · have hmapE : Orientation.map _ eE (oM.orientationAt z) = oE₀ := hmap.trans (hoE _)
+    rw [← hmapE, ← Orientation.map_trans]
+    congr 2
+    exact LinearEquiv.ext fun v ↦ congrArg 𝒜 (eE.symm_apply_apply v).symm
+  · rw [(hΨ u).2, stableNormal_apply_of_zero_mem hφ hz, ← he', eE.apply_symm_apply]
+  · have hX' : eE.symm u₀ = (-b⁻¹) • X z := by
+      have h : eE (X z) = (-b) • u₀ := by
+        have hst : φ.toChart z ∈ φ.stableSubspace := hb ▸ φ.stableSubspace.smul_mem b hu₀
+        rw [he', φ.mfderiv_toChart_apply_of_mem_stableSubspace hφ hsrc hst, hb, neg_smul]
+      have h' : eE ((-b⁻¹) • X z) = u₀ := by
+        rw [map_smul, h, smul_smul, neg_mul_neg, inv_mul_cancel₀ hb0, one_smul]
+      rw [← h', eE.symm_apply_apply]
+    refine ⟨-b⁻¹ * mvfderiv 𝓘(ℝ, E) f z (X z), Prod.ext ?_ ?_, ?_⟩
+    · rw [(hΨ _).1, hX', map_smul, smul_eq_mul]
+    · rw [(hΨ _).2, stableNormal_apply_of_zero_mem hφ hz, ← he', eE.apply_symm_apply]
+      exact φ.mem_stableSubspace_iff_negativeCoord_eq_zero.1 hu₀
+    · have hdf := hX.mvfderiv_apply_lt_zero z hcrit
+      rw [mul_comm, ← mul_assoc, mul_neg, mul_inv_cancel₀ hb0]
+      linarith
+
+/-- **The stable comparison maps on opposite stable rays of a critical point of index `n - 1`.**
+At two points `z₁`, `z₂` in the chart with linear forward flow at time `0` and chart images
+`b₁ • u₀` and `b₂ • u₀` along a vector `u₀` in the stable subspace with `b₁ * b₂ < 0`, the maps
+`v ↦ (df_z v, N_q v)` carry `oM` to opposite orientations of `ℝ × V_q`. -/
+theorem map_stableComparison_eq_neg {q : M} {φ : MorseChart E f q}
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    (hq : manifoldMorseIndex 𝓘(ℝ, E) f q + 1 = Module.finrank ℝ E)
+    {u₀ : E} (hu₀ : u₀ ∈ φ.stableSubspace)
+    {oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (Module.finrank ℝ E))}
+    {oE : Manifold.Orientation 𝓘(ℝ, E) E (Fin (Module.finrank ℝ E))}
+    {oE₀ : Orientation ℝ E (Fin (Module.finrank ℝ E))} (hoE : ∀ x, oE.orientationAt x = oE₀)
+    {z₁ z₂ : M} (h₁ : 0 ∈ hX.linearForwardTimes φ z₁) (h₂ : 0 ∈ hX.linearForwardTimes φ z₂)
+    {b₁ b₂ : ℝ} (hb₁ : φ.toChart z₁ = b₁ • u₀) (hb₂ : φ.toChart z₂ = b₂ • u₀)
+    (hb : b₁ * b₂ < 0) (hcrit₁ : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z₁ ≠ 0)
+    (hcrit₂ : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z₂ ≠ 0)
+    (hpres₁ : oM.IsOrientationPreservingAt oE φ.toChart z₁)
+    (hpres₂ : oM.IsOrientationPreservingAt oE φ.toChart z₂)
+    (hA₁ : Bijective ((mvfderiv 𝓘(ℝ, E) f z₁).prod (hX.stableNormal φ z₁)))
+    (hA₂ : Bijective ((mvfderiv 𝓘(ℝ, E) f z₂).prod (hX.stableNormal φ z₂))) :
+    Orientation.map _
+        (LinearEquiv.ofBijective ((mvfderiv 𝓘(ℝ, E) f z₂).prod (hX.stableNormal φ z₂)).toLinearMap
+          hA₂) (oM.orientationAt z₂) =
+      -Orientation.map _
+        (LinearEquiv.ofBijective ((mvfderiv 𝓘(ℝ, E) f z₁).prod (hX.stableNormal φ z₁)).toLinearMap
+          hA₁) (oM.orientationAt z₁) := by
+  obtain ⟨Ψ₁, hΨ₁, hs₁, a₁, ha₁, hab₁⟩ := exists_linearEquiv_stableComparison hφ hu₀ hoE h₁ hb₁
+    (left_ne_zero_of_mul hb.ne) hcrit₁ hpres₁ hA₁
+  obtain ⟨Ψ₂, hΨ₂, hs₂, a₂, ha₂, hab₂⟩ := exists_linearEquiv_stableComparison hφ hu₀ hoE h₂ hb₂
+    (right_ne_zero_of_mul hb.ne) hcrit₂ hpres₂ hA₂
+  have hcard : Fintype.card (Fin (Module.finrank ℝ E)) =
+      Module.finrank ℝ (ℝ × ({i // φ.weight i < 0} → ℝ)) := by
+    rw [Fintype.card_fin, φ.finrank_prod_negativeWeight_fun]
+    omega
+  rw [hΨ₁, hΨ₂]
+  exact oE₀.map_eq_neg_map_of_snd_eq_of_fst_mul_neg hcard (fun u ↦ (hs₁ u).trans (hs₂ u).symm)
+    (by rw [ha₁]) (by rw [ha₁, ha₂]; nlinarith [mul_pos hab₁ hab₂])
 
 end IsAdaptedPseudoGradient
 

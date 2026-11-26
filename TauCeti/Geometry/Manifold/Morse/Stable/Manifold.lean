@@ -37,6 +37,8 @@ reversed flow.
 * `TauCeti.MorseChart.negativeCoord` and `TauCeti.MorseChart.negativeExtend`: the coordinates of
   negative weight of a vector, and the vector with given coordinates of negative weight and zero
   coordinates of positive weight.
+* `TauCeti.MorseChart.mfderiv_toChart_apply_of_mem_stableSubspace`: at a point in the stable
+  subspace of a chart where `X` is linear, the chart derivative of `X` is `-φ.toChart y`.
 * `TauCeti.MorseChart.exp_neg_smul_coord_symm_linearFlow`: the linear flow, rescaled by `e^{-s}`,
   is the projection onto the coordinates of negative weight plus `e^{-2s}` times its complement.
 * `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_stableSet_flow`: the slice charts of `W^s(x)`
@@ -102,6 +104,20 @@ theorem mem_stableSubspace {v : E} :
 theorem mem_stableSubspace_iff_negativeCoord_eq_zero {v : E} :
     v ∈ φ.stableSubspace ↔ φ.negativeCoord v = 0 := by
   simp [funext_iff]
+
+/-- If a vector field `X` is linear in a Morse chart `φ`, then at any point of the chart domain
+whose image lies in the stable subspace, the chart derivative of `X` is `-φ.toChart y`. -/
+theorem mfderiv_toChart_apply_of_mem_stableSubspace
+    (hφ : ∀ y ∈ φ.toChart.source,
+      φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+        fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {y : M} (hy : y ∈ φ.toChart.source) (hs : φ.toChart y ∈ φ.stableSubspace) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y) = -φ.toChart y := by
+  refine φ.coord.injective (funext fun i ↦ ?_)
+  rw [congrFun (hφ y hy) i, map_neg, Pi.neg_apply]
+  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
+  · simp [φ.mem_stableSubspace.1 hs i (by rw [hi]; norm_num)]
+  · rw [hi, one_mul]
 
 /-- The space of coordinates of negative weight of a Morse chart has the dimension of the Morse
 index. -/
