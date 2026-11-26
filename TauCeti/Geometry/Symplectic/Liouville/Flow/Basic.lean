@@ -34,9 +34,9 @@ By naturality of flows, `ψ` then conjugates the maximal flows of `Z` and `Z₂`
 * `IsLocalDiffeomorph.mfderiv_apply_eq_of_interior_eq`: a local diffeomorphism preserving the
   two-forms and the one-forms carries the vector field dual to one to the vector field dual to the
   other.
-* `Diffeomorph.apply_flowOf_of_interior_eq`: such a symplectomorphism conjugates their maximal
-  flows; in particular symplectomorphisms preserving a primitive commute with the local Liouville
-  flow.
+* `Diffeomorph.apply_flowOf_of_interior_eq`: a diffeomorphism preserving the two-forms and the
+  one-forms conjugates the maximal flows of the dual vector fields; in particular
+  symplectomorphisms preserving a primitive commute with the local Liouville flow.
 
 ## References
 
