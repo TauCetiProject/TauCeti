@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.HermitianBundle.ExteriorPower
+public import TauCeti.NumberTheory.NumberField.HermitianBundle.ExteriorPower.Basic
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Prod
 
 /-!
