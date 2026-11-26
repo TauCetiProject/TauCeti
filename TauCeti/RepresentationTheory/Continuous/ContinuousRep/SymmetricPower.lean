@@ -56,7 +56,7 @@ private theorem continuous_symmetricPower_action (ρ : ContinuousRep Γ A M) :
     rw [← SymmetricPower.range_mk, LinearMap.range_eq_map,
       ← PiTensorProduct.submodule_span_eq_top (g := fun _ ↦ s) fun _ ↦ hs, Submodule.map_span,
       ← Set.range_comp]
-    rfl
+    simp only [SymmetricPower.tprod, LinearMap.coe_compMultilinearMap, Function.comp_def]
   have := IsModuleTopology.toContinuousAdd A (Sym[A]^d M)
   refine (IsModuleTopology.continuous_linearMap_apply_iff_of_span_eq_top
     (ρ.toRepresentation.symmetricPower d) hspan).2 fun r ↦ ?_

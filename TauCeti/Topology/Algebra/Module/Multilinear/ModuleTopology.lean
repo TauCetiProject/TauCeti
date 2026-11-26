@@ -45,7 +45,8 @@ theorem continuous_multilinearMap (f : MultilinearMap (RingHom.id R) M N) : Cont
   choose n φ hφ using fun i ↦ Module.Finite.exists_fin' R (M i)
   have hq : IsOpenQuotientMap (Pi.map fun i ↦ φ i) :=
     .piMap fun i ↦ isOpenQuotientMap_of_surjective (hφ i)
-  rw [← hq.continuous_comp_iff, show ⇑f ∘ Pi.map (fun i ↦ φ i) = f.compLinearMap φ from rfl]
+  rw [← hq.continuous_comp_iff, show ⇑f ∘ Pi.map (fun i ↦ φ i) = f.compLinearMap φ from
+    funext fun x ↦ (f.compLinearMap_apply φ x).symm]
   have hf : ⇑(f.compLinearMap φ) = fun x ↦ ∑ s : ∀ i, Fin (n i),
       (∏ i, x i (s i)) • f.compLinearMap φ fun i ↦ Pi.basisFun R (Fin (n i)) (s i) :=
     funext fun x ↦ by
