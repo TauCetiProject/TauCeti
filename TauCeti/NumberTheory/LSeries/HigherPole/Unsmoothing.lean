@@ -197,90 +197,74 @@ private theorem exists_bound_delangeWeight_mul_exp (a : ℝ) (k : ℕ) (T₀ : �
   have ht' : t ∈ Icc (0 : ℝ) (max T₀ 0) := ⟨ht.1, ht.2.trans (le_max_left _ _)⟩
   exact (hB t ht').trans (le_max_left _ _)
 
+/-- For every `η > 0`, there is `h > 0` such that eventually for large `T`,
+`0 < w_k(T) exp (-a T)` and, for all `|t - T| ≤ 2 h`, the ratio
+`(w_k(t) exp (-a t)) / (w_k(T) exp (-a T))` is positive and within `η` of `1`. -/
+private theorem exists_window_weight_exp_ratio (a : ℝ) (k : ℕ) {η : ℝ} (hη : 0 < η) :
+    ∃ h > 0, ∀ᶠ T in atTop, 0 < delangeWeight k T * exp (-a * T) ∧
+      ∀ t : ℝ, |t - T| ≤ 2 * h →
+        0 < (delangeWeight k t * exp (-a * t)) / (delangeWeight k T * exp (-a * T)) ∧
+        |(delangeWeight k t * exp (-a * t)) / (delangeWeight k T * exp (-a * T)) - 1| < η := by
+  have hcont : ContinuousAt (fun u : ℝ ↦ exp (-a * u)) 0 := by fun_prop
+  obtain ⟨δ, hδ, hδexp⟩ := Metric.continuousAt_iff.mp hcont (min (η / 2) 1) (by positivity)
+  let h : ℝ := δ / 3
+  have hh : 0 < h := by positivity
+  refine ⟨h, hh, ?_⟩
+  filter_upwards [eventually_gt_atTop (2 * h),
+    Metric.tendstoUniformlyOn_iff.mp (tendstoUniformlyOn_delangeWeight_add_div k (2 * h))
+      (η / 4) (by positivity)] with T hT hw
+  have hwT : 0 < delangeWeight k T := delangeWeight_pos (lt_trans (by positivity) hT)
+  refine ⟨mul_pos hwT (exp_pos _), fun t ht ↦ ?_⟩
+  have hwt : 0 < delangeWeight k t := delangeWeight_pos (by linarith [(abs_le.mp ht).1])
+  have hdu : dist (t - T) 0 < δ := by
+    rw [Real.dist_eq, sub_zero]
+    dsimp only [h] at ht
+    linarith
+  have hexp_dist : |exp (-a * (t - T)) - 1| < min (η / 2) 1 := by
+    simpa [Real.dist_eq] using hδexp hdu
+  have hexp_eta : |exp (-a * (t - T)) - 1| < η / 2 := (lt_min_iff.mp hexp_dist).1
+  have hexp_two : exp (-a * (t - T)) < 2 := by
+    linarith [(abs_lt.mp (lt_min_iff.mp hexp_dist).2).2]
+  have hd := hw (t - T) (abs_le.mp ht)
+  rw [add_sub_cancel, Real.dist_eq, abs_sub_comm] at hd
+  have hrat : (delangeWeight k t * exp (-a * t)) / (delangeWeight k T * exp (-a * T)) =
+      (delangeWeight k t / delangeWeight k T) * exp (-a * (t - T)) := by
+    have hexp_split : exp (-a * t) = exp (-a * T) * exp (-a * (t - T)) := by
+      rw [← exp_add]; congr 1; ring
+    rw [hexp_split]
+    field_simp [(exp_pos (-a * T)).ne']
+  refine ⟨div_pos (mul_pos hwt (exp_pos _)) (mul_pos hwT (exp_pos _)), ?_⟩
+  rw [hrat]
+  set r : ℝ := delangeWeight k t / delangeWeight k T
+  set e : ℝ := exp (-a * (t - T))
+  have he_pos : 0 < e := exp_pos _
+  calc |r * e - 1| = |(r - 1) * e + (e - 1)| := by ring_nf
+    _ ≤ |(r - 1) * e| + |e - 1| := abs_add_le _ _
+    _ = |r - 1| * e + |e - 1| := by rw [abs_mul, abs_of_pos he_pos]
+    _ < (η / 4) * 2 + η / 2 := by nlinarith [abs_nonneg (r - 1)]
+    _ = η := by ring
+
 /-- For every `c ∈ (0, 1)`, there is `h > 0` such that eventually for large `T`,
 `c * (w_k(T) exp (-a T)) ≤ w_k(t) exp (-a t)` holds for all `|t - T| ≤ 2 h`. -/
 private theorem exists_window_weight_exp_lower (a : ℝ) (k : ℕ) {c : ℝ} (hc : c ∈ Ioo (0 : ℝ) 1) :
     ∃ h > 0, ∀ᶠ T in atTop, ∀ t : ℝ, |t - T| ≤ 2 * h →
       c * (delangeWeight k T * exp (-a * T)) ≤ delangeWeight k t * exp (-a * t) := by
-  have hcont : Tendsto (fun h : ℝ ↦ exp (-|a| * (2 * h))) (𝓝[>] 0) (𝓝 1) := by
-    simpa using ((by fun_prop : Continuous fun h : ℝ ↦ exp (-|a| * (2 * h))).tendsto 0).mono_left
-      nhdsWithin_le_nhds
-  obtain ⟨h, hhexp, hh⟩ :=
-    ((hcont.eventually (Ioi_mem_nhds (by linarith [hc.2] : (1 + c) / 2 < 1))).and
-      self_mem_nhdsWithin).exists
-  let η : ℝ := 1 - c / ((1 + c) / 2)
-  have hη : 0 < η := sub_pos.mpr ((div_lt_one (by linarith [hc.1])).mpr (by linarith [hc.2]))
-  refine ⟨h, hh, ?_⟩
-  filter_upwards [eventually_gt_atTop (0 : ℝ),
-    Metric.tendstoUniformlyOn_iff.mp (tendstoUniformlyOn_delangeWeight_add_div k (2 * h)) η hη]
-    with T hT hw t ht
-  have hwT : 0 < delangeWeight k T := delangeWeight_pos hT
-  have hd := hw (t - T) (abs_le.mp ht)
-  rw [add_sub_cancel, Real.dist_eq, abs_sub_lt_iff] at hd
-  have hwr : 1 - η < delangeWeight k t / delangeWeight k T := by linarith [hd.1, hd.2]
-  have hwle : (1 - η) * delangeWeight k T ≤ delangeWeight k t := (le_div_iff₀ hwT).mp hwr.le
-  have hexple : exp (-|a| * (2 * h)) * exp (-a * T) ≤ exp (-a * t) := by
-    rw [← exp_add]
-    apply exp_le_exp.mpr
-    have habs : a * (t - T) ≤ |a| * (2 * h) :=
-      (le_abs_self _).trans
-        ((abs_mul a (t - T)).le.trans (mul_le_mul_of_nonneg_left ht (abs_nonneg a)))
-    linarith
-  have h1η : 1 - η = c / ((1 + c) / 2) := by simp [η]
-  have h1η_nonneg : 0 ≤ 1 - η := by rw [h1η]; exact div_nonneg hc.1.le (by linarith [hc.1])
-  have hc_le : c ≤ (1 - η) * exp (-|a| * (2 * h)) := by
-    rw [h1η]
-    calc c = c / ((1 + c) / 2) * ((1 + c) / 2) := (div_mul_cancel₀ c (by linarith [hc.1])).symm
-      _ ≤ c / ((1 + c) / 2) * exp (-|a| * (2 * h)) :=
-          mul_le_mul_of_nonneg_left hhexp.le (div_nonneg hc.1.le (by linarith [hc.1]))
-  calc c * (delangeWeight k T * exp (-a * T))
-      ≤ ((1 - η) * exp (-|a| * (2 * h))) * (delangeWeight k T * exp (-a * T)) :=
-          mul_le_mul_of_nonneg_right hc_le (mul_nonneg hwT.le (exp_pos _).le)
-    _ = ((1 - η) * delangeWeight k T) * (exp (-|a| * (2 * h)) * exp (-a * T)) := by ring
-    _ ≤ delangeWeight k t * exp (-a * t) :=
-          mul_le_mul hwle hexple (by positivity) (le_trans (mul_nonneg h1η_nonneg hwT.le) hwle)
+  obtain ⟨h, hh, hev⟩ := exists_window_weight_exp_ratio a k (sub_pos.mpr hc.2)
+  refine ⟨h, hh, hev.mono fun T ⟨hWT, hrat⟩ t ht ↦ ?_⟩
+  have hlt : c < (delangeWeight k t * exp (-a * t)) / (delangeWeight k T * exp (-a * T)) := by
+    linarith [(abs_lt.mp (hrat t ht).2).1]
+  exact (le_div_iff₀ hWT).mp hlt.le
 
 /-- For every `c > 1`, there is `h > 0` such that eventually for large `T`,
 `w_k(t) exp (-a t) ≤ c * (w_k(T) exp (-a T))` holds for all `|t - T| ≤ 2 h`. -/
 private theorem exists_window_weight_exp_upper (a : ℝ) (k : ℕ) {c : ℝ} (hc : 1 < c) :
     ∃ h > 0, ∀ᶠ T in atTop, ∀ t : ℝ, |t - T| ≤ 2 * h →
       delangeWeight k t * exp (-a * t) ≤ c * (delangeWeight k T * exp (-a * T)) := by
-  have hcont : Tendsto (fun h : ℝ ↦ exp (|a| * (2 * h))) (𝓝[>] 0) (𝓝 1) := by
-    simpa using ((by fun_prop : Continuous fun h : ℝ ↦ exp (|a| * (2 * h))).tendsto 0).mono_left
-      nhdsWithin_le_nhds
-  obtain ⟨h, hhexp, hh⟩ :=
-    ((hcont.eventually (Iio_mem_nhds (by linarith : (1 : ℝ) < (1 + c) / 2))).and
-      self_mem_nhdsWithin).exists
-  let η : ℝ := c / ((1 + c) / 2) - 1
-  have hη : 0 < η := sub_pos.mpr ((one_lt_div (by linarith)).mpr (by linarith))
-  refine ⟨h, hh, ?_⟩
-  filter_upwards [eventually_gt_atTop (2 * h),
-    Metric.tendstoUniformlyOn_iff.mp (tendstoUniformlyOn_delangeWeight_add_div k (2 * h)) η hη]
-    with T hT hw t ht
-  have hwT : 0 < delangeWeight k T := delangeWeight_pos (lt_trans (by positivity) hT)
-  have hd := hw (t - T) (abs_le.mp ht)
-  rw [add_sub_cancel, Real.dist_eq, abs_sub_lt_iff] at hd
-  have hwr : delangeWeight k t / delangeWeight k T < 1 + η := by linarith [hd.1, hd.2]
-  have hwle : delangeWeight k t ≤ (1 + η) * delangeWeight k T := (div_le_iff₀ hwT).mp hwr.le
-  have hexple : exp (-a * t) ≤ exp (|a| * (2 * h)) * exp (-a * T) := by
-    rw [← exp_add]
-    apply exp_le_exp.mpr
-    have habs : -(a * (t - T)) ≤ |a| * (2 * h) :=
-      (neg_le_abs _).trans
-        ((abs_mul a (t - T)).le.trans (mul_le_mul_of_nonneg_left ht (abs_nonneg a)))
-    linarith
-  have h1η : 1 + η = c / ((1 + c) / 2) := by simp [η]
-  have hle_c : (1 + η) * exp (|a| * (2 * h)) ≤ c := by
-    rw [h1η]
-    calc c / ((1 + c) / 2) * exp (|a| * (2 * h))
-        ≤ c / ((1 + c) / 2) * ((1 + c) / 2) := by gcongr
-      _ = c := div_mul_cancel₀ _ (by linarith)
-  calc delangeWeight k t * exp (-a * t)
-      ≤ ((1 + η) * delangeWeight k T) * (exp (|a| * (2 * h)) * exp (-a * T)) :=
-          mul_le_mul hwle hexple (exp_pos _).le (mul_nonneg (by linarith) hwT.le)
-    _ = ((1 + η) * exp (|a| * (2 * h))) * (delangeWeight k T * exp (-a * T)) := by ring
-    _ ≤ c * (delangeWeight k T * exp (-a * T)) :=
-          mul_le_mul_of_nonneg_right hle_c (mul_nonneg hwT.le (exp_pos _).le)
+  obtain ⟨h, hh, hev⟩ := exists_window_weight_exp_ratio a k (sub_pos.mpr hc)
+  refine ⟨h, hh, hev.mono fun T ⟨hWT, hrat⟩ t ht ↦ ?_⟩
+  have hlt : (delangeWeight k t * exp (-a * t)) / (delangeWeight k T * exp (-a * T)) < c := by
+    linarith [(abs_lt.mp (hrat t ht).2).2]
+  exact (div_le_iff₀ hWT).mp hlt.le
 
 /-! ### Nonnegative monotone and antitone unsmoothing -/
 
@@ -596,6 +580,18 @@ private theorem hasDerivAt_counterexample_tail {a C ell ε t : ℝ} {k : ℕ} (h
   field_simp [hw_pos.ne']
   ring
 
+/-- Positivity and margin bounds for the oscillatory amplitude `ε = a C / (2 (a + 6 ell))` used in
+the single-bandwidth counterexample. -/
+private theorem pos_and_sub_pos_counterexample_eps {a C ell : ℝ}
+    (ha : 0 < a) (hC : 0 < C) (hell : 0 ≤ ell) :
+    let ε := a * C / (2 * (a + 6 * ell))
+    0 < ε ∧ 0 < C - ε := by
+  intro ε
+  have hε : 0 < ε := by positivity
+  refine ⟨hε, ?_⟩
+  have : 2 * (a + 6 * ell) * ε = a * C := mul_div_cancel₀ _ (by positivity)
+  nlinarith
+
 /-- The auxiliary smooth function `f(t) = (C + ε cos (3 ell t)) exp (a t) / w_k(t)` is
 nondecreasing on `[t₀, ∞)` once `w_k'(t) / w_k(t) ≤ a / 2` and `ε = a C / (2 (a + 6 ell))`. -/
 private theorem monotoneOn_counterexample_tail {a C ell t₀ : ℝ} {k : ℕ}
@@ -605,14 +601,11 @@ private theorem monotoneOn_counterexample_tail {a C ell t₀ : ℝ} {k : ℕ}
     MonotoneOn (fun t : ℝ ↦ (C + ε * cos (3 * ell * t)) * exp (a * t) / delangeWeight k t)
       (Ici t₀) := by
   intro ε
-  have hε_pos : 0 < ε := by positivity
+  obtain ⟨hε_pos, hCε⟩ := pos_and_sub_pos_counterexample_eps ha hC hell.le
   have hε_eq : (a / 2) * (C - ε) - 3 * ell * ε = a * C / 4 := by
     simp only [ε]
     field_simp [(by positivity : 2 * (a + 6 * ell) ≠ 0)]
     ring
-  have hCε : 0 < C - ε := by
-    have : 2 * (a + 6 * ell) * ε = a * C := mul_div_cancel₀ _ (by positivity)
-    nlinarith
   refine monotoneOn_of_deriv_nonneg (convex_Ici t₀)
     (fun t ht ↦ (hasDerivAt_counterexample_tail
       (lt_of_lt_of_le ht₀ ht)).continuousAt.continuousWithinAt)
@@ -755,10 +748,7 @@ theorem exists_not_tendsto_of_single_bandwidth {a C ell : ℝ} (ha : 0 < a) (hC 
         atTop (𝓝 C) ∧
       ¬ Tendsto (fun t : ℝ ↦ α t / (exp (a * t) * t ^ k)) atTop (𝓝 C) := by
   let ε : ℝ := a * C / (2 * (a + 6 * ell))
-  have hε_pos : 0 < ε := by positivity
-  have hCε : 0 < C - ε := by
-    have : 2 * (a + 6 * ell) * ε = a * C := mul_div_cancel₀ _ (by positivity)
-    nlinarith
+  obtain ⟨hε_pos, hCε⟩ := pos_and_sub_pos_counterexample_eps ha hC hell.le
   obtain ⟨t₀, ht₀_ge⟩ := eventually_atTop.mp
     ((tendsto_deriv_delangeWeight_div_atTop k).eventually
       (Iic_mem_nhds (by positivity : (0 : ℝ) < a / 2)) |>.and (eventually_ge_atTop (1 : ℝ)))
