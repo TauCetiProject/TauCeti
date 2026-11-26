@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.Normed.Module.HahnBanach
+import TauCeti.Algebra.Order.Module.PositiveLinearMap
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
@@ -137,16 +138,14 @@ variable [StarOrderedRing A]
 
 /-- Bundle a state `φ ∈ stateSpace A` as a positive linear map `A →ₚ[ℂ] ℂ`. -/
 noncomputable def stateToPositiveLinearMap (hφ : φ ∈ stateSpace A) : A →ₚ[ℂ] ℂ :=
-  .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) fun _ => map_nonneg_of_mem_stateSpace hφ
+  .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) fun x hx =>
+    (map_nonneg_of_mem_stateSpace hφ hx).trans_eq (toStrongDual_apply φ x).symm
 
 /-- Evaluating `stateToPositiveLinearMap hφ` at `a` gives `φ a`. -/
 @[simp]
 theorem stateToPositiveLinearMap_apply (hφ : φ ∈ stateSpace A) (a : A) :
     stateToPositiveLinearMap hφ a = φ a := by
-  -- `PositiveLinearMap.mk₀` has no `@[simp]` application lemma in Mathlib, so rewrite via
-  -- `toLinearMap`.
-  rw [stateToPositiveLinearMap, ← PositiveLinearMap.coe_toLinearMap]
-  simp [PositiveLinearMap.mk₀]
+  simp [stateToPositiveLinearMap]
 
 /-- The continuous linear map underlying `stateToPositiveLinearMap hφ` is `toStrongDual φ`. -/
 @[simp]
@@ -240,14 +239,14 @@ composite can drop, for instance to `0`. -/
 theorem mapsTo_pullbackFunctional_stateSpace_of_surjective (f : F) (hf : Function.Surjective f) :
     MapsTo (pullbackFunctional A f) (stateSpace B) (stateSpace A) := by
   intro φ hφ
-  let ω : B →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun _ => map_nonneg_of_mem_stateSpace hφ
+  let ω : B →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun x hx =>
+    (map_nonneg_of_mem_stateSpace hφ hx).trans_eq (toStrongDual_apply φ x).symm
   have hcomp : ((ω.comp (.ofClass f) : A →P[ℂ] ℂ) : A →L[ℂ] ℂ) =
       toStrongDual (pullbackFunctional A f φ) := by
-    -- `PositiveContinuousLinearMap.mk₀` has no evaluation lemma; both sides evaluate as
-    -- `φ ∘ f` by definition
     ext
-    rfl
-  refine mem_stateSpace_iff.2 ⟨fun a ha => map_nonneg_of_mem_stateSpace hφ (map_nonneg f ha), ?_⟩
+    simp [ω]
+  refine mem_stateSpace_iff.2
+    ⟨fun a ha => by simpa using map_nonneg_of_mem_stateSpace hφ (map_nonneg f ha), ?_⟩
   rw [← hcomp, PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective ω f hf]
   exact norm_toStrongDual_of_mem_stateSpace hφ
 
@@ -273,9 +272,8 @@ theorem mem_image_pullbackFunctional_stateSpace_iff (f : F) (hf : Function.Surje
     exact map_nonneg_of_mem_stateSpace hψ (star_mul_self_nonneg a)
   let ω : B →P[ℂ] ℂ := .ofClass (PositiveLinearMap.mk₀ g hgpos)
   have hcomp : ((ω.comp (.ofClass f) : A →P[ℂ] ℂ) : A →L[ℂ] ℂ) = toStrongDual ψ := by
-    -- `PositiveLinearMap.mk₀` has no evaluation lemma; `ω` evaluates as `g` by definition
     ext a
-    exact hg a
+    simpa [ω] using hg a
   refine ⟨StrongDual.toWeakDual (ω : B →L[ℂ] ℂ), ?_, ?_⟩
   · rw [PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff,
       ← PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective ω f hf, hcomp]

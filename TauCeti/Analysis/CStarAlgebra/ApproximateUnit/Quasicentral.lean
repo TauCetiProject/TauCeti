@@ -13,6 +13,7 @@ import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
@@ -366,13 +367,6 @@ theorem exists_quasicentral_isIncreasingApproximateUnit
     refine ⟨⟨⟨0, le_rfl, by simp⟩, ⟨1, fun _ => a⟩, ⟨ε, hε⟩⟩, trivial, fun _ ⟨_, _, heF⟩ => ?_⟩
     simpa using heF 0
 
-/-- Convergence from an eventual `1 / (n + 1)` norm bound. -/
-private theorem tendsto_of_eventually_norm_sub_le_inv {E : Type*} [SeminormedAddCommGroup E]
-    {v : ℕ → E} {y : E} (hv : ∀ᶠ n : ℕ in atTop, ‖v n - y‖ ≤ 1 / ((n : ℝ) + 1)) :
-    Tendsto v atTop (𝓝 y) :=
-  tendsto_iff_norm_sub_tendsto_zero.mpr <|
-    squeeze_zero' (.of_forall fun _ => norm_nonneg _) hv tendsto_one_div_add_atTop_nhds_zero_nat
-
 /-- Separable sequential form of Arveson's theorem for closed star ideals: when `A` is separable,
 `S` admits a monotone sequence `u : ℕ → S` of nonnegative strict contractions forming a
 quasicentral increasing approximate unit of `S`. -/
@@ -416,7 +410,7 @@ theorem exists_seq_quasicentral_isIncreasingApproximateUnit [TopologicalSpace.Se
       (eventually_map.mpr (.of_forall fun n => (recSeq (n + 1)).property.2.le))
     rintro _ ⟨k, rfl⟩
     rw [tendsto_map'_iff]
-    exact tendsto_of_eventually_norm_sub_le_inv
+    exact TauCeti.tendsto_of_eventually_norm_sub_le_inv
       (eventually_atTop.mpr ⟨k, fun n hn => ((hu_step n).2.1 k hn).le⟩)
   have hu_comm (a : A) : Tendsto (fun n => (u n : A) * a - a * (u n : A)) atTop (𝓝 0) := by
     refine tendsto_map'_iff.mp <| TauCeti.tendsto_commutator_of_dense (C := 1)
@@ -424,7 +418,7 @@ theorem exists_seq_quasicentral_isIncreasingApproximateUnit [TopologicalSpace.Se
       (TopologicalSpace.denseRange_denseSeq A) ?_ a
     rintro _ ⟨k, rfl⟩
     rw [tendsto_map'_iff]
-    exact tendsto_of_eventually_norm_sub_le_inv (eventually_atTop.mpr ⟨k, fun n hn => by
+    exact TauCeti.tendsto_of_eventually_norm_sub_le_inv (eventually_atTop.mpr ⟨k, fun n hn => by
       simpa [Function.comp_def, sub_zero] using ((hu_step n).2.2 k hn).le⟩)
   exact ⟨u, monotone_nat_of_le_succ fun n => (hu_step (n + 1)).1,
     fun n => (recSeq (n + 1)).property.1, fun n => (recSeq (n + 1)).property.2, hu_approx, hu_comm⟩
@@ -452,12 +446,11 @@ theorem exists_quasicentral_isIncreasingApproximateUnit :
   let φ := I.toNonUnitalStarSubalgebraEquiv.symm
   refine ⟨lS.map φ, hlS.map φ φ.surjective, fun u₀ hu₀_0 hu₀_1 => ?_, fun a => ?_⟩
   · rw [eventually_map]
-    have hu₀S_0 : 0 ≤ φ.symm u₀ := map_nonneg φ.symm hu₀_0
-    have hu₀S_1 : ‖φ.symm u₀‖ < 1 :=
-      (NonUnitalStarAlgHom.norm_map φ.symm φ.symm.injective u₀).trans_lt hu₀_1
-    refine (hstrict (φ.symm u₀) hu₀S_0 hu₀S_1).mono fun e ⟨hle, hnorm⟩ => ⟨?_, ?_⟩
-    · exact (φ.apply_symm_apply u₀).symm.trans_le (OrderHomClass.mono φ hle)
-    · exact (NonUnitalStarAlgHom.norm_map φ φ.injective e).trans_lt hnorm
+    refine (hstrict (I.toNonUnitalStarSubalgebraEquiv u₀)
+      (I.toNonUnitalStarSubalgebraEquiv_nonneg_iff.mpr hu₀_0)
+      ((I.norm_toNonUnitalStarSubalgebraEquiv_apply u₀).symm ▸ hu₀_1)).mono fun e ⟨hle, hnorm⟩ =>
+        ⟨I.le_toNonUnitalStarSubalgebraEquiv_symm_iff.mpr hle,
+          (I.norm_toNonUnitalStarSubalgebraEquiv_symm_apply e).trans_lt hnorm⟩
   · rw [tendsto_map'_iff]
     exact (hcomm a).congr fun e => by
       simp only [Function.comp_apply, φ, I.coe_toNonUnitalStarSubalgebraEquiv_symm_apply]
@@ -471,19 +464,19 @@ theorem exists_quasicentral_approx {u₀ : I} (hu₀ : 0 ≤ u₀) (hu₀_norm :
     ∃ e : I, u₀ ≤ e ∧ ‖e‖ < 1 ∧
       (∀ j, ‖e * g j - g j‖ < ε) ∧
       (∀ i, ‖(e : A) * f i - f i * (e : A)‖ < ε) := by
-  let φ := I.toNonUnitalStarSubalgebraEquiv.symm
+  let ψ := I.toNonUnitalStarSubalgebraEquiv
   obtain ⟨eS, heS_u₀, heS_norm, heS_g, heS_f⟩ :=
     I.toNonUnitalStarSubalgebra.exists_quasicentral_approx I.mul_mem_toNonUnitalStarSubalgebra
-      (map_nonneg φ.symm hu₀)
-      ((NonUnitalStarAlgHom.norm_map φ.symm φ.symm.injective u₀).trans_lt hu₀_norm)
-      f (fun j => φ.symm (g j)) hε
-  refine ⟨φ eS, ?_, (NonUnitalStarAlgHom.norm_map φ φ.injective eS).trans_lt heS_norm,
+      (I.toNonUnitalStarSubalgebraEquiv_nonneg_iff.mpr hu₀)
+      ((I.norm_toNonUnitalStarSubalgebraEquiv_apply u₀).symm ▸ hu₀_norm)
+      f (fun j => ψ (g j)) hε
+  refine ⟨ψ.symm eS, I.le_toNonUnitalStarSubalgebraEquiv_symm_iff.mpr heS_u₀,
+    (I.norm_toNonUnitalStarSubalgebraEquiv_symm_apply eS).trans_lt heS_norm,
     fun j => ?_, fun i => ?_⟩
-  · exact (φ.apply_symm_apply u₀).symm.trans_le (OrderHomClass.mono φ heS_u₀)
-  · have heq : φ eS * g j - g j = φ (eS * φ.symm (g j) - φ.symm (g j)) := by simp
-    rw [heq, NonUnitalStarAlgHom.norm_map φ φ.injective]
+  · have heq : ψ.symm eS * g j - g j = ψ.symm (eS * ψ (g j) - ψ (g j)) := by simp
+    rw [heq, I.norm_toNonUnitalStarSubalgebraEquiv_symm_apply]
     exact heS_g j
-  · simpa only [φ, I.coe_toNonUnitalStarSubalgebraEquiv_symm_apply] using heS_f i
+  · simpa only [ψ, I.coe_toNonUnitalStarSubalgebraEquiv_symm_apply] using heS_f i
 
 /-- Separable sequential form of **Arveson's theorem:** when `A` is separable, every closed
 two-sided ideal `I` of `A` admits a monotone sequence `u : ℕ → I` of nonnegative strict
@@ -497,17 +490,12 @@ theorem exists_seq_quasicentral_isIncreasingApproximateUnit [TopologicalSpace.Se
       I.mul_mem_toNonUnitalStarSubalgebra
   let φ := I.toNonUnitalStarSubalgebraEquiv.symm
   let u : ℕ → I := fun n => φ (uS n)
-  have hcoe (n : ℕ) : (u n : A) = (uS n : A) :=
-    I.coe_toNonUnitalStarSubalgebraEquiv_symm_apply (uS n)
-  have hu_mono : Monotone u := fun m n hmn =>
-    Subtype.coe_le_coe.mp (by rw [hcoe, hcoe]; exact huS_mono hmn)
-  have hu_0 (n : ℕ) : 0 ≤ u n := map_nonneg φ (huS_0 n)
-  have hu_1 (n : ℕ) : ‖u n‖ < 1 :=
-    (NonUnitalStarAlgHom.norm_map φ φ.injective (uS n)).trans_lt (huS_1 n)
-  have hu_approx : (atTop.map u).IsIncreasingApproximateUnit := by
-    have heq : atTop.map u = (atTop.map uS).map φ := (Filter.map_map).symm
+  refine ⟨u, fun _ _ hmn => I.toNonUnitalStarSubalgebraEquiv_symm_le_iff.mpr (huS_mono hmn),
+    fun n => I.toNonUnitalStarSubalgebraEquiv_symm_nonneg_iff.mpr (huS_0 n),
+    fun n => (I.norm_toNonUnitalStarSubalgebraEquiv_symm_apply (uS n)).trans_lt (huS_1 n),
+    ?_, fun a => (huS_comm a).congr fun n => ?_⟩
+  · have heq : atTop.map u = (atTop.map uS).map φ := (Filter.map_map).symm
     exact heq ▸ huS_approx.map φ φ.surjective
-  refine ⟨u, hu_mono, hu_0, hu_1, hu_approx, fun a => (huS_comm a).congr fun n => ?_⟩
-  simp only [hcoe]
+  · simp only [u, φ, I.coe_toNonUnitalStarSubalgebraEquiv_symm_apply]
 
 end TwoSidedIdeal

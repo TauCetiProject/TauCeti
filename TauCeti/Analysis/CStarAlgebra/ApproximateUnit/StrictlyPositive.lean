@@ -14,6 +14,7 @@ import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 import Mathlib.Topology.Algebra.InfiniteSum.Order
+import TauCeti.Algebra.Order.Module.PositiveLinearMap
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Resolvent
 import TauCeti.Analysis.CStarAlgebra.GNS.Basic
 import TauCeti.Analysis.CStarAlgebra.State.Spectrum
@@ -655,15 +656,13 @@ private theorem tendsto_resolventApprox_mul_of_forall_positiveLinearMap_pos {h :
   have heval (z : A⁺¹) : MapClusterPt (ψ₀ z) l_bad (fun m => ψ m z) :=
     (mapClusterPt_def.mpr hcl).continuousAt_comp (WeakBilin.eval_continuous _ z).continuousAt
   let φ₀ : A →ₚ[ℂ] ℂ := .mk₀
-    ((toStrongDual ψ₀).toLinearMap.comp (Unitization.inrHom ℂ ℂ A)) fun x hx =>
-      isClosed_Ici.mem_of_mapClusterPt (heval (x : A⁺¹))
-        (.of_forall fun m => map_nonneg_compressFunctional
-          (fun _ => map_nonneg_of_mem_stateSpace (hω_mem m)) (Unitization.inr_nonneg ℂ x hx))
-  -- `PositiveLinearMap.mk₀` has no `@[simp]` application lemma in Mathlib, so rewrite via
-  -- `toLinearMap`.
+    ((toStrongDual ψ₀).toLinearMap.comp (Unitization.inrHom ℂ ℂ A)) fun x hx => by
+      simpa [WeakDual.toStrongDual_apply] using
+        isClosed_Ici.mem_of_mapClusterPt (heval (x : A⁺¹))
+          (.of_forall fun m => map_nonneg_compressFunctional
+            (fun _ => map_nonneg_of_mem_stateSpace (hω_mem m)) (Unitization.inr_nonneg ℂ x hx))
   have hφ₀_apply (x : A) : φ₀ x = ψ₀ (x : A⁺¹) := by
-    rw [← PositiveLinearMap.coe_toLinearMap]
-    simp [φ₀, PositiveLinearMap.mk₀]
+    simp [φ₀]
   have hφ₀_ne : φ₀ ≠ 0 := fun h0 => by
     have hge : ε ^ 2 ≤ ‖ψ₀ ((a * star a : A) : A⁺¹)‖ :=
       (isClosed_le continuous_const continuous_norm).mem_of_mapClusterPt

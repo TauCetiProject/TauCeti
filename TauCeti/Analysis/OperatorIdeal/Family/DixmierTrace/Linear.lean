@@ -11,6 +11,7 @@ public import TauCeti.Analysis.OperatorIdeal.Family.Modulus
 import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 import Mathlib.Analysis.CStarAlgebra.Unitary.Span
+import TauCeti.Algebra.Order.Module.PositiveLinearMap
 
 /-!
 # Additivity and linear extension of Dixmier traces
@@ -527,11 +528,10 @@ private theorem norm_complexDixmierTrace_comp_left_le_of_isPositive {ω : Genera
       simp only [LinearMap.coe_mk, AddHom.coe_mk]
       exact complexDixmierTrace_comp_nonneg_of_isPositive hω (nonneg_iff_isPositive.1 hB) hTpos hT
   let ψ : (E →L[ℂ] E) →P[ℂ] ℂ := .ofClass ψ₀
-  -- `PositiveLinearMap.mk₀` has no `@[simp]` application lemma in Mathlib, so unfold it via `simp`.
   have hψ (X : E →L[ℂ] E) : (ψ : (E →L[ℂ] E) →L[ℂ] ℂ) X = complexDixmierTrace ω (X ∘L T) := by
     simp only [ψ, ψ₀, PositiveContinuousLinearMap.coe_toContinuousLinearMap,
-      PositiveContinuousLinearMap.coe_ofClass, ← PositiveLinearMap.coe_toLinearMap,
-      PositiveLinearMap.mk₀, LinearMap.coe_mk, AddHom.coe_mk]
+      PositiveContinuousLinearMap.coe_ofClass, PositiveLinearMap.mk₀_apply,
+      LinearMap.coe_mk, AddHom.coe_mk]
   have hop : ‖(ψ : (E →L[ℂ] E) →L[ℂ] ℂ)‖ = dixmierTrace ω T := Complex.ofReal_inj.1 <| by
     rw [ψ.ofReal_opNorm_eq_map_one, ← PositiveContinuousLinearMap.coe_toContinuousLinearMap, hψ,
       one_def, id_comp, complexDixmierTrace_of_isPositive ω hTpos]

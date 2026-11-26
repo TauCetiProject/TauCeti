@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Analysis.Normed.Group.Continuity
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
+import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Topology.MetricSpace.Bounded
 
@@ -98,6 +99,8 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
   enough `ε > 0`, farther than `ε` from each point of `S`.
 * `TauCeti.norm_le_div_of_isFixedPt` -- a fixed point `v` of `T` with `‖T v‖ ≤ R + γ ‖v‖` and
   `γ < 1` satisfies `‖v‖ ≤ R / (1 - γ)`.
+* `TauCeti.tendsto_of_eventually_norm_sub_le_inv` -- convergence from an eventual `1 / (n + 1)`
+  norm bound.
 -/
 
 public section
@@ -303,5 +306,12 @@ theorem norm_le_div_of_isFixedPt {E : Type*} [Norm E] {T : E → E} {v : E} {R �
   rw [hv.eq] at hT
   rw [le_div_iff₀ (sub_pos.2 hγ)]
   linarith
+
+/-- Convergence from an eventual `1 / (n + 1)` norm bound. -/
+theorem tendsto_of_eventually_norm_sub_le_inv {E : Type*} [SeminormedAddCommGroup E]
+    {v : ℕ → E} {y : E} (hv : ∀ᶠ n : ℕ in atTop, ‖v n - y‖ ≤ 1 / ((n : ℝ) + 1)) :
+    Tendsto v atTop (𝓝 y) :=
+  tendsto_iff_norm_sub_tendsto_zero.mpr <|
+    squeeze_zero' (.of_forall fun _ => norm_nonneg _) hv tendsto_one_div_add_atTop_nhds_zero_nat
 
 end TauCeti

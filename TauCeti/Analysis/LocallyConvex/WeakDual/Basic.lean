@@ -43,7 +43,6 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
 
 /-- Precomposition with a continuous linear map `T : E →L[𝕜] F`, as a weak-star continuous
 linear map `WeakDual 𝕜 F →L[𝕜] WeakDual 𝕜 E`. -/
-@[expose]
 noncomputable def precomp (T : E →L[𝕜] F) : WeakDual 𝕜 F →L[𝕜] WeakDual 𝕜 E where
   toFun ω := StrongDual.toWeakDual ((toStrongDual ω).comp T)
   map_add' _ _ := rfl
@@ -54,13 +53,13 @@ noncomputable def precomp (T : E →L[𝕜] F) : WeakDual 𝕜 F →L[𝕜] Weak
 @[simp]
 theorem precomp_apply (T : E →L[𝕜] F) (ω : WeakDual 𝕜 F) (x : E) :
     precomp T ω x = ω (T x) :=
-  rfl
+  (rfl)
 
 /-- As a strong dual functional, `WeakDual.precomp T ω` is `(toStrongDual ω).comp T`. -/
 @[simp]
 theorem toStrongDual_precomp (T : E →L[𝕜] F) (ω : WeakDual 𝕜 F) :
     toStrongDual (precomp T ω) = (toStrongDual ω).comp T :=
-  rfl
+  (rfl)
 
 /-- Precomposition by the identity map on `E` is the identity on `WeakDual 𝕜 E`. -/
 @[simp]

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
 public import TauCeti.Algebra.Star.Basic
@@ -276,28 +275,44 @@ theorem subtype_comp_toNonUnitalStarSubalgebraEquiv :
       I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom = I.starAlgHom :=
   (rfl)
 
-instance instStarOrderedRing [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I := by
-  have : StarOrderedRing I.toNonUnitalStarSubalgebra :=
-    Subtype.starOrderedRing I.toNonUnitalStarSubalgebra
-  let e := I.toNonUnitalStarSubalgebraEquiv
-  have hmap : (AddSubmonoid.closure (Set.range fun s : I => star s * s)).map
-      e.toAddEquiv.toAddMonoidHom =
-      AddSubmonoid.closure (Set.range fun s : I.toNonUnitalStarSubalgebra => star s * s) := by
-    rw [AddMonoidHom.map_mclosure]
-    refine congrArg AddSubmonoid.closure ?_
-    calc (e.toAddEquiv.toAddMonoidHom : I → _) '' Set.range (fun s : I => star s * s)
-        = Set.range (fun s : I => e (star s * s)) := (Set.range_comp _ _).symm
-      _ = Set.range (fun s : I => star (e s) * e s) := by simp only [map_mul, map_star]
-      _ = Set.range (fun t : I.toNonUnitalStarSubalgebra => star t * t) :=
-          e.surjective.range_comp (fun t => star t * t)
-  refine ⟨fun x y => ?_⟩
-  have hle : x ≤ y ↔ e x ≤ e y := by
-    simp only [← Subtype.coe_le_coe, e, I.coe_toNonUnitalStarSubalgebraEquiv_apply]
-  rw [hle, StarOrderedRing.le_iff, (EquivLike.surjective e).exists]
-  refine exists_congr fun p => and_congr ?_ ?_
-  · rw [← hmap, AddSubmonoid.mem_map]
-    exact ⟨fun ⟨q, hq, hqp⟩ => e.injective hqp ▸ hq, fun hp => ⟨p, hp, rfl⟩⟩
-  · rw [← map_add e x p, (EquivLike.injective e).eq_iff]
+/-- `I.toNonUnitalStarSubalgebraEquiv` preserves norms. -/
+theorem norm_toNonUnitalStarSubalgebraEquiv_apply (x : I) :
+    ‖I.toNonUnitalStarSubalgebraEquiv x‖ = ‖x‖ :=
+  (rfl)
+
+/-- `I.toNonUnitalStarSubalgebraEquiv.symm` preserves norms. -/
+theorem norm_toNonUnitalStarSubalgebraEquiv_symm_apply (x : I.toNonUnitalStarSubalgebra) :
+    ‖I.toNonUnitalStarSubalgebraEquiv.symm x‖ = ‖x‖ :=
+  (rfl)
+
+/-- `I.toNonUnitalStarSubalgebraEquiv` preserves and reflects the induced order. -/
+theorem toNonUnitalStarSubalgebraEquiv_le_iff [PartialOrder A] {x y : I} :
+    I.toNonUnitalStarSubalgebraEquiv x ≤ I.toNonUnitalStarSubalgebraEquiv y ↔ x ≤ y :=
+  Iff.rfl
+
+/-- `I.toNonUnitalStarSubalgebraEquiv.symm` preserves and reflects the induced order. -/
+theorem toNonUnitalStarSubalgebraEquiv_symm_le_iff [PartialOrder A]
+    {x y : I.toNonUnitalStarSubalgebra} :
+    I.toNonUnitalStarSubalgebraEquiv.symm x ≤ I.toNonUnitalStarSubalgebraEquiv.symm y ↔ x ≤ y :=
+  Iff.rfl
+
+/-- Comparison with `I.toNonUnitalStarSubalgebraEquiv.symm` corresponds to comparison with
+`I.toNonUnitalStarSubalgebraEquiv`. -/
+theorem le_toNonUnitalStarSubalgebraEquiv_symm_iff [PartialOrder A]
+    {x : I} {y : I.toNonUnitalStarSubalgebra} :
+    x ≤ I.toNonUnitalStarSubalgebraEquiv.symm y ↔ I.toNonUnitalStarSubalgebraEquiv x ≤ y :=
+  Iff.rfl
+
+/-- `I.toNonUnitalStarSubalgebraEquiv` preserves and reflects nonnegativity. -/
+theorem toNonUnitalStarSubalgebraEquiv_nonneg_iff [PartialOrder A] {x : I} :
+    0 ≤ I.toNonUnitalStarSubalgebraEquiv x ↔ 0 ≤ x :=
+  Iff.rfl
+
+/-- `I.toNonUnitalStarSubalgebraEquiv.symm` preserves and reflects nonnegativity. -/
+theorem toNonUnitalStarSubalgebraEquiv_symm_nonneg_iff [PartialOrder A]
+    {x : I.toNonUnitalStarSubalgebra} :
+    0 ≤ I.toNonUnitalStarSubalgebraEquiv.symm x ↔ 0 ≤ x :=
+  Iff.rfl
 
 /-- The nonunital continuous functional calculus of an element in a closed two-sided ideal of a
 C⋆-algebra stays in the ideal. -/
