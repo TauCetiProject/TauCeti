@@ -54,6 +54,8 @@ depends on the cutoffs only through their values at the point.
   symbol commutes with negation and subtraction of operators.
 * `TauCeti.classicalPrincipalSymbol_eq_zero_of_mem_sub_one`: an operator of order `m - 1` has
   principal symbol `0` in order `m`.
+* `TauCeti.classicalPrincipalSymbol_add_of_mem_sub_one`: adding an operator of order `m - 1`
+  does not change the principal symbol of order `m`.
 * `TauCeti.classicalPrincipalSymbol_eq_zero_iff`: conversely, the principal symbol of an operator
   of order `m` vanishes exactly when it has order `m - 1`; so two operators with the same principal
   symbol differ by an operator of order `m - 1`
@@ -508,6 +510,22 @@ theorem classicalPrincipalSymbol_sub (hP : P ∈ classicalPseudodifferentialOper
       classicalPrincipalSymbol m P x ξ - classicalPrincipalSymbol m Q x ξ := by
   rw [sub_eq_add_neg, classicalPrincipalSymbol_add hP (neg_mem hQ), classicalPrincipalSymbol_neg,
     ← sub_eq_add_neg]
+
+/-- **Lower order perturbations.** Adding an operator of order `m - 1` does not change the
+principal symbol of order `m`, whether or not `P` has order `m`. -/
+theorem classicalPrincipalSymbol_add_of_mem_sub_one
+    (hQ : Q ∈ classicalPseudodifferentialOperators (m - 1)) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (P + Q) x ξ = classicalPrincipalSymbol m P x ξ := by
+  have hQ' : Q ∈ classicalPseudodifferentialOperators m :=
+    classicalPseudodifferentialOperators_le 1 (by simp) hQ
+  by_cases hP : P ∈ classicalPseudodifferentialOperators m
+  · rw [classicalPrincipalSymbol_add hP hQ', classicalPrincipalSymbol_eq_zero_of_mem_sub_one hQ,
+      add_zero]
+  · -- Neither `P` nor `P + Q` is of order `m`, so both principal symbols vanish.
+    have hPQ : P + Q ∉ classicalPseudodifferentialOperators m := fun h ↦ hP <| by
+      simpa using sub_mem h hQ'
+    rw [classicalPrincipalSymbol_of_notMem hP, classicalPrincipalSymbol_of_notMem hPQ]
 
 /-- **The kernel of the principal symbol.** A classical pseudodifferential operator of order `m`
 has vanishing principal symbol exactly when it is a classical pseudodifferential operator of order
