@@ -73,9 +73,6 @@ identities `H_(uE) = Q(0)⁻¹ Q` and `H_(u(1-E)) = Q(0) S` (which simplify to `
   `ContinuousLinearMap.IsRowCompact.exists_isRieszColemanProjection`: good Fredholm zero after
   Coleman's polynomial transform, Riesz-projection characterization, and existence of the
   Riesz–Coleman projection for a coprime polynomial factorisation `H_u = Q * S` on `C₀(I, R)`.
-* `ContinuousLinearMap.IsRieszColemanProjection.isCoprime_charPowerSeries_matrixCoeff_complement`:
-  for any Riesz–Coleman projection `E` of a row-compact `u` on `C₀(I, R)` with
-  `IsUnit Q.leadingCoeff`, `Q` is coprime to `(u * (1 - E)).matrixCoeff.charPowerSeries`.
 * `ContinuousLinearMap.IsRieszColemanProjection.rankAtStalk_range`,
   `ContinuousLinearMap.IsRowCompact.rankAtStalk_ker_aeval_reverse`,
   `ContinuousLinearMap.IsRieszColemanProjection.finrank_range`, and
@@ -391,17 +388,6 @@ theorem IsRowCompact.exists_isRieszColemanProjection
   ⟨u.rieszColemanProjection Q, hu.isRieszColemanProjection_rieszColemanProjection hQ hS hQS hcop⟩
 
 namespace IsRieszColemanProjection
-
-/-- **Coprimality on the complementary model-space summand.** For any Riesz–Coleman projection `E`
-of a row-compact operator `u` on `C₀(I, R)` for `Q` with `IsUnit Q.leadingCoeff`, `Q` is coprime to
-`(u * (1 - E)).matrixCoeff.charPowerSeries` in `PowerSeries.IsEntire.subring R`. -/
-theorem isCoprime_charPowerSeries_matrixCoeff_complement
-    {u E : C₀(I, R) →L[R] C₀(I, R)} {Q : R[X]}
-    (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsRowCompact) :
-    IsCoprime (IsEntire.polynomialHom Q)
-      ⟨(u * (1 - E)).matrixCoeff.charPowerSeries,
-        IsEntire.mem_subring.mpr (hu.comp_clm (1 - E)).isEntire_charPowerSeries⟩ :=
-  ((hu.comp_clm (1 - E)).isUnit_aeval_reverse_iff hQ).mp (hE.isUnit_aeval_mul_one_sub_reverse hQ)
 
 /-- Any Riesz–Coleman projection of a row-compact operator `u` at a coprime factorisation
 `H_u = Q * S`, with `IsUnit Q.leadingCoeff` and `S` entire, agrees with the explicit
