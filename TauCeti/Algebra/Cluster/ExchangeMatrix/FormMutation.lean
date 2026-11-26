@@ -68,6 +68,7 @@ theorem toBilin'_formMutation (row : K ↪ I) (B : Matrix I K ℤ)
 
 /-- Integral form mutation preserves exactly the set of values of the bilinear form.
 The coordinate change is its own inverse for every exchange matrix. -/
+@[simp]
 theorem range_toBilin'_formMutation (row : K ↪ I) (B : Matrix I K ℤ)
     (Λ : Matrix I I ℤ) (k : K) :
     Set.range (fun p : (I → ℤ) × (I → ℤ) ↦
@@ -86,6 +87,7 @@ theorem range_toBilin'_formMutation (row : K ↪ I) (B : Matrix I K ℤ)
 /-- The full scalar bar premise is preserved and reflected by integral form mutation,
 including finite-order parameters. The result only uses the assigned integer powers and map;
 ring automorphism and involutivity assumptions are not needed for this propagation law. -/
+@[simp]
 theorem forall_map_zpow_formMutation_iff {R : Type*} [Pow R ℤ]
     (row : K ↪ I) (B : Matrix I K ℤ) (Λ : Matrix I I ℤ) (k : K)
     (σ : R → R) (u : R) :
