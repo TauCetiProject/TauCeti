@@ -16,8 +16,9 @@ Let `σ_X`, `σ_Y` be continuous linear involutions anticommuted by continuous l
 `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Involution`, splitting into
 `±1`-eigenspaces conjugates `T` to the product of its two restrictions, `J` conjugates these
 restrictions to each other, and the kernel, cokernel and index of `T` are twice those of its
-restriction to the `1`-eigenspaces. This file adds that `T` is Fredholm exactly when that
-restriction is, so that the doubling formula
+restriction to the `1`-eigenspaces. This file adds that an operator commuting with the involutions
+is Fredholm exactly when both its restrictions are, and, in the presence of `J`, exactly when its
+restriction to the `1`-eigenspaces is, so that the doubling formula
 `ContinuousLinearMap.index_eq_two_mul_index_restrictEigenspace` is a statement about Fredholm
 indices.
 
@@ -27,6 +28,9 @@ Theorem C.1.10.
 
 ## Main declarations
 
+* `ContinuousLinearMap.isFredholm_iff_isFredholm_restrictEigenspace_one_and_neg_one`: an operator
+  commuting with the involutions is Fredholm exactly when its restrictions to the `1`- and
+  `-1`-eigenspaces are.
 * `ContinuousLinearMap.isFredholm_iff_isFredholm_restrictEigenspace`: Fredholmness is detected on
   the `1`-eigenspaces.
 -/
@@ -42,6 +46,16 @@ variable [AddCommGroup Y] [Module 𝕜 Y] [TopologicalSpace Y] [IsTopologicalAdd
 variable [ContinuousConstSMul 𝕜 Y]
 variable {σX JX : X →L[𝕜] X} {σY JY : Y →L[𝕜] Y}
 
+/-- An operator commuting with the involutions `σ` is Fredholm if and only if its restrictions to
+the `1`-eigenspaces and to the `-1`-eigenspaces are: splitting by the involutions conjugates it to
+the product of the two restrictions. -/
+theorem isFredholm_iff_isFredholm_restrictEigenspace_one_and_neg_one (T : X →L[𝕜] Y)
+    (hσX : Function.Involutive σX) (hσY : Function.Involutive σY) (hT : T.comp σX = σY.comp T) :
+    IsFredholm T ↔
+      IsFredholm (T.restrictEigenspace hT 1) ∧ IsFredholm (T.restrictEigenspace hT (-1)) := by
+  rw [isFredholm_iff_of_comp_eq _ _ (equivEigenspaceProd_comp T hσX hσY hT),
+    isFredholm_prodMap_iff]
+
 /-- An operator commuting with the involutions `σ` and the anticommuting maps `J` is Fredholm if
 and only if its restriction to the `1`-eigenspaces is. -/
 theorem isFredholm_iff_isFredholm_restrictEigenspace (T : X →L[𝕜] Y)
@@ -50,9 +64,8 @@ theorem isFredholm_iff_isFredholm_restrictEigenspace (T : X →L[𝕜] Y)
     (hJY : JY.comp JY = -ContinuousLinearMap.id 𝕜 Y) (hJσY : σY.comp JY = -JY.comp σY)
     (hT : T.comp σX = σY.comp T) (hTJ : T.comp JX = JY.comp T) :
     IsFredholm T ↔ IsFredholm (T.restrictEigenspace hT 1) := by
-  have hconj := equivEigenspaceProd_comp T hσX hσY hT
   have hswap := restrictEigenspace_comp_eigenspaceNegEquiv T hJX hJσX hJY hJσY hT hTJ 1
-  rw [isFredholm_iff_of_comp_eq _ _ hconj, isFredholm_prodMap_iff,
+  rw [isFredholm_iff_isFredholm_restrictEigenspace_one_and_neg_one T hσX hσY hT,
     ← isFredholm_iff_of_comp_eq _ _ hswap.symm, and_self]
 
 end ContinuousLinearMap
