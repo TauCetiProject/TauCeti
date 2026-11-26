@@ -81,14 +81,8 @@ theorem IsLocallyOrientable.relabel (h : 𝒜.IsLocallyOrientable) (f : A' ↪ A
   have hg' : act (I.map f) (MulEquiv.piFinsetMap Γ f I g) x = x := by
     rwa [relabelAct_apply] at hg
   -- The map of local homology only depends on the homeomorphism, here given by two expressions.
-  have hmap : ∀ (φ ψ : T (I.map f) ≃ₜ T (I.map f)), φ = ψ →
-      ∀ (h₁ : ⇑(φ : C(T (I.map f), T (I.map f))) ⁻¹' {x} ⊆ {x})
-        (h₂ : ⇑(ψ : C(T (I.map f), T (I.map f))) ⁻¹' {x} ⊆ {x}),
-      localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (φ : C(T (I.map f), T (I.map f))) h₁ n =
-        localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (ψ : C(T (I.map f), T (I.map f))) h₂ n := by
-    rintro φ _ rfl _ _
-    rfl
-  rw [hmap _ _ (relabelAct_apply f act I g) _ (act_preimage_singleton_subset hg'), hdet]
+  rw [localHomologyMap_congr _ (congrArg (fun φ : T (I.map f) ≃ₜ T (I.map f) ↦
+    (φ : C(T (I.map f), T (I.map f)))) (relabelAct_apply f act I g)) _ n, hdet]
   exact h.localHomologyMap_eq (I := I.map f) hx
     ((𝒜.kuranishiZeroSet_relabel f hf ∅ I) ▸ hx₀) hg' (by rw [hn, sum_map])
 
