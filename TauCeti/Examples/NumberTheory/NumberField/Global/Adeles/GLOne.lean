@@ -36,7 +36,7 @@ noncomputable example : GL (Fin 1) (AdeleRing (𝓞 F) F) ≃ᵐ IdeleGroup (�
 example (g : GL (Fin 1) (AdeleRing (𝓞 F) F)) :
     ((Matrix.GeneralLinearGroup.uniqueContinuousMulEquiv _ _).toHomeomorph.toMeasurableEquiv g :
         AdeleRing (𝓞 F) F) =
-      (g : Matrix (Fin 1) (Fin 1) (AdeleRing (𝓞 F) F)) 0 0 :=
-  Matrix.GeneralLinearGroup.coe_uniqueContinuousMulEquiv_apply g
+      (g : Matrix (Fin 1) (Fin 1) (AdeleRing (𝓞 F) F)) 0 0 := by
+  simp [ContinuousMulEquiv.toHomeomorph_eq_coe]
 
 end TauCeti.Examples
