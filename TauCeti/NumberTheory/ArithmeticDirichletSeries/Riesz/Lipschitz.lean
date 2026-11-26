@@ -102,9 +102,9 @@ theorem norm_mul_rieszSum_div_sub_mul_rieszSum_div_le (c : ℕ → ℂ) {a w w' 
 `TauCeti.rieszSum` of the coefficients cast to `ℂ`. -/
 theorem ofReal_sum_Ioc_floor_mul_div_sub_one (c : ℕ → ℝ) (y : ℝ) :
     ((∑ n ∈ Ioc 0 ⌊y⌋₊, c n * (y / n - 1) : ℝ) : ℂ) = rieszSum (fun n ↦ (c n : ℂ)) y := by
-  rw [rieszSum_def, ← Icc_succ_left_eq_Ioc]
+  rw [rieszSum_def]
   push_cast
-  rfl
+  exact sum_congr (by ext n; simp only [mem_Ioc, mem_Icc]; omega) fun _ _ ↦ rfl
 
 /-- **The weighted Riesz sum is antitone in the weight** for nonnegative coefficients: for
 `0 < w ≤ w'`, `w' S(a / w') ≤ w S(a / w)`, where `S(y) = ∑_{1 ≤ n ≤ y} c(n) (y / n - 1)`. -/

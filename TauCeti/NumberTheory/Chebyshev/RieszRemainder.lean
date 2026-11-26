@@ -69,7 +69,7 @@ open TauCeti
 private theorem sum_Icc_norm_le_three_mul {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ ≤ Λ n) {y : ℝ}
     (hy : 0 ≤ y) : ∑ n ∈ Icc 1 ⌊y⌋₊, ‖c n‖ ≤ 3 * y := by
   refine (sum_le_sum fun n _ ↦ hc n).trans ?_
-  rw [show Icc 1 ⌊y⌋₊ = Ioc 0 ⌊y⌋₊ from Icc_succ_left_eq_Ioc _ _, ← psi]
+  rw [show Icc 1 ⌊y⌋₊ = Ioc 0 ⌊y⌋₊ by ext n; simp only [mem_Ioc, mem_Icc]; omega, ← psi]
   exact psi_le_three_mul_self hy
 
 /-- Ordered case of `Chebyshev.norm_mul_rieszSum_div_add_mul_sub_le`. -/
@@ -112,7 +112,7 @@ theorem norm_rieszSum_add_mul_sub_le {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ �
   rw [max_eq_left hzy] at h ⊢
   have hsum : ∑ n ∈ Icc 1 ⌊y⌋₊, ‖c n‖ / n ≤ Real.log y + (Real.log 4 + 4) := by
     refine (sum_le_sum fun n _ ↦ div_le_div_of_nonneg_right (hc n) n.cast_nonneg).trans ?_
-    rw [show Icc 1 ⌊y⌋₊ = Ioc 0 ⌊y⌋₊ from Icc_succ_left_eq_Ioc _ _]
+    rw [show Icc 1 ⌊y⌋₊ = Ioc 0 ⌊y⌋₊ by ext n; simp only [mem_Ioc, mem_Icc]; omega]
     exact sum_vonMangoldt_div_le h
   rw [abs_of_nonneg (sub_nonneg.2 hzy), add_sub_add_comm, ← sub_mul, mul_add]
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
