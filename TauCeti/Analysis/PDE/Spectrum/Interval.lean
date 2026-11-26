@@ -18,7 +18,7 @@ import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
 
 /-!
-# The Dirichlet, Neumann and mixed spectra of `-Δ` on an interval
+# The Dirichlet, Neumann and mixed eigenvalues of `-Δ` on an interval
 
 On a bounded open interval `(a, b)` the Dirichlet eigenvalue problem for `-Δ = -d²/dx²` can be
 solved explicitly: its eigenvalues are exactly the numbers `(k π / (b - a))²`, `k ≥ 1`, with
@@ -93,11 +93,12 @@ excludes every other eigenvalue.
 * `TauCeti.PDE.eq_zero_of_forall_setIntegral_mul_cos_eq_zero` and
   `TauCeti.PDE.eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero`: both systems are
   complete in `L²(a, b)`.
-* `TauCeti.PDE.exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty`: the Neumann
-  spectrum of `-Δ` on `(a, b)` is `{(k π / (b - a))² | k ≥ 0}`.
+* `TauCeti.PDE.exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty`: the weak
+  Neumann eigenvalues of `-Δ` on `(a, b)`, tested on `H¹_∅(a, b)`, are
+  `{(k π / (b - a))² | k ≥ 0}`.
 * `TauCeti.PDE.exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_left` and
-  `TauCeti.PDE.isLeast_exists_ne_zero_forall_inner_gradient_eq_intervalDomain_left`: the mixed
-  spectrum of `-Δ` on `(a, b)` with Dirichlet part `{a}` is
+  `TauCeti.PDE.isLeast_exists_ne_zero_forall_inner_gradient_eq_intervalDomain_left`: the weak
+  mixed eigenvalues of `-Δ` on `(a, b)` with Dirichlet part `Γ = {a}`, tested on `H¹_Γ(a, b)`, are
   `{((2k + 1) π / (2 (b - a)))² | k ≥ 0}`, with least element `(π / (2 (b - a)))²`.
 
 ## References
@@ -542,7 +543,7 @@ theorem isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain (hab : a < b
     (fun _ _ => energyFormH1_one_zero_zero_comm _ _)
     (nonempty_intervalDomain_iff.2 hab)
 
-/-! ### The Neumann and mixed spectra
+/-! ### The weak Neumann and mixed eigenvalues
 
 The test space is `H¹_Γ(a, b)`, with `Γ = ∅` for the Neumann problem and `Γ = {a}` for the mixed
 problem with a Dirichlet condition at `a` and a Neumann condition at `b`. -/
@@ -775,7 +776,7 @@ theorem exists_value_ae_eq_sin_two_mul_add_one_and_inner_gradient_eq (hab : a < 
     Real.cos_add_pi_div_two, Real.sin_nat_mul_pi]
   simp
 
-/-- The spectrum of `-Δ` on `W^{1,2}_Γ(a, b)` is the set of eigenvalues of a family of weak
+/-- The weak eigenvalues of `-Δ` on `W^{1,2}_Γ(a, b)` are the eigenvalues of a family of weak
 eigenfunctions, with values `x ↦ F k (x 0)`, that is complete in `L²(a, b)`: any other `κ` would
 have its eigenfunctions orthogonal to the whole family, since the form `∫ ∇u · ∇v` is
 symmetric. -/
@@ -822,8 +823,8 @@ private theorem exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
     refine ⟨w k, fun h => hw0 k ?_, hw k⟩
     rw [← W1pVanishingOn.valueL_apply, h, map_zero]
 
-/-- **The Neumann spectrum of `-Δ` on an interval.** The weak Neumann eigenvalues of `-Δ` on
-`(a, b)` are exactly the numbers `(k π / (b - a))²` with `k ≥ 0`: the problem
+/-- **The weak Neumann eigenvalues of `-Δ` on an interval.** On `(a, b)` they are exactly the
+numbers `(k π / (b - a))²` with `k ≥ 0`: the problem
 `∫ ∇u · ∇v = κ ∫ u v` for every `v ∈ H¹_∅(a, b)` has a nonzero solution `u ∈ H¹_∅(a, b)`,
 imposing `u'(a) = u'(b) = 0` weakly, exactly for these `κ`. Here `H¹_∅(a, b)` is the space of the
 mixed problem with no Dirichlet part, as in the spectrum of the mixed Laplacian
@@ -846,7 +847,7 @@ theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty (hab : 
   exact value_ne_zero_of_value_ae_eq hab (F := fun t => Real.cos (k * π * (t - a) / (b - a)))
     (by fun_prop) (left_mem_Icc.2 hab.le) (by simp) (hwv k)
 
-/-- **The mixed spectrum of `-Δ` on an interval with one Dirichlet endpoint.** With the
+/-- **The weak mixed eigenvalues of `-Δ` on an interval with one Dirichlet endpoint.** With the
 Dirichlet part `Γ = {a}`, the weak mixed eigenvalues of `-Δ` on `(a, b)` are exactly the numbers
 `((2k + 1) π / (2 (b - a)))²` with `k ≥ 0`: the problem `∫ ∇u · ∇v = κ ∫ u v` for every
 `v ∈ H¹_Γ(a, b)` has a nonzero solution `u ∈ H¹_Γ(a, b)`, imposing `u(a) = 0` and `u'(b) = 0`,
@@ -872,7 +873,7 @@ theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_left (hab : a
     field_simp [(sub_pos.2 hab).ne'], Real.sin_add_pi_div_two, Real.cos_nat_mul_pi]
   exact pow_ne_zero _ (by norm_num)
 
-/-- The least mixed eigenvalue of `-Δ` on `(a, b)` with the Dirichlet part `{a}` is
+/-- The least weak mixed eigenvalue of `-Δ` on `(a, b)` with the Dirichlet part `{a}` is
 `(π / (2 (b - a)))²`. It lies strictly between the least Neumann eigenvalue `0` and the least
 Dirichlet eigenvalue `(π / (b - a))²`. -/
 theorem isLeast_exists_ne_zero_forall_inner_gradient_eq_intervalDomain_left (hab : a < b) :

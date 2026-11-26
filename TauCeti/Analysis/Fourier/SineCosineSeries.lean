@@ -11,7 +11,8 @@ import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Fourier.Uniqueness
 
 /-!
-# Completeness of the Fourier sine and cosine systems on an interval and on a box
+# Completeness of the Fourier sine, cosine and quarter-wave sine systems on an interval, and of
+sine products on a box
 
 On an interval `[a, b]` with `a < b`, the functions `x ↦ sin (k π (x - a) / (b - a))`,
 `k = 1, 2, …`, are the eigenfunctions of `-d²/dx²` with zero boundary values at both ends. This
