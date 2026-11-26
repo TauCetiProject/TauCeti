@@ -88,6 +88,8 @@ symbol is its fibre map.
   `[[P, df_x], dg_x] s(x) = ([[P, f], g] s)(x)`.
 * `TauCeti.sectionCommutatorSymbol_mvfderiv_of_order_two`: a second-order operator has
   `[[P, df_x], dg_x] s(x) = P(f g s)(x) - f(x) P(g s)(x) - g(x) P(f s)(x) + f(x) g(x) (P s)(x)`.
+* `TauCeti.sectionPrincipalSymbol_eq_inv_two_smul_sectionCommutatorSymbol`: an operator of order
+  at most two has `σ_geom(P)(ξ) = ½ [[P, ξ], ξ]`.
 * `TauCeti.sectionPrincipalSymbol_comp`: principal symbols multiply under composition.
 * `TauCeti.sectionPrincipalSymbol_restrictScalars`: the principal symbol of a `C^∞(M)`-linear map,
   as an operator of order zero, is its fibre map.
@@ -409,6 +411,15 @@ theorem sectionCommutatorSymbol_mvfderiv_of_order_two (hx : I.IsInteriorPoint x)
     Matrix.cons_val_fin_one, ContMDiffSection.coe_sub, Pi.sub_apply,
     ContMDiffSection.smul_apply, smul_comm g f s]
   module
+
+/-- The principal symbol of an operator of order at most two is half its commutator symbol on the
+diagonal: `σ_geom(P)(ξ) = ½ [[P, ξ], ξ]`. -/
+theorem sectionPrincipalSymbol_eq_inv_two_smul_sectionCommutatorSymbol (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    sectionPrincipalSymbol I hx P ξ = (2 : ℝ)⁻¹ • sectionCommutatorSymbol I hx P ![ξ, ξ] := by
+  rw [sectionPrincipalSymbol_def, Matrix.vec_single_eq_const, Matrix.vecCons_const,
+    Nat.factorial_two, Nat.cast_ofNat]
 
 /-- The principal symbol of an operator of order at most `m + 1` vanishes if the operator has
 order at most `m`. -/

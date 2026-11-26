@@ -248,9 +248,8 @@ theorem sectionSecondOrderCoefficient_smulRight_smulRight_self (hx : I.IsInterio
     (ξ : TangentSpace I x →L[ℝ] ℝ) (v : V x) :
     sectionSecondOrderCoefficient I hx P (ξ.smulRight (ξ.smulRight v)) =
       sectionPrincipalSymbol I hx P ξ v := by
-  rw [sectionSecondOrderCoefficient_smulRight_smulRight, sectionPrincipalSymbol_def,
-    Matrix.vec_single_eq_const, Matrix.vecCons_const,
-    LinearMap.smul_apply, Nat.factorial_two, Nat.cast_ofNat]
+  rw [sectionSecondOrderCoefficient_smulRight_smulRight,
+    sectionPrincipalSymbol_eq_inv_two_smul_sectionCommutatorSymbol, LinearMap.smul_apply]
 
 /-! ### Smoothness of the leading coefficient -/
 
@@ -496,12 +495,11 @@ theorem sectionPrincipalSymbol_eq_of_forall_apply_eq_add_add
     sectionPrincipalSymbol I hx P ξ v = A x (ξ.smulRight (ξ.smulRight v)) := by
   obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
   obtain ⟨σ, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
-  have hfun : (fun _ : Fin 2 ↦ mvfderiv I f x) = ![mvfderiv I f x, mvfderiv I f x] := by
-    rw [Matrix.vec_single_eq_const, Matrix.vecCons_const]
-  rw [ContMDiffSection.evalLinearMap_apply, sectionPrincipalSymbol_def, LinearMap.smul_apply, hfun,
+  rw [ContMDiffSection.evalLinearMap_apply,
+    sectionPrincipalSymbol_eq_inv_two_smul_sectionCommutatorSymbol, LinearMap.smul_apply,
     sectionCommutatorSymbol_mvfderiv_of_order_two,
-    apply_smul_smul_sub_of_forall_apply_eq_add cov covT A B C h f f σ x, ← two_smul ℝ, map_smul,
-    Nat.factorial_two, Nat.cast_ofNat, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+    apply_smul_smul_sub_of_forall_apply_eq_add cov covT A B C h f f σ x, map_add]
+  module
 
 /-- **Uniqueness of the coefficients.** An operator `P` of order at most two satisfies
 `(P σ)(x) = A_x((∇²σ)(x)) + B_x((∇σ)(x)) + C_x(σ(x))` for all smooth sections `σ`, with `A_x`
@@ -535,10 +533,10 @@ theorem forall_apply_eq_add_add_iff
         hA x _ _ fun u w ↦ by
           simp only [ContinuousLinearMap.smulRight_apply]
           exact smul_comm _ _ _
-      rw [map_add, hswap, ← two_smul ℝ,
+      rw [map_add, hswap,
         ← sectionCommutatorSymbol_mvfderiv_of_order_two BoundarylessManifold.isInteriorPoint] at hc
-      rw [ContMDiffSection.evalLinearMap_apply, hc, smul_smul, inv_mul_cancel₀ two_ne_zero,
-        one_smul]
+      rw [ContMDiffSection.evalLinearMap_apply, hc]
+      module
   -- The remaining coefficients are those of the first-order remainder.
   have h₁ : ∀ σ x, (cov.firstOrderRemainder covT P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) σ x =
       B x (cov σ x) + C x (σ x) := fun σ x ↦ by
