@@ -25,6 +25,7 @@ their indices: the identity matrix and a product of degree-preserving matrices a
 degree-preserving, and a product of matrices intertwining square matrices intertwines them.
 
 Submatrices of an outer product `vecMulVec u v` are outer products of the reindexed vectors.
+The outer product of two constant vectors is the constant matrix of their product.
 
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
@@ -59,6 +60,7 @@ its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` int
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 * `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
   reindexed vectors.
+* `Matrix.vecMulVec_const_const`: the outer product of constant vectors is a constant matrix.
 * `Matrix.transpose_mul_map_op`, `Matrix.transpose_mul_map_unop`, `Matrix.op_comp_mulVec`,
   `Matrix.transpose_map_op_map_ringHom_op`: transposing a product and passing to or from the
   opposite ring reverses the factors, intertwines `mulVec` with `vecMul`, and commutes with
@@ -75,6 +77,12 @@ public section
 open scoped Matrix
 
 namespace Matrix
+
+/-- The outer product of constant vectors is the constant matrix of their product. -/
+theorem vecMulVec_const_const {α m n : Type*} [Mul α] (a b : α) :
+    vecMulVec (fun _ : m ↦ a) (fun _ : n ↦ b) = of (fun _ _ ↦ a * b) := by
+  ext
+  simp [vecMulVec_apply]
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
