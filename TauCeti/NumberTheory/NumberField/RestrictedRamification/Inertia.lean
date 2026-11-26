@@ -10,13 +10,13 @@ public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.SeparableClosur
 public import TauCeti.NumberTheory.NumberField.RestrictedRamification.Restriction
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
-import TauCeti.FieldTheory.Galois.Quotient
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 import TauCeti.NumberTheory.LocalField.Unramified.BaseChange
 import TauCeti.NumberTheory.NumberField.LocalGlobal.AbsoluteGaloisGroup
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Semilocal
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeExtension
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
 
 /-!
 # Inertia characterization and universal property of `G_{K,S}`
@@ -292,30 +292,11 @@ def liftGaloisGroupS {S : Set (HeightOneSpectrum (𝓞 K))}
         g ∈ separableClosureInertiaSubgroup (v.adicCompletion K) →
         φ (absoluteGaloisGroupMap τ g) = 1) :
     galoisGroupS K (SeparableClosure K) S →ₜ* H :=
-  let e := TauCeti.quotientFixingSubgroupEquiv K (SeparableClosure K)
-    (maxUnramifiedOutside K (SeparableClosure K) S)
-  let qLift : AbsoluteGaloisGroup K ⧸
-      (maxUnramifiedOutside K (SeparableClosure K) S).fixingSubgroup →* H :=
-    QuotientGroup.lift _ φ.toMonoidHom (fixingSubgroup_maxUnramifiedOutside_le_ker K φ hφ)
-  { toMonoidHom := qLift.comp e.symm.toMonoidHom
-    continuous_toFun := (continuous_quot_lift _ φ.continuous).comp e.symm.continuous }
-
-/-- Evaluating `liftGaloisGroupS φ hφ` applies `QuotientGroup.lift` to the inverse of
-`quotientFixingSubgroupEquiv`. -/
-theorem liftGaloisGroupS_apply {S : Set (HeightOneSpectrum (𝓞 K))}
-    {H : Type*} [Group H] [TopologicalSpace H] [T1Space H]
-    (φ : AbsoluteGaloisGroup K →ₜ* H)
-    (hφ : ∀ (v : HeightOneSpectrum (𝓞 K)), v ∉ S →
-      ∀ (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
-        (g : AbsoluteGaloisGroup (v.adicCompletion K)),
-        g ∈ separableClosureInertiaSubgroup (v.adicCompletion K) →
-        φ (absoluteGaloisGroupMap τ g) = 1)
-    (y : galoisGroupS K (SeparableClosure K) S) :
-    liftGaloisGroupS K φ hφ y =
-      QuotientGroup.lift _ φ.toMonoidHom (fixingSubgroup_maxUnramifiedOutside_le_ker K φ hφ)
-        ((TauCeti.quotientFixingSubgroupEquiv K (SeparableClosure K)
-            (maxUnramifiedOutside K (SeparableClosure K) S)).symm y) :=
-  (rfl)
+  ContinuousMonoidHom.liftOfIsQuotientMap
+    (restrictGaloisGroupS K (SeparableClosure K) S)
+    (isQuotientMap_restrictGaloisGroupS K (SeparableClosure K) S)
+    φ ((ker_restrictGaloisGroupS K (SeparableClosure K) S).le.trans
+      (fixingSubgroup_maxUnramifiedOutside_le_ker K φ hφ))
 
 /-- Evaluating `liftGaloisGroupS φ hφ` on `restrictGaloisGroupS σ` recovers `φ σ`. -/
 @[simp]
@@ -328,11 +309,8 @@ theorem liftGaloisGroupS_apply_restrict {S : Set (HeightOneSpectrum (𝓞 K))}
         g ∈ separableClosureInertiaSubgroup (v.adicCompletion K) →
         φ (absoluteGaloisGroupMap τ g) = 1)
     (σ : AbsoluteGaloisGroup K) :
-    liftGaloisGroupS K φ hφ (restrictGaloisGroupS K (SeparableClosure K) S σ) = φ σ := by
-  rw [liftGaloisGroupS_apply, restrictGaloisGroupS_eq_restrictNormalHom,
-    TauCeti.quotientFixingSubgroupEquiv_symm_restrictNormalHom (F := K) (E := SeparableClosure K)
-      (M := maxUnramifiedOutside K (SeparableClosure K) S) σ]
-  exact QuotientGroup.lift_mk' _ _ σ
+    liftGaloisGroupS K φ hφ (restrictGaloisGroupS K (SeparableClosure K) S σ) = φ σ :=
+  ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply _ _ _ _ σ
 
 /-- `liftGaloisGroupS φ hφ` composed with `restrictGaloisGroupS` equals `φ`. -/
 @[simp]
@@ -345,7 +323,7 @@ theorem liftGaloisGroupS_comp_restrictGaloisGroupS {S : Set (HeightOneSpectrum (
         g ∈ separableClosureInertiaSubgroup (v.adicCompletion K) →
         φ (absoluteGaloisGroupMap τ g) = 1) :
     (liftGaloisGroupS K φ hφ).comp (restrictGaloisGroupS K (SeparableClosure K) S) = φ :=
-  ContinuousMonoidHom.ext (liftGaloisGroupS_apply_restrict K φ hφ)
+  ContinuousMonoidHom.liftOfIsQuotientMap_comp _ _ _ _
 
 /-- Two continuous homomorphisms out of `G_{K,S}` agree if they agree after composing with
 `restrictGaloisGroupS`. -/
