@@ -38,7 +38,6 @@ In the namespace `CategoryTheory.Pseudofunctor.AbelianBanding`:
 
 ## Main results
 
-* `naturality_mulEquiv_hom`: band automorphisms are natural in the object.
 * `coefficientCenter_app`, `unitsEndEval_coefficientCenter`, `map_coefficientCenter_app`.
 * `evaluation_centerFromBanding`: `ev_(f, x)(c_b(U)(a)) = b(V, x)(a|_V)`.
 * `restrict_centerFromBanding`: `r_f(c_b(U)(a)) = c_b(V)(a|_V)`.
@@ -60,14 +59,6 @@ namespace CategoryTheory.Pseudofunctor.AbelianBanding
 
 variable {C : Type u} [Category.{v} C] {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
   {J : GrothendieckTopology C} {A : Sheaf J AddCommGrpCat.{w}} (b : F.AbelianBanding J A)
-
-/-- **Band automorphisms are natural** when the fibres are groupoids: for every fibre arrow
-`f : x ⟶ y`, `f ≫ b(U, y)(a) = b(U, x)(a) ≫ f`. -/
-@[reassoc]
-theorem naturality_mulEquiv_hom {U : C} [IsGroupoid (F.obj (.mk (op U)))]
-    {x y : F.obj (.mk (op U))} (f : x ⟶ y) (a : Multiplicative (A.obj.obj (op U))) :
-    f ≫ (b.mulEquiv U y a).asIso.hom = (b.mulEquiv U x a).asIso.hom ≫ f :=
-  (b.mulEquiv_hom_comp (asIso f) a).symm
 
 /-- The **central unit of a coefficient** `a ∈ A(U)`: the invertible natural endomorphism of the
 identity of the fibre over `U` with component `b(U, x)(a)` at `x`, as a group homomorphism
