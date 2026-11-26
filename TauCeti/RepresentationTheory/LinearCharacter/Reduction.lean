@@ -35,47 +35,49 @@ variable {k V G Q S : Type*} [CommSemiring k] [AddCommMonoid V] [Module k V]
 
 variable (ρ : Representation k G V) (red : G →* Q) {H : Subgroup Q} (χ : H →* k)
 
+/-- On the pulled-back weight space, a lift acts by the character of its reduction. -/
+private theorem apply_eq_smul_of_mem_weightSpace_of_map_eq {v : V}
+    (hv : v ∈ weightSpace (ρ.comp (H.comap red).subtype) (χ.comp (red.subgroupComap H)))
+    {b : G} {h : H} (hb : red b = h) : ρ b v = χ h • v := by
+  let b' : H.comap red := ⟨b, Subgroup.mem_comap.mpr (hb ▸ h.property)⟩
+  have hb' : red.subgroupComap H b' = h := by
+    apply Subtype.ext
+    calc
+      ↑(red.subgroupComap H b') = red b := MonoidHom.subgroupComap_apply_coe red H b'
+      _ = h := hb
+  simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype, hb'] using
+    (mem_weightSpace.mp hv) b'
+
 /-- Two elements with the same reduction have the same action on the pulled-back weight space. -/
 theorem apply_eq_apply_of_mem_weightSpace_of_map_eq {v : V}
     (hv : v ∈ weightSpace (ρ.comp (H.comap red).subtype) (χ.comp (red.subgroupComap H)))
     {g g' : G} (heq : red g = red g') : ρ g v = ρ g' v := by
   have hfix (b : red.ker) : ρ b v = v := by
-    have hred : red b = 1 := MonoidHom.mem_ker.mp b.property
-    let b' : H.comap red := ⟨b, Subgroup.mem_comap.mpr (hred ▸ H.one_mem)⟩
-    have hb' : red.subgroupComap H b' = 1 := by
-      apply Subtype.ext
-      exact (MonoidHom.subgroupComap_apply_coe red H b').trans
-        (hred.trans (Subgroup.coe_one H).symm)
-    simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype, hb', map_one, one_smul] using
-      (mem_weightSpace.mp hv) b'
+    simpa only [map_one, one_smul] using
+      ρ.apply_eq_smul_of_mem_weightSpace_of_map_eq red χ hv (h := 1)
+        (MonoidHom.mem_ker.mp b.property)
   exact ρ.apply_eq_apply_of_quotientGroup_mk_eq hfix
     (QuotientGroup.eq.mpr (by simp [MonoidHom.mem_ker, heq]))
 
 /-- A lift preserves the pulled-back weight space if inverse conjugation by its reduction
 preserves the subgroup and its character. -/
-theorem map_mem_weightSpace_comp_subgroupComap {g : G}
+theorem apply_mem_weightSpace_comp_subgroupComap {g : G}
     (hg : ∀ h : H, ∃ h' : H, (red g)⁻¹ * h * red g = h' ∧ χ h' = χ h)
     {v : V}
     (hv : v ∈ weightSpace (ρ.comp (H.comap red).subtype) (χ.comp (red.subgroupComap H))) :
     ρ g v ∈ weightSpace (ρ.comp (H.comap red).subtype) (χ.comp (red.subgroupComap H)) := by
-  rw [mem_weightSpace] at hv ⊢
+  rw [mem_weightSpace]
   intro b
   obtain ⟨h', hconj, hchar⟩ := hg (red.subgroupComap H b)
   have hred : red (g⁻¹ * b * g) = h' := by
     rw [map_mul, map_mul, map_inv]
     exact hconj
-  let b' : H.comap red :=
-    ⟨g⁻¹ * b * g, Subgroup.mem_comap.mpr (hred ▸ h'.property)⟩
-  have hb' : red.subgroupComap H b' = h' := by
-    apply Subtype.ext
-    exact (MonoidHom.subgroupComap_apply_coe red H b').trans hred
-  have hfix : ρ (g⁻¹ * b * g) v = χ (red.subgroupComap H b) • v := by
-    simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype, hb', hchar] using hv b'
+  have hfix := ρ.apply_eq_smul_of_mem_weightSpace_of_map_eq red χ hv hred
   calc
     ρ b (ρ g v) = ρ (b * g) v := by rw [map_mul, mul_apply_eq_comp]
     _ = ρ (g * (g⁻¹ * b * g)) v := by simp [← mul_assoc]
     _ = ρ g (ρ (g⁻¹ * b * g) v) := by rw [map_mul, mul_apply_eq_comp]
-    _ = χ (red.subgroupComap H b) • ρ g v := by rw [hfix, map_smul]
+    _ = χ (red.subgroupComap H b) • ρ g v := by rw [hfix, hchar, map_smul]
 
 variable (φ : S →* Q)
   (hlift : ∀ s, ∃ g, red g = φ s)
@@ -94,7 +96,8 @@ noncomputable def weightSpaceLiftRep :
     Representation k S (weightSpace (ρ.comp (H.comap red).subtype)
       (χ.comp (red.subgroupComap H))) where
   toFun s := (ρ (chooseLift red φ hlift s)).restrict fun _ hv ↦
-    ρ.map_mem_weightSpace_comp_subgroupComap red χ (by simpa only [map_chooseLift] using hχ s) hv
+    ρ.apply_mem_weightSpace_comp_subgroupComap red χ
+      (by simpa only [map_chooseLift] using hχ s) hv
   map_one' := by
     ext v
     simp only [LinearMap.coe_restrict_apply, one_apply_eq_self]
