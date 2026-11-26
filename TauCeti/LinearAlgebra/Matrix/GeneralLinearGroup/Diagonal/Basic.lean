@@ -21,8 +21,6 @@ public import Mathlib.SetTheory.Cardinal.Finite
 -- `Nat.card_units`, the number of units of a `GroupWithZero`.
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
 import TauCeti.LinearAlgebra.Matrix.Diagonal
--- `TauCeti.natCard_GL_fin_two`, the order of `GL₂` over a field.
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 
 /-!
 # Diagonal elements of the general linear group, and the diagonal torus
@@ -73,8 +71,6 @@ element (`TauCeti.diagGL_const`).
   relabelling its entries.
 * `TauCeti.natCard_diagonalTorus`: the torus has `(q - 1)ⁿ` elements over a division semiring
   with `q` elements.
-* `TauCeti.index_diagonalTorus_two`: in `GL₂(𝔽_q)` the torus, the split Cartan subgroup, has
-  index `q(q + 1)`.
 * `TauCeti.neg_one_mem_diagonalTorus` and `TauCeti.map_det_diagonalTorus`: the torus contains `-1`,
   and the determinant maps it onto `kˣ` when `n ≥ 1`.
 * `TauCeti.centralizer_diagonalTorus`: the diagonal torus is its own centralizer.
@@ -240,14 +236,6 @@ theorem natCard_diagonalTorus (k : Type u) [DivisionSemiring k] (n : ℕ) :
     Nat.card (diagonalTorus k n) = (Nat.card k - 1) ^ n := by
   rw [← Nat.card_congr (diagonalTorusEquiv k n).toEquiv, Nat.card_fun, Nat.card_units,
     Nat.card_fin]
-
-/-- **The index of the split Cartan subgroup** of `GL₂(𝔽_q)` is `q(q + 1)`. -/
-theorem index_diagonalTorus_two (k : Type u) [Field k] [Finite k] :
-    (diagonalTorus k 2).index = Nat.card k * (Nat.card k + 1) := by
-  have hq : 0 < (Nat.card k - 1) ^ 2 := pow_pos (Nat.sub_pos_of_lt Finite.one_lt_card) 2
-  have h := (diagonalTorus k 2).card_mul_index
-  rw [natCard_diagonalTorus, natCard_GL_fin_two] at h
-  exact Nat.eq_of_mul_eq_mul_left hq h
 
 /-- An element centralizing the diagonal torus commutes, as a matrix, with every diagonal matrix
 of units. -/

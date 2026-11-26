@@ -36,8 +36,9 @@ Weyl group of the corresponding coordinate root datum with the same permutation 
   permutation.
 * `TauCeti.diagGL_mul_permutationGL`: moving a permutation matrix past a diagonal one relabels
   the diagonal entries.
-* `TauCeti.diagGL_mul_permutationGL_injective`: over a nontrivial semiring both factors of a
-  monomial matrix `diagGL d * permutationGL σ` are determined by the product.
+* `TauCeti.diagGL_mul_permutationGL_injective` and `TauCeti.diagGL_mul_permutationGL_inj`: over a
+  nontrivial semiring both factors of a monomial matrix `diagGL d * permutationGL σ` are
+  determined by the product.
 * `TauCeti.exists_eq_diagGL_mul_permutationGL_of_forall_ne`: an invertible matrix whose
   conjugation keeps a coordinate-separating family of diagonal matrices diagonal is monomial.
 * `TauCeti.mem_normalizer_diagonalTorus_iff_exists`: normalizing matrices are precisely products
@@ -146,6 +147,13 @@ theorem diagGL_mul_permutationGL_injective [Nontrivial k] :
     have := congrArg (fun g : GL (Fin n) k ↦ (g : Matrix (Fin n) (Fin n) k) (σ j) j) h
     simp [hne] at this
   exact Prod.ext (diagGL_injective (mul_right_cancel h)) rfl
+
+/-- Two monomial factorizations `diagGL d * permutationGL σ` agree exactly when both their
+diagonal and their permutation factors agree, over a nontrivial semiring. -/
+theorem diagGL_mul_permutationGL_inj [Nontrivial k] {d e : Fin n → kˣ}
+    {σ τ : Equiv.Perm (Fin n)} :
+    (diagGL d * permutationGL σ : GL (Fin n) k) = diagGL e * permutationGL τ ↔ d = e ∧ σ = τ :=
+  (diagGL_mul_permutationGL_injective.eq_iff (a := (d, σ)) (b := (e, τ))).trans Prod.ext_iff
 
 /-- Permutation matrices normalize the diagonal torus. -/
 theorem permutationGL_mem_normalizer (σ : Equiv.Perm (Fin n)) :
@@ -344,6 +352,15 @@ private theorem diagonalNormalizer_factor
   Classical.choose_spec (Classical.choose_spec
     (mem_normalizer_diagonalTorus_iff_exists.mp g.property))
 
+/-- Any monomial factorization of a normalizer element has the chosen permutation factor. -/
+private theorem diagonalNormalizerPermFun_eq_of_eq
+    (g : Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k)))
+    {d : Fin n → kˣ} {σ : Equiv.Perm (Fin n)}
+    (h : (g : GL (Fin n) k) = diagGL d * permutationGL (k := k) σ) :
+    diagonalNormalizerPermFun g = σ :=
+  let _ : Nontrivial k := Units.val_injective.nontrivial
+  (diagGL_mul_permutationGL_inj.1 ((diagonalNormalizer_factor g).symm.trans h)).2
+
 private theorem diagonalNormalizerPermFun_one :
     diagonalNormalizerPermFun
       (1 : Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k))) = 1 := by
@@ -352,9 +369,7 @@ private theorem diagonalNormalizerPermFun_one :
     -- Present both factors as images of the identity under their defining homomorphisms.
     change 1 = diagGL (1 : Fin n → kˣ) * permutationGL (k := k) 1
     rw [map_one, map_one, mul_one]
-  let _ : Nontrivial k := Units.val_injective.nontrivial
-  exact congrArg Prod.snd <| diagGL_mul_permutationGL_injective (k := k)
-    (a₁ := (_, _)) (a₂ := (_, _)) <| (diagonalNormalizer_factor 1).symm.trans hone
+  exact diagonalNormalizerPermFun_eq_of_eq 1 hone
 
 private theorem diagonalNormalizerPermFun_mul
     (g h : Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k))) :
@@ -384,9 +399,7 @@ private theorem diagonalNormalizerPermFun_mul
       rfl
     rw [hdiag, map_mul (permutationGL (k := k)) σ τ]
     group
-  let _ : Nontrivial k := Units.val_injective.nontrivial
-  exact congrArg Prod.snd <| diagGL_mul_permutationGL_injective (k := k)
-    (a₁ := (_, _)) (a₂ := (_, _)) <| (diagonalNormalizer_factor (g * h)).symm.trans hfactor
+  exact diagonalNormalizerPermFun_eq_of_eq (g * h) hfactor
 
 /-- The permutation of coordinate lines induced by a matrix normalizing the diagonal torus. -/
 noncomputable def diagonalNormalizerPerm :
@@ -402,10 +415,8 @@ theorem diagonalNormalizerPerm_eq_of_eq_diagGL_mul_permutationGL
     (g : Subgroup.normalizer (diagonalTorus k n : Set (GL (Fin n) k)))
     (d : Fin n → kˣ) (σ : Equiv.Perm (Fin n))
     (h : (g : GL (Fin n) k) = diagGL d * permutationGL (k := k) σ) :
-    diagonalNormalizerPerm (k := k) (n := n) g = σ := by
-  let _ : Nontrivial k := Units.val_injective.nontrivial
-  exact congrArg Prod.snd <| diagGL_mul_permutationGL_injective (k := k)
-    (a₁ := (_, _)) (a₂ := (_, _)) <| (diagonalNormalizer_factor g).symm.trans h
+    diagonalNormalizerPerm (k := k) (n := n) g = σ :=
+  diagonalNormalizerPermFun_eq_of_eq g h
 
 /-- The coordinate permutation induced by a permutation matrix is the original permutation. -/
 @[simp]

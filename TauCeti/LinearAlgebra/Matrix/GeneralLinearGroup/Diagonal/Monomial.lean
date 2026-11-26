@@ -39,7 +39,8 @@ and the determinant is surjective on both (`TauCeti.map_det_diagonalTorus`,
 * `TauCeti.diagonalTorus_le_monomialGL`, `TauCeti.permutationGL_mem_monomialGL`,
   `TauCeti.monomialGL_le_normalizer`, `TauCeti.normalizer_diagonalTorus_eq_monomialGL`.
 * `TauCeti.natCard_monomialGL`, `TauCeti.relIndex_diagonalTorus_monomialGL`.
-* `TauCeti.two_mul_index_monomialGL_two`, `TauCeti.neg_one_mem_monomialGL`,
+* `TauCeti.index_diagonalTorus_two`, `TauCeti.two_mul_index_monomialGL_two`,
+  `TauCeti.neg_one_mem_monomialGL`,
   `TauCeti.map_det_monomialGL`.
 
 ## References
@@ -115,14 +116,6 @@ theorem monomialGL_le_normalizer :
   exact mul_mem (Subgroup.le_normalizer (mem_diagonalTorus_iff_exists_diagGL.2 ⟨d, rfl⟩))
     (permutationGL_mem_normalizer σ)
 
-/-- The entries of `diagGL d * permutationGL σ`: the `(i, j)` entry is `d i` if `i = σ j` and `0`
-otherwise. -/
-theorem coe_diagGL_mul_permutationGL_apply (d : Fin n → kˣ) (σ : Equiv.Perm (Fin n))
-    (i j : Fin n) :
-    ((diagGL d * permutationGL σ : GL (Fin n) k) : Matrix (Fin n) (Fin n) k) i j =
-      if i = σ j then (d i : k) else 0 := by
-  rw [coe_mul_permutationGL_apply, diagGL_coe, Matrix.diagonal_apply]
-
 /-- **The entrywise membership criterion**: an invertible matrix is monomial exactly when, for
 some permutation `σ`, its `(i, j)` entry vanishes unless `i = σ j`. -/
 theorem mem_monomialGL_iff_exists_perm {g : GL (Fin n) k} :
@@ -184,16 +177,19 @@ variable (k) [Field k]
 
 /-! ### Rank two: the split Cartan subgroups `C_s` and `C_s⁺` -/
 
+/-- **The index of the split Cartan subgroup** `C_s` of `GL₂(𝔽_q)` is `q(q + 1)`. -/
+theorem index_diagonalTorus_two [Finite k] :
+    (diagonalTorus k 2).index = Nat.card k * (Nat.card k + 1) := by
+  have hq : 0 < (Nat.card k - 1) ^ 2 := pow_pos (Nat.sub_pos_of_lt Finite.one_lt_card) 2
+  have h := (diagonalTorus k 2).card_mul_index
+  rw [natCard_diagonalTorus, natCard_GL_fin_two] at h
+  exact Nat.eq_of_mul_eq_mul_left hq h
+
 /-- **The index of the monomial subgroup** `C_s⁺` of `GL₂(𝔽_q)` is `q(q + 1) / 2`. -/
 theorem two_mul_index_monomialGL_two [Finite k] :
     2 * (monomialGL k 2).index = Nat.card k * (Nat.card k + 1) := by
-  have hq : 0 < (Nat.card k - 1) ^ 2 := pow_pos (Nat.sub_pos_of_lt Finite.one_lt_card) 2
-  have h := (monomialGL k 2).card_mul_index
-  rw [natCard_monomialGL, natCard_GL_fin_two] at h
-  refine Nat.eq_of_mul_eq_mul_left hq ?_
-  rw [← h]
-  simp only [Nat.factorial_two]
-  ring
+  rw [← index_diagonalTorus_two, ← Subgroup.relIndex_mul_index diagonalTorus_le_monomialGL,
+    relIndex_diagonalTorus_monomialGL, Nat.factorial_two]
 
 end Field
 
