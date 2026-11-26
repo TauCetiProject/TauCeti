@@ -93,7 +93,8 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.norm_matrixBilinearForm_le_sum_abs`: the operator norm of the attached bilinear
   form is at most the sum of the absolute values of the entries.
 * `TauCeti.PDE.norm_matrixBilinearForm_eq_norm_toEuclideanCLM`: the operator norm of the attached
-  bilinear form is the operator norm of the matrix on Euclidean space.
+  bilinear form is the operator norm of the matrix on Euclidean space;
+  `TauCeti.PDE.norm_matrixBilinearForm_sub_eq_norm_toEuclideanCLM_sub` is its form for differences.
 * `TauCeti.PDE.norm_toEuclideanCLM_apply_le`: the operator norm of the attached bilinear form
   bounds the action of the matrix on Euclidean space.
 * `TauCeti.PDE.abs_sum_mul_apply_single_mul_apply_single_le`: a bilinear upper bound controls
@@ -416,6 +417,13 @@ lemma norm_matrixBilinearForm_eq_norm_toEuclideanCLM [DecidableEq n] (A : Matrix
     mul_left_comm]
   exact (abs_real_inner_le_norm _ _).trans
     (mul_le_mul_of_nonneg_left ((toEuclideanCLM (n := n) (𝕜 := ℝ) A).le_opNorm ξ) (norm_nonneg _))
+
+/-- The bilinear forms of two matrices are as far apart as their operators on Euclidean space. -/
+lemma norm_matrixBilinearForm_sub_eq_norm_toEuclideanCLM_sub [DecidableEq n]
+    (A B : Matrix n n ℝ) :
+    ‖matrixBilinearForm A - matrixBilinearForm B‖ =
+      ‖toEuclideanCLM (n := n) (𝕜 := ℝ) A - toEuclideanCLM (n := n) (𝕜 := ℝ) B‖ := by
+  rw [← matrixBilinearForm_sub, ← map_sub, norm_matrixBilinearForm_eq_norm_toEuclideanCLM]
 
 /-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
 matrix bilinear form. -/
