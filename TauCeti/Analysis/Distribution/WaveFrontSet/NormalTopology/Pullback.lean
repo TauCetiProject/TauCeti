@@ -416,7 +416,7 @@ private theorem localFourier_pullbackInl_eq_add
       ext m
       rw [Function.comp_apply, map_smul, smul_eq_mul, ContinuousLinearMap.comp_apply,
         coe_ofSupportedInCLM, localFourier_eq_complexPairing_modulate T χ.tsupport_subset
-          (f := cutoffK χ) (fun x ↦ rfl), neg_neg]
+          (f := cutoffK χ) (ContDiffMapSupportedIn.coe_of_support_subset _ _), neg_neg]
     rw [hfun]
     exact (T.complexPairing.comp (ofSupportedInCLM ℂ χ.tsupport_subset)).hasSum hbad.hasSum
   -- The terms with `-m ∈ A` are summable, by the decay of `T` on `A`.
