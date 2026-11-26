@@ -142,6 +142,16 @@ theorem isProperlySupported_id :
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :=
   fun K hK ↦ ⟨K, hK, fun _ hf ↦ hf, fun _ hf x hx ↦ hf.self_of_nhdsSet x hx⟩
 
+/-- On a compact manifold every operator is properly supported. -/
+theorem isProperlySupported_of_compactSpace [CompactSpace M]
+    (P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    IsProperlySupported P := fun _ _ ↦ ⟨univ, isCompact_univ, fun _ _ ↦ subset_univ _,
+  fun f hf x _ ↦ by
+    -- A function vanishing near `univ` is zero.
+    have hf0 : f = 0 := ContMDiffMap.ext fun y ↦ by simpa using hf.self_of_nhdsSet y (mem_univ y)
+    simp [hf0]⟩
+
 theorem IsProperlySupported.add (hP : IsProperlySupported P) (hQ : IsProperlySupported Q) :
     IsProperlySupported (P + Q) := by
   intro K hK
