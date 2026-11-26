@@ -48,6 +48,23 @@ public section
 
 namespace TwoSidedIdeal
 
+section Comap
+
+variable {R S T : Type*} [NonAssocRing R] [NonAssocRing S] [NonAssocRing T]
+  {I : TwoSidedIdeal R} {J : TwoSidedIdeal S} {K : TwoSidedIdeal T}
+
+variable (I) in
+/-- The identity is a morphism of pairs `(R, I) → (R, I)`. -/
+theorem le_comap_id : I ≤ comap (RingHom.id R) I :=
+  fun _ hx ↦ (mem_comap _).2 hx
+
+/-- A composite of morphisms of pairs `(R, I) → (S, J) → (T, K)` is a morphism of pairs. -/
+theorem le_comap_comp {f : R →+* S} {g : S →+* T} (hf : I ≤ comap f J) (hg : J ≤ comap g K) :
+    I ≤ comap (g.comp f) K :=
+  fun _ hx ↦ (mem_comap _).2 ((mem_comap g).1 (hg ((mem_comap f).1 (hf hx))))
+
+end Comap
+
 variable {R S T : Type*} [Ring R] [Ring S] [Ring T] (I : TwoSidedIdeal R) (J : TwoSidedIdeal S)
   (K : TwoSidedIdeal T)
 
@@ -215,13 +232,11 @@ theorem doubleMap_doubleInr (f : R →+* S) (h : I ≤ comap f J) {v : R} (hv : 
 variable (I) in
 @[simp]
 theorem doubleMap_id :
-    doubleMap (RingHom.id R) (fun _ hx ↦ (mem_comap _).2 hx) = RingHom.id I.double :=
+    doubleMap (RingHom.id R) (le_comap_id I) = RingHom.id I.double :=
   (rfl)
 
 theorem doubleMap_comp (f : R →+* S) (g : S →+* T) (hf : I ≤ comap f J) (hg : J ≤ comap g K) :
-    doubleMap (g.comp f)
-        (fun _ hx ↦ (mem_comap _).2 ((mem_comap g).1 (hg ((mem_comap f).1 (hf hx))))) =
-      (doubleMap g hg).comp (doubleMap f hf) :=
+    doubleMap (g.comp f) (le_comap_comp hf hg) = (doubleMap g hg).comp (doubleMap f hf) :=
   (rfl)
 
 end TwoSidedIdeal

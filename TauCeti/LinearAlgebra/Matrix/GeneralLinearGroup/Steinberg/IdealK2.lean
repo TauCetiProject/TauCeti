@@ -469,13 +469,12 @@ theorem toSteinbergGroup_map (f : R →+* S) (h : I ≤ comap f J) (w : IdealSte
 variable (I) in
 @[simp]
 theorem map_id :
-    map (RingHom.id R) (fun _ hx ↦ (mem_comap _).2 hx) = MonoidHom.id (IdealSteinbergGroup I) := by
+    map (RingHom.id R) (le_comap_id I) = MonoidHom.id (IdealSteinbergGroup I) := by
   refine hom_ext (MonoidHom.ext fun y ↦ ?_)
   simp
 
 theorem map_comp (f : R →+* S) (g : S →+* T) (hf : I ≤ comap f J) (hg : J ≤ comap g K) :
-    map (g.comp f) (fun _ hx ↦ (mem_comap _).2 ((mem_comap g).1 (hg ((mem_comap f).1 (hf hx))))) =
-      (map g hg).comp (map f hf) := by
+    map (g.comp f) (le_comap_comp hf hg) = (map g hg).comp (map f hf) := by
   refine hom_ext (MonoidHom.ext fun y ↦ ?_)
   simp [IndexedSteinbergGroup.map_map, ← doubleMap_comp]
 
@@ -504,13 +503,12 @@ theorem toAlgebraicK2_map (f : R →+* S) (h : I ≤ comap f J) (x : idealAlgebr
 variable (I) in
 @[simp]
 theorem map_id :
-    map (RingHom.id R) (fun _ hx ↦ (mem_comap _).2 hx) = MonoidHom.id (idealAlgebraicK2 I) := by
+    map (RingHom.id R) (le_comap_id I) = MonoidHom.id (idealAlgebraicK2 I) := by
   ext x
   simp
 
 theorem map_comp (f : R →+* S) (g : S →+* T) (hf : I ≤ comap f J) (hg : J ≤ comap g K) :
-    map (g.comp f) (fun _ hx ↦ (mem_comap _).2 ((mem_comap g).1 (hg ((mem_comap f).1 (hf hx))))) =
-      (map g hg).comp (map f hf) := by
+    map (g.comp f) (le_comap_comp hf hg) = (map g hg).comp (map f hf) := by
   ext x
   simpa using
     DFunLike.congr_fun (IdealSteinbergGroup.map_comp f g hf hg) (x : IdealSteinbergGroup I)
