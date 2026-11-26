@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.GroupTheory.Subgroup.Centralizer
+import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import TauCeti.Geometry.Lie.Exponential.Classification
 import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 import TauCeti.Geometry.Lie.Subgroup.Differential
@@ -146,13 +147,9 @@ theorem lie_eq_zero_of_mem_lieSubalgebraOfSubgroup_centralizer {K : Subgroup G}
     (hY : Y ∈ lieSubalgebraOfSubgroup (I := I) K) : ⁅X, Y⁆ = 0 := by
   induction hX using lieSubalgebraOfSubgroup_induction with
   | mem Z hZ =>
-    -- The bracket is the derivative at `0` of the adjoint orbit `s ↦ Ad (lieExp (s • Z)) Y`,
-    -- which is constant because `lieExp (s • Z)` centralizes `K`.
-    have horbit : (fun s : ℝ => Ad (I := I) (lieExp (I := I) (s • Z)) Y) = fun _ => Y :=
-      funext fun s => Ad_apply_eq_self_of_mem_centralizer (hZ s) hY
-    have hderiv := hasDerivAt_Ad_lieExp_smul_apply_zero (I := I) Z Y
-    rw [horbit] at hderiv
-    exact hderiv.unique (hasDerivAt_const 0 Y)
+    -- The one-parameter subgroup of `Z` centralizes `K`, so it fixes `Y` under `Ad`.
+    exact Ad_lieExp_smul_apply_eq_self_iff.mp fun s =>
+      Ad_apply_eq_self_of_mem_centralizer (hZ s) hY
   | zero => exact zero_lie Y
   | add Z W _ _ hZ hW => rw [add_lie, hZ, hW, add_zero]
   | smul c Z _ hZ => rw [smul_lie, hZ, smul_zero]
