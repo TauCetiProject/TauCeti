@@ -65,6 +65,9 @@ and to deduce `TauCeti.character_ind` from `Subgroup.indClassFun_eq_natCard_inv_
 * `Subgroup.natCard_nsmul_indClassFun`: for a conjugation-invariant function `f`, the additive
   group-sum form `|S| • (Ind f)(g) = ∑_{x ∈ G} f(x⁻¹gx)`, and its averaged corollary
   `Subgroup.indClassFun_eq_natCard_inv_mul_sum`.
+* `Subgroup.indClassFun_comp_subtype_apply_of_normal`: inducing the restriction of a
+  conjugation-invariant function to a normal subgroup multiplies it by the index on the subgroup
+  and gives zero outside it.
 * `Subgroup.indClassFun_comp_subtype_smul`: the **projection formula**,
   `Ind_S^G ((Res_S f) • ψ) = f • Ind_S^G ψ` for a conjugation-invariant scalar function `f`
   and a function `ψ` with additive coefficients. `Subgroup.indClassFun_comp_subtype_mul`
@@ -460,6 +463,24 @@ theorem natCard_nsmul_indClassFun (S : Subgroup G) [Fintype G] {f : S → k}
         rw [← e.symm.sum_comp (fun x => Function.indTerm f g x), Fintype.sum_prod_type]
     -- the remaining step only unfolds the summand
     _ = _ := rfl
+
+/-- Inducing the restriction of a conjugation-invariant function to a normal subgroup of finite
+index multiplies it by the index on the subgroup and gives zero outside it. -/
+theorem indClassFun_comp_subtype_apply_of_normal (N : Subgroup G) [N.Normal] [N.FiniteIndex]
+    {f : G → k} (hf : ∀ g c, f (c * g * c⁻¹) = f g) (g : G) :
+    open Classical in
+    N.indClassFun (fun n : N => f n) g = if g ∈ N then N.index • f g else 0 := by
+  classical
+  let := Fintype.ofFinite (G ⧸ N)
+  rw [N.indClassFun_apply]
+  have hmem (c : G) : c⁻¹ * g * c ∈ N ↔ g ∈ N := by
+    rw [mul_assoc, (inferInstance : N.Normal).mem_comm_iff]
+    simp [mul_assoc]
+  split_ifs with hg
+  · have hterm (c : G) : f (c⁻¹ * g * c) = f g := by simpa using hf g c⁻¹
+    simp only [hmem, hg, dite_true, hterm, Finset.sum_const, Finset.card_univ, N.index_eq_card,
+      Nat.card_eq_fintype_card]
+  · simp [hmem, hg]
 
 end Subgroup
 
