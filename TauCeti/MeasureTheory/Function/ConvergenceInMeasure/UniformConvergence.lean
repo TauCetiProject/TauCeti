@@ -17,9 +17,9 @@ import TauCeti.Topology.MetricSpace.Equicontinuity
 
 Let `U` be a totally bounded open subset of a pseudometric space `X`, and let `μ` be a measure on
 `X` that charges every nonempty open set. For functions on `U` with a common modulus of
-continuity, closeness in measure forces uniform closeness: every point of `U` is near a point of
-each of finitely many small balls covering `U`, and each such ball meets `U` in a set of positive
-measure, so it contains a point where the two functions are close.
+continuity, closeness in measure forces uniform closeness: every point of `U` lies in one of
+finitely many small balls covering `U`, and each such ball meets `U` in a set of positive measure,
+so it contains a point where the two functions are close.
 
 Hence a family of functions uniformly equicontinuous on `U` that converges in measure on `U`
 converges uniformly on `U` when its limit is uniformly continuous on `U`
