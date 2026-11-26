@@ -368,12 +368,7 @@ theorem dualMeasure_facetPolyhedron_simplex_cornerChop (n : ℕ) {a ε : ℝ} (h
       Function.Embedding.some_apply, simplexNormal_some]
   -- The simplex of size `ε` at the corner lies in the simplex of size `a`.
   have h := (isIntegralLattice_intCast n).dualMeasure_facetPolyhedron_cornerChop_add
-    (c := simplexSupport a) _ hb hε fun x hxs hxε ↦ by
-      simp only [Finset.mem_map, Finset.mem_univ, true_and, Function.Embedding.some_apply,
-        forall_exists_index, forall_apply_eq_imp_iff, hu, simplexSupport_some] at hxs
-      simp only [Finset.sum_map, Function.Embedding.some_apply, hu, simplexSupport_some,
-        sub_zero] at hxε
-      exact mem_facetPolyhedron_simplex_iff.2 ⟨hxs, hxε.trans hεa⟩
+    (c := simplexSupport a) _ hb hε fun _ ↦ mem_facetPolyhedron_simplex_of_sum_le hεa
   rw [dualMeasure_facetPolyhedron_simplex n ha, finrank_fin_fun] at h
   rw [ENNReal.eq_sub_of_add_eq ENNReal.ofReal_ne_top h, sub_div,
     ENNReal.ofReal_sub _ (by positivity)]
