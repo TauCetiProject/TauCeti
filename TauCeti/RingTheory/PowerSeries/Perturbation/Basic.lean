@@ -27,17 +27,6 @@ namespace TauCeti.PowerSeries
 
 open _root_.PowerSeries
 
-section SeminormedRing
-
-variable {R : Type*} [SeminormedRing R]
-
-/-- The Gauss norm of a difference is symmetric in its arguments. -/
-theorem _root_.PowerSeries.gaussNorm_sub_comm (f g : PowerSeries R) (c : ℝ) :
-    (f - g).gaussNorm norm c = (g - f).gaussNorm norm c := by
-  simp only [gaussNorm_eq, map_sub, norm_sub_rev]
-
-end SeminormedRing
-
 section CoefficientBounds
 
 variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R]

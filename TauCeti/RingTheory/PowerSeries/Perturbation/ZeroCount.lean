@@ -27,7 +27,7 @@ one zero in the open disc of radius `r`, at different points. Only the counts ar
 
 Without any preparation data or completeness assumption on `K`, both series can be prepared after
 mapping into `L`, so the counts agree in every algebraically closed complete extension `L`, for
-instance `ℂ_p` over `ℚ_p` or over `ℚ`. The strict inequality is necessary: `1` and `1 - X / a` with
+instance `ℂ_p` over `ℚ_p`. The strict inequality is necessary: `1` and `1 - X / a` with
 `‖a‖ = r` differ by a series of Gauss norm `1 = ‖1‖_r`, and the second has a zero on the sphere
 while the first has none.
 
@@ -70,6 +70,13 @@ section IsUnitMul
 
 variable {e e' : PowerSeries.IsRestricted.subring (R := K) r} {P Q : Polynomial K}
 
+/-- A power series of the form `e * P` with `e` restricted at `r` and `P` a polynomial is
+restricted at `r`. -/
+private theorem isRestricted_of_coe_mul_eq (hf : (e : PowerSeries K) * P = f) :
+    f.IsRestricted r := by
+  rw [← hf]
+  exact e.property.mul (isRestricted_polynomial P)
+
 /-- **Closed-disc zero counts are stable, split case.** Let `f = e * P` and `g = e' * Q` over an
 ultrametric normed field, with `e` and `e'` units of the ring of series restricted at `r > 0` and
 `P`, `Q` polynomials splitting over a complete normed field extension `L`. If `‖f - g‖_r < ‖f‖_r`,
@@ -82,8 +89,8 @@ theorem card_zeroMultiset_eq_of_gaussNorm_sub_lt_of_isUnit_mul (hr : 0 < r)
     (f.zeroMultiset r L).card = (g.zeroMultiset r L).card := by
   obtain ⟨_, _, hd, hdg, _, _⟩ :=
     exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
-      (hf ▸ e.property.mul (isRestricted_polynomial P))
-      (hasGaussNorm_of_isRestricted (hg ▸ e'.property.mul (isRestricted_polynomial Q))) h
+      (isRestricted_of_coe_mul_eq hf)
+      (hasGaussNorm_of_isRestricted (isRestricted_of_coe_mul_eq hg)) h
   rw [hd.card_zeroMultiset_eq_of_isUnit_mul hr he hf hsP,
     hdg.card_zeroMultiset_eq_of_isUnit_mul hr he' hg hsQ]
 
@@ -98,8 +105,8 @@ theorem card_filter_zeroMultiset_norm_lt_eq_of_gaussNorm_sub_lt_of_isUnit_mul (h
       ((g.zeroMultiset r L).filter (‖·‖ < r)).card := by
   obtain ⟨_, _, _, _, hl, hlg⟩ :=
     exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
-      (hf ▸ e.property.mul (isRestricted_polynomial P))
-      (hasGaussNorm_of_isRestricted (hg ▸ e'.property.mul (isRestricted_polynomial Q))) h
+      (isRestricted_of_coe_mul_eq hf)
+      (hasGaussNorm_of_isRestricted (isRestricted_of_coe_mul_eq hg)) h
   rw [hl.card_filter_zeroMultiset_norm_lt_eq_of_isUnit_mul hr he hf hsP,
     hlg.card_filter_zeroMultiset_norm_lt_eq_of_isUnit_mul hr he' hg hsQ]
 
@@ -114,8 +121,8 @@ theorem card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt_of_isUnit_mul (h
       ((g.zeroMultiset r L).filter (‖·‖ = r)).card := by
   obtain ⟨_, _, hd, hdg, hl, hlg⟩ :=
     exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
-      (hf ▸ e.property.mul (isRestricted_polynomial P))
-      (hasGaussNorm_of_isRestricted (hg ▸ e'.property.mul (isRestricted_polynomial Q))) h
+      (isRestricted_of_coe_mul_eq hf)
+      (hasGaussNorm_of_isRestricted (isRestricted_of_coe_mul_eq hg)) h
   rw [card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul hd hl hr he hf hsP,
     card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul hdg hlg hr he' hg hsQ]
 
@@ -124,6 +131,12 @@ end IsUnitMul
 namespace IsDiscPreparation
 
 variable {d dg : ℕ} {P Q : Polynomial K} {U V : PowerSeries K}
+
+/-- A power series admitting a normalised disc preparation at `r` is restricted at `r`. -/
+private theorem isRestricted_series (hfP : IsDiscPreparation r d f P U) :
+    f.IsRestricted r := by
+  rw [hfP.eq_mul]
+  exact (isRestricted_polynomial P).mul hfP.isRestricted
 
 /-- **Perturbation invariance of closed-disc zero counts for split disc polynomials.** If `f` and
 `g` admit normalised disc preparations at `r > 0` whose polynomial factors both split over `L`, and
@@ -135,8 +148,7 @@ theorem card_zeroMultiset_eq_of_gaussNorm_sub_lt
     (f.zeroMultiset r L).card = (g.zeroMultiset r L).card := by
   obtain ⟨_, _, hd, hdg, _, _⟩ :=
     exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
-      (hfP.eq_mul ▸ (isRestricted_polynomial P).mul hfP.isRestricted)
-      hgQ.isDistinguished.hasGaussNorm h
+      hfP.isRestricted_series hgQ.isDistinguished.hasGaussNorm h
   rw [hfP.card_zeroMultiset_eq_of_splits hr hsP, hgQ.card_zeroMultiset_eq_of_splits hr hsQ,
     hfP.isDistinguished.unique hd, hdg.unique hgQ.isDistinguished]
 
@@ -151,8 +163,7 @@ theorem card_filter_zeroMultiset_norm_lt_eq_of_gaussNorm_sub_lt
       ((g.zeroMultiset r L).filter (‖·‖ < r)).card := by
   obtain ⟨_, _, _, _, hl, hlg⟩ :=
     exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
-      (hfP.eq_mul ▸ (isRestricted_polynomial P).mul hfP.isRestricted)
-      hgQ.isDistinguished.hasGaussNorm h
+      hfP.isRestricted_series hgQ.isDistinguished.hasGaussNorm h
   rw [hfP.card_filter_zeroMultiset_norm_lt_eq_of_splits hl hr hsP,
     hgQ.card_filter_zeroMultiset_norm_lt_eq_of_splits hlg hr hsQ]
 
@@ -167,8 +178,7 @@ theorem card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt
       ((g.zeroMultiset r L).filter (‖·‖ = r)).card := by
   obtain ⟨_, _, hd, hdg, hl, hlg⟩ :=
     exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
-      (hfP.eq_mul ▸ (isRestricted_polynomial P).mul hfP.isRestricted)
-      hgQ.isDistinguished.hasGaussNorm h
+      hfP.isRestricted_series hgQ.isDistinguished.hasGaussNorm h
   rw [hfP.card_filter_zeroMultiset_norm_eq_eq_of_splits hl hr hsP,
     hgQ.card_filter_zeroMultiset_norm_eq_eq_of_splits hlg hr hsQ,
     hfP.isDistinguished.unique hd, hdg.unique hgQ.isDistinguished]

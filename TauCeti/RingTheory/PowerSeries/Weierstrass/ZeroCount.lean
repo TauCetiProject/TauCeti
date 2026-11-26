@@ -51,7 +51,7 @@ its extended cardinality is at most `(f.zeroMultiset r L).card`, with equality i
 zeros of `f` in the closed disc are simple. Together with `IsDistinguished.card_zeroMultiset_le`
 this refines Strassmann's distinct-zero bound
 `TauCeti.PowerSeries.IsDistinguished.encard_setOf_evalAt_eq_zero_le`, and filtering by any predicate
-implied by `‖·‖ ≤ r` gives the corresponding characterisations on the open disc and sphere. At a
+implying `‖·‖ ≤ r` gives the corresponding characterisations on the open disc and sphere. At a
 radius on the boundary of convergence these counts depend on the active indices `d` and `l` rather
 than the shape of the Newton polygon alone; stability under Gauss-small perturbations is proved in
 `TauCeti.RingTheory.PowerSeries.Perturbation.ZeroCount`.
@@ -568,6 +568,21 @@ namespace IsDiscPreparation
 
 variable {U : PowerSeries K}
 
+omit [IsUltrametricDist K] in
+/-- Over a complete ultrametric normed field extension `L`, a normalised disc preparation
+`f = P * U` gives a unit `e` of the ring of series restricted at `r > 0` with
+`e * P.map (algebraMap K L) = map (algebraMap K L) f`, while preserving distinguishedness of the
+mapped series. -/
+private theorem exists_isUnit_mul_map [IsUltrametricDist L]
+    (h : IsDiscPreparation r d f P U) (hr : 0 < r) :
+    ∃ e : PowerSeries.IsRestricted.subring (R := L) r,
+      IsUnit e ∧ IsDistinguished r d (_root_.PowerSeries.map (algebraMap K L) f) ∧
+        (e : PowerSeries L) * (P.map (algebraMap K L) : Polynomial L) =
+          _root_.PowerSeries.map (algebraMap K L) f := by
+  have hL := h.map (algebraMap K L) (norm_algebraMap' L)
+  exact ⟨⟨_, hL.isRestricted⟩, hL.isUnit hr, hL.isDistinguished,
+    (mul_comm _ _).trans hL.eq_mul.symm⟩
+
 /-- **The zero multiset of a normalised disc preparation.** If `f = P * U` is the normalised
 preparation of `f` on the closed disc of radius `r > 0` over an ultrametric normed field `K`, then
 in any complete normed field extension `L` the zero multiset of `f` on that disc is the multiset of
@@ -575,11 +590,9 @@ roots of `P` in `L`. -/
 theorem zeroMultiset_eq_roots_map (h : IsDiscPreparation r d f P U) (hr : 0 < r) :
     f.zeroMultiset r L = (P.map (algebraMap K L)).roots := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  have hL := h.map (algebraMap K L) (norm_algebraMap' L)
-  have hZ := hL.isDistinguished.zeroMultiset_eq_roots_map_of_isUnit_mul (L := L) hr (hL.isUnit hr)
-    hL.natDegree_eq.le
-    (mul_comm (_root_.PowerSeries.map (algebraMap K L) U : PowerSeries L) _ ▸ hL.eq_mul.symm)
-  simpa using hZ
+  obtain ⟨e, he, hdL, hfL⟩ := h.exists_isUnit_mul_map (L := L) hr
+  simpa using hdL.zeroMultiset_eq_roots_map_of_isUnit_mul (L := L) hr he
+    (Polynomial.natDegree_map_le.trans h.natDegree_eq.le) hfL
 
 /-- **Closed-disc zero count for a split disc polynomial.** If `f = P * U` is the normalised
 preparation of `f` on the closed disc of radius `r > 0` and `P` splits over `L`, then `f` has
@@ -597,10 +610,9 @@ theorem card_filter_zeroMultiset_norm_lt_eq_of_splits (h : IsDiscPreparation r d
     (hl : IsLowestDominant r l f) (hr : 0 < r) (hs : (P.map (algebraMap K L)).Splits) :
     ((f.zeroMultiset r L).filter (‖·‖ < r)).card = l := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  have hL := h.map (algebraMap K L) (norm_algebraMap' L)
+  obtain ⟨e, he, _, hfL⟩ := h.exists_isUnit_mul_map (L := L) hr
   have hlL := hl.map (algebraMap K L) (norm_algebraMap' L)
-  simpa using hlL.card_filter_zeroMultiset_norm_lt_eq_of_isUnit_mul (L := L) hr (hL.isUnit hr)
-    (mul_comm (_root_.PowerSeries.map (algebraMap K L) U : PowerSeries L) _ ▸ hL.eq_mul.symm)
+  simpa using hlL.card_filter_zeroMultiset_norm_lt_eq_of_isUnit_mul (L := L) hr he hfL
     (by simpa using hs)
 
 /-- **Sphere zero count for a split disc polynomial.** If `f = P * U` is the normalised preparation
@@ -611,11 +623,9 @@ theorem card_filter_zeroMultiset_norm_eq_eq_of_splits (h : IsDiscPreparation r d
     (hl : IsLowestDominant r l f) (hr : 0 < r) (hs : (P.map (algebraMap K L)).Splits) :
     ((f.zeroMultiset r L).filter (‖·‖ = r)).card = d - l := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  have hL := h.map (algebraMap K L) (norm_algebraMap' L)
+  obtain ⟨e, he, hdL, hfL⟩ := h.exists_isUnit_mul_map (L := L) hr
   have hlL := hl.map (algebraMap K L) (norm_algebraMap' L)
-  simpa using card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul (L := L) hL.isDistinguished hlL hr
-    (hL.isUnit hr)
-    (mul_comm (_root_.PowerSeries.map (algebraMap K L) U : PowerSeries L) _ ▸ hL.eq_mul.symm)
+  simpa using card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul (L := L) hdL hlL hr he hfL
     (by simpa using hs)
 
 /-- **The disc polynomial is the product over the zeros.** If `f = P * U` is the normalised

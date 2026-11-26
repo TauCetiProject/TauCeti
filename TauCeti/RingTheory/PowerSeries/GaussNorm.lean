@@ -131,6 +131,11 @@ section SeminormedRing
 
 variable {R : Type*} [SeminormedRing R] {c : ℝ} {i j s t : ℕ} {f g : PowerSeries R}
 
+/-- The Gauss norm of a difference is symmetric in its arguments. -/
+theorem _root_.PowerSeries.gaussNorm_sub_comm (f g : PowerSeries R) (c : ℝ) :
+    (f - g).gaussNorm norm c = (g - f).gaussNorm norm c := by
+  simp only [PowerSeries.gaussNorm_eq, map_sub, norm_sub_rev]
+
 /-- Coefficientwise convergence to zero implies Gauss-norm convergence when the weighted
 coefficient norms are bounded by one null sequence, uniformly over the family. -/
 theorem tendsto_gaussNorm_zero_of_coeff_bound {α : Type*} {l : Filter α}
@@ -241,9 +246,8 @@ theorem gaussNorm_eq_of_forall_le {S : Type*} [Semiring S] {v : S → ℝ} {a : 
 /-- Bounded nonnegative weighted coefficients at `s` remain bounded at every radius `0 ≤ r ≤ s`. -/
 theorem _root_.PowerSeries.HasGaussNorm.of_le {S : Type*} [Semiring S] {v : S → ℝ}
     {a : PowerSeries S} {r s : ℝ} (ha : a.HasGaussNorm v s) (hv : ∀ x, 0 ≤ v x)
-    (hr : 0 ≤ r) (hrs : r ≤ s) : a.HasGaussNorm v r := by
-  rw [PowerSeries.HasGaussNorm]
-  exact ⟨a.gaussNorm v s, Set.forall_mem_range.mpr fun n ↦
+    (hr : 0 ≤ r) (hrs : r ≤ s) : a.HasGaussNorm v r :=
+  ⟨a.gaussNorm v s, Set.forall_mem_range.mpr fun n ↦
     (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hr hrs n) (hv _)).trans
       (PowerSeries.le_gaussNorm v s a ha n)⟩
 
@@ -263,8 +267,7 @@ section NormedRing
 variable {R : Type*} [NormedRing R] {c : ℝ} {f : PowerSeries R}
 
 /-- A restricted power series has bounded weighted coefficient norms. -/
-theorem hasGaussNorm_of_isRestricted (hf : f.IsRestricted c) :
-    f.HasGaussNorm norm c :=
+theorem hasGaussNorm_of_isRestricted (hf : f.IsRestricted c) : f.HasGaussNorm norm c :=
   ((PowerSeries.isRestricted_iff c f).mp hf).bddAbove_range_of_cofinite
 
 /-- At a positive radius, a nonzero series with bounded weighted coefficient norms has positive
