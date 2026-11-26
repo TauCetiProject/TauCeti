@@ -63,7 +63,7 @@ theorem eq_zero_of_integral_contDiff_smul_eq_apply_smul {f : E → F} {a : E} {U
   let φ : ContDiffBump a := ⟨r / 4, r / 2, by positivity, by linarith⟩
   have hφV : tsupport φ ⊆ V := by
     rw [φ.tsupport_eq]
-    exact (Metric.closedBall_subset_ball (by simp [φ]; linarith)).trans hrV
+    exact (Metric.closedBall_subset_ball (half_lt_self hr)).trans hrV
   have hint := h φ φ.contDiff φ.hasCompactSupport (hφV.trans hVU)
   rw [φ.one_of_mem_closedBall (Metric.mem_closedBall_self φ.rIn_pos.le), one_smul] at hint
   rw [← hint]

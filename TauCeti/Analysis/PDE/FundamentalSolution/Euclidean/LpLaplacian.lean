@@ -91,22 +91,22 @@ theorem memLp_mul_newtonianKernel_sub {p : ℝ≥0∞} (hp : p ≠ ∞)
     (hχs : Bornology.IsBounded (Function.support χ)) (a : EuclideanSpace ℝ (Fin n)) :
     MemLp (fun x ↦ χ x * newtonianKernel n (x - a)) p volume := by
   obtain ⟨R, hR⟩ := hχs.subset_closedBall 0
-  set k : ℝ := ((n : ℝ) * ((n : ℝ) - 2) *
-    volume.real (Metric.ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
+  -- The kernel is a constant multiple of `‖y‖ ^ (2 - n)`; the value of the constant is irrelevant.
+  obtain ⟨k, hk⟩ : ∃ k : ℝ, ∀ y, ‖newtonianKernel n y‖ = k * ‖y‖ ^ (2 - (n : ℝ)) :=
+    ⟨_, fun y ↦ by
+      rw [newtonianKernel_def, norm_mul, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg y) _)]⟩
   have hind : (fun x ↦ χ x * newtonianKernel n (x - a)) =
       (Metric.closedBall 0 R).indicator fun x ↦ χ x * newtonianKernel n (x - a) := by
     refine (indicator_eq_self.2 fun x hx ↦ hR ?_).symm
     exact (Function.mem_support.2 fun h ↦ hx (by simp [h]))
   rw [hind, memLp_indicator_iff_restrict measurableSet_closedBall.nullMeasurableSet]
   refine Metric.isBounded_closedBall.memLp_of_ae_norm_le_mul_norm_sub_rpow (s := 2 - n)
-    (C := M * |k|) hp ?_ a ?_ (ae_of_all _ fun x ↦ ?_)
+    (C := M * k) hp ?_ a ?_ (ae_of_all _ fun x ↦ ?_)
   · rw [finrank_euclideanSpace_fin]
     linarith
   · exact (hχm.mul ((measurable_newtonianKernel n).comp
       (measurable_id.sub_const a)).aestronglyMeasurable).restrict
-  · rw [norm_mul, newtonianKernel_def, norm_mul, Real.norm_eq_abs k,
-      Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _), norm_sub_rev, mul_assoc]
-    gcongr
-    exact hχM x
+  · rw [norm_sub_rev, mul_assoc, ← hk, norm_mul]
+    exact mul_le_mul_of_nonneg_right (hχM x) (norm_nonneg _)
 
 end TauCeti
