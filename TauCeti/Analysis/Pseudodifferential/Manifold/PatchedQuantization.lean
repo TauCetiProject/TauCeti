@@ -44,6 +44,8 @@ dimension `0` as soon as `M` has two points, since a chart then sees a single po
 * `TauCeti.classicalPrincipalSymbol_patchedQuantization`: its principal symbol is the locally
   finite sum of the principal symbols of the chart quantizations, which
   `OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization` computes.
+* `TauCeti.patchedQuantization_congr`, `TauCeti.patchedQuantization_eq_add`: the patched
+  quantization only depends on the full symbols, additively.
 * `TauCeti.exists_eq_sum_chartQuantization`: on a compact manifold of positive dimension, every
   classical pseudodifferential operator of order `m` is a finite sum of chart quantizations of
   classical symbols of order `m`.
@@ -99,6 +101,15 @@ theorem patchedQuantization_apply
       ∑ᶠ i, (e i).chartQuantization (he i) (φ i) (ψ i) (a i) f x :=
   ContMDiffMap.locallyFiniteSum_apply f x
 
+/-- At a point `x`, only the charts with `x ∈ eᵢ⁻¹(supp φᵢ ∪ supp ψᵢ)` contribute to the chart
+quantizations `Op_{eᵢ}(aᵢ) f`. -/
+theorem support_chartQuantization_apply_subset (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (x : M) :
+    (Function.support fun i ↦ (e i).chartQuantization (he i) (φ i) (ψ i) (a i) f x) ⊆
+      {i | x ∈ (e i).symm '' (tsupport (φ i) ∪ tsupport (ψ i))} := fun i hi ↦
+  image_mono subset_union_left
+    ((e i).tsupport_chartQuantization_subset (he i) _ _ _ f (subset_tsupport _ hi))
+
 /-- **Patched quantization.** For charts `eᵢ` of the maximal atlas, classical symbols `aᵢ` of order
 `m` and cutoffs `φᵢ`, `ψᵢ` with compact supports in the chart targets, such that the chart preimages
 `eᵢ⁻¹(supp φᵢ ∪ supp ψᵢ)` form a locally finite family, the patched quantization
@@ -130,6 +141,33 @@ theorem classicalPrincipalSymbol_patchedQuantization [IsManifold 𝓘(ℝ, Coord
     (fun i ↦
       (e i).chartQuantization_mem_classicalPseudodifferentialOperators (he i) (φ i) (ψ i) (a i))
     (patchedQuantization_mem_classicalPseudodifferentialOperators he φ ψ a hS) x ξ
+
+/-- The patched quantization only depends on the full symbols, also for classical symbols of
+different orders. -/
+theorem patchedQuantization_congr {m' : ℝ} {b : ι → ClassicalSymbol n ℂ ℂ m'}
+    (hS : LocallyFinite fun i ↦ (e i).symm '' (tsupport (φ i) ∪ tsupport (ψ i)))
+    (h : ∀ i, (a i).toSymbol.coefficient = (b i).toSymbol.coefficient) :
+    patchedQuantization he φ ψ a hS = patchedQuantization he φ ψ b hS := by
+  ext f x
+  simp only [patchedQuantization_apply, (e _).chartQuantization_congr (he _) _ _ (h _)]
+
+/-- The patched quantization is additive in the full symbols, also for classical symbols of
+different orders: if each full symbol `aᵢ` is the sum of `bᵢ` and `cᵢ`, then the patched
+quantization of the `aᵢ` is the sum of those of the `bᵢ` and of the `cᵢ`. -/
+theorem patchedQuantization_eq_add {m₁ m₂ : ℝ} {b : ι → ClassicalSymbol n ℂ ℂ m₁}
+    {c : ι → ClassicalSymbol n ℂ ℂ m₂}
+    (hS : LocallyFinite fun i ↦ (e i).symm '' (tsupport (φ i) ∪ tsupport (ψ i)))
+    (h : ∀ i, (a i).toSymbol.coefficient =
+      (b i).toSymbol.coefficient + (c i).toSymbol.coefficient) :
+    patchedQuantization he φ ψ a hS =
+      patchedQuantization he φ ψ b hS + patchedQuantization he φ ψ c hS := by
+  ext f x
+  simp only [LinearMap.add_apply, ContMDiffMap.coe_add, Pi.add_apply, patchedQuantization_apply,
+    (e _).chartQuantization_eq_add (he _) _ _ (h _)]
+  -- At `x`, only the finitely many charts with `x ∈ eᵢ⁻¹(supp φᵢ ∪ supp ψᵢ)` contribute.
+  exact finsum_add_distrib
+    ((hS.point_finite x).subset (support_chartQuantization_apply_subset he φ ψ b f x))
+    ((hS.point_finite x).subset (support_chartQuantization_apply_subset he φ ψ c f x))
 
 /-! ### Operators on a compact manifold are finite sums of chart quantizations -/
 

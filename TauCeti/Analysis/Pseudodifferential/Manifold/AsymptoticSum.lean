@@ -13,24 +13,25 @@ import TauCeti.Analysis.Pseudodifferential.AsymptoticSum
 /-!
 # Asymptotic summation of classical pseudodifferential operators on a manifold
 
-Let `M` be a compact manifold modelled on `ℝⁿ` and let `Pₖ` be classical pseudodifferential
-operators of orders `m - k` on `M` (`TauCeti.classicalPseudodifferentialOperators`). Although the
-series `∑ₖ Pₖ` need not converge, it has an **asymptotic sum**: a classical pseudodifferential
-operator `Q` of order `m` such that for every `N` the remainder `Q - ∑_{k < N} Pₖ` has order
-`m - N` (`TauCeti.exists_forall_sub_sum_mem_classicalPseudodifferentialOperators`). It is unique
-modulo operators of order `-∞`: another operator `Q'` is an asymptotic sum of the `Pₖ` exactly when
-`Q' - Q` has order `-∞`
-(`TauCeti.forall_sub_sum_mem_classicalPseudodifferentialOperators_iff`).
+Let `M` be a σ-compact manifold modelled on `ℝⁿ`, for instance a compact one, and let `Pₖ` be
+classical pseudodifferential operators of orders `m - k` on `M`
+(`TauCeti.classicalPseudodifferentialOperators`). Although the series `∑ₖ Pₖ` need not converge, it
+has an **asymptotic sum**: a classical pseudodifferential operator `Q` of order `m` such that for
+every `N` the remainder `Q - ∑_{k < N} Pₖ` has order `m - N`
+(`TauCeti.exists_forall_sub_sum_mem_classicalPseudodifferentialOperators`). It is unique modulo
+operators of order `-∞`: another operator `Q'` is an asymptotic sum of the `Pₖ` exactly when
+`Q' - Q` has order `-∞` (`TauCeti.forall_sub_sum_mem_classicalPseudodifferentialOperators_iff`).
 
-The construction follows Hörmander (III, Proposition 18.1.3) chart by chart. With finitely many
-charts and cutoffs fixed once and for all, every `Pₖ` is a sum `∑ₓ Op_{eₓ}(aₖₓ)` of chart
-quantizations modulo order `-∞`
-(`TauCeti.exists_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`). In each chart
-the classical symbols `aₖₓ` of orders `m - k` have an asymptotic sum `bₓ` with classical remainders
-(`TauCeti.ClassicalSymbol.exists_asymptoticSum`), and `Q = ∑ₓ Op_{eₓ}(bₓ)`. The chart quantization
-only depends on the full symbol, additively
-(`OpenPartialHomeomorph.chartQuantization_eq_add`), so `Q - ∑_{k < N} Pₖ` is a sum of chart
-quantizations of the remainders, of order `m - N`, plus operators of order `-∞`.
+The construction follows Hörmander (III, Proposition 18.1.3) chart by chart. With a locally finite
+family of charts and cutoffs fixed once and for all
+(`TauCeti.exists_locallyFinite_finsum_cutoffPullback_eq_one`), every `Pₖ` is a patched quantization
+`∑ᵢ Op_{eᵢ}(aₖᵢ)` modulo order `-∞`
+(`TauCeti.sub_patchedQuantization_mem_smoothingPseudodifferentialOperators`). In each chart the
+classical symbols `aₖᵢ` of orders `m - k` have an asymptotic sum `bᵢ` with classical remainders
+(`TauCeti.ClassicalSymbol.exists_asymptoticSum`), and `Q = ∑ᵢ Op_{eᵢ}(bᵢ)`. The patched
+quantization only depends on the full symbols, additively (`TauCeti.patchedQuantization_eq_add`),
+so `Q - ∑_{k < N} Pₖ` is the patched quantization of the remainders, of order `m - N`, plus
+operators of order `-∞`.
 
 The main application is the **Neumann series**: if `R` has order `-1`, then `1 - R` has an inverse
 modulo operators of order `-∞` on both sides
@@ -41,11 +42,12 @@ principal symbol of an elliptic operator, into a parametrix modulo operators of 
 
 ## Main results
 
-* `TauCeti.exists_forall_sub_sum_mem_classicalPseudodifferentialOperators`: on a compact manifold,
-  classical pseudodifferential operators of orders `m - k` have an asymptotic sum of order `m`.
+* `TauCeti.exists_forall_sub_sum_mem_classicalPseudodifferentialOperators`: on a σ-compact
+  manifold, classical pseudodifferential operators of orders `m - k` have an asymptotic sum of
+  order `m`.
 * `TauCeti.forall_sub_sum_mem_classicalPseudodifferentialOperators_iff`: asymptotic sums are unique
   modulo operators of order `-∞`.
-* `TauCeti.exists_one_sub_mul_sub_one_mem_smoothingPseudodifferentialOperators`: on a compact
+* `TauCeti.exists_one_sub_mul_sub_one_mem_smoothingPseudodifferentialOperators`: on a σ-compact
   manifold, `1 - R` is invertible modulo operators of order `-∞` for every `R` of order `-1`.
 
 ## References
@@ -84,60 +86,58 @@ theorem forall_sub_sum_mem_classicalPseudodifferentialOperators_iff
 
 variable [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
 
-/-- **Asymptotic summation** (Borel). On a compact manifold, let `Pₖ` be classical
-pseudodifferential operators of orders `m - k`. Then there is a classical pseudodifferential
-operator `Q` of order `m` such that for every `N` the remainder `Q - ∑_{k < N} Pₖ` is a classical
-pseudodifferential operator of order `m - N`. -/
-theorem exists_forall_sub_sum_mem_classicalPseudodifferentialOperators [CompactSpace M]
+/-- **Asymptotic summation** (Borel). On a σ-compact manifold, for instance a compact one, let `Pₖ`
+be classical pseudodifferential operators of orders `m - k`. Then there is a classical
+pseudodifferential operator `Q` of order `m` such that for every `N` the remainder
+`Q - ∑_{k < N} Pₖ` is a classical pseudodifferential operator of order `m - N`. -/
+theorem exists_forall_sub_sum_mem_classicalPseudodifferentialOperators [SigmaCompactSpace M]
     (hP : ∀ k : ℕ, P k ∈ classicalPseudodifferentialOperators (m - k)) :
     ∃ Q ∈ classicalPseudodifferentialOperators m, ∀ N : ℕ,
       Q - ∑ k ∈ range N, P k ∈ classicalPseudodifferentialOperators (m - N) := by
-  -- Fixed charts `eₓ`, `x ∈ s`, in which every `Pₖ` is `∑ₓ Op_{eₓ}(aₖₓ)` modulo order `-∞`.
-  obtain ⟨s, φ, ψ, hs⟩ :=
-    exists_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators (n := n) (M := M)
-  choose a ha using fun k ↦ hs _ _ (hP k)
-  -- In each chart, the asymptotic sum `bₓ ∼ ∑ₖ aₖₓ` with classical remainders `rₓ N`.
-  choose b r hr using fun x ↦ ClassicalSymbol.exists_asymptoticSum fun k ↦ a k x
-  have key (x : M) (N : ℕ) :
-      (chartAt (CoordinateSpace n) x).chartQuantization (IsManifold.chart_mem_maximalAtlas x)
-          (φ x) (ψ x) (b x) =
-        (chartAt (CoordinateSpace n) x).chartQuantization (IsManifold.chart_mem_maximalAtlas x)
-            (φ x) (ψ x) (r x N) +
-          ∑ k ∈ range N, (chartAt (CoordinateSpace n) x).chartQuantization
-            (IsManifold.chart_mem_maximalAtlas x) (φ x) (ψ x) (a k x) := by
+  -- Fixed charts `eᵢ` with cutoffs `ρᵢ ≺ χᵢ ≺ θᵢ`, the `ρᵢ` adding up to `1`, in which every `Pₖ`
+  -- is the patched quantization of its chart symbols `aₖᵢ` modulo order `-∞`.
+  obtain ⟨ι, c, ρ, χ, θ, hθ, hρ, hρχ, hχθ⟩ :=
+    exists_locallyFinite_finsum_cutoffPullback_eq_one (E := CoordinateSpace n) (M := M)
+  have he (i : ι) : chartAt (CoordinateSpace n) (c i) ∈
+      IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
+    IsManifold.chart_mem_maximalAtlas (c i)
+  have hS : LocallyFinite fun i ↦ (chartAt (CoordinateSpace n) (c i)).symm ''
+      (tsupport (θ i) ∪ tsupport (θ i)) := by
+    simpa only [Set.union_self] using hθ
+  have hθ1 (i : ι) : Set.EqOn (θ i) 1 (tsupport (χ i)) := fun y hy ↦ (hχθ i).self_of_nhdsSet y hy
+  have hθρ (i : ι) : Set.EqOn (θ i) 1 (tsupport (ρ i)) := (hθ1 i).mono fun y hy ↦ subset_tsupport _
+    (by rw [Function.mem_support, (hρχ i).self_of_nhdsSet y hy]; exact one_ne_zero)
+  choose a ha using fun k i ↦ (mem_classicalPseudodifferentialOperators_iff.1 (hP k)).2 _ (he i)
+    (ρ i) (χ i)
+  have hd (k : ℕ) : P k - patchedQuantization he θ θ (a k) hS ∈
+      smoothingPseudodifferentialOperators :=
+    sub_patchedQuantization_mem_smoothingPseudodifferentialOperators (hP k) hρ hρχ (ha k) hθρ hθ1 hS
+  -- In each chart, the asymptotic sum `bᵢ ∼ ∑ₖ aₖᵢ` with classical remainders `rᵢ N`.
+  choose b r hr using fun i ↦ ClassicalSymbol.exists_asymptoticSum fun k ↦ a k i
+  have key (N : ℕ) : patchedQuantization he θ θ b hS =
+      patchedQuantization he θ θ (fun i ↦ r i N) hS +
+        ∑ k ∈ range N, patchedQuantization he θ θ (a k) hS := by
     induction N with
     | zero =>
       rw [sum_range_zero, add_zero]
-      exact OpenPartialHomeomorph.chartQuantization_congr _ _ _ (by simp [hr])
+      exact patchedQuantization_congr he θ θ b hS fun i ↦ by simp [hr]
     | succ N ih =>
-      rw [ih, OpenPartialHomeomorph.chartQuantization_eq_add _ _ _ (b := r x (N + 1)) (c := a N x)
-        (by rw [hr, hr, sum_range_succ]; abel), sum_range_succ]
+      rw [ih, patchedQuantization_eq_add he θ θ (fun i ↦ r i N) hS (b := fun i ↦ r i (N + 1))
+        (c := a N) fun i ↦ by rw [hr, hr, sum_range_succ]; abel, sum_range_succ]
       abel
-  refine ⟨∑ x ∈ s, (chartAt (CoordinateSpace n) x).chartQuantization
-      (IsManifold.chart_mem_maximalAtlas x) (φ x) (ψ x) (b x),
-    Submodule.sum_mem _ fun x _ ↦
-      OpenPartialHomeomorph.chartQuantization_mem_classicalPseudodifferentialOperators _ _ _ _,
-    fun N ↦ ?_⟩
-  -- The remainder is the patched quantization of the `rₓ N`, minus operators of order `-∞`.
-  have hsplit : ∑ x ∈ s, (chartAt (CoordinateSpace n) x).chartQuantization
-        (IsManifold.chart_mem_maximalAtlas x) (φ x) (ψ x) (b x) - ∑ k ∈ range N, P k =
-      ∑ x ∈ s, (chartAt (CoordinateSpace n) x).chartQuantization
-          (IsManifold.chart_mem_maximalAtlas x) (φ x) (ψ x) (r x N) -
-        ∑ k ∈ range N, (P k - ∑ x ∈ s, (chartAt (CoordinateSpace n) x).chartQuantization
-          (IsManifold.chart_mem_maximalAtlas x) (φ x) (ψ x) (a k x)) := by
-    rw [sum_congr rfl fun x _ ↦ key x N, sum_add_distrib, sum_sub_distrib, sum_comm (s := s)]
-    abel
-  rw [hsplit]
-  exact sub_mem (Submodule.sum_mem _ fun x _ ↦
-      OpenPartialHomeomorph.chartQuantization_mem_classicalPseudodifferentialOperators _ _ _ _)
+  refine ⟨patchedQuantization he θ θ b hS,
+    patchedQuantization_mem_classicalPseudodifferentialOperators he θ θ b hS, fun N ↦ ?_⟩
+  -- The remainder is the patched quantization of the `rᵢ N`, minus operators of order `-∞`.
+  rw [key N, ← sub_sub_eq_add_sub, ← sum_sub_distrib]
+  exact sub_mem (patchedQuantization_mem_classicalPseudodifferentialOperators he θ θ _ hS)
     (Submodule.sum_mem _ fun k _ ↦
-      smoothingPseudodifferentialOperators_le_classicalPseudodifferentialOperators _ (ha k))
+      smoothingPseudodifferentialOperators_le_classicalPseudodifferentialOperators _ (hd k))
 
-/-- **The Neumann series modulo order `-∞`.** On a compact manifold, if `R` is a classical
+/-- **The Neumann series modulo order `-∞`.** On a σ-compact manifold, if `R` is a classical
 pseudodifferential operator of order `-1`, then `1 - R` is invertible modulo operators of order
 `-∞`: there is a classical pseudodifferential operator `S` of order `0` such that `(1 - R) S - 1`
 and `S (1 - R) - 1` have order `-∞`. -/
-theorem exists_one_sub_mul_sub_one_mem_smoothingPseudodifferentialOperators [CompactSpace M]
+theorem exists_one_sub_mul_sub_one_mem_smoothingPseudodifferentialOperators [SigmaCompactSpace M]
     (hR : R ∈ classicalPseudodifferentialOperators (-1)) :
     ∃ S ∈ classicalPseudodifferentialOperators 0,
       (1 - R) * S - 1 ∈ smoothingPseudodifferentialOperators ∧
