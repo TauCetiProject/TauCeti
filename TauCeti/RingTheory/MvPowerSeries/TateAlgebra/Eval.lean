@@ -8,8 +8,6 @@ module
 public import TauCeti.RingTheory.Huber.WeightedEval.Mul
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
-import TauCeti.RingTheory.Algebraic.Basic
-
 /-!
 # Evaluating restricted power series at bounded arguments
 
@@ -46,8 +44,6 @@ algebras, as in Kedlaya's Lemma 4.9 for the interval rings of the Fargues–Font
 * `MvPowerSeries.restrictedEval₂_monomial`, `MvPowerSeries.restrictedEval₂_algebraMap` and
   `MvPowerSeries.restrictedEval₂_X`: the values on monomials, constants and variables.
 * `MvPowerSeries.restrictedEval₂_polynomial`: on polynomials, evaluation is `MvPolynomial.eval₂`.
-* `MvPowerSeries.ker_restrictedEval₂_isMaximal`: evaluation at a point over an algebraic field
-  extension of a normed field has a maximal kernel.
 * `MvPowerSeries.norm_restrictedEval₂_le`: evaluation does not increase the Gauss norm.
 * `MvPowerSeries.eq_restrictedEval₂`: a continuous ring homomorphism out of `R{X/c}` is determined
   by its values on constants and variables.
@@ -166,17 +162,6 @@ theorem restrictedEval₂_polynomial (p : MvPolynomial (Fin k) R) :
     (fun b ↦ ?_) fun i ↦ ?_) p
   · simp [← MvPolynomial.algebraMap_eq, restrictedEval₂_algebraMap]
   · simp [restrictedEval₂_X]
-
-/-- At every polyradius `c`, the kernel of evaluation at a point over an algebraic field extension
-`L` of the coefficient field `K` is a maximal ideal. -/
-theorem ker_restrictedEval₂_isMaximal {K L : Type*} [NormedField K] [IsUltrametricDist K]
-    [NormedField L] [IsUltrametricDist L] [CompleteSpace L] [Algebra K L]
-    [Algebra.IsAlgebraic K L] (x : Fin k → L)
-    (hφ : ∀ r, ‖algebraMap K L r‖ ≤ ‖r‖) (hx : ∀ i, ‖x i‖ ≤ c i) :
-    (RingHom.ker (restrictedEval₂ (algebraMap K L) x hφ hx)).IsMaximal :=
-  AlgHom.ker_isMaximal_of_isAlgebraic
-    { restrictedEval₂ (algebraMap K L) x hφ hx with
-      commutes' := restrictedEval₂_algebraMap _ _ _ _ }
 
 variable [∀ i, Fact (0 < c i)]
 

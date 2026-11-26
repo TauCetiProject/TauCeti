@@ -43,7 +43,7 @@ its Gauss norm at a point of the closed unit polydisc of a finite normed field e
 As no such point gives a value of norm above the Gauss norm, the Gauss norm is the largest of the
 values `‖f(x)‖` over all finite normed field extensions `L / K` and all `x ∈ (L°)ⁿ`. Evaluation at
 any point over an algebraic extension has a field as image, so its kernel is a maximal ideal
-(`MvPowerSeries.ker_restrictedEval₂_isMaximal`); and a nonzero `f` does not vanish at some
+(`AlgHom.ker_isMaximal_of_isAlgebraic`); and a nonzero `f` does not vanish at some
 finite-extension point. These statements read the maximum principle as evaluation at points,
 without passing through maximal ideals of `Tₙ` or through the affinoid Nullstellensatz.
 
@@ -240,7 +240,7 @@ theorem isGreatest_norm_restrictedEval₂ (f : T) :
 /-- **Finite-extension points separate the elements of a Tate algebra.** A nonzero
 `f ∈ K⟨X₁, …, Xₙ⟩` does not vanish at some point of the closed unit polydisc over a finite normed
 field extension of `K`. The kernel of evaluation at such a point is a maximal ideal
-(`MvPowerSeries.ker_restrictedEval₂_isMaximal`). -/
+(`AlgHom.ker_isMaximal_of_isAlgebraic`). -/
 theorem exists_finiteDimensional_restrictedEval₂_ne_zero {f : T} (hf : f ≠ 0) :
     ∃ (L : Type u) (_ : NormedField L) (_ : IsUltrametricDist L) (_ : CompleteSpace L)
       (_ : NormedAlgebra K L) (_ : FiniteDimensional K L) (x : Fin n → L)
