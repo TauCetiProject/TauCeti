@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Real.Sqrt
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 
 /-!
 # Real powers
@@ -182,6 +183,9 @@ with the corresponding integral of `q`-th powers.
 * `Real.le_sqrt_mul_rpow_sub_one_of_sq_le`: `x ≤ √B * d ^ (β - 1)` when
   `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, the step turning a mean-value bound on `d ^ 2 *
   x ^ 2` into a pointwise power bound on `x`.
+* `Real.exists_pos_le_sqrt_mul_rpow_sub_one_of_le_mul_rpow`: power decay `E r ≤ A * r ^ (2 * β)`
+  of an energy, with a small-energy bound `d ^ 2 * x ^ 2 ≤ K * E (2 * d)`, gives
+  `x ≤ √B * d ^ (β - 1)` for small `d`.
 * `Real.le_rpow_inv_mul_of_rpow_le`: `x ≤ r ^ r⁻¹ n` when `x ^ r ≤ (r - 1) y ^ r + z ^ r` with
   `1 ≤ r` and `0 ≤ y, z ≤ n`, the step turning an `Lʳ` trace inequality into a linear bound.
 * `Finsupp.prod_pow_rpow`: `(μ.prod (c · ^ ·)) ^ a = μ.prod fun i k ↦ (c i ^ a) ^ k` for `c`
@@ -610,6 +614,34 @@ theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
   have h' : d * x ≤ sqrt B * d ^ β := (le_sqrt_of_sq_le hsq).trans_eq
     (by rw [sqrt_mul_sq, abs_of_nonneg (rpow_nonneg hd.le β)])
   rw [rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
+  linarith
+
+/-- **Power decay of a quantity from power decay of an energy.** Suppose `E r ≤ A * r ^ (2 * β)`
+for `0 < r < R / 2`, with `β > 0`. Then for every threshold `δ > 0` there are `0 < ε < R / 2`
+and `B` such that for `0 < d < ε` the energy `E (2 * d)` is below `δ`, and every `x` with
+`d ^ 2 * x ^ 2 ≤ K * E (2 * d)` satisfies `x ≤ √B * d ^ (β - 1)`. This turns energy decay and a
+small-energy mean-value inequality on the disc of radius `2 * d` into a pointwise power bound. -/
+theorem exists_pos_le_sqrt_mul_rpow_sub_one_of_le_mul_rpow {E : ℝ → ℝ} {R A K δ β : ℝ}
+    (hR : 0 < R) (hK : 0 ≤ K) (hβ : 0 < β) (hδ : 0 < δ)
+    (hpower : ∀ r ∈ Set.Ioo 0 (R / 2), E r ≤ A * r ^ (2 * β)) :
+    ∃ ε > 0, ε < R / 2 ∧ ∃ B, ∀ d ∈ Set.Ioo 0 ε, E (2 * d) < δ ∧
+      ∀ x, d ^ 2 * x ^ 2 ≤ K * E (2 * d) → x ≤ √B * d ^ (β - 1) := by
+  -- Choose a radius on which the energy bound at the doubled radius is below `δ`.
+  have ht : Tendsto (fun r : ℝ ↦ 2 * r) (𝓝 0) (𝓝 0) := by
+    simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).const_mul 2
+  have hlim : Tendsto (fun r : ℝ ↦ A * (2 * r) ^ (2 * β)) (𝓝 0) (𝓝 0) := by
+    simpa [zero_rpow (by positivity : 2 * β ≠ 0)] using
+      (ht.rpow_const_nhds_zero (by positivity : 0 < 2 * β)).const_mul A
+  obtain ⟨η, hη, hηbound⟩ := Metric.eventually_nhds_iff.mp (hlim.eventually (gt_mem_nhds hδ))
+  refine ⟨min η (R / 4), lt_min hη (by positivity), (min_le_right _ _).trans_lt (by linarith),
+    K * A * 2 ^ (2 * β), fun d hd ↦ ?_⟩
+  have hpow := hpower (2 * d) ⟨by linarith [hd.1], by linarith [hd.2.trans_le (min_le_right _ _)]⟩
+  have hsmall : A * (2 * d) ^ (2 * β) < δ := hηbound (by
+    rw [dist_eq, sub_zero, abs_of_pos hd.1]
+    exact hd.2.trans_le (min_le_left _ _))
+  refine ⟨hpow.trans_lt hsmall, fun x hx ↦ le_sqrt_mul_rpow_sub_one_of_sq_le hd.1 ?_⟩
+  have h := hx.trans (mul_le_mul_of_nonneg_left hpow hK)
+  rw [mul_rpow (by norm_num) hd.1.le] at h
   linarith
 
 /-- If `x ^ r ≤ (r - 1) y ^ r + z ^ r` for `1 ≤ r` and nonnegative `y`, `z`, both at most `n`,
