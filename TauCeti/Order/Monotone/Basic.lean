@@ -9,7 +9,7 @@ public import Mathlib.Data.Nat.Basic
 public import Mathlib.Data.Set.Subsingleton
 public import Mathlib.Logic.Function.Basic
 public import Mathlib.Logic.Pairwise
-public import Mathlib.Order.Interval.Set.Defs
+public import Mathlib.Order.Interval.Set.Basic
 public import Mathlib.Order.Monotone.Defs
 
 /-!
@@ -28,6 +28,9 @@ point `f n` follow one another: of two distinct ones, one ends before the other 
 (`MonotoneOn.pairwise_succ_le_or_succ_le`). For a monotone `ℤ`-indexed sequence, a point strictly
 inside one of these intervals lies in no other (`Monotone.mem_Icc_iff_eq_of_mem_Ioo`).
 
+A decreasing surjection of a closed interval `[a, b]` onto itself exchanges its endpoints
+(`Antitone.coe_apply_eq_left_of_surjective`, `Antitone.coe_apply_eq_right_of_surjective`).
+
 A function on a linearly ordered domain that decreases on `s ∩ (-∞, a]` and increases
 on `s ∩ [a, ∞)` attains its global minimum on `s` at `a` (`TauCeti.le_of_antitoneOn_monotoneOn`),
 strictly so away from `a` when both halves are strict (`TauCeti.lt_of_strictAntiOn_strictMonoOn`).
@@ -42,6 +45,8 @@ strictly so away from `a` when both halves are strict (`TauCeti.lt_of_strictAnti
   overlap at most at an endpoint.
 * `Monotone.mem_Icc_iff_eq_of_mem_Ioo`: a point strictly inside the interval `(a k, a (k + 1))`
   of a monotone `ℤ`-indexed sequence lies in `[a q, a (q + 1)]` exactly when `q = k`.
+* `Antitone.coe_apply_eq_left_of_surjective`, `Antitone.coe_apply_eq_right_of_surjective`: an
+  antitone surjection of `[a, b]` onto itself sends `b` to `a` and `a` to `b`.
 * `TauCeti.le_of_antitoneOn_monotoneOn`: if `f` is antitone on `s ∩ Iic a` and monotone on
   `s ∩ Ici a` with `a ∈ s`, then `f a ≤ f x` for all `x ∈ s`.
 * `TauCeti.lt_of_strictAntiOn_strictMonoOn`: if `f` is strictly antitone on `s ∩ Iic a` and
@@ -103,6 +108,22 @@ theorem Monotone.mem_Icc_iff_eq_of_mem_Ioo {α : Type*} [Preorder α] {a : ℤ �
   rcases lt_or_gt_of_ne hne with hlt | hlt
   · exact (h.2.trans_lt ((ha (by omega)).trans_lt hx.1)).false
   · exact ((hx.2.trans_le (ha (by omega))).trans_le h.1).false
+
+/-- An antitone surjection of `[a, b]` onto itself sends `b` to `a`. -/
+theorem Antitone.coe_apply_eq_left_of_surjective {α : Type*} [PartialOrder α] {a b : α}
+    {f : Icc a b → Icc a b} (hf : Antitone f) (hs : Surjective f) {y : Icc a b}
+    (hy : (y : α) = b) : (f y : α) = a := by
+  obtain ⟨z, hz⟩ := hs ⟨a, left_mem_Icc.2 (y.property.1.trans y.property.2)⟩
+  have hzy : z ≤ y := Subtype.coe_le_coe.1 (by rw [hy]; exact z.property.2)
+  exact le_antisymm (by simpa [hz] using Subtype.coe_le_coe.2 (hf hzy)) (f y).property.1
+
+/-- An antitone surjection of `[a, b]` onto itself sends `a` to `b`. -/
+theorem Antitone.coe_apply_eq_right_of_surjective {α : Type*} [PartialOrder α] {a b : α}
+    {f : Icc a b → Icc a b} (hf : Antitone f) (hs : Surjective f) {y : Icc a b}
+    (hy : (y : α) = a) : (f y : α) = b := by
+  obtain ⟨z, hz⟩ := hs ⟨b, right_mem_Icc.2 (y.property.1.trans y.property.2)⟩
+  have hzy : y ≤ z := Subtype.coe_le_coe.1 (by rw [hy]; exact z.property.1)
+  exact le_antisymm (f y).property.2 (by simpa [hz] using Subtype.coe_le_coe.2 (hf hzy))
 
 namespace TauCeti
 
