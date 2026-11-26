@@ -86,7 +86,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   acting-group map is surjective; its image consists of the orbits meeting the image upstairs.
   Both map and section descent are natural along it
   (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`,
-  `MulActionHom.orbitRelQuotientRec_orbitRelQuotientMap`).
+  `MulActionHom.orbitRelQuotientRec_orbitRelQuotientMap`, with invariance closure
+  `MulActionHom.comp_smul_heq`).
 * `SubMulAction.orbitRelQuotientMap`: for an `H`-invariant subset `S` of `X`, the map
   `S / H → X / G` sending an `H`-orbit to its `G`-orbit; it is injective when `S` is a slice for
   `H`, that is when every element of `G` carrying a point of `S` into `S` lies in `H`
@@ -1219,6 +1220,15 @@ end MulAction.orbitRel.Quotient
 namespace MulActionHom
 
 open TauCeti
+
+/-- Pulling back an `H`-invariant dependent function along `φ : X →ₑ[σ] Y` gives a `G`-invariant
+dependent function. -/
+@[to_additive /-- Pulling back an `H`-invariant dependent function along an equivariant map gives a
+`G`-invariant dependent function. -/]
+theorem comp_smul_heq {G X H Y : Type*} [SMul G X] [SMul H Y] {σ : G → H} {W : Y → Sort*}
+    (φ : X →ₑ[σ] Y) {t : ∀ y : Y, W y} (ht : ∀ (h : H) (y : Y), t (h • y) ≍ t y) (g : G) (x : X) :
+    t (φ (g • x)) ≍ t (φ x) :=
+  (congr_arg_heq t (map_smulₛₗ φ g x)).trans (ht (σ g) (φ x))
 
 variable {G X : Type*} [Group G] [MulAction G X] {H Y : Type*} [Group H] [MulAction H Y]
   {σ : G → H}

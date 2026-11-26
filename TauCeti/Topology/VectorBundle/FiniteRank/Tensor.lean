@@ -221,24 +221,6 @@ end Pullback
 
 section Sections
 
-private theorem kronecker_mul_finProdFinEquiv {m n m' n' : ℕ}
-    (f : (Fin m → 𝕜) →L[𝕜] (Fin m' → 𝕜)) (g : (Fin n → 𝕜) →L[𝕜] (Fin n' → 𝕜))
-    (u : Fin m → 𝕜) (v : Fin n → 𝕜) (k : Fin (m' * n')) :
-    f.kronecker g (fun l ↦ u (finProdFinEquiv.symm l).1 * v (finProdFinEquiv.symm l).2) k =
-      f u (finProdFinEquiv.symm k).1 * g v (finProdFinEquiv.symm k).2 := by
-  obtain ⟨⟨i, j⟩, rfl⟩ := finProdFinEquiv.surjective k
-  rw [ContinuousLinearMap.kronecker_apply, Equiv.symm_apply_apply]
-  have hrow (i' : Fin m) :
-      (fun j' ↦ u (finProdFinEquiv.symm (finProdFinEquiv (i', j'))).1 *
-        v (finProdFinEquiv.symm (finProdFinEquiv (i', j'))).2) = u i' • v := by
-    ext j'
-    simp [smul_eq_mul]
-  have hcol : (fun i' ↦ g (u i' • v) j) = g v j • u := by
-    ext i'
-    simp [smul_eq_mul, mul_comm]
-  simp only [hrow]
-  rw [hcol, map_smul, Pi.smul_apply, smul_eq_mul, mul_comm]
-
 /-- The pure tensor `s₁ ⊗ s₂` of a section `s₁` of `A` and a section `s₂` of `D`, as a section of
 `tensor A D` with entry `s₁ x i * s₂ x j` at `finProdFinEquiv (i, j)`. -/
 def pureTensorSection (A D : FiniteRankBundleCore 𝕜 B)
@@ -258,8 +240,7 @@ theorem fiberMap_tensorHom_pureTensorSection (f : A ⟶ A') (g : D ⟶ D')
     (tensorHom f g).fiberMap x (pureTensorSection A D s₁ s₂ x) =
       pureTensorSection A' D' (fun y ↦ f.fiberMap y (s₁ y)) (fun y ↦ g.fiberMap y (s₂ y)) x := by
   rw [fiberMap_tensorHom]
-  ext k
-  exact kronecker_mul_finProdFinEquiv (f.fiberMap x) (g.fiberMap x) (s₁ x) (s₂ x) k
+  exact ContinuousLinearMap.kronecker_apply_mul (f.fiberMap x) (g.fiberMap x) (s₁ x) (s₂ x)
 
 /-- In chart `i` of `tensor A D`, the fibre coordinate of `pureTensorSection A D s₁ s₂` is the
 coordinatewise product of the chart coordinates of `s₁` and `s₂`. -/
@@ -269,8 +250,7 @@ theorem localTriv_pureTensorSection_snd (A D : FiniteRankBundleCore 𝕜 B)
       fun k ↦ (A.core.localTriv i ⟨x, s₁ x⟩).2 (finProdFinEquiv.symm k).1 *
         (D.core.localTriv i ⟨x, s₂ x⟩).2 (finProdFinEquiv.symm k).2 := by
   simp only [localTriv_apply, indexAt_eq, coordChange_tensor]
-  ext k
-  exact kronecker_mul_finProdFinEquiv _ _ (s₁ x) (s₂ x) k
+  exact ContinuousLinearMap.kronecker_apply_mul _ _ (s₁ x) (s₂ x)
 
 /-- The pure tensor of two continuous sections of `A` and `D` is a continuous section of
 `tensor A D`. -/

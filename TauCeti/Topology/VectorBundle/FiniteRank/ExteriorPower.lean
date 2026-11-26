@@ -528,13 +528,21 @@ noncomputable def wedgeSection (j : ℕ) (A : FiniteRankBundleCore 𝕜 B)
     ((exteriorPower 𝕜 B j).obj A).core.Fiber x :=
   exteriorPower.piEquiv 𝕜 A.rank j (exteriorPower.ιMulti 𝕜 j fun k ↦ s k x)
 
+/-- In the preferred fibre coordinates `Fin (A.rank.choose j) → 𝕜` of `(exteriorPower 𝕜 B j).obj A`,
+`wedgeSection j A s x` evaluates to `exteriorPower.piEquiv` applied to the pure wedge of `s k x`. -/
+theorem wedgeSection_apply (j : ℕ) (A : FiniteRankBundleCore 𝕜 B)
+    (s : Fin j → ∀ x, A.core.Fiber x) (x : B) :
+    wedgeSection j A s x =
+      exteriorPower.piEquiv 𝕜 A.rank j (exteriorPower.ιMulti 𝕜 j fun k ↦ s k x) :=
+  (rfl)
+
 /-- The determinant wedge `s 0 ∧ ⋯ ∧ s (A.rank - 1)` of `A.rank` sections of `A`, as a section of
 the determinant line bundle `A.det`. -/
-@[expose]
 noncomputable def detSection (A : FiniteRankBundleCore 𝕜 B)
     (s : Fin A.rank → ∀ x, A.core.Fiber x) (x : B) : A.det.core.Fiber x :=
   wedgeSection A.rank A s x
 
+/-- `detSection A s` is `wedgeSection A.rank A s` in top degree. -/
 theorem detSection_def (A : FiniteRankBundleCore 𝕜 B) (s : Fin A.rank → ∀ x, A.core.Fiber x) :
     detSection A s = wedgeSection A.rank A s := (rfl)
 
