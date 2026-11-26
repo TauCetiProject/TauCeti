@@ -196,8 +196,6 @@ noncomputable instance oppositeGradedAlgebra : GradedAlgebra G.opposite.piece :=
 `InternalGrading.ofDecomposition 𝒜`. -/
 noncomputable instance ofDecompositionOppositeGradedAlgebra (𝒜 : ℤ → Submodule R A)
     [GradedAlgebra 𝒜] : GradedAlgebra (InternalGrading.ofDecomposition 𝒜).opposite.piece :=
-  have : SetLike.GradedMonoid (InternalGrading.ofDecomposition 𝒜).piece :=
-    (InternalGrading.ofDecomposition_piece 𝒜).symm ▸ inferInstance
   (InternalGrading.ofDecomposition 𝒜).oppositeGradedAlgebra
 
 end GradedAlgebra

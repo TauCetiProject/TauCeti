@@ -80,6 +80,8 @@ measure that is positive on nonempty open sets are equal.
   sets are equal pointwise.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
   with `g` bounded above almost everywhere, is finite.
+* `MeasureTheory.Measure.restrict_withDensity_restrict`: restricting a weighted restriction
+  to the same set leaves it unchanged.
 * `MeasureTheory.withDensity_restrict_apply_compl`: a measure restricted to a measurable set and
   then weighted gives no mass to the complement of the set.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
@@ -384,6 +386,19 @@ theorem isFiniteMeasure_withDensity_ofReal_exp {α : Type*} [MeasurableSpace α]
     (hgM.mono fun x hx ↦ ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 hx))) ?_
   rw [lintegral_const]
   exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (measure_lt_top _ _)
+
+/-- Weighting a measure restricted to `s` and restricting it again to `s` leaves the weighted
+measure unchanged. -/
+@[simp]
+theorem Measure.restrict_withDensity_restrict {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    (s : Set α) (f : α → ℝ≥0∞) :
+    ((μ.restrict s).withDensity f).restrict s = (μ.restrict s).withDensity f := by
+  refine le_antisymm Measure.restrict_le_self (Measure.le_iff.2 fun t ht ↦ ?_)
+  rw [Measure.restrict_apply ht, withDensity_apply _ ht]
+  calc
+    (∫⁻ x in t, f x ∂μ.restrict s) = ∫⁻ x in t ∩ s, f x ∂μ.restrict s := by
+      rw [Measure.restrict_restrict ht, Measure.restrict_restrict_of_subset Set.inter_subset_right]
+    _ ≤ (μ.restrict s).withDensity f (t ∩ s) := withDensity_apply_le _ _
 
 /-- A measure restricted to a measurable set `s` and then weighted gives no mass to the complement
 of `s`. The weight `f` is arbitrary; no measurability of it is required. -/

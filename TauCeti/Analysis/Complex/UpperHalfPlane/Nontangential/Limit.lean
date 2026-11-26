@@ -18,9 +18,10 @@ nontangential limit is `Tendsto u (nontangentialFilter α x) (𝓝 L)`.
 The truncated cones `Γ^α_h(x)`, `0 < h`, form a basis of this filter
 (`TauCeti.nontangentialFilter_hasBasis`). The filter grows with the aperture, so a nontangential
 limit for one aperture is one for every smaller aperture (`TauCeti.nontangentialFilter_mono`).
-For a positive aperture the vertical approach `x + it`, `t → 0⁺`, is nontangential
-(`TauCeti.tendsto_vertical_nontangentialFilter`), so a nontangential limit is also a vertical
-limit and the filter is nontrivial.
+A ray `(x + ct) + it`, `t → 0⁺`, with `|c| < α` is a nontangential approach
+(`TauCeti.tendsto_ray_nontangentialFilter`). In particular, for a positive aperture the vertical
+approach `x + it` is nontangential (`TauCeti.tendsto_vertical_nontangentialFilter`), so a
+nontangential limit is also a vertical limit and the filter is nontrivial.
 
 ## Main definitions
 
@@ -30,7 +31,9 @@ limit and the filter is nontrivial.
 
 * `TauCeti.nontangentialFilter_hasBasis`: the cones `Γ^α_h(x)`, `0 < h`, form a basis.
 * `TauCeti.nontangentialFilter_mono`: the filter is monotone in the aperture.
-* `TauCeti.tendsto_vertical_nontangentialFilter`: vertical approach is nontangential.
+* `TauCeti.tendsto_ray_nontangentialFilter`: straight-line approach inside the cone is
+  nontangential; in particular so is vertical approach
+  (`TauCeti.tendsto_vertical_nontangentialFilter`).
 
 ## References
 
@@ -96,16 +99,24 @@ theorem nontangentialFilter_mono {α β : ℝ} (hαβ : α ≤ β) (x : ℝ) :
     nontangentialFilter α x ≤ nontangentialFilter β x :=
   nhdsWithin_mono _ (nontangentialCone_mono hαβ le_rfl x)
 
+/-- **Straight-line approach inside the cone is nontangential.** For `|c| < α`, the ray
+`(x + ct) + it → x` nontangentially as `t → 0⁺`. -/
+theorem tendsto_ray_nontangentialFilter {α c : ℝ} (hc : |c| < α) (x : ℝ) :
+    Tendsto (fun t : ℝ => ((x + c * t : ℝ) : ℂ) + t * I) (𝓝[>] 0) (nontangentialFilter α x) := by
+  refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+  · have : Tendsto (fun t : ℝ => ((x + c * t : ℝ) : ℂ) + t * I) (𝓝 0)
+        (𝓝 (((x + c * 0 : ℝ) : ℂ) + ((0 : ℝ) : ℂ) * I)) :=
+      ((by fun_prop : Continuous fun t : ℝ => ((x + c * t : ℝ) : ℂ) + t * I).tendsto 0)
+    simpa using this.mono_left nhdsWithin_le_nhds
+  · filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
+    refine mem_nontangentialCone.2 ⟨by simpa using ht, ?_, by simp⟩
+    simpa [abs_mul, abs_of_pos ht] using mul_lt_mul_of_pos_right hc ht
+
 /-- **Vertical approach is nontangential.** For a positive aperture, `x + it → x` nontangentially
 as `t → 0⁺`. -/
 theorem tendsto_vertical_nontangentialFilter {α : ℝ} (hα : 0 < α) (x : ℝ) :
     Tendsto (fun t : ℝ => (x : ℂ) + t * I) (𝓝[>] 0) (nontangentialFilter α x) := by
-  refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-  · have : Tendsto (fun t : ℝ => (x : ℂ) + t * I) (𝓝 0) (𝓝 ((x : ℂ) + ((0 : ℝ) : ℂ) * I)) :=
-      (continuous_const.add (continuous_ofReal.mul continuous_const)).tendsto 0
-    simpa using this.mono_left nhdsWithin_le_nhds
-  · filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-    simp [ht, mul_pos hα ht]
+  simpa using tendsto_ray_nontangentialFilter (c := 0) (by simpa using hα) x
 
 /-- For a positive aperture the nontangential filter is nontrivial. -/
 theorem nontangentialFilter_neBot {α : ℝ} (hα : 0 < α) (x : ℝ) :

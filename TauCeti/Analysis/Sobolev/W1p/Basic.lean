@@ -67,7 +67,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
 * `TauCeti.W1p.coe_ae_eq_toLp_value_gradient`: the ambient jet of a Sobolev function is almost
   everywhere its value-gradient pair.
 * `TauCeti.W1p.eLpNorm_two_eq_ofReal_sqrt_setIntegral`: on `s ⊆ Ω`, the `L²(s)` seminorm of the
-  value of `w ∈ W^{1,2}(Ω)` is `√(∫_s w²)`.
+  value of `w ∈ W^{1,2}(Ω)` is `√(∫_s w²)`, which is at most `‖w‖`
+  (`TauCeti.W1p.sqrt_setIntegral_value_sq_le_norm`).
 * `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
   the value vanishes on an open subset, and with it the whole jet
@@ -531,6 +532,10 @@ theorem W1p.value_apply_ae (u : W1p mu Omega p) :
 theorem W1p.memLp_value (u : W1p mu ⊤ p) : MemLp (W1p.value u : E → ℝ) p mu := by
   simpa using Lp.memLp (W1p.value u)
 
+/-- On the whole space, the value of a `W^{1,1}` function is integrable. -/
+theorem W1p.integrable_value (u : W1p mu ⊤ 1) : Integrable (W1p.value u : E → ℝ) mu :=
+  memLp_one_iff_integrable.1 (W1p.memLp_value u)
+
 /-- The value of a finite sum of Sobolev functions is almost everywhere the sum of their values. -/
 theorem W1p.value_finsetSum_ae {ι : Type*} (s : Finset ι) (u : ι → W1p mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value (∑ j ∈ s, u j) x = ∑ j ∈ s, W1p.value (u j) x := by
@@ -624,6 +629,14 @@ theorem W1p.gradient_apply_ae (u : W1p mu Omega p) :
       W1p.gradient u x = WithLp.snd ((u : Sobolev1JetLp mu Omega p) x) := by
   rw [W1p.gradient_coe]
   exact Sobolev1JetLp.gradient_apply_ae (u : Sobolev1JetLp mu Omega p)
+
+/-- On the whole space, the weak gradient of a Sobolev function is in `Lᵖ(μ)`. -/
+theorem W1p.memLp_gradient (u : W1p mu ⊤ p) : MemLp (W1p.gradient u : E → E) p mu :=
+  Lp.memLp_of_restrict_coe_opens_top (W1p.gradient u)
+
+/-- On the whole space, the weak gradient of a `W^{1,1}` function is integrable. -/
+theorem W1p.integrable_gradient (u : W1p mu ⊤ 1) : Integrable (W1p.gradient u : E → E) mu :=
+  memLp_one_iff_integrable.1 (W1p.memLp_gradient u)
 
 /-- Two Sobolev functions are equal when their value and weak-gradient components are equal. -/
 @[ext]
@@ -751,6 +764,21 @@ theorem W1p.integral_value_sq_eq_norm_value_sq (u : W1p mu Omega 2) :
 theorem W1p.integral_value_sq_eq_norm_value_sq_top (u : W1p mu ⊤ 2) :
     ∫ x, (W1p.value u x) ^ 2 ∂mu = ‖W1p.value u‖ ^ 2 := by
   simpa using W1p.integral_value_sq_eq_norm_value_sq u
+
+/-- The `L²` norm of the value of `u ∈ W^{1,2}(Ω)` on a subset of `Ω` is at most the norm of
+`u`. -/
+theorem W1p.sqrt_setIntegral_value_sq_le_norm (u : W1p mu Omega 2) {s : Set E}
+    (hs : s ⊆ (Omega : Set E)) :
+    √(∫ x in s, W1p.value u x ^ 2 ∂mu) ≤ ‖u‖ := by
+  have hint : Integrable (fun x => W1p.value u x ^ 2) (mu.restrict Omega) :=
+    (Lp.memLp (W1p.value u)).integrable_sq
+  calc √(∫ x in s, W1p.value u x ^ 2 ∂mu)
+      ≤ √(∫ x in Omega, W1p.value u x ^ 2 ∂mu) :=
+        Real.sqrt_le_sqrt (setIntegral_mono_set hint (ae_of_all _ fun _ => sq_nonneg _)
+          (Filter.Eventually.of_forall hs))
+    _ = ‖W1p.value u‖ := by
+      rw [W1p.integral_value_sq_eq_norm_value_sq, Real.sqrt_sq (norm_nonneg _)]
+    _ ≤ ‖u‖ := W1p.norm_value_le u
 
 /-- The `L²` pairing of the value components of two Sobolev functions, as an integral over `Ω`. -/
 theorem W1p.inner_value_eq_setIntegral (u v : W1p mu Omega 2) :
