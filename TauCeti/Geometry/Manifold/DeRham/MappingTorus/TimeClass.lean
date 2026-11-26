@@ -20,9 +20,10 @@ form `dt` and time period homomorphism `N : H₁(Y_φ; ℤ) → ℤ`, `N(h) = �
 
 **The time period is the Wang class.** Through the homeomorphism of `Y_φ` with the topological
 mapping torus of `φ⁻¹` (`TauCeti.SmoothMappingTorus.homeomorphMappingTorus`), the Wang class
-`ε ∘ δ : H₁(Y_φ; ℤ) → ℤ` (`TauCeti.MappingTorus.wangClass`) is `N` up to the universal sign
-`TauCeti.MappingTorus.circleWangSign = ±1`
-(`TauCeti.SmoothMappingTorus.wangClass_singularHomologyMap_homeomorphMappingTorus`). Both factor
+`ε ∘ δ : H₁(Y_φ; ℤ) → ℤ` (`TauCeti.MappingTorus.wangClass`) is `N` times the universal sign
+`TauCeti.MappingTorus.circleWangSign`
+(`TauCeti.SmoothMappingTorus.wangClass_singularHomologyMap_homeomorphMappingTorus`), which is `-1`
+(`TauCeti.MappingTorus.circleWangSign_eq_neg_one`). Both factor
 through the projection to the circle `ℝ / ℤ`: `N` as the winding number of the image class
 (`TauCeti.SmoothMappingTorus.intTimePeriodHom_eq_firstHomologyAddEquiv`), the Wang class as the
 Wang class of the circle
@@ -113,7 +114,7 @@ theorem intTimePeriodHom_eq_firstHomologyAddEquiv
 
 /-- **The Wang class of a mapping torus is its time period, up to a universal sign.** Through the
 homeomorphism of `Y_φ` with the topological mapping torus of `φ⁻¹`, the Wang class
-`ε ∘ δ : H₁(Y_φ; ℤ) → ℤ` is `circleWangSign = ±1` times the time period `N(c) = ∫_c dt`. -/
+`ε ∘ δ : H₁(Y_φ; ℤ) → ℤ` is `circleWangSign = -1` times the time period `N(c) = ∫_c dt`. -/
 theorem wangClass_singularHomologyMap_homeomorphMappingTorus
     (c : ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus φ))).homology 1) :
     (wangClass (ModuleCat.of ℤ ℤ) φ.toHomeomorph.symm).hom
@@ -143,8 +144,8 @@ theorem intTimePeriodHom_eq_circleWangSign_mul_wangClass
     intTimePeriodHom φ c = circleWangSign * (wangClass (ModuleCat.of ℤ ℤ) φ.toHomeomorph.symm).hom
         (ContinuousMap.singularHomologyMap ℤ 1
           ⟨homeomorphMappingTorus φ, (homeomorphMappingTorus φ).continuous⟩ c) := by
-  rw [wangClass_singularHomologyMap_homeomorphMappingTorus, ← mul_assoc, circleWangSign_mul_self,
-    one_mul]
+  rw [wangClass_singularHomologyMap_homeomorphMappingTorus, circleWangSign_eq_neg_one, neg_one_mul,
+    neg_one_mul, neg_neg]
 
 /-! ### The integral class of `dt` -/
 
@@ -231,8 +232,8 @@ theorem intTimePeriodHom_surjective [PathConnectedSpace M] :
   rw [intTimePeriodHom_eq_circleWangSign_mul_wangClass,
     (homeomorphMappingTorus φ).singularHomologyMap_apply_symm_apply,
     wangClass_hom_apply_singularChains, hx,
-    TauCeti.singularHomology₀Section_singularHomology₀ε_apply, ← mul_assoc,
-    circleWangSign_mul_self, one_mul]
+    TauCeti.singularHomology₀Section_singularHomology₀ε_apply, circleWangSign_eq_neg_one,
+    neg_one_mul, neg_one_mul, neg_neg]
 
 /-- For a path-connected fibre, some class of `H₁(Y_φ; ℤ)` pairs to `1` with the integral class of
 `dt`: a class of time period one. -/
@@ -274,8 +275,8 @@ theorem intTimePeriodHom_eq_zero_iff
   have hker := SetLike.ext_iff.1 (ker_wangδ_zero_eq_torsion φ.toHomeomorph.symm
     ((det_id_sub_homologyMap_monodromyChainMap_symm_ne_zero_iff φ.toHomeomorph 1).2 hdet)) x
   rw [LinearMap.mem_ker] at hker
-  rw [intTimePeriodHom_eq_circleWangSign_mul_wangClass, mul_eq_zero,
-    or_iff_right circleWangSign_ne_zero]
+  rw [intTimePeriodHom_eq_circleWangSign_mul_wangClass, circleWangSign_eq_neg_one, neg_one_mul,
+    neg_eq_zero]
   -- `x` lies in the homology of `singularChains ℤ`, the source of `wangClass` only definitionally,
   -- so the lemma is applied by unification rather than by `rw`.
   refine (wangClass_hom_eq_zero_iff φ.toHomeomorph.symm (ModuleCat.of ℤ ℤ) x).trans ?_

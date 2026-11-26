@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.AddCircle
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.FirstCohomology
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Refl
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+import TauCeti.AlgebraicTopology.Singular.ModuleChains.HomologyZero
 
 /-!
 # The Wang class of a mapping torus comes from the base circle
@@ -58,13 +59,16 @@ the angular class and the time form of the circle are compared by
 * **Comparison with the Wang class.** `circleWangClass` and the winding number are both
   isomorphisms `H₁(ℝ/ℤ; ℤ) ≅ ℤ`, so they differ by a sign: `circleWangClass` is the winding number
   times `TauCeti.MappingTorus.circleWangSign`, its value on the circuit class
-  `AddCircle.fundamentalClass 1` (`TauCeti.MappingTorus.circleWangClass_hom_apply`), and this
-  constant is `1` or `-1` (`TauCeti.MappingTorus.circleWangSign_eq_one_or_eq_neg_one`,
-  `TauCeti.MappingTorus.exists_circleWangClass_eq_zsmul`). So `⟨[dt], h⟩ = s ε(δ h)` on every
-  mapping torus, with the same `s = ±1`
-  (`TauCeti.MappingTorus.exists_singularKronecker_baseClass_eq_zsmul`,
-  `TauCeti.MappingTorus.exists_singularKronecker_baseClass_apply`). Which of the two values
-  `circleWangSign` takes is not computed here; the base class itself involves no choice of sign.
+  `AddCircle.fundamentalClass 1` (`TauCeti.MappingTorus.circleWangClass_hom_apply`). This sign is
+  `-1` (`TauCeti.MappingTorus.circleWangSign_eq_neg_one`), computed on the chains of the cyclic
+  cover `pt × ℝ` of the circle: the circuit lifts to the path from height `0` to height `1`, whose
+  boundary is `(𝟙 - τ_*)(-[0])` for the deck transformation `τ` raising the height by one, so the
+  Wang connecting morphism sends the circuit class to `-[pt]`. Thus the Wang class of the circle is
+  minus the winding number
+  (`TauCeti.MappingTorus.circleWangClass_eq_neg_singularKronecker_angularClass`), and
+  `⟨[dt], h⟩ = -ε(δ h)` on every mapping torus
+  (`TauCeti.MappingTorus.singularKronecker_baseClass_eq_neg_wangClass`,
+  `TauCeti.MappingTorus.singularKronecker_baseClass_apply_eq_neg`).
 * **The period homomorphism.** For a path-connected fibre the periods `⟨[dt], h⟩` take every
   integer value (`TauCeti.MappingTorus.singularKronecker_baseClass_surjective`). If moreover
   `H₁(F; ℤ)` is free of finite rank and `det (𝟙 - φ_*) ≠ 0` on it, the period of `h` vanishes
@@ -73,8 +77,8 @@ the angular class and the time form of the circle are compared by
   homomorphism is the torsion of `H₁(T_φ; ℤ)`, so it is injective only when `H₁(T_φ; ℤ)` is
   torsion-free.
 * **A generator.** Under the same hypotheses the identification `H¹(T_φ; ℤ) ≃ ℤ` of
-  `TauCeti.MappingTorus.cohomologyOneEquiv` sends `[dt]` to `±1`
-  (`TauCeti.MappingTorus.cohomologyOneEquiv_baseClass_eq_one_or_eq_neg_one`), so every class of
+  `TauCeti.MappingTorus.cohomologyOneEquiv` sends `[dt]` to `-1`
+  (`TauCeti.MappingTorus.cohomologyOneEquiv_baseClass`), so every class of
   `H¹(T_φ; ℤ)` is an integer multiple of `[dt]` (`TauCeti.MappingTorus.exists_eq_zsmul_baseClass`)
   and `[dt]` is a basis of `H¹(T_φ; ℤ)` (`TauCeti.MappingTorus.basisBaseClass`). With the angular
   class `[ds]` of a circle factor it gives the basis `([ds], [dt])` of `H¹((ℝ / pℤ) × T_φ; ℤ)`
@@ -248,8 +252,8 @@ end Circle
 /-! ### The integral Wang class of the circle -/
 
 /-- **The sign of the Wang class of the circle**: the value of the integral Wang class
-`H₁(ℝ/ℤ; ℤ) ⟶ ℤ` of the circle on the circuit class `AddCircle.fundamentalClass 1`. It is `1` or
-`-1` (`TauCeti.MappingTorus.circleWangSign_eq_one_or_eq_neg_one`). -/
+`H₁(ℝ/ℤ; ℤ) ⟶ ℤ` of the circle on the circuit class `AddCircle.fundamentalClass 1`. It is `-1`
+(`TauCeti.MappingTorus.circleWangSign_eq_neg_one`). -/
 def circleWangSign : ℤ :=
   (circleWangClass (ModuleCat.of ℤ ℤ)).hom (AddCircle.fundamentalClass 1)
 
@@ -269,21 +273,103 @@ theorem circleWangClass_hom_apply
   exact (congrArg _ (AddCircle.eq_firstHomologyAddEquiv_zsmul_fundamentalClass 1 c)).trans
     ((map_zsmul _ _ _).trans (smul_eq_mul _ _))
 
-/-- **The Wang class of the circle is a generator**: its value `circleWangSign` on the circuit
-class is `1` or `-1`, since it is an isomorphism `H₁(ℝ/ℤ; ℤ) ≅ ℤ`. -/
-theorem circleWangSign_eq_one_or_eq_neg_one : circleWangSign = 1 ∨ circleWangSign = -1 := by
-  obtain ⟨c, hc⟩ := (ConcreteCategory.bijective_of_isIso (circleWangClass (ModuleCat.of ℤ ℤ))).2 1
-  exact Int.eq_one_or_neg_one_of_mul_eq_one
-    ((mul_comm _ _).trans ((circleWangClass_hom_apply c).symm.trans hc))
+/-! The value of `circleWangSign` is computed on the mapping torus `T` of the identity of a point,
+the circle of `circleWangClass`. The loop `t ↦ [⋆, t]` of `T` lifts to the path `t ↦ (⋆, t)` of the
+cylinder `pt × ℝ`, whose boundary `[⋆, 1] - [⋆, 0]` is `(𝟙 - τ_*)(-[⋆, 0])` for the deck
+transformation `τ` raising the height by one. So the Wang connecting morphism sends the class of
+the loop to the class of `-[⋆]`, of augmentation `-1`, while the projection to `ℝ/ℤ` sends it to the
+circuit class. -/
 
-/-- The square of `circleWangSign` is `1`. -/
+/-- The path `t ↦ (⋆, t)` of the cylinder `pt × ℝ`, from height `0` to height `1`. -/
+private def unitHeightPath : C(unitInterval, PUnit.{1} × ℝ) :=
+  ⟨fun t ↦ (PUnit.unit, (t : ℝ)), by fun_prop⟩
+
+/-- The image of `unitHeightPath` in the mapping torus of the identity of a point is a loop, so its
+chain is a cycle. -/
+private lemma d_pathChain_coverMap_comp_unitHeightPath :
+    ((singularChains ℤ).obj (TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))).d 1 0
+      (pathChain ℤ (X := TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))
+        ((coverMap (Homeomorph.refl PUnit.{1})).comp unitHeightPath)) = 0 := by
+  have h : mk (Homeomorph.refl PUnit.{1}) PUnit.unit 1 = mk _ PUnit.unit 0 := by
+    simpa using mk_apply_add_one (Homeomorph.refl PUnit.{1}) PUnit.unit 0
+  simp [unitHeightPath, h]
+
+/-- The class in `H₁(T; ℤ)` of the loop `t ↦ [⋆, t]` of the mapping torus `T` of the identity of a
+point. -/
+private def unitLoopClass :
+    ((singularChains ℤ).obj (TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))).homology 1 :=
+  ((singularChains ℤ).obj (TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))).homologyπ 1
+    (((singularChains ℤ).obj (TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))).cyclesMk
+      (pathChain ℤ (X := TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))
+        ((coverMap (Homeomorph.refl PUnit.{1})).comp unitHeightPath)) 0 (by simp)
+      d_pathChain_coverMap_comp_unitHeightPath)
+
+/-- The Wang class of the mapping torus of the identity of a point is `-1` on the class of the loop
+`t ↦ [⋆, t]`: the deck transformation raises the height of the cylinder by one. -/
+private lemma wangClass_unitLoopClass :
+    (wangClass (ModuleCat.of ℤ ℤ) (Homeomorph.refl PUnit.{1})).hom unitLoopClass = -1 := by
+  let φ := Homeomorph.refl PUnit.{1}
+  let x₂ := pathChain ℤ (X := TopCat.of (PUnit.{1} × ℝ)) unitHeightPath
+  let x₁ := -pointChain ℤ (X := TopCat.of (PUnit.{1} × ℝ)) (PUnit.unit, (0 : ℝ))
+  -- The lift `x₂` of the loop has boundary `(𝟙 - τ_*) x₁`.
+  have hx₂ : (coverChainMap φ (ModuleCat.of ℤ ℤ)).f 1 x₂ =
+      pathChain ℤ (X := TopCat.of (MappingTorus φ)) ((coverMap φ).comp unitHeightPath) := by
+    rw [coverChainMap_def]
+    exact singularChains_map_f_pathChain _ _
+  have hτ : ((deckChainMap φ (ModuleCat.of ℤ ℤ)).f 0).hom x₁ =
+      -pointChain ℤ (X := TopCat.of (PUnit.{1} × ℝ)) (PUnit.unit, (1 : ℝ)) := by
+    have hdeck : deck φ ((PUnit.unit, 0) : PUnit.{1} × ℝ) = (PUnit.unit, 1) := by simp
+    rw [deckChainMap_def, map_neg]
+    exact congrArg Neg.neg ((singularChains_map_f_simplexChain _ _ _).trans
+      (congrArg (fun p : PUnit.{1} × ℝ ↦ simplexChain (X := TopCat.of (PUnit.{1} × ℝ))
+        (TopCat.toSSetObj₀Equiv.symm p) (1 : ℤ)) hdeck))
+  have hx₁ : ((𝟙 _ - deckChainMap φ (ModuleCat.of ℤ ℤ)).f 0) x₁ =
+      ((singularChains ℤ).obj (TopCat.of (PUnit.{1} × ℝ))).d 1 0 x₂ := by
+    rw [singularChains_d_pathChain, HomologicalComplex.sub_f_apply, HomologicalComplex.id_f]
+    simp only [ModuleCat.hom_sub, LinearMap.sub_apply, ModuleCat.hom_id, LinearMap.id_apply, hτ]
+    simp [x₁, unitHeightPath, sub_eq_add_neg, add_comm]
+  have hδ := (cyclicCoverShortComplex_shortExact φ (ModuleCat.of ℤ ℤ)).δ_apply 1 0 (by simp) _
+    d_pathChain_coverMap_comp_unitHeightPath x₂ hx₂ x₁ hx₁ 0 ChainComplex.next_nat_zero
+  -- The Wang class is the augmentation of the connecting morphism, read in `pt × ℝ`.
+  rw [wangClass_hom_apply_singularChains, wangδ_def, ConcreteCategory.comp_apply]
+  refine (ConcreteCategory.congr_hom (singularHomologyMap_singularHomology₀ε (ModuleCat.of ℤ ℤ)
+    (TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection PUnit.{1} ℝ).symm.toFun)) _).trans
+    ((congrArg _ hδ).trans ((singularHomology₀ε_homologyπ_cyclesMk x₁ _).trans ?_))
+  rw [map_neg, singularAugment_simplexChain]
+
+/-- The projection of the mapping torus of the identity of a point to `ℝ/ℤ` sends the class of the
+loop `t ↦ [⋆, t]` to the circuit class. -/
+private lemma homologyMap_proj_unitLoopClass :
+    (homologyMap ((singularChains ℤ).map (TopCat.ofHom
+      ⟨proj (Homeomorph.refl PUnit.{1}), continuous_proj _⟩)) 1).hom unitLoopClass =
+      AddCircle.fundamentalClass 1 := by
+  let P := (singularChains ℤ).map
+    (TopCat.ofHom ⟨proj (Homeomorph.refl PUnit.{1}), continuous_proj _⟩)
+  rw [AddCircle.fundamentalClass_eq_homologyπ 1 ((cyclesMap P 1).hom
+    (((singularChains ℤ).obj (TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))).cyclesMk
+      (pathChain ℤ (X := TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))
+        ((coverMap (Homeomorph.refl PUnit.{1})).comp unitHeightPath)) 0 (by simp)
+      d_pathChain_coverMap_comp_unitHeightPath)) ?_]
+  · exact ConcreteCategory.congr_hom (homologyπ_naturality P 1) _
+  · rw [← ConcreteCategory.comp_apply, cyclesMap_i, ConcreteCategory.comp_apply]
+    refine (congrArg _ (HomologicalComplex.i_cyclesMk (C := ModuleCat ℤ) _ _ _ _ _)).trans ?_
+    rw [singularChains_map_f_pathChain, AddCircle.circuitSimplex_def]
+    congr 2
+    ext t
+    simp only [unitHeightPath, ConcreteCategory.hom_ofHom, ContinuousMap.comp_apply,
+      coverMap_apply, ContinuousMap.coe_mk, proj_mk, Path.coe_toContinuousMap,
+      AddCircle.zsmulLoop_zero_apply_eq_coe]
+    simp
+
+/-- **The sign of the Wang class of the circle is `-1`.** The integral Wang class `ε ∘ δ` of the
+circle takes the value `-1` on the circuit class, so it is minus the winding number
+(`circleWangClass_eq_neg_singularKronecker_angularClass`). -/
 @[simp]
-theorem circleWangSign_mul_self : circleWangSign * circleWangSign = 1 := by
-  rcases circleWangSign_eq_one_or_eq_neg_one with h | h <;> rw [h] <;> norm_num
-
-/-- `circleWangSign` is nonzero. -/
-theorem circleWangSign_ne_zero : circleWangSign ≠ 0 :=
-  left_ne_zero_of_mul_eq_one circleWangSign_mul_self
+theorem circleWangSign_eq_neg_one : circleWangSign = -1 :=
+  (congrArg (circleWangClass (ModuleCat.of ℤ ℤ)).hom homologyMap_proj_unitLoopClass.symm).trans
+    ((ConcreteCategory.congr_hom
+      (singularHomologyMap_proj_comp_circleWangClass (ModuleCat.of ℤ ℤ)) unitLoopClass).trans
+      wangClass_unitLoopClass)
 
 section Integral
 
@@ -291,18 +377,15 @@ section Integral
 -- through the linear structure of `ModuleCat ℤ`, under which the Kronecker maps are linear.
 attribute [local instance 1100] ModuleCat.instLinear
 
-/-- **The Wang class of the circle is the winding number up to sign.** With integer coefficients,
-`circleWangClass` is `s` times the Kronecker evaluation of the angular class, that is `s` times the
-winding number, for some `s = ±1`, namely `circleWangSign`. -/
-theorem exists_circleWangClass_eq_zsmul :
-    ∃ s : ℤ, (s = 1 ∨ s = -1) ∧ circleWangClass (ModuleCat.of ℤ ℤ) =
-      s • (TopCat.of UnitAddCircle).singularKronecker ℤ 1 (AddCircle.angularClass 1) := by
-  -- The sign is `circleWangSign`, the value on the circuit class, which the winding number sends
-  -- to `1`.
-  refine ⟨circleWangSign, circleWangSign_eq_one_or_eq_neg_one,
-    ModuleCat.hom_ext (LinearMap.ext fun c ↦ (circleWangClass_hom_apply c).trans ?_)⟩
-  rw [ModuleCat.hom_smul, LinearMap.smul_apply, smul_eq_mul, mul_comm]
-  exact congrArg _ (AddCircle.singularKronecker_angularClass 1 c).symm
+/-- **The Wang class of the circle is minus the winding number.** With integer coefficients,
+`circleWangClass` is minus the Kronecker evaluation of the angular class, that is minus the winding
+number. -/
+theorem circleWangClass_eq_neg_singularKronecker_angularClass :
+    circleWangClass (ModuleCat.of ℤ ℤ) =
+      -(TopCat.of UnitAddCircle).singularKronecker ℤ 1 (AddCircle.angularClass 1) :=
+  ModuleCat.hom_ext (LinearMap.ext fun c ↦ (circleWangClass_hom_apply c).trans (by
+    rw [circleWangSign_eq_neg_one, mul_neg_one, ModuleCat.hom_neg, LinearMap.neg_apply]
+    exact congrArg _ (AddCircle.singularKronecker_angularClass 1 c).symm))
 
 variable {F : Type} [TopologicalSpace F] (φ : F ≃ₜ F)
 
@@ -344,34 +427,27 @@ theorem singularKronecker_baseClass
   rw [baseClass, TopCat.singularKronecker_naturality]
   exact AddCircle.singularKronecker_angularClass 1 _
 
-/-- **The base class evaluates through the Wang class.** There is a sign `s = ±1`, the same for
-every mapping torus, with `⟨[dt], h⟩ = s ε(δ h)` for the Wang class `ε ∘ δ`. The sign is that of
-the Wang class of the circle on the circuit class (`exists_circleWangClass_eq_zsmul`). -/
-theorem exists_singularKronecker_baseClass_eq_zsmul :
-    ∃ s : ℤ, (s = 1 ∨ s = -1) ∧ ∀ {F : Type} [TopologicalSpace F] (φ : F ≃ₜ F),
-        (TopCat.of (MappingTorus φ)).singularKronecker ℤ 1 (baseClass φ) =
-          s • wangClass (ModuleCat.of ℤ ℤ) φ := by
-  obtain ⟨s, hs, h⟩ := exists_circleWangClass_eq_zsmul
-  have hss : s * s = 1 := by rcases hs with rfl | rfl <;> rfl
-  refine ⟨s, hs, fun φ ↦ ?_⟩
-  rw [wangClass_eq_singularHomologyMap_proj_comp_circleWangClass, h, Linear.comp_smul, smul_smul,
-    hss, one_smul, baseClass, TopCat.singularKronecker_naturality]
+/-- **The base class evaluates through the Wang class.** On every mapping torus,
+`⟨[dt], h⟩ = -ε(δ h)` for the Wang class `ε ∘ δ`, since the Wang class of the circle is minus the
+winding number (`circleWangClass_eq_neg_singularKronecker_angularClass`). -/
+theorem singularKronecker_baseClass_eq_neg_wangClass :
+    (TopCat.of (MappingTorus φ)).singularKronecker ℤ 1 (baseClass φ) =
+      -wangClass (ModuleCat.of ℤ ℤ) φ := by
+  rw [wangClass_eq_singularHomologyMap_proj_comp_circleWangClass,
+    circleWangClass_eq_neg_singularKronecker_angularClass, Preadditive.comp_neg, neg_neg, baseClass,
+    TopCat.singularKronecker_naturality]
   -- The chain coefficients `𝟙_ (ModuleCat ℤ)` and `ModuleCat.of ℤ ℤ` agree by definition.
   rfl
 
-/-- **The periods of the base class through the Wang sequence**: there is a sign `s = ±1`, the same
-for every mapping torus, with `⟨[dt], h⟩ = s ε(δ h)` for the Wang connecting morphism `δ` and the
-augmentation `ε` of `H₀(F)`. -/
-theorem exists_singularKronecker_baseClass_apply :
-    ∃ s : ℤ, (s = 1 ∨ s = -1) ∧ ∀ {F : Type} [TopologicalSpace F] (φ : F ≃ₜ F)
-      (c : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj (ModuleCat.of ℤ ℤ)).obj
-        (TopCat.of (MappingTorus φ))),
-        (TopCat.of (MappingTorus φ)).singularKronecker ℤ 1 (baseClass φ) c =
-          s * (TopCat.of F).singularHomology₀ε (ModuleCat.of ℤ ℤ)
-            ((wangδ φ (ModuleCat.of ℤ ℤ) 0).hom c) := by
-  obtain ⟨s, hs, h⟩ := exists_singularKronecker_baseClass_eq_zsmul
-  refine ⟨s, hs, fun φ c ↦ (congrArg (fun f ↦ f.hom c) (h φ)).trans ?_⟩
-  rw [ModuleCat.hom_smul, LinearMap.smul_apply, smul_eq_mul, wangClass_hom_apply]
+/-- **The periods of the base class through the Wang sequence**: `⟨[dt], h⟩ = -ε(δ h)` for the
+Wang connecting morphism `δ` and the augmentation `ε` of `H₀(F)`. -/
+theorem singularKronecker_baseClass_apply_eq_neg
+    (c : ((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (MappingTorus φ))) :
+    (TopCat.of (MappingTorus φ)).singularKronecker ℤ 1 (baseClass φ) c =
+      -(TopCat.of F).singularHomology₀ε (ModuleCat.of ℤ ℤ) ((wangδ φ (ModuleCat.of ℤ ℤ) 0).hom c) :=
+  (congrArg (fun f ↦ f.hom c) (singularKronecker_baseClass_eq_neg_wangClass φ)).trans (by
+    rw [ModuleCat.hom_neg, LinearMap.neg_apply, wangClass_hom_apply])
 
 variable [PathConnectedSpace F]
 
@@ -379,17 +455,14 @@ variable [PathConnectedSpace F]
 `⟨[dt], h⟩` of some class `h ∈ H₁(T_φ; ℤ)`. -/
 theorem singularKronecker_baseClass_surjective :
     Function.Surjective ((TopCat.of (MappingTorus φ)).singularKronecker ℤ 1 (baseClass φ)) := by
-  obtain ⟨s, hs, h⟩ := exists_singularKronecker_baseClass_apply
   -- The Wang connecting morphism is onto `H₀(F)`, which the augmentation identifies with `ℤ`.
   have hδ := (ModuleCat.epi_iff_surjective (wangδ φ (ModuleCat.of ℤ ℤ) 0)).1 inferInstance
   have hε := (ModuleCat.epi_iff_surjective
     ((TopCat.of F).singularHomology₀ε (ModuleCat.of ℤ ℤ))).1 inferInstance
   intro n
-  obtain ⟨x, hx⟩ := hε (s * n)
+  obtain ⟨x, hx⟩ := hε (-n)
   obtain ⟨c, rfl⟩ := hδ x
-  refine ⟨c, (h φ c).trans ?_⟩
-  rw [hx, ← mul_assoc]
-  rcases hs with rfl | rfl <;> simp
+  exact ⟨c, (singularKronecker_baseClass_apply_eq_neg φ c).trans (by rw [hx, neg_neg])⟩
 
 variable [Module.Free ℤ ((((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
     (ModuleCat.of ℤ ℤ)).obj (TopCat.of F)).homology 1)]
@@ -407,39 +480,34 @@ theorem singularKronecker_baseClass_eq_zero_iff
     (TopCat.of (MappingTorus φ)).singularKronecker ℤ 1 (baseClass φ) c = 0 ↔
       c ∈ Submodule.torsion ℤ ((((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
         (ModuleCat.of ℤ ℤ)).obj (TopCat.of (MappingTorus φ))).homology 1) := by
-  obtain ⟨s, hs, h⟩ := exists_singularKronecker_baseClass_apply
-  have hs0 : s ≠ 0 := by rcases hs with rfl | rfl <;> decide
   -- The augmentation `H₀(F) ⟶ ℤ` is an isomorphism, so `ε(δ c) = 0` exactly when `δ c = 0`.
   have hε : Function.Injective ((TopCat.of F).singularHomology₀ε (ModuleCat.of ℤ ℤ)) :=
     (ModuleCat.mono_iff_injective _).1 inferInstance
   have hker : (wangδ φ (ModuleCat.of ℤ ℤ) 0).hom c = 0 ↔ c ∈ Submodule.torsion ℤ _ := by
     rw [← LinearMap.mem_ker, ker_wangδ_zero_eq_torsion φ hdet]
-  refine (Eq.congr_left (h φ c)).trans ?_
-  rw [mul_eq_zero, or_iff_right hs0, ← hker]
+  refine (Eq.congr_left (singularKronecker_baseClass_apply_eq_neg φ c)).trans ?_
+  rw [neg_eq_zero, ← hker]
   exact hε.eq_iff' (map_zero _)
 
-/-- **The base class corresponds to `±1`.** Under the hypotheses of `cohomologyOneEquiv`, the
-identification `H¹(T_φ; ℤ) ≃ ℤ` sends the base class `[dt]` to `1` or `-1`. -/
-theorem cohomologyOneEquiv_baseClass_eq_one_or_eq_neg_one
+/-- **The base class corresponds to `-1`.** Under the hypotheses of `cohomologyOneEquiv`, the
+identification `H¹(T_φ; ℤ) ≃ ℤ`, under which a class evaluates to `ε(δ h)` times its image, sends
+the base class `[dt]` to `-1`. -/
+theorem cohomologyOneEquiv_baseClass
     (hdet : (LinearMap.id -
       (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0) :
-    cohomologyOneEquiv φ (ModuleCat.of ℤ ℤ) hdet (baseClass φ) = 1 ∨
-      cohomologyOneEquiv φ (ModuleCat.of ℤ ℤ) hdet (baseClass φ) = -1 := by
-  obtain ⟨s, hs, h⟩ := exists_singularKronecker_baseClass_eq_zsmul
-  suffices baseClass φ = (cohomologyOneEquiv φ (ModuleCat.of ℤ ℤ) hdet).symm s by
-    rw [this, LinearEquiv.apply_symm_apply]
-    exact hs
-  -- Both classes evaluate to `s ε(δ c)`, and the Kronecker map is injective in degree one since
+    cohomologyOneEquiv φ (ModuleCat.of ℤ ℤ) hdet (baseClass φ) = -1 := by
+  rw [← (cohomologyOneEquiv φ (ModuleCat.of ℤ ℤ) hdet).apply_symm_apply (-1)]
+  congr 1
+  -- Both classes evaluate to `-ε(δ c)`, and the Kronecker map is injective in degree one since
   -- `H₀(T_φ; ℤ)` is free.
   refine ((TopCat.of (MappingTorus φ)).singularKronecker_bijective_of_projective_homology_lt
     (R := ModuleCat.of ℤ ℤ) (ModuleCat.of ℤ ℤ) 1 (fun j hj ↦ ?_)).1
     (ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_))
   · obtain rfl : j = 0 := by omega
     exact ModuleCat.projective_of_free (Module.Free.chooseBasis ℤ _)
-  · refine (congrArg (fun f ↦ f.hom c) (h φ)).trans (Eq.trans ?_
-      (singularKronecker_cohomologyOneEquiv_symm_apply φ (ModuleCat.of ℤ ℤ) hdet s c).symm)
-    rw [ModuleCat.hom_smul, LinearMap.smul_apply, smul_eq_mul, smul_eq_mul, mul_comm,
-      wangClass_hom_apply]
+  · refine (singularKronecker_baseClass_apply_eq_neg φ c).trans (Eq.trans ?_
+      (singularKronecker_cohomologyOneEquiv_symm_apply φ (ModuleCat.of ℤ ℤ) hdet (-1) c).symm)
+    rw [smul_eq_mul, mul_neg_one]
 
 /-- **The base class generates `H¹(T_φ; ℤ)`.** If `F` is path-connected, `H₁(F; ℤ)` is free of
 finite rank and `det (𝟙 - φ_*) ≠ 0` on it, every class of `H¹(T_φ; ℤ)` is an integer multiple of
@@ -449,11 +517,9 @@ theorem exists_eq_zsmul_baseClass
       (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0)
     (x : (TopCat.of (MappingTorus φ)).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ
       (ModuleCat.of ℤ ℤ) 1) : ∃ m : ℤ, x = m • baseClass φ := by
-  set e := cohomologyOneEquiv φ (ModuleCat.of ℤ ℤ) hdet
-  have hss : e (baseClass φ) * e (baseClass φ) = 1 := by
-    rcases cohomologyOneEquiv_baseClass_eq_one_or_eq_neg_one φ hdet with h | h <;> rw [h] <;> rfl
-  refine ⟨e x * e (baseClass φ), e.injective ?_⟩
-  rw [map_zsmul, smul_eq_mul, mul_assoc, hss, mul_one]
+  refine ⟨-cohomologyOneEquiv φ (ModuleCat.of ℤ ℤ) hdet x,
+    (cohomologyOneEquiv φ (ModuleCat.of ℤ ℤ) hdet).injective ?_⟩
+  rw [map_zsmul, cohomologyOneEquiv_baseClass, smul_eq_mul, neg_mul_neg, mul_one]
 
 /-- **The basis `[dt]` of `H¹(T_φ; ℤ)`.** If `F` is path-connected, `H₁(F; ℤ)` is free of finite
 rank and `det (𝟙 - φ_*) ≠ 0` on it, the base class alone is a basis of `H¹(T_φ; ℤ)`. -/
@@ -465,8 +531,10 @@ def basisBaseClass
         (ModuleCat.of ℤ ℤ) 1) :=
   .mk (v := ![baseClass φ])
     (LinearIndependent.of_comp (cohomologyOneEquiv φ (ModuleCat.of ℤ ℤ) hdet).toLinearMap (by
-      rcases cohomologyOneEquiv_baseClass_eq_one_or_eq_neg_one φ hdet with h | h <;>
-        simp [Function.comp_def, h]))
+      simp only [Function.comp_def, Matrix.cons_val_fin_one, LinearEquiv.coe_coe,
+        linearIndependent_unique_iff]
+      rw [cohomologyOneEquiv_baseClass]
+      exact neg_ne_zero.2 one_ne_zero))
     fun x _ ↦ by
       obtain ⟨m, rfl⟩ := exists_eq_zsmul_baseClass φ hdet x
       exact zsmul_mem (Submodule.subset_span (Set.mem_range_self 0)) m
