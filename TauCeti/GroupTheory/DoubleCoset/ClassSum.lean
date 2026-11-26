@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Rat
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.DoubleCoset.Mass
+import TauCeti.Algebra.Module.Rat
 import TauCeti.GroupTheory.DoubleCoset.Finite
 public import TauCeti.Topology.Algebra.Group.LocallyConstant
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
@@ -233,12 +234,6 @@ end FiniteType
 
 /-! ### Class integrals -/
 
-/-- Cancelling a factor `n ≠ 0` of an index `n * m`:
-`((n * m : ℕ) : ℚ)⁻¹ • (n • x) = (m : ℚ)⁻¹ • x`. -/
-private theorem inv_natCast_mul_smul_nsmul {n m : ℕ} (hn : (n : ℚ) ≠ 0) (x : W) :
-    ((n * m : ℕ) : ℚ)⁻¹ • (n • x) = (m : ℚ)⁻¹ • x := by
-  rw [Nat.cast_mul, mul_inv_rev, mul_smul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ hn]
-
 section ClassIntegral
 
 variable (Γ K : Subgroup G)
@@ -276,9 +271,8 @@ theorem classIntegral_eq_inv_relIndex_smul_doubleCosetClassSum {f : G → W}
   have h_sum : doubleCosetClassSum Γ J f = J.relIndex S • doubleCosetClassSum Γ S f :=
     doubleCosetClassSum_eq_relIndex_smul_of_le hl
       (fun k hk ↦ mem_rightTranslationStabilizer.1 (Subgroup.mem_inf.1 hk).1) hJS
-  have h_ne : (J.relIndex S : ℚ) ≠ 0 := Nat.cast_ne_zero.2 (Subgroup.relIndex_ne_zero)
   rw [h_sum, classIntegral_def, ← Subgroup.relIndex_mul_relIndex J S K hJS hSK,
-    inv_natCast_mul_smul_nsmul h_ne]
+    inv_natCast_mul_smul_nsmul Subgroup.relIndex_ne_zero]
 
 /-- If `K` fixes `f`, the class integral is the class sum. -/
 theorem classIntegral_eq_doubleCosetClassSum {f : G → W} (hK : K ≤ rightTranslationStabilizer f) :
@@ -382,14 +376,12 @@ theorem classIntegral_comp_mul_right (hK : HasFiniteType Γ K) {f : G → W}
         rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem] at h
         simpa [MulAut.smul_def, mul_assoc] using
           mem_rightTranslationStabilizer.1 (Subgroup.mem_inf.1 h).1 (g * b)
-  have h_ne : ((MulAut.conj b⁻¹ • M).relIndex J : ℚ) ≠ 0 :=
-    Nat.cast_ne_zero.2 Subgroup.relIndex_ne_zero
   rw [classIntegral_eq_inv_relIndex_smul_doubleCosetClassSum
       (fun γ hγ g ↦ by simp [mul_assoc, hl γ hγ]) inf_le_left hMf,
     doubleCosetClassSum_comp_mul_right hl
       (fun k hk g ↦ mem_rightTranslationStabilizer.1 (Subgroup.mem_inf.1 hk).1 g) b hbM,
     classIntegral_eq_inv_relIndex_smul_doubleCosetClassSum hl hJK inf_le_left, h_index,
-    inv_natCast_mul_smul_nsmul h_ne]
+    inv_natCast_mul_smul_nsmul Subgroup.relIndex_ne_zero]
 
 end ClassIntegral
 
