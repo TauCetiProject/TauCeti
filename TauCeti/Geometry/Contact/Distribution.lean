@@ -127,6 +127,11 @@ namespace IsContactDistribution
 
 variable [FiniteDimensional ℝ E]
 
+/-- A contact structure of class `C^n` is a contact structure of every lower class `C^m`. -/
+theorem of_le {m : ℕ∞ω} (hD : IsContactDistribution I n D) (hmn : m ≤ n) :
+    IsContactDistribution I m D :=
+  ⟨hD.isContMDiffDistribution.of_le hmn, hD.ne_top, hD.bijective_distributionLeviForm⟩
+
 /-- A contact distribution is a hyperplane field: its rank is one less than the dimension of `M`. -/
 theorem finrank_add_one (hD : IsContactDistribution I n D) (x : M) :
     finrank ℝ (D x) + 1 = finrank ℝ E := by

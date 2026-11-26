@@ -305,8 +305,7 @@ theorem isContactDistribution_contactElementDistribution {n : ℕ∞ω} [ENat.LE
       (surjective_id.prodMap QuotientAddGroup.mk_surjective)
     rw [comap_mfderiv_contactElementDistribution]
     exact isContactForm_contactElementForm.isContactDistribution_kerDistribution
-  exact ⟨h.isContMDiffDistribution.of_le ENat.LEInfty.out, h.ne_top,
-    h.bijective_distributionLeviForm⟩
+  exact h.of_le ENat.LEInfty.out
 
 /-! ### The contact structure is not coorientable -/
 

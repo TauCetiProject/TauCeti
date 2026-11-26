@@ -191,8 +191,6 @@ theorem IsContMDiffDistribution.comap_mfderiv {m : ℕ∞ω} {k : ℕ}
   hD'.comap_mfderiv_of_isLocalDiffeomorph h.isLocalDiffeomorph hmn
 
 omit [CompleteSpace E] in
-open Filter in
-open scoped Topology in
 /-- **Descent of a distribution along a surjective local diffeomorphism.** Let `f` be a surjective
 `C^n` local diffeomorphism and `D'` a distribution on its target. If the pullback
 `x ↦ (df_x)⁻¹ (D' (f x))` is a `C^m` distribution of rank `k` and `m + 1 ≤ n`, then so is `D'`:
@@ -210,20 +208,10 @@ theorem IsContMDiffDistribution.of_comap_mfderiv_of_isLocalDiffeomorph [Complete
     (hf x).localInverse_isLocalDiffeomorphAt hmn ?_
   filter_upwards [(hf x).localInverse_open_source.mem_nhds (hf x).localInverse_mem_source]
     with z hz
-  -- Near `z`, `f ∘ g` is the identity, so `df_(g z) ∘ dg_z` is the identity of `T_z N`.
-  have hfg : f ∘ (hf x).localInverse =ᶠ[𝓝 z] id :=
-    eventuallyEq_of_mem ((hf x).localInverse_open_source.mem_nhds hz)
-      (hf x).localInverse_eqOn_right
-  have hid (v : TangentSpace J z) :
-      mfderiv I J f ((hf x).localInverse z) (mfderiv J I (hf x).localInverse z v) = v := by
-    rw [← mfderiv_comp_apply z ((hf _).mdifferentiableAt hn)
-      ((hf x).localInverse.mdifferentiableAt hn hz), hfg.mfderiv_eq, mfderiv_id]
-    -- What remains is the identity of `T_z N` composed with `tangentSpaceCast`, the identity map
-    -- between the tangent spaces at `(f ∘ g) z` and `z`, which Mathlib defines by `v ↦ v`.
-    rfl
   ext v
   rw [Submodule.mem_comap, Submodule.mem_comap, ContinuousLinearMap.coe_coe,
-    ContinuousLinearMap.coe_coe, hid, (hf x).localInverse_right_inv hz]
+    ContinuousLinearMap.coe_coe, (hf x).mfderiv_apply_mfderiv_localInverse_apply hn hz v,
+    (hf x).localInverse_right_inv hz]
 
 end Regularity
 
