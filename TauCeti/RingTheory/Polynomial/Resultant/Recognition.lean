@@ -5,188 +5,245 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.DedekindDomain.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+public import Mathlib.RingTheory.Polynomial.GaussLemma
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-import Mathlib.RingTheory.Polynomial.RationalRoot
-import TauCeti.Algebra.Polynomial.Lifts
-import TauCeti.RingTheory.Polynomial.Monic.Factorization
-import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
+public import Mathlib.RingTheory.Polynomial.UniqueFactorization
+public import Mathlib.RingTheory.UniqueFactorizationDomain.Multiplicity
+public import TauCeti.Algebra.Polynomial.Lifts
+public import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 /-!
-# Resultant recognition over a discrete valuation ring
+# Recognising a monic polynomial over a DVR by valuations of resultants
 
-A monic polynomial `P : O[X]` over a discrete valuation ring `O` is uniquely determined by the
-valuations of its nonzero resultants `P.resultant (ψ.map φ)` against monic polynomials `ψ : D[X]`
-lifted from a semiring `D` whose image under `φ : D →+* O` is dense modulo every power of a
-uniformizer `π`. No equal-degree, completeness, separability, characteristic-zero, or finite-
-residue-field assumption is required.
+Let `O` be a discrete valuation ring with uniformizer `π`. A monic polynomial `P ∈ O[X]` is
+determined by the valuations of its resultants `Res(P, ψ)` against monic test polynomials `ψ`,
+even when the tests only come from a ring `D` whose image in `O` is dense for the `π`-adic
+topology.
+This is Milne's characteristic-polynomial uniqueness criterion (used to identify the
+characteristic polynomial of an endomorphism on the Dieudonné module of an abelian variety with
+its integral characteristic polynomial), stated here for an arbitrary DVR: completeness,
+separability, characteristic zero and a finite residue field are not needed.
 
-The key mechanism is a shifted-factor test: for any monic `R : O[X]` of positive degree `d`,
-if `ψ : O[X]` is congruent to `R + C (π ^ n)` modulo `π ^ (2 * n)` with `n ≥ 1`, then in
-`AdjoinRoot R` we have `mk R ψ = π ^ n * (1 + π ^ n * H)` for a polynomial `H`, so its norm
-`R.resultant ψ` equals `π ^ (n * d) * u` for a unit `u ≡ 1 (mod π ^ n)` and thus has additive
-valuation `n * d`. When `P = R ^ e * S` with `S.resultant R ≠ 0`, the second factor
-`S.resultant ψ` stabilizes in valuation once `n > addVal O (S.resultant R)`, giving
-`addVal O (P.resultant ψ) = n * d * e + addVal O (S.resultant R)`. Comparing slopes across two
-large values of `n` recovers the multiplicity `e` of every monic irreducible factor over
-`FractionRing O`.
+The tests detect multiplicities through shifted factors. If `R` is monic of degree `d` and
+`ψ ≡ R + πⁿ (mod π²ⁿ)`, then `ψ = R + πⁿ g` with `g ≡ 1 (mod πⁿ)`, so
+`Res(R, ψ) = π ^ (n d) Res(R, g)` with `Res(R, g)` a unit, and `v Res(R, ψ) = n d` exactly. For
+`P = Rᵉ S` with `Res(S, R) ≠ 0` and `ψ` of degree `d`, the factor `Res(S, ψ)` is congruent to
+`Res(S, R)` modulo `πⁿ`, so its valuation is eventually constant and
+`v Res(P, ψ) = n d e + v Res(S, R)` for all large `n`. The slope in `n` recovers the multiplicity
+`e` of every irreducible factor, including repeated and inseparable ones.
+
+The density hypothesis cannot be dropped: for `D = 𝔽₂` inside `O = 𝔽₂⟦t⟧`, the distinct
+polynomials `X + t` and `X + t + t²` have equal resultant valuations against every monic
+`ψ ∈ 𝔽₂[X]`.
 
 ## Main results
 
-* `Polynomial.addVal_resultant_of_sub_add_C_pow_mem`: valuation of the resultant of a monic
-  polynomial with a shifted lift.
-* `Polynomial.addVal_resultant_pow_mul_of_sub_add_C_pow_mem`: shifted-factor multiplicity slope
-  formula over a discrete valuation ring.
-* `Polynomial.resultantRecognition`: monic tests from a uniformizer-adically dense semiring uniquely
-  determine a monic polynomial over a discrete valuation ring.
+* `Polynomial.Monic.addVal_resultant_of_dvd_sub`: if `R` is monic, `ψ ≡ R + πⁿ (mod π²ⁿ)` and
+  `n ≥ 1`, then `v Res(R, ψ) = n · deg R`.
+* `Polynomial.Monic.eventually_addVal_resultant_pow_mul`: for `P = Rᵉ S` with `Res(S, R) ≠ 0`,
+  eventually in `n`, `v Res(P, ψ) = n · deg R · e + v Res(S, R)` for every such `ψ`.
+* `Polynomial.Monic.eq_of_forall_addVal_resultant_eq`: two monic polynomials over a DVR with
+  equal valuations of all common nonzero resultants against monic tests lifted from a `π`-adically
+  dense ring are equal.
 
 ## References
 
-* J. S. Milne, *The Tate-Šafarevič group of a constant abelian variety*, Invent. Math. 6 (1968),
-  §1, p. 65 ([1968a](https://jmilne.org/math/articles/1968a.pdf)), the uniqueness criterion for
-  characteristic polynomials over `ℤ_p`; the arbitrary-ideal and general-DVR formulations here are
-  a Tau Ceti adaptation.
+* J. S. Milne, *Extensions of abelian varieties defined over a finite field*, Invent. Math. 5
+  (1968), 63–84, §1 (the uniqueness criterion for characteristic polynomials, p. 65).
 -/
 
 public section
 
-noncomputable section
-
-open Polynomial
+open IsDiscreteValuationRing UniqueFactorizationMonoid
 
 namespace Polynomial
 
-section DVR
+/-- A polynomial `ψ ≡ R + aⁿ (mod a²ⁿ)` has the form `ψ = aⁿ g + R` with `g ≡ 1 (mod aⁿ)`. -/
+private theorem exists_eq_C_mul_add_of_dvd_sub {O : Type*} [CommRing O] {R ψ : O[X]} {a : O}
+    {n : ℕ} (hcong : C (a ^ (2 * n)) ∣ ψ - (R + C (a ^ n))) :
+    ∃ h : O[X], ψ = C (a ^ n) * (1 + C (a ^ n) * h) + R := by
+  obtain ⟨h, hh⟩ := hcong
+  have hC : C (a ^ (2 * n)) = C (a ^ n) * C (a ^ n) := by rw [mul_comm 2 n, pow_mul, sq, C_mul]
+  exact ⟨h, by linear_combination hh + h * hC⟩
 
-open IsDiscreteValuationRing
+variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
 
-/-- For a monic polynomial `R : O[X]` over a discrete valuation ring `O` with uniformizer `π` and
-`n ≥ 1`, any `ψ : O[X]` whose coefficients match `R + C (π ^ n)` modulo `π ^ (2 * n)` has
-nonzero resultant with `R` of additive valuation `n * R.natDegree`. -/
-theorem addVal_resultant_of_sub_add_C_pow_mem {O : Type*} [CommRing O] [IsDomain O]
-    [IsDiscreteValuationRing O] {π : O} (hπ : Irreducible π) {R ψ : O[X]} (hR : R.Monic)
-    {n : ℕ} (hn : 1 ≤ n)
-    (hψ : ∀ i, (ψ - (R + C (π ^ n))).coeff i ∈ Ideal.span {π ^ (2 * n)}) :
-    R.resultant ψ ≠ 0 ∧ addVal O (R.resultant ψ) = (n * R.natDegree : ℕ) := by
-  have hψ' : ∀ i, (ψ - (R + C (π ^ n))).coeff i ∈ Ideal.span {π ^ n * π ^ n} := by
-    simpa [← pow_add, ← two_mul] using hψ
-  obtain ⟨u, hu, hres⟩ :=
-    exists_resultant_eq_pow_mul_of_coeff_mem_span_mul hR (π ^ n) (π ^ n) hψ'
-  have hu_unit : IsUnit u := IsLocalRing.isUnit_of_mem_nonunits_one_sub_self u <|
-    (IsLocalRing.mem_maximalIdeal _).mp <| Ideal.span_le.mpr
-      (Set.singleton_subset_iff.mpr <| Ideal.pow_mem_of_mem _
-        ((IsLocalRing.mem_maximalIdeal _).mpr hπ.not_isUnit) n hn)
-      (neg_sub u 1 ▸ Submodule.neg_mem _ hu)
-  have hne : R.resultant ψ ≠ 0 := by
-    rw [hres]
-    exact mul_ne_zero (pow_ne_zero _ (pow_ne_zero _ hπ.ne_zero)) hu_unit.ne_zero
-  refine ⟨hne, ?_⟩
-  have hval_u : addVal O u = 0 := addVal_eq_zero_iff.mpr hu_unit
-  rw [hres, addVal_mul, hval_u, add_zero, ← pow_mul, hπ.addVal_pow]
+/-- **The valuation of a shifted-factor resultant.** Let `R` be monic and `ψ ≡ R + πⁿ (mod π²ⁿ)`
+with `n ≥ 1`. Then `Res(R, ψ)` is `π ^ (n · deg R)` times a unit, so its valuation is
+`n · deg R`. -/
+theorem Monic.addVal_resultant_of_dvd_sub {R ψ : O[X]} (hR : R.Monic) {π : O}
+    (hπ : Irreducible π) {n : ℕ} (hn : n ≠ 0) (hcong : C (π ^ (2 * n)) ∣ ψ - (R + C (π ^ n))) :
+    addVal O (R.resultant ψ) = (n * R.natDegree : ℕ) := by
+  obtain ⟨h, hψ⟩ := exists_eq_C_mul_add_of_dvd_sub hcong
+  set g := 1 + C (π ^ n) * h
+  -- compute with the degree bound `k` for `ψ`, which is also valid for `R`
+  obtain ⟨k, hψk, hRk⟩ : ∃ k, ψ.natDegree ≤ k ∧ R.natDegree ≤ k :=
+    ⟨_, le_max_left _ _, le_max_right _ _⟩
+  have hres : R.resultant ψ = (π ^ n) ^ R.natDegree * R.resultant g R.natDegree k := by
+    rw [← hR.resultant_of_le hψk, hψ, show C (π ^ n) * g + R = C (π ^ n) * g + R * 1 by
+      rw [mul_one], resultant_add_mul_right _ _ _ _ _ (by simpa using hRk) le_rfl,
+      resultant_C_mul_right]
+  -- modulo the maximal ideal `g` reduces to `1`, so `Res(R, g)` reduces to `1` and is a unit
+  have hunit : IsUnit (R.resultant g R.natDegree k) := by
+    have hπ0 : IsLocalRing.residue O π = 0 :=
+      not_not.mp fun h ↦ hπ.not_isUnit ((IsLocalRing.residue_ne_zero_iff_isUnit π).mp h)
+    have hg : g.map (IsLocalRing.residue O) = 1 := by
+      simp [g, hπ0, zero_pow hn]
+    rw [← IsLocalRing.residue_ne_zero_iff_isUnit, ← resultant_map_map, hg, resultant_one_right,
+      coeff_map]
+    simp [hR.leadingCoeff]
+  rw [hres, addVal_mul, (addVal_eq_zero_iff).mpr hunit, add_zero, ← pow_mul, hπ.addVal_pow]
 
-/-- **Multiplicity detected by shifted factors.** Let `O` be a discrete valuation ring with
-uniformizer `π`, and let `R, S : O[X]` be monic with `S.resultant R ≠ 0`. For `P = R ^ e * S`,
-any `n` strictly larger than `addVal O (S.resultant R)`, and any `ψ : O[X]` congruent to
-`R + C (π ^ n)` modulo `π ^ (2 * n)`, we have `P.resultant ψ ≠ 0` and
-`addVal O (P.resultant ψ) = (n * R.natDegree * e : ℕ) + addVal O (S.resultant R)`. -/
-theorem addVal_resultant_pow_mul_of_sub_add_C_pow_mem {O : Type*} [CommRing O] [IsDomain O]
-    [IsDiscreteValuationRing O] {π : O} (hπ : Irreducible π) {R S ψ : O[X]} (hR : R.Monic)
-    (hS : S.Monic) (e : ℕ) {n : ℕ} (hlt : addVal O (S.resultant R) < n)
-    (hψ : ∀ i, (ψ - (R + C (π ^ n))).coeff i ∈ Ideal.span {π ^ (2 * n)}) :
-    (R ^ e * S).resultant ψ ≠ 0 ∧
-      addVal O ((R ^ e * S).resultant ψ) =
-        ((n * R.natDegree * e : ℕ) : ℕ∞) + addVal O (S.resultant R) := by
-  have hn : 1 ≤ n := Nat.cast_pos.mp (lt_of_le_of_lt bot_le hlt)
-  have hR_val := addVal_resultant_of_sub_add_C_pow_mem hπ hR hn hψ
-  have hsub : ∀ i, (ψ - R).coeff i ∈ Ideal.span {π ^ n} := by
-    intro i
-    have hi : (ψ - (R + C (π ^ n))).coeff i ∈ Ideal.span {π ^ n} := by
-      have hdiv : Ideal.span {π ^ (2 * n)} ≤ Ideal.span {π ^ n} :=
-        Ideal.span_le.mpr (Set.singleton_subset_iff.mpr (Ideal.mem_span_singleton.mpr
-          (pow_dvd_pow π (by lia))))
-      exact hdiv (hψ i)
-    have hc : (C (π ^ n)).coeff i ∈ Ideal.span {π ^ n} := by
-      rw [coeff_C]
-      split_ifs
-      · exact Ideal.subset_span rfl
-      · exact Ideal.zero_mem _
-    have heq : (ψ - R).coeff i = (ψ - (R + C (π ^ n))).coeff i + (C (π ^ n)).coeff i := by
-      simp [sub_eq_add_neg, add_assoc]
-    rw [heq]
-    exact Ideal.add_mem _ hi hc
-  have hS_diff : (n : ℕ∞) ≤ addVal O (S.resultant ψ - S.resultant R) := by
-    have hmem := hS.resultant_sub_mem_of_coeff_sub_mem hsub
-    rw [← hπ.addVal_pow n, addVal_le_iff_dvd]
-    exact Ideal.mem_span_singleton.mp hmem
-  have hS_lt : addVal O (S.resultant R) < addVal O (S.resultant ψ - S.resultant R) :=
-    lt_of_lt_of_le hlt hS_diff
-  have hS_val : addVal O (S.resultant ψ) = addVal O (S.resultant R) :=
-    (addVal O).map_eq_of_lt_sub hS_lt
-  have hS_ne : S.resultant ψ ≠ 0 :=
-    addVal_eq_top_iff.not.mp (by rw [hS_val]; exact (lt_of_lt_of_le hlt le_top).ne)
-  rw [hR.resultant_pow_mul_left hS.ne_zero e ψ]
-  refine ⟨mul_ne_zero (pow_ne_zero e hR_val.1) hS_ne, ?_⟩
-  rw [addVal_mul, addVal_pow, hR_val.2, hS_val, nsmul_eq_mul, ← Nat.cast_mul, mul_comm e]
-
-end DVR
+/-- **Multiplicity detected by shifted factors.** Let `R` be monic, `e ≥ 0`, and let `S` satisfy
+`Res(S, R) ≠ 0` (over the fraction field this says that `S` and `R` are coprime). Eventually in
+`n`, every `ψ` of the degree of `R` with `ψ ≡ R + πⁿ (mod π²ⁿ)` has
+`Res(Rᵉ S, ψ) ≠ 0` and `v Res(Rᵉ S, ψ) = n · deg R · e + v Res(S, R)`. -/
+theorem Monic.eventually_addVal_resultant_pow_mul {R S : O[X]} (hR : R.Monic) {π : O}
+    (hπ : Irreducible π) (hSR : S.resultant R ≠ 0) (e : ℕ) :
+    ∀ᶠ n in Filter.atTop, ∀ ψ : O[X], ψ.natDegree = R.natDegree →
+      C (π ^ (2 * n)) ∣ ψ - (R + C (π ^ n)) →
+        (R ^ e * S).resultant ψ ≠ 0 ∧
+          addVal O ((R ^ e * S).resultant ψ) =
+            (n * R.natDegree * e : ℕ) + addVal O (S.resultant R) := by
+  obtain ⟨c, hc⟩ := ENat.ne_top_iff_exists.mp ((addVal_eq_top_iff (R := O)).not.mpr hSR)
+  replace hc := hc.symm
+  have hdeg : (R ^ e * S).natDegree = (R ^ e).natDegree + S.natDegree := by
+    rcases eq_or_ne S 0 with rfl | hS
+    · have hR0 : R.natDegree = 0 := by
+        by_contra h
+        simp [zero_pow h] at hSR
+      simp [hR0]
+    · exact (hR.pow e).natDegree_mul' hS
+  filter_upwards [Filter.eventually_gt_atTop c] with n hn ψ hψ hcong
+  have hn0 : n ≠ 0 := by omega
+  -- `Res(S, ψ)` is congruent to `Res(S, R)` modulo `πⁿ`
+  have hSψ : addVal O (S.resultant ψ) = c := by
+    obtain ⟨h, hψ'⟩ := exists_eq_C_mul_add_of_dvd_sub hcong
+    have hmk : ψ.map (Ideal.Quotient.mk (Ideal.span {π ^ n})) =
+        R.map (Ideal.Quotient.mk (Ideal.span {π ^ n})) := by
+      simp [hψ', -map_pow]
+    have hmem : S.resultant ψ - S.resultant R ∈ Ideal.span {π ^ n} := by
+      simpa only [hψ] using resultant_sub_mem_of_map_eq (f := S) rfl hmk S.natDegree ψ.natDegree
+    obtain ⟨t, ht⟩ := Ideal.mem_span_singleton.mp hmem
+    rw [show S.resultant ψ = S.resultant R + π ^ n * t by rw [← ht]; ring,
+      AddValuation.map_add_eq_of_lt_left, hc]
+    rw [hc, addVal_mul, hπ.addVal_pow]
+    exact (Nat.cast_lt.mpr hn).trans_le le_self_add
+  have hval : addVal O ((R ^ e * S).resultant ψ) = (n * R.natDegree * e : ℕ) + c := by
+    have hlc : R.leadingCoeff ^ e ≠ 0 := by rw [hR.leadingCoeff, one_pow]; exact one_ne_zero
+    have hmul : (R ^ e * S).resultant ψ = R.resultant ψ ^ e * S.resultant ψ := by
+      rw [show (R ^ e * S).resultant ψ =
+          (R ^ e * S).resultant ψ ((R ^ e).natDegree + S.natDegree) ψ.natDegree by rw [hdeg],
+        resultant_mul_left _ _ _ _ le_rfl,
+        resultant_pow_left (f := R) (g := ψ) (m := e) (n := ψ.natDegree) hlc le_rfl]
+    rw [hmul, addVal_mul, addVal_pow, hR.addVal_resultant_of_dvd_sub hπ hn0 hcong, hSψ]
+    push_cast
+    ring
+  refine ⟨fun h0 ↦ ?_, by rw [hval, hc]⟩
+  rw [h0, addVal_zero] at hval
+  exact ENat.top_ne_natCast _ (hval.trans (Nat.cast_add _ _).symm)
 
 section Recognition
 
-/-- **Resultant recognition.** Let `O` be a discrete valuation ring with uniformizer `π`,
-and let `φ : D →+* O` be a ring homomorphism whose image is dense modulo every power `π ^ N`.
-If monic polynomials `P, Q : O[X]` have equal additive valuations
-`addVal O (P.resultant (ψ.map φ))` and `addVal O (Q.resultant (ψ.map φ))` for every monic
-`ψ : D[X]` such that both resultants are nonzero, then `P = Q`. -/
-theorem resultantRecognition {D O : Type*} [Semiring D] [CommRing O] [IsDomain O]
-    [IsDiscreteValuationRing O] (φ : D →+* O) (π : O) (hπ : Irreducible π)
+variable {D : Type*} [Semiring D]
+
+/-- Shifted-factor tests lifted from a `π`-adically dense ring: for monic `R` of positive degree
+there is a monic `ψ` over `D` whose image has the degree of `R` and satisfies
+`ψ ≡ R + πⁿ (mod π²ⁿ)`. -/
+private theorem exists_monic_map_dvd_sub {R : O[X]} (hR : R.Monic) (hd : 0 < R.natDegree)
+    (φ : D →+* O) {π : O} (hφ : ∀ N : ℕ, ∀ o : O, ∃ d : D, o - φ d ∈ Ideal.span {π ^ N})
+    (n : ℕ) : ∃ ψ : D[X], ψ.Monic ∧ (ψ.map φ).natDegree = R.natDegree ∧
+      C (π ^ (2 * n)) ∣ ψ.map φ - (R + C (π ^ n)) := by
+  have hT : (R + C (π ^ n)).Monic :=
+    hR.add_of_left (degree_C_le.trans_lt (natDegree_pos_iff_degree_pos.mp hd))
+  obtain ⟨ψ, hψ, hdeg, hmem⟩ := hT.exists_monic_map_sub_mem_map_C φ (hφ (2 * n))
+  refine ⟨ψ, hψ, by rw [hψ.natDegree_map, hdeg, natDegree_add_C], ?_⟩
+  rwa [Ideal.map_span, Set.image_singleton, Ideal.mem_span_singleton] at hmem
+
+/-- Splitting off the full power of a monic prime factor `R` of a monic `P` leaves a cofactor `S`
+with `Res(S, R) ≠ 0`. -/
+private theorem exists_eq_pow_multiplicity_mul {R P : O[X]} (hR : R.Monic) (hRp : Prime R)
+    (hP : P.Monic) : ∃ S : O[X], P = R ^ multiplicity R P * S ∧ S.resultant R ≠ 0 := by
+  obtain ⟨S, hS⟩ := pow_multiplicity_dvd R P
+  refine ⟨S, hS, hR.resultant_ne_zero_of_not_dvd hRp.irreducible ?_⟩
+  rintro ⟨T, rfl⟩
+  exact (FiniteMultiplicity.of_prime_left hRp hP.ne_zero).not_pow_dvd_of_multiplicity_lt
+    (lt_add_one _) ⟨T, hS.trans (by ring)⟩
+
+/-- Under the hypotheses of `Polynomial.Monic.eq_of_forall_addVal_resultant_eq`, every monic prime
+factor occurs in `P` and `Q` with the same multiplicity: it is the slope in `n` of the valuations
+`v Res(P, ψₙ)` and `v Res(Q, ψₙ)` along shifted-factor tests `ψₙ`. -/
+private theorem emultiplicity_eq_of_forall_addVal_resultant_eq {P Q R : O[X]} (hP : P.Monic)
+    (hQ : Q.Monic) (hR : R.Monic) (hRp : Prime R) (φ : D →+* O) {π : O} (hπ : Irreducible π)
     (hφ : ∀ N : ℕ, ∀ o : O, ∃ d : D, o - φ d ∈ Ideal.span {π ^ N})
-    (P Q : Polynomial O) (hP : P.Monic) (hQ : Q.Monic)
-    (h : ∀ ψ : Polynomial D, ψ.Monic →
-      Polynomial.resultant P (ψ.map φ) ≠ 0 →
-      Polynomial.resultant Q (ψ.map φ) ≠ 0 →
-      IsDiscreteValuationRing.addVal O (Polynomial.resultant P (ψ.map φ)) =
-        IsDiscreteValuationRing.addVal O (Polynomial.resultant Q (ψ.map φ))) :
+    (h : ∀ ψ : D[X], ψ.Monic → P.resultant (ψ.map φ) ≠ 0 → Q.resultant (ψ.map φ) ≠ 0 →
+      addVal O (P.resultant (ψ.map φ)) = addVal O (Q.resultant (ψ.map φ))) :
+    emultiplicity R P = emultiplicity R Q := by
+  have hd : 0 < R.natDegree := by
+    by_contra hd
+    rw [not_lt, Nat.le_zero] at hd
+    exact hRp.not_isUnit (by rw [eq_one_of_monic_natDegree_zero hR hd]; exact isUnit_one)
+  obtain ⟨SP, hSP, hSPR⟩ := exists_eq_pow_multiplicity_mul hR hRp hP
+  obtain ⟨SQ, hSQ, hSQR⟩ := exists_eq_pow_multiplicity_mul hR hRp hQ
+  obtain ⟨cP, hcP⟩ := ENat.ne_top_iff_exists.mp ((addVal_eq_top_iff (R := O)).not.mpr hSPR)
+  obtain ⟨cQ, hcQ⟩ := ENat.ne_top_iff_exists.mp ((addVal_eq_top_iff (R := O)).not.mpr hSQR)
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp
+    ((hR.eventually_addVal_resultant_pow_mul hπ hSPR (multiplicity R P)).and
+      (hR.eventually_addVal_resultant_pow_mul hπ hSQR (multiplicity R Q)))
+  have key (n : ℕ) (hn : N ≤ n) :
+      n * R.natDegree * multiplicity R P + cP = n * R.natDegree * multiplicity R Q + cQ := by
+    obtain ⟨hPn, hQn⟩ := hN n hn
+    obtain ⟨ψ, hψ, hdeg, hcong⟩ := exists_monic_map_dvd_sub hR hd φ hφ n
+    obtain ⟨hP0, hPv⟩ := hPn _ hdeg hcong
+    obtain ⟨hQ0, hQv⟩ := hQn _ hdeg hcong
+    rw [← hSP] at hP0 hPv
+    rw [← hSQ] at hQ0 hQv
+    have := h ψ hψ hP0 hQ0
+    rw [hPv, hQv, ← hcP, ← hcQ] at this
+    exact_mod_cast this
+  have h1 := key N le_rfl
+  have h2 := key (N + 1) (Nat.le_succ N)
+  have hmul : R.natDegree * multiplicity R P = R.natDegree * multiplicity R Q := by
+    zify at h1 h2 ⊢
+    linear_combination h2 - h1
+  rw [(FiniteMultiplicity.of_prime_left hRp hP.ne_zero).emultiplicity_eq_multiplicity,
+    (FiniteMultiplicity.of_prime_left hRp hQ.ne_zero).emultiplicity_eq_multiplicity,
+    Nat.eq_of_mul_eq_mul_left hd hmul]
+
+/-- **Recognition from nonzero monic resultant tests.** Let `O` be a discrete valuation ring with
+uniformizer `π`, and let `φ : D →+* O` be surjective modulo every power of `π`. If the monic
+polynomials `P, Q ∈ O[X]` have `v Res(P, ψ) = v Res(Q, ψ)` for every monic `ψ ∈ D[X]` for which
+both resultants against the image of `ψ` are nonzero, then `P = Q`.
+
+Equal degrees, completeness, separability, characteristic zero and a finite residue field are not
+assumed; repeated and inseparable factors are detected. Milne, §1. -/
+theorem Monic.eq_of_forall_addVal_resultant_eq {P Q : O[X]} (hP : P.Monic) (hQ : Q.Monic)
+    (φ : D →+* O) {π : O} (hπ : Irreducible π)
+    (hφ : ∀ N : ℕ, ∀ o : O, ∃ d : D, o - φ d ∈ Ideal.span {π ^ N})
+    (h : ∀ ψ : D[X], ψ.Monic → P.resultant (ψ.map φ) ≠ 0 → Q.resultant (ψ.map φ) ≠ 0 →
+      addVal O (P.resultant (ψ.map φ)) = addVal O (Q.resultant (ψ.map φ))) :
     P = Q := by
-  by_contra hne
-  let K := FractionRing O
-  obtain ⟨R₀, hR₀_m, hR₀_irr, e₁, e₂, S₁, S₂,
-      hS₁_m, hS₂_m, hS₁_nd, hS₂_nd, rfl, rfl, he⟩ :=
-    hP.exists_factor_ne_multiplicity (K := K) hQ hne
-  have hinj := IsFractionRing.injective O K
-  have hd_pos : 0 < R₀.natDegree := by
-    rw [← natDegree_map_eq_of_injective hinj]
-    exact hR₀_irr.natDegree_pos
-  have hSR (S : O[X]) (hS_nd : ¬ (R₀.map (algebraMap O K) ∣ S.map (algebraMap O K))) :
-      S.resultant R₀ ≠ 0 :=
-    resultant_ne_zero_of_isCoprime_map (algebraMap O K)
-      (natDegree_map_eq_of_injective hinj _) (natDegree_map_eq_of_injective hinj _)
-      (hR₀_irr.coprime_iff_not_dvd.mpr hS_nd).symm
-  obtain ⟨k₁, hk₁⟩ := ENat.ne_top_iff_exists.mp
-    (IsDiscreteValuationRing.addVal_eq_top_iff.not.mpr (hSR S₁ hS₁_nd))
-  obtain ⟨k₂, hk₂⟩ := ENat.ne_top_iff_exists.mp
-    (IsDiscreteValuationRing.addVal_eq_top_iff.not.mpr (hSR S₂ hS₂_nd))
-  have hslope (n : ℕ) (hn₁ : k₁ < n) (hn₂ : k₂ < n) :
-      n * R₀.natDegree * e₁ + k₁ = n * R₀.natDegree * e₂ + k₂ := by
-    let T : O[X] := R₀ + C (π ^ n)
-    have hCdeg : (C (π ^ n)).degree < R₀.degree :=
-      (degree_C_le).trans_lt (natDegree_pos_iff_degree_pos.mp hd_pos)
-    have hT_monic : T.Monic := hR₀_m.add_of_left hCdeg
-    obtain ⟨ψ, hψ_m, -, hψ_coeff⟩ :=
-      exists_monic_map_sub_coeff_mem φ (hφ (2 * n)) hT_monic
-    obtain ⟨hPψ_ne, hPψ_val⟩ :=
-      addVal_resultant_pow_mul_of_sub_add_C_pow_mem hπ hR₀_m hS₁_m e₁
-        (by rw [← hk₁]; exact Nat.cast_lt.mpr hn₁) hψ_coeff
-    obtain ⟨hQψ_ne, hQψ_val⟩ :=
-      addVal_resultant_pow_mul_of_sub_add_C_pow_mem hπ hR₀_m hS₂_m e₂
-        (by rw [← hk₂]; exact Nat.cast_lt.mpr hn₂) hψ_coeff
-    have heq := h ψ hψ_m hPψ_ne hQψ_ne
-    rw [hPψ_val, hQψ_val, ← hk₁, ← hk₂, ← Nat.cast_add, ← Nat.cast_add] at heq
-    exact Nat.cast_injective heq
-  let N := max k₁ k₂ + 1
-  have h1 := hslope N (by lia) (by lia)
-  have h2 := hslope (N + 1) (by lia) (by lia)
-  have hmul : R₀.natDegree * e₁ = R₀.natDegree * e₂ := by nlinarith
-  exact he (Nat.eq_of_mul_eq_mul_left hd_pos hmul)
+  -- every prime of `O[X]` has the same multiplicity in `P` and in `Q`
+  have key (p : O[X]) (hp : Prime p) : emultiplicity p P = emultiplicity p Q := by
+    by_cases hdvd : p ∣ P ∨ p ∣ Q
+    · -- `p` divides a monic polynomial, so it is a unit multiple of a monic prime `R`
+      have hu : IsUnit p.leadingCoeff :=
+        hdvd.elim hP.isUnit_leadingCoeff_of_dvd hQ.isUnit_leadingCoeff_of_dvd
+      have hassoc : Associated p (p * C (↑hu.unit⁻¹ : O)) :=
+        associated_mul_unit_right _ _ (isUnit_C.mpr (Units.isUnit _))
+      have hR : (p * C (↑hu.unit⁻¹ : O)).Monic := by
+        rw [Monic, leadingCoeff_mul, leadingCoeff_C, hu.mul_val_inv]
+      rw [← emultiplicity_eq_of_associated_left hassoc,
+        ← emultiplicity_eq_of_associated_left hassoc]
+      exact emultiplicity_eq_of_forall_addVal_resultant_eq hP hQ hR (hassoc.prime hp) φ hπ hφ h
+    · rw [not_or] at hdvd
+      rw [emultiplicity_eq_zero.mpr hdvd.1, emultiplicity_eq_zero.mpr hdvd.2]
+  refine eq_of_monic_of_associated hP hQ (associated_of_dvd_dvd ?_ ?_)
+  · exact (dvd_iff_emultiplicity_le hP.ne_zero).mpr fun p hp ↦ (key p hp).le
+  · exact (dvd_iff_emultiplicity_le hQ.ne_zero).mpr fun p hp ↦ (key p hp).ge
 
 end Recognition
 

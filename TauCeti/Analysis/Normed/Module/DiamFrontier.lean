@@ -49,6 +49,8 @@ that conversion.
   its frontier.
 * `TauCeti.diam_le_diam_of_frontier_subset` — hence a bounded set is no wider than any bounded set
   containing its frontier, which is the form a boundary estimate is spent in.
+* `Bornology.IsBounded.eq_empty_of_frontier_eq_empty` — in a nontrivial space, a bounded set with
+  empty frontier is empty.
 -/
 
 public section
@@ -136,5 +138,14 @@ theorem diam_le_diam_of_frontier_subset {W : Set E} (hV : IsBounded V) (hW : IsB
     (hVW : frontier V ⊆ W) : diam V ≤ diam W := by
   rw [← diam_frontier hV]
   exact diam_mono hVW hW
+
+/-- A bounded set with empty frontier in a nontrivial real normed space is empty: a ray from any
+of its points would cross the frontier (`TauCeti.exists_mem_frontier_dist_le`). -/
+theorem _root_.Bornology.IsBounded.eq_empty_of_frontier_eq_empty [Nontrivial E]
+    (hV : IsBounded V) (hfr : frontier V = ∅) : V = ∅ := by
+  refine eq_empty_of_forall_notMem fun x hx => ?_
+  obtain ⟨y, hy⟩ := exists_ne x
+  obtain ⟨p, hp, -⟩ := exists_mem_frontier_dist_le hV hx hy
+  simp [hfr] at hp
 
 end TauCeti

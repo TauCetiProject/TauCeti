@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+import Mathlib.RingTheory.Polynomial.GaussLemma
 import TauCeti.Algebra.Polynomial.Degree.Operations
 
 /-!
@@ -61,6 +63,10 @@ polynomial lifts from the reductions modulo an ideal in the Jacobson radical.
   after a degree-preserving coefficient map to an integral domain.
 * `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
   the valid degree bound supplied for the right argument.
+* `Polynomial.resultant_sub_mem_of_map_eq`: polynomials congruent modulo an ideal have congruent
+  resultants.
+* `Polynomial.Monic.resultant_ne_zero_of_not_dvd`: over an integrally closed domain, a monic
+  irreducible polynomial has nonzero resultant against every polynomial it does not divide.
 * `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
   the coefficients of index at most `m` and `n`.
 * `Polynomial.resultant_sub_mem_of_coeff_sub_mem`,
@@ -349,7 +355,6 @@ theorem resultant_sub_mem_of_coeff_sub_mem (f : R[X]) {g ψ : R[X]} {I : Ideal R
     (hdeg : ψ.natDegree = g.natDegree)
     (hsub : ∀ i ≤ g.natDegree, (ψ - g).coeff i ∈ I) :
     f.resultant ψ - f.resultant g ∈ I := by
-  set q := Ideal.Quotient.mk I
   rw [← Ideal.Quotient.mk_eq_mk_iff_sub_mem, ← resultant_map_map, ← hdeg, ← resultant_map_map]
   refine resultant_congr_of_coeff_eq (fun _ _ ↦ rfl) fun i hi ↦ ?_
   rw [coeff_map, coeff_map, Ideal.Quotient.mk_eq_mk_iff_sub_mem, ← coeff_sub]
@@ -372,5 +377,28 @@ theorem Monic.resultant_sub_mem_of_coeff_sub_mem {f g ψ : R[X]} (hf : f.Monic)
   rw [← resultant_map_map, ← resultant_map_map, ← hf.natDegree_map q,
     (hf.map q).resultant_of_le natDegree_map_le,
     (hf.map q).resultant_of_le natDegree_map_le, hmap]
+
+/-- **Resultants of congruent polynomials are congruent.** If `f ≡ f'` and `g ≡ g'` modulo an
+ideal `I`, then the resultants at the same degree bounds are congruent modulo `I`. -/
+theorem resultant_sub_mem_of_map_eq {I : Ideal R} {f f' g g' : R[X]}
+    (hf : f.map (Ideal.Quotient.mk I) = f'.map (Ideal.Quotient.mk I))
+    (hg : g.map (Ideal.Quotient.mk I) = g'.map (Ideal.Quotient.mk I)) (m n : ℕ) :
+    f.resultant g m n - f'.resultant g' m n ∈ I := by
+  rw [← Ideal.Quotient.eq, ← resultant_map_map, ← resultant_map_map, hf, hg]
+
+/-- **A monic irreducible non-divisor has nonzero resultant.** Over an integrally closed domain,
+if a monic irreducible `g` does not divide `f`, then `Res(f, g) ≠ 0`: by Gauss's lemma `g` stays
+irreducible over the fraction field, where it is therefore coprime to `f`. -/
+theorem Monic.resultant_ne_zero_of_not_dvd [IsDomain R] [IsIntegrallyClosed R] {f g : R[X]}
+    (hg : g.Monic) (hirr : Irreducible g) (hdvd : ¬g ∣ f) : f.resultant g ≠ 0 := by
+  let K := FractionRing R
+  have hinj := IsFractionRing.injective R K
+  have hcop : IsCoprime (f.map (algebraMap R K)) (g.map (algebraMap R K)) :=
+    (((hg.irreducible_iff_irreducible_map_fraction_map (K := K)).mp hirr).coprime_iff_not_dvd.mpr
+      fun h ↦ hdvd ((map_dvd_map _ hinj hg).mp h)).symm
+  intro h0
+  apply resultant_ne_zero _ _ hcop
+  rw [resultant_map_of_natDegree_eq _ (natDegree_map_eq_of_injective hinj _)
+    (natDegree_map_eq_of_injective hinj _), h0, map_zero]
 
 end Polynomial

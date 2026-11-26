@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Interpolation.PCClass
+public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.ModelTheory.RelationalConfiguration.LanguageMap
+public import TauCeti.ModelTheory.RelationalConfiguration.PCSentence
 public import TauCeti.ModelTheory.RelationalConfiguration.Topology
 public import TauCeti.ModelTheory.Infinitary.Symbols
 
@@ -23,9 +25,12 @@ space and the reduct map is continuous, so this class of codes is analytic
 characterization of invariant analytic classes as projective classes. No countability is needed
 for `L` itself.
 
-The forward direction of the characterization (an invariant analytic class is a projective class)
-needs `L` to have countably many relation symbols. A single sentence mentions only countably many
-relation symbols, so if `L` has uncountably many relation symbols then on a nonempty carrier no
+The forward direction (an invariant analytic class is a projective class) holds when `L` has
+countably many relation symbols of each arity: an analytic class of codes on `ℕ` is the projection
+of the body of a tree `T` read through the query code, and invariance lets the enumeration of a
+model of `pcSentence T` be absorbed (`TauCeti.RelationalConfiguration.analyticSet_iff_exists_pc`).
+The countability of `L` cannot be dropped. A single sentence mentions only countably many relation
+symbols, so if `L` has uncountably many relation symbols then on a nonempty carrier no
 projective class along an injective `g` is a single code
 (`FirstOrder.Language.LHom.setOf_pcMem_ne_singleton`): reversing the value of a relation symbol in
 the image of `g` that the sentence does not mention gives a second member. Singletons are analytic,
@@ -36,8 +41,17 @@ and the singleton of a code fixed by every permutation of the carrier is isomorp
 * `FirstOrder.Language.LHom.setOf_pcMem_eq_image_modelsOf`: projective classes of codes are the
   images of model classes under the reduct map.
 * `FirstOrder.Language.LHom.analyticSet_setOf_pcMem`: they are analytic.
+* `TauCeti.RelationalConfiguration.analyticSet_iff_exists_pc`: an isomorphism-invariant class of
+  codes on `ℕ` is analytic exactly when it is a projective class along `LHom.sumInl`.
 * `FirstOrder.Language.LHom.setOf_pcMem_ne_singleton`: with uncountably many relation symbols, no
   projective class along an injective language map is a singleton.
+
+## References
+
+* D. Marker, *Infinitary Logic*, lecture notes for Math 512, University of Illinois at Chicago,
+  Fall 2013, Lemma 4.24, pp. 50–51: every invariant analytic set is the set of countable models of
+  a PC class. The forward direction of `TauCeti.RelationalConfiguration.analyticSet_iff_exists_pc`
+  follows this proof.
 -/
 
 public section
@@ -145,3 +159,49 @@ theorem setOf_pcMem_ne_singleton [Nonempty V] (g : L →ᴸ L') (hg : g.Injectiv
   simp only [decide_eq_true_eq, iff_not_self] at hS'
 
 end FirstOrder.Language.LHom
+
+namespace TauCeti.RelationalConfiguration
+
+open FirstOrder FirstOrder.Language
+
+variable {L : FirstOrder.Language.{u, v}} [L.IsRelational] [∀ n, Countable (L.Relations n)]
+
+/-- **The projective class of the PC sentence of an analytic class.** If `B` is the projection of
+the body of `T` read through the query code and `B` is isomorphism invariant, then `B` is the
+projective class of `pcSentence T` along `LHom.sumInl`. -/
+theorem eq_setOf_pcMem_pcSentence {B : Set (RelationalConfiguration L ℕ)}
+    (hB : IsomorphismInvariant B) {T : Descriptive.tree (Bool × ℕ)}
+    (hT : B = {c | ∃ g : ℕ → ℕ, (fun n => (queryCode c n, g n)) ∈ Descriptive.Tree.body T}) :
+    B = {c | @LHom.PCMem L _ LHom.sumInl (pcSentence T) ℕ c.toStructure} := by
+  ext c
+  simp only [Set.mem_ofPred_eq]
+  rw [@pcMem_pcSentence_iff L _ ℕ c.toStructure T]
+  constructor
+  · intro hc
+    obtain ⟨g, hg⟩ := hT ▸ hc
+    refine ⟨Equiv.refl ℕ, g, ?_⟩
+    rwa [@Equiv.encodeVia_refl L ℕ c.toStructure, ofStructure_toStructure]
+  · rintro ⟨e, g, hg⟩
+    rw [← perm_smul_eq_encodeVia (σ := (e : Equiv.Perm ℕ))] at hg
+    refine (hB.mem_iff (isoSetoid_perm_smul (e : Equiv.Perm ℕ) c)).2 ?_
+    rw [hT]
+    exact ⟨g, hg⟩
+
+/-- **Invariant analytic classes are projective classes.** For a relational language `L` with
+countably many relation symbols of each arity, an isomorphism-invariant set `B` of codes on `ℕ` is
+analytic exactly when it is the class of codes whose decoded structures lie in the projective
+class of a single `L_{ω₁ω}` sentence `ψ` of `L.sum pcWitnessLanguage` along `LHom.sumInl`. The
+forward direction takes `ψ = pcSentence T` for a tree `T` representing `B`; the converse is
+`FirstOrder.Language.LHom.analyticSet_setOf_pcMem`. -/
+theorem analyticSet_iff_exists_pc {B : Set (RelationalConfiguration L ℕ)}
+    (hB : IsomorphismInvariant B) :
+    AnalyticSet B ↔ ∃ ψ : (L.sum pcWitnessLanguage).Sentenceω,
+      B = {c | @LHom.PCMem L _ LHom.sumInl ψ ℕ c.toStructure} := by
+  refine ⟨fun h => ?_, fun ⟨ψ, hψ⟩ => ?_⟩
+  · obtain ⟨T, hT⟩ := exists_tree_of_analyticSet h
+    exact ⟨pcSentence T, eq_setOf_pcMem_pcSentence hB hT⟩
+  · have : ∀ n, Countable ((L.sum pcWitnessLanguage).Relations n) := fun n =>
+      inferInstanceAs (Countable (L.Relations n ⊕ pcWitnessLanguage.Relations n))
+    exact hψ ▸ LHom.analyticSet_setOf_pcMem LHom.sumInl ψ
+
+end TauCeti.RelationalConfiguration

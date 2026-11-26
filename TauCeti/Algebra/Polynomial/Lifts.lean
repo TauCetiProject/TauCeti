@@ -9,9 +9,10 @@ public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.Algebra.Ring.Subring.Basic
-public import Mathlib.RingTheory.Ideal.Defs
+public import Mathlib.RingTheory.Ideal.Maps
 import Mathlib.Algebra.Polynomial.Taylor
-import Mathlib.RingTheory.Ideal.Quotient.Operations
+import Mathlib.RingTheory.Ideal.Quotient.Basic
+import Mathlib.RingTheory.Polynomial.Basic
 
 /-!
 # Lifting polynomials along ring maps
@@ -21,8 +22,9 @@ lie in the image of `f`. A polynomial over `B` whose coefficients are fixed by e
 `S` then lifts along `f`. This is the coefficient step of Galois descent, stated without any
 algebraicity or Galois hypothesis on `B` over `A`.
 
-If a ring map `φ : D →+* O` is surjective modulo an ideal `I`, any monic polynomial over `O`
-lifts to a monic polynomial over `D` of the same degree whose image agrees with it modulo `I`.
+Lifts also exist modulo an ideal: if `φ : D →+* O` is surjective modulo an ideal `I`, every monic
+polynomial over `O` is congruent modulo `I` to the image of a monic polynomial over `D` of the same
+degree.
 
 Integral lifts also control denominators of divided derivatives: if the rescaled translate
 `P(x + L X)` of a rational polynomial lifts to `ℤ[X]`, then its coefficients
@@ -33,8 +35,8 @@ subring of a field of characteristic zero.
 
 * `Polynomial.mem_lifts_of_forall_map_eq`: a polynomial over `B` fixed by `Polynomial.map σ` for
   every `σ ∈ S` lifts along `f`.
-* `Polynomial.exists_monic_map_sub_coeff_mem`: lifting a monic polynomial along a map surjective
-  modulo an ideal while preserving the degree.
+* `Polynomial.Monic.exists_monic_map_sub_mem_map_C`: monic lifts of the same degree modulo an
+  ideal.
 * `Polynomial.pow_mul_eval_hasseDeriv_mem_range_intCast_of_comp_mem_lifts`: if `P(x + L X)` has
   integral coefficients, then `L ^ m (1 / m!) P⁽ᵐ⁾(x)` is an integer.
 * `Subring.pow_mul_eval_hasseDeriv_map_mem`: transfer a rational Hasse-derivative denominator
@@ -56,33 +58,36 @@ theorem mem_lifts_of_forall_map_eq {S : Set (B ≃+* B)}
   (lifts_iff_coeff_lifts p).mpr fun n ↦ hS _ fun σ hσ ↦ by
     simpa using congr($(hp σ hσ).coeff n)
 
-/-- **Lifting a monic polynomial modulo an ideal.** If `φ : D →+* O` is surjective modulo an
-ideal `I`, then any monic `T : O[X]` lifts to a monic `ψ : D[X]` of the same `natDegree`
-such that `ψ.map φ - T` has all coefficients in `I`. -/
-theorem exists_monic_map_sub_coeff_mem {D O : Type*} [Semiring D] [CommRing O] (φ : D →+* O)
-    {I : Ideal O} (hφ : ∀ o : O, ∃ d : D, o - φ d ∈ I)
-    {T : O[X]} (hT : T.Monic) :
-    ∃ ψ : D[X], ψ.Monic ∧ ψ.natDegree = T.natDegree ∧
-      ∀ i, (ψ.map φ - T).coeff i ∈ I := by
-  by_cases hI : I = ⊤
-  · subst hI
-    rcases subsingleton_or_nontrivial D with _ | _
-    · have : Subsingleton O := RingHom.codomain_trivial φ
-      exact ⟨1, monic_one, by simp [Subsingleton.elim T 0], fun _ ↦ Submodule.mem_top⟩
-    · exact ⟨X ^ T.natDegree, monic_X_pow _, natDegree_X_pow _, fun _ ↦ Submodule.mem_top⟩
-  let q := Ideal.Quotient.mk I
+section Ideal
+
+variable {D O : Type*} [Semiring D] [CommRing O]
+
+/-- **Monic lifts modulo an ideal.** Let `φ : D →+* O` be surjective modulo an ideal `I`. Every
+monic polynomial over `O` is congruent modulo `I` to the image of a monic polynomial over `D` of
+the same degree. -/
+theorem Monic.exists_monic_map_sub_mem_map_C {T : O[X]} (hT : T.Monic) (φ : D →+* O)
+    {I : Ideal O} (hφ : ∀ o : O, ∃ d : D, o - φ d ∈ I) :
+    ∃ ψ : D[X], ψ.Monic ∧ ψ.natDegree = T.natDegree ∧ ψ.map φ - T ∈ I.map C := by
+  rcases eq_or_ne I ⊤ with rfl | hI
+  · -- the congruence is empty, and `X ^ deg T` works unless `D`, hence `O`, is zero
+    rw [Ideal.map_top]
+    cases subsingleton_or_nontrivial D with
+    | inl _ =>
+      have : Subsingleton O := φ.codomain_trivial
+      exact ⟨1, monic_one, by simp [natDegree_of_subsingleton], Submodule.mem_top⟩
+    | inr _ => exact ⟨X ^ T.natDegree, monic_X_pow _, natDegree_X_pow _, Submodule.mem_top⟩
   have : Nontrivial (O ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
-  have hlifts : T.map q ∈ lifts (q.comp φ) := by
-    rw [lifts_iff_coeff_lifts]
-    intro i
-    obtain ⟨d, hd⟩ := hφ (T.coeff i)
-    refine ⟨d, ?_⟩
-    rw [RingHom.comp_apply, coeff_map, eq_comm, Ideal.Quotient.mk_eq_mk_iff_sub_mem]
-    exact hd
-  obtain ⟨ψ, hψ_map, hψ_deg, hψ_monic⟩ := lifts_and_natDegree_eq_and_monic hlifts (hT.map q)
-  refine ⟨ψ, hψ_monic, hψ_deg.trans (hT.natDegree_map q), fun i ↦ ?_⟩
-  rw [coeff_sub, ← Ideal.Quotient.mk_eq_mk_iff_sub_mem, ← coeff_map, ← coeff_map, map_map]
-  exact congrArg (fun p : (O ⧸ I)[X] ↦ p.coeff i) hψ_map
+  have hsurj : Function.Surjective ((Ideal.Quotient.mk I).comp φ) := by
+    intro x
+    obtain ⟨o, rfl⟩ := Ideal.Quotient.mk_surjective x
+    obtain ⟨d, hd⟩ := hφ o
+    exact ⟨d, (Ideal.Quotient.eq.mpr hd).symm⟩
+  obtain ⟨ψ, hψ, hdeg, hmonic⟩ := lifts_and_natDegree_eq_and_monic
+    ((mem_lifts _).mpr (map_surjective _ hsurj (T.map (Ideal.Quotient.mk I)))) (hT.map _)
+  refine ⟨ψ, hmonic, hdeg.trans (hT.natDegree_map _), Ideal.mem_map_C_iff.mpr fun k ↦ ?_⟩
+  simpa [Ideal.Quotient.eq] using congr(($hψ).coeff k)
+
+end Ideal
 
 /-- **Denominators of divided derivatives from an integral rescaled translate.** If the
 polynomial `P(x + L X)` has integral coefficients, then for every `m` the number

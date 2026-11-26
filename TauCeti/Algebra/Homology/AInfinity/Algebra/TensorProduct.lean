@@ -278,49 +278,6 @@ private theorem shuffle_of_tprod (n : ℕ) (a : ℕ → A) (b : ℕ → B) (dA d
 
 end Shuffle
 
-section Differential
-
-variable (𝒜 : AInfinityAlgebra R A) (dB : B →ₗ[R] B)
-
-/-- The differential `D_A ⊗ 1 + τ ⊗ d_B` of `Tᶜ(sA) ⊗ B`, where `D_A` is the coaugmented bar
-differential of `A` and `τ` the Koszul twist of the suspended degree of words. -/
-private noncomputable def tensorBarDifferential :
-    TensorWords R A ⊗[R] B →ₗ[R] TensorWords R A ⊗[R] B :=
-  TensorProduct.map 𝒜.coaugmentedBarDifferential LinearMap.id +
-    TensorProduct.map ((TensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1) dB
-
-/-- The differential of `Tᶜ(sA) ⊗ B` on a pure tensor. -/
-private theorem tensorBarDifferential_tmul (w : TensorWords R A) (b : B) :
-    tensorBarDifferential 𝒜 dB (w ⊗ₜ b) = 𝒜.coaugmentedBarDifferential w ⊗ₜ b +
-      (TensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 w ⊗ₜ dB b :=
-  (rfl)
-
-/-- The differential of `Tᶜ(sA) ⊗ B` squares to zero: the bar differential does, `d_B` does, and
-the bar differential anticommutes with the Koszul twist because it has degree one. -/
-private theorem tensorBarDifferential_comp_self (hdB : dB ∘ₗ dB = 0) :
-    tensorBarDifferential 𝒜 dB ∘ₗ tensorBarDifferential 𝒜 dB = 0 := by
-  have hD := 𝒜.isHomogeneous_coaugmentedBarDifferential
-  rw [← TensorWords.grading_piece] at hD
-  have hτD : (TensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 ∘ₗ
-      𝒜.coaugmentedBarDifferential = (-1 : R) • (𝒜.coaugmentedBarDifferential ∘ₗ
-        (TensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1) := by
-    rw [hD.koszulTwist_comp_eq_smul 1, mul_one, Int.negOnePow_one, Units.val_neg, Units.val_one,
-      Int.cast_neg, Int.cast_one]
-  simp only [tensorBarDifferential, LinearMap.comp_add, LinearMap.add_comp,
-    ← TensorProduct.map_comp, LinearMap.id_comp, LinearMap.comp_id, coaugmentedBarDifferential_sq,
-    hτD, InternalGrading.koszulTwist_comp_self, hdB, TensorProduct.map_zero_left,
-    TensorProduct.map_zero_right,
-    TensorProduct.map_smul_left, zero_add, add_zero]
-  -- Tensor words enter here with their additive monoid structure, so the cancellation
-  -- `(-1) • X + X = 0` is derived from `add_smul` rather than from `neg_one_smul`.
-  have key : ∀ X : TensorWords R A ⊗[R] B →ₗ[R] TensorWords R A ⊗[R] B, (-1 : R) • X + X = 0 := by
-    intro X
-    nth_rw 2 [← one_smul R X]
-    rw [← add_smul, neg_add_cancel, zero_smul]
-  exact key _
-
-end Differential
-
 section Taylor
 
 variable (𝒜 : AInfinityAlgebra R A) (ℬ : ℤ → Submodule R B) [GradedAlgebra ℬ] (dB : B →ₗ[R] B)
@@ -331,7 +288,7 @@ kept. -/
 private noncomputable def tensorTaylor : ReducedTensorWords R (A ⊗[R] B) →ₗ[R] A ⊗[R] B :=
   TensorProduct.map (ReducedTensorWords.letter R A ∘ₗ TensorWords.reducedProjection R A)
       LinearMap.id ∘ₗ
-    tensorBarDifferential 𝒜 dB ∘ₗ shuffle 𝒜 ℬ ∘ₗ TensorWords.reducedInclusion R (A ⊗[R] B)
+    𝒜.leftUnaryDifferential dB ∘ₗ shuffle 𝒜 ℬ ∘ₗ TensorWords.reducedInclusion R (A ⊗[R] B)
 
 /-- The signed shuffle of a word of pure tensors of positive length. -/
 private theorem shuffle_reducedInclusion_of_tprod {n : ℕ} (hn : 0 < n) (a : ℕ → A) (b : ℕ → B)
@@ -366,7 +323,8 @@ private theorem tensorTaylor_of_tprod {n : ℕ} (hn : 0 < n) (a : ℕ → A) (b 
   rw [← TensorWords.grading_piece] at hmem
   rw [tensorTaylor, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
     shuffle_reducedInclusion_of_tprod 𝒜 ℬ hn a b dA dB' ha hb, map_smul, map_smul,
-    tensorBarDifferential_tmul, InternalGrading.koszulTwist_apply_of_mem _ hmem, one_mul,
+    leftUnaryDifferential_tmul, ← TensorWords.koszulTwist_grading,
+    InternalGrading.koszulTwist_apply_of_mem _ hmem, one_mul,
     ← LinearMap.comp_apply 𝒜.coaugmentedBarDifferential,
     coaugmentedBarDifferential_comp_reducedInclusion]
   simp only [LinearMap.comp_apply, TensorProduct.smul_tmul', map_add, map_smul,
@@ -494,7 +452,7 @@ private theorem shuffle_gradedCoderiv_of_tprod (hB : IsDGAlgebra ℬ dB) {n : �
         ((𝒜.grading.tensorProduct (InternalGrading.ofDecomposition ℬ)).shift 1)
         (tensorTaylor 𝒜 ℬ dB) 1 (ReducedTensorWords.of R (A ⊗[R] B) ⟨n, hn⟩
           (PiTensorProduct.tprod R fun j : Fin n ↦ a j ⊗ₜ b j)))) =
-      tensorBarDifferential 𝒜 dB (shuffle 𝒜 ℬ (TensorWords.reducedInclusion R (A ⊗[R] B)
+      𝒜.leftUnaryDifferential dB (shuffle 𝒜 ℬ (TensorWords.reducedInclusion R (A ⊗[R] B)
         (ReducedTensorWords.of R (A ⊗[R] B) ⟨n, hn⟩
           (PiTensorProduct.tprod R fun j : Fin n ↦ a j ⊗ₜ b j)))) := by
   have hmem := TensorWords.reducedInclusion_of_tprod_mem_gradedPiece _ hn a dA ha
@@ -505,7 +463,8 @@ private theorem shuffle_gradedCoderiv_of_tprod (hB : IsDGAlgebra ℬ dB) {n : �
         exact InternalGrading.tmul_mem_tensorProduct _ (InternalGrading.ofDecomposition ℬ)
           (ha i hi) (by rw [InternalGrading.ofDecomposition_piece]; exact hb i hi),
     shuffle_reducedInclusion_of_tprod 𝒜 ℬ hn a b dA dB' ha hb, map_smul,
-    tensorBarDifferential_tmul, ← LinearMap.comp_apply 𝒜.coaugmentedBarDifferential,
+    leftUnaryDifferential_tmul, ← TensorWords.koszulTwist_grading,
+    ← LinearMap.comp_apply 𝒜.coaugmentedBarDifferential,
     coaugmentedBarDifferential_comp_reducedInclusion, LinearMap.comp_apply, barDifferential_def,
     ReducedTensorWords.gradedCoderiv_of_tprod_of_homogeneous_nat _ _ 1 hn a dA ha,
     InternalGrading.koszulTwist_apply_of_mem _ hmem,
@@ -529,7 +488,7 @@ private theorem shuffle_comp_gradedCoderiv (hB : IsDGAlgebra ℬ dB) :
         ReducedTensorWords.gradedCoderiv
           ((𝒜.grading.tensorProduct (InternalGrading.ofDecomposition ℬ)).shift 1)
           (tensorTaylor 𝒜 ℬ dB) 1 =
-      tensorBarDifferential 𝒜 dB ∘ₗ shuffle 𝒜 ℬ ∘ₗ TensorWords.reducedInclusion R (A ⊗[R] B) := by
+      𝒜.leftUnaryDifferential dB ∘ₗ shuffle 𝒜 ℬ ∘ₗ TensorWords.reducedInclusion R (A ⊗[R] B) := by
   refine DirectSum.linearMap_ext R fun n ↦ PiTensorProduct.ext_of_span_eq_top
     (g := fun _ (z : Σ pq : ℤ × ℤ, (𝒜.grading.shift 1).piece pq.1 × ℬ pq.2) ↦
       (z.2.1 : A) ⊗ₜ[R] (z.2.2 : B)) (fun _ ↦ by
@@ -615,14 +574,6 @@ private theorem isHomogeneous_tensorTaylor (hB : IsDGAlgebra ℬ dB) :
     LinearMap.isHomogeneous_def.2 fun d w hw ↦ by
       rw [add_zero]
       exact TensorWords.mem_gradedPiece_of_reducedInclusion hw
-  have hD := 𝒜.isHomogeneous_coaugmentedBarDifferential
-  rw [← TensorWords.grading_piece] at hD
-  have hτ : LinearMap.IsHomogeneous ((TensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1)
-      (TensorWords.grading (𝒜.grading.shift 1)).piece
-      (TensorWords.grading (𝒜.grading.shift 1)).piece 0 :=
-    LinearMap.isHomogeneous_def.2 fun d w hw ↦ by
-      rw [add_zero]
-      exact InternalGrading.koszulTwist_mem_piece _ hw 1
   have hd : LinearMap.IsHomogeneous dB (InternalGrading.ofDecomposition ℬ).piece
       (InternalGrading.ofDecomposition ℬ).piece 1 :=
     LinearMap.isHomogeneous_def.2 fun d b hb ↦ by
@@ -634,16 +585,8 @@ private theorem isHomogeneous_tensorTaylor (hB : IsDGAlgebra ℬ dB) :
     rw [TensorWords.grading_piece]
     simpa only [add_zero] using (ReducedTensorWords.isHomogeneous_letter _).comp
       (TensorWords.isHomogeneous_reducedProjection _)
-  have h𝔇 : LinearMap.IsHomogeneous (tensorBarDifferential 𝒜 dB)
-      ((TensorWords.grading (𝒜.grading.shift 1)).tensorProduct
-        (InternalGrading.ofDecomposition ℬ)).piece
-      ((TensorWords.grading (𝒜.grading.shift 1)).tensorProduct
-        (InternalGrading.ofDecomposition ℬ)).piece 1 := by
-    refine LinearMap.IsHomogeneous.add ?_ ?_
-    · simpa only [add_zero] using hD.tensorProduct (LinearMap.isHomogeneous_id _)
-    · simpa only [zero_add] using hτ.tensorProduct hd
   have h := (hlet.tensorProduct (LinearMap.isHomogeneous_id _)).comp
-    (h𝔇.comp ((isHomogeneous_shuffle 𝒜 ℬ).comp hι))
+    ((𝒜.isHomogeneous_leftUnaryDifferential hd).comp ((isHomogeneous_shuffle 𝒜 ℬ).comp hι))
   rw [InternalGrading.shift_tensorProduct_piece] at h
   simpa only [tensorTaylor, add_zero, zero_add] using h
 
@@ -662,15 +605,15 @@ private theorem gradedCoderiv_tensorTaylor_comp_self (hB : IsDGAlgebra ℬ dB) :
       ((𝒜.grading.tensorProduct (InternalGrading.ofDecomposition ℬ)).shift 1)
       (tensorTaylor 𝒜 ℬ dB) 1 =
         TensorProduct.map (ReducedTensorWords.letter R A ∘ₗ TensorWords.reducedProjection R A)
-          LinearMap.id ∘ₗ tensorBarDifferential 𝒜 dB ∘ₗ
+          LinearMap.id ∘ₗ 𝒜.leftUnaryDifferential dB ∘ₗ
             (shuffle 𝒜 ℬ ∘ₗ TensorWords.reducedInclusion R (A ⊗[R] B) ∘ₗ
               ReducedTensorWords.gradedCoderiv
                 ((𝒜.grading.tensorProduct (InternalGrading.ofDecomposition ℬ)).shift 1)
                 (tensorTaylor 𝒜 ℬ dB) 1) :=
     (rfl)
   rw [h, shuffle_comp_gradedCoderiv 𝒜 ℬ dB hB,
-    ← LinearMap.comp_assoc _ (tensorBarDifferential 𝒜 dB) (tensorBarDifferential 𝒜 dB),
-    tensorBarDifferential_comp_self 𝒜 dB (LinearMap.ext hB.sq_zero), LinearMap.zero_comp,
+    ← LinearMap.comp_assoc _ (𝒜.leftUnaryDifferential dB) (𝒜.leftUnaryDifferential dB),
+    𝒜.leftUnaryDifferential_comp_self (LinearMap.ext hB.sq_zero), LinearMap.zero_comp,
     LinearMap.comp_zero]
 
 end Taylor

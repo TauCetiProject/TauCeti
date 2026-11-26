@@ -16,21 +16,17 @@ import TauCeti.MeasureTheory.Function.Jacobian
 Let `M` be a `C¹` manifold without boundary modelled on a finite-dimensional real normed space
 `E` with a Haar measure `μ`, and let `A`, `A'` be two finite bundle atlases of fibre bundles over
 `M`, possibly of different bundles. The chart transitions between the two atlases are `C¹`
-diffeomorphisms between open sets of `E`, so they carry null sets to null sets. Hence a property
-of the points of `M` holding almost everywhere in every chart of `A` holds almost everywhere in
-every chart of `A'` (`TauCeti.FiniteBundleAtlas.ae_restrict_image_symm_of_ae`), and, when `A` and
-`A'` are atlases of the same bundle, two sections whose readings agree almost everywhere in the
-charts of `A` agree almost everywhere in the charts of `A'`
-(`TauCeti.FiniteBundleAtlas.coord_ae_eq_of_coord_ae_eq`).
+diffeomorphisms between open sets of `E`, so they carry null sets to null sets: a property holding
+almost everywhere on the image of a chart of `A` holds, at the reading in that chart, almost
+everywhere on the part of the image of a chart of `A'` lying over its domain
+(`TauCeti.FiniteBundleAtlas.ae_restrict_image_chart_symm`). This is the input to the change of
+atlas for Sobolev spaces of sections in
+`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Atlas.Equiv`.
 
 ## Main results
 
 * `TauCeti.FiniteBundleAtlas.ae_restrict_image_chart_symm`: change of atlas preserves null sets,
   chartwise.
-* `TauCeti.FiniteBundleAtlas.ae_restrict_image_symm_of_ae`: almost everywhere statements on `M` do
-  not depend on the atlas.
-* `TauCeti.FiniteBundleAtlas.coord_ae_eq_of_coord_ae_eq`: sections whose readings agree almost
-  everywhere in one atlas agree almost everywhere in every other atlas.
 -/
 
 public section
@@ -81,28 +77,6 @@ theorem ae_restrict_image_chart_symm (A' : FiniteBundleAtlas E M F' V') {i : Fin
   rw [ae_restrict_iff' (A'.image i').isOpen.measurableSet]
   filter_upwards [hτ] with y hy hyU hdom
   exact hy ⟨hyU, hdom⟩
-
-/-- **Almost everywhere statements on `M` do not depend on the atlas.** A property of points of `M`
-that holds almost everywhere in every chart of `A` holds almost everywhere in every chart of
-`A'`. -/
-theorem ae_restrict_image_symm_of_ae (A' : FiniteBundleAtlas E M F' V') {P : M → Prop}
-    (h : ∀ i, ∀ᵐ z ∂μ.restrict (A.image i), P ((A.chart i).symm z)) (i' : Fin A'.n) :
-    ∀ᵐ y ∂μ.restrict (A'.image i'), P ((A'.chart i').symm y) := by
-  have hall := ae_all_iff.2 fun i ↦ A.ae_restrict_image_chart_symm A' i' (h i)
-  filter_upwards [hall] with y hy
-  obtain ⟨i, hi⟩ := A.exists_mem_dom ((A'.chart i').symm y)
-  simpa only [(A.chart i).left_inv (A.dom_subset_chart_source i hi)] using hy i hi
-
-/-- Sections whose readings agree almost everywhere in every chart of one finite bundle atlas agree
-almost everywhere in every chart of any other. -/
-theorem coord_ae_eq_of_coord_ae_eq (A' : FiniteBundleAtlas E M F V) {s t : ∀ x, V x}
-    (h : ∀ i, A.coord i s =ᵐ[μ.restrict (A.image i)] A.coord i t) (i' : Fin A'.n) :
-    A'.coord i' s =ᵐ[μ.restrict (A'.image i')] A'.coord i' t := by
-  have hst := A.ae_restrict_image_symm_of_ae A' (P := fun x ↦ s x = t x) (fun i ↦ by
-    filter_upwards [h i, ae_restrict_mem (A.image i).isOpen.measurableSet] with z hz hzU
-    exact (A.coord_eq_coord_iff hzU).1 hz) i'
-  filter_upwards [hst] with y hy
-  simp only [coord_def, hy]
 
 end FiniteBundleAtlas
 

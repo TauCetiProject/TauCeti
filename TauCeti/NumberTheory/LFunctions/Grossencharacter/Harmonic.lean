@@ -215,6 +215,13 @@ theorem norm_harmonicFactor (χ : Grossencharacter K 𝔪) (x : mixedSpace K) :
   simp only [harmonicFactor_eq_infinityType, ContinuousInfinityType.norm_harmonicFactor,
     harmonicExponent_eq_infinityType]
 
+/-- When the total harmonic degree vanishes, `χ.harmonicFactor` is the constant `1`. -/
+theorem harmonicFactor_eq_one_of_harmonicDegree_eq_zero (χ : Grossencharacter K 𝔪)
+    (h : χ.harmonicDegree = 0) (x : mixedSpace K) : χ.harmonicFactor x = 1 := by
+  rw [harmonicFactor_eq_infinityType]
+  exact ContinuousInfinityType.harmonicFactor_eq_one_of_harmonicDegree_eq_zero _
+    (by rwa [← harmonicDegree_eq_infinityType]) x
+
 /-- At `0`, `χ.harmonicFactor` takes the value `1` if `χ.harmonicDegree = 0` and `0` otherwise. -/
 theorem harmonicFactor_zero_right (χ : Grossencharacter K 𝔪) :
     χ.harmonicFactor 0 = if χ.harmonicDegree = 0 then 1 else 0 := by

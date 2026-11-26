@@ -108,7 +108,9 @@ private theorem exists_factor_ne_multiplicity_aux {O K : Type*} [CommRing O]
       _ = X₁.map ι := by rw [← hX₁_eq]
       _ = R ^ e₁ * (g' * A) := by rw [hgA, mul_assoc]
   have hS₁_eq := mul_left_cancel₀ (pow_ne_zero e₁ hR_monic.ne_zero) heq
-  exact hS₁_ndvd (hR₀_map.symm ▸ hS₁_eq ▸ hR_dvd_A.mul_left g')
+  apply hS₁_ndvd
+  rw [hR₀_map, hS₁_eq]
+  exact hR_dvd_A.mul_left g'
 
 /-- Two distinct monic polynomials `P, Q : O[X]` over an integrally closed domain admit a monic
 factor `R₀ : O[X]` irreducible over `K = Frac(O)` appearing with distinct multiplicities in `P`
