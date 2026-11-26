@@ -14,6 +14,8 @@ import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Topology.Constructions.SumProd
+import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 /-!
 # Changes of frame on the Sobolev space of the cylinder
@@ -46,6 +48,9 @@ together, with equal indices
 `TauCeti.CylinderSobolev.index_jetOperator_firstOrderJetCoeff_frame`). The multiplication by `Ψ` on
 `L²` used for the target is invertible by
 `MeasureTheory.Lp.isInvertible_operatorMultiplication_of_comp_eq_id`.
+A `C¹` frame of invertible maps that, far out on each end, does not depend on `s` is bounded
+together with its derivative and its inverses
+(`TauCeti.CylinderSobolev.exists_forall_norm_le_of_eq_comp_snd`), as these bounds require.
 
 For a linearized Floer operator `∂s + J ∂t + C` written in a trivialization along a cylinder, this
 says that its Fredholm property and index do not depend on the trivialization. For a loop of
@@ -72,7 +77,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Filter Function
+open MeasureTheory Filter Function Topology
 open scoped ENNReal
 
 namespace TauCeti.CylinderSobolev
@@ -235,6 +240,42 @@ theorem coe_frameEquiv_symm_apply (hΨΦ : ∀ z, (Ψ z).comp (Φ z) = Continuou
 
 end Inverse
 
+/-- A `C¹` family `Φ` of invertible maps on the cylinder, of period one in `t`, which for `s ≤ -R`
+and for `s ≥ R` does not depend on `s`, is bounded together with its derivative and its inverses. -/
+theorem exists_forall_norm_le_of_eq_comp_snd [CompleteSpace V] {Φ : ℝ × ℝ → V →L[ℝ] W}
+    (hΦ : ContDiff ℝ 1 Φ) (hΦi : ∀ z, (Φ z).IsInvertible)
+    (hΦp : ∀ s t, Φ (s, t + 1) = Φ (s, t)) {R : ℝ} (hm : ∀ s ≤ -R, ∀ t, Φ (s, t) = Φ (-R, t))
+    (hp : ∀ s, R ≤ s → ∀ t, Φ (s, t) = Φ (R, t)) :
+    ∃ B B' D : ℝ, (∀ z, ‖Φ z‖ ≤ B) ∧ (∀ z, ‖fderiv ℝ Φ z‖ ≤ B') ∧
+      ∀ z, ‖(Φ z).inverse‖ ≤ D := by
+  have hevm := eventually_atBot.2 ⟨-R, fun s hs t ↦ hm s hs t⟩
+  have hevp := eventually_atTop.2 ⟨R, fun s hs t ↦ hp s hs t⟩
+  obtain ⟨B, hB⟩ := exists_forall_norm_le_of_periodic_of_eventually_eq hΦ.continuous hΦp hevm hevp
+  obtain ⟨D, hD⟩ := exists_forall_norm_le_of_periodic_of_eventually_eq
+    (hΦ.clm_inverse hΦi).continuous
+    (gm := fun t ↦ (Φ (-R, t)).inverse) (gp := fun t ↦ (Φ (R, t)).inverse)
+    (fun s t ↦ by simp only [hΦp]) (hevm.mono fun s hs t ↦ by simp only [hs t])
+    (hevp.mono fun s hs t ↦ by simp only [hs t])
+  -- Far out, `dΦ` is the derivative of a function of `t` alone; it has period one in `t`.
+  have hd (b : ℝ) (z : ℝ × ℝ) (hz : Φ =ᶠ[𝓝 z] fun w ↦ Φ (b, w.2)) :
+      fderiv ℝ Φ z = fderiv ℝ (fun w : ℝ × ℝ ↦ Φ (b, w.2)) (0, z.2) := by
+    rw [hz.fderiv_eq, ← Function.comp_def (fun t ↦ Φ (b, t)) Prod.snd, fderiv_comp_snd,
+      fderiv_comp_snd]
+  have hshift : (fun z : ℝ × ℝ ↦ Φ (z + (0, 1))) = Φ := funext fun ⟨s, t⟩ ↦ by
+    simpa using hΦp s t
+  obtain ⟨B', hB'⟩ := exists_forall_norm_le_of_periodic_of_eventually_eq
+    (hΦ.continuous_fderiv one_ne_zero)
+    (gm := fun t ↦ fderiv ℝ (fun w : ℝ × ℝ ↦ Φ (-R, w.2)) (0, t))
+    (gp := fun t ↦ fderiv ℝ (fun w : ℝ × ℝ ↦ Φ (R, w.2)) (0, t))
+    (fun s t ↦ by
+      calc fderiv ℝ Φ (s, t + 1) = fderiv ℝ Φ ((s, t) + (0, 1)) := by simp
+        _ = fderiv ℝ Φ (s, t) := by rw [← fderiv_comp_add_right, hshift])
+    (eventually_atBot.2 ⟨-R - 1, fun s hs t ↦
+      hd (-R) (s, t) (eventuallyEq_comp_snd_of_lt hm (by simp only; linarith))⟩)
+    (eventually_atTop.2 ⟨R + 1, fun s hs t ↦
+      hd R (s, t) (eventuallyEq_comp_snd_of_gt hp (by simp only; linarith))⟩)
+  exact ⟨B, B', D, hB, hB', hD⟩
+
 /-! ### Fredholm operators in a frame -/
 
 section Fredholm
@@ -364,9 +405,11 @@ variable [CompleteSpace V] {Φ : ℝ → V →L[ℝ] W} (hΦ : ContDiff ℝ 2 Φ
 
 omit [CompleteSpace V] in
 include hΦi hJ in
-/-- Reading `∂s + J_t (∂t - S)` in a loop of frames `Φ_t` intertwining `J₀_t` with `J_t` gives
-`∂s + J₀_t (∂t - S_Φ)`, with `S_Φ = Φ⁻¹ (S Φ - Φ')` the trivialized coefficient. -/
-private theorem firstOrderJetCoeff_frame_loop_eq (z : ℝ × ℝ) :
+/-- **Cylinder operators in a loop of frames.** Reading `∂s + J_t (∂t - S)` in a loop of frames
+`Φ_t` intertwining `J₀_t` with `J_t` gives `∂s + J₀_t (∂t - S_Φ)`, with `S_Φ = Φ⁻¹ (S Φ - Φ')` the
+trivialized coefficient: the coefficient field of
+`TauCeti.StripSobolev.comp_firstOrderJetCoeff_comp_frameJetCoeff` for the frame `(s, t) ↦ Φ_t`. -/
+theorem firstOrderJetCoeff_frame_loop_eq (z : ℝ × ℝ) :
     firstOrderJetCoeff ((Φ z.2).inverse.comp ((J z.2).comp (Φ z.2)))
         ((Φ z.2).inverse.comp ((-(J z.2).comp (S z)).comp (Φ z.2) +
           fderiv ℝ (fun w : ℝ × ℝ ↦ Φ w.2) z (1, 0) +
