@@ -36,6 +36,11 @@ def substLaw (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
     (x y : Fin n → MvPowerSeries σ R) (i : Fin n) : MvPowerSeries σ R :=
   (φ i).subst (Function.uncurry ![x, y])
 
+/-- The coordinate formula for substituting two tuples into a binary law. -/
+theorem substLaw_def (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
+    (x y : Fin n → MvPowerSeries σ R) (i : Fin n) :
+    substLaw φ x y i = (φ i).subst (Function.uncurry ![x, y]) := (rfl)
+
 /-- Substituting after applying a law substitutes into each of its arguments. -/
 theorem subst_substLaw (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
     {x y : Fin n → MvPowerSeries σ R} (hx : HasSubst x) (hy : HasSubst y)
@@ -104,18 +109,10 @@ theorem substLaw_zero_right {x : Fin n → MvPowerSeries σ R} (hx : HasSubst x)
   have hz : HasSubst (0 : Fin n → MvPowerSeries (Fin n) R) := HasSubst.zero
   have h0 : subst x (0 : MvPowerSeries (Fin n) R) = 0 := by
     rw [← substAlgHom_apply hx, map_zero]
+  -- The transport produces a lambda-valued zero tuple. Expose the target's zero tuple too,
+  -- since Pi.zero_apply simplifies applied zeros, not a zero tuple passed to substLaw.
   change substLaw F.law x (fun _ ↦ 0) i = x i
   simpa only [subst_substLaw _ HasSubst.X hz hx, subst_X hx, Pi.zero_apply, h0] using h
-
-private theorem subst_block {k : ℕ} (a : Fin k → Fin n → MvPowerSeries σ R)
-    (ha : HasSubst (Function.uncurry a)) (j : Fin k) :
-    (fun i ↦ (X (R := R) (j, i)).subst (Function.uncurry a)) = a j := by
-  funext i
-  exact subst_X ha _
-
-private theorem hasSubst_block {k : ℕ} (j : Fin k) :
-    HasSubst (fun i : Fin n ↦ X (R := R) (j, i)) :=
-  hasSubst_of_constantCoeff_zero fun _ ↦ by simp
 
 /-- Symmetry of the formal sum on admissible tuples. -/
 theorem substLaw_comm {x y : Fin n → MvPowerSeries σ R} (hx : HasSubst x) (hy : HasSubst y) :
@@ -149,7 +146,7 @@ theorem substLaw_assoc {x y z : Fin n → MvPowerSeries σ R}
     Function.comp_apply, Matrix.cons_val_succ, Matrix.vecHead, Matrix.vecTail,
     Matrix.cons_val_fin_one] using h
 
-private theorem substLaw_additive {x y : Fin n → MvPowerSeries σ R}
+private theorem substLaw_X_add_X {x y : Fin n → MvPowerSeries σ R}
     (hx : HasSubst x) (hy : HasSubst y) :
     substLaw (fun i ↦ X ((0 : Fin 2), i) + X (1, i)) x y = x + y := by
   funext i
@@ -158,17 +155,24 @@ private theorem substLaw_additive {x y : Fin n → MvPowerSeries σ R}
 /-- The additive formal Lie group in `n` coordinates, with coordinatewise addition. -/
 def additive (R : Type*) [CommRing R] (n : ℕ) : FormalLieGroup R n where
   law i := X ((0 : Fin 2), i) + X (1, i)
-  right_unit := (substLaw_additive (x := X) (y := 0) HasSubst.X HasSubst.zero).trans (add_zero _)
-  comm := by simp only [substLaw_additive (hasSubst_block _) (hasSubst_block _), add_comm]
+  right_unit := (substLaw_X_add_X (x := X) (y := 0) HasSubst.X HasSubst.zero).trans (add_zero _)
+  comm := by simp only [substLaw_X_add_X (hasSubst_block _) (hasSubst_block _), add_comm]
   assoc := by
     dsimp only
-    simp only [substLaw_additive (hasSubst_block _) (hasSubst_block _),
-      substLaw_additive ((hasSubst_block _).add (hasSubst_block _)) (hasSubst_block _),
-      substLaw_additive (hasSubst_block _) ((hasSubst_block _).add (hasSubst_block _)), add_assoc]
+    simp only [substLaw_X_add_X (hasSubst_block _) (hasSubst_block _),
+      substLaw_X_add_X ((hasSubst_block _).add (hasSubst_block _)) (hasSubst_block _),
+      substLaw_X_add_X (hasSubst_block _) ((hasSubst_block _).add (hasSubst_block _)), add_assoc]
 
 @[simp]
 theorem additive_law (i : Fin n) :
     (additive R n).law i = X ((0 : Fin 2), i) + X (1, i) := (rfl)
+
+/-- The additive formal Lie group sums admissible tuples coordinatewise. -/
+@[simp]
+theorem substLaw_additive {x y : Fin n → MvPowerSeries σ R}
+    (hx : HasSubst x) (hy : HasSubst y) :
+    substLaw (additive R n).law x y = x + y :=
+  substLaw_X_add_X hx hy
 
 end FormalLieGroup
 

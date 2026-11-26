@@ -231,6 +231,24 @@ theorem hasSubst_pair_of_hasSubst (hq₁ : PowerSeries.HasSubst q₁)
 
 end HasSubstPair
 
+section Blocks
+
+variable {R : Type*} [CommRing R] {n : ℕ}
+
+/-- Substituting a family of coordinate blocks into its variables recovers each block. -/
+theorem subst_block {k : ℕ} (a : Fin k → Fin n → MvPowerSeries σ R)
+    (ha : HasSubst (Function.uncurry a)) (j : Fin k) :
+    (fun i ↦ (X (R := R) (j, i)).subst (Function.uncurry a)) = a j := by
+  funext i
+  exact subst_X ha _
+
+/-- The variables in one finite coordinate block form an admissible substitution family. -/
+theorem hasSubst_block {k : ℕ} (j : Fin k) :
+    HasSubst (fun i : Fin n ↦ X (R := R) (j, i)) :=
+  hasSubst_of_constantCoeff_zero fun _ ↦ by simp
+
+end Blocks
+
 section CoordSpecialize
 
 variable {O : Type*} [CommRing O] {σ' : Type*}
