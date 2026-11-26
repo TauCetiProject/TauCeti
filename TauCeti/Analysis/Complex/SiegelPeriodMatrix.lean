@@ -9,6 +9,7 @@ public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import TauCeti.Analysis.Complex.SiegelUpperHalfSpace
 import Mathlib.LinearAlgebra.Matrix.Integer
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
+import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
 # Period matrices and the symplectic action on the fibres of the Siegel family
@@ -147,9 +148,8 @@ theorem isUnit_det_siegelLatticeMap {M : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin
 
 /-- For symplectic `M`, the lattice action `ρ(M) = M⁻ᵀ` is symplectic. -/
 theorem siegelLatticeMap_mem_symplecticGroup {M : Matrix (Fin g ⊕ Fin g) (Fin g ⊕ Fin g) ℤ}
-    (hM : M ∈ symplecticGroup (Fin g) ℤ) : siegelLatticeMap M ∈ symplecticGroup (Fin g) ℤ := by
-  rw [siegelLatticeMap_def, ← SymplecticGroup.coe_inv' ⟨M, hM⟩]
-  exact SymplecticGroup.transpose_mem (⟨M, hM⟩⁻¹ : symplecticGroup (Fin g) ℤ).property
+    (hM : M ∈ symplecticGroup (Fin g) ℤ) : siegelLatticeMap M ∈ symplecticGroup (Fin g) ℤ :=
+  SymplecticGroup.transpose_nonsing_inv_mem hM
 
 /-- **The cocycle law** `R_{M N}(Ω) = R_M(N · Ω) R_N(Ω)`, whenever `j(N, Ω) = C_N Ω + D_N` is
 invertible. -/
