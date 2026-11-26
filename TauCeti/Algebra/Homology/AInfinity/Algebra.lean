@@ -814,8 +814,9 @@ theorem m_two_assoc_of_m_three_eq_zero (𝒜 : AInfinityAlgebra R A) (h₃ : �
 
 /-- The arity-four Stasheff identity for arbitrary inputs, with the Koszul signs of the first three
 inputs carried by the degree-one twist.  It expresses the boundary of the quaternary operation
-through the composites of two operations of lower arity.  Since the inputs are arbitrary, this is
-the identity of four-linear maps
+through the composites of the binary and ternary operations, modulo the four terms in which the
+quaternary operation meets a unary boundary.  Since the inputs are arbitrary, this is the identity
+of four-linear maps
 `m₁m₄ - m₂(m₃ ⊗ 1) - m₂(1 ⊗ m₃) + m₃(m₂ ⊗ 1 ⊗ 1) - m₃(1 ⊗ m₂ ⊗ 1) + m₃(1 ⊗ 1 ⊗ m₂)
   - m₄(m₁ ⊗ 1 ⊗ 1 ⊗ 1 + 1 ⊗ m₁ ⊗ 1 ⊗ 1 + 1 ⊗ 1 ⊗ m₁ ⊗ 1 + 1 ⊗ 1 ⊗ 1 ⊗ m₁) = 0`
 under the Koszul rule for tensor products of maps. -/
