@@ -550,11 +550,14 @@ theorem limitZeroCharge_eq_limitSectionZeroCharge [l.NeBot]
   subst hσ
   -- The frames of the definition, along `G ∘ τ`.
   set C' := fun k ↦ ((s k).exists_forall_sectionZeroCharge_comp_eq_zeroCharge (G.comp τ)).choose
-  have hC'₀ (k : ι) (z : 𝔻) (hz : C' k z = 0) : (s k ((G.comp τ).comp (.id 𝔻) z)).snd = 0 :=
+  have hC'₀ (k : ι) (z : 𝔻) (hz : C' k z = 0) : (s k ((G.comp τ) z)).snd = 0 :=
     ((s k).exists_forall_sectionZeroCharge_comp_eq_zeroCharge (G.comp τ)).choose_spec.1 z |>.1 hz
   have hC' (k : ι) (τ' : C(𝔻, 𝔻)) :
       (s k).sectionZeroCharge ((G.comp τ).comp τ') = (C' k).zeroCharge τ' :=
     ((s k).exists_forall_sectionZeroCharge_comp_eq_zeroCharge (G.comp τ)).choose_spec.2 τ'
+  -- By definition, the right-hand side is the limit zero charge of the identity disc for `C'`.
+  have hdef : limitZeroCharge l C' ((G.comp τ) ⁻¹' Z) (.id 𝔻) =
+      limitSectionZeroCharge l s Z (G.comp τ) := rfl
   refine eq_of_forall_cutoff_radius (fun hex ↦ limitZeroCharge_of_not_exists
     (by simpa only [ContinuousMap.comp_apply, Set.mem_preimage] using hex))
     limitSectionZeroCharge_of_not_exists fun ρ₀ ρ hρ hρ₁ hρ₀ρ hτ ↦ ?_
@@ -563,7 +566,7 @@ theorem limitZeroCharge_eq_limitSectionZeroCharge [l.NeBot]
   have hC'l := h.isZeroChargeLimit (G := G.comp τ) hC'₀ hC'
   obtain ⟨k, hk, hk'⟩ := (hCl.eventually_zeroCharge_eq_limitZeroCharge hρ hρ₁ hρ₀ρ hτ).and
     (hC'l.eventually_zeroCharge_eq_limitZeroCharge (σ := .id 𝔻) hρ hρ₁ hρ₀ρ hτ) |>.exists
-  rw [← hk, limitSectionZeroCharge, ← hk', ← hC, ← hC', ContinuousMap.id_comp,
+  rw [← hk, ← hdef, ← hk', ← hC, ← hC', ContinuousMap.id_comp,
     ContinuousMap.comp_assoc]
 
 variable [R1Space B] [ParacompactSpace B] [ContractibleSpace B]
