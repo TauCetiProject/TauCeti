@@ -44,6 +44,19 @@ theorem quantumMinor_eq_columnDet (E : Matrix ι ι A) (u : K) (a b : Fin n → 
         E (a i) (b j)).columnDet :=
   (rfl)
 
+/-- An element commuting with the entries in the selected rows and columns also commutes with
+the quantum minor. -/
+theorem commute_quantumMinor (E : Matrix ι ι A) (u : K) (a b : Fin n → ι) {x : A}
+    (h : ∀ i j, Commute (E (a i) (b j)) x) : Commute (E.quantumMinor u a b) x := by
+  rw [quantumMinor_eq_columnDet]
+  apply commute_columnDet
+  intro i j
+  simp only [of_apply]
+  refine Commute.add_left ?_ (h i j)
+  split_ifs
+  · exact Algebra.commutes _ _
+  · exact Commute.zero_left _
+
 /-- The empty quantum minor is one. -/
 @[simp] theorem quantumMinor_fin_zero (E : Matrix ι ι A) (u : K) (a b : Fin 0 → ι) :
     E.quantumMinor u a b = 1 := by
