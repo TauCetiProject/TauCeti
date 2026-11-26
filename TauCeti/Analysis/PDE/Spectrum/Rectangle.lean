@@ -575,25 +575,21 @@ theorem isLeast_exists_ne_zero_forall_inner_gradient_eq_boxDomain_zero_one_left 
             W1p.value (v : W1p volume (boxDomain (0 : Fin 2 → ℝ) 1) 2)⟫_ℝ) ∧ π ^ 2 / 4 < kappa}
       (5 * π ^ 2 / 4) := by
   have hab : ∀ i, (0 : Fin 2 → ℝ) i < (1 : Fin 2 → ℝ) i := fun _ => zero_lt_one
-  have hiff (kappa : ℝ) := exists_ne_zero_forall_inner_gradient_eq_iff_boxDomain_left hab
-    (kappa := kappa)
   have hπ := Real.pi_pos
   -- On the unit square the eigenvalues are `((2k + 1) π / 2)² + (l π)²`.
+  have hiff (kappa : ℝ) := exists_ne_zero_forall_inner_gradient_eq_iff_boxDomain_left hab
+    (kappa := kappa)
+  simp only [Pi.zero_apply, Pi.one_apply, sub_zero, mul_one, div_one] at hiff
   have h5 : π ^ 2 / 4 < 5 * π ^ 2 / 4 := by nlinarith
   have hsin (k : ℕ) : (π / 2) ^ 2 ≤ ((2 * k + 1) * π / 2) ^ 2 :=
     pow_le_pow_left₀ (by positivity)
       (by nlinarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]) 2
-  refine ⟨⟨(hiff _).2 ⟨0, 0, by
-      simp only [Pi.zero_apply, Pi.one_apply, sub_zero, div_one, Nat.cast_zero]; ring⟩,
-    fun kappa hkappa => ?_⟩, ⟨⟨(hiff _).2 ⟨0, 1, by
-      simp only [Pi.zero_apply, Pi.one_apply, sub_zero, div_one, Nat.cast_zero, Nat.cast_one]
-      ring⟩, h5⟩, fun kappa hk => ?_⟩⟩
+  refine ⟨⟨(hiff _).2 ⟨0, 0, by push_cast; ring⟩, fun kappa hkappa => ?_⟩,
+    ⟨⟨(hiff _).2 ⟨0, 1, by push_cast; ring⟩, h5⟩, fun kappa hk => ?_⟩⟩
   · obtain ⟨k, l, rfl⟩ := (hiff kappa).1 hkappa
-    simp only [Pi.zero_apply, Pi.one_apply, sub_zero, mul_one, div_one]
     nlinarith [hsin k, sq_nonneg (l * π)]
   obtain ⟨hkappa, hlt⟩ := hk
   obtain ⟨k, l, rfl⟩ := (hiff kappa).1 hkappa
-  simp only [Pi.zero_apply, Pi.one_apply, sub_zero, mul_one, div_one] at hlt ⊢
   rcases Nat.eq_zero_or_pos l with rfl | hl
   · rcases Nat.eq_zero_or_pos k with rfl | hk
     · simp only [Nat.cast_zero] at hlt
