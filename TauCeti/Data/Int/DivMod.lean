@@ -66,9 +66,10 @@ theorem natCast_mul_sub_div {T b x : ℕ} (hx : x ≤ T) (h : ¬ T ∣ b * x) :
     exact h (by simp [Nat.le_zero.1 hx])
   have hT : (T : ℤ) ≠ 0 := by exact_mod_cast hT0
   push_cast [Nat.cast_sub hx]
-  rw [show (b : ℤ) * (T - x) = -(b * x) + b * T by ring, Int.add_mul_ediv_right _ _ hT,
-    Int.neg_ediv]
-  simp only [show ¬ (T : ℤ) ∣ b * x by exact_mod_cast h, ↓reduceIte,
+  have hsplit : (b : ℤ) * (T - x) = -(b * x) + b * T := by ring
+  have hdvd : ¬ (T : ℤ) ∣ b * x := by exact_mod_cast h
+  rw [hsplit, Int.add_mul_ediv_right _ _ hT, Int.neg_ediv]
+  simp only [hdvd, ↓reduceIte,
     Int.sign_natCast_of_ne_zero hT0]
   ring
 

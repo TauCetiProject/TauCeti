@@ -72,7 +72,8 @@ private theorem exists_two_mul_primorial_mul_sub_eq {e : ℕ} (he : e ≠ 0) (b 
         (b - 1 - 2 * (b * s.val / T : ℕ)) = T * n := by
   obtain ⟨z, hz⟩ := TauCeti.exists_pow_div_mul_bernoulli_eval_val_sub_eq (k := e + 1)
     (Nat.succ_ne_zero e) b s
-  simp only [Nat.add_sub_cancel, show e + 1 + 1 = e + 2 from rfl] at hz
+  have he2 : e + 1 + 1 = e + 2 := by omega
+  simp only [Nat.add_sub_cancel, he2] at hz
   set q := b * s.val / T
   -- `⟨b s⟩ ≡ b ⟨s⟩` modulo `T`, hence also their `e`-th powers
   set u := ((b : ZMod T) * s).val

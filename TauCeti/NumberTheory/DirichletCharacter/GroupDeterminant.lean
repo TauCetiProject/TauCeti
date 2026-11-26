@@ -13,10 +13,11 @@ public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
-import TauCeti.NumberTheory.Bernoulli.Voronoi
+import TauCeti.NumberTheory.Bernoulli.Polynomials
 import TauCeti.LinearAlgebra.Matrix.GroupMatrix
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.TrivialZeros
 import TauCeti.NumberTheory.MulChar.Basic
+import TauCeti.NumberTheory.MulChar.Orthogonality
 
 /-!
 # Group determinants and a nonzero integer divisible by Bernoulli numbers
@@ -98,16 +99,12 @@ theorem det_of_div_ne_zero_iff [NeZero N] {R : Type*} [CommRing R] [IsDomain R] 
     rw [dotProduct_mulVec, hw, zero_dotProduct, dotProduct_smul, smul_eq_mul] at h
     simp only [MulChar.coe_comp_coeHom_apply] at h
     exact (mul_eq_zero.1 h.symm).resolve_left (hg χ)
+  -- by Fourier inversion on `(ZMod N)ˣ`, `#(ZMod N)ˣ · w a` is a sum of these inner products
+  simp only [dotProduct] at horth
   refine hw0 (funext fun a ↦ ?_)
-  have hsum : ∑ χ : DirichletCharacter R N, (w ⬝ᵥ fun t ↦ χ t) * χ (a⁻¹ : (ZMod N)ˣ) = 0 := by
-    simp [horth]
-  simp only [dotProduct, sum_mul, mul_assoc] at hsum
-  rw [sum_comm] at hsum
-  simp only [← mul_sum, ← map_mul, sum_characters_eq] at hsum
-  simp only [mul_ite, mul_zero, Units.mul_inv_eq_one, Units.val_inj, Finset.sum_ite_eq',
-    mem_univ, ite_true] at hsum
-  exact (mul_eq_zero.1 hsum).resolve_right (by exact_mod_cast (Nat.totient_pos.2
-    (Nat.pos_of_ne_zero (NeZero.ne N))).ne')
+  have h := card_units_mul_apply_eq_sum_mulChar_units w a
+  rw [Finset.sum_eq_zero fun χ _ ↦ by rw [horth χ⁻¹, mul_zero]] at h
+  exact (mul_eq_zero.1 h).resolve_left (Nat.cast_ne_zero.2 Nat.card_pos.ne')
 
 /-- The integer `Pₖ₊₁ Mᵏ Bₖ(⟨t⟩ / M)`, where `Pₖ₊₁ = primorial (k + 1)` and `⟨t⟩ ∈ [0, M)` is the
 representative of `t` (`TauCeti.intCast_primorialBernoulli`). -/
@@ -138,8 +135,9 @@ theorem sum_units_mul_primorialBernoulli {M : ℕ} [NeZero M] {k : ℕ} (hk : 2 
   refine sum_congr rfl fun u _ ↦ ?_
   have h := congrArg (algebraMap ℚ R) (intCast_primorialBernoulli M k u)
   simp only [map_intCast, map_mul, map_pow, map_natCast] at h
-  rw [show (M : R) ^ k = M ^ (k - 1) * M by
-    rw [← pow_succ, Nat.sub_add_cancel (by omega)]] at h
+  have hMk : (M : R) ^ k = M ^ (k - 1) * M := by
+    rw [← pow_succ, Nat.sub_add_cancel (by omega)]
+  rw [hMk] at h
   rw [h]
   ring
 

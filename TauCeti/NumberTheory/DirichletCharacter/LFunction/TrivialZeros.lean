@@ -95,15 +95,19 @@ theorem LFunction_neg_natCast_eq_zero_iff {N : ℕ} [NeZero N] (χ : DirichletCh
     χ.LFunction (-k) = 0 ↔ χ (-1) = (-1) ^ k := by
   rw [LFunction_eq_zero_iff_of_re_neg χ (by simpa using Nat.pos_of_ne_zero hk)]
   rcases χ.even_or_odd with hχ | hχ
-  · rw [gammaFactor_eq_zero_iff_of_even hχ, show χ (-1) = 1 from hχ, eq_comm,
+  · have hχ1 : χ (-1) = 1 := by simpa using DirichletCharacter.Even.eval_neg χ 1 hχ
+    rw [gammaFactor_eq_zero_iff_of_even hχ, hχ1, eq_comm,
       neg_one_pow_eq_one_iff_even (by norm_num)]
     refine ⟨fun ⟨n, hn⟩ ↦ ⟨n, ?_⟩, fun ⟨n, hn⟩ ↦ ⟨n, ?_⟩⟩
-    · exact_mod_cast (show (k : ℂ) = n + n by linear_combination -hn)
+    · have hkn : (k : ℂ) = n + n := by linear_combination -hn
+      exact_mod_cast hkn
     · rw [hn]; push_cast; ring
-  · rw [gammaFactor_eq_zero_iff_of_odd hχ, show χ (-1) = -1 from hχ, eq_comm,
+  · have hχ1 : χ (-1) = -1 := by simpa using DirichletCharacter.Odd.eval_neg χ 1 hχ
+    rw [gammaFactor_eq_zero_iff_of_odd hχ, hχ1, eq_comm,
       neg_one_pow_eq_neg_one_iff_odd (by norm_num)]
     refine ⟨fun ⟨n, hn⟩ ↦ ⟨n, ?_⟩, fun ⟨n, hn⟩ ↦ ⟨n, ?_⟩⟩
-    · exact_mod_cast (show (k : ℂ) = 2 * n + 1 by linear_combination -hn)
+    · have hkn : (k : ℂ) = 2 * n + 1 := by linear_combination -hn
+      exact_mod_cast hkn
     · rw [hn]; push_cast; ring
 
 /-- For `k ≥ 2` and a complex character with `χ(-1) = (-1)ᵏ`, the generalized Bernoulli number
@@ -118,7 +122,8 @@ private theorem generalizedBernoulli_ne_zero_complex {N : ℕ} [NeZero N]
     ring
   rw [h, neg_zero, zero_div, hk', LFunction_neg_natCast_eq_zero_iff χ (by omega), hχ] at hL
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
-  rw [show j + 2 - 1 = j + 1 by omega, pow_succ, pow_succ] at hL
+  have hj : j + 2 - 1 = j + 1 := by omega
+  rw [hj, pow_succ, pow_succ] at hL
   exact pow_ne_zero j (neg_ne_zero.2 one_ne_zero : (-1 : ℂ) ≠ 0) (by linear_combination hL / 2)
 
 /-- `generalizedBernoulli_ne_zero` for a character with values in a domain: pass to the fraction
