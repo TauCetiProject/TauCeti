@@ -25,7 +25,7 @@ indexed by the darts (ordered pairs of adjacent vertices) of `G`:
 * the reversal matrix `J = G.dartSymmMatrix R : Matrix G.Dart G.Dart R`, with `J a b = 1` iff
   `b` is the reversal of `a`.
 
-They factor the adjacency matrix `A` and the degree matrix `D` of `G`: `S Tᵀ = A`,
+They factor the adjacency matrix `A` and the degree matrix `D` of `G`: `S Tᵀ = T Sᵀ = A`,
 `S Sᵀ = T Tᵀ = D`, `S J = T`, `T J = S`, `J Tᵀ = Sᵀ` and `J² = 1`, while `(Tᵀ S) a b = 1` exactly
 when `a` ends where `b` starts. Removing the backtracking steps `J` from `Tᵀ S` gives the Hashimoto
 (non-backtracking edge) matrix `B = Tᵀ S - J` of the graph. The reversal matrix swaps the two
@@ -39,7 +39,8 @@ ingredients of Bass's proof of the three-term determinant formula for the Ihara 
 
 ## Main results
 
-* `SimpleGraph.dartFstMatrix_mul_transpose_dartSndMatrix`: `S Tᵀ = A`.
+* `SimpleGraph.dartFstMatrix_mul_transpose_dartSndMatrix`,
+  `SimpleGraph.dartSndMatrix_mul_transpose_dartFstMatrix`: `S Tᵀ = A` and `T Sᵀ = A`.
 * `SimpleGraph.dartFstMatrix_mul_transpose_dartFstMatrix`,
   `SimpleGraph.dartSndMatrix_mul_transpose_dartSndMatrix`: `S Sᵀ = D` and `T Tᵀ = D`.
 * `SimpleGraph.dartFstMatrix_mul_dartSymmMatrix`, `SimpleGraph.dartSndMatrix_mul_dartSymmMatrix`:
@@ -167,6 +168,7 @@ section NonAssocSemiring
 variable [NonAssocSemiring R]
 
 /-- The start matrix times the transposed end matrix is the adjacency matrix: `S Tᵀ = A`. -/
+@[simp]
 theorem dartFstMatrix_mul_transpose_dartSndMatrix :
     G.dartFstMatrix R * (G.dartSndMatrix R)ᵀ = G.adjMatrix R := by
   ext u w
@@ -183,6 +185,7 @@ theorem dartFstMatrix_mul_transpose_dartSndMatrix :
     exact h a.adj
 
 /-- The start matrix times its transpose is the degree matrix: `S Sᵀ = D`. -/
+@[simp]
 theorem dartFstMatrix_mul_transpose_dartFstMatrix :
     G.dartFstMatrix R * (G.dartFstMatrix R)ᵀ = G.degMatrix R := by
   ext u w
@@ -237,6 +240,7 @@ theorem dartSymmMatrix_mul_transpose_dartFstMatrix :
   simp
 
 /-- The end matrix times its transpose is the degree matrix: `T Tᵀ = D`. -/
+@[simp]
 theorem dartSndMatrix_mul_transpose_dartSndMatrix :
     G.dartSndMatrix R * (G.dartSndMatrix R)ᵀ = G.degMatrix R := by
   rw [← dartFstMatrix_mul_transpose_dartFstMatrix]
@@ -245,6 +249,17 @@ theorem dartSndMatrix_mul_transpose_dartSndMatrix :
   exact Fintype.sum_equiv (Function.Involutive.toPerm _ Dart.symm_involutive)
     (fun a => G.dartSndMatrix R u a * (G.dartSndMatrix R)ᵀ a w)
     (fun a => G.dartFstMatrix R u a * (G.dartFstMatrix R)ᵀ a w) fun a => by simp
+
+/-- The end matrix times the transposed start matrix is the adjacency matrix: `T Sᵀ = A`. -/
+@[simp]
+theorem dartSndMatrix_mul_transpose_dartFstMatrix :
+    G.dartSndMatrix R * (G.dartFstMatrix R)ᵀ = G.adjMatrix R := by
+  rw [← dartFstMatrix_mul_transpose_dartSndMatrix]
+  ext u w
+  rw [Matrix.mul_apply, Matrix.mul_apply]
+  exact Fintype.sum_equiv (Function.Involutive.toPerm _ Dart.symm_involutive)
+    (fun a => G.dartSndMatrix R u a * (G.dartFstMatrix R)ᵀ a w)
+    (fun a => G.dartFstMatrix R u a * (G.dartSndMatrix R)ᵀ a w) fun a => by simp
 
 end NonAssocSemiring
 
