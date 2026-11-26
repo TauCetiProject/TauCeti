@@ -19,9 +19,33 @@ coordinates the pairing weights each coefficient by its multi-index factorial.
 The adjoint of multiplication by a variable is the corresponding formal partial
 derivative. When the multi-index factorials are units, every linear functional on
 polynomials is represented by a unique formal power series via this pairing.
+
+## References
+
+The pairing and its basic identities adapt `New.jet` and related lemmas in ShortProof
+(`grh/src/Lib/GLn/SchurModule/Basic.lean` in <https://github.com/lsernau/grh-lean>).
+ShortProof is Claude’s Lean rewriting of Levent Alpöge’s proof, published by Anthropic.
 -/
 
-@[expose] public section
+public section
+
+/-- Increasing one exponent multiplies the product of factorials by that exponent plus one. -/
+theorem Finsupp.prod_factorial_add_single {σ R : Type*} [CommSemiring R]
+    (d : σ →₀ ℕ) (i : σ) :
+    ((d + Finsupp.single i 1).prod fun _ n ↦ (n.factorial : R)) =
+      ((d i : R) + 1) * d.prod fun _ n ↦ (n.factorial : R) := by
+  classical
+  let weight : σ → ℕ → R := fun _ n ↦ n.factorial
+  have hzero : ∀ j, weight j 0 = 1 := by simp [weight]
+  calc
+    (d + Finsupp.single i 1).prod weight =
+        weight i ((d + Finsupp.single i 1 : σ →₀ ℕ) i) *
+          ((d + Finsupp.single i 1).erase i).prod weight :=
+      (Finsupp.mul_prod_erase' _ i _ hzero).symm
+    _ = ((d i : R) + 1) * (weight i (d i) * (d.erase i).prod weight) := by
+      simp [weight, Finsupp.add_apply, Finsupp.erase_add, Nat.factorial_succ, mul_assoc]
+    _ = ((d i : R) + 1) * d.prod weight := by
+      rw [Finsupp.mul_prod_erase' d i weight hzero]
 
 namespace MvPolynomial
 
@@ -46,9 +70,8 @@ theorem jetPairing_monomial (d : σ →₀ ℕ) (a : R) (f : MvPowerSeries σ R)
     jetPairing (monomial d a) f =
       a * (d.prod fun _ n ↦ (n.factorial : R)) * MvPowerSeries.coeff d f := by
   rw [show monomial d a = a • monomial d 1 by simp [smul_monomial],
-    map_smul, LinearMap.smul_apply]
-  change a • jetPairing ((basisMonomials σ R) d) f = _
-  rw [jetPairing, Module.Basis.constr_basis]
+    map_smul, LinearMap.smul_apply, ← congrFun (coe_basisMonomials σ R) d,
+    jetPairing, Module.Basis.constr_basis]
   simp [mul_assoc]
 
 /-- A constant polynomial tests the constant term. -/
@@ -63,8 +86,9 @@ theorem jetPairing_eq_sum (p : MvPolynomial σ R) (f : MvPowerSeries σ R) :
     jetPairing p f =
       ∑ d ∈ p.support, p.coeff d * (d.prod fun _ n ↦ (n.factorial : R)) *
         MvPowerSeries.coeff d f := by
-  simp [jetPairing, Module.Basis.constr_apply, Finsupp.sum, mul_assoc]
-  rfl
+  rw [jetPairing, Module.Basis.constr_apply, show (basisMonomials σ R).repr p = p.coeff from rfl]
+  simp only [Finsupp.sum, finsupp_support_eq_support, LinearMap.sum_apply,
+    LinearMap.smul_apply, smul_eq_mul, mul_assoc]
 
 /-- Multiplying a polynomial by a variable is adjoint to differentiating the series. -/
 theorem jetPairing_mul_X (p : MvPolynomial σ R) (f : MvPowerSeries σ R) (i : σ) :
@@ -72,16 +96,8 @@ theorem jetPairing_mul_X (p : MvPolynomial σ R) (f : MvPowerSeries σ R) (i : �
   classical
   rw [jetPairing_eq_sum, jetPairing_eq_sum, support_mul_X, Finset.sum_map]
   refine Finset.sum_congr rfl fun d _ ↦ ?_
-  rw [addRightEmbedding_apply, coeff_mul_X, MvPowerSeries.coeff_pderiv]
-  have hfac :
-      ((d + single i 1).prod fun _ n ↦ (n.factorial : R)) =
-        ((d i : R) + 1) * d.prod fun _ n ↦ (n.factorial : R) := by
-    rw [← mul_prod_erase' (d + single i 1) i _ (by simp),
-      ← mul_prod_erase' d i _ (by simp), erase_add, erase_single, add_zero,
-      Finsupp.add_apply, single_eq_same, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add,
-      Nat.cast_one]
-    rw [mul_assoc]
-  rw [hfac]
+  rw [addRightEmbedding_apply, coeff_mul_X, MvPowerSeries.coeff_pderiv,
+    Finsupp.prod_factorial_add_single]
   ring
 
 /-- The jet pairing commutes with a change of coefficients. -/
@@ -106,21 +122,29 @@ noncomputable def jetPairingDualEquiv
       simp only [LinearMap.flip_apply, jetPairing_monomial, one_mul] at hd
       exact (h d).mul_left_cancel hd
     · intro L
-      let f : MvPowerSeries σ R := fun d ↦ ((h d).unit⁻¹ : Rˣ) • L (monomial d 1)
+      let f : MvPowerSeries σ R := fun d ↦ (↑(h d).unit⁻¹ : R) * L (monomial d 1)
       refine ⟨f, (basisMonomials σ R).ext fun d ↦ ?_⟩
-      change jetPairing (monomial d 1) f = L (monomial d 1)
-      rw [jetPairing_monomial, one_mul]
-      let u := (h d).unit
-      have hu : (↑u : R) = d.prod fun _ n ↦ (n.factorial : R) := (h d).unit_spec
-      change (d.prod fun _ n ↦ (n.factorial : R)) * (↑u⁻¹ * L (monomial d 1)) = _
-      rw [← mul_assoc, ← hu, Units.mul_inv, one_mul])
+      rw [coe_basisMonomials, LinearMap.flip_apply, jetPairing_monomial,
+        MvPowerSeries.coeff_apply]
+      simp only [f, one_mul, ← mul_assoc, (h d).mul_val_inv])
 
 /-- Evaluating the functional represented by a series is the jet pairing. -/
 @[simp]
 theorem jetPairingDualEquiv_apply
     (h : ∀ d : σ →₀ ℕ, IsUnit (d.prod fun _ n ↦ (n.factorial : R)))
     (f : MvPowerSeries σ R) (p : MvPolynomial σ R) :
-    jetPairingDualEquiv h f p = jetPairing p f := rfl
+    jetPairingDualEquiv h f p = jetPairing p f := (rfl)
+
+/-- The series representing a functional has its monomial values divided by the factorials. -/
+@[simp]
+theorem coeff_jetPairingDualEquiv_symm
+    (h : ∀ d : σ →₀ ℕ, IsUnit (d.prod fun _ n ↦ (n.factorial : R)))
+    (L : MvPolynomial σ R →ₗ[R] R) (d : σ →₀ ℕ) :
+    MvPowerSeries.coeff d ((jetPairingDualEquiv h).symm L) =
+      ↑(h d).unit⁻¹ * L (monomial d 1) := by
+  have hd := LinearMap.congr_fun ((jetPairingDualEquiv h).apply_symm_apply L) (monomial d 1)
+  simp only [jetPairingDualEquiv_apply, jetPairing_monomial, one_mul] at hd
+  rw [← hd, ← mul_assoc, (h d).val_inv_mul, one_mul]
 
 end CommSemiring
 
