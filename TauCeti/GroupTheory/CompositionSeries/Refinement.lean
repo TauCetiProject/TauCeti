@@ -49,9 +49,11 @@ theorem RelSeries.exists_relSeries_isCompositionStep_refinement
     intro hlt hgt
     have : WellFoundedLT (Subgroup B) := (RelSeries.last_snoc s B hstep) ▸ hlt
     have : WellFoundedGT (Subgroup B) := (RelSeries.last_snoc s B hstep) ▸ hgt
-    let e := (Subgroup.inclusion hstep.1).subgroupOrderEmbedding
+    have := (Subgroup.inclusion hstep.1).wellFoundedLT_subgroup
       (Subgroup.inclusion_injective _)
-    obtain ⟨t, htHead, htLast, htMem⟩ := @ih e.wellFoundedLT e.wellFoundedGT
+    have := (Subgroup.inclusion hstep.1).wellFoundedGT_subgroup
+      (Subgroup.inclusion_injective _)
+    obtain ⟨t, htHead, htLast, htMem⟩ := ih
     obtain ⟨u, huHead, huLast⟩ := TauCeti.exists_relSeries_isCompositionStep_between
       (A := s.last) (B := B) hstep.1 hstep.2
     have hconnect : t.last = u.head := htLast.trans huHead.symm
@@ -93,9 +95,8 @@ theorem ChiefSeries.exists_groupCompositionSeries_refinement
     [WellFoundedLT (Subgroup G)] [WellFoundedGT (Subgroup G)]
     (s : ChiefSeries G) (hhead : s.head = ⊥) (hlast : s.last = ⊤) :
     ∃ t : GroupCompositionSeries G, ∀ i, ∃ j, t j = (s i : Subgroup G) := by
-  let e := (s.last : Subgroup G).subtype.subgroupOrderEmbedding (Subgroup.subtype_injective _)
-  have := e.wellFoundedLT
-  have := e.wellFoundedGT
+  have := (s.last : Subgroup G).subtype.wellFoundedLT_subgroup (Subgroup.subtype_injective _)
+  have := (s.last : Subgroup G).subtype.wellFoundedGT_subgroup (Subgroup.subtype_injective _)
   obtain ⟨t, htHead, htLast, htMem⟩ := s.exists_relSeries_isCompositionStep_refinement
   refine ⟨⟨t, ?_, ?_⟩, htMem⟩
   · simpa only [hhead, CompleteSublattice.coe_bot] using htHead

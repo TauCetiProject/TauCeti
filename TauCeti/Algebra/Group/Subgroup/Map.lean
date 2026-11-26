@@ -104,6 +104,18 @@ theorem _root_.MonoidHom.subgroupOrderEmbedding_apply (f : G →* H)
     f.subgroupOrderEmbedding hf K = K.map f := by
   rfl
 
+/-- The descending chain condition on subgroups passes along an injective homomorphism from its
+codomain to its domain. -/
+theorem _root_.MonoidHom.wellFoundedLT_subgroup [WellFoundedLT (Subgroup H)] (f : G →* H)
+    (hf : Function.Injective f) : WellFoundedLT (Subgroup G) :=
+  (f.subgroupOrderEmbedding hf).wellFoundedLT
+
+/-- The ascending chain condition on subgroups passes along an injective homomorphism from its
+codomain to its domain. -/
+theorem _root_.MonoidHom.wellFoundedGT_subgroup [WellFoundedGT (Subgroup H)] (f : G →* H)
+    (hf : Function.Injective f) : WellFoundedGT (Subgroup G) :=
+  (f.subgroupOrderEmbedding hf).wellFoundedGT
+
 /-- The centre of a group lies in the kernel of every surjection onto a centreless group.
 
 Mathlib's `Subgroup.map_center_le_center` bounds the image of the centre under any surjection by

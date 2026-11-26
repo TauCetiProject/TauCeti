@@ -74,8 +74,10 @@ private theorem exists_terminal_isCompositionStep {A B : Subgroup G}
       (Subgroup.subgroupOf_eq_top.mp congr(Subtype.val $he)))
   obtain ⟨M, hM, hAM⟩ := (eq_top_or_exists_le_coatom NA).resolve_left hNA
   let C : Subgroup G := (M : Subgroup B).map B.subtype
-  have hCM : C.subgroupOf B = (M : Subgroup B) :=
-    (Subgroup.MapSubtype.orderIso B).symm_apply_apply (M : Subgroup B)
+  have hCM : C.subgroupOf B = (M : Subgroup B) := by
+    simpa only [C, Subgroup.MapSubtype.orderIso_symm_apply,
+      Subgroup.MapSubtype.orderIso_apply_coe] using
+      (Subgroup.MapSubtype.orderIso B).symm_apply_apply (M : Subgroup B)
   have hCBlt : C < B := by
     simpa only [Subgroup.map_top, Subgroup.range_subtype] using
       (Subgroup.map_subtype_lt_map_subtype.mpr
@@ -111,9 +113,8 @@ theorem exists_relSeries_isCompositionStep_between {A B : Subgroup G}
     by_cases h : A = C.val
     · subst A
       exact ⟨.singleton _ C.val, RelSeries.head_singleton _, RelSeries.last_singleton _⟩
-    let e := (Subgroup.inclusion C.property).subgroupOrderEmbedding
+    have := (Subgroup.inclusion C.property).wellFoundedGT_subgroup
       (Subgroup.inclusion_injective _)
-    have : WellFoundedGT (Subgroup C.val) := e.wellFoundedGT
     obtain ⟨D, hAD, hND, hstep⟩ := exists_terminal_isCompositionStep (lt_of_le_of_ne hAC h) hN
     obtain ⟨s, hsA, hsD⟩ := ih ⟨D, hstep.lt.le.trans C.property⟩ hstep.lt A hAD hND
     exact ⟨s.snoc C.val (hsD ▸ hstep), by simpa using hsA, by simp⟩
@@ -122,9 +123,8 @@ theorem exists_relSeries_isCompositionStep_between {A B : Subgroup G}
 In particular, this applies to every finite group. -/
 theorem nonempty_groupCompositionSeries [WellFoundedLT (Subgroup G)]
     [WellFoundedGT (Subgroup G)] : Nonempty (GroupCompositionSeries G) := by
-  let e := (⊤ : Subgroup G).subtype.subgroupOrderEmbedding (Subgroup.subtype_injective _)
-  have : WellFoundedLT (Subgroup (⊤ : Subgroup G)) := e.wellFoundedLT
-  have : WellFoundedGT (Subgroup (⊤ : Subgroup G)) := e.wellFoundedGT
+  have := (⊤ : Subgroup G).subtype.wellFoundedLT_subgroup (Subgroup.subtype_injective _)
+  have := (⊤ : Subgroup G).subtype.wellFoundedGT_subgroup (Subgroup.subtype_injective _)
   obtain ⟨s, h0, h1⟩ := exists_relSeries_isCompositionStep_between (G := G) bot_le
     (inferInstance : ((⊥ : Subgroup G).subgroupOf ⊤).Normal)
   exact ⟨⟨s, h0, h1⟩⟩
