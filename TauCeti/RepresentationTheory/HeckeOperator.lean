@@ -7,18 +7,19 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.GroupTheory.DoubleCoset
-public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import TauCeti.RepresentationTheory.WeightSpace
 import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.GroupTheory.DoubleCoset.Basic
 
 /-!
-# Level spaces and Hecke operators of a representation
+# Hecke operators of a representation
 
 Let `ρ` be a representation of a group `G` on a module `W` over a commutative semiring `A`, and `K`
 a subgroup of `G`. For a character `χ : K →* A` the **level space**
-`W^{K,χ} = {v | ρ(k) v = χ(k) v for all k ∈ K}` is `Representation.levelSpace ρ K χ`; for `χ = 1`
-it is the space of `K`-invariants (`Representation.levelSpace_one`).
+`W^{K,χ} = {v | ρ(k) v = χ(k) v for all k ∈ K}` is the weight space
+`Representation.weightSpace (ρ.comp K.subtype) χ` of the restriction of `ρ` to `K`; for `χ = 1` it
+is the space `W^K` of `K`-invariants (`Representation.weightSpace_one`).
 
 For `f : G → A` the **Hecke operator** `ρ(f) = ∑_{g K} f(g) ρ(g)` sums over the left cosets of `K`,
 at chosen representatives (`Representation.heckeOperator`). On `W^K`, for `f` right `K`-invariant
@@ -26,14 +27,15 @@ and supported on finitely many cosets, it does not depend on the representatives
 (`Representation.heckeOperator_apply_eq_sum`). The operator of a left translate of `f` is the
 translate of the operator (`Representation.heckeOperator_apply_comp_inv_mul`), operators compose by
 convolution of the functions (`Representation.heckeOperator_heckeOperator`), and the operator of a
-`K`-bi-invariant function preserves `W^K` (`Representation.heckeOperator_apply_mem_levelSpace`).
+`K`-bi-invariant function preserves `W^K`
+(`Representation.heckeOperator_apply_mem_weightSpace`).
 For `K` compact and open, the indicator of a double coset `K g K` lives on finitely many cosets
 (`Representation.finite_support_indicator_doubleCoset`), and its operator, the double coset
-operator `[K g K]`, preserves `W^K` (`Representation.doubleCosetOperator_apply_mem_levelSpace`).
+operator `[K g K]`, preserves `W^K`
+(`Representation.doubleCosetOperator_apply_mem_weightSpace`).
 
 ## Main definitions
 
-* `Representation.levelSpace ρ K χ`: the level space `W^{K,χ}`.
 * `Representation.heckeOperator ρ K f`: the Hecke operator `∑_{g K} f(g) ρ(g)`.
 * `Representation.doubleCosetOperator ρ K g`: the double coset operator `[K g K]`.
 
@@ -43,8 +45,8 @@ operator `[K g K]`, preserves `W^K` (`Representation.doubleCosetOperator_apply_m
   University Press, 1971, ch. 3.
 
 The definitions and results are adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache
-2.0, Copyright 2026 Anthropic PBC), `src/Lib/Adelic/Hecke/Basic.lean` (`New.levelSpace`,
-`New.heckeFun`, `New.heckeCoset`, `New.heckeFun_eq_sum`, `New.heckeFun_comp_inv_mul`,
+2.0, Copyright 2026 Anthropic PBC), `src/Lib/Adelic/Hecke/Basic.lean` (`New.heckeFun`,
+`New.heckeCoset`, `New.heckeFun_eq_sum`, `New.heckeFun_comp_inv_mul`,
 `New.heckeFun_heckeFun`, `New.heckeFun_mem_levelSpace`, `New.isHeckeFunction_doubleCoset`).
 -/
 
@@ -55,41 +57,7 @@ open Function Set
 namespace Representation
 
 variable {A G W : Type*} [CommSemiring A] [Group G] [AddCommMonoid W] [Module A W]
-  (ρ : Representation A G W) (K : Subgroup G)
-
-/-! ### Level spaces -/
-
-/-- **The level space** `W^{K,χ}` of a character `χ` of `K`: the vectors `v` with
-`ρ(k) v = χ(k) v` for every `k ∈ K`. For `χ = 1` it is the space of `K`-invariants. -/
-def levelSpace (χ : K →* A) : Submodule A W where
-  carrier := {v | ∀ k : K, ρ k v = χ k • v}
-  add_mem' hv hw k := by rw [map_add, hv k, hw k, smul_add]
-  zero_mem' k := by rw [map_zero, smul_zero]
-  smul_mem' a v hv k := by rw [map_smul, hv k, smul_comm]
-
-variable {ρ K}
-
-@[simp]
-theorem mem_levelSpace {χ : K →* A} {v : W} : v ∈ ρ.levelSpace K χ ↔ ∀ k : K, ρ k v = χ k • v :=
-  .rfl
-
-/-- The level space of the trivial character is the space of `K`-invariants. -/
-theorem levelSpace_one {A W : Type*} [CommRing A] [AddCommGroup W] [Module A W]
-    (ρ : Representation A G W) (K : Subgroup G) :
-    ρ.levelSpace K 1 = invariants (ρ.comp K.subtype) := by
-  ext v
-  simp [mem_invariants]
-
-/-- Level spaces of the trivial character shrink as the subgroup grows. -/
-theorem levelSpace_one_anti {K' : Subgroup G} (hK : K ≤ K') :
-    ρ.levelSpace K' 1 ≤ ρ.levelSpace K 1 :=
-  fun _ hv k ↦ hv ⟨k, hK k.property⟩
-
-/-- A linear map commuting with every `ρ(k)`, `k ∈ K`, preserves each level space of `K`. -/
-theorem map_mem_levelSpace_of_commute {χ : K →* A} {v : W} {a : W →ₗ[A] W}
-    (hv : v ∈ ρ.levelSpace K χ) (h_comm : ∀ k : K, Commute (ρ k) a) : a v ∈ ρ.levelSpace K χ :=
-  fun k ↦ by rw [show ρ k (a v) = a (ρ k v) from LinearMap.congr_fun (h_comm k).eq v, hv k,
-    map_smul]
+  {ρ : Representation A G W} {K : Subgroup G}
 
 /-! ### Hecke operators -/
 
@@ -114,7 +82,7 @@ variable {f : G → A} {v : W}
 many cosets is the finite sum `∑ f(r i) ρ(r i) v` over any family `r` of representatives of
 distinct cosets covering the support of `f`. -/
 theorem heckeOperator_apply_eq_sum (hf : ∀ g, ∀ k ∈ K, f (g * k) = f g)
-    (hv : v ∈ ρ.levelSpace K 1) {ι : Type*} {s : Finset ι} {r : ι → G}
+    (hv : v ∈ weightSpace (ρ.comp K.subtype) 1) {ι : Type*} {s : Finset ι} {r : ι → G}
     (hr : InjOn (fun i ↦ (r i : G ⧸ K)) s) (hs : ∀ g, f g ≠ 0 → ∃ i ∈ s, (r i : G ⧸ K) = g) :
     ρ.heckeOperator K f v = ∑ i ∈ s, f (r i) • ρ (r i) v := by
   classical
@@ -122,10 +90,10 @@ theorem heckeOperator_apply_eq_sum (hf : ∀ g, ∀ k ∈ K, f (g * k) = f g)
     obtain ⟨i, hi, h⟩ := hs _ hq
     exact Finset.mem_image.2 ⟨i, hi, by rw [h, QuotientGroup.out_eq']⟩
   -- the chosen representative of `g K` is some `g k`, and `k` does not change `f g • ρ g v`
+  have hvK (k : G) (hk : k ∈ K) : ρ k v = v := by simpa using mem_weightSpace.1 hv ⟨k, hk⟩
   have h_term (g : G) : f (g : G ⧸ K).out • ρ (g : G ⧸ K).out v = f g • ρ g v := by
     rw [QuotientGroup.apply_out_mk hf g, QuotientGroup.apply_out_mk (f := fun g ↦ ρ g v)
-      (fun g k hk ↦ by rw [map_mul, mul_apply_eq_comp, hv ⟨k, hk⟩, MonoidHom.one_apply,
-        one_smul]) g]
+      (fun g k hk ↦ by rw [map_mul, mul_apply_eq_comp, hvK k hk]) g]
   have h_support : support (fun q : G ⧸ K ↦ f q.out • ρ q.out) ⊆
       ↑(s.image fun i ↦ (r i : G ⧸ K)) := fun q hq ↦ h_supp q (left_ne_zero_of_smul hq)
   rw [heckeOperator_def, finsum_eq_sum_of_support_subset _ h_support, LinearMap.sum_apply,
@@ -135,7 +103,8 @@ theorem heckeOperator_apply_eq_sum (hf : ∀ g, ∀ k ∈ K, f (g * k) = f g)
 /-- On a `K`-invariant vector, the Hecke operator of a left translate `g ↦ f (x⁻¹ g)` is `ρ(x)`
 applied to the Hecke operator of `f`, for `f` right `K`-invariant with finite support modulo `K`. -/
 theorem heckeOperator_apply_comp_inv_mul (hf : ∀ g, ∀ k ∈ K, f (g * k) = f g)
-    (hf_fin : (support fun q : G ⧸ K ↦ f q.out).Finite) (hv : v ∈ ρ.levelSpace K 1) (x : G) :
+    (hf_fin : (support fun q : G ⧸ K ↦ f q.out).Finite) (hv : v ∈ weightSpace (ρ.comp K.subtype) 1)
+    (x : G) :
     ρ.heckeOperator K (fun g ↦ f (x⁻¹ * g)) v = ρ x (ρ.heckeOperator K f v) := by
   -- Both are finite sums over the cosets in the support of `f`, translated by `x`.
   classical
@@ -189,7 +158,8 @@ theorem finite_support_comp_inv_mul (hf : ∀ g, ∀ k ∈ K, f (g * k) = f g)
 many cosets and a `K`-invariant `v`, `ρ(f') (ρ(f) v) = ρ(f' * f) v`, where
 `(f' * f)(x) = ∑_{g K} f'(g) f(g⁻¹ x)` is the convolution over the cosets of the support of `f'`. -/
 theorem heckeOperator_heckeOperator (hf : ∀ g, ∀ k ∈ K, f (g * k) = f g)
-    (hf_fin : (support fun q : G ⧸ K ↦ f q.out).Finite) (hv : v ∈ ρ.levelSpace K 1) {f' : G → A}
+    (hf_fin : (support fun q : G ⧸ K ↦ f q.out).Finite) (hv : v ∈ weightSpace (ρ.comp K.subtype) 1)
+    {f' : G → A}
     (hf'_fin : (support fun q : G ⧸ K ↦ f' q.out).Finite) :
     ρ.heckeOperator K f' (ρ.heckeOperator K f v) =
       ρ.heckeOperator K (fun x ↦ ∑ q ∈ hf'_fin.toFinset, f' q.out * f (q.out⁻¹ * x)) v := by
@@ -203,18 +173,20 @@ theorem heckeOperator_heckeOperator (hf : ∀ g, ∀ k ∈ K, f (g * k) = f g)
 many cosets, with `χ'(k) f(k g) = f(g)` for `k ∈ K'`. Then `ρ(f)` maps `K`-invariant vectors into
 the level space `W^{K',χ'}`. In particular the operator of a `K`-bi-invariant function preserves
 `W^K`. -/
-theorem heckeOperator_apply_mem_levelSpace {K' : Subgroup G} {χ' : K' →* A}
+theorem heckeOperator_apply_mem_weightSpace {K' : Subgroup G} {χ' : K' →* A}
     (hf : ∀ g, ∀ k ∈ K, f (g * k) = f g) (hf_fin : (support fun q : G ⧸ K ↦ f q.out).Finite)
-    (hf_left : ∀ (k : K') g, χ' k * f (k * g) = f g) (hv : v ∈ ρ.levelSpace K 1) :
-    ρ.heckeOperator K f v ∈ ρ.levelSpace K' χ' := by
+    (hf_left : ∀ (k : K') g, χ' k * f (k * g) = f g)
+    (hv : v ∈ weightSpace (ρ.comp K.subtype) 1) :
+    ρ.heckeOperator K f v ∈ weightSpace (ρ.comp K'.subtype) χ' := by
   -- `ρ k` replaces `f` by `f (k⁻¹ ·) = χ'(k) f`
-  intro k
+  refine mem_weightSpace.2 fun k ↦ ?_
   have h_translate (g : G) : f ((k : G)⁻¹ * g) = χ' k * f g := by
     simpa using (hf_left k ((k : G)⁻¹ * g)).symm
   have h_scale : ρ.heckeOperator K (fun g ↦ f ((k : G)⁻¹ * g)) = χ' k • ρ.heckeOperator K f := by
     simp only [heckeOperator_def, h_translate, mul_smul]
     exact (smul_finsum' _ (hf_fin.subset fun q hq ↦ left_ne_zero_of_smul hq)).symm
-  rw [← heckeOperator_apply_comp_inv_mul hf hf_fin hv, h_scale, LinearMap.smul_apply]
+  rw [MonoidHom.comp_apply, Subgroup.coe_subtype, ← heckeOperator_apply_comp_inv_mul hf hf_fin hv,
+    h_scale, LinearMap.smul_apply]
 
 /-- For a compact open subgroup `K` of a topological group and `g ∈ G`, the indicator of the double
 coset `K g K` is supported on finitely many left cosets of `K`; it is right and left
@@ -241,9 +213,10 @@ theorem doubleCosetOperator_def (g : G) :
   (rfl)
 
 /-- For a compact open subgroup `K`, the double coset operator `[K g K]` preserves `W^K`. -/
-theorem doubleCosetOperator_apply_mem_levelSpace [TopologicalSpace G] [IsTopologicalGroup G]
+theorem doubleCosetOperator_apply_mem_weightSpace [TopologicalSpace G] [IsTopologicalGroup G]
     (hK_open : IsOpen (K : Set G)) (hK : IsCompact (K : Set G)) (g : G)
-    (hv : v ∈ ρ.levelSpace K 1) : ρ.doubleCosetOperator K g v ∈ ρ.levelSpace K 1 := by
+    (hv : v ∈ weightSpace (ρ.comp K.subtype) 1) :
+    ρ.doubleCosetOperator K g v ∈ weightSpace (ρ.comp K.subtype) 1 := by
   -- the indicator of `K g K` is invariant on both sides under `K`
   have h_right (x : G) (k : G) (hk : k ∈ K) :
       (DoubleCoset.doubleCoset g K K).indicator (1 : G → A) (x * k) =
@@ -256,7 +229,7 @@ theorem doubleCosetOperator_apply_mem_levelSpace [TopologicalSpace G] [IsTopolog
     rw [MonoidHom.one_apply, one_mul]
     classical
     simp only [Set.indicator_apply, Pi.one_apply, DoubleCoset.mul_mem_doubleCoset_iff k.property]
-  exact heckeOperator_apply_mem_levelSpace h_right
+  exact heckeOperator_apply_mem_weightSpace h_right
     (finite_support_indicator_doubleCoset hK_open hK g) h_left hv
 
 end Representation

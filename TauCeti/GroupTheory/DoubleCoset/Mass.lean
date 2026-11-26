@@ -241,7 +241,8 @@ theorem orbitSum_comp_map_of_le {W : Type*} [AddCommGroup W] [Module ℚ W] {V U
       rw [finsum_mem_def, finsum_mem_def, finsum_smul]
       refine finsum_congr fun q ↦ ?_
       by_cases hq : q ∈ π ⁻¹' {p}
-      · simp only [Set.indicator_of_mem hq, fV, show π q = p from hq]
+      · have hπq : π q = p := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using hq
+        simp only [Set.indicator_of_mem hq, fV, hπq]
       · simp only [Set.indicator_of_notMem hq, zero_smul]
     rw [h_fib, finsum_mem_inv_cardStabilizerOnOrbit_preimage hle p, mul_smul,
       Nat.cast_smul_eq_nsmul]

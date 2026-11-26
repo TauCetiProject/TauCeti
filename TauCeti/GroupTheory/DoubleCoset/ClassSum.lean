@@ -222,16 +222,10 @@ omit [TopologicalSpace G] in
 theorem finite_doubleCoset_of_le (hJK : J ≤ K) [J.IsFiniteRelIndex K]
     [Finite (DoubleCoset.Quotient (Γ : Set G) K)] :
     Finite (DoubleCoset.Quotient (Γ : Set G) J) := by
-  -- Pass to the orbits of `J` on `G ⧸ Γ`: they lie over finitely many orbits of `K`, with finite
-  -- fibres.
-  let π := Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := G ⧸ Γ) hJK)
+  -- pass to the orbits of `J` and `K` on `G ⧸ Γ`
   have : Finite (orbitRel.Quotient K (G ⧸ Γ)) :=
     .of_equiv _ (doubleCosetQuotientEquivOrbitRelQuotient Γ K)
-  have h_fin : (Set.univ : Set (orbitRel.Quotient J (G ⧸ Γ))).Finite := by
-    rw [← Set.preimage_univ (f := π), ← Set.biUnion_preimage_singleton]
-    exact Set.finite_univ.biUnion fun p _ ↦ Set.finite_coe_iff.mp
-      (finite_fiber_orbitRel_map_of_isFiniteRelIndex (X := G ⧸ Γ) hJK p)
-  have := Set.finite_univ_iff.mp h_fin
+  have := finite_orbitRelQuotient_of_le (X := G ⧸ Γ) hJK
   exact .of_equiv _ (doubleCosetQuotientEquivOrbitRelQuotient Γ J).symm
 
 end FiniteType
