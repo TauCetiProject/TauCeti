@@ -106,8 +106,7 @@ theorem adjoint_fderiv_diagonal_apply_ne_zero (h : ∀ x, NoOppositeCovectorsOn 
         (S.tensorProduct T hV.subset)).waveFrontSet →
       (fderiv ℝ (fun x : E ↦ toLp 2 (x, x)) x).adjoint η ≠ 0 := by
   intro x _ η hη h0
-  rw [← show ⇑(diagL2 ℝ E) = fun x : E ↦ toLp 2 (x, x) from funext (diagL2_apply ℝ E),
-    (diagL2 ℝ E).fderiv, adjoint_diagL2_apply] at h0
+  rw [← coe_diagL2 ℝ E, (diagL2 ℝ E).fderiv, adjoint_diagL2_apply] at h0
   have hη0 : η ≠ 0 := (mem_waveFrontSet_iff.1 hη).2.1
   have hsnd : η.snd = -η.fst := eq_neg_of_add_eq_zero_right h0
   have hfst : η.fst ≠ 0 := fun hf ↦ hη0 (ofLp_injective 2 (by ext <;> simp [hf, hsnd]))
@@ -147,12 +146,10 @@ private theorem fourierInv_fiberIntegralCLM_addSnd_diagonal
       smul_eq_mul]
     ring
   rw [Real.fourierInv_eq]
-  have hL : ∫ z, 𝐞 ⟪z, ζ⟫ • ((fiberIntegralCLM volume volume
-      (addSnd fun x : E ↦ toLp 2 (x, x)) (contDiffOn_addSnd hf) (mapsTo_addSnd _)
-      (surjective_fderiv_addSnd _ (hf.differentiableOn (by simp))) F z : ℝ) : ℂ) =
-      ∫ z, fiberIntegralCLM volume volume (addSnd fun x : E ↦ toLp 2 (x, x))
-        (contDiffOn_addSnd hf) (mapsTo_addSnd _)
-        (surjective_fderiv_addSnd _ (hf.differentiableOn (by simp))) F z • g z := by
+  set Φ := fiberIntegralCLM volume volume (addSnd fun x : E ↦ toLp 2 (x, x))
+    (contDiffOn_addSnd hf) (mapsTo_addSnd _)
+    (surjective_fderiv_addSnd _ (hf.differentiableOn (by simp))) F
+  have hL : ∫ z, 𝐞 ⟪z, ζ⟫ • ((Φ z : ℝ) : ℂ) = ∫ z, Φ z • g z := by
     refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
     simp [g, Circle.smul_def, Complex.real_smul, mul_comm]
   rw [hL, integral_fiberIntegralCLM_smul volume volume _ _ _ F hg.continuousOn]
@@ -268,12 +265,12 @@ private theorem pullback_diagonal_apply_eq_integral (hST : ∀ x, NoOppositeCove
       postcompCLM (𝕜 := ℝ) ofRealCLM χ q.snd) :
     (transportCLM (prodContinuousLinearEquiv 2 ℝ E E) hW
         (S.tensorProduct T hV.subset)).pullback (fun x : E ↦ toLp 2 (x, x))
-        ((diagL2 ℝ E).contDiff.contDiffOn.congr fun x _ ↦ (diagL2_apply ℝ E x).symm) hΔ
+        (contDiff_toLp_diag ℝ E).contDiffOn hΔ
         (adjoint_fderiv_diagonal_apply_ne_zero hV hW hST) ψ =
       ∫ η, S.localFourier (postcompCLM (𝕜 := ℝ) ofRealCLM χ) η *
         T.localFourier (postcompCLM (𝕜 := ℝ) ofRealCLM ψ) (-η) := by
   have hf : ContDiffOn ℝ ∞ (fun x : E ↦ toLp 2 (x, x)) Ω :=
-    (diagL2 ℝ E).contDiff.contDiffOn.congr fun x _ ↦ (diagL2_apply ℝ E x).symm
+    (contDiff_toLp_diag ℝ E).contDiffOn
   have hN := adjoint_fderiv_diagonal_apply_ne_zero hV hW hST
   set U := transportCLM (prodContinuousLinearEquiv 2 ℝ E E) hW (S.tensorProduct T hV.subset)
   set χc : 𝓓(Ω, ℂ) := postcompCLM (𝕜 := ℝ) ofRealCLM χ
@@ -331,7 +328,7 @@ theorem pullback_diagonal_transportCLM_tensorProduct (h : ∀ x, NoOppositeCovec
     (hΔ : MapsTo (fun x : E ↦ toLp 2 (x, x)) Ω W) :
     (transportCLM (prodContinuousLinearEquiv 2 ℝ E E) hW
         (S.tensorProduct T hV.subset)).pullback (fun x : E ↦ toLp 2 (x, x))
-        ((diagL2 ℝ E).contDiff.contDiffOn.congr fun x _ ↦ (diagL2_apply ℝ E x).symm) hΔ
+        (contDiff_toLp_diag ℝ E).contDiffOn hΔ
         (adjoint_fderiv_diagonal_apply_ne_zero hV hW h) =
       S.product T h := by
   refine (eq_product_iff h).2 fun x₀ hx₀ ↦ ?_

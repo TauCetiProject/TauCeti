@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
@@ -20,7 +21,8 @@ of operator norm `1` on nontrivial spaces (`WithLp.norm_inlL2`, `WithLp.norm_inr
 `F` are complete, they are the Hilbert-space adjoints of the coordinate projections
 `WithLp.fstL 2 𝕜 E F` and `WithLp.sndL 2 𝕜 E F` (`WithLp.adjoint_fstL`, `WithLp.adjoint_sndL`,
 `WithLp.adjoint_inlL2`, `WithLp.adjoint_inrL2`). The diagonal embedding `WithLp.diagL2 𝕜 E`,
-`x ↦ (x, x)`, has adjoint `(x, y) ↦ x + y` (`WithLp.adjoint_diagL2`).
+`x ↦ (x, x)`, has adjoint `(x, y) ↦ x + y` (`WithLp.adjoint_diagL2`), and so the map
+`x ↦ (x, x)` is smooth (`WithLp.contDiff_toLp_diag`).
 
 An operator on `WithLp 2 (E × F)` is a `2 × 2` block matrix of operators between the factors:
 `WithLp.blockL2 a b c d` is the operator `(x, y) ↦ (a x + b y, c x + d y)`, and every operator is
@@ -84,6 +86,14 @@ def diagL2 : E →L[𝕜] WithLp 2 (E × E) :=
     ((ContinuousLinearMap.id 𝕜 E).prod (ContinuousLinearMap.id 𝕜 E))
 
 @[simp] theorem diagL2_apply (x : E) : diagL2 𝕜 E x = WithLp.toLp 2 (x, x) := by rfl
+
+/-- The diagonal embedding `WithLp.diagL2 𝕜 E`, as a function, is `x ↦ (x, x)`. -/
+theorem coe_diagL2 : ⇑(diagL2 𝕜 E) = fun x ↦ WithLp.toLp 2 (x, x) := by rfl
+
+/-- The diagonal map `x ↦ (x, x)` into `WithLp 2 (E × E)` is smooth, being the continuous linear
+map `WithLp.diagL2 𝕜 E`. -/
+theorem contDiff_toLp_diag {n : WithTop ℕ∞} : ContDiff 𝕜 n fun x : E ↦ WithLp.toLp 2 (x, x) :=
+  coe_diagL2 𝕜 E ▸ (diagL2 𝕜 E).contDiff
 
 section Adjoint
 
