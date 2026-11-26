@@ -9,6 +9,7 @@ public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Analysis.ODE.ExistUnique
+import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
@@ -42,6 +43,8 @@ the field.
   of the vector field along the curve.
 * `TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn`: in a vector space, integral curves of a
   vector field are the solutions of the autonomous differential equation it defines.
+* `IsIntegralCurve.eq_of_contDiff`: two solutions of the autonomous differential equation of a
+  continuously differentiable vector field on a vector space which agree at one time are equal.
 * `IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt`: a coordinate solution on an
   arbitrary set of times, which may meet the boundary of the model, gives a manifold integral
   curve. `IsMIntegralCurveAt.of_extChartAt_symm` is its form on a neighbourhood of a time.
@@ -203,6 +206,21 @@ theorem isMIntegralCurveOn_iff_isIntegralCurveOn {γ : ℝ → E}
     (hasDerivWithinAt_iff_hasFDerivWithinAt (f := γ) (f' := (v (γ t) : E))).symm
 
 end TauCeti
+
+/-- **Uniqueness of integral curves of a `C¹` autonomous field.** Two solutions of the autonomous
+differential equation `γ' = v ∘ γ` of a continuously differentiable vector field `v` on a vector
+space which agree at one time agree at all times. -/
+theorem IsIntegralCurve.eq_of_contDiff {v : E → E} (hv : ContDiff ℝ 1 v) {γ γ' : ℝ → E}
+    (hγ : IsIntegralCurve γ (fun _ ↦ v)) (hγ' : IsIntegralCurve γ' (fun _ ↦ v)) {t₀ : ℝ}
+    (h : γ t₀ = γ' t₀) : γ = γ' := by
+  -- Read the vector space as a manifold modelled on itself, where integral curves of a smooth
+  -- field are unique.
+  have hM : ∀ c : ℝ → E, IsIntegralCurve c (fun _ ↦ v) →
+      IsMIntegralCurve c (fun x ↦ (v x : TangentSpace 𝓘(ℝ, E) x)) := fun c hc ↦
+    isMIntegralCurve_iff_isMIntegralCurveOn.2
+      (TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn.2 (hc.isIntegralCurveOn _))
+  exact isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (contMDiff_vectorSpace_iff_contDiff.2 hv)
+    (hM γ hγ) (hM γ' hγ') h
 
 /-- A curve in the extended chart at `x₀` that stays in the chart target on a set `s` of times and
 whose derivative within `s` is the coordinate expression of a vector field is an integral curve of
