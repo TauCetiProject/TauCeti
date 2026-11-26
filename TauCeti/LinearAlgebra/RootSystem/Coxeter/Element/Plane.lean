@@ -25,8 +25,8 @@ characteristic-zero domain (or a finite, reduced, crystallographic pairing whose
 finite type with preconnected Dynkin diagram) and a Coxeter element `c = wordProd P b l` of order
 `h = orderOf c`, we construct Coleman's real Coxeter plane (rank ≥ 2) and a matrix-level regular
 `exp (2πi / h)`-eigenvector in `b.support → ℂ` with trivial Weyl stabilizer. On `span {e₁, e₂}`,
-the bipartite Coxeter matrix `W` rotates by `-2π / h` (`Winv` by `+2π / h`), sending `(0, π / h)`
-into the open dominant cone.
+the bipartite Coxeter matrix `W` rotates by `-2π / h` (`Winv` by `+2π / h`), and the open sector
+`0 < φ < π / h` of the plane lies in the open dominant cone.
 
 ## Main results
 * `RootPairing.Base.exists_coxeterPlane_bipartiteCoxeterElement` / `_of_isFiniteType`

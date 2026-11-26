@@ -701,6 +701,13 @@ theorem det_ne_zero [Fintype B] [DecidableEq B] (h : IsFiniteType A) : A.det ≠
   rw [hdet] at hu
   simp at hu
 
+/-- **A finite-type matrix is invertible over any characteristic-zero field.** -/
+theorem isUnit_map [Fintype B] [DecidableEq B] (h : IsFiniteType A) (F : Type*) [Field F]
+    [CharZero F] : IsUnit (A.map (Int.castRingHom F)) := by
+  rw [Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero, ← RingHom.mapMatrix_apply,
+    ← RingHom.map_det]
+  exact Int.cast_ne_zero.mpr h.det_ne_zero
+
 /-- **A finite-type matrix admits no nonzero subdominant vector.** Call a rational vector `x`
 *subdominant* for `A` when `xᵢ · (A x)ᵢ ≤ 0` at every index `i`; then `x = 0`.
 

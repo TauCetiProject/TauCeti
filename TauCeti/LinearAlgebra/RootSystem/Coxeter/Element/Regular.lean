@@ -116,11 +116,7 @@ private theorem sum_tmul_root_injective_of_isFiniteType (b : P.Base)
     (hft : IsFiniteType b.cartanMatrix) :
     Function.Injective (fun u : b.support → ℂ ↦ ∑ i : b.support, u i ⊗ₜ[R] P.root i) := by
   classical
-  refine fun u₁ u₂ h ↦ Matrix.mulVec_injective_of_isUnit
-    ((Matrix.isUnit_iff_isUnit_det (b.cartanMatrixᵀ.map (Int.castRingHom ℂ))).mpr <|
-      isUnit_iff_ne_zero.mpr <| by
-        rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, det_transpose]
-        exact Int.cast_ne_zero (α := ℂ).mpr hft.det_ne_zero)
+  refine fun u₁ u₂ h ↦ Matrix.mulVec_injective_of_isUnit (hft.transpose.isUnit_map ℂ)
     (funext fun k ↦ by
       have hk := congrArg (LinearMap.liftBaseChange ℂ
         (Algebra.linearMap R ℂ ∘ₗ P.coroot' (k : ι))) h
@@ -191,11 +187,7 @@ private theorem sum_map_smul_root_injective_of_isFiniteType (b : P.Base)
     (hft : IsFiniteType b.cartanMatrix) (φ : ℂ →+* K) :
     Function.Injective (fun u : b.support → ℂ ↦ ∑ i : b.support, φ (u i) • P.root i) := by
   classical
-  refine fun u₁ u₂ h ↦ Matrix.mulVec_injective_of_isUnit
-    ((Matrix.isUnit_iff_isUnit_det (b.cartanMatrixᵀ.map (Int.castRingHom ℂ))).mpr <|
-      isUnit_iff_ne_zero.mpr <| by
-        rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, det_transpose]
-        exact Int.cast_ne_zero (α := ℂ).mpr hft.det_ne_zero)
+  refine fun u₁ u₂ h ↦ Matrix.mulVec_injective_of_isUnit (hft.transpose.isUnit_map ℂ)
     (funext fun k ↦ φ.injective <| by
       have hk := congrArg (P.coroot' (k : ι)) h
       simp only [b.coroot'_sum_map_smul_root, corootEval_coe_support] at hk

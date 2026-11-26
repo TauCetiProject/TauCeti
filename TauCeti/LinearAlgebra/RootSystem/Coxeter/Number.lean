@@ -57,7 +57,6 @@ reduced crystallographic finite root systems:
 * `TauCeti.DynkinType.mem_exponents_of_coprime`: every natural number `a < h` coprime to `h` is an
   exponent of a valid `DynkinType`.
 * `RootPairing.Base.orderOf_wordProd_eq_orderOf_wordProd`,
-  `RootPairing.Base.natCard_eq_card_support_mul_orderOf_wordProd`,
   `RootPairing.Base.orderOf_wordProd_eq_natCard_div_card_support`,
   `RootPairing.Base.sum_exponents_eq_ncard_posRoots`, and
   `RootPairing.Base.roots_charpoly_weylGroupRootRep_wordProd`: unconditional theorems for any
@@ -459,28 +458,12 @@ theorem orderOf_wordProd_eq_orderOf_wordProd (b b' : P.Base) {l : List b.support
     orderOf_wordProd_eq_coxeterNumber_classifiedDynkinType b' hnd' hall',
     b.classifiedDynkinType_eq_classifiedDynkinType b']
 
-/-- **The root-count identity `|Φ| = r * h`** for an irreducible reduced crystallographic finite
-root system: the number of roots equals the rank times the order of any Coxeter element. -/
-theorem natCard_eq_card_support_mul_orderOf_wordProd (b : P.Base) {l : List b.support}
-    (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    Nat.card ι = b.support.card * orderOf (wordProd P b l) :=
-  (hasCartanType_classifiedDynkinType b).natCard_eq_card_support_mul_orderOf_wordProd
-    (valid_classifiedDynkinType b) hnd hall
-
 /-- **The order of any Coxeter element of an irreducible reduced crystallographic finite root system
 equals `|Φ| / r`.** -/
 theorem orderOf_wordProd_eq_natCard_div_card_support (b : P.Base) {l : List b.support}
     (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
     orderOf (wordProd P b l) = Nat.card ι / b.support.card :=
   (hasCartanType_classifiedDynkinType b).orderOf_wordProd_eq_natCard_div_card_support
-    (valid_classifiedDynkinType b) hnd hall
-
-/-- **The positive-root count `2 * |Φ⁺| = r * h`** for an irreducible reduced crystallographic
-finite root system. -/
-theorem two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordProd (b : P.Base)
-    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    2 * (posRoots P b).ncard = b.support.card * orderOf (wordProd P b l) :=
-  (hasCartanType_classifiedDynkinType b).two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordProd
     (valid_classifiedDynkinType b) hnd hall
 
 /-- **The exponents of an irreducible reduced crystallographic finite root system sum to its number
