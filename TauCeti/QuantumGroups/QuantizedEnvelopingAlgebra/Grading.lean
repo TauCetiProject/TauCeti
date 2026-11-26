@@ -12,7 +12,6 @@ public import TauCeti.QuantumGroups.QuantizedEnvelopingAlgebra.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Generators
 public import TauCeti.RingTheory.GradedAlgebra.Rescale
 
-import Mathlib.Algebra.Ring.Action.ConjAct
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.DirectSum.Supported
 
@@ -237,12 +236,12 @@ private theorem k_mul_generator_mul_k_neg (y : Y) (g : Generator ι Y) :
   | f i => simp [k_mul_f_mul_k_neg]
   | k z => simp [add_right_comm y z (-y)]
 
-private theorem kUnitsHom_conjAct_apply (y : Y) (z : QuantizedEnvelopingAlgebra D q) :
-    MulSemiringAction.toAlgEquiv K (QuantizedEnvelopingAlgebra D q)
-        (ConjAct.toConjAct (kUnitsHom D q (.ofAdd y))) z =
-      k D q y * z * k D q (-y) := by
-  simp only [MulSemiringAction.toAlgEquiv_apply, ConjAct.units_smul_def,
-    ConjAct.ofConjAct_toConjAct, val_kUnitsHom, val_inv_kUnitsHom]
+private theorem k_mul_mul_mul_k_neg (y : Y) (a b : QuantizedEnvelopingAlgebra D q) :
+    k D q y * (a * b) * k D q (-y) =
+      (k D q y * a * k D q (-y)) * (k D q y * b * k D q (-y)) := by
+  calc k D q y * (a * b) * k D q (-y)
+      = k D q y * (a * (k D q (-y) * k D q y) * b) * k D q (-y) := by rw [k_neg_mul_k, mul_one]
+    _ = (k D q y * a * k D q (-y)) * (k D q y * b * k D q (-y)) := by simp only [mul_assoc]
 
 private theorem k_mul_word_mul_k_neg (y : Y) (l : List (Generator ι Y)) :
     k D q y * (l.map (generator D q)).prod * k D q (-y) =
@@ -251,30 +250,25 @@ private theorem k_mul_word_mul_k_neg (y : Y) (l : List (Generator ι Y)) :
   induction l with
   | nil => simp
   | cons g l ih =>
+    simp only [List.map_cons, List.prod_cons, List.sum_cons, k_mul_mul_mul_k_neg,
+      k_mul_generator_mul_k_neg, ih, smul_mul_smul_comm]
     cases g with
-    | k z =>
-      simp only [List.map_cons, List.prod_cons, List.sum_cons, generatorDegree_k, zero_add]
-      rw [← kUnitsHom_conjAct_apply, map_mul, kUnitsHom_conjAct_apply, kUnitsHom_conjAct_apply,
-        k_mul_generator_mul_k_neg, ih]
-      simp
+    | k z => simp
     | e _ | f _ =>
       rcases eq_or_ne q 0 with rfl | hq
       · simp
-      · simp only [List.map_cons, List.prod_cons, List.sum_cons, map_add, LinearMap.add_apply]
-        rw [← kUnitsHom_conjAct_apply, map_mul, kUnitsHom_conjAct_apply, kUnitsHom_conjAct_apply,
-          k_mul_generator_mul_k_neg, ih, smul_mul_smul_comm, ← zpow_add₀ hq]
+      · simp only [map_add, LinearMap.add_apply, zpow_add₀ hq]
 
 /-- Conjugating `x ∈ gradedPiece D q c` by `K_y` multiplies it by `q^⟨∑ cᵢ αᵢ, y⟩`. -/
 theorem k_mul_mul_k_neg_of_mem_gradedPiece {c : ι →₀ ℤ} (y : Y)
     {x : QuantizedEnvelopingAlgebra D q} (hx : x ∈ gradedPiece D q c) :
     k D q y * x * k D q (-y) =
       q ^ D.pairing (Finsupp.linearCombination ℤ D.root c) y • x := by
-  rw [← kUnitsHom_conjAct_apply]
   induction hx using gradedPiece_induction with
-  | word l hl => simpa only [kUnitsHom_conjAct_apply, hl] using k_mul_word_mul_k_neg y l
-  | zero => rw [map_zero, smul_zero]
-  | add _ _ _ _ ha hb => rw [map_add, ha, hb, smul_add]
-  | smul _ _ _ ha => rw [map_smul, ha, smul_comm]
+  | word l hl => simpa only [hl] using k_mul_word_mul_k_neg y l
+  | zero => simp only [mul_zero, zero_mul, smul_zero]
+  | add _ _ _ _ ha hb => simp only [mul_add, add_mul, ha, hb, smul_add]
+  | smul _ _ _ ha => rw [Algebra.mul_smul_comm, Algebra.smul_mul_assoc, ha, smul_comm]
 
 /-- Moving `K_y` from left to right past `x ∈ gradedPiece D q c` multiplies by `q^⟨∑ cᵢ αᵢ, y⟩`
 (the weight pairing). -/
@@ -320,61 +314,55 @@ theorem serreSum_of {A Γ : Type*} [Semiring A] [Algebra K A] [AddCommMonoid Γ]
 
 variable [DecidableEq ι] {D : CartanDatum ι X Y} {q : K}
 
+private theorem mul_mem_summand {a b c : ι →₀ ℤ} (h : a + b = c)
+    {z₁ z₂ : ⨁ d, gradedPiece D q d}
+    (hz₁ : z₁ ∈ DirectSum.summand K (fun d => ↥(gradedPiece D q d)) a)
+    (hz₂ : z₂ ∈ DirectSum.summand K (fun d => ↥(gradedPiece D q d)) b) :
+    z₁ * z₂ ∈ DirectSum.summand K (fun d => ↥(gradedPiece D q d)) c :=
+  h ▸ SetLike.mul_mem_graded hz₁ hz₂
+
+private theorem of_mul_mem_summand {a b c : ι →₀ ℤ} (h : a + b = c)
+    (x : gradedPiece D q a) (y : gradedPiece D q b) :
+    of (fun d => gradedPiece D q d) a x * of (fun d => gradedPiece D q d) b y ∈
+      DirectSum.summand K (fun d => ↥(gradedPiece D q d)) c :=
+  mul_mem_summand h (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _)
+
+private theorem decompose_conjugate (y : Y) {c : ι →₀ ℤ} (g : gradedPiece D q c)
+    (r : K) (hg : k D q y * g * k D q (-y) = r • (g : QuantizedEnvelopingAlgebra D q)) :
+    of (fun d => gradedPiece D q d) 0 ⟨k D q y, k_mem_gradedPiece y⟩ *
+      of (fun d => gradedPiece D q d) c g *
+      of (fun d => gradedPiece D q d) 0 ⟨k D q (-y), k_mem_gradedPiece (-y)⟩ =
+      r • of (fun d => gradedPiece D q d) c g := by
+  rw [← of_smul]
+  refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q)
+    (mul_mem_summand (add_zero c) (of_mul_mem_summand (zero_add c) _ _)
+      (DirectSum.of_mem_summand (R := K) _ _)) ?_
+  simp [DirectSum.coeAlgHom_of, hg]
+
 private noncomputable def decomposeAlgHom (D : CartanDatum ι X Y) (q : K) :
     QuantizedEnvelopingAlgebra D q →ₐ[K] ⨁ c, gradedPiece D q c :=
   lift
     { e i := of (fun c => gradedPiece D q c) (Finsupp.single i 1) ⟨e D q i, e_mem_gradedPiece i⟩
       f i := of (fun c => gradedPiece D q c) (-Finsupp.single i 1) ⟨f D q i, f_mem_gradedPiece i⟩
       k y := of (fun c => gradedPiece D q c) 0 ⟨k D q y, k_mem_gradedPiece y⟩
-      k_zero := by
-        refine (DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q) ?_ ?_).symm
-        · exact SetLike.one_mem_graded _
-        · simp [k_zero]
-      k_mul_k y z := by
-        refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q) ?_ ?_
-        · conv_lhs => rw [← zero_add (0 : ι →₀ ℤ)]
-          exact SetLike.mul_mem_graded
-            (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _)
-        · simp [DirectSum.coeAlgHom_of, k_mul_k]
-      conjugate_e y i := by
-        rw [← of_smul]
-        refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q) ?_ ?_
-        · conv_lhs => rw [← zero_add (Finsupp.single i 1), ← add_zero (0 + Finsupp.single i 1)]
-          exact SetLike.mul_mem_graded (SetLike.mul_mem_graded
-            (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _))
-            (DirectSum.of_mem_summand (R := K) _ _)
-        · simp [DirectSum.coeAlgHom_of, k_mul_e_mul_k_neg]
-      conjugate_f y i := by
-        rw [← of_smul]
-        refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q) ?_ ?_
-        · conv_lhs => rw [← zero_add (-Finsupp.single i 1), ← add_zero (0 + -Finsupp.single i 1)]
-          exact SetLike.mul_mem_graded (SetLike.mul_mem_graded
-            (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _))
-            (DirectSum.of_mem_summand (R := K) _ _)
-        · simp [DirectSum.coeAlgHom_of, k_mul_f_mul_k_neg]
+      k_zero := (DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q)
+        (SetLike.one_mem_graded _) (by simp [k_zero])).symm
+      k_mul_k y z := DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q)
+        (of_mul_mem_summand (zero_add 0) _ _) (by simp [DirectSum.coeAlgHom_of, k_mul_k])
+      conjugate_e y i := decompose_conjugate y _ _ (k_mul_e_mul_k_neg D q y i)
+      conjugate_f y i := decompose_conjugate y _ _ (k_mul_f_mul_k_neg D q y i)
       commutator_self i := by
         rw [← map_sub (of (fun c => gradedPiece D q c) 0), ← of_smul]
-        refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q) ?_ ?_
-        · refine Decomposition.sub_mem
-            (ℳ := DirectSum.summand K (fun c => ↥(gradedPiece D q c))) ?_ ?_
-          · exact (add_neg_cancel (Finsupp.single i (1 : ℤ))) ▸ SetLike.mul_mem_graded
-              (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _)
-          · exact (neg_add_cancel (Finsupp.single i (1 : ℤ))) ▸ SetLike.mul_mem_graded
-              (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _)
-        · simp only [map_sub, map_mul, DirectSum.coeAlgHom_of, SetLike.val_smul, Submodule.coe_sub,
-            ← simpleK_def, ← simpleKInv_def]
-          exact e_mul_f_sub_f_mul_e_self D q i
+        refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q)
+          (Decomposition.sub_mem (of_mul_mem_summand (add_neg_cancel _) _ _)
+            (of_mul_mem_summand (neg_add_cancel _) _ _)) ?_
+        simp [DirectSum.coeAlgHom_of, ← simpleK_def, ← simpleKInv_def, e_mul_f_sub_f_mul_e_self]
       commutator_ne {i j} hij := by
         rw [← map_zero (of (fun c => gradedPiece D q c) (Finsupp.single i 1 + -Finsupp.single j 1))]
-        refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q) ?_ ?_
-        · refine Decomposition.sub_mem
-            (ℳ := DirectSum.summand K (fun c => ↥(gradedPiece D q c))) ?_ ?_
-          · exact SetLike.mul_mem_graded
-              (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _)
-          · exact (add_comm (Finsupp.single i (1 : ℤ)) (-Finsupp.single j 1)) ▸
-              SetLike.mul_mem_graded
-                (DirectSum.of_mem_summand (R := K) _ _) (DirectSum.of_mem_summand (R := K) _ _)
-        · simp [DirectSum.coeAlgHom_of, (commute_e_f D q hij).eq]
+        refine DirectSum.eq_of_mem_summand_of_coeAlgHom_eq (gradedPiece D q)
+          (Decomposition.sub_mem (of_mul_mem_summand rfl _ _)
+            (of_mul_mem_summand (add_comm _ _) _ _)) ?_
+        simp [DirectSum.coeAlgHom_of, (commute_e_f D q hij).eq]
       serre_e {i j} hij := by
         rw [serreSum_of, show (⟨serreSum D q (fun l => e D q l) i j, _⟩ :
           gradedPiece D q (D.serreLength i j • Finsupp.single i 1 + Finsupp.single j 1)) = 0 from
