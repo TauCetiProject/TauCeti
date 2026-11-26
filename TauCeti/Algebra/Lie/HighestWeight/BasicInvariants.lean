@@ -40,13 +40,16 @@ The proof combines Chevalley's restriction theorem with Chevalley's theorem for 
 
 The degrees of the basic invariants of `L` are therefore the degrees of its root system: every
 system of basic invariants of the Weyl invariants `Sym(M*)^W` of `R` gives one of `S(L)^L` with the
-same degrees (`LieSubalgebra.exists_bijective_aeval_lieInvariants_of_weylGroupRootRep_dual`), so the
-degree identities of a root system, such as `∏ dᵢ = |W|`, hold for them.
+same degrees (`LieSubalgebra.exists_bijective_aeval_lieInvariants_of_weylGroupRootRep_dual`), so
+any degree identity proved for root systems transfers to them.
 
 ## Main results
 
 * `LieSubalgebra.exists_bijective_aeval_lieInvariants_of_linearInvariants`: basic invariants of the
   Weyl group acting on `H` give basic invariants of `L` of the same degrees.
+* `LieSubalgebra.exists_bijective_aeval_lieInvariants_of_weylGroupCorootRep`: basic invariants of
+  the coroot representation of the root system of `H` give basic invariants of `L` of the same
+  degrees.
 * `LieSubalgebra.exists_bijective_aeval_lieInvariants_of_weylGroupRootRep_dual`: basic invariants
   of the root system give basic invariants of `L` of the same degrees.
 * `TauCeti.exists_bijective_aeval_lieInvariants`: **Chevalley's theorem**, `S(L)^L` is a polynomial
@@ -90,6 +93,22 @@ theorem exists_bijective_aeval_lieInvariants_of_linearInvariants {κ : Type*}
     AlgEquiv.apply_symm_apply]
   exact hf k
 
+/-- **A system of basic invariants of the coroot representation gives one of `L`.** If
+homogeneous invariants `f k` of degrees `d k` of the Weyl group acting on `H`, the coroot space of
+the root system of `H`, are polynomial generators of these invariants, then the corresponding
+homogeneous invariants of `L` of the same degrees are polynomial generators of `S(L)^L`. -/
+theorem exists_bijective_aeval_lieInvariants_of_weylGroupCorootRep {κ : Type*}
+    {f : κ → (rootSystem H).weylGroupCorootRep.symmetricAlgebraInvariants} {d : κ → ℕ}
+    (hf : ∀ k, (f k : _root_.SymmetricAlgebra K H) ∈ homogeneousSubmodule K H (d k))
+    (hbij : Function.Bijective (MvPolynomial.aeval (R := K) f)) :
+    ∃ g : κ → lieInvariants K L L,
+      (∀ k, (g k : _root_.SymmetricAlgebra K L) ∈ homogeneousSubmodule K L (d k)) ∧
+        Function.Bijective (MvPolynomial.aeval (R := K) g) := by
+  -- `S(H)^W` is the invariant algebra of the coroot representation.
+  let e := Subalgebra.equivOfEq _ _ (linearInvariants_eq_symmetricAlgebraInvariants (H := H)).symm
+  exact H.exists_bijective_aeval_lieInvariants_of_linearInvariants (f := e ∘ f) hf
+    ((MvPolynomial.bijective_aeval_algEquiv_comp_iff e).mpr hbij)
+
 /-- **The degrees of the basic invariants of `L` are those of its root system.** Every system of
 basic invariants of the Weyl invariant polynomials `Sym(M*)^W` on the weight space `M = H*` of the
 root system of `H` gives a system of basic invariants of `S(L)^L` with the same degrees. -/
@@ -103,10 +122,7 @@ theorem exists_bijective_aeval_lieInvariants_of_weylGroupRootRep_dual {κ : Type
         Function.Bijective (MvPolynomial.aeval (R := K) g) := by
   obtain ⟨g, hg, hgbij⟩ :=
     (rootSystem H).exists_bijective_aeval_weylGroupCorootRep_of_weylGroupRootRep_dual hf hbij
-  -- `S(H)^W` is the invariant algebra of the coroot representation.
-  let e := Subalgebra.equivOfEq _ _ (linearInvariants_eq_symmetricAlgebraInvariants (H := H)).symm
-  exact H.exists_bijective_aeval_lieInvariants_of_linearInvariants (f := e ∘ g) hg
-    ((MvPolynomial.bijective_aeval_algEquiv_comp_iff e).mpr hgbij)
+  exact H.exists_bijective_aeval_lieInvariants_of_weylGroupCorootRep hg hgbij
 
 end LieSubalgebra
 
@@ -126,10 +142,7 @@ theorem exists_bijective_aeval_lieInvariants :
   rw [H.rank_eq_finrank_cartan]
   obtain ⟨f, hf, hbij⟩ := (rootSystem H).exists_bijective_aeval_weylGroupCorootRep_of_base b
   choose d hd hfd using hf
-  -- `S(H)^W` is the invariant algebra of the coroot representation.
-  let e := Subalgebra.equivOfEq _ _ (linearInvariants_eq_symmetricAlgebraInvariants (H := H)).symm
-  obtain ⟨g, hg, hgbij⟩ := H.exists_bijective_aeval_lieInvariants_of_linearInvariants
-    (f := e ∘ f) hfd ((MvPolynomial.bijective_aeval_algEquiv_comp_iff e).mpr hbij)
+  obtain ⟨g, hg, hgbij⟩ := H.exists_bijective_aeval_lieInvariants_of_weylGroupCorootRep hfd hbij
   exact ⟨g, fun i ↦ ⟨d i, hd i, hg i⟩, hgbij⟩
 
 /-- **Chevalley's theorem for the invariant polynomial functions on `L`.** For a

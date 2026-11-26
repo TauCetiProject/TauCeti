@@ -74,9 +74,8 @@ theorem toPerfPair_flip_weylGroupCorootRep (w : P.weylGroup) (y : N) :
     P.toLinearMap.flip.toPerfPair (P.weylGroupCorootRep (Subgroup.equivOp _ w) y) =
       P.weylGroupRootRep.dual w⁻¹ (P.toLinearMap.flip.toPerfPair y) := by
   ext x
-  rw [Representation.dual_apply, Module.Dual.transpose_apply, inv_inv, LinearMap.comp_apply,
-    LinearMap.toPerfPair_apply, LinearMap.toPerfPair_apply, LinearMap.flip_apply,
-    LinearMap.flip_apply]
+  simp only [LinearMap.toLinearMap_toPerfPair, LinearMap.flip_apply, Representation.dual_apply,
+    inv_inv]
   exact (Equiv.toLinearMap_weightEquiv (w : P.Aut) x y).symm
 
 /-- The symmetric-algebra form of `RootPairing.toPerfPair_flip_weylGroupCorootRep`. -/
@@ -138,8 +137,9 @@ perfect pairing `N ≃ M*`. -/
 theorem coe_weylGroupCorootRepInvariantsEquiv_apply
     (p : P.weylGroupCorootRep.symmetricAlgebraInvariants) :
     (P.weylGroupCorootRepInvariantsEquiv p : SymmetricAlgebra R (Dual R M)) =
-      SymmetricAlgebra.map R (P.toLinearMap.flip.toPerfPair : N →ₗ[R] Dual R M) p :=
-  SymmetricAlgebra.mapEquiv_apply R _ _
+      SymmetricAlgebra.map R (P.toLinearMap.flip.toPerfPair : N →ₗ[R] Dual R M) p := by
+  simp [weylGroupCorootRepInvariantsEquiv, AlgEquiv.subalgebraMap_apply_coe,
+    Subalgebra.equivOfEq_apply, SymmetricAlgebra.mapEquiv_apply]
 
 /-- The inverse of `RootPairing.weylGroupCorootRepInvariantsEquiv` is the map induced by the
 inverse of the perfect pairing `N ≃ M*`. -/
@@ -148,9 +148,8 @@ theorem coe_weylGroupCorootRepInvariantsEquiv_symm_apply
     (q : P.weylGroupRootRep.dual.symmetricAlgebraInvariants) :
     (P.weylGroupCorootRepInvariantsEquiv.symm q : SymmetricAlgebra R N) =
       SymmetricAlgebra.map R (P.toLinearMap.flip.toPerfPair.symm : Dual R M →ₗ[R] N) q := by
-  rw [← SymmetricAlgebra.mapEquiv_apply, ← SymmetricAlgebra.mapEquiv_symm, AlgEquiv.eq_symm_apply,
-    SymmetricAlgebra.mapEquiv_apply, ← coe_weylGroupCorootRepInvariantsEquiv_apply,
-    AlgEquiv.apply_symm_apply]
+  obtain ⟨p, rfl⟩ := P.weylGroupCorootRepInvariantsEquiv.surjective q
+  simp [← SymmetricAlgebra.mapEquiv_apply, ← SymmetricAlgebra.mapEquiv_symm]
 
 /-- **The isomorphism of invariants preserves degrees**: a coroot invariant is homogeneous of
 degree `n` exactly when the corresponding Weyl invariant polynomial on `M` is. -/
