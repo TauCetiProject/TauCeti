@@ -263,18 +263,38 @@ theorem isHomotopyKSheaf_of_acyclic {F : KPresheaf (CochainComplex C ℤ) X}
       ((isColimitOfPreserves (homologyFunctor C (ComplexShape.up ℤ) n)
         (colimit.isColimit _)).hom_ext fun L ↦ ((hF _ n).isZero_homology).eq_of_src _ _)
 
-variable {F G : KPresheaf (CochainComplex C ℤ) X} (τ : F ⟶ G)
+/-- The mapping cone `K ↦ cone (𝟙 F(K))` of the identity is a homotopy K-sheaf, being acyclic. -/
+private theorem isHomotopyKSheaf_mappingConeFunctor_id (F : KPresheaf (CochainComplex C ℤ) X) :
+    IsHomotopyKSheaf (NatTrans.mappingConeFunctor (𝟙 F)) :=
+  isHomotopyKSheaf_of_acyclic fun K ↦
+    (quasiIso_iff_acyclic_mappingCone (𝟙 (F.obj (op K)))).1 inferInstance
+
+variable {F : KPresheaf (CochainComplex C ℤ) X}
+
+/-- The shift by `1` of a homotopy K-sheaf is a homotopy K-sheaf: it is the cokernel of
+`F ⟶ cone (𝟙 F)`, whose middle term is acyclic. -/
+private theorem IsHomotopyKSheaf.comp_shiftFunctor_one (hF : F.IsHomotopyKSheaf) :
+    IsHomotopyKSheaf (F ⋙ shiftFunctor (CochainComplex C ℤ) (1 : ℤ)) :=
+  (NatTrans.shortExact_mappingConeInrShortComplex (𝟙 F)).isHomotopyKSheaf_X₃ hF
+    (isHomotopyKSheaf_mappingConeFunctor_id F)
+
+/-- A K-presheaf whose shift by `1` is a homotopy K-sheaf is a homotopy K-sheaf: it is the kernel
+of `cone (𝟙 F) ⟶ F⟦1⟧`, whose middle term is acyclic. -/
+private theorem IsHomotopyKSheaf.of_comp_shiftFunctor_one
+    (hF : IsHomotopyKSheaf (F ⋙ shiftFunctor (CochainComplex C ℤ) (1 : ℤ))) :
+    F.IsHomotopyKSheaf :=
+  (NatTrans.shortExact_mappingConeInrShortComplex (𝟙 F)).isHomotopyKSheaf_X₁
+    (isHomotopyKSheaf_mappingConeFunctor_id F) hF
+
+variable {G : KPresheaf (CochainComplex C ℤ) X} (τ : F ⟶ G)
 
 /-- **Pardon, Lemma A.2.11, for mapping cones.** The mapping cone `K ↦ cone (τ_K)` of a morphism
 `τ : F ⟶ G` of homotopy K-sheaves is a homotopy K-sheaf. -/
 theorem isHomotopyKSheaf_mappingConeFunctor (hF : F.IsHomotopyKSheaf) (hG : G.IsHomotopyKSheaf) :
-    IsHomotopyKSheaf (NatTrans.mappingConeFunctor τ) := by
+    IsHomotopyKSheaf (NatTrans.mappingConeFunctor τ) :=
   -- the shift `F⟦1⟧` of `F` is the cokernel of `F ⟶ cone (𝟙 F)`, whose middle term is acyclic
-  have hcone : IsHomotopyKSheaf (NatTrans.mappingConeFunctor (𝟙 F)) :=
-    isHomotopyKSheaf_of_acyclic fun K ↦
-      (quasiIso_iff_acyclic_mappingCone (𝟙 (F.obj (op K)))).1 inferInstance
-  exact (NatTrans.shortExact_mappingConeInrShortComplex τ).isHomotopyKSheaf_X₂ hG
-    ((NatTrans.shortExact_mappingConeInrShortComplex (𝟙 F)).isHomotopyKSheaf_X₃ hF hcone)
+  (NatTrans.shortExact_mappingConeInrShortComplex τ).isHomotopyKSheaf_X₂ hG
+    hF.comp_shiftFunctor_one
 
 end TopCat.KPresheaf
 
@@ -285,23 +305,6 @@ namespace TopCat.KPresheaf
 variable {X : TopCat.{w}} [T2Space X] {C : Type u} [Category.{v} C] [Abelian C]
   [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C] [WeaklyLocallyCompactSpace X]
   {F : KPresheaf (CochainComplex C ℤ) X}
-
-/-- The shift by `1` of a homotopy K-sheaf is a homotopy K-sheaf: it is the cokernel of
-`F ⟶ cone (𝟙 F)`, whose middle term is acyclic. -/
-private theorem IsHomotopyKSheaf.comp_shiftFunctor_one (hF : F.IsHomotopyKSheaf) :
-    IsHomotopyKSheaf (F ⋙ shiftFunctor (CochainComplex C ℤ) (1 : ℤ)) :=
-  (NatTrans.shortExact_mappingConeInrShortComplex (𝟙 F)).isHomotopyKSheaf_X₃ hF
-    (isHomotopyKSheaf_of_acyclic fun K ↦
-      (quasiIso_iff_acyclic_mappingCone (𝟙 (F.obj (op K)))).1 inferInstance)
-
-/-- A K-presheaf whose shift by `1` is a homotopy K-sheaf is a homotopy K-sheaf: it is the kernel
-of `cone (𝟙 F) ⟶ F⟦1⟧`, whose middle term is acyclic. -/
-private theorem IsHomotopyKSheaf.of_comp_shiftFunctor_one
-    (hF : IsHomotopyKSheaf (F ⋙ shiftFunctor (CochainComplex C ℤ) (1 : ℤ))) :
-    F.IsHomotopyKSheaf :=
-  (NatTrans.shortExact_mappingConeInrShortComplex (𝟙 F)).isHomotopyKSheaf_X₁
-    (isHomotopyKSheaf_of_acyclic fun K ↦
-      (quasiIso_iff_acyclic_mappingCone (𝟙 (F.obj (op K)))).1 inferInstance) hF
 
 /-- The shift `K ↦ F(K)⟦n⟧` of a homotopy K-sheaf is a homotopy K-sheaf, for every `n : ℤ`. -/
 theorem IsHomotopyKSheaf.comp_shiftFunctor (hF : F.IsHomotopyKSheaf) (n : ℤ) :

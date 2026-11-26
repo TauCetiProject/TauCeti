@@ -177,26 +177,11 @@ theorem IsHomotopyKSheaf.of_iso {F G : KPresheaf (CochainComplex C ℤ) X} (e : 
   acyclic_bot i := (exactAt_iff_of_quasiIsoAt (e.hom.app (op ⊥)) i).1 (hF.acyclic_bot i)
   quasiIso_mayerVietorisDesc {K₁ K₂ K₃ K₄} h := by
     have := hF.quasiIso_mayerVietorisDesc h
-    -- the map of mapping cones induced by `e.hom`, inverse to the one induced by `e.inv`
-    let M := mappingCone.map (biprod.lift (F.map (opHomOfLE h.le₂₄)) (F.map (opHomOfLE h.le₃₄)))
-      (biprod.lift (G.map (opHomOfLE h.le₂₄)) (G.map (opHomOfLE h.le₃₄))) (e.hom.app (op K₄))
-      (biprod.map (e.hom.app (op K₂)) (e.hom.app (op K₃))) (by apply biprod.hom_ext <;> simp)
-    have h₁ : biprod.map (e.hom.app (op K₂)) (e.hom.app (op K₃)) ≫
-        biprod.map (e.inv.app (op K₂)) (e.inv.app (op K₃)) = 𝟙 _ := by
-      apply biprod.hom_ext' <;> simp
-    have h₂ : biprod.map (e.inv.app (op K₂)) (e.inv.app (op K₃)) ≫
-        biprod.map (e.hom.app (op K₂)) (e.hom.app (op K₃)) = 𝟙 _ := by
-      apply biprod.hom_ext' <;> simp
-    have : IsIso M :=
-      ⟨mappingCone.map _ _ (e.inv.app (op K₄)) (biprod.map (e.inv.app (op K₂)) (e.inv.app (op K₃)))
-        (by apply biprod.hom_ext <;> simp),
-        by ext n; simp [M, mappingCone.ext_from_iff _ (n + 1) n rfl, mappingCone.map,
-          ← HomologicalComplex.comp_f_assoc, h₁],
-        by ext n; simp [M, mappingCone.ext_from_iff _ (n + 1) n rfl, mappingCone.map,
-          ← HomologicalComplex.comp_f_assoc, h₂]⟩
     -- `mayerVietorisDesc` is natural (`mappingConeMap_comp_mayerVietorisDesc`)
     exact quasiIso_of_arrow_mk_iso (F.mayerVietorisDesc h) (G.mayerVietorisDesc h)
-      (Arrow.isoMk (asIso M) (e.app (op K₁)) (mappingConeMap_comp_mayerVietorisDesc e.hom h))
+      (Arrow.isoMk (mappingCone.mapIso (e.app (op K₄))
+          (biprod.mapIso (e.app (op K₂)) (e.app (op K₃))) (by apply biprod.hom_ext <;> simp))
+        (e.app (op K₁)) (mappingConeMap_comp_mayerVietorisDesc e.hom h))
   exists_isColimit_quasiIso_desc K := by
     obtain ⟨c, hc, _⟩ := hF.exists_isColimit_quasiIso_desc K
     -- transport the colimit cocone of `F` along `e`
