@@ -34,7 +34,8 @@ Its congruence model and rootlessness, which use the Golay weights, are proved i
 * `TauCeti.leechShift`: the odd shift `(-3/2, 1/2, …, 1/2)`.
 * `TauCeti.leechShiftClass`, `TauCeti.leechShiftSubgroup`: its discriminant class and the
   order-two Lagrangian subgroup it generates.
-* `TauCeti.leechLattice`: the Leech lattice, with the carrier decomposition
+* `TauCeti.leechLattice`: the Leech lattice, with
+  `TauCeti.ofIsotropicSubgroup_leechShiftSubgroup_eq_leechLattice`, the carrier decomposition
   `TauCeti.mem_leechLattice_carrier_iff`, and `TauCeti.isEven_leechLattice`,
   `TauCeti.isUnimodular_leechLattice`, `TauCeti.isPosDef_leechLattice`, and
   `TauCeti.finrank_leechLattice`.
@@ -240,6 +241,16 @@ Construction B lattice and its translate by the shift, by `mem_leechLattice_carr
 noncomputable def leechLattice : IntegralLattice (Fin 24 → ℚ) :=
   constructionBLattice.ofIsotropicSubgroup isEven_constructionBLattice leechShiftSubgroup
     isIsotropic_leechShiftSubgroup
+
+/-- Gluing the Golay Construction B lattice along the Leech glue subgroup gives the Leech
+lattice, whatever proof of isotropy is supplied. -/
+@[simp]
+theorem ofIsotropicSubgroup_leechShiftSubgroup_eq_leechLattice
+    (hH : (constructionBLattice.discriminantQuadraticModule
+      isEven_constructionBLattice).IsIsotropic leechShiftSubgroup) :
+    constructionBLattice.ofIsotropicSubgroup isEven_constructionBLattice leechShiftSubgroup hH =
+      leechLattice := by
+  rw [leechLattice]
 
 /-- The carrier of the Leech lattice is the inverse image of the Leech glue subgroup. -/
 theorem leechLattice_carrier : leechLattice.carrier =
