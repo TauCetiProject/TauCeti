@@ -111,6 +111,9 @@ matrix-valued interior regularity on `H^r` then gives `φ u ∈ H^(s + m)`, whos
 * `TauCeti.Symbol.quantizeTempered_cutoffTempered`: `Op(ψ a) (χ T) = ψ Op(a) T`.
 * `TauCeti.Symbol.exists_cutoffs_of_mem_nhds`: the nested cutoffs `φ`, `ψ` and `χ` at a point,
   for a symbol with values in any `V →L[ℂ] W`.
+* `TauCeti.Symbol.toDistr_postcomp_quantizeSobolev_smulLeft`: for a matrix-valued `a` and
+  `u ∈ H^r(ℝⁿ; V)` with the cut-off coordinates `χ (c_j ∘ T)`, the component of `Op(ψ a) u` along
+  `ℓ` is `ψ (ℓ ∘ Op(a) T)`.
 * `TauCeti.Symbol.HasNearDiagonalKernel.exists_cutoffs_of_mem_nhds`: the same cutoffs, reducing
   local elliptic regularity of a scalar operator to interior regularity on any regularity scale.
 * `Distribution.memSobolev_cutoffTempered_quantizeDistribution`: properly supported operators of
@@ -313,7 +316,7 @@ within distance `R` of the diagonal, let `p(x, ξ) = ψ(x) a(x, ξ)`, and let `�
 equal to one on the closed `R`-neighbourhood of the support of `ψ`. If the coordinates of
 `u ∈ H^r(ℝⁿ; V)` in a basis are the cut-off components `χ (c_j ∘ T)` of a distribution `T`, then
 the component of `Op(p) u` along any functional `ℓ` is `ψ (ℓ ∘ Op(a) T)`. -/
-private theorem toDistr_postcomp_quantizeSobolev_smulLeft (b : Module.Basis ι ℂ V)
+theorem toDistr_postcomp_quantizeSobolev_smulLeft (b : Module.Basis ι ℂ V)
     (ha : a.HasNearDiagonalKernel R) {ψ χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)}
     (hχ : ∀ x ∈ Metric.cthickening R (tsupport ψ), χ x = 1)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) {r : ℝ} (u : H^{r}(CoordinateSpace n, V))
