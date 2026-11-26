@@ -46,6 +46,7 @@ them by open sets of almost the same measure.
   many open sets `Vᵢ`, on which `‖φ‖ ≤ cᵢ`, satisfies `|T φ| ≤ ∑ᵢ localMass T Vᵢ * cᵢ`.
 * `Distribution.localMass_union_of_disjoint`: the local mass is additive on disjoint open sets.
 * `Distribution.massMeasure`: the mass measure `‖T‖`.
+* `Distribution.massMeasure_congr`: it depends only on the underlying function of `T`.
 * `Distribution.massMeasure_preimage_coe`, `Distribution.massMeasure_univ`: its values on open
   sets and its total mass.
 * `Distribution.massMeasure_eq_zero_of_not_finiteDimensional`: on an infinite-dimensional space
@@ -242,6 +243,19 @@ private theorem massMeasure_eq (hT : HasLocallyFiniteMass T) :
 theorem massMeasure_of_not_hasLocallyFiniteMass (hT : ¬HasLocallyFiniteMass T) :
     massMeasure T = 0 := by
   simp [massMeasure, hT]
+
+/-- The mass measure depends only on the underlying function of `T`, so for instance a continuous
+linear map and its underlying linear map have the same mass measure. -/
+theorem massMeasure_congr {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(Ω, F) ℝ]
+    [LinearMapClass 𝓖 ℝ 𝓓^{n}(Ω, F) ℝ] {S : 𝓖} (h : ⇑T = ⇑S) :
+    massMeasure T = massMeasure S := by
+  by_cases hT : HasLocallyFiniteMass T
+  · have hS : HasLocallyFiniteMass S := h ▸ hT
+    rw [massMeasure_eq hT, massMeasure_eq hS]
+    congr 1
+    simp only [massContent, h]
+  · rw [massMeasure_of_not_hasLocallyFiniteMass hT,
+      massMeasure_of_not_hasLocallyFiniteMass (h ▸ hT : ¬HasLocallyFiniteMass S)]
 
 /-- **The mass measure on open sets.** For an open set `U` of `E`, the mass measure of `Ω ∩ U` is
 the local mass of `T` on `U`. -/
