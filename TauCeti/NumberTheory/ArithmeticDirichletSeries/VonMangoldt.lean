@@ -234,6 +234,15 @@ theorem vonMangoldtTransform_one :
     (1 : IdealArithmeticFunction K).vonMangoldtTransform = vonMangoldt := by
   rw [vonMangoldtTransform, one_mul]
 
+/-- The von Mangoldt transform commutes with coefficientwise conjugation. -/
+@[simp]
+theorem vonMangoldtTransform_star (f : IdealArithmeticFunction K) :
+    (star f).vonMangoldtTransform = star f.vonMangoldtTransform := by
+  funext I
+  have hreal : star (vonMangoldt I) = vonMangoldt I :=
+    Complex.conj_eq_iff_im.mpr vonMangoldt_im
+  simp only [vonMangoldtTransform_apply, Pi.star_apply, star_mul', hreal]
+
 end IdealArithmeticFunction
 
 namespace MultiplicativeIdealWeight

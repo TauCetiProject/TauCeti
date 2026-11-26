@@ -42,6 +42,8 @@ subfield `K` do not change the restriction to `K`.
   landing in an ideal of `S` that is sent into the nonunits of `W`.
 * `RingHom.isField_of_forall_valuationSubring_eq_top`: a subring of a field lying in no proper
   valuation subring is a field.
+* `RingHom.exists_valuationSubring_mem_and_image_subset_nonunits`: a ring map to a field whose
+  kernel lies in a proper ideal `Q` maps into a valuation subring with `Q` sent to its nonunits.
 * `ValuationSubring.pointwise_smul_eq_comap`: the translate `g • A` is the pullback of `A` along
   the action of `g⁻¹`.
 * `ValuationSubring.comap_algebraMap_pointwise_smul`: translates of `A` by automorphisms fixing
@@ -54,6 +56,9 @@ subfield `K` do not change the restriction to `K`.
 * `Valuation.valuationSubring_ne_top_of_surjective`: for a surjective valuation from a field into
   a linearly ordered commutative group with zero `Γ₀` with `Γ₀ˣ` nontrivial, the valuation ring is
   a proper subring.
+* `TauCeti.exists_valuationRing_of_isPrime_le`: a prime `P` and an ideal `Q ⊇ P` of an algebra
+  over a local ring `V`, lying over the zero ideal and the maximal ideal of `V`, yield a map from
+  the algebra to a valuation domain that is injective and local on `V`.
 
 ## References
 
@@ -62,6 +67,8 @@ subfield `K` do not change the restriction to `K`.
 -/
 
 public section
+
+universe v
 
 open IsLocalRing
 
@@ -255,3 +262,46 @@ theorem valuationSubring_ne_top_of_surjective [Nontrivial Γ₀ˣ] (v : Valuatio
   fun h ↦ (valuationSubring_eq_top_iff v).mp h (isNontrivial_of_surjective hv)
 
 end Valuation
+
+namespace TauCeti
+
+/-- Let `T` be an algebra over a local ring `V`, let `P` be a prime of `T` lying over the zero
+ideal of `V`, and let `Q ⊇ P` be an ideal of `T` lying over the maximal ideal of `V`. Then there
+is a valuation domain `W` and a homomorphism `g : T →+* W` whose restriction to `V` is injective
+and local. -/
+theorem exists_valuationRing_of_isPrime_le {V : Type*} {T : Type v} [CommRing V] [IsLocalRing V]
+    [CommRing T] [Algebra V T] {P Q : Ideal T} [P.IsPrime] (hPQ : P ≤ Q)
+    (hP : P.comap (algebraMap V T) = ⊥) (hQ : Q.comap (algebraMap V T) = maximalIdeal V) :
+    ∃ (W : Type v) (_ : CommRing W) (_ : IsDomain W) (_ : ValuationRing W) (g : T →+* W),
+      Function.Injective (g.comp (algebraMap V T)) ∧ IsLocalHom (g.comp (algebraMap V T)) := by
+  -- `W` is a valuation subring of the fraction field of `T ⧸ P` containing the image of `T`
+  -- and carrying the image of `Q` into its nonunits.
+  let K := FractionRing (T ⧸ P)
+  let ψ : T →+* K := (algebraMap (T ⧸ P) K).comp (Ideal.Quotient.mk P)
+  have hker : RingHom.ker ψ = P := by
+    ext x
+    simp [ψ, Ideal.Quotient.eq_zero_iff_mem]
+  have hQtop : Q ≠ ⊤ := by
+    rintro rfl
+    exact (maximalIdeal.isMaximal V).ne_top (by rw [← hQ, Ideal.comap_top])
+  obtain ⟨W, hW, hnon⟩ := ψ.exists_valuationSubring_mem_and_image_subset_nonunits hQtop
+    (hker.trans_le hPQ)
+  let g : T →+* W := ψ.codRestrict W hW
+  refine ⟨W, inferInstance, inferInstance, inferInstance, g, ?_, ⟨fun x hx => ?_⟩⟩
+  · -- the kernel of `V → T → K` is the preimage of `P`, which is zero
+    rw [injective_iff_map_eq_zero]
+    intro x hx
+    have : algebraMap V T x ∈ RingHom.ker ψ := RingHom.mem_ker.mpr <| by
+      simpa [g, RingHom.codRestrict_apply] using congrArg Subtype.val hx
+    rwa [hker, ← Ideal.mem_comap, hP, Ideal.mem_bot] at this
+  · -- a nonunit of `V` lies in the maximal ideal, so maps into `Q` and then to a nonunit of `W`
+    refine of_not_not fun hxu => ?_
+    have hxQ : algebraMap V T x ∈ Q := by
+      rw [← Ideal.mem_comap, hQ]
+      exact (mem_maximalIdeal x).mpr hxu
+    have hgx : g (algebraMap V T x) ∈ maximalIdeal W := by
+      rw [← ValuationSubring.coe_mem_nonunits_iff, RingHom.codRestrict_apply]
+      exact hnon _ hxQ
+    exact mem_nonunits_iff.mp ((mem_maximalIdeal _).mp hgx) hx
+
+end TauCeti

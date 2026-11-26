@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.MeasureTheory.Varifold.Convergence
-public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation
+public import TauCeti.Geometry.MeasureTheory.Varifold.Euclidean
+public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation.Basic
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Topology.Order.LiminfLimsup
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
@@ -31,7 +32,8 @@ convention, so `V` is then trivially stationary.
 
 These are Simon, *Lectures on Geometric Measure Theory*, 39.3, in Euclidean space. The
 identification of `‖δV‖` with the total variation measure of the extension of `δV` to continuous
-vector fields needs the Riesz representation for vector fields and is not proved here.
+vector fields, through the Riesz representation for vector fields, is in
+`TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation.Measure`.
 
 ## Main results
 
@@ -86,8 +88,8 @@ def HasLocallyBoundedFirstVariation (V : Measure (W × grassmannian ℝ E k)) : 
 
 /-- The **total first variation** `‖δV‖(U) = sup {δV(X) : X ∈ C¹_c(U ∩ W), |X| ≤ 1}` of a set `U`,
 in `[0, ∞]`. It is defined for every varifold. By Simon 39.3 it agrees on open sets with the
-total variation measure of `δV` when `V` has locally bounded first variation; that identification
-is not formalized here. -/
+total variation measure of `δV` when `V` has locally bounded first variation
+(`Euclidean.firstVariationMeasure_preimage_coe`). -/
 def firstVariationMass (V : Measure (W × grassmannian ℝ E k)) (U : Set E) : ℝ≥0∞ :=
   ⨆ (X : 𝓓^{1}(W, E)) (_ : tsupport X ⊆ U) (_ : ∀ x, ‖X x‖ ≤ 1),
     ENNReal.ofReal (firstVariation V X)
@@ -238,6 +240,26 @@ theorem firstVariationMass_smul (c : ℝ≥0) (V : Measure (W × grassmannian �
     firstVariationMass (c • V) U = c * firstVariationMass V U := by
   simp only [firstVariationMass_def, firstVariation_smul_measure, smul_apply,
     smul_eq_mul, ENNReal.ofReal_mul c.coe_nonneg, ENNReal.ofReal_coe_nnreal, ENNReal.mul_iSup]
+
+/-- For `c ≠ 0`, `cV` has locally bounded first variation if and only if `V` does. -/
+theorem hasLocallyBoundedFirstVariation_smul_iff {c : ℝ≥0} (hc : c ≠ 0) :
+    HasLocallyBoundedFirstVariation (c • V) ↔ HasLocallyBoundedFirstVariation V := by
+  simp only [hasLocallyBoundedFirstVariation_iff, firstVariationMass_smul, ne_eq,
+    ENNReal.mul_eq_top, ENNReal.coe_ne_top, false_and, ENNReal.coe_eq_zero, hc, not_false_eq_true,
+    true_and, or_false]
+
+/-- The first variation of a field supported in a set of zero weight is `0`. -/
+theorem firstVariation_eq_zero_of_weight_eq_zero {X : 𝓓^{1}(W, E)} (hXU : tsupport X ⊆ U)
+    (h : weight V U = 0) : firstVariation V X = 0 := by
+  by_cases hV : IsFiniteMeasureOnCompacts V
+  swap
+  · simp [firstVariation_of_not_isFiniteMeasureOnCompacts hV]
+  rw [firstVariation_apply]
+  refine integral_eq_zero_of_ae ?_
+  rw [← measure_toMeasurable, weight_apply (measurableSet_toMeasurable _ _)] at h
+  filter_upwards [measure_eq_zero_iff_ae_notMem.1 h] with p hp
+  exact tangentialDivergence_eq_zero_of_notMem_tsupport
+    (fun hx ↦ hp (subset_toMeasurable _ _ (hXU hx))) _
 
 /-- **Lower semicontinuity of the total first variation** (Simon, *Lectures on Geometric Measure
 Theory*, 40.7(1)). If `V_j → V` as varifolds, then `‖δV‖(U) ≤ lim inf_j ‖δV_j‖(U)` for every
