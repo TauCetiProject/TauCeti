@@ -74,6 +74,8 @@ lower bound on the dimension is needed: in dimension one, both measures count po
   is bounded at infinity is integrable on the spheres of large radius around the origin.
 * `TauCeti.tendsto_setIntegral_sphere_of_isLittleO`: in dimension `d + 1`, the integral over the
   sphere of radius `r` of a function that is `o(‖x‖ ^ (-d))` at infinity tends to `0` as `r → ∞`.
+* `TauCeti.continuousOn_setIntegral_sphere`: the integrals over the spheres `sphere c s` of a
+  function continuous on a closed shell depend continuously on the radius `s`.
 
 ## References
 
@@ -516,5 +518,37 @@ theorem tendsto_setIntegral_sphere_of_isLittleO {F : Type*} [NormedAddCommGroup 
       Real.rpow_natCast]
     field_simp
     linarith
+
+/-- **Continuity of sphere integrals in the radius.** If `f` is continuous on the closed shell
+`closedBall c r₂ \ ball c r₁` with `0 < r₁`, then its integrals against `(n - 1)`-dimensional
+Hausdorff measure over the spheres `sphere c s` depend continuously on `s ∈ [r₁, r₂]`. -/
+theorem continuousOn_setIntegral_sphere {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {c : E} {r₁ r₂ : ℝ} (hr₁ : 0 < r₁) {f : E → F}
+    (hf : ContinuousOn f (closedBall c r₂ \ ball c r₁)) :
+    ContinuousOn (fun s ↦ ∫ x in sphere c s, f x ∂μHE[finrank ℝ E - 1]) (Icc r₁ r₂) := by
+  set μ : Measure E := (μHE[finrank ℝ E - 1] : Measure E).restrict (sphere 0 1)
+  have : IsFiniteMeasure μ := isFiniteMeasure_restrict.2 <| by
+    rw [euclideanHausdorffMeasure_sphere_zero_one]
+    exact ENNReal.mul_ne_top (by simp) measure_ball_lt_top.ne
+  have hmem : ∀ s ∈ Icc r₁ r₂, ∀ u ∈ sphere (0 : E) 1,
+      c + s • u ∈ closedBall c r₂ \ ball c r₁ := fun s hs u hu ↦ by
+    have hnorm : ‖c + s • u - c‖ = s := by
+      rw [add_sub_cancel_left, norm_smul, mem_sphere_zero_iff_norm.1 hu, mul_one,
+        Real.norm_of_nonneg (hr₁.le.trans hs.1)]
+    exact ⟨mem_closedBall_iff_norm.2 (hnorm.trans_le hs.2),
+      fun h ↦ (mem_ball_iff_norm.1 h).not_ge (hs.1.trans_eq hnorm.symm)⟩
+  obtain ⟨C, hC⟩ := ((isCompact_closedBall c r₂).diff isOpen_ball).exists_bound_of_continuousOn hf
+  -- Pull every sphere back to the unit sphere, and integrate there with a uniform bound.
+  have hcont : ContinuousOn (fun s ↦ ∫ u, f (c + s • u) ∂μ) (Icc r₁ r₂) := by
+    refine continuousOn_of_dominated (bound := fun _ ↦ C) (fun s hs ↦ ?_) (fun s hs ↦ ?_)
+      (integrable_const C) ?_
+    · exact (hf.comp (by fun_prop) fun u hu ↦ hmem s hs u hu).aestronglyMeasurable
+        isClosed_sphere.measurableSet
+    · exact (ae_restrict_iff' isClosed_sphere.measurableSet).2
+        (ae_of_all _ fun u hu ↦ hC _ (hmem s hs u hu))
+    · exact (ae_restrict_iff' isClosed_sphere.measurableSet).2 (ae_of_all _ fun u hu ↦
+        hf.comp (by fun_prop) fun s hs ↦ hmem s hs u hu)
+  exact ((continuousOn_pow (finrank ℝ E - 1)).smul hcont).congr fun s hs ↦
+    setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one _ c (hr₁.trans_le hs.1) f
 
 end TauCeti
