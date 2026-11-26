@@ -183,8 +183,8 @@ theorem isSumOfUnits_iff_matrixCoefficientSubmodule_le :
   · obtain ⟨ι, _, ⟨e⟩⟩ := isSumOfUnits_iff.1 h
     rw [matrixCoefficientSubmodule_eq_of_iso e, matrixCoefficientSubmodule_biproduct]
     exact iSup_le fun _ ↦ matrixCoefficientSubmodule_tensorUnit.le
-  · simpa using (Comodule.matrixCoefficientSubmodule_le_span_singleton_iff
-      (R := K) (C := H) (M := X) (1 : GroupLike K H)).1 (by simpa using h)
+  · simpa using ((1 : GroupLike K H).matrixCoefficientSubmodule_le_span_singleton_iff
+      (M := X)).1 (by simpa using h)
 
 /-- **Subquotients of sums of units are sums of units.** The finite-sum and subquotient hull of
 the tensor unit consists exactly of the sums of units. -/

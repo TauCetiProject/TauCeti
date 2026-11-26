@@ -29,7 +29,7 @@ coefficient calculation, a trivial comodule's coefficient subalgebra is the bott
 
 * `TauCeti.Comodule.groupLike_matrixCoefficientSubmodule_le_span_singleton`.
 * `TauCeti.Comodule.groupLike_rankOne_matrixCoefficientSubmodule_eq_span_singleton`.
-* `TauCeti.Comodule.matrixCoefficientSubmodule_le_span_singleton_iff`: conversely, a free comodule
+* `GroupLike.matrixCoefficientSubmodule_le_span_singleton_iff`: conversely, a free comodule
   with coefficients on the line spanned by `g` has the coaction `m ↦ m ⊗ g`.
 * `TauCeti.Comodule.groupLike_matrixCoefficientSubalgebra_le_adjoin_singleton`.
 * `TauCeti.Comodule.groupLike_rankOne_matrixCoefficientSubalgebra_eq_adjoin_singleton`.
@@ -113,7 +113,8 @@ variable {M : Type w} [AddCommMonoid M] [Module R M] [Comodule R C M]
 its matrix coefficients in the line spanned by a group-like element `g` exactly when its
 coaction is `m ↦ m ⊗ g`. A coefficient `c(φ, m)` on that line is `φ m • g`, as the counit shows,
 and the coaction is determined by its coefficients along a basis. -/
-theorem matrixCoefficientSubmodule_le_span_singleton_iff [Module.Free R M] (g : GroupLike R C) :
+theorem _root_.GroupLike.matrixCoefficientSubmodule_le_span_singleton_iff [Module.Free R M]
+    (g : GroupLike R C) :
     matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≤ R ∙ (g : C) ↔
       ∀ m : M, coact (R := R) (C := C) (M := M) m = m ⊗ₜ[R] (g : C) := by
   refine ⟨fun h m ↦ ?_, fun h ↦ matrixCoefficientSubmodule_le fun φ m ↦ ?_⟩

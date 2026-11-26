@@ -67,12 +67,14 @@ theorem IsSumOfUnits.of_iso (h : IsSumOfUnits X) (e : X ≅ Y) : IsSumOfUnits Y 
   exact .mk (e.symm ≪≫ f)
 
 /-- A finite direct sum of copies of the unit is a sum of units. -/
+@[simp]
 theorem isSumOfUnits_biproduct_const (ι : Type) [Finite ι] :
     IsSumOfUnits (⨁ fun _ : ι ↦ 𝟙_ C) :=
   .mk (Iso.refl _)
 
 variable (C) in
 /-- The tensor unit is a sum of units. -/
+@[simp]
 theorem isSumOfUnits_tensorUnit : IsSumOfUnits (𝟙_ C) :=
   .mk (biproductUniqueIso (fun _ : Unit ↦ 𝟙_ C)).symm
 
