@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.Padics.HeightOneSpectrum
 public import TauCeti.NumberTheory.Quaternion.Ramification.Basic
+import Mathlib.Data.Nat.Squarefree
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.RingTheory.DedekindDomain.Ideal.Squarefree
 
 /-!
 # The discriminant of a quaternion algebra over a number field
@@ -53,6 +56,11 @@ can be strict: `ℍ[ℚ,1,7]` is split, so `D = 1`, although the bound is `14`.
 * `TauCeti.QuaternionAlgebra.squarefree_discNat`: `D` is squarefree.
 * `TauCeti.QuaternionAlgebra.discNat_dvd_ramificationBound`: `D` divides
   `2 · num(a) · den(a) · num(b) · den(b)`.
+* `TauCeti.QuaternionAlgebra.discNat_eq_prod_primeFactors`: `D` is the product of the primes
+  dividing `2 · num(a) · den(a) · num(b) · den(b)` at which `ℍ[ℚ,a,b]` is ramified.
+* `TauCeti.QuaternionAlgebra.discNat_eq_discNat_iff`,
+  `TauCeti.QuaternionAlgebra.discNat_eq_of_nonempty_algEquiv`: `D` records the finite ramification
+  set, and isomorphic symbol algebras have the same `D`.
 * `TauCeti.QuaternionAlgebra.span_discNat`: `D` generates the discriminant ideal over `𝓞 ℚ`.
 
 ## References
@@ -91,12 +99,7 @@ ramified at `v`. -/
 @[simp]
 theorem asIdeal_dvd_discIdeal_iff {v : HeightOneSpectrum (𝓞 F)} :
     v.asIdeal ∣ discIdeal a b ↔ IsRamifiedAt a b v := by
-  rw [discIdeal_def, v.prime.dvd_finsetProd_iff]
-  refine ⟨fun ⟨w, hw, hvw⟩ ↦ ?_, fun h ↦ ⟨v, mem_ramifiedFinitePlaces.2 h, dvd_rfl⟩⟩
-  -- `𝔭_v ∣ 𝔭_w` means `𝔭_w ⊆ 𝔭_v`, which forces `v = w` as `𝔭_w` is maximal
-  have hwv : w = v := HeightOneSpectrum.ext <|
-    w.isMaximal.eq_of_le v.isPrime.ne_top (Ideal.le_of_dvd hvw)
-  exact hwv ▸ mem_ramifiedFinitePlaces.1 hw
+  rw [discIdeal_def, HeightOneSpectrum.asIdeal_dvd_prod_asIdeal_iff, mem_ramifiedFinitePlaces]
 
 /-- The discriminant of `ℍ[F,a,b]` is contained in the prime `𝔭_v` exactly when `ℍ[F,a,b]` is
 ramified at `v`. -/
@@ -113,11 +116,8 @@ theorem discIdeal_ne_bot : discIdeal a b ≠ ⊥ := by
   exact Finset.prod_ne_zero_iff.2 fun v _ ↦ v.ne_bot
 
 /-- The discriminant of `ℍ[F,a,b]` is squarefree. -/
-theorem squarefree_discIdeal : Squarefree (discIdeal a b) := by
-  refine Finset.squarefree_prod_of_pairwise_isCoprime (fun v _ w _ hvw ↦ ?_)
-    fun v _ ↦ v.prime.squarefree
-  refine (v.prime.irreducible.isRelPrime_iff_not_dvd).2 fun h ↦ hvw ?_
-  exact HeightOneSpectrum.ext (w.isMaximal.eq_of_le v.isPrime.ne_top (Ideal.le_of_dvd h)).symm
+theorem squarefree_discIdeal : Squarefree (discIdeal a b) :=
+  HeightOneSpectrum.squarefree_prod_asIdeal _
 
 variable {a b}
 
@@ -160,10 +160,9 @@ variable (a b : ℚˣ)
 /-- The integer discriminant `D = ∏_{p ∈ Ram_f B} p` of the quaternion algebra `B = ℍ[ℚ,a,b]`: the
 product of the primes at which `B` is ramified. -/
 def discNat : ℕ :=
-  ∏ v ∈ ramifiedFinitePlaces a b, (primesEquiv (R := 𝓞 ℚ) v : ℕ)
+  ∏ v ∈ ramifiedFinitePlaces a b, natGenerator v
 
-theorem discNat_def :
-    discNat a b = ∏ v ∈ ramifiedFinitePlaces a b, (primesEquiv (R := 𝓞 ℚ) v : ℕ) := (rfl)
+theorem discNat_def : discNat a b = ∏ v ∈ ramifiedFinitePlaces a b, natGenerator v := (rfl)
 
 /-- The integer `2 · num(a) · den(a) · num(b) · den(b)`, which every prime at which `ℍ[ℚ,a,b]` is
 ramified divides (`TauCeti.QuaternionAlgebra.discNat_dvd_ramificationBound`). -/
@@ -179,33 +178,38 @@ theorem ramificationBound_ne_zero : ramificationBound a b ≠ 0 := by
 
 variable {a b}
 
+/-- Ramification of `ℍ[ℚ,a,b]` at the rational prime below a finite place `v` of `ℚ` is
+ramification at `v`. -/
+theorem isRamifiedAtPrime_natGenerator_iff (v : HeightOneSpectrum (𝓞 ℚ)) :
+    IsRamifiedAtPrime a b (natGenerator v) ↔ IsRamifiedAt a b v := by
+  rw [isRamifiedAtPrime_iff_isRamifiedAt,
+    (primesEquiv (R := 𝓞 ℚ)).symm_apply_eq.2 (Subtype.ext (coe_primesEquiv v).symm)]
+
 /-- A prime `p` divides the discriminant `D` of `ℍ[ℚ,a,b]` exactly when `ℍ[ℚ,a,b]` is ramified at
 `p`. -/
 @[simp]
 theorem prime_dvd_discNat_iff (p : ℕ) [hp : Fact p.Prime] :
     p ∣ discNat a b ↔ IsRamifiedAtPrime a b p := by
-  rw [discNat_def, (Nat.prime_iff.1 hp.out).dvd_finsetProd_iff,
-    isRamifiedAtPrime_iff_isRamifiedAt]
-  refine ⟨fun ⟨v, hv, hpv⟩ ↦ ?_, fun h ↦ ⟨_, mem_ramifiedFinitePlaces.2 h,
-    dvd_of_eq (congrArg Subtype.val ((primesEquiv (R := 𝓞 ℚ)).apply_symm_apply ⟨p, hp.out⟩)).symm⟩⟩
-  obtain rfl : (primesEquiv v : ℕ) = p :=
-    ((Nat.prime_dvd_prime_iff_eq hp.out (primesEquiv v).prop).1 hpv).symm
-  convert mem_ramifiedFinitePlaces.1 hv
-  exact (primesEquiv (R := 𝓞 ℚ)).symm_apply_apply v
+  rw [discNat_def, (Nat.prime_iff.1 hp.out).dvd_finsetProd_iff]
+  refine ⟨fun ⟨v, hv, hpv⟩ ↦ ?_, fun h ↦ ⟨_,
+    mem_ramifiedFinitePlaces.2 ((isRamifiedAtPrime_iff_isRamifiedAt p).1 h),
+    (natGenerator_primesEquiv_symm _).symm.dvd⟩⟩
+  obtain rfl := (Nat.prime_dvd_prime_iff_eq hp.out (prime_natGenerator v)).1 hpv
+  exact (isRamifiedAtPrime_natGenerator_iff v).2 (mem_ramifiedFinitePlaces.1 hv)
 
 variable (a b)
 
 /-- The discriminant `D` of `ℍ[ℚ,a,b]` is positive. -/
 theorem discNat_pos : 0 < discNat a b :=
-  Finset.prod_pos fun v _ ↦ (primesEquiv v).prop.pos
+  Finset.prod_pos fun v _ ↦ (prime_natGenerator v).pos
 
 /-- The discriminant `D` of `ℍ[ℚ,a,b]` is squarefree. -/
 theorem squarefree_discNat : Squarefree (discNat a b) := by
   refine Finset.squarefree_prod_of_pairwise_isCoprime (fun v _ w _ hvw ↦ ?_)
-    fun v _ ↦ (primesEquiv v).prop.squarefree
+    fun v _ ↦ (prime_natGenerator v).squarefree
   rw [Function.onFun, ← Nat.coprime_iff_isRelPrime,
-    Nat.coprime_primes (primesEquiv v).prop (primesEquiv w).prop]
-  exact fun h ↦ hvw ((primesEquiv (R := 𝓞 ℚ)).injective (Subtype.ext h))
+    Nat.coprime_primes (prime_natGenerator v) (prime_natGenerator w)]
+  exact natGenerator_injective.ne hvw
 
 variable {a b}
 
@@ -213,35 +217,26 @@ variable {a b}
 prime. -/
 theorem discNat_eq_one_iff : discNat a b = 1 ↔ ramifiedFinitePlaces a b = ∅ := by
   refine ⟨fun h ↦ Finset.eq_empty_of_forall_notMem fun v hv ↦
-      (Nat.prime_iff.1 (primesEquiv v).prop).not_dvd_one ?_,
+      (Nat.prime_iff.1 (prime_natGenerator v)).not_dvd_one ?_,
     fun h ↦ by rw [discNat_def, h, Finset.prod_empty]⟩
-  exact h ▸ Finset.dvd_prod_of_mem (fun v ↦ (primesEquiv (R := 𝓞 ℚ) v : ℕ)) hv
+  exact h ▸ Finset.dvd_prod_of_mem natGenerator hv
 
 /-- **The ramification bound.** `ℍ[ℚ,a,b]` is unramified at every prime `p` not dividing
 `2 · num(a) · den(a) · num(b) · den(b)`: there `2`, `a` and `b` are `p`-adic units. -/
 theorem not_isRamifiedAtPrime_of_not_dvd (p : ℕ) [hp : Fact p.Prime]
     (h : ¬p ∣ ramificationBound a b) : ¬IsRamifiedAtPrime a b p := by
   set v := (primesEquiv (R := 𝓞 ℚ)).symm ⟨p, hp.out⟩
-  have hvp : natGenerator v = p :=
-    congrArg Subtype.val ((primesEquiv (R := 𝓞 ℚ)).apply_symm_apply _)
-  -- a natural number lies in `𝔭_v` exactly when `p` divides it
-  have hmem (n : ℕ) : (n : 𝓞 ℚ) ∈ v.asIdeal ↔ p ∣ n := by
-    rw [natCast_mem_iff_absNorm_asIdeal_dvd, absNorm_asIdeal, hvp]
-  -- a nonzero rational whose numerator and denominator are prime to `p` is a `v`-adic unit
-  have hval {x : ℚ} (hx : x ≠ 0) (hnum : ¬p ∣ x.num.natAbs) (hden : ¬p ∣ x.den) :
-      v.valuation ℚ x = 1 := by
-    have h₁ : v.valuation ℚ x ≤ 1 := Rat.valuation_le_one_iff_den.2 (by rwa [hmem])
-    have h₂ : v.valuation ℚ x⁻¹ ≤ 1 :=
-      Rat.valuation_le_one_iff_den.2 (by rwa [Rat.den_inv_of_ne_zero hx, hmem])
-    rw [map_inv₀, inv_le_one₀ ((v.valuation ℚ).pos_iff.2 hx)] at h₂
-    exact le_antisymm h₁ h₂
+  have hvp : natGenerator v = p := natGenerator_primesEquiv_symm _
   rw [ramificationBound_def] at h
   simp only [Nat.Prime.dvd_mul hp.out, not_or] at h
   obtain ⟨⟨⟨⟨h2, ha⟩, ha'⟩, hb⟩, hb'⟩ := h
+  rw [← hvp] at h2 ha ha' hb hb'
   rw [isRamifiedAtPrime_iff_isRamifiedAt]
   exact not_isRamifiedAt_of_valuation_eq_one
-    (hval two_ne_zero (by simpa using h2) (by simpa using hp.out.ne_one))
-    (hval a.ne_zero ha ha') (hval b.ne_zero hb hb')
+    (valuation_eq_one_of_not_dvd v two_ne_zero (by simpa using h2)
+      (by simpa using (prime_natGenerator v).ne_one))
+    (valuation_eq_one_of_not_dvd v a.ne_zero ha ha')
+    (valuation_eq_one_of_not_dvd v b.ne_zero hb hb')
 
 variable (a b)
 
@@ -249,35 +244,55 @@ variable (a b)
 theorem discNat_dvd_ramificationBound : discNat a b ∣ ramificationBound a b := by
   classical
   -- `D` is the product of the distinct primes in the image of the ramified places
-  have himage : discNat a b = ∏ p ∈ (ramifiedFinitePlaces a b).image
-      (fun v ↦ (primesEquiv (R := 𝓞 ℚ) v : ℕ)), p := by
-    rw [Finset.prod_image fun v _ w _ h ↦ (primesEquiv (R := 𝓞 ℚ)).injective (Subtype.ext h),
-      discNat_def]
+  have himage : discNat a b = ∏ p ∈ (ramifiedFinitePlaces a b).image natGenerator, p := by
+    rw [Finset.prod_image fun v _ w _ h ↦ natGenerator_injective h, discNat_def]
   rw [himage]
   refine Finset.prod_primes_dvd _ (fun p hp ↦ ?_) fun p hp ↦ ?_ <;>
     obtain ⟨v, hv, rfl⟩ := Finset.mem_image.1 hp
-  · exact Nat.prime_iff.1 (primesEquiv v).prop
-  · have : Fact (primesEquiv (R := 𝓞 ℚ) v : ℕ).Prime := ⟨(primesEquiv v).prop⟩
-    by_contra hdvd
-    refine not_isRamifiedAtPrime_of_not_dvd _ hdvd ?_
-    rw [isRamifiedAtPrime_iff_isRamifiedAt]
-    convert mem_ramifiedFinitePlaces.1 hv
-    exact (primesEquiv (R := 𝓞 ℚ)).symm_apply_apply v
+  · exact Nat.prime_iff.1 (prime_natGenerator v)
+  · by_contra hdvd
+    exact not_isRamifiedAtPrime_of_not_dvd _ hdvd
+      ((isRamifiedAtPrime_natGenerator_iff v).2 (mem_ramifiedFinitePlaces.1 hv))
+
+open Classical in
+/-- **The discriminant as a product over the ramification bound.** `D` is the product of the primes
+`p` dividing `2 · num(a) · den(a) · num(b) · den(b)` at which `ℍ[ℚ,a,b]` is ramified. -/
+theorem discNat_eq_prod_primeFactors :
+    discNat a b = ∏ p ∈ (ramificationBound a b).primeFactors with
+      ∃ hp : p.Prime, @IsRamifiedAtPrime a b p ⟨hp⟩, p := by
+  conv_lhs => rw [← Nat.prod_primeFactors_of_squarefree (squarefree_discNat a b)]
+  refine Finset.prod_congr (Finset.ext fun p ↦ ?_) fun _ _ ↦ rfl
+  simp only [Finset.mem_filter, Nat.mem_primeFactors]
+  refine ⟨fun ⟨hp, hpD, _⟩ ↦ ?_, fun ⟨⟨hp, _⟩, _, h⟩ ↦ ?_⟩ <;> have := Fact.mk hp
+  · exact ⟨⟨hp, hpD.trans (discNat_dvd_ramificationBound a b), ramificationBound_ne_zero a b⟩, hp,
+      (prime_dvd_discNat_iff p).1 hpD⟩
+  · exact ⟨hp, (prime_dvd_discNat_iff p).2 h, (discNat_pos a b).ne'⟩
 
 /-- **The integer discriminant generates the discriminant ideal.** Over `ℚ`, the discriminant of
 `ℍ[ℚ,a,b]` as an ideal of `𝓞 ℚ` is generated by the integer discriminant `D`. -/
 theorem span_discNat : Ideal.span {(discNat a b : 𝓞 ℚ)} = discIdeal a b := by
   rw [discNat_def, discIdeal_def, Nat.cast_prod, ← Ideal.prod_span_singleton]
-  refine Finset.prod_congr rfl fun v _ ↦ ?_
-  -- `primesEquiv v` is by definition the rational prime `natGenerator v` below `𝔭_v`
-  have hv : ((primesEquiv (R := 𝓞 ℚ) v : Nat.Primes) : ℕ) = natGenerator v := rfl
-  rw [hv, ← asIdeal_eq_span_natGenerator]
+  exact Finset.prod_congr rfl fun v _ ↦ (asIdeal_eq_span_natGenerator v).symm
+
+variable {a b} in
+/-- Two quaternion algebras over `ℚ` have the same integer discriminant exactly when they are
+ramified at the same primes. -/
+theorem discNat_eq_discNat_iff {c d : ℚˣ} :
+    discNat a b = discNat c d ↔ ramifiedFinitePlaces a b = ramifiedFinitePlaces c d := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [discNat_def, discNat_def, h]⟩
+  ext v
+  rw [mem_ramifiedFinitePlaces, mem_ramifiedFinitePlaces, ← isRamifiedAtPrime_natGenerator_iff,
+    ← isRamifiedAtPrime_natGenerator_iff, ← prime_dvd_discNat_iff, ← prime_dvd_discNat_iff, h]
 
 /-- Isomorphic symbol algebras over `ℚ` have the same integer discriminant. -/
 theorem discNat_eq_of_nonempty_algEquiv {c d : ℚˣ}
     (h : Nonempty (ℍ[ℚ,(a : ℚ),(b : ℚ)] ≃ₐ[ℚ] ℍ[ℚ,(c : ℚ),(d : ℚ)])) :
-    discNat a b = discNat c d := by
-  rw [discNat_def, discNat_def, ramifiedFinitePlaces_eq_of_nonempty_algEquiv h]
+    discNat a b = discNat c d :=
+  discNat_eq_discNat_iff.2 (ramifiedFinitePlaces_eq_of_nonempty_algEquiv h)
+
+/-- Exchanging the two parameters does not change the integer discriminant. -/
+theorem discNat_comm : discNat a b = discNat b a :=
+  discNat_eq_of_nonempty_algEquiv a b ⟨_root_.QuaternionAlgebra.swapEquiv _ _⟩
 
 end Rat
 

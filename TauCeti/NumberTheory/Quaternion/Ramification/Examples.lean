@@ -98,8 +98,7 @@ example : (ramifiedFinitePlaces (-1 : ℚˣ) (-1)).card = 1 ∧
 /-- **Hamilton's quaternions over `ℚ`** have discriminant `D = 2`. -/
 theorem discNat_neg_one_neg_one : discNat (-1 : ℚˣ) (-1) = 2 := by
   rw [discNat_def, ramifiedFinitePlaces_neg_one_neg_one_rat, Finset.prod_singleton]
-  exact congrArg Subtype.val
-    ((Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).apply_symm_apply ⟨2, Nat.prime_two⟩)
+  exact Rat.HeightOneSpectrum.natGenerator_primesEquiv_symm ⟨2, Nat.prime_two⟩
 
 /-- The ramification bound of Hamilton's quaternions over `ℚ` is `2`, equal to their
 discriminant. -/
