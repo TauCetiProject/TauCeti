@@ -7,8 +7,8 @@ module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Krasner.Basic
 public import TauCeti.NumberTheory.LocalField.MassFormula.Ore.Padic
-import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.Data.Nat.Interval
+import TauCeti.NumberTheory.Padics.PadicVal.Basic
 
 /-!
 # Closed-form Krasner counts over `ℚ_[p]`

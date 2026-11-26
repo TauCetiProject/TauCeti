@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.LocalField.MassFormula.Ore.Basic
 import TauCeti.Algebra.BigOperators.Group.Finset.Piecewise
 import TauCeti.Data.Set.Function
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.RingTheory.Polynomial.DiscreteValuationRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 import TauCeti.RingTheory.Valuation.ValuativeRel.ResidueCard

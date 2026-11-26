@@ -50,8 +50,10 @@ fraction field; in equal characteristic with `(n : R) = 0`, taking `j = n * (m -
   `TauCeti.isOreAdmissible_iff_eq_zero_of_not_dvd`,
   `TauCeti.isOreAdmissible_iff_of_natCast_eq_zero`: specializations to degree `1`, the tame case,
   and equal characteristic `p ∣ n`.
-* `TauCeti.iInf_addVal_derivative_add_one_eq_iff`: valuation criterion on Eisenstein coefficients
-  for the shifted derivative valuation infimum to equal `j + n`.
+* `TauCeti.iInf_addVal_derivative_add_one_eq_iff`,
+  `TauCeti.iInf_addVal_derivative_add_one_lt_top_iff`: valuation criterion on Eisenstein
+  coefficients for the shifted derivative valuation infimum to equal `j + n`, and finiteness of
+  the shifted infimum.
 * `TauCeti.IsOreAdmissible.derivative_ne_zero_of_isEisensteinAt`,
   `TauCeti.IsOreAdmissible.separable_map_of_isEisensteinAt`: separability over the fraction field.
 * `TauCeti.IsOreAdmissible.exists_monic_isEisensteinAt`: coefficient-level realization of every
@@ -449,6 +451,35 @@ theorem iInf_addVal_derivative_add_one_eq_iff {n j : ℕ} (hn : 0 < n) {f : R[X]
           hf.one_le_addVal_coeff (hdeg ▸ hiLow)
         exact (le_nsmul_add_iff_oreCoefficientDepth_le (j := j) hn hiLow hm1).mpr
           (hcoeff ((i : ℕ) + 1) (Nat.succ_pos _) hiLow)
+
+/-- For a polynomial `f : R[X]` of positive degree `n` over a discrete valuation ring `R`, the
+derivative valuation infimum `⨅ i : Fin n, (n • addVal R (f.coeff (i + 1) * (i + 1)) + (i + 1))`
+is finite if and only if `f.derivative ≠ 0`. -/
+theorem iInf_addVal_derivative_add_one_lt_top_iff
+    {n : ℕ} (hn : 0 < n) {f : R[X]} (hdeg : f.natDegree = n) :
+    (⨅ i : Fin n, n • addVal R (f.coeff (i + 1) * (i + 1)) + ((i : ℕ) + 1 : ℕ∞)) < ⊤ ↔
+      f.derivative ≠ 0 := by
+  have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  rw [iInf_lt_top]
+  constructor
+  · rintro ⟨i, hi⟩ hzero
+    have hcoeff : f.coeff ((i : ℕ) + 1) * (((i : ℕ) : R) + 1) = 0 := by
+      simpa [coeff_derivative] using congrArg (fun p : R[X] ↦ p.coeff i) hzero
+    rw [hcoeff, addVal_zero] at hi
+    cases n with
+    | zero => omega
+    | succ _ => simp at hi
+  · intro hf'
+    refine ⟨⟨f.derivative.natDegree, hdeg ▸ natDegree_derivative_lt (hdeg ▸ hn.ne')⟩, ?_⟩
+    have hne :
+        f.coeff (f.derivative.natDegree + 1) * ((f.derivative.natDegree : R) + 1) ≠ 0 := by
+      rw [← coeff_derivative, coeff_natDegree]
+      exact leadingCoeff_ne_zero.mpr hf'
+    lift addVal R (f.coeff (f.derivative.natDegree + 1) *
+        ((f.derivative.natDegree : R) + 1)) to ℕ using
+          (fun h ↦ hne (addVal_eq_top_iff.mp h)) with v hv
+    rw [nsmul_eq_mul]
+    exact_mod_cast ENat.natCast_lt_top (n * v + (f.derivative.natDegree + 1))
 
 /-- Any Eisenstein polynomial `f : R[X]` of degree `n` witnessing an Ore-admissible wild
 exponent `j` has nonzero derivative. -/
