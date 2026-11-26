@@ -32,11 +32,14 @@ times that of `dt'`. Hence `relativeDifferentialsResidueTrace`, the trace built 
 separating function, is the residue trace `tr_{X/k}`, characterized by the residue formula for
 every separating function.
 
-The normalized duality theorem for arbitrary quasi-coherent sheaves is separate from this
-construction.
+The normalized duality theorem is separate from this construction; for line bundles it is
+`InvertibleSheaf.bijective_residueTraceDualityHom` in
+`TauCeti/AlgebraicGeometry/Modules/Differentials/SerreDuality.lean`.
 
 ## Main declarations
 
+* `isGreatest_weilDifferentialFiltration_equivFunctionFieldDivisor`: the divisor `K` of `dt`
+  is the largest divisor bounding the Weil differential `dt`;
 * `relativeDifferentialsTrace`: the trace built from a separating function `t`;
 * `relativeDifferentialsTrace_eq`: it does not depend on `t`;
 * `relativeDifferentialsResidueTrace`: the residue trace `tr_{X/k}`, with
@@ -78,11 +81,13 @@ variable {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
 include hK in
 omit [AlgebraicGeometry.IsNoetherian X]
   [SheafOfModules.isInvertible X (X.relativeDifferentials k)] in
-/-- The Weil differential `dt` is bounded by the divisor used in the sheaf comparison. -/
-private lemma weilDifferentialOfSeparating_mem_canonicalFiltration :
-    (weilDifferentialOfSeparating hF ht :
-      Module.Dual k (repartitionSpace k X.functionField)) ∈
-        weilDifferentialFiltration (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim K) := by
+/-- The divisor `K` of `dt` is the largest divisor bounding the Weil differential `dt`; in
+particular `dt` is bounded by the divisor used in the sheaf comparison. -/
+theorem isGreatest_weilDifferentialFiltration_equivFunctionFieldDivisor :
+    IsGreatest {E : Divisor k X.functionField |
+        (weilDifferentialOfSeparating hF ht : Module.Dual k (repartitionSpace k X.functionField)) ∈
+          weilDifferentialFiltration E}
+      (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim K) := by
   have he : K = (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).symm
       (weilDifferentialDivisor hF hk (weilDifferentialOfSeparating hF ht).property
         (coe_weilDifferentialOfSeparating_ne_zero hF ht)) := by
@@ -90,15 +95,15 @@ private lemma weilDifferentialOfSeparating_mem_canonicalFiltration :
     simpa only [SchemeWeilDivisor.coeff_equivFunctionFieldDivisor_symm,
       coeff_weilDifferentialDivisor] using hK y
   rw [he, (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).apply_symm_apply]
-  exact (isGreatest_weilDifferentialDivisor hF hk (weilDifferentialOfSeparating hF ht).property
-    (coe_weilDifferentialOfSeparating_ne_zero hF ht)).1
+  exact isGreatest_weilDifferentialDivisor hF hk _ _
 
 /-- The trace on `H¹(X, Ω_{X/k})` obtained from the Weil differential `dt` and its divisor.
 The comparison with `𝒪_X(K)` transports the actual repartition linear form to cohomology. -/
 def relativeDifferentialsTrace :
     Module.Dual k (Scheme.Modules.Cohomology (X.relativeDifferentials k) 1) :=
   ((SchemeWeilDivisor.cohomologyOneDualEquivWeilDifferentialFiltration hex hdim hF K).symm
-    ⟨_, weilDifferentialOfSeparating_mem_canonicalFiltration ht hF hk hex hdim K hK⟩).comp
+    ⟨_, (isGreatest_weilDifferentialFiltration_equivFunctionFieldDivisor
+      ht hF hk hex hdim K hK).1⟩).comp
     (Scheme.Modules.cohomologyBaseLinearEquivOfIso k
       (relativeDifferentialsIsoDivisorSheaf ht hF hk hdim K hK) 1).toLinearMap
 
@@ -150,7 +155,8 @@ lemma relativeDifferentialsTrace_repartitionToRelativeDifferentialsCohomologyOne
     (SchemeWeilDivisor.cohomologyOneDualEquivWeilDifferentialFiltration_apply_apply
       hex hdim hF K
       ((SchemeWeilDivisor.cohomologyOneDualEquivWeilDifferentialFiltration hex hdim hF K).symm
-        ⟨_, weilDifferentialOfSeparating_mem_canonicalFiltration ht hF hk hex hdim K hK⟩) a).symm
+        ⟨_, (isGreatest_weilDifferentialFiltration_equivFunctionFieldDivisor
+          ht hF hk hex hdim K hK).1⟩) a).symm
 
 /-- The trace is the sum of the local components of `dt` evaluated on the repartition
 coefficients; these have finite support even when some residue fields are inseparable. -/

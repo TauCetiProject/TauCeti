@@ -33,6 +33,8 @@ hypothesis under which that sheaf is built.
 * `SchemeWeilDivisor.inv_localEquation_mem_sections` and
   `SchemeWeilDivisor.coeff_eq_of_sections_eq`: the inverse of a local equation is a section of
   `𝒪_X(D)`, and locally principal divisors with the same sections have the same coefficients;
+* `SchemeWeilDivisor.le_of_sections_le`: a locally principal divisor whose sections are sections
+  of `𝒪_X(E)` is at most `E`;
 * `SchemeWeilDivisor.principalSubgroup_le_locallyPrincipalSubgroup` records that principal
   divisors are locally principal;
 * `WeilDivisor.OrderSystem.LinearlyEquivalent.isLocallyPrincipal_iff` shows that local
@@ -219,6 +221,22 @@ lemma coeff_eq_of_sections_eq {F E : SchemeWeilDivisor X}
     ← hh₁ y hy₁] at b1
   rw [LinearEquiv.apply_symm_apply, AlgebraicGeometry.Scheme.ord_inv, ← orderAt_apply,
     ← hh₂ y hy₂] at b2
+  omega
+
+/-- A locally principal divisor `D` whose sections over every open subset are sections of
+`𝒪_X(E)` is at most `E`: near a codimension-one point `y`, the inverse of a local equation of `D`
+is a section of `𝒪_X(D)` of order exactly `-D(y)` at `y`, so `-D(y) ≥ -E(y)`. The converse is
+`SchemeWeilDivisor.sections_mono`. -/
+lemma le_of_sections_le {D E : SchemeWeilDivisor X} (hD : IsLocallyPrincipal D)
+    (h : ∀ U : X.Opens, sections D U ≤ sections E U) : D ≤ E := by
+  refine WeilDivisor.le_iff.mpr fun y ↦ ?_
+  obtain ⟨U, hy, f, hf⟩ := isLocallyPrincipal_iff.mp hD (y : X)
+  have : Nonempty U := ⟨⟨_, hy⟩⟩
+  have hmem := (mem_sections.mp (h U (inv_localEquation_mem_sections hf)) y hy).resolve_left (by
+    simp only [LinearEquiv.apply_symm_apply, inv_eq_zero]
+    exact Units.ne_zero _)
+  rw [LinearEquiv.apply_symm_apply, AlgebraicGeometry.Scheme.ord_inv, ← orderAt_apply,
+    ← hf y hy] at hmem
   omega
 
 end LocallyNoetherian
