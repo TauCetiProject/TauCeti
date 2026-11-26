@@ -88,23 +88,17 @@ theorem exists_int_two_mul_root_apply_lie_eq_mul_of_lie_eq_smul (B : LinearMap.B
   have hx0 : x ≠ 0 := by
     rintro rfl
     exact hZ0 (Subtype.ext (by simp [hZ]))
-  -- The rank-one subalgebra of `x, y`: its third basis vector `K` lies in `t`, with `α(K) = 1`.
-  obtain ⟨f, -, ⟨c, -, hf₀, hf₁⟩, hK, hαK⟩ :=
-    B.exists_injective_lieHom_soThree_of_lie_eq_smul hBs hBp hB hα hx0 hx hy hxy
-  let a : Fin 3 → L := fun i ↦ f (soThreeEquiv ℝ (Pi.single i 1))
-  have h₀ : ⁅a 0, a 1⁆ = a 2 := by simp only [a, ← LieHom.map_lie, lie_soThreeEquiv_single_zero_one]
-  have h₁ : ⁅a 1, a 2⁆ = a 0 := by simp only [a, ← LieHom.map_lie, lie_soThreeEquiv_single_one_two]
-  have h₂ : ⁅a 2, a 0⁆ = a 1 := by simp only [a, ← LieHom.map_lie, lie_soThreeEquiv_single_two_zero]
-  -- `K = c² ⁅x, y⁆`, so `α(K) = 1` gives `c² α(⁅x, y⁆) = 1`.
-  have hKZ : (⟨a 2, hK⟩ : t) = (c * c) • Z :=
-    Subtype.ext (by simp only [← h₀, a, hf₀, hf₁, smul_lie, lie_smul, smul_smul, hZ,
-      SetLike.val_smul])
+  -- The rank-one subalgebra of `x, y`: its third basis vector `K = c² ⁅x, y⁆` lies in `t`, with
+  -- `α(K) = c² α(⁅x, y⁆) = 1`.
+  obtain ⟨a, c, -, h₀, h₁, h₂, -, -, hKZ, hcZ⟩ :=
+    B.exists_soThree_triple_of_lie_eq_smul hBs hBp hB hα hx0 hx hy hxy
+  have hK : a 2 ∈ t := hKZ ▸ t.smul_mem _ hxy
   -- In the adjoint representation, `K` rotates `u, w` at the speed `β(K)`.
   obtain ⟨n, hn⟩ := exists_int_two_mul_eq_of_lie_eq_smul h₀ h₁ h₂ (hu ⟨a 2, hK⟩) (hw ⟨a 2, hK⟩) hu0
   refine ⟨n, ?_⟩
-  rw [hKZ, map_smul, smul_eq_mul] at hn hαK
+  rw [show (⟨a 2, hK⟩ : t) = (c * c) • Z from Subtype.ext hKZ, map_smul, smul_eq_mul] at hn
   rw [← hn]
-  linear_combination (-2 * β Z) * hαK
+  linear_combination (-2 * β Z) * hcZ
 
 /-- **The Cartan integers of a compact Lie algebra are integers.** Let `B` be a symmetric positive
 definite invariant form on a finite-dimensional real Lie algebra `L` and `t` a subspace. Let
