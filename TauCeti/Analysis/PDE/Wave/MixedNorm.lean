@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Wave.Propagator
 public import TauCeti.Analysis.PDE.Wave.Strichartz
+import TauCeti.Analysis.Fourier.Bernstein
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Analysis.PDE.Strichartz.Retarded
 import TauCeti.Analysis.PDE.Wave.Endpoint
@@ -49,7 +50,9 @@ of `q` and `r`, and let `γ = n / 2 - n / r - 1 / q`. Then there is `C` such tha
 At the pairs `(∞, r)`, `2 ≤ r ≤ ∞`, which are all wave-admissible, the estimates for `W₊(t) Pⱼ`,
 `cos(tD) Pⱼ` and `D⁻¹ sin(tD) Pⱼ` hold in `L^∞_t L^r_x` with `γ = n / 2 - n / r`, and so does the
 retarded estimate, with the forcing measured along any second pair `(q₁, r₁)` as above with
-`r₁ ≥ 2`.
+`r₁ ≥ 2`. The estimates for `cos(tD) Pⱼ` and `D⁻¹ sin(tD) Pⱼ` hold in `L^r_x` at every time `t`,
+by Bernstein's inequality: `cos(tD) Pⱼ f = Pⱼ cos(tD) f` with `cos(tD)` a contraction of `L²`, and
+`D⁻¹ sin(tD) Pⱼ` gains the factor `2^{-j}` on the block.
 
 For a single pair the Duhamel pairings also satisfy the bilinear estimate
 `∫∫ |⟪D⁻¹ sin((t - s)D) Pⱼ Pⱼ F(s), G(t)⟫| ds dt ≤ C 2^{j(2γ - 1)} ‖F‖_{L^p_t L^{r'}_x}
@@ -114,6 +117,9 @@ All in the `ContDiffBump` namespace, with `φ` the bump function defining the cu
   `cos(tD) Pⱼ` and `D⁻¹ sin(tD) Pⱼ`.
 * `exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le`: the
   retarded estimate at the pairs `(∞, r)`.
+* `exists_eLpNorm_waveCosPropagator_littlewoodPaley_le` and
+  `exists_eLpNorm_waveSinPropagator_littlewoodPaley_le`: the estimates for `cos(tD) Pⱼ` and
+  `D⁻¹ sin(tD) Pⱼ` in `L^r`, `2 ≤ r ≤ ∞`, at every time.
 
 The file also proves `TauCeti.eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le` and
 `TauCeti.eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_of_one_le`, which combine
@@ -1233,6 +1239,81 @@ theorem exists_eLpNorm_top_eLpNorm_waveSinPropagator_littlewoodPaley_le (hr : 2 
             Module.finrank ℝ E * (r⁻¹).toReal - 1)) * ‖g‖ₑ :=
   φ.exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le_of_halfWavePropagator le_top
     (φ.exists_eLpNorm_top_eLpNorm_halfWavePropagator_littlewoodPaley_le hr)
+
+/-- **The frequency-localized `cos(tD)` at every time.** Let `E` have dimension `n`, let `Pⱼ` be the
+`L²` Fourier multiplier with the Littlewood–Paley cutoff `ψⱼ` built from `φ` as symbol, let
+`2 ≤ r ≤ ∞` and let `γ = n / 2 - n / r`. There is `C` such that for every `j ∈ ℤ`, every time `t`
+and every `f ∈ L²(E)`,
+
+`‖cos(tD) Pⱼ f‖_r ≤ C 2^{jγ} ‖f‖₂`.
+
+Unlike `ContDiffBump.exists_eLpNorm_top_eLpNorm_waveCosPropagator_littlewoodPaley_le`, the bound
+holds at every time, not only at almost every time. -/
+theorem exists_eLpNorm_waveCosPropagator_littlewoodPaley_le (hr : 2 ≤ r) :
+    ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+        ∀ (t : ℝ) (f : Lp ℂ 2 (volume : Measure E)),
+          eLpNorm (waveCosPropagator ℂ t (Lp.fourierMultiplierCLM ℂ m f)) r volume ≤
+            C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+              Module.finrank ℝ E * (r⁻¹).toReal)) * ‖f‖ₑ := by
+  obtain ⟨C, hC⟩ := φ.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le_of_two_le (F := ℂ) hr
+  refine ⟨C, fun j m hm t f ↦ ?_⟩
+  -- `cos(tD) Pⱼ f = Pⱼ cos(tD) f`, and `cos(tD)` is a contraction of `L²`.
+  have hcos : ‖waveCosPropagator ℂ t f‖ₑ ≤ ‖f‖ₑ := by
+    have h1 : ‖waveCosPropagator (E := E) ℂ t‖ₑ ≤ 1 := by
+      rw [← ofReal_norm]
+      exact ENNReal.ofReal_le_one.2 (norm_waveCosPropagator_le t)
+    simpa using (waveCosPropagator ℂ t).le_of_opENorm_le h1 f
+  rw [← fourierMultiplierCLM_waveCosPropagator_apply]
+  exact (hC j m hm _).trans (by gcongr)
+
+/-- **The frequency-localized `D⁻¹ sin(tD)` at every time.** Let `E` have dimension `n`, let `Pⱼ` be
+the `L²` Fourier multiplier with the Littlewood–Paley cutoff `ψⱼ` built from `φ` as symbol, let
+`2 ≤ r ≤ ∞` and let `γ = n / 2 - n / r`. There is `C` such that for every `j ∈ ℤ`, every time `t`
+and every `g ∈ L²(E)`,
+
+`‖D⁻¹ sin(tD) Pⱼ g‖_r ≤ C 2^{j(γ - 1)} ‖g‖₂`.
+
+Unlike `ContDiffBump.exists_eLpNorm_top_eLpNorm_waveSinPropagator_littlewoodPaley_le`, the bound
+holds at every time, not only at almost every time. -/
+theorem exists_eLpNorm_waveSinPropagator_littlewoodPaley_le (hr : 2 ≤ r) :
+    ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+        ∀ (t : ℝ) (g : Lp ℂ 2 (volume : Measure E)),
+          eLpNorm (waveSinPropagator ℂ t (Lp.fourierMultiplierCLM ℂ m g)) r volume ≤
+            C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+              Module.finrank ℝ E * (r⁻¹).toReal - 1)) * ‖g‖ₑ := by
+  obtain ⟨C, hC⟩ := φ.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le_of_two_le (F := ℂ) hr
+  set K := eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate φ.invCutoff 0)) 1 volume
+  refine ⟨C * K.toNNReal, fun j m hm t g ↦ ?_⟩
+  set c : ℂ := ((2 : ℝ) ^ j)⁻¹ * (2 * Complex.I)⁻¹
+  set y := φ.dyadicMultiplier ℂ φ.invCutoff j g
+  -- `D⁻¹ sin(tD) Pⱼ g = c Pⱼ (W₊(t) Mⱼ g - W₊(-t) Mⱼ g)`, and `W₊(±t)` are contractions of `L²`.
+  have heq : waveSinPropagator ℂ t (Lp.fourierMultiplierCLM ℂ m g) =
+      c • Lp.fourierMultiplierCLM ℂ m (halfWavePropagator ℂ t y - halfWavePropagator ℂ (-t) y) := by
+    rw [φ.waveSinPropagator_littlewoodPaley_eq hm, map_sub,
+      fourierMultiplierCLM_halfWavePropagator_apply, fourierMultiplierCLM_halfWavePropagator_apply]
+  have hW (τ : ℝ) : ‖halfWavePropagator ℂ τ y‖ₑ ≤ ‖y‖ₑ :=
+    (enorm_phasePropagator_apply _ τ y).le
+  have hy : ‖y‖ₑ ≤ K * ‖g‖ₑ := by
+    simpa only [Lp.eNorm_def] using φ.eLpNorm_dyadicMultiplier_le φ.invCutoff j g one_le_two
+  have hsub : ‖halfWavePropagator ℂ t y - halfWavePropagator ℂ (-t) y‖ₑ ≤ 2 * (K * ‖g‖ₑ) :=
+    calc _ ≤ ‖halfWavePropagator ℂ t y‖ₑ + ‖halfWavePropagator ℂ (-t) y‖ₑ := eNorm_sub_le
+      _ ≤ K * ‖g‖ₑ + K * ‖g‖ₑ := add_le_add ((hW t).trans hy) ((hW (-t)).trans hy)
+      _ = _ := (two_mul _).symm
+  have hK : (K.toNNReal : ℝ≥0∞) = K := ENNReal.coe_toNNReal
+    (φ.memLp_fourierInv_dyadicDilate φ.invCutoff 0 1).eLpNorm_ne_top
+  calc _ = ‖c‖ₑ * eLpNorm (Lp.fourierMultiplierCLM ℂ m
+          (halfWavePropagator ℂ t y - halfWavePropagator ℂ (-t) y)) r volume := by
+        rw [heq, eLpNorm_congr_ae (Lp.coeFn_smul _ _), eLpNorm_const_smul]
+    _ ≤ ‖c‖ₑ * (C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+          Module.finrank ℝ E * (r⁻¹).toReal)) * (2 * (K * ‖g‖ₑ))) := by
+        gcongr
+        exact (hC j m hm _).trans (by gcongr)
+    _ = C * K * (‖c‖ₑ * 2 * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+          Module.finrank ℝ E * (r⁻¹).toReal))) * ‖g‖ₑ := by ring
+    _ = _ := by
+        rw [enorm_two_zpow_inv_mul_two_mul_I_inv_mul_two_mul_ofReal_rpow, ENNReal.coe_mul, hK]
 
 end TimeExponentTop
 

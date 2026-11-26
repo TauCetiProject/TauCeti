@@ -31,9 +31,14 @@ dyadic multipliers `Mⱼ` of `ContDiffBump.dyadicMultiplier`, whose symbols are 
 Some dyadic multiplier `Qⱼ` reproduces the homogeneous Littlewood–Paley blocks, `Pⱼ Qⱼ = Pⱼ`
 (`ContDiffBump.exists_fourierMultiplierCLM_dyadicMultiplier_eq`): its symbols equal one on the
 support of `ψⱼ`. So the `L²` image of `Pⱼ` gains integrability at the cost `2^{jn (1/p - 1/q)}`,
-uniformly in `j`. This is how estimates for frequency-localized operators are moved from one
-Lebesgue exponent to a larger one, as for the Strichartz estimates of the wave equation at the
-pairs `(2, r)` beyond the endpoint exponent.
+uniformly in `j`: `‖Pⱼ f‖_q ≤ C 2^{jn (1/p - 1/q)} ‖Pⱼ f‖_p`
+(`ContDiffBump.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`), and in particular
+`‖Pⱼ f‖_r ≤ C 2^{j (n/2 - n/r)} ‖f‖₂` for `r ≥ 2`
+(`ContDiffBump.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le_of_two_le`). This is how
+estimates for frequency-localized operators are moved from one Lebesgue exponent to a larger one,
+as for the Strichartz estimates of the wave equation at the pairs `(2, r)` beyond the endpoint
+exponent. It also makes `a ↦ Pⱼ y(a)` continuous into `L^r`, `r ≥ 2`, for every continuous
+`y : α → L²` (`ContDiffBump.tendsto_eLpNorm_fourierMultiplierCLM_littlewoodPaley_sub`).
 
 These are the `L²`-multiplier counterparts of the band-limited Bernstein inequality for tempered
 distributions, `TauCeti.exists_eq_and_norm_le_of_isVanishingOn_fourier`, and of the periodic one,
@@ -47,8 +52,8 @@ distributions, `TauCeti.exists_eq_and_norm_le_of_isVanishingOn_fourier`, and of 
 
 public section
 
-open MeasureTheory
-open scoped ENNReal FourierTransform SchwartzMap
+open Filter MeasureTheory Topology
+open scoped ENNReal NNReal FourierTransform SchwartzMap
 
 variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
@@ -118,5 +123,89 @@ theorem exists_fourierMultiplierCLM_dyadicMultiplier_eq :
     · rw [φ.dyadicDilate_apply_of_littlewoodPaley_ne_zero (a := fun _ ↦ 1) hσ h, inv_one,
         Complex.ofReal_one, mul_one]
   rw [dyadicMultiplier_def, Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply, hsym]
+
+/-- **Bernstein's inequality for the Littlewood–Paley blocks.** For `1 ≤ p ≤ q ≤ ∞` there is `C`
+such that for every `j ∈ ℤ` and every `f ∈ L²(V, F)`,
+
+`‖Pⱼ f‖_q ≤ C 2^{jn (1/p - 1/q)} ‖Pⱼ f‖_p`,
+
+where `n` is the dimension of `V` and `Pⱼ` is the `L²` Fourier multiplier with any symbol in `L^∞`
+almost everywhere equal to `ψⱼ`. -/
+theorem exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le {p q : ℝ≥0∞} (hp : 1 ≤ p)
+    (hpq : p ≤ q) :
+    ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure V)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp F 2 (volume : Measure V),
+        eLpNorm (Lp.fourierMultiplierCLM F m f) q volume ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^
+            ((Module.finrank ℝ V : ℝ) * (p.toReal⁻¹ - q.toReal⁻¹))) *
+            eLpNorm (Lp.fourierMultiplierCLM F m f) p volume := by
+  obtain ⟨σ, hσ⟩ := φ.exists_fourierMultiplierCLM_dyadicMultiplier_eq (F := F)
+  set B := eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ 0)) (1 + q⁻¹ - p⁻¹)⁻¹ volume
+  refine ⟨B.toNNReal, fun j m hm f ↦ ?_⟩
+  -- `Qⱼ Pⱼ f = Pⱼ f`, since `Qⱼ` commutes with `Pⱼ` and `Pⱼ Qⱼ = Pⱼ`.
+  have hQP : φ.dyadicMultiplier F σ j (Lp.fourierMultiplierCLM F m f) =
+      Lp.fourierMultiplierCLM F m f := by
+    rw [dyadicMultiplier_def, Lp.fourierMultiplierCLM_fourierMultiplierCLM_comm,
+      ← dyadicMultiplier_def, hσ j m hm]
+  have h := φ.eLpNorm_dyadicMultiplier_le_of_le σ j (Lp.fourierMultiplierCLM F m f) hp hpq
+  rw [hQP] at h
+  refine h.trans_eq ?_
+  rw [ENNReal.coe_toNNReal (φ.memLp_fourierInv_dyadicDilate σ 0 _).eLpNorm_ne_top]
+  ring
+
+/-- **Bernstein's inequality from `L²` for the Littlewood–Paley blocks.** For `2 ≤ r ≤ ∞` there is
+`C` such that for every `j ∈ ℤ` and every `f ∈ L²(V, F)`,
+
+`‖Pⱼ f‖_r ≤ C 2^{j (n/2 - n/r)} ‖f‖₂`,
+
+where `n` is the dimension of `V` and `Pⱼ` is the `L²` Fourier multiplier with any symbol in `L^∞`
+almost everywhere equal to `ψⱼ`. -/
+theorem exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le_of_two_le {r : ℝ≥0∞} (hr : 2 ≤ r) :
+    ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure V)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) → ∀ f : Lp F 2 (volume : Measure V),
+        eLpNorm (Lp.fourierMultiplierCLM F m f) r volume ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^
+            ((Module.finrank ℝ V : ℝ) / 2 - Module.finrank ℝ V * (r⁻¹).toReal)) * ‖f‖ₑ := by
+  obtain ⟨C, hC⟩ := φ.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le (F := F) one_le_two hr
+  refine ⟨C, fun j m hm f ↦ (hC j m hm f).trans ?_⟩
+  have hP : eLpNorm (Lp.fourierMultiplierCLM F m f) 2 volume ≤ ‖f‖ₑ := by
+    have h1 : ‖Lp.fourierMultiplierCLM (E := V) F m‖ₑ ≤ 1 := by
+      rw [← ofReal_norm]
+      exact ENNReal.ofReal_le_one.2 (φ.norm_fourierMultiplierCLM_littlewoodPaley_le hm)
+    rw [← Lp.eNorm_def]
+    simpa using (Lp.fourierMultiplierCLM F m).le_of_opENorm_le h1 f
+  have hexp : (Module.finrank ℝ V : ℝ) * ((2 : ℝ≥0∞).toReal⁻¹ - r.toReal⁻¹) =
+      (Module.finrank ℝ V : ℝ) / 2 - Module.finrank ℝ V * (r⁻¹).toReal := by
+    rw [ENNReal.toReal_inv, ENNReal.toReal_ofNat]
+    ring
+  rw [hexp]
+  gcongr
+
+/-- **Continuity of the Littlewood–Paley blocks into `L^r`.** Let `2 ≤ r ≤ ∞`. If `y : α → L²(V, F)`
+is continuous, then so is `a ↦ Pⱼ y(a)` for the `L^r` distance:
+`‖Pⱼ y(a) - Pⱼ y(a₀)‖_r → 0` as `a → a₀`. -/
+theorem tendsto_eLpNorm_fourierMultiplierCLM_littlewoodPaley_sub {α : Type*} [TopologicalSpace α]
+    {r : ℝ≥0∞} (hr : 2 ≤ r) {j : ℤ} {m : Lp ℂ ∞ (volume : Measure V)}
+    (hm : m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))) {y : α → Lp F 2 (volume : Measure V)}
+    (hy : Continuous y) (a₀ : α) :
+    Tendsto (fun a ↦ eLpNorm (⇑(Lp.fourierMultiplierCLM F m (y a)) -
+      ⇑(Lp.fourierMultiplierCLM F m (y a₀))) r volume) (𝓝 a₀) (𝓝 0) := by
+  obtain ⟨C, hC⟩ := φ.exists_eLpNorm_fourierMultiplierCLM_littlewoodPaley_le_of_two_le (F := F) hr
+  have h : Tendsto (fun a ↦ ‖y a - y a₀‖ₑ) (𝓝 a₀) (𝓝 0) := by
+    have hsub := (hy.tendsto a₀).sub_const (y a₀)
+    rw [sub_self] at hsub
+    have h' := (continuous_eNorm.tendsto (0 : Lp F 2 (volume : Measure V))).comp hsub
+    rw [eNorm_zero] at h'
+    exact h'
+  set a : ℝ≥0∞ := C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ V : ℝ) / 2 -
+    Module.finrank ℝ V * (r⁻¹).toReal))
+  have hlim : Tendsto (fun x ↦ a * ‖y x - y a₀‖ₑ) (𝓝 a₀) (𝓝 0) := by
+    simpa using ENNReal.Tendsto.const_mul h (Or.inr (by finiteness : a ≠ ∞))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ zero_le)
+    fun a ↦ ?_
+  calc _ = eLpNorm (Lp.fourierMultiplierCLM F m (y a - y a₀)) r volume := by
+        rw [map_sub]
+        exact eLpNorm_congr_ae (Lp.coeFn_sub _ _).symm
+    _ ≤ _ := hC j m hm _
 
 end ContDiffBump
