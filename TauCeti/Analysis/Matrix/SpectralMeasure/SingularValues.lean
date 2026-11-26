@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Matrix.SingularValues
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Borel
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 
-import Mathlib.Analysis.InnerProductSpace.NormDet
 import TauCeti.Analysis.Matrix.Frobenius
 
 /-!
@@ -160,19 +159,6 @@ theorem lintegral_sq_singularValueMeasure (A : Matrix m n 𝕜) :
   rw [div_eq_inv_mul, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_inv_of_pos (by positivity),
     ENNReal.ofReal_natCast]
 
-omit [Nonempty n] in
-private theorem norm_det_eq_prod_singularValues (A : Matrix n n 𝕜) :
-    ‖A.det‖ = ∏ i : Fin (Fintype.card n), (toEuclideanLin A).singularValues i := by
-  rw [← LinearMap.det_toLpLin 2 A, ← LinearMap.normDet_eq_norm_det,
-    LinearMap.normDet_eq_prod_singularValues, finrank_euclideanSpace, Fin.prod_univ_eq_prod_range]
-
-omit [Nonempty n] in
-private theorem singularValues_ne_zero_of_det_ne_zero {A : Matrix n n 𝕜} (hA : A.det ≠ 0)
-    (i : Fin (Fintype.card n)) : (toEuclideanLin A).singularValues i ≠ 0 := by
-  intro hi
-  exact hA (norm_eq_zero.mp ((norm_det_eq_prod_singularValues A).trans
-    (Finset.prod_eq_zero (Finset.mem_univ i) hi)))
-
 /-- An invertible square matrix has strictly positive singular values. -/
 theorem ae_pos_singularValueMeasure_of_det_ne_zero {A : Matrix n n 𝕜} (hA : A.det ≠ 0) :
     ∀ᵐ x ∂(A.singularValueMeasure : Measure ℝ), 0 < x := by
@@ -181,7 +167,7 @@ theorem ae_pos_singularValueMeasure_of_det_ne_zero {A : Matrix n n 𝕜} (hA : A
   refine Measure.ae_smul_measure ?_ _
   exact (ae_dirac_iff measurableSet_Ioi).mpr
     (((toEuclideanLin A).singularValues_pos_iff_ne_zero i).mpr
-      (singularValues_ne_zero_of_det_ne_zero hA i))
+      (A.det_ne_zero_iff_forall_singularValues_ne_zero.mp hA i))
 
 /-- For an invertible square matrix, the mean logarithm of its singular values, with multiplicity,
 is the normalized logarithm of the absolute value of its determinant. -/
@@ -189,7 +175,7 @@ theorem integral_log_singularValueMeasure_eq_log_norm_det {B : Matrix n n 𝕜} 
     ∫ s, Real.log s ∂(B.singularValueMeasure : Measure ℝ) =
       (Fintype.card n : ℝ)⁻¹ * Real.log ‖B.det‖ := by
   rw [integral_singularValueMeasure, norm_det_eq_prod_singularValues B,
-    Real.log_prod (fun i _ ↦ singularValues_ne_zero_of_det_ne_zero hB i), smul_eq_mul]
+    Real.log_prod (fun i _ ↦ B.det_ne_zero_iff_forall_singularValues_ne_zero.mp hB i), smul_eq_mul]
 
 /-- The mean logarithm of the eigenvalues of the Gram matrix `Aᴴ * A` is twice the mean logarithm
 of the singular values of `A`. Zero singular values contribute `Real.log 0 = 0` on both sides. -/

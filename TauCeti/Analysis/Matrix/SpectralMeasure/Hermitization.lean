@@ -79,13 +79,6 @@ theorem logarithmicPotential_eigenvalueMeasure_eq_log_norm_det (A : Matrix n n �
     rintro _ ⟨w, hw, rfl⟩
     exact norm_ne_zero_iff.mpr (sub_ne_zero.mpr (hroot w hw))
 
-omit [Nonempty n] in
-private theorem det_sub_smul_one_ne_zero_of_notMem_spectrum (A : Matrix n n ℂ) {z : ℂ}
-    (hz : z ∉ spectrum ℂ A) : (A - z • 1).det ≠ 0 := by
-  rw [spectrum.notMem_iff, Algebra.algebraMap_eq_smul_one, ← neg_sub, IsUnit.neg_iff,
-    isUnit_iff_isUnit_det] at hz
-  exact hz.ne_zero
-
 /-- **Girko's hermitization.** If `z` is not an eigenvalue of `A`, the logarithmic potential of
 the eigenvalue measure of `A` at `z` is the mean logarithm of the singular values of `A - z • 1`.
 -/
@@ -93,9 +86,11 @@ theorem logarithmicPotential_eigenvalueMeasure_eq_integral_log_singularValueMeas
     (A : Matrix n n ℂ) {z : ℂ} (hz : z ∉ spectrum ℂ A) :
     (A.eigenvalueMeasure : Measure ℂ).logarithmicPotential z =
       ∫ s, Real.log s ∂((A - z • 1).singularValueMeasure : Measure ℝ) := by
+  have hdet : (A - z • 1).det ≠ 0 := by
+    simpa only [Algebra.algebraMap_eq_smul_one, neg_sub] using
+      ((isUnit_iff_isUnit_det _).mp (spectrum.notMem_iff.mp hz).neg).ne_zero
   rw [logarithmicPotential_eigenvalueMeasure_eq_log_norm_det A hz,
-    integral_log_singularValueMeasure_eq_log_norm_det
-      (det_sub_smul_one_ne_zero_of_notMem_spectrum A hz)]
+    integral_log_singularValueMeasure_eq_log_norm_det hdet]
 
 /-- **Girko's hermitization**, for Lebesgue-almost every `z`: the logarithmic potential of the
 eigenvalue measure of `A` at `z` is the mean logarithm of the singular values of `A - z • 1`. -/
@@ -204,10 +199,14 @@ theorem tendsto_integral_log_singularValueMeasure_sub_smul_one {ι : Type*}
     refine (lintegral_sq_singularValueMeasure_sub_smul_one_le (A n) z).trans ?_
     rw [← ENNReal.ofReal_coe_nnreal]
     apply ENNReal.ofReal_le_ofReal
+    -- Unfolding `D` reduces its real coercion to the value in the subtype constructor.
+    simp only [D]
     exact mul_le_mul_of_nonneg_left (add_le_add_left hn _) (by norm_num)
-  exact ProbabilityMeasure.tendsto_integral_log_of_log_tail_zero hweak
-    (hspec.mono fun k hk ↦ ae_pos_singularValueMeasure_of_det_ne_zero
-      (det_sub_smul_one_ne_zero_of_notMem_spectrum (A k) hk)) hsq hzero
+  refine ProbabilityMeasure.tendsto_integral_log_of_log_tail_zero hweak ?_ hsq hzero
+  filter_upwards [hspec] with k hk
+  apply ae_pos_singularValueMeasure_of_det_ne_zero
+  simpa only [Algebra.algebraMap_eq_smul_one, neg_sub] using
+    ((isUnit_iff_isUnit_det _).mp (spectrum.notMem_iff.mp hk).neg).ne_zero
 
 variable {ιs κs : ℕ → Type*} [∀ n, Fintype (ιs n)] [∀ n, DecidableEq (ιs n)]
   [∀ n, Nonempty (ιs n)] [∀ n, Fintype (κs n)] [∀ n, DecidableEq (κs n)] [∀ n, Nonempty (κs n)]

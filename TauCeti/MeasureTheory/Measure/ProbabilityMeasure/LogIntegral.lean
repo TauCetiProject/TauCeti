@@ -115,16 +115,16 @@ private theorem lintegral_logClippingError_le (ν : ProbabilityMeasure ℝ)
   · have hlo := Real.log_nonpos ha.le ha₁
     have hhi := Real.log_nonneg hb
     have hx₀ := Real.log_nonpos hx.le (hxa.le.trans ha₁)
-    simp only [indicator_of_mem (mem_Ioo.mpr ⟨hx, hxa⟩), indicator_of_notMem
-      (show x ∉ Ioi b from not_lt.mpr (hxa.le.trans (ha₁.trans hb))), add_zero]
+    have hxNotMem : x ∉ Ioi b := not_lt.mpr (hxa.le.trans (ha₁.trans hb))
+    simp only [indicator_of_mem (mem_Ioo.mpr ⟨hx, hxa⟩), indicator_of_notMem hxNotMem, add_zero]
     exact ENNReal.ofReal_le_ofReal (max_le (by linarith)
       (max_le (by linarith) (by linarith)))
   by_cases hbx : b < x
   · have hlo := Real.log_nonpos ha.le ha₁
     have hhi := Real.log_nonneg hb
     have hx₀ := Real.log_nonneg (hb.trans hbx.le)
-    simp only [indicator_of_notMem (show x ∉ Ioo 0 a from fun h ↦ hxa h.2),
-      indicator_of_mem (mem_Ioi.mpr hbx), zero_add]
+    have hxNotMem : x ∉ Ioo 0 a := fun h ↦ hxa h.2
+    simp only [indicator_of_notMem hxNotMem, indicator_of_mem (mem_Ioi.mpr hbx), zero_add]
     exact ENNReal.ofReal_le_ofReal (max_le hx₀ (max_le (by linarith) (by linarith)))
   · have hlo := Real.log_le_log ha (not_lt.mp hxa)
     have hhi := Real.log_le_log hx (not_lt.mp hbx)
@@ -230,7 +230,8 @@ theorem _root_.MeasureTheory.Measure.setLIntegral_log_le_inv_mul_lintegral_sq
     exact (Real.log_le_self hx₀.le).trans (by
       rw [inv_mul_eq_div, le_div_iff₀ hb]
       nlinarith [mul_nonneg hx₀.le (sub_nonneg.mpr hx.le)])
-  · rw [indicator_of_notMem (show x ∉ Ioi b from hx)]
+  · have hxNotMem : x ∉ Ioi b := hx
+    rw [indicator_of_notMem hxNotMem]
     exact zero_le
 
 /-- Weak convergence of positive laws with an eventually bounded second moment and vanishing
