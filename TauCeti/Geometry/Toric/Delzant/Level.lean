@@ -91,6 +91,9 @@ reduction needs.
   derivative of the moment map of the kernel torus has index `d + n`.
 * `TauCeti.Toric.IsDelzant.isManifold_delzantLevel`: `Z` is a smooth manifold of dimension `d + n`.
 * `TauCeti.Toric.IsDelzant.contMDiff_coe_delzantLevel`: the inclusion of `Z` into `ℂ^ι` is smooth.
+* `TauCeti.Toric.IsDelzant.injective_mfderiv_coe_delzantLevel`,
+  `TauCeti.Toric.IsDelzant.range_mfderiv_coe_delzantLevel`: the inclusion is an immersion, and its
+  tangent image at `x` is the kernel of the derivative of the moment map of the kernel torus.
 * `TauCeti.Toric.IsDelzant.contMDiff_codRestrict_delzantLevel`: a smooth map into `ℂ^ι` with
   values in `Z` is smooth into `Z`.
 
@@ -606,6 +609,29 @@ theorem contMDiff_coe_delzantLevel {m : WithTop ℕ∞} :
       ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :=
   contMDiff_coe_levelSet _ _ _ _ fun _ _ ↦
     ((contDiff_delzantMomentMap c).clm_comp contDiff_const).contDiffAt
+
+include hi in
+/-- The inclusion of the level `Z` into `ℂ^ι` is an immersion, for the atlas
+`TauCeti.Toric.IsDelzant.delzantLevelChartedSpace`. -/
+theorem injective_mfderiv_coe_delzantLevel (x : delzantLevel i u c) :
+    letI := hΔ.delzantLevelChartedSpace hi
+    Function.Injective (mfderiv 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
+      𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+      ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) x) :=
+  injective_mfderiv_coe_levelSet _ _ _ _ x
+
+include hi in
+/-- **The tangent space of the level.** The differential at `x` of the inclusion of the level `Z`
+into `ℂ^ι` has range the kernel of the derivative at `x` of the moment map `z ↦ μ(z)|_𝔫` of the
+kernel torus. -/
+theorem range_mfderiv_coe_delzantLevel (x : delzantLevel i u c) :
+    letI := hΔ.delzantLevelChartedSpace hi
+    LinearMap.range (mfderiv 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ)
+      𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+      ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) x).toLinearMap =
+      LinearMap.ker (fderiv ℝ (fun y ↦ (delzantMomentMap c y).comp
+        (LinearMap.ker (Fintype.linearCombination ℝ fun j ↦ i (u j))).subtypeL) x).toLinearMap :=
+  range_mfderiv_coe_levelSet _ _ _ _ x
 
 include hi in
 /-- **Maps into the level.** A `C^m` map into `ℂ^ι` with values in the level `Z` is a `C^m` map

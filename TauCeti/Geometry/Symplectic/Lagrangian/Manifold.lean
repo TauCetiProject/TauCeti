@@ -60,6 +60,8 @@ preserves isotropic and Lagrangian maps
 
 ## Main declarations
 
+* `TauCeti.SmoothTwoForm.IsNondegenerate.mem_of_forall_eval₂_eq_zero_of_isCoisotropic`: a vector
+  `σ`-orthogonal to a coisotropic subspace `W ⊆ T_x M` lies in `W`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsIsotropicMap`, `IsCoisotropicMap`, `IsLagrangianMap`:
   the three tangent-image predicates.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff_mpullback_eq_zero`: isotropy is the
@@ -101,6 +103,18 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   {σ : SmoothTwoForm I M} (hσ : σ.IsNondegenerate) {f : N → M}
+
+/-! ### Coisotropic subspaces of a tangent space -/
+
+/-- A tangent vector `σ`-orthogonal to a coisotropic subspace `W` of `T_x M` lies in `W`. -/
+theorem mem_of_forall_eval₂_eq_zero_of_isCoisotropic {x : M}
+    {W : Submodule ℝ (TangentSpace I x)} (hW : (hσ.symplecticFormAt x).IsCoisotropic W)
+    {v : TangentSpace I x} (hv : ∀ w ∈ W, SmoothBundleForm.eval₂ σ x v w = 0) : v ∈ W := by
+  refine SymplecticForm.isCoisotropic_iff_le.1 hW ?_
+  rw [SymplecticForm.mem_orthogonal_iff']
+  intro w hw
+  rw [symplecticFormAt_apply]
+  exact hv w hw
 
 /-! ### The three predicates -/
 
@@ -172,6 +186,16 @@ theorem IsLagrangianMap.isIsotropicMap (h : hσ.IsLagrangianMap J f) : hσ.IsIso
 /-- A Lagrangian map is coisotropic. -/
 theorem IsLagrangianMap.isCoisotropicMap (h : hσ.IsLagrangianMap J f) : hσ.IsCoisotropicMap J f :=
   (isLagrangianMap_iff.mp h).2
+
+/-- A tangent vector at `f x` which is `σ`-orthogonal to the tangent image of a coisotropic map `f`
+lies in that tangent image. -/
+theorem IsCoisotropicMap.exists_mfderiv_eq_of_forall_eval₂_mfderiv_eq_zero
+    (h : hσ.IsCoisotropicMap J f) (x : N) {v : TangentSpace I (f x)}
+    (hv : ∀ u, SmoothBundleForm.eval₂ σ (f x) v (mfderiv J I f x u) = 0) :
+    ∃ u, mfderiv J I f x u = v :=
+  LinearMap.mem_range.1 (hσ.mem_of_forall_eval₂_eq_zero_of_isCoisotropic (h x) fun w hw ↦ by
+    obtain ⟨u, rfl⟩ := LinearMap.mem_range.1 hw
+    exact hv u)
 
 /-- **Isotropy is the vanishing of the pullback.** A smooth map is isotropic exactly when it pulls
 the two-form back to zero. -/

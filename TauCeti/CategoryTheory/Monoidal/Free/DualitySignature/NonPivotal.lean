@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Universal
+public import TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Basic
 
 import Mathlib.CategoryTheory.Category.Preorder
 

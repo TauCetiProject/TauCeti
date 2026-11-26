@@ -44,8 +44,7 @@ This file sets up this notion on a symplectic vector space, the local model of t
 * `TauCeti.SymplecticForm.IsNondegenerateRankZeroPoint ω F x`: `x` is a `C²` critical point of
   `F : E → G` at which the Hessians of the functions `ℓ ∘ F`, `ℓ` a linear functional on `G`, form
   a nondegenerate family. For `G = ℝⁿ` these may be replaced by the Hessians of the components
-  (`isNondegenerateRankZeroPoint_pi_iff`), and the notion is invariant under composition with
-  maps `g : G → G'` whose differential is injective (`isNondegenerateRankZeroPoint_comp_iff`).
+  (`isNondegenerateRankZeroPoint_pi_iff`).
 
 In dimension two the notion reduces to Morse theory: a single quadratic form is a nondegenerate
 family exactly when it is a nondegenerate quadratic form
@@ -501,8 +500,8 @@ end Linear
 
 section Function
 
-variable {E G G' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup G'] [NormedSpace ℝ G']
+variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup G] [NormedSpace ℝ G]
   (ω : SymplecticForm E)
 
 /-- A point `x` is a **nondegenerate rank-zero point** of a `C²` map `F : E → G` on a symplectic
@@ -551,24 +550,6 @@ theorem isNondegenerateRankZeroPoint_pi_iff {ι : Type*} [Fintype ι] {F : E →
     ω.IsNondegenerateRankZeroPoint F x ↔ ContDiffAt ℝ 2 F x ∧ fderiv ℝ F x = 0 ∧
       ω.IsNondegenerateQuadraticFamily fun i ↦ hessianQuadraticForm (fun y ↦ F y i) x :=
   isNondegenerateRankZeroPoint_iff_of_span_eq fun hF _ ↦ span_range_hessianQuadraticForm_pi hF
-
-/-- **Invariance under reparametrization of the values.** Composing `F` with a `C²` map `g` whose
-differential at `F x` is injective preserves and reflects nondegenerate rank-zero points. -/
-theorem isNondegenerateRankZeroPoint_comp_iff [FiniteDimensional ℝ G'] {g : G → G'}
-    (hg : ContDiffAt ℝ 2 g (F x)) (hinj : Function.Injective (fderiv ℝ g (F x)))
-    (hF : ContDiffAt ℝ 2 F x) :
-    ω.IsNondegenerateRankZeroPoint (g ∘ F) x ↔ ω.IsNondegenerateRankZeroPoint F x := by
-  have hgF : fderiv ℝ (g ∘ F) x = (fderiv ℝ g (F x)).comp (fderiv ℝ F x) :=
-    fderiv_comp x (hg.differentiableAt (by norm_num)) (hF.differentiableAt (by norm_num))
-  have h0 : fderiv ℝ (g ∘ F) x = 0 ↔ fderiv ℝ F x = 0 := by
-    rw [hgF]
-    refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ hinj ?_,
-      fun h ↦ by rw [h, ContinuousLinearMap.comp_zero]⟩
-    simpa using congr($h v)
-  rw [isNondegenerateRankZeroPoint_iff_of_span_eq fun _ h ↦
-    congrArg (Submodule.span ℝ) (range_hessianQuadraticForm_comp hg hinj hF (h0.1 h))]
-  exact ⟨fun ⟨_, h, hQ⟩ ↦ ⟨hF, h0.1 h, hQ⟩,
-    fun h ↦ ⟨hg.comp x hF, h0.2 h.fderiv_eq_zero, h.isNondegenerateQuadraticFamily⟩⟩
 
 /-- **Nondegenerate rank-zero points of one Hamiltonian on a symplectic plane.** On a
 two-dimensional symplectic vector space, a point is a nondegenerate rank-zero point of a function

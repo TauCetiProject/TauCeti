@@ -15,6 +15,7 @@ import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # An `L²` bound for planar functions from the gradient and a linear-growth modular
@@ -91,10 +92,8 @@ private theorem modularRoot_sq (t : ℝ) : modularRoot t ^ 2 = √(1 + t ^ 2) - 
   nlinarith
 
 private theorem contDiff_modularRoot : ContDiff ℝ ⊤ modularRoot := by
-  have h1 : ContDiff ℝ ⊤ fun t : ℝ ↦ √(1 + t ^ 2) :=
-    (contDiff_const.add (contDiff_id.pow 2)).sqrt fun t ↦ by positivity
   have h2 : ContDiff ℝ ⊤ fun t : ℝ ↦ √(1 + √(1 + t ^ 2)) :=
-    (contDiff_const.add h1).sqrt fun t ↦ by positivity
+    (contDiff_const.add Real.contDiff_sqrt_one_add_sq).sqrt fun t ↦ by positivity
   exact contDiff_id.div h2 fun t ↦ by positivity
 
 /-- The derivative of `r³` is `(3/2) r(t) t / √(1 + t²)`; its absolute value is at most
@@ -103,17 +102,13 @@ private theorem hasDerivAt_modularRoot_pow_three (t : ℝ) :
     HasDerivAt (fun t ↦ modularRoot t ^ 3) (3 / 2 * modularRoot t * (t / √(1 + t ^ 2))) t := by
   have hd : HasDerivAt modularRoot (deriv modularRoot t) t :=
     ((contDiff_modularRoot.differentiable (by simp)) t).hasDerivAt
-  have hpos : 0 < 1 + t ^ 2 := by positivity
   -- `2 r r' = t / √(1 + t²)` is the derivative of `r² = √(1 + t²) - 1`.
   have hsq : HasDerivAt (fun t ↦ modularRoot t ^ 2) (2 * modularRoot t * deriv modularRoot t) t :=
     by simpa using hd.fun_pow 2
   have hg : HasDerivAt (fun t ↦ modularRoot t ^ 2) (t / √(1 + t ^ 2)) t := by
-    have h1 : HasDerivAt (fun t ↦ 1 + t ^ 2) (2 * t) t := by
-      simpa using (hasDerivAt_pow 2 t).const_add 1
-    have h2 := (h1.sqrt hpos.ne').sub_const 1
     rw [show (fun t ↦ modularRoot t ^ 2) = fun t ↦ √(1 + t ^ 2) - 1 from funext modularRoot_sq]
-    convert h2 using 1
-    field_simp
+    simpa only [add_comm (_ ^ 2) (1 : ℝ)] using
+      ((Real.hasDerivAt_sqrt_sq_add (p := 1) t (by positivity)).sub_const 1)
   have heq := hsq.unique hg
   convert hd.fun_pow 3 using 1
   simp only [Nat.cast_ofNat]

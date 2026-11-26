@@ -84,16 +84,19 @@ uniqueness of weak derivatives gives the chain rule for the weak Hessian.
   `IsChangeOfVariables.of_leftInvOn`.
 * `TauCeti.Wkp.compL`, `TauCeti.Wkp.compLEquiv`: bounded precomposition and diffeomorphism
   invariance on `W^{k,p}` for `1 ≤ p ≤ ∞`.
+* `TauCeti.Wkp.IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le`: the Faà di
+  Bruno bound in `Lᵖ` for derivatives of `f ∘ Φ` measured in units of a length scale `h`.
 * `TauCeti.Wkp.compOfLeftInvOnL`, `TauCeti.Wkp.exists_norm_comp_le`: precomposition and uniform
   norm bound for left-invertible `Cᵏ` maps across all orders `k : ℕ` and exponents `1 ≤ p ≤ ∞`.
 * `TauCeti.Wkp.IsChangeOfVariables.w1pCompL`: the first-order change of variables
   `TauCeti.W1p.compL` along a change of variables of order at least one.
+* `TauCeti.Wkp.IsChangeOfVariables.w1pCompL_restrictL_eq_restrictL_w1pCompL`: the first-order
+  change of variables commutes with restriction to open subdomains.
 * `TauCeti.Wkp.IsChangeOfVariables.abs_det_fderiv_eq_one`: mutually inverse changes of variables
   with Jacobian determinants at least one in absolute value have Jacobian determinants of absolute
   value one.
-* `TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL` and
-  `TauCeti.Wkp.exists_lowerOrder_eq_restrictL_of_w1pCompL`: local zero boundary values move forward,
-  and local `W^{2,p}` regularity moves back, along a change of variables.
+* `TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL`: local zero
+  boundary values move forward along a change of variables.
 * `TauCeti.Wkp.gradient_firstOrder_compL_ae`: the chain rule `∇(u ∘ Φ) = DΦ† ∇u(Φ ·)` for the
   weak gradient.
 * `TauCeti.Wkp.inner_iteratedGradient_compL_ae`: the chain rule
@@ -485,49 +488,77 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 section Smooth
 
-/-- The Faà di Bruno estimate integrated over `U`: the `Lᵖ(U)` seminorm of the `i`-th derivative of
-`f ∘ Φ` is controlled by the `Lᵖ(V)` seminorms of the derivatives of `f` of order at most `i`. -/
-private theorem eLpNorm_iteratedFDeriv_comp_le (h : IsChangeOfVariables k U V Φ L c)
-    {f : E → ℝ} (hf : ContDiffOn ℝ k f V) {i : ℕ} (hi : i ≤ k) :
-    eLpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) p (mu.restrict U) ≤
-      ENNReal.ofReal (max 1 L ^ i) * ∑ π : OrderedFinpartition i,
-        (ENNReal.ofReal c)⁻¹ ^ (1 / p).toReal *
-          eLpNorm (iteratedFDeriv ℝ π.length f) p (mu.restrict V) := by
+/-- **The weighted Faà di Bruno estimate in `Lᵖ`.** Let `Φ` be a change of variables of order `0`
+from `U` into `V` that is `Cᵏ` on `U`, and let `h ≥ 0` be a length scale such that
+`h ^ (j - 1) * ‖Dʲ Φ‖ ≤ B` on `U` for `1 ≤ j ≤ k`. For `f` of class `Cᵏ` on `V` and `i ≤ k`, the
+`Lᵖ(U)` seminorm of `hⁱ Dⁱ (f ∘ Φ)` is at most `max 1 B ^ i` times the sum, over the ordered
+partitions `π` of `i`, of `c^(-1/p)` times the `Lᵖ(V)` seminorm of `h^|π| D^|π| f`. At `h = 1`
+this is the unweighted estimate used to construct `TauCeti.Wkp.compL`. -/
+theorem IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le
+    (hcv : IsChangeOfVariables 0 U V Φ L c) (hΦ : ContDiffOn ℝ k Φ U) {h B : ℝ} (hh : 0 ≤ h)
+    (hB : ∀ j, 1 ≤ j → j ≤ k → ∀ x ∈ (U : Set E), h ^ (j - 1) * ‖iteratedFDeriv ℝ j Φ x‖ ≤ B)
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} (hf : ContDiffOn ℝ k f V)
+    {i : ℕ} (hi : i ≤ k) :
+    ENNReal.ofReal (h ^ i) * eLpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) p (mu.restrict U) ≤
+      ENNReal.ofReal (max 1 B ^ i) * ∑ π : OrderedFinpartition i,
+        (ENNReal.ofReal c)⁻¹ ^ (1 / p).toReal * (ENNReal.ofReal (h ^ π.length) *
+          eLpNorm (iteratedFDeriv ℝ π.length f) p (mu.restrict V)) := by
   have hi' : ((i : ℕ) : ℕ∞ω) ≤ k := by exact_mod_cast hi
-  have hfΦ : ContDiffOn ℝ k (f ∘ Φ) U := hf.comp h.contDiffOn h.mapsTo
-  calc eLpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) p (mu.restrict U)
-      ≤ eLpNorm (fun x => max 1 L ^ i * ∑ π : OrderedFinpartition i,
-          ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
-        refine eLpNorm_mono_ae_real ((ContinuousOn.continuousOn_iteratedFDeriv hfΦ U.isOpen
-          hi').aestronglyMeasurable U.isOpen.measurableSet) ?_
+  have hfΦ : ContDiffOn ℝ k (f ∘ Φ) U := hf.comp hΦ hcv.mapsTo
+  calc _ = eLpNorm (h ^ i • iteratedFDeriv ℝ i (f ∘ Φ)) p (mu.restrict U) := by
+        rw [← Real.eNorm_of_nonneg (pow_nonneg hh i), ← eLpNorm_const_smul]
+    _ ≤ eLpNorm (fun x => max 1 B ^ i * ∑ π : OrderedFinpartition i,
+          h ^ π.length * ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
+        refine eLpNorm_mono_ae_real (((ContinuousOn.continuousOn_iteratedFDeriv hfΦ U.isOpen
+          hi').aestronglyMeasurable U.isOpen.measurableSet).const_smul _) ?_
         filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with x hx
-        exact ((hf.contDiffAt (V.isOpen.mem_nhds (h.mapsTo hx))).of_le
-          hi').norm_iteratedFDeriv_comp_le_sum
-          ((h.contDiffOn.contDiffAt (U.isOpen.mem_nhds hx)).of_le hi')
-          fun j hj1 hji => h.norm_iteratedFDeriv_le j hj1 (hji.trans hi) x hx
-    _ = ENNReal.ofReal (max 1 L ^ i) * eLpNorm (∑ π : OrderedFinpartition i,
-          fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
-        rw [← Real.eNorm_of_nonneg (pow_nonneg (max_one_pos L).le i),
-          ← eLpNorm_const_smul]
-        congr 1
-        funext x
+        rw [Pi.smul_apply, norm_smul, Real.norm_of_nonneg (pow_nonneg hh i)]
+        exact ((hf.contDiffAt (V.isOpen.mem_nhds (hcv.mapsTo hx))).of_le
+          hi').pow_mul_norm_iteratedFDeriv_comp_le_sum
+          ((hΦ.contDiffAt (U.isOpen.mem_nhds hx)).of_le hi') hh
+          fun j hj1 hji => hB j hj1 (hji.trans hi) x hx
+    _ = ENNReal.ofReal (max 1 B ^ i) * eLpNorm (∑ π : OrderedFinpartition i,
+          h ^ π.length • fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
+        rw [← Real.eNorm_of_nonneg (pow_nonneg (max_one_pos B).le i), ← eLpNorm_const_smul]
+        congr 1 with x
         simp [Finset.sum_apply]
-    _ ≤ ENNReal.ofReal (max 1 L ^ i) * ∑ π : OrderedFinpartition i,
-          eLpNorm (fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
-        gcongr
-        exact eLpNorm_sum_le Fact.out
     _ ≤ _ := by
+        gcongr
+        refine (eLpNorm_sum_le Fact.out).trans (Finset.sum_le_sum fun π _ => ?_)
+        rw [eLpNorm_const_smul, Real.eNorm_of_nonneg (pow_nonneg hh _), mul_left_comm]
+        gcongr
+        refine (eLpNorm_comp_le_of_map_le_smul (g := fun y => ‖iteratedFDeriv ℝ π.length f y‖)
+          hcv.aemeasurable (hcv.map_restrict_le mu) p).trans_eq ?_
+        rw [eLpNorm_norm _ ((ContinuousOn.continuousOn_iteratedFDeriv hf V.isOpen
+          (by exact_mod_cast π.length_le.trans hi)).aestronglyMeasurable V.isOpen.measurableSet)]
+
+/-- **The weighted Faà di Bruno estimate in `Lᵖ`, summed.** In the setting of
+`TauCeti.Wkp.IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le`, suppose that the
+derivatives of `f` of order `j ≤ i` lie in `Lᵖ(V)` with `hʲ ‖Dʲ f‖_{Lᵖ(V)} ≤ M`. Then
+`hⁱ ‖Dⁱ (f ∘ Φ)‖_{Lᵖ(U)} ≤ max 1 B ^ i · #{ordered partitions of i} · c^(-1/p) · M`. -/
+theorem IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le_of_le
+    (hcv : IsChangeOfVariables 0 U V Φ L c) (hΦ : ContDiffOn ℝ k Φ U) {h B M : ℝ} (hh : 0 ≤ h)
+    (hB : ∀ j, 1 ≤ j → j ≤ k → ∀ x ∈ (U : Set E), h ^ (j - 1) * ‖iteratedFDeriv ℝ j Φ x‖ ≤ B)
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} (hf : ContDiffOn ℝ k f V)
+    {i : ℕ} (hi : i ≤ k) (hfm : ∀ j ≤ i, MemLp (iteratedFDeriv ℝ j f) p (mu.restrict V))
+    (hM : ∀ j ≤ i, h ^ j * lpNorm (iteratedFDeriv ℝ j f) p (mu.restrict V) ≤ M) :
+    ENNReal.ofReal (h ^ i) * eLpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) p (mu.restrict U) ≤
+      ENNReal.ofReal (max 1 B ^ i * Fintype.card (OrderedFinpartition i) *
+        c⁻¹ ^ (1 / p).toReal * M) := by
+  have hc := hcv.pos
+  refine (hcv.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le hΦ hh hB hf hi).trans ?_
+  calc _ ≤ ENNReal.ofReal (max 1 B ^ i) *
+        ∑ _π : OrderedFinpartition i, ENNReal.ofReal (c⁻¹ ^ (1 / p).toReal * M) := by
         gcongr with π
-        calc eLpNorm (fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U)
-            = eLpNorm ((fun y => ‖iteratedFDeriv ℝ π.length f y‖) ∘ Φ) p (mu.restrict U) := rfl
-          _ ≤ (ENNReal.ofReal c)⁻¹ ^ (1 / p).toReal *
-              eLpNorm (fun y => ‖iteratedFDeriv ℝ π.length f y‖) p (mu.restrict V) :=
-            eLpNorm_comp_le_of_map_le_smul h.aemeasurable (h.map_restrict_le mu) p
-          _ = _ := by
-            rw [eLpNorm_norm]
-            exact (ContinuousOn.continuousOn_iteratedFDeriv hf V.isOpen
-              (by exact_mod_cast π.length_le.trans hi)).aestronglyMeasurable
-                V.isOpen.measurableSet
+        rw [← ENNReal.ofReal_inv_of_pos hc, ENNReal.ofReal_rpow_of_nonneg (inv_nonneg.2 hc.le)
+          ENNReal.toReal_nonneg, ← ofReal_lpNorm (hfm _ π.length_le),
+          ← ENNReal.ofReal_mul (pow_nonneg hh _), ← ENNReal.ofReal_mul (by positivity)]
+        exact ENNReal.ofReal_le_ofReal (by gcongr; exact hM _ π.length_le)
+    _ = _ := by
+        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← ENNReal.ofReal_natCast,
+          ← ENNReal.ofReal_mul (Nat.cast_nonneg _), ← ENNReal.ofReal_mul (by positivity)]
+        congr 1
+        ring
 
 /-- If `u ∈ W^{k,p}(V)` has a `Cᵏ` representative `f`, every derivative of `f ∘ Φ` through order
 `k` has `Lᵖ(U)` seminorm at most `max 1 L ^ i · #{ordered partitions of i} · c^(-1/p) · ‖u‖`. -/
@@ -537,27 +568,11 @@ private theorem eLpNorm_iteratedFDeriv_comp_le_norm (h : IsChangeOfVariables k U
     eLpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) p (mu.restrict U) ≤
       ENNReal.ofReal (max 1 L ^ i * Fintype.card (OrderedFinpartition i) *
         c⁻¹ ^ (1 / p).toReal * ‖u‖) := by
-  have hmem := memLp_iteratedFDeriv_of_contDiffOn k u hf hu
-  have hC : (ENNReal.ofReal c)⁻¹ ^ (1 / p).toReal = ENNReal.ofReal (c⁻¹ ^ (1 / p).toReal) := by
-    rw [← ENNReal.ofReal_inv_of_pos h.pos,
-      ENNReal.ofReal_rpow_of_nonneg (inv_nonneg.2 h.pos.le) ENNReal.toReal_nonneg]
-  have hc' : 0 ≤ c⁻¹ ^ (1 / p).toReal := by have := h.pos; positivity
-  have hM : 0 ≤ max 1 L ^ i := pow_nonneg (max_one_pos L).le i
-  refine (eLpNorm_iteratedFDeriv_comp_le h hf hi).trans ?_
-  calc ENNReal.ofReal (max 1 L ^ i) * ∑ π : OrderedFinpartition i,
-        (ENNReal.ofReal c)⁻¹ ^ (1 / p).toReal *
-          eLpNorm (iteratedFDeriv ℝ π.length f) p (mu.restrict V)
-      ≤ ENNReal.ofReal (max 1 L ^ i) *
-          ∑ _π : OrderedFinpartition i, ENNReal.ofReal (c⁻¹ ^ (1 / p).toReal * ‖u‖) := by
-        gcongr with π
-        rw [hC, ENNReal.ofReal_mul hc', ← ofReal_lpNorm (hmem _ (π.length_le.trans hi))]
-        gcongr
-        exact lpNorm_iteratedFDeriv_le_of_contDiffOn k u hf hu _ (π.length_le.trans hi)
-    _ = _ := by
-        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← ENNReal.ofReal_natCast,
-          ← ENNReal.ofReal_mul (Nat.cast_nonneg _), ← ENNReal.ofReal_mul hM]
-        congr 1
-        ring
+  simpa only [one_pow, ENNReal.ofReal_one, one_mul] using
+    (h.mono (Nat.zero_le k)).ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le_of_le (mu := mu)
+      (p := p) h.contDiffOn zero_le_one (by simpa using h.norm_iteratedFDeriv_le) hf hi
+      (fun j hj => memLp_iteratedFDeriv_of_contDiffOn k u hf hu j (hj.trans hi))
+      (fun j hj => by simpa using lpNorm_iteratedFDeriv_le_of_contDiffOn k u hf hu j (hj.trans hi))
 
 /-- **The smooth case.** If `u ∈ W^{k,p}(V)` has a `Cᵏ` representative `f`, then `f ∘ Φ`
 represents an element of `W^{k,p}(U)` of norm at most `compLBound p k L c * ‖u‖`. -/
@@ -772,7 +787,7 @@ private theorem exists_comp_top_one (h : IsChangeOfVariables 1 U V Φ L c) (u : 
   have hweak : HasWeakFDerivOn mu U u₀ (fun x => innerSL ℝ (g x)) :=
     hweak₀.congr_ae_deriv (by filter_upwards [hg₀_mem.coeFn_toLp] with x hx; rw [hx])
   set w : Wkp mu U ⊤ 1 := W1p.mk u₀ g hweak
-  have hgn : ‖g‖ ≤ max 1 L * ‖u‖ := Lp.norm_top_le_of_ae_bound
+  have hgn : ‖g‖ ≤ max 1 L * ‖u‖ := Lp.norm_le_of_ae_bound_top
     (mul_nonneg (max_one_pos L).le (norm_nonneg u))
     (hg₀_mem.coeFn_toLp.mp (hg₀_ae.mono fun _ hx hxy => hxy ▸ hx))
   have hu₀n : ‖u₀‖ ≤ ‖u‖ :=
@@ -911,7 +926,7 @@ private theorem exists_comp_top_succ_succ {m : ℕ} (h : IsChangeOfVariables (m 
   have hD_mem : MemLp D_fun ⊤ (mu.restrict U) :=
     memLp_top_of_bound hweak.locallyIntegrableOn_deriv.aestronglyMeasurable _ hD_bound
   set D : Lp (IteratedGradient E (m + 1)) ⊤ (mu.restrict U) := hD_mem.toLp D_fun
-  have hDn : ‖D‖ ≤ M * ‖u‖ := Lp.norm_top_le_of_ae_bound (mul_nonneg hM (norm_nonneg u))
+  have hDn : ‖D‖ ≤ M * ‖u‖ := Lp.norm_le_of_ae_bound_top (mul_nonneg hM (norm_nonneg u))
     (hD_mem.coeFn_toLp.mp (hD_bound.mono fun _ hy hxy => hxy ▸ hy))
   set w : Wkp mu U ⊤ (m + 2) := mk m w₀ D (hweak.congr_ae_deriv hD_mem.coeFn_toLp.symm)
   refine ⟨w, by simpa only [w, value_mk, value_succ (m + 1) u] using hw₀,
@@ -1074,6 +1089,24 @@ theorem IsChangeOfVariables.w1pCompL_mem_w1p0Submodule_of_leftInvOn
     h.w1pCompL hp u ∈ w1p0Submodule mu U p :=
   W1p.compL_mem_w1p0Submodule_of_leftInvOn Φ hp h.differentiableOn h.injOn h.mapsTo
     h.norm_fderiv_le h.pos h.le_abs_det hΨ hΨmaps hΨΦ hu
+
+/-- The first-order change of variables commutes with restriction: for `u ∈ W^{1,p}(W)`, flattening
+the restriction of `u` to `V₁` along `Φ : U₁ → V₁` agrees with flattening its restriction to `V`
+along `Φ : U → V` and then restricting to the open subset `U₁ ⊆ U`. -/
+theorem IsChangeOfVariables.w1pCompL_restrictL_eq_restrictL_w1pCompL {U₁ V₁ : Opens E} {m : ℕ}
+    (h : IsChangeOfVariables (k + 1) U V Φ L c) (h₁ : IsChangeOfVariables (m + 1) U₁ V₁ Φ L' c')
+    (hU₁ : U₁ ≤ U) (hp : p ≠ ⊤) (hVW : V ≤ W) (hV₁W : V₁ ≤ W) (u : W1p mu W p) :
+    h₁.w1pCompL hp (W1p.restrictL hV₁W u) =
+      W1p.restrictL hU₁ (h.w1pCompL hp (W1p.restrictL hVW u)) := by
+  refine W1p.ext_value (Lp.ext ?_)
+  have hU₁U : (U₁ : Set E) ⊆ U := SetLike.coe_subset_coe.mpr hU₁
+  filter_upwards [h₁.value_w1pCompL_ae hp (W1p.restrictL hV₁W u),
+    h₁.ae_comp (W1p.value_restrictL_ae hV₁W u),
+    W1p.value_restrictL_ae hU₁ (h.w1pCompL hp (W1p.restrictL hVW u)),
+    ae_restrict_of_ae_restrict_of_subset hU₁U (h.value_w1pCompL_ae hp (W1p.restrictL hVW u)),
+    ae_restrict_of_ae_restrict_of_subset hU₁U (h.ae_comp (W1p.value_restrictL_ae hVW u))]
+    with y h1 h2 h3 h4 h5
+  rw [h1, h2, h3, h4, h5]
 
 /-- Precomposition commutes with restriction to open subdomains. -/
 theorem restrictL_compL {U' V' : Opens E} (h : IsChangeOfVariables k U V Φ L c)
@@ -1320,49 +1353,16 @@ theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL {Omega O 
   obtain ⟨χ, -, hχ, -, hχ1, hχc, hχs, -, -, -⟩ :=
     hK.exists_contDiff_cutoff_with_bounds O.isOpen (hΦU''.mono_left hψs).image_subset
   -- `χ u ∈ W₀^{1,p}(Ω)` restricts to `W₀^{1,p}(Ω ∩ O)` and pulls back to `W₀^{1,p}(Ω')`.
-  obtain ⟨v, hv⟩ := hu0 χ hχ hχc hχs
-  have hv0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport χ → W1p.value (v : W1p mu Omega p) x = 0 := by
-    filter_upwards [hv] with x hx hxχ
-    rw [hx, image_eq_zero_of_notMem_tsupport hxχ, zero_mul]
-  have hvO := W1p.restrictL_mem_w1p0Submodule_of_isCompact hχc hχs v.property hv0
-  have hvΩ' := hΦ.w1pCompL_mem_w1p0Submodule_of_leftInvOn hp hΨ hΨmaps hΨΦ hvO
+  obtain ⟨v, hv⟩ := W1p.exists_w1p0_value_ae_eq_mul_restrictL subset_rfl hu0 hχ hχc hχs
+  have hvΩ' := hΦ.w1pCompL_mem_w1p0Submodule_of_leftInvOn hp hΨ hΨmaps hΨΦ v.property
   obtain ⟨w, hw⟩ := W1p.exists_w1p0_value_ae_eq_mul_of_mem_w1p0Submodule hψ hψc hvΩ'
   refine ⟨w, ?_⟩
-  have hΩO : ((Omega ⊓ O : Opens E) : Set E) ⊆ Omega := fun x hx => hx.1
-  filter_upwards [hw,
-    hΦ.value_w1pCompL_ae hp (W1p.restrictL inf_le_left (v : W1p mu Omega p)),
-    hΦ.value_w1pCompL_ae hp (W1p.restrictL inf_le_left u),
-    hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left (v : W1p mu Omega p)),
-    hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left u),
-    hΦ.ae_comp (ae_restrict_of_ae_restrict_of_subset hΩO hv)] with x h1 h2 h3 h4 h5 h6
-  rw [h1, h2, h3, h4, h5, h6]
+  filter_upwards [hw, hΦ.value_w1pCompL_ae hp (v : W1p mu (Omega ⊓ O) p),
+    hΦ.value_w1pCompL_ae hp (W1p.restrictL inf_le_left u), hΦ.ae_comp hv] with x h1 h2 h3 h4
+  rw [h1, h2, h3, h4]
   by_cases hx : x ∈ tsupport ψ
   · rw [interior_subset (hχ1 ⟨x, hx, rfl⟩), one_mul]
   · rw [image_eq_zero_of_notMem_tsupport hx, zero_mul, zero_mul]
-
-/-- **Pushing `W^{2,p}` forward along a change of variables.** Let `Φ` be a change of variables
-from `Ω'` into `D ⊆ Ω`, and `Ψ` one of order two from `Ω ∩ V ⊆ D` into `Ω' ∩ V''` with
-`Φ ∘ Ψ = id` on `Ω ∩ V`. If `u ∘ Φ` is `W^{2,p}` on `Ω' ∩ V''`, then `u` is `W^{2,p}` on
-`Ω ∩ V`. -/
-theorem exists_lowerOrder_eq_restrictL_of_w1pCompL {Omega D V Ω' V'' : Opens E} (hp : p ≠ ⊤)
-    (hD : D ≤ Omega) (hVD : Omega ⊓ V ≤ D) (hΦ : IsChangeOfVariables 1 Ω' D Φ L c)
-    (hΨ : IsChangeOfVariables 2 (Omega ⊓ V) (Ω' ⊓ V'') Ψ L' c')
-    (hΦΨ : RightInvOn Ψ Φ (Omega ⊓ V : Opens E)) {u : W1p mu Omega p}
-    {w : Wkp mu (Ω' ⊓ V'') p 2}
-    (hw : lowerOrder 1 w = W1p.restrictL inf_le_left (hΦ.w1pCompL hp (W1p.restrictL hD u))) :
-    ∃ w' : Wkp mu (Omega ⊓ V) p 2, lowerOrder 1 w' = W1p.restrictL inf_le_left u := by
-  refine ⟨compL hΨ w, ?_⟩
-  rw [← firstOrder_one, firstOrder_compL (k := 1) hΨ hp, firstOrder_one, hw]
-  refine W1p.ext_value (Lp.ext ?_)
-  have hΩ'V : ((Ω' ⊓ V'' : Opens E) : Set E) ⊆ Ω' := fun x hx => hx.1
-  filter_upwards [hΨ.value_w1pCompL_ae (mu := mu) hp _,
-    hΨ.ae_comp (W1p.value_restrictL_ae (mu := mu) (p := p) inf_le_left _),
-    hΨ.ae_comp (ae_restrict_of_ae_restrict_of_subset hΩ'V
-      (hΦ.value_w1pCompL_ae hp (W1p.restrictL hD u))),
-    ae_restrict_of_ae_restrict_of_subset hVD (W1p.value_restrictL_ae hD u),
-    W1p.value_restrictL_ae (inf_le_left : Omega ⊓ V ≤ Omega) u,
-    ae_restrict_mem (Omega ⊓ V).isOpen.measurableSet] with x h1 h2 h3 h4 h5 hx
-  rw [h1, h2, h3, hΦΨ hx, h4, h5]
 
 end Local
 

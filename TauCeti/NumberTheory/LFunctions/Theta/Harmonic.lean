@@ -198,6 +198,13 @@ theorem zero_harmonicFactor (x : mixedSpace K) :
 theorem harmonicFactor_one (t : ContinuousInfinityType K) : t.harmonicFactor 1 = 1 := by
   classical simp [harmonicFactor_def]
 
+/-- When the total harmonic degree vanishes, the harmonic polynomial is the constant `1`. -/
+theorem harmonicFactor_eq_one_of_harmonicDegree_eq_zero (t : ContinuousInfinityType K)
+    (h : t.harmonicDegree = 0) (x : mixedSpace K) : t.harmonicFactor x = 1 := by
+  classical
+  obtain ⟨hr, hc⟩ := t.harmonicDegree_eq_zero_iff.mp h
+  simp [harmonicFactor_def, hr, hc, TauCeti.complexHarmonicMonomial_zero]
+
 /-- `harmonicFactor` is completely multiplicative on the commutative ring `mixedSpace K`. -/
 theorem harmonicFactor_mul (t : ContinuousInfinityType K) (x z : mixedSpace K) :
     t.harmonicFactor (x * z) = t.harmonicFactor x * t.harmonicFactor z := by
@@ -558,7 +565,6 @@ theorem mixedFourier_harmonicFactor_mul_archGaussian (t : ContinuousInfinityType
       exact_mod_cast Real.mul_self_sqrt (hy' w).le
   have hc : mixedEmbedding.norm c = √(archNorm y) :=
     norm_mixedSpaceOfRealSpace_sqrt fun w ↦ (hy w).le
-  have hc0 : mixedEmbedding.norm c ≠ 0 := hc ▸ (Real.sqrt_pos.mpr (archNorm_pos hy)).ne'
   have hint (x : mixedSpace K) :
       𝐞 (-mixedInner K x ξ) • (t.harmonicFactor x * archGaussian y x) =
         t.harmonicFactor c' * (𝐞 (-mixedInner K (c * x) (c' * ξ)) •
@@ -572,7 +578,7 @@ theorem mixedFourier_harmonicFactor_mul_archGaussian (t : ContinuousInfinityType
   simp_rw [hint]
   rw [MeasureTheory.integral_const_mul,
     integral_comp_mul_left
-      (fun z ↦ 𝐞 (-mixedInner K z (c' * ξ)) • (t.harmonicFactor z * archGaussian 1 z)) hc0,
+      (fun z ↦ 𝐞 (-mixedInner K z (c' * ξ)) • (t.harmonicFactor z * archGaussian 1 z)) c,
     ← mixedFourier_apply, mixedFourier_harmonicFactor_mul_archGaussian_one,
     t.harmonicFactor_mul c' ξ, ← archGaussianDilation_apply y⁻¹ hy',
     archGaussian_one_archGaussianDilation, hc, Complex.real_smul]

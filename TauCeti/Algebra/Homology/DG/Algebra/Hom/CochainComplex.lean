@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
 public import TauCeti.Algebra.Homology.DG.Algebra.CochainComplex
+public import TauCeti.RingTheory.GradedAlgebra.AlgHom
 
 /-!
 # The cochain map of a differential graded algebra morphism
@@ -41,17 +42,12 @@ namespace DGAlgHom
 variable {hA : IsDGAlgebra 𝒜 dA} {hB : IsDGAlgebra ℬ dB}
   {hC : IsDGAlgebra 𝒞 dC}
 
-private theorem toLinearMap_isHomogeneous (f : DGAlgHom hA hB) :
-    LinearMap.IsHomogeneous f.toGradedAlgHom.toAlgHom.toLinearMap 𝒜 ℬ 0 :=
-  LinearMap.isHomogeneous_def.mpr fun _ _ ha ↦ by
-    simpa [AlgHom.toLinearMap_apply] using f.toGradedAlgHom.map_mem ha
-
 /-- A DG algebra morphism, viewed as a map of the underlying cochain complexes. -/
 noncomputable def toCochainMap (f : DGAlgHom hA hB) :
     hA.toCochainComplex.{uR, uA, max uB uExtra} ⟶
       hB.toCochainComplex.{uR, uB, max uA uExtra} :=
   gradedCochainComplexMap f.toGradedAlgHom.toAlgHom.toLinearMap
-    f.toLinearMap_isHomogeneous (fun _ x ↦ by simp)
+    f.toGradedAlgHom.isHomogeneous_toLinearMap (fun _ x ↦ by simp)
 
 /-- The cochain map acts on homogeneous elements by the DG algebra morphism. -/
 @[simp]
@@ -65,7 +61,7 @@ theorem toCochainMap_f_apply (f : DGAlgHom hA hB) (n : ℤ) (x : 𝒜 n) :
       fun _ _ ha ↦ hA.map_mem ha) (hsq := fun _ y ↦ hA.sq_zero y)
       (hdegN := LinearMap.isHomogeneous_def.mpr fun _ _ hb ↦ hB.map_mem hb)
       (hsqN := fun _ y ↦ hB.sq_zero y)
-      f.toGradedAlgHom.toAlgHom.toLinearMap f.toLinearMap_isHomogeneous
+      f.toGradedAlgHom.toAlgHom.toLinearMap f.toGradedAlgHom.isHomogeneous_toLinearMap
       (fun _ y ↦ by simp) n x
 
 /-- The identity DG algebra morphism induces the identity cochain map. -/
@@ -100,7 +96,7 @@ theorem toCochainMap_comp (g : DGAlgHom hB hC) (f : DGAlgHom hA hB) :
       (g.toGradedAlgHom.toAlgHom.toLinearMap.comp
         f.toGradedAlgHom.toAlgHom.toLinearMap) 𝒜 𝒞 0 := by
     rw [← hlin]
-    exact (g.comp f).toLinearMap_isHomogeneous
+    exact (g.comp f).toGradedAlgHom.isHomogeneous_toLinearMap
   have hcommgf (p : ℤ) (x : 𝒜 p) :
       dC ((g.toGradedAlgHom.toAlgHom.toLinearMap.comp
         f.toGradedAlgHom.toAlgHom.toLinearMap) x) =

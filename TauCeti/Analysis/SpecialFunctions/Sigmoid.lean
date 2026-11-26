@@ -35,16 +35,22 @@ coefficients, as for option prices of linear growth in the spot `exp x`.
 
 ## Main results
 
+* `Real.sigmoid_log` — `sigmoid (log s) = s / (1 + s)` for `0 < s`;
 * `Real.sigmoid_log_div_one_sub` — `sigmoid (log (u / (1 - u))) = u` for `0 < u < 1`;
 * `Real.log_sigmoid_div_one_sub` — `log (sigmoid x / (1 - sigmoid x)) = x`;
 * `Real.log_div_one_sub_le_iff` — `log (u / (1 - u)) ≤ y ↔ u ≤ sigmoid y` for `0 < u < 1`;
 * `Real.measurable_logit_affine` — affine transformations of the logit are measurable;
+* `Real.continuousOn_log_div_one_sub`, `Real.tendsto_log_div_one_sub_nhdsGT_zero`,
+  `Real.tendsto_log_div_one_sub_nhdsLT_one` — the logit is continuous on the open unit interval
+  and tends to `-∞` and `+∞` at its two ends, so a curve `ℝ → X` with limits at `±∞`, read along
+  it, extends to a path on the closed unit interval;
 * `Real.sigmoid_mul_one_sub_sigmoid` — the derivative of the sigmoid is
   `sigmoid y * (1 - sigmoid y) = exp (-y) / (1 + exp (-y)) ^ 2`;
 * `Real.exists_iteratedDeriv_sigmoid_eq_eval` — every derivative of the sigmoid is a polynomial
   in the sigmoid;
-* `Real.exists_abs_iteratedDeriv_sigmoid_le`, `Real.memHolder_iteratedDeriv_sigmoid` — every
-  derivative of the sigmoid is bounded, and Hölder continuous of every exponent `α ≤ 1`;
+* `Real.holderWith_sigmoid`, `Real.exists_abs_iteratedDeriv_sigmoid_le`,
+  `Real.memHolder_iteratedDeriv_sigmoid` — `sigmoid` is `1`-Hölder of every exponent `α ≤ 1`, and
+  every derivative of the sigmoid is bounded and Hölder continuous of every exponent `α ≤ 1`;
 * `Real.hasDerivAt_log_one_add_exp`, `Real.iteratedDeriv_succ_log_one_add_exp` — the derivatives
   of `x ↦ log (1 + exp x)` of positive order are those of the sigmoid.
 -/
@@ -52,6 +58,12 @@ coefficients, as for option prices of linear growth in the spot `exp x`.
 public section
 
 namespace Real
+
+/-- Evaluating `sigmoid` at `log s` for `0 < s` yields `s / (1 + s)`. -/
+theorem sigmoid_log {s : ℝ} (hs : 0 < s) : sigmoid (log s) = s / (1 + s) := by
+  rw [sigmoid_def, exp_neg, exp_log hs]
+  field_simp
+  ring
 
 /-- The logit `u ↦ log (u / (1 - u))` is a right inverse of the sigmoid on the open unit
 interval. -/
@@ -79,12 +91,59 @@ theorem measurable_logit_affine (m s : ℝ) :
     Measurable fun u : ℝ => m + s * log (u / (1 - u)) := by
   fun_prop
 
+open Filter Set Topology in
+/-- The logit `u ↦ log (u / (1 - u))` is continuous on the open unit interval. -/
+theorem continuousOn_log_div_one_sub :
+    ContinuousOn (fun u : ℝ ↦ log (u / (1 - u))) (Ioo 0 1) :=
+  ((continuousOn_id (s := Ioo (0 : ℝ) 1)).div (continuousOn_const.sub continuousOn_id) fun _ hu ↦
+    (sub_pos.2 hu.2).ne').log fun _ hu ↦ (div_pos hu.1 (sub_pos.2 hu.2)).ne'
+
+open Filter Set Topology in
+/-- The logit `u ↦ log (u / (1 - u))` tends to `-∞` at the left end of the unit interval. -/
+theorem tendsto_log_div_one_sub_nhdsGT_zero :
+    Tendsto (fun u : ℝ ↦ log (u / (1 - u))) (𝓝[>] 0) atBot := by
+  have h : Tendsto (fun u : ℝ ↦ u / (1 - u)) (𝓝[>] 0) (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+    · have h : ContinuousAt (fun u : ℝ ↦ u / (1 - u)) 0 := by fun_prop (disch := norm_num)
+      simpa using h.tendsto.mono_left nhdsWithin_le_nhds
+    · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu using div_pos hu.1 (sub_pos.2 hu.2)
+  exact tendsto_log_nhdsGT_zero.comp h
+
+open Filter Set Topology in
+/-- The logit `u ↦ log (u / (1 - u))` tends to `+∞` at the right end of the unit interval. -/
+theorem tendsto_log_div_one_sub_nhdsLT_one :
+    Tendsto (fun u : ℝ ↦ log (u / (1 - u))) (𝓝[<] 1) atTop := by
+  have h₁ : Tendsto (fun u : ℝ ↦ 1 - u) (𝓝[<] 1) (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+    · have h : Tendsto (fun u : ℝ ↦ 1 - u) (𝓝 1) (𝓝 0) := by
+        simpa using (continuous_sub_left (1 : ℝ)).tendsto 1
+      exact h.mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with u hu using sub_pos.2 hu
+  have h₂ : Tendsto (fun u : ℝ ↦ u / (1 - u)) (𝓝[<] 1) atTop :=
+    (tendsto_id.mono_left nhdsWithin_le_nhds).pos_mul_atTop one_pos
+      (tendsto_inv_nhdsGT_zero.comp h₁)
+  exact tendsto_log_atTop.comp h₂
+
 /-- The derivative `sigmoid y * (1 - sigmoid y)` of the sigmoid, written through the
 exponential. -/
 theorem sigmoid_mul_one_sub_sigmoid (y : ℝ) :
     sigmoid y * (1 - sigmoid y) = exp (-y) / (1 + exp (-y)) ^ 2 := by
   rw [← sigmoid_neg, ← sigmoid_mul_rexp_neg, sigmoid_def]
   field
+
+/-- The sigmoid is `α`-Hölder with constant `1` for every exponent `α ≤ 1`. -/
+theorem holderWith_sigmoid {α : NNReal} (hα : α ≤ 1) : HolderWith 1 α sigmoid := by
+  have hL : LipschitzWith 1 sigmoid := by
+    refine lipschitzWith_of_nnNorm_deriv_le differentiable_sigmoid fun x => ?_
+    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, deriv_sigmoid, NNReal.coe_one,
+      abs_of_nonneg (mul_nonneg (sigmoid_nonneg x) (sub_nonneg.2 (sigmoid_le_one x)))]
+    nlinarith [sigmoid_nonneg x, sigmoid_le_one x]
+  have h₀ : HolderWith 1 0 sigmoid :=
+    holderOnWith_univ.1 <| HolderOnWith.of_dist_le fun x _ y _ ↦ by
+      rw [NNReal.coe_zero, rpow_zero, NNReal.coe_one, one_mul, Real.dist_eq, abs_le]
+      exact ⟨by linarith [sigmoid_nonneg x, sigmoid_le_one y],
+        by linarith [sigmoid_le_one x, sigmoid_nonneg y]⟩
+  simpa using h₀.of_le_of_le hL.holderWith zero_le hα
 
 /-! ### Derivatives of every order -/
 

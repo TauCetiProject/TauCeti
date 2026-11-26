@@ -55,12 +55,9 @@ theorem IsTopologicallyFiniteType.exists_surjective_algHom
     (h : IsTopologicallyFiniteType (algebraMap K B)) :
     ∃ (n : ℕ) (φ : MvPowerSeries.IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1) →ₐ[K] B),
       Function.Surjective φ := by
-  obtain ⟨n, π, hπ, hcomp⟩ :=
-    isStrictlyTopologicallyFiniteType_iff.mp h.isStrictlyTopologicallyFiniteType
-  let π' : restrictedMvPowerSeriesCompletion n K →ₐ[K] B :=
-    { π with commutes' := fun r ↦ congrArg (· r) hcomp }
+  obtain ⟨n, π', hπ⟩ := h.isStrictlyTopologicallyFiniteType.exists_surjective_algHom
   exact ⟨n, π'.comp restrictedMvPowerSeriesCompletionGaussAlgEquiv.symm.toAlgHom,
-    hπ.surjective.comp restrictedMvPowerSeriesCompletionGaussAlgEquiv.symm.surjective⟩
+    hπ.comp restrictedMvPowerSeriesCompletionGaussAlgEquiv.symm.surjective⟩
 
 /-- **Wedhorn, Proposition 5.61.** Over a complete nonarchimedean field `K`, the residue field
 `B ⧸ m` of every maximal ideal of a `K`-algebra `B` topologically of finite type is a finite

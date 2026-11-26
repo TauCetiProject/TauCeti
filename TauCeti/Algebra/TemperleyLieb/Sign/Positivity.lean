@@ -69,7 +69,7 @@ namespace IsMarkovTrace
 
 open scoped ComplexOrder
 
-variable {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))]
+variable {δ : ℝ}
   {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
 
 /-- **Failure of signed positivity from level `k` on.** Let `δ < 0` with `-δ` inadmissible, and
@@ -79,7 +79,6 @@ theorem exists_neg_one_pow_mul_map_star_mul_self_neg (htr : IsMarkovTrace ℂ (�
     (hδ : δ < 0) (hδJ : -δ ∉ jonesLoopParameters) {n : ℕ}
     (hn : ⌊π / arccos (-δ / 2)⌋₊ ≤ n) :
     ∃ x : TemperleyLieb ℂ (δ : ℂ) n, (-1 : ℂ) ^ n * tr n (star x * x) < 0 := by
-  have : Fact (IsSelfAdjoint ((-δ : ℝ) : ℂ)) := ⟨Complex.conj_ofReal (-δ)⟩
   have hadd : ((-δ : ℝ) : ℂ) + (δ : ℂ) = 0 := by push_cast; ring
   have hadd' : (δ : ℂ) + ((-δ : ℝ) : ℂ) = 0 := by push_cast; ring
   have htr' := htr.neg_one_pow_smul_comp_signEquivOfAddEqZero hadd
@@ -119,7 +118,6 @@ theorem forall_neg_one_pow_mul_map_star_mul_self_nonneg_iff
     (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n),
         0 ≤ (-1 : ℂ) ^ n * tr n (star x * x)) ↔
       -δ ∈ jonesLoopParameters := by
-  have : Fact (IsSelfAdjoint ((-δ : ℝ) : ℂ)) := ⟨Complex.conj_ofReal (-δ)⟩
   have hadd : ((-δ : ℝ) : ℂ) + (δ : ℂ) = 0 := by push_cast; ring
   have hadd' : (δ : ℂ) + ((-δ : ℝ) : ℂ) = 0 := by push_cast; ring
   have htr' := htr.neg_one_pow_smul_comp_signEquivOfAddEqZero hadd
@@ -164,8 +162,8 @@ open scoped ComplexOrder in
 let `q` be a unit with `δ = -(q + q⁻¹)`. Then `(-1) ^ n * markovTrace q hq (x⋆ * x)` is real and
 nonnegative for every number of strands and every `x` if and only if `-δ` is an admissible Jones
 loop parameter (`-δ ∈ {2 cos (π / m) : m ≥ 3} ∪ [2, ∞)`). -/
-theorem markovTrace_neg_one_pow_nonneg_iff {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))]
-    (hδ : δ < 0) (q : ℂˣ) (hq : (δ : ℂ) = -((q : ℂ) + ((q⁻¹ : ℂˣ) : ℂ))) :
+theorem markovTrace_neg_one_pow_nonneg_iff {δ : ℝ} (hδ : δ < 0) (q : ℂˣ)
+    (hq : (δ : ℂ) = -((q : ℂ) + ((q⁻¹ : ℂˣ) : ℂ))) :
     (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n),
         0 ≤ (-1 : ℂ) ^ n * markovTrace q hq (star x * x)) ↔
       -δ ∈ jonesLoopParameters :=
@@ -175,8 +173,8 @@ open scoped ComplexOrder in
 /-- **Positivity of the normalized spin-model Markov trace** for real `δ ≠ 0`:
 `(δ : ℂ)⁻¹ ^ n * markovTrace q hq (x⋆ * x)` is real and nonnegative for every number of strands
 and every `x` if and only if `|δ|` is an admissible Jones loop parameter. -/
-theorem markovTrace_inv_pow_nonneg_iff {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))]
-    (hδ : δ ≠ 0) (q : ℂˣ) (hq : (δ : ℂ) = -((q : ℂ) + ((q⁻¹ : ℂˣ) : ℂ))) :
+theorem markovTrace_inv_pow_nonneg_iff {δ : ℝ} (hδ : δ ≠ 0) (q : ℂˣ)
+    (hq : (δ : ℂ) = -((q : ℂ) + ((q⁻¹ : ℂˣ) : ℂ))) :
     (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n),
         0 ≤ (δ : ℂ)⁻¹ ^ n * markovTrace q hq (star x * x)) ↔
       |δ| ∈ jonesLoopParameters :=

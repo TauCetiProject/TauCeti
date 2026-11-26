@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Diagram.RigidObject.Substitution
-public import TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Universal
+public import TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Basic
 
 /-!
 # Substitution of rigid expressions for coupons
@@ -84,10 +84,10 @@ noncomputable def Hom.subst (σ : Substitution S T) : ∀ {X Y}, Hom X Y →
   | _, _, .l_inv X => .l_inv (RigidObject.eval σ.obj X).as
   | _, _, .ρ_hom X => .ρ_hom (RigidObject.eval σ.obj X).as
   | _, _, .ρ_inv X => .ρ_inv (RigidObject.eval σ.obj X).as
-  | _, _, .rightCoevaluation X => .rightCoevaluation (RigidObject.eval σ.obj X).as
-  | _, _, .rightEvaluation X => .rightEvaluation (RigidObject.eval σ.obj X).as
-  | _, _, .leftCoevaluation X => .leftCoevaluation (RigidObject.eval σ.obj X).as
-  | _, _, .leftEvaluation X => .leftEvaluation (RigidObject.eval σ.obj X).as
+  | _, _, .ε_right X => .ε_right (RigidObject.eval σ.obj X).as
+  | _, _, .η_right X => .η_right (RigidObject.eval σ.obj X).as
+  | _, _, .ε_left X => .ε_left (RigidObject.eval σ.obj X).as
+  | _, _, .η_left X => .η_left (RigidObject.eval σ.obj X).as
   | _, _, .coupon g => σ.coupon g
   | _, _, .comp f g => (f.subst σ).comp (g.subst σ)
   | _, _, .whiskerLeft X f => (f.subst σ).whiskerLeft (RigidObject.eval σ.obj X).as
@@ -120,14 +120,14 @@ noncomputable def Hom.subst (σ : Substitution S T) : ∀ {X Y}, Hom X Y →
     (Hom.ρ_hom X).subst σ = .ρ_hom (RigidObject.eval σ.obj X).as := by rfl
 @[simp] theorem Hom.subst_ρ_inv (σ : Substitution S T) (X) :
     (Hom.ρ_inv X).subst σ = .ρ_inv (RigidObject.eval σ.obj X).as := by rfl
-@[simp] theorem Hom.subst_rightCoevaluation (σ : Substitution S T) (X) :
-    (Hom.rightCoevaluation X).subst σ = .rightCoevaluation (RigidObject.eval σ.obj X).as := by rfl
-@[simp] theorem Hom.subst_rightEvaluation (σ : Substitution S T) (X) :
-    (Hom.rightEvaluation X).subst σ = .rightEvaluation (RigidObject.eval σ.obj X).as := by rfl
-@[simp] theorem Hom.subst_leftCoevaluation (σ : Substitution S T) (X) :
-    (Hom.leftCoevaluation X).subst σ = .leftCoevaluation (RigidObject.eval σ.obj X).as := by rfl
-@[simp] theorem Hom.subst_leftEvaluation (σ : Substitution S T) (X) :
-    (Hom.leftEvaluation X).subst σ = .leftEvaluation (RigidObject.eval σ.obj X).as := by rfl
+@[simp] theorem Hom.subst_ε_right (σ : Substitution S T) (X) :
+    (Hom.ε_right X).subst σ = .ε_right (RigidObject.eval σ.obj X).as := by rfl
+@[simp] theorem Hom.subst_η_right (σ : Substitution S T) (X) :
+    (Hom.η_right X).subst σ = .η_right (RigidObject.eval σ.obj X).as := by rfl
+@[simp] theorem Hom.subst_ε_left (σ : Substitution S T) (X) :
+    (Hom.ε_left X).subst σ = .ε_left (RigidObject.eval σ.obj X).as := by rfl
+@[simp] theorem Hom.subst_η_left (σ : Substitution S T) (X) :
+    (Hom.η_left X).subst σ = .η_left (RigidObject.eval σ.obj X).as := by rfl
 
 end FreeRigid
 
@@ -153,11 +153,9 @@ noncomputable instance : σ.toFunctor.Monoidal :=
 @[simp] theorem toFunctor_δ (X Y : S.FreeRigid) :
     Functor.OplaxMonoidal.δ σ.toFunctor X Y = 𝟙 _ := FreeRigid.lift_δ _ _ X Y
 @[simp] theorem toFunctor_mapRightDualIso (X : S.FreeRigid) :
-    σ.toFunctor.mapRightDualIso X (_hFX := RightRigidCategory.rightDual (σ.toFunctor.obj X)) =
-      Iso.refl _ := FreeRigid.lift_mapRightDualIso _ _ X
+    σ.toFunctor.mapRightDualIso X = Iso.refl _ := FreeRigid.lift_mapRightDualIso _ _ X
 @[simp] theorem toFunctor_mapLeftDualIso (X : S.FreeRigid) :
-    σ.toFunctor.mapLeftDualIso X (_hFY := LeftRigidCategory.leftDual (σ.toFunctor.obj X)) =
-      Iso.refl _ := FreeRigid.lift_mapLeftDualIso _ _ X
+    σ.toFunctor.mapLeftDualIso X = Iso.refl _ := FreeRigid.lift_mapLeftDualIso _ _ X
 @[simp] theorem toFunctor_obj (X : S.FreeRigid) :
     σ.toFunctor.obj X = RigidObject.eval σ.obj X.as := by rfl
 
@@ -188,11 +186,11 @@ its raw substitution `f.subst σ`. -/
   | l_inv X => exact lift_map_leftUnitor_inv _ _ ⟨X⟩
   | ρ_hom X => exact lift_map_rightUnitor_hom _ _ ⟨X⟩
   | ρ_inv X => exact lift_map_rightUnitor_inv _ _ ⟨X⟩
-  | rightCoevaluation X => exact lift_map_rightCoevaluation _ _ ⟨X⟩
-  | rightEvaluation X => exact lift_map_rightEvaluation _ _ ⟨X⟩
-  | leftCoevaluation X => exact lift_map_leftCoevaluation _ _ ⟨X⟩
-  | leftEvaluation X => exact lift_map_leftEvaluation _ _ ⟨X⟩
-  | coupon g => exact lift_map_coupon _ _ g
+  | ε_right X => exact lift_map_evaluation_rightDual _ _ ⟨X⟩
+  | η_right X => exact lift_map_coevaluation_rightDual _ _ ⟨X⟩
+  | ε_left X => exact lift_map_evaluation_leftDual _ _ ⟨X⟩
+  | η_left X => exact lift_map_coevaluation_leftDual _ _ ⟨X⟩
+  | coupon g => rw [homMk_coupon, σ.toFunctor_map_coupon]; rfl
   | comp _ _ hf hg => exact (liftMap_comp _ _ _ _).trans (congrArg₂ (· ≫ ·) hf hg)
   | whiskerLeft X _ hf =>
     exact (lift_map_whiskerLeft _ _ ⟨X⟩ _).trans (congrArg (RigidObject.eval σ.obj X ◁ ·) hf)

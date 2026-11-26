@@ -111,6 +111,18 @@ theorem cubeState_eq_true_iff {S : Finset (Fin n)} {i : Fin n} :
 theorem cubeState_compl (S : Finset (Fin n)) (i : Fin n) : cubeState Sᶜ i = !cubeState S i := by
   simp [cubeState]
 
+-- Not `@[simp]`: statements about the extreme vertices are phrased with `cubeState ∅`.
+/-- The state of the initial vertex `∅` is the all-A state. -/
+theorem cubeState_empty : cubeState (∅ : Finset (Fin n)) = fun _ ↦ true := by
+  funext i
+  simp [cubeState]
+
+-- Not `@[simp]`: statements about the extreme vertices are phrased with `cubeState univ`.
+/-- The state of the terminal vertex `univ` is the all-B state. -/
+theorem cubeState_univ : cubeState (univ : Finset (Fin n)) = fun _ ↦ false := by
+  funext i
+  simp [cubeState]
+
 /-- The set of `B`-smoothings of the state of the vertex `S` is `S`. -/
 theorem filter_cubeState_eq_false (S : Finset (Fin n)) :
     ({i | cubeState S i = false} : Finset (Fin n)) = S := by
@@ -359,6 +371,24 @@ theorem resolutionCubeι_resolutionCubeObjCongr {m : ℕ} {D' : PDCode m} (hD' :
       PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e ((D.resolutionCubeι hD R j S).hom x) := by
   unfold resolutionCubeObjCongr; rfl
 
+variable {D hD R j} in
+/-- A map of cubes of resolutions of `D` which on every vertex reindexes the circle tensor along a
+bijection of the resolved circles is an isomorphism. -/
+theorem isIso_of_app_comp_resolutionCubeι (τ : D.resolutionCube hD R j ⟶ D.resolutionCube hD R j)
+    (e : ∀ S : Finset (Fin n), D.ResolvedCircle (cubeState S) ≃ D.ResolvedCircle (cubeState S))
+    (hτ : ∀ S, τ.app S ≫ D.resolutionCubeι hD R j S =
+      D.resolutionCubeι hD R j S ≫
+        ModuleCat.ofHom (PiTensorProduct.reindex R (fun _ ↦ DualNumber R) (e S)).toLinearMap) :
+    IsIso τ := by
+  have (S : Finset (Fin n)) : IsIso (τ.app S) := by
+    have hS : τ.app S = (D.resolutionCubeObjCongr hD R j hD (e S) rfl).toModuleIso.hom := by
+      rw [← cancel_mono (D.resolutionCubeι hD R j S), hτ]
+      ext x
+      exact (D.resolutionCubeι_resolutionCubeObjCongr hD R j hD (e S) rfl x).symm
+    rw [hS]
+    infer_instance
+  exact NatIso.isIso_of_isIso_app τ
+
 private theorem resolutionCube_map_homOfLE_insert {S : Finset (Fin n)} {a : Fin n} (ha : a ∉ S) :
     (D.resolutionCube hD R j).map (homOfLE (subset_insert a S)) =
       resolutionCubeEdge D hD R j (covBy_insert ha) :=
@@ -407,7 +437,7 @@ section Hom
 variable {D} {D' : PDCode n} (hD' : D'.IsPlanar) {j' d : ℤ}
   (f : ∀ s : Fin n → Bool, Khovanov.CircleTensor R (D.ResolvedCircle s) →ₗ[R]
     Khovanov.CircleTensor R (D'.ResolvedCircle s))
-  (hf : ∀ s, TauCeti.LinearMap.IsHomogeneous (f s)
+  (hf : ∀ s, LinearMap.IsHomogeneous (f s)
     (Khovanov.circleQuantumGrading R (D.ResolvedCircle s)).piece
     (Khovanov.circleQuantumGrading R (D'.ResolvedCircle s)).piece d)
   (hfe : ∀ ⦃s t : Fin n → Bool⦄ ⦃c : Fin n⦄ (hst : ∀ i, i ≠ c → s i = t i) (hc : s c ≠ t c)
@@ -474,3 +504,25 @@ theorem khovanovBracket_apply : D.khovanovBracket hD R j = (D.resolutionCube hD 
   (rfl)
 
 end TauCeti.PDCode
+
+namespace TauCeti.Khovanov
+
+universe u v
+
+variable {R : Type u} [CommRing R]
+
+/-- Reindexing circle tensors along `e₂`, as a map of modules, factors through reindexing along
+any `e₁`. -/
+theorem ofHom_reindex_eq_comp {α β γ : Type v} (e₁ : α ≃ β) (e₂ : α ≃ γ) :
+    ModuleCat.ofHom (X := ModuleCat.of R (CircleTensor R α))
+        (Y := ModuleCat.of R (CircleTensor R γ))
+        (PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e₂).toLinearMap =
+      ModuleCat.ofHom (Y := ModuleCat.of R (CircleTensor R β))
+          (PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e₁).toLinearMap ≫
+        ModuleCat.ofHom
+          (PiTensorProduct.reindex R (fun _ ↦ DualNumber R) (e₁.symm.trans e₂)).toLinearMap := by
+  have he : e₁.trans (e₁.symm.trans e₂) = e₂ := by
+    rw [← Equiv.trans_assoc, Equiv.self_trans_symm, Equiv.refl_trans]
+  rw [← ModuleCat.ofHom_comp, ← LinearEquiv.coe_trans, PiTensorProduct.reindex_trans, he]
+
+end TauCeti.Khovanov

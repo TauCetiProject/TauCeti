@@ -11,7 +11,7 @@ public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -209,7 +209,7 @@ def modelMap (L : W →ₗ[𝕜] W') :
   have hL := TrivialModel.contMDiff_mk_iff (f := fun p : TotalSpace (TrivialModel 𝕜 W)
       (Bundle.Trivial M W) ↦ L p.snd).2
     ⟨hid.1, (L_mod.contMDiff.comp hid.2).congr fun _ ↦ by simp [L_mod]⟩
-  ⟨(mapLinearMap (fun _ ↦ L) hL).toAddHom, mapLinearMap_smul_function (fun _ ↦ L) hL⟩
+  mapFunctionLinearMap (fun _ ↦ L) hL
 
 @[simp] theorem modelMap_apply (L : W →ₗ[𝕜] W')
     (s : Cₛ^n⟮I; TrivialModel 𝕜 W, Bundle.Trivial M W⟯) (x : M) :

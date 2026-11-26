@@ -26,7 +26,10 @@ top cell, shifted by `n`:
 and `Hₘ(E, F; R) = 0` for `m < n`
 (`TauCeti.TopCat.isZero_singularHomology_sphereFibration_of_lt`). Together with the long exact
 sequence of the pair `(E, F)` these are the terms of the Wang sequence
-`⋯ ⟶ Hₖ(F) ⟶ Hₖ(E) ⟶ Hₖ₋ₙ(p⁻¹(x₁)) ⟶ Hₖ₋₁(F) ⟶ ⋯` of a fibration over a sphere. When the total
+`⋯ ⟶ Hₖ(F) ⟶ Hₖ(E) ⟶ Hₖ₋ₙ(p⁻¹(x₁)) ⟶ Hₖ₋₁(F) ⟶ ⋯` of a fibration over a sphere. One consequence
+needs no knowledge of the connecting maps: `Hq+n(E; R) ≅ Hq(p⁻¹(x₁); R)` whenever `F` has no
+homology in degrees `q + n` and `q + n - 1`
+(`TauCeti.TopCat.singularHomologySphereFibrationIsoOfIsZero`). When the total
 space is contractible, the connecting isomorphisms of the pair turn them into
 `H~q+n-1(F; R) ≅ Hq(p⁻¹(x₁); R)`; for the path fibration of the sphere this computes the homology of
 the loop space of the sphere.
@@ -37,10 +40,21 @@ These are the first-page computations of the skeletal filtration of a Serre fibr
 sphere, read on the sphere itself rather than on the ambient Euclidean space
 (`TauCeti.toRelativeCWComplex` and its classical round trip).
 
+## Main definitions
+
+* `TauCeti.TopCat.sphereRelCWComplex`: the CW structure of the sphere on the sphere itself, with
+  its skeleta `TauCeti.TopCat.skeletonLT_sphereRelCWComplex`,
+  `TauCeti.TopCat.skeletonLT_succ_sphereRelCWComplex` and its single top cell
+  `TauCeti.TopCat.uniqueCellSphereRelCWComplex`.
+* `TauCeti.TopCat.spherePreimageSkeletonPairIso`: the pair of the two stages of the skeletal
+  filtration of `E` is the pair `(E, F)`.
+
 ## Main results
 
 * `TauCeti.TopCat.sphereFibrationSingularHomologyIso`: `Hq+n(E, F; R) ≅ Hq(p⁻¹(x₁); R)`.
 * `TauCeti.TopCat.isZero_singularHomology_sphereFibration_of_lt`: `Hₘ(E, F; R) = 0` for `m < n`.
+* `TauCeti.TopCat.singularHomologySphereFibrationIsoOfIsZero`: `Hq+n(E; R) ≅ Hq(p⁻¹(x₁); R)` when
+  `Hq+n(F; R)` and `Hq+n-1(F; R)` vanish.
 * `TauCeti.TopCat.reducedSingularHomologySphereFibrationIso`,
   `TauCeti.TopCat.isZero_reducedSingularHomology_sphereFibration_of_lt`: for a contractible total
   space over `Sⁿ⁺¹`, `H~q+n(F; R) ≅ Hq(p⁻¹(x₁); R)`, and `H~ₖ(F; R) = 0` for `k < n`.
@@ -157,7 +171,7 @@ variable {E : _root_.TopCat.{u}} {p : E ⟶ _root_.TopCat.of (sphere (0 : Euclid
 
 /-- The pair `(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))` of the two stages of the skeletal filtration of `E` is the pair
 `(E, F)` of `E` and the fibre over the pole. -/
-private def preimageSkeletonPairIso (hn : 1 ≤ n) :
+def spherePreimageSkeletonPairIso (hn : 1 ≤ n) :
     letI := sphereRelCWComplex h
     preimageSkeletonPair p (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) n ≅
       TopPair.ofSubset (p ⁻¹' {spherePolePoint h}) :=
@@ -165,6 +179,25 @@ private def preimageSkeletonPairIso (hn : 1 ≤ n) :
   TopPair.ofInclusionIsoOfSubset _
     (fun x ↦ by rw [mem_preimage, skeletonLT_succ_sphereRelCWComplex h]; exact mem_univ _)
     (fun x ↦ by rw [mem_preimage, mem_preimage, skeletonLT_sphereRelCWComplex h hn le_rfl])
+
+@[simp]
+lemma spherePreimageSkeletonPairIso_hom_fst_apply (hn : 1 ≤ n)
+    (x : letI := sphereRelCWComplex h
+      (preimageSkeletonPair p (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) n).fst) :
+    TopPair.Hom.fst (spherePreimageSkeletonPairIso h hn).hom x = x.val :=
+  TopPair.ofInclusionIsoOfSubset_hom_fst_apply ..
+
+/-- The projection of the pullback over the top cell, read in the pair `(E, F)`, sends a point of
+the pullback to its point of `E`. -/
+@[simp]
+lemma spherePreimageSkeletonPairIso_hom_fst_cellPullbackPairMap_fst_apply (hn : 1 ≤ n)
+    (x : letI := sphereRelCWComplex h
+      (cellPullbackPair p (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) n).fst) :
+    letI := sphereRelCWComplex h
+    TopPair.Hom.fst (spherePreimageSkeletonPairIso h hn).hom
+      (TopPair.Hom.fst (cellPullbackPairMap p univ n) x) = x.val.2 :=
+  letI := sphereRelCWComplex h
+  (spherePreimageSkeletonPairIso_hom_fst_apply ..).trans (coe_cellPullbackPairMap_fst_apply ..)
 
 variable (hp : serreFibrations p) (R : Type u) [Ring R]
 
@@ -179,7 +212,8 @@ def sphereFibrationSingularHomologyIso (hn : 1 ≤ n) (q : ℕ) :
         (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {sphereTopCellCenter h} : Set E)) :=
   letI := sphereRelCWComplex h
   letI := uniqueCellSphereRelCWComplex h hn
-  (TopPair.singularHomologyMapIso (ModuleCat.of R R) (preimageSkeletonPairIso h hn) (q + n)).symm ≪≫
+  (TopPair.singularHomologyMapIso (ModuleCat.of R R) (spherePreimageSkeletonPairIso h hn)
+      (q + n)).symm ≪≫
     preimageSkeletonPairSingularHomologyIsoSigma _ hp R n q ≪≫ coproductUniqueIso _ ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
       (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo (Homeomorph.setCongr (by
@@ -196,8 +230,33 @@ theorem isZero_singularHomology_sphereFibration_of_lt {m : ℕ} (hm : m < n) :
   refine (isZero_singularHomology_preimage_skeletonLT (C := univ) hp R
     (k := ((i + 1 + 1 : ℕ) : ℕ∞)) (by norm_cast; omega) (by omega : m ≤ i)).of_iso ?_
   -- `(i : ℕ∞) + 1` and `((i + 1 : ℕ) : ℕ∞)` are defeq, so the pair is `preimageSkeletonPair p _ n`.
-  exact (TopPair.singularHomologyMapIso (ModuleCat.of R R) (preimageSkeletonPairIso h (by omega))
-    m).symm
+  exact (TopPair.singularHomologyMapIso (ModuleCat.of R R)
+    (spherePreimageSkeletonPairIso h (by omega)) m).symm
+
+/-- **`Hq+n(E) ≅ Hq(p⁻¹(x₁))` when the fibre has no homology in degrees `q + n` and
+`q + n - 1`.** For a Serre fibration `p : E ⟶ Sⁿ`, `n ≥ 1`, whose fibre `F` over the pole has
+vanishing homology in the degrees `q + n` and `m = q + n - 1`, the map `Hq+n(E) ⟶ Hq+n(E, F)` of
+the long exact sequence of the pair is an isomorphism, so `Hq+n(E; R) ≅ Hq(p⁻¹(x₁); R)`, where
+`x₁` is the centre of the top cell of `Sⁿ`. -/
+def singularHomologySphereFibrationIsoOfIsZero (hn : 1 ≤ n) {q m : ℕ} (hm : m + 1 = q + n)
+    (hq : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) (q + n)).obj
+      (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {spherePolePoint h} : Set E))))
+    (hm' : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) m).obj
+      (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {spherePolePoint h} : Set E)))) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) (q + n)).obj
+        (ModuleCat.of R R)).obj E ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {sphereTopCellCenter h} : Set E)) :=
+  eqToIso (singularHomologyFunctor_obj_obj_eq_toSSet_homology _ _ E) ≪≫
+    @asIso _ _ _ _ ((TopPair.ofSubset (p ⁻¹' {spherePolePoint h})).singularHomologyπ
+      (ModuleCat.of R R) (q + n)) (by
+        rw [← hm] at hq ⊢
+        -- The subspace of `TopPair.ofSubset s` is `TopCat.of s` by definition, and reduced
+        -- homology embeds into singular homology, so it vanishes with it.
+        exact TopPair.isIso_singularHomologyπ _ _
+          (hq.of_iso ((reducedSingularHomologySuccIso _ m).app _))
+          (hm'.of_mono ((reducedSingularHomologyι _ m).app _))) ≪≫
+    sphereFibrationSingularHomologyIso h hp R hn q
 
 section Contractible
 

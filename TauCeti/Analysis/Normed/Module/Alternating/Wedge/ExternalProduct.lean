@@ -21,9 +21,12 @@ the product of the two values:
 
 Its comass, the operator norm, satisfies `‖φ‖ ‖ψ‖ ≤ ‖φ ⊠ ψ‖ ≤ binomial(k + l, k) ‖φ‖ ‖ψ‖`.
 The lower bound comes from product frames, the upper bound from the shuffle expansion of the
-wedge. Exchanging the factors multiplies values by `(-1) ^ (k * l)` and preserves the comass.
-None of this needs an inner product; the comass equality for a decomposable factor and products
-of calibrated frames are in `TauCeti.Analysis.InnerProductSpace.Orthonormal.ExternalProduct`.
+wedge. On a frame where the external product splits into a value of each factor, its value is
+bounded by `‖φ‖ ‖ψ‖` once the projected components have norm at most one. Exchanging the factors
+multiplies values by `(-1) ^ (k * l)` and preserves the comass.
+None of this needs an inner product; the comass equalities for a decomposable or top-degree
+factor, and products of calibrated frames, are in
+`TauCeti.Analysis.InnerProductSpace.Orthonormal.ExternalProduct`.
 
 ## Main definitions
 
@@ -32,6 +35,7 @@ of calibrated frames are in `TauCeti.Analysis.InnerProductSpace.Orthonormal.Exte
 ## Main results
 
 * `ContinuousAlternatingMap.externalProduct_apply_append`: the value on a product frame.
+* `ContinuousAlternatingMap.norm_externalProduct_apply_append_le`: the bound on a split frame.
 * `ContinuousAlternatingMap.norm_externalProduct_le`: the binomial upper bound.
 * `ContinuousAlternatingMap.norm_mul_norm_le_norm_externalProduct`: the lower bound.
 * `ContinuousAlternatingMap.externalProduct_apply_eq_neg_one_pow_mul` and
@@ -113,6 +117,23 @@ theorem externalProduct_apply_append_of_forall (φ : E [⋀^Fin k]→L[ℝ] ℝ)
   rw [externalProduct_def, wedge_def, pairedWedge_apply_append_of_forall _ _ _ _ a b fun y i j ↦ ?_]
   · simp [Function.comp_def]
   simpa [Function.comp_update] using h (WithLp.sndL 2 ℝ E F ∘ y) i j
+
+/-- On a concatenated frame `(a, b)` on which the external product splits, as in
+`externalProduct_apply_append_of_forall`, and whose projected components `(a i).fst` and
+`(b j).snd` have norm at most one, the value of `φ ⊠ ψ` has norm at most `‖φ‖ ‖ψ‖`. -/
+theorem norm_externalProduct_apply_append_le (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : F [⋀^Fin l]→L[ℝ] ℝ)
+    {a : Fin k → WithLp 2 (E × F)} {b : Fin l → WithLp 2 (E × F)} (ha : ∀ i, ‖(a i).fst‖ ≤ 1)
+    (hb : ∀ j, ‖(b j).snd‖ ≤ 1)
+    (h : ∀ (y : Fin l → F) (i : Fin k) (j : Fin l), ψ (Function.update y j (a i).snd) = 0) :
+    ‖externalProduct φ ψ (Fin.append a b)‖ ≤ ‖φ‖ * ‖ψ‖ := by
+  have hφ : ‖φ fun i ↦ (a i).fst‖ ≤ ‖φ‖ := by
+    simpa using φ.le_opNorm_mul_pow_of_le (m := fun i ↦ (a i).fst) (pi_norm_le_iff_of_nonneg
+      zero_le_one |>.2 ha)
+  have hψ : ‖ψ fun j ↦ (b j).snd‖ ≤ ‖ψ‖ := by
+    simpa using ψ.le_opNorm_mul_pow_of_le (m := fun j ↦ (b j).snd) (pi_norm_le_iff_of_nonneg
+      zero_le_one |>.2 hb)
+  rw [externalProduct_apply_append_of_forall φ ψ a b h, norm_mul]
+  exact mul_le_mul hφ hψ (norm_nonneg _) (norm_nonneg _)
 
 /-- **The external product on a product frame** is the product of the values of the factors:
 `(φ ⊠ ψ)((v₁, 0), …, (v_k, 0), (0, w₁), …, (0, w_l)) = φ v * ψ w`. -/

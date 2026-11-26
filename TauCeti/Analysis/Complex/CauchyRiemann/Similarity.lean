@@ -105,6 +105,13 @@ holomorphic by Weyl's lemma, and `ξ = Ψ⁻¹ σ`. For finite `p` the Calderón
 * `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_norm_conjWirtingerDeriv_le`: isolated zeros of a
   scalar `C¹` function satisfying `‖\bar∂ f‖ ≤ K ‖f‖` that is not identically zero on a connected
   open set.
+* `TauCeti.exists_similarity_of_norm_le`: the disc form of the factorization under the
+  differential inequality, with `Φ` complex-linear.
+* `TauCeti.exists_eventually_eq_mul_of_norm_conjWirtingerDeriv_le`: a scalar `C¹` function
+  satisfying `‖\bar∂ f‖ ≤ K ‖f‖` is, near each point, a holomorphic function times a continuous
+  nonvanishing complex factor, through
+  `TauCeti.exists_eventually_eq_mul_of_eventually_eq_clm_apply`, which reads a scalar factorization
+  near a point as such a product.
 
 ## References
 
@@ -652,23 +659,27 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn (hΩ : IsOpen Ω)
   exact setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt hΩ hΩc hξ.continuousOn
     (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_contDiffOn hΩ hξ hCm hCb heq hz) hne
 
-/-- **The similarity principle for a differential inequality.** Let `η` be of class `C¹` on an
-open set `Ω ⊆ ℂ`, with values in a finite-dimensional complex inner product space, and satisfy
-`‖∂ₛη + i ∂ₜη‖ ≤ M ‖η‖` on `Ω` for a function `M` bounded above near every point of `Ω`. Then
-`η` solves `∂ₛη + i ∂ₜη + C η = 0` for the rank-one coefficient
+/-- **The similarity principle for a differential inequality**, on a disc. Let `η` be of class
+`C¹` on an open set `Ω ⊆ ℂ`, with values in a finite-dimensional complex inner product space, and
+satisfy `‖∂ₛη + i ∂ₜη‖ ≤ M ‖η‖` on `Ω` for a function `M` bounded above near every point of `Ω`.
+Then `η` solves `∂ₛη + i ∂ₜη + C η = 0` for the rank-one coefficient
 `C = -(∂ₛη + i ∂ₜη) η* / ‖η‖²` (`TauCeti.rankOneDivNormSq`), which is measurable and locally
-bounded, so `η` has a similarity factorization at every point of `Ω`. -/
-theorem hasSimilarityFactorizationAt_of_norm_le {E : Type*} [NormedAddCommGroup E]
+bounded, so near every point of `Ω` it factors as `η = Φ σ`, with `Φ` a continuous family of
+invertible complex-linear maps and `σ` holomorphic. -/
+theorem exists_similarity_of_norm_le {E : Type*} [NormedAddCommGroup E]
     [InnerProductSpace ℂ E] [FiniteDimensional ℂ E] {η : ℂ → E} {M : ℂ → ℝ} (hΩ : IsOpen Ω)
     (hη : ContDiffOn ℝ 1 η Ω) (hM : ∀ z ∈ Ω, ∃ K, ∀ᶠ w in 𝓝 z, M w ≤ K)
     (hle : ∀ z ∈ Ω, ‖fderiv ℝ η z 1 + I • fderiv ℝ η z I‖ ≤ M z * ‖η z‖) {z₀ : ℂ}
-    (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt η z₀ := by
+    (hz₀ : z₀ ∈ Ω) :
+    ∃ r, 0 < r ∧ ball z₀ r ⊆ Ω ∧ ∃ (Φ : ℂ → E →L[ℂ] E) (σ : ℂ → E),
+      ContinuousOn Φ (ball z₀ r) ∧ (∀ z ∈ ball z₀ r, IsUnit (Φ z)) ∧
+      DifferentiableOn ℂ σ (ball z₀ r) ∧ EqOn η (fun z ↦ Φ z (σ z)) (ball z₀ r) := by
   set g : ℂ → E := fun z ↦ -(fderiv ℝ η z 1 + I • fderiv ℝ η z I) with hg
   set R : ℂ → E →L[ℝ] E := fun z ↦ (rankOneDivNormSq ℂ (g z) (η z)).restrictScalars ℝ with hR
   have hDη : ContinuousOn (fderiv ℝ η) Ω := hη.continuousOn_fderiv_of_isOpen hΩ le_rfl
   have hgc : ContinuousOn g Ω := ((hDη.clm_apply continuousOn_const).add
     (continuousOn_const.smul (hDη.clm_apply continuousOn_const))).neg
-  refine hasSimilarityFactorizationAt_of_contDiffOn (C := R) hΩ hη ?_ (fun z hz ↦ ?_)
+  refine exists_similarity_of_contDiffOn (C := R) hΩ hη ?_ (fun z hz ↦ ?_)
     (fun z hz ↦ ?_) hz₀
   · exact (ContinuousLinearMap.restrictScalarsL ℂ E E ℝ ℂ).continuous.comp_aestronglyMeasurable
       ((hgc.aestronglyMeasurable hΩ.measurableSet).rankOneDivNormSq
@@ -689,6 +700,34 @@ theorem hasSimilarityFactorizationAt_of_norm_le {E : Type*} [NormedAddCommGroup 
     · rw [hR, ContinuousLinearMap.coe_restrictScalars', rankOneDivNormSq_apply_self _ h0, hg,
         add_neg_cancel]
 
+/-- **The similarity principle for a differential inequality.** Let `η` be of class `C¹` on an
+open set `Ω ⊆ ℂ`, with values in a finite-dimensional complex inner product space, and satisfy
+`‖∂ₛη + i ∂ₜη‖ ≤ M ‖η‖` on `Ω` for a function `M` bounded above near every point of `Ω`. Then
+`η` has a similarity factorization at every point of `Ω`
+(`TauCeti.exists_similarity_of_norm_le`). -/
+theorem hasSimilarityFactorizationAt_of_norm_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℂ E] [FiniteDimensional ℂ E] {η : ℂ → E} {M : ℂ → ℝ} (hΩ : IsOpen Ω)
+    (hη : ContDiffOn ℝ 1 η Ω) (hM : ∀ z ∈ Ω, ∃ K, ∀ᶠ w in 𝓝 z, M w ≤ K)
+    (hle : ∀ z ∈ Ω, ‖fderiv ℝ η z 1 + I • fderiv ℝ η z I‖ ≤ M z * ‖η z‖) {z₀ : ℂ}
+    (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt η z₀ :=
+  hasSimilarityFactorizationAt_of_exists_similarity
+    (exists_similarity_of_norm_le hΩ hη hM hle hz₀)
+
+/-- The bound `‖\bar∂ f‖ ≤ K ‖f‖`, for a locally bounded `K`, gives
+`‖∂ₛ f + i ∂ₜ f‖ = 2 ‖\bar∂ f(1)‖ ≤ 2 K ‖f‖`, with `2 * K` again locally bounded: the hypotheses of
+`TauCeti.exists_similarity_of_norm_le`. -/
+private theorem norm_fderiv_one_add_I_smul_le_of_norm_conjWirtingerDeriv_le {f : ℂ → ℂ}
+    {K : ℂ → ℝ} (hK : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, K w ≤ M)
+    (hfK : ∀ z ∈ Ω, ‖conjWirtingerDeriv f z‖ ≤ K z * ‖f z‖) :
+    (∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, 2 * K w ≤ M) ∧
+      ∀ z ∈ Ω, ‖fderiv ℝ f z 1 + I • fderiv ℝ f z I‖ ≤ 2 * K z * ‖f z‖ := by
+  refine ⟨fun z hz ↦ ?_, fun z hz ↦ ?_⟩
+  · obtain ⟨M, hM⟩ := hK z hz
+    exact ⟨2 * M, hM.mono fun w hw ↦ by gcongr⟩
+  · rw [fderiv_apply_one_add_I_smul_fderiv_apply_I, norm_smul, Complex.norm_two, mul_assoc]
+    gcongr
+    exact ((conjWirtingerDeriv f z).le_opNorm 1).trans (by simpa using hfK z hz)
+
 /-- **Isolated zeros under a differential inequality.** On a connected open set `Ω ⊆ ℂ`, a
 function `f : ℂ → ℂ` of class `C¹` with `‖\bar∂ f(z)‖ ≤ K(z) ‖f(z)‖` on `Ω`, for a locally bounded
 `K`, that is not identically zero on `Ω` has isolated zeros. -/
@@ -698,14 +737,42 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_norm_conjWirtingerDeriv_le (hΩ : 
     (hfK : ∀ z ∈ Ω, ‖conjWirtingerDeriv f z‖ ≤ K z * ‖f z‖) (hne : ∃ z ∈ Ω, f z ≠ 0) :
     {z | f z ≠ 0} ∈ codiscreteWithin Ω := by
   -- `‖∂ₛ f + i ∂ₜ f‖ = 2 ‖\bar∂ f(1)‖ ≤ 2 K ‖f‖`, so `f` has similarity factorizations
-  refine setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt hΩ hΩc
+  obtain ⟨hM, hle⟩ := norm_fderiv_one_add_I_smul_le_of_norm_conjWirtingerDeriv_le hK hfK
+  exact setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt hΩ hΩc
     hf.continuousOn (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_norm_le (M := fun w ↦ 2 * K w)
-      hΩ hf (fun z hz ↦ ?_) (fun z hz ↦ ?_) hz) hne
-  · obtain ⟨M, hM⟩ := hK z hz
-    exact ⟨2 * M, hM.mono fun w hw ↦ by gcongr⟩
-  · rw [fderiv_apply_one_add_I_smul_fderiv_apply_I, norm_smul, Complex.norm_two, mul_assoc]
-    gcongr
-    exact ((conjWirtingerDeriv f z).le_opNorm 1).trans (by simpa using hfK z hz)
+      hΩ hf hM hle hz) hne
+
+/-- A scalar similarity factorization `f = Φ σ` near `z₀`, with `Φ` a family of complex-linear
+endomorphisms of `ℂ` continuous and invertible at `z₀` and `σ` analytic at `z₀`, is a factorization
+`f = v * σ` near `z₀` with `v` continuous and nonzero at `z₀`: a complex-linear endomorphism of `ℂ`
+is multiplication by its value at `1`. -/
+theorem exists_eventually_eq_mul_of_eventually_eq_clm_apply {f : ℂ → ℂ} {z₀ : ℂ}
+    {Φ : ℂ → ℂ →L[ℂ] ℂ} {σ : ℂ → ℂ} (hΦ : ContinuousAt Φ z₀) (hΦu : IsUnit (Φ z₀))
+    (hσ : AnalyticAt ℂ σ z₀) (hfσ : ∀ᶠ z in 𝓝 z₀, f z = Φ z (σ z)) :
+    ∃ v σ : ℂ → ℂ, ContinuousAt v z₀ ∧ v z₀ ≠ 0 ∧ AnalyticAt ℂ σ z₀ ∧
+      ∀ᶠ z in 𝓝 z₀, f z = v z * σ z := by
+  refine ⟨fun z ↦ Φ z 1, σ, hΦ.clm_apply continuousAt_const, fun h0 ↦ ?_, hσ,
+    hfσ.mono fun z hz ↦ ?_⟩
+  · exact hΦu.ne_zero (ContinuousLinearMap.ext_ring (by simpa using h0))
+  · calc f z = Φ z (σ z • 1) := by rw [hz, smul_eq_mul, mul_one]
+      _ = Φ z 1 * σ z := by rw [map_smul, smul_eq_mul, mul_comm]
+
+/-- **Scalar similarity factorization under a differential inequality.** A function `f : ℂ → ℂ` of
+class `C¹` on an open set `Ω`, with `‖\bar∂ f(z)‖ ≤ K(z) ‖f(z)‖` on `Ω` for a locally bounded `K`,
+is near every point `z₀ ∈ Ω` the product `v * σ` of a function `v` continuous and nonzero at `z₀`
+and a function `σ` analytic at `z₀`. The factor `v` is a complex number, not merely a real-linear
+map: this is what makes the zeros of `f` count positively, as the zeros of `σ` do. -/
+theorem exists_eventually_eq_mul_of_norm_conjWirtingerDeriv_le (hΩ : IsOpen Ω) {f : ℂ → ℂ}
+    (hf : ContDiffOn ℝ 1 f Ω) {K : ℂ → ℝ} (hK : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, K w ≤ M)
+    (hfK : ∀ z ∈ Ω, ‖conjWirtingerDeriv f z‖ ≤ K z * ‖f z‖) {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) :
+    ∃ v σ : ℂ → ℂ, ContinuousAt v z₀ ∧ v z₀ ≠ 0 ∧ AnalyticAt ℂ σ z₀ ∧
+      ∀ᶠ z in 𝓝 z₀, f z = v z * σ z := by
+  -- `‖∂ₛ f + i ∂ₜ f‖ = 2 ‖\bar∂ f(1)‖ ≤ 2 K ‖f‖`
+  obtain ⟨hM, hle⟩ := norm_fderiv_one_add_I_smul_le_of_norm_conjWirtingerDeriv_le hK hfK
+  obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hfσ⟩ := exists_similarity_of_norm_le hΩ hf hM hle hz₀
+  have hball : ball z₀ r ∈ 𝓝 z₀ := ball_mem_nhds z₀ hr
+  exact exists_eventually_eq_mul_of_eventually_eq_clm_apply (hΦ.continuousAt hball)
+    (hΦu z₀ (mem_ball_self hr)) (hσ.analyticAt hball) (eventually_of_mem hball hfσ)
 
 end Classical
 

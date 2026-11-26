@@ -13,10 +13,12 @@ import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Bounds
 import TauCeti.NumberTheory.ModularForms.CharacterDecomp
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Cusp.Gamma1
+import TauCeti.NumberTheory.ModularForms.Cusps.ConstantTerm.Gamma1Four
 import TauCeti.NumberTheory.ModularForms.Cusps.Weight.One
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.ConstantTerm
 import TauCeti.NumberTheory.ModularForms.Parity
 import TauCeti.NumberTheory.ModularForms.SturmBound
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 
 /-!
 # The weight-one cusp–Eisenstein decomposition with nebentypus
@@ -284,7 +286,7 @@ end Profile
 
 /-- The matrix `!![1, 0; c, 1]`, which represents the cusp `1 / c`. -/
 private def lowerUnipotent (c : ℕ) : SL(2, ℤ) :=
-  ⟨!![1, 0; (c : ℤ), 1], by simp [Matrix.det_fin_two_of]⟩
+  Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) (c : ℤ)
 
 /-- The constant term of `E₁^{ψ,φ,t}` at the cusp `1 / c` in terms of the two profiles. -/
 private theorem constantTermAt_lowerUnipotent_charE1MFRaise {u v N : ℕ} [NeZero u] [NeZero v]
@@ -297,8 +299,10 @@ private theorem constantTermAt_lowerUnipotent_charE1MFRaise {u v N : ℕ} [NeZer
           (((u : ℂ) * v)⁻¹ * ∑ j : ZMod (u * v), ψ⁻¹ (j.val : ZMod u) * φ (j.val : ZMod v) *
             (π * cot (π * (j.val / (u * v))))) * profile φ ψ t c := by
   rw [constantTermAt_charE1MFRaise ψ φ hψ hφ htuv]
-  have h10 : (lowerUnipotent c) 1 0 = c := rfl
-  have h00 : (lowerUnipotent c) 0 0 = 1 := rfl
+  have h10 : (lowerUnipotent c) 1 0 = c := by
+    simp [lowerUnipotent]
+  have h00 : (lowerUnipotent c) 0 0 = 1 := by
+    simp [lowerUnipotent]
   simp only [h10, h00, mul_one, Int.gcd_natCast_natCast, ← Int.natCast_div,
     Int.natCast_dvd_natCast, Int.cast_natCast, Int.cast_neg, profile]
   have hφ1 (x : ZMod v) : φ x = φ (-1) * φ (-x) := by
@@ -602,10 +606,8 @@ private theorem two_mul_finrank_le_card_of_disjoint
     simpa using TauCeti.ModularForm.two_mul_finrank_le_natCard_of_disjoint (Gamma1 4)
       ![1, ModularGroup.S]
       (fun γ ↦ (cuspOrbitOfSL2Z_Gamma1_four γ).elim (fun h ↦ .inl ⟨0, h⟩) fun h ↦
-        h.elim (fun h ↦ .inl ⟨1, h⟩) fun h ↦ .inr fun f ↦
-          constantTermAt_eq_zero_of_odd
-            (Subgroup.mem_map_of_mem _ (mul_neg_T_mul_inv_mem_Gamma1_four h))
-            (by simp [ModularGroup.coe_T]) (by simp [ModularGroup.coe_T]) odd_one f) hV
+        h.elim (fun h ↦ .inl ⟨1, h⟩) fun h ↦
+          .inr (constantTermAt_eq_zero_of_odd_of_Gamma1_four h odd_one)) hV
 
 /-- **The weight-one Eisenstein series span a complement of the cusp forms** in `M₁(Γ₁(N))`. -/
 theorem isCompl_span_range_weightOneForm_cuspFormSubmodule :

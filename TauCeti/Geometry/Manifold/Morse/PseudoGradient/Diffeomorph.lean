@@ -18,8 +18,16 @@ pseudo-gradients adapted to functions `f` on `M` and `f'` on `M'` which `σ` int
 conjugates the flows, `Φ'_t ∘ σ = σ ∘ Φ_t`, and carries the stable and unstable manifolds of `X`
 to those of `X'`. In the pullback of a Morse chart along `σ`, the linear flow is that of the chart.
 
+Every pseudo-gradient `X'` adapted to `f'` arises this way: its pullback
+`σ^* X' = (dσ)⁻¹ ∘ X' ∘ σ` (Mathlib's `VectorField.mpullback`) is a pseudo-gradient adapted to
+`f' ∘ σ`, which `σ` intertwines with `X'` (`Diffeomorph.mfderiv_apply_mpullback`), so the
+results below apply to it. This is how a continuation carries the pseudo-gradient
+of one end of a slab back to the other end through the transition diffeomorphism of the slab.
+
 ## Main results
 
+* `TauCeti.IsAdaptedPseudoGradient.mpullback`: the pullback of an adapted pseudo-gradient along a
+  diffeomorphism is adapted to the pulled-back function.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_diffeomorph`: the diffeomorphism conjugates the
   flows.
 * `TauCeti.IsAdaptedPseudoGradient.preimage_unstableSet_diffeomorph`,
@@ -49,6 +57,33 @@ theorem MorseChart.pullback_linearFlow (hf : f' ∘ σ = f) {x : M} (φ : MorseC
   simp
 
 namespace IsAdaptedPseudoGradient
+
+/-- **Pulling back an adapted pseudo-gradient along a diffeomorphism.** If `X'` is a
+pseudo-gradient adapted to `f'` and `σ : M → M'` is a diffeomorphism, then the pullback
+`σ^* X' = (dσ)⁻¹ ∘ X' ∘ σ` is a pseudo-gradient adapted to `f' ∘ σ`. It is smooth as the pullback
+of a smooth field by a smooth map with invertible differential, `f' ∘ σ` decreases along it since
+`d (f' ∘ σ) (σ^* X') = df' (X' ∘ σ)`, and a Morse chart in which `X'` is linear pulls back to one
+in which `σ^* X'` is linear. -/
+theorem mpullback [CompleteSpace E] (hX' : IsAdaptedPseudoGradient f' X')
+    (σ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M') :
+    IsAdaptedPseudoGradient (f' ∘ σ) (VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) σ X') where
+  contMDiff := hX'.contMDiff.mpullback_vectorField σ.contMDiff
+    (fun _ ↦ σ.isInvertible_mfderiv (by simp)) le_rfl
+  mvfderiv_apply_lt_zero x hx := by
+    rw [σ.mvfderiv_comp_diffeomorph (by simp), ContinuousLinearMap.comp_apply,
+      σ.mfderiv_apply_mpullback (by simp)]
+    refine hX'.mvfderiv_apply_lt_zero (σ x) fun h ↦ hx ?_
+    rw [σ.mfderiv_comp_diffeomorph (by simp), h, ContinuousLinearMap.zero_comp]
+  exists_morseChart x hx := by
+    -- `σ x` is a critical point of `f'`, since `dσ` is surjective.
+    have hx' : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f' (σ x) = 0 := by
+      rw [σ.mfderiv_comp_diffeomorph (by simp)] at hx
+      exact ContinuousLinearMap.ext fun v ↦ by
+        obtain ⟨w, rfl⟩ := (σ.isInvertible_mfderiv (x := x) (by simp)).surjective v
+        exact congr($hx w)
+    obtain ⟨φ, hφ⟩ := hX'.exists_morseChart (σ x) hx'
+    exact ⟨φ.pullback rfl, MorseChart.coord_mfderiv_pullback rfl
+      (σ.mfderiv_apply_mpullback (by simp) X') hφ⟩
 
 variable [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M] [CompactSpace M'] [T2Space M']
   (hX : IsAdaptedPseudoGradient f X) (hX' : IsAdaptedPseudoGradient f' X')

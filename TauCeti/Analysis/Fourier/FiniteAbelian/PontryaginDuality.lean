@@ -40,6 +40,8 @@ shift of any fixed nontrivial one.
   the pairing is nondegenerate.
 * `AddChar.IsPrimitive.bijective_mulShift`: the shifts of a primitive character of a finite ring
   are all the characters, each exactly once.
+* `AddChar.IsPrimitive.existsUnique_mulShift_eq`: every character is the shift of a given
+  primitive character by exactly one element.
 * `AddChar.IsPrimitive.existsUnique_units_mulShift_eq`: every primitive character is the shift of
   a given primitive character by a unique unit.
 -/
@@ -119,6 +121,12 @@ that character. -/
 theorem IsPrimitive.mulShift_mulShiftAddEquiv_symm (hψ : ψ.IsPrimitive) (φ : AddChar R R') :
     ψ.mulShift (hψ.mulShiftAddEquiv.symm φ) = φ := by
   rw [← hψ.mulShiftAddEquiv_apply, AddEquiv.apply_symm_apply]
+
+/-- Every additive character of a finite ring is the shift of a given primitive character by
+exactly one element. -/
+theorem IsPrimitive.existsUnique_mulShift_eq (hψ : ψ.IsPrimitive) (φ : AddChar R R') :
+    ∃! a : R, ψ.mulShift a = φ :=
+  hψ.bijective_mulShift.existsUnique φ
 
 /-- Every primitive additive character of a finite ring is the shift of a given primitive
 character by a unique unit. -/

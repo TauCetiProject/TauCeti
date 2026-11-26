@@ -70,7 +70,9 @@ is the single-neck model of the same deformation.
   (`TauCeti.Floer.cappedComparisonPerturbation_zero`). It is constant, equal to the datum with
   `a = 1` and `L = 0`, for `2/3 ≤ R ≤ 3/2`
   (`TauCeti.Floer.cappedComparisonPerturbation_of_mem_Icc`), and for `R ≥ 2` it has necks of
-  length `R - 1` (`TauCeti.Floer.cappedComparisonPerturbation_of_two_le`).
+  length `R - 1` (`TauCeti.Floer.cappedComparisonPerturbation_of_two_le`), so it is the
+  pair-of-pants perturbation on the truncation `S_T` once `T ≤ R + 1`
+  (`TauCeti.Floer.cappedComparisonPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation`).
 * For a manifold target with a smooth two-form, and `|H_q| ≤ B_q`, the integrated curvature of
   the datum along any map is at most `2 |a| (B₀ + B₁ + B_∞)`, independently of `L`
   (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_cappedPerturbation_le`). Along the
@@ -288,6 +290,14 @@ theorem eventually_cocompact_cappedPerturbation_eq_zero :
     ∀ᶠ w in cocompact ℂ, ∀ x : M, cappedPerturbation a L H w x = 0 := by
   filter_upwards [(isCompact_truncation (L + 3)).compl_mem_cocompact] with w hw x
   exact cappedPerturbation_eq_zero_of_notMem_truncation hw x
+
+/-- **The datum vanishes beyond a radius depending only on a bound for the neck length.** For
+`L ≤ L₀` the datum vanishes outside the disc of radius `2 exp (2π (L₀ + 3))`, which contains the
+truncation `S_{L + 3}`. -/
+theorem cappedPerturbation_eq_zero_of_lt_norm {L₀ : ℝ} (hL : L ≤ L₀) {w : ℂ}
+    (hw : 2 * Real.exp (2 * π * (L₀ + 3)) < ‖w‖) (x : M) : cappedPerturbation a L H w x = 0 :=
+  cappedPerturbation_eq_zero_of_notMem_truncation
+    (notMem_truncation_of_lt_norm (by linarith : L + 3 ≤ L₀ + 3) hw) x
 
 /-- **The datum on an end.** On the part `±s > 0` of the end `q`, the pullback of the datum along
 the end lift `φ` is `a P_L(±s) H_q(t) dt`: it sends a tangent vector `v` of the cylinder to
@@ -521,7 +531,7 @@ theorem differentiable_cappedPerturbation_domain (hH : ∀ q, Function.Periodic 
   exact (h.contDiff.differentiable one_ne_zero).clm_apply (differentiable_const v)
 
 /-- The capped perturbation is differentiable in the target point. -/
-private theorem mdifferentiable_cappedPerturbation_target (hH : ∀ q, Function.Periodic (H q) 1)
+theorem mdifferentiable_cappedPerturbation_target (hH : ∀ q, Function.Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry (H q))) (a L : ℝ) (w v : ℂ) :
     MDifferentiable I 𝓘(ℝ) fun y ↦ cappedPerturbation a L H w y v := by
   have h : ContMDiff I 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 fun y ↦ cappedPerturbation a L H w y :=
@@ -606,6 +616,17 @@ theorem cappedComparisonPerturbation_of_two_le (H : Puncture → ℝ → M → �
   rw [cappedComparisonPerturbation_def, comparisonCutoff_of_ge (by linarith),
     comparisonNeckLength_of_ge hR]
 
+/-- On the truncation `S_T`, for `R ≥ 2` with `T ≤ R + 1`, the datum is the pair-of-pants
+perturbation. -/
+theorem cappedComparisonPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation
+    (H : Puncture → ℝ → M → ℝ) {R T : ℝ} (hR : 2 ≤ R) (hRT : T ≤ R + 1) {w : ℂ}
+    (hw : w ∈ truncation T) :
+    cappedComparisonPerturbation H R w = pairOfPantsPerturbation H w :=
+  funext fun x ↦ by
+    rw [cappedComparisonPerturbation_of_two_le H hR,
+      cappedPerturbation_eq_smul_pairOfPantsPerturbation
+        (fun q ↦ ((mem_truncation.1 hw).2.2 q).trans (by linarith)), one_smul]
+
 section Smooth
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
@@ -623,6 +644,12 @@ theorem contMDiff_cappedComparisonPerturbation {n : ℕ∞} (hH : ∀ q, Functio
   exact (contMDiff_cappedPerturbation hH hHs).comp
     (contMDiff_fst.prodMk ((hρL.comp (contMDiff_fst.comp contMDiff_snd)).prodMk
       (contMDiff_snd.comp contMDiff_snd)))
+
+/-- The comparison datum `K_R` is differentiable in the target point, for every `R`. -/
+theorem mdifferentiable_cappedComparisonPerturbation_target (hH : ∀ q, Function.Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry (H q))) (R : ℝ) (w v : ℂ) :
+    MDifferentiable I 𝓘(ℝ) fun y ↦ cappedComparisonPerturbation H R w y v :=
+  mdifferentiable_cappedPerturbation_target hH hHs _ _ w v
 
 end Smooth
 

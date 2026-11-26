@@ -184,8 +184,14 @@ private theorem setIntegral_sq_mul_sobolev_le {P : (ℝ × ℝ → E) → ℝ ×
   have hrect : MeasurableSet (Icc a b ×ˢ Icc (0 : ℝ) 1) := measurableSet_Icc.prod measurableSet_Icc
   have hξc := hξ.continuous
   have hβc := hβ.continuous
-  have hsξ := continuous_sobolev (hξ.of_le one_le_two)
-  have hsη := continuous_sobolev (hη.of_le one_le_two)
+  have hsξ : Continuous fun z ↦ ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+      ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2 := by
+    simpa only [funext (sobolevDensity_apply ξ)] using
+      continuous_sobolevDensity (hξ.of_le one_le_two)
+  have hsη : Continuous fun z ↦ ‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+      ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2 := by
+    simpa only [funext (sobolevDensity_apply η)] using
+      continuous_sobolevDensity (hη.of_le one_le_two)
   set I := ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, β z.1 ^ 2 * (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
     ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2)
   set L := ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2
@@ -233,7 +239,10 @@ private theorem setIntegral_norm_sq_le_div_sq {P : (ℝ × ℝ → E) → ℝ ×
       (8 * C * ‖σ‖ ^ 2 + 4) * (M / R) ^ 2 * ∫ z in univ ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2 := by
   have hR0 : 0 < R := hR₀.trans_le hR
   have hξc := hξ.continuous
-  have hsξ := continuous_sobolev (hξ.of_le one_le_two)
+  have hsξ : Continuous fun z ↦ ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+      ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2 := by
+    simpa only [funext (sobolevDensity_apply ξ)] using
+      continuous_sobolevDensity (hξ.of_le one_le_two)
   set βR : ℝ → ℝ := fun s ↦ β (s / R)
   have hβR : ContDiff ℝ 2 βR := hβ.comp (contDiff_id.div_const R)
   have hβRc := hβR.continuous
