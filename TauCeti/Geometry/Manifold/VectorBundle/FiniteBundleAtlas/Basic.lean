@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Topology.ShrinkingLemma
 public import Mathlib.Topology.VectorBundle.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.PreferredChartReading
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -52,8 +53,8 @@ closed upper half-plane are read in `ℂ` in
   domains and of their pairwise intersections.
 * `TauCeti.FiniteBundleAtlas.transition`: the chart transition between two charts.
 * `TauCeti.FiniteBundleAtlas.coord`: a section read in a chart.
-* `TauCeti.preferredChartReading`: a section read in the preferred manifold chart and the
-  preferred trivialization at a point.
+* `TauCeti.FiniteBundleAtlas.preferredChartReading_center`: the reading of a section in the
+  preferred charts at the centre of a chart is its reading in that chart.
 * `TauCeti.FiniteBundleAtlas.chartSection`: the section with prescribed coordinates on the domain
   of one chart, extended by zero.
 * `TauCeti.FiniteBundleAtlas.ofBaseSet`: the charts of an atlas of `V` as an atlas of `V'`.
@@ -135,13 +136,6 @@ structure FiniteBundleAtlas where
 variable {E M F V}
   {F' : Type*} [TopologicalSpace F'] {V' : M → Type*} [TopologicalSpace (TotalSpace F' V')]
   [∀ x, TopologicalSpace (V' x)] [FiberBundle F' V']
-
-/-- The reading of a section `s` in the preferred manifold chart and the preferred trivialization
-at `c`: the function `y ↦ (e_c (s (φ_c⁻¹ y))).2` on the model space, where `φ_c = chartAt E c` and
-`e_c = trivializationAt F V c`. In the charts of a finite bundle atlas it is
-`TauCeti.FiniteBundleAtlas.coord` (`TauCeti.FiniteBundleAtlas.preferredChartReading_center`). -/
-abbrev preferredChartReading (s : ∀ x, V x) (c : M) (y : E) : F :=
-  (trivializationAt F V c (TotalSpace.mk' F ((chartAt E c).symm y) (s ((chartAt E c).symm y)))).2
 
 namespace FiniteBundleAtlas
 
@@ -299,7 +293,7 @@ theorem coord_def (i : Fin A.n) (s : ∀ x, V x) (y : E) :
 /-- The reading of a section in the preferred charts at the centre of chart `i` is its reading in
 chart `i`. -/
 theorem preferredChartReading_center (i : Fin A.n) (s : ∀ x, V x) :
-    preferredChartReading s (A.center i) = A.coord i s :=
+    preferredChartReading E F s (A.center i) = A.coord i s :=
   (rfl)
 
 theorem coord_chart {i : Fin A.n} (s : ∀ x, V x) {x : M} (hx : x ∈ A.dom i) :

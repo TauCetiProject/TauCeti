@@ -188,12 +188,12 @@ include hD hDs hq in
 continuous, with a weak conjugate Wirtinger derivative bounded by an `Lᵖ_loc` multiple of it. -/
 private theorem exists_weakChartData (hξ : hD.perturbedSobolevL A hDs volume hp hqp α ξ = 0) :
     ∃ (g : Fin A.n → ℂ → ℝ) (G : Fin A.n → ℂ → ℂ), ∀ j,
-      ContinuousOn (preferredChartReading (E := ℂ) (F := ℂ) ξ.toSection (A.center j)) (A.image j) ∧
+      ContinuousOn (preferredChartReading ℂ ℂ ξ.toSection (A.center j)) (A.image j) ∧
       MemLpLoc p (A.image j) (g j) ∧
       HasWeakConjWirtingerDerivOn volume (A.image j)
-        (preferredChartReading (E := ℂ) (F := ℂ) ξ.toSection (A.center j)) (G j) ∧
+        (preferredChartReading ℂ ℂ ξ.toSection (A.center j)) (G j) ∧
       ∀ᵐ y ∂volume.restrict (A.image j), ‖G j y‖ ≤
-        g j y * ‖preferredChartReading (E := ℂ) (F := ℂ) ξ.toSection (A.center j) y‖ := by
+        g j y * ‖preferredChartReading ℂ ℂ ξ.toSection (A.center j) y‖ := by
   have hrep := hasContinuousRepresentatives A hq
   simp only [A.preferredChartReading_center]
   choose Du g hDu hg hle using fun j ↦
@@ -203,7 +203,6 @@ private theorem exists_weakChartData (hξ : hD.perturbedSobolevL A hDs volume hp
       (hDu j).hasWeakConjWirtingerDerivOn, ?_⟩⟩
   filter_upwards [hle j] with y hy
   -- On `ℂ`, the weak conjugate Wirtinger derivative is the value on `1` of `\bar∂`.
-  rw [A.preferredChartReading_center]
   refine le_trans ?_ hy
   rw [show (2 : ℂ)⁻¹ • (Du j y 1 + Complex.I • Du j y Complex.I) =
       complexAntilinearPartL (Du j y) 1 by

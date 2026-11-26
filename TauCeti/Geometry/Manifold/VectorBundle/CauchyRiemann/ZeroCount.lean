@@ -107,9 +107,9 @@ private structure ChartData (s : Π x, L x) (z : X) where
   mem_baseSet : z ∈ (trivializationAt ℂ L c).baseSet
   isOpen : IsOpen Ω
   mem : chartAt ℂ c z ∈ Ω
-  contDiffOn : ContDiffOn ℝ 1 (preferredChartReading (E := ℂ) (F := ℂ) s c) Ω
-  norm_le : ∀ y ∈ Ω, ‖conjWirtingerDeriv (preferredChartReading (E := ℂ) (F := ℂ) s c) y‖ ≤
-    C * ‖preferredChartReading (E := ℂ) (F := ℂ) s c y‖
+  contDiffOn : ContDiffOn ℝ 1 (preferredChartReading ℂ ℂ s c) Ω
+  norm_le : ∀ y ∈ Ω, ‖conjWirtingerDeriv (preferredChartReading ℂ ℂ s c) y‖ ≤
+    C * ‖preferredChartReading ℂ ℂ s c y‖
 
 include hD hDs in
 /-- Around every point, a `C¹` section in the kernel has chart data for the zero count. -/
