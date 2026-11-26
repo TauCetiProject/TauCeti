@@ -13,6 +13,7 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Word
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.DoubleCoset.Map
+import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 
 /-!
 # The Tits system of a Chevalley datum
@@ -35,7 +36,9 @@ Weyl quotient `D.weylSubgroupQuotientMulEquiv K` from `Chevalley.Weyl.Quotient` 
 * `ChevalleyDatum.titsSystem` and `ChevalleyDatum.mem_titsSystem_intersection_iff`: the Tits system
   on `D.extendedElementarySubgroup K`, whose `B ∩ N` intersection consists of the points of the
   actual torus `T_D(K)`.
-* `ChevalleyDatum.titsWeylGroupMulEquiv`: the isomorphism `(D.titsSystem K).WeylGroup ≃* W`.
+* `ChevalleyDatum.titsWeylGroupMulEquiv` and `ChevalleyDatum.titsSimpleReflection_injective`:
+  the isomorphism `(D.titsSystem K).WeylGroup ≃* W` and injectivity of the numbered simple
+  reflections.
 * `ChevalleyDatum.elementaryTitsSystem`,
   `ChevalleyDatum.mem_elementaryTitsSystem_intersection_iff`, and
   `ChevalleyDatum.elementaryTitsWeylGroupMulEquiv`: the induced Tits system on
@@ -66,15 +69,13 @@ variable (K : Type v) [Field K]
 private theorem mem_doubleCoset_borelSubgroupOf_iff
     (a x : D.extendedElementarySubgroup K) :
     x ∈ DoubleCoset.doubleCoset a
-        ((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K))
+        (((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K) :
+          Subgroup (D.extendedElementarySubgroup K)) : Set (D.extendedElementarySubgroup K))
         ((D.borelSubgroup K).subgroupOf (D.extendedElementarySubgroup K)) ↔
-      (x : D.points K) ∈
-        DoubleCoset.doubleCoset (a : D.points K) (D.borelSubgroup K) (D.borelSubgroup K) := by
-  rw [← DoubleCoset.mem_doubleCoset_image_iff
-    (D.extendedElementarySubgroup K).subtype_injective,
-    ← Subgroup.coe_map,
-    Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup K)]
-  rfl
+      (x : D.points K) ∈ DoubleCoset.doubleCoset (a : D.points K)
+        (D.borelSubgroup K) (D.borelSubgroup K) := by
+  rw [DoubleCoset.mem_doubleCoset_subgroupOf_iff,
+    inf_of_le_left (D.borelSubgroup_le_extendedElementarySubgroup K)]
 
 private theorem borelSubgroupOf_subgroupOf_eq_comap
     {B N : Subgroup (D.extendedElementarySubgroup K)}
@@ -215,7 +216,7 @@ noncomputable def titsSystem : TitsSystem (D.extendedElementarySubgroup K) where
         D.coe_titsSimpleRepAux K]
       exact hleft
     · right
-      exact (D.mem_doubleCoset_borelSubgroupOf_iff K w (y * z)).mpr hright
+      exact (D.mem_doubleCoset_borelSubgroupOf_iff K _ _).mpr hright
   exists_conj_not_mem := by
     rintro _ ⟨i, rfl⟩
     obtain ⟨b, hb⟩ := D.exists_weylElement_conj_notMem_borelSubgroup K i
@@ -377,6 +378,22 @@ theorem titsSystem_simple_eq_preimage :
   · rintro ⟨i, hi⟩
     refine ⟨i, (D.titsWeylGroupMulEquiv K).injective ?_⟩
     rw [D.titsWeylGroupMulEquiv_titsSimpleReflection K i, hi]
+
+/-- Distinct Bourbaki nodes determine distinct simple reflections in `(D.titsSystem K).WeylGroup`
+over every field `K`. -/
+theorem titsSimpleReflection_injective : Function.Injective (D.titsSimpleReflection K) := by
+  intro i j hij
+  by_contra hne
+  have hidx : RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i) =
+      RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht j) := by
+    rw [← D.titsWeylGroupMulEquiv_titsSimpleReflection K i,
+      ← D.titsWeylGroupMulEquiv_titsSimpleReflection K j, hij]
+  exact RootPairing.weylGroup.ofIdx_ne_ofIdx_of_ne (t.simplyConnectedRootDatum ht)
+    (t.simplyConnectedBase ht)
+    ((t.mem_support_simplyConnectedBase ht).mpr (by simp))
+    ((t.mem_support_simplyConnectedBase ht).mpr (by simp))
+    (fun h => hne (Fin.ext (by simpa only [val_simpleIndex] using congrArg Fin.val h)))
+    hidx
 
 /-! ### The induced Tits system on the elementary Chevalley subgroup -/
 
