@@ -218,7 +218,6 @@ noncomputable def linearHomComplexSewing (F : A ⊗ linearDual R B ⟶ 𝟙_ _)
 
 /-- The evaluation of the braided exact pairing `(B∨, B)`, obtained from `(B, B∨)` by
 `CategoryTheory.BraidedCategory.exactPairing_swap`, is the right evaluation of `B`. -/
-@[simp]
 lemma exactPairing_swap_evaluation_eq_linearHomComplexRightEvaluation :
     @ExactPairing.evaluation _ _ _ (linearDual R B) B
         (@exactPairing_swap _ _ _ _ B (linearDual R B) (exactPairingLinearHomComplex B)) =
@@ -228,7 +227,6 @@ lemma exactPairing_swap_evaluation_eq_linearHomComplexRightEvaluation :
 /-- The coevaluation of the braided exact pairing `(B∨, B)`, obtained from `(B, B∨)` by
 `CategoryTheory.BraidedCategory.exactPairing_swap`, is the coevaluation of `B` followed by the
 interchange of the factors. -/
-@[simp]
 lemma exactPairing_swap_coevaluation_eq_linearHomComplexCoevaluation_comp :
     @ExactPairing.coevaluation _ _ _ (linearDual R B) B
         (@exactPairing_swap _ _ _ _ B (linearDual R B) (exactPairingLinearHomComplex B)) =
