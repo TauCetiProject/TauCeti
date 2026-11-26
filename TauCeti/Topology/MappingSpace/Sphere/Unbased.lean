@@ -204,6 +204,8 @@ theorem sphereMapComponentOfOrbit_mk (a : HomotopyGroup (Fin k) X x) :
     sphereMapComponentOfOrbit k s₀ x (Quotient.mk _ a) = sphereMapComponent k s₀ x a :=
   (rfl)
 
+/-- Free homotopy classes determine orbits: distinct orbits of `π₁(X, x)` on `π_k(X, x)` give
+distinct path components of `Map(S^k, X)`. -/
 theorem injective_sphereMapComponentOfOrbit :
     Function.Injective (sphereMapComponentOfOrbit k s₀ x) := by
   intro a b h
@@ -268,6 +270,16 @@ theorem orbitEquivSphereMapComponents_apply [PathConnectedSpace X]
     orbitEquivSphereMapComponents k s₀ x a = sphereMapComponentOfOrbit k s₀ x a :=
   (rfl)
 
+/-- The inverse of `orbitEquivSphereMapComponents` sends the path component of the underlying
+unbased map of a based map `f` to the orbit of the class of `f`. -/
+@[simp]
+theorem orbitEquivSphereMapComponents_symm_mk_val [PathConnectedSpace X]
+    (f : BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) X s₀ x) :
+    (orbitEquivSphereMapComponents k s₀ x).symm (.mk f.val) =
+      Quotient.mk _ (zerothHomotopyBasedMapSphereEquiv k x s₀ (.mk f)) := by
+  rw [Equiv.symm_apply_eq, orbitEquivSphereMapComponents_apply, sphereMapComponentOfOrbit_mk,
+    sphereMapComponent_zerothHomotopyBasedMapSphereEquiv_mk]
+
 /-- **The path components of `Map(S^k, X)` for any space `X`.** Given a basepoint `b_c` in each
 path component `c` of `X`, the path components of `Map(S^k, X)` whose maps send the basepoint into
 `c` are the orbits of `π₁(X, b_c)` on `π_k(X, b_c)`:
@@ -276,21 +288,12 @@ def sphereMapComponentsEquivSigma (B : PathComponentBasepoints X) :
     ZerothHomotopy C(sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1, X) ≃
       Σ c : ZerothHomotopy X, MulAction.orbitRel.Quotient (FundamentalGroup X (B.point c))
         (HomotopyGroup (Fin k) X (B.point c)) :=
-  (Equiv.ofBijective (fun p ↦ sphereMapComponentOfOrbit k s₀ (B.point p.1) p.2)
-    ⟨fun ⟨c, a⟩ ⟨c', b⟩ h ↦ by
-      have hc : c = c' := by
-        induction a using Quotient.inductionOn with | h a => ?_
-        induction b using Quotient.inductionOn with | h b => ?_
-        simpa using congrArg (sphereMapComponentBase k X s₀) h
-      subst hc
-      exact congrArg (Sigma.mk c) (injective_sphereMapComponentOfOrbit k s₀ _ h),
-    fun d ↦ by
-      have hd : d ∈ Set.range
-          (sphereMapComponentOfOrbit k s₀ (B.point (sphereMapComponentBase k X s₀ d))) := by
-        rw [range_sphereMapComponentOfOrbit, Set.mem_preimage, Set.mem_singleton_iff,
-          B.mk_point]
-      obtain ⟨a, ha⟩ := hd
-      exact ⟨⟨_, a⟩, ha⟩⟩).symm
+  (Equiv.sigmaFiberEquiv (sphereMapComponentBase k X s₀)).symm.trans
+    (Equiv.sigmaCongrRight fun c ↦
+      ((Equiv.ofInjective _ (injective_sphereMapComponentOfOrbit k s₀ (B.point c))).trans
+        (Equiv.subtypeEquivRight fun d ↦ by
+          rw [range_sphereMapComponentOfOrbit, Set.mem_preimage, Set.mem_singleton_iff,
+            B.mk_point])).symm)
 
 @[simp]
 theorem sphereMapComponentsEquivSigma_symm_apply (B : PathComponentBasepoints X)
@@ -303,12 +306,8 @@ theorem sphereMapComponentsEquivSigma_symm_apply (B : PathComponentBasepoints X)
 @[simp]
 theorem sphereMapComponentsEquivSigma_apply_fst (B : PathComponentBasepoints X)
     (c : ZerothHomotopy C(sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1, X)) :
-    (sphereMapComponentsEquivSigma k s₀ B c).1 = sphereMapComponentBase k X s₀ c := by
-  conv_rhs => rw [← (sphereMapComponentsEquivSigma k s₀ B).symm_apply_apply c]
-  obtain ⟨d, a⟩ := sphereMapComponentsEquivSigma k s₀ B c
-  induction a using Quotient.inductionOn with | h a => ?_
-  rw [sphereMapComponentsEquivSigma_symm_apply, sphereMapComponentOfOrbit_mk,
-    sphereMapComponentBase_sphereMapComponent, B.mk_point]
+    (sphereMapComponentsEquivSigma k s₀ B c).1 = sphereMapComponentBase k X s₀ c :=
+  (rfl)
 
 /-- **For simply connected `X`, `π_k(X, x)` is the set of path components of `Map(S^k, X)`:** the
 action of `π₁(X, x)` is trivial, so free and based homotopy classes of maps `S^k → X` agree. -/
@@ -331,6 +330,16 @@ theorem homotopyGroupEquivSphereMapComponents_apply [SimplyConnectedSpace X]
     homotopyGroupEquivSphereMapComponents k s₀ x a = sphereMapComponent k s₀ x a :=
   (rfl)
 
+/-- The inverse of `homotopyGroupEquivSphereMapComponents` sends the path component of the
+underlying unbased map of a based map `f` to the class of `f`. -/
+@[simp]
+theorem homotopyGroupEquivSphereMapComponents_symm_mk_val [SimplyConnectedSpace X]
+    (f : BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) X s₀ x) :
+    (homotopyGroupEquivSphereMapComponents k s₀ x).symm (.mk f.val) =
+      zerothHomotopyBasedMapSphereEquiv k x s₀ (.mk f) := by
+  rw [Equiv.symm_apply_eq, homotopyGroupEquivSphereMapComponents_apply,
+    sphereMapComponent_zerothHomotopyBasedMapSphereEquiv_mk]
+
 /-- **For simply connected `X`, the unbased mapping space `Map(S^k, X)` has the same path
 components as the based one:** forgetting the basepoint is a bijection
 `π₀ Map_*(S^k, X) ≃ π₀ Map(S^k, X)`. -/
@@ -348,6 +357,14 @@ theorem zerothHomotopyBasedMapEquivSphereMap_mk [SimplyConnectedSpace X]
   rw [zerothHomotopyBasedMapEquivSphereMap, Equiv.trans_apply,
     homotopyGroupEquivSphereMapComponents_apply,
     sphereMapComponent_zerothHomotopyBasedMapSphereEquiv_mk]
+
+/-- The inverse of `zerothHomotopyBasedMapEquivSphereMap` sends the path component of the
+underlying unbased map of a based map `f` to the path component of `f`. -/
+@[simp]
+theorem zerothHomotopyBasedMapEquivSphereMap_symm_mk_val [SimplyConnectedSpace X]
+    (f : BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) X s₀ x) :
+    (zerothHomotopyBasedMapEquivSphereMap k s₀ x).symm (.mk f.val) = .mk f :=
+  (Equiv.symm_apply_eq _).2 (zerothHomotopyBasedMapEquivSphereMap_mk k s₀ x f).symm
 
 /-! ### Self-maps of spheres -/
 
@@ -375,7 +392,7 @@ theorem zerothHomotopySphereSelfMapEquivInt_mk_val
     zerothHomotopySphereSelfMapEquivInt n b s₀ (.mk f.val) =
       zerothHomotopyBasedMapSphereSelfEquivInt n b s₀ (.mk f) := by
   rw [zerothHomotopySphereSelfMapEquivInt, Equiv.trans_apply,
-    (Equiv.symm_apply_eq _).2 (zerothHomotopyBasedMapEquivSphereMap_mk (n + 2) s₀ s₀ f).symm]
+    zerothHomotopyBasedMapEquivSphereMap_symm_mk_val]
 
 end Sphere
 
