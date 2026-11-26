@@ -30,6 +30,7 @@ Finally, a continuous family `ψ (θ, ·)` of maps of `AddCircle T` starting at 
 `ψ (-θ, ·)` a right inverse of `ψ (θ, ·)` and without fixed points at small positive times, moves,
 at some small time, every point forward by a small continuous amount, and the short secants
 `(q τ, q (τ + w))` of a loop `q` stay near the diagonal.
+A real number vanishes in `UnitAddCircle = ℝ/ℤ` exactly when it is an integer.
 
 ## Main definitions
 
@@ -61,6 +62,8 @@ at some small time, every point forward by a small continuous amount, and the sh
   preconnected set or along a filter with a preconnected basis.
 * `Function.Injective.secant_ne_zero` — a short forward secant of an injective circle map is nonzero
   when its defining function has no zeros off the diagonal.
+* `UnitAddCircle.coe_eq_zero_iff` — a real number vanishes in `ℝ/ℤ` exactly when it is an
+  integer.
 * `ContinuousMap.exists_pos_forall_secant_mem` — the short secants `(q τ, q (τ + w))` of a loop
   `q` lie in any given open neighborhood of the diagonal.
 * `TauCeti.circleProdHomeomorphUnitAddTorus_apply`,
@@ -265,6 +268,12 @@ theorem exists_tendsto_add_int_mul_of_tendsto_coe (hp : 0 < p) {l : Filter X}
 end Lift
 
 end AddCircle
+
+/-- A real number is zero in `ℝ/ℤ` exactly when it is an integer. -/
+theorem UnitAddCircle.coe_eq_zero_iff {a : ℝ} :
+    (a : UnitAddCircle) = 0 ↔ ∃ n : ℤ, a = n := by
+  rw [AddCircle.coe_eq_zero_iff]
+  simp only [zsmul_one, eq_comm]
 
 namespace ContinuousMap
 

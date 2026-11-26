@@ -40,7 +40,9 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 
 * `TauCeti.totalVariationOn μ Ω u`: the total variation of `u` on `Ω`.
 * `TauCeti.ofReal_abs_integral_le_totalVariationOn`: every admissible pairing is bounded by the
-  total variation, and `TauCeti.totalVariationOn_le_iff` characterises upper bounds.
+  total variation, and `TauCeti.totalVariationOn_le_iff` characterises upper bounds; a finite
+  total variation is approached by admissible pairings
+  (`TauCeti.exists_toReal_totalVariationOn_sub_lt_integral`).
 * `TauCeti.ofReal_abs_integral_le_ofReal_mul_totalVariationOn`: a test vector field bounded by `c`
   pairs to at most `c |Du|(Ω)`.
 * `TauCeti.totalVariationOn_congr_ae`: the total variation only sees `u` almost everywhere on
@@ -70,8 +72,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm`: a weakly differentiable
   function has total variation at most the integral of the norm of its weak derivative, hence
   locally finite variation (`TauCeti.HasWeakFDerivOn.exists_totalVariationOn_ne_top`).
-* `TauCeti.HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm`: against an additive Haar
-  measure this is an equality, so a `W^{1,1}(Ω)` function has bounded variation on `Ω`, with
+* `TauCeti.HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm`: for any measure `μ` this is
+  an equality, so a `W^{1,1}(Ω)` function has bounded variation on `Ω`, with
   variation the `L¹` norm of its weak derivative
   (`TauCeti.HasWeakFDerivOn.totalVariationOn_lt_top_iff_integrableOn`).
 * `LocallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv`: for a locally Lipschitz
@@ -122,6 +124,17 @@ theorem ofReal_integral_le_totalVariationOn (φ : 𝓓(Ω, E)) (hφ : ∀ x, ‖
 theorem totalVariationOn_le_iff {c : ℝ≥0∞} : totalVariationOn μ Ω u ≤ c ↔
     ∀ φ : 𝓓(Ω, E), (∀ x, ‖φ x‖ ≤ 1) → ENNReal.ofReal (∫ x, divergenceCLM φ x * u x ∂μ) ≤ c :=
   iSup₂_le_iff
+
+/-- A finite total variation is approached by admissible pairings: for every `δ > 0`, some test
+vector field of norm at most one pairs with `u` to more than `|Du|(Ω) - δ`. -/
+theorem exists_toReal_totalVariationOn_sub_lt_integral (h : totalVariationOn μ Ω u ≠ ∞) {δ : ℝ}
+    (hδ : 0 < δ) : ∃ φ : 𝓓(Ω, E), (∀ x, ‖φ x‖ ≤ 1) ∧
+      (totalVariationOn μ Ω u).toReal - δ < ∫ x, divergenceCLM φ x * u x ∂μ := by
+  by_contra! hφ
+  have h0 : 0 ≤ (totalVariationOn μ Ω u).toReal - δ := by simpa using hφ 0 (by simp)
+  have := (ENNReal.ofReal_toReal h).le.trans
+    (totalVariationOn_le_iff.2 fun φ hφ' => ENNReal.ofReal_le_ofReal (hφ φ hφ'))
+  linarith [(ENNReal.ofReal_le_ofReal_iff h0).1 this]
 
 /-- Every admissible pairing is bounded in absolute value by the total variation. -/
 theorem ofReal_abs_integral_le_totalVariationOn (φ : 𝓓(Ω, E)) (hφ : ∀ x, ‖φ x‖ ≤ 1) :
@@ -502,8 +515,9 @@ section Haar
 
 variable [BorelSpace E] [μ.IsAddHaarMeasure]
 
+omit [μ.IsAddHaarMeasure] in
 /-- **The total variation of a weakly differentiable function.** If `u` has weak derivative `U`
-on `Ω`, then against an additive Haar measure `|Du|(Ω) = ∫_Ω ‖U‖`. In particular a function in
+on `Ω`, then `|Du|(Ω) = ∫_Ω ‖U‖`, for any measure `μ`. In particular a function in
 `W^{1,1}(Ω)` has bounded variation on `Ω`, and its variation is the `L¹(Ω)` norm of its weak
 derivative. -/
 theorem HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm {U : E → E →L[ℝ] ℝ}
@@ -522,8 +536,9 @@ theorem HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm {U : E → E →L
   simpa using (Equiv.neg 𝓓(Ω, E)).iSup_comp (g := fun φ => ⨆ (_ : ∀ x, ‖φ x‖ ≤ 1),
     ENNReal.ofReal (∫ x, U x (φ x) ∂μ))
 
-/-- A weakly differentiable function has finite total variation on `Ω`, against an additive Haar
-measure, exactly when its weak derivative is integrable on `Ω`. -/
+omit [μ.IsAddHaarMeasure] in
+/-- A weakly differentiable function has finite total variation on `Ω`, for any measure `μ`,
+exactly when its weak derivative is integrable on `Ω`. -/
 theorem HasWeakFDerivOn.totalVariationOn_lt_top_iff_integrableOn {U : E → E →L[ℝ] ℝ}
     (h : HasWeakFDerivOn μ Ω u U) : totalVariationOn μ Ω u < ∞ ↔ IntegrableOn U Ω μ := by
   rw [h.totalVariationOn_eq_setLIntegral_enorm, ← hasFiniteIntegral_iff_eNorm]

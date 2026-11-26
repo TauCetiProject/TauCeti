@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Valuation.ValuationRing
 public import Mathlib.Topology.Algebra.Valued.NormedValued
-public import Mathlib.Topology.Algebra.Valued.WithVal
+public import TauCeti.Topology.Algebra.Valued.WithVal
 public import TauCeti.RingTheory.Huber.CompleteRankOneBase.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Away
 
@@ -34,7 +34,7 @@ with pseudouniformiser `ϖ`, and let `K` be a fraction field of `O` with canonic
 * On the valued field `WithVal v`, the subgroups `ϖⁿ O` form a neighbourhood basis of zero, so
   `WithVal v` is complete (`IsCompleteRankOneBase.completeSpace_withVal`) and `O` is isomorphic
   as a topological ring to its valuation subring `(Valued.v).integer`
-  (`IsCompleteRankOneBase.equivIntegerWithVal`).
+  (`ValuationRing.equivIntegerWithVal`).
 
 Equipping `WithVal (ValuationRing.valuation O (FractionRing O))` with a `Valuation.RankOne`
 instance therefore realises `O` as the closed unit ball of a complete nontrivially normed
@@ -55,7 +55,7 @@ open scoped nonZeroDivisors
 
 namespace TauCeti.Huber.IsCompleteRankOneBase
 
-section Radical
+open ValuationRing (equivIntegerWithVal coe_equivIntegerWithVal)
 
 variable {O : Type*} [CommRing O] [TopologicalSpace O] (ϖ : O) [IsCompleteRankOneBase O ϖ]
 
@@ -66,48 +66,36 @@ pseudouniformiser `ϖ`. -/
 theorem exists_dvd_pow_of_not_isUnit [IsDomain O] [IsLocalRing O] {d : O} (hd : ¬ IsUnit d) :
     ∃ n : ℕ, ϖ ∣ d ^ n := by
   have hd_mem : d ∈ (Ideal.span {ϖ}).radical := by
-    rw [TauCeti.radical_span_singleton_eq_maximalIdeal_of_ringKrullDim_eq_one
-      (ringKrullDim_eq_one (O := O) (ϖ := ϖ))
+    rw [TauCeti.radical_span_singleton_eq_maximalIdeal_of_ringKrullDim_le_one
+      (ringKrullDim_eq_one (O := O) (ϖ := ϖ)).le
       ((mem_maximalIdeal _).mpr (not_isUnit (O := O) (ϖ := ϖ))) (ne_zero (O := O) (ϖ := ϖ))]
     exact (mem_maximalIdeal _).mpr hd
   obtain ⟨n, hn⟩ := hd_mem
   exact ⟨n, Ideal.mem_span_singleton.mp hn⟩
 
-end Radical
-
-section FractionField
-
-variable {O : Type*} [CommRing O] [IsDomain O] [ValuationRing O] [TopologicalSpace O]
-  (ϖ : O) [IsCompleteRankOneBase O ϖ] (K : Type*) [Field K] [Algebra O K] [IsFractionRing O K]
-
-include ϖ in
 /-- Any fraction field of a complete rank-one valuation base `O` is the localisation `O[1/ϖ]`. -/
-theorem isLocalization_away : IsLocalization.Away ϖ K :=
-  TauCeti.PreValuationRing.isLocalization_away_of_isFractionRing (ne_zero (O := O) (ϖ := ϖ)) K
+theorem isLocalization_away [PreValuationRing O] (K : Type*) [CommRing K] [IsDomain K] [Algebra O K]
+    [IsFractionRing O K] : IsLocalization.Away ϖ K := by
+  have : IsDomain O := (IsFractionRing.injective O K).isDomain _
+  exact TauCeti.PreValuationRing.isLocalization_away_of_isFractionRing (ne_zero (O := O) (ϖ := ϖ)) K
 
-omit [IsDomain O] [ValuationRing O] in
-include ϖ in
-/-- Any valuation on a fraction field of a complete rank-one valuation base `O` with integer ring
-`O` is nontrivial: `ϖ` has nonzero valuation strictly less than `1`. -/
+/-- Any valuation on a field whose integer ring is a complete rank-one base `O`
+ is nontrivial: `ϖ` has nonzero valuation strictly less than `1`. -/
 theorem isNontrivial_of_integers {K : Type*} [Field K] [Algebra O K]
     {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation K Γ₀} (hv : v.Integers O) :
     v.IsNontrivial :=
   hv.isNontrivial_of_ne_zero_of_not_isUnit (ne_zero (O := O) (ϖ := ϖ))
     (not_isUnit (O := O) (ϖ := ϖ))
 
-include ϖ in
-/-- The canonical valuation on a fraction field of a complete rank-one valuation base is
-nontrivial. -/
-theorem isNontrivial_valuation : (ValuationRing.valuation O K).IsNontrivial :=
-  isNontrivial_of_integers ϖ (ValuationRing.integers O K)
-
-include ϖ in
 /-- For any valuation `v` on a fraction field `K` of a complete rank-one valuation base `O` with
 integer ring `O`, the restricted value group `v.ValueGroup₀` is archimedean. -/
 theorem mulArchimedean_valueGroup₀_of_integers {K : Type*} [Field K] [Algebra O K]
-    [IsFractionRing O K] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation K Γ₀}
+    {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation K Γ₀}
     (hv : v.Integers O) :
     MulArchimedean v.ValueGroup₀ := by
+  have : IsDomain O := hv.isDomain
+  have : ValuationRing O := ValuationRing.of_integers v hv
+  have : IsFractionRing O K := hv.isFractionRing
   have : IsLocalization.Away ϖ K := isLocalization_away ϖ K
   let w : Valuation K v.ValueGroup₀ := v.restrict
   have hw_int (a : O) : w (algebraMap O K a) ≤ 1 := v.restrict_le_one_iff.mpr (hv.map_le_one a)
@@ -146,14 +134,21 @@ theorem mulArchimedean_valueGroup₀_of_integers {K : Type*} [Field K] [Algebra 
     exact mul_le_of_le_one_left' (hw_int a)
   exact ⟨N * m, by simpa only [pow_mul] using hα_le.trans (pow_le_pow_left' hϖ_le m)⟩
 
-include ϖ in
+/-! ### The canonical valuation and its topology -/
+
+variable [IsDomain O] [ValuationRing O] (K : Type*) [Field K] [Algebra O K] [IsFractionRing O K]
+
+/-- The canonical valuation on a fraction field of a complete rank-one valuation base is
+nontrivial. -/
+theorem isNontrivial_valuation : (ValuationRing.valuation O K).IsNontrivial :=
+  isNontrivial_of_integers ϖ (ValuationRing.integers O K)
+
 /-- The value group of `ValuationRing.valuation O K` over a complete rank-one valuation base is
 archimedean. -/
 theorem mulArchimedean_valueGroup₀_valuation :
     MulArchimedean (ValuationRing.valuation O K).ValueGroup₀ :=
   mulArchimedean_valueGroup₀_of_integers ϖ (ValuationRing.integers O K)
 
-include ϖ in
 /-- The canonical valuation on a fraction field of a complete rank-one valuation base has rank
 one. -/
 theorem nonempty_rankOne_valuation : Nonempty (ValuationRing.valuation O K).RankOne := by
@@ -161,7 +156,6 @@ theorem nonempty_rankOne_valuation : Nonempty (ValuationRing.valuation O K).Rank
   exact Valuation.nonempty_rankOne_iff_mulArchimedean.mpr
     (mulArchimedean_valueGroup₀_valuation ϖ K)
 
-include ϖ in
 /-- On `WithVal (ValuationRing.valuation O K)`, the valuation `Valued.v` has rank one. -/
 theorem nonempty_rankOne_withVal :
     Nonempty (Valued.v (R := WithVal (ValuationRing.valuation O K))).RankOne := by
@@ -175,7 +169,6 @@ theorem nonempty_rankOne_withVal :
       (WithVal.strictMono_valueGroupOrderIso₀ v)
   exact Valuation.nonempty_rankOne_iff_mulArchimedean.mpr hma
 
-include ϖ in
 /-- The subgroups `ϖⁿ O` form a neighbourhood basis of zero in the valued fraction field
 `WithVal (ValuationRing.valuation O K)`. -/
 theorem hasBasis_nhds_zero_withVal :
@@ -184,12 +177,7 @@ theorem hasBasis_nhds_zero_withVal :
   set v := ValuationRing.valuation O K
   let _ : (Valued.v (R := WithVal v)).RankOne := Classical.choice (nonempty_rankOne_withVal ϖ K)
   open scoped Valued in
-  have hv : (Valued.v (R := WithVal v)).Integers O :=
-    { hom_inj := WithVal.algebraMap_right_injective v (IsFractionRing.injective O K)
-      map_le_one := fun a ↦ (ValuationRing.integers O K).map_le_one a
-      exists_of_le_one := fun {x} hx ↦ by
-        obtain ⟨a, ha⟩ := (ValuationRing.integers O K).exists_of_le_one (r := x.ofVal) hx
-        exact ⟨a, WithVal.ofVal_injective v ha⟩ }
+  have hv := (ValuationRing.integers O K).withVal
   have hϖ0 : 0 < ‖algebraMap O (WithVal v) ϖ‖ :=
     norm_pos_iff.mpr ((map_ne_zero_iff _ hv.hom_inj).mpr (ne_zero (O := O) (ϖ := ϖ)))
   have hϖ1 : ‖algebraMap O (WithVal v) ϖ‖ < 1 := by
@@ -222,7 +210,6 @@ theorem hasBasis_nhds_zero_withVal :
       (hball n).symm.subset (le_trans (le_of_lt hx)
         (pow_le_pow_of_le_one hϖ0.le hϖ1.le n.le_succ))⟩
 
-include ϖ in
 /-- The valued fraction field `WithVal (ValuationRing.valuation O K)` of a complete rank-one
 valuation base is complete. -/
 theorem completeSpace_withVal : CompleteSpace (WithVal (ValuationRing.valuation O K)) := by
@@ -230,37 +217,6 @@ theorem completeSpace_withVal : CompleteSpace (WithVal (ValuationRing.valuation 
   exact completeSpace_of_hasBasis (hasBasis_nhds_zero_withVal ϖ K)
     (mem_nonZeroDivisors_of_ne_zero (ne_zero (O := O) (ϖ := ϖ)))
 
-omit [TopologicalSpace O] in
-variable (O) in
-/-- The canonical ring isomorphism from `O` to the valuation subring `(Valued.v).integer` of
-`WithVal (ValuationRing.valuation O K)`. -/
-noncomputable def equivIntegerWithVal :
-    O ≃+* (Valued.v : Valuation (WithVal (ValuationRing.valuation O K)) _).integer :=
-  RingEquiv.ofBijective
-    ({ toFun a := ⟨algebraMap O _ a,
-         (Valuation.mem_integer_iff _ _).mpr ((ValuationRing.integers O K).map_le_one a)⟩
-       map_one' := Subtype.ext (map_one _)
-       map_mul' _ _ := Subtype.ext (map_mul _ _ _)
-       map_zero' := Subtype.ext (map_zero _)
-       map_add' _ _ := Subtype.ext (map_add _ _ _) } :
-      O →+* (Valued.v : Valuation (WithVal (ValuationRing.valuation O K)) _).integer)
-    ⟨fun _ _ h ↦
-      WithVal.algebraMap_right_injective _ (IsFractionRing.injective O K) (congrArg Subtype.val h),
-     fun ⟨x, hx⟩ ↦ by
-      obtain ⟨a, ha⟩ := (ValuationRing.integers O K).exists_of_le_one (r := x.ofVal) hx
-      exact ⟨a, Subtype.ext (WithVal.ofVal_injective _ ha)⟩⟩
-
-omit [TopologicalSpace O] in
-@[simp]
-theorem coe_equivIntegerWithVal (a : O) :
-    ((equivIntegerWithVal O K a :
-      (Valued.v : Valuation (WithVal (ValuationRing.valuation O K)) _).integer) :
-        WithVal (ValuationRing.valuation O K)) =
-      algebraMap O (WithVal (ValuationRing.valuation O K)) a := by
-  rw [equivIntegerWithVal]
-  rfl
-
-include ϖ in
 /-- `equivIntegerWithVal` is continuous from the `ϖ`-adic topology on `O` to the valuation
 topology on `(Valued.v).integer`. -/
 theorem continuous_equivIntegerWithVal : Continuous (equivIntegerWithVal O K) := by
@@ -269,11 +225,14 @@ theorem continuous_equivIntegerWithVal : Continuous (equivIntegerWithVal O K) :=
   rw [ContinuousAt, map_zero, nhds_subtype_eq_comap, tendsto_comap_iff]
   refine ((isAdic (O := O) (ϖ := ϖ)).hasBasis_nhds_zero.tendsto_iff
     (hasBasis_nhds_zero_withVal ϖ K)).mpr fun n _ ↦ ⟨n, trivial, fun a ha ↦ ?_⟩
+  -- The subtype neighborhood uses the composite of the equivalence as an additive map with
+  -- subtype inclusion. Expose its value so the coercion formula rewrites it to the algebra map.
+  change (equivIntegerWithVal O K a).val ∈ _
+  rw [coe_equivIntegerWithVal]
   rw [Ideal.span_singleton_pow, SetLike.mem_coe, Ideal.mem_span_singleton] at ha
   obtain ⟨b, rfl⟩ := ha
   exact mem_awayNhd.mpr ⟨b, rfl⟩
 
-include ϖ in
 /-- The inverse of `equivIntegerWithVal` is continuous from the valuation topology on
 `(Valued.v).integer` to the `ϖ`-adic topology on `O`. -/
 theorem continuous_equivIntegerWithVal_symm : Continuous (equivIntegerWithVal O K).symm := by
@@ -290,7 +249,5 @@ theorem continuous_equivIntegerWithVal_symm : Continuous (equivIntegerWithVal O 
     WithVal.algebraMap_right_injective _ (IsFractionRing.injective O K) (hval.trans hb.symm)
   rw [SetLike.mem_coe, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
   exact ⟨b, heq⟩
-
-end FractionField
 
 end TauCeti.Huber.IsCompleteRankOneBase

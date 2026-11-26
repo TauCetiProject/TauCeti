@@ -12,7 +12,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Holder.Iterated
 import TauCeti.Analysis.Sobolev.BesselPotential.Holder
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
-import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
+import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.SobolevEmbedding
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
@@ -244,7 +244,7 @@ private theorem memSobolev_bilin (hU : IsOpen U) (hQ : ContDiff ℝ ∞ Q) {k : 
   choose w hw hwS using fun i ↦ hyS.exists_memSobolev_bilin (by norm_num)
     (by rw [finrank_euclideanSpace_fin]; norm_num) hk0 (b i) hyS
   choose v hv using fun i ↦ Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le
-    (ψi i).hasTemperateGrowth (fun x ↦ (ψi i).norm_le_seminorm ℝ x) (w i)
+    (.of_forall fun x ↦ (ψi i).norm_le_seminorm ℝ x) (w i)
   have hvw (i) := (Lp.toTemperedDistribution_eq_smulLeftCLM_iff (ψi i).hasTemperateGrowth (v i)
     (w i)).1 (hv i).1.symm
   -- Near the support of `χ`, `ψ = 1`, so `q = ∑ᵢ ψᵢ bᵢ (y, y)`.
@@ -326,7 +326,7 @@ theorem IsEllipticAbove.exists_contDiff_ae_eq_smul_of_eq_bilin (ha : a.IsEllipti
     exact (F k).contDiff
   -- `ψ f` and `F 0` have the same tempered distribution.
   obtain ⟨v, hv, -⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le
-    ψ.hasTemperateGrowth (fun x ↦ ψ.norm_le_seminorm ℝ x) f
+    (.of_forall fun x ↦ ψ.norm_le_seminorm ℝ x) f
   have h₁ := (Lp.toTemperedDistribution_eq_smulLeftCLM_iff ψ.hasTemperateGrowth v f).1 hv.symm
   have h₂ := Lp.toTemperedDistribution_eq_toTemperedDistribution_iff.1
     (hv.symm.trans (hF 0).symm)

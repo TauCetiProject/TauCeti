@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 public import TauCeti.Analysis.Fourier.Torus.Multiplier
@@ -63,6 +64,7 @@ probability measures on the circle factors.
 * `TauCeti.UnitAddTorus.littlewoodPaleySymbol`, `TauCeti.UnitAddTorus.littlewoodPaleyBlock`: the
   symbol `n ↦ ψⱼ(n)` and the block `Δⱼ`.
 * `TauCeti.UnitAddTorus.mFourierCoeff_littlewoodPaleyBlock`: `(Δⱼ f)^(n) = ψⱼ(n) f̂(n)`.
+* `TauCeti.UnitAddTorus.isSelfAdjoint_littlewoodPaleyBlock`: the blocks are self-adjoint.
 * `TauCeti.UnitAddTorus.exists_finset_littlewoodPaleyBlock_eq_sum`: the blocks are trigonometric
   polynomials of bounded degree.
 * `TauCeti.UnitAddTorus.mFourierCoeff_sum_littlewoodPaleyBlock_range` and
@@ -159,6 +161,16 @@ theorem norm_littlewoodPaleyBlock_le (j : ℕ) : ‖littlewoodPaleyBlock φ j‖
   rw [littlewoodPaleyBlock_eq_fourierMultiplier, norm_fourierMultiplier]
   exact norm_littlewoodPaleySymbol_le φ j
 
+/-- The periodic Littlewood–Paley blocks are self-adjoint, since their symbols are real. -/
+theorem isSelfAdjoint_littlewoodPaleyBlock (j : ℕ) : IsSelfAdjoint (littlewoodPaleyBlock φ j) := by
+  refine LinearMap.IsSymmetric.isSelfAdjoint fun a b ↦ ?_
+  simp only [ContinuousLinearMap.coe_coe, L2.inner_def, RCLike.inner_apply, mul_comm (b _),
+    mul_comm (littlewoodPaleyBlock φ j b _)]
+  refine (hasSum_prod_mFourierCoeff (littlewoodPaleyBlock φ j a) b).unique
+    ((hasSum_prod_mFourierCoeff a (littlewoodPaleyBlock φ j b)).congr_fun fun n ↦ ?_)
+  simp only [mFourierCoeff_littlewoodPaleyBlock, map_mul, Complex.conj_ofReal]
+  ring
+
 /-! ### Spectral localization -/
 
 /-- `Δⱼ f` has no Fourier coefficients at frequencies of norm at least `2^j φ.rOut`. -/
@@ -181,15 +193,15 @@ theorem exists_finset_littlewoodPaleyBlock_eq_sum (j : ℕ) :
       littlewoodPaleyBlock φ j f =
         ∑ n ∈ s, (φ.inhomogeneousLittlewoodPaley j (latticePoint n) * mFourierCoeff f n) •
           mFourierLp 2 n := by
-  set s := (finite_setOf_norm_latticePoint_lt (ι := d) (2 ^ j * φ.rOut)).toFinset
+  set s := (finite_setOf_norm_latticePoint_le (ι := d) (2 ^ j * φ.rOut)).toFinset
   refine ⟨s, fun f ↦ ?_⟩
   have h : HasSum (fun n ↦
       (φ.inhomogeneousLittlewoodPaley j (latticePoint n) * mFourierCoeff f n) • mFourierLp 2 n)
       (∑ n ∈ s, (φ.inhomogeneousLittlewoodPaley j (latticePoint n) * mFourierCoeff f n) •
         mFourierLp 2 n) :=
     hasSum_sum_of_ne_finset_zero fun n hn ↦ by
-      simp only [s, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_lt] at hn
-      simp [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hn]
+      simp only [s, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_le] at hn
+      simp [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hn.le]
   rw [littlewoodPaleyBlock_eq_fourierMultiplier]
   exact (hasSum_fourierMultiplier _ f).unique (by simpa using h)
 

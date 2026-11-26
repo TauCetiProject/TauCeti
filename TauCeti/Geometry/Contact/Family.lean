@@ -149,7 +149,8 @@ theorem contMDiffOn_contactMoserVectorField_mpullback_prodMk
   (contMDiffAt_sectionAlong_contactMoserVectorField (b := Prod.snd)
     (α := fun q : N × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) α)
     (β := fun q : N × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) β)
-    (Filter.mem_of_superset ((hU.preimage continuous_fst).mem_nhds hp.1) fun q hq ↦ hc q.1 hq)
+    (Filter.mem_of_superset ((hU.preimage continuous_fst).mem_nhds hp.1) fun q hq ↦
+      isContactForm_iff_forall_isContactFormAt.1 (hc q.1 hq) q.2)
     (contMDiff_mpullback_prodMk α p)
     (contMDiff_mextDeriv_mpullback_prodMk α p) (contMDiff_mpullback_prodMk β p)).contMDiffWithinAt
 

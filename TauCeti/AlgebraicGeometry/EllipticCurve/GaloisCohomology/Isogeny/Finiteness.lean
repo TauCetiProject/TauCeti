@@ -35,6 +35,7 @@ Galois group is topologically finitely generated.
   cokernel of any nonzero morphism over a finite extension of `ℚ_p` is finite.
 * `TauCeti.Isogeny.Hom.finite_H1_kerCoeff_adicCompletion`: over the completion of a number field
   at a finite place, the first cohomology of the kernel of a nonzero morphism is finite.
+* `TauCeti.Isogeny.finite_H1_kerCoeff_adicCompletion`: the same for an isogeny, as an instance.
 
 ## References
 
@@ -149,3 +150,19 @@ theorem finite_H1_kerCoeff_adicCompletion (f : Hom W₁.toAffine W₂.toAffine) 
 end adicCompletion
 
 end TauCeti.Isogeny.Hom
+
+namespace TauCeti.Isogeny
+
+open Hom (ofIsogeny)
+open scoped NumberField
+
+/-- **Finiteness of local cohomology over the completions of a number field**: over the
+completion of a number field at a finite place, `H¹` of the kernel of an isogeny is finite. -/
+instance finite_H1_kerCoeff_adicCompletion {K : Type} [Field K] [NumberField K]
+    (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K))
+    {E₁ E₂ : WeierstrassCurve (v.adicCompletion K)} [E₁.IsElliptic] [E₂.IsElliptic]
+    (ψ : Isogeny E₁.toAffine E₂.toAffine) :
+    Finite (H1 (AbsoluteGaloisGroup (v.adicCompletion K)) (ofIsogeny ψ).KerCoeff) :=
+  (ofIsogeny ψ).finite_H1_kerCoeff_adicCompletion v (Hom.ofIsogeny_ne_zero ψ)
+
+end TauCeti.Isogeny

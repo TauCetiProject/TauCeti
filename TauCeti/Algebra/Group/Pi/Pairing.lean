@@ -7,59 +7,53 @@ module
 
 public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Group.Hom.Instances
+public import Mathlib.Data.Fintype.EquivFin
 
 /-!
-# Coordinatewise sums of pairings on finite products
+# Sums of pairings over a finite product
 
-A finite family of biadditive pairings `e i : M i →+ N i →+ A` induces a pairing of the products
+Let `ι` be a finite type and let `e i : M i →+ N i →+ P` be biadditive pairings into a common
+additive commutative monoid `P`. Their sum
 
-`(x, y) ↦ ∑ i, e i (x i) (y i)`
+`AddMonoidHom.piPairing e x y = ∑ i, e i (x i) (y i)`
 
-of `Π i, M i` with `Π i, N i`. If every left adjoint `e i` is injective, so is the left adjoint of
-the sum: pairing with the one-point families `Pi.single i y` recovers each coordinate. Over a
-finite set of places, this is how local duality pairings are summed into one pairing of the
-products of the local cohomology groups.
-
-## Main definitions
-
-* `AddMonoidHom.piPairing`: the coordinatewise sum of a finite family of pairings.
-
-## Main results
-
-* `AddMonoidHom.piPairing_apply`: its value is `∑ i, e i (x i) (y i)`.
-* `AddMonoidHom.injective_piPairing`: its left adjoint is injective when every `e i` has an
-  injective left adjoint.
+is a biadditive pairing of the products `∀ i, M i` and `∀ i, N i`. If every left adjoint
+`e i : M i → (N i →+ P)` is bijective, so is the left adjoint of the sum
+(`AddMonoidHom.piPairing_bijective`): an additive map out of a finite product is the sum of its
+restrictions to the coordinates. This is how local duality at finitely many places assembles into
+duality for the product of the local cohomology groups.
 -/
 
 public section
 
 namespace AddMonoidHom
 
-variable {ι : Type*} [Fintype ι] {M N : ι → Type*} [∀ i, AddZeroClass (M i)]
-  [∀ i, AddZeroClass (N i)] {A : Type*} [AddCommMonoid A] (e : ∀ i, M i →+ N i →+ A)
+variable {ι : Type*} [Fintype ι] {M N : ι → Type*} [∀ i, AddCommMonoid (M i)]
+  [∀ i, AddCommMonoid (N i)] {P : Type*} [AddCommMonoid P] (e : ∀ i, M i →+ N i →+ P)
 
-/-- **The coordinatewise sum of a finite family of pairings**: the pairing of `Π i, M i` with
-`Π i, N i` given by `(x, y) ↦ ∑ i, e i (x i) (y i)`. -/
-def piPairing : (∀ i, M i) →+ (∀ i, N i) →+ A :=
-  ∑ i, (compHom' (Pi.evalAddMonoidHom N i)).comp ((e i).comp (Pi.evalAddMonoidHom M i))
+/-- The sum over a finite index type of pairings `M i × N i → P`, as a pairing of the products:
+`piPairing e x y = ∑ i, e i (x i) (y i)`. -/
+def piPairing : (∀ i, M i) →+ (∀ i, N i) →+ P :=
+  ∑ i, ((e i).comp (Pi.evalAddMonoidHom M i)).compl₂ (Pi.evalAddMonoidHom N i)
 
 @[simp]
 theorem piPairing_apply (x : ∀ i, M i) (y : ∀ i, N i) :
     piPairing e x y = ∑ i, e i (x i) (y i) := by
-  simp [piPairing, finsetSum_apply]
+  simp [piPairing]
 
-/-- **The coordinatewise sum of pairings with injective left adjoints has injective left
-adjoint**: two families pairing in the same way with every family of `Π i, N i` are equal. -/
-theorem injective_piPairing (he : ∀ i, Function.Injective (e i)) :
-    Function.Injective (piPairing e) := by
+theorem piPairing_apply_single [DecidableEq ι] (x : ∀ i, M i) (i : ι) (y : N i) :
+    piPairing e x (Pi.single i y) = e i (x i) y := by
+  rw [piPairing_apply, Finset.sum_eq_single_of_mem i (Finset.mem_univ i)
+    fun j _ hj ↦ by rw [Pi.single_eq_of_ne hj, map_zero], Pi.single_eq_same]
+
+/-- The sum of pairings with bijective left adjoints has bijective left adjoint. -/
+theorem piPairing_bijective (he : ∀ i, Function.Bijective (e i)) :
+    Function.Bijective (piPairing e) := by
   classical
-  intro x x' h
-  funext i
-  refine he i (ext fun y ↦ ?_)
-  have hy := congr($h (Pi.single i y))
-  simp only [piPairing_apply] at hy
-  rwa [Finset.sum_eq_single i (fun j _ hj ↦ by rw [Pi.single_eq_of_ne hj, map_zero]) (by simp),
-    Finset.sum_eq_single i (fun j _ hj ↦ by rw [Pi.single_eq_of_ne hj, map_zero]) (by simp),
-    Pi.single_eq_same] at hy
+  refine ⟨fun x x' h ↦ funext fun i ↦ (he i).1 <| AddMonoidHom.ext fun y ↦ ?_, fun χ ↦ ?_⟩
+  · simpa only [piPairing_apply_single] using DFunLike.congr_fun h (Pi.single i y)
+  · choose x hx using fun i ↦ (he i).2 (χ.comp (AddMonoidHom.single N i))
+    refine ⟨x, AddMonoidHom.functions_ext' P _ _ fun i ↦ AddMonoidHom.ext fun y ↦ ?_⟩
+    rw [AddMonoidHom.comp_apply, AddMonoidHom.single_apply, piPairing_apply_single, hx]
 
 end AddMonoidHom

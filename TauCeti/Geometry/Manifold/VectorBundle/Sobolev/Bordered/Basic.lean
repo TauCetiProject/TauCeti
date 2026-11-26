@@ -72,6 +72,8 @@ Conversely, the chart expression of every element lies in the local Sobolev clas
 * `TauCeti.BorderedSobolevSection.memWkpLoc_halfCoord`,
   `TauCeti.BorderedSobolevSection.exists_section_memWkpLoc`: localization to the local Sobolev
   classes on the chart images, up to the real axis.
+* `TauCeti.BorderedSobolevSection.eq_of_ae_eq_halfCoord`: an element is determined by the section
+  whose readings its chart data are.
 
 ## References
 
@@ -178,6 +180,15 @@ theorem halfSectionChartData_coord_ae_eq (i : Fin A.n) (s : ∀ x, V x) :
       A.halfCoord i s := by
   filter_upwards [ae_restrict_mem (A.halfImage i).isOpen.measurableSet] with z hz
   exact A.halfSectionChartData_coord_of_mem s hz
+
+/-- On the interior of the image of chart `i`, a function is almost everywhere the reading of a
+section in the chart data of the atlas exactly when it is almost everywhere its reading
+`A.halfCoord i s`. -/
+theorem ae_eq_halfSectionChartData_coord_iff {i : Fin A.n} {s : ∀ x, V x} {f : ℂ → F} :
+    f =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfSectionChartData.coord i s ↔
+      f =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s :=
+  ⟨fun h ↦ h.trans (A.halfSectionChartData_coord_ae_eq i s),
+    fun h ↦ h.trans (A.halfSectionChartData_coord_ae_eq i s).symm⟩
 
 /-- The interior of the image of chart `i` has finite Lebesgue measure, since it lies in the
 compact image of the closure of the chart domain. -/
@@ -397,6 +408,33 @@ theorem exists_section_memWkpLoc (w : BorderedSobolevSection A p k) :
   obtain ⟨s, hs⟩ := A.halfSectionChartData.exists_section volume p k w
   have hs' (i : Fin A.n) := (hs i).trans (A.halfSectionChartData_coord_ae_eq i s)
   exact ⟨s, hs', memWkpLoc_halfCoord w hs'⟩
+
+/-- **Uniqueness.** Two elements of `W^{k,p}(V)` whose chart data are the readings
+`A.halfCoord i s` of the same section are equal. -/
+theorem eq_of_ae_eq_halfCoord {w w' : BorderedSobolevSection A p k} {s : ∀ x, V x}
+    (hw : ∀ i, A.halfSectionChartData.chartValueL volume p k i w
+      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s)
+    (hw' : ∀ i, A.halfSectionChartData.chartValueL volume p k i w'
+      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s) :
+    w = w' :=
+  SectionChartData.eq_of_ae_eq_coord (s := s)
+    (fun i ↦ A.ae_eq_halfSectionChartData_coord_iff.2 (hw i))
+    (fun i ↦ A.ae_eq_halfSectionChartData_coord_iff.2 (hw' i))
+
+/-- **Sections with Sobolev components are Sobolev sections.** If every component of the reading
+of a section `s` in every chart `j`, on the interior `A.halfImage j` of the chart image, is a
+`W^{k,p}` function, some element of `W^{k,p}(V)` has chart data equal to the readings of `s`. -/
+theorem exists_chartValueL_ae_eq_halfCoord_of_forall_exists_wkp {s : ∀ x, V x}
+    (h : ∀ (j : Fin A.n) (m : Fin (finrank ℝ F)), ∃ v : Wkp volume (A.halfImage j) p k,
+      (Wkp.value k v : ℂ → ℝ) =ᵐ[volume.restrict (A.halfImage j : Set ℂ)]
+        fun z ↦ (finBasis ℝ F).coord m (A.halfSectionChartData.coord j s z)) :
+    ∃ w : BorderedSobolevSection A p k, ∀ j, A.halfSectionChartData.chartValueL volume p k j w
+      =ᵐ[volume.restrict (A.halfImage j : Set ℂ)] A.halfCoord j s := by
+  choose v hv using h
+  refine ⟨⟨fun j m ↦ v j m, (SectionChartData.mem_sobolevSections_iff _ _ _ _).2 ⟨s, fun j ↦
+    A.halfSectionChartData.chartValueL_ae_eq_coord volume p k (hv j)⟩⟩, fun j ↦ ?_⟩
+  exact (A.halfSectionChartData.chartValueL_ae_eq_coord volume p k (hv j)).trans
+    (A.halfSectionChartData_coord_ae_eq j s)
 
 end BorderedSobolevSection
 

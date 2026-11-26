@@ -365,24 +365,21 @@ private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp 
             exact le_self_add
         _ = ‖a w‖ₑ * (C₁ * (1 + C₀) * (X + Y)) := by ring
     -- `D` is reassembled from `D·1` and `D·I`, and the constants are collected into `B`.
-    have hDeq : D = (fun z => L₁ (D z 1)) + fun z => L₂ (D z I) :=
-      fun_eq_smulRightL_reCLM_add_smulRightL_imCLM D
     have hB : ‖L₁‖ₑ * (‖a 1‖ₑ * (C₁ * (1 + C₀) * (X + Y))) +
         ‖L₂‖ₑ * (‖a I‖ₑ * (C₁ * (1 + C₀) * (X + Y))) = ↑(B * (C₁ * (1 + C₀))) * (X + Y) := by
       simp only [B, eNorm_eq_nnNorm]
       push_cast
       ring
     calc eLpNormWkp p K (k + 1 + 1) u
-        ≤ eLpNorm u p (volume.restrict K) + eLpNormWkp p K (k + 1) D :=
-          eLpNormWkp_succ_le (hD.mono hint)
+        ≤ eLpNorm u p (volume.restrict K) + (‖L₁‖ₑ * eLpNormWkp p K (k + 1) (fun z => D z 1) +
+            ‖L₂‖ₑ * eLpNormWkp p K (k + 1) (fun z => D z I)) :=
+          eLpNormWkp_succ_le_eLpNorm_add_apply_one_add_apply_I hp.le (hD.mono hint)
       _ ≤ Y + (‖L₁‖ₑ * (‖a 1‖ₑ * (C₁ * (1 + C₀) * (X + Y))) +
           ‖L₂‖ₑ * (‖a I‖ₑ * (C₁ * (1 + C₀) * (X + Y)))) := by
-          gcongr ?_ + ?_
+          gcongr ?_ + (_ * ?_ + _ * ?_)
           · exact eLpNorm_mono_measure _ (Measure.restrict_mono hKΩ₂ le_rfl)
-          · rw [hDeq]
-            refine (eLpNormWkp_add_le hp.le).trans (add_le_add ?_ ?_)
-            · exact (eLpNormWkp_clm_comp_le L₁).trans (by gcongr; exact hdir 1)
-            · exact (eLpNormWkp_clm_comp_le L₂).trans (by gcongr; exact hdir I)
+          · exact hdir 1
+          · exact hdir I
       _ ≤ ↑(1 + B * (C₁ * (1 + C₀))) * (X + Y) := by
           rw [hB]
           exact (add_le_add (le_add_self : Y ≤ X + Y) le_rfl).trans_eq (by push_cast; ring)

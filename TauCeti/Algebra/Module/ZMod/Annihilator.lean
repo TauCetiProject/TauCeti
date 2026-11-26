@@ -18,15 +18,14 @@ kernel of the restricted pairing `e.compl₂ H.subtype`. Its `Nat.card` equals t
 requires finiteness. The first gives zero on both sides when `H` has infinite index; the
 second gives zero on both sides whenever `N` (and hence `M`) is infinite.
 
+Consequently, when `M` is finite, a subgroup `U ≤ M` orthogonal to `H` satisfies
+`Nat.card U * Nat.card H ≤ Nat.card M`.
+
 When `N` is finite, an arbitrary subgroup `U ≤ M` equals this annihilator if and only if
 it is orthogonal to `H` and `Nat.card U * Nat.card H = Nat.card M`. This counting criterion
 upgrades orthogonality and order computations to equality of local conditions under finite
 Tate pairings. It works for composite `n`, without choosing module structures or bases.
 Bijectivity of the left adjoint is not asserted to be two-sided perfection for infinite `N`.
-
-If the left adjoint is only known to be injective, orthogonal subgroups `U ≤ M` and `H ≤ N`
-still satisfy `Nat.card U * Nat.card H ≤ Nat.card N` for finite `N`. This is the form in which
-orthogonality of global classes under a sum of local pairings bounds the orders of their images.
 
 The proofs use Mathlib's identification of the kernel of character restriction with the
 characters of the quotient, and `TauCeti.natCard_addMonoidHom_zmod` for their order.
@@ -70,6 +69,16 @@ theorem natCard_ker_compl₂_subtype_mul_natCard_zmod (he : Function.Bijective e
   rw [e.natCard_ker_compl₂_subtype_eq_index_zmod he hN, H.index_mul_card,
     Nat.card_congr (Equiv.ofBijective e he), TauCeti.natCard_addMonoidHom_zmod hN]
 
+/-- If `n ≠ 0`, `N` is killed by `n`, the left adjoint `e` is bijective and `M` is finite, then
+orthogonal subgroups `U ≤ M` and `H ≤ N` satisfy `Nat.card U * Nat.card H ≤ Nat.card M`. -/
+theorem natCard_mul_natCard_le_zmod [Finite M] (he : Function.Bijective e)
+    (hN : ∀ y : N, n • y = 0) {U : AddSubgroup M} {H : AddSubgroup N}
+    (horth : ∀ x ∈ U, ∀ y ∈ H, e x y = 0) : Nat.card U * Nat.card H ≤ Nat.card M := by
+  rw [← e.natCard_ker_compl₂_subtype_mul_natCard_zmod he hN H]
+  refine Nat.mul_le_mul_right _ (AddSubgroup.card_le_of_le fun x hx ↦ ?_)
+  ext ⟨y, hy⟩
+  exact horth x hx y hy
+
 /-- For finite `N` killed by `n ≠ 0` and bijective left adjoint `e`, a subgroup `U ≤ M`
 equals the annihilator of `H` if and only if `U` is orthogonal to `H` and
 `Nat.card U * Nat.card H = Nat.card M`. -/
@@ -89,26 +98,5 @@ theorem eq_ker_compl₂_subtype_iff_forall_eq_zero_and_natCard_mul_eq_zmod [Fini
     apply AddSubgroup.eq_of_le_of_card_ge (hle.mpr horth)
     have h := e.natCard_ker_compl₂_subtype_mul_natCard_zmod he hN H
     exact (Nat.mul_right_cancel Nat.card_pos (h.trans hcard.symm)).le
-
-/-- **Orthogonal subgroups have orders bounded by the order of the target**: if `N` is finite
-and killed by `n ≠ 0`, and the left adjoint `e` is injective, subgroups `U ≤ M` and `H ≤ N`
-that are orthogonal under `e` satisfy `Nat.card U * Nat.card H ≤ Nat.card N`. Pairing embeds
-`U` in the characters of `N ⧸ H`, which are as many as the elements of `N ⧸ H`. -/
-theorem natCard_mul_natCard_le_of_forall_eq_zero_zmod [Finite N] (he : Function.Injective e)
-    (hN : ∀ y : N, n • y = 0) {U : AddSubgroup M} {H : AddSubgroup N}
-    (horth : ∀ x ∈ U, ∀ y ∈ H, e x y = 0) : Nat.card U * Nat.card H ≤ Nat.card N := by
-  have : Finite (N →+ ZMod n) := Finite.of_injective _ DFunLike.coe_injective
-  let f : U → (domRestrictHom H (ZMod n)).ker := fun x ↦
-    ⟨e x, AddMonoidHom.ext fun y ↦ horth x x.property y y.property⟩
-  have hU : Nat.card U ≤ H.index := by
-    calc Nat.card U ≤ Nat.card (domRestrictHom H (ZMod n)).ker :=
-          Nat.card_le_card_of_injective f fun x y h ↦ Subtype.ext (he congr(($h).val))
-      _ = Nat.card (N ⧸ H →+ ZMod n) :=
-          Nat.card_congr (domRestrictHomKerEquiv (ZMod n) H).toEquiv
-      _ = H.index := TauCeti.natCard_addMonoidHom_zmod fun y ↦ by
-          obtain ⟨y, rfl⟩ := QuotientAddGroup.mk'_surjective H y
-          rw [← map_nsmul, hN, map_zero]
-  calc Nat.card U * Nat.card H ≤ H.index * Nat.card H := Nat.mul_le_mul_right _ hU
-    _ = Nat.card N := H.index_mul_card
 
 end AddMonoidHom

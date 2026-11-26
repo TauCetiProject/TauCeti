@@ -43,11 +43,13 @@ the inverse.
 * `AlgHom.convGroupOfSemiring`, `AlgHom.convCommGroupOfSemiring`: for `H` a Hopf algebra over `R`
   and `A` a commutative `R`-algebra, `WithConv (H →ₐ[R] A)` is a group, commutative when `H`
   is cocommutative.
+* `WithConv.algHom_toConv_mul_toConv_inv`, `WithConv.algHom_toConv_inv_mul_toConv`: a point and
+  its inverse are convolution inverses as linear maps.
 * `AlgHom.mapValue`: post-composition with `φ : A →ₐ[R] B` as a monoid homomorphism of
   convolution monoids, with `AlgHom.ofConv_comp_mapValue` describing it on underlying
   homomorphisms, `AlgHom.mapValue_id`, `AlgHom.mapValue_comp` recording its
-  functoriality in the value algebra and `AlgHom.mapValue_injective` recording that it loses no
-  information when `φ` does not.
+  functoriality in the value algebra, `AlgHom.mapValue_injective` recording that it loses no
+  information when `φ` does not, and `AlgHom.range_mapValue` describing its image.
 * `AlgHom.mem_mrange_mapValue_iff_mapValue_eq_mapValue`: points preserve equalizers; when an
   injective `φ` maps onto the equalizer of `ψ₁` and `ψ₂`, the points coming from the source of `φ`
   are those on which `mapValue ψ₁` and `mapValue ψ₂` agree.
@@ -135,6 +137,31 @@ noncomputable instance convGroupOfSemiring : Group (WithConv (H →ₐ[R] A)) wh
     simp only [LinearMap.comp_apply, AlgHom.coe_toLinearMap, LinearMap.convOne_apply,
       ← map_mul, ← map_sum, sum_antipode_mul_eq_algebraMap_counit, AlgHom.commutes]
 
+/-- A point convolved with its inverse, as linear maps, is the convolution unit. -/
+lemma _root_.WithConv.algHom_toConv_mul_toConv_inv (f : WithConv (H →ₐ[R] A)) :
+    toConv f.ofConv.toLinearMap * toConv (f⁻¹).ofConv.toLinearMap = 1 := by
+  rw [← AlgHom.toLinearMap_convMul, mul_inv_cancel, AlgHom.toLinearMap_convOne]
+
+/-- The inverse of a point convolved with the point, as linear maps, is the convolution unit. -/
+lemma _root_.WithConv.algHom_toConv_inv_mul_toConv (f : WithConv (H →ₐ[R] A)) :
+    toConv (f⁻¹).ofConv.toLinearMap * toConv f.ofConv.toLinearMap = 1 := by
+  rw [← AlgHom.toLinearMap_convMul, inv_mul_cancel, AlgHom.toLinearMap_convOne]
+
+/-- Precomposing an algebra homomorphism into a commutative algebra twice with the antipode gives
+it back: `f ∘ S² = f`, since `f ∘ S` is the convolution inverse of `f` and inversion in the
+convolution group is involutive. The antipode itself need not be involutive. -/
+@[simp]
+lemma antipodeComp_antipodeComp (f : H →ₐ[R] A) : antipodeComp (antipodeComp f) = f := by
+  simpa only [WithConv.algHom_inv_def, ofConv_toConv] using
+    congrArg WithConv.ofConv (inv_inv (toConv f))
+
+/-- Pointwise form of `antipodeComp_antipodeComp`: an algebra homomorphism into a commutative
+algebra is invariant under the square of the antipode, `f (S (S h)) = f h`. -/
+@[simp]
+lemma apply_antipode_antipode (f : H →ₐ[R] A) (h : H) :
+    f (antipode R (antipode R h)) = f h := by
+  simpa only [antipodeComp_apply] using DFunLike.congr_fun (antipodeComp_antipodeComp f) h
+
 end Hopf
 
 section Bialgebra
@@ -180,6 +207,16 @@ lemma mapValue_injective {φ : A →ₐ[R] B} (hφ : Function.Injective φ) :
   rw [mapValue_apply, mapValue_apply] at hfg
   refine WithConv.ofConv_injective (AlgHom.ext fun h => hφ ?_)
   exact DFunLike.congr_fun (WithConv.toConv_injective hfg) h
+
+/-- The image of `mapValue φ` consists of the points whose underlying homomorphisms factor
+through `φ`. -/
+lemma range_mapValue (φ : A →ₐ[R] B) :
+    Set.range (mapValue (H := H) φ) = ofConv ⁻¹' Set.range fun f : H →ₐ[R] A ↦ φ.comp f := by
+  ext f
+  refine ⟨?_, fun ⟨g, hg⟩ => ⟨toConv g, ?_⟩⟩
+  · rintro ⟨g, rfl⟩
+    exact ⟨g.ofConv, by simp⟩
+  · simp [hg]
 
 /-- For an injective homomorphism `φ` of value algebras, a point comes from a point valued in the
 source of `φ` exactly when each of its values lies in the range of `φ`. -/

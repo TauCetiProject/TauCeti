@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.GTree.Lifting
 public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 public import TauCeti.GroupTheory.GraphOfGroups.Hom
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
+import TauCeti.GroupTheory.CoprodI
 import TauCeti.GroupTheory.GraphOfGroups.NormalForm
 
 /-!
@@ -49,9 +50,12 @@ orbit-comparison elements gives mutually inverse morphisms of graphs of groups b
 When every dart stabilizer is trivial, `D.equivCoprodFreeGroup` decomposes `G` as the free product
 of the lifted vertex groups `D.graphOfGroups.vertexGroup b` (that is, `stabilizer G (D.vertex b)`)
 with a free group on the positively oriented darts outside `D.tree`; this is the algebraic step of
-Kurosh's subgroup theorem. When every vertex stabilizer is trivial, `D.equivFreeGroup` identifies
-`G` with that free group, and `GTree.isFreeGroup_of_stabilizer_eq_bot` concludes that every group
-acting freely without inversions on a tree is free.
+Kurosh's subgroup theorem. Dropping the trivial vertex groups, `G` is then the internal free product
+of a free subgroup and of the stabilizers of one vertex from each orbit of vertices with nontrivial
+stabilizer (`GTree.exists_bijective_coprod_lift_stabilizer`). When every vertex stabilizer is
+trivial, `D.equivFreeGroup` identifies `G` with that free group, and
+`GTree.isFreeGroup_of_stabilizer_eq_bot` concludes that every group acting freely without inversions
+on a tree is free.
 
 ## Main definitions
 
@@ -75,12 +79,15 @@ acting freely without inversions on a tree is free.
 * `TauCeti.GTree.Lifting.exists_hom_graphOfGroups`: for any two liftings `D₁` and `D₂`, there are
   mutually inverse morphisms of graphs of groups between `D₁.graphOfGroups` and
   `D₂.graphOfGroups` over the identity of `T.quotient`.
+* `TauCeti.GTree.exists_bijective_coprod_lift_stabilizer`: a group acting without inversions on a
+  tree with trivial dart stabilizers is the internal free product of a free subgroup and of the
+  stabilizers of representatives of the orbits of vertices with nontrivial stabilizer.
 * `TauCeti.GTree.isFreeGroup_of_stabilizer_eq_bot`: a group acting freely without inversions on a
   tree is a free group.
 
 ## References
 
-* J.-P. Serre, *Trees*, Chapter I, §3.3, Theorem 4, and §5.4, Theorem 13.
+* J.-P. Serre, *Trees*, Chapter I, §3.3, Theorem 4, §5.4, Theorem 13, and §5.5, Theorem 14.
 * I. Kapovich, R. Weidmann and A. Myasnikov, *Foldings, graphs of groups and the membership
   problem*, Internat. J. Algebra Comput. 15 (2005), §2, Proposition 2.6 and Remark 2.7.
 -/
@@ -989,6 +996,47 @@ theorem isFreeGroup_of_stabilizer_eq_bot (T : GTree.{u, v} G)
   obtain ⟨D⟩ := (inferInstance : Nonempty T.Lifting)
   obtain ⟨O, hO⟩ := T.quotient.exists_isOrientation
   exact IsFreeGroup.ofMulEquiv (D.equivFreeGroup hV hO).symm
+
+/-- **Kurosh decomposition of a group acting on a tree with trivial dart stabilizers.** Let `G` act
+without inversions on a tree in which every dart has trivial stabilizer. Then there are vertices
+`x j`, one from each orbit of vertices with nontrivial stabilizer, and a homomorphism
+`f : FreeGroup X →* G`, such that `G` is the internal free product of the stabilizers of the `x j`
+and of the free group `F(X)` along `f`: the homomorphism `(∗ⱼ G_{x j}) ∗ F(X) →* G` induced by the
+inclusions and by `f` is bijective. This is the tree-level step in the proof of Serre, *Trees*,
+Chapter I, §5.5, Theorem 14 (Kurosh). -/
+theorem exists_bijective_coprod_lift_stabilizer (T : GTree.{u, v} G)
+    (hE : ∀ e : T.E, stabilizer G e = ⊥) :
+    ∃ (J : Type u) (x : J → T.V) (X : Type v) (f : FreeGroup X →* G),
+      Function.Bijective
+        (Monoid.Coprod.lift (Monoid.CoprodI.lift fun j => (stabilizer G (x j)).subtype) f) ∧
+      (∀ j, stabilizer G (x j) ≠ ⊥) ∧
+      (∀ j j' (g : G), g • x j = x j' → j = j') ∧
+      (∀ y : T.V, stabilizer G y ≠ ⊥ → ∃ j, ∃ g : G, g • x j = y) := by
+  obtain ⟨D⟩ := (inferInstance : Nonempty T.Lifting)
+  obtain ⟨O, hO⟩ := T.quotient.exists_isOrientation
+  -- The vertex groups of `D.graphOfGroups` outside `p` are trivial and are dropped.
+  let p : T.quotient.V → Prop := fun b => stabilizer G (D.vertex b) ≠ ⊥
+  have hp (b : T.quotient.V) (hb : ¬p b) : Subsingleton (D.graphOfGroups.vertexGroup b) := by
+    rw [D.graphOfGroups_vertexGroup, not_not.1 hb]
+    infer_instance
+  let F : FreeGroup ↥(O \ D.tree.darts) →* G := FreeGroup.lift fun y => D.twist y.val
+  refine ⟨{b // p b}, fun b => D.vertex b.val, _, F, ?_, fun b => b.property, ?_, ?_⟩
+  · have hsymm : (D.equivCoprodFreeGroup hE hO).symm.toMonoidHom =
+        Monoid.Coprod.lift (Monoid.CoprodI.lift D.vertexGroupSubtype) F := by
+      ext b m
+      · simp
+      · simp [F]
+    have h := (Monoid.Coprod.lift_coprodI_lift_subtype_bijective_iff hp D.vertexGroupSubtype F).2
+      (hsymm ▸ (D.equivCoprodFreeGroup hE hO).symm.bijective)
+    -- `D.graphOfGroups.vertexGroup b` is `stabilizer G (D.vertex b)` by definition
+    -- (`graphOfGroups_vertexGroup`), and `D.vertexGroupSubtype b` is its subgroup inclusion.
+    exact h
+  · intro j j' g h
+    exact Subtype.ext (by simpa using congrArg T.quotientMap.mapV h)
+  · intro y hy
+    obtain ⟨g, hg⟩ := quotientMap_mapV_eq_iff.1 (D.quotientMap_vertex (T.quotientMap.mapV y))
+    refine ⟨⟨T.quotientMap.mapV y, fun h => hy ?_⟩, g, hg⟩
+    rw [← hg, stabilizer_smul_eq_stabilizer_map_conj, h, Subgroup.map_bot]
 
 end GTree
 

@@ -27,13 +27,9 @@ Here perfection is stated as bijectivity of the curried map: every additive char
 `H¹(K, E[m])`, respectively of `H¹(K, E₂[φ̂])`, is pairing with a unique class. This is the
 finite-coefficient duality used to study annihilators of local Kummer images; for an isogeny it is
 the local duality between the local conditions of `Sel_φ` and `Sel_φ̂` in Cassels' comparison of
-these Selmer groups. In particular `H¹(K, E₁[φ])` and `H¹(K, E₂[φ̂])` have the same
-order (`TauCeti.Isogeny.natCard_H1_kerCoeff_dual`). The image of the Kummer map
-`E(K) → H¹(K, E[m])` is isotropic for the first pairing
-(`WeierstrassCurve.localTateWeilPairing_kummerMap_kummerMap_eq_zero`). The Kummer images of an
-isogeny and of its dual, the local conditions of `Sel_φ` and `Sel_φ̂`, are orthogonal already for
-the cup product before the local invariant (`TauCeti.Isogeny.kerH1WeilPairing_eq_zero_of_mem_ker`),
-hence for the second pairing.
+these Selmer groups. The image of the Kummer map `E(K) → H¹(K, E[m])` is isotropic for the first
+pairing (`WeierstrassCurve.localTateWeilPairing_kummerMap_kummerMap_eq_zero`); orthogonality of
+the Kummer images of an isogeny and of its dual is a further result.
 
 No assumption that `K` contains the torsion or the roots of unity is required. In mixed
 characteristic, `m` and `n` may be divisible by the residue characteristic.
@@ -171,19 +167,6 @@ theorem localTateKerWeilPairing_bijective :
   intro a b
   simp only [localTateKerWeilPairing_apply, kerH1WeilPairing_eq_dualityMap1,
     AddMonoidHom.id_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.trans_apply]
-
-include hn in
-/-- **`H¹(K, E₂[φ̂])` and `H¹(K, E₁[φ])` have the same order**, local Tate duality identifying
-the second with the `ℤ/n`-valued characters of the first, `n = deg φ`. -/
-theorem natCard_H1_kerCoeff_dual :
-    Nat.card (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) =
-      Nat.card (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) := by
-  have := hn.neZero_natCast
-  have hkill (Q : (ofIsogeny φ.dual).KerCoeff) : φ.degree • Q = 0 := by
-    have h := φ.dual.degree_nsmul_kerCoeff_eq_zero Q
-    rwa [degree_dual] at h
-  rw [Nat.card_congr (Equiv.ofBijective _ (φ.localTateKerWeilPairing_bijective hn)),
-    TauCeti.natCard_addMonoidHom_zmod (nsmul_H1_eq_zero (G := AbsoluteGaloisGroup K) hkill)]
 
 end TauCeti.Isogeny
 
