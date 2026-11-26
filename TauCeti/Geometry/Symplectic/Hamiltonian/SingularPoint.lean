@@ -11,6 +11,7 @@ import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem.Comp
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
 
 /-!
 # Nondegenerate points of positive rank
@@ -86,8 +87,6 @@ rank-zero version follows
   `F : E → (ι → ℝ)` Poisson-commute, so do all functions `ℓ ∘ F`.
 * `TauCeti.SymplecticForm.finrank_reducedSpace_ker_fderiv`: the transversal space has dimension
   `dim E - 2 rank dF_x`.
-* `TauCeti.ker_fderiv_comp_of_injective`: composing `F` with a map whose differential at `F x` is
-  injective does not change `ker dF_x`.
 * `TauCeti.SymplecticForm.polar_hessianQuadraticForm_eq_zero_of_mem_orthogonal`: the Hessians of
   critical functions `ℓ ∘ F` vanish on `(ker dF_x)^ω` for Poisson-commuting components.
 * `TauCeti.SymplecticForm.span_range_hessianQuadraticForm_of_fderiv_eq_zero`: at a critical point
@@ -216,16 +215,6 @@ theorem finrank_reducedSpace_ker_fderiv (hF : DifferentiableAt ℝ F x)
   have h := ((isCoisotropic_ker_fderiv_iff ω hF).2 hcomm).finrank_reducedSpace_add_finrank
   have h' := LinearMap.finrank_range_add_finrank_ker (fderiv ℝ F x : E →ₗ[ℝ] G)
   omega
-
-omit [FiniteDimensional ℝ E] in
-/-- **Reparametrizing the values keeps the kernel.** If `g` is differentiable at `F x` with
-injective differential there, the differential of `g ∘ F` at `x` has the same kernel as `dF_x`. -/
-theorem _root_.TauCeti.ker_fderiv_comp_of_injective {G' : Type*} [NormedAddCommGroup G']
-    [NormedSpace ℝ G'] {g : G → G'} (hg : DifferentiableAt ℝ g (F x))
-    (hD : Function.Injective (fderiv ℝ g (F x))) (hF : DifferentiableAt ℝ F x) :
-    (fderiv ℝ (g ∘ F) x).ker = (fderiv ℝ F x).ker := by
-  rw [fderiv_comp x hg hF]
-  exact LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot.2 hD)
 
 end Kernel
 
@@ -467,12 +456,6 @@ theorem isNondegeneratePoint_iff_isNondegenerateRankZeroPoint (h : fderiv ℝ F 
   exact ⟨fun hx ↦ ⟨hx.contDiffAt, h, key.1 hx.isNondegenerateQuadraticFamily⟩,
     fun hx ↦ ⟨hx.contDiffAt, fun ℓ _ ↦ hpolar ℓ, key.2 hx.isNondegenerateQuadraticFamily⟩⟩
 
-/-- Every functional `ℓ` on `G` factors as `(ℓ ∘ P) ∘ D` through a continuous linear map `D` with
-a continuous linear left inverse `P`. -/
-private theorem comp_leftInverse_comp {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℝ G']
-    {D : G →L[ℝ] G'} (hD : D.HasLeftInverse) (ℓ : G →L[ℝ] ℝ) : (ℓ.comp hD.leftInverse).comp D = ℓ :=
-  ContinuousLinearMap.ext fun v ↦ by simp [hD.leftInverse_leftInverse v]
-
 omit [FiniteDimensional ℝ E] in
 /-- **Descent of the transversal Hessians under reparametrization of the values.** Let `g` be `C²`
 at `F x` with differential `Dg` having a continuous linear left inverse, and `U = ker dF_x`. The
@@ -499,8 +482,8 @@ theorem forall_polar_hessianQuadraticForm_comp_eq_zero_iff {G' : Type*} [NormedA
       ℓ'.hessianQuadraticForm_comp_comp_apply_of_fderiv_apply_eq_zero hg hF hw,
       ℓ'.hessianQuadraticForm_comp_comp_apply_of_fderiv_apply_eq_zero hg hF hu]
   refine ⟨fun hQ ℓ hℓ w hw u hu ↦ ?_, fun hQ ℓ' hℓ' w hw u hu ↦ ?_⟩
-  · rw [← comp_leftInverse_comp hD ℓ, ← hpolar _ hw.1 hu]
-    exact hQ _ (by rwa [← ContinuousLinearMap.comp_assoc, comp_leftInverse_comp]) w hw u hu
+  · rw [← hD.comp_leftInverse_comp ℓ, ← hpolar _ hw.1 hu]
+    exact hQ _ (by rwa [← ContinuousLinearMap.comp_assoc, hD.comp_leftInverse_comp]) w hw u hu
   · rw [hpolar ℓ' hw.1 hu]
     exact hQ _ (by rwa [ContinuousLinearMap.comp_assoc]) w hw u hu
 
@@ -532,8 +515,8 @@ theorem span_range_reducedQuadraticForm_hessianQuadraticForm_comp_eq {G' : Type*
       rw [ContinuousLinearMap.comp_assoc, ← hgF]; exact ℓ'.property⟩
   have hf : Function.Surjective f := fun ℓ ↦
     ⟨⟨ℓ.val.comp hD.leftInverse, by
-      rw [hgF, ← ContinuousLinearMap.comp_assoc, comp_leftInverse_comp, ℓ.property]⟩,
-      Subtype.ext (comp_leftInverse_comp hD ℓ.val)⟩
+      rw [hgF, ← ContinuousLinearMap.comp_assoc, hD.comp_leftInverse_comp, ℓ.property]⟩,
+      Subtype.ext (hD.comp_leftInverse_comp ℓ.val)⟩
   refine congrArg _ ?_
   rw [← hf.range_comp]
   exact congrArg Set.range (funext fun ℓ' ↦ reducedQuadraticForm_congr _ _ _ _ fun _ hu ↦

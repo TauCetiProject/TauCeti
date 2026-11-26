@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SingularPoint
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Classification
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 
 /-!
 # The Williamson type of a nondegenerate singular point
@@ -202,6 +203,7 @@ theorem hasWilliamsonTypeAt_comp_iff {G' : Type*} [NormedAddCommGroup G'] [Norme
 continuous linear equivalence `A : G ≃ G'` does not change the Williamson type of a point. Unlike
 `hasWilliamsonTypeAt_comp_iff`, no regularity of `F` is assumed: `F` is `C²` at `x` exactly when
 `A ∘ F` is. -/
+@[simp]
 theorem hasWilliamsonTypeAt_continuousLinearEquiv_comp_iff {G' : Type*} [NormedAddCommGroup G']
     [NormedSpace ℝ G'] (A : G ≃L[ℝ] G') :
     ω.HasWilliamsonTypeAt (A ∘ F) x kₑ kₕ k_f ↔ ω.HasWilliamsonTypeAt F x kₑ kₕ k_f := by
