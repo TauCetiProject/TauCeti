@@ -115,12 +115,16 @@ theorem IsBlockIdempotent.mem_relTraceIdeal_of_apply_classSumCenter_ne_zero [Dec
   set K := classSumCenter (k := k) (ConjClasses.mk x)
   obtain ⟨z, hz⟩ := hb.exists_mul_mul_eq_of_apply_ne_zero hφ hx
   let ι := Subalgebra.inclusion (center_le_conjInvariants (R := k) (G := G) ⊤)
+  -- The statements write `ι c` in anonymous-constructor form; `hι` bridges the two.
+  have hι (c : Subalgebra.center k (MonoidAlgebra k G)) :
+      ι c = ⟨c, center_le_conjInvariants ⊤ c.property⟩ :=
+    Subtype.ext (Subalgebra.coe_inclusion _ c)
   have hK : ι K ∈ relTraceIdeal k (le_top : P ≤ ⊤) := by
-    rw [hideal]
+    rw [hι, hideal]
     exact classSumCenter_mem_relTraceIdeal_centralizer x
   have hb' : (⟨b, center_le_conjInvariants ⊤ b.property⟩ : conjInvariants k (⊤ : Subgroup G)) =
       ι K * ι (z * b) := by
-    rw [← map_mul, ← mul_assoc, hz, Subalgebra.inclusion_mk]
+    rw [← map_mul, ← mul_assoc, hz, hι]
   rw [hb']
   exact Ideal.mul_mem_right _ _ hK
 
