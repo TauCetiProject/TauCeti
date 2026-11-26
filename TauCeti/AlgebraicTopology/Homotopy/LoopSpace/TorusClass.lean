@@ -369,6 +369,43 @@ theorem cubicalFreeLoopTorusClassHom_mk {γ : C(Circle, Q)} (Λ : Ω^ (Fin 1) C(
       rw [hz, hw]
       exact (freeLoopTorusChain_ofCube R 1 _).symm)
 
+/-- The torus swept out by a loop of free loops is the underlying chain of a cycle. -/
+theorem exists_iCycles_eq_ofCube_freeLoopTorusCube {γ : C(Circle, Q)}
+    (Λ : Ω^ (Fin 1) C(Circle, Q) γ) :
+    ∃ z : ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).cycles 2,
+      ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).iCycles 2 z =
+        NormalizedCubicalChain.ofCube Q R (freeLoopTorusCube (Λ : SingularCube C(Circle, Q) 1)) :=
+  ⟨_, (iCycles_cyclesMap_cyclesMap_cyclesCross_uliftCircleGenLoop R 1
+    (GenLoop.cubicalCycle R Λ)).trans (by
+      rw [GenLoop.iCycles_cubicalCycle]
+      exact freeLoopTorusChain_ofCube R 1 _)⟩
+
+/-- **Naturality of the torus class**: if a loop `Λ'` of free loops of `Q'` is the image of a loop
+`Λ` of free loops of `Q` under a map `f : Q → Q'`, then the torus class of `Λ'` is the push-forward
+along `f` of the torus class of `Λ`. -/
+theorem cubicalFreeLoopTorusClassHom_mk_eq_homologyMap {Q' : Type u} [TopologicalSpace Q']
+    (f : C(Q, Q')) {γ : C(Circle, Q)} {γ' : C(Circle, Q')} (Λ : Ω^ (Fin 1) C(Circle, Q) γ)
+    (Λ' : Ω^ (Fin 1) C(Circle, Q') γ') (h : ∀ t z, Λ' t z = f (Λ t z)) :
+    cubicalFreeLoopTorusClassHom Q' R γ'
+        (Additive.ofMul (⟦Λ'⟧ : HomotopyGroup (Fin 1) C(Circle, Q') γ')) =
+      HomologicalComplex.homologyMap ((normalizedCubicalChainComplex R).map (TopCat.ofHom f)) 2
+        (cubicalFreeLoopTorusClassHom Q R γ
+          (Additive.ofMul (⟦Λ⟧ : HomotopyGroup (Fin 1) C(Circle, Q) γ))) := by
+  obtain ⟨z, hz⟩ := exists_iCycles_eq_ofCube_freeLoopTorusCube R Λ
+  -- The push-forward of a cycle carried by the torus of `Λ` is carried by the torus of `Λ'`.
+  have hz' : ((normalizedCubicalChainComplex R).obj (TopCat.of Q')).iCycles 2
+      (HomologicalComplex.cyclesMap
+        ((normalizedCubicalChainComplex R).map (TopCat.ofHom f)) 2 z) =
+      NormalizedCubicalChain.ofCube Q' R
+        (freeLoopTorusCube (Λ' : SingularCube C(Circle, Q') 1)) := by
+    rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, hz,
+      normalizedCubicalChainComplex_map_f_apply, NormalizedCubicalChain.map_ofCube]
+    congr 1
+    ext x
+    simp [h]
+  rw [cubicalFreeLoopTorusClassHom_mk R Λ hz, cubicalFreeLoopTorusClassHom_mk R Λ' hz']
+  exact (ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality _ 2) z).symm
+
 /-- The torus swept out by a loop of free loops at the constant loop at `x`, all of whose loops
 start at `x`, is a generalized loop of `Q` at `x`: its boundary is sent to `x`. -/
 def _root_.GenLoop.freeLoopTorus {x : Q}

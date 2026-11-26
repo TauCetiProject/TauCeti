@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.RankOne
+public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Rotation
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.TorusClass
 public import TauCeti.Data.ZMod.IntUnitsPower
 
@@ -35,6 +36,10 @@ in `R` (`TauCeti.RankOneLocalSystem.torusSign_eq_one_iff`). At a constant loop t
 the Hurewicz classes of `π₂(Q, x)`, so there the torus sign is trivial exactly when `c` vanishes on
 spherical classes or `2 = 0` (`TauCeti.RankOneLocalSystem.torusSign_const_eq_one_iff`).
 
+Rotating a free loop once around itself sweeps out a torus that factors through the circle, so its
+class vanishes and the torus sign acts trivially along the rotation of every loop
+(`TauCeti.RankOneLocalSystem.torusSign_ρ_rotationLoop`).
+
 A loop of constant loops sweeps out a degenerate torus, so the torus sign is trivial along the
 constant loops: its pullback along the inclusion `Q → 𝓛Q` of the constant loops is trivial
 (`TauCeti.RankOneLocalSystem.pullback_constMap_torusSign`). For `c = ⟨w₂(TQ), -⟩`, together with
@@ -60,6 +65,8 @@ singular torus class `TauCeti.freeLoopTorusClassHom` is.
 * `TauCeti.RankOneLocalSystem.torusSign_eq_one_iff`,
   `TauCeti.RankOneLocalSystem.torusSign_const_eq_one_iff`: when it is trivial, and at a constant
   loop in terms of the Hurewicz classes of `π₂`.
+* `TauCeti.RankOneLocalSystem.torusSign_ρ_rotationLoop`: it is trivial along the rotation of every
+  loop.
 * `TauCeti.RankOneLocalSystem.pullback_constMap_torusSign`: it is trivial along the constant
   loops.
 
@@ -185,6 +192,15 @@ theorem torusSign_const_eq_one_iff (x : Q) :
   simp only [AddMonoidHom.mem_range, forall_exists_index, forall_apply_eq_imp_iff] at h
   rw [← Additive.ofMul.forall_congr_right, ← Additive.ofMul.forall_congr_right] at h
   exact (torusSign_eq_one_iff c _).trans (or_congr_left h.to_iff)
+
+/-- **The torus sign is trivial along the rotation of every loop**: the rotation loop of `γ` sweeps
+out a torus whose class vanishes
+(`TauCeti.MooreFreeLoopSpace.torusClassHom_fundamentalGroupHom_rotationLoop`). -/
+@[simp]
+theorem torusSign_ρ_rotationLoop (γ : MooreFreeLoopSpace Q) :
+    (torusSign R c γ).ρ γ.rotationLoop = 1 := by
+  rw [torusSign_ρ_apply, torusClassHom_fundamentalGroupHom_rotationLoop, map_zero,
+    hilbertSign_zero, map_one]
 
 /-- **Along the constant loops the torus sign is trivial**: its pullback along the inclusion
 `Q → 𝓛Q` of the constant loops is the trivial local system, since a loop of constant loops sweeps

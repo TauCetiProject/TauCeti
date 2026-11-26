@@ -37,6 +37,8 @@ on the torus `S¹ × S¹` winding `p` times around the first circle and `q` time
 
 * `TauCeti.unitToCircle_surjective`, `TauCeti.unitToCircle_eq_one_iff`,
   `TauCeti.eq_or_of_unitToCircle_eq`: quotient properties of `unitToCircle`.
+* `TauCeti.unitToCircle_mul_unitToCircle_of_coe_eq_add`,
+  `TauCeti.unitToCircle_mul_unitToCircle_of_coe_eq_add_sub_one`: products of points of the circle.
 * `TauCeti.homeomorphCircle_symm_unitToCircle`: `unitToCircle t` corresponds to the class of `t`
   in `UnitAddCircle`.
 * `ContinuousMap.ext_unitToCircle`: maps out of the circle agreeing on the image of
@@ -86,6 +88,21 @@ theorem unitToCircle_surjective : Function.Surjective unitToCircle := fun z ↦ 
     (div_le_one hp).2 (Circle.angleDiff_lt_two_pi 1 z).le⟩, ?_⟩
   rw [unitToCircle_apply, mul_div_cancel₀ _ hp.ne']
   simpa using Circle.exp_angleDiff_mul (x := 1) (y := z)
+
+/-- **Products of points of the circle**: if `s + u = w` in the unit interval, then
+`exp (2πis) exp (2πiu) = exp (2πiw)`. -/
+theorem unitToCircle_mul_unitToCircle_of_coe_eq_add {s u w : I} (hw : (w : ℝ) = s + u) :
+    unitToCircle s * unitToCircle u = unitToCircle w := by
+  simp only [unitToCircle_apply, ← Circle.exp_add, hw, mul_add]
+
+/-- **Products of points of the circle**: if `s + u - 1 = w` in the unit interval, then
+`exp (2πis) exp (2πiu) = exp (2πiw)`. -/
+theorem unitToCircle_mul_unitToCircle_of_coe_eq_add_sub_one {s u w : I}
+    (hw : (w : ℝ) = s + u - 1) : unitToCircle s * unitToCircle u = unitToCircle w := by
+  simp only [unitToCircle_apply, ← Circle.exp_add, hw]
+  rw [← Circle.exp_sub_two_pi]
+  congr 1
+  ring
 
 /-- `unitToCircle` sends exactly the endpoints `0` and `1` to `1 ∈ Circle`. -/
 @[simp]
