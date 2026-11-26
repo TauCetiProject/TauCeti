@@ -234,6 +234,15 @@ lemma pslMk_smul (g : SL(2, K)) (c : OnePoint K) :
     (g : PSL(2, K)) • c = (g : GL (Fin 2) K) • c :=
   (rfl)
 
+/-- The image of a matrix of `SL(2, K)` under `Matrix.SpecialLinearGroup.mapGL K` acts on
+`OnePoint K` as its class in `PSL(2, K)`. -/
+lemma mapGL_smul (g : SL(2, K)) (c : OnePoint K) :
+    Matrix.SpecialLinearGroup.mapGL K g • c = (g : PSL(2, K)) • c := by
+  have h : Matrix.SpecialLinearGroup.mapGL K g = (g : GL (Fin 2) K) := by
+    ext i j
+    simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
+  rw [pslMk_smul, h]
+
 /-- If a matrix `A` of `SL(2, K)` sends homogeneous coordinates `v` of a point `x` to a multiple
 of `w`, then its class in `PSL(2, K)` moves `x` to the point with homogeneous coordinates `w`. -/
 lemma equivProjectivization_pslMk_smul_eq_mk (A : SL(2, K)) {v w : Fin 2 → K} (hv : v ≠ 0)
