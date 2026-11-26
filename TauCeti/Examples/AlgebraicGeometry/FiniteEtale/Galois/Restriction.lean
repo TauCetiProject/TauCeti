@@ -34,13 +34,13 @@ instance instIsGaloisZModAlgebraicClosure : IsGalois (ZMod p) Ω := {}
 theorem injective :
     Function.Injective (mapAutFiber
       (Spec.map (CommRingCat.ofHom (algebraMap (ZMod p) (GaloisField p 2))))
-      (spec_algebraMap_comp_spec_algebraMap (ZMod p) Ω (GaloisField p 2))) :=
+      (Spec.algebraMap_comp_algebraMap (ZMod p) (GaloisField p 2) Ω)) :=
   mapAutFiber_spec_injective _ _ _
 
 /-- The image of `π₁(Spec 𝔽_(p²)) → π₁(Spec 𝔽_p)` has index two. -/
 theorem index_range :
     (mapAutFiber (Spec.map (CommRingCat.ofHom (algebraMap (ZMod p) (GaloisField p 2))))
-      (spec_algebraMap_comp_spec_algebraMap (ZMod p) Ω (GaloisField p 2))).toMonoidHom.range.index
+      (Spec.algebraMap_comp_algebraMap (ZMod p) (GaloisField p 2) Ω)).toMonoidHom.range.index
         = 2 := by
   rw [index_range_mapAutFiber_spec, GaloisField.finrank p two_ne_zero]
 
@@ -48,7 +48,7 @@ theorem index_range :
 theorem not_surjective :
     ¬ Function.Surjective (mapAutFiber
       (Spec.map (CommRingCat.ofHom (algebraMap (ZMod p) (GaloisField p 2))))
-      (spec_algebraMap_comp_spec_algebraMap (ZMod p) Ω (GaloisField p 2))) := by
+      (Spec.algebraMap_comp_algebraMap (ZMod p) (GaloisField p 2) Ω)) := by
   rw [mapAutFiber_spec_surjective_iff_finrank_eq_one, GaloisField.finrank p two_ne_zero]
   decide
 
