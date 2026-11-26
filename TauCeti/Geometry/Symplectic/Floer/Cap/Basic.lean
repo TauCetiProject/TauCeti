@@ -66,6 +66,9 @@ is `productClass glue D₁ D₂ D₀ = D₀ -ᵥ glue D₁ D₂ ∈ Γ`. Recappi
   this is the cap independence of the topological energy.
 * `TauCeti.Floer.add_sub_add_two_mul_chern_productClass_eq`: the cap independence of the index
   `μ₁ + μ₂ − μ₀ + 2 c₁(A)`.
+* `TauCeti.Floer.add_sub_add_two_mul_chern_neg_productClass_vadd_fst`: with the opposite
+  orientation `−A`, recapping the first input by `γ` changes `μ₁ + μ₂ − μ₀ + 2 c₁(−A)` by
+  `4 c₁(γ)`, so that orientation is not cap independent.
 
 ## References
 
@@ -250,6 +253,23 @@ theorem productClass_eq_sub_of_eq_vadd {glue' : C₁ → C₂ → C₀} {γ : Pe
     {D₂ : C₂} (h : glue' D₁ D₂ = γ +ᵥ glue D₁ D₂) (D₀ : C₀) :
     productClass glue' D₁ D₂ D₀ = productClass glue D₁ D₂ D₀ - γ := by
   rw [productClass_def, h, vsub_vadd_eq_vsub_sub, productClass_def]
+
+/-- **The opposite orientation of the product class depends on the caps.** If the class of a pair
+of pants were formed as `D₁ + D₂ − D₀ − u`, the negative of `productClass`, then recapping the
+first input by `γ` would change `μ₁ + μ₂ − μ₀ + 2 c₁` of that class by `4 c₁(γ)`, for a gluing map
+equivariant in the first input and a grading `μ₁` obeying the recapping law. With the product
+class itself the change is `0` (`add_sub_add_two_mul_chern_productClass_eq`). -/
+theorem add_sub_add_two_mul_chern_neg_productClass_vadd_fst [VAdd (PeriodGroup ω c) C₁]
+    {m₁ : C₁ → ℤ} {m₂ : C₂ → ℤ} {m₀ : C₀ → ℤ}
+    (hglue₁ : ∀ (γ : PeriodGroup ω c) D₁ D₂, glue (γ +ᵥ D₁) D₂ = γ +ᵥ glue D₁ D₂)
+    (hm₁ : ∀ (γ : PeriodGroup ω c) D, m₁ (γ +ᵥ D) = 2 * PeriodGroup.chern ω c γ + m₁ D)
+    (γ : PeriodGroup ω c) (D₁ : C₁) (D₂ : C₂) (D₀ : C₀) :
+    m₁ (γ +ᵥ D₁) + m₂ D₂ - m₀ D₀ +
+        2 * PeriodGroup.chern ω c (-productClass glue (γ +ᵥ D₁) D₂ D₀) =
+      m₁ D₁ + m₂ D₂ - m₀ D₀ + 2 * PeriodGroup.chern ω c (-productClass glue D₁ D₂ D₀) +
+        4 * PeriodGroup.chern ω c γ := by
+  rw [productClass_vadd_fst hglue₁, hm₁, neg_sub, map_sub, map_neg]
+  ring
 
 variable [AddTorsor (PeriodGroup ω c) C₁] [AddTorsor (PeriodGroup ω c) C₂]
 

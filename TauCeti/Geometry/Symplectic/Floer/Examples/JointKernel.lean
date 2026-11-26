@@ -23,8 +23,8 @@ area `ω(a, b) = a + 2 b` (`JointKernelExample.area`) and first Chern number
   (`JointKernelExample.area_classB`, `JointKernelExample.degree_classB`); it is a nonzero class of
   `Γ` (`JointKernelExample.classB_ne_zero`), so area alone does not determine a class of `Γ`
   (`JointKernelExample.not_area_injective`). Quotienting by the kernel of the area alone would
-  identify `B` with `0` (`JointKernelExample.mk_classB_eq_zero`), and then no degree function
-  `d` on that quotient satisfies `d [s] = 2 c₁(s)` for every class `s`
+  identify `B` with `0` (`JointKernelExample.quotientKerArea_mk_neg_two_one_eq_zero`), and then no
+  degree function `d` on that quotient satisfies `d [s] = 2 c₁(s)` for every class `s`
   (`JointKernelExample.not_exists_degree_quotient_ker_area`, from
   `TauCeti.Floer.PeriodGroup.exists_degree_quotient_ker_area_iff`): the monomial `e^B = e^0`
   would have the two degrees `-4` and `0`.
@@ -35,11 +35,12 @@ area `ω(a, b) = a + 2 b` (`JointKernelExample.area`) and first Chern number
   `D₁ + D₂ − D₀ − u`, which is `-A`, recapping the first input by `γ` changes
   `μ₁ + μ₂ − μ₀ + 2 c₁(-A)` by `4 c₁(γ)` instead of `0`, for every gluing map equivariant in the
   first input and every grading obeying the recapping law
-  (`JointKernelExample.add_sub_add_two_mul_chern_neg_productClass_vadd_fst`). On `S² × S²` the
-  class `(1, 0)` has first Chern number `2`, so the opposite orientation gives a quantity that
-  changes by `8` under this recapping
-  (`JointKernelExample.add_sub_add_two_mul_chern_neg_productClass_classFst_vadd_fst`). The constant
-  `−n` plays no role in either computation.
+  (`TauCeti.Floer.add_sub_add_two_mul_chern_neg_productClass_vadd_fst`). On `S² × S²`, recapping
+  the first input by the class `B = (-2, 1)` of zero area changes that quantity by
+  `4 c₁(B) = -8`
+  (`JointKernelExample.add_sub_add_two_mul_chern_neg_productClass_classB_vadd_fst`): the area
+  cannot see this mismatch, only the grading does. The constant `−n` plays no role in either
+  computation.
 
 ## References
 
@@ -136,7 +137,8 @@ theorem not_area_injective :
 
 /-- In the quotient of the spherical classes of `S² × S²` by the kernel of the area alone, the
 class `B = (-2, 1)` is identified with `0`. -/
-theorem mk_classB_eq_zero : (((-2, 1) : ℤ × ℤ) : (ℤ × ℤ) ⧸ area.ker) = 0 := by
+theorem quotientKerArea_mk_neg_two_one_eq_zero :
+    (((-2, 1) : ℤ × ℤ) : (ℤ × ℤ) ⧸ area.ker) = 0 := by
   rw [QuotientAddGroup.eq_zero_iff, AddMonoidHom.mem_ker, area_apply]
   norm_num
 
@@ -149,47 +151,11 @@ theorem not_exists_degree_quotient_ker_area :
 
 /-! ### The orientation of the product class -/
 
-section Orientation
-
-variable {S : Type*} [AddGroup S] {ω : S →+ ℝ} {c : S →+ ℤ} {C₁ C₂ C₀ : Type*}
-  [VAdd (PeriodGroup ω c) C₁] [AddTorsor (PeriodGroup ω c) C₀] {glue : C₁ → C₂ → C₀}
-  {m₁ : C₁ → ℤ} {m₂ : C₂ → ℤ} {m₀ : C₀ → ℤ}
-
-/-- **The opposite orientation of the product class depends on the caps.** If the class of a pair
-of pants were formed as `D₁ + D₂ − D₀ − u`, the negative of `TauCeti.Floer.productClass`, then
-recapping the first input by `γ` would change `μ₁ + μ₂ − μ₀ + 2 c₁` of that class by `4 c₁(γ)`,
-for a gluing map equivariant in the first input and a grading `μ₁` obeying the recapping law.
-With the product class itself the change is `0`
-(`TauCeti.Floer.add_sub_add_two_mul_chern_productClass_eq`). -/
-theorem add_sub_add_two_mul_chern_neg_productClass_vadd_fst
-    (hglue₁ : ∀ (γ : PeriodGroup ω c) D₁ D₂, glue (γ +ᵥ D₁) D₂ = γ +ᵥ glue D₁ D₂)
-    (hm₁ : ∀ (γ : PeriodGroup ω c) D, m₁ (γ +ᵥ D) = 2 * PeriodGroup.chern ω c γ + m₁ D)
-    (γ : PeriodGroup ω c) (D₁ : C₁) (D₂ : C₂) (D₀ : C₀) :
-    m₁ (γ +ᵥ D₁) + m₂ D₂ - m₀ D₀ +
-        2 * PeriodGroup.chern ω c (-productClass glue (γ +ᵥ D₁) D₂ D₀) =
-      m₁ D₁ + m₂ D₂ - m₀ D₀ + 2 * PeriodGroup.chern ω c (-productClass glue D₁ D₂ D₀) +
-        4 * PeriodGroup.chern ω c γ := by
-  rw [productClass_vadd_fst hglue₁, hm₁, neg_sub, map_sub, map_neg]
-  ring
-
-end Orientation
-
-/-- The class `(1, 0)` of the period group of `S² × S²` with areas `1` and `2`, the class of the
-first factor. -/
-def classFst : PeriodGroup area chernSphereProduct :=
-  ((1, 0) : ℤ × ℤ)
-
-/-- The class `(1, 0)` of the first factor has first Chern number `2`. -/
-@[simp]
-theorem chern_classFst : PeriodGroup.chern area chernSphereProduct classFst = 2 := by
-  rw [classFst, PeriodGroup.chern_mk, chernSphereProduct_apply]
-  norm_num
-
 /-- **The opposite orientation is not cap independent on `S² × S²`.** For every gluing map
 equivariant in the first input and every grading of the first input obeying the recapping law,
-recapping the first input by the class `(1, 0)` of the first factor changes
-`μ₁ + μ₂ − μ₀ + 2 c₁(D₁ + D₂ − D₀ − u)` by `8`. -/
-theorem add_sub_add_two_mul_chern_neg_productClass_classFst_vadd_fst {C₁ C₂ C₀ : Type*}
+recapping the first input by the class `B = (-2, 1)` changes
+`μ₁ + μ₂ − μ₀ + 2 c₁(D₁ + D₂ − D₀ − u)` by `4 c₁(B) = -8`, although `B` has area `0`. -/
+theorem add_sub_add_two_mul_chern_neg_productClass_classB_vadd_fst {C₁ C₂ C₀ : Type*}
     [VAdd (PeriodGroup area chernSphereProduct) C₁]
     [AddTorsor (PeriodGroup area chernSphereProduct) C₀] {glue : C₁ → C₂ → C₀}
     {m₁ : C₁ → ℤ} {m₂ : C₂ → ℤ} {m₀ : C₀ → ℤ}
@@ -198,11 +164,11 @@ theorem add_sub_add_two_mul_chern_neg_productClass_classFst_vadd_fst {C₁ C₂ 
     (hm₁ : ∀ (γ : PeriodGroup area chernSphereProduct) D,
       m₁ (γ +ᵥ D) = 2 * PeriodGroup.chern area chernSphereProduct γ + m₁ D)
     (D₁ : C₁) (D₂ : C₂) (D₀ : C₀) :
-    m₁ (classFst +ᵥ D₁) + m₂ D₂ - m₀ D₀ +
-        2 * PeriodGroup.chern area chernSphereProduct (-productClass glue (classFst +ᵥ D₁) D₂ D₀) =
+    m₁ (classB +ᵥ D₁) + m₂ D₂ - m₀ D₀ +
+        2 * PeriodGroup.chern area chernSphereProduct (-productClass glue (classB +ᵥ D₁) D₂ D₀) =
       m₁ D₁ + m₂ D₂ - m₀ D₀ +
-        2 * PeriodGroup.chern area chernSphereProduct (-productClass glue D₁ D₂ D₀) + 8 := by
-  rw [add_sub_add_two_mul_chern_neg_productClass_vadd_fst hglue₁ hm₁, chern_classFst]
-  norm_num
+        2 * PeriodGroup.chern area chernSphereProduct (-productClass glue D₁ D₂ D₀) - 8 := by
+  rw [add_sub_add_two_mul_chern_neg_productClass_vadd_fst hglue₁ hm₁, chern_classB]
+  ring
 
 end TauCeti.Floer.JointKernelExample
