@@ -25,10 +25,10 @@ and Bessel (`p = 1, α₀ = 1 / 2`) asymptotics.
 
 ## Main declarations
 
-* `TauCeti.HasOscillatoryDecayAt`: fixed-order oscillatory decomposition up to `O(t ^ (-B))`.
-* `TauCeti.HasOscillatoryDecay`, `TauCeti.hasOscillatoryDecay_iff`, and
-  `TauCeti.hasOscillatoryDecay_def`: all-orders oscillatory asymptotic decay predicate and its
-  characterizations.
+* `TauCeti.HasOscillatoryDecayAt` and `TauCeti.hasOscillatoryDecayAt_iff`: fixed-order
+  oscillatory decomposition up to `O(t ^ (-B))`.
+* `TauCeti.HasOscillatoryDecay` and `TauCeti.hasOscillatoryDecay_def`: all-orders oscillatory
+  asymptotic decay predicate and its characterization.
 * `TauCeti.HasOscillatoryDecay.of_asymptoticExpansion`: criterion from a Poincaré oscillatory
   asymptotic series.
 * `TauCeti.HasOscillatoryDecay.isBigO_rpow_neg`: leading amplitude bound `O(t ^ (-α₀))`.
@@ -59,6 +59,17 @@ def HasOscillatoryDecayAt (c p α₀ B : ℝ) (f : ℝ → ℝ) : Prop :=
       (∑ i, (u i * (t ^ (-α i) * Real.cos (c * t ^ p)) +
         v i * (t ^ (-α i) * Real.sin (c * t ^ p)))) + r t
 
+/-- Characterization of `TauCeti.HasOscillatoryDecayAt` by its existential oscillatory
+decomposition. -/
+theorem hasOscillatoryDecayAt_iff {c p α₀ B : ℝ} {f : ℝ → ℝ} :
+    HasOscillatoryDecayAt c p α₀ B f ↔
+      ∃ (k : ℕ) (α u v : Fin k → ℝ) (r : ℝ → ℝ),
+        (∀ i, α₀ ≤ α i) ∧ r =O[atTop] (fun t : ℝ ↦ t ^ (-B)) ∧
+        f =ᶠ[atTop] fun t ↦
+          (∑ i, (u i * (t ^ (-α i) * Real.cos (c * t ^ p)) +
+            v i * (t ^ (-α i) * Real.sin (c * t ^ p)))) + r t :=
+  Iff.rfl
+
 /-- **Asymptotic oscillatory decay of phase `c * t ^ p` and leading damping `α₀`.**
 A function `f : ℝ → ℝ` satisfies `HasOscillatoryDecay c p α₀ f` if to every polynomial order `B`
 it decomposes at `+∞` into a finite linear combination of power-damped oscillations
@@ -66,14 +77,8 @@ it decomposes at `+∞` into a finite linear combination of power-damped oscilla
 `O(t ^ (-B))` remainder. This class includes Fresnel (`p = 2, α₀ = 0`), negative-argument Airy
 (`c = 2 / 3, p = 3 / 2, α₀ = 1 / 4`), and half-integer/general Bessel (`p = 1, α₀ = 1 / 2`)
 oscillations. -/
-def HasOscillatoryDecay (c p α₀ : ℝ) (f : ℝ → ℝ) : Prop :=
+@[expose] def HasOscillatoryDecay (c p α₀ : ℝ) (f : ℝ → ℝ) : Prop :=
   ∀ B : ℝ, HasOscillatoryDecayAt c p α₀ B f
-
-/-- Characterization of `TauCeti.HasOscillatoryDecay` via the single-threshold predicate
-`TauCeti.HasOscillatoryDecayAt`. -/
-theorem hasOscillatoryDecay_iff {c p α₀ : ℝ} {f : ℝ → ℝ} :
-    HasOscillatoryDecay c p α₀ f ↔ ∀ B, HasOscillatoryDecayAt c p α₀ B f :=
-  Iff.rfl
 
 /-- Defining equivalence of `TauCeti.HasOscillatoryDecay`. -/
 theorem hasOscillatoryDecay_def {c p α₀ : ℝ} {f : ℝ → ℝ} :
@@ -83,7 +88,7 @@ theorem hasOscillatoryDecay_def {c p α₀ : ℝ} {f : ℝ → ℝ} :
         f =ᶠ[atTop] fun t ↦
           (∑ i, (u i * (t ^ (-α i) * Real.cos (c * t ^ p)) +
             v i * (t ^ (-α i) * Real.sin (c * t ^ p)))) + r t :=
-  Iff.rfl
+  forall_congr' fun _ ↦ hasOscillatoryDecayAt_iff
 
 namespace HasOscillatoryDecayAt
 
@@ -157,7 +162,7 @@ namespace HasOscillatoryDecay
 for all `c, p, α₀`. -/
 theorem of_isBigO {c p α₀ : ℝ} {f : ℝ → ℝ}
     (hf : ∀ B : ℝ, f =O[atTop] fun t : ℝ ↦ t ^ (-B)) : HasOscillatoryDecay c p α₀ f :=
-  hasOscillatoryDecay_iff.mpr fun B ↦ HasOscillatoryDecayAt.of_isBigO (hf B)
+  fun B ↦ HasOscillatoryDecayAt.of_isBigO (hf B)
 
 /-- The zero function satisfies `HasOscillatoryDecay c p α₀`. -/
 @[simp]
@@ -168,19 +173,19 @@ theorem zero (c p α₀ : ℝ) : HasOscillatoryDecay c p α₀ 0 :=
 theorem congr_atTop {c p α₀ : ℝ} {f g : ℝ → ℝ}
     (hf : HasOscillatoryDecay c p α₀ f) (hfg : f =ᶠ[atTop] g) :
     HasOscillatoryDecay c p α₀ g :=
-  hasOscillatoryDecay_iff.mpr fun B ↦ (hasOscillatoryDecay_iff.mp hf B).congr_atTop hfg
+  fun B ↦ (hf B).congr_atTop hfg
 
 /-- Lowering the leading damping threshold `α₀` preserves `HasOscillatoryDecay`. -/
 theorem mono {c p α₀ α₁ : ℝ} {f : ℝ → ℝ}
     (hf : HasOscillatoryDecay c p α₀ f) (hα : α₁ ≤ α₀) :
     HasOscillatoryDecay c p α₁ f :=
-  hasOscillatoryDecay_iff.mpr fun B ↦ (hasOscillatoryDecay_iff.mp hf B).mono hα
+  fun B ↦ (hf B).mono hα
 
 /-- Multiplication by a constant preserves `HasOscillatoryDecay`. -/
 theorem const_mul {c p α₀ : ℝ} {f : ℝ → ℝ}
     (hf : HasOscillatoryDecay c p α₀ f) (d : ℝ) :
     HasOscillatoryDecay c p α₀ (fun t ↦ d * f t) :=
-  hasOscillatoryDecay_iff.mpr fun B ↦ (hasOscillatoryDecay_iff.mp hf B).const_mul d
+  fun B ↦ (hf B).const_mul d
 
 /-- Negation preserves `HasOscillatoryDecay`. -/
 theorem neg {c p α₀ : ℝ} {f : ℝ → ℝ} (hf : HasOscillatoryDecay c p α₀ f) :
@@ -191,8 +196,7 @@ theorem neg {c p α₀ : ℝ} {f : ℝ → ℝ} (hf : HasOscillatoryDecay c p α
 theorem add {c p α₀ : ℝ} {f g : ℝ → ℝ}
     (hf : HasOscillatoryDecay c p α₀ f) (hg : HasOscillatoryDecay c p α₀ g) :
     HasOscillatoryDecay c p α₀ (f + g) :=
-  hasOscillatoryDecay_iff.mpr fun B ↦
-    (hasOscillatoryDecay_iff.mp hf B).add (hasOscillatoryDecay_iff.mp hg B)
+  fun B ↦ (hf B).add (hg B)
 
 /-- Subtraction preserves `HasOscillatoryDecay`. -/
 theorem sub {c p α₀ : ℝ} {f g : ℝ → ℝ}
@@ -204,19 +208,18 @@ theorem sub {c p α₀ : ℝ} {f g : ℝ → ℝ}
 theorem sum {ι : Type*} {s : Finset ι} {c p α₀ : ℝ} {F : ι → ℝ → ℝ}
     (hF : ∀ j ∈ s, HasOscillatoryDecay c p α₀ (F j)) :
     HasOscillatoryDecay c p α₀ (fun t ↦ ∑ j ∈ s, F j t) :=
-  hasOscillatoryDecay_iff.mpr fun B ↦
-    HasOscillatoryDecayAt.sum fun j hj ↦ hasOscillatoryDecay_iff.mp (hF j hj) B
+  fun B ↦ HasOscillatoryDecayAt.sum fun j hj ↦ hF j hj B
 
 /-- Single cosine mode `t ↦ t ^ (-α) * cos (c * t ^ p)` with `α₀ ≤ α`. -/
 theorem rpow_mul_cos {c p α₀ α : ℝ} (hα : α₀ ≤ α) :
     HasOscillatoryDecay c p α₀ (fun t ↦ t ^ (-α) * Real.cos (c * t ^ p)) :=
-  hasOscillatoryDecay_iff.mpr fun B ↦ (HasOscillatoryDecayAt.rpow_mul_cos_add_sin
+  fun B ↦ (HasOscillatoryDecayAt.rpow_mul_cos_add_sin
     (c := c) (p := p) (B := B) 1 0 hα).congr_atTop (Eventually.of_forall fun _ ↦ by simp)
 
 /-- Single sine mode `t ↦ t ^ (-α) * sin (c * t ^ p)` with `α₀ ≤ α`. -/
 theorem rpow_mul_sin {c p α₀ α : ℝ} (hα : α₀ ≤ α) :
     HasOscillatoryDecay c p α₀ (fun t ↦ t ^ (-α) * Real.sin (c * t ^ p)) :=
-  hasOscillatoryDecay_iff.mpr fun B ↦ (HasOscillatoryDecayAt.rpow_mul_cos_add_sin
+  fun B ↦ (HasOscillatoryDecayAt.rpow_mul_cos_add_sin
     (c := c) (p := p) (B := B) 0 1 hα).congr_atTop (Eventually.of_forall fun _ ↦ by simp)
 
 /-- Phase-shifted cosine mode `t ↦ t ^ (-α) * cos (c * t ^ p + φ)` with `α₀ ≤ α`. -/
@@ -261,7 +264,7 @@ theorem of_asymptoticExpansion {c p α₀ : ℝ} {f : ℝ → ℝ} {β u v : ℕ
 `f =O[atTop] fun t : ℝ ↦ t ^ (-α₀)`. -/
 theorem isBigO_rpow_neg {c p α₀ : ℝ} {f : ℝ → ℝ} (hf : HasOscillatoryDecay c p α₀ f) :
     f =O[atTop] fun t : ℝ ↦ t ^ (-α₀) := by
-  obtain ⟨k, α, u, v, r, hα, hr, heq⟩ := hasOscillatoryDecay_def.mp hf α₀
+  obtain ⟨k, α, u, v, r, hα, hr, heq⟩ := hasOscillatoryDecayAt_iff.mp (hf α₀)
   have hmode (i : Fin k) (trig : ℝ → ℝ) (htrig : ∀ θ, |trig θ| ≤ 1) :
       (fun t : ℝ ↦ t ^ (-α i) * trig (c * t ^ p)) =O[atTop] fun t : ℝ ↦ t ^ (-α₀) :=
     (isBigO_iff.mpr ⟨1, Eventually.of_forall fun t ↦ by

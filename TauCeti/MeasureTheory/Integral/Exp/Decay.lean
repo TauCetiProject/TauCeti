@@ -38,13 +38,9 @@ inclusion.
 ## Main results
 
 * `TauCeti.integrableOn_pow_mul_exp_neg_mul_Ioi`: integrability on `(0, ∞)`.
-* `TauCeti.integrableOn_exp_neg_mul_mul_pow_Ioi`: integrability on `(0, ∞)` with the exponential
-  factor first.
 * `TauCeti.integrableOn_rpow_mul_exp_mul_sub_mul_rpow`: integrability of
   `t ^ q * exp (a * t - b * t ^ p)` on `(0, ∞)` when `1 < p`, `-1 < q`, and `0 < b`.
 * `TauCeti.integral_pow_mul_exp_neg_mul_Ioi`: evaluation in terms of a factorial.
-* `TauCeti.integral_exp_neg_mul_mul_pow_Ioi`: evaluation in terms of a factorial with the
-  exponential factor first.
 * `TauCeti.lintegral_ofReal_exp_neg_mul_mul_lintegral`: an iterated exponential integral is a
   Stieltjes-kernel integral.
 * `TauCeti.integrableOn_exp_mul_Ioi_iff`: `exp (a * ·)` is integrable on `(c, ∞)` exactly when
@@ -119,12 +115,6 @@ theorem integrableOn_pow_mul_exp_neg_mul_Ioi (n : ℕ) {b : ℝ} (hb : 0 < b) :
     (lt_of_lt_of_le (by norm_num) (Nat.cast_nonneg n)) one_pos hb
   simpa only [Real.rpow_one, Real.rpow_natCast, neg_mul] using h
 
-/-- An exponentially decaying factor times a natural power is integrable on `(0, ∞)`. -/
-theorem integrableOn_exp_neg_mul_mul_pow_Ioi (n : ℕ) {p : ℝ} (hp : 0 < p) :
-    IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ n) (Ioi 0) :=
-  (integrableOn_pow_mul_exp_neg_mul_Ioi n hp).congr_fun
-    (fun t _ ↦ mul_comm (t ^ n) (Real.exp (-(p * t)))) measurableSet_Ioi
-
 /-- For `1 < p`, `-1 < q`, and `0 < b`, a linear drift `a * t` in the exponent is dominated by
 `-b * t ^ p`, so `t ^ q * exp (a * t - b * t ^ p)` is integrable on `(0, ∞)`. -/
 theorem integrableOn_rpow_mul_exp_mul_sub_mul_rpow {p q b : ℝ} (hp : 1 < p) (hq : -1 < q)
@@ -184,13 +174,6 @@ theorem integral_pow_mul_exp_neg_mul_Ioi (n : ℕ) {a : ℝ} (ha : 0 < a) :
     rw [Real.rpow_natCast t n]
   rw [h', one_div, div_eq_mul_inv, inv_pow]
   ring
-
-/-- The integral of an exponentially decaying factor times a natural power on `(0, ∞)`. -/
-theorem integral_exp_neg_mul_mul_pow_Ioi (n : ℕ) {p : ℝ} (hp : 0 < p) :
-    ∫ t : ℝ in Ioi 0, Real.exp (-(p * t)) * t ^ n = n.factorial / p ^ (n + 1) := by
-  rw [setIntegral_congr_fun measurableSet_Ioi
-    (fun t _ ↦ mul_comm (Real.exp (-(p * t))) (t ^ n))]
-  exact integral_pow_mul_exp_neg_mul_Ioi n hp
 
 /-- **The Stieltjes kernel is an iterated exponential integral.** Swapping the two integrations
 turns the outer Laplace integral of the inner one into the Stieltjes integral of `ν`. -/
@@ -737,7 +720,8 @@ theorem integrableOn_exp_neg_mul_mul_pow_smul_of_isBigO_one {E : Type*} [NormedA
     [NormedSpace ℝ E] {h : ℝ → E} {p : ℝ} (hp : 0 < p) (k : ℕ)
     (hh_cont : ContinuousOn h (Ici 0)) (hh_top : h =O[atTop] (1 : ℝ → ℝ)) :
     IntegrableOn (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ k) • h t) (Ioi 0) :=
-  (integrableOn_exp_neg_mul_mul_pow_Ioi k hp).smul_of_continuousOn_of_isBigO_one
-    Ioi_subset_Ici_self hh_cont hh_top
+  ((integrableOn_pow_mul_exp_neg_mul_Ioi k hp).congr_fun
+    (fun t _ ↦ mul_comm (t ^ k) (Real.exp (-(p * t))))
+    measurableSet_Ioi).smul_of_continuousOn_of_isBigO_one Ioi_subset_Ici_self hh_cont hh_top
 
 end TauCeti

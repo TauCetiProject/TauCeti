@@ -21,10 +21,11 @@ convergent improper tail integral `TauCeti.iteratedTailIntegral g 1` against a `
 
 ## Main results
 
-* `TauCeti.integral_Ioi_smul_eq_of_tendsto`: if `g` is locally integrable on `[a, ∞)` with
-  convergent (possibly only conditionally) improper integral `R ↦ ∫ t in a..R, g t`, `φ` is `C¹`
-  with `deriv φ` integrable on `(a, ∞)`, and `t ↦ φ t • g t` is Bochner integrable on `(a, ∞)`,
-  then `s ↦ deriv φ s • iteratedTailIntegral g 1 s` is integrable on `(a, ∞)` and
+* `TauCeti.integrableOn_deriv_smul_iteratedTailIntegral_one_and_integral_Ioi_smul_eq`: if `g` is
+  locally integrable on `[a, ∞)` with convergent (possibly only conditionally) improper integral
+  `R ↦ ∫ t in a..R, g t`, `φ` is `C¹` with `deriv φ` integrable on `(a, ∞)`, and `t ↦ φ t • g t`
+  is Bochner integrable on `(a, ∞)`, then `s ↦ deriv φ s • iteratedTailIntegral g 1 s` is
+  integrable on `(a, ∞)` and
   `∫ t in Ioi a, φ t • g t = φ a • iteratedTailIntegral g 1 a +
     ∫ s in Ioi a, deriv φ s • iteratedTailIntegral g 1 s`.
 -/
@@ -42,7 +43,8 @@ locally integrable on `[a, ∞)` with convergent (possibly only conditionally) i
 Bochner integrable on `(a, ∞)`, then `s ↦ deriv φ s • G s` is integrable on `(a, ∞)` and
 `∫ t in Ioi a, φ t • g t = φ a • G a + ∫ s in Ioi a, deriv φ s • G s`. (When `E` is incomplete,
 both integrals and `G` vanish.) -/
-theorem integral_Ioi_smul_eq_of_tendsto {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem integrableOn_deriv_smul_iteratedTailIntegral_one_and_integral_Ioi_smul_eq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {φ : ℝ → ℝ} {g : ℝ → E} {a : ℝ}
     (hg_loc : LocallyIntegrableOn g (Ici a))
     (hg_conv : ∃ L, Tendsto (fun R : ℝ ↦ ∫ t in a..R, g t) atTop (𝓝 L))

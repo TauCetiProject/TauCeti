@@ -70,7 +70,8 @@ private theorem integral_Ioi_exp_neg_mul_smul_eq {g : ℝ → E} {p : ℝ} (hp :
   have hφ'_int : IntegrableOn (deriv fun t : ℝ ↦ Real.exp (-(p * t))) (Ioi 0) :=
     IntegrableOn.congr_fun ((exp_neg_integrableOn_Ioi 0 hp).const_mul (-p))
       (fun s _ ↦ by simp [hderiv, neg_mul]) measurableSet_Ioi
-  obtain ⟨_, heq⟩ := integral_Ioi_smul_eq_of_tendsto hg_loc hg_conv (by fun_prop) hφ'_int hg_int
+  obtain ⟨_, heq⟩ := integrableOn_deriv_smul_iteratedTailIntegral_one_and_integral_Ioi_smul_eq
+    hg_loc hg_conv (by fun_prop) hφ'_int hg_int
   rw [heq]
   simp [hderiv, mul_smul, integral_neg, integral_smul, sub_eq_add_neg]
 
@@ -91,12 +92,14 @@ private theorem integral_Ioi_exp_neg_mul_mul_pow_succ_smul_eq {g : ℝ → E} {p
     simpa only [Nat.cast_add, Nat.cast_one, Nat.add_sub_cancel] using
       (hasDerivAt_exp_neg_mul_mul_pow_right p s (m + 1)).deriv
   have hpow_int (k : ℕ) : IntegrableOn (fun s : ℝ ↦ Real.exp (-(p * s)) * s ^ k) (Ioi 0) :=
-    integrableOn_exp_neg_mul_mul_pow_Ioi k hp
+    (integrableOn_pow_mul_exp_neg_mul_Ioi k hp).congr_fun
+      (fun s _ ↦ mul_comm (s ^ k) (Real.exp (-(p * s)))) measurableSet_Ioi
   have hφ'_int : IntegrableOn (deriv φ) (Ioi 0) :=
     IntegrableOn.congr_fun
       (((hpow_int m).const_mul (m + 1 : ℝ)).sub ((hpow_int (m + 1)).const_mul p))
       (fun s _ ↦ (hderiv s).symm) measurableSet_Ioi
-  obtain ⟨_, heq⟩ := integral_Ioi_smul_eq_of_tendsto hg_loc ⟨L, hL⟩ (by fun_prop) hφ'_int hg_int
+  obtain ⟨_, heq⟩ := integrableOn_deriv_smul_iteratedTailIntegral_one_and_integral_Ioi_smul_eq
+    hg_loc ⟨L, hL⟩ (by fun_prop) hφ'_int hg_int
   have hG_int (k : ℕ) : IntegrableOn
       (fun s : ℝ ↦ (Real.exp (-(p * s)) * s ^ k) • iteratedTailIntegral g 1 s) (Ioi 0) :=
     integrableOn_exp_neg_mul_mul_pow_smul_of_isBigO_one hp k

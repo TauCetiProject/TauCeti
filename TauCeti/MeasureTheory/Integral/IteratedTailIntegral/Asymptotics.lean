@@ -19,9 +19,9 @@ that do not depend on oscillatory cancellation.
 
 ## Main results
 
-* `TauCeti.integrableOn_and_isBigO_tail_of_isBigO_rpow`: a function `g : ℝ → E` locally
-  integrable on `[a, ∞)` with `g =O[atTop] fun t ↦ t ^ (-M)` (`1 < M`) is Bochner integrable on
-  `(a, ∞)`, and its first tail integral satisfies
+* `TauCeti.integrableOn_Ioi_and_isBigO_iteratedTailIntegral_one_of_isBigO_rpow`: a function
+  `g : ℝ → E` locally integrable on `[a, ∞)` with `g =O[atTop] fun t ↦ t ^ (-M)` (`1 < M`) is
+  Bochner integrable on `(a, ∞)`, and its first tail integral satisfies
   `iteratedTailIntegral g 1 =O[atTop] fun x ↦ x ^ (-B)` for every `B ≤ M - 1`.
 -/
 
@@ -33,7 +33,8 @@ open Asymptotics Filter MeasureTheory Set
 
 /-- Integrability and tail `O(x ^ (-B))` bound for a locally integrable function `g = O(t ^ (-M))`
 with `1 < M` and `B ≤ M - 1`. -/
-theorem integrableOn_and_isBigO_tail_of_isBigO_rpow {E : Type*} [NormedAddCommGroup E]
+theorem integrableOn_Ioi_and_isBigO_iteratedTailIntegral_one_of_isBigO_rpow
+    {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {g : ℝ → E} {a B M : ℝ} (hg_loc : LocallyIntegrableOn g (Ici a))
     (hM : 1 < M) (hBM : B ≤ M - 1) (hg : g =O[atTop] fun t : ℝ ↦ t ^ (-M)) :
     IntegrableOn g (Ioi a) ∧
