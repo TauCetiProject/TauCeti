@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.FormalScheme.SectionsTopology
-public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Noetherian
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Stalk
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 
@@ -300,7 +299,7 @@ variable (A : Type u) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [I
 
 /-- For a noetherian adic ring `A`, `ofSpf A` has a noetherian underlying topological space. -/
 instance noetherianSpace_ofSpf [IsNoetherianRing A] : NoetherianSpace (ofSpf A) :=
-  Spf.noetherianSpace_carrier
+  inferInstanceAs (NoetherianSpace (Spf.carrier A))
 
 /-- The formal spectrum of a noetherian adic ring is a noetherian formal scheme. -/
 instance [IsNoetherianRing A] : (ofSpf A).IsNoetherian where
@@ -363,14 +362,6 @@ theorem isLocallyNoetherian_iff_of_iSup_eq_top {ι : Type*} {U : ι → Opens X}
   exact ⟨(hU i).Sections, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, forgetToLocallyRingedSpace.map (hU i).fromSpf, (hU i).isOpenImmersion_fromSpf,
     ((hU i).range_fromSpf).ge hxi⟩
-
-/-- If `X` is covered by affine formal opens with noetherian section rings, then `X` is locally
-noetherian. -/
-theorem isLocallyNoetherian_of_iSup_eq_top {ι : Type*} {U : ι → Opens X}
-    (hU : ∀ i, X.IsAffineOpen (U i)) (hcov : ⨆ i, U i = ⊤)
-    (hnoeth : ∀ i, IsNoetherianRing (X.presheaf.obj (op (U i)))) :
-    X.IsLocallyNoetherian :=
-  (isLocallyNoetherian_iff_of_iSup_eq_top hU hcov).mpr hnoeth
 
 /-- Given a finite affine open cover `⨆ i, U i = ⊤` of `X`, `X` is noetherian if and only if every
 section ring `Γ(U i, O_X)` is noetherian. -/
