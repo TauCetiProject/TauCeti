@@ -74,6 +74,8 @@ sets `V(q)` with `q ≤ p`, so the local Krull dimension of `Spec R` at `p` is a
   height of its image modulo some minimal prime `q ≤ p`.
 * `PrimeSpectrum.coheight_eq_ringKrullDim_quotient`: the coheight of a point `p` of `Spec R` is the
   Krull dimension of `R ⧸ p`.
+* `PrimeSpectrum.exists_le_and_le_ringKrullDim_quotient`: if `dim (R ⧸ I) ≥ n`, then
+  `dim (R ⧸ p) ≥ n` for some prime `p ⊇ I`.
 * `PrimeSpectrum.topologicalKrullDimAt_le_iSup_ringKrullDim_quotient`: in a noetherian ring, the
   local Krull dimension of `Spec R` at `p` is at most the supremum of `dim (R ⧸ q)` over the
   minimal primes `q ≤ p`.
@@ -363,6 +365,18 @@ theorem coheight_eq_ringKrullDim_quotient (p : PrimeSpectrum R) :
     ext x
     rw [Set.mem_Ici, mem_zeroLocus, SetLike.coe_subset_coe, asIdeal_le_asIdeal]
   rw [Order.coheight_eq_krullDim_Ici, ringKrullDim_quotient, this]
+
+/-- If `R ⧸ I` has Krull dimension at least `n`, then so does `R ⧸ p` for some prime `p` of `R`
+containing `I`. -/
+theorem exists_le_and_le_ringKrullDim_quotient {I : Ideal R} {n : ℕ}
+    (h : (n : WithBot ℕ∞) ≤ ringKrullDim (R ⧸ I)) :
+    ∃ p : PrimeSpectrum R, I ≤ p.asIdeal ∧ (n : WithBot ℕ∞) ≤ ringKrullDim (R ⧸ p.asIdeal) := by
+  rw [ringKrullDim_quotient, Order.le_krullDim_iff] at h
+  obtain ⟨l, rfl⟩ := h
+  refine ⟨l.head.val, (mem_zeroLocus _ _).1 l.head.property, ?_⟩
+  rw [← coheight_eq_ringKrullDim_quotient]
+  exact WithBot.coe_le_coe.2 (Order.length_le_coheight_head.trans
+    (Order.coheight_le_coheight_apply_of_strictMono _ (Subtype.strictMono_coe _) _))
 
 open Topology TauCeti in
 /-- In a noetherian ring `R`, the local Krull dimension of `Spec R` at a point `p` is at most the
