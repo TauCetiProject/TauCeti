@@ -671,8 +671,11 @@ theorem snd_neckPreglue_apply (R : ℝ) (k₁ : H1 V × S₁) (k₂ : H1 V × S�
     (neckPreglue R (k₁, k₂)).2 = (k₁.2, k₂.2) := by
   simp [neckPreglue]
 
-/-- The pregluing written with the cutoff operators `cutoffL`, for any bounds on the cutoffs. -/
-private theorem neckPreglue_eq_cutoffL {R : ℝ} (hβ : ContDiff ℝ 2 (neckCutoff (-(2 / R))))
+/-- The pregluing written with the cutoff operators `cutoffL`, for any bounds `B₁`, `B₂` on the
+cutoffs `β = neckCutoff (-(2 / R))` and `1 - β` and their derivatives: it is
+`(β ξ₁(· + R, ·) + (1 - β) ξ₂(· - R, ·), (σ₁, σ₂))`, independently of the bounds used to define
+`TauCeti.CylinderSobolev.neckPreglue`. -/
+theorem neckPreglue_eq_cutoffL {R : ℝ} (hβ : ContDiff ℝ 2 (neckCutoff (-(2 / R))))
     {B₁ : ℝ} (hβ1 : ∀ s, |neckCutoff (-(2 / R)) s| ≤ B₁)
     (hβ'1 : ∀ s, |deriv (neckCutoff (-(2 / R))) s| ≤ B₁)
     (hγ : ContDiff ℝ 2 fun s ↦ 1 - neckCutoff (-(2 / R)) s) {B₂ : ℝ}
