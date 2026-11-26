@@ -68,8 +68,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `pairSign_of_morseIndex_eq_finrank`, `signedPairCoeff_of_morseIndex_eq_finrank`: the signs and
   the coefficients at critical points of index `n`.
 * `IsMorseSmalePair.finsum_signedPairCoeff_mul_augmentationSign`,
-  `IsMorseSmalePair.signedMorseAugmentation_comp_signedPairMap`: the signed pair map commutes with
-  the augmentations.
+  `IsMorseSmalePair.signedMorseAugmentation_comp_signedPairMap`,
+  `IsMorseSmalePair.signedMorseAugmentation_signedPairMap`: the signed pair map commutes with the
+  augmentations.
 * `IsMorseSmalePair.finsum_fundamentalSign_mul_signedPairCoeff`,
   `IsMorseSmalePair.signedPairMap_signedMorseFundamentalChain`: the signed pair map preserves the
   fundamental chains.
@@ -302,6 +303,15 @@ theorem signedMorseAugmentation_comp_signedPairMap (R : Type*) [Ring R] :
     Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _, MorseOrientation.signedMorseAugmentation_single,
     ← h.finsum_signedPairCoeff_mul_augmentationSign 𝔬₀ 𝔬₁ hf₀ p, finsum_eq_sum_of_fintype]
   simp only [signedPairMap_single_apply, Int.cast_sum, Int.cast_mul, Finset.mul_sum, mul_assoc]
+
+/-- **The augmentation of the image of a chain under the signed pair map** is the augmentation of
+the chain. The applied form of `ε₁ ∘ P = ε₀`. -/
+@[simp]
+theorem signedMorseAugmentation_signedPairMap {R : Type*} [Ring R]
+    (c : criticalPoints 𝓘(ℝ, E) f₀ →₀ R) :
+    𝔬₁.signedMorseAugmentation R (hX₀.signedPairMap hX₁ 𝔬₀ 𝔬₁ hf₁ R c) =
+      𝔬₀.signedMorseAugmentation R c := by
+  rw [← LinearMap.comp_apply, h.signedMorseAugmentation_comp_signedPairMap 𝔬₀ 𝔬₁ hf₀ hf₁ R]
 
 include hf₁
 

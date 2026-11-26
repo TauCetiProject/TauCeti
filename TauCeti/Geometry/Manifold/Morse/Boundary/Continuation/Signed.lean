@@ -54,7 +54,8 @@ followed by the bijection of critical points `Φ⁻¹ q ↦ q`
   the one-dimensional intersections, is not proved here.
 * **Augmentations.** When `(X₀, Φ^* X₁)` is a Morse–Smale pair of pseudo-gradients adapted to Morse
   functions, the integral continuation map commutes with the augmentations of `f₀` and of `f₁`
-  (`IsMorseSmalePair.signedMorseAugmentation_comp_signedContinuationMap`, in the namespace
+  (`IsMorseSmalePair.signedMorseAugmentation_comp_signedContinuationMap` and its applied form
+  `IsMorseSmalePair.signedMorseAugmentation_signedContinuationMap`, in the namespace
   `TauCeti.IsAdaptedPseudoGradient`), since the signed pair map does and the bijection of critical
   points `Φ⁻¹ q ↦ q` preserves the augmentation signs. For a transverse continuation this holds
   along the transition diffeomorphism from `a` to `b` once `a` is very negative and `b` very
@@ -308,6 +309,17 @@ theorem IsMorseSmalePair.signedMorseAugmentation_comp_signedContinuationMap
     MorseOrientation.signedMorseAugmentation_comp_domLCongr]
   exact h.signedMorseAugmentation_comp_signedPairMap _ _ hf₀
     (hf₁.comp_isLocalDiffeomorph Φ.isLocalDiffeomorph) R
+
+/-- **The augmentation of the image of a chain under the integral continuation map** is the
+augmentation of the chain. The applied form of
+`IsMorseSmalePair.signedMorseAugmentation_comp_signedContinuationMap`. -/
+@[simp]
+theorem IsMorseSmalePair.signedMorseAugmentation_signedContinuationMap
+    (h : IsMorseSmalePair hX₀ (hX₁.mpullback Φ)) (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
+    (c : criticalPoints 𝓘(ℝ, E) f₀ →₀ R) :
+    𝔬₁.signedMorseAugmentation R (hX₀.signedContinuationMap hX₁ 𝔬₀ 𝔬₁ Φ hf₁ R c) =
+      𝔬₀.signedMorseAugmentation R c := by
+  rw [← LinearMap.comp_apply, h.signedMorseAugmentation_comp_signedContinuationMap hf₁ hf₀]
 
 end Map
 
