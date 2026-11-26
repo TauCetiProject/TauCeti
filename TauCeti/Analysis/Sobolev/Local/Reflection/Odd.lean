@@ -330,17 +330,6 @@ theorem HasWeakFDerivOn.twistedReflection {Ω : Opens ℂ} (hΩ : ∀ z ∈ Ω, 
     simp [hz, not_le.2 hz, imDilation_higherReflectionNode_fin_one_eq_conjCLE]
   · simp [hz, hz.le]
 
-/-- The reflection twisted by `L` that keeps the values of `g` on the real axis, `g` on the closed
-upper half-plane and `L (g (conj z))` below it, agrees almost everywhere with
-`TauCeti.twistedReflection L g`, which vanishes on the null real axis. -/
-theorem ite_conj_ae_eq_twistedReflection (L : F →L[ℝ] F) (g : ℂ → F) :
-    (fun z ↦ if 0 ≤ z.im then g z else L (g (conj z))) =ᵐ[volume]
-      TauCeti.twistedReflection L g := by
-  filter_upwards [Complex.ae_im_ne_zero] with z hz
-  rcases hz.lt_or_gt with hz | hz
-  · simp [twistedReflection_of_im_neg hz, not_le.2 hz]
-  · simp [twistedReflection_of_im_pos hz, hz.le]
-
 /-- **Weak derivative of the continuous twisted reflection.** Under the hypotheses of
 `TauCeti.HasWeakFDerivOn.twistedReflection`, the reflection of `g` twisted by `L` that keeps the
 values of `g` on the real axis, equal to `g` on `0 ≤ im` and to `L (g (conj z))` below, has the

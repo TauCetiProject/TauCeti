@@ -62,6 +62,8 @@ Laplace equation; it needs no hypothesis on `R`.
   `TauCeti.twistedReflection_id_ae_eq_evenReflection`: twisted by `star` or by the identity, the
   reflection agrees almost everywhere with `TauCeti.starSchwarzReflection` or
   `TauCeti.evenReflection`.
+* `TauCeti.ite_conj_ae_eq_twistedReflection`: the reflection that keeps the values of `ξ` on the
+  real axis agrees almost everywhere with the twisted reflection.
 * `TauCeti.locallyIntegrableOn_twistedReflection`: the reflection of a function locally integrable
   up to the real axis is locally integrable on the doubled domain.
 * `MeasureTheory.AEStronglyMeasurable.twistedReflection`: the same for almost everywhere strong
@@ -204,6 +206,16 @@ theorem twistedReflection_id_ae_eq_evenReflection (ξ : ℂ → V) :
   · rw [twistedReflection_of_im_neg hz, evenReflection_of_nonpos hz.le,
       ContinuousLinearMap.id_apply]
   · rw [twistedReflection_of_im_pos hz, evenReflection_of_nonneg hz.le]
+
+/-- The reflection twisted by `R` that keeps the values of `ξ` on the real axis, `ξ` on the closed
+upper half-plane and `R (ξ (conj z))` below it, agrees almost everywhere with
+`TauCeti.twistedReflection R ξ`, which vanishes on the null real axis. -/
+theorem ite_conj_ae_eq_twistedReflection (R : V →L[ℝ] V) (ξ : ℂ → V) :
+    (fun z ↦ if 0 ≤ z.im then ξ z else R (ξ (conj z))) =ᵐ[volume] twistedReflection R ξ := by
+  filter_upwards [Complex.ae_im_ne_zero] with z hz
+  rcases hz.lt_or_gt with hz | hz
+  · simp [twistedReflection_of_im_neg hz, not_le.2 hz]
+  · simp [twistedReflection_of_im_pos hz, hz.le]
 
 /-! ### Local integrability -/
 
