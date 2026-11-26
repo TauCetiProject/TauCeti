@@ -57,7 +57,8 @@ decomposition `TauCeti.Lie.IsMaximalTorus.exists_isInternal_isRootPlane`.
 * `TauCeti.IsRootPlane.circleExp_eq_of_lieExp_eq`,
   `TauCeti.IsRootPlane.exists_apply_eq_intCast_mul_of_lieExp_eq_one`: on a nonzero root plane,
   `e^{i α(H)}` depends only on `exp H`, and `α` takes values in `2πℤ` on the kernel of `exp`.
-* `TauCeti.IsRootPlane.rootCharacter_lieExp`: `χ_α (exp H) = e^{i α(H)}`.
+* `TauCeti.IsRootPlane.rootCharacter_apply_of_lieExp_eq`,
+  `TauCeti.IsRootPlane.rootCharacter_lieExp`: `χ_α (exp H) = e^{i α(H)}`.
 * `TauCeti.IsRootPlane.Ad_apply`, `TauCeti.IsRootPlane.Ad_apply_mem`: `T` acts on the root plane
   by the rotations `χ_α`, and in particular preserves it.
 * `TauCeti.IsRootPlane.eq_rootCharacter_iff`: `χ_α` is the only map with `χ_α (exp H) = e^{i α(H)}`.
@@ -240,8 +241,9 @@ def rootCharacter : T →ₜ* Circle where
       h.rootCharacterFun_eq hT hconn hV _ _ hY, map_add, Circle.exp_add]
   continuous_toFun := h.continuous_rootCharacterFun hT hconn hV
 
-/-- The root character at `g = exp X`, for any `X` with `exp X = g`. -/
-private theorem rootCharacter_apply_of_lieExp_eq (g : T)
+/-- **The root character at an exponential**: `χ_α g = e^{i α(X)}` for any `X` with
+`exp X = g`. -/
+theorem rootCharacter_apply_of_lieExp_eq (g : T)
     (X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule)
     (hX : lieExp (I := I) (X : LeftInvariantDerivation I G) = g) :
     h.rootCharacter hT hconn hV g = Circle.exp (α X) :=
