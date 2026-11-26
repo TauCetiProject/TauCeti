@@ -54,6 +54,10 @@ theorem oddExpPart_def (m n : ℕ) :
 theorem oddExpPart_zero (m : ℕ) : oddExpPart m 0 = 1 := by
   simp [oddExpPart_def]
 
+@[simp]
+theorem oddExpPart_one (m : ℕ) : oddExpPart m 1 = 1 := by
+  simp [oddExpPart_def]
+
 /-- The prime factors of `oddExpPart m n` are the primes `p ∤ m` dividing `n` to an odd power. -/
 theorem mem_primeFactors_oddExpPart {m n p : ℕ} :
     p ∈ (oddExpPart m n).primeFactors ↔
@@ -114,6 +118,7 @@ theorem oddExpPart_le {m n : ℕ} (hn : n ≠ 0) : oddExpPart m n ≤ n :=
   le_of_dvd (pos_of_ne_zero hn) (oddExpPart_dvd m n)
 
 /-- The odd-exponent part of `p ^ k` is `p` if `p ∤ m` and `k` is odd, and `1` otherwise. -/
+@[simp]
 theorem oddExpPart_prime_pow {m p k : ℕ} (hp : p.Prime) :
     oddExpPart m (p ^ k) = if ¬ p ∣ m ∧ Odd k then p else 1 := by
   rcases eq_or_ne k 0 with rfl | hk
@@ -168,8 +173,7 @@ theorem oddExpPart_mul_of_isPrimePow {m n n' : ℕ} (hn : IsPrimePow n) (hn' : I
   have hl0 := pow_ne_zero l hq.ne_zero
   have hpf : (p ^ k * q ^ l).primeFactors = {p, q} := by
     rw [primeFactors_mul hk0 hl0, primeFactors_pow p hk.ne', primeFactors_pow q hl.ne',
-      hp.primeFactors, hq.primeFactors]
-    rfl
+      hp.primeFactors, hq.primeFactors, ← Finset.insert_eq]
   have hfac : (p ^ k * q ^ l).factorization = Finsupp.single p k + Finsupp.single q l := by
     rw [factorization_mul hk0 hl0, hp.factorization_pow, hq.factorization_pow]
   rw [oddExpPart_prime_pow hp, oddExpPart_prime_pow hq, oddExpPart_def, hpf,

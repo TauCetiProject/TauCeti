@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Norm
 public import Mathlib.Data.Nat.Factorization.PrimePow
 public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.ResidueClass
 import TauCeti.Algebra.Order.BigOperators.Sum.Union
+import TauCeti.Data.Nat.Prime.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.Positivity
 
@@ -29,6 +30,8 @@ weight on prime powers with even exponent or base dividing `m₀`.
 
 ## Main statements
 
+* `TauCeti.sum_norm_sq_jacobiSym_le_sum_sum_mul_abs`: expanding the square of a twisted sum of
+  Jacobi symbols over a finite set `P`.
 * `TauCeti.sum_norm_sq_jacobiSym_le`: the algebraic mean-square inequality for quadratic twists of
   prime-power sums over a residue class modulo a multiple of `8`.
 
@@ -44,30 +47,10 @@ namespace TauCeti
 
 open Nat (oddExpPart)
 
-private lemma card_prime_mul_eq_le_two (S : Finset ℕ) (s : ℕ) :
-    ((S ×ˢ S).filter fun x => x.1.Prime ∧ x.2.Prime ∧ x.1 ≠ x.2 ∧ x.1 * x.2 = s).card ≤ 2 := by
-  classical
-  set T := (S ×ˢ S).filter fun x => x.1.Prime ∧ x.2.Prime ∧ x.1 ≠ x.2 ∧ x.1 * x.2 = s
-  rcases T.eq_empty_or_nonempty with hT | ⟨⟨p₁, p₂⟩, h12⟩
-  · simp [hT]
-  obtain ⟨-, hp₁, hp₂, -, hmul⟩ := Finset.mem_filter.mp h12
-  dsimp only at hp₁ hp₂ hmul
-  have hsub : T ⊆ {(p₁, p₂), (p₂, p₁)} := by
-    intro ⟨p, q⟩ hpq
-    obtain ⟨-, hp, hq, -, hmul'⟩ := Finset.mem_filter.mp hpq
-    dsimp only at hp hq hmul'
-    have hdvd : p ∣ p₁ * p₂ := ⟨q, hmul.trans hmul'.symm⟩
-    rcases hp.dvd_mul.mp hdvd with h | h
-    · obtain rfl := (Nat.prime_dvd_prime_iff_eq hp hp₁).mp h
-      have hq2 : q = p₂ := mul_left_cancel₀ hp.ne_zero (hmul'.trans hmul.symm)
-      simp [hq2]
-    · obtain rfl := (Nat.prime_dvd_prime_iff_eq hp hp₂).mp h
-      have hq1 : q = p₁ :=
-        mul_left_cancel₀ hp.ne_zero (hmul'.trans (hmul.symm.trans (mul_comm _ _)))
-      simp [hq1]
-  exact (Finset.card_le_card hsub).trans Finset.card_le_two
-
-private lemma sum_norm_sq_jacobiSym_le_expand {P S : Finset ℕ} {c : ℕ → ℝ} {κ : ℕ → ℂ}
+/-- Expanding the square: for nonnegative weights `c` and coefficients `‖κ n‖ ≤ 1` on a finite set
+`S`, the mean square over a finite set `P` of the twisted sums `∑ n ∈ S, c n * κ n * J(n | q)` is
+at most `∑ n ∈ S, ∑ n' ∈ S, c n * c n' * |∑ q ∈ P, J(n * n' | q)|`. -/
+theorem sum_norm_sq_jacobiSym_le_sum_sum_mul_abs {P S : Finset ℕ} {c : ℕ → ℝ} {κ : ℕ → ℂ}
     (hc : ∀ n ∈ S, 0 ≤ c n) (hκ : ∀ n ∈ S, ‖κ n‖ ≤ 1) :
     ∑ q ∈ P, ‖∑ n ∈ S, (c n : ℂ) * κ n * (jacobiSym n q : ℂ)‖ ^ 2 ≤
       ∑ n ∈ S, ∑ n' ∈ S, c n * c n' * |(∑ q ∈ P, (jacobiSym (n * n') q : ℝ))| := by
@@ -152,15 +135,24 @@ private lemma special_pairs_subset (m₀ N sStar : ℕ) :
       have hss : n.minFac * n'.minFac = sStar := hmul.symm.trans (hor.resolve_left (hmul ▸ hne1))
       simp [hnS, hn'S, h1, h2, heq, hss]
 
-private lemma minFac_mem_primes {N n : ℕ} (hn : n ∈ (Finset.Icc 1 N).filter IsPrimePow) :
-    n.minFac ∈ (Finset.Icc 1 N).filter Nat.Prime := by
-  have ⟨hnI, hpp⟩ := Finset.mem_filter.mp hn
-  have hp := Nat.minFac_prime hpp.ne_one
-  exact Finset.mem_filter.mpr ⟨Finset.mem_Icc.mpr
-    ⟨hp.one_le, (Nat.minFac_le (Finset.mem_Icc.mp hnI).1).trans (Finset.mem_Icc.mp hnI).2⟩, hp⟩
+/-- `Nat.minFac_mem_filter_prime_Icc` for a prime power in `[1, N]`. -/
+private lemma minFac_mem_of_mem_primePows {N n : ℕ}
+    (hn : n ∈ (Finset.Icc 1 N).filter IsPrimePow) : n.minFac ∈ (Finset.Icc 1 N).filter Nat.Prime :=
+  Nat.minFac_mem_filter_prime_Icc (Finset.mem_filter.mp hn).2.one_lt
+    (Finset.mem_Icc.mp (Finset.mem_filter.mp hn).1).2
+
+/-- The weight on the powers of `p` with odd-exponent part not `1` is at most the total weight on
+the powers of `p`. -/
+private lemma sum_active_fiber_le {m₀ N p : ℕ} {c : ℕ → ℝ}
+    (hc : ∀ n ∈ (Finset.Icc 1 N).filter IsPrimePow, 0 ≤ c n) :
+    ∑ n ∈ (((Finset.Icc 1 N).filter IsPrimePow).filter fun n => oddExpPart m₀ n ≠ 1).filter
+        (fun n => n.minFac = p), c n ≤
+      ∑ n ∈ ((Finset.Icc 1 N).filter IsPrimePow).filter (fun n => n.minFac = p), c n :=
+  Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset_filter _ (Finset.filter_subset _ _))
+    fun n hn _ => hc n (Finset.mem_filter.mp hn).1
 
 private lemma sum_diag_active_le {m₀ N : ℕ} {c : ℕ → ℝ}
-    (hc : ∀ n ∈ Finset.Icc 1 N, 0 ≤ c n) :
+    (hc : ∀ n ∈ (Finset.Icc 1 N).filter IsPrimePow, 0 ≤ c n) :
     let S := (Finset.Icc 1 N).filter IsPrimePow
     let A := S.filter (fun n => oddExpPart m₀ n ≠ 1)
     ∑ x ∈ (A ×ˢ A).filter (fun x => x.1.minFac = x.2.minFac), c x.1 * c x.2 ≤
@@ -169,7 +161,6 @@ private lemma sum_diag_active_le {m₀ N : ℕ} {c : ℕ → ℝ}
   classical
   intro S A
   set Pset := (Finset.Icc 1 N).filter Nat.Prime
-  have hcS : ∀ n ∈ S, 0 ≤ c n := fun n hn => hc n (Finset.mem_filter.mp hn).1
   have hfib : ∑ x ∈ (A ×ˢ A).filter (fun x => x.1.minFac = x.2.minFac), c x.1 * c x.2 =
       ∑ p ∈ Pset, (∑ n ∈ A.filter (fun n => n.minFac = p), c n) ^ 2 := by
     simp_rw [sq, Finset.sum_mul_sum, ← Finset.sum_product']
@@ -177,8 +168,8 @@ private lemma sum_diag_active_le {m₀ N : ℕ} {c : ℕ → ℝ}
     · refine Finset.sum_congr ?_ fun _ _ => rfl
       ext ⟨n, n'⟩
       simp only [Finset.mem_filter, Finset.mem_product, Finset.mem_biUnion]
-      exact ⟨fun ⟨⟨hn, hn'⟩, heq⟩ =>
-          ⟨n.minFac, minFac_mem_primes (Finset.mem_filter.mp hn).1, ⟨hn, rfl⟩, ⟨hn', heq.symm⟩⟩,
+      exact ⟨fun ⟨⟨hn, hn'⟩, heq⟩ => ⟨n.minFac, minFac_mem_of_mem_primePows
+          (Finset.mem_filter.mp hn).1, ⟨hn, rfl⟩, ⟨hn', heq.symm⟩⟩,
         fun ⟨_, _, ⟨hn, hp1⟩, ⟨hn', hp2⟩⟩ => ⟨⟨hn, hn'⟩, hp1.trans hp2.symm⟩⟩
     · intro p _ q _ hpq
       rw [Function.onFun, Finset.disjoint_left]
@@ -187,10 +178,8 @@ private lemma sum_diag_active_le {m₀ N : ℕ} {c : ℕ → ℝ}
         (Finset.mem_filter.mp (Finset.mem_product.mp h2).1).2)
   rw [hfib]
   refine Finset.sum_le_sum fun p _ => pow_le_pow_left₀
-    (Finset.sum_nonneg fun n hn => hcS n (Finset.mem_filter.mp (Finset.mem_filter.mp hn).1).1)
-    (Finset.sum_le_sum_of_subset_of_nonneg
-      (Finset.filter_subset_filter _ (Finset.filter_subset _ _))
-      fun n hn _ => hcS n (Finset.mem_filter.mp hn).1) 2
+    (Finset.sum_nonneg fun n hn => hc n (Finset.mem_filter.mp (Finset.mem_filter.mp hn).1).1)
+    (sum_active_fiber_le hc) 2
 
 private lemma sum_offDiag_eq_sum_pairs {m₀ N sStar : ℕ} {c : ℕ → ℝ} :
     let S := (Finset.Icc 1 N).filter IsPrimePow
@@ -211,8 +200,8 @@ private lemma sum_offDiag_eq_sum_pairs {m₀ N sStar : ℕ} {c : ℕ → ℝ} :
     simp only [Finset.mem_filter, Finset.mem_product, Finset.mem_biUnion, Q]
     constructor
     · rintro ⟨⟨hn, hn'⟩, hne, hmul⟩
-      have h1 := minFac_mem_primes (Finset.mem_filter.mp hn).1
-      have h2 := minFac_mem_primes (Finset.mem_filter.mp hn').1
+      have h1 := minFac_mem_of_mem_primePows (Finset.mem_filter.mp hn).1
+      have h2 := minFac_mem_of_mem_primePows (Finset.mem_filter.mp hn').1
       exact ⟨(n.minFac, n'.minFac), ⟨⟨h1, h2⟩, (Finset.mem_filter.mp h1).2,
         (Finset.mem_filter.mp h2).2, hne, hmul⟩, ⟨hn, rfl⟩, ⟨hn', rfl⟩⟩
     · rintro ⟨⟨p, q⟩, ⟨-, -, -, hne, hmul⟩, ⟨hn, rfl⟩, ⟨hn', rfl⟩⟩
@@ -227,7 +216,7 @@ private lemma sum_offDiag_eq_sum_pairs {m₀ N sStar : ℕ} {c : ℕ → ℝ} :
         (Finset.mem_filter.mp (Finset.mem_product.mp h2).2).2))
 
 private lemma sum_offDiag_active_le {m₀ N sStar : ℕ} {c : ℕ → ℝ} {B : ℝ}
-    (hc : ∀ n ∈ Finset.Icc 1 N, 0 ≤ c n)
+    (hc : ∀ n ∈ (Finset.Icc 1 N).filter IsPrimePow, 0 ≤ c n)
     (hB : ∀ p ∈ (Finset.Icc 1 N).filter Nat.Prime,
       (∑ n ∈ ((Finset.Icc 1 N).filter IsPrimePow).filter (fun n => n.minFac = p), c n) ≤ B) :
     let S := (Finset.Icc 1 N).filter IsPrimePow
@@ -238,29 +227,30 @@ private lemma sum_offDiag_active_le {m₀ N sStar : ℕ} {c : ℕ → ℝ} {B : 
   intro S A
   set Pset := (Finset.Icc 1 N).filter Nat.Prime
   set Q := (Pset ×ˢ Pset).filter fun q => q.1.Prime ∧ q.2.Prime ∧ q.1 ≠ q.2 ∧ q.1 * q.2 = sStar
-  have hcS : ∀ n ∈ S, 0 ≤ c n := fun n hn => hc n (Finset.mem_filter.mp hn).1
   have hA_le_B : ∀ p ∈ Pset, (∑ n ∈ A.filter (fun n => n.minFac = p), c n) ≤ B := fun p hp =>
-    (Finset.sum_le_sum_of_subset_of_nonneg
-      (Finset.filter_subset_filter _ (Finset.filter_subset _ _))
-      fun n hn _ => hcS n (Finset.mem_filter.mp hn).1).trans (hB p hp)
+    (sum_active_fiber_le hc).trans (hB p hp)
+  have hQ : Q.card ≤ 2 := Nat.card_le_two_of_forall_prime_mul_eq fun q hq => by
+    obtain ⟨-, h1, h2, -, h3⟩ := Finset.mem_filter.mp hq
+    exact ⟨h1, h2, h3⟩
   rw [sum_offDiag_eq_sum_pairs (m₀ := m₀) (N := N) (sStar := sStar) (c := c)]
   calc ∑ q ∈ Q, (∑ n ∈ A.filter (fun n => n.minFac = q.1), c n) *
         (∑ n' ∈ A.filter (fun n' => n'.minFac = q.2), c n')
       ≤ ∑ _q ∈ Q, B ^ 2 := Finset.sum_le_sum fun q hq => by
         have hqP := Finset.mem_product.mp (Finset.mem_filter.mp hq).1
         have h01 : 0 ≤ ∑ n ∈ A.filter (fun n => n.minFac = q.1), c n :=
-          Finset.sum_nonneg fun n hn => hcS n (Finset.mem_filter.mp (Finset.mem_filter.mp hn).1).1
+          Finset.sum_nonneg fun n hn => hc n (Finset.mem_filter.mp (Finset.mem_filter.mp hn).1).1
         have h02 : 0 ≤ ∑ n' ∈ A.filter (fun n' => n'.minFac = q.2), c n' :=
-          Finset.sum_nonneg fun n hn => hcS n (Finset.mem_filter.mp (Finset.mem_filter.mp hn).1).1
+          Finset.sum_nonneg fun n hn => hc n (Finset.mem_filter.mp (Finset.mem_filter.mp hn).1).1
         rw [sq]
         exact mul_le_mul (hA_le_B q.1 hqP.1) (hA_le_B q.2 hqP.2) h02
           (h01.trans (hA_le_B q.1 hqP.1))
     _ = (Q.card : ℝ) * B ^ 2 := by simp
     _ ≤ 2 * B ^ 2 := mul_le_mul_of_nonneg_right
-        (by exact_mod_cast card_prime_mul_eq_le_two Pset sStar) (sq_nonneg B)
+        (by exact_mod_cast hQ)
+        (sq_nonneg B)
 
 private lemma sum_cross_active_le {m₀ N sStar : ℕ} {c : ℕ → ℝ} {B : ℝ}
-    (hc : ∀ n ∈ Finset.Icc 1 N, 0 ≤ c n)
+    (hc : ∀ n ∈ (Finset.Icc 1 N).filter IsPrimePow, 0 ≤ c n)
     (hB : ∀ p ∈ (Finset.Icc 1 N).filter Nat.Prime,
       (∑ n ∈ ((Finset.Icc 1 N).filter IsPrimePow).filter (fun n => n.minFac = p), c n) ≤ B) :
     let S := (Finset.Icc 1 N).filter IsPrimePow
@@ -271,28 +261,25 @@ private lemma sum_cross_active_le {m₀ N sStar : ℕ} {c : ℕ → ℝ} {B : �
   classical
   intro S R A
   set Pset := (Finset.Icc 1 N).filter Nat.Prime
-  have hcS : ∀ n ∈ S, 0 ≤ c n := fun n hn => hc n (Finset.mem_filter.mp hn).1
   have hRR_nonneg : 0 ≤ ∑ n ∈ R, c n := Finset.sum_nonneg fun n hn =>
-    hcS n (Finset.mem_filter.mp hn).1
+    hc n (Finset.mem_filter.mp hn).1
   by_cases hsP : sStar ∈ Pset
   · refine mul_le_mul_of_nonneg_right ?_ hRR_nonneg
-    exact (Finset.sum_le_sum_of_subset_of_nonneg
-      (Finset.filter_subset_filter _ (Finset.filter_subset _ _))
-      fun n hn _ => hcS n (Finset.mem_filter.mp hn).1).trans (hB sStar hsP)
+    exact (sum_active_fiber_le hc).trans (hB sStar hsP)
   · have hempty : A.filter (fun n => n.minFac = sStar) = ∅ := by
       rw [Finset.filter_eq_empty_iff]
       intro n hn heq
-      exact hsP (heq ▸ minFac_mem_primes (Finset.mem_filter.mp hn).1)
+      exact hsP (heq ▸ minFac_mem_of_mem_primePows (Finset.mem_filter.mp hn).1)
     rw [hempty, Finset.sum_empty, zero_mul]
     rcases R.eq_empty_or_nonempty with hR | ⟨n₀, hn₀⟩
     · simp [hR]
-    · have hp0 := minFac_mem_primes (Finset.mem_filter.mp hn₀).1
+    · have hp0 := minFac_mem_of_mem_primePows (Finset.mem_filter.mp hn₀).1
       have hB0 : 0 ≤ B := (Finset.sum_nonneg fun n hn =>
-        hcS n (Finset.mem_filter.mp hn).1).trans (hB n₀.minFac hp0)
+        hc n (Finset.mem_filter.mp hn).1).trans (hB n₀.minFac hp0)
       exact mul_nonneg hB0 hRR_nonneg
 
 private lemma sum_special_pairs_le {m₀ N sStar : ℕ} {c : ℕ → ℝ} {B : ℝ}
-    (hc : ∀ n ∈ Finset.Icc 1 N, 0 ≤ c n)
+    (hc : ∀ n ∈ (Finset.Icc 1 N).filter IsPrimePow, 0 ≤ c n)
     (hB : ∀ p ∈ (Finset.Icc 1 N).filter Nat.Prime,
       (∑ n ∈ ((Finset.Icc 1 N).filter IsPrimePow).filter (fun n => n.minFac = p), c n) ≤ B) :
     let S := (Finset.Icc 1 N).filter IsPrimePow
@@ -306,9 +293,8 @@ private lemma sum_special_pairs_le {m₀ N sStar : ℕ} {c : ℕ → ℝ} {B : �
   intro S RR
   set R := S.filter (fun n => oddExpPart m₀ n = 1)
   set A := S.filter (fun n => oddExpPart m₀ n ≠ 1)
-  have hcS : ∀ n ∈ S, 0 ≤ c n := fun n hn => hc n (Finset.mem_filter.mp hn).1
   have hnn : ∀ x ∈ S ×ˢ S, 0 ≤ c x.1 * c x.2 := fun x hx =>
-    mul_nonneg (hcS x.1 (Finset.mem_product.mp hx).1) (hcS x.2 (Finset.mem_product.mp hx).2)
+    mul_nonneg (hc x.1 (Finset.mem_product.mp hx).1) (hc x.2 (Finset.mem_product.mp hx).2)
   set U1 := (A ×ˢ A).filter (fun x => x.1.minFac = x.2.minFac)
   set U2 := R ×ˢ R
   set U3 := (A ×ˢ A).filter (fun x => x.1.minFac ≠ x.2.minFac ∧ x.1.minFac * x.2.minFac = sStar)
@@ -380,7 +366,7 @@ private lemma sum_jacobiSym_split_le {m₀ a₀ N sStar : ℕ} {P : Finset ℕ} 
     (h8 : 8 ∣ m₀) (ha₀ : Odd a₀)
     (hP_mod : ∀ q ∈ P, q ≡ a₀ [MOD m₀])
     (hP_cop : ∀ q ∈ P, ∀ n ∈ Finset.Icc 1 N, c n ≠ 0 → n.Coprime q)
-    (hc : ∀ n ∈ Finset.Icc 1 N, 0 ≤ c n)
+    (hc : ∀ n ∈ (Finset.Icc 1 N).filter IsPrimePow, 0 ≤ c n)
     (hη : 0 ≤ η)
     (hchar : ∀ s : ℕ, 1 < s → s ≤ N ^ 2 → Odd s → Squarefree s → s.Coprime m₀ → s ≠ sStar →
       |(∑ q ∈ P, (jacobiSym q s : ℝ))| ≤ η * P.card) :
@@ -391,7 +377,6 @@ private lemma sum_jacobiSym_split_le {m₀ a₀ N sStar : ℕ} {P : Finset ℕ} 
       (η * P.card) * (∑ x ∈ S ×ˢ S, c x.1 * c x.2) := by
   classical
   intro S
-  have hcS : ∀ n ∈ S, 0 ≤ c n := fun n hn => hc n (Finset.mem_filter.mp hn).1
   rw [← Finset.sum_filter_add_sum_filter_not (S ×ˢ S)
     (fun x => oddExpPart m₀ (x.1 * x.2) = 1 ∨ oddExpPart m₀ (x.1 * x.2) = sStar)]
   refine add_le_add ?_ ?_
@@ -405,7 +390,7 @@ private lemma sum_jacobiSym_split_le {m₀ a₀ N sStar : ℕ} {P : Finset ℕ} 
             rcases jacobiSym.trichotomy (x.1 * x.2) q with h | h | h <;> simp [h]
         _ = P.card := by simp
     rw [mul_comm (P.card : ℝ)]
-    exact mul_le_mul_of_nonneg_left habs (mul_nonneg (hcS x.1 hxS.1) (hcS x.2 hxS.2))
+    exact mul_le_mul_of_nonneg_left habs (mul_nonneg (hc x.1 hxS.1) (hc x.2 hxS.2))
   · calc _ ≤ ∑ x ∈ (S ×ˢ S).filter (fun x => ¬ (oddExpPart m₀ (x.1 * x.2) = 1 ∨
             oddExpPart m₀ (x.1 * x.2) = sStar)), c x.1 * c x.2 * (η * P.card) := by
           refine Finset.sum_le_sum fun x hx => ?_
@@ -420,11 +405,11 @@ private lemma sum_jacobiSym_split_le {m₀ a₀ N sStar : ℕ} {P : Finset ℕ} 
               (fun q hq => hP_cop q hq x.2 (Finset.mem_filter.mp hx2).1 hc0.2)
               (Finset.mem_filter.mp hx1).1 (Finset.mem_filter.mp hx2).1
               (fun h => hnot (Or.inl h)) (fun h => hnot (Or.inr h)) hchar)
-            (mul_nonneg (hcS x.1 hx1) (hcS x.2 hx2))
+            (mul_nonneg (hc x.1 hx1) (hc x.2 hx2))
       _ ≤ ∑ x ∈ S ×ˢ S, c x.1 * c x.2 * (η * P.card) :=
           Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _) fun x hx _ => by
             have hxP := Finset.mem_product.mp hx
-            exact mul_nonneg (mul_nonneg (hcS x.1 hxP.1) (hcS x.2 hxP.2))
+            exact mul_nonneg (mul_nonneg (hc x.1 hxP.1) (hc x.2 hxP.2))
               (mul_nonneg hη (Nat.cast_nonneg _))
       _ = (η * P.card) * ∑ x ∈ S ×ˢ S, c x.1 * c x.2 := by rw [← Finset.sum_mul, mul_comm]
 
@@ -481,34 +466,29 @@ theorem sum_norm_sq_jacobiSym_le {m₀ a₀ N sStar : ℕ} {P : Finset ℕ}
           η * (∑ n ∈ Finset.Icc 1 N, c n) ^ 2) := by
   classical
   set S := (Finset.Icc 1 N).filter IsPrimePow
+  have hcS : ∀ n ∈ S, 0 ≤ c n := fun n hn => hc_nonneg n (Finset.mem_filter.mp hn).1
   have hsum_eq : ∀ q : ℕ,
       ∑ n ∈ Finset.Icc 1 N, (c n : ℂ) * κ n * (jacobiSym n q : ℂ) =
       ∑ n ∈ S, (c n : ℂ) * κ n * (jacobiSym n q : ℂ) := fun q =>
-    (Finset.sum_subset (Finset.filter_subset IsPrimePow (Finset.Icc 1 N)) fun n hn hnot => by
-      have hc0 : c n = 0 := by
-        by_contra hne
-        exact hnot (Finset.mem_filter.mpr ⟨hn, hc_supp n hn hne⟩)
-      simp [hc0]).symm
+    (Finset.sum_filter_of_ne fun n hn hne => hc_supp n hn fun h0 => hne (by simp [h0])).symm
   simp_rw [hsum_eq]
-  have hexp := sum_norm_sq_jacobiSym_le_expand (P := P) (S := S)
-    (fun n hn => hc_nonneg n (Finset.mem_filter.mp hn).1)
+  have hexp := sum_norm_sq_jacobiSym_le_sum_sum_mul_abs (P := P) (S := S)
+    hcS
     (fun n hn => hκ n (Finset.mem_filter.mp hn).1)
   rw [← Finset.sum_product'] at hexp
-  have hsplit := sum_jacobiSym_split_le (P := P) (sStar := sStar) h8 ha₀ hP_mod hP_cop hc_nonneg
+  have hsplit := sum_jacobiSym_split_le (P := P) (sStar := sStar) h8 ha₀ hP_mod hP_cop hcS
     hη hchar
   have htot : ∑ x ∈ S ×ˢ S, c x.1 * c x.2 = (∑ n ∈ Finset.Icc 1 N, c n) ^ 2 := by
     rw [Finset.sum_product, ← Finset.sum_mul_sum, ← sq]
     congr 1
-    exact Finset.sum_subset (Finset.filter_subset IsPrimePow (Finset.Icc 1 N)) fun n hn hnot => by
-      by_contra hne
-      exact hnot (Finset.mem_filter.mpr ⟨hn, hc_supp n hn hne⟩)
+    exact Finset.sum_filter_of_ne hc_supp
   have hsP_eq : ∀ p, ∑ n ∈ ((Finset.Icc 1 N).filter IsPrimePow).filter (fun n => n.minFac = p),
       c n = ∑ n ∈ (Finset.Icc 1 N).filter (fun n => IsPrimePow n ∧ n.minFac = p), c n := fun p =>
     Finset.sum_congr (by ext n; simp [and_assoc]) fun _ _ => rfl
   have hB' : ∀ p ∈ (Finset.Icc 1 N).filter Nat.Prime,
       (∑ n ∈ S.filter (fun n => n.minFac = p), c n) ≤ B := fun p hp => by
     rw [hsP_eq p]; exact hB p hp
-  have hspec := sum_special_pairs_le (m₀ := m₀) (sStar := sStar) hc_nonneg hB'
+  have hspec := sum_special_pairs_le (m₀ := m₀) (sStar := sStar) hcS hB'
   have hspec' : ∑ x ∈ (S ×ˢ S).filter (fun x => oddExpPart m₀ (x.1 * x.2) = 1 ∨
         oddExpPart m₀ (x.1 * x.2) = sStar), c x.1 * c x.2 ≤
       (∑ p ∈ (Finset.Icc 1 N).filter Nat.Prime,
