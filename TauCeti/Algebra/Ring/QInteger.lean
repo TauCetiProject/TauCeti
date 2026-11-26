@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Algebra.Ring.GeomSum
 
+import TauCeti.Algebra.Ring.FrobeniusLift
+import TauCeti.Algebra.Ring.GeomSum
+
 /-!
 # The q-integers
 
@@ -16,6 +19,10 @@ defined as a sum rather than as the quotient `(q ^ n - 1) / (q - 1)`, which is m
 `q = 1` and wherever `q - 1` is a zero divisor; the identity `[n]_q * (q - 1) = q ^ n - 1` holds in
 every ring (`TauCeti.QCrys.qInteger_mul_sub_one`), and `[n]_1 = n`
 (`TauCeti.QCrys.qInteger_one_left`).
+
+If a ring endomorphism `φ` sends `q` to `q ^ p`, as the Frobenius lift of the `q`-de Rham prism
+does, the product `[p]_q · φ([p]_q) ⋯ φ^(r - 1)([p]_q)` telescopes to `[p ^ r]_q`
+(`TauCeti.QCrys.prod_pow_apply_qInteger`).
 
 ## References
 
@@ -64,6 +71,17 @@ theorem map_qInteger {F : Type*} [FunLike F R S] [RingHomClass F R S] (f : F) (q
   simp [qInteger]
 
 end Semiring
+
+/-- If a ring endomorphism `φ` satisfies `φ(q) = q ^ p`, then
+`[p]_q · φ([p]_q) ⋯ φ^(r - 1)([p]_q) = [p ^ r]_q`. -/
+theorem prod_pow_apply_qInteger [CommSemiring R] {φ : R →+* R} {q : R} {p : ℕ}
+    (hq : φ q = q ^ p) (r : ℕ) :
+    ∏ s ∈ range r, (φ ^ s) (qInteger q p) = qInteger q (p ^ r) := by
+  induction r with
+  | zero => simp [qInteger]
+  | succ r ih =>
+    rw [prod_range_succ, ih, map_qInteger, pow_apply_of_apply_eq_pow hq, qInteger, qInteger,
+      qInteger, pow_succ, geom_sum_range_mul]
 
 /-- `[n]_q * (q - 1) = q ^ n - 1`, in every ring. -/
 theorem qInteger_mul_sub_one [Ring R] (q : R) (n : ℕ) : qInteger q n * (q - 1) = q ^ n - 1 :=

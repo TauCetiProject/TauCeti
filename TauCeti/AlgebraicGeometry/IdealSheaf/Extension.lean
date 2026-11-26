@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
-import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
+import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.FlatBaseChange
 
 /-!
 # Extending closed subschemes across open immersions

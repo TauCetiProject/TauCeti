@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monad.Limits
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import TauCeti.RepresentationTheory.Smooth.Basic
+import TauCeti.RepresentationTheory.OfMulAction
 
 /-!
 # The category of smooth representations
@@ -24,16 +25,22 @@ target. The counit `ι (V^∞) ⟶ V` is the inclusion of the smooth vectors, an
 exactly when `V` is smooth. So `SmoothRep A G` is a coreflective full subcategory of `Rep A G`,
 and it has all limits: the limit of a diagram of smooth representations is the smooth part of its
 limit in `Rep A G`. When `G` is discrete every representation is smooth and the inclusion is an
-equivalence.
+equivalence; in particular the regular representation `A[G]` is smooth, and every vector `v` of a
+smooth representation `V` gives the morphism `A[G] ⟶ V`, `x ↦ x • v`.
 
 ## Main definitions
 
+* `TauCeti.SmoothRep.isSmoothProperty A G`: the property "smooth" on `Rep A G`.
 * `TauCeti.SmoothRep A G`: the full subcategory of `Rep A G` on the smooth representations.
 * `TauCeti.SmoothRep.ι`: the fully faithful inclusion `SmoothRep A G ⥤ Rep A G`.
 * `TauCeti.SmoothRep.of ρ`: a smooth representation `ρ`, bundled as an object of `SmoothRep A G`.
+* `TauCeti.SmoothRep.mkIso e he`: the isomorphism of smooth representations given by an
+  intertwining linear equivalence `e`.
 * `TauCeti.SmoothRep.smoothPart`: the functor `Rep A G ⥤ SmoothRep A G` sending `V` to `V^∞`.
 * `TauCeti.SmoothRep.smoothPartAdjunction`: the adjunction `ι ⊣ smoothPart`, whose counit is the
   inclusion of the smooth vectors.
+* `TauCeti.SmoothRep.orbitHom`: for a discrete group, the morphism `A[G] ⟶ V`, `x ↦ x • v`, from
+  the regular representation.
 
 ## Main results
 
@@ -64,11 +71,14 @@ section Semiring
 
 variable [Semiring A]
 
+/-- The property "smooth" on `Rep A G`, the property cutting out `SmoothRep A G`. -/
+abbrev SmoothRep.isSmoothProperty : ObjectProperty (Rep.{w} A G) := fun V ↦ IsSmooth V.ρ
+
 /-- The category of smooth representations of a topological group `G` over a semiring `A`: the full
 subcategory of `Rep A G` on the representations in which every vector has an open stabilizer.
 Its morphisms are all intertwining maps. -/
 abbrev SmoothRep : Type _ :=
-  ObjectProperty.FullSubcategory fun V : Rep.{w} A G ↦ IsSmooth V.ρ
+  (SmoothRep.isSmoothProperty.{w} A G).FullSubcategory
 
 namespace SmoothRep
 
@@ -88,6 +98,24 @@ abbrev ι : SmoothRep.{w} A G ⥤ Rep.{w} A G :=
 abbrev of {V : Type w} [AddCommGroup V] [Module A V] (ρ : Representation A G V) [IsSmooth ρ] :
     SmoothRep.{w} A G :=
   ⟨Rep.of ρ, ‹_›⟩
+
+/-- The isomorphism of smooth representations given by a linear equivalence of the underlying
+modules that intertwines the actions. -/
+def mkIso {V W : SmoothRep.{w} A G} (e : V.obj.V ≃ₗ[A] W.obj.V)
+    (he : ∀ g, e ∘ₗ V.obj.ρ g = W.obj.ρ g ∘ₗ e) : V ≅ W :=
+  ObjectProperty.isoMk _ (Rep.mkIso { toLinearEquiv := e, isIntertwining' := he })
+
+@[simp]
+theorem mkIso_hom_hom_hom_apply {V W : SmoothRep.{w} A G} (e : V.obj.V ≃ₗ[A] W.obj.V)
+    (he : ∀ g, e ∘ₗ V.obj.ρ g = W.obj.ρ g ∘ₗ e) (v : V.obj.V) :
+    (mkIso e he).hom.hom.hom v = e v :=
+  rfl
+
+@[simp]
+theorem mkIso_inv_hom_hom_apply {V W : SmoothRep.{w} A G} (e : V.obj.V ≃ₗ[A] W.obj.V)
+    (he : ∀ g, e ∘ₗ V.obj.ρ g = W.obj.ρ g ∘ₗ e) (w : W.obj.V) :
+    (mkIso e he).inv.hom.hom w = e.symm w :=
+  rfl
 
 /-- For a discrete group every representation is smooth, so the inclusion `SmoothRep A G ⥤ Rep A G`
 is an equivalence of categories. -/
@@ -175,6 +203,23 @@ instance hasLimits : HasLimits (SmoothRep.{w} A G) :=
   hasLimits_of_coreflective (ι A G)
 
 end SmoothPart
+
+section Discrete
+
+variable {A G} [CommRing A] [DiscreteTopology G]
+
+/-- For a vector `v` of a smooth representation `V` of a discrete group, the morphism
+`A[G] ⟶ V`, `x ↦ x • v`, from the regular representation: Mathlib's `Rep.leftRegularHom`. -/
+noncomputable def orbitHom (V : SmoothRep.{max u v} A G) (v : V.obj) :
+    of (ofMulAction A G G) ⟶ V :=
+  ObjectProperty.homMk (Rep.leftRegularHom V.obj v)
+
+@[simp] lemma orbitHom_hom_hom_apply (V : SmoothRep.{max u v} A G) (v : V.obj)
+    (x : MonoidAlgebra A G) :
+    (orbitHom V v).hom.hom x = V.obj.ρ.asAlgebraHom x v :=
+  Rep.leftRegularHom_hom_apply v x
+
+end Discrete
 
 end SmoothRep
 

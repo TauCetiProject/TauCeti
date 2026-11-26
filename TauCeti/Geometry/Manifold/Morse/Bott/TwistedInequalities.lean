@@ -137,15 +137,15 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
   [∀ j, FiniteDimensional ℝ (P j)] {f : M → ℝ} {i : ∀ j, SmoothEmbedding (J j) I ∞ (S j) M}
   (hn : (∞ : ℕ∞ω) ≠ 0) (h : IsMorseBottFamily i f)
   (hdim : ∀ j, finrank ℝ (P j) = finrank ℝ E - finrank ℝ (E' j))
-  (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-    ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn)
+    ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
   {r : ι → ℕ}
-  (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
       ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
@@ -162,9 +162,9 @@ of size `r j`, so that they form the negative normal bundle `ν⁻ j` of rank `r
 `dim Hₖ(S j; o(ν⁻ j) ⊗ K)`, the dimension of the homology of `S j` with coefficients in the
 orientation local system `o(ν⁻ j)` of `ν⁻ j`. -/
 def twistedBettiNumber (j : ι) (k : ℕ) : ℕ :=
-  letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   letI : TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
       fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
@@ -187,9 +187,9 @@ omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
 of `S j` with coefficients in the orientation local system of `ν⁻ j`. -/
 theorem twistedBettiNumber_def (j : ι) (k : ℕ) :
     h.twistedBettiNumber hn hdim g hV K j k =
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     letI : TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
         fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
@@ -216,9 +216,9 @@ orientation local system of every bundle is constant, so
 `dim Hₖ(S j; o(ν⁻ j) ⊗ K) = bₖ(S j; K)` for every piece, oriented or not. -/
 theorem twistedBettiNumber_eq_bettiNumber_of_two_eq_zero (h2 : (2 : K) = 0) (j : ι) (k : ℕ) :
     h.twistedBettiNumber hn hdim g hV K j k = bettiNumber K (S j) k := by
-  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   let _ := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
     ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
@@ -243,9 +243,9 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber {a b c :
     finrank K ((sublevelPair f (hac.trans hcb).le).singularHomology (ModuleCat.of K K) n :
         ModuleCat K) =
       ∑ j with (∀ s, f (i j s) = c) ∧ r j ≤ n, h.twistedBettiNumber hn hdim g hV K j (n - r j) := by
-  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) fun s ↦
       (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s) :=
@@ -372,9 +372,9 @@ theorem twistedBettiNumber_eq_bettiNumber_of_orientation (j : ι)
         _ (hV j)))
     (k : ℕ) :
     h.twistedBettiNumber hn hdim g hV K j k = bettiNumber K (S j) k := by
-  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   let _ := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
     ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
@@ -409,9 +409,9 @@ theorem twistedBettiNumber_zero (h2 : (2 : K) ≠ 0) (j : ι) :
           h.contMDiff (hdim j) (g j)
           ((h.isNondegenerateCriticalSubmanifold j).manifoldMorseIndex_eq_of_hasLocalSubbundleFrames
             hn _ (hV j))) then 1 else 0 := by
-  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   let _ := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
     ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)

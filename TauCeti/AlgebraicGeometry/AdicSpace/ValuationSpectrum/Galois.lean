@@ -8,8 +8,8 @@ module
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Basic
+import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Invariant
 import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.LyingOver
-import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Torsor
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 import TauCeti.RingTheory.Valuation.AlgebraicExtension
 import TauCeti.RingTheory.Valuation.Galois
@@ -27,8 +27,8 @@ of those extensions (`TauCeti/RingTheory/Valuation/Galois.lean`) to `Spv`:
 * if `L / K` is purely inseparable, the extension is unique;
 * if a finite group `G` acts on `L` by automorphisms fixing `K`, with fixed field purely
   inseparable over `K`, then the fibres of `Spv L → Spv K` are the `G`-orbits, for the action
-  `g • y = comap (g⁻¹ • ·) y` used for finite étale torsors in
-  `TauCeti/AlgebraicGeometry/AdicSpace/ValuationSpectrum/Torsor.lean`. For a normal extension
+  `g • y = comap (g⁻¹ • ·) y` used over the invariants of a finite group in
+  `TauCeti/AlgebraicGeometry/AdicSpace/ValuationSpectrum/Invariant.lean`. For a normal extension
   with finitely many automorphisms, `G = Gal(L/K)` qualifies: its fixed field is the relative
   perfect closure `perfectClosure K L`, over which `Spv` therefore maps bijectively to `Spv K`.
 

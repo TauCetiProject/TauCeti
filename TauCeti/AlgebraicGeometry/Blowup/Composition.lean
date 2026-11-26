@@ -8,8 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.Blowup.Product
 import TauCeti.AlgebraicGeometry.Blowup.BaseChange
 import TauCeti.AlgebraicGeometry.Blowup.Restriction
-import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.FinitePresentation
+import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.FlatBaseChange
 
 /-!
 # Composition of blowups

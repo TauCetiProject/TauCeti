@@ -29,7 +29,16 @@ operator is 2-nonnegative exactly when the Ricci contraction is nonnegative, and
 when it is positive definite. In particular the 2-nonnegative cone and the nonnegative-Ricci cone
 coincide in dimension three.
 
-The second result is Hamilton's computation of the reaction term on the boundary of the
+The second result is the dimension-three identity. An orthonormal basis `b` of `V` gives the
+orthonormal basis `b 1 ∧ b 2`, `b 2 ∧ b 0`, `b 0 ∧ b 1` of `⋀² V`, and in it the curvature
+operator of a bivector-symmetric four-tensor has the matrix
+
+`⟪R (b (i + 1) ∧ b (i + 2)), b (j + 1) ∧ b (j + 2)⟫ = (Scal / 2) δᵢⱼ - Ric(b i, b j)`,
+
+so `R` is determined by the Ricci contraction. When `b` diagonalizes `Ric` with eigenvalues
+`ρ₀, ρ₁, ρ₂`, the operator is diagonal with eigenvalues `(Scal / 2) - ρᵢ`.
+
+The third result is Hamilton's computation of the reaction term on the boundary of the
 nonnegative-Ricci cone. For an algebraic curvature tensor `r` and an orthonormal basis
 `b₀, b₁, b₂` with `Ric(b₀, b₀) = 0`,
 
@@ -45,6 +54,8 @@ under the three-dimensional Ricci flow, rests.
 
 All in the namespace `TauCeti.FourTensor`:
 
+* `IsBivectorSymmetric.inner_curvatureEndomorphism_ιMulti_two_add_one_add_two`: the matrix of the
+  curvature operator in the bivector basis of an orthonormal basis is `(Scal / 2) I - Ric`.
 * `exists_norm_eq_one_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm` and
   `exists_orthonormal_inner_curvatureEndomorphism_add_inner_eq_ricci_of_antisymm`: the sums over
   orthonormal pairs of bivectors are the Ricci curvatures of unit vectors.
@@ -77,6 +88,40 @@ noncomputable section
 namespace TauCeti.FourTensor
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-! ### The curvature operator in a bivector basis -/
+
+/-- **The dimension-three identity.** For a bivector-symmetric four-tensor `r` on a space with an
+orthonormal basis `b` indexed by `Fin 3`, the matrix of the curvature operator in the orthonormal
+bivector basis `b 1 ∧ b 2, b 2 ∧ b 0, b 0 ∧ b 1` (see
+`Orthonormal.orthonormal_ιMulti_two_add_one_add_two`) is `(Scal / 2) I - Ric`:
+`⟪R (b (i + 1) ∧ b (i + 2)), b (j + 1) ∧ b (j + 2)⟫ = (Scal / 2) ⟪b i, b j⟫ - Ric(b i, b j)`. -/
+theorem IsBivectorSymmetric.inner_curvatureEndomorphism_ιMulti_two_add_one_add_two
+    {r : FourTensor V} (hr : IsBivectorSymmetric r) (b : OrthonormalBasis (Fin 3) ℝ V)
+    (i j : Fin 3) :
+    ⟪curvatureEndomorphism r (exteriorPower.ιMulti ℝ 2 ![b (i + 1), b (i + 2)]),
+        exteriorPower.ιMulti ℝ 2 ![b (j + 1), b (j + 2)]⟫ =
+      scalar r / 2 * ⟪b i, b j⟫ - ricci r (b i) (b j) := by
+  have h₁ (x z w : V) : r ![x, x, z, w] = 0 :=
+    CharZero.eq_neg_self_iff.mp (hr.antisymm_first x x z w)
+  have h₂ (u v z : V) : r ![u, v, z, z] = 0 :=
+    CharZero.eq_neg_self_iff.mp (hr.antisymm_last u v z z)
+  rw [hr.inner_curvatureEndomorphism_ιMulti, scalar_apply_orthonormalBasis b,
+    ricci_apply_orthonormalBasis b, b.inner_eq_ite]
+  -- After expanding the traces, each of the nine entries is a linear identity between the
+  -- components `r(b p, b q, b s, b t)`, closed by the pair symmetries listed below: the first six
+  -- identify the sectional components `r(b p, b q, b p, b q)` with their transposes, the remaining
+  -- ones match the off-diagonal entries with the mixed Ricci components.
+  fin_cases i <;> fin_cases j <;> simp [Fin.sum_univ_three, h₁, h₂] <;>
+    linarith [hr.antisymm_first (b 0) (b 1) (b 0) (b 1), hr.antisymm_first (b 0) (b 2) (b 0) (b 2),
+      hr.antisymm_first (b 1) (b 2) (b 1) (b 2), hr.antisymm_last (b 1) (b 0) (b 0) (b 1),
+      hr.antisymm_last (b 2) (b 0) (b 0) (b 2), hr.antisymm_last (b 2) (b 1) (b 1) (b 2),
+      hr.swap_pairs (b 1) (b 2) (b 2) (b 0), hr.antisymm_last (b 2) (b 0) (b 1) (b 2),
+      hr.swap_pairs (b 1) (b 2) (b 0) (b 1), hr.antisymm_first (b 0) (b 1) (b 1) (b 2),
+      hr.swap_pairs (b 2) (b 1) (b 2) (b 0), hr.antisymm_last (b 2) (b 0) (b 2) (b 1),
+      hr.swap_pairs (b 2) (b 0) (b 0) (b 1), hr.antisymm_last (b 0) (b 1) (b 2) (b 0),
+      hr.swap_pairs (b 1) (b 2) (b 1) (b 0), hr.antisymm_first (b 1) (b 0) (b 1) (b 2),
+      hr.swap_pairs (b 0) (b 2) (b 0) (b 1)]
 
 /-! ### Ricci curvature and pairs of bivectors -/
 

@@ -18,7 +18,9 @@ algebraic multiplication maps and allow power-series calculations on multiplicat
 It also records the norm of a difference of scalar-to-vector maps, notes that every subsingleton
 seminormed algebra is regular, and shows that left multiplication in a regular normed algebra is
 faithful (`RegularNormedAlgebra.faithfulSMul`). On the field itself, `c • mul 𝕜 𝕜` is invertible
-exactly when `c ≠ 0` (`ContinuousLinearMap.isInvertible_smul_mul_iff`).
+exactly when `c ≠ 0` (`ContinuousLinearMap.isInvertible_smul_mul_iff`), and in a normed division
+algebra multiplication by `z ≠ 0` has inverse multiplication by `z⁻¹`
+(`ContinuousLinearMap.isInvertible_mul_apply`, `ContinuousLinearMap.inverse_mul_apply`).
 For unital algebras we also specialize bounded two-sided multiplication `mulLeftRight` when one
 factor is `1`, bundle the left regular representation as a unital algebra homomorphism, and give its
 inverse norm bound without assuming that the identity has norm one.
@@ -157,6 +159,24 @@ theorem isInvertible_smul_mul_iff {c : 𝕜} : (c • mul 𝕜 𝕜).IsInvertibl
   refine ⟨fun h hc ↦ ?_, fun hc ↦ .of_inverse (g := c⁻¹ • apply 𝕜 𝕜 (1 : 𝕜)) ?_ ?_⟩
   · exact one_ne_zero (h.injective (a₁ := 1) (a₂ := 0) (by simp [hc]))
   all_goals ext; simp [hc]
+
+section DivisionRing
+
+variable {R : Type*} [NormedDivisionRing R] [NormedAlgebra 𝕜 R]
+
+/-- Multiplication by a nonzero element of a normed division algebra is an invertible operator. -/
+theorem isInvertible_mul_apply {z : R} (hz : z ≠ 0) : (mul 𝕜 R z).IsInvertible :=
+  .of_inverse (g := mul 𝕜 R z⁻¹) (by ext; simp [hz]) (by ext; simp [hz])
+
+/-- The inverse of multiplication by `z` is multiplication by `z⁻¹`. This also holds for `z = 0`,
+where both sides vanish. -/
+@[simp]
+theorem inverse_mul_apply (z : R) : (mul 𝕜 R z).inverse = mul 𝕜 R z⁻¹ := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp
+  · exact inverse_eq (by ext; simp [hz]) (by ext; simp [hz])
+
+end DivisionRing
 
 end ContinuousLinearMap
 

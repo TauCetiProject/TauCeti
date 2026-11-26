@@ -14,7 +14,6 @@ public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.SplitEpi
-import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.Basic
 
 /-!
 # Base change of ideal sheaves
@@ -32,13 +31,14 @@ closed immersion `j`, pulling back is therefore a left inverse to pushing forwar
 (`AlgebraicGeometry.Scheme.IdealSheafData.comap_map_of_isClosedImmersion`,
 `AlgebraicGeometry.Scheme.Hom.comap_ker_comp_of_isClosedImmersion`), while pushing forward an
 inverse image recovers the supremum with `j.ker`
-(`AlgebraicGeometry.Scheme.IdealSheafData.map_comap_of_isClosedImmersion`). Analogously, along a
-flat morphism, kernel ideal sheaves of quasi-compact morphisms pull back
-(`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback_of_flat`) and schematic images
-of ideal sheaves commute with base change
-(`AlgebraicGeometry.Scheme.IdealSheafData.comap_map_of_isPullback_of_flat`). In particular, for a
-section `s` of `f : X ⟶ S` which is a closed immersion, the ideal sheaf of its base change
-`T ⟶ X ×_S T` along `g : T ⟶ S` is the inverse image of the ideal sheaf of `s`
+(`AlgebraicGeometry.Scheme.IdealSheafData.map_comap_of_isClosedImmersion`). Consequently the ideal
+sheaf of `a` is nilpotent when a power of that of `a ≫ j` lies in `j.ker`
+(`AlgebraicGeometry.Scheme.Hom.ker_pow_eq_bot_of_ker_comp_pow_le`). Analogously, the ideal
+sheaf of any quasi-compact morphism pulled back along an open immersion is the inverse image of its
+ideal sheaf
+(`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback_of_isOpenImmersion`). In
+particular, for a section `s` of `f : X ⟶ S` which is a closed immersion, the ideal sheaf of its
+base change `T ⟶ X ×_S T` along `g : T ⟶ S` is the inverse image of the ideal sheaf of `s`
 (`CategoryTheory.SplitEpi.ker_pullback_section`), and the same holds for the product of the
 ideal sheaves of finitely many sections
 (`AlgebraicGeometry.Scheme.IdealSheafData.prod_ker_pullback_section`). Taking the ideal sheaf of
@@ -140,6 +140,15 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.comap_ker_comp_of_isClosedImmersion 
     (i : Z ⟶ X) (j : X ⟶ Y) [IsClosedImmersion j] : (i ≫ j).ker.comap j = i.ker := by
   rw [Scheme.Hom.ker_comp, comap_map_of_isClosedImmersion]
 
+/-- If the `m`-th power of the ideal sheaf of `a ≫ j`, for a closed immersion `j`, lies in the
+ideal sheaf of `j`, then the ideal sheaf of `a` has vanishing `m`-th power. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_pow_eq_bot_of_ker_comp_pow_le {Y Z : Scheme.{u}}
+    (a : Z ⟶ X) (j : X ⟶ Y) [IsClosedImmersion j] {m : ℕ} (h : (a ≫ j).ker ^ m ≤ j.ker) :
+    a.ker ^ m = ⊥ := by
+  rw [← le_bot_iff, ← Scheme.Hom.comap_ker_comp_of_isClosedImmersion a j, ← comap_pow,
+    ← j.comap_ker_self]
+  exact comap_mono j h
+
 /-- For ideal sheaves `I ≤ J`, the ideal sheaf of the inclusion `V(J) ⟶ V(I)` is the inverse image
 of `J` along `V(I) ⟶ X`. -/
 @[simp]
@@ -171,24 +180,14 @@ theorem map_comap_of_isClosedImmersion {Y : Scheme.{u}} (J : Y.IdealSheafData) (
     rw [← hu, ← Category.assoc, IsClosedImmersion.lift_fac]
   rw [IdealSheafData.map, ← he, Scheme.Hom.ker_comp_of_isIso, J'.ker_subschemeι]
 
-/-- **Ideal sheaves of quasi-compact morphisms commute with flat base change.** If `f' : U ⟶ V` is
-the base change of a quasi-compact morphism `f : X ⟶ Y` along a flat morphism `iV : V ⟶ Y`, then
-the ideal sheaf of `f'` is the inverse image of the ideal sheaf of `f`. -/
-theorem ker_eq_comap_of_isPullback_of_flat {U V Y : Scheme.{u}} {f : X ⟶ Y}
-    {f' : U ⟶ V} {iU : U ⟶ X} (iV : V ⟶ Y) [Flat iV] [QuasiCompact f]
+/-- **Ideal sheaves of quasi-compact morphisms restrict to opens.** If `f' : U ⟶ V` is the base
+change of a quasi-compact morphism `f : X ⟶ Y` along an open immersion `iV : V ⟶ Y`, then the
+ideal sheaf of `f'` is the inverse image of the ideal sheaf of `f`. -/
+theorem ker_eq_comap_of_isPullback_of_isOpenImmersion {U V Y : Scheme.{u}} {f : X ⟶ Y}
+    {f' : U ⟶ V} {iU : U ⟶ X} (iV : V ⟶ Y) [IsOpenImmersion iV] [QuasiCompact f]
     (H : IsPullback f' iU iV f) : f'.ker = f.ker.comap iV := by
-  have hRight : IsPullback (pullback.fst iV f.imageι) (pullback.snd iV f.imageι) iV f.imageι :=
-    IsPullback.of_hasPullback iV f.imageι
-  have hs : IsPullback f' iU iV (f.toImage ≫ f.imageι) := by rwa [f.toImage_imageι]
-  have hLeft := IsPullback.of_right' hs hRight
-  have : Flat (pullback.snd iV f.imageι) :=
-    MorphismProperty.of_isPullback hRight inferInstance
-  have : IsSchemeTheoreticallyDominant
-      (hRight.lift f' (iU ≫ f.toImage) (by rw [hs.w, Category.assoc])) :=
-    .of_isPullback hLeft.flip
-  rw [← hRight.lift_fst f' (iU ≫ f.toImage) (by rw [hs.w, Category.assoc]),
-    Scheme.Hom.ker_comp, Scheme.Hom.ker_eq_bot, map_bot,
-    ker_eq_comap_of_isPullback f.imageι hRight, Scheme.Hom.imageι, ker_subschemeι]
+  ext W : 2
+  rw [ideal_comap_of_isOpenImmersion, ker_ideal_of_isPullback_of_isOpenImmersion f f' iU iV H]
 
 /-- **Closed subschemes are stable under base change.** If `X' ⟶ X` is the base change of
 `X ⟶ S` along `S' ⟶ S`, then the closed subscheme of the inverse image `I.comap g`, as a scheme
@@ -202,17 +201,6 @@ theorem isPullback_subschemeMap_comap {X' S' : Scheme.{u}} (I : X.IdealSheafData
       g I.subschemeι :=
     isPullback_of_isClosedImmersion _ _ _ _ (by simp) (by simp)
   simpa [Category.assoc] using (hI.paste_horiz H.flip).flip
-
-/-- **Schematic images of ideal sheaves commute with flat base change** when the restriction of
-`f` to the closed subscheme `I.subscheme` is quasi-compact. If `f' : U ⟶ V` is the base change of
-`f : X ⟶ Y` along a flat morphism `iV : V ⟶ Y` and `I.subschemeι ≫ f` is quasi-compact, then
-pulling the schematic image `I.map f` back along `iV` gives the schematic image along `f'` of the
-inverse image `I.comap iU`. -/
-theorem comap_map_of_isPullback_of_flat {U V Y : Scheme.{u}} (I : X.IdealSheafData)
-    {f : X ⟶ Y} {f' : U ⟶ V} {iU : U ⟶ X} (iV : V ⟶ Y) [Flat iV]
-    [QuasiCompact (I.subschemeι ≫ f)] (H : IsPullback f' iU iV f) :
-    (I.map f).comap iV = (I.comap iU).map f' :=
-  (ker_eq_comap_of_isPullback_of_flat iV (I.isPullback_subschemeMap_comap f H.flip).flip).symm
 
 /-- The degree of a finite flat closed subscheme is preserved by base change. More precisely, if
 `X' ⟶ X` is the base change of `X ⟶ S` along `S' ⟶ S`, then the closed subscheme cut out by

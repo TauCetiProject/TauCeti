@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Topology.Algebra.Module.Complement
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.LinearAlgebra.Complex.LinearPart
@@ -466,6 +467,12 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace
   [IsScalarTower ℝ ℂ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F]
   [IsScalarTower ℝ ℂ F] [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace ℂ G]
   [IsScalarTower ℝ ℂ G]
+
+/-- Multiplication by `i`, as a real-linear map, squares to `-1`. -/
+theorem lsmul_I_mul_lsmul_I :
+    (lsmul ℝ ℂ Complex.I : F →L[ℝ] F) * lsmul ℝ ℂ Complex.I = -1 := by
+  ext v
+  simp [smul_smul]
 
 /-- The complex-antilinear part `Ψ ↦ ½ (Ψ + i • Ψ ∘ i)`, as a continuous real-linear operator on
 the real-linear maps `E →L[ℝ] F` between complex normed spaces. Unlike

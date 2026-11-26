@@ -86,6 +86,11 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
   `TauCeti.ConvexLifting.sharedOuterApproxOn_of_isEmpty` and
   `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_of_isEmpty`: the degenerate cases of no
   admissible heights and no anchors.
+* `TauCeti.ConvexLifting.directOuterApprox_of_isEmpty_heightCoords`,
+  `TauCeti.ConvexLifting.sharedOuterApprox_of_isEmpty_heightCoords`,
+  `TauCeti.ConvexLifting.sharedOuterApproxOn_of_isEmpty_heightCoords` and
+  `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_of_isEmpty_heightCoords`: the degenerate case
+  of no height coordinates, where every row reduces to the scalar condition `h 0 ≤ b`.
 
 ## References
 
@@ -379,6 +384,43 @@ domain. -/
 theorem fst_image_sharedOuterApprox_of_isEmpty [IsEmpty κ] (hE : E.Nonempty) :
     Prod.fst '' sharedOuterApprox D E g h a Dg Dh b = D := by
   rw [sharedOuterApprox_of_isEmpty, fst_image_prod _ hE]
+
+/-- With no height coordinates and at least one anchor, every direct row is the scalar `h 0`, so
+the direct approximation is the set of points of the domain satisfying `h 0 ≤ b`. -/
+@[simp]
+theorem directOuterApprox_of_isEmpty_heightCoords [IsEmpty ι] [Nonempty κ] :
+    directOuterApprox D g h a Dg Dh b = {x | x ∈ D ∧ h 0 ≤ b} := by
+  have hDh : ∀ i v, Dh i v = 0 := fun i v ↦ by rw [Subsingleton.elim v 0, map_zero]
+  ext x
+  simp [directRow_def, hDh, Subsingleton.elim (g _) 0]
+
+/-- With no height coordinates and at least one anchor, every component row is dominated and every
+outer row is the scalar `h 0`, so the shared approximation is the set of pairs of a point of the
+domain and an admissible height, provided `h 0 ≤ b`. -/
+@[simp]
+theorem sharedOuterApprox_of_isEmpty_heightCoords [IsEmpty ι] [Nonempty κ] :
+    sharedOuterApprox D E g h a Dg Dh b = {z | z.1 ∈ D ∧ z.2 ∈ E ∧ h 0 ≤ b} := by
+  have hDh : ∀ i v, Dh i v = 0 := fun i v ↦ by rw [Subsingleton.elim v 0, map_zero]
+  ext z
+  simp [outerRow_def, hDh, Subsingleton.elim (g _) 0, Subsingleton.elim (componentRow g _ _ _) z.2]
+
+/-- With no height coordinates and at least one anchor, the exact rows on `J` are vacuous, so the
+shared approximation with exact rows on `J` is the set of pairs of a point of the domain and an
+admissible height, provided `h 0 ≤ b`. -/
+@[simp]
+theorem sharedOuterApproxOn_of_isEmpty_heightCoords [IsEmpty ι] [Nonempty κ] :
+    sharedOuterApproxOn J D E g h a Dg Dh b = {z | z.1 ∈ D ∧ z.2 ∈ E ∧ h 0 ≤ b} := by
+  ext z
+  simp [sharedOuterApprox_of_isEmpty_heightCoords]
+
+/-- With no height coordinates and at least one anchor, the shared approximation projects onto the
+points of the domain satisfying `h 0 ≤ b`, provided the unique height `0` is admissible. -/
+theorem fst_image_sharedOuterApprox_of_isEmpty_heightCoords [IsEmpty ι] [Nonempty κ] :
+    Prod.fst '' sharedOuterApprox D E g h a Dg Dh b = {x | x ∈ D ∧ 0 ∈ E ∧ h 0 ≤ b} := by
+  ext x
+  simp only [sharedOuterApprox_of_isEmpty_heightCoords, mem_image, mem_ofPred_eq, Prod.exists,
+    exists_and_right, exists_eq_right]
+  exact ⟨fun ⟨y, hx, hy, hb⟩ ↦ ⟨hx, Subsingleton.elim y 0 ▸ hy, hb⟩, fun h ↦ ⟨0, h⟩⟩
 
 /-! ### The comparison theorems -/
 
