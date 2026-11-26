@@ -47,9 +47,11 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 
 ## Main declarations
 
+* `contDiffAt_norm_rpow_of_ne`: an arbitrary real power is smooth away from zero.
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
 * `isBigO_fderiv_norm_rpow_cobounded`: that derivative is `O(‖x‖ ^ (p - 1))` at infinity.
+* `gradient_norm_rpow_of_ne`: the corresponding gradient `p ‖x‖ ^ (p - 2) x`.
 * `hasFDerivAt_norm_rpow_smul_self`: for `r ≥ 0` the map `y ↦ ‖y‖ ^ r • y` is differentiable
   everywhere, including at the origin.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
@@ -120,14 +122,18 @@ private theorem norm_iteratedFDeriv_eq_of_norm_eq
   rw [hcomp, Submodule.reflection_sub hxy] at h
   exact h
 
+/-- Every real power of the norm is smooth away from the origin. -/
+theorem contDiffAt_norm_rpow_of_ne {n : WithTop ℕ∞} (p : ℝ) {x : E} (hx : x ≠ 0) :
+    ContDiffAt ℝ n (fun y : E ↦ ‖y‖ ^ p) x :=
+  (contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.2 hx)
+
 /-- Every real power of the norm whose exponent exceeds `k` is `Cᵏ`, including at zero,
 on an arbitrary real inner-product space. -/
 theorem contDiff_norm_rpow_of_lt {k : ℕ} {p : ℝ}
     (hp : (k : ℝ) < p) : ContDiff ℝ k (fun x : E ↦ ‖x‖ ^ p) := by
   have hf : ContDiffOn ℝ k (fun x : E ↦ ‖x‖ ^ p) {0}ᶜ := by
     intro x hx
-    exact ((contDiffAt_norm ℝ hx).rpow_const_of_ne
-      (norm_ne_zero_iff.mpr hx)).contDiffWithinAt
+    exact (contDiffAt_norm_rpow_of_ne p hx).contDiffWithinAt
   apply contDiff_of_iteratedFDeriv_norm_rpow_bound hf
     (by simp [Real.zero_rpow (lt_of_le_of_lt (Nat.cast_nonneg k) hp).ne']) hp
   intro j _
@@ -164,6 +170,14 @@ theorem hasFDerivAt_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
 theorem fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
     fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • innerSL ℝ x :=
   (hasFDerivAt_norm_rpow_of_ne p hx).fderiv
+
+/-- Away from the origin, the gradient of `x ↦ ‖x‖ ^ p` is `p ‖x‖ ^ (p - 2) x`. -/
+theorem gradient_norm_rpow_of_ne [CompleteSpace E] (p : ℝ) {x : E} (hx : x ≠ 0) :
+    ∇ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • x := by
+  refine (hasGradientAt_iff_hasFDerivAt.2 ?_).gradient
+  convert hasFDerivAt_norm_rpow_of_ne p hx using 1
+  ext v
+  simp
 
 /-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` has norm `|p| ‖x‖ ^ (p - 1)`. -/
 theorem norm_fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
@@ -868,14 +882,8 @@ theorem laplacian_inner_mul_norm_rpow_of_ne (a : E) (p : ℝ) {x : E} (hx : x �
   have hℓd : ∀ y, HasFDerivAt (fun y : E ↦ ⟪a, y⟫_ℝ) (toDual ℝ E a) y :=
     fun y ↦ (toDual ℝ E a).hasFDerivAt
   have hℓ : ContDiffAt ℝ 2 (fun y : E ↦ ⟪a, y⟫_ℝ) x := (toDual ℝ E a).contDiff.contDiffAt
-  have hg : ContDiffAt ℝ 2 (fun y : E ↦ ‖y‖ ^ p) x :=
-    (contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.mpr hx)
-  -- The linear factor has constant derivative, hence vanishing Laplacian.
-  have hΔℓ : Δ (fun y : E ↦ ⟪a, y⟫_ℝ) x = 0 := by
-    rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis _ (stdOrthonormalBasis ℝ E)) x]
-    refine Finset.sum_eq_zero fun i _ ↦ ?_
-    rw [iteratedFDeriv_two_apply, funext fun y ↦ (hℓd y).fderiv]
-    simp
+  have hg : ContDiffAt ℝ 2 (fun y : E ↦ ‖y‖ ^ p) x := contDiffAt_norm_rpow_of_ne p hx
+  have hΔℓ : Δ (fun y : E ↦ ⟪a, y⟫_ℝ) x = 0 := congrFun (toDual ℝ E a : E →L[ℝ] ℝ).laplacian x
   rw [hℓ.laplacian_fun_mul hg, laplacian_norm_rpow_of_ne p hx, hΔℓ,
     (hasGradientAt_iff_hasFDerivAt.mpr (hℓd x)).gradient, inner_gradient_right, conj_trivial,
     fderiv_norm_rpow_of_ne p hx]
@@ -885,7 +893,7 @@ theorem laplacian_inner_mul_norm_rpow_of_ne (a : E) (p : ℝ) {x : E} (hx : x �
 /-- Away from the origin, `x ↦ ‖x‖ ^ (2 - dim E)` is harmonic. -/
 theorem harmonicAt_norm_rpow_two_sub_finrank {x : E} (hx : x ≠ 0) :
     HarmonicAt (fun y : E ↦ ‖y‖ ^ (2 - Module.finrank ℝ E : ℝ)) x := by
-  refine ⟨(contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.mpr hx), ?_⟩
+  refine ⟨contDiffAt_norm_rpow_of_ne _ hx, ?_⟩
   filter_upwards [eventually_ne_nhds hx] with y hy
   rw [laplacian_norm_rpow_of_ne _ hy, Pi.zero_apply]
   ring
@@ -898,8 +906,7 @@ theorem harmonicOnNhd_norm_sub_rpow_two_sub_finrank (a : E) :
 /-- Away from the origin, the dipole `x ↦ ⟪a, x⟫ ‖x‖ ^ (-dim E)` is harmonic. -/
 theorem harmonicAt_inner_mul_norm_rpow_neg_finrank (a : E) {x : E} (hx : x ≠ 0) :
     HarmonicAt (fun y : E ↦ ⟪a, y⟫_ℝ * ‖y‖ ^ (-(Module.finrank ℝ E : ℝ))) x := by
-  refine ⟨(toDual ℝ E a).contDiff.contDiffAt.mul
-    ((contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.mpr hx)), ?_⟩
+  refine ⟨(toDual ℝ E a).contDiff.contDiffAt.mul (contDiffAt_norm_rpow_of_ne _ hx), ?_⟩
   filter_upwards [eventually_ne_nhds hx] with y hy
   rw [laplacian_inner_mul_norm_rpow_of_ne a _ hy, Pi.zero_apply]
   ring
