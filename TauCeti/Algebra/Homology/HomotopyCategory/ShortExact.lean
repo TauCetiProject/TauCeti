@@ -189,11 +189,14 @@ namespace CochainComplex.mappingCone
 
 open HomComplex
 
-variable {C : Type*} [Category* C] [Abelian C]
+variable {C : Type*} [Category* C]
 
 section MapShortComplex
 
-variable {S₁ S₂ : ShortComplex (CochainComplex C ℤ)} (φ : S₁ ⟶ S₂)
+section Preadditive
+
+variable [Preadditive C] [HasBinaryBiproducts C] {S₁ S₂ : ShortComplex (CochainComplex C ℤ)}
+  (φ : S₁ ⟶ S₂)
 
 /-- The mapping cones `cone φ.τ₁ ⟶ cone φ.τ₂ ⟶ cone φ.τ₃` of the components of a morphism
 `φ : S₁ ⟶ S₂` of short complexes of cochain complexes, with the maps of mapping cones induced by
@@ -208,12 +211,20 @@ noncomputable def mapShortComplex : ShortComplex (CochainComplex C ℤ) :=
     ext n
     apply ext_from _ (n + 1) n rfl <;> simp [reassoc_of% h₁, reassoc_of% h₂])
 
+end Preadditive
+
+variable [Abelian C] {S₁ S₂ : ShortComplex (CochainComplex C ℤ)} (φ : S₁ ⟶ S₂)
+
 /-- **Mapping cones of a morphism of short exact sequences form a short exact sequence.** In degree
 `n` the sequence of mapping cones is the direct sum of the sequences of `S₁` in degree `n + 1` and
 of `S₂` in degree `n`. -/
 lemma shortExact_mapShortComplex (h₁ : S₁.ShortExact) (h₂ : S₂.ShortExact) :
     (mapShortComplex φ).ShortExact := by
   refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦ ?_
+  -- Unfold the degree `n` evaluation of `mapShortComplex φ` (by definition) to the short complex
+  -- of the degree `n` components of the two maps of mapping cones, so that the hypotheses below
+  -- can be stated with `map`; `dsimp only` with the `mapShortComplex` simp lemmas instead leaves a
+  -- goal on which the later `simpa` normalisations of these hypotheses no longer fire.
   change (ShortComplex.mk ((map φ.τ₁ φ.τ₂ S₁.f S₂.f φ.comm₁₂).f n)
     ((map φ.τ₂ φ.τ₃ S₁.g S₂.g φ.comm₂₃).f n) _).ShortExact
   have e₁ := (HomologicalComplex.shortExact_iff_degreewise_shortExact S₁).1 h₁ (n + 1)
@@ -264,8 +275,11 @@ namespace CategoryTheory.NatTrans
 
 open CochainComplex
 
-variable {C : Type*} [Category* C] [Abelian C] {D : Type*} [Category* D]
-  {F G : D ⥤ CochainComplex C ℤ} (τ : F ⟶ G)
+variable {C : Type*} [Category* C] {D : Type*} [Category* D]
+
+section Preadditive
+
+variable [Preadditive C] [HasBinaryBiproducts C] {F G : D ⥤ CochainComplex C ℤ} (τ : F ⟶ G)
 
 /-- For a natural transformation `τ : F ⟶ G` of functors with values in cochain complexes, the
 sequence `G ⟶ cone τ ⟶ F⟦1⟧` of functors: objectwise, the rotation
@@ -289,6 +303,10 @@ noncomputable def mappingConeInrShortComplex : ShortComplex (D ⥤ CochainComple
   zero := by
     ext X : 2
     exact (mappingCone.triangleRotateShortComplex (τ.app X)).zero
+
+end Preadditive
+
+variable [Abelian C] {F G : D ⥤ CochainComplex C ℤ} (τ : F ⟶ G)
 
 /-- For a natural transformation `τ : F ⟶ G` of functors with values in cochain complexes, the
 sequence `G ⟶ cone τ ⟶ F⟦1⟧` of functors is short exact: objectwise it is the degreewise split
