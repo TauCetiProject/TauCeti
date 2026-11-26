@@ -17,10 +17,13 @@ nonzero `u ∈ H¹_Γ(Ω)` satisfies `∫ ∇u · ∇v = κ ∫ u v` for every `
 when a family of weak eigenfunctions, with eigenvalues `κₖ`, is complete in `L²(Ω)`, an
 eigenfunction for any other `κ` is orthogonal to the whole family, hence zero, and the weak mixed
 eigenvalues are exactly the `κₖ`. This is how separation of variables computes a spectrum: exhibit
-explicit eigenfunctions and prove their completeness.
+explicit eigenfunctions and prove their completeness. To show that an explicit function is a weak
+eigenfunction, it suffices to test it against the generators of `H¹_Γ(Ω)`.
 
 ## Main declarations
 
+* `TauCeti.PDE.inner_gradient_eq_mul_inner_value_of_mem_w1pVanishingOnSubmodule`: a weak
+  eigen-identity of `-Δ_Γ` extends from the generators of `H¹_Γ(Ω)` to all of it.
 * `TauCeti.PDE.inner_value_eq_zero_of_forall_inner_gradient_eq`: weak mixed eigenfunctions for
   distinct eigenvalues are orthogonal in `L²(Ω)`.
 * `TauCeti.PDE.exists_ne_zero_forall_inner_gradient_eq_iff_of_complete`: the weak mixed
@@ -34,11 +37,29 @@ namespace TauCeti
 namespace PDE
 
 open MeasureTheory TopologicalSpace
-open scoped InnerProductSpace
+open scoped Distributions InnerProductSpace
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {Γ : Set E}
+
+/-- **A weak eigen-identity extends from the generators of `H¹_Γ(Ω)` to all of it.** If
+`∫ ∇u · ∇v = κ ∫ u v` holds whenever `v` is the restriction to `Ω` of a test function on `E` whose
+support avoids the closure of `Γ`, then it holds for every `v ∈ H¹_Γ(Ω)`: both sides are continuous
+in `v`, and `H¹_Γ(Ω)` is the closure of those restrictions. -/
+theorem inner_gradient_eq_mul_inner_value_of_mem_w1pVanishingOnSubmodule {u : W1p mu Omega 2}
+    {kappa : ℝ} (h : ∀ φ : 𝓓((⊤ : Opens E), ℝ), Disjoint (tsupport φ) (closure Γ) →
+      ⟪W1p.gradient u, W1p.gradient (W1p.restrictL (le_top : Omega ≤ ⊤)
+          (W1p.ofTestFunctionₗ mu ⊤ 2 φ))⟫_ℝ =
+        kappa * ⟪W1p.value u, W1p.value (W1p.restrictL (le_top : Omega ≤ ⊤)
+          (W1p.ofTestFunctionₗ mu ⊤ 2 φ))⟫_ℝ)
+    {v : W1p mu Omega 2} (hv : v ∈ w1pVanishingOnSubmodule mu Omega 2 Γ) :
+    ⟪W1p.gradient u, W1p.gradient v⟫_ℝ = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ :=
+  w1pVanishingOnSubmodule_subset_of_isClosed (s := {v | ⟪W1p.gradient u,
+      W1p.gradient v⟫_ℝ = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ})
+    (isClosed_eq (continuous_const.inner (W1p.gradientL.continuous.congr W1p.gradientL_apply))
+      (continuous_const.mul (continuous_const.inner
+        (W1p.valueL.continuous.congr W1p.valueL_apply)))) h hv
 
 /-- **Weak mixed eigenfunctions for distinct eigenvalues are orthogonal.** If `u` and `w` in
 `H¹_Γ(Ω)` satisfy `∫ ∇u · ∇v = κ ∫ u v` and `∫ ∇w · ∇v = κ' ∫ w v` for every `v ∈ H¹_Γ(Ω)`, with
