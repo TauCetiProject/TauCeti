@@ -43,6 +43,8 @@ on the overlap and vanishes off it
 
 ## Main definitions
 
+* `OpenPartialHomeomorph.cutoffPushforwardSchwartz`: the reading `ψ · (u ∘ e⁻¹)` in a chart `e` of
+  a smooth function `u`, cut off by `ψ`, as a Schwartz function on `ℝⁿ`.
 * `OpenPartialHomeomorph.chartQuantization`: the quantization `Op_e(a)` of a classical symbol `a`
   in a chart `e`, localized by cutoffs `φ` and `ψ`.
 
@@ -86,7 +88,7 @@ include he
 /-! ### The chart quantization -/
 
 /-- The compactly supported smooth function `ψ · (u ∘ e⁻¹)` on `ℝⁿ`, as a Schwartz function. -/
-private def cutoffPushforwardSchwartz (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+def cutoffPushforwardSchwartz (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) : 𝓢(CoordinateSpace n, ℂ) :=
   HasCompactSupport.toSchwartzMap (f := e.complexCutoffPushforward he ψ u)
     (by
@@ -97,7 +99,8 @@ private def cutoffPushforwardSchwartz (ψ : 𝓓(⟨e.target, e.open_target⟩, 
     (contMDiff_iff_contDiff.1 (e.complexCutoffPushforward he ψ u).contMDiff)
 
 omit [T2Space M] in
-private theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+/-- The Schwartz function `cutoffPushforwardSchwartz he ψ u` takes the value `ψ(y) u(e⁻¹ y)`. -/
+theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (y : CoordinateSpace n) :
     cutoffPushforwardSchwartz he ψ u y = ψ y • u (e.symm y) :=
   e.complexCutoffPushforward_apply he ψ u y

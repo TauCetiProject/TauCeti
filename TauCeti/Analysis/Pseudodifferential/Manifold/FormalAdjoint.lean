@@ -79,18 +79,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
 
 include he
 
-omit [T2Space M] in
-/-- The compactly supported smooth function `ψ · (u ∘ e⁻¹)` on `ℝⁿ` is a Schwartz function. -/
-private theorem exists_schwartzMap_eq_smul (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    ∃ w : 𝓢(CoordinateSpace n, ℂ), ∀ y, w y = ψ y • u (e.symm y) := by
-  have h : ⇑(e.complexCutoffPushforward he ψ u) = fun y ↦ ψ y • u (e.symm y) :=
-    funext (e.complexCutoffPushforward_apply he ψ u)
-  refine ⟨HasCompactSupport.toSchwartzMap (f := e.complexCutoffPushforward he ψ u)
-    (h ▸ ψ.hasCompactSupport.smul_right)
-    (contMDiff_iff_contDiff.1 (e.complexCutoffPushforward he ψ u).contMDiff), fun y ↦ ?_⟩
-  rw [HasCompactSupport.toSchwartzMap_toFun, h]
-
 variable [MeasurableSpace M] [BorelSpace M] {μ : Measure M} {ρ : CoordinateSpace n → ℝ}
 
 /-- In the chart, the pairing `∫ ⟪Op_e(a) u, v⟫ dμ` is `∫ ⟪Op(a) w₁, φ ρ w₂⟫ dy`, for the readings
@@ -106,7 +94,8 @@ private theorem integral_inner_chartQuantization_apply_eq (hρ : ContinuousOn ρ
     ∫ p, inner ℂ (e.chartQuantization he φ ψ a u p) (v p) ∂μ =
       ∫ y, inner ℂ (quantizeSchwartzValue a.toSymbol.coefficient w₁ y)
         (((φ y * ρ y : ℝ) : ℂ) * w₂ y) := by
-  rw [integral_eq_setIntegral_target_smul hμ hρ (fun y hy ↦ (hρ0 y hy).le)
+  rw [integral_eq_setIntegral_target_smul hμ (hρ.aemeasurable e.open_target.measurableSet)
+      (fun y hy ↦ (hρ0 y hy).le)
       ((e.chartQuantization he φ ψ a u).contMDiff.continuous.inner
         v.contMDiff.continuous).continuousOn
       fun p hp ↦ by simp [chartQuantization_apply_of_notMem he _ _ a u hp],
@@ -136,7 +125,8 @@ private theorem integral_inner_apply_chartQuantization_eq (hρ : ContinuousOn ρ
     ∫ p, inner ℂ (u p) (e.chartQuantization he θ χ b v p) ∂μ =
       ∫ y in e.target, inner ℂ (u (e.symm y))
         (((ρ y * θ y : ℝ) : ℂ) * quantizeSchwartzValue b.toSymbol.coefficient w₂ y) := by
-  rw [integral_eq_setIntegral_target_smul hμ hρ (fun y hy ↦ (hρ0 y hy).le)
+  rw [integral_eq_setIntegral_target_smul hμ (hρ.aemeasurable e.open_target.measurableSet)
+    (fun y hy ↦ (hρ0 y hy).le)
     (u.contMDiff.continuous.inner
       (e.chartQuantization he θ χ b v).contMDiff.continuous).continuousOn
     fun p hp ↦ by simp [chartQuantization_apply_of_notMem he _ _ _ v hp]]
@@ -182,8 +172,10 @@ theorem exists_integral_inner_chartQuantization_eq (hρ : ContDiffOn ℝ ∞ ρ 
     ClassicalSymbol.toSymbol_smulLeft hk a ▸ Symbol.hasCompactSpatialSupport_smulLeft hk hkc _
   refine ⟨ClassicalSymbol.smulLeft hq (c.adjoint hc), fun u v ↦ ?_, fun y ξ ↦ ?_⟩
   · -- Read `u` and `v` in the chart and apply the adjoint identity of `Op(c)` on `ℝⁿ`.
-    obtain ⟨w₁, hw₁⟩ := exists_schwartzMap_eq_smul he ψ u
-    obtain ⟨w₂, hw₂⟩ := exists_schwartzMap_eq_smul he χ v
+    set w₁ := e.cutoffPushforwardSchwartz he ψ u
+    set w₂ := e.cutoffPushforwardSchwartz he χ v
+    have hw₁ : ∀ y, w₁ y = ψ y • u (e.symm y) := e.cutoffPushforwardSchwartz_apply he ψ u
+    have hw₂ : ∀ y, w₂ y = χ y • v (e.symm y) := e.cutoffPushforwardSchwartz_apply he χ v
     rw [integral_inner_chartQuantization_apply_eq he hρ.continuousOn hρ0 hμ hχ a hw₁ hw₂,
       integral_inner_apply_chartQuantization_eq he hρ.continuousOn hρ0 hμ θ _ u hw₂]
     convert Symbol.integral_inner_quantizeSchwartzValue_adjoint c.toSymbol hc w₁ w₂ using 1
@@ -201,17 +193,15 @@ theorem exists_integral_inner_chartQuantization_eq (hρ : ContDiffOn ℝ ∞ ρ 
     -- On the target, `ρ θ q = ψ`.
     by_cases hψy : ψ y = 0
     · simp [q, hψy]
-    have hρy : (ρ y : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (hρ0 y hy).ne'
     rw [hθ (subset_tsupport _ hψy)]
     simp only [q, smul_eq_mul, Complex.real_smul, RCLike.inner_apply, map_mul,
       Complex.conj_ofReal, Complex.ofReal_mul, Complex.ofReal_inv, Pi.one_apply,
       Complex.ofReal_one]
-    field_simp
+    field_simp [(hρ0 y hy).ne']
   · -- `σ(b) = q (k σ(a))† = (ψ / ρ) (φ ρ) σ(a)† = φ ψ σ(a)†`.
-    rw [ClassicalSymbol.coefficient_principal_smulLeft, ClassicalSymbol.principal_adjoint,
-      HomogeneousSymbol.coefficient_adjoint, ClassicalSymbol.coefficient_principal_smulLeft]
-    simp only [q, k]
-    rw [map_smulₛₗ, Complex.conj_ofReal, smul_smul, ← Complex.ofReal_mul]
+    simp only [ClassicalSymbol.coefficient_principal_smulLeft, ClassicalSymbol.principal_adjoint,
+      HomogeneousSymbol.coefficient_adjoint, map_smulₛₗ, Complex.conj_ofReal, smul_smul,
+      ← Complex.ofReal_mul, c, q, k]
     congr 2
     by_cases hy : y ∈ e.target
     · field_simp [(hρ0 y hy).ne']
