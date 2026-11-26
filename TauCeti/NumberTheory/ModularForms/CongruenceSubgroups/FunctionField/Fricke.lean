@@ -250,8 +250,8 @@ theorem forall_unop_modularFunctionActionZMod_frickeMeromorphicFunction_eq_iff
         frickeMeromorphicFunction a) ↔ g = 1 ∨ g = -1 := by
   refine ⟨fun h ↦ ?_, ?_⟩
   · obtain ⟨τ, hτ⟩ := exists_frickeFunction_eq_iff (N := N)
-    have hGL : Matrix.SpecialLinearGroup.toGL (-1 : SL(2, ZMod N)) = -1 := Units.ext (by simp)
-    rw [← Matrix.SpecialLinearGroup.toGL_inj, ← Matrix.SpecialLinearGroup.toGL_inj, map_one, hGL,
+    rw [← Matrix.SpecialLinearGroup.toGL_inj, ← Matrix.SpecialLinearGroup.toGL_inj, map_one,
+      Matrix.SpecialLinearGroup.toGL_neg_one,
       ← Matrix.GeneralLinearGroup.forall_weightedG2_single_vecMul_apply_eq_iff _ τ]
     intro a ha
     have h' := congrArg (· (ofQuotient (Quotient.mk _ τ))) (h a ha)

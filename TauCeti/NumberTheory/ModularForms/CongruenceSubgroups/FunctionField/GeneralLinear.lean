@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Diagonal
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 
 /-!
@@ -68,50 +68,13 @@ namespace TauCeti
 
 variable {N : ℕ}
 
-/-- The diagonal matrix `diag(1, det γ)` divides `γ` on the right to a matrix of determinant
-one. -/
-private theorem det_mul_inv_diagGL (γ : GL (Fin 2) (ZMod N)) :
-    det (γ * (diagGL ![1, det γ])⁻¹) = 1 := by
-  rw [map_mul, map_inv, det_diagGL, Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_zero, one_mul, mul_inv_cancel]
-
-/-- The special linear factor `g = γ diag(1, det γ)⁻¹` of `γ = g diag(1, det γ)`. -/
-private def slFactor (γ : GL (Fin 2) (ZMod N)) : SL(2, ZMod N) :=
-  ⟨(γ * (diagGL ![1, det γ])⁻¹ : GL (Fin 2) (ZMod N)), by
-    rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mul_inv_diagGL, Units.val_one]⟩
-
-private theorem toGL_slFactor (γ : GL (Fin 2) (ZMod N)) :
-    (slFactor γ : GL (Fin 2) (ZMod N)) = γ * (diagGL ![1, det γ])⁻¹ :=
-  Units.ext rfl
-
-private theorem toGL_slFactor_mul_diagGL (γ : GL (Fin 2) (ZMod N)) :
-    (slFactor γ : GL (Fin 2) (ZMod N)) * diagGL ![1, det γ] = γ := by
-  rw [toGL_slFactor, inv_mul_cancel_right]
-
-private theorem diagGL_one_one : diagGL ![1, (1 : (ZMod N)ˣ)] = 1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
-
-private theorem slFactor_toGL (g : SL(2, ZMod N)) : slFactor (g : GL (Fin 2) (ZMod N)) = g := by
-  apply Matrix.SpecialLinearGroup.toGL_injective
-  rw [toGL_slFactor, Matrix.SpecialLinearGroup.coeToGL_det, diagGL_one_one, inv_one, mul_one]
-
-private theorem slFactor_diagGL (d : (ZMod N)ˣ) : slFactor (diagGL ![1, d]) = 1 := by
-  apply Matrix.SpecialLinearGroup.toGL_injective
-  rw [toGL_slFactor, map_one, det_diagGL, Fin.prod_univ_two, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_zero, one_mul, mul_inv_cancel]
-
-/-- The matrix `-1` of `SL(2, ℤ/Nℤ)` is the matrix `-1` of `GL(2, ℤ/Nℤ)`. -/
-private theorem toGL_neg_one : ((-1 : SL(2, ZMod N)) : GL (Fin 2) (ZMod N)) = -1 :=
-  Units.ext <| by simp
-
 variable [NeZero N]
 
 /-- The action of `γ`: the fractional linear map of the special linear factor of `γ`, followed
 by `diag(1, det γ)`. -/
 private def glActionAux (γ : GL (Fin 2) (ZMod N)) :
     modularFunctionField N ≃+* modularFunctionField N :=
-  modularFunctionFieldDiagAction N (det γ) * unop (modularFunctionFieldActionZMod N (slFactor γ))
+  modularFunctionFieldDiagAction N (det γ) * unop (modularFunctionFieldActionZMod N γ.slFactor)
 
 private theorem glActionAux_modularFunctionFieldConst (γ : GL (Fin 2) (ZMod N))
     (c : Subfield.closure {z : ℂ | z ^ N = 1}) :
@@ -131,7 +94,7 @@ private theorem glActionAux_frickeModularFunction (γ : GL (Fin 2) (ZMod N))
       frickeModularFunction (a ᵥ* (γ : Matrix (Fin 2) (Fin 2) (ZMod N))) := by
   rw [glActionAux, RingAut.mul_apply, unop_modularFunctionFieldActionZMod_frickeModularFunction,
     modularFunctionFieldDiagAction_frickeModularFunction]
-  conv_rhs => rw [← toGL_slFactor_mul_diagGL γ]
+  conv_rhs => rw [← Matrix.GeneralLinearGroup.toGL_slFactor_mul_diagGL γ]
   rw [Units.val_mul, ← Matrix.vecMul_vecMul, diagGL_coe,
     Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
   congr 1
@@ -148,7 +111,7 @@ def modularFunctionFieldGLAction :
   toFun γ := op (glActionAux γ)
   map_one' := by
     rw [glActionAux, map_one, map_one, one_mul, ← map_one Matrix.SpecialLinearGroup.toGL,
-      slFactor_toGL, map_one, unop_one, op_one]
+      Matrix.GeneralLinearGroup.slFactor_toGL, map_one, unop_one, op_one]
   map_mul' γ δ := by
     apply unop_injective
     rw [unop_op, unop_mul, unop_op, unop_op]
@@ -195,7 +158,7 @@ theorem unop_modularFunctionFieldGLAction_frickeModularFunction (γ : GL (Fin 2)
 theorem modularFunctionFieldGLAction_toGL (g : SL(2, ZMod N)) :
     modularFunctionFieldGLAction N g = modularFunctionFieldActionZMod N g := by
   apply unop_injective
-  rw [unop_modularFunctionFieldGLAction, glActionAux, slFactor_toGL,
+  rw [unop_modularFunctionFieldGLAction, glActionAux, Matrix.GeneralLinearGroup.slFactor_toGL,
     Matrix.SpecialLinearGroup.coeToGL_det, map_one, one_mul]
 
 /-- On `diag(1, d)`, the action of `GL(2, ℤ/Nℤ)` is the coefficient action
@@ -204,15 +167,15 @@ theorem modularFunctionFieldGLAction_toGL (g : SL(2, ZMod N)) :
 theorem unop_modularFunctionFieldGLAction_diagGL (d : (ZMod N)ˣ) :
     unop (modularFunctionFieldGLAction N (diagGL ![1, d])) =
       modularFunctionFieldDiagAction N d := by
-  rw [unop_modularFunctionFieldGLAction, glActionAux, slFactor_diagGL, map_one, unop_one,
-    mul_one, det_diagGL, Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_zero, one_mul]
+  rw [unop_modularFunctionFieldGLAction, glActionAux, Matrix.GeneralLinearGroup.slFactor_diagGL,
+    map_one, unop_one, mul_one, det_diagGL_one_left]
 
 /-- Opposite matrices act in the same way on `F_N`. -/
 @[simp]
 theorem modularFunctionFieldGLAction_neg (γ : GL (Fin 2) (ZMod N)) :
     modularFunctionFieldGLAction N (-γ) = modularFunctionFieldGLAction N γ := by
-  rw [← mul_neg_one, map_mul, ← toGL_neg_one, modularFunctionFieldGLAction_toGL,
+  rw [← mul_neg_one, map_mul, ← Matrix.SpecialLinearGroup.toGL_neg_one,
+    modularFunctionFieldGLAction_toGL,
     modularFunctionFieldActionZMod_neg, map_one, mul_one]
 
 /-- **The kernel of the action of `GL(2, ℤ/Nℤ)` on `F_N` is `{±1}`.** This statement also applies
@@ -233,10 +196,10 @@ theorem modularFunctionFieldGLAction_eq_one_iff (γ : GL (Fin 2) (ZMod N)) :
       rw [(det γ).coe_cyclotomicConjugate (σ := (σ : ℂ →+* ℂ)) hσ, RingEquiv.coe_toRingHom, hσ]
         at h'
       exact Units.val_eq_one.mp (ZMod.injective_stdAddChar h')
-    have hγg : γ = (slFactor γ : GL (Fin 2) (ZMod N)) := by
-      rw [toGL_slFactor, hdet, diagGL_one_one, inv_one, mul_one]
+    have hγg : γ = (γ.slFactor : GL (Fin 2) (ZMod N)) :=
+      (Matrix.GeneralLinearGroup.toGL_slFactor_of_det_eq_one hdet).symm
     rw [hγg, modularFunctionFieldGLAction_toGL, modularFunctionFieldActionZMod_eq_one_iff] at hγ
-    rw [hγg, ← toGL_neg_one, ← map_one Matrix.SpecialLinearGroup.toGL,
+    rw [hγg, ← Matrix.SpecialLinearGroup.toGL_neg_one, ← map_one Matrix.SpecialLinearGroup.toGL,
       Matrix.SpecialLinearGroup.toGL_inj, Matrix.SpecialLinearGroup.toGL_inj]
     exact hγ
   · rintro (rfl | rfl)
@@ -256,10 +219,8 @@ where the two signs coincide. -/
 theorem modularFunctionFieldGLAction_injective_iff :
     Function.Injective (modularFunctionFieldGLAction N) ↔ N ∣ 2 := by
   have hsign : (-1 : GL (Fin 2) (ZMod N)) = 1 ↔ N ∣ 2 := by
-    rw [← toGL_neg_one, ← map_one Matrix.SpecialLinearGroup.toGL,
-      Matrix.SpecialLinearGroup.toGL_inj]
-    simpa only [Gamma_mem', Matrix.SpecialLinearGroup.coe_int_neg, map_one] using
-      (neg_one_mem_Gamma_iff (N := N))
+    rw [← Matrix.SpecialLinearGroup.toGL_neg_one, ← map_one Matrix.SpecialLinearGroup.toGL,
+      Matrix.SpecialLinearGroup.toGL_inj, Matrix.SpecialLinearGroup.neg_one_eq_one_iff_dvd_two]
   rw [← hsign, injective_iff_map_eq_one]
   constructor
   · intro h
@@ -289,7 +250,8 @@ theorem forall_unop_modularFunctionFieldGLAction_apply_eq_iff {F : modularFuncti
     exact h g
   · rw [← unop_modularFunctionFieldGLAction_diagGL]
     exact h _
-  · rw [← toGL_slFactor_mul_diagGL γ, map_mul, unop_mul, RingAut.mul_apply,
-      modularFunctionFieldGLAction_toGL, hSL, unop_modularFunctionFieldGLAction_diagGL, hdiag]
+  · rw [← Matrix.GeneralLinearGroup.toGL_slFactor_mul_diagGL γ, map_mul, unop_mul,
+      RingAut.mul_apply, modularFunctionFieldGLAction_toGL, hSL,
+      unop_modularFunctionFieldGLAction_diagGL, hdiag]
 
 end TauCeti
