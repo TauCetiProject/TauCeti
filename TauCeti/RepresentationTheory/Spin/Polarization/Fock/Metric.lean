@@ -390,8 +390,8 @@ theorem toLinearMapₛₗ₂_degreeScaling_of_mem_exteriorPower {ι : Type*} [Fi
       2 ^ p * toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
         (1 : Matrix (Finset ι) (Finset ι) ℂ) s t := by
   have hr2 : starRingEnd ℂ (r : ℂ) * r = 2 := by
-    rw [hr, ← Complex.star_def]
-    simpa using Complex.star_mul_self_ofReal_sqrt zero_le_two
+    rw [hr, Complex.conj_ofReal, ← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two,
+      Complex.ofReal_ofNat]
   rw [b.toLinearMapₛₗ₂_exteriorAlgebra_one (starRingEnd ℂ),
     LinearMap.sesqExteriorAlgebra_degreeScaling_degreeScaling_of_mem_exteriorPower _ r hs t, hr2]
 
@@ -450,7 +450,7 @@ theorem exists_basis_polar_tmulConj (hQ : ∀ v, Q v = -‖v‖ ^ 2) (ℓ : ℕ)
   have hw (i j : Fin ℓ) : polar (Q.baseChange ℂ) (tmulConj V (w i : ℂ ⊗[ℝ] V)) (w j) =
       if i = j then -2 else 0 := by
     have hsqrt : (Real.sqrt 2 : ℂ) * Real.sqrt 2 = 2 := by
-      simpa [Complex.star_def] using Complex.star_mul_self_ofReal_sqrt zero_le_two
+      rw [← Complex.ofReal_mul, Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
     simp only [w, Submodule.coe_smul, map_smulₛₗ, Complex.conj_ofReal, tmulConj_holomorphicPart,
       polar_smul_left, polar_smul_right, smul_eq_mul]
     rw [polar_comm, J.polar_holomorphicPart_antiholomorphicPart hQJ, ← hu i, hpolar, hpolar,

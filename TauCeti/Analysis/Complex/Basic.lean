@@ -91,9 +91,6 @@ At height `1 ≤ |Im s|`, a point `s` is at distance at least `1` from `1`
 (`Complex.one_le_norm_sub_one`), so `s ≠ 1` (`Complex.ne_one_of_one_le_abs_im`) and
 `‖(s - 1)⁻¹‖ ≤ 1` (`Complex.norm_inv_sub_one_le_one`).
 
-For any nonnegative real `a`, `star (√a : ℂ) * (√a : ℂ) = a`
-(`Complex.star_mul_self_ofReal_sqrt`).
-
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 
 There is no ring homomorphism from `ℂ` to a semireal semiring, such as `ℝ` or any linearly
@@ -538,11 +535,6 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
-
-/-- For a nonnegative real number `a`, `star (√a : ℂ) * (√a : ℂ) = a`. -/
-theorem star_mul_self_ofReal_sqrt {a : ℝ} (ha : 0 ≤ a) :
-    star (Real.sqrt a : ℂ) * (Real.sqrt a : ℂ) = a := by
-  rw [star_def, conj_ofReal, ← ofReal_mul, Real.mul_self_sqrt ha]
 
 /-- There is no ring homomorphism from `ℂ` to a semireal semiring `R` (one in which `1 + s ≠ 0`
 for every sum of squares `s`), such as `ℝ` or any linearly ordered ring: it would send
