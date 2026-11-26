@@ -101,18 +101,18 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g h : E → �
 theorem _root_.DifferentiableWithinAt.kummerUBracket
     (hf : DifferentiableWithinAt ℂ f s x) (hg : DifferentiableWithinAt ℂ g s x)
     (hh : DifferentiableWithinAt ℂ h s x) :
-    DifferentiableWithinAt ℂ (fun y => kummerUBracket (f y) (g y) (h y)) s x := by
-  have H := (differentiable_kummerUBracket (f x, g x, h x)).comp_differentiableWithinAt x
-    (hf.prodMk (hg.prodMk hh))
-  exact H
+    DifferentiableWithinAt ℂ (fun y => kummerUBracket (f y) (g y) (h y)) s x :=
+  -- Elaborate the composite before matching it against the goal (`(e :)`): the plain term
+  -- unifies the goal with `?g ∘ ?f` first, which exhausts the heartbeat limit.
+  ((differentiable_kummerUBracket _).comp_differentiableWithinAt x (hf.prodMk (hg.prodMk hh)) :)
 
 /-- For `f`, `g` and `h` differentiable at `x`, so is `y ↦ F(f y, g y, h y)`. -/
 @[fun_prop]
 theorem _root_.DifferentiableAt.kummerUBracket (hf : DifferentiableAt ℂ f x)
     (hg : DifferentiableAt ℂ g x) (hh : DifferentiableAt ℂ h x) :
-    DifferentiableAt ℂ (fun y => kummerUBracket (f y) (g y) (h y)) x := by
-  have H := (differentiable_kummerUBracket (f x, g x, h x)).comp x (hf.prodMk (hg.prodMk hh))
-  exact H
+    DifferentiableAt ℂ (fun y => kummerUBracket (f y) (g y) (h y)) x :=
+  -- As above, `(e :)` avoids unifying the goal with `?g ∘ ?f`, which times out.
+  ((differentiable_kummerUBracket _).comp x (hf.prodMk (hg.prodMk hh)) :)
 
 /-- For `f`, `g` and `h` differentiable on `s`, so is `y ↦ F(f y, g y, h y)`. -/
 @[fun_prop]
