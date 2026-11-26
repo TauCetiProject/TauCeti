@@ -92,13 +92,6 @@ theorem map_eval_mul_le {G : R[X]} {M : ℕ} (hS : S ≤ 1) (hG₀ : ∀ k < M, 
   · simp [hG₀ k hk]
   · exact (hG k).trans (mul_le_mul_right (pow_le_pow_right_of_le_one' hS hk) A)
 
-end Monoid
-
-section Group
-
-variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommGroupWithZero Γ₀]
-  {v : Valuation R Γ₀} {x : R} {A S : Γ₀}
-
 /-- Composition with a polynomial `F` whose coefficients satisfy
 `v (F.coeff n) * A ^ n * S ≤ A * S ^ n` preserves weight `1`. -/
 theorem map_coeff_comp_mul_pow_le {F Q : R[X]}
@@ -124,6 +117,6 @@ theorem map_coeff_comp_mul_pow_le {F Q : R[X]}
     _ ≤ A * S ^ n * (A ^ n * S ^ k) := mul_le_mul' (hF n) hQn
     _ = A * S ^ k * (A ^ n * S ^ n) := by ac_rfl
 
-end Group
+end Monoid
 
 end Valuation
