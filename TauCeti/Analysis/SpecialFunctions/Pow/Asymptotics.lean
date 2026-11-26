@@ -49,7 +49,7 @@ every `c ≤ a`.
 
 Along any filter eventually in `(0, ∞)`, the complex power `t ^ w` of the real variable `t` is
 `O(t ^ Re w)`. For natural `n ≠ 0`, `‖ρ ^ n * n ^ α‖ = ‖ρ‖ ^ n * n ^ Re α` and
-`‖ρ ^ n * n ^ α * n⁻ᴹ‖ = ‖ρ‖ ^ n * n ^ (Re α - M)`. As `n → ∞`, `ρ ^ n * n ^ α = O(r ^ n)` whenever
+`‖ρ ^ n * n ^ α * n⁻ᴹ‖ = ‖ρ‖ ^ n * n ^ (Re α - M)`. As `n → ∞`, `ρ ^ n * n ^ α = o(r ^ n)` whenever
 `‖ρ‖ < r`, and `‖ρ‖ ^ n * n ^ β = o(ρ ^ n * n ^ α)` whenever `β < Re α`.
 
 ## Families bounded by integer powers
@@ -174,12 +174,12 @@ theorem norm_pow_mul_cpow_mul_inv_pow (ρ α : ℂ) (M : ℕ) {n : ℕ} (hn : n 
   simp [Complex.norm_natCast_cpow_of_pos (Nat.pos_of_ne_zero hn), Real.rpow_sub hn',
     Real.rpow_natCast, div_eq_mul_inv, mul_assoc]
 
-/-- The comparison `ρⁿ n^α = O(rⁿ)` for `‖ρ‖ < r`. -/
-theorem isBigO_pow_mul_cpow_pow_of_norm_lt {ρ : ℂ} (α : ℂ) {r : ℝ} (h : ‖ρ‖ < r) :
-    (fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) =O[atTop] fun n ↦ r ^ n := by
+/-- The comparison `ρⁿ n^α = o(rⁿ)` for `‖ρ‖ < r`. -/
+theorem isLittleO_pow_mul_cpow_pow_of_norm_lt {ρ : ℂ} (α : ℂ) {r : ℝ} (h : ‖ρ‖ < r) :
+    (fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) =o[atTop] fun n ↦ r ^ n := by
   have hlo := isLittleO_pow_const_mul_const_pow_const_pow_of_norm_lt (R := ℝ) ⌈α.re⌉₊
     (show ‖‖ρ‖‖ < r by rwa [norm_norm])
-  refine IsBigO.trans ?_ hlo.isBigO
+  refine IsBigO.trans_isLittleO ?_ hlo
   refine IsBigO.of_bound 1 ?_
   filter_upwards [eventually_ge_atTop 1] with n hn
   have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn

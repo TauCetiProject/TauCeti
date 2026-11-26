@@ -505,7 +505,7 @@ theorem difference_solution_unique_of_norm_sq_lt {f g w w' : ℕ → ℂ} {g₀ 
   -- `φ = O(r ^ n)` for some `r` with `r ^ 2 < ‖g₀‖`
   obtain ⟨r, hRr, hr⟩ := exists_between ((Real.lt_sqrt (norm_nonneg ρ)).2 hlt)
   have hr2 : r ^ 2 < ‖g₀‖ := (Real.lt_sqrt ((norm_nonneg ρ).trans hRr.le)).1 hr
-  have hφr : φ =O[atTop] fun n ↦ r ^ n := isBigO_pow_mul_cpow_pow_of_norm_lt α hRr
+  have hφr : φ =O[atTop] fun n ↦ r ^ n := (isLittleO_pow_mul_cpow_pow_of_norm_lt α hRr).isBigO
   obtain ⟨γ, hrγ, hγg⟩ := exists_between hr2
   obtain ⟨c, hc⟩ := exists_eventuallyEq_const_mul_of_isBigO_pow hrγ
     (hg.norm.eventually (eventually_ge_nhds hγg)) hw hw' hw0
