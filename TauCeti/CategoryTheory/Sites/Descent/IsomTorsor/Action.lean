@@ -32,7 +32,7 @@ In the namespace `CategoryTheory.Pseudofunctor.AbelianBanding`:
   `postcomposeActionIso_symm`.
 * `precomposeActionIso`: precomposition with the inverse of `e : x ≅ w`, with
   `precomposeActionIso_hom_hom`, `precomposeActionIso_inv_hom`, `precomposeActionIso_refl`,
-  `precomposeActionIso_trans`.
+  `precomposeActionIso_trans`, `precomposeActionIso_symm`.
 
 ## References
 
@@ -188,5 +188,12 @@ theorem precomposeActionIso_trans {v : F.obj (.mk (op U))} (e : x ≅ w) (f : w 
   simp only [TypeCat.Fun.toFun_apply, Iso.trans_hom, Action.comp_hom, comp_apply,
     b.precomposeActionIso_hom_hom _ p, precomposeActionIso_hom_hom, Iso.trans_symm]
   exact Iso.trans_assoc f.symm e.symm p
+
+/-- Precomposition with the inverse of `e.symm` is the inverse of precomposition with the inverse
+of `e`. -/
+theorem precomposeActionIso_symm (e : x ≅ w) :
+    b.precomposeActionIso (y := y) e.symm = (b.precomposeActionIso e).symm := by
+  ext p
+  exact (b.precomposeActionIso_hom_hom _ p).trans (b.precomposeActionIso_inv_hom _ p).symm
 
 end CategoryTheory.Pseudofunctor.AbelianBanding

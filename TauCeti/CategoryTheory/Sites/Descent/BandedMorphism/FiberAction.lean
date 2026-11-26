@@ -32,15 +32,16 @@ Remark 31.2, Lemma 31.3 and Remark 31.5).
 In the namespace `CategoryTheory.Pseudofunctor.BandedMorphism`:
 
 * `fiberIsomActionFunctor`: the functor `X ↦ (y ≅ X_U x)` from `HomCategory bF bG` to `A(U)`-sets,
-  with `fiberIsomActionFunctor_obj_V`, `fiberIsomActionFunctor_map_hom_apply` and
+  with `fiberIsomActionFunctor_obj`, `fiberIsomActionFunctor_obj_V`,
+  `fiberIsomActionFunctor_map`, `fiberIsomActionFunctor_map_hom_apply` and
   `fiberIsomActionFunctor_map_homIso_inv`.
 * `selfTransportActionIso`: transport along `e : x ≅ x'`, with
   `selfTransportActionIso_hom_hom`, `selfTransportActionIso_inv_hom`,
   `selfTransportActionIso_refl`, `selfTransportActionIso_trans` and
   `selfTransportActionIso_independent`.
 * `selfTransportNatIso`: the natural transport, with `selfTransportNatIso_app`,
-  `selfTransportNatIso_refl`, `selfTransportNatIso_trans` and
-  `selfTransportNatIso_independent`.
+  `selfTransportNatIso_hom_app`, `selfTransportNatIso_inv_app`, `selfTransportNatIso_refl`,
+  `selfTransportNatIso_trans` and `selfTransportNatIso_independent`.
 
 ## References
 
@@ -78,10 +79,18 @@ noncomputable def fiberIsomActionFunctor (U : C) (x : F.obj (.mk (op U)))
   map m := (bG.postcomposeActionIso (componentIso m U x)).hom
   map_id X := by
     rw [componentIso_id, AbelianBanding.postcomposeActionIso_refl]
-    rfl
+    exact Iso.refl_hom _
   map_comp m n := by
     rw [componentIso_comp, AbelianBanding.postcomposeActionIso_trans]
-    rfl
+    exact Iso.trans_hom _ _
+
+variable (bF bG) in
+/-- `fiberIsomActionFunctor` sends `X` to the `A(U)`-set `y ≅ X_U x`. -/
+theorem fiberIsomActionFunctor_obj (U : C) (x : F.obj (.mk (op U))) (y : G.obj (.mk (op U)))
+    (X : HomCategory bF bG) :
+    (fiberIsomActionFunctor bF bG U x y).obj X =
+      bG.fiberAction y ((X.obj.app (.mk (op U))).toFunctor.obj x) :=
+  (rfl)
 
 variable (bF bG) in
 /-- The `A(U)`-set assigned to `X` by `fiberIsomActionFunctor` is the set of isomorphisms
@@ -90,6 +99,14 @@ theorem fiberIsomActionFunctor_obj_V (U : C) (x : F.obj (.mk (op U))) (y : G.obj
     (X : HomCategory bF bG) :
     ((fiberIsomActionFunctor bF bG U x y).obj X).V =
       (y ≅ (X.obj.app (.mk (op U))).toFunctor.obj x) :=
+  (rfl)
+
+/-- `fiberIsomActionFunctor` sends an arrow `m : X ⟶ Y` to postcomposition with its component
+`X_U x ≅ Y_U x`. -/
+theorem fiberIsomActionFunctor_map (U : C) (x : F.obj (.mk (op U))) (y : G.obj (.mk (op U)))
+    {X Y : HomCategory bF bG} (m : X ⟶ Y) :
+    (fiberIsomActionFunctor bF bG U x y).map m =
+      (bG.postcomposeActionIso (componentIso m U x)).hom :=
   (rfl)
 
 /-- An arrow `m : X ⟶ Y` acts on `p : y ≅ X_U x` by postcomposition with its component. -/
@@ -107,18 +124,8 @@ theorem fiberIsomActionFunctor_map_homIso_inv (U : C) (x : F.obj (.mk (op U)))
     (fiberIsomActionFunctor bF bG U x y).map (homIso m).inv =
       (bG.postcomposeActionIso (componentIso m U x)).inv := by
   -- The component of the inverse of `homIso m` is the inverse of the component of `m`.
-  change (bG.postcomposeActionIso (componentIso (homIso m).inv U x)).hom = _
-  rw [componentIso_homIso_inv, AbelianBanding.postcomposeActionIso_symm, Iso.symm_hom]
-
-/-- The arrows of `fiberIsomActionFunctor` commute with the action of each coefficient. -/
-theorem fiberIsomActionFunctor_map_comm (U : C) (x : F.obj (.mk (op U)))
-    (y : G.obj (.mk (op U))) {X Y : HomCategory bF bG} (m : X ⟶ Y)
-    (a : Multiplicative (A.obj.obj (op U))) :
-    (((fiberIsomActionFunctor bF bG U x y).obj X).ρ a).asHom ≫
-        ((fiberIsomActionFunctor bF bG U x y).map m).hom =
-      ((fiberIsomActionFunctor bF bG U x y).map m).hom ≫
-        (((fiberIsomActionFunctor bF bG U x y).obj Y).ρ a).asHom :=
-  ((fiberIsomActionFunctor bF bG U x y).map m).comm a
+  rw [fiberIsomActionFunctor_map, componentIso_homIso_inv,
+    AbelianBanding.postcomposeActionIso_symm, Iso.symm_hom]
 
 end Functor
 
@@ -140,6 +147,9 @@ theorem selfTransportActionIso_hom_hom (X : HomCategory b b) (e : x ≅ x')
     (p : x ≅ (X.obj.app (.mk (op U))).toFunctor.obj x) :
     (selfTransportActionIso X e).hom.hom p =
       e.symm ≪≫ p ≪≫ (X.obj.app (.mk (op U))).toFunctor.mapIso e := by
+  -- The source and target of `selfTransportActionIso` are objects of `fiberIsomActionFunctor`,
+  -- which `simp` and `rw` do not unfold to `fiberAction`, so `Iso.trans_hom` cannot fire;
+  -- `change` unfolds the forward map to the composite applied to `p`.
   change (b.postcomposeActionIso _).hom.hom ((b.precomposeActionIso e).hom.hom p) = _
   rw [b.precomposeActionIso_hom_hom, b.postcomposeActionIso_hom_hom]
   exact Iso.trans_assoc _ _ _
@@ -149,6 +159,8 @@ theorem selfTransportActionIso_inv_hom (X : HomCategory b b) (e : x ≅ x')
     (p : x' ≅ (X.obj.app (.mk (op U))).toFunctor.obj x') :
     (selfTransportActionIso X e).inv.hom p =
       e ≪≫ p ≪≫ ((X.obj.app (.mk (op U))).toFunctor.mapIso e).symm := by
+  -- As in `selfTransportActionIso_hom_hom`, `change` unfolds the inverse map to the composite
+  -- applied to `p`, which `Iso.trans_inv` cannot reach through `fiberIsomActionFunctor`.
   change (b.precomposeActionIso e).inv.hom ((b.postcomposeActionIso _).inv.hom p) = _
   rw [b.postcomposeActionIso_inv_hom, b.precomposeActionIso_inv_hom]
 
@@ -156,19 +168,22 @@ theorem selfTransportActionIso_inv_hom (X : HomCategory b b) (e : x ≅ x')
 @[simp]
 theorem selfTransportActionIso_refl (X : HomCategory b b) :
     selfTransportActionIso X (Iso.refl x) = Iso.refl _ := by
-  ext (p : x ≅ (X.obj.app (.mk (op U))).toFunctor.obj x)
-  refine (selfTransportActionIso_hom_hom X _ p).trans ?_
-  refine Iso.ext ?_
-  simp only [Iso.trans_hom, Iso.symm_hom, Iso.refl_inv, Functor.mapIso_refl, Iso.refl_hom,
-    Category.comp_id, Category.id_comp]
-  rfl
+  simp only [selfTransportActionIso, AbelianBanding.precomposeActionIso_refl,
+    Functor.mapIso_refl, AbelianBanding.postcomposeActionIso_refl]
+  -- The goal `Iso.refl _ ≪≫ Iso.refl _ = Iso.refl _` has `fiberAction` objects on the left and
+  -- `(fiberIsomActionFunctor b b U x x).obj X` on the right; they agree only after unfolding
+  -- `fiberIsomActionFunctor`, which `simp` does not do, so `Iso.refl_trans` is applied by `exact`.
+  exact Iso.refl_trans _
 
 /-- Transport along `e ≪≫ f` is transport along `e` followed by transport along `f`. -/
+@[simp]
 theorem selfTransportActionIso_trans (X : HomCategory b b) (e : x ≅ x') (f : x' ≅ x'') :
     selfTransportActionIso X (e ≪≫ f) =
       selfTransportActionIso X e ≪≫ selfTransportActionIso X f := by
   ext (p : x ≅ (X.obj.app (.mk (op U))).toFunctor.obj x)
   refine (selfTransportActionIso_hom_hom X _ p).trans ?_
+  -- `change` evaluates the composite of the two transports at `p`, so that
+  -- `selfTransportActionIso_hom_hom` applies to each factor.
   change _ = (selfTransportActionIso X f).hom.hom ((selfTransportActionIso X e).hom.hom p)
   rw [selfTransportActionIso_hom_hom, selfTransportActionIso_hom_hom]
   refine Iso.ext ?_
@@ -196,6 +211,8 @@ noncomputable def selfTransportNatIso (e : x ≅ x') :
     fiberIsomActionFunctor b b U x x ≅ fiberIsomActionFunctor b b U x' x' :=
   NatIso.ofComponents (selfTransportActionIso · e) fun {X Y} m ↦ by
     ext (p : x ≅ (X.obj.app (.mk (op U))).toFunctor.obj x)
+    -- `change` evaluates both sides of the naturality square at `p`, so that
+    -- `fiberIsomActionFunctor_map_hom_apply` and `selfTransportActionIso_hom_hom` apply.
     change (selfTransportActionIso Y e).hom.hom
         (((fiberIsomActionFunctor b b U x x).map m).hom p) =
       ((fiberIsomActionFunctor b b U x' x').map m).hom ((selfTransportActionIso X e).hom.hom p)
@@ -212,11 +229,19 @@ theorem selfTransportNatIso_app (e : x ≅ x') (X : HomCategory b b) :
     (selfTransportNatIso e).app X = selfTransportActionIso X e :=
   (rfl)
 
-/-- The natural transport is natural: arrows of the fibre action functors commute with it. -/
-theorem selfTransportNatIso_naturality (e : x ≅ x') {X Y : HomCategory b b} (m : X ⟶ Y) :
-    (fiberIsomActionFunctor b b U x x).map m ≫ (selfTransportActionIso Y e).hom =
-      (selfTransportActionIso X e).hom ≫ (fiberIsomActionFunctor b b U x' x').map m :=
-  (selfTransportNatIso e).hom.naturality m
+/-- The forward component of `selfTransportNatIso e` at `X` is that of
+`selfTransportActionIso X e`. -/
+@[simp]
+theorem selfTransportNatIso_hom_app (e : x ≅ x') (X : HomCategory b b) :
+    (selfTransportNatIso e).hom.app X = (selfTransportActionIso X e).hom :=
+  (rfl)
+
+/-- The inverse component of `selfTransportNatIso e` at `X` is that of
+`selfTransportActionIso X e`. -/
+@[simp]
+theorem selfTransportNatIso_inv_app (e : x ≅ x') (X : HomCategory b b) :
+    (selfTransportNatIso e).inv.app X = (selfTransportActionIso X e).inv :=
+  (rfl)
 
 /-- Natural transport along the identity is the identity. -/
 @[simp]
@@ -226,6 +251,7 @@ theorem selfTransportNatIso_refl :
 
 /-- Natural transport along `e ≪≫ f` is natural transport along `e` followed by natural
 transport along `f`. -/
+@[simp]
 theorem selfTransportNatIso_trans (e : x ≅ x') (f : x' ≅ x'') :
     selfTransportNatIso (b := b) (e ≪≫ f) = selfTransportNatIso e ≪≫ selfTransportNatIso f :=
   Iso.ext (NatTrans.ext (funext fun X ↦ congrArg Iso.hom (selfTransportActionIso_trans X e f)))
