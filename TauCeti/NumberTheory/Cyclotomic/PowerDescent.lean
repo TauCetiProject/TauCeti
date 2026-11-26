@@ -13,6 +13,7 @@ import TauCeti.FieldTheory.Kummer.Cyclic
 import TauCeti.FieldTheory.PowerDescent
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
 import TauCeti.NumberTheory.Multiplicity
+import TauCeti.RingTheory.RootsOfUnity.PPower
 
 /-!
 # Descending prime-power roots from a cyclotomic extension
@@ -126,9 +127,7 @@ theorem exists_pow_eq_of_adjoin_eq_top (hζ : IsPrimitiveRoot ζ (p ^ h)) (h2 : 
     rintro rfl
     simp at h2
   have hξ : IsPrimitiveRoot (ζ ^ p ^ (h - 1)) p := by
-    have := hζ.pow_of_dvd (pow_ne_zero (h - 1) hp.out.ne_zero) (pow_dvd_pow p (h.sub_le 1))
-    rwa [Nat.pow_div (h.sub_le 1) hp.out.pos, Nat.sub_sub_self (Nat.one_le_iff_ne_zero.2 hh),
-      pow_one] at this
+    simpa using hζ.pow_pow_sub hp.out.ne_zero (Nat.one_le_iff_ne_zero.2 hh)
   have : NeZero p := ⟨hp.out.ne_zero⟩
   obtain ⟨g, hg, hd, hgω⟩ := exists_forall_mem_zpowers_apply_eq hξ hωp hgen
   rcases (Nat.dvd_prime hp.out).1 hd with h1 | hpd

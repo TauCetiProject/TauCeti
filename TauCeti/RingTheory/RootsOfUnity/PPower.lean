@@ -13,9 +13,10 @@ public import Mathlib.GroupTheory.Torsion
 
 For a commutative monoid, the `p`-power roots of unity form the primary component of its unit
 group. In a reduced ring of exponential characteristic `p` this subgroup is trivial. When finite
-in a domain, it is cyclic by Mathlib's instance `isCyclic_subgroup_units`. If a commutative monoid
-has no primitive `p ^ (k + 1)`-th root of unity, for a prime `p`, then each of its roots of unity of
-`p`-power order is a `p ^ k`-th root of unity.
+in a domain, it is cyclic by Mathlib's instance `isCyclic_subgroup_units`. For `m ≤ n`, the power
+`ζ ^ p ^ (n - m)` of a primitive `p ^ n`-th root of unity `ζ` is a primitive `p ^ m`-th root of
+unity. If a commutative monoid has no primitive `p ^ (k + 1)`-th root of unity, for a prime `p`,
+then each of its roots of unity of `p`-power order is a `p ^ k`-th root of unity.
 -/
 
 public section
@@ -48,6 +49,13 @@ theorem pPowerRootsOfUnity_eq_bot (R : Type*) [CommRing R] [IsReduced R] [ExpCha
   obtain ⟨n, hn⟩ := (mem_pPowerRootsOfUnity_iff p R x).1 hx
   simpa using (mem_rootsOfUnity_prime_pow_mul_iff' R p n 1).1 (by rwa [mul_one])
 
+/-- If `ζ` is a primitive `p ^ n`-th root of unity and `m ≤ n`, then `ζ ^ p ^ (n - m)` is a
+primitive `p ^ m`-th root of unity. -/
+theorem _root_.IsPrimitiveRoot.pow_pow_sub {M : Type*} [CommMonoid M] {ζ : M} {p n : ℕ}
+    (hζ : IsPrimitiveRoot ζ (p ^ n)) (hp : p ≠ 0) {m : ℕ} (hm : m ≤ n) :
+    IsPrimitiveRoot (ζ ^ p ^ (n - m)) (p ^ m) :=
+  hζ.pow (pow_pos (Nat.pos_of_ne_zero hp) n) (by rw [← pow_add, Nat.sub_add_cancel hm])
+
 /-- If a commutative monoid has no primitive `p ^ (k + 1)`-th root of unity, for a prime `p`, then
 every root of unity of `p`-power order in it is a `p ^ k`-th root of unity. -/
 theorem pow_prime_pow_eq_one_of_forall_not_isPrimitiveRoot {M : Type*} [CommMonoid M]
@@ -58,9 +66,6 @@ theorem pow_prime_pow_eq_one_of_forall_not_isPrimitiveRoot {M : Type*} [CommMono
   · rw [← orderOf_dvd_iff_pow_eq_one, hj]
     exact pow_dvd_pow p hjk
   · -- otherwise `ζ ^ p ^ (j - (k + 1))` is a primitive `p ^ (k + 1)`-th root of unity
-    have hdvd : p ^ (j - (k + 1)) ∣ orderOf ζ := hj ▸ pow_dvd_pow p (by omega)
-    have := (IsPrimitiveRoot.orderOf ζ).pow_of_dvd (pow_ne_zero _ hp.ne_zero) hdvd
-    rw [hj, Nat.pow_div (by omega) hp.pos, show j - (j - (k + 1)) = k + 1 by omega] at this
-    exact (h _ this).elim
+    exact (h _ ((hj ▸ IsPrimitiveRoot.orderOf ζ).pow_pow_sub hp.ne_zero hkj)).elim
 
 end TauCeti
