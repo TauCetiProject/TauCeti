@@ -28,6 +28,8 @@ An element whose `k`-th derivative field is Hölder of an exponent larger than `
 * `TauCeti.CkHolderSpaceOn.isClosed_littleHolder`: it is closed in the `C^{k,α}(Ω)` norm.
 * `TauCeti.CkHolderSpaceOn.mem_littleHolder_of_memHolder`: a `k`-th derivative field that is
   Hölder of a larger exponent is little `α`-Hölder.
+* `TauCeti.CkHolderSpace.restrictOnL_mem_littleHolder`: restriction maps `h^{k,α}(E)` into
+  `h^{k,α}(Ω)`.
 
 ## References
 
@@ -86,5 +88,25 @@ theorem mem_littleHolder_of_memHolder {β : ℝ≥0} (hαβ : α < β) {f : CkHo
   mem_littleHolder_iff.2 (hf.holderWith.memLittleHolder hαβ)
 
 end CkHolderSpaceOn
+
+namespace CkHolderSpace
+
+variable {k : ℕ} {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] (Ω : Opens E)
+
+/-- **Restriction preserves little Hölder continuity**: the restriction to `Ω` of an element of
+`h^{k,α}(E)` lies in `h^{k,α}(Ω)`. -/
+theorem restrictOnL_mem_littleHolder {f : CkHolderSpace k α E F}
+    (hf : f ∈ littleHolder k α E F) :
+    restrictOnL Ω f ∈ CkHolderSpaceOn.littleHolder k α Ω F := by
+  rw [mem_littleHolder_iff] at hf
+  rw [CkHolderSpaceOn.mem_littleHolder_iff]
+  have h : ((restrictOnL Ω f).iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) =
+      _root_.iteratedFDeriv ℝ k f ∘ Subtype.val :=
+    funext fun x ↦ iteratedFDeriv_restrictOnL Ω f (Fin.last k) x
+  rw [h]
+  exact hf.comp_lipschitzWith (LipschitzWith.subtypeVal _)
+
+end CkHolderSpace
 
 end TauCeti

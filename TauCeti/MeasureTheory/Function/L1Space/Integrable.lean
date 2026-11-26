@@ -57,12 +57,19 @@ so is a function vanishing outside a measurable set and dominated on it by a fun
 there (`MeasureTheory.integrable_of_forall_notMem_eq_zero_of_norm_le`).
 Scalar multiplication by a finite product of multiplicative indicators, each constant on a
 null-measurable set and equal to `1` off it, preserves integrability
-(`MeasureTheory.Integrable.prod_mulIndicator_const_smul`). A function integrable for the measure
-`μ` weighted by `‖h‖ₑ` has an integrable scalar product with `h`
+(`MeasureTheory.Integrable.prod_mulIndicator_const_smul`). Against an almost everywhere
+nonnegative weight, the positive part of a function inherits integrability from the signed
+weighted function (`MeasureTheory.Integrable.pos_part_mul`). A function integrable for the
+measure `μ` weighted by `‖h‖ₑ` has an integrable scalar product with `h`
 (`MeasureTheory.integrable_smul_of_integrable_withDensity_enorm`).
+
+The reciprocal of a density over a finite base measure is integrable under the weighted measure,
+even when that measure is infinite (`AEMeasurable.integrable_inv_toReal_withDensity`).
 -/
 
 public section
+
+open scoped ENNReal
 
 namespace MeasureTheory
 
@@ -83,6 +90,15 @@ theorem Integrable.prod_mulIndicator_const_smul {X κ 𝕜 E : Type*} [Measurabl
       (hi.smul (z k)).integrableOn hi.integrableOn
     refine hp.congr (.of_forall fun x ↦ ?_)
     by_cases hx : x ∈ B k <;> simp [hx, Finset.prod_insert hk, mul_smul]
+
+/-- The positive part of `g` against an almost everywhere nonnegative weight `w` is integrable
+when the signed product `g * w` is. -/
+theorem Integrable.pos_part_mul {X : Type*} [MeasurableSpace X] {μ : Measure X} {g w : X → ℝ}
+    (h : Integrable (fun x ↦ g x * w x) μ) (hw : 0 ≤ᵐ[μ] w) :
+    Integrable (fun x ↦ max (g x) 0 * w x) μ := by
+  refine h.pos_part.congr ?_
+  filter_upwards [hw] with x hx
+  simp only [max_mul_of_nonneg _ _ hx, zero_mul]
 
 /-- Multiplication by an almost everywhere measurable real coefficient preserves integrability
 exactly when its absolute value does, without assuming measurability of the vector-valued `f`. -/
@@ -210,6 +226,19 @@ theorem Integrable.smul_of_support_subset {α 𝕜 E : Type*} [NormedRing 𝕜]
     Integrable (fun x ↦ g x • f x) μ :=
   (hf.norm.const_mul K).mono' (hg.smul hf.1)
     (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
+
+/-- The reciprocal of a density is integrable under the changed measure when the
+original measure is finite, even if the changed measure is infinite. Zero and infinite
+density values give reciprocal zero by totalization. No lower bound is required. -/
+theorem _root_.AEMeasurable.integrable_inv_toReal_withDensity {Ω : Type*} {mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsFiniteMeasure μ] {w : Ω → ℝ≥0∞} (hw : AEMeasurable w μ) :
+    Integrable (fun x ↦ ((w x).toReal)⁻¹) (μ.withDensity w) := by
+  have hle := Measure.le_iff.mp (withDensity_inv_same_le hw) Set.univ MeasurableSet.univ
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at hle
+  have hi : AEMeasurable (fun x ↦ (w x)⁻¹) (μ.withDensity w) :=
+    hw.fun_inv.mono_ac (withDensity_absolutelyContinuous μ w)
+  simpa only [ENNReal.toReal_inv] using
+    integrable_toReal_of_lintegral_ne_top hi (hle.trans_lt (measure_lt_top μ _)).ne
 
 /-- An integrable function vanishing almost everywhere outside a set stays integrable when an
 operator-valued function bounded on that set is applied to it. -/

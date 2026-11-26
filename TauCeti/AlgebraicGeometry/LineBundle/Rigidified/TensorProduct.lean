@@ -16,8 +16,9 @@ rigidified along `s`, by `α : s^* L ≅ 𝒪_T` and `β : s^* K ≅ 𝒪_T`, is
 ```
 s^* (L ⊗ K) ≅ s^* L ⊗ s^* K ≅ 𝒪_T ⊗ 𝒪_T ≅ 𝒪_T,
 ```
-using the tensor comparison of pullback, which is invertible because line bundles are
-quasicoherent. The dual of `L` is rigidified so that the canonical isomorphism `L ⊗ L^∨ ≅ 𝒪_Y`
+using the tensor comparison of pullback, which is invertible for arbitrary module sheaves
+(`Scheme.Modules.isIso_pullback_δ`).
+The dual of `L` is rigidified so that the canonical isomorphism `L ⊗ L^∨ ≅ 𝒪_Y`
 respects the rigidifications. On isomorphism classes this makes the classes of line bundles
 rigidified along `s` a commutative group, with the canonically rigidified structure sheaf as
 identity. Forgetting the rigidification is a group homomorphism to the Picard group of `Y`, and

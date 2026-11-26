@@ -51,8 +51,11 @@ of `M` are those of a space with only even cells, one for each fixed point:
 
 These conclusions use the isolation of the fixed points: a trivial action on a symplectic surface
 of positive genus has one fixed component and nonzero first Betti number. The homology here is
-singular homology with coefficients in a division ring; freeness of the integral homology, which
-needs the even-cell structure itself, is not proved here.
+singular homology with coefficients in a division ring. Since every index of a Morse `μ^ξ` is
+even, the integral homology of `M` is also free and vanishes in odd degrees, by the general results
+`TauCeti.IsMorse.free_singularHomology_int` and `TauCeti.IsMorse.isZero_singularHomology_int_of_odd`
+in `TauCeti.Geometry.Manifold.Morse.IntegralHomology`; no cell structure beyond finiteness is
+needed.
 
 Closedness of `σ` and equivariance of `μ` are not used.
 

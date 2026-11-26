@@ -9,14 +9,15 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.NumberTheory.HeckeRing.Associativity
+public import TauCeti.NumberTheory.HeckeRing.GLn.FractionRing
 public import TauCeti.NumberTheory.HeckeRing.Map.Submonoid
 public import TauCeti.NumberTheory.HeckeRing.Normalizer
 public import TauCeti.NumberTheory.Padics.GeneralLinearGroup.Integral
 
-import Mathlib.Tactic.Group
 import TauCeti.GroupTheory.Commensurable
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
-import TauCeti.NumberTheory.Padics.Matrix
+import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
 # The local `p`-adic Hecke rings of `GL_n`
@@ -35,14 +36,11 @@ Hecke ring of `GL_n` over `ℤ` with the integral local ring, by sending a `p`-p
 (`HeckeRing.GLn.padicScalarUnit`).
 
 The heart is that **every element of `GL_n(ℚ_p)` commensurates `GL_n(ℤ_p)`**
-(`HeckeRing.GLn.commensurator_glPadicInt_eq_top`). For `g ∈ GL_n(ℚ_p)` choose `k, l` with
-`A = p ^ k g` and `B = p ^ l g⁻¹` integral (`Matrix.exists_map_padicInt_eq_pow_smul`). If
-`γ ∈ GL_n(ℤ_p)` is congruent to `1` modulo `p ^ (k + l)`, say `γ = 1 + p ^ (k + l) C`
-(`PadicInt.exists_eq_one_add_pow_smul_of_mem_ker`), then
-`g⁻¹ γ g = 1 + B C A` is integral, and so is its inverse `g⁻¹ γ⁻¹ g`, so `g⁻¹ γ g ∈ GL_n(ℤ_p)`.
-Thus the principal congruence subgroup of level `p ^ (k + l)`, the kernel of reduction
-`GL_n(ℤ_p) → GL_n(ℤ/p^(k+l)ℤ)` and so of finite index in `GL_n(ℤ_p)`, lies in `g GL_n(ℤ_p) g⁻¹`.
-By `Subgroup.Commensurable.commensurator_eq_top_iff` this one inclusion for every `g` suffices.
+(`HeckeRing.GLn.commensurator_glPadicInt_eq_top`). Since `GL_n(ℤ_p)` is the subgroup
+`HeckeRing.GLn.integralGL ℤ_[p] ℚ_[p] ι` of integral points
+(`HeckeRing.GLn.glPadicInt_eq_integralGL`) and the quotients of `ℤ_p` by nonzero ideals are
+finite, this is the case `ℤ_p ⊂ ℚ_p` of `HeckeRing.GLn.commensurator_integralGL_eq_top`, the
+congruence-subgroup argument for the fraction field of a ring with finite quotients.
 
 ## Main definitions
 
@@ -59,6 +57,8 @@ By `Subgroup.Commensurable.commensurator_eq_top_iff` this one inclusion for ever
   membership in `Δ_p` is integrality of the entries.
 * `HeckeRing.GLn.mem_glPadicInt_iff_mem_padicIntEntries_and_inv_mem`: `g ∈ GL_n(ℤ_p)` exactly
   when `g` and `g⁻¹` lie in `Δ_p`.
+* `HeckeRing.GLn.glPadicInt_eq_integralGL`: `GL_n(ℤ_p)` is the subgroup of integral points
+  `HeckeRing.GLn.integralGL ℤ_[p] ℚ_[p] ι`.
 * `HeckeRing.GLn.commensurator_glPadicInt_eq_top`: the commensurator of `GL_n(ℤ_p)` in `GL_n(ℚ_p)`
   is the whole group.
 * the `IsHeckeTriple` instances for `(Δ_p, GL_n(ℤ_p))` and `(GL_n(ℚ_p), GL_n(ℤ_p))`.
@@ -96,12 +96,6 @@ noncomputable def padicIntEntries : Submonoid (GL ι ℚ_[p]) :=
     (Units.coeHom _)
 
 variable {ι p}
-
-/-- The image of a matrix in `GL_n(ℤ_p)` is the entrywise image of the underlying matrix. -/
-private lemma coe_map_coe (u : GL ι ℤ_[p]) :
-    (GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) u : Matrix ι ι ℚ_[p]) =
-      (u : Matrix ι ι ℤ_[p]).map ((↑) : ℤ_[p] → ℚ_[p]) :=
-  (rfl)
 
 /-- The entrywise image of a matrix over `ℤ_p` is its image under the ring homomorphism
 `M_n(ℤ_p) → M_n(ℚ_p)`, through which it is multiplicative. -/
@@ -143,60 +137,16 @@ section Commensurator
 
 variable {ι p}
 
-/-- **The conjugation step.** If `p ^ k g` and `p ^ l g⁻¹` are integral and `γ ∈ GL_n(ℤ_p)` is
-congruent to `1` modulo `p ^ (k + l)`, then `g⁻¹ γ g` is integral. -/
-private lemma inv_mul_map_mul_mem_padicIntEntries {g : GL ι ℚ_[p]} {k l : ℕ}
-    {A B : Matrix ι ι ℤ_[p]}
-    (hA : A.map ((↑) : ℤ_[p] → ℚ_[p]) = (p : ℚ_[p]) ^ k • (g : Matrix ι ι ℚ_[p]))
-    (hB : B.map ((↑) : ℤ_[p] → ℚ_[p]) = (p : ℚ_[p]) ^ l • (↑g⁻¹ : Matrix ι ι ℚ_[p]))
-    {γ : GL ι ℤ_[p]}
-    (hγ : γ ∈ (GeneralLinearGroup.map (PadicInt.toZModPow (p := p) (k + l))).ker) :
-    g⁻¹ * GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) γ * g ∈
-      padicIntEntries ι p := by
-  obtain ⟨C, hC⟩ := PadicInt.exists_eq_one_add_pow_smul_of_mem_ker hγ
-  set f := (PadicInt.Coe.ringHom (p := p)).mapMatrix (m := ι)
-  rw [map_coe_eq_mapMatrix] at hA hB
-  have hfγ : f γ = 1 + ((p : ℚ_[p]) ^ (k + l)) • f C := by
-    rw [hC, map_add, map_one]
-    ext i j
-    simp [f]
-  -- the key identity `(p ^ l g⁻¹) C (p ^ k g) = p ^ (k + l) g⁻¹ C g`
-  have hBCA : f (B * C * A) = (p : ℚ_[p]) ^ (k + l) •
-      ((↑g⁻¹ : Matrix ι ι ℚ_[p]) * f C * (g : Matrix ι ι ℚ_[p])) := by
-    rw [map_mul, map_mul, hA, hB, smul_mul_assoc, smul_mul_assoc, mul_smul_comm, smul_smul,
-      ← pow_add, add_comm l k]
-  -- so `g⁻¹ (1 + p ^ (k + l) C) g = 1 + B C A` is integral
-  refine mem_padicIntEntries_iff.mpr ⟨1 + B * C * A, ?_⟩
-  rw [map_coe_eq_mapMatrix, map_add, map_one, hBCA, Units.val_mul, Units.val_mul, coe_map_coe,
-    map_coe_eq_mapMatrix, hfγ]
-  simp [mul_add, add_mul]
+/-- `GL_n(ℤ_p)` is the subgroup `integralGL ℤ_[p] ℚ_[p] ι` of integral points of `GL_n(ℚ_p)`. -/
+theorem glPadicInt_eq_integralGL : GLPadicInt ι p = integralGL ℤ_[p] ℚ_[p] ι := by
+  ext g
+  exact GLPadicInt.mem_iff_exists_map
 
-/-- **Every element of `GL_n(ℚ_p)` commensurates `GL_n(ℤ_p)`.** For `g ∈ GL_n(ℚ_p)`, a principal
-congruence subgroup of `GL_n(ℤ_p)`, of finite index, lies in `g GL_n(ℤ_p) g⁻¹`. -/
+/-- **Every element of `GL_n(ℚ_p)` commensurates `GL_n(ℤ_p)`**: the case `ℤ_p ⊂ ℚ_p` of
+`commensurator_integralGL_eq_top`. -/
 theorem commensurator_glPadicInt_eq_top : commensurator (GLPadicInt ι p) = ⊤ := by
-  refine commensurator_eq_top_iff.mpr fun g ↦ ?_
-  obtain ⟨k, A, hA⟩ := exists_map_padicInt_eq_pow_smul (p := p) (g : Matrix ι ι ℚ_[p])
-  obtain ⟨l, B, hB⟩ := exists_map_padicInt_eq_pow_smul (p := p) (↑g⁻¹ : Matrix ι ι ℚ_[p])
-  set φ := GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p)) (n := ι)
-  set K := (GeneralLinearGroup.map (PadicInt.toZModPow (p := p) (k + l)) (n := ι)).ker
-  have hφ : Function.Injective φ := GeneralLinearGroup.map_injective fun _ _ ↦ PadicInt.ext
-  have hrange : GLPadicInt ι p = φ.range := by
-    ext
-    exact GLPadicInt.mem_iff_exists_map.trans MonoidHom.mem_range.symm
-  -- the principal congruence subgroup has finite index in `GL_n(ℤ_p)`
-  have hK : (K.map φ).IsFiniteRelIndex (GLPadicInt ι p) := by
-    rw [isFiniteRelIndex_iff_relIndex_ne_zero, hrange, MonoidHom.range_eq_map,
-      relIndex_map_map_of_injective _ _ hφ, relIndex_top_right]
-    exact (finiteIndex_ker _).index_ne_zero
-  refine isFiniteRelIndex_of_le_left (GLPadicInt ι p) (H := K.map φ) ?_
-  -- and it lies in `g GL_n(ℤ_p) g⁻¹`
-  rintro _ ⟨γ, hγ, rfl⟩
-  rw [mem_pointwise_smul_iff_inv_smul_mem, MulAut.smul_def, MulAut.conj_inv_apply,
-    mem_glPadicInt_iff_mem_padicIntEntries_and_inv_mem]
-  refine ⟨inv_mul_map_mul_mem_padicIntEntries hA hB hγ, ?_⟩
-  have hinv : (g⁻¹ * φ γ * g)⁻¹ = g⁻¹ * φ γ⁻¹ * g := by rw [map_inv]; group
-  rw [hinv]
-  exact inv_mul_map_mul_mem_padicIntEntries hA hB (K.inv_mem hγ)
+  rw [glPadicInt_eq_integralGL]
+  exact commensurator_integralGL_eq_top
 
 /-- The integral local Hecke pair `(GL_n(ℤ_p), M_n(ℤ_p) ∩ GL_n(ℚ_p))`. -/
 instance instIsHeckeTriplePadicIntEntriesGLPadicInt :

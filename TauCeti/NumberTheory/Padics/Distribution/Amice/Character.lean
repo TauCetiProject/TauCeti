@@ -428,13 +428,9 @@ theorem exists_eval_eq_addChar_iff {h : ℕ} {t : K} (hr : Tendsto (t ^ ·) atTo
     (∃ f : AnalyticStage p h K, ⇑(eval S f) = PadicInt.addChar_of_value_at_one t hr) ↔
       ‖t‖ < amiceRadius p h := by
   refine ⟨fun ⟨f, hf⟩ ↦ ?_, fun ht ↦ ⟨_, eval_addCharExpansion S ht hr⟩⟩
-  -- The Mahler coefficients of `χ_t` are the powers `tⁿ`.
-  have hmahler (n : ℕ) : PadicInt.mahlerEquiv K (eval S f) n = t ^ n := by
-    rw [PadicInt.mahlerEquiv_apply, hf, PadicInt.coe_addChar_of_value_at_one]
-    exact PadicInt.fwdDiff_mahlerSeries hr n
   rw [← tendsto_amiceCharCoeff_iff]
   refine ((mem_range_eval_iff S).mp ⟨f, rfl⟩).congr fun n ↦ ?_
-  rw [hmahler, amiceCharCoeff_def]
+  rw [PadicInt.mahlerEquiv_eq_pow_of_coe_eq_addChar hr hf, amiceCharCoeff_def]
 
 /-- **Every continuous character of `ℤ_p` is analytic at some level**, when its values lie in a
 complete ultrametric normed `ℚ_p`-algebra with multiplicative norm, such as a complete normed field

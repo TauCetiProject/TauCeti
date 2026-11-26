@@ -88,7 +88,7 @@ theorem isFiniteFace_newtonPolygon_of_hasProd {ι : Type*} {a : ι → K} {W : I
   have hF_ent : (F : K⟦X⟧).IsEntire := IsEntire.mem_subring.mp F.property
   have hF_ne : (F : K⟦X⟧) ≠ 0 := by
     intro h
-    have h1 := constantCoeff_tprod_polynomialHom_one_sub_C_mul_X (fun i ↦ (a i)⁻¹)
+    have h1 : _root_.PowerSeries.constantCoeff (F : K⟦X⟧) = 1 := by simp [F]
     rw [h, map_zero] at h1
     exact zero_ne_one h1
   obtain ⟨l, u, hface⟩ := hF_ent.exists_isFiniteFace_newtonPolygon v hb hv hF_ne σ

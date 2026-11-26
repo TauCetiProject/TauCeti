@@ -13,7 +13,7 @@ public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
 /-!
 # Extensions of finitely presented functors
 
-Let `C` be a preadditive category with binary biproducts, and let `0 ⟶ F' ⟶ F ⟶ F'' ⟶ 0` be a
+Let `C` be a preadditive category with finite biproducts, and let `0 ⟶ F' ⟶ F ⟶ F'' ⟶ 0` be a
 short exact sequence of functors `Cᵒᵖ ⥤ AddCommGrpCat`. If `F'` and `F''` are finitely presented,
 then so is `F` (`TauCeti.IsFinitelyPresentedFunctor.of_shortExact`). Similarly, if
 `F' ⟶ F ⟶ F'' ⟶ 0` is exact and `F'`, `F''` are finitely generated, then `F` is finitely generated
@@ -51,8 +51,10 @@ open CategoryTheory Limits Opposite
 
 namespace TauCeti
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteBiproducts C]
   {S : ShortComplex (Cᵒᵖ ⥤ AddCommGrpCat.{v})}
+
+attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
 
 /-- The morphism `(-, Y' ⊞ Y'') ⟶ F` restricting to `p ≫ f` and to `s` on the two summands sends
 `y` to `f (p (y ≫ fst)) + s (y ≫ snd)`. -/
@@ -94,14 +96,15 @@ is finitely generated. -/
 theorem IsFinitelyGeneratedFunctor.of_exact (hS : S.Exact) [Epi S.g]
     (h₁ : IsFinitelyGeneratedFunctor S.X₁) (h₃ : IsFinitelyGeneratedFunctor S.X₃) :
     IsFinitelyGeneratedFunctor S.X₂ := by
-  obtain ⟨Y', p', hp'⟩ := isFinitelyGeneratedFunctor_def.1 h₁
-  obtain ⟨Y'', p'', hp''⟩ := isFinitelyGeneratedFunctor_def.1 h₃
+  obtain ⟨Y', p', hp'⟩ := (isFinitelyGeneratedFunctor_iff_exists_single _).1 h₁
+  obtain ⟨Y'', p'', hp''⟩ := (isFinitelyGeneratedFunctor_iff_exists_single _).1 h₃
   have := h₁.additive
   have := h₃.additive
   have := hS.additive_X₂
   obtain ⟨s, hs⟩ := exists_comp_eq_preadditiveYoneda_obj_of_epi S.g p''
   have : Epi (s ≫ S.g) := hs ▸ hp''
-  exact isFinitelyGeneratedFunctor_def.2 ⟨Y' ⊞ Y'', _, epi_preadditiveYoneda_biprod hS p' s⟩
+  exact (isFinitelyGeneratedFunctor_iff_exists_single _).2
+    ⟨Y' ⊞ Y'', _, epi_preadditiveYoneda_biprod hS p' s⟩
 
 /-- Exactness at `(-, Y' ⊞ Y'')` of the horseshoe presentation of `F`: given presentations of `F'`
 and `F''` by `f'` and `f''`, a lift `s` of `p''` to `F`, and `w` with `(-, w) ≫ p' ≫ S.f` equal to
@@ -153,8 +156,9 @@ presented is finitely presented. -/
 theorem IsFinitelyPresentedFunctor.of_shortExact (hS : S.ShortExact)
     (h₁ : IsFinitelyPresentedFunctor S.X₁) (h₃ : IsFinitelyPresentedFunctor S.X₃) :
     IsFinitelyPresentedFunctor S.X₂ := by
-  obtain ⟨X', Y', f', p', hfp', hp', hE'⟩ := isFinitelyPresentedFunctor_def.1 h₁
-  obtain ⟨X'', Y'', f'', p'', hfp'', hp'', hE''⟩ := isFinitelyPresentedFunctor_def.1 h₃
+  obtain ⟨X', Y', f', p', hfp', hp', hE'⟩ := (isFinitelyPresentedFunctor_iff_exists_single _).1 h₁
+  obtain ⟨X'', Y'', f'', p'', hfp'', hp'', hE''⟩ :=
+    (isFinitelyPresentedFunctor_iff_exists_single _).1 h₃
   have := hS.mono_f
   have := hS.epi_g
   have := h₁.additive
@@ -183,7 +187,7 @@ theorem IsFinitelyPresentedFunctor.of_shortExact (hS : S.ShortExact)
     simp only [P, Preadditive.comp_add, reassoc_of% hfst, reassoc_of% hsnd, Functor.map_sub,
       Functor.map_comp, Preadditive.sub_comp, Category.assoc, reassoc_of% hfp', hwf, comp_zero,
       zero_comp, zero_sub, neg_add_cancel]
-  exact isFinitelyPresentedFunctor_def.2 ⟨X' ⊞ X'', Y' ⊞ Y'', g, P, hP,
+  exact (isFinitelyPresentedFunctor_iff_exists_single _).2 ⟨X' ⊞ X'', Y' ⊞ Y'', g, P, hP,
     epi_preadditiveYoneda_biprod hS.exact p' s, exact_horseshoe hE' hE'' hs hwf hP⟩
 
 /-- `mod C` is closed under extensions in the category of all functors `Cᵒᵖ ⥤ AddCommGrpCat`. -/

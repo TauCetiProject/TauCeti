@@ -49,6 +49,23 @@ instance powerSeriesScalarTower : IsScalarTower R R⟦X⟧ (HahnModule ℤ R V) 
   smul_assoc r p f := by
     rw [powerSeries_smul, powerSeries_smul, PowerSeries.coe_smul, smul_assoc]
 
+open HahnSeries in
+/-- The coefficient of `p X ^ a v` at `a + k` is the `k`-th coefficient of `p` times `v`. -/
+@[simp]
+theorem coeff_powerSeries_smul_single_add (p : R⟦X⟧) (a : ℤ) (v : V) (k : ℕ) :
+    ((of R).symm (p • of R (single a v))).coeff (a + k) = PowerSeries.coeff k p • v := by
+  have hv := single_smul_single a 0 (1 : R) v
+  rw [add_zero, one_smul] at hv
+  rw [powerSeries_smul, ← hv, smul_smul]
+  simp [add_comm a, coeff_mul_single_add]
+
+open HahnSeries in
+/-- Multiplying by `X ^ k` shifts a monomial `X ^ a v` to `X ^ (a + k) v`. -/
+@[simp]
+theorem X_pow_smul_single (k : ℕ) (a : ℤ) (v : V) :
+    (PowerSeries.X ^ k : R⟦X⟧) • of R (single a v) = of R (single (a + k) v) := by
+  simp [powerSeries_smul, single_smul_single, add_comm a]
+
 end HahnModule
 
 namespace HahnModule
@@ -94,6 +111,11 @@ theorem restrictScalars_powerSeriesLattice (a : ℤ) :
 theorem powerSeriesLattice_antitone : Antitone (powerSeriesLattice R V) :=
   fun _ _ h _ hf ↦ lattice_antitone R V h hf
 
+/-- The series `p v Xⁿ` lies in `U_a(V)` once `a ≤ n`. -/
+theorem powerSeries_smul_of_single_mem_lattice (p : R⟦X⟧) {a n : ℤ} (h : a ≤ n) (v : V) :
+    p • of R (single n v) ∈ lattice R V a :=
+  (powerSeriesLattice R V a).smul_mem p (of_single_mem_lattice R V h v)
+
 end Semiring
 
 end TauCeti.HahnModule
@@ -135,10 +157,7 @@ noncomputable def powerSeriesLatticeShift (a k : ℤ) :
   map_add' f g := Subtype.ext (_root_.smul_add _ _ _)
   map_smul' p f := Subtype.ext (by
     simp only [Submodule.coe_smul_of_tower, _root_.HahnModule.powerSeries_smul]
-    rw [← mul_smul, ← mul_smul]
-    congr 1
-    ext n
-    simp only [coeff_single_mul, coeff_mul_single, one_mul, mul_one, RingHom.id_apply])
+    rw [← mul_smul, ← mul_smul, RingHom.id_apply, ((p : R⸨X⸩).commute_single_one k).eq])
 
 /-- The lattice-shift equivalence acts by the specified Laurent monomial. -/
 @[simp]

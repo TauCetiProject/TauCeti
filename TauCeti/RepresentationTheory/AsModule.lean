@@ -33,6 +33,8 @@ representation with projective group-algebra module is a retract of Mathlib's fr
   `Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply`: evaluation of the two
   identifications Mathlib leaves definitional, of `ρ.asModule` with `V` and of the intertwining
   map attached to a `k[G]`-linear map.
+* An instance `Module.Free k ρ.asModule` for a representation on a free `k`-module, next to
+  Mathlib's `Module.Finite` one.
 * `Representation.IntertwiningMap.equivLinearMapAsModule_surjective_iff`: an intertwining map
   is surjective exactly when its attached `k[G]`-linear map is.
 * `Representation.finrank_moduleCat_asModule`: bundling the attached module and restricting
@@ -129,6 +131,11 @@ theorem _root_.Representation.asModuleEquiv_apply (x : ρ.asModule) :
 theorem _root_.Representation.asModuleEquiv_symm_apply (x : V) :
     ρ.asModuleEquiv.symm x = x :=
   (rfl)
+
+/-- The `k[G]`-module of a representation on a free `k`-module is free over `k`, being `V` itself
+(`Representation.asModuleEquiv`). This complements Mathlib's instance for `Module.Finite`. -/
+instance [Module.Free k V] : Module.Free k ρ.asModule :=
+  .of_equiv ρ.asModuleEquiv.symm
 
 end Semiring
 

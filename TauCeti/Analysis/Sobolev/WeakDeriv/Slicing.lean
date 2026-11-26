@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Basic
 public import TauCeti.Analysis.Sobolev.Local.Multiplication
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 
 /-!
@@ -115,10 +116,12 @@ theorem ae_differentiated_cauchyRiemann [FiniteDimensional ℝ V] {p q : ℝ≥0
     ((hDξ.hasWeakLineDerivOn 1).comm ((hpart 1).hasWeakLineDerivOn I)
       (hDξ.hasWeakLineDerivOn I)).ae_eq ((hpart I).hasWeakLineDerivOn 1)
   -- The weak Leibniz rule for `J ∂_t ξ` and `S ξ`.
-  have hJξ := hDJ.bilin_of_memLpLoc (ContinuousLinearMap.id ℝ (V →L[ℝ] V)) hp hq hqp
+  have hJξ := hDJ.bilin_of_finrank_lt (ContinuousLinearMap.id ℝ (V →L[ℝ] V)) (by simpa using hp)
+    hq hqp
     ((hJ.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top)
     (hJ.memLpLoc_of_hasWeakFDerivOn hDJ) (hpart I) (hpartLp I) (hpartDLp I)
-  have hSξ := hDS.bilin_of_memLpLoc (ContinuousLinearMap.id ℝ (V →L[ℝ] V)) hp hq hqp
+  have hSξ := hDS.bilin_of_finrank_lt (ContinuousLinearMap.id ℝ (V →L[ℝ] V)) (by simpa using hp)
+    hq hqp
     ((hS.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top)
     (hS.memLpLoc_of_hasWeakFDerivOn hDS) hDξ hξ.memLpLoc hDξ1.memLpLoc
   -- Differentiating the equation.

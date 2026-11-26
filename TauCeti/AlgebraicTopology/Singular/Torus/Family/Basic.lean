@@ -49,12 +49,14 @@ additive `A`, acts on periods by `A`, whatever the translation `β`
 (`TauCeti.torusFamilyMarking_singularHomologyMap_of_affine`). For an action of a monoid `Γ` on
 `Y` lifted to the family by affine maps `[y, v] ↦ R g y v +ᵥ b g y`
 (`TauCeti.torusFamilyAffineMap`) with periods equivariant for `ρ : Representation ℤ Γ Λ`, the
-markings are therefore equivariant: `g` acts on them by `ρ g`
-(`TauCeti.torusFamilyMarking_singularHomologyMap_affineMap`). Combined with trivial monodromy
-of the globally marked family, this computes the monodromy of the family over the quotient
-base: a loop over `y₀` carried by a free homotopy in the total space to a loop over `y₁`, and
-identified back with the fibre over `y₀ = g • y₁` by the action of `g`, has its marking
-transformed by `ρ g` (`TauCeti.torusFamilyMarking_singularHomologyMap_loopClass_of_homotopy`).
+restriction of such a map to a fibre has this form
+(`TauCeti.exists_torusFamilyFiber_eq_mk_of_affineMap`), so the markings are equivariant: `g`
+acts on them by `ρ g` (`TauCeti.torusFamilyMarking_singularHomologyMap_affineMap`). Combined
+with trivial monodromy of the globally marked family, this computes the monodromy of the family
+over the quotient base: a loop over `y₀` carried by a free homotopy in the total space to a loop
+over `y₁`, and identified back with the fibre over `y₀ = g • y₁` by the action of `g`, has its
+marking transformed by `ρ g`
+(`TauCeti.torusFamilyMarking_singularHomologyMap_loopClass_of_homotopy`).
 For a group action and a free homotopy ending at a loop over `h • y₀`, this transport is `ρ h⁻¹`.
 
 Other markings of the family are described by automorphisms of `Λ`. Call a family of markings
@@ -311,6 +313,38 @@ variable {Γ : Type*} [Monoid Γ] [MulAction Γ Y] (R : Γ → Y → E →+ E)
   (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
 
+omit [IsTopologicalAddGroup E] [SimplyConnectedSpace E]
+  [∀ y, DiscreteTopology (LinearMap.range (P y))] in
+/-- **Fibre restrictions of an affine action.** Let `φ` be a continuous map from the fibre over `y`
+to the fibre over `y'` that agrees with the affine map `[y, v] ↦ R g y v +ᵥ b g y` of `g`
+(`TauCeti.torusFamilyAffineMap`). Then `y' = g • y`, and for some vector `β : E` representing the
+translation part, `φ` sends `[y, v]` to `[y', R g y v + β]`. -/
+theorem exists_torusFamilyFiber_eq_mk_of_affineMap {g : Γ} {y y' : Y}
+    (φ : letI := periodAddAction P
+      C({z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y},
+        {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y'}))
+    (hφ : letI := periodAddAction P
+      ∀ x : {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y},
+        (φ x : AddAction.orbitRel.Quotient Λ (Y × E)) = torusFamilyAffineMap R P ρ hP b hb g x) :
+    letI := periodAddAction P
+    y' = g • y ∧ ∃ β : E,
+      ∀ (x : {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y}) (v : E),
+        (x : AddAction.orbitRel.Quotient Λ (Y × E)) = Quotient.mk _ (y, v) →
+        (φ x : AddAction.orbitRel.Quotient Λ (Y × E)) = Quotient.mk _ (y', R g y v + β) := by
+  let _ := periodAddAction P
+  -- The target fibre is the fibre over `g • y`, as `φ` sends `[y, 0]` there.
+  have hy' : y' = g • y := by
+    have : torusFamilyProjection P
+        (φ ⟨Quotient.mk _ (y, 0), torusFamilyProjection_mk P (y, 0)⟩ : _) = y' := (φ _).property
+    rwa [hφ, torusFamilyProjection_affineMap, torusFamilyProjection_mk, eq_comm] at this
+  subst hy'
+  -- A representative of `b g y` lies over `g • y`, by `hb`.
+  obtain ⟨⟨y₁, β⟩, hβ⟩ := Quotient.exists_rep (b g y)
+  have hy₁ := congrArg (torusFamilyProjection P) hβ
+  rw [torusFamilyProjection_mk, hb] at hy₁
+  obtain rfl : y₁ = g • y := hy₁
+  exact ⟨rfl, β, fun x v hx ↦ by rw [hφ, hx, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hβ.symm]⟩
+
 /-- **Equivariance of the canonical marking.** Let `g` act on the family of tori by the affine map
 `[y, v] ↦ R g y v +ᵥ b g y` (`TauCeti.torusFamilyAffineMap`), with `R g y` continuous, and let
 `φ` be its restriction to a continuous map from the fibre over `y` to the fibre over `y'` (so that
@@ -329,18 +363,9 @@ theorem torusFamilyMarking_singularHomologyMap_affineMap {g : Γ} {y y' : Y}
         {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y})).homology 1) :
     torusFamilyMarking P hcont hinj y' (ContinuousMap.singularHomologyMap ℤ 1 φ c) =
       ρ g (torusFamilyMarking P hcont hinj y c) := by
-  let _ := periodAddAction P
-  -- The target fibre is the fibre over `g • y`, as `φ` sends `[y, 0]` there.
-  have hy' : y' = g • y := by
-    have : torusFamilyProjection P
-        (φ ⟨Quotient.mk _ (y, 0), torusFamilyProjection_mk P (y, 0)⟩ : _) = y' := (φ _).property
-    rwa [hφ, torusFamilyProjection_affineMap, torusFamilyProjection_mk, eq_comm] at this
-  subst hy'
-  obtain ⟨⟨y₁, β⟩, hβ⟩ := Quotient.exists_rep (b g y)
-  obtain rfl : y₁ = g • y := by simpa [hb] using congrArg (torusFamilyProjection P) hβ
+  obtain ⟨rfl, β, hβ⟩ := exists_torusFamilyFiber_eq_mk_of_affineMap P R ρ hP b hb φ hφ
   refine hinj (g • y) ?_
-  rw [torusFamilyMarking_singularHomologyMap_of_affine P hcont hinj φ (R g y) hR β
-    (fun x v hx ↦ by rw [hφ, hx, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hβ.symm]), hP]
+  rw [torusFamilyMarking_singularHomologyMap_of_affine P hcont hinj φ (R g y) hR β hβ, hP]
 
 end Naturality
 

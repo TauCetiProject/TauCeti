@@ -23,10 +23,13 @@ near an orbit segment of one of them move its initial point to the same place. I
 time maps are the identity near every point outside the support of the Hamiltonian, and they
 translate a point by `t • c` when the vector field is the constant `c` along the segment of that
 translation. A bound `M` on the vector field bounds the displacement of the time-`t` map by
-`M |t|`. For a `C²`
+`M |t|`, and for a `C²` Hamiltonian a Lipschitz constant `K` of the vector field bounds the
+distance of the derivative of the time-`t` map from the identity by `exp (K |t|) - 1`. For a `C²`
 Hamiltonian, every time map preserves the symplectic form on tangent vectors: differentiating the
-pairing of two variations and using symmetry of the Hessian gives zero. A linear
-symplectomorphism `e` conjugates the flow of `G ∘ e` to the flow of `G`
+pairing of two variations and using symmetry of the Hessian gives zero. Preserving the symplectic
+form on tangent vectors is stable under composition and iteration of differentiable maps
+(`TauCeti.SymplecticForm.apply_fderiv_comp`, `TauCeti.SymplecticForm.apply_fderiv_iterate`). A
+linear symplectomorphism `e` conjugates the flow of `G ∘ e` to the flow of `G`
 (`TauCeti.SymplecticForm.IsSymplectomorphism.map_hamiltonianFlow`), and so their linearizations
 (`TauCeti.SymplecticForm.IsSymplectomorphism.fderiv_hamiltonianFlow`); in a frame `b` and its image
 `b.map e` the two linearized flows have the same matrix
@@ -163,6 +166,51 @@ theorem apply_fderiv_hamiltonianFlow (hX : LipschitzWith K (ω.hamiltonianVector
   have hc := is_const_of_deriv_eq_zero (fun s ↦ (hd s).differentiableAt)
     (fun s ↦ (hd s).deriv) t 0
   simpa using hc
+
+omit [FiniteDimensional ℝ V] in
+/-- **Preserving `ω` on tangent vectors is stable under composition.** If `ψ` is differentiable
+at `x` and `g` at `ψ x`, and their derivatives at these points preserve `ω`, so does the
+derivative of `g ∘ ψ` at `x`. -/
+theorem apply_fderiv_comp {g ψ : V → V} {x : V} (hg : DifferentiableAt ℝ g (ψ x))
+    (hψ : DifferentiableAt ℝ ψ x)
+    (hgω : ∀ u v, ω (fderiv ℝ g (ψ x) u) (fderiv ℝ g (ψ x) v) = ω u v)
+    (hψω : ∀ u v, ω (fderiv ℝ ψ x u) (fderiv ℝ ψ x v) = ω u v) (u v : V) :
+    ω (fderiv ℝ (g ∘ ψ) x u) (fderiv ℝ (g ∘ ψ) x v) = ω u v := by
+  rw [fderiv_comp x hg hψ]
+  simp [hgω, hψω]
+
+omit [FiniteDimensional ℝ V] in
+/-- **Preserving `ω` on tangent vectors is stable under iteration.** If the derivative of a
+differentiable map `g` preserves `ω` at every point, so do the derivatives of all iterates
+`g^[m]`. -/
+theorem apply_fderiv_iterate {g : V → V} (hg : Differentiable ℝ g)
+    (hgω : ∀ x u v, ω (fderiv ℝ g x u) (fderiv ℝ g x v) = ω u v) (m : ℕ) (x u v : V) :
+    ω (fderiv ℝ g^[m] x u) (fderiv ℝ g^[m] x v) = ω u v := by
+  induction m generalizing x u v with
+  | zero => simp [fderiv_id]
+  | succ m ih =>
+    rw [Function.iterate_succ]
+    exact ω.apply_fderiv_comp ((hg.iterate m) _) (hg x) (ih _) (hgω x) u v
+
+/-- The Hamiltonian flow does not depend on the chosen Lipschitz constant of the Hamiltonian
+vector field. -/
+theorem hamiltonianFlow_congr {K' : ℝ≥0} (hX : LipschitzWith K (ω.hamiltonianVectorField H))
+    (hX' : LipschitzWith K' (ω.hamiltonianVectorField H)) :
+    ω.hamiltonianFlow H hX = ω.hamiltonianFlow H hX' :=
+  flowOfLipschitz_congr hX hX'
+
+/-- **The linearized flow of a `C²` Hamiltonian is close to the identity.** If the Hamiltonian
+vector field is `K`-Lipschitz, the derivative of the time-`t` map differs from the identity by at
+most `exp (K |t|) - 1` in operator norm. Since the flow does not depend on the Lipschitz constant
+(`TauCeti.SymplecticForm.hamiltonianFlow_congr`), any Lipschitz constant of the field bounds the
+derivative of the time-`t` map. -/
+theorem norm_fderiv_hamiltonianFlow_sub_id_le
+    (hX : LipschitzWith K (ω.hamiltonianVectorField H)) (hH : ContDiff ℝ 2 H) (t : ℝ) (x : V) :
+    ‖fderiv ℝ (ω.hamiltonianFlow H hX t) x - ContinuousLinearMap.id ℝ V‖ ≤
+      Real.exp (K * |t|) - 1 :=
+  norm_fderiv_flowOfLipschitz_sub_id_le hX
+    ((ω.contDiff_hamiltonianFlow_apply H 0 hX (by simpa using hH) t).differentiable
+      (by simp) x)
 
 /-- **Linear symplectomorphisms conjugate Hamiltonian flows.** If `e : (V, ω₁) → (W, ω₂)` is a
 linear symplectomorphism, then `e` carries the flow of `G ∘ e` for `ω₁` to the flow of `G` for

@@ -206,6 +206,18 @@ theorem one_sub_norm_sub_endCenter_le {q r : Puncture} (hq : q ≠ inf) (hr : r 
 theorem endSign_eq_one {q : Puncture} (hq : q ≠ inf) : q.endSign = 1 := by
   cases q <;> simp_all
 
+/-- Two distinct inputs `q` and `r` of a pair of pants are `0` and `1`, in some order. -/
+theorem eq_zero_and_eq_one_or_eq_one_and_eq_zero {q r : Puncture} (hq : q ≠ inf)
+    (hrq : r ≠ q) (hr : r ≠ inf) : q = zero ∧ r = one ∨ q = one ∧ r = zero := by
+  revert q r
+  decide
+
+/-- An end `p ≠ q` of a pair of pants with distinct inputs `q` and `r` is `r` or the output. -/
+theorem eq_or_eq_inf_of_ne {p q r : Puncture} (hq : q ≠ inf) (hrq : r ≠ q)
+    (hr : r ≠ inf) (hp : p ≠ q) : p = r ∨ p = inf := by
+  revert p q r
+  decide
+
 /-- The end centers are the two finite punctures, so they lie outside the punctured sphere. -/
 theorem endCenter_eq_zero_or_eq_one (q : Puncture) : q.endCenter = 0 ∨ q.endCenter = 1 := by
   cases q <;> simp
@@ -219,6 +231,14 @@ theorem ne_endCenter {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (q : Puncture) : w ≠
 theorem cylindricalEndLift_eq (q : Puncture) (z : ℂ) :
     q.cylindricalEndLift z = q.endCenter + q.endScale * Complex.exp (-(2 * (π : ℂ)) * z) := by
   cases q <;> simp <;> ring
+
+/-- Every end lift is the end lift at `0` scaled by twice the scale of the end and centred at the
+center of the end, `φ_q(z) = c_q + 2 b_q φ₀(z)`. So for an input `q ≠ ∞` the end `q` is the input
+end of center `c_q` and scale `2 b_q` of a sphere with moving input ends. -/
+theorem cylindricalEndLift_eq_add_mul_cylindricalEndLift_zero (q : Puncture) (z : ℂ) :
+    q.cylindricalEndLift z = q.endCenter + 2 * q.endScale * zero.cylindricalEndLift z := by
+  rw [cylindricalEndLift_eq, cylindricalEndLift_zero]
+  ring
 
 /-- In polar form, the end lift traverses the circle of radius `‖b_q‖ exp (-2πs)` about the
 center `c_q` of the end clockwise, starting at the argument of the scale `b_q`. -/
@@ -362,6 +382,13 @@ theorem neg_re_endCoord_inf_le {R : ℝ} (hR : 0 ≤ R) {w : ℂ}
   · simpa using mul_nonneg hR Real.two_pi_pos.le
   · rw [Real.log_le_iff_le_exp (by simpa using hw₀), norm_div, Complex.norm_ofNat, mul_comm R]
     linarith
+
+/-- A point of the closed disc `‖w‖ ≤ 2 exp (2πρ)` lies outside the circle `s = -L/2` of the end at
+`∞` for every `L ≥ 0` with `L ≥ 2ρ`. -/
+theorem endSign_mul_re_endCoord_inf_le {ρ L : ℝ} (hL : 0 ≤ L) (hLρ : 2 * ρ ≤ L) {w : ℂ}
+    (hw : ‖w‖ ≤ 2 * Real.exp (2 * π * ρ)) : inf.endSign * (inf.endCoord w).re ≤ L / 2 := by
+  rw [endSign_inf, neg_one_mul]
+  exact neg_re_endCoord_inf_le (by linarith) (hw.trans (by gcongr; linarith))
 
 /-- Away from `0`, the signed longitudinal coordinate `-s` of the end at `∞` exceeds `r` exactly
 off the closed disc `‖w‖ ≤ 2 exp (2πr)` bounded by the circle `s = -r` of that end. -/
@@ -979,6 +1006,14 @@ cutoff weight `β(s₀((w - c) / a) - 1)` is supported in the disc `‖w - c‖ 
 of its end disc is less than `1`. -/
 theorem exp_neg_two_pi_lt_one : Real.exp (-(2 * π)) < 1 :=
   Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
+
+/-- `exp (-2π) / 2 ≤ 1/3`, so the part of the end at `0` beyond the height `1` lies in the disc
+`‖w‖ < 1/3` (`TauCeti.ThricePuncturedSphere.Puncture.re_endCoord_zero_le_one`). -/
+theorem exp_neg_two_pi_div_two_le_one_third : Real.exp (-(2 * π)) / 2 ≤ 1 / 3 := by
+  have h₁ : 2 * π + 1 ≤ Real.exp (2 * π) := Real.add_one_le_exp _
+  have h₂ : Real.exp (-(2 * π)) * Real.exp (2 * π) = 1 := by
+    rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
+  nlinarith [Real.two_le_pi, Real.exp_pos (-(2 * π))]
 
 /-- A point of a disc `‖w - c i‖ < r i` disjoint from discs `‖w - c j‖ < r j` containing the
 discs `‖w - c j‖ < ‖a j‖ exp (-2π) / 2` lies outside the latter discs. -/

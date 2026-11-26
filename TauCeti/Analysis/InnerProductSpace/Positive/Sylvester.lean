@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Sylvester
+public import TauCeti.Analysis.InnerProductSpace.Sylvester.Basic
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Algebra.Algebra.StrictPositivity
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
