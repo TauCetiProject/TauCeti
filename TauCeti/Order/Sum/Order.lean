@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Order.Sum.Order
 public import Mathlib.Order.Hom.Basic
+public import Mathlib.Logic.Equiv.Sum
 
 /-!
 # Subtypes of lexicographic sums
@@ -24,17 +25,13 @@ variable {α β : Type*} [LE α] [LE β] {p : α ⊕ₗ β → Prop}
 
 /-- A subtype of a lexicographic sum is order isomorphic to the lexicographic sum of its two
 parts. -/
-@[expose] def subtypeSumLex :
+def subtypeSumLex :
     {c // p c} ≃o {a // p (toLex (Sum.inl a))} ⊕ₗ {b // p (toLex (Sum.inr b))} where
-  toFun
-    | ⟨.inl a, h⟩ => toLex (.inl ⟨a, h⟩)
-    | ⟨.inr b, h⟩ => toLex (.inr ⟨b, h⟩)
-  invFun z := Sum.elim (fun a => ⟨toLex (.inl a.val), a.property⟩)
-    (fun b => ⟨toLex (.inr b.val), b.property⟩) (ofLex z)
-  left_inv := by rintro ⟨a | b, h⟩ <;> rfl
-  right_inv := by rintro (a | b) <;> rfl
-  map_rel_iff' := by
-    rintro ⟨a | b, h⟩ ⟨a' | b', h'⟩
+  toEquiv := (Equiv.subtypeEquiv ofLex fun _ => Iff.rfl).trans (Equiv.subtypeSum.trans toLex)
+  map_rel_iff' {c c'} := by
+    obtain ⟨c, h⟩ := c
+    obtain ⟨c', h'⟩ := c'
+    obtain ⟨a | b, rfl⟩ := toLex.surjective c <;> obtain ⟨a' | b', rfl⟩ := toLex.surjective c'
     · exact Sum.Lex.inl_le_inl_iff.trans
         (Sum.Lex.inl_le_inl_iff (β := β) (a := a) (b := a')).symm
     · exact iff_of_true (Sum.Lex.inl_le_inr _ _) (Sum.Lex.inl_le_inr _ _)
@@ -45,21 +42,21 @@ parts. -/
 @[simp]
 theorem subtypeSumLex_apply_inl (a : α) (h : p (toLex (Sum.inl a))) :
     subtypeSumLex ⟨toLex (Sum.inl a), h⟩ = toLex (Sum.inl ⟨a, h⟩) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem subtypeSumLex_apply_inr (b : β) (h : p (toLex (Sum.inr b))) :
     subtypeSumLex ⟨toLex (Sum.inr b), h⟩ = toLex (Sum.inr ⟨b, h⟩) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem subtypeSumLex_symm_apply_inl (a : {a // p (toLex (Sum.inl a))}) :
     subtypeSumLex.symm (toLex (Sum.inl a)) = ⟨toLex (Sum.inl a.val), a.property⟩ :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem subtypeSumLex_symm_apply_inr (b : {b // p (toLex (Sum.inr b))}) :
     subtypeSumLex.symm (toLex (Sum.inr b)) = ⟨toLex (Sum.inr b.val), b.property⟩ :=
-  rfl
+  (rfl)
 
 end OrderIso

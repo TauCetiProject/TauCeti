@@ -26,6 +26,8 @@ of linear orders is carried along order isomorphisms.
   exactly when their entries compare in the same way.
 * `TauCeti.BFEquiv.orderIso_comp`: back-and-forth equivalence of tuples of linear orders is
   preserved by order isomorphisms.
+* `TauCeti.BFEquiv.orderIso_congr`: the same for linear orders as structures, that is, for the
+  empty tuple.
 -/
 
 public section
@@ -62,19 +64,19 @@ section LinearOrder
 
 variable {M : Type w} {N : Type w'} [LinearOrder M] [LinearOrder N] {n : ℕ}
 
+/-- Two pairs of points of linear orders compare in the same way when `≤` agrees in both
+directions; the converse of `le_iff_le_of_cmp_eq_cmp`. -/
+private theorem cmp_eq_cmp_of_le_iff_le {x y : M} {x' y' : N} (h₁ : x ≤ y ↔ x' ≤ y')
+    (h₂ : y ≤ x ↔ y' ≤ x') : cmp x y = cmp x' y' := by
+  simp only [cmp, cmpUsing, lt_iff_le_not_ge, h₁, h₂]
+
 /-- In the language of orders, tuples of two linear orders have the same atomic type exactly when
 their entries compare in the same way. -/
 theorem sameAtomicType_order_iff_cmp (a : Fin n → M) (b : Fin n → N) :
     SameAtomicType (L := Language.order) a b ↔ ∀ i j, cmp (a i) (a j) = cmp (b i) (b j) := by
   rw [sameAtomicType_order_iff]
-  refine ⟨fun ⟨he, hle⟩ i j => ?_, fun h =>
+  exact ⟨fun ⟨_, hle⟩ i j => cmp_eq_cmp_of_le_iff_le (hle i j) (hle j i), fun h =>
     ⟨fun i j => eq_iff_eq_of_cmp_eq_cmp (h i j), fun i j => le_iff_le_of_cmp_eq_cmp (h i j)⟩⟩
-  rcases lt_trichotomy (a i) (a j) with hij | hij | hij
-  · rw [hij.cmp_eq_lt, eq_comm, cmp_eq_lt_iff, ← not_le, ← hle, not_le]
-    exact hij
-  · rw [hij, cmp_self_eq_eq, eq_comm, cmp_eq_eq_iff, ← he, hij]
-  · rw [hij.cmp_eq_gt, eq_comm, cmp_eq_gt_iff, ← not_le, ← hle, not_le]
-    exact hij
 
 /-- Extending two tuples of the same atomic type by one point each preserves the atomic type
 exactly when the new points compare with the old entries in the same way. -/
@@ -100,6 +102,16 @@ theorem BFEquiv.orderIso_comp {γ : Ordinal.{o}} {a : Fin n → M} {b : Fin n �
     BFEquiv (L := Language.order) γ n (e ∘ a) (f ∘ b) :=
   ((StrongHomClass.toEquiv e : M ≃[Language.order] M').bfEquiv γ a).symm.trans
     (h.trans ((StrongHomClass.toEquiv f : N ≃[Language.order] N').bfEquiv γ b))
+
+/-- Back-and-forth equivalence of linear orders, as structures with the empty tuple, is preserved
+by order isomorphisms. -/
+theorem BFEquiv.orderIso_congr {γ : Ordinal.{o}}
+    (h : BFEquiv (L := Language.order) γ 0 (Fin.elim0 : Fin 0 → M) (Fin.elim0 : Fin 0 → N))
+    (e : M ≃o M') (f : N ≃o N') :
+    BFEquiv (L := Language.order) γ 0 (Fin.elim0 : Fin 0 → M') (Fin.elim0 : Fin 0 → N') := by
+  have h' := h.orderIso_comp e f
+  rwa [Subsingleton.elim (_ ∘ Fin.elim0) Fin.elim0, Subsingleton.elim (_ ∘ Fin.elim0) Fin.elim0]
+    at h'
 
 end LinearOrder
 

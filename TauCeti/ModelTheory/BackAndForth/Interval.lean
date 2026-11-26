@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.BackAndForth.LinearOrder
-public import TauCeti.Order.Hom.SumLex
+public import TauCeti.Order.Sum.Order
 public import Mathlib.Order.Hom.Set
 
 /-!
@@ -85,28 +85,29 @@ theorem mem_cmpCell_snoc_elim0 {x z : M} {τ : Fin 1 → Ordering} :
   rw [mem_cmpCell_snoc, cmpCell_fin_zero]
   exact and_iff_right (Set.mem_univ z)
 
+/-- The cell of a single point `x` below it is `Set.Iio x`. -/
+theorem cmpCell_snoc_elim0_of_gt {x : M} {τ : Fin 1 → Ordering} (h : τ (last 0) = .gt) :
+    cmpCell (snoc (Fin.elim0 : Fin 0 → M) x) τ = Set.Iio x := by
+  ext z
+  rw [mem_cmpCell_snoc_elim0, h, cmp_eq_gt_iff, Set.mem_Iio]
+
+/-- The cell of a single point `x` at it is `{x}`. -/
+theorem cmpCell_snoc_elim0_of_eq {x : M} {τ : Fin 1 → Ordering} (h : τ (last 0) = .eq) :
+    cmpCell (snoc (Fin.elim0 : Fin 0 → M) x) τ = {x} := by
+  ext z
+  rw [mem_cmpCell_snoc_elim0, h, cmp_eq_eq_iff, Set.mem_singleton_iff, eq_comm]
+
+/-- The cell of a single point `x` above it is `Set.Ioi x`. -/
+theorem cmpCell_snoc_elim0_of_lt {x : M} {τ : Fin 1 → Ordering} (h : τ (last 0) = .lt) :
+    cmpCell (snoc (Fin.elim0 : Fin 0 → M) x) τ = Set.Ioi x := by
+  ext z
+  rw [mem_cmpCell_snoc_elim0, h, cmp_eq_lt_iff, Set.mem_Ioi]
+
 /-- Every point lies in the cell of its own comparison pattern. -/
 theorem mem_cmpCell_cmp (a : Fin n → M) (x : M) : x ∈ cmpCell a (fun i => cmp (a i) x) :=
   fun _ => rfl
 
 end Cell
-
-/-! ### Transport of back-and-forth equivalence -/
-
-section Transport
-
-variable {M : Type w} {N : Type w'} [LinearOrder M] [LinearOrder N]
-variable {M' : Type u₁} {N' : Type u₂} [LinearOrder M'] [LinearOrder N']
-
-/-- `BFEquiv.orderIso_comp` for linear orders as structures, that is, for empty tuples. -/
-private theorem bfEquiv_of_orderIso {γ : Ordinal.{o}} (e : M ≃o M') (f : N ≃o N')
-    (h : BFEquiv (L := Language.order) γ 0 (Fin.elim0 : Fin 0 → M) (Fin.elim0 : Fin 0 → N)) :
-    BFEquiv (L := Language.order) γ 0 (Fin.elim0 : Fin 0 → M') (Fin.elim0 : Fin 0 → N') := by
-  have h' := h.orderIso_comp e f
-  rwa [Subsingleton.elim (_ ∘ Fin.elim0) Fin.elim0, Subsingleton.elim (_ ∘ Fin.elim0) Fin.elim0]
-    at h'
-
-end Transport
 
 /-! ### The interval lemma -/
 
@@ -185,8 +186,8 @@ private theorem IntervalLemma.forth_cmpCell {γ : Ordinal.{o}} (ih : IntervalLem
   have hq : y ∈ cmpCell b σ := fun i =>
     ((sameAtomicType_snoc_iff_cmp.1 hs).2 i).symm.trans (p.property i)
   refine ⟨⟨y, hq⟩, (ih _ _ _ _ _).2 ⟨sameAtomicType_snoc_elim0 _ _, fun τ => ?_⟩⟩
-  exact bfEquiv_of_orderIso (cmpCellSnocOrderIso a σ p τ).symm
-    (cmpCellSnocOrderIso b σ ⟨y, hq⟩ τ).symm (hc _)
+  exact (hc _).orderIso_congr (cmpCellSnocOrderIso a σ p τ).symm
+    (cmpCellSnocOrderIso b σ ⟨y, hq⟩ τ).symm
 
 /-- The forth step for two tuples whose cells are equivalent at the next level. -/
 private theorem IntervalLemma.forth_snoc {γ : Ordinal.{o}} (ih : IntervalLemma.{w, w'} γ)
@@ -205,8 +206,8 @@ private theorem IntervalLemma.forth_snoc {γ : Ordinal.{o}} (ih : IntervalLemma.
   by_cases hσ : σ = σ₀
   · -- Inside the cell of `x`, the cells of `snoc a x` are the cells of `x` within it.
     subst hσ
-    exact bfEquiv_of_orderIso (cmpCellSnocOrderIso a _ ⟨x, hx⟩ fun _ => o)
-      (cmpCellSnocOrderIso b _ q fun _ => o) (hsub fun _ => o)
+    exact (hsub fun _ => o).orderIso_congr (cmpCellSnocOrderIso a _ ⟨x, hx⟩ fun _ => o)
+      (cmpCellSnocOrderIso b _ q fun _ => o)
   · -- Elsewhere they are whole cells of `a` and `b`, or empty, in the same way.
     obtain ⟨i, hi⟩ := Function.ne_iff.1 hσ
     rw [cmpCell_snoc_snoc_of_ne hx hi, cmpCell_snoc_snoc_of_ne q.property hi]
@@ -270,7 +271,7 @@ private theorem bfEquiv_setOf_const {A' : Type u₂} [LinearOrder A'] {γ : Ordi
   by_cases hp : p
   · rw [Set.eq_univ_of_forall (s := {_x : A | p}) fun _ => hp,
       Set.eq_univ_of_forall (s := {_x : A' | p}) fun _ => hp]
-    exact bfEquiv_of_orderIso (OrderIso.Set.univ).symm (OrderIso.Set.univ).symm h
+    exact h.orderIso_congr (OrderIso.Set.univ).symm (OrderIso.Set.univ).symm
   · have : IsEmpty {_x : A | p} := ⟨fun x => hp x.property⟩
     have : IsEmpty {_x : A' | p} := ⟨fun x => hp x.property⟩
     exact BFEquiv.of_isEmpty γ
@@ -329,15 +330,15 @@ private theorem SumLexStatement.forth {A' : Type u₂} {B' : Type u₄} [LinearO
   · obtain ⟨a', ha⟩ := ((BFEquiv.add_one γ _ _).1 hA).2.1 a
     refine ⟨toLex (Sum.inl a'),
       (bfEquiv_iff_forall_cmpCell γ _ _).2 ⟨sameAtomicType_snoc_elim0 _ _, fun τ => ?_⟩⟩
-    exact bfEquiv_of_orderIso (cmpCellInlOrderIso a τ).symm (cmpCellInlOrderIso a' τ).symm
-      (ih _ _ _ _ (((bfEquiv_iff_forall_cmpCell γ _ _).1 ha).2 τ)
-        (bfEquiv_setOf_const (hB.mono le_self_add) _))
+    exact (ih _ _ _ _ (((bfEquiv_iff_forall_cmpCell γ _ _).1 ha).2 τ)
+      (bfEquiv_setOf_const (hB.mono le_self_add) _)).orderIso_congr
+        (cmpCellInlOrderIso a τ).symm (cmpCellInlOrderIso a' τ).symm
   · obtain ⟨b', hb⟩ := ((BFEquiv.add_one γ _ _).1 hB).2.1 b
     refine ⟨toLex (Sum.inr b'),
       (bfEquiv_iff_forall_cmpCell γ _ _).2 ⟨sameAtomicType_snoc_elim0 _ _, fun τ => ?_⟩⟩
-    exact bfEquiv_of_orderIso (cmpCellInrOrderIso b τ).symm (cmpCellInrOrderIso b' τ).symm
-      (ih _ _ _ _ (bfEquiv_setOf_const (hA.mono le_self_add) _)
-        (((bfEquiv_iff_forall_cmpCell γ _ _).1 hb).2 τ))
+    exact (ih _ _ _ _ (bfEquiv_setOf_const (hA.mono le_self_add) _)
+      (((bfEquiv_iff_forall_cmpCell γ _ _).1 hb).2 τ)).orderIso_congr
+        (cmpCellInrOrderIso b τ).symm (cmpCellInrOrderIso b' τ).symm
 
 /-- Back-and-forth equivalence of ordered sums, by induction on the level. -/
 private theorem sumLexStatement (γ : Ordinal.{o}) : SumLexStatement.{u₁, u₂, u₃, u₄} γ := by
