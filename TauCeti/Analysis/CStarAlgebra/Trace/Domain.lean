@@ -54,9 +54,10 @@ Dixmier 1963, Lemme 3, p. 226:
 * `TauCeti.IsTrace.mem_domain_iff_of_nonneg`, `TauCeti.IsTrace.domain_inter_nonneg`:
   `𝔪_τ ∩ B₊ = 𝔪_τ⁺`.
 * `TauCeti.IsTrace.domain_subset_sqIntegrable`: `𝔪_τ ⊆ 𝔫_τ`.
-* `TauCeti.IsTrace.existsUnique_linearMap`: the unique linear extension, which is real on
-  self-adjoint elements (`TauCeti.IsTrace.linearMap_apply_of_isSelfAdjoint`) and equals `τ` on
-  `𝔪_τ⁺` (`TauCeti.IsTrace.linearMap_apply_of_mem_finitePart`).
+* `TauCeti.IsTrace.existsUnique_linearMap`, `TauCeti.IsTrace.eq_linearMap`: the unique linear
+  extension, which is real on self-adjoint elements
+  (`TauCeti.IsTrace.linearMap_apply_of_isSelfAdjoint`) and equals `τ` on `𝔪_τ⁺`
+  (`TauCeti.IsTrace.linearMap_apply_of_mem_finitePart`).
 * `TauCeti.IsTrace.linearMap_star_mul_comm`, `TauCeti.IsTrace.linearMap_mul_comm`: traciality
   of the extension.
 * `TauCeti.domain_eq_top_of_lt_top`, `TauCeti.PositiveTracialFunctional.linearMap_toTrace`:
@@ -96,7 +97,7 @@ namespace IsTrace
 
 /-- A real multiple `t (p - q)` of a difference of elements of `𝔪_τ⁺` is again such a
 difference. -/
-theorem exists_real_smul_sub (hτ : IsTrace τ) (t : ℝ) {p q : B} (hp : p ∈ finitePart τ)
+private theorem exists_real_smul_sub (hτ : IsTrace τ) (t : ℝ) {p q : B} (hp : p ∈ finitePart τ)
     (hq : q ∈ finitePart τ) :
     ∃ p' ∈ finitePart τ, ∃ q' ∈ finitePart τ, t • (p - q) = p' - q' := by
   rcases le_total 0 t with ht | ht
@@ -212,6 +213,16 @@ theorem star_mul_mem_domain (hτ : IsTrace τ) {x y : B} (hx : x ∈ sqIntegrabl
       simpa [sub_eq_add_neg] using star_mul_self_mem_domain (hmem (-Complex.I))
   simpa [smul_smul] using Submodule.smul_mem _ (4⁻¹ : ℂ) h4
 
+/-- For `x ∈ 𝔫_τ`, the product `xx⋆` lies in the domain. -/
+theorem mul_star_self_mem_domain (hτ : IsTrace τ) {x : B} (hx : x ∈ sqIntegrable τ) :
+    x * star x ∈ domain τ :=
+  finitePart_subset_domain (hτ.mul_star_self_mem_finitePart_iff.2 hx)
+
+/-- For `x, y ∈ 𝔫_τ`, the product `xy⋆` lies in the domain. -/
+theorem mul_star_mem_domain (hτ : IsTrace τ) {x y : B} (hx : x ∈ sqIntegrable τ)
+    (hy : y ∈ sqIntegrable τ) : x * star y ∈ domain τ := by
+  simpa using hτ.star_mul_mem_domain (hτ.star_mem_sqIntegrable hy) (hτ.star_mem_sqIntegrable hx)
+
 /-- **`𝔪_τ = span{y⋆x : x, y ∈ 𝔫_τ}`** (Dixmier 1963, Lemme 3, p. 226). -/
 theorem domain_eq_span_star_mul (hτ : IsTrace τ) :
     domain τ = Submodule.span ℂ
@@ -312,7 +323,7 @@ theorem selfAdjointTrace_sub (hτ : IsTrace τ) {p q : B} (hp : p ∈ finitePart
     (hq : q ∈ finitePart τ) : selfAdjointTrace τ (p - q) = (τ p).toReal - (τ q).toReal := by
   have hh : ∃ pq : B × B, pq.1 ∈ finitePart τ ∧ pq.2 ∈ finitePart τ ∧ p - q = pq.1 - pq.2 :=
     ⟨(p, q), hp, hq, rfl⟩
-  rw [selfAdjointTrace, dite_eq_left_of_eq_true (eq_true hh)]
+  rw [selfAdjointTrace, dite_eq_left hh]
   obtain ⟨h₁, h₂, h₃⟩ := hh.choose_spec
   exact (hτ.toReal_sub_eq_of_sub_eq hp hq h₁ h₂ h₃).symm
 
@@ -322,30 +333,33 @@ theorem selfAdjointTrace_of_mem_finitePart (hτ : IsTrace τ) {x : B} (hx : x �
     selfAdjointTrace τ x = (τ x).toReal := by
   simpa [hτ.map_zero] using hτ.selfAdjointTrace_sub hx hτ.zero_mem_finitePart
 
+/-- Nonnegative real multiples: if `r (p - q) = p₀ - q₀` with `r ≥ 0` and
+`p, q, p₀, q₀ ∈ 𝔪_τ⁺`, then `τ(p₀) - τ(q₀) = r (τ(p) - τ(q))`. -/
+private theorem toReal_sub_eq_nnreal_mul_of_smul_sub_eq (hτ : IsTrace τ) (r : ℝ≥0)
+    {p q p₀ q₀ : B} (hp : p ∈ finitePart τ) (hq : q ∈ finitePart τ) (hp₀ : p₀ ∈ finitePart τ)
+    (hq₀ : q₀ ∈ finitePart τ) (h : (r : ℝ) • (p - q) = p₀ - q₀) :
+    (τ p₀).toReal - (τ q₀).toReal = r * ((τ p).toReal - (τ q).toReal) := by
+  rw [smul_sub] at h
+  rw [← hτ.toReal_sub_eq_of_sub_eq (hτ.smul_mem_finitePart r hp)
+    (hτ.smul_mem_finitePart r hq) hp₀ hq₀ h,
+    hτ.map_nnreal_smul_of_nonneg r (mem_finitePart.1 hp).1,
+    hτ.map_nnreal_smul_of_nonneg r (mem_finitePart.1 hq).1, ENNReal.toReal_mul,
+    ENNReal.toReal_mul, ENNReal.coe_toReal]
+  ring
+
 /-- Real multiples: if `r (p - q) = p₀ - q₀` with `p, q, p₀, q₀ ∈ 𝔪_τ⁺`, then
 `τ(p₀) - τ(q₀) = r (τ(p) - τ(q))`. -/
-theorem toReal_sub_eq_mul_of_smul_sub_eq (hτ : IsTrace τ) (r : ℝ) {p q p₀ q₀ : B}
+private theorem toReal_sub_eq_mul_of_smul_sub_eq (hτ : IsTrace τ) (r : ℝ) {p q p₀ q₀ : B}
     (hp : p ∈ finitePart τ) (hq : q ∈ finitePart τ) (hp₀ : p₀ ∈ finitePart τ)
     (hq₀ : q₀ ∈ finitePart τ) (h : r • (p - q) = p₀ - q₀) :
     (τ p₀).toReal - (τ q₀).toReal = r * ((τ p).toReal - (τ q).toReal) := by
   rcases le_total 0 r with hr | hr
   · lift r to ℝ≥0 using hr
-    rw [smul_sub] at h
-    rw [← hτ.toReal_sub_eq_of_sub_eq (hτ.smul_mem_finitePart r hp)
-      (hτ.smul_mem_finitePart r hq) hp₀ hq₀ h,
-      hτ.map_nnreal_smul_of_nonneg r (mem_finitePart.1 hp).1,
-      hτ.map_nnreal_smul_of_nonneg r (mem_finitePart.1 hq).1, ENNReal.toReal_mul,
-      ENNReal.toReal_mul, ENNReal.coe_toReal]
-    ring
-  · obtain ⟨u, hu⟩ : ∃ u : ℝ≥0, (u : ℝ) = -r := ⟨⟨-r, neg_nonneg.2 hr⟩, rfl⟩
-    have h' : (u : ℝ) • q - (u : ℝ) • p = p₀ - q₀ := by
-      rw [← h, hu, neg_smul, neg_smul, smul_sub]
-      abel
-    rw [← hτ.toReal_sub_eq_of_sub_eq (hτ.smul_mem_finitePart u hq)
-      (hτ.smul_mem_finitePart u hp) hp₀ hq₀ h',
-      hτ.map_nnreal_smul_of_nonneg u (mem_finitePart.1 hp).1,
-      hτ.map_nnreal_smul_of_nonneg u (mem_finitePart.1 hq).1, ENNReal.toReal_mul,
-      ENNReal.toReal_mul, ENNReal.coe_toReal, show r = -(u : ℝ) by linarith]
+    exact hτ.toReal_sub_eq_nnreal_mul_of_smul_sub_eq r hp hq hp₀ hq₀ h
+  · -- `r (p - q) = (-r) (q - p)` with `-r ≥ 0`.
+    lift -r to ℝ≥0 using neg_nonneg.2 hr with u hu
+    have h' : (u : ℝ) • (q - p) = p₀ - q₀ := by rw [← h, hu, neg_smul, ← smul_neg, neg_sub]
+    rw [hτ.toReal_sub_eq_nnreal_mul_of_smul_sub_eq u hq hp hp₀ hq₀ h', hu]
     ring
 
 /-- `selfAdjointTrace τ` is real-linear on the self-adjoint elements of `𝔪_τ`. -/
@@ -390,14 +404,16 @@ noncomputable def linearMap (hτ : IsTrace τ) : domain τ →ₗ[ℂ] ℂ where
     have h' := hτ.selfAdjointTrace_smul_add_smul 1 1 (imaginaryPart_mem_domain z.property)
       (ℑ (z : B)).property (imaginaryPart_mem_domain w.property) (ℑ (w : B)).property
     simp only [one_smul, one_mul] at h h'
-    simp [h, h']
+    simp only [Submodule.coe_add, map_add, AddSubgroup.coe_add, h, h', Complex.ofReal_add]
     ring
   map_smul' c z := by
     have h := hτ.selfAdjointTrace_smul_add_smul c.re (-c.im) (realPart_mem_domain z.property)
       (ℜ (z : B)).property (imaginaryPart_mem_domain z.property) (ℑ (z : B)).property
     have h' := hτ.selfAdjointTrace_smul_add_smul c.re c.im (imaginaryPart_mem_domain z.property)
       (ℑ (z : B)).property (realPart_mem_domain z.property) (ℜ (z : B)).property
-    simp [realPart_smul, imaginaryPart_smul, sub_eq_add_neg, ← neg_smul, h, h']
+    simp only [SetLike.val_smul, realPart_smul, imaginaryPart_smul, sub_eq_add_neg, ← neg_smul,
+      AddSubgroup.coe_add, selfAdjoint.val_smul, h, h', neg_mul, Complex.ofReal_add,
+      Complex.ofReal_mul, Complex.ofReal_neg, RingHom.id_apply, smul_eq_mul]
     linear_combination (selfAdjointTrace τ (ℜ (z : B)) +
         Complex.I * selfAdjointTrace τ (ℑ (z : B))) * Complex.re_add_im c -
       (c.im * selfAdjointTrace τ (ℑ (z : B))) * Complex.I_sq
@@ -421,29 +437,26 @@ theorem linearMap_apply_of_mem_finitePart (hτ : IsTrace τ) {x : B} (hx : x ∈
   rw [hτ.linearMap_apply_of_isSelfAdjoint _ (mem_finitePart.1 hx).1.isSelfAdjoint,
     hτ.selfAdjointTrace_of_mem_finitePart hx]
 
+/-- Uniqueness of the linear extension: a linear functional on `𝔪_τ` that agrees with `τ` on
+`𝔪_τ⁺` is `hτ.linearMap`. -/
+theorem eq_linearMap (hτ : IsTrace τ) {f : domain τ →ₗ[ℂ] ℂ}
+    (hf : ∀ x (hx : x ∈ finitePart τ), f ⟨x, finitePart_subset_domain hx⟩ = (τ x).toReal) :
+    f = hτ.linearMap :=
+  LinearMap.ext_on Submodule.span_span_coe_preimage fun _ hz ↦
+    (hf _ hz).trans (hτ.linearMap_apply_of_mem_finitePart hz).symm
+
 /-- **The linear extension of a trace.** A trace extends uniquely to a complex-linear functional
 on its domain `𝔪_τ`, a two-sided ideal with `𝔪_τ ∩ B₊ = 𝔪_τ⁺` (`TauCeti.IsTrace.domainIdeal`,
 `TauCeti.IsTrace.mem_domain_iff_of_nonneg`) (Dixmier 1963, Lemme 3, p. 226). -/
 theorem existsUnique_linearMap (hτ : IsTrace τ) :
     ∃! φ : domain τ →ₗ[ℂ] ℂ, ∀ x (hx : x ∈ finitePart τ),
-      φ ⟨x, finitePart_subset_domain hx⟩ = (τ x).toReal := by
-  refine ⟨hτ.linearMap, fun x hx ↦ hτ.linearMap_apply_of_mem_finitePart hx, fun ψ hψ ↦ ?_⟩
-  ext ⟨z, hz⟩
-  induction hz using Submodule.span_induction with
-  | mem x hx => exact (hψ x hx).trans (hτ.linearMap_apply_of_mem_finitePart hx).symm
-  | zero => exact (_root_.map_zero ψ).trans (_root_.map_zero hτ.linearMap).symm
-  | add x y hx hy hx' hy' =>
-    exact (map_add ψ ⟨x, hx⟩ ⟨y, hy⟩).trans
-      ((congrArg₂ (· + ·) hx' hy').trans (map_add hτ.linearMap ⟨x, hx⟩ ⟨y, hy⟩).symm)
-  | smul c x hx hx' =>
-    exact (map_smul ψ c ⟨x, hx⟩).trans
-      ((congrArg (c • ·) hx').trans (map_smul hτ.linearMap c ⟨x, hx⟩).symm)
+      φ ⟨x, finitePart_subset_domain hx⟩ = (τ x).toReal :=
+  ⟨hτ.linearMap, fun _ hx ↦ hτ.linearMap_apply_of_mem_finitePart hx, fun _ hψ ↦ hτ.eq_linearMap hψ⟩
 
 /-- The trace identity for the linear extension: `τ(w⋆w) = τ(ww⋆)` for `w ∈ 𝔫_τ`. -/
 theorem linearMap_star_mul_self (hτ : IsTrace τ) {w : B} (hw : w ∈ sqIntegrable τ) :
     hτ.linearMap ⟨star w * w, star_mul_self_mem_domain hw⟩ =
-      hτ.linearMap ⟨w * star w,
-        finitePart_subset_domain (hτ.mul_star_self_mem_finitePart_iff.2 hw)⟩ := by
+      hτ.linearMap ⟨w * star w, hτ.mul_star_self_mem_domain hw⟩ := by
   rw [hτ.linearMap_apply_of_mem_finitePart (star_mul_self_mem_finitePart_iff.2 hw),
     hτ.linearMap_apply_of_mem_finitePart (hτ.mul_star_self_mem_finitePart_iff.2 hw),
     hτ.map_star_mul_self]
@@ -452,9 +465,7 @@ theorem linearMap_star_mul_self (hτ : IsTrace τ) {w : B} (hw : w ∈ sqIntegra
 theorem linearMap_star_mul_comm (hτ : IsTrace τ) {x y : B} (hx : x ∈ sqIntegrable τ)
     (hy : y ∈ sqIntegrable τ) :
     hτ.linearMap ⟨star y * x, hτ.star_mul_mem_domain hx hy⟩ =
-      hτ.linearMap ⟨x * star y, by
-        simpa using hτ.star_mul_mem_domain (hτ.star_mem_sqIntegrable hy)
-          (hτ.star_mem_sqIntegrable hx)⟩ := by
+      hτ.linearMap ⟨x * star y, hτ.mul_star_mem_domain hx hy⟩ := by
   have hadd (c : ℂ) : x + c • y ∈ sqIntegrable τ :=
     hτ.add_mem_sqIntegrable hx (hτ.smul_mem_sqIntegrable c hy)
   have hsub (c : ℂ) : x - c • y ∈ sqIntegrable τ := by
@@ -464,19 +475,18 @@ theorem linearMap_star_mul_comm (hτ : IsTrace τ) {x y : B} (hx : x ∈ sqInteg
   -- The elements `w⋆w` and `ww⋆` of `𝔪_τ`, for `w ∈ 𝔫_τ`.
   let m (w : B) (hw : w ∈ sqIntegrable τ) : domain τ := ⟨star w * w, star_mul_self_mem_domain hw⟩
   let m' (w : B) (hw : w ∈ sqIntegrable τ) : domain τ :=
-    ⟨w * star w, finitePart_subset_domain (hτ.mul_star_self_mem_finitePart_iff.2 hw)⟩
+    ⟨w * star w, hτ.mul_star_self_mem_domain hw⟩
   have hs (w : B) (hw : w ∈ sqIntegrable τ) : hτ.linearMap (m w hw) = hτ.linearMap (m' w hw) :=
     hτ.linearMap_star_mul_self hw
-  have e₁ := congrArg hτ.linearMap (show (4 : ℂ) • (⟨star y * x, hτ.star_mul_mem_domain hx hy⟩ :
-      domain τ) = m _ h₁ + Complex.I • m _ (hadd Complex.I) - m _ h₂ -
-        Complex.I • m _ (hsub Complex.I) from
-    Subtype.ext (by simpa [m] using star_mul_polarization y x))
-  have e₂ := congrArg hτ.linearMap (show (4 : ℂ) • (⟨x * star y, by
-        simpa using hτ.star_mul_mem_domain (hτ.star_mem_sqIntegrable hy)
-          (hτ.star_mem_sqIntegrable hx)⟩ : domain τ) =
-        m' _ h₁ + Complex.I • m' _ (hadd Complex.I) - m' _ h₂ -
-          Complex.I • m' _ (hsub Complex.I) from
-    Subtype.ext (by simpa [m'] using mul_star_polarization y x))
+  -- The polarization identities for `y⋆x` and `xy⋆`, as identities in `𝔪_τ`.
+  have p₁ : (4 : ℂ) • (⟨star y * x, hτ.star_mul_mem_domain hx hy⟩ : domain τ) =
+      m _ h₁ + Complex.I • m _ (hadd Complex.I) - m _ h₂ - Complex.I • m _ (hsub Complex.I) :=
+    Subtype.ext (by simpa [m] using star_mul_polarization y x)
+  have p₂ : (4 : ℂ) • (⟨x * star y, hτ.mul_star_mem_domain hx hy⟩ : domain τ) =
+      m' _ h₁ + Complex.I • m' _ (hadd Complex.I) - m' _ h₂ - Complex.I • m' _ (hsub Complex.I) :=
+    Subtype.ext (by simpa [m'] using mul_star_polarization y x)
+  have e₁ := congrArg hτ.linearMap p₁
+  have e₂ := congrArg hτ.linearMap p₂
   simp only [map_add, map_sub, map_smul, smul_eq_mul] at e₁ e₂
   rw [hs _ h₁, hs _ (hadd Complex.I), hs _ h₂, hs _ (hsub Complex.I), ← e₂] at e₁
   exact mul_left_cancel₀ four_ne_zero e₁
@@ -493,20 +503,14 @@ theorem linearMap_mul_comm (hτ : IsTrace τ) {x : B} (hx : x ∈ domain τ) (z 
     have hb := star_mul_self_mem_finitePart_iff.1 hx
     have h₁ := hτ.linearMap_star_mul_comm (hτ.mul_mem_sqIntegrable_right z hb) hb
     have h₂ := hτ.linearMap_star_mul_comm hb (hτ.mul_mem_sqIntegrable_right (star z) hb)
-    exact (congrArg hτ.linearMap (Subtype.ext (mul_assoc _ _ _))).trans <| h₁.trans <|
-      (congrArg hτ.linearMap (Subtype.ext (by simp [star_mul, mul_assoc]))).trans <|
-        h₂.symm.trans (congrArg hτ.linearMap (Subtype.ext (by simp [star_mul, mul_assoc])))
-  | zero => exact congrArg hτ.linearMap (Subtype.ext (by simp))
+    simp only [star_mul, star_star, mul_assoc] at h₁ h₂ ⊢
+    exact h₁.trans h₂.symm
+  | zero => simp
   | add x y hx hy ihx ihy =>
-    have e := congrArg₂ (· + ·) ihx ihy
-    simp only [← map_add] at e
-    exact (congrArg hτ.linearMap (Subtype.ext (add_mul _ _ _))).trans
-      (e.trans (congrArg hτ.linearMap (Subtype.ext (mul_add _ _ _).symm)))
+    simpa only [← map_add, AddMemClass.mk_add_mk, add_mul, mul_add] using congr($ihx + $ihy)
   | smul c x hx ih =>
-    have e := congrArg (c • ·) ih
-    simp only [← map_smul] at e
-    exact (congrArg hτ.linearMap (Subtype.ext (smul_mul_assoc _ _ _))).trans
-      (e.trans (congrArg hτ.linearMap (Subtype.ext (mul_smul_comm _ _ _).symm)))
+    simpa only [← map_smul, SetLike.mk_smul_mk, smul_mul_assoc, mul_smul_comm] using
+      congr(c • $ih)
 
 end IsTrace
 
@@ -536,9 +540,7 @@ theorem linearMap_toTrace (ω : PositiveTracialFunctional B) (z : domain ω.toTr
     simp only [ψ, LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
       LinearMap.coe_ofClass, toTrace_apply, ENNReal.toReal_ofReal hre]
     exact Complex.ext rfl him.symm
-  have := ω.isTrace_toTrace.existsUnique_linearMap.unique
-    (fun x hx ↦ ω.isTrace_toTrace.linearMap_apply_of_mem_finitePart hx) hψ
-  simp [this, ψ]
+  simp [← ω.isTrace_toTrace.eq_linearMap hψ, ψ]
 
 end PositiveTracialFunctional
 
