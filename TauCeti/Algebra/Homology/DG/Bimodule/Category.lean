@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import TauCeti.Algebra.Homology.DG.Bimodule.Hom.Basic
 public import TauCeti.Algebra.Homology.DG.Module.Right.Category
 
@@ -115,6 +116,11 @@ instance : GradedFunLike (M ⟶ N) M.grading N.grading :=
 
 @[simp]
 theorem zero_apply (x : M) : (0 : M ⟶ N) x = 0 := DGBimoduleHom.zero_apply x
+
+/-- Exactness of the underlying functions makes the composite of DG bimodule maps zero. -/
+theorem comp_eq_zero_of_exact {f : M ⟶ N} {g : N ⟶ P} (h : Function.Exact f g) :
+    f ≫ g = 0 :=
+  hom_ext fun x ↦ by simpa only [comp_apply, zero_apply] using h.apply_apply_eq_zero x
 
 @[simp]
 theorem add_apply (f g : M ⟶ N) (x : M) : (f + g) x = f x + g x :=

@@ -6,14 +6,16 @@ Authors: Matteo Cipollina, The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Average
+public import Mathlib.MeasureTheory.Integral.CircleAverage
 public import Mathlib.Analysis.SpecialFunctions.Integrability.PosLog
+import Mathlib.Analysis.SpecialFunctions.Integrals.PosLog
 import Mathlib.MeasureTheory.Integral.IntervalAverage
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
-# Dyadic integral bounds for the positive logarithm
+# Dyadic integral bounds for the positive logarithm, and circle averages of `log ‖· - a‖`
 
 `TauCeti.intervalIntegrable_posLog_one_div_abs_one_sub_div` proves integrability of
 `Real.posLog (1 / |1 - r / a|)` on every finite interval, for arbitrary real scales `a`.
@@ -35,6 +37,12 @@ The averaging argument is adapted from Matteo Cipollina's
 `PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/CartanBound.lean` in
 [PrimeNumberTheoremAnd, revision 5754873](https://github.com/AlexKontorovich/PrimeNumberTheoremAnd/blob/5754873e8dae73f3b50f8f2b7a4f0b15d4df58aa/PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/CartanBound.lean),
 for the good-circle minimum-modulus argument in finite-order Hadamard factorization.
+
+Mathlib's `circleAverage_log_norm_sub_const_eq_log_radius_add_posLog` evaluates the circle average
+of `log ‖· - a‖` over the circle of center `c` and radius `R ≠ 0` as `log R + log⁺ (R⁻¹ * ‖c - a‖)`.
+`TauCeti.circleAverage_log_norm_sub_const_eq_log_max` writes it as `log (max |R| ‖c - a‖)`, for
+every radius `R`: the logarithm of the radius when `a` lies in the closed disc, and of the distance
+from `a` to the center otherwise.
 -/
 
 public section
@@ -281,3 +289,22 @@ theorem exists_mem_Ioc_notMem_sum_mul_posLog_one_div_abs_one_sub_div_le {ι : Ty
   simpa only [g, Finset.sum_apply, TauCeti.averageBound] using hle.trans havg
 
 end Finset
+
+namespace TauCeti
+
+/-! ### Circle averages of the logarithmic kernel -/
+
+/-- **Jensen's formula for the logarithmic kernel.** The average of `log ‖· - a‖` over the circle
+of center `c` and radius `R` is `log (max |R| ‖c - a‖)`. This is
+`circleAverage_log_norm_sub_const_eq_log_radius_add_posLog` written with `max`; it also holds for
+`R = 0`, where both sides are `log ‖c - a‖`. -/
+theorem circleAverage_log_norm_sub_const_eq_log_max {a c : ℂ} {R : ℝ} :
+    circleAverage (log ‖· - a‖) c R = log (max |R| ‖c - a‖) := by
+  rcases eq_or_ne R 0 with rfl | hR
+  · simp
+  have hR' : |R| ≠ 0 := abs_ne_zero.2 hR
+  rw [← circleAverage_abs_radius, circleAverage_log_norm_sub_const_eq_log_radius_add_posLog hR',
+    posLog_eq_log_max_one (by positivity), ← log_mul hR' (by positivity),
+    mul_max_of_nonneg _ _ (abs_nonneg R), mul_one, mul_inv_cancel_left₀ hR']
+
+end TauCeti

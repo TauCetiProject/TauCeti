@@ -35,6 +35,9 @@ then vacuous at that point, where the form contributes its value with a negative
   top form that is positive somewhere is positive.
 * `TauCeti.integralTopForm_ofTopForm_pos`: on a nonempty compact manifold of positive dimension,
   a nowhere-vanishing continuous top form has positive integral for the orientation it defines.
+* `TauCeti.integralTopForm_smul_nonneg`, `TauCeti.integralTopForm_smul_mono_of_compactSpace`:
+  against a top form that is nonnegative on positively oriented bases, `∫_M f·φ` is nonnegative
+  for `f ≥ 0`, and on a compact manifold it is monotone in continuous `f` when `φ` is `C^n`.
 
 ## Implementation notes
 
@@ -265,5 +268,33 @@ theorem integralTopForm_ofTopForm_pos [NeZero k] [CompactSpace M] [Nonempty M]
     Module.Basis.orientation_adjustToOrientation (R := ℝ) (M := E) _ _
   exact ⟨x, b, hb,
     (Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff hk hφ h0 b).mp hb⟩
+
+/-- **Nonnegativity against a fixed top form.** On an oriented manifold of positive dimension, if a
+top form `φ` is nonnegative on every positively oriented tangent basis, then `∫_M f·φ ≥ 0` for
+every nonnegative function `f`. -/
+theorem integralTopForm_smul_nonneg [NeZero k] (o : Manifold.Orientation I M (Fin k))
+    {φ : RoughForm I M ℝ k}
+    (hφ : ∀ x (c : Module.Basis (Fin k) ℝ (TangentSpace I x)),
+      c.orientation = o.orientationAt x → 0 ≤ φ x c)
+    {f : M → ℝ} (hf : ∀ x, 0 ≤ f x) :
+    0 ≤ integralTopForm o (fun x ↦ f x • φ x) :=
+  integralTopForm_nonneg o fun x c hc ↦ by
+    rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+    exact mul_nonneg (hf x) (hφ x c hc)
+
+/-- **Monotonicity against a fixed top form.** On a compact oriented manifold of positive
+dimension, if a `C^n` top form `φ` is nonnegative on every positively oriented tangent basis,
+then continuous functions with `f ≤ g` satisfy `∫_M f·φ ≤ ∫_M g·φ`. -/
+theorem integralTopForm_smul_mono_of_compactSpace [NeZero k] [CompactSpace M]
+    (o : Manifold.Orientation I M (Fin k)) {n : WithTop ℕ∞} {φ : RoughForm I M ℝ k}
+    (hφs : IsSmoothForm I n φ)
+    (hφ : ∀ x (c : Module.Basis (Fin k) ℝ (TangentSpace I x)),
+      c.orientation = o.orientationAt x → 0 ≤ φ x c)
+    {f g : M → ℝ} (hf : Continuous f) (hg : Continuous g) (hfg : ∀ x, f x ≤ g x) :
+    integralTopForm o (fun x ↦ f x • φ x) ≤ integralTopForm o (fun x ↦ g x • φ x) := by
+  have h := integralTopForm_add_smul_of_compactSpace o hφs hf (hg.sub hf)
+  simp only [Pi.sub_apply, add_sub_cancel] at h
+  rw [h, le_add_iff_nonneg_right]
+  exact integralTopForm_smul_nonneg o hφ fun x ↦ sub_nonneg.2 (hfg x)
 
 end TauCeti

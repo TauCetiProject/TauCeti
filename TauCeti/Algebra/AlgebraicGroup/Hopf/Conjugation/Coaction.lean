@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.ClassFunction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Basic
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
 
@@ -44,6 +45,8 @@ of the quotient map `χ_G : G → G // G` on points.
 * `TauCeti.HopfAlgebra.mem_conjugationInvariants_iff_forall_conj`: a function is invariant
   exactly when it is constant on conjugacy classes of points with values in every commutative
   algebra.
+* `TauCeti.HopfAlgebra.conjugationInvariants_eq_classFunctions`: the invariant functions are the
+  class functions.
 
 ## References
 
@@ -240,6 +243,14 @@ theorem mem_conjugationInvariants {f : H} :
   let := conjugationComoduleAlgebra (R := R) (H := H)
   exact ComoduleAlgebra.mem_coinvariants
 
+/-- A conjugation invariant is a unit of the invariants exactly when it is a unit of `H`: the
+inverse of an invariant unit is again invariant (`TauCeti.ComoduleAlgebra.isUnit_coinvariants_iff`).
+-/
+theorem isUnit_conjugationInvariants_iff {f : conjugationInvariants R H} :
+    IsUnit f ↔ IsUnit (f : H) :=
+  letI := conjugationComoduleAlgebra (R := R) (H := H)
+  ComoduleAlgebra.isUnit_coinvariants_iff
+
 /-- **An invariant function is constant on conjugacy classes of points**: for every commutative
 `R`-algebra `A` and all `A`-points `g` and `x`, `f(g * x * g⁻¹) = f(x)`. -/
 theorem conjugationInvariants_apply_conj {f : H} (hf : f ∈ conjugationInvariants R H)
@@ -288,6 +299,15 @@ theorem mem_conjugationInvariants_iff_conjugationAlgHom {f : H} :
       (productMap_comp_conjugationAlgHom (R := R) (H := H) g x) f
     rw [AlgHom.comp_apply, h] at hc
     simpa using hc.symm
+
+variable (R H) in
+/-- **The conjugation-invariant functions are the class functions**: the coinvariants of the right
+conjugation coaction are the equalizer `TauCeti.HopfAlgebra.classFunctions` of the left
+conjugation coordinate map and the second-factor inclusion. -/
+theorem conjugationInvariants_eq_classFunctions :
+    conjugationInvariants R H = classFunctions R H :=
+  SetLike.ext fun _ ↦
+    mem_conjugationInvariants_iff_conjugationAlgHom.trans mem_classFunctions_iff.symm
 
 end HopfAlgebra
 

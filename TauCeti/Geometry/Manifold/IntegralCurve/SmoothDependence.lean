@@ -87,8 +87,9 @@ private theorem exists_contDiffAt_maximalIntegralCurve_eq_extChartAt_symm {n : �
   -- `v` through that point on `Ioo (-ε) ε`.
   have hcurve (x : M) (hx : x ∈ φ.source) (hpax : pa (φ x)) :
       IsMIntegralCurveOn (φ.symm ∘ Φ (φ x)) v (Ioo (-ε) ε) ∧ (φ.symm ∘ Φ (φ x)) 0 = x :=
-    ⟨IsMIntegralCurveOn.of_extChartAt_symm isOpen_Ioo (fun t ht ↦ (hab hpax (hIoo t ht)).1)
-      fun t ht ↦ (hab hpax (hIoo t ht)).2.1, by simp [hΦ0, φ.left_inv hx]⟩
+    ⟨IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt
+      (fun t ht ↦ (hab hpax (hIoo t ht)).1.hasDerivWithinAt)
+      fun t ht ↦ interior_subset (hab hpax (hIoo t ht)).2.1, by simp [hΦ0, φ.left_inv hx]⟩
   have hx : ∀ᶠ x in 𝓝 x₀, x ∈ φ.source ∧ pa (φ x) :=
     Filter.Eventually.and (extChartAt_source_mem_nhds (I := I) x₀)
       ((continuousAt_extChartAt x₀).eventually hpa)

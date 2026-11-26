@@ -19,7 +19,9 @@ import TauCeti.LinearAlgebra.Matrix.BilinearForm
 The real inner product `innerₗ E` is a nondegenerate bilinear form on `E`
 (`TauCeti.nondegenerate_inner`): a vector orthogonal to every vector is orthogonal to itself, hence
 zero. This is the hypothesis under which Mathlib's bilinear-form constructions, such as the dual
-basis `LinearMap.BilinForm.dualBasis`, apply to the inner product. In finite dimension it is
+basis `LinearMap.BilinForm.dualBasis`, apply to the inner product. The inner product is also
+symmetric (`TauCeti.isSymm_innerₗ`) and positive definite
+(`TauCeti.posDef_toQuadraticMap_innerₗ`). In finite dimension it is
 moreover a perfect pairing (`TauCeti.bijective_innerₗ`), as Mathlib's `exteriorPower.hodgeStar`
 requires of its bilinear form. Its pullback along an injective linear map, such as the metric
 induced by an immersion, is again nondegenerate (`TauCeti.nondegenerate_inner_comp`), so a vector
@@ -43,6 +45,15 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- The real inner product is a nondegenerate bilinear form. -/
 theorem nondegenerate_inner : (innerₗ E).Nondegenerate :=
   ⟨fun x hx ↦ inner_self_eq_zero.mp (hx x), fun y hy ↦ inner_self_eq_zero.mp (hy y)⟩
+
+/-- The real inner product is a symmetric bilinear form. -/
+theorem isSymm_innerₗ : LinearMap.BilinForm.IsSymm (innerₗ E) :=
+  LinearMap.BilinForm.isSymm_iff.2 isSymm_inner
+
+/-- The real inner product is a positive-definite bilinear form: its quadratic form `v ↦ ⟪v, v⟫`
+is positive away from `0`. -/
+theorem posDef_toQuadraticMap_innerₗ : (LinearMap.BilinMap.toQuadraticMap (innerₗ E)).PosDef :=
+  fun _ ↦ real_inner_self_pos.2
 
 /-- A nonzero scalar multiple of the real inner product is nondegenerate. -/
 theorem nondegenerate_toBilinForm_smul_innerSL {c : ℝ} (hc : c ≠ 0) :
