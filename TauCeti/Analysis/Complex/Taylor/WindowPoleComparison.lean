@@ -11,7 +11,6 @@ public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 import TauCeti.Analysis.Complex.Taylor.CauchyEstimate
 import TauCeti.Analysis.Complex.Taylor.Laurent
-import TauCeti.Analysis.Contour.MeromorphicLaurent
 import TauCeti.Analysis.Meromorphic.Order
 import TauCeti.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.SpecificLimits.Window
