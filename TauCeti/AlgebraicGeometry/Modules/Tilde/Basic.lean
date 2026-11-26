@@ -475,6 +475,7 @@ theorem _root_.AlgebraicGeometry.isBaseChange_tildeToTop (M : ModuleCat.{u} R) :
 
 /-- The global sections functor `moduleSpecΓFunctor` evaluates a morphism of modules on `Spec R`
 on the sections over `⊤`. -/
+@[simp]
 theorem _root_.AlgebraicGeometry.moduleSpecΓFunctor_map_apply {M N : (Spec R).Modules}
     (f : M ⟶ N) (x : moduleSpecΓFunctor.obj M) : moduleSpecΓFunctor.map f x = f.app ⊤ x :=
   (rfl)

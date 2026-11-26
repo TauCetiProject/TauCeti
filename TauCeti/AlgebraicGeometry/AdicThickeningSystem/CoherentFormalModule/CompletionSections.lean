@@ -77,17 +77,16 @@ private lemma transition_pullbackSections {S V₀ V₁ W₀ W₁ : Scheme.{u}} {
         (pullback g₀).map ((pullbackComp ι' t₁).hom.app N ≫ (pullbackCongr hι').hom.app N)).app ⊤
       (ι.pullbackSections _ ⊤ (g₁.pullbackSections _ ⊤ (t₁.pullbackSections N ⊤ x))) =
       g₀.pullbackSections _ ⊤ (t₀.pullbackSections N ⊤ x) := by
-  -- Work with sections pulled back to the whole source, where the composition and congruence
-  -- comparisons of pullback are described by the `pullbackSectionsLE` API.
+  -- Work with sections pulled back to the whole source, where the comparisons of pullback are
+  -- described by the `pullbackSectionsLE` API.
   rw [← Scheme.Hom.pullbackSectionsLE_top t₁, ← Scheme.Hom.pullbackSectionsLE_top g₁,
     ← Scheme.Hom.pullbackSectionsLE_top ι, ← Scheme.Hom.pullbackSectionsLE_top t₀,
     ← Scheme.Hom.pullbackSectionsLE_top g₀]
-  simp only [pullbackCompIsoOfCommSq_hom_app, Modules.Hom.comp_app, ConcreteCategory.comp_apply]
-  rw [Scheme.Hom.pullbackSectionsLE_comp_hom, Scheme.Hom.pullbackSectionsLE_congr,
-    Scheme.Hom.pullbackSectionsLE_comp (V := ⊤) (hV := ι'.preimage_top.ge)
-      (hW := g₀.preimage_top.ge), Scheme.Hom.pullbackSectionsLE_naturality,
-    Modules.Hom.comp_app, ConcreteCategory.comp_apply, Scheme.Hom.pullbackSectionsLE_comp_hom,
-    Scheme.Hom.pullbackSectionsLE_congr]
+  simp only [Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+    pullbackCompIsoOfCommSq_hom_app_pullbackSectionsLE (V' := ⊤) (hV' := ι'.preimage_top.ge)
+      (hO' := g₀.preimage_top.ge)]
+  rw [Scheme.Hom.pullbackSectionsLE_naturality, Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+    Scheme.Hom.pullbackSectionsLE_comp_hom, Scheme.Hom.pullbackSectionsLE_congr]
 
 /-! ### The sections of the completion of `M` on `spf J` -/
 
@@ -230,12 +229,9 @@ theorem coe_completionFunctorSectionsLimEquiv_symm_of_apply (x : moduleSpecΓFun
             ((completionFunctor _ _).obj M))).Product) n =
       ((specIso J).inv.app n).pullbackSections _ ⊤
         ((toScheme _ _ n).pullbackSections M.obj ⊤ x) := by
-  rw [← ModuleTower.limπ_apply, completionFunctorSectionsLimEquiv, LinearEquiv.symm_trans_apply,
-    ← ModuleTower.limReductionEquiv_toLimReduction, LinearEquiv.symm_apply_apply,
-    LinearEquiv.symm_symm, ModuleTower.limEquivOfIso_apply, ← LinearMap.comp_apply,
-    ModuleTower.limπ_comp_limMap, LinearMap.comp_apply, ModuleTower.limπ_apply,
-    ModuleTower.coe_toLimQuotients_apply]
-  exact completionFunctorSectionsTowerIso_hom_app_reductionπ J M n x
+  rw [completionFunctorSectionsLimEquiv, LinearEquiv.symm_trans_apply,
+    ← ModuleTower.limReductionEquiv_toLimReduction, LinearEquiv.symm_apply_apply]
+  simpa using completionFunctorSectionsTowerIso_hom_app_reductionπ J M n x
 
 end
 
