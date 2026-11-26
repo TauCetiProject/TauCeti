@@ -39,11 +39,16 @@ is a bijection from the height functions vanishing at `0` onto the plane tilings
 * `TauCeti.IsTiling.tilingHeight_target_sub_v`, `TauCeti.tilingHeight_zero`,
   `TauCeti.IsTiling.eq_tilingHeight`: `H_M` has the increments of the height cochain, vanishes at
   `0`, and is the only such function.
+* `TauCeti.IsTiling.card_filter_range_eq_tilingHeight_add_nsmul_sub`: the number of edges of
+  direction `e₁` (resp. `e₂`) of a plane tiling on a segment of that direction is the increase of
+  `H_M` along it.
 * `TauCeti.tilingOfHeight_bijOn`: `tilingOfHeight` is a bijection from the height functions
   vanishing at `0` onto the plane tilings, with inverse `tilingHeight`
   (`TauCeti.IsTiling.tilingOfHeight_tilingHeight`,
   `TauCeti.IsHeightFunction.tilingHeight_tilingOfHeight`).
-* `TauCeti.IsTiling.tilingHeight_vadd`: `H_{τ_w M}(v) = H_M(v − w) − H_M(−w)`.
+* `TauCeti.IsTiling.tilingHeight_vadd`: `H_{τ_w M}(v) = H_M(v − w) − H_M(−w)`, and
+  `TauCeti.IsTiling.tilingHeight_add_sub_of_vadd_eq`: if `M` is invariant under the translation
+  by `w`, then `H_M(v + w) − H_M(v) = H_M(w)`.
 * `TauCeti.IsHeightFunction.sub_le_max`, `TauCeti.IsTiling.tilingHeight_sub_le_max`: the Lipschitz
   bound `H(u + (a, b)) − H(u) ≤ max(a, b, 0)`.
 
@@ -145,6 +150,35 @@ theorem isCochainPrimitiveOn_tilingHeight (h : IsTiling Set.univ M) :
 theorem tilingHeight_target_sub_v (h : IsTiling Set.univ M) (e : TriEdge) :
     tilingHeight M e.target - tilingHeight M e.v = heightCochain M e :=
   (isCochainPrimitiveOn_univ_iff.1 h.isCochainPrimitiveOn_tilingHeight e).symm
+
+open Classical in
+/-- Along `e₁` and `e₂`, `H_M` increases by `1` on the edges of `M` and by `0` on the others. -/
+theorem tilingHeight_add_latticeDir_sub_of_ne_two (h : IsTiling Set.univ M) (v : ℤ × ℤ)
+    {k : Fin 3} (hk : k ≠ 2) :
+    tilingHeight M (v + latticeDir k) - tilingHeight M v =
+      if (⟨v, k⟩ : TriEdge) ∈ M then 1 else 0 := by
+  have hc : neutralIncrement ⟨v, k⟩ = 0 := by simp [neutralIncrement_def, hk]
+  have := h.tilingHeight_target_sub_v ⟨v, k⟩
+  rw [TriEdge.target_mk] at this
+  split_ifs with hM <;> simp_all
+
+open Classical in
+/-- **Lozenges on a segment**: for `k` the direction `e₁` or `e₂`, the number of edges
+`(v + i e_k, k)` of a plane tiling with `i < n` is `H_M(v + n e_k) − H_M(v)`. -/
+theorem card_filter_range_eq_tilingHeight_add_nsmul_sub (h : IsTiling Set.univ M) (v : ℤ × ℤ)
+    {k : Fin 3} (hk : k ≠ 2) (n : ℕ) :
+    (((Finset.range n).filter fun i : ℕ => (⟨v + i • latticeDir k, k⟩ : TriEdge) ∈ M).card : ℤ) =
+      tilingHeight M (v + n • latticeDir k) - tilingHeight M v := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hstep := h.tilingHeight_add_latticeDir_sub_of_ne_two (v + n • latticeDir k) hk
+    rw [Finset.range_add_one, Finset.filter_insert, succ_nsmul, ← add_assoc]
+    split_ifs at hstep ⊢
+    · rw [Finset.card_insert_of_notMem (by simp)]
+      push_cast
+      omega
+    · omega
 
 /-- **Uniqueness of the height function**: a primitive of the height cochain of a plane tiling
 vanishing at `0` is `H_M`. -/
@@ -275,6 +309,17 @@ theorem IsTiling.tilingHeight_vadd (h : IsTiling Set.univ M) (w v : ℤ × ℤ) 
     simp only [TriEdge.target_vadd, TriEdge.vadd_v]
     abel_nf
   exact congrFun (hw.eq_tilingHeight hg (by simp)).symm v
+
+/-- **Heights of invariant tilings**: if a plane tiling is invariant under the translation by
+`w`, its height function increases by `H_M(w)` between `v` and `v + w`. -/
+theorem IsTiling.tilingHeight_add_sub_of_vadd_eq (h : IsTiling Set.univ M) {w : ℤ × ℤ}
+    (hw : w +ᵥ M = M) (v : ℤ × ℤ) :
+    tilingHeight M (v + w) - tilingHeight M v = tilingHeight M w := by
+  have hv := h.tilingHeight_vadd w (v + w)
+  have h0 := h.tilingHeight_vadd w w
+  rw [hw, add_sub_cancel_right] at hv
+  rw [hw, sub_self, tilingHeight_zero] at h0
+  omega
 
 /-! ### The Lipschitz bound -/
 
