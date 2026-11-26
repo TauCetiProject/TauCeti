@@ -30,10 +30,9 @@ Poincaré expansions at infinity are the specialization `w z = z⁻¹`.
 * `Asymptotics.HasAsymptoticExpansion.isBigO_sub_constantCoeff` and
   `Asymptotics.HasAsymptoticExpansion.tendsto_constantCoeff`: first-order leading-term bound and
   limit to `constantCoeff P`.
-* `Asymptotics.hasAsymptoticExpansion_pow_eval`,
-  `Asymptotics.hasAsymptoticExpansion_pow_trunc`, and
+* `Asymptotics.hasAsymptoticExpansion_pow_eval` and
   `Asymptotics.HasAsymptoticExpansion.isBigO_sub_trunc_eval`: asymptotic expansion of polynomial
-  evaluations and `PowerSeries.trunc N Q`, and remainder estimate after truncation.
+  evaluations and remainder estimate after truncation.
 * `Asymptotics.hasAsymptoticExpansion_pow_add`, `Asymptotics.hasAsymptoticExpansion_pow_mul`,
   `Asymptotics.hasAsymptoticExpansion_pow_pow`, `Asymptotics.hasAsymptoticExpansion_pow_inv`:
   closure of asymptotic power series under ring operations and reciprocals (when
@@ -124,14 +123,6 @@ theorem hasAsymptoticExpansion_pow_eval (hw : Tendsto w l (𝓝 0)) (p : 𝕜[X]
     simp_rw [smul_eq_mul, hdiff]
     exact isBigO_zero _ _
 
-/-- The `N`-th truncation `(PowerSeries.trunc N Q).eval (w x)` has the asymptotic power series
-`(PowerSeries.trunc N Q : 𝕜⟦X⟧)` in `w → 0`. -/
-theorem hasAsymptoticExpansion_pow_trunc (hw : Tendsto w l (𝓝 0)) (Q : 𝕜⟦X⟧) (N : ℕ) :
-    HasAsymptoticExpansion l (fun n x => w x ^ n)
-      (fun n => coeff n (PowerSeries.trunc N Q : 𝕜⟦X⟧))
-      (fun x => (PowerSeries.trunc N Q).eval (w x)) :=
-  hasAsymptoticExpansion_pow_eval hw (PowerSeries.trunc N Q)
-
 /-- The remainder of an asymptotic power series `P` of `f` after degree `< N` is
 `f x - (PowerSeries.trunc N P).eval (w x) = O(w x ^ N)`. -/
 theorem HasAsymptoticExpansion.isBigO_sub_trunc_eval {P : 𝕜⟦X⟧} {f : α → 𝕜}
@@ -146,7 +137,7 @@ theorem HasAsymptoticExpansion.isBigO_sub_trunc_eval {P : 𝕜⟦X⟧} {f : α �
 theorem isBigO_trunc_eval_one (hw : Tendsto w l (𝓝 0)) (P : 𝕜⟦X⟧) (N : ℕ) :
     (fun x => (PowerSeries.trunc N P).eval (w x)) =O[l] fun _ => (1 : 𝕜) := by
   simpa only [range_zero, sum_empty, sub_zero, pow_zero] using
-    (hasAsymptoticExpansion_pow_trunc hw P N).isBigO 0
+    (hasAsymptoticExpansion_pow_eval hw (PowerSeries.trunc N P)).isBigO 0
 
 /-- Multiplying two `N`-th truncations agrees with the `N`-th truncation of the product up to
 `O(w ^ N)` when `w → 0`. -/
@@ -432,7 +423,7 @@ private lemma isBigO_sum_trunc_substInv {P Q : 𝕜⟦X⟧} {M : ℕ}
     PowerSeries.X_pow_dvd_subst_sub_subst hQ0 hdvd P
   have hqT : HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n T)
       (fun x => (PowerSeries.trunc (M + 1) Q).eval (w x)) :=
-    hasAsymptoticExpansion_pow_trunc hw0 Q (M + 1)
+    hasAsymptoticExpansion_pow_eval hw0 (PowerSeries.trunc (M + 1) Q)
   have hsum : (fun x => ∑ k ∈ range (M + 1),
       ((PowerSeries.trunc (M + 1) Q).eval (w x) ^ k * coeff k P -
         ∑ n ∈ range (M + 1), w x ^ n * (coeff k P * coeff n (T ^ k)))) =O[l]

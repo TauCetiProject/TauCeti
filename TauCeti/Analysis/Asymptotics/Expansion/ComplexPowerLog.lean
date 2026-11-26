@@ -57,8 +57,8 @@ private lemma hasAsymptoticExpansion_pow_unit_sub_one {α : Type*} {l : Filter �
     exact (hsub.congr_coeff fun n => by simp only [map_one]).congr'
       (Eventually.of_forall fun _ => rfl)
   refine ⟨hu_exp, ?_⟩
-  have hU0 : constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 :=
-    constantCoeff_exp_neg_mul_sub_one hP
+  have hU0 : constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 := by
+    rw [map_sub, map_one, constantCoeff_exp_neg_mul hP, sub_self]
   simpa only [hU0] using hu_exp.tendsto_constantCoeff hw
 
 /-- Principal logarithm of a complex asymptotic power series whose constant coefficient lies in
@@ -76,8 +76,8 @@ theorem hasAsymptoticExpansion_pow_log {α : Type*} {l : Filter α} {w : α → 
   have hp₀_ne : p₀ ≠ 0 := (Complex.mem_slitPlane_iff_arg.mp hP).2
   have hexpℓ : Complex.exp ℓ = p₀ := Complex.exp_log hp₀_ne
   obtain ⟨hu_exp, hu0⟩ := hasAsymptoticExpansion_pow_unit_sub_one hw hexpℓ.symm hf
-  have hU0 : constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 :=
-    constantCoeff_exp_neg_mul_sub_one hexpℓ.symm
+  have hU0 : constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 := by
+    rw [map_sub, map_one, constantCoeff_exp_neg_mul hexpℓ.symm, sub_self]
   have hlog_at0 : HasAsymptoticExpansion (𝓝 (0 : ℂ)) (fun n z => z ^ n)
       (fun n => coeff n (PowerSeries.log ℂ)) (fun z => Complex.log (1 + z)) := by
     have hfp := hasFPowerSeriesAt_clog_one_add.hasAsymptoticExpansion
@@ -116,8 +116,8 @@ theorem hasAsymptoticExpansion_pow_cpow {α : Type*} {l : Filter α} {w : α →
   have hp₀_ne : p₀ ≠ 0 := (Complex.mem_slitPlane_iff_arg.mp hP).2
   have hexpℓ : Complex.exp ℓ = p₀ := Complex.exp_log hp₀_ne
   obtain ⟨hu_exp, hu0⟩ := hasAsymptoticExpansion_pow_unit_sub_one hw hexpℓ.symm hf
-  have hU0 : constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 :=
-    constantCoeff_exp_neg_mul_sub_one hexpℓ.symm
+  have hU0 : constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 := by
+    rw [map_sub, map_one, constantCoeff_exp_neg_mul hexpℓ.symm, sub_self]
   have hbin_at0 : HasAsymptoticExpansion (𝓝 (0 : ℂ)) (fun n z => z ^ n)
       (fun n => coeff n (PowerSeries.binomialSeries ℂ r)) (fun z => (1 + z) ^ r) := by
     have hfp := (Complex.one_add_cpow_hasFPowerSeriesAt_zero (a := r)).hasAsymptoticExpansion

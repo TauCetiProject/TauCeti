@@ -65,17 +65,12 @@ theorem formalCpow_def (ℓ r : ℂ) (P : ℂ⟦X⟧) :
       C (Complex.exp (r * ℓ)) * (C (Complex.exp (-ℓ)) * P).binomialPow r := by
   rfl
 
-private theorem constantCoeff_exp_neg_mul {ℓ : ℂ} {P : ℂ⟦X⟧}
+/-- Rescaling a power series `P` with constant coefficient `Complex.exp ℓ` by `Complex.exp (-ℓ)`
+yields a power series with constant coefficient `1`. -/
+theorem constantCoeff_exp_neg_mul {ℓ : ℂ} {P : ℂ⟦X⟧}
     (hP : constantCoeff P = Complex.exp ℓ) :
     constantCoeff (C (Complex.exp (-ℓ)) * P) = 1 := by
   rw [map_mul, constantCoeff_C, hP, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero]
-
-/-- Rescaling a power series `P` with constant coefficient `Complex.exp ℓ` by `Complex.exp (-ℓ)`
-and subtracting `1` yields a power series with zero constant coefficient. -/
-theorem constantCoeff_exp_neg_mul_sub_one {ℓ : ℂ} {P : ℂ⟦X⟧}
-    (hP : constantCoeff P = Complex.exp ℓ) :
-    constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 := by
-  rw [map_sub, map_one, constantCoeff_exp_neg_mul hP, sub_self]
 
 /-- The constant term of `formalCpow ℓ r P` is `Complex.exp (r * ℓ)` when
 `constantCoeff P = Complex.exp ℓ`. -/
