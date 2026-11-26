@@ -96,6 +96,7 @@ theorem contactHamiltonianVectorField_standardContactForm (f : ℝ × ℝ × ℝ
     hX).symm p
 
 /-- The contact Hamiltonian vector field of the coordinate `x` for `dz - x dy` is `-∂_y`. -/
+@[simp]
 theorem contactHamiltonianVectorField_standardContactForm_x (p : ℝ × ℝ × ℝ) :
     (standardContactForm.contactHamiltonianVectorField (fun q ↦ q.1) p : ℝ × ℝ × ℝ) =
       (0, -1, 0) := by
@@ -104,6 +105,7 @@ theorem contactHamiltonianVectorField_standardContactForm_x (p : ℝ × ℝ × �
 
 /-- The contact Hamiltonian vector field of the coordinate `y` for `dz - x dy` is
 `∂_x + y ∂_z`. -/
+@[simp]
 theorem contactHamiltonianVectorField_standardContactForm_y (p : ℝ × ℝ × ℝ) :
     (standardContactForm.contactHamiltonianVectorField (fun q ↦ q.2.1) p : ℝ × ℝ × ℝ) =
       (1, 0, p.2.1) := by
@@ -115,6 +117,7 @@ theorem contactHamiltonianVectorField_standardContactForm_y (p : ℝ × ℝ × �
 
 /-- The contact Hamiltonian vector field of the coordinate `z` for `dz - x dy` is
 `x ∂_x + z ∂_z`. -/
+@[simp]
 theorem contactHamiltonianVectorField_standardContactForm_z (p : ℝ × ℝ × ℝ) :
     (standardContactForm.contactHamiltonianVectorField (fun q ↦ q.2.2) p : ℝ × ℝ × ℝ) =
       (p.1, 0, p.2.2) := by
@@ -126,7 +129,7 @@ theorem contactHamiltonianVectorField_standardContactForm_z (p : ℝ × ℝ × �
 
 /-! ### The flow of `X_z` -/
 
-/-- The contact Hamiltonian vector field `X_z = x ∂_x + z ∂_z` of `dz - x dy` is smooth. -/
+/-- The contact Hamiltonian vector field `X_z = x ∂_x + z ∂_z` of `dz - x dy` is `C¹`. -/
 private theorem contMDiff_contactHamiltonianVectorField_standardContactForm_z :
     ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ).tangent 1
       (fun q ↦ (⟨q, standardContactForm.contactHamiltonianVectorField (fun q ↦ q.2.2) q⟩ :
@@ -173,39 +176,30 @@ theorem mpullback_flowOf_contactHamiltonianVectorField_standardContactForm_z (t 
         (flowOf (standardContactForm.contactHamiltonianVectorField fun q ↦ q.2.2) t)
         standardContactForm.val =
       Real.exp t • standardContactForm.val := by
-  -- The time-`t` map is the linear map `(x, y, z) ↦ (eᵗ x, y, eᵗ z)`.
-  let L : (ℝ × ℝ × ℝ) →L[ℝ] ℝ × ℝ × ℝ :=
-    (Real.exp t • ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)).prod
-      (((ContinuousLinearMap.fst ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))).prod
-        (Real.exp t • (ContinuousLinearMap.snd ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))))
-  have hL : flowOf (standardContactForm.contactHamiltonianVectorField fun q ↦ q.2.2) t = L := by
+  -- In the coordinates `(q, p, z) = (y, x, z)` of `innerProductContactForm ℝ`, given by the
+  -- involution `σ`, the time-`t` map is `(q, p, z) ↦ (q, eᵗ p, eᵗ z)`, which rescales that form
+  -- by `eᵗ` (`mpullback_innerProductContactForm_smul`).
+  let σ : ℝ × ℝ × ℝ → ℝ × ℝ × ℝ := fun p ↦ (p.2.1, p.1, p.2.2)
+  let S : ℝ × ℝ × ℝ → ℝ × ℝ × ℝ := fun p ↦ (p.1, Real.exp t • p.2)
+  have hσ : MDifferentiable 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) σ :=
+    (show ContDiff ℝ 1 σ by fun_prop).contMDiff.mdifferentiable one_ne_zero
+  have hS : MDifferentiable 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) S :=
+    (show ContDiff ℝ 1 S by fun_prop).contMDiff.mdifferentiable one_ne_zero
+  have hφ : flowOf (standardContactForm.contactHamiltonianVectorField fun q ↦ q.2.2) t =
+      fun p ↦ (Real.exp t * p.1, p.2.1, Real.exp t * p.2.2) :=
+    funext (flowOf_contactHamiltonianVectorField_standardContactForm_z t)
+  have hφd : MDifferentiable 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ)
+      (fun p : ℝ × ℝ × ℝ ↦ (Real.exp t * p.1, p.2.1, Real.exp t * p.2.2)) :=
+    (show ContDiff ℝ 1 fun p : ℝ × ℝ × ℝ ↦ (Real.exp t * p.1, p.2.1, Real.exp t * p.2.2) by
+      fun_prop).contMDiff.mdifferentiable one_ne_zero
+  have hσφ : σ ∘ (fun p : ℝ × ℝ × ℝ ↦ (Real.exp t * p.1, p.2.1, Real.exp t * p.2.2)) = S ∘ σ := by
     funext p
-    rw [flowOf_contactHamiltonianVectorField_standardContactForm_z]
-    simp [L]
-  funext p
-  ext v
-  -- A one-form only sees the single entry `v 0` of `v`.
-  have hv : v = ![v 0] := by
-    ext i
-    fin_cases i
-    rfl
-  rw [mpullback_apply, hL, L.mfderiv_eq, Pi.smul_apply, ContinuousAlternatingMap.smul_apply]
-  calc _ = (L (v 0)).2.2 - (L p).1 * (L (v 0)).2.1 := by
-        convert standardContactForm_apply (L p) (L (v 0)) using 2
-        funext i
-        fin_cases i
-        rfl
-    _ = Real.exp t • ((v 0).2.2 - p.1 * (v 0).2.1) := by
-        generalize v 0 = w
-        obtain ⟨a, b, c⟩ := w
-        simp [L]
-        ring
-    _ = _ := by
-        conv_rhs => rw [hv]
-        rw [standardContactForm_apply]
+    simp [σ, S]
+  rw [hφ, ← mpullback_innerProductContactForm_real, ← mpullback_comp hφd hσ, hσφ,
+    mpullback_comp hσ hS, mpullback_innerProductContactForm_smul, SmoothForm.smul_toRoughForm,
+    mpullback_smul]
 
-/-- The time-`t` map of the flow of `X_z` preserves `dz - x dy` only for `t = 0`: for `t ≠ 0` it
-is a cooriented contactomorphism that is not strict. -/
+/-- The time-`t` map of the flow of `X_z` pulls `dz - x dy` back to itself only for `t = 0`. -/
 theorem mpullback_flowOf_contactHamiltonianVectorField_standardContactForm_z_eq_self_iff (t : ℝ) :
     mpullback 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ)
         (flowOf (standardContactForm.contactHamiltonianVectorField fun q ↦ q.2.2) t)
