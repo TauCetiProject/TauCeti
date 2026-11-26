@@ -128,8 +128,9 @@ theorem directionAmount_le {ι : Type*} {s : Finset ι} {κ : ι → ℕ} {c b :
           have hb := h₁.trans (hκ i hi)
           exact (hκ i hi).trans (by nlinarith)
       have hsize := jetSize_le (c := c) hj
+      have hlog25 : 0 ≤ 25 * log b := by positivity
       linarith [mul_le_mul_of_nonneg_left hc (Nat.cast_nonneg (κ i)),
-        mul_le_mul_of_nonneg_right (hκ i hi) (show 0 ≤ 25 * log b by positivity), hP i hi]
+        mul_le_mul_of_nonneg_right (hκ i hi) hlog25, hP i hi]
     _ = _ := by rw [sum_const, nsmul_eq_mul]; ring
 
 /-- Suppose `b` is nonnegative, `c - log b` is at least both `0` and `log b`, and each prime sum
@@ -183,7 +184,8 @@ theorem mul_pow_five_le_mul_of_separated_scales {l F x m k : ℝ}
     rw [← pow_mul]
     exact hx.trans hm₂
   have he : exp 2 ≤ 8 := by
-    rw [show (2 : ℝ) = 1 + 1 by norm_num, exp_add]
+    have htwo : (2 : ℝ) = 1 + 1 := by norm_num
+    rw [htwo, exp_add]
     nlinarith [exp_one_lt_d9, exp_pos 1]
   have hl₃ : (8 : ℝ) ≤ l ^ 3 := by
     have h := pow_le_pow_left₀ (by norm_num : (0 : ℝ) ≤ 2) hl 3
