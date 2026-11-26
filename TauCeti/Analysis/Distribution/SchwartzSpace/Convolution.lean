@@ -142,8 +142,8 @@ theorem integral_fourierInv_sub_mul_fourierChar (σ : 𝓢(E, ℂ)) (ξ x : E) :
     _ = ∫ z, (𝐞 ⟪x, ξ⟫ : ℂ) * (𝐞 (-⟪z, ξ⟫) • 𝓕⁻ σ z) := by
         refine integral_congr_ae (.of_forall fun z ↦ ?_)
         dsimp only
-        rw [inner_sub_left, sub_eq_add_neg, AddChar.map_add_eq_mul, Circle.coe_mul,
-          Circle.smul_def, smul_eq_mul]
+        simp only [sub_eq_add_neg, inner_add_left, inner_neg_left, AddChar.map_add_eq_mul,
+          Circle.coe_mul, Circle.smul_def, smul_eq_mul]
         ring
     _ = σ ξ * 𝐞 ⟪x, ξ⟫ := by rw [integral_const_mul, hσ, mul_comm]
 

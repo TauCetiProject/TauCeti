@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Fourier.Torus.Multiplier
 public import TauCeti.Analysis.Fourier.Torus.SchwartzMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # The periodic Littlewood–Paley decomposition of the torus
@@ -70,7 +71,12 @@ probability measures on the circle factors.
 * `TauCeti.UnitAddTorus.mFourierCoeff_sum_littlewoodPaleyBlock_range` and
   `TauCeti.UnitAddTorus.tendsto_sum_littlewoodPaleyBlock`: the low-pass partial sums and
   `∑ⱼ Δⱼ f = f`.
+* `TauCeti.UnitAddTorus.mFourierCoeff_sum_littlewoodPaleyBlock_range_eq_zero` and
+  `TauCeti.UnitAddTorus.exists_littlewoodPaleyBlock_sum_range_eq`: the low-pass partial sums are
+  trigonometric polynomials, and `Δⱼ`, `j < N`, does not see the partial sums far enough out.
 * `TauCeti.UnitAddTorus.exists_littlewoodPaleyBlock_comp_eq_zero`: almost orthogonality.
+* `TauCeti.UnitAddTorus.sum_littlewoodPaleyBlock_littlewoodPaleyBlock`: the blocks of nearby index
+  reproduce `Δⱼ`.
 * `TauCeti.UnitAddTorus.hasSum_norm_sq_littlewoodPaleyBlock`,
   `TauCeti.UnitAddTorus.summable_tsum_inhomogeneousLittlewoodPaley_sq_mul_norm_sq_mFourierCoeff`,
   `TauCeti.UnitAddTorus.exists_tsum_norm_sq_littlewoodPaleyBlock_le` and
@@ -219,6 +225,40 @@ theorem mFourierCoeff_sum_littlewoodPaleyBlock_range (N : ℕ) (f : L²(UnitAddT
     mFourierCoeff_fourierMultiplier, lp.coeFn_sum, Finset.sum_apply, littlewoodPaleySymbol_apply]
   rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
 
+/-- The low-pass truncation `∑_{k ≤ M} Δₖ f` has no Fourier coefficients at frequencies of norm
+greater than `2^M φ.rOut`. -/
+theorem mFourierCoeff_sum_littlewoodPaleyBlock_range_eq_zero (M : ℕ) (f : L²(UnitAddTorus d)) :
+    ∀ n ∉ (finite_setOf_norm_latticePoint_le (ι := d) (2 ^ M * φ.rOut)).toFinset,
+      mFourierCoeff ((∑ k ∈ Finset.range (M + 1), littlewoodPaleyBlock φ k) f) n = 0 := by
+  intro n hn
+  simp only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_le] at hn
+  rw [mFourierCoeff_sum_littlewoodPaleyBlock_range, φ.zero_of_le_dist, Complex.ofReal_zero,
+    zero_mul]
+  rw [dist_zero_right, norm_inv_smul_of_nonneg (by positivity), le_div_iff₀ (by positivity),
+    mul_comm]
+  exact hn.le
+
+/-- Far enough into the low-pass truncations, the blocks `Δⱼ`, `j < N`, no longer see the
+truncation: `Δⱼ (∑_{k ≤ M} Δₖ f) = Δⱼ f`. -/
+theorem exists_littlewoodPaleyBlock_sum_range_eq (N : ℕ) :
+    ∃ M : ℕ, ∀ j < N, ∀ f : L²(UnitAddTorus d),
+      littlewoodPaleyBlock φ j ((∑ k ∈ Finset.range (M + 1), littlewoodPaleyBlock φ k) f) =
+        littlewoodPaleyBlock φ j f := by
+  obtain ⟨K, hK⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
+  refine ⟨N + K, fun j hj f ↦ mFourierBasis.repr.injective (lp.ext (funext fun n ↦ ?_))⟩
+  simp only [mFourierBasis_repr]
+  rw [mFourierCoeff_littlewoodPaleyBlock, mFourierCoeff_sum_littlewoodPaleyBlock_range,
+    mFourierCoeff_littlewoodPaleyBlock]
+  by_cases hn : 2 ^ j * φ.rOut ≤ ‖latticePoint n‖
+  · simp [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hn]
+  · rw [φ.one_of_mem_closedBall, Complex.ofReal_one, one_mul]
+    rw [mem_closedBall_zero_iff, norm_inv_smul_of_nonneg (by positivity),
+      div_le_iff₀ (by positivity)]
+    calc ‖latticePoint n‖ ≤ 2 ^ j * φ.rOut := (not_le.1 hn).le
+      _ ≤ 2 ^ N * (2 ^ K * φ.rIn) :=
+          mul_le_mul (pow_le_pow_right₀ one_le_two hj.le) hK.le φ.rOut_pos.le (by positivity)
+      _ = φ.rIn * 2 ^ (N + K) := by rw [pow_add]; ring
+
 /-- **Littlewood–Paley reconstruction on the torus.** For every `f ∈ L²(𝕋ᵈ)`, the partial sums
 `∑_{j < N} Δⱼ f` converge to `f` in `L²(𝕋ᵈ)`. -/
 theorem tendsto_sum_littlewoodPaleyBlock (f : L²(UnitAddTorus d)) :
@@ -257,6 +297,25 @@ theorem exists_littlewoodPaleyBlock_comp_eq_zero (φ' : ContDiffBump (0 : Euclid
     simp [← Complex.ofReal_mul, hL j k hjk]
   simp only [littlewoodPaleyBlock_eq_fourierMultiplier, ← ContinuousLinearMap.mul_def, ← map_mul,
     h, mul_comm (littlewoodPaleySymbol φ' k), map_zero, and_self]
+
+/-- **The blocks of nearby index reproduce `Δⱼ`.** If `ψⱼ ψₖ = 0` whenever `j + L ≤ k`, then
+`∑_{k ∈ [j + 1 - L, j + L)} Δₖ Δⱼ f = Δⱼ f`. -/
+theorem sum_littlewoodPaleyBlock_littlewoodPaleyBlock
+    {L : ℕ} (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : EuclideanSpace ℝ d,
+      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
+    (j : ℕ) (f : L²(UnitAddTorus d)) :
+    ∑ k ∈ Finset.Ico (j + 1 - L) (j + L), littlewoodPaleyBlock φ k (littlewoodPaleyBlock φ j f) =
+      littlewoodPaleyBlock φ j f := by
+  have hsym : (∑ k ∈ Finset.Ico (j + 1 - L) (j + L), littlewoodPaleySymbol φ k) *
+      littlewoodPaleySymbol φ j = littlewoodPaleySymbol φ j := by
+    ext n
+    simp only [lp.infty_coeFn_mul, Pi.mul_apply, lp.coeFn_sum, Finset.sum_apply,
+      littlewoodPaleySymbol_apply, ← Complex.ofReal_sum, ← Complex.ofReal_mul,
+      ← φ.enlargedLittlewoodPaley_apply,
+      φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL]
+  conv_rhs => rw [littlewoodPaleyBlock_eq_fourierMultiplier, ← hsym, map_mul, map_sum]
+  simp only [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
+    FunLike.coe_sum, Finset.sum_apply, littlewoodPaleyBlock_eq_fourierMultiplier]
 
 /-! ### The `L²` square function -/
 
