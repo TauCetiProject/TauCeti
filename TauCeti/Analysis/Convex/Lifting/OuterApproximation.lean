@@ -558,7 +558,7 @@ theorem exists_affine_coordinate_comparison_not_monotone :
   have hnotSub := not_fst_image_sharedOA_subset_directOA_of_rows hcomp houter
   have haff : ∀ i : Fin 1, ∀ x : ℝ, ∀ j ∈ ({0} : Set (Fin 2)),
       componentRow g (a i) Dg0 x j = g x j := fun i x j hj => by
-    rw [mem_singleton_iff.1 hj, hcomp i, Matrix.cons_val_zero]; rfl
+    rw [mem_singleton_iff.1 hj, hcomp i]; simp [g]
   have hc : ∀ j ∉ ({0} : Set (Fin 2)), ConvexOn ℝ Set.univ (fun x => g x j) := fun j hj => by
     rw [Fin.eq_one_of_ne_zero j (by simpa only [mem_singleton_iff] using hj)]
     simpa [g] using even_two.convexOn_pow (𝕜 := ℝ)

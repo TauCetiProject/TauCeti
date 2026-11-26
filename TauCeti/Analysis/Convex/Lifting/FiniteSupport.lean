@@ -355,13 +355,12 @@ theorem exists_strict_sharedOA_ssubset_directOA :
     Set.mem_pi.mpr fun _ _ => by by_cases hi : i = 0 <;> simp [a, hi]
   have hg : ∀ i, HasFDerivAt g (Dg i) (a i) := fun i => hasFDerivAt_pi'.2 fun j => by
     have hpow : HasDerivAt (fun t : ℝ => t ^ 2) (2 * a i j) (a i j) :=
-      (hasDerivAt_pow 2 (a i j)).congr_deriv (by simp only [Nat.cast_ofNat, Nat.add_one_sub_one,
-        pow_one])
+      (hasDerivAt_pow 2 (a i j)).congr_deriv (by norm_num)
     have hL : (ContinuousLinearMap.proj (R := ℝ) j).comp (Dg i) =
         (2 * a i j) • ContinuousLinearMap.proj (R := ℝ) j := by
       ext v
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply, smul_apply]
-      rfl
+      simp [Dg]
+      simp [a]
     rw [hL]; exact hpow.comp_hasFDerivAt (a i) (hasFDerivAt_apply (𝕜 := ℝ) j (a i))
   have hh : ∀ i, HasFDerivAt h (Dh i) (g (a i)) := fun i =>
     HasFDerivAt.fun_sum fun j _ => hasFDerivAt_apply (𝕜 := ℝ) j (g (a i))
@@ -377,7 +376,7 @@ theorem exists_strict_sharedOA_ssubset_directOA :
     (fun _ _ hxy => sum_le_sum fun j _ => hxy j) hc hhc ha hg hh
   have hrow (i : Fin 2) (x : Fin 2 → ℝ) (j : Fin 2) :
       componentRow g (a i) (Dg i) x j = 2 * (if i = 0 then (1 : ℝ) else -1) * x j - 1 := by
-    have hDg (v : Fin 2 → ℝ) : Dg i v = (2 * a i 0) • v := rfl
+    have hDg (v : Fin 2 → ℝ) : Dg i v = (2 * a i 0) • v := by simp [Dg]
     rw [componentRow_apply, hDg, Pi.smul_apply, smul_eq_mul, Pi.sub_apply]
     dsimp only [g, a]
     split_ifs <;> ring
