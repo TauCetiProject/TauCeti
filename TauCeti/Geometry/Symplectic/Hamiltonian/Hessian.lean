@@ -17,7 +17,9 @@ Let `(V, ω)` be a symplectic vector space whose inner product is the metric `ω
 linear compatible almost complex structure `J`. Then `J X_H = ∇H`
 (`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`), and differentiating gives
 `J dX_H(x) = d(∇H)(x)`, the Hessian operator `TauCeti.hessianOperator H x` of `H`
-(`TauCeti.SymplecticForm.apply_fderiv_hamiltonianVectorField_eq_hessianOperator`).
+(`TauCeti.SymplecticForm.apply_fderiv_hamiltonianVectorField_eq_hessianOperator`); equivalently
+`-J dX_H(x)` is the Hessian operator of `-H`
+(`TauCeti.SymplecticForm.neg_comp_fderiv_hamiltonianVectorField_eq_hessianOperator_neg`).
 
 At a nondegenerate critical point `p` of `H`, `dX_H(p)` is therefore injective
 (`TauCeti.SymplecticForm.injective_fderiv_hamiltonianVectorField_of_isNondegenerateCriticalPoint`),
@@ -82,6 +84,18 @@ theorem finrank_pointSpectralSubspace_add_morseIndex (hg : ∀ v w, ω v (J w) =
   rw [hHess, Module.End.pointSpectralSubspace_neg, Set.neg_Iio, neg_zero,
     ← hp.contDiffAt.stableLinearSubspace_eq_pointSpectralSubspace]
   exact hp.finrank_stableLinearSubspace_add_morseIndex
+
+/-- **`-J dX_H` is the Hessian of `-H`.** If the inner product of `V` is the metric `ω(·, J ·)`,
+then `-J dX_H(x)` is the Hessian operator of `-H` at `x`: this is
+`TauCeti.SymplecticForm.apply_fderiv_hamiltonianVectorField_eq_hessianOperator` combined with
+`TauCeti.hessianOperator_neg`. It identifies the zeroth-order term of the Morse operator of `-H`,
+whose negative gradient lines are the time-independent Floer solutions of `H`. -/
+theorem neg_comp_fderiv_hamiltonianVectorField_eq_hessianOperator_neg
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (H : V → ℝ) (x : V) :
+    -(J.toLinearMap.toContinuousLinearMap ∘L fderiv ℝ (ω.hamiltonianVectorField H) x) =
+      hessianOperator (-H) x := by
+  ext v
+  simp [apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg]
 
 /-- **The Hamiltonian vector field of the squared norm.** If the inner product of `V` is the metric
 `ω(·, J ·)`, the Hamiltonian vector field of `y ↦ ‖y‖²` is the linear field `y ↦ -2 J y`. -/
