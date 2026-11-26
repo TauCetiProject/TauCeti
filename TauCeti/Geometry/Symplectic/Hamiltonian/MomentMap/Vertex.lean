@@ -65,13 +65,19 @@ effective circle action on `ℂ²` with weights `1` and `-1`
 
 ## Main results
 
-Apart from `TauCeti.bijective_pi_of_mfderiv_eq`, all declarations are in the namespace
-`TauCeti.SmoothTwoForm.IsMomentMap`.
+Apart from `TauCeti.bijective_pi_of_mfderiv_eq` and
+`TauCeti.isOpen_setOf_forall_pos_and_isLocalMax_of_weightModelChart`, all declarations are in the
+namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
 
 * `TauCeti.bijective_pi_of_mfderiv_eq`: in a weight chart of a symplectic toric manifold, the
   weights are the coordinates of a linear isomorphism `𝔤 ≃ ℝⁿ`, so they form a basis of `𝔤*`.
+* `TauCeti.isOpen_setOf_forall_pos_and_isLocalMax_of_weightModelChart`: in a weight chart at `p`,
+  the elements `ξ` on which every weight is positive form an open set, and `μ^ξ` has a local
+  maximum at `p` for each of them.
 * `eventually_mem_fixedPoints_imp_eq`, `finite_fixedPoints_of_faithfulSMul`: the fixed points of
   a symplectic toric manifold are isolated, hence finite in number.
+* `apply_le_apply_of_mem_closure`: if `μ^ξ` has a local maximum at `p` for every `ξ` in an open
+  set `V`, then `μ^ξ` attains its maximum at `p` for every `ξ` in the closure of `V`.
 * `exists_forall_lt_of_mem_fixedPoints`: every fixed point is the unique maximum of some component
   `μ^ξ` of the moment map.
 * `preimage_singleton_eq_of_mem_fixedPoints`: the fibre of `μ` through a fixed point is that
@@ -156,12 +162,36 @@ theorem bijective_pi_of_mfderiv_eq {n : ℕ} {α : Fin n → StrongDual ℝ E}
   refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
   rwa [Module.finrank_fin_fun]
 
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [LieGroup I ∞ G] [T2Space G] [IsTopologicalGroup G]
+  [CompactSpace G] [PreconnectedSpace G] [FiniteDimensional ℝ E'] [I'.Boundaryless]
+  [IsManifold I' ∞ M] [T2Space M] [CompactSpace M] [PreconnectedSpace M] [MulAction G M]
+  [ContMDiffSMul I I' ∞ G M] [FaithfulSMul G M] in
+/-- **The positive cone of the weights.** In a weight chart at `p`, where
+`μ = μ(p) - ½ Σₖ |zₖ|² αₖ`, the elements `ξ` of the Lie algebra on which every weight `αₖ` is
+positive form an open set, and for each of them `μ^ξ` has a local maximum at `p`. -/
+theorem isOpen_setOf_forall_pos_and_isLocalMax_of_weightModelChart {n : ℕ}
+    {α : Fin n → StrongDual ℝ E}
+    {chart : PartialDiffeomorph I' 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n))
+      M (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) ∞}
+    {p : M} (hpchart : p ∈ chart.source)
+    (hμchart : ∀ x ∈ chart.source, ∀ ξ, μ x ξ = μ p ξ + weightMomentMap α (chart x) ξ) :
+    IsOpen {ξ : GroupLieAlgebra I G | ∀ k, 0 < α k ξ} ∧
+      ∀ ξ ∈ {ξ : GroupLieAlgebra I G | ∀ k, 0 < α k ξ}, IsLocalMax (fun y ↦ μ y ξ) p := by
+  refine ⟨?_, fun ξ hξ ↦ mem_of_superset (chart.open_source.mem_nhds hpchart) fun x hx ↦ ?_⟩
+  · simp only [ofPred_forall]
+    exact isOpen_iInter_of_finite fun k ↦ isOpen_lt continuous_const (α k).continuous
+  · -- On the chart, `μ^ξ = μ^ξ(p) - ½ Σₖ αₖ(ξ) (qₖ² + pₖ²)` with every `αₖ(ξ) > 0`.
+    simp only [mem_ofPred_eq]
+    rw [hμchart x hx ξ, add_le_iff_nonpos_right, weightMomentMap_apply α (chart x) ξ]
+    exact mul_nonpos_of_nonpos_of_nonneg (by norm_num) (Finset.sum_nonneg fun k _ ↦
+      mul_nonneg (hξ k).le (by positivity))
+
 namespace SmoothTwoForm.IsMomentMap
 
 omit [PreconnectedSpace G] [CompactSpace M] in
 /-- **The local picture at a fixed point of a symplectic toric manifold.** Near a fixed point `p`,
 `p` is the only fixed point, and there is a nonempty open set of elements `ξ` of the Lie algebra,
-those on which every weight at `p` is positive, for which `μ^ξ ≤ μ^ξ(p)` near `p`. -/
+those on which every weight at `p` is positive, for which `μ^ξ` has a local maximum at `p`. -/
 private theorem exists_nhds_of_mem_fixedPoints
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsSymplectic)
     (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
@@ -169,7 +199,7 @@ private theorem exists_nhds_of_mem_fixedPoints
     (hdim : finrank ℝ E' = 2 * finrank ℝ E) {p : M} (hp : p ∈ MulAction.fixedPoints G M) :
     ∃ U ∈ 𝓝 p, (∀ q ∈ U, q ∈ MulAction.fixedPoints G M → q = p) ∧
       ∃ V : Set (GroupLieAlgebra I G), IsOpen V ∧ V.Nonempty ∧
-        ∀ ξ ∈ V, ∀ x ∈ U, μ x ξ ≤ μ p ξ := by
+        ∀ ξ ∈ V, IsLocalMax (fun y ↦ μ y ξ) p := by
   have : IsMulCommutative G := ⟨⟨mul_comm⟩⟩
   obtain ⟨n, χ, α, chart, r, -, -, hpchart, hchartp, -, -, -, -, hgen, hμchart⟩ :=
     h.exists_weightModelChart hσ hG (MulAction.mem_fixedPoints.1 hp)
@@ -178,29 +208,22 @@ private theorem exists_nhds_of_mem_fixedPoints
   have hA (ξ : GroupLieAlgebra I G) (k : Fin n) : A ξ k = α k ξ := rfl
   obtain ⟨ξ₁, hξ₁⟩ : ∃ ξ₁, A ξ₁ = fun _ ↦ 1 :=
     (bijective_pi_of_mfderiv_eq hgen hpchart hdim).2 _
-  refine ⟨chart.source, chart.open_source.mem_nhds hpchart, fun q hq hqfix ↦ ?_,
-    A ⁻¹' {v | ∀ k, 0 < v k}, ?_, ⟨ξ₁, fun k ↦ by simp [hξ₁]⟩, fun ξ hξ x hx ↦ ?_⟩
-  · -- A fixed point of the chart other than `p` would have a nonzero coordinate `zₖ`, and every
-    -- element of the Lie algebra would be killed by the weight `αₖ`.
-    by_contra hqp
-    have hz : chart q ≠ 0 := fun hz ↦ hqp (chart.injOn hq hpchart (hz.trans hchartp.symm))
-    obtain ⟨k, hk⟩ : ∃ k, (chart q).1 k ≠ 0 ∨ (chart q).2 k ≠ 0 := by
-      by_contra! hk
-      exact hz (Prod.ext (PiLp.ext fun k ↦ (hk k).1) (PiLp.ext fun k ↦ (hk k).2))
-    have hiso : ξ₁ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy q := by
-      rw [InfinitesimalAction.mem_isotropy_iff, InfinitesimalAction.fundamental_apply]
-      exact fundamentalVectorField_eq_zero_of_forall_smul_eq (MulAction.mem_fixedPoints.1 hqfix) _
-    have h0 := (mem_isotropy_fundamental_iff_of_mfderiv_eq hq (hgen q hq ξ₁)).1 hiso k hk
-    rw [← hA, hξ₁] at h0
-    exact one_ne_zero h0
-  · refine IsOpen.preimage A.continuous_of_finiteDimensional ?_
-    simp only [ofPred_forall]
-    exact isOpen_iInter_of_finite fun k ↦ isOpen_lt continuous_const (continuous_apply k)
-  · -- On the chart, `μ^ξ = μ^ξ(p) - ½ Σₖ αₖ(ξ) (qₖ² + pₖ²)` with every `αₖ(ξ) > 0`.
-    rw [hμchart x hx ξ, add_le_iff_nonpos_right, weightMomentMap_apply α (chart x) ξ]
-    rw [mem_preimage, mem_ofPred_eq] at hξ
-    refine mul_nonpos_of_nonpos_of_nonneg (by norm_num) (Finset.sum_nonneg fun k _ ↦ ?_)
-    exact mul_nonneg (hA ξ k ▸ (hξ k).le) (by positivity)
+  obtain ⟨hVo, hVmax⟩ := isOpen_setOf_forall_pos_and_isLocalMax_of_weightModelChart hpchart hμchart
+  refine ⟨chart.source, chart.open_source.mem_nhds hpchart, fun q hq hqfix ↦ ?_, _, hVo,
+    ⟨ξ₁, fun k ↦ by simp [← hA, hξ₁]⟩, hVmax⟩
+  -- A fixed point of the chart other than `p` would have a nonzero coordinate `zₖ`, and every
+  -- element of the Lie algebra would be killed by the weight `αₖ`.
+  by_contra hqp
+  have hz : chart q ≠ 0 := fun hz ↦ hqp (chart.injOn hq hpchart (hz.trans hchartp.symm))
+  obtain ⟨k, hk⟩ : ∃ k, (chart q).1 k ≠ 0 ∨ (chart q).2 k ≠ 0 := by
+    by_contra! hk
+    exact hz (Prod.ext (PiLp.ext fun k ↦ (hk k).1) (PiLp.ext fun k ↦ (hk k).2))
+  have hiso : ξ₁ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy q := by
+    rw [InfinitesimalAction.mem_isotropy_iff, InfinitesimalAction.fundamental_apply]
+    exact fundamentalVectorField_eq_zero_of_forall_smul_eq (MulAction.mem_fixedPoints.1 hqfix) _
+  have h0 := (mem_isotropy_fundamental_iff_of_mfderiv_eq hq (hgen q hq ξ₁)).1 hiso k hk
+  rw [← hA, hξ₁] at h0
+  exact one_ne_zero h0
 
 omit [PreconnectedSpace G] [CompactSpace M] in
 /-- **Fixed points of a symplectic toric manifold are isolated.** Let a torus `G` act smoothly and
@@ -227,6 +250,40 @@ theorem finite_fixedPoints_of_faithfulSMul
   exact h.finite_fixedPoints hσ.isNondegenerate fun _ hp ↦
     h.eventually_mem_fixedPoints_imp_eq hσ hG hdim hp
 
+/-- **Local maxima of moment map components on an open set are global.** Let a torus `G` act
+smoothly and effectively on a compact connected symplectic manifold `(M, σ)` without boundary,
+preserving `σ`, with moment map `μ`, and with `dim M = 2 dim G`. If `μ^ξ` has a local maximum at `p`
+for every `ξ` in an open set `V` of the Lie algebra, then `μ^ξ` attains its maximum at `p` for every
+`ξ` in the closure of `V`. -/
+theorem apply_le_apply_of_mem_closure
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsSymplectic)
+    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
+    (hdim : finrank ℝ E' = 2 * finrank ℝ E) {p : M} {V : Set (GroupLieAlgebra I G)}
+    (hV : IsOpen V) (hmax : ∀ ξ ∈ V, IsLocalMax (fun y ↦ μ y ξ) p) {ξ : GroupLieAlgebra I G}
+    (hξ : ξ ∈ closure V) (x : M) : μ x ξ ≤ μ p ξ := by
+  have : IsMulCommutative G := ⟨⟨mul_comm⟩⟩
+  have : ConnectedSpace M := { toNonempty := ⟨p⟩ }
+  have hσG (a : G) (y : M) (u v : TangentSpace I' y) :
+      σ.eval₂ (a • y) (mfderiv I' I' (a • ·) y u) (mfderiv I' I' (a • ·) y v) =
+        σ.eval₂ y u v := by
+    rw [← SmoothForm.eval₂_mpullback _ (ContMDiffSMul.contMDiff_const_smul (I := I) a), hG a]
+  -- The elements `ζ` for which `μ^ζ` attains its maximum at `p` form a closed set.
+  let S : Set (GroupLieAlgebra I G) := {ζ | ∀ y, μ y ζ ≤ μ p ζ}
+  have hS : IsClosed S := by
+    simp only [S, ofPred_forall]
+    exact isClosed_iInter fun y ↦ isClosed_le (μ y).continuous_of_finiteDimensional
+      (μ p).continuous_of_finiteDimensional
+  -- For `ζ ∈ V` with dense one-parameter subgroup, `μ^ζ` is Morse, so its local maximum at `p` is
+  -- global; such `ζ` are dense in `V`.
+  have hD : V ∩ {ζ | Lie.closedOneParameterSubgroup ζ = ⊤} ⊆ S := fun ζ ⟨hζV, hζ⟩ y ↦
+    h.isMaxOn_of_isLocalMax hσ.isNondegenerate hσG (h.isMorse_of_eq_top hσ.isNondegenerate hζ
+      fun q hq ↦ h.eventually_mem_fixedPoints_imp_eq hσ hG hdim hq) (hmax ζ hζV) (mem_univ y)
+  have hVS : V ⊆ S :=
+    ((Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).open_subset_closure_inter hV).trans
+      (closure_minimal hD hS)
+  exact closure_minimal hVS hS hξ x
+
 /-- **A fixed point is the unique maximum of a moment map component.** Let a torus `G` act
 smoothly and effectively on a compact connected symplectic manifold `(M, σ)` without boundary,
 preserving `σ`, with moment map `μ`, and with `dim M = 2 dim G`. For every fixed point `p` there is
@@ -246,13 +303,14 @@ theorem exists_forall_lt_of_mem_fixedPoints
   have hiso (q : M) (hq : q ∈ MulAction.fixedPoints G M) :
       ∀ᶠ y in 𝓝 q, y ∈ MulAction.fixedPoints G M → y = q :=
     h.eventually_mem_fixedPoints_imp_eq hσ hG hdim hq
-  obtain ⟨U, hU, -, V, hVo, hVne, hV⟩ := h.exists_nhds_of_mem_fixedPoints hσ hG hdim hp
+  obtain ⟨-, -, -, V, hVo, hVne, hV⟩ := h.exists_nhds_of_mem_fixedPoints hσ hG hdim hp
   -- Choose `ξ` in the open cone `V` with dense one-parameter subgroup; then `μ^ξ` is Morse.
   obtain ⟨ξ, hξV, hξ⟩ :=
     (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).inter_open_nonempty V hVo hVne
   have hM := h.isMorse_of_eq_top hσ.isNondegenerate hξ hiso
-  have hmax : IsLocalMax (fun y ↦ μ y ξ) p := Filter.mem_of_superset hU fun x hx ↦ hV ξ hξV x hx
-  have hglob := h.isMaxOn_of_isLocalMax hσ.isNondegenerate hσG hM hmax
+  have hmax := hV ξ hξV
+  have hglob : IsMaxOn (fun y ↦ μ y ξ) univ p := fun y _ ↦
+    h.apply_le_apply_of_mem_closure hσ hG hdim hVo hV (subset_closure hξV) y
   refine ⟨ξ, fun y hyp ↦ (hglob (mem_univ y)).lt_of_ne fun hy ↦ hyp ?_⟩
   -- A second maximum would be a second local maximum of the Morse function `μ^ξ`.
   have hymax : IsMaxOn (fun y ↦ μ y ξ) univ y :=

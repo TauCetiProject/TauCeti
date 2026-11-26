@@ -44,7 +44,9 @@ corner at `μ(p)` comes from the weight normal form at `p`
   if moreover `ξ` generates a dense one-parameter subgroup, `μ^ξ` is a Morse function
   (`TauCeti.SmoothTwoForm.IsMomentMap.isMorse_of_eq_top`), so this local maximum is a global one
   (`TauCeti.SmoothTwoForm.IsMomentMap.isMaxOn_of_isLocalMax`). Such `ξ` are dense in the open cone,
-  so by continuity `μ^ξ ≤ μ^ξ(p)` on `M` for `ξ` in its closure, which contains every `i(bₖ)`.
+  so by continuity `μ^ξ ≤ μ^ξ(p)` on `M` for `ξ` in its closure
+  (`TauCeti.SmoothTwoForm.IsMomentMap.apply_le_apply_of_mem_closure`), which contains every
+  `i(bₖ)`.
 
 This statement is about the moment polytope `conv μ(M)`. That the moment image `μ(M)` is itself
 convex, so that it equals the polytope, is the convexity theorem of Atiyah and Guillemin–Sternberg,
@@ -93,37 +95,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 namespace SmoothTwoForm.IsMomentMap
 
-/-- If `μ^ξ` has a local maximum at `p` for every `ξ` in an open set `V` of the Lie algebra, then
-`μ^ξ` attains its maximum at `p` for every `ξ` in the closure of `V`. -/
-private theorem apply_le_apply_of_mem_closure
-    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsSymplectic)
-    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
-      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
-    (hdim : finrank ℝ E' = 2 * finrank ℝ E) {p : M} {V : Set (GroupLieAlgebra I G)}
-    (hV : IsOpen V) (hmax : ∀ ξ ∈ V, IsLocalMax (fun y ↦ μ y ξ) p) {ξ : GroupLieAlgebra I G}
-    (hξ : ξ ∈ closure V) (x : M) : μ x ξ ≤ μ p ξ := by
-  have : IsMulCommutative G := ⟨⟨mul_comm⟩⟩
-  have : ConnectedSpace M := { toNonempty := ⟨p⟩ }
-  have hσG (a : G) (y : M) (u v : TangentSpace I' y) :
-      σ.eval₂ (a • y) (mfderiv I' I' (a • ·) y u) (mfderiv I' I' (a • ·) y v) =
-        σ.eval₂ y u v := by
-    rw [← SmoothForm.eval₂_mpullback _ (ContMDiffSMul.contMDiff_const_smul (I := I) a), hG a]
-  -- The elements `ζ` for which `μ^ζ` attains its maximum at `p` form a closed set.
-  let S : Set (GroupLieAlgebra I G) := {ζ | ∀ y, μ y ζ ≤ μ p ζ}
-  have hS : IsClosed S := by
-    simp only [S, ofPred_forall]
-    exact isClosed_iInter fun y ↦ isClosed_le (μ y).continuous_of_finiteDimensional
-      (μ p).continuous_of_finiteDimensional
-  -- For `ζ ∈ V` with dense one-parameter subgroup, `μ^ζ` is Morse, so its local maximum at `p` is
-  -- global; such `ζ` are dense in `V`.
-  have hD : V ∩ {ζ | Lie.closedOneParameterSubgroup ζ = ⊤} ⊆ S := fun ζ ⟨hζV, hζ⟩ y ↦
-    h.isMaxOn_of_isLocalMax hσ.isNondegenerate hσG (h.isMorse_of_eq_top hσ.isNondegenerate hζ
-      fun q hq ↦ h.eventually_mem_fixedPoints_imp_eq hσ hG hdim hq) (hmax ζ hζV) (mem_univ y)
-  have hVS : V ⊆ S :=
-    ((Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).open_subset_closure_inter hV).trans
-      (closure_minimal hD hS)
-  exact closure_minimal hVS hS hξ x
-
 /-- In a weight chart at a fixed point whose weights are dual to a `ℤ`-basis `b` of `N`, the
 component `μ^(i(bₖ))` of the moment map attains its maximum at the fixed point: the moment polytope
 lies in the cone `{y | y(i bₖ) ≤ μ(p)(i bₖ) for all k}`. -/
@@ -139,21 +110,12 @@ private theorem apply_le_apply_of_weightModelChart
     {N : Type*} [AddCommGroup N] {i : N →+ E} (b : Module.Basis (Fin n) ℤ N)
     (hb : ∀ j m, α j (i m) = b.coord j m) (x : M) (k : Fin n) :
     μ x (i (b k)) ≤ μ p (i (b k)) := by
-  -- On the open cone `V` where every weight is positive, `μ^ξ` has a local maximum at `p`.
-  let V : Set E := {ξ | ∀ k, 0 < α k ξ}
-  have hVo : IsOpen V := by
-    simp only [V, ofPred_forall]
-    exact isOpen_iInter_of_finite fun k ↦ isOpen_lt continuous_const (α k).continuous
-  have hVmax (ξ : GroupLieAlgebra I G) (hξ : ξ ∈ V) : IsLocalMax (fun y ↦ μ y ξ) p :=
-    mem_of_superset (chart.open_source.mem_nhds hpchart) fun x hx ↦ by
-      simp only [mem_ofPred_eq]
-      rw [hμchart x hx ξ, add_le_iff_nonpos_right, weightMomentMap_apply α (chart x) ξ]
-      exact mul_nonpos_of_nonpos_of_nonneg (by norm_num) (Finset.sum_nonneg fun k _ ↦
-        mul_nonneg (hξ k).le (by positivity))
+  -- On the open cone where every weight is positive, `μ^ξ` has a local maximum at `p`.
+  obtain ⟨hVo, hVmax⟩ := isOpen_setOf_forall_pos_and_isLocalMax_of_weightModelChart hpchart hμchart
   -- `i(bₖ)` is the limit of `i(bₖ) + t ξ₁` as `t → 0⁺`, where every weight is `1` on `ξ₁`.
   obtain ⟨ξ₁, hξ₁⟩ : ∃ ξ₁ : E, ∀ j, α j ξ₁ = 1 :=
     ⟨i (∑ l, b l), fun j ↦ by simp [hb, Finsupp.single_apply]⟩
-  have hcl : i (b k) ∈ closure V := by
+  have hcl : i (b k) ∈ closure {ξ : E | ∀ k, 0 < α k ξ} := by
     refine mem_closure_of_tendsto (f := fun t : ℝ ↦ i (b k) + t • ξ₁) (b := 𝓝[>] 0) ?_ ?_
     · exact ((continuous_const.add (continuous_id.smul continuous_const)).tendsto' 0 _
         (by simp)).mono_left nhdsWithin_le_nhds
@@ -161,7 +123,7 @@ private theorem apply_le_apply_of_weightModelChart
       simp only [map_add, map_smul, hξ₁, hb, Module.Basis.coord_apply, Module.Basis.repr_self,
         Finsupp.single_apply, smul_eq_mul, mul_one]
       split_ifs <;> push_cast <;> linarith
-  exact apply_le_apply_of_mem_closure h hσ hG hdim hVo hVmax hcl x
+  exact h.apply_le_apply_of_mem_closure hσ hG hdim hVo hVmax hcl x
 
 omit [PreconnectedSpace G] in
 /-- **The weights of an effective toric action are dual to a lattice basis.** At a fixed point,
