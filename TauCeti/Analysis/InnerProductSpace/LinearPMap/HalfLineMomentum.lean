@@ -175,8 +175,11 @@ theorem halfLineMomentum_apply (φ : 𝓓(Ω₊, ℂ)) :
 theorem coeFn_halfLineMomentum_apply (φ : 𝓓(Ω₊, ℂ)) :
     halfLineMomentum ℏ ⟨_, ambientToLp_mem_domain_halfLineMomentum φ⟩ =ᵐ[volume.restrict
       (Ioi (0 : ℝ))] fun q ↦ I * ℏ * deriv φ q := by
+  have h : halfLineMomentum ℏ ⟨_, ambientToLp_mem_domain_halfLineMomentum φ⟩ =
+      TestFunction.ambientToLp ℂ 2 (volume.restrict (Ioi (0 : ℝ))) (momentumTest ℏ φ) := by
+    simpa only [ContinuousLinearMap.coe_coe] using halfLineMomentum_ambientToLp (ℏ := ℏ) φ
   filter_upwards [TestFunction.coeFn_ambientToLp (𝕜 := ℂ) (p := 2) (momentumTest ℏ φ)] with q hq
-  rw [halfLineMomentum_apply, ← momentumTest_apply, hq, momentumTest_apply_apply]
+  rw [h, hq, momentumTest_apply_apply]
 
 /-- The half-line momentum is densely defined: an `L²(0, ∞)` function orthogonal to every test
 function vanishes. -/
@@ -366,9 +369,8 @@ theorem mem_ker_subScalar_neg_I_adjoint_halfLineMomentum_iff (hℏ : 0 < ℏ) {u
     have hcond : ∀ x : (halfLineMomentum ℏ).domain,
         ⟪(-I) • u, (x : L²₊)⟫_ℂ = ⟪u, halfLineMomentum ℏ x⟫_ℂ := by
       rintro ⟨_, hφ⟩
-      obtain ⟨φ, rfl⟩ := mem_domain_halfLineMomentum_iff.mp hφ
-      rw [halfLineMomentum_apply, Submodule.coe_mk, ← momentumTest_apply,
-        ← ContinuousLinearMap.coe_coe, ← inner_conj_symm,
+      obtain ⟨φ, rfl⟩ : ∃ φ, ι₊ φ = _ := mem_domain_halfLineMomentum_iff.mp hφ
+      rw [Submodule.coe_mk, halfLineMomentum_ambientToLp, ← inner_conj_symm,
         ← inner_ambientToLp_Ioi_momentumTest_of_ae_eq hℏ.ne' hv, inner_conj_symm]
     have hdom : u ∈ (halfLineMomentum ℏ)†.domain :=
       LinearPMap.mem_adjoint_domain_of_exists u ⟨_, hcond⟩
