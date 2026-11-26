@@ -11,17 +11,19 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Intrinsic
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import TauCeti.Analysis.InnerProductSpace.OfLinearIsometry
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
+import TauCeti.Analysis.Sobolev.Trace.Epigraph.AdmissibleBoundaryPart
 import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.Localization
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
-# Boundary parts of a Lipschitz domain and the Poincaré–Friedrichs inequality
+# Boundary parts of a Lipschitz domain: trace characterization and Poincaré–Friedrichs
 
 Let `Ω ⊆ ℝ × E` be a bounded Lipschitz domain, `σ` normalized `dim E`-dimensional Euclidean
 Hausdorff measure on `frontier Ω`, `T : W^{1,p}(Ω) → Lᵖ(frontier Ω, σ)` the trace operator
-(`TauCeti.W1p.frontierTrace`), `1 ≤ p < ∞`, and `Γ` a set. This file proves four facts about the
-space `W^{1,p}_Γ(Ω)` of Sobolev functions vanishing on `Γ` (`TauCeti.w1pVanishingOnSubmodule`).
+(`TauCeti.W1p.frontierTrace`), `1 ≤ p < ∞`, and `Γ` a set. This file proves the following facts
+about the space `W^{1,p}_Γ(Ω)` of Sobolev functions vanishing on `Γ`
+(`TauCeti.w1pVanishingOnSubmodule`).
 
 * With no boundary part, nothing is imposed: `W^{1,p}_∅(Ω) = W^{1,p}(Ω)`, because restrictions of
   test functions on the whole space are dense in `W^{1,p}(Ω)`.
@@ -38,6 +40,14 @@ space `W^{1,p}_Γ(Ω)` of Sobolev functions vanishing on `Γ` (`TauCeti.w1pVanis
   the frontier lies in `Γ` it has zero trace, so it lies in `W^{1,p}_0(Ω)`. In particular the trace
   characterization `W^{1,p}_Γ(Ω) = {u | T u = 0 on Γ}` holds when `closure Γ` and
   `closure (frontier Ω \ Γ)` are disjoint.
+* **The trace characterization** `W^{1,p}_Γ(Ω) = {u | T u = 0 on Γ}` holds for every admissible
+  boundary part `Γ` (`Set.IsAdmissibleBoundaryPart`). Near a point of the relative boundary of `Γ`,
+  a boundary-part chart presents `Γ` as the part of a Lipschitz graph over an admissible base region
+  `B`. For a cutoff `ψ` supported in its cylinder, zero trace on `Γ` is zero graph trace over `B` of
+  the chart localization of `ψ u`, which then vanishes on the part of the graph over `B`
+  (`W1p.mem_w1pVanishingOnSubmodule_iff_normalEpigraphTrace_ae_eq_zero_of_isAdmissibleBaseRegion`),
+  and undoing the localization gives `ψ u ∈ W^{1,p}_Γ(Ω)`. Equivalently, `u - g ∈ W^{1,p}_Γ(Ω)` is
+  the Dirichlet condition `T u = T g` on `Γ`.
 * **Poincaré–Friedrichs**: if `Ω` is moreover connected and `Γ` charges the frontier,
   `σ(Γ) > 0`, there is a constant `C` with `‖u‖_{Lᵖ(Ω)} ≤ C ‖∇u‖_{Lᵖ(Ω)}` for every
   `u ∈ W^{1,p}_Γ(Ω)`. The argument is Peetre's compact-error estimate, in the form
@@ -52,9 +62,10 @@ The hypothesis `σ(Γ) > 0` cannot be dropped: for `Γ = ∅` the constant `1` h
 nonzero norm. Neither can connectedness: on two disjoint balls with `Γ` on the frontier of the
 first, the function equal to `0` on the first ball and `1` on the second is a counterexample.
 
-The last two facts also hold on a bounded Lipschitz domain `U` of a finite-dimensional inner
-product space `F` such as `EuclideanSpace ℝ ι`, where boundary-value problems are stated, with the
-trace `TauCeti.W1p.frontierTraceOfIsLipschitzDomain` and `(dim F - 1)`-dimensional surface measure.
+The zero trace on `Γ` and the Poincaré–Friedrichs inequality also hold on a bounded Lipschitz
+domain `U` of a finite-dimensional inner product space `F` such as `EuclideanSpace ℝ ι`, where
+boundary-value problems are stated, with the trace `TauCeti.W1p.frontierTraceOfIsLipschitzDomain`
+and `(dim F - 1)`-dimensional surface measure.
 Both traces vanish on `Γ` by `TauCeti.W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`, the
 intrinsic one for every additive Haar measure. The Poincaré–Friedrichs inequality is transported
 from the model space along a boundary chart of `U`, an affine isometry onto a Lipschitz domain of
@@ -71,6 +82,12 @@ from the model space along a boundary chart of `U`, an affine isometry onto a Li
   the converse reduced to neighbourhoods of the relative boundary of `Γ`, and
   `TauCeti.W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_disjoint_closure`: the
   trace characterization when that relative boundary is empty.
+* `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_of_isBoundaryPartChart`: the converse for
+  cutoffs supported in a boundary-part chart with admissible base region.
+* `W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_isAdmissibleBoundaryPart`: the
+  trace characterization of `W^{1,p}_Γ(Ω)` for an admissible boundary part, and
+  `W1p.sub_mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_of_isAdmissibleBoundaryPart`: its
+  form as the Dirichlet condition on `Γ`.
 * `TauCeti.W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule`: the
   Poincaré–Friedrichs inequality on `W^{1,p}_Γ(Ω)`, and its form
   `W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_affineIsometryEquiv`
@@ -84,8 +101,10 @@ from the model space along a boundary chart of `U`, an affine isometry onto a Li
 ## References
 
 * S. Bauer, D. Pauly, M. Schomburg, *The Maxwell compactness property in bounded weak Lipschitz
-  domains with mixed boundary conditions*, SIAM J. Math. Anal. 48 (2016), Theorem 4.8 (the
-  Poincaré–Friedrichs inequality for `p = 2` in dimension three).
+  domains with mixed boundary conditions*, SIAM J. Math. Anal. 48 (2016), Lemma 3.1 and
+  Appendix A (the trace characterization for `p = 2` in dimension three, by localization in
+  boundary charts) and Theorem 4.8 (the Poincaré–Friedrichs inequality for `p = 2` in dimension
+  three).
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., §5.8.1, Theorem 1 (the compactness
   argument for Poincaré inequalities).
 -/
@@ -342,6 +361,83 @@ theorem W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_disjoint
   ⟨W1p.frontierTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule hp hΩ hb, fun hu =>
     W1p.mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero_of_forall_mem_closure_inter hp hΩ
       hb hΓΩ hu fun x hx => absurd hx (disjoint_iff_inter_eq_empty.1 hΓ ▸ notMem_empty x)⟩
+
+/-- **Zero trace on `Γ` gives vanishing on `Γ` inside a boundary-part chart.** On a bounded
+Lipschitz domain and for `p < ∞`, let a Lipschitz chart centred on the graph present `Γ`, inside
+its cylinder, as the part of the graph lying over an admissible base region `B`. If the trace of
+`u` vanishes almost everywhere on `Γ`, then `ψ u ∈ W^{1,p}_Γ(Ω)` for every smooth cutoff `ψ`
+supported in the cylinder. -/
+theorem W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_of_isBoundaryPartChart
+    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [MeasurableSpace E']
+    [BorelSpace E'] (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {L' : ℝ≥0}
+    {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ} {a b : ℝ} {B : Set E}
+    (hc : (Ω : Set (WithLp 2 (ℝ × E))).IsBoundaryPartChart Γ e φ L' a b B) (hφ : φ 0 = 0)
+    (hB : B.IsAdmissibleBaseRegion E')
+    {ψ : WithLp 2 (ℝ × E) → ℝ} {M : ℝ} (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) {u : W1p volume Ω p}
+    (hu : W1p.frontierTrace hp hΩ hb u =ᵐ[((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+      (frontier (Ω : Set (WithLp 2 (ℝ × E))))).restrict Γ] 0) :
+    W1p.contDiffSMul ψ hψ hM hψM hgM u ∈ w1pVanishingOnSubmodule volume Ω p Γ := by
+  have h := hc.isLipschitzChart.isLipschitzChartWith hφ
+  -- The localization of `u` has zero graph trace over `B`, so it vanishes on the part of the
+  -- graph over `B`, and undoing the localization gives `ψ u ∈ W^{1,p}_Γ(Ω)`.
+  refine W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_of_lipschitzChartLocalizeL_mem h hψ hM hψM
+    hgM hs hc.inter_preimage_normalCylinder_subset
+    ((W1p.mem_w1pVanishingOnSubmodule_iff_normalEpigraphTrace_ae_eq_zero_of_isAdmissibleBaseRegion
+      hp h.lipschitzWith hB _).2 ?_)
+  simpa only [W1p.lipschitzChartTrace_apply] using
+    W1p.lipschitzChartTrace_ae_eq_zero_of_isBoundaryPartChart hp hΩ hb hc hφ hψ hM hψM hgM hs hu
+
+/-- **The trace characterization of `W^{1,p}_Γ(Ω)`.** Let `Ω` be a bounded Lipschitz domain, let
+`Γ` be an admissible boundary part of `Ω` (`Set.IsAdmissibleBoundaryPart`), and let
+`1 ≤ p < ∞`. Then `u ∈ W^{1,p}(Ω)` lies in `W^{1,p}_Γ(Ω)` exactly when its trace vanishes almost
+everywhere on `Γ` for surface measure on the frontier. -/
+theorem W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_isAdmissibleBoundaryPart
+    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [MeasurableSpace E']
+    [BorelSpace E'] (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
+    (hΓ : (Ω : Set (WithLp 2 (ℝ × E))).IsAdmissibleBoundaryPart Γ E E') (u : W1p volume Ω p) :
+    u ∈ w1pVanishingOnSubmodule volume Ω p Γ ↔
+      W1p.frontierTrace hp hΩ hb u =ᵐ[((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+        (frontier (Ω : Set (WithLp 2 (ℝ × E))))).restrict Γ] 0 := by
+  refine ⟨W1p.frontierTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule hp hΩ hb, fun hu => ?_⟩
+  have hΓΩ : Disjoint Γ (Ω : Set (WithLp 2 (ℝ × E))) :=
+    (disjoint_frontier_iff_isOpen.2 Ω.isOpen).mono_left hΓ.subset_frontier
+  refine W1p.mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero_of_forall_mem_closure_inter hp
+    hΩ hb hΓΩ hu fun x hx => ?_
+  -- The point `x` lies on the frontier, so it is the centre of a boundary-part chart, inside whose
+  -- cylinder every cutoff product lies in `W^{1,p}_Γ(Ω)`.
+  have hxF : x ∈ frontier (Ω : Set (WithLp 2 (ℝ × E))) :=
+    isClosed_frontier.closure_subset_iff.2 hΓ.subset_frontier hx.1
+  obtain ⟨e, φ, K, a, b, B, hc, hB, hex⟩ := hΓ.exists_isBoundaryPartChart x hxF
+  have hxC : e x ∈ normalCylinder a b := hex ▸ zero_mem_normalCylinder
+    hc.isLipschitzChart.height_pos hc.isLipschitzChart.radius_pos
+  have hφ : φ 0 = 0 := hc.isLipschitzChart.apply_zero_of_mem_frontier hxF hex
+  exact ⟨e ⁻¹' normalCylinder a b,
+    ((isOpen_normalCylinder a b).preimage e.continuous).mem_nhds hxC,
+    fun ψ hψ M hM hψM hgM hs => W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_of_isBoundaryPartChart
+      hp hΩ hb hc hφ hB hψ hM hψM hgM hs hu⟩
+
+/-- **The Dirichlet condition on an admissible boundary part.** On a bounded Lipschitz domain, for
+an admissible boundary part `Γ` and `1 ≤ p < ∞`, `u - g ∈ W^{1,p}_Γ(Ω)` holds exactly when the
+traces of `u` and `g` agree almost everywhere on `Γ` for surface measure on the frontier. -/
+theorem W1p.sub_mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_of_isAdmissibleBoundaryPart
+    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [MeasurableSpace E']
+    [BorelSpace E'] (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
+    (hΓ : (Ω : Set (WithLp 2 (ℝ × E))).IsAdmissibleBoundaryPart Γ E E') (u g : W1p volume Ω p) :
+    u - g ∈ w1pVanishingOnSubmodule volume Ω p Γ ↔
+      W1p.frontierTrace hp hΩ hb u =ᵐ[((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+        (frontier (Ω : Set (WithLp 2 (ℝ × E))))).restrict Γ] W1p.frontierTrace hp hΩ hb g := by
+  rw [W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_isAdmissibleBoundaryPart hp
+    hΩ hb hΓ, map_sub]
+  exact (EventuallyEq.congr_left (ae_restrict_of_ae (Lp.coeFn_sub (W1p.frontierTrace hp hΩ hb u)
+    (W1p.frontierTrace hp hΩ hb g)))).trans eventuallyEq_iff_sub.symm
 
 /-! ### Bounded Lipschitz domains of a Euclidean space -/
 
