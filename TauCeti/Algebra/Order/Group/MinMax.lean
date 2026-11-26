@@ -23,6 +23,8 @@ twice its absolute value is `|a| + |b| - |b - a|`.
 ## Main results
 
 * `TauCeti.max_zero_min_add`: `max 0 (min t (a + b)) = max 0 (min t a) + max 0 (min (t - a) b)`.
+* `TauCeti.max_zero_min_sub_max`: for `a ≤ a'` and `b ≤ b'`,
+  `max 0 (min a' b' - max a b) = min a' b' - min a b' - min a' b + min a b`.
 * `TauCeti.abs_max_min_le`: the max-min clipping formula is bounded by `|M|` for any height `M`.
 * `TauCeti.abs_max_min_le_abs`: clipping at a nonnegative height does not increase absolute value.
 * `TauCeti.max_neg_min_eq_self_of_abs_le`: clipping fixes elements in the symmetric interval.
@@ -43,6 +45,12 @@ variable {α : Type*} [AddCommGroup α] [LinearOrder α] [IsOrderedAddMonoid α]
 time `t - a` to `[0, b]`. -/
 theorem max_zero_min_add {a b : α} (ha : 0 ≤ a) (hb : 0 ≤ b) (t : α) :
     max 0 (min t (a + b)) = max 0 (min t a) + max 0 (min (t - a) b) := by
+  grind
+
+/-- The length of the intersection `[a, a'] ∩ [b, b']` of two intervals `a ≤ a'` and `b ≤ b'`
+equals the two-dimensional difference of `(u, v) ↦ min u v` across `[a, a'] × [b, b']`. -/
+theorem max_zero_min_sub_max {a a' b b' : α} (ha : a ≤ a') (hb : b ≤ b') :
+    max 0 (min a' b' - max a b) = min a' b' - min a b' - min a' b + min a b := by
   grind
 
 /-- The max-min clipping formula is bounded by the absolute value of its height,

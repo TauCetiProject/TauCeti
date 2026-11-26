@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
+import Mathlib.Order.UpperLower.Basic
+
 /-!
 # Cumulative prefix-sum coordinates on standard simplices
 
@@ -32,10 +34,12 @@ sum `t_{p+1}`.
 
 * `Convexity.StdSimplex.strictMono_prefixSum_iff`: the prefix sums strictly increase exactly when
   every barycentric weight is strictly positive.
-* `Convexity.StdSimplex.prefixSum_map_of_lt_iff`, `Convexity.StdSimplex.prefixSum_map_finCongr`,
+* `Convexity.StdSimplex.prefixSum_map_of_lt_iff`,
+  `Convexity.StdSimplex.exists_lt_iff_and_prefixSum_weights_map`,
+  `Convexity.StdSimplex.prefixSum_map_finCongr`,
   `Convexity.StdSimplex.prefixSum_map_succAbove`, `Convexity.StdSimplex.prefixSum_map_predAbove`:
-  how general maps, reindexing, facet inclusions, and adjacent-vertex merges act on cumulative
-  prefix sums.
+  how general maps, monotone maps, reindexing, facet inclusions, and adjacent-vertex merges act on
+  cumulative prefix sums.
 -/
 
 public section
@@ -155,6 +159,22 @@ theorem prefixSum_map_of_lt_iff {R : Type*} [PartialOrder R] [Semiring R]
   refine Finset.sum_congr ?_ fun _ _ ↦ rfl
   ext j
   simpa only [Finset.mem_filter, Finset.mem_univ, true_and] using h j
+
+/-- For a monotone map `g : Fin m → Fin n`, the preimage of `{i | i < N}` is an initial segment
+`{j | j < a}` whose prefix sum equals `TauCeti.prefixSum N (w.map g).weights`. -/
+theorem exists_lt_iff_and_prefixSum_weights_map {R : Type*} [PartialOrder R] [Semiring R]
+    [IsStrictOrderedRing R] {m n : ℕ} {g : Fin m → Fin n} (w : StdSimplex R (Fin m))
+    (hg : Monotone g) (N : ℕ) :
+    ∃ a : ℕ, (∀ j : Fin m, (g j).val < N ↔ j.val < a) ∧
+      TauCeti.prefixSum N (w.map g).weights = TauCeti.prefixSum a w.weights := by
+  have hs : IsLowerSet {j | (g j).val < N} := fun _ _ h hj ↦ (Fin.le_def.1 (hg h)).trans_lt hj
+  obtain ⟨a, ha⟩ : ∃ a : ℕ, ∀ j : Fin m, (g j).val < N ↔ j.val < a := by
+    rcases hs.eq_univ_or_Iio with h | ⟨a, h⟩
+    · exact ⟨m, fun j ↦ ⟨fun _ ↦ j.isLt, fun _ ↦ (Set.ext_iff.1 h j).2 (Set.mem_univ j)⟩⟩
+    · exact ⟨a, fun j ↦ (Set.ext_iff.1 h j).trans (Set.mem_Iio.trans Fin.lt_def)⟩
+  refine ⟨a, ha, ?_⟩
+  rw [TauCeti.prefixSum_def, sum_filter_weights_map g w (fun i ↦ i.val < N), TauCeti.prefixSum_def]
+  exact Finset.sum_congr (Finset.filter_congr fun j _ ↦ ha j) fun _ _ ↦ rfl
 
 /-- Reindexing a standard simplex along `finCongr h` shifts cumulative prefix sums by
 `Fin.cast`. -/
