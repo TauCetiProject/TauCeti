@@ -119,24 +119,8 @@ theorem tateModuleGaloisRepresentation_tateCurveAt_sub_one_sq_eq_zero (ℓ : ℕ
     (σ : L ≃ₐ[K] L) (hσ : Continuous σ)
     (hζ : ∀ k, ∀ ζ : rootsOfUnity (ℓ ^ k) L,
       restrictRootsOfUnity σ.toAlgHom (ℓ ^ k) ζ = ζ) :
-    ((tateCurveAt q hq).tateModuleGaloisRepresentation ℓ σ - 1) ^ 2 = 0 := by
-  apply LinearMap.ext
-  intro x
-  apply TateModule.ext
-  intro k
-  have hproj (y : TateModule ℓ ((tateCurveAt q hq)⁄L).toAffine.Point) :
-      TateModule.proj k (((tateCurveAt q hq).tateModuleGaloisRepresentation ℓ σ - 1) y) =
-        torsionByMap ((ℓ ^ k : ℕ) : ℤ)
-          (Point.map σ.toAlgHom).toIntLinearMap (TateModule.proj k y) - TateModule.proj k y := by
-    apply Subtype.ext
-    simp only [LinearMap.sub_apply, one_apply_eq_self, map_sub,
-      AddSubgroupClass.coe_sub, coe_proj_tateModuleGaloisRepresentation,
-      coe_torsionByMap_apply, AddMonoidHom.coe_toIntLinearMap]
-  have h := LinearMap.congr_fun
-    (torsionByMap_tateCurveAt_sub_id_sq_eq_zero q hq (ℓ ^ k) σ.toAlgHom hσ (hζ k))
-    (TateModule.proj k x)
-  simp only [pow_two, mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.id_apply,
-    LinearMap.zero_apply] at h
-  simpa only [pow_two, mul_apply_eq_comp, hproj, LinearMap.zero_apply, map_zero] using h
+    ((tateCurveAt q hq).tateModuleGaloisRepresentation ℓ σ - 1) ^ 2 = 0 :=
+  (tateCurveAt q hq).tateModuleGaloisRepresentation_sub_one_sq_eq_zero σ fun k ↦
+    torsionByMap_tateCurveAt_sub_id_sq_eq_zero q hq (ℓ ^ k) σ.toAlgHom hσ (hζ k)
 
 end TauCeti

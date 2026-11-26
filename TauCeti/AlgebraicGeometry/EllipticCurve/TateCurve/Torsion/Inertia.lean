@@ -14,6 +14,7 @@ import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 import TauCeti.NumberTheory.LocalField.RootsOfUnity.AlgebraicClosure
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
+import TauCeti.Topology.Algebra.UniformRing
 
 /-!
 # Arithmetic inertia acts unipotently on Tate-curve torsion
@@ -63,26 +64,17 @@ theorem torsionByMap_tateCurveAt_sub_id_sq_eq_zero_of_isAlgebraic {m : ℕ} [NeZ
     rw [IsScalarTower.coe_toAlgHom', Completion.algebraMap_def, Algebra.algebraMap_self,
       RingHom.id_apply]
   have hσ : Continuous σ := (AddMonoidHomClass.isometry_of_norm σ fun x ↦ by
-    rw [NormedAlgebra.norm_eq_spectralNorm K, NormedAlgebra.norm_eq_spectralNorm K,
-      σ.spectralNorm_map]).continuous
-  let τ : C →ₐ[K] C :=
-    { Completion.mapRingHom σ.toRingHom hσ with
-      commutes' := fun r ↦ by
-        change Completion.mapRingHom σ.toRingHom hσ (algebraMap K C r) = algebraMap K C r
-        rw [Completion.algebraMap_def, Completion.mapRingHom_coe,
-          AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, σ.commutes] }
-  have hτ : Continuous τ := by
-    change Continuous (Completion.mapRingHom σ.toRingHom hσ)
-    rw [Completion.coe_mapRingHom]
-    exact Completion.continuous_map
-  have hcoe (x : L) : τ (x : C) = (σ x : C) := Completion.mapRingHom_coe hσ x
+    simp only [NormedAlgebra.norm_eq_spectralNorm K, σ.spectralNorm_map]).continuous
+  let τ : C →ₐ[K] C := Completion.mapAlgHom σ hσ
+  have hτ : Continuous τ := Completion.continuous_mapAlgHom σ hσ
+  have hcoe (x : L) : τ (x : C) = (σ x : C) := Completion.mapAlgHom_coe σ hσ x
   have hηC : IsPrimitiveRoot (η : C) m :=
     hη.map_of_injective (f := Completion.coeRingHom) (RingHom.injective _)
   have hroots (ζ : rootsOfUnity m C) : restrictRootsOfUnity τ m ζ = ζ := by
-    apply rootsOfUnity.coe_injective
-    change ((restrictRootsOfUnity τ m ζ : Cˣ) : C) = ((ζ : Cˣ) : C)
-    rw [restrictRootsOfUnity_coe_apply]
-    simpa only [pow_one] using hηC.map_eq_pow (j := 1) τ (by rw [hcoe, hfix, pow_one])
+    apply Subtype.ext
+    apply Units.ext
+    simpa only [restrictRootsOfUnity_coe_apply, pow_one] using
+      hηC.map_eq_pow (j := 1) τ (by rw [hcoe, hfix, pow_one])
       ((mem_rootsOfUnity' m (ζ : Cˣ)).mp ζ.property)
   have heq : τ.comp ι = ι.comp σ := by
     ext x
@@ -97,9 +89,7 @@ theorem torsionByMap_tateCurveAt_sub_id_sq_eq_zero_of_isAlgebraic {m : ℕ} [NeZ
   have h := congrArg Subtype.val <| LinearMap.congr_fun
     (torsionByMap_tateCurveAt_sub_id_sq_eq_zero q hq m τ hτ hroots)
     (torsionByMap (m : ℤ) (Point.map ι).toIntLinearMap P)
-  simpa only [pow_two, mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.id_apply,
-    LinearMap.zero_apply, coe_torsionByMap_apply, AddMonoidHom.coe_toIntLinearMap,
-    AddSubgroupClass.coe_sub, ZeroMemClass.coe_zero, map_sub, hcomm, map_zero] using h
+  simpa [pow_two, mul_apply_eq_comp, coe_torsionByMap_apply, hcomm] using h
 
 /-- An automorphism of an algebraic extension that fixes a primitive root at every `ℓ`-power
 level acts with square-zero displacement on the `ℓ`-adic Tate module of a Tate curve. -/
@@ -107,20 +97,11 @@ theorem tateModuleGaloisRepresentation_tateCurveAt_sub_one_sq_eq_zero_of_isAlgeb
     (ℓ : ℕ) [Fact ℓ.Prime] (σ : L ≃ₐ[K] L)
     (hζ : ∀ n : ℕ, ∃ η : L, IsPrimitiveRoot η (ℓ ^ n) ∧ σ η = η) :
     ((tateCurveAt q hq).tateModuleGaloisRepresentation ℓ σ - 1) ^ 2 = 0 := by
-  apply LinearMap.ext
-  intro x
-  apply TateModule.ext
+  apply (tateCurveAt q hq).tateModuleGaloisRepresentation_sub_one_sq_eq_zero σ
   intro n
-  apply Subtype.ext
   let : NeZero (ℓ ^ n) := ⟨pow_ne_zero _ (Fact.out : ℓ.Prime).ne_zero⟩
   obtain ⟨η, hη, hfix⟩ := hζ n
-  have h := congrArg Subtype.val <| LinearMap.congr_fun
-    (torsionByMap_tateCurveAt_sub_id_sq_eq_zero_of_isAlgebraic q hq σ.toAlgHom hη hfix)
-    (TateModule.proj n x)
-  simpa only [pow_two, mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self,
-    LinearMap.id_apply, LinearMap.zero_apply, map_sub, map_zero, AddSubgroupClass.coe_sub,
-    ZeroMemClass.coe_zero, coe_proj_tateModuleGaloisRepresentation, coe_torsionByMap_apply,
-    AddMonoidHom.coe_toIntLinearMap] using h
+  exact torsionByMap_tateCurveAt_sub_id_sq_eq_zero_of_isAlgebraic q hq σ.toAlgHom hη hfix
 
 end AlgebraicExtension
 
