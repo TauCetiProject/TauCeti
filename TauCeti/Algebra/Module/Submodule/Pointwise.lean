@@ -48,6 +48,8 @@ this file to restate both.
 
 * `Submodule.mem_pointwise_smul_iff_inv_smul_mem`: membership in `g • N` is equivalent to
   membership of `g⁻¹ • x` in `N`.
+* `Submodule.comap_restrictScalars_units_smul`: pulling back along a `K`-linear map commutes with
+  the homothety by `t ∈ Kˣ`.
 * `Submodule.finite_pointwise_smul_of_finite_quotient`: if `M ⧸ I` and `a • (I ⊓ D)` are finite,
   then `a • D` is finite.
 * `Submodule.smul_eq_self_of_finite`: an `M`-regular scalar in a tower fixes any finite submodule
@@ -88,6 +90,24 @@ theorem mem_pointwise_smul_iff_inv_smul_mem {R M G : Type*} [Semiring R] [AddCom
     [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
     {N : Submodule R M} {g : G} {x : M} : x ∈ g • N ↔ g⁻¹ • x ∈ N := by
   rw [← SetLike.mem_coe, coe_pointwise_smul, Set.mem_smul_set_iff_inv_smul_mem, SetLike.mem_coe]
+
+/-- Pulling back along a `K`-linear map commutes with homotheties: `f⁻¹(tS) = t · f⁻¹(S)` for an
+`O`-submodule `S` and `t ∈ Kˣ`. -/
+theorem comap_restrictScalars_units_smul {O K V V' : Type*} [CommRing O] [Field K]
+    [Algebra O K] [AddCommGroup V] [Module K V] [Module O V] [IsScalarTower O K V]
+    [AddCommGroup V'] [Module K V'] [Module O V'] [IsScalarTower O K V'] (f : V' →ₗ[K] V)
+    (t : Kˣ) (S : Submodule O V) :
+    (t • S).comap (f.restrictScalars O) = t • S.comap (f.restrictScalars O) := by
+  ext x
+  -- `t • S` is the action of the scalar `(t : K)`; test membership with its preimage `(t : K)⁻¹`.
+  simp only [Units.smul_def, mem_comap, mem_smul_pointwise_iff_exists,
+    LinearMap.restrictScalars_apply]
+  constructor
+  · rintro ⟨s, hs, hsx⟩
+    refine ⟨(t : K)⁻¹ • x, ?_, smul_inv_smul₀ t.ne_zero x⟩
+    rwa [map_smul, ← hsx, inv_smul_smul₀ t.ne_zero]
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨f y, hy, (map_smul f _ y).symm⟩
 
 /-- If `I` has finite quotient `M ⧸ I` and `a • (I ⊓ D)` is finite, then `a • D` is finite:
 `D ⧸ (I ⊓ D)` embeds into `M ⧸ I` and surjects onto `(a • D) ⧸ (a • (I ⊓ D))`. -/
