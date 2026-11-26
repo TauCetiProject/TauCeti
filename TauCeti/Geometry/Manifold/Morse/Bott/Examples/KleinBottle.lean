@@ -9,18 +9,18 @@ public import TauCeti.Geometry.Manifold.Instances.KleinBottle
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Lift
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
-public import TauCeti.Geometry.Manifold.Morse.Bott.Index.One
+public import TauCeti.Geometry.Manifold.Morse.Bott.RankDegreeHomology
 public import TauCeti.Geometry.Manifold.Morse.Bott.Splitting
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 public import TauCeti.Topology.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.Immersion.NormalSpace.Basic
-import TauCeti.Geometry.Manifold.Morse.Bott.RankDegreeHomology
 import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Morse.Prod
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
 import TauCeti.Geometry.Manifold.Topology
+import TauCeti.RingTheory.Ideal.Quotient.LinearEquiv
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.VectorBundle.Orientation.ZeroSectionCompl
 
@@ -61,13 +61,14 @@ top level. The negative normal bundle of `C₀` has rank `0` and carries its can
 (`TauCeti.VectorBundleOrientation.positive`).
 
 The twist is visible in the homology across the top level. Let `-1 < a < 1 < b`, so that the band
-`{a ≤ h ≤ b}` contains `C₁` and no other critical point. Bott's description of a level of index
-one (`nonempty_singularHomology_sublevelPair_succ_iso_twistedHomology`, in the namespace
+`{a ≤ h ≤ b}` contains `C₁` and no other critical point. Bott's description of a level in the
+degree of its index (`nonempty_singularHomology_sublevelPair_iso_twistedHomology`, in the namespace
 `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`) identifies
 `H₁({h ≤ b}, {h ≤ a}; R)` with the zeroth homology `H₀(C₁; o(ν⁻) ⊗ R)` of the circle twisted by the
 orientation local system of its negative normal line, and since that line is not orientable this is
 `R ⧸ 2R` for every commutative ring `R`
-(`TauCeti.KleinBottle.nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two`).
+(`nonempty_singularHomology_sublevelPair_linearEquiv_quotient_two` in the same namespace, and
+`TauCeti.KleinBottle.nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two`).
 Constant coefficients would give `H₀(C₁; R) = R` instead. Whenever `2 ≠ 0` in `R`, for instance
 over `ℤ`, where the top level contributes `ℤ/2` and not `ℤ`, the group is not `R`
 (`KleinBottle.not_nonempty_singularHomology_sublevelPair_height_linearEquiv_self_of_two_ne_zero`),
@@ -540,20 +541,13 @@ theorem nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two {
   have hV := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
     (fun s ↦ (contMDiff_height (c s)).of_le (by simp)) hdim g
     manifoldMorseIndex_height_criticalCircle_one).hasLocalSubbundleFrames
-  let := hV.fiberBundle
-  have := hV.vectorBundle
-  -- Bott's description of the level in index one, followed by the zeroth twisted homology of a
-  -- non-orientable line bundle over a connected base.
-  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_succ_iso_twistedHomology hn
-    contMDiff_height (fun s ↦ by simp) ha.2 hb
-    (isClosed_Icc.preimage contMDiff_height.continuous).isCompact
-    (criticalPoints_inter_preimage_Icc_subset ha.1) hdim g hV R 0
-  have := 𝓘(ℝ).locallyPathConnectedSpace_of_chartedSpace (AddCircle ((1 : ℕ) : ℝ))
-  let o := (Module.finBasisOfFinrankEq ℝ _
-    ((hV.finrank_eq 0).trans (Fintype.card_fin 1))).orientation
-  exact ⟨e.toLinearEquiv ≪≫ₗ VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo _
+  -- Across a connected level whose negative normal bundle is not orientable, the homology in the
+  -- degree of the index is `R ⧸ 2R`.
+  exact h.nonempty_singularHomology_sublevelPair_linearEquiv_quotient_two hn contMDiff_height
+    (fun s ↦ by simp) ha.2 hb (isClosed_Icc.preimage contMDiff_height.continuous).isCompact
+    (criticalPoints_inter_preimage_Icc_subset ha.1) hdim g hV
     (isEmpty_vectorBundleOrientation_negativeNormalSpace_criticalCircle_one hn hdim
-      g.toRiemannianMetric hV) o⟩
+      g.toRiemannianMetric hV) R
 
 /-- **Below the index the top level contributes nothing.** For `-1 < a < 1 < b`, the relative
 homology `H₀({h ≤ b}, {h ≤ a})` of the height function on the Klein bottle vanishes, with
@@ -576,17 +570,11 @@ maximum circle `C₁` would give. Over `ℤ` the top level contributes `ℤ/2`, 
 theorem not_nonempty_singularHomology_sublevelPair_height_linearEquiv_self_of_two_ne_zero {a b : ℝ}
     (ha : a ∈ Ioo (-1) 1) (hb : 1 < b) (R : Type) [CommRing R] (h2 : (2 : R) ≠ 0) :
     ¬Nonempty (((sublevelPair height (ha.2.trans hb).le).singularHomology (ModuleCat.of R R) 1 :
-      ModuleCat R) ≃ₗ[R] R) := by
-  rintro ⟨φ⟩
+      ModuleCat R) ≃ₗ[R] R) := fun ⟨φ⟩ ↦ by
   obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_height_linearEquiv_quotient_two ha hb R
-  let ψ := φ.symm ≪≫ₗ e
-  obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective (ψ 1)
-  -- `ψ 2 = 2 • ψ 1` vanishes in `R ⧸ 2R`, so `2 = 0` in `R`.
-  have h : ψ ((2 : R) • 1) = 0 := by
-    rw [ψ.map_smul, ← hy, Algebra.smul_def, Ideal.Quotient.algebraMap_eq, ← map_mul,
-      Ideal.Quotient.eq_zero_iff_mem]
-    exact Ideal.mul_mem_right _ _ (Ideal.subset_span rfl)
-  exact h2 (by simpa using h)
+  -- `R ⧸ 2R` is not isomorphic to `R` since `2R ≠ 0`.
+  exact h2 (Ideal.span_singleton_eq_bot.1
+    (Ideal.nonempty_quotient_linearEquiv_self_iff.1 ⟨e.symm ≪≫ₗ φ⟩))
 
 /-- **With `2` invertible the top level contributes nothing in degree one.** For `-1 < a < 1 < b`
 and a commutative ring `R` in which `2` is a unit, for instance `ℚ`, the group
