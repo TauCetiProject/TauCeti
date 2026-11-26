@@ -505,9 +505,8 @@ theorem W1p.norm_value_le_div_pi_mul_norm_gradient_of_mem_w1p0Submodule (hab : a
     ‖W1p.value u‖ ≤ (b - a) / π * ‖W1p.gradient u‖ := by
   set g := PDE.lineEquiv.symm.toAffineIsometryEquiv
   have hUV : (PDE.intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) =
-      g ⁻¹' ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ) := by
-    ext x
-    simp [g, PDE.lineEquiv_symm_apply]
+      g ⁻¹' ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ) :=
+    PDE.coe_intervalDomain_eq_preimage
   set v := W1p.compAffineIsometryEquivL g hUV u
   have hv : v ∈ w1p0Submodule volume (PDE.intervalDomain a b) 2 :=
     (W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff g hUV).2 hu
@@ -516,7 +515,7 @@ theorem W1p.norm_value_le_div_pi_mul_norm_gradient_of_mem_w1p0Submodule (hab : a
   simp only [v, W1p.norm_value_compAffineIsometryEquivL, W1p.norm_gradient_compAffineIsometryEquivL]
     at h
   have := sub_pos.2 hab
-  rw [← inv_div, le_inv_mul_iff₀ (by positivity)]
-  exact (abs_le_of_sq_le_sq' (by rwa [mul_pow]) (norm_nonneg _)).2
+  rw [← inv_div]
+  exact (le_inv_mul_iff₀ (by positivity)).2 (le_of_sq_le_sq (by rwa [mul_pow]) (norm_nonneg _))
 
 end TauCeti

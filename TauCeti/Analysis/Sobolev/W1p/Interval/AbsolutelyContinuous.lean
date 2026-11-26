@@ -28,6 +28,12 @@ continuity alone does not characterize `H¹`. A constant plus the primitive of a
 such a representative, with weak gradient that function
 (`TauCeti.W1p.exists_intervalRepresentativeL_eq_and_gradient_ae_eq`).
 
+The weak gradient of every class is the classical derivative of its projected continuous
+representative almost everywhere (`TauCeti.W1p.gradient_ae_eq_deriv_intervalRepresentativeL`). A
+class whose value agrees almost everywhere with a function continuous on `[a,b]` has that function
+as its continuous representative, and its trace is the pair of endpoint values
+(`TauCeti.W1p.intervalTraceL_eq_of_value_ae_eq`).
+
 ## References
 
 * G. Leoni, *A First Course in Sobolev Spaces*, Theorem 7.13.
@@ -98,6 +104,37 @@ namespace TauCeti.W1p
 
 variable {a b : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+/-- If the value of a class agrees almost everywhere on `(a,b)` with a function `f` continuous on
+`[a,b]`, then `f` is its continuous representative, including at both endpoints. -/
+theorem intervalRepresentativeL_apply_of_value_ae_eq (hab : a < b) {f : ℝ → ℝ}
+    (hf : ContinuousOn f (Icc a b)) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
+    (hu : value u =ᵐ[volume.restrict (Ioo a b)] f) (t : Icc a b) :
+    intervalRepresentativeL hab u t = f t := by
+  have heq : intervalRepresentativeL hab u = ⟨(Icc a b).domRestrict f, hf.domRestrict⟩ := by
+    apply (intervalRepresentativeL_eq_iff hab u _).2
+    filter_upwards [hu, ae_restrict_mem measurableSet_Ioo] with t ht hmem
+    rw [ContinuousMap.coe_mk, projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem), domRestrict_apply]
+    exact ht
+  rw [heq, ContinuousMap.coe_mk, domRestrict_apply]
+
+/-- If the value of a class agrees almost everywhere on `(a,b)` with a function `f` continuous on
+`[a,b]`, then its trace is the pair of endpoint values `(f a, f b)`. -/
+theorem intervalTraceL_eq_of_value_ae_eq (hab : a < b) {f : ℝ → ℝ}
+    (hf : ContinuousOn f (Icc a b)) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
+    (hu : value u =ᵐ[volume.restrict (Ioo a b)] f) : intervalTraceL hab u = (f a, f b) := by
+  rw [intervalTraceL_apply, intervalRepresentativeL_apply_of_value_ae_eq hab hf hu,
+    intervalRepresentativeL_apply_of_value_ae_eq hab hf hu]
+
+/-- The weak gradient of an interval Sobolev class is almost everywhere the classical derivative of
+its continuous representative, extended to `ℝ` by endpoint projection. -/
+theorem gradient_ae_eq_deriv_intervalRepresentativeL (hab : a < b)
+    (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) :
+    gradient u =ᵐ[volume.restrict (Ioo a b)]
+      deriv (fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t)) := by
+  apply (ae_restrict_iff' measurableSet_Ioo).2
+  filter_upwards [ae_hasDerivAt_intervalRepresentativeL hab u] with t ht hmem
+  exact (ht (uIoc_of_le hab.le ▸ Ioo_subset_Ioc_self hmem)).deriv.symm
+
 /-- Every absolutely continuous real function with `Lᵖ` derivative is the representative of
 exactly one interval Sobolev class. The equality includes both endpoint values. -/
 theorem existsUnique_intervalRepresentativeL_eq (hab : a < b) {f : ℝ → ℝ}
@@ -106,18 +143,11 @@ theorem existsUnique_intervalRepresentativeL_eq (hab : a < b) {f : ℝ → ℝ}
     ∃! u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p,
       ∀ t : Icc a b, intervalRepresentativeL hab u t = f t := by
   obtain ⟨u, hu, -⟩ := hf.exists_w1p_value_gradient_ae_eq hdf
-  let w : C(Icc a b, ℝ) := ⟨fun t ↦ f t,
-    (uIcc_of_le hab.le ▸ hf.continuousOn).domRestrict⟩
-  have heq : intervalRepresentativeL hab u = w := by
-    apply (intervalRepresentativeL_eq_iff hab u w).2
-    filter_upwards [hu, ae_restrict_mem measurableSet_Ioo] with t ht hmem
-    rw [projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)]
-    exact ht
-  refine ⟨u, fun t ↦ congrArg (fun g : C(Icc a b, ℝ) ↦ g t) heq, ?_⟩
-  intro v hv
-  apply intervalRepresentativeL_injective hab
+  have heq := intervalRepresentativeL_apply_of_value_ae_eq hab
+    (uIcc_of_le hab.le ▸ hf.continuousOn) hu
+  refine ⟨u, heq, fun v hv ↦ intervalRepresentativeL_injective hab ?_⟩
   ext t
-  exact (hv t).trans ((congrArg (fun g : C(Icc a b, ℝ) ↦ g t) heq).symm)
+  exact (hv t).trans (heq t).symm
 
 /-- Characterization of the range of the continuous-representative map. The projection
 extends a function on `[a,b]` by constants outside the interval and imposes no extra endpoint
@@ -131,11 +161,8 @@ theorem mem_range_intervalRepresentativeL_iff (hab : a < b) (w : C(Icc a b, ℝ)
         (volume.restrict (Ioo a b)) := by
   constructor
   · rintro ⟨u, rfl⟩
-    refine ⟨absolutelyContinuousOnInterval_intervalRepresentativeL hab u, ?_⟩
-    apply (Lp.memLp (gradient u)).ae_eq
-    apply (ae_restrict_iff' measurableSet_Ioo).2
-    filter_upwards [ae_hasDerivAt_intervalRepresentativeL hab u] with t ht hmem
-    exact (ht (uIoc_of_le hab.le ▸ Ioo_subset_Ioc_self hmem)).deriv.symm
+    exact ⟨absolutelyContinuousOnInterval_intervalRepresentativeL hab u,
+      (Lp.memLp (gradient u)).ae_eq (gradient_ae_eq_deriv_intervalRepresentativeL hab u)⟩
   · rintro ⟨hw, hdw⟩
     obtain ⟨u, hu, -⟩ := existsUnique_intervalRepresentativeL_eq hab hw hdw
     refine ⟨u, ?_⟩

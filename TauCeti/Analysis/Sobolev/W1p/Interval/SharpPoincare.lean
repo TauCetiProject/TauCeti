@@ -39,7 +39,8 @@ Poincaré–Friedrichs constant is `2 / π`, compared with the constant `b - a =
 
 ## The argument
 
-The even reflection `t ↦ u(b - |t - b|)` of `u` in `b` vanishes at both endpoints of
+The even reflection `t ↦ u(b - |t - b|)` of `u` in `b`, absolutely continuous by
+`AbsolutelyContinuousOnInterval.comp_sub_abs_sub`, vanishes at both endpoints of
 `(a, 2b - a)`, an interval twice as long, and both its `L²` norm and the `L²` norm of its derivative
 are `√2` times those of `u` (`TauCeti.intervalIntegral.integral_eq_two_smul_of_eqOn_reflect`).
 The sharp Poincaré inequality on `H¹₀(a, 2b - a)`, with constant `2 (b - a) / π`, therefore gives
@@ -108,25 +109,6 @@ private theorem deriv_reflect_of_gt (G : ℝ → ℝ) {b t : ℝ} (ht : b < t) :
     Filter.eventually_of_mem (Ioi_mem_nhds ht) fun _ hs => reflect_of_ge G (le_of_lt hs),
     deriv_comp_const_sub]
 
-/-- The even reflection of an absolutely continuous function on `[a, b]` in `b` is absolutely
-continuous on `[a, 2b - a]`. -/
-private theorem absolutelyContinuousOnInterval_reflect (hab : a < b) {G : ℝ → ℝ}
-    (hG : AbsolutelyContinuousOnInterval G a b) :
-    AbsolutelyContinuousOnInterval (reflect G b) a (2 * b - a) := by
-  have hbc : b ≤ 2 * b - a := by linarith
-  have hmap : MapsTo (fun t : ℝ => -1 * t + 2 * b) (uIcc b (2 * b - a)) (uIcc a b) := by
-    intro t ht
-    rw [uIcc_of_le hbc] at ht
-    rw [uIcc_of_le hab.le]
-    constructor <;> linarith [ht.1, ht.2]
-  refine (hG.congr fun t ht => ?_).trans ((hG.comp_affine (-1) (2 * b) hmap).congr fun t ht => ?_)
-  · rw [uIcc_of_le hab.le] at ht
-    exact (reflect_of_le G ht.2).symm
-  · rw [uIcc_of_le hbc] at ht
-    rw [Function.comp_apply, reflect_of_ge G ht.1]
-    congr 1
-    ring
-
 /-- **The sharp Poincaré inequality at one endpoint, for absolutely continuous functions.** If `G`
 is absolutely continuous on `[a, b]`, vanishes at `a` and has square integrable derivative, then
 `(π / (2 (b - a)))² ∫_a^b G² ≤ ∫_a^b G'²`. The even reflection of `G` in `b` vanishes at both
@@ -138,7 +120,7 @@ theorem _root_.AbsolutelyContinuousOnInterval.sq_mul_integral_sq_le_of_left_eq_z
     (π / (2 * (b - a))) ^ 2 * ∫ t in a..b, G t ^ 2 ≤ ∫ t in a..b, deriv G t ^ 2 := by
   have hbc : b < 2 * b - a := by linarith
   have hac : a < 2 * b - a := hab.trans hbc
-  have hF := absolutelyContinuousOnInterval_reflect hab hG
+  have hF : AbsolutelyContinuousOnInterval (reflect G b) a (2 * b - a) := hG.comp_sub_abs_sub hab.le
   have hFsq := intervalIntegral.integral_eq_two_smul_of_eqOn_reflect
     (f := fun t => reflect G b t ^ 2) (g := fun t => G t ^ 2)
     (hG.continuousOn.pow 2).intervalIntegrable
@@ -195,17 +177,26 @@ theorem _root_.AbsolutelyContinuousOnInterval.sq_mul_integral_sq_le_of_right_eq_
     intervalIntegral.integral_comp_add_sub (fun t => G t ^ 2),
     intervalIntegral.integral_comp_add_sub (fun t => deriv G t ^ 2)] using h
 
-/-- The norms of a class of `W^{1,2}(a, b)` as integrals of its continuous representative. -/
-private theorem norm_sq_value_gradient_eq (hab : a < b)
-    (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2) :
-    ‖value u‖ ^ 2 = ∫ t in a..b, intervalRepresentativeL hab u (projIcc a b hab.le t) ^ 2 ∧
-      ‖gradient u‖ ^ 2 = ∫ t in a..b,
-        deriv (fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t)) t ^ 2 := by
-  refine ⟨L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hab.le
+/-- A class of `W^{1,2}(a, b)` whose continuous representative vanishes at `c ∈ [a, b]` satisfies
+`‖u‖_{L²(a,b)} ≤ 2 (b - a) / π ‖u'‖_{L²(a,b)}`, provided that every absolutely continuous function
+vanishing at `c` with square integrable derivative satisfies
+`(π / (2 (b - a)))² ∫_a^b G² ≤ ∫_a^b G'²`. -/
+private theorem norm_value_le_of_forall_sq_mul_integral_sq_le (hab : a < b) {c : ℝ}
+    (hc : c ∈ Icc a b) (H : ∀ G : ℝ → ℝ, AbsolutelyContinuousOnInterval G a b →
+      IntervalIntegrable (fun t => deriv G t ^ 2) volume a b → G c = 0 →
+        (π / (2 * (b - a))) ^ 2 * ∫ t in a..b, G t ^ 2 ≤ ∫ t in a..b, deriv G t ^ 2)
+    {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2} (hu : intervalRepresentativeL hab u ⟨c, hc⟩ = 0) :
+    ‖value u‖ ≤ 2 * (b - a) / π * ‖gradient u‖ := by
+  have := sub_pos.2 hab
+  rw [← inv_div]
+  refine (le_inv_mul_iff₀ (by positivity)).2 (le_of_sq_le_sq ?_ (norm_nonneg _))
+  obtain ⟨hac, hdF⟩ := (mem_range_intervalRepresentativeL_iff hab _).1 ⟨u, rfl⟩
+  rw [mul_pow, L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hab.le
       (value_ae_eq_intervalRepresentativeL hab u),
-    L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hab.le ((ae_restrict_iff' measurableSet_Ioo).2 ?_)⟩
-  filter_upwards [ae_hasDerivAt_intervalRepresentativeL hab u] with t ht htI
-  exact (ht (uIoc_of_le hab.le ▸ Ioo_subset_Ioc_self htI)).deriv.symm
+    L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hab.le
+      (gradient_ae_eq_deriv_intervalRepresentativeL hab u)]
+  exact H _ hac ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 hdF.integrable_sq)
+    (by simpa only [projIcc_of_mem hab.le hc] using hu)
 
 /-- **The sharp Poincaré–Friedrichs inequality on an interval, vanishing at `a`.** If the
 continuous representative of `u ∈ W^{1,2}(a, b)` vanishes at `a`, then
@@ -214,15 +205,9 @@ continuous representative of `u ∈ W^{1,2}(a, b)` vanishes at `a`, then
 theorem norm_value_le_two_mul_div_pi_mul_norm_gradient_of_intervalTraceL_fst_eq_zero
     (hab : a < b) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2} (hu : (intervalTraceL hab u).1 = 0) :
     ‖value u‖ ≤ 2 * (b - a) / π * ‖gradient u‖ := by
-  have := sub_pos.2 hab
-  rw [← inv_div, le_inv_mul_iff₀ (by positivity)]
-  refine (abs_le_of_sq_le_sq' ?_ (norm_nonneg _)).2
-  obtain ⟨hac, hdF⟩ := (mem_range_intervalRepresentativeL_iff hab _).1 ⟨u, rfl⟩
-  rw [mul_pow, (norm_sq_value_gradient_eq hab u).1, (norm_sq_value_gradient_eq hab u).2]
-  refine hac.sq_mul_integral_sq_le_of_left_eq_zero hab
-    ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 hdF.integrable_sq) ?_
   rw [intervalTraceL_apply] at hu
-  simpa only [projIcc_left] using hu
+  exact norm_value_le_of_forall_sq_mul_integral_sq_le hab _
+    (fun _ hG => hG.sq_mul_integral_sq_le_of_left_eq_zero hab) hu
 
 /-- **The sharp Poincaré–Friedrichs inequality on an interval, vanishing at `b`.** If the
 continuous representative of `u ∈ W^{1,2}(a, b)` vanishes at `b`, then
@@ -231,15 +216,9 @@ continuous representative of `u ∈ W^{1,2}(a, b)` vanishes at `b`, then
 theorem norm_value_le_two_mul_div_pi_mul_norm_gradient_of_intervalTraceL_snd_eq_zero
     (hab : a < b) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2} (hu : (intervalTraceL hab u).2 = 0) :
     ‖value u‖ ≤ 2 * (b - a) / π * ‖gradient u‖ := by
-  have := sub_pos.2 hab
-  rw [← inv_div, le_inv_mul_iff₀ (by positivity)]
-  refine (abs_le_of_sq_le_sq' ?_ (norm_nonneg _)).2
-  obtain ⟨hac, hdF⟩ := (mem_range_intervalRepresentativeL_iff hab _).1 ⟨u, rfl⟩
-  rw [mul_pow, (norm_sq_value_gradient_eq hab u).1, (norm_sq_value_gradient_eq hab u).2]
-  refine hac.sq_mul_integral_sq_le_of_right_eq_zero hab
-    ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 hdF.integrable_sq) ?_
   rw [intervalTraceL_apply] at hu
-  simpa only [projIcc_right] using hu
+  exact norm_value_le_of_forall_sq_mul_integral_sq_le hab _
+    (fun _ hG => hG.sq_mul_integral_sq_le_of_right_eq_zero hab) hu
 
 /-! ### Optimality -/
 
@@ -252,15 +231,9 @@ private theorem exists_intervalTraceL_eq_and_norm_sq_eq (hab : a < b) {S : ℝ �
   obtain ⟨u, hv, hg⟩ := hS.contDiffOn.absolutelyContinuousOnInterval.exists_w1p_value_gradient_ae_eq
     ((hS.continuous_deriv le_rfl).continuousOn.memLp_restrict_of_subset_isCompact isCompact_Icc
       measurableSet_Ioo Ioo_subset_Icc_self 2)
-  have heq : intervalRepresentativeL hab u =
-      ⟨fun t ↦ S t, hS.continuous.comp continuous_subtypeVal⟩ := by
-    refine (intervalRepresentativeL_eq_iff hab u _).2 ?_
-    filter_upwards [hv, ae_restrict_mem measurableSet_Ioo] with t ht hmem
-    rw [ht, ContinuousMap.coe_mk, projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)]
-  refine ⟨u, ?_, L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hab.le hv,
+  exact ⟨u, intervalTraceL_eq_of_value_ae_eq hab hS.continuous.continuousOn hv,
+    L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hab.le hv,
     L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hab.le hg⟩
-  rw [intervalTraceL_apply, heq]
-  simp only [ContinuousMap.coe_mk]
 
 /-- The first mode `S t = sin (π (t - a) / (2 (b - a)))` vanishes at `a`, and
 `∫_a^b S'² = (π / (2 (b - a)))² ∫_a^b S²` with `∫_a^b S² > 0`. -/
