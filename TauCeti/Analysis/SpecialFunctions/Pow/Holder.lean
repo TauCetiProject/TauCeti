@@ -45,7 +45,7 @@ theorem abs_rpow_sub_rpow_le {a b p : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hp : 0
 constant `2`, for `0 < p ≤ 1`. -/
 theorem holderWith_abs_rpow_sub_one_mul_self {p : NNReal} (hp₀ : 0 < p) (hp₁ : p ≤ 1) :
     HolderWith 2 p (fun x : ℝ ↦ |x| ^ ((p : ℝ) - 1) * x) := by
-  have hp₀' : (0 : ℝ) < p := hp₀
+  have hp₀' : (0 : ℝ) < p := NNReal.coe_pos.2 hp₀
   -- On `[0, ∞)` the odd power is `x ^ p`.
   have hnonneg {x : ℝ} (hx : 0 ≤ x) : |x| ^ ((p : ℝ) - 1) * x = x ^ (p : ℝ) := by
     rw [abs_of_nonneg hx, ← rpow_eq_rpow_sub_one_mul hx hp₀'.ne']
@@ -74,9 +74,7 @@ theorem holderWith_abs_rpow_sub_one_mul_self {p : NNReal} (hp₀ : 0 < p) (hp₁
   · exact key x y hx
   · have h := key (-x) (-y) (neg_nonneg.2 hx)
     rw [abs_neg x, abs_neg y, show -x - -y = -(x - y) by ring, abs_neg] at h
-    calc _ = |(|x| ^ ((p : ℝ) - 1) * -x) - |y| ^ ((p : ℝ) - 1) * -y| := by
-          rw [← abs_neg]
-          ring_nf
-      _ ≤ _ := h
+    rwa [show (|x| ^ ((p : ℝ) - 1) * -x) - |y| ^ ((p : ℝ) - 1) * -y =
+      -((|x| ^ ((p : ℝ) - 1) * x) - |y| ^ ((p : ℝ) - 1) * y) by ring, abs_neg] at h
 
 end Real

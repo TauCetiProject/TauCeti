@@ -7,7 +7,11 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.Topology.MetricSpace.HolderNorm
+import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.SpecialFunctions.Pow.Holder
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # The sharp finite regularity of absolute powers
@@ -17,29 +21,69 @@ sharp obstructions to finite regularity for radial powers and their restrictions
 
 Positive regularity is read off from the derivative `p |x| ^ (p - 2) x` of `|x| ^ p` (Mathlib's
 `hasDerivAt_abs_rpow`) and of the odd power `|x| ^ p x`, whose derivative is `(p + 1) |x| ^ p`
-for `p > 1` (`TauCeti.hasDerivAt_abs_rpow_mul_self`). Differentiation thus alternates between the
+for `p ≥ 0` (`TauCeti.hasDerivAt_abs_rpow_mul_self`). Differentiation thus alternates between the
 even powers `|x| ^ p` and the odd powers `|x| ^ (p - 2) x`, lowering the exponent by one at each
-step.
+step. For `p > 3` the third derivative is `p (p - 1) (p - 2) |x| ^ (p - 4) x`
+(`TauCeti.iteratedDeriv_three_abs_rpow`); for `p = 3 + β` with `0 < β ≤ 1` it is `β`-Hölder on
+the whole line (`TauCeti.memHolder_iteratedFDeriv_abs_rpow_three_add`).
 -/
 
 public section
 
 open Set Filter Topology Real
-open scoped ContDiff
+open scoped ContDiff NNReal
 
 namespace TauCeti
 
 /-- The odd power `|x| ^ p * x`, that is `sign(x) |x| ^ (p + 1)`, has derivative `(p + 1) |x| ^ p`,
-for `p > 1`. -/
-theorem hasDerivAt_abs_rpow_mul_self {p : ℝ} (hp : 1 < p) (x : ℝ) :
+for `p ≥ 0`. -/
+theorem hasDerivAt_abs_rpow_mul_self {p : ℝ} (hp : 0 ≤ p) (x : ℝ) :
     HasDerivAt (fun x : ℝ ↦ |x| ^ p * x) ((p + 1) * |x| ^ p) x := by
-  refine ((hasDerivAt_abs_rpow x hp).mul (hasDerivAt_id' x)).congr_deriv ?_
+  rcases hp.eq_or_lt with rfl | hp
+  · simpa using hasDerivAt_id' x
   rcases eq_or_ne x 0 with rfl | hx
-  · simp [Real.zero_rpow (by linarith : p ≠ 0)]
-  · have h2 : |x| ^ (p - 2) * (x * x) = |x| ^ p := by
-      rw [← abs_mul_abs_self x, ← sq, ← Real.rpow_two, ← Real.rpow_add (abs_pos.2 hx),
-        sub_add_cancel]
-    linear_combination p * h2
+  · -- At the origin `|h| ^ p * h = o(h)`, since `|h| ^ p → 0`.
+    have h0 : Tendsto (fun h : ℝ ↦ |h| ^ p) (𝓝 0) (𝓝 0) := by
+      simpa [Real.zero_rpow hp.ne'] using
+        (continuous_abs.rpow_const fun _ ↦ Or.inr hp.le).tendsto (0 : ℝ)
+    rw [hasDerivAt_iff_isLittleO_nhds_zero]
+    simpa [Real.zero_rpow hp.ne'] using
+      ((Asymptotics.isLittleO_one_iff ℝ).2 h0).mul_isBigO (Asymptotics.isBigO_refl id (𝓝 0))
+  · -- Away from the origin, `|x| ^ p` has derivative `p |x| ^ (p - 1) sign(x)`.
+    refine (((hasDerivAt_abs hx).rpow_const (Or.inl (abs_ne_zero.2 hx))).mul
+      (hasDerivAt_id' x)).congr_deriv ?_
+    have h : |x| ^ (p - 1) * (SignType.sign x * x) = |x| ^ p := by
+      rw [sign_mul_self, ← Real.rpow_add_one (abs_ne_zero.2 hx), sub_add_cancel]
+    linear_combination p * h
+
+/-- The third derivative of `|x| ^ p`, for `p > 3`, is the odd power
+`p (p - 1) (p - 2) |x| ^ (p - 4) x`. -/
+theorem iteratedDeriv_three_abs_rpow {p : ℝ} (hp : 3 < p) :
+    iteratedDeriv 3 (fun x : ℝ ↦ |x| ^ p) =
+      fun x ↦ p * (p - 1) * (p - 2) * (|x| ^ (p - 4) * x) := by
+  have h1 : iteratedDeriv 1 (fun x : ℝ ↦ |x| ^ p) = fun x ↦ p * (|x| ^ (p - 2) * x) := by
+    funext x
+    rw [iteratedDeriv_one, (hasDerivAt_abs_rpow x (by linarith)).deriv, mul_assoc]
+  have h2 : iteratedDeriv 2 (fun x : ℝ ↦ |x| ^ p) = fun x ↦ p * (p - 1) * |x| ^ (p - 2) := by
+    funext x
+    rw [iteratedDeriv_succ, h1,
+      ((hasDerivAt_abs_rpow_mul_self (p := p - 2) (by linarith) x).const_mul p).deriv]
+    ring
+  funext x
+  rw [iteratedDeriv_succ, h2,
+    ((hasDerivAt_abs_rpow x (p := p - 2) (by linarith)).const_mul (p * (p - 1))).deriv,
+    show p - 2 - 2 = p - 4 by ring]
+  ring
+
+/-- The third derivative of `|x| ^ (3 + β)` is globally `β`-Hölder, for `0 < β ≤ 1`. -/
+theorem memHolder_iteratedFDeriv_abs_rpow_three_add {β : ℝ≥0} (hβ₀ : 0 < β) (hβ₁ : β ≤ 1) :
+    MemHolder β (iteratedFDeriv ℝ 3 (fun x : ℝ ↦ |x| ^ (3 + (β : ℝ)))) := by
+  have hβ : (0 : ℝ) < β := NNReal.coe_pos.2 hβ₀
+  rw [iteratedFDeriv_eq_equiv_comp, iteratedDeriv_three_abs_rpow (by linarith)]
+  simp only [show (3 : ℝ) + β - 4 = β - 1 by ring]
+  exact ⟨_, (ContinuousMultilinearMap.piFieldEquiv ℝ (Fin 3) ℝ).isometry.comp_holderWith
+    ((Real.holderWith_abs_rpow_sub_one_mul_self hβ₀ hβ₁).smul
+      ((3 + (β : ℝ)) * (3 + β - 1) * (3 + β - 2)))⟩
 
 /-- A nonintegral absolute power fails to have the next order of continuous differentiability
 at the origin. -/
