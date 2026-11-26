@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.EulerCharacteristic
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Dimension.RankNullity
+import TauCeti.Algebra.BigOperators.Finset.Filter
 import TauCeti.Algebra.Category.ModuleCat.Finrank
 import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 
@@ -121,26 +122,6 @@ end Support
 
 section EulerPoincare
 
-/-- If a relation `r` uniquely determines `j = step i` whenever `r i j`, and `g i (step i) = 0`
-whenever `¬ (r i (step i) ∧ step i ∈ s)`, then summing `g i (step i)` over `s` equals the nested
-sum over `(i, j) ∈ s ×ˢ s` guarded by `r i j`. -/
-private lemma sum_step_eq_sum_ite {ι : Type*} {s : Finset ι} (r : ι → ι → Prop)
-    [DecidableRel r] (step : ι → ι) (g : ι → ι → ℤ)
-    (hstep : ∀ i j, r i j → step i = j)
-    (hzero : ∀ i ∈ s, ¬ (r i (step i) ∧ step i ∈ s) → g i (step i) = 0) :
-    ∑ i ∈ s, g i (step i) = ∑ i ∈ s, ∑ j ∈ s, if r i j then g i j else 0 := by
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [Finset.sum_eq_single (step i)]
-  · split_ifs with hr
-    · rfl
-    · exact hzero i hi fun h ↦ hr h.1
-  · intro j _ hjne
-    exact ite_eq_right_iff.2 fun hij ↦ absurd (hstep i j hij).symm hjne
-  · intro hnot
-    split_ifs with hr
-    · exact hzero i hi fun h ↦ hnot h.2
-    · rfl
-
 section RankLtAleph0
 
 variable {R : Type u} [Ring R] [HasRankNullity.{v} R]
@@ -165,16 +146,17 @@ private lemma sum_chi_finrank_range_d_next [Nontrivial R] [c.EulerCharSigns] [De
     ∑ i ∈ s, (c.χ i : ℤ) * finrank R (LinearMap.range (K.d i (c.next i)).hom) =
       ∑ ij ∈ (s ×ˢ s).filter (fun ij ↦ c.Rel ij.1 ij.2),
         (c.χ ij.1 : ℤ) * finrank R (LinearMap.range (K.d ij.1 ij.2).hom) := by
-  rw [Finset.sum_filter, Finset.sum_product]
-  exact sum_step_eq_sum_ite c.Rel c.next
-    (fun i j ↦ (c.χ i : ℤ) * finrank R (LinearMap.range (K.d i j).hom))
-    (fun _ _ h ↦ c.next_eq' h) fun i _ h ↦ by
-      have hd0 : K.d i (c.next i) = 0 := by
-        by_cases hr : c.Rel i (c.next i)
-        · exact (hs (c.next i) fun hmem ↦ h ⟨hr, hmem⟩).eq_of_tgt _ _
-        · exact K.shape _ _ hr
-      rw [hd0, ModuleCat.hom_zero, LinearMap.range_zero]
-      simp
+  rw [Finset.sum_filter_product s s c.Rel
+    (fun i j ↦ (c.χ i : ℤ) * finrank R (LinearMap.range (K.d i j).hom))]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  symm
+  refine Finset.sum_filter_eq_single (c.next i) (fun _ _ h ↦ (c.next_eq' h).symm) fun h ↦ ?_
+  have hd0 : K.d i (c.next i) = 0 := by
+    by_cases hr : c.Rel i (c.next i)
+    · exact (hs (c.next i) fun hmem ↦ h ⟨hmem, hr⟩).eq_of_tgt _ _
+    · exact K.shape _ _ hr
+  rw [hd0, ModuleCat.hom_zero, LinearMap.range_zero]
+  simp
 
 omit [HasRankNullity.{v} R] in
 /-- Symmetrically, the signed sum over `s` of the incoming boundary ranks `im d_{prev j, j}` equals
@@ -184,16 +166,17 @@ private lemma sum_chi_finrank_range_d_prev [Nontrivial R] [c.EulerCharSigns] [De
     ∑ j ∈ s, (c.χ j : ℤ) * finrank R (LinearMap.range (K.d (c.prev j) j).hom) =
       ∑ ij ∈ (s ×ˢ s).filter (fun ij ↦ c.Rel ij.1 ij.2),
         (c.χ ij.2 : ℤ) * finrank R (LinearMap.range (K.d ij.1 ij.2).hom) := by
-  rw [Finset.sum_filter, Finset.sum_product_right]
-  exact sum_step_eq_sum_ite (fun j i ↦ c.Rel i j) c.prev
-    (fun j i ↦ (c.χ j : ℤ) * finrank R (LinearMap.range (K.d i j).hom))
-    (fun _ _ h ↦ c.prev_eq' h) fun j _ h ↦ by
-      have hd0 : K.d (c.prev j) j = 0 := by
-        by_cases hr : c.Rel (c.prev j) j
-        · exact (hs (c.prev j) fun hmem ↦ h ⟨hr, hmem⟩).eq_of_src _ _
-        · exact K.shape _ _ hr
-      rw [hd0, ModuleCat.hom_zero, LinearMap.range_zero]
-      simp
+  rw [Finset.sum_filter_product_right s s c.Rel
+    (fun i j ↦ (c.χ j : ℤ) * finrank R (LinearMap.range (K.d i j).hom))]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  symm
+  refine Finset.sum_filter_eq_single (c.prev j) (fun _ _ h ↦ (c.prev_eq' h).symm) fun h ↦ ?_
+  have hd0 : K.d (c.prev j) j = 0 := by
+    by_cases hr : c.Rel (c.prev j) j
+    · exact (hs (c.prev j) fun hmem ↦ h ⟨hmem, hr⟩).eq_of_src _ _
+    · exact K.shape _ _ hr
+  rw [hd0, ModuleCat.hom_zero, LinearMap.range_zero]
+  simp
 
 /-- **Euler–Poincaré over a finite support set for an arbitrary complex shape (finite rank).**
 Over a ring satisfying `HasRankNullity`, if `K` vanishes outside `s` and its terms on `s` have

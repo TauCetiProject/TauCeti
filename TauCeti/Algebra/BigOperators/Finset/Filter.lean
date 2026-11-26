@@ -27,12 +27,16 @@ level `m ≥ 1`.
   the condition of a filtered product or sum.
 * `Finset.prod_filter_eq_one_of_ne`, `Finset.sum_filter_eq_zero_of_ne`: a filtered product or sum
   is trivial when every nontrivial factor fails the condition.
+* `Finset.prod_filter_eq_single`, `Finset.sum_filter_eq_single`: a filtered product or sum equals
+  `f a` when `a` is the only element of `s` that can satisfy the condition and `f a` is trivial
+  whenever `a ∉ s` or `¬p a`.
 * `Finset.prod_subtype_eq_prod_of_mem`, `Finset.sum_subtype_eq_sum_of_mem`: reindexing a product or
   sum over `Subtype p` to a finite superset `s` when the factors on `s` outside `p` are trivial.
 * `Finset.prod_filter_eq_one_of_forall_prod_pow_tsub_eq_one`: the level products of a family are
   trivial when all its truncated power products are.
-* `Finset.prod_filter_product`, `Finset.sum_filter_product`: rewriting a filtered product or sum
-  over `s ×ˢ t` as an iterated product or sum over `s` and the filtered fiber in `t`.
+* `Finset.prod_filter_product`, `Finset.sum_filter_product`, `Finset.prod_filter_product_right`,
+  `Finset.sum_filter_product_right`: rewriting a filtered product or sum over `s ×ˢ t` as an
+  iterated product or sum over either factor and the filtered fiber in the other.
 * `Finset.prod_filter_product_product_and`, `Finset.sum_filter_product_product_and`: peeling the
   last coordinate off a filtered product or sum over `s ×ˢ t ×ˢ u` with a conjunctive predicate.
 * `Finset.prod_prod_filter_eq_prod_pow_card`, `Finset.sum_sum_filter_eq_sum_card_nsmul`: a product
@@ -62,6 +66,17 @@ theorem _root_.Finset.prod_filter_eq_one_of_ne {ι M : Type*} [CommMonoid M] {s 
     ∏ i ∈ s with p i, f i = 1 :=
   prod_eq_one fun i hi =>
     by_contra fun hfi => h i (mem_filter.mp hi).1 hfi (mem_filter.mp hi).2
+
+/-- If `a` is the only element of `s` that can satisfy `p`, and `f a = 1` whenever `a ∉ s` or
+`¬p a`, then the product of `f` over `{b ∈ s | p b}` equals `f a`. -/
+@[to_additive /-- If `a` is the only element of `s` that can satisfy `p`, and `f a = 0` whenever
+`a ∉ s` or `¬p a`, then the sum of `f` over `{b ∈ s | p b}` equals `f a`. -/]
+theorem prod_filter_eq_single {ι M : Type*} [CommMonoid M] {s : Finset ι} {p : ι → Prop}
+    [DecidablePred p] {f : ι → M} (a : ι) (h₀ : ∀ b ∈ s, p b → b = a)
+    (h₁ : ¬(a ∈ s ∧ p a) → f a = 1) :
+    ∏ b ∈ s with p b, f b = f a :=
+  prod_eq_single a (fun b hb hne ↦ absurd (h₀ b (mem_filter.1 hb).1 (mem_filter.1 hb).2) hne)
+    fun h ↦ h₁ (by rwa [mem_filter] at h)
 
 /-- If `s` contains every element satisfying `p` and `f` equals `1` on `s` outside `p`, then the
 product of `f` over `Subtype p` equals its product over `s`. Unlike `Finset.prod_congr_set`, the
@@ -115,6 +130,15 @@ theorem prod_filter_product {α β M : Type*} [CommMonoid M] (s : Finset α) (t 
     (p : α → β → Prop) [DecidableRel p] (f : α → β → M) :
     (∏ e ∈ s ×ˢ t with p e.1 e.2, f e.1 e.2) = ∏ a ∈ s, ∏ b ∈ t with p a b, f a b := by
   simp_rw [prod_filter, prod_product]
+
+/-- A product over a filtered Cartesian product `s ×ˢ t` equals the iterated product over `b ∈ t`
+and the filtered fiber `a ∈ s` satisfying `p a b`. -/
+@[to_additive /-- A sum over a filtered Cartesian product `s ×ˢ t` equals the iterated sum over
+`b ∈ t` and the filtered fiber `a ∈ s` satisfying `p a b`. -/]
+theorem prod_filter_product_right {α β M : Type*} [CommMonoid M] (s : Finset α) (t : Finset β)
+    (p : α → β → Prop) [DecidableRel p] (f : α → β → M) :
+    (∏ e ∈ s ×ˢ t with p e.1 e.2, f e.1 e.2) = ∏ b ∈ t, ∏ a ∈ s with p a b, f a b := by
+  simp_rw [prod_filter, prod_product_right]
 
 /-- A product over `s ×ˢ t ×ˢ u` filtered by `p x.1 x.2.1 ∧ q x.1 x.2.1 x.2.2` equals the product
 over pairs `e ∈ s ×ˢ t` satisfying `p e.1 e.2` of the inner product over `c ∈ u` satisfying

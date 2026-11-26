@@ -20,6 +20,7 @@ import TauCeti.Algebra.Homology.SpectralSequence.ModuleCat
 import TauCeti.AlgebraicTopology.Singular.Fibration.ArbitraryBase
 import TauCeti.AlgebraicTopology.Singular.Fibration.FirstPage
 import TauCeti.Topology.CWComplex.Comparison
+import TauCeti.Topology.FiberBundle.TopCat
 import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 
 /-!
@@ -543,21 +544,12 @@ end TopCat
 
 section FiberBundle
 
-/-- Each fibre of the projection of a fibre bundle `FiberBundle F E` is homeomorphic to the model
-fibre `F`. -/
-private def projFiberHomeomorph {B F : Type u} [TopologicalSpace B] [TopologicalSpace F]
-    (E : B → Type u) [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)]
-    [FiberBundle F E] (b : B) :
-    ((_root_.TopCat.ofHom ⟨TotalSpace.proj, FiberBundle.continuous_proj F E⟩ :
-      _root_.TopCat.of (TotalSpace F E) ⟶ _root_.TopCat.of B).fiber b) ≃ₜ F :=
-  (trivializationAt F E b).preimageSingletonHomeomorph (FiberBundle.mem_baseSet_trivializationAt' b)
-
 private instance {B F : Type u} [TopologicalSpace B] [TopologicalSpace F]
     (E : B → Type u) [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)]
     [FiberBundle F E] [FiniteCWType F] (b : TopCat.of B) :
     FiniteCWType ((_root_.TopCat.ofHom ⟨TotalSpace.proj, FiberBundle.continuous_proj F E⟩ :
       _root_.TopCat.of (TotalSpace F E) ⟶ _root_.TopCat.of B).fiber b) :=
-  (projFiberHomeomorph E b).finiteCWType
+  (FiberBundle.projFiberHomeomorph F E b).finiteCWType
 
 /-- Over a Noetherian ring `R`, the singular homology of the total space of a fibre bundle whose
 base and fibre have finite CW type is finitely generated in every degree. -/
@@ -594,7 +586,8 @@ theorem finsum_finrank_singularHomology_fiberBundle (k : Type u) [DivisionRing k
         (ModuleCat.of k k)).obj (TopCat.of (TotalSpace F E))) : ℤ) =
       eulerChar B * eulerChar F :=
   TopCat.finsum_finrank_singularHomology_of_mem_serreFibrations
-    (TopCat.mem_serreFibrations_proj F E) k fun b ↦ (projFiberHomeomorph E b).eulerChar_eq
+    (TopCat.mem_serreFibrations_proj F E) k fun b ↦
+      (FiberBundle.projFiberHomeomorph F E b).eulerChar_eq
 
 /-- **Multiplicativity of `eulerChar` for fibre bundles.** When `B`, `F`, and `TotalSpace F E` all
 have finite CW type, `χ(TotalSpace F E) = χ(B) · χ(F)`. -/
