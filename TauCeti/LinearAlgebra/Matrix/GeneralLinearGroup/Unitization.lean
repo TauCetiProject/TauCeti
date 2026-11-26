@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.Algebra.Quasiregular
 public import TauCeti.Algebra.Algebra.Unitization.Matrix
 public import TauCeti.Algebra.Algebra.Unitization
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 
 /-!
 # Invertible matrices over a forced unitization
@@ -25,6 +26,9 @@ algebra `R → S` and an `S`-algebra `A`, the change of scalars `Unitization.map
 quasi-units of `Mₙ(A)` are invertible matrices over `A`, and the subgroup is isomorphic to
 `GLₙ(A)` through the map `Unitization R A → A`, `(r, a) ↦ r • 1 + a`.
 
+Writing `s(g)` for the scalar part of `g ∈ GLₙ(A⁺)` included back into `GLₙ(A⁺)`, the map
+`g ↦ g · s(g)⁻¹` is a retraction of `GLₙ(A⁺)` onto `unitizationGLFstOne R A n`.
+
 This is the matrix form of Mathlib's `Unitization.unitsFstOne_mulEquiv_quasiregular`, which
 treats the units of `A⁺` itself. Since matrices with identity scalar part represent every class
 of the relative `K₁` of `A`, it compares relative `K₁` over different scalar rings, and with
@@ -33,6 +37,11 @@ of the relative `K₁` of `A`, it compares relative `K₁` over different scalar
 ## Main definitions
 
 * `TauCeti.unitizationGLFstOne R A n`: invertible matrices over `A⁺` with identity scalar part.
+* `TauCeti.unitizationGLFst R A n`, `TauCeti.unitizationGLInl R A n`: the scalar part
+  `GLₙ(A⁺) →* GLₙ(R)`, whose kernel is `unitizationGLFstOne R A n`, and the inclusion
+  `GLₙ(R) →* GLₙ(A⁺)` of invertible scalar matrices.
+* `TauCeti.unitizationGLRetract R A n`: the retraction `g ↦ g · s(g)⁻¹` onto
+  `unitizationGLFstOne R A n`.
 * `TauCeti.unitizationGLFstOneEquiv R A n`: its isomorphism with the quasi-units of `Mₙ(A)`,
   `u ↦ u - 1`, with inverse `x ↦ 1 + x`.
 * `TauCeti.unitizationGLFstOneEquivGL R A n`: for a unital algebra `A`, its isomorphism with
@@ -41,6 +50,9 @@ of the relative `K₁` of `A`, it compares relative `K₁` over different scalar
 ## Main results
 
 * `TauCeti.mem_unitizationGLFstOne_iff`: membership means that the scalar part is the identity.
+* `TauCeti.unitizationGLRetract_mem_unitizationGLFstOne`, `TauCeti.unitizationGLRetract_of_mem`:
+  the retraction lands in `unitizationGLFstOne R A n` and fixes it.
+* `TauCeti.stabilizeGL_mem_unitizationGLFstOne`: stabilization preserves the identity scalar part.
 * `TauCeti.units_map_unitizationGLFstOneEquiv_symm`: the inverse isomorphisms for two scalar rings
   `R → S` are compatible with `Unitization R A → Unitization S A`.
 
@@ -168,7 +180,106 @@ theorem coe_unitizationGLFstOneEquiv_symm_apply (x : (PreQuasiregular (Matrix n 
       Matrix n n (Unitization R A)) = 1 + x.val.val.map (↑) :=
   (rfl)
 
+/-! ### The scalar part and the retraction onto `unitizationGLFstOne` -/
+
+variable (R A n) in
+/-- The scalar part `GLₙ(A⁺) →* GLₙ(R)` of an invertible matrix over `A⁺ = Unitization R A`,
+induced by the augmentation. Its kernel is `unitizationGLFstOne R A n`. -/
+def unitizationGLFst : GL n (Unitization R A) →* GL n R :=
+  Units.map ((fstHom R A : Unitization R A →+* R).mapMatrix (m := n)).toMonoidHom
+
+variable (R A n) in
+/-- The inclusion `GLₙ(R) →* GLₙ(A⁺)` of invertible scalar matrices. -/
+def unitizationGLInl : GL n R →* GL n (Unitization R A) :=
+  Units.map ((inlRingHom R A).mapMatrix (m := n)).toMonoidHom
+
+/-- `unitizationGLFst` applies the augmentation to the entries. -/
+theorem unitizationGLFst_def :
+    unitizationGLFst R A n =
+      Units.map ((fstHom R A : Unitization R A →+* R).mapMatrix (m := n)).toMonoidHom :=
+  (rfl)
+
+/-- `unitizationGLInl` applies the inclusion `R →+* A⁺` to the entries. -/
+theorem unitizationGLInl_def :
+    unitizationGLInl R A n = Units.map ((inlRingHom R A).mapMatrix (m := n)).toMonoidHom :=
+  (rfl)
+
+/-- The matrix of the scalar part is the entrywise scalar part. -/
+@[simp]
+theorem coe_unitizationGLFst (u : GL n (Unitization R A)) :
+    ((unitizationGLFst R A n u : GL n R) : Matrix n n R) =
+      (u : Matrix n n (Unitization R A)).map fun x ↦ x.fst :=
+  (rfl)
+
+/-- The matrix of an included scalar matrix is its entrywise inclusion. -/
+@[simp]
+theorem coe_unitizationGLInl (g : GL n R) :
+    ((unitizationGLInl R A n g : GL n (Unitization R A)) : Matrix n n (Unitization R A)) =
+      (g : Matrix n n R).map Unitization.inl :=
+  (rfl)
+
+variable (R A n) in
+/-- The kernel of the scalar part is the group `unitizationGLFstOne` of invertible matrices with
+identity scalar part. -/
+theorem ker_unitizationGLFst : (unitizationGLFst R A n).ker = unitizationGLFstOne R A n :=
+  unitizationGLFstOne_def.symm
+
+/-- An invertible matrix over `A⁺` lies in `unitizationGLFstOne` exactly when its scalar part
+`unitizationGLFst` is `1`. -/
+theorem mem_unitizationGLFstOne_iff_unitizationGLFst {u : GL n (Unitization R A)} :
+    u ∈ unitizationGLFstOne R A n ↔ unitizationGLFst R A n u = 1 := by
+  rw [← ker_unitizationGLFst, MonoidHom.mem_ker]
+
+/-- The scalar part of an included scalar matrix is the matrix itself. -/
+@[simp]
+theorem unitizationGLFst_unitizationGLInl (g : GL n R) :
+    unitizationGLFst R A n (unitizationGLInl R A n g) = g :=
+  Units.ext <| by
+    ext i j
+    simp
+
+variable (R A n) in
+/-- The retraction `g ↦ g · s(g)⁻¹` of `GLₙ(A⁺)` onto the invertible matrices with identity
+scalar part, where `s(g)` is the scalar part of `g` included back into `GLₙ(A⁺)`. -/
+def unitizationGLRetract (g : GL n (Unitization R A)) : GL n (Unitization R A) :=
+  g * (unitizationGLInl R A n (unitizationGLFst R A n g))⁻¹
+
+/-- The retraction multiplies by the inverse of the included scalar part. -/
+theorem unitizationGLRetract_def (g : GL n (Unitization R A)) :
+    unitizationGLRetract R A n g = g * (unitizationGLInl R A n (unitizationGLFst R A n g))⁻¹ :=
+  (rfl)
+
+/-- The retraction has identity scalar part. -/
+theorem unitizationGLRetract_mem_unitizationGLFstOne (g : GL n (Unitization R A)) :
+    unitizationGLRetract R A n g ∈ unitizationGLFstOne R A n :=
+  mem_unitizationGLFstOne_iff_unitizationGLFst.2 <| by simp [unitizationGLRetract_def]
+
+/-- The retraction fixes the invertible matrices with identity scalar part. -/
+theorem unitizationGLRetract_of_mem {g : GL n (Unitization R A)}
+    (hg : g ∈ unitizationGLFstOne R A n) : unitizationGLRetract R A n g = g := by
+  simp [unitizationGLRetract_def, mem_unitizationGLFstOne_iff_unitizationGLFst.1 hg]
+
 end Semiring
+
+section Ring
+
+variable {R A : Type*} [CommRing R] [NonUnitalRing A] [Module R A] [IsScalarTower R A A]
+  [SMulCommClass R A A]
+
+/-- The scalar part commutes with stabilization. -/
+theorem unitizationGLFst_stabilizeGL {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) (Unitization R A)) :
+    unitizationGLFst R A (Fin n) (stabilizeGL _ h u) =
+      stabilizeGL R h (unitizationGLFst R A (Fin m) u) :=
+  (stabilizeGL_map h _ u).symm
+
+/-- Stabilization preserves the invertible matrices with identity scalar part. -/
+theorem stabilizeGL_mem_unitizationGLFstOne {m n : ℕ} (h : m ≤ n)
+    {u : GL (Fin m) (Unitization R A)} (hu : u ∈ unitizationGLFstOne R A (Fin m)) :
+    stabilizeGL _ h u ∈ unitizationGLFstOne R A (Fin n) := by
+  rw [mem_unitizationGLFstOne_iff_unitizationGLFst, unitizationGLFst_stabilizeGL,
+    mem_unitizationGLFstOne_iff_unitizationGLFst.1 hu, map_one]
+
+end Ring
 
 section ChangeOfScalars
 

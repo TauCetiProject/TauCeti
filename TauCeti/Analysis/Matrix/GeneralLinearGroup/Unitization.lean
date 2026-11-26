@@ -32,10 +32,11 @@ file proves this invertible-matrix description for the kernel:
 
 The corresponding description by unitaries of `A⁺` is not treated here.
 
-Both rest on the continuous retraction `g ↦ g · s(g)⁻¹` of `GLₙ(A⁺)` onto the matrices with
-scalar part `1` (`TauCeti.UnitizationKOne.retract`), where `s(g)` is the scalar part of `g` viewed
-in `GLₙ(A⁺)`: it fixes those matrices and maps the identity component of `GLₙ(A⁺)` to a connected
-set containing `1`.
+Both rest on the retraction `g ↦ g · s(g)⁻¹` of `GLₙ(A⁺)` onto the matrices with scalar part `1`
+(`TauCeti.unitizationGLRetract`), where `s(g)` is the scalar part of `g` viewed in `GLₙ(A⁺)`. It
+is continuous (`TauCeti.continuous_unitizationGLRetract`), fixes those matrices, and so maps the
+identity component of `GLₙ(A⁺)` to a connected set containing `1`
+(`TauCeti.mem_connectedComponentIn_unitizationGLFstOne`).
 
 When `K₁(𝕜) = 0`, as for `𝕜 = ℂ` since every `GLₙ(ℂ)` is connected, the kernel condition is
 vacuous: `K₁(A)` is all of `π₀GL_∞(A⁺)` (`TauCeti.UnitizationKOne.eq_top`,
@@ -46,14 +47,13 @@ star homomorphisms through `Unitization.starMap` (`TauCeti.UnitizationKOne.map`,
 ## Main definitions
 
 * `TauCeti.UnitizationKOne`: `K₁(A) = ker(π₀GL_∞(A⁺) → π₀GL_∞(𝕜))`.
-* `TauCeti.UnitizationKOne.scalarGL`, `TauCeti.UnitizationKOne.inlGL`: the scalar part
-  `GLₙ(A⁺) → GLₙ(𝕜)`, whose kernel is `TauCeti.unitizationGLFstOne`, and the inclusion
-  `GLₙ(𝕜) → GLₙ(A⁺)`.
-* `TauCeti.UnitizationKOne.retract`: the retraction `g ↦ g · s(g)⁻¹`.
 * `TauCeti.UnitizationKOne.map`: functoriality for star homomorphisms of C⋆-algebras.
 
 ## Main results
 
+* `TauCeti.continuous_unitizationGLFst`, `TauCeti.continuous_unitizationGLInl`,
+  `TauCeti.continuous_unitizationGLRetract`: continuity of the scalar part, of the inclusion of
+  scalar matrices and of the retraction onto `TauCeti.unitizationGLFstOne`.
 * `TauCeti.UnitizationKOne.exists_mk_eq`, `TauCeti.UnitizationKOne.mk_eq_mk_iff`:
   representatives of `K₁(A)` with scalar part `1`, and homotopies within the scalar condition.
 * `TauCeti.UnitizationKOne.map_id`, `TauCeti.UnitizationKOne.map_comp`: functoriality.
@@ -85,91 +85,42 @@ theorem _root_.Unitization.continuous_fstHom :
     Continuous (Unitization.fstHom 𝕜 A : Unitization 𝕜 A →+* 𝕜) :=
   Unitization.continuous_fst
 
-namespace UnitizationKOne
+/-- The scalar part `GLₙ(A⁺) →* GLₙ(𝕜)` is continuous. -/
+theorem continuous_unitizationGLFst (n : Type*) [Fintype n] [DecidableEq n] :
+    Continuous (unitizationGLFst 𝕜 A n) := by
+  rw [unitizationGLFst_def]
+  exact Units.continuous_map (continuous_id.matrix_map Unitization.continuous_fst)
 
-variable {𝕜 A}
-
-variable (𝕜 A) in
-/-- The scalar part `GLₙ(A⁺) →* GLₙ(𝕜)` of an invertible matrix over the unitization. -/
-def scalarGL (n : ℕ) : GL (Fin n) (Unitization 𝕜 A) →* GL (Fin n) 𝕜 :=
-  Units.map ((Unitization.fstHom 𝕜 A : Unitization 𝕜 A →+* 𝕜).mapMatrix (m := Fin n)).toMonoidHom
-
-variable (𝕜 A) in
-/-- The inclusion `GLₙ(𝕜) →* GLₙ(A⁺)` of invertible scalar matrices. -/
-def inlGL (n : ℕ) : GL (Fin n) 𝕜 →* GL (Fin n) (Unitization 𝕜 A) :=
-  Units.map ((Unitization.inlRingHom 𝕜 A).mapMatrix (m := Fin n)).toMonoidHom
-
-/-- The matrix of the scalar part is the entrywise scalar part. -/
-@[simp]
-theorem coe_scalarGL {n : ℕ} (u : GL (Fin n) (Unitization 𝕜 A)) :
-    ((scalarGL 𝕜 A n u : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) =
-      (u : Matrix (Fin n) (Fin n) (Unitization 𝕜 A)).map fun x ↦ x.fst :=
-  (rfl)
-
-/-- The matrix of an included scalar matrix is its entrywise inclusion. -/
-@[simp]
-theorem coe_inlGL {n : ℕ} (g : GL (Fin n) 𝕜) :
-    ((inlGL 𝕜 A n g : GL (Fin n) (Unitization 𝕜 A)) :
-        Matrix (Fin n) (Fin n) (Unitization 𝕜 A)) =
-      (g : Matrix (Fin n) (Fin n) 𝕜).map Unitization.inl :=
-  (rfl)
-
-variable (𝕜 A) in
-/-- The kernel of the scalar part is the group `unitizationGLFstOne` of invertible matrices with
-scalar part `1`. -/
-theorem ker_scalarGL (n : ℕ) : (scalarGL 𝕜 A n).ker = unitizationGLFstOne 𝕜 A (Fin n) :=
-  unitizationGLFstOne_def.symm
-
-/-- An invertible matrix over `A⁺` lies in `unitizationGLFstOne` exactly when its scalar part
-`scalarGL` is `1`. -/
-theorem mem_unitizationGLFstOne_iff_scalarGL {n : ℕ} {u : GL (Fin n) (Unitization 𝕜 A)} :
-    u ∈ unitizationGLFstOne 𝕜 A (Fin n) ↔ scalarGL 𝕜 A n u = 1 := by
-  rw [← ker_scalarGL, MonoidHom.mem_ker]
-
-/-- The scalar part of an included scalar matrix is the matrix itself. -/
-@[simp]
-theorem scalarGL_inlGL {n : ℕ} (g : GL (Fin n) 𝕜) : scalarGL 𝕜 A n (inlGL 𝕜 A n g) = g :=
-  Units.ext <| by
-    ext i j
-    simp
-
-/-- The scalar part is continuous. -/
-theorem continuous_scalarGL (n : ℕ) : Continuous (scalarGL 𝕜 A n) :=
-  Units.continuous_map (continuous_id.matrix_map Unitization.continuous_fst)
-
-/-- The inclusion of scalar matrices is continuous. -/
-theorem continuous_inlGL (n : ℕ) : Continuous (inlGL 𝕜 A n) :=
-  Units.continuous_map (continuous_id.matrix_map Unitization.continuous_inl)
-
-/-- The scalar part commutes with stabilization. -/
-theorem scalarGL_stabilizeGL {m n : ℕ} (h : m ≤ n) (u : GL (Fin m) (Unitization 𝕜 A)) :
-    scalarGL 𝕜 A n (stabilizeGL _ h u) = stabilizeGL 𝕜 h (scalarGL 𝕜 A m u) :=
-  (stabilizeGL_map h _ u).symm
-
-variable (𝕜 A) in
-/-- The retraction `g ↦ g · s(g)⁻¹` of `GLₙ(A⁺)` onto the invertible matrices with scalar
-part `1`, where `s(g)` is the scalar part of `g` included back into `GLₙ(A⁺)`. -/
-def retract (n : ℕ) (g : GL (Fin n) (Unitization 𝕜 A)) : GL (Fin n) (Unitization 𝕜 A) :=
-  g * (inlGL 𝕜 A n (scalarGL 𝕜 A n g))⁻¹
-
-/-- The retraction multiplies by the inverse of the included scalar part. -/
-theorem retract_def {n : ℕ} (g : GL (Fin n) (Unitization 𝕜 A)) :
-    retract 𝕜 A n g = g * (inlGL 𝕜 A n (scalarGL 𝕜 A n g))⁻¹ :=
-  (rfl)
-
-/-- The retraction has scalar part `1`. -/
-theorem retract_mem_unitizationGLFstOne {n : ℕ} (g : GL (Fin n) (Unitization 𝕜 A)) :
-    retract 𝕜 A n g ∈ unitizationGLFstOne 𝕜 A (Fin n) :=
-  mem_unitizationGLFstOne_iff_scalarGL.2 <| by simp [retract_def]
-
-/-- The retraction fixes the matrices with scalar part `1`. -/
-theorem retract_of_mem {n : ℕ} {g : GL (Fin n) (Unitization 𝕜 A)}
-    (hg : g ∈ unitizationGLFstOne 𝕜 A (Fin n)) : retract 𝕜 A n g = g := by
-  simp [retract_def, mem_unitizationGLFstOne_iff_scalarGL.1 hg]
-
-end UnitizationKOne
+/-- The inclusion `GLₙ(𝕜) →* GLₙ(A⁺)` of invertible scalar matrices is continuous. -/
+theorem continuous_unitizationGLInl (n : Type*) [Fintype n] [DecidableEq n] :
+    Continuous (unitizationGLInl 𝕜 A n) := by
+  rw [unitizationGLInl_def]
+  exact Units.continuous_map (continuous_id.matrix_map Unitization.continuous_inl)
 
 variable [RegularNormedAlgebra 𝕜 A]
+
+/-- The retraction of `GLₙ(A⁺)` onto `unitizationGLFstOne` is continuous. -/
+theorem continuous_unitizationGLRetract (n : Type*) [Fintype n] [DecidableEq n] :
+    Continuous (unitizationGLRetract 𝕜 A n) :=
+  (continuous_id.mul ((continuous_unitizationGLInl 𝕜 A n).comp
+    (continuous_unitizationGLFst 𝕜 A n)).inv).congr fun g ↦ (unitizationGLRetract_def g).symm
+
+variable {𝕜 A} in
+/-- An invertible matrix with identity scalar part in the identity component of `GLₙ(A⁺)` lies in
+the identity component of the group `unitizationGLFstOne` of invertible matrices with identity
+scalar part. -/
+theorem mem_connectedComponentIn_unitizationGLFstOne {n : Type*} [Fintype n] [DecidableEq n]
+    {g : GL n (Unitization 𝕜 A)} (hg : g ∈ unitizationGLFstOne 𝕜 A n)
+    (hg₀ : g ∈ connectedComponent 1) :
+    g ∈ connectedComponentIn (unitizationGLFstOne 𝕜 A n : Set _) 1 := by
+  have hconn : IsPreconnected (unitizationGLRetract 𝕜 A n '' connectedComponent 1) :=
+    isPreconnected_connectedComponent.image _
+      (continuous_unitizationGLRetract 𝕜 A n).continuousOn
+  have h1 : (1 : GL n (Unitization 𝕜 A)) ∈ unitizationGLRetract 𝕜 A n '' connectedComponent 1 :=
+    ⟨1, mem_connectedComponent, unitizationGLRetract_of_mem (one_mem _)⟩
+  refine hconn.subset_connectedComponentIn h1 ?_ ⟨g, hg₀, unitizationGLRetract_of_mem hg⟩
+  rintro _ ⟨u, -, rfl⟩
+  exact unitizationGLRetract_mem_unitizationGLFstOne u
 
 /-- **`K₁` of a nonunital algebra**: the kernel of the homomorphism
 `π₀GL_∞(A⁺) → π₀GL_∞(𝕜)` of stable component groups induced by the scalar part of the
@@ -194,25 +145,23 @@ class. -/
 theorem map_mk (n : ℕ) (u : GL (Fin n) (Unitization 𝕜 A)) :
     StableComponentGroup.map (Unitization.fstHom 𝕜 A : Unitization 𝕜 A →+* 𝕜)
         (Unitization.continuous_fstHom 𝕜 A) (StableComponentGroup.mk _ n u) =
-      StableComponentGroup.mk 𝕜 n (scalarGL 𝕜 A n u) :=
-  StableComponentGroup.map_mk ..
+      StableComponentGroup.mk 𝕜 n (unitizationGLFst 𝕜 A (Fin n) u) := by
+  rw [unitizationGLFst_def]
+  exact StableComponentGroup.map_mk ..
 
 /-- The class in `π₀GL_∞(A⁺)` of an included scalar matrix is the image of its class. -/
 theorem map_inlRingHom_mk (n : ℕ) (g : GL (Fin n) 𝕜) :
     StableComponentGroup.map (Unitization.inlRingHom 𝕜 A) Unitization.continuous_inl
         (StableComponentGroup.mk 𝕜 n g) =
-      StableComponentGroup.mk _ n (inlGL 𝕜 A n g) :=
-  StableComponentGroup.map_mk ..
+      StableComponentGroup.mk _ n (unitizationGLInl 𝕜 A (Fin n) g) := by
+  rw [unitizationGLInl_def]
+  exact StableComponentGroup.map_mk ..
 
 /-- The class of an invertible matrix with scalar part `1` lies in `K₁(A)`. -/
 theorem mk_mem {n : ℕ} {u : GL (Fin n) (Unitization 𝕜 A)}
     (hu : u ∈ unitizationGLFstOne 𝕜 A (Fin n)) :
     StableComponentGroup.mk _ n u ∈ UnitizationKOne 𝕜 A := by
-  rw [mem_iff, map_mk, mem_unitizationGLFstOne_iff_scalarGL.1 hu, map_one]
-
-/-- The retraction is continuous. -/
-theorem continuous_retract (n : ℕ) : Continuous (retract 𝕜 A n) :=
-  continuous_id.mul ((continuous_inlGL n).comp (continuous_scalarGL n)).inv
+  rw [mem_iff, map_mk, mem_unitizationGLFstOne_iff_unitizationGLFst.1 hu, map_one]
 
 /-- **Representatives of `K₁(A)`.** Every class of `K₁(A)` is the class of an invertible matrix
 over `A⁺` whose scalar part is the identity. -/
@@ -220,27 +169,14 @@ theorem exists_mk_eq {x : StableComponentGroup (Unitization 𝕜 A)}
     (hx : x ∈ UnitizationKOne 𝕜 A) :
     ∃ n, ∃ u ∈ unitizationGLFstOne 𝕜 A (Fin n), StableComponentGroup.mk _ n u = x := by
   obtain ⟨n, g, rfl⟩ := StableComponentGroup.exists_mk x
-  refine ⟨n, retract 𝕜 A n g, retract_mem_unitizationGLFstOne g, ?_⟩
-  have h₁ : StableComponentGroup.mk 𝕜 n (scalarGL 𝕜 A n g) = 1 := by
+  refine ⟨n, unitizationGLRetract 𝕜 A (Fin n) g, unitizationGLRetract_mem_unitizationGLFstOne g, ?_⟩
+  have h₁ : StableComponentGroup.mk 𝕜 n (unitizationGLFst 𝕜 A (Fin n) g) = 1 := by
     rw [← map_mk]
     exact mem_iff.1 hx
-  have h₂ : StableComponentGroup.mk _ n (inlGL 𝕜 A n (scalarGL 𝕜 A n g)) = 1 := by
+  have h₂ : StableComponentGroup.mk _ n
+      (unitizationGLInl 𝕜 A (Fin n) (unitizationGLFst 𝕜 A (Fin n) g)) = 1 := by
     rw [← map_inlRingHom_mk, h₁, map_one]
-  rw [retract_def, map_mul, map_inv, h₂, inv_one, mul_one]
-
-/-- An invertible matrix with scalar part `1` in the identity component of `GLₙ(A⁺)` lies in
-the identity component of the group of invertible matrices with scalar part `1`. -/
-theorem mem_connectedComponentIn_of_mem_connectedComponent {n : ℕ}
-    {g : GL (Fin n) (Unitization 𝕜 A)} (hg : g ∈ unitizationGLFstOne 𝕜 A (Fin n))
-    (hg₀ : g ∈ connectedComponent 1) :
-    g ∈ connectedComponentIn (unitizationGLFstOne 𝕜 A (Fin n) : Set _) 1 := by
-  have hconn : IsPreconnected (retract 𝕜 A n '' connectedComponent 1) :=
-    isPreconnected_connectedComponent.image _ (continuous_retract n).continuousOn
-  have h1 : (1 : GL (Fin n) (Unitization 𝕜 A)) ∈ retract 𝕜 A n '' connectedComponent 1 :=
-    ⟨1, mem_connectedComponent, retract_of_mem (one_mem _)⟩
-  refine hconn.subset_connectedComponentIn h1 ?_ ⟨g, hg₀, retract_of_mem hg⟩
-  rintro _ ⟨u, -, rfl⟩
-  exact retract_mem_unitizationGLFstOne u
+  rw [unitizationGLRetract_def, map_mul, map_inv, h₂, inv_one, mul_one]
 
 /-- **Homotopies within the scalar condition.** Two invertible matrices over `A⁺` with scalar
 part `1` have the same class exactly when, after a common stabilization, they differ by an
@@ -252,10 +188,8 @@ theorem mk_eq_mk_iff {n : ℕ} {u v : GL (Fin n) (Unitization 𝕜 A)}
         connectedComponentIn (unitizationGLFstOne 𝕜 A (Fin k) : Set _) 1 := by
   rw [StableComponentGroup.mk_eq_mk_iff]
   refine exists_congr fun k ↦ exists_congr fun h ↦ ⟨fun hc ↦ ?_, fun hc ↦ ?_⟩
-  · refine mem_connectedComponentIn_of_mem_connectedComponent ?_ hc
-    rw [mem_unitizationGLFstOne_iff_scalarGL, scalarGL_stabilizeGL, map_mul, map_inv,
-      mem_unitizationGLFstOne_iff_scalarGL.1 hu, mem_unitizationGLFstOne_iff_scalarGL.1 hv,
-      inv_one, one_mul, map_one]
+  · exact mem_connectedComponentIn_unitizationGLFstOne
+      (stabilizeGL_mem_unitizationGLFstOne h (mul_mem (inv_mem hu) hv)) hc
   · rw [Subgroup.mem_connectedComponentOfOne_iff, ← connectedComponentIn_univ]
     exact connectedComponentIn_mono _ (Set.subset_univ _) hc
 
@@ -303,18 +237,25 @@ theorem _root_.Unitization.continuous_starMap (φ : A →⋆ₙₐ[ℂ] B) :
     Continuous (Unitization.starMap φ : Unitization ℂ A →+* Unitization ℂ B) :=
   map_continuous (Unitization.starMap φ)
 
+/-- The map of stable component groups induced by the unitization of a star homomorphism of
+C⋆-algebras sends `K₁(A)` into `K₁(B)`, since it preserves the scalar part. -/
+theorem map_starMap_mem (φ : A →⋆ₙₐ[ℂ] B) {x : StableComponentGroup (Unitization ℂ A)}
+    (hx : x ∈ UnitizationKOne ℂ A) :
+    StableComponentGroup.map (Unitization.starMap φ : Unitization ℂ A →+* Unitization ℂ B)
+      (Unitization.continuous_starMap φ) x ∈ UnitizationKOne ℂ B := by
+  have h : (Unitization.fstHom ℂ B : Unitization ℂ B →+* ℂ).comp
+      (Unitization.starMap φ : Unitization ℂ A →+* Unitization ℂ B) =
+        (Unitization.fstHom ℂ A : Unitization ℂ A →+* ℂ) :=
+    RingHom.ext fun x ↦ by simp
+  rw [mem_iff, StableComponentGroup.map_map]
+  simp_rw [h]
+  exact mem_iff.1 hx
+
 /-- **Functoriality of `K₁`** for star homomorphisms of C⋆-algebras, through the unitization. -/
 def map (φ : A →⋆ₙₐ[ℂ] B) : UnitizationKOne ℂ A →* UnitizationKOne ℂ B :=
   ((StableComponentGroup.map (Unitization.starMap φ : Unitization ℂ A →+* Unitization ℂ B)
     (Unitization.continuous_starMap φ)).comp (UnitizationKOne ℂ A).subtype).codRestrict
-    (UnitizationKOne ℂ B) fun x ↦ by
-      have h : (Unitization.fstHom ℂ B : Unitization ℂ B →+* ℂ).comp
-          (Unitization.starMap φ : Unitization ℂ A →+* Unitization ℂ B) =
-            (Unitization.fstHom ℂ A : Unitization ℂ A →+* ℂ) :=
-        RingHom.ext fun x ↦ by simp
-      rw [mem_iff, MonoidHom.comp_apply, StableComponentGroup.map_map]
-      simp_rw [h]
-      exact mem_iff.1 x.property
+    (UnitizationKOne ℂ B) fun x ↦ map_starMap_mem φ x.property
 
 /-- The underlying class of the image of a class under `map φ`. -/
 @[simp]
