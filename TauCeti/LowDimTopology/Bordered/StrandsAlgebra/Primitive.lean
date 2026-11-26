@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Idempotents
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading.Basic
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Matched
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.StrandCount
 public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
 /-!
@@ -35,7 +36,11 @@ A diagram from `S` to `S` has length zero, so it is `idOn S`: over any commutati
 corner `I(S) A(n) I(S)` is spanned by `I(S)`, with `I(S) x I(S) = x_{I(S)} I(S)`
 (`TauCeti.StrandsAlgebra.idem_mul_mul_idem`). Hence the idempotents of the corner ring are the
 `c I(S)` with `c` an idempotent of the coefficient ring
-(`TauCeti.StrandsAlgebra.eq_smul_idem_of_isIdempotentElem`).
+(`TauCeti.StrandsAlgebra.eq_smul_idem_of_isIdempotentElem`). A diagram with a strand at every
+point starts and ends at every point, so the part `A(n, n)` with `n` strands is the corner of
+`I({1, …, n})`, spanned by this idempotent
+(`TauCeti.StrandsAlgebra.strandCountPart_card_eq_span_idem_univ`), and the differential vanishes
+on it.
 
 Primitivity holds over any commutative semiring in which `1` is primitive, such as a field or a
 local ring (`TauCeti.isPrimitiveIdempotent_one`); bordered Floer theory uses `𝔽₂`. The coefficient
@@ -95,6 +100,9 @@ a splitting `1 = a + b` gives the splitting `I(s) = a I(s) + b I(s)`
   part are nilpotent.
 * `TauCeti.StrandsAlgebra.idem_mul_mul_idem`: the corner of `I(S)` in `A(n)` is spanned by
   `I(S)`.
+* `TauCeti.StrandsAlgebra.strandCountPart_card_eq_span_idem_univ`: the part `A(n, n)` is spanned
+  by `I({1, …, n})`, and `TauCeti.StrandsAlgebra.differential_eq_zero_of_mem_strandCountPart_card`:
+  the differential vanishes on it.
 * `TauCeti.StrandsAlgebra.eq_smul_idem_of_isIdempotentElem`: the idempotents of the corner of
   `I(S)` in `A(n)`.
 * `TauCeti.StrandsAlgebra.eq_zero_of_isIdempotentElem_of_forall_repr_idOn_eq_zero`: an idempotent
@@ -276,6 +284,36 @@ theorem eq_smul_idem_of_isIdempotentElem {e : StrandsAlgebra R α} {s : Finset �
   simp only [map_smul, Finsupp.smul_apply, idem_def, ← basis_apply, Module.Basis.repr_self,
     Finsupp.single_eq_same, smul_eq_mul, mul_one] at h
   exact h
+
+/-- **The part `A(n, n)` with a strand at every point is spanned by the identity `I({1, …, n})`**:
+the only strand diagram with a strand at every point is the identity diagram, since two crossing
+strands cannot both go upwards when every point is an end point. -/
+theorem strandCountPart_card_eq_span_idem_univ :
+    strandCountPart R (Fintype.card α) = R ∙ (idem univ : StrandsAlgebra R α) := by
+  refine le_antisymm (fun x hx ↦ ?_) ((Submodule.span_singleton_le_iff_mem _ _).2 ?_)
+  · have h : idem univ * x = x ∧ x * idem univ = x := by
+      rw [strandCountPart_eq_span] at hx
+      induction hx using Submodule.span_induction with
+      | mem x hx =>
+        obtain ⟨φ, hφ, rfl⟩ := hx
+        have hs : φ.source = univ := eq_univ_of_card _ hφ
+        have ht : φ.target = univ := eq_univ_of_card _ (by rw [card_target, hφ])
+        rw [idem_mul_of, of_mul_idem, ite_eq_left hs.symm, ite_eq_left ht]
+        exact ⟨rfl, rfl⟩
+      | zero => simp
+      | add x y _ _ hx hy => simp [mul_add, add_mul, hx.1, hx.2, hy.1, hy.2]
+      | smul r x _ hx => simp [hx.1, hx.2]
+    rw [eq_smul_idem_of_idem_mul_eq_of_mul_idem_eq h.1 h.2]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
+  · simpa using idem_mem_strandCountPart (R := R) (univ : Finset α)
+
+/-- **The differential vanishes on the part `A(n, n)` with a strand at every point**, which is
+spanned by an idempotent. -/
+theorem differential_eq_zero_of_mem_strandCountPart_card {x : StrandsAlgebra R α}
+    (hx : x ∈ strandCountPart R (Fintype.card α)) : differential R α x = 0 := by
+  rw [strandCountPart_card_eq_span_idem_univ] at hx
+  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hx
+  rw [map_smul, differential_idem, smul_zero]
 
 /-- The horizontal part fixes the idempotents `I(s)` of the matched subalgebra. -/
 @[simp]
