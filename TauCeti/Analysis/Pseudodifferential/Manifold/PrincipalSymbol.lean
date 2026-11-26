@@ -11,6 +11,7 @@ import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.VectorBundle.Section.ComplexModule
 
 /-!
 # The principal symbol of a classical pseudodifferential operator on a manifold
@@ -941,12 +942,8 @@ theorem classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators {m : ℕ}
     rw [smulCommutator_pow_comp_comp (a := ContMDiffMap.ofReal f)
       (fun g ↦ map_mul ContMDiffMap.ofReal f g) hσ, smulCommutator_pow_restrictScalars]
     simp
-  have hre := hcomm (σ := ContMDiffMap.re) fun y ↦ by
-    ext y
-    simp [ContMDiffMap.re_apply]
-  have him := hcomm (σ := ContMDiffMap.im) fun y ↦ by
-    ext y
-    simp [ContMDiffMap.im_apply]
+  have hre := hcomm (σ := ContMDiffMap.re) (ContMDiffMap.re_ofReal_mul f)
+  have him := hcomm (σ := ContMDiffMap.im) (ContMDiffMap.im_ofReal_mul f)
   -- `Q = A + i B` for the complexifications of `A` and `B`.
   conv_lhs =>
     rw [← ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp Q]

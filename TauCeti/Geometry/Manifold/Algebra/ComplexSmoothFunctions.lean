@@ -189,6 +189,20 @@ theorem ofReal_im (f : C^n⟮I, M; ℝ⟯) : (ofReal f).im = 0 := by
   ext x
   simp
 
+/-- Real part of the product of a real-valued and a complex-valued smooth function. -/
+@[simp]
+theorem re_ofReal_mul (f : C^n⟮I, M; ℝ⟯) (g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (ofReal f * g).re = f * g.re := by
+  ext x
+  simp
+
+/-- Imaginary part of the product of a real-valued and a complex-valued smooth function. -/
+@[simp]
+theorem im_ofReal_mul (f : C^n⟮I, M; ℝ⟯) (g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (ofReal f * g).im = f * g.im := by
+  ext x
+  simp
+
 /-- Inclusion of real-valued functions is injective. -/
 theorem ofReal_injective :
     Function.Injective (ofReal (I := I) (M := M) (n := n)) := by

@@ -795,10 +795,7 @@ theorem isSectionClassicalEllipticAt_iff_isSectionEllipticAt
     IsSectionClassicalEllipticAt k P x ↔
       IsSectionEllipticAt ⟨P.restrictScalars ℝ, restrictScalars_mem_differentialOperators_of_complex
         hP⟩ x := by
-  -- Multiplication by `i ^ k` is a bijection of `F_x`.
   have hc : Complex.I ^ k ≠ 0 := pow_ne_zero _ Complex.I_ne_zero
-  have hI : Function.Bijective fun w : F x ↦ Complex.I ^ k • w :=
-    ⟨smul_right_injective _ hc, fun w ↦ ⟨(Complex.I ^ k)⁻¹ • w, smul_inv_smul₀ hc w⟩⟩
   have h (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) (hξ : ξ ≠ 0) :
       Function.Bijective (sectionClassicalPrincipalSymbol k P x ξ) ↔
         Function.Bijective (sectionPrincipalSymbol 𝓘(ℝ, CoordinateSpace n)
@@ -808,7 +805,7 @@ theorem isSectionClassicalEllipticAt_iff_isSectionEllipticAt
       ⇑(sectionPrincipalSymbol 𝓘(ℝ, CoordinateSpace n) BoundarylessManifold.isInteriorPoint
         ⟨P.restrictScalars ℝ, restrictScalars_mem_differentialOperators_of_complex hP⟩ ξ) from
       funext (sectionClassicalPrincipalSymbol_apply_of_mem_differentialOperators hP x hξ)]
-    exact hI.of_comp_iff' _
+    exact (MulAction.bijective (Units.mk0 _ hc)).of_comp_iff' _
   rw [isSectionEllipticAt_iff]
   exact ⟨fun hP' _ ξ hξ ↦ (h ξ hξ).1 (hP' ξ hξ),
     fun hP' ξ hξ ↦ (h ξ hξ).2 (hP' BoundarylessManifold.isInteriorPoint ξ hξ)⟩
