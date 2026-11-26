@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import TauCeti.Dynamics.Flow.ExitTime
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.Calculus.Deriv.Shift
+import TauCeti.Analysis.Calculus.Deriv.MeanValue
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.MeanValue
+import TauCeti.Dynamics.Flow.Deriv
 
 /-!
 # Exit tests by derivatives along a flow
@@ -22,8 +22,10 @@ a vector field `V` on a manifold and a differentiable function `g` it is `dg(V)`
 by the signs of such derivatives, whether trajectories leave `P` at once or stay in it for a
 while. These are the two conditions on the exit time `Flow.exitTime` from `P` in the index-pair
 arguments of Conley index theory: its zeros are the points leaving `P` at once, and it is
-continuous on a closed set `P` (`Flow.continuousOn_exitTime`) when the points of positive exit time
-have neighbours staying in `P` for a common time.
+continuous on a closed set `P` (`Flow.continuousOn_exitTime`) when every point of `P` of positive
+exit time has a trajectory lying in `interior P` at every positive time before its exit, and has
+neighbours staying in `P` for a common time. The tests below give the second of these conditions;
+the interior-trajectory condition is a separate hypothesis.
 
 * **Strict first-order exit.** If `g ≥ 0` on `P` near `x`, `g x ≤ 0` and the derivative of `g`
   along the flow at `x` is negative, then the trajectory of `x` leaves `P` at once: its exit time
@@ -42,11 +44,10 @@ have neighbours staying in `P` for a common time.
 
 Derivatives along the flow can be read at every point of a trajectory: the derivative of
 `s ↦ g (ϕ s x)` at time `t` is the derivative along the flow at `ϕ t x`
-(`Flow.hasDerivAt_comp_apply_iff`).
+(`Flow.hasDerivAt_apply_flow_iff` in `TauCeti/Dynamics/Flow/Deriv.lean`).
 
 ## Main results
 
-* `Flow.hasDerivAt_comp_apply_iff`: derivatives along a trajectory at any time.
 * `Flow.exitTime_eq_zero_of_hasDerivAt_neg`,
   `Flow.exitTime_eq_zero_of_hasDerivAt_of_hasDerivAt_neg`: strict first- and second-order exit.
 * `Flow.exists_pos_eventually_forall_apply_mem_of_hasDerivAt_nonneg`: a common initial interval in
@@ -67,20 +68,6 @@ open scoped Topology
 namespace Flow
 
 variable {α : Type*} [TopologicalSpace α] {ϕ : Flow ℝ α} {P : Set α} {x : α}
-
-/-- **Derivatives along a trajectory.** The derivative of `s ↦ g (ϕ s x)` at time `t` is the
-derivative at time `0` of the same function along the trajectory of `ϕ t x`. -/
-theorem hasDerivAt_comp_apply_iff {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {g : α → F} {g' : F} {t : ℝ} :
-    HasDerivAt (fun s ↦ g (ϕ s x)) g' t ↔ HasDerivAt (fun s ↦ g (ϕ s (ϕ t x))) g' 0 := by
-  have hshift : (fun s ↦ g (ϕ s (ϕ t x))) = fun s ↦ g (ϕ (s + t) x) := by
-    funext s
-    rw [ϕ.map_add]
-  rw [hshift]
-  refine ⟨fun h ↦ HasDerivAt.comp_add_const 0 t (by rwa [zero_add]), fun h ↦ ?_⟩
-  refine (HasDerivAt.comp_sub_const t t (by rwa [sub_self])).congr_of_eventuallyEq
-    (Eventually.of_forall fun s ↦ ?_)
-  simp only [sub_add_cancel]
 
 /-- **Strict first-order exit.** Let `g` be nonnegative on the points of `P` near `x`, with
 `g x ≤ 0`. If the derivative of `g` along the flow at `x` is negative, the trajectory of `x` leaves
@@ -114,7 +101,7 @@ theorem exitTime_eq_zero_of_hasDerivAt_of_hasDerivAt_neg {g g' : α → ℝ} {g'
       rw [ϕ.map_zero_apply] at ht
       exact ht.trans_le hg'x
   have hder : ∀ᶠ t in 𝓝 (0 : ℝ), HasDerivAt (fun s ↦ g (ϕ s x)) (g' (ϕ t x)) t :=
-    (hx.eventually hg).mono fun t ht ↦ hasDerivAt_comp_apply_iff.2 ht
+    (hx.eventually hg).mono fun t ht ↦ hasDerivAt_apply_flow_iff.2 ht
   obtain ⟨ε, hε, hεsub⟩ :=
     mem_nhdsGT_iff_exists_Ioo_subset.1 (hneg.and (nhdsWithin_le_nhds hder))
   have hg0 : HasDerivAt (fun s ↦ g (ϕ s x)) (g' x) 0 := by
@@ -168,12 +155,10 @@ theorem exists_pos_eventually_forall_apply_mem_of_hasDerivAt_nonneg {ι : Type*}
   · -- `t ↦ g i (ϕ t y)` has a nonnegative derivative during `[0, ε / 2]`, so it is monotone there
     have hd : ∀ u ∈ Icc (0 : ℝ) (ε / 2),
         HasDerivAt (fun t ↦ g i (ϕ t y)) (g' i (ϕ u y)) u ∧ 0 ≤ g' i (ϕ u y) := fun u hu ↦
-      ⟨hasDerivAt_comp_apply_iff.2 (((hQs y hyW u hu).2 i).2 hL).1,
+      ⟨hasDerivAt_apply_flow_iff.2 (((hQs y hyW u hu).2 i).2 hL).1,
         (((hQs y hyW u hu).2 i).2 hL).2⟩
     have hmono : MonotoneOn (fun t ↦ g i (ϕ t y)) (Icc 0 (ε / 2)) :=
-      monotoneOn_of_hasDerivWithinAt_nonneg (convex_Icc 0 (ε / 2))
-        (fun u hu ↦ (hd u hu).1.continuousAt.continuousWithinAt)
-        (fun u hu ↦ (hd u (interior_subset hu)).1.hasDerivWithinAt)
+      TauCeti.monotoneOn_of_hasDerivAt_nonneg (convex_Icc 0 (ε / 2)) (fun u hu ↦ (hd u hu).1)
         fun u hu ↦ (hd u (interior_subset hu)).2
     have h0 : g i (ϕ 0 y) ≤ g i (ϕ s y) := hmono ⟨le_rfl, (half_pos hε).le⟩ hs hs.1
     rw [ϕ.map_zero_apply] at h0

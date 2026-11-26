@@ -45,8 +45,9 @@ of `P` at every positive time before its exit and the points of `P` near `x` all
 during a common initial time interval. When this holds at every point of a closed set `P` of
 positive exit time, the exit time is continuous on `P` (`Flow.continuousOn_exitTime`), which is
 the hypothesis of the deformation below. The file `TauCeti/Dynamics/Flow/ExitTime/Deriv.lean`
-verifies both conditions, and immediate exit, by the signs of derivatives along the flow of
-functions describing `P`.
+verifies the common-initial-interval condition, and immediate exit, by the signs of derivatives
+along the flow of functions describing `P`; the interior-trajectory condition must be proved
+separately.
 
 The **flow stopped at the exit** (`Flow.stopAtExit ϕ P t`) sends `x` to its position at time
 `min t (exitTime x)`. It maps `P` into `P`, it fixes the points of exit time zero, and it maps
