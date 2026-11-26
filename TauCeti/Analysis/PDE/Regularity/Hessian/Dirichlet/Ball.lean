@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Dirichlet.Existence
-import TauCeti.Analysis.Calculus.FDeriv.Homothety
+import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
 import TauCeti.Analysis.Normed.Operator.MethodOfContinuity
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
-import TauCeti.MeasureTheory.Function.Jacobian
 
 /-!
 # The `W^{2,p}` Dirichlet problem for constant coefficients on balls
@@ -210,59 +209,9 @@ private theorem forall_frontier_exists_contDiff_graph_of_eq_ball (x₀ : WithLp 
   rw [← SetLike.mem_coe, hΩ]
   exact h6 z hz
 
-/-- The weak Hessian of `u ∘ Φ` for the homothety `Φ y = R y + a` is `R² D²u ∘ Φ`. -/
-private theorem iteratedGradient_compL_smul_add_const_ae (hp_top : p ≠ ⊤)
-    {U V : Opens (WithLp 2 (ℝ × E))} {R : ℝ} {a : WithLp 2 (ℝ × E)} {L c : ℝ}
-    (h : IsChangeOfVariables 2 U V (fun y => R • y + a) L c)
-    (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) V p 2) :
-    iteratedGradient 1 (compL h u) =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict U]
-      fun y => R ^ 2 • iteratedGradient 1 u (R • y + a) := by
-  filter_upwards [inner_iteratedGradient_compL_ae h hp_top u] with y hy
-  refine ContinuousLinearMap.ext fun f => ext_inner_right ℝ fun g => ?_
-  rw [hy, fderiv_smul_add_const]
-  simp only [fderiv_fun_const, Pi.zero_apply, zero_apply, inner_zero_right,
-    add_zero, smul_apply, ContinuousLinearMap.id_apply, map_smul,
-    inner_smul_left, inner_smul_right, RCLike.conj_to_real]
-  ring
-
-omit [Fact (1 ≤ p)] in
-/-- Composing with the homothety `y ↦ R y + a`, `R > 0`, scales `Lᵖ` norms by at most
-`(R ^ n)^(-1 / p)`, the power of the Jacobian. -/
-private theorem norm_le_of_ae_eq_smul_comp_smul_add_const {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {U V : Opens (WithLp 2 (ℝ × E))} {R : ℝ} (hR : 0 < R)
-    (a : WithLp 2 (ℝ × E)) (hmaps : MapsTo (fun y => R • y + a) U V)
-    {g : Lp G p ((volume : Measure (WithLp 2 (ℝ × E))).restrict V)}
-    {h : Lp G p ((volume : Measure (WithLp 2 (ℝ × E))).restrict U)} (κ : ℝ)
-    (hgh : h =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict U]
-      fun y => κ • g (R • y + a)) :
-    ‖h‖ ≤ |κ| * ((R ^ finrank ℝ (WithLp 2 (ℝ × E)))⁻¹ ^ (1 / p).toReal) * ‖g‖ := by
-  have hn : 0 < R ^ finrank ℝ (WithLp 2 (ℝ × E)) := pow_pos hR _
-  have h1 := eLpNorm_comp_restrict_le (μ := (volume : Measure (WithLp 2 (ℝ × E)))) (p := p)
-    (f := fun y => R • y + a) isOpen_univ (by fun_prop)
-    (fun x _ y _ hxy => smul_right_injective _ hR.ne' (add_right_cancel hxy)) (subset_univ _)
-    U.isOpen.measurableSet hn (fun x _ => (abs_det_fderiv_smul_add_const hR a x).ge) g
-  have h2 : eLpNorm g p ((volume : Measure (WithLp 2 (ℝ × E))).restrict
-      ((fun y => R • y + a) '' U)) ≤
-        eLpNorm g p ((volume : Measure (WithLp 2 (ℝ × E))).restrict V) :=
-    eLpNorm_mono_measure _ (Measure.restrict_mono (image_subset_iff.2 hmaps) le_rfl)
-  have h3 : eLpNorm h p ((volume : Measure (WithLp 2 (ℝ × E))).restrict U) =
-      ‖κ‖ₑ * eLpNorm (fun y => g (R • y + a)) p
-        ((volume : Measure (WithLp 2 (ℝ × E))).restrict U) :=
-    (eLpNorm_congr_ae hgh).trans (eLpNorm_const_smul κ (fun y => g (R • y + a)) p _)
-  have hfin : (ENNReal.ofReal (R ^ finrank ℝ (WithLp 2 (ℝ × E))))⁻¹ ^ (1 / p).toReal ≠ ⊤ :=
-    ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg
-      (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hn).ne')
-  have h4 := ENNReal.toReal_mono
-    (ENNReal.mul_ne_top eNorm_ne_top (ENNReal.mul_ne_top hfin (Lp.eLpNorm_ne_top g)))
-    (h3.trans_le (mul_le_mul_right (h1.trans (mul_le_mul_right h2 _)) _))
-  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, toReal_eNorm, ← ENNReal.toReal_rpow,
-    ENNReal.toReal_inv, ENNReal.toReal_ofReal hn.le, ← Lp.norm_def, ← Lp.norm_def,
-    Real.norm_eq_abs] at h4
-  linarith
-
 /-- The Jacobian factors of a homothety of ratio `R > 0` and of its inverse cancel. -/
 private theorem homothety_factors_mul_eq (n : ℕ) {R : ℝ} (hR : 0 < R) (s C t : ℝ) :
-    |R⁻¹ ^ 2| * (R⁻¹ ^ n)⁻¹ ^ s * (C * (|R ^ 2| * (R ^ n)⁻¹ ^ s * t)) = C * t := by
+    |R⁻¹ ^ 2| * ((R⁻¹ ^ n)⁻¹ ^ s * (C * (|R ^ 2| * ((R ^ n)⁻¹ ^ s * t)))) = C * t := by
   have hm : 0 < R ^ n := pow_pos hR n
   have hcancel : (R⁻¹ ^ n)⁻¹ ^ s * (R ^ n)⁻¹ ^ s = 1 := by
     rw [inv_pow, inv_inv, Real.inv_rpow hm.le, mul_inv_cancel₀ (Real.rpow_pos_of_pos hm s).ne']
@@ -309,33 +258,34 @@ private theorem norm_iteratedGradient_le_of_eq_ball (hp_top : p ≠ ⊤)
     fun y _ => by simp [smul_add, smul_smul, inv_mul_cancel₀ hR.ne']
   have hright : RightInvOn (fun x => R⁻¹ • x + -(R⁻¹ • x₀)) (fun y => R • y + x₀) Omega :=
     fun x _ => by simp [smul_add, smul_smul, mul_inv_cancel₀ hR.ne']
-  -- `v = u ∘ Φ` lies in `W^{2,p}(B) ∩ W^{1,p}_0(B)`, with `D²v = R² D²u ∘ Φ`, `D²u = R⁻² D²v ∘ Ψ`
-  -- and `tr (A ∘ D²v) = R² f ∘ Φ`.
+  -- `v = u ∘ Φ` lies in `W^{2,p}(B) ∩ W^{1,p}_0(B)`; `D²u = R⁻² D²v ∘ Ψ` and
+  -- `tr (A ∘ D²v) = R² f ∘ Φ`.
   set v := compL hΦ u
   have hv0 : firstOrder 1 v ∈ w1p0Submodule volume B p := by
     rw [firstOrder_compL hΦ hp_top]
     exact hΦ.w1pCompL_mem_w1p0Submodule_of_leftInvOn hp_top
       ((continuous_const_smul _).add continuous_const).continuousOn hΨ.mapsTo hleft hu
-  have hDu : iteratedGradient 1 u =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict Omega]
-      fun x => R⁻¹ ^ 2 • iteratedGradient 1 v (R⁻¹ • x + -(R⁻¹ • x₀)) := by
+  -- The two changes of variables scale the norms by reciprocal Jacobian factors.
+  have hDu : ‖iteratedGradient 1 u‖ ≤ |R⁻¹ ^ 2| *
+      ((R⁻¹ ^ finrank ℝ (WithLp 2 (ℝ × E)))⁻¹ ^ (1 / p).toReal * ‖iteratedGradient 1 v‖) := by
     have h := iteratedGradient_compL_smul_add_const_ae hp_top hΨ v
-    rwa [show compL hΨ v = u from compL_compL_of_rightInvOn hΦ hΨ hright u] at h
-  have hTv : hessianTraceL B A v =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict B]
-      fun y => R ^ 2 • f (R • y + x₀) := by
+    rw [show compL hΨ v = u from compL_compL_of_rightInvOn hΦ hΨ hright u] at h
+    rw [Lp.norm_def, toReal_eLpNorm, Lp.norm_def, toReal_eLpNorm]
+    exact hΨ.lpNorm_le_of_ae_le_mul_comp Omega.isOpen.measurableSet subset_rfl hΨ.mapsTo
+      (abs_nonneg _) (Lp.aestronglyMeasurable _) (Lp.memLp _)
+      (h.mono fun y hy => by rw [hy, norm_smul, Real.norm_eq_abs])
+  have hTv : ‖hessianTraceL B A v‖ ≤ |R ^ 2| *
+      ((R ^ finrank ℝ (WithLp 2 (ℝ × E)))⁻¹ ^ (1 / p).toReal * ‖f‖) := by
+    rw [Lp.norm_def, toReal_eLpNorm, Lp.norm_def, toReal_eLpNorm]
+    refine hΦ.lpNorm_le_of_ae_le_mul_comp B.isOpen.measurableSet subset_rfl hΦ.mapsTo
+      (abs_nonneg _) (Lp.aestronglyMeasurable _) (Lp.memLp _) ?_
     filter_upwards [hessianTraceL_ae B A v, iteratedGradient_compL_smul_add_const_ae hp_top hΦ u,
       hΦ.ae_comp hf] with y h1 h2 h3
-    rw [h1, h2, ContinuousLinearMap.comp_smul, map_smul, h3]
-  -- The two changes of variables scale the norms by reciprocal Jacobian factors.
-  calc ‖iteratedGradient 1 u‖
-      ≤ |R⁻¹ ^ 2| * (R⁻¹ ^ finrank ℝ (WithLp 2 (ℝ × E)))⁻¹ ^ (1 / p).toReal *
-          ‖iteratedGradient 1 v‖ :=
-        norm_le_of_ae_eq_smul_comp_smul_add_const (inv_pos.2 hR) _ hΨ.mapsTo _ hDu
-    _ ≤ |R⁻¹ ^ 2| * (R⁻¹ ^ finrank ℝ (WithLp 2 (ℝ × E)))⁻¹ ^ (1 / p).toReal *
-          (C * (|R ^ 2| * (R ^ finrank ℝ (WithLp 2 (ℝ × E)))⁻¹ ^ (1 / p).toReal * ‖f‖)) := by
-        gcongr
-        exact (hC v hv0).trans (mul_le_mul_of_nonneg_left
-          (norm_le_of_ae_eq_smul_comp_smul_add_const hR x₀ hΦ.mapsTo _ hTv) hC0)
-    _ = C * ‖f‖ := homothety_factors_mul_eq _ hR _ _ _
+    rw [h1, h2, ContinuousLinearMap.comp_smul, map_smul, h3, norm_smul, Real.norm_eq_abs]
+  refine (hDu.trans ?_).trans_eq (homothety_factors_mul_eq (finrank ℝ (WithLp 2 (ℝ × E))) hR
+    (1 / p).toReal C ‖f‖)
+  gcongr
+  exact (hC v hv0).trans (mul_le_mul_of_nonneg_left hTv hC0)
 
 /-- **The a priori estimate for constant coefficients on balls, with a universal constant.** Let
 `1 < p < ∞` and `0 < λ`. There is a constant `C`, depending only on `E`, `p`, `λ` and `Λ`, such
