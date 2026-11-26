@@ -40,8 +40,10 @@ equal index for smooth continuation fields between Morse–Smale pseudo-gradient
 transversality condition for continuations
 (`TauCeti.IsTransverseContinuation.finite_morseContinuationSlice`). On an infinite slice the count
 is a junk value, since `Set.ncard` is `0` on infinite sets.
-That the continuation map is a chain map, which needs the compactification and gluing of the
-one-dimensional continuation trajectory spaces, is not proved here.
+That the continuation map of a transverse continuation is a chain map, which needs the
+compactification and gluing of the one-dimensional continuation trajectory spaces, is proved in
+`TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.ChainMap`
+(`TauCeti.IsTransverseContinuation.morseBoundary_comp_morseContinuationMap`).
 
 **Continuation fields.** The fields of interest are the positive parameter fields of a
 continuation from `X₀` to `X₁` (`TauCeti.IsContinuationField X₀ X₁ C V`): in the open slab their
