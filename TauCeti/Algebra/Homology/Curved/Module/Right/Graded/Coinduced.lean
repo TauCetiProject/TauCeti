@@ -184,51 +184,57 @@ private theorem freeι_shift_neg_one_mem (g : toGradedModuleCat M ⟶ Y) {q : �
   simpa only [toGradedModuleCat_piece, hom_freeUnit] using
     GradedModuleCat.map_mem (freeUnit h (Y.shiftObj (-1))) hg
 
+private theorem coinducedLift_map_smul_aux (g : toGradedModuleCat M ⟶ Y) (a : A) (m : M) :
+    freeι h (Y.shiftObj (-1)) (g.hom (M.differential (op a • m))) +
+        (freeObj h (Y.shiftObj (-1))).differential
+          (freeι h (Y.shiftObj (-1)) (g.hom (op a • m))) =
+      op a • (freeι h (Y.shiftObj (-1)) (g.hom (M.differential m)) +
+        (freeObj h (Y.shiftObj (-1))).differential (freeι h (Y.shiftObj (-1)) (g.hom m))) := by
+  let V := Y.shiftObj (-1)
+  let ι := freeι h V
+  let dF := (freeObj h V).differential
+  induction m using DirectSum.Decomposition.inductionOn M.grading with
+  | zero => simp
+  | add m₁ m₂ hm₁ hm₂ =>
+    calc
+      ι (g.hom (M.differential (op a • (m₁ + m₂)))) + dF (ι (g.hom (op a • (m₁ + m₂))))
+        = (ι (g.hom (M.differential (op a • m₁))) + dF (ι (g.hom (op a • m₁)))) +
+            (ι (g.hom (M.differential (op a • m₂))) + dF (ι (g.hom (op a • m₂)))) := by
+          simp only [smul_add, map_add]
+          abel
+      _ = op a • (ι (g.hom (M.differential (m₁ + m₂))) + dF (ι (g.hom (m₁ + m₂)))) := by
+          rw [hm₁, hm₂]
+          simp only [map_add, smul_add]
+          abel
+  | @homogeneous p m =>
+    rcases m with ⟨m, hm⟩
+    dsimp only
+    have hιm : ι (g.hom m) ∈ (freeObj h V).grading (p - 1) := freeι_shift_neg_one_mem g hm
+    have hsign : (p - 1).negOnePow = -p.negOnePow :=
+      Int.negOnePow_eq_neg_of_odd_sub ⟨-1, by omega⟩
+    rw [M.isCurvedDGRightModule.leibniz hm a, g.hom.map_add, ι.map_add, g.hom.map_smul,
+      ι.map_smul, g.hom.map_smul, ι.map_smul, (freeObj h V).isCurvedDGRightModule.leibniz hιm a,
+      hsign]
+    simp only [Units.smul_def, Units.val_neg, map_zsmul, neg_zsmul, g.hom.map_smul, ι.map_smul,
+      smul_add]
+    abel
+
 /-- Lift a graded right-linear morphism `g : toGradedModuleCat M ⟶ Y` to a closed morphism
 `M ⟶ coinducedObj h Y` sending `m` to `ι (g (d_M m)) + d (ι (g m))`. -/
 def coinducedLift (g : toGradedModuleCat M ⟶ Y) :
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (coinducedObj h Y) := by
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (coinducedObj h Y) :=
   let V := Y.shiftObj (-1)
   let ι := freeι h V
   let dF := (freeObj h V).differential
-  have hsmul (a : A) (m : M) :
-      ι (g.hom (M.differential (op a • m))) + dF (ι (g.hom (op a • m))) =
-        op a • (ι (g.hom (M.differential m)) + dF (ι (g.hom m))) := by
-    induction m using DirectSum.Decomposition.inductionOn M.grading with
-    | zero => simp
-    | add m₁ m₂ hm₁ hm₂ =>
-      calc
-        ι (g.hom (M.differential (op a • (m₁ + m₂)))) + dF (ι (g.hom (op a • (m₁ + m₂))))
-          = (ι (g.hom (M.differential (op a • m₁))) + dF (ι (g.hom (op a • m₁)))) +
-              (ι (g.hom (M.differential (op a • m₂))) + dF (ι (g.hom (op a • m₂)))) := by
-            simp only [smul_add, map_add]
-            abel
-        _ = op a • (ι (g.hom (M.differential (m₁ + m₂))) + dF (ι (g.hom (m₁ + m₂)))) := by
-            rw [hm₁, hm₂]
-            simp only [map_add, smul_add]
-            abel
-    | @homogeneous p m =>
-      rcases m with ⟨m, hm⟩
-      dsimp only
-      have hιm : ι (g.hom m) ∈ (freeObj h V).grading (p - 1) := freeι_shift_neg_one_mem g hm
-      have hsign : (p - 1).negOnePow = -p.negOnePow :=
-        Int.negOnePow_eq_neg_of_odd_sub ⟨-1, by omega⟩
-      rw [M.isCurvedDGRightModule.leibniz hm a, g.hom.map_add, ι.map_add, g.hom.map_smul,
-        ι.map_smul, g.hom.map_smul, ι.map_smul, (freeObj h V).isCurvedDGRightModule.leibniz hιm a,
-        hsign]
-      simp only [Units.smul_def, Units.val_neg, map_zsmul, neg_zsmul, g.hom.map_smul, ι.map_smul,
-        smul_add]
-      dsimp only [dF]
-      abel
-  refine closedHomOf
+  closedHomOf
     { toFun := fun m ↦ ι (g.hom (M.differential m)) + dF (ι (g.hom m))
       map_add' := fun x y ↦ by
         simp only [map_add]
         abel
       map_smul' := fun z m ↦ by
         induction z using MulOpposite.rec' with | h a =>
-        exact hsmul a m }
+        exact coinducedLift_map_smul_aux g a m }
     (fun p m hm ↦ by
       have hdm : M.differential m ∈ M.grading (p + 1) :=
         M.isCurvedDGRightModule.isHomogeneous.map_mem hm
@@ -335,13 +341,8 @@ theorem coinducedLift_coinducedCounit
     coinducedLift (M := coinducedObj h Y) (coinducedCounit h Y) =
       𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (coinducedObj h Y)) :=
   coinducedObj_hom_ext (by
-    have hid :
-        (forgetDifferential (h := h)).map
-          (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (coinducedObj h Y))) =
-          𝟙 (toGradedModuleCat (coinducedObj h Y)) :=
-      GradedModuleCat.hom_ext (closedHom_id _)
-    rw [forgetDifferential_map_coinducedLift_comp_coinducedCounit]
-    exact ((congrArg (· ≫ coinducedCounit h Y) hid).trans (Category.id_comp _)).symm)
+    rw [forgetDifferential_map_coinducedLift_comp_coinducedCounit,
+      CategoryTheory.Functor.map_id, Category.id_comp])
 
 /-- Precomposing `coinducedLift g` with a closed morphism `f` lifts
 `forgetDifferential.map f ≫ g`. -/
@@ -501,14 +502,10 @@ theorem forgetDifferentialCoinducedAdjunction_unit_app (M : CurvedDGRightModuleC
 theorem forgetDifferentialCoinducedAdjunction_counit_app
     (Y : GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece) :
     (forgetDifferentialCoinducedAdjunction (h := h)).counit.app Y = coinducedCounit h Y := by
-  rw [forgetDifferentialCoinducedAdjunction, Adjunction.mkOfHomEquiv_counit_app]
-  dsimp only [coinducedHomEquiv, LinearEquiv.coe_toEquiv_symm, LinearEquiv.coe_symm_mk]
-  have hid :
-      (forgetDifferential (h := h)).map
-        (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (coinducedObj h Y))) =
-        𝟙 (toGradedModuleCat (coinducedObj h Y)) :=
-    GradedModuleCat.hom_ext (closedHom_id _)
-  exact (congrArg (· ≫ coinducedCounit h Y) hid).trans (Category.id_comp _)
+  rw [← (forgetDifferentialCoinducedAdjunction (h := h)).homEquiv_symm_id Y]
+  dsimp only [coinducedFunctor]
+  rw [forgetDifferentialCoinducedAdjunction_homEquiv_symm_apply,
+    CategoryTheory.Functor.map_id, Category.id_comp]
 
 instance : (forgetDifferential (h := h)).IsLeftAdjoint :=
   (forgetDifferentialCoinducedAdjunction (h := h)).isLeftAdjoint

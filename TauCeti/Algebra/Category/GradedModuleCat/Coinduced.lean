@@ -154,13 +154,40 @@ private theorem coindObj_piece (N : ModuleCat.{v} A) (p : ℤ) :
     (InternalGrading.ofDecomposition_piece
       (_root_.DirectSum.summand k (fun _ : ℤ ↦ RestrictScalars k A N))) p
 
+private def restrictScalarsLinear (k : Type uk) [CommRing k] [Algebra k A]
+    {N₁ N₂ : ModuleCat.{v} A} (g : N₁ ⟶ N₂) :
+    RestrictScalars k A N₁ →ₗ[k] RestrictScalars k A N₂ where
+  toFun y := (RestrictScalars.addEquiv k A N₂).symm (g.hom (RestrictScalars.addEquiv k A N₁ y))
+  map_add' x y := by simp
+  map_smul' c y := by
+    rw [RestrictScalars.addEquiv_map_smul, g.hom.map_smul,
+      RestrictScalars.addEquiv_symm_map_algebraMap_smul, RingHom.id_apply]
+
+@[simp]
+private theorem restrictScalarsLinear_apply {N₁ N₂ : ModuleCat.{v} A} (g : N₁ ⟶ N₂)
+    (y : RestrictScalars k A N₁) :
+    restrictScalarsLinear k g y =
+      (RestrictScalars.addEquiv k A N₂).symm (g.hom (RestrictScalars.addEquiv k A N₁ y)) :=
+  rfl
+
+@[simp]
+private theorem restrictScalarsLinear_id (N : ModuleCat.{v} A) :
+    restrictScalarsLinear k (𝟙 N) = LinearMap.id := by
+  ext y
+  simp
+
+@[simp]
+private theorem restrictScalarsLinear_comp {N₁ N₂ N₃ : ModuleCat.{v} A}
+    (f : N₁ ⟶ N₂) (g : N₂ ⟶ N₃) :
+    restrictScalarsLinear k (f ≫ g) =
+      (restrictScalarsLinear k g).comp (restrictScalarsLinear k f) := by
+  ext y
+  simp
+
 private def coindMapLinear (k : Type uk) [CommRing k] [Algebra k A]
     {N₁ N₂ : ModuleCat.{v} A} (g : N₁ ⟶ N₂) :
     (⨁ _ : ℤ, RestrictScalars k A N₁) →ₗ[k] ⨁ _ : ℤ, RestrictScalars k A N₂ :=
-  letI : Module A (RestrictScalars k A N₁) := RestrictScalars.moduleOrig k A N₁
-  letI : Module A (RestrictScalars k A N₂) := RestrictScalars.moduleOrig k A N₂
-  let g' : RestrictScalars k A N₁ →ₗ[A] RestrictScalars k A N₂ := g.hom
-  DirectSum.lmap fun _ : ℤ ↦ g'.restrictScalars k
+  DirectSum.lmap fun _ : ℤ ↦ restrictScalarsLinear k g
 
 private theorem coindMapLinear_endAlgHom {N₁ N₂ : ModuleCat.{v} A} (g : N₁ ⟶ N₂) (a : A)
     (z : ⨁ _ : ℤ, RestrictScalars k A N₁) :
@@ -174,9 +201,7 @@ private theorem coindMapLinear_endAlgHom {N₁ N₂ : ModuleCat.{v} A} (g : N₁
     | of p y =>
       rw [← DirectSum.lof_eq_of k, coindEndAlgHom_of_mem 𝒜 N₁ a.property, coindMapLinear,
         DirectSum.lmap_lof, DirectSum.lmap_lof, coindEndAlgHom_of_mem 𝒜 N₂ a.property]
-      congr 1
-      exact congrArg (RestrictScalars.addEquiv k A N₂).symm
-        (g.hom.map_smul (a : A) (RestrictScalars.addEquiv k A N₁ y))
+      simp [RestrictScalars.lsmul_apply_apply]
     | add z₁ z₂ hz₁ hz₂ => simp [hz₁, hz₂]
   | add a₁ a₂ ha₁ ha₂ => simp [ha₁, ha₂]
 
@@ -245,20 +270,31 @@ private theorem coindCounitAddHom_mapLinear {N₁ N₂ : ModuleCat.{v} A} (g : N
   | zero => simp
   | of p y =>
     rw [← DirectSum.lof_eq_of k, coindMapLinear, DirectSum.lmap_lof]
-    simp only [coindCounitAddHom, DirectSum.lof_eq_of, DirectSum.toAddMonoid_of,
-      AddEquiv.coe_toAddMonoidHom]
-    -- `RestrictScalars.addEquiv` is `AddEquiv.refl`, so `g.hom.restrictScalars k` agrees with
-    -- `g.hom`.
-    rfl
+    simp [coindCounitAddHom, DirectSum.lof_eq_of]
   | add z₁ z₂ hz₁ hz₂ => simp [hz₁, hz₂]
+
+omit [GradedAlgebra 𝒜] in
+private def toRestrictScalarsLinear
+    {M : GradedModuleCat.{v} 𝒜} {N : ModuleCat.{v} A} (f : toModuleCat.obj M ⟶ N) :
+    M →ₗ[k] RestrictScalars k A N where
+  toFun m := (RestrictScalars.addEquiv k A N).symm (f.hom m)
+  map_add' x y := by simp
+  map_smul' c m := by
+    rw [← algebraMap_smul A c m, f.hom.map_smul,
+      RestrictScalars.addEquiv_symm_map_algebraMap_smul, RingHom.id_apply]
+
+omit [GradedAlgebra 𝒜] in
+@[simp]
+private theorem toRestrictScalarsLinear_apply {M : GradedModuleCat.{v} 𝒜} {N : ModuleCat.{v} A}
+    (f : toModuleCat.obj M ⟶ N) (m : M) :
+    toRestrictScalarsLinear 𝒜 f m = (RestrictScalars.addEquiv k A N).symm (f.hom m) :=
+  rfl
 
 private def coindLiftLinear {M : GradedModuleCat.{v} 𝒜} {N : ModuleCat.{v} A}
     (f : toModuleCat.obj M ⟶ N) : M →ₗ[k] ⨁ _ : ℤ, RestrictScalars k A N :=
-  letI : Module A (RestrictScalars k A N) := RestrictScalars.moduleOrig k A N
-  let f' : M →ₗ[A] RestrictScalars k A N := f.hom
   DirectSum.homogeneousExtend M.grading.piece fun p ↦
     (DirectSum.lof k ℤ (fun _ ↦ RestrictScalars k A N) p).comp
-      ((f'.restrictScalars k).comp (M.grading.piece p).subtype)
+      ((toRestrictScalarsLinear 𝒜 f).comp (M.grading.piece p).subtype)
 
 omit [GradedAlgebra 𝒜] in
 private theorem coindLiftLinear_of_mem {M : GradedModuleCat.{v} 𝒜} {N : ModuleCat.{v} A}
@@ -267,9 +303,7 @@ private theorem coindLiftLinear_of_mem {M : GradedModuleCat.{v} 𝒜} {N : Modul
       DirectSum.lof k ℤ (fun _ ↦ RestrictScalars k A N) p
         ((RestrictScalars.addEquiv k A N).symm (f.hom x)) := by
   rw [coindLiftLinear, DirectSum.homogeneousExtend_of_mem M.grading.piece _ hx]
-  -- `RestrictScalars.addEquiv` is `AddEquiv.refl`, aligning `f.hom.restrictScalars k` with
-  -- `addEquiv.symm`.
-  rfl
+  simp
 
 private theorem coindLiftLinear_smul {M : GradedModuleCat.{v} 𝒜} {N : ModuleCat.{v} A}
     (f : toModuleCat.obj M ⟶ N) (a : A) (m : M) :
@@ -335,13 +369,12 @@ def coindFunctor : ModuleCat.{v} A ⥤ GradedModuleCat.{v} 𝒜 where
   obj := coindObj 𝒜
   map := coindMap 𝒜
   map_id N := hom_ext <| by
-    have h : coindMapLinear k (𝟙 N) = LinearMap.id :=
-      DirectSum.lmap_id
+    have h : coindMapLinear k (𝟙 N) = LinearMap.id := by
+      simp only [coindMapLinear, restrictScalarsLinear_id, DirectSum.lmap_id]
     exact LinearMap.ext fun z ↦ LinearMap.congr_fun h z
   map_comp f g := hom_ext <| by
     have h : coindMapLinear k (f ≫ g) = (coindMapLinear k g).comp (coindMapLinear k f) := by
-      simp only [coindMapLinear, ModuleCat.hom_comp, ← DirectSum.lmap_comp]
-      rfl
+      simp only [coindMapLinear, restrictScalarsLinear_comp, ← DirectSum.lmap_comp]
     exact LinearMap.ext fun z ↦ LinearMap.congr_fun h z
 
 attribute [local implicit_reducible] coindFunctor
