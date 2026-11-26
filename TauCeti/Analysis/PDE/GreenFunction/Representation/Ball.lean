@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
 public import TauCeti.Analysis.PDE.GreenFunction.Representation.Basic
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DirichletBall
-public import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Ball
+public import TauCeti.Analysis.PDE.TorsionFunction.Ball
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ParametricIntegral
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution

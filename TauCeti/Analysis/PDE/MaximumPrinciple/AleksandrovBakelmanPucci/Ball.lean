@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
+public import TauCeti.Analysis.PDE.TorsionFunction.Ball
 import Mathlib.Algebra.Order.Star.Real
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Analysis.Calculus.Gradient
 
 /-!
 # The equality case of the Aleksandrov–Bakelman–Pucci estimate on the unit ball
@@ -21,8 +20,10 @@ concave paraboloid
 
 which solves `-Δv = 1` in `B` and vanishes on the unit sphere. It is the negative of the convex
 function `u = (‖x‖² - 1) / (2n)`, with `Δu = 1`, and attains its maximum `1 / (2n)` at the
-origin. This file computes every quantity in the Aleksandrov–Bakelman–Pucci argument for `v` on
-the unit ball `B`, and shows that the measure inequality at its heart is an equality here.
+origin. Its gradient, Hessian and Laplacian are computed in
+`TauCeti/Analysis/PDE/TorsionFunction/Ball.lean`. This file computes the remaining quantities in
+the Aleksandrov–Bakelman–Pucci argument for `v` on the unit ball `B`, and shows that the measure
+inequality at its heart is an equality here.
 
 All declarations are in the `TauCeti.PDE` namespace.
 
@@ -66,108 +67,6 @@ namespace TauCeti
 namespace PDE
 
 variable {ι : Type*} [Fintype ι]
-
-/-- The **torsion function of the unit ball** of `ℝⁿ = EuclideanSpace ℝ ι`, `n = card ι`: the
-concave paraboloid `v(x) = (1 - ‖x‖²) / (2n)`. It solves `-Δv = 1` and vanishes on the unit
-sphere, and on the unit ball it attains equality in the Aleksandrov measure estimate. -/
-def ballTorsionFunction (ι : Type*) [Fintype ι] (x : EuclideanSpace ℝ ι) : ℝ :=
-  (1 - ‖x‖ ^ 2) / (2 * Fintype.card ι)
-
-/-- The defining formula of the torsion function of the unit ball. -/
-theorem ballTorsionFunction_apply (x : EuclideanSpace ℝ ι) :
-    ballTorsionFunction ι x = (1 - ‖x‖ ^ 2) / (2 * Fintype.card ι) :=
-  (rfl)
-
-/-- The torsion function as a quadratic `(a / 2) ‖x‖² + c`, the form of
-`TauCeti.gradient_mul_norm_sq_add`. -/
-private theorem ballTorsionFunction_eq :
-    ballTorsionFunction ι = fun x => -(Fintype.card ι : ℝ)⁻¹ / 2 * ‖x‖ ^ 2 +
-      (2 * Fintype.card ι : ℝ)⁻¹ := by
-  funext x
-  rw [ballTorsionFunction_apply]
-  ring
-
-/-- The torsion function of the unit ball is smooth. -/
-theorem contDiff_ballTorsionFunction {k : WithTop ℕ∞} :
-    ContDiff ℝ k (ballTorsionFunction ι) := by
-  rw [ballTorsionFunction_eq]
-  exact (contDiff_const.mul (contDiff_norm_sq ℝ)).add contDiff_const
-
-/-- The torsion function vanishes on the unit sphere. -/
-theorem ballTorsionFunction_eq_zero_of_mem_sphere {x : EuclideanSpace ℝ ι}
-    (hx : x ∈ sphere 0 1) : ballTorsionFunction ι x = 0 := by
-  rw [mem_sphere_zero_iff_norm] at hx
-  simp [ballTorsionFunction_apply, hx]
-
-/-- The value of the torsion function at the origin is `1 / (2n)`. -/
-theorem ballTorsionFunction_zero : ballTorsionFunction ι 0 = 1 / (2 * Fintype.card ι) := by
-  simp [ballTorsionFunction_apply]
-
-/-- The torsion function is at most its value `1 / (2n)` at the origin. -/
-theorem ballTorsionFunction_le (x : EuclideanSpace ℝ ι) :
-    ballTorsionFunction ι x ≤ 1 / (2 * Fintype.card ι) := by
-  rw [ballTorsionFunction_apply]
-  gcongr
-  linarith [sq_nonneg ‖x‖]
-
-/-- The gradient of the torsion function is `∇v(x) = -x / n`. -/
-@[simp]
-theorem gradient_ballTorsionFunction (x : EuclideanSpace ℝ ι) :
-    ∇ (ballTorsionFunction ι) x = -(Fintype.card ι : ℝ)⁻¹ • x := by
-  rw [ballTorsionFunction_eq]
-  exact gradient_mul_norm_sq_add _ _ x
-
-/-- The gradient of the torsion function, as a function: `∇v = fun x => -x / n`. -/
-theorem gradient_ballTorsionFunction_eq :
-    ∇ (ballTorsionFunction ι) = fun x => -(Fintype.card ι : ℝ)⁻¹ • x :=
-  funext gradient_ballTorsionFunction
-
-/-- The Hessian operator of the torsion function is `-1 / n` times the identity. -/
-@[simp]
-theorem hessianOperator_ballTorsionFunction (x : EuclideanSpace ℝ ι) :
-    hessianOperator (ballTorsionFunction ι) x =
-      -(Fintype.card ι : ℝ)⁻¹ • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι) := by
-  rw [← fderiv_gradient, gradient_ballTorsionFunction_eq]
-  exact ((hasFDerivAt_id x).const_smul (-(Fintype.card ι : ℝ)⁻¹)).fderiv
-
-/-- The second derivatives of the torsion function: `D²v(x)(w₁, w₂) = -⟪w₁, w₂⟫ / n`. -/
-theorem fderiv_fderiv_ballTorsionFunction (x w₁ w₂ : EuclideanSpace ℝ ι) :
-    fderiv ℝ (fderiv ℝ (ballTorsionFunction ι)) x w₁ w₂ =
-      -(Fintype.card ι : ℝ)⁻¹ * ⟪w₁, w₂⟫_ℝ := by
-  rw [← inner_hessianOperator_left, hessianOperator_ballTorsionFunction]
-  simp [real_inner_smul_left]
-
-/-- **The torsion function solves `-Δv = 1`**, in every dimension `n ≥ 1`. -/
-theorem sum_fderiv_fderiv_ballTorsionFunction [Nonempty ι] [DecidableEq ι]
-    (x : EuclideanSpace ℝ ι) :
-    ∑ i, fderiv ℝ (fderiv ℝ (ballTorsionFunction ι)) x (EuclideanSpace.single i 1)
-      (EuclideanSpace.single i 1) = -1 := by
-  have hn : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
-  simp only [fderiv_fderiv_ballTorsionFunction, EuclideanSpace.inner_single_left, map_one,
-    PiLp.single_apply, ite_true, mul_one, Finset.sum_const, Finset.card_univ,
-    nsmul_eq_mul]
-  field_simp
-
-/-- **The Laplacian of the torsion function is `Δv = -1`**, in every dimension `n ≥ 1`. -/
-theorem laplacian_ballTorsionFunction [Nonempty ι] (x : EuclideanSpace ℝ ι) :
-    Δ (ballTorsionFunction ι) x = -1 := by
-  classical
-  rw [laplacian_eq_iteratedFDeriv_orthonormalBasis _ (EuclideanSpace.basisFun ι ℝ)]
-  simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    EuclideanSpace.basisFun_apply]
-  exact sum_fderiv_fderiv_ballTorsionFunction x
-
-/-- The determinant of the Hessian operator of the torsion function is `(-1 / n)ⁿ`. -/
-theorem det_hessianOperator_ballTorsionFunction (x : EuclideanSpace ℝ ι) :
-    (hessianOperator (ballTorsionFunction ι) x).det =
-      (-(Fintype.card ι : ℝ)⁻¹) ^ Fintype.card ι := by
-  simp [ContinuousLinearMap.det, LinearMap.det_smul, -neg_smul]
-
-/-- The absolute value of the Hessian determinant of the torsion function is `n⁻ⁿ`. -/
-theorem abs_det_hessianOperator_ballTorsionFunction (x : EuclideanSpace ℝ ι) :
-    |(hessianOperator (ballTorsionFunction ι) x).det| =
-      (Fintype.card ι : ℝ)⁻¹ ^ Fintype.card ι := by
-  rw [det_hessianOperator_ballTorsionFunction, abs_pow, abs_neg, abs_of_nonneg (by positivity)]
 
 /-- **The torsion function lies below each of its tangent planes**:
 `v(x) = v(y) + ⟪∇v(y), x - y⟫ - ‖x - y‖² / (2n)`. -/
