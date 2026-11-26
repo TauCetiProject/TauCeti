@@ -168,12 +168,12 @@ theorem two_le_of_admissible (hq : 0 < q) (hr0 : r ≠ 0)
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The Hölder conjugate `r'` of the space exponent of an admissible pair `2 / q + n / r = n / 2`
-with `2 ≤ q` is finite, since `2 ≤ r`. -/
-theorem ne_top_of_admissible (hq : 2 ≤ q)
+with `0 < q` is finite, since `2 ≤ r`. -/
+theorem ne_top_of_admissible (hq : 0 < q)
     (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
     r' ≠ ∞ :=
   (ENNReal.HolderConjugate.ne_top_iff_ne_one r' r).2 fun h ↦ by
-    have := two_le_of_admissible (E := E) (zero_lt_two.trans_le hq)
+    have := two_le_of_admissible (E := E) hq
       (ENNReal.HolderConjugate.ne_zero r r') hqr
     rw [h] at this
     norm_num at this

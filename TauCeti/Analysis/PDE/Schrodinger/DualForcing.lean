@@ -289,7 +289,8 @@ theorem schrodingerRetardedL_apply_of_ae_eq (hq₁ : 2 ≤ q₁)
   obtain ⟨C, hC⟩ := exists_norm_retardedOnLift_le (r₁' := r₁') hq₁ hn₁ hpq₁ hqr₁
   have h := LinearMap.extendOfNorm_eq (f := retardedOnLift (p₁ : ℝ≥0∞) r₁' I)
     (e := (liftSubmodule E p₁ r₁' I).subtype)
-    (denseRange_subtype_liftSubmodule ENNReal.coe_ne_top (ne_top_of_admissible hq₁ hqr₁))
+    (denseRange_subtype_liftSubmodule ENNReal.coe_ne_top
+      (ne_top_of_admissible (zero_lt_two.trans_le hq₁) hqr₁))
     ⟨C, hC hI⟩ ⟨Φ, hmem⟩
   -- `Φ` is the image of `⟨Φ, hmem⟩` under the inclusion of the submodule, by `Subtype.coe_mk`.
   rw [show Φ = (liftSubmodule E p₁ r₁' I).subtype ⟨Φ, hmem⟩ from rfl, schrodingerRetardedL, h,
@@ -313,7 +314,8 @@ theorem eq_schrodingerRetardedL (hq₁ : 2 ≤ q₁)
   obtain ⟨C, hC⟩ := exists_norm_retardedOnLift_le (r₁' := r₁') hq₁ hn₁ hpq₁ hqr₁
   refine (LinearMap.extendOfNorm_unique (f := retardedOnLift (p₁ : ℝ≥0∞) r₁' I)
     (e := (liftSubmodule E p₁ r₁' I).subtype)
-    (denseRange_subtype_liftSubmodule ENNReal.coe_ne_top (ne_top_of_admissible hq₁ hqr₁)) C
+    (denseRange_subtype_liftSubmodule ENNReal.coe_ne_top
+      (ne_top_of_admissible (zero_lt_two.trans_le hq₁) hqr₁)) C
     (hC hI) V
     ?_).symm
   ext1 Φ
@@ -404,7 +406,8 @@ theorem exists_eLpNorm_eLpNorm_schrodingerRetardedL_le {p q : ℝ≥0} {r : ℝ�
   -- The bound holds on the dense subspace of forcings with an `L²`-valued representative, and
   -- both sides are continuous in the forcing.
   refine (Lp.dense_integrableRepSubmodule (𝕜 := ℂ) (μ := (volume : Measure E))
-    (ρ := volume.restrict I) (s := 2) ENNReal.coe_ne_top (ne_top_of_admissible hq₁ hqr₁)).induction
+    (ρ := volume.restrict I) (s := 2) ENNReal.coe_ne_top
+    (ne_top_of_admissible (zero_lt_two.trans_le hq₁) hqr₁)).induction
     (P := fun Φ ↦ ‖∫ t, ⟪W Φ t, G t⟫_ℂ‖ₑ ≤ (C + 1) * ‖Φ‖ₑ * M) (fun Φ hΦ ↦ ?_)
     (isClosed_le (hcont.congr fun Φ ↦ by
         rw [MemLp.innerLpCLM_apply, enorm_integral_inner_comm]
@@ -434,7 +437,8 @@ theorem exists_norm_schrodingerRetardedL_le (hq₁ : 2 ≤ q₁)
   rw [schrodingerRetardedL]
   exact LinearMap.norm_extendOfNorm_apply_le (f := retardedOnLift (p₁ : ℝ≥0∞) r₁' I)
     (e := (liftSubmodule E p₁ r₁' I).subtype)
-    (denseRange_subtype_liftSubmodule ENNReal.coe_ne_top (ne_top_of_admissible hq₁ hqr₁)) C
+    (denseRange_subtype_liftSubmodule ENNReal.coe_ne_top
+      (ne_top_of_admissible (zero_lt_two.trans_le hq₁) hqr₁)) C
     (hC hI) Φ
 
 /-- **Duhamel's formula through the retarded integral on the dual Strichartz space.** Under the

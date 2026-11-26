@@ -55,10 +55,7 @@ theorem ae_ae_eq_add {Φ Ψ : Lp (Lp F r μ) p ρ} {G H : α → Lp F s μ}
     ∀ᵐ b ∂ρ, ((Φ + Ψ) b : X → F) =ᵐ[μ] (G + H) b := by
   filter_upwards [Lp.coeFn_add Φ Ψ, hG, hH] with b hb h₁ h₂
   rw [hb]
-  filter_upwards [Lp.coeFn_add (Φ b) (Ψ b), Lp.coeFn_add (G b) (H b), h₁, h₂] with x hx₁ hx₂
-    hx₃ hx₄
-  simp only [Pi.add_apply] at hx₁ hx₂ ⊢
-  rw [hx₁, hx₂, hx₃, hx₄]
+  exact (Lp.coeFn_add_ae_eq_of_ae_eq h₁ h₂).trans (Lp.coeFn_add (G b) (H b)).symm
 
 /-- If `G` represents `Φ ∈ L^p(ρ; L^r(μ))`, then `c • G` represents `c • Φ`. -/
 theorem ae_ae_eq_smul {Φ : Lp (Lp F r μ) p ρ} {G : α → Lp F s μ}
@@ -66,9 +63,7 @@ theorem ae_ae_eq_smul {Φ : Lp (Lp F r μ) p ρ} {G : α → Lp F s μ}
     ∀ᵐ b ∂ρ, ((c • Φ) b : X → F) =ᵐ[μ] (c • G) b := by
   filter_upwards [Lp.coeFn_smul c Φ, hG] with b hb h
   rw [hb]
-  filter_upwards [Lp.coeFn_smul c (Φ b), Lp.coeFn_smul c (G b), h] with x h₁ h₂ h₃
-  simp only [Pi.smul_apply] at h₁ h₂ ⊢
-  rw [h₁, h₂, h₃]
+  exact (Lp.coeFn_smul_ae_eq_of_ae_eq c h).trans (Lp.coeFn_smul c (G b)).symm
 
 variable [Fact (1 ≤ s)]
 
