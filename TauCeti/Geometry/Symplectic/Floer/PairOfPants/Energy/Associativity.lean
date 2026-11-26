@@ -47,7 +47,7 @@ On `[0, 1]` the identity is that of the sphere with moving input ends,
 it is that of the whole plumbed four-punctured sphere,
 `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`, read in the
 coordinates of moving input ends
-(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update_smul`): the
+(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update`): the
 input ends of the inserted pair of pants, pushed forward by the plumbing map, are the input ends
 of centers `c_q`, `ψ(1)` and scales `f`, `-f`, the remaining input of the receiving pair of pants
 is the end of center `c_r` and scale `2 b_r`, and the neck contributes no boundary term. For
@@ -143,15 +143,17 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_associativityPerturb
     ⟨fun p ↦ if p = zero then H 0 else H 1, fun p ↦ if p = inf then Hout else H 2,
       by funext i; fin_cases i <;> rfl, rfl⟩
   rw [associativityPerturbation_of_nonpos hL₀ hτ.le] at hE ⊢
-  exact hω.integral_floerEnergyDensity_plumbedPerturbation_update_smul (q := zero) (r := one)
+  exact hω.integral_floerEnergyDensity_plumbedPerturbation_update (q := zero) (r := one)
     (by decide) (by decide) (by decide)
     (fun p hp ↦ by cases p; exacts [hH 0, hH 1, absurd rfl hp])
-    (fun p hp ↦ by cases p; exacts [absurd rfl hp, hH 2, hHout]) hG
+    (fun p hp ↦ by cases p; exacts [absurd rfl hp, hH 2, hHout]) (hG.smul (smoothTransition (-τ)))
     (fun p hp ↦ by cases p; exacts [hHs 0, hHs 1, absurd rfl hp])
-    (fun p hp ↦ by cases p; exacts [absurd rfl hp, hHs 2, hHouts]) hGs hL (smoothTransition (-τ))
+    (fun p hp ↦ by cases p; exacts [absurd rfl hp, hHs 2, hHouts])
+    ((contDiff_const_smul (smoothTransition (-τ))).contMDiff.comp hGs) hL
     (Ba := fun p ↦ if p = zero then B 0 else B 1) (Bb := fun p ↦ if p = inf then Bout else B 2)
     (fun p hp ↦ by cases p; exacts [hB 0, hB 1, absurd rfl hp])
-    (fun p hp ↦ by cases p; exacts [absurd rfl hp, hB 2, hBout]) hBG
+    (fun p hp ↦ by cases p; exacts [absurd rfl hp, hB 2, hBout])
+    (fun t x ↦ by simpa [abs_mul] using mul_le_mul_of_nonneg_left (hBG t x) (abs_nonneg _))
     (associativityCenter_eq_plumbingMap_of_nonpos hτ.le)
     (associativityScale_eq_plumbingFactor_of_nonpos hτ.le) rfl hu hx hxout hE hA
 
@@ -213,16 +215,18 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_associativityPerturb
     exact (finRotate 3).forall_congr_right.symm
   rw [associativityPerturbation_of_one_le hL₀ hτ.le, hS] at hE ⊢
   rw [hS] at hu hA
-  rw [hω.integral_floerEnergyDensity_plumbedPerturbation_update_smul (q := one) (r := zero)
+  rw [hω.integral_floerEnergyDensity_plumbedPerturbation_update (q := one) (r := zero)
     (by decide) (by decide) (by decide)
     (fun p hp ↦ by cases p; exacts [hH 1, hH 2, absurd rfl hp])
-    (fun p hp ↦ by cases p; exacts [hH 0, absurd rfl hp, hHout]) hG'
+    (fun p hp ↦ by cases p; exacts [hH 0, absurd rfl hp, hHout])
+    (hG'.smul (smoothTransition (τ - 1)))
     (fun p hp ↦ by cases p; exacts [hHs 1, hHs 2, absurd rfl hp])
-    (fun p hp ↦ by cases p; exacts [hHs 0, absurd rfl hp, hHouts]) hG's hL
-    (smoothTransition (τ - 1))
+    (fun p hp ↦ by cases p; exacts [hHs 0, absurd rfl hp, hHouts])
+    ((contDiff_const_smul (smoothTransition (τ - 1))).contMDiff.comp hG's) hL
     (Ba := fun p ↦ if p = zero then B 1 else B 2) (Bb := fun p ↦ if p = inf then Bout else B 0)
     (fun p hp ↦ by cases p; exacts [hB 1, hB 2, absurd rfl hp])
-    (fun p hp ↦ by cases p; exacts [hB 0, absurd rfl hp, hBout]) hBG'
+    (fun p hp ↦ by cases p; exacts [hB 0, absurd rfl hp, hBout])
+    (fun t x ↦ by simpa [abs_mul] using mul_le_mul_of_nonneg_left (hBG' t x) (abs_nonneg _))
     (associativityCenter_comp_finRotate_of_one_le hτ.le)
     (associativityScale_comp_finRotate_of_one_le hτ.le)
     (H := ![Hb zero, Ha zero, Ha one] ∘ finRotate 3) (by funext j; fin_cases j <;> rfl) hu

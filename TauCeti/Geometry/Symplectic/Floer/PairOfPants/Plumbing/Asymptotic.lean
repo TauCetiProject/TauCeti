@@ -35,11 +35,11 @@ the receiving one to `x_r`. If the Hamiltonians are bounded, then
 
 (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`), with the sign
 `+` on inputs and `-` on the output. The neck contributes no boundary term, and its length enters
-only through the domain. When the neck carries a scaled Hamiltonian `b • N`, the inputs of the
-inserted pair of pants pushed forward by the plumbing map and the remaining input of the receiving
-one are input ends `c_i + a_i φ₀(R + i t)` of centers `c_q`, `ψ(1)`, `c_r` and scales `f`, `-f`,
-`2 b_r`, so the identity also holds in the coordinates of a sphere with moving input ends
-(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update_smul`).
+only through the domain. When the neck carries a Hamiltonian `N`, the inputs of the inserted pair
+of pants pushed forward by the plumbing map and the remaining input of the receiving one are input
+ends `c_i + a_i φ₀(R + i t)` of centers `c_q`, `ψ(1)`, `c_r` and scales `f`, `-f`, `2 b_r`, so the
+identity also holds in the coordinates of a sphere with moving input ends
+(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update`).
 
 The curvature is integrable over `Σ_L`
 (`TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedPerturbation`): it is integrable
@@ -71,8 +71,8 @@ In the namespace `TauCeti.SmoothTwoForm`:
   four-punctured sphere.
 * `IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`: the energy identity on the
   whole plumbed four-punctured sphere, at the asymptotic loops of the four outer ends.
-* `IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update_smul`: the same identity
-  for a scaled neck Hamiltonian, read in the coordinates of moving input ends.
+* `IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update`: the same identity for
+  a neck Hamiltonian `N`, read in the coordinates of moving input ends.
 * `IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le`: the resulting
   energy bound, uniform in the neck length.
 * `IsNondegenerate.neg_sum_add_sum_le_integral_add_sum_add_sum_of_plumbedPerturbation`: the lower
@@ -246,22 +246,22 @@ private theorem setOf_forall_ne_plumbedCenters {r : Puncture} (hq : q ≠ inf) (
   rcases eq_zero_and_eq_one_or_eq_one_and_eq_zero hq hrq hr with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
     simp only [endCenter_zero, endCenter_one, IsEmpty.forall_iff, and_true] <;> tauto
 
-/-- **The energy identity on a plumbed sphere with a scaled neck, in the coordinates of moving
-input ends.** Plumb the output end of a pair of pants with Hamiltonians `Ha` into the input end
-`q ≠ ∞` of one with Hamiltonians `Hb`, along a neck of length `L > 4` carrying the Hamiltonian
-`b • N`, for bounded period-one `C¹` Hamiltonians on a finite-dimensional manifold with a
-nondegenerate two-form. Read the plumbed sphere as a sphere with the three input ends of centers
-`c = (c_q, ψ(1), c_r)`, scales `a = (f, -f, 2 b_r)` and Hamiltonians `(Ha 0, Ha 1, Hb r)`, where
-`r` is the other input of the receiving pair of pants, `f` the plumbing factor and `b_r` the scale
-of the end `r`. Then the energy identity of the whole plumbed sphere holds at the asymptotic loops
-`x i` of these input ends, along `c_i + a_i φ₀(R + i t)`, and `xout` of the output end. -/
-theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update_smul
+/-- **The energy identity on a plumbed sphere, in the coordinates of moving input ends.** Plumb
+the output end of a pair of pants with Hamiltonians `Ha` into the input end `q ≠ ∞` of one with
+Hamiltonians `Hb`, along a neck of length `L > 4` carrying the Hamiltonian `N`, for bounded
+period-one `C¹` Hamiltonians on a finite-dimensional manifold with a nondegenerate two-form. Read
+the plumbed sphere as a sphere with the three input ends of centers `c = (c_q, ψ(1), c_r)`, scales
+`a = (f, -f, 2 b_r)` and Hamiltonians `(Ha 0, Ha 1, Hb r)`, where `r` is the other input of the
+receiving pair of pants, `f` the plumbing factor and `b_r` the scale of the end `r`. Then the
+energy identity of the whole plumbed sphere holds at the asymptotic loops `x i` of these input
+ends, along `c_i + a_i φ₀(R + i t)`, and `xout` of the output end. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update
     (hω : ω.IsNondegenerate) {r : Puncture} (hq : q ≠ inf) (hrq : r ≠ q) (hr : r ≠ inf)
     {N : ℝ → M → ℝ} (hHa : ∀ p ≠ inf, Periodic (Ha p) 1) (hHb : ∀ p ≠ q, Periodic (Hb p) 1)
     (hN : Periodic N 1)
     (hHas : ∀ p ≠ inf, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha p)))
     (hHbs : ∀ p ≠ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb p)))
-    (hNs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry N)) (hL : 4 < L) (b : ℝ)
+    (hNs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry N)) (hL : 4 < L)
     {Ba Bb : Puncture → ℝ} {BN : ℝ} (hBa : ∀ p ≠ inf, ∀ t x, |Ha p t x| ≤ Ba p)
     (hBb : ∀ p ≠ q, ∀ t x, |Hb p t x| ≤ Bb p) (hBN : ∀ t x, |N t x| ≤ BN)
     {c a : Fin 3 → ℂ} (hc : c = ![q.endCenter, q.plumbingMap L 1, r.endCenter])
@@ -275,9 +275,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update_s
     (hxout : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
       (inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))) atTop (𝓝 (xout t)))
     (hE : IntegrableOn (ω.floerEnergyDensity
-        (fun z x ↦ plumbedPerturbation (update Ha inf (b • N)) (update Hb q (b • N)) q L
+        (fun z x ↦ plumbedPerturbation (update Ha inf N) (update Hb q N) q L
           (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation (update Ha inf (b • N)) (update Hb q (b • N)) q L
+        (fun z x ↦ plumbedPerturbation (update Ha inf N) (update Hb q N) q L
           (Complex.equivRealProdCLM.symm z) x Complex.I) u)
       {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i})
     (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
@@ -285,9 +285,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update_s
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ))
       {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}) :
     ∫ z in {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}, ω.floerEnergyDensity
-        (fun z x ↦ plumbedPerturbation (update Ha inf (b • N)) (update Hb q (b • N)) q L
+        (fun z x ↦ plumbedPerturbation (update Ha inf N) (update Hb q N) q L
           (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation (update Ha inf (b • N)) (update Hb q (b • N)) q L
+        (fun z x ↦ plumbedPerturbation (update Ha inf N) (update Hb q N) q L
           (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
       (∫ z in {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i},
           (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
@@ -295,32 +295,25 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_update_s
         ((∑ i, ∫ t in (0 : ℝ)..1, H i t (x i t)) - ∫ t in (0 : ℝ)..1, Hb inf t (xout t)) -
         ∫ z in {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i},
           ω.hamiltonianCurvature
-            (fun z x ↦ plumbedPerturbation (update Ha inf (b • N)) (update Hb q (b • N)) q L
+            (fun z x ↦ plumbedPerturbation (update Ha inf N) (update Hb q N) q L
               (Complex.equivRealProdCLM.symm z) x 1)
-            (fun z x ↦ plumbedPerturbation (update Ha inf (b • N)) (update Hb q (b • N)) q L
+            (fun z x ↦ plumbedPerturbation (update Ha inf N) (update Hb q N) q L
               (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
   subst hc ha hH
   rw [setOf_forall_ne_plumbedCenters hq hrq hr L] at hu hE hA ⊢
-  -- The neck Hamiltonian `b • N` is again periodic, `C¹` and bounded.
-  have hbN : Periodic (b • N) 1 := hN.smul b
-  have hbNs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (b • N)) :=
-    (contDiff_const_smul b).contMDiff.comp hNs
-  have hbBN (t : ℝ) (x : M) : |(b • N) t x| ≤ |b| * BN := by
-    rw [Pi.smul_apply, Pi.smul_apply, smul_eq_mul, abs_mul]
-    exact mul_le_mul_of_nonneg_left (hBN t x) (abs_nonneg b)
-  -- The plumbed datum with the neck Hamiltonian `b • N` on both sides of the neck.
+  -- The plumbed datum with the neck Hamiltonian `N` on both sides of the neck.
   rw [hω.integral_floerEnergyDensity_plumbedPerturbation hq
-    ((forall_update_iff Ha fun _ f => Periodic f 1).2 ⟨hbN, hHa⟩)
-    ((forall_update_iff Hb fun _ f => Periodic f 1).2 ⟨hbN, hHb⟩)
+    ((forall_update_iff Ha fun _ f => Periodic f 1).2 ⟨hN, hHa⟩)
+    ((forall_update_iff Hb fun _ f => Periodic f 1).2 ⟨hN, hHb⟩)
     ((forall_update_iff Ha fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)).2
-      ⟨hbNs, hHas⟩)
+      ⟨hNs, hHas⟩)
     ((forall_update_iff Hb fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f)).2
-      ⟨hbNs, hHbs⟩)
+      ⟨hNs, hHbs⟩)
     (by simp) hL
-    ((forall_update_iff Ha fun p f => ∀ t x, |f t x| ≤ update Ba inf (|b| * BN) p).2
-      ⟨by simpa using hbBN, fun p hp => by simpa [update_of_ne hp] using hBa p hp⟩)
-    ((forall_update_iff Hb fun p f => ∀ t x, |f t x| ≤ update Bb q (|b| * BN) p).2
-      ⟨by simpa using hbBN, fun p hp => by simpa [update_of_ne hp] using hBb p hp⟩) hu
+    ((forall_update_iff Ha fun p f => ∀ t x, |f t x| ≤ update Ba inf BN p).2
+      ⟨by simpa using hBN, fun p hp => by simpa [update_of_ne hp] using hBa p hp⟩)
+    ((forall_update_iff Hb fun p f => ∀ t x, |f t x| ≤ update Bb q BN p).2
+      ⟨by simpa using hBN, fun p hp => by simpa [update_of_ne hp] using hBb p hp⟩) hu
     (xa := fun p ↦ if p = zero then x 0 else x 1)
     (xb := fun p ↦ if p = inf then xout else x 2) ?_ ?_ hE hA]
   · -- The Hamiltonian terms are those of the three input ends and of the output end.
