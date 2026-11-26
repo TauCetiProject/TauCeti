@@ -15,7 +15,8 @@ The universe lift `SSet.uliftFunctor.{v}.obj X` of a simplicial set `X : SSet.{u
 simplices of `X`, wrapped in `ULift`. It is a fully faithful functor
 (`SSet.fullyFaithfulUliftFunctor`), and iterating universe lifts collapses to a single lift
 (`SSet.uliftFunctorCompIso`) and commutes up to natural isomorphism
-(`SSet.uliftFunctorCompCommIso`).
+(`SSet.uliftFunctorCompCommIso`). It also commutes with taking opposites
+(`SSet.opFunctorCompUliftFunctorIso`).
 
 Horn-filling conditions only involve finitely many simplices and their faces, so they do not see
 the universe: the lift of a map `p` has the right lifting property with respect to a horn inclusion
@@ -42,6 +43,7 @@ simplicial sets.
   `Full` and `Faithful` instances and preimage computation on simplices.
 * `SSet.uliftFunctorCompIso`, `SSet.uliftFunctorCompCommIso`: iterated universe lifts collapse
   to a single lift and commute up to natural isomorphism.
+* `SSet.opFunctorCompUliftFunctorIso`: the universe lift commutes with taking opposites.
 * `SSet.hasLiftingProperty_horn_ι_uliftFunctor_map_iff`: the universe lift of a map has the right
   lifting property with respect to a horn inclusion exactly when the map has it.
 * `SSet.fibration_uliftFunctor_map_iff`, `SSet.innerFibration_uliftFunctor_map_iff`: the
@@ -84,6 +86,18 @@ lemma uliftFunctor_preimage_app_apply
     (f : uliftFunctor.{v}.obj X ⟶ uliftFunctor.{v}.obj Y) (n : SimplexCategoryᵒᵖ) (x : X.obj n) :
     (uliftFunctor.{v}.preimage f).app n x = (f.app n (ULift.up x)).down :=
   congrArg ULift.down congr($(uliftFunctor.{v}.map_preimage f).app n (ULift.up x))
+
+/-- The universe lift of a simplicial set is nonempty exactly when the simplicial set is. -/
+@[simp]
+lemma nonempty_uliftFunctor_obj_iff (X : SSet.{u}) :
+    (uliftFunctor.{v}.obj X).Nonempty ↔ X.Nonempty :=
+  ⟨fun ⟨x⟩ ↦ ⟨x.down⟩, fun ⟨x⟩ ↦ ⟨ULift.up x⟩⟩
+
+/-- The universe lift commutes with the involution `SSet.opFunctor`: both composites send a
+simplicial set to the same simplices, wrapped in `ULift`, with the reversed simplicial operators. -/
+def opFunctorCompUliftFunctorIso :
+    opFunctor.{u} ⋙ uliftFunctor.{v} ≅ uliftFunctor.{v} ⋙ opFunctor :=
+  Iso.refl _
 
 /-- Iterating `SSet.uliftFunctor` is naturally isomorphic to a single universe lift. -/
 def uliftFunctorCompIso :
