@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.SemiFredholm
 public import TauCeti.Analysis.Normed.Module.Annihilator
-import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator.Estimate
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Sobolev.Wkp.Local.Compactness
@@ -330,7 +330,9 @@ private theorem exists_norm_sub_le_sum (χ : SmoothPartitionOfUnity (Fin A.n) �
     _ = (∑ i, k i) * (∑ i, ∑ c, e i c) * ‖w‖ := by
         rw [← Finset.mul_sum, ← Finset.sum_mul, mul_assoc]
 
-/-! ### Finite dimension of the cokernel -/
+end IsRealCauchyRiemannOperator
+
+namespace FiniteBundleAtlas
 
 omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [NormedSpace ℝ F]
   [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [FiniteDimensional ℝ F]
@@ -339,7 +341,7 @@ omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V
 /-- **Nested chart sets.** There are a smooth partition of unity `χ` indexed by the charts and, in
 every chart `i`, open sets `Q₀ ⋐ Q₁ ⋐ Q₂ ⋐ Q₃ ⋐ Aᵢ` of the chart image `Aᵢ`, the first two with
 compact closure, with the support of `χᵢ` read in chart `i` inside `Q₀`. -/
-private theorem exists_nested_chart_sets :
+theorem exists_nested_chart_sets :
     ∃ (χ : SmoothPartitionOfUnity (Fin A.n) 𝓘(ℝ, ℂ) M univ) (Q₀ Q₁ Q₂ Q₃ : Fin A.n → Opens ℂ),
       (∀ i, tsupport (χ i) ⊆ (A.chart i).symm '' Q₀ i) ∧
       (∀ i, IsCompact (closure (Q₀ i : Set ℂ)) ∧ closure (Q₀ i : Set ℂ) ⊆ Q₁ i) ∧
@@ -367,6 +369,12 @@ private theorem exists_nested_chart_sets :
     fun i ↦ ⟨hQ₁c i, hQ₁ i⟩, hQ₂, hQ₃, fun i ↦ subset_closure.trans ((hQ₀ i).trans
       (subset_closure.trans ((hQ₁ i).trans (subset_closure.trans (hQ₂ i)))))⟩
 
+end FiniteBundleAtlas
+
+namespace IsRealCauchyRiemannOperator
+
+/-! ### Finite dimension of the cokernel -/
+
 include hD hDs in
 /-- **The annihilator of the range is finite-dimensional.** On a closed surface, the continuous
 functionals on the `Lᵖ` `(0,1)`-forms vanishing on the range of the realization
@@ -383,7 +391,7 @@ theorem finiteDimensional_orthogonalBilin_range_sobolevL (hp : 1 < p) (hp_top : 
   have hG (Λ : G) (w : SobolevSection A volume p 1) :
       (Λ : zeroOneSobolevSections A volume p 0 →L[ℝ] ℝ) (hD.sobolevL A hDs volume p w) = 0 :=
     Submodule.mem_orthogonalBilin.1 Λ.property _ ⟨w, rfl⟩
-  obtain ⟨χ, Q₀, Q₁, Q₂, Q₃, hχ, hQ₀, hQ₁, hQ₂, hQ₃, hQ₀₃⟩ := exists_nested_chart_sets A
+  obtain ⟨χ, Q₀, Q₁, Q₂, Q₃, hχ, hQ₀, hQ₁, hQ₂, hQ₃, hQ₀₃⟩ := A.exists_nested_chart_sets
   have hQ₃' (i : Fin A.n) : (Q₃ i : Set ℂ) ⊆ A.image i := subset_closure.trans (hQ₃ i)
   -- The fields representing an annihilator over `Q₃`, and their compact sets of values.
   choose θ hθ hrep hweak using fun (Λ : G) i ↦

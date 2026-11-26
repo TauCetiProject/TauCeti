@@ -1199,6 +1199,15 @@ theorem ae_overlap_tangentHom_iff [MeasurableSpace E] (μ : Measure E) (i i' : F
       ∀ᵐ y ∂μ.restrict (A.overlap i i'), P y := by
   rw [sectionChartData_overlap_tangentHom]
 
+/-- The chart images of the section chart data of `V`-valued one-forms have finite measure, for
+the indices of `A`. Instance search does not identify `Fin A.n` with `Fin A.tangentHom.n`, so this
+is a separate instance. -/
+instance isFiniteMeasure_restrict_sectionChartData_image_tangentHom [MeasurableSpace E]
+    (μ : Measure E) [IsFiniteMeasureOnCompacts μ] (i : Fin A.n) :
+    IsFiniteMeasure (μ.restrict (A.tangentHom.sectionChartData.image i : Set E)) := by
+  rw [sectionChartData_image_tangentHom]
+  infer_instance
+
 /-- On the overlap of charts `i` and `i'`, the coordinate change of the chart data of `V`-valued
 one-forms is `η ↦ g ∘ η ∘ dτ`, for the coordinate change `g` of `V` and the chart transition `τ`. -/
 theorem sectionChartData_coordChange_tangentHom_apply {i i' : Fin A.n} {y : E}
