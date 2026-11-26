@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
+import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
@@ -44,6 +45,8 @@ mixed norm of the tails by `∑_{i ∉ s} ‖gᵢ‖_{L^q_b L^r_x}`, which tends
 
 * `MeasureTheory.exists_tendsto_eLpNorm_eLpNorm_sub_sum_of_tsum_ne_top`: a series of families
   with summable mixed norms converges almost everywhere in the parameter and in mixed norm.
+* `MeasureTheory.ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum`: a sum in `L^r` agrees almost
+  everywhere with a limit in `Lᵖ` of partial sums along an exhausting sequence of finite sets.
 
 ## References
 
@@ -143,5 +146,19 @@ theorem exists_tendsto_eLpNorm_eLpNorm_sub_sum_of_tsum_ne_top [CompleteSpace F] 
     refine le_of_eq_of_le ?_ ((htail ∅).trans (tsum_comp_le_tsum_of_injective
       Subtype.val_injective fun i ↦ eLpNorm (fun b ↦ eLpNorm (g i b) r μ) q ρ))
     simp only [hzero]
+
+/-- **A sum in `L^r` agrees with a limit in `Lᵖ` of its partial sums.** If the partial sums
+`∑_{i ∈ s} gᵢ` of `gᵢ ∈ Lᵖ(μ)` converge to `U` in `L^r(μ)` along the finite sets `s` of indices,
+and along an exhausting sequence `sₙ` of finite sets they converge to `v` in `Lᵖ(μ)`, then `U = v`
+almost everywhere: both limits are limits in measure. -/
+theorem ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum {g : ι → Lp F p μ} {U : Lp F r μ}
+    (hU : Tendsto (fun s : Finset ι ↦ eLpNorm (⇑U - ⇑(∑ i ∈ s, g i)) r μ) atTop (𝓝 0))
+    {s : ℕ → Finset ι} (hs : Tendsto s atTop atTop) {v : Lp F p μ}
+    (hv : Tendsto (fun n ↦ ∑ i ∈ s n, g i) atTop (𝓝 v)) :
+    ⇑U =ᵐ[μ] ⇑v := by
+  refine tendstoInMeasure_ae_unique ?_ (tendstoInMeasure_of_tendsto_Lp hv)
+  refine tendstoInMeasure_of_tendsto_eLpNorm (zero_lt_one.trans_le (Fact.out : 1 ≤ r)).ne' ?_
+  refine (hU.comp hs).congr fun n ↦ ?_
+  rw [Function.comp_apply, eLpNorm_sub_comm]
 
 end MeasureTheory

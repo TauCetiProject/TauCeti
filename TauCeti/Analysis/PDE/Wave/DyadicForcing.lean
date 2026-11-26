@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.TemperedDistribution.HomogeneousLittlewoodPaley
 public import TauCeti.Analysis.PDE.Wave.InhomogeneousStrichartz
 import Mathlib.Order.Filter.AtTopBot.Interval
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Series
@@ -63,19 +62,21 @@ the evolutions of data in the homogeneous Besov spaces (`TauCeti.Analysis.PDE.Wa
 
 ## The argument
 
-Almost orthogonality of the blocks
-(`TemperedDistribution.exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero`) gives `L` such that
-`Pₖ Gⱼ(s) = Pₖ Pⱼ F(s) = 0` unless `|k - j| < L`. So the retarded Strichartz estimate for the `L²`
-forcing term `Gⱼ` has at most `2L - 1` nonzero terms, and since the blocks are bounded on
-`L^{r₁'}` uniformly in the scale (`ContDiffBump.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`)
-it bounds the retarded integral of `Gⱼ` by a constant times `2^{jσ} ‖Gⱼ‖_{L^{p₁}_t L^{r₁'}_x}`.
+Almost orthogonality of the blocks on `L²`
+(`TemperedDistribution.exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock`)
+gives `L` such that `Pₖ Gⱼ(s) = Pₖ Pⱼ F(s) = 0` unless `|k - j| < L`. So the retarded Strichartz
+estimate for the `L²` forcing term `Gⱼ` has at most `2L - 1` nonzero terms, and since the blocks
+are bounded on `L^{r₁'}` uniformly in the scale
+(`ContDiffBump.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`) it bounds the retarded integral
+of `Gⱼ` by a constant times `2^{jσ} ‖Gⱼ‖_{L^{p₁}_t L^{r₁'}_x}`.
 These bounds are summable, and a series with summable mixed norms converges
 (`MeasureTheory.exists_tendsto_eLpNorm_eLpNorm_sub_sum_of_tsum_ne_top`).
 
 For the comparison with `L²` forcing terms, `Pⱼ` commutes with `D⁻¹ sin((t - s)D)` and with the
 integral, so the partial sums of the series are the partial sums `∑ⱼ Pⱼ u(t)`, which converge to
 `u(t)` in `L²` (`ContDiffBump.tendsto_sum_fourierMultiplierCLM_littlewoodPaley`). Limits in `L²`
-and in `L^r` are both limits in measure, so they agree almost everywhere.
+and in `L^r` are both limits in measure, so they agree almost everywhere
+(`MeasureTheory.ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum`).
 
 ## Main declarations
 
@@ -106,25 +107,6 @@ namespace ContDiffBump
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (φ : ContDiffBump (0 : E))
 
-/-- An `L²` function that is the `j`-th block of a tempered distribution has no block `Pₖ` with
-`|k - j| ≥ L`, for the `L` of almost orthogonality. -/
-private theorem fourierMultiplierCLM_eq_zero_of_eq_block {L : ℕ}
-    (hL : ∀ j k : ℤ, j + L ≤ k →
-      homogeneousLittlewoodPaleyBlock ℂ φ j ∘L homogeneousLittlewoodPaleyBlock ℂ φ k = 0 ∧
-        homogeneousLittlewoodPaleyBlock ℂ φ k ∘L homogeneousLittlewoodPaleyBlock ℂ φ j = 0)
-    {j k : ℤ} (hk : k ∉ Finset.Ioo (j - L) (j + L)) {m : Lp ℂ ∞ (volume : Measure E)}
-    (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley k ξ : ℂ)) {x : Lp ℂ 2 (volume : Measure E)}
-    {v : 𝓢'(E, ℂ)} (hx : (x : 𝓢'(E, ℂ)) = homogeneousLittlewoodPaleyBlock ℂ φ j v) :
-    Lp.fourierMultiplierCLM ℂ m x = 0 := by
-  refine Lp.toTemperedDistribution_injective ?_
-  dsimp only
-  rw [← homogeneousLittlewoodPaleyBlock_toTemperedDistribution φ hm, hx,
-    Lp.toTemperedDistribution_zero]
-  rw [Finset.mem_Ioo, not_and_or, not_lt, not_lt] at hk
-  rcases hk with hk | hk
-  · exact congr($((hL k j (by omega)).1) v)
-  · exact congr($((hL j k (by omega)).2) v)
-
 /-- **The retarded estimate for a forcing term made of `j`-th blocks.** If the retarded Duhamel
 integrals of integrable `L²` forcing terms `F` satisfy
 `‖u‖_{L^q_t L^r_x} ≤ C ∑ₖ 2^{kσ} ‖Pₖ F‖_{L^{p₁}_t L^{r₁'}_x}`, then a forcing term `G` whose
@@ -146,7 +128,8 @@ private theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_
             Lp ℂ 2 (volume : Measure E))) r volume) q volume ≤
           C' * (ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
             eLpNorm (fun s ↦ eLpNorm (G s) r₁' volume) p₁ volume) := by
-  obtain ⟨L, hL⟩ := exists_homogeneousLittlewoodPaleyBlock_compL_eq_zero (F := ℂ) φ φ
+  obtain ⟨L, hL⟩ :=
+    exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock (G := ℂ) φ
   set m : ℤ → Lp ℂ ∞ (volume : Measure E) := fun j ↦ (φ.memLp_ofReal_littlewoodPaley j ∞).toLp _
   have hm (j : ℤ) : m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) :=
     (φ.memLp_ofReal_littlewoodPaley j ∞).coeFn_toLp
@@ -162,7 +145,7 @@ private theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_
         0 := by
     have h0 (s : ℝ) : eLpNorm (Lp.fourierMultiplierCLM ℂ (m k) (G s)) r₁' volume = 0 := by
       obtain ⟨v, hv⟩ := hblock s
-      rw [φ.fourierMultiplierCLM_eq_zero_of_eq_block hL hk (hm k) hv,
+      rw [hL j k hk (hm k) (G s) v hv,
         eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
     simp [h0]
   have hnear (k : ℤ) :
@@ -344,25 +327,13 @@ theorem ae_ae_eq_setIntegral_Iio_waveSinPropagator_sub_of_tendsto {r : ℝ≥0�
         r volume) atTop (𝓝 0)) :
     ∀ᵐ t, ⇑(U t) =ᵐ[volume] ⇑(∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (f s)) := by
   filter_upwards [hf, hU] with t hft ht
-  set S : ℕ → Lp ℂ 2 (volume : Measure E) := fun N ↦ ∑ j ∈ Finset.Ioc (-(N : ℤ)) N,
-    ∫ τ in Set.Iio t, waveSinPropagator ℂ (t - τ) (Lp.fourierMultiplierCLM ℂ (m j) (f τ))
-  -- The partial sums are `∑ⱼ Pⱼ u(t)`, since `Pⱼ` commutes with the propagator and the integral.
-  have hS (N : ℕ) : S N = ∑ j ∈ Finset.Ioc (-(N : ℤ)) N, Lp.fourierMultiplierCLM ℂ (m j)
-      (∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (f s)) := by
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← ContinuousLinearMap.integral_comp_comm _ hft]
-    simp only [fourierMultiplierCLM_waveSinPropagator_apply]
   -- Along the partial sums over `(-N, N]`, the series tends to `U(t)` in `L^r` and to `u(t)` in
-  -- `L²`; both limits are limits in measure, so they agree almost everywhere.
-  have hr : TendstoInMeasure volume (fun N ↦ ⇑(S N)) atTop ⇑(U t) := by
-    refine tendstoInMeasure_of_tendsto_eLpNorm
-      (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ r)).ne' ?_
-    refine (ht.comp (Finset.tendsto_Ioc_neg (R := ℤ))).congr fun N ↦ ?_
-    rw [Function.comp_apply, eLpNorm_sub_comm]
-  have h2 : TendstoInMeasure volume (fun N ↦ ⇑(S N)) atTop
-      ⇑(∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (f s)) :=
-    tendstoInMeasure_of_tendsto_Lp
-      ((φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm _).congr fun N ↦ (hS N).symm)
-  exact tendstoInMeasure_ae_unique hr h2
+  -- `L²`, since its partial sums are `∑ⱼ Pⱼ u(t)`.
+  refine ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum ht (Finset.tendsto_Ioc_neg (R := ℤ))
+    ((φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm _).congr fun N ↦ ?_)
+  -- `Pⱼ` commutes with the propagator and the integral.
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [← ContinuousLinearMap.integral_comp_comm _ hft]
+  simp only [fourierMultiplierCLM_waveSinPropagator_apply]
 
 end ContDiffBump
