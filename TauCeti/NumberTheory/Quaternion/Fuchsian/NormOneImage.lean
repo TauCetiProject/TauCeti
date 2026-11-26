@@ -15,9 +15,9 @@ public import TauCeti.NumberTheory.Quaternion.Order.NormOne
 
 A real splitting carries the reduced-norm-one group of a quaternion order into `SL(2, ℝ)`.
 Its image in `PSL(2, ℝ)` is `RealSplitting.normOneImage`, the group conventionally denoted
-`Γ¹(Λ)`. The construction is monotone in the order, and changing the order gives groups of
-finite relative index in each other. Thus for a smaller order its projective image has finite
-index in that of the larger order.
+`Γ¹(Λ)`. The construction is monotone in the order. Over a base ring with finite quotients,
+changing the order gives groups of finite relative index in each other. Thus the projective
+image of a smaller order has finite index in that of the larger order.
 
 ## References
 
@@ -43,6 +43,7 @@ def normOneImage (hΛ : IntegralOrder.IsOrder k Λ) : Subgroup (PSL(2, ℝ)) :=
 
 /-- An element of `PSL(2, ℝ)` belongs to the projective norm-one image exactly when it has a
 norm-one quaternion representative belonging to the order. -/
+@[simp]
 theorem mem_normOneImage (hΛ : IntegralOrder.IsOrder k Λ) {g : PSL(2, ℝ)} :
     g ∈ S.normOneImage hΛ ↔ ∃ x : unitary ℍ[k,a,b], (x : ℍ[k,a,b]) ∈ Λ ∧
       QuotientGroup.mk (S.unitaryToSpecialLinear x) = g := by
@@ -54,15 +55,16 @@ theorem normOneImage_mono (hΛ : IntegralOrder.IsOrder k Λ) (hΓ : IntegralOrde
     (h : Λ ≤ Γ) : S.normOneImage hΛ ≤ S.normOneImage hΓ :=
   Subgroup.map_mono (hΛ.normOne_mono hΓ h)
 
-/-- The projective norm-one images of any two orders have finite relative index. In particular,
-for nested orders this is the finiteness of the index of the smaller image in the larger one. -/
+/-- Over a base ring with finite quotients, the projective norm-one images of any two orders
+have finite relative index. For nested orders this is the finiteness of the index of the smaller
+image in the larger one. -/
 theorem normOneImage_isFiniteRelIndex [Ring.HasFiniteQuotients R]
     (hΛ : IntegralOrder.IsOrder k Λ) (hΓ : IntegralOrder.IsOrder k Γ) :
     (S.normOneImage hΛ).IsFiniteRelIndex (S.normOneImage hΓ) :=
   (hΛ.normOne_isFiniteRelIndex hΓ).map _
 
-/-- Changing the quaternion order preserves the commensurability class of its projective
-norm-one image. -/
+/-- Over a base ring with finite quotients, changing the quaternion order preserves the
+commensurability class of its projective norm-one image. -/
 theorem normOneImage_commensurable [Ring.HasFiniteQuotients R]
     (hΛ : IntegralOrder.IsOrder k Λ) (hΓ : IntegralOrder.IsOrder k Γ) :
     (S.normOneImage hΛ).Commensurable (S.normOneImage hΓ) :=
