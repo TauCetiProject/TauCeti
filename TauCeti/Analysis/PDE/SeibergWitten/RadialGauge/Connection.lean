@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
+public import TauCeti.Analysis.PDE.SeibergWitten.IteratedCovariantDeriv
 public import TauCeti.Analysis.Calculus.DifferentialForm.Poincare
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Calculus.ContDiff.Pi
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.Equicontinuity
@@ -62,8 +64,24 @@ a subsequence of the radial gauge pairs converges on the ball: the connections i
 is with their derivatives of order at most `k` locally uniformly on the ball, and the sections
 locally uniformly. Taubes's analysis supplies such bounds for the large-parameter Seiberg–Witten
 fields rescaled by `r^(-1/2)` about a point, and this is the step that extracts their limits modulo
-gauge. Convergence of the sections in `Cᵏ` would need bounds on their higher
-covariant derivatives, which are not treated here.
+gauge.
+
+The sections converge in `Cˡ`, for `l ≤ k + 1`, when their higher covariant derivatives are
+bounded. The radial gauge multiplies the iterated covariant derivatives `∇ʲ α`
+(`iteratedCovariantDeriv`) by `u`, so their norms are unchanged
+(`TauCeti.SeibergWitten.norm_iteratedCovariantDeriv_radialConnection_radialGauge_mul`), and in
+radial gauge the connection form is bounded with its derivatives, so bounds on `∇ʲ α` for
+`j ≤ l + 1` bound the derivatives of order at most `l + 1` of `u α`
+(`TauCeti.SeibergWitten.exists_norm_iteratedFDeriv_le_of_norm_iteratedCovariantDeriv_le`). A
+subsequence of the radial gauge pairs then converges on the ball, the connections in `Cᵏ_loc` and
+the sections in `Cˡ_loc`
+(`exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv_radialGauge_mul`); the compactness
+above is its case `l = 0`. When the bounds hold on every ball about `x₀`, uniformly for finitely
+many sections transformed by the same gauge, such as the components of a spinor, one subsequence
+converges in this sense on the whole space
+(`exists_strictMono_tendstoLocallyUniformly_iteratedFDeriv_radialGauge_mul`).
+These are the gauge-theoretic half of the local compactness of Taubes's rescaled solutions; the
+bounds on the curvature and on the covariant derivatives themselves come from the equations.
 
 ## Main definitions
 
@@ -216,7 +234,8 @@ theorem radialConnection_sub_phaseForm (x₀ : E) (b : E → E [⋀^Fin 1]→L[�
   · -- Neither `b` nor `b - Im (u⁻¹ du)` is differentiable at `y`, so both derivatives vanish.
     have hb' : ¬ DifferentiableAt ℝ (b - phaseForm u) y := fun h ↦
       hb (by simpa using h.add hφ)
-    rw [extDeriv_of_not_differentiableAt hb, extDeriv_of_not_differentiableAt hb']
+    rw [extDeriv_zero_of_not_differentiableAt hb,
+      extDeriv_zero_of_not_differentiableAt hb']
 
 /-- In radial gauge the derivative of the section is controlled by gauge invariant quantities and
 the radial connection: `|d(u α)| ≤ |∇_b α| + |K (db)| |α|`, since
@@ -239,21 +258,6 @@ theorem norm_fderiv_radialGauge_mul_le (x₀ : E) (hb : ContDiff ℝ 1 b)
   · rw [covariantDeriv_radialConnection_radialGauge_mul x₀ hb hα, norm_smul, norm_radialGauge,
       one_mul]
   · simp [ContinuousLinearMap.norm_smulRight_apply, -ofSubsingletonLIE_symm_apply]
-
-/-- Pointwise bounds `|α| ≤ C`, `|∇_b α| ≤ C` and `|K (db)| ≤ M` bound the derivatives of order
-at most `1` of the section `u α` in radial gauge by `C + M C`. -/
-private theorem norm_iteratedFDeriv_radialGauge_mul_le (x₀ : E) (hb : ContDiff ℝ 1 b)
-    (hα : DifferentiableAt ℝ α x) {C M : ℝ} (hM0 : 0 ≤ M) (hαC : ‖α x‖ ≤ C)
-    (hcov : ‖covariantDeriv b α x‖ ≤ C) (hM : ‖radialConnection x₀ b x‖ ≤ M) {j : ℕ}
-    (hj : j ≤ 1) :
-    ‖iteratedFDeriv ℝ j (radialGauge x₀ b * α) x‖ ≤ C + M * C := by
-  have hC : 0 ≤ C := (norm_nonneg _).trans hαC
-  rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
-  · rw [norm_iteratedFDeriv_zero, Pi.mul_apply, norm_mul, norm_radialGauge, one_mul]
-    exact hαC.trans (le_add_of_nonneg_right (mul_nonneg hM0 hC))
-  · rw [norm_iteratedFDeriv_one]
-    exact (norm_fderiv_radialGauge_mul_le x₀ hb hα).trans
-      (add_le_add hcov (mul_le_mul hM hαC (norm_nonneg _) hM0))
 
 /-! ### Derivative bounds and compactness modulo gauge -/
 
@@ -283,7 +287,7 @@ theorem exists_norm_iteratedFDeriv_radialConnection_le [FiniteDimensional ℝ E]
 sequence of connection forms, on a ball about the centre, from uniform bounds on the derivatives of
 their curvatures. -/
 private theorem exists_forall_norm_iteratedFDeriv_radialConnection_le [FiniteDimensional ℝ E]
-    {b : ℕ → E → E [⋀^Fin 1]→L[ℝ] ℝ} (x₀ : E) (R : ℝ) (k : ℕ)
+    {ι : Type*} {b : ι → E → E [⋀^Fin 1]→L[ℝ] ℝ} (x₀ : E) (R : ℝ) (k : ℕ)
     (hb : ∀ n, ContDiff ℝ (k + 2) (b n)) {A : ℝ}
     (hF : ∀ n, ∀ j ≤ k + 1, ∀ x ∈ ball x₀ R, ‖iteratedFDeriv ℝ j (extDeriv (b n)) x‖ ≤ A) :
     ∃ M, 0 ≤ M ∧ ∀ n, ∀ j ≤ k + 1, ∀ x ∈ ball x₀ R,
@@ -299,13 +303,167 @@ private theorem exists_forall_norm_iteratedFDeriv_radialConnection_le [FiniteDim
         Finset.single_le_sum (fun j _ ↦ mul_nonneg (hA'0 j) (abs_nonneg A))
           (Finset.mem_range.2 (by omega))
 
+/-- **Covariance in radial gauge.** The radial gauge carries the iterated covariant derivatives
+of `α` for `b` to those of `u α` for the radial connection:
+`∇ⁿ_{K (db)} (u α) = u ∇ⁿ_b α` for `u = exp (i K b)`. -/
+theorem iteratedCovariantDeriv_radialConnection_radialGauge_mul (x₀ : E) {n : ℕ}
+    (hb : ContDiff ℝ (max (n - 1) 1 : ℕ) b) (hα : ContDiff ℝ n α) (x : E) :
+    iteratedCovariantDeriv (radialConnection x₀ b) (radialGauge x₀ b * α) n x =
+      radialGauge x₀ b x • iteratedCovariantDeriv b α n x := by
+  have hb1 : ContDiff ℝ 1 b := hb.of_le (by norm_cast; omega)
+  rw [← sub_phaseForm_radialGauge x₀ hb1]
+  exact congrFun (iteratedCovariantDeriv_sub_phaseForm_mul (norm_radialGauge x₀ b)
+    ((contDiff_radialGauge x₀ hb1).differentiable one_ne_zero) hα
+    (hb.of_le (by norm_cast; omega))) x
+
+/-- The radial gauge preserves the norms of the iterated covariant derivatives. -/
+theorem norm_iteratedCovariantDeriv_radialConnection_radialGauge_mul (x₀ : E) {n : ℕ}
+    (hb : ContDiff ℝ (max (n - 1) 1 : ℕ) b) (hα : ContDiff ℝ n α) (x : E) :
+    ‖iteratedCovariantDeriv (radialConnection x₀ b) (radialGauge x₀ b * α) n x‖ =
+      ‖iteratedCovariantDeriv b α n x‖ := by
+  rw [iteratedCovariantDeriv_radialConnection_radialGauge_mul x₀ hb hα, norm_smul,
+    norm_radialGauge, one_mul]
+
+/-- The radial gauge of a `C^(k+2)` connection form, times a `C^(l+1)` section with `l ≤ k + 1`,
+is `C^(l+1)`. -/
+private theorem contDiff_radialGauge_mul {k l : ℕ} (hl : l ≤ k + 1) (x₀ : E)
+    (hb : ContDiff ℝ (k + 2) b) (hα : ContDiff ℝ (l + 1) α) :
+    ContDiff ℝ (l + 1) (radialGauge x₀ b * α) :=
+  ((contDiff_radialGauge x₀ hb).of_le
+    (by beta_reduce; exact_mod_cast (by omega : l + 1 ≤ k + 2))).mul hα
+
+/-- Uniform bounds on the derivatives of order at most `l + 1` of a family of sections in radial
+gauge, on a ball about the centre, from uniform bounds on the derivatives of order at most `k + 1`
+of the curvatures and on the iterated covariant derivatives of order at most `l + 1` of the
+sections. -/
+private theorem exists_forall_norm_iteratedFDeriv_radialGauge_mul_le [FiniteDimensional ℝ E]
+    {ι : Type*} {b : ι → E → E [⋀^Fin 1]→L[ℝ] ℝ} {α : ι → E → ℂ} (x₀ : E) (R : ℝ) {k l : ℕ}
+    (hl : l ≤ k + 1) (hb : ∀ n, ContDiff ℝ (k + 2) (b n)) (hα : ∀ n, ContDiff ℝ (l + 1) (α n))
+    {A C : ℝ}
+    (hF : ∀ n, ∀ j ≤ k + 1, ∀ x ∈ ball x₀ R, ‖iteratedFDeriv ℝ j (extDeriv (b n)) x‖ ≤ A)
+    (hcov : ∀ n, ∀ j ≤ l + 1, ∀ x ∈ ball x₀ R, ‖iteratedCovariantDeriv (b n) (α n) j x‖ ≤ C) :
+    ∃ B, 0 ≤ B ∧ ∀ n, ∀ j ≤ l + 1, ∀ x ∈ ball x₀ R,
+      ‖iteratedFDeriv ℝ j (radialGauge x₀ (b n) * α n) x‖ ≤ B := by
+  obtain ⟨M, -, hM⟩ := exists_forall_norm_iteratedFDeriv_radialConnection_le x₀ R k hb hF
+  choose K hK using fun m ↦
+    exists_norm_iteratedFDeriv_le_of_norm_iteratedCovariantDeriv_le (E := E) C M m
+  refine ⟨∑ i ∈ Finset.range (l + 2), |K i|, Finset.sum_nonneg fun i _ ↦ abs_nonneg (K i),
+    fun n j hj x hx ↦ ?_⟩
+  have hc : ContDiff ℝ (k + 1) (radialConnection x₀ (b n)) := contDiff_radialConnection x₀ (hb n)
+  refine (hK j ((contDiff_radialGauge_mul hl x₀ (hb n) (hα n)).of_le (by norm_cast))
+    (hc.of_le (by norm_cast; omega)) (fun i hi y hy ↦ ?_)
+    (fun i hi y hy ↦ hM n i (by omega) y hy) x hx).trans
+    ((le_abs_self _).trans (Finset.single_le_sum (fun i _ ↦ abs_nonneg (K i))
+      (Finset.mem_range.2 (by omega))))
+  rw [norm_iteratedCovariantDeriv_radialConnection_radialGauge_mul x₀
+    ((hb n).of_le (by norm_cast; omega)) ((hα n).of_le (by norm_cast; omega))]
+  exact hcov n i (by omega) y hy
+
+/-- **Compactness modulo gauge in `Cᵏ`.** Let `(bₙ, αₙ)` be pairs on a finite-dimensional space,
+with `bₙ` of class `C^(k+2)` and `αₙ` of class `C^(l+1)` for some `l ≤ k + 1`, whose curvatures
+have derivatives of order at most `k + 1` bounded by `A` on the ball of radius `R` about `x₀`, and
+whose iterated covariant derivatives `∇ʲ αₙ` of order at most `l + 1` are bounded by `C` there.
+Then along a subsequence the radial gauge pairs `(K (dbₙ), uₙ αₙ)` converge on the ball: the
+radial connections, with their derivatives of order at most `k`, converge locally uniformly on the
+ball to a connection form `b` of class `Cᵏ`, and the sections, with their derivatives of order at
+most `l`, to a section `α` of class `Cˡ`. -/
+theorem exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv_radialGauge_mul
+    [FiniteDimensional ℝ E] {b : ℕ → E → E [⋀^Fin 1]→L[ℝ] ℝ} {α : ℕ → E → ℂ} (x₀ : E) (R : ℝ)
+    (k l : ℕ) (hl : l ≤ k + 1) (hb : ∀ n, ContDiff ℝ (k + 2) (b n))
+    (hα : ∀ n, ContDiff ℝ (l + 1) (α n)) {A C : ℝ}
+    (hF : ∀ n, ∀ j ≤ k + 1, ∀ x ∈ ball x₀ R, ‖iteratedFDeriv ℝ j (extDeriv (b n)) x‖ ≤ A)
+    (hcov : ∀ n, ∀ j ≤ l + 1, ∀ x ∈ ball x₀ R, ‖iteratedCovariantDeriv (b n) (α n) j x‖ ≤ C) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ (b' : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α' : E → ℂ),
+      ContDiffOn ℝ k b' (ball x₀ R) ∧ ContDiffOn ℝ l α' (ball x₀ R) ∧
+      (∀ j ≤ k, TendstoLocallyUniformlyOn
+        (fun n ↦ iteratedFDeriv ℝ j (radialConnection x₀ (b (φ n)))) (iteratedFDeriv ℝ j b')
+          atTop (ball x₀ R)) ∧
+      ∀ j ≤ l, TendstoLocallyUniformlyOn
+        (fun n ↦ iteratedFDeriv ℝ j (radialGauge x₀ (b (φ n)) * α (φ n)))
+          (iteratedFDeriv ℝ j α') atTop (ball x₀ R) := by
+  obtain ⟨M, -, hM⟩ := exists_forall_norm_iteratedFDeriv_radialConnection_le x₀ R k hb hF
+  -- The radial connections converge in `Cᵏ` along a subsequence.
+  obtain ⟨φ, hφ, b', hb', hconv⟩ := exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv
+    isOpen_ball k (fun n ↦ (contDiff_radialConnection x₀ ((hb n).of_le (by norm_cast))).contDiffOn)
+    fun K _ hK ↦ ⟨M, fun n j hj x hx ↦ hM n j hj x (hK hx)⟩
+  -- In radial gauge the sections have bounded derivatives of order at most `l + 1`, so they
+  -- converge in `Cˡ` along a further subsequence.
+  obtain ⟨B, -, hB⟩ := exists_forall_norm_iteratedFDeriv_radialGauge_mul_le x₀ R hl hb hα hF hcov
+  obtain ⟨ψ, hψ, α', hα', hconvα⟩ := exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv
+    isOpen_ball l (fun n ↦ (contDiff_radialGauge_mul hl x₀ (hb (φ n)) (hα (φ n))).contDiffOn)
+    fun K' _ hK' ↦ ⟨B, fun n j hj x hx ↦ hB (φ n) j hj x (hK' hx)⟩
+  exact ⟨φ ∘ ψ, hφ.comp hψ, b', α', hb', hα',
+    fun j hj ↦ (hconv j hj).comp_tendsto hψ.tendsto_atTop, hconvα⟩
+
+/-- **Compactness modulo gauge on the whole space.** Let `bₙ` be connection forms of class
+`C^(k+2)` on a finite-dimensional space and `αₙ = (αₙⱼ)ⱼ` finitely many sections of class
+`C^(l+1)`, `l ≤ k + 1`, such as the components of a spinor in a constant frame. Suppose that on
+every ball about `x₀` the derivatives of order at most `k + 1` of the curvatures and the iterated
+covariant derivatives `∇ʲ αₙⱼ` of order at most `l + 1` are bounded uniformly in `n` and in the
+component. Then along one subsequence the radial gauge pairs converge locally uniformly on the
+whole space: the radial connections `K (dbₙ)` with their derivatives of order at most `k` to a
+connection form of class `Cᵏ`, and the sections `(uₙ αₙⱼ)ⱼ`, all transformed by the same radial
+gauge `uₙ`, with their derivatives of order at most `l` to a section of class `Cˡ`. -/
+theorem exists_strictMono_tendstoLocallyUniformly_iteratedFDeriv_radialGauge_mul
+    [FiniteDimensional ℝ E] {κ : Type*} [Fintype κ] {b : ℕ → E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    {α : ℕ → κ → E → ℂ} (x₀ : E) (k l : ℕ) (hl : l ≤ k + 1)
+    (hb : ∀ n, ContDiff ℝ (k + 2) (b n)) (hα : ∀ n j, ContDiff ℝ (l + 1) (α n j))
+    (hF : ∀ R, ∃ A, ∀ n, ∀ i ≤ k + 1, ∀ x ∈ ball x₀ R,
+      ‖iteratedFDeriv ℝ i (extDeriv (b n)) x‖ ≤ A)
+    (hcov : ∀ R, ∃ C, ∀ n j, ∀ i ≤ l + 1, ∀ x ∈ ball x₀ R,
+      ‖iteratedCovariantDeriv (b n) (α n j) i x‖ ≤ C) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ (b' : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α' : E → κ → ℂ),
+      ContDiff ℝ k b' ∧ ContDiff ℝ l α' ∧
+      (∀ i ≤ k, TendstoLocallyUniformly
+        (fun n ↦ iteratedFDeriv ℝ i (radialConnection x₀ (b (φ n)))) (iteratedFDeriv ℝ i b')
+          atTop) ∧
+      ∀ i ≤ l, TendstoLocallyUniformly
+        (fun n ↦ iteratedFDeriv ℝ i (fun x j ↦ radialGauge x₀ (b (φ n)) x * α (φ n) j x))
+          (iteratedFDeriv ℝ i α') atTop := by
+  -- On every ball the radial connections have derivatives of order at most `k + 1` bounded
+  -- uniformly in `n`.
+  have hM (R : ℝ) : ∃ M, ∀ n, ∀ i ≤ k + 1, ∀ x ∈ ball x₀ R,
+      ‖iteratedFDeriv ℝ i (radialConnection x₀ (b n)) x‖ ≤ M := by
+    obtain ⟨A, hA⟩ := hF R
+    obtain ⟨M, -, hM⟩ := exists_forall_norm_iteratedFDeriv_radialConnection_le x₀ R k hb hA
+    exact ⟨M, hM⟩
+  -- The radial connections converge in `Cᵏ_loc` along a subsequence.
+  have hc (n : ℕ) : ContDiff ℝ (k + 1) (radialConnection x₀ (b n)) :=
+    contDiff_radialConnection x₀ (hb n)
+  obtain ⟨φ, hφ, b', hb', hconv⟩ := exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv
+    isOpen_univ k (fun n ↦ (hc n).contDiffOn) fun K hK _ ↦ by
+      obtain ⟨R, hKR⟩ := hK.isBounded.subset_ball x₀
+      obtain ⟨M, hM⟩ := hM R
+      exact ⟨M, fun n i hi x hx ↦ hM n i hi x (hKR hx)⟩
+  -- In radial gauge the sections have derivatives of order at most `l + 1` bounded on every ball,
+  -- uniformly in `n` and in the component, so they converge in `Cˡ_loc` along a further
+  -- subsequence.
+  have hβ (n : ℕ) (j : κ) : ContDiff ℝ (l + 1) (radialGauge x₀ (b n) * α n j) :=
+    contDiff_radialGauge_mul hl x₀ (hb n) (hα n j)
+  obtain ⟨ψ, hψ, α', hα', hconvα⟩ := exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv
+    isOpen_univ l (fun n ↦ (contDiff_pi.2 fun j ↦ hβ (φ n) j).contDiffOn) fun K hK _ ↦ by
+      obtain ⟨R, hKR⟩ := hK.isBounded.subset_ball x₀
+      obtain ⟨A, hA⟩ := hF R
+      obtain ⟨C, hC⟩ := hcov R
+      obtain ⟨B, hB0, hB⟩ := exists_forall_norm_iteratedFDeriv_radialGauge_mul_le
+        (b := fun p : ℕ × κ ↦ b p.1) (α := fun p ↦ α p.1 p.2) x₀ R hl (fun p ↦ hb p.1)
+        (fun p ↦ hα p.1 p.2) (fun p ↦ hA p.1) (fun p ↦ hC p.1 p.2)
+      exact ⟨B, fun n i hi x hx ↦ norm_iteratedFDeriv_pi_le hB0
+        (fun j ↦ ((hβ (φ n) j).of_le (by norm_cast)).contDiffAt)
+        fun j ↦ hB (φ n, j) i hi x (hKR hx)⟩
+  exact ⟨φ ∘ ψ, hφ.comp hψ, b', α', contDiffOn_univ.1 hb', contDiffOn_univ.1 hα',
+    fun i hi ↦ tendstoLocallyUniformlyOn_univ.1
+      ((hconv i hi).comp_tendsto hψ.tendsto_atTop),
+    fun i hi ↦ tendstoLocallyUniformlyOn_univ.1 (hconvα i hi)⟩
+
 /-- **Compactness modulo gauge.** Let `(bₙ, αₙ)` be pairs on a finite-dimensional space, with
 `bₙ` of class `C^(k+2)` and `αₙ` of class `C¹`, whose curvatures have derivatives of order at most
 `k + 1` bounded by `A` on the ball of radius `R` about `x₀`, and whose sections satisfy `|αₙ| ≤ C`
 and `|∇_{bₙ} αₙ| ≤ C` there. Then along a subsequence the radial gauge pairs
 `(K (dbₙ), uₙ αₙ)` converge on the ball: the radial connections, with their derivatives of order at
 most `k`, locally uniformly to a connection form `b` of class `Cᵏ`, and the sections locally
-uniformly to a continuous section. -/
+uniformly to a continuous section. This is the case `l = 0` of
+`exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv_radialGauge_mul`. -/
 theorem exists_strictMono_tendstoLocallyUniformlyOn_radialConnection [FiniteDimensional ℝ E]
     {b : ℕ → E → E [⋀^Fin 1]→L[ℝ] ℝ} {α : ℕ → E → ℂ} (x₀ : E) (R : ℝ) (k : ℕ)
     (hb : ∀ n, ContDiff ℝ (k + 2) (b n)) (hα : ∀ n, ContDiff ℝ 1 (α n)) {A C : ℝ}
@@ -319,24 +477,13 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_radialConnection [FiniteDime
           atTop (ball x₀ R)) ∧
       TendstoLocallyUniformlyOn (fun n ↦ radialGauge x₀ (b (φ n)) * α (φ n)) α' atTop
         (ball x₀ R) := by
-  have hb1 (n : ℕ) : ContDiff ℝ 1 (b n) := (hb n).of_le (by norm_cast; omega)
-  obtain ⟨M, hM0, hM⟩ := exists_forall_norm_iteratedFDeriv_radialConnection_le x₀ R k hb hF
-  -- The radial connections converge in `Cᵏ` along a subsequence.
-  obtain ⟨φ, hφ, b', hb', hconv⟩ := exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv
-    isOpen_ball k (fun n ↦ (contDiff_radialConnection x₀ ((hb n).of_le (by norm_cast))).contDiffOn)
-    fun K _ hK ↦ ⟨M, fun n j hj x hx ↦ hM n j hj x (hK hx)⟩
-  -- In radial gauge the sections are bounded with bounded derivatives, so they converge along a
-  -- further subsequence.
-  have hβ (n : ℕ) : ContDiff ℝ 1 (radialGauge x₀ (b (φ n)) * α (φ n)) :=
-    (contDiff_radialGauge x₀ (hb1 (φ n))).mul (hα (φ n))
-  obtain ⟨ψ, hψ, α', hα', hconvα⟩ := exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv
-    isOpen_ball 0 (fun n ↦ (hβ n).contDiffOn) fun K _ hK ↦ ⟨C + M * C, fun n j hj x hx ↦
-      norm_iteratedFDeriv_radialGauge_mul_le x₀ (hb1 (φ n))
-        ((hα (φ n)).differentiable one_ne_zero x) hM0 (hαC (φ n) x (hK hx))
-        (hcov (φ n) x (hK hx))
-        (by simpa using hM (φ n) 0 (Nat.zero_le _) x (hK hx)) hj⟩
-  exact ⟨φ ∘ ψ, hφ.comp hψ, b', α', hb', contDiffOn_zero.1 hα',
-    fun j hj ↦ (hconv j hj).comp_tendsto hψ.tendsto_atTop,
+  obtain ⟨φ, hφ, b', α', hb', hα', hconv, hconvα⟩ :=
+    exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv_radialGauge_mul x₀ R k 0
+      (Nat.zero_le _) hb (fun n ↦ by simpa using hα n) hF (C := C) fun n j hj x hx ↦ by
+        rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
+        · simpa using hαC n x hx
+        · simpa using hcov n x hx
+  exact ⟨φ, hφ, b', α', hb', contDiffOn_zero.1 hα', hconv,
     tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1 (hconvα 0 le_rfl)⟩
 
 end TauCeti.SeibergWitten

@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.Category
 public import TauCeti.AlgebraicGeometry.Scheme.Place.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Separated
-import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 import TauCeti.AlgebraicGeometry.Scheme.Place.Hom
 import TauCeti.AlgebraicGeometry.Scheme.Place.Injective
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic

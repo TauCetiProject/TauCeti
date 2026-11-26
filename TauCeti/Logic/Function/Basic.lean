@@ -10,6 +10,7 @@ public import Mathlib.Logic.Function.Defs
 /-!
 # Basic facts about functions
 
+Two distinct dependent functions witness that their domain is nonempty (`Function.nonempty_of_ne`).
 A function that is a retract of a bijection is bijective (`Function.bijective_of_retract`). A map
 into a subtype whose values are those of an injective map is injective
 (`Function.Injective.of_val_eq`).
@@ -18,6 +19,11 @@ into a subtype whose values are those of an injective map is injective
 public section
 
 namespace Function
+
+/-- Two distinct dependent functions witness that their domain is nonempty. -/
+theorem nonempty_of_ne {α : Sort*} {β : α → Sort*} {f₁ f₂ : ∀ a, β a} (h : f₁ ≠ f₂) :
+    Nonempty α :=
+  Classical.byContradiction fun hn ↦ h (funext fun a ↦ (hn ⟨a⟩).elim)
 
 /-- A map `Φ` that is a retract of a bijection `Φ'` is bijective: if `a`, `b` embed the source
 and target of `Φ` into those of `Φ'` with retractions `c`, `d`, `Φ'` restricts to `Φ` along them

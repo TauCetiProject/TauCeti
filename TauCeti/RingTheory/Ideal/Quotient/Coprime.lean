@@ -26,6 +26,8 @@ coprime to `𝔣` in `O`.
 
 * `Ideal.Quotient.isUnit_mk_iff`: the class of `x` is a unit modulo `C` exactly when
   `(x) + C = R`; no finiteness is needed here.
+* `Ideal.Quotient.isUnit_mk_span_singleton_iff`: the class of `b` is a unit modulo `a` exactly
+  when `a` and `b` are coprime.
 * `Ideal.exists_pow_sub_one_mem_of_sup_eq_top`: an element coprime to an ideal with finite
   quotient has a positive power congruent to `1`.
 * `Ideal.span_singleton_sup_comap_eq_top`: coprimality to an ideal with finite quotient descends
@@ -50,6 +52,12 @@ theorem Quotient.isUnit_mk_iff {x : R} : IsUnit (Quotient.mk C x) ↔ span {x} �
     refine IsUnit.of_mul_eq_one_right (Quotient.mk C a) ?_
     rw [← map_mul, ← map_one (Quotient.mk C), ← hab, map_add, Quotient.eq_zero_iff_mem.mpr hb,
       add_zero]
+
+/-- The class of `b` is a unit of `R ⧸ (a)` exactly when `a` and `b` are coprime. -/
+theorem Quotient.isUnit_mk_span_singleton_iff {a b : R} :
+    IsUnit (Quotient.mk (span {a}) b) ↔ IsCoprime a b := by
+  rw [Quotient.isUnit_mk_iff, ← isCoprime_iff_sup_eq, isCoprime_span_singleton_iff,
+    isCoprime_comm]
 
 /-- An element coprime to an ideal `C` with finite quotient ring has a positive power congruent
 to `1` modulo `C`. -/

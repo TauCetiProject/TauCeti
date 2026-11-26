@@ -43,9 +43,10 @@ the discrete topology imposed by `TauCeti.ForcedDiscrete`, is a discrete `Gal(L/
   `K`-algebra, under the postcomposition action of `Gal(L/K)`, is open.
 * `AlgEquiv.autCongr_mem_fixingSubgroup_iff`: conjugation by `e : L ≃ₐ[K] L'` carries the
   subgroup fixing `e⁻¹(E)` onto the subgroup fixing `E`.
-* `AlgEquiv.continuous_autCongr`, `AlgEquiv.autContinuousCongr`: an isomorphism of field
-  extensions `L ≃ₐ[K] L'` induces a topological group isomorphism `Gal(L/K) ≃ₜ* Gal(L'/K)` by
-  conjugation.
+* `AlgEquiv.continuous_autCongr`: an isomorphism of field extensions `L ≃ₐ[K] L'` induces a
+  continuous isomorphism `Gal(L/K) ≃* Gal(L'/K)` by conjugation.
+* `AlgEquiv.autCongrContinuousMulEquiv`: that conjugation, as an isomorphism of topological
+  groups `Gal(L/K) ≃ₜ* Gal(L'/K)`.
 * `AlgEquiv.continuous_restrictScalarsHom`, `AlgEquiv.mem_range_restrictScalarsHom_iff`,
   `AlgEquiv.isClosed_range_restrictScalarsHom`, `AlgEquiv.restrictScalarsHomRangeEquiv`: for any
   field tower `F → K → L`, restriction of scalars `Gal(L/K) →* Gal(L/F)` is continuous with image
@@ -172,31 +173,27 @@ theorem AlgEquiv.continuous_autCongr {L' : Type*} [Field L'] [Algebra K L'] (e :
     ⟨E.map e.symm.toAlgHom, inferInstance,
       fun σ hσ ↦ hEs ((e.autCongr_mem_fixingSubgroup_iff E).2 hσ)⟩
 
-/-- **An isomorphism of field extensions induces an isomorphism of topological Galois groups.**
-Conjugation by `e : L ≃ₐ[K] L'` upgrades `e.autCongr` to `Gal(L/K) ≃ₜ* Gal(L'/K)`. -/
-def AlgEquiv.autContinuousCongr {L' : Type*} [Field L'] [Algebra K L'] (e : L ≃ₐ[K] L') :
-    Gal(L/K) ≃ₜ* Gal(L'/K) where
-  __ := e.autCongr
+/-- **Galois groups of isomorphic extensions are isomorphic topological groups.** An isomorphism
+`e : L ≃ₐ[K] L'` of field extensions of `K` conjugates `Gal(L/K)` onto `Gal(L'/K)`,
+`σ ↦ e ∘ σ ∘ e⁻¹`, and this is a homeomorphism for the Krull topologies
+(`AlgEquiv.continuous_autCongr`). It is `AlgEquiv.autCongr` with its continuity recorded. -/
+def AlgEquiv.autCongrContinuousMulEquiv {L' : Type*} [Field L'] [Algebra K L']
+    (e : L ≃ₐ[K] L') : Gal(L/K) ≃ₜ* Gal(L'/K) where
+  toMulEquiv := e.autCongr
   continuous_toFun := e.continuous_autCongr
   continuous_invFun := e.symm.continuous_autCongr
 
+/-- `e.autCongrContinuousMulEquiv` sends `σ` to its conjugate `e.autCongr σ`. -/
 @[simp]
-theorem AlgEquiv.autContinuousCongr_apply {L' : Type*} [Field L'] [Algebra K L']
-    (e : L ≃ₐ[K] L') (σ : Gal(L/K)) : e.autContinuousCongr σ = e.autCongr σ := (rfl)
+theorem AlgEquiv.autCongrContinuousMulEquiv_apply {L' : Type*} [Field L'] [Algebra K L']
+    (e : L ≃ₐ[K] L') (σ : Gal(L/K)) : e.autCongrContinuousMulEquiv σ = e.autCongr σ :=
+  (rfl)
 
+/-- The inverse of conjugation by `e` is conjugation by `e⁻¹`. -/
 @[simp]
-theorem AlgEquiv.autContinuousCongr_refl :
-    (AlgEquiv.refl : L ≃ₐ[K] L).autContinuousCongr = ContinuousMulEquiv.refl _ := by ext; rfl
-
-@[simp]
-theorem AlgEquiv.autContinuousCongr_symm {L' : Type*} [Field L'] [Algebra K L']
-    (e : L ≃ₐ[K] L') : e.autContinuousCongr.symm = e.symm.autContinuousCongr := (rfl)
-
-@[simp]
-theorem AlgEquiv.autContinuousCongr_trans {L' L'' : Type*} [Field L'] [Field L'']
-    [Algebra K L'] [Algebra K L''] (e₁ : L ≃ₐ[K] L') (e₂ : L' ≃ₐ[K] L'') :
-    e₁.autContinuousCongr.trans e₂.autContinuousCongr = (e₁.trans e₂).autContinuousCongr := by
-  ext; rfl
+theorem AlgEquiv.autCongrContinuousMulEquiv_symm {L' : Type*} [Field L'] [Algebra K L']
+    (e : L ≃ₐ[K] L') : e.autCongrContinuousMulEquiv.symm = e.symm.autCongrContinuousMulEquiv :=
+  (rfl)
 
 section RestrictScalars
 

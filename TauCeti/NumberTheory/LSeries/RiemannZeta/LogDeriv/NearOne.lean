@@ -1,0 +1,126 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
+public import Mathlib.NumberTheory.LSeries.Nonvanishing
+public import TauCeti.Analysis.Meromorphic.LogDeriv
+import Mathlib.NumberTheory.Harmonic.ZetaAsymp
+import TauCeti.Algebra.Order.GroupWithZero.Basic
+import TauCeti.Analysis.Calculus.LogDeriv
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
+
+/-!
+# The logarithmic derivative of the Riemann zeta function near `s = 1`
+
+The function `ζ′/ζ(s) + (s - 1)⁻¹` is bounded on every compact subset of the closed half-plane
+`1 ≤ re s`, punctured at `s = 1`. In particular there is one absolute constant `C` with
+`‖-ζ′/ζ(1 + η) - η⁻¹‖ ≤ C` (and hence `-(ζ′/ζ(1 + η)).re ≤ η⁻¹ + C` with `C ≥ 0`) for all
+`0 < η ≤ 1`. The constant term of `ζ′/ζ` at `s = 1`, its finite part in the sense of
+`TauCeti.logDerivFinitePart`, is Euler's constant.
+
+The proof identifies `ζ′/ζ(s) + (s - 1)⁻¹` with the logarithmic derivative of the regularized
+function `(s - 1) ζ(s)`, which is Mathlib's `DirichletCharacter.LFunctionTrivChar₁` at level one.
+Its negative logarithmic derivative is continuous wherever `ζ` does not vanish, including at `s = 1`
+(`DirichletCharacter.continuousOn_neg_logDeriv_LFunctionTrivChar₁`), and `ζ` has no zero on
+`1 ≤ re s` (`riemannZeta_ne_zero_of_one_le_re`).
+
+## Main results
+
+* `TauCeti.logDeriv_riemannZeta_add_inv_sub_one`
+* `TauCeti.logDerivFinitePart_riemannZeta_one`
+* `IsCompact.exists_norm_logDeriv_riemannZeta_add_inv_sub_one_le`
+* `TauCeti.exists_norm_neg_logDeriv_riemannZeta_one_add_sub_inv_le`
+* `TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le`
+* `TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le_inv_add_mul`
+-/
+
+public section
+
+open Complex DirichletCharacter
+
+namespace TauCeti
+
+/-- Away from `s = 1` and the zeros of `ζ`, `ζ′/ζ(s) + (s - 1)⁻¹` is the logarithmic derivative of
+the regularized function `(s - 1) ζ(s)`. -/
+theorem logDeriv_riemannZeta_add_inv_sub_one {s : ℂ} (hs : s ≠ 1) (hζ : riemannZeta s ≠ 0) :
+    logDeriv riemannZeta s + (s - 1)⁻¹ = logDeriv (LFunctionTrivChar₁ 1) s := by
+  have hs' : s - 1 ≠ 0 := sub_ne_zero_of_ne hs
+  rw [logDeriv_apply, logDeriv_apply, deriv_LFunctionTrivChar₁_apply_of_ne_one _ hs,
+    LFunctionTrivChar₁_one_apply_of_ne_one hs, LFunctionTrivChar, LFunction_modOne_eq]
+  field_simp
+
+/-- The finite part of `ζ′ / ζ` at `1` is the Euler–Mascheroni constant. -/
+@[simp] theorem logDerivFinitePart_riemannZeta_one :
+    logDerivFinitePart riemannZeta 1 = (Real.eulerMascheroniConstant : ℂ) := by
+  have ha := differentiable_riemannZeta₁.analyticAt (z := (1 : ℂ))
+  have hlog : AnalyticAt ℂ (logDeriv riemannZeta₁) 1 := ha.logDeriv (by simp)
+  rw [hlog.logDerivFinitePart_eq, logDeriv_apply]
+  · simp
+  · filter_upwards [log_deriv_riemannZeta_eq_neg_inv_sub_add] with s hs
+    simp [logDeriv_apply, hs, meromorphicOrderAt_riemannZeta_one]
+    ring
+
+end TauCeti
+
+/-- On a compact subset of the closed half-plane `1 ≤ re s`, the function `ζ′/ζ(s) + (s - 1)⁻¹`
+is bounded away from `s = 1`. -/
+theorem IsCompact.exists_norm_logDeriv_riemannZeta_add_inv_sub_one_le {K : Set ℂ}
+    (hK : IsCompact K) (hK₁ : K ⊆ {s | 1 ≤ s.re}) :
+    ∃ C, ∀ s ∈ K, s ≠ 1 → ‖logDeriv riemannZeta s + (s - 1)⁻¹‖ ≤ C := by
+  have hcont := (continuousOn_neg_logDeriv_LFunctionTrivChar₁ 1).mono fun s hs ↦ by
+    rcases eq_or_ne s 1 with rfl | _
+    · exact .inl rfl
+    · refine .inr ?_
+      rw [LFunctionTrivChar, LFunction_modOne_eq]
+      exact riemannZeta_ne_zero_of_one_le_re (hK₁ hs)
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hcont
+  refine ⟨C, fun s hs hs₁ ↦ ?_⟩
+  have := hC s hs
+  rwa [neg_div, norm_neg, ← logDeriv_apply, ← TauCeti.logDeriv_riemannZeta_add_inv_sub_one hs₁
+    (riemannZeta_ne_zero_of_one_le_re (hK₁ hs))] at this
+
+namespace TauCeti
+
+/-- **The pole of `-ζ′/ζ` at `s = 1`.** One absolute constant `C` satisfies
+`‖-ζ′/ζ(1 + η) - η⁻¹‖ ≤ C` for every `0 < η ≤ 1`. -/
+theorem exists_norm_neg_logDeriv_riemannZeta_one_add_sub_inv_le :
+    ∃ C, ∀ η : ℝ, 0 < η → η ≤ 1 → ‖-logDeriv riemannZeta (1 + η) - (η : ℂ)⁻¹‖ ≤ C := by
+  obtain ⟨C, hC⟩ := ((isCompact_Icc (a := (0 : ℝ)) (b := 1)).image
+    (continuous_const.add continuous_ofReal)).exists_norm_logDeriv_riemannZeta_add_inv_sub_one_le
+      (K := (fun η : ℝ ↦ 1 + (η : ℂ)) '' Set.Icc 0 1) (by
+        rintro _ ⟨η, hη, rfl⟩
+        simpa using hη.1)
+  refine ⟨C, fun η hη hη₁ ↦ ?_⟩
+  have := hC _ ⟨η, ⟨hη.le, hη₁⟩, rfl⟩ (by simpa using hη.ne')
+  rwa [add_sub_cancel_left, ← norm_neg, neg_add] at this
+
+/-- **Real-part pole bound for `-ζ′/ζ` on `(1, 2]`.** There is a constant `C ≥ 0` such that
+`-(logDeriv riemannZeta (1 + η)).re ≤ η⁻¹ + C` for every `0 < η ≤ 1`. -/
+theorem exists_neg_re_logDeriv_riemannZeta_one_add_le :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ {η : ℝ}, 0 < η → η ≤ 1 → -(logDeriv riemannZeta (1 + η)).re ≤ η⁻¹ + C := by
+  obtain ⟨C₀, hC₀⟩ := exists_norm_neg_logDeriv_riemannZeta_one_add_sub_inv_le
+  refine ⟨max 0 C₀, le_max_left _ _, fun {η} hη hη₁ ↦ ?_⟩
+  have hle : (-logDeriv riemannZeta (1 + η) - (η : ℂ)⁻¹).re ≤ max 0 C₀ :=
+    (le_abs_self _).trans <| (Complex.abs_re_le_norm _).trans <|
+      (hC₀ η hη hη₁).trans (le_max_right _ _)
+  have hre : ((η : ℂ)⁻¹).re = η⁻¹ := by rw [← ofReal_inv, ofReal_re]
+  rw [sub_re, neg_re, hre] at hle
+  linarith
+
+/-- **Scaled real-part pole bound for `-ζ′/ζ` on `(1, 2]`.** For any positive threshold `L₀ > 0`,
+there is a constant `C ≥ 0` such that `-(logDeriv riemannZeta (1 + η)).re ≤ η⁻¹ + C * L` for
+every `0 < η ≤ 1` and `L₀ ≤ L`. -/
+theorem exists_neg_re_logDeriv_riemannZeta_one_add_le_inv_add_mul {L₀ : ℝ} (hL₀ : 0 < L₀) :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ {η L : ℝ}, 0 < η → η ≤ 1 → L₀ ≤ L → -(logDeriv riemannZeta (1 + η)).re ≤ η⁻¹ + C * L := by
+  obtain ⟨C₀, hC₀, h⟩ := exists_neg_re_logDeriv_riemannZeta_one_add_le
+  exact ⟨C₀ / L₀, div_nonneg hC₀ hL₀.le, fun hη hη₁ hL ↦
+    (h hη hη₁).trans (add_le_add_right (TauCeti.le_div_mul_of_le hC₀ hL₀ hL) _)⟩
+
+end TauCeti

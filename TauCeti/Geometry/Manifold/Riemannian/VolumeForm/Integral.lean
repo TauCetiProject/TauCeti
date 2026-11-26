@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
+public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ZeroDim
+import TauCeti.Geometry.Manifold.Riemannian.FormMetric
 import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
 
 /-!
@@ -45,12 +47,16 @@ if and only if `η = vol`.
   characterization against `vol` on compact manifolds.
 * `TauCeti.integralTopForm_smul_riemannianVolumeForm_nonneg`: `0 ≤ f` gives `0 ≤ ∫_M f vol`.
 * `TauCeti.integralTopForm_mul_smul_riemannianVolumeForm`: `∫_M c f vol = c ∫_M f vol`.
-* `TauCeti.isSmoothForm_smul_riemannianVolumeForm`: `f vol` is a continuous top form when `f`
-  is continuous.
+* `TauCeti.isSmoothForm_zero_riemannianVolumeForm`,
+  `TauCeti.isSmoothForm_smul_riemannianVolumeForm`: for a continuous metric, `vol` is a continuous
+  top form, and so is `f vol` when `f` is continuous.
 * `TauCeti.integralTopForm_add_smul_riemannianVolumeForm`: on a compact manifold,
   `∫_M (f + g) vol = ∫_M f vol + ∫_M g vol` for continuous `f` and `g`.
 * `TauCeti.integralTopForm_smul_riemannianVolumeForm_mono`: on a compact manifold, `f ≤ g`
   gives `∫_M f vol ≤ ∫_M g vol` for continuous `f` and `g`.
+* `TauCeti.abs_integralTopForm_inner_smul_riemannianVolumeForm_le`: on a compact manifold, the
+  `L²` pairing of continuous forms satisfies `|∫_M ⟨α, β⟩ vol| ≤ K ∫_M |β| vol` when `|α| ≤ K`
+  pointwise.
 
 ## References
 
@@ -269,30 +275,30 @@ nonnegative, on an oriented Riemannian manifold of positive dimension. -/
 theorem integralTopForm_smul_riemannianVolumeForm_nonneg [NeZero m] {f : M → ℝ}
     (hf : ∀ x, 0 ≤ f x) :
     0 ≤ integralTopForm o (fun x ↦ f x • riemannianVolumeForm o x) :=
-  integralTopForm_nonneg o fun x c hc ↦ by
-    let := o.fact_finrank_tangentSpace x
-    rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, riemannianVolumeForm_apply]
-    exact mul_nonneg (hf x) (Orientation.volumeForm_apply_pos_iff.2 hc).le
+  integralTopForm_smul_nonneg o (fun x c hc ↦ (riemannianVolumeForm_apply_pos o x c hc).le) hf
 
 /-- Constant factors come out of the integral against the Riemannian volume form:
 `∫_M c f vol = c ∫_M f vol`. -/
 theorem integralTopForm_mul_smul_riemannianVolumeForm (c : ℝ) (f : M → ℝ) :
     integralTopForm o (fun x ↦ (c * f x) • riemannianVolumeForm o x) =
-      c * integralTopForm o (fun x ↦ f x • riemannianVolumeForm o x) := by
-  rw [← integralTopForm_smul]
-  congr 1
-  funext x
-  rw [Pi.smul_apply, mul_smul]
+      c * integralTopForm o (fun x ↦ f x • riemannianVolumeForm o x) :=
+  integralTopForm_mul_smul o c f _
 
 section Continuous
 
 variable [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
 
+/-- For a continuous metric, the Riemannian volume form is a continuous top form. -/
+theorem isSmoothForm_zero_riemannianVolumeForm : IsSmoothForm I 0 (riemannianVolumeForm o) := by
+  -- `isSmoothForm_riemannianVolumeForm` asks for a `C^(n + 1)` manifold; at `n = 0` instance
+  -- search does not reduce `0 + 1` to the `1` of the ambient `IsManifold I 1 M`.
+  have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
+  exact isSmoothForm_riemannianVolumeForm o
+
 /-- For a continuous function `f`, the top form `f vol` is continuous. -/
 theorem isSmoothForm_smul_riemannianVolumeForm {f : M → ℝ} (hf : Continuous f) :
-    IsSmoothForm I 0 (fun x ↦ f x • riemannianVolumeForm o x) := by
-  have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
-  exact (isSmoothForm_riemannianVolumeForm o).fun_smul (contMDiff_zero_iff.2 hf)
+    IsSmoothForm I 0 (fun x ↦ f x • riemannianVolumeForm o x) :=
+  (isSmoothForm_zero_riemannianVolumeForm o).fun_smul_of_continuous hf
 
 variable [CompactSpace M]
 
@@ -302,12 +308,8 @@ theorem integralTopForm_add_smul_riemannianVolumeForm {f g : M → ℝ} (hf : Co
     (hg : Continuous g) :
     integralTopForm o (fun x ↦ (f x + g x) • riemannianVolumeForm o x) =
       integralTopForm o (fun x ↦ f x • riemannianVolumeForm o x) +
-        integralTopForm o (fun x ↦ g x • riemannianVolumeForm o x) := by
-  rw [← integralTopForm_add_of_compactSpace o (isSmoothForm_smul_riemannianVolumeForm o hf)
-    (isSmoothForm_smul_riemannianVolumeForm o hg)]
-  congr 1
-  funext x
-  rw [Pi.add_apply, add_smul]
+        integralTopForm o (fun x ↦ g x • riemannianVolumeForm o x) :=
+  integralTopForm_add_smul_of_compactSpace o (isSmoothForm_zero_riemannianVolumeForm o) hf hg
 
 /-- **Monotonicity of the integral against the Riemannian volume form**: on a compact oriented
 Riemannian manifold of positive dimension, continuous functions with `f ≤ g` satisfy
@@ -315,12 +317,39 @@ Riemannian manifold of positive dimension, continuous functions with `f ≤ g` s
 theorem integralTopForm_smul_riemannianVolumeForm_mono [NeZero m] {f g : M → ℝ}
     (hf : Continuous f) (hg : Continuous g) (hfg : ∀ x, f x ≤ g x) :
     integralTopForm o (fun x ↦ f x • riemannianVolumeForm o x) ≤
-      integralTopForm o (fun x ↦ g x • riemannianVolumeForm o x) := by
-  have h :=
-    integralTopForm_add_smul_riemannianVolumeForm o (g := fun x ↦ g x - f x) hf (hg.sub hf)
-  simp only [add_sub_cancel] at h
-  rw [h, le_add_iff_nonneg_right]
-  exact integralTopForm_smul_riemannianVolumeForm_nonneg o fun x ↦ sub_nonneg.2 (hfg x)
+      integralTopForm o (fun x ↦ g x • riemannianVolumeForm o x) :=
+  integralTopForm_smul_mono_of_compactSpace o (isSmoothForm_zero_riemannianVolumeForm o)
+    (fun x c hc ↦ (riemannianVolumeForm_apply_pos o x c hc).le) hf hg hfg
+
+/-- **The `L²` pairing against a bounded form.** On a compact oriented Riemannian manifold, if a
+continuous `k`-form `α` has pointwise norm `|α| = √⟨α, α⟩ ≤ K`, then its `L²` pairing with a
+continuous `k`-form `β` satisfies `|∫_M ⟨α, β⟩ vol| ≤ K ∫_M |β| vol`. This is the fibrewise
+Cauchy–Schwarz inequality `|⟨α, β⟩| ≤ |α| |β|`, integrated against the Riemannian measure. -/
+theorem abs_integralTopForm_inner_smul_riemannianVolumeForm_le {k : ℕ}
+    {α β : RoughForm I M ℝ k} (hα : IsSmoothForm I 0 α) (hβ : IsSmoothForm I 0 β) {K : ℝ}
+    (hαK : ∀ x, √(alternatingFormInner (TangentSpace I x) k (α x) (α x)) ≤ K) :
+    |integralTopForm o (fun x ↦
+        alternatingFormInner (TangentSpace I x) k (α x) (β x) • riemannianVolumeForm o x)| ≤
+      K * integralTopForm o (fun x ↦
+        √(alternatingFormInner (TangentSpace I x) k (β x) (β x)) • riemannianVolumeForm o x) := by
+  have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
+  have hαβ := (hα.contMDiff_alternatingFormInner hβ).continuous
+  have hg : Continuous fun x ↦ K * √(alternatingFormInner (TangentSpace I x) k (β x) (β x)) :=
+    continuous_const.mul (hβ.contMDiff_alternatingFormInner hβ).continuous.sqrt
+  -- Fibrewise Cauchy–Schwarz: `|⟨α, β⟩| ≤ |α| |β| ≤ K |β|`.
+  have hpt (x : M) : |alternatingFormInner (TangentSpace I x) k (α x) (β x)| ≤
+      K * √(alternatingFormInner (TangentSpace I x) k (β x) (β x)) :=
+    (α x).abs_alternatingFormInner_le_sqrt_mul_sqrt (β x) |>.trans
+      (mul_le_mul_of_nonneg_right (hαK x) (Real.sqrt_nonneg _))
+  let : MeasurableSpace M := borel M
+  have : BorelSpace M := ⟨rfl⟩
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 0)
+  rw [← integralTopForm_mul_smul_riemannianVolumeForm,
+    integralTopForm_smul_riemannianVolumeForm o hαβ (.of_compactSpace _),
+    integralTopForm_smul_riemannianVolumeForm o hg (.of_compactSpace _), ← Real.norm_eq_abs]
+  exact norm_integral_le_of_norm_le (hg.integrable_of_hasCompactSupport (.of_compactSpace _))
+    (ae_of_all _ hpt)
 
 end Continuous
 

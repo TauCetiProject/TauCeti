@@ -40,12 +40,16 @@ When `h` is smooth and nowhere zero, this extends by continuity across the zeros
   `Δ (log |α|²) = (|α|² - 1) / 4 - 2 E`, where `E` is the curvature defect `equation x z 0`.
 * `TauCeti.Vortex.laplacian_log_normSq_of_equation_eq_zero`: the scalar equation
   `Δ (log |α|²) = (|α|² - 1) / 4` near a nonzero point of a solution.
+* `TauCeti.Vortex.laplacian_log_normSq_eq_exp`: the same equation in the form
+  `Δ ℓ = (exp ℓ - 1) / 4` for `ℓ = log |α|²`, at a point where `|α|² > 0`.
 * `TauCeti.Vortex.laplacian_log_norm_eq`: the regularized scalar equation for `log |h|`, where
   `α = h f` with `f` holomorphic and nonzero at the point.
 * `TauCeti.Vortex.laplacian_log_norm_eq_of_dense`: the same equation everywhere on the plane, when
   `f` is entire and its zeros have dense complement.
 * `TauCeti.Vortex.normSq_le_one_of_tendsto`: a `C²` solution on the whole plane with
   `|α| → 1` at infinity satisfies `|α| ≤ 1` everywhere, by the maximum principle.
+* `TauCeti.Vortex.normSq_le_one_of_tendsto_sectionValue_mul_inv_pow`: the same bound for a
+  plane vortex with the degree-`m` end framing.
 
 ## References
 
@@ -205,6 +209,16 @@ theorem laplacian_log_normSq_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ
     hsol.self_of_nhds]
   simp
 
+/-- The scalar equation of a vortex in exponential form: near a point where `|α|² > 0`, the
+logarithmic modulus `ℓ = log |α|²` of a solution satisfies `Δ ℓ = (exp ℓ - 1) / 4`. -/
+theorem laplacian_log_normSq_eq_exp {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : ContDiffAt ℝ 2 (fun w ↦ x w 2) z) (hq : ContDiffAt ℝ 2 (fun w ↦ x w 3) z)
+    (hα : 0 < 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (hsol : ∀ᶠ w in 𝓝 z, equation x w = 0) :
+    Δ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z =
+      (Real.exp (Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))) - 1) / 4 := by
+  rw [laplacian_log_normSq_of_equation_eq_zero hp hq (right_ne_zero_of_mul hα.ne') hsol,
+    Real.exp_log hα]
+
 /-- **The scalar equation for the amplitude of a vortex.** Let `x` solve the vortex equation near
 `z`, with section `C²` at `z`, and suppose that its section is `α = h f` near `z`, where `h`
 is `C²` at `z` with `h z ≠ 0` and `f` is complex analytic at `z` with `f z ≠ 0`. Then
@@ -281,5 +295,23 @@ theorem normSq_le_one_of_tendsto {x : ℂ → EuclideanSpace ℝ (Fin 4)}
   · rw [laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt hα
       (Eventually.of_forall hsol)]
     linarith
+
+/-- A vortex on the whole plane whose section satisfies `|α| → 1` at infinity has
+`log |α|² ≤ 0` everywhere, by `TauCeti.Vortex.normSq_le_one_of_tendsto`. -/
+theorem log_normSq_nonpos {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (z : ℂ) :
+    Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) ≤ 0 :=
+  Real.log_nonpos (by positivity) (normSq_le_one_of_tendsto hp hq hsol hlim z)
+
+/-- A plane vortex with the degree-`m` end framing satisfies `|α|² ≤ 1` everywhere: the framed
+case of `TauCeti.Vortex.normSq_le_one_of_tendsto`. -/
+theorem normSq_le_one_of_tendsto_sectionValue_mul_inv_pow {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0) {m : ℕ}
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    (z : ℂ) : 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 1 :=
+  normSq_le_one_of_tendsto ((contDiff_piLp 2).1 hx 2) ((contDiff_piLp 2).1 hx 3) hsol
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z
 
 end TauCeti.Vortex

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.YSeed.Basic
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Word
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Word.Basic
 
 /-!
 # Mutation words and reachable Y-seeds

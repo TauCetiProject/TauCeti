@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import Mathlib.Topology.LocallyConstant.Algebra
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 
 /-!
 # De Rham cohomology in degree zero
@@ -28,6 +29,7 @@ separation or completeness hypotheses on the model.
 
 * `TauCeti.mem_closedForms_zero_iff`: a smooth `0`-form is closed exactly when its
   function is locally constant.
+* `TauCeti.mextDerivₗ_ofFunction_const`: the differential of a constant function vanishes.
 * `TauCeti.closedFormsZeroEquiv`: closed smooth `0`-forms are locally constant functions.
 * `TauCeti.deRhamCohomologyZeroEquiv`: `H⁰_dR(M) ≃ₗ[ℝ] LocallyConstant M ℝ`.
 * `TauCeti.deRhamCohomology.const`: the degree-zero class of a constant real function.
@@ -70,6 +72,14 @@ theorem mem_closedForms_zero_iff (φ : SmoothForm I M ℝ 0) :
   have h := mextDeriv_ofFunction_eq_zero_iff
     ((isSmoothForm_ofFunction_iff.mp hφ).mdifferentiable (by simp))
   rwa [← RoughForm.eq_ofFunction, ← mem_closedForms] at h
+
+/-- The exterior derivative of a constant function vanishes. -/
+@[simp]
+theorem mextDerivₗ_ofFunction_const (c : ℝ) :
+    mextDerivₗ I 0 (SmoothForm.ofFunction (ContMDiffMap.const c : C^∞⟮I, M; ℝ⟯)) = 0 := by
+  rw [← mem_closedForms_iff_mextDerivₗ_eq_zero, mem_closedForms_zero_iff]
+  simp only [SmoothForm.coe_ofFunction, RoughForm.ofFunction_apply, ContMDiffMap.const_apply]
+  exact IsLocallyConstant.const c
 
 variable (M) in
 /-- Closed smooth real `0`-forms are exactly the locally constant real functions. -/

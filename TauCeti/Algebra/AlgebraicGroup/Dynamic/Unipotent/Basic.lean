@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Parabolic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.ClosedSubgroup
-import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
+import TauCeti.Algebra.Coalgebra.Comodule.Character
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Laurent
 
 /-!
@@ -55,17 +55,6 @@ variable {R : Type u} {H : Type v} {A : Type w}
 variable [Field R] [Semiring H] [_root_.HopfAlgebra R H]
 variable [CommRing A] [Algebra R A]
 
-private theorem charpoly_conjugate {B : Type w} [CommRing B] [Algebra R B]
-    (M : FGComoduleCat.{u, v, u} R H) (x y : WithConv (H →ₐ[R] B)) :
-    (Comodule.endOfPoint M (x * y * x⁻¹).ofConv).charpoly =
-      (Comodule.endOfPoint M y.ofConv).charpoly := by
-  have hEnd : Comodule.endOfPoint M (x * y * x⁻¹).ofConv =
-      (Comodule.pointsAction M x).conj (Comodule.endOfPoint M y.ofConv) := by
-    rw [← Comodule.pointsAction_toLinearMap M]
-    ext z
-    simp [LinearEquiv.conj_apply, Comodule.pointsAction_toLinearMap]
-  rw [hEnd, LinearEquiv.charpoly_conj]
-
 /-- Over the Laurent polynomials, the coefficient matrix of the extension of the conjugate of `g`
 has the same characteristic polynomial as that of the constant matrix of `g`. -/
 private theorem charpoly_map_toLaurent_extend_coefficientMatrix
@@ -94,7 +83,7 @@ private theorem charpoly_map_toLaurent_extend_coefficientMatrix
     _ = (Comodule.endOfPoint M (conjugate A l g).ofConv).charpoly := by
       rw [← Comodule.toMatrix_endOfPoint b, LinearMap.charpoly_toMatrix]
     _ = (Comodule.endOfPoint M (constPoint A g).ofConv).charpoly := by
-      rw [conjugate_apply, charpoly_conjugate]
+      rw [conjugate_apply, Comodule.charpoly_endOfPoint_mul_mul_inv]
     _ = (Comodule.endOfPoint M (f.comp g.ofConv)).charpoly := by rw [constPoint_apply]
     _ = (Comodule.endOfPoint M g.ofConv).charpoly.map f :=
       Comodule.charpoly_endOfPoint_comp g.ofConv f

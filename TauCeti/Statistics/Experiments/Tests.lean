@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Randomized tests and their power
@@ -49,12 +50,17 @@ threshold and interval tests are evaluated by `simp` lemmas such as `thresholdTe
   integrable for every finite measure, as is its product with an integrable function.
 * `TauCeti.IsStatisticalTest.integral_mem_Icc`: the integral of a test under a probability
   measure lies in `[0, 1]`.
+* `TauCeti.isStatisticalTest_indicator_one_iff`, `TauCeti.testPower_indicator_one`: the
+  nonrandomized test rejecting on `s` is a test iff `s` is measurable, and its power at `θ` is
+  the probability of `s` under `P θ`.
 * `TauCeti.IsUniformlyMostPowerfulTest.hasTestLevel`,
   `TauCeti.IsUniformlyMostPowerfulUnbiasedTest.hasTestLevel`: optimal tests have the level.
 * `TauCeti.IsSimilarTest.hasTestLevel`, `TauCeti.isSimilarTest_const`: a similar test has the
   level, and a constant in `[0, 1]` is similar of its own size under probability laws.
 * `TauCeti.isStatisticalTest_thresholdTest`, `TauCeti.isStatisticalTest_intervalTest`: threshold
   and interval tests in measurable statistics are tests.
+* `TauCeti.integral_thresholdTest`: the integral `P(T > c) + γ P(T = c)` of a threshold test, when
+  the two events have finite measure and are null-measurable.
 
 ## References
 
@@ -62,7 +68,8 @@ threshold and interval tests are evaluated by `simp` lemmas such as `thresholdTe
 
 The definitions and lemmas are adapted from the lean-CKSD project
 (<https://github.com/bjbraams/lean-CKSD>), files `CKSD/Inference/Basic.lean`,
-`CKSD/Inference/Model.lean` and `CKSD/Inference/Testing.lean`.
+`CKSD/Inference/Model.lean`, `CKSD/Inference/Testing.lean` and
+`CKSD/Inference/NeymanPearson.lean`.
 -/
 
 public section
@@ -164,6 +171,22 @@ theorem integral_one_sub (hφ : IsStatisticalTest φ) (μ : Measure X) [IsProbab
   simp
 
 end IsStatisticalTest
+
+/-- The nonrandomized test `s.indicator 1`, rejecting exactly on `s`, is a test iff its rejection
+region `s` is measurable. -/
+@[simp]
+theorem isStatisticalTest_indicator_one_iff {s : Set X} :
+    IsStatisticalTest (s.indicator (1 : X → ℝ)) ↔ MeasurableSet s := by
+  rw [isStatisticalTest_iff, Pi.one_def, measurable_indicator_const_iff]
+  exact and_iff_left_of_imp fun _ x ↦ ⟨indicator_nonneg (fun _ _ ↦ zero_le_one) x,
+    indicator_le' (fun _ _ ↦ le_rfl) (fun _ _ ↦ zero_le_one) x⟩
+
+/-- The power at `θ` of the nonrandomized test with measurable rejection region `s` is the
+probability `(P θ).real s` of rejecting. -/
+@[simp]
+theorem testPower_indicator_one {s : Set X} (hs : MeasurableSet s) :
+    testPower P (s.indicator 1) θ = (P θ).real s := by
+  rw [testPower_def, integral_indicator_one hs]
 
 /-! ### Tests of a given level -/
 
@@ -308,6 +331,38 @@ theorem isStatisticalTest_thresholdTest [TopologicalSpace α] [OrderClosedTopolo
     exact Measurable.ite (hT measurableSet_Ioi) measurable_const
       (Measurable.ite (hT (measurableSet_singleton c)) measurable_const measurable_const)
   · rcases lt_trichotomy (T x) c with h | h | h <;> simp [h, hγ]
+
+/-- **The integral of a threshold test.** For a measure `P` under which the rejection region
+`{T > c}` and the boundary `{T = c}` are null-measurable sets of finite measure, the integral of
+`thresholdTest T c γ` is `P(T > c) + γ P(T = c)`. When `α` carries a measurable structure in
+which `Ioi c` and `{c}` are measurable (such as the Borel σ-algebra of an order-closed topology),
+an almost everywhere measurable `T` and a finite `P` satisfy these hypotheses. When moreover `P`
+is a probability law, `T` is measurable and `γ ∈ [0, 1]`, the threshold test is a test
+(`TauCeti.isStatisticalTest_thresholdTest`) and this integral is its rejection probability under
+`P`. -/
+@[simp]
+theorem integral_thresholdTest {P : Measure X} {T : X → α} {c : α}
+    (hs : NullMeasurableSet (T ⁻¹' Ioi c) P) (ht : NullMeasurableSet (T ⁻¹' {c}) P)
+    (hs' : P (T ⁻¹' Ioi c) ≠ ⊤) (ht' : P (T ⁻¹' {c}) ≠ ⊤) (γ : ℝ) :
+    ∫ x, thresholdTest T c γ x ∂P = P.real (T ⁻¹' Ioi c) + γ * P.real (T ⁻¹' {c}) := by
+  -- The test is the indicator of the rejection region plus `γ` times that of the boundary.
+  have hsplit (x : X) : thresholdTest T c γ x =
+      (T ⁻¹' Ioi c).indicator (fun _ ↦ (1 : ℝ)) x + (T ⁻¹' {c}).indicator (fun _ ↦ γ) x := by
+    rcases lt_trichotomy (T x) c with h | h | h
+    · simp [h, h.not_gt, h.ne]
+    · simp [h]
+    · simp [h, h.ne']
+  have hi₁ : Integrable ((T ⁻¹' Ioi c).indicator fun _ ↦ (1 : ℝ)) P :=
+    (integrable_indicator_iff₀ hs).2 (integrableOn_const hs')
+  have hi₂ : Integrable ((T ⁻¹' {c}).indicator fun _ ↦ γ) P :=
+    (integrable_indicator_iff₀ ht).2 (integrableOn_const ht')
+  calc ∫ x, thresholdTest T c γ x ∂P
+      = ∫ x, (T ⁻¹' Ioi c).indicator (fun _ ↦ (1 : ℝ)) x ∂P +
+          ∫ x, (T ⁻¹' {c}).indicator (fun _ ↦ γ) x ∂P := by
+        simp_rw [hsplit]
+        exact integral_add hi₁ hi₂
+    _ = P.real (T ⁻¹' Ioi c) + γ * P.real (T ⁻¹' {c}) := by
+        simp [integral_indicator₀ hs, integral_indicator₀ ht, mul_comm]
 
 end ThresholdTest
 

@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
-public import TauCeti.LinearAlgebra.Submodule.Prod
+public import TauCeti.LinearAlgebra.Submodule.Prod.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
@@ -137,6 +137,16 @@ theorem exists_submodule_finrank_eq_sigPos_and_posDef (Q : _root_.QuadraticForm 
 theorem exists_submodule_finrank_eq_sigNeg_and_negDef (Q : _root_.QuadraticForm R M) :
     ∃ V : Submodule R M, Module.finrank R V = sigNeg Q ∧ ((-Q).restrict V).PosDef :=
   exists_submodule_finrank_eq_sigPos_and_posDef (-Q)
+
+/-- On a zero-dimensional space the positive index of inertia is `0`. -/
+theorem sigPos_eq_zero_of_finrank_eq_zero (Q : _root_.QuadraticForm R M)
+    (h : Module.finrank R M = 0) : sigPos Q = 0 :=
+  Nat.le_zero.mp ((sigPos_le_finrank Q).trans_eq h)
+
+/-- On a zero-dimensional space the negative index of inertia is `0`. -/
+theorem sigNeg_eq_zero_of_finrank_eq_zero (Q : _root_.QuadraticForm R M)
+    (h : Module.finrank R M = 0) : sigNeg Q = 0 :=
+  sigPos_eq_zero_of_finrank_eq_zero (-Q) h
 
 variable [IsStrictOrderedRing R]
 

@@ -13,9 +13,11 @@ import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Distribution.DuBoisReymond
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Analysis.Convex.Integral
+import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
 # Weak derivatives on an interval
@@ -32,6 +34,10 @@ theorem of calculus `v t - v s = ∫ r in s..t, u' r` on `[a, b]`, and, when `a 
 by
 
 `‖v t‖ ≤ ⨍ s in (a, b), ‖u s‖ + ∫ s in (a, b), ‖u' s‖`.
+
+Since `v` oscillates by at most `∫ s in (a, b), ‖u' s‖` on `[a, b]`, Hölder's inequality gives the
+Poincaré–Wirtinger inequality `‖u - ⨍ s in (a, b), u s‖_{Lᵖ(a, b)} ≤ (b - a) ‖u'‖_{Lᵖ(a, b)}`
+for `1 ≤ p ≤ ∞` and complete `F`.
 
 This is the theory of the vector-valued Sobolev space `W^{1,1}(a, b; F)`. It is the analytic
 input for evolution equations, whose solutions are functions of time `t ∈ (0, T)` with values in a
@@ -66,6 +72,8 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
 * `TauCeti.HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral_top`: the same on the whole line.
 * `TauCeti.HasWeakLineDerivOn.exists_continuousOn_ae_eq`: if the weak derivative is integrable,
   the function has a representative continuous on the closed interval.
+* `TauCeti.HasWeakLineDerivOn.eq_of_ae_eq_const_Ioo`: a weakly differentiable function has no
+  jump; if it is almost everywhere constant on each side of a point, the two constants agree.
 * `TauCeti.HasWeakLineDerivOn.integral_eq_sub`: the fundamental theorem of calculus for such a
   continuous representative.
 * `TauCeti.HasWeakLineDerivOn.absolutelyContinuousOnInterval` and
@@ -75,8 +83,12 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
   zero integral of the weak derivative characterizes matching endpoint traces.
 * `TauCeti.HasWeakLineDerivOn.integral_deriv_smul_eq_sub`: integration by parts against a `C¹`
   function for such a continuous representative.
+* `TauCeti.HasWeakLineDerivOn.norm_sub_le_integral_norm`: the oscillation bound
+  `‖v t - v s‖ ≤ ∫ r in (a, b), ‖u' r‖` of a continuous representative `v`.
 * `TauCeti.HasWeakLineDerivOn.norm_le_setAverage_add_integral`: for `a < b`, the pointwise bound
   `‖v t‖ ≤ ⨍ s in (a, b), ‖u s‖ + ∫ s in (a, b), ‖u' s‖` of a continuous representative `v`.
+* `TauCeti.HasWeakLineDerivOn.eLpNorm_sub_setAverage_le`: the Poincaré–Wirtinger inequality
+  `‖u - ⨍ s in (a, b), u s‖_{Lᵖ(a, b)} ≤ (b - a) ‖u'‖_{Lᵖ(a, b)}` for `1 ≤ p ≤ ∞`.
 
 ## References
 
@@ -88,7 +100,7 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
 public section
 
 open MeasureTheory Set Filter TopologicalSpace intervalIntegral
-open scoped Interval Distributions
+open scoped Interval Distributions ENNReal
 
 namespace TauCeti
 
@@ -281,6 +293,46 @@ theorem HasWeakLineDerivOn.exists_continuousOn_ae_eq
     (TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hu'
       (Ioo_subset_Icc_self ht₀)), hc⟩
 
+/-- **A weakly differentiable function has no jump.** Let `u` have a weak derivative on `(a, b)`
+and let `a < c < b`. If `u` is almost everywhere equal to `y₀` on `(a, c)` and to `y₁` on
+`(c, b)`, then `y₀ = y₁`. In particular the indicator function of a subinterval `(a, c)` is not
+weakly differentiable on `(a, b)`. -/
+theorem HasWeakLineDerivOn.eq_of_ae_eq_const_Ioo
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ u u' 1) {c : ℝ} (hac : a < c)
+    (hcb : c < b) {y₀ y₁ : F} (h₀ : ∀ᵐ t ∂volume.restrict (Ioo a c), u t = y₀)
+    (h₁ : ∀ᵐ t ∂volume.restrict (Ioo c b), u t = y₁) : y₀ = y₁ := by
+  -- On a compact subinterval `[a', b']` around `c` the weak derivative is integrable, so `u` has
+  -- a representative `v` continuous there.
+  have ha' : a < (a + c) / 2 := by linarith
+  have hc' : (a + c) / 2 < c := by linarith
+  have hc'' : c < (c + b) / 2 := by linarith
+  have hb' : (c + b) / 2 < b := by linarith
+  have hu' : IntegrableOn u' (Ioo ((a + c) / 2) ((c + b) / 2)) :=
+    (h.locallyIntegrableOn_deriv.integrableOn_compact_subset (Icc_subset_Ioo ha' hb')
+      isCompact_Icc).mono_set Ioo_subset_Icc_self
+  obtain ⟨v, hv, huv⟩ := (h.mono (Ω' := ⟨Ioo ((a + c) / 2) ((c + b) / 2), isOpen_Ioo⟩)
+    (Ioo_subset_Ioo ha'.le hb'.le)).exists_continuousOn_ae_eq hu'
+  -- `v` is constant on each open side of `c`, hence, by continuity, on its closure, so `v c` is
+  -- both `y₀` and `y₁`.
+  have side : ∀ {s t : ℝ} {y : F}, s < t → Icc s t ⊆ Icc ((a + c) / 2) ((c + b) / 2) →
+      (∀ᵐ r ∂volume.restrict (Ioo s t), v r = y) → c ∈ Icc s t → v c = y := by
+    intro s t y hst hsub hy hc
+    have hIoo : Ioo s t ⊆ Icc ((a + c) / 2) ((c + b) / 2) := Ioo_subset_Icc_self.trans hsub
+    have hEq : EqOn v (fun _ ↦ y) (Ioo s t) :=
+      Measure.eqOn_open_of_ae_eq hy isOpen_Ioo (hv.mono hIoo) continuousOn_const
+    exact hEq.of_subset_closure (hv.mono hsub) continuousOn_const Ioo_subset_Icc_self
+      (by rw [closure_Ioo hst.ne]) hc
+  have hv₀ : ∀ᵐ r ∂volume.restrict (Ioo ((a + c) / 2) c), v r = y₀ := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right hc''.le) huv,
+      ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_left ha'.le) h₀] with r h1 h2
+    rw [← h1, h2]
+  have hv₁ : ∀ᵐ r ∂volume.restrict (Ioo c ((c + b) / 2)), v r = y₁ := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_left hc'.le) huv,
+      ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right hb'.le) h₁] with r h1 h2
+    rw [← h1, h2]
+  rw [← side hc' (Icc_subset_Icc_right hc''.le) hv₀ (right_mem_Icc.2 hc'.le),
+    side hc'' (Icc_subset_Icc_left hc'.le) hv₁ (left_mem_Icc.2 hc''.le)]
+
 /-- **The fundamental theorem of calculus for a continuous representative.** Let `u'` be the weak
 derivative of `u` on `Ioo a b`, integrable on `Ioo a b`, and let `v` be continuous on `Icc a b`
 and equal to `u` almost everywhere on `Ioo a b`. Then `∫ r in s..t, u' r = v t - v s` for all
@@ -418,6 +470,20 @@ theorem HasWeakLineDerivOn.integral_deriv_smul_eq_sub
   simp only [sub_smul, smul_add]
   abel
 
+/-- **The oscillation bound.** Let `u'` be the weak derivative of `u` on `Ioo a b`, integrable on
+`Ioo a b`, and let `v` be continuous on `Icc a b` and equal to `u` almost everywhere on `Ioo a b`.
+Then `‖v t - v s‖ ≤ ∫ r in Ioo a b, ‖u' r‖` for all `s, t ∈ Icc a b`. -/
+theorem HasWeakLineDerivOn.norm_sub_le_integral_norm
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ u u' 1)
+    (hu' : IntegrableOn u' (Ioo a b)) (hv : ContinuousOn v (Icc a b))
+    (hae : u =ᵐ[volume.restrict (Ioo a b)] v) {s t : ℝ} (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    ‖v t - v s‖ ≤ ∫ r in Ioo a b, ‖u' r‖ := by
+  rw [← h.integral_eq_sub hu' hv hae hs ht, ← integral_Icc_eq_integral_Ioo]
+  refine norm_integral_le_integral_norm_uIoc.trans (setIntegral_mono_set
+    ((integrableOn_Icc_iff_integrableOn_Ioo (f := u') (a := a) (b := b)).2 hu').norm
+    (Eventually.of_forall fun _ ↦ norm_nonneg _) (Eventually.of_forall ?_))
+  exact uIoc_subset_uIcc.trans (uIcc_subset_Icc hs ht)
+
 /-- **The `W^{1,1}` bound.** Let the weak derivative `u'` of `u` on `Ioo a b`, `a < b`, be
 integrable on `Ioo a b`, and let `v` be continuous on `Icc a b` and equal to `u` almost everywhere
 on `Ioo a b`. Then at every `t ∈ Icc a b`,
@@ -430,13 +496,7 @@ theorem HasWeakLineDerivOn.norm_le_setAverage_add_integral
   set M := ∫ s in Ioo a b, ‖u' s‖
   -- `‖v t‖ ≤ ‖v s‖ + M` for every `s ∈ Icc a b`, by the fundamental theorem of calculus.
   have hpt : ∀ s ∈ Icc a b, ‖v t‖ ≤ ‖v s‖ + M := fun s hs ↦ by
-    have hM : ‖v t - v s‖ ≤ M := by
-      have hMIcc : M = ∫ s in Icc a b, ‖u' s‖ := integral_Icc_eq_integral_Ioo.symm
-      rw [← h.integral_eq_sub hu' hv hae hs ht, hMIcc]
-      refine norm_integral_le_integral_norm_uIoc.trans (setIntegral_mono_set
-        ((integrableOn_Icc_iff_integrableOn_Ioo (f := u') (a := a) (b := b)).2 hu').norm
-        (Eventually.of_forall fun _ ↦ norm_nonneg _) (Eventually.of_forall ?_))
-      exact uIoc_subset_uIcc.trans (uIcc_subset_Icc hs ht)
+    have hM : ‖v t - v s‖ ≤ M := h.norm_sub_le_integral_norm hu' hv hae hs ht
     calc ‖v t‖ = ‖v s + (v t - v s)‖ := by rw [add_sub_cancel]
       _ ≤ ‖v s‖ + ‖v t - v s‖ := norm_add_le _ _
       _ ≤ ‖v s‖ + M := by gcongr
@@ -463,5 +523,53 @@ theorem HasWeakLineDerivOn.norm_le_setAverage_add_integral
       (∫ s in Ioo a b, ‖u s‖) + (b - a) * M := by
     field_simp
   exact le_of_mul_le_mul_left (by rw [this]; exact key) hpos
+
+/-- **The Poincaré–Wirtinger inequality on an interval.** Let `u'` be the weak derivative of `u`
+on `Ioo a b`, with `u' ∈ Lᵖ(a, b)` for some `1 ≤ p ≤ ∞`. Then the deviation of `u` from its mean
+over `(a, b)` is bounded in `Lᵖ(a, b)` by the length of the interval times the `Lᵖ` norm of `u'`:
+`‖u - ⨍ s in (a, b), u s‖_{Lᵖ(a, b)} ≤ (b - a) ‖u'‖_{Lᵖ(a, b)}`. -/
+theorem HasWeakLineDerivOn.eLpNorm_sub_setAverage_le [CompleteSpace F] {p : ℝ≥0∞} (hp : 1 ≤ p)
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ u u' 1)
+    (hu' : MemLp u' p (volume.restrict (Ioo a b))) :
+    eLpNorm (fun t ↦ u t - ⨍ s in Ioo a b, u s) p (volume.restrict (Ioo a b)) ≤
+      ENNReal.ofReal (b - a) * eLpNorm u' p (volume.restrict (Ioo a b)) := by
+  rcases le_or_gt b a with hba | hab
+  · simp [Ioo_eq_empty_of_le hba]
+  set μ := volume.restrict (Ioo a b)
+  have hμ : μ univ = ENNReal.ofReal (b - a) := by simp [μ]
+  have hint : IntegrableOn u' (Ioo a b) := hu'.integrable hp
+  obtain ⟨v, hv, hae⟩ := h.exists_continuousOn_ae_eq hint
+  set M := ∫ r in Ioo a b, ‖u' r‖
+  have hvi : IntegrableOn v (Ioo a b) :=
+    (hv.integrableOn_compact isCompact_Icc).mono_set Ioo_subset_Icc_self
+  -- Pointwise, `v t` is within `M` of every value of `v`, hence of their mean.
+  have hpt : ∀ t ∈ Icc a b, ‖v t - ⨍ s in Ioo a b, v s‖ ≤ M := fun t ht ↦ by
+    have hmem := (convex_closedBall (v t) M).set_average_mem Metric.isClosed_closedBall
+      (by simp [hab]) measure_Ioo_lt_top.ne
+      (ae_restrict_of_forall_mem measurableSet_Ioo fun s hs ↦ Metric.mem_closedBall.2 <| by
+        rw [dist_eq_norm, norm_sub_rev]
+        exact h.norm_sub_le_integral_norm hint hv hae (Ioo_subset_Icc_self hs) ht) hvi
+    rwa [Metric.mem_closedBall, dist_eq_norm, norm_sub_rev] at hmem
+  have hbound : ∀ᵐ t ∂μ, ‖u t - ⨍ s in Ioo a b, u s‖ ≤ M := by
+    filter_upwards [hae, ae_restrict_mem measurableSet_Ioo] with t ht hmem
+    rw [ht, average_congr hae]
+    exact hpt t (Ioo_subset_Icc_self hmem)
+  have hmeas : AEStronglyMeasurable (fun t ↦ u t - ⨍ s in Ioo a b, u s) μ :=
+    (hvi.aestronglyMeasurable.congr hae.symm).sub aestronglyMeasurable_const
+  -- The `L¹` norm of `u'` is at most `(b - a) ^ (1 - 1 / p)` times its `Lᵖ` norm.
+  have hM : ENNReal.ofReal M ≤ eLpNorm u' p μ * μ univ ^ (1 - 1 / p.toReal) := by
+    rw [ofReal_integral_norm_eq_lintegral_eNorm hint,
+      ← eLpNorm_one_eq_lintegral_eNorm hint.aestronglyMeasurable]
+    simpa [μ] using eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp hint.aestronglyMeasurable
+  have hμ0 : μ univ ≠ 0 := by simp [hμ, hab]
+  have hμtop : μ univ ≠ ∞ := by simp [hμ]
+  calc eLpNorm (fun t ↦ u t - ⨍ s in Ioo a b, u s) p μ
+      ≤ μ univ ^ p.toReal⁻¹ * ENNReal.ofReal M := eLpNorm_le_of_ae_bound hmeas hbound
+    _ ≤ μ univ ^ p.toReal⁻¹ * (eLpNorm u' p μ * μ univ ^ (1 - 1 / p.toReal)) := by gcongr
+    _ = μ univ ^ (p.toReal⁻¹ + (1 - 1 / p.toReal)) * eLpNorm u' p μ := by
+        rw [ENNReal.rpow_add _ _ hμ0 hμtop]
+        ring
+    _ = ENNReal.ofReal (b - a) * eLpNorm u' p μ := by
+        rw [one_div, add_sub_cancel, ENNReal.rpow_one, hμ]
 
 end TauCeti

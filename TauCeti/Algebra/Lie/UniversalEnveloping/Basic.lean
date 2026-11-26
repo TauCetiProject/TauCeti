@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.UniversalEnveloping
 public import Mathlib.GroupTheory.GroupAction.Ring
 public import Mathlib.RingTheory.FiniteType
@@ -27,8 +28,12 @@ additional structures such as filtrations, bialgebras, or antipodes.
   attached to a Lie module `M`, in particular the adjoint action of `U(L)` on `L` at `M = L`.
 * `TauCeti.UniversalEnvelopingAlgebra.representation_lie_of_mem_center`: a central element of
   `U(L)` acts on a Lie module by a map commuting with the Lie action.
+* `TauCeti.UniversalEnvelopingAlgebra.representation_apply_of_lie_eq_smul`: on a module where `L`
+  acts through a Lie algebra homomorphism `f : L → R`, every `u ∈ U(L)` acts by `lift f u`.
 * `TauCeti.UniversalEnvelopingAlgebra.mem_center_iff_forall_lie_ι`: centrality in `U(L)` is
   detected on the canonical Lie generators alone.
+* `TauCeti.UniversalEnvelopingAlgebra.ι_mem_center_of_mem_center`: the canonical generator of a
+  central element of `L` is central in `U(L)`.
 * `TauCeti.UniversalEnvelopingAlgebra.ad_ι_pow_apply_ι`: iterating the commutator with a Lie
   generator reproduces, on the Lie generators, the iterated adjoint action of `L`.
 * `TauCeti.UniversalEnvelopingAlgebra.mul_sub_mul_eq_map_ι_lie`: the image of a Lie bracket
@@ -176,6 +181,19 @@ theorem representation_lie_of_mem_center {u : U} (hu : u ∈ Subalgebra.center R
     (Subalgebra.mem_center_iff.mp hu (_root_.UniversalEnvelopingAlgebra.ι R x))) m
   simpa only [map_mul, mul_apply_eq_comp, representation_ι_apply] using h.symm
 
+variable {R L M} in
+/-- **On a module where `L` acts through a Lie algebra homomorphism `f : L → R`, every element `u`
+of `U(L)` acts by the scalar `lift f u`.** -/
+theorem representation_apply_of_lie_eq_smul (f : L →ₗ⁅R⁆ R)
+    (hf : ∀ (y : L) (m : M), ⁅y, m⁆ = f y • m) (u : U) (m : M) :
+    representation R L M u m = _root_.UniversalEnvelopingAlgebra.lift R f u • m := by
+  have key : representation R L M =
+      (Algebra.ofId R (Module.End R M)).comp (_root_.UniversalEnvelopingAlgebra.lift R f) := by
+    refine _root_.UniversalEnvelopingAlgebra.hom_ext R
+      (LieHom.ext fun y ↦ LinearMap.ext fun m ↦ ?_)
+    simp [hf, Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one]
+  simp [key, Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one]
+
 variable {R L}
 
 section NonUnitalRing
@@ -282,6 +300,13 @@ theorem mem_center_iff_forall_lie_ι {u : U} :
     exact sub_eq_zero.mp <| (LieRing.of_associative_ring_bracket _ _).symm.trans (h x)
 
 variable {R L}
+
+/-- The canonical generator of a central element of `L` is central in `U(L)`. -/
+theorem ι_mem_center_of_mem_center {y : L} (hy : y ∈ LieAlgebra.center R L) :
+    _root_.UniversalEnvelopingAlgebra.ι R y ∈ Subalgebra.center R U :=
+  (mem_center_iff_forall_lie_ι R L).mpr fun x => by
+    rw [← LieHom.map_lie, ← lie_skew, (LieModule.mem_maxTrivSubmodule R L L y).mp hy x,
+      neg_zero, map_zero]
 
 /-- **The iterated commutator with a Lie generator, read on the Lie generators.**  Bracketing
 `n` times with `ι x` inside `U(L)` sends `ι y` to the image of the `n`-fold adjoint action of `x`

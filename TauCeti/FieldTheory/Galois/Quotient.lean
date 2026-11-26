@@ -136,7 +136,8 @@ normal. -/
 def _root_.AlgHom.quotientKerRestrictNormalHomEquiv (f : M →ₐ[F] K) [Normal F K] :
     Gal(K/F) ⧸ f.restrictNormalHom.ker ≃ₜ* Gal(M/F) :=
   (Subgroup.quotientContinuousMulEquivOfEq f.ker_restrictNormalHom).trans <|
-    (quotientFixingSubgroupEquiv F K f.fieldRange).trans f.equivFieldRange.symm.autContinuousCongr
+    (quotientFixingSubgroupEquiv F K f.fieldRange).trans
+      f.equivFieldRange.symm.autCongrContinuousMulEquiv
 
 /-- `quotientKerRestrictNormalHomEquiv` sends the class of `σ` to `f.restrictNormalHom σ`. -/
 @[simp]
@@ -146,7 +147,7 @@ theorem _root_.AlgHom.quotientKerRestrictNormalHomEquiv_mk (f : M →ₐ[F] K) [
       f.restrictNormalHom σ := by
   rw [AlgHom.quotientKerRestrictNormalHomEquiv, ContinuousMulEquiv.trans_apply,
     ContinuousMulEquiv.trans_apply, Subgroup.quotientContinuousMulEquivOfEq_mk,
-    quotientFixingSubgroupEquiv_mk, AlgEquiv.autContinuousCongr_apply]
+    quotientFixingSubgroupEquiv_mk, AlgEquiv.autCongrContinuousMulEquiv_apply]
   exact f.restrictNormalHom_eq_autCongr σ
 
 /-- The inverse of `quotientKerRestrictNormalHomEquiv` sends `f.restrictNormalHom σ` back to the

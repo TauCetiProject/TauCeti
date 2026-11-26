@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.Distribution
 public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Gluing distributions and currents on an open cover
@@ -32,6 +34,13 @@ compact set gives continuity for the LF topology. Uniqueness is the localization
 `AddMonoidHom.eq_zero_of_locally_vanishing`. On an infinite-dimensional space every test function
 is zero (`TestFunction.eq_zero_of_not_finiteDimensional`), and the glued map is zero.
 
+The same cutoffs glue integral representations: if `T φ = ∫ φ • f` for real tests supported in
+each member of an open cover of a set `W`, with one `f` locally integrable on `W`, then this holds
+for every real test supported in `W` (`Distribution.apply_eq_integral_of_locally`). The set `W`
+need not be open. Local continuous representatives agree on overlaps, since a continuous function
+on an open set is determined by its integrals against the tests supported there
+(`IsOpen.eqOn_of_integral_smul_eq`).
+
 ## Main declarations
 
 * `Distribution.eq_of_forall_comp_monoCLM_eq`: continuous linear maps on tests on `Ω` which agree
@@ -40,6 +49,10 @@ is zero (`TestFunction.eq_zero_of_not_finiteDimensional`), and the glued map is 
   cover glue to a unique continuous linear map on the union.
 * `Distribution.existsUnique_gluing_of_isScalarTower`: the glued map of compatible `𝕜`-linear
   maps is `𝕜`-linear, for instance complex linear on complex test functions.
+* `IsOpen.eqOn_of_integral_smul_eq`: two functions continuous on an open set with the same
+  integrals against the tests supported there agree on it.
+* `Distribution.apply_eq_integral_of_locally`: local integral representations by one locally
+  integrable function glue.
 
 ## References
 
@@ -222,3 +235,64 @@ theorem existsUnique_gluing_of_isScalarTower (hU : ⨆ i, U i = Ω)
   exact ContinuousLinearMap.ext fun φ ↦ DFunLike.congr_fun h φ
 
 end Distribution
+
+/-! ### Gluing integral representations -/
+
+section Integral
+
+open MeasureTheory Distribution
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {μ : Measure E}
+
+/-- Two functions continuous on an open set `U ⊆ Ω` that give the same integral with respect to
+`μ` against every real test function supported in `U` agree on `U`, when `μ` is locally finite
+and charges every nonempty open set. -/
+theorem IsOpen.eqOn_of_integral_smul_eq [FiniteDimensional ℝ E] [CompleteSpace F]
+    [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] {U : Set E} (hU : IsOpen U)
+    (hUΩ : U ⊆ Ω) {f g : E → F} (hf : ContinuousOn f U) (hg : ContinuousOn g U)
+    (h : ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ U → ∫ y, φ y • f y ∂μ = ∫ y, φ y • g y ∂μ) :
+    EqOn f g U := by
+  let U' : Opens E := ⟨U, hU⟩
+  have hUΩ' : U' ≤ Ω := hUΩ
+  have hfU := hf.locallyIntegrableOn (μ := μ) hU.measurableSet
+  have hgU := hg.locallyIntegrableOn (μ := μ) hU.measurableSet
+  refine Measure.eqOn_open_of_ae_eq (ofFun_injective (Ω := U') (n := ⊤) hfU hgU ?_) hU hf hg
+  -- A test function on `U` is a test function on `Ω` supported in `U`.
+  ext ψ
+  have hψ : (TestFunction.monoCLM ℝ ψ : 𝓓(Ω, ℝ)) = (ψ : E → ℝ) := by
+    simp [TestFunction.monoCLM_apply, hUΩ']
+  rw [ofFun_apply hfU, ofFun_apply hgU, ← hψ]
+  exact h _ (hψ ▸ ψ.tsupport_subset)
+
+namespace Distribution
+
+omit [BorelSpace E] in
+/-- **Integral representations glue.** If `f` is locally integrable on a set `W` and every point
+of `W` has an open neighbourhood on whose supported real test functions `T` is integration against
+`f` with respect to `μ`, then `T φ = ∫ φ • f ∂μ` for every real test function `φ` supported in
+`W`. The set `W` need not be open. -/
+theorem apply_eq_integral_of_locally [OpensMeasurableSpace E] {n : ℕ∞} {T : 𝓓'^{n}(Ω, F)}
+    {W : Set E} {f : E → F} (hf : LocallyIntegrableOn f W μ)
+    (h : ∀ x ∈ W, ∃ U : Set E, IsOpen U ∧ x ∈ U ∧
+      ∀ φ : 𝓓^{n}(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y ∂μ)
+    {φ : 𝓓^{n}(Ω, ℝ)} (hφ : tsupport φ ⊆ W) : T φ = ∫ y, φ y • f y ∂μ := by
+  classical
+  choose U hU hxU hT using fun x : W ↦ h x x.property
+  obtain ⟨s, ψ, hψ, hsum, hψφ⟩ := φ.exists_sum_subordinate U hU
+    fun y hy ↦ mem_iUnion.2 ⟨⟨y, hφ hy⟩, hxU _⟩
+  -- Each piece vanishes where `φ` does, so it is supported in `tsupport φ ⊆ W`.
+  have hψW (i : s) : tsupport (ψ i) ⊆ W :=
+    (closure_minimal (fun x hx ↦ subset_tsupport φ <| norm_pos_iff.1 <|
+      (norm_pos_iff.2 hx).trans_le (hψφ i x)) (isClosed_tsupport φ)).trans hφ
+  have hint (i : s) : Integrable (fun y ↦ ψ i y • f y) μ :=
+    hf.integrable_smul_left_of_hasCompactSupport (ψ i).continuous.continuousOn
+      (ψ i).hasCompactSupport (hψW i)
+  rw [← hsum, map_sum,
+    Finset.sum_congr rfl fun (i : s) _ ↦ hT i (ψ i) (hψ i),
+    ← integral_finsetSum _ fun i _ ↦ hint i]
+  simp [Finset.sum_smul]
+
+end Distribution
+
+end Integral

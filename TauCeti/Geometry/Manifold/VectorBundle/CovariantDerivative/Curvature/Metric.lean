@@ -18,6 +18,8 @@ The curvature endomorphisms of a metric-compatible connection are skew-adjoint:
 `⟪R(X,Y)σ, τ⟫ = -⟪σ, R(X,Y)τ⟫`. The first theorem applies to `C^n` fields and
 `C^(n + 1)` sections for `1 ≤ n`, under the corresponding finite regularity hypotheses;
 the second specializes it to the smooth pointwise curvature tensor on arbitrary fibre vectors.
+Consequently `⟪R(u, v) w, w⟫ = 0`, and on the tangent bundle the pairing `⟪R(w, v) v, w⟫` does
+not change when a multiple of `v` is subtracted from `w`.
 
 Under these hypotheses this is antisymmetry in the last two arguments of the
 metric-lowered Riemann tensor. Together with antisymmetry in the first two arguments,
@@ -126,6 +128,44 @@ theorem IsMetricCompatible.inner_curvatureTensor_eq_neg
   let _ : ContMDiffVectorBundle (∞ + 1) F V I := by
     simpa using (inferInstance : ContMDiffVectorBundle ∞ F V I)
   exact hcov.inner_curvatureOperator_eq_neg (n := ∞) (by simp) hX hY hσ hτ x
+
+/-- For a smooth metric-compatible connection, the curvature pairing `⟪R(u, v) w, w⟫` vanishes,
+by the skew-adjointness `CovariantDerivative.IsMetricCompatible.inner_curvatureTensor_eq_neg`. -/
+theorem IsMetricCompatible.inner_curvatureTensor_self_eq_zero
+    [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I]
+    [ContMDiffCovariantDerivative cov ∞]
+    [IsContMDiffRiemannianBundle I 2 F V]
+    [FiniteDimensional ℝ E] [T2Space M] (hcov : cov.IsMetricCompatible)
+    (x : M) (u v : TangentSpace I x) (w : V x) :
+    inner ℝ (cov.curvatureTensor x u v w) w = 0 := by
+  have h := hcov.inner_curvatureTensor_eq_neg x u v w w
+  rw [real_inner_comm (cov.curvatureTensor x u v w) w] at h
+  linarith
+
+end CovariantDerivative
+
+namespace CovariantDerivative
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
+  {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+  [ContMDiffCovariantDerivative cov ∞]
+
+/-- For a smooth metric-compatible connection on the tangent bundle, the curvature pairing
+`⟪R(w, v) v, w⟫` does not change when a multiple of `v` is subtracted from `w`: `R` is
+antisymmetric in its first two arguments, and `⟪R(w, v) v, v⟫ = 0`
+(`CovariantDerivative.IsMetricCompatible.inner_curvatureTensor_self_eq_zero`). -/
+theorem IsMetricCompatible.inner_curvatureTensor_sub_smul
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    {x : M} (w v : TangentSpace I x) (c : ℝ) :
+    inner ℝ (cov.curvatureTensor x (w - c • v) v v) (w - c • v) =
+      inner ℝ (cov.curvatureTensor x w v v) w := by
+  simp only [map_sub, map_smul, curvatureTensor_self, smul_zero, sub_zero, LinearMap.sub_apply,
+    LinearMap.smul_apply, inner_sub_right, inner_smul_right,
+    hcov.inner_curvatureTensor_self_eq_zero, mul_zero]
 
 end CovariantDerivative
 

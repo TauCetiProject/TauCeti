@@ -56,7 +56,8 @@ group it represents, both in the abelianization of the free group and in its fir
 (`FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles`); in
 particular the loop around the `i`-th circle corresponds to the generator `i`
 (`TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles_expLoop`). The
-statements are for `S : Type`, the universe in which the wedge of circles is a `K(F, 1)`.
+index set `S`, the coefficient ring `k` and the group `G` live in an arbitrary universe, except in
+these degree-one comparisons with the integers, which are for `S : Type`.
 
 ## Main definitions
 
@@ -106,11 +107,13 @@ noncomputable section
 open scoped ContinuousMap
 open CategoryTheory Limits FundamentalGroup Set TauCeti.HurewiczOne
 
+universe u
+
 namespace TauCeti
 
 open WedgeSum
 
-variable (S : Type)
+variable (S : Type u)
 
 private theorem exists_wedgeCirclesHomotopyEquivClassifyingSpace :
     ∃ (e : (WedgeSum fun _ : S ↦ (1 : Circle)) ≃ₕ classifyingSpace (FreeGroup S))
@@ -226,7 +229,7 @@ commutative ring `k`, the singular homology `Hₙ(⋁ S¹; k)` of the wedge of c
 is Mathlib's group homology `Hₙ(FreeGroup S, k)` of the trivial representation: the map induced by
 `TauCeti.wedgeCirclesHomotopyEquivClassifyingSpace` followed by
 `TauCeti.classifyingSpaceSingularHomologyIsoGroupHomology`. -/
-def wedgeCirclesSingularHomologyIsoGroupHomology (k : Type) [CommRing k] (n : ℕ) :
+def wedgeCirclesSingularHomologyIsoGroupHomology (k : Type u) [CommRing k] (n : ℕ) :
     ((singularChains k).obj (TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle)))).homology n ≅
       groupHomology (Rep.trivial k (FreeGroup S) k) n :=
   (wedgeCirclesHomotopyEquivClassifyingSpace S).singularHomologyIso (ModuleCat.of k k) n ≪≫
@@ -235,7 +238,7 @@ def wedgeCirclesSingularHomologyIsoGroupHomology (k : Type) [CommRing k] (n : �
 /-- The identification `TauCeti.wedgeCirclesSingularHomologyIsoGroupHomology` is the map induced
 on homology by `TauCeti.wedgeCirclesHomotopyEquivClassifyingSpace`, followed by
 `TauCeti.classifyingSpaceSingularHomologyIsoGroupHomology`. -/
-theorem wedgeCirclesSingularHomologyIsoGroupHomology_hom (k : Type) [CommRing k] (n : ℕ) :
+theorem wedgeCirclesSingularHomologyIsoGroupHomology_hom (k : Type u) [CommRing k] (n : ℕ) :
     (wedgeCirclesSingularHomologyIsoGroupHomology S k n).hom =
       HomologicalComplex.homologyMap ((singularChains k).map
           (TopCat.ofHom (wedgeCirclesHomotopyEquivClassifyingSpace S).toFun)) n ≫
@@ -250,29 +253,29 @@ Milnor's classifying space of `FreeGroup S` is homotopy equivalent to the wedge 
 by `S`, so its singular homology vanishes in every degree `n ≥ 2`, with coefficients in any
 abelian category with exact coproducts. -/
 theorem isZero_classifyingSpace_singularHomology_freeGroup {A : Type w} [Category.{v} A]
-    [HasCoproducts.{0} A] [Abelian A] [AB4OfSize.{0} A] (R : A) {n : ℕ} (hn : 2 ≤ n) :
-    IsZero (((AlgebraicTopology.singularHomologyFunctor.{0} A n).obj R).obj
+    [HasCoproducts.{u} A] [Abelian A] [AB4OfSize.{u} A] (R : A) {n : ℕ} (hn : 2 ≤ n) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor.{u} A n).obj R).obj
       (TopCat.of (classifyingSpace (FreeGroup S)))) :=
   (WedgeSum.isZero_singularHomology_circle S R hn).of_iso
     ((wedgeCirclesHomotopyEquivClassifyingSpace S).singularHomologyIso R n).symm
 
 /-- **The group homology of a free group vanishes in degrees at least `2`**, with trivial
 coefficients in any commutative ring `k`: it is the homology of a wedge of circles. -/
-theorem isZero_groupHomology_freeGroup (k : Type) [CommRing k] {n : ℕ} (hn : 2 ≤ n) :
+theorem isZero_groupHomology_freeGroup (k : Type u) [CommRing k] {n : ℕ} (hn : 2 ≤ n) :
     IsZero (groupHomology (Rep.trivial k (FreeGroup S) k) n) :=
   (isZero_classifyingSpace_singularHomology_freeGroup S (ModuleCat.of k k) hn).of_iso
     (classifyingSpaceSingularHomologyIsoGroupHomology k (FreeGroup S) n).symm
 
 /-- An infinite cyclic subgroup has no group homology with trivial coefficients in degrees
 `n ≥ 2`, since it is free on one generator. -/
-theorem isZero_groupHomology_res_zpowers (k : Type) [CommRing k] {G : Type} [Group G] {g : G}
+theorem isZero_groupHomology_res_zpowers (k : Type u) [CommRing k] {G : Type u} [Group G] {g : G}
     (hg : ¬IsOfFinOrder g) {n : ℕ} (hn : 2 ≤ n) :
     IsZero (groupHomology (Rep.res (Subgroup.zpowers g).subtype (Rep.trivial k G k)) n) := by
   have hinj : Function.Injective (zpowersHom G g) :=
     injective_zpow_iff_not_isOfFinOrder.2 hg
-  let e : FreeGroup Unit ≃* Subgroup.zpowers g :=
+  let e : FreeGroup PUnit.{u + 1} ≃* Subgroup.zpowers g :=
     FreeGroup.mulEquivIntOfUnique.trans (MonoidHom.ofInjective hinj)
-  refine (isZero_groupHomology_freeGroup Unit k hn).of_iso
+  refine (isZero_groupHomology_freeGroup PUnit.{u + 1} k hn).of_iso
     (groupHomology.mapIso e (LinearEquiv.refl k k) (fun _ ↦ ?_) n).symm
   ext
   simp
@@ -281,7 +284,7 @@ theorem isZero_groupHomology_res_zpowers (k : Type) [CommRing k] {G : Type} [Gro
 directed family of infinite cyclic subgroups, then its group homology with trivial coefficients
 vanishes in degrees `n ≥ 2`. For an empty family `G` is trivial, and the statement is the vanishing
 of the homology of a trivial group in positive degrees. -/
-theorem isZero_groupHomology_of_directed_zpowers (k : Type) [CommRing k] {G : Type} [Group G]
+theorem isZero_groupHomology_of_directed_zpowers (k : Type u) [CommRing k] {G : Type u} [Group G]
     {ι : Type*} {g : ι → G} (hg : ∀ i, ¬IsOfFinOrder (g i))
     (hS : Directed (· ≤ ·) fun i ↦ Subgroup.zpowers (g i))
     (hG : ⨆ i, Subgroup.zpowers (g i) = ⊤) {n : ℕ} (hn : 2 ≤ n) :
@@ -297,7 +300,9 @@ theorem isZero_groupHomology_of_directed_zpowers (k : Type) [CommRing k] {G : Ty
   · exact groupHomology.isZero_groupHomology_of_directed hS hG fun i ↦
       isZero_groupHomology_res_zpowers k (hg i) hn
 
-variable {S}
+/-! ### First homology with integer coefficients -/
+
+variable {S : Type}
 
 /-- On integral first homology, `TauCeti.wedgeCirclesHomotopyEquivClassifyingSpace` sends the
 Hurewicz class of a loop at the wedge point to the class in `(FreeGroup S)ᵃᵇ` of the element of
@@ -308,6 +313,7 @@ theorem classifyingSpaceFirstHomologyAddEquiv_map_wedgeCirclesHomotopyEquivClass
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom (wedgeCirclesHomotopyEquivClassifyingSpace S).toFun)) 1).hom
           (hurewiczHomologyAddEquiv (X := TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle))) (base _)
+            (.refl ℤ)
             (Additive.ofMul (Group.Abelianization.of a)))) =
       Additive.ofMul (Group.Abelianization.of (circleFundamentalGroupMulEquiv S a)) := by
   rw [classifyingSpaceFirstHomologyAddEquiv_homologyMap_hurewiczHomologyAddEquiv _
@@ -326,6 +332,7 @@ theorem _root_.FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomolo
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom (wedgeCirclesHomotopyEquivClassifyingSpace S).toFun)) 1).hom
           (hurewiczHomologyAddEquiv (X := TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle))) (base _)
+            (.refl ℤ)
             (Additive.ofMul (Group.Abelianization.of a)))) =
       groupHomology.H1π (Rep.trivial ℤ (FreeGroup S) ℤ)
         ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ (FreeGroup S) ℤ)).inv
@@ -343,6 +350,7 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles_expL
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom (wedgeCirclesHomotopyEquivClassifyingSpace S).toFun)) 1).hom
           (hurewiczHomologyAddEquiv (X := TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle))) (base _)
+            (.refl ℤ)
             (Additive.ofMul (Group.Abelianization.of
               (mapOfEq (incl (fun _ : S ↦ (1 : Circle)) i) (incl_apply_self i)
                 (fromPath (Path.Homotopic.Quotient.mk Circle.expLoop))))))) =

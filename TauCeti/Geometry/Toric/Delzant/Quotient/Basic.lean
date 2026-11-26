@@ -35,7 +35,8 @@ and orbit-theoretic properties of the reduced space:
   residual torus `T / N_Δ` acts continuously on `M_Δ` by the action of a quotient group on the
   orbits of its kernel (`AddAction.orbitRel.Quotient.instAddActionQuotientAddGroup`). For a Delzant
   polytope and an integral lattice, `facetTorusHom` is surjective with kernel `N_Δ`, so `T / N_Δ` is
-  the torus `V / 2π i(N)`.
+  the torus `V / 2π i(N)`. Through it, `T` itself acts continuously on `M_Δ`
+  (`TauCeti.Toric.DelzantQuotient.vadd_mk`).
 * **Stabilizers.** The class of `θ ∈ T` fixes the class of a point `z ∈ Z` exactly when `θ` agrees
   with an element of `N_Δ` on the coordinates `j` with `z_j ≠ 0`
   (`TauCeti.Toric.DelzantQuotient.coe_vadd_mk_eq_mk_iff`). In terms of the moment value `y ∈ Δ`,
@@ -199,6 +200,27 @@ instance : ContinuousVAdd ((ι → AddCircle (2 * π)) ⧸ (facetTorusHom i u (2
     isOpenQuotientMap_mk).continuous_comp_iff).1 ?_⟩
   exact (continuous_mk.comp continuous_vadd).congr fun p ↦ (coe_vadd_mk p.1 p.2).symm
 
+/-- The torus `(ℝ / 2πℤ)^ι` acts on the Delzant quotient through the residual torus
+`(ℝ / 2πℤ)^ι / N_Δ`. -/
+instance : AddAction (ι → AddCircle (2 * π)) (DelzantQuotient i u c) :=
+  AddAction.compHom _ (QuotientAddGroup.mk' (facetTorusHom i u (2 * π)).ker)
+
+/-- An angle acts on the Delzant quotient as its class in the residual torus does. -/
+theorem coe_vadd (θ : ι → AddCircle (2 * π)) (q : DelzantQuotient i u c) :
+    (θ : (ι → AddCircle (2 * π)) ⧸ (facetTorusHom i u (2 * π)).ker) +ᵥ q = θ +ᵥ q :=
+  (rfl)
+
+/-- The torus acts on classes through representatives. -/
+@[simp]
+theorem vadd_mk (θ : ι → AddCircle (2 * π)) (x : delzantLevel i u c) :
+    θ +ᵥ mk x = mk (θ +ᵥ x) :=
+  coe_vadd_mk θ x
+
+/-- The torus acts continuously on the Delzant quotient. -/
+instance : ContinuousVAdd (ι → AddCircle (2 * π)) (DelzantQuotient i u c) :=
+  ⟨(continuous_vadd.comp ((QuotientAddGroup.continuous_mk.comp continuous_fst).prodMk
+    continuous_snd)).congr fun p ↦ coe_vadd p.1 p.2⟩
+
 /-! ### Topology -/
 
 /-- **The Delzant quotient is Hausdorff.** For an integral lattice, the kernel torus is a closed,
@@ -317,6 +339,13 @@ theorem reducedMomentMap_vadd (θ : (ι → AddCircle (2 * π)) ⧸ (facetTorusH
   rw [coe_vadd_mk, reducedMomentMap_mk_eq_iff]
   intro j
   rw [coe_vadd_delzantLevel, torusRotation_apply_normSq, reducedMomentMap_mk_apply]
+
+/-- The reduced moment map is invariant under the torus `(ℝ / 2πℤ)^ι`, which acts through the
+residual torus. -/
+@[simp]
+theorem reducedMomentMap_vadd' (θ : ι → AddCircle (2 * π)) (q : DelzantQuotient i u c) :
+    reducedMomentMap hβ (θ +ᵥ q) = reducedMomentMap hβ q := by
+  rw [← coe_vadd, reducedMomentMap_vadd]
 
 /-- The reduced moment map is continuous. -/
 theorem continuous_reducedMomentMap :

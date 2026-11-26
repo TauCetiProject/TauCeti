@@ -17,7 +17,8 @@ import Mathlib.Tactic.Linarith
 
 For a finite measure on the real line, multiplying the imaginary part of its resolvent
 transform by `η` and approaching `a` vertically from above recovers the mass of `{a}`.
-This detects atoms, including atoms at endpoints when using Stieltjes inversion.
+This detects atoms, including atoms at endpoints when using Stieltjes inversion. The same
+rescaled transform also bounds the mass of a closed ball around `a`.
 
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
 `(z - x)⁻¹`. No moment assumptions are needed.
@@ -32,7 +33,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Filter Complex
+open MeasureTheory Filter Complex Metric Set
 open scoped Topology
 
 namespace Real
@@ -57,6 +58,20 @@ theorem tendsto_sq_div_sq_add_sq_indicator (a x : ℝ) :
     simpa only [zero_pow (by decide : 2 ≠ 0), zero_div] using!
       (ht.pow 2).div (tendsto_const_nhds.add (ht.pow 2)) hden
 
+/-- The rescaled Poisson kernels converge pointwise to `1` as the height tends to infinity. -/
+theorem tendsto_sq_div_sq_add_sq_atTop (x : ℝ) :
+    Tendsto (fun η : ℝ ↦ η ^ 2 / (x ^ 2 + η ^ 2)) atTop (𝓝 1) := by
+  have hd : Tendsto (fun η : ℝ ↦ x ^ 2 + η ^ 2) atTop atTop :=
+    tendsto_atTop_add_const_left _ _ (tendsto_pow_atTop two_ne_zero)
+  have h : Tendsto (fun η : ℝ ↦ 1 - x ^ 2 / (x ^ 2 + η ^ 2)) atTop (𝓝 1) := by
+    simpa using (tendsto_const_nhds (x := (1 : ℝ))).sub
+      ((tendsto_const_nhds (x := x ^ 2)).div_atTop hd)
+  refine h.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with η hη
+  have : 0 < x ^ 2 + η ^ 2 := by positivity
+  field_simp
+  ring
+
 end Real
 
 namespace MeasureTheory
@@ -71,6 +86,30 @@ theorem mul_im_resolventTransform {a η : ℝ} :
   congr 1
   ext x
   simp [sq, mul_div_assoc]
+
+/-- For a finite measure, the mass in a closed ball of radius `η > 0` is bounded by twice `η`
+times the imaginary transform at height `η` over the center. -/
+theorem measureReal_closedBall_le_two_mul_mul_im_resolventTransform
+    (x : ℝ) {η : ℝ} (hη : 0 < η) :
+    μ.real (closedBall x η) ≤ 2 * η * (resolventTransform μ (x + η * I)).im := by
+  let k := fun t : ℝ ↦ η ^ 2 / ((t - x) ^ 2 + η ^ 2)
+  have hnonneg (t : ℝ) : 0 ≤ k t := by
+    dsimp only [k]
+    positivity
+  have hcont : Continuous k := continuous_const.div (by fun_prop) fun _ ↦ by positivity
+  have hint : Integrable k μ := Integrable.of_bound hcont.aestronglyMeasurable 1
+    (ae_of_all _ fun t ↦ by
+      rw [Real.norm_of_nonneg (hnonneg t)]
+      exact (div_le_one (by positivity)).2 (le_add_of_nonneg_left (sq_nonneg _)))
+  have hsub : closedBall x η ⊆ {t | 1 / 2 ≤ k t} := by
+    intro t ht
+    have ht' : |t - x| ≤ η := by simpa [Real.dist_eq] using ht
+    simp only [mem_ofPred_eq, k]
+    rw [le_div_iff₀ (by positivity)]
+    nlinarith [sq_abs (t - x), pow_le_pow_left₀ (abs_nonneg _) ht' 2]
+  have hmarkov := mul_meas_ge_le_integral_of_nonneg (ae_of_all _ hnonneg) hint (1 / 2)
+  rw [← mul_im_resolventTransform] at hmarkov
+  linarith [measureReal_mono (μ := μ) hsub]
 
 /-- **Atom recovery for the Stieltjes transform.** Approaching `a` vertically from the upper
 half-plane, `η Im m(a + iη)` tends to the mass of `{a}`. The mass is real-valued since `μ`

@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv
 -- Private: the endpoint-ratio identity of winding numbers, the injectivity of integer
 -- multiples of `2πi` and the base points of path components are used only inside proofs.
 import TauCeti.Analysis.Complex.WindingNormalization
-import TauCeti.Analysis.Contour.Winding.EndpointRatio
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import TauCeti.Topology.Connected.PathConnected
 
 /-!
@@ -83,6 +83,12 @@ connected manifold the kernel of `dlog` itself is the constants
   by `ContMDiffMap.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom`.
 * `TauCeti.circlePeriodHom_eq_one_iff`, `TauCeti.exists_mlogDeriv_coe_eq`,
   `TauCeti.mem_range_circlePeriodHom_iff`: the kernel and the image of the period homomorphism.
+* `ContMDiffMap.homologyPeriodHom_circleLogDeriv`, `TauCeti.exists_circleLogDeriv_eq`: the real
+  logarithmic derivatives `-i dlog u` of smooth circle-valued maps are exactly the closed real
+  `1`-forms with periods in `2πℤ`.
+* `TauCeti.deRhamCohomology.circlePeriodLattice`: the lattice `2π H¹(M; ℤ)` of de Rham classes
+  with periods in `2πℤ`, which by `TauCeti.deRhamCohomology.mk_mem_circlePeriodLattice_iff` are
+  the classes of the real logarithmic derivatives.
 
 ## References
 
@@ -126,8 +132,9 @@ theorem exp_pathIntegral_mlogDeriv {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, �
   have hcont : ContinuousOn (u ∘ γ) (uIcc a b) := hc.continuous.continuousOn
   have hii := Contour.intervalIntegrable_inv_sub_mul_deriv hcont hu₀
     (hc.continuous_deriv_one.intervalIntegrable a b)
-  have he := Contour.exp_two_pi_I_mul_windingNumber_of_avoidance countable_empty hcont
-    (fun t _ ↦ hc.differentiable one_ne_zero t) hu₀ hii
+  have hac : AbsolutelyContinuousOnInterval (u ∘ γ) a b :=
+    (hc.contDiffOn (s := uIcc a b)).absolutelyContinuousOnInterval
+  have he := hac.exp_two_pi_I_mul_windingNumber (z := 0) fun ⟨t, ht, h⟩ ↦ hu₀ t ht h
   rw [Contour.windingNumber_eq_integral_of_avoidance hcont hu₀ hii, ← mul_assoc,
     mul_inv_cancel₀ two_pi_I_ne_zero, one_mul] at he
   rw [hint, he, sub_zero, sub_zero, Function.comp_apply, Function.comp_apply]
@@ -294,7 +301,7 @@ theorem exists_homologyPeriodHom_mlogDeriv_eq_int_mul {u : M → ℂ}
       simp only [LinearMap.toSpanSingleton_apply, zsmul_eq_mul, Fin.coe_ofNat_eq_mod, Nat.zero_mod,
         Nat.mod_succ, pow_zero, pow_one, one_smul, neg_smul]
       ring
-  obtain ⟨z, rfl⟩ := (H₁AddEquivHomology (.of M)).surjective.comp H₁.mk_surjective c
+  obtain ⟨z, rfl⟩ := (H₁AddEquivHomology ℤ (.of M)).surjective.comp H₁.mk_surjective c
   refine ⟨chainsDesc N (z : ((singularChains ℤ).obj (.of M)).X 1), ?_⟩
   rw [Function.comp_apply, homologyPeriodHom_H₁AddEquivHomology_mk, hL]
   simp [mem_cycles₁_iff.1 z.property, zsmul_eq_mul]
@@ -438,7 +445,8 @@ theorem exists_mlogDeriv_eq_of_homologyPeriodHom_eq_int_mul {r : ℕ∞} (hr : 1
   have hpath {a a' y : M} (e : a = a') (p : Path a y) (q : Path a' y) :
       exp (pathClassIntegral φ (.mk p)) = exp (pathClassIntegral φ (.mk q)) := by
     subst e
-    obtain ⟨n, hn⟩ := hper (H₁AddEquivHomology (.of M) (loopClass (X := .of M) (p.trans q.symm)))
+    obtain ⟨n, hn⟩ :=
+      hper (H₁AddEquivHomology ℤ (.of M) (loopClass ℤ (X := .of M) (p.trans q.symm)))
     rw [homologyPeriodHom_loopClass, Path.Homotopic.Quotient.mk_trans,
       Path.Homotopic.Quotient.mk_symm, pathClassIntegral_trans, pathClassIntegral_symm] at hn
     exact exp_eq_exp_iff_exists_int.mpr ⟨n, by rw [← hn]; ring⟩
@@ -497,5 +505,74 @@ theorem mem_range_circlePeriodHom_iff
     refine ⟨u, Multiplicative.toAdd.injective ?_⟩
     refine AddMonoidHom.ext fun c ↦ Complex.intCast_mul_two_pi_I_injective ?_
     simp only [← ContMDiffMap.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom, hu, hper]
+
+/-- **The periods of the real logarithmic derivative.** The integral of `circleLogDeriv u` over a
+singular `1`-cycle `c` is `2π` times the period of the smooth circle-valued map `u` on `c`. -/
+theorem _root_.ContMDiffMap.homologyPeriodHom_circleLogDeriv (u : C^∞⟮I, M; 𝓡 1, Circle⟯)
+    (c : ((singularChains ℤ).obj (.of M)).homology 1) :
+    homologyPeriodHom (u.circleLogDeriv : RoughForm I M ℝ 1) c =
+      Multiplicative.toAdd (circlePeriodHom I M u) c * (2 * π) := by
+  rw [u.coe_circleLogDeriv, homologyPeriodHom_mapCoeff _
+    (u.isSmoothForm_mlogDeriv_coe.of_le (by simp)) u.mextDeriv_mlogDeriv_coe,
+    AddMonoidHom.comp_apply, u.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom]
+  simp
+
+/-- **Closed real forms with periods in `2πℤ` are real logarithmic derivatives.** A smooth closed
+real `1`-form whose integrals over singular `1`-cycles lie in `2πℤ` is `circleLogDeriv u` for a
+smooth map `u : M → U(1)`. -/
+theorem exists_circleLogDeriv_eq {φ : SmoothForm I M ℝ 1} (hclosed : mextDeriv φ.val = 0)
+    (hper : ∀ c, ∃ n : ℤ, homologyPeriodHom φ.val c = n * (2 * π)) :
+    ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, u.circleLogDeriv = φ := by
+  -- `i φ` is a closed imaginary form with periods in `2πiℤ`, hence `dlog u` for some `u`.
+  let L : ℝ →L[ℝ] ℂ := Complex.I • Complex.ofRealCLM
+  have hφ₁ : IsSmoothForm I 1 φ.val := φ.isSmoothForm.of_le (by simp)
+  obtain ⟨u, hu⟩ := exists_mlogDeriv_coe_eq (φ := RoughForm.mapCoeff L φ.val)
+    (φ.isSmoothForm.mapCoeff L)
+    (by rw [mextDeriv_mapCoeff L hφ₁, hclosed, RoughForm.mapCoeff_zero])
+    (fun x v ↦ by simp [L])
+    fun c ↦ by
+      obtain ⟨n, hn⟩ := hper c
+      refine ⟨n, ?_⟩
+      rw [homologyPeriodHom_mapCoeff L hφ₁ hclosed, AddMonoidHom.comp_apply,
+        AddMonoidHom.coe_ofClass, hn]
+      simp only [L, smul_apply, Complex.ofRealCLM_apply, smul_eq_mul]
+      push_cast
+      ring
+  refine ⟨u, Subtype.ext (funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_)⟩
+  rw [u.circleLogDeriv_apply, hu]
+  simp [L]
+
+namespace deRhamCohomology
+
+variable (I M) in
+/-- The lattice `2π H¹(M; ℤ)` in the first de Rham cohomology: the classes whose periods on every
+singular `1`-cycle lie in `2πℤ`. -/
+def circlePeriodLattice : AddSubgroup (deRhamCohomology I M 1) where
+  carrier := {c | ∀ z, ∃ n : ℤ, homologyPeriod c z = n * (2 * π)}
+  add_mem' {c d} hc hd z := by
+    obtain ⟨m, hm⟩ := hc z
+    obtain ⟨n, hn⟩ := hd z
+    exact ⟨m + n, by rw [map_add, AddMonoidHom.add_apply, hm, hn]; push_cast; ring⟩
+  zero_mem' z := ⟨0, by simp⟩
+  neg_mem' {c} hc z := by
+    obtain ⟨n, hn⟩ := hc z
+    exact ⟨-n, by rw [map_neg, AddMonoidHom.neg_apply, hn]; push_cast; ring⟩
+
+@[simp]
+theorem mem_circlePeriodLattice_iff {c : deRhamCohomology I M 1} :
+    c ∈ circlePeriodLattice I M ↔ ∀ z, ∃ n : ℤ, homologyPeriod c z = n * (2 * π) :=
+  Iff.rfl
+
+/-- **The lattice `2π H¹(M; ℤ)` consists of the classes of real logarithmic derivatives.** The de
+Rham class of a closed `1`-form lies in `2π H¹(M; ℤ)` exactly when the form is the real
+logarithmic derivative of a smooth circle-valued map. -/
+theorem mk_mem_circlePeriodLattice_iff {a : closedForms I M 1} :
+    mk I 1 a ∈ circlePeriodLattice I M ↔
+      ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, u.circleLogDeriv = a.val := by
+  rw [mem_circlePeriodLattice_iff, homologyPeriod_mk]
+  refine ⟨fun h ↦ exists_circleLogDeriv_eq ((mem_closedForms I a.val).mp a.property) h,
+    fun ⟨u, hu⟩ z ↦ ⟨_, hu ▸ u.homologyPeriodHom_circleLogDeriv z⟩⟩
+
+end deRhamCohomology
 
 end TauCeti

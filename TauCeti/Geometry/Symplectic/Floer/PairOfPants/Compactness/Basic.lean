@@ -95,10 +95,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPant
     isOpen_thricePuncturedSphereReal.prod isOpen_univ
   have hK' {n : ℕ∞} (hn : (n : WithTop ℕ∞) ≤ 3) (v : ℂ) : ContDiffOn ℝ n
       (uncurry fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x v)
-      (thricePuncturedSphereReal ×ˢ univ) := by
-    rintro ⟨z, x⟩ ⟨hz, -⟩
-    exact (contDiffAt_uncurry_pairOfPantsPerturbation hH (fun q ↦ (hHs q).of_le hn) hz x
-      v).contDiffWithinAt
+      (thricePuncturedSphereReal ×ˢ univ) :=
+    contDiffOn_uncurry_pairOfPantsPerturbation hH (fun q ↦ (hHs q).of_le hn) v
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset hS
     (hK' (by norm_num) 1) (hK' (by norm_num) I) hJ hD hK (prod_mono hDS (subset_univ K))
     fun z hz x _ ↦ hJt z (hDS hz) x

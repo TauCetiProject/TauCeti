@@ -50,7 +50,10 @@ the standard form `Σ dq_i ∧ dp_i` on `ℂ^ι = EuclideanSpace ℝ ι × Eucli
 measure (`TauCeti.SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm`). Likewise on a
 plane the Liouville measure of the determinant form of a basis is the Haar measure of that basis
 (`TauCeti.SmoothTwoForm.liouvilleMeasure_const_continuousDet`), so the area form `dx ∧ dy` of `ℝ²`
-has Liouville measure Lebesgue measure.
+has Liouville measure Lebesgue measure. Consequently the inverse of a Darboux chart, a partial
+homeomorphism to `ℂ^ι` whose inverse pulls `σ` back to the standard form, carries Lebesgue
+measure on the target of the chart to the Liouville measure of `σ` on its source
+(`OpenPartialHomeomorph.map_symm_volume_restrict_target`).
 
 ## Main definitions
 
@@ -59,6 +62,7 @@ has Liouville measure Lebesgue measure.
 ## Main results
 
 * `TauCeti.SmoothTwoForm.liouvilleMeasure_apply_of_subset`: the Liouville measure in a chart.
+* `TauCeti.SmoothTwoForm.liouvilleMeasure_one`: on a surface it is the measure `|σ|` of `σ`.
 * `TauCeti.SmoothTwoForm.isLocallyFiniteMeasure_liouvilleMeasure`: it is locally finite.
 * `TauCeti.SmoothTwoForm.nullSingletonClass_liouvilleMeasure`: in positive dimension points are
   null.
@@ -82,6 +86,8 @@ has Liouville measure Lebesgue measure.
   the standard symplectic form on `ℂ^ι` is Lebesgue measure.
 * `TauCeti.SmoothTwoForm.liouvilleMeasure_const_continuousDet`: on a plane, the Liouville measure
   of the determinant form of a basis is the Haar measure of that basis.
+* `OpenPartialHomeomorph.map_symm_volume_restrict_target`: the inverse of a Darboux chart carries
+  Lebesgue measure on its target to the Liouville measure on its source.
 
 ## References
 
@@ -124,6 +130,11 @@ variable (σ n) in
 /-- The Liouville measure is the measure of the symplectic volume form. -/
 theorem liouvilleMeasure_def : σ.liouvilleMeasure n = RoughForm.measure (σ.volumeForm n).val :=
   (rfl)
+
+/-- On a surface the Liouville measure of `σ` is the measure `|σ|` of the two-form itself. -/
+theorem liouvilleMeasure_one [Fact (finrank ℝ E = 2 * 1)] (σ : SmoothTwoForm I M) :
+    σ.liouvilleMeasure 1 = RoughForm.measure σ.val := by
+  rw [liouvilleMeasure_def, volumeForm_one]
 
 /-- **The Liouville measure in coordinates.** The Liouville measure of a measurable subset of a
 chart source is the integral over its coordinate image of the absolute value of the coefficient of
@@ -187,9 +198,10 @@ namespace MeasurableEmbedding
 
 open TauCeti
 
-variable {H' N : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N]
-  [ChartedSpace H' N] [IsManifold J ∞ N] [MeasurableSpace N] [BorelSpace N] [LindelofSpace N]
-  {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J N} {f : M → N}
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [Fact (finrank ℝ E' = 2 * n)] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N] [MeasurableSpace N] [BorelSpace N]
+  [LindelofSpace N] {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J N} {f : M → N}
 
 /-- **Embeddings pulling back the two-form carry Liouville measure to Liouville measure.** A
 differentiable measurable embedding `f : M → N` between manifolds of the same dimension with
@@ -312,6 +324,74 @@ theorem liouvilleMeasure_constSmooth_stdSymplecticForm {ι : Type*} [Fintype ι]
     Basis.prod_addHaar, OrthonormalBasis.addHaar_eq_volume, Measure.volume_eq_prod]
 
 end TauCeti.SymplecticForm
+
+/-! ### Darboux charts -/
+
+namespace OpenPartialHomeomorph
+
+open TauCeti TopologicalSpace
+
+variable {ι : Type*} [Fintype ι] [Fact (finrank ℝ E = 2 * Fintype.card ι)] {σ : SmoothTwoForm I M}
+
+/-- **Darboux charts carry Lebesgue measure to the Liouville measure.** Let `e` be a partial
+homeomorphism from `M` to `ℂ^ι = EuclideanSpace ℝ ι × EuclideanSpace ℝ ι` whose inverse is smooth
+on the target of `e` and pulls `σ` back to the standard symplectic form `Σ dq_i ∧ dp_i` there. Then
+the inverse of `e` carries Lebesgue measure on the target of `e` to the Liouville measure of `σ` on
+the source of `e`. -/
+theorem map_symm_volume_restrict_target
+    (e : OpenPartialHomeomorph M (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι))
+    (he : ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) I ∞ e.symm e.target)
+    (h : ∀ w ∈ e.target, ∀ a b, σ.eval₂ (e.symm w)
+      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) I e.symm w a)
+      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) I e.symm w b) =
+        stdSymplecticForm a b) :
+    (volume.restrict e.target).map e.symm =
+      (σ.liouvilleMeasure (Fintype.card ι)).restrict e.source := by
+  set W : Opens (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) := ⟨_, e.open_target⟩
+  set g : W → M := fun w ↦ e.symm w
+  have hd (w : W) : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) I ∞ e.symm w :=
+    (he w w.property).contMDiffAt (e.open_target.mem_nhds w.property)
+  have hg : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) I ∞ g := fun w ↦
+    (hd w).comp w contMDiff_subtypeVal.contMDiffAt
+  -- The restricted inverse `g` pulls `σ` back to the standard form restricted to `W`.
+  have hpull : SmoothForm.mpullback _ hg σ = SmoothForm.mpullback (Subtype.val : W → _)
+      contMDiff_subtypeVal (stdSymplecticForm (V := EuclideanSpace ℝ ι)).constSmooth := by
+    refine SmoothBundleForm.ext_eval₂ fun w a b ↦ ?_
+    have hval : MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+        𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (Subtype.val : W → _) w :=
+      contMDiff_subtypeVal.mdifferentiable one_ne_zero w
+    -- By definition `g` is the inclusion of `W` followed by the inverse of `e`.
+    rw [SmoothForm.eval₂_mpullback, SmoothForm.eval₂_mpullback,
+      show g = e.symm ∘ Subtype.val from rfl,
+      mfderiv_comp_apply w ((hd w).mdifferentiableAt (by simp)) hval,
+      mfderiv_comp_apply w ((hd w).mdifferentiableAt (by simp)) hval,
+      TauCeti.Manifold.mfderiv_subtype_val_apply, TauCeti.Manifold.mfderiv_subtype_val_apply]
+    exact (h w w.property a b).trans (SymplecticForm.constSmooth_apply _ _ _ _).symm
+  have hpull' := congrArg Subtype.val hpull
+  rw [SmoothForm.coe_mpullback] at hpull'
+  have hrange : range g = e.source := by
+    ext x
+    simp only [← e.symm_image_target_eq_source, g, W, mem_range, Subtype.exists, Opens.mem_mk,
+      exists_prop, mem_image]
+  have : Fact (finrank ℝ (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) = 2 * Fintype.card ι) :=
+    ⟨by rw [finrank_prod, finrank_euclideanSpace, two_mul]⟩
+  -- Lebesgue measure on `W` is the Liouville measure of the restricted standard form, which `g`
+  -- carries to the Liouville measure of `σ` on the range of `g`.
+  have hW : volume.restrict e.target = (SmoothTwoForm.liouvilleMeasure (Fintype.card ι)
+      (SmoothForm.mpullback (Subtype.val : W → _) contMDiff_subtypeVal
+        (stdSymplecticForm (V := EuclideanSpace ℝ ι)).constSmooth)).map Subtype.val := by
+    rw [SmoothTwoForm.map_liouvilleMeasure_mpullback_subtypeVal,
+      SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm]
+    simp only [W, Opens.coe_mk]
+  rw [hW, AEMeasurable.map_map_of_aemeasurable (by
+      rw [← hW]
+      exact e.continuousOn_symm.aemeasurable e.open_target.measurableSet)
+    measurable_subtypeVal.aemeasurable,
+    ← hrange]
+  have hemb : MeasurableEmbedding g := e.symm.isOpenEmbedding_restrict.measurableEmbedding
+  exact hemb.map_liouvilleMeasure (hg.mdifferentiable (by simp)) hpull'
+
+end OpenPartialHomeomorph
 
 /-! ### The area form of the plane -/
 
