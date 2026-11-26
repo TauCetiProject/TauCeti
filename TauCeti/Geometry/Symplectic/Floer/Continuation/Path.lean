@@ -19,7 +19,7 @@ second at `μ = 1`. Its almost complex structures `TauCeti.Floer.pathAlmostCompl
 `J' z y`, with the parameter `μ` as its homotopy coordinate `s` (at time `0`); so they are tame
 (`TauCeti.Floer.tames_pathAlmostComplex`), their Cayley coordinates relative to a fixed compatible
 structure run along the segment between those of `J z y` and `J' z y`
-(`TauCeti.Floer.cayley_pathAlmostComplex`), and they stay compatible.
+(`TauCeti.Floer.cayley_pathAlmostComplex`), and they are compatible wherever both `J` and `J'` are.
 Its Hamiltonians `TauCeti.Floer.pathHamiltonian` run along the segment `K + μ (K' - K)`, the linear
 homotopy `TauCeti.Floer.linearHomotopy` with profile `id`.
 

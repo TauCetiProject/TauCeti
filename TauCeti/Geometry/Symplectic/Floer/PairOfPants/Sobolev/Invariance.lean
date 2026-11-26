@@ -17,11 +17,12 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 Let `u` be a `C¹` map on the pair of pants `S = ℂ ∖ {0, 1}` into a finite-dimensional symplectic
 inner product space `(V, ω)`, and let `(J, K_s, K_t)` and `(J', K'_s, K'_t)` be two sets of Floer
 data on `S` which agree far out on the ends: beyond some height of every end `q`, read in the
-positive end chart `φ'_q`, both are a family `J_q(t)` of compatible structures together with the
-pair-of-pants perturbation of the same period-one Hamiltonians `H_q`, and `u` solves the Floer
-equation there and converges to nondegenerate one-periodic orbits `x_q` along the ends. Over the
-compact core of `S` the two sets of data are arbitrary: `ω`-tame almost complex structures,
-compatible with `ω` along the graph of `u`, and `C¹` (with `C²` Hamiltonians) along it. This file
+positive end chart `φ'_q`, both are a `C¹` family `J_q(t)` of almost complex structures, compatible
+along the limit orbits `x_q`, together with the pair-of-pants perturbation of the same period-one
+Hamiltonians `H_q`, and `u` solves the Floer equation there and converges to nondegenerate
+one-periodic orbits `x_q` along the ends. Over the compact core of `S` the two sets of data are
+arbitrary: `ω`-tame almost complex structures, compatible with `ω` along the graph of `u`, and `C¹`
+(with `C²` Hamiltonians) along it. This file
 proves that the realizations `D_u : W^{1,2}_0(S, V) → L²(S, V)` of the linearized Floer operators of
 the two sets of data (`TauCeti.SymplecticForm.floerConformalSobolevOperator` for the cylindrical
 weight) are Fredholm together
