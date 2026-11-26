@@ -143,6 +143,7 @@ theorem periodicTorusOperator_antiperiodicGaugeLoop_eq_zero_iff (hℓ : ℓ ≠ 
         (S t (cexp (↑(π / T * t) * I) • toContinuousMap T (by norm_num) x.1 t)) t := by
   have hinj := (isInvertible_torusModeOperator_periodic T hℓ _
     (im_inner_antiperiodicGaugeLoop_add_eq_zero T hS)).injective
+  unfold periodicModeFrequency at hinj
   rw [periodicTorusOperator_apply, Prod.mk_eq_zero, smul_eq_zero, map_eq_zero_iff _ hinj,
     loopOperator_antiperiodicGaugeLoop_eq_zero_iff]
   simp only [I_ne_zero, false_or]

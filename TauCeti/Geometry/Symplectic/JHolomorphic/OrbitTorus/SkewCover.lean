@@ -97,8 +97,6 @@ signs found on the covers along the orbit in
 * `TauCeti.skewTorusModeSobolev F ω σ θ`, `TauCeti.skewTorusModeL2 F ω σ θ`: the maps with the
   frequencies `ω` along `s` that are invariant under the translation by `(σ, θ)`, in `H¹` and in
   `L²`.
-* `TauCeti.periodicModeFrequency ℓ`: the frequencies `2(k + 1)π/ℓ` of the maps periodic of period
-  `ℓ` in `s` with no `s`-independent part.
 * `TauCeti.skewTorusModeOperator`: the restriction of `TauCeti.torusModeOperator` to them.
 * `TauCeti.skewTorusOperator T q ℓ σ S`: the operator `∂s + J₀ (∂t - S)` on the cover with lattice
   spanned by `(ℓ, 0)` and `(σ, T)`, when `q σ ∈ ℓ ℤ`.
@@ -361,18 +359,6 @@ theorem isClosed_skewTorusModeL2 (ω : ℕ → ℝ) (σ : ℝ) (θ : AddCircle T
 instance [CompleteSpace F] (ω : ℕ → ℝ) (σ : ℝ) (θ : AddCircle T) :
     CompleteSpace (skewTorusModeL2 F ω σ θ) :=
   (isClosed_skewTorusModeL2 ω σ θ).completeSpace_coe
-
-/-- The frequencies `ωₖ = 2(k + 1)π/ℓ` along `s` of the modes of maps periodic of period `ℓ` in `s`
-with no `s`-independent part, the frequencies of `TauCeti.skewTorusOperator`. -/
--- A named sequence: with the anonymous function `fun k ↦ 2 * (k + 1) * π / ℓ` in the types of the
--- determinant lines of `TauCeti.skewTorusOperator`, elaboration unfolds the invariant subspaces
--- and times out.
-def periodicModeFrequency (ℓ : ℝ) (k : ℕ) : ℝ :=
-  2 * (k + 1) * π / ℓ
-
-theorem periodicModeFrequency_apply (ℓ : ℝ) (k : ℕ) :
-    periodicModeFrequency ℓ k = 2 * (k + 1) * π / ℓ :=
-  (rfl)
 
 end Space
 

@@ -139,11 +139,11 @@ antiperiodic of antiperiod `ℓ` in `s`, whose frequencies `ωₖ = (2k + 1)π/�
 theorem detLineOrientationTransport_rayOfNeZero_torusModeOperator_antiperiodic {ℓ : ℝ}
     (hℓ : ℓ ≠ 0) {M : ℝ → C(AddCircle T, F →L[ℝ] F)} {a b : ℝ} (hM : ContinuousOn M (uIcc a b))
     (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
-    {f : torusModeSobolev F (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) →ₗ[ℂ] 𝕐[F]}
-    (hf : f.restrictScalars ℝ = torusModeOperator T (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) (M a))
+    {f : torusModeSobolev F (antiperiodicModeFrequency ℓ) →ₗ[ℂ] 𝕐[F]}
+    (hf : f.restrictScalars ℝ = torusModeOperator T (antiperiodicModeFrequency ℓ) (M a))
     {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z) :
     detLineOrientationTransport
-        (T := fun τ ↦ torusModeOperator T (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) (M τ)) a b
+        (T := fun τ ↦ torusModeOperator T (antiperiodicModeFrequency ℓ) (M τ)) a b
         ((continuous_torusModeOperator T _).comp_continuousOn hM)
         (fun τ hτ ↦ (isInvertible_torusModeOperator_antiperiodic T hℓ (M τ) (hMs τ hτ)).isFredholm)
         (rayOfNeZero ℝ (LinearMap.detLineCongrOfEq hf z) (hz.detLineCongrOfEq_ne_zero hf
@@ -155,7 +155,8 @@ theorem detLineOrientationTransport_rayOfNeZero_torusModeOperator_antiperiodic {
         ((LinearEquiv.map_ne_zero_iff _).2 one_ne_zero) := by
   refine detLineOrientationTransport_rayOfNeZero_torusModeOperator T
     (div_pos Real.pi_pos (abs_pos.2 hℓ)) (fun k ↦ ?_) hM hMs hf hz
-  rw [abs_div, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (2 * k + 1) * π)]
+  rw [antiperiodicModeFrequency_apply, abs_div,
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ (2 * k + 1) * π)]
   gcongr
   nlinarith [Real.pi_pos, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
 
@@ -244,15 +245,15 @@ theorem detLineOrientationTransport_rayOfNeZero_skewTorusModeOperator_antiperiod
     (q : ℕ) [NeZero q] {ℓ : ℝ} (hℓ : ℓ ≠ 0) (σ : ℝ) {M : ℝ → C(AddCircle T, F →L[ℝ] F)}
     {a b : ℝ} (hM : ContinuousOn M (uIcc a b))
     (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
-    {f : skewTorusModeSobolev F (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) σ
+    {f : skewTorusModeSobolev F (antiperiodicModeFrequency ℓ) σ
         ((T : ℝ) : AddCircle ((q : ℝ) * T)) →ₗ[ℂ]
-      skewTorusModeL2 F (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) σ ((T : ℝ) : AddCircle ((q : ℝ) * T))}
+      skewTorusModeL2 F (antiperiodicModeFrequency ℓ) σ ((T : ℝ) : AddCircle ((q : ℝ) * T))}
     (hf : f.restrictScalars ℝ = skewTorusModeOperator ((q : ℝ) * T)
-      (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) σ _ (AddCircle.coverPullback q (M a))
+      (antiperiodicModeFrequency ℓ) σ _ (AddCircle.coverPullback q (M a))
       (AddCircle.coverPullback_add_coe_period q (M a)))
     {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z) :
     detLineOrientationTransport
-        (T := fun τ ↦ skewTorusModeOperator ((q : ℝ) * T) (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) σ _
+        (T := fun τ ↦ skewTorusModeOperator ((q : ℝ) * T) (antiperiodicModeFrequency ℓ) σ _
           (AddCircle.coverPullback q (M τ)) (AddCircle.coverPullback_add_coe_period q (M τ))) a b
         (continuousOn_skewTorusModeOperator _ _ σ
           ((AddCircle.continuous_coverPullback q).comp_continuousOn hM) _)
@@ -269,7 +270,7 @@ theorem detLineOrientationTransport_rayOfNeZero_skewTorusModeOperator_antiperiod
             (im_inner_coverPullback_add_eq_zero q (hMs b right_mem_uIcc)))).bijective).symm 1)
         ((LinearEquiv.map_ne_zero_iff _).2 one_ne_zero) :=
   detLineOrientationTransport_rayOfNeZero_skewTorusModeOperator _
-    (ω := fun k : ℕ ↦ (2 * k + 1) * π / ℓ) σ (M := fun τ ↦ AddCircle.coverPullback q (M τ))
+    (ω := antiperiodicModeFrequency ℓ) σ (M := fun τ ↦ AddCircle.coverPullback q (M τ))
     ((AddCircle.continuous_coverPullback q).comp_continuousOn hM)
     (fun τ ↦ AddCircle.coverPullback_add_coe_period q (M τ))
     (fun τ hτ ↦ isInvertible_torusModeOperator_antiperiodic _ hℓ _

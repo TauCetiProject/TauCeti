@@ -294,6 +294,7 @@ private theorem mem_doublyAntiperiodicSobolev_of_mem {ℓ : ℝ} (hℓ : ℓ ≠
   have hrot : rotateMode ((T / 2 : ℝ) : AddCircle T) x = -x := by
     refine (isInvertible_torusModeOperator_antiperiodic T hℓ S hS).injective
       (lp.ext (funext fun k ↦ ?_))
+    unfold antiperiodicModeFrequency
     rw [torusModeOperator_rotateMode T hS', map_neg]
     refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)
     · simpa using (rotate_half_period_eq_neg_iff hT).2 (hx k).1
