@@ -123,6 +123,8 @@ theorem exists_lieEquiv_apply_eq_sub_smul_of_lie_eq_smul (B : LinearMap.BilinFor
       LinearMap.toMatrix b b (LieEquiv.refl : L ≃ₗ⁅ℝ⁆ L).toLinearEquiv =
         NormedSpace.exp (Real.pi • LinearMap.toMatrix b b (LieAlgebra.ad ℝ L ((0 : ℝ) • x))) := by
     simp only [zero_smul, map_zero, smul_zero, NormedSpace.exp_zero]
+    rw [show ((LieEquiv.refl : L ≃ₗ⁅ℝ⁆ L).toLinearEquiv : L →ₗ[ℝ] L) = LinearMap.id from
+      LinearMap.ext LieEquiv.refl_apply]
     exact LinearMap.toMatrix_id b
   by_cases hα : α = 0
   · exact ⟨0, LieEquiv.refl, fun b ↦ hrefl b, fun _ _ ↦ rfl, fun H ↦ by simp [hα]⟩
