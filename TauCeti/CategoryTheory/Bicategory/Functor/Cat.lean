@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Bicategory.Functor.Cat
 public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
+public import TauCeti.CategoryTheory.Center.Basic
 
 /-!
 # Components of the comparison isomorphisms of `Cat`-valued pseudofunctors
@@ -16,7 +17,9 @@ depends on the chosen `1`-morphism `fg` equal to `f ≫ g`. This file records, o
 changes when `fg` is replaced by an equal `1`-morphism, and the right unit law for an arbitrary
 `fg` equal to `f ≫ 𝟙 _` when the source bicategory is strict. These are the forms in which the
 comparisons appear when `fg` is computed rather than written as a composite, as for the
-transition maps of a discrete pseudofunctor.
+transition maps of a discrete pseudofunctor. Conjugating by the composition comparison also
+transports a formula identifying an endomorphism with a component of a central element
+(`CatCenter`) from `F.map fg` to the iterated image under `F.map f` and `F.map g`.
 
 ## Main results
 
@@ -24,6 +27,8 @@ transition maps of a discrete pseudofunctor.
   `1`-morphism composes the component with an `eqToHom`.
 * `CategoryTheory.Pseudofunctor.mapComp'_comp_id_hom_app_mapId_hom_app`: the right unit law at an
   arbitrary `fg` equal to `f ≫ 𝟙 _`.
+* `CategoryTheory.Pseudofunctor.map_map_eq_catCenter_app`: if `F.map fg` sends an endomorphism to
+  the component of a central element, so does `F.map f` followed by `F.map g`.
 -/
 
 public section
@@ -54,5 +59,18 @@ lemma mapComp'_comp_id_hom_app_mapId_hom_app [Strict B] {b₀ b₁ : B} (f fg : 
         eqToHom (by rw [← h, Strict.comp_id]; rfl) := by
   obtain rfl : fg = f := h.symm.trans (Strict.comp_id f)
   simp [mapComp'_comp_id_hom_app]
+
+/-- **Transport of a central formula along a composite.** If the image of an endomorphism `c` of
+`x` under `F.map fg` is the component of a central element `z` at `(F.map fg) x`, then its
+iterated image under `F.map f` and then `F.map g` is the component of `z` at
+`(F.map g) ((F.map f) x)`, for any `fg` equal to `f ≫ g`. The composition isomorphism of `F` is
+kept; the two image objects are not identified. -/
+lemma map_map_eq_catCenter_app {b₀ b₁ b₂ : B} (f : b₀ ⟶ b₁) (g : b₁ ⟶ b₂) (fg : b₀ ⟶ b₂)
+    (h : f ≫ g = fg) {x : F.obj b₀} (c : x ⟶ x) (z : CatCenter (F.obj b₂))
+    (hc : (F.map fg).toFunctor.map c = z.app ((F.map fg).toFunctor.obj x)) :
+    (F.map g).toFunctor.map ((F.map f).toFunctor.map c) =
+      z.app ((F.map g).toFunctor.obj ((F.map f).toFunctor.obj x)) := by
+  rw [← F.mapComp'_naturality_1 f g fg h c, hc]
+  exact z.inv_comp_app_comp_hom ((Cat.Hom.toNatIso (F.mapComp' f g fg h)).app x)
 
 end CategoryTheory.Pseudofunctor

@@ -609,13 +609,11 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_exchangePer
   exact ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_recentered hH hHs
     hc₀ hc₁ hX hx hnd hJe hJex (fun q hq ζ hζ ↦ hJeq q hq ζ (hR₁.trans hζ))
     (fun ζ hζ ↦ hJeq_inf ζ (hR₁.trans hζ))
-    (fun q hq _ _ hz ↦ by
-      have h := exchangePerturbation_eq_of_pos_fst_positiveEndCoord (H := H) hc₀ hc₁ hq
-        (by linarith [h1 hz])
-      exact ⟨funext fun x ↦ by rw [h], funext fun x ↦ by rw [h]⟩)
-    (fun _ hz ↦ by
-      have h := exchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord (H := H) hc₀ hc₁ (h1 hz)
-      exact ⟨funext fun x ↦ by rw [h], funext fun x ↦ by rw [h]⟩) hJ
+    (fun _ hq _ _ hz ↦
+      exchangePerturbation_components_eq_of_pos_fst_positiveEndCoord hc₀ hc₁ hq
+        (zero_lt_one.trans (h1 hz)))
+    (fun _ hz ↦ exchangePerturbation_add_components_eq_of_one_lt_fst_positiveEndCoord hc₀ hc₁
+      (h1 hz)) hJ
     (fun z hz ↦ contDiffAt_uncurry_exchangePerturbation hH hHs c hz (u z) 1)
     (fun z hz ↦ contDiffAt_uncurry_exchangePerturbation hH hHs c hz (u z) Complex.I) hu hc
     (fun q hq z hz hzR ↦ hF q hq z hz (hR₁.trans hzR)) (fun z hz ↦ hF_inf z (hR₁.trans hz)) hux

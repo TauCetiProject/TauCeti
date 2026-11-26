@@ -28,7 +28,12 @@ The factors are also nonzero on `Re(s) < 0`:
 `DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`.
 
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,
-by David Loeffler and Michael Stoll.
+by David Loeffler and Michael Stoll. When the levels have the same prime factors,
+`DirichletCharacter.LFunction_changeLevel_eq_of_primeFactors_eq` shows that no correction
+is needed, away from the possible pole. This comparison is used in
+`New.exists_regularL_eq_of_sq_eq_one` in `grh/src/Lib/Analytic/Primes.lean` of
+https://github.com/lsernau/grh-lean (rev. `72fead1`).
+
 For the elementary finite-product estimates see Davenport, *Multiplicative Number Theory*,
 the treatment of imprimitive characters and Siegel's theorem.
 -/
@@ -133,6 +138,15 @@ theorem LFunction_changeLevel_eventuallyEq_nhds {M N : ℕ} [NeZero M] [NeZero N
     simp [Finset.prod_apply, LFunction_changeLevel hMN χ (.inr hz), mul_comm]
   · exact Eventually.of_forall fun z ↦ by
       simp [Finset.prod_apply, LFunction_changeLevel hMN χ (.inl hχ), mul_comm]
+
+/-- Raising the level without adding prime factors leaves the L-function unchanged, away from
+`1` in the principal case and everywhere in the nonprincipal case. -/
+theorem LFunction_changeLevel_eq_of_primeFactors_eq {M N : ℕ} [NeZero M] [NeZero N]
+    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) (h : N.primeFactors = M.primeFactors)
+    {s : ℂ} (hs : χ ≠ 1 ∨ s ≠ 1) : (χ.changeLevel hMN).LFunction s = χ.LFunction s := by
+  rw [LFunction_changeLevel hMN χ hs, h, Finset.prod_eq_one, mul_one]
+  intro p hp
+  simp [χ.map_nonunit (ZMod.not_isUnit_of_mem_primeFactors hp)]
 
 /-- Raising the level preserves the zeros of the continued L-function in the open right
 half-plane. At the possible pole `1`, require the original character to be nonprincipal. -/

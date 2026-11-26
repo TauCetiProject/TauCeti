@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Moebius
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # Standard automorphisms of the complex unit disc
@@ -19,13 +20,16 @@ composes it with Mathlib's `Circle` action on `Complex.UnitDisc`.
 
 It reuses Mathlib's `Circle` action on `Complex.UnitDisc` and Tau Ceti's
 `unitDiscMoebiusEquiv`.
+
+A standard automorphism whose boundary values fix `1` and `-1` has `u = 1` and real `a`
+(`TauCeti.coe_eq_one_and_conj_eq_of_tendsto`).
 -/
 
 public section
 
 namespace TauCeti
 
-open _root_.Complex
+open _root_.Complex Filter Metric Set Topology
 open scoped ComplexConjugate
 
 /--
@@ -144,6 +148,39 @@ lemma eq_zero_and_eq_one_of_unitDiscStandardAutomorphismFormula_eq_self {u c w�
     exact (mul_eq_zero.mp h).resolve_right (sub_ne_zero.mpr h₂₃)
   have hu : u - 1 = 0 := by simpa [hc] using h₁₂
   exact ⟨(map_eq_zero _).mp hc, sub_eq_zero.mp hu⟩
+
+/-- A standard disc automorphism `ζ ↦ u (ζ - a) / (1 - conj a ζ)` which agrees on the disc with a
+map tending to `1` at `1` and to `-1` at `-1` has `u = 1` and real `a`. The formula is continuous
+at both boundary points, so it fixes them. -/
+lemma coe_eq_one_and_conj_eq_of_tendsto {f : ℂ → ℂ} {u : Circle} {a : Complex.UnitDisc}
+    (hf : EqOn f (fun ζ => (u : ℂ) * ((ζ - a) / (1 - conj (a : ℂ) * ζ))) (ball 0 1))
+    (h₁ : Tendsto f (𝓝[ball 0 1] 1) (𝓝 1)) (h₂ : Tendsto f (𝓝[ball 0 1] (-1)) (𝓝 (-1))) :
+    (u : ℂ) = 1 ∧ conj (a : ℂ) = a := by
+  set M : ℂ → ℂ := fun ζ => (u : ℂ) * ((ζ - a) / (1 - conj (a : ℂ) * ζ))
+  have hnorm : ‖conj (a : ℂ)‖ < 1 := by simpa using a.norm_lt_one
+  -- At a point of the unit circle, `M` is continuous, so its value is the limit of `f`.
+  have hfix (ζ₀ : ℂ) (hζ₀ : ‖ζ₀‖ = 1) (hf₀ : Tendsto f (𝓝[ball 0 1] ζ₀) (𝓝 ζ₀)) :
+      M ζ₀ = ζ₀ := by
+    have hden : 1 - conj (a : ℂ) * ζ₀ ≠ 0 :=
+      one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hζ₀.le a.norm_lt_one
+    have hM : ContinuousAt M ζ₀ := by
+      refine continuousAt_const.mul (ContinuousAt.div ?_ ?_ hden) <;> fun_prop
+    have : (𝓝[ball (0 : ℂ) 1] ζ₀).NeBot := mem_closure_iff_nhdsWithin_neBot.mp
+      (by rw [closure_ball _ one_ne_zero]; simp [hζ₀])
+    exact tendsto_nhds_unique (hM.tendsto.mono_left nhdsWithin_le_nhds)
+      (hf₀.congr' (eventually_nhdsWithin_of_forall hf))
+  have e₁ := hfix 1 (by simp) h₁
+  have e₂ := hfix (-1) (by simp) h₂
+  have hd₁ : 1 - conj (a : ℂ) ≠ 0 := one_sub_ne_zero_of_norm_lt_one hnorm
+  have hd₂ : 1 + conj (a : ℂ) ≠ 0 := by
+    simpa using one_sub_ne_zero_of_norm_lt_one (x := -conj (a : ℂ)) (by simpa using hnorm)
+  simp only [M, mul_one, mul_neg] at e₁ e₂
+  rw [sub_neg_eq_add] at e₂
+  field_simp at e₁ e₂
+  have hu : (u : ℂ) = 1 := by linear_combination (e₁ - e₂) / 2
+  refine ⟨hu, ?_⟩
+  rw [hu] at e₁
+  linear_combination e₁
 
 /-- The inverse of a standard automorphism as a composition of the inverse rotation and
 the inverse Moebius factor. -/
