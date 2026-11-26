@@ -19,7 +19,9 @@ A quotient `G → Q` is represented by an injective morphism of Hopf algebras `k
 representation of `Q` is a representation of `G` by corestricting the coaction, and a vector fixed
 by `G` is fixed by `Q`, since tensoring with `M` over a field preserves the injectivity of
 `k[Q] → k[G]`. So **quotients of unipotent groups are unipotent**
-(`TauCeti.unipotentCommHopfAlgProperty.of_injective`; Milne, Corollary 14.7).
+(`TauCeti.unipotentCommHopfAlgProperty.of_injective`; Milne, Corollary 14.7). The argument only
+uses that `k[Q] → k[G]` is an injective coalgebra map sending `1` to `1`
+(`TauCeti.unipotentCommHopfAlgProperty.of_coalgHom_injective`).
 
 A character of `G` is a group-like element of `H`, and a nontrivial one excludes unipotence, so
 the only character of a unipotent group is trivial
@@ -34,6 +36,8 @@ that the morphism preserves the coalgebra structure.
 
 ## Main declarations
 
+* `TauCeti.unipotentCommHopfAlgProperty.of_coalgHom_injective`: unipotence pulls back along an
+  injective coalgebra map preserving `1`.
 * `TauCeti.unipotentCommHopfAlgProperty.of_injective`: a quotient of a unipotent group is
   unipotent.
 * `TauCeti.unipotentCommHopfAlgProperty.apply_eq_algebraMap_counit_of_groupLikeSetSpan_eq_top`:
@@ -61,22 +65,33 @@ namespace unipotentCommHopfAlgProperty
 variable (hH : unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k H))
 include hH
 
-/-- **A quotient of a unipotent group is unipotent.** If `f : A → H` is an injective morphism of
-Hopf algebras, representing a quotient of the group of `H`, and `H` is unipotent, then so is
-`A`. -/
-theorem of_injective {A : Type w} [CommRing A] [HopfAlgebra k A] (f : A →ₐc[k] H)
-    (hf : Function.Injective f) : unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k A) := by
+/-- **Unipotence pulls back along injective unital coalgebra maps.** If `f : A → H` is an injective
+morphism of coalgebras with `f 1 = 1` between commutative Hopf algebras, and `H` is unipotent, then
+so is `A`. The map need not be multiplicative: this applies to the inclusion of the coalgebra
+`k[x]/(xᵖ)` of `αₚ` into `k[x]` as `span {1, x, …, xᵖ⁻¹}`. -/
+theorem of_coalgHom_injective {A : Type w} [CommRing A] [HopfAlgebra k A] (f : A →ₗc[k] H)
+    (hf : Function.Injective f) (h1 : f 1 = 1) :
+    unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k A) := by
+  -- An `A`-comodule is an `H`-comodule through `f`; a vector fixed by `H` is fixed by `A`, since
+  -- tensoring with `M` over a field preserves the injectivity of `f` and `f 1 = 1`.
   refine (unipotentCommHopfAlgProperty_iff k _).mpr fun M _ _ _ _ _ ↦ ?_
-  let _ : Comodule k H M := Corestrict (f : A →ₐc[k] H).toCoalgHom
+  let _ : Comodule k H M := Corestrict f
   obtain ⟨v, hv, hvc⟩ :=
     hasNonzeroFixedVector_iff.mp ((unipotentCommHopfAlgProperty_iff k _).mp hH M)
   rw [corestrict_coact_apply] at hvc
   refine hasNonzeroFixedVector_iff.mpr ⟨v, hv, ?_⟩
-  have hinj : Function.Injective ((f : A →ₐc[k] H).toCoalgHom.toLinearMap.lTensor M) :=
+  have hinj : Function.Injective (f.toLinearMap.lTensor M) :=
     Module.Flat.lTensor_preserves_injective_linearMap _ hf
   apply hinj
   rw [LinearMap.lTensor_def, hvc]
-  simp [BialgHom.toCoalgHom_apply]
+  simp [h1]
+
+/-- **A quotient of a unipotent group is unipotent.** If `f : A → H` is an injective morphism of
+Hopf algebras, representing a quotient of the group of `H`, and `H` is unipotent, then so is
+`A`. -/
+theorem of_injective {A : Type w} [CommRing A] [HopfAlgebra k A] (f : A →ₐc[k] H)
+    (hf : Function.Injective f) : unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k A) :=
+  hH.of_coalgHom_injective f.toCoalgHom hf (map_one f)
 
 /-- **Every homomorphism from a unipotent group to a diagonalizable group is trivial.** If the
 coalgebra `A` is spanned by its group-like elements, in the sense of
