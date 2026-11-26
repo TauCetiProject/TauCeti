@@ -60,7 +60,7 @@ theorem law_eq_semicircleReal_iff (ha : IsSelfAdjoint a) (v : ℝ≥0) :
     law φ a = semicircleReal 0 v ↔ IsSemicircular φ.toLinearMap a ((v : ℝ) : ℂ) := by
   rw [eq_comm, eq_law_iff_forall_integral_pow ha isCompact_Icc
       (by simpa only [zero_sub, zero_add, Set.ofPred_mem_eq] using
-        mem_ae_iff.mp (ae_mem_Icc_semicircleReal 0 v)),
+        mem_ae_iff.1 (ae_mem_Icc_semicircleReal 0 v)),
     isSemicircular_iff_apply_pow]
   refine forall_congr' fun n => ?_
   obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n <;> simp [eq_comm]
@@ -72,7 +72,7 @@ theorem law_smul_add_algebraMap_of_isSemicircular (ha : IsSelfAdjoint a) {v : �
     law φ (r • a + algebraMap ℝ A c) = semicircleReal c (Real.toNNReal (r ^ 2) * v) := by
   have hfun : (fun x : ℝ => r * x + c) = fun x => c + r * x := by
     ext x; ring
-  rw [law_smul_add_algebraMap φ ha r c, (law_eq_semicircleReal_iff φ ha v).mpr h, hfun,
+  rw [law_smul_add_algebraMap φ ha r c, (law_eq_semicircleReal_iff φ ha v).2 h, hfun,
     map_affine_semicircleReal, mul_zero, add_zero]
 
 /-- Shifting a selfadjoint semicircular element of variance `v` by `c • 1` yields the semicircle
@@ -90,7 +90,7 @@ theorem law_eq_semicircleReal_iff_isSemicircular_sub (ha : IsSelfAdjoint a) (c :
   have hc : IsSelfAdjoint (algebraMap ℝ A c) := by
     simp [IsSelfAdjoint, Algebra.algebraMap_eq_smul_one]
   have ha' : IsSelfAdjoint (a - algebraMap ℝ A c) := ha.sub hc
-  refine ⟨fun hlaw => (law_eq_semicircleReal_iff φ ha' v).mp ?_, fun hsub => ?_⟩
+  refine ⟨fun hlaw => (law_eq_semicircleReal_iff φ ha' v).1 ?_, fun hsub => ?_⟩
   · have hsub_eq : a - algebraMap ℝ A c = (1 : ℝ) • a + algebraMap ℝ A (-c) := by
       simp [sub_eq_add_neg]
     have hfun : (fun x : ℝ => 1 * x + -c) = fun x => -c + 1 * x := by

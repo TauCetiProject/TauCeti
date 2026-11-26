@@ -38,9 +38,8 @@ self-adjoint operator, to operators on real Hilbert spaces.
 ## Main declarations
 
 * `WithLp.instComplexificationInnerProductSpace`: the complex inner product space
-  `WithLp 2 (Complexification X)`, with `WithLp.complexification_re_inner`,
-  `WithLp.complexification_im_inner` and `WithLp.complexification_inner_toLp_ofReal` computing the
-  inner product.
+  `WithLp 2 (Complexification X)`, with `WithLp.complexification_re_inner` and
+  `WithLp.complexification_im_inner` computing the inner product from real and imaginary parts.
 * `WithLp.complexification_norm_sq_eq`: `‖x + i y‖² = ‖x‖² + ‖y‖²`.
 * `WithLp.complexificationEquivProd`: the real-linear isometric equivalence
   `WithLp 2 (Complexification X) ≃ₗᵢ[ℝ] WithLp 2 (X × X)`,
@@ -110,8 +109,8 @@ instance instComplexificationNormedAddCommGroup :
     ({ toFun z := toLp 2 (z.ofLp.re, z.ofLp.im)
        map_zero' := (rfl)
        map_add' _ _ := (rfl) } : WithLp 2 (Complexification X) →+ WithLp 2 (X × X))
-    fun _ _ h ↦ ofLp_injective 2 (Complexification.ext (congrArg (fun p ↦ p.ofLp.fst) h)
-      (congrArg (fun p ↦ p.ofLp.snd) h))
+    fun _ _ h ↦ ofLp_injective 2 (Complexification.ext (congrArg (fun p ↦ p.ofLp.1) h)
+      (congrArg (fun p ↦ p.ofLp.2) h))
 
 /-- The `L²` norm of `x + i y` is the norm of `(x, y)` in the `L²` product. -/
 theorem complexification_norm_eq (z : WithLp 2 (Complexification X)) :
@@ -136,7 +135,7 @@ variable (X) in
 `x + i y ↦ (x, y)`. Real scalars act on the complexification by restricting the complex ones. -/
 def complexificationEquivProd : WithLp 2 (Complexification X) ≃ₗᵢ[ℝ] WithLp 2 (X × X) where
   toFun z := toLp 2 (z.ofLp.re, z.ofLp.im)
-  invFun p := toLp 2 ⟨p.ofLp.fst, p.ofLp.snd⟩
+  invFun p := toLp 2 ⟨p.ofLp.1, p.ofLp.2⟩
   map_add' _ _ := (rfl)
   map_smul' r z := by simp [← toLp_smul]
   left_inv _ := (rfl)
@@ -149,7 +148,7 @@ theorem complexificationEquivProd_apply (z : WithLp 2 (Complexification X)) :
 
 @[simp]
 theorem complexificationEquivProd_symm_apply (p : WithLp 2 (X × X)) :
-    (complexificationEquivProd X).symm p = toLp 2 ⟨p.ofLp.fst, p.ofLp.snd⟩ := (rfl)
+    (complexificationEquivProd X).symm p = toLp 2 ⟨p.ofLp.1, p.ofLp.2⟩ := (rfl)
 
 /-- The `L²` complexification of a real Banach space is complete. -/
 instance instComplexificationCompleteSpace [CompleteSpace X] :
@@ -258,9 +257,9 @@ on the Hilbert-norm complexification. -/
 def complexifyL2 (S : Submodule ℝ E) : Submodule ℂ (WithLp 2 (Complexification E)) where
   carrier := {z | z.ofLp.re ∈ S ∧ z.ofLp.im ∈ S}
   zero_mem' := ⟨S.zero_mem, S.zero_mem⟩
-  add_mem' hx hy := ⟨S.add_mem hx.left hy.left, S.add_mem hx.right hy.right⟩
-  smul_mem' c _ hz := ⟨S.sub_mem (S.smul_mem c.re hz.left) (S.smul_mem c.im hz.right),
-    S.add_mem (S.smul_mem c.im hz.left) (S.smul_mem c.re hz.right)⟩
+  add_mem' hx hy := ⟨S.add_mem hx.1 hy.1, S.add_mem hx.2 hy.2⟩
+  smul_mem' c _ hz := ⟨S.sub_mem (S.smul_mem c.re hz.1) (S.smul_mem c.im hz.2),
+    S.add_mem (S.smul_mem c.im hz.1) (S.smul_mem c.re hz.2)⟩
 
 @[simp]
 theorem mem_complexifyL2 (S : Submodule ℝ E) (z : WithLp 2 (Complexification E)) :
@@ -320,12 +319,12 @@ theorem dense_complexifyL2_iff (S : Submodule ℝ E) :
     simp only [Set.mem_image, Set.mem_prod, SetLike.mem_coe]
     constructor
     · rintro ⟨w, hw, rfl⟩
-      simpa only [he_apply] using (mem_complexifyL2 S w).mp hw
+      simpa only [he_apply] using (mem_complexifyL2 S w).1 hw
     · intro hz
-      exact ⟨toLp 2 ⟨z.fst, z.snd⟩, hz, by simp [he_apply]⟩
+      exact ⟨toLp 2 ⟨z.1, z.2⟩, hz, by simp [he_apply]⟩
   rw [← e.isDenseEmbedding.dense_image, he]
   exact ⟨fun h ↦ (Prod.fst_surjective : Function.Surjective (Prod.fst : E × E → E)).denseRange
-    |>.dense_of_mapsTo continuous_fst h (fun _ hx ↦ hx.left), fun h ↦ h.prod h⟩
+    |>.dense_of_mapsTo continuous_fst h (fun _ hx ↦ hx.1), fun h ↦ h.prod h⟩
 
 end Submodule
 

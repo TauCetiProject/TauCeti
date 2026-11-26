@@ -882,15 +882,6 @@ theorem field_ofReal_smul (r : ℝ) (h : H) :
   field_smul_of_isSelfAdjoint (by simp [IsSelfAdjoint, RCLike.conj_ofReal]) h
 
 @[simp]
-theorem field_complex_real_smul {E : Type v} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-    (r : ℝ) (h : E) : field ℂ (r • h) = r • field ℂ h := by
-  have : IsScalarTower ℝ ℂ E := Real.isScalarTower
-  have : IsScalarTower ℝ ℂ (FullFockSpace ℂ E) := Real.isScalarTower
-  rw [← algebraMap_smul ℂ r h, RCLike.algebraMap_eq_ofReal, field_ofReal_smul]
-  ext x : 1
-  simp only [smul_apply, ← RCLike.algebraMap_eq_ofReal, algebraMap_smul]
-
-@[simp]
 theorem norm_field (h : H) : ‖field 𝕜 h‖ = 2 * ‖h‖ :=
   norm_creation_add_annihilation h
 

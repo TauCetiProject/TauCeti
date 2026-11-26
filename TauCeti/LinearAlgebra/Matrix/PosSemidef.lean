@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import TauCeti.LinearAlgebra.Matrix.Block
+import TauCeti.Analysis.Matrix.GramFactorization
 
 /-!
 # Positive-semidefinite matrix algebra
@@ -353,7 +354,6 @@ theorem mulVec_eq_zero_of_posSemidef_sub [Fintype ι] {A B : Matrix ι ι R} (hA
 
 end Matrix.PosSemidef
 
-open scoped MatrixOrder in
 /-- Entrywise casting of a real matrix `C : Matrix α α ℝ` into `𝕜` (`ℝ` or `ℂ`) preserves and
 reflects positive semidefiniteness. -/
 @[simp]
@@ -374,14 +374,14 @@ theorem Matrix.posSemidef_map_ofReal_iff {α 𝕜 : Type*} [RCLike 𝕜] {C : Ma
           ((star x ⬝ᵥ C.submatrix ((↑) : s → α) ((↑) : s → α) *ᵥ x : ℝ) : 𝕜) := by
       simp [dotProduct, Matrix.mulVec, RCLike.star_def]
     exact RCLike.ofReal_nonneg.mp (hdot ▸ hy)
-  · obtain ⟨B, hB⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp h.nonneg
+  · obtain ⟨B, hB⟩ := posSemidef_iff_eq_conjTranspose_mul_self.mp h
     have heq : (C.map ((↑) : ℝ → 𝕜)).submatrix ((↑) : s → α) ((↑) : s → α) =
         (B.map (algebraMap ℝ 𝕜))ᴴ * B.map (algebraMap ℝ 𝕜) := by
       have hsub : (C.map ((↑) : ℝ → 𝕜)).submatrix ((↑) : s → α) ((↑) : s → α) =
           (C.submatrix ((↑) : s → α) ((↑) : s → α)).map (algebraMap ℝ 𝕜) := by
         ext i j
         simp
-      rw [hsub, hB, star_eq_conjTranspose, Matrix.map_mul]
+      rw [hsub, hB, Matrix.map_mul]
       congr 1
       ext i j
       simp

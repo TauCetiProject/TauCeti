@@ -231,11 +231,15 @@ theorem law_vacuumState_smul_field_add_algebraMap {H : Type v} [NormedAddCommGro
     (vacuumState ℂ H).law
         (r • field ℂ h + algebraMap ℝ (FullFockSpace ℂ H →L[ℂ] FullFockSpace ℂ H) c) =
       Probability.semicircleReal c (Real.toNNReal (r ^ 2) * ‖h‖₊ ^ 2) := by
-  have : IsScalarTower ℝ ℂ H := Real.isScalarTower
-  have hnorm : ‖r • h‖₊ ^ 2 = Real.toNNReal (r ^ 2) * ‖h‖₊ ^ 2 := by
-    ext
-    simp [nnNorm_smul, mul_pow, Real.coe_toNNReal _ (sq_nonneg r)]
-  rw [← field_complex_real_smul, law_vacuumState_field_add_algebraMap, hnorm]
+  -- `ContinuousLinearMap.instSMul` and `Module.complexToReal` agree pointwise via `(r : ℂ) • ·`.
+  convert PositiveLinearMap.law_smul_add_algebraMap_of_law_eq_semicircleReal
+    (vacuumState ℂ H) (law_vacuumState_field h) r c using 3
+  · rw [← Complex.coe_smul]
+    ext x n
+    simp only [smul_apply, lp.coeFn_smul, Pi.smul_apply]
+    exact (Complex.coe_smul r _).symm
+  · rfl
+  · simp
 
 /-- Under the vacuum state on complexified full Fock space, `realField h` has the centred semicircle
 law `semicircleReal 0 (‖h‖₊ ^ 2)`. -/
