@@ -135,7 +135,7 @@ private theorem integrable_pdf_sub_smul_sub [IsFiniteMeasure μ₀] (hs : s ≠ 
     (y : EuclideanSpace ℝ ι) :
     Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x))
       μ₀ :=
-  integrable_multivariateGaussianPDFReal_sub_smul_smul hs continuous_id (K := 1)
+  integrable_multivariateGaussianPDFReal_sub_smul_smul hs continuous_id (K := 1) 2
     (fun z ↦ by simp only [id]; nlinarith [norm_nonneg z]) y
 
 /-- Against a finite measure, `x ↦ φ_{s²}(y - c • x) (y - c • x) ⊗ (y - c • x)` is
@@ -145,7 +145,7 @@ private theorem integrable_pdf_sub_smul_rankOne [IsFiniteMeasure μ₀] (hs : s 
     Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
       rankOne ℝ (y - c • x) (y - c • x)) μ₀ :=
   integrable_multivariateGaussianPDFReal_sub_smul_smul hs (g := fun z ↦ rankOne ℝ z z)
-    (by simp only [rankOne_def]; fun_prop) (K := 1) (fun z ↦ by
+    (by simp only [rankOne_def]; fun_prop) (K := 1) 2 (fun z ↦ by
       rw [norm_rankOne, one_mul]
       nlinarith [norm_nonneg z]) y
 
