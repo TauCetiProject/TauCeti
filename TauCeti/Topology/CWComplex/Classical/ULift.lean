@@ -30,7 +30,8 @@ homeomorphic spaces in different universes.
 * `Topology.CWComplex.ulift`: the lift of an absolute CW complex, with empty base.
 * `Topology.CWComplex.uliftCellEquiv`: its `n`-cells are the `n`-cells of `C`.
 * `ContinuousMap.HomotopyEquiv.ulift`: a homotopy equivalence `X ≃ₕ C` lifted to
-  `ULift.{v} X ≃ₕ ULift.down ⁻¹' C`.
+  `ULift.{v} X ≃ₕ ULift.down ⁻¹' C`; its forward and inverse maps are described by
+  `ContinuousMap.HomotopyEquiv.ulift_apply` and `ContinuousMap.HomotopyEquiv.ulift_symm_apply`.
 
 ## Main results
 
@@ -175,6 +176,22 @@ def ContinuousMap.HomotopyEquiv.ulift {X : Type*} {Y : Type w} [TopologicalSpace
     ContinuousMap.HomotopyEquiv (ULift.{v} X) (ULift.down ⁻¹' C : Set (ULift.{v} Y)) :=
   (Homeomorph.ulift.toHomotopyEquiv.trans e).trans
     (Homeomorph.ulift.subtype fun _ ↦ Iff.rfl).symm.toHomotopyEquiv
+
+/-- The forward map of `ContinuousMap.HomotopyEquiv.ulift` is `e` followed by `ULift.up`. -/
+@[simp]
+lemma ContinuousMap.HomotopyEquiv.ulift_apply {X : Type*} {Y : Type w} [TopologicalSpace X]
+    [TopologicalSpace Y] {C : Set Y} (e : ContinuousMap.HomotopyEquiv X C) (x : ULift.{v} X) :
+    e.ulift x = ⟨ULift.up (e x.down), (e x.down).property⟩ :=
+  (rfl)
+
+/-- The inverse map of `ContinuousMap.HomotopyEquiv.ulift` is `ULift.down` followed by the inverse
+of `e`. -/
+@[simp]
+lemma ContinuousMap.HomotopyEquiv.ulift_symm_apply {X : Type*} {Y : Type w} [TopologicalSpace X]
+    [TopologicalSpace Y] {C : Set Y} (e : ContinuousMap.HomotopyEquiv X C)
+    (y : (ULift.down ⁻¹' C : Set (ULift.{v} Y))) :
+    e.ulift.symm y = ULift.up (e.symm ⟨y.val.down, y.property⟩) :=
+  (rfl)
 
 namespace TauCeti
 
