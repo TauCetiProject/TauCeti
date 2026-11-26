@@ -46,9 +46,9 @@ and second derivatives of the base and of the cutoff.
 * `TauCeti.fderiv_norm_sq_sub_comp`: the first derivative of squared distance along a map.
 * `TauCeti.fderiv_norm_sq_sub_comp_eq_zero_iff`: the critical-point normal-vector test.
 * `TauCeti.fderiv_fderiv_norm_sq_sub_comp_apply`: the full Hessian formula.
-* `TauCeti.contDiff_exp_mul_norm_sq`, `TauCeti.contDiff_exp_mul_sq_norm_sq_sub`: the functions
-  `x ↦ exp (α ‖x‖ ^ 2)` and `x ↦ exp (α (‖x‖ ^ 2 - r) ^ 2)` are analytic, with derivatives
-  `TauCeti.hasFDerivAt_exp_mul_norm_sq` and `TauCeti.hasFDerivAt_exp_mul_sq_norm_sq_sub`.
+* `TauCeti.contDiff_exp_mul_norm_sq`, `TauCeti.contDiff_exp_mul_norm_sq_sub_sq`: the functions
+  `x ↦ exp (α ‖x‖ ^ 2)` and `x ↦ exp (α (‖x‖ ^ 2 - r) ^ 2)` are analytic; the derivative of the
+  second is `TauCeti.hasFDerivAt_exp_mul_norm_sq_sub_sq`.
 * `TauCeti.hasFDerivAt_exp_neg_mul_norm_sub_sq`,
   `TauCeti.fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply`: the first and second derivatives of
   `x ↦ exp (-α ‖x - a‖ ^ 2)`.
@@ -147,21 +147,12 @@ theorem contDiff_exp_mul_norm_sq (α : ℝ) :
   (contDiff_const.mul (contDiff_norm_sq ℝ)).exp
 
 /-- For `α r : ℝ`, the function `x ↦ e^{α(|x|² - r)²}` is analytic. -/
-theorem contDiff_exp_mul_sq_norm_sq_sub (α r : ℝ) :
+theorem contDiff_exp_mul_norm_sq_sub_sq (α r : ℝ) :
     ContDiff ℝ ω fun y : E ↦ Real.exp (α * (‖y‖ ^ 2 - r) ^ 2) :=
   (contDiff_const.mul (((contDiff_norm_sq ℝ).sub contDiff_const).pow 2)).exp
 
-/-- The derivative of `x ↦ e^{α|x|²}` is `2 α e^{α|x|²} ⟪x, ·⟫`. -/
-theorem hasFDerivAt_exp_mul_norm_sq (α : ℝ) (x : E) :
-    HasFDerivAt (fun y : E ↦ Real.exp (α * ‖y‖ ^ 2))
-      ((2 * α * Real.exp (α * ‖x‖ ^ 2)) • innerSL ℝ x) x := by
-  refine ((hasStrictFDerivAt_norm_sq x).hasFDerivAt.const_mul α).exp.congr_fderiv ?_
-  ext v
-  simp
-  ring
-
 /-- The derivative of `x ↦ e^{α(|x|² - r)²}` is `4 α (|x|² - r) e^{α(|x|² - r)²} ⟪x, ·⟫`. -/
-theorem hasFDerivAt_exp_mul_sq_norm_sq_sub (α r : ℝ) (x : E) :
+theorem hasFDerivAt_exp_mul_norm_sq_sub_sq (α r : ℝ) (x : E) :
     HasFDerivAt (fun y : E ↦ Real.exp (α * (‖y‖ ^ 2 - r) ^ 2))
       ((4 * α * (‖x‖ ^ 2 - r) * Real.exp (α * (‖x‖ ^ 2 - r) ^ 2)) • innerSL ℝ x) x := by
   refine ((((hasStrictFDerivAt_norm_sq x).hasFDerivAt.sub_const r).pow 2).const_mul α).exp

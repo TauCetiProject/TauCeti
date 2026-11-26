@@ -35,7 +35,7 @@ fundamental form (`Bundle.ContMDiffRiemannianMetric.boundarySecondFundamentalFor
   sign `e^{φ} (II + dφ(ν_in) h)` would give `3 e^{-1} h`;
 * `ĝ = e^{α(|x|² - 1)²} g` for `α : ℝ`, which for `α = 2` is `φ = (|x|² - 1)²`: `φ = 0` and
   `dφ = 0` on the sphere, so `II^ĝ = II = h`
-  (`TauCeti.boundarySecondFundamentalForm_closedBall_rescale_exp_mul_sq_norm_sq_sub_one`).
+  (`TauCeti.boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq_sub_one_sq`).
 
 For `n ≥ 1` the mean curvature of the sphere, `1` for `g`, becomes
 `H^ĝ_q = (√(Φ q))⁻¹ (1 + (2 Φ q)⁻¹ DΦ(q) q)` (`TauCeti.boundaryMeanCurvature_closedBall_rescale`),
@@ -57,6 +57,21 @@ namespace TauCeti
 variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [Fact (finrank ℝ E = n + 1)]
 
+/-- A boundary point of the closed unit ball lies on the unit sphere. -/
+private theorem norm_boundary_closedBall (q : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :
+    ‖((q : closedBall (0 : E) 1) : E)‖ = 1 :=
+  (isBoundaryPoint_closedBall_iff (n := n + 1)).mp q.property
+
+/-- For a differentiable `Φ : E → ℝ`, the derivative of `Φ` along the inward unit normal `-q` of
+the sphere at `q ∈ ∂B` is `-DΦ(q) q`. -/
+private theorem mvfderiv_comp_subtypeVal_inwardUnitNormal_closedBall {Φ : E → ℝ}
+    (hΦ : Differentiable ℝ Φ) (q : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :
+    mvfderiv (𝓡∂ (n + 1)) (Φ ∘ Subtype.val) (q : closedBall (0 : E) 1) (inwardUnitNormal q) =
+      -fderiv ℝ Φ q q := by
+  rw [mvfderiv_comp_apply_of_differentiableAt (hΦ _)
+      ((contMDiff_subtypeVal_closedBall (k := 1)).mdifferentiableAt one_ne_zero),
+    inwardUnitNormal_def, map_neg, mvfderiv_outwardUnitNormal_closedBall, map_neg]
+
 /-- **The second fundamental form of the sphere under a conformal change of the Euclidean metric
 of the ball.** For an analytic `Φ : E → ℝ` positive on the ball and `ĝ = Φ g`, at `q ∈ ∂B`,
 `II^ĝ_q(u, w) = √(Φ q) (1 + (2 Φ q)⁻¹ DΦ(q) q) h_q(u, w)`, where `h_q(u, w) = ⟨dι u, dι w⟩` is
@@ -76,14 +91,7 @@ theorem boundarySecondFundamentalForm_closedBall_rescale {Φ : E → ℝ} (hΦ :
     √(Φ q) * (1 + (2 * Φ q)⁻¹ * fderiv ℝ Φ q q) * boundaryInducedForm q u w := by
   set x : closedBall (0 : E) 1 := (q : closedBall (0 : E) 1)
   set ι := (Subtype.val : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1) → closedBall (0 : E) 1)
-  have hι :
-      MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ, E) (Subtype.val : closedBall (0 : E) 1 → E) x :=
-    (contMDiff_subtypeVal_closedBall (k := 1)).mdifferentiableAt one_ne_zero
-  have hd : mvfderiv (𝓡∂ (n + 1)) (Φ ∘ Subtype.val) x (inwardUnitNormal q) =
-      -fderiv ℝ Φ (x : E) (x : E) := by
-    rw [mvfderiv_comp_apply_of_differentiableAt
-      ((hΦ.differentiable (by simp)) (x : E)) hι, inwardUnitNormal_def, map_neg,
-      mvfderiv_outwardUnitNormal_closedBall, map_neg]
+  have hd := mvfderiv_comp_subtypeVal_inwardUnitNormal_closedBall (hΦ.differentiable (by simp)) q
   refine (Bundle.ContMDiffRiemannianMetric.boundarySecondFundamentalForm_rescale
     closedBallEuclideanMetric _ _ le_top q u w).trans ?_
   -- The `letI` around the unscaled metric is definitionally the instance of the closed ball,
@@ -120,7 +128,8 @@ theorem boundarySecondFundamentalForm_closedBall_rescale_const {c : ℝ} (hc : 0
 /-- On the unit sphere, `x ↦ e^{α|x|²}` has derivative `2 α e^α` in the radial direction. -/
 private theorem fderiv_exp_mul_norm_sq_apply_self (α : ℝ) {x : E} (hx : ‖x‖ = 1) :
     fderiv ℝ (fun y : E ↦ Real.exp (α * ‖y‖ ^ 2)) x x = 2 * α * Real.exp α := by
-  rw [(hasFDerivAt_exp_mul_norm_sq α x).fderiv]
+  rw [(by simpa using hasFDerivAt_exp_neg_mul_norm_sub_sq (-α) (0 : E) x :
+    HasFDerivAt _ ((2 * α * Real.exp (α * ‖x‖ ^ 2)) • innerSL ℝ x) x).fderiv]
   simp [hx]
 
 /-- **The conformal factor `e^{α|x|²}`.** For `α : ℝ` and `ĝ = e^{α|x|²} g` on the closed unit
@@ -138,8 +147,7 @@ theorem boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq (α : �
         IsContMDiffRiemannianBundle.of_le (n := ω) le_top;
       boundarySecondFundamentalForm q u w) =
     Real.exp (α / 2) * (1 + α) * boundaryInducedForm q u w := by
-  have hq : ‖((q : closedBall (0 : E) 1) : E)‖ = 1 :=
-    (isBoundaryPoint_closedBall_iff (n := n + 1)).mp q.property
+  have hq := norm_boundary_closedBall q
   refine (boundarySecondFundamentalForm_closedBall_rescale
     (contDiff_exp_mul_norm_sq α) (fun _ _ ↦ Real.exp_pos _) q u w).trans ?_
   rw [fderiv_exp_mul_norm_sq_apply_self α hq, hq, one_pow, mul_one, ← Real.exp_half]
@@ -165,21 +173,21 @@ theorem boundarySecondFundamentalForm_closedBall_rescale_exp_neg_two_mul_norm_sq
   norm_num
 
 /-- On the unit sphere, `x ↦ e^{α(|x|² - 1)²}` has derivative `0` in the radial direction. -/
-private theorem fderiv_exp_mul_sq_norm_sq_sub_one_apply_self (α : ℝ) {x : E} (hx : ‖x‖ = 1) :
+private theorem fderiv_exp_mul_norm_sq_sub_one_sq_apply_self (α : ℝ) {x : E} (hx : ‖x‖ = 1) :
     fderiv ℝ (fun y : E ↦ Real.exp (α * (‖y‖ ^ 2 - 1) ^ 2)) x x = 0 := by
-  rw [(hasFDerivAt_exp_mul_sq_norm_sq_sub α 1 x).fderiv]
+  rw [(hasFDerivAt_exp_mul_norm_sq_sub_sq α 1 x).fderiv]
   simp [hx]
 
 /-- **The conformal factor `e^{α(|x|² - 1)²}`.** For `α : ℝ` and `ĝ = e^{α(|x|² - 1)²} g` on the
 closed unit ball, `φ` and `dφ` vanish on the sphere, so `II^ĝ = II = h`. The case `α = 2` is
 `ĝ = e^{2φ} g` with `φ = (|x|² - 1)²`. -/
-theorem boundarySecondFundamentalForm_closedBall_rescale_exp_mul_sq_norm_sq_sub_one (α : ℝ)
+theorem boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq_sub_one_sq (α : ℝ)
     (q : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1))
     (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
     (letI : RiemannianBundle (fun x : closedBall (0 : E) 1 ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
         ⟨(closedBallEuclideanMetric.rescale
           ((fun y : E ↦ Real.exp (α * (‖y‖ ^ 2 - 1) ^ 2)) ∘ Subtype.val)
-          ((contDiff_exp_mul_sq_norm_sq_sub α 1).contMDiff.comp
+          ((contDiff_exp_mul_norm_sq_sub_sq α 1).contMDiff.comp
             contMDiff_subtypeVal_closedBall)
           fun _ ↦ Real.exp_pos _).toRiemannianMetric⟩;
       letI : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
@@ -187,11 +195,10 @@ theorem boundarySecondFundamentalForm_closedBall_rescale_exp_mul_sq_norm_sq_sub_
         IsContMDiffRiemannianBundle.of_le (n := ω) le_top;
       boundarySecondFundamentalForm q u w) =
     boundaryInducedForm q u w := by
-  have hq : ‖((q : closedBall (0 : E) 1) : E)‖ = 1 :=
-    (isBoundaryPoint_closedBall_iff (n := n + 1)).mp q.property
+  have hq := norm_boundary_closedBall q
   refine (boundarySecondFundamentalForm_closedBall_rescale
-    (contDiff_exp_mul_sq_norm_sq_sub α 1) (fun _ _ ↦ Real.exp_pos _) q u w).trans ?_
-  simp [fderiv_exp_mul_sq_norm_sq_sub_one_apply_self α hq, hq]
+    (contDiff_exp_mul_norm_sq_sub_sq α 1) (fun _ _ ↦ Real.exp_pos _) q u w).trans ?_
+  simp [fderiv_exp_mul_norm_sq_sub_one_sq_apply_self α hq, hq]
 
 /-- **The mean curvature of the sphere under a conformal change of the Euclidean metric of the
 ball.** For `n ≥ 1`, an analytic `Φ : E → ℝ` positive on the ball and `ĝ = Φ g`, at `q ∈ ∂B`,
@@ -209,14 +216,7 @@ theorem boundaryMeanCurvature_closedBall_rescale [NeZero n] {Φ : E → ℝ} (h�
       boundaryMeanCurvature q) =
     (√(Φ q))⁻¹ * (1 + (2 * Φ q)⁻¹ * fderiv ℝ Φ q q) := by
   set x : closedBall (0 : E) 1 := (q : closedBall (0 : E) 1)
-  have hι :
-      MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ, E) (Subtype.val : closedBall (0 : E) 1 → E) x :=
-    (contMDiff_subtypeVal_closedBall (k := 1)).mdifferentiableAt one_ne_zero
-  have hd : mvfderiv (𝓡∂ (n + 1)) (Φ ∘ Subtype.val) x (inwardUnitNormal q) =
-      -fderiv ℝ Φ (x : E) (x : E) := by
-    rw [mvfderiv_comp_apply_of_differentiableAt
-      ((hΦ.differentiable (by simp)) (x : E)) hι, inwardUnitNormal_def, map_neg,
-      mvfderiv_outwardUnitNormal_closedBall, map_neg]
+  have hd := mvfderiv_comp_subtypeVal_inwardUnitNormal_closedBall (hΦ.differentiable (by simp)) q
   refine (Bundle.ContMDiffRiemannianMetric.boundaryMeanCurvature_rescale
     closedBallEuclideanMetric _ _ le_top (NeZero.ne n) q).trans ?_
   -- As in `boundarySecondFundamentalForm_closedBall_rescale`, the `letI` around the unscaled
@@ -241,8 +241,7 @@ theorem boundaryMeanCurvature_closedBall_rescale_exp_mul_norm_sq [NeZero n] (α 
         IsContMDiffRiemannianBundle.of_le (n := ω) le_top;
       boundaryMeanCurvature q) =
     Real.exp (-(α / 2)) * (1 + α) := by
-  have hq : ‖((q : closedBall (0 : E) 1) : E)‖ = 1 :=
-    (isBoundaryPoint_closedBall_iff (n := n + 1)).mp q.property
+  have hq := norm_boundary_closedBall q
   refine (boundaryMeanCurvature_closedBall_rescale
     (contDiff_exp_mul_norm_sq α) (fun _ _ ↦ Real.exp_pos _) q).trans ?_
   rw [fderiv_exp_mul_norm_sq_apply_self α hq, hq, one_pow, mul_one, ← Real.exp_half,
@@ -250,8 +249,8 @@ theorem boundaryMeanCurvature_closedBall_rescale_exp_mul_norm_sq [NeZero n] (α 
   field_simp
 
 /-- **The mean curvature of the conformal disc.** For `n ≥ 1` and `ĝ = e^{-2|x|²} g` on the
-closed unit ball, that is `φ = -|x|²`, `H^ĝ = e (1 - 2) = -e`; for the closed unit disc (`n = 1`)
-this is the Check `H^ĝ = -e`. -/
+closed unit ball, that is `φ = -|x|²`, `H^ĝ = e (1 - 2) = -e`; in particular this holds for the
+closed unit disc (`n = 1`). -/
 theorem boundaryMeanCurvature_closedBall_rescale_exp_neg_two_mul_norm_sq [NeZero n]
     (q : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :
     (letI : RiemannianBundle (fun x : closedBall (0 : E) 1 ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
