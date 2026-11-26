@@ -101,9 +101,11 @@ attribute [simp] pure_smul
 variable {μ : LeftModuleAlgebra R H A} {M : Type x}
   [AddCommMonoid M] [Module A M] [Module H M] [Module (SmashProduct μ) M] [μ.IsSmashModule M]
 
+@[simp]
 theorem includeA_smul (a : A) (m : M) : SmashProduct.includeA (μ := μ) a • m = a • m := by
   simp [SmashProduct.includeA_eq_pure]
 
+@[simp]
 theorem includeH_smul (h : H) (m : M) : SmashProduct.includeH (μ := μ) h • m = h • m := by
   simp [SmashProduct.includeH_eq_pure]
 
@@ -146,6 +148,34 @@ theorem lsmulAlgHom_pure [AddCommMonoid M] [Module R M]
     [μ.IsCompatibleAction M] (a : A) (h : H) (m : M) :
     lsmulAlgHom μ M (pure a h) m = a • (h • m) := by
   simp [lsmulAlgHom]
+
+@[simp]
+theorem lsmulAlgHom_comp_includeA [AddCommMonoid M] [Module R M]
+    [Module A M] [IsScalarTower R A M] [Module H M] [IsScalarTower R H M]
+    [μ.IsCompatibleAction M] :
+    (lsmulAlgHom μ M).comp includeA = Algebra.lsmul R R M :=
+  lift_comp_includeA ..
+
+@[simp]
+theorem lsmulAlgHom_comp_includeH [AddCommMonoid M] [Module R M]
+    [Module A M] [IsScalarTower R A M] [Module H M] [IsScalarTower R H M]
+    [μ.IsCompatibleAction M] :
+    (lsmulAlgHom μ M).comp includeH = Algebra.lsmul R R M :=
+  lift_comp_includeH ..
+
+@[simp]
+theorem lsmulAlgHom_includeA [AddCommMonoid M] [Module R M]
+    [Module A M] [IsScalarTower R A M] [Module H M] [IsScalarTower R H M]
+    [μ.IsCompatibleAction M] (a : A) (m : M) :
+    lsmulAlgHom μ M (includeA a) m = a • m := by
+  simp [includeA_eq_pure]
+
+@[simp]
+theorem lsmulAlgHom_includeH [AddCommMonoid M] [Module R M]
+    [Module A M] [IsScalarTower R A M] [Module H M] [IsScalarTower R H M]
+    [μ.IsCompatibleAction M] (h : H) (m : M) :
+    lsmulAlgHom μ M (includeH h) m = h • m := by
+  simp [includeH_eq_pure]
 
 /-- Left `A # H`-module structure on `M` assembled from compatible `A`- and `H`-actions. -/
 @[instance_reducible]
@@ -288,9 +318,9 @@ private theorem toSmashModule_ofSmashModule [AddCommMonoid M] [Module R M]
   have _ := isSmashModule_moduleA_moduleH μ M
   have hF : lsmulAlgHom μ M = Algebra.lsmul R R M := by
     ext a x
-    · simp only [AlgHom.comp_apply, lsmulAlgHom, lift_includeA, Algebra.lsmul_coe]
+    · simp only [AlgHom.comp_apply, lsmulAlgHom_comp_includeA, Algebra.lsmul_coe]
       exact (IsSmashModule.includeA_smul (μ := μ) a x).symm
-    · simp only [AlgHom.comp_apply, lsmulAlgHom, lift_includeH, Algebra.lsmul_coe]
+    · simp only [AlgHom.comp_apply, lsmulAlgHom_comp_includeH, Algebra.lsmul_coe]
       exact (IsSmashModule.includeH_smul (μ := μ) a x).symm
   exact Subtype.ext <| Module.ext' _ m fun z x =>
     DFunLike.congr_fun (DFunLike.congr_fun hF z) x
@@ -306,10 +336,10 @@ private theorem ofSmashModule_toSmashModule [AddCommMonoid M] [Module R M]
   refine CompatibleActionData.ext (fun a x => ?_) (fun h x => ?_)
   · dsimp only [ofSmashModule, toSmashModule]
     rw [moduleA_smul]
-    exact (moduleOfCompatible_smul μ M (includeA a) x).trans (by simp [lsmulAlgHom])
+    exact (moduleOfCompatible_smul μ M (includeA a) x).trans (lsmulAlgHom_includeA μ M a x)
   · dsimp only [ofSmashModule, toSmashModule]
     rw [moduleH_smul]
-    exact (moduleOfCompatible_smul μ M (includeH h) x).trans (by simp [lsmulAlgHom])
+    exact (moduleOfCompatible_smul μ M (includeH h) x).trans (lsmulAlgHom_includeH μ M h x)
 
 /-- Bijection between `R`-compatible left `A # H`-module structures on `M` and compatible pairs of
 `R`-compatible `A`- and `H`-module structures on `M`. -/

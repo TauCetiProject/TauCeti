@@ -323,6 +323,7 @@ theorem inductionOn {motive : SmashProduct μ → Prop} (x : SmashProduct μ)
   | add x y hx hy => simpa only [map_add] using add _ _ hx hy
 
 /-- Two `R`-linear maps out of `A # H` agree when they agree on pure elements `a # h`. -/
+@[ext]
 theorem lhom_ext {M : Type*} [AddCommMonoid M] [Module R M]
     {f g : SmashProduct μ →ₗ[R] M} (h : ∀ a x, f (pure a x) = g (pure a x)) : f = g := by
   refine LinearMap.ext fun z => ?_
