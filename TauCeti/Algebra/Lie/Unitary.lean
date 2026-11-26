@@ -121,6 +121,7 @@ theorem coe_unitaryLieAlgebra_apply_swap (X : unitaryLieAlgebra ι) (a b : ι) :
   rw [← map_neg, ← h, star_def, conj_conj]
 
 /-- The trace of a skew-Hermitian matrix is imaginary. -/
+@[simp]
 theorem re_trace_coe_unitaryLieAlgebra (X : unitaryLieAlgebra ι) :
     (X : Matrix ι ι ℂ).trace.re = 0 := by
   have h := congrArg (fun A : Matrix ι ι ℂ ↦ A.trace.re) (conjTranspose_coe_unitaryLieAlgebra X)

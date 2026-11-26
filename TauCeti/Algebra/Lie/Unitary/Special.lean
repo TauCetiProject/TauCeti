@@ -110,18 +110,16 @@ theorem coe_mem_specialUnitaryLieAlgebra_iff {X : unitaryLieAlgebra ι} :
   rw [mem_derivedSeries_one_unitaryLieAlgebra_iff]
   exact and_iff_right X.property
 
-/-- **A matrix commuting with `𝔰𝔲(n)` is scalar.** For `i ≠ j` the matrix unit `E_ij` is
-`(A - I • B) / 2` with `A = E_ij - E_ji` and `B = I • (E_ij + E_ji)` in `𝔰𝔲(n)`. -/
+/-- **A matrix commuting with every element of `𝔰𝔲(n)` is scalar.** -/
 theorem mem_range_scalar_of_forall_mem_specialUnitaryLieAlgebra_commute {M : Matrix ι ι ℂ}
     (h : ∀ X ∈ specialUnitaryLieAlgebra ι, Commute X M) : M ∈ Set.range (scalar ι) := by
+  -- For `i ≠ j`, `E_ij = (A - I • B) / 2` with `A = E_ij - E_ji` and `B = I • (E_ij + E_ji)`.
   refine mem_range_scalar_of_commute_single fun i j hij ↦ ?_
   have hA : single i j (1 : ℂ) - single j i 1 ∈ specialUnitaryLieAlgebra ι := by
     simp [conjTranspose_sub, trace_single_eq_of_ne _ _ _ hij, trace_single_eq_of_ne _ _ _ hij.symm]
   have hB : I • (single i j (1 : ℂ) + single j i 1) ∈ specialUnitaryLieAlgebra ι := by
-    rw [mem_specialUnitaryLieAlgebra_iff, conjTranspose_smul, conjTranspose_add,
-      conjTranspose_single, conjTranspose_single, trace_smul, trace_add,
-      trace_single_eq_of_ne _ _ _ hij, trace_single_eq_of_ne _ _ _ hij.symm]
-    simp [add_comm]
+    simp [conjTranspose_add, single_neg, trace_single_eq_of_ne _ _ _ hij,
+      trace_single_eq_of_ne _ _ _ hij.symm, add_comm]
   have hE : single i j (1 : ℂ) =
       (2⁻¹ : ℂ) • ((single i j 1 - single j i 1) - I • I • (single i j 1 + single j i 1)) := by
     rw [smul_smul, I_mul_I]
@@ -162,8 +160,7 @@ theorem finrank_specialUnitaryLieAlgebra :
   have hsurj : Function.Surjective (imTrace (ι := ι)) := fun t ↦ by
     refine ⟨⟨single i i ((t : ℂ) * I), ?_⟩, ?_⟩
     · have h : star ((t : ℂ) * I) = -((t : ℂ) * I) := by simp
-      rw [mem_unitaryLieAlgebra_iff, conjTranspose_single, h]
-      exact map_neg (singleAddMonoidHom i i) _
+      rw [mem_unitaryLieAlgebra_iff, conjTranspose_single, h, single_neg]
     · simp [imTrace_apply]
   have h := LinearMap.finrank_range_add_finrank_ker (imTrace (ι := ι))
   rw [LinearMap.range_eq_top.mpr hsurj, finrank_top, finrank_self, finrank_unitaryLieAlgebra,

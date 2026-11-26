@@ -128,15 +128,6 @@ theorem specialUnitaryAdjointHom_apply (U : unitaryGroup ι ℂ) (X : specialUni
 
 /-! ### The kernel -/
 
-/-- A scalar unitary matrix fixes every matrix under conjugation. -/
-private theorem mul_mul_star_eq_self_of_mem_range_scalarHom {U : unitaryGroup ι ℂ}
-    (hU : U ∈ (UnitaryGroup.scalarHom ι ℂ).range) (X : Matrix ι ι ℂ) :
-    U * X * star (U : Matrix ι ι ℂ) = X := by
-  obtain ⟨c, rfl⟩ := hU
-  rw [← commute_unitary_iff_star_right_conjugate (UnitaryGroup.scalarHom ι ℂ c).property,
-    UnitaryGroup.coe_scalarHom]
-  exact scalar_commute _ (fun _ ↦ Commute.all _ _) X
-
 /-- A unitary matrix commuting with every element of `𝔰𝔲(n)` is a unit scalar. -/
 private theorem mem_range_scalarHom_of_forall_mul_mul_star_eq_self {U : unitaryGroup ι ℂ}
     (h : ∀ X ∈ specialUnitaryLieAlgebra ι, U * X * star (U : Matrix ι ι ℂ) = X) :
@@ -155,7 +146,7 @@ theorem ker_specialUnitaryAdjointRepresentation :
   refine ⟨fun h ↦ mem_range_scalarHom_of_forall_mul_mul_star_eq_self fun X hX ↦ ?_,
     fun h ↦ LinearMap.ext fun X ↦ Subtype.ext ?_⟩
   · simpa using congrArg Subtype.val (LinearMap.congr_fun (MonoidHom.mem_ker.mp h) ⟨X, hX⟩)
-  · simpa using mul_mul_star_eq_self_of_mem_range_scalarHom h X
+  · simpa using UnitaryGroup.mul_mul_star_eq_self_of_mem_range_scalarHom h X
 
 /-- **The kernel of the adjoint action on `𝔲(n)`** is the subgroup of unit scalars `c • 1`. -/
 theorem ker_unitaryAdjointRepresentation :
@@ -165,7 +156,7 @@ theorem ker_unitaryAdjointRepresentation :
     fun h ↦ LinearMap.ext fun X ↦ Subtype.ext ?_⟩
   · simpa using congrArg Subtype.val
       (LinearMap.congr_fun (MonoidHom.mem_ker.mp h) ⟨X, specialUnitaryLieAlgebra_le hX⟩)
-  · simpa using mul_mul_star_eq_self_of_mem_range_scalarHom h X
+  · simpa using UnitaryGroup.mul_mul_star_eq_self_of_mem_range_scalarHom h X
 
 /-- The kernel of the rotation representation `U(n) →* SO(𝔰𝔲(n))` is the subgroup of unit
 scalars. -/

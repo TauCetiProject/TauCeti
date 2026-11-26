@@ -560,10 +560,9 @@ section LinearOrder
 variable [LinearOrder R] [IsStrictOrderedRing R] [Module.Free R M] [Module.Finite R M]
 
 /-- Over a linearly ordered commutative ring, an isometry of a left-separating form on a finite
-free module that is the square of an endomorphism has determinant `1`: its determinant squares to
-`1` and is the square of a determinant, hence nonnegative. For a representation of a group in
-which every element is a square, such as the unitary group `U(n)`, by isometries of such a form,
-this says the representation preserves every orientation. -/
+free module that is the square of an endomorphism has determinant `1`. For a representation of a
+group in which every element is a square, such as the unitary group `U(n)`, by isometries of such
+a form, this says the representation preserves every orientation. -/
 theorem IsIsometry.det_eq_one_of_isSquare (hB : B.SeparatingLeft) (hf : IsIsometry B f)
     (hsq : IsSquare f) : LinearMap.det f = 1 := by
   have h1 : LinearMap.det f ^ 2 = 1 :=
