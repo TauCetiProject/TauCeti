@@ -100,16 +100,8 @@ theorem comapHom_hom : (X.comapHom f).hom = f := Hom.mkOfApp_hom _ _
 /-- The closed fibre of the restriction is the inverse image of the original closed fibre. -/
 theorem isPullback_comapHom_closedFiberι :
     IsPullback (X.comapHom f).closedFiberMap (X.comapOfIsOpenImmersion f).closedFiberι
-      X.closedFiberι f := by
-  refine IsPullback.of_iso_pullback ⟨by rw [Hom.closedFiberMap_comp_ι, comapHom_hom]⟩
-    ((X.ideal.comapIso f) ≪≫ pullbackSymmetry f X.closedFiberι) ?_ ?_
-  · rw [Iso.trans_hom, Category.assoc, pullbackSymmetry_hom_comp_fst]
-    rw [← cancel_mono X.closedFiberι, Category.assoc, ← pullback.condition, ← Category.assoc,
-      comapIso_hom_fst, Hom.closedFiberMap_comp_ι, comapHom_hom]
-    -- The closed fibre immersion of the restriction is defined by the pullback ideal.
-    exact (rfl)
-  · rw [Iso.trans_hom, Category.assoc, pullbackSymmetry_hom_comp_snd]
-    exact X.ideal.comapIso_hom_fst f
+      X.closedFiberι f :=
+  (isPullback_of_isClosedImmersion _ _ _ _ (by simp) (by simp)).flip
 
 /-- Restriction along an open immersion preserves divided power thickenings. -/
 theorem IsPDThickening.comapOfIsOpenImmersion {X : DividedPowerScheme.{u}}

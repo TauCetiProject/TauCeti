@@ -87,11 +87,11 @@ instance : Category DividedPowerScheme.{u} where
     { hom := 𝟙 X.scheme
       isDPMorphism_appLE := fun U V h ↦ by
         have hVU : V ≤ U := Scheme.Hom.id_preimage U ▸ h
-        have he : Scheme.Hom.appLE (𝟙 X.scheme) U V h = X.scheme.presheaf.map (homOfLE hVU).op :=
-          calc
-            _ = 𝟙 Γ(X.scheme, U) ≫ X.scheme.presheaf.map (homOfLE hVU).op :=
-              congrArg (· ≫ X.scheme.presheaf.map (homOfLE hVU).op) (Scheme.Hom.id_app U)
-            _ = _ := Category.id_comp _
+        have he : Scheme.Hom.appLE (𝟙 X.scheme) U V h =
+            X.scheme.presheaf.map (homOfLE hVU).op := by
+          unfold Scheme.Hom.appLE
+          exact (congrArg (· ≫ X.scheme.presheaf.map (homOfLE hVU).op)
+            (Scheme.Hom.id_app U)).trans (Category.id_comp _)
         rw [he]
         exact X.isDPMorphism_res (homOfLE hVU) }
   comp f g :=
@@ -283,18 +283,17 @@ theorem isPDThickening_trivial_obj (T : Scheme.{u}) : (trivial.obj T).IsPDThicke
 private def trivialHomEquiv (T : Scheme.{u}) (X : DividedPowerScheme.{u}) :
     (trivial.obj T ⟶ X) ≃ (T ⟶ closedFiberFunctor.obj X) where
   toFun f := by
-    let g : T ⟶ X.scheme := f.hom
-    let i : closedFiberFunctor.obj X ⟶ X.scheme := X.closedFiberι
-    have hi : IsClosedImmersion i := inferInstanceAs (IsClosedImmersion X.closedFiberι)
-    refine IsClosedImmersion.lift i g ?_
-    have h : X.ideal.comap g ≤ ⊥ := f.ideal_comap_le
+    rw [closedFiberFunctor_obj]
+    refine IsClosedImmersion.lift X.closedFiberι f.hom ?_
+    have h : X.ideal.comap f.hom ≤ ⊥ := by
+      simpa only [trivial_obj_ideal] using f.ideal_comap_le
     exact X.ideal.ker_subschemeι.trans_le
-      ((le_map_iff_comap_le.mpr h).trans_eq (map_bot g))
+      ((le_map_iff_comap_le.mpr h).trans_eq (map_bot f.hom))
   invFun g := by
-    let g' : T ⟶ X.closedFiber := g
-    refine Hom.fromTrivial (X := X) (g' ≫ X.closedFiberι) fun U x hx ↦ ?_
+    rw [closedFiberFunctor_obj] at g
+    refine Hom.fromTrivial (X := X) (g ≫ X.closedFiberι) fun U x hx ↦ ?_
     -- The composite on sections first restricts to the closed fibre, where the ideal vanishes.
-    have h := congrArg (g'.app (X.closedFiberι ⁻¹ᵁ U)).hom (X.ideal.mem_sections_iff.mp hx)
+    have h := congrArg (g.app (X.closedFiberι ⁻¹ᵁ U)).hom (X.ideal.mem_sections_iff.mp hx)
     exact h.trans (map_zero _)
   left_inv f := Hom.ext (IsClosedImmersion.lift_fac _ _ _)
   right_inv g := by
