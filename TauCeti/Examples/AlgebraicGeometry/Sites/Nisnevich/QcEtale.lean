@@ -12,10 +12,11 @@ public import TauCeti.AlgebraicGeometry.Sites.Nisnevich.QcEtale
 /-!
 # Checks for the quasi-compact small Nisnevich site
 
-The identity of `X` and the empty étale `X`-scheme are objects of `X.QcEtale`, the empty sieve
-covers the empty object, and for a quadratic étale field extension `k → K` the morphism
-`Spec K ⟶ Spec k` is an object of `(Spec k).QcEtale` whose generated sieve does not cover the
-final object, since `k → K` is not an isomorphism on residue fields. This applies to `ℝ → ℂ`.
+The identity of `X` and the empty étale `X`-scheme are objects of `X.QcEtale`, and the empty sieve
+covers the empty object. For an étale field extension `k → K` of degree other than `1` the
+morphism `Spec K ⟶ Spec k` is an object of `(Spec k).QcEtale` whose generated sieve does not cover
+the final object, since `k → K` is not an isomorphism on residue fields; in particular this holds
+for `Spec ℂ ⟶ Spec ℝ`.
 -/
 
 open CategoryTheory Limits AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme Module
@@ -26,17 +27,18 @@ universe u
 
 namespace TauCeti.Examples.QcEtale
 
-variable (X : Scheme.{u}) [QuasiSeparatedSpace X]
+variable (X : Scheme.{u})
 
 /-- The identity of `X`, as an object of `X.QcEtale`. -/
 noncomputable def idObj : X.QcEtale :=
-  @Scheme.QcEtale.mk X (MorphismProperty.Over.mk ⊤ (𝟙 X) inferInstance)
-    (inferInstanceAs (QuasiCompact (𝟙 X)))
+  Scheme.QcEtale.mk (𝟙 X)
 
 /-- The empty étale `X`-scheme, as an object of `X.QcEtale`. -/
 noncomputable def emptyObj : X.QcEtale :=
-  @Scheme.QcEtale.mk X (MorphismProperty.Over.mk ⊤ (Scheme.emptyTo X) inferInstance)
-    (quasiCompact_of_compactSpace (Scheme.emptyTo X))
+  have : QuasiCompact (Scheme.emptyTo X) := ⟨fun _ _ _ ↦ (Set.toFinite _).isCompact⟩
+  Scheme.QcEtale.mk (Scheme.emptyTo X)
+
+variable [QuasiSeparatedSpace X]
 
 -- The empty sieve covers the empty object.
 example : (⊥ : Sieve (emptyObj X)) ∈ X.qcNisnevichTopology (emptyObj X) := by
@@ -53,8 +55,8 @@ variable (k K : Type u) [Field k] [Field K] [Algebra k K] [Algebra.Etale k K]
 noncomputable def specObj : (Spec (.of k)).QcEtale :=
   have : Etale (Spec.map (CommRingCat.ofHom (algebraMap k K))) :=
     (HasRingHomProperty.Spec_iff (P := @Etale)).mpr (RingHom.etale_algebraMap.mpr inferInstance)
-  @Scheme.QcEtale.mk _ (MorphismProperty.Over.mk ⊤ (Spec.map (CommRingCat.ofHom (algebraMap k K)))
-    inferInstance) (quasiCompact_of_compactSpace (Spec.map (CommRingCat.ofHom (algebraMap k K))))
+  have := quasiCompact_of_compactSpace (Spec.map (CommRingCat.ofHom (algebraMap k K)))
+  Scheme.QcEtale.mk (Spec.map (CommRingCat.ofHom (algebraMap k K)))
 
 /-- The structure morphism of `specObj k K`, as a morphism of `(Spec k).QcEtale` to the final
 object. -/
@@ -62,37 +64,39 @@ noncomputable def specHom : specObj k K ⟶ idObj (Spec (.of k)) :=
   Scheme.QcEtale.homMk (MorphismProperty.Over.homMk (Spec.map (CommRingCat.ofHom (algebraMap k K)))
     (Category.comp_id _) trivial)
 
--- For a quadratic étale extension `k → K`, `{Spec K ⟶ Spec k}` does not cover the final object of
--- `(Spec k).QcEtale`.
-example (h : finrank k K = 2) :
+-- For an étale extension `k → K` of degree other than `1`, `{Spec K ⟶ Spec k}` does not cover the
+-- final object of `(Spec k).QcEtale`.
+example (h : finrank k K ≠ 1) :
     Sieve.ofArrows (fun _ : PUnit.{u + 1} ↦ specObj k K) (fun _ ↦ specHom k K) ∉
       (Spec (.of k)).qcNisnevichTopology (idObj (Spec (.of k))) := by
   rw [Scheme.ofArrows_mem_qcNisnevichTopology_iff]
-  intro hc
-  replace hc : IsNisnevichCovering
-      (fun _ : PUnit.{u + 1} ↦ Spec.map (CommRingCat.ofHom (algebraMap k K))) := hc
-  obtain ⟨-, x, -, hx⟩ := hc.exists_isIso (IsLocalRing.closedPoint k)
-  have := x.isPrime
-  rw [RingHom.isIso_SpecMap_residueFieldMap_iff _ x _ rfl] at hx
-  -- The residue field of the field `k` at its prime is `k`, so `k → K` is onto.
-  have hb : Function.Bijective (algebraMap k K) := by
-    refine ⟨(algebraMap k K).injective, fun y ↦ ?_⟩
-    obtain ⟨w, hw⟩ := hx.2 (algebraMap K x.asIdeal.ResidueField y)
-    obtain ⟨r, rfl⟩ :=
-      (Ideal.algEquivResidueFieldOfField (x.asIdeal.comap (algebraMap k K))).surjective w
-    refine ⟨r, (algebraMap K x.asIdeal.ResidueField).injective ?_⟩
-    rw [← hw, Ideal.algEquivResidueFieldOfField_apply, Ideal.ResidueField.map_algebraMap]
-  have := (LinearEquiv.ofBijective (Algebra.linearMap k K) hb).finrank_eq
-  rw [Module.finrank_self] at this
-  omega
+  -- The underlying morphism of `specHom k K` is `Spec K ⟶ Spec k` by definition of `specHom`,
+  -- `QcEtale.homMk` and `Over.homMk`; the sources of the family are `Spec K` only by definition
+  -- too, so this step is definitional rather than a rewrite.
+  exact not_isNisnevichCovering_specMap_algebraMap_of_finrank_ne_one k K h
 
--- `ℝ → ℂ` is a quadratic étale extension.
-example : Algebra.Etale ℝ ℂ :=
+/-- `ℝ → ℂ` is étale, being a finite separable field extension. -/
+theorem algebraEtale_real_complex : Algebra.Etale ℝ ℂ :=
   have : Algebra.FormallyEtale ℝ ℂ := Algebra.FormallyEtale.of_isSeparable ℝ ℂ
   have : Algebra.FinitePresentation ℝ ℂ :=
     Algebra.FinitePresentation.of_finiteType.mp inferInstance
   ⟨inferInstance, inferInstance⟩
 
-example : finrank ℝ ℂ = 2 := Complex.finrank_real_complex
+attribute [local instance] algebraEtale_real_complex
+
+-- `Spec ℂ ⟶ Spec ℝ` is the structure morphism of the object `specObj ℝ ℂ` of `(Spec ℝ).QcEtale`.
+example : ((Scheme.QcEtale.ι _).obj (specObj ℝ ℂ)).hom =
+    Spec.map (CommRingCat.ofHom (algebraMap ℝ ℂ)) :=
+  rfl
+
+-- `Spec ℂ ⟶ Spec ℝ` lies in the basis `(Spec ℝ).QcEtale`, but the sieve it generates does not
+-- cover the final object.
+example :
+    Sieve.ofArrows (fun _ : PUnit.{1} ↦ specObj ℝ ℂ) (fun _ ↦ specHom ℝ ℂ) ∉
+      (Spec (.of ℝ)).qcNisnevichTopology (idObj (Spec (.of ℝ))) := by
+  rw [Scheme.ofArrows_mem_qcNisnevichTopology_iff]
+  -- As above, the underlying morphism of `specHom ℝ ℂ` is `Spec ℂ ⟶ Spec ℝ` by definition.
+  exact not_isNisnevichCovering_specMap_algebraMap_of_finrank_ne_one ℝ ℂ
+    (by simp [Complex.finrank_real_complex])
 
 end TauCeti.Examples.QcEtale
