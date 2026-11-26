@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 public import Mathlib.LinearAlgebra.Eigenspace.Zero
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Eigenspace.Range
 
@@ -215,9 +216,9 @@ theorem det_mul_det_ne_zero_of_compl₁₂_eq_smul [FiniteDimensional K V]
 characteristic polynomial of `F`. -/
 theorem zero_notMem_roots_charpoly_of_compl₁₂_eq_smul [FiniteDimensional K V]
     (h : B.compl₁₂ F F' = c • B) (hc : c ≠ 0) : (0 : K) ∉ F.charpoly.roots := by
-  have hF : ¬F.HasEigenvalue 0 := ((not_hasEigenvalue_zero_tfae F).out 4 1).1
-    (left_ne_zero_of_mul (B.det_mul_det_ne_zero_of_compl₁₂_eq_smul h hc))
-  exact fun h0 ↦ hF ((hasEigenvalue_iff_isRoot_charpoly F 0).2 (mem_roots'.1 h0).2)
+  have hne := B.det_mul_det_ne_zero_of_compl₁₂_eq_smul h hc
+  simp only [det_eq_sign_charpoly_coeff, coeff_zero_eq_eval_zero, mul_ne_zero_iff] at hne
+  exact fun h0 ↦ hne.1.2 (mem_roots'.1 h0).2
 
 /-- **Eigenvalues under a perfect pairing with a multiplier.** If `B` is perfect and
 `B (F x) (F' y) = c • B x y` with `c ≠ 0`, then the eigenvalues of `F'` in `K`, counted with
@@ -233,12 +234,8 @@ theorem roots_charpoly_eq_map_div_of_compl₁₂_eq_smul [FiniteDimensional K V]
   simp only [count_roots]
   rcases eq_or_ne β 0 with rfl | hβ
   · have hne := B.det_mul_det_ne_zero_of_compl₁₂_eq_smul h hc
-    have hF : ¬F.HasEigenvalue 0 := ((not_hasEigenvalue_zero_tfae F).out 4 1).1
-      (left_ne_zero_of_mul hne)
-    have hF' : ¬F'.HasEigenvalue 0 := ((not_hasEigenvalue_zero_tfae F').out 4 1).1
-      (right_ne_zero_of_mul hne)
-    rw [div_zero, rootMultiplicity_eq_zero (mt (hasEigenvalue_iff_isRoot_charpoly F 0).2 hF),
-      rootMultiplicity_eq_zero (mt (hasEigenvalue_iff_isRoot_charpoly F' 0).2 hF')]
+    simp only [det_eq_sign_charpoly_coeff, coeff_zero_eq_eval_zero, mul_ne_zero_iff] at hne
+    rw [div_zero, rootMultiplicity_eq_zero hne.1.2, rootMultiplicity_eq_zero hne.2.2]
   · rw [← finrank_maxGenEigenspace_eq, ← finrank_maxGenEigenspace_eq]
     exact B.finrank_maxGenEigenspace_eq_of_compl₁₂_eq_smul h hc (div_mul_cancel₀ c hβ)
 
