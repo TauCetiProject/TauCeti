@@ -490,15 +490,15 @@ theorem chowlaSelberg_classMean (hK : finrank ℚ K = 2) (σ : K →+* ℂ) (D :
   exact classMean_eq_of_value_deriv hk hw h1 h2 hkπ
 
 /-- **The Chowla–Selberg formula in class-mean form, for the character of the field.** Let `K` be
-an imaginary quadratic field, `σ` a complex embedding of `K`, and `χ_K` the quadratic character
-`(d_K / ·)` of the discriminant `d_K` of `K`, at level `|d_K|`. Let `τ_C` be points of the upper
-half-plane such that the image under `σ` of some fractional ideal of the class `C` is homothetic
-to `ℤ + ℤ τ_C`. Then the mean over the ideal classes of the logarithmic periods
-`log (4 π Im τ_C |η(τ_C)|⁴)` is `γ + log (2π / √|d_K|) - L'(1, χ_K) / L(1, χ_K)`. This is
-`chowlaSelberg_classMean` with the factorisation `ζ_K = ζ · L(·, χ_K)` supplied by
-`dedekindZeta_eq_riemannZeta_mul_LFunction`. -/
-theorem chowlaSelberg_classMean_fundamentalDiscriminantChar [IsTotallyComplex K]
-    (hK : finrank ℚ K = 2) (σ : K →+* ℂ) (τ : ClassGroup (𝓞 K) → ℍ)
+a quadratic field, `σ` a complex embedding of `K`, and `χ_K` the quadratic character `(d_K / ·)`
+of the discriminant `d_K` of `K`, at level `|d_K|`. Let `τ_C` be points of the upper half-plane
+such that the image under `σ` of some fractional ideal of the class `C` is homothetic to
+`ℤ + ℤ τ_C` (this forces `K` to be imaginary). Then the mean over the ideal classes of the
+logarithmic periods `log (4 π Im τ_C |η(τ_C)|⁴)` is
+`γ + log (2π / √|d_K|) - L'(1, χ_K) / L(1, χ_K)`. This is `chowlaSelberg_classMean` with the
+factorisation `ζ_K = ζ · L(·, χ_K)` supplied by `dedekindZeta_eq_riemannZeta_mul_LFunction`. -/
+theorem chowlaSelberg_classMean_fundamentalDiscriminantChar (hK : finrank ℚ K = 2)
+    (σ : K →+* ℂ) (τ : ClassGroup (𝓞 K) → ℍ)
     (hτ : ∀ C, ∃ I : (FractionalIdeal (𝓞 K)⁰ K)ˣ, ClassGroup.mk K I = C ∧
       ∃ c : ℂ, c ≠ 0 ∧ σ '' ((I : FractionalIdeal (𝓞 K)⁰ K) : Set K) =
         (c * ·) '' (Submodule.span ℤ {(1 : ℂ), (τ C : ℂ)} : Set ℂ)) :
@@ -509,12 +509,9 @@ theorem chowlaSelberg_classMean_fundamentalDiscriminantChar [IsTotallyComplex K]
             (Int.castRingHom ℂ))) 1 /
         DirichletCharacter.LFunction ((Multiquadratic.fundamentalDiscriminantChar (discr K)
           (Multiquadratic.isFundamentalDiscr_discr hK)).ringHomComp (Int.castRingHom ℂ)) 1 := by
-  have hodd : ¬ Even (nrComplexPlaces K) := by
-    rw [Nat.not_even_iff_odd]
-    exact ⟨0, by have := IsTotallyComplex.finrank K; omega⟩
-  have hdK : discr K < 0 := lt_of_le_of_ne
-    (not_lt.mp (mt (InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr K).mpr hodd))
-    (NeZero.ne (discr K))
+  obtain ⟨I, -, c, hc, hI⟩ := hτ 1
+  have := isTotallyComplex_of_image_eq σ hK hc hI
+  have hdK := IsTotallyComplex.discr_lt_zero hK
   exact chowlaSelberg_classMean hK σ (discr K).natAbs (by omega) _
     (fun _ hs ↦ dedekindZeta_eq_riemannZeta_mul_LFunction hK hs) τ hτ
 

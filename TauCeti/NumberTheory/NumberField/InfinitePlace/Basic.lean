@@ -62,7 +62,8 @@ equivalent to a nonarchimedean absolute value.
   `nrComplexPlaces_eq_one_of_discr_lt_zero` (degree less than `6`) and
   `NumberField.IsTotallyReal.of_zero_lt_discr` read the signature off the sign of the
   discriminant in low degree, and `NumberField.IsTotallyComplex.of_discr_lt_zero` shows that a
-  quadratic field of negative discriminant is totally complex.
+  quadratic field of negative discriminant is totally complex, with converse
+  `NumberField.IsTotallyComplex.discr_lt_zero`.
 * `NumberField.IsTotallyComplex.of_finrank_le_two_mul_nrComplexPlaces`: a field is totally complex
   as soon as its complex places use up the degree.
 * `NumberField.IsTotallyReal.nontrivial_ringHom_real`: a totally real field of degree greater
@@ -267,6 +268,16 @@ theorem IsTotallyComplex.of_discr_lt_zero (hd : discr K < 0) (hK : Module.finran
     IsTotallyComplex K :=
   .of_finrank_le_two_mul_nrComplexPlaces <| by
     rw [hK, InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero hd (by omega)]
+
+/-- A totally complex number field of degree `2`, an imaginary quadratic field, has negative
+discriminant: the converse of `NumberField.IsTotallyComplex.of_discr_lt_zero`. Its single complex
+place is odd in number, so by Brill's theorem the discriminant is not positive, and it is
+nonzero. -/
+theorem IsTotallyComplex.discr_lt_zero [IsTotallyComplex K] (hK : Module.finrank ℚ K = 2) :
+    discr K < 0 := by
+  have h := (InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr K).not.mp
+    (by simp [InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two hK])
+  exact lt_of_le_of_ne (not_lt.mp h) (discr_ne_zero K)
 
 /-- A totally real number field of degree greater than one has two distinct real embeddings:
 each of its complex embeddings, of which there are as many as the degree, is real. -/
