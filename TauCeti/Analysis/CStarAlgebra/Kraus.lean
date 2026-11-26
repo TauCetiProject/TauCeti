@@ -36,9 +36,9 @@ public section
 open scoped CStarAlgebra ComplexOrder
 open CStarMatrix
 
-namespace Matrix
-
 variable {n m ι κ : Type*} [Fintype n] [Fintype m] [Fintype ι] [Fintype κ]
+
+namespace Matrix
 
 /-- Conjugation by a rectangular matrix is completely positive. -/
 noncomputable def conjugateCP (V : Matrix n m ℂ) :
@@ -129,30 +129,41 @@ theorem krausMap_apply (V : ι → Matrix n m ℂ) (a : CStarMatrix n n ℂ) :
   simp only [LinearMap.sum_apply]
   rfl
 
-/-- The underlying linear map of `krausMap V`, transported to ordinary matrices. -/
+end Matrix
+
+namespace TauCeti
+
+open scoped Matrix
+
+/-- The underlying linear map of `Matrix.krausMap V`, transported to ordinary matrices. -/
 noncomputable def krausMapLinearMap (V : ι → Matrix n m ℂ) :
     Matrix n n ℂ →ₗ[ℂ] Matrix m m ℂ :=
-  ((ofMatrixₗ (R := ℂ)).arrowCongr (ofMatrixₗ (R := ℂ))).symm (krausMap V : _ →ₗ[ℂ] _)
+  ((ofMatrixₗ (R := ℂ)).arrowCongr (ofMatrixₗ (R := ℂ))).symm
+    (Matrix.krausMap V : _ →ₗ[ℂ] _)
 
 /-- On ordinary matrices, the Kraus map evaluates to the sum of conjugations. -/
 @[simp]
 theorem krausMapLinearMap_apply (V : ι → Matrix n m ℂ) (X : Matrix n n ℂ) :
     krausMapLinearMap V X = ∑ i, (V i)ᴴ * X * V i := by
   simp only [krausMapLinearMap, LinearEquiv.arrowCongr_symm_apply, LinearMap.coe_ofClass,
-    ofMatrixₗ_apply, ofMatrixₗ_symm_apply, krausMap_apply, Equiv.symm_apply_apply]
+    ofMatrixₗ_apply, ofMatrixₗ_symm_apply, Matrix.krausMap_apply, Equiv.symm_apply_apply]
 
 /-- The Choi matrix of a Kraus map is the sum of outer products of its vectorized adjoints
 with their entrywise conjugates. -/
 theorem choiMatrix_krausMapLinearMap [DecidableEq n] (V : ι → Matrix n m ℂ) :
-    TauCeti.choiMatrix (krausMapLinearMap V) =
+    choiMatrix (krausMapLinearMap V) =
       ∑ i, Matrix.vecMulVec (V i)ᴴ.vec (star (V i)ᴴ.vec) := by
   have h : (⇑(krausMapLinearMap V)) = ∑ i, fun X : Matrix n n ℂ => (V i)ᴴ * X * V i := by
     funext X
     simp only [krausMapLinearMap_apply, Finset.sum_apply]
-  rw [h, TauCeti.choiMatrix_sum]
+  rw [h, choiMatrix_sum]
   refine Finset.sum_congr rfl fun i _ => ?_
   simpa only [Matrix.conjTranspose_conjTranspose] using
     ((V i)ᴴ).choiMatrix_mul_mul_conjTranspose
+
+end TauCeti
+
+namespace Matrix
 
 /-- A Kraus map is unital precisely when its normalization sum is one. -/
 @[simp] theorem krausMap_unital_iff [DecidableEq n] [DecidableEq m]

@@ -103,8 +103,9 @@ noncomputable def choiMatrixAddEquiv {m n R : Type*} [Finite n] [Semiring R] :
 
 /-- The forward direction of `choiMatrixAddEquiv` forms the Choi matrix. -/
 @[simp]
-theorem choiMatrixAddEquiv_apply {m n R : Type*} [Finite n] [DecidableEq n] [Semiring R]
-    (Φ : Matrix n n R →ₗ[R] Matrix m m R) : choiMatrixAddEquiv Φ = choiMatrix Φ := by
+theorem _root_.LinearMap.choiMatrixAddEquiv_apply {m n R : Type*} [Finite n] [DecidableEq n]
+    [Semiring R] (Φ : Matrix n n R →ₗ[R] Matrix m m R) :
+    choiMatrixAddEquiv Φ = choiMatrix Φ := by
   let := Fintype.ofFinite n
   apply Matrix.ext
   rintro ⟨i, a⟩ ⟨j, b⟩
@@ -112,17 +113,17 @@ theorem choiMatrixAddEquiv_apply {m n R : Type*} [Finite n] [DecidableEq n] [Sem
 
 /-- The Choi matrix of the linear map reconstructed from `C` is `C`. -/
 @[simp]
-theorem choiMatrix_choiMatrixAddEquiv_symm {m n R : Type*} [Finite n] [DecidableEq n]
+theorem _root_.Matrix.choiMatrix_choiMatrixAddEquiv_symm {m n R : Type*} [Finite n] [DecidableEq n]
     [Semiring R] (C : Matrix (n × m) (n × m) R) :
     choiMatrix (choiMatrixAddEquiv.symm C) = C := by
-  simpa only [choiMatrixAddEquiv_apply] using choiMatrixAddEquiv.apply_symm_apply C
+  simpa only [LinearMap.choiMatrixAddEquiv_apply] using choiMatrixAddEquiv.apply_symm_apply C
 
 /-- Reconstructing a linear map from its Choi matrix recovers the original map. -/
 @[simp]
-theorem choiMatrixAddEquiv_symm_choiMatrix {m n R : Type*} [Finite n] [DecidableEq n]
-    [Semiring R] (Φ : Matrix n n R →ₗ[R] Matrix m m R) :
+theorem _root_.LinearMap.choiMatrixAddEquiv_symm_choiMatrix {m n R : Type*} [Finite n]
+    [DecidableEq n] [Semiring R] (Φ : Matrix n n R →ₗ[R] Matrix m m R) :
     choiMatrixAddEquiv.symm (choiMatrix Φ) = Φ := by
-  simpa only [choiMatrixAddEquiv_apply] using choiMatrixAddEquiv.symm_apply_apply Φ
+  simpa only [LinearMap.choiMatrixAddEquiv_apply] using choiMatrixAddEquiv.symm_apply_apply Φ
 
 /-- A linear map with a finite input index type is determined by its Choi matrix.
 The output index type is arbitrary. -/
@@ -130,7 +131,7 @@ theorem choiMatrix_injective {m n R : Type*} [Finite n] [DecidableEq n] [Semirin
     Function.Injective (fun Φ : Matrix n n R →ₗ[R] Matrix m m R => choiMatrix Φ) := by
   intro Φ Ψ h
   apply choiMatrixAddEquiv.injective
-  simpa only [choiMatrixAddEquiv_apply] using h
+  simpa only [LinearMap.choiMatrixAddEquiv_apply] using h
 
 /-- Two linear maps with finite input index type have equal Choi matrices exactly when
 the maps are equal. -/
@@ -142,12 +143,12 @@ theorem choiMatrix_inj {m n R : Type*} [Finite n] [DecidableEq n] [Semiring R]
 
 /-- The reconstructed linear map sends the `(i, j)` matrix unit to the `(i, j)` block. -/
 @[simp]
-theorem choiMatrixAddEquiv_symm_apply_single {m n R : Type*} [Finite n] [DecidableEq n]
-    [Semiring R] (C : Matrix (n × m) (n × m) R) (i j : n) :
+theorem _root_.Matrix.choiMatrixAddEquiv_symm_apply_single {m n R : Type*} [Finite n]
+    [DecidableEq n] [Semiring R] (C : Matrix (n × m) (n × m) R) (i j : n) :
     choiMatrixAddEquiv.symm C (Matrix.single i j 1) =
       C.submatrix (fun a => (i, a)) (fun b => (j, b)) := by
   ext a b
-  simpa only [choiMatrixAddEquiv_apply, choiMatrix_apply, Matrix.submatrix_apply] using
+  simpa only [LinearMap.choiMatrixAddEquiv_apply, choiMatrix_apply, Matrix.submatrix_apply] using
     congrArg (fun M : Matrix (n × m) (n × m) R => M (i, a) (j, b))
       (choiMatrixAddEquiv.apply_symm_apply C)
 
