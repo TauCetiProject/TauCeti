@@ -44,7 +44,8 @@ almost-everywhere representative of a half-space.
 * `TauCeti.eq_setOf_inner_lt_or_le_of_forall_inner_nonpos`: the exact classification.
 * `TauCeti.ae_eq_setOf_inner_lt_of_forall_inner_nonpos`: the almost-everywhere classification.
 * `MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_closedBall`,
-  `MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall`: the exact half-ball measures.
+  `MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall`,
+  `MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_ball`: the exact half-ball measures.
 * `MeasureTheory.Measure.inv_two_mul_addHaar_closedBall_le_addHaar_closedBall_inter_setOf_lt_inner`:
   density at least one half in the closed balls centred in the closed half-space.
 * `TauCeti.hasDensityAt_setOf_inner_lt`: density one half on the boundary hyperplane.
@@ -207,6 +208,26 @@ theorem _root_.MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall
     ext y
     simp only [mem_ofPred_eq, inner_neg_right, neg_lt_neg_iff]
   rw [h, μ.addHaar_setOf_inner_lt_inter_closedBall (neg_ne_zero.2 hν) (by rw [inner_neg_right, hx])]
+
+/-- The upper half-space `{y | c < ⟪y, ν⟫}` cuts every open ball centred on its boundary
+hyperplane into two equal parts, for any additive Haar measure. -/
+theorem _root_.MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_ball
+    (μ : Measure E) [μ.IsAddHaarMeasure] {ν x : E} {c r : ℝ} (hν : ν ≠ 0)
+    (hx : ⟪x, ν⟫ = c) :
+    μ ({y | c < ⟪y, ν⟫} ∩ ball x r) = μ (ball x r) / 2 := by
+  have : Nontrivial E := ⟨⟨ν, 0, hν⟩⟩
+  -- The sphere is null, so the open and the closed half-balls have the same measure.
+  have h : μ ({y | c < ⟪y, ν⟫} ∩ ball x r) = μ ({y | c < ⟪y, ν⟫} ∩ closedBall x r) := by
+    refine le_antisymm (measure_mono (inter_subset_inter_right _ ball_subset_closedBall)) ?_
+    calc μ ({y | c < ⟪y, ν⟫} ∩ closedBall x r)
+        ≤ μ ({y | c < ⟪y, ν⟫} ∩ ball x r ∪ sphere x r) := by
+          refine measure_mono fun y hy => ?_
+          rcases (mem_closedBall.1 hy.2).lt_or_eq with h | h
+          · exact Or.inl ⟨hy.1, mem_ball.2 h⟩
+          · exact Or.inr (mem_sphere.2 h)
+      _ ≤ μ ({y | c < ⟪y, ν⟫} ∩ ball x r) + μ (sphere x r) := measure_union_le _ _
+      _ = μ ({y | c < ⟪y, ν⟫} ∩ ball x r) := by rw [Measure.addHaar_sphere, add_zero]
+  rw [h, μ.addHaar_setOf_lt_inner_inter_closedBall hν hx, μ.addHaar_closedBall_eq_addHaar_ball]
 
 /-- At every point of the boundary hyperplane of a half-space with nonzero normal, its
 density with respect to any additive Haar measure is one half. -/

@@ -99,7 +99,7 @@ section Comparison
 `ball z r ⊆ U`, and let `w ∈ H¹(B_r ∩ H)` have the boundary values of `u`, that is
 `u - w ∈ H¹₀(B_r ∩ H)`. Then `u` minus the zero extension of `u - w` is a function
 `W ∈ H¹(B_r)` that vanishes on `B_r ∖ H` and restricts to `w` on `B_r ∩ H`. -/
-private theorem exists_restrictL_eq_of_sub_mem_w1p0Submodule
+theorem exists_restrictL_eq_of_sub_mem_w1p0Submodule
     {U H : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {u : W1p volume U 2}
     {z : EuclideanSpace ℝ (Fin (n + 1))} {r : ℝ}
     (hu0 : ∀ᵐ x ∂volume.restrict U, x ∉ H → W1p.value u x = 0) (hball : ball z r ⊆ U)
