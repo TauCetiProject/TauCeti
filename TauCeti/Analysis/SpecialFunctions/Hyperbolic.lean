@@ -55,8 +55,9 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Real.cosh_add_le_exp_abs_mul_cosh` — `cosh (x + y) ≤ exp |y| * cosh x`: a shift by `y` changes
   `Real.cosh` by a factor between `exp (-|y|)` and `exp |y|`.
 * `Real.bijOn_cosh_sub_one_Ioi` — `u ↦ cosh u - 1` maps `(0, ∞)` bijectively onto `(0, ∞)`.
-* `Real.hasDerivAt_log_cosh` and `Real.abs_sub_log_two_le_log_cosh` — `log (cosh x)` has
-  derivative `tanh x` and is at least `|x| - log 2`, so it is a smooth version of `|x|`.
+* `Real.hasDerivAt_log_cosh`, `Real.abs_sub_log_two_le_log_cosh` and `Real.log_cosh_le_abs` —
+  `log (cosh x)` has derivative `tanh x` and lies between `|x| - log 2` and `|x|`, so it is a
+  smooth version of `|x|`.
 * `Real.tendsto_cosh_sub_div_cosh_add_atTop` — `cosh (x - a) / cosh (x + a) → exp (-(2 * a))` as
   `x → ∞`.
 * `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` —
@@ -66,6 +67,12 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Complex.norm_cosh_mul_le` — `‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2` for complex
   `z` and `w`.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
+* `Real.cosh_eq_one_add_two_mul_sinh_half_sq` — `cosh x = 1 + 2 * sinh (x / 2) ^ 2`, the
+  half-argument formula that turns `cosh` into a square under the substitution
+  `s = 2 sinh (x / 2)`.
+* `Real.one_add_sq_div_two_le_cosh` — `1 + x ^ 2 / 2 ≤ cosh x`, the lower companion of
+  Mathlib's `Real.cosh_le_exp_half_sq`, which bounds Laplace-type integrals of `exp (-c cosh x)`
+  by Gaussian ones.
 * `Real.sinh_le_mul_exp_sq_div_six` — `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. It bounds the
   exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
   distribution on `[0, 1]`, which is what makes the volume of a simplex cut from a cube
@@ -282,6 +289,24 @@ theorem four_mul_sinh_half_sq (r : ℝ) :
   rw [sinh_eq]
   ring
 
+/-- The half-argument formula `cosh x = 1 + 2 * sinh (x / 2) ^ 2`. -/
+theorem cosh_eq_one_add_two_mul_sinh_half_sq (x : ℝ) : cosh x = 1 + 2 * sinh (x / 2) ^ 2 := by
+  have h := cosh_two_mul (x / 2)
+  rw [show 2 * (x / 2) = x by ring, cosh_sq] at h
+  linarith
+
+/-- `1 + x ^ 2 / 2 ≤ cosh x`: the first two terms of the power series of `Real.cosh` bound it
+from below. -/
+theorem one_add_sq_div_two_le_cosh (x : ℝ) : 1 + x ^ 2 / 2 ≤ cosh x := by
+  -- `cosh x = 1 + 2 sinh (x / 2) ^ 2` and `|x / 2| ≤ |sinh (x / 2)|`
+  have h : |x / 2| ≤ |sinh (x / 2)| := by
+    rw [abs_sinh]
+    exact self_le_sinh_iff.mpr (abs_nonneg _)
+  have hsq := pow_le_pow_left₀ (abs_nonneg _) h 2
+  rw [sq_abs, sq_abs] at hsq
+  rw [cosh_eq_one_add_two_mul_sinh_half_sq]
+  nlinarith
+
 /-- `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`, the odd companion of `Real.cosh_le_exp_half_sq`.
 The constant `6` is sharp: the cubic terms of the two power series agree. -/
 theorem sinh_le_mul_exp_sq_div_six {x : ℝ} (hx : 0 ≤ x) :
@@ -376,6 +401,11 @@ theorem abs_sub_log_two_le_log_cosh (x : ℝ) :
     linarith [exp_abs_le x]
   have := log_le_log (by positivity) hcosh
   rwa [log_div (exp_pos _).ne' two_ne_zero, log_exp] at this
+
+/-- `log (cosh x)` is at most `|x|`, because `cosh x ≤ exp |x|`. -/
+theorem log_cosh_le_abs (x : ℝ) : log (cosh x) ≤ |x| := by
+  rw [log_le_iff_le_exp (cosh_pos x), cosh_eq]
+  linarith [exp_le_exp.2 (le_abs_self x), exp_le_exp.2 (neg_le_abs x)]
 
 /-- The ratio `cosh (x - a) / cosh (x + a)` tends to `exp (-(2 * a))` as `x → ∞`. -/
 theorem tendsto_cosh_sub_div_cosh_add_atTop (a : ℝ) :

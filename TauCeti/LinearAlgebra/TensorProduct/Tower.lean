@@ -48,10 +48,14 @@ an `A`-linear map `A ⊗[R] M → M`. Mathlib's `LinearMap.liftBaseChange` and
   comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` is natural in `M` and `N`, with
   its pure-tensor form
   `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_baseChange_tmul_baseChange`.
+* `AlgHom.distribBaseChange_symm_rTensor_tmul`: the same comparison is natural in the scalar
+  algebra, along an algebra map `f : A →ₐ[R] B`.
 * `TensorProduct.tmul_eq_one_tmul_smul_of_mem`: in `R ⊗[B] M`, for a subring `B` of `R` and
   `r ∈ B`, `r ⊗ m = 1 ⊗ r • m`.
 * `Submodule.one_tmul_mem_baseChange_of_smul_mem`: if `a • x ∈ N` and `a` becomes a unit in `A`,
   then `1 ⊗ₜ x` lies in the base change of `N` to `A`.
+* `Submodule.map_cancelBaseChange_baseChange_baseChange`: along a tower `R → K → A`, cancelling
+  the base change carries `(N_K)_A` onto `N_A`.
 * `LinearMap.baseChange_leftInverse`: base change preserves left inverses.
 * `LinearMap.liftBaseChangeSemilinear`, `AddMonoidHom.liftBaseChangeSemilinear`,
   `LinearMap.ext_one_tmul`, `LinearMap.eq_liftBaseChangeSemilinear_iff`,
@@ -137,6 +141,25 @@ theorem TensorProduct.AlgebraTensorModule.distribBaseChange_symm_baseChange_tmul
       (TensorProduct.map f g).baseChange A ((distribBaseChange R A M N).symm (x ⊗ₜ[A] y)) :=
   LinearMap.congr_fun (distribBaseChange_symm_comp_map_baseChange f g) (x ⊗ₜ[A] y)
 
+/-- On pure tensors, the comparison maps of scalar extensions along `f : A →ₐ[R] B` intertwine
+the comparisons `(A ⊗ M) ⊗[A] (A ⊗ N) ≃ A ⊗ (M ⊗ N)` for the two scalar algebras. -/
+theorem AlgHom.distribBaseChange_symm_rTensor_tmul {R A B M N : Type*} [CommSemiring R]
+    [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra R B]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (f : A →ₐ[R] B) (u : A ⊗[R] M) (v : A ⊗[R] N) :
+    (AlgebraTensorModule.distribBaseChange R B M N).symm
+        (LinearMap.rTensor M f.toLinearMap u ⊗ₜ[B] LinearMap.rTensor N f.toLinearMap v) =
+      LinearMap.rTensor (M ⊗[R] N) f.toLinearMap
+        ((AlgebraTensorModule.distribBaseChange R A M N).symm (u ⊗ₜ[A] v)) := by
+  induction u using TensorProduct.inductionOn with
+  | add u₁ u₂ hu₁ hu₂ => simp only [map_add, add_tmul, hu₁, hu₂]
+  | tmul a m =>
+    induction v using TensorProduct.inductionOn with
+    | add v₁ v₂ hv₁ hv₂ => simp only [map_add, tmul_add, hv₁, hv₂]
+    | tmul b n =>
+      simp only [LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply,
+        AlgebraTensorModule.distribBaseChange_symm_tmul, map_mul]
+
 /-- In `R ⊗[B] M`, for a subring `B` of `R`, an element `r ∈ B` can be moved across the tensor
 sign: `r ⊗ m = 1 ⊗ r • m`. -/
 theorem TensorProduct.tmul_eq_one_tmul_smul_of_mem {R M : Type*} [CommRing R] [AddCommMonoid M]
@@ -154,6 +177,23 @@ theorem Submodule.one_tmul_mem_baseChange_of_smul_mem {R A M : Type*} [CommSemir
   rw [← (N.baseChange A).smul_mem_iff' ha.unit, Units.smul_def, IsUnit.unit_spec, algebraMap_smul,
     ← tmul_smul]
   exact tmul_mem_baseChange_of_mem 1 hx
+
+/-- Along a tower `R → K → A`, cancelling the base change `A ⊗[K] (K ⊗[R] M) ≃ A ⊗[R] M` carries
+`(N_K)_A` onto `N_A`. -/
+@[simp]
+theorem Submodule.map_cancelBaseChange_baseChange_baseChange {R K M : Type*} [CommSemiring R]
+    [CommSemiring K] [Algebra R K] [AddCommMonoid M] [Module R M] (N : Submodule R M)
+    (A : Type*) [CommSemiring A] [Algebra R A] [Algebra K A] [IsScalarTower R K A] :
+    ((N.baseChange K).baseChange A).map
+        (TensorProduct.AlgebraTensorModule.cancelBaseChange R K A A M).toLinearMap =
+      N.baseChange A := by
+  conv_lhs => rw [← N.span_eq]
+  conv_rhs => rw [← N.span_eq]
+  rw [baseChange_span, baseChange_span, baseChange_span, map_span, Set.image_image,
+    Set.image_image]
+  simp only [mk_apply, LinearEquiv.coe_coe, AlgebraTensorModule.cancelBaseChange_tmul, one_smul]
+  -- both sides are spanned by the `1 ⊗ₜ x` for `x ∈ N`
+  exact congrArg (span A) (Set.image_congr fun x _ ↦ (mk_apply 1 x).symm)
 
 /-- Base change preserves left inverses: if `f ∘ₗ g = id`, then `f.baseChange A` is a left
 inverse of `g.baseChange A`. -/

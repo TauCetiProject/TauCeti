@@ -34,6 +34,8 @@ When `E` is a hermitian vector bundle, `F` is finitely generated projective, and
 ## Main definitions
 
 * `TauCeti.HermitianMetric.comap`: the pullback of a metric along an injective linear map.
+* `TauCeti.HermitianMetric.isometryEquivComap`: a metric is isometric to its pullback along a
+  linear isomorphism.
 * `TauCeti.HermitianMetric.quotientLift`: the identification of the complex fibre of `E ⧸ F` with
   the orthogonal complement of the fibre of `F`, as a section of the projection.
 * `TauCeti.HermitianMetric.quotient`: the quotient metric on `E ⧸ F`.
@@ -105,6 +107,28 @@ theorem placeNorm_comap [NumberField K] (f : F →ₗ[𝓞 K] E) (hf : Function.
     (h.comap f hf).placeNorm v x = h.placeNorm v (f x) := by
   rw [← v.mk_embedding, placeNorm_mk, placeNorm_mk, norm_comap, LinearMap.baseChange_tmul]
 
+/-- A hermitian metric `h` on `E` is isometric, by `e⁻¹`, to its pullback along a linear
+isomorphism `e : F ≃ E`. -/
+def isometryEquivComap [NumberField K] (e : F ≃ₗ[𝓞 K] E) :
+    IsometryEquiv h (h.comap e.toLinearMap e.injective) where
+  toLinearEquiv := e.symm
+  form_tmul σ x y := by simp
+
+@[simp]
+theorem isometryEquivComap_apply [NumberField K] (e : F ≃ₗ[𝓞 K] E) (x : E) :
+    h.isometryEquivComap e x = e.symm x :=
+  (rfl)
+
+@[simp]
+theorem toLinearEquiv_isometryEquivComap [NumberField K] (e : F ≃ₗ[𝓞 K] E) :
+    (h.isometryEquivComap e).toLinearEquiv = e.symm :=
+  (rfl)
+
+@[simp]
+theorem isometryEquivComap_symm_apply [NumberField K] (e : F ≃ₗ[𝓞 K] E) (x : F) :
+    (h.isometryEquivComap e).symm x = e x := by
+  simpa using (h.isometryEquivComap e).symm_apply_apply (e x)
+
 /-! ### The quotient metric -/
 
 variable (F' : Submodule (𝓞 K) E)
@@ -147,7 +171,6 @@ private theorem exists_isOrthogonalFiber [Module.Finite (𝓞 K) E] (σ : K →+
   obtain ⟨v₀, rfl⟩ := baseChange_mkQ_surjective F' σ u
   let : NormedAddCommGroup (Codomain σ ⊗[𝓞 K] E) := (h.toCore σ).toNormedAddCommGroup
   let : InnerProductSpace ℂ (Codomain σ ⊗[𝓞 K] E) := .ofCore (h.toCore σ).toCore
-  have : Module.Finite ℂ (Codomain σ) := Module.Finite.self ℂ
   have : FiniteDimensional ℂ (Codomain σ ⊗[𝓞 K] E) := Module.Finite.trans (Codomain σ) _
   let W := LinearMap.range ((F'.subtype.baseChange (Codomain σ)).restrictScalars ℂ)
   refine ⟨v₀ - W.starProjection v₀, ?_, fun w ↦ ?_⟩

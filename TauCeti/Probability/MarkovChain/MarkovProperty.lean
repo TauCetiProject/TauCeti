@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Probability.Kernel.Composition.Power
 public import TauCeti.Probability.Process.MarkovChain
 public import TauCeti.Probability.Process.PathLaw.ProcessShift
 public import TauCeti.Probability.Process.PathLaw.Filtration
@@ -34,9 +35,12 @@ This file proves it in the following forms.
   (`MeasureTheory.Measure.markovChainLaw_map_shift_iterate`). On an event `{(X 0, …, X n) ∈ A}` of
   the history, the future path has the law of the chain started from the law of `X n` restricted
   to that event (`MeasureTheory.Measure.markovChainLaw_restrict_map_shift_iterate`).
-* One step ahead, as an identity of probabilities: for an event `B` of the history up to time `n`,
-  `ℙ(B ∩ {X (n + 1) ∈ C}) = ∫_B κ (X n) C`
-  (`MeasureTheory.Measure.markovChainLaw_inter_preimage_eval_succ`).
+* `k` steps ahead, for an s-finite initial measure: the joint law of the prefix `(X 0, …, X n)` and
+  of the state `X (n + k)` is the prefix law extended by the kernel power `κ ^ k` out of the last
+  coordinate (`MeasureTheory.Measure.markovChainLaw_map_prefix_eval_add_eq_compProd`), and, as an
+  identity of probabilities, for an event `B` of the history up to time `n`,
+  `ℙ(B ∩ {X (n + k) ∈ C}) = ∫_B (κ ^ k) (X n) C`
+  (`MeasureTheory.Measure.markovChainLaw_inter_preimage_eval_add`; take `k = 1` for one step).
 * As a consequence, a measurable function `f` of a chain whose transition laws depend on the
   current state only through its value under `f` is again a chain
   (`ProbabilityTheory.Kernel.markovChainLaw_dirac_map_comp`,
@@ -133,24 +137,6 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_map_shift_iterate [IsFiniteM
   simpa [Measure.markovChainLaw_map_eval] using
     Measure.markovChainLaw_restrict_map_shift_iterate ν κ n MeasurableSet.univ
 
-/-- **The one-step Markov property, for events.** For an event `B` of the history `X 0, …, X n` and
-a measurable set `C` of states, `ℙ(B ∩ {X (n + 1) ∈ C}) = ∫_B κ (X n) C`. -/
-theorem _root_.MeasureTheory.Measure.markovChainLaw_inter_preimage_eval_succ [SFinite ν] (n : ℕ)
-    {B : Set (ℕ → α)} (hB : MeasurableSet[Filtration.piLE n] B) {C : Set α}
-    (hC : MeasurableSet C) :
-    markovChainLaw ν κ (B ∩ (fun x => x (n + 1)) ⁻¹' C) =
-      ∫⁻ x in B, κ (x n) C ∂markovChainLaw ν κ := by
-  rw [Filtration.piLE_eq_comap_prefix] at hB
-  obtain ⟨A, hA, rfl⟩ := hB
-  have hpre : Measurable fun x : ℕ → α => fun i : Fin (n + 1) => x i.val := by fun_prop
-  have hfib : (fun (x : ℕ → α) (i : Fin (n + 1)) => x i.val) ⁻¹' A ∩
-      (fun x : ℕ → α => x (n + 1)) ⁻¹' C =
-      (fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.val), x (n + 1))) ⁻¹' (A ×ˢ C) := rfl
-  rw [hfib, ← Measure.map_apply (hpre.prodMk (measurable_pi_apply _)) (hA.prod hC),
-    markovChainLaw_map_prefix_succ_eq_compProd, Measure.compProd_apply_prod hA hC,
-    setLIntegral_map hA (Kernel.measurable_coe _ hC) hpre]
-  simp [Kernel.comap_apply]
-
 /-- **The Markov property at time `n`, as a joint law.** Under `markovChainLaw ν κ`, the prefix
 `(X 0, …, X n)` and the future path `(X (n + k))ₖ` have joint law the prefix law composed with the
 kernel `u ↦ ℙ_{u n}` sending a prefix to the law of the chain started at its last state. -/
@@ -172,6 +158,61 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_map_prefix_shift_iterate_eq_
     Measure.markovChainLaw_restrict_map_shift_iterate ν κ n hA, Measure.markovChainLaw_eq_comp,
     Measure.bind_apply hB (Kernel.aemeasurable _),
     lintegral_map (Kernel.measurable_coe _ hB) (measurable_pi_apply n)]
+  simp [Kernel.comap_apply]
+
+/-- The `k`-step Markov property for a finite initial measure, read off the joint law of the
+prefix and the future path. -/
+private theorem markovChainLaw_map_prefix_eval_add_of_isFiniteMeasure [IsFiniteMeasure ν]
+    (n k : ℕ) :
+    (markovChainLaw ν κ).map (fun x => ((fun i : Fin (n + 1) => x i.val), x (n + k))) =
+      ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.val) ⊗ₘ
+        (κ ^ k).comap (fun w : Fin (n + 1) → α => w (Fin.last n)) (measurable_pi_apply _) := by
+  have hpre : Measurable fun x : ℕ → α => fun i : Fin (n + 1) => x i.val := by fun_prop
+  have hg : (fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.val), x (n + k))) =
+      Prod.map id (fun y : ℕ → α => y k) ∘
+        fun x => ((fun i : Fin (n + 1) => x i.val), (shift α)^[n] x) := by
+    funext x
+    simp [Nat.add_comm n k]
+  rw [hg, ← Measure.map_map (measurable_id.prodMap (measurable_pi_apply k))
+      (hpre.prodMk (measurable_shift_iterate n)),
+    Measure.markovChainLaw_map_prefix_shift_iterate_eq_compProd,
+    ← Measure.compProd_map (measurable_pi_apply k),
+    ← Kernel.comap_map_comm _ _ (measurable_pi_apply k), Kernel.markovChainKernel_map_eval]
+
+/-- **The `k`-step Markov property of the chain.** The joint law of the prefix `(X 0, …, X n)` and
+of the state `X (n + k)` is the prefix law extended by the `k`-step kernel `κ ^ k` out of the last
+coordinate of the prefix. For `k = 0` the state is the last coordinate itself. -/
+theorem _root_.MeasureTheory.Measure.markovChainLaw_map_prefix_eval_add_eq_compProd [SFinite ν]
+    (n k : ℕ) :
+    (markovChainLaw ν κ).map (fun x => ((fun i : Fin (n + 1) => x i.val), x (n + k))) =
+      ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.val) ⊗ₘ
+        (κ ^ k).comap (fun w : Fin (n + 1) → α => w (Fin.last n)) (measurable_pi_apply _) := by
+  have hpre : Measurable fun x : ℕ → α => fun i : Fin (n + 1) => x i.val := by fun_prop
+  have hg : Measurable fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.val), x (n + k)) :=
+    hpre.prodMk (measurable_pi_apply _)
+  -- Split `ν` into finite pieces, on each of which the finite-measure form applies.
+  rw [← sum_sfiniteSeq ν, Measure.markovChainLaw_sum, Measure.map_sum hg.aemeasurable,
+    Measure.map_sum hpre.aemeasurable, Measure.compProd_sum_left]
+  exact congrArg Measure.sum
+    (funext fun i => markovChainLaw_map_prefix_eval_add_of_isFiniteMeasure _ κ n k)
+
+/-- **The `k`-step Markov property, for events.** For an event `B` of the history `X 0, …, X n`
+and a measurable set `C` of states, `ℙ(B ∩ {X (n + k) ∈ C}) = ∫_B (κ ^ k) (X n) C`. -/
+theorem _root_.MeasureTheory.Measure.markovChainLaw_inter_preimage_eval_add [SFinite ν]
+    (n k : ℕ) {B : Set (ℕ → α)} (hB : MeasurableSet[Filtration.piLE n] B) {C : Set α}
+    (hC : MeasurableSet C) :
+    markovChainLaw ν κ (B ∩ (fun x => x (n + k)) ⁻¹' C) =
+      ∫⁻ x in B, (κ ^ k) (x n) C ∂markovChainLaw ν κ := by
+  rw [Filtration.piLE_eq_comap_prefix] at hB
+  obtain ⟨A, hA, rfl⟩ := hB
+  have hpre : Measurable fun x : ℕ → α => fun i : Fin (n + 1) => x i.val := by fun_prop
+  have hfib : (fun (x : ℕ → α) (i : Fin (n + 1)) => x i.val) ⁻¹' A ∩
+      (fun x : ℕ → α => x (n + k)) ⁻¹' C =
+      (fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.val), x (n + k))) ⁻¹' (A ×ˢ C) :=
+    (Set.mk_preimage_prod _ _).symm
+  rw [hfib, ← Measure.map_apply (hpre.prodMk (measurable_pi_apply _)) (hA.prod hC),
+    Measure.markovChainLaw_map_prefix_eval_add_eq_compProd, Measure.compProd_apply_prod hA hC,
+    setLIntegral_map hA (Kernel.measurable_coe _ hC) hpre]
   simp [Kernel.comap_apply]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
@@ -322,7 +363,8 @@ theorem _root_.ProbabilityTheory.Kernel.markovChainLaw_dirac_map_comp
   have hfib : (fun (ω : ℕ → S) => ((fun i : Fin (n + 1) => f (ω i.val)), f (ω (n + 1)))) ⁻¹'
       (A ×ˢ C) = (fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.val)) ⁻¹' A ∩
         (fun ω : ℕ → S => ω (n + 1)) ⁻¹' (f ⁻¹' C) := rfl
-  rw [hfib, Measure.markovChainLaw_inter_preimage_eval_succ (Measure.dirac x) η n hB (hf hC)]
+  rw [hfib, Measure.markovChainLaw_inter_preimage_eval_add (Measure.dirac x) η n 1 hB (hf hC),
+    pow_one]
   refine lintegral_congr fun ω => ?_
   rw [← Measure.map_apply hf hC, h]
 

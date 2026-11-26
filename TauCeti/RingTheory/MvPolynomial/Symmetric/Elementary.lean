@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+public import Mathlib.Algebra.Order.Ring.Defs
+import Mathlib.Algebra.Order.BigOperators.Group.Multiset
+import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
 public import TauCeti.RingTheory.PowerSeries.Rescale
 
 /-!
@@ -27,12 +30,22 @@ product in elementary symmetric polynomials.
   `e_{n+1}(a, s) = e_{n+1}(s) + a eₙ(s)`.
 * `Multiset.esymm_cons_zero`: adjoining a zero gives `e_{n+1}(0, s) = e_{n+1}(s)`, and
   `Multiset.esymm_cons_zero_eq_snoc` lists `e₁, …, e_{n+1}` of `0 ::ₘ s` for `card s ≤ n`.
+* `Multiset.esymm_replicate_zero`: the positive-degree elementary symmetric functions of a
+  multiset of zeros vanish.
 * `Multiset.esymm_one`: `e₁(s)` is the sum of `s`.
+* `MvPolynomial.esymm_card`: `e_n(X₁, …, X_n)` is the product of the variables.
+* `Multiset.esymm_map`: elementary symmetric functions commute with ring homomorphisms.
+* `Multiset.esymm_nonneg`, `Multiset.esymm_eq_zero_of_le`: for a multiset of nonnegative elements
+  of an ordered semiring, every `eₙ(s)` is nonnegative, and once one vanishes so do all those of
+  higher degree.
 * `Multiset.esymm_erase`: removing an element `a ∈ s` gives
   `eₙ(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`, and `Multiset.sum_map_mul_esymm_erase` sums it
   over `a ∈ s` against weights `w(a)`.
+* `Multiset.esymm_card_eq_prod` and `Multiset.esymm_map_inv_mul_prod`: `e_{card s}(s) = ∏ s`
+  and the reversal `e_j(s⁻¹) ∏ s = e_{card s - j}(s)` for `0 ∉ s`.
 * `TauCeti.esymmInt`: the elementary symmetric polynomial `e_m` of an integer degree `m`, which
   is `0` for `m < 0`.
+* `TauCeti.symmetricEsymm`: `e_k` as an element of `MvPolynomial.symmetricSubalgebra`.
 * `TauCeti.coeff_prod_one_add_C_mul_X`: the coefficient of `tⁿ` in `∏ᵢ (1 + xᵢ t)`, as a sum
   over the `n`-element subsets of the variables.
 * `TauCeti.mk_esymm_eq_prod_one_add_X`: the generating function of the `eₙ`.
@@ -73,6 +86,15 @@ theorem Multiset.esymm_cons_zero {R : Type*} [CommSemiring R] (s : Multiset R) (
     (0 ::ₘ s).esymm (n + 1) = s.esymm (n + 1) := by
   simp [Multiset.esymm_cons]
 
+/-- The positive-degree elementary symmetric functions of `n` zeros vanish:
+`e_{j+1}(0, …, 0) = 0`. -/
+@[simp]
+theorem Multiset.esymm_replicate_zero {R : Type*} [CommSemiring R] (n j : ℕ) :
+    (Multiset.replicate n (0 : R)).esymm (j + 1) = 0 := by
+  induction n with
+  | zero => exact Multiset.esymm_of_card_lt (by simp)
+  | succ n ih => rw [Multiset.replicate_succ, Multiset.esymm_cons_zero, ih]
+
 /-- Adjoining a zero to a multiset `s` of at most `n` elements appends `0` to its elementary
 symmetric values: `e_{j+1}(0, s)` for `j < n + 1` is `e₁(s), …, eₙ(s), 0`. -/
 theorem Multiset.esymm_cons_zero_eq_snoc {R : Type*} [CommSemiring R] {n : ℕ} (s : Multiset R)
@@ -89,6 +111,45 @@ theorem Multiset.esymm_cons_zero_eq_snoc {R : Type*} [CommSemiring R] {n : ℕ} 
 is the multiset counterpart of `MvPolynomial.esymm_one`. -/
 theorem Multiset.esymm_one {R : Type*} [CommSemiring R] (s : Multiset R) : s.esymm 1 = s.sum := by
   simp [Multiset.esymm, Multiset.powersetCard_one]
+
+/-- Elementary symmetric functions commute with ring homomorphisms:
+`e_n(f(s)) = f(e_n(s))`. This is the multiset counterpart of `MvPolynomial.map_esymm`. -/
+theorem Multiset.esymm_map {R S F : Type*} [CommSemiring R] [CommSemiring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) (s : Multiset R) (n : ℕ) :
+    (s.map f).esymm n = f (s.esymm n) := by
+  simp only [Multiset.esymm, Multiset.powersetCard_map, Multiset.map_map, map_multiset_sum,
+    Function.comp_def, map_multiset_prod]
+
+/-- The elementary symmetric functions of a multiset of nonnegative elements of an ordered
+semiring are nonnegative. -/
+theorem Multiset.esymm_nonneg {R : Type*} [CommSemiring R] [PartialOrder R] [IsOrderedRing R]
+    {s : Multiset R} (hs : ∀ a ∈ s, 0 ≤ a) (n : ℕ) : 0 ≤ s.esymm n :=
+  Multiset.sum_nonneg fun x hx ↦ by
+    obtain ⟨t, ht, rfl⟩ := Multiset.mem_map.mp hx
+    exact Multiset.prod_nonneg fun a ha ↦
+      hs a (Multiset.mem_of_le (Multiset.mem_powersetCard.mp ht).1 ha)
+
+/-- For a multiset of nonnegative elements of an ordered semiring, once an elementary symmetric
+function vanishes, so do all those of higher degree: `e_j(s) = 0` and `j ≤ l` give `e_l(s) = 0`.
+For nonnegative reals, `e_j(s) = 0` means that fewer than `j` elements of `s` are nonzero. -/
+theorem Multiset.esymm_eq_zero_of_le {R : Type*} [CommSemiring R] [PartialOrder R]
+    [IsOrderedRing R] {s : Multiset R} (hs : ∀ a ∈ s, 0 ≤ a) {j l : ℕ} (hj : s.esymm j = 0)
+    (hjl : j ≤ l) : s.esymm l = 0 := by
+  induction l, hjl using Nat.le_induction with
+  | base => exact hj
+  | succ l _ ih =>
+    rcases l with _ | l
+    · have : (1 : R) = 0 := by simpa using ih
+      simpa using congrArg (s.esymm 1 * ·) this
+    clear hj
+    induction s using Multiset.induction_on with
+    | empty => exact Multiset.esymm_of_card_lt (by simp)
+    | cons a s ihs =>
+      have hs' : ∀ b ∈ s, 0 ≤ b := fun b hb ↦ hs b (Multiset.mem_cons_of_mem hb)
+      have ha : 0 ≤ a := hs a (Multiset.mem_cons_self a s)
+      rw [Multiset.esymm_cons, add_eq_zero_iff_of_nonneg (Multiset.esymm_nonneg hs' _)
+        (mul_nonneg ha (Multiset.esymm_nonneg hs' _))] at ih
+      rw [Multiset.esymm_cons, ihs hs' ih.1, ih.1, mul_zero, add_zero]
 
 /-- Removing an element `a` of a multiset `s` from it:
 `e_n(s ∖ a) = ∑_{k=0}^{n} (-1)ᵏ e_{n-k}(s) aᵏ`. This is the coefficient form of
@@ -125,6 +186,49 @@ theorem Multiset.sum_map_mul_esymm_erase {R : Type*} [CommRing R] [DecidableEq R
   refine congrArg Multiset.sum (Multiset.map_congr rfl fun k _ ↦ ?_)
   rw [← Multiset.sum_map_mul_left]
   exact congrArg Multiset.sum (Multiset.map_congr rfl fun a _ ↦ by ring)
+
+/-- The top elementary symmetric function of a multiset is its product: `e_{card s}(s) = ∏ s`. -/
+@[simp]
+theorem Multiset.esymm_card_eq_prod {R : Type*} [CommSemiring R] (s : Multiset R) :
+    s.esymm (Multiset.card s) = s.prod := by
+  simp [Multiset.esymm, Multiset.powersetCard_self]
+
+/-- Reversal: the elementary symmetric functions of the inverses of a multiset `s` of nonzero
+elements of a semifield are those of `s`, read backwards and divided by `e_{card s}(s) = ∏ s`. -/
+theorem Multiset.esymm_map_inv_mul_prod {K : Type*} [Semifield K] (s : Multiset K)
+    (hs : (0 : K) ∉ s) {j : ℕ} (hj : j ≤ Multiset.card s) :
+    (s.map (·⁻¹)).esymm j * s.prod = s.esymm (Multiset.card s - j) := by
+  induction s using Multiset.induction_on generalizing j with
+  | empty =>
+    obtain rfl : j = 0 := by simpa using hj
+    simp
+  | cons a t ih =>
+    have ha : a ≠ 0 := fun h ↦ hs (h ▸ Multiset.mem_cons_self _ _)
+    have ht : (0 : K) ∉ t := fun h ↦ hs (Multiset.mem_cons_of_mem h)
+    -- The factor `a⁻¹` of the new term cancels against the factor `a` of the new product.
+    have hinv (x : K) : a⁻¹ * x * (a * t.prod) = x * t.prod := by
+      rw [mul_mul_mul_comm, inv_mul_cancel₀ ha, one_mul]
+    rw [Multiset.card_cons] at hj ⊢
+    rcases j with _ | i
+    · rw [Multiset.esymm_zero, one_mul, Nat.sub_zero, ← Multiset.card_cons a t,
+        Multiset.esymm_card_eq_prod]
+    rw [Multiset.map_cons, Multiset.esymm_cons, Multiset.prod_cons, add_mul, hinv,
+      ih ht (j := i) (by omega)]
+    rcases Nat.lt_or_ge i (Multiset.card t) with hlt | hge
+    · -- Both remaining indices are one more than `card t - (i + 1)`; expand by `esymm_cons`.
+      have h1 : Multiset.card t - i = Multiset.card t - (i + 1) + 1 := by omega
+      have h2 : Multiset.card t + 1 - (i + 1) = Multiset.card t - (i + 1) + 1 := by omega
+      rw [h1, h2, Multiset.esymm_cons, ← ih ht hlt]
+      ring
+    · obtain rfl : i = Multiset.card t := by omega
+      rw [Multiset.esymm_of_card_lt (by simp), zero_mul, zero_add, Nat.sub_self, Nat.sub_self,
+        Multiset.esymm_zero, Multiset.esymm_zero]
+
+/-- The elementary symmetric polynomial whose degree is the number of variables is the product of
+all the variables: `e_n(X₁, …, X_n) = X₁ ⋯ X_n`. -/
+theorem MvPolynomial.esymm_card (σ : Type*) [Fintype σ] (R : Type*) [CommSemiring R] :
+    MvPolynomial.esymm σ R (Fintype.card σ) = ∏ i, MvPolynomial.X i := by
+  rw [MvPolynomial.esymm, ← Finset.card_univ, Finset.powersetCard_self, Finset.sum_singleton]
 
 namespace TauCeti
 
@@ -174,6 +278,32 @@ theorem rename_esymmInt {τ : Type*} [Fintype τ] (m : ℤ) (e : σ ≃ τ) :
   split_ifs <;> simp [MvPolynomial.rename_esymm]
 
 end esymmInt
+
+section symmetricEsymm
+
+variable (σ : Type*) [Fintype σ] (R : Type*) [CommSemiring R]
+
+/-- The elementary symmetric polynomial `MvPolynomial.esymm σ R k`, as an element of
+`MvPolynomial.symmetricSubalgebra`. -/
+noncomputable def symmetricEsymm (k : ℕ) : MvPolynomial.symmetricSubalgebra σ R :=
+  ⟨MvPolynomial.esymm σ R k, MvPolynomial.esymm_isSymmetric σ R k⟩
+
+variable {σ R}
+
+@[simp, norm_cast]
+theorem coe_symmetricEsymm (k : ℕ) :
+    (symmetricEsymm σ R k : MvPolynomial σ R) = MvPolynomial.esymm σ R k :=
+  (rfl)
+
+/-- The elementary symmetric polynomial `e_k` in the symmetric subalgebra vanishes when `k`
+exceeds the number of variables. -/
+theorem symmetricEsymm_eq_zero_of_lt {k : ℕ} (h : Fintype.card σ < k) :
+    symmetricEsymm σ R k = 0 := by
+  ext1
+  rw [coe_symmetricEsymm, MvPolynomial.esymm_eq_multiset_esymm]
+  exact Multiset.esymm_of_card_lt (by simpa using h)
+
+end symmetricEsymm
 
 section GeneratingFunction
 

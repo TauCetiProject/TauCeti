@@ -50,9 +50,10 @@ plane. This file proves the resulting interior part of Gromov–Floer compactnes
 Both statements hold for the positive and for the negative plane. Since `ε a ≥ -B` for every
 solution, the bound `A + B` on the energy is nonnegative. Windows that move off to `∞` along the
 end, where Floer cylinders break off, are treated in
-`TauCeti.Geometry.Symplectic.Floer.Plane.Compactness.End`. Localizing the images of small discs
-into charts on a closed manifold, the bubbles at the points of `Z`, and the assembly of broken
-configurations are not treated here.
+`TauCeti.Geometry.Symplectic.Floer.Plane.Compactness.End`. In a closed manifold, with no
+condition on the images of the solutions, both are in
+`TauCeti.Geometry.Symplectic.Floer.Plane.Compactness.Closed`. The bubbles at the points of `Z`
+and the assembly of broken configurations are not treated here.
 
 ## References
 

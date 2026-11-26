@@ -50,6 +50,20 @@ public section
 
 open Polynomial
 
+namespace Polynomial
+
+variable {R : Type*} [CommRing R] {I : Ideal R}
+
+/-- A polynomial vanishes modulo `I` exactly when all its coefficients lie in `I`. -/
+theorem map_mk_eq_zero_iff {p : R[X]} :
+    p.map (Ideal.Quotient.mk I) = 0 ↔ ∀ i, p.coeff i ∈ I := by
+  refine ⟨fun h i ↦ ?_, fun hp ↦ ?_⟩
+  · simpa [Ideal.Quotient.eq_zero_iff_mem] using congrArg (·.coeff i) h
+  · ext i
+    simpa using Ideal.Quotient.eq_zero_iff_mem.mpr (hp i)
+
+end Polynomial
+
 namespace TauCeti
 
 variable {R : Type*} [CommRing R] {I : Ideal R}
@@ -61,9 +75,7 @@ needed. -/
 theorem HenselianRing.exists_isRoot_X_pow_mul_X_sub_one_add [HenselianRing R I] (n : ℕ)
     {p : R[X]} (hp : ∀ i, p.coeff i ∈ I) :
     ∃ a : R, (X ^ n * (X - 1) + p).IsRoot a ∧ a - 1 ∈ I := by
-  have hp₀ : p.map (Ideal.Quotient.mk I) = 0 := by
-    ext i
-    simpa using Ideal.Quotient.eq_zero_iff_mem.mpr (hp i)
+  have hp₀ : p.map (Ideal.Quotient.mk I) = 0 := map_mk_eq_zero_iff.mpr hp
   -- Modulo `I` the polynomial is `Xⁿ (X - 1)`, with the simple root `1`.
   refine exists_isRoot_sub_mem _ ?_ ?_
   · rw [← Ideal.Quotient.eq_zero_iff_mem, ← eval_map_apply]

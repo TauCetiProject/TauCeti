@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.MeasurableSpace.Embedding
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Tactic.Measurability
 public import Mathlib.Probability.ConditionalProbability
+public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 
 /-!
 # Finite-dimensional and path laws of a process
@@ -31,7 +32,9 @@ compare them:
 * `prefixProj α n`, `shift α`, `permReindex π` — the prefix projection, the one-sided left shift,
   and reindexing by a permutation of time;
 * `prefixSplitEquiv r` — the measurable equivalence splitting a path into its length-`r` prefix
-  and its tail from index `r`.
+  and its tail from index `r`;
+* `map_finSnoc_map_prefix_eval` — appending the coordinate at time `n` to the first `n`
+  coordinates with `Fin.snoc` turns their joint law into the law of the first `n + 1`.
 
 The definitions are hypothesis-light; measurability hypotheses enter only in the lemmas that
 compose `Measure.map`s (`map_prefixProj_pathLaw`, `map_blockLaw`, `map_reindex_pathLaw`,
@@ -305,6 +308,19 @@ theorem prefixLaw_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α} (hX : ∀ i,
   rw [prefixLaw_def, blockLaw_def,
     ← map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX) n]
   rfl
+
+/-- Appending the coordinate at time `n` to the first `n` coordinates with `Fin.snoc` turns their
+joint law into the law of the first `n + 1` coordinates. -/
+theorem map_finSnoc_map_prefix_eval (μ : Measure Ω) {X : ℕ → Ω → α}
+    (hX : ∀ i, AEMeasurable (X i) μ) (n : ℕ) :
+    (μ.map fun ω ↦ ((fun i : Fin n ↦ X i ω), X n ω)).map
+        (fun p ↦ (Fin.snoc p.1 p.2 : Fin (n + 1) → α)) =
+      μ.map fun ω (i : Fin (n + 1)) ↦ X i ω := by
+  rw [AEMeasurable.map_map_of_aemeasurable (MeasureTheory.measurable_finSnoc n).aemeasurable
+    ((AEMeasurable.of_eval fun i : Fin n ↦ hX i).prodMk (hX n))]
+  congr 1
+  funext ω
+  exact (congrFun (MeasureTheory.prefix_succ_eq_finSnoc_comp n) fun k ↦ X k ω).symm
 
 /-- A coordinatewise measurable map sends block laws to block laws. -/
 theorem map_blockLaw (μ : Measure Ω) {X : ι → Ω → α} {m : ℕ} (k : Fin m → ι)

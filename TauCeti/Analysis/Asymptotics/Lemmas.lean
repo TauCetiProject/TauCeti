@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 public import Mathlib.Analysis.Asymptotics.Lemmas
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.Topology.Bornology.BoundedOperation
@@ -38,7 +40,8 @@ are used, not differentiability or any additive structure.
 
 In a seminormed group the norm is at most one on a neighbourhood of the origin, so there a higher
 power of the norm is dominated by any lower one. This is the comparison that lets a Taylor
-remainder of one order be read as a remainder of a smaller order.
+remainder of one order be read as a remainder of a smaller order. In particular a map within
+`O(‖x‖ ^ k)`, `k ≥ 1`, of the identity is itself `O(‖x‖)` at the origin.
 
 A bound `‖g x‖ ≤ A / ‖x - c‖ ^ n` outside a ball about any centre `c` of a normed division ring
 gives `g = O(x⁻¹ ^ n)` at infinity: the decay rate of an inverse power does not depend on the
@@ -49,6 +52,11 @@ rapid decay at infinity, `O(x ^ r)` for every `r`, passes to rescaled functions 
 theta kernels of a lattice at a level. A bound `u n = O(n ^ r)` on a sequence likewise passes to
 the step function `t ↦ u ⌊t⌋₊` as `O(t ^ r)`, since `⌊t⌋₊ ∼ t`; this is how a bound on the
 partial sums of a sequence enters an integral against the partial-sum step function.
+
+On a set where a real function `g` is nonnegative, `f = O(g)` uniformly on the set means
+`‖f x‖ ≤ c * g x` there for a constant `c`, with no norm on `g`. This is the form in which a big-O
+hypothesis on a weight enters a pointwise estimate, such as the bound of a solution of a Volterra
+integral equation by a multiple of its weight.
 
 An eventual big-O bound at `atTop` is uniform on a whole half-line `[a, ∞)` of a linear order as
 soon as it holds uniformly on every interval `[a, b]`. This is how an asymptotic estimate becomes
@@ -70,6 +78,14 @@ In an ordered field, the ratio `(t + x) / (t + y)` of two translates tends to `1
 is the limit at infinity of antiderivatives built from such ratios, for example in elementary
 evaluations of elliptic integrals.
 
+A function asymptotically equivalent to an eventually nonvanishing function is itself eventually
+nonvanishing; this lets one divide by a solution `w ∼ y` of a differential equation.
+
+A function `g` with `f x ‖g x‖` eventually bounded along a filter on which `f → ∞` tends to `0`.
+For `f y = y` on the real line, a bound on `y ‖g y‖` for large `y` also bounds `y |Im g y|` when
+`g` is complex-valued. These are the decay estimates read off along the imaginary axis from
+resolvent-type functions, which are `O(1 / y)` there.
+
 ## Main results
 
 * `Asymptotics.isLittleO_sub_mul_iff_tendsto_div`: `f - a g = o(g)` if and only if
@@ -79,6 +95,8 @@ evaluations of elliptic integrals.
   `f(σ) = O((σ - a)⁻¹)` along it.
 * `Asymptotics.isBigO_norm_pow_norm_pow_nhds_zero_of_le`: `‖x‖ ^ m = O(‖x‖ ^ n)` at the origin
   whenever `n ≤ m`.
+* `Asymptotics.isBigO_norm_of_isBigO_sub_norm_pow`: `w x - x = O(‖x‖ ^ k)` at the origin with
+  `k ≥ 1` implies `w x = O(‖x‖)` there.
 * `Asymptotics.isBigO_inv_pow_cobounded_of_norm_le`: a bound `‖g x‖ ≤ A / ‖x - c‖ ^ n` for
   `‖x - c‖ > R` gives `g = O(x⁻¹ ^ n)` at infinity.
 * `Asymptotics.IsBigO.comp_const_mul_rpow`: `F = O(x ^ r)` at infinity implies
@@ -90,13 +108,19 @@ evaluations of elliptic integrals.
   satisfies `‖r • c‖ = ‖r‖ * ‖c‖` at `c`, then `ψ • c = o(ψ)` if and only if `c = 0`.
 * `Asymptotics.isBigO_smul_const_self`: `u • c = O(u)` for a scalar function `u` and a constant
   vector `c` with `‖r • c‖ ≤ ‖r‖ * ‖c‖` for every scalar `r`.
+* `Asymptotics.isBigO_principal_iff_of_nonneg`: for `g ≥ 0` on `s`, `f = O(g)` on `s` if and
+  only if `‖f x‖ ≤ c * g x` on `s` for some `c`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_isBigO_principal_Icc`: `f = O(g)` at `atTop` and
   on every `[a, b]` gives `f = O(g)` on `[a, ∞)`.
+* `Asymptotics.isBigO_inv_norm_smul_apply`: evaluating continuous linear maps `L a` at `x a` and
+  dividing by `‖x a‖` gives `O(L)`.
 * `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
   when, on each `[a, b]`, `f` is bounded and `‖g‖` is bounded below by a positive constant.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when closed
   intervals are compact, `f` and `g` take values in seminormed groups and are continuous on
   `[a, ∞)`, and `‖g‖` does not vanish there.
+* `Asymptotics.IsEquivalent.eventually_ne_zero`: if `u ~ v` and `v` is eventually nonzero, then
+  so is `u`.
 * `Asymptotics.IsBigO.exists_norm_le_div_log`: `f = O((log x)⁻¹)` at `atTop` gives a uniform bound
   `‖f x‖ ≤ C / log x` on `[a, ∞)` (`a > 1`) when `f` is bounded on each `[a, b]`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
@@ -104,6 +128,10 @@ evaluations of elliptic integrals.
 * `TauCeti.continuousAt_of_isBigO_dist`: `dist (u y) (u x) = O(dist y x)` as `y → x` implies
   continuity of `u` at `x`.
 * `TauCeti.tendsto_add_div_add_atTop`: `(t + x) / (t + y) → 1` as `t → ∞`.
+* `TauCeti.tendsto_zero_of_eventually_mul_norm_le`: `f x ‖g x‖ ≤ K` eventually along a filter on
+  which `f → ∞` implies `g → 0`.
+* `TauCeti.eventually_mul_abs_im_le_of_mul_norm_le`: an eventual bound on `y ‖f y‖` bounds
+  `y |Im f y|`.
 
 ## Related results
 
@@ -161,6 +189,15 @@ theorem isBigO_norm_pow_norm_pow_nhds_zero_of_le {E : Type*} [SeminormedAddGroup
   simp only [one_mul, norm_pow, Real.norm_of_nonneg (norm_nonneg x)]
   exact pow_le_pow_of_le_one (norm_nonneg x) (by simpa [Metric.mem_closedBall] using hx) h
 
+/-- **A map within `O(‖x‖ ^ k)` of the identity is `O(‖x‖)` at the origin.** If
+`w x - x = O(‖x‖ ^ k)` near `0` for some `k ≥ 1`, then `w x = O(‖x‖)` near `0`. -/
+theorem isBigO_norm_of_isBigO_sub_norm_pow {E : Type*} [SeminormedAddCommGroup E] {w : E → E}
+    {k : ℕ} (hk : 1 ≤ k) (hw : (fun x ↦ w x - x) =O[𝓝 0] fun x ↦ ‖x‖ ^ k) :
+    w =O[𝓝 0] fun x ↦ ‖x‖ := by
+  have hk1 : (fun x : E ↦ ‖x‖ ^ k) =O[𝓝 0] fun x ↦ ‖x‖ := by
+    simpa using isBigO_norm_pow_norm_pow_nhds_zero_of_le (E := E) hk
+  simpa using (hw.trans hk1).add (isBigO_norm_right.2 (isBigO_refl (fun x : E ↦ x) (𝓝 0)))
+
 /-- **An inverse-power bound about any centre is a decay bound at infinity.** If
 `‖g x‖ ≤ A / ‖x - c‖ ^ n` whenever `R < ‖x - c‖`, then `g = O(x⁻¹ ^ n)` along `cobounded 𝕜`. -/
 theorem isBigO_inv_pow_cobounded_of_norm_le {𝕜 E : Type*} [NormedDivisionRing 𝕜] [Norm E]
@@ -202,6 +239,14 @@ theorem IsBigO.comp_natFloor_rpow {E : Type*} [Norm E] {u : ℕ → E} {r : ℝ}
   exact (hu.comp_tendsto tendsto_nat_floor_atTop).trans <|
     (hequiv.rpow fun _ ↦ le_max_right _ _).isBigO.congr' EventuallyEq.rfl
       (hmax.fun_comp fun t ↦ t ^ r)
+
+/-- **A big-O bound on a set by a nonnegative real function.** If `g ≥ 0` on `s`, then
+`f = O(g)` on `s` exactly when `‖f x‖ ≤ c * g x` on `s` for some constant `c`. -/
+theorem isBigO_principal_iff_of_nonneg {α E : Type*} [Norm E] {f : α → E} {g : α → ℝ}
+    {s : Set α} (hg : ∀ x ∈ s, 0 ≤ g x) :
+    f =O[𝓟 s] g ↔ ∃ c, ∀ x ∈ s, ‖f x‖ ≤ c * g x :=
+  isBigO_principal.trans <| exists_congr fun _ ↦ forall₂_congr fun x hx ↦ by
+    rw [Real.norm_of_nonneg (hg x hx)]
 
 /-- **An eventual big-O bound holds on a whole half-line once it holds on its intervals.** If
 `f = O(g)` at `atTop` and `f = O(g)` uniformly on every interval `[a, b]`, then `f = O(g)`
@@ -322,6 +367,21 @@ theorem isBigO_smul_const_self {α 𝕜 E : Type*} [Norm 𝕜] [Norm E] [SMul �
     (fun x => u x • c) =O[l] u :=
   IsBigO.of_bound ‖c‖ (Eventually.of_forall fun x => (hc (u x)).trans_eq (mul_comm _ _))
 
+/-- **Evaluation at a unit vector is bounded by the operator norm.** For continuous linear maps
+`L a` and vectors `x a`, `‖x a‖⁻¹ • L a (x a) = O(L)`, along any filter. -/
+theorem isBigO_inv_norm_smul_apply {α E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    [SeminormedAddCommGroup F] [NormedSpace ℝ F] (l : Filter α) (L : α → E →L[ℝ] F)
+    (x : α → E) : (fun a ↦ ‖x a‖⁻¹ • L a (x a)) =O[l] L := by
+  refine IsBigO.of_bound' (Eventually.of_forall fun a ↦ ?_)
+  rw [norm_smul, norm_inv, norm_norm, inv_mul_eq_div]
+  exact div_le_of_le_mul₀ (norm_nonneg _) (norm_nonneg _) ((L a).le_opNorm (x a))
+
+/-- **An asymptotic equivalent of an eventually nonvanishing function is eventually nonvanishing.**
+If `u ~[l] v` and `v` is eventually nonzero along `l`, then so is `u`, since `v = O(u)`. -/
+theorem IsEquivalent.eventually_ne_zero {α β : Type*} [NormedAddCommGroup β] {l : Filter α}
+    {u v : α → β} (h : u ~[l] v) (hv : ∀ᶠ x in l, v x ≠ 0) : ∀ᶠ x in l, u x ≠ 0 :=
+  (h.isBigO_symm.eq_zero_imp.and hv).mono fun _ hx hu ↦ hx.2 (hx.1 hu)
+
 /-- **An eventual `O((log x)⁻¹)` bound holds on a whole half-line `[a, ∞)` (`a > 1`).** If
 `f = O((log x)⁻¹)` at `atTop` and `f` is bounded on every compact interval `[a, b]`, then there is
 a constant `C ≥ 0` with `‖f x‖ ≤ C / log x` for all `x ≥ a`. Unlike
@@ -379,5 +439,21 @@ theorem tendsto_add_div_add_atTop {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
   simp only [id]
   field_simp
   ring
+
+/-- If `f x ‖g x‖` is eventually bounded along a filter on which `f` tends to infinity, then `g`
+tends to `0`. -/
+theorem tendsto_zero_of_eventually_mul_norm_le {α E : Type*} [SeminormedAddCommGroup E]
+    {l : Filter α} {f : α → ℝ} {g : α → E} {K : ℝ} (hf : Tendsto f l atTop)
+    (h : ∀ᶠ x in l, f x * ‖g x‖ ≤ K) : Tendsto g l (𝓝 0) := by
+  refine squeeze_zero_norm' (a := fun x ↦ K / f x) ?_ (tendsto_const_nhds.div_atTop hf)
+  filter_upwards [h, hf.eventually_gt_atTop 0] with x hx hx0
+  rw [le_div_iff₀ hx0, mul_comm]
+  exact hx
+
+/-- A bound on `y ‖f y‖` for large `y` bounds `y |Im f y|`. -/
+theorem eventually_mul_abs_im_le_of_mul_norm_le {f : ℝ → ℂ} {C : ℝ}
+    (h : ∀ᶠ y : ℝ in atTop, y * ‖f y‖ ≤ C) : ∀ᶠ y : ℝ in atTop, y * |(f y).im| ≤ C := by
+  filter_upwards [h, eventually_gt_atTop 0] with y hy hy0
+  exact (mul_le_mul_of_nonneg_left (Complex.abs_im_le_norm _) hy0.le).trans hy
 
 end TauCeti

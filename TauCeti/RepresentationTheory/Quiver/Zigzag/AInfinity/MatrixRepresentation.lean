@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.Matrix.Kronecker.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.MatrixRepresentation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal
 import TauCeti.LinearAlgebra.Matrix.Trace.Basic
+import TauCeti.Combinatorics.SimpleGraph.Bipartite
+import TauCeti.Combinatorics.SimpleGraph.Dart.Basic
 
 /-!
 # Higher Hochschild classes and non-formal deformations from matrix representations
@@ -115,13 +117,9 @@ private theorem sum_dartMatrix_mul_dartMatrix_symm [DecidableRel G.Adj]
     simp [dartMatrix, ← mul_kronecker_mul, SimpleGraph.Dart.symm]
   -- The darts with head `v` are the darts from the neighbours of `v`.
   have hre : ∑ d : G.Dart with d.snd = v, Matrix.single v v (1 : k) ⊗ₖ (β d.fst v * β v d.fst) =
-      ∑ w ∈ G.neighborFinset v, Matrix.single v v (1 : k) ⊗ₖ (β w v * β v w) :=
-    Finset.sum_bij' (fun d _ ↦ d.fst)
-      (fun w hw ↦ ⟨(w, v), ((G.mem_neighborFinset v w).1 hw).symm⟩)
-      (fun d hd ↦ (G.mem_neighborFinset _ _).2 ((Finset.mem_filter.1 hd).2 ▸ d.adj.symm))
-      (fun w _ ↦ by simp)
-      (fun d hd ↦ (SimpleGraph.Dart.ext_iff _ _).2 (Prod.ext rfl (Finset.mem_filter.1 hd).2.symm))
-      (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+      ∑ w ∈ G.neighborFinset v, Matrix.single v v (1 : k) ⊗ₖ (β w v * β v w) := by
+    rw [G.sum_dart_snd_eq_sum_neighborSet, G.neighborFinset_def, ← Finset.sum_set_coe]
+    simp
   rw [Finset.sum_congr rfl fun d h ↦ hd d (Finset.mem_filter.1 h).2, hre]
   have hsum : ∑ w ∈ G.neighborFinset v, Matrix.single v v (1 : k) ⊗ₖ (β w v * β v w) =
       Matrix.single v v 1 ⊗ₖ ∑ w ∈ G.neighborFinset v, β w v * β v w := by
@@ -172,16 +170,11 @@ private theorem exists_bipartite_sign_dartMatrix [DecidableRel G.Adj] [H.Locally
             Finsupp.single (fun t ↦ f.toHom.mapDart (w t)) (1 : k) w') =
         trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod := by
   classical
-  obtain ⟨C⟩ := hH
-  let s : W → k := fun x ↦ if C x = C (w 0).snd then 1 else -1
-  have hs (x y : W) (h : H.Adj x y) : s x = -s y := by
-    have hC := C.valid h
-    have h01 : ∀ a b c : Fin 2, a ≠ b → a = c ∨ b = c := by decide
-    rcases h01 _ _ (C (w 0).snd) hC with h0 | h0
-    · have hCy : C y ≠ C (w 0).snd := h0 ▸ hC.symm
-      simp [s, h0, hCy]
-    · have hCx : C x ≠ C (w 0).snd := h0 ▸ hC
-      simp [s, h0, hCx]
+  -- The sign `±1` of the bipartition of `H`, normalized to be `1` at `(w 0).snd`.
+  obtain ⟨t, ht, ht₁⟩ := hH.exists_sign (R := k)
+  let s : W → k := fun x ↦ t (w 0).snd * t x
+  have hs (x y : W) (h : H.Adj x y) : s x = -s y := by simp [s, ht h]
+  have hs₀ : s (w 0).snd = 1 := by rcases ht₁ (w 0).snd with h | h <;> simp [s, h]
   let ε : V → k := Function.extend f s 1
   have hεf (x : W) : ε (f x) = s x := f.injective.extend_apply s 1 x
   refine ⟨traceLinearMap _ k k ∘ₗ LinearMap.mulLeft k (diagonal ε ⊗ₖ 1),
@@ -204,8 +197,7 @@ private theorem exists_bipartite_sign_dartMatrix [DecidableRel G.Adj] [H.Locally
         (fun t ↦ β (w t).fst (w t).snd) fun i ↦ by rw [hw i.castSucc, Fin.coeSucc_eq_succ]]
       have hlast : (w (Fin.last (n + 1))).fst = (w 0).snd := by rw [hw, Fin.last_add_one]
       simp [hlast, ← mul_kronecker_mul, trace_kronecker]
-    rw [hsum, hεf]
-    simp [s]
+    rw [hsum, hεf, hs₀, one_mul]
 
 end Blocks
 

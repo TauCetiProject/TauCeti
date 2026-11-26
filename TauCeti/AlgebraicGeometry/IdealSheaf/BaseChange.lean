@@ -31,7 +31,9 @@ closed immersion `j`, pulling back is therefore a left inverse to pushing forwar
 (`AlgebraicGeometry.Scheme.IdealSheafData.comap_map_of_isClosedImmersion`,
 `AlgebraicGeometry.Scheme.Hom.comap_ker_comp_of_isClosedImmersion`), while pushing forward an
 inverse image recovers the supremum with `j.ker`
-(`AlgebraicGeometry.Scheme.IdealSheafData.map_comap_of_isClosedImmersion`). Analogously, the ideal
+(`AlgebraicGeometry.Scheme.IdealSheafData.map_comap_of_isClosedImmersion`). Consequently the ideal
+sheaf of `a` is nilpotent when a power of that of `a ≫ j` lies in `j.ker`
+(`AlgebraicGeometry.Scheme.Hom.ker_pow_eq_bot_of_ker_comp_pow_le`). Analogously, the ideal
 sheaf of any quasi-compact morphism pulled back along an open immersion is the inverse image of its
 ideal sheaf
 (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback_of_isOpenImmersion`). In
@@ -137,6 +139,15 @@ theorem comap_map_of_isClosedImmersion {Y : Scheme.{u}} (I : X.IdealSheafData) (
 theorem _root_.AlgebraicGeometry.Scheme.Hom.comap_ker_comp_of_isClosedImmersion {Y Z : Scheme.{u}}
     (i : Z ⟶ X) (j : X ⟶ Y) [IsClosedImmersion j] : (i ≫ j).ker.comap j = i.ker := by
   rw [Scheme.Hom.ker_comp, comap_map_of_isClosedImmersion]
+
+/-- If the `m`-th power of the ideal sheaf of `a ≫ j`, for a closed immersion `j`, lies in the
+ideal sheaf of `j`, then the ideal sheaf of `a` has vanishing `m`-th power. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_pow_eq_bot_of_ker_comp_pow_le {Y Z : Scheme.{u}}
+    (a : Z ⟶ X) (j : X ⟶ Y) [IsClosedImmersion j] {m : ℕ} (h : (a ≫ j).ker ^ m ≤ j.ker) :
+    a.ker ^ m = ⊥ := by
+  rw [← le_bot_iff, ← Scheme.Hom.comap_ker_comp_of_isClosedImmersion a j, ← comap_pow,
+    ← j.comap_ker_self]
+  exact comap_mono j h
 
 /-- For ideal sheaves `I ≤ J`, the ideal sheaf of the inclusion `V(J) ⟶ V(I)` is the inverse image
 of `J` along `V(I) ⟶ X`. -/

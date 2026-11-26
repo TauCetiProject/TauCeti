@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Finite.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Singular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.SingularPointCount
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Frobenius.Fixed
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
 
 /-!
@@ -159,7 +160,7 @@ theorem map_frobeniusAlgHom_eq_zsmul (hΔ : W.Δ = 0) (hc₄ : W.c₄ ≠ 0) {K 
       (.inr ⟨rfl, hαq⟩) (map ι P)
     -- `ι` commutes with the `q`-power maps and is injective on points
     apply map_injective ι
-    rw [map_zsmul, map_map, ι.frobeniusAlgHom_comm, ← map_map, hL]
+    rw [map_zsmul, map_map_frobeniusAlgHom, hL]
 
 end WeierstrassCurve.Affine.Point
 

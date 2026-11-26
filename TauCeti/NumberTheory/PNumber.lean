@@ -26,6 +26,8 @@ notion in which Temkin's tameness theorem for `p`-closed valued fields is stated
 * `TauCeti.isPNumber_pow_iff`: a power `n ^ k` is a `P`-number exactly when `k = 0` or `n` is;
 * `TauCeti.IsPNumber.of_dvd`: divisors of `P`-numbers are `P`-numbers;
 * `TauCeti.isPNumber_singleton_iff`: for a prime `p`, the `{p}`-numbers are the powers of `p`;
+* `TauCeti.isPNumber_compl_singleton_iff`: for a prime `p`, the `{p}ᶜ`-numbers are the positive
+  numbers prime to `p`;
 * `TauCeti.isPNumber_inter_setOf_prime_iff`: only the primes of `P` matter;
 * `TauCeti.isPNumber_coe_finset_iff`: for a finset `s`, the `s`-numbers are
   `Nat.factoredNumbers s`.
@@ -131,6 +133,13 @@ theorem isPNumber_singleton_iff {p : ℕ} (hp : p.Prime) : IsPNumber {p} n ↔ �
     h.mem_of_prime_of_dvd hq hqn⟩, ?_⟩
   rintro ⟨r, rfl⟩
   exact ((isPNumber_prime_iff hp).2 rfl).pow r
+
+/-- For a prime `p`, the `{p}ᶜ`-numbers are exactly the positive numbers not divisible by `p`. -/
+theorem isPNumber_compl_singleton_iff {p : ℕ} (hp : p.Prime) :
+    IsPNumber {p}ᶜ n ↔ 0 < n ∧ ¬p ∣ n :=
+  ⟨fun h ↦ ⟨h.pos, fun hpn ↦ h.mem_of_prime_of_dvd hp hpn (Set.mem_singleton p)⟩,
+    fun ⟨hn, hpn⟩ ↦ ⟨hn, fun _ _ hqn ↦
+      Set.mem_compl_singleton_iff.2 fun hqp ↦ hpn (hqp ▸ hqn)⟩⟩
 
 /-- For a finite set `s`, the `s`-numbers are Mathlib's `s`-factored numbers. -/
 theorem isPNumber_coe_finset_iff {s : Finset ℕ} : IsPNumber ↑s n ↔ n ∈ Nat.factoredNumbers s := by

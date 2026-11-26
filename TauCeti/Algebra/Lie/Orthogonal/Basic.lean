@@ -39,6 +39,8 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
   skew-adjoint matrices.
 * `LieAlgebra.Orthogonal.mul_mul_transpose_mem_so`: the orthogonal Lie algebra is stable under
   `A ↦ M A Mᵀ`, in particular under conjugation by orthogonal matrices.
+* `LieAlgebra.Orthogonal.conjTranspose_mem_so`: the orthogonal Lie algebra is closed under
+  conjugate transpose over a star ring.
 * `LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal`: the Gram matrix of the indefinite form is
   invertible.
 * `LieAlgebra.Orthogonal.indefiniteDiagonal_mul_indefiniteDiagonal`,
@@ -51,11 +53,13 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
   `LieAlgebra.Orthogonal.star_indefiniteDiagonal`: it squares to one, so is its own inverse,
   its diagonal entries are `±1`, hence nonzero, it is the block matrix `fromBlocks 1 0 0 (-1)`, and
   it is Hermitian, that is, self-adjoint.
+* `LieAlgebra.Orthogonal.indefiniteDiagonal_of_isEmpty`: with no negative coordinates it is the
+  identity matrix.
 * `LieAlgebra.Orthogonal.indefiniteDiagonal_mulVec_apply` and
   `LieAlgebra.Orthogonal.vecMul_indefiniteDiagonal_apply`: it scales the coordinates of a vector by
   its diagonal entries.
-* `LieAlgebra.Orthogonal.mem_so'`: membership in the indefinite orthogonal Lie algebra is the
-  matrix equation `Xᵀ J = J (-X)`.
+* `LieAlgebra.Orthogonal.mem_so'` and `LieAlgebra.Orthogonal.mem_so'_iff_forall`: membership in
+  the indefinite orthogonal Lie algebra is the matrix equation `Xᵀ J = J (-X)`, or entrywise.
 * `LieAlgebra.Orthogonal.transpose_mem_so'` and `LieAlgebra.Orthogonal.conjTranspose_mem_so'`: the
   indefinite orthogonal Lie algebra is closed under transpose, and under conjugate transpose over
   a star ring.
@@ -93,6 +97,14 @@ theorem mul_mul_transpose_mem_so {n R : Type*} [Fintype n] [DecidableEq n] [Comm
   rw [mem_so] at hA ⊢
   simp [Matrix.transpose_mul, hA, Matrix.mul_assoc]
 
+open Matrix in
+/-- **Conjugate transpose preserves the orthogonal Lie algebra** of skew-symmetric matrices, over
+any commutative star ring. -/
+theorem conjTranspose_mem_so {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [StarRing R]
+    {X : Matrix n n R} (hX : X ∈ so n R) : Xᴴ ∈ so n R := by
+  rw [mem_so] at hX ⊢
+  rw [← conjTranspose_transpose_eq_transpose_conjTranspose, hX, conjTranspose_neg]
+
 variable {p q R : Type*} [DecidableEq p] [DecidableEq q] [Fintype p] [Fintype q] [CommRing R]
 
 open Matrix in
@@ -109,6 +121,18 @@ theorem indefiniteDiagonal_mul_indefiniteDiagonal :
   rw [indefiniteDiagonal, diagonal_mul_diagonal, ← diagonal_one]
   congr 1
   ext (i | i) <;> simp
+
+omit [Fintype p] [Fintype q] in
+open Matrix in
+/-- With no negative coordinates, the Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite
+form is the identity. -/
+@[simp]
+theorem indefiniteDiagonal_of_isEmpty [IsEmpty q] : indefiniteDiagonal p q R = 1 := by
+  rw [indefiniteDiagonal, ← diagonal_one]
+  congr 1
+  ext (i | i)
+  · rfl
+  · exact isEmptyElim i
 
 open Matrix in
 /-- Multiplying twice on the left by the Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite
@@ -183,6 +207,14 @@ theorem mem_so' {X : Matrix (p ⊕ q) (p ⊕ q) R} :
     X ∈ so' p q R ↔ Xᵀ * indefiniteDiagonal p q R = indefiniteDiagonal p q R * -X := by
   rw [so', mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
     Matrix.IsSkewAdjoint, Matrix.IsAdjointPair]
+
+/-- Membership in the indefinite orthogonal Lie algebra `so' p q R`, entrywise: `Nᵀ D = -(D N)`
+for the diagonal Gram matrix `D = indefiniteDiagonal p q R`. -/
+theorem mem_so'_iff_forall (N : Matrix (p ⊕ q) (p ⊕ q) R) :
+    N ∈ so' p q R ↔
+      ∀ a b, N b a * indefiniteDiagonal p q R b b = -(indefiniteDiagonal p q R a a * N a b) := by
+  rw [mem_so', ← Matrix.ext_iff]
+  simp [indefiniteDiagonal, Matrix.mul_diagonal, Matrix.diagonal_mul]
 
 open Matrix in
 /-- The indefinite orthogonal Lie algebra `𝔰𝔬(p, q)` is closed under transpose. -/

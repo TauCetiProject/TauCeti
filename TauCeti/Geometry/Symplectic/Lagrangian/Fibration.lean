@@ -183,6 +183,14 @@ theorem poissonBracket_comp_apply_eq_zero [FiniteDimensional ℝ E] {ι : Type*}
   h.poissonBracket_comp_eq_zero (mdifferentiableAt_pi_space.1 hκ i)
     (mdifferentiableAt_pi_space.1 hκ j)
 
+/-- **Pulled-back functions Poisson-commute everywhere.** For `κ : B → ℝ^ι` differentiable on the
+base, the components of `κ ∘ π` Poisson-commute at every point of `M`. -/
+theorem poissonBracket_comp_apply_eq_zero_of_mdifferentiable [FiniteDimensional ℝ E]
+    {ι : Type*} [Fintype ι] {κ : B → ι → ℝ} (hκ : MDifferentiable J 𝓘(ℝ, ι → ℝ) κ)
+    (i j : ι) (x : M) :
+    σ.poissonBracket ((κ ∘ π) · i) ((κ ∘ π) · j) x = 0 :=
+  h.poissonBracket_comp_apply_eq_zero (hκ (π x)) i j
+
 /-- The Hamiltonian vector field of a `C²` pulled-back function `g ∘ π` is `C¹`. -/
 theorem contMDiff_hamiltonianVectorField_comp [FiniteDimensional ℝ E] {g : B → ℝ}
     (hg : ContMDiff J 𝓘(ℝ) 2 g) :

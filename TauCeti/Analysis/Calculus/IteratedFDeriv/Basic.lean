@@ -49,6 +49,8 @@ order `TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_one_le`), and such
 common bound is nonnegative and bounds the function itself
 (`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a constant to a function does not
 change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`). The
+iterated derivatives of a scalar multiple are the scalar multiples of the iterated derivatives,
+without differentiability assumptions (`TauCeti.iteratedFDeriv_fun_const_smul_apply`). The
 iterated derivatives of a constant `c` have norm at most `‖c‖`
 (`TauCeti.norm_iteratedFDeriv_const_le`), and those of positive order of the identity have norm at
 most one (`TauCeti.norm_iteratedFDeriv_id_le_one`), as have those of right translations
@@ -272,6 +274,23 @@ theorem iteratedFDeriv_succ_add_const (f : E → F) (c : F) (n : ℕ) :
     iteratedFDeriv 𝕜 (n + 1) (fun x ↦ f x + c) = iteratedFDeriv 𝕜 (n + 1) f := by
   funext x
   simp only [iteratedFDeriv_succ_eq_comp_right, fderiv_add_const]
+
+/-- Multiplying a function by a scalar multiplies every iterated derivative by that scalar.
+Unlike Mathlib's `iteratedFDeriv_const_smul_apply'`, no differentiability is needed. -/
+theorem iteratedFDeriv_fun_const_smul_apply (f : E → F) (a : 𝕜) (x : E) (i : ℕ) :
+    iteratedFDeriv 𝕜 i (fun y ↦ a • f y) x = a • iteratedFDeriv 𝕜 i f x := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  · have h := (ContinuousLinearEquiv.smulLeft (Units.mk0 a ha) : F ≃L[𝕜] F)
+      |>.iteratedFDeriv_comp_left (f := f) (x := x) (i := i)
+    ext v
+    simpa [Function.comp_def] using congrArg (fun L ↦ L v) h
+
+/-- Negating a function does not change the norms of its iterated derivatives. -/
+@[simp]
+theorem norm_iteratedFDeriv_fun_neg (f : E → F) (n : ℕ) (x : E) :
+    ‖iteratedFDeriv 𝕜 n (fun y ↦ -f y) x‖ = ‖iteratedFDeriv 𝕜 n f x‖ := by
+  rw [← Pi.neg_def, iteratedFDeriv_neg_apply, norm_neg]
 
 /-- The iterated derivatives of a constant function `c` have norm at most `‖c‖`. -/
 theorem norm_iteratedFDeriv_const_le (n : ℕ) (c : F) (x : E) :

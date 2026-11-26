@@ -33,7 +33,9 @@ and subset stabilizers across standard constructions on representations:
 * restriction along a group homomorphism (`Representation.stabilizer_comp` and
   `Representation.map_stabilizer_comp_of_surjective`), trivial and subsingleton representations,
   binary and arbitrary products (`Representation.stabilizer_prod`, `Representation.stabilizer_pi`,
-  `Representation.stabilizer_pi_ofMulAction_quotient_basepoint`);
+  `Representation.stabilizer_pi_ofMulAction_quotient_basepoint`), and kernels of tensor
+  products and Hom representations (`Representation.ker_inf_ker_le_ker_tprod`,
+  `Representation.ker_inf_ker_le_ker_linHom`);
 * permutation and left regular representations (`Representation.stabilizer_ofMulAction_single`,
   `Representation.finite_stabilizer_leftRegular`) and trivial subgroup restrictions
   (`Representation.isTrivial_comp_subtype_iff` and
@@ -69,13 +71,22 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 * `Representation.Equiv.stabilizer_apply`
 * `Representation.stabilizer_prod`, `Representation.stabilizer_pi`, and
   `Representation.stabilizer_pi_ofMulAction_quotient_basepoint`
+* `Representation.stabilizer_directSum`, `Representation.stabilizer_directSum_eq_iInf_support`:
+  stabilizers in direct sums, where only the finitely many nonzero components of a vector
+  constrain its stabilizer.
 * `Subrepresentation.le_stabilizer_quotient_mk`
 * `Representation.stabilizer_ofMulAction_single` and `Representation.finite_stabilizer_leftRegular`
 * `Representation.isTrivial_comp_subtype_iff` and
   `Representation.le_stabilizer_of_isTrivial_comp_subtype`
-* `Representation.mem_invariants_comp_subtype_iff`
+* `Representation.mem_invariants_comp_subtype_iff`,
+  `Representation.invariants_comp_subtype_antitone`, `Representation.map_invariants_comp_subtype`:
+  invariants of subgroups, their monotonicity, and their transport under conjugation.
+* `Representation.le_stabilizer_ofMulAction`
+* `Representation.le_stabilizer_dual`
 * `Representation.orbitMap_smul`, `Representation.orbitMap_injective`,
-  `Representation.range_orbitMap`
+  `Representation.range_orbitMap`, `Representation.finsum_mem_range_eq_finsum_out` and
+  `Representation.natCard_range_eq_index_stabilizer`: the orbit is in bijection with the cosets of
+  the stabilizer.
 * `Representation.biInf_stabilizer_span`: pointwise stabilizer of `Submodule.span R s`.
 * `Representation.stabilizer_comp`, `Representation.map_stabilizer_comp_of_surjective`,
   `Representation.comap_mk'_stabilizer_ofQuotient`, and `Representation.map_mk'_stabilizer`:
@@ -170,6 +181,29 @@ theorem stabilizer_pi {ι : Type*} {M : ι → Type*} [∀ i, AddCommMonoid (M i
   ext g
   simp [Subgroup.mem_iInf, funext_iff]
 
+/-- The stabilizer of a vector of a direct sum of a family is the intersection of the stabilizers
+of its components. -/
+@[simp]
+theorem stabilizer_directSum {ι : Type*} {V : ι → Type*}
+    [∀ i, AddCommMonoid (V i)] [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i))
+    (x : DirectSum ι V) :
+    (directSum ρ).stabilizer x = ⨅ i, (ρ i).stabilizer (x i) := by
+  ext g
+  simp [mem_stabilizer, DirectSum.ext_iff]
+
+/-- The stabilizer of a vector of a direct sum of a family is the intersection of the stabilizers
+of its finitely many nonzero components. -/
+theorem stabilizer_directSum_eq_iInf_support {ι : Type*} [DecidableEq ι] {V : ι → Type*}
+    [∀ i, AddCommMonoid (V i)] [∀ i, Module A (V i)] [∀ i (v : V i), Decidable (v ≠ 0)]
+    (ρ : ∀ i, Representation A G (V i)) (x : DirectSum ι V) :
+    (directSum ρ).stabilizer x = ⨅ i ∈ x.support, (ρ i).stabilizer (x i) := by
+  rw [stabilizer_directSum]
+  refine le_antisymm (le_iInf₂ fun i _ ↦ iInf_le _ i) (le_iInf fun i ↦ ?_)
+  by_cases hi : i ∈ x.support
+  · exact iInf₂_le i hi
+  · rw [DFinsupp.notMem_support_iff.1 hi]
+    exact fun g _ ↦ mem_stabilizer.2 (map_zero _)
+
 section MulAction
 
 variable {X : Type*} [MulAction G X]
@@ -200,6 +234,19 @@ theorem stabilizer_pi_ofMulAction_quotient_basepoint [Nontrivial A] {ι : Type*}
       ⨅ i, H i := by
   simp only [stabilizer_pi, stabilizer_ofMulAction_single _ one_ne_zero,
     MulAction.stabilizer_quotient]
+
+/-- A subgroup fixing every point of `X` fixes every vector of the permutation representation on
+`A[X]`. -/
+theorem le_stabilizer_ofMulAction {U : Subgroup G}
+    (h : ∀ x : X, U ≤ MulAction.stabilizer G x) (v : MonoidAlgebra A X) :
+    U ≤ (ofMulAction A G X).stabilizer v := by
+  intro g hg
+  induction v using MonoidAlgebra.induction_linear with
+  | zero => exact mem_stabilizer.2 (map_zero _)
+  | add f₁ f₂ h₁ h₂ =>
+    exact mem_stabilizer.2 (by rw [map_add, mem_stabilizer.1 h₁, mem_stabilizer.1 h₂])
+  | single x r =>
+    exact mem_stabilizer.2 (by rw [ofMulAction_single, MulAction.mem_stabilizer_iff.1 (h x hg)])
 
 end MulAction
 
@@ -232,6 +279,32 @@ theorem le_stabilizer_of_isTrivial_comp_subtype (ρ : Representation A G V) (H :
 
 end Semiring
 
+section CommSemiring
+
+variable {A G V : Type*} [CommSemiring A] [Group G] [AddCommMonoid V] [Module A V]
+  {ρ : Representation A G V}
+
+/-- A subgroup fixing every vector fixes every linear form in the dual representation. -/
+theorem le_stabilizer_dual {U : Subgroup G} (h : ∀ v, U ≤ ρ.stabilizer v)
+    (f : Module.Dual A V) : U ≤ ρ.dual.stabilizer f := fun g hg ↦
+  mem_stabilizer.2 <| LinearMap.ext fun v ↦ by
+    simp only [dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
+      mem_stabilizer.1 (h v (inv_mem hg))]
+
+/-- An element acting trivially on both factors acts trivially on their tensor product. -/
+theorem ker_inf_ker_le_ker_tprod {W : Type*} [AddCommMonoid W] [Module A W]
+    (ρ : Representation A G V) (σ : Representation A G W) : ρ.ker ⊓ σ.ker ≤ (ρ.tprod σ).ker :=
+  fun g hg ↦ by simp [MonoidHom.mem_ker.mp hg.1, MonoidHom.mem_ker.mp hg.2]
+
+/-- An element acting trivially on both modules acts trivially on their Hom representation. -/
+theorem ker_inf_ker_le_ker_linHom {W : Type*} [AddCommMonoid W] [Module A W]
+    (ρ : Representation A G V) (σ : Representation A G W) : ρ.ker ⊓ σ.ker ≤ (ρ.linHom σ).ker :=
+  fun g hg ↦ by
+    ext f x
+    simp [linHom_apply, MonoidHom.mem_ker.mp hg.2, MonoidHom.mem_ker.mp (ρ.ker.inv_mem hg.1)]
+
+end CommSemiring
+
 section CommRing
 
 variable {A G V : Type*} [CommRing A] [Group G] [AddCommGroup V] [Module A V]
@@ -242,6 +315,29 @@ its stabilizer. -/
 theorem mem_invariants_comp_subtype_iff {H : Subgroup G} {v : V} :
     v ∈ invariants (ρ.comp H.subtype) ↔ H ≤ ρ.stabilizer v := by
   simp [mem_invariants, IsConcreteLE.le_iff]
+
+/-- The invariants of the restriction to a subgroup shrink as the subgroup grows. -/
+theorem invariants_comp_subtype_antitone :
+    Antitone fun H : Subgroup G ↦ invariants (ρ.comp H.subtype) := fun _ _ hHK _ hv ↦
+  mem_invariants_comp_subtype_iff.2 (hHK.trans (mem_invariants_comp_subtype_iff.1 hv))
+
+/-- `ρ g` maps the invariants of a subgroup `H` onto the invariants of its conjugate `g H g⁻¹`. -/
+theorem map_invariants_comp_subtype (g : G) (H : Subgroup G) :
+    (invariants (ρ.comp H.subtype)).map (ρ g) =
+      invariants (ρ.comp (H.map (MulAut.conj g)).subtype) := by
+  ext w
+  constructor
+  · rintro ⟨v, hv, rfl⟩
+    rw [SetLike.mem_coe, mem_invariants_comp_subtype_iff] at hv
+    rw [mem_invariants_comp_subtype_iff, stabilizer_conj]
+    exact Subgroup.map_mono hv
+  · intro hw
+    refine ⟨ρ g⁻¹ w, ?_, self_inv_apply ρ g w⟩
+    rw [mem_invariants_comp_subtype_iff] at hw
+    rw [SetLike.mem_coe, mem_invariants_comp_subtype_iff, stabilizer_conj]
+    intro h hh
+    exact Subgroup.mem_map.2 ⟨g * h * g⁻¹, hw (Subgroup.mem_map.2 ⟨h, hh, rfl⟩), by
+      simp [mul_assoc]⟩
 
 end CommRing
 
@@ -285,6 +381,19 @@ theorem orbitMap_injective : Function.Injective (ρ.orbitMap v) := by
 /-- The range of the orbit map is the orbit `{ρ g v | g ∈ G}` of `v`. -/
 theorem range_orbitMap : Set.range (ρ.orbitMap v) = Set.range fun g : G ↦ ρ g v :=
   (QuotientGroup.mk_surjective.range_comp (ρ.orbitMap v)).symm
+
+/-- The sum over the orbit of `v` is the sum over the cosets of its stabilizer. -/
+theorem finsum_mem_range_eq_finsum_out :
+    ∑ᶠ w ∈ Set.range fun g : G ↦ ρ g v, w = ∑ᶠ q : G ⧸ ρ.stabilizer v, ρ q.out v := by
+  rw [← range_orbitMap, finsum_mem_range (ρ.orbitMap_injective v)]
+  refine finsum_congr fun q ↦ ?_
+  conv_lhs => rw [← QuotientGroup.out_eq' q]
+  exact ρ.orbitMap_mk v _
+
+/-- **Orbit–stabilizer**: the orbit of `v` has as many points as the cosets of its stabilizer. -/
+theorem natCard_range_eq_index_stabilizer :
+    Nat.card (Set.range fun g : G ↦ ρ g v) = (ρ.stabilizer v).index := by
+  rw [← range_orbitMap, Nat.card_range_of_injective (ρ.orbitMap_injective v), Subgroup.index]
 
 end OrbitMap
 

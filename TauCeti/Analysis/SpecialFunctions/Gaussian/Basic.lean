@@ -7,19 +7,23 @@ module
 
 public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exp
+public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
 
 /-!
-# Elementary Gaussian bounds
+# Elementary Gaussian bounds and derivatives
 
 A polynomial weight times a real Gaussian is bounded above, and completing the square absorbs a
 linear tilt into half the Gaussian weight. This file records an explicit upper bound for
 `(1 + r) ^ m * exp (-a r²)` (the scalar estimate behind the decay of Gaussian Schwartz functions),
 the uniform bound `exp (-b u² - c u) ≤ exp (c² / (2 b)) * exp (-(b / 2) u²)` for `0 < b`,
+the linear growth `α r exp (-α r²) t ≤ exp (-α (r - t)²) - exp (-α r²)` for `α ≥ 0` and
+`0 ≤ t ≤ r`, which makes a Gaussian a barrier with a positive inward slope at a sphere,
 the cocompact decay of `t ↦ exp (c - δ * t ^ 2)`, and modulus and vertical-shift bounds for
-`z ↦ exp (δ * (z - θ) ^ 2)`.
+`z ↦ exp (δ * (z - θ) ^ 2)`, together with the complex derivative of `w ↦ exp (a (w - b)²)`.
 
 ## Main results
 
@@ -27,6 +31,8 @@ the cocompact decay of `t ↦ exp (c - δ * t ^ 2)`, and modulus and vertical-sh
   `(1 + r) ^ m * exp (-a r²)`.
 * `TauCeti.exp_neg_mul_sq_sub_mul_le`: uniform completing-the-square bound for
   `exp (-b u² - c u)` when `0 < b`.
+* `TauCeti.mul_exp_neg_mul_sq_mul_le_exp_neg_mul_sub_sq_sub`: moving inward from radius `r`, the
+  Gaussian `exp (-α s²)` grows at least linearly, at rate `α r exp (-α r²)`.
 * `TauCeti.norm_exp_ofReal_mul_sub_sq`, `TauCeti.exp_mul_sq_add_mul`: modulus and
   square-completion for complex Gaussians.
 * `TauCeti.norm_exp_ofReal_mul_sq_add_ofReal_mul_le`: the bound `exp (δ + |ω|)` for
@@ -36,6 +42,9 @@ the cocompact decay of `t ↦ exp (c - δ * t ^ 2)`, and modulus and vertical-sh
   `TauCeti.norm_exp_ofReal_mul_sq_mul_add_mul_I_sq_le`: vertical-shift Gaussian decay bounds.
 * `TauCeti.tendsto_exp_sub_mul_sq_cocompact`,
   `TauCeti.tendstoUniformly_exp_ofReal_mul_add_mul_I_sq_smul`: cocompact decay and uniform damping.
+* `Complex.hasDerivAt_cexp_mul_sub_sq`: the complex derivative of `w ↦ exp (a (w - b)²)`, for
+  complex `a` and `b`; Gaussian kernels such as `z ↦ exp (-(c (t - z))²)` and
+  `w ↦ exp (-(z + w)² / 2)` are the cases `a = -c²`, `b = t` and `a = -1/2`, `b = -z`.
 -/
 
 public section
@@ -100,6 +109,22 @@ theorem exp_neg_mul_sq_sub_mul_le {b : ℝ} (hb : 0 < b) (c u : ℝ) :
     field_simp
     ring
   linarith
+
+/-- Moving inward from radius `r`, the Gaussian `exp (-α s²)` grows at least linearly:
+`α r e^{-α r²} t ≤ exp (-α (r - t)²) - exp (-α r²)` for `α ≥ 0` and `0 ≤ t ≤ r`. -/
+theorem mul_exp_neg_mul_sq_mul_le_exp_neg_mul_sub_sq_sub {α r t : ℝ} (hα : 0 ≤ α) (ht : 0 ≤ t)
+    (htr : t ≤ r) :
+    α * r * Real.exp (-α * r ^ 2) * t ≤ Real.exp (-α * (r - t) ^ 2) - Real.exp (-α * r ^ 2) := by
+  have hexp : Real.exp (-α * (r - t) ^ 2) =
+      Real.exp (-α * r ^ 2) * Real.exp (α * (r ^ 2 - (r - t) ^ 2)) := by
+    rw [← Real.exp_add]
+    ring_nf
+  have h1 := Real.add_one_le_exp (α * (r ^ 2 - (r - t) ^ 2))
+  have h2 : α * r * t ≤ α * (r ^ 2 - (r - t) ^ 2) := by
+    have : r * t ≤ r ^ 2 - (r - t) ^ 2 := by nlinarith
+    nlinarith
+  rw [hexp]
+  nlinarith [Real.exp_pos (-α * r ^ 2)]
 
 /-- For `0 < δ` and any `c : ℝ`, `t ↦ exp (c - δ * t ^ 2)` tends to `0` along `cocompact ℝ`. -/
 theorem tendsto_exp_sub_mul_sq_cocompact {δ : ℝ} (hδ : 0 < δ) (c : ℝ) :
@@ -217,3 +242,16 @@ theorem tendstoUniformly_exp_ofReal_mul_add_mul_I_sq_smul {E : Type*} [Seminorme
     linarith [mul_le_mul_of_nonneg_right hexp (norm_nonneg (f t))]
 
 end TauCeti
+
+namespace Complex
+
+/-- The complex derivative of the translated quadratic exponential `w ↦ exp (a (w - b)²)` is
+`exp (a (w - b)²) · 2a (w - b)`, for complex `a` and `b`. -/
+theorem hasDerivAt_cexp_mul_sub_sq (a b w : ℂ) :
+    HasDerivAt (fun w : ℂ => cexp (a * (w - b) ^ 2)) (cexp (a * (w - b) ^ 2) * (2 * a * (w - b)))
+      w := by
+  have h := (((hasDerivAt_id' w).sub_const b).fun_pow 2).const_mul a |>.cexp
+  convert h using 1
+  ring
+
+end Complex

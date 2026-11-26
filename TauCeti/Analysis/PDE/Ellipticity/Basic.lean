@@ -18,6 +18,7 @@ public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.Matrix.Contraction
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Topology.MetricSpace.Lipschitz
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
@@ -93,7 +94,8 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.norm_matrixBilinearForm_le_sum_abs`: the operator norm of the attached bilinear
   form is at most the sum of the absolute values of the entries.
 * `TauCeti.PDE.norm_matrixBilinearForm_eq_norm_toEuclideanCLM`: the operator norm of the attached
-  bilinear form is the operator norm of the matrix on Euclidean space.
+  bilinear form is the operator norm of the matrix on Euclidean space;
+  `TauCeti.PDE.norm_matrixBilinearForm_sub_eq_norm_toEuclideanCLM_sub` is its form for differences.
 * `TauCeti.PDE.norm_toEuclideanCLM_apply_le`: the operator norm of the attached bilinear form
   bounds the action of the matrix on Euclidean space.
 * `TauCeti.PDE.abs_sum_mul_apply_single_mul_apply_single_le`: a bilinear upper bound controls
@@ -416,6 +418,13 @@ lemma norm_matrixBilinearForm_eq_norm_toEuclideanCLM [DecidableEq n] (A : Matrix
     mul_left_comm]
   exact (abs_real_inner_le_norm _ _).trans
     (mul_le_mul_of_nonneg_left ((toEuclideanCLM (n := n) (𝕜 := ℝ) A).le_opNorm ξ) (norm_nonneg _))
+
+/-- The bilinear forms of two matrices are as far apart as their operators on Euclidean space. -/
+lemma norm_matrixBilinearForm_sub_eq_norm_toEuclideanCLM_sub [DecidableEq n]
+    (A B : Matrix n n ℝ) :
+    ‖matrixBilinearForm A - matrixBilinearForm B‖ =
+      ‖toEuclideanCLM (n := n) (𝕜 := ℝ) A - toEuclideanCLM (n := n) (𝕜 := ℝ) B‖ := by
+  rw [← matrixBilinearForm_sub, ← map_sub, norm_matrixBilinearForm_eq_norm_toEuclideanCLM]
 
 /-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
 matrix bilinear form. -/
@@ -1066,6 +1075,24 @@ lemma add_const_smul_one (h : UniformlyEllipticOn Ω a lam Lam) {c : ℝ} (hc : 
     UniformlyEllipticOn Ω (fun x => a x + c • (1 : Matrix n n ℝ)) lam (Lam + c) :=
   h.add_smul_one hc (fun {_} _ => hc) (fun {_} _ => le_rfl)
 
+/-- **Uniform ellipticity extends to the closure** for coefficients whose bilinear forms are
+continuous on the closure: both defining inequalities are closed conditions. -/
+theorem closure_of_continuousOn [TopologicalSpace X] (h : UniformlyEllipticOn Ω a lam Lam)
+    (ha : ContinuousOn (fun x => matrixBilinearForm (a x)) (closure Ω)) :
+    UniformlyEllipticOn (closure Ω) a lam Lam := by
+  obtain ⟨h1, h2, h3⟩ := uniformlyEllipticOn_iff.1 h
+  refine uniformlyEllipticOn_iff.2 ⟨h1, h2, fun x hx => ⟨fun ξ => ?_, fun η ξ => ?_⟩⟩
+  · rw [← matrixBilinearForm_self]
+    exact le_on_closure (f := fun _ => lam * ‖ξ‖ ^ 2)
+      (g := fun x => matrixBilinearForm (a x) ξ ξ)
+      (fun y hy => (matrixBilinearForm_self (a y) ξ).symm ▸ (h3 hy).1 ξ) continuousOn_const
+      ((ha.clm_apply continuousOn_const).clm_apply continuousOn_const) hx
+  · rw [← matrixBilinearForm_apply]
+    exact le_on_closure (f := fun x => |matrixBilinearForm (a x) η ξ|)
+      (g := fun _ => Lam * ‖η‖ * ‖ξ‖)
+      (fun y hy => (matrixBilinearForm_apply (a y) η ξ).symm ▸ (h3 hy).2 η ξ)
+      ((ha.clm_apply continuousOn_const).clm_apply continuousOn_const).abs continuousOn_const hx
+
 end UniformlyEllipticOn
 
 variable {Ω : Set X} {a b : X → Matrix n n ℝ}
@@ -1198,6 +1225,17 @@ open scoped ContDiff Gradient InnerProductSpace NNReal
 
 variable {n : Type*} [Fintype n]
 
+/-- A matrix bilinear form evaluated at the `i`-th standard basis vector in its first argument
+is the contraction of the `i`-th row with the second argument. -/
+theorem matrixBilinearForm_basisFun_left {A : Matrix n n ℝ} (i : n)
+    (ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm A (EuclideanSpace.basisFun n ℝ i) ξ =
+      ∑ j, A i j * ⟪ξ, EuclideanSpace.basisFun n ℝ j⟫_ℝ := by
+  classical
+  simp only [EuclideanSpace.inner_basisFun_real]
+  simp [matrixBilinearForm_apply, dotProduct, Matrix.mulVec, EuclideanSpace.basisFun_apply,
+    PiLp.single_apply]
+
 /-- Expanding the first argument of a matrix bilinear form in an orthonormal basis. -/
 theorem sum_inner_mul_matrixBilinearForm {A : Matrix n n ℝ} (ξ η : EuclideanSpace ℝ n) :
     ∑ i, ⟪ξ, EuclideanSpace.basisFun n ℝ i⟫_ℝ *
@@ -1224,15 +1262,25 @@ theorem contDiff_matrixBilinearForm_gradient {A : Matrix n n ℝ}
     ContDiff ℝ ∞ (fun y => matrixBilinearForm A η (∇ ψ y)) :=
   (matrixBilinearForm A η).contDiff.comp (hψ.gradient_right (m := ∞) (by simp))
 
+/-- On a set `s`, `Cᵏ` matrix entries and `Cᵏ` vector fields give a `Cᵏ` scalar pairing
+`x ↦ η(x)ᵀ a(x) ξ(x)`. -/
+theorem contDiffOn_matrixBilinearForm_apply {k : WithTop ℕ∞} {s : Set (EuclideanSpace ℝ n)}
+    {a : EuclideanSpace ℝ n → Matrix n n ℝ} (ha : ∀ i j, ContDiffOn ℝ k (fun x => a x i j) s)
+    {η ξ : EuclideanSpace ℝ n → EuclideanSpace ℝ n}
+    (hη : ContDiffOn ℝ k η s) (hξ : ContDiffOn ℝ k ξ s) :
+    ContDiffOn ℝ k (fun x => matrixBilinearForm (a x) (η x) (ξ x)) s := by
+  simp only [matrixBilinearForm_apply, dotProduct, Matrix.mulVec]
+  exact ContDiffOn.sum fun i _ => ((contDiffOn_piLp 2).1 hη i).mul
+    (ContDiffOn.sum fun j _ => (ha i j).mul ((contDiffOn_piLp 2).1 hξ j))
+
 /-- **`Cᵏ` coefficient fields give `Cᵏ` bilinear forms.** If the entries of `a` are `Cᵏ`, then
 `x ↦ η(x)ᵀ a(x) ξ(x)` is `Cᵏ` for `Cᵏ` vector fields `η` and `ξ`. -/
 theorem contDiff_matrixBilinearForm_apply {k : WithTop ℕ∞}
     {a : EuclideanSpace ℝ n → Matrix n n ℝ} (ha : ∀ i j, ContDiff ℝ k fun x => a x i j)
     {η ξ : EuclideanSpace ℝ n → EuclideanSpace ℝ n} (hη : ContDiff ℝ k η) (hξ : ContDiff ℝ k ξ) :
-    ContDiff ℝ k fun x => matrixBilinearForm (a x) (η x) (ξ x) := by
-  simp only [matrixBilinearForm_apply, dotProduct, Matrix.mulVec]
-  exact ContDiff.sum fun i _ => (contDiff_euclidean.1 hη i).mul
-    (ContDiff.sum fun j _ => (ha i j).mul (contDiff_euclidean.1 hξ j))
+    ContDiff ℝ k fun x => matrixBilinearForm (a x) (η x) (ξ x) :=
+  contDiffOn_univ.1 (contDiffOn_matrixBilinearForm_apply
+    (fun i j ↦ (ha i j).contDiffOn) hη.contDiffOn hξ.contDiffOn)
 
 /-- **`C¹` coefficient fields have locally Lipschitz bilinear forms.** If the entries of `a` are
 continuously differentiable on an open set `s`, then `x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is locally Lipschitz

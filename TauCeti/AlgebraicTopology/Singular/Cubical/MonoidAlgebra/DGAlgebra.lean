@@ -31,9 +31,15 @@ are also those of the DG right modules of chains of a space with a right action 
 
 ## Main results
 
+* `TauCeti.cubicalChainPoint_mem`, `TauCeti.cubicalChainDifferential_cubicalChainPoint`: the point
+  chain `[g]` is a cycle of degree `0`.
+* `TauCeti.cubicalChainPoint_sub_one_mem`,
+  `TauCeti.cubicalChainDifferential_cubicalChainPoint_sub_one`: for a topological monoid, `[g] - 1`
+  is a cycle of degree `0`.
 * `TauCeti.cubicalChainSumMap_id`, `TauCeti.cubicalChainSumMap_comp`,
   `TauCeti.cubicalChainDifferential_cubicalChainSumMap`: the push-forward is a functorial chain map.
 * `TauCeti.cubicalChainSumMap_injective`: the push-forward along an injective map is injective.
+* `TauCeti.cubicalChainSumMap_cubicalChainPoint`: the push-forward sends `[x]` to `[f x]`.
 * `TauCeti.cubicalChain_isDGAlgebra`: `normalizedCubicalChainAlgebra G R` with this grading and
   differential is a differential graded algebra.
 
@@ -103,6 +109,11 @@ theorem cubicalChainLof_mem {n : ℕ} (y : NormalizedCubicalChain G R n) :
   (mem_cubicalChainGrading_iff G R).2 (Or.inr ⟨n, y, by simp, rfl⟩)
 
 variable {G R} in
+/-- The point chain `[g]` lies in degree `0`. -/
+theorem cubicalChainPoint_mem (g : G) : cubicalChainPoint G R g ∈ cubicalChainGrading G R 0 :=
+  (mem_cubicalChainGrading_iff G R).2 (Or.inr ⟨0, _, by simp, (cubicalChainPoint_def g).symm⟩)
+
+variable {G R} in
 /-- A chain of cohomological degree `-n` is a chain of dimension `n`. -/
 theorem exists_cubicalChainLof_eq {i : ℤ} {x : normalizedCubicalChainAlgebra G R}
     (hx : x ∈ cubicalChainGrading G R i) (n : ℕ) (hn : (n : ℤ) = -i) :
@@ -163,6 +174,12 @@ instance :
     GradedAlgebra (R := R) (A := normalizedCubicalChainAlgebra G R) (cubicalChainGrading G R) :=
   { }
 
+variable {G R} in
+/-- The difference `[g] - 1` of a point chain and the unit lies in degree `0`. -/
+theorem cubicalChainPoint_sub_one_mem (g : G) :
+    cubicalChainPoint G R g - 1 ∈ cubicalChainGrading G R 0 :=
+  sub_mem (cubicalChainPoint_mem g) (SetLike.one_mem_graded (cubicalChainGrading G R))
+
 end Grading
 
 section Differential
@@ -195,6 +212,13 @@ theorem cubicalChainDifferential_lof_zero (y : NormalizedCubicalChain G R 0) :
     cubicalChainDifferential G R (cubicalChainLof G R 0 y) = 0 := by
   rw [cubicalChainDifferential_lof]
   rfl
+
+variable {G R} in
+/-- The point chain `[g]` is a cycle. -/
+@[simp]
+theorem cubicalChainDifferential_cubicalChainPoint (g : G) :
+    cubicalChainDifferential G R (cubicalChainPoint G R g) = 0 := by
+  rw [cubicalChainPoint_def, cubicalChainDifferential_lof_zero]
 
 /-- The differential on `(k + 1)`-chains is the boundary. -/
 @[simp]
@@ -329,6 +353,13 @@ theorem cubicalChainSumMap_comp (g : C(Y, Z)) (f : C(X, Y)) :
       cubicalChainSumMap_lof, cubicalChainSumMap_lof, NormalizedCubicalChain.map_comp,
       LinearMap.comp_apply]
 
+/-- The push-forward sends the point chain `[x]` to `[f x]`. -/
+@[simp]
+theorem cubicalChainSumMap_cubicalChainPoint (f : C(X, Y)) (x : X) :
+    cubicalChainSumMap R f (cubicalChainPoint X R x) = cubicalChainPoint Y R (f x) := by
+  rw [cubicalChainPoint_def, cubicalChainPoint_def, cubicalChainSumMap_lof, map_ofCube,
+    SingularCube.comp_point]
+
 /-- The push-forward preserves the cohomological degree. -/
 theorem cubicalChainSumMap_mem (f : C(X, Y)) {i : ℤ} {a : normalizedCubicalChainAlgebra X R}
     (ha : a ∈ cubicalChainGrading X R i) :
@@ -423,6 +454,12 @@ theorem cubicalChain_isDGAlgebra :
     | add b b' hb hb' =>
       rw [mul_add, map_add, hb, hb', map_add, mul_add, mul_add, smul_add]
       abel
+
+variable {G R} in
+/-- The difference `[g] - 1` of a point chain and the unit is a cycle. -/
+theorem cubicalChainDifferential_cubicalChainPoint_sub_one (g : G) :
+    cubicalChainDifferential G R (cubicalChainPoint G R g - 1) = 0 := by
+  simp [(cubicalChain_isDGAlgebra G R).map_one_eq_zero]
 
 end Differential
 
