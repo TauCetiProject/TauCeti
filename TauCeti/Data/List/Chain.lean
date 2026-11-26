@@ -11,7 +11,8 @@ public import Mathlib.Data.List.Cycle
 # Chains on extended lists
 
 A list extended by one entry is a chain exactly when the list is a chain whose last entry is related
-to the new one.
+to the new one. In particular a list followed by its first entry is a chain exactly when the list is
+a chain whose last entry is related to its first.
 
 A list followed by itself is a chain for a relation exactly when the list is a chain as a cycle:
 consecutive entries are related, and so is the last entry to the first. This cyclic condition is
@@ -30,6 +31,17 @@ any, is related to the new entry. -/
 theorem isChain_append_singleton_iff {l : List α} {a : α} :
     (l ++ [a]).IsChain R ↔ l.IsChain R ∧ ∀ x ∈ l.getLast?, R x a := by
   simp [isChain_append]
+
+/-- A list followed by its first entry is a chain exactly when the list is a chain whose last entry,
+if the list is nonempty, is related to its first entry. -/
+theorem isChain_append_take_one_iff {l : List α} :
+    (l ++ l.take 1).IsChain R ↔ l.IsChain R ∧ ∀ h : l ≠ [], R (l.getLast h) (l.head h) := by
+  cases l with
+  | nil => simp
+  | cons a l =>
+    rw [take_one, head?_cons, Option.toList_some, isChain_append_singleton_iff,
+      getLast?_eq_some_getLast (cons_ne_nil a l)]
+    simp
 
 /-- A list followed by itself is a chain exactly when the list is a chain as a cycle. -/
 theorem isChain_append_self_iff {l : List α} :

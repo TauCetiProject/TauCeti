@@ -35,11 +35,11 @@ a preconnected set disjoint from a bounded `K` that meets its filled hull has di
 
 A point lies outside the filled hull exactly when its component in the complement of `K` is
 unbounded. This is the hypothesis of
-`TauCeti.Contour.windingNumber_eq_zero_of_unbounded_component` in
-`TauCeti/Analysis/Contour/Winding/UnboundedComponent.lean` and of its cycle form
-`TauCeti.Contour.Cycle.windingNumber_eq_zero_of_unbounded_component` in
-`TauCeti/Analysis/Contour/Cycle/Winding.lean`: for a closed curve with the required regularity,
-or a contour cycle, the winding number vanishes outside the filled hull of its trace.
+`AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_unbounded_component` in
+`TauCeti/Analysis/Contour/Winding/AbsolutelyContinuous/UnboundedComponent.lean` and of its cycle
+form `TauCeti.Contour.Cycle.windingNumber_eq_zero_of_unbounded_component` in
+`TauCeti/Analysis/Contour/Cycle/Winding.lean`: for a closed absolutely continuous curve, or a
+contour cycle, the winding number vanishes outside the filled hull of its trace.
 
 Without additional hypotheses on `K`, the hull need not be closed or connected.
 

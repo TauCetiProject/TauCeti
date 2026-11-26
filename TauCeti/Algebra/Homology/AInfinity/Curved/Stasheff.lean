@@ -41,17 +41,26 @@ encoding, where no structural coefficient appears.
 ## Main definitions
 
 * `TauCeti.AInfinity.curvedStasheffSum`: the left-hand side of `(CSIₙ)`.
+* `TauCeti.AInfinity.curvatureInsertionSum`: the curvature insertions
+  `(-1) ^ r m_{n + 1}(x₀, …, x_{r - 1}, c r, x_r, …, x_{n - 1})` of a family `c` of elements that
+  may depend on the position, as in an `A∞` category, where each object has its own curvature.
 * `TauCeti.AInfinity.curvedSuspendedStasheffSum`: the same sum in the suspended encoding.
 
 ## Main results
 
 * `TauCeti.AInfinity.curvedStasheffSum_eq_stasheffSum_add`: the curved sum is the uncurved sum
-  plus the curvature insertions `(-1) ^ r m_{n + 1}(x₀, …, x_{r - 1}, m₀, x_r, …, x_{n - 1})`.
+  plus the curvature insertions `(-1) ^ r m_{n + 1}(x₀, …, x_{r - 1}, m₀, x_r, …, x_{n - 1})`,
+  which are `TauCeti.AInfinity.curvatureInsertionSum` of the constant family `m₀`
+  (`TauCeti.AInfinity.sum_stasheffTerm_inner_zero`).
+* `TauCeti.AInfinity.stasheffSum_congr_of_pos`: the uncurved Stasheff sum does not read the
+  nullary operation.
 * `TauCeti.AInfinity.curvedStasheffSum_eq_stasheffSum_of_m_zero_eq_zero` and
   `TauCeti.AInfinity.curvedStasheffSum_eq_stasheffSum_of_m_succ_eq_zero`: the curved sum is the
   uncurved one when the curvature vanishes, or when the operation of arity `n + 1` vanishes.
 * `TauCeti.AInfinity.curvedStasheffSum_zero` and `TauCeti.AInfinity.curvedStasheffSum_one`: the
-  identities in arities zero and one, written out.
+  identities in arities zero and one, written out, and
+  `TauCeti.AInfinity.curvatureInsertionSum_zero` and `TauCeti.AInfinity.curvatureInsertionSum_one`:
+  the curvature insertions in arities zero and one.
 * `TauCeti.AInfinity.curvedSuspendedStasheffSum_eq_zero_iff`: the suspended curved identity holds
   exactly when the unsuspended one does.
 
@@ -109,6 +118,66 @@ theorem curvedStasheffSum_eq_stasheffSum_add (n : ℕ) :
   rw [Nat.range_succ_eq_Icc_zero, ← Finset.insert_Icc_add_one_left_eq_Icc (Nat.zero_le _),
     Finset.sum_insert (by simp), add_comm, Nat.sub_zero, zero_add]
 
+/-- The **curvature insertions** of arity `n`: the sum over the positions `p ≤ n` of
+`(-1) ^ p m_{n + 1}(x₀, …, x_{p - 1}, c p, x_p, …, x_{n - 1})`, where the inserted element `c p`
+may depend on the position. With `c p = m₀` for every `p` these are the terms of inner arity zero
+of the curved Stasheff identity (`TauCeti.AInfinity.sum_stasheffTerm_inner_zero`). In an `A∞`
+category, the curvature inserted at position `p` is that of the object between the inputs
+`x_{p - 1}` and `x_p`. -/
+def curvatureInsertionSum (c : ℕ → A) (n : ℕ) : A :=
+  ∑ p ∈ Finset.range (n + 1),
+    negOnePowCast R (p : ℤ) • evalNat (m (n + 1)) (replaceBlock x p 0 (c p))
+
+/-- The defining sum for the curvature insertions. -/
+theorem curvatureInsertionSum_def (c : ℕ → A) (n : ℕ) : curvatureInsertionSum m x c n =
+    ∑ p ∈ Finset.range (n + 1),
+      negOnePowCast R (p : ℤ) • evalNat (m (n + 1)) (replaceBlock x p 0 (c p)) := (rfl)
+
+/-- The terms of inner arity zero of the curved Stasheff identity are the curvature insertions of
+the constant family `m₀`. -/
+theorem sum_stasheffTerm_inner_zero (n : ℕ) :
+    ∑ p ∈ Finset.range (n + 1), stasheffTerm m d x p 0 (n - p) =
+      curvatureInsertionSum m x (fun _ ↦ m 0 ![]) n := by
+  refine Finset.sum_congr rfl fun p hp ↦ ?_
+  rw [stasheffTerm_inner_zero, show p + 1 + (n - p) = n + 1 by
+    rw [Finset.mem_range] at hp
+    omega]
+
+/-- Inserting zero at every position gives no curvature terms. -/
+@[simp]
+theorem curvatureInsertionSum_const_zero (n : ℕ) :
+    curvatureInsertionSum m x (fun _ ↦ 0) n = 0 :=
+  Finset.sum_eq_zero fun p hp ↦ by
+    rw [Finset.mem_range] at hp
+    rw [evalNat_def, (m _).map_coord_zero (⟨p, hp⟩ : Fin (n + 1)) (by simp), smul_zero]
+
+/-- The curvature insertion of arity zero is the unary operation on the inserted element. -/
+@[simp]
+theorem curvatureInsertionSum_zero (c : ℕ → A) : curvatureInsertionSum m x c 0 = m 1 ![c 0] := by
+  rw [curvatureInsertionSum_def, Finset.sum_range_one, Nat.cast_zero, negOnePowCast_zero, one_smul,
+    evalNat_def]
+  congr 1
+  ext i
+  fin_cases i
+  simp
+
+/-- The uncurved Stasheff sum does not read the nullary operation: it only depends on the
+operations of positive arity. -/
+theorem stasheffSum_congr_of_pos
+    {m' : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ A) A}
+    (h : ∀ k, 0 < k → m k = m' k) (n : ℕ) : stasheffSum m d x n = stasheffSum m' d x n := by
+  rw [stasheffSum_def, stasheffSum_def]
+  refine Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun s hs ↦ ?_
+  rw [Finset.mem_Icc] at hs
+  rw [stasheffTerm_def, stasheffTerm_def, h s (by omega), h (p + 1 + (n - p - s)) (by omega)]
+
+/-- The curvature insertions of arity `n` only read the operation of arity `n + 1`. -/
+theorem curvatureInsertionSum_congr
+    {m' : ∀ k : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ A) A} {n : ℕ}
+    (h : m (n + 1) = m' (n + 1)) (c : ℕ → A) :
+    curvatureInsertionSum m x c n = curvatureInsertionSum m' x c n := by
+  rw [curvatureInsertionSum_def, curvatureInsertionSum_def, h]
+
 /-- The arity-`n` curved Stasheff sum only reads the first `n` supplied degrees and inputs. -/
 theorem curvedStasheffSum_congr {e : ℕ → ℤ} {y : ℕ → A} (n : ℕ)
     (hd : ∀ i < n, d i = e i) (hx : ∀ i < n, x i = y i) :
@@ -159,6 +228,23 @@ theorem curvedStasheffSum_one :
     curvedStasheffSum m d x 1 = m 1 ![m 1 ![x 0]] + m 2 ![m 0 ![], x 0] - m 2 ![x 0, m 0 ![]] := by
   simp [curvedStasheffSum_eq_stasheffSum_add, stasheffSum_one, stasheffTerm_inner_zero,
     Finset.sum_range_succ, sub_eq_add_neg, add_assoc]
+
+/-- The curvature insertions of arity one are `m₂(c₀, x₀) - m₂(x₀, c₁)`. -/
+theorem curvatureInsertionSum_one (c : ℕ → A) :
+    curvatureInsertionSum m x c 1 = m 2 ![c 0, x 0] - m 2 ![x 0, c 1] := by
+  rw [curvatureInsertionSum_def, Finset.sum_range_succ, Finset.sum_range_one, evalNat_def,
+    evalNat_def]
+  have h₀ : (fun i : Fin 2 ↦ replaceBlock x 0 0 (c 0) i.val) = ![c 0, x 0] := by
+    ext i
+    fin_cases i
+    · exact replaceBlock_self ..
+    · exact replaceBlock_of_gt _ _ _ _ Nat.zero_lt_one
+  have h₁ : (fun i : Fin 2 ↦ replaceBlock x 1 0 (c 1) i.val) = ![x 0, c 1] := by
+    ext i
+    fin_cases i
+    · exact replaceBlock_of_lt _ _ _ _ Nat.zero_lt_one
+    · exact replaceBlock_self ..
+  simp [h₀, h₁, sub_eq_add_neg]
 
 end CurvedStasheffGroup
 

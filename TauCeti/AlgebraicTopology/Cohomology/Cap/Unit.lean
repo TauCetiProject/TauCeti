@@ -28,6 +28,8 @@ For explicit rewriting, use `TauCeti.capChain_constCochain (X := X)` and
 `TauCeti.singularCap_constSingularCocycle (X := X)`. The space is otherwise inferred from the goal.
 Both coefficient formulas are available to `simp` without opening the `TauCeti` namespace.
 The direct unit identities are `TauCeti.capChain_unit` and `TauCeti.singularCap_unit`.
+For modules, `TopCat.singularCapAddHom_constSingularCocycle_of_comp_eq_id` states that capping a
+homology class with the constant cocycle class `e` returns it when `u ≫ e ▷ S ≫ μ = 𝟙`.
 -/
 
 public section
@@ -121,3 +123,24 @@ lemma singularCap_unit {X : TopCat.{w}} (k : Type*) [Ring k] [Linear k C]
 end Homology
 
 end TauCeti
+
+namespace TopCat
+
+section AddHom
+
+variable {R₀ : Type w} [CommRing R₀] (k : Type*) [Ring k] [Linear k (ModuleCat.{w} R₀)]
+  [MonoidalLinear k (ModuleCat.{w} R₀)] {R S T M : ModuleCat.{w} R₀}
+
+/-- If the coefficient morphisms satisfy `u ≫ e ▷ S ≫ μ = 𝟙`, capping a homology class `z` with
+the class of the constant `0`-cocycle with value `e` gives back `z`. -/
+theorem singularCapAddHom_constSingularCocycle_of_comp_eq_id {u : T ⟶ R ⊗ S} {μ : M ⊗ S ⟶ T}
+    {e : R ⟶ M} (he : u ≫ e ▷ S ≫ μ = 𝟙 T) {X : TopCat.{w}} {n : ℕ} (h : 0 + n = n)
+    (z : ((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj T).obj X) :
+    X.singularCapAddHom k u μ h z
+      ((X.singularCochainComplex R k M).homologyπ 0 (X.constSingularCocycle k e)) = z := by
+  rw [singularCapAddHom_apply, TauCeti.singularCap_constSingularCocycle, he]
+  simp
+
+end AddHom
+
+end TopCat

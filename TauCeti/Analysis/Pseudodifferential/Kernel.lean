@@ -159,12 +159,19 @@ private theorem integral_comp_two_pi_smul (g : E → ℝ) :
     ∫ ζ, g ((2 * π) • ζ) = ((2 * π) ^ finrank ℝ E)⁻¹ * ∫ ξ, g ξ := by
   rw [Measure.integral_comp_smul, smul_eq_mul, abs_of_pos (by positivity)]
 
+/-- The integral of the norm of the kernel integrand at `(x, y)` is `(2π)⁻ⁿ ∫ ‖a(x, ξ)‖ dξ`. -/
+theorem integral_norm_quantizationKernel_integrand {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace ℂ F] (a : E × E → F) (x y : E) :
+    ∫ ζ, ‖𝐞 ⟪ζ, x - y⟫ • a (x, (2 * π) • ζ)‖ = ((2 * π) ^ finrank ℝ E)⁻¹ * ∫ ξ, ‖a (x, ξ)‖ := by
+  simp_rw [Circle.norm_smul (E := F)]
+  exact integral_comp_two_pi_smul fun ξ ↦ ‖a (x, ξ)‖
+
 /-- **Uniform bound.** `‖K_a(x, y)‖ ≤ (2π)⁻ⁿ ∫ ‖a(x, ξ)‖ dξ` for every `y`. -/
 theorem norm_quantizationKernel_le (a : E × E → V →L[ℂ] W) (x y : E) :
     ‖quantizationKernel a x y‖ ≤ ((2 * π) ^ finrank ℝ E)⁻¹ * ∫ ξ, ‖a (x, ξ)‖ := by
-  rw [← integral_comp_two_pi_smul fun ξ ↦ ‖a (x, ξ)‖]
+  rw [quantizationKernel_def]
   exact (norm_integral_le_integral_norm _).trans_eq
-    (by simp_rw [Circle.norm_smul (E := V →L[ℂ] W)])
+    (integral_norm_quantizationKernel_integrand a x y)
 
 /-- The kernel is linear in the coefficient: it vanishes for the zero coefficient. -/
 @[simp]

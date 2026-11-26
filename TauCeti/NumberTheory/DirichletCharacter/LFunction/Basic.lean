@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.NumberTheory.LSeries.Injectivity
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Analysis.Meromorphic.Order
 
@@ -41,6 +42,9 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   function `LFunctionTrivChar₁ N`, which is `(s - 1) L(s)` away from `s = 1` and, for `N = 1`,
   `(s - 1) ζ(s)` away from `1` and `1` at `1`; it is nonzero wherever `ζ` is, and away from `1`
   its analytic orders agree with `ζ`.
+* `DirichletCharacter.entireLFunction`, with `DirichletCharacter.entireLFunction_one` and
+  `DirichletCharacter.entireLFunction_of_ne_one`: the entire function `E_χ`, which is `χ.LFunction`
+  for `χ ≠ 1` and `LFunctionTrivChar₁ N` for `χ = 1`.
 * `DirichletCharacter.meromorphicOrderAt_LFunction_ne_top`,
   `DirichletCharacter.analyticOrderAt_LFunction_ne_top`,
   `DirichletCharacter.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt`,
@@ -51,12 +55,17 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   everywhere a positive meromorphic order `n` is the same as `analyticOrderNatAt` equal to `n`.
 * `DirichletCharacter.re_lt_one_of_LFunction_eq_zero`: every zero of `χ.LFunction` away from the
   simple pole `(s = 1, χ = 1)` satisfies `s.re < 1`.
+* `DirichletCharacter.eq_of_LFunction_eq`: a Dirichlet character is determined by its
+  `L`-function on `Re s > 1`.
 
 ## References
 
 * D. Loeffler, M. Stoll, `Mathlib.NumberTheory.LSeries.DirichletContinuation`.
 * M. Stoll, D. Loeffler, T. Tao, `Mathlib.NumberTheory.LSeries.Nonvanishing`.
 * H. Davenport, *Multiplicative Number Theory*, Ch. 4.
+* The function `E_χ` (`DirichletCharacter.entireLFunction`) follows the formal proof in the
+  folder `grh` of https://github.com/lsernau/grh-lean at commit
+  72fead102f663d5c7a407964a13dc0cf9d977207, where it enters `New.logDerivMean`.
 
 The order lemmas are adapted, with the hypothesis `χ ≠ 1` weakened, from chrisflav's
 file `LFunction/Order.lean` in
@@ -103,6 +112,23 @@ theorem analyticOrderAt_LFunctionTrivChar₁_one {ρ : ℂ} (hρ : ρ ≠ 1) :
   have hlin : AnalyticAt ℂ (fun z : ℂ ↦ z - 1) ρ := by fun_prop
   rw [analyticOrderAt_congr hev, analyticOrderAt_mul hlin (analyticOn_riemannZeta ρ hρ),
     hlin.analyticOrderAt_eq_zero.mpr (sub_ne_zero.mpr hρ), zero_add]
+
+/-- The **entire `L`-function** `E_χ` of a Dirichlet character `χ`: its `L`-function if `χ` is
+not principal, and the entire continuation `DirichletCharacter.LFunctionTrivChar₁ N` of
+`(s - 1) L(s, χ)` if it is. -/
+noncomputable def entireLFunction {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) : ℂ → ℂ :=
+  open Classical in if χ = 1 then LFunctionTrivChar₁ N else χ.LFunction
+
+/-- `E_χ` of the principal character is `DirichletCharacter.LFunctionTrivChar₁`. -/
+@[simp]
+theorem entireLFunction_one (N : ℕ) [NeZero N] :
+    entireLFunction (1 : DirichletCharacter ℂ N) = LFunctionTrivChar₁ N := by
+  simp [entireLFunction]
+
+/-- `E_χ` of a non-principal character `χ` is its `L`-function. -/
+theorem entireLFunction_of_ne_one {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N} (hχ : χ ≠ 1) :
+    entireLFunction χ = χ.LFunction := by
+  simp [entireLFunction, hχ]
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
@@ -248,5 +274,24 @@ theorem meromorphicOrderAt_LFunction_eq_natCast_iff {s : ℂ} {n : ℕ} (hn : n 
 theorem re_lt_one_of_LFunction_eq_zero {s : ℂ} (h1 : s ≠ 1 ∨ χ ≠ 1) (h : χ.LFunction s = 0) :
     s.re < 1 :=
   not_le.mp fun hs ↦ χ.LFunction_ne_zero_of_one_le_re h1.symm hs h
+
+/-- **A Dirichlet character is determined by its `L`-function.** Two Dirichlet characters of the
+same level whose `L`-functions agree on `Re s > 1` are equal, since a Dirichlet series determines
+its coefficients. -/
+theorem eq_of_LFunction_eq {ψ : DirichletCharacter ℂ N}
+    (h : ∀ s : ℂ, 1 < s.re → χ.LFunction s = ψ.LFunction s) : χ = ψ := by
+  have hcoef (n : ℕ) (hn : n ≠ 0) : χ n = ψ n := by
+    refine LSeries.eq_of_LSeries_eventually_eq (f := fun n ↦ χ n) (g := fun n ↦ ψ n) ?_ ?_ ?_ hn
+    · rw [abscissaOfAbsConv_eq_one (NeZero.ne N)]
+      exact EReal.coe_lt_top 1
+    · rw [abscissaOfAbsConv_eq_one (NeZero.ne N)]
+      exact EReal.coe_lt_top 1
+    · filter_upwards [eventually_gt_atTop 1] with x hx
+      rw [← LFunction_eq_LSeries _ (by simpa using hx),
+        ← LFunction_eq_LSeries _ (by simpa using hx), h _ (by simpa using hx)]
+  refine MulChar.ext' fun a ↦ ?_
+  have ha : ((a.val + N : ℕ) : ZMod N) = a := by simp
+  rw [← ha]
+  exact hcoef _ (by have := NeZero.pos N; omega)
 
 end DirichletCharacter

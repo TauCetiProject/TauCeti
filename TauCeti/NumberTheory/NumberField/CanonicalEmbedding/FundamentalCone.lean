@@ -44,6 +44,9 @@ Mathlib's `idealSet K J` for a nonzero integral ideal `J`:
 * `NumberField.mixedEmbedding.fundamentalCone.natCard_unitSMul_eq_torsionOrder`: a point of
   nonzero norm is `u • a`, with `a` a point of the cone and `u` a unit, for exactly `w` pairs
   `(a, u)`.
+* `NumberField.mixedEmbedding.fundamentalCone.mem_iff_norm_ne_zero_of_rank_eq_zero`: in unit
+  rank `0`, as for `ℚ` and the imaginary quadratic fields, the cone is the set of points of nonzero
+  norm.
 
 ## References
 
@@ -275,5 +278,14 @@ theorem natCard_unitSMul_eq_torsionOrder {x : mixedSpace K} (hx : mixedEmbedding
       exact a.property
     refine ⟨⟨_, hζ⟩, Subtype.ext (Prod.ext (Subtype.ext ?_) ?_)⟩ <;>
       simp only [inv_mul_cancel_right, ← hp, inv_smul_smul, inv_inv]
+
+/-- **The cone in unit rank `0`.** When the unit rank is `0`, as for `ℚ` and the imaginary
+quadratic fields, there is no logarithmic condition to impose, and the fundamental cone is the set
+of points of nonzero norm. -/
+theorem mem_iff_norm_ne_zero_of_rank_eq_zero (hr : Units.rank K = 0) (x : mixedSpace K) :
+    x ∈ fundamentalCone K ↔ mixedEmbedding.norm x ≠ 0 := by
+  simp only [fundamentalCone, Set.mem_sdiff, Set.mem_preimage, ZSpan.mem_fundamentalDomain,
+    Set.mem_ofPred_eq]
+  exact ⟨fun h ↦ h.2, fun h ↦ ⟨fun i ↦ absurd i.isLt (by omega), h⟩⟩
 
 end NumberField.mixedEmbedding.fundamentalCone

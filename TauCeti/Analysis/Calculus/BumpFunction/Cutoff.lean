@@ -32,7 +32,9 @@ finite-dimensional real normed space. The cutoff is equal to one on a neighborho
 set and has topological support in a prescribed open set, which is the localization step used for
 compact exhaustions in domain arguments; between the sublevel sets `{ν ≤ a}` and `{ν ≥ b}` of a
 continuous function with compact sublevel set `{ν ≤ a}` it gives a cutoff whose derivative vanishes
-where `ν > b` (`IsCompact.exists_contDiff_cutoff_sublevel`). A compact set covered by open sets
+where `ν > b` (`IsCompact.exists_contDiff_cutoff_sublevel`), and its complement `1 - ψ` is a
+cutoff onto `{ν ≥ b}` vanishing near `{ν ≤ a}` (`IsCompact.exists_contDiff_cutoff_superlevel`).
+A compact set covered by open sets
 carries a finite smooth partition of unity by nonnegative compactly supported functions, each with
 topological support in a member of the cover, whose sum is at most one everywhere and one on the
 compact set (`IsCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one`). Taking differences of
@@ -189,6 +191,24 @@ theorem _root_.IsCompact.exists_contDiff_cutoff_sublevel [NormedSpace ℝ E] [Fi
   refine ⟨ψ, hψ, fun x ↦ hψ01 (mem_range_self x), hψ1, hψ0, fun x hx ↦ ?_⟩
   rw [(hψ0 x hx.le).fderiv_eq]
   simp
+
+/-- **A cutoff between superlevel sets.** Let `ν : E → ℝ` be continuous with compact sublevel set
+`{ν ≤ a}`, and let `a < b`. There is a smooth function `β` with values in `[0, 1]`, equal to `0`
+near every point where `ν ≤ a` and to `1` near every point where `ν ≥ b`, whose derivative
+vanishes wherever `ν > b`. It is `1 - ψ` for the cutoff `ψ` of
+`IsCompact.exists_contDiff_cutoff_sublevel`. -/
+theorem _root_.IsCompact.exists_contDiff_cutoff_superlevel [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {ν : E → ℝ} {a b : ℝ} (hK : IsCompact {x | ν x ≤ a})
+    (hν : Continuous ν) (hab : a < b) :
+    ∃ β : E → ℝ, ContDiff ℝ ∞ β ∧ (∀ x, β x ∈ Icc 0 1) ∧
+      (∀ x, ν x ≤ a → β =ᶠ[𝓝 x] 0) ∧ (∀ x, b ≤ ν x → β =ᶠ[𝓝 x] 1) ∧
+        ∀ x, b < ν x → fderiv ℝ β x = 0 := by
+  obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK⟩ := hK.exists_contDiff_cutoff_sublevel hν hab
+  refine ⟨fun x ↦ 1 - ψ x, contDiff_const.sub hψ,
+    fun x ↦ ⟨by simp [(hψ01 x).2], by simp [(hψ01 x).1]⟩,
+    fun x hx ↦ (hψ1 x hx).mono fun y h ↦ by simp [h],
+    fun x hx ↦ (hψ0 x hx).mono fun y h ↦ by simp [h], fun x hx ↦ ?_⟩
+  rw [fderiv_const_sub, hψK x hx, neg_zero]
 
 /-- **A finite smooth partition of unity on a compact set.** A compact subset `K` of a
 finite-dimensional real normed space covered by open sets `U i` carries smooth, compactly
@@ -668,19 +688,28 @@ private theorem smoothTransition_radial_cutoff [InnerProductSpace ℝ E] {r R : 
       tsupport (fun x : E => Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))) ⊆
         Metric.closedBall x₀ R := by
   have hD0 : 0 < R ^ 2 - r ^ 2 := by nlinarith
-  refine ⟨Real.smoothTransition.contDiff.comp ((contDiff_const.sub
-    ((contDiff_id.sub contDiff_const).norm_sq ℝ)).div_const _), ?_, fun x hx => ?_, ?_⟩
+  -- The profile is the radial cutoff `ψ(a + b ‖x - x₀‖²)` with `a = R² / D`, `b = -1 / D`.
+  have hf : (fun x : E => Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))) =
+      fun x => Real.smoothTransition
+        (R ^ 2 / (R ^ 2 - r ^ 2) + -1 / (R ^ 2 - r ^ 2) * ‖x - x₀‖ ^ 2) := by
+    funext x
+    congr 1
+    ring
+  refine ⟨hf ▸ Real.smoothTransition.contDiff_add_mul_norm_sub_sq x₀ _ _, ?_, fun x hx => ?_,
+    (hf ▸ Real.smoothTransition.tsupport_add_mul_norm_sub_sq_subset x₀ _ _).trans
+      fun x hx => ?_⟩
   · rintro _ ⟨x, rfl⟩
     exact ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
   · rw [Metric.mem_closedBall, dist_eq_norm] at hx
     refine Real.smoothTransition.one_of_one_le ?_
     rw [le_div_iff₀ hD0]
     nlinarith [norm_nonneg (x - x₀)]
-  · refine closure_minimal (fun x hx => ?_) Metric.isClosed_closedBall
+  · have hx' : 0 ≤ (R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2) := by
+      rw [Set.mem_ofPred_eq] at hx
+      convert hx using 1
+      ring
     rw [Metric.mem_closedBall, dist_eq_norm]
-    by_contra h
-    exact hx (Real.smoothTransition.zero_of_nonpos
-      (div_nonpos_of_nonpos_of_nonneg (by nlinarith [norm_nonneg (x - x₀)]) hD0.le))
+    nlinarith [norm_nonneg (x - x₀), (le_div_iff₀ hD0).1 hx']
 
 /-- **Radial cutoffs with quantitative derivative bounds.** There is a universal constant `c`
 such that for every centre `x₀` and radii `0 ≤ r < R`, some smooth `ψ` with values in `[0, 1]`

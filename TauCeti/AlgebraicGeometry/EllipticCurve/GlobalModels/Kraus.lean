@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
-public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
+public import TauCeti.RingTheory.DedekindDomain.Localization.AtPrime
 
 import Mathlib.RingTheory.LocalRing.Basic
 import TauCeti.Algebra.Ring.TwoPowMulThreePow

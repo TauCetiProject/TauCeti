@@ -9,6 +9,7 @@ public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.Algebra.Ring.Real
 
 public import Mathlib.Topology.Separation.Hausdorff
+public import TauCeti.Data.Finset.Pi
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Basic.Finite.Sigma
 
@@ -42,6 +43,8 @@ Repeating the first entry of a finite tuple, `(q₀, …, qₙ) ↦ (q₀, q₀,
 * `TauCeti.continuous_extend_subtypeVal`: extending functions on a subset along `Subtype.val`,
   with a fixed fallback, is continuous.
 * `TauCeti.isEmbedding_cons_apply_zero`: repeating the first entry of a tuple is an embedding.
+* `Finset.continuous_extendByZero₂`: extension by zero of dependent functions on a finite set
+  `s` to a finite set `t` is continuous.
 -/
 
 public section
@@ -167,3 +170,14 @@ theorem not_discreteTopology_pi {ι : Type*} {Y : ι → Type*} [∀ i, Topologi
   exact hxy j this.symm
 
 end TauCeti
+
+/-- Extension by zero of dependent functions on a finite set `s` to a finite set `t` is continuous
+for the product topologies. -/
+@[continuity, fun_prop]
+theorem Finset.continuous_extendByZero₂ {ι : Type*} [DecidableEq ι] {π : ι → Type*}
+    [∀ i, Zero (π i)] [∀ i, TopologicalSpace (π i)] {s : Finset ι} (t : Finset ι) :
+    Continuous (Finset.extendByZero₂ (π := π) (s := s) t) :=
+  continuous_pi fun i ↦ by
+    by_cases h : i.val ∈ s
+    · simpa only [Finset.extendByZero₂_of_mem _ _ h] using continuous_apply (⟨i, h⟩ : s)
+    · simpa only [Finset.extendByZero₂_of_notMem _ _ h] using continuous_const

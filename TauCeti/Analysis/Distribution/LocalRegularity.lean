@@ -25,6 +25,10 @@ and frame by frame, only uses a few closure properties, which this file records:
   relating the local representatives of a distribution on a vector bundle in two charts and
   frames.
 
+An invariant notion of local regularity holds near every point outside the support of a
+distribution (`Distribution.IsInvariantLocalRegularity.of_notMem_dsupport`), since the
+distribution restricts to zero near such a point.
+
 Pullback invariance gives its own converse
 (`Distribution.IsInvariantLocalRegularity.compCLMOfOpenPartialHomeomorph_iff`): `e^* T` satisfies
 `P` near `x` exactly when `T` satisfies `P` near `e x`. Pulling back along `e⁻¹` returns the
@@ -114,5 +118,22 @@ theorem IsInvariantLocalRegularity.compCLMOfOpenPartialHomeomorph_iff
   have := hP.compCLMOfOpenPartialHomeomorph he' he₁' hV hVU hexV h
   rwa [compCLMOfOpenPartialHomeomorph_symm_apply_apply (he₁ := he') (he₁' := he₁'),
     hP.restrictCLM_iff hVΩ hexV] at this
+
+/-- **Regularity off the support.** A distribution satisfies an invariant notion of local
+regularity `P` near every point of `Ω` outside its support: there it restricts to the zero
+distribution on a neighbourhood. -/
+theorem IsInvariantLocalRegularity.of_notMem_dsupport (hP : IsInvariantLocalRegularity P)
+    {Ω : Opens E} {T : 𝓓'(Ω, ℂ)} {x : E} (hx : x ∈ Ω) (hxT : x ∉ dsupport T) : P Ω T x := by
+  obtain ⟨U, hTU, hU, hxU⟩ := (notMem_dsupport_iff x).1 hxT
+  let Ω' : Opens E := ⟨U, hU⟩ ⊓ Ω
+  have hxΩ' : x ∈ Ω' := ⟨hxU, hx⟩
+  have h0 : (restrictCLM T : 𝓓'(Ω', ℂ)) = 0 := by
+    ext φ
+    rw [restrictCLM_apply, zero_apply]
+    refine hTU _ ?_
+    rw [TestFunction.coe_monoCLM_of_le le_rfl inf_le_right]
+    exact φ.tsupport_subset.trans inf_le_left
+  rw [← hP.restrictCLM_iff inf_le_right hxΩ', h0]
+  exact hP.zero hxΩ'
 
 end Distribution
