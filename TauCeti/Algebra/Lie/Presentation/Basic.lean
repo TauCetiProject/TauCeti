@@ -30,12 +30,17 @@ such a vanishing result from `x` to `-x`; equivalently, `x` and `-x` have the sa
 
 This file proves that a free Lie algebra is generated, as a Lie subalgebra, by its generators:
 `TauCeti.FreeLieAlgebra.lieSpan_range_of_eq_top`. This is what makes the images of the generators
-generate the presented algebra, rather than merely determine maps out of it.
+generate the presented algebra, rather than merely determine maps out of it. It also shows that
+evaluating an element of a free Lie algebra commutes with Lie homomorphisms
+(`FreeLieAlgebra.comp_lift_apply`), so the value of a universal expression at images of generators
+is the image of its value.
 
 ## Main results
 
 * `TauCeti.FreeLieAlgebra.lieSpan_range_of_eq_top`: the generators of a free Lie algebra generate it
   as a Lie subalgebra.
+* `FreeLieAlgebra.comp_lift_apply`: evaluation in a free Lie algebra commutes with Lie
+  homomorphisms.
 
 ## Applications
 
@@ -72,3 +77,16 @@ theorem lieSpan_range_of_eq_top :
 end FreeLieAlgebra
 
 end TauCeti
+
+namespace FreeLieAlgebra
+
+/-- Evaluating elements of a free Lie algebra commutes with Lie homomorphisms: `f` applied to the
+value of `r` at `v` is the value of `r` at `f ∘ v`. -/
+theorem comp_lift_apply {R L L' S : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L']
+    [LieAlgebra R L'] (f : L →ₗ⁅R⁆ L') (v : S → L) (r : FreeLieAlgebra R S) :
+    f (lift R v r) = lift R (f ∘ v) r := by
+  rw [← LieHom.comp_apply]
+  congr 1
+  exact hom_ext fun s => by simp
+
+end FreeLieAlgebra

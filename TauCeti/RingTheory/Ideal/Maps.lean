@@ -91,11 +91,24 @@ theorem map_algebraMap_map_algebraMap {R A B : Type*} [CommSemiring R] [CommSemi
     (I.map (algebraMap R A)).map (algebraMap A B) = I.map (algebraMap R B) := by
   rw [map_map, ← IsScalarTower.algebraMap_eq]
 
+/-- A ring homomorphism carrying `I` into `J` carries each power of `I` into the same power of
+`J`. Unlike `Ideal.le_comap_pow`, neither ring need be commutative. -/
+theorem pow_le_comap_pow_of_le_comap {R S F : Type*} [Semiring R] [Semiring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) {I : Ideal R} {J : Ideal S} (h : I ≤ J.comap f) (n : ℕ) :
+    I ^ n ≤ (J ^ n).comap f := by
+  induction n with
+  | zero => simp only [Submodule.pow_zero, one_eq_top, comap_top, le_refl]
+  | succ n ih =>
+    rw [Submodule.pow_succ, mul_le]
+    intro r hr s hs
+    rw [mem_comap, map_mul, Submodule.pow_succ]
+    exact mul_mem_mul (ih hr) (h hs)
+
 /-- A ring homomorphism `f` with `I ≤ J.comap f` maps `I ^ n` into `J ^ n`. -/
-theorem map_mem_pow_of_le_comap {R S : Type*} [CommSemiring R] [CommSemiring S] (f : R →+* S)
+theorem map_mem_pow_of_le_comap {R S : Type*} [Semiring R] [Semiring S] (f : R →+* S)
     {I : Ideal R} {J : Ideal S} (h : I ≤ J.comap f) {n : ℕ} {x : R} (hx : x ∈ I ^ n) :
     f x ∈ J ^ n :=
-  le_comap_pow f n (pow_right_mono h n hx)
+  pow_le_comap_pow_of_le_comap f h n hx
 
 /-- Along a surjective ring homomorphism, the powers of the image of an ideal lie in the image of
 its powers. Unlike `Ideal.map_pow`, neither ring need be commutative. -/
