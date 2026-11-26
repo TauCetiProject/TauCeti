@@ -64,7 +64,7 @@ potentials `TauCeti.IsSpectralFlowPotential` of the bounded spectral flow in
 * Paths with the same potentials, possibly on different spaces, have the same spectral flow
   (`TauCeti.domainSpectralFlow_eq_of_isDomainSpectralFlowPotential_iff`). In particular it is
   unchanged by changes of trivialization (`TauCeti.domainSpectralFlow_comp_comp_symm`, in
-  `TauCeti.Analysis.Fredholm.Spectral.Conjugation`).
+  `TauCeti.Analysis.Fredholm.Spectral.CommonDomain.Conjugation`).
 * It extends the bounded spectral flow: on a finite-dimensional space, with `D = H` and `ι = 1`,
   every path of self-adjoint operators qualifies, and its spectral flow is
   `TauCeti.spectralFlow A a b` (`TauCeti.domainSpectralFlow_one`). Then `τ_c A` is the image
