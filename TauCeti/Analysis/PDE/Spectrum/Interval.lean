@@ -390,7 +390,7 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (
   -- The sine mode equals `1` at `a + (b - a) / (2k)`.
   have hba : 0 < b - a := sub_pos.2 hab
   refine ne_zero_of_value_ae_eq (by fun_prop) hu (t := a + (b - a) / (2 * k)) ⟨?_, ?_⟩ ?_
-    (congrArg Subtype.val h0)
+    (by rw [h0, ZeroMemClass.coe_zero])
   · have : 0 < (b - a) / (2 * k) := by positivity
     linarith
   · have hk1 : (1 : ℝ) ≤ k := Nat.one_le_cast.2 hk
@@ -558,10 +558,17 @@ private abbrev ofLineL : W1p volume (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) 2 �
     W1p volume (intervalDomain a b) 2 :=
   W1p.compAffineIsometryEquivL lineEquiv.symm.toAffineIsometryEquiv coe_intervalDomain_eq_preimage
 
+private theorem symm_toAffineIsometryEquiv_lineEquiv_symm :
+    lineEquiv.symm.toAffineIsometryEquiv.symm = lineEquiv.toAffineIsometryEquiv :=
+  AffineIsometryEquiv.ext fun x => lineEquiv.symm.toAffineIsometryEquiv.injective (by simp)
+
 private theorem toLineL_ofLineL (w : W1p volume (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) 2) :
-    toLineL (ofLineL w) = w :=
-  W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL
-    lineEquiv.symm.toAffineIsometryEquiv _ _ w
+    toLineL (ofLineL w) = w := by
+  have h := W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL
+    lineEquiv.symm.toAffineIsometryEquiv coe_intervalDomain_eq_preimage
+    (by rw [symm_toAffineIsometryEquiv_lineEquiv_symm]; exact coe_Ioo_eq_preimage_lineEquiv) w
+  simp only [symm_toAffineIsometryEquiv_lineEquiv_symm] at h
+  exact h
 
 /-- The Dirichlet energy on the interval domain is the energy on the real interval. -/
 private theorem energyFormH1_eq_setIntegral_toLineL (u v : W1p volume (intervalDomain a b) 2) :
@@ -686,10 +693,10 @@ private theorem ne_zero_of_value_ae_eq_cos (hab : a < b) (k : ℕ)
 
 `∫ ∇u · ∇v = κ ∫ u v` for every `v ∈ H¹(a, b)`,
 
-has a nonzero solution `u ∈ H¹(a, b)` exactly for these `κ`, with eigenfunctions
-`x ↦ cos (k π (x - a) / (b - a))`. Compared with the Dirichlet spectrum
-(`TauCeti.PDE.isDirichletEigenvalue_laplacian_intervalDomain_iff`), the eigenvalue `0`, with the
-constants as eigenfunctions, is added. -/
+has a nonzero solution `u ∈ H¹(a, b)` exactly for these `κ`. Compared with the Dirichlet
+spectrum (`TauCeti.PDE.isDirichletEigenvalue_laplacian_intervalDomain_iff`), the eigenvalue `0` is
+added. Eigenfunctions for these `κ`, the cosine modes `x ↦ cos (k π (x - a) / (b - a))`, are
+supplied by `TauCeti.PDE.exists_value_ae_eq_cos_and_energyFormH1_eq`. -/
 theorem exists_ne_zero_forall_energyFormH1_eq_iff_intervalDomain (hab : a < b) {kappa : ℝ} :
     (∃ u : W1p volume (intervalDomain a b) 2, u ≠ 0 ∧ ∀ v : W1p volume (intervalDomain a b) 2,
         energyFormH1 (fun _ => 1) 0 0 u v = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ) ↔
@@ -712,7 +719,8 @@ theorem exists_ne_zero_forall_energyFormH1_eq_iff_intervalDomain (hab : a < b) {
     exact ⟨u, ne_zero_of_value_ae_eq_cos hab k hu, hkappa ▸ heq⟩
 
 /-- The first Neumann eigenvalue of `-Δ` on `(a, b)` is `0`, the least element of the Neumann
-spectrum, with the constants as eigenfunctions. -/
+spectrum. An eigenfunction for it, a constant, is supplied by
+`TauCeti.PDE.exists_value_ae_eq_cos_and_energyFormH1_eq` with `k = 0`. -/
 theorem isLeast_setOf_exists_ne_zero_forall_energyFormH1_eq_intervalDomain (hab : a < b) :
     IsLeast {kappa | ∃ u : W1p volume (intervalDomain a b) 2, u ≠ 0 ∧
       ∀ v : W1p volume (intervalDomain a b) 2,
