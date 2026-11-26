@@ -27,7 +27,10 @@ factors as an inert map followed by an active map: the inert map collapses the e
 `1 ≤ i ≤ n` the inert projection `ρ i : ⟨n⟩ ⟶ ⟨1⟩` sends `i` to `1` and everything else to the
 basepoint; these are the maps along which the Segal condition is stated. The fold map
 `fold n : ⟨n⟩ ⟶ ⟨1⟩` sending every element other than the basepoint to `1` is the unique active
-map to `⟨1⟩`; the multi-operations of an `∞`-operad lie over it.
+map to `⟨1⟩`; the multi-operations of an `∞`-operad lie over it. The fibers of a map over the
+elements other than the basepoint, listed in increasing order, index the ordered tensor products
+in the category of operators of a symmetric monoidal category; the fibers of a composite are, up
+to order, the concatenations of fibers.
 
 ## Main definitions
 
@@ -35,6 +38,8 @@ map to `⟨1⟩`; the multi-operations of an `∞`-operad lie over it.
 * `TauCeti.FinPointed.toPointed`: its fully faithful functor to `Pointed`.
 * `TauCeti.FinPointed.inert`, `TauCeti.FinPointed.active`: the inert and the active maps, both
   closed under composition.
+* `TauCeti.FinPointed.Hom.fiber f j`: the fiber of `f` over an element other than the
+  basepoint, as an increasing list.
 * `TauCeti.FinPointed.ρ i`: the inert projection `⟨n⟩ ⟶ ⟨1⟩` at `i`.
 * `TauCeti.FinPointed.fold n`: the fold map `⟨n⟩ ⟶ ⟨1⟩`.
 * `TauCeti.FinPointed.inertActiveFactorizationData`: the factorization of a map as an inert map
@@ -44,6 +49,8 @@ map to `⟨1⟩`; the multi-operations of an `∞`-operad lie over it.
 
 * `CategoryTheory.Pointed.exists_iso_finPointed`: every finite pointed type is isomorphic to some
   `⟨n⟩`.
+* `TauCeti.FinPointed.perm_fiber_comp`: the fiber of a composite `f ≫ g` is, up to order, the
+  concatenation of the fibers of `f` over the fiber of `g`.
 * `TauCeti.FinPointed.isInert_ρ`: the projections `ρ i` are inert.
 * `TauCeti.FinPointed.isActive_fold`, `TauCeti.FinPointed.eq_fold_of_isActive`: the fold map is
   the unique active map `⟨n⟩ ⟶ ⟨1⟩`.
@@ -124,6 +131,49 @@ def fullyFaithfulToPointed : toPointed.{u}.FullyFaithful where
 instance : toPointed.{u}.Full := fullyFaithfulToPointed.full
 
 instance : toPointed.{u}.Faithful := fullyFaithfulToPointed.faithful
+
+/-! ### Fibers -/
+
+/-- The fiber of `f : ⟨m⟩ ⟶ ⟨n⟩` over the element `j.succ` of `⟨n⟩` other than the basepoint:
+the list, in increasing order, of the `i : Fin m.len` with `f (i.succ) = j.succ`. Here the elements
+of `⟨m⟩` other than the basepoint are numbered `i.succ` by `i : Fin m.len`. -/
+def Hom.fiber (f : m ⟶ n) (j : Fin n.len) : List (Fin m.len) :=
+  (List.finRange m.len).filter fun i ↦ f.toFun i.succ = j.succ
+
+@[simp]
+lemma Hom.mem_fiber {f : m ⟶ n} {j : Fin n.len} {i : Fin m.len} :
+    i ∈ f.fiber j ↔ f.toFun i.succ = j.succ := by
+  simp [Hom.fiber]
+
+lemma Hom.nodup_fiber (f : m ⟶ n) (j : Fin n.len) : (f.fiber j).Nodup :=
+  (List.nodup_finRange _).filter _
+
+/-- The fibers of a map over distinct elements are disjoint. -/
+lemma Hom.disjoint_fiber (f : m ⟶ n) {j j' : Fin n.len} (h : j ≠ j') :
+    (f.fiber j).Disjoint (f.fiber j') := fun _ hi hi' ↦
+  h (Fin.succ_injective _ ((mem_fiber.1 hi).symm.trans (mem_fiber.1 hi')))
+
+/-- The fibers of the identity are the singletons. -/
+@[simp]
+lemma fiber_id (j : Fin n.len) : Hom.fiber (𝟙 n) j = [j] :=
+  List.perm_singleton.1 <| (List.perm_ext_iff_of_nodup (Hom.nodup_fiber _ _)
+    (List.nodup_singleton j)).2 fun i ↦ by simp
+
+/-- The fiber of a composite `f ≫ g` over `l` is, up to order, the concatenation of the fibers of
+`f` over the elements of the fiber of `g` over `l`. -/
+lemma perm_fiber_comp (f : m ⟶ n) (g : n ⟶ k) (l : Fin k.len) :
+    ((f ≫ g).fiber l).Perm ((g.fiber l).flatMap f.fiber) := by
+  refine (List.perm_ext_iff_of_nodup (Hom.nodup_fiber _ _) (List.nodup_flatMap.2
+    ⟨fun j _ ↦ Hom.nodup_fiber f j, (Hom.nodup_fiber g l).pairwise_of_forall_ne
+      fun j _ j' _ h ↦ Hom.disjoint_fiber f h⟩)).2 fun i ↦ ?_
+  simp only [Hom.mem_fiber, comp_toFun, List.mem_flatMap]
+  constructor
+  · intro h
+    obtain ⟨j, hj⟩ := Fin.exists_succ_eq.2 fun h' : f.toFun i.succ = 0 ↦
+      Fin.succ_ne_zero l (by simp [← h, h'])
+    exact ⟨j, by rw [hj, h], hj.symm⟩
+  · rintro ⟨j, hj, hi⟩
+    rw [hi, hj]
 
 /-! ### Inert and active maps -/
 
