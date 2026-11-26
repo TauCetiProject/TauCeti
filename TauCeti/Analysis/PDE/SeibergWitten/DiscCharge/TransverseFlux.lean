@@ -202,7 +202,7 @@ theorem sliceMoment_cutoffCurrent_comp_prodMap_smul {F : Type*} [NormedAddCommGr
       (α ∘ L) x = (cutoffCurrent χ b α (L x)).compContinuousLinearMap L := by
     simpa only [L.fderiv] using cutoffCurrent_comp (f := L) hα.contDiffAt hb.contDiffAt hχ hχ₀
       L.contDiff.contDiffAt
-  simp only [hL] at hcomp
+  simp only [Function.comp_def, hL] at hcomp
   rw [← sliceMoment_compContinuousLinearMap_prodMap_smul _ g ha]
   exact congrArg (fun T ↦ sliceMoment T g z) (funext hcomp)
 
