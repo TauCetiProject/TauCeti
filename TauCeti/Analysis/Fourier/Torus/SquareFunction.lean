@@ -18,7 +18,6 @@ import TauCeti.MeasureTheory.Constructions.EuclideanSpace
 import TauCeti.MeasureTheory.Function.Lp.SquareFunction
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
-import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
 # The Littlewood–Paley square function theorem on the torus
@@ -119,20 +118,6 @@ private theorem _root_.UnitAddTorus.toEuclideanSpaceIoc_mem_cube (t : UnitAddTor
 /-- The box `(-1, 2]ᵈ`, which contains the points at distance less than one from the unit cube. -/
 private def box : Set (EuclideanSpace ℝ d) := {v | ∀ i, v i ∈ Ioc (-1 : ℝ) 2}
 
-/-- The box is covered by the `3ᵈ` translates of the unit cube by the integer vectors with
-coordinates in `{-1, 0, 1}`. -/
-private theorem exists_sub_latticePoint_mem_cube {y : EuclideanSpace ℝ d} (hy : y ∈ box) :
-    ∃ ℓ : d → ℤ, (∀ i, ℓ i ∈ ({-1, 0, 1} : Finset ℤ)) ∧ y - latticePoint ℓ ∈ cube := by
-  refine ⟨fun i ↦ ⌈y i⌉ - 1, fun i ↦ ?_, fun i ↦ ?_⟩
-  · have hc₁ : 0 ≤ ⌈y i⌉ := Int.ceil_nonneg_of_neg_one_lt (hy i).1
-    have hc₂ : ⌈y i⌉ ≤ 2 := Int.ceil_le.2 (by exact_mod_cast (hy i).2)
-    simp only [Finset.mem_insert, Finset.mem_singleton]
-    omega
-  · simp only [PiLp.sub_apply, latticePoint_apply, Int.cast_sub, Int.cast_one, mem_Icc]
-    constructor
-    · linarith [Int.ceil_lt_add_one (y i)]
-    · linarith [Int.le_ceil (y i)]
-
 variable [Fintype d]
 
 /-- A point of the cube and a point outside the box are at distance at least one. -/
@@ -145,10 +130,6 @@ private theorem one_le_norm_sub_of_mem_cube_of_notMem_box {w y : EuclideanSpace 
   rcases hi with hi | hi
   · exact (by linarith [(hw i).1] : (1 : ℝ) ≤ w i - y i).trans (le_abs_self _)
   · exact (by linarith [(hw i).2] : (1 : ℝ) ≤ -(w i - y i)).trans (neg_le_abs _)
-
-omit [Fintype d] in
-private theorem measurableSet_cube [Countable d] : MeasurableSet (cube (d := d)) :=
-  EuclideanSpace.measurableSet_setOf_forall_mem fun _ ↦ measurableSet_Icc
 
 omit [Fintype d] in
 private theorem measurableSet_box [Countable d] : MeasurableSet (box (d := d)) :=
@@ -179,44 +160,6 @@ private theorem eLpNorm_comp_toEuclideanSpaceIoc_le {F : EuclideanSpace ℝ d �
   (eLpNorm_comp_measurePreserving hF.restrict.aestronglyMeasurable
     measurePreserving_toEuclideanSpaceIoc_cube).trans_le
     (eLpNorm_mono_measure _ Measure.restrict_le_self)
-
-/-- A periodic function integrates over every translate of the unit cube to its integral over the
-torus. -/
-private theorem setLIntegral_cube_comp_proj_add (H : UnitAddTorus d → ℝ≥0∞)
-    (z : EuclideanSpace ℝ d) : ∫⁻ w in cube, H (proj (w + z)) = ∫⁻ t, H t := by
-  rw [← measurePreserving_toEuclideanSpaceIoc_cube.lintegral_comp_emb
-    measurableEmbedding_toEuclideanSpaceIoc]
-  simp_rw [map_add, proj_toEuclideanSpaceIoc]
-  exact lintegral_add_right_eq_self H (proj z)
-
-/-- A periodic function integrates over the box to at most `3ᵈ` times its integral over the
-torus. -/
-private theorem setLIntegral_box_comp_proj_le (H : UnitAddTorus d → ℝ≥0∞) :
-    ∫⁻ y in box, H (proj y) ≤ 3 ^ Fintype.card d * ∫⁻ t, H t := by
-  classical
-  set S := Fintype.piFinset fun _ : d ↦ ({-1, 0, 1} : Finset ℤ)
-  have hcover : box ⊆ ⋃ ℓ : S, (fun y ↦ y - latticePoint (ℓ : d → ℤ)) ⁻¹' cube := fun y hy ↦ by
-    obtain ⟨ℓ, hℓ, h⟩ := exists_sub_latticePoint_mem_cube hy
-    exact mem_iUnion.2 ⟨⟨ℓ, Fintype.mem_piFinset.2 hℓ⟩, h⟩
-  have htrans (ℓ : d → ℤ) : ∫⁻ y in (fun y ↦ y - latticePoint ℓ) ⁻¹' cube, H (proj y) =
-      ∫⁻ t, H t := by
-    have h := (measurePreserving_sub_right volume (latticePoint ℓ)).setLIntegral_comp_preimage_emb
-      (MeasurableEquiv.subRight (latticePoint ℓ)).measurableEmbedding
-      (fun w ↦ H (proj (w + latticePoint ℓ))) cube
-    simp only [sub_add_cancel] at h
-    rw [h, setLIntegral_cube_comp_proj_add]
-  have hcard : (S.card : ℝ≥0∞) = 3 ^ Fintype.card d := by
-    simp [S, Fintype.card_piFinset, Finset.prod_const]
-  calc ∫⁻ y in box, H (proj y)
-      ≤ ∫⁻ y in ⋃ ℓ : S, (fun y ↦ y - latticePoint (ℓ : d → ℤ)) ⁻¹' cube, H (proj y) :=
-        lintegral_mono_set hcover
-    _ ≤ ∑' ℓ : S, ∫⁻ y in (fun y ↦ y - latticePoint (ℓ : d → ℤ)) ⁻¹' cube, H (proj y) :=
-        lintegral_iUnion_le _ _
-    _ = ∑ ℓ ∈ S, ∫⁻ t, H t := by
-        rw [Finset.tsum_subtype S fun ℓ ↦
-          ∫⁻ y in (fun y ↦ y - latticePoint ℓ) ⁻¹' cube, H (proj y)]
-        exact Finset.sum_congr rfl fun ℓ _ ↦ htrans ℓ
-    _ = 3 ^ Fintype.card d * ∫⁻ t, H t := by rw [Finset.sum_const, nsmul_eq_mul, hcard]
 
 /-- The `Lᵖ(ℝᵈ)` norm of the part in the box `(-1, 2]ᵈ` of the lift of a function `F` on the torus
 is at most `3^{d/p}` times its `Lᵖ(𝕋ᵈ)` norm. -/
@@ -264,7 +207,7 @@ private theorem eLpNorm_lintegral_mul_comp_proj_toEuclideanSpaceIoc_sub_le
   rw [lintegral_const_mul _ hHz, ENNReal.mul_rpow_of_nonneg _ _ (by positivity), one_div,
     ENNReal.rpow_rpow_inv hq0.ne']
   congr 2
-  simpa only [sub_eq_add_neg] using
+  simpa only [cube, sub_eq_add_neg] using
     setLIntegral_cube_comp_proj_add (fun t ↦ ‖F t‖ₑ ^ p.toReal) (-z)
 
 /-! ### Kernels on plane waves and trigonometric polynomials -/
@@ -368,8 +311,6 @@ private theorem lintegral_tsum_kernelTail_ne_top (φ : ContDiffBump (0 : Euclide
   · rw [ENNReal.tsum_mul_right, ENNReal.tsum_geometric_two]
     exact ENNReal.mul_ne_top ENNReal.ofNat_ne_top ENNReal.coe_ne_top
   set k := 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)
-  have hk : ⇑k = 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
-    rw [SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
   calc ∫⁻ z, kernelTail (φ.inhomogeneousLittlewoodPaleySchwartz j) z
       ≤ ∫⁻ z, ENNReal.ofReal (‖z‖ ^ 1 * ‖k z‖) := lintegral_mono fun z ↦ by
         rw [kernelTail]
@@ -385,7 +326,7 @@ private theorem lintegral_tsum_kernelTail_ne_top (φ : ContDiffBump (0 : Euclide
         (ofReal_integral_eq_lintegral_ofReal (k.integrable_pow_mul volume 1)
           (.of_forall fun z ↦ by positivity)).symm
     _ ≤ ENNReal.ofReal (((2 ^ j) ^ 1)⁻¹ * C) := by
-        rw [hk]
+        rw [φ.coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz j]
         exact ENNReal.ofReal_le_ofReal (hC j)
     _ = (2⁻¹ : ℝ≥0∞) ^ j * C := by
         simp [ENNReal.ofReal_mul, ENNReal.ofReal_inv_of_pos, ENNReal.inv_pow]

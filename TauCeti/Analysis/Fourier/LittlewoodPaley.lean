@@ -88,7 +88,7 @@ in the single Hilbert space `ℓ²(F)` of all indices rather than in a space dep
 ## The argument for `‖f‖_p ≤ C ‖S f‖_p`
 
 The reverse inequality follows from the first one at the conjugate exponent `q` by duality
-(`MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`). The pieces
+(`MeasureTheory.Lp.exists_eLpNorm_le_one_and_lt_re_inner`). The pieces
 `ψⱼ` and `ψₖ` have disjoint supports once `|j - k| ≥ L`
 (`ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`,
 `ContDiffBump.exists_littlewoodPaley_mul_eq_zero`), so `∑_{|k - j| < L} ψₖ ψⱼ = ψⱼ`
