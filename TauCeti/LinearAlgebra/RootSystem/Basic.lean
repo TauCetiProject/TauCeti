@@ -26,6 +26,10 @@ theory.
   reflects linear independence with that root.
 * `RootPairing.exists_root'_eq_zero_and_eq_one`: for two linearly independent roots over a field,
   some coweight pairs to `0` with the first and to `1` with the second.
+* `RootPairing.coroot_eq_smul_of_root_eq_smul`, `RootPairing.reflection_eq_of_root_eq_smul`,
+  `RootPairing.coreflection_eq_of_root_eq_smul`, and
+  `RootPairing.reflectionPerm_eq_of_root_eq_smul`: proportional roots have inversely proportional
+  coroots and induce the same reflection, coreflection, and root-index permutation.
 -/
 
 public section
@@ -78,6 +82,42 @@ theorem linearIndependent_root_reflectionPerm_iff (P : RootPairing ι R M N) (i 
     LinearIndependent R ![P.root i, P.root (P.reflectionPerm i j)] ↔
       LinearIndependent R ![P.root i, P.root j] := by
   rw [P.root_reflectionPerm, P.linearIndependent_root_reflection_iff]
+
+section Proportional
+
+variable {P : RootPairing ι R M N} [Finite ι] [CharZero R] [IsDomain R]
+
+/-- If `P.root j = t • P.root i`, then `P.coroot i = t • P.coroot j`. -/
+theorem coroot_eq_smul_of_root_eq_smul {i j : ι} {t : R} (h : P.root j = t • P.root i) :
+    P.coroot i = t • P.coroot j :=
+  have := Module.IsReflexive.of_isPerfPair P.toLinearMap
+  have := Module.IsReflexive.of_isPerfPair P.flip.toLinearMap
+  have : HasUniqueDiv M := .of_isTorsionFree R M
+  have : HasUniqueDiv N := .of_isTorsionFree R N
+  P.coroot_eq_smul_coroot_iff.mpr h
+
+/-- Proportional roots define the same reflection on the weight space. -/
+theorem reflection_eq_of_root_eq_smul {i j : ι} {t : R} (h : P.root j = t • P.root i) :
+    P.reflection j = P.reflection i := by
+  ext x
+  simp only [reflection_apply, sub_right_inj, h, smul_smul]
+  congr 1
+  rw [mul_comm]
+  simp [coroot', P.coroot_eq_smul_of_root_eq_smul h]
+
+/-- Proportional roots define the same coreflection on the coweight space. -/
+theorem coreflection_eq_of_root_eq_smul {i j : ι} {t : R} (h : P.root j = t • P.root i) :
+    P.coreflection j = P.coreflection i :=
+  (P.flip.reflection_eq_of_root_eq_smul (P.coroot_eq_smul_of_root_eq_smul h)).symm
+
+/-- Proportional roots induce the same permutation of root indices. -/
+theorem reflectionPerm_eq_of_root_eq_smul {i j : ι} {t : R} (h : P.root j = t • P.root i) :
+    P.reflectionPerm j = P.reflectionPerm i := by
+  ext k
+  refine P.root.injective ?_
+  rw [P.root_reflectionPerm, P.root_reflectionPerm, P.reflection_eq_of_root_eq_smul h]
+
+end Proportional
 
 end CommRing
 

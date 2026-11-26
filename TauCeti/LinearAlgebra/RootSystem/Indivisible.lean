@@ -12,8 +12,10 @@ public import TauCeti.LinearAlgebra.RootSystem.Chamber
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.RootSystem.BaseChange
 import Mathlib.LinearAlgebra.RootSystem.BaseExists
+import TauCeti.LinearAlgebra.RootSystem.Basic
 import TauCeti.LinearAlgebra.RootSystem.CoweightLattice
 import TauCeti.LinearAlgebra.RootSystem.Flip
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Indivisible roots of a root pairing
@@ -49,17 +51,11 @@ gives Weyl transitivity on regular sign chambers of `P` itself (`P.exists_weylGr
 
 ## Main results
 
-* `RootPairing.coroot_eq_smul_of_root_eq_smul`: if `P.root j = t • P.root i`, then
-  `P.coroot i = t • P.coroot j`.
-* `RootPairing.not_linearIndependent_root_iff`: two roots of a finite crystallographic pairing fail
-  to be linearly independent iff they are equal, opposite, or one is `±2` times the other.
 * `RootPairing.instIsReducedIndivisiblePairing`: `P.indivisiblePairing` is reduced.
 * `RootPairing.isIndivisible_or_exists_root_eq_two_smul`: every root is either indivisible or twice
   an indivisible root.
 * `RootPairing.exists_weylGroup_root'_pos_iff`: the Weyl group acts transitively on the sign
   chambers cut out by regular coweights.
-* `RootPairing.exists_forall_root'_ne_zero_and_pos`: perturbing a coweight along a regular coweight
-  gives a regular coweight preserving positivity.
 * `RootPairing.exists_mem_corootSpan_of_forall_reflectionPerm`: any family obeying the reflection
   law `d (s_i j) = d j - ⟨j, i∨⟩ d i` is realized on every root by a vector in `P.corootSpan R`.
 
@@ -76,41 +72,6 @@ namespace RootPairing
 
 section CommRing
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-
-section Proportional
-variable {P : RootPairing ι R M N} [Finite ι] [CharZero R] [IsDomain R]
-/-- If `P.root j = t • P.root i`, then `P.coroot i = t • P.coroot j`. -/
-theorem coroot_eq_smul_of_root_eq_smul {i j : ι} {t : R} (h : P.root j = t • P.root i) :
-    P.coroot i = t • P.coroot j :=
-  have := Module.IsReflexive.of_isPerfPair P.toLinearMap
-  have := Module.IsReflexive.of_isPerfPair P.flip.toLinearMap
-  have : HasUniqueDiv M := .of_isTorsionFree R M; have : HasUniqueDiv N := .of_isTorsionFree R N
-  P.coroot_eq_smul_coroot_iff.mpr h
-
-/-- Proportional roots define the same reflection on the weight space. -/
-theorem reflection_eq_of_root_eq_smul {i j : ι} {t : R} (h : P.root j = t • P.root i) :
-    P.reflection j = P.reflection i := by
-  ext x; simp only [reflection_apply, sub_right_inj, h, smul_smul]
-  congr 1; rw [mul_comm]; simp [coroot', P.coroot_eq_smul_of_root_eq_smul h]
-
-/-- Proportional roots define the same coreflection on the coweight space. -/
-theorem coreflection_eq_of_root_eq_smul {i j : ι} {t : R} (h : P.root j = t • P.root i) :
-    P.coreflection j = P.coreflection i :=
-  (P.flip.reflection_eq_of_root_eq_smul (P.coroot_eq_smul_of_root_eq_smul h)).symm
-
-/-- Proportional roots induce the same permutation of root indices. -/
-theorem reflectionPerm_eq_of_root_eq_smul {i j : ι} {t : R} (h : P.root j = t • P.root i) :
-    P.reflectionPerm j = P.reflectionPerm i := by
-  ext k; refine P.root.injective ?_
-  rw [P.root_reflectionPerm, P.root_reflectionPerm, P.reflection_eq_of_root_eq_smul h]
-
-/-- Proportional roots define the same reflection generator in `P.weylGroup`. -/
-theorem weylGroup.ofIdx_eq_of_root_eq_smul {i j : ι} {t : R} (h : P.root j = t • P.root i) :
-    weylGroup.ofIdx P j = weylGroup.ofIdx P i :=
-  weylGroup.ext fun x ↦ by
-    rw [weylGroup.ofIdx_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul, Equiv.reflection_smul,
-      P.reflection_eq_of_root_eq_smul h]
-end Proportional
 
 section Indivisible
 variable (P : RootPairing ι R M N)
@@ -188,44 +149,6 @@ private theorem exists_weylGroup_smul_eq (w : P.indivisiblePairing.weylGroup) :
 
 section Crystallographic
 variable [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic]
-omit [Finite ι] [IsDomain R] [P.IsCrystallographic] in
-private theorem not_linearIndependent_of_root_eq_smul {i j : ι} {c : R}
-    (h : P.root i = c • P.root j) : ¬ LinearIndependent R ![P.root i, P.root j] := fun hli ↦
-  one_ne_zero ((LinearIndependent.pair_iff.mp hli 1 (-c) (by simp [h])).1)
-
-/-- In a finite crystallographic root pairing over a domain of characteristic zero, two roots fail
-to be linearly independent if and only if they are equal, opposite, or one is `±2` times the other
-(Bourbaki, Ch. VI, §1, no. 3, Proposition 8). -/
-theorem not_linearIndependent_root_iff {i j : ι} :
-    ¬ LinearIndependent R ![P.root i, P.root j] ↔
-      i = j ∨ P.root i = -P.root j ∨ P.root j = (2 : R) • P.root i ∨
-        P.root i = (2 : R) • P.root j ∨ P.root j = (-2 : R) • P.root i ∨
-        P.root i = (-2 : R) • P.root j := by
-  have := Module.IsReflexive.of_isPerfPair P.toLinearMap
-  have := Module.IsReflexive.of_isPerfPair P.flip.toLinearMap
-  refine ⟨fun hdep ↦ ?_, fun h ↦ ?_⟩
-  · set a := P.pairingIn ℤ i j; set b := P.pairingIn ℤ j i
-    have h4 : a * b = 4 := (P.coxeterWeightIn_eq_four_iff_not_linearIndependent ℤ).mpr hdep
-    have hb2 : 1 ≤ b ^ 2 := (eq_or_ne b 0).elim (fun hb ↦ by simp [hb] at h4) sq_pos_of_ne_zero
-    have hprod : a ^ 2 * b ^ 2 = 16 := by linear_combination (a * b + 4) * h4
-    have : -4 ≤ a := by nlinarith
-    have : a ≤ 4 := by nlinarith
-    have hc : (a = 2 ∧ b = 2) ∨ (a = -2 ∧ b = -2) ∨ (a = 1 ∧ b = 4) ∨ (a = 4 ∧ b = 1) ∨
-        (a = -1 ∧ b = -4) ∨ (a = -4 ∧ b = -1) := by interval_cases a <;> omega
-    rcases hc with h | h | h | h | h | h
-    exacts [.inl ((P.pairingIn_two_two_iff ℤ i j).mp h),
-      .inr (.inl ((P.pairingIn_neg_two_neg_two_iff ℤ i j).mp h)),
-      .inr (.inr (.inl ((P.pairingIn_one_four_iff ℤ i j).mp h))),
-      .inr (.inr (.inr (.inl ((P.pairingIn_one_four_iff ℤ j i).mp h.symm)))),
-      .inr (.inr (.inr (.inr (.inl ((P.pairingIn_neg_one_neg_four_iff ℤ i j).mp h))))),
-      .inr (.inr (.inr (.inr (.inr ((P.pairingIn_neg_one_neg_four_iff ℤ j i).mp h.symm)))))]
-  · rcases h with rfl | h | h | h | h | h
-    exacts [P.not_linearIndependent_of_root_eq_smul (one_smul R _).symm,
-      P.not_linearIndependent_of_root_eq_smul (h.trans (neg_one_smul R _).symm),
-      mt LinearIndependent.pair_symm_iff.mp (P.not_linearIndependent_of_root_eq_smul h),
-      P.not_linearIndependent_of_root_eq_smul h,
-      mt LinearIndependent.pair_symm_iff.mp (P.not_linearIndependent_of_root_eq_smul h),
-      P.not_linearIndependent_of_root_eq_smul h]
 
 /-- The sub-pairing of indivisible roots of a finite crystallographic root pairing is reduced. -/
 instance instIsReducedIndivisiblePairing : P.indivisiblePairing.IsReduced where
@@ -248,8 +171,9 @@ theorem isIndivisible_or_exists_root_eq_two_smul (i : ι) :
     have hik : P.root i = (4 : R) • P.root k := by rw [hj, hk, smul_smul]; norm_num
     have hne (c d : R) (hcd : c ≠ d) (heq : c • P.root k = d • P.root k) : False :=
       hcd (smul_left_injective R (P.ne_zero k) heq)
-    rcases P.not_linearIndependent_root_iff.mp (P.not_linearIndependent_of_root_eq_smul hik) with
-      rfl | h | h | h | h | h
+    have hdep : ¬ LinearIndependent R ![P.root i, P.root k] := fun hli ↦
+      one_ne_zero (LinearIndependent.pair_iff.mp hli 1 (-4) (by simp [hik])).1
+    rcases P.not_linearIndependent_root_iff.mp hdep with rfl | h | h | h | h | h
     exacts [hne 1 4 (by norm_num) (by simpa using hik),
       hne 4 (-1) (by norm_num) (by rw [← hik, h, neg_one_smul]),
       hne 1 8 (by norm_num) (by (conv_lhs => rw [one_smul, h, hik, smul_smul]); norm_num),
@@ -382,16 +306,6 @@ pairs positively with `v`. -/
     fun _ hc ↦ P.root'_pos_of_mem_indivisibleBaseOf hc
   ⟨root'_pos_of_isPos hsupp, fun ha ↦
     by_contra fun hna ↦ ha.not_gt (root'_neg_of_not_isPos hsupp hna)⟩
-omit [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] in
-private theorem autFlip_symm_mem_weylGroup {g : P.indivisiblePairing.flip.Aut}
-    (hg : g ∈ P.indivisiblePairing.flip.weylGroup) :
-    (Equiv.autFlip P.indivisiblePairing).symm g ∈ P.indivisiblePairing.weylGroup := by
-  induction hg using weylGroup.induction with
-  | mem a =>
-    rw [(Equiv.autFlip P.indivisiblePairing).symm_apply_eq.mpr (Equiv.autFlip_reflection a).symm]
-    exact (weylGroup.ofIdx P.indivisiblePairing a).property
-  | one => simp
-  | mul _ _ _ _ ih₁ ih₂ => rw [map_mul]; exact mul_mem ih₁ ih₂
 
 /-- **Weyl transitivity on regular sign chambers**: for any two regular coweights `x, v : N` of a
 finite crystallographic root pairing (reduced or non-reduced), some element `w ∈ P.weylGroup`
@@ -409,7 +323,7 @@ theorem exists_weylGroup_root'_pos_iff {x v : N}
       ((isRegularWeight_smul P₀.flip u x).mpr
         ((isRegularWeight_iff P₀.flip x).mpr fun a ↦ hx a.val))
   let w₀ : P₀.weylGroup :=
-    ⟨(Equiv.autFlip P₀).symm u.val, P.autFlip_symm_mem_weylGroup u.property⟩
+    ⟨(Equiv.autFlip P₀).symm u.val, Equiv.autFlip_symm_mem_weylGroup_iff.mpr u.property⟩
   let w : P.weylGroup := P.indivisibleWeylGroupEquiv w₀
   have hkey (a : {i : ι // P.IsIndivisible i}) :
       0 < P.root' a.val x ↔ 0 < P.root' (P.weylGroupToPerm w a.val) v := by
@@ -433,32 +347,6 @@ theorem exists_weylGroup_root'_pos_iff {x v : N}
       simp [root', hij, smul_comm (w : P.Aut) (2 : R)]
     rw [h1, h2, mul_pos_iff_of_pos_left two_pos, mul_pos_iff_of_pos_left two_pos]
     exact hkey ⟨j, hj⟩
-
-omit [P.IsCrystallographic] in
-/-- Perturbing a coweight `y` in the direction of a regular coweight `v` produces a regular
-coweight `z` on which every `y`-positive root remains positive. -/
-theorem exists_forall_root'_ne_zero_and_pos {v : N} (hv : ∀ i : ι, P.root' i v ≠ 0) (y : N) :
-    ∃ z : N, (∀ i : ι, P.root' i z ≠ 0) ∧ ∀ i : ι, 0 < P.root' i y → 0 < P.root' i z := by
-  have := Fintype.ofFinite ι
-  let C : R := (∑ b : ι, |P.root' b v| / |P.root' b y|) + 1
-  have hdom (b : ι) (hb : P.root' b y ≠ 0) : |P.root' b v| < C * |P.root' b y| :=
-    (div_lt_iff₀ (abs_pos.mpr hb)).mp <| lt_of_le_of_lt
-      (Finset.single_le_sum (f := fun c : ι ↦ |P.root' c v| / |P.root' c y|)
-        (fun _ _ ↦ div_nonneg (abs_nonneg _) (abs_nonneg _)) (Finset.mem_univ b)) (lt_add_one _)
-  let z : N := C • y + v
-  have hpos (b : ι) (hb : 0 < P.root' b y) : 0 < P.root' b z := by
-    have h1 := hdom b hb.ne'
-    rw [abs_of_pos hb] at h1
-    simp only [z, map_add, map_smul, smul_eq_mul]
-    linarith [neg_abs_le (P.root' b v)]
-  refine ⟨z, fun b ↦ ?_, hpos⟩
-  rcases lt_trichotomy (P.root' b y) 0 with hn | h0 | hp
-  · have h1 := hdom b hn.ne
-    rw [abs_of_neg hn] at h1
-    exact (by simp only [z, map_add, map_smul, smul_eq_mul]
-              linarith [le_abs_self (P.root' b v)] : P.root' b z < 0).ne
-  · simp [z, h0, hv b]
-  · exact (hpos b hp).ne'
 
 /-- Any family `d : ι → R` obeying the reflection law
 `d (P.reflectionPerm i j) = d j - P.pairing j i * d i` is realized on every root by a vector in the

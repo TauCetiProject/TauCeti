@@ -10,15 +10,17 @@ public import TauCeti.GroupTheory.BruhatTits.WeylGroup
 import TauCeti.GroupTheory.Commutator
 import TauCeti.LinearAlgebra.RootSystem.Basic
 import TauCeti.LinearAlgebra.RootSystem.CoweightLattice.Automorphism
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Action of the Weyl normalizer on valuations of a root datum
 
 Let `D` be a Bruhat–Tits root datum of crystallographic type `P` in a group `G`, with Weyl
-normalizer `N = D.weylNormalizer` and spherical Weyl group projection
-`D.weylGroupHom : D.weylNormalizer →* P.weylGroup`. Conjugating root subgroups by `n ∈ N` permutes
-them according to `w = D.weylGroupHom n`, which induces a left action of `D.weylNormalizer` on the
-space of valuations `Valuation D` by `(n • φ) a (u) = φ (w⁻¹ a) (n⁻¹ u n)`.
+normalizer `D.weylNormalizer` and spherical Weyl group projection
+`D.weylGroupHom : D.weylNormalizer →* P.weylGroup`. Conjugating root subgroups by
+`n ∈ D.weylNormalizer` permutes them according to `w = D.weylGroupHom n`, which induces a left
+action of `D.weylNormalizer` on the space of valuations `Valuation D` by
+`(n • φ) a (u) = φ (w⁻¹ a) (n⁻¹ u n)`.
 
 The central geometric input for constructing the affine Weyl group action on apartments is the
 reflection formula (`TauCeti.BruhatTits.Valuation.smul_reflection`, Bruhat–Tits I,

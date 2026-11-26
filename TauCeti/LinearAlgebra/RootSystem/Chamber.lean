@@ -75,6 +75,8 @@ Weyl-invariant.
   are negative.
 * `RootPairing.Base.exists_forall_root'_eq`: over a field the simple roots take arbitrary
   prescribed values at some point of the coweight space.
+* `RootPairing.exists_forall_root'_ne_zero_and_pos`: over a linearly ordered field, perturbing a
+  coweight along a regular coweight gives a regular coweight preserving positivity.
 
 ## Implementation notes
 
@@ -570,5 +572,33 @@ theorem Base.exists_forall_root'_eq (c : ι → R) : ∃ x : N, ∀ i ∈ b.supp
     Module.Basis.span_apply] at h
   rw [← h, ← LinearMap.flip_apply (m := P.root i), ← flip_toLinearMap,
     ← LinearMap.toPerfPair_apply, LinearEquiv.apply_symm_apply]
+
+/-- Perturbing a coweight `y` in the direction of a regular coweight `v` produces a regular
+coweight `z` on which every `y`-positive root remains positive. -/
+theorem exists_forall_root'_ne_zero_and_pos [LinearOrder R] [IsStrictOrderedRing R]
+    (P : RootPairing ι R M N) [Finite ι] {v : N} (hv : ∀ i : ι, P.root' i v ≠ 0) (y : N) :
+    ∃ z : N, (∀ i : ι, P.root' i z ≠ 0) ∧ ∀ i : ι, 0 < P.root' i y → 0 < P.root' i z := by
+  have := Fintype.ofFinite ι
+  let C : R := (∑ b : ι, |P.root' b v| / |P.root' b y|) + 1
+  have hdom (b : ι) (hb : P.root' b y ≠ 0) : |P.root' b v| < C * |P.root' b y| :=
+    (div_lt_iff₀ (abs_pos.mpr hb)).mp <| lt_of_le_of_lt
+      (Finset.single_le_sum (f := fun c : ι ↦ |P.root' c v| / |P.root' c y|)
+        (fun _ _ ↦ div_nonneg (abs_nonneg _) (abs_nonneg _)) (Finset.mem_univ b)) (lt_add_one _)
+  let z : N := C • y + v
+  have hpos (b : ι) (hb : 0 < P.root' b y) : 0 < P.root' b z := by
+    have h1 := hdom b hb.ne'
+    rw [abs_of_pos hb] at h1
+    simp only [z, map_add, map_smul, smul_eq_mul]
+    exact neg_lt_iff_pos_add'.mp (abs_lt.mp h1).1
+  refine ⟨z, fun b ↦ ?_, hpos⟩
+  rcases lt_trichotomy (P.root' b y) 0 with hn | h0 | hp
+  · have h1 := hdom b hn.ne
+    rw [abs_of_neg hn, mul_neg] at h1
+    have hlt : P.root' b z < 0 := by
+      simp only [z, map_add, map_smul, smul_eq_mul]
+      exact (add_lt_add_right (abs_lt.mp h1).2 (C * P.root' b y)).trans_eq (add_neg_cancel _)
+    exact hlt.ne
+  · simp [z, h0, hv b]
+  · exact (hpos b hp).ne'
 
 end RootPairing

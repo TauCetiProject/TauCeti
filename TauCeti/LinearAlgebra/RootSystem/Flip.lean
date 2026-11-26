@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
+public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 
 /-!
 # Flipping root pairings, their Cartan matrices and their morphisms
@@ -50,8 +51,10 @@ construction of the Langlands dual group with its Galois action.
   its maps of weights and coweights are the inverses of the maps of coweights and weights of `f`.
 * `RootPairing.Equiv.toLinearMap_weightEquiv_autFlip`: `f` and `autFlip P f` preserve the
   pairing of weights with coweights.
-* `RootPairing.Equiv.autFlip_reflection`: `autFlip` sends the reflection in a root to the
-  reflection of the flipped pairing in the same index.
+* `RootPairing.Equiv.autFlip_reflection`, `RootPairing.Equiv.autFlip_mem_weylGroup_iff`, and
+  `RootPairing.Equiv.autFlip_symm_mem_weylGroup_iff`: `autFlip` sends the reflection in a root to
+  the reflection of the flipped pairing in the same index, and so carries `P.weylGroup` onto
+  `P.flip.weylGroup`.
 * `RootPairing.Equiv.autFlip_mem_stabilizer_iff`: `autFlip P f` stabilizes a set of root indices,
   such as the support of a base and hence of its flip, exactly when `f` does.
 
@@ -317,6 +320,36 @@ theorem autFlip_reflection (i : ι) :
   apply weightHom_injective
   ext x
   simp [LinearEquiv.symm_apply_eq, ← coreflection_eq_flip_reflection]
+
+private theorem autFlip_mem_weylGroup {P : RootPairing ι R M N} {f : P.Aut}
+    (hf : f ∈ P.weylGroup) : autFlip P f ∈ P.flip.weylGroup := by
+  induction hf using weylGroup.induction with
+  | mem i => rw [autFlip_reflection]; exact reflection_mem_weylGroup P.flip i
+  | one => simp
+  | mul _ _ _ _ ih₁ ih₂ => rw [map_mul]; exact mul_mem ih₁ ih₂
+
+private theorem autFlip_symm_mem_weylGroup {P : RootPairing ι R M N} {g : P.flip.Aut}
+    (hg : g ∈ P.flip.weylGroup) : (autFlip P).symm g ∈ P.weylGroup := by
+  induction hg using weylGroup.induction with
+  | mem i =>
+    rw [(autFlip P).symm_apply_eq.mpr (autFlip_reflection i).symm]
+    exact reflection_mem_weylGroup P i
+  | one => simp
+  | mul _ _ _ _ ih₁ ih₂ => rw [map_mul]; exact mul_mem ih₁ ih₂
+
+/-- `(autFlip P).symm` carries `P.flip.weylGroup` onto `P.weylGroup`. -/
+@[simp]
+theorem autFlip_symm_mem_weylGroup_iff {g : P.flip.Aut} :
+    (autFlip P).symm g ∈ P.weylGroup ↔ g ∈ P.flip.weylGroup :=
+  ⟨fun hg ↦ (autFlip P).apply_symm_apply g ▸ autFlip_mem_weylGroup hg,
+    autFlip_symm_mem_weylGroup⟩
+
+/-- `autFlip P` carries `P.weylGroup` onto `P.flip.weylGroup`. -/
+@[simp]
+theorem autFlip_mem_weylGroup_iff {f : P.Aut} :
+    autFlip P f ∈ P.flip.weylGroup ↔ f ∈ P.weylGroup :=
+  ⟨fun hf ↦ (autFlip P).symm_apply_apply f ▸ autFlip_symm_mem_weylGroup hf,
+    autFlip_mem_weylGroup⟩
 
 end Equiv
 

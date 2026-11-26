@@ -9,6 +9,7 @@ public import Mathlib.Data.Finite.Perm
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
+import TauCeti.LinearAlgebra.RootSystem.Basic
 
 /-!
 # Permutation actions of Weyl groups
@@ -70,8 +71,9 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   index sends `w x` to `w (s_β x)`.
 * `RootPairing.weylGroup.commute_ofIdx_of_isOrthogonal` says orthogonal roots have
   commuting reflections.
-* `RootPairing.weylGroup.ofIdx_reflectionPerm_self` and `RootPairing.weylGroup.ofIdx_neg` say
-  negating a root index does not change the associated Weyl-group reflection.
+* `RootPairing.weylGroup.ofIdx_reflectionPerm_self`, `RootPairing.weylGroup.ofIdx_neg`, and
+  `RootPairing.weylGroup.ofIdx_eq_of_root_eq_smul` say negating or scaling a root does not change
+  the associated Weyl-group reflection.
 * `RootPairing.exists_flip_weylGroup_smul_eq_coweightEquiv` realizes each coweight action of the
   Weyl group as a weight action of the flipped Weyl group.
 * `RootPairing.mem_corootSpan_of_mem_closure_range_coreflection` and
@@ -468,6 +470,15 @@ theorem weylGroup.ofIdx_neg (i : ι) :
     weylGroup.ofIdx P (-i) = weylGroup.ofIdx P i := by
   let := P.indexNeg
   simp [indexNeg_neg]
+
+variable {P} in
+/-- Proportional roots define the same reflection generator in `P.weylGroup`. -/
+theorem weylGroup.ofIdx_eq_of_root_eq_smul [Finite ι] [CharZero R] [IsDomain R]
+    {i j : ι} {t : R} (h : P.root j = t • P.root i) :
+    weylGroup.ofIdx P j = weylGroup.ofIdx P i :=
+  weylGroup.ext fun x ↦ by
+    rw [weylGroup.ofIdx_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul, Equiv.reflection_smul,
+      P.reflection_eq_of_root_eq_smul h]
 
 /-- Every coweight action of `P.weylGroup` is realized as a weight action of `P.flip.weylGroup`. -/
 theorem exists_flip_weylGroup_smul_eq_coweightEquiv (w : P.weylGroup) :
