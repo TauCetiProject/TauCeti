@@ -29,11 +29,12 @@ base `N` is compact and `ν` finite. The continuity of the family is asked in th
 used and in which a continuous group action supplies it: transporting a continuous section `s` of
 `E` gives a continuous family of vectors `(g, y) ↦ A g y (s (ψ g y)) ∈ E' y`.
 
-For a compact group `G` acting continuously on a bundle with an invariant measure and an invariant
-continuous Hermitian metric, the operators `U g` are the unitaries of the `L²`-section action, and
-this is its strong continuity. The restriction `p < ∞` is needed: for the translations of the
-circle `ℝ / ℤ` acting on the trivial line, the indicator function of an arc moves at constant
-distance `1` in `L^∞` under every nonzero translation small enough.
+For a topological group `G` acting continuously on a smooth bundle over a compact manifold,
+preserving a finite measure and a continuous Hermitian metric, the operators `U g` are the
+unitaries of the `L²`-section action, and this is its strong continuity. The restriction `p < ∞`
+is needed: for the translations of the circle `ℝ / ℤ` acting on the trivial line, the indicator
+function of an arc moves at constant distance `1` in `L^∞` under every nonzero translation small
+enough.
 
 ## The argument
 
@@ -168,9 +169,9 @@ variable (I) in
 include I hψ in
 /-- **Strong continuity of transport along a continuous family of bundle maps.** Under the
 hypotheses of `TauCeti.LpSection.continuous_compBundleMapₗᵢ`, for `p < ∞` the transport of every
-`f ∈ Lᵖ(E, μ)` along `A g` depends continuously on `g`. For a compact group acting on a bundle,
-preserving a measure and a Hermitian metric, this is the strong continuity of the induced unitary
-action on `L²` sections. -/
+`f ∈ Lᵖ(E, μ)` along `A g` depends continuously on `g`. For a topological group acting
+continuously on a smooth bundle over a compact manifold, preserving a finite measure and a
+Hermitian metric, this is the strong continuity of the induced unitary action on `L²` sections. -/
 theorem continuous_compBundleMapₗᵢ_apply (hp : p ≠ ⊤)
     (hcont : ∀ s : ∀ x, E x, Continuous (fun x ↦ TotalSpace.mk' F x (s x)) →
       Continuous fun q : G × N ↦ TotalSpace.mk' F' q.2 (A q.1 q.2 (s (ψ q.1 q.2))))

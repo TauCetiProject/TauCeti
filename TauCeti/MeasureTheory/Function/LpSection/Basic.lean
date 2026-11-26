@@ -324,7 +324,7 @@ theorem norm_eq_integral (hp0 : p ≠ 0) (hp : p ≠ ∞) :
   exact norm_mk_eq_integral hp0 hp _ _
 
 /-- For a finite measure, a class whose fibre norm is almost everywhere at most `C` has norm at
-most `μ(B) ^ (1 / p) * C`. -/
+most `μ(univ) ^ (1 / p) * C`. -/
 theorem norm_le_of_ae_bound [IsFiniteMeasure μ] {C : ℝ} (hC : 0 ≤ C)
     (hfC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) : ‖f‖ ≤ measureUnivNNReal μ ^ p.toReal⁻¹ * C := by
   rw [norm_eq_norm_toLp]
