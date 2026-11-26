@@ -24,7 +24,8 @@ measures order-one growth of entire functions: a factor `D ≥ 0` in front of
 * `Real.log_two_le_log_add_two`: `log 2 ≤ log (x + 2)` for `0 ≤ x`.
 * `Real.log_add_two_le_two_mul_log_add_two`: `log (y + 2) ≤ 2 log (x + 2)` for `0 ≤ x` and
   `0 ≤ y ≤ x + 2`.
-* `Real.one_half_le_log_two_add`: `1 / 2 ≤ log (2 + r)` for `0 ≤ r`.
+* `Real.one_half_le_log_two_add`: `1 / 2 ≤ log (2 + r)` for `0 ≤ r`, and
+  `Real.one_half_le_log_add_two`, the same bound for the height scale `log (x + 2)`.
 * `Real.one_half_le_one_add_mul_log_two_add`: `1 / 2 ≤ (1 + r) * log (2 + r)` for `0 ≤ r`.
 * `Real.one_add_le_exp_one_add_mul_log_two_add`: `1 + r ≤ exp ((1 + r) * log (2 + r))` for `0 ≤ r`.
 * `Real.mul_exp_mul_one_add_mul_log_two_add_le`: absorption of a nonnegative factor into the
@@ -53,6 +54,11 @@ theorem one_half_le_log_two_add {r : ℝ} (hr : 0 ≤ r) : (1 / 2 : ℝ) ≤ log
   have h2 : (1 / 2 : ℝ) ≤ log 2 := by
     convert one_sub_inv_le_log_of_pos (by norm_num : (0 : ℝ) < 2) using 1; norm_num
   exact h2.trans (log_le_log (by norm_num) (by linarith))
+
+/-- For nonnegative `x`, the height scale `log (x + 2)` is at least `1 / 2`. -/
+theorem one_half_le_log_add_two {x : ℝ} (hx : 0 ≤ x) : (1 / 2 : ℝ) ≤ log (x + 2) := by
+  rw [add_comm]
+  exact one_half_le_log_two_add hx
 
 /-- For nonnegative `r`, the growth scale `(1 + r) * log (2 + r)` is at least `1 / 2`. -/
 theorem one_half_le_one_add_mul_log_two_add {r : ℝ} (hr : 0 ≤ r) :

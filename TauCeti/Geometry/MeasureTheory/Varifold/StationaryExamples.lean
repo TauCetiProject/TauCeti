@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation
+public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation.Basic
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.MeasureTheory.Measure.Subtype

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Basic
+public import TauCeti.AlgebraicGeometry.Blowup.IsoLocus
 public import TauCeti.AlgebraicGeometry.Blowup.Modification
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Stalk
 import Mathlib.RingTheory.MvPolynomial.Ideal
@@ -22,7 +23,9 @@ and Noetherian, the blowup at the origin is a modification, and its centre lies 
 The ideal `(x, y)` is not an effective Cartier divisor on any affine open neighbourhood `U` of the
 origin: its stalk at the origin is the maximal ideal of the local ring `k[x, y]_(x, y)`, which has
 dimension two since `(x, y)` is a maximal ideal of `k[x, y]`, while the stalks of an effective
-Cartier divisor are principal.
+Cartier divisor are principal. The same argument applies on every open neighbourhood, so the
+blowup is an isomorphism over no neighbourhood of the origin, and its centre is exactly the origin
+(`centre_blowupToBase_originIdealSheaf`).
 -/
 
 public section
@@ -37,6 +40,11 @@ variable (k : Type) [Field k]
 noncomputable def originIdealSheaf : (Spec (.of (MvPolynomial (Fin 2) k))).IdealSheafData :=
   Scheme.IdealSheafData.ofIdealTop
     ((Ideal.span {X 0, X 1}).map (Scheme.ΓSpecIso (.of (MvPolynomial (Fin 2) k))).inv.hom)
+
+/-- The ideal sheaf of the origin is associated to the ideal `(x, y)` of global sections. -/
+theorem originIdealSheaf_def : originIdealSheaf k = Scheme.IdealSheafData.ofIdealTop
+    ((Ideal.span {X 0, X 1}).map (Scheme.ΓSpecIso (.of (MvPolynomial (Fin 2) k))).inv.hom) :=
+  (rfl)
 
 /-- The support of the ideal sheaf of the origin is not the whole plane. -/
 theorem support_originIdealSheaf_ne_top : (originIdealSheaf k).support ≠ ⊤ := by
@@ -104,17 +112,43 @@ theorem stalkIdeal_originIdealSheaf_origin :
   exact IsLocalRing.map_ringEquiv_maximalIdeal
     (Spec.stalkIso _ (origin k)).symm.commRingCatIsoToRingEquiv
 
-/-- **The origin is not a Cartier divisor near the origin.** On no affine open neighbourhood `U` of
-the origin of `𝔸²_k` does the ideal `(x, y)` pull back to an effective Cartier divisor on
-`Spec Γ(𝔸²_k, U)`. -/
+/-- **The origin is not a Cartier divisor near the origin.** If a morphism `f` to `𝔸²_k` is flat
+at a point `p` over the origin, then the ideal `(x, y)` does not pull back along `f` to an
+effective Cartier divisor. -/
+theorem not_isEffectiveCartier_comap {Y : Scheme} (f : Y ⟶ Spec (.of (MvPolynomial (Fin 2) k)))
+    {p : Y} (hp : f p = origin k) (hf : (f.stalkMap p).hom.Flat) :
+    ¬ ((originIdealSheaf k).comap f).IsEffectiveCartier := by
+  intro h
+  have hdim := Scheme.IdealSheafData.ringKrullDim_stalk_le_one_of_comap f h p hf
+    (hp ▸ stalkIdeal_originIdealSheaf_origin k)
+  rw [hp] at hdim
+  exact absurd ((ringKrullDim_stalk_origin k).ge.trans hdim) (by decide)
+
+/-- On no affine open neighbourhood `U` of the origin of `𝔸²_k` does the ideal `(x, y)` pull back
+to an effective Cartier divisor on `Spec Γ(𝔸²_k, U)`. -/
 theorem not_isEffectiveCartier_comap_fromSpec {U : (Spec (.of (MvPolynomial (Fin 2) k))).Opens}
     (hU : IsAffineOpen U) (hoU : origin k ∈ U) :
     ¬ ((originIdealSheaf k).comap hU.fromSpec).IsEffectiveCartier := by
-  intro h
   obtain ⟨y, hy⟩ : origin k ∈ Set.range hU.fromSpec := hU.range_fromSpec ▸ hoU
-  have hdim := Scheme.IdealSheafData.ringKrullDim_stalk_le_one_of_comap hU.fromSpec h y
-    (Flat.stalkMap _ y) (hy ▸ stalkIdeal_originIdealSheaf_origin k)
-  rw [hy] at hdim
-  exact absurd ((ringKrullDim_stalk_origin k).ge.trans hdim) (by decide)
+  exact not_isEffectiveCartier_comap k _ hy (Flat.stalkMap _ y)
+
+/-- On no open neighbourhood `U` of the origin of `𝔸²_k` does the ideal `(x, y)` restrict to an
+effective Cartier divisor. -/
+theorem not_isEffectiveCartier_comap_ι {U : (Spec (.of (MvPolynomial (Fin 2) k))).Opens}
+    (hoU : origin k ∈ U) : ¬ ((originIdealSheaf k).comap U.ι).IsEffectiveCartier :=
+  not_isEffectiveCartier_comap k U.ι (p := ⟨origin k, hoU⟩) rfl (Flat.stalkMap _ _)
+
+/-- **The centre of the blowup of the plane at the origin is the origin.** The blowup
+`Bl_0 𝔸²_k ⟶ 𝔸²_k` is an isomorphism exactly over the complement of the origin. -/
+theorem centre_blowupToBase_originIdealSheaf :
+    (originIdealSheaf k).blowupToBase.centre = {origin k} := by
+  ext x
+  refine ⟨fun hx ↦ (mem_support_originIdealSheaf_iff k x).1
+    (Scheme.IdealSheafData.centre_blowupToBase_subset hx), ?_⟩
+  rintro rfl
+  rw [Scheme.Hom.centre_def, Set.mem_compl_iff, SetLike.mem_coe,
+    Scheme.IdealSheafData.mem_isoLocus_blowupToBase_iff]
+  rintro ⟨U, hoU, hU⟩
+  exact not_isEffectiveCartier_comap_ι k hoU hU
 
 end TauCeti.BlowupModificationExample

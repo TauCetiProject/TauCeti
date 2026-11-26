@@ -25,7 +25,8 @@ import TauCeti.GroupTheory.DoubleCoset.Cover
 A group `G` acts on its group algebra `R[G]` by conjugation, `x ↦ g x g⁻¹`
 (`TauCeti.conjRepresentation`). For a subgroup `H ≤ G` the fixed points `R[G]^H` form a
 subalgebra, the centralizer of the image of `H` (`TauCeti.conjInvariants`). The centre of `R[G]`
-is contained in every `R[G]^H`, and it is `R[G]^G`; the trivial subgroup fixes all of `R[G]`.
+is contained in every `R[G]^H`, and it is `R[G]^G`, a commutative ring; the trivial subgroup
+fixes all of `R[G]`.
 
 For subgroups `Q ≤ P` with `Q` of finite index in `P`, the **relative trace**
 `Tr_Q^P : R[G]^Q → R[G]^P` sends `a` to `∑_{x ∈ P/Q} x a x⁻¹` (`TauCeti.relTrace`). It is the
@@ -70,6 +71,7 @@ are described through them.
   `R[G]^1 = R[G]`.
 * `TauCeti.mem_conjInvariants_closure_iff`: `R[G]^{⟨S⟩}` is the centralizer of `S`.
 * `TauCeti.relTrace_apply_eq_sum_of_bijective`: `Tr_Q^P(a) = ∑ᵢ sᵢ a sᵢ⁻¹` for every transversal.
+* `TauCeti.coe_relTrace_bot_top`: `Tr_1^G(a) = ∑_{g ∈ G} g a g⁻¹` for a finite group `G`.
 * `TauCeti.relTrace_self`, `TauCeti.relTrace_apply_of_mem`: `Tr_P^P = id`, and
   `Tr_Q^P(a) = |P : Q| a` for `a ∈ R[G]^P`.
 * `TauCeti.relTrace_relTrace`: transitivity `Tr_Q^P ∘ Tr_S^Q = Tr_S^P`.
@@ -153,6 +155,13 @@ theorem conjRepresentation_apply_eq_mul (g : G) (x : MonoidAlgebra R G) :
     conjRepresentation R G g x = of R G g * x * of R G g⁻¹ := by
   ext h
   simp [of_apply, coeff_single_mul_apply, coeff_mul_single_apply, mul_assoc]
+
+/-- Summing the conjugates `g x g⁻¹` over a finite group gives the sum of the conjugates
+`g⁻¹ x g`, reindexed by `g ↦ g⁻¹`. -/
+theorem sum_conjRepresentation_eq_sum_inv_mul_mul [Fintype G] (x : MonoidAlgebra R G) :
+    ∑ g : G, conjRepresentation R G g x = ∑ g : G, of R G g⁻¹ * x * of R G g := by
+  refine Fintype.sum_equiv (Equiv.inv G) _ _ fun g => ?_
+  rw [conjRepresentation_apply_eq_mul, Equiv.inv_apply, inv_inv]
 
 /-- Conjugation by `g` is multiplicative. -/
 theorem conjRepresentation_mul (g : G) (x y : MonoidAlgebra R G) :
@@ -249,6 +258,15 @@ theorem conjInvariants_top :
   | add y z hy hz => rw [add_mul, mul_add, hy, hz]
   | smul r y hy => rw [smul_mul_assoc, mul_smul_comm, hy]
 
+/-- The centre `R[G]^G` is a commutative semiring. -/
+noncomputable instance instCommSemiringConjInvariantsTop :
+    CommSemiring (conjInvariants R (⊤ : Subgroup G)) :=
+  { (inferInstance : Semiring (conjInvariants R (⊤ : Subgroup G))) with
+    mul_comm x y := Subtype.ext <| by
+      have hy : (y : MonoidAlgebra R G) ∈ Subalgebra.center R (MonoidAlgebra R G) := by
+        rw [← conjInvariants_top]; exact y.property
+      exact Subalgebra.mem_center_iff.1 hy x }
+
 /-- The trivial subgroup fixes all of `R[G]`. -/
 @[simp]
 theorem conjInvariants_bot : conjInvariants R (⊥ : Subgroup G) = ⊤ :=
@@ -288,6 +306,12 @@ theorem conjInvariants_toSubmodule {G : Type*} [Group G] (H : Subgroup G) :
   ext x
   rw [Subalgebra.mem_toSubmodule, mem_conjInvariants_iff, Representation.mem_invariants]
   exact ⟨fun hx h => hx h h.property, fun hx h hh => hx ⟨h, hh⟩⟩
+
+/-- The centre `R[G]^G` is a commutative ring. -/
+noncomputable instance instCommRingConjInvariantsTop {G : Type*} [Group G] :
+    CommRing (conjInvariants R (⊤ : Subgroup G)) :=
+  { (inferInstance : CommSemiring (conjInvariants R (⊤ : Subgroup G))),
+    (inferInstance : Ring (conjInvariants R (⊤ : Subgroup G))) with }
 
 end Ring
 
@@ -343,6 +367,18 @@ theorem relTrace_apply_eq_sum_of_bijective {ι : Type*} [Fintype ι] (s : ι →
   have hfix := mem_conjInvariants_iff.1 a.property _ (Subgroup.mem_subgroupOf.1 hmem)
   rw [← mul_inv_cancel_left ((e i).out : P) (s i), Subgroup.coe_mul, map_mul,
     mul_apply_eq_comp, hfix]
+
+/-- The relative trace from the trivial subgroup to the whole of a finite group `G` is the sum of
+all conjugates: `Tr_1^G(a) = ∑_{g ∈ G} g a g⁻¹`. -/
+theorem coe_relTrace_bot_top [Fintype G] (a : conjInvariants R (⊥ : Subgroup G)) :
+    (relTrace R ⊥ ⊤ a : MonoidAlgebra R G) = ∑ g : G, conjRepresentation R G g a := by
+  refine relTrace_apply_eq_sum_of_bijective (fun g => ⟨g, Subgroup.mem_top g⟩)
+    ⟨fun g h hgh => ?_, fun q => ?_⟩ a
+  · have := QuotientGroup.leftRel_apply.1 (Quotient.exact hgh)
+    rw [Subgroup.mem_subgroupOf, Subgroup.mem_bot] at this
+    simpa [inv_mul_eq_one] using this
+  · induction q using QuotientGroup.induction_on with
+    | H x => exact ⟨x, rfl⟩
 
 /-- On `P`-fixed elements, the relative trace is multiplication by the index `|P : Q|`. -/
 theorem relTrace_apply_of_mem {a : conjInvariants R Q} (ha : (a : MonoidAlgebra R G) ∈

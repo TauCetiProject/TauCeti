@@ -44,6 +44,9 @@ on the image (`TauCeti.FunctionalConfiguration.borelBireducible_classIso_image_g
   invariant class is invariant.
 * `TauCeti.FunctionalConfiguration.borelBireducible_classIso_image_graphCode`: isomorphism on a
   class and on its image are Borel bireducible.
+* `TauCeti.FunctionalConfiguration.borelBireducible_classIso_preimage_rel`: for a relational
+  language, isomorphism on a class `K` of configurations and on the class of functional
+  configurations whose relational part lies in `K` are Borel bireducible.
 
 ## References
 
@@ -104,6 +107,34 @@ theorem isomorphismInvariant_image_graphCode (hK : IsomorphismInvariant K) :
   rintro _ ⟨_, ⟨F, hF, rfl⟩, rfl⟩
   exact ⟨σ • F, FunctionalConfiguration.isomorphismInvariant_iff_isInvariantBlock.1 hK σ
     (smul_mem_smul_set hF), graphCode_perm_smul σ F⟩
+
+section Relational
+
+variable [L.IsRelational] [TopologicalSpace V]
+
+/-- **Relational classes as functional classes.** For a relational language, isomorphism on a
+class `K` of configurations and isomorphism on the class of functional configurations whose
+relational part lies in `K` are Borel bireducible, through the relational part and the empty
+function table. -/
+theorem borelBireducible_classIso_preimage_rel [∀ n, Countable (L.Relations n)] [Countable V]
+    (K : Set (RelationalConfiguration L V)) :
+    (classIso L V (rel ⁻¹' K)).BorelBireducible (RelationalConfiguration.classIso K) := by
+  have hrel : Continuous (rel : FunctionalConfiguration L V → _) := continuous_rel
+  have hmk : Continuous fun c : RelationalConfiguration L V =>
+      (mk isEmptyElim c : FunctionalConfiguration L V) :=
+    continuous_mk continuous_const continuous_id
+  have hmem (c : K) : (mk isEmptyElim c.val : FunctionalConfiguration L V) ∈ rel ⁻¹' K := by
+    simp [rel_mk]
+  refine Setoid.borelBireducible_iff.2 ⟨Setoid.borelReducible_iff.2
+    ⟨fun F => ⟨F.val.rel, F.property⟩, (hrel.measurable.comp measurable_subtypeVal).subtype_mk,
+      fun F G => ?_⟩, Setoid.borelReducible_iff.2
+    ⟨fun c => ⟨mk isEmptyElim c.val, hmem c⟩,
+      (hmk.measurable.comp measurable_subtypeVal).subtype_mk (h := hmem), fun c d => ?_⟩⟩
+  · rw [classIso_apply, RelationalConfiguration.classIso_apply, isoSetoid_iff_isoSetoid_rel]
+  · rw [classIso_apply, RelationalConfiguration.classIso_apply, isoSetoid_iff_isoSetoid_rel,
+      rel_mk, rel_mk]
+
+end Relational
 
 variable [TopologicalSpace V] [DiscreteTopology V] [Countable V]
   [∀ n, Countable (L.Functions n)] [∀ n, Countable (L.Relations n)]
