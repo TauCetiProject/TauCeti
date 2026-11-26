@@ -87,10 +87,7 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
 multiplied by the sign of the row, is the sign of the column of `b`. -/
 private theorem negOnePow_smul_negOnePow_smul_mul_left (i j : ℤ) (a b : A) :
     i.negOnePow • (i + 1 - (j + 1)).negOnePow • (a * b) = a * j.negOnePow • b := by
-  rw [mul_smul_comm, smul_smul]
-  congr 1
-  rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
-  exact ⟨i - j, by ring⟩
+  rw [mul_smul_comm, smul_smul, add_sub_add_right_eq_sub, Int.negOnePow_mul_negOnePow_sub]
 
 /-- The sign of a term `a * b` of the twisting equation on `P ⊕ Q` through a generator of `Q`,
 multiplied by the sign `(-1) ^ i` of the row, is the sign of the continuation equation applied to
@@ -98,29 +95,29 @@ multiplied by the sign `(-1) ^ i` of the row, is the sign of the continuation eq
 private theorem negOnePow_smul_negOnePow_smul_mul_right (i j : ℤ) (a b : A) :
     i.negOnePow • (i + 1 - j).negOnePow • (a * b) =
       (i - j - 1).negOnePow • (i.negOnePow • a * b) := by
-  rw [smul_mul_assoc, smul_smul, smul_smul]
-  congr 1
-  rw [← Int.negOnePow_add, ← Int.negOnePow_add, Int.negOnePow_eq_iff]
-  exact ⟨1, by ring⟩
+  rw [Int.negOnePow_add_one_sub, smul_mul_assoc, smul_comm]
 
 /-- The sign of a term `a * (-1) ^ j • b` of the twisting equation of the cone through a generator
 of `P` is the sign `(-1) ^ i` of its row. -/
 private theorem negOnePow_smul_mul_negOnePow_smul (i j : ℤ) (a b : A) :
     (i + 1 - (j + 1)).negOnePow • (a * j.negOnePow • b) = i.negOnePow • (a * b) := by
-  rw [mul_smul_comm, smul_smul]
-  congr 1
-  rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
-  exact ⟨0, by ring⟩
+  rw [← negOnePow_smul_negOnePow_smul_mul_left i j, smul_comm, Int.negOnePow_smul_negOnePow_smul]
 
 /-- The sign of a term `(-1) ^ i • a * b` of the twisting equation of the cone through a generator
 of `Q` is the sign `(-1) ^ i` of its row times the sign of the continuation equation. -/
 private theorem negOnePow_smul_negOnePow_smul_mul (i j : ℤ) (a b : A) :
     (i + 1 - j).negOnePow • (i.negOnePow • a * b) =
       i.negOnePow • (i - j - 1).negOnePow • (a * b) := by
-  rw [smul_mul_assoc, smul_smul, smul_smul]
-  congr 1
-  rw [← Int.negOnePow_add, ← Int.negOnePow_add, Int.negOnePow_eq_iff]
-  exact ⟨1, by ring⟩
+  rw [Int.negOnePow_add_one_sub, smul_mul_assoc, smul_comm]
+
+omit [Fintype P] [Fintype Q] in
+/-- For the grading of `P ⊕ Q` by `ind x + 1` on `P` and `indQ y` on `Q`, an entry of a twisting
+cocycle from `inl x` to `inr y` has the degree `indQ y - ind x` of an entry of a continuation
+cocycle. -/
+theorem sumElim_inr_sub_sumElim_inl_add_one (x : P) (y : Q) :
+    Sum.elim (fun x ↦ ind x + 1) indQ (.inr y) - Sum.elim (fun x ↦ ind x + 1) indQ (.inl x) + 1 =
+      indQ y - ind x := by
+  rw [Sum.elim_inl, Sum.elim_inr, sub_add_eq_sub_sub, sub_add_cancel]
 
 /-! ### The blocks of a block-triangular twisting cocycle -/
 
@@ -167,10 +164,8 @@ continuation cocycle from the upper-left block to the lower-right block. -/
 def blockContinuation : ContinuationCocycle (m.blockLeft h) (m.blockRight h) where
   ν x y := (ind x).negOnePow • m.m (.inl x) (.inr y)
   mem_graded x y := by
-    have := m.mem_graded (.inl x) (.inr y)
-    rw [Sum.elim_inl, Sum.elim_inr, show indQ y - (ind x + 1) + 1 = indQ y - ind x by ring] at this
-    rw [Units.smul_def]
-    exact zsmul_mem this _
+    rw [← sumElim_inr_sub_sumElim_inl_add_one]
+    exact Submodule.smul_of_tower_mem _ _ (m.mem_graded (.inl x) (.inr y))
   continuation x y := by
     rw [map_zsmul_unit, m.twisting, Fintype.sum_sum_type, smul_add, Finset.smul_sum,
       Finset.smul_sum]
@@ -221,9 +216,8 @@ def cone : TwistingCocycle 𝒜 d (P ⊕ Q) (Sum.elim (fun x ↦ ind x + 1) indQ
   mem_graded
     | .inl x, .inl y => by simpa using mP.mem_graded x y
     | .inl x, .inr y => by
-      simp only [Sum.elim_inl, Sum.elim_inr, show indQ y - (ind x + 1) + 1 = indQ y - ind x by ring,
-        Units.smul_def]
-      exact zsmul_mem (ν.mem_graded x y) _
+      rw [sumElim_inr_sub_sumElim_inl_add_one]
+      exact Submodule.smul_of_tower_mem _ _ (ν.mem_graded x y)
     | .inr _, .inl _ => zero_mem _
     | .inr x, .inr y => by simpa using mQ.mem_graded x y
   twisting

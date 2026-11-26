@@ -69,10 +69,7 @@ private theorem negOnePow_smul_negOnePow_smul_pairing_left {X Y Z : Type*} [Topo
     (a : normalizedCubicalChainAlgebra X R) (b : normalizedCubicalChainAlgebra Y R) :
     i.negOnePow • (i + 1 - (j + 1)).negOnePow • cubicalChainSumPairing R f a b =
       cubicalChainSumPairing R f a (j.negOnePow • b) := by
-  rw [map_zsmul_unit, smul_smul]
-  congr 1
-  rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
-  exact ⟨i - j, by ring⟩
+  rw [map_zsmul_unit, smul_smul, add_sub_add_right_eq_sub, Int.negOnePow_mul_negOnePow_sub]
 
 /-- The sign of a term of the twisting sum on `P ⊕ Q` through a generator of `Q`, multiplied by
 the sign `(-1) ^ i` of the row, is the sign of the continuation sum applied to `(-1) ^ i • a`. -/
@@ -81,10 +78,7 @@ private theorem negOnePow_smul_negOnePow_smul_pairing_right {X Y Z : Type*} [Top
     (a : normalizedCubicalChainAlgebra X R) (b : normalizedCubicalChainAlgebra Y R) :
     i.negOnePow • (i + 1 - j).negOnePow • cubicalChainSumPairing R f a b =
       (i - j - 1).negOnePow • cubicalChainSumPairing R f (i.negOnePow • a) b := by
-  rw [map_zsmul_unit, LinearMap.smul_apply, smul_smul, smul_smul]
-  congr 1
-  rw [← Int.negOnePow_add, ← Int.negOnePow_add, Int.negOnePow_eq_iff]
-  exact ⟨1, by ring⟩
+  rw [map_zsmul_unit, LinearMap.smul_apply, Int.negOnePow_add_one_sub, smul_comm]
 
 namespace TwistingChainSystem
 
@@ -126,10 +120,8 @@ def blockContinuation :
       (fun x z y ↦ ι (.inl x) (.inr z) (.inr y)) (S.blockLeft h) (S.blockRight h) where
   chain x y := (ind x).negOnePow • S.chain (.inl x) (.inr y)
   mem_graded x y := by
-    have := S.mem_graded (.inl x) (.inr y)
-    rw [Sum.elim_inl, Sum.elim_inr, show indQ y - (ind x + 1) + 1 = indQ y - ind x by ring] at this
-    rw [Units.smul_def]
-    exact zsmul_mem this _
+    rw [← sumElim_inr_sub_sumElim_inl_add_one]
+    exact Submodule.smul_of_tower_mem _ _ (S.mem_graded (.inl x) (.inr y))
   continuation x y := by
     rw [map_zsmul_unit, S.twisting, twistingChainSum_def, Fintype.sum_sum_type,
       continuationChainSum_def, smul_add, Finset.smul_sum, Finset.smul_sum]
