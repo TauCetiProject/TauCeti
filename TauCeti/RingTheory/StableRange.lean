@@ -52,6 +52,8 @@ This file develops the ring-theoretic properties of `HasStableRangeLE`:
 * `TauCeti.hasStableRangeLE_one_iff`: the unit form of stable range at most `1`.
 * `TauCeti.HasStableRangeLE.exists_isUnimodular_add_mul_of_subset`: shortening into any finite
   subset of cardinality at least `s`.
+* `TauCeti.HasStableRangeLE.exists_add_smul_dotProduct_eq_one`: the same shortening in
+  coordinates, with a functional vanishing at the shortened coordinate.
 * `TauCeti.hasStableRangeLE_iff_forall_le`: equivalence with shortening all rows of length at least
   `s + 1` (Vaserstein).
 * `TauCeti.HasStableRangeLE.mono`: monotonicity in the bound `s`.
@@ -61,6 +63,8 @@ This file develops the ring-theoretic properties of `HasStableRangeLE`:
   product ring `R × S` and of an indexed product `Π i, R i`.
 * `TauCeti.hasStableRangeLE_mop_iff`: `HasStableRangeLE Rᵐᵒᵖ s ↔ HasStableRangeLE R s`
   (Vaserstein).
+* `TauCeti.HasStableRangeLE.exists_dotProduct_add_op_smul_eq_one`: the left-handed form of the
+  coordinate shortening, deduced from the right-handed one through `Rᵐᵒᵖ`.
 
 ## References
 
@@ -308,6 +312,24 @@ theorem HasStableRangeLE.exists_isUnimodular_add_mul_subtype_ne {R ι : Type*} [
     exact ha
   exact hR.exists_isUnimodular_add_mul hcard ha'
 
+/-- Shortening a chosen coordinate, in coordinates: over a ring of stable range at most `s`, a
+unimodular vector `a : ι → R` with `s + 1 ≤ Fintype.card ι` becomes unimodular through a
+functional `b` vanishing at `i₀` after adding the multiples `a i₀ * c i` of its coordinate `i₀` to
+the others, where `c i₀ = 0`. -/
+theorem HasStableRangeLE.exists_add_smul_dotProduct_eq_one {R ι : Type*} [Ring R] [Fintype ι]
+    {s : ℕ} (hR : HasStableRangeLE R s) (hι : s + 1 ≤ Fintype.card ι)
+    {a : ι → R} (ha : Module.IsUnimodular R a) (i₀ : ι) :
+    ∃ b c : ι → R, b i₀ = 0 ∧ c i₀ = 0 ∧ (a + a i₀ • c) ⬝ᵥ b = 1 := by
+  classical
+  obtain ⟨c, hc⟩ := hR.exists_isUnimodular_add_mul_subtype_ne hι ha i₀
+  obtain ⟨b, hb⟩ := TauCeti.Module.isUnimodular_pi_iff.mp hc
+  -- extend functions on the coordinates other than `i₀` by zero
+  let ext : ({i // i ≠ i₀} → R) → ι → R := fun f i => if h : i = i₀ then 0 else f ⟨i, h⟩
+  refine ⟨ext b, ext c, by simp [ext], by simp [ext], ?_⟩
+  rw [dotProduct, Fintype.sum_eq_add_sum_subtype_ne _ i₀, ← hb]
+  simp only [ext, ↓reduceDIte, mul_zero, zero_add]
+  exact Finset.sum_congr rfl fun i _ => by simp [i.property]
+
 /-- **Vaserstein's first theorem:** `HasStableRangeLE R s` holds if and only if every unimodular
 `(m + 1)`-row of length `m ≥ s` can be shortened to a unimodular `m`-row. -/
 theorem hasStableRangeLE_iff_forall_le {R : Type*} [Ring R] {s : ℕ} :
@@ -456,6 +478,26 @@ theorem hasStableRangeLE_mop_iff {R : Type*} [Ring R] {s : ℕ} :
       map_add' := fun _ _ ↦ rfl }
   exact (hasStableRangeLE_mop_of_hasStableRangeLE h).of_surjective (f := unop₂)
     fun r ↦ ⟨MulOpposite.op (MulOpposite.op r), rfl⟩
+
+/-- The left-handed form of `HasStableRangeLE.exists_add_smul_dotProduct_eq_one`: over a ring of
+stable range at most `s`, a vector `a : ι → R` with a left inverse `b ⬝ᵥ a = 1` and
+`s + 1 ≤ Fintype.card ι` keeps a left inverse `b` vanishing at `i₀` after adding the right
+multiples `c i * a i₀` of its coordinate `i₀` to the others, where `c i₀ = 0`. -/
+theorem HasStableRangeLE.exists_dotProduct_add_op_smul_eq_one {R ι : Type*} [Ring R] [Fintype ι]
+    {s : ℕ} (hR : HasStableRangeLE R s) (hι : s + 1 ≤ Fintype.card ι)
+    {a : ι → R} (ha : ∃ b : ι → R, b ⬝ᵥ a = 1) (i₀ : ι) :
+    ∃ b c : ι → R, b i₀ = 0 ∧ c i₀ = 0 ∧ b ⬝ᵥ (a + MulOpposite.op (a i₀) • c) = 1 := by
+  -- apply the right-handed form over the opposite ring
+  obtain ⟨b, hb⟩ := ha
+  obtain ⟨b', c', hb', hc', h⟩ :=
+    (hasStableRangeLE_mop_iff.mpr hR).exists_add_smul_dotProduct_eq_one hι
+      (a := fun i ↦ MulOpposite.op (a i))
+      (TauCeti.Module.isUnimodular_pi_iff.mpr ⟨fun i ↦ MulOpposite.op (b i), by
+        simpa [dotProduct, ← MulOpposite.op_mul, ← Finset.op_sum] using
+          congrArg MulOpposite.op hb⟩) i₀
+  refine ⟨fun i ↦ (b' i).unop, fun i ↦ (c' i).unop, by simp [hb'], by simp [hc'], ?_⟩
+  simpa [dotProduct, mul_add, Finset.sum_add_distrib] using
+    congrArg MulOpposite.unop h
 
 end TauCeti
 

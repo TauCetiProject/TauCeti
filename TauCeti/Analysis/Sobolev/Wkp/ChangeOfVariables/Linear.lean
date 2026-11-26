@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.MeasureTheory.Function.Lp.Dilation
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Linear changes of variables in `W^{2,p}`
@@ -42,6 +43,8 @@ preserved because `e` is a homeomorphism (`TauCeti.W1p.compL_mem_w1p0Submodule`)
   `W^{1,p}` function whose weak gradient is given by the weak Hessian of `u`.
 * `TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`: precomposition with a linear
   automorphism in `W^{2,p}`, and the chain rule for the weak Hessian.
+* `TauCeti.Wkp.exists_value_ae_eq_of_value_ae_eq_comp_continuousLinearEquiv`: if `u ∘ e` lies in
+  `W^{2,p}(e⁻¹(W))`, then `u` lies in `W^{2,p}(W)`.
 * `TauCeti.Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp`: transferring a Hessian
   estimate for the Laplacian to a constant-coefficient operator along a linear change of variables.
 
@@ -116,16 +119,6 @@ private theorem compCLE_mem_w1p0Submodule (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
 
 /-! ### Precomposition with a linear automorphism in `W^{2,p}` -/
 
-/-- A linear automorphism `e` is quasi-measure-preserving from `U = e⁻¹(W)` to `W`, for the
-restrictions of an additive Haar measure: almost-everywhere statements on `W` pull back along `e`
-to `U`. -/
-theorem _root_.ContinuousLinearEquiv.quasiMeasurePreserving_restrict_of_coe_eq_preimage
-    (e : E ≃L[ℝ] E)
-    (hUW : (U : Set E) = e ⁻¹' W) :
-    QuasiMeasurePreserving e (mu.restrict U) (mu.restrict W) :=
-  (Measure.ContinuousLinearMap.quasiMeasurePreserving mu (e : E →L[ℝ] E)
-    (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero).restrict (mapsTo_of_coe_eq_preimage e hUW)
-
 /-- Each component `⟪∇u, c⟫` of the weak gradient of `u ∈ W^{2,p}(W)` is the value of a function
 `d ∈ W^{1,p}(W)` whose weak gradient has the components `⟪D²u f, c⟫`. -/
 theorem Wkp.exists_w1p_value_eq_inner_gradient (u : Wkp mu W p 2) (c : E) :
@@ -164,7 +157,8 @@ private theorem inner_gradient_compCLE_ae (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
       fun x => ⟪((e : E →L[ℝ] E).adjoint ∘L Wkp.iteratedGradient 1 u (e x) ∘L
         (e : E →L[ℝ] E)) f, c⟫_ℝ := by
   filter_upwards [gradient_compCLE_ae hp e hUW d,
-    e.quasiMeasurePreserving_restrict_of_coe_eq_preimage hUW |>.ae (hd (e f))] with x h1 h2
+    (e.quasiMeasurePreserving_restrict mu (mapsTo_of_coe_eq_preimage e hUW)).ae (hd (e f))]
+    with x h1 h2
   rw [h1, ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, h2]
@@ -183,7 +177,7 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
       (Wkp.firstOrder 1 u ∈ w1p0Submodule mu W p →
         Wkp.firstOrder 1 w ∈ w1p0Submodule mu U p) := by
   set T := compCLE (mu := mu) hp e hUW
-  have hqmp := e.quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) hUW
+  have hqmp := e.quasiMeasurePreserving_restrict mu (mapsTo_of_coe_eq_preimage e hUW)
   set u₁ := Wkp.firstOrder 1 u
   have hgrad : W1p.gradient u₁ = Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) :=
     Wkp.gradient_firstOrder_one u
@@ -231,6 +225,23 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
   · rw [Wkp.firstOrder_one, hw]
     exact compCLE_mem_w1p0Submodule hp e hUW hu
 
+/-- **Transporting back along a linear automorphism.** Let `U = e⁻¹(W)`. If `v' ∈ W^{2,p}(U)` has
+the value of `g ∘ e`, then some `v ∈ W^{2,p}(W)` has the value of `g`. -/
+theorem Wkp.exists_value_ae_eq_of_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤)
+    (e : E ≃L[ℝ] E) (hUW : (U : Set E) = e ⁻¹' W) {g : E → ℝ} {v' : Wkp mu U p 2}
+    (hv' : Wkp.value 2 v' =ᵐ[mu.restrict U] fun y => g (e y)) :
+    ∃ v : Wkp mu W p 2, Wkp.value 2 v =ᵐ[mu.restrict W] g := by
+  have hWU : (W : Set E) = e.symm ⁻¹' U := by
+    rw [hUW, ← preimage_comp]
+    ext x
+    simp
+  obtain ⟨v, hv, -, -⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp e.symm hWU v'
+  refine ⟨v, ?_⟩
+  filter_upwards [hv,
+    (e.symm.quasiMeasurePreserving_restrict mu (mapsTo_of_coe_eq_preimage e.symm hWU)).ae hv']
+    with y h₁ h₂
+  rw [h₁, h₂, ContinuousLinearEquiv.apply_symm_apply]
+
 /-! ### Transferring Hessian estimates along a linear change of variables -/
 
 /-- **Transferring the estimate along a linear change of variables.** Let `e e† = A` with
@@ -270,7 +281,7 @@ theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ]
       fun x _ => abs_det_le e x
   have hC' : (ENNReal.ofReal |(e : E →L[ℝ] E).det|)⁻¹ ≠ ⊤ :=
     ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 habs).ne'
-  have hqmp := e.quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) hUW
+  have hqmp := e.quasiMeasurePreserving_restrict mu (mapsTo_of_coe_eq_preimage e hUW)
   -- `v` solves Poisson's equation with forcing term `f ∘ e`
   set f' := Lp.compOfMapLeSmul ℝ e.continuous.aemeasurable hC' hmap f
   have hf'e := Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) e.continuous.aemeasurable hC' hmap f

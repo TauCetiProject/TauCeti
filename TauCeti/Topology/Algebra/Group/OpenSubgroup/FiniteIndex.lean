@@ -49,6 +49,8 @@ This needs no compactness.
   compact group has finite index.
 * `OpenSubgroup.compactSpace_toSubgroup`: the underlying subgroup of an open subgroup of a
   compact group is compact.
+* `Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact`: an open subgroup has finite index in every
+  compact subgroup.
 * `OpenSubgroup.finiteIndex_comap`: the preimage of an open subgroup of finite index under a
   continuous homomorphism has finite index.
 * `Subgroup.isOpen_normalCore`: the normal core of an open subgroup whose normalizer has finite
@@ -81,6 +83,21 @@ instance OpenSubgroup.compactSpace_toSubgroup {G : Type*} [Group G] [Topological
     [SeparatelyContinuousMul G] [CompactSpace G] (U : OpenSubgroup G) :
     CompactSpace U.toSubgroup :=
   isCompact_iff_compactSpace.mp U.isClosed.isCompact
+
+/-- **An open subgroup has finite index in every compact subgroup.** The intersection `U' ∩ U` is
+an open subgroup of the compact group `U`, so its coset space in `U` is finite. No containment
+`U' ≤ U` is assumed. -/
+@[to_additive /-- **An open additive subgroup has finite index in every compact additive
+subgroup.** The intersection `U' ∩ U` is an open additive subgroup of the compact additive group
+`U`, so its coset space in `U` is finite. No containment `U' ≤ U` is assumed. -/]
+theorem Subgroup.relIndex_ne_zero_of_isOpen_of_isCompact {G : Type*} [Group G]
+    [TopologicalSpace G] [SeparatelyContinuousMul G] {U U' : Subgroup G}
+    (hU' : IsOpen (U' : Set G)) (hU : IsCompact (U : Set G)) : U'.relIndex U ≠ 0 := by
+  have : CompactSpace U := isCompact_iff_compactSpace.mp hU
+  have := U.toSubmonoid.separatelyContinuousMul
+  have := Subgroup.quotient_finite_of_isOpen _ (Subgroup.subgroupOf_isOpen U U' hU')
+  rw [Subgroup.relIndex]
+  exact Subgroup.index_ne_zero_of_finite
 
 /-- **The preimage of an open subgroup of finite index has finite index.** Mathlib's instance
 for `Subgroup.comap` does not fire on `OpenSubgroup.comap` directly, since instance search does not

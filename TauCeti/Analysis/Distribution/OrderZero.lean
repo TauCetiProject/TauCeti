@@ -152,10 +152,15 @@ private lemma exists_isApprox_of_subset (f : C_c(Ω, ℝ)) {K : Set E} (hK : IsC
 omit hT in
 private lemma exists_isApprox (f : C_c(Ω, ℝ)) :
     ∃ φ : ℕ → 𝓓(Ω, ℝ), IsApprox f φ fun n => 1 / ((n : ℝ) + 1) := by
-  obtain ⟨δ, hδ, hδΩ⟩ := (isCompact_image_tsupport f).exists_cthickening_subset_open Ω.isOpen
-    (Subtype.coe_image_subset _ _)
-  obtain ⟨φ, -, hφ⟩ := exists_isApprox_of_subset f (isCompact_image_tsupport f) subset_rfl hδ hδΩ
-  exact ⟨φ, hφ⟩
+  obtain ⟨K, hK, hKΩ, -, happrox⟩ := f.exists_isCompact_forall_exists_testFunction_dist_le
+  choose φ hφK hφ using fun n : ℕ => happrox _ (Nat.one_div_pos_of_nat (n := n))
+  refine ⟨φ, ⟨K, hK, hKΩ, hφK⟩, fun n x => ?_⟩
+  by_cases h : x ∈ Ω
+  · rw [extendZero_apply _ _ (⟨x, h⟩ : Ω)]
+    simpa [Real.dist_eq] using hφ n ⟨x, h⟩
+  · rw [extendZero_apply_of_notMem_range _ _ (by simpa using h), (φ n).zero_on_compl h, sub_zero,
+      Pi.zero_apply, abs_zero]
+    positivity
 
 omit hT in
 /-- The extension of `T` to a compactly supported continuous function `f` on `Ω`: the limit of

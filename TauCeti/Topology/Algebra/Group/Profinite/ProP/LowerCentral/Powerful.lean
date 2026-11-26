@@ -39,8 +39,13 @@ For a topologically finitely generated pro-`p` group this gives the structure of
   (`TauCeti.IsPowerful.relIndex_pLowerCentralSeries_succ_le`), since `π` maps `gr_k(G)` onto
   `gr_{k+1}(G)`.
 
-In a uniform group `π` is moreover injective, so the indices are constant; that converse is not
-proved here.
+In a torsion-free powerful group `π` is moreover **injective**
+(`TauCeti.IsPowerful.gradedPow_injective`), so the indices are constant. Modulo `λ_{j+2}` the
+`p`-th power of a product `y * w` with `w ∈ λ_j` is `y ^ p * w ^ p`
+(`TauCeti.IsPowerful.mk_mul_pow`); for `p = 2` this uses that powerfulness kills every bracket with
+a degree-zero class (`TauCeti.IsPowerful.gradedBracket_eq_zero_of_two`). Successive approximation
+then shows that if `x ^ p ∈ λ_{k+2}`, some `z ≡ x` modulo `λ_{k+1}` has `z ^ p = 1`
+(`TauCeti.IsPowerful.exists_pow_eq_one_of_pow_mem`), which is `z = 1` in a torsion-free group.
 
 ## Main results
 
@@ -54,11 +59,17 @@ proved here.
 * `TauCeti.IsPowerful.to_pLowerCentralSeries`: `λ_k` is powerful.
 * `TauCeti.IsPowerful.relIndex_pLowerCentralSeries_succ_le`:
   `[λ_{k+1} : λ_{k+2}] ≤ [λ_k : λ_{k+1}]`.
+* `TauCeti.IsPowerful.gradedBracket_eq_zero_of_two`: for `p = 2`, `[x, y] = 0` for `y` of degree
+  zero, that is `⁅λ_j, G⁆ ≤ λ_{j+2}`.
+* `TauCeti.IsPowerful.mk_mul_pow`: `(y * w) ^ p ≡ y ^ p * w ^ p` modulo `λ_{j+2}` for `w ∈ λ_j`.
+* `TauCeti.IsPowerful.exists_pow_eq_one_of_pow_mem`: if `x ^ p ∈ λ_{k+2}`, then some `z ≡ x`
+  modulo `λ_{k+1}` satisfies `z ^ p = 1`.
+* `TauCeti.IsPowerful.gradedPow_injective`: in a torsion-free powerful group `π` is injective.
 
 ## References
 
 * J. D. Dixon, M. P. F. du Sautoy, A. Mann and D. Segal, *Analytic pro-`p` groups*, second
-  edition, Chapter 3, Theorem 3.6.
+  edition, Chapter 3, Theorem 3.6, and Chapter 4, Theorem 4.5.
 -/
 
 public section
@@ -169,6 +180,54 @@ theorem IsPowerful.gradedPowIter_surjective (hp : p.Prime) (hG : IsPowerful p G)
     obtain ⟨x, rfl⟩ := ih (Subgroup.isOpen_mono (pLowerCentralSeries_antitone (by omega)) h) y
     exact ⟨x, gradedPowIter_succ k x⟩
 
+/-- **The brackets with degree-zero classes vanish in a powerful group at `p = 2`**:
+`[x, y] = 0` for `x ∈ gr_j(G)` and `y ∈ gr_0(G)`, as soon as `λ_{j+1}` is open. Equivalently
+`⁅λ_j, G⁆ ≤ λ_{j+2}`. -/
+theorem IsPowerful.gradedBracket_eq_zero_of_two (hG : IsPowerful 2 G) {j : ℕ}
+    (h : IsOpen (pLowerCentralSeries 2 G (j + 1) : Set G)) (x : gradedPiece 2 G j)
+    (y : gradedPiece 2 G 0) : gradedBracket 2 G j 0 x y = 0 := by
+  -- In degree zero this is powerfulness; in higher degrees `x = π w` and `[π w, y] = π [w, y]`.
+  induction j with
+  | zero => exact hG.gradedBracket_zero_zero_eq_zero_of_two x y
+  | succ j ih =>
+    obtain ⟨w, rfl⟩ := hG.gradedPow_surjective Nat.prime_two h x
+    have hw := ih (Subgroup.isOpen_mono (pLowerCentralSeries_antitone (by omega)) h) w
+    cases j with
+    | zero => rw [← hG.gradedPow_gradedBracket_zero_zero Nat.prime_two, hw, gradedPow_zero]
+    | succ j => rw [← gradedPow_gradedBracket_left_zero (Nat.le_add_left 1 j), hw, gradedPow_zero]
+
+/-- **The `p`-th power of a product with a deep factor in a powerful group**:
+`(y * w) ^ p ≡ y ^ p * w ^ p` modulo `λ_{j+2}` for every `y` and every `w ∈ λ_j`, for a prime `p`,
+as soon as `λ_{j+1}` is open. -/
+theorem IsPowerful.mk_mul_pow (hp : p.Prime) (hG : IsPowerful p G) {j : ℕ}
+    (h : IsOpen (pLowerCentralSeries p G (j + 1) : Set G)) (y : G) {w : G}
+    (hw : w ∈ pLowerCentralSeries p G j) :
+    (((y * w) ^ p : G) : G ⧸ pLowerCentralSeries p G (j + 1 + 1)) =
+      ((y ^ p * w ^ p : G) : G ⧸ _) := by
+  have hc : ⁅w, y⁆ ∈ pLowerCentralSeries p G (j + 1) :=
+    commutator_mem_pLowerCentralSeries hw (mem_pLowerCentralSeries_zero p y)
+  -- Modulo `λ_{j+2}` the commutator `⁅w, y⁆ ∈ λ_{j+1}` is central, so `(y * w) ^ p` is
+  -- `y ^ p * w ^ p * ⁅w, y⁆ ^ (p choose 2)`. The defect lies in `λ_{j+2}`: for odd `p` because `p`
+  -- divides `p choose 2`, and for `p = 2` because the bracket `[w, y]` vanishes.
+  have hchoose : ⁅w, y⁆ ^ p.choose 2 ∈ pLowerCentralSeries p G (j + 1 + 1) := by
+    have hmk : gradedMk p G (j + 1) ⟨_, hc⟩ = gradedBracket p G j 0
+        (gradedMk p G j ⟨w, hw⟩) (gradedMkZero p G y) := by
+      rw [gradedBracket_gradedMk_gradedMkZero]
+    have hzero : p.choose 2 • gradedMk p G (j + 1) ⟨_, hc⟩ = 0 := by
+      rcases hp.eq_two_or_odd' with rfl | hodd
+      · rw [hmk, hG.gradedBracket_eq_zero_of_two h, smul_zero]
+      · exact choose_two_nsmul_gradedPiece_eq_zero_of_odd hodd _
+    rwa [← gradedMk_pow, gradedMk_eq_zero_iff] at hzero
+  have hone :
+      QuotientGroup.mk' (pLowerCentralSeries p G (j + 1 + 1)) (⁅w, y⁆ ^ p.choose 2) = 1 := by
+    rw [QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff]
+    exact hchoose
+  have hcomm (g : G) : Commute (g : G ⧸ pLowerCentralSeries p G (j + 1 + 1)) (⁅w, y⁆ : G) :=
+    commute_mk_of_mem_pLowerCentralSeries hc g
+  simp only [← QuotientGroup.mk'_apply, map_pow, map_mul, map_commutatorElement] at hcomm hone ⊢
+  rw [Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_two (hcomm y) (hcomm w), hone,
+    mul_one]
+
 /-! ### The lower `p`-series of a powerful pro-`p` group -/
 
 section ProP
@@ -252,6 +311,72 @@ theorem IsPowerful.relIndex_pLowerCentralSeries_succ_le (hp : p.Prime) (hG : IsP
   rw [← natCard_gradedPiece, ← natCard_gradedPiece]
   exact Nat.card_le_card_of_surjective (gradedPow p G k)
     (hG.gradedPow_surjective hp (hfg.isOpen_pLowerCentralSeries hp (k + 1 + 1)))
+
+/-- **Lifting a `p`-th power that lies too deep to an element of order dividing `p`.** In a
+topologically finitely generated powerful pro-`p` group, for a prime `p`, if `x ^ p ∈ λ_{k+2}` then
+some `z ≡ x` modulo `λ_{k+1}` has `z ^ p = 1`. -/
+theorem IsPowerful.exists_pow_eq_one_of_pow_mem (hp : p.Prime) (hG : IsPowerful p G)
+    (hP : IsProP p G) (hfg : IsTopologicallyFinitelyGenerated G) {k : ℕ} {x : G}
+    (hx : x ^ p ∈ pLowerCentralSeries p G (k + 1 + 1)) :
+    ∃ z : G, x⁻¹ * z ∈ pLowerCentralSeries p G (k + 1) ∧ z ^ p = 1 := by
+  -- `C n` is the closed set of `z ≡ x` modulo `λ_{k+1}` with `z ^ p ∈ λ_{k+n+2}`. Each is nonempty,
+  -- by successive corrections `z ↦ z * w⁻¹` with `w ∈ λ_{k+n+1}`, and compactness gives a point
+  -- in all of them.
+  let C (n : ℕ) : Set G := (x⁻¹ * ·) ⁻¹' (pLowerCentralSeries p G (k + 1) : Set G) ∩
+    (· ^ p) ⁻¹' (pLowerCentralSeries p G (k + n + 1 + 1) : Set G)
+  have hclosed (n : ℕ) : IsClosed (C n) :=
+    ((isClosed_pLowerCentralSeries _).preimage (continuous_const.mul continuous_id)).inter
+      ((isClosed_pLowerCentralSeries _).preimage (continuous_pow p))
+  have hanti (n : ℕ) : C (n + 1) ⊆ C n :=
+    Set.inter_subset_inter_right _ (Set.preimage_mono (pLowerCentralSeries_antitone (by omega)))
+  have hne (n : ℕ) : (C n).Nonempty := by
+    induction n with
+    | zero => exact ⟨x, by simpa [C] using hx⟩
+    | succ n ih =>
+      obtain ⟨z, hz, hzp⟩ := ih
+      -- Correct `z` by some `w ∈ λ_{k+n+1}` with `w ^ p ≡ z ^ p` modulo `λ_{k+n+3}`.
+      obtain ⟨a, ha⟩ := hG.gradedPow_surjective (k := k + n + 1) hp
+        (hfg.isOpen_pLowerCentralSeries hp _) (gradedMk p G _ ⟨z ^ p, hzp⟩)
+      obtain ⟨w, rfl⟩ := gradedMk_surjective _ a
+      rw [gradedPow_gradedMk, gradedMk_eq_gradedMk_iff, QuotientGroup.eq] at ha
+      have hmul := hG.mk_mul_pow hp (hfg.isOpen_pLowerCentralSeries hp _) z (inv_mem w.property)
+      rw [QuotientGroup.eq, inv_pow] at hmul
+      -- `ha` says `(w ^ p)⁻¹ * z ^ p ∈ λ_{k+n+3}`, hence `z ^ p * (w ^ p)⁻¹` by normality.
+      have hzw : z ^ p * ((w : G) ^ p)⁻¹ ∈ pLowerCentralSeries p G (k + n + 1 + 1 + 1) := by
+        have := (pLowerCentralSeries_normal _).conj_mem _ ha ((w : G) ^ p)
+        rwa [mul_inv_cancel_left] at this
+      refine ⟨z * (w : G)⁻¹, ?_, ?_⟩
+      · rw [Set.mem_preimage, SetLike.mem_coe, ← mul_assoc]
+        exact mul_mem hz (inv_mem (pLowerCentralSeries_antitone (by omega) w.property))
+      · have hmem := mul_mem hmul (inv_mem hzw)
+        rwa [mul_inv_cancel_right, inv_mem_iff] at hmem
+  obtain ⟨z, hz⟩ := (hclosed 0).isCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed
+    C hanti hne hclosed
+  rw [Set.mem_iInter] at hz
+  refine ⟨z, (hz 0).1, Subgroup.mem_bot.mp ?_⟩
+  rw [← hP.iInf_pLowerCentralSeries_eq_bot hp, Subgroup.mem_iInf]
+  exact fun m ↦ pLowerCentralSeries_antitone (by omega) (hz m).2
+
+/-- **In a torsion-free powerful group the `p`-power operator is injective**: `π` maps `gr_k(G)`
+injectively to `gr_{k+1}(G)` for a topologically finitely generated, torsion-free, powerful pro-`p`
+group and a prime `p`. With `TauCeti.IsPowerful.gradedPow_surjective` it is bijective. -/
+theorem IsPowerful.gradedPow_injective [IsMulTorsionFree G] (hp : p.Prime) (hG : IsPowerful p G)
+    (hP : IsProP p G) (hfg : IsTopologicallyFinitelyGenerated G) (k : ℕ) :
+    Function.Injective (gradedPow p G k) := by
+  -- `π` is additive in every degree, so it suffices that its kernel is trivial.
+  have hadd (a b : gradedPiece p G k) : gradedPow p G k (a + b) =
+      gradedPow p G k a + gradedPow p G k b := by
+    rcases Nat.eq_zero_or_pos k with rfl | hk
+    · exact hG.gradedPow_add_zero hp a b
+    · exact gradedPow_add_of_one_le hk a b
+  refine (injective_iff_map_eq_zero (AddMonoidHom.mk' _ hadd)).mpr fun a ha ↦ ?_
+  obtain ⟨x, rfl⟩ := gradedMk_surjective k a
+  rw [AddMonoidHom.mk'_apply, gradedPow_gradedMk, gradedMk_eq_zero_iff] at ha
+  obtain ⟨z, hz, hzp⟩ := hG.exists_pow_eq_one_of_pow_mem hp hP hfg ha
+  obtain rfl : z = 1 := IsMulTorsionFree.eq_of_pow_eq_pow_of_commute hp.ne_zero
+    (Commute.one_right z) (hzp.trans (one_pow p).symm)
+  rw [gradedMk_eq_zero_iff]
+  simpa using hz
 
 end ProP
 

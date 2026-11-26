@@ -33,6 +33,7 @@ For `x ∈ 𝔨` the operator `ad x` is skew-adjoint for `B_θ`, and for `x ∈ 
 * `LieEquiv.isCompl_fixedSubalgebra_cartanP`: `L = 𝔨 ⊕ 𝔭` for an involution when `2` is a unit.
 * `LieEquiv.lie_mem_cartanP`, `LieEquiv.lie_mem_fixedSubalgebra_of_mem_cartanP`: the bracket
   relations `[𝔨, 𝔭] ⊆ 𝔭` and `[𝔭, 𝔭] ⊆ 𝔨`.
+* `LieEquiv.isLieAbelian_of_le_cartanP`: a Lie subalgebra of `𝔭` is abelian when `2` is a unit.
 * `LieEquiv.killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP`: `B(𝔨, 𝔭) = 0`.
 * `LieEquiv.twistedKillingForm_map_map_of_commute`: `B_θ` is invariant under automorphisms commuting
   with `θ`.
@@ -40,6 +41,8 @@ For `x ∈ 𝔨` the operator `ad x` is skew-adjoint for `B_θ`, and for `x ∈ 
 * `LieEquiv.ad_mem_skewAdjointSubmodule_twistedKillingForm`,
   `LieEquiv.ad_mem_selfAdjointSubmodule_twistedKillingForm`: `ad x` is `B_θ`-skew-adjoint for
   `x ∈ 𝔨` and `B_θ`-self-adjoint for `x ∈ 𝔭`.
+* `LieEquiv.cartanP_conj`: the `-1`-eigenspace of `e ∘ θ ∘ e⁻¹` is the image under `e` of that
+  of `θ`.
 
 ## References
 
@@ -106,6 +109,18 @@ theorem lie_mem_fixedSubalgebra_of_mem_cartanP {x y : L} (hx : x ∈ θ.cartanP)
   rw [mem_cartanP] at hx hy
   rw [LieHom.mem_fixedSubalgebra, coe_toLieHom, map_lie, hx, hy, neg_lie, lie_neg, neg_neg]
 
+/-- A Lie subalgebra contained in `𝔭` is abelian when `2` is a unit: `[𝔭, 𝔭] ⊆ 𝔨` and
+`𝔨 ∩ 𝔭 = 0`. -/
+theorem isLieAbelian_of_le_cartanP (h2 : IsUnit (2 : R)) {𝔞 : LieSubalgebra R L}
+    (h𝔞 : 𝔞.toSubmodule ≤ θ.cartanP) : IsLieAbelian 𝔞 := by
+  refine ⟨fun x y ↦ Subtype.ext ?_⟩
+  have hk := lie_mem_fixedSubalgebra_of_mem_cartanP (h𝔞 x.property) (h𝔞 y.property)
+  have hp := mem_cartanP.mp (h𝔞 (⁅x, y⁆ : 𝔞).property)
+  rw [LieHom.mem_fixedSubalgebra, coe_toLieHom] at hk
+  rw [LieSubalgebra.coe_bracket] at hp ⊢
+  rw [hk, eq_neg_iff_add_eq_zero, ← two_smul R] at hp
+  exact h2.smul_eq_zero.mp hp
+
 /-- `𝔨` and `𝔭` are orthogonal for the Killing form, over a base ring without additive
 torsion. -/
 theorem killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP [IsAddTorsionFree R]
@@ -164,5 +179,26 @@ theorem ad_mem_selfAdjointSubmodule_twistedKillingForm {x : L} (hx : x ∈ θ.ca
   intro y z
   simp only [twistedKillingForm_apply, ad_apply, map_lie, hx, neg_lie, map_neg,
     traceForm_apply_lie_apply']
+
+/-! ### Transport along an isomorphism -/
+
+section Conj
+
+variable {L' : Type*} [LieRing L'] [LieAlgebra R L']
+
+variable {e : L ≃ₗ⁅R⁆ L'}
+
+/-- The `-1`-eigenspace of `e ∘ θ ∘ e⁻¹` is the image under `e` of that of `θ`. -/
+@[simp]
+theorem cartanP_conj :
+    (e.conj θ).cartanP = θ.cartanP.map (e.toLinearEquiv : L →ₗ[R] L') := by
+  ext x
+  refine ⟨fun hx ↦ ⟨e.symm x, ?_, by simp⟩, ?_⟩
+  · rw [mem_cartanP, conj_apply] at hx
+    simpa using congrArg e.symm hx
+  · rintro ⟨y, hy, rfl⟩
+    simp [mem_cartanP.mp hy]
+
+end Conj
 
 end LieEquiv
