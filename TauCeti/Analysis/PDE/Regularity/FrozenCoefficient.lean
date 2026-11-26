@@ -83,6 +83,9 @@ the sum of these.
 * `TauCeti.PDE.aestronglyMeasurable_of_holderOnWith_matrixBilinearForm` and
   `TauCeti.PDE.memLp_energyIntegrand_of_holderOnWith`: inside a ball on which `a` is `α`-Hölder,
   `a` is measurable and its energy integrands are essentially bounded where it is elliptic.
+* `TauCeti.PDE.memLp_energyIntegrand_and_memLp_of_holderOnWith`: on an open set of finite
+  measure, Hölder elliptic coefficients give an essentially bounded energy integrand and a
+  bounded Hölder field is square integrable.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le`: on an
   open set inside a ball `B(x₀, r)`, the replacement frozen at `x₀` exists and its error is
   `O(r^α)` for `α`-Hölder coefficients and field, plus `2 r ‖f‖_{L²(B)}`.
@@ -326,6 +329,29 @@ theorem memLp_energyIntegrand_of_holderOnWith {B : Opens (EuclideanSpace ℝ ι)
     (aestronglyMeasurable_of_holderOnWith_matrixBilinearForm B.isOpen.measurableSet hBρ hα haK)
     aestronglyMeasurable_const aestronglyMeasurable_const (fun x hx => h.upper_bound hx)
     (fun _ _ => by simp) (fun _ _ => by simp)
+
+omit [mu.IsAddHaarMeasure] in
+/-- **Integrability of Hölder data on a piece of finite measure.** On an open set `D` of finite
+measure inside `t`, a uniformly elliptic coefficient `a` that is Hölder on `t` defines an
+essentially bounded energy integrand, and a field `G` that is Hölder and bounded on `t` is
+square integrable. -/
+theorem memLp_energyIntegrand_and_memLp_of_holderOnWith {α : ℝ≥0} (hα : 0 < α)
+    {D : Opens (EuclideanSpace ℝ ι)} [IsFiniteMeasure (mu.restrict (D : Set (EuclideanSpace ℝ ι)))]
+    {t : Set (EuclideanSpace ℝ ι)} (hDt : (D : Set (EuclideanSpace ℝ ι)) ⊆ t)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+    {Ka : ℝ≥0} (hell : UniformlyEllipticOn t a lam Lam)
+    (hKa : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) t)
+    {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {KG : ℝ≥0} {M : ℝ}
+    (hG : HolderOnWith KG α G t) (hGM : ∀ x ∈ t, ‖G x‖ ≤ M) :
+    MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict D) ∧
+      MemLp G 2 (mu.restrict D) :=
+  ⟨memLp_energyIntegrand_of_memLp_top (hell.pos.le.trans hell.le)
+      (((continuousOn_of_continuousOn_matrixBilinearForm (hKa.continuousOn hα)).mono
+        hDt).aestronglyMeasurable D.isOpen.measurableSet)
+      (fun _ hx => hell.upper_bound (hDt hx)) (memLp_top_const 0) (memLp_top_const 0),
+    MemLp.of_bound (((hG.continuousOn hα).mono hDt).aestronglyMeasurable
+      D.isOpen.measurableSet) _
+      ((ae_restrict_mem D.isOpen.measurableSet).mono fun x hx => hGM x (hDt hx))⟩
 
 /-- **The replacement frozen at a centre.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G`
 weakly on `Ω ⊆ ℝ^{n+1}`, tested against test functions, let `B ⊆ Ω` be open with

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.SpecialFunctions.Exp.Unimodality
 import TauCeti.Probability.Distributions.Gamma.Basic
 import TauCeti.Probability.Distributions.Gamma.PDF
 
@@ -41,12 +42,16 @@ For a positive rate `a` and `u ≥ 0` it is `(a ^ (k + 1))⁻¹` times the proba
   its mass off an interval `[U, V]`, with independent tilts for the two tails. Its consequence
   for the windows `[U, (1 + δ) U]` of the windowed form of Landau's theorem is in
   `TauCeti.Analysis.LaplaceTransform.Landau`.
+* `TauCeti.pow_mul_exp_neg_mul_div_factorial_le_off_window`: for a suitable degree `k`, the
+  kernel outside `[U, L U]` is bounded by `(a ^ k)⁻¹ * q ^ k`, with `q < 1` depending only on
+  `L`. This controls the off-window contribution against an integrable input without a pointwise
+  growth bound on that input.
 
 ## References
 
 * L. Alpöge's Lean formalization of the Riemann hypothesis for Dirichlet L-functions
-  (<https://github.com/leanprover-community/riemann-hypothesis>) is the source of these
-  statements and of the Chernoff strategy for the bound off an interval:
+  (<https://github.com/leanprover-community/riemann-hypothesis>) is the source of the mass,
+  basic upper bound, rate shift, and Chernoff estimate off an interval:
   `Deduction.kernel_integral` for the mass at a positive rate, `Deduction.landau_kernel_max` for
   the upper bound and shift, and `Deduction.landau_tails_chernoff` for the mass off an interval
   with one tilt `0 ≤ l < a` for both tails. Two extensions are added here: the mass equation at
@@ -156,5 +161,68 @@ theorem setIntegral_Ioi_sdiff_Icc_pow_mul_exp_neg_mul_div_factorial_le (k : ℕ)
           rpow_neg (by positivity), rpow_neg (by positivity), rpow_natCast, rpow_natCast,
           div_pow, div_pow]
         field_simp
+
+/-- For degree `k = ⌈a √L U⌉`, the Gamma kernel outside `[U, L U]` is bounded by
+`(a ^ k)⁻¹ * q ^ k`, so its ratio to `(a ^ k)⁻¹` decays exponentially in `k`. The factor `q`
+is the larger of the profile values at `1 / √L` and `L^(1/4)`. The lower bound on `U` leaves
+room to round the degree up. -/
+theorem pow_mul_exp_neg_mul_div_factorial_le_off_window {a L U : ℝ} (hL : 1 < L)
+    (ha : 1 ≤ a * √L) (hU : (a * √L * (√(√L) - 1))⁻¹ ≤ U) :
+    let profile := fun t : ℝ ↦ t * exp (1 - t)
+    let k := ⌈a * √L * U⌉₊
+    let q := max (profile (√L)⁻¹) (profile (√(√L)))
+    0 < q ∧ q < 1 ∧ U ≤ (k : ℝ) ∧
+      ∀ u ≥ 0, u ∉ Icc U (L * U) →
+        u ^ k * exp (-(a * u)) / (k ! : ℝ) ≤ (a ^ k)⁻¹ * q ^ k := by
+  dsimp only
+  set s := √L
+  set r := √s
+  set k := ⌈a * s * U⌉₊
+  let profile := fun t : ℝ ↦ t * exp (1 - t)
+  have hs : 1 < s := by simpa [s] using sqrt_lt_sqrt (by norm_num : (0 : ℝ) ≤ 1) hL
+  have hr : 1 < r := by simpa [r] using sqrt_lt_sqrt (by norm_num : (0 : ℝ) ≤ 1) hs
+  have ha₀ : 0 < a := pos_of_mul_pos_left (zero_lt_one.trans_le ha) (by positivity)
+  have hsInv : s⁻¹ < 1 := inv_lt_one_of_one_lt₀ hs
+  have hden : 0 < a * s * (r - 1) := mul_pos (zero_lt_one.trans_le ha) (sub_pos.mpr hr)
+  have hU₀ : 0 < U := (inv_pos.mpr hden).trans_le hU
+  have hbase : a * s * U ≤ (k : ℝ) := Nat.le_ceil _
+  have hkU : U ≤ (k : ℝ) := (le_mul_of_one_le_left hU₀.le ha).trans hbase
+  have hk₀ : (0 : ℝ) < k := hU₀.trans_le hkU
+  -- The cutoff leaves room for the ceiling between `a √L U` and `a L^(3/4) U`.
+  have hkUpper : (k : ℝ) ≤ a * s * U * r := by
+    have hroom := (inv_le_iff_one_le_mul₀ hden).mp hU
+    exact (Nat.ceil_lt_add_one (by positivity : 0 ≤ a * s * U)).le.trans (by nlinarith [hroom])
+  refine ⟨lt_max_of_lt_left (by positivity : 0 < profile s⁻¹),
+    max_lt (mul_exp_one_sub_lt_one hsInv.ne) (mul_exp_one_sub_lt_one hr.ne'), hkU, ?_⟩
+  intro u hu hout
+  let t := a * u / (k : ℝ)
+  have ht : 0 ≤ t := by positivity
+  have htail : profile t ≤ max (profile s⁻¹) (profile r) := by
+    rcases not_and_or.mp (fun h ↦ hout (mem_Icc.mpr h)) with hl | hh
+    · have ht' : t ≤ s⁻¹ := by
+        dsimp only [t]
+        rw [div_le_iff₀ hk₀, ← div_eq_inv_mul, le_div_iff₀ (by positivity : 0 < s)]
+        have hlow : u ≤ U := le_of_not_ge hl
+        calc
+          a * u * s ≤ a * U * s := by gcongr
+          _ = a * s * U := by ring
+          _ ≤ k := hbase
+      exact (strictMonoOn_mul_exp_one_sub.monotoneOn (ht'.trans hsInv.le) hsInv.le ht').trans
+        (le_max_left ..)
+    · have ht' : r ≤ t := by
+        dsimp only [t]
+        rw [le_div_iff₀ hk₀]
+        calc
+          r * (k : ℝ) ≤ r * (a * s * U * r) := by gcongr
+          _ = a * (L * U) := by
+            have hrs : r ^ 2 = s := sq_sqrt (by positivity)
+            have hsL : s ^ 2 = L := sq_sqrt (by linarith)
+            linear_combination hrs * (a * s * U) + hsL * (a * U)
+          _ ≤ a * u := mul_le_mul_of_nonneg_left (le_of_not_ge hh) ha₀.le
+      exact (strictAntiOn_mul_exp_one_sub.antitoneOn hr.le (hr.le.trans ht') ht').trans
+        (le_max_right ..)
+  exact (pow_mul_exp_neg_mul_div_factorial_le_profile ha₀ hu k).trans
+    (mul_le_mul_of_nonneg_left
+      (pow_le_pow_left₀ (mul_nonneg ht (exp_pos _).le) htail k) (by positivity))
 
 end TauCeti

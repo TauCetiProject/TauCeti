@@ -380,7 +380,7 @@ noncomputable def toAInfinityCategory : AInfinityCategory R C where
           totalMul_homInclusion_of_ne hne]
     | n + 3, _ =>
       rw [IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_add_three]
-      exact ⟨fun _ _ ↦ zero_mem _, fun _ _ _ _ _ _ _ ↦ rfl⟩
+      exact .zero
 
 private theorem m_toAInfinityCategory :
     (toAInfinityCategory R C).m = isNonUnitalDGAlgebra.toAInfinityAlgebra.m :=

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.GL2.CompactWeightModule
+public import TauCeti.RepresentationTheory.GL2.CompactWeight.Module
 
 /-!
 # The discrete series of `GL₂(ℝ)` as explicit `𝔤𝔩₂(ℂ)`-modules

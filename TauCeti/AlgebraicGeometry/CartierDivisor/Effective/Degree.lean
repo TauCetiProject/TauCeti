@@ -27,7 +27,8 @@ that twisting by `𝒪_X(D)` adds this degree, for every line bundle `L` with fi
 `H⁰` and `H¹`. Every line bundle on `X` is `𝒪_X(E) ⊗ 𝒪_X(F)⁻¹` with `E` and `F` effective
 (`Scheme.CartierDivisor.exists_isEffective_toLineBundleClass_mul_inv_eq`), so `H⁰` and `H¹` of
 every line bundle are finite-dimensional, and additivity follows from additivity along twists by
-effective divisors.
+effective divisors. The same twists show that `Hⁿ` of every line bundle vanishes for `n ≥ 2` as
+soon as `Hⁿ(X, 𝒪_X)` does.
 
 When the codimension-one local rings of `X` are discrete valuation rings, additivity is
 `LineBundleClass.eulerDegree_mul`, proved through Weil divisors. Integral curves with singular
@@ -40,6 +41,8 @@ curve over a discrete valuation ring, are covered here.
   an effective Cartier divisor `D` is `dim_k Γ(D, 𝒪_D)`.
 * `InvertibleSheaf.finiteDimensional_cohomology_of_isIntegral`: `H⁰` and `H¹` of every line
   bundle are finite-dimensional.
+* `InvertibleSheaf.subsingleton_cohomology_of_isIntegral`: `Hⁿ` of every line bundle vanishes,
+  for `n ≥ 2`, as soon as `Hⁿ(X, 𝒪_X)` does.
 * `LineBundleClass.eulerDegree_mul_of_isIntegral` and
   `LineBundleClass.eulerDegree_inv_of_isIntegral`: the degree is additive on the Picard group.
 
@@ -55,7 +58,8 @@ curve over a discrete valuation ring, are covered here.
 public section
 
 open CategoryTheory MonoidalCategory AlgebraicGeometry
-open AlgebraicGeometry.Scheme.Modules (finiteDimensional_cohomology_congr)
+open AlgebraicGeometry.Scheme.Modules
+  (cohomologyBaseLinearEquivOfIso finiteDimensional_cohomology_congr)
 open TauCeti.AlgebraicGeometry.Scheme.Modules (Cohomology)
 
 namespace TauCeti
@@ -106,6 +110,40 @@ private theorem IsEffective.eulerDegree_mk_mul_toLineBundleClass (hD : D.IsEffec
 
 omit [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 0)]
   [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 1)] in
+/-- Twisting by an effective divisor `D` does not change whether all line bundles in a class
+satisfy a property `P` of sheaves of modules, provided `P` is invariant under isomorphism and
+holds for `M ⊗ 𝒪_X(-D)` exactly when it holds for `M`. -/
+private theorem IsEffective.forall_mul_toLineBundleClass_iff (hD : D.IsEffective)
+    (P : X.Modules → Prop) (hP : ∀ {M N : X.Modules}, (M ≅ N) → (P M ↔ P N))
+    (htwist : ∀ M : InvertibleSheaf X, P (M.obj ⊗ hD.sectionsIdealSheaf.sheaf) ↔ P M.obj)
+    (a : LineBundleClass X) :
+    (∀ L : InvertibleSheaf X, LineBundleClass.mk L = a * D.toLineBundleClass → P L.obj) ↔
+      ∀ L : InvertibleSheaf X, LineBundleClass.mk L = a → P L.obj := by
+  have hI := hD.isEffectiveCartier_sectionsIdealSheaf
+  -- `L ⊗ 𝒪_X(-D)` has class `[L] [𝒪_X(D)]⁻¹`, so `P` holds for it exactly when it does for `L`.
+  have key (L M : InvertibleSheaf X)
+      (h : LineBundleClass.mk L = LineBundleClass.mk M * D.toLineBundleClass⁻¹) :
+      P L.obj ↔ P (M.obj ⊗ hD.sectionsIdealSheaf.sheaf) := by
+    rw [← hD.mk_toInvertibleSheaf_sectionsIdealSheaf, ← LineBundleClass.mk_tensorProduct,
+      LineBundleClass.mk_eq_mk_iff] at h
+    obtain ⟨e⟩ := h
+    exact hP (e ≪≫ InvertibleSheaf.tensorProductObjIso M hI.toInvertibleSheaf ≪≫
+      eqToIso (by rw [Scheme.IdealSheafData.IsEffectiveCartier.toInvertibleSheaf_obj]))
+  have hL (L : InvertibleSheaf X) :
+      LineBundleClass.mk (InvertibleSheaf.tensorProduct L hI.toInvertibleSheaf) =
+        LineBundleClass.mk L * D.toLineBundleClass⁻¹ := by
+    rw [LineBundleClass.mk_tensorProduct, hD.mk_toInvertibleSheaf_sectionsIdealSheaf]
+  constructor
+  · -- `L` with class `a` is `M ⊗ 𝒪_X(-D)` for any `M` of class `a [𝒪_X(D)]`.
+    intro h L hLa
+    obtain ⟨M, hM⟩ := LineBundleClass.mk_surjective (a * D.toLineBundleClass)
+    exact (key L M (by rw [hM, hLa, mul_inv_cancel_right])).mpr ((htwist M).mpr (h M hM))
+  · -- For `L` of class `a [𝒪_X(D)]`, the twist `L ⊗ 𝒪_X(-D)` has class `a`.
+    intro h L hLa
+    exact (htwist L).mp ((key _ L (hL L)).mp (h _ (by rw [hL, hLa, mul_inv_cancel_right])))
+
+omit [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 0)]
+  [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 1)] in
 /-- Twisting by an effective divisor does not change whether all line bundles in a class have
 finite-dimensional `H⁰` and `H¹`. -/
 private theorem IsEffective.forall_finiteDimensional_mul_toLineBundleClass_iff
@@ -114,42 +152,34 @@ private theorem IsEffective.forall_finiteDimensional_mul_toLineBundleClass_iff
         ∀ i < 2, FiniteDimensional k (Cohomology L.obj i)) ↔
       ∀ L : InvertibleSheaf X, LineBundleClass.mk L = a →
         ∀ i < 2, FiniteDimensional k (Cohomology L.obj i) := by
-  have hI := hD.isEffectiveCartier_sectionsIdealSheaf
   have : IsFinite (hD.sectionsIdealSheaf.subschemeι ≫ X ↘ Spec (.of k)) :=
-    hI.isFinite_subschemeι_comp
-  -- `L ⊗ 𝒪_X(-D)` has class `[L] [𝒪_X(D)]⁻¹`, and its cohomology is finite exactly when that of
-  -- `L` is (`finiteDimensional_cohomology_tensor_sheaf_iff`).
-  have key (L M : InvertibleSheaf X)
-      (h : LineBundleClass.mk L = LineBundleClass.mk M * D.toLineBundleClass⁻¹) (i : ℕ) :
-      FiniteDimensional k (Cohomology L.obj i) ↔
-        FiniteDimensional k (Cohomology (M.obj ⊗ hD.sectionsIdealSheaf.sheaf) i) := by
-    rw [← hD.mk_toInvertibleSheaf_sectionsIdealSheaf, ← LineBundleClass.mk_tensorProduct,
-      LineBundleClass.mk_eq_mk_iff] at h
-    obtain ⟨e⟩ := h
-    exact finiteDimensional_cohomology_congr k
-      (e ≪≫ InvertibleSheaf.tensorProductObjIso M hI.toInvertibleSheaf ≪≫
-        eqToIso (by rw [Scheme.IdealSheafData.IsEffectiveCartier.toInvertibleSheaf_obj])) i
+    hD.isEffectiveCartier_sectionsIdealSheaf.isFinite_subschemeι_comp
   -- Twisting a line bundle `M` by `𝒪_X(-D)` preserves finiteness of `H⁰` and `H¹`.
-  have hiff (M : InvertibleSheaf X) :
-      (∀ i < 2, FiniteDimensional k (Cohomology (M.obj ⊗ hD.sectionsIdealSheaf.sheaf) i)) ↔
-        ∀ i < 2, FiniteDimensional k (Cohomology M.obj i) := by
-    have h := Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_sheaf_iff
-      hD.sectionsIdealSheaf (k := k) (E := (InvertibleSheaf.toFixedRankOne X).obj M)
-    rwa [InvertibleSheaf.toFixedRankOne_obj_obj, ObjectProperty.ιOfLE_obj_obj] at h
-  have hL (L : InvertibleSheaf X) :
-      LineBundleClass.mk (InvertibleSheaf.tensorProduct L hI.toInvertibleSheaf) =
-        LineBundleClass.mk L * D.toLineBundleClass⁻¹ := by
-    rw [LineBundleClass.mk_tensorProduct, hD.mk_toInvertibleSheaf_sectionsIdealSheaf]
-  constructor
-  · -- `L` with class `a` is `M ⊗ 𝒪_X(-D)` for any `M` of class `a [𝒪_X(D)]`.
-    intro h L hLa i hi
-    obtain ⟨M, hM⟩ := LineBundleClass.mk_surjective (a * D.toLineBundleClass)
-    refine (key L M (by rw [hM, hLa, mul_inv_cancel_right]) i).mpr ?_
-    exact (hiff M).mpr (h M hM) i hi
-  · -- For `L` of class `a [𝒪_X(D)]`, the twist `L ⊗ 𝒪_X(-D)` has class `a`.
-    intro h L hLa i hi
-    refine (hiff L).mp (fun j hj ↦ ?_) i hi
-    exact (key _ L (hL L) j).mp (h _ (by rw [hL, hLa, mul_inv_cancel_right]) j hj)
+  refine hD.forall_mul_toLineBundleClass_iff
+    (fun M ↦ ∀ i < 2, FiniteDimensional k (Cohomology M i))
+    (fun e ↦ forall₂_congr fun i _ ↦ finiteDimensional_cohomology_congr k e i) (fun M ↦ ?_) a
+  have h := Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_sheaf_iff
+    hD.sectionsIdealSheaf (k := k) (E := (InvertibleSheaf.toFixedRankOne X).obj M)
+  rwa [InvertibleSheaf.toFixedRankOne_obj_obj, ObjectProperty.ιOfLE_obj_obj] at h
+
+omit [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 0)]
+  [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 1)] in
+include k in
+/-- Twisting by an effective divisor does not change whether all line bundles in a class have
+vanishing `Hⁿ`, for `n ≥ 2`. -/
+private theorem IsEffective.forall_subsingleton_mul_toLineBundleClass_iff
+    (hD : D.IsEffective) {n : ℕ} (hn : 2 ≤ n) (a : LineBundleClass X) :
+    (∀ L : InvertibleSheaf X, LineBundleClass.mk L = a * D.toLineBundleClass →
+        Subsingleton (Cohomology L.obj n)) ↔
+      ∀ L : InvertibleSheaf X, LineBundleClass.mk L = a → Subsingleton (Cohomology L.obj n) := by
+  have : IsFinite (hD.sectionsIdealSheaf.subschemeι ≫ X ↘ Spec (.of k)) :=
+    hD.isEffectiveCartier_sectionsIdealSheaf.isFinite_subschemeι_comp
+  -- Twisting a line bundle `M` by `𝒪_X(-D)` preserves vanishing of `Hⁿ`.
+  refine hD.forall_mul_toLineBundleClass_iff (fun M ↦ Subsingleton (Cohomology M n))
+    (fun e ↦ (cohomologyBaseLinearEquivOfIso k e n).toEquiv.subsingleton_congr) (fun M ↦ ?_) a
+  have h := Scheme.IdealSheafData.subsingleton_cohomology_tensor_sheaf_iff k
+    hD.sectionsIdealSheaf (E := (InvertibleSheaf.toFixedRankOne X).obj M) hn
+  rwa [InvertibleSheaf.toFixedRankOne_obj_obj, ObjectProperty.ιOfLE_obj_obj] at h
 
 end Scheme.CartierDivisor
 
@@ -176,6 +206,32 @@ theorem InvertibleSheaf.finiteDimensional_cohomology_of_isIntegral (L : Invertib
   have h₃ := (hE.forall_finiteDimensional_mul_toLineBundleClass_iff k
     F.toLineBundleClass⁻¹).mpr h₂
   exact h₃ L (by rw [← hEF, mul_comm]) i hi
+
+omit [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 0)]
+  [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj 1)] in
+include k in
+/-- **Higher cohomology of line bundles on a curve.** Let `X` be an integral scheme, proper over `k`
+with fibres of dimension at most one. If `Hⁿ(X, 𝒪_X)` vanishes for some `n ≥ 2`, then `Hⁿ(X, L)`
+vanishes for every line bundle `L` on `X`. -/
+theorem InvertibleSheaf.subsingleton_cohomology_of_isIntegral (L : InvertibleSheaf X) {n : ℕ}
+    (hn : 2 ≤ n) (hX : Subsingleton (Cohomology (InvertibleSheaf.trivial X).obj n)) :
+    Subsingleton (Cohomology L.obj n) := by
+  have : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
+  obtain ⟨E, F, hE, hF, hEF⟩ :=
+    Scheme.CartierDivisor.exists_isEffective_toLineBundleClass_mul_inv_eq
+    (coheight_le_of_relativeDimensionLE_of_field (d := 1) (X ↘ Spec (.of k)))
+    (LineBundleClass.mk L)
+  -- The trivial class has vanishing `Hⁿ`, and twisting by `𝒪_X(F)` and `𝒪_X(E)` keeps it so.
+  have h₁ : ∀ M : InvertibleSheaf X, LineBundleClass.mk M = 1 →
+      Subsingleton (Cohomology M.obj n) := fun M hM ↦ by
+    rw [← LineBundleClass.mk_trivial, LineBundleClass.mk_eq_mk_iff] at hM
+    obtain ⟨e⟩ := hM
+    exact (cohomologyBaseLinearEquivOfIso k e n).toEquiv.subsingleton_congr.mpr hX
+  have h₂ := (hF.forall_subsingleton_mul_toLineBundleClass_iff k hn
+    F.toLineBundleClass⁻¹).mp (by rwa [inv_mul_cancel])
+  have h₃ := (hE.forall_subsingleton_mul_toLineBundleClass_iff k hn
+    F.toLineBundleClass⁻¹).mpr h₂
+  exact h₃ L (by rw [← hEF, mul_comm])
 
 namespace LineBundleClass
 

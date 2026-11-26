@@ -61,6 +61,9 @@ the companion of the rotation angle `TauCeti.sphericalPendulumRotationAngle`.
 * `TauCeti.isIntegralCurveOn_sphericalPendulumVectorField`: the motions of the pendulum solve the
   equations of motion in `ℝ³ × ℝ³`.
 * `TauCeti.sphericalPendulumEnergyMomentum_eq_of_isMIntegralCurveOn`: conservation of `(H, J)`.
+* `TauCeti.strictMonoOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum` and
+  `TauCeti.strictAntiOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum`: the height
+  increases or decreases strictly on an interval when the vertical momentum has that sign.
 * `TauCeti.integral_comp_eq_integral_div_sqrt_of_isMIntegralCurveOn_sphericalPendulum`: time
   integrals of functions of the height along a passage are height quadratures.
 * `TauCeti.sub_eq_integral_inv_sqrt_of_isMIntegralCurveOn_sphericalPendulum`: the time between two
@@ -251,6 +254,34 @@ theorem hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
   simpa [Function.comp_def, sphericalPendulumVectorField_def] using
     ((ContinuousLinearMap.fst ℝ _ _).hasFDerivAt.comp_hasDerivWithinAt t
       (isIntegralCurveOn_sphericalPendulumVectorField hγ t ht)).piLp_apply 2
+
+/-- While the vertical momentum is positive, the height of a motion increases strictly. -/
+theorem strictMonoOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum {s t : ℝ}
+    (hγ : IsMIntegralCurveOn γ (sphericalPendulumSymplecticForm.hamiltonianVectorField
+      fun y ↦ sphericalPendulumHamiltonian y) (Icc s t))
+    (hp : ∀ u ∈ Ioo s t, 0 < (γ u : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2) :
+    StrictMonoOn (fun t ↦ (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2)
+      (Icc s t) := by
+  have hd {u} (hu : u ∈ Icc s t) :=
+    hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum hγ hu
+  exact strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc s t)
+    (fun _ hu ↦ (hd hu).continuousWithinAt)
+    (fun _ hu ↦ (hd (interior_subset hu)).mono interior_subset)
+    fun u hu ↦ hp u (by simpa only [interior_Icc] using hu)
+
+/-- While the vertical momentum is negative, the height of a motion decreases strictly. -/
+theorem strictAntiOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum {s t : ℝ}
+    (hγ : IsMIntegralCurveOn γ (sphericalPendulumSymplecticForm.hamiltonianVectorField
+      fun y ↦ sphericalPendulumHamiltonian y) (Icc s t))
+    (hp : ∀ u ∈ Ioo s t, (γ u : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 < 0) :
+    StrictAntiOn (fun t ↦ (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2)
+      (Icc s t) := by
+  have hd {u} (hu : u ∈ Icc s t) :=
+    hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum hγ hu
+  exact strictAntiOn_of_hasDerivWithinAt_neg (convex_Icc s t)
+    (fun _ hu ↦ (hd hu).continuousWithinAt)
+    (fun _ hu ↦ (hd (interior_subset hu)).mono interior_subset)
+    fun u hu ↦ hp u (by simpa only [interior_Icc] using hu)
 
 /-- Along a motion of the spherical pendulum, the vertical momentum `p₃` changes with velocity
 `(q₃ - ‖p‖²) q₃ - 1`, the vertical component of the gravitational and constraint forces. -/

@@ -50,16 +50,21 @@ with such coefficients, and the regularity of its annihilators
 on `V` is needed.
 
 **Vanishing.** Replacing `η` by its `C¹` representative changes none of the integrals against it, so
-each of the three transversality arguments of `Cokernel` applies to a locally `L^q` covector field,
+each of the transversality arguments of `Cokernel` applies to a locally `L^q` covector field,
 `q > 1`, once the data have one more derivative than there: Hamiltonian variations on a core
 (`ae_eq_zero_of_integral_floerLinearization_of_integral_floerOperator_add_sub`), variations of a
 frozen almost complex structure
-(`ae_eq_zero_of_integral_floerLinearization_of_integral_deriv_floerOperator`), and periodic
+(`ae_eq_zero_of_integral_floerLinearization_of_integral_deriv_floerOperator`), periodic
 variations of `J_t` along a Floer trajectory
-(`ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator`), all in the
-namespace `TauCeti.SymplecticForm`. In each case `η = 0` almost everywhere. The surjectivity of
-the universal operator on Banach spaces that follows from this, given closed range, is not treated
-here.
+(`ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator`), and variations
+of `J_t` along a Floer strip, or any band `ℝ × T` over an open interval `T`
+(`ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator_timeDependent`),
+all in the namespace `TauCeti.SymplecticForm`. In each case `η = 0` almost everywhere, on the band
+in the last case, where the annihilation of the range of `D_u` is used only for the regularity of
+`η`. The surjectivity of
+the universal operator on `L²` of the cylinder that follows from this, given closed range of finite
+codimension, is `range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top` in the namespace
+`TauCeti.SymplecticForm`, in `TauCeti.Geometry.Symplectic.Floer.Transversality.Surjective`.
 
 ## Main results
 
@@ -72,9 +77,12 @@ here.
   `exists_contDiffOn_ae_eq_of_forall_integral_apply_floerLinearization_eq_zero`, in the namespace
   `TauCeti.SymplecticForm`: such a covector field has a `Cᵏ` representative.
 * `ae_eq_zero_of_integral_floerLinearization_of_integral_floerOperator_add_sub`,
-  `ae_eq_zero_of_integral_floerLinearization_of_integral_deriv_floerOperator` and
-  `ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator`, in the namespace
-  `TauCeti.SymplecticForm`: weak cokernel elements of the universal operator vanish.
+  `ae_eq_zero_of_integral_floerLinearization_of_integral_deriv_floerOperator`,
+  `ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator` and, along a Floer
+  strip,
+  `ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator_timeDependent`, in
+  the namespace `TauCeti.SymplecticForm`: weak cokernel elements of the universal operator
+  vanish.
 
 ## References
 
@@ -148,7 +156,7 @@ theorem memWkpLoc_succ_of_forall_integral_apply_floerLinearization_eq_zero {Ω :
   -- A test function `φ` on `Ω` gives the test map `φ ∘ e⁻¹` supported over `Ω`.
   set U : Opens (ℝ × ℝ) := ⟨e.symm ⁻¹' Ω, Ω.isOpen.preimage e.symm.continuous⟩
   have hmaps : MapsTo e Ω U := fun w hw ↦ by simpa [U] using hw
-  set ψ : 𝓓(U, V) := e.transportTestFunction hmaps φ
+  set ψ : 𝓓(U, V) := e.transportTestFunction ℝ hmaps φ
   have hψ : (ψ : ℝ × ℝ → V) = (φ : ℂ → V) ∘ e.symm := funext fun y ↦ by simp [ψ]
   have h := hηD ψ ψ.contDiff ψ.hasCompactSupport ψ.tsupport_subset
   rw [← volume_preserving_equiv_real_prod.integral_comp measurableEquivRealProd.measurableEmbedding,
@@ -232,11 +240,12 @@ section Vanishing
 
 /-! ### Weak cokernel elements of the universal operator vanish
 
-The three transversality arguments of `TauCeti.Geometry.Symplectic.Floer.Transversality.Cokernel`
-take a `C¹` covector field. Applied to the `C¹` representative of a weak cokernel element, they show
-that a locally `L^q` covector field annihilating the range of the universal linearized operator
-vanishes almost everywhere, once the data have one more derivative than the classical statements
-ask for. -/
+The transversality arguments of `TauCeti.Geometry.Symplectic.Floer.Transversality.Cokernel` take
+a covector field that is `C¹` on the plane, or in the strip case continuous on the band `ℝ × T` and
+`C¹` there. Applied to the `C¹` representative of a weak cokernel element, they show that a locally
+`L^q` covector field annihilating the range of the universal linearized operator vanishes almost
+everywhere, on the band in the strip case, once the data have one more derivative than the
+classical statements ask for. -/
 
 variable {U : Set (ℝ × ℝ)} {η : ℝ × ℝ → V →L[ℝ] ℝ} {q : ℝ≥0∞}
 
@@ -392,6 +401,62 @@ theorem ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOper
     (fun ξ hξ hξc ↦ (integral_apply_congr hae _).trans (hD ξ hξ hξc))
     fun Y h₁ h₂ h₃ h₄ ↦ (integral_apply_congr (ae_restrict_of_ae hae) _).trans (hY Y h₁ h₂ h₃ h₄)
   exact hae.mono fun z hz ↦ by rw [hz, h0, Pi.zero_apply]
+
+/-- **Variations of `J_t` kill the weak cokernel of the universal operator along a Floer strip.**
+Let `T ⊆ ℝ` be open and preconnected, such as the interval `(0, 1)` of a strip. Let `J (t, x)` be a
+`Cⁿ` family of complex structures preserving `ω`, with `2 ≤ n`, tamed by `ω` along `u` over the band
+`ℝ × T`, and let `u` be a map, `C²` on the band, solving the Floer equation
+`∂ₛu + J_t(u)(∂ₜu - X_{H_t}(u)) = 0` there, for a `C³` Hamiltonian `H`, and not stationary there,
+with limits `xm` and `xp` continuous on `T` along its ends. Let `η` be a locally `L^q` covector
+field on the band, `q > 1`, annihilating `D_u ξ` for every smooth test map `ξ` compactly supported
+in the band, and annihilating over the band the derivative of the Floer operator along `J + τ Y`
+for every compactly supported `Cⁿ` field `Y` supported in `T × V` and tangent to the compatible
+structures. Then `η = 0` almost everywhere on the band. This is the weak form of
+`SymplecticForm.eqOn_zero_of_setIntegral_apply_deriv_floerOperator_timeDependent_eq_zero`. -/
+theorem ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator_timeDependent
+    {n : ℕ∞} {J : ℝ × V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ n fun p ↦ LinearMap.toContinuousLinearMap (J p).toLinearMap) (hn : 2 ≤ n)
+    (hJω : ∀ p, ω.Invariant (J p)) {T : Set ℝ} (hT : IsOpen T) (hTc : IsPreconnected T)
+    (hJ₀ : ∀ z ∈ univ ×ˢ T, ω.Tames (J (z.2, u z))) {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ 3 (uncurry H)) (hu : ContDiffOn ℝ 2 u (univ ×ˢ T))
+    (hF : ∀ z ∈ univ ×ˢ T, ω.floerOperator
+      (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap) (fun _ _ ↦ 0)
+        (fun z ↦ H z.2) u z = 0)
+    (hne : ∃ z ∈ univ ×ˢ T, fderiv ℝ u z stdComplexLineReal ≠ 0) {xm xp : ℝ → V}
+    (hxm : ContinuousOn xm T) (hxp : ContinuousOn xp T)
+    (hm : ∀ t ∈ T, Tendsto u (atBot ×ˢ 𝓝 t) (𝓝 (xm t)))
+    (hp : ∀ t ∈ T, Tendsto u (atTop ×ˢ 𝓝 t) (𝓝 (xp t))) (hq : 1 < q)
+    (hη : MemLpLoc q (univ ×ˢ T) η)
+    (hD : ∀ ξ : ℝ × ℝ → V, ContDiff ℝ (⊤ : ℕ∞) ξ → HasCompactSupport ξ → tsupport ξ ⊆ univ ×ˢ T →
+      ∫ z, η z (ω.floerLinearization
+        (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap) (fun _ _ ↦ 0)
+          (fun z ↦ H z.2) u ξ z) = 0)
+    (hY : ∀ Y : ℝ × V → V →L[ℝ] V, ContDiff ℝ n Y → HasCompactSupport Y →
+      tsupport Y ⊆ T ×ˢ univ → (∀ p, (Y p : Module.End ℝ V) ∈ ω.compatibleTangentSpace (J p)) →
+        ∫ z in univ ×ˢ T, η z (deriv (fun τ : ℝ ↦ ω.floerOperator
+          (fun z x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap + τ • Y (z.2, x))
+            (fun _ _ ↦ 0) (fun z ↦ H z.2) u z) 0) = 0) :
+    η =ᵐ[volume.restrict (univ ×ˢ T)] 0 := by
+  have hB : IsOpen (univ ×ˢ T : Set (ℝ × ℝ)) := isOpen_univ.prod hT
+  have hg : ContDiff ℝ 3 fun p : (ℝ × ℝ) × V ↦ (p.1.2, p.2) :=
+    (contDiff_snd.comp contDiff_fst).prodMk contDiff_snd
+  have hJ2 : ContDiff ℝ 2
+      (uncurry fun (z : ℝ × ℝ) x ↦ LinearMap.toContinuousLinearMap (J (z.2, x)).toLinearMap) :=
+    (hJ.of_le (WithTop.coe_le_coe.2 hn)).comp (hg.of_le (by norm_num))
+  have hH' : ContDiff ℝ 3 (uncurry fun (z : ℝ × ℝ) ↦ H z.2) := hH.comp hg
+  -- `η` agrees almost everywhere with a covector field `η'` that is `C¹` on the band.
+  obtain ⟨η', hη', hae⟩ :=
+    exists_contDiffOn_ae_eq_of_forall_integral_apply_floerLinearization_eq_zero hB
+      (k := 1) (fun _ _ ↦ (one_add_one_eq_two' ▸ hJ2).contDiffAt) (fun _ _ ↦ contDiffAt_const)
+      (fun _ _ ↦ (one_add_two_eq_three' ▸ hH').contDiffAt)
+      (fun _ hz ↦ (one_add_one_eq_two' ▸ hu).contDiffAt (hB.mem_nhds hz))
+      (fun z _ ↦ by ext v; simp) hq hη hD
+  have h0 := eqOn_zero_of_setIntegral_apply_deriv_floerOperator_timeDependent_eq_zero hJ
+    (one_le_two.trans hn) hJω hT hTc hJ₀ (hH.of_le (by norm_num)) hu hF hne hxm hxp hm hp
+    hη'.continuousOn
+    fun Y h₁ h₂ h₃ h₄ ↦ (integral_apply_congr (ae_restrict_of_ae hae) _).trans (hY Y h₁ h₂ h₃ h₄)
+  exact (ae_restrict_iff' hB.measurableSet).2 (hae.mono fun z hz hzB ↦ by
+    rw [hz, h0 hzB, Pi.zero_apply])
 
 end Vanishing
 

@@ -23,6 +23,7 @@ monomials and the Sobolev seminorms of a Lie group representation.
 
 * `TauCeti.length_monomialWord`, `TauCeti.count_monomialWord`: its length is `|α|` and the letter
   `i` occurs `α i` times.
+* `TauCeti.monomialWord_eq_nil_iff`: the ordered monomial word is empty only for `α = 0`.
 * `TauCeti.pairwise_monomialWord`: ordered monomial words are sorted.
 * `TauCeti.monomialWord_count`: a sorted word is the ordered monomial word of its letter counts.
 -/
@@ -57,6 +58,12 @@ theorem count_monomialWord (α : Fin m → ℕ) (i : Fin m) : (monomialWord α).
 /-- An ordered monomial word determines its exponent vector. -/
 theorem monomialWord_injective : Function.Injective (monomialWord (m := m)) := fun α β h ↦
   funext fun i ↦ by rw [← count_monomialWord α i, ← count_monomialWord β i, h]
+
+/-- The ordered monomial word of `α` is empty exactly for the zero exponent vector. -/
+@[simp]
+theorem monomialWord_eq_nil_iff {α : Fin m → ℕ} : monomialWord α = [] ↔ α = 0 := by
+  rw [← List.length_eq_zero_iff, length_monomialWord, Finset.sum_eq_zero_iff, funext_iff]
+  simp
 
 /-- **Ordered monomial words are sorted.** -/
 theorem pairwise_monomialWord (α : Fin m → ℕ) : (monomialWord α).Pairwise (· ≤ ·) := by

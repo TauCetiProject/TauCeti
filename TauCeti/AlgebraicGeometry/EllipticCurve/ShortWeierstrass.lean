@@ -52,6 +52,8 @@ with `u = 1`, and this is the canonical representative of the pair.
   automatically unfold `baseChange`, so that lemma never fires on this spelling by itself.
 * `WeierstrassCurve.shortCurve_equation_iff`: a point lies on it exactly when
   `y² = x³ + Ax + B`.
+* `WeierstrassCurve.eval_toPoly_twoTorsionPolynomial_shortCurve`: its two-torsion polynomial
+  evaluates to `4(x³ + Ax + B)`.
 * `WeierstrassCurve.shortCurve_a₄_a₆`: a curve in short normal form is `shortCurve` of its own
   `a₄` and `a₆`. This is how a statement about an arbitrary `[W.IsShortNF]` reaches the explicit
   `y² = x³ + Ax + B` shape and the `shortCurve` API.
@@ -154,6 +156,13 @@ hand. -/
     (shortCurve A B).toAffine.Equation x y ↔ y ^ 2 = x ^ 3 + A * x + B := by
   rw [Affine.equation_iff]
   simp [shortCurve]
+
+/-- The two-torsion polynomial of `y² = x³ + Ax + B` evaluates to `4(x³ + Ax + B)`. -/
+theorem eval_toPoly_twoTorsionPolynomial_shortCurve (x : R) :
+    (shortCurve A B).twoTorsionPolynomial.toPoly.eval x = 4 * (x ^ 3 + A * x + B) := by
+  rw [eval_toPoly_twoTorsionPolynomial, b₂_of_isShortNF, b₄_of_isShortNF, b₆_of_isShortNF,
+    shortCurve_a₄, shortCurve_a₆]
+  ring
 
 /-- A curve in short normal form is `shortCurve` of its own `a₄` and `a₆`. This is how a statement
 about an arbitrary `[W.IsShortNF]` reaches the explicit `y² = x³ + Ax + B` shape and the

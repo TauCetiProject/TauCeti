@@ -8,10 +8,13 @@ module
 public import Mathlib.Algebra.Order.BigOperators.Ring.Multiset
 import TauCeti.Algebra.Order.BigOperators.GroupWithZero.Multiset
 import Mathlib.Data.Nat.Cast.Order.Ring
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
 
 /-!
-# Products of `1 - t` over a multiset of elements of `[0, 1]`
+# Products of `1 - t` and sums of squares over a multiset
 
 For a multiset `s` of elements of `[0, 1]` in a linearly ordered commutative ring:
 
@@ -23,11 +26,35 @@ For a multiset `s` of elements of `[0, 1]` in a linearly ordered commutative rin
 Nonnegativity of `∏ (1 - t)` is `Multiset.prod_map_nonneg`, and `∏ (1 - t) ≤ 1` is the case
 `f t = 1 - t` of `Multiset.prod_map_le_one₀` from
 `TauCeti/Algebra/Order/BigOperators/GroupWithZero/Multiset.lean`.
+
+This file also expands `∑_{x ∈ s} (a x - b)²` (`Multiset.sum_map_mul_sub_sq`) and proves the
+equality case of the inequality `(∑ s)² ≤ card s · ∑_{x ∈ s} x²` of Mathlib's
+`Multiset.sq_sum_le_card_mul_sum_sq`: equality holds only when all elements of `s` are equal
+(`Multiset.eq_of_sq_sum_eq_card_mul_sum_sq`).
 -/
 
 public section
 
 namespace Multiset
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
+/-- Expanding `∑_{x ∈ s} (a x - b)²`. -/
+theorem sum_map_mul_sub_sq (s : Multiset R) (a b : R) :
+    (s.map fun x ↦ (a * x - b) ^ 2).sum =
+      a ^ 2 * (s.map (· ^ 2)).sum - 2 * a * b * s.sum + Multiset.card s * b ^ 2 := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons x s ih =>
+    simp only [Multiset.map_cons, Multiset.sum_cons, Multiset.card_cons, ih]
+    push_cast
+    ring
+
+end CommRing
+
+section OrderedRing
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] {s : Multiset R}
 
@@ -62,5 +89,27 @@ theorem sum_map_sq_le_card_mul_one_sub_prod_map_one_sub (h₀ : ∀ t ∈ s, 0 �
     simp only [map_cons, prod_cons, sum_cons, card_cons, Nat.cast_succ]
     nlinarith [ih h₀' h₁', mul_nonneg (sub_nonneg.2 hP₁) (sub_nonneg.2 ht₁),
       mul_nonneg hk (mul_nonneg ht₀ hP₀), mul_le_of_le_one_left ht₀ ht₁]
+
+/-- The equality case of `Multiset.sq_sum_le_card_mul_sum_sq`: if `(∑ s)² = card s · ∑_{x ∈ s} x²`,
+then all elements of `s` are equal. -/
+theorem eq_of_sq_sum_eq_card_mul_sum_sq (s : Multiset R)
+    (h : s.sum ^ 2 = Multiset.card s * (s.map (· ^ 2)).sum) :
+    ∀ x ∈ s, ∀ y ∈ s, x = y := by
+  have hsum := sum_map_mul_sub_sq s (Multiset.card s) s.sum
+  have hzero : (s.map fun x ↦ ((Multiset.card s : R) * x - s.sum) ^ 2).sum = 0 := by
+    rw [hsum]
+    linear_combination (-(Multiset.card s : R)) * h
+  have hx : ∀ x ∈ s, (Multiset.card s : R) * x = s.sum := fun x hx ↦ by
+    have := Multiset.single_le_sum (fun y hy ↦ by
+      obtain ⟨x, -, rfl⟩ := Multiset.mem_map.mp hy
+      positivity) _ (Multiset.mem_map_of_mem (fun x ↦ ((Multiset.card s : R) * x - s.sum) ^ 2) hx)
+    rw [hzero] at this
+    nlinarith [sq_nonneg ((Multiset.card s : R) * x - s.sum)]
+  intro x hx' y hy'
+  have hn : (Multiset.card s : R) ≠ 0 := by
+    exact_mod_cast (Multiset.card_pos_iff_exists_mem.mpr ⟨x, hx'⟩).ne'
+  exact mul_left_cancel₀ hn ((hx x hx').trans (hx y hy').symm)
+
+end OrderedRing
 
 end Multiset

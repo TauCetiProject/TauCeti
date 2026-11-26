@@ -61,7 +61,7 @@ theorem existsUnique_fixed_center_add_fixed_derivedSeries (e : L ≃ₗ⁅K⁆ L
     rw [← e.map_lie, (LieModule.mem_maxTrivSubmodule K L L p.1).mp p.1.property y,
       map_zero]
   have hd : e p.2 ∈ derivedSeries K L 1 :=
-    (LieIdeal.derivedSeries_map_le (f := e.toLieHom) 1) (LieIdeal.mem_map p.2.property)
+    e.toLieHom.map_mem_derivedSeries 1 p.2.property
   have hfixed : (⟨e p.1, hz⟩, ⟨e p.2, hd⟩) = p := by
     apply a.injective
     calc

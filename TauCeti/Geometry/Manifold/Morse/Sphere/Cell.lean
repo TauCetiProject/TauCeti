@@ -33,12 +33,13 @@ height.
   critical point `v`, of index `n`.
 * For `-1 ≤ a < 1` and `a ≤ b`, the quotient map `Hₖ₊₁({h ≤ b}) ⟶ Hₖ₊₁({h ≤ b}, {h ≤ a})` is
   an isomorphism (`TauCeti.isIso_singularHomologyπ_sublevelPair_sphereHeight`), since the lower
-  sublevel is contractible. With the previous item, for `-1 < a < 1 < b` and `n ≥ 1` the homology
-  `Hₙ({h ≤ b})` is one copy of the coefficients, carried by the cell at the north pole. For
-  `b ≥ 1` the subspace `{h ≤ b}` is the whole sphere as a set, so this is the cell-structure
-  reading of `Hₙ(Sⁿ)`, and of `H₁(S¹; ℤ) ≅ ℤ` for the circle with integer coefficients; the
-  identification of the homology of `{h ≤ b}` with that of `Sⁿ` is not formalized here. The
-  homology of spheres itself is computed by the Mayer–Vietoris sequence in
+  sublevel is contractible. For `b ≥ 1` the subspace `{h ≤ b}` is the whole sphere, so in positive
+  degrees the homology of `Sⁿ` is the relative homology across the maximum
+  (`TauCeti.singularHomologyIsoSublevelPairOfContractibleSpace`). With the previous item, for
+  `n ≥ 1` the homology `Hₙ(Sⁿ)` is one copy of the coefficients, carried by the cell at the north
+  pole, and `Hₖ(Sⁿ)` vanishes for `0 < k ≠ n`: this is the cell-structure reading of the homology
+  of the sphere, and of `H₁(S¹; ℤ) ≅ ℤ` for the circle with integer coefficients. The homology of
+  spheres is also computed, independently of Morse theory, by the Mayer–Vietoris sequence in
   `TauCeti.reducedSingularHomologySphereIso`.
 * Consequently, the connecting morphism `Hₖ₊₁({h ≤ b}, {h ≤ a}) ⟶ Hₖ({h ≤ a})` vanishes
   (`TauCeti.singularHomologyδ_sublevelPair_sphereHeight_eq_zero`): the top cell is a cycle. For
@@ -230,9 +231,10 @@ theorem isZero_singularHomology_sublevelPair_sphereHeight (v : sphere (0 : E) 1)
 /-- **The homology of an upper sublevel is carried by the top cell of the height.** For
 `-1 ≤ a < 1` and `a ≤ b`, the quotient map `Hₖ₊₁({h ≤ b}) ⟶ Hₖ₊₁({h ≤ b}, {h ≤ a})` is an
 isomorphism, since the lower sublevel is contractible. The source is the homology of the subspace
-`{h ≤ b}`, which is the whole sphere as a set when `b ≥ 1`; its identification with the homology of
-`Sⁿ` is not stated here. For `a > -1`, `b > 1` and `k + 1 = n` the target is one copy of the
-coefficients (`TauCeti.nonempty_singularHomology_sublevelPair_sphereHeight_iso`). -/
+`{h ≤ b}`, which is the whole sphere as a set when `b ≥ 1`; then the homology of `Sⁿ` is the target
+(`TauCeti.singularHomologyIsoSublevelPairOfContractibleSpace`). For `a > -1`, `b > 1` and
+`k + 1 = n` the target is one copy of the coefficients
+(`TauCeti.nonempty_singularHomology_sublevelPair_sphereHeight_iso`). -/
 theorem isIso_singularHomologyπ_sublevelPair_sphereHeight (v : sphere (0 : E) 1) {a b : ℝ}
     (ha : -1 ≤ a) (ha' : a < 1) (hab : a ≤ b) (k : ℕ) :
     IsIso ((sublevelPair (sphereHeight v) hab).singularHomologyπ R (k + 1)) := by

@@ -7,7 +7,11 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.CompletedPartialZeta
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
+import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.Analysis.Meromorphic.RCLike
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+import TauCeti.Analysis.Meromorphic.Conj
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
@@ -59,15 +63,24 @@ pole of `Λ_K` there), and has a simple pole at `s = 1` whose residue is Mathlib
 * `TauCeti.LFunctions.tendsto_sub_one_mul_completedDedekindZeta`,
   `TauCeti.LFunctions.tendsto_mul_completedDedekindZeta_zero`: the residues
   `2 ^ (r₁ + r₂) h R / w` at `s = 1` and `-2 ^ (r₁ + r₂) h R / w` at `s = 0`.
+* `TauCeti.LFunctions.toMeromorphicNFOn_mul_completedDedekindZeta_eq_sum`: the entire repair of
+  `s(s - 1) Λ_K(s)` is the sum of the pole-cleared ideal-lattice Mellin completions. At both
+  former poles it takes the value of the residue of `Λ_K` at `1`.
+  The identity `completedPartialZeta_eq_mellinKernelFEPair_Λ` uses Neukirch's normalization
+  (Chapter VII, §5).
 * `TauCeti.LFunctions.completedDedekindZeta_one_sub`: the functional equation
   `Λ_K(1 - s) = Λ_K(s)` for every `s : ℂ`.
 * `TauCeti.LFunctions.dedekindZetaC_eq_mul_completedDedekindZeta`: away from `0` and `1`,
   `ζ_K(s) = |d_K| ^ (-s / 2) Γ_ℝ(s)⁻¹ ^ r₁ Γ_ℂ(s)⁻¹ ^ r₂ Λ_K(s)`.
 * `TauCeti.LFunctions.dedekindZetaC_eq_dedekindZeta`: `dedekindZetaC K` agrees with
   `NumberField.dedekindZeta K` on `Re s > 1`.
+* `TauCeti.LFunctions.eqOn_dedekindZetaC_of_eqOn_dedekindZeta`: uniqueness away from `1` of
+  an analytic continuation agreeing with the Dedekind zeta series on `Re s > 1`.
 * `TauCeti.LFunctions.analyticAt_dedekindZetaC_iff`,
   `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_one`: `ζ_K` is analytic exactly away
   from `1`, where it has a simple pole.
+* `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_ne_top`: `ζ_K` has finite order
+  everywhere.
 * `TauCeti.LFunctions.tendsto_sub_one_mul_dedekindZetaC`: its residue at `s = 1` is
   `NumberField.dedekindZeta_residue K = 2 ^ r₁ (2π) ^ r₂ h R / (w √|d_K|)`.
 
@@ -201,7 +214,7 @@ theorem meromorphic_completedDedekindZeta : Meromorphic (completedDedekindZeta K
 
 /-- There is a system of representatives of the ideal classes, through which
 `completedDedekindZeta_eq_sum_completedPartialZeta` applies. -/
-private theorem exists_completedDedekindZeta_eq_sum :
+theorem exists_completedDedekindZeta_eq_sum :
     ∃ rep : ClassGroup (𝓞 K) → (FractionalIdeal (𝓞 K)⁰ K)ˣ,
       (∀ c, ClassGroup.mk K (rep c) = c) ∧
         completedDedekindZeta K = ∑ c, completedPartialZeta (rep c) := by
@@ -219,6 +232,24 @@ theorem completedDedekindZeta_eq_mul_dedekindZeta {s : ℂ} (hs : 1 < s.re) :
   obtain ⟨rep, hrep, h⟩ := exists_completedDedekindZeta_eq_sum K
   rw [h, Finset.sum_apply]
   exact sum_completedPartialZeta_eq_mul_dedekindZeta hrep hs
+
+open scoped ComplexConjugate in
+/-- The completed Dedekind zeta function commutes with complex conjugation, including at its
+poles where both representatives have the canonical value zero. -/
+@[simp] theorem completedDedekindZeta_conj (s : ℂ) :
+    completedDedekindZeta K (conj s) = conj (completedDedekindZeta K s) := by
+  have h : conj ∘ completedDedekindZeta K ∘ conj = completedDedekindZeta K := by
+    apply eq_of_meromorphicNFOn_of_eqOn_halfPlane
+      (meromorphicNFOn_conj_conj_iff.mpr (by simpa using meromorphicNFOn_completedDedekindZeta K))
+      (meromorphicNFOn_completedDedekindZeta K) (σ := 1)
+    intro z hz
+    have hz' : 1 < (conj z).re := by simpa only [conj_re] using Set.mem_ofPred.mp hz
+    have hD := ofReal_cpow_conj (r := ((discr K).natAbs : ℝ)) (by positivity) (z / 2)
+    rw [ofReal_natCast, map_div₀, map_ofNat] at hD
+    simp only [Function.comp_apply, completedDedekindZeta_eq_mul_dedekindZeta K hz',
+      completedDedekindZeta_eq_mul_dedekindZeta K hz, Int.abs_eq_natAbs, Int.cast_natCast,
+      dedekindZeta_conj, Gammaℝ_conj, Gammaℂ_conj, hD, map_mul, map_pow, conj_conj]
+  simpa only [Function.comp_apply, conj_conj] using (congrFun h (conj s)).symm
 
 /-! ### Regularity, poles, and residues -/
 
@@ -309,6 +340,71 @@ pole `s = 1`. -/
 theorem completedDedekindZeta_one : completedDedekindZeta K 1 = 0 := by
   obtain ⟨rep, -, h⟩ := exists_completedDedekindZeta_eq_sum K
   simp [h]
+
+/-! ### Pole-cleared completion -/
+
+open _root_.NumberField.mixedEmbedding in
+/-- The pole-cleared Dedekind completion is the sum of the pole-cleared Mellin completions
+of the lattices of any system of ideal class representatives, including at `0` and `1`. -/
+theorem toMeromorphicNFOn_mul_completedDedekindZeta_eq_sum
+    {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D)
+    (rep : ClassGroup (𝓞 K) → (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+    (hrep : ∀ c, ClassGroup.mk K (rep c) = c) :
+    toMeromorphicNFOn (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) univ =
+      ∑ c, mellinKernelEntireCompletion hD (idealLattice K (rep c)) := by
+  classical
+  have hm : Meromorphic (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) := by fun_prop
+  have hd : Differentiable ℂ (∑ c, mellinKernelEntireCompletion hD (idealLattice K (rep c))) :=
+    Differentiable.sum fun c _ ↦ differentiable_mellinKernelEntireCompletion hD _
+  ext z
+  have hne (w : ℂ) : ∀ᶠ s in 𝓝[≠] z, s ≠ w := by
+    by_cases h : z = w
+    · subst w
+      exact self_mem_nhdsWithin
+    · exact (eventually_ne_nhds h).filter_mono nhdsWithin_le_nhds
+  -- Compare the punctured germs: the finite sum gives the analytic value even at a pole.
+  have hgerm : (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) =ᶠ[𝓝[≠] z]
+      ∑ c, mellinKernelEntireCompletion hD (idealLattice K (rep c)) := by
+    filter_upwards [hne 0, hne 1] with s hs₀ hs₁
+    rw [completedDedekindZeta_eq_sum_completedPartialZeta rep hrep, Finset.sum_apply,
+      Finset.sum_apply, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun c _ ↦ ?_
+    rw [mellinKernelEntireCompletion_eq_mul_Λ hD _ hs₀ hs₁,
+      completedPartialZeta_eq_mellinKernelFEPair_Λ hD (rep c) hs₀ hs₁]
+  have hnf := meromorphicNFOn_toMeromorphicNFOn
+    (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) univ (mem_univ z)
+  exact ((hnf.eventuallyEq_nhdsNE_iff_eventuallyEq_nhds (hd.analyticAt z).meromorphicNFAt).mp
+    ((hm.meromorphicOn.toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ z)).trans hgerm)).eq_of_nhds
+
+/-- The repaired product `s(s - 1) Λ_K(s)` is entire. -/
+@[fun_prop]
+theorem differentiable_toMeromorphicNFOn_mul_completedDedekindZeta :
+    Differentiable ℂ (toMeromorphicNFOn
+      (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) univ) := by
+  obtain ⟨rep, hrep, -⟩ := exists_completedDedekindZeta_eq_sum K
+  rw [toMeromorphicNFOn_mul_completedDedekindZeta_eq_sum K
+    isUnitFundamentalDomain_unitFundamentalDomain rep hrep]
+  exact Differentiable.sum fun c _ ↦ differentiable_mellinKernelEntireCompletion _ _
+
+/-- The repaired product `s(s - 1) Λ_K(s)` at `0` equals the residue of `Λ_K` at `1`. -/
+@[simp]
+theorem toMeromorphicNFOn_mul_completedDedekindZeta_zero :
+    toMeromorphicNFOn (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) univ 0 =
+      classNumber K * (2 * mellinConstant K) := by
+  obtain ⟨rep, hrep, -⟩ := exists_completedDedekindZeta_eq_sum K
+  rw [toMeromorphicNFOn_mul_completedDedekindZeta_eq_sum K
+    isUnitFundamentalDomain_unitFundamentalDomain rep hrep, Finset.sum_apply]
+  simp [classNumber]
+
+/-- The repaired product `s(s - 1) Λ_K(s)` at `1` equals the residue of `Λ_K` at `1`. -/
+@[simp]
+theorem toMeromorphicNFOn_mul_completedDedekindZeta_one :
+    toMeromorphicNFOn (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) univ 1 =
+      classNumber K * (2 * mellinConstant K) := by
+  obtain ⟨rep, hrep, -⟩ := exists_completedDedekindZeta_eq_sum K
+  rw [toMeromorphicNFOn_mul_completedDedekindZeta_eq_sum K
+    isUnitFundamentalDomain_unitFundamentalDomain rep hrep, Finset.sum_apply]
+  simp [classNumber]
 
 /-! ### Functional equation -/
 
@@ -438,6 +534,22 @@ theorem analyticAt_dedekindZetaC {s : ℂ} (hs : s ≠ 1) : AnalyticAt ℂ (dede
   · exact ((analyticAt_invArchFactor K s).mul
       (analyticAt_completedDedekindZeta K h0 hs)).meromorphicOrderAt_nonneg
 
+/-- Any function analytic off `1` and agreeing with the Dedekind zeta series on `Re s > 1`
+agrees with the continued Dedekind zeta function off `1`. -/
+theorem eqOn_dedekindZetaC_of_eqOn_dedekindZeta {Z : ℂ → ℂ}
+    (hZ : ∀ z ≠ 1, AnalyticAt ℂ Z z)
+    (hseries : Set.EqOn Z (dedekindZeta K) {z | 1 < z.re}) :
+    Set.EqOn Z (dedekindZetaC K) ({1}ᶜ : Set ℂ) := by
+  refine AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq
+    (fun z hz ↦ hZ z (Set.mem_compl_singleton_iff.mp hz))
+    (fun _ hz ↦ analyticAt_dedekindZetaC K (Set.mem_compl_singleton_iff.mp hz))
+    (isConnected_compl_singleton_of_one_lt_rank
+      (rank_real_complex ▸ Nat.one_lt_ofNat) 1).isPreconnected
+    (z₀ := 2) (by norm_num) ?_
+  filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
+    (by norm_num : 1 < (2 : ℂ).re)] with z hz
+  exact (hseries hz).trans (dedekindZetaC_eq_dedekindZeta K hz).symm
+
 /-- **The analytic class number formula for the continued Dedekind zeta function**:
 `lim_{s → 1} (s - 1) ζ_K(s) = 2 ^ r₁ (2π) ^ r₂ h R / (w √|d_K|)`, Mathlib's
 `NumberField.dedekindZeta_residue K`. -/
@@ -466,6 +578,13 @@ theorem meromorphicOrderAt_dedekindZetaC_one :
     meromorphicOrderAt (dedekindZetaC K) 1 = (-1 : ℤ) :=
   (meromorphic_dedekindZetaC K 1).meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
     (ofReal_ne_zero.mpr (dedekindZeta_residue_pos K).ne') (tendsto_sub_one_mul_dedekindZetaC K)
+
+/-- `ζ_K` has finite order at every point, since it has a simple pole at `1` and therefore is
+not the zero meromorphic function. -/
+theorem meromorphicOrderAt_dedekindZetaC_ne_top (z : ℂ) :
+    meromorphicOrderAt (dedekindZetaC K) z ≠ ⊤ :=
+  ((meromorphic_dedekindZetaC K).exists_meromorphicOrderAt_ne_top_iff_forall.mp
+    ⟨1, by simp [meromorphicOrderAt_dedekindZetaC_one]⟩) z
 
 /-- `ζ_K` is analytic at `s` if and only if `s ≠ 1`. -/
 @[simp]

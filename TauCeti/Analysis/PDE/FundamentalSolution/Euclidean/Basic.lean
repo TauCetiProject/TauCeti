@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Analysis.InnerProductSpace.NormPow
-public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+public import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
@@ -120,13 +120,6 @@ theorem newtonianKernel_smul (n : ℕ) (r : ℝ)
   rw [newtonianKernel_def, newtonianKernel_def, norm_smul,
     Real.mul_rpow (norm_nonneg r) (norm_nonneg x)]
   ring
-
-/-- The Euclidean unit ball has positive real volume in every dimension. -/
-theorem volume_real_unitBall_pos (n : ℕ) :
-    0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) := by
-  exact ENNReal.toReal_pos
-    (measure_ball_pos volume (0 : EuclideanSpace ℝ (Fin n)) zero_lt_one).ne'
-    measure_ball_ne_top
 
 /-- Away from its pole, and outside dimension two, the Newtonian kernel does not vanish. -/
 theorem newtonianKernel_ne_zero (n : ℕ) (hn : n ≠ 2) {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :
@@ -337,7 +330,7 @@ theorem contDiffAt_newtonianKernel (n : ℕ)
   rw [hfun]
   have hpow : ContDiffAt ℝ 2 (fun y : EuclideanSpace ℝ (Fin n) ↦
       ‖y‖ ^ (2 - (n : ℝ))) x :=
-    (contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.mpr hx)
+    contDiffAt_norm_rpow_of_ne _ hx
   exact hpow.const_smul (((n : ℝ) * ((n : ℝ) - 2) *
     volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹)
 
@@ -354,7 +347,7 @@ theorem laplacian_newtonianKernel (n : ℕ)
     simp only [newtonianKernel_def, Pi.smul_apply, smul_eq_mul]
   have hpow : ContDiffAt ℝ 2 (fun y : EuclideanSpace ℝ (Fin n) ↦
       ‖y‖ ^ (2 - (n : ℝ))) x :=
-    (contDiffAt_norm ℝ hx).rpow_const_of_ne (norm_ne_zero_iff.mpr hx)
+    contDiffAt_norm_rpow_of_ne _ hx
   rw [hfun, laplacian_smul _ hpow]
   rw [laplacian_norm_rpow_of_ne (2 - (n : ℝ)) hx]
   simp only [finrank_euclideanSpace, Fintype.card_fin, smul_eq_mul]

@@ -201,6 +201,22 @@ namespace YoungDiagram
 
 open TauCeti.TypeAHeckeAlgebra
 
+/-- Additive contents separate the addable cells when the quantum integers through
+`μ.card + 1` are nonzero. -/
+theorem injOn_additiveContent_cellContent_of_forall_ne_zero (μ : YoungDiagram)
+    {R : Type*} [Field R] {Q : R} (hQ : Q ≠ 0)
+    (hQint : ∀ d : ℕ, 0 < d → d ≤ μ.card + 1 → additiveContent Q d ≠ 0) :
+    Set.InjOn (fun c => additiveContent Q (cellContent c)) {c | IsAddable μ c} := by
+  intro c hc d hd he
+  by_contra hne
+  have hbound := (Finset.mem_Icc.mp (hc.natAbs_cellContent_sub_mem hd hne)).2
+  have habs : |cellContent c - cellContent d| < ((μ.card + 2 : ℕ) : ℤ) := by
+    rw [← Int.natCast_natAbs]
+    have hnat : (cellContent c - cellContent d).natAbs < μ.card + 2 := by omega
+    exact_mod_cast hnat
+  exact hne (μ.injOn_cellContent hc hd
+    ((additiveContent_inj hQ (fun e he' he'' => hQint e he' (by omega)) habs).mp he))
+
 /-- Additive contents separate the addable cells of a fixed diagram at every
 positive parameter, including `Q = 1`. No bound on the diagram size is needed. -/
 theorem injOn_additiveContent_cellContent (μ : YoungDiagram) {R : Type*} [Field R]

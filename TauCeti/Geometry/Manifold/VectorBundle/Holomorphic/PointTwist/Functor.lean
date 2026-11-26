@@ -26,13 +26,14 @@ This file shows that twisting is functorial and that the two opposite twists at 
   charts `i.1` of `E` and `E'`, because the scalars of the twist commute with the complex linear
   maps `e z` (`TauCeti.signedPointTwistCore_localTriv_signedPointTwistHom`). In particular its
   reading in the preferred charts at any point agrees with that of `e` nearby
-  (`TauCeti.inCoordinates_signedPointTwistHom_real`), so it is real `C^n` on total spaces when `e`
-  is (`TauCeti.contMDiff_signedPointTwistHom_real`), for real `C^n` structures as in
-  `TauCeti.signedPointTwistCore.contMDiffVectorBundle_real`.
+  (`TauCeti.inCoordinates_signedPointTwistHom_eventuallyEq`), so it is `C^n` on total spaces when
+  `e` is (`TauCeti.contMDiff_signedPointTwistHom`), for any model of `X` over a subfield `𝕜` of `ℂ`:
+  the real structure of `TauCeti.signedPointTwistCore.contMDiffVectorBundle_real` (`𝓘(ℝ, ℂ)`) and
+  the holomorphic one (`𝓘(ℂ)`).
 * For fibre isomorphisms the twisted maps are isomorphisms `TauCeti.signedPointTwistEquiv`, which
   respect identities, composition and inverses (`TauCeti.signedPointTwistEquiv_refl`,
   `TauCeti.signedPointTwistEquiv_trans`, `TauCeti.signedPointTwistEquiv_symm`). A family whose
-  total-space map is real `C^n` induces a real `C^n` diffeomorphism `E(±x) ≅ E'(±x)`
+  total-space map is `C^n` induces a `C^n` diffeomorphism `E(±x) ≅ E'(±x)`
   (`TauCeti.signedPointTwistDiffeomorph`).
 * The twist of `E(±x)` with the opposite sign is `E` again: the fibre isomorphism
   `TauCeti.signedPointTwistCancelEquiv` reads a coordinate of the double twist as a vector of `E`
@@ -52,8 +53,9 @@ twists, and cancellation undoes a twist.
 
 * `TauCeti.signedPointTwistHom`, `TauCeti.signedPointTwistEquiv`: the fibre maps of the twists
   induced by fibre maps of the bundles.
-* `TauCeti.signedPointTwistDiffeomorph`: `E ≅ E'` implies `E(±x) ≅ E'(±x)`, as real `C^n`
-  diffeomorphisms of total spaces with complex linear fibre maps.
+* `TauCeti.signedPointTwistDiffeomorph`: `E ≅ E'` implies `E(±x) ≅ E'(±x)`, as `C^n`
+  diffeomorphisms of total spaces with complex linear fibre maps, for any model `I` of `X` over a
+  subfield `𝕜` of `ℂ` (real for `𝓘(ℝ, ℂ)`, holomorphic for `𝓘(ℂ)`).
 * `TauCeti.signedPointTwistCancelEquiv` and `TauCeti.signedPointTwistCancelDiffeomorph`:
   `E(x)(-x) ≅ E` and `E(-x)(x) ≅ E`.
 
@@ -61,8 +63,8 @@ twists, and cancellation undoes a twist.
 
 * `TauCeti.signedPointTwistCore_localTriv_signedPointTwistHom`: in every chart, the twisted map
   reads as the original one.
-* `TauCeti.contMDiff_signedPointTwistHom_real`, `TauCeti.contMDiff_signedPointTwistEquiv_real`:
-  the twisted maps are real `C^n` on total spaces.
+* `TauCeti.contMDiff_signedPointTwistHom`, `TauCeti.contMDiff_signedPointTwistEquiv`: the twisted
+  maps are `C^n` on total spaces.
 * `TauCeti.signedPointTwistEquiv_refl`, `TauCeti.signedPointTwistEquiv_trans`,
   `TauCeti.signedPointTwistEquiv_symm`: the functor laws.
 * `TauCeti.trivializationAt_signedPointTwistCancelEquiv`: in the preferred charts at any point, the
@@ -113,7 +115,8 @@ def signedPointTwistHom (x : X) (s : Bool) (e : ∀ z, E z →L[ℂ] E' z) (z : 
     (signedPointTwistCore F E x s).Fiber z →L[ℂ] (signedPointTwistCore F' E' x s).Fiber z :=
   ContinuousLinearMap.inCoordinates F E F' E' z z z z (e z)
 
-theorem signedPointTwistHom_apply (x : X) (s : Bool) (e : ∀ z, E z →L[ℂ] E' z) (z : X) (w : F) :
+@[simp] theorem signedPointTwistHom_apply (x : X) (s : Bool) (e : ∀ z, E z →L[ℂ] E' z) (z : X)
+    (w : F) :
     signedPointTwistHom F F' x s e z w =
       (trivializationAt F' E' z ⟨z, e z ((trivializationAt F E z).symm z w)⟩).2 := by
   -- The fibres of the twists are `F` and `F'` by definition, so the map is `inCoordinates`.
@@ -159,7 +162,7 @@ def signedPointTwistEquiv (x : X) (s : Bool) (e : ∀ z, E z ≃L[ℂ] E' z) (z 
     ((e z).trans ((trivializationAt F' E' z).continuousLinearEquivAt ℂ z
       (mem_baseSet_trivializationAt F' E' z)))
 
-theorem signedPointTwistEquiv_apply (x : X) (s : Bool) (e : ∀ z, E z ≃L[ℂ] E' z) (z : X)
+@[simp] theorem signedPointTwistEquiv_apply (x : X) (s : Bool) (e : ∀ z, E z ≃L[ℂ] E' z) (z : X)
     (w : F) :
     signedPointTwistEquiv F F' x s e z w =
       (trivializationAt F' E' z ⟨z, e z ((trivializationAt F E z).symm z w)⟩).2 :=
@@ -177,6 +180,8 @@ theorem coe_signedPointTwistEquiv (x : X) (s : Bool) (e : ∀ z, E z ≃L[ℂ] E
     signedPointTwistEquiv F F x s (fun z ↦ ContinuousLinearEquiv.refl ℂ (E z)) z =
       ContinuousLinearEquiv.refl ℂ _ := by
   refine ContinuousLinearEquiv.ext (funext fun w ↦ ?_)
+  -- Evaluate the twist; the chart of `E` at `z` and its inverse then cancel.
+  refine (signedPointTwistEquiv_apply (F := F) (F' := F) (E := E) (E' := E) x s _ z w).trans ?_
   exact congrArg Prod.snd
     ((trivializationAt F E z).apply_mk_symm (mem_baseSet_trivializationAt F E z) w)
 
@@ -186,6 +191,10 @@ theorem signedPointTwistEquiv_trans (x : X) (s : Bool) (e : ∀ z, E z ≃L[ℂ]
     signedPointTwistEquiv F F'' x s (fun z ↦ (e z).trans (e' z)) z =
       (signedPointTwistEquiv F F' x s e z).trans (signedPointTwistEquiv F' F'' x s e' z) := by
   refine ContinuousLinearEquiv.ext (funext fun w ↦ ?_)
+  -- Evaluate the twist of the composite. The composite of the two twists is, by
+  -- `signedPointTwistEquiv_apply` applied twice, `e' z` read after `e z` with the chart of `E'` at
+  -- `z` and its inverse in between, which cancel.
+  refine (signedPointTwistEquiv_apply (F := F) (F' := F'') (E := E) (E' := E'') x s _ z w).trans ?_
   exact congrArg (fun y ↦ (trivializationAt F'' E'' z ⟨z, e' z y⟩).2)
     ((trivializationAt F' E' z).symm_apply_apply_mk (mem_baseSet_trivializationAt F' E' z) _).symm
 
@@ -193,45 +202,50 @@ theorem signedPointTwistEquiv_trans (x : X) (s : Bool) (e : ∀ z, E z ≃L[ℂ]
 @[simp] theorem signedPointTwistEquiv_symm (x : X) (s : Bool) (e : ∀ z, E z ≃L[ℂ] E' z) (z : X) :
     (signedPointTwistEquiv F F' x s e z).symm =
       signedPointTwistEquiv F' F x s (fun z ↦ (e z).symm) z :=
+  -- Both sides are the inverse chart of `E'` at `z`, then `(e z).symm`, then the chart of `E` at
+  -- `z`: `ContinuousLinearEquiv.symm` reverses `trans` and inverts each factor by definition.
   (rfl)
 
 end Bundle
 
-/-! ### Real smoothness of twisted maps -/
+/-! ### Smoothness of twisted maps -/
 
-section RealSmooth
+section Smooth
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedSpace ℝ F]
-  [IsScalarTower ℝ ℂ F]
-  {E : X → Type*} [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)] [∀ z, Module ℝ (E z)]
-  [∀ z, IsScalarTower ℝ ℂ (E z)] [∀ z, TopologicalSpace (E z)] [TopologicalSpace (TotalSpace F E)]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra 𝕜 ℂ]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedSpace 𝕜 F]
+  [IsScalarTower 𝕜 ℂ F]
+  {E : X → Type*} [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)] [∀ z, Module 𝕜 (E z)]
+  [∀ z, IsScalarTower 𝕜 ℂ (E z)] [∀ z, TopologicalSpace (E z)] [TopologicalSpace (TotalSpace F E)]
   [FiberBundle F E] [VectorBundle ℂ F E]
-  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℂ F'] [NormedSpace ℝ F']
-  [IsScalarTower ℝ ℂ F']
-  {E' : X → Type*} [∀ z, AddCommGroup (E' z)] [∀ z, Module ℂ (E' z)] [∀ z, Module ℝ (E' z)]
-  [∀ z, IsScalarTower ℝ ℂ (E' z)] [∀ z, TopologicalSpace (E' z)]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℂ F'] [NormedSpace 𝕜 F']
+  [IsScalarTower 𝕜 ℂ F']
+  {E' : X → Type*} [∀ z, AddCommGroup (E' z)] [∀ z, Module ℂ (E' z)] [∀ z, Module 𝕜 (E' z)]
+  [∀ z, IsScalarTower 𝕜 ℂ (E' z)] [∀ z, TopologicalSpace (E' z)]
   [TopologicalSpace (TotalSpace F' E')] [FiberBundle F' E'] [VectorBundle ℂ F' E']
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] {I : ModelWithCorners 𝕜 EB ℂ}
   {n : ℕ∞ω}
 
-local instance instVectorBundleRealPointTwistFunctor {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℂ F] [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F] {E : X → Type*}
-    [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)] [∀ z, Module ℝ (E z)]
-    [∀ z, IsScalarTower ℝ ℂ (E z)] [∀ z, TopologicalSpace (E z)]
+/-- The underlying `𝕜`-vector bundle of a complex vector bundle. -/
+local instance instVectorBundlePointTwistFunctor {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℂ F] [NormedSpace 𝕜 F] [IsScalarTower 𝕜 ℂ F] {E : X → Type*}
+    [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)] [∀ z, Module 𝕜 (E z)]
+    [∀ z, IsScalarTower 𝕜 ℂ (E z)] [∀ z, TopologicalSpace (E z)]
     [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℂ F E] :
-    VectorBundle ℝ F E :=
-  VectorBundle.restrictScalars ℝ ℂ F E
+    VectorBundle 𝕜 F E :=
+  VectorBundle.restrictScalars 𝕜 ℂ F E
 
 /-- **The twisted map in the preferred charts.** Near every point `z₀`, the twisted map read in the
 preferred charts of the twists at `z₀` is `e` read in the preferred charts of `E` and `E'` at `z₀`,
-as real linear maps. This is the chart `(z₀, decide (z₀ = x))` case of
+as `𝕜`-linear maps. This is the chart `(z₀, decide (z₀ = x))` case of
 `TauCeti.signedPointTwistCore_localTriv_signedPointTwistHom`. -/
-theorem inCoordinates_signedPointTwistHom_real (x : X) (s : Bool) (e : ∀ z, E z →L[ℂ] E' z)
+theorem inCoordinates_signedPointTwistHom_eventuallyEq (x : X) (s : Bool) (e : ∀ z, E z →L[ℂ] E' z)
     (z₀ : X) :
     ∀ᶠ z in 𝓝 z₀,
       ContinuousLinearMap.inCoordinates F (signedPointTwistCore F E x s).Fiber F'
           (signedPointTwistCore F' E' x s).Fiber z₀ z z₀ z
-          ((signedPointTwistHom F F' x s e z).restrictScalars ℝ) =
-        ContinuousLinearMap.inCoordinates F E F' E' z₀ z z₀ z ((e z).restrictScalars ℝ) := by
+          ((signedPointTwistHom F F' x s e z).restrictScalars 𝕜) =
+        ContinuousLinearMap.inCoordinates F E F' E' z₀ z z₀ z ((e z).restrictScalars 𝕜) := by
   classical
   have h := (trivializationAt F (signedPointTwistCore F E x s).Fiber z₀).open_baseSet.inter
     (trivializationAt F' (signedPointTwistCore F' E' x s).Fiber z₀).open_baseSet
@@ -253,63 +267,65 @@ theorem inCoordinates_signedPointTwistHom_real (x : X) (s : Bool) (e : ∀ z, E 
   simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
     Trivialization.symmL_apply _ h₁, Trivialization.continuousLinearMapAt_apply_of_mem _ _ h₂]
 
-variable [FiniteDimensional ℝ F]
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
 
-/-- **Twisting preserves real-`C^n` bundle maps.** If a family of complex linear fibre maps
-`e z : E z →L[ℂ] E' z` is real `C^n` on total spaces, so is the induced family of maps of the
-signed point twists. -/
-theorem contMDiff_signedPointTwistHom_real (x : X) (s : Bool) {e : ∀ z, E z →L[ℂ] E' z}
-    (he : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F')) n
+/-- **Twisting preserves `C^n` bundle maps.** If a family of complex linear fibre maps
+`e z : E z →L[ℂ] E' z` is `C^n` on total spaces, for a model `I` of `X` over a subfield `𝕜` of `ℂ`
+(`𝓘(ℝ, ℂ)` for the real structure, `𝓘(ℂ)` for the holomorphic one), so is the induced family of
+maps of the signed point twists. -/
+theorem contMDiff_signedPointTwistHom (x : X) (s : Bool) {e : ∀ z, E z →L[ℂ] E' z}
+    (he : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F')) n
       fun p : TotalSpace F E ↦ TotalSpace.mk' F' p.proj (e p.proj p.snd)) :
-    ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F')) n
+    ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F')) n
       fun p : TotalSpace F (signedPointTwistCore F E x s).Fiber ↦
         TotalSpace.mk' F' p.proj (signedPointTwistHom F F' x s e p.proj p.snd) := by
-  have : ∀ z, IsTopologicalAddGroup (E' z) := VectorBundle.isTopologicalAddGroup ℝ F' E'
-  have : ∀ z, ContinuousSMul ℝ (E' z) := VectorBundle.continuousSMul ℝ F' E'
+  have : ∀ z, IsTopologicalAddGroup (E' z) := VectorBundle.isTopologicalAddGroup 𝕜 F' E'
+  have : ∀ z, ContinuousSMul 𝕜 (E' z) := VectorBundle.continuousSMul 𝕜 F' E'
   have : ∀ z, IsTopologicalAddGroup ((signedPointTwistCore F' E' x s).Fiber z) :=
-    VectorBundle.isTopologicalAddGroup ℝ F' _
-  have : ∀ z, ContinuousSMul ℝ ((signedPointTwistCore F' E' x s).Fiber z) :=
-    VectorBundle.continuousSMul ℝ F' _
+    VectorBundle.isTopologicalAddGroup 𝕜 F' _
+  have : ∀ z, ContinuousSMul 𝕜 ((signedPointTwistCore F' E' x s).Fiber z) :=
+    VectorBundle.continuousSMul 𝕜 F' _
   -- Smoothness of a bundle map is that of its Hom section, read in the preferred charts.
-  have h := (contMDiff_hom_bundle_iff (IB := 𝓘(ℝ, ℂ)) (n := n)
-    fun z ↦ (e z).restrictScalars ℝ).2 he
-  refine (contMDiff_hom_bundle_iff (IB := 𝓘(ℝ, ℂ)) (n := n)
+  have h := (contMDiff_hom_bundle_iff (IB := I) (n := n)
+    fun z ↦ (e z).restrictScalars 𝕜).2 he
+  refine (contMDiff_hom_bundle_iff (IB := I) (n := n)
     (E₁ := (signedPointTwistCore F E x s).Fiber) (E₂ := (signedPointTwistCore F' E' x s).Fiber)
-    fun z ↦ (signedPointTwistHom F F' x s e z).restrictScalars ℝ).1 fun z₀ ↦ ?_
+    fun z ↦ (signedPointTwistHom F F' x s e z).restrictScalars 𝕜).1 fun z₀ ↦ ?_
   rw [contMDiffAt_hom_bundle]
   exact ⟨contMDiffAt_id, ((contMDiffAt_hom_bundle _).1 (h z₀)).2.congr_of_eventuallyEq
-    (inCoordinates_signedPointTwistHom_real x s e z₀)⟩
+    (inCoordinates_signedPointTwistHom_eventuallyEq x s e z₀)⟩
 
-/-- **Twisting preserves real-`C^n` bundle isomorphisms.** If a family of complex fibre
-isomorphisms is real `C^n` on total spaces, so is the induced family of isomorphisms of the signed
-point twists. -/
-theorem contMDiff_signedPointTwistEquiv_real (x : X) (s : Bool) {e : ∀ z, E z ≃L[ℂ] E' z}
-    (he : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F')) n
+/-- **Twisting preserves `C^n` bundle isomorphisms.** If a family of complex fibre isomorphisms is
+`C^n` on total spaces for a model `I` over `𝕜`, so is the induced family of isomorphisms of the
+signed point twists. -/
+theorem contMDiff_signedPointTwistEquiv (x : X) (s : Bool) {e : ∀ z, E z ≃L[ℂ] E' z}
+    (he : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F')) n
       fun p : TotalSpace F E ↦ TotalSpace.mk' F' p.proj (e p.proj p.snd)) :
-    ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F')) n
+    ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F')) n
       fun p : TotalSpace F (signedPointTwistCore F E x s).Fiber ↦
         TotalSpace.mk' F' p.proj (signedPointTwistEquiv F F' x s e p.proj p.snd) := by
   simpa only [← coe_signedPointTwistEquiv, ContinuousLinearEquiv.coe_coe] using
-    contMDiff_signedPointTwistHom_real x s (e := fun z ↦ (e z : E z →L[ℂ] E' z)) he
+    contMDiff_signedPointTwistHom x s (e := fun z ↦ (e z : E z →L[ℂ] E' z)) he
 
 variable (F F') in
 /-- **Functoriality of point twists.** A family of complex fibre isomorphisms
-`e z : E z ≃L[ℂ] E' z` whose total-space map is real `C^n` induces a real `C^n` diffeomorphism
-`E(±x) ≅ E'(±x)` of the signed point twists, with fibre maps `signedPointTwistEquiv`. The inverse
-is `C^n` because the model fibre has finite dimension. -/
+`e z : E z ≃L[ℂ] E' z` whose total-space map is `C^n` for a model `I` over `𝕜` induces a `C^n`
+diffeomorphism `E(±x) ≅ E'(±x)` of the signed point twists, with fibre maps
+`signedPointTwistEquiv`. The inverse is `C^n` because the model fibre has finite dimension over
+`𝕜`. -/
 def signedPointTwistDiffeomorph (x : X) (s : Bool) (e : ∀ z, E z ≃L[ℂ] E' z)
-    (he : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F')) n
+    (he : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F')) n
       fun p : TotalSpace F E ↦ TotalSpace.mk' F' p.proj (e p.proj p.snd)) :
-    TotalSpace F (signedPointTwistCore F E x s).Fiber ≃ₘ^n⟮𝓘(ℝ, ℂ).prod 𝓘(ℝ, F),
-      𝓘(ℝ, ℂ).prod 𝓘(ℝ, F')⟯ TotalSpace F' (signedPointTwistCore F' E' x s).Fiber :=
+    TotalSpace F (signedPointTwistCore F E x s).Fiber ≃ₘ^n⟮I.prod 𝓘(𝕜, F),
+      I.prod 𝓘(𝕜, F')⟯ TotalSpace F' (signedPointTwistCore F' E' x s).Fiber :=
   bundleDiffeomorph (E₁ := (signedPointTwistCore F E x s).Fiber)
     (E₂ := (signedPointTwistCore F' E' x s).Fiber)
-    (fun z ↦ (signedPointTwistEquiv F F' x s e z).restrictScalars' ℝ)
+    (fun z ↦ (signedPointTwistEquiv F F' x s e z).restrictScalars' 𝕜)
     (by simpa only [ContinuousLinearEquiv.coe_restrictScalars'] using
-      contMDiff_signedPointTwistEquiv_real x s he)
+      contMDiff_signedPointTwistEquiv x s he)
 
 @[simp] theorem signedPointTwistDiffeomorph_apply (x : X) (s : Bool) (e : ∀ z, E z ≃L[ℂ] E' z)
-    (he : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F')) n
+    (he : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F')) n
       fun p : TotalSpace F E ↦ TotalSpace.mk' F' p.proj (e p.proj p.snd))
     (p : TotalSpace F (signedPointTwistCore F E x s).Fiber) :
     signedPointTwistDiffeomorph F F' x s e he p =
@@ -319,7 +335,7 @@ def signedPointTwistDiffeomorph (x : X) (s : Bool) (e : ∀ z, E z ≃L[ℂ] E' 
 
 @[simp] theorem signedPointTwistDiffeomorph_symm_apply (x : X) (s : Bool)
     (e : ∀ z, E z ≃L[ℂ] E' z)
-    (he : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F')) n
+    (he : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, F')) n
       fun p : TotalSpace F E ↦ TotalSpace.mk' F' p.proj (e p.proj p.snd))
     (p : TotalSpace F' (signedPointTwistCore F' E' x s).Fiber) :
     (signedPointTwistDiffeomorph F F' x s e he).symm p =
@@ -327,7 +343,7 @@ def signedPointTwistDiffeomorph (x : X) (s : Bool) (e : ∀ z, E z ≃L[ℂ] E' 
   rw [signedPointTwistDiffeomorph, bundleDiffeomorph_symm_apply,
     ContinuousLinearEquiv.coe_restrictScalars'_symm]
 
-end RealSmooth
+end Smooth
 
 /-! ### Cancellation of opposite twists -/
 
@@ -348,7 +364,7 @@ def signedPointTwistCancelEquiv (x : X) (s : Bool) (z : X) :
   ((trivializationAt F E z).continuousLinearEquivAt ℂ z
     (mem_baseSet_trivializationAt F E z)).symm
 
-theorem signedPointTwistCancelEquiv_apply (x : X) (s : Bool) (z : X) (v : F) :
+@[simp] theorem signedPointTwistCancelEquiv_apply (x : X) (s : Bool) (z : X) (v : F) :
     signedPointTwistCancelEquiv F E x s z v = (trivializationAt F E z).symm z v :=
   (rfl)
 
