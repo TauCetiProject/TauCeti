@@ -101,10 +101,7 @@ of unity for every `n > 0`, an isomorphism `e : puiseuxField K ≃ₐ[K⸨X⸩] 
 (`TauCeti.puiseuxField.galEquivTateModuleOfAlgEquiv_eq`). -/
 noncomputable def galEquivTateModuleOfAlgEquiv (e : puiseuxField K ≃ₐ[K⸨X⸩] L) :
     Gal(L/K⸨X⸩) ≃ₜ* PrimeToPTateModule 1 K :=
-  ({ e.symm.autCongr with
-      continuous_toFun := e.symm.continuous_autCongr
-      continuous_invFun := e.continuous_autCongr } :
-      Gal(L/K⸨X⸩) ≃ₜ* Gal(puiseuxField K/K⸨X⸩)).trans (galEquivTateModule K)
+  e.symm.autCongrContinuousMulEquiv.trans (galEquivTateModule K)
 
 /-- The image of `σ` is the image under `galEquivTateModule` of its conjugate `e⁻¹ ∘ σ ∘ e`. -/
 @[simp]

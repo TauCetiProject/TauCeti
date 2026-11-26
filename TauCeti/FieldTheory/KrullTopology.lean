@@ -44,6 +44,8 @@ the discrete topology imposed by `TauCeti.ForcedDiscrete`, is a discrete `Gal(L/
   subgroup fixing `e⁻¹(E)` onto the subgroup fixing `E`.
 * `AlgEquiv.continuous_autCongr`: an isomorphism of field extensions `L ≃ₐ[K] L'` induces a
   continuous isomorphism `Gal(L/K) ≃* Gal(L'/K)` by conjugation.
+* `AlgEquiv.autCongrContinuousMulEquiv`: that conjugation, as an isomorphism of topological
+  groups `Gal(L/K) ≃ₜ* Gal(L'/K)`.
 * `IntermediateField.isOpen_ker_comp_restrictNormalHom`: an additive homomorphism from
   `Gal(E/K)` for a finite normal intermediate field `E`, read on `Gal(L/K)` through restriction,
   has open kernel.
@@ -164,6 +166,28 @@ theorem AlgEquiv.continuous_autCongr {L' : Type*} [Field L'] [Algebra K L'] (e :
   refine Filter.mem_map.2 <| (krullTopology_mem_nhds_one_iff K L _).2
     ⟨E.map e.symm.toAlgHom, inferInstance,
       fun σ hσ ↦ hEs ((e.autCongr_mem_fixingSubgroup_iff E).2 hσ)⟩
+
+/-- **Galois groups of isomorphic extensions are isomorphic topological groups.** An isomorphism
+`e : L ≃ₐ[K] L'` of field extensions of `K` conjugates `Gal(L/K)` onto `Gal(L'/K)`,
+`σ ↦ e ∘ σ ∘ e⁻¹`, and this is a homeomorphism for the Krull topologies
+(`AlgEquiv.continuous_autCongr`). It is `AlgEquiv.autCongr` with its continuity recorded. -/
+@[expose] def AlgEquiv.autCongrContinuousMulEquiv {L' : Type*} [Field L'] [Algebra K L']
+    (e : L ≃ₐ[K] L') : Gal(L/K) ≃ₜ* Gal(L'/K) where
+  toMulEquiv := e.autCongr
+  continuous_toFun := e.continuous_autCongr
+  continuous_invFun := e.symm.continuous_autCongr
+
+/-- `e.autCongrContinuousMulEquiv` sends `σ` to its conjugate `e.autCongr σ`. -/
+@[simp]
+theorem AlgEquiv.autCongrContinuousMulEquiv_apply {L' : Type*} [Field L'] [Algebra K L']
+    (e : L ≃ₐ[K] L') (σ : Gal(L/K)) : e.autCongrContinuousMulEquiv σ = e.autCongr σ :=
+  (rfl)
+
+/-- The inverse of conjugation by `e` is conjugation by `e⁻¹`. -/
+@[simp]
+theorem AlgEquiv.autCongrContinuousMulEquiv_symm {L' : Type*} [Field L'] [Algebra K L']
+    (e : L ≃ₐ[K] L') : e.autCongrContinuousMulEquiv.symm = e.symm.autCongrContinuousMulEquiv :=
+  (rfl)
 
 namespace TauCeti
 
