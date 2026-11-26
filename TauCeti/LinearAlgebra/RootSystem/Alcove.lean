@@ -51,6 +51,8 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 * `RootPairing.fundamentalAlcove`: the open fundamental alcove of a base.
 * `RootPairing.closedFundamentalAlcove`: the closed fundamental alcove, cut out by the
   non-strict inequalities.
+* `RootPairing.separatingAffineRoots`: the affine roots `αⱼ - k` positive at one point and negative
+  at another; for a reduced pairing, one for each affine root hyperplane separating the two points.
 * `RootPairing.Base.affineSimpleRoot`: the affine simple roots `a₀ = 1 - θ` and `aᵢ = αᵢ`,
   indexed by the nodes of the affine Dynkin diagram, whose zero sets are the walls of the
   fundamental alcove.
@@ -252,6 +254,34 @@ theorem mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove :
   · exact hx.2.lt_of_ne (by simpa using h b.highestRoot 1)
 
 end Alcove
+
+/-! ### The affine roots separating two points -/
+
+section SeparatingAffineRoots
+
+variable [LinearOrder R]
+
+/-- The **affine roots separating `x` from `y`**: the affine roots `αⱼ - k`, encoded as pairs
+`(j, k)` of a root index and an integer, that are positive at `x` and negative at `y`. Each affine
+root hyperplane `αⱼ = k` strictly separating `x` from `y` gives one of them, `(j, k)` or `(-j, -k)`
+according to the side on which `x` lies. The set counts indexed affine roots rather than
+hyperplanes: in a nonreduced pairing, where `2αⱼ` may also be a root, the affine roots `αⱼ - k`
+and `2αⱼ - 2k` have the same hyperplane. When `P` is reduced, the set has exactly one element for
+each separating hyperplane. -/
+def separatingAffineRoots (x y : N) : Set (ι × ℤ) :=
+  {p | (p.2 : R) < P.root' p.1 x ∧ P.root' p.1 y < p.2}
+
+@[simp]
+lemma mem_separatingAffineRoots {x y : N} {p : ι × ℤ} :
+    p ∈ P.separatingAffineRoots x y ↔ (p.2 : R) < P.root' p.1 x ∧ P.root' p.1 y < p.2 :=
+  Iff.rfl
+
+/-- No affine root separates a point from itself. -/
+@[simp]
+lemma separatingAffineRoots_self (x : N) : P.separatingAffineRoots x x = ∅ :=
+  Set.eq_empty_of_forall_notMem fun _ h ↦ lt_asymm h.1 h.2
+
+end SeparatingAffineRoots
 
 end CommRing
 

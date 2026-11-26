@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Weyl.Coxeter
+public import TauCeti.LinearAlgebra.RootSystem.AffineRealization
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Affine.Alcove
-import TauCeti.LinearAlgebra.LinearIndependent.Prod
+import TauCeti.GroupTheory.Coxeter.Geometric.Basic
 import TauCeti.GroupTheory.Coxeter.Parabolic
 import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Weyl.TitsCone
 
@@ -41,8 +42,11 @@ group fixes. Consequently:
   property of the dominant chamber (`TauCeti.CartanRealization.isDominant_smul_iff_eq`), and the
   stabilizer of the strictly dominant weight `λₓ` is trivial
   (`TauCeti.CartanRealization.parabolic_eq_stabilizer`);
-* it is surjective: the wall reflections carry every point into the closed fundamental alcove
-  (`RootPairing.exists_mem_apply_mem_closedFundamentalAlcove_of_affineCoreflection_mem`), and the
+* it is surjective: the wall reflections carry into the closed fundamental alcove every point at
+  which every root is bounded below by an integer
+  (`RootPairing.exists_mem_apply_mem_closedFundamentalAlcove_of_affineCoreflection_mem`), as is the
+  image `f x` of a point `x` of the fundamental alcove under any `f ∈ W_aff`
+  (`RootPairing.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup`); and the
   affine Weyl group acts freely on the alcoves
   (`RootPairing.eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove`), so every element
   of `W_aff` is a product of wall reflections.
@@ -62,7 +66,6 @@ that it is at least the length.
 
 ## Main definitions
 
-* `RootPairing.Base.affineRealization`: a realization of the affine Cartan matrix on `M × R × R`.
 * `RootPairing.Base.affineWeylGroupEquiv`: the isomorphism of the affine Weyl group with the Weyl
   group of any realization of the affine Cartan matrix over a field of characteristic zero,
   carrying the wall reflections to the simple reflections.
@@ -101,64 +104,6 @@ open TauCeti.CartanRealization (diag_map_intCast)
 namespace RootPairing.Base
 
 variable {ι R M N : Type*} [AddCommGroup M] [AddCommGroup N]
-
-/-! ### A realization of the affine Cartan matrix -/
-
-section Realization
-
-variable [Field R] [Module R M] [Module R N]
-
-variable [CharZero R] {P : RootPairing ι R M N} [P.IsCrystallographic] [Finite ι] [Nonempty ι]
-  (b : P.Base)
-
-/-- **The affine realization of a base.** A realization of the affine Cartan matrix
-`RootPairing.Base.affineCartanMatrix` on `H = M × R × R`. In the convention of
-`TauCeti.CartanRealization`, where the matrix entry `A k l` is the value of the root at `l` on the
-coroot at `k`, the coroot at a node `k` is the affine simple root `aₖ = αₖ + aₖ(0)`, homogenized
-as `(αₖ, aₖ(0), 0)`, and the root at `l` is the coroot `αₗ^∨` (with `α₀^∨ = -θ^∨`), as the
-functional `(m, s, t) ↦ ⟨m, αₗ^∨⟩ + aₗ(0) t`. The last coordinate makes the roots linearly
-independent although the coroots `αₗ^∨` are not, and the middle one does the same for the
-coroots. -/
-noncomputable def affineRealization :
-    CartanRealization (b.affineCartanMatrix.map (Int.cast : ℤ → R)) (M × R × R) where
-  coroot k := (P.root (b.affineSimpleRootIndex k), b.affineSimpleRoot k 0, 0)
-  root l := (P.coroot' (b.affineSimpleRootIndex l)).coprod
-    (b.affineSimpleRoot l 0 • LinearMap.snd R R R)
-  coroot_linearIndependent := by
-    -- Forgetting the last coordinate, the simple roots `(αᵢ, 0)` are independent and the affine
-    -- node adds `(-θ, 1)`. `LinearIndepOn R P.root b.support` is the independence of the simple
-    -- roots indexed by the subtype of `b.support`.
-    refine LinearIndependent.of_comp
-      ((LinearMap.id : M →ₗ[R] M).prodMap (LinearMap.fst R R R)) ?_
-    exact LinearIndependent.option_prod (J := b.support) (e := fun i ↦ P.root i)
-      b.linearIndepOn_root (fun i ↦ by simp) (by simp)
-  root_linearIndependent := by
-    -- Restricting to `M` and evaluating at `(0, 0, 1)`, the simple coroots `(αᵢ^∨, 0)` are
-    -- independent, the pairing being perfect, and the affine node adds `(-θ^∨, 1)`.
-    refine LinearIndependent.of_comp
-      ((LinearMap.lcomp R R (LinearMap.inl R M (R × R))).prod
-        (Dual.eval R (M × R × R) (0, 0, 1))) ?_
-    refine LinearIndependent.option_prod (J := b.support) (e := fun i ↦ P.coroot' i)
-      ((b.linearIndepOn_coroot).map' _
-        (LinearMap.ker_eq_bot.mpr (LinearMap.IsPerfPair.bijective_right P.toLinearMap).injective))
-      (fun i ↦ ?_) (by simp)
-    ext m <;> simp
-  root_coroot k l := by
-    simp [b.affineCartanMatrix_apply, ← P.algebraMap_pairingIn ℤ, algebraMap_int_eq]
-
-@[simp]
-lemma affineRealization_coroot (k : Option b.support) :
-    b.affineRealization.coroot k =
-      (P.root (b.affineSimpleRootIndex k), b.affineSimpleRoot k 0, 0) :=
-  (rfl)
-
-@[simp]
-lemma affineRealization_root_apply (l : Option b.support) (v : M × R × R) :
-    b.affineRealization.root l v =
-      P.toLinearMap v.1 (P.coroot (b.affineSimpleRootIndex l)) + b.affineSimpleRoot l 0 * v.2.2 :=
-  (rfl)
-
-end Realization
 
 /-! ### The affine Weyl group as the Weyl group of the affine realization -/
 
@@ -603,13 +548,9 @@ include hθ in
 /-- In type `A₁` the product of the two simple reflections has infinite order. -/
 example : orderOf (b.affineWeylCoxeterSystem.simple none *
     b.affineWeylCoxeterSystem.simple (some ⟨_, hθ⟩)) = 0 := by
-  rw [constVAdd_coroot_eq_simple_mul_simple hθ, orderOf_eq_zero_iff']
-  intro n hn h
-  have h0 := congr(((($h : P.affineWeylGroup) : N ≃ᵃ[R] N)) 0)
-  simp only [SubgroupClass.coe_pow, ← AffineEquiv.constVAdd_nsmul, AffineEquiv.constVAdd_apply,
-    vadd_eq_add, add_zero, OneMemClass.coe_one, AffineEquiv.coe_one, id_eq] at h0
-  rw [← Nat.cast_smul_eq_nsmul R] at h0
-  exact P.ne_zero' b.highestRoot ((smul_eq_zero.mp h0).resolve_left (Nat.cast_ne_zero.mpr hn.ne'))
+  rw [b.affineWeylCoxeterSystem.orderOf_simple_mul_simple,
+    coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne _ (Option.some_ne_none _).symm]
+  simp
 
 include hθ in
 /-- In type `A₁` the translation by the coroot has length `2`. -/

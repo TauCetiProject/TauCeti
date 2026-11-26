@@ -32,9 +32,12 @@ closed fundamental alcove, it lies on the far side of a wall of `A`: `αᵢ(x) <
 or `θ(x) > 1`. The reflection `s` in that wall exchanges the two affine roots of the wall and
 permutes all the other positive affine roots, so `s x` lies on the far side of exactly one fewer
 hyperplane than `x`. Induction on this number finishes the proof. Only the reflections in the walls
-of `A` are used, so they already carry every point into the closed alcove. Seen from a point of `A`,
-the positive affine roots are the affine roots positive at that point, so the hyperplanes counted
-are those of `RootPairing.separatingAffineRoots`.
+of `A` are used, so they already carry into the closed alcove every point at which every root is
+bounded below by an integer; such points include every point over an archimedean ring, and the
+images under the affine Weyl group of the points of `A`
+(`RootPairing.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup`). Seen from a point of `A`, the
+positive affine roots are the affine roots positive at that point, so the affine roots counted are
+those of `RootPairing.separatingAffineRoots`.
 
 For a simple wall, that `s` permutes the other positive affine roots is the fact that a simple
 reflection permutes the positive roots other than its own
@@ -52,11 +55,6 @@ so `v = 0`, and `w` then carries a point of the open dominant chamber into the d
 which forces `w = 1` (`TauCeti.eq_one_of_smul_mem_dominantChamber`). This replaces the usual
 gallery argument with the Coxeter generators by the free action of the finite Weyl group on the
 chambers.
-
-## Main definitions
-
-* `RootPairing.separatingAffineRoots`: the affine roots `αⱼ - k` positive at one point and negative
-  at another, one for each affine root hyperplane separating the two points.
 
 ## Main results
 
@@ -137,31 +135,6 @@ private lemma wallPerm_wall' (j₀ : ι) (c : ℤ) :
   ring
 
 end WallPerm
-
-/-! ### The affine roots separating two points -/
-
-section SeparatingAffineRoots
-
-variable [LinearOrder R] (P : RootPairing ι R M N)
-
-/-- The **affine roots separating `x` from `y`**: the affine roots `αⱼ - k`, encoded as pairs
-`(j, k)` of a root index and an integer, that are positive at `x` and negative at `y`. Each affine
-root hyperplane `αⱼ = k` strictly separating `x` from `y` gives one of them, `(j, k)` or `(-j, -k)`
-according to the side on which `x` lies. -/
-def separatingAffineRoots (x y : N) : Set (ι × ℤ) :=
-  {p | (p.2 : R) < P.root' p.1 x ∧ P.root' p.1 y < p.2}
-
-@[simp]
-lemma mem_separatingAffineRoots {x y : N} {p : ι × ℤ} :
-    p ∈ P.separatingAffineRoots x y ↔ (p.2 : R) < P.root' p.1 x ∧ P.root' p.1 y < p.2 :=
-  Iff.rfl
-
-/-- No affine root separates a point from itself. -/
-@[simp]
-lemma separatingAffineRoots_self (x : N) : P.separatingAffineRoots x x = ∅ :=
-  Set.eq_empty_of_forall_notMem fun _ h ↦ lt_asymm h.1 h.2
-
-end SeparatingAffineRoots
 
 /-! ### Positive affine roots and the hyperplanes separating a point from the alcove -/
 
@@ -310,11 +283,13 @@ private lemma separatingAffineRoots_eq_sepSet {x : N} (hx : x ∈ fundamentalAlc
     simp only [mem_separatingAffineRoots, sepSet, Set.mem_ofPred_eq, this]
   refine ⟨?_, fun h ↦ ?_⟩
   · rintro (hk | ⟨rfl, hj⟩)
-    · have : (k : R) ≤ -1 := by exact_mod_cast (show k ≤ -1 by omega)
+    · have hk' : k ≤ -1 := by omega
+      have : (k : R) ≤ -1 := by exact_mod_cast hk'
       linarith [neg_one_lt_root'_of_mem_fundamentalAlcove hx j]
     · simpa using root'_pos_of_isPos ((mem_fundamentalAlcove P b).mp hx).1 hj
   · have hk : k < 1 := by exact_mod_cast h.trans (root'_lt_one_of_mem_fundamentalAlcove hx j)
-    rcases (show k < 0 ∨ k = 0 by omega) with hk | rfl
+    have hk' : k < 0 ∨ k = 0 := by omega
+    rcases hk' with hk | rfl
     · exact .inl hk
     · refine .inr ⟨rfl, ?_⟩
       by_contra hj
