@@ -16,11 +16,13 @@ of its ring of integers `𝓞 F`, this file defines the subalgebra `TauCeti.SInt
 `S`-integers `𝒪_{F,S} = (S : Set (HeightOneSpectrum (𝓞 F))).integer F`.
 
 Because `SIntegers F S` is an `abbrev` for `(S : Set _).integer F`, it inherits the Dedekind-domain
-instances from `TauCeti.RingTheory.DedekindDomain.SInteger.Basic` and the inclusion API
-(`Set.integer_mono`, `Set.integerAlgebraOfSubset`, `Set.isScalarTower_integerAlgebraOfSubset`,
-`Set.toAlgHom_integer_injective`) from `TauCeti.RingTheory.DedekindDomain.SInteger.Inclusion` via
-`Finset.coe_subset.mpr`. For the local-global completion characterization and local integer
-subalgebras, see `TauCeti.NumberTheory.NumberField.SInteger.Completion`.
+instances and monotonicity (`Set.integer_mono`) from
+`TauCeti.RingTheory.DedekindDomain.SInteger.Basic`. Import
+`TauCeti.RingTheory.DedekindDomain.SInteger.Inclusion` separately for the scalar-tower inclusion
+helpers (`Set.integerAlgebraOfSubset`, `Set.isScalarTower_integerAlgebraOfSubset`,
+`Set.integerAlgebraOfSubset_eq`, `Set.toAlgHom_integer_injective`), applied via
+`Finset.coe_subset.mpr`, and `TauCeti.NumberTheory.NumberField.SInteger.Completion` for the
+local-global completion characterization and local integer subalgebras.
 
 ## Main declarations
 

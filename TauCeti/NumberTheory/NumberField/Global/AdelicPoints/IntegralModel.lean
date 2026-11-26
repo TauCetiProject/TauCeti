@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Global.AdelicPoints.Basic
 public import TauCeti.NumberTheory.NumberField.SInteger.Completion
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Inclusion
 public import TauCeti.Topology.Algebra.PointTopology.BaseChange
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
 # Integral models of affine group schemes away from a finite set of places
@@ -36,7 +37,7 @@ From an integral model `M` away from `S`, this file constructs and characterizes
 * **Reference level subgroups** `M.level v ≤ LocalPoints (𝓞 F) F H v`: `⊤` at `v ∈ S` and
   `M.localPoints v hv` at `v ∉ S`, open at every finite place and compact outside `S`.
 * **Global `T`-integral points** `M.globalPoints T hST ≤ WithConv (H →ₐ[F] F)` for `S ⊆ T`: the
-  `F`-rational points integral on `M.coordinate` away from `T`, proved equal to the rational points
+  `F`-rational points integral on `M.toBase` away from `T`, proved equal to the rational points
   whose local projections at all `v ∉ T` lie in `M.localPoints v _`.
 * **Base change to a larger exceptional set** `M.enlarge hST : IntegralModel F H T`: scalar
   extension of `M.coordinate` from `𝒪_{F,S}` to `𝒪_{F,T}`, preserving local integral subgroups away
@@ -44,7 +45,8 @@ From an integral model `M` away from `S`, this file constructs and characterizes
 
 ## Main declarations
 
-* `TauCeti.IntegralModel`: bundled integral model of `Spec H` over `𝒪_{F,S}`.
+* `TauCeti.IntegralModel`, `TauCeti.IntegralModel.points_ext`: bundled integral model of `Spec H`
+  over `𝒪_{F,S}` and extensionality of generic-fibre points on model coordinates.
 * `TauCeti.IntegralModel.integralPointsHom`, `TauCeti.IntegralModel.localIntegralHom`,
   `TauCeti.IntegralModel.globalIntegralHom`: group homomorphisms from points of `M.coordinate` into
   generic-fibre points (injective whenever the coefficient map is injective, in particular for
@@ -128,6 +130,19 @@ theorem baseChangeIso_hom_tmul (M : IntegralModel F H S) (c : F) (a : M.coordina
     rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
   rw [hc, map_smul, M.toBase_apply]
 
+/-- Two `R`-points of the generic fibre `H` are equal if they agree on `M.toBase a` for every
+model coordinate `a : M.coordinate`. -/
+theorem points_ext (M : IntegralModel F H S) {R : Type*} [Semiring R] [Algebra F R]
+    {g₁ g₂ : WithConv (H →ₐ[F] R)}
+    (h : ∀ a : M.coordinate, g₁.ofConv (M.toBase a) = g₂.ofConv (M.toBase a)) :
+    g₁ = g₂ := by
+  refine ofConv_injective <| AlgHom.ext fun x ↦ ?_
+  rw [← M.baseChangeIso.inv_hom_id_apply x]
+  generalize M.baseChangeIso.inv.hom x = t
+  induction (t : F ⊗[SIntegers F S] M.coordinate) using TensorProduct.inductionOn with
+  | tmul c a => rw [M.baseChangeIso_hom_tmul, map_smul, map_smul, h a]
+  | add x y hx hy => rw [map_add, map_add, map_add, hx, hy]
+
 section GenericFiberPoints
 
 /-- For any commutative `F`-algebra `R`, the generic-fibre isomorphism identifies `R`-points of
@@ -178,19 +193,16 @@ theorem coe_pointsContinuousMulEquiv (M : IntegralModel F H S) {R : Type*} [Comm
 theorem pointsContinuousMulEquiv_apply (M : IntegralModel F H S) {R : Type*}
     [CommRing R] [Algebra F R] [TopologicalSpace R] [IsTopologicalRing R]
     (x : WithConv (M.coordinate →ₐ[SIntegers F S] R)) :
-    M.pointsContinuousMulEquiv R x = M.pointsMulEquiv R x := by
-  apply ofConv_injective
-  simp [pointsContinuousMulEquiv, pointsMulEquiv]
+    M.pointsContinuousMulEquiv R x = M.pointsMulEquiv R x :=
+  DFunLike.congr_fun M.coe_pointsContinuousMulEquiv x
 
 @[simp]
 theorem pointsContinuousMulEquiv_symm_ofConv_apply (M : IntegralModel F H S) {R : Type*}
     [CommRing R] [Algebra F R] [TopologicalSpace R] [IsTopologicalRing R]
     (g : WithConv (H →ₐ[F] R)) (a : M.coordinate) :
     ((M.pointsContinuousMulEquiv R).symm g).ofConv a = g.ofConv (M.toBase a) := by
-  have hsymm : (M.pointsContinuousMulEquiv R).symm g = (M.pointsMulEquiv R).symm g :=
-    (M.pointsContinuousMulEquiv R).symm_apply_eq.mpr <| by
-      rw [M.pointsContinuousMulEquiv_apply, MulEquiv.apply_symm_apply]
-  rw [hsymm, M.pointsMulEquiv_symm_ofConv_apply]
+  rw [ContinuousMulEquiv.symm_apply_of_coe_eq M.coe_pointsContinuousMulEquiv g,
+    M.pointsMulEquiv_symm_ofConv_apply]
 
 @[simp]
 theorem pointsContinuousMulEquiv_ofConv_toBase (M : IntegralModel F H S) {R : Type*}
@@ -261,13 +273,16 @@ theorem mem_range_integralPointsHom_iff_of_adjoin_eq_top (M : IntegralModel F H 
     g ∈ (M.integralPointsHom ι).range ↔
       ∀ j, g.ofConv (M.toBase (a j)) ∈ Set.range ι := by
   rw [M.mem_range_integralPointsHom_iff hι]
-  simp_rw [← M.pointsMulEquiv_symm_ofConv_apply g]
-  have hmem : (∀ b : M.coordinate,
-      ((M.pointsMulEquiv K).symm g).ofConv b ∈ Set.range ι) ↔
-      ((M.pointsMulEquiv K).symm g).ofConv ∈
-        Set.range (fun x : M.coordinate →ₐ[SIntegers F S] R ↦ ι.comp x) := by
-    rw [AlgHom.range_comp_left_of_injective _ hι, Set.mem_ofPred_eq]
-  rw [hmem, AlgHom.range_comp_left_eq_of_adjoin_eq_top _ hι ha, Set.mem_ofPred_eq]
+  let S₀ : Subalgebra (SIntegers F S) M.coordinate :=
+    ι.range.comap ((M.pointsMulEquiv K).symm g).ofConv
+  have hmem (b : M.coordinate) : g.ofConv (M.toBase b) ∈ Set.range ι ↔ b ∈ S₀ := by
+    rw [Subalgebra.mem_comap, M.pointsMulEquiv_symm_ofConv_apply, ← SetLike.mem_coe,
+      AlgHom.coe_range]
+  have htop : (∀ b : M.coordinate, b ∈ S₀) ↔ ⊤ ≤ S₀ :=
+    ⟨fun h b _ ↦ h b, fun h b ↦ h Algebra.mem_top⟩
+  simp_rw [hmem]
+  rw [htop, ← ha, Algebra.adjoin_le_iff, Set.range_subset_iff]
+  rfl
 
 /-- When `ι : R →ₐ[𝒪_{F,S}] K` is an open embedding into a topological ring `K`,
 `M.integralPointsHom ι` is an open embedding. -/
@@ -449,43 +464,67 @@ end LocalPoints
 
 section GlobalPoints
 
-section Tower
+private noncomputable def sIntegersToBaseAlgHom
+    {T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T) :
+    letI : Algebra (SIntegers F S) (SIntegers F T) :=
+      Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+    SIntegers F T →ₐ[SIntegers F S] F :=
+  letI : Algebra (SIntegers F S) (SIntegers F T) :=
+    Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  letI : IsScalarTower (SIntegers F S) (SIntegers F T) F :=
+    Set.isScalarTower_integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F
 
-variable (M : IntegralModel F H S) (T : Finset (HeightOneSpectrum (𝓞 F)))
-  [Algebra (SIntegers F S) (SIntegers F T)] [IsScalarTower (SIntegers F S) (SIntegers F T) F]
+private theorem sIntegersToBaseAlgHom_injective
+    {T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T) :
+    Function.Injective (sIntegersToBaseAlgHom hST) := by
+  let : Algebra (SIntegers F S) (SIntegers F T) :=
+    Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  let : IsScalarTower (SIntegers F S) (SIntegers F T) F :=
+    Set.isScalarTower_integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  exact Set.toAlgHom_integer_injective F
 
 /-- The canonical embedding `𝓗(𝒪_{F,T}) →* G(F)` of `𝒪_{F,T}`-points of `M.coordinate` into
-`F`-rational points in any scalar tower `𝒪_{F,S} → 𝒪_{F,T} → F` (supplied for `S ⊆ T` by
-`Set.integerAlgebraOfSubset` and `Set.isScalarTower_integerAlgebraOfSubset`), under the
-generic-fibre identification. -/
-noncomputable def globalIntegralHom :
+`F`-rational points for `S ⊆ T`, under the generic-fibre identification. -/
+noncomputable def globalIntegralHom (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    letI : Algebra (SIntegers F S) (SIntegers F T) :=
+      Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
     WithConv (M.coordinate →ₐ[SIntegers F S] SIntegers F T) →* WithConv (H →ₐ[F] F) :=
-  M.integralPointsHom (IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F)
-
-theorem globalIntegralHom_def :
-    M.globalIntegralHom T =
-      M.integralPointsHom (IsScalarTower.toAlgHom (SIntegers F S) (SIntegers F T) F) := by
-  rw [globalIntegralHom]
+  letI : Algebra (SIntegers F S) (SIntegers F T) :=
+    Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  M.integralPointsHom (sIntegersToBaseAlgHom hST)
 
 @[simp]
-theorem globalIntegralHom_ofConv_toBase
-    (x : WithConv (M.coordinate →ₐ[SIntegers F S] SIntegers F T)) (a : M.coordinate) :
-    (M.globalIntegralHom T x).ofConv (M.toBase a) = (x.ofConv a : F) := by
-  rw [M.globalIntegralHom_def, M.integralPointsHom_ofConv_toBase]
-  simp
+theorem globalIntegralHom_ofConv_toBase (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    letI : Algebra (SIntegers F S) (SIntegers F T) :=
+      Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+    ∀ (x : WithConv (M.coordinate →ₐ[SIntegers F S] SIntegers F T)) (a : M.coordinate),
+      (M.globalIntegralHom T hST x).ofConv (M.toBase a) = (x.ofConv a : F) := by
+  let : Algebra (SIntegers F S) (SIntegers F T) :=
+    Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  intro x a
+  exact M.integralPointsHom_ofConv_toBase (sIntegersToBaseAlgHom hST) x a
 
-/-- The canonical map `𝓗(𝒪_{F,T}) →* G(F)` is injective. -/
-theorem globalIntegralHom_injective : Function.Injective (M.globalIntegralHom T) :=
-  M.integralPointsHom_injective (Set.toAlgHom_integer_injective F)
+/-- The canonical map `𝓗(𝒪_{F,T}) →* G(F)` is injective for every `T ⊇ S`. -/
+theorem globalIntegralHom_injective (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    Function.Injective (M.globalIntegralHom T hST) :=
+  letI : Algebra (SIntegers F S) (SIntegers F T) :=
+    Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  M.integralPointsHom_injective (sIntegersToBaseAlgHom_injective hST)
 
-private theorem mem_range_globalIntegralHom_iff {g : WithConv (H →ₐ[F] F)} :
-    g ∈ (M.globalIntegralHom T).range ↔
+private theorem mem_range_globalIntegralHom_iff (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) {g : WithConv (H →ₐ[F] F)} :
+    g ∈ (M.globalIntegralHom T hST).range ↔
       ∀ a : M.coordinate, g.ofConv (M.toBase a) ∈ SIntegers F T := by
-  rw [M.globalIntegralHom_def,
-    M.mem_range_integralPointsHom_iff (Set.toAlgHom_integer_injective F)]
-  simp
-
-end Tower
+  let : Algebra (SIntegers F S) (SIntegers F T) :=
+    Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
+  rw [globalIntegralHom, M.mem_range_integralPointsHom_iff (sIntegersToBaseAlgHom_injective hST)]
+  exact forall_congr' fun a ↦ by
+    change g.ofConv (M.toBase a) ∈ Set.range (Subtype.val : SIntegers F T → F) ↔ _
+    simp
 
 /-- The subgroup `Γ(M, T) ≤ G(F)` of `T`-integral rational points for `S ⊆ T`: the subgroup of
 rational points taking `𝒪_{F,T}`-values on `M.toBase`, equal to the image of the `𝒪_{F,T}`-points
@@ -493,13 +532,9 @@ of `M.coordinate` in `G(F)`. -/
 noncomputable def globalPoints (M : IntegralModel F H S)
     (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
     Subgroup (WithConv (H →ₐ[F] F)) :=
-  letI : Algebra (SIntegers F S) (SIntegers F T) :=
-    Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
-  letI : IsScalarTower (SIntegers F S) (SIntegers F T) F :=
-    Set.isScalarTower_integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
-  Subgroup.copy (M.globalIntegralHom T).range
+  Subgroup.copy (M.globalIntegralHom T hST).range
     {g | ∀ a : M.coordinate, g.ofConv (M.toBase a) ∈ SIntegers F T}
-    (Set.ext fun _ ↦ (mem_range_globalIntegralHom_iff M T).symm)
+    (Set.ext fun _ ↦ (mem_range_globalIntegralHom_iff M T hST).symm)
 
 /-- A rational point `g ∈ G(F)` lies in `M.globalPoints T hST` if and only if its values on
 `M.toBase` lie in `𝒪_{F,T}`. -/
@@ -510,14 +545,12 @@ theorem mem_globalPoints_iff (M : IntegralModel F H S)
       ∀ a : M.coordinate, g.ofConv (M.toBase a) ∈ SIntegers F T :=
   Iff.rfl
 
-/-- The range of `M.globalIntegralHom T` is `M.globalPoints T hST`. -/
+/-- The range of `M.globalIntegralHom T hST` is `M.globalPoints T hST`. -/
 @[simp]
 theorem range_globalIntegralHom (M : IntegralModel F H S)
-    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T)
-    [Algebra (SIntegers F S) (SIntegers F T)] [IsScalarTower (SIntegers F S) (SIntegers F T) F] :
-    (M.globalIntegralHom T).range = M.globalPoints T hST := by
-  ext g
-  rw [M.mem_range_globalIntegralHom_iff T, M.mem_globalPoints_iff T hST]
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    (M.globalIntegralHom T hST).range = M.globalPoints T hST :=
+  (Subgroup.copy_eq _ _ _).symm
 
 /-- Membership in `M.globalPoints T hST` need only be checked on a generating family of
 `M.coordinate` over `𝒪_{F,S}`. -/
@@ -528,11 +561,11 @@ theorem mem_globalPoints_iff_of_adjoin_eq_top (M : IntegralModel F H S)
       ∀ i, g.ofConv (M.toBase (a i)) ∈ SIntegers F T := by
   let : Algebra (SIntegers F S) (SIntegers F T) :=
     Set.integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
-  let : IsScalarTower (SIntegers F S) (SIntegers F T) F :=
-    Set.isScalarTower_integerAlgebraOfSubset F (Finset.coe_subset.mpr hST)
-  rw [← M.range_globalIntegralHom T hST, M.globalIntegralHom_def,
-    M.mem_range_integralPointsHom_iff_of_adjoin_eq_top (Set.toAlgHom_integer_injective F) ha]
-  simp
+  rw [← M.range_globalIntegralHom T hST, globalIntegralHom,
+    M.mem_range_integralPointsHom_iff_of_adjoin_eq_top (sIntegersToBaseAlgHom_injective hST) ha]
+  exact forall_congr' fun i ↦ by
+    change g.ofConv (M.toBase (a i)) ∈ Set.range (Subtype.val : SIntegers F T → F) ↔ _
+    simp
 
 /-- Enlarging the finite set of places `T` enlarges the subgroup of `T`-integral rational points. -/
 theorem globalPoints_mono (M : IntegralModel F H S)

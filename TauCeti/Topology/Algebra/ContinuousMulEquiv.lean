@@ -44,6 +44,8 @@ universe be applied to a group in a smaller one.
 * `ContinuousMulEquiv.prodCongr`: the product `M × N ≃ₜ* M' × N'` of topological isomorphisms
   `M ≃ₜ* M'` and `N ≃ₜ* N'` (with additive version `ContinuousAddEquiv.prodCongr`), with its
   evaluation lemmas `prodCongr_apply` and `prodCongr_symm`.
+* `ContinuousMulEquiv.symm_apply_of_coe_eq`: transport equality of underlying `MulEquiv`s to
+  inverse evaluation (with additive version `ContinuousAddEquiv.symm_apply_of_coe_eq`).
 * `ContinuousAddEquiv.toMultiplicative`: a topological isomorphism `M ≃ₜ+ N` of additive groups
   as a topological isomorphism `Multiplicative M ≃ₜ* Multiplicative N`, with its evaluation
   lemmas `toMultiplicative_apply` and `toMultiplicative_symm_apply`.
@@ -168,6 +170,14 @@ theorem _root_.ContinuousMulEquiv.prodCongr_apply (e : M ≃ₜ* M') (e' : N ≃
 theorem _root_.ContinuousMulEquiv.prodCongr_symm (e : M ≃ₜ* M') (e' : N ≃ₜ* N') :
     (e.prodCongr e').symm = e.symm.prodCongr e'.symm :=
   (rfl)
+
+/-- If the underlying `MulEquiv` of `e : M ≃ₜ* M'` equals `d`, then `e.symm` agrees pointwise with
+`d.symm`. -/
+@[to_additive /-- If the underlying `AddEquiv` of `e : M ≃ₜ+ M'` equals `d`, then `e.symm` agrees
+pointwise with `d.symm`. -/]
+theorem _root_.ContinuousMulEquiv.symm_apply_of_coe_eq {e : M ≃ₜ* M'} {d : M ≃* M'}
+    (h : (e : M ≃* M') = d) (y : M') : e.symm y = d.symm y :=
+  congrArg (fun f : M ≃* M' ↦ f.symm y) h
 
 end ProdCongr
 

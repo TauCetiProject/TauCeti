@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Algebra.Equiv
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Topology.Algebra.PointTopology.Functoriality
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
 # The topological group of points of an affine group scheme
@@ -150,28 +151,26 @@ noncomputable def BialgEquiv.mapDomainContinuousMulEquiv (R : Type*) [CommSemiri
     (e.mapDomainMulEquiv_symm_apply f).symm
 
 @[simp]
-theorem BialgEquiv.mapDomainContinuousMulEquiv_apply (R : Type*) [CommSemiring R]
-    [Algebra k R] [TopologicalSpace R] (e : H₁ ≃ₐc[k] H₂)
-    (f : WithConv (H₂ →ₐ[k] R)) :
-    e.mapDomainContinuousMulEquiv R f = BialgHom.mapDomain (e : H₁ →ₐc[k] H₂) f := by
-  simp [mapDomainContinuousMulEquiv]
-
-@[simp]
 theorem BialgEquiv.coe_mapDomainContinuousMulEquiv (R : Type*) [CommSemiring R]
     [Algebra k R] [TopologicalSpace R] (e : H₁ ≃ₐc[k] H₂) :
     (e.mapDomainContinuousMulEquiv R : WithConv (H₂ →ₐ[k] R) ≃* WithConv (H₁ →ₐ[k] R)) =
       e.mapDomainMulEquiv :=
-  MulEquiv.ext fun f ↦
-    (e.mapDomainContinuousMulEquiv_apply R f).trans (e.mapDomainMulEquiv_apply f).symm
+  (rfl)
+
+@[simp]
+theorem BialgEquiv.mapDomainContinuousMulEquiv_apply (R : Type*) [CommSemiring R]
+    [Algebra k R] [TopologicalSpace R] (e : H₁ ≃ₐc[k] H₂)
+    (f : WithConv (H₂ →ₐ[k] R)) :
+    e.mapDomainContinuousMulEquiv R f = BialgHom.mapDomain (e : H₁ →ₐc[k] H₂) f :=
+  (DFunLike.congr_fun (e.coe_mapDomainContinuousMulEquiv R) f).trans (e.mapDomainMulEquiv_apply f)
 
 @[simp]
 theorem BialgEquiv.mapDomainContinuousMulEquiv_symm_apply (R : Type*) [CommSemiring R]
     [Algebra k R] [TopologicalSpace R] (e : H₁ ≃ₐc[k] H₂)
     (f : WithConv (H₁ →ₐ[k] R)) :
     (e.mapDomainContinuousMulEquiv R).symm f = BialgHom.mapDomain (e.symm : H₂ →ₐc[k] H₁) f :=
-  (e.mapDomainContinuousMulEquiv R).symm_apply_eq.mpr <| by
-    rw [e.mapDomainContinuousMulEquiv_apply R, ← e.mapDomainMulEquiv_apply,
-      ← e.mapDomainMulEquiv_symm_apply, MulEquiv.apply_symm_apply]
+  (ContinuousMulEquiv.symm_apply_of_coe_eq (e.coe_mapDomainContinuousMulEquiv R) f).trans
+    (e.mapDomainMulEquiv_symm_apply f)
 
 /-- Postcomposition with a continuous algebra map `ψ : R → R'` of coefficients is a continuous
 homomorphism from the points with values in `R` to those with values in `R'`. -/

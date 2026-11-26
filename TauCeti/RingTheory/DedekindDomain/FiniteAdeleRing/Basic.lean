@@ -72,8 +72,10 @@ approximates `a`.
   `S`-integral finite adeles carry the product topology.
 * `IsDedekindDomain.FiniteAdeleRing.algebraMap_mem_sIntegralAdeles_iff` and
   `IsDedekindDomain.FiniteAdeleRing.algebraMap_mem_integralAdeles_iff`: the diagonal image of
-  `x : K` is an `S`-integral finite adele if and only if `x` is an `S`-integer, and an integral
-  finite adele if and only if `x` lies in `R`.
+  `x : K` is an `S`-integral finite adele if and only if `x` is an `S`-integer (inducing the
+  canonical `S.integer K`-algebra and scalar-tower structures `sIntegralAdelesAlgebraOfSubset` and
+  `isScalarTower_sIntegralAdelesAlgebraOfSubset` on `sIntegralAdeles R K T` for `S ⊆ T`), and an
+  integral finite adele if and only if `x` lies in `R`.
 * `IsDedekindDomain.FiniteAdeleRing.mul_nonZeroDivisor_mem_integralAdeles`: a finite adele has a
   common denominator in `R`.
 * `IsDedekindDomain.FiniteAdeleRing.exists_forall_valued_sub_le_and_forall_valued_sub_le_one`:
@@ -342,6 +344,42 @@ theorem algebraMap_mem_sIntegralAdeles_iff (S : Set (HeightOneSpectrum R)) (x : 
     algebraMap K (FiniteAdeleRing R K) x ∈ sIntegralAdeles R K S ↔ x ∈ S.integer K := by
   simp only [mem_sIntegralAdeles, algebraMap_apply, mem_adicCompletionIntegers,
     valuedAdicCompletion_eq_valuation', Set.mem_integer_iff]
+
+variable (R K) in
+/-- For `S ⊆ T`, the canonical `S.integer K`-algebra structure on `sIntegralAdeles R K T` induced by
+the diagonal embedding `K → 𝔸ᶠ[R, K]`. -/
+@[instance_reducible]
+noncomputable def sIntegralAdelesAlgebraOfSubset {S T : Set (HeightOneSpectrum R)} (h : S ⊆ T) :
+    Algebra (S.integer K) (sIntegralAdeles R K T) :=
+  (((algebraMap K (FiniteAdeleRing R K)).comp (algebraMap (S.integer K) K)).codRestrict
+    (sIntegralAdeles R K T).toSubring fun x ↦
+      (algebraMap_mem_sIntegralAdeles_iff T (x : K)).mpr
+        (Set.integer_mono K h x.property)).toAlgebra
+
+variable (R K) in
+/-- For `S ⊆ T`, `sIntegralAdelesAlgebraOfSubset R K h` forms a scalar tower with
+`FiniteAdeleRing R K`. -/
+theorem isScalarTower_sIntegralAdelesAlgebraOfSubset {S T : Set (HeightOneSpectrum R)}
+    (h : S ⊆ T) :
+    letI : Algebra (S.integer K) (sIntegralAdeles R K T) := sIntegralAdelesAlgebraOfSubset R K h
+    IsScalarTower (S.integer K) (sIntegralAdeles R K T) (FiniteAdeleRing R K) := by
+  let : Algebra (S.integer K) (sIntegralAdeles R K T) := sIntegralAdelesAlgebraOfSubset R K h
+  exact IsScalarTower.of_algebraMap_eq fun x ↦
+    (IsScalarTower.algebraMap_apply (S.integer K) K (FiniteAdeleRing R K) x).symm
+
+/-- The `S`-integral finite adeles form an `S.integer K`-algebra via the diagonal embedding. -/
+noncomputable instance instAlgebraIntegerSIntegralAdeles (S : Set (HeightOneSpectrum R)) :
+    Algebra (S.integer K) (sIntegralAdeles R K S) :=
+  sIntegralAdelesAlgebraOfSubset R K Set.Subset.rfl
+
+instance instIsScalarTowerIntegerSIntegralAdeles (S : Set (HeightOneSpectrum R)) :
+    IsScalarTower (S.integer K) (sIntegralAdeles R K S) (FiniteAdeleRing R K) :=
+  isScalarTower_sIntegralAdelesAlgebraOfSubset R K Set.Subset.rfl
+
+instance instIsScalarTowerBaseIntegerSIntegralAdeles (S : Set (HeightOneSpectrum R)) :
+    IsScalarTower R (S.integer K) (sIntegralAdeles R K S) :=
+  IsScalarTower.of_algebraMap_eq fun r ↦ Subtype.ext <|
+    IsScalarTower.algebraMap_apply R K (FiniteAdeleRing R K) r
 
 /-- The diagonal image of an element of `K` in the finite adele ring is integral exactly when the
 element lies in `R`: the integral finite adeles meet `K` in `R`. It takes priority over the

@@ -8,7 +8,9 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.AdelicPoints.IntegralModel
 public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.ContinuousRng
+public import TauCeti.Topology.Algebra.RestrictedProduct.Principal
 import Mathlib.Topology.Algebra.Group.Neighborhood
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
 # Adelic points of affine group schemes as restricted products
@@ -34,12 +36,15 @@ open reference subgroups `M.level v` (compact for `v ∉ S`):
 * **Restricted-product homomorphism**: coordinate projections
   `finiteLocalProjection (𝓞 F) F H v : G(𝔸_{F,f}) →* G(F_v)` land in `M.level v` at all but finitely
   many places (`eventually_finiteLocalProjection_mem_level`) and assemble into a continuous group
-  homomorphism `M.toRestrictedProductMonoidHom`.
-* **Restricted-product isomorphism**: `M.restrictedProductEquiv` upgrades
+  homomorphism `M.toRestrictedProductMonoidHom`, with openness at `1` supplied by the open embedding
+  `M.finiteAdelicIntegralHom` of model points over the `T`-integral finite adeles (`S ⊆ T`).
+* **Restricted-product isomorphism and `T`-integral pieces**: `M.restrictedProductEquiv` upgrades
   `M.toRestrictedProductMonoidHom` to a topological group isomorphism
   `FiniteAdelicPoints (𝓞 F) F H ≃ₜ* Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]` whose inverse
   evaluates each coordinate `h ∈ H` place-by-place in `𝔸_{F,f}`, yielding the packaged comparison
-  theorem `M.exists_restrictedProductEquiv`.
+  theorem `M.exists_restrictedProductEquiv` and restricting for every finite `T ⊇ S` to a
+  topological group isomorphism `M.sIntegralRestrictedProductEquiv T hST` between model points over
+  `FiniteAdeleRing.sIntegralAdeles (𝓞 F) F T` and `TauCeti.levelOpenSubgroup M.level T _`.
 * **Full adelic decomposition**: combining `AdelicPoints.prodContinuousMulEquiv` with
   `M.restrictedProductEquiv` identifies `G(𝔸_F)` as a topological group with
   `G(F_∞) × Πʳ v, [G(F_v), M.level v]` (`M.adelicRestrictedProductEquiv`).
@@ -51,11 +56,16 @@ open reference subgroups `M.level v` (compact for `v ∉ S`):
 
 ## Main declarations
 
+* `TauCeti.IntegralModel.finiteAdelicIntegralHom`: canonical open topological group embedding of
+  model points over the `T`-integral finite adeles (`S ⊆ T`) into `FiniteAdelicPoints (𝓞 F) F H`.
 * `TauCeti.IntegralModel.toRestrictedProductMonoidHom`,
   `TauCeti.IntegralModel.continuous_toRestrictedProductMonoidHom`: the continuous coordinatewise
   group homomorphism `FiniteAdelicPoints (𝓞 F) F H →* Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]`.
-* `TauCeti.IntegralModel.restrictedProductEquiv`: topological group isomorphism
-  `FiniteAdelicPoints (𝓞 F) F H ≃ₜ* Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]`.
+* `TauCeti.IntegralModel.restrictedProductEquiv`,
+  `TauCeti.IntegralModel.sIntegralRestrictedProductEquiv`: topological group isomorphism
+  `FiniteAdelicPoints (𝓞 F) F H ≃ₜ* Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]` and its restriction
+  for `S ⊆ T` from model points over the `T`-integral adeles to
+  `TauCeti.levelOpenSubgroup M.level T _`.
 * `TauCeti.IntegralModel.exists_restrictedProductEquiv`: packaged existence and coordinate formula
   for the restricted-product comparison.
 * `TauCeti.IntegralModel.adelicRestrictedProductEquiv`: full adelic decomposition
@@ -118,33 +128,104 @@ theorem toRestrictedProductMonoidHom_apply (M : IntegralModel F H S)
     M.toRestrictedProductMonoidHom x v = finiteLocalProjection (𝓞 F) F H v x := by
   simp [toRestrictedProductMonoidHom, RestrictedProduct.mk_apply]
 
+private noncomputable def sIntegralAdelesToBaseAlgHom
+    {T : Finset (HeightOneSpectrum (𝓞 F))} (hST : S ⊆ T) :
+    letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+      FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+    FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _) →ₐ[SIntegers F S] FiniteAdeleRing (𝓞 F) F :=
+  letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+    FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+  letI : IsScalarTower (SIntegers F S)
+      (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) (FiniteAdeleRing (𝓞 F) F) :=
+    FiniteAdeleRing.isScalarTower_sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+  IsScalarTower.toAlgHom (SIntegers F S)
+    (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) (FiniteAdeleRing (𝓞 F) F)
+
+/-- For `S ⊆ T`, the canonical embedding of model points over the `T`-integral finite adeles
+`FiniteAdeleRing.sIntegralAdeles (𝓞 F) F T` into `FiniteAdelicPoints (𝓞 F) F H` under the
+generic-fibre identification. -/
+noncomputable def finiteAdelicIntegralHom (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+      FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+    WithConv (M.coordinate →ₐ[SIntegers F S]
+        FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) →*
+      FiniteAdelicPoints (𝓞 F) F H :=
+  letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+    FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+  M.integralPointsHom (sIntegralAdelesToBaseAlgHom hST)
+
+@[simp]
+theorem finiteAdelicIntegralHom_ofConv_toBase (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+      FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+    ∀ (x : WithConv (M.coordinate →ₐ[SIntegers F S]
+        FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _))) (a : M.coordinate),
+      (M.finiteAdelicIntegralHom T hST x).ofConv (M.toBase a) =
+        (x.ofConv a : FiniteAdeleRing (𝓞 F) F) := by
+  let : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+    FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+  intro x a
+  exact M.integralPointsHom_ofConv_toBase (sIntegralAdelesToBaseAlgHom hST) x a
+
+/-- For `S ⊆ T`, `M.finiteAdelicIntegralHom T hST` is injective. -/
+theorem finiteAdelicIntegralHom_injective (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    Function.Injective (M.finiteAdelicIntegralHom T hST) :=
+  letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+    FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+  M.integralPointsHom_injective Subtype.val_injective
+
+/-- For `S ⊆ T`, `M.finiteAdelicIntegralHom T hST` is an open topological embedding into
+`G(𝔸_{F,f})`. -/
+theorem isOpenEmbedding_finiteAdelicIntegralHom (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    Topology.IsOpenEmbedding (M.finiteAdelicIntegralHom T hST) := by
+  let : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+    FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+  exact M.isOpenEmbedding_integralPointsHom
+    (FiniteAdeleRing.isOpen_sIntegralAdeles (𝓞 F) F (T : Set _)).isOpenEmbedding_subtypeVal
+
+/-- For `S ⊆ T`, the range of `M.finiteAdelicIntegralHom T hST` consists of the finite adelic points
+whose local projections outside `T` lie in `M.level v`. -/
+theorem mem_range_finiteAdelicIntegralHom_iff (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) {x : FiniteAdelicPoints (𝓞 F) F H} :
+    x ∈ (M.finiteAdelicIntegralHom T hST).range ↔
+      ∀ v ∉ T, finiteLocalProjection (𝓞 F) F H v x ∈ M.level v := by
+  let : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+    FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+  rw [finiteAdelicIntegralHom, M.mem_range_integralPointsHom_iff Subtype.val_injective]
+  have hcoe : Set.range (sIntegralAdelesToBaseAlgHom hST) =
+      (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _) : Set (FiniteAdeleRing (𝓞 F) F)) :=
+    Subtype.range_coe
+  simp only [hcoe, SetLike.mem_coe, FiniteAdeleRing.mem_sIntegralAdeles]
+  refine ⟨fun hx v hv ↦ ?_, fun hx a v hv ↦ ?_⟩
+  · rw [M.level_of_notMem fun hvS ↦ hv (hST hvS), M.mem_localPoints_iff]
+    intro a
+    exact (finiteLocalProjection_apply_apply v x (M.toBase a)).symm ▸ hx a v hv
+  · have hloc := hx v hv
+    rw [M.level_of_notMem fun hvS ↦ hv (hST hvS), M.mem_localPoints_iff] at hloc
+    exact finiteLocalProjection_apply_apply v x (M.toBase a) ▸ hloc a
+
 /-- The set of finite adelic points whose local projections lie in `M.level v` at every finite
 place `v` is open in `G(𝔸_{F,f})`. -/
 theorem isOpen_setOf_forall_finiteLocalProjection_mem_level (M : IntegralModel F H S) :
     IsOpen {x : FiniteAdelicPoints (𝓞 F) F H |
       ∀ v, finiteLocalProjection (𝓞 F) F H v x ∈ M.level v} := by
-  obtain ⟨s, hs⟩ := M.exists_finset_forall_mem_localPoints_iff
   have heq : {x : FiniteAdelicPoints (𝓞 F) F H |
       ∀ v, finiteLocalProjection (𝓞 F) F H v x ∈ M.level v} =
-      ⋂ a ∈ s, (fun x : FiniteAdelicPoints (𝓞 F) F H ↦ x.ofConv (M.toBase a)) ⁻¹'
-        (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (S : Set _) : Set (FiniteAdeleRing (𝓞 F) F)) := by
+      (M.finiteAdelicIntegralHom S (Finset.Subset.refl S)).range := by
     ext x
-    simp only [Set.mem_ofPred_eq, Set.mem_iInter, Set.mem_preimage, SetLike.mem_coe,
-      FiniteAdeleRing.mem_sIntegralAdeles]
-    refine ⟨fun hx a ha v hv ↦ ?_, fun hx v ↦ ?_⟩
-    · have hloc := hx v
-      rw [M.level_of_notMem hv, hs v hv] at hloc
-      exact finiteLocalProjection_apply_apply v x (M.toBase a) ▸ hloc a ha
-    · by_cases hv : v ∈ S
-      · rw [M.level_of_mem hv]
-        exact Subgroup.mem_top _
-      · rw [M.level_of_notMem hv, hs v hv]
-        intro a ha
-        exact (finiteLocalProjection_apply_apply v x (M.toBase a)).symm ▸ hx a ha v hv
+    rw [SetLike.mem_coe, M.mem_range_finiteAdelicIntegralHom_iff S (Finset.Subset.refl S),
+      Set.mem_ofPred_eq]
+    refine ⟨fun hx v _ ↦ hx v, fun hx v ↦ ?_⟩
+    by_cases hv : v ∈ S
+    · rw [M.level_of_mem hv]
+      exact Subgroup.mem_top _
+    · exact hx v hv
   rw [heq]
-  exact isOpen_biInter_finset fun a _ ↦
-    (FiniteAdeleRing.isOpen_sIntegralAdeles (𝓞 F) F (S : Set _)).preimage
-      (continuous_eval_ofConv _)
+  exact (M.isOpenEmbedding_finiteAdelicIntegralHom S (Finset.Subset.refl S)).isOpen_range
 
 /-- The coordinatewise homomorphism `M.toRestrictedProductMonoidHom` from finite adelic points to
 the restricted product of local points is continuous. -/
@@ -196,30 +277,31 @@ theorem eventually_eval_mem_adicCompletionIntegers_of_mem_level (M : IntegralMod
     with v hv g hg
   simpa only [M.baseChangeIso.inv_hom_id_apply] using hv g hg
 
-private noncomputable def adeleEval (M : IntegralModel F H S) (h : H)
-    (y : Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) : FiniteAdeleRing (𝓞 F) F :=
-  ⟨fun v ↦ (y v).ofConv h, by
-    filter_upwards [y.property, M.eventually_eval_mem_adicCompletionIntegers_of_mem_level h]
-      with v hy hv
-    exact hv (y v) hy⟩
-
-private theorem adeleEval_apply (M : IntegralModel F H S) (h : H)
-    (y : Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) (v : HeightOneSpectrum (𝓞 F)) :
-    adeleEval M h y v = (y v).ofConv h :=
-  rfl
-
-private theorem continuous_adeleEval (M : IntegralModel F H S) (h : H) :
-    Continuous (adeleEval M h) :=
-  (RestrictedProduct.mapAlong_continuous
+private noncomputable def adeleEval (M : IntegralModel F H S) (h : H) :
+    (Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) → FiniteAdeleRing (𝓞 F) F :=
+  RestrictedProduct.mapAlong
     (fun v : HeightOneSpectrum (𝓞 F) ↦ LocalPoints (𝓞 F) F H v)
     (fun v : HeightOneSpectrum (𝓞 F) ↦ v.adicCompletion F)
     (A₁ := fun v ↦ (M.level v : Set (LocalPoints (𝓞 F) F H v)))
     (A₂ := fun v ↦ (v.adicCompletionIntegers F : Set (v.adicCompletion F)))
     id tendsto_id (fun _ g ↦ g.ofConv h)
     (M.eventually_eval_mem_adicCompletionIntegers_of_mem_level h)
-    (fun _ ↦ continuous_eval_ofConv h)).congr fun y ↦
-      FiniteAdeleRing.ext F fun v ↦
-        (RestrictedProduct.mapAlong_apply _ _ _ _ _ _ y v).trans (adeleEval_apply M h y v).symm
+
+private theorem adeleEval_apply (M : IntegralModel F H S) (h : H)
+    (y : Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) (v : HeightOneSpectrum (𝓞 F)) :
+    adeleEval M h y v = (y v).ofConv h :=
+  RestrictedProduct.mapAlong_apply _ _ _ _ _ _ y v
+
+private theorem continuous_adeleEval (M : IntegralModel F H S) (h : H) :
+    Continuous (adeleEval M h) :=
+  RestrictedProduct.mapAlong_continuous
+    (fun v : HeightOneSpectrum (𝓞 F) ↦ LocalPoints (𝓞 F) F H v)
+    (fun v : HeightOneSpectrum (𝓞 F) ↦ v.adicCompletion F)
+    (A₁ := fun v ↦ (M.level v : Set (LocalPoints (𝓞 F) F H v)))
+    (A₂ := fun v ↦ (v.adicCompletionIntegers F : Set (v.adicCompletion F)))
+    id tendsto_id (fun _ g ↦ g.ofConv h)
+    (M.eventually_eval_mem_adicCompletionIntegers_of_mem_level h)
+    (fun _ ↦ continuous_eval_ofConv h)
 
 private noncomputable def fromRestrictedProductFun (M : IntegralModel F H S)
     (y : Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) : FiniteAdelicPoints (𝓞 F) F H :=
@@ -327,30 +409,129 @@ theorem exists_restrictedProductEquiv (M : IntegralModel F H S) :
         (e x v).ofConv h = (x.ofConv h) v :=
   ⟨M.restrictedProductEquiv, M.restrictedProductEquiv_apply_ofConv_apply⟩
 
+/-- For a finite set of places `T ⊇ S`, restricting `M.restrictedProductEquiv` along
+`M.finiteAdelicIntegralHom T hST` identifies model points over the `T`-integral finite adeles
+`FiniteAdeleRing.sIntegralAdeles (𝓞 F) F T` as a topological group with the open subgroup
+`TauCeti.levelOpenSubgroup M.level T _` of the restricted product cut out by `M.level` outside
+`T`. -/
+noncomputable def sIntegralRestrictedProductEquiv (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+      FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+    WithConv (M.coordinate →ₐ[SIntegers F S]
+        FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) ≃ₜ*
+      TauCeti.levelOpenSubgroup M.level T (fun v _ ↦ M.isOpen_level v) := by
+  letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+    FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+  let φ := (M.restrictedProductEquiv :
+    FiniteAdelicPoints (𝓞 F) F H →* Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]).comp
+    (M.finiteAdelicIntegralHom T hST)
+  have hφ : Topology.IsEmbedding φ :=
+    M.restrictedProductEquiv.toHomeomorph.isEmbedding.comp
+      (M.isOpenEmbedding_finiteAdelicIntegralHom T hST).isEmbedding
+  have hrange : Set.range φ =
+      (TauCeti.levelOpenSubgroup M.level T (fun v _ ↦ M.isOpen_level v) :
+        Set (Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v])) := by
+    ext y
+    rw [SetLike.mem_coe, TauCeti.mem_levelOpenSubgroup]
+    refine ⟨?_, fun hy ↦ ?_⟩
+    · rintro ⟨x, rfl⟩ v hv
+      have hx : M.finiteAdelicIntegralHom T hST x ∈ (M.finiteAdelicIntegralHom T hST).range :=
+        ⟨x, rfl⟩
+      rw [M.mem_range_finiteAdelicIntegralHom_iff T hST] at hx
+      simpa [φ] using hx v hv
+    · obtain ⟨x, hx⟩ := (M.mem_range_finiteAdelicIntegralHom_iff T hST
+        (x := M.restrictedProductEquiv.symm y)).mpr fun v hv ↦ by simpa using hy v hv
+      exact ⟨x, by
+        rw [MonoidHom.comp_apply, MonoidHom.coe_ofClass, hx, ContinuousMulEquiv.apply_symm_apply]⟩
+  exact ContinuousMulEquiv.mk' (hφ.toHomeomorph.trans (Homeomorph.setCongr hrange))
+    fun x₁ x₂ ↦ Subtype.ext (map_mul φ x₁ x₂)
+
+/-- Coercing `M.sIntegralRestrictedProductEquiv T hST x` into the ambient restricted product agrees
+with applying `M.restrictedProductEquiv` to `M.finiteAdelicIntegralHom T hST x`. -/
+@[simp]
+theorem val_sIntegralRestrictedProductEquiv_apply (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+      FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+    ∀ x : WithConv (M.coordinate →ₐ[SIntegers F S]
+        FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)),
+      ((M.sIntegralRestrictedProductEquiv T hST x :
+          TauCeti.levelOpenSubgroup M.level T (fun v _ ↦ M.isOpen_level v)) :
+        Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) =
+        M.restrictedProductEquiv (M.finiteAdelicIntegralHom T hST x) := by
+  intro x
+  rfl
+
+/-- Coordinate evaluation of `M.sIntegralRestrictedProductEquiv T hST` on `M.toBase`; not marked
+`@[simp]` because `simp` already reduces the left-hand side via
+`val_sIntegralRestrictedProductEquiv_apply` and `finiteAdelicIntegralHom_ofConv_toBase`. -/
+theorem sIntegralRestrictedProductEquiv_apply_ofConv_toBase (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+      FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+    ∀ (x : WithConv (M.coordinate →ₐ[SIntegers F S]
+        FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)))
+      (v : HeightOneSpectrum (𝓞 F)) (a : M.coordinate),
+      (((M.sIntegralRestrictedProductEquiv T hST x :
+          TauCeti.levelOpenSubgroup M.level T (fun v _ ↦ M.isOpen_level v)) :
+        Πʳ w, [LocalPoints (𝓞 F) F H w, M.level w]) v).ofConv (M.toBase a) =
+        (x.ofConv a : FiniteAdeleRing (𝓞 F) F) v := by
+  let : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+    FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+  intro x v a
+  simp
+
+/-- Embedding `(M.sIntegralRestrictedProductEquiv T hST).symm y` into `G(𝔸_{F,f})` agrees with
+applying `M.restrictedProductEquiv.symm` to `(y : Πʳ v, [G(F_v), M.level v])`. -/
+@[simp]
+theorem finiteAdelicIntegralHom_sIntegralRestrictedProductEquiv_symm (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T)
+    (y : TauCeti.levelOpenSubgroup M.level T (fun v _ ↦ M.isOpen_level v)) :
+    M.finiteAdelicIntegralHom T hST ((M.sIntegralRestrictedProductEquiv T hST).symm y) =
+      M.restrictedProductEquiv.symm (y : Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v]) := by
+  let : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+    FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+  apply M.restrictedProductEquiv.injective
+  rw [← M.val_sIntegralRestrictedProductEquiv_apply T hST,
+    ContinuousMulEquiv.apply_symm_apply, ContinuousMulEquiv.apply_symm_apply]
+
+/-- Placewise coordinate evaluation of `(M.sIntegralRestrictedProductEquiv T hST).symm`. -/
+@[simp]
+theorem sIntegralRestrictedProductEquiv_symm_ofConv_apply (M : IntegralModel F H S)
+    (T : Finset (HeightOneSpectrum (𝓞 F))) (hST : S ⊆ T) :
+    letI : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+      FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+    ∀ (y : TauCeti.levelOpenSubgroup M.level T (fun v _ ↦ M.isOpen_level v))
+      (a : M.coordinate) (v : HeightOneSpectrum (𝓞 F)),
+      (((M.sIntegralRestrictedProductEquiv T hST).symm y).ofConv a :
+          FiniteAdeleRing (𝓞 F) F) v =
+        ((y : Πʳ w, [LocalPoints (𝓞 F) F H w, M.level w]) v).ofConv (M.toBase a) := by
+  let : Algebra (SIntegers F S) (FiniteAdeleRing.sIntegralAdeles (𝓞 F) F (T : Set _)) :=
+    FiniteAdeleRing.sIntegralAdelesAlgebraOfSubset (𝓞 F) F (Finset.coe_subset.mpr hST)
+  intro y a v
+  rw [← M.finiteAdelicIntegralHom_ofConv_toBase T hST,
+    M.finiteAdelicIntegralHom_sIntegralRestrictedProductEquiv_symm,
+    M.restrictedProductEquiv_symm_ofConv_apply]
+
 /-- Full adelic restricted-product decomposition: `G(𝔸_F)` is canonically isomorphic as a
 topological group to `G(F_∞) × Πʳ v, [G(F_v), M.level v]`. -/
 noncomputable def adelicRestrictedProductEquiv (M : IntegralModel F H S) :
     AdelicPoints (𝓞 F) F H ≃ₜ*
       InfinitePoints F H × Πʳ v, [LocalPoints (𝓞 F) F H v, M.level v] :=
   (AdelicPoints.prodContinuousMulEquiv (𝓞 F) F H).trans
-    { toMulEquiv :=
-        (MulEquiv.refl (InfinitePoints F H)).prodCongr M.restrictedProductEquiv.toMulEquiv
-      continuous_toFun := continuous_id.prodMap M.restrictedProductEquiv.continuous
-      continuous_invFun := continuous_id.prodMap M.restrictedProductEquiv.symm.continuous }
+    ((ContinuousMulEquiv.refl (InfinitePoints F H)).prodCongr M.restrictedProductEquiv)
 
 @[simp]
 theorem adelicRestrictedProductEquiv_fst (M : IntegralModel F H S) (x : AdelicPoints (𝓞 F) F H) :
     (M.adelicRestrictedProductEquiv x).1 = infiniteProjection (𝓞 F) F H x := by
-  rw [adelicRestrictedProductEquiv, ContinuousMulEquiv.trans_apply]
-  exact congr_arg Prod.fst (AdelicPoints.prodContinuousMulEquiv_apply x)
+  simp [adelicRestrictedProductEquiv]
 
 @[simp]
 theorem adelicRestrictedProductEquiv_snd (M : IntegralModel F H S) (x : AdelicPoints (𝓞 F) F H) :
     (M.adelicRestrictedProductEquiv x).2 =
       M.restrictedProductEquiv (finiteProjection (𝓞 F) F H x) := by
-  rw [adelicRestrictedProductEquiv, ContinuousMulEquiv.trans_apply]
-  exact congr_arg M.restrictedProductEquiv
-    (congr_arg Prod.snd (AdelicPoints.prodContinuousMulEquiv_apply x))
+  simp [adelicRestrictedProductEquiv]
 
 /-- Coordinate formula for the second factor of `M.adelicRestrictedProductEquiv`; not marked
 `@[simp]` because `simp` already reduces it to `finiteLocalProjection` applied to
@@ -366,7 +547,8 @@ theorem adelicRestrictedProductEquiv_symm_apply (M : IntegralModel F H S)
     M.adelicRestrictedProductEquiv.symm p =
       (AdelicPoints.prodContinuousMulEquiv (𝓞 F) F H).symm
         (p.1, M.restrictedProductEquiv.symm p.2) := by
-  rw [adelicRestrictedProductEquiv, ContinuousMulEquiv.symm_trans_apply]
+  simp only [adelicRestrictedProductEquiv, ContinuousMulEquiv.symm_trans_apply,
+    ContinuousMulEquiv.prodCongr_symm, ContinuousMulEquiv.prodCongr_apply]
   rfl
 
 /-! ### Independence of the integral model -/
@@ -412,23 +594,21 @@ noncomputable def levelChangeEquiv {S₁ S₂ : Finset (HeightOneSpectrum (𝓞 
     TauCeti.continuous_restrictedProductCongr_symm M₁.level M₂.level (M₁.eventually_level_eq M₂)
 
 @[simp]
-theorem levelChangeEquiv_apply {S₁ S₂ : Finset (HeightOneSpectrum (𝓞 F))}
-    (M₁ : IntegralModel F H S₁) (M₂ : IntegralModel F H S₂)
-    (x : Πʳ v, [LocalPoints (𝓞 F) F H v, M₁.level v]) (v : HeightOneSpectrum (𝓞 F)) :
-    M₁.levelChangeEquiv M₂ x v = x v := by
-  rw [levelChangeEquiv]
-  exact TauCeti.restrictedProductCongr_apply M₁.level M₂.level _ x v
-
-@[simp]
 theorem toMulEquiv_levelChangeEquiv {S₁ S₂ : Finset (HeightOneSpectrum (𝓞 F))}
     (M₁ : IntegralModel F H S₁) (M₂ : IntegralModel F H S₂) :
     (M₁.levelChangeEquiv M₂ :
       (Πʳ v, [LocalPoints (𝓞 F) F H v, M₁.level v]) ≃*
         Πʳ v, [LocalPoints (𝓞 F) F H v, M₂.level v]) =
       TauCeti.restrictedProductCongr M₁.level M₂.level (M₁.eventually_level_eq M₂) :=
-  MulEquiv.ext fun x ↦ DFunLike.coe_injective <| funext fun v ↦
-    (M₁.levelChangeEquiv_apply M₂ x v).trans
-      (TauCeti.restrictedProductCongr_apply M₁.level M₂.level _ x v).symm
+  (rfl)
+
+@[simp]
+theorem levelChangeEquiv_apply {S₁ S₂ : Finset (HeightOneSpectrum (𝓞 F))}
+    (M₁ : IntegralModel F H S₁) (M₂ : IntegralModel F H S₂)
+    (x : Πʳ v, [LocalPoints (𝓞 F) F H v, M₁.level v]) (v : HeightOneSpectrum (𝓞 F)) :
+    M₁.levelChangeEquiv M₂ x v = x v :=
+  (congrArg (fun y ↦ y v) (DFunLike.congr_fun (M₁.toMulEquiv_levelChangeEquiv M₂) x)).trans
+    (TauCeti.restrictedProductCongr_apply M₁.level M₂.level _ x v)
 
 @[simp]
 theorem levelChangeEquiv_refl (M : IntegralModel F H S) :

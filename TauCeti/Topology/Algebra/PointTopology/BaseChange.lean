@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
 public import TauCeti.Topology.Algebra.PointTopology.Group
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
 # Point topology for base change of bialgebras
@@ -19,9 +20,11 @@ and `TauCeti.PointTopology.baseChangeHomeomorph` identifies the underlying evalu
 topologies.
 
 This file combines the two into the topological monoid isomorphism
-`TauCeti.AlgHom.baseChangePointsContinuousMulEquiv`. When `A` is a Hopf algebra, this identifies
-the topological group of `R`-points of an integral model `Spec A` over `k` with the topological
-group of `R`-points of its generic fibre `Spec (K ⊗[k] A)` over `K`.
+`TauCeti.AlgHom.baseChangePointsContinuousMulEquiv` identifying `R`-valued convolution points of `A`
+with those of the scalar extension `K ⊗[k] A` (an isomorphism of topological groups when `A` is a
+Hopf algebra). In the special case of a commutative Hopf algebra `A` over an integral domain `k`
+with fraction field `K`, this identifies the topological group of `R`-points of the integral model
+`Spec A` over `k` with that of its generic fibre `Spec (K ⊗[k] A)` over `K`.
 
 ## Main declarations
 
@@ -57,29 +60,27 @@ noncomputable def baseChangePointsContinuousMulEquiv :
       fun f ↦ AlgHom.ext fun a ↦ by simp
 
 @[simp]
-theorem baseChangePointsContinuousMulEquiv_apply_ofConv (f : WithConv (A →ₐ[k] R)) :
-    (baseChangePointsContinuousMulEquiv k K A R f).ofConv =
-      AlgHom.liftEquiv k K A R f.ofConv := by
-  simp [baseChangePointsContinuousMulEquiv]
-
-@[simp]
 theorem coe_baseChangePointsContinuousMulEquiv :
     (baseChangePointsContinuousMulEquiv k K A R :
       WithConv (A →ₐ[k] R) ≃* WithConv (K ⊗[k] A →ₐ[K] R)) =
       baseChangePointsMulEquiv :=
-  MulEquiv.ext fun f ↦ ofConv_injective <|
-    (baseChangePointsContinuousMulEquiv_apply_ofConv k K A R f).trans
-      (baseChangePointsMulEquiv_apply_ofConv f).symm
+  (rfl)
+
+@[simp]
+theorem baseChangePointsContinuousMulEquiv_apply_ofConv (f : WithConv (A →ₐ[k] R)) :
+    (baseChangePointsContinuousMulEquiv k K A R f).ofConv =
+      AlgHom.liftEquiv k K A R f.ofConv :=
+  (congrArg ofConv (DFunLike.congr_fun (coe_baseChangePointsContinuousMulEquiv k K A R) f)).trans
+    (baseChangePointsMulEquiv_apply_ofConv f)
 
 @[simp]
 theorem baseChangePointsContinuousMulEquiv_symm_ofConv (f : WithConv (K ⊗[k] A →ₐ[K] R)) :
     ((baseChangePointsContinuousMulEquiv k K A R).symm f).ofConv =
-      (AlgHom.liftEquiv k K A R).symm f.ofConv := by
-  have hsymm : (baseChangePointsContinuousMulEquiv k K A R).symm f =
-      baseChangePointsMulEquiv.symm f :=
-    (baseChangePointsContinuousMulEquiv k K A R).symm_apply_eq.mpr <| by
-      simp [baseChangePointsContinuousMulEquiv]
-  rw [hsymm, baseChangePointsMulEquiv_symm_ofConv]
+      (AlgHom.liftEquiv k K A R).symm f.ofConv :=
+  (congrArg ofConv
+    (ContinuousMulEquiv.symm_apply_of_coe_eq
+      (coe_baseChangePointsContinuousMulEquiv k K A R) f)).trans
+    (baseChangePointsMulEquiv_symm_ofConv f)
 
 theorem baseChangePointsContinuousMulEquiv_apply_tmul
     (f : WithConv (A →ₐ[k] R)) (s : K) (a : A) :
