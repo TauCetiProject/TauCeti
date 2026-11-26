@@ -25,7 +25,9 @@ The diagonal action on `X × Y` is free when the action on the first factor is
 
 When every orbit of every point stabilizer on `S` is finite (`TauCeti.FiniteStabilizerOrbits`),
 injectivity of the forward map shows that each diagonal orbit of `S × S` meets every row and every
-column in finitely many points.
+column in finitely many points. This holds for the action of `G` on `G ⧸ U` for a normal subgroup
+`U` (`TauCeti.FiniteStabilizerOrbits.of_normal`): every point stabilizer is `U`, which acts
+trivially.
 -/
 
 public section
@@ -133,6 +135,18 @@ theorem FiniteStabilizerOrbits.finite_setOf_mk_right_eq (x : S)
     fun _ hy ↦ by subst hy; rw [Set.mem_ofPred_eq, Quotient.map'_mk'', Prod.swap_prod_mk]
 
 end FiniteStabilizerOrbits
+
+/-- For `U` normal, the orbits of the point stabilizers on `G ⧸ U` are points: every stabilizer is
+`U`, which acts trivially on `G ⧸ U`. -/
+instance FiniteStabilizerOrbits.of_normal {G : Type*} [Group G] (U : Subgroup G) [U.Normal] :
+    FiniteStabilizerOrbits G (G ⧸ U) := by
+  refine ⟨fun x y ↦ (Set.finite_singleton y).subset ?_⟩
+  rintro _ ⟨⟨g, hg⟩, rfl⟩
+  induction x using QuotientGroup.induction_on
+  have hg' : (g : G ⧸ U) = 1 := by
+    simpa [QuotientGroup.mk_mul] using mem_stabilizer_iff.1 hg
+  induction y using QuotientGroup.induction_on
+  simp [QuotientGroup.mk_mul, hg']
 
 /-- **A diagonal action is free when it is free on the first factor** and left-cancellative on
 the second, as every group action is: an element of `G` fixing a pair fixes its first coordinate.
