@@ -15,8 +15,9 @@ import TauCeti.RingTheory.NormTrace.Pi
 /-!
 # Trace duals and the different ideal across a semilocal decomposition
 
-Let `R` be a Dedekind domain with fraction field `K`, let `L / K` be a finite separable extension,
-and let `S` be an integral closure of `R` in `L`. Suppose `R'` is an integrally closed domain with
+Let `R` be a domain (integrally closed when fractional ideals or the different ideal are formed)
+with fraction field `K`, let `L / K` be a finite separable extension, and let `S` be a finite
+projective integral closure of `R` in `L`. Suppose `R'` is an integrally closed domain with
 fraction field `K'` over `K`, and `(S' i, L' i)` is a finite family of completed or localized
 extensions equipped with semilocal algebra isomorphisms
 
@@ -137,9 +138,9 @@ theorem mem_traceDual_one_of_semilocal
 
 /-- **The local trace dual is spanned by the global one** in a semilocal decomposition. -/
 theorem span_traceDual_one_eq_traceDual_one_of_semilocal
-    [IsDedekindDomain R] [IsFractionRing R K]
+    [IsDomain R] [IsFractionRing R K]
     [FiniteDimensional K L] [Algebra.IsSeparable K L]
-    [IsIntegralClosure S R L]
+    [IsIntegralClosure S R L] [Module.Finite R S] [Module.Projective R S]
     (eField : K' ⊗[K] L ≃ₐ[K'] ∀ i, L' i) (eInt : R' ⊗[R] S ≃ₐ[R'] ∀ i, S' i)
     (fField : ∀ i, L →+* L' i) (fInt : ∀ i, S →+* S' i)
     (heField : ∀ (a : K') (x : L) (i : ι),
@@ -158,8 +159,9 @@ theorem span_traceDual_one_eq_traceDual_one_of_semilocal
 
 /-- **Fractional-ideal trace duals commute with completion** in a semilocal decomposition. -/
 theorem extended_dual_one_eq_dual_one_of_semilocal
-    [IsDedekindDomain R] [IsFractionRing R K]
+    [IsDomain R] [IsIntegrallyClosed R] [IsFractionRing R K]
     [IsDomain S] [IsFractionRing S L] [IsIntegralClosure S R L]
+    [Module.Finite R S] [Module.Projective R S]
     [FiniteDimensional K L] [Algebra.IsSeparable K L]
     [IsDomain R'] [IsIntegrallyClosed R'] [IsFractionRing R' K']
     (eField : K' ⊗[K] L ≃ₐ[K'] ∀ i, L' i) (eInt : R' ⊗[R] S ≃ₐ[R'] ∀ i, S' i)
@@ -182,9 +184,9 @@ theorem extended_dual_one_eq_dual_one_of_semilocal
 
 /-- **The different ideal commutes with completion** in a semilocal decomposition. -/
 theorem map_differentIdeal_eq_differentIdeal_of_semilocal
-    [IsDedekindDomain R] [IsFractionRing R K]
+    [IsDomain R] [IsIntegrallyClosed R] [IsFractionRing R K]
     [IsDedekindDomain S] [IsFractionRing S L] [IsIntegralClosure S R L]
-    [Module.IsTorsionFree R S]
+    [Module.IsTorsionFree R S] [Module.Finite R S] [Module.Projective R S]
     [FiniteDimensional K L] [Algebra.IsSeparable K L]
     [IsDomain R'] [IsIntegrallyClosed R'] [IsFractionRing R' K']
     (eField : K' ⊗[K] L ≃ₐ[K'] ∀ i, L' i) (eInt : R' ⊗[R] S ≃ₐ[R'] ∀ i, S' i)

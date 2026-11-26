@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Multiplicity
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Semilocal
 public import TauCeti.RingTheory.DedekindDomain.Different.Discriminant
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
+import Mathlib.RingTheory.Finiteness.Projective
+import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.RingTheory.DedekindDomain.Different.Semilocal
 import TauCeti.RingTheory.NormTrace.Pi
 
@@ -60,6 +62,15 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 private abbrev primeAbove : {u : HeightOneSpectrum B // u.asIdeal.LiesOver v.asIdeal} :=
   ⟨w, inferInstance⟩
 
+include K L in
+omit [IsDedekindDomain B] [IsFractionRing B L] [Module.IsTorsionFree R B] in
+private theorem moduleProjective_of_isIntegralClosure : Module.Projective R B := by
+  have : Module.Finite R B := IsIntegralClosure.finite R K L B
+  have : Module.IsTorsionFree R L := .trans_faithfulSMul R K L
+  have : Module.IsTorsionFree R B := IsIntegralClosure.isTorsionFree R L
+  have := Module.finitePresentation_of_finite R B
+  exact Module.Flat.projective_of_finitePresentation
+
 omit [Module.IsTorsionFree R B] in
 /-- **Trace-dual expansions pass to completions.** If `x = ∑ᵢ Tr_{L/K}(x bᵢ) yᵢ` for every `x ∈ L`,
 then `z = ∑ᵢ Tr_{L_w/K_v}(z bᵢ) yᵢ` for every `z ∈ L_w`. -/
@@ -84,6 +95,8 @@ theorem traceDual_one_adicCompletionIntegers_eq_span :
       Submodule.span (w.adicCompletionIntegers L)
         (algebraMap L (w.adicCompletion L) '' Submodule.traceDual R K (1 : Submodule B L)) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
+  have : Module.Projective R B :=
+    moduleProjective_of_isIntegralClosure (R := R) (K := K) (B := B) (L := L)
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
   have : Module.IsTorsionFree R B :=
     Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective R B)
@@ -107,6 +120,8 @@ theorem dual_one_adicCompletionIntegers_eq_extended :
         (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
           (FaithfulSMul.algebraMap_injective B (w.adicCompletionIntegers L))) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
+  have : Module.Projective R B :=
+    moduleProjective_of_isIntegralClosure (R := R) (K := K) (B := B) (L := L)
   have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
   have : Module.IsTorsionFree R B :=
     Module.isTorsionFree_iff_algebraMap_injective.mpr (FaithfulSMul.algebraMap_injective R B)
@@ -127,6 +142,8 @@ theorem differentIdeal_adicCompletionIntegers_eq_map :
     differentIdeal (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) =
       (differentIdeal R B).map (algebraMap B (w.adicCompletionIntegers L)) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
+  have : Module.Projective R B :=
+    moduleProjective_of_isIntegralClosure (R := R) (K := K) (B := B) (L := L)
   exact ((v.adicCompletionSemilocalEquiv K B L).map_differentIdeal_eq_differentIdeal_of_semilocal
     (v.adicCompletionIntegersSemilocalEquiv K B L)
     (fun u ↦ algebraMap L (u.val.adicCompletion L))

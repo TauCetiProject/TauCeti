@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.RingTheory.Finiteness.Projective
 public import TauCeti.RingTheory.Localization.Finiteness
-import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # Trace-dual families of a projective extension
@@ -147,9 +146,9 @@ variable {R K S L R' K' S₀ L₀ : Type*}
 `L` persist in `L₀`, then the trace dual of `S₀ / R'` is spanned over `S₀` by the image of the
 trace dual of `S / R`. -/
 theorem span_traceDual_one_eq_traceDual_one_of_forall
-    [IsDedekindDomain R] [IsFractionRing R K]
+    [IsDomain R] [IsFractionRing R K]
     [FiniteDimensional K L] [Algebra.IsSeparable K L]
-    [IsIntegralClosure S R L]
+    [IsIntegralClosure S R L] [Module.Finite R S] [Module.Projective R S]
     (fField₀ : L →+* L₀) (fInt₀ : S →+* S₀)
     (hfCompat₀ : ∀ x : S, algebraMap S₀ L₀ (fInt₀ x) = fField₀ (algebraMap S L x))
     (hMem : ∀ ⦃d : L⦄, d ∈ Submodule.traceDual R K (1 : Submodule S L) →
@@ -162,13 +161,6 @@ theorem span_traceDual_one_eq_traceDual_one_of_forall
   refine le_antisymm (Submodule.span_le.mpr ?_) fun z hz ↦ ?_
   · rintro _ ⟨d, hd, rfl⟩
     exact hMem hd
-  -- `S` is torsion-free and finite over the Dedekind domain `R`, hence projective, so it admits a
-  -- finite trace-dual family `(b, y)`.
-  have : Module.Finite R S := IsIntegralClosure.finite R K L S
-  have : Module.IsTorsionFree R L := .trans_faithfulSMul R K L
-  have : Module.IsTorsionFree R S := IsIntegralClosure.isTorsionFree R L
-  have := Module.finitePresentation_of_finite R S
-  have : Module.Projective R S := Module.Flat.projective_of_finitePresentation
   obtain ⟨n, b, y, hy, hb⟩ := TauCeti.exists_sum_trace_mul_smul_eq R K (L := L) (B := S)
   rw [← hExp (fun j ↦ algebraMap S L (b j)) y hb z]
   refine Submodule.sum_mem _ fun j _ ↦ ?_
