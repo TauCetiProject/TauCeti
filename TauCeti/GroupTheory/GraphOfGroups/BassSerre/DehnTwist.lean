@@ -108,17 +108,22 @@ section loop
 variable {G : Type w} {C : Type x} [Group G] [Group C] {f g : C →* G}
   {hf : Function.Injective f} {hg : Function.Injective g} {v : (SerreGraph.rose Unit).V}
 
+open MonoidHom (ker_eq_ker_of_injective)
+
 /-- **Dehn twists act on elliptic subgroups by conjugation.** For each subgroup `H` of an HNN
 extension that is elliptic in the Bass–Serre tree of the splitting, a Dehn twist agrees on `H` with
 an inner automorphism, which may depend on `H`. -/
 theorem exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_loop
     (z : Subgroup.centralizer (f.range : Set G))
-    {H : Subgroup (HNNExtension G f.range g.range (loopEquiv f g hf hg))}
+    {H : Subgroup
+      (HNNExtension G f.range g.range (f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)))}
     (hH : (bassSerreTree (loop f g hf hg) v).IsEllipticSubgroup
       (H.comap (π₁.equivHNNExtension f g hf hg v).toMonoidHom)) :
-    ∃ x : HNNExtension G f.range g.range (loopEquiv f g hf hg),
-      Set.EqOn (HNNExtension.dehnTwist (loopEquiv f g hf hg) z) (MulAut.conj x)
-        (H : Set (HNNExtension G f.range g.range (loopEquiv f g hf hg))) := by
+    ∃ x : HNNExtension G f.range g.range (f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)),
+      Set.EqOn (HNNExtension.dehnTwist (f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)) z)
+        (MulAut.conj x)
+        (H : Set (HNNExtension G f.range g.range
+          (f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)))) := by
   obtain ⟨w, hHw⟩ := bassSerreTree_loop_isEllipticSubgroup_comap_iff.1 hH
   exact ⟨_, (HNNExtension.eqOn_dehnTwist_conj_of _ z w).mono hHw⟩
 
@@ -127,11 +132,13 @@ extension carries every subgroup that is elliptic in the Bass–Serre tree of th
 conjugate of itself. -/
 theorem exists_map_dehnTwist_eq_map_conj_of_isEllipticSubgroup_loop
     (z : Subgroup.centralizer (f.range : Set G))
-    {H : Subgroup (HNNExtension G f.range g.range (loopEquiv f g hf hg))}
+    {H : Subgroup
+      (HNNExtension G f.range g.range (f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)))}
     (hH : (bassSerreTree (loop f g hf hg) v).IsEllipticSubgroup
       (H.comap (π₁.equivHNNExtension f g hf hg v).toMonoidHom)) :
-    ∃ x : HNNExtension G f.range g.range (loopEquiv f g hf hg),
-      H.map (HNNExtension.dehnTwist (loopEquiv f g hf hg) z).toMonoidHom =
+    ∃ x : HNNExtension G f.range g.range (f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)),
+      H.map (HNNExtension.dehnTwist
+          (f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)) z).toMonoidHom =
         H.map (MulAut.conj x).toMonoidHom := by
   obtain ⟨x, hx⟩ := exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_loop z hH
   exact ⟨x, hx.subgroup_map_eq⟩

@@ -93,6 +93,8 @@ section loop
 variable {G : Type w} {C : Type x} [Group G] [Group C] {f g : C →* G}
   {hf : Function.Injective f} {hg : Function.Injective g}
 
+open MonoidHom (ker_eq_ker_of_injective)
+
 /-- The vertex group of the loop maps onto the base group of the HNN extension along the empty
 path: the rose has a single vertex. With the base group as reference subgroup,
 `exists_map_stabilizer_eq_map_conj` shows that each vertex stabilizer of the Bass–Serre tree is a
@@ -100,7 +102,7 @@ conjugate of the base group. -/
 theorem exists_path_map_range_vertexHom_loop (v b : (SerreGraph.rose Unit).V) :
     ∃ q : (loop f g hf hg).Path ⟨v⟩ ⟨b⟩,
       (π₁.vertexHom q).range.map (π₁.equivHNNExtension f g hf hg v).toMonoidHom =
-        (HNNExtension.of : G →* HNNExtension G f.range g.range (loopEquiv f g hf hg)).range := by
+        (HNNExtension.of : G →* _).range := by
   obtain rfl : v = b := Subsingleton.elim _ _
   exact ⟨.nil, (MonoidHom.map_range _ _).trans
     (congrArg _ (π₁.equivHNNExtension_comp_vertexHom_nil v))⟩
@@ -108,12 +110,12 @@ theorem exists_path_map_range_vertexHom_loop (v b : (SerreGraph.rose Unit).V) :
 /-- A subgroup `H` of the HNN extension is elliptic in the Bass–Serre tree of the loop exactly when
 it lies in a conjugate of the base group. -/
 theorem bassSerreTree_loop_isEllipticSubgroup_comap_iff {v : (SerreGraph.rose Unit).V}
-    {H : Subgroup (HNNExtension G f.range g.range (loopEquiv f g hf hg))} :
+    {H : Subgroup
+      (HNNExtension G f.range g.range (f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)))} :
     (bassSerreTree (loop f g hf hg) v).IsEllipticSubgroup
         (H.comap (π₁.equivHNNExtension f g hf hg v).toMonoidHom) ↔
-      ∃ w : HNNExtension G f.range g.range (loopEquiv f g hf hg),
-        H ≤ (HNNExtension.of : G →* HNNExtension G f.range g.range (loopEquiv f g hf hg)).range.map
-          (MulAut.conj w).toMonoidHom := by
+      ∃ w : HNNExtension G f.range g.range (f.rangeEquivRange g (ker_eq_ker_of_injective hf hg)),
+        H ≤ (HNNExtension.of : G →* _).range.map (MulAut.conj w).toMonoidHom := by
   have key := bassSerreTree_isEllipticSubgroup_comap_iff (H := H) _
     (π₁.equivHNNExtension f g hf hg v).injective
     (fun b _ ↦ exists_path_map_range_vertexHom_loop v b)

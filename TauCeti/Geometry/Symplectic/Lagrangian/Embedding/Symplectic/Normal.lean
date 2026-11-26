@@ -117,15 +117,15 @@ omit [FiniteDimensional ℝ V] in
 /-- The tangent space of the embedding at `x` is a symplectic subspace. -/
 private theorem isSymplectic_tangentRange (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) :
-    (hσ.symplecticFormAt (f x)).IsSymplectic (f.tangentRange x hn) :=
+    (hσ.symplecticFormAt (f x)).IsSymplectic (f.isImmersion.tangentRange x hn) :=
   IsNondegenerate.hasSymplecticTangentImages_iff_forall.1 h x
 
 /-- In a finite-dimensional manifold, a symplectic tangent space and its symplectic complement
 are topological complements. -/
 private theorem isTopCompl_tangentRange_orthogonal (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) :
-    Submodule.IsTopCompl (f.tangentRange x hn)
-      ((hσ.symplecticFormAt (f x)).orthogonal (f.tangentRange x hn)) := by
+    Submodule.IsTopCompl (f.isImmersion.tangentRange x hn)
+      ((hσ.symplecticFormAt (f x)).orthogonal (f.isImmersion.tangentRange x hn)) := by
   have : FiniteDimensional ℝ (TangentSpace J (f x)) := inferInstanceAs (FiniteDimensional ℝ V)
   exact ⟨(isSymplectic_tangentRange f h x hn).isCompl,
     LinearMap.continuous_of_finiteDimensional _⟩
@@ -134,7 +134,8 @@ private theorem isTopCompl_tangentRange_orthogonal (f : SmoothEmbedding I J n M 
 embedding with the symplectic complement of its tangent space. -/
 def normalSpaceSymplecticComplementEquiv (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) :
-    f.NormalSpace x hn ≃L[ℝ] (hσ.symplecticFormAt (f x)).orthogonal (f.tangentRange x hn) :=
+    f.isImmersion.NormalSpace x hn ≃L[ℝ] (hσ.symplecticFormAt (f x)).orthogonal
+        (f.isImmersion.tangentRange x hn) :=
   f.normalSpaceComplementEquiv x hn (isTopCompl_tangentRange_orthogonal f h x hn)
 
 /-- The inverse of the symplectic-representative equivalence takes the normal class of a vector of
@@ -142,46 +143,50 @@ the symplectic complement. -/
 @[simp]
 theorem normalSpaceSymplecticComplementEquiv_symm_apply (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0)
-    (v : (hσ.symplecticFormAt (f x)).orthogonal (f.tangentRange x hn)) :
-    (f.normalSpaceSymplecticComplementEquiv h x hn).symm v = f.normalClass x hn v :=
+    (v : (hσ.symplecticFormAt (f x)).orthogonal (f.isImmersion.tangentRange x hn)) :
+    (f.normalSpaceSymplecticComplementEquiv h x hn).symm v = f.isImmersion.normalClass x hn v :=
   f.normalSpaceComplementEquiv_symm_apply x hn _ v
 
 /-- The **symplectic representative** of a normal class of a symplectic submanifold embedding:
 the unique vector of the class lying in the symplectic complement of the tangent space. -/
 def symplecticNormalRepresentative (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) :
-    f.NormalSpace x hn →L[ℝ] TangentSpace J (f x) :=
+    f.isImmersion.NormalSpace x hn →L[ℝ] TangentSpace J (f x) :=
   f.complementRepresentative x hn (isTopCompl_tangentRange_orthogonal f h x hn)
 
 /-- The symplectic representative is the vector given by the symplectic-representative
 equivalence. -/
 theorem symplecticNormalRepresentative_apply (f : SmoothEmbedding I J n M N)
-    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) (v : f.NormalSpace x hn) :
+    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0)
+        (v : f.isImmersion.NormalSpace x hn) :
     f.symplecticNormalRepresentative h x hn v = f.normalSpaceSymplecticComplementEquiv h x hn v :=
   f.complementRepresentative_apply x hn _ v
 
 /-- Taking the normal class of the symplectic representative recovers the original class. -/
 @[simp]
 theorem normalClass_symplecticNormalRepresentative (f : SmoothEmbedding I J n M N)
-    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) (v : f.NormalSpace x hn) :
-    f.normalClass x hn (f.symplecticNormalRepresentative h x hn v) = v :=
+    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0)
+        (v : f.isImmersion.NormalSpace x hn) :
+    f.isImmersion.normalClass x hn (f.symplecticNormalRepresentative h x hn v) = v :=
   f.normalClass_complementRepresentative x hn _ v
 
 /-- Symplectic representatives lie in the symplectic complement of the tangent space. -/
 theorem symplecticNormalRepresentative_mem_orthogonal (f : SmoothEmbedding I J n M N)
-    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) (v : f.NormalSpace x hn) :
+    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0)
+        (v : f.isImmersion.NormalSpace x hn) :
     f.symplecticNormalRepresentative h x hn v ∈
-      (hσ.symplecticFormAt (f x)).orthogonal (f.tangentRange x hn) :=
+      (hσ.symplecticFormAt (f x)).orthogonal (f.isImmersion.tangentRange x hn) :=
   f.complementRepresentative_mem x hn _ v
 
 /-- The symplectic representative is the unique vector of the symplectic complement of the tangent
 space in its normal class. -/
 theorem symplecticNormalRepresentative_eq_iff (f : SmoothEmbedding I J n M N)
-    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) (v : f.NormalSpace x hn)
+    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0)
+        (v : f.isImmersion.NormalSpace x hn)
     (w : TangentSpace J (f x)) :
     f.symplecticNormalRepresentative h x hn v = w ↔
-      w ∈ (hσ.symplecticFormAt (f x)).orthogonal (f.tangentRange x hn) ∧
-        f.normalClass x hn w = v :=
+      w ∈ (hσ.symplecticFormAt (f x)).orthogonal (f.isImmersion.tangentRange x hn) ∧
+        f.isImmersion.normalClass x hn w = v :=
   f.complementRepresentative_eq_iff x hn _ v w
 
 /-- A vector of the symplectic complement is the symplectic representative of its own normal
@@ -189,15 +194,15 @@ class. -/
 @[simp]
 theorem symplecticNormalRepresentative_normalClass_of_mem (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) {w : TangentSpace J (f x)}
-    (hw : w ∈ (hσ.symplecticFormAt (f x)).orthogonal (f.tangentRange x hn)) :
-    f.symplecticNormalRepresentative h x hn (f.normalClass x hn w) = w :=
+    (hw : w ∈ (hσ.symplecticFormAt (f x)).orthogonal (f.isImmersion.tangentRange x hn)) :
+    f.symplecticNormalRepresentative h x hn (f.isImmersion.normalClass x hn w) = w :=
   f.complementRepresentative_normalClass_of_mem x hn _ hw
 
 /-- The symplectic representatives fill the symplectic complement of the tangent space. -/
 theorem range_symplecticNormalRepresentative (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) :
     LinearMap.range (f.symplecticNormalRepresentative h x hn).toLinearMap =
-      (hσ.symplecticFormAt (f x)).orthogonal (f.tangentRange x hn) :=
+      (hσ.symplecticFormAt (f x)).orthogonal (f.isImmersion.tangentRange x hn) :=
   f.range_complementRepresentative x hn _
 
 /-- Taking symplectic representatives is injective. -/
@@ -209,7 +214,8 @@ theorem symplecticNormalRepresentative_injective (f : SmoothEmbedding I J n M N)
 /-- A symplectic representative pairs to zero under `σ` with every tangent vector of the
 embedded submanifold. -/
 theorem eval₂_symplecticNormalRepresentative_mfderiv (f : SmoothEmbedding I J n M N)
-    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) (v : f.NormalSpace x hn)
+    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0)
+        (v : f.isImmersion.NormalSpace x hn)
     (w : TangentSpace I x) :
     SmoothBundleForm.eval₂ σ (f x) (f.symplecticNormalRepresentative h x hn v)
       (mfderiv I J f x w) = 0 := by
@@ -220,7 +226,8 @@ theorem eval₂_symplecticNormalRepresentative_mfderiv (f : SmoothEmbedding I J 
 /-- Every tangent vector of the embedded submanifold pairs to zero under `σ` with a symplectic
 representative. -/
 theorem eval₂_mfderiv_symplecticNormalRepresentative (f : SmoothEmbedding I J n M N)
-    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) (v : f.NormalSpace x hn)
+    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0)
+        (v : f.isImmersion.NormalSpace x hn)
     (w : TangentSpace I x) :
     SmoothBundleForm.eval₂ σ (f x) (mfderiv I J f x w)
       (f.symplecticNormalRepresentative h x hn v) = 0 := by
@@ -282,7 +289,7 @@ theorem symplecticNormalRepresentative_normalClass_eq_sub_mfderiv_inverse
     (a : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
     (ha : ∀ u w, a u w = SmoothBundleForm.eval₂ σ (f x) (mfderiv I J f x u) (mfderiv I J f x w))
     (v : TangentSpace J (f x)) :
-    f.symplecticNormalRepresentative h x hn (f.normalClass x hn v) =
+    f.symplecticNormalRepresentative h x hn (f.isImmersion.normalClass x hn v) =
       v - mfderiv I J f x (a.inverse ((flat σ (f x) v).comp (mfderiv I J f x))) := by
   set d := mfderiv I J f x
   have hinv := isInvertible_of_eval₂_mfderiv f h x hn a ha
@@ -294,7 +301,7 @@ theorem symplecticNormalRepresentative_normalClass_eq_sub_mfderiv_inverse
     rw [ContinuousLinearMap.comp_apply, flat_apply, ha] at hpair
     rw [IsNondegenerate.symplecticFormAt_apply, SmoothBundleForm.eval₂_sub_left]
     exact sub_eq_zero.2 hpair.symm
-  · rw [map_sub, normalClass_mfderiv, sub_zero]
+  · rw [map_sub, Manifold.IsImmersion.normalClass_mfderiv, sub_zero]
 
 end Pointwise
 
@@ -307,7 +314,7 @@ nondegenerately. -/
 private theorem nondegenerate_restrict_orthogonal (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) :
     ((hσ.symplecticFormAt (f x)).toBilinForm.restrict
-      ((hσ.symplecticFormAt (f x)).orthogonal (f.tangentRange x hn))).Nondegenerate :=
+      ((hσ.symplecticFormAt (f x)).orthogonal (f.isImmersion.tangentRange x hn))).Nondegenerate :=
   (SymplecticForm.isSymplectic_orthogonal_iff.2
     (isSymplectic_tangentRange f h x hn)).nondegenerate_restrict
 
@@ -317,14 +324,15 @@ representatives under `σ`. It is the restriction of `σ` to the symplectic comp
 tangent space, transported to the normal space. -/
 def symplecticNormalForm (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) :
-    SymplecticForm (f.NormalSpace x hn) :=
+    SymplecticForm (f.isImmersion.NormalSpace x hn) :=
   ((hσ.symplecticFormAt (f x)).restrict _ (nondegenerate_restrict_orthogonal f h x hn)).transport
     (f.normalSpaceSymplecticComplementEquiv h x hn).symm.toLinearEquiv
 
 /-- The normal symplectic form pairs two normal classes as their symplectic representatives. -/
 @[simp]
 theorem symplecticNormalForm_apply (f : SmoothEmbedding I J n M N)
-    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) (v w : f.NormalSpace x hn) :
+    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0)
+        (v w : f.isImmersion.NormalSpace x hn) :
     f.symplecticNormalForm h x hn v w =
       SmoothBundleForm.eval₂ σ (f x) (f.symplecticNormalRepresentative h x hn v)
         (f.symplecticNormalRepresentative h x hn w) := by
@@ -338,14 +346,16 @@ theorem symplecticNormalForm_apply (f : SmoothEmbedding I J n M N)
 zero with the symplectic complement. -/
 theorem symplecticNormalForm_normalClass (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) (v : TangentSpace J (f x))
-    (w : f.NormalSpace x hn) :
-    f.symplecticNormalForm h x hn (f.normalClass x hn v) w =
+    (w : f.isImmersion.NormalSpace x hn) :
+    f.symplecticNormalForm h x hn (f.isImmersion.normalClass x hn v) w =
       SmoothBundleForm.eval₂ σ (f x) v (f.symplecticNormalRepresentative h x hn w) := by
   rw [symplecticNormalForm_apply]
   -- The two representatives of the class of `v` differ by a tangent vector `d u`.
-  obtain ⟨u, hu⟩ := (f.normalClass_eq_iff x hn _ _).1
-    (f.normalClass_symplecticNormalRepresentative h x hn (f.normalClass x hn v))
-  rw [← sub_add_cancel (f.symplecticNormalRepresentative h x hn (f.normalClass x hn v)) v,
+  obtain ⟨u, hu⟩ := (f.isImmersion.normalClass_eq_iff x hn _ _).1
+    (f.normalClass_symplecticNormalRepresentative h x hn (f.isImmersion.normalClass x hn v))
+  rw
+      [← sub_add_cancel
+          (f.symplecticNormalRepresentative h x hn (f.isImmersion.normalClass x hn v)) v,
     ← hu, ContinuousLinearMap.coe_coe]
   rw [SmoothBundleForm.eval₂_add_left, eval₂_mfderiv_symplecticNormalRepresentative, zero_add]
 
@@ -353,8 +363,9 @@ theorem symplecticNormalForm_normalClass (f : SmoothEmbedding I J n M N)
 theorem symplecticNormalForm_normalClass_normalClass (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) (v : TangentSpace J (f x))
     {w : TangentSpace J (f x)}
-    (hw : w ∈ (hσ.symplecticFormAt (f x)).orthogonal (f.tangentRange x hn)) :
-    f.symplecticNormalForm h x hn (f.normalClass x hn v) (f.normalClass x hn w) =
+    (hw : w ∈ (hσ.symplecticFormAt (f x)).orthogonal (f.isImmersion.tangentRange x hn)) :
+    f.symplecticNormalForm h x hn (f.isImmersion.normalClass x hn v)
+        (f.isImmersion.normalClass x hn w) =
       SmoothBundleForm.eval₂ σ (f x) v w := by
   rw [symplecticNormalForm_normalClass,
     symplecticNormalRepresentative_normalClass_of_mem _ h x hn hw]
@@ -402,7 +413,8 @@ theorem contMDiff_symplecticNormalRepresentative_normalClass (f : SmoothEmbeddin
     (h : hσ.HasSymplecticTangentImages I f) (hn : n ≠ 0) (hm : m + 1 ≤ n) (hm' : m + 1 ≤ ∞) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (⟨f p.proj, f.symplecticNormalRepresentative h p.proj hn (f.normalClass p.proj hn p.snd)⟩ :
+        (⟨f p.proj, f.symplecticNormalRepresentative h p.proj hn
+            (f.isImmersion.normalClass p.proj hn p.snd)⟩ :
           TangentBundle J N)) := by
   have hmtop : m ≤ ∞ := le_self_add.trans hm'
   have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
@@ -430,7 +442,7 @@ theorem contMDiff_symplecticNormalRepresentative (f : SmoothEmbedding I J n M N)
     haveI : IsManifold I 1 M := .of_le (n := ∞) (by simp)
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, V)) m
-      (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
+      (fun p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ↦
         (⟨f p.proj, f.symplecticNormalRepresentative h p.proj hn p.snd⟩ : TangentBundle J N)) := by
   have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
   have : IsManifold J 1 N := .of_le (n := ∞) (by simp)

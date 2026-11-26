@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.Coprod.Finiteness
 public import TauCeti.GroupTheory.GroupAlgGeom.AlgebraicSet
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Discrimination
 public import TauCeti.GroupTheory.LimitGroup.MarkedGroup
+import TauCeti.GroupTheory.Coprod.Centralizer
 import TauCeti.GroupTheory.Coprod.Conj
 import TauCeti.GroupTheory.LimitGroup.Characterization
 
@@ -47,12 +48,9 @@ conjugate in `ℤ² ∗ ℤ`.
 
 ## Implementation notes
 
-The centralizer is computed with the retractions `r_k` of the extension of centralizers onto
-`F(a, t)` sending `b` to `a ^ k`, which keep any given nontrivial element nontrivial for all large
-`k`. Let `g` commute with a nontrivial `v = (v₁, v₂) ∈ ℤ²`, and let `n = (fst g)⁻¹ g`, where `fst`
-kills `t`. For large `k` with `v₁ + k v₂ ≠ 0`, the element `r_k n` commutes with the nontrivial
-power `r_k v = a ^ (v₁ + k v₂)`, hence with `a`, so it is a power of `a`; its exponent is that of
-`r_k (fst n) = 1`, so `r_k n = 1`. Hence `n = 1` and `g = fst g ∈ ℤ²`.
+The centralizer is the case of the factor `ℤ²` of the description of the centralizers of factor
+elements in a free product (`Monoid.Coprod.centralizer_inl_eq_map`): the centralizer of `v ≠ 1` is
+the centralizer of `v` in `ℤ²`, which is abelian.
 
 ## References
 
@@ -171,55 +169,6 @@ theorem isFullyResiduallyFree : IsFullyResiduallyFree IntSqCoprodInt :=
 theorem isLimitGroup : IsLimitGroup IntSqCoprodInt :=
   isFullyResiduallyFree.isLimitGroup
 
-/-- The exponent sum of `a` in `F(a, t)`. -/
-private def expA : FreeGroup (Fin 2) →* Multiplicative ℤ :=
-  FreeGroup.lift ![.ofAdd 1, 1]
-
-private theorem expA_of_zero_zpow (m : ℤ) : expA (FreeGroup.of 0 ^ m) = .ofAdd m := by
-  simp [expA, ← ofAdd_zsmul]
-
-/-- After a retraction onto `F(a, t)`, the exponent sum of `a` only depends on the image in `ℤ²`,
-since `t` has exponent sum zero. -/
-private theorem expA_retraction_equivCentralizerExt (k : ℤ) (g : IntSqCoprodInt) :
-    expA (CentralizerExt.retraction (fun _ => k) (equivCentralizerExt g)) =
-      expA (CentralizerExt.retraction (fun _ => k) (equivCentralizerExt (inl (fst g)))) := by
-  let f := expA.comp ((CentralizerExt.retraction fun _ => k).comp equivCentralizerExt.toMonoidHom)
-  have hf : f = (f.comp inl).comp fst :=
-    hom_ext (MonoidHom.ext fun v => by simp) (MonoidHom.ext_mint (by simp [f, expA]))
-  exact DFunLike.congr_fun hf g
-
-private theorem retraction_equivCentralizerExt_inl (k : ℤ) (v : Multiplicative (ℤ × ℤ)) :
-    CentralizerExt.retraction (fun _ => k) (equivCentralizerExt (inl v)) =
-      FreeGroup.of 0 ^ (v.toAdd.1 + k * v.toAdd.2) := by
-  simp [zpow_add, zpow_mul]
-
-/-- An element of `ℤ² ∗ ℤ` commuting with a nontrivial `v ∈ ℤ²` and killed by the projection onto
-`ℤ²` is trivial. -/
-private theorem eq_one_of_commute_of_fst_eq_one {v : Multiplicative (ℤ × ℤ)} (hv : v ≠ 1)
-    {n : IntSqCoprodInt} (hn : Commute n (inl v)) (hfst : fst n = 1) : n = 1 := by
-  by_contra hne
-  have hF := isFullyResiduallyFree_of_isFreeGroup (G := FreeGroup (Fin 2))
-  obtain ⟨N, hN⟩ := CentralizerExt.exists_forall_retraction_ne_one hF.isBP hF.isCSA
-    (FreeGroup.of_ne_one 0)
-    ((map_ne_one_iff equivCentralizerExt equivCentralizerExt.injective).2 hne)
-  obtain ⟨k, hk, hvk⟩ := ((Filter.eventually_ge_atTop N).and
-    (TauCeti.eventually_add_mul_eq_zero_iff v.toAdd.1 v.toAdd.2)).exists
-  let ρ := (CentralizerExt.retraction fun _ => (k : ℤ)).comp equivCentralizerExt.toMonoidHom
-  have hρv : ρ (inl v) = FreeGroup.of 0 ^ (v.toAdd.1 + k * v.toAdd.2) :=
-    retraction_equivCentralizerExt_inl _ v
-  -- `ρ n` commutes with a nontrivial power of `a`, hence with `a`, so it is a power of `a`.
-  have hpow : FreeGroup.of (0 : Fin 2) ^ (v.toAdd.1 + k * v.toAdd.2) ≠ 1 := fun h =>
-    hv <| Multiplicative.toAdd.injective <| Prod.ext_iff.2 <| hvk.1 <| by
-      simpa only [expA_of_zero_zpow, map_one, ofAdd_eq_one] using congrArg expA h
-  have ha : Commute (ρ n) (FreeGroup.of 0) :=
-    IsFreeGroup.commute_of_commute hpow (hρv ▸ hn.map ρ) ((Commute.refl _).zpow_left _)
-  obtain ⟨j, hj⟩ := FreeGroup.commute_of_iff.mp ha.symm
-  -- Its exponent sum of `a` is that of `ρ (inl (fst n)) = 1`, so it is trivial.
-  have hexp : expA (ρ n) = 1 := by
-    simpa [ρ, hfst] using expA_retraction_equivCentralizerExt k n
-  rw [← hj, expA_of_zero_zpow, ofAdd_eq_one] at hexp
-  exact hN k hk (by simpa [ρ, hexp] using hj.symm)
-
 /-- The factor `ℤ²` is abelian, so it centralizes each of its elements. -/
 private theorem range_inl_le_centralizer (v : Multiplicative (ℤ × ℤ)) :
     (inl : Multiplicative (ℤ × ℤ) →* IntSqCoprodInt).range ≤ centralizer {inl v} := by
@@ -231,10 +180,9 @@ private theorem range_inl_le_centralizer (v : Multiplicative (ℤ × ℤ)) :
 theorem centralizer_inl_eq_range_inl {v : Multiplicative (ℤ × ℤ)} (hv : v ≠ 1) :
     centralizer {(inl v : IntSqCoprodInt)} =
       (inl : Multiplicative (ℤ × ℤ) →* IntSqCoprodInt).range := by
-  refine le_antisymm (fun g hg => ⟨fst g, ?_⟩) (range_inl_le_centralizer v)
-  have hc : Commute ((inl (fst g))⁻¹ * g) (inl v) :=
-    ((Commute.all _ _).map inl).inv_left.mul_left (mem_centralizer_singleton_iff.1 hg)
-  exact inv_mul_eq_one.1 (eq_one_of_commute_of_fst_eq_one hv hc (by simp))
+  rw [Monoid.Coprod.centralizer_inl_eq_map hv, MonoidHom.range_eq_map]
+  -- The factor `ℤ²` is abelian, so it centralizes `v`.
+  exact congrArg _ (eq_top_iff.2 fun w _ => mem_centralizer_singleton_iff.2 (Commute.all w v))
 
 /-- The centralizer in `ℤ² ∗ ℤ` of an element of the factor `ℤ²` is not cyclic, although
 `ℤ² ∗ ℤ` is fully residually free. -/
