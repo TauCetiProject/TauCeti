@@ -47,7 +47,8 @@ polynomials, the canonical polynomial is a complete isomorphism invariant.
   the leading one, each preceded by its absolute value.
 * `Polynomial.polredabsKey P`: the key `(T₂ P, |disc P|, signVector P)`, ordered
   lexicographically.
-* `TauCeti.NumberField.CanonicalPolynomial K`: the defining polynomials of `K` of least key.
+* `TauCeti.NumberField.CanonicalPolynomial K`: the defining polynomials of `K` of least key,
+  with constructor `TauCeti.NumberField.CanonicalPolynomial.mk`.
 * `TauCeti.NumberField.polredabs K p`: the polynomial of a canonical datum `p`.
 
 ## Main results
@@ -234,15 +235,29 @@ variable (K) in
 /-- The **canonical polynomials** of a number field `K`: its defining polynomials of least
 polredabs key, that is, of least `T₂`, then least `|disc|`, then least sign vector. There is
 exactly one (`exists_polredabs`, `polredabs_unique`); a term of this type is a datum certifying
-it, and `polredabs K p` is the polynomial. -/
+it, built by `CanonicalPolynomial.mk`, and `polredabs K p` is the polynomial. The body is exposed
+because the module system requires it for the computable `CanonicalPolynomial.mk` and `polredabs`.
+-/
 @[expose] def CanonicalPolynomial : Type :=
   {P : ℤ[X] // P ∈ definingPolys K ∧ ∀ Q ∈ definingPolys K, polredabsKey P ≤ polredabsKey Q}
+
+/-- The canonical datum of a defining polynomial `P` of `K` of least key. -/
+def CanonicalPolynomial.mk (hP : P ∈ definingPolys K)
+    (hmin : ∀ Q ∈ definingPolys K, polredabsKey P ≤ polredabsKey Q) : CanonicalPolynomial K :=
+  ⟨P, hP, hmin⟩
 
 variable (K) in
 /-- The **canonical polynomial** `polredabs K p` of a number field `K`: the polynomial of the
 canonical datum `p`. It does not depend on `p` (`polredabs_unique`). -/
 def polredabs (p : CanonicalPolynomial K) : ℤ[X] :=
   Subtype.val p
+
+/-- The canonical polynomial of the datum `CanonicalPolynomial.mk hP hmin` is `P`. -/
+@[simp]
+theorem polredabs_mk (hP : P ∈ definingPolys K)
+    (hmin : ∀ Q ∈ definingPolys K, polredabsKey P ≤ polredabsKey Q) :
+    polredabs K (.mk hP hmin) = P :=
+  (rfl)
 
 /-- The canonical polynomial is a defining polynomial. -/
 theorem polredabs_mem_definingPolys (p : CanonicalPolynomial K) :
@@ -274,8 +289,8 @@ theorem polredabs_unique (p q : CanonicalPolynomial K) : polredabs K p = polreda
   (polredabs_eq_iff p).mpr ⟨polredabs_mem_definingPolys q, fun _ ↦ polredabsKey_polredabs_le q⟩
 
 instance : Nonempty (CanonicalPolynomial K) :=
-  let ⟨P, hP⟩ := exists_polredabs K
-  ⟨⟨P, hP⟩⟩
+  let ⟨_, hP, hmin⟩ := exists_polredabs K
+  ⟨.mk hP hmin⟩
 
 instance : Subsingleton (CanonicalPolynomial K) :=
   ⟨fun p q ↦ Subtype.ext (polredabs_unique p q)⟩
@@ -324,6 +339,7 @@ theorem polredabs_eq_polredabs_iff (p : CanonicalPolynomial K) (q : CanonicalPol
 
 /-- The canonical polynomial of `ℚ` is `X`: the defining polynomials of `ℚ` are the `X - n`, and
 `X` is the only one of `T₂` norm `0`. -/
+@[simp]
 theorem polredabs_rat (p : CanonicalPolynomial ℚ) : polredabs ℚ p = X := by
   rw [polredabs_eq_iff, definingPolys_rat]
   refine ⟨⟨0, by simp⟩, ?_⟩
