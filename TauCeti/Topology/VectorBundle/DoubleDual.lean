@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 public import TauCeti.Topology.VectorBundle.Coordinates
 public import TauCeti.Topology.VectorBundle.Dual
 
@@ -21,8 +22,9 @@ canonical identifications of dual tensor bundles, without choosing a metric or a
 
 The construction transports Mathlib's normed-space double-dual map through a bundle trivialization;
 the evaluation formula proves that the result does not depend on that trivialization. In finite
-dimensions over a complete field, `Module.evalEquiv` gives the inverse identification. Both
-identifications have constant expressions in the induced bundle charts, including rank zero.
+dimensions over a complete field, `TauCeti.inclusionInDoubleDualEquiv` gives the inverse
+identification. Both identifications have constant expressions in the induced bundle charts,
+including rank zero.
 -/
 
 public section
@@ -84,12 +86,7 @@ def bundleDoubleDualEquiv (x : M) : V x ≃L[𝕜] StrongDual 𝕜 (StrongDual �
     (mem_baseSet_trivializationAt F V x)
   let d := e.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)
   let dd := d.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)
-  let c : Module.Dual 𝕜 F ≃ₗ[𝕜] StrongDual 𝕜 F := LinearMap.toContinuousLinearMap
-  let j := (Module.evalEquiv 𝕜 F).trans
-    ((c.arrowCongr (LinearEquiv.refl 𝕜 𝕜)).trans LinearMap.toContinuousLinearMap)
-  let j' := LinearEquiv.toContinuousLinearEquiv (𝕜 := 𝕜) (E := F)
-    (F := StrongDual 𝕜 (StrongDual 𝕜 F)) j
-  e.trans (j'.trans dd.symm)
+  e.trans ((inclusionInDoubleDualEquiv 𝕜 F).trans dd.symm)
 
 /-- The finite-dimensional double-dual equivalence has the canonical evaluation formula. -/
 @[simp]

@@ -111,6 +111,12 @@ theorem eq_hull_singleton (ρ : ToricRay σ) (hρ : (ρ.toPointedCone : ConvexCo
     exact hρ x hx hx0 hnegx
   · exact Submodule.span_le.2 fun _ hx' ↦ by simpa using hx' ▸ hx
 
+/-- A pointed cone containing a nonzero point of a salient ray contains the whole ray. -/
+theorem toPointedCone_le_of_mem (ρ : ToricRay σ) (hρ : (ρ.toPointedCone : ConvexCone ℝ V).Salient)
+    {x : V} (hx : x ∈ ρ) (hx0 : x ≠ 0) (hτ : x ∈ τ) : ρ.toPointedCone ≤ τ := by
+  rw [ρ.eq_hull_singleton hρ hx hx0]
+  exact Submodule.span_le.2 (Set.singleton_subset_iff.2 hτ)
+
 /-! ### The zero cone -/
 
 /-- The zero cone has no rays: its only face is itself, whose span is zero-dimensional. -/

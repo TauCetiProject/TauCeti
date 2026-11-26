@@ -58,12 +58,18 @@ for the statements here.
   `ξ` and continuous `η`, the weak equation with `DJ = fderiv ℝ J` is the classical equation
   `∂_s ξ + J ∂_t ξ + S ξ = η` at every point of `Ω`. Its coefficients are Sobolev coefficients
   for every exponent (`TauCeti.IsSobolevCRCoefficients.of_contDiffOn`).
+* `TauCeti.integrable_inner_crFormalAdjoint_of_memLpLoc`: for locally `Lᵖ` coefficients and
+  `1/p + 1/q ≤ 1` the pairing `⟪D* φ, ξ⟫` is integrable for every locally `L^q` field `ξ`, with no
+  relation between `J` and `DJ`.
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_deriv_apply`: the directional weak derivatives
   `DJ · e` of the coefficient are locally `Lᵖ`; `TauCeti.IsSobolevCRCoefficients.add_zeroth`
   changes the zeroth-order coefficient by a locally `Lᵖ` field, which adds its adjoint to the
   formal adjoint (`TauCeti.crFormalAdjoint_add_zeroth`).
-* Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolution.add`, `.const_smul`, `.neg`, `.sub`),
-  restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`), changing the exponent
+* Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolution.add`, `.const_smul`, `.neg`, `.sub`), and
+  moving a locally `Lᵖ` term `A ξ` into the zeroth-order coefficient
+  (`TauCeti.IsWeakCRSolution.add_zeroth`),
+  restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`,
+  `TauCeti.IsSobolevCRCoefficients.mono`), changing the exponent
   (`TauCeti.IsWeakCRSolution.mono_exponent`, `TauCeti.IsWeakCRSolution.of_memLpLoc`) and
   invariance under changes of `J`, `DJ`, `S`, `ξ` and `η` on null subsets of `Ω`
   (`TauCeti.isWeakCRSolution_congr_ae`).
@@ -267,6 +273,13 @@ theorem IsSobolevCRCoefficients.memLpLoc_deriv_apply
   hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) e)
 
 omit [CompleteSpace V] in
+/-- Sobolev coefficients on `Ω` are Sobolev coefficients on every open subset of `Ω`. -/
+theorem IsSobolevCRCoefficients.mono (hc : IsSobolevCRCoefficients p Ω J DJ S) (hΩ : Ω' ≤ Ω) :
+    IsSobolevCRCoefficients p Ω' J DJ S :=
+  ⟨hc.hasWeakFDerivOn.mono hΩ, hc.memLpLoc_coeff.mono_set hΩ, hc.memLpLoc_deriv.mono_set hΩ,
+    hc.memLpLoc_zeroth.mono_set hΩ⟩
+
+omit [CompleteSpace V] in
 /-- Adding a locally `Lᵖ` field to the zeroth-order coefficient preserves Sobolev coefficients. -/
 theorem IsSobolevCRCoefficients.add_zeroth (hc : IsSobolevCRCoefficients p Ω J DJ S)
     {A : ℂ → V →L[ℝ] V} (hA : MemLpLoc p Ω A) :
@@ -275,10 +288,9 @@ theorem IsSobolevCRCoefficients.add_zeroth (hc : IsSobolevCRCoefficients p Ω J 
 
 omit [CompleteSpace V] in
 /-- The four terms of the pairing `⟪D* φ, ξ⟫` (see `TauCeti.inner_crFormalAdjoint`) are
-integrable under Sobolev coefficients and the Hölder condition `1/p + 1/q ≤ 1`. -/
-private theorem IsSobolevCRCoefficients.integrable_crFormalAdjoint_terms
-    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
-    (hξ : MemLpLoc q Ω ξ) (φ : 𝓓(Ω, V)) :
+integrable for locally `Lᵖ` coefficients under the Hölder condition `1/p + 1/q ≤ 1`. -/
+private theorem integrable_crFormalAdjoint_terms (hJ : MemLpLoc p Ω J) (hDJ : MemLpLoc p Ω DJ)
+    (hS : MemLpLoc p Ω S) (hpq : p⁻¹ + q⁻¹ ≤ 1) (hξ : MemLpLoc q Ω ξ) (φ : 𝓓(Ω, V)) :
     Integrable (fun z => ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ) ∧
       Integrable (fun z => ⟪fderiv ℝ (φ : ℂ → V) z I, J z (ξ z)⟫_ℝ) ∧
       Integrable (fun z => ⟪(φ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) ∧
@@ -286,19 +298,29 @@ private theorem IsSobolevCRCoefficients.integrable_crFormalAdjoint_terms
   have hloc := Ω.isOpen.isLocallyClosed
   exact ⟨φ.integrable_inner_fderiv
       (hξ.locallyIntegrableOn (ENNReal.inv_le_one.1 (le_add_self.trans hpq)) hloc) 1,
-    φ.integrable_inner_fderiv (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply hξ hpq hloc) I,
-    φ.integrable_inner ((hc.memLpLoc_deriv_apply I).locallyIntegrableOn_clm_apply hξ hpq hloc),
-    φ.integrable_inner (hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hξ hpq hloc)⟩
+    φ.integrable_inner_fderiv (hJ.locallyIntegrableOn_clm_apply hξ hpq hloc) I,
+    φ.integrable_inner (((hDJ.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I))
+      ).locallyIntegrableOn_clm_apply hξ hpq hloc),
+    φ.integrable_inner (hS.locallyIntegrableOn_clm_apply hξ hpq hloc)⟩
+
+/-- For locally `Lᵖ` coefficients `J`, `DJ`, `S` and the Hölder condition `1/p + 1/q ≤ 1`, the
+pairing `⟪D* φ, ξ⟫` of the weak equation is integrable for every locally `L^q` field `ξ`. No weak
+derivative relation between `J` and `DJ` is needed. -/
+theorem integrable_inner_crFormalAdjoint_of_memLpLoc (hJ : MemLpLoc p Ω J)
+    (hDJ : MemLpLoc p Ω DJ) (hS : MemLpLoc p Ω S) (hpq : p⁻¹ + q⁻¹ ≤ 1) (hξ : MemLpLoc q Ω ξ)
+    (φ : 𝓓(Ω, V)) : Integrable (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) := by
+  obtain ⟨h₁, h₂, h₃, h₄⟩ := integrable_crFormalAdjoint_terms hJ hDJ hS hpq hξ φ
+  simp only [inner_crFormalAdjoint]
+  exact ((h₁.neg.sub h₂).sub h₃).add h₄
 
 /-- Under Sobolev coefficients and the Hölder condition `1/p + 1/q ≤ 1`, the pairing
 `⟪D* φ, ξ⟫` of the weak equation is integrable for every locally `L^q` field `ξ`. -/
 theorem IsSobolevCRCoefficients.integrable_inner_crFormalAdjoint
     (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     (hξ : MemLpLoc q Ω ξ) (φ : 𝓓(Ω, V)) :
-    Integrable (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) := by
-  obtain ⟨h₁, h₂, h₃, h₄⟩ := hc.integrable_crFormalAdjoint_terms hpq hξ φ
-  simp only [inner_crFormalAdjoint]
-  exact ((h₁.neg.sub h₂).sub h₃).add h₄
+    Integrable (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) :=
+  integrable_inner_crFormalAdjoint_of_memLpLoc hc.memLpLoc_coeff hc.memLpLoc_deriv
+    hc.memLpLoc_zeroth hpq hξ φ
 
 /-- The integral of `⟪D* φ, ξ⟫` splits into the integrals of its four terms. -/
 theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_eq_terms
@@ -307,7 +329,8 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint_eq_terms
     ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =
       -(∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ) - (∫ z, ⟪fderiv ℝ (φ : ℂ → V) z I, J z (ξ z)⟫_ℝ) -
         (∫ z, ⟪(φ : ℂ → V) z, DJ z I (ξ z)⟫_ℝ) + ∫ z, ⟪(φ : ℂ → V) z, S z (ξ z)⟫_ℝ := by
-  obtain ⟨h₁, h₂, h₃, h₄⟩ := hc.integrable_crFormalAdjoint_terms hpq hξ φ
+  obtain ⟨h₁, h₂, h₃, h₄⟩ := integrable_crFormalAdjoint_terms hc.memLpLoc_coeff hc.memLpLoc_deriv
+    hc.memLpLoc_zeroth hpq hξ φ
   simp only [inner_crFormalAdjoint]
   rw [integral_add _ h₄, integral_sub _ h₃, integral_sub _ h₂, integral_neg]
   exacts [h₁.neg, h₁.neg.sub h₂, (h₁.neg.sub h₂).sub h₃]
@@ -344,7 +367,8 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint [FiniteDimensiona
       (fun K hK hKΩ => memLpLoc_iff.1 (hc.memLpLoc_deriv_apply I) K hKΩ hK)
       (fun K hK hKΩ => memLpLoc_iff.1 hξq K hKΩ hK)
       (fun K hK hKΩ => memLpLoc_iff.1 hDξI K hKΩ hK)
-  obtain ⟨-, -, hA, hC⟩ := hc.integrable_crFormalAdjoint_terms hpq hξq φ
+  obtain ⟨-, -, hA, hC⟩ := integrable_crFormalAdjoint_terms hc.memLpLoc_coeff hc.memLpLoc_deriv
+    hc.memLpLoc_zeroth hpq hξq φ
   have hB := φ.integrable_inner (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply hDξI hpq hloc)
   have hD := φ.integrable_inner (hDξ1.locallyIntegrableOn hq1 hloc)
   have hξ1 : ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ = -∫ z, ⟪(φ : ℂ → V) z, Dξ z 1⟫_ℝ := by
@@ -435,6 +459,21 @@ theorem add (h : IsWeakCRSolution q Ω J DJ S ξ η) (h' : IsWeakCRSolution q Ω
 theorem sub (h : IsWeakCRSolution q Ω J DJ S ξ η) (h' : IsWeakCRSolution q Ω J DJ S ξ' η') :
     IsWeakCRSolution q Ω J DJ S (ξ - ξ') (η - η') := by
   simpa [sub_eq_add_neg] using h.add h'.neg
+
+/-- **Moving a term into the zeroth-order coefficient.** If `ξ` is a weak solution of
+`∂_s ξ + J ∂_t ξ + S ξ = η` and `A` is locally `Lᵖ` with `1/p + 1/q ≤ 1`, then `ξ` is a weak
+solution of `∂_s ξ + J ∂_t ξ + (S + A) ξ = η + A ξ`. -/
+theorem add_zeroth (h : IsWeakCRSolution q Ω J DJ S ξ η) {p : ℝ≥0∞} {A : ℂ → V →L[ℝ] V}
+    (hA : MemLpLoc p Ω A) (hpq : p⁻¹ + q⁻¹ ≤ 1) :
+    IsWeakCRSolution q Ω J DJ (fun z => S z + A z) ξ (fun z => η z + A z (ξ z)) := by
+  have hAξ := hA.locallyIntegrableOn_clm_apply h.memLpLoc hpq Ω.isOpen.isLocallyClosed
+  refine ⟨h.memLpLoc, h.locallyIntegrableOn.add hAξ, fun φ => ⟨?_, ?_⟩⟩
+  · simp only [inner_crFormalAdjoint_add_zeroth]
+    exact (h.integrable_inner_crFormalAdjoint φ).add (φ.integrable_inner hAξ)
+  · simp only [inner_crFormalAdjoint_add_zeroth, inner_add_right]
+    rw [integral_add (h.integrable_inner_crFormalAdjoint φ) (φ.integrable_inner hAξ),
+      integral_add (φ.integrable_inner h.locallyIntegrableOn) (φ.integrable_inner hAξ),
+      h.integral_inner_crFormalAdjoint φ]
 
 end IsWeakCRSolution
 

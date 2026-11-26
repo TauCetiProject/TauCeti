@@ -7,7 +7,12 @@ module
 
 public import TauCeti.Geometry.Symplectic.Liouville.Flow.Out
 public import TauCeti.Geometry.Symplectic.Liouville.Scaling
-public import Mathlib.Topology.Homotopy.Basic
+public import Mathlib.Topology.Homotopy.Contractible
+public import TauCeti.Geometry.Symplectic.Hamiltonian.AlmostExistence
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Reeb.Basic
+public import TauCeti.Geometry.Symplectic.Liouville.ContactType
+import Mathlib.Geometry.Manifold.IntegralCurve.Transform
+import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 
 /-!
@@ -49,9 +54,16 @@ compact (`TauCeti.IsLiouvilleDomain.isClosedEmbedding_liouvilleGraph`). On a com
 the graph over a boundary point `ι s` with `f s ≥ 1` lies on the level `f s` of the radial
 coordinate (`TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_liouvilleGraph`). Moving `f`
 linearly to the constant `1` deforms the graph back to `ι` through the graphs of the functions
-`(1 - τ) f + τ` (`TauCeti.liouvilleGraphHomotopy`). Its intended application, not proved here, is
-to join each closed characteristic of `j_f(S)` to the corresponding closed Reeb orbit of
-`f ι^* α` on `Σ`.
+`(1 - τ) f + τ` (`TauCeti.liouvilleGraphHomotopy`).
+
+Closed characteristics of the graph come from closed Reeb orbits of `f ι^* α`. Let `S` be compact,
+of one dimension less than `M`, let `ι` be an injective immersion into the boundary of `W`, and let
+the graph be a regular level `K⁻¹(c)`. If this level carries a closed characteristic, contractible
+in some set, then the contact form `j_f^* α = f ι^* α` has a closed Reeb orbit `γ` whose loop
+`ι ∘ γ` on `Σ`, run at another speed, is contractible in `M`; see
+`IsLiouvilleDomain.exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacteristic`.
+This is how Corollary E brings a closed characteristic of the hypersurface `Σ_α = j_f(S)` back to
+a closed Reeb orbit of the contact form `f ι^* α` on `Σ`, contractible in the ambient manifold.
 
 ## Main definitions
 
@@ -75,6 +87,9 @@ to join each closed characteristic of `j_f(S)` to the corresponding closed Reeb 
   into the complement of the domain, and a closed embedding of a compact boundary.
 * `TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_liouvilleGraph`: on a completion, for a
   boundary point `ι s` and `f s ≥ 1`, the radial coordinate of `j_f(s)` is `f(s)`.
+* `IsLiouvilleDomain.exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacteristic`
+  in `TauCeti`: a contractible closed characteristic of a graph which is a regular level comes
+  from a closed Reeb orbit `γ` of `f ι^* α` whose loop `ι ∘ γ` is contractible in `M`.
 
 ## References
 
@@ -168,9 +183,8 @@ include hZ hc
 continuous. -/
 theorem continuous_liouvilleGraph (hι : Continuous ι) (hf : Continuous f) (hf₀ : ∀ s, f s ≠ 0) :
     Continuous (liouvilleGraph Z ι f) := by
-  rw [liouvilleGraph_def, flowOf_eq_globalFlow hZ hc]
-  exact (contMDiff_globalFlow_uncurry hc le_rfl hZ).continuous.comp
-    ((hf.log hf₀).prodMk hι)
+  rw [liouvilleGraph_def]
+  exact (continuous_flowOf_comp hc hZ hι).comp ((hf.log hf₀).prodMk continuous_id)
 
 /-- **The radial homotopy.** For a continuous positive function `f`, the Liouville graphs of the
 functions `(1 - τ) f + τ`, `τ ∈ [0, 1]`, form a homotopy from the Liouville graph of `f` to the map
@@ -314,6 +328,110 @@ theorem isClosedEmbedding_liouvilleGraph [CompactSpace S] (h : IsLiouvilleDomain
     Topology.IsClosedEmbedding (liouvilleGraph Z ι f) :=
   (continuous_liouvilleGraph ((h.contMDiff_of_interior_eq hZ).of_le (by simp)) hc hι hf
     hf₀).isClosedEmbedding (h.injective_liouvilleGraph hZ hc hιi hιW)
+
+/-! ### Closed characteristics of a graph and closed Reeb orbits -/
+
+section ClosedCharacteristic
+
+variable [BoundarylessManifold J S] [CompactSpace S] [IsManifold J (⊤ : ℕ∞) S]
+
+/-- A contractible map into a set, with values on a Liouville graph over a compact boundary, lifts
+through the graph to a map into `S` whose composite with `ι` is contractible in `M`: the radial
+homotopy joins the two composites. -/
+private theorem exists_nullhomotopic_of_forall_mem_range_liouvilleGraph
+    (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
+    (hc : IsCompleteVectorField Z) (hι : Continuous ι) (hιi : Injective ι)
+    (hιW : ∀ s, ι s ∈ frontier W) (hf : Continuous f) (hf₀ : ∀ s, 0 < f s) {X : Type*}
+    [TopologicalSpace X] {V : Set M} (g : C(X, V)) (hg : g.Nullhomotopic)
+    (hgj : ∀ x, (g x : M) ∈ range (liouvilleGraph Z ι f)) :
+    ∃ ℓ : C(X, S), (∀ x, liouvilleGraph Z ι f (ℓ x) = g x) ∧
+      (ContinuousMap.comp ⟨ι, hι⟩ ℓ).Nullhomotopic := by
+  have hZ1 : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
+  choose ℓ hℓ using hgj
+  have hℓc : Continuous ℓ :=
+    (h.isClosedEmbedding_liouvilleGraph hZ hc hι hιi hιW hf fun s ↦ (hf₀ s).ne').isInducing
+      |>.continuous_iff.2 <| (continuous_subtypeVal.comp g.continuous).congr fun x ↦ (hℓ x).symm
+  obtain ⟨y, hy⟩ := hg.comp_right ⟨Subtype.val, continuous_subtypeVal⟩
+  refine ⟨⟨ℓ, hℓc⟩, hℓ, y, (ContinuousMap.Homotopic.symm ⟨(liouvilleGraphHomotopy hZ1 hc hι hf
+    hf₀).compContinuousMap ⟨ℓ, hℓc⟩⟩).trans ?_⟩
+  convert hy using 1
+  ext x
+  exact hℓ x
+
+/-- **Closed characteristics of a Liouville graph come from contractible closed Reeb orbits.**
+Let `ι` be a smooth injective immersion of a compact manifold `S`, of one dimension less than `M`,
+into the frontier of a Liouville domain `W` with complete Liouville field `Z`, let `f > 0` be
+smooth, and let the Liouville graph `j_f` of `f` over `ι` be the regular level `K⁻¹(c)` of a `C²`
+function `K`. If this level carries a closed characteristic, contractible in some set `V`, then
+the contact form `j_f^* α`, which is `f ι^* α` (`TauCeti.mpullback_liouvilleGraph_apply`), has a
+closed Reeb orbit `γ` whose loop `ι ∘ γ` on the boundary of `W`, run at another speed, is
+contractible in `M`.
+
+This is the step of the proof of Corollary E of Barraud–Damian–Humilière–Oancea that brings a
+closed characteristic of the graph `Σ_α` back to a closed Reeb orbit of the contact form
+`f ι^* α` on `Σ`. -/
+theorem exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacteristic
+    (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
+    (hc : IsCompleteVectorField Z) (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιi : Injective ι)
+    (hιs : ∀ s, Injective (mfderiv J I ι s)) (hιW : ∀ s, ι s ∈ frontier W)
+    (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f) (hf₀ : ∀ s, 0 < f s)
+    (hdim : Module.finrank ℝ E' + 1 = Module.finrank ℝ E)
+    {K : M → ℝ} {c : ℝ} (hK : ContMDiff I 𝓘(ℝ) 2 K) (hreg : IsRegularValue I 𝓘(ℝ) K c)
+    (hlevel : {x | K x = c} = range (liouvilleGraph Z ι f)) {V : Set M}
+    (hV : ω.HasContractibleClosedCharacteristic V K c) :
+    ∃ γ : ℝ → S, IsMIntegralCurve γ (SmoothForm.mpullback (liouvilleGraph Z ι f)
+        (contMDiff_liouvilleGraph le_top (h.contMDiff_of_interior_eq hZ) hc hι hf
+          fun s ↦ (hf₀ s).ne') α).reebVectorField ∧ (∃ τ, τ ≠ 0 ∧ Periodic γ τ) ∧
+      ∃ (T : ℝ) (ψ : ℝ ≃ₜ ℝ), 0 < T ∧
+        ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = ι (γ (ψ t)) := by
+  have : T2Space S := T2Space.of_injective_continuous hιi hι.continuous
+  set j := liouvilleGraph Z ι f
+  have hZs := h.contMDiff_of_interior_eq hZ
+  have hZ1 : ContMDiff I I.tangent 1 (T% Z) := hZs.of_le (by simp)
+  have hj : ContMDiff J I (⊤ : ℕ∞) j :=
+    contMDiff_liouvilleGraph le_top hZs hc hι hf fun s ↦ (hf₀ s).ne'
+  have hιd : MDifferentiable J I ι := hι.mdifferentiable (by simp)
+  have hfd : MDifferentiable J 𝓘(ℝ) f := hf.mdifferentiable (by simp)
+  have hjs (s : S) : Injective (mfderiv J I j s) :=
+    injective_mfderiv_liouvilleGraph hZ1 hc (hιd s) (hfd s) (hf₀ s).ne' (hιs s)
+      (h.isTransverseAlong hZ hιd hιW)
+  have hji : Injective j := h.injective_liouvilleGraph hZ hc hιi hιW
+  -- The graph carries the contact form `j^* α`, and its negative `j^* (-α)`, with `d(-α) = -ω`.
+  have hα : (SmoothForm.mpullback j hj α).IsContactForm :=
+    (h.isRestrictedContactType_liouvilleGraph hZ hc hιd hιs hιW hfd fun s ↦ (hf₀ s).ne')
+      |>.isContactType.isContactForm_mpullback h.isNondegenerate hj hjs hdim
+  have hαneg : (SmoothForm.mpullback j hj (-α)).IsContactForm := by
+    rwa [map_neg, SmoothForm.isContactForm_neg_iff]
+  have hdθ (s : S) : mextDeriv (-α).val (j s) = -ω.val (j s) := by
+    rw [NegMemClass.coe_neg, mextDeriv_neg, h.mextDeriv_eq, Pi.neg_apply]
+  have hKj (s : S) : (mfderiv J I j s).range = (mvfderiv I K (j s)).ker := by
+    have hjK : ∀ s, K (j s) = c := fun s ↦ (hlevel.symm ▸ mem_range_self s : j s ∈ {x | K x = c})
+    rw [ker_mvfderiv]
+    exact (hreg.isRegularPoint (hjK s)).range_mfderiv_eq_ker_mfderiv
+      (Filter.Eventually.of_forall hjK) (hjs s) (by simpa using hdim)
+  -- The closed characteristic is a closed Reeb orbit of `j^* (-α)` run at another speed.
+  obtain ⟨T, δ, hT, hδ, hper, -, hδK, g, hg, hgδ⟩ :=
+    SmoothTwoForm.hasContractibleClosedCharacteristic_iff.1 hV
+  have hδj (t : ℝ) : δ t ∈ range j := hlevel ▸ hδK t
+  obtain ⟨γ, hγ, ⟨τ, hτ, hγτ⟩, ψ, -, hδeq⟩ :=
+    h.isNondegenerate.exists_isMIntegralCurve_reebVectorField_comp_eq hj hji hαneg hK hdθ hKj hδ
+      (hδj 0) hT.ne' hper
+  -- Reversing time turns it into a closed Reeb orbit of `j^* α`.
+  refine ⟨γ ∘ (· * -1), ?_, ⟨τ / -1, by simpa using hτ, hγτ.mul_const' (-1)⟩, T,
+    ψ.trans (Homeomorph.neg ℝ), hT, ?_⟩
+  · refine (isMIntegralCurve_congr_vectorField fun t ↦ ?_).1 (hγ.comp_mul (-1))
+    rw [Pi.smul_apply, map_neg, hα.reebVectorField_neg, neg_one_smul, neg_neg]
+  -- The loop of the closed characteristic lies on the graph, through a loop `ℓ` of `S`, and the
+  -- radial homotopy joins it to the loop `ι ∘ ℓ`.
+  obtain ⟨ℓ, hℓ, hιℓ⟩ := exists_nullhomotopic_of_forall_mem_range_liouvilleGraph h hZ hc
+    hι.continuous hιi hιW hf.continuous hf₀ g hg fun x ↦ by
+      obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
+      exact hgδ t ▸ hδj t
+  refine ⟨_, hιℓ, fun t ↦ congrArg ι (hji ((hℓ t).trans ?_))⟩
+  rw [hgδ, hδeq]
+  simp
+
+end ClosedCharacteristic
 
 end IsLiouvilleDomain
 

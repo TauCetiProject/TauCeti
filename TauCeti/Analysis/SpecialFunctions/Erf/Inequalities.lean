@@ -9,16 +9,18 @@ public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.Real.Pi.Bounds
+public import TauCeti.Analysis.SpecialFunctions.Dawson
 import TauCeti.Analysis.SpecialFunctions.Exp.Chord
 import TauCeti.Analysis.Real.Sqrt
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 
 /-!
 # Inequalities for the error functions
 
 This file proves the inequalities of DLMF §7.8 for Mills' ratio
-`M(x) = e^{x²} ∫ₓ^∞ e^{−t²} dt = (√π/2) e^{x²} erfc x`, for the integral `∫₀ˣ e^{at²} dt` and for
-`erf`. Mills' ratio is written out in every public statement, so that the bounds apply directly
-to `erfc`.
+`M(x) = e^{x²} ∫ₓ^∞ e^{−t²} dt = (√π/2) e^{x²} erfc x`, for the integral `∫₀ˣ e^{at²} dt`, for
+Dawson's integral `F` and for `erf`. Mills' ratio is written out in every public statement, so
+that the bounds apply directly to `erfc`.
 
 ## Main results
 
@@ -36,6 +38,10 @@ to `erfc`.
 * `TauCeti.Real.mul_millsRatio_bounds`: the rational bounds for `x M(x)` (DLMF 7.8.5).
 * `TauCeti.Real.integral_exp_mul_sq_lt`: `∫₀ˣ e^{at²} dt < (2e^{ax²} + ax² − 2)/(3ax)` for
   `x > 0` and `a ≠ 0` (DLMF 7.8.6, stated there for `a > 0`).
+* `TauCeti.Real.integral_exp_sq_bounds`: `sinh(x²)/x < ∫₀ˣ e^{t²} dt < (e^{x²} − 1)/x` for
+  `x > 0` (DLMF 7.8.7); the middle term is `e^{x²} F(x)` for Dawson's integral `F`.
+* `TauCeti.Real.strictAntiOn_dawson_div_sqrt`: `F(x)/√(1 − e^{−2x²})` is strictly decreasing on
+  `x > 0` (DLMF §7.8), with `F(x)` the real part of `TauCeti.dawson x`.
 * `TauCeti.Real.erf_lt_sqrt_one_sub_exp`: `erf x < √(1 − e^{−4x²/π})` for `x > 0` (DLMF 7.8.8).
 
 ## Implementation notes
@@ -50,10 +56,14 @@ sign-change lemmas `TauCeti.le_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_nonpos`
 `TauCeti.lt_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_neg` conclude. The upper bound of 7.8.3
 follows from the upper bound of 7.8.2.
 
-DLMF 7.8.7, the bounds for Dawson's integral, is not in this file.
+For the two bounds of 7.8.7, the differences `y I(y) − sinh(y²)` and `e^{y²} − 1 − y I(y)`,
+with `I(y) = ∫₀^y e^{t²} dt`, vanish at `0` and have derivatives that vanish at `0` and increase
+on `(0, ∞)`, so they are positive on `(0, ∞)`. The derivative of `F(x)/√(1 − e^{−2x²})` is
+negative by the lower bound of 7.8.7 in the form `2x F(x) > 1 − e^{−2x²}`.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
-`DLMF/ErrorFunctions/BoundsAsymptotics/ContinuedFractions.lean`.
+`DLMF/ErrorFunctions/BoundsAsymptotics/ContinuedFractions.lean`; the Dawson bounds from its
+`Real.dawsonF_integral_bounds` and `Real.dawsonF_normalized_strictAnti`.
 -/
 
 public section
@@ -638,5 +648,120 @@ theorem erf_lt_sqrt_one_sub_exp {x : ℝ} (hx : 0 < x) :
   rw [Real.lt_sqrt (TauCeti.Real.erf_nonneg hx.le),
     show -4 * x ^ 2 / π = -(k * x ^ 2) by rw [hkdef]; ring]
   linarith
+
+/-- The lower bound of DLMF 7.8.7: `sinh(x²)/x < ∫₀ˣ e^{t²} dt` for `x > 0`. -/
+private theorem sinh_sq_div_lt_integral_exp_sq {x : ℝ} (hx : 0 < x) :
+    Real.sinh (x ^ 2) / x < ∫ t in (0 : ℝ)..x, Real.exp (t ^ 2) := by
+  set I : ℝ → ℝ := fun x => ∫ t in (0 : ℝ)..x, Real.exp (t ^ 2) with hI
+  have hId : ∀ y, HasDerivAt I (Real.exp (y ^ 2)) y := fun y =>
+    ((by fun_prop : Continuous fun t : ℝ => Real.exp (t ^ 2)).integral_hasStrictDerivAt
+      0 y).hasDerivAt
+  have hen : ∀ y, HasDerivAt (fun y => Real.exp (-y ^ 2)) (Real.exp (-y ^ 2) * -(2 * y)) y :=
+    fun y => (hasDerivAt_pow 2 y).neg.exp.congr_deriv (by norm_num)
+  -- `K′(y) = I(y) − y e^{−y²}` vanishes at `0` and increases on `(0, ∞)`.
+  have hK' : ∀ y, HasDerivAt (fun y => I y - y * Real.exp (-y ^ 2))
+      (Real.exp (y ^ 2) - Real.exp (-y ^ 2) + 2 * y ^ 2 * Real.exp (-y ^ 2)) y := fun y =>
+    ((hId y).sub ((hasDerivAt_id y).mul (hen y))).congr_deriv
+      (by simp only [id_eq]; ring)
+  have hK'pos : ∀ y, 0 < y → 0 < I y - y * Real.exp (-y ^ 2) := fun y hy => by
+    have := lt_of_hasDerivAt_pos hy (fun s _ => (hK' s).continuousAt.continuousWithinAt)
+      (fun s _ => hK' s) fun s hs => by
+        have : Real.exp (-s ^ 2) < Real.exp (s ^ 2) :=
+          Real.exp_lt_exp.mpr (by nlinarith [hs.1])
+        have : 0 < 2 * s ^ 2 * Real.exp (-s ^ 2) := by have := hs.1; positivity
+        linarith
+    simpa [hI] using this
+  -- `K(y) = y I(y) − sinh(y²)` vanishes at `0` and has derivative `K′`.
+  have hK : ∀ y, HasDerivAt (fun y => y * I y - Real.sinh (y ^ 2))
+      (I y - y * Real.exp (-y ^ 2)) y := fun y =>
+    (((hasDerivAt_id y).mul (hId y)).sub
+      (hasDerivAt_pow 2 y).sinh).congr_deriv (by simp only [id_eq, Real.cosh_eq]; ring)
+  have hKx := lt_of_hasDerivAt_pos hx (fun s _ => (hK s).continuousAt.continuousWithinAt)
+    (fun s _ => hK s) fun s hs => hK'pos s hs.1
+  simp only [hI, intervalIntegral.integral_same, mul_zero, sub_zero,
+    zero_pow two_ne_zero, Real.sinh_zero] at hKx
+  rw [div_lt_iff₀ hx]
+  linarith
+
+/-- The upper bound of DLMF 7.8.7: `∫₀ˣ e^{t²} dt < (e^{x²} − 1)/x` for `x > 0`. -/
+private theorem integral_exp_sq_lt_exp_sq_sub_one_div {x : ℝ} (hx : 0 < x) :
+    ∫ t in (0 : ℝ)..x, Real.exp (t ^ 2) < (Real.exp (x ^ 2) - 1) / x := by
+  set I : ℝ → ℝ := fun x => ∫ t in (0 : ℝ)..x, Real.exp (t ^ 2) with hI
+  have hId : ∀ y, HasDerivAt I (Real.exp (y ^ 2)) y := fun y =>
+    ((by fun_prop : Continuous fun t : ℝ => Real.exp (t ^ 2)).integral_hasStrictDerivAt
+      0 y).hasDerivAt
+  have he : ∀ y, HasDerivAt (fun y => Real.exp (y ^ 2)) (Real.exp (y ^ 2) * (2 * y)) y :=
+    fun y => (hasDerivAt_pow 2 y).exp.congr_deriv (by norm_num)
+  -- `H(y) = y e^{y²} − I(y)` vanishes at `0` and increases on `(0, ∞)`.
+  have hH : ∀ y, HasDerivAt (fun y => y * Real.exp (y ^ 2) - I y)
+      (2 * y ^ 2 * Real.exp (y ^ 2)) y := fun y =>
+    (((hasDerivAt_id y).mul (he y)).sub (hId y)).congr_deriv
+      (by simp only [id_eq]; ring)
+  have hHpos : ∀ y, 0 < y → 0 < y * Real.exp (y ^ 2) - I y := fun y hy => by
+    have := lt_of_hasDerivAt_pos hy (fun s _ => (hH s).continuousAt.continuousWithinAt)
+      (fun s _ => hH s) fun s hs => by have := hs.1; positivity
+    simpa [hI] using this
+  -- `G(y) = e^{y²} − 1 − y I(y)` vanishes at `0` and has derivative `H`.
+  have hG : ∀ y, HasDerivAt (fun y => Real.exp (y ^ 2) - 1 - y * I y)
+      (y * Real.exp (y ^ 2) - I y) y := fun y =>
+    (((he y).sub_const 1).sub ((hasDerivAt_id y).mul (hId y))).congr_deriv
+      (by simp only [id_eq]; ring)
+  have hGx := lt_of_hasDerivAt_pos hx (fun s _ => (hG s).continuousAt.continuousWithinAt)
+    (fun s _ => hG s) fun s hs => hHpos s hs.1
+  simp only [hI, intervalIntegral.integral_same, mul_zero,
+    zero_pow two_ne_zero, Real.exp_zero, sub_self] at hGx
+  rw [lt_div_iff₀ hx]
+  linarith
+
+/-- **DLMF 7.8.7.** For `x > 0`, `sinh(x²)/x < ∫₀ˣ e^{t²} dt < (e^{x²} − 1)/x`. The middle term
+is `e^{x²} F(x)` for Dawson's integral `F` (`TauCeti.dawson_ofReal`). -/
+theorem integral_exp_sq_bounds {x : ℝ} (hx : 0 < x) :
+    Real.sinh (x ^ 2) / x < ∫ t in (0 : ℝ)..x, Real.exp (t ^ 2) ∧
+      ∫ t in (0 : ℝ)..x, Real.exp (t ^ 2) < (Real.exp (x ^ 2) - 1) / x :=
+  ⟨sinh_sq_div_lt_integral_exp_sq hx, integral_exp_sq_lt_exp_sq_sub_one_div hx⟩
+
+/-- **DLMF §7.8.** Dawson's integral divided by `√(1 − e^{−2x²})`,
+`F(x)/√(1 − e^{−2x²})` with `F(x) = Re (dawson x)`, is strictly decreasing on `x > 0`. -/
+theorem strictAntiOn_dawson_div_sqrt :
+    StrictAntiOn (fun x : ℝ => (dawson x).re / Real.sqrt (1 - Real.exp (-2 * x ^ 2))) (Ioi 0) := by
+  have hu : ∀ x : ℝ, 0 < x → 0 < 1 - Real.exp (-2 * x ^ 2) := fun x hx => by
+    have : Real.exp (-2 * x ^ 2) < 1 := Real.exp_lt_one_iff.mpr (by nlinarith)
+    linarith
+  have hg : ∀ x : ℝ, 0 < x → HasDerivAt (fun x : ℝ => Real.sqrt (1 - Real.exp (-2 * x ^ 2)))
+      (4 * x * Real.exp (-2 * x ^ 2) / (2 * Real.sqrt (1 - Real.exp (-2 * x ^ 2)))) x :=
+    fun x hx => ((((hasDerivAt_pow 2 x).const_mul (-2)).exp.const_sub 1).congr_deriv
+      (by push_cast; ring)).sqrt (hu x hx).ne'
+  have hd : ∀ x : ℝ, 0 < x → HasDerivAt
+      (fun x : ℝ => (dawson x).re / Real.sqrt (1 - Real.exp (-2 * x ^ 2)))
+      ((1 - Real.exp (-2 * x ^ 2) - 2 * x * (dawson x).re) /
+        Real.sqrt (1 - Real.exp (-2 * x ^ 2)) ^ 3) x := fun x hx => by
+    have hsq := Real.sq_sqrt (hu x hx).le
+    have hpos := Real.sqrt_pos.mpr (hu x hx)
+    refine ((hasDerivAt_dawson_ofReal_re x).div (hg x hx) hpos.ne').congr_deriv ?_
+    generalize Real.sqrt (1 - Real.exp (-2 * x ^ 2)) = g at hsq hpos ⊢
+    generalize Real.exp (-2 * x ^ 2) = E at hsq ⊢
+    field_simp
+    rw [hsq]
+    ring
+  refine strictAntiOn_of_hasDerivWithinAt_neg (convex_Ioi 0)
+    (f' := fun x => (1 - Real.exp (-2 * x ^ 2) - 2 * x * (dawson x).re) /
+      Real.sqrt (1 - Real.exp (-2 * x ^ 2)) ^ 3)
+    (fun x hx => (hd x hx).continuousAt.continuousWithinAt) (fun x hx => ?_) fun x hx => ?_
+  · rw [interior_Ioi] at hx ⊢
+    exact (hd x hx).hasDerivWithinAt
+  rw [interior_Ioi] at hx
+  -- `2x F(x) = 2x e^{−x²} I(x) > 2 e^{−x²} sinh(x²) = 1 − e^{−2x²}`, by DLMF 7.8.7.
+  have hb := sinh_sq_div_lt_integral_exp_sq hx
+  rw [div_lt_iff₀ hx, Real.sinh_eq] at hb
+  have hkey : 1 - Real.exp (-2 * x ^ 2) < 2 * x * (dawson x).re := by
+    have hE : Real.exp (-2 * x ^ 2) = Real.exp (-x ^ 2) * Real.exp (-x ^ 2) := by
+      rw [← Real.exp_add]
+      congr 1
+      ring
+    have hex : Real.exp (x ^ 2) * Real.exp (-x ^ 2) = 1 := by
+      rw [← Real.exp_add, add_neg_cancel, Real.exp_zero]
+    rw [dawson_ofReal_re, hE]
+    nlinarith [Real.exp_pos (-x ^ 2)]
+  exact div_neg_of_neg_of_pos (by linarith) (pow_pos (Real.sqrt_pos.mpr (hu x hx)) 3)
 
 end TauCeti.Real

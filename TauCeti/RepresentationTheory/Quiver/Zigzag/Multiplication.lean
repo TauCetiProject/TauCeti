@@ -599,6 +599,14 @@ theorem zigzagBasis_coord_dart_zigzagVolume (hns : ∀ i : V, ∃ j, G.Adj i j) 
   rw [← zigzagBasisFun_inr_inr, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
   simp
 
+/-- The volume coordinate at `v` of the volume class at `v'`. -/
+theorem zigzagBasis_coord_zigzagVolume [DecidableEq V] (hns : ∀ i : V, ∃ j, G.Adj i j)
+    (v v' : V) :
+    (zigzagBasis k G hns).coord (.inr (.inr v)) (zigzagVolume k G v') =
+      if v' = v then 1 else 0 := by
+  rw [← zigzagBasisFun_inr_inr, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
+  simp
+
 end
 
 end TauCeti

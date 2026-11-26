@@ -42,6 +42,7 @@ of a tangent space is positively oriented. Closedness of `σ` is not used.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.wedgePow_eq_factorial_smul_volumeForm`: `σⁿ = n!·(σⁿ / n!)`.
 * `TauCeti.SmoothTwoForm.volumeForm_one`: the volume form `σ¹ / 1!` is `σ` itself.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_reindex`: the volume form takes the
   value `1` on Darboux bases.
@@ -91,6 +92,13 @@ def volumeForm (σ : SmoothTwoForm I M) (n : ℕ) : SmoothForm I M ℝ (2 * n) :
 theorem volumeForm_apply (σ : SmoothTwoForm I M) (n : ℕ) (x : M) :
     (σ.volumeForm n).val x = ((n.factorial : ℝ)⁻¹) • (σ.val x).wedgePow n := by
   rw [volumeForm, Submodule.coe_smul, Pi.smul_apply, SmoothForm.wedgePow_apply]
+
+/-- **The top power is `n!` times the volume form**: `σⁿ = n!·(σⁿ/n!)`. -/
+theorem wedgePow_eq_factorial_smul_volumeForm (σ : SmoothTwoForm I M) (n : ℕ) :
+    SmoothForm.wedgePow σ n = (n.factorial : ℝ) • σ.volumeForm n := by
+  refine Subtype.ext (funext fun x ↦ ?_)
+  rw [Submodule.coe_smul, Pi.smul_apply, volumeForm_apply, SmoothForm.wedgePow_apply, smul_smul,
+    mul_inv_cancel₀ (by positivity), one_smul]
 
 /-- The symplectic volume form `σ¹ / 1!` is the two-form `σ` itself. On a surface it is the
 volume form of `σ`. -/

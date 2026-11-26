@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.Examples.AffineRay
-public import TauCeti.Geometry.Toric.Algebraic.Fan.DivisorWeights
+public import TauCeti.Geometry.Toric.Algebraic.Fan.Divisor.Weights
 
 /-!
 # The fan of the projective line

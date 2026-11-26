@@ -176,6 +176,7 @@ section Estimate
 
 variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+omit [Fact (1 ≤ p)] in
 /-- **The small mean oscillation estimate on an open set of finite measure.** The whole-space
 estimate `exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le`, applied to
 the extension by zero of `w ∈ W^{2,2}_0(U)`, bounds `‖D²w‖_{Lᵖ(U)}` by the `Lᵖ(U)` norm of
@@ -221,8 +222,6 @@ private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 2 <
       heq] with x hx
     rw [← hx, Matrix.contraction_apply]
   have hkey := hCZ ha (fun x => haΛ.opNorm_matrixBilinearForm_le (mem_univ x)) hosc W _ hWeq
-    (((integrable_indicator_iff hUm).2 (hwp.integrable Fact.out)).congr
-      (hW.mono fun _ h => h.symm))
     (((memLp_indicator_iff_restrict hUm.nullMeasurableSet).2 hwp).ae_eq
       (hW.mono fun _ h => h.symm))
     ((memLp_indicator_iff_restrict hUm.nullMeasurableSet).2 hF)

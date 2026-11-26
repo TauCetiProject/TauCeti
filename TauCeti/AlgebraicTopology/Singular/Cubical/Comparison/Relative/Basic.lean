@@ -88,6 +88,9 @@ relative homotopy invariance of cubical homology is transported from the simplic
   relative boundaries.
 * `TopPair.exists_isCubicalRepresentative_of_dim_zero`: every chain of dimension `0` represents a
   relative class.
+* `TopPair.exists_isCubicalRepresentative_ofCube`: a cube sending the boundary of the cube into the
+  subspace represents a relative class.
+* `TopPair.isCubicalRepresentative_d`: a boundary represents the zero class.
 * `TopPair.IsCubicalRepresentative.sum`, `TopPair.IsCubicalRepresentative.neg`,
   `TopPair.IsCubicalRepresentative.smul`, `TopPair.IsCubicalRepresentative.zsmul`,
   `TopPair.IsCubicalRepresentative.unique`:
@@ -372,6 +375,31 @@ theorem cubicalChainComplexMap_comp {P P' P'' : TopPair.{u}} (f : P ⟶ P') (g :
     cubicalChainComplexMap k (f ≫ g) = cubicalChainComplexMap k f ≫ cubicalChainComplexMap k g :=
   coequalizer.hom_ext (by simp)
 
+/-- Enlarging the subspace of `X` from `B` to `B'` sends the class of a chain of `X` relative to
+`B` to its class relative to `B'`. -/
+@[reassoc]
+theorem π_cubicalChainComplexMap_ofSubsetMap_id {X : TopCat.{u}} {B B' : Set X}
+    (h : Set.MapsTo (𝟙 X) B B') :
+    cokernel.π ((normalizedCubicalChainComplex k).map (ofSubset B).map) ≫
+        cubicalChainComplexMap k (ofSubsetMap (𝟙 X) h) =
+      cokernel.π ((normalizedCubicalChainComplex k).map (ofSubset B').map) := by
+  have hid : Hom.fst (ofSubsetMap (𝟙 X) h) = 𝟙 (ofSubset B).fst := ofSubsetMap_fst _ h
+  rw [π_cubicalChainComplexMap, hid]
+  exact ((normalizedCubicalChainComplex k).map_id _ =≫ _).trans (Category.id_comp _)
+
+variable {k} in
+/-- In relative cubical homology, two maps of pairs induced by continuous maps compose to the map
+induced by any continuous map equal to their composite. -/
+theorem homologyMap_cubicalChainComplexMap_ofSubsetMap_apply_of_comp_eq {X Y Z : TopCat.{u}}
+    {B : Set X} {B' : Set Y} {B'' : Set Z} {g : X ⟶ Y} {g' : Y ⟶ Z} {g'' : X ⟶ Z}
+    (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'') (h : Set.MapsTo g'' B B'')
+    (hg : g ≫ g' = g'') (n : ℕ) (v : ((ofSubset B).cubicalChainComplex k).homology n) :
+    (HomologicalComplex.homologyMap (cubicalChainComplexMap k (ofSubsetMap g' hB')) n).hom
+        ((HomologicalComplex.homologyMap (cubicalChainComplexMap k (ofSubsetMap g hB)) n).hom v) =
+      (HomologicalComplex.homologyMap (cubicalChainComplexMap k (ofSubsetMap g'' h)) n).hom v := by
+  rw [← ofSubsetMap_comp_ofSubsetMap_of_comp_eq hB hB' h hg, cubicalChainComplexMap_comp,
+    HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply]
+
 /-- An isomorphism of pairs induces an isomorphism of relative normalized cubical chains. -/
 instance isIso_cubicalChainComplexMap {P P' : TopPair.{u}} (f : P ⟶ P') [IsIso f] :
     IsIso (cubicalChainComplexMap k f) :=
@@ -615,6 +643,18 @@ theorem exists_d_sub_mem_range_of_isZero
   obtain ⟨μ, h⟩ := exists_isCubicalRepresentative_of_d_mem c hc
   exact h.eq_zero_iff.1 ((ModuleCat.subsingleton_of_isZero hP).elim _ _)
 
+/-- **Boundaries represent the zero class**: the boundary of a chain of the ambient space of a pair
+represents the zero class of the relative homology. -/
+theorem isCubicalRepresentative_d (a : ((normalizedCubicalChainComplex k).obj P.fst).X (n + 1)) :
+    P.IsCubicalRepresentative k
+      (((normalizedCubicalChainComplex k).obj P.fst).d (n + 1) n a) 0 := by
+  obtain ⟨μ, hμ⟩ := exists_isCubicalRepresentative_of_d_mem
+    (((normalizedCubicalChainComplex k).obj P.fst).d (n + 1) n a) (by
+      have h := ConcreteCategory.congr_hom
+        (((normalizedCubicalChainComplex k).obj P.fst).d_comp_d (n + 1) n (n - 1)) a
+      exact ((ConcreteCategory.comp_apply _ _ _).symm.trans h) ▸ zero_mem _)
+  rwa [hμ.eq_zero_iff.2 ⟨a, by rw [sub_self]; exact zero_mem _⟩] at hμ
+
 end Representative
 
 /-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the
@@ -758,6 +798,19 @@ theorem cyclesMap_cubicalCycleOfCube {P P' : TopPair.{u}} (f : P ⟶ P') {m : �
   rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]
   simp
 
+/-- **A relative cube represents a relative class**: a singular cube of the ambient space of a pair
+sending the boundary of the cube into the subspace represents a class of the relative cubical
+homology of the pair. In positive dimension it is the class of `TopPair.cubicalCycleOfCube`. -/
+theorem exists_isCubicalRepresentative_ofCube {P : TopPair.{u}} {n : ℕ} (c : SingularCube P.fst n)
+    (hc : Set.MapsTo c (Cube.boundary (Fin n)) (Set.range P.map)) :
+    ∃ μ, P.IsCubicalRepresentative k (NormalizedCubicalChain.ofCube P.fst k c) μ := by
+  cases n with
+  | zero => exact exists_isCubicalRepresentative_of_dim_zero _
+  | succ m =>
+    exact ⟨_, (isCubicalRepresentative_iff _ _).2 ⟨cubicalCycleOfCube k c hc, by
+      rw [iCycles_cubicalCycleOfCube, cubicalChainOfCube_def,
+        normalizedCubicalChainComplexXEquiv_symm_apply], rfl⟩⟩
+
 /-! ### The boundary of a relative cube -/
 
 section BoundaryOfCube
@@ -766,7 +819,7 @@ variable {P : TopPair.{u}}
 
 /-- The faces of a cube sending the boundary of the cube into the subspace take values in the
 subspace. -/
-private lemma face_mem_range_map {m : ℕ} {c : SingularCube P.fst (m + 1)}
+theorem face_mem_range_map {m : ℕ} {c : SingularCube P.fst (m + 1)}
     (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) (i : Fin (m + 1))
     {t : unitInterval} (ht : t = 0 ∨ t = 1) (x : Fin m → unitInterval) :
     SingularCube.face i t c x ∈ Set.range P.map := by
