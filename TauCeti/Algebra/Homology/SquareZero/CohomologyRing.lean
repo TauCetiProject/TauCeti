@@ -40,7 +40,9 @@ condition on the units is not needed: it is automatic once the induced map is on
 (`LinearMap.sub_mem_coboundaries_of_surjective_cohomologyMap`), since a multiplicative map onto
 the cohomology of a unital product sends the unit to the unit. In particular, two such products
 on the same module which agree up to coboundaries on cocycles give the same graded ring structure,
-whatever their units (`LinearMap.cohomologyGRing_eq_of_sub_mem_coboundaries`).
+whatever their units (`LinearMap.cohomologyGRing_eq_of_sub_mem_coboundaries`); the graded ring
+structure depends only on the product on cohomology and the unit class
+(`LinearMap.cohomologyGRing_congr`).
 
 The degree-wise cohomology is that of `TauCeti.Algebra.Homology.SquareZero.Graded`, where `M` need
 not be the direct sum of the pieces `G i`; the ring is the direct sum of the cohomology groups of
@@ -465,6 +467,23 @@ variable (μ : M →ₗ[R] M →ₗ[R] M)
   (hsub : ∀ {i j : ℤ} {a b : M}, a ∈ D.cocycles G i → b ∈ D.cocycles G j →
     μ a b - ν a b ∈ D.coboundaries G (i + j))
 
+/-- **The cohomology ring is determined by its product and unit.** If the products `μ` and `ν`
+induce the same product on cohomology, and the units `e` and `e'` have the same class, then the
+graded ring structures `LinearMap.cohomologyGRing` of `μ` and `ν` are equal. -/
+theorem cohomologyGRing_congr
+    (hmul : ∀ {i j : ℤ} (x : D.cohomology G i) (y : D.cohomology G j),
+      cohomologyMul μ hμdeg hμL x y = cohomologyMul ν hνdeg hνL x y)
+    (hone : (Submodule.Quotient.mk ⟨e, he⟩ : D.cohomology G 0) = Submodule.Quotient.mk ⟨e', he'⟩) :
+    cohomologyGRing μ hμdeg hμL e he hμone_mul hμmul_one hμassoc =
+      cohomologyGRing ν hνdeg hνL e' he' hνone_mul hνmul_one hνassoc := by
+  unfold cohomologyGRing
+  -- Rewrite the product and the unit field by field; `congr` then compares the default power
+  -- fields `GradedMonoid.GMonoid.gnpowRec`, built from the two products.
+  simp only [hmul, hone]
+  congr
+  funext i j x y
+  exact hmul x y
+
 include hsub in
 /-- **Products agreeing up to coboundaries have the same cohomology ring.** Let `μ` and `ν` be
 products on the same module, each with a unit up to coboundaries, as in
@@ -486,12 +505,8 @@ theorem cohomologyGRing_eq_of_sub_mem_coboundaries :
       simpa only [LinearMap.id_apply] using sub_mem_coboundaries_of_surjective_cohomologyMap μ e he
         hμone_mul ν hνdeg hνL e' he' hνmul_one LinearMap.id (fun ha => ha) (fun _ => rfl)
         (fun ha hb => hsub ha hb) (by rw [cohomologyMap_id]; exact Function.surjective_id)
-  -- The two structures differ only in their products, units, and the casts built from the units.
-  unfold cohomologyGRing
-  congr
-  all_goals first
-    | (funext i j x y; rw [hmul])
-    | (funext k; rw [hone])
+  exact cohomologyGRing_congr μ hμdeg hμL e he hμone_mul hμmul_one hμassoc ν hνdeg hνL e' he'
+    hνone_mul hνmul_one hνassoc (fun x y => by rw [hmul]) hone
 
 end Agreement
 

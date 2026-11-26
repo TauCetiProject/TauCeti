@@ -89,13 +89,6 @@ variable {ι₁ ι₂ ι₀ : Type*} {P₁ : ι₁ → Type*} {P₂ : ι₂ → 
   (Q Q' K : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG) (D₁ : ι₁ → ι₁ → NovikovSeries R G ωG)
   (D₂ : ι₂ → ι₂ → NovikovSeries R G ωG) (D₀ : ι₀ → ι₀ → NovikovSeries R G ωG) (n : ℤ)
 
-/-- The coefficient comparison of the identity matrix is the identity matrix. -/
-private theorem coefficientComparison_matrix_one {ι : Type*} [DecidableEq ι] :
-    (fun k l => coefficientComparison q hq ((1 : Matrix ι ι (NovikovSeries R G ωG)) k l)) =
-      (1 : Matrix ι ι _) := by
-  funext k l
-  simp only [Matrix.one_apply, apply_ite (coefficientComparison q hq), _root_.map_one, map_zero]
-
 include hμ₁
 
 /-- **The homotopy of products along a path of auxiliary data.** Let `Q` and `Q'` be the
@@ -136,13 +129,7 @@ theorem novikovProductOfMatrix_coefficientComparison_sub_eq_add
     hq r₁ r₂ r₀ hF₁ hF₂ hF₀ hF₁ hF₂ hF₀ hμ₁ Q Q' (1 : Matrix ι₁ ι₁ (NovikovSeries R G ωG))
     (1 : Matrix ι₂ ι₂ (NovikovSeries R G ωG)) (1 : Matrix ι₀ ι₀ (NovikovSeries R G ωG)) K D₁ D₂ D₀
     n (fun i j l => by simpa [Matrix.one_apply] using hpath i j l) ha b
-  -- The Novikov module structures, in which `novikovMapOfMatrix_one` is stated.
-  let := module (R := R) hF₁
-  let := module (R := R) hF₂
-  let := module (R := R) hF₀
-  rwa [coefficientComparison_matrix_one, coefficientComparison_matrix_one,
-    coefficientComparison_matrix_one, novikovMapOfMatrix_one, novikovMapOfMatrix_one,
-    novikovMapOfMatrix_one, LinearMap.id_apply, LinearMap.id_apply, LinearMap.id_apply] at h
+  simpa only [novikovMapOfMatrix_coefficientComparison_one_apply] using h
 
 /-- **Products along a path of auxiliary data agree on cocycles.** Under the identity of
 `TauCeti.Floer.novikovProductOfMatrix_coefficientComparison_sub_eq_add`, suppose that every class
@@ -188,13 +175,7 @@ theorem novikovProductOfMatrix_coefficientComparison_sub_mem_coboundaries
     (1 : Matrix ι₁ ι₁ (NovikovSeries R G ωG)) (1 : Matrix ι₂ ι₂ (NovikovSeries R G ωG))
     (1 : Matrix ι₀ ι₀ (NovikovSeries R G ωG)) K D₁ D₂ D₀ n hμ₂ hμ₀ hK
     (fun i j l => by simpa [Matrix.one_apply] using hpath i j l) hδ₁ hδ₂ hδ₀ ha hb
-  -- The Novikov module structures, in which `novikovMapOfMatrix_one` is stated.
-  let := module (R := R) hF₁
-  let := module (R := R) hF₂
-  let := module (R := R) hF₀
-  rwa [coefficientComparison_matrix_one, coefficientComparison_matrix_one,
-    coefficientComparison_matrix_one, novikovMapOfMatrix_one, novikovMapOfMatrix_one,
-    novikovMapOfMatrix_one, LinearMap.id_apply, LinearMap.id_apply, LinearMap.id_apply] at h
+  simpa only [novikovMapOfMatrix_coefficientComparison_one_apply] using h
 
 section Cohomology
 
