@@ -325,9 +325,8 @@ Hölder constant, since `ContinuousLinearMap.flip` is a linear isometry. -/
 theorem clm_flip {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
     [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {C α : ℝ≥0}
     {f : X → E →L[𝕜] F →L[𝕜] G} {s : Set X} (hf : HolderOnWith C α f s) :
-    HolderOnWith C α (fun x ↦ (f x).flip) s := fun x hx y hy ↦ by
-  rw [← ContinuousLinearMap.coe_flipₗᵢ', LinearIsometryEquiv.edist_map]
-  exact hf x hx y hy
+    HolderOnWith C α (fun x ↦ (f x).flip) s :=
+  (ContinuousLinearMap.flipₗᵢ' E F G (RingHom.id 𝕜) (RingHom.id 𝕜)).isometry.comp_holderOnWith hf
 
 /-- Evaluating a family of continuous linear maps at a family of vectors, both Hölder and bounded
 on `s`, gives a Hölder function on `s`, with constant `Mf Kv + Mv Kf`. -/

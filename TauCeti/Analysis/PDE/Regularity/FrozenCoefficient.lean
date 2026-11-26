@@ -341,12 +341,9 @@ theorem holderOnWith_coefficientField {a : EuclideanSpace ℝ ι → Matrix ι �
     {α Ka Kξ L N : ℝ≥0} (ha : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) s)
     (hξ : HolderOnWith Kξ α ξ s) (hL : ∀ x ∈ s, ‖matrixBilinearForm (a x)‖ ≤ L)
     (hN : ∀ x ∈ s, ‖ξ x‖ ≤ N) :
-    HolderOnWith (L * Kξ + N * Ka) α (coefficientField a ξ) s := by
-  have h := ha.clm_flip.clm_apply hξ
+    HolderOnWith (L * Kξ + N * Ka) α (coefficientField a ξ) s :=
+  (toDual ℝ (EuclideanSpace ℝ ι)).symm.isometry.comp_holderOnWith <| ha.clm_flip.clm_apply hξ
     (fun x hx => (ContinuousLinearMap.opNorm_flip (matrixBilinearForm (a x))).trans_le (hL x hx)) hN
-  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-  rw [coefficientField, coefficientField, LinearIsometryEquiv.dist_map]
-  exact h.dist_le hx hy
 
 omit [DecidableEq ι] in
 /-- If the bilinear forms of `a` are `α`-Hölder with constant `K_a` on `s`, then for a constant
@@ -354,11 +351,8 @@ vector `p` the field `x ↦ a(x) p` is `α`-Hölder on `s` with constant `K_a �
 theorem holderOnWith_coefficientField_const {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {s : Set (EuclideanSpace ℝ ι)} {α Ka : ℝ≥0}
     (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) s) (p : EuclideanSpace ℝ ι) :
-    HolderOnWith (Ka * ‖p‖₊) α (coefficientField a fun _ => p) s := by
-  have h := haK.clm_flip.clm_apply_const p
-  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-  rw [coefficientField, coefficientField, LinearIsometryEquiv.dist_map]
-  exact h.dist_le hx hy
+    HolderOnWith (Ka * ‖p‖₊) α (coefficientField a fun _ => p) s :=
+  (toDual ℝ (EuclideanSpace ℝ ι)).symm.isometry.comp_holderOnWith (haK.clm_flip.clm_apply_const p)
 
 omit [mu.IsAddHaarMeasure] in
 /-- On an open set `B` inside a set `S` on which the bilinear forms of `a` are `α`-Hölder, with
