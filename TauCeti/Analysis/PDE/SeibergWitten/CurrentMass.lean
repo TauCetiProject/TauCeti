@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.SeibergWitten.CoarseBounds
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature
 import TauCeti.Analysis.InnerProductSpace.Comass
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # `r`-independent mass bounds for the curvature and cutoff currents
@@ -323,7 +324,8 @@ theorem norm_le_mul_max_one_sub_add_of_inner_ιMulti_eq {Θ F η : ⋀[ℝ]^2 V}
     (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃)
   have hplus := norm_smul_add_hodgeStar_le hQ hkl
     (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) hω₂ hφ hβ hρ h₂ hr hβK hφβ hF
-  have hFn := norm_le_norm_smul_add_hodgeStar_add_norm_smul_sub_hodgeStar o hkl F
+  have hFn :=
+    norm_le_norm_inv_two_smul_add_add_norm_inv_two_smul_sub (R := ℝ) F (o.hodgeStar hkl F)
   -- The cutoff current is `(1 - χ(|φ|²)) F + 2 χ'(|φ|²) p₁ ∧ p₂`.
   have hΘ' : Θ = (1 - χ (‖φ‖ ^ 2)) • F + (2 * deriv χ (‖φ‖ ^ 2)) • Dα.gradientWedge :=
     ext_inner_ιMulti_two fun u w ↦ by

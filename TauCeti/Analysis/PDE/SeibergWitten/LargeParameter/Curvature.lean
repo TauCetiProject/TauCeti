@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.PositiveCone
 public import TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting
-import TauCeti.Algebra.Module.Basic
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Pointwise curvature bounds for the large-parameter Seiberg–Witten equations
@@ -199,15 +199,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
   {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
 
 attribute [local instance] finiteDimensional_of_finrank_four
-
-variable (o) in
-/-- **The norm of a two-vector by its self-dual and anti-self-dual parts.** Splitting
-`F = F⁺ + F⁻` with `F^± = (F ± ⋆F) / 2` (`TauCeti.inv_two_smul_add_add_inv_two_smul_sub`) gives
-`‖F‖ ≤ ‖F⁺‖ + ‖F⁻‖`. -/
-theorem norm_le_norm_smul_add_hodgeStar_add_norm_smul_sub_hodgeStar (hkl : 2 + 2 = finrank ℝ V)
-    (F : ⋀[ℝ]^2 V) :
-    ‖F‖ ≤ ‖(2⁻¹ : ℝ) • (F + o.hodgeStar hkl F)‖ + ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ :=
-  (norm_add_le _ _).trans_eq' (by rw [inv_two_smul_add_add_inv_two_smul_sub])
 
 /-! ### The `ω`-component and the self-dual part -/
 
@@ -517,7 +508,7 @@ theorem norm_le_of_add_hodgeStar_eq (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)
     (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) hω₂ hφ hβ hρ h₂ hr hβK hφβ hF
   have hminus := norm_smul_sub_hodgeStar_le h₀ h₂₃ hQ hkl he hφ hβ hr hβK hF hC
   calc ‖F‖ ≤ ‖(2⁻¹ : ℝ) • (F + o.hodgeStar hkl F)‖ + ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ :=
-        norm_le_norm_smul_add_hodgeStar_add_norm_smul_sub_hodgeStar o hkl F
+        norm_le_norm_inv_two_smul_add_add_norm_inv_two_smul_sub (R := ℝ) F (o.hodgeStar hkl F)
     _ ≤ (r / (4 * √2) * max (1 - ‖φ‖ ^ 2) 0 + (K + 1) / (2 * √2) + ‖η‖ / 2) +
           (r / (4 * √2) * max (1 - ‖φ‖ ^ 2) 0 + K / (2 * √2) + ‖η‖ / 2 + √2 * C) :=
         add_le_add hplus hminus
@@ -553,7 +544,8 @@ theorem norm_le_of_add_hodgeStar_eq_of_norm_smul_sub_hodgeStar_le
     (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃)
   have hplus := norm_smul_add_hodgeStar_le hQ hkl
     (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) hω₂ hφ hβ hρ h₂ hr hβK hφβ hF
-  have htri := norm_le_norm_smul_add_hodgeStar_add_norm_smul_sub_hodgeStar o hkl F
+  have htri :=
+    norm_le_norm_inv_two_smul_add_add_norm_inv_two_smul_sub (R := ℝ) F (o.hodgeStar hkl F)
   -- Both parts are at most a multiple of `r w₊ / 4`, and `r w₊ / 4 ≤ δ + K / 2`.
   have hw₀ := div_mul_max_le_div_mul_abs_add (s := ‖φ‖ ^ 2) hr0.le (sq_nonneg ‖β‖)
   set m := max (1 - ‖φ‖ ^ 2) 0
