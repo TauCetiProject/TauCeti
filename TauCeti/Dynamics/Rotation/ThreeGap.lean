@@ -67,7 +67,7 @@ built from. The statements about lists of consecutive differences that the proof
 `TauCeti/Algebra/Order/Group/List.lean`), and
 `List.getElem_zipWith_sub_tail_append_singleton` (in `TauCeti/Data/List/Zip.lean`),
 `List.SortedLT.isLeast_inter_Ioi_getElem_succ` and
-`List.SortedLT.isGreatest_getElem_of_not_succ_lt` (in `TauCeti/Data/List/Sort.lean`).
+`List.SortedLE.isGreatest_getElem_of_not_succ_lt` (in `TauCeti/Data/List/Sort.lean`).
 
 ## References
 
@@ -210,7 +210,7 @@ theorem mem_gaps_iff_exists {g : ℝ} :
     rw [List.getElem_zipWith_sub_tail_append_singleton]
     by_cases h : i + 1 < l.length
     · exact Or.inl ⟨l[i + 1], hs.isLeast_inter_Ioi_getElem_succ h, by rw [dite_eq_left h]⟩
-    · exact Or.inr ⟨hs.isGreatest_getElem_of_not_succ_lt hi h, by rw [dite_eq_right h]⟩
+    · exact Or.inr ⟨hs.sortedLE.isGreatest_getElem_of_not_succ_lt hi h, by rw [dite_eq_right h]⟩
   · rintro ⟨y, hy, ⟨z, hz, rfl⟩ | ⟨hy', rfl⟩⟩ <;>
       obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.1 ((mem_sort (· ≤ ·)).2 hy) <;>
       by_cases h : i + 1 < l.length

@@ -16,11 +16,11 @@ import Mathlib.Data.List.Chain
 A weakly increasing list stays weakly increasing after appending an entry exactly when its last
 entry, if any, is at most the new one.
 
-## Consecutive entries of a strictly increasing list
+## Consecutive entries of a sorted list
 
 In a strictly increasing list the next entry is the least entry above the current one
-(`List.SortedLT.isLeast_inter_Ioi_getElem_succ`) and the last entry is the greatest
-(`List.SortedLT.isGreatest_getElem_of_not_succ_lt`).
+(`List.SortedLT.isLeast_inter_Ioi_getElem_succ`), and in a weakly increasing list the last
+entry is the greatest (`List.SortedLE.isGreatest_getElem_of_not_succ_lt`).
 -/
 
 public section
@@ -49,12 +49,12 @@ theorem SortedLT.isLeast_inter_Ioi_getElem_succ (hl : l.SortedLT) {i : ℕ}
   refine hl.sortedLE.getElem_le_getElem_of_le (Nat.succ_le_of_lt (lt_of_not_ge fun hki => ?_))
   exact lt_irrefl _ ((Set.mem_Ioi.1 hix).trans_le (hl.sortedLE.getElem_le_getElem_of_le hki))
 
-/-- In a strictly increasing list, the last entry is the greatest entry. -/
-theorem SortedLT.isGreatest_getElem_of_not_succ_lt (hl : l.SortedLT) {i : ℕ} (hi : i < l.length)
+/-- In a weakly increasing list, the last entry is the greatest entry. -/
+theorem SortedLE.isGreatest_getElem_of_not_succ_lt (hl : l.SortedLE) {i : ℕ} (hi : i < l.length)
     (h : ¬i + 1 < l.length) : IsGreatest {x | x ∈ l} l[i] := by
   refine ⟨getElem_mem _, fun x hx => ?_⟩
   obtain ⟨k, hk, rfl⟩ := mem_iff_getElem.1 hx
-  exact hl.sortedLE.getElem_le_getElem_of_le (by omega)
+  exact hl.getElem_le_getElem_of_le (by omega)
 
 end Entries
 
