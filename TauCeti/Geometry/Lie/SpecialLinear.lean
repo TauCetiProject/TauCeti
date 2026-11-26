@@ -100,12 +100,11 @@ private theorem continuous_comparison_symm : Continuous (comparisonMulEquiv n �
   exact continuous_subtypeVal.congr fun A ↦
     (MonoidHom.apply_ofInjective_symm toGL_injective A).symm
 
-private def comparisonDiffeomorph : S ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, V)⟯ K where
-  toEquiv := (comparisonMulEquiv n 𝕜).toEquiv
-  contMDiff_toFun := contMDiff_of_continuous_monoidHom
-    (comparisonMulEquiv n 𝕜) (continuous_comparison n 𝕜)
-  contMDiff_invFun := contMDiff_of_continuous_monoidHom
-    (comparisonMulEquiv n 𝕜).symm (continuous_comparison_symm n 𝕜)
+private def comparisonDiffeomorph : S ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, V)⟯ K :=
+  ContinuousMulEquiv.toDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, V)
+    { toMulEquiv := comparisonMulEquiv n 𝕜
+      continuous_toFun := continuous_comparison n 𝕜
+      continuous_invFun := continuous_comparison_symm n 𝕜 }
 
 private def comparisonSmoothHom :
     ContMDiffMonoidMorphism 𝓘(ℝ, E) 𝓘(ℝ, V) ∞ S K :=
@@ -116,8 +115,10 @@ private def nativeToClosedLieEquiv :
     LeftInvariantDerivation 𝓘(ℝ, E) S ≃ₗ⁅ℝ⁆ LeftInvariantDerivation 𝓘(ℝ, V) K :=
   lieEquivOfIsLocalDiffeomorphAt (comparisonSmoothHom n 𝕜)
     (by
+      have h := (comparisonDiffeomorph n 𝕜).isLocalDiffeomorph 1
+      rw [comparisonDiffeomorph, ContinuousMulEquiv.coe_toDiffeomorph] at h
       rw [comparisonSmoothHom, ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
-      exact (comparisonDiffeomorph n 𝕜).isLocalDiffeomorph 1)
+      exact h)
 
 private def slInclusionEquiv :
     RestrictScalars ℝ 𝕜 (LieAlgebra.SpecialLinear.sl n 𝕜) ≃ₗ⁅ℝ⁆
