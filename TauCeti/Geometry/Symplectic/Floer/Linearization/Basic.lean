@@ -51,7 +51,9 @@ finite. A compactly supported direction has a compactly supported image
 (`hasCompactSupport_floerLinearization`), whose square norm is then integrable
 (`integrable_norm_floerLinearization_sq`). Multiplying a direction of compact support by a cutoff
 `β` with values in `[0, 1]` bounds `‖D_u (β ξ)‖²` in `L²` by `2 ‖D_u ξ‖²` plus a multiple of `‖ξ‖²`
-over a compact set off which `dβ` vanishes (`exists_integral_norm_floerLinearization_smul_sq_le`).
+over a compact set off which `dβ` vanishes (`exists_integral_norm_floerLinearization_smul_sq_le`,
+and `exists_integral_norm_floerLinearization_smul_sq_le_of_tsupport_subset` for data regular on a
+set containing the direction's support).
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`), and `Cⁿ` where
@@ -592,28 +594,30 @@ theorem integrable_norm_floerLinearization_sq (ω : SymplecticForm V)
     ((ω.hasCompactSupport_floerLinearization J Ks Kt u hξ).comp_left (g := fun v ↦ ‖v‖ ^ 2)
       (by simp))
 
-/-- **The cost of a cutoff.** Let `β` be a `C¹` function with values in `[0, 1]` whose derivative
-vanishes off a compact set `K`. Then multiplying a `C¹` direction `ξ` of compact
-support by `β` gives a direction whose `D_u` has squared `L²` norm at most twice that of `D_u ξ`
-plus a multiple of the squared `L²` norm of `ξ` over `K`:
-`∫ ‖D_u (β ξ)‖² ≤ 2 ∫ ‖D_u ξ‖² + C ∫_K ‖ξ‖²`. -/
-theorem exists_integral_norm_floerLinearization_smul_sq_le (ω : SymplecticForm V)
-    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
-    (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
+/-- **The cost of a cutoff, for data regular on a set.** Let the data be regular along `u` on a
+set `U`, and let `β` be a `C¹` function with values in `[0, 1]` whose derivative vanishes off a
+compact set `K ⊆ U`. Then multiplying a `C¹` direction `ξ` of compact support in `U` by `β` gives a
+direction whose `D_u` has squared `L²` norm at most twice that of `D_u ξ` plus a multiple of the
+squared `L²` norm of `ξ` over `K`: `∫ ‖D_u (β ξ)‖² ≤ 2 ∫ ‖D_u ξ‖² + C ∫_K ‖ξ‖²`. -/
+theorem exists_integral_norm_floerLinearization_smul_sq_le_of_tsupport_subset
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    {U : Set (ℝ × ℝ)} (hJ : ∀ z ∈ U, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ U, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ U, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ U, ContDiffAt ℝ 1 u z)
     {β : ℝ × ℝ → ℝ} (hβ : ContDiff ℝ 1 β) (hβ1 : ∀ z, β z ∈ Set.Icc 0 1) {K : Set (ℝ × ℝ)}
-    (hK : IsCompact K) (hβK : ∀ z ∉ K, fderiv ℝ β z = 0) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 1 ξ → HasCompactSupport ξ →
+    (hK : IsCompact K) (hKU : K ⊆ U) (hβK : ∀ z ∉ K, fderiv ℝ β z = 0) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 1 ξ → HasCompactSupport ξ → tsupport ξ ⊆ U →
       ∫ z, ‖ω.floerLinearization J Ks Kt u (fun w ↦ β w • ξ w) z‖ ^ 2 ≤
         2 * (∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) + C * ∫ z in K, ‖ξ z‖ ^ 2 := by
-  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (continuous_comp_prodMk_of_continuousAt
-    (fun z ↦ (hJ z).continuousAt) hu.continuous).continuousOn
+  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ J z (u z)) fun z hz ↦
+    ((hJ z (hKU hz)).continuousAt.comp₂ continuousAt_id
+      (hu z (hKU hz)).continuousAt).continuousWithinAt
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hβ.continuous_fderiv one_ne_zero).continuousOn
   set c := max M 0 * (1 + max B 0)
-  refine ⟨2 * c ^ 2, by positivity, fun ξ hξ hξc ↦ ?_⟩
+  refine ⟨2 * c ^ 2, by positivity, fun ξ hξ hξc hξU ↦ ?_⟩
   have hD := ω.integrable_norm_floerLinearization_sq (μ := MeasureTheory.volume)
-    (ω.continuous_floerLinearization hJ hKs hKt hu hξ) hξc
+    (ω.continuous_floerLinearization_of_tsupport_subset hJ hKs hKt hu hξ hξU) hξc
   have hind : MeasureTheory.Integrable (K.indicator fun z ↦ ‖ξ z‖ ^ 2) :=
     (MeasureTheory.integrable_indicator_iff hK.measurableSet).2
       ((hξ.continuous.norm.pow 2).continuousOn.integrableOn_compact hK)
@@ -635,12 +639,33 @@ theorem exists_integral_norm_floerLinearization_smul_sq_le (ω : SymplecticForm 
         2 * c ^ 2 * K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z) :=
         MeasureTheory.integral_mono
           (ω.integrable_norm_floerLinearization_sq
-            (ω.continuous_floerLinearization hJ hKs hKt hu (hβ.smul hξ)) hξc.smul_left)
+            (ω.continuous_floerLinearization_of_tsupport_subset hJ hKs hKt hu (hβ.smul hξ)
+              ((tsupport_smul_subset_right _ _).trans hξU)) hξc.smul_left)
           ((hD.const_mul 2).add (hind.const_mul _)) hpt
     _ = _ := by
         rw [MeasureTheory.integral_add (hD.const_mul 2) (hind.const_mul _),
           MeasureTheory.integral_const_mul, MeasureTheory.integral_const_mul,
           MeasureTheory.integral_indicator hK.measurableSet]
+
+/-- **The cost of a cutoff.** Let `β` be a `C¹` function with values in `[0, 1]` whose derivative
+vanishes off a compact set `K`. Then multiplying a `C¹` direction `ξ` of compact
+support by `β` gives a direction whose `D_u` has squared `L²` norm at most twice that of `D_u ξ`
+plus a multiple of the squared `L²` norm of `ξ` over `K`:
+`∫ ‖D_u (β ξ)‖² ≤ 2 ∫ ‖D_u ξ‖² + C ∫_K ‖ξ‖²`. -/
+theorem exists_integral_norm_floerLinearization_smul_sq_le (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
+    {β : ℝ × ℝ → ℝ} (hβ : ContDiff ℝ 1 β) (hβ1 : ∀ z, β z ∈ Set.Icc 0 1) {K : Set (ℝ × ℝ)}
+    (hK : IsCompact K) (hβK : ∀ z ∉ K, fderiv ℝ β z = 0) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 1 ξ → HasCompactSupport ξ →
+      ∫ z, ‖ω.floerLinearization J Ks Kt u (fun w ↦ β w • ξ w) z‖ ^ 2 ≤
+        2 * (∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) + C * ∫ z in K, ‖ξ z‖ ^ 2 :=
+  (ω.exists_integral_norm_floerLinearization_smul_sq_le_of_tsupport_subset (U := Set.univ)
+    (fun z _ ↦ hJ z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun _ _ ↦ hu.contDiffAt) hβ hβ1 hK
+    (Set.subset_univ K) hβK).imp fun _ ⟨hC, h⟩ ↦
+      ⟨hC, fun _ hξ hξc ↦ h hξ hξc (Set.subset_univ _)⟩
 
 /-- **Measurability of the Floer operator.** Let the coefficients `J` be jointly continuous and the
 Hamiltonians `Ks`, `Kt` jointly `C¹`. Then the Floer operator of an almost everywhere strongly

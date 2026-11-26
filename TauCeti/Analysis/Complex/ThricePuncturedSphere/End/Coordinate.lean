@@ -980,6 +980,14 @@ of its end disc is less than `1`. -/
 theorem exp_neg_two_pi_lt_one : Real.exp (-(2 * π)) < 1 :=
   Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
 
+/-- `exp (-2π) / 2 ≤ 1/3`, so the part of the end at `0` beyond the height `1` lies in the disc
+`‖w‖ < 1/3` (`TauCeti.ThricePuncturedSphere.Puncture.re_endCoord_zero_le_one`). -/
+theorem exp_neg_two_pi_div_two_le_one_third : Real.exp (-(2 * π)) / 2 ≤ 1 / 3 := by
+  have h₁ : 2 * π + 1 ≤ Real.exp (2 * π) := Real.add_one_le_exp _
+  have h₂ : Real.exp (-(2 * π)) * Real.exp (2 * π) = 1 := by
+    rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
+  nlinarith [Real.two_le_pi, Real.exp_pos (-(2 * π))]
+
 /-- A point of a disc `‖w - c i‖ < r i` disjoint from discs `‖w - c j‖ < r j` containing the
 discs `‖w - c j‖ < ‖a j‖ exp (-2π) / 2` lies outside the latter discs. -/
 theorem le_norm_sub_of_norm_sub_lt {ι : Type*} {c a : ι → ℂ} {r : ι → ℝ} {i : ι}
