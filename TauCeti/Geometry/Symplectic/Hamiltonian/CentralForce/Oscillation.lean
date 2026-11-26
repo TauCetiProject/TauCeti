@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.TurningPoint
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.Deriv.TurningPoint
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Periodicity of the radial motion in a potential well
@@ -146,16 +147,10 @@ include hm hr₁ h₁₂ hU hlt hd₁ hd₂ in
 /-- **The time to reach a radius.** The quadrature `ρ ↦ ∫_{r₁}^{ρ} m dr / |p_r|` is strictly
 increasing on the well. -/
 private theorem strictMonoOn_integral_div_absRadialMomentum :
-    StrictMonoOn (fun ρ ↦ ∫ r in r₁..ρ, m / absRadialMomentum m U ℓ E r) (Icc r₁ r₂) := by
-  have hint := intervalIntegrable_div_absRadialMomentum_well hm hr₁ h₁₂ hU hlt hd₁ hd₂
-  intro a ha b hb hab
-  have hia : IntervalIntegrable (fun r ↦ m / absRadialMomentum m U ℓ E r) volume r₁ a :=
-    hint.mono_set (uIcc_subset_uIcc_left (Icc_subset_uIcc ha))
-  have hib : IntervalIntegrable (fun r ↦ m / absRadialMomentum m U ℓ E r) volume r₁ b :=
-    hint.mono_set (uIcc_subset_uIcc_left (Icc_subset_uIcc hb))
-  rw [← sub_pos, integral_interval_sub_left hib hia]
-  exact intervalIntegral_pos_of_pos_on (hia.symm.trans hib)
-    (fun r hr ↦ div_absRadialMomentum_pos hm (hlt r ⟨ha.1.trans_lt hr.1, hr.2.trans_le hb.2⟩)) hab
+    StrictMonoOn (fun ρ ↦ ∫ r in r₁..ρ, m / absRadialMomentum m U ℓ E r) (Icc r₁ r₂) :=
+  TauCeti.intervalIntegral.strictMonoOn_primitive_of_pos
+    (fun _ hr ↦ div_absRadialMomentum_pos hm (hlt _ hr))
+    (intervalIntegrable_div_absRadialMomentum_well hm hr₁ h₁₂ hU hlt hd₁ hd₂)
 
 /-! ### Motions in the well -/
 
