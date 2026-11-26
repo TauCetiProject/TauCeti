@@ -16,10 +16,15 @@ Given two families of objects `X₁` and `X₂` that cover the terminal object o
 constructs a third covering family each of whose members maps to a member of `X₁` and to a member
 of `X₂`. It also shows that for any family `Y` covering the terminal object of `(C, J)`, the
 restriction functors `J.overPullback A (Y i) : Sheaf J A ⥤ Sheaf (J.over (Y i)) A` are jointly
-faithful (and therefore jointly reflect epimorphisms) for any coefficient category `A`.
+faithful (and therefore jointly reflect epimorphisms) for any coefficient category `A`. For sieves
+on a single object, the intersection of a finite family of covering sieves is covering
+(`CategoryTheory.GrothendieckTopology.iInf_covering`).
 
 ## Main declarations
 
+* `CategoryTheory.GrothendieckTopology.iInf_covering`,
+  `CategoryTheory.GrothendieckTopology.iInf_covering_iff`: the intersection of a finite family of
+  sieves is covering if and only if every member is.
 * `CategoryTheory.GrothendieckTopology.CoversTop.CommonRefinement`: a covering family together
   with arrows from each of its members to a member of each of two given families.
 * `CategoryTheory.GrothendieckTopology.CoversTop.commonRefinement`: a common refinement of two
@@ -35,6 +40,25 @@ public section
 open CategoryTheory
 
 universe w u v
+
+namespace CategoryTheory.GrothendieckTopology
+
+variable {C : Type u} [Category.{v} C]
+
+/-- The intersection of a finite family of covering sieves is covering. -/
+theorem iInf_covering (J : GrothendieckTopology C) {ι : Type*} [Finite ι] {X : C}
+    {R : ι → Sieve X} (hR : ∀ i, R i ∈ J X) : ⨅ i, R i ∈ J X := by
+  cases nonempty_fintype ι
+  simpa [Finset.inf_eq_iInf] using Finset.inf_induction (p := (· ∈ J X)) (J.top_mem X)
+    (fun _ h₁ _ h₂ ↦ J.intersection_covering h₁ h₂) fun i (_ : i ∈ Finset.univ) ↦ hR i
+
+/-- The intersection of a finite family of sieves is covering if and only if every member is. -/
+@[simp]
+theorem iInf_covering_iff (J : GrothendieckTopology C) {ι : Type*} [Finite ι] {X : C}
+    {R : ι → Sieve X} : ⨅ i, R i ∈ J X ↔ ∀ i, R i ∈ J X :=
+  ⟨fun h i ↦ J.superset_covering (iInf_le R i) h, J.iInf_covering⟩
+
+end CategoryTheory.GrothendieckTopology
 
 namespace CategoryTheory.GrothendieckTopology.CoversTop
 

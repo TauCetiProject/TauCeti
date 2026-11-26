@@ -26,6 +26,10 @@ condition forces every automorphism group `Aut x` to be commutative.
 A strong transformation `η : F ⟶ G` between banded pseudofunctors is band-preserving when its
 component functors carry the band automorphism of each coefficient to the band automorphism of
 the same coefficient. Band-preserving transformations are closed under identities and
+composition. More generally, for a morphism `φ : A ⟶ B` of sheaves of abelian groups, a strong
+transformation from an `A`-banded to a `B`-banded pseudofunctor is compatible with `φ` when its
+component functors carry the band automorphism of each coefficient `a` to the band automorphism of
+`φ a`; compatibility with the identity is band preservation, and compatibility is closed under
 composition.
 
 Both notions restrict to the slice site `(Over U, J.over U)`: an `A`-banding of `F` restricts to an
@@ -45,11 +49,14 @@ transformation, its whiskering by `(Over.forget U).op`, preserves the restricted
   preserving the bands.
 * `CategoryTheory.Pseudofunctor.BandPreserving.over`: the restriction of a band-preserving
   transformation to the slice site over `U` preserves the restricted bands.
+* `CategoryTheory.Pseudofunctor.BandCompatible`: the property of a strong transformation of
+  carrying the band of the source to the band of the target along a morphism `φ : A ⟶ B` of
+  sheaves of abelian groups, with `bandCompatible_id_iff` and `BandCompatible.comp`.
 
 ## References
 
 * [Martin Olsson, *Stacks* (lecture notes, notes by A. Geraschenko et al.)](https://stacky.net/files/written/Stacks/Stacks.pdf),
-  Definition 31.1 and Remark 31.2
+  Definition 31.1, Remark 31.2 and Theorem 31.7
 * [Michael Groechenig, Dimitri Wyss and Paul Ziegler, *Mirror symmetry for moduli of Higgs
   bundles via p-adic integration*](https://doi.org/10.1007/s00222-020-00957-8),
   Definition 2.6 and Section 2.2.1
@@ -214,5 +221,64 @@ instance over (η : F ⟶ G) [BandPreserving bF bG η] (U : C) :
   mapAut_mulEquiv X x a := BandPreserving.mapAut_mulEquiv (bG := bG) (η := η) X.left x a
 
 end BandPreserving
+
+/-- A strong transformation `η : F ⟶ G` from a pseudofunctor with an `A`-banding `bF` to one with
+a `B`-banding `bG` is compatible with a morphism `φ : A ⟶ B` of sheaves of abelian groups if each
+component functor `η_U` sends the band automorphism of a coefficient `a` at `x` to the band
+automorphism of `φ a` at `η_U x`; these are the morphisms along which the band is changed in
+Olsson, Theorem 31.7. For `φ` the identity this is `BandPreserving` (`bandCompatible_id_iff`). -/
+class BandCompatible {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} {J : GrothendieckTopology C}
+    {A B : Sheaf J AddCommGrpCat.{w}} (φ : A ⟶ B) (bF : F.AbelianBanding J A)
+    (bG : G.AbelianBanding J B) (η : StrongTrans F G) : Prop where
+  /-- The component functors carry the band of `F` to the band of `G` along `φ`. -/
+  mapAut_mulEquiv (U : C) (x : F.obj (.mk (op U))) (a : Multiplicative (A.obj.obj (op U))) :
+    (η.app (.mk (op U))).toFunctor.mapAut x (bF.mulEquiv U x a) =
+      bG.mulEquiv U ((η.app (.mk (op U))).toFunctor.obj x) (.ofAdd (φ.hom.app (op U) a.toAdd))
+
+section BandCompatible
+
+variable {F G H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} {J : GrothendieckTopology C}
+  {A B D : Sheaf J AddCommGrpCat.{w}} {bF : F.AbelianBanding J A}
+
+variable (bG : G.AbelianBanding J B) in
+/-- A transformation compatible with `φ` carries band automorphisms to band automorphisms along
+`φ`, stated on the underlying morphisms. -/
+@[reassoc]
+lemma BandCompatible.map_mulEquiv_hom (φ : A ⟶ B) (η : StrongTrans F G)
+    [BandCompatible φ bF bG η] (U : C) (x : F.obj (.mk (op U)))
+    (a : Multiplicative (A.obj.obj (op U))) :
+    (η.app (.mk (op U))).toFunctor.map (bF.mulEquiv U x a).asIso.hom =
+      (bG.mulEquiv U ((η.app (.mk (op U))).toFunctor.obj x)
+        (.ofAdd (φ.hom.app (op U) a.toAdd))).asIso.hom :=
+  congr($(BandCompatible.mapAut_mulEquiv (bG := bG) (φ := φ) (η := η) U x a).asIso.hom)
+
+/-- A transformation is compatible with the identity of `A` if and only if it preserves the
+bands. -/
+lemma bandCompatible_id_iff {bG : G.AbelianBanding J A} (η : StrongTrans F G) :
+    BandCompatible (𝟙 A) bF bG η ↔ BandPreserving bF bG η :=
+  ⟨fun h ↦ ⟨h.mapAut_mulEquiv⟩, fun h ↦ ⟨h.mapAut_mulEquiv⟩⟩
+
+/-- A band-preserving transformation is compatible with the identity of the band. -/
+instance BandPreserving.bandCompatible {bG : G.AbelianBanding J A} (η : StrongTrans F G)
+    [BandPreserving bF bG η] : BandCompatible (𝟙 A) bF bG η :=
+  (bandCompatible_id_iff η).2 ‹_›
+
+open scoped Pseudofunctor.StrongTrans in
+variable (bG : G.AbelianBanding J B) {bH : H.AbelianBanding J D} in
+/-- The composite of a transformation compatible with `φ` and one compatible with `ψ` is
+compatible with `φ ≫ ψ`. -/
+lemma BandCompatible.comp (φ : A ⟶ B) (ψ : B ⟶ D) (η : F ⟶ G) (θ : G ⟶ H)
+    [BandCompatible φ bF bG η] [BandCompatible ψ bG bH θ] :
+    BandCompatible (φ ≫ ψ) bF bH (η ≫ θ) where
+  mapAut_mulEquiv U x a := by
+    ext
+    rw [Functor.mapAut_apply_asIso]
+    simp only [StrongTrans.comp_app, Cat.Hom.comp_toFunctor, Functor.mapIso_hom, Functor.comp_map]
+    rw [BandCompatible.map_mulEquiv_hom bG φ η, BandCompatible.map_mulEquiv_hom bH ψ θ]
+    -- The two sides differ only by `Functor.comp_obj` and by the evaluation of `φ ≫ ψ` on
+    -- sections, both of which hold by definition.
+    rfl
+
+end BandCompatible
 
 end CategoryTheory.Pseudofunctor

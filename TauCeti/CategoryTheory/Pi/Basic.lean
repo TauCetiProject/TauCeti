@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Pi.Basic
 public import Mathlib.CategoryTheory.EssentialImage
+public import Mathlib.CategoryTheory.Endomorphism
 public import Mathlib.CategoryTheory.Functor.FullyFaithful
 
 /-!
@@ -14,7 +15,9 @@ public import Mathlib.CategoryTheory.Functor.FullyFaithful
 
 For families of functors `G i : A i ⥤ B i`, the product functor `Functor.pi G` is fully faithful
 when every `G i` is (`CategoryTheory.Functor.FullyFaithful.pi`), and essentially surjective when
-every `G i` is (`CategoryTheory.Functor.essSurj_pi`).
+every `G i` is (`CategoryTheory.Functor.essSurj_pi`). The automorphism group of an object of a
+product category is the product of the automorphism groups of its components
+(`CategoryTheory.Pi.autMulEquiv`).
 -/
 
 @[expose] public section
@@ -35,5 +38,15 @@ instance Functor.essSurj_pi (G : ∀ i, A i ⥤ B i) [∀ i, (G i).EssSurj] :
     (Functor.pi G).EssSurj where
   mem_essImage Y :=
     ⟨fun i ↦ (G i).objPreimage (Y i), ⟨Pi.isoMk fun i ↦ (G i).objObjPreimageIso (Y i)⟩⟩
+
+/-- The automorphisms of an object `X` of a product category are the families of automorphisms of
+its components `X i`. -/
+@[simps]
+def Pi.autMulEquiv (X : ∀ i, A i) : Aut X ≃* ∀ i, Aut (X i) where
+  toFun e i := .of (Pi.isoApp e.asIso i)
+  invFun e := .of (Pi.isoMk fun i ↦ (e i).asIso)
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
 
 end CategoryTheory
