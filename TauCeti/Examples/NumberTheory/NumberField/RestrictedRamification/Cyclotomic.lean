@@ -48,9 +48,8 @@ example (Ω : Type*) [Field Ω] [Algebra ℚ Ω] (p : Nat.Primes) :
     profiniteOrder (galoisGroupS ℚ Ω ∅) p = 0 := by
   have : Subsingleton (galoisGroupS ℚ Ω ∅) :=
     IntermediateField.subsingleton_algEquiv_of_eq_bot (maxUnramifiedOutside_rat_empty Ω)
-  rw [profiniteOrder_apply, ENat.iSup_eq_zero]
-  intro U
+  refine (profiniteOrder_apply_eq_zero_iff _ p).2 fun U ↦ ?_
   rw [Nat.card_eq_one_iff_unique.2 ⟨QuotientGroup.mk_surjective.subsingleton, inferInstance⟩]
-  rw [Nat.padicValNat_def, multiplicity_one_right, Nat.cast_zero]
+  exact p.prop.not_dvd_one
 
 end TauCeti.Examples.RestrictedRamification
