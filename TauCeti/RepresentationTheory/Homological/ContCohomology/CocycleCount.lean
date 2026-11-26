@@ -97,10 +97,8 @@ to `W` has image `π(W)` and kernel `W ⊓ B¹`. -/
 theorem natCard_addSubgroup_Z1 (W : AddSubgroup (Z1 G M)) :
     Nat.card W =
       Nat.card (W.map (H1pi G M)) * Nat.card (W ⊓ (B1 G M).addSubgroupOf (Z1 G M) :) := by
-  rw [← AddMonoidHom.domRestrict_range, ← AddSubgroup.card_ker_mul_card_range
-    ((H1pi G M).domRestrict W), mul_comm, AddMonoidHom.ker_domRestrict, QuotientAddGroup.ker_mk',
-    ← AddSubgroup.card_map_of_injective (f := W.subtype) W.subtype_injective,
-    AddSubgroup.addSubgroupOf_map_subtype, inf_comm]
+  rw [← AddSubgroup.relIndex_mul_card (H1pi G M).ker W, AddSubgroup.relIndex_ker, ker_H1pi,
+    inf_comm]
 
 /-- **Cocycle counts from class counts.** For a group `W ≤ Z¹(G, M)` of `1`-cocycles,
 `#W = #π(W) · #(W ⊓ B¹)`, where `π(W) ≤ H¹(G, M)` is the group of classes of elements of `W`. -/
