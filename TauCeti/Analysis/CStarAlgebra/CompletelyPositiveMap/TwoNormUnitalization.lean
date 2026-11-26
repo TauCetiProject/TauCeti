@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Matrix
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 
 /-!
@@ -17,15 +16,14 @@ Let `φ : A → M_k` be a completely positive contraction on a nonzero unital C�
 (`CompletelyPositiveMap.exists_unital_eq_sqrt_mul_mul_sqrt`) writes `φ(a) = h ψ(a) h` with `ψ`
 unital completely positive. If `tr_k φ(1) ≥ 1 - δ`, then `ψ` is close to `φ` in the normalized
 2-norm: `‖ψ(x) - φ(x)‖₂ ≤ 2‖x‖δ^{1/2}`, from `‖1 - h‖₂² ≤ 1 - tr_k φ(1)`, which holds because
-`(1 - h)² ≤ 1 - h²` for `0 ≤ h ≤ 1`. Consequently `|tr_k ψ(x) - tr_k φ(x)| ≤ 2‖x‖δ^{1/2}` and
+`(1 - h)² ≤ 1 - h²` for `0 ≤ h ≤ 1` (`CStarMatrix.normalizedTwoNorm_sub_one_sq_le`).
+Consequently `|tr_k ψ(x) - tr_k φ(x)| ≤ 2‖x‖δ^{1/2}` and
 `‖ψ(ab) - ψ(a)ψ(b)‖₂ ≤ ‖φ(ab) - φ(a)φ(b)‖₂ + 6‖a‖‖b‖δ^{1/2}`.
 
 ## Main statements
 
-* `CStarMatrix.normalizedTwoNorm_sub_one_sq_le`: `‖h - 1‖₂² ≤ re tr(1 - h²)` for `0 ≤ h`,
-  `‖h‖ ≤ 1`.
-* `CStarMatrix.normalizedTwoNorm_mul_sub_le_of_normalizedTwoNorm_sub_le`: maps that are close in
-  the 2-norm have close multiplicativity defects.
+* `CStarMatrix.normalizedTwoNorm_map_mul_sub_le_of_normalizedTwoNorm_sub_le`: maps that are close
+  in the 2-norm have close multiplicativity defects.
 * `CompletelyPositiveMap.exists_unital_normalizedTwoNorm_sub_le`: the 2-norm unitalization, with
   its trace and product estimates.
 
@@ -41,32 +39,19 @@ open scoped CStarAlgebra ComplexOrder
 
 namespace CStarMatrix
 
-variable {n : Type*} [Fintype n] [DecidableEq n]
+variable {n : Type*} [Fintype n]
 
-/-- For `0 ≤ h` with `‖h‖ ≤ 1` in `M_k`, `‖h - 1‖₂² ≤ re tr_k(1 - h²)`, since
-`(1 - h)² = (1 - h²) - 2(h - h²)` and `h² ≤ h`. -/
-theorem normalizedTwoNorm_sub_one_sq_le {h : CStarMatrix n n ℂ} (h0 : 0 ≤ h) (h1 : ‖h‖ ≤ 1) :
-    normalizedTwoNorm (h - 1) ^ 2 ≤ (normalizedTrace (1 - h * h)).re := by
-  rw [normalizedTwoNorm_sq]
-  refine Complex.re_le_re (normalizedTrace_mono ?_)
-  have hle : h * h ≤ h := CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one h0 h1
-  have e : star (h - 1) * (h - 1) = (1 - h * h) - 2 • (h - h * h) := by
-    rw [star_sub, h0.isSelfAdjoint.star_eq, star_one]
-    noncomm_ring
-  rw [e]
-  exact sub_le_self _ (nsmul_nonneg (sub_nonneg.2 hle) 2)
-
-omit [DecidableEq n] in
 /-- **Close maps have close multiplicativity defects.** If `φ, ψ : A → M_k` are contractive and
-`‖ψ(x) - φ(x)‖₂ ≤ 2‖x‖ε` for every `x`, then
-`‖ψ(ab) - ψ(a)ψ(b)‖₂ ≤ ‖φ(ab) - φ(a)φ(b)‖₂ + 6‖a‖‖b‖ε`. -/
-theorem normalizedTwoNorm_mul_sub_le_of_normalizedTwoNorm_sub_le {A : Type*} [NonUnitalNormedRing A]
-    {φ ψ : A → CStarMatrix n n ℂ} (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (hψ : ∀ a, ‖ψ a‖ ≤ ‖a‖) {ε : ℝ}
-    (h : ∀ a, normalizedTwoNorm (ψ a - φ a) ≤ 2 * ‖a‖ * ε) (a b : A) :
+`‖ψ(x) - φ(x)‖₂ ≤ c‖x‖` for every `x`, then
+`‖ψ(ab) - ψ(a)ψ(b)‖₂ ≤ ‖φ(ab) - φ(a)φ(b)‖₂ + 3c‖a‖‖b‖`. -/
+theorem normalizedTwoNorm_map_mul_sub_le_of_normalizedTwoNorm_sub_le {A : Type*}
+    [NonUnitalNormedRing A] {φ ψ : A → CStarMatrix n n ℂ} (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖)
+    (hψ : ∀ a, ‖ψ a‖ ≤ ‖a‖) {c : ℝ} (h : ∀ a, normalizedTwoNorm (ψ a - φ a) ≤ c * ‖a‖)
+    (a b : A) :
     normalizedTwoNorm (ψ (a * b) - ψ a * ψ b) ≤
-      normalizedTwoNorm (φ (a * b) - φ a * φ b) + 6 * ‖a‖ * ‖b‖ * ε := by
-  rcases lt_or_ge ε 0 with hε | hε
-  · -- For `ε < 0` the hypothesis forces `A = 0` and `ψ 0 = φ 0`.
+      normalizedTwoNorm (φ (a * b) - φ a * φ b) + 3 * c * ‖a‖ * ‖b‖ := by
+  rcases lt_or_ge c 0 with hc | hc
+  · -- For `c < 0` the hypothesis forces `A = 0` and `ψ 0 = φ 0`.
     have h0 (x : A) : x = 0 := by
       by_contra hx
       have := (normalizedTwoNorm_nonneg _).trans (h x)
@@ -78,32 +63,30 @@ theorem normalizedTwoNorm_mul_sub_le_of_normalizedTwoNorm_sub_le {A : Type*} [No
       ((φ a - ψ a) * φ b + ψ a * (φ b - ψ b)) := by
     noncomm_ring
   rw [e]
-  have h1 : normalizedTwoNorm (ψ (a * b) - φ (a * b)) ≤ 2 * ‖a‖ * ‖b‖ * ε := by
+  have h1 : normalizedTwoNorm (ψ (a * b) - φ (a * b)) ≤ c * ‖a‖ * ‖b‖ := by
     refine (h _).trans ?_
-    rw [mul_assoc 2 ‖a‖]
+    rw [mul_assoc c ‖a‖]
     gcongr
     exact norm_mul_le a b
-  have h2 : normalizedTwoNorm ((φ a - ψ a) * φ b) ≤ 2 * ‖a‖ * ‖b‖ * ε := by
+  have h2 : normalizedTwoNorm ((φ a - ψ a) * φ b) ≤ c * ‖a‖ * ‖b‖ := by
     refine (normalizedTwoNorm_mul_le_normalizedTwoNorm_mul_norm _ _).trans ?_
     rw [normalizedTwoNorm_sub_comm]
-    calc normalizedTwoNorm (ψ a - φ a) * ‖φ b‖ ≤ (2 * ‖a‖ * ε) * ‖b‖ :=
-          mul_le_mul (h a) (hφ b) (norm_nonneg _) (by positivity)
-      _ = 2 * ‖a‖ * ‖b‖ * ε := by ring
-  have h3 : normalizedTwoNorm (ψ a * (φ b - ψ b)) ≤ 2 * ‖a‖ * ‖b‖ * ε := by
+    exact mul_le_mul (h a) (hφ b) (norm_nonneg _) (by positivity)
+  have h3 : normalizedTwoNorm (ψ a * (φ b - ψ b)) ≤ c * ‖a‖ * ‖b‖ := by
     refine (normalizedTwoNorm_mul_le_norm_mul_normalizedTwoNorm _ _).trans ?_
     rw [normalizedTwoNorm_sub_comm]
-    calc ‖ψ a‖ * normalizedTwoNorm (ψ b - φ b) ≤ ‖a‖ * (2 * ‖b‖ * ε) :=
+    calc ‖ψ a‖ * normalizedTwoNorm (ψ b - φ b) ≤ ‖a‖ * (c * ‖b‖) :=
           mul_le_mul (hψ a) (h b) (normalizedTwoNorm_nonneg _) (norm_nonneg _)
-      _ = 2 * ‖a‖ * ‖b‖ * ε := by ring
+      _ = c * ‖a‖ * ‖b‖ := by ring
   calc normalizedTwoNorm ((ψ (a * b) - φ (a * b)) + (φ (a * b) - φ a * φ b) +
         ((φ a - ψ a) * φ b + ψ a * (φ b - ψ b)))
       ≤ normalizedTwoNorm (ψ (a * b) - φ (a * b)) + normalizedTwoNorm (φ (a * b) - φ a * φ b) +
         (normalizedTwoNorm ((φ a - ψ a) * φ b) + normalizedTwoNorm (ψ a * (φ b - ψ b))) :=
         (normalizedTwoNorm_add_le _ _).trans (add_le_add (normalizedTwoNorm_add_le _ _)
           (normalizedTwoNorm_add_le _ _))
-    _ ≤ 2 * ‖a‖ * ‖b‖ * ε + normalizedTwoNorm (φ (a * b) - φ a * φ b) +
-        (2 * ‖a‖ * ‖b‖ * ε + 2 * ‖a‖ * ‖b‖ * ε) := by gcongr
-    _ = normalizedTwoNorm (φ (a * b) - φ a * φ b) + 6 * ‖a‖ * ‖b‖ * ε := by ring
+    _ ≤ c * ‖a‖ * ‖b‖ + normalizedTwoNorm (φ (a * b) - φ a * φ b) +
+        (c * ‖a‖ * ‖b‖ + c * ‖a‖ * ‖b‖) := by gcongr
+    _ = normalizedTwoNorm (φ (a * b) - φ a * φ b) + 3 * c * ‖a‖ * ‖b‖ := by ring
 
 end CStarMatrix
 
@@ -141,12 +124,8 @@ theorem exists_unital_normalizedTwoNorm_sub_le (φ : A →CP CStarMatrix n n ℂ
       positivity
     have h0 : 0 ≤ φ 1 := map_nonneg φ zero_le_one
     have hh0 : 0 ≤ CFC.sqrt (φ 1) := CFC.sqrt_nonneg _
-    have hh1 : ‖CFC.sqrt (φ 1)‖ ≤ 1 := by
-      have hn1 : ‖φ 1‖ ≤ 1 := (hφ 1).trans CStarRing.norm_one.le
-      have e : ‖CFC.sqrt (φ 1)‖ * ‖CFC.sqrt (φ 1)‖ = ‖φ 1‖ := by
-        rw [← CStarRing.norm_star_mul_self, hh0.isSelfAdjoint.star_eq,
-          CFC.sqrt_mul_sqrt_self _ h0]
-      nlinarith [norm_nonneg (CFC.sqrt (φ 1))]
+    have hh1 : ‖CFC.sqrt (φ 1)‖ ≤ 1 :=
+      (CFC.norm_sqrt _ h0).trans_le (Real.sqrt_le_one.2 ((hφ 1).trans CStarRing.norm_one.le))
     have hsq : normalizedTwoNorm (CFC.sqrt (φ 1) - 1) ≤ √δ := by
       refine Real.le_sqrt_of_sq_le ((normalizedTwoNorm_sub_one_sq_le hh0 hh1).trans ?_)
       rw [CFC.sqrt_mul_sqrt_self _ h0, normalizedTrace_sub, normalizedTrace_one, Complex.sub_re,
@@ -155,9 +134,11 @@ theorem exists_unital_normalizedTwoNorm_sub_le (φ : A →CP CStarMatrix n n ℂ
     rw [hψ a]
     refine (normalizedTwoNorm_sub_mul_mul_le_of_norm_le_one (ψ a) hh1).trans ?_
     exact mul_le_mul (by gcongr; exact hψc a) hsq (normalizedTwoNorm_nonneg _) (by positivity)
-  refine ⟨ψ, hψ1, hψ, h2, fun a => ?_, normalizedTwoNorm_mul_sub_le_of_normalizedTwoNorm_sub_le
-    hφ hψc h2⟩
-  rw [← normalizedTrace_sub]
-  exact (norm_normalizedTrace_le_normalizedTwoNorm _).trans (h2 a)
+  refine ⟨ψ, hψ1, hψ, h2, fun a => ?_, fun a b => ?_⟩
+  · rw [← normalizedTrace_sub]
+    exact (norm_normalizedTrace_le_normalizedTwoNorm _).trans (h2 a)
+  · refine (normalizedTwoNorm_map_mul_sub_le_of_normalizedTwoNorm_sub_le hφ hψc
+      (c := 2 * √δ) (fun x => (h2 x).trans_eq (by ring)) a b).trans_eq ?_
+    ring
 
 end CompletelyPositiveMap

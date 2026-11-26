@@ -56,7 +56,8 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
   conjugation and of `‖·‖₂` under multiplication by isometries and coisometries.
 * `CStarMatrix.normalizedTwoNorm_sub_mul_mul_le`: `‖x - cxd‖₂ ≤ ‖x‖(‖c - 1‖₂ + ‖c‖‖d - 1‖₂)`, and
   `CStarMatrix.normalizedTwoNorm_sub_mul_mul_le_of_norm_le_one`: `‖x - cxc‖₂ ≤ 2‖x‖‖c - 1‖₂` for a
-  contraction `c`.
+  contraction `c`; `CStarMatrix.normalizedTwoNorm_sub_one_sq_le`: `‖h - 1‖₂² ≤ re tr_k(1 - h²)`
+  for a positive contraction `h`.
 * `CStarMatrix.normalizedTrace_reindexₐ`, `CStarMatrix.normalizedTwoNorm_reindexₐ`: `tr_k` and
   `‖·‖₂` do not depend on the labelling of the index type, so the statements below over `n ⊕ m`
   and `n × m` give those over `Fin (k + l)` and `Fin (k * l)`.
@@ -523,6 +524,19 @@ theorem normalizedTwoNorm_sub_mul_mul_le_of_norm_le_one [DecidableEq n] (x : CSt
   rw [mul_comm 2, mul_assoc, two_mul]
   gcongr
   exact mul_le_of_le_one_left (normalizedTwoNorm_nonneg _) hc
+
+/-- For `0 ≤ h` with `‖h‖ ≤ 1`, `‖h - 1‖₂² ≤ re tr_k(1 - h²)`, since
+`(1 - h)² = (1 - h²) - 2(h - h²)` and `h² ≤ h`; Brown (2006), proof of Lemma 2.7. -/
+theorem normalizedTwoNorm_sub_one_sq_le [DecidableEq n] {h : CStarMatrix n n ℂ} (h0 : 0 ≤ h)
+    (h1 : ‖h‖ ≤ 1) : normalizedTwoNorm (h - 1) ^ 2 ≤ (normalizedTrace (1 - h * h)).re := by
+  rw [normalizedTwoNorm_sq]
+  refine Complex.re_le_re (normalizedTrace_mono ?_)
+  have hle : h * h ≤ h := CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one h0 h1
+  have e : star (h - 1) * (h - 1) = (1 - h * h) - 2 • (h - h * h) := by
+    rw [star_sub, h0.isSelfAdjoint.star_eq, star_one]
+    noncomm_ring
+  rw [e]
+  exact sub_le_self _ (nsmul_nonneg (sub_nonneg.2 hle) 2)
 
 /-- `k tr_k(x) = Tr(x)`, also for `k = 0`, where both sides vanish. -/
 theorem card_mul_normalizedTrace (x : CStarMatrix n n ℂ) :
