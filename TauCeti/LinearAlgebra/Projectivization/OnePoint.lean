@@ -15,12 +15,14 @@ Mathlib identifies `OnePoint K` with `ℙ K (Fin 2 → K)` by `OnePoint.equivPro
 `t ↦ [t : 1]` and `∞ ↦ [1 : 0]`. This file describes, in terms of `OnePoint K`, which points land
 in the two standard affine opens `Projectivization.affineOpen i`: the affine open of the
 coordinate `1` consists of the finite points, and the affine open of the coordinate `0` consists
-of the points other than `0`.
+of the points other than `0`, and the only point outside the affine open of the coordinate `1`
+corresponds to `∞`.
 
 ## Main declarations
 
 * `OnePoint.equivProjectivization_mem_affineOpen_one_iff`
 * `OnePoint.equivProjectivization_mem_affineOpen_zero_iff`
+* `OnePoint.equivProjectivization_symm_eq_infty_iff`
 -/
 
 public section
@@ -44,5 +46,12 @@ open of the coordinate `0` exactly when `x` is not `0`. -/
 theorem equivProjectivization_mem_affineOpen_zero_iff (x : OnePoint K) :
     equivProjectivization K x ∈ Projectivization.affineOpen 0 ↔ x ≠ ((0 : K) : OnePoint K) := by
   induction x using OnePoint.rec <;> simp
+
+/-- The only point of `ℙ K (Fin 2 → K)` outside the standard affine open of the coordinate `1`
+corresponds to `∞`. -/
+theorem equivProjectivization_symm_eq_infty_iff (x : ℙ K (Fin 2 → K)) :
+    (equivProjectivization K).symm x = (∞ : OnePoint K) ↔ x ∉ Projectivization.affineOpen 1 := by
+  rw [← (equivProjectivization K).apply_symm_apply x, equivProjectivization_mem_affineOpen_one_iff,
+    Equiv.symm_apply_apply, not_not]
 
 end OnePoint

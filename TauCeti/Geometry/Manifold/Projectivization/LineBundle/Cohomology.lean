@@ -118,13 +118,6 @@ private theorem twistTransition_zero_one_equivProjectivization (y : OnePoint ℂ
   | infty => exact absurd rfl hy
   | coe t => simp [zpow_neg]
 
-/-- The inverted coordinate does not vanish at the finite nonzero points. -/
-private theorem invChart_ne_zero {y : OnePoint ℂ} (hyi : y ≠ (∞ : OnePoint ℂ))
-    (hy0 : y ≠ ((0 : ℂ) : OnePoint ℂ)) : invChart y ≠ 0 := by
-  induction y using OnePoint.rec with
-  | infty => exact absurd rfl hyi
-  | coe t => simpa using (show t ≠ 0 by simpa using hy0)
-
 /-- Near `∞`, the points of the Riemann sphere are finite and nonzero. -/
 private theorem eventually_ne_infty_and_ne_zero :
     ∀ᶠ z in 𝓝[≠] (∞ : OnePoint ℂ), z ≠ (∞ : OnePoint ℂ) ∧ z ≠ ((0 : ℂ) : OnePoint ℂ) :=
@@ -213,12 +206,8 @@ private theorem lowerCoord_eventuallyEq {g : OnePoint ℂ → ℂ} {y : OnePoint
 
 /-- The coordinate at infinity only depends on the punctured germ. -/
 private theorem lowerCoord_congr {g g' : OnePoint ℂ → ℂ} {y : OnePoint ℂ}
-    (h : g =ᶠ[𝓝[≠] y] g') : lowerCoord k g y = lowerCoord k g' y := by
-  have hm : (fun z ↦ ((invChart z ^ k * g z : ℂ) : OnePoint ℂ)) =ᶠ[𝓝[≠] y]
-      fun z ↦ ((invChart z ^ k * g' z : ℂ) : OnePoint ℂ) := by
-    filter_upwards [h] with z hz
-    rw [hz]
-  simp only [lowerCoord, toDivisorSection_apply, sphereMap_def, limUnder, map_congr hm]
+    (h : g =ᶠ[𝓝[≠] y] g') : lowerCoord k g y = lowerCoord k g' y :=
+  toDivisorSection_congr_nhdsNE (by filter_upwards [h] with z hz; rw [hz])
 
 /-- At a finite point `y ≠ 0` where `g` is continuous, the coordinate at infinity is
 `(y⁻¹)^k g y`. -/
@@ -268,18 +257,6 @@ private theorem indexAt_eq_zero_of_notMem {x : ℙ ℂ (Fin 2 → ℂ)} (hx : x 
   · rfl
   · exact absurd h hx
 
-private theorem mem_affineOpen_indexAt (x : ℙ ℂ (Fin 2 → ℂ)) :
-    x ∈ affineOpen ((twistCore (𝕜 := ℂ) (n := 1) k).indexAt x) := by
-  have h := (twistCore (𝕜 := ℂ) (n := 1) k).mem_baseSet_at x
-  rwa [twistCore_baseSet] at h
-
-/-- The only point of `ℂℙ¹` outside `U₁` corresponds to `∞` on the Riemann sphere. -/
-private theorem symm_eq_infty_of_notMem_affineOpen_one {x : ℙ ℂ (Fin 2 → ℂ)}
-    (hx : x ∉ affineOpen 1) : (equivProjectivization ℂ).symm x = (∞ : OnePoint ℂ) := by
-  by_contra h
-  exact hx (Equiv.apply_symm_apply (equivProjectivization ℂ) x ▸
-    (equivProjectivization_mem_affineOpen_one_iff _).2 h)
-
 private theorem extend_apply_of_mem {U : Opens (OnePoint ℂ)} (f : U → ℂ) {y : OnePoint ℂ}
     (hy : y ∈ U) : Subtype.val.extend f 0 y = f ⟨y, hy⟩ :=
   Subtype.val_injective.extend_apply f 0 ⟨y, hy⟩
@@ -326,7 +303,7 @@ private theorem coord_one_sectionFun {U : Opens (OnePoint ℂ)}
       Subtype.val.extend g.val 0 ((equivProjectivization ℂ).symm x) := by
   rw [coord, sectionFun]
   simp only [hx, ↓reduceIte]
-  rw [← mul_assoc, twistTransition_mul_twistTransition k 1 1 (mem_affineOpen_indexAt k x),
+  rw [← mul_assoc, twistTransition_mul_twistTransition k 1 1 (mem_affineOpen_twistCore_indexAt k x),
     twistTransition_self k hx, one_mul]
 
 /-- A section `g` of `𝒪(k [∞])` is holomorphic at the finite points of its domain. -/
@@ -351,7 +328,8 @@ private theorem coord_zero_sectionFun {U : Opens (OnePoint ℂ)}
       rwa [hxy, equivProjectivization_mem_affineOpen_zero_iff] at hx
     rw [coord, sectionFun]
     simp only [hx1, ↓reduceIte]
-    rw [← mul_assoc, twistTransition_mul_twistTransition k 1 0 (mem_affineOpen_indexAt k x),
+    rw [← mul_assoc,
+      twistTransition_mul_twistTransition k 1 0 (mem_affineOpen_twistCore_indexAt k x),
       lowerCoord_apply k (isDivisorSectionAt_extend g.property ⟨y, hxU⟩) hy0 hyi
         (contMDiffAt_extend g hxU hyi).continuousAt]
     rw [hxy, twistTransition_one_zero_equivProjectivization k y hyi, Equiv.symm_apply_apply]
@@ -403,7 +381,7 @@ private theorem sectionFun_add {U : Opens (OnePoint ℂ)}
   split_ifs with hx1
   · rw [Pi.add_apply, mul_add]
   · have hy0 : (equivProjectivization ℂ).symm x ≠ ((0 : ℂ) : OnePoint ℂ) := by
-      rw [symm_eq_infty_of_notMem_affineOpen_one hx1]
+      rw [(equivProjectivization_symm_eq_infty_iff _).2 hx1]
       exact infty_ne_coe _
     exact lowerCoord_add k (isDivisorSectionAt_extend g₁.property ⟨_, hxU⟩)
       (isDivisorSectionAt_extend g₂.property ⟨_, hxU⟩) hy0
@@ -419,7 +397,7 @@ private theorem sectionFun_smul {U : Opens (OnePoint ℂ)} (c : ℂ)
   · rw [Pi.smul_apply, smul_eq_mul]
     ring
   · have hy0 : (equivProjectivization ℂ).symm x ≠ ((0 : ℂ) : OnePoint ℂ) := by
-      rw [symm_eq_infty_of_notMem_affineOpen_one hx1]
+      rw [(equivProjectivization_symm_eq_infty_iff _).2 hx1]
       exact infty_ne_coe _
     exact lowerCoord_smul k (isDivisorSectionAt_extend g.property ⟨_, hxU⟩) hy0 c
 
@@ -678,9 +656,9 @@ private theorem compLinearMap_surjective (U : Opens (OnePoint ℂ)) :
       exact hx1
     rw [hext _ hyU, toDivisorSection_coord_one_apply hs hyU hyi, hxy, coord, ← mul_assoc,
       twistTransition_mul_twistTransition k _ _ hx1,
-      twistTransition_self k (mem_affineOpen_indexAt k x), one_mul]
+      twistTransition_self k (mem_affineOpen_twistCore_indexAt k (x : ℙ ℂ (Fin 2 → ℂ))), one_mul]
     exact htx x
-  · have hyi := symm_eq_infty_of_notMem_affineOpen_one hx1
+  · have hyi := (equivProjectivization_symm_eq_infty_iff _).2 hx1
     have hxi : equivProjectivization ℂ (∞ : OnePoint ℂ) = x := by
       rw [← hyi]
       exact hxy

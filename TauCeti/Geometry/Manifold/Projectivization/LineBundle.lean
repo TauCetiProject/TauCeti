@@ -206,6 +206,11 @@ theorem chartAt_eq_affineOpenPartialHomeomorph_twistCore_indexAt (k : ℤ)
     chartAt (Fin n → 𝕜) x = affineOpenPartialHomeomorph ((twistCore k).indexAt x) :=
   (rfl)
 
+/-- Every point lies in the standard affine open of the preferred chart of `𝒪(k)` at it. -/
+theorem mem_affineOpen_twistCore_indexAt (k : ℤ) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    x ∈ affineOpen ((twistCore (𝕜 := 𝕜) k).indexAt x) :=
+  (twistCore (𝕜 := 𝕜) (n := n) k).mem_baseSet_at x
+
 /-- The homogeneous coordinate of the preferred chart of `𝒪(k)` at `[v]` does not vanish
 on `v`. -/
 theorem apply_indexAt_twistCore_mk_ne_zero (k : ℤ) {v : Fin (n + 1) → 𝕜} (hv : v ≠ 0) :

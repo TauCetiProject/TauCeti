@@ -93,6 +93,12 @@ theorem sphereMap_def (f : X → ℂ) (x : X) :
     sphereMap f x = limUnder (𝓝[≠] x) fun y ↦ (f y : OnePoint ℂ) :=
   (rfl)
 
+/-- The value of `sphereMap f` at `x` only depends on `f` on a punctured neighbourhood of `x`. -/
+theorem sphereMap_congr_nhdsNE {f' : X → ℂ} (h : f =ᶠ[𝓝[≠] x] f') :
+    sphereMap f x = sphereMap f' x := by
+  have hc : (fun y ↦ (f y : OnePoint ℂ)) =ᶠ[𝓝[≠] x] fun y ↦ (f' y : OnePoint ℂ) := h.fun_comp _
+  rw [sphereMap_def, sphereMap_def, limUnder, limUnder, map_congr hc]
+
 /-! ### Values -/
 
 variable [ChartedSpace ℂ X]
