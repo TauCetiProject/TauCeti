@@ -38,14 +38,13 @@ section Mul
 variable [Mul G] [ContMDiffMul I' n G]
 
 /-- The `C^n` map `(x, y) ↦ f x * g y` on `M × N`, for `C^n` maps `f` on `M` and `g` on `N`. -/
-@[expose]
 def mulProd (f : C^n⟮I, M; I', G⟯) (g : C^n⟮J, N; I', G⟯) : C^n⟮I.prod J, M × N; I', G⟯ :=
   ⟨fun z ↦ f z.1 * g z.2, (f.contMDiff.comp contMDiff_fst).mul (g.contMDiff.comp contMDiff_snd)⟩
 
 @[simp]
 theorem mulProd_apply (f : C^n⟮I, M; I', G⟯) (g : C^n⟮J, N; I', G⟯) (z : M × N) :
     f.mulProd g z = f z.1 * g z.2 :=
-  rfl
+  (rfl)
 
 end Mul
 

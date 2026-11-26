@@ -196,6 +196,26 @@ theorem sum_apply {ι : Type*} (u : Finset ι) (s : ι → BundleTest I F V) (x 
     (∑ i ∈ u, s i) x = ∑ i ∈ u, s i x :=
   map_sum (AddMonoidHom.mk' (fun t : BundleTest I F V ↦ t x) fun a b ↦ add_apply a b x) s u
 
+/-- The closed support of a sum of bundle tests lies in the union of their closed supports. -/
+theorem tsupport_add_subset (s t : BundleTest I F V) :
+    closure {x | (s + t) x ≠ 0} ⊆ closure {x | s x ≠ 0} ∪ closure {x | t x ≠ 0} := by
+  rw [← closure_union]
+  refine closure_mono fun x (hx : (s + t) x ≠ 0) ↦ ?_
+  by_contra h
+  simp only [mem_union, mem_ofPred_eq, not_or, not_not] at h
+  exact hx (by rw [add_apply, h.1, h.2, add_zero])
+
+/-- The closed support of a scalar multiple of a bundle test lies in its closed support. -/
+theorem tsupport_smul_subset (a : ℝ) (s : BundleTest I F V) :
+    closure {x | (a • s) x ≠ 0} ⊆ closure {x | s x ≠ 0} :=
+  closure_mono fun x (hx : (a • s) x ≠ 0) (h : s x = 0) ↦ hx (by rw [smul_apply, h, smul_zero])
+
+/-- A bundle test coming from the sections supported in a compact set `K` is supported in `K`. -/
+theorem tsupport_ofSupportedIn_subset (K : Compacts M) (σ : supportedIn I F ∞ V K) :
+    closure {x | ofCompactlySupported I F V (ofSupportedIn K σ) x ≠ 0} ⊆ K := by
+  rw [coe_ofCompactlySupported, ofSupportedIn_apply, ← tsupport_def]
+  exact mem_supportedIn.1 σ.property
+
 variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
 
 /-- The topology on bundle tests is the test topology of any covering family of smooth frames

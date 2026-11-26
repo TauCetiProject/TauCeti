@@ -17,8 +17,9 @@ import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 To transport a construction from model spaces to a manifold `P` one covers `P` by charts into the
 model space `E` and cuts functions off with a partition of unity subordinate to the charts. A
 `TauCeti.ChartCutoffs I P n ι` packages this data: charts `cᵢ : P → E`, `C^n` with `C^n` inverses,
-and `C^n` cutoffs `ρᵢ` summing to `1` with `tsupport ρᵢ` in the source of `cᵢ`, each mapped by `cᵢ`
-into a compact subset of the target, finitely many of which meet any compact set.
+and `C^n` cutoffs `ρᵢ` summing to `1` with compact `tsupport ρᵢ` in the source of `cᵢ`, finitely
+many of which meet any compact set. The image of `tsupport ρᵢ` under `cᵢ` is a compact subset of the
+target (`TauCeti.ChartCutoffs.box`).
 
 On a Hausdorff `σ`-compact manifold with finite-dimensional model, every family of such charts
 indexed by the points of `P`, each containing its point, carries cutoffs
@@ -32,7 +33,8 @@ indexed by the points of `P`, each containing its point, carries cutoffs
 * `TauCeti.ChartCutoffs.meeting`: the finitely many indices whose cutoffs meet a compact set; the
   corresponding cutoffs sum to `1` on it (`TauCeti.ChartCutoffs.sum_meeting_eq_one`).
 * `TauCeti.ChartCutoffs.exists_chart_eq`, `TauCeti.ChartCutoffs.nonempty`: existence.
-* `TauCeti.ChartCutoffs.prod`: product chart cutoffs.
+* `TauCeti.ChartCutoffs.prod`: product chart cutoffs, with the product targets
+  (`TauCeti.ChartCutoffs.prod_chart_target`).
 -/
 
 public noncomputable section
@@ -47,9 +49,8 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 variable (ι : Type*) (I P n) in
 /-- **Charts with subordinate cutoffs** on `P`, indexed by `ι`: `C^n` charts into the model space
-with `C^n` inverses, and `C^n` cutoffs summing to `1`, each supported in the source of its chart
-and mapped by it into a compact subset of the target, finitely many of which meet any compact
-set. -/
+with `C^n` inverses, and `C^n` cutoffs summing to `1`, each with compact support in the source of
+its chart, finitely many of which meet any compact set. -/
 structure ChartCutoffs where
   /-- The charts. -/
   chart : ι → OpenPartialHomeomorph P E
@@ -61,12 +62,8 @@ structure ChartCutoffs where
   cutoff : ι → C^n⟮I, P; ℝ⟯
   /-- Each cutoff is supported in the source of its chart. -/
   tsupport_subset : ∀ i, tsupport (cutoff i) ⊆ (chart i).source
-  /-- Compact subsets of the chart targets containing the images of the supports of the cutoffs. -/
-  box : ι → Compacts E
-  /-- Each compact set lies in the target of its chart. -/
-  box_subset : ∀ i, (box i : Set E) ⊆ (chart i).target
-  /-- Each chart maps the support of its cutoff into its compact set. -/
-  mapsTo : ∀ i, MapsTo (chart i) (tsupport (cutoff i)) (box i)
+  /-- The cutoffs have compact supports. -/
+  isCompact_tsupport : ∀ i, IsCompact (tsupport (cutoff i))
   /-- Finitely many cutoffs meet a compact set. -/
   finite : ∀ K : Set P, IsCompact K → {i | (tsupport (cutoff i) ∩ K).Nonempty}.Finite
   /-- The cutoffs sum to `1`. -/
@@ -76,10 +73,33 @@ namespace ChartCutoffs
 
 variable {ι : Type*}
 
+/-- The image `cᵢ '' tsupport ρᵢ` of the support of a cutoff under its chart, a compact subset of
+the chart target. -/
+def box (A : ChartCutoffs I P n ι) (i : ι) : Compacts E :=
+  ⟨A.chart i '' tsupport (A.cutoff i), (A.isCompact_tsupport i).image_of_continuousOn
+    ((A.chart i).continuousOn.mono (A.tsupport_subset i))⟩
+
+@[simp]
+theorem coe_box (A : ChartCutoffs I P n ι) (i : ι) :
+    (A.box i : Set E) = A.chart i '' tsupport (A.cutoff i) :=
+  (rfl)
+
+/-- Each compact set `cᵢ '' tsupport ρᵢ` lies in the target of its chart. -/
+theorem box_subset (A : ChartCutoffs I P n ι) (i : ι) : (A.box i : Set E) ⊆ (A.chart i).target := by
+  rw [coe_box]
+  exact image_subset_iff.2 fun _ hz ↦ (A.chart i).map_source (A.tsupport_subset i hz)
+
+/-- Each chart maps the support of its cutoff into its compact set. -/
+theorem mapsTo (A : ChartCutoffs I P n ι) (i : ι) :
+    MapsTo (A.chart i) (tsupport (A.cutoff i)) (A.box i) := by
+  rw [coe_box]
+  exact mapsTo_image _ _
+
 /-- The indices of the cutoffs meeting a compact set. -/
 def meeting (A : ChartCutoffs I P n ι) (K : Set P) (hK : IsCompact K) : Finset ι :=
   (A.finite K hK).toFinset
 
+@[simp]
 theorem mem_meeting (A : ChartCutoffs I P n ι) {K : Set P} {hK : IsCompact K} {i : ι} :
     i ∈ A.meeting K hK ↔ (tsupport (A.cutoff i) ∩ K).Nonempty := by
   simp [meeting]
@@ -135,10 +155,8 @@ theorem exists_chart_eq (c : P → OpenPartialHomeomorph P E)
     contMDiffOn_chart_symm := hcs
     cutoff := fun x ↦ ⟨ρ x, (ρ x).contMDiff.of_le (WithTop.coe_le_coe.2 le_top)⟩
     tsupport_subset := fun x ↦ (hρ x).trans (subset_closure.trans (hWs x))
-    box := fun x ↦ ⟨c x '' closure (W x),
-      (hWc x).image_of_continuousOn ((c x).continuousOn.mono (hWs x))⟩
-    box_subset := fun x ↦ image_subset_iff.2 fun y hy ↦ (c x).map_source (hWs x hy)
-    mapsTo := fun x y hy ↦ mem_image_of_mem _ (subset_closure (hρ x hy))
+    isCompact_tsupport := fun x ↦ (hWc x).of_isClosed_subset (isClosed_tsupport _)
+      ((hρ x).trans subset_closure)
     finite := fun K hK ↦ ρ.locallyFinite.closure.finite_nonempty_inter_compact hK
     sum_eq_one := fun z ↦ ρ.sum_eq_one (mem_univ z) }, rfl⟩
 
@@ -166,7 +184,6 @@ variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Topologic
 
 /-- The product of chart cutoffs on `P` and on `N`: the product charts `cᵢ × dⱼ` with the product
 cutoffs `(x, y) ↦ ρᵢ x * σⱼ y`. -/
-@[expose, simps chart cutoff box]
 def prod (A : ChartCutoffs I P n ι) (B : ChartCutoffs J N n κ) :
     ChartCutoffs (I.prod J) (P × N) n (ι × κ) where
   chart p := (A.chart p.1).prod (B.chart p.2)
@@ -180,21 +197,36 @@ def prod (A : ChartCutoffs I P n ι) (B : ChartCutoffs J N n κ) :
   cutoff p := (A.cutoff p.1).mulProd (B.cutoff p.2)
   tsupport_subset p := (ContMDiffMap.tsupport_mulProd_subset _ _).trans
     (prod_mono (A.tsupport_subset p.1) (B.tsupport_subset p.2))
-  box p := A.box p.1 ×ˢ B.box p.2
-  box_subset p := prod_mono (A.box_subset p.1) (B.box_subset p.2)
-  mapsTo p := ((A.mapsTo p.1).prodMap (B.mapsTo p.2)).mono_left
+  isCompact_tsupport p := ((A.isCompact_tsupport p.1).prod
+    (B.isCompact_tsupport p.2)).of_isClosed_subset (isClosed_tsupport _)
     (ContMDiffMap.tsupport_mulProd_subset _ _)
   finite K hK := ((A.finite _ (hK.image continuous_fst)).prod
     (B.finite _ (hK.image continuous_snd))).subset fun p ⟨z, hz, hzK⟩ ↦
       ⟨⟨z.1, (ContMDiffMap.tsupport_mulProd_subset _ _ hz).1, mem_image_of_mem _ hzK⟩,
         ⟨z.2, (ContMDiffMap.tsupport_mulProd_subset _ _ hz).2, mem_image_of_mem _ hzK⟩⟩
   sum_eq_one z := by
+    simp_rw [ContMDiffMap.mulProd_apply]
     refine (A.finsum_prod_eq_sum_meeting B isCompact_singleton isCompact_singleton
       (f := fun i j ↦ A.cutoff i z.1 * B.cutoff j z.2)
       (fun i j hi ↦ by rw [A.cutoff_eq_zero hi rfl, zero_mul])
       (fun i j hj ↦ by rw [B.cutoff_eq_zero hj rfl, mul_zero])).trans ?_
     simp_rw [← Finset.mul_sum, ← Finset.sum_mul]
     rw [A.sum_meeting_eq_one _ rfl, B.sum_meeting_eq_one _ rfl, one_mul]
+
+@[simp]
+theorem prod_chart (A : ChartCutoffs I P n ι) (B : ChartCutoffs J N n κ) (p : ι × κ) :
+    (A.prod B).chart p = (A.chart p.1).prod (B.chart p.2) :=
+  (rfl)
+
+@[simp]
+theorem prod_cutoff (A : ChartCutoffs I P n ι) (B : ChartCutoffs J N n κ) (p : ι × κ) :
+    (A.prod B).cutoff p = (A.cutoff p.1).mulProd (B.cutoff p.2) :=
+  (rfl)
+
+/-- The target of a product chart is the product of the targets. -/
+theorem prod_chart_target (A : ChartCutoffs I P n ι) (B : ChartCutoffs J N n κ) (p : ι × κ) :
+    ((A.prod B).chart p).target = (A.chart p.1).target ×ˢ (B.chart p.2).target := by
+  rw [prod_chart, OpenPartialHomeomorph.prod_target]
 
 end ChartCutoffs
 
