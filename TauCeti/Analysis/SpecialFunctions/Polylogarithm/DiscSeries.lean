@@ -12,7 +12,7 @@ import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
-import TauCeti.Analysis.SpecialFunctions.Integrals.LogPower
+import TauCeti.Analysis.SpecialFunctions.Integrals.Log.Power
 
 /-!
 # The power series of integer-weight polylogarithms on the open unit disc
