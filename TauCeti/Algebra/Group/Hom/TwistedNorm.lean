@@ -69,8 +69,8 @@ theorem twistedNorm_eq_prod_iterate {C : Type*} [CommMonoid C] (τ : C →* C) (
   induction p with
   | zero => simp
   | succ p ih =>
-    rw [twistedNorm_succ, ih, map_prod, prod_range_succ', Function.iterate_zero_apply, mul_comm]
-    simp only [Function.iterate_succ_apply']
+    rw [twistedNorm_succ]
+    simp [ih, map_prod, prod_range_succ', mul_comm, Function.iterate_succ_apply']
 
 /-- For a ring endomorphism `σ` of a commutative semiring, the twisted norm equals
 `∏ i ∈ range p, (σ ^ i) x`. -/

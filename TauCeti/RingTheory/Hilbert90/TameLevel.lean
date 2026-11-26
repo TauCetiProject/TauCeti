@@ -15,6 +15,7 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.GroupTheory.Index
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+import Mathlib.LinearAlgebra.Matrix.Unique
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.Spectrum.Prime.Topology
 import TauCeti.Algebra.BigOperators.Finset.Periodic
@@ -263,15 +264,18 @@ private lemma basicOpen_det_sub_smul_superset {n : Type*} [Fintype n] [Decidable
     simp only [Matrix.map_apply, Matrix.sub_apply, Matrix.add_apply, Matrix.smul_apply,
       smul_eq_mul, map_sub, map_mul]
     ring
+  have hdet_of_zero {I : Ideal R} (h0 : Ideal.Quotient.mk I N = 0) :
+      Ideal.Quotient.mk I (g - N • (g - v)).det = Ideal.Quotient.mk I g.det := by
+    simpa [h0, RingHom.map_det, RingHom.mapMatrix_apply] using hdet_mk I
+  have hdet_of_one {I : Ideal R} (h1 : Ideal.Quotient.mk I N = 1) :
+      Ideal.Quotient.mk I (g - N • (g - v)).det = Ideal.Quotient.mk I v.det := by
+    simpa [h1, RingHom.map_det, RingHom.mapMatrix_apply] using hdet_mk I
   refine ⟨?_, ?_⟩
   · rintro ⟨P, hP⟩ hgP
-    have hN_zero : Ideal.Quotient.mk P N = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr (hN_mem P hP hgP)
-    rw [PrimeSpectrum.mem_basicOpen, ← Ideal.Quotient.eq_zero_iff_mem, hdet_mk P, hN_zero,
-      sub_zero, one_smul, zero_smul, add_zero, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
-    exact Ideal.Quotient.eq_zero_iff_mem.not.mpr hgP
-  · rw [PrimeSpectrum.mem_basicOpen, ← Ideal.Quotient.eq_zero_iff_mem, hdet_mk M, hN_one,
-      sub_self, zero_smul, zero_add, one_smul, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
-    exact Ideal.Quotient.eq_zero_iff_mem.not.mpr hvM
+    have h0 := Ideal.Quotient.eq_zero_iff_mem.mpr (hN_mem P hP hgP)
+    simpa [PrimeSpectrum.mem_basicOpen, ← Ideal.Quotient.eq_zero_iff_mem, hdet_of_zero h0] using hgP
+  · simpa [PrimeSpectrum.mem_basicOpen, ← Ideal.Quotient.eq_zero_iff_mem, hdet_of_one hN_one]
+      using hvM
 
 /-- **Hilbert's Theorem 90 for `GL n` at congruence level `m` over an Artinian ring.** If `R` is
 Artinian, `σ` is tame at level `m` with exponent `p`, and `c : GL n R` satisfies `c.val = 1 + m • Y`
@@ -290,11 +294,8 @@ theorem IsTameAtLevel.exists_mul_map_eq_of_twistedNorm_eq_one {n : Type*} [Finty
     induction i with
     | zero => simp
     | succ i ih =>
-      rw [iterate_succ_apply', ih, hτ_apply, Matrix.map_mul, Matrix.map_map, ← mul_assoc,
-        MonoidHom.twistedNorm_succ, Units.val_mul]
-      congr 1
-      ext a b
-      simp [pow_succ']
+      rw [MonoidHom.twistedNorm_succ]
+      simp [iterate_succ_apply', ih, hτ_apply, Matrix.map_mul, Matrix.map_map, mul_assoc, pow_succ']
   have hτ_period (v : Matrix n n R) : τ^[p] v = v := by simp [hτ, hc, h_tame.pow_eq_one]
   -- Pick a `τ`-fixed matrix `g ≡ 1 [mod m]` maximizing the basic open set `D(det g)`.
   obtain ⟨g, ⟨hg, W, hW⟩, hmax⟩ := exists_maximalFor_of_wellFoundedGT
@@ -337,30 +338,30 @@ theorem IsTameAtLevel.exists_mul_map_eq_of_prod_eq_one {σ : R →+* R} {p : ℕ
     (hx_norm : ∏ i ∈ range p, (σ ^ i) (x : R) = 1) :
     ∃ g : Rˣ, m ∣ (g : R) - 1 ∧ x * Units.map (σ : R →* R) g = g := by
   obtain ⟨y, hy⟩ := hx_one
-  let c : GL Unit R := Units.mk (of fun _ _ ↦ (x : R)) (of fun _ _ ↦ ((x⁻¹ : Rˣ) : R))
-    (by ext i j; simp [Matrix.mul_apply]) (by ext i j; simp [Matrix.mul_apply])
+  let e : GL Unit R ≃* Rˣ := Units.mapEquiv (Matrix.uniqueRingEquiv (m := Unit) (A := R)).toMulEquiv
+  let c : GL Unit R := e.symm x
+  have he_map (u : GL Unit R) :
+      e (GeneralLinearGroup.map σ u) = Units.map (σ : R →* R) (e u) := by
+    ext
+    simp [e]
   have hc_val : c.val = 1 + m • of fun _ _ ↦ y := by
     ext i j
-    simpa [c] using eq_add_of_sub_eq' hy
+    simpa [c, e] using eq_add_of_sub_eq' hy
   have hc_norm : MonoidHom.twistedNorm (GeneralLinearGroup.map σ) p c = 1 := by
-    let detVal : GL Unit R →* R := (Units.coeHom R).comp Matrix.GeneralLinearGroup.det
-    have hdetVal : detVal (MonoidHom.twistedNorm (GeneralLinearGroup.map σ) p c) = 1 := by
-      rw [MonoidHom.map_twistedNorm detVal (τ' := (σ : R →* R))
-          (fun g ↦ by simp [detVal, GeneralLinearGroup.map_det]),
-        MonoidHom.twistedNorm_ringHom_eq_prod_pow]
-      simpa [detVal, c] using hx_norm
-    ext i j
-    cases i; cases j
-    simpa [detVal, det_unique] using hdetVal
+    apply e.injective
+    rw [map_one, ← MulEquiv.coe_toMonoidHom, MonoidHom.map_twistedNorm e.toMonoidHom he_map,
+      MulEquiv.coe_toMonoidHom, e.apply_symm_apply]
+    ext
+    rw [Units.val_one, ← Units.coeHom_apply,
+      MonoidHom.map_twistedNorm (Units.coeHom R) (τ' := (σ : R →* R)) (fun _ ↦ rfl),
+      MonoidHom.twistedNorm_ringHom_eq_prod_pow]
+    exact hx_norm
   obtain ⟨k, W, hk, hW⟩ := h_tame.exists_mul_map_eq_of_twistedNorm_eq_one c hc_val hc_norm
-  refine ⟨k.det, ?_, ?_⟩
-  · have h_det : (k.det : R) = 1 + m * W () () := by simp [hW]
-    rw [h_det, add_sub_cancel_left]
+  refine ⟨e k, ?_, ?_⟩
+  · have h_val : ((e k : Rˣ) : R) = 1 + m * W () () := by simp [e, hW]
+    rw [h_val, add_sub_cancel_left]
     exact dvd_mul_right m _
-  · ext
-    have h_entry : (c.val * k.val.map σ) () () = k.val () () := by
-      simpa using congrArg (fun M : GL Unit R ↦ M.val () ()) hk
-    simpa [c, Matrix.mul_apply] using h_entry
+  · simpa [c, he_map] using congrArg e hk
 
 /-- **Surjectivity of the orbit product on `σ`-fixed units at congruence level `m` over a finite
 ring.** If `R` is finite, `σ` is tame at level `m` with exponent `p`, and `x : Rˣ` is `σ`-fixed
