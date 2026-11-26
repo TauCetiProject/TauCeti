@@ -27,6 +27,8 @@ and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponent
 
 * `Complex.analyticAt_Gammaℝ_of_ne_zero`, `Complex.analyticAt_Gammaℂ_of_ne_zero`: both factors
   are analytic wherever they are nonzero.
+* `TauCeti.analyticAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow`: every product of natural powers of the
+  reciprocal archimedean factors is analytic everywhere.
 * `Complex.Gammaℂ_eq_zero_iff`: total zeros of `Gammaℂ` occur at `-(n : ℂ)` (`n : ℕ`),
   complementing `Complex.Gammaℝ_eq_zero_iff`; this identifies the exceptional values in finite
   products of shifted gamma factors.
@@ -232,4 +234,14 @@ theorem Gammaℝ_neg_two_mul_natCast_sub_one (k : ℕ) :
 end IntegerValues
 
 end Complex
+
+namespace TauCeti
+
+/-- Products of natural powers of the reciprocal archimedean gamma factors are entire. -/
+theorem analyticAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow (r₁ r₂ : ℕ) (s : ℂ) :
+    AnalyticAt ℂ (fun z : ℂ ↦ (Complex.Gammaℝ z)⁻¹ ^ r₁ * (Complex.Gammaℂ z)⁻¹ ^ r₂) s :=
+  ((Complex.differentiable_Gammaℝ_inv.analyticAt s).pow r₁).mul
+    ((Complex.differentiable_Gammaℂ_inv.analyticAt s).pow r₂)
+
+end TauCeti
 

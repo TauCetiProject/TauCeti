@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Instances.AddCircle.Annulus
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Algebra.Order.Archimedean.Basic
+import TauCeti.Order.Monotone.Basic
 
 /-!
 # Twist lifts of the annulus
@@ -19,7 +20,9 @@ coordinate `y ↦ F₁(x, y)` is strictly increasing (Katok–Hasselblatt, *Intr
 Theory of Dynamical Systems*, Section 9.2; Herman, *Sur les courbes invariantes par les
 difféomorphismes de l'anneau*, Chapitre I, 1.2, for the differentiable form). A *negative twist
 lift* is the same with strictly decreasing; for `ℓ ≠ 0` it is described here through its
-inverse.
+inverse. The positive twist condition is the *deviation of the verticals* (A. Fathi, Appendice to
+Herman, *Sur les courbes invariantes…*, §2): the image of a vertical crosses every vertical it
+meets from left to right.
 
 The geometric case is `ℓ ≠ 0` and `a < b`: then `F` is the lift of a homeomorphism of the closed
 annulus `AddCircle ℓ × [a, b]` preserving its two boundary circles. The predicate itself makes
@@ -45,6 +48,12 @@ the strip is empty.
   lift twists negatively, and `TauCeti.isTwistLift_symm_iff`: for `ℓ ≠ 0`, a homeomorphism is a
   negative twist lift exactly when its inverse is a positive one.
 * `TauCeti.IsTwistLift.trans_stripDeck`: composing with a deck translation keeps the twist property.
+* `TauCeti.IsTwistLift.strictAnti_fst_stripFiberConj_apply`: conjugating a positive twist lift by
+  `I_r(x, y) = (x, r(y))` (`TauCeti.stripFiberConj`) for a strictly decreasing homeomorphism `r`
+  of `[a, b]` reverses the twist, and `TauCeti.isTwistLift_symm_stripFiberConj_iff`,
+  `TauCeti.isTwistLift_stripFiberConj_iff`: for `ℓ ≠ 0` this conjugation exchanges positive and
+  negative twist lifts. One may take `r(y) = a + b - y` (`TauCeti.iccReflect`, in
+  `TauCeti.Topology.Order.IccReflect`).
 
 ## Implementation notes
 
@@ -80,7 +89,10 @@ structure IsTwistLift (ℓ : ℝ) {a b : ℝ} (F : ℝ × Icc a b ≃ₜ ℝ × 
   snd_apply_of_eq_left : ∀ p : ℝ × Icc a b, (p.2 : ℝ) = a → ((F p).2 : ℝ) = a
   /-- `F` maps the upper boundary line `y = b` into itself. -/
   snd_apply_of_eq_right : ∀ p : ℝ × Icc a b, (p.2 : ℝ) = b → ((F p).2 : ℝ) = b
-  /-- Positive twist: the first coordinate of `F` is strictly increasing on every vertical. -/
+  /-- Positive twist: the first coordinate of `F` is strictly increasing on every vertical. This
+  says that `F` *deviates the verticals* (Fathi, Appendice to Herman (1983), §2): the image of a
+  vertical crosses every vertical it meets from left to right, so it meets each vertical at most
+  once. -/
   strictMono_fst_apply : ∀ x : ℝ, StrictMono fun y : Icc a b => (F (x, y)).1
 
 namespace IsTwistLift
@@ -252,5 +264,101 @@ theorem isTwistLift_symm_iff (hℓ : ℓ ≠ 0) :
       snd_symm_apply_of_forall_eq hℓ hd hr, fun x => ?_⟩
     · have := (hG.strictAnti_fst_symm_apply hℓ (-x)).neg
       simpa [G, stripReflect_symm_apply, Function.comp_def] using this
+
+/-! ### Conjugation by a fibre reversal -/
+
+/-- The *fibre map* `I_r(x, y) = (x, r(y))` of the strip `ℝ × Y` induced by a homeomorphism `r` of
+the fibre `Y`. -/
+def stripFiberMap (r : Y ≃ₜ Y) : ℝ × Y ≃ₜ ℝ × Y :=
+  (Homeomorph.refl ℝ).prodCongr r
+
+@[simp]
+theorem stripFiberMap_apply (r : Y ≃ₜ Y) (p : ℝ × Y) : stripFiberMap r p = (p.1, r p.2) :=
+  (rfl)
+
+@[simp]
+theorem stripFiberMap_symm (r : Y ≃ₜ Y) : (stripFiberMap r).symm = stripFiberMap r.symm :=
+  (rfl)
+
+/-- The conjugate `I_r ∘ F ∘ I_r⁻¹` of a homeomorphism `F` of the strip `ℝ × Y` by the fibre map
+`I_r(x, y) = (x, r(y))`. -/
+def stripFiberConj (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) : ℝ × Y ≃ₜ ℝ × Y :=
+  (stripFiberMap r.symm).trans (F.trans (stripFiberMap r))
+
+@[simp]
+theorem stripFiberConj_apply (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) (p : ℝ × Y) :
+    stripFiberConj r F p = ((F (p.1, r.symm p.2)).1, r (F (p.1, r.symm p.2)).2) :=
+  (rfl)
+
+/-- Inverting the conjugate is conjugating the inverse. -/
+@[simp]
+theorem stripFiberConj_symm (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) :
+    (stripFiberConj r F).symm = stripFiberConj r F.symm :=
+  (rfl)
+
+/-- Conjugating back by the inverse fibre map recovers `F`. -/
+@[simp]
+theorem stripFiberConj_symm_stripFiberConj (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) :
+    stripFiberConj r.symm (stripFiberConj r F) = F := by
+  ext p <;> simp
+
+/-- Conjugating by the fibre map recovers `F` from its conjugate by the inverse fibre map. -/
+@[simp]
+theorem stripFiberConj_stripFiberConj_symm (r : Y ≃ₜ Y) (F : ℝ × Y ≃ₜ ℝ × Y) :
+    stripFiberConj r (stripFiberConj r.symm F) = F := by
+  ext p <;> simp
+
+/-- Conjugation by a fibre reversal keeps the deck condition and the invariance of the two
+boundary lines: the reversal exchanges the two lines, and so does its inverse. -/
+private theorem stripFiberConj_data {r : Icc a b ≃ₜ Icc a b} (hr : StrictAnti r)
+    (hd : ∀ p : ℝ × Icc a b, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2))
+    (hl : ∀ p : ℝ × Icc a b, (p.2 : ℝ) = a → ((F p).2 : ℝ) = a)
+    (hr' : ∀ p : ℝ × Icc a b, (p.2 : ℝ) = b → ((F p).2 : ℝ) = b) :
+    (∀ p : ℝ × Icc a b, stripFiberConj r F (p.1 + ℓ, p.2) =
+        ((stripFiberConj r F p).1 + ℓ, (stripFiberConj r F p).2)) ∧
+      (∀ p : ℝ × Icc a b, (p.2 : ℝ) = a → ((stripFiberConj r F p).2 : ℝ) = a) ∧
+      (∀ p : ℝ × Icc a b, (p.2 : ℝ) = b → ((stripFiberConj r F p).2 : ℝ) = b) := by
+  have hrs : StrictAnti r.symm := Function.strictAnti_of_rightInverse hr r.apply_symm_apply
+  refine ⟨fun p => ?_, fun p hp => ?_, fun p hp => ?_⟩
+  · simp only [stripFiberConj_apply, hd (p.1, r.symm p.2)]
+  · rw [stripFiberConj_apply]
+    exact hr.antitone.coe_apply_eq_left_of_surjective r.surjective
+      (hr' _ (hrs.antitone.coe_apply_eq_right_of_surjective r.symm.surjective hp))
+  · rw [stripFiberConj_apply]
+    exact hr.antitone.coe_apply_eq_right_of_surjective r.surjective
+      (hl _ (hrs.antitone.coe_apply_eq_left_of_surjective r.symm.surjective hp))
+
+/-- **Conjugation by a fibre reversal turns a positive twist into a negative one.** If `F` is a
+positive twist lift and `r` is a strictly decreasing homeomorphism of `[a, b]`, then the first
+coordinate of the conjugate `I_r ∘ F ∘ I_r⁻¹` by `I_r(x, y) = (x, r(y))` is strictly decreasing
+along each vertical. -/
+theorem IsTwistLift.strictAnti_fst_stripFiberConj_apply (hF : IsTwistLift ℓ F)
+    {r : Icc a b ≃ₜ Icc a b} (hr : StrictAnti r) (x : ℝ) :
+    StrictAnti fun y : Icc a b => (stripFiberConj r F (x, y)).1 := by
+  simpa [Function.comp_def] using StrictMono.comp_strictAnti
+    (hF.strictMono_fst_apply x) (Function.strictAnti_of_rightInverse hr r.apply_symm_apply)
+
+/-- **Conjugation by a fibre reversal exchanges positive and negative twist lifts.** For a nonzero
+period and a strictly decreasing homeomorphism `r` of `[a, b]`, the conjugate of `F` by
+`I_r(x, y) = (x, r(y))` is a negative twist lift (its inverse is a positive one) exactly when `F`
+is a positive twist lift. -/
+theorem isTwistLift_symm_stripFiberConj_iff (hℓ : ℓ ≠ 0) {r : Icc a b ≃ₜ Icc a b}
+    (hr : StrictAnti r) : IsTwistLift ℓ (stripFiberConj r F).symm ↔ IsTwistLift ℓ F := by
+  refine ⟨fun h => ?_, fun h => (isTwistLift_symm_iff hℓ).2 ?_⟩
+  · obtain ⟨hd, hl, hr', hanti⟩ := (isTwistLift_symm_iff hℓ).1 h
+    have hrs : StrictAnti r.symm := Function.strictAnti_of_rightInverse hr r.apply_symm_apply
+    obtain ⟨hd', hl', hr''⟩ := stripFiberConj_data hrs hd hl hr'
+    rw [stripFiberConj_symm_stripFiberConj] at hd' hl' hr''
+    refine ⟨hd', hl', hr'', fun x => ?_⟩
+    simpa [Function.comp_def] using StrictAnti.comp (hanti x) hr
+  · obtain ⟨hd, hl, hr'⟩ :=
+      stripFiberConj_data hr h.apply_add_period h.snd_apply_of_eq_left h.snd_apply_of_eq_right
+    exact ⟨hd, hl, hr', h.strictAnti_fst_stripFiberConj_apply hr⟩
+
+/-- For a nonzero period and a strictly decreasing homeomorphism `r` of `[a, b]`, the conjugate of
+`F` by `I_r(x, y) = (x, r(y))` is a positive twist lift exactly when `F` is a negative one. -/
+theorem isTwistLift_stripFiberConj_iff (hℓ : ℓ ≠ 0) {r : Icc a b ≃ₜ Icc a b}
+    (hr : StrictAnti r) : IsTwistLift ℓ (stripFiberConj r F) ↔ IsTwistLift ℓ F.symm := by
+  simpa using isTwistLift_symm_stripFiberConj_iff (F := F.symm) hℓ hr
 
 end TauCeti
