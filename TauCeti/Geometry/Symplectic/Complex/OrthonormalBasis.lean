@@ -1058,6 +1058,18 @@ theorem coe_centralizerToUnitaryGroup_apply (g : Subgroup.centralizer {J₀}) (i
   rw [complexCoords_centralizerToUnitaryGroup_apply, LinearEquiv.apply_symm_apply,
     Matrix.mulVec_single_one, Matrix.col_apply]
 
+/-- The entry `(i, j)` of the matrix `centralizerToUnitaryGroup g` is
+`⟪e (2i), g (e (2j))⟫ + i ⟪e (2i + 1), g (e (2j))⟫`. -/
+theorem coe_centralizerToUnitaryGroup_apply_eq_inner (g : Subgroup.centralizer {J₀})
+    (i j : Fin 2) :
+    (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g : Matrix (Fin 2) (Fin 2) ℂ) i j =
+      (inner ℝ (e ⟨2 * i.val, by omega⟩) (((g : unitary (V →L[ℝ] V)) : V →L[ℝ] V)
+          (e ⟨2 * j.val, by omega⟩)) : ℂ) +
+        Complex.I * inner ℝ (e ⟨2 * i.val + 1, by omega⟩) (((g : unitary (V →L[ℝ] V)) :
+          V →L[ℝ] V) (e ⟨2 * j.val, by omega⟩)) := by
+  rw [coe_centralizerToUnitaryGroup_apply, complexCoords_two_symm_apply, complexCoords_two_apply]
+  fin_cases i <;> fin_cases j <;> simp [mul_comm]
+
 /-- The matrix of a complex rotation depends continuously on it, for the operator norm. -/
 @[fun_prop]
 theorem continuous_centralizerToUnitaryGroup :
