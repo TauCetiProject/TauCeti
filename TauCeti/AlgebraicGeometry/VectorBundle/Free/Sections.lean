@@ -54,7 +54,8 @@ def pullbackFreeSectionsEquiv (T : Over X) :
       ((Scheme.Modules.pullback T.hom).obj (free X I).obj)).symm.trans <|
     (((Scheme.Modules.isFiniteLocallyFree X).ι ⋙ Scheme.Modules.pullback T.hom).mapIso
         (freeIsoDual X I) ≪≫
-      asIso ((pullbackIhomComparison (free X I).obj T.hom).app (𝟙_ X.Modules) ≫
+      asIso (((Scheme.Modules.pullback T.hom).ihomComparison (free X I).obj).app
+          (𝟙_ X.Modules) ≫
         (ihom ((Scheme.Modules.pullback T.hom).obj (free X I).obj)).map
           (Scheme.Modules.pullbackObjUnitIso T.hom).hom)).symm.homFromEquiv.trans <|
     ((Scheme.Modules.pullbackPushforwardAdjunction T.hom).homEquiv _ _).trans <|
@@ -69,14 +70,15 @@ lemma pullbackFreeSectionsEquiv_apply (T : Over X)
       (eqToHom (free_obj X I).symm ≫
         (Scheme.Modules.pullbackPushforwardAdjunction T.hom).homEquiv _ _
           ((Scheme.Modules.pullback T.hom).map (freeIsoDual X I).hom.hom ≫
-            ((pullbackIhomComparison (free X I).obj T.hom).app (𝟙_ X.Modules) ≫
+            (((Scheme.Modules.pullback T.hom).ihomComparison (free X I).obj).app
+                (𝟙_ X.Modules) ≫
               (ihom ((Scheme.Modules.pullback T.hom).obj (free X I).obj)).map
                 (Scheme.Modules.pullbackObjUnitIso T.hom).hom) ≫
             (Scheme.Modules.dualHomUnitEquiv _).symm s)) :=
   congrArg (fun φ ↦ T.hom.freeHomPushforwardEquiv I
     (eqToHom (free_obj X I).symm ≫ (Scheme.Modules.pullbackPushforwardAdjunction T.hom).homEquiv
       _ _ φ)) (Category.assoc ((Scheme.Modules.pullback T.hom).map (freeIsoDual X I).hom.hom)
-        ((pullbackIhomComparison (free X I).obj T.hom).app (𝟙_ X.Modules) ≫
+        (((Scheme.Modules.pullback T.hom).ihomComparison (free X I).obj).app (𝟙_ X.Modules) ≫
           (ihom ((Scheme.Modules.pullback T.hom).obj (free X I).obj)).map
             (Scheme.Modules.pullbackObjUnitIso T.hom).hom)
         ((Scheme.Modules.dualHomUnitEquiv _).symm s))
