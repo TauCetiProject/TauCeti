@@ -37,6 +37,8 @@ here the spaces live in a common universe; the underlying linear maps of
   `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainComplexMap_comp`,
   `TauCeti.LocalCoefficientSystem.normalizedTwistedCubicalChainComplexMap_naturality`:
   functoriality.
+* `TauCeti.LocalCoefficientSystem.mono_normalizedTwistedCubicalChainComplexMap`: an injective
+  continuous map induces a monomorphism of chain complexes.
 
 ## References
 
@@ -128,6 +130,15 @@ theorem normalizedTwistedCubicalChainComplexMap_f (f : C(X, Y))
     (normalizedTwistedCubicalChainComplexMap f L).f n = ModuleCat.ofHom (map f L n) := by
   unfold normalizedTwistedCubicalChainComplexMap
   rfl
+
+/-- An injective continuous map, such as the inclusion of a subspace, induces a monomorphism of
+normalized cubical chain complexes with local coefficients. -/
+theorem mono_normalizedTwistedCubicalChainComplexMap {f : C(X, Y)} (hf : Function.Injective f)
+    (L : LocalCoefficientSystem.{u, v, w} R Y) :
+    Mono (normalizedTwistedCubicalChainComplexMap f L) :=
+  HomologicalComplex.mono_of_mono_f _ fun n ↦ (ModuleCat.mono_iff_injective _).2 <| by
+    rw [normalizedTwistedCubicalChainComplexMap_f]
+    exact NormalizedTwistedCubicalChain.map_injective hf n
 
 /-- The identity of a local system induces the identity chain map. -/
 @[simp]

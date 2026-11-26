@@ -47,6 +47,11 @@ augmentation all descend to the normalized chains; the chain complex they form i
 * `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.augment_boundary`: `ε ∘ ∂ = 0`.
 * `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.map_id`,
   `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.map_comp`: functoriality.
+* `TauCeti.LocalCoefficientSystem.TwistedCubicalChain.mem_degenerate_iff`: a chain is degenerate
+  exactly when its components at the nondegenerate cubes vanish.
+* `TauCeti.LocalCoefficientSystem.NormalizedTwistedCubicalChain.map_injective`: an injective
+  continuous map, such as the inclusion of a subspace, induces an injective map of normalized
+  chains, since a cube composed with an injective map is degenerate exactly when the cube is.
 
 ## References
 
@@ -171,6 +176,108 @@ theorem degenerate_le_comap_map (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v�
   degenerate_le fun c hc a ↦ by
     rw [Submodule.mem_comap, map_ofCube]
     exact ofCube_mem_degenerate (hc.comp f) _
+
+open scoped Classical in
+/-- The component of the summand of a cube at another cube vanishes. -/
+theorem ofCube_apply_of_ne {n : ℕ} {c c' : SingularCube X n} (h : c' ≠ c)
+    (a : L.obj (FundamentalGroupoid.mk (c 0))) : ofCube L c a c' = 0 := by
+  rw [ofCube_eq_lof, DirectSum.lof_eq_of]
+  exact DirectSum.of_eq_of_ne _ _ _ h
+
+/-- The component of the summand of a cube at that cube is its coefficient. -/
+@[simp]
+theorem ofCube_apply_self {n : ℕ} (c : SingularCube X n)
+    (a : L.obj (FundamentalGroupoid.mk (c 0))) : ofCube L c a c = a := by
+  classical
+  rw [ofCube_eq_lof, DirectSum.lof_eq_of]
+  exact DirectSum.of_eq_same _ _
+
+open scoped Classical in
+/-- The restriction of a chain to the degenerate cubes is a degenerate chain. -/
+private theorem filter_isDegenerate_mem_degenerate {n : ℕ} (y : L.TwistedCubicalChain n) :
+    (DFinsupp.filter IsDegenerate y : L.TwistedCubicalChain n) ∈ degenerate L n := by
+  induction y using induction_on with
+  | zero => simp [DFinsupp.filter_zero]
+  | ofCube c a =>
+    by_cases hc : IsDegenerate c
+    · have h : (DFinsupp.filter IsDegenerate (ofCube L c a) : L.TwistedCubicalChain n) =
+          ofCube L c a := DirectSum.ext fun c' ↦ by
+        by_cases hc' : IsDegenerate c'
+        · exact DFinsupp.filter_apply_pos _ hc'
+        · rw [DFinsupp.filter_apply_neg _ hc', ofCube_apply_of_ne (by rintro rfl; exact hc' hc)]
+      rw [h]
+      exact ofCube_mem_degenerate hc a
+    · have h : (DFinsupp.filter IsDegenerate (ofCube L c a) : L.TwistedCubicalChain n) = 0 :=
+        DirectSum.ext fun c' ↦ by
+          by_cases hc' : IsDegenerate c'
+          · rw [DFinsupp.filter_apply_pos _ hc', ofCube_apply_of_ne
+              (by rintro rfl; exact hc hc'), DirectSum.zero_apply]
+          · exact DFinsupp.filter_apply_neg _ hc'
+      rw [h]
+      exact Submodule.zero_mem _
+  | add y z hy hz =>
+    rw [DFinsupp.filter_add]
+    exact Submodule.add_mem _ hy hz
+
+/-- A chain is degenerate exactly when its components at the nondegenerate cubes vanish. -/
+theorem mem_degenerate_iff {n : ℕ} (x : L.TwistedCubicalChain n) :
+    x ∈ degenerate L n ↔ ∀ c, ¬IsDegenerate c → x c = 0 := by
+  classical
+  constructor
+  · -- The chains vanishing at the nondegenerate cubes form a submodule containing every
+    -- degenerate cube.
+    let p : Submodule R (L.TwistedCubicalChain n) :=
+      { carrier := {x | ∀ c, ¬IsDegenerate c → x c = 0}
+        add_mem' := fun hx hy c hc ↦ by rw [DirectSum.add_apply, hx c hc, hy c hc, add_zero]
+        zero_mem' := fun c _ ↦ DirectSum.zero_apply c
+        smul_mem' := fun r x hx c hc ↦ by
+          rw [DirectSum.smul_apply, hx c hc, smul_zero] }
+    refine fun hx ↦ degenerate_le (p := p) (fun c hc a c' hc' ↦ ofCube_apply_of_ne ?_ a) hx
+    rintro rfl
+    exact hc' hc
+  · -- Such a chain is its restriction to the degenerate cubes.
+    intro hx
+    have hxf : (DFinsupp.filter IsDegenerate x : L.TwistedCubicalChain n) = x :=
+      DirectSum.ext fun c ↦ by
+        by_cases hc : IsDegenerate c
+        · exact DFinsupp.filter_apply_pos _ hc
+        · rw [DFinsupp.filter_apply_neg _ hc, hx c hc]
+    rw [← hxf]
+    exact filter_isDegenerate_mem_degenerate x
+
+/-- An injective map of spaces preserves the component of a chain at each cube, at the image
+cube. -/
+theorem map_apply_comp_of_injective {f : C(X, Y)} (hf : Function.Injective f)
+    {L : LocalCoefficientSystem.{u, v₂, w} R Y} {n : ℕ}
+    (x : ((pullback f).obj L).TwistedCubicalChain n) (c : SingularCube X n) :
+    map f L n x (f.comp c) = x c := by
+  -- The summand of a cube `c` for `f⁎L` is definitionally the summand of `f.comp c` for `L`, so
+  -- the two sides live in the same module only up to unfolding the pullback; the cases where both
+  -- sides are built from the same components close by `rfl`.
+  induction x using induction_on with
+  | zero => exact (congrArg (· (f.comp c)) (map_zero (map f L n))).trans rfl
+  | ofCube c' a =>
+    rw [map_ofCube]
+    by_cases h : c' = c
+    · subst h
+      exact (ofCube_apply_self (L := L) (f.comp c') a).trans (ofCube_apply_self c' a).symm
+    · exact (ofCube_apply_of_ne (L := L) (c := f.comp c') (fun h' ↦ h
+        (ContinuousMap.postcomp_injective f hf h').symm) a).trans
+          (ofCube_apply_of_ne (Ne.symm h) a).symm
+  | add y z hy hz =>
+    rw [map_add, DirectSum.add_apply, DirectSum.add_apply, hy, hz]
+    rfl
+
+/-- Along an injective map, a chain is degenerate exactly when its image is. -/
+theorem map_mem_degenerate_iff_of_injective {f : C(X, Y)} (hf : Function.Injective f)
+    {L : LocalCoefficientSystem.{u, v₂, w} R Y} {n : ℕ}
+    (x : ((pullback f).obj L).TwistedCubicalChain n) :
+    map f L n x ∈ degenerate L n ↔ x ∈ degenerate ((pullback f).obj L) n := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ degenerate_le_comap_map f L n hx⟩
+  rw [mem_degenerate_iff] at hx ⊢
+  intro c hc
+  rw [← map_apply_comp_of_injective hf]
+  exact hx _ ((isDegenerate_comp_iff_of_injective f hf c).not.2 hc)
 
 end Degenerate
 
@@ -368,6 +475,16 @@ theorem map_comp (g : C(Y, Z)) (L : LocalCoefficientSystem.{u, v₃, w} R Z) (n 
       coefficientMap ((pullbackCompIso f g).hom.app L) n := by
   refine LinearMap.ext fun x ↦ Submodule.Quotient.induction_on _ x fun x ↦ ?_
   simp only [LinearMap.comp_apply, map_mk, coefficientMap_mk, TwistedCubicalChain.map_comp]
+
+/-- Normalization preserves injectivity of a map of spaces: an injective continuous map induces an
+injective map of normalized chains. No embedding hypothesis is needed. -/
+theorem map_injective (hf : Function.Injective f) (n : ℕ) : Function.Injective (map f L n) := by
+  rw [← LinearMap.ker_eq_bot, map, Submodule.ker_mapQ]
+  have hcomap : (TwistedCubicalChain.degenerate L n).comap (TwistedCubicalChain.map f L n) =
+      TwistedCubicalChain.degenerate ((pullback f).obj L) n := by
+    ext x
+    exact TwistedCubicalChain.map_mem_degenerate_iff_of_injective hf x
+  rw [hcomap, Submodule.mkQ_map_self]
 
 end Map
 
