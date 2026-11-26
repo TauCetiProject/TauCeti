@@ -314,6 +314,21 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_se
 
 /-! ### Differentiating the equation with differentiable coefficients -/
 
+omit [mu.IsAddHaarMeasure] in
+/-- Coefficients whose entries have bounded derivatives on `Ω`, of any order, give an essentially
+bounded drift- and mass-free energy integrand on `Ω`: the entries are continuous and bounded. -/
+private theorem memLp_energyIntegrand_of_bddDerivOn {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {k : ℕ} (ha : ∀ i j, BddDerivOn ℝ k (fun x => a x i j) (Omega : Set (EuclideanSpace ℝ ι))) :
+    MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) := by
+  choose C hC using fun i j => (ha i j).exists_norm_le
+  refine memLp_energyIntegrand_of_abs_apply_le (fun i j => (ha i j).contDiffOn.continuousOn)
+    (M := ∑ i, ∑ j, |C i j|) fun i j x hx => ?_
+  rw [← Real.norm_eq_abs]
+  exact (hC i j x hx).trans ((le_abs_self _).trans ((Finset.single_le_sum
+    (fun _ _ => abs_nonneg _) (Finset.mem_univ j)).trans (Finset.single_le_sum
+      (f := fun i => ∑ j, |C i j|) (fun _ _ => Finset.sum_nonneg fun _ _ => abs_nonneg _)
+      (Finset.mem_univ i))))
+
 /-- **The derivative of a weak solution with coefficients with bounded derivatives.** Let the
 entries of `a` be of class `C^{k+2}` on `Ω` with derivatives of order at most `k + 2` bounded on
 `Ω`, let `F ∈ W^{k+1,2}(Ω)`, and let `u ∈ H^{k+2}(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = F` against
@@ -337,15 +352,7 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_bddDerivOn
   have hΩo := Omega.isOpen
   have haΩ : ∀ i j, ContDiffOn ℝ 2 (fun x => a x i j) Omega := fun i j =>
     (ha i j).contDiffOn.of_le (by norm_cast; omega)
-  have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) := by
-    choose C hC using fun i j => (ha i j).exists_norm_le
-    refine memLp_energyIntegrand_of_abs_apply_le (fun i j => (ha i j).contDiffOn.continuousOn)
-      (M := ∑ i, ∑ j, |C i j|) fun i j x hx => ?_
-    rw [← Real.norm_eq_abs]
-    exact (hC i j x hx).trans ((le_abs_self _).trans ((Finset.single_le_sum
-      (fun _ _ => abs_nonneg _) (Finset.mem_univ j)).trans (Finset.single_le_sum
-        (f := fun i => ∑ j, |C i j|) (fun _ _ => Finset.sum_nonneg fun _ _ => abs_nonneg _)
-        (Finset.mem_univ i))))
+  have hcoeff := memLp_energyIntegrand_of_bddDerivOn (mu := mu) ha
   -- The first and second weak derivatives of `u`, from `u ∈ H^{k+2}(Ω)`.
   choose D hD using fun j => Wkp.exists_hasWeakLineDerivOn_value (k + 1) w (b j)
   choose E hE using fun i j => Wkp.exists_hasWeakLineDerivOn_value k (D j) (b i)
