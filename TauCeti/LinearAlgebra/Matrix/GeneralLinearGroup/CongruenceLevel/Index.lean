@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CongruenceLevel
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import Mathlib.RingTheory.DedekindDomain.Dvr
 import TauCeti.LinearAlgebra.Unimodular.Card
+import TauCeti.RingTheory.StableRange.Commutative
 
 /-!
 # The index of the upper-triangular congruence subgroup
@@ -43,8 +44,10 @@ theorem index_eq_prod_of_quotientEquivPi {ι : Type*} [Fintype ι] {B : ι → T
   have hu : Nat.card (A ⧸ I)ˣ = ∏ i, Nat.card (B i ⧸ J i)ˣ := by
     rw [Nat.card_congr ((Units.mapEquiv e.toMulEquiv).trans MulEquiv.piUnits).toEquiv, Nat.card_pi]
   have hrows : (GL2K1 I).index = ∏ i, (GL2K1 (J i)).index := by
-    simp only [GL2K1.index_eq_card]
-    rw [← TauCeti.Module.card_isUnimodular_congr (Fin 2) e, TauCeti.Module.card_isUnimodular_pi]
+    rw [GL2K1.index_eq_card I (hasStableRangeLE_one_of_finite_maximalSpectrum _),
+      ← TauCeti.Module.card_isUnimodular_congr (Fin 2) e, TauCeti.Module.card_isUnimodular_pi]
+    exact Finset.prod_congr rfl fun i _ ↦
+      (GL2K1.index_eq_card (J i) (hasStableRangeLE_one_of_finite_maximalSpectrum _)).symm
   apply Nat.eq_of_mul_eq_mul_left (Nat.card_pos (α := (A ⧸ I)ˣ))
   calc
     Nat.card (A ⧸ I)ˣ * (GL2K0 I).index = (GL2K1 I).index := by
