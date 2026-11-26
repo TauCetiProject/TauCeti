@@ -366,6 +366,20 @@ theorem coe_gspinNorm (x : gspinGroup Q) :
       reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * (x : (CliffordAlgebra Q)ˣ) :=
   coe_gpinNorm_of_mem_gspinGroup x.property
 
+/-- An element of the Clifford group has Clifford norm one exactly when `star(g) g = 1`. -/
+theorem gpinNorm_eq_one_iff (x : gpinGroup Q) :
+    gpinNorm Q x = 1 ↔
+      star ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * (x : (CliffordAlgebra Q)ˣ) = 1 := by
+  rw [Subtype.ext_iff, Units.ext_iff, coe_gpinNorm, OneMemClass.coe_one, Units.val_one]
+
+/-- An element of the general spin group has general spin norm one exactly when
+`reverse(g) g = 1`. -/
+theorem gspinNorm_eq_one_iff (x : gspinGroup Q) :
+    gspinNorm Q x = 1 ↔
+      reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * (x : (CliffordAlgebra Q)ˣ) =
+        1 := by
+  rw [Subtype.ext_iff, Units.ext_iff, coe_gspinNorm, OneMemClass.coe_one, Units.val_one]
+
 variable (Q) in
 /-- **The norm-one Pin group** `Pin(Q) = ker N`: the elements of the Clifford group of Clifford
 norm one. -/
@@ -378,14 +392,9 @@ theorem mem_normOnePinGroup_iff {x : (CliffordAlgebra Q)ˣ} :
     x ∈ normOnePinGroup Q ↔ x ∈ gpinGroup Q ∧ star (x : CliffordAlgebra Q) * x = 1 := by
   constructor
   · rintro ⟨y, hy, rfl⟩
-    refine ⟨y.property, ?_⟩
-    have h := congrArg (fun z : Subgroup.center (CliffordAlgebra Q)ˣ =>
-      ((z : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) (MonoidHom.mem_ker.mp hy)
-    simpa only [Subgroup.coe_subtype, coe_gpinNorm, OneMemClass.coe_one,
-      Units.val_one] using h
+    exact ⟨y.property, (gpinNorm_eq_one_iff y).mp (MonoidHom.mem_ker.mp hy)⟩
   · rintro ⟨hx, h⟩
-    refine ⟨⟨x, hx⟩, MonoidHom.mem_ker.mpr (Subtype.ext (Units.ext ?_)), rfl⟩
-    simpa only [coe_gpinNorm, OneMemClass.coe_one, Units.val_one] using h
+    exact ⟨⟨x, hx⟩, MonoidHom.mem_ker.mpr ((gpinNorm_eq_one_iff ⟨x, hx⟩).mpr h), rfl⟩
 
 variable (Q) in
 /-- `Pin(Q)` is the kernel of the Clifford norm, as a subgroup of the Clifford units. -/
@@ -426,11 +435,9 @@ theorem normOneSpinGroup_eq_map_ker :
   rw [mem_normOneSpinGroup_iff]
   constructor
   · rintro ⟨hx, h⟩
-    exact ⟨⟨x, hx⟩, MonoidHom.mem_ker.mpr (Subtype.ext (Units.ext (by simpa using h))), rfl⟩
+    exact ⟨⟨x, hx⟩, MonoidHom.mem_ker.mpr ((gspinNorm_eq_one_iff ⟨x, hx⟩).mpr h), rfl⟩
   · rintro ⟨y, hy, rfl⟩
-    have h := congrArg (fun z : Subgroup.center (CliffordAlgebra Q)ˣ =>
-      ((z : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) (MonoidHom.mem_ker.mp hy)
-    exact ⟨y.property, by simpa using h⟩
+    exact ⟨y.property, (gspinNorm_eq_one_iff y).mp (MonoidHom.mem_ker.mp hy)⟩
 
 /-! ### The vector action of the Clifford group -/
 
