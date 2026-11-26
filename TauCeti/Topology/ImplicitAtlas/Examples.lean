@@ -71,6 +71,10 @@ The single-chart atlases on a point realize the following test atlases.
   and trivially on `E_α = ℝ`. The regular point `0` of `X_α` is fixed by the reflection
   (`TauCeti.ImplicitAtlas.coe_pointAct_unitsIntAction_neg_one`), which reverses the orientation of
   `X_α` and preserves that of `E_α`.
+* **The odd reflection atlas** (`TauCeti.ImplicitAtlas.oddReflectionAtlas`): `s(x) = xᵐ` for an
+  odd `m`, such as `s(x) = x`, with `Γ_α = ℤˣ` acting by `x ↦ ±x` on both `X_α = ℝ` and
+  `E_α = ℝ` (`Representation.ofDistribMulAction`). The reflection reverses the orientations of
+  both.
 * **The atlas `s = 0` on a point** (`TauCeti.ImplicitAtlas.zeroAtlas`): an arbitrary finite group
   `Γ_α` acting trivially on the point `X_α = ℝ⁰`, an arbitrary obstruction representation `E_α`
   and `s_α = 0`, of virtual dimension `-dim E_α`. The next two atlases are instances of it.
@@ -94,7 +98,7 @@ The single-chart atlases on a point realize the following test atlases.
   Definitions 3.1.1 and 3.2.1 (implicit atlases with boundary). The atlas `s(x) = xᵐ` on `ℝ`
   is Pardon's Example 2.3.2, and `s(z) = zᵐ` on `ℂ` is its complex analogue. The ineffective
   point, a trivial `ℤ/2` action on a point, is Pardon's example in §2.3.3 (p. 20). The
-  reflection atlas, the point of virtual dimension `-1` and the isotropy theorem are constructed
+  reflection atlases, the point of virtual dimension `-1` and the isotropy theorem are constructed
   here as implicit atlases in the sense of Definition 3.1.1; they are not taken from a numbered
   example of Pardon.
 -/
@@ -444,7 +448,7 @@ theorem pointAct_one (hσ : ∀ g, (1 : Γ →* (Y ≃ₜ Y)) g y₀ = y₀) :
   simp
 
 /-- A thickening at a nonempty index set is all of `Y`. -/
-private def pointThickeningHomeomorph {J : Finset Unit} (hJ : J.Nonempty) :
+def pointThickeningHomeomorph {J : Finset Unit} (hJ : J.Nonempty) :
     PointThickening Y y₀ J ≃ₜ Y where
   toFun := Subtype.val
   invFun y := ⟨y, fun h ↦ (hJ.ne_empty h).elim⟩
@@ -452,6 +456,16 @@ private def pointThickeningHomeomorph {J : Finset Unit} (hJ : J.Nonempty) :
   right_inv _ := rfl
   continuous_toFun := continuous_subtypeVal
   continuous_invFun := continuous_id.subtype_mk _
+
+@[simp]
+theorem coe_pointThickeningHomeomorph {J : Finset Unit} (hJ : J.Nonempty) :
+    ⇑(pointThickeningHomeomorph (y₀ := y₀) hJ) = Subtype.val :=
+  (rfl)
+
+@[simp]
+theorem coe_pointThickeningHomeomorph_symm_apply {J : Finset Unit} (hJ : J.Nonempty) (y : Y) :
+    ((pointThickeningHomeomorph (y₀ := y₀) hJ).symm y : Y) = y :=
+  (rfl)
 
 /-- An equivariant map `s` whose only zero is `y₀` forces `y₀` to be a fixed point. -/
 theorem apply_eq_self_of_equivariant {E : Type*} [AddCommGroup E] [Module ℝ E]
@@ -824,6 +838,63 @@ theorem coe_pointAct_unitsIntAction_neg_one (hσ : ∀ u, unitsIntAction u 0 = 0
     (x : PointThickening ℝ 0 {()}) :
     (pointAct unitsIntAction hσ {()} (fun _ ↦ -1) x : ℝ) = -x := by
   simp [pointComponent_of_mem (Finset.mem_singleton_self ())]
+
+/-- **The odd reflection atlas.** The implicit atlas of virtual dimension `0` on the point
+`X = {0}` with one index `α`, group `Γ_α = ℤˣ = {±1}` acting by `x ↦ ±x` both on the thickening
+`X_α = ℝ` and on the obstruction space `E_α = ℝ`, and the equivariant Kuranishi map
+`s_α(x) = xᵐ` for an odd `m`; `m = 1` gives the transverse section `s_α(x) = x`. As in
+`TauCeti.ImplicitAtlas.reflectionAtlas` the reflection fixes the regular point `0` of `X_α` and
+reverses the orientation of `X_α`, but here it reverses the orientation of `E_α` as well. -/
+noncomputable def oddReflectionAtlas (hm : Odd m) :
+    ImplicitAtlas (fun _ : Unit ↦ ℤˣ) (fun _ ↦ ℝ)
+      (fun _ ↦ Representation.ofDistribMulAction ℝ ℤˣ ℝ) (PointThickening ℝ 0)
+      (pointAct unitsIntAction fun _ ↦ by simp) (PointThickening ℝ 0 ∅) 0 :=
+  letI := realChartedSpace
+  pointAtlas (Representation.ofDistribMulAction ℝ ℤˣ ℝ) unitsIntAction (fun x : ℝ ↦ x ^ m)
+    (continuous_pow m)
+    (fun u _ ↦ by rcases Int.units_eq_one_or u with rfl | rfl <;> simp [hm.neg_pow])
+    (fun _ ↦ pow_eq_zero_iff hm.pos.ne') 1 (by simp)
+
+/-- The Kuranishi map of `TauCeti.ImplicitAtlas.oddReflectionAtlas` is `s_α(x) = xᵐ`. -/
+@[simp]
+theorem kuranishi_oddReflectionAtlas (hm : Odd m) :
+    (oddReflectionAtlas hm).kuranishi = pointKuranishi 0 fun x : ℝ ↦ x ^ m :=
+  (rfl)
+
+/-- The regular locus of `X_I` in `TauCeti.ImplicitAtlas.oddReflectionAtlas` is everything for
+`I = {α}` and empty for `I = ∅`. -/
+theorem regLocus_oddReflectionAtlas (hm : Odd m) (I : Finset Unit) :
+    (oddReflectionAtlas hm).regLocus I = {_x | I.Nonempty} :=
+  (rfl)
+
+/-- The regular locus of `X_∅` in `TauCeti.ImplicitAtlas.oddReflectionAtlas` is empty. -/
+@[simp]
+theorem regLocus_oddReflectionAtlas_empty (hm : Odd m) :
+    (oddReflectionAtlas hm).regLocus ∅ = ∅ :=
+  letI := realChartedSpace
+  regLocus_pointAtlas_empty ..
+
+/-- The footprint maps of `TauCeti.ImplicitAtlas.oddReflectionAtlas` keep the real coordinate. -/
+@[simp]
+theorem coe_footprintMap_oddReflectionAtlas (hm : Odd m) {I J : Finset Unit} (h : I ⊆ J)
+    (x : kuranishiZeroSet (E := fun _ : Unit ↦ ℝ) (oddReflectionAtlas hm).kuranishi I J) :
+    ((oddReflectionAtlas hm).footprintMap h x : ℝ) = ((x : PointThickening ℝ 0 J) : ℝ) :=
+  (rfl)
+
+/-- The footprint `V_∅` of `TauCeti.ImplicitAtlas.oddReflectionAtlas` is empty, since the regular
+locus of `X_∅` is. -/
+@[simp]
+theorem footprint_oddReflectionAtlas_empty (hm : Odd m) :
+    (oddReflectionAtlas hm).footprint ∅ = ∅ :=
+  letI := realChartedSpace
+  footprint_pointAtlas_empty ..
+
+/-- The footprint `V_α` of `TauCeti.ImplicitAtlas.oddReflectionAtlas` is the whole point. -/
+@[simp]
+theorem footprint_oddReflectionAtlas_singleton (hm : Odd m) :
+    (oddReflectionAtlas hm).footprint {()} = univ :=
+  letI := realChartedSpace
+  footprint_pointAtlas_singleton ..
 
 /-! #### The atlas `s = 0` on a point -/
 
