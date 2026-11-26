@@ -712,21 +712,22 @@ theorem exists_rat_fold_hurwitzMul_gal {K : Type*} [Field K] [Algebra ℚ K]
 
 namespace IsEFunction
 
-/-- **Galois-conjugate Hurwitz product of an E-function.** For a finite Galois extension `K / ℚ`
-embedded in `ℂ` and `a : ℕ → K` defining an E-function, the Hurwitz product of all `Gal(K/ℚ)`
-conjugates of `a` is an E-function. -/
+/-- **`Gal(K/ℚ)`-orbit Hurwitz product of an E-function.** For a finite extension `K / ℚ`
+embedded in `ℂ` and `a : ℕ → K` defining an E-function, the Hurwitz product of
+`algebraMap K ℂ ∘ (σ • a)` over all `σ : Gal(K/ℚ)` is an E-function. -/
 theorem fold_hurwitzMul_gal {K : Type*} [Field K] [Algebra ℚ K]
-    [FiniteDimensional ℚ K] [IsGalois ℚ K] [Algebra K ℂ] [IsScalarTower ℚ K ℂ]
+    [FiniteDimensional ℚ K] [Algebra K ℂ] [IsScalarTower ℚ K ℂ]
     {a : ℕ → K} (ha : IsEFunction (algebraMap K ℂ ∘ a)) :
     IsEFunction ((Finset.univ : Finset Gal(K/ℚ)).fold TauCeti.hurwitzMul (Pi.single 0 1)
       fun σ ↦ algebraMap K ℂ ∘ (σ • a)) :=
   fold_hurwitzMul Finset.univ fun σ _ ↦
     ha.comp_algHom ((IsScalarTower.toAlgHom ℚ K ℂ).comp σ.toAlgHom)
 
-/-- Evaluating `eFun` on the Galois-conjugate Hurwitz product over `Gal(K/ℚ)` gives the product of
-the `eFun` evaluations of all conjugates. -/
+/-- For a finite extension `K / ℚ` embedded in `ℂ`, evaluating `eFun` on the Hurwitz product of
+`algebraMap K ℂ ∘ (σ • a)` over `σ : Gal(K/ℚ)` gives the product of the individual `eFun`
+evaluations. -/
 theorem eFun_fold_hurwitzMul_gal {K : Type*} [Field K] [Algebra ℚ K]
-    [FiniteDimensional ℚ K] [IsGalois ℚ K] [Algebra K ℂ] [IsScalarTower ℚ K ℂ]
+    [FiniteDimensional ℚ K] [Algebra K ℂ] [IsScalarTower ℚ K ℂ]
     {a : ℕ → K} (ha : IsEFunction (algebraMap K ℂ ∘ a)) (z : ℂ) :
     eFun ((Finset.univ : Finset Gal(K/ℚ)).fold TauCeti.hurwitzMul (Pi.single 0 1)
       fun σ ↦ algebraMap K ℂ ∘ (σ • a)) z =
