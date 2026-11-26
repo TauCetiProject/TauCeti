@@ -31,6 +31,9 @@ import TauCeti.LinearAlgebra.Matrix.ToLin
 import Mathlib.RingTheory.Norm.Basic
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
+-- Non-public: surjectivity of the norm of finite fields is used only inside the proof of
+-- `TauCeti.GL2NonSplitTorus.map_det`.
+import Mathlib.FieldTheory.Finite.GaloisField
 
 /-!
 # The non-split torus of `GL₂`
@@ -78,6 +81,8 @@ choice.
 
 * `TauCeti.GL2NonSplitTorus.natCard_eq`: the torus has `q² - 1` elements over a finite field with
   `q` elements, and `TauCeti.GL2NonSplitTorus.index_eq`: its index is then `q (q - 1)`.
+* `TauCeti.GL2NonSplitTorus.map_det`: over a finite field the determinant maps the torus onto
+  `Fˣ`, because the determinant is the norm and the norm of finite fields is surjective.
 * `TauCeti.GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom`: an element of the torus not
   coming from `F` is not a scalar matrix, hence is regular.
 * `TauCeti.GL2NonSplitTorus.conj_notMem_of_det_sub_algebraMap_eq_zero`: a non-scalar element with
@@ -233,6 +238,16 @@ theorem index_eq [Finite F] : (GL2NonSplitTorus F E).index =
     have := Nat.le_self_pow two_ne_zero (Fintype.card F)
     omega
   · simpa only [Nat.card_eq_fintype_card] using natCard_GL_fin_two_eq_sq_sub_one_mul F
+
+/-- **The determinant is surjective on the non-split torus** over a finite field: the determinant
+of a torus element is the norm of the unit of `E` it comes from, and the norm `Eˣ → Fˣ` of an
+extension of finite fields is surjective. -/
+theorem map_det [Finite F] : (GL2NonSplitTorus F E).map Matrix.GeneralLinearGroup.det = ⊤ := by
+  have : Finite E := Module.finite_of_finite F
+  refine eq_top_iff.2 fun u _ ↦ ?_
+  obtain ⟨x, hx⟩ := FiniteField.unitsMap_norm_surjective F E u
+  refine ⟨_, mem_iff.2 ⟨x, rfl⟩, Units.ext ?_⟩
+  rw [val_det_gl2NonSplitTorusHom, ← hx, Units.coe_map]
 
 /-- An element of the non-split torus not coming from `F` is not a scalar matrix: multiplication by
 `x` on `E` is multiplication by an element of `F` exactly when `x` lies in `F`. It is therefore
