@@ -88,7 +88,7 @@ theorem eq_cos_smul_add_sin_smul_of_hasDerivAt [FiniteDimensional ℝ V] {θ : �
     γ t = cos (θ * t) • γ 0 + sin (θ * t) • J (γ 0) := by
   -- Both curves solve the equation of the Lipschitz linear field `θ J`.
   set L : V →L[ℝ] V := θ • LinearMap.toContinuousLinearMap J.toLinearMap
-  have hL (y : V) : L y = θ • J y := rfl
+  have hL (y : V) : L y = θ • J y := by simp [L, LinearMap.coe_toContinuousLinearMap']
   have h := ODE_solution_unique_univ (v := fun _ ↦ ⇑L) (s := fun _ ↦ Set.univ) (t₀ := 0)
     (fun _ ↦ L.lipschitzWith.lipschitzOnWith) (fun t ↦ ⟨by simpa only [hL] using hγ t, trivial⟩)
     (fun t ↦ ⟨by simpa only [hL] using J.hasDerivAt_cos_smul_add_sin_smul θ (γ 0) t, trivial⟩)

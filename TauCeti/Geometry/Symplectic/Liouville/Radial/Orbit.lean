@@ -61,9 +61,8 @@ orbit at the origin.
 
 ## Main results
 
-* `TauCeti.SymplecticForm.hamiltonianVectorField_mul_norm_sq`: `X_{a ‖x‖²} = -2 a J x`.
-* `TauCeti.SymplecticForm.eq_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq`: its integral
-  curves are the rotations `cos (2 a t) x - sin (2 a t) J x`.
+* `TauCeti.SymplecticForm.eq_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq`: the integral
+  curves of `X_{a ‖x‖²} = -2 a J x` are the rotations `cos (2 a t) x - sin (2 a t) J x`.
 * `TauCeti.SymplecticForm.periodic_iff_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq`: a
   nonconstant integral curve has period `T` exactly when `a T ∈ πℤ`.
 * `TauCeti.SymplecticForm.exists_periodic_one_ne_zero_hamiltonianVectorField_mul_norm_sq_iff`:
@@ -101,14 +100,13 @@ namespace SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 
-/-- **The Hamiltonian vector field of a quadratic Hamiltonian.** If the inner product of `V` is
-the metric `ω(·, J ·)`, the Hamiltonian vector field of `y ↦ a ‖y‖²` is the linear field
-`y ↦ -2 a J y`. -/
-theorem hamiltonianVectorField_mul_norm_sq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (a : ℝ) :
-    ω.hamiltonianVectorField (fun y ↦ a * ‖y‖ ^ 2) = fun y ↦ (-2 * a) • J y := by
-  funext y
-  rw [hamiltonianVectorField_const_mul, hamiltonianVectorField_norm_sq hg]
-  simp [smul_smul, mul_comm]
+omit [FiniteDimensional ℝ V] in
+/-- The rotation `cos (2 a t) x - sin (2 a t) J x` is the rotation by the angle `-2 a t`, the form
+in which `TauCeti.AlmostComplexStructure` states the rotations solving `γ' = θ J γ`. -/
+private theorem cos_smul_sub_sin_smul_eq (a t : ℝ) (x : V) :
+    Real.cos (2 * a * t) • x - Real.sin (2 * a * t) • J x =
+      Real.cos (-2 * a * t) • x + Real.sin (-2 * a * t) • J x := by
+  simp [neg_mul, Real.cos_neg, Real.sin_neg, sub_eq_add_neg, mul_assoc]
 
 /-- **The flow of a quadratic Hamiltonian is a rotation.** If the inner product of `V` is the
 metric `ω(·, J ·)`, the curve `t ↦ cos (2 a t) x - sin (2 a t) J x` is an integral curve of the
@@ -118,9 +116,8 @@ theorem hasDerivAt_hamiltonianVectorField_mul_norm_sq (hg : ∀ v w, ω v (J w) 
     HasDerivAt (fun t ↦ Real.cos (2 * a * t) • x - Real.sin (2 * a * t) • J x)
       (ω.hamiltonianVectorField (fun y ↦ a * ‖y‖ ^ 2)
         (Real.cos (2 * a * t) • x - Real.sin (2 * a * t) • J x)) t := by
-  have h := J.hasDerivAt_cos_smul_add_sin_smul (-2 * a) x t
-  simp only [hamiltonianVectorField_mul_norm_sq hg]
-  convert h using 2 <;> simp [neg_mul, Real.cos_neg, Real.sin_neg, sub_eq_add_neg, mul_assoc]
+  simp only [hamiltonianVectorField_mul_norm_sq hg, cos_smul_sub_sin_smul_eq]
+  exact J.hasDerivAt_cos_smul_add_sin_smul (-2 * a) x t
 
 /-- **The integral curves of a quadratic Hamiltonian.** If the inner product of `V` is the metric
 `ω(·, J ·)`, every integral curve of the Hamiltonian vector field of `y ↦ a ‖y‖²` is the rotation
@@ -131,8 +128,8 @@ theorem eq_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq (hg : ∀ v w, ω v 
     (hγ : ∀ t, HasDerivAt γ (ω.hamiltonianVectorField (fun y ↦ a * ‖y‖ ^ 2) (γ t)) t) (t : ℝ) :
     γ t = Real.cos (2 * a * t) • γ 0 - Real.sin (2 * a * t) • J (γ 0) := by
   simp only [hamiltonianVectorField_mul_norm_sq hg] at hγ
-  rw [J.eq_cos_smul_add_sin_smul_of_hasDerivAt hγ t]
-  simp [neg_mul, Real.cos_neg, Real.sin_neg, sub_eq_add_neg, mul_assoc]
+  rw [cos_smul_sub_sin_smul_eq]
+  exact J.eq_cos_smul_add_sin_smul_of_hasDerivAt hγ t
 
 /-- **The periods of a quadratic Hamiltonian.** If the inner product of `V` is the metric
 `ω(·, J ·)`, an integral curve of the Hamiltonian vector field of `y ↦ a ‖y‖²` has period `T`
@@ -143,8 +140,7 @@ theorem periodic_iff_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq
     Periodic γ T ↔ γ 0 = 0 ∨ ∃ k : ℤ, a * T = k * π := by
   have hγ' : γ = fun t ↦ Real.cos (-2 * a * t) • γ 0 + Real.sin (-2 * a * t) • J (γ 0) := by
     funext t
-    rw [eq_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq hg hγ t]
-    simp [neg_mul, Real.cos_neg, Real.sin_neg, sub_eq_add_neg, mul_assoc]
+    rw [eq_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq hg hγ t, cos_smul_sub_sin_smul_eq]
   obtain ⟨x, hx⟩ : ∃ x, γ 0 = x := ⟨_, rfl⟩
   rw [hx] at hγ' ⊢
   rcases eq_or_ne x 0 with h0 | h0
@@ -152,11 +148,10 @@ theorem periodic_iff_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq
     rw [hγ']
     simp [h0]
   · rw [hγ', J.periodic_cos_smul_add_sin_smul_iff h0, or_iff_right h0]
-    constructor
-    · rintro ⟨k, hk⟩
-      exact ⟨-k, by push_cast; linarith⟩
-    · rintro ⟨k, hk⟩
-      exact ⟨-k, by push_cast; linarith⟩
+    -- `-2 a T = k (2 π)` exactly when `a T = (-k) π`.
+    exact (Equiv.neg ℤ).exists_congr fun k ↦ by
+      rw [Equiv.neg_apply, Int.cast_neg]
+      constructor <;> intro hk <;> linarith
 
 /-- **The degenerate slopes are the multiples of `π`.** If `V` is nonzero and its inner product is
 the metric `ω(·, J ·)`, the Hamiltonian `y ↦ a ‖y‖²` has a nonconstant `1`-periodic orbit exactly
@@ -267,14 +262,17 @@ theorem isMIntegralCurve_reebVectorField_sphereContactForm_iff
       rw [show ((↑) : sphere (0 : E) 1 → E) ∘ γ = c from funext hγ] at h1
       have h2 : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ, E) c t _ :=
         (J.hasDerivAt_cos_smul_add_sin_smul 2 (γ 0 : E) t).hasFDerivAt.hasMFDerivAt
-      exact (DFunLike.congr_fun (h1.mfderiv.symm.trans h2.mfderiv) (1 : ℝ)).trans
-        ((one_smul ℝ _).trans (by rw [hγ t]))
+      -- Evaluating both derivatives of `c` at `1`; `change` unfolds the `TangentSpace` synonyms.
+      have h := DFunLike.congr_fun (h1.mfderiv.symm.trans h2.mfderiv) (1 : ℝ)
+      change _ = (1 : ℝ) • (2 : ℝ) • J (c t) at h
+      rwa [one_smul, ← show (γ t : E) = c t from hγ t] at h
     refine hγd.hasMFDerivAt.congr_mfderiv (ContinuousLinearMap.ext_ring ?_)
+    -- Compare the velocities after pushing them forward along the injective inclusion.
+    change _ = (1 : ℝ) • (ω.sphereContactForm n).reebVectorField (γ t)
+    rw [one_smul]
     refine injective_mvfderiv_subtypeVal_sphere (n := n) (γ t) ?_
     rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply]
-    refine hv.trans ((hR (γ t)).symm.trans ?_)
-    congr 1
-    exact (one_smul ℝ _).symm
+    exact hv.trans (hR (γ t)).symm
 
 /-- **The periods of a Reeb orbit of the unit sphere.** If the inner product of `E` is the metric
 `ω(·, J ·)`, every integral curve of the Reeb vector field of the contact form `λ|S` has period `T`
@@ -300,8 +298,9 @@ theorem periodic_iff_of_isMIntegralCurve_reebVectorField_sphereContactForm
 /-- **The Reeb periods of the unit sphere are the multiples of `π`.** If the inner product of `E`
 is the metric `ω(·, J ·)`, the Reeb vector field of the contact form `λ|S` of the unit sphere has a
 `T`-periodic integral curve exactly when `T` is an integer multiple of `π`. For `ℝ²ⁿ` with
-`ω = Σ dqⱼ ∧ dpⱼ` these are the periods `k π` of the closed Reeb orbits of `∂D²ⁿ`, each of action
-`∫ λ = π`, which the slopes of the Hamiltonians defining `SH_*(D²ⁿ)` must avoid. -/
+`ω = Σ dqⱼ ∧ dpⱼ` these are the periods `k π` of the closed Reeb orbits of `∂D²ⁿ`, the `k`-fold
+covers of the simple orbits of period `π`, which the slopes of the Hamiltonians defining
+`SH_*(D²ⁿ)` must avoid. -/
 theorem exists_periodic_reebVectorField_sphereContactForm_iff (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
     (T : ℝ) :
     (∃ γ : ℝ → sphere (0 : E) 1,
