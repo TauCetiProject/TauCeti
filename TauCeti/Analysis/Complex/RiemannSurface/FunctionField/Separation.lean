@@ -86,12 +86,13 @@ private theorem exists_forall_ne_infty_and_ne (hs : s.Finite) {x y : X} (hx : x 
 private def evalFiniteOn {x : X} (hx : x ∈ s) :
     Module.Dual ℂ (Subalgebra.toSubmodule (holomorphicSubalgebra s)) where
   toFun f := (f : MeromorphicFunction X).finitePart x
-  map_add' f g := finitePart_of_eq_coe (add_apply (mem_holomorphicSubalgebra.mp f.property x hx)
-    (mem_holomorphicSubalgebra.mp g.property x hx))
+  map_add' f g := finitePart_of_eq_coe (add_apply
+    (mem_holomorphicSubalgebra.mp ((Subalgebra.mem_toSubmodule _).mp f.property) x hx)
+    (mem_holomorphicSubalgebra.mp ((Subalgebra.mem_toSubmodule _).mp g.property) x hx))
   map_smul' c f := by
     refine finitePart_of_eq_coe ?_
     rw [SetLike.val_smul, Algebra.smul_def, mul_apply (f := algebraMap ℂ _ c) (by simp)
-        (mem_holomorphicSubalgebra.mp f.property x hx)]
+        (mem_holomorphicSubalgebra.mp ((Subalgebra.mem_toSubmodule _).mp f.property) x hx)]
     simp
 
 private theorem evalFiniteOn_apply {x : X} (hx : x ∈ s)
@@ -117,11 +118,12 @@ theorem exists_forall_ne_infty_and_injOn (hs : s.Finite)
   obtain ⟨⟨f, hf⟩, hD⟩ := Module.Dual.exists_forall_ne_zero_of_forall_exists D fun q ↦ by
     obtain ⟨g, hg⟩ := hsep q.property.1 q.property.2.1 q.property.2.2
     obtain ⟨h, hh, hxy⟩ := exists_forall_ne_infty_and_ne hs q.property.1 q.property.2.1 hg
-    refine ⟨⟨h, mem_holomorphicSubalgebra.mpr hh⟩, sub_ne_zero.2 fun he ↦ hxy ?_⟩
+    refine ⟨⟨h, (Subalgebra.mem_toSubmodule _).mpr (mem_holomorphicSubalgebra.mpr hh)⟩,
+      sub_ne_zero.2 fun he ↦ hxy ?_⟩
     rw [← coe_finitePart (hh _ q.property.1), ← coe_finitePart (hh _ q.property.2.1)]
     exact congrArg _ he
-  refine ⟨f, mem_holomorphicSubalgebra.mp hf, fun x hx y hy hxy ↦
-    by_contra fun hne ↦ hD ⟨(x, y), hx, hy, hne⟩ ?_⟩
+  refine ⟨f, mem_holomorphicSubalgebra.mp ((Subalgebra.mem_toSubmodule _).mp hf),
+    fun x hx y hy hxy ↦ by_contra fun hne ↦ hD ⟨(x, y), hx, hy, hne⟩ ?_⟩
   rw [LinearMap.sub_apply, evalFiniteOn_apply, evalFiniteOn_apply, finitePart_def, finitePart_def,
     hxy, sub_self]
 
