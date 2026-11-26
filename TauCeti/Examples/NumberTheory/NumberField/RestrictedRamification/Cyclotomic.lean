@@ -35,7 +35,8 @@ open TauCeti.RestrictedRamification
 example (Ω : Type*) [Field Ω] [Algebra ℚ Ω] :
     IntermediateField.adjoin ℚ {x : Ω | ∃ n : ℕ, x ^ (2 ^ n) = 1} ≤
       maxUnramifiedOutside ℚ Ω {v | (2 : 𝓞 ℚ) ∈ v.asIdeal} :=
-  adjoin_powRootsOfUnity_le_maxUnramifiedOutside two_ne_zero fun _ hv h ↦ hv (by exact_mod_cast h)
+  adjoin_setOf_pow_pow_eq_one_le_maxUnramifiedOutside two_ne_zero fun _ hv h ↦
+    hv (by exact_mod_cast h)
 
 /-- `2 ∈ P` for `S` the places above `2`: `2^∞` divides the supernatural order of `G_{ℚ,S}`. -/
 example :

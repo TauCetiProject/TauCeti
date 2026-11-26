@@ -17,9 +17,9 @@ import TauCeti.NumberTheory.NumberField.Cyclotomic.Finrank
 Let `K` be a number field, `Ω` an extension of `K` and `S` a set of finite places of `K`. If every
 `n ∈ T` is a unit at each finite place outside `S`, the roots of unity of orders in `T` lie in the
 maximal extension `K_S` of `K` unramified outside `S`
-(`TauCeti.RestrictedRamification.adjoin_rootsOfUnity_le_maxUnramifiedOutside`). In particular, if
-`S` contains the places above `ℓ ≠ 0`, then `K(μ_{ℓ^∞}) ≤ K_S`
-(`TauCeti.RestrictedRamification.adjoin_powRootsOfUnity_le_maxUnramifiedOutside`).
+(`TauCeti.RestrictedRamification.adjoin_setOf_pow_eq_one_le_maxUnramifiedOutside`). In particular,
+if `S` contains the places above `ℓ ≠ 0`, then `K(μ_{ℓ^∞}) ≤ K_S`
+(`TauCeti.RestrictedRamification.adjoin_setOf_pow_pow_eq_one_le_maxUnramifiedOutside`).
 
 The degrees `[K(μ_{ℓ^m}) : K]` have unbounded `ℓ`-adic valuation
 (`IsPrimitiveRoot.pow_dvd_finrank_adjoin`). When `Ω` is separably closed and normal over `K`,
@@ -30,9 +30,9 @@ orders, so `ℓ^∞` divides the supernatural order of `G_{K,S}`
 
 ## Main results
 
-* `TauCeti.RestrictedRamification.adjoin_rootsOfUnity_le_maxUnramifiedOutside`: roots of unity of
-  orders that are units outside `S` generate a subfield of `K_S`.
-* `TauCeti.RestrictedRamification.adjoin_powRootsOfUnity_le_maxUnramifiedOutside`:
+* `TauCeti.RestrictedRamification.adjoin_setOf_pow_eq_one_le_maxUnramifiedOutside`: roots of
+  unity of orders that are units outside `S` generate a subfield of `K_S`.
+* `TauCeti.RestrictedRamification.adjoin_setOf_pow_pow_eq_one_le_maxUnramifiedOutside`:
   `K(μ_{ℓ^∞}) ≤ K_S` when `S` contains the places above `ℓ`.
 * `TauCeti.RestrictedRamification.profiniteOrder_galoisGroupS_apply_eq_top`: `ℓ ∈ P`, that is,
   the `ℓ`-part of the supernatural order of `G_{K,S}` is `ℓ^∞`.
@@ -55,7 +55,7 @@ variable {K Ω : Type*} [Field K] [NumberField K] [Field Ω] [Algebra K Ω]
 
 /-- **Roots of unity lie in `K_S`.** If every `n ∈ T` is nonzero and lies in no finite place
 outside `S`, the field generated over `K` by the `n`-th roots of unity, `n ∈ T`, lies in `K_S`. -/
-theorem adjoin_rootsOfUnity_le_maxUnramifiedOutside {T : Set ℕ} (hT : 0 ∉ T)
+theorem adjoin_setOf_pow_eq_one_le_maxUnramifiedOutside {T : Set ℕ} (hT : 0 ∉ T)
     (h : ∀ n ∈ T, ∀ v ∉ S, (n : 𝓞 K) ∉ v.asIdeal) :
     adjoin K {x : Ω | ∃ n ∈ T, x ^ n = 1} ≤ maxUnramifiedOutside K Ω S := by
   rw [adjoin_le_iff]
@@ -64,10 +64,10 @@ theorem adjoin_rootsOfUnity_le_maxUnramifiedOutside {T : Set ℕ} (hT : 0 ∉ T)
 
 /-- **`K(μ_{ℓ^∞}) ≤ K_S`.** If `ℓ ≠ 0` lies in no finite place outside `S`, the field generated
 over `K` by the roots of unity of order a power of `ℓ` lies in `K_S`. -/
-theorem adjoin_powRootsOfUnity_le_maxUnramifiedOutside {ℓ : ℕ} (hℓ : ℓ ≠ 0)
+theorem adjoin_setOf_pow_pow_eq_one_le_maxUnramifiedOutside {ℓ : ℕ} (hℓ : ℓ ≠ 0)
     (h : ∀ v ∉ S, (ℓ : 𝓞 K) ∉ v.asIdeal) :
     adjoin K {x : Ω | ∃ n : ℕ, x ^ (ℓ ^ n) = 1} ≤ maxUnramifiedOutside K Ω S := by
-  have := adjoin_rootsOfUnity_le_maxUnramifiedOutside (K := K) (Ω := Ω) (S := S)
+  have := adjoin_setOf_pow_eq_one_le_maxUnramifiedOutside (K := K) (Ω := Ω) (S := S)
     (T := Set.range (ℓ ^ ·)) (fun ⟨n, hn⟩ ↦ pow_ne_zero n hℓ hn)
     (fun _ ⟨n, hn⟩ v hv hmem ↦ h v hv <| by
       rw [← hn, Nat.cast_pow] at hmem
