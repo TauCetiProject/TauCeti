@@ -30,15 +30,14 @@ the field.
   derivative intertwines the vector fields there sends it to an integral curve of the second field.
 * `IsMIntegralCurveAt.map_of_mfderiv_eq`: the corresponding result for local integral curves.
 * `IsMIntegralCurveOn.congr`: being an integral curve on a set only depends on the values of the
-  curve on that set.
+  curve on that set, and `IsMIntegralCurveOn.of_forall_mem_nhdsWithin`: it is a local property of
+  the set.
 * `IsMIntegralCurveOn.union_of_isClosed`: integral curves on two closed sets of times glue to an
   integral curve on their union.
-* `IsMIntegralCurveOn.comp_neg`: running an integral curve of `v` on `s` backwards gives an
-  integral curve of `-v` on `-s`.
 * `isMIntegralCurve_const_iff`: a constant curve is an integral curve exactly at a zero of the
   field.
-* `IsMIntegralCurve.comp_neg`: running an integral curve of `v` backwards gives an integral curve
-  of `-v`.
+* `IsMIntegralCurveOn.comp_neg`, `IsMIntegralCurve.comp_neg`: running an integral curve of `v`
+  backwards gives an integral curve of `-v`.
 * `TauCeti.isMIntegralCurve_congr_vectorField`: being an integral curve only depends on the values
   of the vector field along the curve.
 * `TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn`: in a vector space, integral curves of a
@@ -109,6 +108,15 @@ theorem congr {V : (x : M) → TangentSpace I x} {γ γ' : ℝ → M} {s : Set �
   -- Normalize the common base point so the dependent tangent spaces and their cast coincide.
   rw [h ht]
   rfl
+
+/-- **Being an integral curve is local in the set of times.** If every time `t` of `s` has a
+neighbourhood within `s` on which `γ` is an integral curve of `v`, then `γ` is an integral curve
+of `v` on `s`. -/
+theorem of_forall_mem_nhdsWithin {V : (x : M) → TangentSpace I x} {γ : ℝ → M} {s : Set ℝ}
+    (h : ∀ t ∈ s, ∃ u ∈ 𝓝[s] t, t ∈ u ∧ IsMIntegralCurveOn γ V u) :
+    IsMIntegralCurveOn γ V s := fun t ht ↦ by
+  obtain ⟨u, hu, htu, hγ⟩ := h t ht
+  exact (hγ t htu).mono_of_mem_nhdsWithin hu
 
 /-- **Gluing along closed sets of times.** A curve which is an integral curve of `v` on two
 closed sets of times is an integral curve on their union. -/

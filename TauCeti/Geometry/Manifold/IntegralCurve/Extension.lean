@@ -29,7 +29,9 @@ read through the extended chart at `y`.
 ## Main results
 
 * `exists_mem_nhds_forall_exists_isMIntegralCurveOn_Ioo`: a uniform time of existence for the
-  integral curves of a `C^1` vector field near a point.
+  integral curves of a `C^1` vector field near a point, and
+  `exists_mem_nhds_forall_exists_isMIntegralCurveOn_Ioo_of_isInteriorPoint` its form near an
+  interior point of a manifold with boundary, whose curves stay in the interior.
 * `IsMIntegralCurveOn.exists_gt_isMIntegralCurveOn_Ioo`: the extension criterion at a finite right
   endpoint, and `IsMIntegralCurveOn.exists_lt_isMIntegralCurveOn_Ioo` at a finite left endpoint.
 * `IsMIntegralCurveOn.exists_gt_isMIntegralCurveOn_Ioo_of_tendsto` and
@@ -53,6 +55,47 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {v : (x : M) → TangentSpace I x} {γ : ℝ → M} {a b : ℝ} {y : M}
 
+/-- **A uniform time of existence near an interior point** for the integral curves of a `C^1`
+vector field: there is a neighbourhood `w` of the interior point `x₀` and a single `ε > 0` such
+that, at any prescribed initial time `t₀`, every point of `w` is the value at `t₀` of an integral
+curve defined on all of `Ioo (t₀ - ε) (t₀ + ε)` and lying in the interior of `M` there.
+
+The manifold may have boundary; only the initial points are required to be near an interior
+point. -/
+theorem exists_mem_nhds_forall_exists_isMIntegralCurveOn_Ioo_of_isInteriorPoint [CompleteSpace E]
+    [IsManifold I 1 M] {x₀ : M} (hx₀ : I.IsInteriorPoint x₀)
+    (hv : CMDiffAt 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) x₀) :
+    ∃ w ∈ 𝓝 x₀, ∃ ε > (0 : ℝ), ∀ t₀ : ℝ, ∀ x ∈ w, ∃ γ : ℝ → M,
+      γ t₀ = x ∧ IsMIntegralCurveOn γ v (Ioo (t₀ - ε) (t₀ + ε)) ∧
+        MapsTo γ (Ioo (t₀ - ε) (t₀ + ε)) (I.interior M) := by
+  -- the vector field read in the extended chart at `x₀`
+  set g : E → E := fun z ↦ tangentCoordChange I ((extChartAt I x₀).symm z) x₀
+    ((extChartAt I x₀).symm z) (v ((extChartAt I x₀).symm z))
+  have hgc : ContDiffAt ℝ 1 g (extChartAt I x₀ x₀) :=
+    ((contMDiffAt_iff.mp hv).2.contDiffAt (range_mem_nhds_isInteriorPoint hx₀)).snd
+  have hnhds : interior (extChartAt I x₀).target ∈ 𝓝 (extChartAt I x₀ x₀) :=
+    isOpen_interior.mem_nhds (I.isInteriorPoint_iff.mp hx₀)
+  obtain ⟨r, hr, ε, hε, hsol⟩ :=
+    hgc.exists_forall_mem_ball_exists_eq_forall_mem_Ioo_hasDerivAt_and_mem hnhds
+  refine ⟨extChartAt I x₀ ⁻¹' Metric.ball (extChartAt I x₀ x₀) r ∩ (extChartAt I x₀).source,
+    Filter.inter_mem ((continuousAt_extChartAt x₀).preimage_mem_nhds
+      (Metric.ball_mem_nhds _ hr)) (extChartAt_source_mem_nhds x₀), ε, hε, fun t₀ x hx ↦ ?_⟩
+  obtain ⟨f, hf0, hf⟩ := hsol t₀ (extChartAt I x₀ x) hx.1
+  refine ⟨(extChartAt I x₀).symm ∘ f, by rw [comp_apply, hf0, (extChartAt I x₀).left_inv hx.2],
+    IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ ?_, fun t ht ↦ ?_⟩
+  · refine IsMIntegralCurveAt.of_extChartAt_symm ?_ ?_
+    · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs using (hf s hs).2
+    · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs using (hf s hs).1
+  · -- The chart at `x₀` reads the point in the interior of its target, hence of the model.
+    have hft : f t ∈ (extChartAt I x₀).target := interior_subset (hf t ht).2
+    have hsrc : (extChartAt I x₀).symm (f t) ∈ (chartAt H x₀).source := by
+      rw [← extChartAt_source I]
+      exact (extChartAt I x₀).map_target hft
+    have hmem := (hf t ht).2
+    rw [← (extChartAt I x₀).right_inv hft] at hmem
+    -- `extChartAt I x₀` is by definition the extension `(chartAt H x₀).extend I`.
+    exact (I.isInteriorPoint_iff_of_mem_atlas one_ne_zero (chart_mem_atlas H x₀) hsrc).2 hmem
+
 /-- **A uniform time of existence** for the integral curves of a `C^1` vector field: there is a
 neighbourhood `w` of `x₀` and a single `ε > 0` such that, at any prescribed initial time `t₀`,
 every point of `w` is the value at `t₀` of an integral curve defined on all of
@@ -66,25 +109,10 @@ theorem exists_mem_nhds_forall_exists_isMIntegralCurveOn_Ioo [CompleteSpace E] [
     (hv : CMDiffAt 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) x₀) :
     ∃ w ∈ 𝓝 x₀, ∃ ε > (0 : ℝ), ∀ t₀ : ℝ, ∀ x ∈ w, ∃ γ : ℝ → M,
       γ t₀ = x ∧ IsMIntegralCurveOn γ v (Ioo (t₀ - ε) (t₀ + ε)) := by
-  -- the vector field read in the extended chart at `x₀`
-  set g : E → E := fun z ↦ tangentCoordChange I ((extChartAt I x₀).symm z) x₀
-    ((extChartAt I x₀).symm z) (v ((extChartAt I x₀).symm z))
-  have hgc : ContDiffAt ℝ 1 g (extChartAt I x₀ x₀) :=
-    ((contMDiffAt_iff.mp hv).2.contDiffAt (range_mem_nhds_isInteriorPoint
-      BoundarylessManifold.isInteriorPoint)).snd
-  have hnhds : interior (extChartAt I x₀).target ∈ 𝓝 (extChartAt I x₀ x₀) :=
-    isOpen_interior.mem_nhds (I.isInteriorPoint_iff.mp BoundarylessManifold.isInteriorPoint)
-  obtain ⟨r, hr, ε, hε, hsol⟩ :=
-    hgc.exists_forall_mem_ball_exists_eq_forall_mem_Ioo_hasDerivAt_and_mem hnhds
-  refine ⟨extChartAt I x₀ ⁻¹' Metric.ball (extChartAt I x₀ x₀) r ∩ (extChartAt I x₀).source,
-    Filter.inter_mem ((continuousAt_extChartAt x₀).preimage_mem_nhds
-      (Metric.ball_mem_nhds _ hr)) (extChartAt_source_mem_nhds x₀), ε, hε, fun t₀ x hx ↦ ?_⟩
-  obtain ⟨f, hf0, hf⟩ := hsol t₀ (extChartAt I x₀ x) hx.1
-  refine ⟨(extChartAt I x₀).symm ∘ f, by rw [comp_apply, hf0, (extChartAt I x₀).left_inv hx.2],
-    IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ ?_⟩
-  refine IsMIntegralCurveAt.of_extChartAt_symm ?_ ?_
-  · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs using (hf s hs).2
-  · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs using (hf s hs).1
+  obtain ⟨w, hw, ε, hε, h⟩ :=
+    exists_mem_nhds_forall_exists_isMIntegralCurveOn_Ioo_of_isInteriorPoint
+      BoundarylessManifold.isInteriorPoint hv
+  exact ⟨w, hw, ε, hε, fun t₀ x hx ↦ (h t₀ x hx).imp fun _ hγ ↦ ⟨hγ.1, hγ.2.1⟩⟩
 
 namespace IsMIntegralCurveOn
 
