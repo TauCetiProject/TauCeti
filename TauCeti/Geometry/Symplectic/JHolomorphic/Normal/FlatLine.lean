@@ -114,11 +114,17 @@ theorem mpullback_vadd_constSmooth (γ : FlatLineLattice ψ) :
       (stdComplexSymplecticForm.prod stdComplexSymplecticForm).constSmooth := by
   have key (v w : ℂ × ℂ) :
       stdComplexSymplecticForm.prod stdComplexSymplecticForm
-          (v.1, ψ (FlatLineLattice.toLattice ψ γ) * v.2)
-          (w.1, ψ (FlatLineLattice.toLattice ψ γ) * w.2) =
+          ((ContinuousLinearMap.fst ℝ ℂ ℂ).prod
+            ((ContinuousLinearMap.mul ℝ ℂ (ψ (FlatLineLattice.toLattice ψ γ))).comp
+              (ContinuousLinearMap.snd ℝ ℂ ℂ)) v)
+          ((ContinuousLinearMap.fst ℝ ℂ ℂ).prod
+            ((ContinuousLinearMap.mul ℝ ℂ (ψ (FlatLineLattice.toLattice ψ γ))).comp
+              (ContinuousLinearMap.snd ℝ ℂ ℂ)) w) =
         stdComplexSymplecticForm.prod stdComplexSymplecticForm v w := by
-    simp only [SymplecticForm.prod_apply, stdComplexSymplecticForm_mul_mul, Circle.norm_coe,
-      one_pow, one_mul]
+    simp only [ContinuousLinearMap.prod_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', ContinuousLinearMap.mul_apply',
+      SymplecticForm.prod_apply, stdComplexSymplecticForm_mul_mul, Circle.norm_coe, one_pow,
+      one_mul]
   refine SmoothBundleForm.ext_eval₂ fun p v w ↦ ?_
   rw [SmoothForm.eval₂_mpullback, mfderiv_vadd]
   exact (SymplecticForm.constSmooth_apply _ _ _ _).trans
@@ -166,7 +172,7 @@ theorem eval₂_couplingForm_mfderiv_mk (p u w : ℂ × ℂ) :
   have h := SmoothForm.eval₂_mpullback _ isLocalDiffeomorph_addQuotientMk.contMDiff
     (couplingForm ψ) p u w
   rw [mpullback_mk_couplingForm] at h
-  exact h.symm.trans (SymplecticForm.constSmooth_apply _ _ _ _)
+  rw [← h, SymplecticForm.constSmooth_apply, SymplecticForm.prod_apply]
 
 /-- **The coupling form is Taubes's coupling form of the flat connection.** On the cover
 `ℂ × ℂ`, where the holonomy is carried by the deck transformations and the connection is

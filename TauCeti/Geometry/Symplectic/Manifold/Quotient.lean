@@ -30,14 +30,17 @@ diffeomorphism, so its differentials identify the tangent spaces of `M` with tho
 The same criterion is stated for an arbitrary surjective local diffeomorphism, such as a covering
 map (`IsLocalDiffeomorph.isSymplectic_mpullback_iff`).
 
-Both statements also hold for additive groups acting additively, such as lattices acting by
-translations (`TauCeti.SmoothTwoForm.isSymplectic_addDescend_iff`).
+The descent criteria also hold for additive groups acting additively, such as lattices acting by
+translations (`TauCeti.SmoothTwoForm.isNondegenerate_addDescend_iff`,
+`TauCeti.SmoothTwoForm.isSymplectic_addDescend_iff`).
 
 ## Main results
 
 * `TauCeti.SmoothTwoForm.isNondegenerate_descend_iff`,
   `TauCeti.SmoothTwoForm.isSymplectic_descend_iff`: the descent of an invariant two-form to the
   orbit space is nondegenerate, respectively symplectic, exactly when the form is.
+* `TauCeti.SmoothTwoForm.isNondegenerate_addDescend_iff`,
+  `TauCeti.SmoothTwoForm.isSymplectic_addDescend_iff`: the same for additive group actions.
 
 ## References
 
