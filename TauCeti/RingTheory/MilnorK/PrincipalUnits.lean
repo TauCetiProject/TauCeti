@@ -70,13 +70,6 @@ variable {F : Type*} [Field F] (v : Valuation F ℤᵐ⁰) (t : Fˣ) (ht : v.ord
 
 /-! ### Degree one -/
 
-/-- A unit of order zero has reduced unit part `1` exactly when it is a principal unit. -/
-private theorem unitPartResidue_eq_one_iff_of_ord_eq_zero {f : Fˣ} (hord : v.ord (f : F) = 0) :
-    v.unitPartResidue t ht f = 1 ↔ f ∈ v.valuationSubring.principalUnitGroup := by
-  rw [v.unitPartResidue_of_ord_eq_zero t ht hord, ← MonoidHom.mem_ker,
-    ValuationSubring.ker_unitGroupToResidueFieldUnits, Subgroup.mem_comap]
-  exact Iff.rfl
-
 /-- Serre's map vanishes on `{f}` exactly when `f` is a principal unit: the kernel of
 `f ↦ ({ū}, ord_v f)` is `U¹ = 1 + 𝔪_v`. -/
 theorem serreMap_ofUnit_eq_zero_iff {f : Fˣ} :
