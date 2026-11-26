@@ -50,6 +50,5 @@ example (χ : Γ →ₜ* ℤˣ) [TopologicalSpace (ZMod 2 ⊗[ℤ] ℤ)]
     [IsModuleTopology (ZMod 2) (ZMod 2 ⊗[ℤ] ℤ)] :
     ((ofCharacter χ).baseChange (ZMod 2)).det = 1 := by
   ext g
-  rw [coe_det_baseChange_apply, det_ofCharacter, MonoidHom.coe_ofClass, MonoidHom.one_apply,
-    Units.val_one]
-  rcases Int.units_eq_one_or (χ g) with h | h <;> rw [h] <;> decide
+  rw [coe_det_baseChange_apply, det_ofCharacter]
+  rcases Int.units_eq_one_or (χ g) with h | h <;> simp [h, CharTwo.neg_one_eq_one]
