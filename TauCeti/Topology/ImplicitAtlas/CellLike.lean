@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.ImplicitAtlas.Examples
+public import TauCeti.Topology.ImplicitAtlas.Boundary
 public import TauCeti.Topology.Stratification.CellLike
 
 /-!
@@ -47,11 +47,10 @@ constrains the thickenings outside their regular loci.
   (`TauCeti.ImplicitAtlasWithBoundary.CellLikeStratification.exists_nonneg_baseStratum`). A
   stratum `s` with `dim s + m_I < 0` meets no regular point of `X_I`, and a regular point of `X_I`
   lying strictly below a stratum `t` forces `dim t + m_I ≥ 1`.
-* **The interval.** The interval atlas `[0, 1]`
-  (`TauCeti.ImplicitAtlasWithBoundary.unitIntervalAtlas`) stratified by `{0} < (0, 1) > {1}`,
-  with dimensions `0`, `1`, `0` and the two endpoints as boundary faces, is a cell-like stratified
-  atlas
-  (`TauCeti.ImplicitAtlasWithBoundary.unitIntervalCellLikeStratification`).
+* **The interval.** The interval atlas `[0, 1]` stratified by `{0} < (0, 1) > {1}`, with
+  dimensions `0`, `1`, `0` and the two endpoints as boundary faces, is a cell-like stratified atlas
+  (`TauCeti.ImplicitAtlasWithBoundary.unitIntervalCellLikeStratification`, in
+  `TauCeti.Topology.ImplicitAtlas.Examples`).
 
 Pardon takes the poset `S` finite; nothing here uses finiteness, which enters through the closedness
 of the preimages of lower sets (`TauCeti.IsStratification.isClosed_preimage`).
@@ -84,7 +83,7 @@ with the footprint maps on the zero sets, cell-like on the regular loci for the 
 `dim s + m_I`, and pulled back from a cell-like stratification of the first factor of a local
 product model of the extra obstruction over `ψ_IJ⁻¹(X_I^reg)`. -/
 structure CellLikeStratification (𝒜 : ImplicitAtlasWithBoundary Γ E ρ T act X bd d)
-    (S : Type*) [PartialOrder S] (dim : S → ℤ) (bdS : LowerSet S) where
+    (S : Type*) [Preorder S] (dim : S → ℤ) (bdS : LowerSet S) where
   /-- The stratification `σ_I : X_I → S` of the thickening `X_I`. -/
   stratum : ∀ I : Finset A, T I → S
   isStratification_stratum : ∀ I : Finset A, IsStratification (stratum I)
@@ -110,7 +109,7 @@ structure CellLikeStratification (𝒜 : ImplicitAtlasWithBoundary Γ E ρ T act
 
 namespace CellLikeStratification
 
-variable {𝒜 : ImplicitAtlasWithBoundary Γ E ρ T act X bd d} {S : Type*} [PartialOrder S]
+variable {𝒜 : ImplicitAtlasWithBoundary Γ E ρ T act X bd d} {S : Type*} [Preorder S]
   {dim : S → ℤ} {bdS : LowerSet S} (σ : 𝒜.CellLikeStratification S dim bdS)
 
 /-- A point of a thickening lies on its boundary exactly when its stratum is a boundary face. -/
@@ -167,56 +166,6 @@ theorem exists_nonneg_baseStratum (y : X) :
   exact ⟨I, σ.baseStratum_footprintMap x ▸ σ.nonneg_of_mem_regLocus hx⟩
 
 end CellLikeStratification
-
-/-! ### The interval -/
-
-section UnitInterval
-
-variable {A : Type*} [IsEmpty A] [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α)]
-  [∀ α, Finite (Γ α)] (E : A → Type*) [∀ α, NormedAddCommGroup (E α)]
-  [∀ α, NormedSpace ℝ (E α)] [∀ α, FiniteDimensional ℝ (E α)]
-  (ρ : ∀ α, Representation ℝ (Γ α) (E α))
-
-/-- **The interval as a cell-like stratified atlas.** The interval atlas `[0, 1]`, stratified by
-`{0} < (0, 1) > {1}` (`TauCeti.unitIntervalStratum`, indexed by the subsets of `Bool` with dimension
-one less than their cardinality), with the proper subsets as boundary faces. -/
-noncomputable def unitIntervalCellLikeStratification :
-    (unitIntervalAtlas Γ E ρ).CellLikeStratification (Set Bool) (fun P ↦ (P.ncard : ℤ) - 1)
-      (LowerSet.Iio univ) where
-  stratum _ := unitIntervalStratum
-  isStratification_stratum _ := isCellLike_unitIntervalStratum.isStratification
-  stratum_act _ _ _ := rfl
-  boundary_eq_preimage _ := by
-    ext x
-    rw [boundary_unitIntervalAtlas, mem_preimage, LowerSet.coe_Iio, mem_Iio]
-    by_cases h₀ : x = 0
-    · simp [h₀, unitIntervalStratum_zero, lt_iff_le_and_ne, Set.ext_iff]
-    by_cases h₁ : x = 1
-    · simp [h₁, unitIntervalStratum_one, lt_iff_le_and_ne, Set.ext_iff]
-    simp [h₀, h₁, unitIntervalStratum_of_ne h₀ h₁]
-  stratum_footprintMap I J _ x := by
-    -- The only finite set of indices is `∅`, and `ψ_∅∅` is the identity.
-    obtain rfl := Finset.eq_empty_of_isEmpty I
-    obtain rfl := Finset.eq_empty_of_isEmpty J
-    exact congrArg unitIntervalStratum ((unitIntervalAtlas Γ E ρ).footprintMap_self ∅ x.val)
-  isCellLikeOn_regLocus I := by
-    simpa [Finset.eq_empty_of_isEmpty I] using isCellLike_unitIntervalStratum.isCellLikeOn_univ
-  exists_openPartialHomeomorph_stratum I J _ x _ := by
-    have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.val⟩
-    refine ⟨unitInterval, inferInstance, unitIntervalStratum,
-      by simpa [Finset.eq_empty_of_isEmpty I] using isCellLike_unitIntervalStratum,
-      (Homeomorph.prodUnique unitInterval ((α : ↥(J \ I)) → E α)).symm.toOpenPartialHomeomorph,
-      by simp, fun _ _ ↦ Subsingleton.elim _ _, fun y _ ↦ ?_⟩
-    rw [Homeomorph.toOpenPartialHomeomorph_apply, ← Homeomorph.coe_prodUnique,
-      Homeomorph.apply_symm_apply]
-
-/-- The interval atlas is stratified by `TauCeti.unitIntervalStratum` in each thickening. -/
-@[simp]
-theorem stratum_unitIntervalCellLikeStratification (I : Finset A) :
-    (unitIntervalCellLikeStratification Γ E ρ).stratum I = unitIntervalStratum :=
-  (rfl)
-
-end UnitInterval
 
 end ImplicitAtlasWithBoundary
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Topology.Order.UpperLowerSetTopology
 import TauCeti.Geometry.Manifold.Boundary.Charts
+import TauCeti.Geometry.Manifold.Instances.Icc.Boundary
 
 /-!
 # Cell-like stratifications
@@ -86,10 +87,7 @@ theorem isStratification_const (s₀ : S) : IsStratification fun _ : X ↦ s₀ 
 finite union of the closed strata `X^≤s` of its elements. -/
 theorem IsStratification.isClosed_preimage [Finite S] {σ : X → S} (hσ : IsStratification σ)
     {L : Set S} (hL : IsLowerSet L) : IsClosed (σ ⁻¹' L) := by
-  have hL' : L = ⋃ s ∈ L, Iic s :=
-    Subset.antisymm (fun s hs ↦ mem_biUnion hs (mem_Iic.2 le_rfl))
-      (iUnion₂_subset fun _ hs _ ht ↦ hL ht hs)
-  rw [hL', preimage_iUnion₂]
+  rw [← hL.lowerClosure, coe_lowerClosure, preimage_iUnion₂]
   exact (toFinite L).isClosed_biUnion fun s _ ↦ hσ s
 
 /-- For a stratification by a finite poset, the open-boundary strata `X^<s = σ⁻¹(Iio s)` are
@@ -125,6 +123,14 @@ def IsManifoldBoundaryPair (Y B : Set X) (n : ℤ) : Prop :=
       ⟨y, hy⟩ ∈ e.source ∧ ∀ z ∈ e.source, (z : X) ∉ B) ∨
     (∃ m : ℕ, (m + 1 : ℤ) = n ∧ ∃ e : OpenPartialHomeomorph Y (EuclideanHalfSpace (m + 1)),
       ⟨y, hy⟩ ∈ e.source ∧ ∀ z ∈ e.source, (z : X) ∈ B ↔ (e z).val 0 = 0)
+
+theorem isManifoldBoundaryPair_iff {Y B : Set X} {n : ℤ} :
+    IsManifoldBoundaryPair Y B n ↔ B ⊆ Y ∧ ∀ y (hy : y ∈ Y),
+      (∃ m : ℕ, (m : ℤ) = n ∧ ∃ e : OpenPartialHomeomorph Y (EuclideanSpace ℝ (Fin m)),
+        ⟨y, hy⟩ ∈ e.source ∧ ∀ z ∈ e.source, (z : X) ∉ B) ∨
+      (∃ m : ℕ, (m + 1 : ℤ) = n ∧ ∃ e : OpenPartialHomeomorph Y (EuclideanHalfSpace (m + 1)),
+        ⟨y, hy⟩ ∈ e.source ∧ ∀ z ∈ e.source, (z : X) ∈ B ↔ (e z).val 0 = 0) :=
+  Iff.rfl
 
 namespace IsManifoldBoundaryPair
 
@@ -197,6 +203,15 @@ boundary `X^<s` of dimension `dim s`. -/
 def IsCellLike (σ : X → S) (dim : S → ℤ) : Prop :=
   IsStratification σ ∧ IsCellLikeOn σ univ dim
 
+theorem isCellLikeOn_iff {σ : X → S} {U : Set X} {dim : S → ℤ} :
+    IsCellLikeOn σ U dim ↔
+      ∀ s, IsManifoldBoundaryPair (U ∩ σ ⁻¹' Iic s) (U ∩ σ ⁻¹' Iio s) (dim s) :=
+  Iff.rfl
+
+theorem isCellLike_iff {σ : X → S} {dim : S → ℤ} :
+    IsCellLike σ dim ↔ IsStratification σ ∧ IsCellLikeOn σ univ dim :=
+  Iff.rfl
+
 namespace IsCellLikeOn
 
 variable {σ : X → S} {U : Set X} {dim : S → ℤ}
@@ -248,62 +263,97 @@ subsets of `Bool`: a point lies in the stratum `{b | if b then 0 < x else x < 1}
 def unitIntervalStratum (x : unitInterval) : Set Bool :=
   {b | if b then 0 < x else x < 1}
 
+@[simp]
+theorem mem_unitIntervalStratum {x : unitInterval} {b : Bool} :
+    b ∈ unitIntervalStratum x ↔ if b then 0 < x else x < 1 :=
+  Iff.rfl
+
+@[simp]
 theorem unitIntervalStratum_zero : unitIntervalStratum 0 = {false} := by
   ext b
-  cases b <;> simp [unitIntervalStratum]
+  cases b <;> simp
 
+@[simp]
 theorem unitIntervalStratum_one : unitIntervalStratum 1 = {true} := by
   ext b
-  cases b <;> simp [unitIntervalStratum]
+  cases b <;> simp
 
 theorem unitIntervalStratum_of_ne {x : unitInterval} (h₀ : x ≠ 0) (h₁ : x ≠ 1) :
     unitIntervalStratum x = univ := by
   ext b
-  cases b
-  · simpa [unitIntervalStratum] using lt_of_le_of_ne (show x ≤ 1 from unitInterval.le_one x) h₁
-  · simpa [unitIntervalStratum] using
-      lt_of_le_of_ne (show 0 ≤ x from unitInterval.nonneg x) (Ne.symm h₀)
+  cases b <;> simp [unitInterval.pos_iff_ne_zero, unitInterval.lt_one_iff_ne_one, h₀, h₁]
 
-/-- Every point of the interval is an endpoint or an interior point, with the corresponding
-stratum. -/
+/-- Every point of the interval is an endpoint, or an interior point with stratum `univ`. -/
 private theorem unitIntervalStratum_cases (x : unitInterval) :
-    (x = 0 ∧ unitIntervalStratum x = {false}) ∨ (x = 1 ∧ unitIntervalStratum x = {true}) ∨
-      (x ≠ 0 ∧ x ≠ 1 ∧ unitIntervalStratum x = univ) := by
+    x = 0 ∨ x = 1 ∨ (x ≠ 0 ∧ x ≠ 1 ∧ unitIntervalStratum x = univ) := by
   by_cases h₀ : x = 0
-  · exact Or.inl ⟨h₀, h₀ ▸ unitIntervalStratum_zero⟩
+  · exact Or.inl h₀
   by_cases h₁ : x = 1
-  · exact Or.inr (Or.inl ⟨h₁, h₁ ▸ unitIntervalStratum_one⟩)
+  · exact Or.inr (Or.inl h₁)
   exact Or.inr (Or.inr ⟨h₀, h₁, unitIntervalStratum_of_ne h₀ h₁⟩)
 
-/-- The four subsets of `Bool`, with the closed and open-boundary strata of the interval that they
-index. -/
-private theorem unitIntervalStratum_strata (P : Set Bool) :
-    (P = univ ∧ unitIntervalStratum ⁻¹' Iic P = univ ∧ unitIntervalStratum ⁻¹' Iio P = {0, 1}) ∨
-    (P = {false} ∧ unitIntervalStratum ⁻¹' Iic P = {0} ∧ unitIntervalStratum ⁻¹' Iio P = ∅) ∨
-    (P = {true} ∧ unitIntervalStratum ⁻¹' Iic P = {1} ∧ unitIntervalStratum ⁻¹' Iio P = ∅) ∨
-    (P = ∅ ∧ unitIntervalStratum ⁻¹' Iic P = ∅ ∧ unitIntervalStratum ⁻¹' Iio P = ∅) := by
-  have hP : P = univ ∨ P = {false} ∨ P = {true} ∨ P = ∅ := by
-    by_cases hf : false ∈ P <;> by_cases ht : true ∈ P
-    · exact Or.inl (eq_univ_of_forall fun b ↦ by cases b <;> assumption)
-    · refine Or.inr (Or.inl (ext fun b ↦ ?_))
-      cases b <;> simp [hf, ht]
-    · refine Or.inr (Or.inr (Or.inl (ext fun b ↦ ?_)))
-      cases b <;> simp [hf, ht]
-    · refine Or.inr (Or.inr (Or.inr (ext fun b ↦ ?_)))
-      cases b <;> simp [hf, ht]
-  rcases hP with rfl | rfl | rfl | rfl
-  · refine Or.inl ⟨rfl, eq_univ_of_forall fun _ ↦ subset_univ _, ext fun x ↦ ?_⟩
-    rcases unitIntervalStratum_cases x with ⟨rfl, h⟩ | ⟨rfl, h⟩ | ⟨_, _, h⟩ <;>
-      simp [lt_iff_le_and_ne, Set.ext_iff, *]
-  · refine Or.inr (Or.inl ⟨rfl, ext fun x ↦ ?_, ext fun x ↦ ?_⟩) <;>
-    rcases unitIntervalStratum_cases x with ⟨rfl, h⟩ | ⟨rfl, h⟩ | ⟨_, _, h⟩ <;>
-      simp [lt_iff_le_and_ne, Set.ext_iff, *]
-  · refine Or.inr (Or.inr (Or.inl ⟨rfl, ext fun x ↦ ?_, ext fun x ↦ ?_⟩)) <;>
-    rcases unitIntervalStratum_cases x with ⟨rfl, h⟩ | ⟨rfl, h⟩ | ⟨_, _, h⟩ <;>
-      simp [lt_iff_le_and_ne, Set.ext_iff, *]
-  · refine Or.inr (Or.inr (Or.inr ⟨rfl, ext fun x ↦ ?_, ext fun x ↦ ?_⟩)) <;>
-    rcases unitIntervalStratum_cases x with ⟨rfl, h⟩ | ⟨rfl, h⟩ | ⟨_, _, h⟩ <;>
-      simp [Set.ext_iff, *]
+/-- The closed stratum of the interior of the interval is the whole interval. -/
+theorem preimage_unitIntervalStratum_Iic_univ : unitIntervalStratum ⁻¹' Iic univ = univ :=
+  eq_univ_of_forall fun _ ↦ subset_univ _
+
+/-- The open-boundary stratum of the interior of the interval is the pair of endpoints. -/
+theorem preimage_unitIntervalStratum_Iio_univ : unitIntervalStratum ⁻¹' Iio univ = {0, 1} := by
+  ext x
+  rcases unitIntervalStratum_cases x with rfl | rfl | ⟨h₀, h₁, h⟩
+  · simp [lt_iff_le_and_ne, Set.ext_iff]
+  · simp [lt_iff_le_and_ne, Set.ext_iff]
+  · simp [h₀, h₁, h]
+
+/-- The closed stratum of the endpoint `0` is `{0}`. -/
+theorem preimage_unitIntervalStratum_Iic_false : unitIntervalStratum ⁻¹' Iic {false} = {0} := by
+  ext x
+  rcases unitIntervalStratum_cases x with rfl | rfl | ⟨h₀, -, h⟩
+  · simp
+  · simp
+  · simp [h₀, h]
+
+/-- The closed stratum of the endpoint `1` is `{1}`. -/
+theorem preimage_unitIntervalStratum_Iic_true : unitIntervalStratum ⁻¹' Iic {true} = {1} := by
+  ext x
+  rcases unitIntervalStratum_cases x with rfl | rfl | ⟨-, h₁, h⟩
+  · simp
+  · simp
+  · simp [h₁, h]
+
+/-- The open-boundary stratum of the endpoint `0` is empty. -/
+theorem preimage_unitIntervalStratum_Iio_false : unitIntervalStratum ⁻¹' Iio {false} = ∅ := by
+  ext x
+  rcases unitIntervalStratum_cases x with rfl | rfl | ⟨-, -, h⟩
+  · simp
+  · simp [lt_iff_le_and_ne, Set.ext_iff]
+  · simp [h, lt_iff_le_and_ne, Set.ext_iff]
+
+/-- The open-boundary stratum of the endpoint `1` is empty. -/
+theorem preimage_unitIntervalStratum_Iio_true : unitIntervalStratum ⁻¹' Iio {true} = ∅ := by
+  ext x
+  rcases unitIntervalStratum_cases x with rfl | rfl | ⟨-, -, h⟩
+  · simp [lt_iff_le_and_ne, Set.ext_iff]
+  · simp
+  · simp [h, lt_iff_le_and_ne, Set.ext_iff]
+
+/-- No point of the interval lies in the empty stratum. -/
+theorem preimage_unitIntervalStratum_Iic_empty : unitIntervalStratum ⁻¹' Iic ∅ = ∅ := by
+  ext x
+  rcases unitIntervalStratum_cases x with rfl | rfl | ⟨-, -, h⟩
+  · simp
+  · simp
+  · simp [h]
+
+/-- A subset of `Bool` is `univ`, `{false}`, `{true}` or `∅`. -/
+private theorem set_bool_cases (P : Set Bool) : P = univ ∨ P = {false} ∨ P = {true} ∨ P = ∅ := by
+  by_cases hf : false ∈ P <;> by_cases ht : true ∈ P
+  · exact Or.inl (eq_univ_of_forall fun b ↦ by cases b <;> assumption)
+  · refine Or.inr (Or.inl (ext fun b ↦ ?_))
+    cases b <;> simp [hf, ht]
+  · refine Or.inr (Or.inr (Or.inl (ext fun b ↦ ?_)))
+    cases b <;> simp [hf, ht]
+  · refine Or.inr (Or.inr (Or.inr (ext fun b ↦ ?_)))
+    cases b <;> simp [hf, ht]
 
 /-- **The interval is cell-like.** The stratification of `[0, 1]` by `{0} < (0, 1) > {1}`,
 indexed by the subsets of `Bool` with dimension one less than their cardinality, is cell-like: the
@@ -311,21 +361,30 @@ endpoints are manifolds of dimension `0`, and `[0, 1]` is a manifold of dimensio
 boundary `{0, 1}`. -/
 theorem isCellLike_unitIntervalStratum :
     IsCellLike unitIntervalStratum fun P : Set Bool ↦ (P.ncard : ℤ) - 1 := by
-  let : ChartedSpace (EuclideanHalfSpace (0 + 1)) unitInterval := instIccChartedSpace 0 1
-  have hbd : (𝓡∂ (0 + 1)).boundary unitInterval = {0, 1} := boundary_Icc
   refine ⟨fun P ↦ ?_, fun P ↦ ?_⟩
-  · rcases unitIntervalStratum_strata P with ⟨-, h, -⟩ | ⟨-, h, -⟩ | ⟨-, h, -⟩ | ⟨-, h, -⟩ <;>
-      rw [h]
-    exacts [isClosed_univ, isClosed_singleton, isClosed_singleton, isClosed_empty]
+  · rcases set_bool_cases P with rfl | rfl | rfl | rfl
+    · rw [preimage_unitIntervalStratum_Iic_univ]
+      exact isClosed_univ
+    · rw [preimage_unitIntervalStratum_Iic_false]
+      exact isClosed_singleton
+    · rw [preimage_unitIntervalStratum_Iic_true]
+      exact isClosed_singleton
+    · rw [preimage_unitIntervalStratum_Iic_empty]
+      exact isClosed_empty
   · rw [univ_inter, univ_inter]
-    rcases unitIntervalStratum_strata P with ⟨rfl, h, h'⟩ | ⟨rfl, h, h'⟩ | ⟨rfl, h, h'⟩ |
-      ⟨rfl, h, h'⟩ <;> rw [h, h']
-    · convert isManifoldBoundaryPair_univ_boundary 0 unitInterval using 1
-      · exact hbd.symm
+    rcases set_bool_cases P with rfl | rfl | rfl | rfl
+    · rw [preimage_unitIntervalStratum_Iic_univ, preimage_unitIntervalStratum_Iio_univ]
+      convert isManifoldBoundaryPair_univ_boundary 0 unitInterval using 1
+      · exact boundary_unitInterval.symm
       · simp
-    · simpa using isManifoldBoundaryPair_singleton (0 : unitInterval)
-    · simpa using isManifoldBoundaryPair_singleton (1 : unitInterval)
-    · exact isManifoldBoundaryPair_empty _
+    · rw [preimage_unitIntervalStratum_Iic_false, preimage_unitIntervalStratum_Iio_false]
+      simpa using isManifoldBoundaryPair_singleton (0 : unitInterval)
+    · rw [preimage_unitIntervalStratum_Iic_true, preimage_unitIntervalStratum_Iio_true]
+      simpa using isManifoldBoundaryPair_singleton (1 : unitInterval)
+    -- `∅` is the bottom element of `Set Bool`, so nothing lies strictly below it.
+    · rw [preimage_unitIntervalStratum_Iic_empty, show Iio (∅ : Set Bool) = ∅ from Iio_bot,
+        preimage_empty]
+      exact isManifoldBoundaryPair_empty _
 
 end UnitInterval
 
