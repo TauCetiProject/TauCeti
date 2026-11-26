@@ -327,8 +327,9 @@ theorem mpullback_apply_eq_of_mfderiv_eq {f : M → M'} {x : M} {y : M'} (hy : f
     (ω : RoughForm I' M' F k) :
     mpullback I I' f ω x = (ω y).compContinuousLinearMap A := by
   subst hy
-  rw [← hA]
-  rfl
+  subst hA
+  ext v
+  simp [mpullback_apply, Function.comp_def]
 
 /-- If the derivative of `f` at `x` is surjective, two forms have the same pullback along `f` at
 `x` exactly when they agree at `f x`. -/

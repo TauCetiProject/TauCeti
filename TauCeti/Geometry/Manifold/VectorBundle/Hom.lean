@@ -978,18 +978,6 @@ variable {𝕜 F E E' K H H' Q M N : Type*}
   [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
   {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' 1 N]
 
-/-- **Intrinsic characterization of smoothness in `inTangentCoordinates` within a set.** -/
-theorem contMDiffWithinAt_inTangentCoordinates_iff {m : ℕ∞ω}
-    {f : Q → M} {g : Q → N} {s : Set Q} {q₀ : Q}
-    (hf : ContMDiffWithinAt J I m f s q₀) (hg : ContMDiffWithinAt J I' m g s q₀)
-    (ϕ : ∀ q : Q, TangentSpace I (f q) →L[𝕜] TangentSpace I' (g q)) :
-    ContMDiffWithinAt J 𝓘(𝕜, E →L[𝕜] E') m (inTangentCoordinates I I' f g ϕ q₀) s q₀ ↔
-      ∀ v : ∀ q : Q, TangentSpace I (f q),
-        ContMDiffWithinAt J (I.prod 𝓘(𝕜, E)) m (fun q ↦ TotalSpace.mk' E (f q) (v q)) s q₀ →
-        ContMDiffWithinAt J (I'.prod 𝓘(𝕜, E')) m
-          (fun q ↦ TotalSpace.mk' E' (g q) (ϕ q (v q))) s q₀ :=
-  TauCeti.contMDiffWithinAt_inCoordinates_iff hf hg ϕ
-
 /-- **Intrinsic characterization of smoothness in `inTangentCoordinates` at a point.** Over a
 finite-dimensional tangent model `E`, a family of continuous linear maps
 `ϕ q : T_(f q) M →L[𝕜] T_(g q) N` along `C^m` maps `f : Q → M` and `g : Q → N` at `q₀` is `C^m` at

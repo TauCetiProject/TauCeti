@@ -184,10 +184,16 @@ theorem isImmersionOfComplement_zeroSection :
     (restr_mem_maximalAtlas (contDiffGroupoid n I) (IsManifold.chart_mem_maximalAtlas b) hs)
     (IsManifold.chart_mem_maximalAtlas _) fun y hy ↦ ?_
   -- Restricting `chartAt H b` to `s` does not change `.symm`.
-  have hext : (((chartAt H b).restr s).extend I).symm y = (extChartAt I b).symm y := rfl
+  have hext : (((chartAt H b).restr s).extend I).symm y = (extChartAt I b).symm y := by
+    rw [OpenPartialHomeomorph.extend_coe_symm, extChartAt_coe_symm, Function.comp_apply,
+      Function.comp_apply, (chartAt H b).restr_symm_apply]
   have hmem : (extChartAt I b).symm y ∈ (chartAt H b).source ∩ s := by
-    simpa [← hext, extChartAt, hs.interior_eq] using ((chartAt H b).restr s).map_target hy.2
-  have hy_ext : y ∈ (extChartAt I b).target := ⟨hy.1, hy.2.1⟩
+    have hsrc := (((chartAt H b).restr s).extend I).map_target hy
+    rwa [hext, OpenPartialHomeomorph.extend_source, (chartAt H b).restr_source' s hs] at hsrc
+  have hy_ext : y ∈ (extChartAt I b).target := by
+    rw [OpenPartialHomeomorph.extend_target, (chartAt H b).restr_target] at hy
+    rw [extChartAt_target]
+    exact ⟨hy.1.1, hy.2⟩
   rw [← extChartAt]
   simp only [Function.comp_apply, hext, extChartAt_zeroSection_of_mem_baseSet (IB := I) b hmem.2,
     ContinuousLinearEquiv.refl_apply, (extChartAt I b).right_inv hy_ext]
