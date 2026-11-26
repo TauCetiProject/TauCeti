@@ -38,7 +38,7 @@ unchanged, since the escaping branch is eventually dominated by the convergent o
   `Filter.Tendsto.atTop_min` and `Filter.Tendsto.min_atTop`).
 * `MapClusterPt.ge_of_monotone_atTop` and `MapClusterPt.le_of_monotone_atBot`: a monotone family
   is bounded above by its cluster points at `atTop` and below by its cluster points at `atBot`.
-* `ContinuousAt.mem_interior_strictEpigraph`: above a point where `g` is continuous, the strict
+* `ContinuousAt.mem_interior_strict_epigraph`: above a point where `g` is continuous, the strict
   epigraph `{p | g p.1 < p.2}` is a neighbourhood.
 * `TauCeti.eq_of_tendsto_section`, `TauCeti.monotone_of_tendsto_section`: uniqueness and
   monotonicity of an index map matching boundary limits of sections on `C` along a set `B`
@@ -137,7 +137,7 @@ theorem MapClusterPt.le_of_monotone_atBot {ι α : Type*} [Preorder ι] [Topolog
 
 /-- **The strict epigraph is open above a point of continuity.** If `g` is continuous at `x₀` and
 `g x₀ < t`, then `(x₀, t)` is an interior point of the strict epigraph `{p | g p.1 < p.2}`. -/
-theorem ContinuousAt.mem_interior_strictEpigraph {X α : Type*} [TopologicalSpace X]
+theorem ContinuousAt.mem_interior_strict_epigraph {X α : Type*} [TopologicalSpace X]
     [TopologicalSpace α] [LinearOrder α] [OrderClosedTopology α] {g : X → α} {x₀ : X}
     (hg : ContinuousAt g x₀) {t : α} (ht : g x₀ < t) :
     (x₀, t) ∈ interior {p : X × α | g p.1 < p.2} :=

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Cone.Dual
 public import Mathlib.Analysis.LocallyConvex.Separation
 public import TauCeti.Analysis.Convex.Subdifferential
 public import TauCeti.Topology.Order.OrderClosed
@@ -36,7 +37,8 @@ gives a functional `(v, t) ↦ ℓ v + λ t` separating the two sets. Testing at
 
 ## Main declarations
 
-* `TauCeti.normalCone C u`: the normal cone `N_C(u)`; `TauCeti.normalCone_univ` and
+* `TauCeti.normalCone C u`: the normal cone `N_C(u)`, a `PointedCone` defined as the dual cone
+  `PointedCone.dual` of `u - C`; `TauCeti.normalCone_univ` and
   `TauCeti.normalCone_anti` give the unconstrained case and restriction, and
   `TauCeti.normalCone_image_add` translation.
 * `TauCeti.constraintIndicator C`: the indicator `ι_C`;
@@ -93,49 +95,33 @@ end Indicator
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
 
-/-- The normal cone `N_C(u) = {f | ∀ v ∈ C, f (v - u) ≤ 0}` of a set `C` at a point `u`. -/
-def normalCone (C : Set V) (u : V) : Set (StrongDual ℝ V) :=
-  {f | ∀ v ∈ C, f (v - u) ≤ 0}
+/-- The normal cone `N_C(u) = {f | ∀ v ∈ C, f (v - u) ≤ 0}` of a set `C` at a point `u`: the dual
+cone of the translate `u - C` for the evaluation pairing. -/
+def normalCone (C : Set V) (u : V) : PointedCone ℝ (StrongDual ℝ V) :=
+  PointedCone.dual (topDualPairing ℝ V).flip ((u - ·) '' C)
 
 /-- The defining condition of the normal cone. -/
 @[simp]
 theorem mem_normalCone_iff {C : Set V} {u : V} {f : StrongDual ℝ V} :
-    f ∈ normalCone C u ↔ ∀ v ∈ C, f (v - u) ≤ 0 :=
-  Iff.rfl
+    f ∈ normalCone C u ↔ ∀ v ∈ C, f (v - u) ≤ 0 := by
+  simp only [normalCone, PointedCone.mem_dual, forall_mem_image, LinearMap.flip_apply,
+    topDualPairing_apply]
+  refine forall₂_congr fun v _ ↦ ?_
+  rw [← neg_sub, map_neg, neg_nonneg]
 
-/-- The normal cone contains `0`. -/
-theorem zero_mem_normalCone (C : Set V) (u : V) : (0 : StrongDual ℝ V) ∈ normalCone C u :=
-  fun _ _ ↦ le_rfl
-
-/-- The normal cone is closed under addition. -/
-theorem add_mem_normalCone {C : Set V} {u : V} {f g : StrongDual ℝ V} (hf : f ∈ normalCone C u)
-    (hg : g ∈ normalCone C u) : f + g ∈ normalCone C u :=
-  fun v hv ↦ by simpa using add_nonpos (hf v hv) (hg v hv)
-
-/-- The normal cone is closed under multiplication by nonnegative scalars. -/
-theorem smul_mem_normalCone {C : Set V} {u : V} {f : StrongDual ℝ V} (hf : f ∈ normalCone C u)
-    {c : ℝ} (hc : 0 ≤ c) : c • f ∈ normalCone C u :=
-  fun v hv ↦ by simpa using mul_nonpos_of_nonneg_of_nonpos hc (hf v hv)
-
-/-- The normal cone is convex. -/
-theorem convex_normalCone (C : Set V) (u : V) : Convex ℝ (normalCone C u) :=
-  fun _ hf _ hg _ _ ha hb _ ↦ add_mem_normalCone (smul_mem_normalCone hf ha)
-    (smul_mem_normalCone hg hb)
-
-/-- Enlarging the set shrinks the normal cone: `C ⊆ D` gives `N_D(u) ⊆ N_C(u)`. -/
+/-- Enlarging the set shrinks the normal cone: `C ⊆ D` gives `N_D(u) ≤ N_C(u)`. -/
 @[gcongr]
-theorem normalCone_anti {C D : Set V} (h : C ⊆ D) (u : V) : normalCone D u ⊆ normalCone C u :=
-  fun _ hf v hv ↦ hf v (h hv)
+theorem normalCone_anti {C D : Set V} (h : C ⊆ D) (u : V) : normalCone D u ≤ normalCone C u :=
+  PointedCone.dual_anti (image_mono h)
 
-/-- **The unconstrained case**: the normal cone of the whole space is `{0}`. -/
+/-- **The unconstrained case**: the normal cone of the whole space is `⊥ = {0}`. -/
 @[simp]
-theorem normalCone_univ (u : V) : normalCone (univ : Set V) u = {0} := by
-  refine Set.eq_singleton_iff_unique_mem.2 ⟨zero_mem_normalCone _ _, fun f hf ↦ ?_⟩
-  ext w
-  have h₁ := hf (u + w) trivial
-  have h₂ := hf (u - w) trivial
-  simp only [add_sub_cancel_left, sub_sub_cancel_left, map_neg, neg_nonpos] at h₁ h₂
-  simpa using le_antisymm h₁ h₂
+theorem normalCone_univ (u : V) : normalCone (univ : Set V) u = ⊥ := by
+  rw [normalCone, image_univ_of_surjective fun w ↦ ⟨u - w, sub_sub_cancel u w⟩,
+    PointedCone.dual_univ, Submodule.zero_eq_bot]
+  intro f g hfg
+  ext v
+  exact LinearMap.congr_fun hfg v
 
 /-- **Translation**: the normal cone of `C + a` at `u + a` is the normal cone of `C` at `u`. -/
 theorem normalCone_image_add (C : Set V) (u a : V) :
@@ -147,12 +133,8 @@ theorem normalCone_image_add (C : Set V) (u a : V) :
 continuous. -/
 theorem isClosed_normalCone [TopologicalSpace (StrongDual ℝ V)]
     (h : ∀ v : V, Continuous fun f : StrongDual ℝ V ↦ f v) (C : Set V) (u : V) :
-    IsClosed (normalCone C u) := by
-  have hN : normalCone C u = ⋂ v ∈ C, {f : StrongDual ℝ V | f (v - u) ≤ 0} := by
-    ext f
-    simp
-  rw [hN]
-  exact isClosed_biInter fun v _ ↦ isClosed_le (h (v - u)) continuous_const
+    IsClosed (normalCone C u : Set (StrongDual ℝ V)) :=
+  PointedCone.isClosed_dual h
 
 /-- A subgradient of `E + ι_C` at a point `u` of `C` is a functional `f` with
 `E u + f (v - u) ≤ E v` on `C`. -/
@@ -208,7 +190,7 @@ theorem subdifferential_add_normalCone_subset {E : V → ℝ} {C : Set V} {u : V
   rw [mem_subdifferential_add_constraintIndicator_iff hu]
   intro v hv
   have h₁ := (mem_subdifferential_coe_iff _ E).1 hf v
-  have h₂ := hh v hv
+  have h₂ := mem_normalCone_iff.1 hh v hv
   simp only [LinearMap.flip_apply, topDualPairing_apply, add_apply] at h₁ ⊢
   linarith
 
@@ -246,7 +228,7 @@ theorem exists_le_and_nonneg_of_convexOn {g : V → ℝ} (hg : ConvexOn ℝ univ
   have hKc : Convex ℝ K := by simpa using hg.convex_strict_epigraph
   have hTc : Convex ℝ T := hC.prod (convex_Iic 0)
   -- The point `(x₀, g x₀ + 1)` is interior to the strict epigraph.
-  have hint : (x₀, g x₀ + 1) ∈ interior K := hgx₀.mem_interior_strictEpigraph (lt_add_one _)
+  have hint : (x₀, g x₀ + 1) ∈ interior K := hgx₀.mem_interior_strict_epigraph (lt_add_one _)
   have hdisj : Disjoint (interior K) T := by
     refine Set.disjoint_left.2 fun p hpK hpT ↦ ?_
     have : g p.1 < p.2 := interior_subset hpK
@@ -271,7 +253,7 @@ theorem exists_le_and_nonneg_of_convexOn {g : V → ℝ} (hg : ConvexOn ℝ univ
       continuous_const)) (hcl hp)
   -- The separating hyperplane is not vertical: `λ < 0`.
   have hlam_neg : lam < 0 := by
-    have h₁ := hφK (x₀, max (g x₀ + 1) 1) (hgx₀.mem_interior_strictEpigraph
+    have h₁ := hφK (x₀, max (g x₀ + 1) 1) (hgx₀.mem_interior_strict_epigraph
       (lt_of_lt_of_le (lt_add_one _) (le_max_left _ _)))
     have h₂ := hφT (x₀, 0) ⟨hx₀, le_rfl⟩
     rw [hφ] at h₁ h₂
@@ -312,7 +294,7 @@ theorem subdifferential_add_constraintIndicator_eq {E : V → ℝ} (hE : ConvexO
       (f.continuous.continuousAt.comp (continuousAt_id.sub continuousAt_const))
   obtain ⟨h, hh, hC'⟩ := exists_le_and_nonneg_of_convexOn hg hC hx₀ hgc hu (by simp)
     (fun w hw ↦ by linarith [hf w hw])
-  · refine ⟨f + h, ?_, -h, fun w hw ↦ by simpa using hC' w hw, by simp⟩
+  · refine ⟨f + h, ?_, -h, mem_normalCone_iff.2 fun w hw ↦ by simpa using hC' w hw, by simp⟩
     rw [mem_subdifferential_coe_iff]
     intro v
     have := hh v
