@@ -34,10 +34,12 @@ Under these identities and the index conditions of the rigid counts, the maps in
 cohomology form an isomorphism of algebras over the ground ring
 (`TauCeti.Floer.continuationAlgEquivOfCounts`), sending the class of a cocycle `a` to the class of
 `Φ a` (`TauCeti.Floer.continuationAlgEquivOfCounts_of_mk`), with inverse induced by `Ψ`
-(`TauCeti.Floer.continuationAlgEquivOfCounts_symm_of_mk`). No identity relating the units is
-assumed: a multiplicative map onto degree-zero cohomology sends the unit to the unit
-(`LinearMap.sub_mem_coboundaries_of_surjective_cohomologyMap`), so continuation sends the class of
-the PSS cycle of `H` to that of `H'`.
+(`TauCeti.Floer.continuationAlgEquivOfCounts_symm_of_mk`). It is the isomorphism
+`TauCeti.Floer.algEquivOfCounts` of homotopy-inverse multiplicative counts, with the
+multiplicativity on cocycles supplied by the continuation family of pairs of pants. No identity
+relating the units is assumed: a multiplicative map onto degree-zero cohomology sends the unit to
+the unit (`LinearMap.sub_mem_coboundaries_of_surjective_cohomologyMap`), so continuation sends the
+class of the PSS cycle of `H` to that of `H'`.
 
 The count identities, index conditions and potential bounds are the hypotheses that the
 compactified moduli spaces are to supply; no moduli space, orientation or count is constructed
@@ -79,64 +81,6 @@ variable {R S : Type*} [AddCommGroup S] {ω : S →+ ℝ} {c : S →+ ℤ}
       F' p' ≤ F' p + C')
   (Φ : ι → ι' → NovikovSeries R G ωG) (Ψ : ι' → ι → NovikovSeries R G ωG)
 
-section Map
-
-/-- The continuation map, as the ground-ring linear map of the kernel of its counts. -/
-private abbrev contMap (M : ι → ι' → NovikovSeries R G ωG) :
-    NovikovModule R F →ₗ[R] NovikovModule R F' :=
-  kernelMap (exists_potential_le_of_mapKernelOfMatrix_ne_zero hF hF' r r'
-      (fun i k => coefficientComparison q hq (M i k))).choose_spec
-    (mapKernelOfMatrix_mem hF' r r' _)
-
-/-- The ground-ring linear map of the kernel of the counts is the map of their matrix. -/
-private theorem contMap_apply (M : ι → ι' → NovikovSeries R G ωG) (a : NovikovModule R F) :
-    contMap q hq r r' hF hF' M a =
-      novikovMapOfMatrix hF hF' r r' (fun i k => coefficientComparison q hq (M i k)) a :=
-  (novikovMapOfMatrix_eq_kernelMap hF hF' r r' _ _ a).symm
-
-include hμ hμ' in
-/-- A map of rigid counts which preserves the index preserves the cochain degree. -/
-private theorem contMap_mem_gradeBy {M : ι → ι' → NovikovSeries R G ωG}
-    (hM : ∀ i i', ∀ A ∈ (M i i').support, μ' ⟨i', r' i'⟩ - degree ω c (q A) = μ ⟨i, r i⟩)
-    {k : ℤ} {a : NovikovModule R F} (ha : a ∈ gradeBy R F (fun p => n - μ p) k) :
-    contMap q hq r r' hF hF' M a ∈ gradeBy R F' (fun p => n - μ' p) k := by
-  rw [contMap_apply]
-  exact novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy_of_eq r r' q hq hμ hμ' hF hF'
-    hM ha
-
-/-- A map of counts obeying the chain-map identity commutes with the differentials. -/
-private theorem kernelMap_contMap {M : ι → ι' → NovikovSeries R G ωG}
-    (hMD : ∀ i l, ∑ k, M i k * D' k l = ∑ k, D i k * M k l) (a : NovikovModule R F) :
-    kernelMap hδ' (mapKernelOfMatrix_mem hF' r' r' _) (contMap q hq r r' hF hF' M a) =
-      contMap q hq r r' hF hF' M (kernelMap hδ (mapKernelOfMatrix_mem hF r r _) a) := by
-  rw [contMap_apply, contMap_apply, ← novikovMapOfMatrix_eq_kernelMap hF' hF' r' r' _ hδ',
-    ← novikovMapOfMatrix_eq_kernelMap hF hF r r _ hδ]
-  exact novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm r r' q hq hF hF' M D' D
-    hMD a
-
-variable [DecidableEq ι]
-
-include hμ in
-/-- If `Ψ ∘ Φ` is homotopic to the identity through counts lowering the cochain degree by one,
-then `Ψ (Φ a) - a` is a coboundary for every cocycle `a`. -/
-private theorem contMap_contMap_sub_mem_coboundaries
-    (hΨΦ : ∃ Y : ι → ι → NovikovSeries R G ωG,
-      (∀ i l, ∀ A ∈ (Y i l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + 1) ∧
-      ∀ i l, ∑ k, Φ i k * Ψ k l - (if i = l then 1 else 0) =
-        ∑ m, Y i m * D m l + ∑ m, D i m * Y m l)
-    {k : ℤ} {a : NovikovModule R F}
-    (ha : a ∈ (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
-      (gradeBy R F fun p => n - μ p) k) :
-    contMap q hq r' r hF' hF Ψ (contMap q hq r r' hF hF' Φ a) - a ∈
-      (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).coboundaries
-        (gradeBy R F fun p => n - μ p) k := by
-  obtain ⟨Y, hY, hinv⟩ := hΨΦ
-  rw [contMap_apply, contMap_apply]
-  exact novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_sub_mem_coboundaries r r' q hq
-    hF hF' hμ Φ Ψ Y D hY hinv hδ ha
-
-end Map
-
 section CohomologyRing
 
 variable
@@ -154,7 +98,7 @@ continuation family of pairs of pants, with counts `K` lowering the cochain degr
 the identity of `novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_eq_add`
 between the products `Q` and `Q'` of two complexes and the continuation counts `Φ` on all three
 ends, then `Φ (a ⋆ b) - Φ a ⋆' Φ b` is a coboundary for all cocycles `a` and `b`. -/
-private theorem contMap_kernelProduct_sub_mem_coboundaries
+private theorem countMap_kernelProduct_sub_mem_coboundaries
     (hcont : ∃ K : ι → ι → ι' → NovikovSeries R G ωG,
       (∀ i j l, ∀ A ∈ (K i j l).support,
         μ' ⟨l, r' l⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + μ ⟨j, r j⟩ - n + 1) ∧
@@ -166,13 +110,13 @@ private theorem contMap_kernelProduct_sub_mem_coboundaries
       (gradeBy R F fun p => n - μ p) e)
     (hb : b ∈ (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
       (gradeBy R F fun p => n - μ p) f) :
-    contMap q hq r r' hF hF' Φ (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _) a b) -
-        kernelProduct hnQ' (kernelOfMatrix_mem hF' r' r' r' _) (contMap q hq r r' hF hF' Φ a)
-          (contMap q hq r r' hF hF' Φ b) ∈
+    countMap r r' q hq hF hF' Φ (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _) a b) -
+        kernelProduct hnQ' (kernelOfMatrix_mem hF' r' r' r' _) (countMap r r' q hq hF hF' Φ a)
+          (countMap r r' q hq hF hF' Φ b) ∈
       (kernelMap hδ' (mapKernelOfMatrix_mem hF' r' r' _)).coboundaries
         (gradeBy R F' fun p => n - μ' p) (e + f) := by
   obtain ⟨K, hK, hKid⟩ := hcont
-  rw [contMap_apply, contMap_apply, contMap_apply,
+  rw [countMap_apply, countMap_apply, countMap_apply,
     ← novikovProductOfMatrix_eq_kernelProduct hF hF hF r r r _ hnQ,
     ← novikovProductOfMatrix_eq_kernelProduct hF' hF' hF' r' r' r' _ hnQ']
   exact novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_mem_coboundaries
@@ -267,39 +211,11 @@ def continuationAlgEquivOfCounts :
         (gradeBy R F fun p => n - μ p) k) ≃ₐ[R]
       ⨁ k, (kernelMap hδ' (mapKernelOfMatrix_mem hF' r' r' _)).cohomology
         (gradeBy R F' fun p => n - μ' p) k :=
-  LinearMap.cohomologyAlgEquiv (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _))
-    (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
-    (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ hL)
-    _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r q hq hF r hF hμ D hδ Q hnQ E
-      hone_mul)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r q hq hF r hF hμ D hδ Q hnQ E
-      hmul_one)
-    (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r hF hμ n D hδ Q
-      hnQ hassoc)
-    (kernelProduct hnQ' (kernelOfMatrix_mem hF' r' r' r' _))
-    (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r' hF' hμ' n Q' hnQ' hQ')
-    (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r' hF' hμ' n D' hδ' Q' hnQ' hL')
-    _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r' hF' hμ' n D' hδ' E' hE'
-      hED')
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r' q hq hF' r' hF' hμ' D' hδ' Q'
-      hnQ' E' hone_mul')
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r' q hq hF' r' hF' hμ' D' hδ' Q'
-      hnQ' E' hmul_one')
-    (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r' hF' hμ' n D'
-      hδ' Q' hnQ' hassoc')
-    (contMap q hq r r' hF hF' Φ) (fun ha => contMap_mem_gradeBy q hq r r' hF hF' hμ hμ' n hΦ ha)
-    (fun {_} {a} _ => kernelMap_contMap q hq r r' hF hF' D D' hδ hδ' hΦD a)
-    (fun ha hb => contMap_kernelProduct_sub_mem_coboundaries q hq r r' hF hF' hμ hμ' n D D' hδ hδ'
+  algEquivOfCounts q hq r r' hF hF' hμ hμ' n D D' hδ hδ' Q Q' hnQ hnQ' hQ hQ' hL hL' E E' hE hE' hED
+    hED' hone_mul hone_mul' hmul_one hmul_one' hassoc hassoc' Φ Ψ hΦ hΨ hΦD hΨD
+    (fun ha hb => countMap_kernelProduct_sub_mem_coboundaries q hq r r' hF hF' hμ hμ' n D D' hδ hδ'
       Φ Q Q' hnQ hnQ' hcont ha hb)
-    -- The continuation maps in the two directions are mutually inverse on cohomology.
-    (fun k => LinearMap.bijective_cohomologyMap (i := k) (contMap q hq r r' hF hF' Φ)
-      (contMap q hq r' r hF' hF Ψ) (fun ha => contMap_mem_gradeBy q hq r r' hF hF' hμ hμ' n hΦ ha)
-      (fun {_} {a} _ => kernelMap_contMap q hq r r' hF hF' D D' hδ hδ' hΦD a)
-      (fun ha => contMap_mem_gradeBy q hq r' r hF' hF hμ' hμ n hΨ ha)
-      (fun {_} {a} _ => kernelMap_contMap q hq r' r hF' hF D' D hδ' hδ hΨD a)
-      (contMap_contMap_sub_mem_coboundaries q hq r r' hF hF' hμ n D hδ Φ Ψ hΨΦ)
-      (contMap_contMap_sub_mem_coboundaries q hq r' r hF' hF hμ' n D' hδ' Ψ Φ hΦΨ))
+    hΨΦ hΦΨ
 
 /-- The continuation isomorphism sends the class of a cocycle `a` to the class of its image `Φ a`
 under the map of the continuation counts. -/
@@ -313,16 +229,10 @@ theorem continuationAlgEquivOfCounts_of_mk {k : ℤ}
         hL' E E' hE hE' hED hED' hone_mul hone_mul' hmul_one hmul_one' hassoc hassoc' hΦ hΨ hΦD hΨD
         hcont hΨΦ hΦΨ (of _ k (Submodule.Quotient.mk a)) =
       of (fun k => (kernelMap hδ' (mapKernelOfMatrix_mem hF' r' r' _)).cohomology
-        (gradeBy R F' fun p => n - μ' p) k) k (Submodule.Quotient.mk b) := by
-  rw [continuationAlgEquivOfCounts]
-  -- The degree hypotheses of the two products occur only in the instances, where unification
-  -- does not assign proofs, so they are supplied by name.
-  refine (LinearMap.cohomologyAlgEquiv_of
-    (hμdeg := kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
-    (hνdeg := kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r' hF' hμ' n Q' hnQ' hQ')
-    ..).trans ?_
-  rw [LinearMap.cohomologyMap_mk]
-  exact congrArg _ (congrArg _ (Subtype.ext ((contMap_apply q hq r r' hF hF' Φ a).trans hab)))
+        (gradeBy R F' fun p => n - μ' p) k) k (Submodule.Quotient.mk b) :=
+  algEquivOfCounts_of_mk q hq r r' hF hF' hμ hμ' n D D' hδ hδ' Q Q' hnQ hnQ' hQ hQ' hL hL' E E' hE
+    hE' hED hED' hone_mul hone_mul' hmul_one hmul_one' hassoc hassoc' Φ Ψ hΦ hΨ hΦD hΨD _ hΨΦ hΦΨ a
+    b hab
 
 /-- The inverse of the continuation isomorphism is induced by the continuation counts `Ψ` in the
 opposite direction: it sends the class of a cocycle `b` to the class of `Ψ b`. -/
@@ -344,25 +254,10 @@ theorem continuationAlgEquivOfCounts_symm_of_mk {k : ℤ}
         hL hL' E E' hE hE' hED hED' hone_mul hone_mul' hmul_one hmul_one' hassoc hassoc' hΦ hΨ hΦD
         hΨD hcont hΨΦ hΦΨ).symm (of _ k (Submodule.Quotient.mk b)) =
       of (fun k => (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cohomology
-        (gradeBy R F fun p => n - μ p) k) k (Submodule.Quotient.mk a) := by
-  let := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one hassoc
-  let := cohomologyGAlgebraOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
-    hassoc
-  let := cohomologyGRingOfCounts q hq r' hF' hμ' n D' hδ' Q' hnQ' hQ' hL' E' hE' hED' hone_mul'
-    hmul_one' hassoc'
-  let := cohomologyGAlgebraOfCounts q hq r' hF' hμ' n D' hδ' Q' hnQ' hQ' hL' E' hE' hED' hone_mul'
-    hmul_one' hassoc'
-  refine (AlgEquiv.symm_apply_eq _).2 ?_
-  rw [continuationAlgEquivOfCounts_of_mk q hq r r' hF hF' hμ hμ' n D D' hδ hδ' Φ Ψ Q Q' hnQ hnQ'
-    hQ hQ' hL hL' E E' hE hE' hED hED' hone_mul hone_mul' hmul_one hmul_one' hassoc hassoc' hΦ hΨ
-    hΦD hΨD hcont hΨΦ hΦΨ a
-    ⟨_, novikovMapOfMatrix_coefficientComparison_mem_cocycles r r' q hq hF hF' hμ hμ' hΦ hΦD hδ hδ'
-      a.property⟩
-    rfl]
-  -- `Φ (Ψ b) - b` is a coboundary, by the homotopy `hΦΨ`.
-  refine congrArg _ (LinearMap.cohomology_mk_eq_mk_iff.2 ?_).symm
-  have h := contMap_contMap_sub_mem_coboundaries q hq r' r hF' hF hμ' n D' hδ' Ψ Φ hΦΨ b.property
-  rwa [contMap_apply q hq r' r hF' hF, hba, contMap_apply] at h
+        (gradeBy R F fun p => n - μ p) k) k (Submodule.Quotient.mk a) :=
+  algEquivOfCounts_symm_of_mk q hq r r' hF hF' hμ hμ' n D D' hδ hδ' Q Q' hnQ hnQ' hQ hQ' hL hL' E
+    E' hE hE' hED hED' hone_mul hone_mul' hmul_one hmul_one' hassoc hassoc' Φ Ψ hΦ hΨ hΦD hΨD _ hΨΦ
+    hΦΨ b a hba
 
 end CohomologyRing
 
