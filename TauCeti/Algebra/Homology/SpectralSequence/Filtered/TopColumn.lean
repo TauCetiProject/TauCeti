@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
+public import TauCeti.Algebra.Homology.SpectralObject.Edge
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.Algebra.Category.ModuleCat.Range
 
 /-!
 # The top column of the spectral sequence of a filtered complex
@@ -17,7 +19,9 @@ Let `F : ℤ → Subobject K` be an increasing filtration of a cochain complex `
 `F_{q+1} = K`. Then `H^n(K)` is the piece `F_{q+1}` of the filtration of the abutment, and it
 projects onto the graded piece `F_{q+1} H^n / F_q H^n`, which is the limit object `E∞` at `q` in
 degree `n` (`CategoryTheory.Abelian.SpectralObject.EInftyIsoCokernel`). This projection is
-`CochainComplex.filtrationToTopColumnEInfty`; when `q + 1` is the largest filtration index, its
+`CochainComplex.filtrationToTopColumnEInfty`, the projection
+`CategoryTheory.Abelian.SpectralObject.abutmentToEInfty` of the spectral object of the filtration
+transported to `H^n(K)`; when `q + 1` is the largest filtration index, its
 target is the top column of the limit page.
 
 For complexes of modules, the filtration of the abutment is the image filtration
@@ -62,9 +66,7 @@ noncomputable def filtrationToTopColumnEInfty (n : ℤ) :
     K.homology n ⟶ (spectralObject (filtrationFunctor F hF)).EInfty q n :=
   haveI := isIso_filtrationAbutmentFiltrationι F hF hq n
   (filtrationAbutmentIso F hF n).inv ≫
-    inv ((spectralObject (filtrationFunctor F hF)).abutmentFiltrationι (q + 1) n) ≫
-      cokernel.π ((spectralObject (filtrationFunctor F hF)).abutmentFiltrationMap q n) ≫
-        ((spectralObject (filtrationFunctor F hF)).EInftyIsoCokernel q n).inv
+    (spectralObject (filtrationFunctor F hF)).abutmentToEInfty q n
 
 /-- **The defining property of the projection onto the top column.** On the piece `F_{q+1}` of the
 filtration of the abutment, identified with `H^n(K)`, the projection is the quotient map onto the
@@ -112,28 +114,12 @@ theorem filtrationToTopColumnEInfty_eq_zero_iff {q : ℤ} (hq : F (q + 1) = ⊤)
     (filtrationToTopColumnEInfty F hF hq n).hom α = 0 ↔
       α ∈ LinearMap.range (HomologicalComplex.homologyMap (F q).arrow n).hom := by
   have := isIso_filtrationAbutmentFiltrationι F hF hq n
-  set X := spectralObject (filtrationFunctor F hF)
-  set e := asIso (X.abutmentFiltrationι (q + 1) n) ≪≫ filtrationAbutmentIso F hF n
-  set m := X.abutmentFiltrationMap q n
-  -- Up to the isomorphism `e` of the source with the piece `F_{q+1}` and the isomorphism of the
-  -- target with the cokernel of `m`, the projection is the quotient map onto that cokernel.
-  have hproj : (filtrationToTopColumnEInfty F hF hq n).hom α = 0 ↔
-      (cokernel.π m).hom (e.inv.hom α) = 0 := by
-    have h : filtrationToTopColumnEInfty F hF hq n =
-        e.inv ≫ cokernel.π m ≫ (X.EInftyIsoCokernel q n).inv := by
-      simp [e, m, X, filtrationToTopColumnEInfty]
-    rw [h, ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply]
-    exact (X.EInftyIsoCokernel q n).symm.toLinearEquiv.map_eq_zero_iff
-  have hmem : e.inv.hom α ∈ LinearMap.range m.hom ↔ α ∈ LinearMap.range (m ≫ e.hom).hom := by
-    rw [ModuleCat.hom_comp, LinearMap.range_comp]
-    exact (Submodule.mem_map_equiv (p := LinearMap.range m.hom) (e := e.toLinearEquiv)).symm
-  -- Applying `e`, the range of `m` becomes the embedding of the piece `F_q`, which is the image
-  -- filtration.
-  have hm : m ≫ e.hom = X.abutmentFiltrationι q n ≫ (filtrationAbutmentIso F hF n).hom :=
-    Abelian.SpectralObject.abutmentFiltrationMap_ι_assoc _ _ _ _
-  rw [hproj, ← LinearMap.mem_ker, ← (ShortComplex.exact_cokernel m).moduleCat_range_eq_ker, hmem,
-    hm]
-  exact SetLike.ext_iff.1 (range_abutmentFiltrationι_comp_filtrationAbutmentIso_hom F hF q n) α
+  -- Through `filtrationAbutmentIso`, the kernel is the piece `F_q` of the filtration of the
+  -- abutment, which is the image filtration.
+  rw [← SetLike.ext_iff.1 (range_abutmentFiltrationι_comp_filtrationAbutmentIso_hom F hF q n) α,
+    ModuleCat.mem_range_comp_iso_hom,
+    ((spectralObject (filtrationFunctor F hF)).abutmentToEInfty_exact q n).moduleCat_range_eq_ker,
+    LinearMap.mem_ker, filtrationToTopColumnEInfty, ModuleCat.hom_comp, LinearMap.comp_apply]
 
 end ModuleCat
 

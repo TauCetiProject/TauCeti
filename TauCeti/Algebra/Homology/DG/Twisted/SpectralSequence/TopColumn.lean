@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.TopColumn
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
 import Mathlib.Algebra.Homology.HomologySequence
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.Algebra.Category.ModuleCat.Range
 
 /-!
 # The top column of the index spectral sequence of a twisted complex
@@ -30,12 +31,14 @@ top column of the limit page
 page embeds into the cohomology of `ℳ ⊗ ⟨P_{q+1}⟩`, the top column of the first page
 (`TauCeti.TwistingCocycle.indexTopColumnEInftyToHomology`).
 
-For the twisted complex of a Morse function with a unique maximum `x_max` of index `n`, the
-restriction is the projection onto the coefficients of `x_max`, through which the shriek map of
-the inclusion of a point is computed. This is the algebraic form of the characterization of the
-classes living over the fundamental class of the base, by their component at the maximum
-(Proposition 2.5 of the reference) and by the top column `E^∞_{n,*}` of the spectral sequence
-(Proposition 2.6).
+As motivation: for the twisted complex of a Morse function with a unique maximum `x_max` of
+index `n`, the restriction is the projection onto the coefficients of `x_max`, which the reference
+uses to compute the shriek map of the inclusion of a point. The results here supply the algebraic
+input to its characterization of the classes living over the fundamental class of the base, by
+their component at the maximum (Proposition 2.5 of the reference) and by the top column
+`E^∞_{n,*}` of the spectral sequence (Proposition 2.6). This file involves no Morse function,
+shriek map or fundamental class, and does not prove the identification of the restriction with
+the shriek map.
 
 ## Main definitions
 
@@ -112,10 +115,8 @@ theorem topIndexRestriction_f_apply (n : ℤ) (f : (m.twistedCochainComplex dM h
         (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n f) := by
   have := m.isIso_twistedIndexCochainComplexι hM hq
   -- Write `f` as the image of a family `g` of the last stage `F_{q+1}` of the index filtration.
-  obtain ⟨g, rfl⟩ : ∃ g, ((m.twistedIndexCochainComplexι hM (q + 1)).f n).hom g = f :=
-    ⟨((inv (m.twistedIndexCochainComplexι hM (q + 1))).f n).hom f, by
-      rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f,
-        IsIso.inv_hom_id, HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply]⟩
+  obtain ⟨g, rfl⟩ := (ModuleCat.epi_iff_surjective _).1
+    (inferInstance : Epi ((m.twistedIndexCochainComplexι hM (q + 1)).f n)) f
   rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f,
     twistedIndexCochainComplexι_comp_topIndexRestriction, twistedIndexCochainComplexProj_f_apply,
     twistedIndexCochainComplexι_apply]
@@ -134,7 +135,7 @@ theorem homologyMap_topIndexRestriction_eq_zero_iff {k : ℤ}
   -- `F_{q+1}` onto its graded piece, whose kernel on cohomology is the image of `H^k(F_q)` by the
   -- long exact sequence of `F_q ⟶ F_{q+1} ⟶ ℳ ⊗ ⟨P_{q+1}⟩`.
   have hS := m.twistedIndexShortComplex_shortExact dM hM q
-  rw [twistedIndexShortComplex_eq] at hS
+  rw [twistedIndexShortComplex_def] at hS
   have hr : m.topIndexRestriction dM hM hq =
       inv ι ≫ m.twistedIndexCochainComplexProj dM hM (q + 1) := by
     rw [IsIso.eq_inv_comp, twistedIndexCochainComplexι_comp_topIndexRestriction]
@@ -143,8 +144,7 @@ theorem homologyMap_topIndexRestriction_eq_zero_iff {k : ℤ}
   have hj : homologyMap (m.twistedIndexCochainComplexι hM q) k = j ≫ e.hom := by
     simp [e, ι, j, ← homologyMap_comp]
   rw [hr, homologyMap_comp, hinv, ModuleCat.hom_comp, LinearMap.comp_apply, ← LinearMap.mem_ker,
-    ← (hS.homology_exact₂ k).moduleCat_range_eq_ker, hj, ModuleCat.hom_comp, LinearMap.range_comp]
-  exact (Submodule.mem_map_equiv (p := LinearMap.range j.hom) (e := e.toLinearEquiv)).symm
+    ← (hS.homology_exact₂ k).moduleCat_range_eq_ker, hj, ModuleCat.mem_range_comp_iso_hom]
 
 /-! ### The top column of the index spectral sequence -/
 

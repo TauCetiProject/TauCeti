@@ -670,7 +670,7 @@ theorem twistedIndexShortComplex_X₃ (p : ℤ) :
 /-- `twistedIndexShortComplex` is the short complex of the inclusion `F_p ⟶ F_{p+1}` and the
 restriction to the generators of index `p + 1`. Its body is not exposed, so other modules need
 this lemma. -/
-theorem twistedIndexShortComplex_eq (p : ℤ) :
+theorem twistedIndexShortComplex_def (p : ℤ) :
     m.twistedIndexShortComplex dM hM p =
       ShortComplex.mk (m.twistedIndexCochainComplexMap hM (Int.le_add_one le_rfl))
         (m.twistedIndexCochainComplexProj dM hM (p + 1)) (m.twistedIndexMap_comp_proj dM hM p) :=

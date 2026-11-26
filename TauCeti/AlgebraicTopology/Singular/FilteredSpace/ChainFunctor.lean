@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.FirstPage
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Naturality
 public import TauCeti.Topology.Category.TopPair
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.Algebra.Category.ModuleCat.Range
 import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
 
 /-!
@@ -457,13 +458,10 @@ theorem chainFiltrationToTopColumnEInfty_eq_zero_iff {q : ℤ} (hq : X (q + 1) =
       (CochainComplex.filtrationAbutmentIso _ (monotone_chainFiltration F hX) (-n)).hom
   -- By the generic statement, the projection vanishes exactly on the image filtration of the
   -- reindexed complex, which `e` carries to that of `Hₙ(F Y)`.
-  have hmem : e.inv.hom α ∈ LinearMap.range ι.hom ↔ α ∈ LinearMap.range (ι ≫ e.hom).hom := by
-    rw [ModuleCat.hom_comp ι e.hom, LinearMap.range_comp ι.hom e.hom.hom]
-    exact (Submodule.mem_map_equiv (p := LinearMap.range ι.hom) (e := e.toLinearEquiv)).symm
   rw [chainFiltrationToTopColumnEInfty, ModuleCat.hom_comp, LinearMap.comp_apply,
     CochainComplex.filtrationToTopColumnEInfty_eq_zero_iff,
     ← CochainComplex.range_abutmentFiltrationι_comp_filtrationAbutmentIso_hom _
-      (monotone_chainFiltration F hX), hmem]
+      (monotone_chainFiltration F hX), ← ModuleCat.mem_range_comp_iso_hom ι e]
   have hι : ι ≫ e.hom = (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
       (monotone_chainFiltration F hX))).abutmentFiltrationι q (-n) ≫
         (chainFiltrationAbutmentIso F hX n).hom := by
