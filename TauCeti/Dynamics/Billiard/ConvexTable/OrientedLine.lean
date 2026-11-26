@@ -248,7 +248,7 @@ def addCircleOrientedLine (x : AddCircle ℓ × ℝ) : Circle × ℝ :=
 @[simp]
 theorem addCircleOrientedLine_mk (s δ : ℝ) :
     T.addCircleOrientedLine ((s : AddCircle ℓ), δ) = T.orientedLine s δ :=
-  (rfl)
+  (T.periodic_orientedLine δ).lift_coe s
 
 theorem continuous_addCircleOrientedLine : Continuous T.addCircleOrientedLine :=
   ((QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id).isQuotientMap
@@ -268,22 +268,28 @@ private abbrev interiorLines : Set (Circle × ℝ) :=
 
 private theorem mem_preimage_closedLine_iff (x : AddCircle ℓ × Icc 0 Real.pi) :
     x ∈ T.closedLine ⁻¹' T.interiorLines ↔ (x.2 : ℝ) ∈ Ioo 0 Real.pi := by
-  obtain ⟨⟨s, ⟨δ, hδ⟩⟩, rfl⟩ : ∃ y : ℝ × Icc 0 Real.pi, ((y.1 : AddCircle ℓ), y.2) = x :=
-    ⟨((QuotientAddGroup.mk_surjective x.1).choose, x.2),
-      Prod.ext (QuotientAddGroup.mk_surjective x.1).choose_spec rfl⟩
-  refine ⟨fun h => ?_, fun h => T.orientedLineSet_orientedLine_inter_interior_nonempty h⟩
-  refine ⟨hδ.1.lt_of_ne fun h0 => ?_, hδ.2.lt_of_ne fun hπ => ?_⟩
-  · have := T.orientedLineSet_orientedLine_inter_interior_eq_empty (s := s) (δ := δ)
-      (by rw [← h0, Real.sin_zero])
-    exact h.ne_empty this
-  · have := T.orientedLineSet_orientedLine_inter_interior_eq_empty (s := s) (δ := δ)
-      (by rw [hπ, Real.sin_pi])
-    exact h.ne_empty this
+  obtain ⟨a, δ, hδ⟩ := x
+  obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective a
+  rw [mem_preimage, closedLine, addCircleOrientedLine_mk]
+  refine ⟨fun h => ?_, T.orientedLineSet_orientedLine_inter_interior_nonempty⟩
+  by_contra hIoo
+  -- The endpoints `δ = 0` and `δ = π` give tangent lines, which miss the interior.
+  have hsin : Real.sin δ = 0 := by
+    rcases hδ.1.eq_or_lt with rfl | h0
+    · exact Real.sin_zero
+    · rw [hδ.2.eq_of_not_lt fun hπ => hIoo ⟨h0, hπ⟩, Real.sin_pi]
+  exact h.ne_empty (T.orientedLineSet_orientedLine_inter_interior_eq_empty hsin)
 
 /-- The restriction of `Λ` to the phase cylinder, onto the lines meeting the interior. -/
 private def restrictedLine :
     T.closedLine ⁻¹' T.interiorLines → T.interiorLines :=
   T.interiorLines.restrictPreimage T.closedLine
+
+private theorem continuous_restrictedLine : Continuous T.restrictedLine :=
+  T.continuous_closedLine.restrictPreimage
+
+private theorem isClosedMap_restrictedLine : IsClosedMap T.restrictedLine :=
+  T.continuous_closedLine.isClosedMap.restrictPreimage _
 
 private theorem bijective_restrictedLine : Bijective T.restrictedLine := by
   constructor
@@ -320,13 +326,14 @@ def orientedLineHomeomorph :
       {p : Circle × ℝ // (orientedLineSet p ∩ interior T.region).Nonempty} :=
   T.phaseCylinderEquiv.trans
     ((Equiv.ofBijective _ T.bijective_restrictedLine).toHomeomorphOfContinuousClosed
-      (T.continuous_closedLine.restrictPreimage)
-      (T.continuous_closedLine.isClosedMap.restrictPreimage _))
+      T.continuous_restrictedLine T.isClosedMap_restrictedLine)
 
 @[simp]
 theorem coe_orientedLineHomeomorph_apply (s : ℝ) (δ : Ioo 0 Real.pi) :
-    (T.orientedLineHomeomorph ((s : AddCircle ℓ), δ) : Circle × ℝ) = T.orientedLine s δ :=
-  (rfl)
+    (T.orientedLineHomeomorph ((s : AddCircle ℓ), δ) : Circle × ℝ) = T.orientedLine s δ := by
+  rw [orientedLineHomeomorph, Homeomorph.trans_apply, Equiv.toHomeomorphOfContinuousClosed_apply,
+    Equiv.ofBijective_apply, restrictedLine, phaseCylinderEquiv, Homeomorph.homeomorph_mk_coe,
+    Equiv.coe_fn_mk, restrictPreimage_mk, Subtype.coe_mk, closedLine, addCircleOrientedLine_mk]
 
 /-- The inverse of `Λ` sends the line `Λ(s, δ)` to its entry state `(s, δ)`. -/
 @[simp]

@@ -20,8 +20,7 @@ An oriented line of the plane `ℂ` is represented by a pair `(e, c) ∈ Circle 
 * `TauCeti.orientedLineSet_eq_range`: the line `(e, c)` is `{z + t e : t ∈ ℝ}` for any of its
   points `z`;
 * `TauCeti.orientedLineThrough_eq_iff`: two (direction, point) pairs give the same oriented line
-  exactly when the directions agree and the points differ by a multiple of the direction, so every
-  oriented line has exactly one representation;
+  exactly when the directions agree and the points differ by a multiple of the direction;
 * `TauCeti.orientedLineSet_neg`, `TauCeti.orientedLineSet_eq_orientedLineSet_iff`: reversing the
   orientation, `(e, c) ↦ (−e, −c)`, keeps the point set, and two representations have the same
   point set exactly when they are equal or opposite;
@@ -75,9 +74,10 @@ theorem orientedLineSet_eq_range {p : Circle × ℝ} {z : ℂ} (hz : z ∈ orien
   · rintro ⟨t, rfl⟩
     rw [mem_orientedLineSet, Circle.im_conj_mul_add_smul, hz]
 
-/-- **Every oriented line has exactly one representation.** The oriented lines through `z` with
-direction `e` and through `z'` with direction `e'` agree exactly when `e = e'` and `z' − z` is a
-real multiple of `e`. -/
+/-- Two (direction, point) pairs give the same oriented line exactly when the directions agree and
+the points differ by a real multiple of the direction: the oriented lines through `z` with
+direction `e` and through `z'` with direction `e'` agree exactly when `e = e'` and
+`z' = z + t e` for some real `t`. -/
 theorem orientedLineThrough_eq_iff {e e' : Circle} {z z' : ℂ} :
     orientedLineThrough e z = orientedLineThrough e' z' ↔
       e = e' ∧ ∃ t : ℝ, z' = z + t • (e : ℂ) := by
