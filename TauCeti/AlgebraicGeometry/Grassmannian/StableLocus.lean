@@ -46,8 +46,8 @@ The scheme structure is the one of the functor of points, and it is not reduced 
 the nilpotent Jordan block `t` on a free module of rank two, with `t e₁ = 0` and `t e₂ = e₁`, the
 stable lines over `A` are the lines of `e₁ + a e₂` with `a² = 0`
 (`Module.Grassmannian.jordanBlockStableEquiv`), so the closed subscheme of stable lines is
-`Spec R[ε]` (`Module.Grassmannian.isIso_jordanBlockStableLocusHom`), which is not reduced, and
-over a field it has the single point of the line of `e₁`.
+`Spec R[ε]` (`Module.Grassmannian.isIso_jordanBlockStableLocusHom`), which is not reduced when
+`R` is nontrivial, and over a field it has the single point of the line of `e₁`.
 
 ## Main definitions
 

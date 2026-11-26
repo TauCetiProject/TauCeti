@@ -25,11 +25,11 @@ line lies in this chart: over a residue field of `A`, a stable line containing `
 `t`-stable lines over `A` are the lines of `e₁ + a e₂` with `a² = 0`, naturally in `A`
 (`Module.Grassmannian.jordanBlockStableEquiv`). Over a reduced ring, such as a field, the only
 stable line is the line of `e₁` (`Module.Grassmannian.stableLocus_eq_bot_iff_toSubmodule_eq_span`),
-but over the dual numbers `a = ε` gives a second one.
+but over the dual numbers of a nontrivial ring `a = ε` gives a second one.
 
 This is a test case for the scheme structure of the closed subscheme of stable submodules
 (`Module.Grassmannian.schemeStableLocus`) on nonreduced test rings: here it is `Spec R[a]/(a²)`,
-which is not reduced.
+which is not reduced when `R` is nontrivial.
 
 ## Main definitions
 
