@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Complex.CauchyIntegral
@@ -28,6 +29,11 @@ is the distributional equation; for a general measure it is the corresponding ad
 
 The relation is local, complex-linear, invariant under almost-everywhere replacement and
 compatible with continuous complex-linear maps. Its value is unique almost everywhere.
+It passes to limits that converge in `L¹` on every compact subset of the open set
+(`HasWeakConjWirtingerDerivOn.of_tendsto_setLIntegral_enorm_sub`); in particular a locally uniform
+limit of `C¹` maps whose `\bar∂` is `L¹`-close on compact sets to locally uniformly convergent
+continuous maps solves the limiting equation weakly
+(`hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn`).
 `hasWeakConjWirtingerDerivOn_of_hasWeakLineDerivOn` and
 `HasWeakFDerivOn.hasWeakConjWirtingerDerivOn` compare it with the native real weak derivatives,
 and `HasWeakConjWirtingerDerivOn.weakLineDeriv` differentiates the equation in a real direction.
@@ -234,6 +240,47 @@ theorem HasWeakConjWirtingerDerivOn.ae_eq {k : ℂ → F}
   filter_upwards [hz] with z hz hzΩ
   simpa [sub_eq_zero] using hz hzΩ
 
+/-- **Weak `\bar∂` equations pass to `L¹_loc` limits.** If `\bar∂ uᵢ = gᵢ` weakly on `Ω`, and on
+every compact subset of `Ω` the maps `uᵢ` and `gᵢ` converge in `L¹` to `w` and `w'`, locally
+integrable on `Ω`, then `\bar∂ w = w'` weakly on `Ω`. The `L¹` distances are lower Lebesgue
+integrals, so the differences need not be integrable. -/
+theorem HasWeakConjWirtingerDerivOn.of_tendsto_setLIntegral_enorm_sub {ι : Type*}
+    {l : Filter ι} [l.NeBot] {u g : ι → ℂ → F} {w w' : ℂ → F}
+    (h : ∀ i, HasWeakConjWirtingerDerivOn μ Ω (u i) (g i))
+    (hw : LocallyIntegrableOn w Ω μ) (hw' : LocallyIntegrableOn w' Ω μ)
+    (hu : ∀ K ⊆ (Ω : Set ℂ), IsCompact K →
+      Filter.Tendsto (fun i ↦ ∫⁻ z in K, ‖u i z - w z‖ₑ ∂μ) l (nhds 0))
+    (hg : ∀ K ⊆ (Ω : Set ℂ), IsCompact K →
+      Filter.Tendsto (fun i ↦ ∫⁻ z in K, ‖g i z - w' z‖ₑ ∂μ) l (nhds 0)) :
+    HasWeakConjWirtingerDerivOn μ Ω w w' := by
+  have : Nonempty ι := Filter.nonempty_of_neBot l
+  refine ⟨(h (Classical.arbitrary ι)).completeSpace, hw, hw', fun φ ↦ ?_⟩
+  have hK : IsCompact (tsupport (φ : ℂ → ℝ)) := φ.hasCompactSupport
+  have hKΩ : tsupport (φ : ℂ → ℝ) ⊆ Ω := φ.tsupport_subset
+  -- The integrals against the derivatives of `φ` converge.
+  have hd (v : ℂ) : Filter.Tendsto (fun i ↦ ∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u i z ∂μ) l
+      (nhds (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • w z ∂μ)) := by
+    obtain ⟨B, hB⟩ := (LineDeriv.lineDerivOp v φ).continuous.bounded_above_of_compact_support
+      (LineDeriv.lineDerivOp v φ).hasCompactSupport
+    simp only [TestFunction.lineDerivOp_apply] at hB
+    exact MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (ae_of_all _ hB)
+      (ae_of_all _ fun z hz ↦ lineDeriv_of_notMem_tsupport hz v)
+      (Filter.Eventually.of_forall fun i ↦
+        integrable_lineDeriv_smul_of_locallyIntegrableOn (h i).locallyIntegrableOn φ v)
+      (integrable_lineDeriv_smul_of_locallyIntegrableOn hw φ v).aestronglyMeasurable
+      (hu _ hKΩ hK)
+  -- The integrals against `φ` converge.
+  obtain ⟨B, hB⟩ := φ.continuous.bounded_above_of_compact_support φ.hasCompactSupport
+  have h0 : Filter.Tendsto (fun i ↦ ∫ z, (φ : ℂ → ℝ) z • g i z ∂μ) l
+      (nhds (∫ z, (φ : ℂ → ℝ) z • w' z ∂μ)) :=
+    MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (ae_of_all _ hB)
+      (ae_of_all _ fun z hz ↦ image_eq_zero_of_notMem_tsupport hz)
+      (Filter.Eventually.of_forall fun i ↦ φ.integrable_smul (h i).locallyIntegrableOn_deriv)
+      (φ.integrable_smul hw').aestronglyMeasurable (hg _ hKΩ hK)
+  refine tendsto_nhds_unique (((hd 1).add ((hd I).const_smul I)).congr fun i ↦
+    (h i).integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul φ) ?_
+  exact h0.const_smul _
+
 /-- The two weak real partial derivatives combine to the normalized weak `\bar∂` derivative. -/
 theorem hasWeakConjWirtingerDerivOn_of_hasWeakLineDerivOn {us ut : ℂ → F}
     (hs : HasWeakLineDerivOn μ Ω u us 1) (ht : HasWeakLineDerivOn μ Ω u ut I) :
@@ -272,6 +319,41 @@ theorem hasWeakConjWirtingerDerivOn_of_contDiffOn [CompleteSpace F] [μ.IsAddHaa
     (fun z hz ↦ (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hz))
   simpa only [conjWirtingerDeriv_apply, smul_eq_mul, mul_one] using
     h.hasWeakConjWirtingerDerivOn
+
+/-- **Weak `\bar∂` equations of locally uniform limits.** Let `uᵢ` be `C¹` maps on `Ω` converging
+locally uniformly on `Ω` to `w`, and let `gᵢ`, continuous on `Ω`, converge locally uniformly on
+`Ω` to `g₀`. If the defects `\bar∂ uᵢ - gᵢ` tend to `0` in `L¹` on each compact subset of `Ω`, then
+`\bar∂ w = g₀` weakly on `Ω`. This is how an equation `\bar∂ u = g(u)` with a zeroth-order term
+depending continuously on `u`, satisfied up to vanishing remainders, passes to the limit. -/
+theorem hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn [CompleteSpace F]
+    [μ.IsAddHaarMeasure] {ι : Type*} {l : Filter ι} [l.NeBot] {u g : ι → ℂ → F} {w : ℂ → F}
+    (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω) (huw : TendstoLocallyUniformlyOn u w l Ω)
+    (hg : ∀ i, ContinuousOn (g i) Ω) (hgg : TendstoLocallyUniformlyOn g g₀ l Ω)
+    (hr : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → Filter.Tendsto
+      (fun i ↦ ∫⁻ z in K, ‖conjWirtingerDeriv (u i) z 1 - g i z‖ₑ ∂μ) l (nhds 0)) :
+    HasWeakConjWirtingerDerivOn μ Ω w g₀ := by
+  have hg₀ : ContinuousOn g₀ Ω := hgg.continuousOn (Filter.Frequently.of_forall hg)
+  have hK {v : ι → ℂ → F} {v₀ : ℂ → F} (hv : TendstoLocallyUniformlyOn v v₀ l Ω) {K : Set ℂ}
+      (hKΩ : K ⊆ Ω) (hK : IsCompact K) :
+      Filter.Tendsto (fun i ↦ ∫⁻ z in K, ‖v i z - v₀ z‖ₑ ∂μ) l (nhds 0) :=
+    ((tendstoLocallyUniformlyOn_iff_forall_isCompact Ω.isOpen).1 hv K hKΩ
+      hK).tendsto_setLIntegral_enorm_sub hK.measure_lt_top.ne
+  refine HasWeakConjWirtingerDerivOn.of_tendsto_setLIntegral_enorm_sub
+    (fun i ↦ hasWeakConjWirtingerDerivOn_of_contDiffOn (hu i))
+    ((huw.continuousOn (Filter.Frequently.of_forall fun i ↦
+      (hu i).continuousOn)).locallyIntegrableOn Ω.isOpen.measurableSet)
+    (hg₀.locallyIntegrableOn Ω.isOpen.measurableSet) (fun _ hKΩ hK' ↦ hK huw hKΩ hK')
+    fun K hKΩ hK' ↦ ?_
+  -- On `K`, `\bar∂ uᵢ - g₀ = (\bar∂ uᵢ - gᵢ) + (gᵢ - g₀)`.
+  have hle (i : ι) : ∫⁻ z in K, ‖conjWirtingerDeriv (u i) z 1 - g₀ z‖ₑ ∂μ ≤
+      (∫⁻ z in K, ‖conjWirtingerDeriv (u i) z 1 - g i z‖ₑ ∂μ) + ∫⁻ z in K, ‖g i z - g₀ z‖ₑ ∂μ :=
+    le_trans (lintegral_mono fun z ↦ by
+        rw [← sub_add_sub_cancel _ (g i z)]
+        exact eNorm_add_le _ _)
+      (lintegral_add_right' _ ((((hg i).sub hg₀).mono
+        hKΩ).aestronglyMeasurable hK'.measurableSet).eNorm).le
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ ↦ zero_le) hle
+  simpa using (hr K hKΩ hK').add (hK hgg hKΩ hK')
 
 /-- Conjugation has normalized weak `\bar∂` derivative `1`, fixing both its sign and factor. -/
 theorem hasWeakConjWirtingerDerivOn_conj [μ.IsAddHaarMeasure] :
