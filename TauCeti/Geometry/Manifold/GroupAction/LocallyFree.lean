@@ -134,9 +134,9 @@ theorem exists_isOfFinOrder_smul_eq_exists_smul_ne_of_mem_isotropy [CompactSpace
     ((isTorus_closedOneParameterSubgroup ξ).subset_closure_setOf_isOfFinOrder I).trans
       (closure_minimal (fun g hg ↦ h g hg.2 (hle hg.1)) hclosed)
   refine hξ0 ?_
-  rw [← InfinitesimalAction.coe_toLinearMap, ← LinearMap.mem_ker,
-    InfinitesimalAction.mem_ker_toLinearMap_fundamental_iff]
-  exact fun t ↦ hsub (mulInvariantExp_smul_mem_closedOneParameterSubgroup ξ t)
+  exact (InfinitesimalAction.mem_ker_toLinearMap_iff _).1
+    (InfinitesimalAction.mem_ker_toLinearMap_fundamental_iff.2 fun t ↦
+      hsub (mulInvariantExp_smul_mem_closedOneParameterSubgroup ξ t))
 
 /-- **Effective actions of compact commutative Lie groups are generically locally free.** For an
 effective smooth action of a compact commutative Lie group, such as a torus, on a connected
