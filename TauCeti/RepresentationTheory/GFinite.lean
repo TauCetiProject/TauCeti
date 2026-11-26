@@ -46,6 +46,8 @@ representation of a compact group, this is the space of `K`-finite vectors of ha
 * `Representation.IsGFinite.map` and `Representation.map_gFiniteSubmodule_le`: intertwining maps
   preserve `G`-finiteness.
 * `Representation.IsGFinite.of_injective`: injective intertwining maps reflect `G`-finiteness.
+* `Subrepresentation.isGFinite_toRepresentation_iff`: a vector of a subrepresentation is
+  `G`-finite for the restriction exactly when it is `G`-finite in the ambient representation.
 * `Representation.gFiniteSubmodule_eq_top`: every vector of a finite-dimensional representation is
   `G`-finite.
 * `Representation.isGFinite_gFiniteSubrepresentation`: every vector of the `G`-finite
@@ -160,6 +162,13 @@ theorem IsGFinite.of_injective (f : IntertwiningMap ρ σ) (hf : Function.Inject
         funext fun g => IntertwiningMap.isIntertwining _ _ f g v]
   exact LinearEquiv.finiteDimensional (Submodule.equivMapOfInjective _ hf _).symm
 
+/-- A vector of a subrepresentation is `G`-finite for the restricted representation exactly when
+it is `G`-finite in the ambient representation. -/
+theorem _root_.Subrepresentation.isGFinite_toRepresentation_iff (S : Subrepresentation ρ)
+    (v : S.toSubmodule) : S.toRepresentation.IsGFinite v ↔ ρ.IsGFinite v :=
+  ⟨fun h => by simpa using h.map S.subtype,
+    fun h => IsGFinite.of_injective S.subtype S.subtype_injective (by simpa using h)⟩
+
 variable (ρ)
 
 /-- The `G`-finite vectors are invariant under the representation. -/
@@ -199,8 +208,6 @@ theorem mem_gFiniteSubrepresentation {v : V} :
 representation. -/
 theorem isGFinite_gFiniteSubrepresentation (v : ρ.gFiniteSubrepresentation.toSubmodule) :
     ρ.gFiniteSubrepresentation.toRepresentation.IsGFinite v :=
-  IsGFinite.of_injective ρ.gFiniteSubrepresentation.subtype
-    ρ.gFiniteSubrepresentation.subtype_injective
-    (congrFun (Subrepresentation.coe_subtype _) v ▸ ρ.mem_gFiniteSubmodule.1 v.prop)
+  (ρ.gFiniteSubrepresentation.isGFinite_toRepresentation_iff v).2 (ρ.mem_gFiniteSubmodule.1 v.prop)
 
 end Representation

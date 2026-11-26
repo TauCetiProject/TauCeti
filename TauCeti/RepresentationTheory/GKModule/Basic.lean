@@ -154,8 +154,7 @@ variable (N : GKSubmodule M)
 def submodule : GKModule Ad N.toLieSubmodule where
   ρ := N.toSubrepresentation.toRepresentation
   map_lie g x v := Subtype.ext (M.map_lie g x v)
-  isGFinite v := IsGFinite.of_injective N.toSubrepresentation.subtype
-    N.toSubrepresentation.subtype_injective (by simpa using M.isGFinite v)
+  isGFinite v := (N.toSubrepresentation.isGFinite_toRepresentation_iff v).2 (M.isGFinite v)
 
 @[simp]
 theorem submodule_ρ_apply_coe (g : K) (v : N.toLieSubmodule) :

@@ -74,9 +74,10 @@ is `K`-finite then so is `⁅x, f⁆`: its orbit lies in the span of the bracket
 with the orbit of `f`. -/
 theorem isGFinite_dual_lie [FiniteDimensional k 𝔤] {f : Dual k V} (hf : M.ρ.dual.IsGFinite f)
     (x : 𝔤) : M.ρ.dual.IsGFinite ⁅x, f⁆ := by
-  have := (isGFinite_iff _ _).1 hf
   let b := Module.finBasis k 𝔤
   let O := Submodule.span k (Set.range fun g : K ↦ M.ρ.dual g f)
+  -- The orbit span `O` is finite-dimensional, hence so is the supremum of its images below.
+  have : FiniteDimensional k O := (isGFinite_iff _ _).1 hf
   refine IsGFinite.of_forall_apply_mem
     (W := ⨆ j, O.map (LieModule.toEnd k 𝔤 (Dual k V) (b j))) fun g ↦ ?_
   rw [dual_lie, ← b.sum_repr (Ad g x), sum_lie]
