@@ -6,104 +6,66 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.PartitionEntropy
-public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.MeasureTheory.Constructions.UnitInterval
 public import Mathlib.Order.Filter.AtTopBot.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 
 /-!
 # Worked example: dyadic truncations of the identity of `[0, 1]`
 
-On `[0, 1]` with Lebesgue measure, the label `x ↦ x` has uncountably many values and is not a
-countable partition. Every one of its atoms is a point, of mass zero, so the countable-partition
-formula applied to it would give `0`. Its dyadic truncations `x ↦ ⌊2 ^ k * x⌋₊` are admissible
-labels into `ℕ`: the `2 ^ k` atoms `[j / 2 ^ k, (j + 1) / 2 ^ k)` have mass `2⁻¹ ^ k` (and the
-atom `{1}` of label `2 ^ k` is null), so the truncation at level `k` has entropy `k log 2`, which
-tends to `⊤`.
+On `I = [0, 1]` with Lebesgue measure, the label `x ↦ x` is not admissible: its alphabet `I` is
+uncountable. Every one of its atoms is a point, of mass zero, so the countable-partition formula
+applied to it would give `0`. Its dyadic truncations `TauCeti.unitInterval.cellIdx (2 ^ k)`, the
+index of the dyadic interval `[j / 2 ^ k, (j + 1) / 2 ^ k)` containing `x` (the top one closed at
+`1`), are admissible labels into `ℕ`: their `2 ^ k` atoms have mass `2⁻¹ ^ k`, so the truncation
+at level `k` has entropy `k log 2`, which tends to `⊤`.
 -/
 
 public section
 
 open MeasureTheory Real Filter Topology Set
-open scoped ENNReal
+open scoped ENNReal unitInterval
 
 namespace TauCeti.DyadicEntropyExamples
 
-/-- Lebesgue measure on `[0, 1]`. -/
-noncomputable abbrev unitLebesgue : Measure ℝ := volume.restrict (Icc 0 1)
-
-/-- The dyadic truncation at level `k`: the index `⌊2 ^ k * x⌋₊` of the dyadic interval of length
-`2⁻¹ ^ k` containing `x`. -/
-noncomputable def dyadicLabel (k : ℕ) (x : ℝ) : ℕ := ⌊2 ^ k * x⌋₊
-
-/-- The dyadic truncation is measurable. -/
-theorem measurable_dyadicLabel (k : ℕ) : Measurable (dyadicLabel k) :=
-  Measurable.nat_floor (f := fun x : ℝ ↦ 2 ^ k * x) (by fun_prop)
-
-/-- The atom of the dyadic truncation with index `j < 2 ^ k` has mass `2⁻¹ ^ k`, and the other
-atoms are null. -/
-theorem measureReal_dyadicLabel_preimage (k j : ℕ) :
-    unitLebesgue.real (dyadicLabel k ⁻¹' {j}) = if j < 2 ^ k then 2⁻¹ ^ k else 0 := by
-  have h2 : (0 : ℝ) < 2 ^ k := by positivity
-  rw [measureReal_restrict_apply (measurable_dyadicLabel k (measurableSet_singleton j))]
-  split_ifs with hj
-  · have hset : dyadicLabel k ⁻¹' {j} ∩ Icc 0 1 = Ico ((j : ℝ) / 2 ^ k) ((j + 1) / 2 ^ k) := by
-      have hj' : (j : ℝ) + 1 ≤ 2 ^ k := by exact_mod_cast hj
-      ext x
-      simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, mem_Icc, mem_Ico, dyadicLabel,
-        div_le_iff₀ h2, lt_div_iff₀ h2]
-      constructor
-      · rintro ⟨hfl, hx0, -⟩
-        rw [Nat.floor_eq_iff (by positivity)] at hfl
-        constructor <;> linarith
-      · rintro ⟨hlo, hhi⟩
-        have hx0 : 0 ≤ x := by
-          by_contra! hneg
-          nlinarith [(Nat.cast_nonneg j : (0 : ℝ) ≤ j)]
-        refine ⟨(Nat.floor_eq_iff (by positivity)).mpr ⟨by linarith, by linarith⟩, hx0, ?_⟩
-        nlinarith
-    rw [hset, Real.volume_real_Ico_of_le (by gcongr; linarith), ← sub_div, add_sub_cancel_left,
-      one_div, inv_pow]
-  · have hsub : dyadicLabel k ⁻¹' {j} ∩ Icc 0 1 ⊆ {1} := fun x ⟨hfl, hx0, hx1⟩ ↦ by
-      simp only [mem_preimage, mem_singleton_iff, dyadicLabel] at hfl
-      have hle : (2 : ℝ) ^ k ≤ 2 ^ k * x := by
-        have := Nat.floor_le (a := 2 ^ k * x) (by positivity)
-        rw [hfl] at this
-        exact le_trans (by exact_mod_cast not_lt.mp hj) this
-      exact mem_singleton_iff.mpr (le_antisymm hx1 (by nlinarith))
-    rw [Measure.real, measure_mono_null hsub (measure_singleton 1), ENNReal.toReal_zero]
-
 /-- **Dyadic truncations.** The truncation at level `k` has entropy `k log 2`. -/
-theorem countablePartitionEntropy_dyadicLabel (k : ℕ) :
-    countablePartitionEntropy unitLebesgue (dyadicLabel k) = ENNReal.ofReal (k * log 2) := by
+theorem countablePartitionEntropy_cellIdx_two_pow (k : ℕ) :
+    countablePartitionEntropy volume (unitInterval.cellIdx (2 ^ k)) =
+      ENNReal.ofReal (k * log 2) := by
+  have hreal {j : ℕ} (hj : j < 2 ^ k) :
+      (volume : Measure I).real (unitInterval.cellIdx (2 ^ k) ⁻¹' {j}) = 2⁻¹ ^ k := by
+    simp [Measure.real, unitInterval.volume_preimage_cellIdx hj]
   rw [countablePartitionEntropy_def, tsum_eq_sum (s := Finset.range (2 ^ k)) fun j hj ↦ by
-    rw [measureReal_dyadicLabel_preimage]
-    simp [Finset.mem_range.not.mp hj]]
-  rw [Finset.sum_congr rfl (g := fun _ ↦ ENNReal.ofReal (negMulLog (2⁻¹ ^ k))) fun j hj ↦ by
-    simp only [measureReal_dyadicLabel_preimage, Finset.mem_range.mp hj, ite_true]]
-  rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul, ← ENNReal.ofReal_natCast,
-    ← ENNReal.ofReal_mul (by positivity)]
+    have hempty : unitInterval.cellIdx (2 ^ k) ⁻¹' {j} = ∅ := eq_empty_of_forall_notMem fun x hx ↦
+      Finset.mem_range.not.mp hj (hx ▸ unitInterval.cellIdx_lt (by positivity) x)
+    simp [hempty]]
+  rw [Finset.sum_congr rfl fun j hj ↦ by rw [hreal (Finset.mem_range.mp hj)]]
+  simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+  rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   simp only [negMulLog_def, log_pow, log_inv, inv_pow]
   push_cast
   field_simp
 
 /-- The entropies of the dyadic truncations tend to `⊤`. -/
-theorem tendsto_countablePartitionEntropy_dyadicLabel :
-    Tendsto (fun k ↦ countablePartitionEntropy unitLebesgue (dyadicLabel k)) atTop (𝓝 ∞) := by
-  simp only [countablePartitionEntropy_dyadicLabel]
+theorem tendsto_countablePartitionEntropy_cellIdx_two_pow :
+    Tendsto (fun k ↦ countablePartitionEntropy volume (unitInterval.cellIdx (2 ^ k))) atTop
+      (𝓝 ∞) := by
+  simp only [countablePartitionEntropy_cellIdx_two_pow]
   exact ENNReal.tendsto_ofReal_atTop.comp
     (tendsto_natCast_atTop_atTop.atTop_mul_const (log_pos one_lt_two))
 
+/-- The label `x ↦ x` of `[0, 1]` is not admissible: its alphabet `I` is uncountable, since a
+countable subset of `ℝ` is Lebesgue-null while `[0, 1]` has measure `1`. -/
+example : ¬ Countable I := fun h ↦ by
+  simpa using (countable_coe_iff.mp h).measure_zero volume
+
 /-- The countable-partition formula applied to the label `x ↦ x`, whose atoms are points, gives
-`0`: the label is not a countable partition, and its entropy is not this value. -/
-example : countablePartitionEntropy unitLebesgue id = 0 := by
+`0`. Since the label is not admissible, this value is not its entropy. -/
+example : countablePartitionEntropy volume (id : I → I) = 0 := by
   rw [countablePartitionEntropy_def]
-  refine tsum_eq_zero_iff.mpr fun i ↦ ?_
-  have h0 : unitLebesgue {i} = 0 :=
-    le_antisymm ((Measure.restrict_apply_le _ _).trans_eq (measure_singleton i)) bot_le
-  simp [Measure.real, h0]
+  exact tsum_eq_zero_iff.mpr fun x ↦ by simp [Measure.real]
 
 end TauCeti.DyadicEntropyExamples
