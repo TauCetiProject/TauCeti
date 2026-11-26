@@ -65,8 +65,6 @@ theorem _root_.ContDiffAt.laplacian_comp_prodMk_fderiv {f : P × E → F} {p : P
       fderiv ℝ (fun w : P × E ↦ Δ (fun y ↦ f (w.1, y)) w.2) (p, z) := by
   let b := stdOrthonormalBasis ℝ E
   have hDf : ContDiffAt ℝ 2 (fderiv ℝ f) (p, z) := hf.fderiv_right (m := 2) (by norm_num)
-  have hD2 : DifferentiableAt ℝ (fderiv ℝ (fderiv ℝ f)) (p, z) :=
-    (hDf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
   -- Near `(p, z)` the Laplacian in the second variable is the trace along `inr`.
   have hΔ : (fun w : P × E ↦ Δ (fun y ↦ f (w.1, y)) w.2) =ᶠ[𝓝 (p, z)]
       fun w ↦ ∑ i, fderiv ℝ (fderiv ℝ f) w (0, b i) (0, b i) := by
@@ -77,17 +75,7 @@ theorem _root_.ContDiffAt.laplacian_comp_prodMk_fderiv {f : P × E → F} {p : P
     (l := ContinuousLinearMap.apply ℝ F v)
   simp only [Function.comp_def, ContinuousLinearMap.apply_apply] at hl
   rw [← hl, (hDf.clm_apply contDiffAt_const).laplacian_comp_prodMk_eq_sum b, hΔ.fderiv_eq,
-    fderiv_fun_sum fun i _ ↦ (hD2.clm_apply (differentiableAt_const _)).clm_apply
-      (differentiableAt_const _)]
-  simp only [FunLike.coe_sum, Finset.sum_apply]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  -- Both summands are values of the symmetric third derivative.
-  have hsymm := (hDf.isSymmSndFDerivAt (by simp [minSmoothness_of_isRCLikeNormedField]))
-    (0, b i) v
-  rw [fderiv_fderiv_fderiv_apply hf, fderiv_fderiv_fderiv_apply_comm hf (by simp), hsymm,
-    fderiv_clm_apply (hD2.clm_apply (differentiableAt_const _)) (differentiableAt_const _),
-    fderiv_clm_apply hD2 (differentiableAt_const _)]
-  simp
+    fderiv_sum_fderiv_fderiv_apply hf (by simp) (fun i ↦ (0, b i)) v]
 
 /-- **The Laplacian in the second variable commutes with joint iterated derivatives.** For
 `f : P × E → F` of class `C^(n+2)`, the Laplacian in `z` of `Dⁿ f` is the `n`-th joint derivative
