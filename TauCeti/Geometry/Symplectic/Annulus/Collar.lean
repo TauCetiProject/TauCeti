@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Annulus.PoincareBirkhoffLift
+import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Analysis.Calculus.ContDiff.Periodization
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem.DomRestrict
 import TauCeti.Analysis.Sobolev.Trace.Reflection.Seeley
@@ -32,24 +34,28 @@ The construction has three steps.
 
 * *Extension.* Seeley's extension (`TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_prod_Icc`)
   extends the displacement `f - id`, which has period one in `x` on `S`, to a `Cⁿ` map on the
-  plane, and periodizing in `x` (`TauCeti.exists_contDiff_eqOn_prod_univ_of_add_one`) makes the
+  plane, and periodizing in `x` (`TauCeti.exists_contDiff_eqOn_prod_univ_of_periodic`) makes the
   extension periodic everywhere. So the extension `Φ = id + u` of `f` commutes with the deck
   translation on the whole plane.
 * *Invertible differential.* Differentiating `g ∘ f = id` and `f ∘ g = id` within `S`, which has
-  unique derivatives, shows that the differential of `Φ` is invertible at every point of `S`.
-  Invertibility is an open condition, and by periodicity it suffices to look at the compact square
-  `[0, 1] × [-1, 2]`; so the differential is invertible on a band `ℝ × (-ε, 1 + ε)`.
+  unique derivatives (`HasFDerivWithinAt.isInvertible_of_invOn`), shows that the differential of
+  `Φ` is invertible at every point of `S`. Invertibility is an open condition, so it holds on a
+  thickening of the compact square `[0, 1] × [0, 1]`, and by periodicity on a band
+  `ℝ × (-ε, 1 + ε)`.
 * *Injectivity.* By the inverse function theorem `Φ` is injective near each point of `S`, and it is
-  injective on `S`. A compactness argument on pairs of points, with both points translated by the
-  same integer so that the first one lies in `[0, 1] × [-1, 2]`, shows that `Φ` is injective on a
-  band `ℝ × (-ε, 1 + ε)`. There `Φ` is an injective local diffeomorphism, hence an open partial
-  homeomorphism with `Cⁿ` inverse.
+  injective on `S`; so it is injective on an open neighbourhood of a compact rectangle
+  `[-R, R] × [0, 1]` (`Set.InjOn.exists_isOpen_superset`), hence on a thickening of it. Two points
+  of a thin band with the same image, translated by the same integer so that the first one lies in
+  `[0, 1] × [-1, 2]`, lie in that thickening, because `Φ` moves points a bounded distance. So `Φ`
+  is injective on a band `ℝ × (-ε, 1 + ε)`. There `Φ` is an injective local diffeomorphism, hence
+  an open partial homeomorphism with `Cⁿ` inverse.
 
-For a diffeomorphism of the closed strip preserving a smooth positive density `ρ dx ∧ dy` and
-twisting the two boundary lines in opposite directions, the collar extension is a
+For a diffeomorphism of the closed strip preserving a smooth positive density `ρ dx ∧ dy`,
+preserving both boundary lines and twisting them in opposite directions, the collar extension is a
 Poincaré–Birkhoff lift for `ρ` (`TauCeti.exists_isPoincareBirkhoffLift_eqOn_univ_prod_Icc`). So
 the strict annulus fixed-point theorem, stated for Poincaré–Birkhoff lifts, applies to every
-smooth area-preserving diffeomorphism of the closed annulus.
+smooth area-preserving diffeomorphism of the closed annulus which preserves each boundary circle
+and twists the two in opposite directions.
 
 ## Main results
 
@@ -75,37 +81,44 @@ open scoped Topology ContDiff
 
 namespace TauCeti
 
-/-! ### The excess over the strip -/
+/-! ### Bands around the strip -/
 
-/-- How far a point lies outside the strip `ℝ × [0, 1]`: `max (-y) (y - 1)`, which is nonpositive
-exactly on the strip and less than `ε` exactly on the band `ℝ × (-ε, 1 + ε)`. -/
-private def stripExcess (p : ℝ × ℝ) : ℝ := max (-p.2) (p.2 - 1)
+/-- The bands `(-ε, 1 + ε)` around `[0, 1]` grow with `ε`. -/
+private theorem Ioo_neg_subset_Ioo_neg {ε ε' : ℝ} (h : ε ≤ ε') :
+    Ioo (-ε) (1 + ε) ⊆ Ioo (-ε') (1 + ε') :=
+  Ioo_subset_Ioo (neg_le_neg h) (add_le_add_right h 1)
 
-private theorem continuous_stripExcess : Continuous stripExcess := by
-  unfold stripExcess
-  fun_prop
+/-- The band `(-ε, 1 + ε)` contains `[0, 1]` for `ε > 0`. -/
+private theorem Icc_zero_one_subset_Ioo_neg {ε : ℝ} (hε : 0 < ε) :
+    Icc (0 : ℝ) 1 ⊆ Ioo (-ε) (1 + ε) :=
+  Icc_subset_Ioo (neg_lt_zero.2 hε) (lt_add_of_pos_right 1 hε)
 
-private theorem stripExcess_nonpos_iff {p : ℝ × ℝ} :
-    stripExcess p ≤ 0 ↔ p ∈ univ ×ˢ Icc (0 : ℝ) 1 := by
-  simp only [stripExcess, max_le_iff, mem_prod, mem_univ, mem_Icc, true_and]
-  constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+/-- The band `(-min ε 1, 1 + min ε 1)` lies in `[-1, 2]`. -/
+private theorem Ioo_neg_min_one_subset_Icc (ε : ℝ) :
+    Ioo (-min ε 1) (1 + min ε 1) ⊆ Icc (-1 : ℝ) 2 := fun _ hy ↦
+  ⟨by linarith [hy.1, min_le_right ε 1], by linarith [hy.2, min_le_right ε 1]⟩
 
-private theorem stripExcess_lt_iff {p : ℝ × ℝ} {ε : ℝ} :
-    stripExcess p < ε ↔ p.2 ∈ Ioo (-ε) (1 + ε) := by
-  simp only [stripExcess, max_lt_iff, mem_Ioo]
-  constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+/-- A point of `[a, b] × (-δ, 1 + δ)` lies in the `δ`-thickening of `[a, b] × [0, 1]`. -/
+private theorem mem_thickening_Icc_prod_Icc {a b δ : ℝ} (hδ : 0 < δ) {q : ℝ × ℝ}
+    (hq₁ : q.1 ∈ Icc a b) (hq₂ : q.2 ∈ Ioo (-δ) (1 + δ)) :
+    q ∈ Metric.thickening δ (Icc a b ×ˢ Icc (0 : ℝ) 1) := by
+  refine Metric.mem_thickening_iff.2 ⟨(q.1, max 0 (min q.2 1)),
+    ⟨hq₁, le_max_left _ _, max_le zero_le_one (min_le_right _ _)⟩, ?_⟩
+  simp only [Prod.dist_eq, dist_self, Real.dist_eq]
+  refine max_lt hδ (abs_sub_lt_iff.2 ⟨?_, ?_⟩) <;> simp only [max_def, min_def] <;> split_ifs <;>
+    linarith [hq₂.1, hq₂.2]
 
-@[simp]
-private theorem stripExcess_add_mk (p : ℝ × ℝ) (a : ℝ) :
-    stripExcess (p + (a, 0)) = stripExcess p := by
-  simp [stripExcess]
+/-- Translating `p` by `-⌊p.1⌋` in `x` moves its first coordinate into `[0, 1]`. -/
+private theorem fst_add_neg_floor_mem (p : ℝ × ℝ) :
+    (p + (((-⌊p.1⌋ : ℤ) : ℝ), 0)).1 ∈ Icc (0 : ℝ) 1 := by
+  refine ⟨?_, ?_⟩
+  · simp [← sub_eq_add_neg]
+  · simpa [← sub_eq_add_neg] using (Int.fract_lt_one p.1).le
 
 /-- Translating `p` by `-⌊p.1⌋` in `x` moves it into `[0, 1] × [-1, 2]` when `p.2 ∈ [-1, 2]`. -/
 private theorem add_neg_floor_mem {p : ℝ × ℝ} (hp : p.2 ∈ Icc (-1 : ℝ) 2) :
-    p + (((-⌊p.1⌋ : ℤ) : ℝ), 0) ∈ Icc (0 : ℝ) 1 ×ˢ Icc (-1 : ℝ) 2 := by
-  refine ⟨⟨?_, ?_⟩, by simpa using hp⟩
-  · simp [← sub_eq_add_neg]
-  · simpa [← sub_eq_add_neg] using (Int.fract_lt_one p.1).le
+    p + (((-⌊p.1⌋ : ℤ) : ℝ), 0) ∈ Icc (0 : ℝ) 1 ×ˢ Icc (-1 : ℝ) 2 :=
+  ⟨fst_add_neg_floor_mem p, by simpa using hp⟩
 
 /-! ### A periodic extension of a lift -/
 
@@ -119,7 +132,7 @@ private theorem exists_contDiff_add_eqOn {n : ℕ∞} {f : ℝ × ℝ → ℝ ×
   -- Extend the displacement `f - id` across the boundary lines.
   obtain ⟨G, hG, hGf⟩ := HalfSpaceExtension.exists_contDiff_eqOn_prod_Icc (hf.sub contDiffOn_id)
   -- Periodize the extension in `x`, written as the second variable.
-  obtain ⟨v, hv, hvG, hvper⟩ := exists_contDiff_eqOn_prod_univ_of_add_one
+  obtain ⟨v, hv, hvG, hvper⟩ := exists_contDiff_eqOn_prod_univ_of_periodic
     (hG.comp (contDiff_snd.prodMk contDiff_fst)) (s := Icc (0 : ℝ) 1) fun y hy x ↦ by
       have hp : ((x, y) : ℝ × ℝ) ∈ univ ×ˢ Icc (0 : ℝ) 1 := ⟨mem_univ _, hy⟩
       have hp' : ((x + 1, y) : ℝ × ℝ) ∈ univ ×ˢ Icc (0 : ℝ) 1 := ⟨mem_univ _, hy⟩
@@ -132,7 +145,7 @@ private theorem exists_contDiff_add_eqOn {n : ℕ∞} {f : ℝ × ℝ → ℝ ×
   · have h := hvG (mk_mem_prod hp.2 (mem_univ p.1))
     simp only [comp_apply, hGf hp, id] at h
     simp [h]
-  · simpa using (show Periodic (fun x ↦ v (p.2, x)) 1 from hvper p.2).int_mul k p.1
+  · simpa using (hvper p.2).int_mul k p.1
 
 /-! ### Uniform bands -/
 
@@ -152,19 +165,14 @@ private theorem exists_band_isInvertible_fderiv (hΦ : ContDiff ℝ 1 Φ)
     (hper : ∀ (p : ℝ × ℝ) (k : ℤ), Φ (p + ((k : ℝ), 0)) = Φ p + ((k : ℝ), 0))
     (hinv : ∀ p ∈ univ ×ˢ Icc (0 : ℝ) 1, (fderiv ℝ Φ p).IsInvertible) :
     ∃ ε > 0, ∀ p : ℝ × ℝ, p.2 ∈ Ioo (-ε) (1 + ε) → (fderiv ℝ Φ p).IsInvertible := by
-  have hC : IsClosed {p : ℝ × ℝ | ¬ (fderiv ℝ Φ p).IsInvertible} :=
+  obtain ⟨δ, hδ, hsub⟩ := (isCompact_Icc.prod isCompact_Icc :
+      IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)).exists_thickening_subset_open
     (ContinuousLinearMap.isOpen_setOfPred_isInvertible.preimage
-      (hΦ.continuous_fderiv one_ne_zero)).isClosed_compl
-  obtain ⟨ε₀, hε₀, hle⟩ := (isCompact_Icc.prod isCompact_Icc).inter_right hC |>.exists_forall_le'
-    (f := stripExcess) continuous_stripExcess.continuousOn (a := 0) fun p hp ↦
-      lt_of_not_ge fun h ↦ hp.2 (hinv p (stripExcess_nonpos_iff.1 h))
-  refine ⟨min ε₀ 1, lt_min hε₀ one_pos, fun p hp ↦ ?_⟩
-  by_contra hnot
-  have hp' : p.2 ∈ Icc (-1 : ℝ) 2 :=
-    ⟨by linarith [hp.1, min_le_right ε₀ 1], by linarith [hp.2, min_le_right ε₀ 1]⟩
-  have h := hle _ ⟨add_neg_floor_mem hp', by rwa [mem_ofPred_eq, fderiv_add_mk hper]⟩
-  rw [stripExcess_add_mk] at h
-  linarith [stripExcess_lt_iff.2 hp, min_le_left ε₀ 1]
+      (hΦ.continuous_fderiv one_ne_zero)) fun p hp ↦ hinv p ⟨mem_univ _, hp.2⟩
+  refine ⟨δ, hδ, fun p hp ↦ ?_⟩
+  have h : (fderiv ℝ Φ (p + (((-⌊p.1⌋ : ℤ) : ℝ), 0))).IsInvertible :=
+    hsub (mem_thickening_Icc_prod_Icc hδ (fst_add_neg_floor_mem p) (by simpa using hp))
+  rwa [fderiv_add_mk hper] at h
 
 /-- A continuous map commuting with the deck translation moves the points of the band
 `ℝ × [-1, 2]` a bounded distance. -/
@@ -177,23 +185,6 @@ private theorem exists_norm_sub_le (hΦ : Continuous Φ)
   have h := hM _ (add_neg_floor_mem hq)
   rwa [hper, add_sub_add_right_eq_sub] at h
 
-/-- Two points of the strip with the same image under a `C¹` map injective on the strip, with
-invertible differential there, lie in a common open set on which the map is injective. -/
-private theorem exists_isOpen_injOn_of_apply_eq (hΦ : ContDiff ℝ 1 Φ)
-    (hinv : ∀ p ∈ univ ×ˢ Icc (0 : ℝ) 1, (fderiv ℝ Φ p).IsInvertible)
-    (hinj : InjOn Φ (univ ×ˢ Icc 0 1)) {p q : ℝ × ℝ} (hp : p ∈ univ ×ˢ Icc (0 : ℝ) 1)
-    (hq : q ∈ univ ×ˢ Icc (0 : ℝ) 1) (hpq : Φ p = Φ q) :
-    ∃ U, IsOpen U ∧ InjOn Φ U ∧ p ∈ U ∧ q ∈ U := by
-  obtain rfl := hinj hp hq hpq
-  -- Near a point of the strip, `Φ` is injective by the inverse function theorem.
-  obtain ⟨e, he⟩ := hinv p hp
-  have hs : HasStrictFDerivAt Φ (e : ℝ × ℝ →L[ℝ] ℝ × ℝ) p := by
-    rw [he]
-    exact hΦ.contDiffAt.hasStrictFDerivAt_fderiv one_ne_zero
-  exact ⟨_, (hs.toOpenPartialHomeomorph Φ).open_source,
-    by simpa using (hs.toOpenPartialHomeomorph Φ).injOn, hs.mem_toOpenPartialHomeomorph_source,
-    hs.mem_toOpenPartialHomeomorph_source⟩
-
 /-- If a `C¹` map commuting with the deck translation is injective on the strip and has invertible
 differential there, it is injective on a band `ℝ × (-ε, 1 + ε)`. -/
 private theorem exists_band_injOn (hΦ : ContDiff ℝ 1 Φ)
@@ -201,81 +192,53 @@ private theorem exists_band_injOn (hΦ : ContDiff ℝ 1 Φ)
     (hinv : ∀ p ∈ univ ×ˢ Icc (0 : ℝ) 1, (fderiv ℝ Φ p).IsInvertible)
     (hinj : InjOn Φ (univ ×ˢ Icc 0 1)) :
     ∃ ε > 0, InjOn Φ (univ ×ˢ Ioo (-ε) (1 + ε)) := by
-  set K := Icc (0 : ℝ) 1 ×ˢ Icc (-1 : ℝ) 2
-  have hK : IsCompact K := isCompact_Icc.prod isCompact_Icc
   obtain ⟨M, hMp⟩ := exists_norm_sub_le hΦ.continuous hper
-  -- Pairs of points with the same image, near the diagonal of the strip or not.
-  set W := ⋃ (U : Set (ℝ × ℝ)) (_ : IsOpen U ∧ InjOn Φ U), U ×ˢ U
-  have hW : IsOpen W := isOpen_iUnion fun U ↦ isOpen_iUnion fun hU ↦ hU.1.prod hU.1
-  set Z := (K ×ˢ Metric.closedBall (0 : ℝ × ℝ) (2 + 2 * M) ∩ {z | Φ z.1 = Φ z.2}) \ W
-  have hZ : IsCompact Z := ((hK.prod (isCompact_closedBall _ _)).inter_right
-    (isClosed_eq (hΦ.continuous.comp continuous_fst) (hΦ.continuous.comp continuous_snd))).diff hW
-  obtain ⟨ε₀, hε₀, hle⟩ := hZ.exists_forall_le'
-    (f := fun z : (ℝ × ℝ) × (ℝ × ℝ) ↦ max (stripExcess z.1) (stripExcess z.2))
-    ((continuous_stripExcess.comp continuous_fst).max
-      (continuous_stripExcess.comp continuous_snd)).continuousOn (a := 0) fun z hz ↦ by
-    by_contra h
-    rw [not_lt, max_le_iff, stripExcess_nonpos_iff, stripExcess_nonpos_iff] at h
-    obtain ⟨U, hU, hUinj, h₁, h₂⟩ := exists_isOpen_injOn_of_apply_eq hΦ hinv hinj h.1 h.2 hz.1.2
-    exact hz.2 (mem_iUnion₂.2 ⟨U, ⟨hU, hUinj⟩, h₁, h₂⟩)
-  refine ⟨min ε₀ 1, lt_min hε₀ one_pos, fun p hp q hq hpq ↦ ?_⟩
-  have hp' : p.2 ∈ Icc (-1 : ℝ) 2 :=
-    ⟨by linarith [hp.2.1, min_le_right ε₀ 1], by linarith [hp.2.2, min_le_right ε₀ 1]⟩
-  have hq' : q.2 ∈ Icc (-1 : ℝ) 2 :=
-    ⟨by linarith [hq.2.1, min_le_right ε₀ 1], by linarith [hq.2.2, min_le_right ε₀ 1]⟩
-  -- Translate both points by the same integer, so that the first one lies in `K`.
+  set K := Icc (-(2 + 2 * M)) (2 + 2 * M) ×ˢ Icc (0 : ℝ) 1
+  have hK : IsCompact K := isCompact_Icc.prod isCompact_Icc
+  -- `Φ` is injective on an open neighbourhood `t` of `K`: near each point of the strip by the
+  -- inverse function theorem, and on the strip itself.
+  obtain ⟨t, ht, hKt, htinj⟩ :=
+    (hinj.mono (prod_mono (subset_univ _) subset_rfl)).exists_isOpen_superset hK
+      (fun _ _ ↦ hΦ.continuous.continuousAt) fun p hp ↦ by
+      obtain ⟨e, he⟩ := hinv p ⟨mem_univ _, hp.2⟩
+      have hs : HasStrictFDerivAt Φ (e : ℝ × ℝ →L[ℝ] ℝ × ℝ) p := by
+        rw [he]
+        exact hΦ.contDiffAt.hasStrictFDerivAt_fderiv one_ne_zero
+      exact ⟨_, (hs.toOpenPartialHomeomorph Φ).open_source.mem_nhds
+        hs.mem_toOpenPartialHomeomorph_source, by simpa using (hs.toOpenPartialHomeomorph Φ).injOn⟩
+  obtain ⟨δ, hδ, hδt⟩ := hK.exists_thickening_subset_open ht hKt
+  refine ⟨min δ 1, lt_min hδ one_pos, fun p hp q hq hpq ↦ ?_⟩
+  have hp' := Ioo_neg_min_one_subset_Icc δ hp.2
+  have hq' := Ioo_neg_min_one_subset_Icc δ hq.2
+  -- Translate both points by the same integer, so that the first one lies in `[0, 1] × [-1, 2]`.
   set v : ℝ × ℝ := (((-⌊p.1⌋ : ℤ) : ℝ), 0)
   have hpK := add_neg_floor_mem hp'
   have hΦv : Φ (p + v) = Φ (q + v) := by rw [hper, hper, hpq]
+  have h₁ := hMp (p + v) (by simpa [v] using hp')
+  have h₂ := hMp (q + v) (by simpa [v] using hq')
+  have hM : 0 ≤ M := (norm_nonneg _).trans h₁
+  -- The second point stays within `2 + 2 * M` of the origin.
   have hqv : ‖q + v‖ ≤ 2 + 2 * M := by
     have hpv : ‖p + v‖ ≤ 2 := norm_prod_le_iff.2
       ⟨by rw [Real.norm_eq_abs, abs_le]; constructor <;> linarith [hpK.1.1, hpK.1.2],
         by rw [Real.norm_eq_abs, abs_le]; constructor <;> linarith [hpK.2.1, hpK.2.2]⟩
-    have h₁ := hMp (p + v) (by simpa [v] using hp')
-    have h₂ := hMp (q + v) (by simpa [v] using hq')
     calc ‖q + v‖ = ‖(p + v) + (Φ (p + v) - (p + v)) - (Φ (q + v) - (q + v))‖ := by
           rw [hΦv]; abel_nf
       _ ≤ ‖p + v‖ + ‖Φ (p + v) - (p + v)‖ + ‖Φ (q + v) - (q + v)‖ := norm_sub_le_of_le
           (norm_add_le _ _) le_rfl
       _ ≤ 2 + 2 * M := by linarith
-  have hnot : (p + v, q + v) ∉ Z := fun hz ↦ by
-    have h := hle _ hz
-    simp only [v, stripExcess_add_mk] at h
-    have h₁ := stripExcess_lt_iff.2 hp.2
-    have h₂ := stripExcess_lt_iff.2 hq.2
-    linarith [max_lt h₁ h₂, min_le_left ε₀ 1]
-  have hW' : (p + v, q + v) ∈ W := by
-    by_contra hW'
-    exact hnot ⟨⟨⟨hpK, mem_closedBall_zero_iff.2 hqv⟩, hΦv⟩, hW'⟩
-  obtain ⟨U, ⟨-, hU⟩, hpU, hqU⟩ := by simpa only [W, mem_iUnion, exists_prop] using hW'
-  exact add_right_cancel (hU hpU hqU hΦv)
+  have hqv₁ := (norm_fst_le (q + v)).trans hqv
+  rw [Real.norm_eq_abs, abs_le] at hqv₁
+  have hpt : p + v ∈ t := hδt (mem_thickening_Icc_prod_Icc hδ
+    ⟨by linarith [hpK.1.1], by linarith [hpK.1.2]⟩
+    (by simpa [v] using Ioo_neg_subset_Ioo_neg (min_le_left δ 1) hp.2))
+  have hqt : q + v ∈ t := hδt (mem_thickening_Icc_prod_Icc hδ hqv₁
+    (by simpa [v] using Ioo_neg_subset_Ioo_neg (min_le_left δ 1) hq.2))
+  exact add_right_cancel (htinj hpt hqt hΦv)
 
 end Band
 
 /-! ### The collar extension -/
-
-/-- The differential of a differentiable extension `Φ` of a map `f` of the strip with an inverse
-`g` differentiable on the strip is invertible at every point of the strip. -/
-private theorem isInvertible_fderiv_of_eqOn {Φ f g : ℝ × ℝ → ℝ × ℝ} (hΦ : Differentiable ℝ Φ)
-    (hΦf : EqOn Φ f (univ ×ˢ Icc 0 1)) (hg : DifferentiableOn ℝ g (univ ×ˢ Icc 0 1))
-    (hfS : MapsTo f (univ ×ˢ Icc 0 1) (univ ×ˢ Icc 0 1))
-    (hgS : MapsTo g (univ ×ˢ Icc 0 1) (univ ×ˢ Icc 0 1))
-    (hinv : InvOn g f (univ ×ˢ Icc 0 1) (univ ×ˢ Icc 0 1)) {p : ℝ × ℝ}
-    (hp : p ∈ univ ×ˢ Icc (0 : ℝ) 1) : (fderiv ℝ Φ p).IsInvertible := by
-  have hU : UniqueDiffOn ℝ (univ ×ˢ Icc (0 : ℝ) 1) :=
-    (uniqueDiffOn_univ (E := ℝ)).prod uniqueDiffOn_Icc_zero_one
-  set A := fderiv ℝ Φ p
-  set B := fderivWithin ℝ g (univ ×ˢ Icc 0 1) (f p)
-  have hA : HasFDerivWithinAt f A (univ ×ˢ Icc 0 1) p :=
-    (hΦ p).hasFDerivAt.hasFDerivWithinAt.congr hΦf.symm (hΦf hp).symm
-  have hB : HasFDerivWithinAt g B (univ ×ˢ Icc 0 1) (f p) := (hg _ (hfS hp)).hasFDerivWithinAt
-  -- Differentiate `g ∘ f = id` at `p` and `f ∘ g = id` at `f p`, within the strip.
-  have h₁ : B ∘L A = .id ℝ _ := (hU p hp).eq (hB.comp p hA hfS)
-    ((hasFDerivWithinAt_id p _).congr (fun q hq ↦ hinv.1 hq) (hinv.1 hp))
-  have hA' : HasFDerivWithinAt f A (univ ×ˢ Icc 0 1) (g (f p)) := by rwa [hinv.1 hp]
-  have h₂ : A ∘L B = .id ℝ _ := (hU _ (hfS hp)).eq (hA'.comp (f p) hB hgS)
-    ((hasFDerivWithinAt_id (f p) _).congr (fun q hq ↦ hinv.2 hq) (hinv.2 (hfS hp)))
-  exact .of_inverse h₂ h₁
 
 /-- **Collar extension of a diffeomorphism of the closed strip.** Let `f` and `g` be mutually
 inverse maps of the closed strip `ℝ × [0, 1]` into itself, with `f` of class `Cⁿ`, `n ≥ 1`, and
@@ -303,20 +266,24 @@ theorem exists_openPartialHomeomorph_eqOn_univ_prod_Icc {n : ℕ∞} (hn : 1 ≤
   have hper : ∀ (p : ℝ × ℝ) (k : ℤ), Φ (p + ((k : ℝ), 0)) = Φ p + ((k : ℝ), 0) := fun p k ↦ by
     simp only [hΦdef, huper]
     abel
+  have hU : UniqueDiffOn ℝ (univ ×ˢ Icc (0 : ℝ) 1) :=
+    (uniqueDiffOn_univ (E := ℝ)).prod uniqueDiffOn_Icc_zero_one
   have hinvS : ∀ p ∈ univ ×ˢ Icc (0 : ℝ) 1, (fderiv ℝ Φ p).IsInvertible := fun p hp ↦
-    isInvertible_fderiv_of_eqOn (hΦ₁.differentiable one_ne_zero) huf hg hfS hgS hinv hp
+    ((hΦ₁.differentiable one_ne_zero p).hasFDerivAt.hasFDerivWithinAt.congr huf.symm
+      (huf hp).symm).isInvertible_of_invOn (hg _ (hfS hp)).hasFDerivWithinAt hfS hgS hinv
+      (hU p hp) (hU _ (hfS hp)) hp
   obtain ⟨ε₁, hε₁, hband₁⟩ := exists_band_isInvertible_fderiv hΦ₁ hper hinvS
   obtain ⟨ε₂, hε₂, hband₂⟩ :=
     exists_band_injOn hΦ₁ hper hinvS (hinv.1.injOn.congr huf.symm)
   set ε := min ε₁ ε₂
   set B : Set (ℝ × ℝ) := univ ×ˢ Ioo (-ε) (1 + ε)
   have hB : IsOpen B := isOpen_univ.prod isOpen_Ioo
-  have hB₁ : B ⊆ univ ×ˢ Ioo (-ε₁) (1 + ε₁) := prod_mono subset_rfl
-    (Ioo_subset_Ioo (by linarith [min_le_left ε₁ ε₂]) (by linarith [min_le_left ε₁ ε₂]))
-  have hB₂ : B ⊆ univ ×ˢ Ioo (-ε₂) (1 + ε₂) := prod_mono subset_rfl
-    (Ioo_subset_Ioo (by linarith [min_le_right ε₁ ε₂]) (by linarith [min_le_right ε₁ ε₂]))
-  have hSB : univ ×ˢ Icc (0 : ℝ) 1 ⊆ B := prod_mono subset_rfl
-    (Icc_subset_Ioo (by linarith [lt_min hε₁ hε₂]) (by linarith [lt_min hε₁ hε₂]))
+  have hB₁ : B ⊆ univ ×ˢ Ioo (-ε₁) (1 + ε₁) :=
+    prod_mono subset_rfl (Ioo_neg_subset_Ioo_neg (min_le_left ε₁ ε₂))
+  have hB₂ : B ⊆ univ ×ˢ Ioo (-ε₂) (1 + ε₂) :=
+    prod_mono subset_rfl (Ioo_neg_subset_Ioo_neg (min_le_right ε₁ ε₂))
+  have hSB : univ ×ˢ Icc (0 : ℝ) 1 ⊆ B :=
+    prod_mono subset_rfl (Icc_zero_one_subset_Ioo_neg (lt_min hε₁ hε₂))
   have hinvB : ∀ p ∈ B, (fderiv ℝ Φ p).IsInvertible := fun p hp ↦ hband₁ p (hB₁ hp).2
   let F := OpenPartialHomeomorph.ofContinuousOpenRestrict ((hband₂.mono hB₂).toPartialEquiv Φ B)
     hΦ.continuous.continuousOn (isOpenMap_domRestrict_of_hasStrictFDerivAt_of_isInvertible hB
@@ -356,8 +323,8 @@ theorem exists_isPoincareBirkhoffLift_eqOn_univ_prod_Icc {ρ : ℝ × ℝ → �
       EqOn F f (univ ×ˢ Icc 0 1) ∧ EqOn F.symm g (univ ×ˢ Icc 0 1) := by
   obtain ⟨F, ε, hε, hsrc, htgt, hFc, hFsc, hFf, hFg, hFdeck⟩ :=
     exists_openPartialHomeomorph_eqOn_univ_prod_Icc le_top hf hg hfS hgS hinv hdeck
-  have hSsrc : univ ×ˢ Icc (0 : ℝ) 1 ⊆ F.source := hsrc ▸ prod_mono subset_rfl
-    (Icc_subset_Ioo (by linarith) (by linarith))
+  have hSsrc : univ ×ˢ Icc (0 : ℝ) 1 ⊆ F.source :=
+    hsrc ▸ prod_mono subset_rfl (Icc_zero_one_subset_Ioo_neg hε)
   have hmem (x : ℝ) {y : ℝ} (hy : y ∈ Icc (0 : ℝ) 1) : ((x, y) : ℝ × ℝ) ∈ univ ×ˢ Icc (0 : ℝ) 1 :=
     ⟨mem_univ x, hy⟩
   -- On the strip, the derivative of `F` is the derivative of `f` within the strip.

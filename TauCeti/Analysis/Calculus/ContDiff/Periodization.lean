@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Algebra.Order.Floor.Ring
-import Mathlib.Algebra.Ring.Periodic
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 
@@ -26,7 +26,7 @@ translates by `-1`, `0` and `1` contribute (`TauCeti.periodizeSnd_eq_of_mem_Icc`
 
 A `C^n` map which already has period one in the second variable over a set `s` of first
 coordinates agrees on `s × ℝ` with a `C^n` map of period one everywhere
-(`TauCeti.exists_contDiff_eqOn_prod_univ_of_add_one`): periodize its product with a cutoff whose
+(`TauCeti.exists_contDiff_eqOn_prod_univ_of_periodic`): periodize its product with a cutoff whose
 integer translates sum to one.
 
 Periodizing by `fract` instead (`TauCeti.apply_fract_snd_eventuallyEq`) needs a map that is already
@@ -112,10 +112,11 @@ theorem contDiff_periodizeSnd {E W : Type*} [NormedAddCommGroup E] [NormedSpace 
 /-- **Periodic extension.** A `C^n` map `h` with period one in the second variable over a set `s`
 of first coordinates agrees on `s × ℝ` with a `C^n` map of period one in the second variable
 everywhere. -/
-theorem exists_contDiff_eqOn_prod_univ_of_add_one {E W : Type*} [NormedAddCommGroup E]
+theorem exists_contDiff_eqOn_prod_univ_of_periodic {E W : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [NormedAddCommGroup W] [NormedSpace ℝ W] {n : ℕ∞} {h : E × ℝ → W}
-    (hc : ContDiff ℝ n h) {s : Set E} (hs : ∀ x ∈ s, ∀ t, h (x, t + 1) = h (x, t)) :
-    ∃ g : E × ℝ → W, ContDiff ℝ n g ∧ EqOn g h (s ×ˢ univ) ∧ ∀ x t, g (x, t + 1) = g (x, t) := by
+    (hc : ContDiff ℝ n h) {s : Set E} (hs : ∀ x ∈ s, Function.Periodic (fun t ↦ h (x, t)) 1) :
+    ∃ g : E × ℝ → W, ContDiff ℝ n g ∧ EqOn g h (s ×ˢ univ) ∧
+      ∀ x, Function.Periodic (fun t ↦ g (x, t)) 1 := by
   set k : E × ℝ → W := fun z ↦ latticeBump₁ z.2 • h z
   have hk : ∀ z, k z ≠ 0 → z.2 ∈ Ioo (-1 : ℝ) 1 := fun z hz ↦
     abs_lt.1 (abs_lt_one_of_latticeBump₁_ne_zero (left_ne_zero_of_smul hz))
@@ -123,10 +124,9 @@ theorem exists_contDiff_eqOn_prod_univ_of_add_one {E W : Type*} [NormedAddCommGr
     hk, ?_, periodizeSnd_add_one k⟩
   rintro ⟨x, t⟩ ⟨hx, -⟩
   -- Over `x ∈ s` every translate `h (x, t + j)` is `h (x, t)`, and the bumps sum to one.
-  have hh : Function.Periodic (fun t ↦ h (x, t)) 1 := hs x hx
   have hsum : HasSum (fun j : ℤ ↦ latticeBump₁ (t + j)) 1 := by
     simpa [Function.comp_def] using (Equiv.neg ℤ).hasSum_iff.2 (hasSum_latticeBump₁_sub t)
-  have hj (j : ℤ) : h (x, t + j) = h (x, t) := by simpa using hh.int_mul j t
+  have hj (j : ℤ) : h (x, t + j) = h (x, t) := by simpa using (hs x hx).int_mul j t
   rw [periodizeSnd_apply]
   simp only [k, hj]
   rw [(hsum.smul_const (h (x, t))).tsum_eq, one_smul]
