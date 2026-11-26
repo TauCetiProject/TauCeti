@@ -37,10 +37,10 @@ the local Reeb flow, the flow of the constant Hamiltonian `1`, preserves `α`
 (`IsContactForm.mpullback_flowOf_reebVectorField_apply`). None of this needs completeness.
 
 When `X` is complete, which holds for instance on a compact manifold
-(`TauCeti.isCompleteVectorField_of_compactSpace`) or when `f` has compact support
+(`TauCeti.isCompleteVectorField_of_compactSpace`) or when `f` is `C²` with compact support
 (`IsContactForm.isCompleteVectorField_contactHamiltonianVectorField_of_hasCompactSupport`), since
 `X` vanishes off the support of `f`, its maximal flow is the global flow `ψ`, and the
-time-`t` maps are diffeomorphisms. They are then cooriented contactomorphisms of `α`
+time-`t` maps are diffeomorphisms. For smooth `f` they are then cooriented contactomorphisms of `α`
 (`IsContactHamiltonianVectorField.preservesCoorientation_globalFlowDiffeomorph`), and strict
 contactomorphisms for every `t` exactly when `R_α f = 0`
 (`IsContactHamiltonianVectorField.isStrictContactomorphism_globalFlowDiffeomorph_iff`). In
@@ -238,7 +238,8 @@ theorem IsContactForm.isStrictContactomorphism_globalFlowDiffeomorph_reebVectorF
 
 /-- **Compactly supported contact Hamiltonians have complete flows.** For a contact form `α` and a
 compactly supported `C²` function `f`, the contact Hamiltonian vector field `X_f` vanishes off the
-support of `f`, so it is complete. Its flow then consists of cooriented contactomorphisms
+support of `f`, so it is complete. When `f` is moreover smooth, its flow then consists of
+cooriented contactomorphisms
 (`IsContactHamiltonianVectorField.preservesCoorientation_globalFlowDiffeomorph`), with no
 compactness of `M`. -/
 theorem IsContactForm.isCompleteVectorField_contactHamiltonianVectorField_of_hasCompactSupport
