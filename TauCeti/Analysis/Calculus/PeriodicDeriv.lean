@@ -56,6 +56,8 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   translations along a vector `v` has derivative vanishing on `v`.
 * `TauCeti.fderiv_add_snd_of_periodic_snd`: a map on a product of period `c` in the second
   coordinate has a Fréchet derivative of period `c` in it.
+* `TauCeti.exists_mem_Ico_fderiv_comp_add_right_eq`: for such a map on `E × ℝ`, translation in
+  the first coordinate moves every point to `{0} × [0, c)` without changing the derivative.
 * `TauCeti.hasDerivAt_of_periodic_of_hasDerivWithinAt`: a periodic function solving `x' = Y` for a
   periodic `Y` within a single closed period interval `[a, a + T]` solves it everywhere.
 -/
@@ -164,6 +166,21 @@ theorem fderiv_add_snd_of_periodic_snd {𝕜 E F G : Type*} [NontriviallyNormedF
     fderiv 𝕜 f (x, y + c) = fderiv 𝕜 f (x, y) := by
   have hp : Function.Periodic f (0, c) := fun ⟨p, q⟩ ↦ by simpa using hf p q
   simpa using hp.fderiv (x, y)
+
+/-- **Moving a point of a periodic map into one period.** For a map `u` on `E × ℝ` of period
+`c > 0` in the second coordinate, every point `z` is moved, by translation in the first coordinate
+and periodicity in the second, to a point `(0, t)` with `t ∈ [0, c)` at which the translate
+`w ↦ u (w + (z.1, 0))` has the same Fréchet derivative as `u` at `z`. -/
+theorem exists_mem_Ico_fderiv_comp_add_right_eq {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {u : E × ℝ → F} {c : ℝ}
+    (hc : 0 < c) (hu : ∀ x y, u (x, y + c) = u (x, y)) (z : E × ℝ) :
+    ∃ t ∈ Set.Ico 0 c, fderiv ℝ (fun w ↦ u (w + (z.1, 0))) (0, t) = fderiv ℝ u z := by
+  have hpd : Function.Periodic (fun t ↦ fderiv ℝ u (z.1, t)) c :=
+    fun t ↦ fderiv_add_snd_of_periodic_snd hu _ t
+  obtain ⟨t, ht, heq⟩ := hpd.exists_mem_Ico₀ hc z.2
+  refine ⟨t, ht, ?_⟩
+  rw [fderiv_comp_add_right, Prod.mk_add_mk, zero_add, add_zero]
+  exact heq.symm
 
 open Set in
 /-- **Periodic solutions of a differential equation on one period.** Let `x` and `Y` be

@@ -31,6 +31,9 @@ shift yield smooth `K`-Lipschitz `g_j` with `u < g_j` on `Ω` converging uniform
 * `Distribution.lintegral_mass_slice_le_of_lipschitzOnWith`,
   `Distribution.lintegral_mass_slice_le_of_lipschitzOnWith_of_innerProductSpace`: the slicing
   inequality for `K`-Lipschitz functions on `Ω` (sharp constant `K` on inner product spaces).
+* `Distribution.setLIntegral_mass_slice_le_of_lipschitzOnWith`,
+  `Distribution.setLIntegral_mass_slice_le_of_lipschitzOnWith_of_innerProductSpace`: localization
+  to a strip `{a < u < b}`.
 * `Distribution.lintegral_lintegral_massMeasure_slice_le_of_lipschitzOnWith`,
   `Distribution.lintegral_lintegral_massMeasure_slice_le_of_lipschitzOnWith_of_innerProductSpace`:
   weighted mass-measure slicing inequalities for nonnegative Borel weights.
@@ -102,12 +105,12 @@ theorem exists_contDiff_lipschitzWith_slice_tendsto (hu : LipschitzOnWith K u Ω
     · exact ((tendsto_order.1 (hg_lim x)).2 t hx).mono fun j hj => iff_of_true hj hx
     · exact .of_forall fun j => iff_of_false (fun hj => hx ((hg_bounds x j).1.trans hj)) hx
   simp only [slice_apply _ hu_meas, slice_apply _ (hg_meas _)]
-  exact (tendsto_massRestrict_of_eventually_iff
+  exact (tendsto_massRestrict_apply
       (fun j => measurableSet_lt (hg_meas j) measurable_const)
-      (measurableSet_lt hu_meas measurable_const) hiff (extDerivCLM φ)).sub
-    (tendsto_massRestrict_of_eventually_iff
+      (measurableSet_lt hu_meas measurable_const) (ae_of_all _ hiff) (extDerivCLM φ)).sub
+    (tendsto_massRestrict_apply
       (fun j => measurableSet_lt (hg_meas j) measurable_const)
-      (measurableSet_lt hu_meas measurable_const) hiff φ)
+      (measurableSet_lt hu_meas measurable_const) (ae_of_all _ hiff) φ)
 
 /-! ### The slicing inequality for Lipschitz functions -/
 
@@ -163,6 +166,72 @@ theorem lintegral_localMass_slice_le_of_lipschitzOnWith {U : Opens E} (hU : U �
   simp_rw [← mass_comp_monoCLM hU (f := T)]
   simpa only [← mass_comp_monoCLM hU, ← coe_comp, slice_comp_monoCLM hT hU huΩ] using
     lintegral_mass_slice_le_of_lipschitzOnWith hT.comp_monoCLM hu
+
+private theorem setLIntegral_mass_slice_le_of_lipschitzOnWith_aux
+    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
+    (hu : LipschitzOnWith K u Ω) (a b : ℝ) (c : ℝ≥0∞)
+    (hsmooth : ∀ g : E → ℝ, ContDiff ℝ ∞ g → ∃ m : ℝ → ℝ≥0∞, Measurable m ∧
+      (∀ t, mass (slice T g t) ≤ m t) ∧
+      ∫⁻ t, m t ≤ c * ∫⁻ x : Ω, ‖fderiv ℝ g x‖ₑ ∂massMeasure T) :
+    ∫⁻ t in Ioo a b, mass (slice T u t) ≤ c * (K : ℝ≥0∞) * massMeasure T {x | u x ∈ Ioo a b} := by
+  by_cases hab : a < b
+  swap
+  · simp [Ioo_eq_empty hab]
+  obtain ⟨w, hw, huw⟩ := hu.extend_real
+  have hε (j : ℕ) : 0 < (b - a) * (1 / ((j : ℝ) + 1)) := mul_pos (sub_pos.2 hab) (by positivity)
+  choose v hv hvL hvd hv0 using fun j : ℕ =>
+    hw.exists_contDiff_lipschitzWith_dist_max_min_lt_fderiv_eq_zero a b (hε j)
+  let w' : E → ℝ := fun x => max a (min (w x) b)
+  have hw'_meas : Measurable fun x : Ω => w' x :=
+    ((continuous_const.max (hw.continuous.min continuous_const)).comp
+      continuous_subtypeVal).measurable
+  have hlim : ∀ x ∈ Ω, Tendsto (fun j => v j x) atTop (𝓝 (w' x)) := fun x _ => by
+    rw [tendsto_iff_dist_tendsto_zero]
+    exact squeeze_zero (fun _ => dist_nonneg) (fun j => (hvd j x).le) <| by
+      simpa using tendsto_one_div_add_atTop_nhds_zero_nat.const_mul (b - a)
+  choose mj hmj_meas hmj_le hmj_int using fun j => hsmooth (v j) (hv j)
+  have hcount := (Measure.countable_meas_level_set_pos (μ := massMeasure T) hw'_meas).union
+    (Measure.countable_meas_level_set_pos (μ := massMeasure (T ∘L extDerivCLM)) hw'_meas)
+  have hae : ∀ᵐ t, mass (slice T w' t) ≤ liminf (fun j => mj j t) atTop := by
+    filter_upwards [measure_eq_zero_iff_ae_notMem.1 (hcount.measure_zero volume)] with t ht
+    simp only [mem_union, mem_ofPred_eq, not_or, not_lt, nonpos_iff_eq_zero] at ht
+    exact (mass_le_liminf (tendsto_slice_apply T
+        (fun j => ((hv j).continuous.comp continuous_subtypeVal).measurable) hw'_meas hlim
+        ht.1 ht.2)).trans (liminf_le_liminf (.of_forall fun j => hmj_le j t))
+  have hGint : ∫⁻ t, liminf (fun j => mj j t) atTop ≤
+      c * (K : ℝ≥0∞) * massMeasure T {x | u x ∈ Ioo a b} := by
+    refine (lintegral_liminf_le hmj_meas).trans
+      (liminf_le_of_frequently_le' (.of_forall fun j => ?_))
+    refine (hmj_int j).trans ?_
+    rw [mul_assoc]
+    gcongr
+    have hset : {x : Ω | w x ∈ Ioo a b} = {x : Ω | u x ∈ Ioo a b} := by
+      ext x; simp [huw x.property]
+    rw [← hset]
+    refine (lintegral_mono fun x => ?_).trans (lintegral_indicator_const_le _ _)
+    by_cases hx : (x : Ω) ∈ {x : Ω | w x ∈ Ioo a b}
+    · rw [indicator_of_mem hx, ← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
+      exact ENNReal.ofReal_le_ofReal (norm_fderiv_le_of_lipschitz ℝ (hvL j))
+    · rw [indicator_of_notMem hx, hv0 j x hx, ← ofReal_norm]
+      simp
+  refine (setLIntegral_mono_ae (Measurable.liminf hmj_meas).aemeasurable
+    (hae.mono fun t ht hts => ?_)).trans ((setLIntegral_le_lintegral _ _).trans hGint)
+  have htrunc : slice T w t = slice T w' t := by
+    refine slice_congr T (hw.continuous.comp continuous_subtypeVal).measurable hw'_meas
+      (ext fun x => ?_)
+    simp only [w', mem_ofPred_eq, max_lt_iff, min_lt_iff, hts.1, true_and]
+    exact ⟨Or.inl, fun h => h.resolve_right hts.2.not_gt⟩
+  simpa [slice_congr_of_eqOn T huw, htrunc] using ht
+
+/-- **The Lipschitz slicing inequality on a strip** on a general normed space:
+`∫⁻ t in Ioo a b, mass ⟨T, u, t⟩ ≤ (k + 1) * K * ‖T‖ {a < u < b}`. -/
+theorem setLIntegral_mass_slice_le_of_lipschitzOnWith
+    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
+    (hu : LipschitzOnWith K u Ω) (a b : ℝ) :
+    ∫⁻ t in Ioo a b, mass (slice T u t) ≤
+      (k + 1 : ℝ≥0∞) * (K : ℝ≥0∞) * massMeasure T {x | u x ∈ Ioo a b} :=
+  setLIntegral_mass_slice_le_of_lipschitzOnWith_aux hu a b (k + 1) fun _ hg =>
+    exists_measurable_mass_slice_le hT hg
 
 /-! ### Almost-everywhere normality and local normality of slices -/
 
@@ -393,6 +462,16 @@ theorem lintegral_lintegral_massMeasure_slice_le_of_lipschitzOnWith_of_innerProd
   · simpa only [← mass_comp_monoCLM hU, ← coe_comp, slice_comp_monoCLM hT hU hu_meas t] using
       hm_le t
   · simpa only [← mass_comp_monoCLM hU, coe_comp] using hm_int
+
+/-- **Sharp Lipschitz slicing inequality on a strip on an inner product space**:
+`∫⁻ t in Ioo a b, mass ⟨T, u, t⟩ ≤ K * ‖T‖ {a < u < b}`. -/
+theorem setLIntegral_mass_slice_le_of_lipschitzOnWith_of_innerProductSpace
+    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
+    (hu : LipschitzOnWith K u Ω) (a b : ℝ) :
+    ∫⁻ t in Ioo a b, mass (slice T u t) ≤ (K : ℝ≥0∞) * massMeasure T {x | u x ∈ Ioo a b} := by
+  simpa only [one_mul] using
+    setLIntegral_mass_slice_le_of_lipschitzOnWith_aux hu a b 1 fun _ hg => by
+      simpa only [one_mul] using exists_measurable_mass_slice_le_of_innerProductSpace hT hg
 
 end InnerProductSpace
 

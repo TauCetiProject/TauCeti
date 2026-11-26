@@ -57,6 +57,10 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω} {V : M → Type*}
   [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
 
+/-- On an empty base manifold, `C^n` sections form a subsingleton. -/
+instance subsingleton_of_isEmpty [IsEmpty M] : Subsingleton Cₛ^n⟮I; F, V⟯ :=
+  coe_injective.subsingleton
+
 section Module
 
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
@@ -315,6 +319,16 @@ instance instSMulCommClassContMDiffMapOfNormedAlgebra :
 theorem const_smul_of_normedAlgebra (c : 𝕜') (s : Cₛ^n⟮I; F, V⟯) :
     (ContMDiffMap.const c : C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯) • s = c • s :=
   ext fun _ ↦ (rfl)
+
+/-- Multiplication by a `𝕜'`-valued function is supported in both the support of the function and
+that of the section. -/
+theorem tsupport_smul_function_subset_of_normedAlgebra (f : C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯)
+    (s : Cₛ^n⟮I; F, V⟯) : (f • s).tsupport ⊆ _root_.tsupport f ∩ s.tsupport := by
+  refine (tsupport_subset_iff ((_root_.isClosed_tsupport f).inter s.isClosed_tsupport)).2
+    fun x hx ↦ ?_
+  by_cases hf : x ∈ _root_.tsupport f
+  · simp [s.eq_zero_of_notMem_tsupport fun hs ↦ hx ⟨hf, hs⟩]
+  · simp [_root_.image_eq_zero_of_notMem_tsupport hf]
 
 section Pullback
 

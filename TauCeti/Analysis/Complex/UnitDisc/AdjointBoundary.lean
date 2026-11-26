@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UnitDisc.RotatingLineBoundary
+public import TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Boundary
 
 /-!
 # The adjoint problem on the disc with boundary values on a rotating line

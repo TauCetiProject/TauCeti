@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.SetLike.Fintype
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.GroupTheory.Subgroup.Simple
+public import Mathlib.Order.Atoms.Finite
 public import Mathlib.Order.CompleteSublattice
 public import TauCeti.Algebra.Group.Subgroup.ModularLaw
 
@@ -34,6 +36,9 @@ subgroups with simple quotient.
 
 ## Main results
 
+* `Subgroup.isMinimalNormal_top_iff`: the whole group is minimal normal exactly when it is simple.
+* `Subgroup.exists_isMinimalNormal_le`: a nontrivial finite normal subgroup contains a minimal
+  normal subgroup.
 * `Subgroup.IsMinimalNormal.map_mulEquiv`: minimal normality is transported by isomorphisms.
 * `Subgroup.IsMinimalNormal.disjoint_of_ne`, `Subgroup.IsMinimalNormal.commute_of_ne`: two distinct
   minimal normal subgroups intersect trivially and commute elementwise.
@@ -107,6 +112,13 @@ theorem commute_of_ne (hN : N.IsMinimalNormal) (hM : M.IsMinimalNormal) (hne : N
   commute_of_normal_of_disjoint N M hN.normal hM.normal (hN.disjoint_of_ne hM hne) x y hx hy
 
 end Subgroup.IsMinimalNormal
+
+/-- The whole group is a minimal normal subgroup of itself exactly when it is a simple group. -/
+theorem Subgroup.isMinimalNormal_top_iff : (⊤ : Subgroup G).IsMinimalNormal ↔ IsSimpleGroup G := by
+  refine ⟨fun h ↦ ?_, fun h ↦ isMinimalNormal_iff.2 ⟨normal_top, top_ne_bot, fun M _ _ ↦
+    IsSimpleGroup.eq_bot_or_eq_top_of_normal M⟩⟩
+  have : Nontrivial G := nontrivial_iff.1 (nontrivial_of_ne _ _ h.ne_bot)
+  exact ⟨fun M hM ↦ h.eq_bot_or_eq hM le_top⟩
 
 namespace TauCeti
 
@@ -199,3 +211,20 @@ theorem isCoatom_iff_isSimpleGroup {N : NormalSubgroup G} :
 end NormalSubgroup
 
 end TauCeti
+
+open TauCeti in
+/-- A nontrivial finite normal subgroup `M`, for instance any nontrivial normal subgroup of a
+finite group, contains a minimal normal subgroup. -/
+theorem Subgroup.exists_isMinimalNormal_le {M : Subgroup G} [M.Normal] [Finite M] (hM : M ≠ ⊥) :
+    ∃ N : Subgroup G, N.IsMinimalNormal ∧ N ≤ M := by
+  -- The normal subgroups of `G` below `M` form a finite, hence atomic, lattice, whose atoms are
+  -- minimal normal subgroups of `G`.
+  let M' : NormalSubgroup G := ⟨M, ‹M.Normal›⟩
+  have hle (K : Set.Iic M') : ((K : NormalSubgroup G) : Subgroup G) ≤ M := K.property
+  have : Finite (Set.Iic M') := Finite.of_injective
+    (fun K : Set.Iic M' ↦ ((K : NormalSubgroup G) : Subgroup G).subgroupOf M) fun K L h ↦ by
+      rw [subgroupOf_inj, inf_of_le_left (hle K), inf_of_le_left (hle L)] at h
+      exact Subtype.ext (Subtype.ext h)
+  obtain ⟨A, hA, -⟩ := (eq_bot_or_exists_atom_le (⊤ : Set.Iic M')).resolve_left fun h ↦
+    hM congr(Subtype.val (Subtype.val $h))
+  exact ⟨_, NormalSubgroup.isAtom_iff_isMinimalNormal.1 hA.of_isAtom_coe_Iic, hle A⟩

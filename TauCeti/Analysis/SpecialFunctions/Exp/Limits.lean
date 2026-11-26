@@ -22,6 +22,8 @@ decaying bound `c e^{-κ s}`, `κ > 0`, tends to zero as `s → ∞`.
 * `Real.tendsto_mul_exp_mul_nhds_zero`: `c e^{a u} → c` as `u → 0`.
 * `Real.le_of_forall_pos_le_exp_mul`: a bound `a ≤ e^{δ c} N` for all `δ > 0` gives `a ≤ N`.
 * `Real.tendsto_exp_mul_sub_one_div`: `(e^{a t} - 1) / t → a` as `t → 0`, `t ≠ 0`.
+* `Real.eventually_mul_lt_and_exp_mul_sub_one_lt`: near `0`, both `a x` and `e^{b x} - 1` are
+  smaller than a given `ε > 0`.
 * `Real.isBigO_exp_comp_sub_one`: if `f → 0` and `f = O(g)` along a filter, then
   `e^f - 1 = O(g)`.
 * `Real.tendsto_const_mul_exp_neg_mul_atTop`: `c e^{-κ s} → 0` as `s → ∞`, for `κ > 0`.
@@ -53,6 +55,16 @@ theorem le_of_forall_pos_le_exp_mul {a c N : ℝ} (h : ∀ δ > 0, a ≤ exp (δ
 theorem tendsto_exp_mul_sub_one_div (a : ℝ) :
     Tendsto (fun t => (exp (a * t) - 1) / t) (𝓝[≠] 0) (𝓝 a) := by
   simpa [div_eq_inv_mul] using ((hasDerivAt_id (0 : ℝ)).const_mul a).exp.tendsto_slope_zero
+
+/-- For `ε > 0`, both `a x` and `e^{b x} - 1` are smaller than `ε` for `x` near `0`: the choice
+of a small parameter making a linear displacement bound and an exponential derivative bound
+smaller than `ε`. -/
+theorem eventually_mul_lt_and_exp_mul_sub_one_lt (a b : ℝ) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ x in 𝓝 0, a * x < ε ∧ exp (b * x) - 1 < ε :=
+  (ContinuousAt.eventually_lt (f := fun x ↦ a * x) (by fun_prop) continuousAt_const
+      (by simpa using hε)).and
+    (ContinuousAt.eventually_lt (f := fun x ↦ exp (b * x) - 1) (by fun_prop) continuousAt_const
+      (by simpa using hε))
 
 /-- If `f` tends to zero and `f = O(g)` along a filter, then `e^f - 1 = O(g)`: near zero,
 `e^u - 1 = O(u)` (`HasDerivAt.isBigO_sub` for `exp` at `0`). -/

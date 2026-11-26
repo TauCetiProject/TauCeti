@@ -99,13 +99,18 @@ finite-dimensional kernel (`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`
 projections and right inverses along that family
 (`TauCeti.Vortex.continuous_orthogonalKerProjection_sobolevGaugeFixedOperator`,
 `TauCeti.Vortex.continuous_orthogonalRightInverse_sobolevGaugeFixedOperator`). Since `a ↦ L_a`
-is affine (`TauCeti.Vortex.contDiff_sobolevGaugeFixedOperator`) and over `ℝ` the projections and
+is affine (`TauCeti.Vortex.sobolevGaugeFixedOperator_eq_add`), hence smooth
+(`TauCeti.Vortex.contDiff_sobolevGaugeFixedOperator`), and over `ℝ` the projections and
 right inverses are `C^n` in the operator
 (`ContinuousLinearMap.IsFredholm.contDiffAt_orthogonalKerProjection`,
 `ContinuousLinearMap.IsFredholm.contDiffAt_orthogonalRightInverse`), they are `C^n` along a family
 of coefficients `C^n` in `L∞`
 (`TauCeti.Vortex.contDiff_orthogonalKerProjection_sobolevGaugeFixedOperator`,
-`TauCeti.Vortex.contDiff_orthogonalRightInverse_sobolevGaugeFixedOperator`).
+`TauCeti.Vortex.contDiff_orthogonalRightInverse_sobolevGaugeFixedOperator`). Along a family of
+coefficients differentiable at a point, `L_a` is differentiable there
+(`TauCeti.Vortex.differentiableAt_sobolevGaugeFixedOperator_comp`), and the derivative of `L_a`
+in a direction `v` is the zeroth-order operator whose coefficient is the derivative of `a` in that
+direction (`TauCeti.Vortex.fderiv_sobolevGaugeFixedOperator_comp_apply`).
 
 ## References
 
@@ -242,16 +247,53 @@ theorem continuous_sobolevGaugeFixedOperator :
     Continuous sobolevGaugeFixedOperator :=
   exists_lipschitzWith_sobolevGaugeFixedOperator.elim fun _ h ↦ h.continuous
 
+/-- The realization is affine in the `L∞` class of the coefficient: it is the realization at `0`
+plus the zeroth-order part with coefficient `a`. -/
+theorem sobolevGaugeFixedOperator_eq_add (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
+    sobolevGaugeFixedOperator a = sobolevGaugeFixedOperator 0 +
+      (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 a).comp sobolevFieldValues := by
+  simp only [sobolevGaugeFixedOperator, map_zero, ContinuousLinearMap.zero_comp, add_zero]
+
 /-- The realization is a smooth function of the `L∞` class of the coefficient: it is affine in
 it, the realization at `0` plus the zeroth-order part with coefficient `a`. -/
 theorem contDiff_sobolevGaugeFixedOperator {n : WithTop ℕ∞} :
     ContDiff ℝ n sobolevGaugeFixedOperator := by
+  rw [funext sobolevGaugeFixedOperator_eq_add]
+  exact contDiff_const.add
+    ((gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2).contDiff.clm_comp contDiff_const)
+
+/-- Along a family of coefficients differentiable at `p₀`, the realizations are differentiable
+at `p₀`. -/
+theorem differentiableAt_sobolevGaugeFixedOperator_comp {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {p₀ : X}
+    (ha : DifferentiableAt ℝ a p₀) :
+    DifferentiableAt ℝ (fun p ↦ sobolevGaugeFixedOperator (a p)) p₀ :=
+  ((contDiff_sobolevGaugeFixedOperator (n := 1)).differentiable one_ne_zero).differentiableAt.comp
+    p₀ ha
+
+/-- **The derivative of the realization along a family of coefficients.** The realization is
+affine in the `L∞` class of the coefficient, so along a family `a` of coefficients differentiable
+at `p₀` its derivative in the direction `v`, applied to `y`, is the zeroth-order part with
+coefficient `a' = Da(p₀) v`: the `L²` class of `z ↦ Z(a'(z), y(z))`, with `Z` the bilinear map
+`gaugeFixedZerothOrder`. -/
+theorem fderiv_sobolevGaugeFixedOperator_comp_apply {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {p₀ : X}
+    (ha : DifferentiableAt ℝ a p₀) (v : X) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    fderiv ℝ (fun p ↦ sobolevGaugeFixedOperator (a p)) p₀ v y =
+      gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 (fderiv ℝ a p₀ v) (sobolevFieldValues y) := by
   set H := gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2
-  have h (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) : sobolevGaugeFixedOperator a =
-      sobolevGaugeFixedOperator 0 + (H a).comp sobolevFieldValues := by
-    simp [sobolevGaugeFixedOperator, H]
-  rw [funext h]
-  exact contDiff_const.add (H.contDiff.clm_comp contDiff_const)
+  -- Evaluated at `y`, the family is the constant `L₀ y` plus the linear map `b ↦ Z(b, y)` of `a`.
+  have hS (p : X) : sobolevGaugeFixedOperator (a p) y =
+      sobolevGaugeFixedOperator 0 y + H.flip (sobolevFieldValues y) (a p) := by
+    rw [sobolevGaugeFixedOperator_eq_add (a p), add_apply,
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply]
+  have h : HasFDerivAt (fun p ↦ sobolevGaugeFixedOperator (a p) y)
+      ((H.flip (sobolevFieldValues y)).comp (fderiv ℝ a p₀)) p₀ := by
+    simp only [hS]
+    exact ((H.flip (sobolevFieldValues y)).hasFDerivAt.comp p₀ ha.hasFDerivAt).const_add _
+  simpa using congrArg (fun L ↦ L v)
+    (((differentiableAt_sobolevGaugeFixedOperator_comp ha).hasFDerivAt.clm_apply
+      (hasFDerivAt_const y p₀)).unique h)
 
 /-- On a variation `y` whose coordinates have the coordinates of a `C¹` field `Y` as
 representatives, the realization at the `L∞` class of a field `x` is the classical gauge-fixed

@@ -51,10 +51,14 @@ form is zero, so every current and every slice is zero.
 
 ## Main declarations
 
-* `Distribution.slice`, `Distribution.slice_def`, `Distribution.slice_apply`: the slice `⟨T, u, t⟩`,
-  zero by convention when `u` is not measurable on `Ω`.
+* `Distribution.slice`, `Distribution.slice_def`, `Distribution.slice_apply`,
+  `Distribution.slice_congr`, `Distribution.slice_eq_zero_of_not_finiteDimensional`: the slice
+  `⟨T, u, t⟩`, zero by convention when `u` is not measurable on `Ω` or `E` is infinite-dimensional,
+  and dependent only on `{x ∈ Ω | u x < t}`.
 * `Distribution.slice_const`: the slice of a locally normal current by a constant is zero.
 * `Distribution.slice_comp_extDerivCLM`: the boundary law `∂⟨T, u, t⟩ = -⟨∂T, u, t⟩`.
+* `Distribution.tendsto_slice_apply`: slices converge when the slicing functions converge pointwise
+  on `Ω`, at levels charged neither by `‖T‖` nor by `‖∂T‖`.
 * `Distribution.dsupport_slice_subset`, `Distribution.dsupport_slice_inter_subset`: support
   localization of a slice.
 * `Distribution.measurable_slice_apply`, `Distribution.measurable_localMass_slice`,
@@ -131,15 +135,20 @@ theorem slice_apply (hu : Measurable fun x : Ω => u x) (φ : 𝓓(Ω, E [⋀^Fi
 theorem slice_of_not_measurable (hu : ¬Measurable fun x : Ω => u x) : slice T u t = 0 := by
   simp [slice, hu]
 
+/-- A slice depends on the slicing function only through its sublevel set in `Ω`. -/
+theorem slice_congr {v : E → ℝ} (hu : Measurable fun x : Ω => u x)
+    (hv : Measurable fun x : Ω => v x) (h : {x : Ω | u x < t} = {x : Ω | v x < t}) :
+    slice T u t = slice T v t := by
+  ext φ
+  rw [slice_apply _ hu, slice_apply _ hv,
+    massRestrict_congr_set (T := T) _ _ h,
+    massRestrict_congr_set (T := T ∘L extDerivCLM) _ _ h]
+
 /-- The slice depends only on the restriction of `u` to `Ω`. -/
 theorem slice_congr_of_eqOn (huv : EqOn u v Ω) : slice T u t = slice T v t := by
   have hfun : (fun x : Ω => u x) = fun x : Ω => v x := funext fun x => huv x.property
   by_cases hu : Measurable fun x : Ω => u x
-  · have hv : Measurable fun x : Ω => v x := hfun ▸ hu
-    have hset : {x : Ω | u x < t} = {x : Ω | v x < t} := by ext x; simp [huv x.property]
-    ext φ
-    rw [slice_apply T hu φ, slice_apply T hv φ,
-      massRestrict_congr_set _ _ hset, massRestrict_congr_set _ _ hset]
+  · exact slice_congr T hu (hfun ▸ hu) (by ext x; simp [huv x.property])
   · rw [slice_of_not_measurable T hu, slice_of_not_measurable T (hfun ▸ hu)]
 
 /-- The slice of the zero current is zero. -/
@@ -149,6 +158,12 @@ theorem slice_zero : slice (0 : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[�
   · ext φ
     simp [slice_apply _ hu]
   · simp [hu]
+
+/-- If `E` is infinite-dimensional, every test form is zero, so every slice is zero. -/
+theorem slice_eq_zero_of_not_finiteDimensional (hE : ¬FiniteDimensional ℝ E) :
+    slice T u t = 0 := by
+  ext φ
+  simp [TestFunction.eq_zero_of_not_finiteDimensional φ hE]
 
 /-- Slicing commutes with scalar multiplication. -/
 @[simp]
@@ -476,6 +491,27 @@ theorem slice_comp_pullbackCLM_of_measurable {E' : Type*} [NormedAddCommGroup E'
       slice T (u ∘ Φ) t ∘L pullbackCLM Φ hΦ hΦp :=
   slice_comp_pullbackCLM_of_measurable_comp hT (hu.comp measurable_subtypeVal)
     (hu.comp hΦ.continuousOn.domRestrict.measurable) t
+
+/-- **Convergence of slices.** If functions `vᵢ` measurable on `Ω` converge pointwise on `Ω` to
+a function `u` measurable on `Ω`, and neither `‖T‖` nor `‖∂T‖` charges the level set `u⁻¹{t}`,
+then `⟨T, vᵢ, t⟩ → ⟨T, u, t⟩` on every test form. -/
+theorem tendsto_slice_apply {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+    (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ) {v : ι → E → ℝ}
+    (hv : ∀ i, Measurable fun x : Ω => v i x) (hu : Measurable fun x : Ω => u x)
+    (hlim : ∀ x ∈ Ω, Tendsto (fun i => v i x) l (𝓝 (u x)))
+    (hT : massMeasure T {x | u x = t} = 0)
+    (hdT : massMeasure (T ∘L extDerivCLM) {x | u x = t} = 0) (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
+    Tendsto (fun i => slice T (v i) t φ) l (𝓝 (slice T u t φ)) := by
+  -- Off the level set, membership in the sublevel sets of `vᵢ` eventually matches that of `u`.
+  have hev (x : Ω) (hx : x ∉ {x : Ω | u x = t}) : ∀ᶠ i in l, (v i x < t ↔ u x < t) := by
+    rcases lt_or_gt_of_ne hx with h | h
+    · filter_upwards [(hlim x x.property).eventually_lt_const h] with i hi
+      simp [hi, h]
+    · filter_upwards [(hlim x x.property).eventually_const_lt h] with i hi
+      simp [hi.not_gt, h.not_gt]
+  simp_rw [slice_apply _ (hv _), slice_apply _ hu]
+  exact (tendsto_massRestrict_apply _ _ (measure_eq_zero_iff_ae_notMem.1 hT |>.mono hev) _).sub
+    (tendsto_massRestrict_apply _ _ (measure_eq_zero_iff_ae_notMem.1 hdT |>.mono hev) _)
 
 /-! ### The slicing inequality for smooth functions
 

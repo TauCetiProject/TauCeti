@@ -174,9 +174,7 @@ noncomputable def cyclotomicIrreducibleCharacterAction (hζ : IsPrimitiveRoot ζ
   let : CharZero L := charZero_of_injective_algebraMap (algebraMap K L).injective
   let : Invertible (Nat.card G : L) := invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   let ι : irreducibleCharacters L G → virtualCharacters L G := fun χ =>
-    ⟨χ.val, by
-      rw [virtualCharacters_eq_closure_irreducibleCharacters]
-      exact AddSubgroup.subset_closure χ.property⟩
+    ⟨χ.val, irreducibleCharacters_subset_virtualCharacters χ.property⟩
   let f (σ : Gal(K/ℚ)) (χ : irreducibleCharacters L G) : irreducibleCharacters L G :=
     ⟨(Multiplicative.toAdd (cyclotomicVirtualCharacterAction hζ hG σ) (ι χ)).val,
       cyclotomicVirtualCharacterAction_mem_irreducibleCharacters hζ hG σ (ι χ) χ.property⟩
@@ -205,8 +203,6 @@ theorem cyclotomicIrreducibleCharacterAction_apply (hζ : IsPrimitiveRoot ζ n)
   let : CharZero L := charZero_of_injective_algebraMap (algebraMap K L).injective
   let : Invertible (Nat.card G : L) := invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   exact cyclotomicVirtualCharacterAction_apply hζ hG σ
-    ⟨χ.val, by
-      rw [virtualCharacters_eq_closure_irreducibleCharacters]
-      exact AddSubgroup.subset_closure χ.property⟩ g
+    ⟨χ.val, irreducibleCharacters_subset_virtualCharacters χ.property⟩ g
 
 end IsPrimitiveRoot

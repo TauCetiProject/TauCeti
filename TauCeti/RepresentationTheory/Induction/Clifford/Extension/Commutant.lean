@@ -198,6 +198,23 @@ theorem commutantAction_section_mul {A : FDRep K N} (s : (groupExtension A).Sect
   rw [map_mul, AlgEquiv.mul_apply, groupExtension_inl]
   simp
 
+/-- If all equivariant endomorphisms are scalars, the canonical Clifford extension is central. -/
+theorem inl_range_le_center_of_surjective_algebraMap {A : FDRep K N}
+    (h : Function.Surjective (algebraMap K (End A))) :
+    (groupExtension A).inl.range ≤ Subgroup.center (Carrier A) := by
+  rintro _ ⟨d, rfl⟩
+  apply Subgroup.mem_center_iff.mpr
+  intro c
+  have hd : Units.map (commutantAction c).toMonoidHom d = d := by
+    apply Units.ext
+    obtain ⟨a, ha⟩ := h (d : End A)
+    rw [Units.coe_map, ← ha]
+    exact (commutantAction c).commutes a
+  rw [groupExtension_inl]
+  have he : c * inl A d * c⁻¹ = inl A d := by
+    simpa only [hd] using (inl_map_commutantAction c d).symm
+  simpa [mul_assoc] using congrArg (· * c) he
+
 end Field
 
 end TauCeti.CliffordExtension

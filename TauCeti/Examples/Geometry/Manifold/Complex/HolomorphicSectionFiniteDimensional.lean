@@ -92,10 +92,8 @@ private instance : ChartedSpace ℂ PEmpty.{1} := ChartedSpace.empty ℂ PEmpty.
 
 example : FiniteDimensional ℂ Cₛ^ω⟮𝓘(ℂ); ℂ, Trivial PEmpty.{1} ℂ⟯ := inferInstance
 
-example : Module.finrank ℂ Cₛ^ω⟮𝓘(ℂ); ℂ, Trivial PEmpty.{1} ℂ⟯ = 0 := by
-  let : Subsingleton Cₛ^ω⟮𝓘(ℂ); ℂ, Trivial PEmpty.{1} ℂ⟯ :=
-    ⟨fun s t ↦ ContMDiffSection.ext fun x ↦ isEmptyElim x⟩
-  exact Module.finrank_zero_of_subsingleton
+example : Module.finrank ℂ Cₛ^ω⟮𝓘(ℂ); ℂ, Trivial PEmpty.{1} ℂ⟯ = 0 :=
+  Module.finrank_zero_of_subsingleton
 
 example : ∃ P : Finset PEmpty.{1},
     Function.Injective (LinearMap.pi fun x : P ↦
