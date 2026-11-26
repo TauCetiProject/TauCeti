@@ -43,15 +43,13 @@ planar theory.
   they consist of (`TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEquiv`), and have the same
   dimension.
 * **The adjoint equation, in a chart.** A locally `L^q` covector field `ηᵢ : ℂ → (F →L[ℝ] ℝ)`,
-  `q > 1`, that annihilates the value on `1` of `∂bar φ + Zᵢ φ` for every test function `φ` on the
-  image of chart `i` agrees almost everywhere with a smooth field
+  `q > 1`, that annihilates the value on `1` of `∂bar φ + Zᵢ φ` for every test function `φ` on an
+  open subset of the image of chart `i` agrees almost everywhere there with a smooth field
   (`TauCeti.IsRealCauchyRiemannOperator.exists_contDiffOn_ae_eq_of_forall_integral_eq_zero`). This
   is the planar statement
   `TauCeti.exists_contDiffOn_ae_eq_of_forall_integral_apply_cauchyRiemann_eq_zero` for `J = i` and
-  `S = 2 Zᵢ(·)(1)`. It is the chart form expected of an annihilator of the range of the realization
-  of `D`: pairing a `(0,1)`-form with a fibre metric and an area form reads in a chart as such a
-  covector field applied to the value on `1` of the reading of the form. Showing that an
-  annihilator of the range satisfies this chart equation is not done here.
+  `S = 2 Zᵢ(·)(1)`. The fields representing an annihilator of the range of the realization of `D`
+  in a chart solve this equation (`TauCeti.exists_memLp_forall_integral_eq_zero_of_annihilator`).
 
 ## Main results
 
@@ -71,7 +69,7 @@ planar theory.
 ## References
 
 * D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Theorem C.1.10 (iii) and Theorem C.2.3, and Appendix B.4.
+  Theorem C.1.10 (i) and its proof, Theorem C.2.3, and Appendix B.4.
 -/
 
 public section
@@ -181,10 +179,10 @@ theorem exists_contDiffOn_ae_eq_chartValueL_of_sobolevL_eq_zero (hp : 1 < p)
   linear_combination (norm := module) (-2 : ℝ) • h1
 
 include hD hDs in
-/-- **Kernel regularity on closed surfaces** (McDuff–Salamon, Theorem C.1.10 (iii), for smooth
-operators). For `1 < p ≤ ∞`, an element `w` of the kernel of the realization
-`W^{1,p}(Σ, V) → Lᵖ(Σ, Λ^{0,1} ⊗ V)` of a smooth real Cauchy–Riemann operator `D` is the Sobolev
-section of a smooth section `s` with `D s = 0`. -/
+/-- **Kernel regularity on closed surfaces** (McDuff–Salamon, Theorem C.1.10 (i), proved as
+Theorem C.2.3, for smooth operators). For `1 < p ≤ ∞`, an element `w` of the kernel of the
+realization `W^{1,p}(Σ, V) → Lᵖ(Σ, Λ^{0,1} ⊗ V)` of a smooth real Cauchy–Riemann operator `D` is
+the Sobolev section of a smooth section `s` with `D s = 0`. -/
 theorem exists_contMDiff_of_sobolevL_eq_zero (hp : 1 < p) {w : SobolevSection A volume p 1}
     (hw : hD.sobolevL A hDs volume p w = 0) :
     ∃ (s : Π x : M, V x) (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (T% s)),
@@ -252,8 +250,8 @@ private theorem coe_kerSobolevLEquivComap_apply (hp : 1 < p)
 
 variable {p' : ℝ≥0∞} [Fact (1 ≤ p')]
 
-/-- **The kernel does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (iii), for
-smooth operators). For `1 < p, p' ≤ ∞`, the kernels of the realizations
+/-- **The kernel does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (i), proved as
+Theorem C.2.3, for smooth operators). For `1 < p, p' ≤ ∞`, the kernels of the realizations
 `W^{1,p}(Σ, V) → Lᵖ(Σ, Λ^{0,1} ⊗ V)` and `W^{1,p'}(Σ, V) → L^{p'}(Σ, Λ^{0,1} ⊗ V)` of a smooth
 real Cauchy–Riemann operator are linearly equivalent: both consist of the Sobolev sections of the
 smooth sections `s` with `D s = 0`, and the equivalence keeps `s`
@@ -290,18 +288,19 @@ theorem finrank_ker_sobolevL_eq (hp : 1 < p) (hp' : 1 < p') :
 /-! ### The cokernel, in a chart -/
 
 include hD hDs in
-/-- **Weak solutions of the adjoint equation are smooth in a chart.** Let `η` be a locally `L^q`
-covector field on the image of chart `i`, `q > 1`, such that `∫ η (∂bar φ + Zᵢ φ)(1) = 0` for every
-test function `φ` on the chart image, where `Zᵢ` is the zeroth-order term of `D` in chart `i`. Then
-`η` agrees almost everywhere on the chart image with a smooth covector field. This is the chart
-form expected of an annihilator of the range of the realization of `D`; that an annihilator
-satisfies it is not proved here. -/
-theorem exists_contDiffOn_ae_eq_of_forall_integral_eq_zero {i : Fin A.n}
-    {η : ℂ → F →L[ℝ] ℝ} {q : ℝ≥0∞} (hq : 1 < q) (hη : MemLpLoc q (A.image i) η)
-    (h : ∀ φ : 𝓓(A.image i, F), ∫ z, η z ((complexAntilinearPartL (fderiv ℝ (φ : ℂ → F) z) +
+/-- **Weak solutions of the adjoint equation are smooth in a chart.** Let `Ω` be an open subset of
+the image of chart `i` and `η` a locally `L^q` covector field on `Ω`, `q > 1`, such that
+`∫ η (∂bar φ + Zᵢ φ)(1) = 0` for every test function `φ` on `Ω`, where `Zᵢ` is the zeroth-order
+term of `D` in chart `i`. Then `η` agrees almost everywhere on `Ω` with a smooth covector field.
+The fields representing an annihilator of the range of the realization of `D` satisfy this
+equation (`TauCeti.exists_memLp_forall_integral_eq_zero_of_annihilator`). -/
+theorem exists_contDiffOn_ae_eq_of_forall_integral_eq_zero {i : Fin A.n} {Ω : Opens ℂ}
+    (hΩ : (Ω : Set ℂ) ⊆ A.image i) {η : ℂ → F →L[ℝ] ℝ} {q : ℝ≥0∞} (hq : 1 < q)
+    (hη : MemLpLoc q Ω η)
+    (h : ∀ φ : 𝓓(Ω, F), ∫ z, η z ((complexAntilinearPartL (fderiv ℝ (φ : ℂ → F) z) +
       A.chartZeroOrder D i z ((φ : ℂ → F) z)) 1) = 0) :
-    ∃ g : ℂ → F →L[ℝ] ℝ, ContDiffOn ℝ ∞ g (A.image i) ∧ η =ᵐ[volume.restrict (A.image i)] g := by
-  have hZ := A.contDiffOn_chartZeroOrder_image hD hDs i
+    ∃ g : ℂ → F →L[ℝ] ℝ, ContDiffOn ℝ ∞ g Ω ∧ η =ᵐ[volume.restrict Ω] g := by
+  have hZ := (A.contDiffOn_chartZeroOrder_image hD hDs i).mono hΩ
   -- The planar form of the equation: `J = i` and `S = 2 Zᵢ(·)(1)`.
   refine exists_contDiffOn_ae_eq_of_forall_integral_apply_cauchyRiemann_eq_zero
     (J := fun _ ↦ lsmul ℝ ℂ Complex.I) (S := fun z ↦ (2 : ℝ) •
