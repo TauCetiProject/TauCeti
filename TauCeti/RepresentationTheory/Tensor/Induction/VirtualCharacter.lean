@@ -19,6 +19,7 @@ import Mathlib.LinearAlgebra.PiTensorProduct.Finite
 import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.GroupAction.Orbit.Basic
 import TauCeti.GroupTheory.GroupAction.Orbit.Finset
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.GroupTheory.GroupAction.FinRotate
 import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 import TauCeti.GroupTheory.Perm.OrbitCount.Basic
@@ -246,17 +247,6 @@ private theorem neg_one_pow_mul_stabilizerRep_character {k G : Type*} [Field k] 
   congr 1
   rw [Finset.prod_neg]
 
-private theorem conjOrbitEquiv_mem_iff {G : Type*} [Group G] (U : Subgroup G)
-    [DecidableEq (G ⧸ U)] (S : Finset (G ⧸ U)) (g r : G)
-    (hr : r⁻¹ * g * r ∈ MulAction.stabilizer G S)
-    (ω : MulAction.orbitRel.Quotient (Subgroup.zpowers (r⁻¹ * g * r)) (G ⧸ U)) :
-    ω.out ∈ S ↔ (MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω).out ∈ r • S := by
-  have hgT : g • (r • S) = r • S := by
-    have hs : (r⁻¹ * g * r) • S = S := hr
-    simpa [mul_smul, smul_inv_smul] using congrArg (r • ·) hs
-  rw [← MulAction.mem_iff_mem_of_orbitRel_zpowers_of_smul_eq hgT
-    (MulAction.orbitRel_smul_out_conjOrbitEquiv_out g r ω), Finset.smul_mem_smul_finset_iff]
-
 private theorem neg_one_pow_mul_stabilizerRep_character_conj {k G : Type*} [Field k] [Group G]
     (U : Subgroup G) [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (s : U.LeftTransversal)
     (S : Finset (G ⧸ U)) (A B : FDRep k U) (g r : G)
@@ -269,7 +259,7 @@ private theorem neg_one_pow_mul_stabilizerRep_character_conj {k G : Type*} [Fiel
   simp_rw [Finset.prod_filter]
   congr 1
   · refine Fintype.prod_equiv (MulAction.conjOrbitEquiv (α := G ⧸ U) g r) _ _ fun ω ↦ ?_
-    have hm := conjOrbitEquiv_mem_iff U S g r hr ω
+    have hm := (MulAction.conjOrbitEquiv_out_mem_smul_iff hr ω).symm
     by_cases hω : ω.out ∈ S
     · simp only [hω, hm.mp hω, ↓reduceIte,
         apply_conj_pow_minimalPeriod_conjOrbitEquiv (fun u v ↦ B.char_conj u v)
@@ -277,7 +267,7 @@ private theorem neg_one_pow_mul_stabilizerRep_character_conj {k G : Type*} [Fiel
     · have hmr : (MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω).out ∉ r • S := fun h ↦ hω (hm.mpr h)
       simp only [hω, hmr, ↓reduceIte]
   · refine Fintype.prod_equiv (MulAction.conjOrbitEquiv (α := G ⧸ U) g r) _ _ fun ω ↦ ?_
-    have hm := conjOrbitEquiv_mem_iff U S g r hr ω
+    have hm := (MulAction.conjOrbitEquiv_out_mem_smul_iff hr ω).symm
     by_cases hω : ω.out ∈ S
     · have hmr : (MulAction.conjOrbitEquiv (α := G ⧸ U) g r ω).out ∈ r • S := hm.mp hω
       simp only [Finset.mem_compl, hω, hmr, not_true_eq_false, ↓reduceIte]
@@ -418,32 +408,6 @@ private theorem conjNormal_prod_conj {k G : Type*} [CommMonoid k] [Group G]
   rw [map_mul, map_mul, map_inv]
   split_ifs <;> [exact hψ₂ _ _; exact hψ₁ _ _]
 
-private theorem conjNormal_pow_eq_conjNormal_mod {G : Type*} [Group G] (H : Subgroup G)
-    [H.Normal] {l : ℕ} (hl : l.Prime) (hH : H.index = l) (x : G)
-    (h : H) (i j : Fin l) :
-    let q := ((i : ℕ) + (j : ℕ)) / l
-    have hxl : x ^ l ∈ H := hH ▸ H.pow_index_mem x
-    let u : H := ⟨x ^ l, hxl⟩ ^ q
-    MulAut.conjNormal (x ^ (i : ℕ)) (MulAut.conjNormal (x ^ (j : ℕ)) h) =
-      u * MulAut.conjNormal (x ^ ((i + j : Fin l) : ℕ)) h * u⁻¹ := by
-  intro q hxl u
-  have : NeZero l := ⟨hl.ne_zero⟩
-  apply Subtype.ext
-  have hdiv : ((i : ℕ) + (j : ℕ)) = l * q + ((i + j : Fin l) : ℕ) := by
-    rw [Fin.val_add]
-    exact (Nat.div_add_mod ((i : ℕ) + (j : ℕ)) l).symm
-  have hpow : x ^ (i : ℕ) * x ^ (j : ℕ) = (x ^ l) ^ q * x ^ ((i + j : Fin l) : ℕ) := by
-    rw [← pow_add, hdiv, pow_add, pow_mul]
-  have hu : (u : G) = (x ^ l) ^ q := rfl
-  simp only [Subgroup.coe_mul, InvMemClass.coe_inv, MulAut.conjNormal_apply, hu]
-  calc
-    x ^ (i : ℕ) * (x ^ (j : ℕ) * (h : G) * (x ^ (j : ℕ))⁻¹) * (x ^ (i : ℕ))⁻¹ =
-        (x ^ (i : ℕ) * x ^ (j : ℕ)) * (h : G) * (x ^ (i : ℕ) * x ^ (j : ℕ))⁻¹ := by group
-    _ = ((x ^ l) ^ q * x ^ ((i + j : Fin l) : ℕ)) * (h : G) *
-          ((x ^ l) ^ q * x ^ ((i + j : Fin l) : ℕ))⁻¹ := by rw [hpow]
-    _ = (x ^ l) ^ q * (x ^ ((i + j : Fin l) : ℕ) * (h : G) *
-          (x ^ ((i + j : Fin l) : ℕ))⁻¹) * ((x ^ l) ^ q)⁻¹ := by group
-
 private theorem indClassFun_conjNormal_prod_apply {k G : Type*} [CommRing k] [Group G]
     (H : Subgroup G) [H.Normal] [H.FiniteIndex] {l : ℕ} (hl : l.Prime) (hH : H.index = l)
     {x : G} (hx : x ∉ H) {ψ₁ ψ₂ : H → k}
@@ -479,7 +443,7 @@ private theorem indClassFun_conjNormal_prod_apply {k G : Type*} [CommRing k] [Gr
   dsimp only [f]
   refine (Fintype.prod_equiv (Equiv.addRight j) _ _ fun i ↦ ?_).symm
   rw [Equiv.coe_addRight]
-  have hmod := conjNormal_pow_eq_conjNormal_mod H hl hH x h i j
+  have hmod := MulAut.conjNormal_pow_conjNormal_pow (hH ▸ H.pow_index_mem x) h i j
   have hval : (if i ∈ S then ψ₂ else ψ₁) (MulAut.conjNormal (x ^ (i : ℕ))
         (MulAut.conjNormal (x ^ (j : ℕ)) h)) =
       (if i ∈ S then ψ₂ else ψ₁) (MulAut.conjNormal (x ^ ((i + j : Fin l) : ℕ)) h) := by

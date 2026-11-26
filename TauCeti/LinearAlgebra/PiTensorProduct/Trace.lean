@@ -114,31 +114,6 @@ theorem trace_piTensorProduct_map {R ι : Type*} [CommSemiring R] [Fintype ι] {
 
 end TraceMap
 
-section ReindexTrace
-
-/-- The trace of the ordered product of `f` along a `⟨σ⟩`-orbit does not depend on the starting
-point: starting at `(σ ^ d) x` instead of `x` rotates the list of factors by `d`. -/
-private theorem trace_orbit_change_rep {R ι M : Type*} [CommSemiring R] [Finite ι]
-    [AddCommMonoid M] [Module R M] (σ : Equiv.Perm ι) (f : ι → M →ₗ[R] M) {x y : ι}
-    (h : MulAction.orbitRel (Subgroup.zpowers σ) ι y x) :
-    LinearMap.trace R M (List.ofFn fun t : Fin (Function.minimalPeriod (σ • ·) y) ↦
-        f ((σ ^ (t : ℕ)) y)).prod =
-      LinearMap.trace R M (List.ofFn fun t : Fin (Function.minimalPeriod (σ • ·) x) ↦
-        f ((σ ^ (t : ℕ)) x)).prod := by
-  obtain ⟨d, rfl⟩ :=
-    (σ.sameCycle_iff_mem_orbit_zpowers.mpr (MulAction.orbitRel_apply.mp h)).exists_nat_pow_eq
-  have hx : x ∈ Function.periodicPts σ := σ.injective.mem_periodicPts x
-  have hper : Function.minimalPeriod (σ • ·) ((σ ^ d) x) = Function.minimalPeriod (σ • ·) x := by
-    rw [Equiv.Perm.coe_pow]
-    exact Function.minimalPeriod_apply_iterate hx d
-  refine (LinearMap.trace_list_prod_of_isRotated
-    ⟨d, List.ext_getElem (by simpa using hper.symm) fun m h₁ h₂ ↦ ?_⟩).symm
-  simp only [List.getElem_rotate, List.getElem_ofFn, List.length_ofFn]
-  rw [← Equiv.Perm.mul_apply, ← pow_add, Equiv.Perm.coe_pow, Equiv.Perm.coe_pow]
-  exact congrArg f (Function.iterate_mod_minimalPeriod_eq (f := σ))
-
-end ReindexTrace
-
 end LinearMap
 
 namespace LinearMap
@@ -254,7 +229,7 @@ theorem trace_piTensorProduct_map_comp_reindex {R ι M : Type*} [CommSemiring R]
     obtain ⟨⟨g, hg⟩, hgx⟩ := hs
     rw [← Subgroup.zpowers_inv (g := σ)] at hg
     exact ⟨⟨g, hg⟩, hgx⟩
-  refine (trace_orbit_change_rep σ⁻¹ f horb).trans ?_
+  refine (LinearMap.trace_list_ofFn_prod_orbit_eq_of_orbitRel σ⁻¹ f horb).trans ?_
   have hper : Function.minimalPeriod (σ⁻¹ • ·) (qEquiv ω).out =
       Function.minimalPeriod (σ • ·) (qEquiv ω).out := by
     simpa only [MulAction.period_eq_minimalPeriod] using MulAction.period_inv σ (qEquiv ω).out

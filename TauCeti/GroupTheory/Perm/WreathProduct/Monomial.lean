@@ -172,23 +172,6 @@ theorem monomialHom_right_zpow (s : U.LeftTransversal) (g : G) (k : ℤ) (x : G 
   rw [MonoidHom.comp_apply, SemidirectProduct.rightHom_eq_right] at h
   rw [h, ← map_zpow, MulAction.toPermHom_apply, MulAction.toPerm_apply]
 
-/-- Telescoping product of `TauCeti.lWord` along `n` steps of the inverse orbit of `g`: by the
-cocycle law `TauCeti.lWord_mul_lWord`, it is the transversal word of `g ^ n`. -/
-theorem prod_ofFn_lWord_eq_lWord_pow (t : G ⧸ U → G) (g : G) (q : G ⧸ U) (n : ℕ) :
-    (List.ofFn fun k : Fin n ↦ TauCeti.lWord U t ((g⁻¹ ^ (k : ℕ)) • q) g).prod =
-      TauCeti.lWord U t q (g ^ n) := by
-  induction n generalizing q with
-  | zero => simp
-  | succ n ih =>
-    rw [List.ofFn_succ, List.prod_cons]
-    have hshift :
-        (fun k : Fin n ↦ TauCeti.lWord U t ((g⁻¹ ^ (k.succ : ℕ)) • q) g) =
-          fun k : Fin n ↦ TauCeti.lWord U t ((g⁻¹ ^ (k : ℕ)) • (g⁻¹ • q)) g := by
-      funext k
-      simp [pow_succ, mul_smul]
-    rw [hshift, ih (g⁻¹ • q), Fin.val_zero, pow_zero, one_smul, TauCeti.lWord_mul_lWord,
-      ← pow_succ']
-
 /-- **Orbit monodromy of the monomial homomorphism.** The product of the base coordinates of
 `U.monomialHom s g` along a `⟨(U.monomialHom s g).right⟩`-orbit on `G ⧸ U` equals the coset
 monodromy element in `U`. -/
@@ -214,6 +197,6 @@ theorem monomialHom_orbit_prod (s : U.LeftTransversal) (g : G) (q : G ⧸ U) :
     rw [monomialHom_left, hinv]
   have hper : (g ^ Function.minimalPeriod (g • ·) q)⁻¹ • q = q := by
     rw [inv_smul_eq_iff, ← MulAction.period_eq_minimalPeriod, MulAction.pow_period_smul]
-  rw [hval, prod_ofFn_lWord_eq_lWord_pow, TauCeti.lWord_def, hper]
+  rw [hval, TauCeti.prod_ofFn_lWord_eq_lWord_pow, TauCeti.lWord_def, hper]
 
 end Subgroup
