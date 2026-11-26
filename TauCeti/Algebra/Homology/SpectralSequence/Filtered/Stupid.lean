@@ -282,6 +282,29 @@ noncomputable def stupidFiltrationSpectralSequenceFirstPageXIso (p q : ℤ) (hq 
   homologicalFiltrationSpectralSequenceFirstPageXIso _ _ p q ≪≫
     (stupidGrHomologyIso (K := K) (p := p) (n := -(p + q)) (by omega)).symm
 
+/-- `CochainComplex.stupidFiltrationSpectralSequenceFirstPageXIso` sends an element of
+`K^{-p} = F_p^{-p}` to the class of its image in the graded piece `F_p/F_{p-1}`, under the
+identification `CochainComplex.homologicalFiltrationSpectralSequenceFirstPageXIso` of `E¹_{p,q}`
+with the homology of the graded piece. Since the inclusion `F_p^{-p} ⟶ K^{-p}` is an isomorphism
+(`CochainComplex.isIso_stupidFiltration_arrow_f`), this characterizes the identification. -/
+@[reassoc]
+lemma stupidFiltration_arrow_f_stupidFiltrationSpectralSequenceFirstPageXIso_inv (p q : ℤ)
+    (hq : q = 0) :
+    (K.stupidFiltration p).arrow.f (-(p + q)) ≫
+        (K.stupidFiltrationSpectralSequenceFirstPageXIso p q hq).inv =
+      (cokernel (Subobject.ofLE (K.stupidFiltration (p - 1)) (K.stupidFiltration p)
+          (K.monotone_stupidFiltration (by omega)))).liftCycles
+        ((cokernel.π (Subobject.ofLE (K.stupidFiltration (p - 1)) (K.stupidFiltration p)
+          (K.monotone_stupidFiltration (by omega)))).f (-(p + q))) (-(p + q) + 1) (by simp)
+        (by rw [stupidGr_d_eq_zero (K := K) (p := p) (n := -(p + q)) (by omega) (by omega),
+          comp_zero]) ≫
+        (cokernel (Subobject.ofLE (K.stupidFiltration (p - 1)) (K.stupidFiltration p)
+          (K.monotone_stupidFiltration (by omega)))).homologyπ (-(p + q)) ≫
+        (homologicalFiltrationSpectralSequenceFirstPageXIso _ _ p q).inv := by
+  have := isIso_stupidFiltration_arrow_f (K := K) (p := p) (i := -(p + q)) (by omega)
+  simp [stupidFiltrationSpectralSequenceFirstPageXIso, stupidGrHomologyIso_hom, stupidGrXIso_hom,
+    stupidFiltrationXIso, HomologicalComplex.comp_liftCycles_assoc]
+
 /-- **Every page `r ≥ 1` of the spectral sequence of the brutal filtration vanishes off the row
 `q = 0`.** -/
 lemma isZero_stupidFiltrationSpectralSequence_page_X (r : ℤ) (hr : 1 ≤ r) (p q : ℤ)
