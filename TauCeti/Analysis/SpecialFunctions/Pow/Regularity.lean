@@ -17,14 +17,14 @@ import TauCeti.Topology.Instances.Real.Sign
 /-!
 # The sharp finite regularity of absolute powers
 
-For `k < p`, the function `x ↦ |x| ^ p` is `C^k` (`TauCeti.contDiff_abs_rpow`), and for
-`k < p < k + 1` it is not `C^(k+1)` at zero (`TauCeti.not_contDiffAt_abs_rpow`). This supplies
-sharp obstructions to finite regularity for radial powers and their restrictions to real lines.
+For `k < p < k + 1`, the function `x ↦ |x| ^ p` is not `C^(k+1)` at zero
+(`TauCeti.not_contDiffAt_abs_rpow`); that it is `C^k` is the case `E = ℝ` of
+`TauCeti.contDiff_norm_rpow_of_lt`. This supplies sharp obstructions to finite regularity for
+radial powers and their restrictions to real lines.
 
-The derivatives are computed through the signed powers `|x|^r sgn(x)^j`, continuous for `r > 0`
-(`TauCeti.continuous_abs_rpow_mul_sign_pow`) and, for `r > 1`, with derivative
-`r |x|^(r - 1) sgn(x)^(j + 1)` everywhere (`TauCeti.hasDerivAt_abs_rpow_mul_sign_pow`), so that
-`D^j |x|^p = p (p - 1) ⋯ (p - j + 1) |x|^(p - j) sgn(x)^j` for `j < p`
+The derivatives are computed through the signed powers `|x|^r sgn(x)^j`, which for `r > 1` have
+derivative `r |x|^(r - 1) sgn(x)^(j + 1)` everywhere (`TauCeti.hasDerivAt_abs_rpow_mul_sign_pow`),
+so that `D^j |x|^p = p (p - 1) ⋯ (p - j + 1) |x|^(p - j) sgn(x)^j` for `j < p`
 (`TauCeti.iteratedDeriv_abs_rpow`). Away from the origin the sign is locally constant
 (`Real.eventually_sign_eq_nhds`), and the signed power is at most `|x|^r` in absolute value
 (`TauCeti.abs_abs_rpow_mul_sign_pow_le`).
@@ -74,25 +74,6 @@ theorem hasDerivAt_abs_rpow_mul_sign_pow {r : ℝ} (hr : 1 < r) (j : ℕ) (x : �
     rw [mul_assoc r, abs_rpow_sub_two_mul, pow_succ]
     ring
 
-/-- For `r > 0`, the signed power `|x|^r sgn(x)^j` is continuous. -/
-theorem continuous_abs_rpow_mul_sign_pow {r : ℝ} (hr : 0 < r) (j : ℕ) :
-    Continuous fun x : ℝ ↦ |x| ^ r * Real.sign x ^ j := by
-  have hpow : Continuous fun x : ℝ ↦ |x| ^ r :=
-    continuous_abs.rpow_const fun _ ↦ Or.inr hr.le
-  rw [continuous_iff_continuousAt]
-  intro x
-  rcases eq_or_ne x 0 with rfl | hx
-  · have h0 : |(0 : ℝ)| ^ r * Real.sign 0 ^ j = 0 := by simp [Real.zero_rpow hr.ne']
-    rw [ContinuousAt, h0]
-    refine squeeze_zero_norm (a := fun y ↦ |y| ^ r) (fun y ↦ ?_) ?_
-    · rw [Real.norm_eq_abs]
-      exact abs_abs_rpow_mul_sign_pow_le j y
-    · simpa [Real.zero_rpow hr.ne'] using hpow.tendsto 0
-  · refine (hpow.mul (continuous_const (y := Real.sign x ^ j))).continuousAt.congr ?_
-    filter_upwards [Real.eventually_sign_eq_nhds hx] with y hy
-    rw [hy]
-    rfl
-
 /-- For `j < p`, the `j`-th derivative of `|x|^p` is `p (p - 1) ⋯ (p - j + 1) |x|^(p - j) sgn(x)^j`,
 the falling factorial being `(descPochhammer ℝ j).eval p`. -/
 theorem iteratedDeriv_abs_rpow {p : ℝ} {j : ℕ} (hj : (j : ℝ) < p) :
@@ -109,20 +90,6 @@ theorem iteratedDeriv_abs_rpow {p : ℝ} {j : ℕ} (hj : (j : ℝ) < p) :
     push_cast
     rw [sub_sub]
     ring
-
-/-- For `k < p`, the function `|x|^p` is `C^k`. -/
-theorem contDiff_abs_rpow {k : ℕ} {p : ℝ} (hk : (k : ℝ) < p) :
-    ContDiff ℝ k (fun x : ℝ ↦ |x| ^ p) := by
-  rw [contDiff_nat_iff_iteratedDeriv]
-  refine ⟨fun m hm ↦ ?_, fun m hm ↦ ?_⟩
-  · have hmp : (m : ℝ) < p := lt_of_le_of_lt (by exact_mod_cast hm) hk
-    rw [iteratedDeriv_abs_rpow hmp]
-    exact continuous_const.mul (continuous_abs_rpow_mul_sign_pow (by linarith) m)
-  · have hmk : ((m + 1 : ℕ) : ℝ) ≤ k := by exact_mod_cast hm
-    push_cast at hmk
-    rw [iteratedDeriv_abs_rpow (by linarith)]
-    exact fun x ↦
-      ((hasDerivAt_abs_rpow_mul_sign_pow (by linarith) m x).const_mul _).differentiableAt
 
 /-! ### The obstruction at the next order -/
 

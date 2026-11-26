@@ -10,7 +10,8 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Basic.Real.Sign
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Calculus.BumpFunction.Basic
-import TauCeti.Analysis.Calculus.IteratedFDeriv.CompactSupport
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Basic.Real.Sign
 import TauCeti.Analysis.Holder.Examples
 import TauCeti.Analysis.Holder.Jet.Bounds
@@ -97,16 +98,19 @@ theorem exists_ckHolderSpace_eqOn_abs_rpow (k : ℕ) {β : ℝ≥0} (hβ0 : 0 < 
     ∃ f : CkHolderSpace k β ℝ ℝ, HasCompactSupport f ∧
       ∀ x ∈ Ioo (-1 : ℝ) 1, f x = |x| ^ ((k : ℝ) + β) := by
   have hkp : (k : ℝ) < k + β := lt_add_of_pos_right _ hβ0
+  have hpow : ContDiff ℝ k fun x : ℝ ↦ |x| ^ ((k : ℝ) + β) := by
+    simpa only [Real.norm_eq_abs] using contDiff_norm_rpow_of_lt (E := ℝ) hkp
   let χ : ContDiffBump (0 : ℝ) := ⟨1, 3 / 2, one_pos, by norm_num⟩
   have hχs : tsupport χ ⊆ ball (0 : ℝ) 2 := by
     rw [χ.tsupport_eq]
     exact closedBall_subset_ball (by norm_num [χ])
   obtain ⟨N, -, hN⟩ := χ.hasCompactSupport.exists_bound_iteratedFDeriv χ.contDiff (k + 1)
   obtain ⟨M, -, hM⟩ :=
-    (isCompact_closedBall (0 : ℝ) 2).exists_bound_iteratedFDeriv (contDiff_abs_rpow hkp)
+    hpow.contDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen isOpen_univ
+      (isCompact_closedBall (0 : ℝ) 2) (subset_univ _)
   have hfH := (holderWith_iteratedFDeriv_abs_rpow k hβ0 hβ1).holderOnWith (ball (0 : ℝ) 2)
   let f := CkHolderSpace.cutoff (M := M.toNNReal) (N := N.toNNReal)
-    (contDiff_abs_rpow hkp).contDiffOn ((χ.contDiff (n := ⊤)).of_le (mod_cast le_top)) isOpen_ball
+    hpow.contDiffOn ((χ.contDiff (n := ⊤)).of_le (mod_cast le_top)) isOpen_ball
     (convex_ball 0 2) hχs hβ1
     (fun i hi x hx ↦ (hM i hi x (ball_subset_closedBall hx)).trans (Real.le_coe_toNNReal M))
     (fun i hi x ↦ (hN i hi x).trans (Real.le_coe_toNNReal N)) hfH
