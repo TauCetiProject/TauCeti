@@ -390,11 +390,11 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
 theorem completionRestrictScalarsRingEquiv_completionExtension (z : P.Completion) :
     P'.completionRestrictScalarsRingEquiv k
         (P.completionExtension (P'.restrictScalars k)
-          ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP) z) =
+          (P'.restrictScalarsAbove k hP).property z) =
       P.completionExtension P' hP z := by
   have hhom : (P'.completionRestrictScalarsRingEquiv k).toRingHom.comp
         (P.completionExtension (P'.restrictScalars k)
-          ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)) =
+          (P'.restrictScalarsAbove k hP).property) =
       P.completionExtension P' hP :=
     P.eq_completionExtension_of_continuous P' hP
       ((P'.continuous_completionRestrictScalarsRingEquiv (k₀ := k)).comp
@@ -408,11 +408,11 @@ P'.Completion`. -/
 noncomputable def completionExtensionRestrictScalarsEquiv :
     letI := P.completionExtensionAlgebra P' hP
     letI := P.completionExtensionAlgebra (P'.restrictScalars k)
-      ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+      (P'.restrictScalarsAbove k hP).property
     (P'.restrictScalars k).Completion ≃ₐ[P.Completion] P'.Completion :=
   letI := P.completionExtensionAlgebra P' hP
   letI := P.completionExtensionAlgebra (P'.restrictScalars k)
-    ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+    (P'.restrictScalarsAbove k hP).property
   AlgEquiv.ofRingEquiv (f := P'.completionRestrictScalarsRingEquiv k) fun z ↦ by
     rw [P.algebraMap_completionExtensionAlgebra, P.algebraMap_completionExtensionAlgebra]
     exact P.completionRestrictScalarsRingEquiv_completionExtension P' hP z
@@ -422,7 +422,7 @@ theorem completionExtensionRestrictScalarsEquiv_apply
     (z : (P'.restrictScalars k).Completion) :
     letI := P.completionExtensionAlgebra P' hP
     letI := P.completionExtensionAlgebra (P'.restrictScalars k)
-      ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+      (P'.restrictScalarsAbove k hP).property
     P.completionExtensionRestrictScalarsEquiv P' hP z =
       P'.completionRestrictScalarsRingEquiv k z :=
   (rfl)
@@ -431,7 +431,7 @@ theorem completionExtensionRestrictScalarsEquiv_apply
 theorem completionExtensionRestrictScalarsEquiv_symm_apply (z : P'.Completion) :
     letI := P.completionExtensionAlgebra P' hP
     letI := P.completionExtensionAlgebra (P'.restrictScalars k)
-      ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+      (P'.restrictScalarsAbove k hP).property
     (P.completionExtensionRestrictScalarsEquiv P' hP).symm z =
       (P'.completionRestrictScalarsRingEquiv k).symm z :=
   (rfl)

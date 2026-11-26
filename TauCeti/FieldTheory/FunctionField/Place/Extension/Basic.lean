@@ -19,6 +19,8 @@ import TauCeti.RingTheory.Valuation.NontrivialComap
 import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
 -- Proof-only: a surjective valuation is nontrivial.
 import TauCeti.RingTheory.Valuation.Surjective
+-- Proof-only: separability transports from abstract fraction fields to `FractionRing`.
+import TauCeti.FieldTheory.Separable.Localization
 
 /-!
 # Extensions of places: the ramification index and the relative degree
@@ -57,7 +59,9 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.algebraIntegersExtension` and `TauCeti.Place.isScalarTowerIntegersExtension`: the
   action of the valuation ring of a place of `F / k` on an `F`-algebra `F'`, to be installed
   with `attribute [local instance 10]`.
-* `TauCeti.Place.restrict`: the place of `F / k` that a place of `F' / k'` lies over.
+* `TauCeti.Place.restrict`: the place of `F / k` that a place of `F' / k'` lies over, with
+  `TauCeti.Place.restrictScalarsAbove` packaging its restriction of constants in the fibre above a
+  given place of `F / k`.
 * `TauCeti.Place.ramificationIdx`: the ramification index `e(P' | P)`.
 * `TauCeti.Place.relativeDegree`: the relative degree `f(P' | P) = [F'_{P'} : F_P]`.
 * `TauCeti.Place.ramificationIdxIn`: the ramification index of a place `P` of the base in an
@@ -276,15 +280,8 @@ omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k
 integral-closure API. -/
 instance isSeparable_fractionRing_integralClosure :
     Algebra.IsSeparable (FractionRing (P.integers))
-      (FractionRing (integralClosure (P.integers) F')) := by
-  refine Algebra.IsSeparable.of_equiv_equiv (FractionRing.algEquiv (P.integers) F).symm.toRingEquiv
-    (FractionRing.algEquiv (integralClosure (P.integers) F') F').symm.toRingEquiv ?_
-  apply IsLocalization.ringHom_ext (P.integers)⁰
-  ext a
-  simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,
-    AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
-  rw [IsScalarTower.algebraMap_apply (P.integers) (integralClosure (P.integers) F') F',
-    AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
+      (FractionRing (integralClosure (P.integers) F')) :=
+  .of_isLocalization (P.integers)⁰ (integralClosure (P.integers) F')⁰ F F'
 
 end LocalIntegralClosure
 
@@ -401,6 +398,15 @@ theorem restrict_restrictScalars {k₁ : Type*} [Field k₁] [Algebra k k₁] [A
     (P'.restrictScalars k₁).restrict k F = P'.restrict k F := by
   apply ext
   rw [valuation_restrict, valuation_restrict, valuation_restrictScalars]
+
+variable {k F} in
+/-- Restricting the constant field of a place `P'` lying over `P` to an intermediate field `k₁`
+gives a place of `F' / k₁` in the fibre above `P`. -/
+abbrev restrictScalarsAbove (k₁ : Type*) [Field k₁] [Algebra k k₁] [Algebra k₁ k']
+    [Algebra k₁ F'] [IsScalarTower k k₁ F'] [IsScalarTower k₁ k' F'] {P : Place k F}
+    (hP : P'.restrict k F = P) :
+    {Q' : Place k₁ F' // Q'.restrict k F = P} :=
+  ⟨P'.restrictScalars k₁, (P'.restrict_restrictScalars k F).trans hP⟩
 
 /-- **The ramification index** `e(P' ∣ P)` of a place `P'` of `F' / k'` over the place `P` of
 `F / k` it lies over: the factor by which the order function at `P'` scales the order function

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Unramified.Basic
 public import TauCeti.RingTheory.DedekindDomain.Different
+import TauCeti.FieldTheory.Separable.Localization
 
 /-!
 # The different exponent of an extension of local fields
@@ -72,16 +73,8 @@ attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_l
 /-- Separability of `L / K` transported to the canonical fraction fields of `𝒪[K]` and `𝒪[L]`,
 which is the form of the hypothesis taken by Mathlib's theory of the different ideal. -/
 instance isSeparable_fractionRing_integerRing [Algebra.IsSeparable K L] :
-    Algebra.IsSeparable (FractionRing 𝒪[K]) (FractionRing 𝒪[L]) := by
-  have := isLocalization_integerRing K L
-  refine Algebra.IsSeparable.of_equiv_equiv (FractionRing.algEquiv 𝒪[K] K).symm.toRingEquiv
-    (FractionRing.algEquiv 𝒪[L] L).symm.toRingEquiv ?_
-  apply IsLocalization.ringHom_ext (nonZeroDivisors 𝒪[K])
-  ext a
-  simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,
-    AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
-  rw [IsScalarTower.algebraMap_apply 𝒪[K] 𝒪[L] L, AlgEquiv.commutes,
-    ← IsScalarTower.algebraMap_apply]
+    Algebra.IsSeparable (FractionRing 𝒪[K]) (FractionRing 𝒪[L]) :=
+  .of_isLocalization (nonZeroDivisors 𝒪[K]) (nonZeroDivisors 𝒪[L]) K L
 
 end FractionRing
 

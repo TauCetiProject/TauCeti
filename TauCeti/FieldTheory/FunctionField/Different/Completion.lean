@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.DedekindDomain.Different.Discriminant
 import TauCeti.FieldTheory.FunctionField.Different.Complementary
 import TauCeti.FieldTheory.FunctionField.Different.Localization
 import TauCeti.FieldTheory.FunctionField.Place.Extension.IntegralBasis.Basic
+import TauCeti.FieldTheory.Separable.Localization
 import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
 import TauCeti.RingTheory.DedekindDomain.Different.Semilocal
 import TauCeti.RingTheory.NormTrace.Pi
@@ -138,21 +139,18 @@ private theorem isTorsionFree_integers [Algebra.IsIntegral F F'] (Q' : Place k' 
 
 /-! ### Trace-dual expansions and the completed complementary module -/
 
-private abbrev restrictScalarsAbove : {Q' : Place k F' // Q'.restrict k F = P} :=
-  ⟨P'.restrictScalars k, (P'.restrict_restrictScalars (k := k) (F := F)).trans hP⟩
-
 omit [FiniteDimensional F F'] in
 private theorem trace_mul_completionEmbedding_restrictScalars (z : P'.Completion) (x : F') :
     letI := P.completionExtensionAlgebra P' hP
     letI := P.completionExtensionAlgebra (P'.restrictScalars k)
-      ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+      (P'.restrictScalarsAbove k hP).property
     Algebra.trace P.Completion P'.Completion (z * P'.completionEmbedding x) =
       Algebra.trace P.Completion (P'.restrictScalars k).Completion
         ((P'.completionRestrictScalarsRingEquiv k).symm z *
           (P'.restrictScalars k).completionEmbedding x) := by
   let _ := P.completionExtensionAlgebra P' hP
   let _ := P.completionExtensionAlgebra (P'.restrictScalars k)
-    ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+    (P'.restrictScalarsAbove k hP).property
   let e := P.completionExtensionRestrictScalarsEquiv P' hP
   have hmul : e.symm (z * P'.completionEmbedding x) =
       (P'.completionRestrictScalarsRingEquiv k).symm z *
@@ -172,10 +170,10 @@ theorem sum_trace_mul_smul_completionEmbedding_eq {ι : Type*} [Fintype ι] (b y
         (z * P'.completionEmbedding (b i)) • P'.completionEmbedding (y i) = z := by
   let _ := P.completionExtensionAlgebra P' hP
   let _ := P.completionExtensionAlgebra (P'.restrictScalars k)
-    ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+    (P'.restrictScalarsAbove k hP).property
   let e := P.completionExtensionRestrictScalarsEquiv P' hP
   have h₀ := (completionSemilocalEquiv k F' P).sum_trace_mul_smul_eq
-    b y h (restrictScalarsAbove P P' hP) ((P'.completionRestrictScalarsRingEquiv k).symm z)
+    b y h (P'.restrictScalarsAbove k hP) ((P'.completionRestrictScalarsRingEquiv k).symm z)
   simp only [completionSemilocalEquiv_tmul, map_one, one_mul] at h₀
   have he := (congrArg e h₀).trans (by
     rw [completionExtensionRestrictScalarsEquiv_apply, RingEquiv.apply_symm_apply])
@@ -195,16 +193,16 @@ private theorem completionEmbedding_mem_traceDual {d : F'}
   let _ := P.completionExtensionAlgebra P' hP
   let _ := P.completionIntegersExtensionAlgebra P' hP
   let _ := P.completionExtensionAlgebra (P'.restrictScalars k)
-    ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+    (P'.restrictScalarsAbove k hP).property
   let _ := P.completionIntegersExtensionAlgebra (P'.restrictScalars k)
-    ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+    (P'.restrictScalarsAbove k hP).property
   have h₀ := (completionSemilocalEquiv k F' P).mem_traceDual_one_of_semilocal
     (integralCompletionSemilocalEquiv k F' P)
     (fun w ↦ w.val.completionEmbedding.toRingHom)
     (fun w ↦ P.completionIntegersIntegralClosureHom w.val w.property)
     (fun a x w ↦ completionSemilocalEquiv_tmul a x w)
     (fun a x w ↦ integralCompletionSemilocalEquiv_tmul a x w)
-    (fun _ _ ↦ by simp) (restrictScalarsAbove P P' hP) hd
+    (fun _ _ ↦ by simp) (P'.restrictScalarsAbove k hP) hd
   rw [Submodule.mem_traceDual]
   intro _ hz
   obtain ⟨z, rfl⟩ := Submodule.mem_one.mp hz
@@ -333,16 +331,8 @@ theorem multiplicity_differentIdeal_completionIntegers :
   have := P₀.isSeparable_completion P' rfl
   have : Algebra.IsSeparable (FractionRing P₀.completionPlace.integers)
       (FractionRing P'.completionPlace.integers) :=
-    Algebra.IsSeparable.of_equiv_equiv
-      (FractionRing.algEquiv P₀.completionPlace.integers P₀.Completion).symm.toRingEquiv
-      (FractionRing.algEquiv P'.completionPlace.integers P'.Completion).symm.toRingEquiv <| by
-        apply IsLocalization.ringHom_ext (P₀.completionPlace.integers)⁰
-        ext a
-        simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe,
-          AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
-        rw [IsScalarTower.algebraMap_apply P₀.completionPlace.integers
-            P'.completionPlace.integers P'.Completion,
-          AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply]
+    .of_isLocalization (P₀.completionPlace.integers)⁰ (P'.completionPlace.integers)⁰
+      P₀.Completion P'.Completion
   set d := differentExponent k F P'
   refine le_antisymm ?_ ?_
   · by_contra! hlt
