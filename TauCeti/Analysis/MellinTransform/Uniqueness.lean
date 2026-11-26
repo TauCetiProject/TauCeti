@@ -38,8 +38,7 @@ theorem MellinConvergent.ae_eq_of_mellin_eq_on_verticalLine {f g : ℝ → E} {c
     f =ᵐ[volume.restrict (Ioi 0)] g := by
   let damp (k : ℝ → E) (u : ℝ) := Real.exp (-c * u) • k (Real.exp (-u))
   have hweight (u : ℝ) : exp (-(c : ℂ) * u) = (Real.exp (-c * u) : ℂ) := by
-    push_cast
-    rfl
+    simp [Complex.ofReal_exp]
   have hi {k : ℝ → E} (hk : MellinConvergent k c) : Integrable (damp k) := by
     simpa only [damp, hweight, Complex.coe_smul] using
       (TauCeti.mellinConvergent_iff_integrable_exp_smul k c).mp hk
