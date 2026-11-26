@@ -35,6 +35,11 @@ integral matrix. Base change of finitely generated projective modules along a su
 homomorphism, such as `R → R/I`, is full (`RingHom.full_finiteProjectiveModulesExtendScalars`), so
 the criterion applies to the relative group `K₀(R, I)` of a ring and a two-sided ideal.
 
+## Main definitions
+
+* `TauCeti.RelativeK0.tripleBiprodTransIso`: for a full additive `T`, the isomorphism
+  `(P, α, Q) ⊞ (Q, β, S) ≅ (P, β ∘ α, S) ⊞ (Q, id, Q)` behind the composition relation.
+
 ## Main results
 
 * `TauCeti.RelativeK0.of_eq_of_iff`: for a full additive `T`, two triples have the same class iff
@@ -70,74 +75,6 @@ universe w v v' u u'
 
 namespace RelativeK0
 
-section Isos
-
-variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
-  {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D]
-  {T : C ⥤ D} [T.PreservesZeroMorphisms] [PreservesBiproductsOfShape WalkingPair T]
-
-/-- The direct sum of isomorphisms of triples `e : x ≅ x'` and `e' : y ≅ y'`, an isomorphism
-`x ⊞ y ≅ x' ⊞ y'` whose two components are the direct sums of the components of `e` and `e'`. -/
-private noncomputable def tripleBiprodMapIso {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : y ≅ y') :
-    tripleBiprod T x y ≅ tripleBiprod T x' y' :=
-  mkIso (biprod.mapIso (asIso e.hom.fst) (asIso e'.hom.fst))
-    (biprod.mapIso (asIso e.hom.snd) (asIso e'.hom.snd)) (by
-      have := preservesBinaryBiproducts_of_preservesBiproducts T
-      dsimp only [tripleBiprod]
-      refine Functor.map_biprod_hom_ext ?_ ?_ <;>
-        simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom,
-          Functor.mapBiprod_hom, Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd,
-          biprod.map_fst, biprod.map_snd, biprod.lift_fst_assoc, biprod.lift_snd_assoc,
-          ← T.map_comp_assoc, ← T.map_comp, asIso_hom] <;>
-        simp only [T.map_comp, Category.assoc, Hom.w, Functor.mapBiprod_inv_map_fst_assoc,
-          Functor.mapBiprod_inv_map_snd_assoc, biprod.map_fst_assoc, biprod.map_snd_assoc,
-          biprod.lift_fst_assoc, biprod.lift_snd_assoc])
-
-/-- The direct sum of triples is commutative: `x ⊞ y ≅ y ⊞ x` through the braidings of both
-components. -/
-private noncomputable def tripleBiprodComm (x y : T ⊡ T) :
-    tripleBiprod T x y ≅ tripleBiprod T y x :=
-  mkIso (biprod.braiding _ _) (biprod.braiding _ _) (by
-    have := preservesBinaryBiproducts_of_preservesBiproducts T
-    dsimp only [tripleBiprod]
-    refine Functor.map_biprod_hom_ext ?_ ?_ <;>
-      simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom,
-        Functor.mapBiprod_hom, Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd,
-        biprod.map_fst, biprod.map_snd, biprod.lift_fst_assoc, biprod.lift_snd_assoc,
-        ← T.map_comp_assoc, ← T.map_comp, biprod.braiding_hom, biprod.lift_fst, biprod.lift_snd])
-
-/-- The direct sum of triples is associative: `(x ⊞ y) ⊞ z ≅ x ⊞ (y ⊞ z)` through the
-associators of both components. -/
-private noncomputable def tripleBiprodAssoc (x y z : T ⊡ T) :
-    tripleBiprod T (tripleBiprod T x y) z ≅ tripleBiprod T x (tripleBiprod T y z) :=
-  mkIso (biprod.associator _ _ _) (biprod.associator _ _ _) (by
-    have := preservesBinaryBiproducts_of_preservesBiproducts T
-    dsimp only [tripleBiprod]
-    refine Functor.map_biprod_hom_ext ?_ (Functor.map_biprod_hom_ext ?_ ?_) <;>
-      simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom,
-        Functor.mapBiprod_hom, Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd,
-        biprod.map_fst, biprod.map_snd, biprod.lift_fst_assoc, biprod.lift_snd_assoc] <;>
-      simp only [← T.map_comp_assoc, ← T.map_comp, biprod.associator_hom, biprod.lift_fst,
-        biprod.lift_snd, biprod.lift_snd_assoc] <;>
-      simp only [Category.assoc, T.map_comp, Functor.mapBiprod_inv_map_fst,
-        Functor.mapBiprod_inv_map_snd, Functor.mapBiprod_inv_map_fst_assoc, biprod.map_fst,
-        biprod.map_snd, biprod.map_fst_assoc, biprod.lift_fst_assoc, biprod.lift_snd_assoc])
-
-/-- The direct sum of the identity triples `(S, id, S)` and `(S', id, S')` is the identity triple
-`(S ⊞ S', id, S ⊞ S')`. -/
-private noncomputable def tripleBiprodReflIso (S S' : C) :
-    tripleBiprod T ⟨S, S, Iso.refl _⟩ ⟨S', S', Iso.refl _⟩ ≅ ⟨S ⊞ S', S ⊞ S', Iso.refl _⟩ :=
-  mkIso (Iso.refl _) (Iso.refl _) (by
-    have := preservesBinaryBiproducts_of_preservesBiproducts T
-    dsimp only [tripleBiprod]
-    refine Functor.map_biprod_hom_ext ?_ ?_ <;>
-      simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom, Iso.refl_hom,
-        Functor.mapBiprod_hom, Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd,
-        biprod.map_fst, biprod.map_snd, T.map_id, Category.id_comp, Category.comp_id,
-        biprod.lift_fst, biprod.lift_snd])
-
-end Isos
-
 section TransIso
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
@@ -148,7 +85,8 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
 `(P, β ∘ α, S) ⊞ (Q, id, Q)` are isomorphic. The component on `P ⊞ Q` is the identity, and the
 component `Q ⊞ S ≅ S ⊞ Q` is Whitehead's isomorphism of preimages of `β` and `β⁻¹` under `T`,
 whose image under `T` is the diagonal sum of `β` and `β⁻¹`. -/
-private noncomputable def tripleBiprodTransIso [T.Full] {P Q S : C} (α : T.obj P ≅ T.obj Q)
+@[expose, simps! hom_fst hom_snd inv_fst inv_snd]
+noncomputable def tripleBiprodTransIso [T.Full] {P Q S : C} (α : T.obj P ≅ T.obj Q)
     (β : T.obj Q ≅ T.obj S) :
     tripleBiprod T ⟨P, Q, α⟩ ⟨Q, S, β⟩ ≅ tripleBiprod T ⟨P, S, α ≪≫ β⟩ ⟨Q, Q, Iso.refl _⟩ :=
   mkIso (Iso.refl _) (Biprod.whiteheadIso (T.preimage β.hom) (T.preimage β.inv)) (by
@@ -324,7 +262,7 @@ private noncomputable def stableClassInvariant [Nonempty C] :
     AdditiveInvariant T (StableClass T) where
   obj := StableClass.mk
   map_iso _ _ e := StableClass.mk_eq_mk_of_iso e
-  map_tripleBiprod _ _ := rfl
+  map_tripleBiprod x y := (StableClass.mk_add_mk x y).symm
   map_trans α β := StableClass.mk_trans α β
 
 variable [EssentiallySmall.{w} C] [LocallySmall.{w} D]

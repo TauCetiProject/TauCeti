@@ -44,7 +44,8 @@ functor.
 * `CategoryTheory.Biprod.whiteheadIso_hom`, `CategoryTheory.Biprod.whiteheadIso_inv`: its matrix
   and the matrix of its inverse.
 * `CategoryTheory.Biprod.whiteheadIso_hom_fst`, `CategoryTheory.Biprod.whiteheadIso_hom_snd`: its
-  two components.
+  two components, and `CategoryTheory.Biprod.whiteheadIso_inv_fst`,
+  `CategoryTheory.Biprod.whiteheadIso_inv_snd` those of its inverse.
 * `CategoryTheory.Biprod.whiteheadIso_hom_eq_biprod_map`: it is `biprod.map b c` when `b` and `c`
   are mutually inverse.
 
@@ -112,6 +113,19 @@ theorem whiteheadIso_hom_snd (b : X ⟶ Y) (c : Y ⟶ X) :
     (whiteheadIso b c).hom ≫ biprod.snd =
       biprod.fst ≫ (𝟙 X - b ≫ c) + biprod.snd ≫ (c + (c - c ≫ b ≫ c)) := by
   rw [whiteheadIso_hom, ofComponents_snd]
+
+/-- The first component of the inverse of Whitehead's isomorphism. -/
+@[reassoc (attr := simp)]
+theorem whiteheadIso_inv_fst (b : X ⟶ Y) (c : Y ⟶ X) :
+    (whiteheadIso b c).inv ≫ biprod.fst =
+      biprod.fst ≫ (c + (c - c ≫ b ≫ c)) + biprod.snd ≫ (𝟙 X - b ≫ c) := by
+  rw [whiteheadIso_inv, ofComponents_fst]
+
+/-- The second component of the inverse of Whitehead's isomorphism. -/
+@[reassoc (attr := simp)]
+theorem whiteheadIso_inv_snd (b : X ⟶ Y) (c : Y ⟶ X) :
+    (whiteheadIso b c).inv ≫ biprod.snd = biprod.fst ≫ (c ≫ b - 𝟙 Y) + biprod.snd ≫ b := by
+  rw [whiteheadIso_inv, ofComponents_snd]
 
 /-- **Whitehead's lemma.** For mutually inverse `b` and `c`, the diagonal isomorphism
 `biprod.map b c : X ⊞ Y ⟶ Y ⊞ X` is Whitehead's isomorphism, a composite of unipotent

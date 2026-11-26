@@ -40,7 +40,10 @@ functors.
 
 ## Main definitions
 
-* `TauCeti.RelativeK0.tripleBiprod x y`: the direct sum of two triples.
+* `TauCeti.RelativeK0.tripleBiprod x y`: the direct sum of two triples, with its isomorphisms
+  `TauCeti.RelativeK0.tripleBiprodMapIso` (functoriality), `TauCeti.RelativeK0.tripleBiprodComm`,
+  `TauCeti.RelativeK0.tripleBiprodAssoc` and `TauCeti.RelativeK0.tripleBiprodReflIso` (the sum of
+  two identity triples).
 * `TauCeti.RelativeK0 T`: the relative group, with class map `TauCeti.RelativeK0.of`.
 * `TauCeti.RelativeK0.AdditiveInvariant T G`: the functions on triples that factor through
   `K₀(T)`, and `TauCeti.RelativeK0.lift` the homomorphism they induce.
@@ -131,6 +134,77 @@ lemma tripleBiprod_iso_hom_map_snd (x y : T ⊡ T) :
   dsimp only [tripleBiprod]
   simp only [Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom, Category.assoc,
     Functor.mapBiprod_inv_map_snd, biprod.map_snd, Functor.mapBiprod_hom, biprod.lift_snd_assoc]
+
+/-! ### Isomorphisms of direct sums of triples
+
+The isomorphism conditions below are proved with `tripleBiprod` unfolded, as in the two
+characteristic lemmas above. The ends `(tripleBiprod T x y).fst` and `x.fst ⊞ y.fst` agree only
+up to unfolding `tripleBiprod`, so `simp` cannot apply the characteristic lemmas to composites
+whose objects are written one way and whose morphisms, such as `biprod.braiding`, the other. -/
+
+/-- The direct sum of isomorphisms of triples `e : x ≅ x'` and `e' : y ≅ y'`, an isomorphism
+`x ⊞ y ≅ x' ⊞ y'` whose two components are the direct sums of the components of `e` and `e'`. -/
+@[expose, simps! hom_fst hom_snd inv_fst inv_snd]
+noncomputable def tripleBiprodMapIso {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : y ≅ y') :
+    tripleBiprod T x y ≅ tripleBiprod T x' y' :=
+  mkIso (biprod.mapIso (asIso e.hom.fst) (asIso e'.hom.fst))
+    (biprod.mapIso (asIso e.hom.snd) (asIso e'.hom.snd)) (by
+      have := preservesBinaryBiproducts_of_preservesBiproducts T
+      dsimp only [tripleBiprod]
+      refine Functor.map_biprod_hom_ext ?_ ?_ <;>
+        simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom,
+          Functor.mapBiprod_hom, Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd,
+          biprod.map_fst, biprod.map_snd, biprod.lift_fst_assoc, biprod.lift_snd_assoc,
+          ← T.map_comp_assoc, ← T.map_comp, asIso_hom] <;>
+        simp only [T.map_comp, Category.assoc, Hom.w, Functor.mapBiprod_inv_map_fst_assoc,
+          Functor.mapBiprod_inv_map_snd_assoc, biprod.map_fst_assoc, biprod.map_snd_assoc,
+          biprod.lift_fst_assoc, biprod.lift_snd_assoc])
+
+/-- The direct sum of triples is commutative: `x ⊞ y ≅ y ⊞ x` through the braidings of both
+components. -/
+@[expose, simps! hom_fst hom_snd inv_fst inv_snd]
+noncomputable def tripleBiprodComm (x y : T ⊡ T) :
+    tripleBiprod T x y ≅ tripleBiprod T y x :=
+  mkIso (biprod.braiding _ _) (biprod.braiding _ _) (by
+    have := preservesBinaryBiproducts_of_preservesBiproducts T
+    dsimp only [tripleBiprod]
+    refine Functor.map_biprod_hom_ext ?_ ?_ <;>
+      simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom,
+        Functor.mapBiprod_hom, Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd,
+        biprod.map_fst, biprod.map_snd, biprod.lift_fst_assoc, biprod.lift_snd_assoc,
+        ← T.map_comp_assoc, ← T.map_comp, biprod.braiding_hom, biprod.lift_fst, biprod.lift_snd])
+
+/-- The direct sum of triples is associative: `(x ⊞ y) ⊞ z ≅ x ⊞ (y ⊞ z)` through the
+associators of both components. -/
+@[expose, simps! hom_fst hom_snd inv_fst inv_snd]
+noncomputable def tripleBiprodAssoc (x y z : T ⊡ T) :
+    tripleBiprod T (tripleBiprod T x y) z ≅ tripleBiprod T x (tripleBiprod T y z) :=
+  mkIso (biprod.associator _ _ _) (biprod.associator _ _ _) (by
+    have := preservesBinaryBiproducts_of_preservesBiproducts T
+    dsimp only [tripleBiprod]
+    refine Functor.map_biprod_hom_ext ?_ (Functor.map_biprod_hom_ext ?_ ?_) <;>
+      simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom,
+        Functor.mapBiprod_hom, Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd,
+        biprod.map_fst, biprod.map_snd, biprod.lift_fst_assoc, biprod.lift_snd_assoc] <;>
+      simp only [← T.map_comp_assoc, ← T.map_comp, biprod.associator_hom, biprod.lift_fst,
+        biprod.lift_snd, biprod.lift_snd_assoc] <;>
+      simp only [Category.assoc, T.map_comp, Functor.mapBiprod_inv_map_fst,
+        Functor.mapBiprod_inv_map_snd, Functor.mapBiprod_inv_map_fst_assoc, biprod.map_fst,
+        biprod.map_snd, biprod.map_fst_assoc, biprod.lift_fst_assoc, biprod.lift_snd_assoc])
+
+/-- The direct sum of the identity triples `(S, id, S)` and `(S', id, S')` is the identity triple
+`(S ⊞ S', id, S ⊞ S')`. -/
+@[expose, simps! hom_fst hom_snd inv_fst inv_snd]
+noncomputable def tripleBiprodReflIso (S S' : C) :
+    tripleBiprod T ⟨S, S, Iso.refl _⟩ ⟨S', S', Iso.refl _⟩ ≅ ⟨S ⊞ S', S ⊞ S', Iso.refl _⟩ :=
+  mkIso (Iso.refl _) (Iso.refl _) (by
+    have := preservesBinaryBiproducts_of_preservesBiproducts T
+    dsimp only [tripleBiprod]
+    refine Functor.map_biprod_hom_ext ?_ ?_ <;>
+      simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom, biprod.mapIso_hom, Iso.refl_hom,
+        Functor.mapBiprod_hom, Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd,
+        biprod.map_fst, biprod.map_snd, T.map_id, Category.id_comp, Category.comp_id,
+        biprod.lift_fst, biprod.lift_snd])
 
 end RelativeK0
 
