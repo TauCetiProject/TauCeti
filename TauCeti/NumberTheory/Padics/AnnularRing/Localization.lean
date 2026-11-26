@@ -64,8 +64,6 @@ namespace TauCeti.AnnularRing
 
 variable {p : ℕ} [Fact p.Prime]
 
-private theorem one_lt_p : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
-
 /-! ### `T`-adic completeness of `H` -/
 
 /-- Congruence modulo `(T) ^ n` in `AnnularRing p` is equivalent to the shifted coefficient bound
