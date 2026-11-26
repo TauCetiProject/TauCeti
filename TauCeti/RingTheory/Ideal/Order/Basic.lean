@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ENat.Lattice
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
+public import Mathlib.RingTheory.Spectrum.Prime.Defs
 public import TauCeti.RingTheory.Ideal.AssociatedGraded
 import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
@@ -215,6 +216,18 @@ theorem localOrder_pow [NoZeroDivisors (maximalIdeal R).AssociatedGraded] (I : I
   | zero => simp
   | succ n ih => rw [pow_succ, localOrder_mul, ih, succ_nsmul]
 
+/-- If `gr_𝔪 R` has no zero divisors, as for a regular local ring, the local order of a finite
+product of ideals is the sum of their local orders. -/
+@[simp]
+theorem localOrder_prod [NoZeroDivisors (maximalIdeal R).AssociatedGraded]
+    {ι : Type*} (s : Finset ι) (I : ι → Ideal R) :
+    (∏ i ∈ s, I i).localOrder = ∑ i ∈ s, (I i).localOrder := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.sum_insert hi, localOrder_mul, ih]
+
 /-- Over a Noetherian local ring, only the zero ideal has infinite order. -/
 @[simp]
 theorem localOrder_eq_top_iff_eq_bot [IsNoetherianRing R] (I : Ideal R) :
@@ -322,6 +335,15 @@ theorem orderAt_pow (I : Ideal R) (n : ℕ) (p : PrimeSpectrum R)
     [NoZeroDivisors (maximalIdeal (Localization.AtPrime p.asIdeal)).AssociatedGraded] :
     (I ^ n).orderAt p = n • I.orderAt p := by
   simp only [orderAt_def, Ideal.map_pow, localOrder_pow]
+
+/-- At a prime whose local ring has an associated graded ring without zero divisors, for instance
+a prime with regular localization, the order of a finite product of ideals is the sum of their
+orders. -/
+@[simp]
+theorem orderAt_prod {ι : Type*} (s : Finset ι) (I : ι → Ideal R) (p : PrimeSpectrum R)
+    [NoZeroDivisors (maximalIdeal (Localization.AtPrime p.asIdeal)).AssociatedGraded] :
+    (∏ i ∈ s, I i).orderAt p = ∑ i ∈ s, (I i).orderAt p := by
+  simp only [orderAt_def, ← Ideal.mapHom_apply, map_prod, localOrder_prod]
 
 end AtPrime
 
