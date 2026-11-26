@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Schwartz
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Sobolev.BesselPotential.LocalizedChangeOfVariables
-import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -108,8 +108,9 @@ theorem exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz
   obtain ⟨χ, hχ⟩ : ∃ χ : 𝓢(CoordinateSpace n, ℂ), ∀ y, χ y = θ y :=
     ⟨(θ.hasCompactSupport.comp_left Complex.ofReal_zero).toSchwartzMap
       (Complex.ofRealCLM.contDiff.comp θ.contDiff), HasCompactSupport.toSchwartzMap_toFun _ _⟩
-  refine ⟨χ, fun t u ↦ ?_⟩
-  rw [BesselPotentialSpace.smulLeftCLM_toBesselPotentialSpaceCLM]
+  refine ⟨χ, fun t u ↦ BesselPotentialSpace.ext ?_⟩
+  rw [BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+    TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]
   congr 1
   ext y
   rw [SchwartzMap.smulLeftCLM_apply_apply χ.hasTemperateGrowth, cutoffPushforwardSchwartz_apply,
