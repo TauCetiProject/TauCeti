@@ -44,8 +44,8 @@ example [TopologicalSpace (Module.Dual ℤ_[ℓ] ℤ_[ℓ])]
     [IsModuleTopology ℤ_[ℓ] (Module.Dual ℤ_[ℓ] ℤ_[ℓ])] :
     Nonempty (Iso (cyclotomicLine ℓ F).dual
       ((trivial (Field.absoluteGaloisGroup F) ℤ_[ℓ] ℤ_[ℓ]).tateTwist ℓ (-1))) := by
-  rw [tateTwist_trivial_neg_one]
-  exact ⟨dualCyclotomicLineIso ℓ F⟩
+  rw [tateTwist_trivial_neg_one, cyclotomicLine_def]
+  exact ⟨dualOfCharacterIso _⟩
 
 open ValuativeRel in
 -- Over a nonarchimedean local field `K` and for `ℓ` prime to the residue characteristic, the dual

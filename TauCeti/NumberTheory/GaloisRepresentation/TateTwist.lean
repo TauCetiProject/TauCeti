@@ -34,7 +34,6 @@ Extending coefficients from `A` to an `A`-algebra `B` sends `χ_ℓ ^ n` with va
 * `TauCeti.cyclotomicPow ℓ F A n`: the character `χ_ℓ ^ n` of `G_F` with values in `Aˣ`.
 * `TauCeti.ContinuousRep.cyclotomicLine ℓ F`: the line `ℤ_ℓ(1)`, `ofCharacter χ_ℓ`.
 * `TauCeti.ContinuousRep.tateTwist ρ ℓ n`: the Tate twist `M(n) = M(χ_ℓ ^ n)`.
-* `TauCeti.ContinuousRep.dualCyclotomicLineIso ℓ F`: the isomorphism `ℤ_ℓ(1)^∨ ≅ ℤ_ℓ(−1)`.
 
 ## Main results
 
@@ -121,6 +120,7 @@ theorem cyclotomicPow_one_padicInt :
   simp
 
 /-- Over `ℤ_ℓ` itself, the `(-1)`-st power is the inverse of the cyclotomic character. -/
+@[simp]
 theorem cyclotomicPow_neg_one_padicInt :
     cyclotomicPow ℓ F ℤ_[ℓ] (-1) = (continuousLocalCyclotomicCharacter ℓ F)⁻¹ := by
   rw [cyclotomicPow_neg, cyclotomicPow_one_padicInt]
@@ -299,30 +299,6 @@ theorem dual_tateTwist (ρ : ContinuousRep (Field.absoluteGaloisGroup F) A N) (n
   rw [tateTwist_def, tateTwist_def, dual_twist, cyclotomicPow_neg]
 
 end Dual
-
-section DualCyclotomicLine
-
-variable (ℓ F) [TopologicalSpace (Module.Dual ℤ_[ℓ] ℤ_[ℓ])]
-  [IsModuleTopology ℤ_[ℓ] (Module.Dual ℤ_[ℓ] ℤ_[ℓ])]
-
-/-- **The dual of `ℤ_ℓ(1)` is `ℤ_ℓ(−1)`**: evaluation at `1` is an isomorphism
-`ℤ_ℓ(1)^∨ ≅ ofCharacter χ_ℓ⁻¹`, the `(−1)`-st Tate twist of the trivial line
-(`TauCeti.ContinuousRep.tateTwist_trivial_neg_one`). -/
-noncomputable def dualCyclotomicLineIso :
-    Iso (cyclotomicLine ℓ F).dual (ofCharacter (continuousLocalCyclotomicCharacter ℓ F)⁻¹) :=
-  dualOfCharacterIso (continuousLocalCyclotomicCharacter ℓ F)
-
-@[simp]
-theorem dualCyclotomicLineIso_apply (ψ : Module.Dual ℤ_[ℓ] ℤ_[ℓ]) :
-    dualCyclotomicLineIso ℓ F ψ = ψ 1 :=
-  dualOfCharacterIso_apply _ ψ
-
-@[simp]
-theorem dualCyclotomicLineIso_symm_apply_apply (a x : ℤ_[ℓ]) :
-    (dualCyclotomicLineIso ℓ F).symm a x = x * a :=
-  dualOfCharacterIso_symm_apply_apply _ a x
-
-end DualCyclotomicLine
 
 end ContinuousRep
 
