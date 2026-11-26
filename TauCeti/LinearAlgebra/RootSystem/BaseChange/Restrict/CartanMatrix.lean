@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
-public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Base
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Base.Basic
 
 /-!
 # Cartan matrices under scalar restriction

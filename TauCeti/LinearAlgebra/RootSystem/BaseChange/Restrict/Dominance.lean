@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Base
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Base.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Dominance
 import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced.Dominance
 

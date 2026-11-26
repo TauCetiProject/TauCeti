@@ -5,22 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Base
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Base.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 
 /-!
 # Regular weights and dominant chambers under scalar restriction
 
-Under scalar restriction of a balanced root pairing `P` to a subfield `K` (and in particular for
-`K = L`), weight regularity and membership in the closed and open dominant chambers in
-`P.restrictScalars' K` agree with those in `P`.
+Under scalar restriction of a balanced root pairing `P` to a subfield `K`, weight regularity in
+`P.restrictScalars' K` agrees unconditionally with weight regularity in `P`. When `K` and `L` carry
+preorders such that `algebraMap K L` preserves and reflects nonnegativity (resp. strict positivity)
+— and in particular when `K = L` — membership in the closed (resp. open) dominant chamber also
+agrees.
 
 ## Main results
 
-* `RootPairing.isRegularWeight_restrictScalars'_iff`,
-  `RootPairing.mem_dominantChamber_restrictScalars'_iff_of_nonneg_iff`, and
-  `RootPairing.mem_openDominantChamber_restrictScalars'_iff_of_pos_iff`: regularity and chamber
-  membership in `P.restrictScalars' K` agree with those in `P`.
+* `RootPairing.isRegularWeight_restrictScalars'_iff`: weight regularity in `P.restrictScalars' K`
+  agrees unconditionally with that in `P`.
+* `RootPairing.mem_dominantChamber_restrictScalars'_iff_of_nonneg_iff`: closed dominant chamber
+  membership agrees when `algebraMap K L` preserves and reflects nonnegativity.
+* `RootPairing.mem_openDominantChamber_restrictScalars'_iff_of_pos_iff`: open dominant chamber
+  membership agrees when `algebraMap K L` preserves and reflects strict positivity.
 * `RootPairing.mem_dominantChamber_restrictScalars'_self_iff` and
   `RootPairing.mem_openDominantChamber_restrictScalars'_self_iff`: the `K = L` specialization.
 
