@@ -25,6 +25,8 @@ projections `R × S → R` and `R × S → S` induce isomorphisms `V(R × S) ≃
   the sum of the images under the inclusions of its images under the two projections.
 * `TauCeti.ProjectionMonoid.prodEquiv`: `V(R × S) ≃+ V(R) × V(S)`.
 * `TauCeti.ProjectionKZero.prodEquiv`: `K₀(R × S) ≃+ K₀(R) × K₀(S)`.
+* `TauCeti.ProjectionKZero.map_inl_map_fst_add_map_inr_map_snd`: the same decomposition of a
+  class in `K₀(R × S)`.
 
 ## References
 
@@ -173,6 +175,13 @@ theorem prodEquiv_symm_apply (y : ProjectionKZero R × ProjectionKZero S) :
     (prodEquiv R S).symm y =
       map (NonUnitalStarRingHom.inl R S) y.1 + map (NonUnitalStarRingHom.inr R S) y.2 :=
   (rfl)
+
+/-- Every class in `K₀(R × S)` is the sum of the images under the inclusions of its images under
+the two projections. -/
+theorem map_inl_map_fst_add_map_inr_map_snd (x : ProjectionKZero (R × S)) :
+    map (NonUnitalStarRingHom.inl R S) (map (NonUnitalStarRingHom.fst R S) x) +
+      map (NonUnitalStarRingHom.inr R S) (map (NonUnitalStarRingHom.snd R S) x) = x :=
+  (prodEquiv R S).symm_apply_apply x
 
 -- Not `@[simp]`: the simp normal form of `Algebra.GrothendieckAddGroup.of x` is
 -- `AddLocalization.addMonoidOf ⊤ x`, as for `TauCeti.ProjectionKZero.map_of_mk`.
