@@ -195,6 +195,16 @@ theorem measurableSet_predictable_of_mem_predictablePaving {u : Set (ℝ≥0 × 
 
 end PavingProperties
 
+private theorem inter_preimage_fst_Iic_natCast_mem_predictablePaving {σ : Ω → WithTop ℝ≥0}
+    (hσ : TauCeti.IsPredictableTime ℱ σ) (m : ℕ) :
+    {p : ℝ≥0 × Ω | σ p.2 ≤ p.1} ∩ Prod.fst ⁻¹' Iic (m : ℝ≥0) ∈ ℱ.predictablePaving := by
+  have heq : {p : ℝ≥0 × Ω | σ p.2 ≤ p.1} ∩ Prod.fst ⁻¹' Iic (m : ℝ≥0) =
+      {p : ℝ≥0 × Ω | σ p.2 ≤ p.1 ∧ (p.1 : WithTop ℝ≥0) ≤ ((m : ℝ≥0) : WithTop ℝ≥0)} := by
+    ext p; simp only [mem_inter_iff, mem_ofPred_eq, mem_preimage, mem_Iic, WithTop.coe_le_coe]
+  rw [heq]
+  exact ℱ.Icc_mem_predictablePaving hσ (isStoppingTime_const ℱ (m : ℝ≥0))
+    fun _ ↦ WithTop.coe_ne_top
+
 /-- `predictablePaving` generates the predictable sigma-algebra `ℱ.predictable`. -/
 theorem generateFrom_predictablePaving :
     MeasurableSpace.generateFrom ℱ.predictablePaving = ℱ.predictable := by
@@ -203,9 +213,9 @@ theorem generateFrom_predictablePaving :
   rw [ℱ.predictable_eq_generateFrom_isPredictableTime_le]
   refine MeasurableSpace.generateFrom_le ?_
   rintro _ ⟨σ, hσ, rfl⟩
-  rw [TauCeti.setOf_le_coe_eq_iUnion_le_natCast (fun p ↦ σ p.2) Prod.fst]
+  rw [← Set.iUnion_inter_preimage_Iic_natCast {p : ℝ≥0 × Ω | σ p.2 ≤ p.1} Prod.fst]
   exact MeasurableSet.iUnion fun m ↦ MeasurableSpace.measurableSet_generateFrom
-    (ℱ.Icc_mem_predictablePaving hσ (isStoppingTime_const ℱ m) fun _ ↦ WithTop.coe_ne_top)
+    (inter_preimage_fst_Iic_natCast_mem_predictablePaving ℱ hσ m)
 
 section SouslinClosure
 
@@ -215,9 +225,9 @@ variable {ℱ}
 private theorem setOf_le_mem_souslinClosure {σ : Ω → WithTop ℝ≥0}
     (hσ : TauCeti.IsPredictableTime ℱ σ) :
     {p : ℝ≥0 × Ω | σ p.2 ≤ p.1} ∈ TauCeti.souslinClosure ℱ.predictablePaving := by
-  rw [TauCeti.setOf_le_coe_eq_iUnion_le_natCast (fun p ↦ σ p.2) Prod.fst]
+  rw [← Set.iUnion_inter_preimage_Iic_natCast {p : ℝ≥0 × Ω | σ p.2 ≤ p.1} Prod.fst]
   exact TauCeti.iUnion_mem_souslinClosure fun m ↦ TauCeti.subset_souslinClosure
-    (ℱ.Icc_mem_predictablePaving hσ (isStoppingTime_const ℱ m) fun _ ↦ WithTop.coe_ne_top)
+    (inter_preimage_fst_Iic_natCast_mem_predictablePaving ℱ hσ m)
 
 -- The strict lower ray of a pointwise predictable time belongs to the Souslin closure of `E*`.
 private theorem lt_predictable_mem_souslinClosure {σ : Ω → WithTop ℝ≥0}

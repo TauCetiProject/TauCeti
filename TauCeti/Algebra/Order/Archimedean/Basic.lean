@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Archimedean.Basic
+import Mathlib.Data.Set.Lattice.Image
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 
@@ -24,7 +25,7 @@ Hölder inequality is iterated.
 Finally, it chooses a dyadic scale `2ᵏ` comparable to a given length: for `ρ, n > 0` there is
 an integer `k` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n` (covering arguments with dyadic cubes use it to fit
 a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with `n = √d`), and exhausts
-Archimedean ordered semirings and lower-bounded sets by natural-number upper bounds.
+Archimedean ordered semirings and arbitrary sets by natural-number upper bounds.
 
 Beyond ordered semifields, in an Archimedean linearly ordered additive group the integer
 multiples `k • ℓ` of a nonzero element `ℓ` are unbounded above, whatever the sign of `ℓ`. For maps
@@ -41,10 +42,10 @@ lines, and that the inverse of a positive twist lift twists negatively.
   with `1 / (N + 1) ≤ δ` and `2 * n / N ≤ δ`.
 * `TauCeti.exists_four_mul_two_zpow_mul_le_and_lt`: for `ρ, n > 0` there is `k : ℤ` with
   `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`.
-* `TauCeti.iUnion_Iic_natCast`: natural-number downward rays `Iic (m : R)` cover any Archimedean
-  ordered semiring.
-* `TauCeti.setOf_le_coe_eq_iUnion_le_natCast`: any set bounded below on a finite `R`-valued
-  coordinate is exhausted by imposing natural-number upper bounds in `WithTop R`.
+* `TauCeti.iUnion_Iic_natCast_eq_univ`: natural-number downward rays `Iic (m : R)` cover any
+  Archimedean ordered semiring.
+* `Set.iUnion_inter_preimage_Iic_natCast`: any set is exhausted by intersecting with the
+  natural-number sublevel sets `g ⁻¹' Iic (m : R)` of a map into an Archimedean ordered semiring.
 * `TauCeti.exists_lt_zsmul`: in an Archimedean linearly ordered additive group, the integer
   multiples of a nonzero element are unbounded above.
 -/
@@ -106,19 +107,9 @@ end Field
 
 /-- Closed downward rays at natural-number bounds cover any Archimedean ordered semiring. -/
 @[simp]
-theorem iUnion_Iic_natCast {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+theorem iUnion_Iic_natCast_eq_univ {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
     [Archimedean R] : (⋃ m : ℕ, Set.Iic (m : R)) = Set.univ :=
   Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.mpr (exists_nat_ge x)
-
-/-- Any set defined by a lower bound on a finite `R`-valued coordinate `g` in an Archimedean
-ordered semiring is exhausted by imposing the natural-number bounds `(g x : WithTop R) ≤ m`. -/
-theorem setOf_le_coe_eq_iUnion_le_natCast {α R : Type*} [Semiring R] [PartialOrder R]
-    [IsOrderedRing R] [Archimedean R] (f : α → WithTop R) (g : α → R) :
-    {x : α | f x ≤ g x} =
-      ⋃ m : ℕ, {x : α | f x ≤ g x ∧ (g x : WithTop R) ≤ (m : R)} := by
-  ext x
-  simp only [Set.mem_ofPred_eq, Set.mem_iUnion, WithTop.coe_le_coe]
-  exact ⟨fun h ↦ let ⟨m, hm⟩ := exists_nat_ge (g x); ⟨m, h, hm⟩, fun ⟨_, h, _⟩ ↦ h⟩
 
 /-- In an Archimedean linearly ordered additive group, some integer multiple of a nonzero element
 `ℓ` exceeds any given `r`, whatever the sign of `ℓ`. -/
@@ -131,3 +122,11 @@ theorem exists_lt_zsmul {M : Type*} [AddCommGroup M] [LinearOrder M] [IsOrderedA
     exact ⟨n, by rwa [natCast_zsmul]⟩
 
 end TauCeti
+
+/-- Any set is exhausted by intersecting with the natural-number sublevel sets `g ⁻¹' Iic (m : R)`
+of a map into an Archimedean ordered semiring. -/
+theorem Set.iUnion_inter_preimage_Iic_natCast {α R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] [Archimedean R] (s : Set α) (g : α → R) :
+    (⋃ m : ℕ, s ∩ g ⁻¹' Set.Iic (m : R)) = s := by
+  rw [← Set.inter_iUnion, ← Set.preimage_iUnion, TauCeti.iUnion_Iic_natCast_eq_univ,
+    Set.preimage_univ, Set.inter_univ]

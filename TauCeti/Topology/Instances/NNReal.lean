@@ -26,7 +26,8 @@ We also collect elementary monotone approximations in `ℝ≥0` and `WithTop ℝ
 - the truncated left shifts `t - 1 / (n + 1 : ℝ≥0)` are monotone and converge to `t` both in `ℝ≥0`
   and after coercion to `WithTop ℝ≥0`;
 - strict inequalities `x < (t : WithTop ℝ≥0)` are witnessed by positive reciprocal cushions
-  `x + 1 / (k + 1) ≤ t`.
+  `x + 1 / (k + 1) ≤ t`, and `{0}` is the complement of the union of positive reciprocal rays
+  `Ici (1 / (k + 1))`.
 
 ## References
 
@@ -89,6 +90,13 @@ theorem lt_coe_iff_exists_add_one_div_add_one_le {x : WithTop ℝ≥0} {t : ℝ�
     have hIoi := iUnion_Ici_eq_Ioi_of_lt_of_tendsto hgt htend
     simp only [WithTop.coe_lt_coe, ← WithTop.coe_add, WithTop.coe_le_coe]
     simpa only [mem_iUnion, mem_Ici, mem_Ioi] using (Set.ext_iff.mp hIoi t).symm
+
+/-- The singleton `{0}` in `ℝ≥0` is the complement of the union of positive reciprocal closed rays
+`Ici (1 / (k + 1))`. -/
+theorem singleton_zero_eq_compl_iUnion_Ici_one_div_add_one :
+    ({(0 : ℝ≥0)} : Set ℝ≥0) = (⋃ k : ℕ, Ici (1 / (k + 1 : ℝ≥0)))ᶜ := by
+  rw [iUnion_Ici_eq_Ioi_of_lt_of_tendsto (fun _ ↦ by positivity)
+    (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ≥0)), compl_Ioi, ← bot_eq_zero, Iic_bot]
 
 end NNReal
 
