@@ -31,6 +31,13 @@ changes of variables, in particular rigid motions, the transport also holds at `
 (`TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule`), and for rigid motions it is an
 equivalence (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff`).
 
+Dilating by `r ≠ 0` multiplies the `Lᵖ` norm of a function by `|r| ^ (n / p)` and that of its
+gradient by `|r| ^ (n / p - 1)`, where `n` is the dimension. Since dilation is a bijection from
+`W^{1,p}_Γ(V)` onto `W^{1,p}_{r • Γ}(r • V)`, a Poincaré–Friedrichs inequality
+`‖u‖_p ≤ C ‖∇u‖_p` holds on `W^{1,p}_Γ(V)` exactly when the inequality with constant `|r| C` holds
+on `W^{1,p}_{r • Γ}(r • V)`: the Poincaré–Friedrichs constant scales linearly under dilation
+(`TauCeti.W1p.forall_norm_value_le_abs_mul_mul_norm_gradient_iff`).
+
 ## Main results
 
 * `TauCeti.W1p.compL_mem_w1pVanishingOnSubmodule`: for `p < ∞`, precomposition with a smooth
@@ -44,6 +51,8 @@ equivalence (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_i
   changes of variables, for every exponent `1 ≤ p ≤ ∞`.
 * `TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff`: rigid motions for every
   exponent `1 ≤ p ≤ ∞`.
+* `TauCeti.W1p.forall_norm_value_le_abs_mul_mul_norm_gradient_iff`: the Poincaré–Friedrichs
+  constant of the dilated pair `(r • V, r • Γ)` is `|r|` times that of `(V, Γ)`, for `p < ∞`.
 -/
 
 public section
@@ -51,7 +60,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Set TopologicalSpace
-open scoped Distributions ENNReal Topology ContDiff
+open scoped Distributions ENNReal Pointwise Topology ContDiff
 
 namespace TauCeti
 
@@ -231,5 +240,96 @@ theorem W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff (g : F ≃�
     show ⇑g ∘ ⇑g.symm = id from funext g.apply_symm_apply, preimage_id] at h
 
 end AffineIsometry
+
+/-! ### Dilations and the Poincaré–Friedrichs constant -/
+
+section Dilation
+
+variable {r : ℝ}
+
+/-- Every `u ∈ W^{1,p}_{r • Γ}(r • V)` is the dilate `v (r⁻¹ • ·)` of `v = u (r • ·)`, which lies
+in `W^{1,p}_Γ(V)`; dilation multiplies the norms of the value and of the gradient by `|r| ^ (n / p)`
+and `|r| ^ (n / p - 1)`. -/
+private theorem exists_mem_w1pVanishingOnSubmodule_norm_value_eq_and_norm_gradient_eq
+    (hp : p ≠ ⊤) (hr : r ≠ 0) (hUV : (U : Set E) = r • (V : Set E)) {u : W1p mu U p}
+    (hu : u ∈ w1pVanishingOnSubmodule mu U p (r • Γ)) :
+    ∃ v ∈ w1pVanishingOnSubmodule mu V p Γ,
+      ‖W1p.value u‖ = |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal) * ‖W1p.value v‖ ∧
+        ‖W1p.gradient u‖ =
+          |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal - 1) * ‖W1p.gradient v‖ := by
+  have hr' : r⁻¹ ≠ 0 := inv_ne_zero hr
+  -- The derivative of `x ↦ a • x` is `a • id`, of norm at most `‖a‖ ‖id‖` and Jacobian `aⁿ`.
+  have hfd : ∀ (a : ℝ) (x : E), fderiv ℝ (fun x : E => a • x) x = a • ContinuousLinearMap.id ℝ E :=
+    fun a x => by simp only [fderiv_fun_const_smul differentiableAt_fun_id, fderiv_fun_id]
+  have hnorm : ∀ (a : ℝ) (x : E),
+      ‖fderiv ℝ (fun x : E => a • x) x‖ ≤ ‖a‖ * ‖ContinuousLinearMap.id ℝ E‖ :=
+    fun a x => hfd a x ▸ norm_smul_le _ _
+  have hdet : ∀ (a : ℝ) (x : E),
+      |a| ^ Module.finrank ℝ E ≤ |(fderiv ℝ (fun x : E => a • x) x).det| :=
+    fun a x => by simp [hfd, ContinuousLinearMap.det, LinearMap.det_smul, abs_pow]
+  have habs : ∀ a : ℝ, a ≠ 0 → 0 < |a| ^ Module.finrank ℝ E := fun a ha => by positivity
+  -- `Φ = r⁻¹ • ·` maps `U` into `V`, and `Ψ = r • ·` maps `V` into `U` and inverts it.
+  have hΦmaps : MapsTo (fun x : E => r⁻¹ • x) U V := fun x hx => by
+    rw [hUV] at hx
+    obtain ⟨y, hy, rfl⟩ := hx
+    simpa [inv_smul_smul₀ hr] using hy
+  have hΨmaps : MapsTo (fun x : E => r • x) V U := fun y hy => by
+    rw [SetLike.mem_coe, ← SetLike.mem_coe, hUV]
+    exact smul_mem_smul_set hy
+  have hΨc : ContDiff ℝ ∞ fun x : E => r • x := contDiff_const_smul r
+  have hΨ : DifferentiableOn ℝ (fun x : E => r • x) V :=
+    (hΨc.differentiable (by simp)).differentiableOn
+  have hΦ : DifferentiableOn ℝ (fun x : E => r⁻¹ • x) U :=
+    ((contDiff_const_smul (F := E) (𝕜 := ℝ) (n := ∞) r⁻¹).differentiable (by simp)).differentiableOn
+  have hΨinj : InjOn (fun x : E => r • x) V := (smul_right_injective E hr).injOn
+  have hΦinj : InjOn (fun x : E => r⁻¹ • x) U := (smul_right_injective E hr').injOn
+  -- `v = u (r • ·)` lies in `W^{1,p}_Γ(V)`, and `u` is its dilate.
+  obtain ⟨v, rfl⟩ : ∃ v, W1p.compL _ hp hΦ hΦinj hΦmaps (fun x _ => hnorm r⁻¹ x) (habs r⁻¹ hr')
+      (fun x _ => hdet r⁻¹ x) v = u :=
+    ⟨_, W1p.compL_compL_of_leftInvOn _ hp hΦ hΦinj hΦmaps _ _ _ hΨ hΨinj hΨmaps
+      (fun y _ => hnorm r y) (habs r hr) (fun y _ => hdet r y) (fun x _ => smul_inv_smul₀ hr x) u⟩
+  refine ⟨v, ?_, W1p.norm_value_compL_inv_smul hp _ _ _ _ _ _ hr hUV v,
+    W1p.norm_gradient_compL_inv_smul hp _ _ _ _ _ _ hr hUV v⟩
+  have hv := W1p.compL_mem_w1pVanishingOnSubmodule _ hp hΨ hΨinj hΨmaps (fun y _ => hnorm r y)
+    (habs r hr) (fun y _ => hdet r y) hΨc (Homeomorph.smulOfNeZero r hr).isProperMap hu
+  rwa [preimage_smul₀ hr, inv_smul_smul₀ hr, W1p.compL_compL_of_leftInvOn _ hp hΨ hΨinj hΨmaps
+    _ _ _ hΦ hΦinj hΦmaps _ _ _ (fun y _ => inv_smul_smul₀ hr y) v] at hv
+
+/-- One direction of `TauCeti.W1p.forall_norm_value_le_abs_mul_mul_norm_gradient_iff`: a
+Poincaré–Friedrichs inequality on `W^{1,p}_Γ(V)` with constant `C` gives one on
+`W^{1,p}_{r • Γ}(r • V)` with constant `|r| * C`. -/
+private theorem forall_norm_value_le_abs_mul_mul_norm_gradient_of_forall (hp : p ≠ ⊤)
+    (hr : r ≠ 0) (hUV : (U : Set E) = r • (V : Set E)) {C : ℝ}
+    (h : ∀ v ∈ w1pVanishingOnSubmodule mu V p Γ, ‖W1p.value v‖ ≤ C * ‖W1p.gradient v‖) :
+    ∀ u ∈ w1pVanishingOnSubmodule mu U p (r • Γ),
+      ‖W1p.value u‖ ≤ |r| * C * ‖W1p.gradient u‖ := by
+  intro u hu
+  obtain ⟨v, hv, hval, hgrad⟩ :=
+    exists_mem_w1pVanishingOnSubmodule_norm_value_eq_and_norm_gradient_eq hp hr hUV hu
+  rw [hval, hgrad, Real.rpow_sub_one (abs_ne_zero.2 hr)]
+  calc |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal) * ‖W1p.value v‖
+      ≤ |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal) * (C * ‖W1p.gradient v‖) :=
+        mul_le_mul_of_nonneg_left (h v hv) (by positivity)
+    _ = |r| * C * (|r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal) / |r| * ‖W1p.gradient v‖) := by
+        field_simp
+
+/-- **The Poincaré–Friedrichs constant scales linearly under dilation.** Let `r ≠ 0`, let
+`U = r • V`, and let `1 ≤ p < ∞`. The inequality `‖u‖_{Lᵖ(U)} ≤ |r| C ‖∇u‖_{Lᵖ(U)}` holds for every
+`u ∈ W^{1,p}_{r • Γ}(U)` exactly when `‖v‖_{Lᵖ(V)} ≤ C ‖∇v‖_{Lᵖ(V)}` holds for every
+`v ∈ W^{1,p}_Γ(V)`. So the admissible constants of the dilated pair `(r • V, r • Γ)` are those of
+`(V, Γ)` multiplied by `|r|`, and so is the optimal constant. No regularity of `V` or `Γ` is
+used. -/
+theorem W1p.forall_norm_value_le_abs_mul_mul_norm_gradient_iff (hp : p ≠ ⊤) (hr : r ≠ 0)
+    (hUV : (U : Set E) = r • (V : Set E)) (C : ℝ) :
+    (∀ u ∈ w1pVanishingOnSubmodule mu U p (r • Γ),
+        ‖W1p.value u‖ ≤ |r| * C * ‖W1p.gradient u‖) ↔
+      ∀ v ∈ w1pVanishingOnSubmodule mu V p Γ, ‖W1p.value v‖ ≤ C * ‖W1p.gradient v‖ := by
+  refine ⟨fun h => ?_, forall_norm_value_le_abs_mul_mul_norm_gradient_of_forall hp hr hUV⟩
+  have hVU : (V : Set E) = r⁻¹ • (U : Set E) := by rw [hUV, inv_smul_smul₀ hr]
+  have h' := forall_norm_value_le_abs_mul_mul_norm_gradient_of_forall hp (inv_ne_zero hr) hVU h
+  rwa [inv_smul_smul₀ hr, abs_inv, ← mul_assoc, inv_mul_cancel₀ (abs_ne_zero.2 hr),
+    one_mul] at h'
+
+end Dilation
 
 end TauCeti
