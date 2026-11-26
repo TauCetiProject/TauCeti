@@ -41,9 +41,8 @@ Morse–Bott function with the twisted homology of its critical submanifolds
 (`nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology`, in the namespace
 `TauCeti.IsMorseBottFamily`, in `TauCeti.Geometry.Manifold.Morse.Bott.SpectralSequence`).
 
-The twisted Thom isomorphism needs the base, the model fibre `Fin (r j) → ℝ` of `ν⁻ j` and the
-coefficient ring in one universe. The model fibre lies in `Type`, so the manifolds, their model
-spaces and the ring live in `Type` too.
+The manifold, the model space of `M`, the submanifolds and the coefficient ring lie in one
+universe `u`; the model fibre `Fin (r j) → ℝ` of `ν⁻ j` lies in `Type`.
 
 ## Main results
 
@@ -73,17 +72,20 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
+universe u
+
 /-- **The Thom pairs of finitely many bundles, with orientation-twisted coefficients.** For
 finitely many vector bundles `V j` of ranks `r j` over compact bases `S j` and a commutative ring
 `K`, the coproduct of the homologies `Hₙ(V j, (V j)₀; K)` of the Thom pairs is the coproduct, over
 the bundles of rank `r j ≤ n`, of the homologies `H_{n - r j}(S j; o(V j) ⊗ K)` with coefficients
 in the orientation local systems. -/
 private theorem nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology
-    {ι : Type*} [Finite ι] {S : ι → Type} [∀ j, TopologicalSpace (S j)] [∀ j, CompactSpace (S j)]
-    {r : ι → ℕ} {V : ∀ j, S j → Type} [∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) (V j))]
+    {ι : Type*} [Finite ι] {S : ι → Type u} [∀ j, TopologicalSpace (S j)]
+    [∀ j, CompactSpace (S j)] {r : ι → ℕ} {V : ∀ j, S j → Type u}
+    [∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) (V j))]
     [∀ j s, AddCommMonoid (V j s)] [∀ j s, Module ℝ (V j s)] [∀ j s, TopologicalSpace (V j s)]
     [∀ j, FiberBundle (Fin (r j) → ℝ) (V j)] [∀ j, VectorBundle ℝ (Fin (r j) → ℝ) (V j)]
-    (K : Type) [CommRing K] (n : ℕ) :
+    (K : Type u) [CommRing K] (n : ℕ) :
     Nonempty ((∐ fun j ↦ (thomPair (Fin (r j) → ℝ) (V j)).singularHomology (ModuleCat.of K K) n) ≅
       ∐ fun j : {j // r j ≤ n} ↦ twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
         ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j)) := by
@@ -104,10 +106,10 @@ private theorem nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomolo
     (biproductSubtypeIsoOfIsZero W (fun j ↦ r j ≤ n) hW).symm ≪≫ biproduct.mapIso T ≪≫
     biproduct.isoCoproduct _⟩
 
-variable {E M : Type} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E M : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] {ι : Type*} {E' H' P : ι → Type*}
-  {S : ι → Type} [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)]
+  {S : ι → Type u} [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)]
   [∀ j, FiniteDimensional ℝ (E' j)] [∀ j, TopologicalSpace (H' j)]
   {J : ∀ j, ModelWithCorners ℝ (E' j) (H' j)} [∀ j, TopologicalSpace (S j)]
   [∀ j, ChartedSpace (H' j) (S j)] [∀ j, IsManifold (J j) ∞ (S j)]
@@ -147,7 +149,7 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_twisted
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
       ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
         ((h j).negativeNormalSpace hn (g j).toRiemannianMetric))
-    (K : Type) [CommRing K] (n : ℕ) :
+    (K : Type u) [CommRing K] (n : ℕ) :
     letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
     letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
@@ -169,7 +171,7 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_twisted
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
   let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-  set V : ∀ j, S j → Type := fun j s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s
+  set V : ∀ j, S j → Type u := fun j s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s
   let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) (V j)) :=
     fun j ↦ subbundleTopology (P j) ((h j).negativeNormalSpace hn (g j).toRiemannianMetric)
   let _ : ∀ j, FiberBundle (Fin (r j) → ℝ) (V j) := fun j ↦ (hV j).fiberBundle
@@ -213,7 +215,7 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
       ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
         ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
-    (K : Type) [CommRing K] (n : ℕ) :
+    (K : Type u) [CommRing K] (n : ℕ) :
     letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
     letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
@@ -244,7 +246,7 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
   let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-  set V : ∀ j, S j → Type := fun j s ↦
+  set V : ∀ j, S j → Type u := fun j s ↦
     (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s
   let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) (V j)) :=
     fun j ↦ subbundleTopology (P j)
@@ -267,7 +269,9 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
   -- Reindex the pieces of index at most `n` among those on the level `c`.
   exact ⟨e ≪≫ (nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology
     (V := fun j : {j // ∀ s, f (i j s) = c} ↦ V j) K n).some ≪≫
-    Sigma.reindex (Equiv.subtypeSubtypeEquivSubtypeInter _ fun j ↦ r j ≤ n)
+    -- Naming the category fixes the universe of the coproducts, which instance synthesis for
+    -- `Sigma.reindex` would otherwise leave open.
+    Sigma.reindex (C := ModuleCat.{u} K) (Equiv.subtypeSubtypeEquivSubtypeInter _ fun j ↦ r j ≤ n)
       fun j ↦ twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
         ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j)⟩
 
