@@ -28,12 +28,12 @@ space: `TauCeti.classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso` i
 isomorphism from `B ⋙ π₁` to the identity functor of `GrpCat`. The classifying-space functor is
 moreover fully faithful (`TauCeti.classifyingSpaceHomotopyFunctorFullyFaithful`): the base point
 of `classifyingSpace G` is a `0`-cell of its CW structure
-(`TauCeti.classifyingSpaceBasepoint_mem_skeletonLT_one`) and the higher homotopy groups of
-`classifyingSpace H` vanish, so pointed maps between classifying spaces inducing the same
-homomorphism of fundamental groups are pointed homotopic
-(`TauCeti.quotient_map_eq_of_fundamentalGroupFunctor_map_eq`). Hence every pointed homotopy class
-of maps `classifyingSpace G → classifyingSpace H` is the class of `classifyingSpaceMap φ` for a
-unique homomorphism `φ`.
+(`TauCeti.classifyingSpaceBasepoint_mem_skeletonLT_one`), so pointed maps out of it into a space
+without higher homotopy groups, such as `classifyingSpace H`, that induce the same homomorphism of
+fundamental groups are pointed homotopic
+(`TauCeti.quotient_map_eq_of_fundamentalGroupFunctor_map_eq_classifyingSpace`). Hence every
+pointed homotopy class of maps `classifyingSpace G → classifyingSpace H` is the class of
+`classifyingSpaceMap φ` for a unique homomorphism `φ`.
 
 The cellular model determines the induced maps up to pointed homotopy. Out of the
 cellular classifying space `TauCeti.cellularClassifyingSpace R` of a presentation, pointed homotopy
@@ -59,8 +59,9 @@ the comparison map of `TauCeti.cellularHomotopyEquivClassifyingSpace` followed b
 
 ## Main results
 
-* `TauCeti.quotient_map_eq_of_fundamentalGroupFunctor_map_eq`: pointed maps between classifying
-  spaces are classified up to pointed homotopy by their effect on `π₁`.
+* `TauCeti.quotient_map_eq_of_fundamentalGroupFunctor_map_eq_classifyingSpace`: pointed maps out
+  of a classifying space into a space without higher homotopy groups are determined up to pointed
+  homotopy by their effect on `π₁`.
 * `TauCeti.fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace`: pointed homotopy
   classes of maps out of a cellular classifying space into a space with no higher homotopy groups
   are classified by their effect on `π₁`.
@@ -161,23 +162,21 @@ theorem classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso_inv_app_ho
       (classifyingSpaceFundamentalGroupMulEquiv G).symm.toMonoidHom :=
   (rfl)
 
-/-- **Pointed maps between classifying spaces are classified by `π₁`.** Two based maps
-`classifyingSpace G → classifyingSpace H` inducing the same homomorphism of fundamental groups are
-pointed homotopic: the base point of `classifyingSpace G` is a `0`-cell of its CW structure, and
-the higher homotopy groups of `classifyingSpace H` vanish. -/
-theorem quotient_map_eq_of_fundamentalGroupFunctor_map_eq {G H : GrpCat.{u}}
-    {f g : classifyingSpaceFunctor.obj G ⟶ classifyingSpaceFunctor.obj H}
+/-- **Pointed maps out of a classifying space are determined up to pointed homotopy by their
+effect on `π₁`.** If the homotopy groups of `Y` vanish from degree `2` on, at every point, then two
+based maps `classifyingSpace G → Y` inducing the same homomorphism of fundamental groups are
+pointed homotopic: the base point of `classifyingSpace G` is a `0`-cell of its CW structure. -/
+theorem quotient_map_eq_of_fundamentalGroupFunctor_map_eq_classifyingSpace {G : GrpCat.{u}}
+    {Y : BasedTopologicalSpace.{u}}
+    (hY : ∀ (y : Y.carrier) (n : ℕ), Subsingleton (π_ (n + 2) Y.carrier y))
+    {f g : classifyingSpaceFunctor.obj G ⟶ Y}
     (h : BasedTopologicalSpace.fundamentalGroupFunctor.map f =
       BasedTopologicalSpace.fundamentalGroupFunctor.map g) :
     PointedHomotopyCat.quotient.map f = PointedHomotopyCat.quotient.map g :=
   (PointedHomotopyCat.quotient_map_eq_iff f g).2 <|
-    homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT_of_cwComplex
-      (fun y n ↦ subsingleton_homotopyGroup_classifyingSpace H n y)
-      (classifyingSpaceBasepoint_mem_skeletonLT_one G) f.map_basepoint g.map_basepoint (by
-        have h' := congrArg GrpCat.Hom.hom h
-        rw [BasedTopologicalSpace.fundamentalGroupFunctor_map_hom,
-          BasedTopologicalSpace.fundamentalGroupFunctor_map_hom] at h'
-        exact h')
+    homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT_of_cwComplex hY
+      (classifyingSpaceBasepoint_mem_skeletonLT_one G) f.map_basepoint g.map_basepoint
+      (BasedTopologicalSpace.mapOfEq_eq_of_fundamentalGroupFunctor_map_eq h)
 
 /-- **The classifying-space functor is fully faithful** (Hatcher, Proposition 1B.9, for maps
 between classifying spaces). A pointed homotopy class of maps
@@ -198,7 +197,8 @@ def classifyingSpaceHomotopyFunctorFullyFaithful :
       rw [← Functor.comp_map, ← NatIso.naturality_2 e]
       simp
     obtain ⟨f, rfl⟩ := PointedHomotopyCat.quotient.map_surjective a
-    exact quotient_map_eq_of_fundamentalGroupFunctor_map_eq key
+    exact quotient_map_eq_of_fundamentalGroupFunctor_map_eq_classifyingSpace
+      (fun y n ↦ subsingleton_homotopyGroup_classifyingSpace H n y) key
   preimage_map :=
     NatIso.naturality_1 classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso
 
@@ -252,11 +252,7 @@ private theorem quotient_map_eq_cellularClassifyingSpace {Y : BasedTopologicalSp
     PointedHomotopyCat.quotient.map f = PointedHomotopyCat.quotient.map g :=
   (PointedHomotopyCat.quotient_map_eq_iff f g).2
     (homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace R hY f.map_basepoint g.map_basepoint
-      (by
-        have h' := congrArg GrpCat.Hom.hom h
-        rw [BasedTopologicalSpace.fundamentalGroupFunctor_map_hom,
-          BasedTopologicalSpace.fundamentalGroupFunctor_map_hom] at h'
-        exact h'))
+      (BasedTopologicalSpace.mapOfEq_eq_of_fundamentalGroupFunctor_map_eq h))
 
 /-- **Pointed maps out of a cellular classifying space are classified by `π₁`.** If the homotopy
 groups of `Y` vanish from degree `2` on, at every point, then a pointed homotopy class of maps from
