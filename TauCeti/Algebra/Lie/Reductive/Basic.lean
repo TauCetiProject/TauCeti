@@ -52,8 +52,9 @@ the two combine into a direct sum
 carries those hypotheses even though the criterion itself does not.
 
 Conversely, a reductive Lie algebra is that direct sum, and its derived ideal is semisimple
-(`TauCeti.isCompl_center_derivedSeries` and `TauCeti.isKilling_derivedSeries`). Together with the
-criterion this is the **structure theorem for reductive Lie algebras**
+(`TauCeti.isCompl_center_derivedSeries` and `TauCeti.isKilling_derivedSeries`), with canonical Lie
+retraction onto the derived ideal along the centre (`TauCeti.derivedSeriesLieProj`). Together with
+the criterion this is the **structure theorem for reductive Lie algebras**
 (`TauCeti.hasCentralRadical_iff_isCompl_center_derivedSeries`): in characteristic zero and finite
 dimension, `L` is reductive exactly when `L = Z(L) ⊕ ⁅L, L⁆` with `⁅L, L⁆` semisimple.
 
@@ -459,6 +460,53 @@ instance isKilling_derivedSeries : LieAlgebra.IsKilling K (derivedSeries K L 1) 
     (LieAlgebra.center K L).quotientEquivOfIsCompl (derivedSeries K L 1).toLieSubalgebra <| by
       rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.isCompl_toSubmodule]
       exact isCompl_center_derivedSeries K L
+
+/-- **Canonical Lie algebra retraction `L →ₗ⁅K⁆ ⁅L, L⁆`** of a reductive Lie algebra onto its
+derived ideal along the centre `Z(L)`, built from `L = Z(L) ⊕ ⁅L, L⁆` via `L ⧸ Z(L) ≃ₗ⁅K⁆ ⁅L, L⁆`.
+-/
+noncomputable def derivedSeriesLieProj : L →ₗ⁅K⁆ derivedSeries K L 1 :=
+  ((LieAlgebra.center K L).quotientEquivOfIsCompl (derivedSeries K L 1).toLieSubalgebra <| by
+    rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.isCompl_toSubmodule]
+    exact isCompl_center_derivedSeries K L).toLieHom.comp (LieAlgebra.center K L).mkQ
+
+variable {K L} in
+/-- `derivedSeriesLieProj` fixes every element of the derived ideal `⁅L, L⁆`. -/
+@[simp]
+theorem derivedSeriesLieProj_coe (y : derivedSeries K L 1) :
+    derivedSeriesLieProj K L (y : L) = y :=
+  (LieAlgebra.center K L).quotientEquivOfIsCompl_apply_mk_coe (derivedSeries K L 1).toLieSubalgebra
+    (by rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.isCompl_toSubmodule]
+        exact isCompl_center_derivedSeries K L) ⟨(y : L), y.property⟩
+
+/-- `derivedSeriesLieProj` retracts the inclusion of the derived ideal `⁅L, L⁆`. -/
+@[simp]
+theorem comp_incl_derivedSeriesLieProj :
+    (derivedSeriesLieProj K L).comp (derivedSeries K L 1).incl = LieHom.id :=
+  LieHom.ext (derivedSeriesLieProj_coe (K := K) (L := L))
+
+variable {K L} in
+/-- An element of `L` is killed by `derivedSeriesLieProj` if and only if it is central. -/
+@[simp]
+theorem derivedSeriesLieProj_eq_zero_iff {x : L} :
+    derivedSeriesLieProj K L x = 0 ↔ x ∈ LieAlgebra.center K L := by
+  let e := (LieAlgebra.center K L).quotientEquivOfIsCompl (derivedSeries K L 1).toLieSubalgebra <|
+    by rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.isCompl_toSubmodule]
+       exact isCompl_center_derivedSeries K L
+  have hx : (derivedSeriesLieProj K L x : L) = (e ((LieAlgebra.center K L).mkQ x) : L) := rfl
+  rw [← ZeroMemClass.coe_eq_zero, hx, ZeroMemClass.coe_eq_zero,
+    map_eq_zero_iff e (EquivLike.injective e), LieIdeal.mkQ_eq_zero]
+
+variable {K L} in
+/-- `derivedSeriesLieProj` annihilates the centre `Z(L)`. -/
+theorem derivedSeriesLieProj_eq_zero_of_mem_center {z : L} (hz : z ∈ LieAlgebra.center K L) :
+    derivedSeriesLieProj K L z = 0 :=
+  derivedSeriesLieProj_eq_zero_iff.mpr hz
+
+/-- The kernel of `derivedSeriesLieProj` is the centre `Z(L)`. -/
+@[simp]
+theorem ker_derivedSeriesLieProj : (derivedSeriesLieProj K L).ker = LieAlgebra.center K L := by
+  ext x
+  exact derivedSeriesLieProj_eq_zero_iff
 
 end Reductive
 

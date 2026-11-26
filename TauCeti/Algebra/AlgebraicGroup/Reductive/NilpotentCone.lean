@@ -31,6 +31,10 @@ agree (`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff`).
   `z + y` lies on the cone exactly when `z = 0` and `ad y` is nilpotent.
 * `isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval`: the
   `ad`-nilpotent elements of `𝔤` are the sums of a central element and a point of the cone.
+* `mk_mem_nilpotentConeOrbits_iff_mem_derivedSeries_and_isNilpotent_ad` and
+  `centerProdNilpotentConeOrbitsEquiv`: the rational orbits in the nilpotent cone are the orbits of
+  `ad`-nilpotent elements of `⁅𝔤, 𝔤⁆`, giving
+  `Z(𝔤) × nilpotentConeOrbits k H ≃ {O // O.IsNilpotentAd}`.
 
 ## References
 
@@ -110,5 +114,42 @@ noncomputable def centerProdNilpotentConeOrbitsEquiv (hH : reductiveCommHopfAlgP
   have := hH.geometricallyConnected.connectedSpace
   have := hH.hasCentralRadical_dual_cotangentSpace
   TauCeti.centerProdNilpotentConeOrbitsEquiv
+
+attribute [local instance] Derivation.adjointComodule in
+/-- `hH.centerProdNilpotentConeOrbitsEquiv` unfolds to
+`TauCeti.centerProdNilpotentConeOrbitsEquiv`. -/
+theorem centerProdNilpotentConeOrbitsEquiv_def (hH : reductiveCommHopfAlgProperty k H) :
+    have := hH.geometricallyConnected.connectedSpace
+    have := hH.hasCentralRadical_dual_cotangentSpace
+    hH.centerProdNilpotentConeOrbitsEquiv =
+      TauCeti.centerProdNilpotentConeOrbitsEquiv (k := k) (H := H) :=
+  (rfl)
+
+attribute [local instance] Derivation.adjointComodule in
+/-- On `(z, mk y)`, `hH.centerProdNilpotentConeOrbitsEquiv` sends the pair to `mk (z + y)`. -/
+@[simp]
+theorem coe_centerProdNilpotentConeOrbitsEquiv_mk (hH : reductiveCommHopfAlgProperty k H)
+    (z : LieAlgebra.center k 𝔤) {y : 𝔤}
+    (hy : (Comodule.VectorOrbit.mk y : Comodule.VectorOrbit k H 𝔤) ∈ nilpotentConeOrbits k H) :
+    (hH.centerProdNilpotentConeOrbitsEquiv (z, ⟨Comodule.VectorOrbit.mk y, hy⟩) :
+        Comodule.VectorOrbit k H 𝔤) =
+      Comodule.VectorOrbit.mk ((z : 𝔤) + y) := by
+  have := hH.geometricallyConnected.connectedSpace
+  have := hH.hasCentralRadical_dual_cotangentSpace
+  exact TauCeti.coe_centerProdNilpotentConeOrbitsEquiv_mk z hy
+
+attribute [local instance] Derivation.adjointComodule in
+/-- The inverse of `hH.centerProdNilpotentConeOrbitsEquiv` splits `mk (z + y)` into `(z, mk y)`. -/
+@[simp]
+theorem centerProdNilpotentConeOrbitsEquiv_symm_mk_add (hH : reductiveCommHopfAlgProperty k H)
+    (z : LieAlgebra.center k 𝔤) {y : 𝔤}
+    (hy : (Comodule.VectorOrbit.mk y : Comodule.VectorOrbit k H 𝔤) ∈ nilpotentConeOrbits k H)
+    (h : (Comodule.VectorOrbit.mk ((z : 𝔤) + y) : Comodule.VectorOrbit k H 𝔤).IsNilpotentAd) :
+    hH.centerProdNilpotentConeOrbitsEquiv.symm
+        ⟨Comodule.VectorOrbit.mk ((z : 𝔤) + y), h⟩ =
+      (z, ⟨Comodule.VectorOrbit.mk y, hy⟩) := by
+  have := hH.geometricallyConnected.connectedSpace
+  have := hH.hasCentralRadical_dual_cotangentSpace
+  exact TauCeti.centerProdNilpotentConeOrbitsEquiv_symm_mk_add z hy h
 
 end TauCeti.reductiveCommHopfAlgProperty

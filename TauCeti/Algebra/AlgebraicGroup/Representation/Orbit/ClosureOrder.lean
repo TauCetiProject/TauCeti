@@ -60,9 +60,10 @@ adjoint orbits, in particular on nilpotent orbits.
   order is cut out by these polynomials.
 * `TauCeti.Comodule.VectorOrbit.mk_zero_le_mk_of_forall_smul`: a scaling-invariant orbit contains
   the zero orbit in its closure.
-* `TauCeti.Comodule.VectorOrbit.closure_image_inter_basicOpen_snd_eq_biUnion` and
-  `TauCeti.Comodule.VectorOrbit.closure_diff_image_inter_basicOpen_snd_eq_biUnion`: finite
-  scheme-point closure and boundary decompositions in the affine chart `{t ≠ 0}` of `P(M × k)`.
+* `TauCeti.Comodule.VectorOrbit.setOf_mk_le_eq_union_biUnion_of_forall_le`,
+  `TauCeti.Comodule.VectorOrbit.closure_image_inter_basicOpen_snd_eq_biUnion`, and
+  `TauCeti.Comodule.VectorOrbit.closure_image_sdiff_image_inter_basicOpen_snd_eq_biUnion`:
+  rational-vector and finite scheme-point closure and boundary decompositions.
 
 ## References
 
@@ -100,30 +101,11 @@ theorem image_injective : Function.Injective (image : VectorOrbit k H M → Set 
 then `O₁.image` and `O₂.image` share no scheme points (including nonclosed points). -/
 theorem disjoint_image_of_ne {O₁ O₂ : VectorOrbit k H M} (hne : O₁ ≠ O₂) :
     Disjoint O₁.image O₂.image := by
+  have himg : O₁.image ≠ O₂.image := image_injective.ne hne
   induction O₁ using VectorOrbit.ind with | h v₁
   induction O₂ using VectorOrbit.ind with | h v₂
-  rw [Set.disjoint_iff_inter_eq_empty]
-  by_contra hne'
-  rw [image_mk, image_mk] at hne'
-  obtain ⟨x, ⟨hx₁, hx₂⟩, hxc⟩ :=
-    ((isConstructible_range_projectiveOrbitMap (H := H) ((v₁, 1) : M × k) _).inter
-      (isConstructible_range_projectiveOrbitMap (H := H) ((v₂, 1) : M × k) _))
-      |>.nonempty_inter_closedPoints (Set.ne_empty_iff_nonempty.mp hne')
-  obtain ⟨g₁, rfl⟩ :=
-    (range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints (H := H)
-      ((v₁, 1) : M × k) _).ge ⟨hx₁, hxc⟩
-  obtain ⟨g₂, hg₂⟩ :=
-    (range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints (H := H)
-      ((v₂, 1) : M × k) _).ge ⟨hx₂, hxc⟩
-  have hspan := (projectiveOrbitMap_kernelPoint_eq_iff_span_eq
-    ((v₂, 1) : M × k) _ ((v₁, 1) : M × k) _ g₂ g₁).mp hg₂
-  have hspan' : k ∙ basePointsRepresentation (M × k) (g₁⁻¹ * g₂) ((v₂, 1) : M × k) =
-      k ∙ ((v₁, 1) : M × k) := by
-    simpa only [Submodule.map_span, Set.image_singleton, Representation.inv_self_apply, map_mul,
-      mul_apply_eq_comp] using
-      congrArg (Submodule.map (basePointsRepresentation (M × k) g₁⁻¹)) hspan
-  exact hne (mk_eq_mk_iff.mpr ⟨(g₁⁻¹ * g₂)⁻¹, by
-    rw [← basePointsRepresentation_eq_of_span_eq hspan', Representation.inv_self_apply]⟩)
+  rw [image_mk, image_mk] at himg ⊢
+  exact disjoint_range_projectiveOrbitMap_of_ne _ _ himg
 
 /-- **Orbits are determined by their closures.** Two rational orbits whose geometric images
 have the same closure in `P(M × k)` are equal. -/
@@ -319,6 +301,22 @@ theorem mk_zero_le_mk_of_forall_smul {v : M}
       (Multiset.mem_toFinset.mpr ((Polynomial.mem_roots hne).mpr hroot)))
   simpa [hq0] using (hqeval 0).symm
 
+/-- **Decomposition of the `k`-rational vectors below an orbit in a downward-closed family.** -/
+theorem setOf_mk_le_eq_union_biUnion_of_forall_le {S : Set (VectorOrbit k H M)}
+    {O : VectorOrbit k H M} (hS : ∀ ⦃O' : VectorOrbit k H M⦄, O' ≤ O → O' ∈ S) :
+    {y : M | (mk y : VectorOrbit k H M) ≤ O} =
+      {y : M | mk y = O} ∪
+        ⋃ O' ∈ {O' : VectorOrbit k H M | O' ∈ S ∧ O' < O}, {y : M | mk y = O'} := by
+  ext y
+  simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_iUnion, exists_prop]
+  refine ⟨fun hle ↦ ?_, ?_⟩
+  · rcases eq_or_lt_of_le hle with rfl | hlt
+    · exact Or.inl rfl
+    · exact Or.inr ⟨mk y, ⟨hS hle, hlt⟩, rfl⟩
+  · rintro (rfl | ⟨_, ⟨-, hlt⟩, rfl⟩)
+    · exact le_rfl
+    · exact hlt.le
+
 /-- **Scheme-point closure decomposition of an orbit with finitely many lower orbits.** In the
 affine chart `U = {t ≠ 0}` of `P(M × k)`, when `{O' | O' ≤ O}` is finite, `closure O.image ∩ U` is
 the union of the geometric orbit images `O'.image` for `O' ≤ O`, including nonclosed points. -/
@@ -332,10 +330,8 @@ theorem closure_image_inter_basicOpen_snd_eq_biUnion {O : VectorOrbit k H M}
   let U : Set (Proj 𝒜) :=
     (Proj.basicOpen 𝒜 (SymmetricAlgebra.ι k (Module.Dual k (M × k)) (LinearMap.snd k M k)) : Set _)
   have hlhs_cons : IsConstructible (closure O.image ∩ U) :=
-    (IsRetrocompact.isConstructible isClosed_closure.isOpen_compl
-      fun _ _ _ ↦ NoetherianSpace.isCompact _).of_compl.inter
-      (IsRetrocompact.isConstructible (Proj.basicOpen 𝒜 _).isOpen
-        fun _ _ _ ↦ NoetherianSpace.isCompact _)
+    ((NoetherianSpace.isCompact _).isConstructible isClosed_closure.isOpen_compl).of_compl.inter
+      ((NoetherianSpace.isCompact _).isConstructible (Proj.basicOpen 𝒜 _).isOpen)
   have hrhs_cons : IsConstructible (⋃ O' ∈ {O' : VectorOrbit k H M | O' ≤ O}, O'.image) :=
     IsConstructible.biUnion hf fun O' _ ↦ by
       induction O' using VectorOrbit.ind with | h v
@@ -347,13 +343,9 @@ theorem closure_image_inter_basicOpen_snd_eq_biUnion {O : VectorOrbit k H M}
     obtain ⟨⟨v, c⟩, hvc, rfl⟩ :=
       (ProjectiveSpectrum.mem_closedPoints_iff_exists_projectiveOrbitMap_eq (H := H) x).mp hxc
     have hc0 : c ≠ 0 := by
-      have hiff := ι_mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((v, c) : M × k) hvc
-        1 (LinearMap.snd k M k)
-      simpa [AlgHom.convOne_def] using hiff.not.mp hxU
+      simpa [AlgHom.convOne_def] using (ι_mem_projectiveOrbitMap_kernelPoint_iff (H := H)
+        ((v, c) : M × k) hvc 1 (LinearMap.snd k M k)).not.mp hxU
     let y : M := c⁻¹ • v
-    have hspan : k ∙ ((v, c) : M × k) = k ∙ ((y, 1) : M × k) :=
-      Submodule.span_singleton_eq_span_singleton.mpr ⟨Units.mk0 c⁻¹ (inv_ne_zero hc0), by
-        ext <;> simp [y, Units.smul_def, inv_mul_cancel₀ hc0]⟩
     have hpt : projectiveOrbitMap (H := H) ((v, c) : M × k) hvc
           (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) =
         projectiveOrbitMap (H := H) ((y, 1) : M × k) (Module.isUnimodular_mk_one y)
@@ -362,14 +354,13 @@ theorem closure_image_inter_basicOpen_snd_eq_biUnion {O : VectorOrbit k H M}
         ((y, 1) : M × k) (Module.isUnimodular_mk_one y) 1 1
       simp only [map_one, one_apply_eq_self] at hiff
       rw [TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom] at hiff
-      exact hiff.mpr hspan
+      exact hiff.mpr <| Submodule.span_singleton_eq_span_singleton.mpr
+        ⟨Units.mk0 c⁻¹ (inv_ne_zero hc0), by ext <;> simp [y, Units.smul_def, inv_mul_cancel₀ hc0]⟩
     have hle : (mk y : VectorOrbit k H M) ≤ O := by
       induction O using VectorOrbit.ind with | h e
       rw [image_mk] at hxcl
       rwa [mk_le_mk_iff, ← hpt]
-    refine ⟨Set.mem_iUnion₂.mpr ⟨mk y, hle, ?_⟩, hxc⟩
-    rw [hpt, image_mk]
-    exact Set.mem_range_self _
+    exact ⟨Set.mem_iUnion₂.mpr ⟨mk y, hle, by rw [hpt, image_mk]; exact Set.mem_range_self _⟩, hxc⟩
   · rintro x ⟨hx, hxc⟩
     obtain ⟨O', hle, hxO'⟩ := Set.mem_iUnion₂.mp hx
     refine ⟨⟨le_iff_image_subset_closure.mp hle hxO', ?_⟩, hxc⟩
@@ -380,7 +371,7 @@ theorem closure_image_inter_basicOpen_snd_eq_biUnion {O : VectorOrbit k H M}
 /-- **Scheme-point boundary decomposition of an orbit with finitely many lower orbits.** In the
 affine chart `U = {t ≠ 0}` of `P(M × k)`, when `{O' | O' ≤ O}` is finite, the boundary
 `(closure O.image \ O.image) ∩ U` is the union of `O'.image` over all strictly smaller `O' < O`. -/
-theorem closure_diff_image_inter_basicOpen_snd_eq_biUnion {O : VectorOrbit k H M}
+theorem closure_image_sdiff_image_inter_basicOpen_snd_eq_biUnion {O : VectorOrbit k H M}
     (hf : {O' : VectorOrbit k H M | O' ≤ O}.Finite) :
     (closure O.image \ O.image) ∩
         (Proj.basicOpen (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))

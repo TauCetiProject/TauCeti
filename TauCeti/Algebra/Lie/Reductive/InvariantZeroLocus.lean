@@ -49,7 +49,6 @@ such eigenvectors.
   algebra, the common zeros of the invariants of positive degree are the `ad`-nilpotent elements
   of the derived ideal.
 * `TauCeti.forall_lift_eval_add_eq_zero_iff`: the same in the coordinates of `Z(L) ⊕ ⁅L, L⁆`.
-* `TauCeti.derivedSeriesLieProj`: the canonical Lie retraction `L →ₗ⁅K⁆ ⁅L, L⁆` along `Z(L)`.
 
 ## References
 
@@ -104,31 +103,6 @@ theorem forall_lift_eval_add_eq_zero_iff {z y : L} (hz : z ∈ center K L)
   have h := center_inf_derivedSeries_eq_bot K L
   rw [← LieSubmodule.mem_bot (R := K) (L := L) z, ← h]
   exact ⟨hz, hz'⟩
-
-variable (K L) in
-/-- **Canonical Lie algebra retraction `L →ₗ⁅K⁆ ⁅L, L⁆`** of a reductive Lie algebra onto its
-derived ideal along the centre `Z(L)`, built from `L = Z(L) ⊕ ⁅L, L⁆` via `L ⧸ Z(L) ≃ₗ⁅K⁆ ⁅L, L⁆`.
--/
-noncomputable def derivedSeriesLieProj : L →ₗ⁅K⁆ derivedSeries K L 1 :=
-  (LieHom.mk ⟨⟨fun x ↦ ⟨x.val, x.property⟩, fun _ _ ↦ rfl⟩, fun _ _ ↦ rfl⟩ fun {_ _} ↦ rfl).comp <|
-    ((center K L).quotientEquivOfIsCompl (derivedSeries K L 1).toLieSubalgebra <| by
-      rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.isCompl_toSubmodule]
-      exact isCompl_center_derivedSeries K L).toLieHom.comp (center K L).mkQ
-
-/-- `derivedSeriesLieProj` fixes every element of the derived ideal `⁅L, L⁆`. -/
-@[simp]
-theorem derivedSeriesLieProj_coe (y : derivedSeries K L 1) :
-    derivedSeriesLieProj K L (y : L) = y := by
-  have h := (center K L).quotientEquivOfIsCompl_apply_mk_coe (derivedSeries K L 1).toLieSubalgebra
-    (by rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.isCompl_toSubmodule]
-        exact isCompl_center_derivedSeries K L) ⟨(y : L), y.property⟩
-  exact Subtype.ext (congrArg Subtype.val h)
-
-/-- `derivedSeriesLieProj` annihilates the centre `Z(L)`. -/
-@[simp]
-theorem derivedSeriesLieProj_eq_zero_of_mem_center {z : L} (hz : z ∈ center K L) :
-    derivedSeriesLieProj K L z = 0 := by
-  simpa [derivedSeriesLieProj] using hz
 
 end Reductive
 
