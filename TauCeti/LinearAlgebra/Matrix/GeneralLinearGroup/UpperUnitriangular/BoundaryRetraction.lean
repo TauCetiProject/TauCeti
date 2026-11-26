@@ -9,6 +9,9 @@ public import Mathlib.Algebra.Module.ZMod
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Center
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Transvection
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.TwoBoundary
+-- Non-public: the product and conjugation identities below are used only in proofs.
+import TauCeti.Algebra.Algebra.Quasiregular
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 
 /-!
 # Boundary retractions of the two-boundary subgroups and their stabilizers
@@ -155,7 +158,7 @@ def twoBoundaryRetraction (h : r + s < n) (u v : Fin (n + 1) → R) :
     have hAB : (A - 1) * (B - 1) = 0 :=
       (mem_twoBoundarySubgroup_iff.1 Q.property).sub_one_mul_sub_one_eq_zero h
         (mem_twoBoundarySubgroup_iff.1 Q'.property)
-    rw [Subgroup.coe_mul, coe_mul_sub_one, hAB, add_zero]
+    rw [Subgroup.coe_mul, coe_mul, mul_sub_one_eq_add_add_mul, hAB, add_zero]
 
 variable (h : r + s < n) (u v : Fin (n + 1) → R)
 
@@ -367,7 +370,8 @@ theorem mem_twoBoundaryStabilizer_iff_vecMul_sub_one_and_sub_one_mulVec (hr : r 
   have hBA : B * A = 1 := coe_inv_mul_coe M
   have hAB : A * B = 1 := coe_mul_coe_inv M
   rw [mem_twoBoundaryStabilizer_iff]
-  simp_rw [dotProduct_conj_sub_one_mulVec]
+  simp_rw [Subgroup.coe_mul, Subgroup.coe_inv,
+    Matrix.GeneralLinearGroup.dotProduct_conj_sub_one_mulVec, ← Subgroup.coe_inv]
   rw [forall_dotProduct_eq_iff hr hs
     (by rw [vecMul_coe_apply_of_isBot M u fun _ ↦ Fin.zero_le _, hu])
     (by rw [coe_mulVec_apply_of_isTop M⁻¹ v fun _ ↦ Fin.le_last _, hv]) hu hv]
@@ -421,8 +425,8 @@ def twoBoundaryStabilizerRetraction :
       by_cases hk : (k : ℕ) ≤ r
       · rw [hM.1 k hk, zero_mul]
       · rw [hN.2 k (by omega), mul_zero]
-    rw [Subgroup.coe_mul, coe_mul_sub_one, add_mulVec _ ((A - 1) * (B - 1)), dotProduct_add, hAB,
-      add_zero]
+    rw [Subgroup.coe_mul, coe_mul, mul_sub_one_eq_add_add_mul, add_mulVec _ ((A - 1) * (B - 1)),
+      dotProduct_add, hAB, add_zero]
 
 /-- The value of `ρ'` at `M` is `u (M - 1) v`. -/
 @[simp]
