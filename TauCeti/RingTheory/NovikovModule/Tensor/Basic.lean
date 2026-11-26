@@ -40,7 +40,7 @@ needed for this: the unsigned differential `δ₁ ⊗ 1 + 1 ⊗ δ₂`, which is
 the zero degree function, applied twice to `a ⊗ b` gives
 `δ₁ δ₁ a ⊗ b + 2 (δ₁ a ⊗ δ₂ b) + a ⊗ δ₂ δ₂ b`
 (`kernelMap_tensorDifferential_zero_kernelMap_tensorDifferential_zero_tensor`, in the namespace
-`TauCeti.NovikovModule`), which is `2 (δ₁ a ⊗ δ₂ b) ≠ 0` when the differentials square to zero,
+`TauCeti.NovikovModule`), which is `2 (δ₁ a ⊗ δ₂ b) ≠ 0` when `δ₁ δ₁ a = 0`, `δ₂ δ₂ b = 0`,
 `δ₁ a ≠ 0`, `δ₂ b ≠ 0` and the ground ring has no zero divisors and `2 ≠ 0`
 (`kernelMap_tensorDifferential_zero_kernelMap_tensorDifferential_zero_tensor_ne_zero`).
 
@@ -203,12 +203,8 @@ theorem tensor_eq_zero_iff [NoZeroDivisors R] {a : NovikovModule R F₁} {b : No
     tensor a b = 0 ↔ a = 0 ∨ b = 0 := by
   refine ⟨fun h => ?_, by rintro (rfl | rfl) <;> simp⟩
   by_contra! hab
-  obtain ⟨p₁, hp₁⟩ : ∃ p₁, a.val p₁ ≠ 0 := by
-    by_contra! h₁
-    exact hab.1 (Subtype.ext (funext h₁))
-  obtain ⟨p₂, hp₂⟩ : ∃ p₂, b.val p₂ ≠ 0 := by
-    by_contra! h₂
-    exact hab.2 (Subtype.ext (funext h₂))
+  obtain ⟨p₁, hp₁⟩ := ne_zero_iff.1 hab.1
+  obtain ⟨p₂, hp₂⟩ := ne_zero_iff.1 hab.2
   have := congrArg (fun x : NovikovModule R _ => x.val (p₁, p₂)) h
   simp only [tensor_apply_val] at this
   exact mul_ne_zero hp₁ hp₂ this
@@ -546,8 +542,8 @@ theorem kernelMap_tensorDifferential_zero_kernelMap_tensorDifferential_zero_tens
   simp only [Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul, two_smul]
   abel
 
-/-- **The unsigned tensor differential does not square to zero.** Let `δ₁` and `δ₂` square to
-zero, over a ring without zero divisors in which `2 ≠ 0`. If `δ₁ a ≠ 0` and `δ₂ b ≠ 0`, then the
+/-- **The unsigned tensor differential does not square to zero.** Work over a ring without zero
+divisors in which `2 ≠ 0`. If `δ₁ δ₁ a = 0`, `δ₂ δ₂ b = 0`, `δ₁ a ≠ 0` and `δ₂ b ≠ 0`, then the
 tensor differential `δ₁ ⊗ 1 + 1 ⊗ δ₂` of the zero degree function, applied twice to `a ⊗ b`, gives
 `2 (δ₁ a ⊗ δ₂ b) ≠ 0`. With the Koszul sign the tensor differential squares to zero
 (`NovikovModule.kernelMap_tensorDifferential_kernelMap_tensorDifferential_eq_zero`). -/
@@ -556,9 +552,9 @@ theorem kernelMap_tensorDifferential_zero_kernelMap_tensorDifferential_zero_tens
     (hD₀ : ∀ p q, tensorDifferential 0 δ₁ δ₂ p q ≠ 0 → F₁ q.1 + F₂ q.2 ≤ F₁ p.1 + F₂ p.2 + C)
     (hD₀fin : ∀ p, tensorDifferential 0 δ₁ δ₂ p ∈
       NovikovModule R fun q : S₁ × S₂ => F₁ q.1 + F₂ q.2)
-    (hδ₁δ₁ : ∀ a, kernelMap hδ₁ hδ₁fin (kernelMap hδ₁ hδ₁fin a) = 0)
-    (hδ₂δ₂ : ∀ b, kernelMap hδ₂ hδ₂fin (kernelMap hδ₂ hδ₂fin b) = 0)
-    {a : NovikovModule R F₁} {b : NovikovModule R F₂} (ha : kernelMap hδ₁ hδ₁fin a ≠ 0)
+    {a : NovikovModule R F₁} {b : NovikovModule R F₂}
+    (hδ₁δ₁ : kernelMap hδ₁ hδ₁fin (kernelMap hδ₁ hδ₁fin a) = 0)
+    (hδ₂δ₂ : kernelMap hδ₂ hδ₂fin (kernelMap hδ₂ hδ₂fin b) = 0) (ha : kernelMap hδ₁ hδ₁fin a ≠ 0)
     (hb : kernelMap hδ₂ hδ₂fin b ≠ 0) :
     kernelMap hD₀ hD₀fin (kernelMap hD₀ hD₀fin (tensor a b)) ≠ 0 := by
   rw [kernelMap_tensorDifferential_zero_kernelMap_tensorDifferential_zero_tensor hδ₁ hδ₁fin hδ₂
