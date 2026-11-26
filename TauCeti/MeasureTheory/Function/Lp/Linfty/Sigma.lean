@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteLimit
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import Mathlib.MeasureTheory.Function.LpSpace.CompleteOfCompleteLp
 
 /-!
 # The support-restricted Bochner space at infinity
@@ -35,11 +36,11 @@ open scoped ENNReal Topology
 
 namespace TauCeti
 
-variable {α 𝕜 E : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜]
+variable {α 𝕜 E : Type*} [MeasurableSpace α] [NormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- The submodule of native `L∞` whose classes admit a.e. finite-measure simple approximation. -/
-def linftySigma (𝕜 : Type*) [NontriviallyNormedField 𝕜] (E : Type*)
+def linftySigma (𝕜 : Type*) [NormedField 𝕜] (E : Type*)
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] (μ : Measure α) :
     Submodule 𝕜 (Lp E ∞ μ) where
   carrier := {f | AEFinStronglyMeasurable f μ}
@@ -91,14 +92,11 @@ theorem linftySigma_eq_bot_of_forall_measure_eq_zero
   intro f hf
   rw [Submodule.mem_bot]
   apply Lp.ext
-  refine (hf.ae_eq_mk.trans ?_).trans (Lp.coeFn_zero E ∞ μ).symm
-  have hz n : ((hf.finStronglyMeasurable_mk).approx n : α → E) =ᵐ[μ] 0 :=
-    (μ.measure_support_eq_zero_iff).mp
-      (hμ _ (hf.finStronglyMeasurable_mk.approx n).measurableSet_support
-        (hf.finStronglyMeasurable_mk.fin_support_approx n))
-  filter_upwards [ae_all_iff.mpr hz] with x hx
-  exact tendsto_nhds_unique (hf.finStronglyMeasurable_mk.tendsto_approx x)
-    (tendsto_const_nhds.congr fun n ↦ (hx n).symm)
+  have hz : f =ᵐ[μ] 0 := by
+    by_contra hne
+    obtain ⟨s, hs, hpos, hfin⟩ := hf.exists_measurableSet_measure_pos_lt_top hne
+    exact (ne_of_gt hpos) (hμ s hs hfin)
+  exact hz.trans (Lp.coeFn_zero E ∞ μ).symm
 
 end TauCeti
 

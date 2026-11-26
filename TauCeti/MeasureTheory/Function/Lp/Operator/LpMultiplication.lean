@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
-public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+public import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
