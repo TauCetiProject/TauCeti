@@ -135,17 +135,13 @@ lemma joinFiber_ι_comp (p : X ⟶ Δ[1]) (e : Fin 2) :
   induction n using SimplexCategory.rec with | _ n
   exact stdSimplex.ext _ _ ((mem_joinFiber_iff p e x).1 hx)
 
-/-- A vertex of `X` that does not lie over the vertex `0` of `Δ[1]` lies over the vertex `1`. -/
-lemma mem_joinFiber_one_of_notMem_zero (p : X ⟶ Δ[1]) {x : X _⦋0⦌}
-    (hx : x ∉ (joinFiber p 0).obj _) : x ∈ (joinFiber p 1).obj _ := by
-  rw [mem_joinFiber_iff] at hx ⊢
-  exact fun j ↦ Fin.eq_one_of_ne_zero _ fun h ↦ hx fun j' ↦ Subsingleton.elim (α := Fin 1) j j' ▸ h
-
-/-- A vertex of `X` that lies over the vertex `1` of `Δ[1]` does not lie over the vertex `0`. -/
-lemma notMem_joinFiber_zero_of_mem_one (p : X ⟶ Δ[1]) {x : X _⦋0⦌}
-    (hx : x ∈ (joinFiber p 1).obj _) : x ∉ (joinFiber p 0).obj _ := by
-  rw [mem_joinFiber_iff] at hx ⊢
-  exact fun h ↦ one_ne_zero ((hx 0).symm.trans (h 0))
+/-- A vertex of `X` does not lie over the vertex `0` of `Δ[1]` exactly when it lies over the
+vertex `1`. -/
+lemma notMem_joinFiber_zero_iff_mem_one (p : X ⟶ Δ[1]) {x : X _⦋0⦌} :
+    x ∉ (joinFiber p 0).obj _ ↔ x ∈ (joinFiber p 1).obj _ := by
+  rw [mem_joinFiber_iff, mem_joinFiber_iff]
+  exact ⟨fun hx j ↦ Fin.eq_one_of_ne_zero _ fun h ↦ hx fun j' ↦
+    Subsingleton.elim (α := Fin 1) j j' ▸ h, fun hx h ↦ one_ne_zero ((hx 0).symm.trans (h 0))⟩
 
 /-- The vertex `j` of `Δ[m]` lies over the vertex `e` of `Δ[1]` along `q` exactly when `q` sends
 `j` to `e`. -/

@@ -32,11 +32,11 @@ terminal and the initial objects (`SSet.slice.isLimit_iff_nonempty_isTerminal`,
 `SSet.coslice.isColimit_iff_nonempty_isInitial`). In the nerve of a preorder, a cocone under any
 diagram is a colimit cocone exactly when its cone point is a least upper bound of the vertices of
 the diagram (`SSet.coslice.isColimit_iff_isLUB`), through the identification of the coslice with
-the nerve of the upper bounds (`CategoryTheory.nerve.upperBoundsCosliceIso`). Limit and colimit
-cones are invariant under isomorphisms of diagrams (`SSet.slice.isLimit_map_iff_of_isIso`,
-`SSet.coslice.isColimit_map_iff_of_isIso`). In a terminal simplicial set, such as `Δ[0]`,
-every cone is a limit cone and every cocone a colimit cocone (`SSet.slice.isLimit_of_isTerminal`,
-`SSet.coslice.isColimit_of_isTerminal`).
+the nerve of the upper bounds (`CategoryTheory.nerve.upperBoundsCosliceIso`). Limit cones are
+invariant under isomorphisms of diagrams (`SSet.slice.isLimit_map_iff_of_isIso`), and colimit
+cocones under isomorphisms of the target (`SSet.coslice.isColimit_map_iff_of_isIso`). In a
+terminal simplicial set, such as `Δ[0]`, every cone is a limit cone and every cocone a colimit
+cocone (`SSet.slice.isLimit_of_isTerminal`, `SSet.coslice.isColimit_of_isTerminal`).
 
 ## References
 
@@ -201,8 +201,9 @@ lemma exists_isColimit_iff_exists_isLUB {P : Type u} [Preorder P] (q : K ⟶ ner
   refine ⟨fun ⟨c, hc⟩ ↦ ⟨_, (isColimit_iff_isLUB q c).1 hc⟩, fun ⟨b, hb⟩ ↦
     ⟨(nerve.upperBoundsCosliceIso q).hom.app (op ⦋0⦌) (nerveEquiv.symm ⟨b, hb.1⟩), ?_⟩⟩
   -- The cocone given by the upper bound `b` has cone point `b`.
-  have h := nerve.nerveEquiv_π_app_upperBoundsCosliceIso_hom_app q (nerveEquiv.symm ⟨b, hb.1⟩)
-  rw [Equiv.apply_symm_apply] at h
+  have h := nerve.nerveEquiv_yonedaEquiv_inr_comp_objEquiv_upperBoundsCosliceIso_hom_app_coe q
+    (nerveEquiv.symm ⟨b, hb.1⟩)
+  rw [← π_app, Equiv.apply_symm_apply] at h
   exact (isColimit_iff_isLUB q _).2 (h.symm ▸ hb)
 
 variable (p) in
