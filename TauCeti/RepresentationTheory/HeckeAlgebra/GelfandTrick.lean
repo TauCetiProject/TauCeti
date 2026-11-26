@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Coset.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 import Mathlib.Algebra.BigOperators.Finprod
 import Mathlib.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Block
@@ -35,9 +36,10 @@ If `τ : G ≃* G` is a group automorphism preserving `K` such that `τ g⁻¹ �
 For `G = GL n F` over a field `F` with a valuation subring `O : ValuationSubring F` and
 `K = GL n O` (`TauCeti.intGL n O.toSubring`), pivot elimination over `O` factors every matrix as
 `k * diagonal d * k'` with `k, k' ∈ K` (`TauCeti.exists_mul_diagonal_mul_of_valuationSubring`).
-Consequently the inverse-transpose automorphism `g ↦ (gᵀ)⁻¹` (`TauCeti.invTransposeGL`) satisfies
-Gelfand's condition (`TauCeti.exists_invTransposeGL_inv_eq`), yielding both adjointness and
-commutativity of spherical Hecke operators for `GL_n(F)` (`heckeOp_adjoint_gl`, `heckeOp_comm_gl`).
+Consequently the inverse-transpose automorphism `g ↦ (g⁻¹)ᵀ`
+(`Matrix.GeneralLinearGroup.inverseTranspose`) satisfies Gelfand's condition
+(`TauCeti.exists_inverseTranspose_inv_eq`), yielding both adjointness and commutativity of
+spherical Hecke operators for `GL_n(F)` (`heckeOp_adjoint_gl`, `heckeOp_comm_gl`).
 
 ## References
 
@@ -73,10 +75,6 @@ defined by summing `f q.out • π q.out v` over left cosets `q : G ⧸ K`. -/
 def heckeOp (π : Representation A G W) (K : Subgroup G) (f : G → A) (v : W) : W :=
   ∑ᶠ q : G ⧸ K, f q.out • π q.out v
 
-private theorem out_eq_mul_of_mk_eq {K : Subgroup G} (g : G) :
-    ∃ k ∈ K, (↑g : G ⧸ K).out = g * k :=
-  ⟨g⁻¹ * (↑g : G ⧸ K).out, QuotientGroup.eq.1 (Quotient.out_eq (↑g : G ⧸ K)).symm, by simp⟩
-
 /-- The Hecke operator of a bi-`K`-invariant function sends `K`-fixed vectors to `K`-fixed
 vectors. -/
 theorem heckeOp_mem_fixed {K : Subgroup G} {π : Representation A G W} {f : G → A} {v : W}
@@ -91,9 +89,9 @@ theorem heckeOp_mem_fixed {K : Subgroup G} {π : Representation A G W} {f : G �
   let e : G ⧸ K ≃ G ⧸ K :=
     Quotient.congr (Equiv.mulLeft k) fun a b ↦ by simp [leftRel_apply, mul_assoc]
   refine (finsum_congr fun q ↦ ?_).trans (finsum_comp_equiv e)
-  obtain ⟨k', hk', hq'⟩ := out_eq_mul_of_mk_eq (K := K) (k * q.out)
+  obtain ⟨⟨k', hk'⟩, hq'⟩ := QuotientGroup.mk_out_eq_mul K (k * q.out)
   have heq : (e q).out = k * q.out * k' := by
-    have : e q = ↑(k * q.out) := by
+    have : e q = QuotientGroup.mk (k * q.out) := by
       conv_lhs => rw [← Quotient.out_eq q]
       rfl
     rw [this, hq']
@@ -139,9 +137,9 @@ theorem IsHeckeFunction.heckeOp_adjoint {K : Subgroup G} {f : G → A} (hf : IsH
       simp [leftRel_apply, ← map_inv, ← map_mul, hτK]
   have hq_term (q : G ⧸ K) :
       f (e q).out⁻¹ = f q.out ∧ B v (π' (e q).out v') = B (π q.out v) v' := by
-    obtain ⟨k, hk, hq'⟩ := out_eq_mul_of_mk_eq (K := K) (τ q.out)
+    obtain ⟨⟨k, hk⟩, hq'⟩ := QuotientGroup.mk_out_eq_mul K (τ q.out)
     have heq : (e q).out = τ q.out * k := by
-      have : e q = ↑(τ q.out) := by
+      have : e q = QuotientGroup.mk (τ q.out) := by
         conv_lhs => rw [← Quotient.out_eq q]
         rfl
       rw [this, hq']
@@ -173,8 +171,8 @@ private theorem mem_conv_prod_image {K : Subgroup G} {f f' : G → A}
     (hs' : f (q.out⁻¹ * s.out) ≠ 0) :
     s ∈ (fun p : (G ⧸ K) × (G ⧸ K) ↦ (↑(p.1.out * p.2.out) : G ⧸ K)) ''
       ({q | f' q.out ≠ 0} ×ˢ {r | f r.out ≠ 0}) := by
-  let r₀ : G ⧸ K := ↑(q.out⁻¹ * s.out)
-  obtain ⟨k, hk, hr₀⟩ := out_eq_mul_of_mk_eq (K := K) (q.out⁻¹ * s.out)
+  let r₀ : G ⧸ K := QuotientGroup.mk (q.out⁻¹ * s.out)
+  obtain ⟨⟨k, hk⟩, hr₀⟩ := QuotientGroup.mk_out_eq_mul K (q.out⁻¹ * s.out)
   refine ⟨(q, r₀), ⟨hq', ?_⟩, ?_⟩
   · simpa only [Set.mem_ofPred_eq, r₀, hr₀, (hf.2 _ k hk).2] using hs'
   · simp only [r₀]
@@ -214,10 +212,10 @@ theorem IsHeckeFunction.heckeOp_comp {K : Subgroup G} {π : Representation A G W
     have h2 : (∑ᶠ r : G ⧸ K, (f' q.out * f r.out) • π (q.out * r.out) v) =
         ∑ᶠ s : G ⧸ K, (f' q.out * f (q.out⁻¹ * s.out)) • π s.out v := by
       refine (finsum_congr fun r ↦ ?_).trans (finsum_comp_equiv φ)
-      have hφ : φ r = ↑(q.out * r.out) := by
+      have hφ : φ r = QuotientGroup.mk (q.out * r.out) := by
         conv_lhs => rw [← Quotient.out_eq r]
         rfl
-      obtain ⟨k, hk, hk'⟩ := out_eq_mul_of_mk_eq (K := K) (q.out * r.out)
+      obtain ⟨⟨k, hk⟩, hk'⟩ := QuotientGroup.mk_out_eq_mul K (q.out * r.out)
       rw [hφ, hk', ← mul_assoc, inv_mul_cancel_left, (hf.2 _ k hk).2]
       conv_rhs => rw [map_mul, mul_apply_eq_comp, hv k hk]
     exact h1.trans <| h2.trans <| finsum_eq_sum_of_support_subset _ fun s hs ↦
@@ -255,9 +253,9 @@ theorem IsHeckeFunction.heckeOp_comm {K : Subgroup G} {π : Representation A G W
     Quotient.congr (τ.toEquiv.trans (Equiv.mulLeft (x * b))) fun g g' ↦ by
       simp [leftRel_apply, ← map_inv, ← map_mul, hτK, mul_assoc]
   refine (finsum_congr fun q ↦ ?_).trans (finsum_comp_equiv e)
-  obtain ⟨k, hk, hk'⟩ := out_eq_mul_of_mk_eq (K := K) (x * b * τ q.out)
+  obtain ⟨⟨k, hk⟩, hk'⟩ := QuotientGroup.mk_out_eq_mul K (x * b * τ q.out)
   have heq : (e q).out = x * b * τ q.out * k := by
-    have : e q = ↑(x * b * τ q.out) := by
+    have : e q = QuotientGroup.mk (x * b * τ q.out) := by
       conv_lhs => rw [← Quotient.out_eq q]
       rfl
     rw [this, hk']
@@ -276,7 +274,7 @@ end AbstractHecke
 
 section GLnValuation
 
-open Matrix
+open Matrix Matrix.GeneralLinearGroup
 
 universe u
 
@@ -288,33 +286,18 @@ def intGL (n : Type u) [Fintype n] [DecidableEq n] {A : Type*} [CommRing A] (R :
     Subgroup (GL n A) :=
   (GeneralLinearGroup.map R.subtype).range
 
-/-- The transpose of an invertible matrix as an element of `GL n R`. -/
-def transposeGL {R : Type*} [CommRing R] (g : GL n R) : GL n R :=
-  ⟨g.valᵀ, g.invᵀ, by rw [← transpose_mul, g.inv_val, transpose_one],
-    by rw [← transpose_mul, g.val_inv, transpose_one]⟩
-
-/-- The inverse-transpose automorphism `g ↦ (gᵀ)⁻¹` of `GL n R`. -/
-def invTransposeGL {R : Type*} [CommRing R] : GL n R ≃* GL n R where
-  toFun g := transposeGL g⁻¹
-  invFun g := transposeGL g⁻¹
-  left_inv g := Units.ext (by simp [transposeGL])
-  right_inv g := Units.ext (by simp [transposeGL])
-  map_mul' g h := Units.ext (by simp [transposeGL, transpose_mul])
-
-/-- `invTransposeGL` preserves `intGL n O`. -/
-theorem invTransposeGL_mem_intGL {R : Type*} [CommRing R] {O : Subring R} (g : GL n R) :
-    invTransposeGL g ∈ intGL n O ↔ g ∈ intGL n O := by
-  have htr (x : GL n R) : transposeGL x ∈ intGL n O ↔ x ∈ intGL n O := by
-    constructor
-    · rintro ⟨u, hu⟩
-      refine ⟨transposeGL u, Units.ext ?_⟩
-      have h := congrArg (fun m : GL n R ↦ m.valᵀ) hu
-      simpa [transposeGL, GeneralLinearGroup.map, Matrix.transpose_map] using h
-    · rintro ⟨u, rfl⟩
-      refine ⟨transposeGL u, Units.ext ?_⟩
-      simp [transposeGL, GeneralLinearGroup.map, Matrix.transpose_map]
-  have hdef : invTransposeGL g = transposeGL g⁻¹ := rfl
-  rw [hdef, htr, Subgroup.inv_mem_iff]
+/-- `Matrix.GeneralLinearGroup.inverseTranspose` preserves `intGL n O`. -/
+theorem inverseTranspose_mem_intGL {R : Type*} [CommRing R] {O : Subring R} (g : GL n R) :
+    inverseTranspose g ∈ intGL n O ↔ g ∈ intGL n O := by
+  have hmap (u : GL n O) :
+      GeneralLinearGroup.map O.subtype (inverseTranspose u) =
+        inverseTranspose (GeneralLinearGroup.map O.subtype u) :=
+    map_inverseTranspose O.subtype u
+  constructor
+  · rintro ⟨u, hu⟩
+    exact ⟨inverseTranspose u, by rw [hmap, hu, inverseTranspose_inverseTranspose]⟩
+  · rintro ⟨u, rfl⟩
+    exact ⟨inverseTranspose u, hmap u⟩
 
 /-- One pivot elimination step over a subring `R` of `A`: if every entry `M i j` is an
 `R`-multiple `w i j * M p p` of the `(p, p)` entry and the remaining block diagonalizes over `R`,
@@ -367,37 +350,9 @@ private theorem exists_pivot_dvd_valuationSubring {m : Type u} [Finite m]
     ∃ ij₀ : m × m, ∀ ij : m × m, ∃ w : O.toSubring, (w : F) * y ij₀.1 ij₀.2 = y ij.1 ij.2 := by
   classical
   let : Fintype m := Fintype.ofFinite m
-  have htot (a b : F) : (∃ w : O.toSubring, (w : F) * a = b) ∨
-      (∃ w : O.toSubring, (w : F) * b = a) := by
-    by_cases ha : a = 0
-    · exact Or.inr ⟨0, by simp [ha]⟩
-    by_cases hb : b = 0
-    · exact Or.inl ⟨0, by simp [hb]⟩
-    rcases O.mem_or_inv_mem (b / a) with h1 | h1
-    · exact Or.inl ⟨⟨b / a, h1⟩, div_mul_cancel₀ b ha⟩
-    · refine Or.inr ⟨⟨a / b, by simpa [inv_div] using h1⟩, div_mul_cancel₀ a hb⟩
-  have hfin : ∀ s : Finset (m × m), s.Nonempty →
-      ∃ ij₀ ∈ s, ∀ ij ∈ s, ∃ w : O.toSubring, (w : F) * y ij₀.1 ij₀.2 = y ij.1 ij.2 := by
-    intro s hs
-    induction s using Finset.cons_induction with
-    | empty => exact (Finset.not_nonempty_empty hs).elim
-    | cons a t hat iht =>
-      rcases t.eq_empty_or_nonempty with rfl | ht
-      · exact ⟨a, Finset.mem_cons_self _ _, fun b hb ↦ by
-          rw [Finset.mem_singleton.1 hb]; exact ⟨1, one_mul _⟩⟩
-      · obtain ⟨b, hbt, hb⟩ := iht ht
-        rcases htot (y a.1 a.2) (y b.1 b.2) with ⟨w, hw⟩ | ⟨w, hw⟩
-        · refine ⟨a, Finset.mem_cons_self _ _, fun c hc ↦ ?_⟩
-          rcases Finset.mem_cons.1 hc with rfl | hct
-          · exact ⟨1, one_mul _⟩
-          · obtain ⟨w', hw'⟩ := hb c hct
-            exact ⟨w' * w, by push_cast; rw [mul_assoc, hw, hw']⟩
-        · refine ⟨b, Finset.mem_cons_of_mem hbt, fun c hc ↦ ?_⟩
-          rcases Finset.mem_cons.1 hc with rfl | hct
-          · exact ⟨w, hw⟩
-          · exact hb c hct
-  obtain ⟨ij₀, -, hij₀⟩ := hfin Finset.univ ⟨(p, p), Finset.mem_univ _⟩
-  exact ⟨ij₀, fun ij ↦ hij₀ ij (Finset.mem_univ _)⟩
+  obtain ⟨ij₀, -, hij₀⟩ := Finset.exists_max_image Finset.univ
+    (fun ij : m × m ↦ O.valuation (y ij.1 ij.2)) ⟨(p, p), Finset.mem_univ _⟩
+  exact ⟨ij₀, fun ij ↦ (O.valuation_le_iff _ _).1 (hij₀ ij (Finset.mem_univ _))⟩
 
 /-- **Diagonalization over a valuation subring.** For a valuation subring `O` of a field `F`,
 every square matrix `y : Matrix n n F` factors as `k * diagonal d * k'` with
@@ -446,26 +401,20 @@ theorem exists_mul_diagonal_mul_of_valuationSubring {F : Type*} [Field F] (O : V
 
 /-- **Gelfand's double-coset condition for `GL_n(F)` over a valuation subring `O`.**
 For every `g ∈ GL n F`, there is `k ∈ GL n O` such that `gᵀ = (kᵀ)⁻¹ * g * k`
-(written via `invTransposeGL g⁻¹ = invTransposeGL k * g * k`). -/
-theorem exists_invTransposeGL_inv_eq {F : Type*} [Field F] (O : ValuationSubring F) (g : GL n F) :
-    ∃ k ∈ intGL n O.toSubring, invTransposeGL g⁻¹ = invTransposeGL k * g * k := by
+(written via `inverseTranspose g⁻¹ = inverseTranspose k * g * k`). -/
+theorem exists_inverseTranspose_inv_eq {F : Type*} [Field F] (O : ValuationSubring F)
+    (g : GL n F) :
+    ∃ k ∈ intGL n O.toSubring, inverseTranspose g⁻¹ = inverseTranspose k * g * k := by
   obtain ⟨k, hk, l, hl, d, h_smith⟩ := exists_mul_diagonal_mul_of_valuationSubring O g.val
-  have hk_tr : transposeGL k ∈ intGL n O.toSubring := by
-    have := (invTransposeGL_mem_intGL k⁻¹).2 (Subgroup.inv_mem _ hk)
-    simpa [invTransposeGL] using this
-  have htr_inv : (transposeGL k)⁻¹ = transposeGL k⁻¹ :=
-    inv_eq_of_mul_eq_one_right (Units.ext (by simp [transposeGL, ← transpose_mul]))
-  refine ⟨l⁻¹ * transposeGL k, Subgroup.mul_mem _ (Subgroup.inv_mem _ hl) hk_tr, Units.ext ?_⟩
-  have h1 : (invTransposeGL g⁻¹).val = g.valᵀ := by simp [invTransposeGL, transposeGL]
-  have h2 : (invTransposeGL (l⁻¹ * transposeGL k)).val = l.valᵀ * (k⁻¹).val := by
-    have htr : invTransposeGL (transposeGL k) = k⁻¹ := by
-      have hdef : invTransposeGL (transposeGL k) = transposeGL (transposeGL k)⁻¹ := rfl
-      rw [hdef, htr_inv]
-      exact Units.ext (by simp [transposeGL])
-    rw [map_mul, htr, Units.val_mul]
-    simp [invTransposeGL, transposeGL]
-  rw [h1, Units.val_mul, Units.val_mul, h2, h_smith]
-  simp only [Units.val_mul, transposeGL, transpose_mul, diagonal_transpose, Matrix.mul_assoc]
+  have hk_tr : (transposeMulEquiv n k).unop ∈ intGL n O.toSubring := by
+    rw [unop_transposeMulEquiv_eq_inverseTranspose_inv, inverseTranspose_mem_intGL]
+    exact Subgroup.inv_mem _ hk
+  refine ⟨l⁻¹ * (transposeMulEquiv n k).unop,
+    Subgroup.mul_mem _ (Subgroup.inv_mem _ hl) hk_tr, Units.ext ?_⟩
+  rw [map_mul, unop_transposeMulEquiv_eq_inverseTranspose_inv, inverseTranspose_inverseTranspose,
+    Units.val_mul, Units.val_mul, Units.val_mul, Units.val_mul, coe_inverseTranspose,
+    coe_inverseTranspose, coe_inverseTranspose, inv_inv, inv_inv, inv_inv, h_smith]
+  simp only [transpose_mul, diagonal_transpose, Matrix.mul_assoc]
   rw [← Matrix.mul_assoc (k⁻¹).val k.val, Units.inv_mul, Matrix.one_mul,
     ← Matrix.mul_assoc l.val (l⁻¹).val, Units.mul_inv, Matrix.one_mul]
 
@@ -482,8 +431,8 @@ theorem IsHeckeFunction.heckeOp_adjoint_gl {A W W' Z F : Type*} [CommSemiring A]
     IsHeckeFunction (intGL n O.toSubring) (fun g ↦ σ (f g⁻¹)) ∧
       B (heckeOp π (intGL n O.toSubring) f v) v' =
         B v (heckeOp π' (intGL n O.toSubring) (fun g ↦ σ (f g⁻¹)) v') :=
-  hf.heckeOp_adjoint invTransposeGL invTransposeGL_mem_intGL (exists_invTransposeGL_inv_eq O)
-    B hv hv' hB
+  hf.heckeOp_adjoint inverseTranspose inverseTranspose_mem_intGL
+    (exists_inverseTranspose_inv_eq O) B hv hv' hB
 
 /-- **Gelfand's trick (commutativity) for `GL_n(F)` over a valuation subring `O`.** -/
 theorem IsHeckeFunction.heckeOp_comm_gl {A W F : Type*} [CommSemiring A]
@@ -494,7 +443,8 @@ theorem IsHeckeFunction.heckeOp_comm_gl {A W F : Type*} [CommSemiring A]
     (hv : ∀ k ∈ intGL n O.toSubring, π k v = v) :
     heckeOp π (intGL n O.toSubring) f (heckeOp π (intGL n O.toSubring) f' v) =
       heckeOp π (intGL n O.toSubring) f' (heckeOp π (intGL n O.toSubring) f v) :=
-  hf.heckeOp_comm hf' hv invTransposeGL invTransposeGL_mem_intGL (exists_invTransposeGL_inv_eq O)
+  hf.heckeOp_comm hf' hv inverseTranspose inverseTranspose_mem_intGL
+    (exists_inverseTranspose_inv_eq O)
 
 end GLnValuation
 
