@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
 import TauCeti.Analysis.Convolution.Young
-import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Off-diagonal estimates for the heat semigroup

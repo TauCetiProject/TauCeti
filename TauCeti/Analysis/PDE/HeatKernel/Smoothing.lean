@@ -182,18 +182,6 @@ private theorem ae_norm_heatSemigroup_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp :
     (eLpNorm_heatSemigroup_top_le hp ht f).trans_lt (by finiteness)
   simpa only [toReal_eLpNorm] using ae_le_lpNorm_exponent_top hg
 
-/-- Splitting the evolution in two half-steps writes the heat semigroup at a positive time as the
-heat convolution of an essentially bounded function: `e^{tΔ} f = K_{t/2} ⋆ e^{(t/2)Δ} f`. -/
-theorem heatSemigroup_ae_eq_convolution_heatSemigroup_half {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (hp : p ≠ ∞) {t : ℝ≥0} (ht : t ≠ 0) (f : Lp F p (volume : Measure E)) :
-    (heatSemigroup hp t f : E → F) =ᵐ[volume]
-      heatKernel ((t / 2 : ℝ≥0) : ℝ) ⋆ (heatSemigroup hp (t / 2) f : E → F) := by
-  have he : heatSemigroup hp t f = heatSemigroup hp (t / 2) (heatSemigroup hp (t / 2) f) := by
-    simpa only [add_halves, Semigroups.ContractionSemigroup.toStronglyContinuousSemigroup_apply]
-      using (heatSemigroup hp).toStronglyContinuousSemigroup.map_add_apply (t / 2) (t / 2) f
-  rw [he]
-  exact heatSemigroup_ae_eq_convolution_coeFn hp (by positivity) _
-
 /-- **Instantaneous smoothness for `Lᵖ` data.** At every positive time the heat semigroup
 has a smooth representative. No boundedness of the initial datum is required. -/
 theorem exists_contDiff_ae_eq_heatSemigroup {p : ℝ≥0∞} [Fact (1 ≤ p)]
