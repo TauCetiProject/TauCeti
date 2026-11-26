@@ -366,20 +366,15 @@ def leftIdeal (P : ProperCone ℝ A) (hP : IsHereditary P) : ClosedSubmodule ℂ
   carrier := {x : A | star x * x ∈ P}
   zero_mem' := by simp
   add_mem' {x y} hx hy := by
-    have hpar : star (x + y) * (x + y) + star (x - y) * (x - y) =
-        (2 : ℝ) • (star x * x + star y * y) := by
-      rw [two_smul]
-      simp only [star_add, star_sub, add_mul, sub_mul, mul_add, mul_sub]
-      abel
-    have hle : star (x + y) * (x + y) ≤ (2 : ℝ) • (star x * x + star y * y) := by
-      rw [← hpar]
-      exact le_add_of_nonneg_right (star_mul_self_nonneg (x - y))
+    have hle : star (x + y) * (x + y) ≤ (2 : ℝ) • (star x * x + star y * y) :=
+      calc star (x + y) * (x + y)
+          ≤ star (x + y) * (x + y) + star (x - y) * (x - y) :=
+            le_add_of_nonneg_right (star_mul_self_nonneg (x - y))
+        _ = (2 : ℝ) • (star x * x + star y * y) := by
+          rw [star_add_mul_add_add_star_sub_mul_sub, two_nsmul, two_smul]
     exact hP.mem_of_le (star_mul_self_nonneg (x + y)) hle (P.smul_mem (add_mem hx hy) zero_le_two)
   smul_mem' c {x} hx := by
-    have hsmul : star (c • x) * (c • x) = (‖c‖ ^ 2 : ℝ) • (star x * x) := by
-      rw [star_smul, mul_smul_comm, smul_mul_assoc, smul_smul, Complex.star_def,
-        Complex.mul_conj', ← Complex.ofReal_pow, Complex.coe_smul]
-    rw [Set.mem_ofPred_eq, hsmul]
+    rw [Set.mem_ofPred_eq, star_smul_mul_smul]
     exact P.smul_mem hx (sq_nonneg ‖c‖)
   isClosed' := P.isClosed.preimage (continuous_star.mul continuous_id)
 

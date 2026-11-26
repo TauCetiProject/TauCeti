@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Topology.MetricSpace.Equicontinuity
+public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import Mathlib.Topology.MetricSpace.Lipschitz
+import Mathlib.Topology.MetricSpace.UniformConvergence
 
 /-!
 # Equicontinuity from slice distance bounds, and uniform attainment from rate bounds
@@ -25,7 +27,8 @@ smallness `F k p < ε` for all `k` once `s p` is small enough.
 
 Finally, a family that is eventually uniformly Lipschitz along a filter and converges pointwise on
 a dense set to a Lipschitz limit converges everywhere
-(`TauCeti.tendsto_of_dense_of_eventually_lipschitz`).
+(`TauCeti.tendsto_of_dense_of_eventually_lipschitz`), and the iterates of a `1`-Lipschitz map are
+`1`-Lipschitz, so they form a uniformly equicontinuous family.
 
 ## Main statements
 
@@ -36,6 +39,8 @@ a dense set to a Lipschitz limit converges everywhere
   `C (η + s L)` over a uniformly equicontinuous family gives uniform attainment as `s → 0`.
 * `TauCeti.tendsto_of_dense_of_eventually_lipschitz`: pointwise convergence on a dense set extends
   to every point under an eventual uniform Lipschitz bound.
+* `LipschitzWith.uniformEquicontinuous_iterate`: the iterates of a `1`-Lipschitz map are uniformly
+  equicontinuous.
 -/
 
 public section
@@ -157,3 +162,8 @@ theorem tendsto_of_dense_of_eventually_lipschitz {ι X Y : Type*} [PseudoMetricS
   linarith
 
 end TauCeti
+
+/-- The iterates of a `1`-Lipschitz map are uniformly equicontinuous. -/
+theorem LipschitzWith.uniformEquicontinuous_iterate {X : Type*} [PseudoEMetricSpace X]
+    {f : X → X} (hf : LipschitzWith 1 f) : UniformEquicontinuous fun n : ℕ ↦ f^[n] :=
+  LipschitzWith.uniformEquicontinuous _ 1 fun n ↦ by simpa using hf.iterate n

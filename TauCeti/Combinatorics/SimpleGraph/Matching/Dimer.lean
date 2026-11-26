@@ -37,6 +37,10 @@ For a finite set `F` of edges and a configuration `ω`, the *completion set*
 It depends on `ω` only off `F` (`SimpleGraph.dimerCompletionSet_congr`), is finite
 (`SimpleGraph.finite_dimerCompletionSet`) and contains `ω` when `ω` is a dimer configuration; at
 `F = ∅` it is then the singleton `{ω}` (`SimpleGraph.dimerCompletionSet_empty`).
+Each member is the gluing of its restriction to `F` to `ω` off `F`
+(`Function.updateFinset_restrict_of_eqOn_compl`), so a sum over the completion set
+is a sum over the configurations `η` on `F` whose gluing to `ω` is a dimer configuration
+(`SimpleGraph.sum_dimerCompletionSet_eq_sum_updateFinset`).
 Its members cover the same vertices by edges of `F` of value `true`
 (`SimpleGraph.dimerCoveredVertices`, `SimpleGraph.dimerCoveredVertices_eq`): the endpoints of edges
 of `F` that are not covered by an edge outside `F`
@@ -48,6 +52,8 @@ the restrictions to `F` of its members are exactly those configurations `η`
 (`SimpleGraph.mem_image_restrict_dimerCompletionSet`). So for two dimer configurations `ω₁` and
 `ω₂` that agree on the edges outside `F` sharing a vertex with an edge of `F`, the restrictions to
 `F` of their completion sets coincide (`SimpleGraph.image_restrict_dimerCompletionSet_eq`).
+For any `ω`, the gluing of `η` to `ω` is a dimer configuration exactly when `η` is such a
+restriction (`SimpleGraph.isDimerConfiguration_updateFinset_iff`).
 
 ## References
 
@@ -237,6 +243,12 @@ theorem mem_dimerSubshift [G.LocallyFinite] {Γ : Type*} [Group Γ] [MulAction �
     ω ∈ G.dimerSubshift Γ hΓ ↔ G.IsDimerConfiguration ω :=
   (Iff.rfl)
 
+@[simp]
+theorem coe_dimerSubshift [G.LocallyFinite] {Γ : Type*} [Group Γ] [MulAction Γ G.edgeSet]
+    {hΓ : ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e} :
+    (G.dimerSubshift Γ hΓ : Set (G.edgeSet → Bool)) = {ω | G.IsDimerConfiguration ω} :=
+  (rfl)
+
 /-! ### Completion sets -/
 
 variable (G) in
@@ -332,13 +344,9 @@ theorem dimerCompletionSet_eq_image [DecidableEq G.edgeSet] {F : Finset G.edgeSe
         ∃! e : G.edgeSet, updateFinset ω F η e = true ∧ v ∈ (e : Sym2 V)} := by
   ext ω'
   constructor
-  · rintro ⟨hω', hoff⟩
-    have hglue : updateFinset ω F (F.restrict ω') = ω' := by
-      ext e
-      by_cases he : e ∈ F
-      · rw [updateFinset_apply_of_mem he, Finset.restrict_def]
-      · rw [updateFinset_apply_of_notMem he, hoff e he]
-    exact ⟨_, fun v _ => by rw [hglue]; exact hω' v, hglue⟩
+  · intro hω'
+    have hglue := updateFinset_restrict_of_eqOn_compl hω'.2
+    exact ⟨_, fun v _ => by rw [hglue]; exact hω'.1 v, hglue⟩
   · rintro ⟨η, hη, rfl⟩
     refine ⟨fun v => ?_, fun e he => updateFinset_apply_of_notMem he⟩
     by_cases hv : ∃ e ∈ F, v ∈ (e : Sym2 V)
@@ -346,6 +354,28 @@ theorem dimerCompletionSet_eq_image [DecidableEq G.edgeSet] {F : Finset G.edgeSe
     · simp only [not_exists, not_and] at hv
       refine (existsUnique_congr_of_eqOn_incident fun e he => ?_).2 (hω v)
       exact updateFinset_apply_of_notMem fun heF => hv e heF he
+
+/-- A sum over the completion set `Ω_F(ω)` is a sum over the configurations `η` on `F` whose
+gluing to `ω` off `F` is a dimer configuration. -/
+theorem sum_dimerCompletionSet_eq_sum_updateFinset [DecidableEq G.edgeSet] {M : Type*}
+    [AddCommMonoid M] (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) (f : (G.edgeSet → Bool) → M)
+    [DecidablePred fun η : F → Bool => G.IsDimerConfiguration (updateFinset ω F η)] :
+    ∑ ω' ∈ (G.finite_dimerCompletionSet F ω).toFinset, f ω' =
+      ∑ η with G.IsDimerConfiguration (updateFinset ω F η), f (updateFinset ω F η) := by
+  symm
+  refine Finset.sum_nbij' (fun η => updateFinset ω F η) (fun ω' => F.restrict ω') ?_ ?_ ?_ ?_
+    fun _ _ => rfl
+  · intro η hη
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hη
+    simp only [Finite.mem_toFinset, mem_dimerCompletionSet]
+    exact ⟨hη, fun e he => updateFinset_apply_of_notMem he⟩
+  · intro ω' hω'
+    rw [Finite.mem_toFinset] at hω'
+    simpa [updateFinset_restrict_of_eqOn_compl hω'.2] using hω'.1
+  · intro η _
+    exact restrict_updateFinset ω η
+  · intro ω' hω'
+    exact updateFinset_restrict_of_eqOn_compl ((Finite.mem_toFinset _).1 hω').2
 
 /-- The restrictions to `F` of the members of the completion set of a dimer configuration `ω` at
 `F` are the configurations `η` on `F` whose gluing to `ω` off `F` covers every endpoint of an edge
@@ -357,6 +387,17 @@ theorem mem_image_restrict_dimerCompletionSet [DecidableEq G.edgeSet] {F : Finse
   rw [dimerCompletionSet_eq_image hω, image_image]
   simp only [restrict_updateFinset, image_id']
   exact Iff.rfl
+
+/-- The gluing of a configuration `η` on `F` to `ω` off `F` is a dimer configuration exactly when
+`η` is the restriction to `F` of a member of the completion set `Ω_F(ω)`. -/
+theorem isDimerConfiguration_updateFinset_iff [DecidableEq G.edgeSet] {F : Finset G.edgeSet}
+    {ω : G.edgeSet → Bool} {η : F → Bool} :
+    G.IsDimerConfiguration (updateFinset ω F η) ↔ η ∈ F.restrict '' G.dimerCompletionSet F ω := by
+  constructor
+  · exact fun h => ⟨_, ⟨h, fun e he => updateFinset_apply_of_notMem he⟩, restrict_updateFinset ω η⟩
+  · rintro ⟨ω', hω', rfl⟩
+    rw [updateFinset_restrict_of_eqOn_compl hω'.2]
+    exact hω'.1
 
 /-- For two dimer configurations that agree on the edges outside `F` sharing a vertex with an edge
 of `F`, the restrictions to `F` of their completion sets coincide. -/
