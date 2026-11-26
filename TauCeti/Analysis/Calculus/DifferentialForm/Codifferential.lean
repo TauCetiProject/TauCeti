@@ -208,10 +208,9 @@ theorem integral_alternatingFormInner_extDeriv_eq_codifferential
     rw [hvol, mul_one, o.formHodgeStar_codifferential hkl hkl',
       ContinuousAlternatingMap.wedge_smul_right, ContinuousAlternatingMap.smul_apply,
       smul_eq_mul] at h
-    rw [← h, ← mul_assoc, ← pow_add, Even.neg_one_pow ⟨k + 1, rfl⟩, one_mul]
+    simp [← h, ← mul_assoc, ← pow_add]
   simp_rw [hleft, hright, integral_const_mul] at hparts
-  rw [hparts, ← mul_assoc, pow_succ, mul_neg_one, neg_mul_neg, ← pow_add,
-    Even.neg_one_pow ⟨k, rfl⟩, one_mul]
+  simp [hparts, ← mul_assoc, ← pow_add]
 
 end Adjoint
 
