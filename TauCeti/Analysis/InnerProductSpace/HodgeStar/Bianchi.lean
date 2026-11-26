@@ -15,8 +15,8 @@ import TauCeti.LinearAlgebra.Alternating.Basic
 # The divergence of a Bianchi family of two-forms in dimension four
 
 Let `E` be an oriented real inner product space of dimension four and `W` a real vector space. A
-family of `W`-valued two-forms depending linearly on a vector, `T : E →ₗ[ℝ] (⋀² E →ₗ[ℝ] W)`,
-satisfies the **Bianchi identity** when
+family of `W`-valued two-forms indexed by a vector, `T : E → (⋀² E →ₗ[ℝ] W)`, satisfies the
+**Bianchi identity** when
 
 `T u (v ∧ w) + T v (w ∧ u) + T w (u ∧ v) = 0`
 
@@ -98,12 +98,12 @@ theorem vectorFormHodgeStar_apply_ιMulti_two (b : OrthonormalBasis ι ℝ E)
   rw [eq_inv_smul_iff₀ two_ne_zero, ← map_smul, ← h]
   simp only [map_sum, map_smul]
 
-/-- **The divergence of the Hodge dual of a Bianchi family vanishes.** If a linear family of
+/-- **The divergence of the Hodge dual of a Bianchi family vanishes.** If a family of
 `W`-valued two-forms on an oriented four-dimensional inner product space satisfies the Bianchi
 identity `T u (v ∧ w) + T v (w ∧ u) + T w (u ∧ v) = 0`, then for every orthonormal basis `(eᵢ)`
 and every vector `a`, `∑ᵢ (⋆T eᵢ) (a ∧ eᵢ) = 0`. -/
 theorem sum_vectorFormHodgeStar_apply_ιMulti_eq_zero (b : OrthonormalBasis ι ℝ E)
-    (T : E →ₗ[ℝ] ⋀[ℝ]^2 E →ₗ[ℝ] W)
+    (T : E → ⋀[ℝ]^2 E →ₗ[ℝ] W)
     (hT : ∀ u v w, T u (ιMulti ℝ 2 ![v, w]) + T v (ιMulti ℝ 2 ![w, u]) +
       T w (ιMulti ℝ 2 ![u, v]) = 0) (a : E) :
     ∑ i, o.vectorFormHodgeStar hkl (T (b i)) (ιMulti ℝ 2 ![a, b i]) = 0 := by
@@ -117,7 +117,7 @@ theorem sum_vectorFormHodgeStar_apply_ιMulti_eq_zero (b : OrthonormalBasis ι �
 identity, `∑ᵢ T eᵢ (a ∧ eᵢ) = 2 ∑ᵢ T⁺ eᵢ (a ∧ eᵢ)` with `T⁺ = (T + ⋆T) / 2`. For `T v = ∇_v F`
 the right side involves `(∇_v F)⁺`; it is `2 d_∇^* F⁺` once `∇_v` commutes with `⋆`. -/
 theorem sum_apply_ιMulti_eq_two_smul_sum_vectorFormSelfDualPart (b : OrthonormalBasis ι ℝ E)
-    (T : E →ₗ[ℝ] ⋀[ℝ]^2 E →ₗ[ℝ] W)
+    (T : E → ⋀[ℝ]^2 E →ₗ[ℝ] W)
     (hT : ∀ u v w, T u (ιMulti ℝ 2 ![v, w]) + T v (ιMulti ℝ 2 ![w, u]) +
       T w (ιMulti ℝ 2 ![u, v]) = 0) (a : E) :
     ∑ i, T (b i) (ιMulti ℝ 2 ![a, b i]) =
@@ -132,7 +132,7 @@ Bianchi identity, `∑ᵢ T eᵢ (a ∧ eᵢ) = 2 ∑ᵢ T⁻ eᵢ (a ∧ eᵢ)`
 `T v = ∇_v F` the right side involves `(∇_v F)⁻`; it is `2 d_∇^* F⁻` once `∇_v` commutes
 with `⋆`. -/
 theorem sum_apply_ιMulti_eq_two_smul_sum_vectorFormAntiSelfDualPart (b : OrthonormalBasis ι ℝ E)
-    (T : E →ₗ[ℝ] ⋀[ℝ]^2 E →ₗ[ℝ] W)
+    (T : E → ⋀[ℝ]^2 E →ₗ[ℝ] W)
     (hT : ∀ u v w, T u (ιMulti ℝ 2 ![v, w]) + T v (ιMulti ℝ 2 ![w, u]) +
       T w (ιMulti ℝ 2 ![u, v]) = 0) (a : E) :
     ∑ i, T (b i) (ιMulti ℝ 2 ![a, b i]) =
