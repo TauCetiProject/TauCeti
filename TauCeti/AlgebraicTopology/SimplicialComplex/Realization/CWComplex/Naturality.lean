@@ -173,16 +173,8 @@ private theorem cellularChainRealizationLinearEquiv_cellularChainGroupMap_succ (
   -- The ordered image of `c` is a multiple of `c'`.
   set y := OrderedSimplicialChain.map R f (n + 1)
     (single c (realizationChainScale R (n + 1) : R))
-  have hy : y = single c' (y c') := by
-    ext d
-    by_cases hd : d = c'
-    · rw [hd, single_eq_same]
-    · rw [single_eq_of_ne hd]
-      by_contra hne
-      refine hd (RealizationCell.ext ?_)
-      rw [OrderedSimplicialChain.val_eq_image_of_mem_support_map_single f
-          (Finsupp.mem_support_iff.mpr hne), RealizationCell.map_face,
-        TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply]
+  have hy : y = single c' (y c') :=
+    OrderedSimplicialChain.map_single_eq_single_map_of_injOn f c hc _
   -- Both images have the same boundary, since both maps are chain maps that agree in degree `n`.
   have hF := congrArg (fun φ ↦ φ.hom b)
     (cellularChainGroupMap_comp_cellularDifferential (univ : Set (Realization K))
@@ -236,14 +228,9 @@ private theorem cellularChainRealizationLinearEquiv_naturality_aux (n : ℕ)
   by_cases hc : InjOn f (↑c.val.val : Set ι)
   swap
   · -- Both maps kill a cell on which `f` is not injective.
-    have hinj : ¬Function.Injective (f ∘ c.vertexEmbedding) := fun h ↦ hc fun x hx y hy hxy ↦ by
-      rw [Finset.mem_coe, ← c.image_vertexEmbedding] at hx hy
-      obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hx
-      obtain ⟨j, -, rfl⟩ := Finset.mem_image.mp hy
-      exact congrArg _ (h hxy)
     rw [cellularChainGroupMap_realization_cellularChainBasis_eq_zero f R c hc, map_zero,
-      cellularChainRealizationLinearEquiv_cellularChainBasis, OrderedSimplicialChain.map_single,
-      OrderedSimplicialChain.tupleChain_eq_zero_of_not_injective hinj, smul_zero]
+      cellularChainRealizationLinearEquiv_cellularChainBasis,
+      OrderedSimplicialChain.map_single_of_not_injOn f c hc]
   rcases n with _ | n
   · -- In degree zero `f` is increasing on every cell, so both maps relabel cells.
     have hmono : StrictMonoOn f (↑c.val.val : Set ι) := by
