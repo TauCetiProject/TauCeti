@@ -546,13 +546,8 @@ theorem isWeakPseudoholomorphicBordered_coe :
     IsWeakPseudoholomorphicBordered (ContMDiffAlmostComplexStructureFamily.const
       ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ℓ)) 0 p
         ((↑) : ClosedUpperHalfPlane → ℂ) := by
-  have hu : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) ∞ ((↑) : ClosedUpperHalfPlane → ℂ) := by
-    have h := closedUpperHalfPlaneModel.contMDiff (n := ∞)
-    have he : (closedUpperHalfPlaneModel : ClosedUpperHalfPlane → ℂ) = (↑) :=
-      funext closedUpperHalfPlaneModel_apply
-    rwa [he] at h
   have hM : MemWkpLocMapBordered 𝓘(ℝ, ℂ) p 1 ((↑) : ClosedUpperHalfPlane → ℂ) :=
-    hu.memWkpLocMapBordered (by simp)
+    ClosedUpperHalfPlane.contMDiff_coe.memWkpLocMapBordered le_rfl
   refine ⟨hM, fun φ hφ ψ hψ ↦ ?_⟩
   set U := (φ.extend closedUpperHalfPlaneModel).target ∩
     (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' (((↑) : ClosedUpperHalfPlane → ℂ) ⁻¹' ψ.source)
@@ -566,12 +561,8 @@ theorem isWeakPseudoholomorphicBordered_coe :
   -- The interior of the half-disc `U` lies in the open upper half-plane, where `g` is holomorphic.
   have hint : interior U ⊆ D ∩ g ⁻¹' ψ.source := by
     intro z hz
-    have hzr : z ∈ interior (range closedUpperHalfPlaneModel) :=
-      interior_mono (fun w hw ↦ by
-        have hw' := hw.1
-        rw [OpenPartialHomeomorph.extend_target] at hw'
-        exact hw'.2) hz
-    rw [range_closedUpperHalfPlaneModel, Complex.interior_setOfPred_le_im] at hzr
+    have hzr := interior_subset_setOf_im_pos
+      (inter_subset_left.trans φ.extend_target_subset_range) hz
     obtain ⟨hzt, hzψ⟩ := interior_subset hz
     rw [OpenPartialHomeomorph.extend_target] at hzt
     exact ⟨⟨hzt.1, hzr⟩, hzψ⟩

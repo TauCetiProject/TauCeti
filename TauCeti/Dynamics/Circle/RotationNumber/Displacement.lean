@@ -23,6 +23,7 @@ map read through the chosen lift.
   (`CircleDeg1Lift.isUnit_ofInjective`). The restriction of a homeomorphism of the closed annulus
   strip `ℝ × [0, 1]` commuting with `(x, y) ↦ (x + 1, y)` to a boundary line is of this kind,
   with no orientation hypothesis: a strictly decreasing map cannot commute with `x ↦ x + 1`.
+  A translation `x ↦ a + x` is a continuous lift (`CircleDeg1Lift.continuous_translate`).
 * For a continuous lift the displacement attains its minimum and its maximum
   (`CircleDeg1Lift.exists_isMinOn_map_sub`, `CircleDeg1Lift.exists_isMaxOn_map_sub`), by
   periodicity and compactness of
@@ -95,6 +96,13 @@ theorem isUnit_ofInjective {f : ℝ → ℝ} (hf : Continuous f) (hinj : Injecti
     (h : ∀ x, f (x + 1) = f x + 1) : IsUnit (ofInjective f hf hinj h) :=
   isUnit_iff_bijective.2 ⟨by rwa [coe_ofInjective],
     (ofInjective f hf hinj h).continuous_iff_surjective.1 (continuous_ofInjective hf hinj h)⟩
+
+/-- A translation `x ↦ a + x` is a continuous lift. -/
+theorem continuous_translate (a : ℝ) :
+    Continuous (translate (Multiplicative.ofAdd a) : CircleDeg1Lift) := by
+  rw [show ⇑(translate (Multiplicative.ofAdd a) : CircleDeg1Lift) = fun y ↦ a + y from
+    funext (translate_apply a)]
+  exact continuous_const_add a
 
 variable (f : CircleDeg1Lift)
 

@@ -18,7 +18,8 @@ F(z) = e^{-z^2} \int_0^1 z\, e^{(sz)^2}\, ds,
 $$
 
 that is `e^{−z²} ∫₀^z e^{t²} dt` along the straight segment from `0` to `z` (DLMF 7.2.5).
-It proves that `F` is entire with `F′ = 1 − 2zF`, that `F(0) = 0` and `F` is odd, and that
+It proves that `F` is entire with `F′ = 1 − 2zF`, that `F(0) = 0` and `F` is odd, that
+`F(x) = e^{−x²} ∫₀ˣ e^{t²} dt` is real on the real line, and that
 `F(iy) = i (√π/2) e^{y²} erf y` on the imaginary axis.
 
 ## Main declarations
@@ -27,6 +28,9 @@ It proves that `F` is entire with `F′ = 1 − 2zF`, that `F(0) = 0` and `F` is
 * `TauCeti.hasDerivAt_dawson`, `TauCeti.differentiable_dawson`: `F′ = 1 − 2zF`, and `F` is
   entire.
 * `TauCeti.dawson_zero`, `TauCeti.dawson_neg`: `F(0) = 0` and `F(−z) = −F(z)`.
+* `TauCeti.dawson_ofReal`, `TauCeti.dawson_ofReal_re`, `TauCeti.dawson_ofReal_im`:
+  `F(x) = e^{−x²} ∫₀ˣ e^{t²} dt` is real for real `x`.
+* `TauCeti.hasDerivAt_dawson_ofReal_re`: `(Re F)′(x) = 1 − 2x Re F(x)` on the real line.
 * `TauCeti.dawson_mul_I`: `F(iy) = i (√π/2) e^{y²} erf y` for real `y`, with
   `TauCeti.Real.erf`.
 
@@ -128,5 +132,38 @@ theorem dawson_mul_I (y : ℝ) :
   rw [dawson_def, hint, hsq, ← ofReal_exp, Real.erf_def]
   push_cast
   field_simp
+
+/-- **Dawson's integral on the real line**: `F(x) = e^{−x²} ∫₀ˣ e^{t²} dt` for real `x`, a real
+number. -/
+theorem dawson_ofReal (x : ℝ) :
+    dawson x = ((Real.exp (-x ^ 2) * ∫ t in (0 : ℝ)..x, Real.exp (t ^ 2) : ℝ) : ℂ) := by
+  have hint : (∫ s in (0 : ℝ)..1, (x : ℂ) * exp (((s : ℂ) * x) ^ 2)) =
+      ((∫ t in (0 : ℝ)..x, Real.exp (t ^ 2) : ℝ) : ℂ) := by
+    have hpt : ∀ s : ℝ, (x : ℂ) * exp (((s : ℂ) * x) ^ 2) =
+        ((x * Real.exp ((s * x) ^ 2) : ℝ) : ℂ) := fun s => by
+      norm_cast
+    simp_rw [hpt]
+    rw [intervalIntegral.integral_ofReal, intervalIntegral.integral_const_mul]
+    have h := intervalIntegral.smul_integral_comp_mul_right (fun t => Real.exp (t ^ 2)) x
+      (a := 0) (b := 1)
+    simpa only [smul_eq_mul, zero_mul, one_mul] using congrArg ((↑) : ℝ → ℂ) h
+  rw [dawson_def, hint, ← ofReal_pow, ← ofReal_neg, ← ofReal_exp, ← ofReal_mul]
+
+/-- The real part of Dawson's integral on the real line: `Re F(x) = e^{−x²} ∫₀ˣ e^{t²} dt`. -/
+@[simp]
+theorem dawson_ofReal_re (x : ℝ) :
+    (dawson x).re = Real.exp (-x ^ 2) * ∫ t in (0 : ℝ)..x, Real.exp (t ^ 2) := by
+  rw [dawson_ofReal, ofReal_re]
+
+/-- Dawson's integral is real on the real line: `Im F(x) = 0`. -/
+@[simp]
+theorem dawson_ofReal_im (x : ℝ) : (dawson x).im = 0 := by
+  rw [dawson_ofReal, ofReal_im]
+
+/-- The differential equation of Dawson's integral on the real line:
+`(Re F)′(x) = 1 − 2x Re F(x)`. -/
+theorem hasDerivAt_dawson_ofReal_re (x : ℝ) :
+    HasDerivAt (fun y : ℝ => (dawson y).re) (1 - 2 * x * (dawson x).re) x := by
+  simpa using (hasDerivAt_dawson x).real_of_complex
 
 end TauCeti

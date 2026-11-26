@@ -11,7 +11,7 @@ public import TauCeti.Combinatorics.SimpleGraph.Density
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.BigOperators.Ring.Finset
-import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
+import TauCeti.Algebra.Order.BigOperators.Group.Finset
 import TauCeti.Combinatorics.SimpleGraph.Regularity.Uniform
 
 /-!

@@ -102,8 +102,8 @@ private noncomputable def rankTwoTensorAux (R : Type v) [CommSemiring R] :
   BialgEquiv.ofBialgHom
     (_root_.Bialgebra.TensorProduct.map eL.toBialgHom eL.toBialgHom)
     (_root_.Bialgebra.TensorProduct.map eL.symm.toBialgHom eL.symm.toBialgHom)
-    (Bialgebra.TensorProduct.map_comp_map_eq_id eL.comp_symm eL.comp_symm)
-    (Bialgebra.TensorProduct.map_comp_map_eq_id eL.symm_comp eL.symm_comp)
+    (TauCeti.Bialgebra.TensorProduct.map_comp_map_eq_id_iff.mpr ⟨eL.comp_symm, eL.comp_symm⟩)
+    (TauCeti.Bialgebra.TensorProduct.map_comp_map_eq_id_iff.mpr ⟨eL.symm_comp, eL.symm_comp⟩)
 
 private theorem rankTwoTensorAux_tmul (R : Type v) [CommSemiring R]
     (x y : MonoidAlgebra R (Multiplicative ℤ)) :

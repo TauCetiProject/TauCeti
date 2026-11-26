@@ -14,6 +14,7 @@ import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
 import TauCeti.Algebra.AlgebraicGroup.Torus.Splitting
+import TauCeti.RingTheory.NormTrace.Prod
 
 /-!
 # The splitting of the Deligne torus over `ℂ`
@@ -91,6 +92,10 @@ satisfies `g ^ 2 = 1` (`TauCeti.DeligneTorus.isEmpty_realPoints_mulEquiv_pi`).
   `(q, p)`.
 * `TauCeti.DeligneTorus.characterGroup_mu`, `TauCeti.DeligneTorus.characterGroup_weight`: the
   character `(p, q)` is `z ↦ z ^ p` on `μ(z)` and `r ↦ r ^ (-(p + q))` on the weight.
+* `TauCeti.DeligneTorus.coe_norm_eq_mul`, `TauCeti.DeligneTorus.norm_eq_characterGroup`,
+  `TauCeti.DeligneTorus.norm_zpow_eq_characterGroup`: over a complex algebra the norm of a point
+  with coordinates `(z₁, z₂)` is `z₁ * z₂`, the character `(1, 1)`, and its `m`-th power is
+  `(m, m)`.
 * `TauCeti.DeligneTorus.mapDomain_baseChangeComplexBialgEquiv` and
   `TauCeti.DeligneTorus.mapDomain_baseChangeComplexBialgEquiv_symm`: point compatibility in both
   directions for `baseChangeComplexBialgEquiv`.
@@ -332,6 +337,33 @@ theorem characterGroup_mapValue {R' : Type*} [CommRing R'] [Algebra ℝ R'] [Alg
   obtain ⟨⟨p, q⟩, rfl⟩ : ∃ pq' : ℤ × ℤ, Multiplicative.ofAdd pq' = pq := ⟨pq.toAdd, rfl⟩
   rw [characterGroup_apply, characterGroup_apply, complexSplitting_mapValue]
   simp
+
+/-- **The norm over a complex algebra**: a point of `S` with coordinates `(z₁, z₂)` in
+`S(R) ≃ Rˣ × Rˣ` has norm `z₁ * z₂`. -/
+theorem coe_norm_eq_mul (f : WithConv (S →ₐ[ℝ] R)) :
+    (norm R f : R) = (complexSplitting R f).1 * (complexSplitting R f).2 := by
+  -- `R ⊗[ℝ] ℂ ≃ₐ[R] R × R`, `x ⊗ a ↦ (a • x, conj a • x)`; the type is not written out, since
+  -- with `Algebra ℂ R` in scope the notation `R ⊗[ℝ] ℂ` would pick the real structure of `ℂ`
+  let e := AlgEquiv.ofRingEquiv (R := R)
+    (f := ((Algebra.TensorProduct.comm ℝ ℂ R).symm.trans
+      (complexTensorProductEquivProd R)).toRingEquiv)
+    fun r ↦ by simp [Algebra.TensorProduct.algebraMap_apply]
+  have he : ∀ x, e (Algebra.TensorProduct.comm ℝ ℂ R x) = complexTensorProductEquivProd R x :=
+    fun x ↦ congrArg (complexTensorProductEquivProd R)
+      ((Algebra.TensorProduct.comm ℝ ℂ R).symm_apply_apply x)
+  rw [norm_apply, NormTorus.coe_norm, ← Algebra.norm_eq_of_algEquiv e, Algebra.norm_prod]
+  simp [he, coe_complexSplitting_fst, coe_complexSplitting_snd]
+
+/-- **The norm is the character `(1, 1)`** of `S(R) ≃ Rˣ × Rˣ`, `(z₁, z₂) ↦ z₁ * z₂`. -/
+theorem norm_eq_characterGroup (f : WithConv (S →ₐ[ℝ] R)) :
+    norm R f = characterGroup R (.ofAdd (1, 1)) f :=
+  Units.ext <| by rw [coe_norm_eq_mul, characterGroup_apply, zpow_one, zpow_one, Units.val_mul]
+
+/-- The `m`-th power of the norm is the character `(m, m)`. -/
+theorem norm_zpow_eq_characterGroup (f : WithConv (S →ₐ[ℝ] R)) (m : ℤ) :
+    norm R f ^ m = characterGroup R (.ofAdd (m, m)) f := by
+  rw [norm_eq_characterGroup, characterGroup_apply, characterGroup_apply, zpow_one, zpow_one,
+    mul_zpow]
 
 end Character
 

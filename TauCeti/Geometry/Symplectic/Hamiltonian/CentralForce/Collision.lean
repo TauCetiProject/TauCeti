@@ -32,9 +32,11 @@ collision set `q = 0`.
 * **Zero angular momentum means collision.** For an attractive potential, `U' > 0`, and zero
   angular momentum, the effective force `-U'(r)` never vanishes, so no such motion avoids
   collision at all times. Every global noncollision motion therefore has nonzero angular momentum
-  (`TauCeti.sq_sub_inner_sq_ne_zero_of_hasDerivAt`). As soon as `V ≠ 0` there are states
-  with zero angular momentum off the collision set, such as those at rest, so the Hamiltonian flow
-  on the punctured phase space `{(q, p) | q ≠ 0}` is not complete
+  (`TauCeti.sq_sub_inner_sq_ne_zero_of_hasDerivAt`).
+* **Incompleteness.** For a non-repulsive potential, `U' ≥ 0`, a particle thrown straight at the
+  centre has zero angular momentum and nonzero radial momentum, so it is not on a circular orbit
+  and cannot avoid collision at all times. As soon as `V ≠ 0` such states exist, so the
+  Hamiltonian flow on the punctured phase space `{(q, p) | q ≠ 0}` is not complete
   (`TauCeti.not_isCompleteVectorField_hamiltonianVectorField_puncturedPhaseSpace`).
 
 The Kepler potential `-κ / r`, `κ > 0`, is attractive; its collision domain and collision orbits
@@ -224,13 +226,14 @@ theorem sq_sub_inner_sq_ne_zero_of_hasDerivAt (hm : 0 < m) {γ : ℝ → V × V}
   simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_div] at h₀
   exact (hattr t).ne' h₀
 
-/-- **Attractive central-force flows are not complete.** Let `V ≠ 0`, `m > 0`, and let `U` be `C²`
-and attractive, `U' > 0`, on `(0, ∞)`. On the punctured phase space `{(q, p) | q ≠ 0}`, with the
-restriction of the standard symplectic form, the Hamiltonian vector field of
-`H(q, p) = ‖p‖² / (2m) + U(‖q‖)` is not complete: no motion with zero angular momentum, such as
-one starting at rest, avoids the collision set at all times. -/
+/-- **Non-repulsive central-force flows are not complete.** Let `V ≠ 0`, `m > 0`, and let `U` be
+`C²` and non-repulsive, `U' ≥ 0`, on `(0, ∞)`. On the punctured phase space `{(q, p) | q ≠ 0}`,
+with the restriction of the standard symplectic form, the Hamiltonian vector field of
+`H(q, p) = ‖p‖² / (2m) + U(‖q‖)` is not complete: a particle thrown straight at the centre, from a
+point `q ≠ 0` with momentum `-q`, has zero angular momentum and moves inwards, so it cannot avoid
+the collision set at all times. This includes the free particle `U = 0`. -/
 theorem not_isCompleteVectorField_hamiltonianVectorField_puncturedPhaseSpace [Nontrivial V]
-    (hm : 0 < m) (hU : ContDiffOn ℝ 2 U (Ioi 0)) (hattr : ∀ r, 0 < r → 0 < deriv U r) :
+    (hm : 0 < m) (hU : ContDiffOn ℝ 2 U (Ioi 0)) (hU' : ∀ r, 0 < r → 0 ≤ deriv U r) :
     ¬ IsCompleteVectorField (SmoothTwoForm.hamiltonianVectorField
       (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
         (stdSymplecticForm (V := V)).constSmooth)
@@ -242,14 +245,18 @@ theorem not_isCompleteVectorField_hamiltonianVectorField_puncturedPhaseSpace [No
     contMDiff_centralForceHamiltonian_comp_subtypeVal fun _ hr ↦ hU.contDiffAt (Ioi_mem_nhds hr)
   obtain ⟨u, hu⟩ := exists_ne (0 : V)
   obtain ⟨γ, hγ₀, hγ⟩ := SymplecticForm.exists_forall_hasDerivAt_of_isCompleteVectorField _ hH
-    hcomplete (x := (u, 0)) (mem_puncturedPhaseSpace.2 hu)
+    hcomplete (x := (u, -u)) (mem_puncturedPhaseSpace.2 hu)
   have hq (t : ℝ) : (γ t).1 ≠ 0 := mem_puncturedPhaseSpace.1 (hγ t).1
-  -- The curve starts at rest, with zero angular momentum.
-  refine sq_sub_inner_sq_ne_zero_of_hasDerivAt hm (fun t ↦ (hγ t).2) hq
-    (fun t ↦ (hU.differentiableOn (by norm_num) _
-      (norm_pos_iff.2 (hq t))).differentiableAt (Ioi_mem_nhds (norm_pos_iff.2 (hq t))))
-    (fun t ↦ hattr _ (norm_pos_iff.2 (hq t))) 0 ?_
-  simp [hγ₀]
+  have hr (t : ℝ) : 0 < ‖(γ t).1‖ := norm_pos_iff.2 (hq t)
+  -- With zero angular momentum the global motion would have zero radial momentum.
+  have h := (radialMomentum_eq_zero_and_deriv_eq_of_forall_hasDerivAt hm (fun t ↦ (hγ t).2) hq
+    (fun t ↦ (hU.differentiableOn (by norm_num) _ (hr t)).differentiableAt (Ioi_mem_nhds (hr t)))
+    (ℓ := 0) (t₀ := 0)
+    (by rw [hγ₀]; simp only [inner_neg_right, norm_neg, real_inner_self_eq_norm_sq]; ring)
+    (fun t ↦ by simpa using hU' _ (hr t)) 0).1
+  -- But the particle thrown at the centre has radial momentum `-‖u‖ ≠ 0`.
+  rw [radialMomentum_eq_zero_iff, hγ₀] at h
+  simp [hu] at h
 
 end CentralForce
 

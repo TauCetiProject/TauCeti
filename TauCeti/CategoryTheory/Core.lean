@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Core
+public import Mathlib.CategoryTheory.Endomorphism
+public import Mathlib.CategoryTheory.Skeletal
 
 /-!
 # Functors into and between cores of categories
@@ -13,6 +15,12 @@ public import Mathlib.CategoryTheory.Core
 A functor `F : D ⥤ C` sending every morphism of `D` to an isomorphism of `C` factors through the
 core `Core C`, the groupoid of objects of `C` and isomorphisms between them. Mathlib's
 `CategoryTheory.Core.functorToCore` is the case where `D` is a groupoid.
+
+The inclusion `Core C ⥤ C` is essentially surjective, and it is an equivalence when `C` is a
+groupoid. Since two objects are isomorphic in `Core C` exactly when they are isomorphic in `C`,
+the inclusion identifies the isomorphism classes `Skeleton (Core C)` with `Skeleton C`
+(`CategoryTheory.Core.skeletonEquiv`), and the automorphism group of an object of `Core C` with
+that of the underlying object of `C` (`CategoryTheory.Core.autMulEquiv`).
 
 The core functor `F.core : Core C ⥤ Core D` preserves faithfulness, and preserves fullness when `F`
 is fully faithful: a full functor that is not faithful need not lift isomorphisms to isomorphisms,
@@ -56,6 +64,61 @@ lemma functorToCoreOfIsIso_comp_left (G : E ⥤ D) (F : D ⥤ C)
 lemma functorToCoreOfIsIso_comp_inclusion_self (G : D ⥤ Core C) :
     functorToCoreOfIsIso (G ⋙ inclusion C) (fun _ _ f ↦ (G.map f).iso.isIso_hom) = G :=
   Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ heq_of_eq (Core.hom_ext rfl)
+
+/-- The inclusion of the core is essentially surjective. -/
+instance : (inclusion C).EssSurj where
+  mem_essImage X := ⟨⟨X⟩, ⟨Iso.refl _⟩⟩
+
+section Groupoid
+
+variable [IsGroupoid C]
+
+/-- For a groupoid `C`, the inclusion `Core C ⥤ C` is full. -/
+instance : (inclusion C).Full where
+  map_surjective f := ⟨⟨asIso f⟩, rfl⟩
+
+/-- For a groupoid `C`, the inclusion `Core C ⥤ C` is an equivalence of categories. -/
+instance : (inclusion C).IsEquivalence where
+
+end Groupoid
+
+/-- Two objects of `Core C` are isomorphic exactly when they are isomorphic in `C`, so the
+inclusion identifies the isomorphism classes of `Core C` with those of `C`. -/
+noncomputable def skeletonEquiv : Skeleton (Core C) ≃ Skeleton C :=
+  .ofBijective (inclusion C).mapSkeleton.obj <| by
+    refine ⟨fun X Y h ↦ ?_, (inclusion C).mapSkeleton_surjective⟩
+    rw [← toSkeleton_fromSkeleton_obj X, ← toSkeleton_fromSkeleton_obj Y] at h ⊢
+    simp only [Functor.mapSkeleton_obj_toSkeleton] at h
+    obtain ⟨e⟩ := toSkeleton_eq_toSkeleton_iff.1 h
+    exact congr_toSkeleton_of_iso (isoMk e)
+
+@[simp]
+lemma skeletonEquiv_toSkeleton (X : Core C) : skeletonEquiv (toSkeleton X) = toSkeleton X.of :=
+  (inclusion C).mapSkeleton_obj_toSkeleton X
+
+@[simp]
+lemma skeletonEquiv_symm_toSkeleton (X : C) :
+    skeletonEquiv.symm (toSkeleton X) = toSkeleton (⟨X⟩ : Core C) :=
+  skeletonEquiv.symm_apply_eq.2 (skeletonEquiv_toSkeleton _).symm
+
+/-- The automorphisms of an object of `Core C` are the automorphisms of the underlying object
+of `C`. -/
+def autMulEquiv (X : Core C) : Aut X ≃* Aut X.of where
+  toFun e := .of e.asIso.hom.iso
+  invFun e := .of (isoMk e.asIso)
+  left_inv _ := Aut.ext (Iso.ext (hom_ext rfl))
+  right_inv _ := Aut.ext (Iso.ext rfl)
+  map_mul' _ _ := Aut.ext (Iso.ext rfl)
+
+@[simp]
+lemma autMulEquiv_apply_asIso (X : Core C) (e : Aut X) :
+    (autMulEquiv X e).asIso = e.asIso.hom.iso :=
+  (rfl)
+
+@[simp]
+lemma autMulEquiv_symm_apply_asIso (X : Core C) (e : Aut X.of) :
+    ((autMulEquiv X).symm e).asIso = isoMk e.asIso :=
+  (rfl)
 
 end Core
 

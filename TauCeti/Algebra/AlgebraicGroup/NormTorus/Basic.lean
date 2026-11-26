@@ -200,13 +200,16 @@ variable (k k') [Module.Free k k'] [Module.Finite k k']
 /-- **The norm morphism `Res_{k'/k} 𝔾ₘ → 𝔾ₘ`**, as the underlying algebra map
 `k[T;T⁻¹] →ₐ[k] Res_{k'/k} k'[T;T⁻¹]` sending `T` to the norm of the universal point of
 `Res_{k'/k} 𝔾ₘ`. -/
-private noncomputable def normHom : k[T;T⁻¹] →ₐ[k] Algebra.WeilRestriction k k' k'[T;T⁻¹] :=
+noncomputable def normHom : k[T;T⁻¹] →ₐ[k] Algebra.WeilRestriction k k' k'[T;T⁻¹] :=
   laurentEval <| norm k k' _ <| Algebra.WeilRestriction.multiplicativeGroupPoints k k' _ <|
     toConv (AlgHom.id k _)
 
 variable {k k'}
 
-private theorem pointsMulEquiv_comp_normHom
+/-- **The norm morphism on points.** For a point `f` of `Res_{k'/k} 𝔾ₘ` over a commutative
+`k`-algebra `R`, the point `f ∘ normHom` of `𝔾ₘ` is the norm of the unit of `k' ⊗[k] R`
+attached to `f`. -/
+theorem pointsMulEquiv_comp_normHom
     (f : WithConv (Algebra.WeilRestriction k k' k'[T;T⁻¹] →ₐ[k] R)) :
     MultiplicativeGroup.pointsMulEquiv (toConv (f.ofConv.comp (normHom k k'))) =
       norm k k' R (Algebra.WeilRestriction.multiplicativeGroupPoints k k' R f) := by
@@ -237,7 +240,7 @@ noncomputable def normBialgHom :
         ← TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom (R := k) (H := k[T;T⁻¹]),
         toConv_ofConv]
       simp only [toConv_comp_normHom, map_one])
-    (TauCeti.Bialgebra.map_comp_comulAlgHom_of_mul (normHom k k') fun f g ↦ by
+    (_root_.AlgHom.map_comp_comulAlgHom_of_mul (normHom k k') fun f g ↦ by
       simp only [toConv_comp_normHom, map_mul])
 
 /-- **The norm bialgebra homomorphism on points.** Precomposing a point `f` of `Res_{k'/k} 𝔾ₘ` over
