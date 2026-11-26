@@ -107,7 +107,7 @@ private def linearFiberIntegral : 𝓓(W, ℝ) →L[ℝ] 𝓓(Ω', ℝ) :=
   (A.linearScale hA μ ν : ℝ) •
     (Distribution.ofFun ⊤ (fun _ ↦ (1 : ℝ)) Measure.addHaar ⊤).partialPairing
       (linearCoordImage_subset hA hW) ∘L
-    (A.linearCoord hA).transportTestFunction (mapsTo_linearCoord hA W)
+    (A.linearCoord hA).transportTestFunction ℝ (mapsTo_linearCoord hA W)
 
 private theorem linearFiberIntegral_apply (ψ : 𝓓(W, ℝ)) (y : E') :
     linearFiberIntegral hA hW μ ν ψ y =
@@ -122,7 +122,7 @@ private theorem integral_linearFiberIntegral_smul (ψ : 𝓓(W, ℝ)) {g : E' �
     (hg : ContinuousOn g Ω') :
     ∫ y, linearFiberIntegral hA hW μ ν ψ y • g y ∂ν = ∫ x, ψ x • g (A x) ∂μ := by
   set L := A.linearCoord hA
-  set ψ' := L.transportTestFunction (mapsTo_linearCoord hA W) ψ
+  set ψ' := L.transportTestFunction ℝ (mapsTo_linearCoord hA W) ψ
   have hψ' (p : E' × (A : E →ₗ[ℝ] E').ker) : ψ' p = ψ (L.symm p) :=
     ContinuousLinearEquiv.transportTestFunction_apply ..
   -- The integrand on the product is continuous on `Ω' × ker A`, which contains the support of

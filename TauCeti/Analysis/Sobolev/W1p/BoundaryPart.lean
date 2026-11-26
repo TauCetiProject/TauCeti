@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Indicator
 import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # Sobolev functions vanishing on a part of the boundary
@@ -35,8 +36,10 @@ restrictions of test functions, so `W^{1,p}_∅(Ω) = W^{1,p}(Ω)` exactly when 
 The space shrinks as `Γ` grows and depends on `Γ` only through its closure. When `Γ` misses `Ω`,
 as a boundary part does, it contains `W^{1,p}_0(Ω)`; this can fail when `Γ` meets `Ω`, for
 instance when `Γ` contains a nonempty open subset of `Ω`. Multiplication by a smooth function
-bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`. Its invariance under
-changes of variables is in `TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables`.
+bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`, and when the support of
+the function misses `closure Γ` it carries `W^{1,p}_{Γ'}(Ω)` into `W^{1,p}_{Γ' ∪ Γ}(Ω)`. Its
+invariance under changes of variables is in
+`TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables`.
 
 For finite `p` the generators need not be smooth: a function on the whole space vanishing outside a
 compact set disjoint from `closure Γ` lies in `W^{1,p}_Γ(Ω)` as soon as it lies in `W^{1,p}`, in
@@ -52,6 +55,8 @@ functions are only Lipschitz.
 * `TauCeti.W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule` and
   `TauCeti.w1pVanishingOnSubmodule_subset_of_isClosed`: the generators lie in it, and a closed set
   containing them contains all of it.
+* `TauCeti.W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`: every trace operator, a
+  continuous linear map sending each generator to its boundary values, vanishes on `Γ` on it.
 * `TauCeti.mem_w1pVanishingOnSubmodule_iff_exists_seq_tendsto`: its elements are the limits of
   sequences of generators.
 * `TauCeti.w1pVanishingOnSubmodule_antitone` and `TauCeti.w1pVanishingOnSubmodule_closure`: it is
@@ -67,7 +72,9 @@ functions are only Lipschitz.
   `Γ` misses `Ω` (`TauCeti.W1pVanishingOn.denseRange_valueL_two`) and compact when the value map
   of `W^{1,p}(Ω)` is (`TauCeti.W1pVanishingOn.isCompactOperator_valueL`).
 * `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule`: it is stable under multiplication by
-  smooth functions bounded with their gradients.
+  smooth functions bounded with their gradients, and
+  `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_union`: a cutoff whose support misses
+  `closure Γ` carries `W^{1,p}_{Γ'}(Ω)` into `W^{1,p}_{Γ' ∪ Γ}(Ω)`.
 * `TauCeti.W1p.restrictL_contDiffSMul_mem_w1pVanishingOnSubmodule`: a whole-space Sobolev
   function times a cutoff supported away from `closure Γ`, restricted to `Ω`, lies in it.
 * `TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule_of_isCompact` and
@@ -91,10 +98,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open Filter MeasureTheory Set TopologicalSpace
 open scoped Distributions ENNReal Topology Gradient ContDiff
+
+namespace TauCeti
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -156,6 +163,30 @@ theorem w1pVanishingOnSubmodule_subset_of_isClosed {s : Set (W1p mu Omega p)} (h
     (w1pVanishingOnSubmodule mu Omega p Γ : Set (W1p mu Omega p)) ⊆ s := by
   rw [coe_w1pVanishingOnSubmodule]
   exact closure_minimal (by rintro _ ⟨φ, hφ, rfl⟩; exact h φ hφ) hs
+
+/-- **Functions vanishing on `Γ` have zero boundary values on `Γ`, for any trace operator.** Let
+`T : W^{1,p}(Ω) → Lᵖ(σ)` be a continuous linear map that sends the restriction to `Ω` of every test
+function `φ` on the whole space to `φ` itself, `σ`-almost everywhere. Then `T u` vanishes
+`σ`-almost everywhere on `Γ` for every `u ∈ W^{1,p}_Γ(Ω)`. No regularity of `Ω` or of `Γ` is
+assumed; the traces on a Lipschitz domain are the main examples. -/
+theorem W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule {σ : Measure E}
+    {T : W1p mu Omega p →L[ℝ] Lp ℝ p σ}
+    (hT : ∀ φ : 𝓓((⊤ : Opens E), ℝ),
+      T (W1p.restrictL (le_top : Omega ≤ ⊤) (W1p.ofTestFunctionₗ mu ⊤ p φ)) =ᵐ[σ] φ)
+    {u : W1p mu Omega p} (hu : u ∈ w1pVanishingOnSubmodule mu Omega p Γ) :
+    T u =ᵐ[σ.restrict Γ] 0 := by
+  -- Vanishing on `Γ` is the kernel of a continuous linear map, hence a closed condition.
+  let R := (LpToLpRestrictCLM E ℝ ℝ σ p Γ).comp T
+  have hclosed : IsClosed {v : W1p mu Omega p | R v = 0} := isClosed_eq R.continuous
+    continuous_const
+  have h := w1pVanishingOnSubmodule_subset_of_isClosed hclosed (fun φ hφ => ?_) hu
+  · exact (LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ) Γ _).1 h
+  -- The boundary values of a generator are the generator itself, which is zero on `closure Γ`.
+  rw [mem_ofPred, ContinuousLinearMap.comp_apply, LpToLpRestrictCLM_eq_zero_iff (𝕜 := ℝ)]
+  filter_upwards [ae_restrict_of_ae (hT φ), ae_restrict_of_ae_restrict_of_subset subset_closure
+      (ae_restrict_mem (μ := σ) isClosed_closure.measurableSet)] with x hx hxΓ
+  rw [hx, Pi.zero_apply]
+  exact image_eq_zero_of_notMem_tsupport (hφ.notMem_of_mem_right hxΓ)
 
 /-- **The Sobolev space `W^{1,p}_Γ(Ω)`** as a type: the subspace `w1pVanishingOnSubmodule`, with
 the normed structure inherited from `W^{1,p}(Ω)`. For `p = 2` it is a Hilbert space, the test
@@ -322,21 +353,23 @@ theorem W1pVanishingOn.isCompactOperator_valueL
 
 /-! ### Multiplication by smooth functions -/
 
-/-- **`W^{1,p}_Γ(Ω)` is stable under multiplication by a smooth function** `ψ` bounded together
-with its gradient on `Ω`. The product of `ψ` with a generator is again a generator, since its
-support lies in that of the generator, and continuity extends this to the closure. -/
-theorem W1p.contDiffSMul_mem_w1pVanishingOnSubmodule {psi : E → ℝ} {M : ℝ}
+/-- **Multiplying by a cutoff that vanishes near a second set.** If `ψ` is smooth and bounded
+together with its gradient on `Ω`, and its support misses `closure Γ`, then multiplication by `ψ`
+carries `W^{1,p}_{Γ'}(Ω)` into `W^{1,p}_{Γ' ∪ Γ}(Ω)`. The product of `ψ` with a generator for
+`Γ'` is a test function supported in both supports, so it is a generator for `Γ' ∪ Γ`, and
+continuity extends this to the closure. -/
+theorem W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_union {psi : E → ℝ} {M : ℝ}
     (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M) (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M)
-    (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M) {u : W1p mu Omega p}
-    (hu : u ∈ w1pVanishingOnSubmodule mu Omega p Γ) :
-    W1p.contDiffSMul psi hpsi hM hpsiM hgradM u ∈ w1pVanishingOnSubmodule mu Omega p Γ := by
+    (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M) (hΓ : Disjoint (tsupport psi) (closure Γ))
+    {Γ' : Set E} {u : W1p mu Omega p} (hu : u ∈ w1pVanishingOnSubmodule mu Omega p Γ') :
+    W1p.contDiffSMul psi hpsi hM hpsiM hgradM u ∈ w1pVanishingOnSubmodule mu Omega p (Γ' ∪ Γ) := by
   have hclosed : IsClosed (W1p.contDiffSMulL psi hpsi hM hpsiM hgradM ⁻¹'
-      (w1pVanishingOnSubmodule mu Omega p Γ : Set (W1p mu Omega p))) :=
-    (w1pVanishingOnSubmodule mu Omega p Γ).isClosed.preimage
+      (w1pVanishingOnSubmodule mu Omega p (Γ' ∪ Γ) : Set (W1p mu Omega p))) :=
+    (w1pVanishingOnSubmodule mu Omega p (Γ' ∪ Γ)).isClosed.preimage
       (W1p.contDiffSMulL psi hpsi hM hpsiM hgradM).continuous
   have h := w1pVanishingOnSubmodule_subset_of_isClosed hclosed (fun φ hφ => ?_) hu
   · simpa only [mem_preimage, SetLike.mem_coe, W1p.contDiffSMulL_apply] using h
-  -- The product `ψ φ` is a test function on the whole space with support inside that of `φ`.
+  -- The product `ψ φ` is a test function on the whole space with support inside both supports.
   obtain ⟨Φ, hΦφ⟩ : ∃ Φ : 𝓓((⊤ : Opens E), ℝ), ⇑Φ = fun x => psi x * φ x :=
     ⟨⟨fun x => psi x * φ x, hpsi.mul φ.contDiff, φ.hasCompactSupport.mul_left, subset_univ _⟩,
       rfl⟩
@@ -351,8 +384,21 @@ theorem W1p.contDiffSMul_mem_w1pVanishingOnSubmodule {psi : E → ℝ} {M : ℝ}
       with x h h₁ h₂
     rw [h, h₁, h₂, smul_eq_mul, hΦφ]
   simp only [mem_preimage, SetLike.mem_coe, W1p.contDiffSMulL_apply, hΦ]
-  exact W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
-    (hΦφ ▸ hφ.mono_left (tsupport_mul_subset_right (f := psi) (g := φ)))
+  refine W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule ?_
+  rw [closure_union, disjoint_union_right, hΦφ]
+  exact ⟨hφ.mono_left (tsupport_mul_subset_right (f := psi) (g := φ)),
+    hΓ.mono_left (tsupport_mul_subset_left (f := psi) (g := φ))⟩
+
+/-- **`W^{1,p}_Γ(Ω)` is stable under multiplication by a smooth function** `ψ` bounded together
+with its gradient on `Ω`. -/
+theorem W1p.contDiffSMul_mem_w1pVanishingOnSubmodule {psi : E → ℝ} {M : ℝ}
+    (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M) (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M)
+    (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M) {u : W1p mu Omega p}
+    (hu : u ∈ w1pVanishingOnSubmodule mu Omega p Γ) :
+    W1p.contDiffSMul psi hpsi hM hpsiM hgradM u ∈ w1pVanishingOnSubmodule mu Omega p Γ := by
+  simpa only [union_empty] using
+    W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_union hpsi hM hpsiM hgradM
+      (Γ := ∅) (by simp) hu
 
 /-! ### Whole-space Sobolev functions supported away from `closure Γ` -/
 
