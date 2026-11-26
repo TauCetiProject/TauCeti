@@ -30,6 +30,11 @@ close up after one turn.
 * `TauCeti.KleinBottle`: the Klein bottle, the mapping torus of `TauCeti.conjCircleDiffeomorph`.
 * `TauCeti.KleinBottle.mk`: the class `[t, z]` of a point of the cylinder.
 
+## Main results
+
+* `TauCeti.mfderiv_conjCircleDiffeomorph_one`: conjugation acts by `-1` on the tangent line of the
+  circle at its fixed point `1`.
+
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, second edition, Graduate Texts in
@@ -65,6 +70,33 @@ theorem conjCircleDiffeomorph_one : conjCircleDiffeomorph 1 = 1 :=
 @[simp]
 theorem conjCircleDiffeomorph_neg_one : conjCircleDiffeomorph (-1) = -1 :=
   Subtype.ext (by simp [Metric.unitSphere.coe_one])
+
+/-- **Complex conjugation reverses the tangent line of the circle at its fixed point `1`**: its
+differential there is `-1`. Read in `ℂ`, the tangent line at `1` is the imaginary axis, which
+conjugation negates. -/
+@[simp]
+theorem mfderiv_conjCircleDiffeomorph_one (w : TangentSpace (𝓡 1) (1 : sphere (0 : ℂ) 1)) :
+    mfderiv (𝓡 1) (𝓡 1) conjCircleDiffeomorph 1 w = -w := by
+  have hcoe : ⇑conjCircleDiffeomorph = LinearIsometryEquiv.unitSphereEquiv Complex.conjLIE :=
+    LinearIsometryEquiv.coe_unitSphereDiffeomorph _
+  rw [hcoe]
+  have h := LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv (n := 1) (k := 1)
+    Complex.conjLIE 1 w
+  have hfix : LinearIsometryEquiv.unitSphereEquiv Complex.conjLIE (1 : sphere (0 : ℂ) 1) = 1 :=
+    hcoe ▸ conjCircleDiffeomorph_one
+  rw [hfix] at h
+  -- Read in `ℂ`, the tangent vector `w` at `1` is orthogonal to `1`, so it is imaginary and
+  -- conjugation negates it.
+  have hw : mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) 1 w ∈
+      (ℝ ∙ ((1 : sphere (0 : ℂ) 1) : ℂ))ᗮ :=
+    range_mvfderiv_subtypeVal (n := 1) (1 : sphere (0 : ℂ) 1) ▸ LinearMap.mem_range_self _ w
+  generalize hz : mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) 1 w = z at h hw
+  have hre : z.re = 0 := by
+    have := Submodule.mem_orthogonal_singleton_iff_inner_right.1 hw
+    rwa [Complex.inner, Metric.unitSphere.coe_one, map_one, mul_one] at this
+  apply injective_mvfderiv_subtypeVal_sphere (n := 1) (1 : sphere (0 : ℂ) 1)
+  rw [map_neg, hz]
+  refine h.trans (Complex.ext ?_ ?_) <;> simp [hre]
 
 /-- The **Klein bottle**: the quotient of the cylinder `ℝ × S¹` by `(t + 1, z) ∼ (t, conj z)`, the
 smooth mapping torus of complex conjugation of the unit circle. -/

@@ -21,8 +21,11 @@ Let `σ` be a section of a complex line bundle `L` with fibre `ℂ` over a Riema
 `D : ℂ →L[ℝ] ℂ` at `φ x`. The zero is *positive* when `D` is close to a complex multiplication,
 `‖D - (u ↦ u c)‖ < ‖c‖`, and *negative* when it is close to a conjugate one,
 `‖D - (u ↦ conj u c)‖ < ‖c‖`. These are the open conditions under which a zero is untwisted in
-`L(-x)`, respectively `L(x)` (`TauCeti.exists_negPointTwist_section_of_hasFDerivAt`,
-`TauCeti.exists_pointTwist_section_of_hasFDerivAt`).
+`L(-x)`, respectively `L(x)`
+(`TauCeti.exists_untwist_section_of_isSignedTransverseZero`). The predicate
+`TauCeti.IsSignedTransverseZero σ x s` records this estimate for the sign `s` (`false` for
+positive, `true` for negative); it constrains only the derivative at `x`, and vanishing at `x` is
+a separate hypothesis.
 
 This file identifies these signs with the local indices for the canonical orientations of `L` and
 `X`: a positive zero has local index `1` and a negative zero local index `-1`
@@ -168,10 +171,7 @@ number of positive zeros minus the number of negative ones. -/
 theorem exists_contMDiffSection_complexEulerClass_eq_sum_sign [CompactSpace X]
     [IsManifold 𝓘(ℂ) ∞ X] [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)] :
     ∃ (σ : ContMDiffSection 𝓘(ℝ, ℂ) ℂ ∞ L) (hZ : {z | σ z = 0}.Finite) (ε : X → Bool),
-      (∀ z, σ z = 0 → ∃ (D : ℂ →L[ℝ] ℂ) (c : ℂ),
-        HasFDerivAt (negPointTwistChartReading ℂ z σ) D (chartAt ℂ z z) ∧
-          ‖D - (if ε z then Complex.conjCLE.toContinuousLinearMap
-            else ContinuousLinearMap.id ℝ ℂ).smulRight c‖ < ‖c‖) ∧
+      (∀ z, σ z = 0 → IsSignedTransverseZero σ z (ε z)) ∧
       ((complexHomologicalOrientation X).evalFundamentalClass Complex.finrank_real_complex
           (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id X)
           (complexEulerClass ℂ L (r := 0) (finrank_self ℂ))).down =
@@ -192,7 +192,7 @@ theorem exists_contMDiffSection_complexEulerClass_eq_sum_sign [CompactSpace X]
     · obtain ⟨c, hc⟩ := exists_norm_sub_smulRight_lt_of_det_pos h
       exact ⟨false, D, c, hD, hc⟩
   choose! ε D c hD hc using hzero
-  refine ⟨σ, hZ, ε, fun z hz ↦ ⟨D z, c z, hD z hz, hc z hz⟩, ?_⟩
+  refine ⟨σ, hZ, ε, fun z hz ↦ isSignedTransverseZero_iff.2 ⟨D z, c z, hD z hz, hc z hz⟩, ?_⟩
   rw [complexEulerClass_def,
     VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex _ _ _ hσ _ hZ]
   refine Finset.sum_congr rfl fun z hz ↦ ?_
