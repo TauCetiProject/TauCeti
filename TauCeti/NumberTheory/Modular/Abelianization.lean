@@ -40,6 +40,15 @@ has class `1`, a product of `n` conjugates of `T` equal to `1` forces `12 ∣ n`
   `Multiplicative (ZMod 6)`, with the class of `T` sent to `1`.
 * `TauCeti.ModularGroup.abelianizationMulEquiv_of_coe_S`, `_of_coe_T`, `_of_coe_U`,
   `_of_coe_R`: the images `3`, `1`, `2` and `4` of `S`, `T`, `U` and `R = S T`.
+* `TauCeti.ModularGroup.abelianizationAddEquiv`: the additive abelianization of `PSL(2, ℤ)` is
+  `ZMod 6`, with the class of `T` sent to `1` (and `S ↦ 3`, `U ↦ 2`, `R ↦ 4`).
+* `TauCeti.ModularGroup.abelianizationAddEquiv_ofMul_of_coe_S`, `_T`, `_U`, `_R`: images of the
+  standard generators in `ZMod 6`.
+* `TauCeti.ModularGroup.abelianizationAddEquiv_symm_one`,
+  `TauCeti.ModularGroup.abelianizationAddEquiv_symm_intCast`: values of
+  `abelianizationAddEquiv.symm`.
+* `TauCeti.ModularGroup.natCard_abelianization`, `TauCeti.ModularGroup.index_commutator`:
+  `Nat.card (Group.Abelianization PSL(2, ℤ)) = 6` and `(commutator PSL(2, ℤ)).index = 6`.
 * `TauCeti.ModularGroup.sl2zAbelianizationMulEquiv`: the abelianization of `SL(2, ℤ)` is
   `Multiplicative (ZMod 12)`, with the class of `T` sent to `1`.
 * `TauCeti.ModularGroup.sl2zAbelianizationMulEquiv_of_S`, `_of_T`, `_of_neg_one`: the images
@@ -155,6 +164,60 @@ theorem abelianizationMulEquiv_of_coe_R :
   rw [R_def, QuotientGroup.mk_mul, map_mul, map_mul, abelianizationMulEquiv_of_coe_S,
     abelianizationMulEquiv_of_coe_T, ← ofAdd_add]
   decide
+
+/-- **Additive abelianization of `PSL(2, ℤ)`.** The abelianization of the modular group is cyclic
+of order `6`, canonically normalized so that the cusp translation `T` maps to `1 : ZMod 6` (and
+hence `U = S T⁻¹ ↦ 2`, `S ↦ 3`, and `R = S T ↦ 4`). -/
+noncomputable def abelianizationAddEquiv : Additive (Group.Abelianization PSL(2, ℤ)) ≃+ ZMod 6 :=
+  abelianizationMulEquiv.toAdditiveLeft
+
+/-- The abelianization of `PSL(2, ℤ)` sends the class of `S` to `3 ∈ ℤ/6`. -/
+@[simp]
+theorem abelianizationAddEquiv_ofMul_of_coe_S :
+    abelianizationAddEquiv (.ofMul (Group.Abelianization.of (S : PSL(2, ℤ)))) = 3 :=
+  congrArg Multiplicative.toAdd <| (Group.Abelianization.lift_apply_of _ _).trans zmodSixChar_S
+
+/-- The abelianization of `PSL(2, ℤ)` sends the class of `T` to `1 ∈ ℤ/6`. -/
+@[simp]
+theorem abelianizationAddEquiv_ofMul_of_coe_T :
+    abelianizationAddEquiv (.ofMul (Group.Abelianization.of (T : PSL(2, ℤ)))) = 1 :=
+  congrArg Multiplicative.toAdd <| (Group.Abelianization.lift_apply_of _ _).trans zmodSixChar_T
+
+/-- The abelianization of `PSL(2, ℤ)` sends the class of `U = S T⁻¹` to `2 ∈ ℤ/6`. -/
+@[simp]
+theorem abelianizationAddEquiv_ofMul_of_coe_U :
+    abelianizationAddEquiv (.ofMul (Group.Abelianization.of (U : PSL(2, ℤ)))) = 2 :=
+  congrArg Multiplicative.toAdd <| (Group.Abelianization.lift_apply_of _ _).trans zmodSixChar_U
+
+/-- The abelianization of `PSL(2, ℤ)` sends the class of `R = S T` to `4 ∈ ℤ/6`. -/
+@[simp]
+theorem abelianizationAddEquiv_ofMul_of_coe_R :
+    abelianizationAddEquiv (.ofMul (Group.Abelianization.of (R : PSL(2, ℤ)))) = 4 := by
+  rw [R_def, QuotientGroup.mk_mul, map_mul, ofMul_mul, map_add,
+    abelianizationAddEquiv_ofMul_of_coe_S, abelianizationAddEquiv_ofMul_of_coe_T]
+  decide
+
+@[simp]
+theorem abelianizationAddEquiv_symm_one :
+    abelianizationAddEquiv.symm 1 = .ofMul (Group.Abelianization.of (T : PSL(2, ℤ))) :=
+  abelianizationAddEquiv.symm_apply_eq.mpr abelianizationAddEquiv_ofMul_of_coe_T.symm
+
+@[simp]
+theorem abelianizationAddEquiv_symm_intCast (k : ℤ) :
+    abelianizationAddEquiv.symm (k : ZMod 6) =
+      .ofMul (Group.Abelianization.of ((T : PSL(2, ℤ)) ^ k)) := by
+  rw [← zsmul_one k, map_zsmul, abelianizationAddEquiv_symm_one, map_zpow, ofMul_zpow]
+
+/-- The abelianization of `PSL(2, ℤ)` has order `6`. -/
+@[simp]
+theorem natCard_abelianization : Nat.card (Group.Abelianization PSL(2, ℤ)) = 6 := by
+  rw [Nat.card_congr abelianizationAddEquiv.toMultiplicativeRight.toEquiv,
+    Nat.card_congr Multiplicative.toAdd, Nat.card_zmod]
+
+/-- The commutator subgroup `[PSL(2, ℤ), PSL(2, ℤ)]` has index `6` in `PSL(2, ℤ)`. -/
+@[simp]
+theorem index_commutator : (commutator PSL(2, ℤ)).index = 6 :=
+  natCard_abelianization
 
 /-! ### The abelianization of `SL(2, ℤ)` -/
 

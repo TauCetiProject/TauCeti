@@ -5,45 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
+public import Mathlib.GroupTheory.Abelianization.Defs
 public import TauCeti.NumberTheory.Modular.Generators
-import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
-import Mathlib.NumberTheory.Modular
+import TauCeti.GroupTheory.Coprod.Torsion
 import TauCeti.GroupTheory.OrderOfElement.Basic
-import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
-import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.OrderOf
-import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 import TauCeti.NumberTheory.Modular.Abelianization
-import TauCeti.NumberTheory.Modular.Stabilizer
+import TauCeti.NumberTheory.Modular.FreeProduct
 
 /-!
 # Torsion in the modular group
 
 Every element of finite order of `PSL(2, ℤ)` is conjugate to exactly one of `1`, `S`, `R` and
-`R²`, where `S = (0 -1; 1 0)` and `R = S T = (0 -1; 1 1)`. In the free-product picture
-`PSL(2, ℤ) = ℤ/2 ∗ ℤ/3` these are the elements of the two factors, and the statement is the
-classification of torsion in a free product. Here it is proved geometrically. A nontrivial element
-of finite order has an elliptic representative, since hyperbolic and parabolic elements have
-infinite order, so it fixes a point of the upper half-plane. Moving that point into the standard
-fundamental domain, it becomes `i` or `ρ`, and the stabilisers of these two points are generated
-by `S` and by `R`, respectively. Finally `R` and `R²` are not conjugate, because their images `4`
-and `2` in the abelianization `ℤ/6` differ.
+`R²`, where `S = (0 -1; 1 0)` and `R = S T = (0 -1; 1 1)`. Using the free-product presentation
+`PSL(2, ℤ) ≃* ℤ/2 ∗ ℤ/3` (`TauCeti.ModularGroup.coprodEquiv`) and the classification of torsion
+in a free product (`Monoid.Coprod.isOfFinOrder_iff`), every finite-order element of `PSL(2, ℤ)`
+is conjugate into one of the two factors `⟨S⟩ ≅ ℤ/2` or `⟨R⟩ ≅ ℤ/3`. Finally `R` and `R²` are
+not conjugate, because their images `4` and `2` in the abelianization `ℤ/6` differ.
 
 In particular the elements of order two are the conjugates of `S`, and those of order three the
-conjugates of `R` or of `R² = R⁻¹`. These are the elliptic elements whose fixed points are the
-elliptic points of a finite-index subgroup.
+conjugates of `R` or of `R² = R⁻¹`. Every nontrivial finite-order element has nontrivial image in
+the abelianization, so the commutator subgroup `[PSL(2, ℤ), PSL(2, ℤ)]` is torsion-free.
 
 ## Main declarations
 
-* `TauCeti.ModularGroup.isOfFinOrder_iff_exists_smul_eq_self`: an element has finite order
-  exactly when it fixes a point of the upper half-plane.
-* `TauCeti.ModularGroup.isOfFinOrder_iff_eq_one_or_isConj`: an element has finite order exactly
+* `TauCeti.ModularGroup.isConj_of_isOfFinOrder`,
+  `TauCeti.ModularGroup.isOfFinOrder_iff_eq_one_or_isConj`: an element has finite order exactly
   when it is `1` or conjugate to `S`, `R` or `R²`.
 * `TauCeti.ModularGroup.isConj_coe_S_iff_orderOf_eq_two`: the elements of order two form the
   conjugacy class of `S`.
 * `TauCeti.ModularGroup.orderOf_eq_three_iff_isConj`: the elements of order three form the
   conjugacy classes of `R` and `R²`.
 * `TauCeti.ModularGroup.not_isConj_coe_R_coe_R_sq`: these two classes are distinct.
+* `TauCeti.ModularGroup.orderOf_mem_of_isOfFinOrder`: every finite-order element has order `1`,
+  `2`, or `3`.
+* `TauCeti.ModularGroup.instIsMulTorsionFreeCommutator`: the commutator subgroup
+  `[PSL(2, ℤ), PSL(2, ℤ)]` is torsion-free.
 
 ## References
 
@@ -55,93 +51,32 @@ elliptic points of a finite-index subgroup.
 public section
 
 open scoped MatrixGroups
-open UpperHalfPlane ModularGroup
+open ModularGroup
 
 namespace TauCeti.ModularGroup
-
-/-- **Torsion elements of `PSL(2, ℤ)` are elliptic**: an element of finite order fixes a point
-of the upper half-plane. -/
-theorem exists_smul_eq_self_of_isOfFinOrder {g : PSL(2, ℤ)} (hg : IsOfFinOrder g) :
-    ∃ z : ℍ, g • z = z := by
-  obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective g
-  by_cases h1 : (γ : PSL(2, ℤ)) = 1
-  · exact ⟨I, by rw [h1, one_smul]⟩
-  have hell := Matrix.ProjectiveSpecialLinearGroup.isElliptic_of_isOfFinOrder_mk hg h1
-  have hd : (Matrix.SpecialLinearGroup.mapGL ℝ γ).val.det = 1 := by
-    rw [← Matrix.GeneralLinearGroup.val_det_apply]
-    simp
-  have hellR : (Matrix.SpecialLinearGroup.mapGL ℝ γ).IsElliptic := by
-    rw [Matrix.GeneralLinearGroup.IsElliptic, Matrix.SpecialLinearGroup.mapGL_coe_matrix]
-    exact Matrix.IsElliptic.map_intCast hell
-  refine ⟨fixedPt _ hellR, ?_⟩
-  rw [pslMk_smul]
-  exact (gl_smul_eq_self_iff_eq_fixedPt (by rw [hd]; norm_num) hellR).2 rfl
-
-/-- **The elliptic elements of `PSL(2, ℤ)` are its torsion**: an element has finite order exactly
-when it fixes a point of the upper half-plane. Point stabilisers are finite, of order at most
-`3`. -/
-theorem isOfFinOrder_iff_exists_smul_eq_self {g : PSL(2, ℤ)} :
-    IsOfFinOrder g ↔ ∃ z : ℍ, g • z = z := by
-  refine ⟨exists_smul_eq_self_of_isOfFinOrder, fun ⟨z, hz⟩ ↦ ?_⟩
-  have hpos := ellipticOrder_pos (Quotient.mk'' z)
-  rw [ellipticOrder_mk] at hpos
-  have : Finite (MulAction.stabilizer PSL(2, ℤ) z) := Nat.finite_of_card_ne_zero hpos.ne'
-  exact (MulAction.stabilizer PSL(2, ℤ) z).subtype.isOfFinOrder
-    (isOfFinOrder_of_finite (⟨g, hz⟩ : MulAction.stabilizer PSL(2, ℤ) z))
-
-/-- A matrix fixing a point of `ℍ`, with nontrivial class in `PSL(2, ℤ)`, has a conjugate other
-than `±1` fixing `i` or `ρ`: moving the point into the fundamental domain `𝒟`, it must be one of
-the three points `i`, `ρ`, `ρ + 1` with nontrivial stabiliser, and `ρ + 1 = T ρ`. -/
-private theorem exists_conj_smul_eq_I_or_eq_ρ {γ : SL(2, ℤ)} {z : ℍ} (hz : γ • z = z)
-    (hγ : (γ : PSL(2, ℤ)) ≠ 1) : ∃ h : SL(2, ℤ), h * γ * h⁻¹ ≠ 1 ∧ h * γ * h⁻¹ ≠ -1 ∧
-      ((h * γ * h⁻¹) • I = I ∨ (h * γ * h⁻¹) • ρ = ρ) := by
-  have hfix (h : SL(2, ℤ)) : (h * γ * h⁻¹) • (h • z) = h • z := by
-    rw [mul_smul, mul_smul, inv_smul_smul, hz]
-  -- a conjugate of `γ` is not central, since its class in `PSL(2, ℤ)` is a conjugate of `γ ≠ 1`
-  have hc (h : SL(2, ℤ)) : h * γ * h⁻¹ ∉ Subgroup.center SL(2, ℤ) := fun hc ↦ hγ <|
-    (conj_eq_one_iff (a := (h : PSL(2, ℤ)))).1 <| by
-      simpa only [QuotientGroup.mk_mul, QuotientGroup.mk_inv] using
-        (QuotientGroup.eq_one_iff (h * γ * h⁻¹)).2 hc
-  have hne (h : SL(2, ℤ)) : h * γ * h⁻¹ ≠ 1 ∧ h * γ * h⁻¹ ≠ -1 := by
-    simpa [Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one, not_or] using hc h
-  obtain ⟨h, hh⟩ := exists_smul_mem_fd z
-  by_cases hI : h • z = I
-  · exact ⟨h, (hne h).1, (hne h).2, Or.inl (hI ▸ hfix h)⟩
-  by_cases hρ : h • z = ρ
-  · exact ⟨h, (hne h).1, (hne h).2, Or.inr (hρ ▸ hfix h)⟩
-  by_cases hρ' : h • z = (1 : ℝ) +ᵥ ρ
-  · have hTρ : (T⁻¹ * h) • z = ρ := by
-      rw [mul_smul, hρ', inv_smul_eq_iff, modular_T_smul]
-    exact ⟨T⁻¹ * h, (hne _).1, (hne _).2, Or.inr (hTρ ▸ hfix _)⟩
-  · refine (hc h ?_).elim
-    rw [Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
-    exact stabilizer_of_ne hh (hfix h) hI hρ hρ'
 
 /-- A nontrivial element of finite order of `PSL(2, ℤ)` is conjugate to `S`, to `R` or to `R²`. -/
 theorem isConj_of_isOfFinOrder {g : PSL(2, ℤ)} (hg : IsOfFinOrder g) (h1 : g ≠ 1) :
     IsConj g S ∨ IsConj g R ∨ IsConj g ((R : PSL(2, ℤ)) ^ 2) := by
-  obtain ⟨z, hz⟩ := exists_smul_eq_self_of_isOfFinOrder hg
-  obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective g
-  rw [pslMk_smul] at hz
-  obtain ⟨h, hne1, hne2, hw⟩ := exists_conj_smul_eq_I_or_eq_ρ hz h1
-  have hconj : IsConj (γ : PSL(2, ℤ)) ((h * γ * h⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) :=
-    isConj_iff.2 ⟨h, by rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]⟩
-  rcases hw with hw | hw
-  · have hS := stabilizer_I.1 hw
-    simp only [Finset.mem_insert, Finset.mem_singleton, hne1, hne2, false_or] at hS
-    left
-    rcases hS with hS | hS <;> rw [hS] at hconj
-    · exact hconj
-    · rwa [Matrix.ProjectiveSpecialLinearGroup.mk_neg] at hconj
-  · have hR := stabilizer_ρ.1 hw
-    simp only [Finset.mem_insert, Finset.mem_singleton, hne1, hne2, false_or] at hR
-    right
-    rcases hR with hR | hR | hR | hR <;> rw [hR] at hconj
-    · exact Or.inl (by rwa [← R_def] at hconj)
-    · exact Or.inl (by rwa [Matrix.ProjectiveSpecialLinearGroup.mk_neg, ← R_def] at hconj)
-    · exact Or.inr (by rwa [← R_sq, QuotientGroup.mk_pow] at hconj)
-    · exact Or.inr (by
-        rwa [Matrix.ProjectiveSpecialLinearGroup.mk_neg, ← R_sq, QuotientGroup.mk_pow] at hconj)
+  rcases Monoid.Coprod.isOfFinOrder_iff.mp (coprodEquiv.toMonoidHom.isOfFinOrder hg) with
+    ⟨x, -, hconj⟩ | ⟨y, -, hconj⟩
+  · have hc : IsConj g (coprodEquiv.symm (Monoid.Coprod.inl x)) := by
+      simpa using coprodEquiv.symm.toMonoidHom.map_isConj hconj
+    rcases (by decide : ∀ a : ZMod 2, a = 0 ∨ a = 1) x.toAdd with hx | hx
+    · have hx1 : x = 1 := by rw [← ofAdd_toAdd x, hx, ofAdd_zero]
+      exact absurd (isConj_one_left.mp (by simpa [hx1] using hc)) h1
+    · have hx1 : x = .ofAdd 1 := by rw [← ofAdd_toAdd x, hx]
+      exact Or.inl (by simpa [hx1] using hc)
+  · have hc : IsConj g (coprodEquiv.symm (Monoid.Coprod.inr y)) := by
+      simpa using coprodEquiv.symm.toMonoidHom.map_isConj hconj
+    rcases (by decide : ∀ a : ZMod 3, a = 0 ∨ a = 1 ∨ a = 2) y.toAdd with hy | hy | hy
+    · have hy1 : y = 1 := by rw [← ofAdd_toAdd y, hy, ofAdd_zero]
+      exact absurd (isConj_one_left.mp (by simpa [hy1] using hc)) h1
+    · have hy1 : y = .ofAdd 1 := by rw [← ofAdd_toAdd y, hy]
+      exact Or.inr (Or.inl (by simpa [hy1] using hc))
+    · have hy2 : y = .ofAdd ((2 : ℕ) : ZMod 3) := by rw [← ofAdd_toAdd y, hy]; rfl
+      rw [hy2, coprodEquiv_symm_inr_ofAdd_natCast] at hc
+      exact Or.inr (Or.inr hc)
 
 /-- **The torsion of `PSL(2, ℤ)`**: an element has finite order exactly when it is the identity
 or conjugate to `S`, to `R` or to `R²`. -/
@@ -182,7 +117,59 @@ theorem orderOf_eq_three_iff_isConj {g : PSL(2, ℤ)} :
 classes in the abelianization `ℤ/6` are `4` and `2`. -/
 theorem not_isConj_coe_R_coe_R_sq : ¬ IsConj (R : PSL(2, ℤ)) ((R : PSL(2, ℤ)) ^ 2) := by
   intro h
-  have h' := (abelianizationMulEquiv.toMonoidHom.comp Group.Abelianization.of).map_isConj h
-  simp +decide [isConj_iff_eq, ← ofAdd_nsmul] at h'
+  have h' := (abelianizationAddEquiv.toMultiplicativeRight.toMonoidHom.comp
+    Group.Abelianization.of).map_isConj h
+  have hR :
+      abelianizationAddEquiv.toMultiplicativeRight (Group.Abelianization.of (R : PSL(2, ℤ))) =
+        .ofAdd 4 :=
+    congrArg Multiplicative.ofAdd abelianizationAddEquiv_ofMul_of_coe_R
+  simp +decide [isConj_iff_eq, hR] at h'
+
+/-- In `PSL(2, ℤ)`, `U` is not conjugate to `U²`. -/
+theorem not_isConj_coe_U_sq : ¬ IsConj (U : PSL(2, ℤ)) ((U : PSL(2, ℤ)) ^ 2) :=
+  fun h ↦ not_isConj_coe_R_coe_R_sq
+    ((isConj_coe_R_coe_U_sq.trans h.symm).trans isConj_coe_U_coe_R_sq)
+
+/-- In `PSL(2, ℤ)`, `R = S T` and `U = S T⁻¹` are not conjugate. -/
+theorem not_isConj_coe_R_coe_U : ¬ IsConj (R : PSL(2, ℤ)) (U : PSL(2, ℤ)) :=
+  fun h ↦ not_isConj_coe_R_coe_R_sq (h.trans isConj_coe_U_coe_R_sq)
+
+/-- Every finite-order element of `PSL(2, ℤ)` has order `1`, `2`, or `3`. -/
+theorem orderOf_mem_of_isOfFinOrder {g : PSL(2, ℤ)} (hg : IsOfFinOrder g) :
+    orderOf g ∈ ({1, 2, 3} : Set ℕ) := by
+  rcases isOfFinOrder_iff_eq_one_or_isConj.mp hg with rfl | ⟨_, hc⟩ | ⟨_, hc⟩ | ⟨_, hc⟩
+  · simp
+  · simp [hc.orderOf_eq]
+  · simp [hc.orderOf_eq]
+  · simp [hc.orderOf_eq, coe_R_sq]
+
+/-- Every nonidentity finite-order element of `PSL(2, ℤ)` has nontrivial image in the
+abelianization (`3`, `4`, or `2` in `ZMod 6`). -/
+theorem abelianization_of_ne_one_of_isOfFinOrder {g : PSL(2, ℤ)} (hg : IsOfFinOrder g)
+    (hne : g ≠ 1) : Group.Abelianization.of g ≠ 1 := by
+  intro hab
+  have hzero : abelianizationAddEquiv (.ofMul (Group.Abelianization.of g)) = 0 := by simp [hab]
+  rcases isOfFinOrder_iff_eq_one_or_isConj.mp hg with rfl | hc | hc | hc
+  · exact hne rfl
+  · have heq := isConj_iff_eq.mp (Group.Abelianization.of.map_isConj hc)
+    rw [heq, abelianizationAddEquiv_ofMul_of_coe_S] at hzero
+    revert hzero; decide
+  · have heq := isConj_iff_eq.mp (Group.Abelianization.of.map_isConj hc)
+    rw [heq, abelianizationAddEquiv_ofMul_of_coe_R] at hzero
+    revert hzero; decide
+  · have heq := isConj_iff_eq.mp (Group.Abelianization.of.map_isConj hc)
+    simp only [heq, map_pow, ofMul_pow, map_nsmul, abelianizationAddEquiv_ofMul_of_coe_R] at hzero
+    revert hzero; decide
+
+/-- **The commutator subgroup `[PSL(2, ℤ), PSL(2, ℤ)]` is torsion-free.** Together with
+`index_commutator`, this shows the divisibility bound `6 ∣ Γ'.index`
+(`TauCeti.ModularGroup.six_dvd_index_of_isMulTorsionFree`) is sharp. -/
+instance instIsMulTorsionFreeCommutator : IsMulTorsionFree (commutator PSL(2, ℤ)) :=
+  IsMulTorsionFree.of_not_isOfFinOrder fun ⟨g, hg⟩ hne hfin ↦ by
+    have hne' : g ≠ 1 := fun h1 ↦ hne (Subtype.ext h1)
+    have hker : Group.Abelianization.of g = 1 :=
+      MonoidHom.mem_ker.mp ((Group.Abelianization.ker_of PSL(2, ℤ)).symm ▸ hg)
+    exact abelianization_of_ne_one_of_isOfFinOrder
+      ((commutator PSL(2, ℤ)).subtype.isOfFinOrder hfin) hne' hker
 
 end TauCeti.ModularGroup

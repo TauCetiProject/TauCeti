@@ -115,6 +115,19 @@ theorem R_mul_U_inv : R * U⁻¹ = S * T ^ 2 * S⁻¹ := by
 theorem T_mul_S_mul_U : T * S * U = (-1 : SL(2, ℤ)) := by
   decide
 
+/-- Projectively, `R = S * T`. -/
+theorem coe_R_eq_coe_S_mul_coe_T : (R : PSL(2, ℤ)) = (S : PSL(2, ℤ)) * T := by
+  rw [R_def, QuotientGroup.mk_mul]
+
+/-- Projectively, `U = S * T⁻¹`. -/
+theorem coe_U_eq_coe_S_mul_coe_T_inv :
+    (U : PSL(2, ℤ)) = (S : PSL(2, ℤ)) * (T : PSL(2, ℤ))⁻¹ := by
+  rw [U_def, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+
+/-- Projectively, multiplying `R = S * T` on the left by `S` recovers `T`. -/
+theorem coe_S_mul_coe_R : (S : PSL(2, ℤ)) * (R : PSL(2, ℤ)) = T := by
+  rw [coe_R_eq_coe_S_mul_coe_T, ← mul_assoc, ← sq, coe_S_sq, one_mul]
+
 /-- The negative `-U = [[0, 1], [-1, 1]]` of `U` has order six: its cube is `-1`. -/
 @[simp]
 theorem neg_U_pow_three : (-U) ^ 3 = (-1 : SL(2, ℤ)) := by
@@ -146,6 +159,10 @@ theorem coe_U_pow_three : (U : PSL(2, ℤ)) ^ 3 = 1 := by
 theorem coe_R_sq : (R : PSL(2, ℤ)) ^ 2 = (R : PSL(2, ℤ))⁻¹ :=
   eq_inv_of_mul_eq_one_left (by rw [← pow_succ, coe_R_pow_three])
 
+/-- In `PSL(2, ℤ)`, the inverse of the order-three generator `U = S T⁻¹` is `U²`. -/
+theorem coe_U_inv : (U : PSL(2, ℤ))⁻¹ = (U : PSL(2, ℤ)) ^ 2 :=
+  inv_eq_of_mul_eq_one_right (by rw [← pow_succ', coe_U_pow_three])
+
 /-- The triangle relation in the convention with positive cusp translation. -/
 theorem coe_T_mul_coe_S_mul_coe_U : (T : PSL(2, ℤ)) * S * U = 1 := by
   rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, T_mul_S_mul_U,
@@ -166,6 +183,16 @@ theorem coe_S_mul_coe_U_inv_mul_coe_S :
   rw [R_def, U_def, QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv,
     _root_.mul_inv_rev, inv_inv, coe_S_inv, ← mul_assoc (S : PSL(2, ℤ)) T S,
     _root_.Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S]
+
+/-- In `PSL(2, ℤ)`, `U = S T⁻¹` is conjugate to `R² = (S T)⁻¹` (namely by `S`). -/
+theorem isConj_coe_U_coe_R_sq : IsConj (U : PSL(2, ℤ)) ((R : PSL(2, ℤ)) ^ 2) := by
+  rw [coe_R_sq]
+  exact (isConj_iff.mpr ⟨(S : PSL(2, ℤ)), coe_S_mul_coe_R_inv_mul_coe_S_inv⟩).symm
+
+/-- In `PSL(2, ℤ)`, `R = S T` is conjugate to `U² = (S T⁻¹)⁻¹` (namely by `S`). -/
+theorem isConj_coe_R_coe_U_sq : IsConj (R : PSL(2, ℤ)) ((U : PSL(2, ℤ)) ^ 2) := by
+  rw [← coe_U_inv]
+  exact (isConj_iff.mpr ⟨(S : PSL(2, ℤ)), by rw [coe_S_inv, coe_S_mul_coe_U_inv_mul_coe_S]⟩).symm
 
 /-- The projective class of `R` has exact order three. -/
 @[simp]

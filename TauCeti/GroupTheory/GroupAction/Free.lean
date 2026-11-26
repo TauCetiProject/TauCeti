@@ -10,7 +10,6 @@ public import Mathlib.Data.Finset.Basic
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.GroupTheory.QuotientGroup.Basic
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Logic.Function.Iterate
 import Mathlib.Order.Preorder.Finite

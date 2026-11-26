@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Coprod.Basic
-import Mathlib.Algebra.Group.ULift
 import Mathlib.Algebra.Ring.Int.Defs
-import TauCeti.GroupTheory.CoprodI
+import TauCeti.GroupTheory.CoprodI.Basic
 import TauCeti.GroupTheory.CoprodI.Word
 
 /-!
@@ -81,16 +80,8 @@ theorem map_injective {f : M →* M'} {g : N →* N'} (hf : Function.Injective f
   -- `M` and `N` are monoids, since they embed in the monoids `M'` and `N'`.
   let _ : Monoid M := { ‹MulOneClass M› with mul_assoc a b c := hf (by simp [mul_assoc]) }
   let _ : Monoid N := { ‹MulOneClass N› with mul_assoc a b c := hg (by simp [mul_assoc]) }
-  -- Lift the factors to common universes, so that `M`, `N` and `M'`, `N'` are families over `Bool`.
-  let _ : ∀ b, Monoid (cond b (ULift.{u} N) (ULift.{v} M))
-    | false => inferInstanceAs (Monoid (ULift M))
-    | true => inferInstanceAs (Monoid (ULift N))
-  let _ : ∀ b, Monoid (cond b (ULift.{u'} N') (ULift.{v'} M'))
-    | false => inferInstanceAs (Monoid (ULift M'))
-    | true => inferInstanceAs (Monoid (ULift N'))
   refine map_injective_of_mulEquiv MulEquiv.ulift MulEquiv.ulift MulEquiv.ulift MulEquiv.ulift
-    (map_injective_of_bool (A := fun b => cond b (ULift.{u} N) (ULift.{v} M))
-      (B := fun b => cond b (ULift.{u'} N') (ULift.{v'} M')) ?_ ?_)
+    (map_injective_of_bool (A := Factors M N) (B := Factors M' N') ?_ ?_)
   exacts [MulEquiv.ulift.symm.injective.comp (hf.comp MulEquiv.ulift.injective),
     MulEquiv.ulift.symm.injective.comp (hg.comp MulEquiv.ulift.injective)]
 

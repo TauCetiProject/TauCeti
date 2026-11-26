@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.Conjugate
 public import TauCeti.NumberTheory.ModularForms.Petersson.FiniteIndex
 import TauCeti.NumberTheory.ModularForms.Petersson.Adjoint
-import TauCeti.NumberTheory.Modular
+import TauCeti.NumberTheory.Modular.Basic
 
 /-!
 # The Petersson product of conjugate forms

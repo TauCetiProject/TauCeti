@@ -29,13 +29,19 @@ products.
 * `Monoid.CoprodI.Word.prod_map`: the product of the image is the image of the product.
 * `Monoid.CoprodI.Word.eq_empty_of_lift_prod_eq_one`: a reduced word whose product the
   homomorphism induced by the `f i` sends to `1` is empty.
+* `Monoid.CoprodI.NeWord.injective_pow_prod_of_ne`: a nonempty reduced word whose endpoints lie
+  in distinct factors has injective power map `n ↦ w.prod ^ n`.
 * `Monoid.CoprodI.lift_of_comp_injective`: injective homomorphisms of the factors induce an
   injective homomorphism of free products.
 -/
 
 public section
 
-namespace Monoid.CoprodI.Word
+namespace Monoid.CoprodI
+
+section Word
+
+namespace Word
 
 variable {ι : Type*} {M N : ι → Type*} [∀ i, Monoid (M i)] [∀ i, Monoid (N i)]
 
@@ -106,9 +112,51 @@ theorem eq_empty_of_lift_prod_eq_one (hf : ∀ l ∈ w.toList, f l.1 l.2 ≠ 1)
   rw [← map_eq_empty_iff f hf]
   exact prod_injective (by rw [prod_map, h, prod_empty])
 
-end Monoid.CoprodI.Word
+end Word
 
-namespace Monoid.CoprodI
+end Word
+
+section NeWord
+
+namespace NeWord
+
+variable {ι : Type*} {M : ι → Type*} [∀ i, Monoid (M i)]
+
+/-- The `(n + 1)`-fold reduced concatenation of a `NeWord M i j` with `i ≠ j`. -/
+private def npowSucc {i j : ι} (hij : i ≠ j) (w : NeWord M i j) : ℕ → NeWord M i j
+  | 0 => w
+  | n + 1 => append w hij.symm (npowSucc hij w n)
+
+private theorem prod_npowSucc {i j : ι} (hij : i ≠ j) (w : NeWord M i j) :
+    ∀ n : ℕ, (npowSucc hij w n).prod = w.prod ^ (n + 1)
+  | 0 => (pow_one w.prod).symm
+  | n + 1 => by rw [npowSucc, append_prod, prod_npowSucc hij w n, ← pow_succ']
+
+private theorem length_toList_npowSucc {i j : ι} (hij : i ≠ j) (w : NeWord M i j) :
+    ∀ n : ℕ, (npowSucc hij w n).toList.length = (n + 1) * w.toList.length
+  | 0 => (one_mul _).symm
+  | n + 1 => by
+      rw [npowSucc, toList, List.length_append, length_toList_npowSucc hij w n,
+        Nat.add_mul (n + 1) 1 w.toList.length, one_mul, add_comm]
+
+/-- A nonempty reduced word whose first and last letters lie in distinct factors has injective
+power map `n ↦ w.prod ^ n`: adjacent copies of `w` do not cancel at their boundary. -/
+theorem injective_pow_prod_of_ne {i j : ι} (hij : i ≠ j) (w : NeWord M i j) :
+    Function.Injective (w.prod ^ · : ℕ → CoprodI M) := by
+  classical
+  have hlen : ∀ n : ℕ, (Word.equiv (w.prod ^ n)).toList.length = n * w.toList.length := by
+    rintro (_ | n)
+    · rw [pow_zero, ← Word.prod_empty, Word.equiv_prod]
+      simp
+    · rw [← prod_npowSucc hij w n, NeWord.prod, Word.equiv_prod]
+      exact length_toList_npowSucc hij w n
+  have hpos : 0 < w.toList.length := List.length_pos_iff.mpr w.toList_ne_nil
+  intro m n (hmn : w.prod ^ m = w.prod ^ n)
+  exact Nat.eq_of_mul_eq_mul_right hpos ((hlen m).symm.trans (by rw [hmn, hlen n]))
+
+end NeWord
+
+end NeWord
 
 variable {ι : Type*} {M N : ι → Type*} [∀ i, Monoid (M i)] [∀ i, Monoid (N i)]
 

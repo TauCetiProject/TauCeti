@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-public import TauCeti.NumberTheory.Modular
+public import TauCeti.NumberTheory.Modular.Basic
 
 /-!
 # Adjoining the centre to a subgroup of `SL(2, ℤ)`

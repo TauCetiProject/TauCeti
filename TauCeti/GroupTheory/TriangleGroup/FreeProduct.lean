@@ -1,0 +1,315 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Data.ZMod.Basic
+public import TauCeti.GroupTheory.Coprod.Abelianization
+public import TauCeti.GroupTheory.TriangleGroup.Basic
+import TauCeti.Data.ZMod.MonoidHomEquiv
+import TauCeti.GroupTheory.Coprod.Torsion
+import TauCeti.GroupTheory.Index.TorsionFree
+
+/-!
+# Free-product presentation of triangle groups `Δ(a, b, 0)`
+
+When the third exponent of a triangle group is `0`, the relator `z ^ 0 = 1` is vacuous and the
+product relation `z * y * x = 1` simply expresses `z = (y * x)⁻¹` in terms of `x` and `y`. What
+remains is `⟨x, y | x ^ a, y ^ b⟩`, the free product of two cyclic groups of orders `a` and `b`
+(with `0` giving an infinite cyclic factor `Multiplicative (ZMod 0) = Multiplicative ℤ`).
+
+From the isomorphism `TauCeti.TriangleGroup.equivCoprod` we deduce for all `a b : ℕ`:
+
+* the exact generator orders `orderOf (x a b 0) = a` and `orderOf (y a b 0) = b`, and
+  `orderOf (z a b 0) = 0` whenever `a ≠ 1` and `b ≠ 1`;
+* the abelianization `Additive (Group.Abelianization (TriangleGroup a b 0)) ≃+ ZMod a × ZMod b`;
+* the classification of finite-order elements up to conjugacy as powers of `x a b 0` or `y a b 0`;
+* for `a, b > 0`, divisibility `Nat.lcm a b ∣ H.index` for every torsion-free subgroup `H`.
+
+## Main definitions
+
+* `TauCeti.TriangleGroup.equivCoprod`: the isomorphism
+  `TriangleGroup a b 0 ≃* Multiplicative (ZMod a) ∗ Multiplicative (ZMod b)`.
+* `TauCeti.TriangleGroup.abelianizationMulEquivProd`,
+  `TauCeti.TriangleGroup.abelianizationAddEquivProd`: the abelianization of `TriangleGroup a b 0`
+  as `(ZMod a) × (ZMod b)`.
+
+## Main results
+
+* `TauCeti.TriangleGroup.orderOf_x_zero`, `TauCeti.TriangleGroup.orderOf_y_zero`,
+  `TauCeti.TriangleGroup.orderOf_z_zero`: exact orders of the three generators of `Δ(a, b, 0)`.
+* `TauCeti.TriangleGroup.isOfFinOrder_iff`, `TauCeti.TriangleGroup.isOfFinOrder_iff_of_neZero`,
+  `TauCeti.TriangleGroup.orderOf_eq_iff`: torsion and order classification in `Δ(a, b, 0)`.
+* `TauCeti.TriangleGroup.lcm_dvd_index_of_isMulTorsionFree`: `Nat.lcm a b` divides the index of
+  every torsion-free subgroup of `Δ(a, b, 0)` when `a, b ≠ 0`.
+
+## References
+
+* R. C. Lyndon, P. E. Schupp, *Combinatorial Group Theory*, Springer, 1977, Chapter IV, §1.
+* J.-P. Serre, *Trees*, Springer Monographs in Mathematics, 1980, Chapter I, §4.2.
+-/
+
+public section
+
+noncomputable section
+
+open scoped Monoid.Coprod
+
+namespace TauCeti
+
+namespace TriangleGroup
+
+/-! ### Isomorphism with `Multiplicative (ZMod a) ∗ Multiplicative (ZMod b)` -/
+
+private def toCoprodHom (a b : ℕ) :
+    TriangleGroup a b 0 →* Multiplicative (ZMod a) ∗ Multiplicative (ZMod b) :=
+  lift (Monoid.Coprod.inl (.ofAdd 1)) (Monoid.Coprod.inr (.ofAdd 1))
+    ((Monoid.Coprod.inl (.ofAdd 1))⁻¹ * (Monoid.Coprod.inr (.ofAdd 1))⁻¹)
+    (by rw [← map_pow, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero, map_one])
+    (by rw [← map_pow, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero, map_one])
+    (pow_zero _)
+    (by simp [mul_assoc])
+
+private def fromCoprodHom (a b : ℕ) :
+    Multiplicative (ZMod a) ∗ Multiplicative (ZMod b) →* TriangleGroup a b 0 :=
+  Monoid.Coprod.lift (zmodLift (x a b 0) (x_pow a b 0)) (zmodLift (y a b 0) (y_pow a b 0))
+
+/-- **Free-product presentation of `Δ(a, b, 0)`.** For all `a b : ℕ`, `TriangleGroup a b 0` is
+isomorphic to the free product `Multiplicative (ZMod a) ∗ Multiplicative (ZMod b)`, sending `x` to
+`inl (ofAdd 1)`, `y` to `inr (ofAdd 1)` and `z` to `(inl (ofAdd 1))⁻¹ * (inr (ofAdd 1))⁻¹`. -/
+def equivCoprod (a b : ℕ) :
+    TriangleGroup a b 0 ≃* Multiplicative (ZMod a) ∗ Multiplicative (ZMod b) :=
+  MonoidHom.toMulEquiv (toCoprodHom a b) (fromCoprodHom a b)
+    (hom_ext a b 0
+      (by simp [toCoprodHom, fromCoprodHom])
+      (by simp [toCoprodHom, fromCoprodHom]))
+    (Monoid.Coprod.hom_ext
+      (MonoidHom.eq_of_eqOn_dense (Multiplicative.closure_ofAdd_one a) <| by
+        rintro _ rfl
+        simp [toCoprodHom, fromCoprodHom])
+      (MonoidHom.eq_of_eqOn_dense (Multiplicative.closure_ofAdd_one b) <| by
+        rintro _ rfl
+        simp [toCoprodHom, fromCoprodHom]))
+
+@[simp]
+theorem equivCoprod_x (a b : ℕ) :
+    equivCoprod a b (x a b 0) = Monoid.Coprod.inl (.ofAdd 1) := by
+  simp [equivCoprod, toCoprodHom]
+
+@[simp]
+theorem equivCoprod_y (a b : ℕ) :
+    equivCoprod a b (y a b 0) = Monoid.Coprod.inr (.ofAdd 1) := by
+  simp [equivCoprod, toCoprodHom]
+
+@[simp]
+theorem equivCoprod_z (a b : ℕ) :
+    equivCoprod a b (z a b 0) =
+      (Monoid.Coprod.inl (.ofAdd 1))⁻¹ * (Monoid.Coprod.inr (.ofAdd 1))⁻¹ := by
+  simp [equivCoprod, toCoprodHom]
+
+@[simp]
+theorem equivCoprod_symm_inl_ofAdd_intCast (a b : ℕ) (k : ℤ) :
+    (equivCoprod a b).symm (Monoid.Coprod.inl (.ofAdd (k : ZMod a))) = x a b 0 ^ k := by
+  simp [equivCoprod, fromCoprodHom]
+
+@[simp]
+theorem equivCoprod_symm_inr_ofAdd_intCast (a b : ℕ) (k : ℤ) :
+    (equivCoprod a b).symm (Monoid.Coprod.inr (.ofAdd (k : ZMod b))) = y a b 0 ^ k := by
+  simp [equivCoprod, fromCoprodHom]
+
+@[simp]
+theorem equivCoprod_symm_inl_ofAdd_natCast (a b : ℕ) (k : ℕ) :
+    (equivCoprod a b).symm (Monoid.Coprod.inl (.ofAdd (k : ZMod a))) = x a b 0 ^ k := by
+  simp [equivCoprod, fromCoprodHom]
+
+@[simp]
+theorem equivCoprod_symm_inr_ofAdd_natCast (a b : ℕ) (k : ℕ) :
+    (equivCoprod a b).symm (Monoid.Coprod.inr (.ofAdd (k : ZMod b))) = y a b 0 ^ k := by
+  simp [equivCoprod, fromCoprodHom]
+
+@[simp]
+theorem equivCoprod_symm_inl_ofAdd_one (a b : ℕ) :
+    (equivCoprod a b).symm (Monoid.Coprod.inl (.ofAdd 1)) = x a b 0 := by
+  simp [equivCoprod, fromCoprodHom]
+
+@[simp]
+theorem equivCoprod_symm_inr_ofAdd_one (a b : ℕ) :
+    (equivCoprod a b).symm (Monoid.Coprod.inr (.ofAdd 1)) = y a b 0 := by
+  simp [equivCoprod, fromCoprodHom]
+
+/-! ### Exact orders of the generators -/
+
+private abbrev inlHom (a b : ℕ) :
+    Multiplicative (ZMod a) →* Multiplicative (ZMod a) ∗ Multiplicative (ZMod b) :=
+  Monoid.Coprod.inl
+
+private abbrev inrHom (a b : ℕ) :
+    Multiplicative (ZMod b) →* Multiplicative (ZMod a) ∗ Multiplicative (ZMod b) :=
+  Monoid.Coprod.inr
+
+/-- In `Δ(a, b, 0)`, the generator `x` has exact order `a` (equal to `0`, encoding infinite order,
+when `a = 0`). -/
+@[simp]
+theorem orderOf_x_zero (a b : ℕ) : orderOf (x a b 0) = a := by
+  rw [← (equivCoprod a b).orderOf_eq, equivCoprod_x,
+    orderOf_injective (inlHom a b) Monoid.Coprod.inl_injective (.ofAdd 1),
+    orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
+
+/-- In `Δ(a, b, 0)`, the generator `y` has exact order `b` (equal to `0`, encoding infinite order,
+when `b = 0`). -/
+@[simp]
+theorem orderOf_y_zero (a b : ℕ) : orderOf (y a b 0) = b := by
+  rw [← (equivCoprod a b).orderOf_eq, equivCoprod_y,
+    orderOf_injective (inrHom a b) Monoid.Coprod.inr_injective (.ofAdd 1),
+    orderOf_ofAdd_eq_addOrderOf, ZMod.addOrderOf_one]
+
+private theorem ofAdd_one_inv_ne_one {n : ℕ} (hn : n ≠ 1) :
+    (Multiplicative.ofAdd (1 : ZMod n))⁻¹ ≠ 1 := by
+  intro h
+  have h1 : (1 : ZMod n) = 0 := by simpa using congrArg Multiplicative.toAdd (inv_eq_one.mp h)
+  exact hn (ZMod.one_eq_zero_iff.mp h1)
+
+/-- In `Δ(a, b, 0)` with `a ≠ 1` and `b ≠ 1`, the third generator `z = (y * x)⁻¹` has infinite
+order (`orderOf = 0`), since under `equivCoprod` it is a product of nonidentity elements from
+distinct factors. -/
+theorem orderOf_z_zero {a b : ℕ} (ha : a ≠ 1) (hb : b ≠ 1) : orderOf (z a b 0) = 0 := by
+  rw [← (equivCoprod a b).orderOf_eq, equivCoprod_z,
+    ← (inlHom a b).map_inv, ← (inrHom a b).map_inv]
+  exact Monoid.Coprod.orderOf_inl_mul_inr_eq_zero
+    (ofAdd_one_inv_ne_one ha) (ofAdd_one_inv_ne_one hb)
+
+/-! ### Abelianization -/
+
+private def abelianizationMulEquivProd (a b : ℕ) :
+    Group.Abelianization (TriangleGroup a b 0) ≃*
+      Multiplicative (ZMod a) × Multiplicative (ZMod b) :=
+  ((equivCoprod a b).abelianizationCongr.trans Group.Abelianization.coprodMulEquiv).trans
+    (MulEquiv.prodCongr Group.Abelianization.equivOfComm.symm
+      Group.Abelianization.equivOfComm.symm)
+
+/-- **Additive abelianization of `Δ(a, b, 0)`.** Written additively, the abelianization of
+`TriangleGroup a b 0` is isomorphic to `ZMod a × ZMod b`, sending `x` to `(1, 0)`, `y` to `(0, 1)`
+and `z` to `(-1, -1)`. -/
+def abelianizationAddEquivProd (a b : ℕ) :
+    Additive (Group.Abelianization (TriangleGroup a b 0)) ≃+ ZMod a × ZMod b :=
+  MulEquiv.toAdditiveLeft
+    ((abelianizationMulEquivProd a b).trans
+      (MulEquiv.prodMultiplicative (G := ZMod a) (H := ZMod b)).symm)
+
+@[simp]
+theorem abelianizationAddEquivProd_ofMul_of_x (a b : ℕ) :
+    abelianizationAddEquivProd a b (.ofMul (Group.Abelianization.of (x a b 0))) = (1, 0) := by
+  simp [abelianizationAddEquivProd, abelianizationMulEquivProd, MulEquiv.prodCongr]
+
+@[simp]
+theorem abelianizationAddEquivProd_ofMul_of_y (a b : ℕ) :
+    abelianizationAddEquivProd a b (.ofMul (Group.Abelianization.of (y a b 0))) = (0, 1) := by
+  simp [abelianizationAddEquivProd, abelianizationMulEquivProd, MulEquiv.prodCongr]
+
+@[simp]
+theorem abelianizationAddEquivProd_ofMul_of_z (a b : ℕ) :
+    abelianizationAddEquivProd a b (.ofMul (Group.Abelianization.of (z a b 0))) = (-1, -1) := by
+  simp [abelianizationAddEquivProd, abelianizationMulEquivProd, MulEquiv.prodCongr]
+
+/-- The cardinality of the abelianization of `Δ(a, b, 0)` is `a * b`. -/
+@[simp]
+theorem natCard_abelianization (a b : ℕ) :
+    Nat.card (Group.Abelianization (TriangleGroup a b 0)) = a * b := by
+  rw [Nat.card_congr (abelianizationMulEquivProd a b).toEquiv, Nat.card_prod,
+    Nat.card_congr Multiplicative.toAdd, Nat.card_congr Multiplicative.toAdd,
+    Nat.card_zmod, Nat.card_zmod]
+
+/-! ### Torsion classification and index divisibility -/
+
+/-- An element of `Δ(a, b, 0)` has finite order if and only if it is conjugate to a finite-order
+integer power of `x a b 0` or `y a b 0`. -/
+theorem isOfFinOrder_iff {a b : ℕ} {g : TriangleGroup a b 0} :
+    IsOfFinOrder g ↔
+      (∃ k : ℤ, IsOfFinOrder (x a b 0 ^ k) ∧ IsConj g (x a b 0 ^ k)) ∨
+        (∃ k : ℤ, IsOfFinOrder (y a b 0 ^ k) ∧ IsConj g (y a b 0 ^ k)) := by
+  refine ⟨fun hg ↦ ?_, ?_⟩
+  · have hg' : IsOfFinOrder (equivCoprod a b g) :=
+      (equivCoprod a b).toMonoidHom.isOfFinOrder hg
+    rw [Monoid.Coprod.isOfFinOrder_iff] at hg'
+    rcases hg' with ⟨u, hu, hconj⟩ | ⟨v, hv, hconj⟩
+    · obtain ⟨k, hk⟩ := ZMod.intCast_surjective u.toAdd
+      have hu' : u = .ofAdd (k : ZMod a) := by rw [hk, ofAdd_toAdd]
+      subst hu'
+      have hc := (equivCoprod a b).symm.toMonoidHom.map_isConj hconj
+      rw [MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply,
+        equivCoprod_symm_inl_ofAdd_intCast] at hc
+      have hfin : IsOfFinOrder (x a b 0 ^ k) := by
+        rw [← equivCoprod_symm_inl_ofAdd_intCast]
+        exact (equivCoprod a b).symm.toMonoidHom.isOfFinOrder ((inlHom a b).isOfFinOrder hu)
+      exact Or.inl ⟨k, hfin, hc⟩
+    · obtain ⟨k, hk⟩ := ZMod.intCast_surjective v.toAdd
+      have hv' : v = .ofAdd (k : ZMod b) := by rw [hk, ofAdd_toAdd]
+      subst hv'
+      have hc := (equivCoprod a b).symm.toMonoidHom.map_isConj hconj
+      rw [MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply,
+        equivCoprod_symm_inr_ofAdd_intCast] at hc
+      have hfin : IsOfFinOrder (y a b 0 ^ k) := by
+        rw [← equivCoprod_symm_inr_ofAdd_intCast]
+        exact (equivCoprod a b).symm.toMonoidHom.isOfFinOrder ((inrHom a b).isOfFinOrder hv)
+      exact Or.inr ⟨k, hfin, hc⟩
+  · rintro (⟨k, hfin, hconj⟩ | ⟨k, hfin, hconj⟩)
+    · exact hconj.symm.isOfFinOrder hfin
+    · exact hconj.symm.isOfFinOrder hfin
+
+/-- When `a` and `b` are nonzero, an element of `Δ(a, b, 0)` has finite order if and only if it is
+conjugate to `x a b 0 ^ k` for some `k < a` or to `y a b 0 ^ k` for some `k < b`. -/
+theorem isOfFinOrder_iff_of_neZero {a b : ℕ} [NeZero a] [NeZero b] {g : TriangleGroup a b 0} :
+    IsOfFinOrder g ↔
+      (∃ k < a, IsConj g (x a b 0 ^ k)) ∨ (∃ k < b, IsConj g (y a b 0 ^ k)) := by
+  classical
+  have hx : IsOfFinOrder (x a b 0) :=
+    orderOf_pos_iff.mp (by rw [orderOf_x_zero]; exact Nat.pos_of_ne_zero (NeZero.ne a))
+  have hy : IsOfFinOrder (y a b 0) :=
+    orderOf_pos_iff.mp (by rw [orderOf_y_zero]; exact Nat.pos_of_ne_zero (NeZero.ne b))
+  refine ⟨fun hg ↦ ?_, ?_⟩
+  · rcases isOfFinOrder_iff.mp hg with ⟨k, -, hconj⟩ | ⟨k, -, hconj⟩
+    · obtain ⟨m, hm, hm_eq⟩ := Finset.mem_image.mp
+        (hx.mem_zpowers_iff_mem_range_orderOf.mp ⟨k, rfl⟩)
+      rw [Finset.mem_range, orderOf_x_zero] at hm
+      exact Or.inl ⟨m, hm, hm_eq ▸ hconj⟩
+    · obtain ⟨m, hm, hm_eq⟩ := Finset.mem_image.mp
+        (hy.mem_zpowers_iff_mem_range_orderOf.mp ⟨k, rfl⟩)
+      rw [Finset.mem_range, orderOf_y_zero] at hm
+      exact Or.inr ⟨m, hm, hm_eq ▸ hconj⟩
+  · rintro (⟨k, -, hconj⟩ | ⟨k, -, hconj⟩)
+    · exact hconj.symm.isOfFinOrder (hx.pow (n := k))
+    · exact hconj.symm.isOfFinOrder (hy.pow (n := k))
+
+/-- For `1 < n`, an element of `Δ(a, b, 0)` has order `n` if and only if it is conjugate to an
+integer power of `x a b 0` or `y a b 0` of order `n`. -/
+theorem orderOf_eq_iff {a b n : ℕ} (hn : 1 < n) {g : TriangleGroup a b 0} :
+    orderOf g = n ↔
+      (∃ k : ℤ, orderOf (x a b 0 ^ k) = n ∧ IsConj g (x a b 0 ^ k)) ∨
+        (∃ k : ℤ, orderOf (y a b 0 ^ k) = n ∧ IsConj g (y a b 0 ^ k)) := by
+  refine ⟨fun hg ↦ ?_, ?_⟩
+  · have hfin : IsOfFinOrder g := orderOf_pos_iff.mp (by omega)
+    rcases isOfFinOrder_iff.mp hfin with ⟨k, -, hconj⟩ | ⟨k, -, hconj⟩
+    · let ⟨_, hc⟩ := hconj
+      exact Or.inl ⟨k, by rw [← hc.orderOf_eq, hg], hconj⟩
+    · let ⟨_, hc⟩ := hconj
+      exact Or.inr ⟨k, by rw [← hc.orderOf_eq, hg], hconj⟩
+  · rintro (⟨k, hk, ⟨_, hc⟩⟩ | ⟨k, hk, ⟨_, hc⟩⟩) <;> rw [hc.orderOf_eq, hk]
+
+/-- When `a` and `b` are nonzero, `Nat.lcm a b` divides the index of every torsion-free subgroup
+`H ≤ TriangleGroup a b 0`. -/
+theorem lcm_dvd_index_of_isMulTorsionFree {a b : ℕ} [NeZero a] [NeZero b]
+    (H : Subgroup (TriangleGroup a b 0)) [IsMulTorsionFree H] :
+    Nat.lcm a b ∣ H.index := by
+  have hx : IsOfFinOrder (x a b 0) :=
+    orderOf_pos_iff.mp (by rw [orderOf_x_zero]; exact Nat.pos_of_ne_zero (NeZero.ne a))
+  have hy : IsOfFinOrder (y a b 0) :=
+    orderOf_pos_iff.mp (by rw [orderOf_y_zero]; exact Nat.pos_of_ne_zero (NeZero.ne b))
+  refine Nat.lcm_dvd ?_ ?_
+  · simpa [orderOf_x_zero] using H.orderOf_dvd_index_of_isMulTorsionFree hx
+  · simpa [orderOf_y_zero] using H.orderOf_dvd_index_of_isMulTorsionFree hy
+
+end TriangleGroup
+
+end TauCeti

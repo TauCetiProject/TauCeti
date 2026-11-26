@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.GTree.Lifting
 public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 public import TauCeti.GroupTheory.GraphOfGroups.Hom
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
-import TauCeti.GroupTheory.CoprodI
+import TauCeti.GroupTheory.CoprodI.Basic
 import TauCeti.GroupTheory.GraphOfGroups.NormalForm
 
 /-!

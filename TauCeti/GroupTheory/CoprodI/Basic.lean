@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.CoprodI
+public import Mathlib.Algebra.Group.ULift
 public import Mathlib.GroupTheory.Coprod.Basic
+public import Mathlib.GroupTheory.CoprodI
 
 /-!
 # Isomorphisms of free products of monoids
@@ -17,10 +18,13 @@ Mathlib's `MulEquiv.coprodCongr` for the free product of two monoids.  It is use
 free product of fundamental groups one factor at a time, for instance to recognise the
 fundamental group of a wedge of circles as a free group.
 
-The free product of a family of two monoids indexed by `Bool` is the binary free product
-`Monoid.Coprod` of its two members, by the isomorphism matching the canonical inclusions. Under it,
-the homomorphisms induced by a pair of homomorphisms on the two members correspond, so one of them
-is injective exactly when the other is.
+The free product of a family of two monoids indexed by `Bool` or `Fin 2` is the binary free
+product `Monoid.Coprod` of its two members, by the isomorphism matching the canonical inclusions.
+Under the `Bool` isomorphism, the homomorphisms induced by a pair of homomorphisms on the two
+members correspond, so one of them is injective exactly when the other is.  Conversely, for any
+two monoids or groups `M` and `N` in possibly different universes, `Monoid.Coprod.toCoprodI`
+identifies `M ∗ N` with the indexed free product of the universe-lifted `Bool` family
+`Monoid.Coprod.Factors M N`.
 
 A free product of trivial monoids is trivial; in particular, so is the free product of an empty
 family. The free product of a family indexed by a type with a unique element is that single
@@ -33,11 +37,17 @@ decompositions with trivial factors are trimmed to their nontrivial factors.
 ## Main declarations
 
 * `MulEquiv.coprodICongr`: the isomorphism of free products induced by a family of isomorphisms.
+* `MulEquiv.coprodICongrLeft`: reindexing an indexed free product along an equivalence of index
+  types.
 * `Monoid.CoprodI.boolEquivCoprod`: `CoprodI M ≃* Coprod (M false) (M true)` for a family `M`
   indexed by `Bool`.
 * `Monoid.CoprodI.coprodLift_injective_iff`: for a family `M` indexed by `Bool`, homomorphisms
   `f i : M i →* N` induce an injective homomorphism `Coprod (M false) (M true) →* N` if and only
   if they induce an injective homomorphism `CoprodI M →* N`.
+* `Monoid.Coprod.Factors`, `Monoid.Coprod.toCoprodI`: universe-lifted `Bool`-indexed family for
+  `M ∗ N` and the comparison isomorphism `M ∗ N ≃* CoprodI (Monoid.Coprod.Factors M N)`.
+* `Monoid.CoprodI.finTwoEquivCoprod`: `CoprodI M ≃* Coprod (M 0) (M 1)` for a family `M` indexed
+  by `Fin 2`.
 * `Monoid.CoprodI.instUnique`: the free product of a family of trivial monoids is trivial.
 * `Monoid.CoprodI.instUniqueOfIsEmpty`: the free product of an empty family is trivial.
 * `MulEquiv.coprodIUnique`: the free product of a family indexed by a type with a unique element
@@ -91,6 +101,41 @@ theorem coprodICongr_symm (e : ∀ i, M i ≃* N i) :
     (coprodICongr e).symm = coprodICongr fun i => (e i).symm :=
   (rfl)
 
+private theorem of_cast (M : ι → Type*) [∀ i, Monoid (M i)] {i j : ι} (h : i = j) (m : M i) :
+    CoprodI.of (i := j) (MulEquiv.cast (M := M) h m) = CoprodI.of (i := i) m := by
+  subst h; simp
+
+private theorem of_comp_cast {ι' : Type*} (M : ι → Type*) [∀ i, Monoid (M i)]
+    (f : ι' → ι) {a b : ι'} (hab : a = b) (h : f b = f a) (m : M (f b)) :
+    CoprodI.of (M := fun x => M (f x)) (i := a) (MulEquiv.cast (M := M) h m) =
+      CoprodI.of (M := fun x => M (f x)) (i := b) m := by
+  subst hab; simp
+
+/-- Reindexing an indexed free product along an equivalence `e : ι' ≃ ι` of index types. -/
+def coprodICongrLeft (M : ι → Type*) [∀ i, Monoid (M i)] {ι' : Type*} (e : ι' ≃ ι) :
+    CoprodI (fun i' => M (e i')) ≃* CoprodI M :=
+  MonoidHom.toMulEquiv
+    (CoprodI.lift fun i' => CoprodI.of (i := e i'))
+    (CoprodI.lift fun i =>
+      CoprodI.of.comp (MulEquiv.cast (M := M) (e.apply_symm_apply i).symm).toMonoidHom)
+    (CoprodI.ext_hom _ _ fun i' => MonoidHom.ext fun m => by
+      simp only [MonoidHom.comp_apply, MonoidHom.id_apply, CoprodI.lift_of]
+      exact of_comp_cast M e (e.symm_apply_apply i') _ m)
+    (CoprodI.ext_hom _ _ fun i => MonoidHom.ext fun m => by
+      simp only [MonoidHom.comp_apply, MonoidHom.id_apply, CoprodI.lift_of]
+      exact of_cast M (e.apply_symm_apply i).symm m)
+
+@[simp]
+theorem coprodICongrLeft_of (M : ι → Type*) [∀ i, Monoid (M i)] {ι' : Type*} (e : ι' ≃ ι)
+    {i' : ι'} (m : M (e i')) :
+    coprodICongrLeft M e (CoprodI.of (i := i') m) = CoprodI.of (i := e i') m :=
+  CoprodI.lift_of _ _
+
+theorem coprodICongrLeft_symm_of (M : ι → Type*) [∀ i, Monoid (M i)] {ι' : Type*} (e : ι' ≃ ι)
+    {i' : ι'} (m : M (e i')) :
+    (coprodICongrLeft M e).symm (CoprodI.of (i := e i') m) = CoprodI.of (i := i') m :=
+  (coprodICongrLeft M e).symm_apply_eq.mpr (coprodICongrLeft_of M e m).symm
+
 variable (M) [Unique ι]
 
 /-- The free product of a family of monoids indexed by a type with a unique element is
@@ -111,6 +156,8 @@ theorem coprodIUnique_symm_apply (m : M default) : (coprodIUnique M).symm m = Co
 end MulEquiv
 
 namespace Monoid.CoprodI
+
+section Bool
 
 variable (M : Bool → Type*) [∀ i, Monoid (M i)]
 
@@ -165,9 +212,44 @@ theorem coprodLift_injective_iff :
   rw [← lift_comp_boolEquivCoprod_symm, MonoidHom.coe_comp, MonoidHom.coe_ofClass]
   exact EquivLike.injective_comp _ _
 
-end Monoid.CoprodI
+end Bool
 
-namespace Monoid.CoprodI
+section FinTwo
+
+variable (M : Fin 2 → Type*) [∀ i, Monoid (M i)]
+
+/-- The free product of a family of two monoids indexed by `Fin 2` is the free product of its two
+members: the inclusion of `M 0` corresponds to `Monoid.Coprod.inl` and that of `M 1` to
+`Monoid.Coprod.inr`. -/
+def finTwoEquivCoprod : CoprodI M ≃* Coprod (M 0) (M 1) :=
+  (MulEquiv.coprodICongrLeft M finTwoEquiv.symm).symm.trans
+    (boolEquivCoprod fun b => M (finTwoEquiv.symm b))
+
+variable {M}
+
+@[simp]
+theorem finTwoEquivCoprod_of_zero (x : M 0) : finTwoEquivCoprod M (of x) = Coprod.inl x :=
+  (congrArg (boolEquivCoprod fun b => M (finTwoEquiv.symm b))
+    (MulEquiv.coprodICongrLeft_symm_of M finTwoEquiv.symm (i' := false) x)).trans
+    (boolEquivCoprod_of_false (M := fun b => M (finTwoEquiv.symm b)) x)
+
+@[simp]
+theorem finTwoEquivCoprod_of_one (x : M 1) : finTwoEquivCoprod M (of x) = Coprod.inr x :=
+  (congrArg (boolEquivCoprod fun b => M (finTwoEquiv.symm b))
+    (MulEquiv.coprodICongrLeft_symm_of M finTwoEquiv.symm (i' := true) x)).trans
+    (boolEquivCoprod_of_true (M := fun b => M (finTwoEquiv.symm b)) x)
+
+@[simp]
+theorem finTwoEquivCoprod_symm_inl (x : M 0) : (finTwoEquivCoprod M).symm (Coprod.inl x) = of x :=
+  (finTwoEquivCoprod M).symm_apply_eq.mpr (finTwoEquivCoprod_of_zero x).symm
+
+@[simp]
+theorem finTwoEquivCoprod_symm_inr (x : M 1) : (finTwoEquivCoprod M).symm (Coprod.inr x) = of x :=
+  (finTwoEquivCoprod M).symm_apply_eq.mpr (finTwoEquivCoprod_of_one x).symm
+
+end FinTwo
+
+section Option
 
 variable {ι : Type*} (M : Option ι → Type*) [∀ o, Monoid (M o)] [Subsingleton (M none)]
 
@@ -203,9 +285,9 @@ theorem optionEquivOfSubsingleton_symm_of {i : ι} (m : M (some i)) :
     (optionEquivOfSubsingleton M).symm (of (i := i) m) = of m :=
   lift_of ..
 
-end Monoid.CoprodI
+end Option
 
-namespace Monoid.CoprodI
+section Subtype
 
 variable {ι : Type*} (M : ι → Type*) [∀ i, Monoid (M i)] (p : ι → Prop)
 
@@ -257,9 +339,77 @@ theorem lift_comp_subtypeEquivOfSubsingleton {N : Type*} [Monoid N] (f : ∀ i, 
   · have := h i hi
     simp [Subsingleton.elim m 1]
 
+end Subtype
+
 end Monoid.CoprodI
 
 namespace Monoid.Coprod
+
+universe u v
+
+/-- The factors of `M ∗ N` as a family indexed by `Bool`, lifted to a common universe: `false`
+gives `M` and `true` gives `N`. -/
+@[expose] def Factors (M : Type u) (N : Type v) : Bool → Type max u v
+  | false => ULift.{v} M
+  | true => ULift.{u} N
+
+instance instMonoidFactors (M : Type u) (N : Type v) [Monoid M] [Monoid N] :
+    ∀ b, Monoid (Factors M N b)
+  | false => inferInstanceAs (Monoid (ULift M))
+  | true => inferInstanceAs (Monoid (ULift N))
+
+instance instGroupFactors (G : Type u) (H : Type v) [Group G] [Group H] (b : Bool) :
+    Group (Factors G H b) :=
+  let g : Group (Factors G H b) :=
+    Bool.rec (motive := fun b => Group (Factors G H b))
+      (inferInstance : Group (ULift.{v} G)) (inferInstance : Group (ULift.{u} H)) b
+  { toMonoid := instMonoidFactors G H b
+    inv := g.inv
+    div := g.div
+    zpow := g.zpow
+    div_eq_mul_inv := by cases b <;> exact div_eq_mul_inv
+    zpow_zero' := by cases b <;> exact zpow_zero
+    zpow_succ' := by cases b <;> exact DivInvMonoid.zpow_succ'
+    zpow_neg' := by cases b <;> exact DivInvMonoid.zpow_neg'
+    inv_mul_cancel := by cases b <;> exact inv_mul_cancel }
+
+section Monoid
+
+variable {M : Type u} {N : Type v} [Monoid M] [Monoid N]
+
+/-- The comparison isomorphism from the free product `M ∗ N` of two monoids (possibly in different
+universes) to the indexed free product of the family `Factors M N`. -/
+def toCoprodI : M ∗ N ≃* CoprodI (Factors M N) :=
+  (MulEquiv.coprodCongr MulEquiv.ulift.symm MulEquiv.ulift.symm).trans
+    (CoprodI.boolEquivCoprod (Factors M N)).symm
+
+@[simp]
+theorem toCoprodI_inl (m : M) :
+    toCoprodI (inl m : M ∗ N) = CoprodI.of (i := false) (ULift.up m) := by
+  simp [toCoprodI]
+  rfl
+
+@[simp]
+theorem toCoprodI_inr (n : N) :
+    toCoprodI (inr n : M ∗ N) = CoprodI.of (i := true) (ULift.up n) := by
+  simp [toCoprodI]
+  rfl
+
+@[simp]
+theorem toCoprodI_symm_of_false (m : Factors M N false) :
+    toCoprodI.symm (CoprodI.of (i := false) m) = inl m.down := by
+  simp [toCoprodI]
+  rfl
+
+@[simp]
+theorem toCoprodI_symm_of_true (n : Factors M N true) :
+    toCoprodI.symm (CoprodI.of (i := true) n) = inr n.down := by
+  simp [toCoprodI]
+  rfl
+
+end Monoid
+
+section Subtype
 
 variable {ι : Type*} {M : ι → Type*} [∀ i, Monoid (M i)] {p : ι → Prop} {H N : Type*} [Monoid H]
   [Monoid N]
@@ -281,5 +431,7 @@ theorem lift_coprodI_lift_subtype_bijective_iff (h : ∀ i, ¬p i → Subsinglet
     · simp
   rw [key, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom,
     Function.Bijective.of_comp_iff _ (MulEquiv.bijective _)]
+
+end Subtype
 
 end Monoid.Coprod
