@@ -12,6 +12,7 @@ public import TauCeti.Analysis.PDE.Vortex.WindowEstimate
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
+import TauCeti.MeasureTheory.Function.Lp.Holder
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.PiLp
 import TauCeti.MeasureTheory.Measure.Restrict
@@ -122,7 +123,7 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex MeasureTheory Filter TopologicalSpace ContinuousLinearMap BesselPotentialSpace
+open Complex _root_.MeasureTheory Filter TopologicalSpace ContinuousLinearMap BesselPotentialSpace
 open scoped ENNReal NNReal Topology RealInnerProductSpace ContDiff BesselPotentialSpace
 
 local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens ℂ) : Set ℂ)
@@ -948,18 +949,6 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_neg_gaugeFixedZerothOrder
     exact (pi_norm_le_iff_of_nonneg (norm_nonneg u)).2 fun a ↦
       (norm_inclusion_apply_le hk _).trans (norm_le_pi_norm u a)
 
-/-- The values of `Z(b, g)`, for the class `b` of a field `β`, are `Z(β z, g z)` almost
-everywhere on `ℂ`. -/
-private theorem holderL_ae_eq_gaugeFixedZerothOrder {b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
-    {β : ℂ → EuclideanSpace ℝ (Fin 4)} (hb : b =ᵐ[μ⊤] β)
-    (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-    ⇑(gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b g) =ᵐ[volume]
-      fun z ↦ gaugeFixedZerothOrder (β z) (g z) := by
-  filter_upwards [(gaugeFixedZerothOrder.coeFn_holder (r := 2) b g).filter_mono
-      (ae_mono (Measure.restrict_coe_opens_top _).ge),
-    hb.filter_mono (ae_mono (Measure.restrict_coe_opens_top _).ge)] with z h₁ h₂
-  rw [holderL_apply_apply, h₁, h₂]
-
 /-- If `W j` are coordinates of `-Z(β j, exp(c ρ) g j)` for `j ∈ t`, for the classes `b j` of
 fields `β j`, then `∑ j ∈ t, W j` are coordinates of `exp(c ρ) (-∑ j ∈ t, Z(b j, g j))`. -/
 private theorem inclusionLp_sum_ae_eq_exp_mul_smul_neg_sum {s : ℝ} (hs : 0 ≤ s) {c : ℝ}
@@ -976,7 +965,9 @@ private theorem inclusionLp_sum_ae_eq_exp_mul_smul_neg_sum {s : ℝ} (hs : 0 ≤
   filter_upwards [(Lp.coeFn_finsetSum _ _).trans (eventuallyEq_sum fun j hj ↦ hW j hj i),
     ((Lp.coeFn_neg _).trans (Lp.coeFn_finsetSum t
       fun j ↦ gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 (b j) (g j)).neg).filter_mono hμ,
-    eventuallyEq_sum fun j hj ↦ holderL_ae_eq_gaugeFixedZerothOrder (hb j hj) (g j)] with z hW hH hZ
+    eventuallyEq_sum fun j hj ↦ gaugeFixedZerothOrder.holderL_ae_eq_of_measure_le (r := 2)
+      (Measure.restrict_coe_opens_top _).ge (b j) (g j) ((hb j hj).filter_mono hμ) .rfl]
+    with z hW hH hZ
   rw [hW, hH, Pi.neg_apply, hZ, Finset.sum_apply, Finset.sum_apply]
   simp [map_smul, Finset.smul_sum]
 
