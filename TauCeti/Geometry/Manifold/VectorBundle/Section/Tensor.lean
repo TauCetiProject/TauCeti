@@ -54,10 +54,12 @@ private theorem tensorSection_apply (φ : BundleTest I ℝ (Bundle.Trivial M ℝ
 private theorem tsupport_tensorSection_subset (φ : BundleTest I ℝ (Bundle.Trivial M ℝ))
     (ψ : BundleTest J ℝ (Bundle.Trivial N ℝ)) :
     (tensorSection φ ψ).tsupport ⊆ closure {x | φ x ≠ 0} ×ˢ closure {y | ψ y ≠ 0} := by
-  rw [tsupport_def, ← closure_prod_eq]
-  refine closure_mono fun z (hz : (tensorSection φ ψ z : ℝ) ≠ 0) ↦ ?_
-  rw [tensorSection_apply] at hz
-  exact ⟨left_ne_zero_of_mul hz, right_ne_zero_of_mul hz⟩
+  have h := ContMDiffMap.tsupport_mulProd_subset
+    (trivialEquiv ((ofCompactlySupported I ℝ _).symm φ).val)
+    (trivialEquiv ((ofCompactlySupported J ℝ _).symm ψ).val)
+  rw [_root_.tsupport, _root_.tsupport, _root_.tsupport, coe_trivialEquiv, coe_trivialEquiv] at h
+  rw [tsupport_def, tensorSection, coe_trivialEquiv_symm]
+  exact h
 
 /-- The **tensor product** `(φ ⊗ ψ)(x, y) = φ x * ψ y` of a scalar test `φ` on `M` and a scalar
 test `ψ` on `N`, a scalar test on `M × N`. -/
@@ -71,8 +73,9 @@ def tensor (φ : BundleTest I ℝ (Bundle.Trivial M ℝ)) (ψ : BundleTest J ℝ
 @[simp]
 theorem tensor_apply (φ : BundleTest I ℝ (Bundle.Trivial M ℝ))
     (ψ : BundleTest J ℝ (Bundle.Trivial N ℝ)) (z : M × N) :
-    (φ.tensor ψ z : ℝ) = φ z.1 * ψ z.2 :=
-  tensorSection_apply φ ψ z
+    (φ.tensor ψ z : ℝ) = φ z.1 * ψ z.2 := by
+  rw [tensor, coe_ofCompactlySupported]
+  exact tensorSection_apply φ ψ z
 
 /-- The closed support of `φ ⊗ ψ` lies in the product of the closed supports of `φ` and `ψ`. -/
 theorem tsupport_tensor_subset (φ : BundleTest I ℝ (Bundle.Trivial M ℝ))

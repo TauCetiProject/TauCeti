@@ -115,17 +115,28 @@ private theorem chartTest_injective (c : OpenPartialHomeomorph P E)
     (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) : Injective (chartTest c hc) :=
   Bundle.Trivialization.chartTestCLM_injective _ c hc _
 
+/-- The localization `Φ ↦ (ρᵢ Φ) ∘ cᵢ⁻¹` of scalar tests along chart cutoffs, read in the
+trivialization of the trivial line. -/
+private def scalarLocalize {ι : Type*} (A : ChartCutoffs I P ⊤ ι) (i : ι) :
+    BundleTest I ℝ (Bundle.Trivial P ℝ) →L[ℝ] 𝓓(⟨(A.chart i).target, (A.chart i).open_target⟩, ℝ) :=
+  A.localize (fun _ ↦ Trivial.trivialization P ℝ) (fun _ ↦ subset_baseSet_trivial _) i
+
 /-- Extending the localization of `Φ` along chart cutoffs back through the chart gives
 `ρᵢ Φ`. -/
-private theorem chartTest_localize {ι : Type*} (A : ChartCutoffs I P ⊤ ι) (i : ι)
+private theorem chartTest_scalarLocalize {ι : Type*} (A : ChartCutoffs I P ⊤ ι) (i : ι)
     (Φ : BundleTest I ℝ (Bundle.Trivial P ℝ)) :
-    chartTest (A.chart i) (A.contMDiffOn_chart i)
-        (A.localize (fun _ ↦ Trivial.trivialization P ℝ) (fun _ ↦ subset_baseSet_trivial _) i
-          Φ) =
-      smulLeftCLM (A.cutoff i) Φ := by
-  rw [chartTest]
-  exact A.chartTestCLM_localize (fun _ ↦ Trivial.trivialization P ℝ)
+    chartTest (A.chart i) (A.contMDiffOn_chart i) (scalarLocalize A i Φ) =
+      smulLeftCLM (A.cutoff i) Φ :=
+  A.chartTestCLM_localize (fun _ ↦ Trivial.trivialization P ℝ)
     (fun _ ↦ subset_baseSet_trivial _) i Φ
+
+/-- A localization to a chart whose cutoff does not meet a compact set `K` vanishes on the scalar
+tests supported in `K`. -/
+private theorem scalarLocalize_eq_zero {ι : Type*} (A : ChartCutoffs I P ⊤ ι) {K : Set P}
+    {hK : IsCompact K} {i : ι} (hi : i ∉ A.meeting K hK)
+    {Φ : BundleTest I ℝ (Bundle.Trivial P ℝ)} (hΦ : closure {x | Φ x ≠ 0} ⊆ K) :
+    scalarLocalize A i Φ = 0 :=
+  A.localize_eq_zero _ (fun _ ↦ subset_baseSet_trivial _) hi hΦ
 
 end Scalar
 
@@ -157,8 +168,9 @@ private theorem chartTest_prod_prodSMulCLM {ι κ : Type*} (A : ChartCutoffs I M
   · have hz' := hz
     rw [ChartCutoffs.prod_chart, OpenPartialHomeomorph.prod_source] at hz'
     rw [chartTest_apply_of_mem _ _ _ hz, tensor_apply, chartTest_apply_of_mem _ _ _ hz'.1,
-      chartTest_apply_of_mem _ _ _ hz'.2, TestFunction.prodSMulCLM_apply, smul_eq_mul, mul_comm,
-      ChartCutoffs.prod_chart, OpenPartialHomeomorph.prod_apply]
+      chartTest_apply_of_mem _ _ _ hz'.2]
+    simp [TestFunction.prodSMulCLM_apply, ChartCutoffs.prod_chart,
+      OpenPartialHomeomorph.prod_apply, mul_comm]
   · rw [chartTest_apply_of_notMem _ _ _ hz]
     rw [ChartCutoffs.prod_chart, OpenPartialHomeomorph.prod_source, mem_prod, not_and_or] at hz
     rcases hz with hz | hz
@@ -170,17 +182,12 @@ localizations. -/
 private theorem localize_prod_tensor {ι κ : Type*} (A : ChartCutoffs I M ⊤ ι)
     (B : ChartCutoffs J N ⊤ κ) (p : ι × κ) (φ : BundleTest I ℝ (Bundle.Trivial M ℝ))
     (ψ : BundleTest J ℝ (Bundle.Trivial N ℝ)) :
-    (A.prod B).localize (fun _ ↦ Trivial.trivialization _ ℝ) (fun _ ↦ subset_baseSet_trivial _) p
-        (φ.tensor ψ) =
-      TestFunction.prodSMulCLM
-        (B.localize (fun _ ↦ Trivial.trivialization _ ℝ) (fun _ ↦ subset_baseSet_trivial _) p.2
-          ψ)
-        (A.prod_chart_target B p).symm.subset
-        (A.localize (fun _ ↦ Trivial.trivialization _ ℝ) (fun _ ↦ subset_baseSet_trivial _) p.1
-          φ) := by
+    scalarLocalize (A.prod B) p (φ.tensor ψ) =
+      TestFunction.prodSMulCLM (scalarLocalize B p.2 ψ) (A.prod_chart_target B p).symm.subset
+        (scalarLocalize A p.1 φ) := by
   refine chartTest_injective _ ((A.prod B).contMDiffOn_chart p) ?_
-  rw [chartTest_prod_prodSMulCLM, chartTest_localize, chartTest_localize, chartTest_localize,
-    ChartCutoffs.prod_cutoff, smulLeftCLM_mulProd_tensor]
+  rw [chartTest_prod_prodSMulCLM, chartTest_scalarLocalize, chartTest_scalarLocalize,
+    chartTest_scalarLocalize, ChartCutoffs.prod_cutoff, smulLeftCLM_mulProd_tensor]
 
 end Tensor
 
@@ -237,16 +244,12 @@ private theorem finsum_localKernel (A : ChartCutoffs I M ⊤ M) (A' : ChartCutof
     (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ) (h₂ : ∀ φ, Continuous (B φ)) {L : Set (M × N)}
     (hL : IsCompact L) {Φ : BundleTest (I.prod J) ℝ (Bundle.Trivial (M × N) ℝ)}
     (hΦ : closure {z | Φ z ≠ 0} ⊆ L) :
-    ∑ᶠ p, localKernel A A' B h₁ h₂ p
-        ((A.prod A').localize (fun _ ↦ Trivial.trivialization _ ℝ)
-          (fun _ ↦ subset_baseSet_trivial _) p Φ) =
-      ∑ p ∈ (A.prod A').meeting L hL, localKernel A A' B h₁ h₂ p
-        ((A.prod A').localize (fun _ ↦ Trivial.trivialization _ ℝ)
-          (fun _ ↦ subset_baseSet_trivial _) p Φ) := by
+    ∑ᶠ p, localKernel A A' B h₁ h₂ p (scalarLocalize (A.prod A') p Φ) =
+      ∑ p ∈ (A.prod A').meeting L hL,
+        localKernel A A' B h₁ h₂ p (scalarLocalize (A.prod A') p Φ) := by
   refine finsum_eq_sum_of_support_subset _ fun p hp ↦ ?_
   by_contra h
-  exact hp (by
-    simp only [(A.prod A').localize_eq_zero _ (fun _ ↦ subset_baseSet_trivial _) h hΦ, map_zero])
+  exact hp (by simp only [scalarLocalize_eq_zero (A.prod A') h hΦ, map_zero])
 
 /-- The kernel `Φ ↦ ∑ₚ κ_p ((ρ ⊗ σ)_p Φ)` of `B`, a locally finite sum of the local kernels, as a
 linear map. -/
@@ -254,9 +257,7 @@ private def kernelₗ (A : ChartCutoffs I M ⊤ M) (A' : ChartCutoffs J N ⊤ N)
     (B : BundleTest I ℝ (Bundle.Trivial M ℝ) →ₗ[ℝ] BundleTest J ℝ (Bundle.Trivial N ℝ) →ₗ[ℝ] G)
     (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ) (h₂ : ∀ φ, Continuous (B φ)) :
     BundleTest (I.prod J) ℝ (Bundle.Trivial (M × N) ℝ) →ₗ[ℝ] G where
-  toFun Φ := ∑ᶠ p, localKernel A A' B h₁ h₂ p
-    ((A.prod A').localize (fun _ ↦ Trivial.trivialization _ ℝ) (fun _ ↦ subset_baseSet_trivial _) p
-      Φ)
+  toFun Φ := ∑ᶠ p, localKernel A A' B h₁ h₂ p (scalarLocalize (A.prod A') p Φ)
   map_add' Φ Ψ := by
     have hL := Φ.isCompact_tsupport.union Ψ.isCompact_tsupport
     rw [finsum_localKernel A A' B h₁ h₂ hL subset_union_left,
@@ -283,8 +284,7 @@ private def kernel (A : ChartCutoffs I M ⊤ M) (A' : ChartCutoffs J N ⊤ N)
     -- On the tests supported in `L` the kernel is a finite sum of continuous maps.
     refine (continuous_finsetSum ((A.prod A').meeting L L.isCompact) fun p _ ↦
       (map_continuous (localKernel A A' B h₁ h₂ p)).comp
-        (((A.prod A').localize (fun _ ↦ Trivial.trivialization _ ℝ)
-          (fun _ ↦ subset_baseSet_trivial _) p).continuous.comp
+        ((scalarLocalize (A.prod A') p).continuous.comp
         (BundleTest.continuous_ofSupportedIn L))).congr fun σ ↦ ?_
     exact (finsum_localKernel A A' B h₁ h₂ L.isCompact
       (BundleTest.tsupport_ofSupportedIn_subset L σ)).symm
@@ -293,9 +293,8 @@ private theorem kernel_apply (A : ChartCutoffs I M ⊤ M) (A' : ChartCutoffs J N
     (B : BundleTest I ℝ (Bundle.Trivial M ℝ) →ₗ[ℝ] BundleTest J ℝ (Bundle.Trivial N ℝ) →ₗ[ℝ] G)
     (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ) (h₂ : ∀ φ, Continuous (B φ))
     (Φ : BundleTest (I.prod J) ℝ (Bundle.Trivial (M × N) ℝ)) :
-    kernel A A' B h₁ h₂ Φ = ∑ᶠ p, localKernel A A' B h₁ h₂ p
-      ((A.prod A').localize (fun _ ↦ Trivial.trivialization _ ℝ) (fun _ ↦ subset_baseSet_trivial _)
-        p Φ) :=
+    kernel A A' B h₁ h₂ Φ =
+      ∑ᶠ p, localKernel A A' B h₁ h₂ p (scalarLocalize (A.prod A') p Φ) :=
   rfl
 
 /-- On `φ ⊗ ψ` the term of the product chart `p` of the kernel is `B (ρ φ) (σ ψ)`, for the cutoffs
@@ -304,10 +303,10 @@ private theorem localKernel_localize_tensor (A : ChartCutoffs I M ⊤ M) (A' : C
     (B : BundleTest I ℝ (Bundle.Trivial M ℝ) →ₗ[ℝ] BundleTest J ℝ (Bundle.Trivial N ℝ) →ₗ[ℝ] G)
     (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ) (h₂ : ∀ φ, Continuous (B φ)) (p : M × N)
     (φ : BundleTest I ℝ (Bundle.Trivial M ℝ)) (ψ : BundleTest J ℝ (Bundle.Trivial N ℝ)) :
-    localKernel A A' B h₁ h₂ p ((A.prod A').localize (fun _ ↦ Trivial.trivialization _ ℝ)
-        (fun _ ↦ subset_baseSet_trivial _) p (φ.tensor ψ)) =
+    localKernel A A' B h₁ h₂ p (scalarLocalize (A.prod A') p (φ.tensor ψ)) =
       B (smulLeftCLM (A.cutoff p.1) φ) (smulLeftCLM (A'.cutoff p.2) ψ) := by
-  rw [localize_prod_tensor, localKernel_prodSMulCLM, chartTest_localize, chartTest_localize]
+  rw [localize_prod_tensor, localKernel_prodSMulCLM, chartTest_scalarLocalize,
+    chartTest_scalarLocalize]
 
 private theorem kernel_tensor (A : ChartCutoffs I M ⊤ M) (A' : ChartCutoffs J N ⊤ N)
     (B : BundleTest I ℝ (Bundle.Trivial M ℝ) →ₗ[ℝ] BundleTest J ℝ (Bundle.Trivial N ℝ) →ₗ[ℝ] G)
@@ -345,7 +344,7 @@ theorem ext_tensor {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace
       exact (congrArg K₁ hp).trans ((h _ _).trans (congrArg K₂ hp).symm)
   ext Φ
   rw [← (A.prod B).sum_smulLeftCLM Φ.isCompact_tsupport subset_rfl, map_sum, map_sum]
-  simp_rw [← chartTest_localize]
+  simp_rw [← chartTest_scalarLocalize]
   exact Finset.sum_congr rfl fun p _ ↦ DFunLike.congr_fun (hC p) _
 
 end Kernel
