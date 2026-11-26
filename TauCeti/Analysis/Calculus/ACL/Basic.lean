@@ -176,6 +176,14 @@ theorem lineFunction_const (c : F) (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) 
   simp [lineFunction]
 
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of the zero map is zero. -/
+@[simp]
+theorem lineFunction_zero [Zero F] (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (0 : EuclideanSpace ℝ (Fin n) → F) x i = 0 := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
 /-- The line function of a sum is the sum of the line functions. -/
 @[simp]
 theorem lineFunction_add [Add F] (u v : EuclideanSpace ℝ (Fin n) → F)

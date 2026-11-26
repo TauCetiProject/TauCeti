@@ -24,7 +24,8 @@ absolute continuity on an interval is stable under them:
   particular with continuous (semi)linear maps (`ContinuousLinearMap.comp_isACLOn`) and
   isometries.
 
-Constant maps are `ACL` on every set (`TauCeti.isACLOn_const`).
+Constant maps, in particular the zero map, are `ACL` on every set (`TauCeti.isACLOn_const`,
+`TauCeti.isACLOn_zero`).
 -/
 
 public section
@@ -42,6 +43,10 @@ variable {n : ℕ} {F F' : Type*} [NormedAddCommGroup F] [NormedAddCommGroup F']
 /-- Constant maps are `ACL` on every set. -/
 theorem isACLOn_const (c : F) : IsACLOn (fun _ : EuclideanSpace ℝ (Fin n) ↦ c) Ω :=
   (LocallyLipschitz.const c).locallyLipschitzOn.isACLOn
+
+/-- The zero map is `ACL` on every set. -/
+theorem isACLOn_zero : IsACLOn (0 : EuclideanSpace ℝ (Fin n) → F) Ω :=
+  isACLOn_const 0
 
 /-- The sum of two maps `ACL` on `Ω` is `ACL` on `Ω`. -/
 theorem IsACLOn.add (hu : IsACLOn u Ω) (hv : IsACLOn v Ω) : IsACLOn (u + v) Ω where
@@ -69,7 +74,7 @@ theorem IsACLOn.sum {ι : Type*} {s : Finset ι} {w : ι → EuclideanSpace ℝ 
     (hw : ∀ k ∈ s, IsACLOn (w k) Ω) : IsACLOn (∑ k ∈ s, w k) Ω := by
   classical
   induction s using Finset.induction_on with
-  | empty => exact Finset.sum_empty (f := w) ▸ isACLOn_const (0 : F)
+  | empty => simpa using isACLOn_zero
   | insert k s hk ih =>
     rw [Finset.sum_insert hk]
     exact (hw k (Finset.mem_insert_self k s)).add
