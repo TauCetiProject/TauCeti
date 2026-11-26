@@ -10,7 +10,6 @@ public import Mathlib.GroupTheory.Rank
 public import TauCeti.Algebra.Module.ZLattice.Covolume
 public import TauCeti.Algebra.Module.ZLattice.Integral
 public import TauCeti.Algebra.Module.ZLattice.Quotient
-import TauCeti.Algebra.Module.Submodule.Quotient
 import TauCeti.GroupTheory.Rank
 import TauCeti.LinearAlgebra.Matrix.Determinant.Skew
 

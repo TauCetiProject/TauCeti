@@ -261,8 +261,8 @@ private theorem summable_norm_thetaSeries_sup_dual_iff [Finite (DiscriminantGrou
     refine (Equiv.addLeft (⟨-u, neg_mem hu⟩ : L)).summable_iff.mp (hsx.congr fun v ↦ ?_)
     have hv : ((Quotient.out q : M) : E) + ((Equiv.addLeft (⟨-u, neg_mem hu⟩ : L) v : L) : E) =
         0 + x + (v : E) := by
-      rw [Equiv.coe_addLeft, AddMemClass.coe_add, Subtype.coe_mk, ← hux, zero_add, add_comm u x,
-        add_assoc, add_neg_cancel_left]
+      simp only [Equiv.coe_addLeft, AddMemClass.coe_add, ← hux]
+      abel
     simp only [Function.comp_def, hv]
   exact (L.quotientFiberEquivOfLe le_sup_left q).summable_iff.mp (hsz.congr fun _ ↦ by simp)
 
@@ -275,12 +275,8 @@ theorem thetaSeries_sup_dual_eq_sum [Fintype (DiscriminantGroup L)] (τ : ℍ) :
   · have hsM : Summable fun v : (L ⊔ dual L : Submodule ℤ E) ↦
         cexp (π * I * (‖(v : E)‖ ^ 2 : ℝ) * τ) :=
       ((summable_norm_thetaSeries_sup_dual_iff τ).mpr hs0).of_norm
-    have hfib : HasSum (fun q : (L ⊔ dual L : Submodule ℤ E) ⧸ L.submoduleOf (L ⊔ dual L) ↦
-        thetaCoset L ((Quotient.out q : (L ⊔ dual L : Submodule ℤ E)) : E) τ)
-        (thetaSeries (L ⊔ dual L) τ) := by
-      rw [← funext (fun q ↦ tsum_thetaTerm_fiber (L ⊔ dual L) le_sup_left q τ), thetaSeries_apply]
-      exact hsM.hasSum.tsum_fiberwise _
-    rw [← hfib.tsum_eq, ← (discriminantGroupEquivQuotientSup L).toEquiv.tsum_eq, tsum_fintype]
+    rw [← (hasSum_thetaCoset_out_of_summable (L ⊔ dual L) le_sup_left τ hsM).tsum_eq,
+      ← (discriminantGroupEquivQuotientSup L).toEquiv.tsum_eq, tsum_fintype]
     refine Finset.sum_congr rfl fun γ _ ↦ ?_
     induction γ using Submodule.Quotient.induction_on with
     | H x =>
@@ -290,8 +286,7 @@ theorem thetaSeries_sup_dual_eq_sum [Fintype (DiscriminantGroup L)] (τ : ℍ) :
         (Submodule.Quotient.mk_out
           (Submodule.Quotient.mk (p := L.submoduleOf (L ⊔ dual L))
             ⟨(x : E), Submodule.mem_sup_right x.property⟩))
-      rwa [Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply,
-        AddSubgroupClass.coe_sub] at hout
+      simpa [Submodule.submoduleOf] using hout
   · have hM0 : thetaSeries (L ⊔ dual L) τ = 0 := by
       rw [thetaSeries_apply]
       exact tsum_eq_zero_of_not_summable fun hsM ↦

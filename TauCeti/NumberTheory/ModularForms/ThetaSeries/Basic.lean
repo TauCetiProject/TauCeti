@@ -61,9 +61,10 @@ the series `θ_{γ+y+M}` over those classes, and in particular `Θ_L` as the sum
   `γ` modulo `L`, and `θ_{-γ+L} = θ_{γ+L}`.
 * `ZLattice.summable_norm_thetaCoset`, `ZLattice.summable_thetaCoset`: the series converge
   absolutely at every `τ : ℍ`.
-* `ZLattice.hasSum_thetaCoset_add_out`, `ZLattice.hasSum_thetaCoset_out`: for `M ≤ L`, `θ_{γ+L}`
-  is the sum of the `θ_{γ+y+M}`, and `Θ_L` the sum of the `θ_{y+M}`, over the classes `y` of `L`
-  modulo `M`.
+* `ZLattice.hasSum_thetaCoset_add_out_of_summable`, `ZLattice.hasSum_thetaCoset_add_out`,
+  `ZLattice.hasSum_thetaCoset_out_of_summable`, `ZLattice.hasSum_thetaCoset_out`: for `M ≤ L`,
+  `θ_{γ+L}` is the sum of the `θ_{γ+y+M}`, and `Θ_L` the sum of the `θ_{y+M}`, over the classes `y`
+  of `L` modulo `M`.
 * `ZLattice.hasSumUniformlyOn_thetaCoset`: uniform convergence on `{τ | y ≤ im τ}` for `0 < y`.
 * `ZLattice.hasSumLocallyUniformly_thetaCoset`: locally uniform convergence on `ℍ`.
 * `ZLattice.differentiableOn_thetaCoset`, `ZLattice.mdifferentiable_thetaCoset`: holomorphy.
@@ -227,6 +228,26 @@ theorem tsum_thetaTerm_fiber {M : Submodule ℤ E} (hML : M ≤ L)
         thetaCoset M (Quotient.out y : L) τ := by
   simpa using tsum_thetaCosetTerm_fiber L hML 0 y τ
 
+/-- **Splitting the theta series of a translate into cosets.** For `M ≤ L` and `γ : E`, when the
+series defining `θ_{γ+L}(τ)` is summable, `θ_{γ+L}(τ)` is the sum of the theta series of the
+translates `γ + y + M` over the classes `y` of `L` modulo `M`, each class represented by
+`Quotient.out` (by `thetaCoset_eq_of_sub_mem` the representative does not matter). -/
+theorem hasSum_thetaCoset_add_out_of_summable {M : Submodule ℤ E} (hML : M ≤ L) (γ : E) (τ : ℍ)
+    (hs : Summable fun v : L => cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ)) :
+    HasSum (fun y : L ⧸ M.submoduleOf L => thetaCoset M (γ + ((Quotient.out y : L) : E)) τ)
+      (thetaCoset L γ τ) := by
+  rw [← funext (fun y ↦ tsum_thetaCosetTerm_fiber L hML γ y τ), thetaCoset_apply]
+  exact hs.hasSum.tsum_fiberwise _
+
+/-- **Splitting a theta series into cosets.** For `M ≤ L`, when the series defining `Θ_L(τ)` is
+summable, `Θ_L(τ)` is the sum of the theta series of the translates `y + M` over the classes `y` of
+`L` modulo `M`, each class represented by `Quotient.out`. -/
+theorem hasSum_thetaCoset_out_of_summable {M : Submodule ℤ E} (hML : M ≤ L) (τ : ℍ)
+    (hs : Summable fun v : L => cexp (π * I * (‖(v : E)‖ ^ 2 : ℝ) * τ)) :
+    HasSum (fun y : L ⧸ M.submoduleOf L => thetaCoset M ((Quotient.out y : L) : E) τ)
+      (thetaSeries L τ) := by
+  simpa using hasSum_thetaCoset_add_out_of_summable L hML 0 τ (hs.congr fun _ => by rw [zero_add])
+
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
 
 /-- The theta series of a translate of a discrete subgroup converges absolutely at every point
@@ -255,17 +276,16 @@ of `L` modulo `M`, each class represented by `Quotient.out` (by `thetaCoset_eq_o
 representative does not matter). The sum is finite when `M` has finite index in `L`. -/
 theorem hasSum_thetaCoset_add_out {M : Submodule ℤ E} (hML : M ≤ L) (γ : E) (τ : ℍ) :
     HasSum (fun y : L ⧸ M.submoduleOf L => thetaCoset M (γ + ((Quotient.out y : L) : E)) τ)
-      (thetaCoset L γ τ) := by
-  rw [← funext (fun y ↦ tsum_thetaCosetTerm_fiber L hML γ y τ), thetaCoset_apply]
-  exact (summable_thetaCoset L γ τ).hasSum.tsum_fiberwise _
+      (thetaCoset L γ τ) :=
+  hasSum_thetaCoset_add_out_of_summable L hML γ τ (summable_thetaCoset L γ τ)
 
 /-- **Splitting a theta series into cosets.** For `M ≤ L`, the theta series of `L` is the sum of
 the theta series of the translates `y + M` over the classes `y` of `L` modulo `M`, each class
 represented by `Quotient.out`. The sum is finite when `M` has finite index in `L`. -/
 theorem hasSum_thetaCoset_out {M : Submodule ℤ E} (hML : M ≤ L) (τ : ℍ) :
     HasSum (fun y : L ⧸ M.submoduleOf L => thetaCoset M ((Quotient.out y : L) : E) τ)
-      (thetaSeries L τ) := by
-  simpa using hasSum_thetaCoset_add_out L hML 0 τ
+      (thetaSeries L τ) :=
+  hasSum_thetaCoset_out_of_summable L hML τ (summable_thetaSeries L τ)
 
 /-- The theta series of a translate converges uniformly on each half-plane `{τ | y ≤ im τ}` with
 `0 < y`. -/
