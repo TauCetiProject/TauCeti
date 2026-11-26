@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Submodule.Invariant
 public import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
@@ -13,7 +14,8 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 # Invariant lines of matrix representations
 
 A matrix representation `ρ : G →* GL(n, K)` over a field *has an invariant line* when some
-one-dimensional subspace of `n → K` is carried into itself by every `ρ g`. For `n = 2` this is
+one-dimensional subspace of `n → K` is invariant, in the sense of `Module.End.invtSubmodule`, under
+every `ρ g`. For `n = 2` this is
 reducibility of `ρ`; applied to the restriction of `ρ` to the kernel of `det ∘ ρ`, it is the
 conclusion of reducibility criteria for residual two-dimensional Galois representations whose
 determinant has nontrivial image, such as Caraiani–Newton, Lemma 5.6.5.
@@ -28,6 +30,8 @@ invariant line when `2 ≠ 0`, as for the quaternion matrices `i` and `j`.
 ## Main declarations
 
 * `MonoidHom.HasInvariantLine`: some line of `n → K` is invariant under every `ρ g`.
+* `MonoidHom.hasInvariantLine_iff`: the definition, with invariance unfolded to
+  `∀ v ∈ W, ρ g *ᵥ v ∈ W`.
 * `MonoidHom.hasInvariantLine_iff_exists_mulVec_mem_span`,
   `MonoidHom.hasInvariantLine_iff_exists_mulVec_eq_smul`: the line is spanned by a nonzero
   vector, a common eigenvector of all `ρ g`.
@@ -58,17 +62,25 @@ variable {G : Type*} [Monoid G] {n : Type*} [Fintype n] [DecidableEq n] {K : Typ
   (ρ : G →* GL n K)
 
 /-- A matrix representation `ρ : G →* GL(n, K)` over a field *has an invariant line* if some
-one-dimensional subspace of `n → K` is carried into itself by every `ρ g`. -/
+one-dimensional subspace of `n → K` is an invariant submodule of every `ρ g`. -/
 def HasInvariantLine : Prop :=
   ∃ W : Submodule K (n → K), finrank K W = 1 ∧
-    ∀ g, ∀ v ∈ W, (ρ g : Matrix n n K) *ᵥ v ∈ W
+    ∀ g, W ∈ End.invtSubmodule (toLin' (ρ g : Matrix n n K))
 
 variable {ρ}
+
+/-- `ρ` has an invariant line exactly when some one-dimensional subspace `W` of `n → K` is carried
+into itself by every `ρ g`. -/
+theorem hasInvariantLine_iff :
+    ρ.HasInvariantLine ↔ ∃ W : Submodule K (n → K), finrank K W = 1 ∧
+      ∀ g, ∀ v ∈ W, (ρ g : Matrix n n K) *ᵥ v ∈ W := by
+  simp only [HasInvariantLine, End.mem_invtSubmodule_iff_forall_mem_of_mem, toLin'_apply]
 
 /-- `ρ` has an invariant line exactly when some nonzero vector `v` has its span `K ∙ v` preserved
 by every `ρ g`. -/
 theorem hasInvariantLine_iff_exists_mulVec_mem_span :
     ρ.HasInvariantLine ↔ ∃ v ≠ 0, ∀ g, (ρ g : Matrix n n K) *ᵥ v ∈ K ∙ v := by
+  rw [hasInvariantLine_iff]
   constructor
   · rintro ⟨W, hW, hρ⟩
     obtain ⟨⟨v, hvW⟩, hv, hspan⟩ := finrank_eq_one_iff'.1 hW
@@ -90,8 +102,8 @@ theorem hasInvariantLine_iff_exists_mulVec_eq_smul :
 invariant under the whole group is invariant under each of its subgroups. -/
 theorem HasInvariantLine.comp (h : ρ.HasInvariantLine) {H : Type*} [Monoid H] (f : H →* G) :
     (ρ.comp f).HasInvariantLine := by
-  obtain ⟨W, hW, hρ⟩ := h
-  exact ⟨W, hW, fun g ↦ hρ (f g)⟩
+  obtain ⟨W, hW, hρ⟩ := hasInvariantLine_iff.1 h
+  exact hasInvariantLine_iff.2 ⟨W, hW, fun g ↦ hρ (f g)⟩
 
 /-- The trivial representation has an invariant line, as soon as `n → K` is nonzero. -/
 theorem hasInvariantLine_one [Nonempty n] : (1 : G →* GL n K).HasInvariantLine := by
@@ -141,6 +153,7 @@ theorem hasInvariantLine_comp_ker_det_subtype_iff :
     (ρ.comp (GeneralLinearGroup.det.comp ρ).ker.subtype).HasInvariantLine ↔
       ∃ W : Submodule K (n → K), finrank K W = 1 ∧
         ∀ g, GeneralLinearGroup.det (ρ g) = 1 → ∀ v ∈ W, (ρ g : Matrix n n K) *ᵥ v ∈ W := by
+  rw [hasInvariantLine_iff]
   refine exists_congr fun W ↦ and_congr_right fun _ ↦ ⟨fun h g hg ↦ h ⟨g, hg⟩, ?_⟩
   rintro h ⟨g, hg⟩
   exact h g hg
@@ -152,18 +165,22 @@ section Conj
 variable {G : Type*} [Monoid G] {n : Type*} [Fintype n] [DecidableEq n] {K : Type*} [Field K]
   {ρ : G →* GL n K}
 
-/-- Conjugating `ρ` by an invertible matrix `P` carries an invariant line `K ∙ v` to `K ∙ (P v)`. -/
+/-- Conjugating `ρ` by an invertible matrix `P` carries an invariant line `W` to its image under
+`P`: the linear map of `P * ρ g * P⁻¹` is the conjugate of that of `ρ g` by `P`. -/
 theorem HasInvariantLine.conj (h : ρ.HasInvariantLine) (P : GL n K) :
     ((MulAut.conj P : GL n K →* GL n K).comp ρ).HasInvariantLine := by
-  obtain ⟨v, hv, hρ⟩ := hasInvariantLine_iff_exists_mulVec_eq_smul.1 h
-  refine hasInvariantLine_iff_exists_mulVec_eq_smul.2 ⟨(P : Matrix n n K) *ᵥ v, ?_, fun g ↦ ?_⟩
-  · rw [← mulVec_zero (P : Matrix n n K)]
-    exact (mulVec_injective_of_isUnit P.isUnit).ne hv
-  · obtain ⟨c, hc⟩ := hρ g
-    refine ⟨c, ?_⟩
-    simp only [comp_apply, MonoidHom.coe_ofClass, MulAut.conj_apply, Units.val_mul, mulVec_mulVec,
-      mul_assoc, Units.inv_mul, mul_one]
-    rw [← mulVec_mulVec, hc, mulVec_smul]
+  obtain ⟨W, hW, hρ⟩ := h
+  let e : (n → K) ≃ₗ[K] n → K :=
+    LinearMap.GeneralLinearGroup.toLinearEquiv (GeneralLinearGroup.toLin P)
+  refine ⟨W.map (e : (n → K) →ₗ[K] n → K), by rw [LinearEquiv.finrank_map_eq, hW], fun g ↦ ?_⟩
+  have hconj : toLin' ((MulAut.conj P : GL n K →* GL n K).comp ρ g : Matrix n n K) =
+      e.conj (toLin' (ρ g : Matrix n n K)) := by
+    refine LinearMap.ext fun v ↦ ?_
+    have he : e.symm v = ((P⁻¹ : GL n K) : Matrix n n K) *ᵥ v :=
+      e.symm_apply_eq.2 (by simp [e, mulVec_mulVec])
+    simp [LinearEquiv.conj_apply, he, e, mulVec_mulVec, mul_assoc]
+  rw [hconj, LinearEquiv.map_mem_invtSubmodule_conj_iff]
+  exact hρ g
 
 /-- Having an invariant line is unchanged by conjugating `ρ` by an invertible matrix, that is, by
 a change of basis of `n → K`. -/

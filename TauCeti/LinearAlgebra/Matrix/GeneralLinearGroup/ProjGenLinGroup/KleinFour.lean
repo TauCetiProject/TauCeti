@@ -22,9 +22,11 @@ anticommute: `a * b = -(b * a)`.
 
 Consequently a two-dimensional representation whose projective image is a Klein four group has no
 invariant line when `2 ≠ 0`. This is the exceptional branch of the reducibility criterion for
-determinant kernels of residual representations (Caraiani–Newton, Lemma 5.6.5): when the
-projective image is `A₄` and the determinant has order three, the determinant kernel has
-projective image `(ℤ/2)²` and fixes no line. In characteristic `2` the statement fails: the
+determinant kernels of residual representations (Caraiani–Newton, Lemma 5.6.5): under that
+lemma's trace hypothesis `(tr ρ g)² = (1 + det ρ g)²` whenever `det ρ g ≠ 1`, when the projective
+image is `A₄` and the determinant has order three, the determinant kernel has projective image
+`(ℤ/2)²`. This file handles that Klein four case, showing that such a determinant kernel fixes no
+line. In characteristic `2` the statement fails: the
 upper unitriangular matrices over `𝔽₄` have Klein four projective image and fix a line.
 
 ## Main results
@@ -65,10 +67,18 @@ theorem mk_sq_eq_one_of_trace_eq_zero (h : (g : Matrix (Fin 2) (Fin 2) R).trace 
     mk g ^ 2 = 1 := by
   have hsq : g ^ 2 = GeneralLinearGroup.scalar (Fin 2) (-GeneralLinearGroup.det g) := by
     ext : 1
-    rw [Units.val_pow_eq_pow_val, sq_eq_trace_smul_sub_det_smul_one_fin_two, h, zero_smul,
-      zero_sub, GeneralLinearGroup.coe_scalar, Units.val_neg, GeneralLinearGroup.val_det_apply,
-      scalar_apply, ← smul_one_eq_diagonal, neg_smul]
+    simp [sq_eq_trace_smul_sub_det_smul_one_fin_two, h, smul_one_eq_diagonal]
   rw [← map_pow, hsq, mk_scalar]
+
+/-- A traceless invertible `2 × 2` matrix is not scalar when `2 ≠ 0`, since a scalar `u` has
+trace `2 u`. -/
+theorem mk_ne_one_of_trace_eq_zero (h2 : (2 : R) ≠ 0)
+    (h : (g : Matrix (Fin 2) (Fin 2) R).trace = 0) : mk g ≠ 1 := by
+  rw [Ne, mk_eq_one, GeneralLinearGroup.center_eq_range_scalar]
+  rintro ⟨u, rfl⟩
+  rw [GeneralLinearGroup.coe_scalar, trace_fin_two, scalar_apply, diagonal_apply_eq,
+    diagonal_apply_eq, ← two_mul] at h
+  exact h2 (u.isUnit.mul_left_eq_zero.1 h)
 
 end CommRing
 
@@ -81,23 +91,16 @@ theorem trace_eq_zero_of_mk_sq_eq_one (hsq : mk g ^ 2 = 1) (hne : mk g ≠ 1) :
   rw [← map_pow, mk_eq_one, GeneralLinearGroup.mem_center_iff_val_mem_range_scalar] at hsq
   obtain ⟨c, hc⟩ := hsq
   by_contra htr
+  set A := (g : Matrix (Fin 2) (Fin 2) K)
+  -- Cayley–Hamilton with `g ^ 2 = c • 1` exhibits `trace g • g` as a scalar.
+  have hCH : A.trace • A = (c + A.det) • 1 := by
+    have h := sq_eq_trace_smul_sub_det_smul_one_fin_two A
+    rw [← Units.val_pow_eq_pow_val, ← hc, scalar_apply, ← smul_one_eq_diagonal] at h
+    rw [add_smul, h, sub_add_cancel]
   refine hne (mk_eq_one.2 (GeneralLinearGroup.mem_center_iff_val_mem_range_scalar.2
-    ⟨(g : Matrix (Fin 2) (Fin 2) K).trace⁻¹ * (c + (g : Matrix (Fin 2) (Fin 2) K).det), ?_⟩))
-  have hCH := sq_eq_trace_smul_sub_det_smul_one_fin_two (g : Matrix (Fin 2) (Fin 2) K)
-  rw [← Units.val_pow_eq_pow_val, ← hc, scalar_apply, ← smul_one_eq_diagonal,
-    eq_sub_iff_add_eq, ← add_smul, eq_comm] at hCH
+    ⟨A.trace⁻¹ * (c + A.det), ?_⟩))
   rw [scalar_apply, ← smul_one_eq_diagonal, mul_smul, ← hCH, smul_smul, inv_mul_cancel₀ htr,
     one_smul]
-
-/-- A traceless invertible `2 × 2` matrix is not scalar when `2 ≠ 0`, since a scalar `u` has
-trace `2 u`. -/
-theorem mk_ne_one_of_trace_eq_zero (h2 : (2 : K) ≠ 0)
-    (h : (g : Matrix (Fin 2) (Fin 2) K).trace = 0) : mk g ≠ 1 := by
-  rw [Ne, mk_eq_one, GeneralLinearGroup.center_eq_range_scalar]
-  rintro ⟨u, rfl⟩
-  rw [GeneralLinearGroup.coe_scalar, trace_fin_two, scalar_apply, diagonal_apply_eq,
-    diagonal_apply_eq, ← two_mul] at h
-  exact mul_ne_zero h2 u.ne_zero h
 
 /-- When `2 ≠ 0`, the class of an invertible `2 × 2` matrix in `PGL(2, K)` has order two exactly
 when the matrix is traceless. -/

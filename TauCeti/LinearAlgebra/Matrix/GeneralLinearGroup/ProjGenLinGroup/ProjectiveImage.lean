@@ -89,8 +89,7 @@ theorem ker_mk_comp :
 /-- `g` maps to the identity of `PGL(n, R)` exactly when `ρ g` is a scalar matrix. -/
 theorem mk_apply_eq_one_iff {g : G} :
     ProjGenLinGroup.mk (ρ g) = 1 ↔ ∃ u : Rˣ, GeneralLinearGroup.scalar n u = ρ g := by
-  rw [← comp_apply, ← mem_ker, ker_mk_comp]
-  rfl
+  rw [← comp_apply, ← mem_ker, ker_mk_comp, Subgroup.mem_comap, mem_range]
 
 /-- The projective image is trivial exactly when `ρ` takes only scalar values. -/
 theorem projectiveImage_eq_bot_iff :
