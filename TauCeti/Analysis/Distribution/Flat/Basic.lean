@@ -68,6 +68,25 @@ theorem normalFlatMass_le_of_eq_add_comp_extDerivCLM
   exact iInf_le_of_le S (iInf_le_of_le hS (iInf_le_of_le (hres ▸ hR)
     (by rw [hres])))
 
+/-- A decomposition `T = R + ∂S` of a normal current into currents of finite mass bounds its flat
+mass. Both terms are then normal: `∂S = T - R`, and `∂R = ∂T` since `∂∂S = 0`. -/
+theorem normalFlatMass_le_of_eq_add_comp_extDerivCLM_of_mass_ne_top (hT : IsNormal T)
+    {R : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ}
+    {S : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ}
+    (hR : mass R ≠ ⊤) (hS : mass S ≠ ⊤) (h : T = R + S ∘L extDerivCLM) :
+    T.normalFlatMass ≤ mass R + mass S := by
+  refine normalFlatMass_le_of_eq_add_comp_extDerivCLM T ?_ ?_ h
+  · cases k with
+    | zero => exact isNormal_finZero_iff.2 hR
+    | succ k =>
+      refine isNormal_succ_iff.2 ⟨hR, ?_⟩
+      have hRd : R ∘L extDerivCLM = T ∘L extDerivCLM := by
+        rw [h, add_comp, comp_assoc S, extDerivCLM_comp_extDerivCLM, comp_zero, add_zero]
+      exact hRd ▸ (isNormal_succ_iff.1 hT).2
+  · refine isNormal_succ_iff.2 ⟨hS, ?_⟩
+    have hSd : S ∘L extDerivCLM = T - R := by rw [h]; abel
+    exact hSd ▸ ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hT.mass_ne_top, hR⟩) mass_sub_le
+
 /-- A strict flat-mass bound is witnessed by an actual normal decomposition. -/
 theorem normalFlatMass_lt_iff {c : ℝ≥0∞} : T.normalFlatMass < c ↔
     ∃ (R : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ)

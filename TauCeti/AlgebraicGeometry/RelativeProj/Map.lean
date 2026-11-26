@@ -39,6 +39,8 @@ of `AlgebraicGeometry.Proj.isClosedImmersion_map_of_grade_subset_range`.
   image of `D₊(φ b)` in a chart of `Proj_X(A)` into the image of `D₊(b)` in a chart of `Proj_X(B)`.
 * `CategoryTheory.CommMon.relativeProjMap_id` and `CategoryTheory.CommMon.relativeProjMap_comp`:
   the construction is contravariantly functorial.
+* `CategoryTheory.CommMon.relativeProjMapIso e`: an isomorphism `e : B ≅ A` of graded algebras
+  induces an isomorphism `Proj_X(A) ≅ Proj_X(B)` of relative `Proj`s over `X`.
 * `CategoryTheory.CommMon.isPullback_relativeProjMap`: over the chart of `Proj_X(B)` above an
   affine open `U`, the morphism is `Proj (⨁ n, Γ(Aₙ, U)) ⟶ Proj (⨁ n, Γ(Bₙ, U))`.
 * `CategoryTheory.CommMon.isClosedImmersion_relativeProjMap`: a morphism surjective in positive
@@ -253,6 +255,74 @@ theorem relativeProjMap_comp (φ : C ⟶ B) (ψ : B ⟶ A)
           (Category.assoc _ _ _).symm
 
 end Functoriality
+
+section Iso
+
+/-- An isomorphism `φ : B ⟶ A` of graded algebras satisfies the irrelevant-ideal condition of
+`CategoryTheory.CommMon.relativeProjMap`: it is bijective on sections over every open. -/
+theorem irrelevant_le_map_of_isIso (φ : B ⟶ A) [IsIso φ] (U : X.Opens) :
+    HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
+      (HomogeneousIdeal.irrelevant (B.gradedSectionsGrading U)).map
+        (CommMon.gradedSectionsGradedHom φ U) :=
+  HomogeneousIdeal.irrelevant_le_map_of_grade_subset_range _ fun _ _ x _ ↦
+    ⟨CommMon.gradedSectionsGradedHom (inv φ) U x, by
+      rw [← GradedRingHom.comp_apply, ← CommMon.gradedSectionsGradedHom_comp, IsIso.inv_hom_id,
+        CommMon.gradedSectionsGradedHom_id]
+      rfl⟩
+
+variable [∀ n, (A.X n).IsQuasicoherent] [∀ n, (B.X n).IsQuasicoherent]
+
+/-- The morphism of relative `Proj`s induced by a morphism of graded algebras depends only on the
+morphism, not on the proof of the irrelevant-ideal condition. -/
+theorem relativeProjMap_congr {φ ψ : B ⟶ A} (h : φ = ψ) (hφ hψ) :
+    CommMon.relativeProjMap φ hφ = CommMon.relativeProjMap ψ hψ := by
+  subst h
+  rfl
+
+/-- An isomorphism `e : B ≅ A` of graded algebras with quasi-coherent homogeneous components
+induces an isomorphism `Proj_X(A) ≅ Proj_X(B)` of relative `Proj`s, inverse to the morphism
+induced by `e⁻¹`. -/
+def relativeProjMapIso (e : B ≅ A) : A.relativeProj ≅ B.relativeProj where
+  hom := CommMon.relativeProjMap e.hom (fun U _ ↦ irrelevant_le_map_of_isIso e.hom U)
+  inv := CommMon.relativeProjMap e.inv (fun U _ ↦ irrelevant_le_map_of_isIso e.inv U)
+  hom_inv_id := by
+    rw [← CommMon.relativeProjMap_comp _ _ _ _
+      (fun U _ ↦ irrelevant_le_map_of_isIso (e.inv ≫ e.hom) U),
+      relativeProjMap_congr e.inv_hom_id _ (fun U _ ↦ irrelevant_le_map_of_isIso (𝟙 A) U),
+      CommMon.relativeProjMap_id]
+  inv_hom_id := by
+    rw [← CommMon.relativeProjMap_comp _ _ _ _
+      (fun U _ ↦ irrelevant_le_map_of_isIso (e.hom ≫ e.inv) U),
+      relativeProjMap_congr e.hom_inv_id _ (fun U _ ↦ irrelevant_le_map_of_isIso (𝟙 B) U),
+      CommMon.relativeProjMap_id]
+
+@[simp]
+theorem relativeProjMapIso_hom (e : B ≅ A) :
+    (relativeProjMapIso e).hom =
+      CommMon.relativeProjMap e.hom (fun U _ ↦ irrelevant_le_map_of_isIso e.hom U) :=
+  (rfl)
+
+@[simp]
+theorem relativeProjMapIso_inv (e : B ≅ A) :
+    (relativeProjMapIso e).inv =
+      CommMon.relativeProjMap e.inv (fun U _ ↦ irrelevant_le_map_of_isIso e.inv U) :=
+  (rfl)
+
+/-- The isomorphism of relative `Proj`s induced by an isomorphism of graded algebras lies over
+`X`. -/
+@[reassoc]
+theorem relativeProjMapIso_hom_relativeProjToBase (e : B ≅ A) :
+    (relativeProjMapIso e).hom ≫ B.relativeProjToBase = A.relativeProjToBase :=
+  CommMon.relativeProjMap_relativeProjToBase _ _
+
+/-- The inverse of the isomorphism of relative `Proj`s induced by an isomorphism of graded
+algebras lies over `X`. -/
+@[reassoc]
+theorem relativeProjMapIso_inv_relativeProjToBase (e : B ≅ A) :
+    (relativeProjMapIso e).inv ≫ A.relativeProjToBase = B.relativeProjToBase :=
+  CommMon.relativeProjMap_relativeProjToBase _ _
+
+end Iso
 
 section ClosedImmersion
 

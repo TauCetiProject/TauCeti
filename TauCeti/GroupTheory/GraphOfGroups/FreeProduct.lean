@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.StarRose
 public import TauCeti.GroupTheory.GraphOfGroups.Presentation
 public import TauCeti.GroupTheory.CoprodI.Basic
+public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 
 /-!
 # The graph of groups of a free product
@@ -22,6 +23,8 @@ at the center for each `x : X`.
 * `TauCeti.GraphOfGroups.freeProduct`: the graph of groups.
 * `TauCeti.GraphOfGroups.freeProductHom`: the homomorphism from `(∗ᵢ Mᵢ) ∗ F(X)` to the
   fundamental group of `freeProduct` with respect to the spokes.
+* `TauCeti.GraphOfGroups.coprodIEquivπ₁`: the isomorphism of the free product `∗ᵢ Mᵢ` with the
+  fundamental group of `freeProduct M PEmpty` at the center.
 
 ## Main results
 
@@ -75,6 +78,11 @@ instance freeProduct.subsingleton_edgeGroup (y : (starRose ι X).GeomEdge) :
     Subsingleton ((freeProduct M X).edgeGroup y) :=
   inferInstanceAs (Subsingleton PUnit)
 
+/-- The vertex group at the center of the graph of groups of a free product is trivial. -/
+instance freeProduct.subsingleton_vertexGroup_center :
+    Subsingleton ((freeProduct M X).vertexGroup (starRose.center ι X)) :=
+  inferInstanceAs (Subsingleton PUnit)
+
 /-- The homomorphism from the free product `(∗ᵢ Mᵢ) ∗ F(X)` to the fundamental group of its graph
 of groups with respect to the spokes: `M i` goes to the vertex group at `tip i` and the
 generator `x` to the dart of its petal. -/
@@ -99,7 +107,8 @@ def freeProductHom : Monoid.Coprod (Monoid.CoprodI M) (FreeGroup X) →*
 /-- The homomorphism `freeProductHom` is bijective: the free product `(∗ᵢ Mᵢ) ∗ F(X)` is the
 fundamental group of its graph of groups. -/
 theorem freeProductHom_bijective : Function.Bijective (freeProductHom M X) := by
-  have : Subsingleton (freeProductVertexGroup M none) := inferInstanceAs (Subsingleton PUnit)
+  have : Subsingleton (freeProductVertexGroup M none) :=
+    freeProduct.subsingleton_vertexGroup_center M X
   -- The vertex factors: the factor at the center is trivial.
   let e₁ : Monoid.CoprodI M ≃* Monoid.CoprodI (freeProduct M X).vertexGroup :=
     (Monoid.CoprodI.optionEquivOfSubsingleton (freeProductVertexGroup M)).symm
@@ -118,5 +127,29 @@ theorem freeProductHom_bijective : Function.Bijective (freeProductHom M X) := by
     ext <;> simp [he₁, e₂]
   exact h ▸ (π₁Tree.ofCoprod_bijective _ (isOrientation_starRoseOrientation ι X)
     (starRoseTree ι X).rev_mem).comp (MulEquiv.bijective _)
+
+/-- The free product `∗ᵢ Mᵢ` is the fundamental group at the center of its graph of groups over the
+star: `m ∈ Mᵢ` goes to the class of the loop that runs along the spoke `i`, reads `m` at its tip
+and comes back (`coprodIEquivπ₁_of`). -/
+noncomputable def coprodIEquivπ₁ :
+    Monoid.CoprodI M ≃* π₁ (freeProduct M PEmpty.{1}) (starRose.center ι PEmpty) :=
+  (MulEquiv.ofBijective ((freeProductHom M PEmpty).comp Monoid.Coprod.inl)
+    ((freeProductHom_bijective M PEmpty).comp ⟨Monoid.Coprod.inl_injective, fun x =>
+      ⟨Monoid.Coprod.fst x, by
+        induction x using Monoid.Coprod.induction_on with
+        | inl m => simp
+        | inr n => simp [Subsingleton.elim n 1]
+        | mul x y hx hy => simp [hx, hy]⟩⟩)).trans
+    (π₁Equiv _ _ (starRoseTree ι _)).symm
+
+/-- `coprodIEquivπ₁` sends `m ∈ Mᵢ` to the class of the loop that runs from the center along the
+spoke `i`, reads `m` at the tip `i` and comes back. -/
+@[simp] theorem coprodIEquivπ₁_of {i : ι} (m : M i) :
+    coprodIEquivπ₁ M (Monoid.CoprodI.of m) = π₁.vertexHom
+      ((dartPrefunctor (freeProduct M PEmpty.{1})).mapPath
+        ((starRoseTree ι PEmpty).path (starRose.center ι PEmpty) (starRose.tip _ i))) m := by
+  simp only [coprodIEquivπ₁, MulEquiv.trans_apply, MulEquiv.ofBijective_apply,
+    MonoidHom.comp_apply, freeProductHom_inl_of]
+  exact π₁Equiv_symm_of ..
 
 end TauCeti.GraphOfGroups

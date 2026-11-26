@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.GroupTheory.CoprodI.Basic
 public import TauCeti.NumberTheory.Modular.Generators
-import TauCeti.Analysis.Complex.Fuchsian.LevelOne.TriangleGroup
+import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Triangle.Group
 import TauCeti.GroupTheory.TriangleGroup.FreeProduct
 
 /-!

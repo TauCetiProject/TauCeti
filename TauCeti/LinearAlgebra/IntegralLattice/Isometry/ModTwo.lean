@@ -35,6 +35,8 @@ their transvections outside one small exception, these statements reduce the sur
 
 * `TauCeti.IntegralLattice.nondegenerate_polarBilin_reduceModTwo_quadraticForm`: `Q₂` is
   nonsingular when `L` is unimodular.
+* `TauCeti.IntegralLattice.reduceModTwo_quadraticForm_mk_eq_one_iff`: `Q₂` is `1` on the class of
+  `x` exactly when `B(x, x) ≡ 2 [ZMOD 4]`.
 * `TauCeti.IntegralLattice.Isometry.reductionModTwoHom`: the homomorphism `O(L) → O(Q₂)`, acting
   as `TauCeti.IntegralLattice.Isometry.reductionHom` (`coe_reductionModTwoHom_apply`), with kernel
   `congruenceSubgroup L 2` (`ker_reductionModTwoHom`).
@@ -80,6 +82,17 @@ theorem reduceModTwo_quadraticForm_mk_of_integralNorm_eq_neg_two {x : L}
     (hx : L.integralNorm x = -2) :
     (L.quadraticForm hL).reduceModTwo (Submodule.Quotient.mk x) = 1 := by
   simp [hx]
+
+/-- **The classes on which `Q₂` is `1`.** For an even lattice `L`, the reduction `Q₂` of
+`B(x, x) / 2` modulo two is `1` on the class of `x` exactly when `B(x, x) ≡ 2 [ZMOD 4]`, that is,
+when `B(x, x) / 2` is odd. -/
+theorem reduceModTwo_quadraticForm_mk_eq_one_iff (x : L) :
+    (L.quadraticForm hL).reduceModTwo (Submodule.Quotient.mk x) = 1 ↔
+      L.integralNorm x ≡ 2 [ZMOD 4] := by
+  obtain ⟨q, hq⟩ := (L.even_integralNorm_iff x).mpr (hL.exists_norm_eq_two_mul x)
+  rw [QuadraticForm.reduceModTwo_mk, quadraticForm_apply, hq, ZMod.intCast_eq_one_iff_odd,
+    Int.odd_iff, Int.ModEq]
+  omega
 
 namespace Isometry
 

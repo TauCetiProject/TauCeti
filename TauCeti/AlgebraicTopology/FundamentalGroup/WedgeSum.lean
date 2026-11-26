@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.CoprodI.Basic
 public import TauCeti.Topology.WedgeSum
 public import TauCeti.Topology.Circle.Punctured
 
+import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 import TauCeti.Topology.Homotopy.HomotopyEquiv
 
@@ -45,6 +46,7 @@ counterclockwise around the `i`-th circle.
   `TauCeti.WedgeSum.circleFundamentalGroupMulEquiv_expLoop`: **the fundamental group of a wedge
   of circles is free on the circles**, with the loop around the `i`-th circle sent to the
   generator `i`.
+* `TauCeti.WedgeSum.isMulTorsionFree_circleFundamentalGroup`: in particular it is torsion-free.
 
 ## References
 
@@ -319,6 +321,12 @@ theorem circleFundamentalGroupMulEquiv_expLoop (i : ι) :
     (MulEquiv.symm_apply_eq _).2 (by simp [FreeGroup.mulEquivIntOfUnique,
       FreeGroup.equivIntOfUnique])
   simp [circleFundamentalGroupMulEquiv, h]
+
+/-- The fundamental group of a wedge of circles is torsion-free, being a free group. -/
+instance isMulTorsionFree_circleFundamentalGroup :
+    IsMulTorsionFree (FundamentalGroup (WedgeSum fun _ : ι => (1 : Circle)) (base _)) :=
+  (circleFundamentalGroupMulEquiv ι).injective.isMulTorsionFree
+    (circleFundamentalGroupMulEquiv ι).toMonoidHom
 
 end Circle
 
