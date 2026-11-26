@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Symplectic.Manifold.Torus.Basic
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype.Cutoff
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure
 import TauCeti.Geometry.Symplectic.Manifold.Moser
@@ -151,25 +151,38 @@ def twoTorusCos :
   ⟨fun x ↦ Real.cos_periodic.lift (x (.inl ())),
     (Real.cos_periodic.contMDiff_lift Real.contDiff_cos).comp contMDiff_apply⟩
 
+/-- `sin θ` is `sin` lifted to the circle of the first angle `θ = x (inl ())`. -/
+@[simp]
+theorem twoTorusSin_apply (x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)) :
+    twoTorusSin x = Real.sin_periodic.lift (x (.inl ())) :=
+  (rfl)
+
+/-- `cos θ` is `cos` lifted to the circle of the first angle `θ = x (inl ())`. -/
+@[simp]
+theorem twoTorusCos_apply (x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)) :
+    twoTorusCos x = Real.cos_periodic.lift (x (.inl ())) :=
+  (rfl)
+
 /-- `sin θ` at a point whose first angle is the class of `t` is `sin t`. -/
-theorem twoTorusSin_apply {x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)} {t : ℝ}
+theorem twoTorusSin_apply_of_eq {x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)} {t : ℝ}
     (ht : x (.inl ()) = t) : twoTorusSin x = Real.sin t := by
-  simp [twoTorusSin, ht]
+  simp [ht]
 
 /-- `cos θ` at a point whose first angle is the class of `t` is `cos t`. -/
-theorem twoTorusCos_apply {x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)} {t : ℝ}
+theorem twoTorusCos_apply_of_eq {x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)} {t : ℝ}
     (ht : x (.inl ()) = t) : twoTorusCos x = Real.cos t := by
-  simp [twoTorusCos, ht]
+  simp [ht]
 
 /-- The values of `cos θ` lie in `[-1, 1]`. -/
 theorem abs_twoTorusCos_le_one (x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π)) :
     |twoTorusCos x| ≤ 1 := by
   obtain ⟨t, ht⟩ := QuotientAddGroup.mk_surjective (x (.inl ()))
-  rw [twoTorusCos_apply ht.symm]
+  rw [twoTorusCos_apply_of_eq ht.symm]
   exact Real.abs_cos_le_one t
 
 /-- The differential of `sin θ` is `cos θ dθ`: on a tangent vector `v` of the two-torus it is
 `cos θ * v (inl ())`. -/
+@[simp]
 theorem mfderiv_twoTorusSin (x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π))
     (v : TangentSpace (ModelWithCorners.pi fun _ : Unit ⊕ Unit ↦ 𝓘(ℝ)) x) :
     mfderiv (ModelWithCorners.pi fun _ : Unit ⊕ Unit ↦ 𝓘(ℝ)) 𝓘(ℝ, ℝ) twoTorusSin x v =
@@ -191,7 +204,7 @@ theorem mfderiv_twoTorusSin (x : ∀ _ : Unit ⊕ Unit, AddCircle (2 * π))
   erw [hcomp, ContinuousLinearMap.comp_apply, mfderiv_apply]
   have hval := congrArg (fun L ↦ L (v (.inl ())))
     (AddCircle.mvfderiv_eq_smulRight_of_hasDerivAt hlift)
-  rw [twoTorusCos_apply ht.symm, ← ht]
+  rw [twoTorusCos_apply_of_eq ht.symm, ← ht]
   -- `mvfderiv` into `ℝ` is `mfderiv` read in the model, and `smulRight 1 c` multiplies by `c`.
   exact hval.trans (mul_comm _ _)
 
@@ -224,7 +237,11 @@ theorem mextDerivₗ_twoTorusSinForm :
   rw [hv, RoughForm.wedge_apply_one_one (mextDeriv (RoughForm.ofFunction _ twoTorusSin))
     (torusTimeForm (fun _ : Unit ⊕ Unit ↦ 2 * π) (.inr ())).val x (v 0) (v 1)]
   simp only [mextDeriv_ofFunction_apply, mfderiv_twoTorusSin]
-  simp
+  simp only [Fin.isValue, torusTimeForm_apply, Matrix.cons_val_fin_one, Nat.reduceAdd,
+    ZeroMemClass.coe_zero, Pi.zero_apply, ContinuousAlternatingMap.coe_zero, mul_zero, add_zero,
+    SmoothForm.coe_funSMulₗ, ContinuousAlternatingMap.coe_smul, Pi.smul_apply,
+    torusSymplecticForm_apply, Finset.univ_unique, PUnit.default_eq_unit, Finset.sum_sub_distrib,
+    Finset.sum_singleton, smul_eq_mul]
   ring
 
 /-- **`dθ ∧ dφ + s d(sin θ dφ) = (1 + s cos θ) dθ ∧ dφ`** on the two-torus. -/
@@ -264,30 +281,6 @@ theorem isSymplectic_torusSymplecticForm_add_smul_mextDerivₗ_twoTorusSinForm {
     mul_eq_zero, hcoeff, false_or] at h
   rwa [SmoothBundleForm.eval₂_apply]
 
-/-- A smooth function `c : ℝ → ℝ` equal to `t` on `[0, 1]` with `|c t| < 2` everywhere: `t` times a
-bump function equal to `1` on `[0, 1]` and supported in `(-1/4, 5/4)`. It reparametrizes the path
-`ω_t` of the two-torus, symplectic only for `|t| < 2`, as a family over the whole line. -/
-private theorem exists_contDiff_eqOn_Icc_abs_lt_two :
-    ∃ c : ℝ → ℝ, ContDiff ℝ ∞ c ∧ (∀ t ∈ Icc (0 : ℝ) 1, c t = t) ∧ ∀ t, |c t| < 2 := by
-  let b : ContDiffBump (1 / 2 : ℝ) := ⟨1 / 2, 3 / 4, by norm_num, by norm_num⟩
-  refine ⟨fun t ↦ t * b t, contDiff_id.mul b.contDiff, fun t ht ↦ ?_, fun t ↦ ?_⟩
-  · have hmem : t ∈ Metric.closedBall (1 / 2 : ℝ) b.rIn := by
-      rw [Real.closedBall_eq_Icc]
-      constructor <;> simp only [b] <;> linarith [ht.1, ht.2]
-    simp only [b.one_of_mem_closedBall hmem, mul_one]
-  · by_cases h : b t = 0
-    · simp only [h, mul_zero, abs_zero]
-      norm_num
-    have hmem : t ∈ Metric.ball (1 / 2 : ℝ) (3 / 4) := by
-      rw [← b.support_eq]
-      exact h
-    rw [Real.ball_eq_Ioo] at hmem
-    rw [abs_mul, abs_of_nonneg b.nonneg]
-    have ht : |t| < 2 := by
-      rw [abs_lt]
-      constructor <;> linarith [hmem.1, hmem.2]
-    nlinarith [b.le_one (x := t), b.nonneg (x := t), abs_nonneg t]
-
 /-- **Moser's isotopy for `(1 + (t / 2) cos θ) dθ ∧ dφ`.** On the two-torus, the path
 `ω_t = dθ ∧ dφ + (t / 2) d(sin θ dφ)`, whose velocity `(1 / 2) d(sin θ dφ)` is exact, has a Moser
 isotopy: there are diffeomorphisms `ψ_t`, jointly smooth in `(t, x)`, with `ψ_0 = id` and
@@ -306,7 +299,14 @@ theorem exists_isotopy_mpullback_torusSymplecticForm_add_smul_mextDerivₗ_twoTo
         torusSymplecticForm fun _ ↦ 2 * π := by
   -- Reparametrize by a smooth `c` with `c t = t` on `[0, 1]` and `|c| < 2`, keeping the slices
   -- `ω_(c t)` symplectic.
-  obtain ⟨c, hc, hct, hc2⟩ := exists_contDiff_eqOn_Icc_abs_lt_two
+  obtain ⟨g, hg, hgid⟩ :=
+    (⟨Ioo (-2) 2, isOpen_Ioo⟩ : TopologicalSpace.Opens ℝ).exists_contMDiff_eventuallyEq_id
+      (convex_Icc 0 1) isCompact_Icc (nonempty_Icc.2 zero_le_one)
+      fun t ht ↦ ⟨by linarith [ht.1], by linarith [ht.2]⟩
+  set c : ℝ → ℝ := fun t ↦ (g t : ℝ)
+  have hc : ContDiff ℝ ∞ c := contMDiff_iff_contDiff.1 (contMDiff_subtypeVal.comp hg)
+  have hct (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : c t = t := (hgid t ht).self_of_nhds
+  have hc2 (t : ℝ) : |c t| < 2 := abs_lt.2 (g t).property
   have hc' : ContDiff ℝ ∞ (deriv c) := (contDiff_infty_iff_deriv.1 hc).2
   -- The family with slices `ω_(c t)`, and the family of primitives `c'(t) (1 / 2) sin θ dφ` of its
   -- velocities.
