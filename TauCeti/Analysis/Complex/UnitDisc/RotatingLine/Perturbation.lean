@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Pi
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # The perturbed real-boundary disc problem in Hölder spaces
@@ -32,6 +33,8 @@ operator for small coefficients. This gives:
 * the coefficients for which the operator is invertible form an open set, on which the inverse,
   and hence the solution, is a `C^n` function of the coefficients for every `n`, including
   `n = ω` (`TauCeti.contDiffOn_inverse_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL`).
+  This holds for any target space `F` in place of `ℂ^ι` and any closed subspace in place of
+  `X_3`.
 
 The forcing is an arbitrary Hölder function, so this is the local Hölder boundary problem of the
 linear theory of holomorphic discs, which does not require the forcing to be Sobolev.
@@ -45,7 +48,7 @@ linear theory of holomorphic discs, which does not require the forcing to be Sob
   solvability with the uniform Schauder estimate.
 * `TauCeti.isOpen_setOf_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL` and
   `TauCeti.contDiffOn_inverse_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL`: parameter
-  dependence.
+  dependence on any closed subspace of `C^{1,α}(D, F)`.
 
 ## References
 
@@ -109,6 +112,34 @@ theorem contDiff_perturbedAugmentedConjWirtingerDerivL (hα : α ≤ 1) {n : Wit
       perturbedAugmentedConjWirtingerDerivL F hα p.1 p.2 :=
   contDiff_const.add (contDiff_const.clm_comp
     (contDiff_wirtingerPerturbationL (Ω := unitBallOpens ℂ) (F := F) (convex_unitBallOpens ℂ) hα))
+
+/-- The coefficients `(A, B)` for which the perturbed augmented operator is invertible on a
+closed subspace `V` of `C^{1,α}(D, F)` form an open set. -/
+theorem isOpen_setOf_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL
+    (hα : α ≤ 1) (V : Submodule ℝ (CkHolderSpaceOn 1 α (unitBallOpens ℂ) F)) [CompleteSpace V] :
+    IsOpen {p : HolderSpace α (unitBallOpens ℂ) (F →L[ℝ] F) ×
+        HolderSpace α (unitBallOpens ℂ) (F →L[ℝ] F) |
+      (perturbedAugmentedConjWirtingerDerivL F hα p.1 p.2 ∘L V.subtypeL).IsInvertible} :=
+  isOpen_setOfPred_isInvertible.preimage
+    ((contDiff_perturbedAugmentedConjWirtingerDerivL (F := F) (n := 0) hα).continuous.clm_comp
+      continuous_const)
+
+/-- **Parameter dependence of the perturbed disc problem.** On the open set of coefficients
+`(A, B)` for which the perturbed augmented operator is invertible on a closed subspace `V` of
+`C^{1,α}(D, F)`, its inverse is a `C^n` function of `(A, B)` for every `n`, including `n = ω`. For
+`F = ℂ^ι`, `V = X_3` and `0 < α < 1` this set contains every pair of coefficients of small norm
+(`TauCeti.exists_pos_forall_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL`). -/
+theorem contDiffOn_inverse_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL
+    (hα : α ≤ 1) (V : Submodule ℝ (CkHolderSpaceOn 1 α (unitBallOpens ℂ) F)) [CompleteSpace V]
+    {n : WithTop ℕ∞} :
+    ContDiffOn ℝ n
+      (fun p : HolderSpace α (unitBallOpens ℂ) (F →L[ℝ] F) ×
+          HolderSpace α (unitBallOpens ℂ) (F →L[ℝ] F) ↦
+        (perturbedAugmentedConjWirtingerDerivL F hα p.1 p.2 ∘L V.subtypeL).inverse)
+      {p | (perturbedAugmentedConjWirtingerDerivL F hα p.1 p.2 ∘L V.subtypeL).IsInvertible} :=
+  ContDiffOn.clm_inverse
+    ((contDiff_perturbedAugmentedConjWirtingerDerivL hα).clm_comp contDiff_const).contDiffOn
+    fun _ hp ↦ hp
 
 end operator
 
@@ -196,50 +227,9 @@ theorem exists_pos_forall_existsUnique_perturbedAugmentedConjWirtingerDerivL_eq
     exists_pos_forall_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL
       (ι := ι) hα0 hα1
   refine ⟨ε, hε, C, fun A B hA hB ↦ ?_⟩
-  obtain ⟨⟨e, he⟩, hC⟩ := h A B hA hB
-  refine ⟨fun y ↦ ⟨e.symm y, ?_, fun u hu ↦ ?_⟩, fun u hu ↦ ?_⟩
-  · simpa using congr($he.symm (e.symm y))
-  · rw [← e.symm_apply_apply u]
-    congr 1
-    simpa using congr($he u).trans hu
-  · rw [← he, inverse_equiv] at hC
-    have h1 := e.symm.toContinuousLinearMap.le_opNorm (e ⟨u, hu⟩)
-    rw [ContinuousLinearEquiv.coe_coe, e.symm_apply_apply] at h1
-    have h2 : e ⟨u, hu⟩ = perturbedAugmentedConjWirtingerDerivL (ι → ℂ) hα1.le A B u :=
-      congr($he ⟨u, hu⟩)
-    calc ‖u‖ = ‖(⟨u, hu⟩ : rotatingLinePiSubspace ι 3 α)‖ := rfl
-      _ ≤ _ := h1
-      _ ≤ C * ‖e ⟨u, hu⟩‖ := by gcongr
-      _ = _ := by rw [h2]
-
-/-- The coefficients `(A, B)` for which the perturbed augmented operator is invertible on `X_3`
-form an open set. -/
-theorem isOpen_setOf_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL
-    (hα : α ≤ 1) :
-    IsOpen {p : HolderSpace α (unitBallOpens ℂ) ((ι → ℂ) →L[ℝ] (ι → ℂ)) ×
-        HolderSpace α (unitBallOpens ℂ) ((ι → ℂ) →L[ℝ] (ι → ℂ)) |
-      (perturbedAugmentedConjWirtingerDerivL (ι → ℂ) hα p.1 p.2 ∘L
-        (rotatingLinePiSubspace ι 3 α).subtypeL).IsInvertible} :=
-  isOpen_setOfPred_isInvertible.preimage
-    ((contDiff_perturbedAugmentedConjWirtingerDerivL (F := ι → ℂ) (n := 0) hα).continuous.clm_comp
-      continuous_const)
-
-/-- **Parameter dependence of the perturbed disc problem.** On the open set of coefficients
-`(A, B)` for which the perturbed augmented operator is invertible on `X_3`, its inverse is a `C^n`
-function of `(A, B)` for every `n`, including `n = ω`. For `0 < α < 1` this set contains every
-pair of coefficients of small norm
-(`TauCeti.exists_pos_forall_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL`). -/
-theorem contDiffOn_inverse_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL
-    (hα : α ≤ 1) {n : WithTop ℕ∞} :
-    ContDiffOn ℝ n
-      (fun p : HolderSpace α (unitBallOpens ℂ) ((ι → ℂ) →L[ℝ] (ι → ℂ)) ×
-          HolderSpace α (unitBallOpens ℂ) ((ι → ℂ) →L[ℝ] (ι → ℂ)) ↦
-        (perturbedAugmentedConjWirtingerDerivL (ι → ℂ) hα p.1 p.2 ∘L
-          (rotatingLinePiSubspace ι 3 α).subtypeL).inverse)
-      {p | (perturbedAugmentedConjWirtingerDerivL (ι → ℂ) hα p.1 p.2 ∘L
-        (rotatingLinePiSubspace ι 3 α).subtypeL).IsInvertible} :=
-  ContDiffOn.clm_inverse
-    ((contDiff_perturbedAugmentedConjWirtingerDerivL hα).clm_comp contDiff_const).contDiffOn
-    fun _ hp ↦ hp
+  obtain ⟨hinv, hC⟩ := h A B hA hB
+  refine ⟨fun y ↦ by simpa using hinv.bijective.existsUnique y, fun u hu ↦ ?_⟩
+  exact (hinv.norm_le_norm_inverse_mul_norm ⟨u, hu⟩).trans
+    (mul_le_mul_of_nonneg_right hC (norm_nonneg _))
 
 end TauCeti
