@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Coset.Basic
 public import Mathlib.RepresentationTheory.Basic
 import Mathlib.Algebra.BigOperators.Finprod
+import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.Tactic.Group
 import TauCeti.GroupTheory.Coset.Basic
 
@@ -122,17 +123,6 @@ theorem Subgroup.isHeckeFunction_indicator_one (K : Subgroup G) :
     · have hgk : g * k ∉ (K : Set G) := fun h ↦ hg (by simpa using K.mul_mem h (K.inv_mem hk))
       simp [Set.indicator_of_notMem hgk, Set.indicator_of_notMem hg]
 
-private theorem support_smul_subset {K : Subgroup G} {f : G → A} {M : Type*} [AddCommMonoid M]
-    [Module A M] (x : G ⧸ K → M) :
-    (Function.support fun q : G ⧸ K ↦ f q.out • x q) ⊆ {q : G ⧸ K | f q.out ≠ 0} :=
-  fun _ hq h0 ↦ hq (by simp [h0])
-
-private theorem finite_support_smul {K : Subgroup G} {f : G → A}
-    (hf : {q : G ⧸ K | f q.out ≠ 0}.Finite) {M : Type*} [AddCommMonoid M] [Module A M]
-    (x : G ⧸ K → M) :
-    (Function.support fun q : G ⧸ K ↦ f q.out • x q).Finite :=
-  hf.subset (support_smul_subset x)
-
 /-- The Hecke operator attached to `f : G → A` on a representation `π : Representation A G W`,
 defined by summing `f q.out • π q.out v` over left cosets `q : G ⧸ K`. -/
 def Representation.heckeOp (π : Representation A G W) (K : Subgroup G) (f : G → A) (v : W) : W :=
@@ -167,25 +157,27 @@ theorem Representation.heckeOp_add_right {K : Subgroup G} (π : Representation A
     (hf : {q : G ⧸ K | f q.out ≠ 0}.Finite) (v w : W) :
     π.heckeOp K f (v + w) = π.heckeOp K f v + π.heckeOp K f w := by
   simp only [heckeOp_def, map_add, smul_add]
-  exact finsum_add_distrib (finite_support_smul hf _) (finite_support_smul hf _)
+  exact finsum_add_distrib (Function.HasFiniteSupport.smul_left hf _)
+    (Function.HasFiniteSupport.smul_left hf _)
 
 theorem Representation.heckeOp_smul_right {K : Subgroup G} (π : Representation A G W) {f : G → A}
     (hf : {q : G ⧸ K | f q.out ≠ 0}.Finite) (c : A) (v : W) :
     π.heckeOp K f (c • v) = c • π.heckeOp K f v := by
   simp only [heckeOp_def, map_smul, smul_comm _ c]
-  exact (map_finsum (LinearMap.lsmul A W c) (finite_support_smul hf _)).symm
+  exact (map_finsum (LinearMap.lsmul A W c) (Function.HasFiniteSupport.smul_left hf _)).symm
 
 theorem Representation.heckeOp_add_left {K : Subgroup G} (π : Representation A G W) {f f' : G → A}
     (hf : {q : G ⧸ K | f q.out ≠ 0}.Finite) (hf' : {q : G ⧸ K | f' q.out ≠ 0}.Finite) (v : W) :
     π.heckeOp K (f + f') v = π.heckeOp K f v + π.heckeOp K f' v := by
   simp only [heckeOp_def, Pi.add_apply, add_smul]
-  exact finsum_add_distrib (finite_support_smul hf _) (finite_support_smul hf' _)
+  exact finsum_add_distrib (Function.HasFiniteSupport.smul_left hf _)
+    (Function.HasFiniteSupport.smul_left hf' _)
 
 theorem Representation.heckeOp_smul_left {K : Subgroup G} (π : Representation A G W) {f : G → A}
     (hf : {q : G ⧸ K | f q.out ≠ 0}.Finite) (c : A) (v : W) :
     π.heckeOp K (c • f) v = c • π.heckeOp K f v := by
   simp only [heckeOp_def, Pi.smul_apply, smul_eq_mul, mul_smul]
-  exact (map_finsum (LinearMap.lsmul A W c) (finite_support_smul hf _)).symm
+  exact (map_finsum (LinearMap.lsmul A W c) (Function.HasFiniteSupport.smul_left hf _)).symm
 
 /-- The indicator function of `K` acts as the identity on `K`-fixed vectors. -/
 theorem Representation.heckeOp_indicator_one {K : Subgroup G} (π : Representation A G W) {v : W}
@@ -205,7 +197,9 @@ vectors. -/
 theorem Representation.heckeOp_mem_fixed {K : Subgroup G} (π : Representation A G W) {f : G → A}
     {v : W} (hf : K.IsHeckeFunction f) (hv : ∀ k ∈ K, π k v = v) {k : G} (hk : k ∈ K) :
     π k (π.heckeOp K f v) = π.heckeOp K f v := by
-  rw [heckeOp_def, map_finsum (π k) (finite_support_smul hf.finite_support _)]
+  have hfin : (Function.support fun q : G ⧸ K ↦ f q.out • π q.out v).Finite :=
+    Function.HasFiniteSupport.smul_left hf.finite_support _
+  rw [heckeOp_def, map_finsum (π k) hfin]
   have h1 : (∑ᶠ q : G ⧸ K, π k (f q.out • π q.out v)) =
       ∑ᶠ q : G ⧸ K, f (k * q.out) • π (k * q.out) v :=
     finsum_congr fun q ↦ by rw [map_smul, map_mul, mul_apply_eq_comp, hf.mul_left _ hk]
@@ -265,10 +259,12 @@ theorem Subgroup.IsHeckeFunction.heckeOp_adjoint {K : Subgroup G} {f : G → A}
     · have hbk : π' (a * q.out⁻¹ * (b * k)) v' = π' a (π' q.out⁻¹ v') := by
         simp [map_mul, hv' _ hk, hv' _ hb]
       rw [heq', hbk, hmove a, hv _ (K.inv_mem ha), hmove q.out⁻¹, inv_inv]
+  have hfin : (Function.support fun q : G ⧸ K ↦ f q.out • π q.out v).Finite :=
+    Function.HasFiniteSupport.smul_left hf.finite_support _
+  have hfin' : (Function.support fun q : G ⧸ K ↦ σ (f q.out⁻¹) • π' q.out v').Finite :=
+    Function.HasFiniteSupport.smul_left (hf.dual σ τ hτg).finite_support _
   rw [Representation.heckeOp_def, Representation.heckeOp_def, ← LinearMap.flip_apply B _ v',
-    map_finsum (B.flip v') (finite_support_smul hf.finite_support _),
-    map_finsum (B v)
-      (finite_support_smul (f := fun g ↦ σ (f g⁻¹)) (hf.dual σ τ hτg).finite_support _)]
+    map_finsum (B.flip v') hfin, map_finsum (B v) hfin']
   refine (finsum_congr fun q ↦ ?_).trans (finsum_comp_equiv e)
   simp only [LinearMap.flip_apply, map_smulₛₗ, RingHom.id_apply, (hq_term q).1, (hq_term q).2]
 
@@ -281,11 +277,6 @@ def Subgroup.heckeConv (K : Subgroup G) (f' f : G → A) (x : G) : A :=
 theorem Subgroup.heckeConv_def (K : Subgroup G) (f' f : G → A) (x : G) :
     K.heckeConv f' f x = ∑ᶠ q : G ⧸ K, f' q.out * f (q.out⁻¹ * x) :=
   (rfl)
-
-private theorem finite_support_mul {K : Subgroup G} {f : G → A}
-    (hf : {q : G ⧸ K | f q.out ≠ 0}.Finite) (g : G ⧸ K → A) :
-    (Function.support fun q : G ⧸ K ↦ f q.out * g q).Finite :=
-  hf.subset fun _ hq h0 ↦ hq (by simp [h0])
 
 @[simp] theorem Subgroup.heckeConv_zero_left (K : Subgroup G) (f : G → A) :
     K.heckeConv 0 f = 0 := by
@@ -303,28 +294,30 @@ theorem Subgroup.heckeConv_add_left (K : Subgroup G) {f₁ f₂ : G → A}
     K.heckeConv (f₁ + f₂) f = K.heckeConv f₁ f + K.heckeConv f₂ f := by
   funext x
   simp only [heckeConv_def, Pi.add_apply, add_mul]
-  exact finsum_add_distrib (finite_support_mul hf₁ _) (finite_support_mul hf₂ _)
+  exact finsum_add_distrib (Function.HasFiniteSupport.mul_left hf₁ _)
+    (Function.HasFiniteSupport.mul_left hf₂ _)
 
 theorem Subgroup.heckeConv_add_right (K : Subgroup G) {f' : G → A}
     (hf' : {q : G ⧸ K | f' q.out ≠ 0}.Finite) (f₁ f₂ : G → A) :
     K.heckeConv f' (f₁ + f₂) = K.heckeConv f' f₁ + K.heckeConv f' f₂ := by
   funext x
   simp only [heckeConv_def, Pi.add_apply, mul_add]
-  exact finsum_add_distrib (finite_support_mul hf' _) (finite_support_mul hf' _)
+  exact finsum_add_distrib (Function.HasFiniteSupport.mul_left hf' _)
+    (Function.HasFiniteSupport.mul_left hf' _)
 
 theorem Subgroup.heckeConv_smul_left (K : Subgroup G) {f' : G → A}
     (hf' : {q : G ⧸ K | f' q.out ≠ 0}.Finite) (c : A) (f : G → A) :
     K.heckeConv (c • f') f = c • K.heckeConv f' f := by
   funext x
   simp only [heckeConv_def, Pi.smul_apply, smul_eq_mul, mul_assoc]
-  exact (map_finsum (LinearMap.lsmul A A c) (finite_support_mul hf' _)).symm
+  exact (map_finsum (LinearMap.lsmul A A c) (Function.HasFiniteSupport.mul_left hf' _)).symm
 
 theorem Subgroup.heckeConv_smul_right (K : Subgroup G) {f' : G → A}
     (hf' : {q : G ⧸ K | f' q.out ≠ 0}.Finite) (c : A) (f : G → A) :
     K.heckeConv f' (c • f) = c • K.heckeConv f' f := by
   funext x
   simp only [heckeConv_def, Pi.smul_apply, smul_eq_mul, mul_left_comm _ c]
-  exact (map_finsum (LinearMap.lsmul A A c) (finite_support_mul hf' _)).symm
+  exact (map_finsum (LinearMap.lsmul A A c) (Function.HasFiniteSupport.mul_left hf' _)).symm
 
 /-- The indicator function of `K` is a left unit for Hecke convolution on left `K`-invariant
 functions. -/
@@ -409,7 +402,8 @@ theorem Representation.heckeOp_comp {K : Subgroup G} (π : Representation A G W)
     (hf'_supp : {q : G ⧸ K | f' q.out ≠ 0}.Finite)
     (hv : ∀ k ∈ K, π k v = v) :
     π.heckeOp K f' (π.heckeOp K f v) = π.heckeOp K (K.heckeConv f' f) v := by
-  have hfin_f := finite_support_smul hf_supp (fun q : G ⧸ K ↦ π q.out v)
+  have hfin_f : (Function.support fun q : G ⧸ K ↦ f q.out • π q.out v).Finite :=
+    Function.HasFiniteSupport.smul_left hf_supp _
   have hS : ((fun p : (G ⧸ K) × (G ⧸ K) ↦ (↑(p.1.out * p.2.out) : G ⧸ K)) ''
       ({q | f' q.out ≠ 0} ×ˢ {r | f r.out ≠ 0})).Finite :=
     (hf'_supp.prod hf_supp).image _
@@ -418,8 +412,9 @@ theorem Representation.heckeOp_comp {K : Subgroup G} (π : Representation A G W)
     rw [Representation.heckeOp_def, finsum_eq_sum _ hfin_f, map_sum]
     exact Finset.sum_congr rfl fun r _ ↦ by rw [map_smul, map_mul, mul_apply_eq_comp]
   rw [Representation.heckeOp_def,
-    finsum_eq_sum_of_support_subset _ (s := hf'_supp.toFinset)
-      (fun q hq ↦ hf'_supp.mem_toFinset.2 (support_smul_subset _ hq))]
+    finsum_eq_sum_of_support_subset (f := fun q : G ⧸ K ↦ f' q.out • π q.out (π.heckeOp K f v))
+      (s := hf'_supp.toFinset) (fun q hq ↦ hf'_supp.mem_toFinset.2
+        (Function.support_smul_subset_left (fun q : G ⧸ K ↦ f' q.out) _ hq))]
   simp_rw [hinner, Finset.smul_sum, smul_smul]
   have hstep : ∀ q ∈ hf'_supp.toFinset,
       ∑ r ∈ hfin_f.toFinset, (f' q.out * f r.out) • π (q.out * r.out) v =
@@ -441,9 +436,10 @@ theorem Representation.heckeOp_comp {K : Subgroup G} (π : Representation A G W)
       hS.mem_toFinset.2 (mem_conv_prod_image hf_right (hf'_supp.mem_toFinset.1 hq)
         fun h0 ↦ hs (by simp [h0]))
   rw [Finset.sum_congr rfl hstep, Finset.sum_comm, Representation.heckeOp_def,
-    finsum_eq_sum_of_support_subset _ (s := hS.toFinset) fun _ hr ↦
-      hS.mem_toFinset.2 (mem_conv_prod_image_of_heckeConv_ne_zero hf_right
-        (support_smul_subset _ hr))]
+    finsum_eq_sum_of_support_subset (f := fun s : G ⧸ K ↦ K.heckeConv f' f s.out • π s.out v)
+      (s := hS.toFinset) fun _ hr ↦
+        hS.mem_toFinset.2 (mem_conv_prod_image_of_heckeConv_ne_zero hf_right
+          (Function.support_smul_subset_left (fun s : G ⧸ K ↦ K.heckeConv f' f s.out) _ hr))]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   rw [← Finset.sum_smul, Subgroup.heckeConv_def,
     finsum_eq_sum_of_support_subset _ (s := hf'_supp.toFinset)
