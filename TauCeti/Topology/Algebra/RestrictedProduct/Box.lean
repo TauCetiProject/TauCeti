@@ -43,8 +43,6 @@ Monticone.
 * `RestrictedProduct.isOpenEmbedding_inclusion_principal_of_forall_mem`: for cofinite `S`, the
   inclusion of `Πʳ i, [R i, A i]_[𝓟 S]` into `Πʳ i, [R i, A i]` is an open embedding as soon as
   `A i` is open for every `i ∈ S`.
-* `RestrictedProduct.units_smul_box`: a unit of a restricted product of monoids acts on a box
-  coordinatewise.
 * `RestrictedProduct.isOpen_box` and `RestrictedProduct.isCompact_box`: `box C` is open in
   `Πʳ i, [R i, A i]` when every `C i` is open and `A i ⊆ C i` cofinitely, and compact in
   `Πʳ i, [R i, A i]_[𝓕]` when every `C i` is compact and `C i ⊆ A i` `𝓕`-eventually, with no
@@ -295,17 +293,6 @@ theorem preimage_smul_box {M : Type*} [∀ i, SMul M (G i)] [∀ i, SMulMemClass
     (m • ·) ⁻¹' (box C : Set (Πʳ i, [G i, B i]_[𝓕])) = box (fun i ↦ (m • ·) ⁻¹' C i) := by
   ext x
   simp
-
-open scoped Pointwise in
-/-- A unit `x` of a restricted product of monoids acts on a box coordinatewise: `x • box C` is the
-box with factors `x i • C i`. -/
-theorem units_smul_box [∀ i, Monoid (G i)] [∀ i, SubmonoidClass (S i) (G i)]
-    (x : (Πʳ i, [G i, B i]_[𝓕])ˣ) (C : ∀ i, Set (G i)) :
-    x • (box C : Set (Πʳ i, [G i, B i]_[𝓕])) =
-      (box fun i ↦ Units.map (evalMonoidHom G i) x • C i : Set (Πʳ i, [G i, B i]_[𝓕])) := by
-  ext y
-  simp only [Set.mem_smul_set_iff_inv_smul_mem, mem_box]
-  simp [Units.smul_def]
 
 end Algebra
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.IntegralCurve.Flow
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Dynamics.Flow.PeriodBound
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 
 /-!
 # The maximal flow of a vector field
@@ -45,6 +46,8 @@ compact set.
 * `TauCeti.mfderiv_flowOf_comp_apply`: the differential of `(t, s) ↦ φₜ(f s)`.
 * `TauCeti.mfderiv_flowOf_comp_prodMk_apply`: the differential of `y ↦ φ_{τ y}(f y)`.
 * `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
+* `TauCeti.lt_apply_flowOf_of_le_apply`, `TauCeti.apply_flowOf_lt_of_apply_le`: a trajectory
+  crosses a level transverse to the field only in the direction of the field.
 * `TauCeti.mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq`: a function that the flow rescales by
   `e^s` is differentiated to itself by the field.
 * `TauCeti.mfderiv_flowOf_zero_apply`: the derivative of the flow at time zero.
@@ -358,6 +361,48 @@ theorem hasDerivAt_comp_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace 
       isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp hx)
   exact Manifold.hasDerivAt_comp_curve hg
     (((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hopen).hasMFDerivAt)
+
+omit [CompleteSpace E] in
+/-- **Trajectories cross a level only upwards.** Let `f` be continuous, differentiable with
+`df(v) > 0` at every point of the level `f⁻¹(c)`, and let `v` be `C¹`. If `c ≤ f x`, then
+`c < f (φₜ x)` at every positive time `t` at which the trajectory of `x` is defined. -/
+theorem lt_apply_flowOf_of_le_apply [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {f : M → ℝ} {c : ℝ}
+    (hf : Continuous f)
+    (hfc : ∀ y, f y = c → MDifferentiableAt I 𝓘(ℝ) f y ∧ 0 < mvfderiv I f y (v y)) {x : M}
+    (hx : c ≤ f x) {t : ℝ} (ht : 0 < t) (htx : (t, x) ∈ flowDomain v) :
+    c < f (flowOf v t x) := by
+  -- The trajectory is an integral curve on its open interval of existence, which contains
+  -- `[0, t]`.
+  have hdom : {τ | (τ, x) ∈ flowDomain v} = maximalIntegralCurveInterval v x :=
+    ext fun _ ↦ mem_flowDomain
+  have hs : IsOpen {τ | (τ, x) ∈ flowDomain v} := hdom ▸ isOpen_maximalIntegralCurveInterval
+  have hIcc : Icc 0 t ⊆ {τ | (τ, x) ∈ flowDomain v} := hdom ▸
+    ordConnected_maximalIntegralCurveInterval.out
+      (mem_flowDomain.1 (mem_flowDomain_zero_of_mem htx)) (mem_flowDomain.1 htx)
+  exact (isMIntegralCurveOn_flowOf hv x).lt_apply_of_le_apply hs hIcc
+    (hf.comp_continuousOn ((isMIntegralCurveOn_flowOf hv x).continuousOn.mono hIcc))
+    (fun τ _ hτ ↦ hfc _ hτ) (by rwa [flowOf_zero v]) ⟨ht, le_rfl⟩
+
+omit [CompleteSpace E] in
+/-- **Trajectories cross a level only downwards when the field decreases the function.** Let `f`
+be continuous, differentiable with `df(v) < 0` at every point of the level `f⁻¹(c)`, and let `v`
+be `C¹`. If `f x ≤ c`, then `f (φₜ x) < c` at every positive time `t` at which the trajectory of
+`x` is defined: the forward flow carries `{f ≤ c}` into `{f < c}`. -/
+theorem apply_flowOf_lt_of_apply_le [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {f : M → ℝ} {c : ℝ}
+    (hf : Continuous f)
+    (hfc : ∀ y, f y = c → MDifferentiableAt I 𝓘(ℝ) f y ∧ mvfderiv I f y (v y) < 0) {x : M}
+    (hx : f x ≤ c) {t : ℝ} (ht : 0 < t) (htx : (t, x) ∈ flowDomain v) :
+    f (flowOf v t x) < c := by
+  have hlt := lt_apply_flowOf_of_le_apply (f := -f) (c := -c) hv hf.neg
+    (fun y hy ↦ by
+      have hy' : f y = c := by simpa using hy
+      refine ⟨(hfc y hy').1.neg, ?_⟩
+      rw [mvfderiv_neg, neg_apply]
+      exact neg_pos.2 (hfc y hy').2)
+    (by simpa using hx) ht htx
+  simpa using hlt
 
 /-- **A function rescaled by a flow is differentiated to itself by the field.** If `F` is
 differentiable at `x` and `F(φ_s x) = e^s F(x)` for `s` near `0`, then `dF(v) = F` at `x`. -/

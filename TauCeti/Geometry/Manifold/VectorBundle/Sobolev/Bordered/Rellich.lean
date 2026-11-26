@@ -38,10 +38,20 @@ The closure of `A.halfImage j` is compact and lies in the image of chart `j` of 
 axis, so Rellich compactness up to the real axis
 (`TauCeti.Wkp.isCompactOperator_restrictL_lowerOrderL_upperHalf`) applies on each component.
 
+Composing, the inclusion `W^{k+d+1,p}(V) → W^{k,p}(V)` is compact for `k + d + 1 ≤ n`
+(`TauCeti.BorderedSobolevSection.isCompactOperator_lowerOrdersL`), and with the injectivity of the
+chart data this gives **Ehrling's inequality**
+(`TauCeti.BorderedSobolevSection.exists_norm_lowerOrdersL_le`), as for bases without boundary
+(`TauCeti.SectionChartData.exists_norm_lowerOrdersL_le`).
+
 ## Main results
 
 * `TauCeti.BorderedSobolevSection.isCompactOperator_lowerOrderL`: **Rellich's theorem** for
   Sobolev sections over a base with boundary.
+* `TauCeti.BorderedSobolevSection.isCompactOperator_lowerOrdersL`: `W^{k+d+1,p}(V) → W^{k,p}(V)`
+  is compact.
+* `TauCeti.BorderedSobolevSection.exists_norm_lowerOrdersL_le`: **Ehrling's inequality**
+  `‖w‖_{W^{k,p}} ≤ ε ‖w‖_{W^{k+d+1,p}} + C_ε ‖w‖_{Lᵖ}`.
 
 ## References
 
@@ -128,6 +138,29 @@ theorem isCompactOperator_lowerOrderL (hkn : k + 1 ≤ n)
     exact Wkp.lowerOrder_restrictL hA k (y x)
   rw [hfun]
   exact hT
+
+/-- **Rellich's theorem over a base with boundary, for any loss of derivatives.** For
+`k + d + 1 ≤ n` and `1 ≤ p ≤ ∞`, the inclusion `W^{k+d+1,p}(V) → W^{k,p}(V)` is a compact
+operator. -/
+theorem isCompactOperator_lowerOrdersL {d : ℕ} (hkn : k + d + 1 ≤ n)
+    (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V) :
+    IsCompactOperator (A.halfSectionChartData.lowerOrdersL volume p k (d + 1)) :=
+  SectionChartData.isCompactOperator_lowerOrdersL (isCompactOperator_lowerOrderL hkn A)
+
+/-- **Ehrling's inequality over a base with boundary.** For a `Cⁿ` vector bundle over a Hausdorff
+`Cⁿ` manifold modelled on the closed upper half-plane, given by a finite bundle atlas, `1 ≤ p ≤ ∞`,
+orders with `k + d + 1 ≤ n` and every `ε > 0`, there is `C ≥ 0` with
+
+`‖w‖_{W^{k,p}} ≤ ε ‖w‖_{W^{k+d+1,p}} + C ‖w‖_{Lᵖ}`
+
+for every `w ∈ W^{k+d+1,p}(V)`, where `‖w‖_{Lᵖ}` is the norm of the chart data of `w`
+(`TauCeti.SectionChartData.chartValuesL`). -/
+theorem exists_norm_lowerOrdersL_le {d : ℕ} (hkn : k + d + 1 ≤ n)
+    (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V) {ε : ℝ} (hε : 0 < ε) :
+    ∃ C, 0 ≤ C ∧ ∀ w : BorderedSobolevSection A p (k + (d + 1)),
+      ‖A.halfSectionChartData.lowerOrdersL volume p k (d + 1) w‖ ≤
+        ε * ‖w‖ + C * ‖A.halfSectionChartData.chartValuesL volume p (k + (d + 1)) w‖ :=
+  SectionChartData.exists_norm_lowerOrdersL_le (isCompactOperator_lowerOrdersL hkn A) hε
 
 end BorderedSobolevSection
 

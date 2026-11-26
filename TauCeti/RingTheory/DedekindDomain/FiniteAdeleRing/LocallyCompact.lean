@@ -30,7 +30,7 @@ valid.
 ## Main results
 
 * `IsDedekindDomain.FiniteAdeleRing.instFactIsOpenAdicCompletionIntegers`: the local integer rings
-  are open.
+  are open, as a `Fact` instance for the restricted-product constructions.
 * `IsDedekindDomain.FiniteAdeleRing.instLocallyCompactSpace`: the finite adele ring is locally
   compact when all residue fields are finite.
 * `IsDedekindDomain.FiniteAdeleRing.instSecondCountableTopology`: the finite adele ring is second
@@ -53,10 +53,12 @@ namespace IsDedekindDomain.FiniteAdeleRing
 variable (R : Type*) [CommRing R] [IsDedekindDomain R]
 variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
 
-/-- The local integer rings `𝒪_v` are open in the completions `K_v`. This is the openness
-hypothesis of the restricted-product topology on `FiniteAdeleRing R K`. -/
-instance instFactIsOpenAdicCompletionIntegers : Fact (∀ v : HeightOneSpectrum R,
-    IsOpen (v.adicCompletionIntegers K : Set (v.adicCompletion K))) :=
+/-- The local integer rings are open in the adic completions. This is the standing hypothesis of
+the topological and measure-theoretic constructions on restricted products, such as local
+compactness and `TauCeti.restrictedAddHaar`, applied to the finite adele ring. -/
+instance instFactIsOpenAdicCompletionIntegers :
+    Fact (∀ v : HeightOneSpectrum R,
+      IsOpen (v.adicCompletionIntegers K : Set (v.adicCompletion K))) :=
   ⟨fun _ ↦ Valued.isOpen_valuationSubring _⟩
 
 /-- The finite adele ring of a Dedekind domain with finite residue fields is locally compact. -/

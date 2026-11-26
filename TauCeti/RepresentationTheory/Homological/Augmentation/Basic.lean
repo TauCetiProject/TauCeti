@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import Mathlib.RepresentationTheory.Rep.Res
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 import TauCeti.Algebra.MonoidAlgebra.Exactness
 import TauCeti.RepresentationTheory.Intertwining
 

@@ -14,7 +14,7 @@ Let `d` be a square-zero linear endomorphism of a module `M`, and let `N` be a s
 `d N ⊆ N`. Then `d` induces a square-zero endomorphism of `M ⧸ N`, whose homology is written
 `d.quotientHomology hd N hN`.
 
-Suppose that `v` is an endomorphism of `M` commuting with `d` which is null-homotopic modulo `N`,
+Suppose that `v` is an endomorphism of `M` which is null-homotopic modulo `N`,
 `d h + h d ≡ v (mod N)` for an endomorphism `h` with `h N ⊆ N`, and which is regular modulo `N`:
 `v m ∈ N` only for `m ∈ N`. Then passing from `M ⧸ N` to `M ⧸ (N ⊔ range v)` doubles the homology:
 
@@ -222,7 +222,7 @@ section Splitting
 
 variable {d : M →ₗ[S] M} (hd : d ∘ₗ d = 0) {h v : M →ₗ[S] M} {N N' : Submodule S M}
   (hN : N ≤ N.comap d) (hN' : N' ≤ N'.comap d) (hNN' : N ≤ N') (hvN' : ∀ m, v m ∈ N')
-  (hN'N : ∀ x ∈ N', ∃ u, x - v u ∈ N) (hh : ∀ m ∈ N, h m ∈ N) (hvd : ∀ m, d (v m) = v (d m))
+  (hN'N : ∀ x ∈ N', ∃ u, x - v u ∈ N) (hh : ∀ m ∈ N, h m ∈ N)
   (hreg : ∀ m, v m ∈ N → m ∈ N) (hhom : ∀ m, d (h m) + h (d m) - v m ∈ N)
 
 include hhom hh hNN' hvN' in
@@ -242,7 +242,7 @@ private theorem h_boundary {b w : M} (hbw : b - d w ∈ N) : h b - d (-h w) ∈ 
   rw [this]
   exact N'.add_mem (N'.add_mem (hNN' (hhom w)) (hvN' w)) (hNN' (hh _ hbw))
 
-include hd hN hN'N hh hvd hreg hhom in
+include hd hN hN'N hh hreg hhom in
 /-- If `a + h b` is a boundary modulo `N'` for cycles `a` and `b` modulo `N`, then `b` is a
 boundary modulo `N`. -/
 private theorem boundary_of_add_h {a b w : M} (ha : d a ∈ N) (hb : d b ∈ N)
@@ -251,25 +251,25 @@ private theorem boundary_of_add_h {a b w : M} (ha : d a ∈ N) (hb : d b ∈ N)
   refine ⟨u, hreg _ ?_⟩
   have hdd : d (d w) = 0 := congr($hd w)
   have : v (b - d u) = d (a + h b - d w - v u) - d a - (d (h b) + h (d b) - v b) + h (d b) +
-      d (d w) := by
-    simp only [map_sub, map_add, hvd]
+      d (d w) - (v (d u) - d (v u)) := by
+    simp only [map_sub, map_add]
     abel
   rw [this]
-  exact N.add_mem (N.add_mem (N.sub_mem (N.sub_mem (hN hu) ha) (hhom b)) (hh _ hb))
-    (hdd ▸ N.zero_mem)
+  exact N.sub_mem (N.add_mem (N.add_mem (N.sub_mem (N.sub_mem (hN hu) ha) (hhom b)) (hh _ hb))
+    (hdd ▸ N.zero_mem)) (commutator_mem_of_homotopy hd hN hhom u)
 
-include hd hN hN'N hh hvd hreg hhom in
+include hd hN hN'N hh hreg hhom in
 /-- A cycle modulo `N` which is a boundary modulo `N'` is a boundary modulo `N`. -/
 private theorem boundary_of_boundary {a w : M} (ha : d a ∈ N) (haw : a - d w ∈ N') :
     ∃ w', a - d w' ∈ N := by
   obtain ⟨u, hu⟩ := hN'N _ haw
   have hdd : d (d w) = 0 := congr($hd w)
   have hdu : d u ∈ N := hreg _ <| by
-    have : v (d u) = d a - d (a - d w - v u) - d (d w) := by
-      simp only [map_sub, hvd]
+    have : v (d u) = d a - d (a - d w - v u) - d (d w) + (v (d u) - d (v u)) := by
+      simp only [map_sub]
       abel
     rw [this, hdd, sub_zero]
-    exact N.sub_mem ha (hN hu)
+    exact N.add_mem (N.sub_mem ha (hN hu)) (commutator_mem_of_homotopy hd hN hhom u)
   refine ⟨w + h u, ?_⟩
   have : a - d (w + h u) = (a - d w - v u) - (d (h u) + h (d u) - v u) + h (d u) := by
     simp only [map_add]
@@ -277,18 +277,18 @@ private theorem boundary_of_boundary {a w : M} (ha : d a ∈ N) (haw : a - d w �
   rw [this]
   exact N.add_mem (N.sub_mem hu (hhom u)) (hh _ hdu)
 
-include hd hN hN'N hh hvd hreg hhom in
+include hd hN hN'N hh hreg hhom in
 /-- A cycle `c` modulo `N'` is `(c - h u) + h u` for cycles `c - h u` and `u` modulo `N`. -/
 private theorem exists_eq_add_h {c : M} (hc : d c ∈ N') :
     ∃ u, d u ∈ N ∧ d (c - h u) ∈ N := by
   obtain ⟨u, hu⟩ := hN'N _ hc
   have hdd : d (d c) = 0 := congr($hd c)
   have hdu : d u ∈ N := hreg _ <| by
-    have : v (d u) = -d (d c - v u) := by
-      simp only [map_sub, hvd, hdd]
+    have : v (d u) = -d (d c - v u) + (v (d u) - d (v u)) := by
+      simp only [map_sub, hdd]
       abel
     rw [this]
-    exact N.neg_mem (hN hu)
+    exact N.add_mem (N.neg_mem (hN hu)) (commutator_mem_of_homotopy hd hN hhom u)
   refine ⟨u, hdu, ?_⟩
   have : d (c - h u) = (d c - v u) - (d (h u) + h (d u) - v u) + h (d u) := by
     simp only [map_sub]
@@ -314,7 +314,7 @@ private theorem hHomology_cls (m : M) (hm : d m ∈ N) :
       quotientHomologyClass hd hN' (h m) (map_map_mem_of_homotopy hNN' hvN' hh hhom hm) :=
   (rfl)
 
-include hd hN hN'N hh hvd hreg hhom in
+include hd hN hN'N hh hreg hhom in
 private theorem bijective_coprod_quotientHomologyMapOfLE_hHomology :
     Function.Bijective ((quotientHomologyMapOfLE hd hN hN' hNN').coprod
       (hHomology hd hN hN' hNN' hvN' hh hhom)) := by
@@ -324,13 +324,13 @@ private theorem bijective_coprod_quotientHomologyMapOfLE_hHomology :
     rw [coprod_apply, quotientHomologyMapOfLE_quotientHomologyClass, hHomology_cls,
       quotientHomologyClass_add, quotientHomologyClass_eq_zero_iff] at hxy
     obtain ⟨w, hw⟩ := hxy
-    obtain ⟨u, hu⟩ := boundary_of_add_h hd hN hN'N hh hvd hreg hhom ha hb hw
+    obtain ⟨u, hu⟩ := boundary_of_add_h hd hN hN'N hh hreg hhom ha hb hw
     have hy : quotientHomologyClass hd hN b hb = 0 :=
       (quotientHomologyClass_eq_zero_iff hd b hb).mpr ⟨u, hu⟩
     have hhb : h b - d (-h u) ∈ N' := h_boundary hNN' hvN' hh hhom hu
     have hx : quotientHomologyClass hd hN a ha = 0 := by
       rw [quotientHomologyClass_eq_zero_iff]
-      refine boundary_of_boundary hd hN hN'N hh hvd hreg hhom ha (w := w + h u) ?_
+      refine boundary_of_boundary hd hN hN'N hh hreg hhom ha (w := w + h u) ?_
       have : a - d (w + h u) = (a + h b - d w) - (h b - d (-h u)) := by
         simp only [map_add, map_neg]
         abel
@@ -338,16 +338,16 @@ private theorem bijective_coprod_quotientHomologyMapOfLE_hHomology :
       exact N'.sub_mem hw hhb
     rw [hx, hy, Prod.mk_zero_zero]
   · obtain ⟨c, hc, rfl⟩ := exists_quotientHomologyClass_eq hd z
-    obtain ⟨u, hu, hcu⟩ := exists_eq_add_h hd hN hN'N hh hvd hreg hhom hc
+    obtain ⟨u, hu, hcu⟩ := exists_eq_add_h hd hN hN'N hh hreg hhom hc
     refine ⟨(quotientHomologyClass hd hN (c - h u) hcu, quotientHomologyClass hd hN u hu), ?_⟩
     rw [coprod_apply, quotientHomologyMapOfLE_quotientHomologyClass, hHomology_cls,
       quotientHomologyClass_add]
     congr 1
     exact sub_add_cancel c (h u)
 
-include hN'N hvd hreg in
-/-- **Quotienting by a null-homotopic regular endomorphism doubles the homology.** Let `v` commute
-with `d`, be regular modulo `N` (`v m ∈ N → m ∈ N`), and satisfy `d h + h d ≡ v` modulo `N` for an
+include hN'N hreg in
+/-- **Quotienting by a null-homotopic regular endomorphism doubles the homology.** Let `v` be
+regular modulo `N` (`v m ∈ N → m ∈ N`), and satisfy `d h + h d ≡ v` modulo `N` for an
 endomorphism `h` with `h N ⊆ N`, and let `N' = N ⊔ range v`, given by `N ≤ N'`, `range v ≤ N'` and
 `N' ≤ N ⊔ range v`. Then `H(M ⧸ N) × H(M ⧸ N) ≃ H(M ⧸ N')`, the class of `(a, b)` going to the
 class of `a + h b`. -/
@@ -355,14 +355,14 @@ noncomputable def quotientHomologyProdEquiv :
     (d.quotientHomology hd N hN × d.quotientHomology hd N hN) ≃ₗ[S]
       d.quotientHomology hd N' hN' :=
   LinearEquiv.ofBijective _
-    (bijective_coprod_quotientHomologyMapOfLE_hHomology hd hN hN' hNN' hvN' hN'N hh hvd hreg hhom)
+    (bijective_coprod_quotientHomologyMapOfLE_hHomology hd hN hN' hNN' hvN' hN'N hh hreg hhom)
 
-include hN'N hvd hreg in
+include hN'N hreg in
 /-- The splitting sends the classes of cycles `a` and `b` modulo `N` to the class of `a + h b`
 modulo `N'`. -/
 @[simp]
 theorem quotientHomologyProdEquiv_mk (a b : M) (ha : d a ∈ N) (hb : d b ∈ N) :
-    quotientHomologyProdEquiv hd hN hN' hNN' hvN' hN'N hh hvd hreg hhom
+    quotientHomologyProdEquiv hd hN hN' hNN' hvN' hN'N hh hreg hhom
         (Submodule.Quotient.mk
             ⟨Submodule.Quotient.mk a, (Submodule.mk_mem_ker_mapQ_iff a).mpr ha⟩,
           Submodule.Quotient.mk
