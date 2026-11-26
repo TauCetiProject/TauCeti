@@ -71,6 +71,20 @@ theorem ofPMF_pure (f : α → β) :
   ext a : 1
   simp only [ofPMF_apply, PMF.toMeasure_pure, deterministic_apply]
 
+/-- If every row of `p` is a point mass `pure (f a)`, then almost every pair drawn from
+`μ ⊗ₘ ofPMF p` lies on the graph of `f`. -/
+theorem ae_compProd_ofPMF_of_eq_pure [MeasurableSingletonClass β] {μ : Measure α}
+    {p : α → PMF β} {f : α → β} (hp : ∀ a, p a = PMF.pure (f a)) :
+    ∀ᵐ x ∂(μ ⊗ₘ ofPMF p), x.2 = f x.1 := by
+  have hgraph : {x : α × β | x.2 = f x.1} = ⋃ a, {a} ×ˢ {f a} := by
+    ext ⟨a, b⟩
+    simp [eq_comm]
+  refine Measure.ae_compProd_of_ae_ae (hgraph ▸ MeasurableSet.iUnion fun a ↦
+      (measurableSet_singleton a).prod (measurableSet_singleton _))
+    (Filter.Eventually.of_forall fun a ↦ by
+      rw [ofPMF_apply, hp, PMF.toMeasure_pure, ae_dirac_eq]
+      exact Filter.eventually_pure.2 rfl)
+
 end OfPMF
 
 section ToPMF
