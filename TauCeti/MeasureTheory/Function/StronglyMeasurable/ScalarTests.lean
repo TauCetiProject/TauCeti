@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import TauCeti.Analysis.Normed.Module.Dual.Norming
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.Metric
 
@@ -16,7 +15,7 @@ public import TauCeti.MeasureTheory.Function.StronglyMeasurable.Metric
 
 For functions taking values in a separable linear subspace, a norming family of
 continuous linear functionals detects strong measurability. In particular, a function
-into a real or complex normed space is strongly measurable exactly when its range is
+into a real or complex seminormed space is strongly measurable exactly when its range is
 separable and every scalar evaluation is measurable. Neither the ambient space nor the
 supporting subspace needs to be complete.
 
@@ -37,7 +36,7 @@ open MeasureTheory Set TopologicalSpace
 section Norming
 
 variable {α 𝕜 E : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜]
-  [MeasurableSpace 𝕜] [BorelSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [MeasurableSpace 𝕜] [BorelSpace 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- Norming scalar tests detect strong measurability on a separable supporting linear
 subspace, even when that subspace is incomplete. -/
@@ -68,9 +67,9 @@ end Norming
 namespace TauCeti
 
 variable {α 𝕜 E : Type*} [MeasurableSpace α] [RCLike 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- The range-separability form of Pettis' measurability theorem for an arbitrary normed
+/-- The range-separability form of Pettis' measurability theorem for an arbitrary seminormed
 target over the real or complex numbers. -/
 theorem stronglyMeasurable_iff_isSeparable_scalar_tests (f : α → E) :
     StronglyMeasurable f ↔ IsSeparable (range f) ∧
@@ -83,7 +82,7 @@ theorem stronglyMeasurable_iff_isSeparable_scalar_tests (f : α → E) :
   exact (S.stronglyMeasurable_iff_norming_tests hS D hD f
     (fun a ↦ Submodule.subset_span (mem_range_self a))).2 (fun φ _ ↦ htests φ)
 
-/-- **Pettis measurability theorem** for real or complex normed targets: strong measurability
+/-- **Pettis measurability theorem** for real or complex seminormed targets: strong measurability
 is equivalent to a closed separable supporting linear subspace and measurable scalar tests.
 No completeness assumption is required. -/
 theorem stronglyMeasurable_iff_scalar_tests (f : α → E) :

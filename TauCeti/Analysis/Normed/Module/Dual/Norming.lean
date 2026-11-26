@@ -11,7 +11,7 @@ public import Mathlib.Topology.Semicontinuity.Lindelof
 /-!
 # Countable norming subsets of the continuous dual
 
-On a separable subset of a normed space, any prescribed family of continuous linear
+On a separable subset of a seminormed space, any prescribed family of continuous linear
 functionals recovering the norm has a countable subfamily with the same property.
 The family need not be norm separable, and the space need not be complete.
 
@@ -31,7 +31,7 @@ open Set TopologicalSpace
 section Extraction
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- A family of dual tests recovering the norm on a separable set contains a countable
 subfamily recovering the norm on that same set. In particular, a prescribed 1-norming
@@ -71,10 +71,10 @@ end Extraction
 
 section RCLike
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- The dual unit ball contains countably many tests recovering the norm on any separable
-set in a real or complex normed space. No completeness assumption is needed. -/
+set in a real or complex seminormed space. No completeness assumption is needed. -/
 theorem TopologicalSpace.IsSeparable.exists_countable_dual_norming
     {s : Set E} (hs : IsSeparable s) :
     ∃ D : Set (StrongDual 𝕜 E), D.Countable ∧ (∀ φ ∈ D, ‖φ‖ ≤ 1) ∧

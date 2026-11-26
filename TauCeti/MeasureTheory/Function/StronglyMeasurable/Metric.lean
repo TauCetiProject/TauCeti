@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Basic
-public import Mathlib.Topology.Compactness.Lindelof
 
 /-!
 # Strong measurability from distance tests
