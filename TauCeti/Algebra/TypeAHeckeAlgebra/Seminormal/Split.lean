@@ -34,9 +34,7 @@ size `standardCount`.
 
 * H. Wenzl, *Hecke algebras of type A and subfactors*, Invent. Math. 92 (1988), 349–383,
   Theorem 2.2, DOI: 10.1007/BF01404457, for the complex split decomposition and quantum-factorial
-  criterion. The joint diagonal interpolation extends the argument of
-  `single_self_mem_seminormalMatrices` in `Seminormal.Irreducible` to tableaux across all
-  partitions.
+  criterion.
 -/
 
 public section
@@ -105,6 +103,8 @@ private theorem jointDiagonal_mem_range
     (hn : ∀ d : ℕ, 0 < d → d ≤ n → additiveContent ((q : K) ^ 2) d ≠ 0)
     (f : (Σ μ : n.Partition, StandardYoungTableau (YoungDiagram.ofPartition μ)) → K) :
     jointDiagonal f ∈ (seminormalPi hn).range := by
+  -- The joint diagonal interpolation extends `single_self_mem_seminormalMatrices` in
+  -- `Seminormal.Irreducible` to tableaux across all partitions.
   let S := (seminormalPi hn).range.comap jointDiagonal
   let φ (i : Fin n) (T : Σ μ : n.Partition, StandardYoungTableau (YoungDiagram.ofPartition μ)) :=
     additiveContent ((q : K) ^ 2) (labelContent T.2.toTableau

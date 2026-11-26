@@ -21,12 +21,16 @@ column are ordered as their rows are (`TauCeti.StandardYoungTableau.lt_iff_rowIn
 labels in one row are ordered as their columns are
 (`TauCeti.StandardYoungTableau.lt_iff_colIndex_lt`).
 
-The consequence this file is written for is that **a standard Young tableau is determined by the
-row of each of its labels** (`TauCeti.StandardYoungTableau.rowIndex_injective`): the labels of a row
-are placed there in increasing order, so nothing is left to choose once the rows are known.  Two
-standard tableaux with the same rows differ by a permutation preserving every row of the first,
-which restricts to a strictly monotone self-map of that row and is therefore the identity there by
-Mathlib's `StrictMono.apply_eq`.
+More generally, the labelling is strictly monotone for the product order on cells
+(`TauCeti.StandardYoungTableau.strictMono_toTableau`). The cells whose labels are below a cutoff
+`i` form an initial Young diagram (`TauCeti.StandardYoungTableau.initialDiagram`) of size `i.val`,
+and the cell carrying `i` is addable to this diagram. These results support the separation of
+standard tableaux by transformed label contents in
+`TauCeti/Combinatorics/Young/StandardTableau/Separation.lean`.
+
+A standard Young tableau is also determined by the row of each of its labels
+(`TauCeti.StandardYoungTableau.rowIndex_injective`): the labels of a row are placed there in
+increasing order, so nothing is left to choose once the rows are known.
 
 In the language of the Specht modules, the injectivity says that distinct standard tableaux have
 distinct tabloids, and that is how
@@ -39,6 +43,13 @@ distinct tabloids, and that is how
 * `TauCeti.StandardYoungTableau.apply_lt_apply_of_le`: more generally, labels increase strictly
   along the product order of the cells; `TauCeti.StandardYoungTableau.apply_lt_apply_of_mem` is
   its form for cells given by their coordinates.
+* `TauCeti.StandardYoungTableau.strictMono_toTableau`: the labelling is strictly monotone for the
+  product order on cells.
+* `TauCeti.StandardYoungTableau.initialDiagram`: the Young diagram filled by labels below a cutoff.
+* `TauCeti.StandardYoungTableau.card_initialDiagram`: the initial diagram at cutoff `i` has `i.val`
+  cells.
+* `TauCeti.StandardYoungTableau.isAddable_initialDiagram`: the cutoff cell is addable to its initial
+  diagram.
 * `TauCeti.exists_standardYoungTableau_toTableau_eq_iff`: conversely, a tableau whose labels
   increase down each column and along each row is standard.
 * `TauCeti.StandardYoungTableau.rowIndex_injective`: a standard Young tableau is determined by the
