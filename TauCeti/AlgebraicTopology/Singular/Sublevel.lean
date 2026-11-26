@@ -138,6 +138,7 @@ theorem singularHomologyIsoSublevelPairOfContractibleSpace_hom (hab : a ≤ b)
           (TopCat.ofHom (X := TopCat.of X) (Y := TopCat.of {x | f x ≤ b})
             ⟨fun x ↦ ⟨x, hb x⟩, by fun_prop⟩) ≫
         (sublevelPair f hab).singularHomologyπ R (k + 1) := by
+  -- The subspace of `sublevelPair f hab` is `TopCat.of {x | f x ≤ a}` by definition.
   have : ContractibleSpace (sublevelPair f hab).snd := ‹ContractibleSpace {x | f x ≤ a}›
   have he : (TopCat.isoOfHomeo (X := TopCat.of {x | f x ≤ b}) (sublevelHomeomorphUniv hb)).inv =
       TopCat.ofHom ⟨fun x ↦ ⟨x, hb x⟩, by fun_prop⟩ := by
