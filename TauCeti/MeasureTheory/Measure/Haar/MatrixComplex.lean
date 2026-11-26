@@ -47,11 +47,8 @@ theorem lintegral_comp_linearMap {E : Type*} [NormedAddCommGroup E] [NormedSpace
     [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
     {f : E →ₗ[ℝ] E} (hf : LinearMap.det f ≠ 0) (g : E → ENNReal) :
     ∫⁻ x, g (f x) ∂μ = ENNReal.ofReal |(LinearMap.det f)⁻¹| * ∫⁻ x, g x ∂μ := by
-  obtain ⟨u, rfl⟩ := (LinearMap.isUnit_iff_isUnit_det f).2 (isUnit_iff_ne_zero.2 hf)
-  have h_inj : Function.Injective (u : E →ₗ[ℝ] E) := fun x y h ↦ by
-    simpa only [← mul_apply_eq_comp, u.inv_val, one_apply_eq_self] using congrArg u.inv h
-  have h_emb : MeasurableEmbedding (u : E →ₗ[ℝ] E) :=
-    Continuous.measurableEmbedding (u : E →ₗ[ℝ] E).continuous_of_finiteDimensional h_inj
+  have h_emb : MeasurableEmbedding f :=
+    (f.equivOfDetNeZero hf).toContinuousLinearEquiv.toHomeomorph.measurableEmbedding
   rw [← h_emb.lintegral_map g, Measure.map_linearMap_addHaar_eq_smul_addHaar μ hf,
     lintegral_smul_measure, smul_eq_mul]
 

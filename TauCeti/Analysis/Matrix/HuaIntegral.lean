@@ -85,9 +85,8 @@ theorem lintegral_one_add_sum_norm_sq_inv_pow {κ : Type*} [Fintype κ] :
         simp only [F, mul_assoc, ← Real.exp_add]
         ring_nf
       simp_rw [h_split]
-      rw [integral_const_mul, integral_rexp_neg_mul_sum_norm_sq ht, rpow_natCast, div_pow,
-        sub_self, rpow_zero, one_mul, one_mul]
-      dsimp only [k]
+      rw [integral_const_mul, integral_rexp_neg_mul_sum_norm_sq ht]
+      simp only [rpow_natCast, div_pow, sub_self, rpow_zero, one_mul, k]
       field_simp
     have h_ne : π ^ k / Gamma (k + 1) * (t ^ ((1 : ℝ) - 1) * rexp (-(1 * t))) ≠ 0 := by positivity
     rw [← ofReal_integral_eq_lintegral_ofReal (.of_integral_ne_zero (h_int.trans_ne h_ne))
@@ -125,15 +124,12 @@ theorem lintegral_norm_det_add_vecMulVec_inv_pow_le {κ : Type*} [Fintype κ] [D
     have h_mul := lintegral_comp_mulVec (u := (C * S⁻¹)ᵀ) h_det_ne
       (fun v ↦ ENNReal.ofReal (‖(star C * C + vecMulVec (star ((v + -a ᵥ* S⁻¹) ᵥ* S + a))
         ((v + -a ᵥ* S⁻¹) ᵥ* S + a)).det‖⁻¹ ^ (r + 1)))
-    calc
-      _ = ENNReal.ofReal (‖(C * S⁻¹)ᵀ.det‖ ^ 2) *
-            (ENNReal.ofReal (‖(C * S⁻¹)ᵀ.det‖⁻¹ ^ 2) * _) := by
-        rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity), inv_pow,
-          mul_inv_cancel₀ (by positivity), ENNReal.ofReal_one, one_mul]
-      _ = ENNReal.ofReal (‖(C * S⁻¹)ᵀ.det‖ ^ 2) * _ := by
-        rw [← h_mul]
-        congr 1
-        exact lintegral_congr fun y ↦ by rw [h_subst, norm_det_star_mul_self_add_vecMulVec]
+    have h_solved := congrArg (ENNReal.ofReal (‖(C * S⁻¹)ᵀ.det‖ ^ 2) * ·) h_mul
+    rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity), inv_pow,
+      mul_inv_cancel₀ (by positivity), ENNReal.ofReal_one, one_mul] at h_solved
+    rw [← h_solved]
+    congr 1
+    exact lintegral_congr fun y ↦ by rw [h_subst, norm_det_star_mul_self_add_vecMulVec]
   calc
     _ = ∫⁻ y : κ → ℂ, ENNReal.ofReal (‖(C * S⁻¹)ᵀ.det‖ ^ 2) *
           ENNReal.ofReal ((‖C.det‖ ^ 2 * (1 + ∑ j, ‖y j‖ ^ 2))⁻¹ ^ (r + 1)) := by
@@ -255,7 +251,7 @@ theorem lintegral_norm_det_add_conjTranspose_mul_inv_pow_le {ι κ : Type*} [Fin
           (‖S.det‖⁻¹ ^ (2 * card κ) * (‖T.det‖⁻¹ ^ (2 * card ι) * ‖G.det‖⁻¹ ^ r))) := by
         rw [← ENNReal.ofReal_mul (by positivity)]
         congr 1
-        rw [div_pow, div_eq_mul_inv, inv_pow, ← pow_mul, ← inv_pow]
-        ring
+        simp only [div_pow, inv_pow, ← pow_mul]
+        field_simp
 
 end TauCeti
