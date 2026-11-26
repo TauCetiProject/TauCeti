@@ -515,9 +515,8 @@ theorem W1p.norm_value_le_div_pi_mul_norm_gradient_of_mem_w1p0Submodule (hab : a
   rw [PDE.energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq] at h
   simp only [v, W1p.norm_value_compAffineIsometryEquivL, W1p.norm_gradient_compAffineIsometryEquivL]
     at h
-  rw [← mul_pow, pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero] at h
-  calc ‖W1p.value u‖ = (b - a) / π * (π / (b - a) * ‖W1p.value u‖) := by
-        field_simp [(sub_pos.2 hab).ne']
-    _ ≤ (b - a) / π * ‖W1p.gradient u‖ := by gcongr
+  have := sub_pos.2 hab
+  rw [← inv_div, le_inv_mul_iff₀ (by positivity)]
+  exact (abs_le_of_sq_le_sq' (by rwa [mul_pow]) (norm_nonneg _)).2
 
 end TauCeti

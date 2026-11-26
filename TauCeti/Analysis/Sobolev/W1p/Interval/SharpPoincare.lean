@@ -11,6 +11,8 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Reparam
+import TauCeti.MeasureTheory.Function.Lp.Integral.L2NormSq
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Reflection
 
 /-!
 # The sharp Poincaré–Friedrichs inequality on an interval
@@ -39,8 +41,9 @@ Poincaré–Friedrichs constant is `2 / π`, compared with the constant `b - a =
 
 The even reflection `t ↦ u(b - |t - b|)` of `u` in `b` vanishes at both endpoints of
 `(a, 2b - a)`, an interval twice as long, and both its `L²` norm and the `L²` norm of its derivative
-are `√2` times those of `u`. The sharp Poincaré inequality on `H¹₀(a, 2b - a)`, with constant
-`2 (b - a) / π`, therefore gives the inequality for `u`. The reflection is built from the absolutely
+are `√2` times those of `u` (`TauCeti.intervalIntegral.integral_eq_two_smul_of_eqOn_reflect`).
+The sharp Poincaré inequality on `H¹₀(a, 2b - a)`, with constant `2 (b - a) / π`, therefore gives
+the inequality for `u`. The reflection is built from the absolutely
 continuous representative of `u`
 (`TauCeti.W1p.absolutelyContinuousOnInterval_intervalRepresentativeL`), and an absolutely
 continuous function vanishing at both endpoints with square integrable derivative is a class of
@@ -51,6 +54,10 @@ For optimality, `S(t) = sin (π (t - a) / (2 (b - a)))` vanishes at `a` and
 
 ## Main declarations
 
+* `AbsolutelyContinuousOnInterval.sq_mul_integral_sq_le_of_left_eq_zero` and
+  `AbsolutelyContinuousOnInterval.sq_mul_integral_sq_le_of_right_eq_zero`: the same inequality,
+  `(π / (2 (b - a)))² ∫_a^b G² ≤ ∫_a^b G'²`, for an absolutely continuous function `G` vanishing
+  at `a`, respectively at `b`, with square integrable derivative.
 * `TauCeti.W1p.norm_value_le_two_mul_div_pi_mul_norm_gradient_of_intervalTraceL_fst_eq_zero` and
   `TauCeti.W1p.norm_value_le_two_mul_div_pi_mul_norm_gradient_of_intervalTraceL_snd_eq_zero`: the
   sharp Poincaré–Friedrichs inequality for classes vanishing at `a`, respectively at `b`.
@@ -75,14 +82,6 @@ open scoped ENNReal
 namespace TauCeti.W1p
 
 variable {a b : ℝ}
-
-/-- The squared `L²(a, b)` norm of a class with a representative `G` is `∫_a^b G²`. -/
-private theorem norm_sq_eq_intervalIntegral_sq (hab : a ≤ b)
-    {f : Lp ℝ 2 (volume.restrict (Ioo a b))} {G : ℝ → ℝ}
-    (h : f =ᵐ[volume.restrict (Ioo a b)] G) : ‖f‖ ^ 2 = ∫ t in a..b, G t ^ 2 := by
-  rw [← real_inner_self_eq_norm_sq, L2.inner_def, intervalIntegral.integral_of_le hab,
-    integral_Ioc_eq_integral_Ioo]
-  exact integral_congr_ae (h.mono fun t ht => by simp [ht, sq])
 
 /-! ### One vanishing endpoint, by reflection -/
 
@@ -128,57 +127,41 @@ private theorem absolutelyContinuousOnInterval_reflect (hab : a < b) {G : ℝ �
     congr 1
     ring
 
-/-- A function agreeing with `g` on `(a, b)` and with `t ↦ g (2b - t)` on `(b, 2b - a)` is
-integrable on `[a, 2b - a]` if `g` is integrable on `[a, b]`, with twice its integral. -/
-private theorem intervalIntegrable_and_integral_eq_two_mul (hab : a < b) {f g : ℝ → ℝ}
-    (hg : IntervalIntegrable g volume a b) (h₁ : EqOn f g (Ioo a b))
-    (h₂ : EqOn f (fun t => g (2 * b - t)) (Ioo b (2 * b - a))) :
-    IntervalIntegrable f volume a (2 * b - a) ∧
-      ∫ t in a..(2 * b - a), f t = 2 * ∫ t in a..b, g t := by
-  have hbc : b ≤ 2 * b - a := by linarith
-  have h2b : 2 * b - b = b := by ring
-  rw [← uIoo_of_le hab.le] at h₁
-  rw [← uIoo_of_le hbc] at h₂
-  have hf₁ : IntervalIntegrable f volume a b := hg.congr_uIoo h₁.symm
-  have hf₂ : IntervalIntegrable f volume b (2 * b - a) := by
-    have := (hg.comp_sub_left (2 * b)).symm
-    rw [h2b] at this
-    exact this.congr_uIoo h₂.symm
-  refine ⟨hf₁.trans hf₂, ?_⟩
-  rw [← intervalIntegral.integral_add_adjacent_intervals hf₁ hf₂,
-    intervalIntegral.integral_congr_uIoo h₁, intervalIntegral.integral_congr_uIoo h₂,
-    intervalIntegral.integral_comp_sub_left g, sub_sub_cancel, h2b, two_mul]
-
 /-- **The sharp Poincaré inequality at one endpoint, for absolutely continuous functions.** If `G`
 is absolutely continuous on `[a, b]`, vanishes at `a` and has square integrable derivative, then
 `(π / (2 (b - a)))² ∫_a^b G² ≤ ∫_a^b G'²`. The even reflection of `G` in `b` vanishes at both
 endpoints of `(a, 2b - a)`, and the sharp Poincaré inequality on `H¹₀(a, 2b - a)` applies to it;
 both of its integrals are twice those of `G`. -/
-private theorem sq_mul_integral_sq_le_of_eq_zero (hab : a < b) {G : ℝ → ℝ}
-    (hG : AbsolutelyContinuousOnInterval G a b)
+theorem _root_.AbsolutelyContinuousOnInterval.sq_mul_integral_sq_le_of_left_eq_zero {G : ℝ → ℝ}
+    (hG : AbsolutelyContinuousOnInterval G a b) (hab : a < b)
     (hdG : IntervalIntegrable (fun t => deriv G t ^ 2) volume a b) (hGa : G a = 0) :
     (π / (2 * (b - a))) ^ 2 * ∫ t in a..b, G t ^ 2 ≤ ∫ t in a..b, deriv G t ^ 2 := by
   have hbc : b < 2 * b - a := by linarith
   have hac : a < 2 * b - a := hab.trans hbc
   have hF := absolutelyContinuousOnInterval_reflect hab hG
-  obtain ⟨-, hFsq⟩ := intervalIntegrable_and_integral_eq_two_mul hab
+  have hFsq := intervalIntegral.integral_eq_two_smul_of_eqOn_reflect
     (f := fun t => reflect G b t ^ 2) (g := fun t => G t ^ 2)
     (hG.continuousOn.pow 2).intervalIntegrable
-    (fun t ht => by simp only [reflect_of_le G ht.2.le])
-    (fun t ht => by simp only [reflect_of_ge G ht.1.le])
-  obtain ⟨hdFi, hdFsq⟩ := intervalIntegrable_and_integral_eq_two_mul hab
-    (f := fun t => deriv (reflect G b) t ^ 2) hdG
-    (fun t ht => by simp only [deriv_reflect_of_lt G ht.2])
-    (fun t ht => by simp only [deriv_reflect_of_gt G ht.1, neg_sq])
+    (fun t ht => by simp only [reflect_of_le G (uIoo_of_le hab.le ▸ ht).2.le])
+    (fun t ht => by simp only [reflect_of_ge G (uIoo_of_le hbc.le ▸ ht).1.le])
+  have hdF₁ : EqOn (fun t => deriv (reflect G b) t ^ 2) (fun t => deriv G t ^ 2) (uIoo a b) :=
+    fun t ht => by simp only [deriv_reflect_of_lt G (uIoo_of_le hab.le ▸ ht).2]
+  have hdF₂ : EqOn (fun t => deriv (reflect G b) t ^ 2) (fun t => deriv G (2 * b - t) ^ 2)
+      (uIoo b (2 * b - a)) :=
+    fun t ht => by simp only [deriv_reflect_of_gt G (uIoo_of_le hbc.le ▸ ht).1, neg_sq]
+  have hdFsq := intervalIntegral.integral_eq_two_smul_of_eqOn_reflect hdG hdF₁ hdF₂
+  obtain ⟨hdFi₁, hdFi₂⟩ := hdG.of_eqOn_reflect hdF₁ hdF₂
   -- The reflection represents a class of `H¹₀(a, 2b - a)`.
   obtain ⟨w, hw, hwv, hwg⟩ := hF.exists_mem_w1p0Submodule_value_gradient_ae_eq
     ((memLp_two_iff_integrable_sq (measurable_deriv _).aestronglyMeasurable).2
-      ((intervalIntegrable_iff_integrableOn_Ioo_of_le hac.le).1 hdFi)) (by norm_num)
-    (by rw [reflect_of_le G hab.le, hGa]) (by rw [reflect_of_ge G hbc.le, sub_sub_cancel, hGa])
+      ((intervalIntegrable_iff_integrableOn_Ioo_of_le hac.le).1 (hdFi₁.trans hdFi₂)))
+    (by norm_num) (by rw [reflect_of_le G hab.le, hGa])
+    (by rw [reflect_of_ge G hbc.le, sub_sub_cancel, hGa])
   have h := pow_le_pow_left₀ (norm_nonneg _)
     (norm_value_le_div_pi_mul_norm_gradient_of_mem_w1p0Submodule hac hw) 2
-  rw [mul_pow, norm_sq_eq_intervalIntegral_sq hac.le hwv,
-    norm_sq_eq_intervalIntegral_sq hac.le hwg, hFsq, hdFsq] at h
+  rw [mul_pow, L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hac.le hwv,
+    L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hac.le hwg, hFsq, hdFsq, smul_eq_mul,
+    smul_eq_mul] at h
   have hk : (π / (2 * (b - a))) ^ 2 * ((2 * b - a - a) / π) ^ 2 = 1 := by
     field_simp [(sub_pos.2 hab).ne', pi_ne_zero]
     ring
@@ -188,15 +171,13 @@ private theorem sq_mul_integral_sq_le_of_eq_zero (hab : a < b) {G : ℝ → ℝ}
         linarith
     _ = ∫ t in a..b, deriv G t ^ 2 := by rw [← mul_assoc, hk, one_mul]
 
-/-- Reversing `[a, b]` does not change integrals over it. -/
-private theorem integral_comp_add_sub (f : ℝ → ℝ) :
-    ∫ t in a..b, f (a + b - t) = ∫ t in a..b, f t := by
-  rw [intervalIntegral.integral_comp_sub_left, add_sub_cancel_left, add_sub_cancel_right]
-
-/-- The sharp Poincaré inequality at the right endpoint, for absolutely continuous functions,
-from the one at the left endpoint applied to `t ↦ G (a + b - t)`. -/
-private theorem sq_mul_integral_sq_le_of_eq_zero_right (hab : a < b) {G : ℝ → ℝ}
-    (hG : AbsolutelyContinuousOnInterval G a b)
+/-- **The sharp Poincaré inequality at the right endpoint, for absolutely continuous functions.**
+If `G` is absolutely continuous on `[a, b]`, vanishes at `b` and has square integrable derivative,
+then `(π / (2 (b - a)))² ∫_a^b G² ≤ ∫_a^b G'²`. This is
+`AbsolutelyContinuousOnInterval.sq_mul_integral_sq_le_of_left_eq_zero` applied to
+`t ↦ G (a + b - t)`. -/
+theorem _root_.AbsolutelyContinuousOnInterval.sq_mul_integral_sq_le_of_right_eq_zero {G : ℝ → ℝ}
+    (hG : AbsolutelyContinuousOnInterval G a b) (hab : a < b)
     (hdG : IntervalIntegrable (fun t => deriv G t ^ 2) volume a b) (hGb : G b = 0) :
     (π / (2 * (b - a))) ^ 2 * ∫ t in a..b, G t ^ 2 ≤ ∫ t in a..b, deriv G t ^ 2 := by
   have hdG' : IntervalIntegrable (fun t => deriv (fun s => G (a + b - s)) t ^ 2) volume a b := by
@@ -209,18 +190,10 @@ private theorem sq_mul_integral_sq_le_of_eq_zero_right (hab : a < b) {G : ℝ �
     · simp only [Function.comp_apply]
       congr 1
       ring
-  have h := sq_mul_integral_sq_le_of_eq_zero hab hG' hdG' (by simpa using hGb)
-  simpa only [deriv_comp_const_sub, neg_sq, integral_comp_add_sub (fun t => G t ^ 2),
-    integral_comp_add_sub (fun t => deriv G t ^ 2)] using h
-
-/-- From `(π / (2 (b - a)))² x² ≤ y²` for nonnegative `x, y`, the linear form
-`x ≤ 2 (b - a) / π y`. -/
-private theorem le_two_mul_div_pi_mul_of_sq (hab : a < b) {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y)
-    (h : (π / (2 * (b - a))) ^ 2 * x ^ 2 ≤ y ^ 2) : x ≤ 2 * (b - a) / π * y := by
-  rw [← mul_pow, pow_le_pow_iff_left₀ (by positivity) hy two_ne_zero] at h
-  calc x = 2 * (b - a) / π * (π / (2 * (b - a)) * x) := by
-        field_simp [(sub_pos.2 hab).ne']
-    _ ≤ 2 * (b - a) / π * y := by gcongr
+  have h := hG'.sq_mul_integral_sq_le_of_left_eq_zero hab hdG' (by simpa using hGb)
+  simpa only [deriv_comp_const_sub, neg_sq,
+    intervalIntegral.integral_comp_add_sub (fun t => G t ^ 2),
+    intervalIntegral.integral_comp_add_sub (fun t => deriv G t ^ 2)] using h
 
 /-- The norms of a class of `W^{1,2}(a, b)` as integrals of its continuous representative. -/
 private theorem norm_sq_value_gradient_eq (hab : a < b)
@@ -228,22 +201,11 @@ private theorem norm_sq_value_gradient_eq (hab : a < b)
     ‖value u‖ ^ 2 = ∫ t in a..b, intervalRepresentativeL hab u (projIcc a b hab.le t) ^ 2 ∧
       ‖gradient u‖ ^ 2 = ∫ t in a..b,
         deriv (fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t)) t ^ 2 := by
-  refine ⟨norm_sq_eq_intervalIntegral_sq hab.le (value_ae_eq_intervalRepresentativeL hab u),
-    norm_sq_eq_intervalIntegral_sq hab.le ((ae_restrict_iff' measurableSet_Ioo).2 ?_)⟩
+  refine ⟨L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hab.le
+      (value_ae_eq_intervalRepresentativeL hab u),
+    L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hab.le ((ae_restrict_iff' measurableSet_Ioo).2 ?_)⟩
   filter_upwards [ae_hasDerivAt_intervalRepresentativeL hab u] with t ht htI
   exact (ht (uIoc_of_le hab.le ▸ Ioo_subset_Ioc_self htI)).deriv.symm
-
-/-- The derivative of the continuous representative of a class of `W^{1,2}(a, b)` is square
-integrable on `(a, b)`. -/
-private theorem intervalIntegrable_deriv_intervalRepresentativeL_sq (hab : a < b)
-    (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2) :
-    IntervalIntegrable
-      (fun t => deriv (fun t ↦ intervalRepresentativeL hab u (projIcc a b hab.le t)) t ^ 2)
-      volume a b := by
-  refine (intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 ?_
-  refine (Lp.memLp (gradient u)).integrable_sq.congr ((ae_restrict_iff' measurableSet_Ioo).2 ?_)
-  filter_upwards [ae_hasDerivAt_intervalRepresentativeL hab u] with t ht htI
-  rw [(ht (uIoc_of_le hab.le ▸ Ioo_subset_Ioc_self htI)).deriv]
 
 /-- **The sharp Poincaré–Friedrichs inequality on an interval, vanishing at `a`.** If the
 continuous representative of `u ∈ W^{1,2}(a, b)` vanishes at `a`, then
@@ -252,11 +214,13 @@ continuous representative of `u ∈ W^{1,2}(a, b)` vanishes at `a`, then
 theorem norm_value_le_two_mul_div_pi_mul_norm_gradient_of_intervalTraceL_fst_eq_zero
     (hab : a < b) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2} (hu : (intervalTraceL hab u).1 = 0) :
     ‖value u‖ ≤ 2 * (b - a) / π * ‖gradient u‖ := by
-  refine le_two_mul_div_pi_mul_of_sq hab (norm_nonneg _) (norm_nonneg _) ?_
-  rw [(norm_sq_value_gradient_eq hab u).1, (norm_sq_value_gradient_eq hab u).2]
-  refine sq_mul_integral_sq_le_of_eq_zero hab
-    (absolutelyContinuousOnInterval_intervalRepresentativeL hab u)
-    (intervalIntegrable_deriv_intervalRepresentativeL_sq hab u) ?_
+  have := sub_pos.2 hab
+  rw [← inv_div, le_inv_mul_iff₀ (by positivity)]
+  refine (abs_le_of_sq_le_sq' ?_ (norm_nonneg _)).2
+  obtain ⟨hac, hdF⟩ := (mem_range_intervalRepresentativeL_iff hab _).1 ⟨u, rfl⟩
+  rw [mul_pow, (norm_sq_value_gradient_eq hab u).1, (norm_sq_value_gradient_eq hab u).2]
+  refine hac.sq_mul_integral_sq_le_of_left_eq_zero hab
+    ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 hdF.integrable_sq) ?_
   rw [intervalTraceL_apply] at hu
   simpa only [projIcc_left] using hu
 
@@ -267,11 +231,13 @@ continuous representative of `u ∈ W^{1,2}(a, b)` vanishes at `b`, then
 theorem norm_value_le_two_mul_div_pi_mul_norm_gradient_of_intervalTraceL_snd_eq_zero
     (hab : a < b) {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2} (hu : (intervalTraceL hab u).2 = 0) :
     ‖value u‖ ≤ 2 * (b - a) / π * ‖gradient u‖ := by
-  refine le_two_mul_div_pi_mul_of_sq hab (norm_nonneg _) (norm_nonneg _) ?_
-  rw [(norm_sq_value_gradient_eq hab u).1, (norm_sq_value_gradient_eq hab u).2]
-  refine sq_mul_integral_sq_le_of_eq_zero_right hab
-    (absolutelyContinuousOnInterval_intervalRepresentativeL hab u)
-    (intervalIntegrable_deriv_intervalRepresentativeL_sq hab u) ?_
+  have := sub_pos.2 hab
+  rw [← inv_div, le_inv_mul_iff₀ (by positivity)]
+  refine (abs_le_of_sq_le_sq' ?_ (norm_nonneg _)).2
+  obtain ⟨hac, hdF⟩ := (mem_range_intervalRepresentativeL_iff hab _).1 ⟨u, rfl⟩
+  rw [mul_pow, (norm_sq_value_gradient_eq hab u).1, (norm_sq_value_gradient_eq hab u).2]
+  refine hac.sq_mul_integral_sq_le_of_right_eq_zero hab
+    ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 hdF.integrable_sq) ?_
   rw [intervalTraceL_apply] at hu
   simpa only [projIcc_right] using hu
 
@@ -291,9 +257,10 @@ private theorem exists_intervalTraceL_eq_and_norm_sq_eq (hab : a < b) {S : ℝ �
     refine (intervalRepresentativeL_eq_iff hab u _).2 ?_
     filter_upwards [hv, ae_restrict_mem measurableSet_Ioo] with t ht hmem
     rw [ht, ContinuousMap.coe_mk, projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)]
-  refine ⟨u, ?_, norm_sq_eq_intervalIntegral_sq hab.le hv, norm_sq_eq_intervalIntegral_sq hab.le hg⟩
+  refine ⟨u, ?_, L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hab.le hv,
+    L2.norm_sq_eq_intervalIntegral_sq_of_ae_eq hab.le hg⟩
   rw [intervalTraceL_apply, heq]
-  rfl
+  simp only [ContinuousMap.coe_mk]
 
 /-- The first mode `S t = sin (π (t - a) / (2 (b - a)))` vanishes at `a`, and
 `∫_a^b S'² = (π / (2 (b - a)))² ∫_a^b S²` with `∫_a^b S² > 0`. -/
@@ -333,8 +300,8 @@ private theorem isLeast_of_exists (hab : a < b) {P : W1p volume ⟨Ioo a b, isOp
   rw [← mul_pow, pow_left_inj₀ (norm_nonneg _) (by positivity) two_ne_zero] at hug
   have h := hC u hu
   rw [hug, ← mul_assoc] at h
-  have h1 : 1 ≤ C * (π / (2 * (b - a))) := by
-    simpa using le_of_mul_le_mul_right (by simpa using h) ((norm_nonneg _).lt_of_ne' hu0)
+  have h1 : 1 ≤ C * (π / (2 * (b - a))) :=
+    (le_mul_iff_one_le_left ((norm_nonneg _).lt_of_ne' hu0)).1 h
   have hpos : 0 < π / (2 * (b - a)) := by have := sub_pos.2 hab; positivity
   calc 2 * (b - a) / π = 1 / (π / (2 * (b - a))) := by field_simp
     _ ≤ C := by rwa [div_le_iff₀ hpos]
@@ -369,10 +336,10 @@ theorem isLeast_norm_value_le_mul_norm_gradient_of_intervalTraceL_snd_eq_zero (h
   obtain ⟨u, htr, hv, hg⟩ := exists_intervalTraceL_eq_and_norm_sq_eq
     (S := fun t => S (a + b - t)) hab (hS.comp (contDiff_const.sub contDiff_id))
   have h₁ : ∫ t in a..b, S (a + b - t) ^ 2 = ∫ t in a..b, S t ^ 2 :=
-    integral_comp_add_sub fun t => S t ^ 2
+    intervalIntegral.integral_comp_add_sub fun t => S t ^ 2
   have h₂ : ∫ t in a..b, deriv (fun t => S (a + b - t)) t ^ 2 = ∫ t in a..b, deriv S t ^ 2 := by
     simp only [deriv_comp_const_sub, neg_sq]
-    exact integral_comp_add_sub fun t => deriv S t ^ 2
+    exact intervalIntegral.integral_comp_add_sub fun t => deriv S t ^ 2
   rw [h₁] at hv
   rw [h₂] at hg
   refine ⟨u, by rw [htr, add_sub_cancel_right, hSa], fun h => ?_, by rw [hg, hv, hSd]⟩
