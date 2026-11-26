@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Eigenspace.ConjugatePow
 public import TauCeti.LinearAlgebra.Matrix.Spanning
 public import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.Algebra.Group.Semiconj
 
 /-!
 # Irreducibility from an element conjugate to a power of itself
@@ -23,8 +24,8 @@ generator of tame inertia and `φ` a Frobenius element at an auxiliary place, wh
 `φ τ φ⁻¹ = τ ^ q` with `q` the order of the residue field. Its form over a local coefficient ring
 `R` is stronger: for `u : G →* M_n(R)` with `u (φ τ φ⁻¹) = u τ ^ q` and an eigenvalue `μ` of the
 reduction of `u τ` with `n` pairwise distinct powers `μ ^ q ^ i` in the residue field, the image of
-`u` spans `M_n(R)` itself, by Nakayama's lemma. Consequently the reduction of `u` along any ring
-homomorphism to a field is absolutely irreducible
+`u` spans `M_n(R)` itself, by Nakayama's lemma. Consequently, for `n` nonempty, the reduction of `u`
+along any ring homomorphism to a field is absolutely irreducible
 (`MonoidHom.isIrreducible_map_of_span_range_eq_top`).
 
 The hypothesis on `μ` holds when the characteristic polynomial of `ρ τ` is the product of `X - x`
@@ -63,14 +64,6 @@ public section
 
 open Function Module Submodule
 
-/-- If `u (φ τ φ⁻¹) = u τ ^ q`, then `T = u τ` and `F = u φ⁻¹` satisfy `T * F = F * T ^ q`. -/
-private theorem MonoidHom.map_mul_map_inv_eq_of_map_conj_eq_pow {G M : Type*} [Group G]
-    [Monoid M] {u : G →* M} {τ φ : G} {q : ℕ} (h : u (φ * τ * φ⁻¹) = u τ ^ q) :
-    u τ * u φ⁻¹ = u φ⁻¹ * u τ ^ q := by
-  rw [← h, ← map_mul, ← map_mul]
-  congr 1
-  group
-
 namespace Representation
 
 variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
@@ -85,7 +78,8 @@ theorem span_range_eq_top_of_map_conj_eq_pow [FiniteDimensional k V]
     (h : ρ (φ * τ * φ⁻¹) = ρ τ ^ q) (hμ : End.HasEigenvalue (ρ τ) μ)
     (hdist : Injective fun i : Fin (finrank k V) ↦ μ ^ q ^ (i : ℕ)) :
     span k (Set.range ρ) = ⊤ := by
-  have hTF : ρ τ * ρ φ⁻¹ = ρ φ⁻¹ * ρ τ ^ q := MonoidHom.map_mul_map_inv_eq_of_map_conj_eq_pow h
+  have hTF : ρ τ * ρ φ⁻¹ = ρ φ⁻¹ * ρ τ ^ q :=
+    (MonoidHom.semiconjBy_map_inv_of_map_conj_eq_pow h).eq.symm
   have hF : Injective (ρ φ⁻¹) :=
     ((End.isUnit_iff _).mp ((Group.isUnit φ⁻¹).map ρ)).injective
   refine eq_top_mono (span_mono ?_)
@@ -151,7 +145,7 @@ theorem span_range_eq_top_of_map_conj_eq_pow [IsLocalRing R]
     (hdist : Injective fun i : Fin (Fintype.card n) ↦ μ ^ q ^ (i : ℕ)) :
     span R (Set.range u) = ⊤ := by
   refine eq_top_mono (span_mono ?_) (IsLocalRing.span_range_pow_mul_pow_eq_top_of_mul_eq_mul_pow
-    (map_mul_map_inv_eq_of_map_conj_eq_pow h) ((Group.isUnit φ⁻¹).map u) hμ hdist)
+    (semiconjBy_map_inv_of_map_conj_eq_pow h).eq.symm ((Group.isUnit φ⁻¹).map u) hμ hdist)
   rintro _ ⟨p, rfl⟩
   exact ⟨φ⁻¹ ^ (p.1 : ℕ) * τ ^ (p.2 : ℕ), by rw [map_mul, map_pow, map_pow]⟩
 
