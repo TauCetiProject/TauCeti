@@ -229,8 +229,10 @@ theorem IsHeightFunctionOn.isTiling_tilingOfHeightOn_iff (hH : IsHeightFunctionO
   rw [mem_tilingOfHeightOn, not_and_or, or_iff_left (not_not.2 heR)]
   exact ne_one_sub_neutralIncrement_iff (hH e heR)
 
-/-- **Restriction commutes with heights**: the height function of a plane tiling `M` is a height
-function on every region `R`, and its free tiling on `R` is the restriction `M ∩ E(R)`. -/
+/-- **Restriction commutes with heights**: the free tiling on a region `R` of the height function
+of a plane tiling `M` is the restriction `M ∩ E(R)`. That this height function is a height function
+on `R` follows from `IsTiling.isHeightFunction_tilingHeight` and
+`IsHeightFunction.isHeightFunctionOn`. -/
 theorem IsTiling.tilingOfHeightOn_tilingHeight (h : IsTiling Set.univ M) (R : Set TriFace) :
     tilingOfHeightOn R (tilingHeight M) = M ∩ regionEdges R := by
   rw [tilingOfHeightOn_def, h.tilingOfHeight_tilingHeight]
