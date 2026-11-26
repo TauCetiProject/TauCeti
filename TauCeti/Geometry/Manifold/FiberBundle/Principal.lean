@@ -41,11 +41,10 @@ trivialization `TauCeti.PrincipalBundle.trivializationOfSection` determined by a
 section is `C^n` with `C^n` inverse (`TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection`
 and `TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection_symm`).
 
-The fibre coordinate `TauCeti.PrincipalBundle.fiberCoord P b₀` of the trivialization of the atlas
-at `b₀` is `C^n` over its base set (`TauCeti.PrincipalBundle.contMDiffAt_fiberCoord`), where it
-turns the right action into right multiplication, `g_e(x · g) = g_e(x) g`
-(`TauCeti.PrincipalBundle.fiberCoord_op_smul`), also on tangent vectors
-(`TauCeti.PrincipalBundle.mfderiv_fiberCoord_mfderiv_op_smul`).
+Over the base set of the trivialization of the atlas at `b₀`, the fibre coordinate
+`TauCeti.ManifoldTotalSpace.fiberCoord G P b₀` in it turns the right action into right
+multiplication, `g_e(x · g) = g_e(x) g` (`TauCeti.PrincipalBundle.fiberCoord_op_smul`), also on
+tangent vectors (`TauCeti.PrincipalBundle.mfderiv_fiberCoord_mfderiv_op_smul`).
 
 The vertical tangent space at a point `p` of the total space, the kernel of the derivative of the
 projection, is the image of the derivative at the identity of the orbit map `g ↦ p • g`
@@ -57,11 +56,6 @@ which is its dimension when that model space is finite-dimensional
 (`TauCeti.PrincipalBundle.finrank_ker_mfderiv_proj`). These statements need `C^n` multiplication on
 `G` and a `C^n` fibre bundle for some `n ≠ 0`.
 
-## Main definitions
-
-* `TauCeti.PrincipalBundle.fiberCoord P b₀`: the fibre coordinate in the trivialization of the
-  atlas at `b₀`.
-
 ## Main results
 
 * `TauCeti.PrincipalBundle.contMDiffFiberBundle_iff`: a principal bundle is a `C^n` fibre bundle
@@ -70,9 +64,8 @@ which is its dimension when that model space is finite-dimensional
   `TauCeti.PrincipalBundle.instContMDiffConstSMul`: joint and pointwise `C^n` smoothness of the
   right action of a principal bundle.
 * `ContMDiff.division`: the division map of a principal bundle is `C^n`.
-* `TauCeti.PrincipalBundle.fiberCoord_op_smul`,
-  `TauCeti.PrincipalBundle.contMDiffAt_fiberCoord`: over its base set, the fibre coordinate of a
-  trivialization is `C^n` and turns the right action into right multiplication.
+* `TauCeti.PrincipalBundle.fiberCoord_op_smul`: over its base set, the fibre coordinate of a
+  trivialization turns the right action into right multiplication.
 * `TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection` and
   `TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection_symm`: a `C^n` local section
   determines a `C^n` equivariant trivialization with `C^n` inverse.
@@ -227,55 +220,17 @@ end SmoothAction
 
 section FiberCoord
 
-omit [Group G] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
-variable (P) in
-/-- The **fibre coordinate** of a point `x` of the charted total space in the trivialization of the
-atlas at `b₀`: the second component of `trivializationAt G P b₀ x`. Over the base set of that
-trivialization it turns the right action into right multiplication
-(`TauCeti.PrincipalBundle.fiberCoord_op_smul`). -/
-noncomputable def fiberCoord (b₀ : B) (x : ManifoldTotalSpace G P) : G :=
-  (trivializationAt G P b₀ ((ManifoldTotalSpace.homeomorph G P).symm x)).2
-
-omit [Group G] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
-/-- The fibre coordinate of a point transported from the original total space is the second
-component of the trivialization at `b₀`. -/
-@[simp]
-theorem fiberCoord_homeomorph (b₀ : B) (p : TotalSpace G P) :
-    fiberCoord P b₀ (ManifoldTotalSpace.homeomorph G P p) = (trivializationAt G P b₀ p).2 := by
-  rw [fiberCoord, Homeomorph.symm_apply_apply]
-
-omit [Group G] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
-/-- If the base point of `x` lies in the base set of the trivialization at `b₀`, so do the base
-points of all points near `x`. -/
-theorem eventually_mem_baseSet_trivializationAt {b₀ : B} {x : ManifoldTotalSpace G P}
-    (hx : ((ManifoldTotalSpace.homeomorph G P).symm x).proj ∈ (trivializationAt G P b₀).baseSet) :
-    ∀ᶠ y in 𝓝 x,
-      ((ManifoldTotalSpace.homeomorph G P).symm y).proj ∈ (trivializationAt G P b₀).baseSet :=
-  ((FiberBundle.continuous_proj G P).comp
-    (ManifoldTotalSpace.homeomorph G P).symm.continuous).continuousAt.preimage_mem_nhds
-    ((trivializationAt G P b₀).open_baseSet.mem_nhds hx)
+open TauCeti.ManifoldTotalSpace (fiberCoord fiberCoord_homeomorph
+  eventually_mem_baseSet_trivializationAt contMDiffAt_fiberCoord)
 
 /-- Over the base set, the fibre coordinate of `x · g` is the fibre coordinate of `x` times `g`. -/
 theorem fiberCoord_op_smul {b₀ : B} {x : ManifoldTotalSpace G P}
     (hx : ((ManifoldTotalSpace.homeomorph G P).symm x).proj ∈ (trivializationAt G P b₀).baseSet)
-    (g : G) : fiberCoord P b₀ (op g • x) = fiberCoord P b₀ x * g := by
+    (g : G) : fiberCoord G P b₀ (op g • x) = fiberCoord G P b₀ x * g := by
   obtain ⟨⟨b, p⟩, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
   rw [Homeomorph.symm_apply_apply] at hx
   rw [ManifoldTotalSpace.smul_homeomorph, fiberCoord_homeomorph, fiberCoord_homeomorph]
   exact (trivializationAt G P b₀).snd_apply_smul hx p g
-
-omit [Group G] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
-/-- Over the base set of its trivialization, the fibre coordinate of a `C^n` fibre bundle is
-`C^n`. This is the analogue of `TauCeti.ManifoldTotalSpace.contMDiffAt_trivializationAt_snd` for a
-trivialization at any base point whose base set contains the projection of `x`. -/
-theorem contMDiffAt_fiberCoord [ContMDiffFiberBundle n G P IB IG] {b₀ : B}
-    {x : ManifoldTotalSpace G P}
-    (hx : ((ManifoldTotalSpace.homeomorph G P).symm x).proj ∈ (trivializationAt G P b₀).baseSet) :
-    ContMDiffAt (IB.prod IG) IG n (fiberCoord P b₀) x :=
-  (ManifoldTotalSpace.contMDiffOn_trivialization_snd_comp (trivializationAt G P b₀)
-    (s := {y | ((ManifoldTotalSpace.homeomorph G P).symm y).proj ∈
-      (trivializationAt G P b₀).baseSet})
-    contMDiffOn_id fun _ hy ↦ hy).contMDiffAt (eventually_mem_baseSet_trivializationAt hx)
 
 /-- Over the base set, the fibre coordinate intertwines the right action by `g` with right
 multiplication by `g`, also on tangent vectors. -/
@@ -283,20 +238,20 @@ theorem mfderiv_fiberCoord_mfderiv_op_smul [ContMDiffMul IG 1 G]
     [ContMDiffFiberBundle 1 G P IB IG] {b₀ : B} {x : ManifoldTotalSpace G P}
     (hx : ((ManifoldTotalSpace.homeomorph G P).symm x).proj ∈ (trivializationAt G P b₀).baseSet)
     (g : G) (v : TangentSpace (IB.prod IG) x) :
-    mfderiv (IB.prod IG) IG (fiberCoord P b₀) (op g • x)
+    mfderiv (IB.prod IG) IG (fiberCoord G P b₀) (op g • x)
         (mfderiv (IB.prod IG) (IB.prod IG) (fun y ↦ op g • y) x v) =
-      mfderiv IG IG (· * g) (fiberCoord P b₀ x)
-        (mfderiv (IB.prod IG) IG (fiberCoord P b₀) x v) := by
+      mfderiv IG IG (· * g) (fiberCoord G P b₀ x)
+        (mfderiv (IB.prod IG) IG (fiberCoord G P b₀) x v) := by
   have hx' : ((ManifoldTotalSpace.homeomorph G P).symm (op g • x)).proj ∈
       (trivializationAt G P b₀).baseSet := by
     rwa [ManifoldTotalSpace.homeomorph_symm_smul]
   -- Near `x`, translating by `g` and then taking the fibre coordinate is right multiplication by
   -- `g` after the fibre coordinate.
-  have heq : fiberCoord P b₀ ∘ (fun y ↦ op g • y) =ᶠ[𝓝 x] (· * g) ∘ fiberCoord P b₀ :=
+  have heq : fiberCoord G P b₀ ∘ (fun y ↦ op g • y) =ᶠ[𝓝 x] (· * g) ∘ fiberCoord G P b₀ :=
     (eventually_mem_baseSet_trivializationAt hx).mono fun y hy ↦ fiberCoord_op_smul hy g
-  have hcomp : HasMFDerivAt (IB.prod IG) IG (fiberCoord P b₀ ∘ fun y ↦ op g • y) x
-      ((mfderiv IG IG (· * g) (fiberCoord P b₀ x)).comp
-        (mfderiv (IB.prod IG) IG (fiberCoord P b₀) x)) :=
+  have hcomp : HasMFDerivAt (IB.prod IG) IG (fiberCoord G P b₀ ∘ fun y ↦ op g • y) x
+      ((mfderiv IG IG (· * g) (fiberCoord G P b₀ x)).comp
+        (mfderiv (IB.prod IG) IG (fiberCoord G P b₀) x)) :=
     ((mdifferentiableAt_mul_right (I := IG)).hasMFDerivAt.comp x
       ((contMDiffAt_fiberCoord hx).mdifferentiableAt one_ne_zero).hasMFDerivAt
       ).congr_of_eventuallyEq heq
@@ -304,9 +259,9 @@ theorem mfderiv_fiberCoord_mfderiv_op_smul [ContMDiffMul IG 1 G]
       ((contMDiff_const_smul (I := IB.prod IG) (n := 1) (op g) x).mdifferentiableAt one_ne_zero)
       rfl, hcomp.mfderiv]
   -- Elaborated before unifying with the goal, whose tangent space is indexed by the equal point
-  -- `fiberCoord P b₀ (op g • x)` rather than `fiberCoord P b₀ x * g`.
-  exact (ContinuousLinearMap.comp_apply (mfderiv IG IG (· * g) (fiberCoord P b₀ x))
-    (mfderiv (IB.prod IG) IG (fiberCoord P b₀) x) v :)
+  -- `fiberCoord G P b₀ (op g • x)` rather than `fiberCoord G P b₀ x * g`.
+  exact (ContinuousLinearMap.comp_apply (mfderiv IG IG (· * g) (fiberCoord G P b₀ x))
+    (mfderiv (IB.prod IG) IG (fiberCoord G P b₀) x) v :)
 
 end FiberCoord
 

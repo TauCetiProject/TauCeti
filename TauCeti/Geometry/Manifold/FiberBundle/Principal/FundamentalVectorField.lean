@@ -135,16 +135,17 @@ theorem mfderiv_op_smul_rightFundamentalVectorField [LieGroup IG 1 G]
     (mdifferentiableAt_orbit (n := 1) one_ne_zero x 1)
     (mdifferentiableAt_orbit (n := 1) one_ne_zero (op g • x) 1) ξ
 
+open TauCeti.ManifoldTotalSpace (fiberCoord contMDiffAt_fiberCoord) in
 /-- Over the base set of its trivialization, the fibre coordinate
-`TauCeti.PrincipalBundle.fiberCoord` carries the fundamental vector field of `ξ` to the
+`TauCeti.ManifoldTotalSpace.fiberCoord` carries the fundamental vector field of `ξ` to the
 left-invariant vector field of `ξ`. -/
 theorem mfderiv_fiberCoord_rightFundamentalVectorField [ContMDiffMul IG 1 G]
     [ContMDiffFiberBundle 1 G P IB IG] {b₀ : B} {x : ManifoldTotalSpace G P}
     (hx : ((ManifoldTotalSpace.homeomorph G P).symm x).proj ∈ (trivializationAt G P b₀).baseSet)
     (ξ : GroupLieAlgebra IG G) :
-    mfderiv (IB.prod IG) IG (fiberCoord P b₀) x (rightFundamentalVectorField (IB.prod IG) ξ x) =
-      mulInvariantVectorField ξ (fiberCoord P b₀ x) := by
-  have hfun : fiberCoord P b₀ ∘ (fun g : G ↦ op g • x) = (fiberCoord P b₀ x * ·) :=
+    mfderiv (IB.prod IG) IG (fiberCoord G P b₀) x (rightFundamentalVectorField (IB.prod IG) ξ x) =
+      mulInvariantVectorField ξ (fiberCoord G P b₀ x) := by
+  have hfun : fiberCoord G P b₀ ∘ (fun g : G ↦ op g • x) = (fiberCoord G P b₀ x * ·) :=
     funext fun g ↦ fiberCoord_op_smul hx g
   rw [rightFundamentalVectorField_apply, ← mfderiv_comp_apply_of_eq (1 : G)
     ((contMDiffAt_fiberCoord hx).mdifferentiableAt one_ne_zero)

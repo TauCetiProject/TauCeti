@@ -25,7 +25,7 @@ values in `𝔤` which
 This file proves that **every smooth principal bundle over a Hausdorff σ-compact
 finite-dimensional base has a connection form** (`TauCeti.PrincipalBundle.exists_isConnectionForm`).
 Over the base set of a trivialization `e` of the atlas, write `x = e⁻¹(π x, g_e(x))`. The fibre
-coordinate `g_e` (`TauCeti.PrincipalBundle.fiberCoord`) satisfies `g_e(x · g) = g_e(x) g`, so the
+coordinate `g_e` (`TauCeti.ManifoldTotalSpace.fiberCoord`) satisfies `g_e(x · g) = g_e(x) g`, so the
 pullback `g_e^* θ` of the left Maurer–Cartan form of `G` (`TauCeti.leftMaurerCartanForm`) is a
 connection form over that base set: it takes the value `ξ` on `ξ♯`, because `ξ♯` is carried to the
 left-invariant vector field of `ξ`
@@ -177,6 +177,7 @@ private theorem proj_op_smul (g : G) (x : ManifoldTotalSpace G P) :
     proj G P (op g • x) = proj G P x := by
   rw [proj, ManifoldTotalSpace.homeomorph_symm_smul]
 
+open TauCeti.ManifoldTotalSpace (fiberCoord contMDiffAt_fiberCoord) in
 /-- **Existence of connection forms.** A smooth principal bundle over a Hausdorff σ-compact
 finite-dimensional manifold has a connection form. -/
 theorem exists_isConnectionForm [FiniteDimensional ℝ EB] [T2Space B] [SigmaCompactSpace B] :
@@ -189,19 +190,19 @@ theorem exists_isConnectionForm [FiniteDimensional ℝ EB] [T2Space B] [SigmaCom
     hρ b (subset_tsupport _ ((ρ.mem_finsupport b₀).1 hb))
   have hsmooth := isSmoothForm_sum_finsupport_smul_mpullback (F := EG) hρ
     (fun b ↦ (trivializationAt G P b).open_baseSet) (ManifoldTotalSpace.contMDiff_proj ∞ G P IB IG)
-    (g := fiberCoord P) (fun _ _ hx ↦ contMDiffAt_fiberCoord hx) (leftMaurerCartanForm IG G)
+    (g := fiberCoord G P) (fun _ _ hx ↦ contMDiffAt_fiberCoord hx) (leftMaurerCartanForm IG G)
   let A : SmoothForm (IB.prod IG) (ManifoldTotalSpace G P) EG 1 :=
     ⟨_, hsmooth.mem_smoothBundleForms⟩
   -- The value of the glued form is the defining sum, by construction of the subtype element.
   have hA (x : ManifoldTotalSpace G P) : A.val x = ∑ b ∈ ρ.finsupport (proj G P x),
       ρ b (proj G P x) •
-        mpullback (F := EG) (IB.prod IG) IG (fiberCoord P b) (leftMaurerCartanForm IG G).val x :=
+        mpullback (F := EG) (IB.prod IG) IG (fiberCoord G P b) (leftMaurerCartanForm IG G).val x :=
     rfl
   refine ⟨A, ⟨fun x ξ ↦ ?_, fun g x v ↦ ?_⟩⟩
   · rw [hA, ContinuousAlternatingMap.sum_apply]
     have h (b : B) (hb : b ∈ ρ.finsupport (proj G P x)) :
         (ρ b (proj G P x) •
-          mpullback (F := EG) (IB.prod IG) IG (fiberCoord P b) (leftMaurerCartanForm IG G).val x)
+          mpullback (F := EG) (IB.prod IG) IG (fiberCoord G P b) (leftMaurerCartanForm IG G).val x)
             ![rightFundamentalVectorField (IB.prod IG) ξ x] = ρ b (proj G P x) • (ξ : EG) := by
       rw [ContinuousAlternatingMap.smul_apply, mpullback_apply_one,
         mfderiv_fiberCoord_rightFundamentalVectorField (hmem hb),
