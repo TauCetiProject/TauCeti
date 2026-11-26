@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.Morse.AddCircle
 public import TauCeti.Geometry.Manifold.Morse.Persistence
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
 import TauCeti.Algebra.AddCircle
 
 /-!
@@ -98,23 +97,17 @@ theorem isMorse_circleCos : IsMorse 𝓘(ℝ) circleCos := by
 /-- A point of the circle at which the cosine takes the value `a ∈ [-1, 1]` is `± arccos a`. -/
 theorem eq_or_eq_neg_arccos_of_circleCos_eq {x : AddCircle (2 * π)} {a : ℝ}
     (hx : circleCos x = a) (ha₁ : -1 ≤ a) (ha₂ : a ≤ 1) :
-    x = (Real.arccos a : ℝ) ∨ x = (-Real.arccos a : ℝ) := by
-  induction x using QuotientAddGroup.induction_on with | H φ =>
-  rw [circleCos_coe, ← Real.cos_arccos ha₁ ha₂, Real.cos_eq_cos_iff] at hx
-  obtain ⟨k, hk | hk⟩ := hx
-  · exact .inl <| AddCircle.coe_eq_coe_iff_exists_zsmul.2
-      ⟨-k, by rw [hk, neg_zsmul, zsmul_eq_mul]; ring⟩
-  · exact .inr <| AddCircle.coe_eq_coe_iff_exists_zsmul.2
-      ⟨k, by rw [hk, zsmul_eq_mul]; ring⟩
+    x = (Real.arccos a : ℝ) ∨ x = (-Real.arccos a : ℝ) :=
+  Real.Angle.cos_eq_real_cos_iff_eq_or_eq_neg.1 (hx.trans (Real.cos_arccos ha₁ ha₂).symm)
 
 /-- The cosine takes its maximum `1` at `0`. -/
 @[simp]
-theorem circleCos_zero : circleCos 0 = 1 := by
-  simpa using circleCos_coe 0
+theorem circleCos_zero : circleCos 0 = 1 :=
+  Real.Angle.cos_zero
 
 /-- The cosine takes its minimum `-1` at `π`. -/
-theorem circleCos_pi : circleCos ((π : ℝ) : AddCircle (2 * π)) = -1 := by
-  rw [circleCos_coe, Real.cos_pi]
+theorem circleCos_pi : circleCos ((π : ℝ) : AddCircle (2 * π)) = -1 :=
+  Real.Angle.cos_coe_pi
 
 /-- **The critical points of the cosine on the circle** are its maximum `0` and its minimum `π`. -/
 theorem mem_criticalPoints_circleCos_iff {x : AddCircle (2 * π)} :

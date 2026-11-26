@@ -16,10 +16,13 @@ import TauCeti.Algebra.AddCircle
 The cosine `circleCos` is the height function of the circle `S¹ = ℝ ⧸ 2πℤ`, with its maximum at
 `0` and its minimum at `π`. This file computes the trajectory space from the maximum to the
 minimum for every adapted pseudo-gradient, and the degree-zero entry of the Barraud–Cornea cocycle
-(`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`) between them: it is `(1 + t) g` in the
-group ring of the fundamental group, with `t` the image of a generator of `π₁(S¹)`. This is the
-twisted Morse differential `1 + t` of the circle, with its `π₁`-monodromy, which the classical
-Morse differential `1 + 1 = 0` mod two forgets.
+(`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`) between them: its image in the group ring
+of the fundamental group is `∑_ε r_ε [θ ∘ γ_ε]`, the sum of the classes of the loops traced along
+the two half-circles `γ_ε`, weighted by the coefficients `r_ε` of the two trajectories. When both
+coefficients are `1`, as in the mod-two fundamental chain, it is `(1 + t) g`, with `t` the image of
+a generator of `π₁(S¹)`. For `g = 1` and coefficients mod two this is the twisted Morse
+differential `1 + t` of the circle, with its `π₁`-monodromy, which the classical mod-two Morse
+differential `1 + 1 = 0` forgets.
 
 * **The two half-circles.** The Moore path `circleCosHalfPath ε`, `ε = ±1`, is at the angle
   `ε · arccos (1 - t)` at time `t`, so that the cosine decreases along it at unit speed from `1`
@@ -34,8 +37,8 @@ Morse differential `1 + 1 = 0` mod two forgets.
   cosine along the path enter, not the Morse–Smale condition.
 * **Both half-circles occur.** The midpoints `± π / 2` of the half-circles lie on trajectories from
   `0` to `π`, since along their orbits the cosine stays on one side of its value `0` there
-  (`IsAdaptedPseudoGradient.circleCosHalfPath_one_mem_unstableSet_inter_stableSet`). Recording these
-  trajectories on the levels of `c` gives two points of the trajectory space
+  (`IsAdaptedPseudoGradient.circleCosHalfPath_apply_one_mem_unstableSet_inter_stableSet`).
+  Recording these trajectories on the levels of `c` gives two points of the trajectory space
   (`IsAdaptedPseudoGradient.circleCosTrajectory`), whose Moore paths are the two half-circles
   (`IsAdaptedPseudoGradient.morseLevelPath_circleCosTrajectory`). A record is determined by its
   Moore path (`TauCeti.IsAdaptedPseudoGradient.morseLevelPath_injective`), so when the levels of
@@ -125,6 +128,16 @@ theorem circleCosHalfPath_apply (ε : ℤˣ) (t : ℝ≥0) :
     circleCosHalfPath ε t = (((ε : ℤ) : ℝ) * Real.arccos (1 - t) : ℝ) :=
   (rfl)
 
+/-- The upper half-circle is at the angle `arccos (1 - t)` at time `t`. -/
+theorem circleCosHalfPath_one_apply (t : ℝ≥0) :
+    circleCosHalfPath 1 t = (Real.arccos (1 - t) : ℝ) := by
+  simp
+
+/-- The lower half-circle is at the angle `-arccos (1 - t)` at time `t`. -/
+theorem circleCosHalfPath_neg_one_apply (t : ℝ≥0) :
+    circleCosHalfPath (-1) t = (-Real.arccos (1 - t) : ℝ) := by
+  simp
+
 /-- The half-circles have length `2`, the drop of the cosine from `1` to `-1`. -/
 @[simp]
 theorem length_circleCosHalfPath (ε : ℤˣ) : (circleCosHalfPath ε).length = 2 :=
@@ -138,24 +151,23 @@ theorem source_circleCosHalfPath (ε : ℤˣ) : (circleCosHalfPath ε).source = 
 /-- The half-circles end at the minimum `π` of the cosine. -/
 @[simp]
 theorem target_circleCosHalfPath (ε : ℤˣ) : (circleCosHalfPath ε).target = (π : ℝ) := by
-  rw [MoorePath.target_def, circleCosHalfPath_apply, length_circleCosHalfPath, NNReal.coe_ofNat,
-    show (1 : ℝ) - 2 = -1 by norm_num, Real.arccos_neg_one]
+  have h : Real.arccos (1 - ((2 : ℝ≥0) : ℝ)) = π := by
+    rw [NNReal.coe_ofNat, show (1 : ℝ) - 2 = -1 by norm_num, Real.arccos_neg_one]
+  rw [MoorePath.target_def, length_circleCosHalfPath]
   rcases Int.units_eq_one_or ε with rfl | rfl
-  · rw [Units.val_one, Int.cast_one, one_mul]
+  · rw [circleCosHalfPath_one_apply, h]
   · -- The circle `AddCircle (2π)` is `Real.Angle`, in which `-π = π`.
-    rw [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, neg_one_mul]
+    rw [circleCosHalfPath_neg_one_apply, h]
     exact (Real.Angle.coe_neg π).trans Real.Angle.neg_coe_pi
 
 /-- Along each half-circle the cosine decreases at unit speed: at time `t ≤ 2` it is `1 - t`. -/
 theorem circleCos_circleCosHalfPath (ε : ℤˣ) {t : ℝ≥0} (ht : t ≤ 2) :
     circleCos (circleCosHalfPath ε t) = 1 - t := by
   have ht' : (t : ℝ) ≤ 2 := by exact_mod_cast ht
-  rw [circleCosHalfPath_apply, circleCos_coe]
+  have h := Real.cos_arccos (x := 1 - t) (by linarith [t.coe_nonneg]) (by linarith [t.coe_nonneg])
   rcases Int.units_eq_one_or ε with rfl | rfl
-  · rw [Units.val_one, Int.cast_one, one_mul, Real.cos_arccos (by linarith [t.coe_nonneg])
-      (by linarith [t.coe_nonneg])]
-  · rw [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, neg_one_mul, Real.cos_neg,
-      Real.cos_arccos (by linarith [t.coe_nonneg]) (by linarith [t.coe_nonneg])]
+  · rw [circleCosHalfPath_one_apply, circleCos_coe, h]
+  · rw [circleCosHalfPath_neg_one_apply, circleCos_coe, Real.cos_neg, h]
 
 /-- At a time `t ∈ (0, 2)` the two half-circles are at different points. -/
 theorem circleCosHalfPath_one_ne_neg_one {t : ℝ≥0} (ht₀ : 0 < t) (ht₂ : t < 2) :
@@ -165,8 +177,7 @@ theorem circleCosHalfPath_one_ne_neg_one {t : ℝ≥0} (ht₀ : 0 < t) (ht₂ : 
   have hpos : 0 < Real.arccos (1 - t) := Real.arccos_pos.2 (by linarith)
   have hlt : Real.arccos (1 - t) < π := Real.arccos_lt_pi.2 (by linarith)
   intro h
-  simp only [circleCosHalfPath_apply, Units.val_one, Int.cast_one, one_mul, Units.val_neg,
-    Int.cast_neg, neg_one_mul] at h
+  rw [circleCosHalfPath_one_apply, circleCosHalfPath_neg_one_apply] at h
   have := AddCircle.eq_of_coe_eq_of_abs_sub_lt h (by
     rw [sub_neg_eq_add, abs_of_pos (by linarith)]
     linarith)
@@ -181,7 +192,8 @@ theorem circleCosHalfPath_apply_one_injective :
   exacts [rfl, (hne h).elim, (hne h.symm).elim, rfl]
 
 /-- The point of a half-circle at time `1` lies on the level `0` of the cosine. -/
-theorem circleCos_circleCosHalfPath_one (ε : ℤˣ) : circleCos (circleCosHalfPath ε 1) = 0 := by
+theorem circleCos_circleCosHalfPath_apply_one (ε : ℤˣ) :
+    circleCos (circleCosHalfPath ε 1) = 0 := by
   simpa using circleCos_circleCosHalfPath ε (t := 1) one_le_two
 
 /-! ### Loops along the half-circles -/
@@ -343,15 +355,15 @@ theorem exists_morseLevelPath_eq_circleCosHalfPath
 pseudo-gradient adapted to the cosine, the points `± π / 2` flow down to the minimum `π` and come
 from the maximum `0`: along their orbits the cosine stays below, respectively above, its value
 `0` there, while the only critical points are `0` and `π`. -/
-theorem circleCosHalfPath_one_mem_unstableSet_inter_stableSet (ε : ℤˣ) :
+theorem circleCosHalfPath_apply_one_mem_unstableSet_inter_stableSet (ε : ℤˣ) :
     circleCosHalfPath ε 1 ∈
       hX.flow.unstableSet 0 ∩ hX.flow.stableSet ((π : ℝ) : AddCircle (2 * π)) := by
   have hcont : Continuous circleCos := (contMDiff_circleCos (n := 0)).continuous
   have hanti (t : ℝ) (ht : t ≤ 0) : circleCos (hX.flow t (circleCosHalfPath ε 1)) ≥ 0 := by
-    simpa only [Flow.map_zero_apply, circleCos_circleCosHalfPath_one] using
+    simpa only [Flow.map_zero_apply, circleCos_circleCosHalfPath_apply_one] using
       hX.antitone_flow (circleCosHalfPath ε 1) ht
   have hanti' (t : ℝ) (ht : 0 ≤ t) : circleCos (hX.flow t (circleCosHalfPath ε 1)) ≤ 0 := by
-    simpa only [Flow.map_zero_apply, circleCos_circleCosHalfPath_one] using
+    simpa only [Flow.map_zero_apply, circleCos_circleCosHalfPath_apply_one] using
       hX.antitone_flow (circleCosHalfPath ε 1) ht
   constructor
   · obtain ⟨q, hq, hzq⟩ := hX.exists_mem_unstableSet (circleCosHalfPath ε 1)
@@ -380,14 +392,14 @@ level `c i`. -/
 private noncomputable def circleCosCrossingTime (ε : ℤˣ)
     (i : c ⁻¹' Ioo (circleCos ((π : ℝ) : AddCircle (2 * π))) (circleCos 0)) : ℝ :=
   (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet zero_ne_coe_pi
-    (hX.circleCosHalfPath_one_mem_unstableSet_inter_stableSet ε) i.property.1
+    (hX.circleCosHalfPath_apply_one_mem_unstableSet_inter_stableSet ε) i.property.1
     i.property.2).exists.choose
 
 private theorem circleCos_flow_circleCosCrossingTime (ε : ℤˣ)
     (i : c ⁻¹' Ioo (circleCos ((π : ℝ) : AddCircle (2 * π))) (circleCos 0)) :
     circleCos (hX.flow (circleCosCrossingTime hX c ε i) (circleCosHalfPath ε 1)) = c i :=
   (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet zero_ne_coe_pi
-    (hX.circleCosHalfPath_one_mem_unstableSet_inter_stableSet ε) i.property.1
+    (hX.circleCosHalfPath_apply_one_mem_unstableSet_inter_stableSet ε) i.property.1
     i.property.2).exists.choose_spec
 
 /-- **The trajectory through the half-circle `ε`**: the point of the trajectory space from `0` to
@@ -401,7 +413,7 @@ noncomputable def circleCosTrajectory (ε : ℤˣ) :
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 circleCosMaxCrit.property)
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 circleCosMinCrit.property) zero_ne_coe_pi _
       (hX.mem_morseTrajectoryRecords.2
-        ⟨_, hX.circleCosHalfPath_one_mem_unstableSet_inter_stableSet ε, fun i ↦
+        ⟨_, hX.circleCosHalfPath_apply_one_mem_unstableSet_inter_stableSet ε, fun i ↦
           ⟨circleCos_flow_circleCosCrossingTime hX c ε i, _, rfl⟩⟩)⟩⟩
 
 variable {c}
@@ -418,7 +430,7 @@ theorem morseLevelPath_circleCosTrajectory (ε : ℤˣ) :
     (inclusion (morseBrokenTrajectorySpace_subset _ _) (hX.circleCosTrajectory c ε))
   rw [h, circleCosHalfPath_apply_one_injective (a₁ := ε') (a₂ := ε) ?_]
   -- At time `1` the path is on the level `0`, at the midpoint of the half-circle `ε`.
-  have hz := hX.circleCosHalfPath_one_mem_unstableSet_inter_stableSet ε
+  have hz := hX.circleCosHalfPath_apply_one_mem_unstableSet_inter_stableSet ε
   have hmid := hX.morseLevelPoint_eq isMorse_circleCos hdense' (k := 1)
     (x := ![0, ((π : ℝ) : AddCircle (2 * π))]) (z := ![circleCosHalfPath ε 1])
     (m := circleCosHalfPath ε 1) rfl rfl
@@ -430,7 +442,7 @@ theorem morseLevelPath_circleCosTrajectory (ε : ℤˣ) :
     (w := (hX.circleCosTrajectory c ε : c ⁻¹' Ioo _ _ → AddCircle (2 * π)))
     (fun i ↦ ⟨circleCos_flow_circleCosCrossingTime hX c ε i, 0, _, rfl⟩)
     (.inr ⟨0, 0, Flow.map_zero_apply ..⟩)
-  rw [circleCos_circleCosHalfPath_one] at hmid
+  rw [circleCos_circleCosHalfPath_apply_one] at hmid
   have h1 := congrArg (· 1) h
   simp only [morseLevelPath_apply, NNReal.coe_one, circleCos_zero, sub_self] at h1
   exact h1.symm.trans hmid
