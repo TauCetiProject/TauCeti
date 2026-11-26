@@ -30,6 +30,8 @@ for `q ^ f`.
 ## Main results
 
 * `TauCeti.WeilDeligneParameter.restrict_det`: restriction commutes with determinants.
+* `TauCeti.WeilDeligneParameter.ker_le_comap_ker_of_deg`: `ι` maps `ker deg'` into `ker deg` when
+  `deg ∘ ι = f · deg'`.
 * `TauCeti.WeilDeligneParameter.restrict_special`: restriction of `Sp(n)`.
 
 ## References
@@ -81,6 +83,15 @@ theorem restrict_r_apply (D : WeilDeligneParameter E W V deg q) (w : W') :
 @[simp]
 theorem restrict_N (D : WeilDeligneParameter E W V deg q) : (D.restrict ι hι f hf).N = D.N :=
   (rfl)
+
+omit [TopologicalSpace W] [TopologicalSpace W'] in
+/-- A homomorphism `ι : W' →* W` with `deg (ι w) = f · deg' w` maps the kernel of `deg'` into the
+kernel of `deg`. -/
+theorem ker_le_comap_ker_of_deg (hf : ∀ w, (deg (ι w)).toAdd = f * (deg' w).toAdd) :
+    deg'.ker ≤ deg.ker.comap ι :=
+  MonoidHom.ker_le_comap_ker_of_comp_eq (f₁ := powMonoidHom f) <| by
+    ext w
+    simp [hf]
 
 variable {D₁ D₂ D₃ : WeilDeligneParameter E W V deg q}
 

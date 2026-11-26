@@ -53,6 +53,11 @@ right is the Jacobi bracket of the contact form `α`; in terms of `r` the identi
 * `TauCeti.SmoothForm.IsContactForm.poissonBracket_symplectization_exp_mul`:
   `{eᵗ f, eᵗ g} = eᵗ (dα(X_f, X_g) + f R_α(g) - g R_α(f))`.
 
+The formulas for `X_(eᵗ f)` and `{eᵗ f, eᵗ g}` hold at `(t, x)` as soon as `α` is a contact form
+at `x` (`TauCeti.SmoothForm.hamiltonianVectorField_symplectization_exp_mul_of_isContactFormAt`,
+`TauCeti.SmoothForm.poissonBracket_symplectization_exp_mul_of_isContactFormAt`), which is what a
+local contact form of a contact structure provides.
+
 ## References
 
 * V. I. Arnold, *Mathematical Methods of Classical Mechanics*, 2nd ed., Graduate Texts in
@@ -76,17 +81,19 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {α : SmoothForm I M ℝ 1} {f g : M → ℝ} {X : (x : M) → TangentSpace I x}
 
-/-- **Contraction of `d(eᵗ α)` with the lift of a contact Hamiltonian vector field.** If `X` is a
-contact Hamiltonian vector field of `f` for a one-form `α`, and `f` is differentiable at `x`, then
-at `(t, x)` the contraction of `d(eᵗ α)` with `(R_α f)(x) ∂_t - X(x)` is the differential of
-`(t, x) ↦ eᵗ f(x)`. -/
-theorem IsContactHamiltonianVectorField.eval₂_mextDerivₗ_symplectization
-    (hX : α.IsContactHamiltonianVectorField f X) {p : ℝ × M}
+/-- **Contraction of `d(eᵗ α)` with the lift of a tangent vector solving the contact Hamiltonian
+equations at a point.** If a tangent vector `X` at `x` satisfies `α(X) = f(x)` and
+`ι_X dα = (R_α f) α - df` at `x`, and `f` is differentiable at `x`, then at `(t, x)` the
+contraction of `d(eᵗ α)` with `(R_α f)(x) ∂_t - X` is the differential of `(t, x) ↦ eᵗ f(x)`. -/
+private theorem eval₂_mextDerivₗ_symplectization_of_apply_eq {p : ℝ × M}
+    {X : TangentSpace I p.2} (hX : α.val p.2 ![X] = f p.2)
+    (hdX : ∀ v, mextDeriv α.val p.2 ![X, v] =
+      mvfderiv I f p.2 (α.reebVectorField p.2) * α.val p.2 ![v] - mvfderiv I f p.2 v)
     (hf : MDifferentiableAt I 𝓘(ℝ) f p.2) (w : TangentSpace (𝓘(ℝ).prod I) p) :
     SmoothBundleForm.eval₂ (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization) p
         ((Manifold.tangentSpaceProdEquiv p).symm
           ((NormedSpace.fromTangentSpace p.1).symm (mvfderiv I f p.2 (α.reebVectorField p.2)),
-            -X p.2)) w =
+            -X)) w =
       mvfderiv (𝓘(ℝ).prod I) (fun q : ℝ × M ↦ Real.exp q.1 * f q.2) p w := by
   have hexp (s : TangentSpace 𝓘(ℝ) p.1) :
       mvfderiv 𝓘(ℝ) Real.exp p.1 s = NormedSpace.fromTangentSpace p.1 s * Real.exp p.1 := by
@@ -98,10 +105,24 @@ theorem IsContactHamiltonianVectorField.eval₂_mextDerivₗ_symplectization
     mvfderiv_comp_fst_mul_comp_snd_apply Real.differentiable_exp.differentiableAt.mdifferentiableAt
       hf,
     ContinuousLinearEquiv.apply_symm_apply, SmoothBundleForm.eval₂_neg_left,
-    SmoothBundleForm.eval₂_apply, mextDerivₗ_apply, hX.mextDeriv_apply_eq]
-  simp only [ContinuousLinearEquiv.apply_symm_apply, apply_neg_vec, hX.apply_eq,
+    SmoothBundleForm.eval₂_apply, mextDerivₗ_apply, hdX]
+  simp only [ContinuousLinearEquiv.apply_symm_apply, apply_neg_vec, hX,
     Manifold.tangentSpaceProdEquiv_apply]
   linear_combination -f p.2 * hexp w.1
+
+/-- **Contraction of `d(eᵗ α)` with the lift of a contact Hamiltonian vector field.** If `X` is a
+contact Hamiltonian vector field of `f` for a one-form `α`, and `f` is differentiable at `x`, then
+at `(t, x)` the contraction of `d(eᵗ α)` with `(R_α f)(x) ∂_t - X(x)` is the differential of
+`(t, x) ↦ eᵗ f(x)`. -/
+theorem IsContactHamiltonianVectorField.eval₂_mextDerivₗ_symplectization
+    (hX : α.IsContactHamiltonianVectorField f X) {p : ℝ × M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f p.2) (w : TangentSpace (𝓘(ℝ).prod I) p) :
+    SmoothBundleForm.eval₂ (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization) p
+        ((Manifold.tangentSpaceProdEquiv p).symm
+          ((NormedSpace.fromTangentSpace p.1).symm (mvfderiv I f p.2 (α.reebVectorField p.2)),
+            -X p.2)) w =
+      mvfderiv (𝓘(ℝ).prod I) (fun q : ℝ × M ↦ Real.exp q.1 * f q.2) p w :=
+  eval₂_mextDerivₗ_symplectization_of_apply_eq (hX.apply_eq p.2) (hX.mextDeriv_apply_eq p.2) hf w
 
 /-- **Hamiltonian vector fields of homogeneous functions on the symplectization.** If `X` is a
 contact Hamiltonian vector field of a differentiable function `f` for a one-form `α`, then
@@ -116,6 +137,56 @@ theorem IsContactHamiltonianVectorField.isHamiltonianVectorField_symplectization
           -X p.2)) :=
   SmoothTwoForm.isHamiltonianVectorField_iff.2 fun p ↦
     hX.eval₂_mextDerivₗ_symplectization (hf p.2)
+
+section Pointwise
+
+variable [FiniteDimensional ℝ E]
+
+/-- **The Hamiltonian vector field of a homogeneous function on the symplectization, at a point.**
+If `α` is a contact form at `x` and `f` is differentiable at `x`, the Hamiltonian vector field of
+`(t, x) ↦ eᵗ f(x)` for `d(eᵗ α)` at `(t, x)` is `(R_α f) ∂_t - X_f`, where `X_f` is the contact
+Hamiltonian vector field of `f`. No contact condition is needed away from `x`. -/
+theorem hamiltonianVectorField_symplectization_exp_mul_of_isContactFormAt {p : ℝ × M}
+    (hα : IsContactFormAt α.val p.2) (hf : MDifferentiableAt I 𝓘(ℝ) f p.2) :
+    SmoothTwoForm.hamiltonianVectorField (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization)
+        (fun q ↦ Real.exp q.1 * f q.2) p =
+      (Manifold.tangentSpaceProdEquiv p).symm
+        ((NormedSpace.fromTangentSpace p.1).symm (mvfderiv I f p.2 (α.reebVectorField p.2)),
+          -α.contactHamiltonianVectorField f p.2) := by
+  have hinv := SmoothTwoForm.isInvertible_flat_iff.2
+    ((nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff α p).2 hα)
+  -- Both vectors have the same flat, the differential of `eᵗ f`, and the flat is injective.
+  refine hinv.injective (ContinuousLinearMap.ext fun w ↦ ?_)
+  rw [SmoothTwoForm.flat_hamiltonianVectorField_of_isInvertible hinv, SmoothTwoForm.flat_apply,
+    eval₂_mextDerivₗ_symplectization_of_apply_eq
+      (apply_contactHamiltonianVectorField_of_isContactFormAt hα f)
+      (mextDeriv_contactHamiltonianVectorField_left_of_isContactFormAt hα f) hf]
+
+/-- **Poisson brackets of homogeneous functions on the symplectization, at a point.** If `α` is a
+contact form at `x` and `f` and `g` are differentiable at `x`, the Poisson bracket for `d(eᵗ α)`
+of `(t, x) ↦ eᵗ f(x)` and `(t, x) ↦ eᵗ g(x)` at `(t, x)` is
+`eᵗ (dα(X_f, X_g) + f R_α(g) - g R_α(f))`, where `X_f`, `X_g` are the contact Hamiltonian vector
+fields. No contact condition is needed away from `x`. -/
+theorem poissonBracket_symplectization_exp_mul_of_isContactFormAt {p : ℝ × M}
+    (hα : IsContactFormAt α.val p.2) (hf : MDifferentiableAt I 𝓘(ℝ) f p.2)
+    (hg : MDifferentiableAt I 𝓘(ℝ) g p.2) :
+    SmoothTwoForm.poissonBracket (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization)
+        (fun q ↦ Real.exp q.1 * f q.2) (fun q ↦ Real.exp q.1 * g q.2) p =
+      Real.exp p.1 * (mextDeriv α.val p.2 ![α.contactHamiltonianVectorField f p.2,
+          α.contactHamiltonianVectorField g p.2] +
+        f p.2 * mvfderiv I g p.2 (α.reebVectorField p.2) -
+        g p.2 * mvfderiv I f p.2 (α.reebVectorField p.2)) := by
+  rw [SmoothTwoForm.poissonBracket_def,
+    hamiltonianVectorField_symplectization_exp_mul_of_isContactFormAt hα hf,
+    hamiltonianVectorField_symplectization_exp_mul_of_isContactFormAt hα hg,
+    eval₂_mextDerivₗ_symplectization]
+  simp only [ContinuousLinearEquiv.apply_symm_apply, apply_neg_vec,
+    apply_contactHamiltonianVectorField_of_isContactFormAt hα, SmoothBundleForm.eval₂_neg_left,
+    SmoothBundleForm.eval₂_neg_right, neg_neg]
+  rw [SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
+  ring
+
+end Pointwise
 
 namespace IsContactForm
 
@@ -132,13 +203,9 @@ theorem hamiltonianVectorField_symplectization_exp_mul {p : ℝ × M}
         (fun q ↦ Real.exp q.1 * f q.2) p =
       (Manifold.tangentSpaceProdEquiv p).symm
         ((NormedSpace.fromTangentSpace p.1).symm (mvfderiv I f p.2 (α.reebVectorField p.2)),
-          -α.contactHamiltonianVectorField f p.2) := by
-  have hσ := isNondegenerate_mextDerivₗ_symplectization_iff.2 hα
-  -- Both vectors have the same flat, the differential of `eᵗ f`, and the flat is injective.
-  refine (hσ.isInvertible_flat p).injective (ContinuousLinearMap.ext fun w ↦ ?_)
-  rw [hσ.flat_hamiltonianVectorField, SmoothTwoForm.flat_apply,
-    IsContactHamiltonianVectorField.eval₂_mextDerivₗ_symplectization
-      (hα.isContactHamiltonianVectorField_contactHamiltonianVectorField f) hf]
+          -α.contactHamiltonianVectorField f p.2) :=
+  hamiltonianVectorField_symplectization_exp_mul_of_isContactFormAt
+    (isContactForm_iff_forall_isContactFormAt.1 hα p.2) hf
 
 /-- **The Hamiltonian vector field of the fibre coordinate.** For a contact form `α`, the
 Hamiltonian vector field of `(t, x) ↦ eᵗ` for `d(eᵗ α)` is `-R_α`, minus the Reeb vector field
@@ -166,14 +233,9 @@ theorem poissonBracket_symplectization_exp_mul {p : ℝ × M} (hf : MDifferentia
       Real.exp p.1 * (mextDeriv α.val p.2 ![α.contactHamiltonianVectorField f p.2,
           α.contactHamiltonianVectorField g p.2] +
         f p.2 * mvfderiv I g p.2 (α.reebVectorField p.2) -
-        g p.2 * mvfderiv I f p.2 (α.reebVectorField p.2)) := by
-  rw [SmoothTwoForm.poissonBracket_def, hα.hamiltonianVectorField_symplectization_exp_mul hf,
-    hα.hamiltonianVectorField_symplectization_exp_mul hg, eval₂_mextDerivₗ_symplectization]
-  simp only [ContinuousLinearEquiv.apply_symm_apply, apply_neg_vec,
-    hα.apply_contactHamiltonianVectorField, SmoothBundleForm.eval₂_neg_left,
-    SmoothBundleForm.eval₂_neg_right, neg_neg]
-  rw [SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
-  ring
+        g p.2 * mvfderiv I f p.2 (α.reebVectorField p.2)) :=
+  poissonBracket_symplectization_exp_mul_of_isContactFormAt
+    (isContactForm_iff_forall_isContactFormAt.1 hα p.2) hf hg
 
 /-- **The Poisson bracket with the fibre coordinate.** For a contact form `α` and a
 function `g` differentiable at `x`, the Poisson bracket for `d(eᵗ α)` of `(t, x) ↦ eᵗ` and

@@ -59,8 +59,9 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
 * `LinearMap.torsion_le_ker`: a linear map into a torsion-free module vanishes on the torsion
   submodule.
 * `TauCeti.Submodule.prodMk_mem_torsion`: a pair of torsion elements is torsion.
-* `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`:
-  submodules, linear images and products of torsion modules are torsion.
+* `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`,
+  `Module.IsTorsion.pi`: submodules, linear images, and binary and finite dependent products of
+  torsion modules are torsion.
 * `TauCeti.isTorsion_pi_self_iff`: over a nontrivial ring `R`, the free module `ι → R` is torsion
   exactly when `ι` is empty.
 * `LinearEquiv.isTorsion'_iff`: being `S`-torsion is invariant under linear equivalences.
@@ -338,6 +339,16 @@ theorem prod (hM : Module.IsTorsion R M) (hN : Module.IsTorsion R N) :
   (_root_.Submodule.mem_torsion_iff _).mp (TauCeti.Submodule.prodMk_mem_torsion
     ((_root_.Submodule.mem_torsion_iff _).mpr (@hM x.1))
     ((_root_.Submodule.mem_torsion_iff _).mpr (@hN x.2)))
+
+/-- A dependent product of finitely many torsion modules is torsion. -/
+theorem pi {ι : Type*} [Finite ι] {P : ι → Type*} [∀ i, AddCommMonoid (P i)]
+    [∀ i, Module R (P i)] (hP : ∀ i, Module.IsTorsion R (P i)) :
+    Module.IsTorsion R (∀ i, P i) := fun x ↦ by
+  cases nonempty_fintype ι
+  choose a ha using fun i ↦ @hP i (x i)
+  refine ⟨∏ i, a i, funext fun i ↦ ?_⟩
+  obtain ⟨c, hc⟩ := Finset.dvd_prod_of_mem a (Finset.mem_univ i)
+  rw [Pi.smul_apply, hc, mul_comm, mul_smul, ha i, smul_zero, Pi.zero_apply]
 
 end Module.IsTorsion
 

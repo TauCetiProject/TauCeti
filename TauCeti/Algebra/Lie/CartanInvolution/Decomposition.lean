@@ -38,6 +38,8 @@ For `x ∈ 𝔨` the operator `ad x` is skew-adjoint for `B_θ`, and for `x ∈ 
 * `LieEquiv.twistedKillingForm_map_map_of_commute`: `B_θ` is invariant under automorphisms commuting
   with `θ`.
 * `LieEquiv.isSymm_twistedKillingForm`: `B_θ` is symmetric when `θ` is involutive.
+* `LieEquiv.twistedKillingForm_lie_apply`: for an involution `θ`, the `B_θ`-adjoint of `ad z` is
+  `ad (-θ z)`.
 * `LieEquiv.ad_mem_skewAdjointSubmodule_twistedKillingForm`,
   `LieEquiv.ad_mem_selfAdjointSubmodule_twistedKillingForm`: `ad x` is `B_θ`-skew-adjoint for
   `x ∈ 𝔨` and `B_θ`-self-adjoint for `x ∈ 𝔭`.
@@ -160,6 +162,13 @@ theorem isSymm_twistedKillingForm (hθ : Function.Involutive θ) : θ.twistedKil
   refine ⟨fun x y ↦ ?_⟩
   rw [twistedKillingForm_apply, twistedKillingForm_apply,
     ← killingForm_of_equiv_apply θ y, hθ, traceForm_comm]
+
+/-- For an involution `θ`, the adjoint of `ad z` for the twisted Killing form is `ad (-θ z)`:
+`B_θ(⁅z, x⁆, y) = B_θ(x, ⁅-θ z, y⁆)`. -/
+theorem twistedKillingForm_lie_apply (hθ : Function.Involutive θ) (z x y : L) :
+    θ.twistedKillingForm ⁅z, x⁆ y = θ.twistedKillingForm x ⁅-θ z, y⁆ := by
+  simp only [twistedKillingForm_apply, map_lie, map_neg, hθ z, neg_lie,
+    traceForm_apply_lie_apply', neg_neg]
 
 /-- For `x ∈ 𝔨`, `ad x` is skew-adjoint for the twisted Killing form. -/
 theorem ad_mem_skewAdjointSubmodule_twistedKillingForm {x : L}

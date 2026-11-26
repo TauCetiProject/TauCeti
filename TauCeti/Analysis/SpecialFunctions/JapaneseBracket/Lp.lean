@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.IntegrableOn
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -23,7 +24,9 @@ nontrivial space and for `0 < p < ∞`, the power lies in `Lᵖ` exactly when `d
 (`TauCeti.memLp_rpow_neg_one_add_norm_sq_iff`). A
 function of polynomial growth `C (1 + ‖x‖) ^ k` becomes square integrable after multiplication by
 `(1 + ‖x‖ ^ 2) ^ (s / 2)` once `d < -2 (s + k)`
-(`TauCeti.memLp_two_one_add_norm_sq_rpow_smul_of_norm_le`). For every `s`, the
+(`TauCeti.memLp_two_one_add_norm_sq_rpow_smul_of_norm_le`), and rescaled weights
+`(1 + c * ‖x‖ ^ 2) ^ (-r / 2)` are integrable whenever `0 < c` and `d < r`
+(`TauCeti.integrable_rpow_neg_one_add_mul_norm_sq`). For every `s`, the
 Cauchy–Schwarz inequality gives
 
 `‖v‖₁ ≤ ‖(1 + ‖·‖ ^ 2) ^ (-s / 2)‖₂ ‖(1 + ‖·‖ ^ 2) ^ (s / 2) v‖₂`
@@ -121,5 +124,17 @@ theorem eLpNorm_one_le_eLpNorm_rpow_neg_one_add_norm_sq_mul_eLpNorm_one_add_norm
     rw [Pi.smul_apply', smul_smul, one_add_norm_sq_rpow_neg_mul_rpow, one_smul]
   conv_lhs => rw [h]
   exact eLpNorm_smul_le_mul_eLpNorm_of_pos one_pos
+
+/-- **Rescaled Japanese-bracket integrability** on a finite-dimensional real normed space: for
+`0 < c` and `finrank ℝ E < r`, `v ↦ (1 + c * ‖v‖ ^ 2) ^ (-r / 2)` is `μ`-integrable. -/
+theorem integrable_rpow_neg_one_add_mul_norm_sq {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+    [μ.IsAddHaarMeasure] {c r : ℝ} (hc : 0 < c) (hr : (finrank ℝ E : ℝ) < r) :
+    Integrable (fun v : E ↦ (1 + c * ‖v‖ ^ 2) ^ (-r / 2)) μ := by
+  have hbase := integrable_rpow_neg_one_add_norm_sq (μ := μ) hr
+  have hsqrt : Real.sqrt c ≠ 0 := (Real.sqrt_pos.mpr hc).ne'
+  refine (hbase.comp_smul hsqrt).congr (.of_forall fun v ↦ ?_)
+  dsimp only
+  rw [TauCeti.norm_sqrt_smul_sq hc.le v]
 
 end TauCeti
