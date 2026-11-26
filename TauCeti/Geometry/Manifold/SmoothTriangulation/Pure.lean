@@ -86,8 +86,7 @@ theorem IsSmoothTriangulation.dimension_eq [Nonempty M] (h : IsSmoothTriangulati
     K.dimension = (finrank ℝ E : WithBot ℕ∞) := by
   obtain ⟨x⟩ := (inferInstance : Nonempty M)
   rw [← dimension_toPreAbstractSimplicialComplex]
-  exact h.isPure.dimension_eq fun hK ↦
-    PreAbstractSimplicialComplex.notMem_bot (hK ▸ support_mem K (κ.symm x) :
-      (κ.symm x).val.support ∈ (⊥ : PreAbstractSimplicialComplex ι))
+  exact h.isPure.dimension_eq fun hK ↦ PreAbstractSimplicialComplex.notMem_bot
+    (hK ▸ mem_toPreAbstractSimplicialComplex.2 (support_mem K (κ.symm x)))
 
 end TauCeti
