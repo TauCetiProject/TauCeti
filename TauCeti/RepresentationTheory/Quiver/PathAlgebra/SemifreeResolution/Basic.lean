@@ -292,6 +292,16 @@ theorem vertexTensorBimoduleDifferential_vertexTensorBimoduleDifferential
   rw [coe_vertexTensorBimoduleDifferential hd hdε, coe_vertexTensorBimoduleDifferential hd hdε,
     envelopeDifferential_envelopeDifferential hd.toIsNonUnitalDGAlgebra, ZeroMemClass.coe_zero]
 
+/-- When `d` kills the vertex idempotents, the generator `∑ᵥ eᵥ ⊗ eᵥ` of `kQ ⊗_{kQ₀} kQ` is a
+cycle. -/
+@[simp]
+theorem vertexTensorBimoduleDifferential_vertexTensorGenerator (hdε : ∀ v, d (ε v) = 0) :
+    vertexTensorBimoduleDifferential wt d (vertexTensorGenerator k Q) = 0 := by
+  apply Subtype.ext
+  rw [coe_vertexTensorBimoduleDifferential_apply, coe_vertexTensorGenerator,
+    vertexTensorIdempotent_def]
+  simp [hdε]
+
 /-- **The multiplication map is a chain map**: it intertwines the differential of
 `kQ ⊗_{kQ₀} kQ` with `d`. -/
 theorem vertexTensorMul_vertexTensorBimoduleDifferential (hd : IsDGAlgebra (gradeBy k wt) d)

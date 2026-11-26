@@ -336,6 +336,16 @@ theorem smul_arrowTensorDerivation_ofArrow_eq_of {i j : Q} (b : i ⟶ j) (u : �
         (u • spanSingletonGenerator (arrowTensorIdempotent k Q ⟨i, j, b⟩)) := by
   rw [arrowTensorDerivation_ofArrow, ← map_smul, DirectSum.lof_eq_of]
 
+/-- The element `x` of the component of an arrow `b` is the multiple `x ∂b` of the universal
+derivation of `b`. -/
+theorem of_eq_smul_arrowTensorDerivation (b : Σ i j : Q, i ⟶ j)
+    (x : (Ideal.span {arrowTensorIdempotent k Q b} : Ideal 𝒜ᵉ)) :
+    (DirectSum.of (fun b ↦ (Ideal.span {arrowTensorIdempotent k Q b} : Ideal 𝒜ᵉ)) b x :
+      arrowTensorBimodule k Q) = (x : 𝒜ᵉ) • arrowTensorDerivation k Q (ofArrow b.2.2) := by
+  obtain ⟨i, j, b⟩ := b
+  rw [smul_arrowTensorDerivation_ofArrow_eq_of,
+    smul_spanSingletonGenerator (isIdempotentElem_arrowTensorIdempotent k Q _)]
+
 /-- The simp-normal form of `TauCeti.PathAlgebra.arrowTensorDerivation_ofArrow`, in which
 `TauCeti.PathAlgebra.ofArrow_eq_ofPath` has written the arrow as its length-one path. -/
 @[simp]
@@ -491,6 +501,22 @@ theorem tmul_mem_vertexTensorBimodule (v : Q) (x y : 𝒜) :
 
 instance : Module.Projective 𝒜ᵉ (vertexTensorBimodule k Q) :=
   (isIdempotentElem_vertexTensorIdempotent k Q).projective_span_singleton
+
+variable (k Q) in
+/-- The generator `∑ᵥ eᵥ ⊗ eᵥ` of `kQ ⊗_{kQ₀} kQ`. -/
+noncomputable def vertexTensorGenerator : vertexTensorBimodule k Q :=
+  ⟨vertexTensorIdempotent k Q,
+    mem_vertexTensorBimodule_iff.2 (isIdempotentElem_vertexTensorIdempotent k Q).eq⟩
+
+/-- The generator of `kQ ⊗_{kQ₀} kQ`, read in the enveloping algebra, is `∑ᵥ eᵥ ⊗ eᵥ`. -/
+@[simp]
+theorem coe_vertexTensorGenerator :
+    (vertexTensorGenerator k Q : 𝒜ᵉ) = vertexTensorIdempotent k Q := (rfl)
+
+/-- Every element of `kQ ⊗_{kQ₀} kQ` is its own multiple of the generator `∑ᵥ eᵥ ⊗ eᵥ`. -/
+theorem coe_smul_vertexTensorGenerator (z : vertexTensorBimodule k Q) :
+    (z : 𝒜ᵉ) • vertexTensorGenerator k Q = z :=
+  Subtype.ext (mem_vertexTensorBimodule_iff.1 z.property)
 
 /-! ### The multiplication map -/
 
@@ -738,6 +764,14 @@ theorem arrowTensorDerivation_vertexIdempotent_mul_mul (i j : Q) (z : 𝒜) :
   -- `rw [← mul_smul]` does not find the action on the direct sum syntactically.
   refine (mul_smul (_ : 𝒜ᵉ) _ (_ : arrowTensorBimodule k Q)).symm.trans ?_
   rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+
+/-- The idempotent `eⱼ ⊗ eᵢ` of an arrow `b : i ⟶ j` fixes the universal derivation of `b`. -/
+theorem arrowTensorIdempotent_smul_arrowTensorDerivation (b : Σ i j : Q, i ⟶ j) :
+    arrowTensorIdempotent k Q b • arrowTensorDerivation k Q (ofArrow b.2.2) =
+      arrowTensorDerivation k Q (ofArrow b.2.2) := by
+  obtain ⟨i, j, b⟩ := b
+  rw [arrowTensorIdempotent_def, ← arrowTensorDerivation_vertexIdempotent_mul_mul,
+    vertexIdempotent_mul_ofArrow_self, ofArrow_mul_vertexIdempotent_self]
 
 variable {M : Type*} [AddCommGroup M] [Module (pathAlgebra k Q ⊗[k] (pathAlgebra k Q)ᵐᵒᵖ) M]
   [Module k M]
