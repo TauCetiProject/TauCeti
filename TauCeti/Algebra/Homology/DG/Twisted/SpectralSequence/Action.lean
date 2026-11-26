@@ -26,6 +26,8 @@ morphism of complexes from `shiftedModuleComplex hM (q + 1)` to the shift by one
 * `TauCeti.shiftedModuleComplexAct`: the action of a cycle of degree zero, as a morphism of
   complexes.
 * `TauCeti.shiftedModuleComplexActHomology`: the induced map on cohomology.
+* `TauCeti.shiftedModuleComplexMul`: the action of a cycle of degree zero without the Koszul sign,
+  as an endomorphism of `shiftedModuleComplex hM q`.
 
 ## Main results
 
@@ -202,6 +204,67 @@ theorem shiftedModuleComplexHomologyEquiv_shiftedModuleComplexActHomology {a : A
     Submodule.coe_smul_of_tower, Submodule.coe_smul_of_tower, Units.smul_def, smul_comm]
   -- The opposite cycle `op ⟨a, _⟩` acts on `ℳ` as `op a` does, by definition of the action.
   rfl
+
+/-- The right action of an element `a` of degree zero of the algebra on the degree-`n` term of
+`shiftedModuleComplex hM q`, the piece of `ℳ` of degree `n + q`. -/
+noncomputable def shiftedModuleComplexMulX {a : A} (ha : a ∈ 𝒜 0) (q n : ℤ) :
+    (shiftedModuleComplex.{uR, uA, uM, uP} hM q).X n →ₗ[R]
+      (shiftedModuleComplex.{uR, uA, uM, uP} hM q).X n :=
+  (shiftedModuleComplexXEquiv hM q n).symm.toLinearMap ∘ₗ
+    ((DistribSMul.toLinearMap R M (op a) ∘ₗ (ℳ (n + q)).subtype).codRestrict _ fun x ↦ by
+        simpa using op_smul_mem_of_mem_graded ha x.property) ∘ₗ
+    (shiftedModuleComplexXEquiv hM q n).toLinearMap
+
+@[simp]
+theorem shiftedModuleComplexXEquiv_shiftedModuleComplexMulX {a : A} (ha : a ∈ 𝒜 0) (q n : ℤ)
+    (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM q).X n) :
+    (shiftedModuleComplexXEquiv hM q n (shiftedModuleComplexMulX hM ha q n α) : M) =
+      op a • (shiftedModuleComplexXEquiv hM q n α : M) := by
+  simp [shiftedModuleComplexMulX]
+
+/-- **The right action of a cycle of degree zero**, as an endomorphism of the complex
+`shiftedModuleComplex hM q`: it commutes with `dM` by the Leibniz rule. Unlike
+`shiftedModuleComplexAct`, it carries no Koszul sign and does not change the index `q`. -/
+noncomputable def shiftedModuleComplexMul {a : A} (ha : a ∈ 𝒜 0) (hda : d a = 0) (q : ℤ) :
+    shiftedModuleComplex.{uR, uA, uM, uP} hM q ⟶ shiftedModuleComplex.{uR, uA, uM, uP} hM q where
+  f n := ModuleCat.ofHom (shiftedModuleComplexMulX hM ha q n)
+  comm' i j hij := by
+    obtain rfl : i + 1 = j := hij
+    refine ModuleCat.hom_ext (LinearMap.ext fun α ↦
+      (shiftedModuleComplexXEquiv hM q (i + 1)).injective (Subtype.ext ?_))
+    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply]
+    rw [shiftedModuleComplexXEquiv_shiftedModuleComplexMulX, shiftedModuleComplexXEquiv_d,
+      shiftedModuleComplexXEquiv_d, shiftedModuleComplexXEquiv_shiftedModuleComplexMulX,
+      hM.leibniz_of_map_eq_zero _ hda]
+
+/-- `shiftedModuleComplexMul` acts by `op a` on the underlying elements of `ℳ`. -/
+@[simp]
+theorem shiftedModuleComplexXEquiv_shiftedModuleComplexMul_f {a : A} (ha : a ∈ 𝒜 0)
+    (hda : d a = 0) (q n : ℤ) (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM q).X n) :
+    (shiftedModuleComplexXEquiv hM q n (((shiftedModuleComplexMul hM ha hda q).f n).hom α) : M) =
+      op a • (shiftedModuleComplexXEquiv hM q n α : M) :=
+  shiftedModuleComplexXEquiv_shiftedModuleComplexMulX hM ha q n α
+
+/-- The action of a cycle of degree zero on cohomology, on classes: it sends the class of `α` to
+the class of `op a • α`. -/
+theorem homologyMap_shiftedModuleComplexMul_homologyπ {a : A} (ha : a ∈ 𝒜 0) (hda : d a = 0)
+    (q n : ℤ) (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM q).X n)
+    (hα : ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).d n (n + 1)).hom α = 0)
+    (β : (shiftedModuleComplex.{uR, uA, uM, uP} hM q).X n)
+    (hβ : (shiftedModuleComplexXEquiv hM q n β : M) =
+      op a • (shiftedModuleComplexXEquiv hM q n α : M))
+    (hβ' : ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).d n (n + 1)).hom β = 0) :
+    (HomologicalComplex.homologyMap (shiftedModuleComplexMul hM ha hda q) n).hom
+        (((shiftedModuleComplex.{uR, uA, uM, uP} hM q).homologyπ n).hom
+          ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).moduleCatCyclesMk α (n + 1) (by simp)
+            hα)) =
+      ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).homologyπ n).hom
+        ((shiftedModuleComplex.{uR, uA, uM, uP} hM q).moduleCatCyclesMk β (n + 1) (by simp)
+          hβ') := by
+  rw [HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
+  congr 2
+  exact (shiftedModuleComplexXEquiv hM q n).injective (Subtype.ext (by
+    rw [shiftedModuleComplexXEquiv_shiftedModuleComplexMul_f, hβ]))
 
 end Action
 
