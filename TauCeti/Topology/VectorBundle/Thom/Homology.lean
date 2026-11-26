@@ -475,10 +475,8 @@ theorem isIso_homologyThomMap (p m : ℕ) (h : finrank ℝ F + p = m)
   -- Move the model fibre to the universe of the base. The change of model fibre `φ` is the
   -- identity on the fibres and over the base, so it intertwines the two homology Thom maps.
   let F' := ULift.{w} (Fin (finrank ℝ F) → ℝ)
-  let L : F ≃L[ℝ] F' :=
-    (ContinuousLinearEquiv.ofFinrankEq (by simp)).trans ContinuousLinearEquiv.ulift.symm
-  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_of_continuousLinearEquiv F (E := E) L
-  have hF' : finrank ℝ F' = finrank ℝ F := L.toLinearEquiv.finrank_eq.symm
+  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_ulift_fin.{w} F (𝕜 := ℝ) (E := E)
+  have hF' : finrank ℝ F' = finrank ℝ F := by simp [F']
   let φ := thomPairModelFiberIso h_ind
   have hφ := homologyThomMap_naturality F E (A := ModuleCat.of K K) φ.hom (𝟙 _)
     ((thomPairModelFiberIso_hom_fst_comp_thomPairProj h_ind).trans (Category.comp_id _).symm) h u

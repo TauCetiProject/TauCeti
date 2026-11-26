@@ -573,11 +573,8 @@ theorem isZero_singularHomology_thomPair {F : Type*} [NormedAddCommGroup F] [Nor
     IsZero ((thomPair F E).singularHomology R n) := by
   -- Read `E` with the model fibre `ULift (Fin r → ℝ)`, which lies in the universe of `B` and of
   -- the fibres, with the topology on its total space induced along the identity of points.
-  let L : F ≃L[ℝ] ULift.{w} (Fin (finrank ℝ F) → ℝ) :=
-    (ContinuousLinearEquiv.ofFinrankEq (by simp)).trans ContinuousLinearEquiv.ulift.symm
-  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_of_continuousLinearEquiv F (E := E) L
-  exact (isZero_singularHomology_thomPair_sameUniverse R
-    (by rwa [← L.toLinearEquiv.finrank_eq])).of_iso
+  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_ulift_fin.{w} F (𝕜 := ℝ) (E := E)
+  exact (isZero_singularHomology_thomPair_sameUniverse R (by simpa using hn)).of_iso
     ((thomPair F E).singularHomologyMapIso R (thomPairModelFiberIso h_ind).symm n)
 
 /-- **Morphisms out of the top-degree homology of the Thom pair are determined on the fibres**:
@@ -704,10 +701,8 @@ theorem exists_isThomClass_of_two_eq_zero {F : Type*} [NormedAddCommGroup F] [No
       (finrank ℝ F), IsThomClass F E u := by
   -- Read `E` with the model fibre `ULift (Fin r → ℝ)`, which lies in the universe of `B` and of
   -- the fibres, with the topology on its total space induced along the identity of points.
-  let L : F ≃L[ℝ] ULift.{w} (Fin (finrank ℝ F) → ℝ) :=
-    (ContinuousLinearEquiv.ofFinrankEq (by simp)).trans ContinuousLinearEquiv.ulift.symm
-  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_of_continuousLinearEquiv F (E := E) L
-  exact (exists_isThomClass_iff_of_isInducing h_ind L.toLinearEquiv.finrank_eq.symm).2
+  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_ulift_fin.{w} F (𝕜 := ℝ) (E := E)
+  exact (exists_isThomClass_iff_of_isInducing h_ind (by simp)).2
     (exists_isThomClass_of_two_eq_zero_sameUniverse K h2)
 
 section SubsingletonUnits
