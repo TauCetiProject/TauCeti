@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Semigroups.Identity
 
+import TauCeti.Topology.Algebra.Order.Field
+
 /-!
 # Time rescaling of strongly continuous semigroups
 
@@ -102,12 +104,7 @@ private theorem tendsto_rescale_genQuot (S : StronglyContinuousSemigroup X) {c :
     Tendsto (fun t : ℝ => (1 / t) • ((S.rescale c).realOperator t x - x)) (𝓝[>] 0)
       (𝓝 ((c : ℝ) • y)) := by
   have hc' : (0 : ℝ) < c := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hc)
-  -- Multiplication by `c > 0` maps right neighbourhoods of `0` to right neighbourhoods of `0`.
-  have hmul : Tendsto (fun t : ℝ => (c : ℝ) * t) (𝓝[>] 0) (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
-    · simpa using ((continuous_const_mul (c : ℝ)).tendsto 0).mono_left nhdsWithin_le_nhds
-    · filter_upwards [self_mem_nhdsWithin] with t ht using mul_pos hc' ht
-  refine ((h.comp hmul).const_smul (c : ℝ)).congr' ?_
+  refine ((h.comp (tendsto_const_mul_nhdsGT_zero hc')).const_smul (c : ℝ)).congr' ?_
   filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
   rw [Function.comp_apply, realOperator_rescale, smul_smul]
   congr 1
