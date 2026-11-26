@@ -67,8 +67,8 @@ private lemma exists_mulEquiv_comp_extendedHom :
     (DFunLike.congr_fun (map_congr rfl _ _) _)
 
 include M in
-/-- **Extension of ideal classes to a localization is surjective.** Every ideal of the
-localization `B` of `R` at `M` is extended from its contraction to `R`. -/
+/-- **Extension of ideal classes to a localization is surjective.** Every ideal class of
+the localization `B` of `R` at `M` is the class of an ideal extended from `R`. -/
 theorem extendedHom_surjective_of_isLocalization :
     Function.Surjective (extendedHom R B) := by
   obtain ⟨e, he⟩ := exists_mulEquiv_comp_extendedHom M B
