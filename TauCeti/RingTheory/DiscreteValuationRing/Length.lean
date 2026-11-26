@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.Length.Determinant
 
@@ -32,7 +33,17 @@ codimension-one points.
 A module of finite length over a discrete valuation ring is torsion, and a submodule of finite
 colength in `O^ι` is spanned by the rows of a square matrix. The rows of a square matrix `M` span
 a submodule of colength `v(det M)`, infinite when `det M = 0`
-(`Matrix.length_quotient_span_range_eq_addVal_det`).
+(`Matrix.length_quotient_span_range_eq_addVal_det`). For an arbitrary rectangular matrix with a
+nonempty family of full-column row selections, the row-span colength is the least valuation of
+such a minor (`Matrix.isLeast_length_quotient_span_range_row`).
+
+## References
+
+* N. Bourbaki, *Algebra*, Chapter VII, §4 (Elementary divisors).
+* S. Lang, *Algebra*, Chapter III, §7 (Modules over principal ideal domains).
+* The rectangular row-span colength theorem is adapted from `grh-lean`,
+  `src/Lib/General/Algebra/SharpMinors.lean`
+  (Copyright 2026 Anthropic, PBC, Apache 2.0).
 -/
 
 public section
@@ -202,5 +213,40 @@ theorem length_quotient_span_range_eq_addVal_det (M : Matrix ι ι O) :
     rw [range_mulVecLin, col_transpose]
   rw [hrange, length_quotient_range_mulVecLin_eq_ord_det _ (by rwa [det_transpose]),
     det_transpose, Ring.ord_eq_addVal]
+
+section Rectangular
+
+open Module Submodule
+
+variable {κ k : Type*} [Fintype k] [DecidableEq k]
+
+/-- Over a discrete valuation ring `O`, for any matrix `M : Matrix κ k O` with `Nonempty (k → κ)`,
+the quotient `(k → O) ⧸ span O (Set.range M.row)` has length equal to the least additive valuation
+of a maximal minor `(M.submatrix f _root_.id).det`. -/
+theorem isLeast_length_quotient_span_range_row [Nonempty (k → κ)] (M : Matrix κ k O) :
+    IsLeast (addVal O '' Set.range fun f : k → κ ↦ (M.submatrix f _root_.id).det)
+      (length O ((k → O) ⧸ span O (Set.range M.row))) := by
+  let v (f : k → κ) : ℕ∞ := addVal O (M.submatrix f _root_.id).det
+  have h_lower (f : k → κ) : length O ((k → O) ⧸ span O (Set.range M.row)) ≤ v f := by
+    have h_le : span O (Set.range (M.submatrix f _root_.id).row) ≤ span O (Set.range M.row) :=
+      span_mono (Set.range_comp_subset_range f M.row)
+    simpa only [length_quotient_span_range_eq_addVal_det] using
+      length_le_of_surjective _ (factor_surjective h_le)
+  refine ⟨?_, Set.forall_mem_image.2 (Set.forall_mem_range.2 h_lower)⟩
+  rcases eq_or_ne (length O ((k → O) ⧸ span O (Set.range M.row))) ⊤ with h_top | h_fin
+  · let f₁ : k → κ := Classical.arbitrary (k → κ)
+    exact ⟨(M.submatrix f₁ _root_.id).det, ⟨f₁, rfl⟩,
+      (top_le_iff.1 (h_top ▸ h_lower f₁)).trans h_top.symm⟩
+  · obtain ⟨N, hN⟩ := IsDiscreteValuationRing.exists_matrix_span_range_row_eq _ h_fin
+    let f₀ : k → κ := Function.argmin v
+    have h_dvd : (M.submatrix f₀ _root_.id).det ∣ N.det :=
+      dvd_det_of_forall_row_mem_span
+        (fun f ↦ addVal_le_iff_dvd.1 (Function.argmin_le v f))
+        fun i ↦ hN.le (subset_span ⟨i, rfl⟩)
+    have h_upper : v f₀ ≤ length O ((k → O) ⧸ span O (Set.range M.row)) :=
+      (addVal_le_iff_dvd.2 h_dvd).trans_eq (by rw [← hN, length_quotient_span_range_eq_addVal_det])
+    exact ⟨(M.submatrix f₀ _root_.id).det, ⟨f₀, rfl⟩, h_upper.antisymm (h_lower f₀)⟩
+
+end Rectangular
 
 end Matrix
