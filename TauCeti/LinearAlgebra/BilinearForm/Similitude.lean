@@ -80,6 +80,27 @@ open LinearMap (BilinForm)
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   {φ : End K V} {c s : K}
 
+omit [FiniteDimensional K V] in
+/-- A similitude of `B` is a similitude of the scalar extension of `B`, with the same
+multiplier. -/
+private theorem compl₁₂_baseChange_eq_smul {L : Type*} [CommRing L] [Algebra K L]
+    (B : BilinForm K V) (h : B.compl₁₂ φ φ = c • B) :
+    (B.baseChange L).compl₁₂ (φ.baseChange L) (φ.baseChange L) =
+      algebraMap K L c • B.baseChange L := by
+  rw [← baseChange_compl₁₂, h, baseChange_smul]
+
+/-- The degenerate case `c = 0`: a similitude with multiplier `0` of a perfect form has
+`det φ = (-1) ^ m * 0 ^ b` for every `m ≤ b`, since both sides vanish in positive dimension and are
+`1` in dimension zero. -/
+private theorem det_eq_neg_one_pow_mul_zero_pow_of_compl₁₂_self_eq_zero (B : BilinForm K V)
+    [B.IsPerfPair] (h : B.compl₁₂ φ φ = (0 : K) • B) {m : ℕ} (hm : m ≤ finrank K V) :
+    LinearMap.det φ = (-1) ^ m * 0 ^ finrank K V := by
+  have hdet := LinearMap.det_mul_det_eq_of_compl₁₂_eq_smul B (IsPerfPair.bijective_right B) h
+  rcases eq_or_ne (finrank K V) 0 with hV | hV
+  · simp [hV, Nat.eq_zero_of_le_zero (hV ▸ hm), det_eq_one_of_finrank_eq_zero hV]
+  · rw [zero_pow hV, mul_self_eq_zero] at hdet
+    rw [hdet, zero_pow hV, mul_zero]
+
 /-- The eigenvalues of a similitude with multiplier `c ≠ 0` of a perfect form, counted with
 algebraic multiplicity, are nonzero and stable under `x ↦ c / x`. -/
 private theorem map_div_roots_charpoly_eq_and_zero_notMem (B : BilinForm K V) [B.IsPerfPair]
@@ -100,15 +121,8 @@ private theorem det_eq_neg_one_pow_mul_pow_of_splits (B : BilinForm K V) [B.IsPe
     LinearMap.det φ = (-1) ^ finrank K (φ.maxGenEigenspace (-s)) * s ^ finrank K V := by
   classical
   rcases eq_or_ne c 0 with rfl | hc
-  · -- Both sides vanish in positive dimension, and are `1` in dimension zero.
-    have hdet := LinearMap.det_mul_det_eq_of_compl₁₂_eq_smul B (IsPerfPair.bijective_right B) h
-    obtain rfl : s = 0 := mul_self_eq_zero.1 hs
-    rcases eq_or_ne (finrank K V) 0 with hV | hV
-    · have hm : finrank K (φ.maxGenEigenspace (-0)) = 0 :=
-        Nat.eq_zero_of_le_zero (hV ▸ Submodule.finrank_le _)
-      simp [hV, hm, det_eq_one_of_finrank_eq_zero hV]
-    · rw [zero_pow hV, mul_self_eq_zero] at hdet
-      rw [hdet, zero_pow hV, mul_zero]
+  · obtain rfl : s = 0 := mul_self_eq_zero.1 hs
+    exact det_eq_neg_one_pow_mul_zero_pow_of_compl₁₂_self_eq_zero B h (Submodule.finrank_le _)
   obtain ⟨hmap, h0⟩ := map_div_roots_charpoly_eq_and_zero_notMem B h hc
   rw [det_eq_prod_roots_charpoly_of_splits hsplit, LinearMap.finrank_maxGenEigenspace_eq,
     ← count_roots, ← φ.charpoly_natDegree, hsplit.natDegree_eq_card_roots]
@@ -135,9 +149,7 @@ theorem det_eq_neg_one_pow_mul_pow_of_compl₁₂_self_eq_smul (B : BilinForm K 
     LinearMap.det φ = (-1) ^ finrank K (φ.maxGenEigenspace (-s)) * s ^ finrank K V := by
   let L := AlgebraicClosure K
   apply (algebraMap K L).injective
-  have hL : (B.baseChange L).compl₁₂ (φ.baseChange L) (φ.baseChange L) =
-      algebraMap K L c • B.baseChange L := by
-    rw [← baseChange_compl₁₂, h, baseChange_smul]
+  have hL := compl₁₂_baseChange_eq_smul (L := L) B h
   rw [← LinearMap.det_baseChange, det_eq_neg_one_pow_mul_pow_of_splits _ hL
     (s := algebraMap K L s) (by rw [← map_mul, hs]) (IsAlgClosed.splits _), ← map_neg,
     LinearMap.finrank_maxGenEigenspace_baseChange_algebraMap, finrank_baseChange]
@@ -154,7 +166,7 @@ theorem algebraMap_det_eq_neg_one_pow_mul_pow_of_compl₁₂_self_eq_smul {L : T
       (-1) ^ finrank L (maxGenEigenspace (φ.baseChange L) (-s)) * s ^ finrank K V := by
   rw [← LinearMap.det_baseChange, ← finrank_baseChange (R := L) (M' := V)]
   exact det_eq_neg_one_pow_mul_pow_of_compl₁₂_self_eq_smul _
-    (by rw [← baseChange_compl₁₂, h, baseChange_smul]) hs
+    (compl₁₂_baseChange_eq_smul B h) hs
 
 /-- **Parity of the multiplicities of the square roots of the multiplier.** If `φ` is a similitude
 with multiplier `c ≠ 0` of a perfect bilinear form, `s * s = c` and `2 ≠ 0`, then
@@ -166,9 +178,7 @@ theorem even_finrank_sub_finrank_maxGenEigenspace_of_compl₁₂_self_eq_smul (B
     Even ((finrank K V : ℤ) - finrank K (φ.maxGenEigenspace s) -
       finrank K (φ.maxGenEigenspace (-s))) := by
   let L := AlgebraicClosure K
-  have hL : (B.baseChange L).compl₁₂ (φ.baseChange L) (φ.baseChange L) =
-      algebraMap K L c • B.baseChange L := by
-    rw [← baseChange_compl₁₂, h, baseChange_smul]
+  have hL := compl₁₂_baseChange_eq_smul (L := L) B h
   have h2L : (2 : L) ≠ 0 := by
     rw [← map_ofNat (algebraMap K L) 2]
     exact (_root_.map_ne_zero _).2 h2
@@ -186,13 +196,10 @@ theorem det_eq_neg_one_pow_finrank_sub_mul_pow_of_compl₁₂_self_eq_smul (B : 
     [B.IsPerfPair] (h2 : (2 : K) ≠ 0) (h : B.compl₁₂ φ φ = c • B) (hs : s * s = c) :
     LinearMap.det φ =
       (-1) ^ (finrank K V - finrank K (φ.maxGenEigenspace s)) * s ^ finrank K V := by
-  rw [det_eq_neg_one_pow_mul_pow_of_compl₁₂_self_eq_smul B h hs]
   rcases eq_or_ne c 0 with rfl | hc
-  · -- Both sides vanish in positive dimension, and are `1` in dimension zero.
-    obtain rfl : s = 0 := mul_self_eq_zero.1 hs
-    rcases eq_or_ne (finrank K V) 0 with hV | hV
-    · simp [hV, Nat.eq_zero_of_le_zero (hV ▸ Submodule.finrank_le (φ.maxGenEigenspace (-0)))]
-    · simp [zero_pow hV]
+  · obtain rfl : s = 0 := mul_self_eq_zero.1 hs
+    exact det_eq_neg_one_pow_mul_zero_pow_of_compl₁₂_self_eq_zero B h (Nat.sub_le _ _)
+  rw [det_eq_neg_one_pow_mul_pow_of_compl₁₂_self_eq_smul B h hs]
   have hle := Submodule.finrank_le (φ.maxGenEigenspace s)
   have he : Even (finrank K V - finrank K (φ.maxGenEigenspace s) +
       finrank K (φ.maxGenEigenspace (-s))) := by
@@ -216,7 +223,7 @@ theorem even_finrank_maxGenEigenspace_of_isAlt_of_compl₁₂_self_eq_smul (B : 
     (hα : α * α = c) : Even (finrank K (φ.maxGenEigenspace α)) := by
   have hP := LinearMap.isPerfPair_domRestrict₁₂_maxGenEigenspace_of_compl₁₂_eq_smul B h hc hα
   exact IsAlt.even_finrank (B := B.domRestrict₁₂ (φ.maxGenEigenspace α) (φ.maxGenEigenspace α))
-    (fun x ↦ halt.self_eq_zero x) hP.nondegenerate
+    (fun x ↦ by rw [LinearMap.domRestrict₁₂_apply]; exact halt.self_eq_zero _) hP.nondegenerate
 
 /-- **The determinant of a similitude of an alternating form.** If `φ` is a similitude with
 multiplier `c` of a perfect alternating form on a space of dimension `b`, then
@@ -226,18 +233,12 @@ theorem det_eq_pow_of_isAlt_of_compl₁₂_self_eq_smul (B : BilinForm K V) [B.I
     LinearMap.det φ = c ^ (finrank K V / 2) := by
   obtain ⟨k, hk⟩ := IsAlt.even_finrank halt (IsPerfPair.nondegenerate inferInstance)
   rcases eq_or_ne c 0 with rfl | hc
-  · have hdet := LinearMap.det_mul_det_eq_of_compl₁₂_eq_smul B (IsPerfPair.bijective_right B) h
-    rcases eq_or_ne k 0 with rfl | hk0
-    · have hV : finrank K V = 0 := by omega
-      simp [hV, det_eq_one_of_finrank_eq_zero hV]
-    · rw [hk, zero_pow (by omega), mul_self_eq_zero] at hdet
-      rw [hdet, zero_pow (by omega)]
+  · rw [det_eq_neg_one_pow_mul_zero_pow_of_compl₁₂_self_eq_zero B h (Nat.zero_le _), pow_zero,
+      one_mul, hk, ← two_mul, Nat.mul_div_cancel_left _ two_pos, pow_mul, zero_pow two_ne_zero]
   let L := AlgebraicClosure K
   obtain ⟨t, ht⟩ := IsAlgClosed.isSquare (algebraMap K L c)
   apply (algebraMap K L).injective
-  have hL : (B.baseChange L).compl₁₂ (φ.baseChange L) (φ.baseChange L) =
-      algebraMap K L c • B.baseChange L := by
-    rw [← baseChange_compl₁₂, h, baseChange_smul]
+  have hL := compl₁₂_baseChange_eq_smul (L := L) B h
   have hm := even_finrank_maxGenEigenspace_of_isAlt_of_compl₁₂_self_eq_smul _
     halt.baseChange hL (by simpa using hc) (α := -t) (by rw [neg_mul_neg, ht])
   rw [algebraMap_det_eq_neg_one_pow_mul_pow_of_compl₁₂_self_eq_smul B h ht.symm,
