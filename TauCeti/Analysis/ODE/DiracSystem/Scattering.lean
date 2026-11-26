@@ -162,8 +162,11 @@ private noncomputable def chgInv : Matrix (Fin 2) (Fin 2) ℂ := !![1 / 2, 1 / 2
 /-- `chgInv` is the inverse of `chg`. -/
 private theorem chg_mul_chgInv : chg * chgInv = 1 := by
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [chg, chgInv, Matrix.mul_apply] <;> ring_nf <;>
-    simp [I_sq] <;> ring
+  fin_cases i <;> fin_cases j <;> simp [chg, chgInv, Matrix.mul_apply, Fin.sum_univ_two]
+  · linear_combination (-1 / 2 : ℂ) * I_sq
+  · linear_combination (1 / 2 : ℂ) * I_sq
+  · linear_combination (1 / 2 : ℂ) * I_sq
+  · linear_combination (-1 / 2 : ℂ) * I_sq
 
 /-- The gauge is the identity at time `0`. -/
 private theorem gauge_zero (z : ℂ) : gauge z 0 = 1 := by
@@ -537,8 +540,8 @@ theorem diracScatteringMatrix_eq_of_ae_eq_zero (hq : IntegrableOn q (Icc 0 t)) {
     simp [P, diracScatteringCoeff_def, hu hmem, ← Matrix.ext_iff, Fin.forall_fin_two]
   apply EquivLike.injective (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ))
   simp only [toEuclideanCLM_diracScatteringMatrix]
-  rw [← propagator_comp_propagator hP hT h0 ht, hone]
-  rfl
+  rw [← propagator_comp_propagator hP hT h0 ht, hone, ContinuousLinearMap.one_def,
+    ContinuousLinearMap.id_comp]
 
 /-- **The free case.** For the zero potential the scattering matrix is the identity. -/
 @[simp]
