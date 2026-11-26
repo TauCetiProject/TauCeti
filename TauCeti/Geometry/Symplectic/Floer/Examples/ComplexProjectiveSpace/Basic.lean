@@ -48,6 +48,13 @@ and `n + 1`, up to the orientation of the generator.
   particular `q^ℓ` is the Laurent variable `X`. This is the class `q^[line]` of the quantum
   relation once `ℓ` is identified with the class of an oriented line, for instance when `c` is
   the first Chern class, so that `c ℓ = n + 1 > 0`; that identification is not made here.
+  The comparison preserves degrees: a nonzero monomial `r e^(k ℓ)` has raw degree `2 k c ℓ` and
+  no other
+  (`TauCeti.Floer.NovikovRing.single_zsmul_projectiveSpaceGenerator_mem_gradeBy_degree_iff`), so
+  `q^(k [ℓ])`, of quantum degree `2 k c ℓ`, goes to a series of raw degree `-2 k c ℓ`, that is
+  of cochain degree `2 k c ℓ`
+  (`TauCeti.Floer.coefficientComparison_projectiveSpace_single_mem_gradeBy_degree`). For
+  `c ℓ = n + 1` and `k = 1` this is the degree `2 n + 2` of `x^(n+1)`.
 * **Recapping.** On every loop of `CPⁿ` the cap classes form a `Γ`-torsor, and unless both periods
   of `ℓ` vanish any two caps differ by recapping with a unique multiple `k • ℓ`
   (`SphericalCapClass.existsUnique_zsmul_projectiveSpaceGenerator_vadd_eq`), which raises the
@@ -258,6 +265,42 @@ theorem NovikovRing.toLaurentSeries_coefficientComparison_projectiveSpace_single
   rw [coefficientComparison_single, map_zsmul,
     ofSingularHomology_hurewiczIntHom_pi2MulEquivInt_symm]
   exact NovikovRing.toLaurentSeries_single_neg_zsmul_projectiveSpaceGenerator v hn hτ' hc hτ h k r
+
+/-- **The raw degrees of Floer monomials on `CPⁿ`.** A nonzero monomial `r e^(k ℓ)` of the Floer
+Novikov ring has raw degree `2 c(k ℓ) = 2 k c(ℓ)` and no other. -/
+theorem NovikovRing.single_zsmul_projectiveSpaceGenerator_mem_gradeBy_degree_iff {R : Type*}
+    [Semiring R] {r : R} (hr : r ≠ 0) (k d : ℤ) :
+    single (k • projectiveSpaceGenerator ω c v hn) r ∈
+        gradeBy R (-PeriodGroup.area _ _) (PeriodGroup.degree _ _) d ↔
+      d = 2 * k * PeriodGroup.chern _ _ (projectiveSpaceGenerator ω c v hn) := by
+  rw [single_mem_gradeBy_iff hr, map_zsmul, PeriodGroup.degree_apply, smul_eq_mul]
+  constructor <;> intro h <;> linarith
+
+/-- **The comparison `q^A ↦ e^(-A)` preserves the degree of the quantum relation of `CPⁿ`.**
+Let `L ∈ H₂(CPⁿ; ℤ)` be the Hurewicz class of the generator of `π₂(CPⁿ)`. The comparison sends the
+quantum monomial `q^(k L)`, of degree `2 c(k L) = 2 k c(L)`, to `e^(-k ℓ)`, of raw Floer degree
+`-2 k c(L)`, that is of cochain degree `2 k c(L)` in the grading `C^k = CF_(n-k)`. When `c` is the
+first Chern number and `L` the class of a line, `c(L) = n + 1`; for `k = 1` the coefficient `q^L`
+of the quantum relation `x^(⋆(n+1)) = q^L · 1` and its image `e^(-ℓ)` both have degree `2 n + 2`,
+the degree of `x^(n+1)`. -/
+theorem coefficientComparison_projectiveSpace_single_mem_gradeBy_degree {R : Type*} [Semiring R]
+    (k : ℤ) (r : R) :
+    coefficientComparison
+        (ofSingularHomology ω c (sphericalClasses_eq_top_of_simplyConnectedSpace _))
+        (area_ofSingularHomology (sphericalClasses_eq_top_of_simplyConnectedSpace _))
+        (single (k • hurewiczIntHom _ (mk n v) 1
+          (Additive.ofMul ((pi2MulEquivInt v hn).symm (Multiplicative.ofAdd 1)))) r) ∈
+      gradeBy R (-PeriodGroup.area _ _) (PeriodGroup.degree _ _)
+        (-(2 * k * c (hurewiczIntHom _ (mk n v) 1
+          (Additive.ofMul ((pi2MulEquivInt v hn).symm (Multiplicative.ofAdd 1)))))) := by
+  rcases eq_or_ne r 0 with rfl | hr
+  · rw [single_zero, map_zero]
+    exact zero_mem _
+  rw [coefficientComparison_single, map_zsmul,
+    ofSingularHomology_hurewiczIntHom_pi2MulEquivInt_symm, ← neg_zsmul,
+    NovikovRing.single_zsmul_projectiveSpaceGenerator_mem_gradeBy_degree_iff v hn hr,
+    chern_projectiveSpaceGenerator]
+  ring
 
 namespace SphericalCapClass
 
