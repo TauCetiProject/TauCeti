@@ -15,6 +15,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
+import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -64,6 +65,10 @@ half-space, where `TauCeti.W1p.halfSpaceTrace` and `TauCeti.W1p.extendByReflecti
   weak gradient is `DΦ* (∇u ∘ Φ)`, almost everywhere on `U`.
 * `TauCeti.W1p.norm_compL_le`, `TauCeti.W1p.opNorm_compL_le`: the norm bound.
 * `TauCeti.W1p.compL_mem_w1p0Submodule`: precomposition maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`.
+* `TauCeti.W1p.norm_value_compL_continuousLinearEquiv`,
+  `TauCeti.W1p.norm_gradient_compL_continuousLinearEquiv_le`: for a linear automorphism `e`, the
+  `Lᵖ` norm of the value scales by `|det e| ^ (-1/p)`, and that of the gradient by at most
+  `‖e‖ |det e| ^ (-1/p)`.
 * `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo`: the chain rule for weak derivatives under a
   `C¹` change of variables.
 * `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`: its affine case `x ↦ A x + b`.
@@ -423,6 +428,57 @@ theorem W1p.compL_compL_of_leftInvOn {Ψ : E → E} {L' c' : ℝ} (hΨ : Differe
   rw [h1, h2, hΨΦ hx]
 
 end ChangeOfVariables
+
+/-! ### Linear changes of variables -/
+
+section LinearChangeOfVariables
+
+variable [mu.IsAddHaarMeasure] (hp : p ≠ ⊤) (e : E ≃L[ℝ] E) (hΦ : DifferentiableOn ℝ e U)
+  (hinj : InjOn e U) (hmaps : MapsTo e U V) (hL : ∀ x ∈ (U : Set E), ‖fderiv ℝ e x‖ ≤ L)
+  (hc : 0 < c) (hdet : ∀ x ∈ (U : Set E), c ≤ |(fderiv ℝ e x).det|)
+
+/-- **Linear changes of variables scale the `Lᵖ` norm.** For a linear automorphism `e` of `E` and
+`U = e⁻¹(V)`, the value of `u ∘ e` has `Lᵖ(U)` norm `|det e| ^ (-1/p)` times the `Lᵖ(V)` norm of
+the value of `u`. -/
+theorem W1p.norm_value_compL_continuousLinearEquiv (hUV : (U : Set E) = e ⁻¹' V)
+    (u : W1p mu V p) :
+    ‖W1p.value (W1p.compL e hp hΦ hinj hmaps hL hc hdet u)‖ =
+      |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal * ‖W1p.value u‖ := by
+  have h := Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage mu (W1p.value u) e p
+    (s := V)
+  rw [← hUV] at h
+  rw [Lp.norm_def, Lp.norm_def,
+    eLpNorm_congr_ae (W1p.value_compL_ae e hp hΦ hinj hmaps hL hc hdet u), ← Function.comp_def, h,
+    ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _)]
+
+/-- **Linear changes of variables and the weak gradient.** For a linear automorphism `e` of `E`
+and `U = e⁻¹(V)`, the weak gradient of `u ∘ e` has `Lᵖ(U)` norm at most `‖e‖ |det e| ^ (-1/p)`
+times the `Lᵖ(V)` norm of the weak gradient of `u`. -/
+theorem W1p.norm_gradient_compL_continuousLinearEquiv_le (hUV : (U : Set E) = e ⁻¹' V)
+    (u : W1p mu V p) :
+    ‖W1p.gradient (W1p.compL e hp hΦ hinj hmaps hL hc hdet u)‖ ≤
+      ‖(e : E →L[ℝ] E)‖ *
+        (|(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal * ‖W1p.gradient u‖) := by
+  have h := Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage mu (W1p.gradient u) e p
+    (s := V)
+  rw [← hUV] at h
+  -- Pointwise, `∇(u ∘ e) = e* (∇u ∘ e)` and `‖e*‖ = ‖e‖`.
+  have hle : eLpNorm (W1p.gradient (W1p.compL e hp hΦ hinj hmaps hL hc hdet u)) p
+      (mu.restrict U) ≤ ENNReal.ofReal ‖(e : E →L[ℝ] E)‖ * eLpNorm (W1p.gradient u ∘ e) p
+        (mu.restrict U) := by
+    refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul (Lp.aestronglyMeasurable _) ?_ p
+    filter_upwards [W1p.gradient_compL_ae e hp hΦ hinj hmaps hL hc hdet u] with x hx
+    rw [hx, e.fderiv]
+    exact ((e : E →L[ℝ] E).adjoint.le_opNorm _).trans_eq (by simp)
+  rw [h] at hle
+  rw [Lp.norm_def, Lp.norm_def]
+  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.mul_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top)
+    (Lp.eLpNorm_ne_top _))) hle).trans_eq ?_
+  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal (norm_nonneg _),
+    ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _)]
+
+end LinearChangeOfVariables
 
 /-! ### The chain rule for weak derivatives under a `C¹` change of variables -/
 

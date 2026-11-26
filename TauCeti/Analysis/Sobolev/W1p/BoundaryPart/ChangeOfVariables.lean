@@ -31,6 +31,13 @@ changes of variables, in particular rigid motions, the transport also holds at `
 (`TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule`), and for rigid motions it is an
 equivalence (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff`).
 
+The same transport carries Poincaré–Friedrichs inequalities `‖u‖_{Lᵖ(Ω)} ≤ C ‖∇u‖_{Lᵖ(Ω)}` on
+`W^{1,p}_Γ(Ω)`. Precomposition with a linear automorphism `e` multiplies both `Lᵖ` norms by the same
+power of `|det e|`, and multiplies the gradient by `e*` inside, so a constant `C` for
+`(e⁻¹(Ω), e⁻¹(Γ))` gives the constant `‖e‖ C` for `(Ω, Γ)`. For a dilation by `c > 0` the factor is
+exact in both directions: the Poincaré–Friedrichs constant of `(c • Ω, c • Γ)` is `c` times that of
+`(Ω, Γ)`.
+
 ## Main results
 
 * `TauCeti.W1p.compL_mem_w1pVanishingOnSubmodule`: for `p < ∞`, precomposition with a smooth
@@ -44,6 +51,12 @@ equivalence (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_i
   changes of variables, for every exponent `1 ≤ p ≤ ∞`.
 * `TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff`: rigid motions for every
   exponent `1 ≤ p ≤ ∞`.
+* `W1p.norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_continuousLinearEquiv`,
+  in the namespace `TauCeti`: a Poincaré–Friedrichs inequality `‖u‖_p ≤ C ‖∇u‖_p` on
+  `W^{1,p}_{e⁻¹(Γ)}(e⁻¹(V))` gives one with constant `‖e‖ C` on `W^{1,p}_Γ(V)`, for a linear
+  automorphism `e`.
+* `TauCeti.W1p.forall_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_smul_iff`:
+  the Poincaré–Friedrichs constant scales linearly under dilation of the pair `(Ω, Γ)`.
 -/
 
 public section
@@ -51,7 +64,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Set TopologicalSpace
-open scoped Distributions ENNReal Topology ContDiff
+open scoped Distributions ENNReal Topology ContDiff Pointwise
 
 namespace TauCeti
 
@@ -160,6 +173,88 @@ theorem W1p.compL_affine_mem_w1pVanishingOnSubmodule_iff {L c : ℝ} (hp : p ≠
     (L' := ‖(A.symm : E →L[ℝ] E)‖)
     (fun y _ => by rw [fderiv_add_const, ContinuousLinearEquiv.fderiv]) (abs_pos.2 hdet')
     (fun y _ => by rw [fderiv_add_const, ContinuousLinearEquiv.fderiv]) fun y => by simp
+
+/-! ### Poincaré–Friedrichs constants under linear changes of variables and dilations -/
+
+/-- A bound `‖u‖_p ≤ b` with `b ≤ 0` forces `u = 0`, so `u` satisfies every bound of
+Poincaré type. -/
+private theorem W1p.norm_value_le_mul_norm_gradient_of_norm_value_le_of_nonpos {u : W1p mu V p}
+    {b : ℝ} (h : ‖W1p.value u‖ ≤ b) (hb : b ≤ 0) (a : ℝ) :
+    ‖W1p.value u‖ ≤ a * ‖W1p.gradient u‖ := by
+  obtain rfl : u = 0 :=
+    W1p.ext_value (by rw [W1p.value_zero]; exact norm_le_zero_iff.1 (h.trans hb))
+  simp [W1p.value_zero, W1p.gradient_zero]
+
+/-- **Poincaré–Friedrichs constants under linear changes of variables.** Let `1 ≤ p < ∞`, let
+`e` be a linear automorphism of `E`, and let `U = e⁻¹(V)`. If `‖w‖_{Lᵖ(U)} ≤ C ‖∇w‖_{Lᵖ(U)}` for
+every `w ∈ W^{1,p}_{e⁻¹(Γ)}(U)`, then `‖u‖_{Lᵖ(V)} ≤ ‖e‖ C ‖∇u‖_{Lᵖ(V)}` for every
+`u ∈ W^{1,p}_Γ(V)`. For a linear isometry the constant is unchanged. -/
+theorem W1p.norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_continuousLinearEquiv
+    (hp : p ≠ ⊤) (e : E ≃L[ℝ] E) (hUV : (U : Set E) = e ⁻¹' V) {C : ℝ}
+    (hC : ∀ w ∈ w1pVanishingOnSubmodule mu U p (e ⁻¹' Γ),
+      ‖W1p.value w‖ ≤ C * ‖W1p.gradient w‖)
+    {u : W1p mu V p} (hu : u ∈ w1pVanishingOnSubmodule mu V p Γ) :
+    ‖W1p.value u‖ ≤ ‖(e : E →L[ℝ] E)‖ * C * ‖W1p.gradient u‖ := by
+  have hdet0 : LinearMap.det (e : E →ₗ[ℝ] E) ≠ 0 :=
+    (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
+  have hL : ∀ x ∈ (U : Set E), ‖fderiv ℝ e x‖ ≤ ‖(e : E →L[ℝ] E)‖ := fun x _ => by rw [e.fderiv]
+  have hdet : ∀ x ∈ (U : Set E), |(e : E →L[ℝ] E).det| ≤ |(fderiv ℝ e x).det| := fun x _ => by
+    rw [e.fderiv]
+  have hmaps : MapsTo e U V := hUV ▸ mapsTo_preimage e V
+  have hd : DifferentiableOn ℝ e U := e.differentiable.differentiableOn
+  have hi : InjOn e U := e.injective.injOn
+  have hd0 : 0 < |(e : E →L[ℝ] E).det| := abs_pos.2 hdet0
+  -- With `w = u ∘ e` and `K = |det e| ^ (-1/p)`: `‖w‖ = K ‖u‖` and `‖∇w‖ ≤ ‖e‖ K ‖∇u‖`.
+  have hgrad := W1p.norm_gradient_compL_continuousLinearEquiv_le hp e hd hi hmaps hL hd0 hdet hUV u
+  have h := hC _ (W1p.compL_mem_w1pVanishingOnSubmodule e hp hd hi hmaps hL hd0 hdet e.contDiff
+    e.toHomeomorph.isProperMap hu)
+  rw [W1p.norm_value_compL_continuousLinearEquiv hp e hd hi hmaps hL hd0 hdet hUV u] at h
+  set K := |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal
+  have hK : 0 < K := Real.rpow_pos_of_pos (abs_pos.2 (inv_ne_zero hdet0)) _
+  rcases le_or_gt 0 C with hC0 | hC0
+  · refine le_of_mul_le_mul_left ?_ hK
+    calc K * ‖W1p.value u‖ ≤ C * (‖(e : E →L[ℝ] E)‖ * (K * ‖W1p.gradient u‖)) :=
+          h.trans (mul_le_mul_of_nonneg_left hgrad hC0)
+      _ = K * (‖(e : E →L[ℝ] E)‖ * C * ‖W1p.gradient u‖) := by ring
+  · -- A negative constant forces `u = 0`.
+    refine W1p.norm_value_le_mul_norm_gradient_of_norm_value_le_of_nonpos (b := 0) ?_ le_rfl _
+    nlinarith [norm_nonneg (W1p.value u),
+      norm_nonneg (W1p.gradient (W1p.compL e hp hd hi hmaps hL hd0 hdet u))]
+
+/-- **The Poincaré–Friedrichs constant scales linearly under dilation.** Let `1 ≤ p < ∞`,
+`c > 0` and `V = c • U`. The inequality `‖u‖_{Lᵖ(U)} ≤ C ‖∇u‖_{Lᵖ(U)}` holds on `W^{1,p}_Γ(U)`
+exactly when `‖u‖_{Lᵖ(V)} ≤ c C ‖∇u‖_{Lᵖ(V)}` holds on `W^{1,p}_{c • Γ}(V)`. In particular the
+optimal constant of the dilated pair `(c • U, c • Γ)` is `c` times that of `(U, Γ)`. -/
+theorem W1p.forall_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_smul_iff
+    (hp : p ≠ ⊤) {c : ℝ} (hc : 0 < c) (hUV : (V : Set E) = c • (U : Set E)) {C : ℝ} :
+    (∀ u ∈ w1pVanishingOnSubmodule mu V p (c • Γ), ‖W1p.value u‖ ≤ c * C * ‖W1p.gradient u‖) ↔
+      ∀ u ∈ w1pVanishingOnSubmodule mu U p Γ, ‖W1p.value u‖ ≤ C * ‖W1p.gradient u‖ := by
+  -- The implication from `(U, Γ)` to `(c • U, c • Γ)`, for every dilation; the converse is the
+  -- dilation by `c⁻¹`.
+  have key {c : ℝ} (hc : 0 < c) {U V : Opens E} (hUV : (V : Set E) = c • (U : Set E))
+      {Γ : Set E} {C : ℝ}
+      (hC : ∀ u ∈ w1pVanishingOnSubmodule mu U p Γ, ‖W1p.value u‖ ≤ C * ‖W1p.gradient u‖)
+      (u : W1p mu V p) (hu : u ∈ w1pVanishingOnSubmodule mu V p (c • Γ)) :
+      ‖W1p.value u‖ ≤ c * C * ‖W1p.gradient u‖ := by
+    let e : E ≃L[ℝ] E := (LinearEquiv.smulOfNeZero ℝ E c hc.ne').toContinuousLinearEquiv
+    have he (x : E) : e x = c • x := rfl
+    have hpre (s : Set E) : e ⁻¹' (c • s) = s := by
+      ext x
+      simp [he, smul_mem_smul_set_iff₀ hc.ne']
+    have h :=
+      W1p.norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_continuousLinearEquiv
+        (U := U) (V := V) (Γ := c • Γ) hp e (by rw [hUV, hpre]) (by rwa [hpre]) hu
+    have hnorm : ‖(e : E →L[ℝ] E)‖ ≤ c := ContinuousLinearMap.opNorm_le_bound _ hc.le fun x => by
+      simp [he, norm_smul, abs_of_pos hc]
+    rcases le_or_gt 0 C with hC0 | hC0
+    · exact h.trans (by gcongr)
+    · -- A negative constant forces `u = 0`.
+      exact W1p.norm_value_le_mul_norm_gradient_of_norm_value_le_of_nonpos h
+        (mul_nonpos_of_nonpos_of_nonneg
+          (mul_nonpos_of_nonneg_of_nonpos (norm_nonneg _) hC0.le) (norm_nonneg _)) _
+  refine ⟨fun h => ?_, key hc hUV⟩
+  simpa [inv_smul_smul₀ hc.ne', inv_mul_cancel_left₀ hc.ne'] using
+    key (inv_pos.2 hc) (U := V) (V := U) (Γ := c • Γ) (by rw [hUV, inv_smul_smul₀ hc.ne']) h
 
 /-! ### Measure-preserving changes of variables and rigid motions at every exponent -/
 
