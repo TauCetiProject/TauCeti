@@ -32,9 +32,9 @@ linear factors by `card s` over any commutative ring, without the nontriviality 
 that an affine substitution `X ↦ a X + b` with `a ≠ 0` keeps the degree, while
 `Polynomial.natDegree_comp_C_mul_X_le` shows that a rescaling `X ↦ a X` never increases it.
 `Polynomial.sub_C_ne_zero` records that a nonconstant polynomial differs from every constant
-polynomial, `Polynomial.natDegree_one_sub_C_mul_le` bounds the degree of `1 - C a * p` by that
-of `p` (in particular `Polynomial.natDegree_one_sub_C_mul_X_le` shows that `1 - t X` has degree at
-most one), and `Polynomial.degree_C_add_X_sub_C_mul_lt` bounds the degree of `C a + (X - C ζ) * Q`.
+polynomial, and `Polynomial.natDegree_one_sub_C_mul_le` bounds the degree of `1 - C a * p` by that
+of `p`; in particular `Polynomial.natDegree_one_sub_C_mul_X_le` shows that `1 - t X` has degree at
+most one.
 -/
 
 public section
@@ -139,25 +139,6 @@ theorem _root_.Polynomial.natDegree_X_pow_add_C_mul_X_add_C [Nontrivial R] (a b 
 theorem _root_.Polynomial.natDegree_comp_C_mul_X_add_C [NoZeroDivisors R] {a : R} (ha : a ≠ 0)
     (b : R) (p : R[X]) : (p.comp (C a * X + C b)).natDegree = p.natDegree := by
   rw [natDegree_comp, natDegree_linear ha, mul_one]
-
-/-- Adding a constant to `(X - C ζ) * Q` raises a strict degree bound `< d` by at most `1`. -/
-theorem _root_.Polynomial.degree_C_add_X_sub_C_mul_lt {S : Type*} [Ring S] {a ζ : S} {Q : S[X]}
-    {d : ℕ} (hQ : Q.degree < d) :
-    (C a + (X - C ζ) * Q).degree < ((d + 1 : ℕ) : WithBot ℕ) := by
-  nontriviality S
-  refine (degree_add_le _ _).trans_lt (max_lt
-    (degree_C_le.trans_lt (WithBot.coe_lt_coe.mpr (Nat.succ_pos d))) ?_)
-  rcases eq_or_ne Q 0 with rfl | hQ0
-  · simp
-  · rw [degree_eq_natDegree hQ0] at hQ
-    have hlt : Q.natDegree < d := Nat.cast_lt.mp hQ
-    calc ((X - C ζ) * Q).degree
-        ≤ (X - C ζ).degree + Q.degree := degree_mul_le _ _
-      _ = ((Q.natDegree + 1 : ℕ) : WithBot ℕ) := by
-          rw [degree_X_sub_C, degree_eq_natDegree hQ0]
-          norm_cast
-          ring
-      _ < ((d + 1 : ℕ) : WithBot ℕ) := Nat.cast_lt.mpr (Nat.add_lt_add_right hlt 1)
 
 /-- A rescaling `X ↦ a X` does not increase the degree. -/
 theorem _root_.Polynomial.natDegree_comp_C_mul_X_le (a : R) (p : R[X]) :

@@ -36,8 +36,9 @@ evaluating polynomials of degree `< n`.
 ## Main results
 
 * `Polynomial.mem_degreeLT_natDegree_iff`: membership in `R[X]_(g.natDegree)` is `degree < degree`.
-* `Polynomial.evalDegreeLT`, `Polynomial.evalDegreeLT_def`, `Polynomial.mem_evalDegreeLT`: the
-  `R`-submodule of functions `R → R` represented by polynomials of degree `< n`.
+* `Polynomial.evalDegreeLT`, `Polynomial.evalDegreeLT_def`, `Polynomial.mem_evalDegreeLT`,
+  `Polynomial.mem_evalDegreeLT_natDegree_iff`: the `R`-submodule of functions `R → R` represented
+  by polynomials of degree `< n`.
 * `Polynomial.mem_degreeLT_succ_iff_natDegree_le`: membership in `R[X]_(n + 1)` is
   `natDegree ≤ n`.
 * `Polynomial.modByMonic_mem_degreeLT`, `Polynomial.divByMonic_mem_degreeLT`: where `%ₘ` and `/ₘ`
@@ -93,10 +94,18 @@ noncomputable def evalDegreeLT (R : Type*) [Semiring R] (n : ℕ) : Submodule R 
 theorem evalDegreeLT_def (R : Type*) [Semiring R] (n : ℕ) :
     evalDegreeLT R n = (degreeLT R n).map (evalLinearMap R) := (rfl)
 
+/-- A function `R → R` lies in `evalDegreeLT R n` iff it is evaluation of some polynomial of
+degree `< n`. -/
 theorem mem_evalDegreeLT {n : ℕ} {f : R → R} :
     f ∈ evalDegreeLT R n ↔ ∃ Q : R[X], Q.degree < n ∧ ∀ w, f w = Q.eval w := by
   simp only [evalDegreeLT, Submodule.mem_map, mem_degreeLT, funext_iff, evalLinearMap_apply]
   refine exists_congr fun Q ↦ and_congr_right fun _ ↦ forall_congr' fun _ ↦ eq_comm
+
+/-- A function `R → R` lies in `evalDegreeLT R g.natDegree` iff it is evaluation of a polynomial of
+degree `< g.degree`, for `g ≠ 0`. -/
+theorem mem_evalDegreeLT_natDegree_iff (hg : g ≠ 0) {f : R → R} :
+    f ∈ evalDegreeLT R g.natDegree ↔ ∃ Q : R[X], Q.degree < g.degree ∧ ∀ w, f w = Q.eval w := by
+  rw [mem_evalDegreeLT, degree_eq_natDegree hg]
 
 /-- Membership in `R[X]_(n + 1)` is the bound `natDegree ≤ n`. -/
 theorem mem_degreeLT_succ_iff_natDegree_le {n : ℕ} {p : R[X]} :

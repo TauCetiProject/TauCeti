@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Normed.Ring.Basic
+import TauCeti.Analysis.Normed.Ring.Multiset
 
 /-!
 # Norm bounds for polynomials given by a multiset of roots
@@ -35,15 +36,8 @@ variable {R : Type*} [SeminormedCommRing R] [NormOneClass R]
 theorem norm_eval_ofMultiset_le_pow {s : Multiset R} {w : R} {B : ℝ}
     (hB : ∀ ζ ∈ s, ‖w - ζ‖ ≤ B) :
     ‖(ofMultiset s).eval w‖ ≤ B ^ s.card := by
-  induction s using Multiset.induction_on with
-  | empty => simp
-  | cons ζ s ih =>
-    have hζ : ‖w - ζ‖ ≤ B := hB ζ (Multiset.mem_cons_self _ _)
-    have hB0 : 0 ≤ B := (norm_nonneg _).trans hζ
-    rw [ofMultiset_apply, Multiset.map_cons, Multiset.prod_cons, eval_mul, eval_sub, eval_X,
-      eval_C, Multiset.card_cons, pow_succ']
-    exact (norm_mul_le _ _).trans (mul_le_mul hζ
-      (ih fun η hη ↦ hB η (Multiset.mem_cons_of_mem hη)) (norm_nonneg _) hB0)
+  rw [ofMultiset_apply, eval_multiset_prod, Multiset.map_map]
+  simpa [Function.comp_def] using Multiset.norm_prod_map_le_pow_card s (fun ζ ↦ w - ζ) hB
 
 /-- If every `ζ ∈ s` and `w` belong to `Metric.closedBall c r`, then
 `‖(ofMultiset s).eval w‖ ≤ (2 * r) ^ s.card`. -/

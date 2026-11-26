@@ -100,15 +100,21 @@ theorem exists_degree_lt_and_update_eq_eval {R : Type*} [Semiring R] {f : (ι �
   · obtain ⟨Q, hQdeg, hQ⟩ := hf (update z i ζ)
     exact ⟨Q, hQdeg, fun w ↦ by rw [update_comm hij, hQ]⟩
 
+/-- Rewrites an existential `natDegree ≤ e` bound as a strict `degree < Order.succ e` bound. -/
+private theorem exists_natDegree_le_iff {R : Type*} [Semiring R] (e : ℕ) (p : R[X] → Prop) :
+    (∃ Q : R[X], Q.natDegree ≤ e ∧ p Q) ↔
+      ∃ Q : R[X], Q.degree < Order.succ (e : WithBot ℕ) ∧ p Q := by
+  simp only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le]
+
 /-- Fixing the `i`-th coordinate at `ζ` preserves a polynomial degree bound `≤ e` in any
 coordinate `j` (becoming constant in coordinate `i` itself). -/
 theorem exists_natDegree_le_and_update_eq_eval {R : Type*} [Semiring R] {f : (ι → R) → R}
     (i j : ι) (ζ : R) {e : ℕ}
     (hf : ∀ y, ∃ Q : R[X], Q.natDegree ≤ e ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → R) :
     ∃ Q : R[X], Q.natDegree ≤ e ∧ ∀ w, f (update (update z j w) i ζ) = Q.eval w := by
-  simpa only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le] using
-    exists_degree_lt_and_update_eq_eval i j ζ (d := Order.succ (e : WithBot ℕ))
-      (fun y ↦ by simpa only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le] using hf y) z
+  rw [exists_natDegree_le_iff]
+  exact exists_degree_lt_and_update_eq_eval i j ζ
+    (fun y ↦ (exists_natDegree_le_iff e _).mp (hf y)) z
 
 /-- **Coordinate degree preservation under `partialDslope`.** If `f` is entire and a polynomial of
 degree strictly less than `d` in coordinate `j`, then so is `partialDslope i f ζ`. -/
@@ -160,9 +166,9 @@ theorem exists_natDegree_le_and_partialDslope_eq_eval [Finite ι] {f : (ι → �
     (hf : Differentiable ℂ f) (i j : ι) (ζ : ℂ) {e : ℕ}
     (hdeg : ∀ y, ∃ Q : ℂ[X], Q.natDegree ≤ e ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → ℂ) :
     ∃ Q : ℂ[X], Q.natDegree ≤ e ∧ ∀ w, partialDslope i f ζ (update z j w) = Q.eval w := by
-  simpa only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le] using
-    exists_degree_lt_and_partialDslope_eq_eval hf i j ζ (d := Order.succ (e : WithBot ℕ))
-      (fun y ↦ by simpa only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le] using hdeg y) z
+  rw [exists_natDegree_le_iff]
+  exact exists_degree_lt_and_partialDslope_eq_eval hf i j ζ
+    (fun y ↦ (exists_natDegree_le_iff e _).mp (hdeg y)) z
 
 section PartialDeriv
 

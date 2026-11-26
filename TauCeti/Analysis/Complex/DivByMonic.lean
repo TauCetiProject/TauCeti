@@ -13,7 +13,9 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Complex.DividedDifference.Analytic
 import TauCeti.Analysis.Complex.DividedDifference.Degree
 import TauCeti.Analysis.Complex.DividedDifference.Estimate
+import TauCeti.Analysis.Complex.PartialDeriv.Degree
 import TauCeti.Analysis.Normed.Group.Pi
+import TauCeti.Topology.MetricSpace.Pseudo.Pi
 
 /-!
 # Dividing an entire function by a polynomial in one variable
@@ -26,14 +28,15 @@ multiplicity, writes
 
 with the quotient `f₁ = TauCeti.partialDivByMonic i f P` and the remainder
 `f₀ = TauCeti.partialModByMonic i f P` entire, and `f₀` a polynomial of degree less than `p` in
-`zᵢ`, in the sense that `∂ᵢ^p f₀ = 0`. This is Euclidean division by a monic polynomial
-(Mathlib's `Polynomial.divByMonic` and `Polynomial.modByMonic`) for entire functions of the `i`-th
-variable, and as there the quotient and remainder are unique. Moreover:
+`zᵢ`, in the sense that `∂ᵢ^p f₀ = 0` (and for `E = ℂ`, every `zᵢ`-line agrees with a polynomial
+of degree `< deg P`). This is Euclidean division by a monic polynomial (Mathlib's
+`Polynomial.divByMonic` and `Polynomial.modByMonic`) for entire functions of the `i`-th variable,
+and as there the quotient and remainder are unique. Moreover:
 
-* if the roots of `P` lie in the closed disc of radius `r`, `5 r ≤ R` and `‖f‖ ≤ M` on the closed
-  polydisc of radius `R`, then `‖f₀‖ ≤ 3 ^ p M` and `‖f₁‖ ≤ (3 / R) ^ p M` there;
+* if the roots of `P` lie in the closed disc `closedBall (c i) r`, `5 r ≤ R` and `‖f‖ ≤ M` on
+  `closedBall c R`, then `‖f₀‖ ≤ 3 ^ p M` and `‖f₁‖ ≤ (3 / R) ^ p M` there;
 * the partial derivatives `∂ⱼ` with `j ≠ i` commute with `f ↦ f₀` and `f ↦ f₁`, so `f₀` and `f₁`
-  are polynomials of degree at most `e` in `zⱼ` whenever `f` is;
+  preserve coordinate polynomial degree bounds in `zⱼ` whenever `f` satisfies them;
 * `f₀ = 0`, that is `P(zᵢ)` divides `f`, if and only if `∂ᵢ^κ f` vanishes on the hyperplane
   `zᵢ = ζ` for every root `ζ` of `P` and every `κ` less than its multiplicity.
 
@@ -47,16 +50,22 @@ method of Schneider, Lang and Baker.
 * `TauCeti.partialDivByMonic i f P`, `TauCeti.partialModByMonic i f P`: the quotient and the
   remainder of `f` by `P(zᵢ)`.
 * `TauCeti.partialModByMonic_add_smul_partialDivByMonic`: `f₀ z + P(zᵢ) • f₁ z = f z`.
-* `TauCeti.iterate_partialDeriv_partialModByMonic_eq_zero`: `∂ᵢ^p f₀ = 0`.
+* `TauCeti.iterate_partialDeriv_partialModByMonic_eq_zero`,
+  `TauCeti.exists_degree_lt_partialModByMonic`: `∂ᵢ^p f₀ = 0`, and for `E = ℂ` every `zᵢ`-line has
+  polynomial degree `< deg P`.
 * `TauCeti.eq_partialDivByMonic`, `TauCeti.eq_partialModByMonic`: uniqueness.
 * `TauCeti.partialDivByMonic_add`, `TauCeti.partialDivByMonic_const_smul` and their remainder
   counterparts: both are linear on entire functions.
 * `TauCeti.norm_partialDivByMonic_le`, `TauCeti.norm_partialModByMonic_le`: the bounds
-  `‖f₁‖ ≤ (2 / (R - r)) ^ p M` and `‖f₀‖ ≤ (∑_{j < p} (2 (R + r) / (R - r)) ^ j) M` for `r < R`,
-  and their consequences `TauCeti.norm_partialDivByMonic_le_of_five_mul_le` and
+  `‖f₁‖ ≤ (2 / (R - r)) ^ p M` and `‖f₀‖ ≤ (∑_{j < p} (2 (R + r) / (R - r)) ^ j) M` on
+  `closedBall c R` for `r < R`, and their consequences
+  `TauCeti.norm_partialDivByMonic_le_of_five_mul_le` and
   `TauCeti.norm_partialModByMonic_le_of_five_mul_le` for `5 r ≤ R`.
 * `TauCeti.iterate_partialDeriv_partialDivByMonic_of_ne`,
   `TauCeti.iterate_partialDeriv_partialModByMonic_of_ne`: `∂ⱼ^m` commutes with both for `j ≠ i`.
+* `TauCeti.exists_degree_lt_partialDivByMonic_of_ne`,
+  `TauCeti.exists_degree_lt_partialModByMonic_of_ne`: preservation of coordinate polynomial degree
+  bounds in `zⱼ` (`j ≠ i`) for `E = ℂ`.
 * `TauCeti.partialModByMonic_eq_zero_iff`: the divisibility criterion.
 
 ## References
@@ -296,7 +305,7 @@ private theorem listRem_eq_zero_iff (hf : Differentiable ℂ f) (l : List ℂ) :
 
 /-- Uniqueness of division along `l`. -/
 private theorem eq_listQuot {f₀ g : (ι → ℂ) → E} (hf₀ : Differentiable ℂ f₀)
-    (hg : Differentiable ℂ g) (l : List ℂ) (hdeg : (partialDeriv i)^[l.length] f₀ = 0)
+    (hg : Continuous g) (l : List ℂ) (hdeg : (partialDeriv i)^[l.length] f₀ = 0)
     (h : ∀ z, f z = f₀ z + ((l.map fun ζ ↦ X - C ζ).prod).eval (z i) • g z) :
     g = listQuot i f l := by
   have := Fintype.ofFinite ι
@@ -307,13 +316,16 @@ private theorem eq_listQuot {f₀ g : (ι → ℂ) → E} (hf₀ : Differentiabl
     simp [listQuot, h z, hdeg]
   | cons ζ l ih =>
     set G : (ι → ℂ) → E := fun z ↦ ((l.map fun ζ ↦ X - C ζ).prod).eval (z i) • g z with hGdef
-    have hG : Differentiable ℂ G := by fun_prop
+    have hG : Continuous G := by
+      have hprod : Continuous fun z : ι → ℂ ↦ ((l.map fun ζ ↦ X - C ζ).prod).eval (z i) :=
+        ((l.map fun ζ ↦ X - C ζ).prod).continuous.comp (continuous_apply i)
+      exact hprod.smul hg
     have hf : f = fun z ↦ f₀ z + (z i - ζ) • G z := by
       ext z
       simp [h z, hGdef, mul_smul]
     have hdiv : partialDslope i f ζ = fun z ↦ partialDslope i f₀ ζ z + G z := by
       refine (eq_partialDslope_of_sub_smul_eq
-        ((differentiable_partialDslope hf₀ i ζ).continuous.add hG.continuous) fun z ↦ ?_).symm
+        ((differentiable_partialDslope hf₀ i ζ).continuous.add hG) fun z ↦ ?_).symm
       rw [hf]
       simp only [update_self, sub_self, zero_smul, add_zero, Pi.add_apply, smul_add,
         sub_smul_partialDslope]
@@ -339,7 +351,8 @@ private theorem listQuot_add {g : (ι → ℂ) → E} (hf : Differentiable ℂ f
   have hfr := differentiable_listRem (i := i) hf l
   have hgr := differentiable_listRem (i := i) hg l
   refine (eq_listQuot (hfr.add hgr)
-    ((differentiable_listQuot hf l).add (differentiable_listQuot hg l)) l ?_ fun z ↦ ?_).symm
+    ((differentiable_listQuot hf l).add (differentiable_listQuot hg l)).continuous l ?_
+    fun z ↦ ?_).symm
   · rw [iterate_partialDeriv_add hfr hgr, iterate_partialDeriv_listRem hf,
       iterate_partialDeriv_listRem hg, add_zero]
   · simp only [listRem, Pi.add_apply, smul_add]
@@ -350,8 +363,8 @@ private theorem listQuot_const_smul (hf : Differentiable ℂ f) (c : ℂ) (l : L
     listQuot i (c • f) l = c • listQuot i f l := by
   have := Fintype.ofFinite ι
   have hr := differentiable_listRem (i := i) hf l
-  refine (eq_listQuot (hr.const_smul c) ((differentiable_listQuot hf l).const_smul c) l ?_
-    fun z ↦ ?_).symm
+  refine (eq_listQuot (hr.const_smul c) ((differentiable_listQuot hf l).const_smul c).continuous l
+    ?_ fun z ↦ ?_).symm
   · rw [iterate_partialDeriv_const_smul, iterate_partialDeriv_listRem hf, smul_zero]
   · simp only [listRem, Pi.smul_apply, smul_sub]
     rw [smul_smul, smul_smul, mul_comm c, sub_add_cancel]
@@ -359,9 +372,9 @@ private theorem listQuot_const_smul (hf : Differentiable ℂ f) (c : ℂ) (l : L
 end Entire
 
 /-- The bound `(2 / (R - r)) ^ (length l) M` for the quotient along `l`. -/
-private theorem norm_listQuot_le [Fintype ι] [CompleteSpace E] {r R M : ℝ}
-    (hf : Differentiable ℂ f) {l : List ℂ} (hl : ∀ ζ ∈ l, ‖ζ‖ ≤ r) (hrR : r < R)
-    (hM : ∀ w : ι → ℂ, ‖w‖ ≤ R → ‖f w‖ ≤ M) {z : ι → ℂ} (hz : ‖z‖ ≤ R) :
+private theorem norm_listQuot_le [Fintype ι] [CompleteSpace E] {c : ι → ℂ} {r R M : ℝ}
+    (hf : Differentiable ℂ f) {l : List ℂ} (hl : ∀ ζ ∈ l, ζ ∈ closedBall (c i) r) (hrR : r < R)
+    (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) {z : ι → ℂ} (hz : z ∈ closedBall c R) :
     ‖listQuot i f l z‖ ≤ (2 / (R - r)) ^ l.length * M := by
   induction l generalizing f M with
   | nil => simpa [listQuot] using hM z hz
@@ -369,17 +382,16 @@ private theorem norm_listQuot_le [Fintype ι] [CompleteSpace E] {r R M : ℝ}
     have := ih (differentiable_partialDslope hf i ζ)
       (fun ζ' h ↦ hl ζ' (List.mem_cons_of_mem _ h))
       (fun w hw ↦ norm_partialDslope_le_of_mem_closedBall hf.differentiableOn
-        (mem_closedBall_zero_iff.mpr (hl ζ List.mem_cons_self)) hrR
-        (fun y hy ↦ hM y (mem_closedBall_zero_iff.mp hy)) (mem_closedBall_zero_iff.mpr hw))
+        (hl ζ List.mem_cons_self) hrR hM hw)
     calc ‖listQuot i f (ζ :: l) z‖ ≤ (2 / (R - r)) ^ l.length * (2 * M / (R - r)) := this
       _ = (2 / (R - r)) ^ (ζ :: l).length * M := by
         rw [List.length_cons, pow_succ]
         ring
 
 /-- The bound `(∑_{j < length l} (2 (R + r) / (R - r)) ^ j) M` for the remainder along `l`. -/
-private theorem norm_listRem_le [Fintype ι] [CompleteSpace E] {r R M : ℝ}
-    (hf : Differentiable ℂ f) {l : List ℂ} (hl : ∀ ζ ∈ l, ‖ζ‖ ≤ r) (hrR : r < R)
-    (hM : ∀ w : ι → ℂ, ‖w‖ ≤ R → ‖f w‖ ≤ M) {z : ι → ℂ} (hz : ‖z‖ ≤ R) :
+private theorem norm_listRem_le [Fintype ι] [CompleteSpace E] {c : ι → ℂ} {r R M : ℝ}
+    (hf : Differentiable ℂ f) {l : List ℂ} (hl : ∀ ζ ∈ l, ζ ∈ closedBall (c i) r) (hrR : r < R)
+    (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) {z : ι → ℂ} (hz : z ∈ closedBall c R) :
     ‖listRem i f l z‖ ≤ (∑ j ∈ Finset.range l.length, (2 * (R + r) / (R - r)) ^ j) * M := by
   induction l generalizing f M with
   | nil => simp [listRem, listQuot]
@@ -388,12 +400,14 @@ private theorem norm_listRem_le [Fintype ι] [CompleteSpace E] {r R M : ℝ}
     have hRr : R - r ≠ 0 := (sub_pos.2 hrR).ne'
     have h₁ := ih (differentiable_partialDslope hf i ζ)
       (fun ζ' h ↦ hl ζ' (List.mem_cons_of_mem _ h))
-      (fun w hw ↦ norm_partialDslope_le_of_mem_closedBall hf.differentiableOn
-        (mem_closedBall_zero_iff.mpr hζ) hrR
-        (fun y hy ↦ hM y (mem_closedBall_zero_iff.mp hy)) (mem_closedBall_zero_iff.mpr hw))
-    have h₂ := hM _ (Pi.norm_update_le (i := i) hz (hζ.trans hrR.le))
+      (fun w hw ↦ norm_partialDslope_le_of_mem_closedBall hf.differentiableOn hζ hrR hM hw)
+    have h₂ := hM _ (update_mem_closedBall (closedBall_subset_closedBall hrR.le hζ) hz)
+    have hzc : ‖z i - c i‖ ≤ R := by
+      simpa [dist_eq_norm] using (dist_le_pi_dist z c i).trans (mem_closedBall.mp hz)
+    have hζc : ‖c i - ζ‖ ≤ r := by
+      simpa [dist_eq_norm, norm_sub_rev] using mem_closedBall.mp hζ
     have h₃ : ‖z i - ζ‖ ≤ R + r :=
-      (norm_sub_le _ _).trans (add_le_add ((norm_le_pi_norm z i).trans hz) hζ)
+      (norm_sub_le_norm_sub_add_norm_sub _ (c i) _).trans (add_le_add hzc hζc)
     set a := 2 * (R + r) / (R - r)
     set S := ∑ j ∈ Finset.range l.length, a ^ j
     have hS : ∑ j ∈ Finset.range (ζ :: l).length, a ^ j = 1 + a * S := by
@@ -439,20 +453,20 @@ theorem iterate_partialDeriv_partialModByMonic_eq_zero (hP : P.Monic) (hf : Diff
     ← Multiset.length_toList]
   exact iterate_partialDeriv_listRem hf _
 
-/-- **Uniqueness of the quotient.** If `f z = f₀ z + P(zᵢ) • g z` with `f₀` and `g` entire and
-`∂ᵢ^p f₀ = 0`, then `g` is the quotient of `f` by `P(zᵢ)`. -/
+/-- **Uniqueness of the quotient.** If `f z = f₀ z + P(zᵢ) • g z` with `f₀` entire, `g` continuous,
+and `∂ᵢ^p f₀ = 0`, then `g` is the quotient of `f` by `P(zᵢ)`. -/
 theorem eq_partialDivByMonic {f₀ g : (ι → ℂ) → E} (hP : P.Monic) (hf₀ : Differentiable ℂ f₀)
-    (hg : Differentiable ℂ g) (hdeg : (partialDeriv i)^[P.natDegree] f₀ = 0)
+    (hg : Continuous g) (hdeg : (partialDeriv i)^[P.natDegree] f₀ = 0)
     (h : ∀ z, f z = f₀ z + P.eval (z i) • g z) : g = partialDivByMonic i f P := by
   rw [partialDivByMonic_eq_listQuot]
   refine eq_listQuot hf₀ hg P.roots.toList ?_ ?_
   · rwa [Multiset.length_toList, IsAlgClosed.card_roots_eq_natDegree]
   · rwa [prod_map_roots_toList hP]
 
-/-- **Uniqueness of the remainder.** If `f z = f₀ z + P(zᵢ) • g z` with `f₀` and `g` entire and
-`∂ᵢ^p f₀ = 0`, then `f₀` is the remainder of `f` modulo `P(zᵢ)`. -/
+/-- **Uniqueness of the remainder.** If `f z = f₀ z + P(zᵢ) • g z` with `f₀` entire, `g` continuous,
+and `∂ᵢ^p f₀ = 0`, then `f₀` is the remainder of `f` modulo `P(zᵢ)`. -/
 theorem eq_partialModByMonic {f₀ g : (ι → ℂ) → E} (hP : P.Monic) (hf₀ : Differentiable ℂ f₀)
-    (hg : Differentiable ℂ g) (hdeg : (partialDeriv i)^[P.natDegree] f₀ = 0)
+    (hg : Continuous g) (hdeg : (partialDeriv i)^[P.natDegree] f₀ = 0)
     (h : ∀ z, f z = f₀ z + P.eval (z i) • g z) : f₀ = partialModByMonic i f P := by
   ext z
   rw [partialModByMonic_apply, ← eq_partialDivByMonic hP hf₀ hg hdeg h, h z, add_sub_cancel_right]
@@ -527,46 +541,94 @@ theorem partialModByMonic_eq_zero_iff (hP : P.Monic) (hf : Differentiable ℂ f)
 
 end Entire
 
+section Scalar
+
+variable [Finite ι] {f : (ι → ℂ) → ℂ}
+
+/-- **Line polynomial degree of the remainder.** For monic `P` and entire `f : (ι → ℂ) → ℂ`,
+every `zᵢ`-line of `partialModByMonic i f P` agrees with a polynomial of degree `< P.degree`. -/
+theorem exists_degree_lt_partialModByMonic {P : ℂ[X]} (hP : P.Monic) (hf : Differentiable ℂ f)
+    (i : ι) (z : ι → ℂ) :
+    ∃ Q : ℂ[X], Q.degree < P.degree ∧
+      ∀ w, partialModByMonic i f P (update z i w) = Q.eval w := by
+  rw [degree_eq_natDegree hP.ne_zero]
+  exact (iterate_partialDeriv_eq_zero_iff_exists_degree_lt
+    (differentiable_partialModByMonic hf i P) i P.natDegree).mp
+    (iterate_partialDeriv_partialModByMonic_eq_zero hP hf) z
+
+/-- **Coordinate degree preservation for the quotient.** If `f` is entire and a polynomial of
+degree `< d` in another coordinate `j ≠ i`, then so is `partialDivByMonic i f P`. -/
+theorem exists_degree_lt_partialDivByMonic_of_ne (hf : Differentiable ℂ f) {i j : ι}
+    (hji : j ≠ i) (P : ℂ[X]) {d : WithBot ℕ}
+    (hfj : ∀ y, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → ℂ) :
+    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, partialDivByMonic i f P (update z j w) = Q.eval w := by
+  cases d with
+  | bot => exact absurd (hfj z).choose_spec.1 not_lt_bot
+  | coe n =>
+    refine (iterate_partialDeriv_eq_zero_iff_exists_degree_lt
+      (differentiable_partialDivByMonic hf i P) j n).mp ?_ z
+    rw [iterate_partialDeriv_partialDivByMonic_of_ne hf hji,
+      (iterate_partialDeriv_eq_zero_iff_exists_degree_lt hf j n).mpr hfj,
+      partialDivByMonic_zero_fun]
+
+/-- **Coordinate degree preservation for the remainder.** If `f` is entire and a polynomial of
+degree `< d` in another coordinate `j ≠ i`, then so is `partialModByMonic i f P`. -/
+theorem exists_degree_lt_partialModByMonic_of_ne (hf : Differentiable ℂ f) {i j : ι}
+    (hji : j ≠ i) (P : ℂ[X]) {d : WithBot ℕ}
+    (hfj : ∀ y, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → ℂ) :
+    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, partialModByMonic i f P (update z j w) = Q.eval w := by
+  cases d with
+  | bot => exact absurd (hfj z).choose_spec.1 not_lt_bot
+  | coe n =>
+    refine (iterate_partialDeriv_eq_zero_iff_exists_degree_lt
+      (differentiable_partialModByMonic hf i P) j n).mp ?_ z
+    rw [iterate_partialDeriv_partialModByMonic_of_ne hf hji,
+      (iterate_partialDeriv_eq_zero_iff_exists_degree_lt hf j n).mpr hfj,
+      partialModByMonic_zero_fun]
+
+end Scalar
+
 /-! ### Size on polydiscs -/
 
 section Bounds
 
-variable [Fintype ι] [CompleteSpace E] {i : ι} {f : (ι → ℂ) → E} {P : ℂ[X]} {r R M : ℝ}
-  {z : ι → ℂ}
+variable [Fintype ι] [CompleteSpace E] {i : ι} {f : (ι → ℂ) → E} {P : ℂ[X]} {c z : ι → ℂ}
+  {r R M : ℝ}
 
-/-- **Size of the quotient.** If `f` is entire, the roots of `P` lie in the closed disc of radius
-`r < R` and `‖f‖ ≤ M` on the closed polydisc of radius `R`, then the quotient of `f` by `P(zᵢ)` is
-bounded by `(2 / (R - r)) ^ p M` there, where `p = natDegree P`. -/
-theorem norm_partialDivByMonic_le (hf : Differentiable ℂ f) (hroots : ∀ ζ ∈ P.roots, ‖ζ‖ ≤ r)
-    (hrR : r < R) (hM : ∀ w : ι → ℂ, ‖w‖ ≤ R → ‖f w‖ ≤ M) (hz : ‖z‖ ≤ R) :
+/-- **Size of the quotient.** If `f` is entire, the roots of `P` lie in `closedBall (c i) r` with
+`r < R` and `‖f‖ ≤ M` on `closedBall c R`, then the quotient of `f` by `P(zᵢ)` is bounded by
+`(2 / (R - r)) ^ p M` there, where `p = natDegree P`. -/
+theorem norm_partialDivByMonic_le (hf : Differentiable ℂ f)
+    (hroots : ∀ ζ ∈ P.roots, ζ ∈ closedBall (c i) r) (hrR : r < R)
+    (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) (hz : z ∈ closedBall c R) :
     ‖partialDivByMonic i f P z‖ ≤ (2 / (R - r)) ^ P.natDegree * M := by
   rw [partialDivByMonic_eq_listQuot, ← IsAlgClosed.card_roots_eq_natDegree,
     ← Multiset.length_toList]
   exact norm_listQuot_le hf (fun ζ hζ ↦ hroots ζ (Multiset.mem_toList.1 hζ)) hrR hM hz
 
-/-- **Size of the remainder.** If `P` is monic, `f` is entire, the roots of `P` lie in the closed
-disc of radius `r < R` and `‖f‖ ≤ M` on the closed polydisc of radius `R`, then the remainder of
-`f` modulo `P(zᵢ)` is bounded by `(∑_{j < p} (2 (R + r) / (R - r)) ^ j) M` there, where
+/-- **Size of the remainder.** If `P` is monic, `f` is entire, the roots of `P` lie in
+`closedBall (c i) r` with `r < R` and `‖f‖ ≤ M` on `closedBall c R`, then the remainder of `f`
+modulo `P(zᵢ)` is bounded by `(∑_{j < p} (2 (R + r) / (R - r)) ^ j) M` there, where
 `p = natDegree P`. -/
 theorem norm_partialModByMonic_le (hP : P.Monic) (hf : Differentiable ℂ f)
-    (hroots : ∀ ζ ∈ P.roots, ‖ζ‖ ≤ r) (hrR : r < R) (hM : ∀ w : ι → ℂ, ‖w‖ ≤ R → ‖f w‖ ≤ M)
-    (hz : ‖z‖ ≤ R) :
+    (hroots : ∀ ζ ∈ P.roots, ζ ∈ closedBall (c i) r) (hrR : r < R)
+    (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) (hz : z ∈ closedBall c R) :
     ‖partialModByMonic i f P z‖ ≤
       (∑ j ∈ Finset.range P.natDegree, (2 * (R + r) / (R - r)) ^ j) * M := by
   rw [partialModByMonic_eq_listRem hP, ← IsAlgClosed.card_roots_eq_natDegree,
     ← Multiset.length_toList]
   exact norm_listRem_le hf (fun ζ hζ ↦ hroots ζ (Multiset.mem_toList.1 hζ)) hrR hM hz
 
-/-- **Size of the quotient, Waldschmidt's form.** If `f` is entire, the roots of `P` lie in the
-closed disc of radius `r`, `5 r ≤ R` and `‖f‖ ≤ M` on the closed polydisc of radius `R > 0`, then
-the quotient of `f` by `P(zᵢ)` is bounded by `(3 / R) ^ p M` there, where `p = natDegree P`. -/
+/-- **Size of the quotient, Waldschmidt's form.** If `f` is entire, the roots of `P` lie in
+`closedBall (c i) r`, `5 r ≤ R` and `‖f‖ ≤ M` on `closedBall c R` (`R > 0`), then the quotient of
+`f` by `P(zᵢ)` is bounded by `(3 / R) ^ p M` there, where `p = natDegree P`. -/
 theorem norm_partialDivByMonic_le_of_five_mul_le (hf : Differentiable ℂ f)
-    (hroots : ∀ ζ ∈ P.roots, ‖ζ‖ ≤ r) (hR : 0 < R) (hrR : 5 * r ≤ R)
-    (hM : ∀ w : ι → ℂ, ‖w‖ ≤ R → ‖f w‖ ≤ M) (hz : ‖z‖ ≤ R) :
+    (hroots : ∀ ζ ∈ P.roots, ζ ∈ closedBall (c i) r) (hR : 0 < R) (hrR : 5 * r ≤ R)
+    (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) (hz : z ∈ closedBall c R) :
     ‖partialDivByMonic i f P z‖ ≤ (3 / R) ^ P.natDegree * M := by
   have hr : 3 * r ≤ R ∧ r < R := by
     rcases le_or_gt 0 r with _ | _ <;> constructor <;> linarith
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0 (by simpa using hR.le))
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM z hz)
   refine (norm_partialDivByMonic_le hf hroots hr.2 hM hz).trans
     (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (by have := sub_pos.2 hr.2; positivity) ?_ _)
       hM0)
@@ -574,15 +636,14 @@ theorem norm_partialDivByMonic_le_of_five_mul_le (hf : Differentiable ℂ f)
   linarith [hr.1]
 
 /-- **Size of the remainder, Waldschmidt's form.** If `P` is monic, `f` is entire, the roots of
-`P` lie in the closed disc of radius `r`, `5 r ≤ R` and `‖f‖ ≤ M` on the closed polydisc of radius
-`R > 0`, then the remainder of `f` modulo `P(zᵢ)` is bounded by `3 ^ p M` there, where
-`p = natDegree P`. -/
+`P` lie in `closedBall (c i) r`, `5 r ≤ R` and `‖f‖ ≤ M` on `closedBall c R` (`R > 0`), then the
+remainder of `f` modulo `P(zᵢ)` is bounded by `3 ^ p M` there, where `p = natDegree P`. -/
 theorem norm_partialModByMonic_le_of_five_mul_le (hP : P.Monic) (hf : Differentiable ℂ f)
-    (hroots : ∀ ζ ∈ P.roots, ‖ζ‖ ≤ r) (hR : 0 < R) (hrR : 5 * r ≤ R)
-    (hM : ∀ w : ι → ℂ, ‖w‖ ≤ R → ‖f w‖ ≤ M) (hz : ‖z‖ ≤ R) :
+    (hroots : ∀ ζ ∈ P.roots, ζ ∈ closedBall (c i) r) (hR : 0 < R) (hrR : 5 * r ≤ R)
+    (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) (hz : z ∈ closedBall c R) :
     ‖partialModByMonic i f P z‖ ≤ 3 ^ P.natDegree * M := by
   have hlt : r < R := by rcases le_or_gt 0 r with _ | _ <;> linarith
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0 (by simpa using hR.le))
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM z hz)
   refine (norm_partialModByMonic_le hP hf hroots hlt hM hz).trans
     (mul_le_mul_of_nonneg_right ?_ hM0)
   rcases P.roots.empty_or_exists_mem with h | ⟨ζ, hζ⟩
@@ -590,7 +651,7 @@ theorem norm_partialModByMonic_le_of_five_mul_le (hP : P.Monic) (hf : Differenti
     rw [← IsAlgClosed.card_roots_eq_natDegree, h]
     simp
   -- With a root, `0 ≤ r`, so the ratio `2 (R + r) / (R - r)` lies in `[0, 3]`.
-  have hr : 0 ≤ r := (norm_nonneg ζ).trans (hroots ζ hζ)
+  have hr : 0 ≤ r := dist_nonneg.trans (mem_closedBall.mp (hroots ζ hζ))
   have ha : 2 * (R + r) / (R - r) ≤ 3 := by
     rw [div_le_iff₀ (sub_pos.2 hlt)]
     linarith

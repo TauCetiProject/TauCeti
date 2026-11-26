@@ -178,17 +178,26 @@ theorem partialDeriv_fun_smul_self [Finite ι] {c : ℂ → ℂ} (hc : Different
   simp only [update_eq_self] at h
   simpa only [update_self] using h.deriv
 
+/-- An entire scalar factor independent of the `i`-th coordinate pulls out of `∂ᵢ`. -/
+theorem partialDeriv_smul_of_update_eq [Finite ι] {φ : (ι → ℂ) → ℂ} (hφ : Differentiable ℂ φ)
+    (hf : Differentiable ℂ f) {i : ι} (hφi : ∀ z s, φ (update z i s) = φ z) :
+    partialDeriv i (fun z ↦ φ z • f z) = fun z ↦ φ z • partialDeriv i f z := by
+  have := Fintype.ofFinite ι
+  ext z
+  rw [partialDeriv_eq_deriv_update ((hφ z).fun_smul (hf z)) i,
+    partialDeriv_eq_deriv_update (hf z) i]
+  have hconst : (fun s ↦ φ (update z i s) • f (update z i s)) =
+      fun s ↦ φ z • f (update z i s) := funext fun s ↦ by rw [hφi]
+  rw [hconst, deriv_fun_const_smul_field]
+
 /-- A factor depending only on the `i`-th variable is a constant for `∂ⱼ` with `j ≠ i`:
 `∂ⱼ (c(zᵢ) f) = c(zᵢ) ∂ⱼ f`. -/
 theorem partialDeriv_fun_smul_of_ne [Finite ι] {c : ℂ → ℂ} (hc : Differentiable ℂ c)
     (hf : Differentiable ℂ f) {i j : ι} (hji : j ≠ i) :
     partialDeriv j (fun z ↦ c (z i) • f z) = fun z ↦ c (z i) • partialDeriv j f z := by
   have := Fintype.ofFinite ι
-  ext z
-  rw [partialDeriv_eq_deriv_update (by fun_prop)]
-  have h := (hasDerivAt_comp_update (s := z j) (hf (update z j (z j)))).fun_const_smul (c (z i))
-  simp only [update_eq_self] at h
-  simpa only [update_of_ne hji.symm] using h.deriv
+  exact partialDeriv_smul_of_update_eq (hc.comp (differentiable_apply i)) hf fun z s ↦ by
+    rw [update_of_ne hji.symm]
 
 /-! ### Entire functions -/
 
@@ -261,17 +270,25 @@ theorem iterate_partialDeriv_comp_update_of_ne (hf : Differentiable ℂ f) {i j 
     rw [iterate_succ_apply', iterate_succ_apply', ih,
       partialDeriv_comp_update_of_ne (differentiable_iterate_partialDeriv hf j m) hji]
 
+/-- An entire scalar factor independent of the `i`-th coordinate pulls out of `∂ᵢ^k`. -/
+theorem iterate_partialDeriv_smul_of_update_eq {φ : (ι → ℂ) → ℂ} (hφ : Differentiable ℂ φ)
+    (hf : Differentiable ℂ f) {i : ι} (hφi : ∀ z s, φ (update z i s) = φ z) (k : ℕ) :
+    (partialDeriv i)^[k] (fun z ↦ φ z • f z) = fun z ↦ φ z • (partialDeriv i)^[k] f z := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [iterate_succ_apply', iterate_succ_apply', ih,
+      partialDeriv_smul_of_update_eq hφ (differentiable_iterate_partialDeriv hf i k) hφi]
+
 /-- A factor depending only on the `i`-th variable commutes with the iterated partial derivatives
 `∂ⱼ^m` in another variable `j ≠ i`. -/
 theorem iterate_partialDeriv_fun_smul_of_ne {c : ℂ → ℂ} (hc : Differentiable ℂ c)
     (hf : Differentiable ℂ f) {i j : ι} (hji : j ≠ i) (m : ℕ) :
     (partialDeriv j)^[m] (fun z ↦ c (z i) • f z) =
       fun z ↦ c (z i) • (partialDeriv j)^[m] f z := by
-  induction m with
-  | zero => rfl
-  | succ m ih =>
-    rw [iterate_succ_apply', iterate_succ_apply', ih,
-      partialDeriv_fun_smul_of_ne hc (differentiable_iterate_partialDeriv hf j m) hji]
+  have := Fintype.ofFinite ι
+  exact iterate_partialDeriv_smul_of_update_eq (hc.comp (differentiable_apply i)) hf
+    (fun z s ↦ by rw [update_of_ne hji.symm]) m
 
 /-- **Leibniz's rule** for `∂ᵢ^(n+1)` and the factor `zᵢ - a`:
 `∂ᵢ^(n+1) ((zᵢ - a) f) = (zᵢ - a) ∂ᵢ^(n+1) f + (n + 1) ∂ᵢ^n f`. -/
@@ -317,29 +334,6 @@ theorem iterate_partialDeriv_eq_iteratedDeriv_update (hf : Differentiable ℂ f)
     (partialDeriv i)^[k] f z = iteratedDeriv k (fun s ↦ f (update z i s)) (z i) := by
   have h := congrFun (iteratedDeriv_comp_update hf i z k).symm (z i)
   rwa [update_eq_self] at h
-
-omit [CompleteSpace E] in
-/-- An entire scalar factor independent of the `i`-th coordinate pulls out of `∂ᵢ`. -/
-theorem partialDeriv_smul_of_update_eq {φ : (ι → ℂ) → ℂ} (hφ : Differentiable ℂ φ)
-    (hf : Differentiable ℂ f) {i : ι} (hφi : ∀ z s, φ (update z i s) = φ z) :
-    partialDeriv i (fun z ↦ φ z • f z) = fun z ↦ φ z • partialDeriv i f z := by
-  have := Fintype.ofFinite ι
-  ext z
-  rw [partialDeriv_eq_deriv_update ((hφ z).fun_smul (hf z)) i,
-    partialDeriv_eq_deriv_update (hf z) i]
-  have hconst : (fun s ↦ φ (update z i s) • f (update z i s)) =
-      fun s ↦ φ z • f (update z i s) := funext fun s ↦ by rw [hφi]
-  rw [hconst, deriv_fun_const_smul_field]
-
-/-- An entire scalar factor independent of the `i`-th coordinate pulls out of `∂ᵢ^k`. -/
-theorem iterate_partialDeriv_smul_of_update_eq {φ : (ι → ℂ) → ℂ} (hφ : Differentiable ℂ φ)
-    (hf : Differentiable ℂ f) {i : ι} (hφi : ∀ z s, φ (update z i s) = φ z) (k : ℕ) :
-    (partialDeriv i)^[k] (fun z ↦ φ z • f z) = fun z ↦ φ z • (partialDeriv i)^[k] f z := by
-  induction k with
-  | zero => rfl
-  | succ k ih =>
-    rw [iterate_succ_apply', iterate_succ_apply', ih,
-      partialDeriv_smul_of_update_eq hφ (differentiable_iterate_partialDeriv hf i k) hφi]
 
 /-- An entire factor independent of the `i`-th coordinate pulls out of `∂ᵢ^k`. -/
 theorem iterate_partialDeriv_mul_of_update_eq {φ h : (ι → ℂ) → ℂ} (hφ : Differentiable ℂ φ)

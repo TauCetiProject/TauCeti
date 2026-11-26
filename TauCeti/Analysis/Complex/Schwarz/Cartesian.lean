@@ -60,9 +60,9 @@ namespace TauCeti
 /-- Core `0 < n`, `0 < p`, `0 < r`, `5 * r ≤ R` regime of the weighted Cartesian Schwarz lemma. -/
 private theorem norm_le_mul_six_pow_mul_div_pow_of_five_mul_le {n : ℕ} {f : (Fin n → ℂ) → ℂ}
     (hf : Differentiable ℂ f) {E : Fin n → Finset ℂ} {k : Fin n → ℂ → ℕ} {p : ℕ}
-    (_hn : 0 < n) (hp : 0 < p) (hsum : ∀ i, p ≤ ∑ ζ ∈ E i, k i ζ)
+    (hp : 0 < p) (hsum : ∀ i, p ≤ ∑ ζ ∈ E i, k i ζ)
     {c : Fin n → ℂ} {r R M : ℝ} (hE : ∀ i, (E i : Set ℂ) ⊆ closedBall (c i) r)
-    (_hr : 0 < r) (hrR : 5 * r ≤ R)
+    (hr : 0 < r) (hrR : 5 * r ≤ R)
     (hzero : ∀ ξ : Fin n → ℂ, (∀ i, ξ i ∈ E i) →
       ∀ σ : Fin n → ℕ, (∀ i, σ i < k i (ξ i)) → mDeriv σ f ξ = 0)
     (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) {z : Fin n → ℂ} (hz : z ∈ closedBall c r) :
@@ -99,7 +99,7 @@ private theorem norm_le_mul_six_pow_mul_div_pow_of_five_mul_le {n : ℕ} {f : (F
   have hsum_deg : ∑ j : Fin n, (P j).natDegree = n * p := by simp [hP_deg]
   have hconst : (n : ℝ) * 2 ^ p * 3 ^ (n * p) ≤ (6 : ℝ) ^ (n * p) := by
     exact_mod_cast (Nat.mul_le_mul_right (3 ^ (n * p))
-      (Nat.mul_pow_le_pow_mul n (by norm_num) hp)).trans_eq (by rw [← mul_pow]; rfl)
+      (Nat.mul_pow_le_pow_mul n (by norm_num) hp)).trans_eq (by rw [← mul_pow]; norm_num)
   calc ‖f z‖ = ‖∑ i : Fin n, g i z * (P i).eval (z i)‖ := by simp [hdiv z, hf₀_zero]
     _ ≤ ∑ i : Fin n, ‖g i z * (P i).eval (z i)‖ := norm_sum_le _ _
     _ ≤ ∑ _ : Fin n, ((3 : ℝ) ^ (n * p) / R ^ p * M) * (2 * r) ^ p :=
@@ -133,12 +133,13 @@ theorem norm_le_mul_six_pow_mul_div_pow_of_le_sum {n : ℕ} {f : (Fin n → ℂ)
     (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) {z : Fin n → ℂ} (hz : z ∈ closedBall c r) :
     ‖f z‖ ≤ M * (6 ^ n * r / R) ^ p := by
   have hr : 0 ≤ r := dist_nonneg.trans (mem_closedBall.mp hz)
-  have _hR0 : 0 ≤ R := hr.trans hrR
+  have hR0 : 0 ≤ R := hr.trans hrR -- consumed by `positivity` below
   have hzR : z ∈ closedBall c R := closedBall_subset_closedBall hrR hz
   have hfz : ‖f z‖ ≤ M := hM z hzR
   have hM0 : 0 ≤ M := (norm_nonneg (f z)).trans hfz
   rcases Nat.eq_zero_or_pos p with rfl | hp
   · simpa using hfz
+  -- Needed for the `R < 5 * r` branch below, where `6 ^ n * r / R ≥ 1` requires `0 < n`.
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · have hf0 : f z = 0 := by
       have h := hzero hp z (fun i ↦ i.elim0) 0 (fun i ↦ i.elim0)
@@ -167,7 +168,7 @@ theorem norm_le_mul_six_pow_mul_div_pow_of_le_sum {n : ℕ} {f : (Fin n → ℂ)
     calc ‖f z‖ ≤ M := hfz
       _ = M * 1 := (mul_one M).symm
       _ ≤ M * (6 ^ n * r / R) ^ p := mul_le_mul_of_nonneg_left (one_le_pow₀ h1) hM0
-  exact norm_le_mul_six_pow_mul_div_pow_of_five_mul_le hf hn hp hsum hE hr_pos hR_large
+  exact norm_le_mul_six_pow_mul_div_pow_of_five_mul_le hf hp hsum hE hr_pos hR_large
     (hzero hp) hM hz
 
 /-- **Schwarz's lemma for Cartesian products (Waldschmidt, Proposition 4.7).**
@@ -190,7 +191,7 @@ theorem norm_le_mul_eighteen_pow_mul_div_pow {n : ℕ} {f : (Fin n → ℂ) → 
     (p := S₀ * S₁) (fun i ↦ by simpa [mul_comm] using Nat.mul_le_mul_left S₀ (hcard i))
     hE hrR hzero hM hz
   have hr : 0 ≤ r := dist_nonneg.trans (mem_closedBall.mp hz)
-  have _hR0 : 0 ≤ R := hr.trans hrR
+  have hR0 : 0 ≤ R := hr.trans hrR -- consumed by `positivity` below
   have hM0 : 0 ≤ M := (norm_nonneg (f z)).trans (hM z (closedBall_subset_closedBall hrR hz))
   refine hsix.trans (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) ?_ _) hM0)
   refine div_le_div_of_nonneg_right (mul_le_mul_of_nonneg_right ?_ hr) (by positivity)
