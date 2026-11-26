@@ -98,10 +98,12 @@ local notation "χ" => MonoidHom.ofClass (spinCGroup.chargeConj (realCliffordFor
 local notation "hχ" => spinCGroup.continuous_chargeConj (realCliffordForm n 0) hQ
 
 /-- Charge conjugation covers the identity rotation, `πᶜ ∘ χ = πᶜ`
-(`CliffordAlgebra.spinCGroup.comp_toSpecialOrthogonal_comp_chargeConj`): the compatibility
+(`CliffordAlgebra.spinCGroup.toSpecialOrthogonal_comp_chargeConj`): the compatibility
 hypothesis of `TauCeti.OrthonormalFrameLift.extendSpinC` for `χ`. -/
-local notation "hπχ" => spinCGroup.comp_toSpecialOrthogonal_comp_chargeConj _ hQ
-  (Subgroup.subtype (QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)))
+local notation "hπχ" => Eq.trans (MonoidHom.comp_assoc _ _ _)
+  (congrArg (MonoidHom.comp
+      (Subgroup.subtype (QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0))))
+    (spinCGroup.toSpecialOrthogonal_comp_chargeConj (realCliffordForm n 0) hQ))
 
 section Structure
 

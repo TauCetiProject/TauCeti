@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Euclidean
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Real
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Extension
 
 /-!
@@ -73,9 +72,6 @@ nonzero form `Q`, which for the standard form on `ℝⁿ` means `n ≥ 1`
   along `[s, z] ↦ (v ↦ s v s⁻¹)`.
 * `TauCeti.SpinCStructure.toFrame_smul_ofCircle`: the central circle of `Spinᶜ(n)` acts trivially
   on frames.
-* `TauCeti.CliffordAlgebra.norm_toLp_spinCGroup_toSpecialOrthogonal_apply`,
-  `TauCeti.CliffordAlgebra.continuous_spinCGroup_toSpecialOrthogonal_apply`: the norm and
-  continuity hypotheses for extending a lift to a `Spinᶜ` structure.
 
 ## References
 
@@ -164,29 +160,6 @@ end SpinCStructure
 section ExtendSpinC
 
 /-! ### The `Spinᶜ` structure induced by a lift -/
-
-/-- **The rotations of `Spinᶜ(n)` preserve the Euclidean norm**: the norm hypothesis of
-`TauCeti.OrthonormalFrameLift.extend` for the rotation homomorphism `Spinᶜ(n) → SO(n)`, used by
-every extension to a `Spinᶜ` structure. -/
-theorem CliffordAlgebra.norm_toLp_spinCGroup_toSpecialOrthogonal_apply [NeZero n]
-    (g : spinCGroup (realCliffordForm n 0)
-      (QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm n 0)))
-    (v : Fin n → ℝ) :
-    ‖WithLp.toLp 2 ((QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)).subtype.comp
-      (spinCGroup.toSpecialOrthogonal _ _) g v)‖ = ‖WithLp.toLp 2 v‖ :=
-  CliffordAlgebra.norm_toLp_specialOrthogonalGroup_realCliffordForm_apply n _ v
-
-/-- **Rotating a fixed vector is continuous in the element of `Spinᶜ(n)`**: the continuity
-hypothesis of `TauCeti.OrthonormalFrameLift.extend` for the rotation homomorphism
-`Spinᶜ(n) → SO(n)`, used by every extension to a `Spinᶜ` structure. -/
-theorem CliffordAlgebra.continuous_spinCGroup_toSpecialOrthogonal_apply [NeZero n]
-    (v : Fin n → ℝ) :
-    Continuous fun g : spinCGroup (realCliffordForm n 0)
-        (QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm n 0)) ↦
-      (QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)).subtype.comp
-        (spinCGroup.toSpecialOrthogonal _ _) g v :=
-  (CliffordAlgebra.continuous_specialOrthogonalGroup_realCliffordForm_apply n v).comp
-    (spinCGroup.continuous_toSpecialOrthogonal_pi _ _)
 
 variable {V : X → Type} [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
   [TopologicalSpace (TotalSpace F V)] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F V]

@@ -83,7 +83,7 @@ Taubes's identification `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` at the l
   `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_chargeConj`: charge conjugation inverts the
   determinant character and covers the identity rotation;
   `CliffordAlgebra.spinCGroup.chargeConj_comp_chargeConj` and
-  `CliffordAlgebra.spinCGroup.comp_toSpecialOrthogonal_comp_chargeConj` are the involution and
+  `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_comp_chargeConj` are the involution and
   rotation identities as identities of homomorphisms.
 * `CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`,
   `CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`: charge conjugation is twisting by the
@@ -553,17 +553,13 @@ theorem chargeConj_comp_chargeConj :
       MonoidHom.id _ :=
   (chargeConj Q hQ).toMonoidHom_comp_toMonoidHom_symm
 
-/-- **Charge conjugation covers the identity rotation**, as a homomorphism: any homomorphism `f`
-out of `SO(Q)` satisfies `f ∘ π ∘ chargeConj = f ∘ π`, where `π : Spinᶜ(Q) → SO(Q)` is the
-rotation homomorphism. For `f` the inclusion into the linear automorphisms, this is the
-compatibility that makes the charge conjugate of a `Spinᶜ` structure a `Spinᶜ` structure on the
-same oriented bundle. -/
-theorem comp_toSpecialOrthogonal_comp_chargeConj {G : Type*} [Group G]
-    (f : specialOrthogonalGroup Q →* G) :
-    (f.comp (toSpecialOrthogonal Q hQ)).comp
-        (chargeConj Q hQ : spinCGroup Q hQ →* spinCGroup Q hQ) =
-      f.comp (toSpecialOrthogonal Q hQ) :=
-  MonoidHom.ext fun x ↦ congrArg f (toSpecialOrthogonal_chargeConj Q hQ x)
+/-- **Charge conjugation covers the identity rotation**, as a homomorphism: `π ∘ chargeConj = π`,
+where `π : Spinᶜ(Q) → SO(Q)` is the rotation homomorphism. This is the compatibility that makes
+the charge conjugate of a `Spinᶜ` structure a `Spinᶜ` structure on the same oriented bundle. -/
+theorem toSpecialOrthogonal_comp_chargeConj :
+    (toSpecialOrthogonal Q hQ).comp (chargeConj Q hQ : spinCGroup Q hQ →* spinCGroup Q hQ) =
+      toSpecialOrthogonal Q hQ :=
+  MonoidHom.ext (toSpecialOrthogonal_chargeConj Q hQ)
 
 /-- **Charge conjugation is twisting by the inverse determinant**:
 `chargeConj x = x [1, (det x)⁻¹]`. Since `[s, z⁻¹] = [s, z] [1, (z²)⁻¹]`, the conjugate of a
