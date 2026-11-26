@@ -721,23 +721,11 @@ theorem sectionClassicalPrincipalSymbol_mvfderiv_apply {k : ℕ}
   refine (t'.symmL_continuousLinearMapAt (R := ℂ) hx' _).symm.trans
     ((congrArg (t'.symmL ℂ x) ((SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2
       fun ℓ ↦ ?_)).trans (t'.symmL_continuousLinearMapAt (R := ℂ) hx' _))
-  -- The commutators of the matrix entry of `P` are the matrix entries of the commutators of `P`,
-  -- since the entry sandwiches `P` between maps linear over the complex-valued functions.
-  have hentry (Q : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ]
-      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
-      sectionEntry t ρ hρt v t' ρ hρt' ℓ Q = t'.cutoffFrameCoeff ρ hρt' ℓ ∘ₗ Q ∘ₗ
-        (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ρ hρt v)).restrictScalars ℂ := by
-    ext h y
-    simp
-  have hcomm : (smulCommutator ℂ g ^ k) (sectionEntry t ρ hρt v t' ρ hρt' ℓ P) =
-      sectionEntry t ρ hρt v t' ρ hρt' ℓ R := by
-    rw [hentry, hentry,
-      smulCommutator_pow_comp_comp (a := g) (fun h ↦ by simp [mul_smul]) fun h ↦ by
-        ext y; simp; ring]
   have h₁ := classicalPrincipalSymbol_sectionEntry hmem t ρ hρt v t' ρ hρt' ℓ x
     (mvfderiv 𝓘(ℝ, CoordinateSpace n) f x)
   rw [classicalPrincipalSymbol_mvfderiv
-      (sectionEntry_mem_differentialOperators t ρ hρt v t' ρ hρt' ℓ hP) f hf, hcomm,
+      (sectionEntry_mem_differentialOperators t ρ hρt v t' ρ hρt' ℓ hP) f hf,
+    smulCommutator_pow_sectionEntry,
     sectionEntry_apply, one_smul, apply_eq_apply_of_map_smul hR hsx, hρx, hv] at h₁
   simpa using h₁.symm
 
