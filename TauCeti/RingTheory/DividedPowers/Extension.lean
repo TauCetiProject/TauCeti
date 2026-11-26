@@ -766,8 +766,9 @@ private theorem mk'_dpow_eq_of_mk'_eq (hI : DividedPowers I) (S : Submonoid A) (
     {s t : S} (hxy : IsLocalization.mk' B x s = IsLocalization.mk' B y t) (n : ℕ) :
     IsLocalization.mk' B (hI.dpow n x) (s ^ n) = IsLocalization.mk' B (hI.dpow n y) (t ^ n) := by
   obtain ⟨c, hc⟩ := IsLocalization.eq.mp hxy
-  have hdp := congrArg (hI.dpow n) (show ((c : A) * t) * x = ((c : A) * s) * y by
-    rw [mul_assoc, mul_assoc, hc])
+  have hmul : ((c : A) * t) * x = ((c : A) * s) * y := by
+    rw [mul_assoc, mul_assoc, hc]
+  have hdp := congrArg (hI.dpow n) hmul
   rw [hI.dpow_mul hx, hI.dpow_mul hy] at hdp
   refine IsLocalization.eq.mpr ⟨c ^ n, ?_⟩
   simp only [SubmonoidClass.coe_pow]
