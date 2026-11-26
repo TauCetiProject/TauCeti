@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Prod
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Trajectories of the continuation field of a constant path
@@ -25,7 +26,8 @@ with an adapted pseudo-gradient `X` of `f` in the space direction the field is t
 `V(x, t) = (X x, C t (1 - t²))` (`TauCeti.constantContinuationField`).
 
 This file determines all of its trajectories between the critical points `(p, 0)` and `(q, 1)` of
-the slab, on a compact boundaryless manifold `M` and for `C > 0`.
+the slab, on a compact boundaryless manifold `M` and for `C > 0`. The field is as smooth as `X`
+(`TauCeti.contMDiff_constantContinuationField`).
 
 * **Product structure.** A curve is an integral curve of `V` exactly when its components are an
   integral curve of `X` and a negative gradient trajectory of the base potential
@@ -51,6 +53,7 @@ the slab, on a compact boundaryless manifold `M` and for `C > 0`.
 ## Main declarations
 
 * `TauCeti.constantContinuationField`: the field `(X x, C t (1 - t²))` on `M × ℝ`.
+* `TauCeti.contMDiff_constantContinuationField`: it is as smooth as `X`.
 * `TauCeti.isMIntegralCurve_constantContinuationField_iff`: its integral curves are pairs.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
@@ -111,6 +114,22 @@ theorem constantContinuationField_fst (X : (x : M) → TangentSpace I x) (C : �
 theorem constantContinuationField_snd (X : (x : M) → TangentSpace I x) (C : ℝ) (z : M × ℝ) :
     (constantContinuationField X C z).2 = C * z.2 * (1 - z.2 ^ 2) :=
   (Manifold.prodVectorField_snd _ _ z).trans (by rw [gradient_intervalBasePotential]; ring)
+
+/-- **The continuation field of a constant path is as smooth as `X`**: if the section
+`x ↦ (x, X x)` of the tangent bundle of `M` is `C^n`, so is the section `z ↦ (z, V z)` of the
+tangent bundle of `M × ℝ`, for `V = (X x, C t (1 - t²))`. For a smooth pseudo-gradient this is the
+smoothness under which `V` has transition diffeomorphisms. -/
+theorem contMDiff_constantContinuationField [IsManifold I 1 M] {X : (x : M) → TangentSpace I x}
+    {n : WithTop ℕ∞} (hX : ContMDiff I I.tangent n fun x ↦ (⟨x, X x⟩ : TangentBundle I M))
+    (C : ℝ) :
+    ContMDiff (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)).tangent n
+      fun z ↦ (⟨z, constantContinuationField X C z⟩ : TangentBundle (I.prod 𝓘(ℝ)) (M × ℝ)) := by
+  have hv : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n fun t : ℝ ↦ -∇ (intervalBasePotential C) t := by
+    simp only [gradient_intervalBasePotential]
+    exact ContDiff.contMDiff (by fun_prop)
+  rw [constantContinuationField_def]
+  exact Manifold.contMDiff_prodVectorField hX
+    (contMDiff_tangentBundle_mk_modelSpace contMDiff_id hv)
 
 /-- **The trajectories of the continuation field of a constant path are pairs**: a curve in
 `M × ℝ` is an integral curve of `constantContinuationField X C` exactly when its space component is
