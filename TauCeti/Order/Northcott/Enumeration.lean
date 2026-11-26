@@ -9,7 +9,6 @@ public import Mathlib.Data.Set.Card
 public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Order.OrderIsoNat
 public import Mathlib.SetTheory.Cardinal.Order
-import TauCeti.Data.Set.Card
 
 /-!
 # Enumerating a family in nondecreasing order
@@ -29,8 +28,7 @@ with the finiteness of the multiplicities.
 
 The enumeration sorts `ι` lexicographically by the value of `f` and, among indices with equal
 values, by an arbitrary well-ordering of `ι`; each index is then sent to the number of indices
-below it (`ncardIioOrderEmbedding`), which is finite. For any linear order whose strict initial
-segments `Set.Iio a` are finite, `ncardIioOrderEmbedding` embeds it order-preservingly into `ℕ`.
+below it, which is finite.
 -/
 
 public section
@@ -38,21 +36,6 @@ public section
 namespace TauCeti
 
 open Filter Set
-
-/-- When every strict initial segment `Set.Iio a` of a linear order is finite, the rank map
-`a ↦ (Set.Iio a).ncard` is an order embedding into `ℕ`. -/
-noncomputable def ncardIioOrderEmbedding {α : Type*} [LinearOrder α]
-    (hfin : ∀ a : α, (Set.Iio a).Finite) : α ↪o ℕ :=
-  OrderEmbedding.ofStrictMono (fun a ↦ (Set.Iio a).ncard) fun a b hab ↦ by
-    simpa [Set.Iio] using Set.ncard_sep_lt_lt_ncard_sep_lt (s := Set.univ) (f := id)
-      (Set.mem_univ a) hab (by simpa [Set.Iio] using hfin b)
-
-/-- Evaluation of `TauCeti.ncardIioOrderEmbedding`. -/
-@[simp]
-theorem ncardIioOrderEmbedding_apply {α : Type*} [LinearOrder α]
-    (hfin : ∀ a : α, (Set.Iio a).Finite) (a : α) :
-    ncardIioOrderEmbedding hfin a = (Set.Iio a).ncard :=
-  (rfl)
 
 /-- **Nondecreasing enumeration.** If `f : ι → α` has finite sublevel sets on an infinite type
 `ι`, there is a bijection `e : ℕ ≃ ι` along which `f` is nondecreasing: `f (e 0) ≤ f (e 1) ≤ ⋯`.
@@ -66,17 +49,27 @@ theorem exists_equiv_monotone_comp_of_finite_setOf_le {ι α : Type*} [Infinite 
     embeddingToCardinal.injective (Prod.ext_iff.1 (toLex.injective h)).2
   have hkey_le {i j : ι} (h : key i ≤ key j) : f i ≤ f j := by
     simpa only [key, ofLex_toLex] using Prod.Lex.monotone_fst _ _ h
-  let : LinearOrder ι := LinearOrder.lift' key hkey
-  let r : ι ↪o ℕ := ncardIioOrderEmbedding fun i ↦
+  have hfin (i : ι) : {j | key j < key i}.Finite :=
     (hf (f i)).subset fun _ hj ↦ hkey_le (le_of_lt hj)
-  have : Infinite (range r) := (infinite_range_of_injective r.injective).to_subtype
+  -- The rank of `i` is the number of indices below it.
+  let r : ι → ℕ := fun i ↦ {j | key j < key i}.ncard
+  have hr {i j : ι} (h : key i < key j) : r i < r j :=
+    ncard_lt_ncard ⟨fun _ (hk : key _ < key i) ↦ hk.trans h,
+      fun hsub ↦ lt_irrefl (key i) (hsub h)⟩ (hfin j)
+  have hr_le {i j : ι} (h : r i ≤ r j) : key i ≤ key j := le_of_not_gt fun hlt ↦
+    (hr hlt).not_ge h
+  have hr_inj : Function.Injective r := fun i j h ↦
+    hkey (le_antisymm (hr_le h.le) (hr_le h.ge))
+  have : Infinite (range r) := (infinite_range_of_injective hr_inj).to_subtype
   let e : ℕ ≃ ι := (Nat.Subtype.orderIsoOfNat (range r)).toEquiv.trans
-    (Equiv.ofInjective r r.injective).symm
+    (Equiv.ofInjective r hr_inj).symm
   have hre (m : ℕ) : r (e m) = Nat.Subtype.orderIsoOfNat (range r) m :=
-    Equiv.apply_ofInjective_symm r.injective _
-  refine ⟨e, fun m n hmn ↦ hkey_le (r.le_iff_le.mp ?_)⟩
-  rw [hre, hre]
-  exact (Nat.Subtype.orderIsoOfNat (range r)).monotone hmn
+    Equiv.apply_ofInjective_symm hr_inj _
+  refine ⟨e, fun m n hmn ↦ ?_⟩
+  have hkmn : key (e m) ≤ key (e n) := hr_le (by
+    rw [hre, hre]
+    exact (Nat.Subtype.orderIsoOfNat (range r)).monotone hmn)
+  exact hkey_le hkmn
 
 /-- Along any injective enumeration `e : ℕ → ι`, a family with finite sublevel sets tends to
 infinity. -/

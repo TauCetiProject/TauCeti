@@ -184,10 +184,6 @@ theorem airyBi_zero_eq_cpow_mul_airyAi_zero : airyBi 0 = (3 : ℂ) ^ (1 / 2 : �
   rw [airyAi_zero, airyBi_zero, ← mul_div_assoc, ← cpow_add _ _ (by norm_num)]
   norm_num
 
-/-- `Ai` does not vanish at the origin. -/
-theorem airyAi_zero_ne_zero : airyAi 0 ≠ 0 :=
-  right_ne_zero_of_mul (airyBi_zero_eq_cpow_mul_airyAi_zero ▸ airyBi_zero_ne_zero)
-
 /-- `Bi′(0) = −√3 Ai′(0)`. -/
 theorem deriv_airyBi_zero_eq_neg_cpow_mul_deriv_airyAi_zero :
     deriv airyBi 0 = -(3 : ℂ) ^ (1 / 2 : ℂ) * deriv airyAi 0 := by
@@ -196,10 +192,5 @@ theorem deriv_airyBi_zero_eq_neg_cpow_mul_deriv_airyAi_zero :
   have h : (1 / 6 : ℂ) = 1 / 2 + -1 / 3 := by norm_num
   rw [deriv_airyAi_zero, deriv_airyBi_zero, h, cpow_add _ _ (by norm_num)]
   ring
-
-/-- `Ai′` does not vanish at the origin. -/
-theorem deriv_airyAi_zero_ne_zero : deriv airyAi 0 ≠ 0 :=
-  right_ne_zero_of_mul
-    (deriv_airyBi_zero_eq_neg_cpow_mul_deriv_airyAi_zero ▸ deriv_airyBi_zero_ne_zero)
 
 end TauCeti
