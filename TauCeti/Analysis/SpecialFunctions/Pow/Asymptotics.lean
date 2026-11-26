@@ -41,9 +41,8 @@ particular every multiple `A * h ^ θ`, falls below any positive constant. This 
 rates in a small scale `h` become inequalities for all small `h`. Power laws multiply: if
 `f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then `f * g = O(h ^ (a + b))`, and a bound
 `f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`; at `+∞` it weakens to
-`f = O(x ^ c)` for every `c ≥ a`. A power law `g = O(u ^ p)` also survives rescaling the variable,
-`t ↦ g (x t)` being `O(t ^ p)` for every `x > 0`. Likewise, near a point `w` of a normed
-group, a bound `f = O(‖x - w‖ ^ a)` within a set avoiding `w` weakens to `f = O(‖x - w‖ ^ c)` for
+`f = O(x ^ c)` for every `c ≥ a`. Likewise, near a point `w` of a normed group, a bound
+`f = O(‖x - w‖ ^ a)` within a set avoiding `w` weakens to `f = O(‖x - w‖ ^ c)` for
 every `c ≤ a`.
 
 ## Complex powers of a positive real variable
@@ -319,16 +318,6 @@ theorem IsBigO.atTop_rpow_of_le {R : Type*} [Norm R] {f : ℝ → R} {a c : ℝ}
   filter_upwards [eventually_ge_atTop 1] with x hx
   rw [Real.norm_of_nonneg (Real.rpow_nonneg (zero_le_one.trans hx) a)]
   exact Real.rpow_le_rpow_of_exponent_le hx h
-
-/-- Power laws survive rescaling of the variable: if `g = O(u ^ p)` along `l`, `x > 0`, and
-`t ↦ x t` tends to `l` along a filter `l'` eventually in `(0, ∞)`, then `t ↦ g (x t)` is
-`O(t ^ p)` along `l'`. -/
-theorem IsBigO.comp_mul_left_rpow {R : Type*} [Norm R] {l l' : Filter ℝ} {g : ℝ → R} {p x : ℝ}
-    (hg : g =O[l] fun u ↦ u ^ p) (hx : 0 < x) (hl : Tendsto (x * ·) l' l)
-    (hpos : ∀ᶠ t in l', 0 < t) : (fun t ↦ g (x * t)) =O[l'] fun t ↦ t ^ p := by
-  refine (hg.comp_tendsto hl).trans (IsBigO.of_bound (x ^ p) (hpos.mono fun t ht ↦ ?_))
-  simp only [Function.comp_apply, Real.norm_eq_abs, Real.mul_rpow hx.le ht.le]
-  rw [abs_mul, abs_of_pos (Real.rpow_pos_of_pos hx p)]
 
 /-- Power laws in the distance weaken near a point: if `f = O(‖x - w‖ ^ a)` as `x → w` within a
 set `s` that does not contain `w`, then `f = O(‖x - w‖ ^ c)` there for every `c ≤ a`. -/

@@ -46,11 +46,12 @@ A bound `‖g x‖ ≤ A / ‖x - c‖ ^ n` outside a ball about any centre `c` 
 gives `g = O(x⁻¹ ^ n)` at infinity: the decay rate of an inverse power does not depend on the
 centre.
 
-A bound `F = O(x ^ r)` at infinity survives the dilation `x ↦ c x` for `c > 0`. This is how
-rapid decay at infinity, `O(x ^ r)` for every `r`, passes to rescaled functions such as the
-theta kernels of a lattice at a level. A bound `u n = O(n ^ r)` on a sequence likewise passes to
-the step function `t ↦ u ⌊t⌋₊` as `O(t ^ r)`, since `⌊t⌋₊ ∼ t`; this is how a bound on the
-partial sums of a sequence enters an integral against the partial-sum step function.
+A power bound `g = O(u ^ p)` survives the dilation `t ↦ x t` for `x > 0`, at infinity as well
+as at `0+`. This is how rapid decay at infinity, `O(x ^ r)` for every `r`, passes to rescaled
+functions such as the theta kernels of a lattice at a level. A bound `u n = O(n ^ r)` on a
+sequence likewise passes to the step function `t ↦ u ⌊t⌋₊` as `O(t ^ r)`, since `⌊t⌋₊ ∼ t`;
+this is how a bound on the partial sums of a sequence enters an integral against the partial-sum
+step function.
 
 On a set where a real function `g` is nonnegative, `f = O(g)` uniformly on the set means
 `‖f x‖ ≤ c * g x` there for a constant `c`, with no norm on `g`. This is the form in which a big-O
@@ -95,8 +96,9 @@ resolvent-type functions, which are `O(1 / y)` there.
   `k ≥ 1` implies `w x = O(‖x‖)` there.
 * `Asymptotics.isBigO_inv_pow_cobounded_of_norm_le`: a bound `‖g x‖ ≤ A / ‖x - c‖ ^ n` for
   `‖x - c‖ > R` gives `g = O(x⁻¹ ^ n)` at infinity.
-* `Asymptotics.IsBigO.comp_const_mul_rpow`: `F = O(x ^ r)` at infinity implies
-  `F (c x) = O(x ^ r)` for `c > 0`.
+* `Asymptotics.IsBigO.comp_mul_left_rpow`: `g = O(u ^ p)` along `l` implies
+  `g (x t) = O(t ^ p)` along any `l'` that `t ↦ x t` maps to `l` and that lies eventually in
+  `(0, ∞)`, for `x > 0`.
 * `Asymptotics.IsBigO.comp_natFloor_rpow`: `u n = O(n ^ r)` implies `u ⌊t⌋₊ = O(t ^ r)` as
   `t → ∞`.
 * `Asymptotics.isLittleO_smul_const_self_iff`: if `‖ψ‖` is eventually nonnegative and frequently
@@ -213,15 +215,15 @@ theorem isBigO_inv_pow_cobounded_of_norm_le {𝕜 E : Type*} [NormedDivisionRing
   exact hgc.trans ((hx.inv_rev ((Bornology.eventually_ne_cobounded 0).mono
     fun _ h h0 ↦ absurd h0 h)).pow n)
 
-/-- **A power bound at infinity survives a dilation.** If `F = O(x ^ r)` as `x → ∞`, then
-`F (c x) = O(x ^ r)` for every `c > 0`. -/
-theorem IsBigO.comp_const_mul_rpow {E : Type*} [Norm E] {F : ℝ → E} {r c : ℝ}
-    (hF : F =O[atTop] (· ^ r)) (hc : 0 < c) :
-    (fun x ↦ F (c * x)) =O[atTop] (· ^ r) := by
-  refine (hF.comp_tendsto (tendsto_id.const_mul_atTop hc)).trans ?_
-  refine ((isBigO_refl (fun x : ℝ ↦ x ^ r) atTop).const_mul_left (c ^ r)).congr' ?_ .rfl
-  filter_upwards [eventually_ge_atTop 0] with x hx
-  simp [Real.mul_rpow hc.le hx]
+/-- **A power bound survives a dilation of the variable.** If `g = O(u ^ p)` along `l`, `x > 0`,
+and `t ↦ x t` tends to `l` along a filter `l'` eventually in `(0, ∞)`, then `t ↦ g (x t)` is
+`O(t ^ p)` along `l'`. For instance `l = l' = atTop`, or `l = l' = 𝓝[>] 0`. -/
+theorem IsBigO.comp_mul_left_rpow {R : Type*} [Norm R] {l l' : Filter ℝ} {g : ℝ → R} {p x : ℝ}
+    (hg : g =O[l] fun u ↦ u ^ p) (hx : 0 < x) (hl : Tendsto (x * ·) l' l)
+    (hpos : ∀ᶠ t in l', 0 < t) : (fun t ↦ g (x * t)) =O[l'] fun t ↦ t ^ p := by
+  refine (hg.comp_tendsto hl).trans (IsBigO.of_bound (x ^ p) (hpos.mono fun t ht ↦ ?_))
+  simp only [Function.comp_apply, Real.norm_eq_abs, Real.mul_rpow hx.le ht.le]
+  rw [abs_mul, abs_of_pos (Real.rpow_pos_of_pos hx p)]
 
 /-- **A power bound on a sequence passes to its step function.** If `u n = O(n ^ r)` as
 `n → ∞`, then `u ⌊t⌋₊ = O(t ^ r)` as `t → ∞`, for every real exponent `r`. -/
