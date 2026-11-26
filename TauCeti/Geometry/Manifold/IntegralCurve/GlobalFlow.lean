@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Flow.Complete
 public import Mathlib.Dynamics.Flow
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Diffeomorphism.Group
-public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -35,9 +34,7 @@ use is a compact invariant region of a field that blows up elsewhere, such as th
 * `TauCeti.apply_globalFlow_eq_sub`: a function `f` with `df(v) = -1` on a band decreases at unit
   speed along the flow while the flow stays in the band;
   `TauCeti.apply_globalFlow_eq_sub_of_forall_mem`: the same forward or backward up to a time `s`,
-  along a flow line staying where `df(v) = -1` between `0` and `s`;
-  `TauCeti.isRegularValue_of_apply_globalFlow_eq_add`: conversely, the values through which the
-  flow translates a function at unit speed are regular.
+  along a flow line staying where `df(v) = -1` between `0` and `s`.
 * `TauCeti.globalFlow_eq_of_isMIntegralCurve`: every integral curve is an orbit.
 * `TauCeti.forall_globalFlow_eq_self_iff`, `TauCeti.exists_globalFlow_ne_self`: a point is fixed at
   all times exactly when the field vanishes there.
@@ -175,17 +172,6 @@ theorem apply_globalFlow_eq_sub_of_forall_mem {f : M → ℝ} {U : Set M}
     left_mem_uIcc right_mem_uIcc
   rw [Flow.map_zero_apply, add_zero] at hconst
   linarith
-
-/-- **Values swept by a flow are regular.** If `f` is differentiable on the band `a < f < b` and
-the flow `ψ` of `v` translates `f` at unit speed there, `f (ψ_t x) = f x + t` whenever `f x` and
-`f x + t` lie in `(a, b)`, then every value in `(a, b)` is a regular value of `f`. -/
-theorem isRegularValue_of_apply_globalFlow_eq_add {f : M → ℝ} {a b : ℝ}
-    (hf : ∀ x, f x ∈ Ioo a b → MDifferentiableAt I 𝓘(ℝ) f x)
-    (hfv : ∀ x t, f x ∈ Ioo a b → f x + t ∈ Ioo a b →
-      f (globalFlow v hv hcomplete t x) = f x + t)
-    {c : ℝ} (hc : c ∈ Ioo a b) : IsRegularValue I 𝓘(ℝ) f c :=
-  isRegularValue_of_apply_flowOf_eq_add hv hf
-    (fun x t hx hxt ↦ by rw [flowOf_eq_globalFlow hv hcomplete]; exact hfv x t hx hxt) hc
 
 /-- Every integral curve of the field is an orbit of the flow. -/
 theorem globalFlow_eq_of_isMIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCurve γ v) (t : ℝ) :

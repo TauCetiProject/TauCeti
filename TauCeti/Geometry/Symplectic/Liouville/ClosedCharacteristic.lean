@@ -198,7 +198,7 @@ theorem hasContractibleClosedCharacteristic {ε : ℝ}
     obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective z
     exact (congrArg F (hgγ s)).trans (hlev s)
   obtain ⟨g', hg', hgg'⟩ := exists_nullhomotopic_flowOf_comp hZ hg
-    (fun z u hu ↦ (hFZ _ _ (by rw [hgF]; exact hc') (by rw [hgF]; exact hJ u hu)).1)
+    (fun z ↦ (hFZ _ t (by rw [hgF]; exact hc') (by simpa [hgF] using hJ 1 ⟨zero_le_one, le_rfl⟩)).1)
     (fun z u hu ↦ hW _ _ (g z).property (by rw [hgF]; exact hc') (by rw [hgF]; exact hJ u hu))
   refine (SmoothTwoForm.hasContractibleClosedCharacteristicOfPeriodLE_of_isMIntegralCurve_smul hT
     (Real.exp_pos (-t)).ne' hγt ⟨s₀, fun h ↦ hs₀ ?_⟩ (fun s ↦ (hdom s).2)
@@ -256,9 +256,7 @@ theorem exists_hasContractibleClosedCharacteristic_image_flowOf {ε : ℝ} (hε 
   have hψ := flowOf_eq_globalFlow hZ1 hc
   -- Every value in the band is regular: `F` grows at unit speed along the flow, so `dF(Z) = 1`.
   have hreg : ∀ c' ∈ Ioo (c - ε) (c + ε), IsRegularValue I 𝓘(ℝ) F c' :=
-    fun _ ↦ isRegularValue_of_apply_globalFlow_eq_add hZ1 hc hF fun x t hx hxt ↦ by
-      rw [← hψ]
-      exact hFZ x t hx hxt
+    fun _ ↦ isRegularValue_of_apply_flowOf_eq_add hZ1 hF hFZ
   -- Some nearby level `F⁻¹(c')` carries a closed characteristic contractible in `W`.
   obtain ⟨c', hc'ε, hcc'⟩ := h.exists_hasContractibleClosedCharacteristic hε hreg
   -- Flow it back to the level `c`, for time `t = c - c'`.

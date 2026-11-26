@@ -332,13 +332,13 @@ theorem isOpen_setOf_mem_flowDomain_and_flowOf_mem [IsManifold I 1 M]
   (contMDiffOn_flowOf le_rfl hv).continuousOn.isOpen_inter_preimage (isOpen_flowDomain hv) hU
 
 /-- **Flowing a nullhomotopic map.** On a complete normed model space, let `g : X → W` be
-nullhomotopic in `W`, and let the maximal flow of a `C¹` field `v` be defined and stay in `W` at
-the times `u t`, `u ∈ [0, 1]`, from every point of `g`. Then `x ↦ φₜ(g x)` is nullhomotopic in
-`W`: the times `u t` move `g` to it inside `W`. -/
+nullhomotopic in `W`, and let the maximal flow of a `C¹` field `v` be defined at time `t` and stay
+in `W` at the times `u t`, `u ∈ [0, 1]`, from every point of `g`. Then `x ↦ φₜ(g x)` is
+nullhomotopic in `W`: the times `u t` move `g` to it inside `W`. -/
 theorem exists_nullhomotopic_flowOf_comp [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {X : Type*} [TopologicalSpace X]
     {W : Set M} {g : C(X, W)} (hg : g.Nullhomotopic) {t : ℝ}
-    (hdom : ∀ x, ∀ u ∈ Icc (0 : ℝ) 1, (u * t, (g x : M)) ∈ flowDomain v)
+    (hdom : ∀ x, (t, (g x : M)) ∈ flowDomain v)
     (hmem : ∀ x, ∀ u ∈ Icc (0 : ℝ) 1, flowOf v (u * t) (g x) ∈ W) :
     ∃ g' : C(X, W), g'.Nullhomotopic ∧ ∀ x, (g' x : M) = flowOf v t (g x) := by
   have hcont : ContinuousOn (fun p : ℝ × M ↦ flowOf v p.1 p.2) (flowDomain v) :=
@@ -348,7 +348,9 @@ theorem exists_nullhomotopic_flowOf_comp [IsManifold I 1 M] {v : (x : M) → Tan
         ⟨flowOf v ((p.1 : ℝ) * t) (g p.2), hmem p.2 p.1 p.1.property⟩
       continuous_toFun := (hcont.comp_continuous
         (f := fun p : unitInterval × X ↦ ((p.1 : ℝ) * t, (g p.2 : M))) (by fun_prop)
-        fun p ↦ hdom p.2 p.1 p.1.property).subtype_mk _ }
+        fun p ↦ uIcc_subset_setOf_mem_flowDomain (hdom p.2)
+          ((convex_uIcc 0 t).smul_mem_of_zero_mem left_mem_uIcc right_mem_uIcc
+            p.1.property)).subtype_mk _ }
   let g' : C(X, W) := ⟨fun x ↦ H (1, x), by fun_prop⟩
   let hH : ContinuousMap.Homotopy g g' :=
     { toContinuousMap := H
