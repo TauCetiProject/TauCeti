@@ -17,7 +17,8 @@ constructs a *collar projection* of `M`: a map `ρ : M → M` from an open neigh
 boundary onto the boundary, fixing the boundary, which is smooth when read on the double through
 the fold (`TauCeti.SchottkyDouble.exists_collarProjection`). These are the collar hypotheses of
 `TauCeti.SchottkyDouble.contMDiffOn_coordChange_doubledBundleCore`, under which a complex core
-constant along the fibres of `ρ` has a smooth double.
+constant along the fibres of `ρ` has a smooth double. The map `ρ` is also continuous on all of `M`,
+so cores can be pulled back along it.
 
 The construction goes through the double. A smooth defining function `g` of the seam which is odd
 under `τ` (`TauCeti.SchottkyDouble.exists_odd_definingFunction`) has the seam as a compact regular
@@ -38,7 +39,8 @@ which lies in the first copy; so `fold ∘ r`, hence `ρ ∘ fold`, is smooth on
 * `TauCeti.SchottkyDouble.exists_retraction_seam`: a smooth retraction of a neighbourhood of the
   seam onto the seam, invariant under the sheet swap.
 * `TauCeti.SchottkyDouble.exists_collarProjection`: a collar projection of `M` which is smooth
-  when read on the double through the fold, and smooth on `M`.
+  when read on the double through the fold, smooth on a neighbourhood `U` of the boundary, and
+  continuous on `M`.
 
 ## References
 
@@ -90,13 +92,15 @@ theorem exists_retraction_seam (hA : IsCompact A) :
   exact ⟨(hzero _).1 h0, by simpa only [coe_swapDiffeomorph] using hτ⟩
 
 /-- **A collar projection through the double.** If the boundary `A` of `M` is compact, there are an
-open neighbourhood `U` of `A` and a map `ρ : M → M` which maps `U` into `A`, fixes `A` pointwise,
-is smooth on `U`, and is smooth on `fold⁻¹ U` when read on the Schottky double through the fold.
+open neighbourhood `U` of `A` and a continuous map `ρ : M → M` which maps `U` into `A`, fixes `A`
+pointwise, is smooth on `U`, and is smooth on `fold⁻¹ U` when read on the Schottky double through
+the fold.
 
 The last property is the regularity required of a collar projection by
 `TauCeti.SchottkyDouble.contMDiffOn_coordChange_doubledBundleCore`. -/
 theorem exists_collarProjection (hA : IsCompact A) :
-    ∃ U : Set M, IsOpen U ∧ A ⊆ U ∧ ∃ ρ : M → M, MapsTo ρ U A ∧ (∀ x ∈ A, ρ x = x) ∧
+    ∃ U : Set M, IsOpen U ∧ A ⊆ U ∧ ∃ ρ : M → M, Continuous ρ ∧ MapsTo ρ U A ∧
+      (∀ x ∈ A, ρ x = x) ∧
       ContMDiffOn 𝓘(ℝ, ℂ) closedUpperHalfPlaneModel ∞ (ρ ∘ DoubleAlong.fold A)
         (DoubleAlong.fold A ⁻¹' U) ∧
       ContMDiffOn closedUpperHalfPlaneModel closedUpperHalfPlaneModel ∞ ρ U := by
@@ -121,8 +125,9 @@ theorem exists_collarProjection (hA : IsCompact A) :
       (hrU.mono_right (image_subset_range _ _))).congr fun z hz ↦ by
         simp only [Function.comp_apply, hr_inl z hz]
   refine ⟨U, hW.preimage (DoubleAlong.inl A).continuous, fun a ha ↦ hKW ⟨a, ha, rfl⟩,
-    fun x ↦ DoubleAlong.fold A (r (DoubleAlong.inl A x)), fun x hx ↦ ?_, fun a ha ↦ ?_, hfold,
-    ?_⟩
+    fun x ↦ DoubleAlong.fold A (r (DoubleAlong.inl A x)),
+    (DoubleAlong.fold A).continuous.comp (hr.continuous.comp (DoubleAlong.inl A).continuous),
+    fun x hx ↦ ?_, fun a ha ↦ ?_, hfold, ?_⟩
   · obtain ⟨a, ha, h⟩ := (hrW _ hx).1
     beta_reduce
     rw [← h, DoubleAlong.fold_inl]

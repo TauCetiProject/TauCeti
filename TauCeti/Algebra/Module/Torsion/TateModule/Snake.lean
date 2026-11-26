@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
 public import TauCeti.Algebra.Module.Torsion.Snake
 public import TauCeti.Algebra.Module.Torsion.TateModule
+public import TauCeti.NumberTheory.Padics.PadicIntAdicCompletion
 
 /-!
 # The Tate module of the cokernel of a short exact sequence
@@ -23,8 +24,10 @@ generated `M₁` it is `ℤ^_p ⊗ M₁`, `ℤ^_p` the `p`-adic completion of `�
 (`TauCeti.tateModuleδEquivTensor`). For a lattice `M₁` in a real vector space `M₂` this computes
 the Tate module of the torus `M₃`.
 
-Both identifications are additive equivalences. Their targets are Mathlib's `AdicCompletion` for
-the ideal `(p)` of `ℤ`, not modules over the `p`-adic integers `ℤ_[p]`.
+Both identifications are additive equivalences, with targets Mathlib's `AdicCompletion` for the
+ideal `(p)` of `ℤ`. For prime `p` the map to the completion is semilinear along
+`ℤ_[p] ≃ ℤ^_p` (`TauCeti.tateModuleδ_smul`), and for finitely generated `M₁` the Tate module of
+`M₃` is `ℤ_[p] ⊗ M₁` as a `ℤ_[p]`-module (`TauCeti.tateModuleδPadicEquiv`).
 
 ## Main definitions
 
@@ -35,6 +38,8 @@ the ideal `(p)` of `ℤ`, not modules over the `p`-adic integers `ℤ_[p]`.
   multiplication by `p` is bijective on `M₂`.
 * `TauCeti.tateModuleδEquivTensor`: `T_p M₃ ≃ ℤ^_p ⊗ M₁` for finitely generated `M₁`, when
   multiplication by `p` is bijective on `M₂`.
+* `TauCeti.tateModuleδPadicEquiv`: `T_p M₃ ≃ₗ[ℤ_[p]] ℤ_[p] ⊗ M₁` for prime `p` and finitely
+  generated `M₁`, when multiplication by `p` is bijective on `M₂`.
 
 ## Main statements
 
@@ -43,6 +48,8 @@ the ideal `(p)` of `ℤ`, not modules over the `p`-adic integers `ℤ_[p]`.
 * `TauCeti.tateModuleLevelδ_transition`: multiplication by `p` on torsion corresponds to reduction.
 * `TauCeti.bijective_tateModuleLevelδ`: each level map is bijective when multiplication by `p` is
   bijective on `M₂`.
+* `TauCeti.tateModuleδ_smul`: for prime `p`, the map to the completion sends `a • x` to
+  `a • δ x`, with `a ∈ ℤ_[p]` acting on the completion through `ℤ_[p] ≃ ℤ^_p`.
 -/
 
 public noncomputable section
@@ -159,6 +166,15 @@ theorem tateModuleLevelδ_proj_tateModuleδEquiv_symm (hp : Bijective fun x : M�
       c.val n := by
   rw [← tateModuleδ_apply_val, ← tateModuleδEquiv_apply p hfg hf hg hp, AddEquiv.apply_symm_apply]
 
+/-- The `n`-th level of the inverse image of `c` is the torsion point that the level map sends to
+the `n`-th class of `c`. -/
+theorem proj_tateModuleδEquiv_symm_eq_of_tateModuleLevelδ_eq
+    (hp : Bijective fun x : M₂ ↦ (p : ℤ) • x) (c : AdicCompletion (Ideal.span {(p : ℤ)}) M₁)
+    {n : ℕ} {y : TateModuleLevel p M₃ n} (hy : tateModuleLevelδ p hfg hf hg n y = c.val n) :
+    TateModule.proj n ((tateModuleδEquiv p hfg hf hg hp).symm c) = y :=
+  (bijective_tateModuleLevelδ p hfg hf hg hp n).1 <| by
+    rw [tateModuleLevelδ_proj_tateModuleδEquiv_symm, hy]
+
 end Level
 
 section Finite
@@ -189,5 +205,69 @@ theorem ofTensorProduct_tateModuleδEquivTensor (hp : Bijective fun x : M₂ ↦
     M₁).apply_symm_apply _
 
 end Finite
+
+section Padic
+
+variable (p : ℕ) [Fact p.Prime] {M₁ M₂ M₃ : Type*} [AddCommGroup M₁] [AddCommGroup M₂]
+  [AddCommGroup M₃] {f : M₁ →ₗ[ℤ] M₂} {g : M₂ →ₗ[ℤ] M₃} (hfg : Exact f g) (hf : Injective f)
+  (hg : Surjective g)
+
+/-- **The map to the completion is `ℤ_[p]`-semilinear.** It sends `a • x` to `a • δ x`, where
+`a ∈ ℤ_[p]` acts on the `p`-adic completion of `M₁` through `ℤ_[p] ≃ ℤ^_p`
+(`PadicInt.adicCompletionRingEquiv`). -/
+@[simp]
+theorem tateModuleδ_smul (a : ℤ_[p]) (x : TateModule p M₃) :
+    tateModuleδ p hfg hf hg (a • x) =
+      PadicInt.adicCompletionRingEquiv p a • tateModuleδ p hfg hf hg x := by
+  refine AdicCompletion.ext fun n ↦ ?_
+  simp only [tateModuleδ_apply_val, TateModule.proj_smul, AdicCompletion.smul_eval,
+    AdicCompletion.val_smul_eq_evalₐ_smul, PadicInt.evalₐ_adicCompletionRingEquiv]
+  generalize PadicInt.toZModPow n a = c
+  rw [← ZMod.intCast_zmod_cast c, map_intCast, Int.cast_smul_eq_zsmul, map_zsmul]
+  -- the integer `c.cast` acts on `M₁ ⧸ (p)ⁿM₁` through its residue in `ℤ ⧸ (p)ⁿ`
+  obtain ⟨z, hz⟩ := Submodule.Quotient.mk_surjective _
+    (tateModuleLevelδ p hfg hf hg n (TateModule.proj n x))
+  rw [← hz, ← map_intCast (Ideal.Quotient.mk (Ideal.span {(p : ℤ)} ^ n))]
+  exact AdicCompletion.mk_smul_mk _ _ _
+
+end Padic
+
+section PadicFinite
+
+variable (p : ℕ) [Fact p.Prime] {M₁ : Type} {M₂ M₃ : Type*} [AddCommGroup M₁]
+  [Module.Finite ℤ M₁] [AddCommGroup M₂] [AddCommGroup M₃] {f : M₁ →ₗ[ℤ] M₂} {g : M₂ →ₗ[ℤ] M₃}
+  (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
+
+/-- **The Tate module of a cokernel as `ℤ_[p] ⊗ M₁`, `ℤ_[p]`-linearly.** For prime `p` and
+finitely generated `M₁`, when multiplication by `p` is bijective on `M₂`, the `p`-adic Tate module
+of `M₃` is `ℤ_[p] ⊗ M₁` as a `ℤ_[p]`-module: `TauCeti.tateModuleδEquiv` followed by the inverse of
+`PadicInt.tensorAdicCompletionEquiv`. -/
+def tateModuleδPadicEquiv (hp : Bijective fun x : M₂ ↦ (p : ℤ) • x) :
+    TateModule p M₃ ≃ₗ[ℤ_[p]] ℤ_[p] ⊗[ℤ] M₁ :=
+  ((tateModuleδEquiv p hfg hf hg hp).trans
+      (PadicInt.tensorAdicCompletionEquiv p M₁).toAddEquiv.symm).toLinearEquiv
+    fun a x ↦ (PadicInt.tensorAdicCompletionEquiv p M₁).injective <| by
+      simp
+
+/-- `PadicInt.tensorAdicCompletionEquiv` turns the tensor form back into the `p`-adic completion
+form of the equivalence. -/
+@[simp]
+theorem tensorAdicCompletionEquiv_tateModuleδPadicEquiv (hp : Bijective fun x : M₂ ↦ (p : ℤ) • x)
+    (x : TateModule p M₃) :
+    PadicInt.tensorAdicCompletionEquiv p M₁ (tateModuleδPadicEquiv p hfg hf hg hp x) =
+      tateModuleδEquiv p hfg hf hg hp x :=
+  (PadicInt.tensorAdicCompletionEquiv p M₁).apply_symm_apply _
+
+/-- The inverse equivalence is `PadicInt.tensorAdicCompletionEquiv` followed by the inverse of
+`TauCeti.tateModuleδEquiv`. -/
+theorem tateModuleδPadicEquiv_symm_apply (hp : Bijective fun x : M₂ ↦ (p : ℤ) • x)
+    (t : ℤ_[p] ⊗[ℤ] M₁) :
+    (tateModuleδPadicEquiv p hfg hf hg hp).symm t =
+      (tateModuleδEquiv p hfg hf hg hp).symm (PadicInt.tensorAdicCompletionEquiv p M₁ t) := by
+  rw [LinearEquiv.symm_apply_eq]
+  apply (PadicInt.tensorAdicCompletionEquiv p M₁).injective
+  simp
+
+end PadicFinite
 
 end TauCeti

@@ -13,6 +13,7 @@ public import TauCeti.Geometry.RealAlgebraic.Nash.Relation
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.PartialEquiv
 import Mathlib.Analysis.Analytic.Polynomial
 import TauCeti.Analysis.Analytic.Constructions
+import TauCeti.LinearAlgebra.AffineSpace.AffineMap
 
 /-!
 # Nash maps on semialgebraic analytic submanifolds
@@ -36,7 +37,8 @@ neighbourhood of a semialgebraic analytic submanifold is a Nash map on it.
 The class is closed under the operations of the category:
 
 * restriction to open semialgebraic subsets and to smaller semialgebraic analytic submanifolds;
-* polynomial maps, pointwise ring operations and polynomial postcomposition;
+* polynomial maps, affine maps, pointwise ring operations, finite sums,
+  reciprocals and quotients of nonvanishing maps, and polynomial postcomposition;
 * pairing, and products of maps on products of submanifolds;
 * composition;
 * analytic left inverses: if `g` is analytic and inverts a Nash map `f` on `S`, then `g` is a Nash
@@ -50,6 +52,10 @@ The class is closed under the operations of the category:
 * `TauCeti.NashOnSubmanifold d f S`: `f` is a Nash map on `S` in dimension `d`.
 * `IsOpen.nashOnSubmanifold_iff`: on open sets, Nash maps are the maps with Nash coordinate germs.
 * `TauCeti.nashOnSubmanifold_of_forall_isNashAt`: restrictions of ambient Nash maps.
+* `AffineMap.nashOnSubmanifold`: affine maps on semialgebraic analytic submanifolds.
+* `Finset.nashOnSubmanifold_sum`, `TauCeti.NashOnSubmanifold.inv`,
+  `TauCeti.NashOnSubmanifold.div`: finite sums, and pointwise reciprocals and quotients where no
+  denominator coordinate vanishes.
 * `TauCeti.NashOnSubmanifold.comp`: composition.
 * `TauCeti.NashOnSubmanifold.prodMap`: products.
 * `TauCeti.NashOnSubmanifold.of_leftInvOn`: analytic inverses of Nash maps are Nash.
@@ -154,7 +160,7 @@ theorem nashOnSubmanifold_of_forall_isNashAt (hU : IsOpen U) (hU' : IsSemialgebr
     (hS : IsAnalyticSubmanifold d S) (hS' : IsSemialgebraic S) : NashOnSubmanifold d f S :=
   (hU.nashOnSubmanifold_iff.2 ⟨hU', hf⟩).mono hSU hS hS'
 
-/-! ### Polynomial maps -/
+/-! ### Polynomial and affine maps -/
 
 /-- Polynomial maps are Nash maps on every semialgebraic analytic submanifold. -/
 theorem nashOnSubmanifold_eval (p : τ → MvPolynomial (Fin n) ℝ) (hS : IsAnalyticSubmanifold d S)
@@ -173,6 +179,14 @@ theorem nashOnSubmanifold_id (hS : IsAnalyticSubmanifold d S) (hS' : IsSemialgeb
     NashOnSubmanifold d id S :=
   (nashOnSubmanifold_eval (fun i ↦ X i) hS hS').congr fun _ _ ↦ by ext; simp
 
+/-- Every affine map `A : (Fin n → ℝ) →ᵃ[ℝ] (τ → ℝ)` is a Nash map on every `d`-dimensional
+semialgebraic analytic submanifold `S ⊆ Fin n → ℝ`. -/
+theorem _root_.AffineMap.nashOnSubmanifold (A : (Fin n → ℝ) →ᵃ[ℝ] (τ → ℝ))
+    (hS : IsAnalyticSubmanifold d S) (hS' : IsSemialgebraic S) :
+    NashOnSubmanifold d A S := by
+  obtain ⟨p, hp⟩ := A.exists_mvPolynomial_eval_eq
+  exact (nashOnSubmanifold_eval p hS hS').congr fun x _ ↦ (hp x).symm
+
 namespace NashOnSubmanifold
 
 /-! ### Algebraic operations -/
@@ -187,7 +201,7 @@ theorem eval_comp (hf : NashOnSubmanifold d f S) (p : υ → MvPolynomial τ ℝ
 /-- The pointwise sum of Nash maps is a Nash map. -/
 theorem add (hf : NashOnSubmanifold d f S) (hg : NashOnSubmanifold d g S) :
     NashOnSubmanifold d (f + g) S :=
-  ⟨AnalyticOnNhd.comp_analyticOnSubmanifold (g := fun p : (τ → ℝ) × (τ → ℝ) ↦ p.1 + p.2)
+  ⟨AnalyticOnNhd.comp_analyticOnSubmanifold (g := fun p : (τ → ℝ) × (τ → ℝ) ↦ p.fst + p.snd)
       (fun _ _ ↦ analyticAt_fst.add analyticAt_snd)
       (hf.analyticOnSubmanifold.prod hg.analyticOnSubmanifold) (mapsTo_univ _ _),
     hf.isSemialgebraicOn.add hg.isSemialgebraicOn⟩
@@ -206,10 +220,33 @@ theorem sub (hf : NashOnSubmanifold d f S) (hg : NashOnSubmanifold d g S) :
 /-- The pointwise product of Nash maps is a Nash map. -/
 theorem mul (hf : NashOnSubmanifold d f S) (hg : NashOnSubmanifold d g S) :
     NashOnSubmanifold d (f * g) S :=
-  ⟨AnalyticOnNhd.comp_analyticOnSubmanifold (g := fun p : (τ → ℝ) × (τ → ℝ) ↦ p.1 * p.2)
+  ⟨AnalyticOnNhd.comp_analyticOnSubmanifold (g := fun p : (τ → ℝ) × (τ → ℝ) ↦ p.fst * p.snd)
       (fun _ _ ↦ analyticAt_fst.mul analyticAt_snd)
       (hf.analyticOnSubmanifold.prod hg.analyticOnSubmanifold) (mapsTo_univ _ _),
     hf.isSemialgebraicOn.mul hg.isSemialgebraicOn⟩
+
+/-- A finite sum of Nash maps on a semialgebraic analytic submanifold is a Nash map. -/
+theorem _root_.Finset.nashOnSubmanifold_sum {ι : Type*} {F : ι → (Fin n → ℝ) → τ → ℝ}
+    (N : Finset ι) (hS : IsAnalyticSubmanifold d S) (hS' : IsSemialgebraic S)
+    (hF : ∀ i ∈ N, NashOnSubmanifold d (F i) S) :
+    NashOnSubmanifold d (∑ i ∈ N, F i) S :=
+  Finset.sum_induction _ (NashOnSubmanifold d · S) (fun _ _ ↦ .add)
+    (nashOnSubmanifold_const 0 hS hS') hF
+
+/-- The pointwise reciprocal of a Nash map whose coordinates never vanish on `S` is a Nash map. -/
+theorem inv (hf : NashOnSubmanifold d f S) (h0 : ∀ x ∈ S, ∀ i, f x i ≠ 0) :
+    NashOnSubmanifold d f⁻¹ S := by
+  refine ⟨AnalyticOnNhd.comp_analyticOnSubmanifold (g := Inv.inv)
+      (t := {y : τ → ℝ | ∀ i, y i ≠ 0}) ?_ hf.analyticOnSubmanifold h0,
+    hf.isSemialgebraicOn.inv⟩
+  exact analyticOnNhd_pi_iff.2 fun i y hy ↦
+    ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : τ ↦ ℝ) i).analyticAt y).fun_inv (hy i)
+
+/-- The pointwise quotient of Nash maps is a Nash map when no coordinate of the denominator
+vanishes on `S`. -/
+theorem div (hf : NashOnSubmanifold d f S) (hg : NashOnSubmanifold d g S)
+    (h0 : ∀ x ∈ S, ∀ i, g x i ≠ 0) : NashOnSubmanifold d (f / g) S := by
+  simpa only [div_eq_mul_inv] using hf.mul (hg.inv h0)
 
 /-! ### Pairs and products -/
 
