@@ -25,9 +25,10 @@ characters at their common level, including primes dividing both conductors.
 The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves zeros and exact
 meromorphic orders there, including the simple pole at `s = 1` for principal characters. At `s = 1`
 pointwise L-function comparison requires nonprincipal characters, as in the native continuation API.
-For principal characters `LFunctionTrivChar₁_eq_mul_eulerFactors` gives the comparison even at `1`
-after the pole is removed. `one_sub_rpow_pow_le_norm_eulerFactors` bounds the correction from
-below in terms of the number of distinct prime divisors, rather than the size of the new level.
+For principal characters `LFunctionTrivChar₁_eq_mul_prod_one_sub_prime_cpow` gives the comparison
+even at `1` after the pole is removed. `one_sub_rpow_pow_le_norm_prod_one_sub_mul_prime_cpow`
+bounds the correction from below in terms of the number of distinct prime divisors, rather than
+the size of the new level.
 The factors are also nonzero on `Re(s) < 0`:
 `DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`.
 
@@ -120,8 +121,9 @@ theorem exists_norm_prod_one_sub_mul_prime_cpow_le_rpow {δ ε : ℝ}
 /-- On `Re s ≥ δ ≥ 0`, each deleted Euler factor has norm at least `1 - 2 ^ (-δ)`.
 When `δ > 0`, a bound on the number of prime divisors thus bounds the product away from zero,
 independently of the level's prime-power exponents. -/
-theorem one_sub_rpow_pow_le_norm_eulerFactors {M N k : ℕ} (χ : DirichletCharacter ℂ M)
-    (hk : N.primeFactors.card ≤ k) {δ : ℝ} (hδ : 0 ≤ δ) {s : ℂ} (hs : δ ≤ s.re) :
+theorem one_sub_rpow_pow_le_norm_prod_one_sub_mul_prime_cpow {M N k : ℕ}
+    (χ : DirichletCharacter ℂ M) (hk : N.primeFactors.card ≤ k)
+    {δ : ℝ} (hδ : 0 ≤ δ) {s : ℂ} (hs : δ ≤ s.re) :
     (1 - (2 : ℝ) ^ (-δ)) ^ k ≤ ‖∏ p ∈ N.primeFactors, (1 - χ p * (p : ℂ) ^ (-s))‖ := by
   have hbase : 0 ≤ 1 - (2 : ℝ) ^ (-δ) := sub_nonneg.mpr <| by
     rw [← Real.rpow_zero (2 : ℝ)]
@@ -137,7 +139,7 @@ theorem one_sub_rpow_pow_le_norm_eulerFactors {M N k : ℕ} (χ : DirichletChara
 
 /-- After removing the principal pole, the change-of-level formula from level one holds
 at every `s`, including `s = 1`. -/
-theorem LFunctionTrivChar₁_eq_mul_eulerFactors (N : ℕ) [NeZero N] (s : ℂ) :
+theorem LFunctionTrivChar₁_eq_mul_prod_one_sub_prime_cpow (N : ℕ) [NeZero N] (s : ℂ) :
     LFunctionTrivChar₁ N s =
       LFunctionTrivChar₁ 1 s * ∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s)) := by
   by_cases hs : s = 1
