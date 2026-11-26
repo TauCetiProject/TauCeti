@@ -51,7 +51,12 @@ respect to `e`: `c ‖d e v‖² ≤ ω(v, J v)` for a constant `c > 0`.
 These are steps of Gromov–Floer compactness for a manifold target. Away from the bubbling points
 the energy densities are locally bounded along a subsequence, so by the second result the solutions
 converge there; and the rescaled solutions at a bubbling point converge by the third
-(`TauCeti.Geometry.Symplectic.Floer.Rescaling.Limit`). The limits are only shown to be continuous.
+(`TauCeti.Geometry.Symplectic.Floer.Rescaling.Limit`). This file gives only continuous limits.
+The limit off the bubbling points is shown to be `C¹` in
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Bubbling`, and the rescaled solutions are shown to
+converge in `C¹` to a nonconstant bubble in `TauCeti.Geometry.Symplectic.Floer.Rescaling.Limit`
+(`IsNondegenerate.exists_rescale_tendstoLocallyUniformly_fderiv_extChartAt_comp`, in the namespace
+`TauCeti.SmoothTwoForm`).
 Locating the bubbling points, which needs a lower bound on the energy concentrating at each of
 them, is not treated here.
 
