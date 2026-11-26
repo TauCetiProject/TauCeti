@@ -14,7 +14,6 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Group.NullFamily
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Data.Nat.ModEq
-import TauCeti.RingTheory.Algebraic.Basic
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
@@ -43,10 +42,10 @@ finite extension of `K` and carries the spectral norm, so every `f ∈ Tₙ = K�
 its Gauss norm at a point of the closed unit polydisc of a finite normed field extension of `K`.
 As no such point gives a value of norm above the Gauss norm, the Gauss norm is the largest of the
 values `‖f(x)‖` over all finite normed field extensions `L / K` and all `x ∈ (L°)ⁿ`. Evaluation at
-any point over an algebraic extension has a field as image, so its kernel is a maximal ideal; and a
-nonzero `f` does not vanish at some finite-extension point. These statements read the maximum
-principle as evaluation at points, without passing through maximal ideals of `Tₙ` or through the
-affinoid Nullstellensatz.
+any point over an algebraic extension has a field as image, so its kernel is a maximal ideal
+(`MvPowerSeries.ker_restrictedEval₂_isMaximal`); and a nonzero `f` does not vanish at some
+finite-extension point. These statements read the maximum principle as evaluation at points,
+without passing through maximal ideals of `Tₙ` or through the affinoid Nullstellensatz.
 
 ## Main results
 
@@ -56,8 +55,6 @@ affinoid Nullstellensatz.
   Gauss norm at a point of the closed unit polydisc over a finite normed field extension of `K`.
 * `MvPowerSeries.isGreatest_norm_restrictedEval₂`: the Gauss norm of a Tate series is the greatest
   of its absolute values at such points.
-* `MvPowerSeries.ker_restrictedEval₂_isMaximal`: evaluation at a point over an algebraic field
-  extension has a maximal kernel.
 * `MvPowerSeries.exists_finiteDimensional_restrictedEval₂_ne_zero`: finite-extension points
   separate the elements of a Tate algebra.
 
@@ -179,17 +176,6 @@ theorem exists_norm_restrictedEval₂_eq_norm (hφ : ∀ r, ‖φ r‖ = ‖r‖
     fun j ↦ w j * ev j
   refine ⟨j, ?_⟩
   rwa [htotal, norm_mul, hw, one_mul] at hj
-
-/-- At every polyradius `c`, the kernel of evaluation at a point over an algebraic field extension
-`L` of the coefficient field `K` is a maximal ideal. -/
-theorem ker_restrictedEval₂_isMaximal {K L : Type*} [NormedField K] [IsUltrametricDist K]
-    [NormedField L] [IsUltrametricDist L] [CompleteSpace L] [Algebra K L]
-    [Algebra.IsAlgebraic K L] {c : Fin k → ℝ} (x : Fin k → L)
-    (hφ : ∀ r, ‖algebraMap K L r‖ ≤ ‖r‖) (hx : ∀ i, ‖x i‖ ≤ c i) :
-    (RingHom.ker (restrictedEval₂ (algebraMap K L) x hφ hx)).IsMaximal :=
-  AlgHom.ker_isMaximal_of_isAlgebraic
-    { restrictedEval₂ (algebraMap K L) x hφ hx with
-      commutes' := restrictedEval₂_algebraMap _ _ _ _ }
 
 section FiniteExtension
 
