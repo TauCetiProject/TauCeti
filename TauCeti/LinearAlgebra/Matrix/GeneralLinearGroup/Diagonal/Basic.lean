@@ -60,6 +60,8 @@ element (`TauCeti.diagGL_const`).
 
 ## Main statements
 
+* `TauCeti.diagGL_mul_mul_inv_apply`: conjugation by `diagGL t` acts on the `(i, j)` entry by
+  `x ↦ tᵢ x tⱼ⁻¹`.
 * `TauCeti.isUnit_apply_of_isDiag`: the diagonal entries of an invertible diagonal matrix are
   units.
 * `TauCeti.coe_inv_of_coe_eq_diagonal`: over a division ring, the inverse of an invertible
@@ -120,6 +122,17 @@ theorem diagGL_coe (t : ι → kˣ) :
 theorem diagGL_apply (t : ι → kˣ) (i j : ι) :
     diagGL t i j = if i = j then (t i : k) else 0 := by
   rw [diagGL_coe, Matrix.diagonal_apply]
+
+/-- Conjugation by a diagonal matrix `t` acts on the `(i, j)` entry of a matrix by
+`x ↦ tᵢ x tⱼ⁻¹`. -/
+theorem diagGL_mul_mul_inv_apply (t : ι → kˣ) (g : GL ι k) (i j : ι) :
+    ((diagGL t * g * (diagGL t)⁻¹ : GL ι k) : Matrix ι ι k) i j =
+      ((t i : kˣ) : k) * ((g : GL ι k) : Matrix ι ι k) i j * (((t j)⁻¹ : kˣ) : k) := by
+  have hval : (((diagGL t)⁻¹ : GL ι k) : Matrix ι ι k) =
+      Matrix.diagonal fun a => (((t a)⁻¹ : kˣ) : k) := by
+    rw [← map_inv diagGL t, diagGL_coe]
+    simp
+  simp only [Units.val_mul, diagGL_coe, hval, Matrix.diagonal_mul, Matrix.mul_diagonal]
 
 /-- The trace of a diagonal element of the general linear group is the sum of its diagonal
 entries. -/
