@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.FiniteAbelian.Duality
 public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 public import Mathlib.RingTheory.IntegralDomain
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Basic
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 
 /-!
