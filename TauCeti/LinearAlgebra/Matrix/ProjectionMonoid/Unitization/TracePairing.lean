@@ -110,7 +110,8 @@ theorem tracePairing_traceExtension (g : K →+ M) (f : A →+ M)
         (Unitization.traceExtension_mul_comm g hf) (x : ProjectionKZero (_root_.Unitization K A)) =
       tracePairing f hf x := by
   rw [ProjectionKZero.tracePairing_traceExtension_eq_add g f hf, AddMonoidHom.add_apply,
-    AddMonoidHom.comp_apply, (mem_iff _).1 x.property, map_zero, add_zero, tracePairing_apply]
+    AddMonoidHom.comp_apply, (mem_iff _).1 x.property, _root_.map_zero, add_zero,
+    tracePairing_apply]
 
 /-- **The pairing on a representative.** Let `e` be a projection over `A⁺` and `p` a projection
 over `K`. If `[e] − [p]` lies in `K₀(A)`, the trace pairing sends it to `∑ i, f ((e i i).snd)`.
