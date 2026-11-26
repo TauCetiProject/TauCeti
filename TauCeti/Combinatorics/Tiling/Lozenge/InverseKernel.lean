@@ -32,7 +32,7 @@ and `Σ_u G_w(v' − u) K(W(u), B(v'')) = [v' = v'']`
 the fixed face.
 
 The orthogonality relation used is `∫∫_{(0,2π]²} e^{i(d₁θ + d₂φ)} dθ dφ = 4π² [d = 0]`
-(`TauCeti.setIntegral_exp_int_mul_add_int_mul_I`).
+(`TauCeti.setIntegral_cexp_intCast_mul_add_intCast_mul_mul_I`).
 
 ## References
 
@@ -125,7 +125,7 @@ theorem lozengeKernel_three_term_of_integrableOn
       if d = 0 then 1 else 0 := by
   rw [lozengeKernel_linear_combination hP,
     integral_congr_ae (hP₀.mono fun p hp => lozengeKernel_integrand_three_term d hp),
-    setIntegral_exp_int_mul_add_int_mul_I]
+    setIntegral_cexp_intCast_mul_add_intCast_mul_mul_I]
   split_ifs
   · rw [real_smul]
     push_cast

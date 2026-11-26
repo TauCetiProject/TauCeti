@@ -64,8 +64,9 @@ Interval integrals of elementary functions in closed form or as series, continui
   interval avoiding `0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
-* `TauCeti.setIntegral_exp_int_mul_add_int_mul_I`: `∫∫_{(0,2π]²} exp ((d₁ θ + d₂ φ) i)` is `4π²`
-  for `d = 0` in `ℤ²` and `0` otherwise, the orthogonality of the characters of the torus.
+* `TauCeti.setIntegral_cexp_intCast_mul_add_intCast_mul_mul_I`:
+  `∫∫_{(0,2π]²} exp ((d₁ θ + d₂ φ) i)` is `4π²` for `d = 0` in `ℤ²` and `0` otherwise, the
+  orthogonality of the characters of the torus.
 * `TauCeti.norm_integral_cexp_le`, `TauCeti.norm_integral_cexp_le_of_ne_zero`: the integral
   `∫ t in a..b, exp (t u i)` has modulus at most `|b - a|`, and at most `2 / |u|` for `u ≠ 0`.
 * `TauCeti.tendsto_average_integral_cexp`: the averages `T⁻¹ ∫ t in 0..T, exp (t u i)` tend to
@@ -400,7 +401,7 @@ open MeasureTheory Set in
 /-- The integral of the Fourier character `(θ, φ) ↦ exp ((d₁ θ + d₂ φ) i)` over the torus
 `(0, 2π]²`, for `d ∈ ℤ²`: it is `4π²` when `d = 0`, and vanishes otherwise. It is the product of
 two integrals `TauCeti.integral_cexp_intCast_mul_mul_I`, each shifted by one period. -/
-theorem setIntegral_exp_int_mul_add_int_mul_I (d : ℤ × ℤ) :
+theorem setIntegral_cexp_intCast_mul_add_intCast_mul_mul_I (d : ℤ × ℤ) :
     ∫ p in Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi),
         Complex.exp ((d.1 * p.1 + d.2 * p.2 : ℝ) * Complex.I) =
       if d = 0 then ((4 * Real.pi ^ 2 : ℝ) : ℂ) else 0 := by
