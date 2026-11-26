@@ -42,7 +42,8 @@ and positive semidefiniteness and monotonicity of the updates follow. The inform
 
 ## Main results
 
-* `Matrix.joseph_eq_measurementUpdate_add`: the completion of the square.
+* `Matrix.joseph_eq_measurementUpdate_add`: the completion of the square, and
+  `Matrix.joseph_kalmanGain`: the Joseph form of the Kalman gain is the measurement update.
 * `Matrix.joseph_sub_measurementUpdate_posSemidef` and `Matrix.joseph_eq_measurementUpdate_iff`:
   the Kalman gain minimizes the error covariance, and is the only minimizer.
 * `Matrix.PosSemidef.measurementUpdate` and `Matrix.PosSemidef.riccatiMap`: the updates preserve
@@ -202,6 +203,14 @@ theorem joseph_eq_measurementUpdate_add (hP : P.IsSymm) (hR : R.IsSymm)
     Matrix.one_mul, Matrix.mul_one]
   abel
 
+/-- At the Kalman gain the correction term of the completion of the square vanishes: the Joseph
+form of the Kalman gain is the measurement update. -/
+theorem joseph_kalmanGain (hP : P.IsSymm) (hR : R.IsSymm) (hS : IsUnit (innovationCov C R P)) :
+    (1 - kalmanGain C R P * C) * P * (1 - kalmanGain C R P * C)ᵀ +
+        kalmanGain C R P * R * (kalmanGain C R P)ᵀ = measurementUpdate C R P := by
+  rw [joseph_eq_measurementUpdate_add hP hR hS, sub_self, Matrix.zero_mul, Matrix.zero_mul,
+    add_zero]
+
 omit [Fintype κ] [DecidableEq κ] [DecidableEq ι] in
 /-- The innovation covariance of a positive semidefinite prior and observation noise is positive
 semidefinite. -/
@@ -256,10 +265,7 @@ theorem PosSemidef.measurementUpdate (hP : P.PosSemidef) (hR : R.PosSemidef)
     (C : Matrix κ ι ℝ) : (Matrix.measurementUpdate C R P).PosSemidef := by
   classical
   by_cases hS : IsUnit (Matrix.innovationCov C R P)
-  · have h := joseph_eq_measurementUpdate_add hP.isHermitian.isSymm hR.isHermitian.isSymm hS
-      (kalmanGain C R P)
-    rw [sub_self, Matrix.zero_mul, Matrix.zero_mul, add_zero] at h
-    rw [← h]
+  · rw [← joseph_kalmanGain hP.isHermitian.isSymm hR.isHermitian.isSymm hS]
     exact (hP.mul_mul_transpose_same _).add (hR.mul_mul_transpose_same (kalmanGain C R P))
   · rwa [measurementUpdate_of_not_isUnit hS]
 
@@ -313,7 +319,8 @@ theorem measurementUpdate_sub_posSemidef (hR : R.PosDef) (hP : P.PosSemidef)
   -- The Joseph form of the gain `K` of `P'` is the update of `P'` at `P'`, and dominates the
   -- update of `P` at `P`; the two Joseph forms differ by a congruence of `P' - P`.
   have hK : (1 - K * C) * P' * (1 - K * C)ᵀ + K * R * Kᵀ = measurementUpdate C R P' :=
-    (joseph_eq_measurementUpdate_iff hP' hR K).mpr rfl
+    joseph_kalmanGain hP'.isHermitian.isSymm hR.isHermitian.isSymm
+      (hP'.posDef_innovationCov hR C).isUnit
   have hJ := joseph_sub_measurementUpdate_posSemidef (C := C) hP hR K
   set J := 1 - K * C
   have hdiff : measurementUpdate C R P' - measurementUpdate C R P =
