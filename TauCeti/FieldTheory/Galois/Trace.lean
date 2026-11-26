@@ -25,6 +25,8 @@ file states the first for an abstract finite Galois group and records consequenc
 
 * `IsGaloisGroup.algebraMap_trace_eq_sum`: for a finite Galois group `G` of `L/K`, the trace of
   `x` is the sum of the `g • x` over `g : G`.
+* `Algebra.trace_eq_zero_of_apply_eq_neg`: an element negated by an automorphism of order two has
+  trace zero.
 * `MonoidHom.prod_fiber_eq_prod_liftNormal_mul` (and `MonoidHom.sum_fiber_eq_sum_liftNormal_mul`):
   for `f : Gal(M/K) → Gal(L/K)` compatible with the inclusion `L ⊆ M`, the fibre of `f` over `σ`
   is the coset `σ.liftNormal M · Gal(M/L)`, so a product over it is a product over `Gal(M/L)`.
@@ -57,6 +59,30 @@ theorem algebraMap_trace_eq_sum (x : L) :
   exact (Fintype.sum_equiv (mulEquivAlgEquiv G K L).toEquiv _ _ fun _ ↦ by simp).symm
 
 end IsGaloisGroup
+
+namespace Algebra
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
+
+/-- In a Galois extension `L/K`, the trace of an `x` negated by an automorphism `τ` of
+order two vanishes: the automorphisms `g` and `g τ` pair off and `g x + (g τ) x = 0`. In
+characteristic two this says that `τ`-fixed elements have trace zero. Both hypotheses on `τ` are
+needed in characteristic two, for `τ = 1` on `L = K = 𝔽₂` and for the Frobenius of `𝔽₈/𝔽₂`, of
+order three, each with `x = 1`. -/
+theorem trace_eq_zero_of_apply_eq_neg [IsGalois K L] {τ : Gal(L/K)} (hτ : τ ≠ 1)
+    (hττ : τ * τ = 1) {x : L} (hx : τ x = -x) : trace K L x = 0 := by
+  by_cases hfin : FiniteDimensional K L
+  swap
+  · rw [trace_eq_zero_of_not_exists_basis K fun ⟨_, ⟨b⟩⟩ ↦ hfin (Module.Finite.of_basis b)]
+    rfl
+  refine FaithfulSMul.algebraMap_injective K L ?_
+  rw [trace_eq_sum_automorphisms, map_zero]
+  refine Finset.sum_involution (fun g _ ↦ g * τ) (fun g _ ↦ ?_) (fun g _ _ ↦ ?_)
+    (fun _ _ ↦ Finset.mem_univ _) (fun g _ ↦ by rw [mul_assoc, hττ, mul_one])
+  · rw [AlgEquiv.mul_apply, hx, map_neg, add_neg_cancel]
+  · simpa using hτ
+
+end Algebra
 
 namespace MonoidHom
 
