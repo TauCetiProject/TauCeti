@@ -21,8 +21,10 @@ the `lpNorm` form of Mathlib's `MeasureTheory.eLpNorm_le_mul_eLpNorm_of_ae_le_mu
 multiplication by a bounded measurable coefficient, as for the lower-order terms of a
 differential operator.
 
-In particular, scalar multiplication by a function bounded by `c` multiplies the `Lᵖ` norm by at
-most `c` (`MeasureTheory.lpNorm_smul_le_mul_lpNorm_of_ae_le`). For `1 ≤ p`, the lower-order terms
+Scaling by a constant `c ≥ 0` multiplies the `Lᵖ` norm by `c`
+(`MeasureTheory.lpNorm_const_smul_of_nonneg`). More generally, scalar multiplication by a function
+bounded by `c` multiplies the `Lᵖ` norm by at most `c`
+(`MeasureTheory.lpNorm_smul_le_mul_lpNorm_of_ae_le`). For `1 ≤ p`, the lower-order terms
 `⟪b, G⟫ + c V` of a second-order operator over `ℝ` or `ℂ`, with `‖b‖ ≤ β` and `‖c‖ ≤ γ`, lie in
 `Lᵖ` with norm at most `β ‖G‖ + γ ‖V‖` (`MeasureTheory.memLp_inner_add_mul_and_lpNorm_le`), so
 they can be moved to the right-hand side of an equation
@@ -84,6 +86,12 @@ theorem integral_norm_lt_of_eLpNorm_one_lt_ofReal {f : α → F} {η : ℝ}
     aestronglyMeasurable_of_eLpNorm_ne_top (ne_top_of_lt h)
   rw [← lpNorm_one_eq_integral_norm hf, ← toReal_eLpNorm]
   exact ENNReal.toReal_lt_of_lt_ofReal h
+
+/-- Scaling by a nonnegative real `c` multiplies `lpNorm` by `c`: the form of Mathlib's
+`MeasureTheory.lpNorm_const_smul` without the norm of the scalar. -/
+theorem lpNorm_const_smul_of_nonneg [Module ℝ F] [NormSMulClass ℝ F] {c : ℝ} (hc : 0 ≤ c)
+    (f : α → F) : lpNorm (c • f) p μ = c * lpNorm f p μ := by
+  rw [lpNorm_const_smul, coe_nnNorm, Real.norm_of_nonneg hc]
 
 /-- **Multiplying by a bounded function.** If `f ∈ Lᵖ(μ)` and `‖ψ x‖ ≤ c` for almost every `x`,
 then `lpNorm (ψ • f) p μ ≤ c * lpNorm f p μ`. -/

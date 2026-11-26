@@ -17,6 +17,7 @@ import TauCeti.Analysis.InnerProductSpace.Hemisphere
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Sphere.Connected
 
 /-!
 # The height function on the unit sphere is a Morse function
@@ -61,6 +62,9 @@ multiple of `x`.
 * `TauCeti.criticalPoints_sphereHeight`: the critical points of the height function are the poles.
 * `TauCeti.criticalCount_sphereHeight`: it has one critical point of index `n` and one of index
   `0`.
+* `TauCeti.sphereHeight_mem_Ioo_iff`: the height lies in `(-1, 1)` exactly off the poles.
+* `TauCeti.range_sphereHeight`: in positive dimension the height function takes exactly the values
+  in `[-1, 1]`.
 * `TauCeti.isRegularValue_sphereHeight`: every value other than `±1` is a regular value.
 * `TauCeti.ncard_setOf_sphereHeight_eq_zero`: the equator of the circle has two points.
 * `TauCeti.infinite_setOf_sphereHeight_eq_zero`: the equator of a sphere of dimension at least `2`
@@ -367,6 +371,25 @@ theorem sphereHeight_eq_one_iff {v x : sphere (0 : E) 1} : sphereHeight v x = 1 
 theorem sphereHeight_eq_neg_one_iff {v x : sphere (0 : E) 1} :
     sphereHeight v x = -1 ↔ x = -v := by
   rw [← neg_eq_iff_eq_neg, ← Pi.neg_apply, ← sphereHeight_neg, sphereHeight_eq_one_iff]
+
+/-- The height of a point lies strictly between `-1` and `1` exactly when the point is neither
+pole. -/
+theorem sphereHeight_mem_Ioo_iff {v x : sphere (0 : E) 1} :
+    sphereHeight v x ∈ Ioo (-1) 1 ↔ x ≠ v ∧ x ≠ -v := by
+  rw [mem_Ioo, (neg_one_le_sphereHeight v x).lt_iff_ne', (sphereHeight_le_one v x).lt_iff_ne,
+    Ne, Ne, sphereHeight_eq_neg_one_iff, sphereHeight_eq_one_iff, and_comm]
+
+/-- In positive dimension the height function takes exactly the values in `[-1, 1]`. In dimension
+`0` the sphere consists of the two poles, and the range is `{-1, 1}`. -/
+theorem range_sphereHeight (hn : 0 < n) (v : sphere (0 : E) 1) :
+    range (sphereHeight v) = Icc (-1) 1 := by
+  refine (range_subset_iff.2 fun x ↦
+    mem_Icc.2 ⟨neg_one_le_sphereHeight v x, sphereHeight_le_one v x⟩).antisymm fun r hr ↦ ?_
+  obtain ⟨y, hy, hyr⟩ := (isConnected_sphere_of_one_le (E := E) hn).isPreconnected
+    |>.intermediate_value (f := fun y : E ↦ ⟪y, (v : E)⟫) (-v).property v.property
+    (continuous_id.inner continuous_const).continuousOn
+    (by simpa only [← sphereHeight_apply, sphereHeight_neg_self, sphereHeight_self] using hr)
+  exact ⟨⟨y, hy⟩, hyr⟩
 
 omit [Fact (finrank ℝ E = n + 1)] in
 /-- If the unit vectors `u` and `v` are orthogonal, the height function in the direction `u`

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.RademacherSum.Basic
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
