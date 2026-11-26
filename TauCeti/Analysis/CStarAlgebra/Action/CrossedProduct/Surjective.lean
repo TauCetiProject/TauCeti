@@ -99,13 +99,9 @@ theorem surjective_fullCrossedProductMap (φ : Hom α β) (hφ : DenseRange φ) 
   have : IsClosed (J : Set (FullCrossedProduct β μ)) :=
     hJ ▸ NonUnitalStarAlgHom.isClosed_range (φ.fullCrossedProductMap μ)
   let ψ := TwoSidedIdeal.Quotient.mkStarAlgHom J
-  have hΦ : ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ψ).IsMultiplierNondegenerate := by
-    rw [NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_dense]
-    simp only [NonUnitalStarAlgHom.comp_apply]
-    exact (NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_dense_span_comp
-      (φ := DoubleCentralizer.coeHom (𝕜 := ℂ))
-      (TwoSidedIdeal.Quotient.mkStarAlgHom_surjective J).denseRange).mp
-      NonUnitalStarAlgHom.isMultiplierNondegenerate_coeHom
+  have hΦ : ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ψ).IsMultiplierNondegenerate :=
+    NonUnitalStarAlgHom.isMultiplierNondegenerate_coeHom_comp
+      (TwoSidedIdeal.Quotient.mkStarAlgHom_surjective J).denseRange
   let M := ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ψ).toCovariantMultiplierHom hΦ
   have hM0 : M.coefficient = 0 := by
     refine NonUnitalStarAlgHom.ext fun b => ?_

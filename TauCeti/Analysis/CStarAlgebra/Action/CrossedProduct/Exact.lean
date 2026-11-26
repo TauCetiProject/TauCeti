@@ -87,12 +87,8 @@ private theorem map_eq_zero_of_fullCrossedProductMap_eq_zero {D : Type v} {C : T
     (hψφ : ∀ z, ψ (φ.fullCrossedProductMap μ z) = 0)
     {x : FullCrossedProduct α μ} (hx : q.fullCrossedProductMap μ x = 0) :
     ψ x = 0 := by
-  have hΦ : ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ψ).IsMultiplierNondegenerate := by
-    rw [NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_dense]
-    simp only [NonUnitalStarAlgHom.comp_apply]
-    exact (NonUnitalStarAlgHom.isMultiplierNondegenerate_iff_dense_span_comp
-      (φ := DoubleCentralizer.coeHom (𝕜 := ℂ)) hψ).mp
-      NonUnitalStarAlgHom.isMultiplierNondegenerate_coeHom
+  have hΦ : ((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ψ).IsMultiplierNondegenerate :=
+    NonUnitalStarAlgHom.isMultiplierNondegenerate_coeHom_comp hψ
   have hM : ∀ a, q a = 0 →
       (((DoubleCentralizer.coeHom (𝕜 := ℂ)).comp ψ).toCovariantMultiplierHom hΦ).coefficient a =
         0 := by
