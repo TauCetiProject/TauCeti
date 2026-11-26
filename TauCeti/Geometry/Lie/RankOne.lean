@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.InvariantForm.RankOne
 public import TauCeti.RepresentationTheory.SU2.LieGroup
-import TauCeti.Geometry.Lie.Exponential.Classification
 import TauCeti.Geometry.Lie.Integration
 import TauCeti.RepresentationTheory.SU2.NormalSubgroup
 
@@ -36,33 +35,19 @@ of `α` for the metric `B`. The differential sends the real root vectors `-iσ�
 every rotation of `x, y` in their plane is again a root pair, so the rank-one homomorphism is
 stated as an existence statement.
 
-Two properties hold for every smooth homomorphism `φ : SU(2) → G`, with `v = dφ(diag(i, -i))`. The
-homomorphism intertwines the exponentials, so on the diagonal torus
-
-`φ(diag(e^{is}, e^{-is})) = exp_G(s v)`
-
-(`ContMDiffMonoidMorphism.map_torusExp`). Evaluating at `s = 2π`, where the diagonal torus
-returns to the identity, gives `exp_G(2π v) = 1`
-(`ContMDiffMonoidMorphism.lieExp_two_pi_smul_lieMap_torusGenerator`). For the rank-one
-homomorphism of a root this says that `α∨` lies in the period lattice
-`Λ_ℤ = (2π)⁻¹ ker(exp_G)`: **the coroot is an integral cocharacter**. If `v ≠ 0`, then `φ` is not
-trivial, and its kernel lies in the center `{1, -1}` of `SU(2)`
-(`ContMDiffMonoidMorphism.coe_eq_one_or_eq_neg_one_of_apply_eq_one`, from
+Every smooth homomorphism `φ : SU(2) → G` sends the diagonal torus `diag(e^{is}, e^{-is})` to
+the one-parameter subgroup of `v = dφ(diag(i, -i))`, which has period `2π`: `exp_G(2π v) = 1`
+(`ContMDiffMonoidMorphism.lieExp_two_pi_smul_lieMap_torusGenerator`, in
+`TauCeti.RepresentationTheory.SU2.LieGroup`). For the rank-one homomorphism of a root this says
+that `α∨` lies in the period lattice `Λ_ℤ = (2π)⁻¹ ker(exp_G)`: **the coroot is an integral
+cocharacter**. If `v ≠ 0`, then `φ` is not trivial, and its kernel lies in the center `{1, -1}` of
+`SU(2)` (`ContMDiffMonoidMorphism.ker_le_center_of_lieMap_ne_zero`, from
 `TauCeti.SU2.ker_le_center`). This applies to every rank-one homomorphism, since `α(α∨) = 2`
 forces `α∨ ≠ 0`.
 
-## Main definitions
-
-* `TauCeti.SU2.torusGenerator`: the element `diag(i, -i)` of the native Lie algebra of `SU(2)`.
-
 ## Main results
 
-* `TauCeti.SU2.lieExp_smul_torusGenerator`: `exp(s diag(i, -i)) = diag(e^{is}, e^{-is})`.
-* `ContMDiffMonoidMorphism.map_torusExp`: a smooth homomorphism out of `SU(2)` sends the diagonal
-  torus to the one-parameter subgroup of the image of `diag(i, -i)`.
-* `ContMDiffMonoidMorphism.lieExp_two_pi_smul_lieMap_torusGenerator`: that one-parameter subgroup
-  has period `2π`.
-* `ContMDiffMonoidMorphism.coe_eq_one_or_eq_neg_one_of_apply_eq_one`: the kernel bound.
+* `ContMDiffMonoidMorphism.ker_le_center_of_lieMap_ne_zero`: the kernel bound.
 * `LinearMap.BilinForm.exists_contMDiffMonoidMorphism_of_lie_eq_smul`,
   `TauCeti.IsRootPlane.exists_contMDiffMonoidMorphism`: the rank-one homomorphism of a root, with
   its coroot calibration.
@@ -82,61 +67,6 @@ noncomputable section
 open Module
 open scoped ContDiff Manifold
 
-namespace TauCeti
-
--- Use the operator-norm topology under which `GL(2, ℂ)` is a Lie group, as in
--- `TauCeti.RepresentationTheory.SU2.LieGroup`.
-attribute [local instance 100] LieRing.ofAssociativeRing
-attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
-  TauCeti.normedAlgebraRatOfReal
-attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
-attribute [local instance] ContMDiffMul.boundarylessManifold
-
-open scoped Matrix.Norms.Operator
-
-namespace SU2
-
-/-- The element `diag(i, -i)` of the native Lie algebra of the Lie group `SU(2)`: the coroot of the
-positive root of the diagonal torus. It is `-2` times the basis element `-iσ₃/2` of `𝔰𝔲(2)`. -/
-def torusGenerator :
-    LeftInvariantDerivation 𝓘(ℝ, lieAlgebra.toSubmodule) (GLSpecialUnitary (Fin 2) ℂ) :=
-  nativeLieEquiv.symm ((-2 : ℝ) • suTwoEquiv (Pi.single 2 1))
-
-/-- The matrix of `TauCeti.SU2.torusGenerator` is `diag(i, -i)`. -/
-theorem toMatrix_nativeLieEquiv_torusGenerator :
-    toMatrix (nativeLieEquiv torusGenerator) = Matrix.diagonal ![Complex.I, -Complex.I] := by
-  rw [torusGenerator, LieEquiv.apply_symm_apply, map_smul, toMatrix_suTwoEquiv_single_two]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp <;> ring
-
-/-- **The one-parameter subgroup of `diag(i, -i)` is the diagonal torus of `SU(2)`**:
-`exp(s diag(i, -i)) = diag(e^{is}, e^{-is})`. -/
-theorem lieExp_smul_torusGenerator (s : ℝ) :
-    lieExp (s • torusGenerator) =
-      (GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ).symm (torusExp s) := by
-  apply Subtype.ext
-  apply Units.ext
-  have hmap := map_lieExp embeddedLieSubgroupData.subtypeVal (s • torusGenerator)
-  dsimp only at hmap
-  have hsub : (embeddedLieSubgroupData.subtypeVal (lieExp (s • torusGenerator)) :
-      (Matrix (Fin 2) (Fin 2) ℂ)ˣ) =
-      ((lieExp (s • torusGenerator) : GLSpecialUnitary (Fin 2) ℂ) : (Matrix (Fin 2) (Fin 2) ℂ)ˣ) :=
-    embeddedLieSubgroupData.subtypeVal_apply _
-  have hY : (lieMap embeddedLieSubgroupData.subtypeVal (s • torusGenerator) :
-      LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ) (Matrix (Fin 2) (Fin 2) ℂ)ˣ) =
-      (((s * -2) • suTwoEquiv (Pi.single 2 1) : lieAlgebra) :
-        LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ) (Matrix (Fin 2) (Fin 2) ℂ)ˣ) := by
-    rw [← Lie.EmbeddedLieSubgroupData.lieMapSubtypeVal_apply, ← coe_nativeLieEquiv_apply,
-      map_smul, torusGenerator, LieEquiv.apply_symm_apply, smul_smul]
-  rw [← hsub, hmap, hY, coe_lieExp_smul_suTwoEquiv_single_two,
-    GLSpecialUnitary.coe_continuousMulEquiv_symm_apply]
-  congr 2
-  ring
-
-end SU2
-
-end TauCeti
-
 open TauCeti
 
 namespace ContMDiffMonoidMorphism
@@ -155,55 +85,22 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
 
-/-- **A smooth homomorphism out of `SU(2)` on the diagonal torus.** For a smooth homomorphism
-`φ : SU(2) → G` with `v = dφ(diag(i, -i))`, `φ(diag(e^{is}, e^{-is})) = exp_G(s v)`. -/
-theorem map_torusExp
-    (φ : ContMDiffMonoidMorphism 𝓘(ℝ, SU2.lieAlgebra.toSubmodule) I ∞
-      (GLSpecialUnitary (Fin 2) ℂ) G) (s : ℝ) :
-    let _ : T2Space G := I.t2Space_of_lieGroup ∞
-    φ ((GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ).symm (SU2.torusExp s)) =
-      lieExp (s • lieMap φ SU2.torusGenerator) := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  dsimp only
-  rw [← SU2.lieExp_smul_torusGenerator, map_lieExp, map_smul]
-
-/-- **The image of `diag(i, -i)` has period `2π`.** For a smooth homomorphism `φ : SU(2) → G`,
-`exp_G(2π dφ(diag(i, -i))) = 1`: the vector `dφ(diag(i, -i))` lies in the period lattice
-`(2π)⁻¹ ker(exp_G)`. For the rank-one homomorphism of a root it is the coroot, which is therefore
-an integral cocharacter. -/
-theorem lieExp_two_pi_smul_lieMap_torusGenerator
-    (φ : ContMDiffMonoidMorphism 𝓘(ℝ, SU2.lieAlgebra.toSubmodule) I ∞
-      (GLSpecialUnitary (Fin 2) ℂ) G) :
-    let _ : T2Space G := I.t2Space_of_lieGroup ∞
-    lieExp ((2 * Real.pi) • lieMap φ SU2.torusGenerator) = 1 := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  dsimp only
-  rw [← map_torusExp, SU2.torusExp_eq_one_iff.mpr ⟨1, by ring⟩, map_one, map_one]
-
 /-- **The kernel bound.** A smooth homomorphism `φ : SU(2) → G` with `dφ(diag(i, -i)) ≠ 0` has
-kernel contained in the center `{1, -1}` of `SU(2)`. This applies to the rank-one homomorphism of
-a root, whose differential sends `diag(i, -i)` to the coroot. -/
-theorem coe_eq_one_or_eq_neg_one_of_apply_eq_one
+kernel contained in the center `{1, -1}` of `SU(2)`, read through the identification of the
+special unitary subgroup of `GL(2, ℂ)` with the matrix group `SU(2)`. This applies to the rank-one
+homomorphism of a root, whose differential sends `diag(i, -i)` to the coroot. -/
+theorem ker_le_center_of_lieMap_ne_zero
     (φ : ContMDiffMonoidMorphism 𝓘(ℝ, SU2.lieAlgebra.toSubmodule) I ∞
       (GLSpecialUnitary (Fin 2) ℂ) G)
-    (hφ : lieMap φ SU2.torusGenerator ≠ 0) {g : GLSpecialUnitary (Fin 2) ℂ} (hg : φ g = 1) :
-    ((g : (Matrix (Fin 2) (Fin 2) ℂ)ˣ) : Matrix (Fin 2) (Fin 2) ℂ) = 1 ∨
-      ((g : (Matrix (Fin 2) (Fin 2) ℂ)ˣ) : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let e := GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ
-  let ψ : SU2 →* G := φ.toMonoidHom.comp e.symm.toMonoidHom
-  have hψx (x : SU2) : ψ x = φ (e.symm x) := rfl
-  -- If `φ` were trivial on `SU(2)`, the one-parameter subgroup of `dφ(diag(i, -i))` would be
-  -- trivial by `map_torusExp`, so this vector would vanish.
-  have hψ : ψ ≠ 1 := fun h ↦ hφ <| oneParameterSubgroup_injective (I := I) (G := G) <|
-    DFunLike.ext _ _ fun t ↦ by
-      rw [← ofAdd_toAdd t, oneParameterSubgroup_apply, oneParameterSubgroup_apply, smul_zero,
-        lieExp_zero, ← map_torusExp]
-      rw [← hψx, h, MonoidHom.one_apply]
-  have hker : e g ∈ ψ.ker := by
-    rw [MonoidHom.mem_ker, hψx, ContinuousMulEquiv.symm_apply_apply, hg]
-  have hc := SU2.mem_center_iff.mp (SU2.ker_le_center hψ hker)
-  rwa [GLSpecialUnitary.coe_continuousMulEquiv_apply] at hc
+    (hφ : lieMap φ SU2.torusGenerator ≠ 0) :
+    (φ.toMonoidHom.comp (GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ).symm.toMonoidHom).ker ≤
+      Subgroup.center SU2 := by
+  refine SU2.ker_le_center fun h ↦ hφ ?_
+  -- A trivial composite forces `φ` itself to be trivial, whose differential vanishes.
+  have h1 : φ = 1 := DFunLike.ext _ _ fun x ↦ by
+    simpa using DFunLike.congr_fun h (GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ x)
+  rw [h1, lieMap_one]
+  rfl
 
 end ContMDiffMonoidMorphism
 
@@ -276,7 +173,7 @@ theorem exists_contMDiffMonoidMorphism_of_lie_eq_smul (B : LinearMap.BilinForm �
       ψ (SU2.nativeLieEquiv.symm (suTwoEquiv v)) = f (soThreeEquiv ℝ v) := by
     simp [ψ]
   have hcoroot : ψ SU2.torusGenerator = (-2 : ℝ) • f (soThreeEquiv ℝ (Pi.single 2 1)) := by
-    rw [SU2.torusGenerator, ← map_smul, hψ, map_smul, map_smul]
+    simp [ψ]
   have hmem : ψ SU2.torusGenerator ∈ t := by
     rw [hcoroot]
     exact t.smul_mem _ hf₂
