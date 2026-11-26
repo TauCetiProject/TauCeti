@@ -27,7 +27,9 @@ curvature and `Ω^{k+1}_ℤ(M)` is the group of smooth `(k + 1)`-forms with inte
   (`TauCeti.differentialCharacters.ofHomology`). This is injective
   (`TauCeti.differentialCharacters.ofHomology_injective`), and its image is the kernel of the
   curvature (`TauCeti.differentialCharacters.exact_ofHomology_curvature`): a character of curvature
-  zero vanishes on boundaries, so it factors through homology.
+  zero vanishes on boundaries, so it factors through homology. Flat characters are natural: they
+  pull back along the map induced on homology
+  (`TauCeti.differentialCharacters.pullback_ofHomology`).
 * **The image of the curvature.** A smooth `(k + 1)`-form `φ` is a curvature exactly when it has
   integral periods (`TauCeti.differentialCharacters.range_curvature`). Given `φ` with integral
   periods, `c ↦ ∫_c φ mod ℤ` on `(k + 1)`-chains vanishes on cycles, so it defines a homomorphism
@@ -104,6 +106,27 @@ theorem ofHomology_injective :
   rw [← ofHomology_apply, ← ofHomology_apply, hfg]
 
 end OfHomology
+
+section Pullback
+
+variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} {N : Type} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold I 1 M] [IsManifold J 1 N] {f : M → N}
+
+/-- **Naturality of flat characters.** The pullback along `f` of the flat character of
+`g : H_k(N; ℤ) → ℝ/ℤ` is the flat character of `g` composed with the map `f_*` on homology. -/
+@[simp]
+theorem pullback_ofHomology (hf : ContMDiff I J ∞ f)
+    (g : ((smoothSingularSubcomplex J N : SSet).chainComplex (ModuleCat.of ℤ ℤ)).homology k →+
+      UnitAddCircle) :
+    pullback hf (ofHomology g) = ofHomology (g.comp (homologyMap (SSet.chainComplexMap
+      (smoothSingularSubcomplexMap f hf) (ModuleCat.of ℤ ℤ)) k).hom.toAddMonoidHom) := by
+  ext z
+  rw [pullback_apply, ofHomology_apply, ofHomology_apply, AddMonoidHom.comp_apply,
+    LinearMap.toAddMonoidHom_coe, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
+    homologyπ_naturality]
+
+end Pullback
 
 section Exact
 

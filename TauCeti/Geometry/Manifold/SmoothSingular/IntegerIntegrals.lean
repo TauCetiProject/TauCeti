@@ -33,7 +33,8 @@ The smooth forms with **integral periods**, whose integral over every smooth sin
 cycle is an integer, form the subgroup `TauCeti.integralPeriodForms`. On a boundaryless manifold
 such a form is closed (`TauCeti.mem_closedForms_of_mem_integralPeriodForms`): by Stokes' theorem the
 integral of its derivative over a smooth simplex is its integral over the boundary cycle, an
-integer, so the derivative vanishes.
+integer, so the derivative vanishes. Integral periods are preserved by pullback along smooth maps
+(`TauCeti.mpullback_mem_integralPeriodForms`).
 
 ## Implementation notes
 
@@ -262,6 +263,21 @@ theorem mem_closedForms_of_mem_integralPeriodForms [IsManifold I ∞ M] [Boundar
     integrationCochain_d_apply (φ.isSmoothForm.of_le (by simp)),
     integrationCochain_ιChainComplex, one_smul] at hn
   exact ⟨n, hn⟩
+
+/-- **Integral periods pull back.** The pullback of a form with integral periods along a smooth map
+`f` has integral periods: its integral over a cycle `z` is the integral of the form over the cycle
+`f_* z`. -/
+theorem mpullback_mem_integralPeriodForms {E' H' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} {N : Type}
+    [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] {f : M → N}
+    (hf : ContMDiff I J ∞ f) {k : ℕ} {φ : SmoothForm J N ℝ k}
+    (hφ : φ ∈ integralPeriodForms J N k) :
+    SmoothForm.mpullback f hf φ ∈ integralPeriodForms I M k := fun z ↦ by
+  obtain ⟨n, hn⟩ := hφ (HomologicalComplex.cyclesMap
+    (SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of ℤ ℤ)) k z)
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply,
+    integrationCochain_chainComplexMap_apply hf] at hn
+  exact ⟨n, by rw [SmoothForm.coe_mpullback, hn]⟩
 
 end IntegralPeriods
 
