@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
+public import TauCeti.CategoryTheory.Comma.Over
 public import TauCeti.CategoryTheory.Sites.CoverLifting
 public import TauCeti.CategoryTheory.Sites.Descent.Stackification.HomSheafification
 
@@ -78,23 +79,6 @@ universe v' u' v u
 open CategoryTheory Limits Opposite MonoidalCategory Bicategory Pseudofunctor
   LocallyDiscreteOpToCat
 
-namespace CategoryTheory.Over
-
-variable {C : Type u} [Category.{v} C] {U : C}
-
-/-- The morphism `(Over.map T.hom).obj (Over.mk (𝟙 T.left)) ⟶ T` of `Over U` whose underlying
-morphism is the identity of `T.left`. -/
-abbrev mapObjMkIdHom (T : Over U) : (Over.map T.hom).obj (Over.mk (𝟙 T.left)) ⟶ T :=
-  Over.homMk (𝟙 T.left)
-
-/-- For `p : T' ⟶ T` in `Over U`, the identification of `Over.map T'.hom` with the composite of
-`Over.map p.left` and `Over.map T.hom`. -/
-abbrev mapCompOfHom {T T' : Over U} (p : T' ⟶ T) :
-    Over.map T'.hom ≅ Over.map p.left ⋙ Over.map T.hom :=
-  Over.mapCongr T'.hom (p.left ≫ T.hom) (Over.w p).symm ≪≫ Over.mapComp p.left T.hom
-
-end CategoryTheory.Over
-
 namespace TauCeti.Stack.Prestackification
 
 variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
@@ -162,20 +146,20 @@ lemma restrictSectionsOver_app_toSheafify (T : Over U) [HasSheafify (J.over T.le
         (Over.mapObjMkIdHom T).op) x).symm).trans h
 
 /-- The component of `restrictSectionsOver` at `P` as an isomorphism: it restricts along the
-isomorphism `Over.isoMk (Iso.refl T.left)` from `(Over.map T.hom).obj (Over.mk (𝟙 T.left))` to
+isomorphism `Over.mapMkIso (𝟙 T.left) _` from `(Over.map T.hom).obj (Over.mk (𝟙 T.left))` to
 `T`, and then applies the comparison isomorphism of sheafifications. -/
 def restrictSectionsOverIso (T : Over U) [HasSheafify (J.over T.left) (Type v')]
     [(J.over T.left).WEqualsLocallyBijective (Type v')] (P : (Over U)ᵒᵖ ⥤ Type v') :
     (sheafify (J.over U) P).obj (op T) ≅
       (sheafifySections J T.left).obj ((Over.map T.hom).op ⋙ P) :=
   (sheafify (J.over U) P).mapIso
-      (Over.isoMk (Iso.refl T.left) : (Over.map T.hom).obj (Over.mk (𝟙 T.left)) ≅ T).op ≪≫
+      (Over.mapMkIso (𝟙 T.left) (Category.id_comp T.hom)).op ≪≫
     ((sheafToPresheaf _ _).mapIso ((Over.map T.hom).sheafPushforwardContinuousPresheafToSheafIso
       (J.over T.left) (J.over U) P)).app (op (Over.mk (𝟙 T.left)))
 
 /-- The components of `restrictSectionsOver` are the isomorphisms `restrictSectionsOverIso`. This
-holds by definition: the forward morphism of `Over.isoMk (Iso.refl T.left)` is
-`Over.homMk (𝟙 T.left)`, which is `Over.mapObjMkIdHom T`. -/
+holds by definition: `Over.mapObjMkIdHom T` is the forward morphism of
+`Over.mapMkIso (𝟙 T.left) _`. -/
 lemma restrictSectionsOver_app (T : Over U) [HasSheafify (J.over T.left) (Type v')]
     [(J.over T.left).WEqualsLocallyBijective (Type v')] (P : (Over U)ᵒᵖ ⥤ Type v') :
     (restrictSectionsOver J T).app P = (restrictSectionsOverIso J T P).hom := (rfl)
@@ -232,6 +216,7 @@ lemma restrictSectionsOver_comp {T T' : Over U} [HasSheafify (J.over T.left) (Ty
         (Functor.whiskerRight (NatTrans.op (Over.mapCompOfHom p).hom) P)
         ((restrictSections J p.left).app _ ((restrictSectionsOver J T).app P t)) =
       (restrictSectionsOver J T').app P ((sheafify (J.over U) P).map p.op t) := by
+  -- `Over.mapCompOfHom p` ends at the composite functor, whose continuity `hC` needs.
   have : (Over.map p.left ⋙ Over.map T.hom).IsContinuous (J.over T'.left) (J.over U) :=
     Functor.isContinuous_comp _ _ _ (J.over T.left) _
   have : (Over.map p.left ⋙ Over.map T.hom).IsCocontinuous (J.over T'.left) (J.over U) :=
@@ -392,6 +377,8 @@ lemma Fiber.pullbackHom_comp (f : V ⟶ U) {M N P : Fiber J F U} (s : M ⟶ N) (
   ext
   rw [Fiber.homEquiv_pullbackHom, Fiber.homEquiv_comp, Fiber.homEquiv_comp,
     Fiber.homEquiv_pullbackHom, Fiber.homEquiv_pullbackHom]
+  -- The source of `H` is a tensor product in `Type v'`, which is the product type only after
+  -- unfolding, so the pair is ascribed the product type for the anonymous constructor.
   exact ConcreteCategory.congr_hom H (show (sheafifySections J U).obj (F.presheafHom M.obj N.obj) ×
     (sheafifySections J U).obj (F.presheafHom N.obj P.obj) from
       (Fiber.homEquiv M N s, Fiber.homEquiv N P t))
@@ -618,7 +605,8 @@ def Fiber.pullbackId (U : C) [HasSheafify (J.over U) (Type v')]
     have hs : (sheafify (J.over U) (F.presheafHom M.obj N.obj)).map
         (Over.mkIdTerminal.from (Over.mk (𝟙 U))).op (Fiber.homEquiv M N s) =
           Fiber.homEquiv M N s := by
-      rw [show Over.mkIdTerminal.from (Over.mk (𝟙 U)) = 𝟙 _ from Over.mkIdTerminal.hom_ext _ _]
+      have hterm : Over.mkIdTerminal.from (Over.mk (𝟙 U)) = 𝟙 _ := Over.mkIdTerminal.hom_ext _ _
+      rw [hterm]
       exact ConcreteCategory.congr_hom ((sheafify (J.over U) _).map_id _) _
     have h := (Fiber.pullbackHom_eq_sheafifyPresheafHomEquiv (𝟙 U) s).trans
       ((congrArg _ hs).trans (sheafifyPresheafHomEquiv_mkId J M.obj N.obj _))
@@ -832,8 +820,7 @@ functors `toFiber` and identity naturality isomorphisms. -/
       fun M ↦ by
         -- The naturality isomorphism is the identity, and the unit isomorphism of the
         -- Hom-sheafification is the image of that of `F`.
-        rw [show F.mapId a = F.mapId' (𝟙 a.as.unop).op.toLoc (by simp) from
-          (F.mapId'_eq_mapId a).symm]
+        rw [← F.mapId'_eq_mapId a]
         exact Category.id_comp _
   naturality_comp f g :=
     Cat.comp_whiskerLeft_eq_whiskerRight_comp_associators _ _ _ _ _ fun M ↦ by

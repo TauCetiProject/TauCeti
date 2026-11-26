@@ -38,7 +38,8 @@ are not available.
   functor sends morphisms inverted by sheafification to morphisms inverted by sheafification.
 * `CategoryTheory.Functor.sheafPushforwardContinuousPresheafToSheafIso`: the restriction along
   `G` of the sheafification of `Q` is the sheafification of the restriction of `Q`, under the
-  locally bijective hypotheses above. It is natural in `Q`
+  locally bijective hypotheses above. Morphisms out of the restriction of a sheafification are
+  determined on the restricted unit (`whiskerLeft_toSheafify_hom_ext`). It is natural in `Q`
   (`sheafPushforwardContinuousPresheafToSheafIso_hom_naturality`) and in the functor `G`
   (`whiskerRight_op_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom`), the identity for
   the identity functor (`sheafPushforwardContinuousPresheafToSheafIso_id_hom_hom`), and compatible
@@ -140,6 +141,16 @@ theorem whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso
   rw [Category.assoc, ← ObjectProperty.FullSubcategory.comp_hom, Iso.inv_hom_id] at h
   exact h.symm.trans (Category.comp_id _)
 
+omit [G.IsContinuous J K] [HasWeakSheafify J A] in
+/-- Morphisms from the restriction along `G` of the sheafification of `Q` to a sheaf are determined
+by their composites with the restriction of the unit `Q ⟶ sheafify Q`, which becomes an
+isomorphism after sheafification. -/
+theorem whiskerLeft_toSheafify_hom_ext {Q : Dᵒᵖ ⥤ A} {P : Cᵒᵖ ⥤ A} (hP : Presheaf.IsSheaf J P)
+    {f g : G.op ⋙ sheafify K Q ⟶ P}
+    (h : whiskerLeft G.op (toSheafify K Q) ≫ f = whiskerLeft G.op (toSheafify K Q) ≫ g) :
+    f = g :=
+  ((K.W_toSheafify Q).whiskerLeft_op G J P hP).1 h
+
 /-- The isomorphisms `sheafPushforwardContinuousPresheafToSheafIso G J K Q` are natural in `Q`. -/
 @[reassoc]
 theorem sheafPushforwardContinuousPresheafToSheafIso_hom_naturality {Q Q' : Dᵒᵖ ⥤ A}
@@ -148,37 +159,29 @@ theorem sheafPushforwardContinuousPresheafToSheafIso_hom_naturality {Q Q' : Dᵒ
         (G.sheafPushforwardContinuousPresheafToSheafIso J K Q').hom =
       (G.sheafPushforwardContinuousPresheafToSheafIso J K Q).hom ≫
         (presheafToSheaf J A).map (whiskerLeft G.op φ) := by
-  rw [← cancel_epi (G.sheafPushforwardContinuousPresheafToSheafIso J K Q).inv,
-    Iso.inv_hom_id_assoc,
-    ← cancel_mono (G.sheafPushforwardContinuousPresheafToSheafIso J K Q').inv,
-    Category.assoc, Category.assoc, Iso.hom_inv_id, Category.comp_id]
   ext1
-  refine sheafify_hom_ext J _ _ (ObjectProperty.FullSubcategory.property _) ?_
-  simp only [ObjectProperty.FullSubcategory.comp_hom,
-    toSheafify_sheafPushforwardContinuousPresheafToSheafIso_inv_hom_assoc]
-  rw [← toSheafify_naturality_assoc,
-    toSheafify_sheafPushforwardContinuousPresheafToSheafIso_inv_hom]
-  -- The restriction of a morphism of sheaves along `G` is the whiskering of its underlying morphism
-  -- of presheaves by definition of `sheafPushforwardContinuous`, but its source is
-  -- `sheafify K Q` only after unfolding, so `Functor.whiskerLeft_comp` applies through `exact`.
-  exact (Functor.whiskerLeft_comp G.op (toSheafify K Q) (sheafifyMap K φ)).symm.trans
-    ((congrArg (whiskerLeft G.op) (toSheafify_naturality K φ).symm).trans
-      (Functor.whiskerLeft_comp G.op φ (toSheafify K Q')))
+  refine whiskerLeft_toSheafify_hom_ext G J K (ObjectProperty.FullSubcategory.property _) ?_
+  have hn : whiskerLeft G.op (toSheafify K Q) ≫ whiskerLeft G.op (sheafifyMap K φ) =
+      whiskerLeft G.op φ ≫ whiskerLeft G.op (toSheafify K Q') := by
+    rw [← Functor.whiskerLeft_comp, ← Functor.whiskerLeft_comp, toSheafify_naturality]
+  simp only [ObjectProperty.FullSubcategory.comp_hom]
+  -- Both sides are `whiskerLeft G.op φ ≫ toSheafify J (G.op ⋙ Q')`. The restriction of a morphism
+  -- of sheaves along `G` is the whiskering of its underlying morphism of presheaves only after
+  -- unfolding `sheafPushforwardContinuous`, so the steps are chained as terms.
+  exact ((reassoc_of% hn) _).trans ((congrArg (_ ≫ ·)
+    (whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom
+      G J K Q')).trans
+      ((toSheafify_naturality J (whiskerLeft G.op φ)).trans
+        ((whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom_assoc
+          G J K Q _).symm.trans (Category.assoc _ _ _))))
 
 omit [G.IsContinuous J K] [G.IsCocontinuous J K] in
 /-- For the identity functor, `sheafPushforwardContinuousPresheafToSheafIso` is the identity. -/
 theorem sheafPushforwardContinuousPresheafToSheafIso_id_hom_hom (Q : Cᵒᵖ ⥤ A) :
-    ((𝟭 C).sheafPushforwardContinuousPresheafToSheafIso J J Q).hom.hom = 𝟙 _ := by
-  have h : ((𝟭 C).sheafPushforwardContinuousPresheafToSheafIso J J Q).inv.hom = 𝟙 _ :=
-    sheafify_hom_ext J _ _ (ObjectProperty.FullSubcategory.property _)
-      ((toSheafify_sheafPushforwardContinuousPresheafToSheafIso_inv_hom (𝟭 C) J J Q).trans
-        (Category.comp_id _).symm)
-  have h₂ : ((𝟭 C).sheafPushforwardContinuousPresheafToSheafIso J J Q).inv.hom ≫
-      ((𝟭 C).sheafPushforwardContinuousPresheafToSheafIso J J Q).hom.hom = 𝟙 _ :=
-    congrArg InducedCategory.Hom.hom
-      ((𝟭 C).sheafPushforwardContinuousPresheafToSheafIso J J Q).inv_hom_id
-  rw [h] at h₂
-  exact (Category.id_comp _).symm.trans h₂
+    ((𝟭 C).sheafPushforwardContinuousPresheafToSheafIso J J Q).hom.hom = 𝟙 _ :=
+  whiskerLeft_toSheafify_hom_ext (𝟭 C) J J (ObjectProperty.FullSubcategory.property _)
+    ((whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom
+      (𝟭 C) J J Q).trans (Category.comp_id _).symm)
 
 /-- The isomorphisms `sheafPushforwardContinuousPresheafToSheafIso` are natural in the functor: a
 natural transformation `α : G ⟶ G'` gives a commutative square relating the restrictions along `G`
@@ -190,51 +193,47 @@ theorem whiskerRight_op_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_ho
         (G.sheafPushforwardContinuousPresheafToSheafIso J K Q).hom.hom =
       (G'.sheafPushforwardContinuousPresheafToSheafIso J K Q).hom.hom ≫
         sheafifyMap J (whiskerRight (NatTrans.op α) Q) := by
-  refine (cancel_epi (G'.sheafPushforwardContinuousPresheafToSheafIso J K Q).inv.hom).1 ?_
-  refine sheafify_hom_ext J _ _ (ObjectProperty.FullSubcategory.property _) ?_
+  refine whiskerLeft_toSheafify_hom_ext G' J K (ObjectProperty.FullSubcategory.property _) ?_
   have hx : whiskerLeft G'.op (toSheafify K Q) ≫ whiskerRight (NatTrans.op α) (sheafify K Q) =
       whiskerRight (NatTrans.op α) Q ≫ whiskerLeft G.op (toSheafify K Q) :=
     NatTrans.ext (funext fun X ↦ ((toSheafify K Q).naturality (α.app X.unop).op).symm)
-  have e₁ := toSheafify_sheafPushforwardContinuousPresheafToSheafIso_inv_hom G' J K Q
-  have e₂ :=
-    whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom G J K Q
-  have e₃ :=
-    whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom G' J K Q
-  -- The composites below are only type correct up to unfolding `sheafPushforwardContinuous`, so
-  -- `rw` cannot be used and the steps are chained as terms.
-  exact ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) e₁)).trans
-    ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) hx).trans ((Category.assoc _ _ _).trans
-      ((congrArg (_ ≫ ·) e₂).trans ((toSheafify_naturality J _).trans
-        ((congrArg (· ≫ _) e₃.symm).trans ((congrArg (fun x ↦ (x ≫ _) ≫ _) e₁.symm).trans
-          ((Category.assoc _ _ _).trans (Category.assoc _ _ _)))))))))
+  -- Both sides are `whiskerRight (NatTrans.op α) Q ≫ toSheafify J (G.op ⋙ Q)`; the composites are
+  -- only type correct up to unfolding `sheafPushforwardContinuous`, so the steps are chained as
+  -- terms.
+  exact ((reassoc_of% hx) _).trans ((congrArg (_ ≫ ·)
+    (whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom
+      G J K Q)).trans
+      ((toSheafify_naturality J _).trans
+        ((whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom_assoc
+          G' J K Q _).symm.trans (Category.assoc _ _ _))))
 
 /-- The isomorphisms `sheafPushforwardContinuousPresheafToSheafIso` are compatible with
 composition of functors: restricting along `G` and then along `G'` is restricting along
 `G' ⋙ G`. -/
 theorem whiskerLeft_sheafPushforwardContinuousPresheafToSheafIso_hom_hom_comp_hom_hom
     {C' : Type*} [Category* C'] (G' : C' ⥤ C) (J' : GrothendieckTopology C')
-    [G'.IsContinuous J' J] [G'.IsCocontinuous J' J] [(G' ⋙ G).IsContinuous J' K]
-    [(G' ⋙ G).IsCocontinuous J' K] [J'.WEqualsLocallyBijective A] [HasWeakSheafify J' A]
-    (Q : Dᵒᵖ ⥤ A) :
+    [G'.IsContinuous J' J] [G'.IsCocontinuous J' J] [J'.WEqualsLocallyBijective A]
+    [HasWeakSheafify J' A] (Q : Dᵒᵖ ⥤ A) :
+    letI := isContinuous_comp G' G J' J K
+    letI := isCocontinuous_comp G' G J' J (L := K)
     whiskerLeft G'.op (G.sheafPushforwardContinuousPresheafToSheafIso J K Q).hom.hom ≫
         (G'.sheafPushforwardContinuousPresheafToSheafIso J' J (G.op ⋙ Q)).hom.hom =
       ((G' ⋙ G).sheafPushforwardContinuousPresheafToSheafIso J' K Q).hom.hom := by
-  refine (cancel_epi ((G' ⋙ G).sheafPushforwardContinuousPresheafToSheafIso J' K Q).inv.hom).1 ?_
-  refine sheafify_hom_ext J' _ _ (ObjectProperty.FullSubcategory.property _) ?_
-  have e₁ := toSheafify_sheafPushforwardContinuousPresheafToSheafIso_inv_hom (G' ⋙ G) J' K Q
-  have e₂ :=
-    whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom G J K Q
-  have e₃ := whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom
-    G' J' J (G.op ⋙ Q)
-  have e₄ := whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom
-    (G' ⋙ G) J' K Q
-  -- As above, the composites are only type correct up to unfolding, so the steps are chained as
-  -- terms; `whiskerLeft (G' ⋙ G).op` is `whiskerLeft G'.op ∘ whiskerLeft G.op` by definition.
-  exact ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) e₁)).trans
-    ((Category.assoc _ _ _).symm.trans
-      ((congrArg (· ≫ _) (Functor.whiskerLeft_comp G'.op _ _).symm).trans
-        ((congrArg (fun x ↦ whiskerLeft G'.op x ≫ _) e₂).trans (e₃.trans
-          (((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) e₁)).trans e₄).symm))))
+  have := isContinuous_comp G' G J' J K
+  have := isCocontinuous_comp G' G J' J (L := K)
+  refine whiskerLeft_toSheafify_hom_ext (G' ⋙ G) J' K
+    (ObjectProperty.FullSubcategory.property _) ?_
+  -- Both sides are `toSheafify J' ((G' ⋙ G).op ⋙ Q)`. As above, the composites are only type
+  -- correct up to unfolding, so the steps are chained as terms; `whiskerLeft (G' ⋙ G).op` is
+  -- `whiskerLeft G'.op ∘ whiskerLeft G.op` by definition.
+  exact ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _)
+    ((Functor.whiskerLeft_comp G'.op _ _).symm.trans (congrArg (whiskerLeft G'.op)
+      (whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom
+        G J K Q))))).trans
+    ((whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom
+      G' J' J (G.op ⋙ Q)).trans
+      (whiskerLeft_toSheafify_comp_sheafPushforwardContinuousPresheafToSheafIso_hom_hom
+        (G' ⋙ G) J' K Q).symm)
 
 end Functor
 
