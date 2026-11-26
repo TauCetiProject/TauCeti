@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.TensorProduct.Lift
+public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.Algebra.Category.GradedModuleCat.Monoidal
 public import TauCeti.Algebra.Category.GradedModuleCat.RestrictScalars
 
