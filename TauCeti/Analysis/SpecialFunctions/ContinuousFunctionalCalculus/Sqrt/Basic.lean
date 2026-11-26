@@ -114,16 +114,16 @@ end MulOpposite
 
 section Smul
 
-variable {A : Type*} [PartialOrder A] [Ring A] [StarRing A] [TopologicalSpace A]
-  [StarOrderedRing A] [Algebra ℝ A] [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
-  [NonnegSpectrumClass ℝ A]
+variable {A : Type*} [PartialOrder A] [NonUnitalRing A] [StarRing A] [TopologicalSpace A]
+  [StarOrderedRing A] [Module ℝ A] [SMulCommClass ℝ A A] [IsScalarTower ℝ A A]
+  [NonUnitalContinuousFunctionalCalculus ℝ A IsSelfAdjoint] [NonnegSpectrumClass ℝ A]
 
 /-- Nonnegative elements are closed under multiplication by nonnegative real scalars. Unlike
 `smul_nonneg`, this needs no `StarModule ℝ A`, since `c • a` is computed by the continuous
 functional calculus of `a`. -/
 protected theorem smul_nonneg {c : ℝ} (hc : 0 ≤ c) {a : A} (ha : 0 ≤ a) : 0 ≤ c • a := by
-  rw [← cfc_const_mul_id c a ha.isSelfAdjoint]
-  exact cfc_nonneg fun x hx ↦ mul_nonneg hc (spectrum_nonneg_of_nonneg ha hx)
+  rw [← cfcₙ_const_mul_id c a ha.isSelfAdjoint]
+  exact cfcₙ_nonneg fun x hx ↦ mul_nonneg hc (quasispectrum_nonneg_of_nonneg a ha x hx)
 
 /-- The square root is positively homogeneous: `√(c • a) = √c • √a` for every real `c ≥ 0`. No
 nonnegativity hypothesis on `a` is needed: for `c > 0`, the element `c • a` is nonnegative exactly

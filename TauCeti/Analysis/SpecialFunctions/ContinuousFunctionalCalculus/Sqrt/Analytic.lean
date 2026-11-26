@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 public import TauCeti.Analysis.Normed.Algebra.SquareRoot
-public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt.Basic
 
 /-!
 # Analyticity of the square root of strictly positive elements

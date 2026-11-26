@@ -154,22 +154,13 @@ theorem analyticOnNhd_sqrtNearOne : AnalyticOnNhd ℝ (sqrtNearOne A) (Metric.ba
 /-- **On the reals, the square root near the identity is the usual square root**: `√t` for
 `0 < t < 2`. -/
 theorem sqrtNearOne_real_eq_sqrt {t : ℝ} (ht : |t - 1| < 1) : sqrtNearOne ℝ t = √t := by
-  have hball : ∀ u : ℝ, |u - 1| < 1 → sqrtNearOne ℝ u * sqrtNearOne ℝ u = u := fun u hu ↦
-    mul_self_sqrtNearOne (by rwa [Real.norm_eq_abs])
-  -- The square root near the identity is continuous and has no zero on `(0, 2)`, and it is
-  -- positive at `1`, so it is positive on all of `(0, 2)`.
-  have hpos : 0 ≤ sqrtNearOne ℝ t := by
-    by_contra hneg
-    have hIoo : Metric.ball (1 : ℝ) 1 = Set.Ioo 0 2 := by norm_num [Real.ball_eq_Ioo]
-    obtain ⟨u, hu, hu0⟩ := isPreconnected_Ioo.intermediate_value
-      (⟨by linarith [(abs_lt.1 ht).1], by linarith [(abs_lt.1 ht).2]⟩ : t ∈ Set.Ioo (0 : ℝ) 2)
-      (by norm_num : (1 : ℝ) ∈ Set.Ioo 0 2)
-      (hIoo ▸ analyticOnNhd_sqrtNearOne.continuousOn)
-      (by rw [sqrtNearOne_one]; exact ⟨(not_le.1 hneg).le, zero_le_one⟩)
-    have hu' := hball u (by rw [abs_lt]; constructor <;> linarith [hu.1, hu.2])
-    rw [hu0, mul_zero] at hu'
-    exact hu.1.ne hu'
-  rw [← Real.sqrt_mul_self hpos, hball t ht]
+  have hmem : t - 1 ∈ Metric.eball (0 : ℝ) 1 := by
+    rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one,
+      Real.norm_eq_abs]
+  -- Mathlib's real binomial series of `(1 + y) ^ (1 / 2)`, evaluated at `y = t - 1`.
+  have h := (Real.one_add_rpow_hasFPowerSeriesOnBall_zero (a := 2⁻¹)).hasSum hmem
+  rw [zero_add, add_sub_cancel] at h
+  rw [sqrtNearOne_def, FormalMultilinearSeries.sum, h.tsum_eq, Real.sqrt_eq_rpow, one_div]
 
 /-- The square root near the identity is analytic at the identity.  This gives a single
 neighborhood on which it is smooth to every finite order. -/
