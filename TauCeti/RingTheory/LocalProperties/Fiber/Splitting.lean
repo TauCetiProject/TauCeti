@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.LocalProperties.Fiber
 import Mathlib.RingTheory.LocalProperties.Projective
 import TauCeti.Algebra.Exact.Split
 import TauCeti.LinearAlgebra.Finsupp.Supported
+import TauCeti.LinearAlgebra.TensorProduct.Tower
 
 /-!
 # Fibrewise splitting into projective modules
@@ -46,7 +47,7 @@ private theorem exists_leftInverse_of_finite_of_residueField
     let A := Localization.AtPrime I
     have : Module.Free A (A ⊗[R] N) := Module.free_of_flat_of_isLocalRing
     exact (IsLocalRing.split_injective_iff_lTensor_residueField_injective (f.baseChange A)).2
-      (f.injective_lTensor_localization_residueField I (hf I))
+      ((f.injective_lTensor_baseChange_iff A I.ResidueField).2 (hf I))
   have hinj : Function.Injective f := by
     intro x y hxy
     refine Module.eq_of_localization_maximal
