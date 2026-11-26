@@ -81,6 +81,9 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   square of extensions, then `F'' = F · k''`.
 * `TauCeti.constantCompositum_eq_top_of_adjoin_eq_top`: `F'` is the compositum `F · k'` as soon
   as the image of `F` generates `F'` over a field `k'`.
+* `TauCeti.exists_intermediateField_isIntegrallyClosedIn_constantCompositum`: pulling back
+  `E · M` along `k'' → F'` produces an intermediate field `M₁` of `k'' / M` that is exact in
+  `E · M` whenever `k''` is exact in `F'`.
 * `TauCeti.finrank_constantCompositum_mul_geometricDegree`: the tower law
   `[F·k' : F] · n(F'/F) = [F' : F]`.
 * `TauCeti.finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq`:
@@ -530,6 +533,44 @@ theorem isScalarTower_base_constantCompositum :
   .of_algebraMap_eq fun c ↦ Subtype.ext (IsScalarTower.algebraMap_apply k k' F' c)
 
 end ConstantCompositumAlgebra
+
+/-- Cutting out the intersection `(E · M) ∩ k''` inside `k''`: when `k''` is exact in `F'`, the
+pullback `M₁` of `E · M` along `k'' → F'` sits as an intermediate field of `k'' / M`, acts
+compatibly on `E · M`, and is exact in `E · M`. -/
+theorem exists_intermediateField_isIntegrallyClosedIn_constantCompositum
+    {E M k'' F' : Type*} [Field E] [Field M] [Field k''] [Field F']
+    [Algebra M k''] [Algebra M F'] [Algebra k'' F'] [Algebra E F'] [IsScalarTower M k'' F']
+    (hex'' : IsIntegrallyClosedIn k'' F') :
+    let EM := constantCompositum E M F'
+    letI := constantCompositumAlgebra E M F'
+    ∃ (M₁ : IntermediateField M k'') (_ : Algebra M₁ EM),
+      IsScalarTower M M₁ EM ∧ IsScalarTower M₁ EM F' ∧ IsIntegrallyClosedIn M₁ EM := by
+  let EM := constantCompositum E M F'
+  let := constantCompositumAlgebra E M F'
+  have := isScalarTower_constantCompositum E M F'
+  have hm_mem (m : M) : algebraMap M k'' m ∈ (EM.toSubfield).comap (algebraMap k'' F') := by
+    rw [Subfield.mem_comap, ← IsScalarTower.algebraMap_apply M k'' F']
+    exact algebraMap_mem_constantCompositum E M F' m
+  let M₁ : IntermediateField M k'' :=
+    ((EM.toSubfield).comap (algebraMap k'' F')).toIntermediateField hm_mem
+  have hmEM (c : M₁) : algebraMap M₁ F' c ∈ EM := by
+    rw [IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply]
+    exact c.property
+  let _ : Algebra M₁ EM := ((algebraMap M₁ F').codRestrict EM hmEM).toAlgebra
+  have hstEM : IsScalarTower M₁ EM F' := .of_algebraMap_eq fun c ↦ by
+    rw [IntermediateField.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
+  have hstM : IsScalarTower M M₁ EM := .of_algebraMap_eq fun m ↦ (algebraMap EM F').injective <| by
+    rw [← IsScalarTower.algebraMap_apply M EM F', ← IsScalarTower.algebraMap_apply M₁ EM F',
+      IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply,
+      IntermediateField.coe_algebraMap_apply, IsScalarTower.algebraMap_apply M k'' F']
+  refine ⟨M₁, inferInstance, hstM, hstEM,
+    isIntegrallyClosedIn_iff.2 ⟨(algebraMap M₁ EM).injective, fun {y} hy ↦ ?_⟩⟩
+  obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.1
+    ((hy.map (IsScalarTower.toAlgHom M₁ EM F')).tower_top : IsIntegral k'' (y : F'))
+  refine ⟨⟨c, show algebraMap k'' F' c ∈ EM from hc.symm ▸ y.property⟩, Subtype.ext ?_⟩
+  rw [RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply,
+    IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply]
+  exact hc
 
 /-! ### The degree of `F' / F` when `[F·k' : F]` is known -/
 

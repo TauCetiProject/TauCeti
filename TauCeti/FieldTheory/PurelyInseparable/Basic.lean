@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 
 import Mathlib.Algebra.Polynomial.Eval.Subring
 import Mathlib.Algebra.Polynomial.Expand
@@ -32,6 +33,9 @@ field of degree `p` over `K`
   field of degree `p`.
 * `TauCeti.IsPurelyInseparable.charP_of_prime_dvd_finrank`: if a prime `p` divides the degree of
   a finite purely inseparable field extension `M / K`, then `K` has characteristic `p`.
+* `TauCeti.IsPurelyInseparable.of_isIntegrallyClosedIn`: in a purely inseparable extension `F' / F`
+  over a field `k` integrally closed in `F`, any algebraic enlargement `k'' / k'` inside `F'` (with
+  `k' / k` algebraic) is purely inseparable over `k'`.
 -/
 
 public section
@@ -133,5 +137,36 @@ theorem exists_intermediateField_finrank_eq_expChar {K M : Type*} [Field K] [Fie
     have hr1 : r = 1 := le_antisymm
       ((Nat.pow_le_pow_iff_right hp.one_lt).1 (by simpa [hr] using hz_le)) (Nat.pos_of_ne_zero hr0)
     exact ⟨K⟮z⟯, by rw [hr, hr1, pow_one]⟩
+
+/-- In a purely inseparable field extension `F' / F` over a field `k` integrally closed in `F`,
+any algebraic enlargement `k'' / k'` inside `F'` (with `k' / k` algebraic) is purely inseparable
+over `k'`. -/
+theorem of_isIntegrallyClosedIn {k k' F : Type*} (F' : Type*) {k'' : Type*}
+    [Field k] [Field k'] [Field F] [Field F'] [Field k'']
+    [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+    [Algebra k' k''] [Algebra k'' F']
+    [IsScalarTower k k' F'] [IsScalarTower k F F'] [IsScalarTower k' k'' F']
+    [Algebra.IsAlgebraic k k'] [_root_.IsPurelyInseparable F F']
+    (hex : IsIntegrallyClosedIn k F) [Algebra.IsAlgebraic k' k''] :
+    _root_.IsPurelyInseparable k' k'' := by
+  obtain ⟨p, _⟩ := ExpChar.exists k
+  have : ExpChar F p := expChar_of_injective_algebraMap (algebraMap k F).injective p
+  have : ExpChar k' p := expChar_of_injective_algebraMap (algebraMap k k').injective p
+  let _ : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
+  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
+    simp [RingHom.algebraMap_toAlgebra, ← IsScalarTower.algebraMap_apply _ _ F']
+  have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
+  rw [isPurelyInseparable_iff_pow_mem k' p]
+  intro c
+  obtain ⟨n, y, hy⟩ := _root_.IsPurelyInseparable.pow_mem F p (algebraMap k'' F' c)
+  obtain ⟨c₀, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.1 <|
+    (isIntegral_algHom_iff (IsScalarTower.toAlgHom k F F') (algebraMap F F').injective).1 <| by
+      rw [IsScalarTower.toAlgHom_apply, hy, ← map_pow]
+      exact (Algebra.IsIntegral.isIntegral (R := k) (c ^ p ^ n)).map
+        (IsScalarTower.toAlgHom k k'' F')
+  refine ⟨n, algebraMap k k' c₀, (algebraMap k'' F').injective ?_⟩
+  simp only [map_pow, ← hy, ← IsScalarTower.algebraMap_apply k F F',
+    ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply k k' F']
 
 end TauCeti.IsPurelyInseparable

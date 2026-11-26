@@ -9,7 +9,6 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Change
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Stabilization
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Singularity.Tate
 import TauCeti.FieldTheory.PurelyInseparable.Basic
-import TauCeti.FieldTheory.PurelyInseparable.Exponent
 
 /-!
 # Tate's genus-change theorem in positive characteristic
@@ -72,39 +71,6 @@ universe u u' v v'
 
 section Tate
 
-/-- In a degree-`p` purely inseparable field extension `F' / F` over a field `k` integrally closed
-in `F`, any algebraic enlargement `k'' / k'` inside `F'` (with `k' / k` algebraic) is purely
-inseparable over `k'`. -/
-private theorem isPurelyInseparable_enlargement_of_finrank_eq_prime {k k' F F' : Type*}
-    [Field k] [Field k'] [Field F] [Field F'] [Algebra k k'] [Algebra k F] [Algebra k F']
-    [Algebra k' F'] [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
-    {p : ℕ} (hp : p.Prime) [CharP k p] [Algebra.IsAlgebraic k k'] [IsPurelyInseparable F F']
-    (hex : IsIntegrallyClosedIn k F) (hFF' : Module.finrank F F' = p) {k'' : Type*} [Field k'']
-    [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F'] [Algebra.IsAlgebraic k' k''] :
-    _root_.IsPurelyInseparable k' k'' := by
-  have : FiniteDimensional F F' := Module.finite_of_finrank_pos (hFF' ▸ hp.pos)
-  have : CharP F p := charP_of_injective_algebraMap (algebraMap k F).injective p
-  have : ExpChar F p := .prime hp
-  have : CharP k' p := charP_of_injective_algebraMap (algebraMap k k').injective p
-  have : ExpChar k' p := .prime hp
-  let _ : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
-  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
-    simp [RingHom.algebraMap_toAlgebra, ← IsScalarTower.algebraMap_apply _ _ F']
-  have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
-  rw [isPurelyInseparable_iff_pow_mem k' p]
-  intro c
-  obtain ⟨y, hy⟩ := TauCeti.IsPurelyInseparable.pow_mem_of_finrank_le_pow F F' p (n := 1)
-    (by simp [hFF']) (algebraMap k'' F' c)
-  rw [pow_one] at hy
-  obtain ⟨c₀, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.1 <|
-    (isIntegral_algHom_iff (IsScalarTower.toAlgHom k F F') (algebraMap F F').injective).1 <| by
-      rw [IsScalarTower.toAlgHom_apply, hy, ← map_pow]
-      exact (Algebra.IsIntegral.isIntegral (R := k) (c ^ p)).map (IsScalarTower.toAlgHom k k'' F')
-  refine ⟨1, algebraMap k k' c₀, (algebraMap k'' F').injective ?_⟩
-  simp only [pow_one, map_pow, ← hy, ← IsScalarTower.algebraMap_apply k F F',
-    ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply k k' F']
-
 /-- Tate's genus-change divisibility for a single purely inseparable constant step of prime degree
 `p`, allowing constant growth into an exact constant field `k''` of `F'`. -/
 private theorem sub_one_dvd_two_mul_genus_sub_genus_of_finrank_eq_prime {k : Type u}
@@ -128,7 +94,7 @@ private theorem sub_one_dvd_two_mul_genus_sub_genus_of_finrank_eq_prime {k : Typ
   have : CharP k' p := charP_of_injective_algebraMap (algebraMap k k').injective p
   have : ExpChar k' p := .prime hp
   have : IsPurelyInseparable k' k'' :=
-    isPurelyInseparable_enlargement_of_finrank_eq_prime hp hex hFF' (k'' := k'')
+    TauCeti.IsPurelyInseparable.of_isIntegrallyClosedIn F' hex
   obtain ⟨m, hm⟩ := IsPurelyInseparable.finrank_eq_pow k' k'' p
   have hfin := finite_setOf_singularityDegree_ne_zero hF hex h hn
   have heq := genus_sub_one_eq_finrank_mul_genus_sub_one_add_finsum_singularityDegree
