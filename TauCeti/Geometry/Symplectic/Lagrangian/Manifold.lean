@@ -54,10 +54,10 @@ self-intersections. Every immersion of a curve into a surface is one
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianImmersion_of_finrank_eq_one`).
 
 The linear facts about a subspace `W` of a symplectic vector space and its symplectic complement
-`W^σ` hold for tangent images `W = df_x(T_x N)`, read in `(T_(f x) M, σ_(f x))`: when `df_x` is
-injective `dim N + dim W^σ = dim M`, in finite dimension `W^σσ = W`, and in any dimension `W` is
-Lagrangian exactly when it is maximal isotropic, so that `f` is a Lagrangian map exactly when its
-tangent images are maximal isotropic
+`W^σ` hold for tangent images `W = df_x(T_x N)`, read in `(T_(f x) M, σ_(f x))`: when `M` is
+finite-dimensional, `W^σσ = W`, and `dim N + dim W^σ = dim M` if moreover `df_x` is injective; in
+any dimension `W` is Lagrangian exactly when it is maximal isotropic, so that `f` is a Lagrangian
+map exactly when its tangent images are maximal isotropic
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianMap_iff_forall_maximal_isIsotropic`).
 
 The basic example: in a finite-dimensional symplectic vector space with its constant symplectic
@@ -84,8 +84,9 @@ preserves isotropic and Lagrangian maps
 * `TauCeti.SmoothTwoForm.IsNondegenerate.finrank_add_finrank_orthogonal_range_mfderiv`,
   `TauCeti.SmoothTwoForm.IsNondegenerate.orthogonal_orthogonal_range_mfderiv` and
   `TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangian_range_mfderiv_iff_maximal_isIsotropic`: the
-  linear symplectic facts for a tangent image `W = df_x(T_x N)`: `dim N + dim W^σ = dim M` when
-  `df_x` is injective, `W^σσ = W`, and `W` is Lagrangian exactly when it is maximal isotropic.
+  linear symplectic facts for a tangent image `W = df_x(T_x N)`: for finite-dimensional `M`,
+  `dim N + dim W^σ = dim M` when `df_x` is injective and `W^σσ = W`; and `W` is Lagrangian exactly
+  when it is maximal isotropic.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianImmersion` and
   `TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianImmersion_iff`: Lagrangian immersions.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianImmersion_of_finrank_eq_one`: immersed curves
@@ -338,9 +339,9 @@ end Dimension
 
 section TangentImage
 
-/-- **The complement of a tangent image has the complementary dimension.** If the differential of
-`f` is injective at `x`, the tangent image `W = df_x(T_x N)` satisfies
-`dim N + dim W^σ = dim M`. -/
+/-- **The complement of a tangent image has the complementary dimension.** If `M` is
+finite-dimensional and the differential of `f` is injective at `x`, the tangent image
+`W = df_x(T_x N)` satisfies `dim N + dim W^σ = dim M`. -/
 theorem finrank_add_finrank_orthogonal_range_mfderiv [FiniteDimensional ℝ E] {x : N}
     (hx : Function.Injective (mfderiv J I f x)) :
     finrank ℝ E' + finrank ℝ ((hσ.symplecticFormAt (f x)).orthogonal
@@ -349,8 +350,9 @@ theorem finrank_add_finrank_orthogonal_range_mfderiv [FiniteDimensional ℝ E] {
     (LinearMap.range (mfderiv J I f x).toLinearMap)
   rwa [LinearMap.finrank_range_of_inj hx, finrank_tangentSpace, finrank_tangentSpace] at this
 
-/-- **The double complement of a tangent image is the tangent image**: `W^σσ = W` for
-`W = df_x(T_x N)`. No injectivity of the differential is needed. -/
+/-- **The double complement of a tangent image is the tangent image**: if `M` is
+finite-dimensional, `W^σσ = W` for `W = df_x(T_x N)`. No injectivity of the differential is
+needed. -/
 theorem orthogonal_orthogonal_range_mfderiv [FiniteDimensional ℝ E] (x : N) :
     (hσ.symplecticFormAt (f x)).orthogonal ((hσ.symplecticFormAt (f x)).orthogonal
         (LinearMap.range (mfderiv J I f x).toLinearMap)) =
