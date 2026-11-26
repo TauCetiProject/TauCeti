@@ -101,15 +101,6 @@ variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDi
 
 variable {A h μ p k}
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [FiniteDimensional ℝ F]
-  [FiniteDimensional ℝ F'] [μ.IsAddHaarMeasure] in
-/-- An almost everywhere statement on the image of a chart of `A.prod h` is one on the image of
-the corresponding chart of `A`. -/
-private theorem ae_restrict_image_prod_iff {i : Fin A.n} {P : E → Prop} :
-    (∀ᵐ y ∂μ.restrict ((A.prod h).sectionChartData.image i), P y) ↔
-      ∀ᵐ y ∂μ.restrict (A.image i), P y := by
-  rw [(A.prod h).sectionChartData_image i, FiniteBundleAtlas.image_prod]
-
 section ProdOfCoord
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
@@ -123,295 +114,215 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimension
   {W₂ : M → Type*} [TopologicalSpace (TotalSpace G₂ W₂)] [∀ x, AddCommGroup (W₂ x)]
   [∀ x, Module ℝ (W₂ x)] [∀ x, TopologicalSpace (W₂ x)] [FiberBundle G₂ W₂]
   [VectorBundle ℝ G₂ W₂]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [FiniteDimensional ℝ G]
-  [μ.IsAddHaarMeasure] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ x, Module ℝ (V x)]
-  [VectorBundle ℝ F V] [∀ x, AddCommGroup (V x)] in
-/-- An almost everywhere statement on the image of a chart of `A.ofBaseSet hW` is one on the image
-of the corresponding chart of `A`. -/
-private theorem ae_restrict_image_ofBaseSet_iff
-    {hW : ∀ i, closure (A.dom i) ⊆ (trivializationAt G W (A.center i)).baseSet} {i : Fin A.n}
-    {P : E → Prop} :
-    (∀ᵐ y ∂μ.restrict ((A.ofBaseSet hW).sectionChartData.image i), P y) ↔
-      ∀ᵐ y ∂μ.restrict (A.image i), P y := by
-  rw [(A.ofBaseSet hW).sectionChartData_image i, image_ofBaseSet]
-
-variable {hW : ∀ i, closure (A.dom i) ⊆ (trivializationAt G W (A.center i)).baseSet}
+  {hW : ∀ i, closure (A.dom i) ⊆ (trivializationAt G W (A.center i)).baseSet}
   {hW₁ : ∀ i, closure (A.dom i) ⊆ (trivializationAt G₁ W₁ (A.center i)).baseSet}
   {hW₂ : ∀ i, closure (A.dom i) ⊆ (trivializationAt G₂ W₂ (A.center i)).baseSet}
-  (e : G ≃L[ℝ] G₁ × G₂)
 
 variable (hW hW₁ μ p k) in
-/-- The components of the first factor of a tuple of components on the charts of `A.ofBaseSet hW`.
--/
-private def ofCoordFstData :
+/-- The constant fibre map `L : G →L[ℝ] G₁` applied to the components of a tuple on the charts of
+`A.ofBaseSet hW`, giving a tuple on the same charts of `A.ofBaseSet hW₁`. -/
+private def ofBaseSetMapData (L : G →L[ℝ] G₁) :
     (A.ofBaseSet hW).sectionChartData.SobolevData μ p k →L[ℝ]
       (A.ofBaseSet hW₁).sectionChartData.SobolevData μ p k :=
-  fiberMapData μ p k ((ContinuousLinearMap.fst ℝ G₁ G₂).comp (e : G →L[ℝ] G₁ × G₂))
+  fiberMapData μ p k L
     fun i ↦ ((image_ofBaseSet (h := hW₁) i).trans (image_ofBaseSet (h := hW) i).symm).le
-
-variable (hW hW₂ μ p k) in
-/-- The components of the second factor of a tuple of components on the charts of
-`A.ofBaseSet hW`. -/
-private def ofCoordSndData :
-    (A.ofBaseSet hW).sectionChartData.SobolevData μ p k →L[ℝ]
-      (A.ofBaseSet hW₂).sectionChartData.SobolevData μ p k :=
-  fiberMapData μ p k ((ContinuousLinearMap.snd ℝ G₁ G₂).comp (e : G →L[ℝ] G₁ × G₂))
-    fun i ↦ ((image_ofBaseSet (h := hW₂) i).trans (image_ofBaseSet (h := hW) i).symm).le
-
-variable (hW hW₁ μ p k) in
-/-- The components on the charts of `A.ofBaseSet hW` of a tuple of components on the charts of
-`A.ofBaseSet hW₁`, placed in the first factor. -/
-private def ofCoordInlData :
-    (A.ofBaseSet hW₁).sectionChartData.SobolevData μ p k →L[ℝ]
-      (A.ofBaseSet hW).sectionChartData.SobolevData μ p k :=
-  fiberMapData μ p k ((e.symm : G₁ × G₂ →L[ℝ] G).comp (ContinuousLinearMap.inl ℝ G₁ G₂))
-    fun i ↦ ((image_ofBaseSet (h := hW) i).trans (image_ofBaseSet (h := hW₁) i).symm).le
-
-variable (hW hW₂ μ p k) in
-/-- The components on the charts of `A.ofBaseSet hW` of a tuple of components on the charts of
-`A.ofBaseSet hW₂`, placed in the second factor. -/
-private def ofCoordInrData :
-    (A.ofBaseSet hW₂).sectionChartData.SobolevData μ p k →L[ℝ]
-      (A.ofBaseSet hW).sectionChartData.SobolevData μ p k :=
-  fiberMapData μ p k ((e.symm : G₁ × G₂ →L[ℝ] G).comp (ContinuousLinearMap.inr ℝ G₁ G₂))
-    fun i ↦ ((image_ofBaseSet (h := hW) i).trans (image_ofBaseSet (h := hW₂) i).symm).le
-
-omit [FiniteDimensional ℝ G₂] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ x, Module ℝ (V x)]
-  [VectorBundle ℝ F V] [∀ x, AddCommGroup (V x)] in
-private theorem chartValueL_ofCoordFstData_ae
-    (w : (A.ofBaseSet hW).sectionChartData.SobolevData μ p k)
-    (i : Fin A.n) :
-    (A.ofBaseSet hW₁).sectionChartData.chartValueL μ p k i (ofCoordFstData μ p k hW hW₁ e w)
-      =ᵐ[μ.restrict (A.image i)]
-        fun y ↦ (e ((A.ofBaseSet hW).sectionChartData.chartValueL μ p k i w y)).1 := by
-  refine (ae_restrict_image_ofBaseSet_iff (A := A) (hW := hW₁)).1 ?_
-  filter_upwards [chartValueL_ae_of_eq_fiberMap μ p k (C₁ := (A.ofBaseSet hW).sectionChartData)
-    (C₂ := (A.ofBaseSet hW₁).sectionChartData)
-    ((ContinuousLinearMap.fst ℝ G₁ G₂).comp (e : G →L[ℝ] G₁ × G₂)) (i₁ := i) (i₂ := i)
-    ((image_ofBaseSet (h := hW₁) i).trans (image_ofBaseSet (h := hW) i).symm).le (w₁ := w)
-    (w₂ := ofCoordFstData μ p k hW hW₁ e w) (fiberMapData_apply μ p k _ _ w i)] with y hy
-  rw [hy]
-  simp
-
-omit [FiniteDimensional ℝ G₁] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ x, Module ℝ (V x)]
-  [VectorBundle ℝ F V] [∀ x, AddCommGroup (V x)] in
-private theorem chartValueL_ofCoordSndData_ae
-    (w : (A.ofBaseSet hW).sectionChartData.SobolevData μ p k)
-    (i : Fin A.n) :
-    (A.ofBaseSet hW₂).sectionChartData.chartValueL μ p k i (ofCoordSndData μ p k hW hW₂ e w)
-      =ᵐ[μ.restrict (A.image i)]
-        fun y ↦ (e ((A.ofBaseSet hW).sectionChartData.chartValueL μ p k i w y)).2 := by
-  refine (ae_restrict_image_ofBaseSet_iff (A := A) (hW := hW₂)).1 ?_
-  filter_upwards [chartValueL_ae_of_eq_fiberMap μ p k (C₁ := (A.ofBaseSet hW).sectionChartData)
-    (C₂ := (A.ofBaseSet hW₂).sectionChartData)
-    ((ContinuousLinearMap.snd ℝ G₁ G₂).comp (e : G →L[ℝ] G₁ × G₂)) (i₁ := i) (i₂ := i)
-    ((image_ofBaseSet (h := hW₂) i).trans (image_ofBaseSet (h := hW) i).symm).le (w₁ := w)
-    (w₂ := ofCoordSndData μ p k hW hW₂ e w) (fiberMapData_apply μ p k _ _ w i)] with y hy
-  rw [hy]
-  simp
 
 omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
   [∀ x, AddCommGroup (V x)] in
+private theorem chartValueL_ofBaseSetMapData_ae (L : G →L[ℝ] G₁)
+    (w : (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) (i : Fin A.n) :
+    (A.ofBaseSet hW₁).sectionChartData.chartValueL μ p k i (ofBaseSetMapData μ p k hW hW₁ L w)
+      =ᵐ[μ.restrict (A.image i)]
+        fun y ↦ L ((A.ofBaseSet hW).sectionChartData.chartValueL μ p k i w y) :=
+  (A.ae_image_ofBaseSet_iff μ hW₁ i).1 <| chartValueL_ae_of_eq_fiberMap μ p k
+    (C₁ := (A.ofBaseSet hW).sectionChartData) (C₂ := (A.ofBaseSet hW₁).sectionChartData) L
+    (i₁ := i) (i₂ := i)
+    ((image_ofBaseSet (h := hW₁) i).trans (image_ofBaseSet (h := hW) i).symm).le (w₁ := w)
+    (w₂ := ofBaseSetMapData μ p k hW hW₁ L w) (fiberMapData_apply μ p k _ _ w i)
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [FiniteDimensional ℝ G]
+  [FiniteDimensional ℝ G₁] [μ.IsAddHaarMeasure] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] [∀ x, AddCommGroup (V x)] in
+/-- If the readings of sections `s` of `W` and `s₁` of `W₁` are related by `L` on the image of
+chart `i`, so are their section chart data, almost everywhere. -/
+private theorem ae_sectionChartData_coord_ofBaseSet (L : G →L[ℝ] G₁) {s : ∀ x, W x}
+    {s₁ : ∀ x, W₁ x} {i : Fin A.n}
+    (hs : ∀ y ∈ A.image i, L ((A.ofBaseSet hW).coord i s y) = (A.ofBaseSet hW₁).coord i s₁ y) :
+    ∀ᵐ y ∂μ.restrict (A.image i), L ((A.ofBaseSet hW).sectionChartData.coord i s y) =
+      (A.ofBaseSet hW₁).sectionChartData.coord i s₁ y := by
+  filter_upwards [ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy
+  rw [(A.ofBaseSet hW).sectionChartData_coord_of_mem s ((image_ofBaseSet i).ge hy),
+    (A.ofBaseSet hW₁).sectionChartData_coord_of_mem _ ((image_ofBaseSet i).ge hy), hs y hy]
+
+variable (hW hW₁ μ p k) in
+/-- A constant fibre map `L : G →L[ℝ] G₁` which carries the readings of every section of `W` to
+the readings of a section of `W₁` induces `W^{k,p}(W) →L[ℝ] W^{k,p}(W₁)` on the same charts. -/
+private def ofBaseSetMapL (L : G →L[ℝ] G₁)
+    (hL : ∀ s : ∀ x, W x, ∃ s₁ : ∀ x, W₁ x, ∀ i, ∀ y ∈ A.image i,
+      L ((A.ofBaseSet hW).coord i s y) = (A.ofBaseSet hW₁).coord i s₁ y) :
+    SobolevSection (A.ofBaseSet hW) μ p k →L[ℝ] SobolevSection (A.ofBaseSet hW₁) μ p k :=
+  ((ofBaseSetMapData μ p k hW hW₁ L).comp
+      ((A.ofBaseSet hW).sectionChartData.sobolevSections μ p k).subtypeL).codRestrict _
+    fun w ↦ by
+      obtain ⟨s, hs⟩ := (A.ofBaseSet hW).sectionChartData.exists_section μ p k w
+      obtain ⟨s₁, hs₁⟩ := hL s
+      refine (SectionChartData.mem_sobolevSections_iff _ μ p k).2
+        ⟨s₁, fun i ↦ (A.ae_image_ofBaseSet_iff μ hW₁ i).2 ?_⟩
+      filter_upwards [chartValueL_ofBaseSetMapData_ae (hW₁ := hW₁) L
+          (w : (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) i,
+        (A.ae_image_ofBaseSet_iff μ hW i).1 (hs i),
+        ae_sectionChartData_coord_ofBaseSet (μ := μ) L (hs₁ i)] with y h₁ h₂ h₃
+      rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, h₁, h₂, h₃]
+
+omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
+  [∀ x, AddCommGroup (V x)] in
+private theorem coe_ofBaseSetMapL (L : G →L[ℝ] G₁) {hL}
+    (w : SobolevSection (A.ofBaseSet hW) μ p k) :
+    (ofBaseSetMapL μ p k hW hW₁ L hL w : (A.ofBaseSet hW₁).sectionChartData.SobolevData μ p k) =
+      ofBaseSetMapData μ p k hW hW₁ L w := by
+  simp [ofBaseSetMapL]
+
+variable (e : G ≃L[ℝ] G₁ × G₂)
+
+omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
+  [∀ x, AddCommGroup (V x)] in
+/-- The chart data of the tuple on the charts of `A.ofBaseSet hW` assembled by `e.symm` from tuples
+`u`, `v` on the charts of `A.ofBaseSet hW₁`, `A.ofBaseSet hW₂`. -/
 private theorem chartValueL_ofCoordPairData_ae
     (u : (A.ofBaseSet hW₁).sectionChartData.SobolevData μ p k)
     (v : (A.ofBaseSet hW₂).sectionChartData.SobolevData μ p k) (i : Fin A.n) :
     (A.ofBaseSet hW).sectionChartData.chartValueL μ p k i
-        (ofCoordInlData μ p k hW hW₁ e u + ofCoordInrData μ p k hW hW₂ e v)
+        (ofBaseSetMapData μ p k hW₁ hW ((e.symm : G₁ × G₂ →L[ℝ] G).comp
+            (ContinuousLinearMap.inl ℝ G₁ G₂)) u +
+          ofBaseSetMapData μ p k hW₂ hW ((e.symm : G₁ × G₂ →L[ℝ] G).comp
+            (ContinuousLinearMap.inr ℝ G₁ G₂)) v)
       =ᵐ[μ.restrict (A.image i)] fun y ↦
         e.symm ((A.ofBaseSet hW₁).sectionChartData.chartValueL μ p k i u y,
           (A.ofBaseSet hW₂).sectionChartData.chartValueL μ p k i v y) := by
-  have hu := chartValueL_ae_of_eq_fiberMap μ p k (C₁ := (A.ofBaseSet hW₁).sectionChartData)
-    (C₂ := (A.ofBaseSet hW).sectionChartData)
-    ((e.symm : G₁ × G₂ →L[ℝ] G).comp (ContinuousLinearMap.inl ℝ G₁ G₂)) (i₁ := i) (i₂ := i)
-    ((image_ofBaseSet (h := hW) i).trans (image_ofBaseSet (h := hW₁) i).symm).le (w₁ := u)
-    (w₂ := ofCoordInlData μ p k hW hW₁ e u) (fiberMapData_apply μ p k _ _ u i)
-  have hv := chartValueL_ae_of_eq_fiberMap μ p k (C₁ := (A.ofBaseSet hW₂).sectionChartData)
-    (C₂ := (A.ofBaseSet hW).sectionChartData)
-    ((e.symm : G₁ × G₂ →L[ℝ] G).comp (ContinuousLinearMap.inr ℝ G₁ G₂)) (i₁ := i) (i₂ := i)
-    ((image_ofBaseSet (h := hW) i).trans (image_ofBaseSet (h := hW₂) i).symm).le (w₁ := v)
-    (w₂ := ofCoordInrData μ p k hW hW₂ e v) (fiberMapData_apply μ p k _ _ v i)
-  refine (ae_restrict_image_ofBaseSet_iff (A := A) (hW := hW)).1 ?_
-  filter_upwards [hu, hv, Lp.coeFn_add
-    ((A.ofBaseSet hW).sectionChartData.chartValueL μ p k i (ofCoordInlData μ p k hW hW₁ e u))
-    ((A.ofBaseSet hW).sectionChartData.chartValueL μ p k i (ofCoordInrData μ p k hW hW₂ e v))]
-    with y hu hv hadd
-  rw [map_add, hadd, Pi.add_apply, hu, hv]
+  filter_upwards [(A.ae_image_ofBaseSet_iff μ hW i).1 (Lp.coeFn_add
+      ((A.ofBaseSet hW).sectionChartData.chartValueL μ p k i (ofBaseSetMapData μ p k hW₁ hW
+        ((e.symm : G₁ × G₂ →L[ℝ] G).comp (ContinuousLinearMap.inl ℝ G₁ G₂)) u))
+      ((A.ofBaseSet hW).sectionChartData.chartValueL μ p k i (ofBaseSetMapData μ p k hW₂ hW
+        ((e.symm : G₁ × G₂ →L[ℝ] G).comp (ContinuousLinearMap.inr ℝ G₁ G₂)) v))),
+    chartValueL_ofBaseSetMapData_ae (hW₁ := hW) _ u i,
+    chartValueL_ofBaseSetMapData_ae (hW₁ := hW) _ v i] with y hadd h₁ h₂
+  rw [map_add, hadd, Pi.add_apply, h₁, h₂]
   simp [← map_add]
 
-variable {f₁ : (∀ x, W x) → ∀ x, W₁ x} {f₂ : (∀ x, W x) → ∀ x, W₂ x}
-  {g : (∀ x, W₁ x) → (∀ x, W₂ x) → ∀ x, W x}
-
-include e in
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] [μ.IsAddHaarMeasure] [FiniteDimensional ℝ G]
-  [FiniteDimensional ℝ G₁] [FiniteDimensional ℝ G₂] [∀ x, AddCommGroup (V x)] in
-/-- Coordinates of a section of `W` on the image of chart `i` read through the section chart
-data. -/
-private theorem e_sectionChartData_coord_ae
-    (hf : ∀ i s, ∀ y ∈ A.image i, e ((A.ofBaseSet hW).coord i s y) =
-      ((A.ofBaseSet hW₁).coord i (f₁ s) y, (A.ofBaseSet hW₂).coord i (f₂ s) y))
-    (i : Fin A.n) (s : ∀ x, W x) :
-    ∀ᵐ y ∂μ.restrict (A.image i), e ((A.ofBaseSet hW).sectionChartData.coord i s y) =
-      ((A.ofBaseSet hW₁).sectionChartData.coord i (f₁ s) y,
-        (A.ofBaseSet hW₂).sectionChartData.coord i (f₂ s) y) := by
-  filter_upwards [ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy
-  rw [(A.ofBaseSet hW).sectionChartData_coord_of_mem s ((image_ofBaseSet i).ge hy),
-    (A.ofBaseSet hW₁).sectionChartData_coord_of_mem _ ((image_ofBaseSet i).ge hy),
-    (A.ofBaseSet hW₂).sectionChartData_coord_of_mem _ ((image_ofBaseSet i).ge hy), hf i s y hy]
-
-variable (hW hW₁ hW₂ μ p k f₁ f₂ g)
-
-/-- The first component of `TauCeti.SobolevSection.prodEquivOfCoord`. -/
-private def ofCoordFstL
-    (hf : ∀ i s, ∀ y ∈ A.image i, e ((A.ofBaseSet hW).coord i s y) =
-      ((A.ofBaseSet hW₁).coord i (f₁ s) y, (A.ofBaseSet hW₂).coord i (f₂ s) y)) :
-    SobolevSection (A.ofBaseSet hW) μ p k →L[ℝ] SobolevSection (A.ofBaseSet hW₁) μ p k :=
-  ((ofCoordFstData μ p k hW hW₁ e).comp
-      ((A.ofBaseSet hW).sectionChartData.sobolevSections μ p k).subtypeL).codRestrict
-    ((A.ofBaseSet hW₁).sectionChartData.sobolevSections μ p k) fun w ↦ by
-      obtain ⟨s, hs⟩ := (A.ofBaseSet hW).sectionChartData.exists_section μ p k w
-      refine (SectionChartData.mem_sobolevSections_iff _ μ p k).2
-        ⟨f₁ s, fun i ↦ (ae_restrict_image_ofBaseSet_iff (A := A) (hW := hW₁)).2 ?_⟩
-      filter_upwards [chartValueL_ofCoordFstData_ae (hW₁ := hW₁) e
-          (w : (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) i,
-        (ae_restrict_image_ofBaseSet_iff (A := A) (hW := hW)).1 (hs i),
-        e_sectionChartData_coord_ae e hf i s] with y h₁ h₂ h₃
-      rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, h₁, h₂, h₃]
-
-/-- The second component of `TauCeti.SobolevSection.prodEquivOfCoord`. -/
-private def ofCoordSndL
-    (hf : ∀ i s, ∀ y ∈ A.image i, e ((A.ofBaseSet hW).coord i s y) =
-      ((A.ofBaseSet hW₁).coord i (f₁ s) y, (A.ofBaseSet hW₂).coord i (f₂ s) y)) :
-    SobolevSection (A.ofBaseSet hW) μ p k →L[ℝ] SobolevSection (A.ofBaseSet hW₂) μ p k :=
-  ((ofCoordSndData μ p k hW hW₂ e).comp
-      ((A.ofBaseSet hW).sectionChartData.sobolevSections μ p k).subtypeL).codRestrict
-    ((A.ofBaseSet hW₂).sectionChartData.sobolevSections μ p k) fun w ↦ by
-      obtain ⟨s, hs⟩ := (A.ofBaseSet hW).sectionChartData.exists_section μ p k w
-      refine (SectionChartData.mem_sobolevSections_iff _ μ p k).2
-        ⟨f₂ s, fun i ↦ (ae_restrict_image_ofBaseSet_iff (A := A) (hW := hW₂)).2 ?_⟩
-      filter_upwards [chartValueL_ofCoordSndData_ae (hW₂ := hW₂) e
-          (w : (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) i,
-        (ae_restrict_image_ofBaseSet_iff (A := A) (hW := hW)).1 (hs i),
-        e_sectionChartData_coord_ae e hf i s] with y h₁ h₂ h₃
-      rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, h₁, h₂, h₃]
-
+variable (hW hW₁ hW₂ μ p k) in
 /-- The inverse of `TauCeti.SobolevSection.prodEquivOfCoord`. -/
 private def ofCoordPairL
-    (hg : ∀ i s₁ s₂, ∀ y ∈ A.image i, e ((A.ofBaseSet hW).coord i (g s₁ s₂) y) =
-      ((A.ofBaseSet hW₁).coord i s₁ y, (A.ofBaseSet hW₂).coord i s₂ y)) :
+    (hg : ∀ (s₁ : ∀ x, W₁ x) (s₂ : ∀ x, W₂ x), ∃ s : ∀ x, W x, ∀ i, ∀ y ∈ A.image i,
+      e ((A.ofBaseSet hW).coord i s y) =
+        ((A.ofBaseSet hW₁).coord i s₁ y, (A.ofBaseSet hW₂).coord i s₂ y)) :
     SobolevSection (A.ofBaseSet hW₁) μ p k × SobolevSection (A.ofBaseSet hW₂) μ p k →L[ℝ]
       SobolevSection (A.ofBaseSet hW) μ p k :=
-  ((ofCoordInlData μ p k hW hW₁ e).comp
+  ((ofBaseSetMapData μ p k hW₁ hW ((e.symm : G₁ × G₂ →L[ℝ] G).comp
+        (ContinuousLinearMap.inl ℝ G₁ G₂))).comp
       (((A.ofBaseSet hW₁).sectionChartData.sobolevSections μ p k).subtypeL.comp
         (ContinuousLinearMap.fst ℝ _ _)) +
-    (ofCoordInrData μ p k hW hW₂ e).comp
+    (ofBaseSetMapData μ p k hW₂ hW ((e.symm : G₁ × G₂ →L[ℝ] G).comp
+        (ContinuousLinearMap.inr ℝ G₁ G₂))).comp
       (((A.ofBaseSet hW₂).sectionChartData.sobolevSections μ p k).subtypeL.comp
-        (ContinuousLinearMap.snd ℝ _ _))).codRestrict
-    ((A.ofBaseSet hW).sectionChartData.sobolevSections μ p k) fun w ↦ by
-      obtain ⟨s₁, hs₁⟩ := (A.ofBaseSet hW₁).sectionChartData.exists_section μ p k w.1
-      obtain ⟨s₂, hs₂⟩ := (A.ofBaseSet hW₂).sectionChartData.exists_section μ p k w.2
-      refine (SectionChartData.mem_sobolevSections_iff _ μ p k).2
-        ⟨g s₁ s₂, fun i ↦ (ae_restrict_image_ofBaseSet_iff (A := A) (hW := hW)).2 ?_⟩
-      filter_upwards [chartValueL_ofCoordPairData_ae (hW := hW) e
-          (w.1 : (A.ofBaseSet hW₁).sectionChartData.SobolevData μ p k)
-          (w.2 : (A.ofBaseSet hW₂).sectionChartData.SobolevData μ p k) i,
-        (ae_restrict_image_ofBaseSet_iff (A := A) (hW := hW₁)).1 (hs₁ i),
-        (ae_restrict_image_ofBaseSet_iff (A := A) (hW := hW₂)).1 (hs₂ i),
-        ae_restrict_mem (A.image i).isOpen.measurableSet] with y h₁ h₂ h₃ hy
-      have hg' := hg i s₁ s₂ y hy
-      rw [← (A.ofBaseSet hW).sectionChartData_coord_of_mem _ ((image_ofBaseSet (h := hW) i).ge hy),
-        ← (A.ofBaseSet hW₁).sectionChartData_coord_of_mem _
-          ((image_ofBaseSet (h := hW₁) i).ge hy),
-        ← (A.ofBaseSet hW₂).sectionChartData_coord_of_mem _
-          ((image_ofBaseSet (h := hW₂) i).ge hy), ← h₂, ← h₃, ← e.eq_symm_apply] at hg'
-      simpa using h₁.trans hg'.symm
-
-variable {hf : ∀ i s, ∀ y ∈ A.image i, e ((A.ofBaseSet hW).coord i s y) =
-      ((A.ofBaseSet hW₁).coord i (f₁ s) y, (A.ofBaseSet hW₂).coord i (f₂ s) y)}
-  {hg : ∀ i s₁ s₂, ∀ y ∈ A.image i, e ((A.ofBaseSet hW).coord i (g s₁ s₂) y) =
-      ((A.ofBaseSet hW₁).coord i s₁ y, (A.ofBaseSet hW₂).coord i s₂ y)}
-
-omit [FiniteDimensional ℝ G₂] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ x, Module ℝ (V x)]
-  [VectorBundle ℝ F V] [∀ x, AddCommGroup (V x)] in
-private theorem coe_ofCoordFstL (w : SobolevSection (A.ofBaseSet hW) μ p k) :
-    (ofCoordFstL μ p k hW hW₁ hW₂ e f₁ f₂ hf w :
-        (A.ofBaseSet hW₁).sectionChartData.SobolevData μ p k) =
-      ofCoordFstData μ p k hW hW₁ e w := by
-  simp [ofCoordFstL]
-
-omit [FiniteDimensional ℝ G₁] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ x, Module ℝ (V x)]
-  [VectorBundle ℝ F V] [∀ x, AddCommGroup (V x)] in
-private theorem coe_ofCoordSndL (w : SobolevSection (A.ofBaseSet hW) μ p k) :
-    (ofCoordSndL μ p k hW hW₁ hW₂ e f₁ f₂ hf w :
-        (A.ofBaseSet hW₂).sectionChartData.SobolevData μ p k) =
-      ofCoordSndData μ p k hW hW₂ e w := by
-  simp [ofCoordSndL]
+        (ContinuousLinearMap.snd ℝ _ _))).codRestrict _ fun w ↦ by
+    obtain ⟨s₁, hs₁⟩ := (A.ofBaseSet hW₁).sectionChartData.exists_section μ p k w.1
+    obtain ⟨s₂, hs₂⟩ := (A.ofBaseSet hW₂).sectionChartData.exists_section μ p k w.2
+    obtain ⟨s, hs⟩ := hg s₁ s₂
+    refine (SectionChartData.mem_sobolevSections_iff _ μ p k).2
+      ⟨s, fun i ↦ (A.ae_image_ofBaseSet_iff μ hW i).2 ?_⟩
+    filter_upwards [chartValueL_ofCoordPairData_ae (hW := hW) e
+        (w.1 : (A.ofBaseSet hW₁).sectionChartData.SobolevData μ p k)
+        (w.2 : (A.ofBaseSet hW₂).sectionChartData.SobolevData μ p k) i,
+      (A.ae_image_ofBaseSet_iff μ hW₁ i).1 (hs₁ i), (A.ae_image_ofBaseSet_iff μ hW₂ i).1 (hs₂ i),
+      ae_sectionChartData_coord_ofBaseSet (μ := μ)
+        ((ContinuousLinearMap.fst ℝ G₁ G₂).comp (e : G →L[ℝ] G₁ × G₂))
+        fun y hy ↦ congrArg Prod.fst (hs i y hy),
+      ae_sectionChartData_coord_ofBaseSet (μ := μ)
+        ((ContinuousLinearMap.snd ℝ G₁ G₂).comp (e : G →L[ℝ] G₁ × G₂))
+        fun y hy ↦ congrArg Prod.snd (hs i y hy)] with y h₁ h₂ h₃ h₄ h₅
+    simp only [ContinuousLinearMap.comp_apply, add_apply, Submodule.subtypeL_apply,
+      ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd'] at h₄ h₅ ⊢
+    rw [h₁, h₂, h₃, ← h₄, ← h₅]
+    simp
 
 omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
   [∀ x, AddCommGroup (V x)] in
-private theorem coe_ofCoordPairL (u : SobolevSection (A.ofBaseSet hW₁) μ p k)
-    (v : SobolevSection (A.ofBaseSet hW₂) μ p k) :
-    (ofCoordPairL μ p k hW hW₁ hW₂ e g hg (u, v) :
-        (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) =
-      ofCoordInlData μ p k hW hW₁ e u + ofCoordInrData μ p k hW hW₂ e v := by
-  simp [ofCoordPairL]
+private theorem chartValueL_ofCoordPairL_ae {hg} (u : SobolevSection (A.ofBaseSet hW₁) μ p k)
+    (v : SobolevSection (A.ofBaseSet hW₂) μ p k) (i : Fin A.n) :
+    (A.ofBaseSet hW).sectionChartData.chartValueL μ p k i
+        (ofCoordPairL μ p k hW hW₁ hW₂ e hg (u, v))
+      =ᵐ[μ.restrict (A.image i)] fun y ↦
+        e.symm ((A.ofBaseSet hW₁).sectionChartData.chartValueL μ p k i u y,
+          (A.ofBaseSet hW₂).sectionChartData.chartValueL μ p k i v y) := by
+  simpa [ofCoordPairL] using chartValueL_ofCoordPairData_ae (hW := hW) e
+    (u : (A.ofBaseSet hW₁).sectionChartData.SobolevData μ p k)
+    (v : (A.ofBaseSet hW₂).sectionChartData.SobolevData μ p k) i
 
-variable (A) in
+variable (A μ p k hW hW₁ hW₂) in
 /-- **Sobolev sections on the same charts split along a fibre isomorphism.** Let `W`, `W₁`, `W₂`
 be vector bundles read on the charts of `A`, and `e : G ≃L[ℝ] G₁ × G₂` an isomorphism of their
-model fibres which, on the chart images, carries the readings of a section `s` of `W` to the
-readings of two sections `f₁ s` of `W₁` and `f₂ s` of `W₂`, and the readings of a section
-`g s₁ s₂` of `W` to those of `s₁` and `s₂`. Then `W^{k,p}(W) ≃ W^{k,p}(W₁) × W^{k,p}(W₂)`, acting on
-the chart data by `e` (`TauCeti.SobolevSection.chartValueL_prodEquivOfCoord_fst_ae`,
+model fibres which, on the chart images, carries the readings of every section of `W` to the
+readings of a pair of sections of `W₁` and `W₂` (`hf`), and conversely (`hg`). Then
+`W^{k,p}(W) ≃ W^{k,p}(W₁) × W^{k,p}(W₂)`, acting on the chart data by `e`
+(`TauCeti.SobolevSection.chartValueL_prodEquivOfCoord_fst_ae`,
 `TauCeti.SobolevSection.chartValueL_prodEquivOfCoord_snd_ae`,
 `TauCeti.SobolevSection.chartValueL_prodEquivOfCoord_symm_ae`). -/
 def prodEquivOfCoord
-    (hf : ∀ i s, ∀ y ∈ A.image i, e ((A.ofBaseSet hW).coord i s y) =
-      ((A.ofBaseSet hW₁).coord i (f₁ s) y, (A.ofBaseSet hW₂).coord i (f₂ s) y))
-    (hg : ∀ i s₁ s₂, ∀ y ∈ A.image i, e ((A.ofBaseSet hW).coord i (g s₁ s₂) y) =
-      ((A.ofBaseSet hW₁).coord i s₁ y, (A.ofBaseSet hW₂).coord i s₂ y)) :
+    (hf : ∀ s : ∀ x, W x, ∃ (s₁ : ∀ x, W₁ x) (s₂ : ∀ x, W₂ x), ∀ i, ∀ y ∈ A.image i,
+      e ((A.ofBaseSet hW).coord i s y) =
+        ((A.ofBaseSet hW₁).coord i s₁ y, (A.ofBaseSet hW₂).coord i s₂ y))
+    (hg : ∀ (s₁ : ∀ x, W₁ x) (s₂ : ∀ x, W₂ x), ∃ s : ∀ x, W x, ∀ i, ∀ y ∈ A.image i,
+      e ((A.ofBaseSet hW).coord i s y) =
+        ((A.ofBaseSet hW₁).coord i s₁ y, (A.ofBaseSet hW₂).coord i s₂ y)) :
     SobolevSection (A.ofBaseSet hW) μ p k ≃L[ℝ]
       SobolevSection (A.ofBaseSet hW₁) μ p k × SobolevSection (A.ofBaseSet hW₂) μ p k :=
   ContinuousLinearEquiv.ofContinuousLinearMap
-    ((ofCoordFstL μ p k hW hW₁ hW₂ e f₁ f₂ hf).prod (ofCoordSndL μ p k hW hW₁ hW₂ e f₁ f₂ hf))
-    (ofCoordPairL μ p k hW hW₁ hW₂ e g hg)
+    ((ofBaseSetMapL μ p k hW hW₁ ((ContinuousLinearMap.fst ℝ G₁ G₂).comp (e : G →L[ℝ] G₁ × G₂))
+        fun s ↦ (hf s).elim fun s₁ h ↦ h.elim fun _ h ↦
+          ⟨s₁, fun i y hy ↦ congrArg Prod.fst (h i y hy)⟩).prod
+      (ofBaseSetMapL μ p k hW hW₂ ((ContinuousLinearMap.snd ℝ G₁ G₂).comp (e : G →L[ℝ] G₁ × G₂))
+        fun s ↦ (hf s).elim fun _ h ↦ h.elim fun s₂ h ↦
+          ⟨s₂, fun i y hy ↦ congrArg Prod.snd (h i y hy)⟩))
+    (ofCoordPairL μ p k hW hW₁ hW₂ e hg)
     (h₂ := ContinuousLinearMap.ext fun w ↦ SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
-      (ae_restrict_image_ofBaseSet_iff (A := A) (hW := hW)).2 <| by
-      filter_upwards [chartValueL_ofCoordPairData_ae (hW := hW) e (ofCoordFstData μ p k hW hW₁ e w)
-          (ofCoordSndData μ p k hW hW₂ e w) i,
-        chartValueL_ofCoordFstData_ae (hW₁ := hW₁) e
+      (A.ae_image_ofBaseSet_iff μ hW i).2 <| by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
+        ContinuousLinearMap.id_apply]
+      filter_upwards [chartValueL_ofCoordPairL_ae (μ := μ) (p := p) (k := k) (hW := hW) (hW₁ := hW₁)
+          (hW₂ := hW₂) e _ _ i,
+        chartValueL_ofBaseSetMapData_ae (hW₁ := hW₁) _
           (w : (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) i,
-        chartValueL_ofCoordSndData_ae (hW₂ := hW₂) e
-          (w : (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) i]
-        with y h₁ h₂ h₃
-      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply, coe_ofCoordPairL,
-        coe_ofCoordFstL, coe_ofCoordSndL, ContinuousLinearMap.id_apply, h₁, h₂, h₃, Prod.mk.eta,
-        ContinuousLinearEquiv.symm_apply_apply])
+        chartValueL_ofBaseSetMapData_ae (hW₁ := hW₂) _
+          (w : (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) i] with y h₁ h₂ h₃
+      rw [h₁, coe_ofBaseSetMapL, coe_ofBaseSetMapL, h₂, h₃]
+      simp)
     (h₁ := ContinuousLinearMap.ext fun w ↦ by
       obtain ⟨u, v⟩ := w
       rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
         ContinuousLinearMap.id_apply]
       refine Prod.ext (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
-          (ae_restrict_image_ofBaseSet_iff (A := A) (hW := hW₁)).2 ?_)
+          (A.ae_image_ofBaseSet_iff μ hW₁ i).2 ?_)
         (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
-          (ae_restrict_image_ofBaseSet_iff (A := A) (hW := hW₂)).2 ?_)
-      · filter_upwards [chartValueL_ofCoordFstData_ae (hW₁ := hW₁) e
-            (ofCoordPairL μ p k hW hW₁ hW₂ e g hg (u, v) :
-            (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) i,
-          chartValueL_ofCoordPairData_ae (hW := hW) e
-            (u : (A.ofBaseSet hW₁).sectionChartData.SobolevData μ p k)
-            (v : (A.ofBaseSet hW₂).sectionChartData.SobolevData μ p k) i] with y h₁ h₂
-        rw [coe_ofCoordFstL, h₁, coe_ofCoordPairL, h₂, ContinuousLinearEquiv.apply_symm_apply]
-      · filter_upwards [chartValueL_ofCoordSndData_ae (hW₂ := hW₂) e
-            (ofCoordPairL μ p k hW hW₁ hW₂ e g hg (u, v) :
-            (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) i,
-          chartValueL_ofCoordPairData_ae (hW := hW) e
-            (u : (A.ofBaseSet hW₁).sectionChartData.SobolevData μ p k)
-            (v : (A.ofBaseSet hW₂).sectionChartData.SobolevData μ p k) i] with y h₁ h₂
-        rw [coe_ofCoordSndL, h₁, coe_ofCoordPairL, h₂, ContinuousLinearEquiv.apply_symm_apply])
+          (A.ae_image_ofBaseSet_iff μ hW₂ i).2 ?_)
+      · filter_upwards [chartValueL_ofBaseSetMapData_ae (hW₁ := hW₁) _
+            (ofCoordPairL μ p k hW hW₁ hW₂ e hg (u, v) :
+              (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) i,
+          chartValueL_ofCoordPairL_ae (hW := hW) e u v i] with y h₁ h₂
+        rw [coe_ofBaseSetMapL, h₁, h₂]
+        simp
+      · filter_upwards [chartValueL_ofBaseSetMapData_ae (hW₁ := hW₂) _
+            (ofCoordPairL μ p k hW hW₁ hW₂ e hg (u, v) :
+              (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) i,
+          chartValueL_ofCoordPairL_ae (hW := hW) e u v i] with y h₁ h₂
+        rw [coe_ofBaseSetMapL, h₁, h₂]
+        simp)
 
-variable {hW hW₁ hW₂ μ p k f₁ f₂ g}
+variable {hf : ∀ s : ∀ x, W x, ∃ (s₁ : ∀ x, W₁ x) (s₂ : ∀ x, W₂ x), ∀ i, ∀ y ∈ A.image i,
+      e ((A.ofBaseSet hW).coord i s y) =
+        ((A.ofBaseSet hW₁).coord i s₁ y, (A.ofBaseSet hW₂).coord i s₂ y)}
+  {hg : ∀ (s₁ : ∀ x, W₁ x) (s₂ : ∀ x, W₂ x), ∃ s : ∀ x, W x, ∀ i, ∀ y ∈ A.image i,
+      e ((A.ofBaseSet hW).coord i s y) =
+        ((A.ofBaseSet hW₁).coord i s₁ y, (A.ofBaseSet hW₂).coord i s₂ y)}
 
 omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
   [∀ x, AddCommGroup (V x)] in
@@ -420,12 +331,12 @@ applied to the chart data. -/
 theorem chartValueL_prodEquivOfCoord_fst_ae (w : SobolevSection (A.ofBaseSet hW) μ p k)
     (i : Fin A.n) :
     (A.ofBaseSet hW₁).sectionChartData.chartValueL μ p k i
-        (prodEquivOfCoord A μ p k hW hW₁ hW₂ e f₁ f₂ g hf hg w).1
+        (prodEquivOfCoord A μ p k hW hW₁ hW₂ e hf hg w).1
       =ᵐ[μ.restrict (A.image i)]
         fun y ↦ (e ((A.ofBaseSet hW).sectionChartData.chartValueL μ p k i w y)).1 := by
   rw [prodEquivOfCoord, ContinuousLinearEquiv.coe_ofContinuousLinearMap,
-    ContinuousLinearMap.prod_apply, coe_ofCoordFstL]
-  exact chartValueL_ofCoordFstData_ae (hW₁ := hW₁) e
+    ContinuousLinearMap.prod_apply, coe_ofBaseSetMapL]
+  exact chartValueL_ofBaseSetMapData_ae (hW₁ := hW₁) _
     (w : (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) i
 
 omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
@@ -435,12 +346,12 @@ applied to the chart data. -/
 theorem chartValueL_prodEquivOfCoord_snd_ae (w : SobolevSection (A.ofBaseSet hW) μ p k)
     (i : Fin A.n) :
     (A.ofBaseSet hW₂).sectionChartData.chartValueL μ p k i
-        (prodEquivOfCoord A μ p k hW hW₁ hW₂ e f₁ f₂ g hf hg w).2
+        (prodEquivOfCoord A μ p k hW hW₁ hW₂ e hf hg w).2
       =ᵐ[μ.restrict (A.image i)]
         fun y ↦ (e ((A.ofBaseSet hW).sectionChartData.chartValueL μ p k i w y)).2 := by
   rw [prodEquivOfCoord, ContinuousLinearEquiv.coe_ofContinuousLinearMap,
-    ContinuousLinearMap.prod_apply, coe_ofCoordSndL]
-  exact chartValueL_ofCoordSndData_ae (hW₂ := hW₂) e
+    ContinuousLinearMap.prod_apply, coe_ofBaseSetMapL]
+  exact chartValueL_ofBaseSetMapData_ae (hW₁ := hW₂) _
     (w : (A.ofBaseSet hW).sectionChartData.SobolevData μ p k) i
 
 omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
@@ -450,15 +361,13 @@ chart data. -/
 theorem chartValueL_prodEquivOfCoord_symm_ae (u : SobolevSection (A.ofBaseSet hW₁) μ p k)
     (v : SobolevSection (A.ofBaseSet hW₂) μ p k) (i : Fin A.n) :
     (A.ofBaseSet hW).sectionChartData.chartValueL μ p k i
-        ((prodEquivOfCoord A μ p k hW hW₁ hW₂ e f₁ f₂ g hf hg).symm (u, v))
+        ((prodEquivOfCoord A μ p k hW hW₁ hW₂ e hf hg).symm (u, v))
       =ᵐ[μ.restrict (A.image i)] fun y ↦
         e.symm ((A.ofBaseSet hW₁).sectionChartData.chartValueL μ p k i u y,
           (A.ofBaseSet hW₂).sectionChartData.chartValueL μ p k i v y) := by
   rw [prodEquivOfCoord, ContinuousLinearEquiv.symm_ofContinuousLinearMap,
-    ContinuousLinearEquiv.coe_ofContinuousLinearMap, coe_ofCoordPairL]
-  exact chartValueL_ofCoordPairData_ae (hW := hW) e
-    (u : (A.ofBaseSet hW₁).sectionChartData.SobolevData μ p k)
-    (v : (A.ofBaseSet hW₂).sectionChartData.SobolevData μ p k) i
+    ContinuousLinearEquiv.coe_ofContinuousLinearMap]
+  exact chartValueL_ofCoordPairL_ae e u v i
 
 end ProdOfCoord
 
@@ -475,8 +384,8 @@ def prodEquiv :
       SobolevSection A μ p k × SobolevSection (A.ofBaseSet h) μ p k :=
   prodEquivOfCoord A μ p k (fun i ↦ subset_inter (A.closure_dom_subset_baseSet i) (h i))
     A.closure_dom_subset_baseSet h (.refl ℝ (F × F'))
-    (fun s x ↦ (s x).1) (fun s x ↦ (s x).2) (fun s t x ↦ ((s x, t x) : (V ×ᵇ V') x))
-    (fun i s y _ ↦ coord_prod A h i s y) (fun i _ _ y _ ↦ coord_prod A h i _ y)
+    (fun s ↦ ⟨fun x ↦ (s x).1, fun x ↦ (s x).2, fun i y _ ↦ coord_prod A h i s y⟩)
+    (fun s t ↦ ⟨fun x ↦ ((s x, t x) : (V ×ᵇ V') x), fun i y _ ↦ coord_prod A h i _ y⟩)
 
 /-- The chart data of the first component of `prodEquiv A h μ p k w` are the first projections of
 the chart data of `w`. -/
@@ -547,7 +456,7 @@ theorem prodEquiv_lowerOrderL (w : SobolevSection (A.prod h) μ p (k + 1)) :
         (A.ofBaseSet h).sectionChartData.lowerOrderL μ p k (prodEquiv A h μ p (k + 1) w).2) := by
   refine Prod.ext (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦ ?_)
     (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
-      (ae_restrict_image_ofBaseSet_iff (A := A) (hW := h)).2 ?_)
+      (A.ae_image_ofBaseSet_iff μ h i).2 ?_)
   · filter_upwards [chartValueL_prodEquiv_fst_ae ((A.prod h).sectionChartData.lowerOrderL μ p k w)
       i, chartValueL_prodEquiv_fst_ae w i] with y h₁ h₂
     rw [h₁, (A.prod h).sectionChartData.chartValueL_coe_lowerOrderL μ p k w i,
@@ -574,11 +483,11 @@ theorem prodEquiv_contMDiffSMulL [IsManifold 𝓘(ℝ, E) ∞ M] {φ : M → ℝ
     prodEquiv A h μ p k (contMDiffSMulL (A.prod h) μ p k hφ w) =
       (contMDiffSMulL A μ p k hφ (prodEquiv A h μ p k w).1,
         contMDiffSMulL (A.ofBaseSet h) μ p k hφ (prodEquiv A h μ p k w).2) := by
-  have hw (i : Fin A.n) := (ae_restrict_image_prod_iff (A := A) (h := h) (i := i)).1
+  have hw (i : Fin A.n) := (A.ae_image_ofBaseSet_iff μ _ i).1
     (chartValueL_contMDiffSMulL_ae hφ w i)
   refine Prod.ext (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦ ?_)
     (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
-      (ae_restrict_image_ofBaseSet_iff (A := A) (hW := h)).2 ?_)
+      (A.ae_image_ofBaseSet_iff μ h i).2 ?_)
   · filter_upwards [chartValueL_prodEquiv_fst_ae (contMDiffSMulL (A.prod h) μ p k hφ w) i,
       chartValueL_prodEquiv_fst_ae w i, hw i,
       chartValueL_contMDiffSMulL_ae hφ (prodEquiv A h μ p k w).1 i] with y h₁ h₂ h₃ h₄
@@ -586,7 +495,7 @@ theorem prodEquiv_contMDiffSMulL [IsManifold 𝓘(ℝ, E) ∞ M] {φ : M → ℝ
     exact congrArg (fun e : OpenPartialHomeomorph M E ↦ φ (e.symm y) • _) (chart_prod (h := h) i)
   · filter_upwards [chartValueL_prodEquiv_snd_ae (contMDiffSMulL (A.prod h) μ p k hφ w) i,
       chartValueL_prodEquiv_snd_ae w i, hw i,
-      (ae_restrict_image_ofBaseSet_iff (A := A) (hW := h)).1
+      (A.ae_image_ofBaseSet_iff μ h i).1
         (chartValueL_contMDiffSMulL_ae hφ (prodEquiv A h μ p k w).2 i)] with y h₁ h₂ h₃ h₄
     rw [h₁, h₃, h₄, Prod.smul_snd, h₂]
     exact congrArg (fun e : OpenPartialHomeomorph M E ↦ φ (e.symm y) • _)
@@ -613,7 +522,7 @@ theorem prodEquiv_ofContMDiffSection [IsManifold 𝓘(ℝ, E) k M]
       (ofContMDiffSection A μ p k s, ofContMDiffSection (A.ofBaseSet h) μ p k t) := by
   have hσ' : ∀ i, (A.prod h).sectionChartData.chartValueL μ p k i
       (ofContMDiffSection (A.prod h) μ p k σ) =ᵐ[μ.restrict (A.image i)] (A.prod h).coord i σ :=
-    fun i ↦ (ae_restrict_image_prod_iff (A := A) (h := h) (i := i)).1
+    fun i ↦ (A.ae_image_ofBaseSet_iff μ _ i).1
       (chartValueL_ofContMDiffSection_ae (A.prod h) μ p k σ i)
   have hs : (fun x ↦ (σ x).1) = s := funext fun x ↦ by rw [hσ]
   have ht : (fun x ↦ (σ x).2) = t := funext fun x ↦ by rw [hσ]
@@ -623,7 +532,7 @@ theorem prodEquiv_ofContMDiffSection [IsManifold 𝓘(ℝ, E) k M]
   · rw [← hs]
     exact chartValueL_prodEquiv_fst_ae_coord (hσ' i)
   · rw [← ht]
-    exact (ae_restrict_image_ofBaseSet_iff (A := A) (hW := h)).2
+    exact (A.ae_image_ofBaseSet_iff μ h i).2
       (chartValueL_prodEquiv_snd_ae_coord (hσ' i))
 
 /-- The inverse of `TauCeti.SobolevSection.prodEquiv` sends the pair of the Sobolev sections of
@@ -698,6 +607,27 @@ private theorem tangentHomFiberEquiv_coord_prod (i : Fin A.n)
   rw [tangentHomFiberEquiv_coord (h := h) i _ hy]
   simp only [ContinuousLinearMap.fst_comp_prod, ContinuousLinearMap.snd_comp_prod]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F]
+  [FiniteDimensional ℝ F'] in
+/-- The fibre map hypothesis of `prodEquivOfCoord` for one-forms: `tangentHomFiberEquiv` sends the
+readings of a one-form with values in `V ×ᵇ V'` to those of its components. -/
+private theorem exists_tangentHomFiberEquiv_coord
+    (θ : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] (V ×ᵇ V') x) :
+    ∃ (s : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x) (t : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V' x),
+      ∀ i, ∀ y ∈ A.image i, tangentHomFiberEquiv E F F' ((A.prod h).tangentHom.coord i θ y) =
+        (A.tangentHom.coord i s y, (A.ofBaseSet h).tangentHom.coord i t y) :=
+  ⟨_, _, fun i _ hy ↦ tangentHomFiberEquiv_coord i θ hy⟩
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F]
+  [FiniteDimensional ℝ F'] in
+/-- The converse fibre map hypothesis of `prodEquivOfCoord` for one-forms. -/
+private theorem exists_tangentHomFiberEquiv_coord_prod
+    (s : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x) (t : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V' x) :
+    ∃ θ : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] (V ×ᵇ V') x, ∀ i, ∀ y ∈ A.image i,
+      tangentHomFiberEquiv E F F' ((A.prod h).tangentHom.coord i θ y) =
+        (A.tangentHom.coord i s y, (A.ofBaseSet h).tangentHom.coord i t y) :=
+  ⟨_, fun i _ hy ↦ tangentHomFiberEquiv_coord_prod i s t hy⟩
+
 variable (A h μ p k) in
 /-- **One-forms with values in a product bundle.** The Sobolev space `W^{k,p}` of one-forms with
 values in `V ×ᵇ V'`, on the charts of `(A.prod h).tangentHom`, is isomorphic to the product of the
@@ -712,12 +642,8 @@ def tangentHomProdEquiv :
   prodEquivOfCoord A μ p k (fun i ↦ (A.prod h).tangentHom.closure_dom_subset_baseSet i)
     (fun i ↦ A.tangentHom.closure_dom_subset_baseSet i)
     (fun i ↦ (A.ofBaseSet h).tangentHom.closure_dom_subset_baseSet i)
-    (tangentHomFiberEquiv E F F')
-    (fun θ x ↦ (ContinuousLinearMap.fst ℝ (V x) (V' x)).comp (θ x))
-    (fun θ x ↦ (ContinuousLinearMap.snd ℝ (V x) (V' x)).comp (θ x))
-    (fun s t x ↦ ((s x).prod (t x) : TangentSpace 𝓘(ℝ, E) x →L[ℝ] (V ×ᵇ V') x))
-    (fun i θ _ hy ↦ tangentHomFiberEquiv_coord (h := h) i θ hy)
-    (fun i s t _ hy ↦ tangentHomFiberEquiv_coord_prod (h := h) i s t hy)
+    (tangentHomFiberEquiv E F F') (exists_tangentHomFiberEquiv_coord (h := h))
+    (exists_tangentHomFiberEquiv_coord_prod (h := h))
 
 /-- The chart data of the first component of `tangentHomProdEquiv A h μ p k w` are the chart data
 of `w` followed by the first projection. -/
@@ -727,8 +653,8 @@ theorem chartValueL_tangentHomProdEquiv_fst_ae (w : SobolevSection (A.prod h).ta
       =ᵐ[μ.restrict (A.image i)] fun y ↦ (ContinuousLinearMap.fst ℝ F F').comp
         ((A.prod h).tangentHom.sectionChartData.chartValueL μ p k i w y) :=
   (chartValueL_prodEquivOfCoord_fst_ae (A := A)
-    (hf := fun i θ _ hy ↦ tangentHomFiberEquiv_coord (h := h) i θ hy)
-    (hg := fun i s t _ hy ↦ tangentHomFiberEquiv_coord_prod (h := h) i s t hy)
+    (hf := exists_tangentHomFiberEquiv_coord (h := h))
+    (hg := exists_tangentHomFiberEquiv_coord_prod (h := h))
     _ w i).mono fun _ hy ↦
     hy.trans (congrArg Prod.fst (tangentHomFiberEquiv_apply _))
 
@@ -741,8 +667,8 @@ theorem chartValueL_tangentHomProdEquiv_snd_ae (w : SobolevSection (A.prod h).ta
       =ᵐ[μ.restrict (A.image i)] fun y ↦ (ContinuousLinearMap.snd ℝ F F').comp
         ((A.prod h).tangentHom.sectionChartData.chartValueL μ p k i w y) :=
   (chartValueL_prodEquivOfCoord_snd_ae (A := A)
-    (hf := fun i θ _ hy ↦ tangentHomFiberEquiv_coord (h := h) i θ hy)
-    (hg := fun i s t _ hy ↦ tangentHomFiberEquiv_coord_prod (h := h) i s t hy)
+    (hf := exists_tangentHomFiberEquiv_coord (h := h))
+    (hg := exists_tangentHomFiberEquiv_coord_prod (h := h))
     _ w i).mono fun _ hy ↦
     hy.trans (congrArg Prod.snd (tangentHomFiberEquiv_apply _))
 
@@ -756,8 +682,8 @@ theorem chartValueL_tangentHomProdEquiv_symm_ae (u : SobolevSection A.tangentHom
         (A.tangentHom.sectionChartData.chartValueL μ p k i u y).prod
           ((A.ofBaseSet h).tangentHom.sectionChartData.chartValueL μ p k i v y) :=
   chartValueL_prodEquivOfCoord_symm_ae (A := A)
-    (hf := fun i θ _ hy ↦ tangentHomFiberEquiv_coord (h := h) i θ hy)
-    (hg := fun i s t _ hy ↦ tangentHomFiberEquiv_coord_prod (h := h) i s t hy) _ u v i
+    (hf := exists_tangentHomFiberEquiv_coord (h := h))
+    (hg := exists_tangentHomFiberEquiv_coord_prod (h := h)) _ u v i
 
 end TangentHom
 

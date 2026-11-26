@@ -779,8 +779,17 @@ theorem ContinuousLinearMap.inCoordinates_prod_eq {x₀ x : B} {y₀ y : B'}
     inCoordinates F₁ E₁ (F₂ × F₃) (E₂ ×ᵇ E₃) x₀ x y₀ y ϕ =
       (inCoordinates F₁ E₁ F₂ E₂ x₀ x y₀ y ((ContinuousLinearMap.fst 𝕜 _ _).comp ϕ)).prod
         (inCoordinates F₁ E₁ F₃ E₃ x₀ x y₀ y ((ContinuousLinearMap.snd 𝕜 _ _).comp ϕ)) := by
-  ext v <;> simp [inCoordinates, Trivialization.continuousLinearMapAt_apply,
-    Trivialization.linearMapAt_apply, hy₂, hy₃, Trivialization.Prod.toFun']
+  have hy : y ∈ ((trivializationAt F₂ E₂ y₀).prod (trivializationAt F₃ E₃ y₀)).baseSet := ⟨hy₂, hy₃⟩
+  -- The preferred trivializations of `E₂ ×ᵇ E₃` are the products of those of `E₂` and `E₃`, by
+  -- the definition of the instance `FiberBundle.prod`.
+  have he : trivializationAt (F₂ × F₃) (E₂ ×ᵇ E₃) y₀ =
+      (trivializationAt F₂ E₂ y₀).prod (trivializationAt F₃ E₃ y₀) := rfl
+  rw [inCoordinates, inCoordinates, inCoordinates,
+    ← Trivialization.coe_continuousLinearEquivAt_eq' (trivializationAt (F₂ × F₃) (E₂ ×ᵇ E₃) y₀) hy,
+    ← Trivialization.coe_continuousLinearEquivAt_eq' _ hy₂,
+    ← Trivialization.coe_continuousLinearEquivAt_eq' _ hy₃]
+  simp only [he, Trivialization.continuousLinearEquivAt_prod]
+  ext v <;> simp
 
 /-- Read in the trivializations of a fibrewise product bundle, the `prod` of two linear maps is the
 pair of their readings, at every point of both base sets. -/

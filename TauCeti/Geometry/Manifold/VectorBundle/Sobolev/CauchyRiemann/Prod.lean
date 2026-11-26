@@ -149,22 +149,62 @@ theorem FiniteBundleAtlas.snd_comp_chartZeroOrder_sectionProdMap {i : Fin A.n} {
   rw [FiniteBundleAtlas.chartZeroOrder_sectionProdMap A h hD₁ hD₂ hy,
     ContinuousLinearMap.snd_comp_prod]
 
-omit [IsManifold 𝓘(ℂ) ∞ M] [FiniteDimensional ℝ F] [FiniteDimensional ℝ F'] in
-/-- A complex linear map `L` commutes with the chart formula `∂bar X + Z` of the realizations:
-`L ∘ (∂bar X + Z) = ∂bar (L ∘ X) + L ∘ Z`. -/
-private theorem comp_complexAntilinearPartL_add {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] [NormedSpace ℂ G] [IsScalarTower ℝ ℂ G] (L : F × F' →L[ℂ] G)
-    {L' : F × F' →L[ℝ] G} (hL : L.restrictScalars ℝ = L') (X Z : ℂ →L[ℝ] F × F') :
-    L'.comp (complexAntilinearPartL X + Z) = complexAntilinearPartL (L'.comp X) + L'.comp Z := by
-  subst hL
-  rw [ContinuousLinearMap.comp_add, ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp]
-
 namespace IsRealCauchyRiemannOperator
 
 variable [T2Space M] {A h}
   (hD₁s : ContMDiffCovariantDerivativeOn F ∞ D₁ univ)
   (hD₂s : ContMDiffCovariantDerivativeOn F' ∞ D₂ univ)
   (μ : Measure ℂ) [μ.IsAddHaarMeasure] (p : ℝ≥0∞) [Fact (1 ≤ p)]
+
+include hD₁ hD₂ in
+/-- **One component of the realization of a direct sum.** Let `L : F × F' →L[ℂ] G` be a complex
+linear projection onto the model fibre of a complex bundle `W` read on the charts of `A`, carrying
+the zeroth-order term of `D₁ ⊕ D₂` to that of a smooth real Cauchy–Riemann operator `D` on `W`.
+If the chart data of `u ∈ W^{1,p}(W)` are `L` applied to those of `w ∈ W^{1,p}(V ×ᵇ V')`, and the
+chart data of `η` are `L` composed with those of the realization of `D₁ ⊕ D₂` at `w`, then `η` is
+the realization of `D` at `u`: in every chart, `L ∘ (∂bar wᵢ + Zᵢ wᵢ) = ∂bar (L ∘ wᵢ) + Z'ᵢ (L wᵢ)`.
+-/
+private theorem eq_sobolevL_of_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedSpace ℂ G] [IsScalarTower ℝ ℂ G] [FiniteDimensional ℝ G] {W : M → Type*}
+    [TopologicalSpace (TotalSpace G W)] [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
+    [∀ x, Module ℂ (W x)] [∀ x, IsScalarTower ℝ ℂ (W x)] [∀ x, TopologicalSpace (W x)]
+    [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] [FiberBundle G W]
+    [VectorBundle ℂ G W] [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W 𝓘(ℝ, ℂ)]
+    {hW : ∀ i, closure (A.dom i) ⊆ (trivializationAt G W (A.center i)).baseSet}
+    {D : (Π x : M, W x) → Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] W x}
+    (hD : IsRealCauchyRiemannOperator G (ofComplexManifold ℂ M) D)
+    (hDs : ContMDiffCovariantDerivativeOn G ∞ D univ) (L : F × F' →L[ℂ] G)
+    (hZ : ∀ i, ∀ y ∈ A.image i, ∀ a, (L.restrictScalars ℝ).comp
+      ((A.prod h).chartZeroOrder (sectionProdMap D₁ D₂) i y a) =
+        (A.ofBaseSet hW).chartZeroOrder D i y (L a))
+    (w : SobolevSection (A.prod h) μ p 1) {u : SobolevSection (A.ofBaseSet hW) μ p 1}
+    (hu : ∀ i, (A.ofBaseSet hW).sectionChartData.chartValueL μ p 1 i u
+      =ᵐ[μ.restrict (A.image i)] fun y ↦ L ((A.prod h).sectionChartData.chartValueL μ p 1 i w y))
+    {η : zeroOneSobolevSections (A.ofBaseSet hW) μ p 0}
+    (hη : ∀ i, (A.ofBaseSet hW).tangentHom.sectionChartData.chartValueL μ p 0 i
+        ((η : SobolevSection (A.ofBaseSet hW).tangentHom μ p 0) :
+          (A.ofBaseSet hW).tangentHom.sectionChartData.SobolevData μ p 0)
+      =ᵐ[μ.restrict (A.image i)] fun y ↦ (L.restrictScalars ℝ).comp
+        ((A.prod h).tangentHom.sectionChartData.chartValueL μ p 0 i
+          (((hD₁.prod hD₂).sobolevL (A.prod h) (hD₁s.sectionProdMap hD₂s) μ p w :
+            SobolevSection (A.prod h).tangentHom μ p 0) :
+              (A.prod h).tangentHom.sectionChartData.SobolevData μ p 0) y)) :
+    η = hD.sobolevL (A.ofBaseSet hW) hDs μ p u := by
+  refine Subtype.ext (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
+    (A.ae_image_tangentHom_ofBaseSet_iff μ hW i).2 ?_)
+  have hsub : (A.image i : Set ℂ) ⊆ (A.prod h).image i :=
+    (FiniteBundleAtlas.image_prod (h := h) i).ge
+  have hDu := (A.prod h).sectionChartData.hasWeakFDerivOn_chartValueL μ p i
+    (w : (A.prod h).sectionChartData.SobolevData μ p 1)
+  filter_upwards [hη i, ae_restrict_of_ae_restrict_of_subset hsub
+      (chartValueL_sobolevL_ae (A.prod h) (hD₁.prod hD₂) (hD₁s.sectionProdMap hD₂s) μ p w hDu),
+    (A.ae_image_ofBaseSet_iff μ hW i).1 (chartValueL_sobolevL_ae (A.ofBaseSet hW) hD hDs μ p u
+      (((hDu.mono ((FiniteBundleAtlas.image_ofBaseSet (h := hW) i).le.trans hsub)).clm_comp
+        (L.restrictScalars ℝ)).congr_ae
+          (Filter.EventuallyEq.symm ((A.ae_image_ofBaseSet_iff μ hW i).2 (hu i))))),
+    hu i, ae_restrict_mem (A.image i).isOpen.measurableSet] with y e₁ e₂ e₃ e₄ hy
+  rw [e₁, e₂, e₃, e₄, ContinuousLinearMap.comp_add,
+    ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp, hZ i y hy]
 
 include hD₁ hD₂ in
 /-- **The realization of a direct sum is the product of the realizations.** Under the
@@ -176,47 +216,25 @@ theorem sobolevL_prod (w : SobolevSection (A.prod h) μ p 1) :
     zeroOneSobolevSectionsProdEquiv A h μ p 0
         ((hD₁.prod hD₂).sobolevL (A.prod h) (hD₁s.sectionProdMap hD₂s) μ p w) =
       (hD₁.sobolevL A hD₁s μ p (SobolevSection.prodEquiv A h μ p 1 w).1,
-        hD₂.sobolevL (A.ofBaseSet h) hD₂s μ p (SobolevSection.prodEquiv A h μ p 1 w).2) := by
-  -- The projections of `F × F'` are complex linear.
-  have hfst : (ContinuousLinearMap.fst ℂ F F').restrictScalars ℝ = ContinuousLinearMap.fst ℝ F F' :=
-    ContinuousLinearMap.ext fun _ ↦ rfl
-  have hsnd : (ContinuousLinearMap.snd ℂ F F').restrictScalars ℝ = ContinuousLinearMap.snd ℝ F F' :=
-    ContinuousLinearMap.ext fun _ ↦ rfl
-  have hsub (i : Fin A.n) : (A.image i : Set ℂ) ⊆ (A.prod h).image i :=
-    (FiniteBundleAtlas.image_prod (h := h) i).ge
-  have hDu (i : Fin A.n) := (A.prod h).sectionChartData.hasWeakFDerivOn_chartValueL μ p i
-    (w : (A.prod h).sectionChartData.SobolevData μ p 1)
-  have hT (i : Fin A.n) := ae_restrict_of_ae_restrict_of_subset (hsub i)
-    (chartValueL_sobolevL_ae (A.prod h) (hD₁.prod hD₂) (hD₁s.sectionProdMap hD₂s) μ p w (hDu i))
-  refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
-  · rw [coe_zeroOneSobolevSectionsProdEquiv_fst]
-    refine SectionChartData.eq_of_chartValueL_ae_eq fun i ↦ (A.ae_image_tangentHom_iff μ i).2 ?_
-    have h₁ := SobolevSection.chartValueL_prodEquiv_fst_ae w i
-    filter_upwards [SobolevSection.chartValueL_tangentHomProdEquiv_fst_ae
-      ((hD₁.prod hD₂).sobolevL (A.prod h) (hD₁s.sectionProdMap hD₂s) μ p w :
-        SobolevSection (A.prod h).tangentHom μ p 0) i, hT i,
-      chartValueL_sobolevL_ae A hD₁ hD₁s μ p _
-        ((((hDu i).mono (hsub i)).clm_comp (ContinuousLinearMap.fst ℝ F F')).congr_ae h₁.symm), h₁,
-      ae_restrict_mem (A.image i).isOpen.measurableSet] with y e₁ e₂ e₃ e₄ hy
-    rw [e₁, e₂, e₃, e₄, comp_complexAntilinearPartL_add _ hfst,
-      FiniteBundleAtlas.fst_comp_chartZeroOrder_sectionProdMap A h hD₁ hD₂ hy]
-  · rw [coe_zeroOneSobolevSectionsProdEquiv_snd]
-    refine SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
-      (A.ae_image_tangentHom_ofBaseSet_iff μ h i).2 ?_
-    have h₁ := SobolevSection.chartValueL_prodEquiv_snd_ae w i
-    have hsub' : ((A.ofBaseSet h).image i : Set ℂ) ⊆ A.image i :=
-      (FiniteBundleAtlas.image_ofBaseSet (h := h) i).le
-    filter_upwards [SobolevSection.chartValueL_tangentHomProdEquiv_snd_ae
-      ((hD₁.prod hD₂).sobolevL (A.prod h) (hD₁s.sectionProdMap hD₂s) μ p w :
-        SobolevSection (A.prod h).tangentHom μ p 0) i, hT i,
-      ae_restrict_of_ae_restrict_of_subset (FiniteBundleAtlas.image_ofBaseSet (h := h) i).ge
-        (chartValueL_sobolevL_ae (A.ofBaseSet h) hD₂ hD₂s μ p _
-          ((((hDu i).mono ((hsub' ).trans (hsub i))).clm_comp
-            (ContinuousLinearMap.snd ℝ F F')).congr_ae (ae_restrict_of_ae_restrict_of_subset hsub'
-              h₁.symm))), h₁,
-      ae_restrict_mem (A.image i).isOpen.measurableSet] with y e₁ e₂ e₃ e₄ hy
-    rw [e₁, e₂, e₃, e₄, comp_complexAntilinearPartL_add _ hsnd,
-      FiniteBundleAtlas.snd_comp_chartZeroOrder_sectionProdMap A h hD₁ hD₂ hy]
+        hD₂.sobolevL (A.ofBaseSet h) hD₂s μ p (SobolevSection.prodEquiv A h μ p 1 w).2) :=
+  Prod.ext
+    (eq_sobolevL_of_comp hD₁ hD₂ hD₁s hD₂s μ p (W := V) (hW := A.closure_dom_subset_baseSet) hD₁
+      hD₁s
+      (ContinuousLinearMap.fst ℂ F F')
+      (fun _ _ hy ↦ FiniteBundleAtlas.fst_comp_chartZeroOrder_sectionProdMap A h hD₁ hD₂ hy) w
+      (SobolevSection.chartValueL_prodEquiv_fst_ae w) fun i ↦ by
+        rw [coe_zeroOneSobolevSectionsProdEquiv_fst]
+        exact SobolevSection.chartValueL_tangentHomProdEquiv_fst_ae (h := h)
+          ((hD₁.prod hD₂).sobolevL (A.prod h) (hD₁s.sectionProdMap hD₂s) μ p w :
+            SobolevSection (A.prod h).tangentHom μ p 0) i)
+    (eq_sobolevL_of_comp hD₁ hD₂ hD₁s hD₂s μ p (W := V') (hW := h) hD₂ hD₂s
+      (ContinuousLinearMap.snd ℂ F F')
+      (fun _ _ hy ↦ FiniteBundleAtlas.snd_comp_chartZeroOrder_sectionProdMap A h hD₁ hD₂ hy) w
+      (SobolevSection.chartValueL_prodEquiv_snd_ae w) fun i ↦ by
+        rw [coe_zeroOneSobolevSectionsProdEquiv_snd]
+        exact SobolevSection.chartValueL_tangentHomProdEquiv_snd_ae (h := h)
+          ((hD₁.prod hD₂).sobolevL (A.prod h) (hD₁s.sectionProdMap hD₂s) μ p w :
+            SobolevSection (A.prod h).tangentHom μ p 0) i)
 
 include hD₁ hD₂ in
 /-- **The index is additive under direct sums** (McDuff–Salamon, proof of Theorem C.1.10, step 1,
