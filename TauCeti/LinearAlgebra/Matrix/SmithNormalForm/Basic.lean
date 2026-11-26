@@ -48,7 +48,8 @@ Copyright 2026 Anthropic PBC) at commit 72fead102f663d5c7a407964a13dc0cf9d977207
 (induction on the size, bringing a pivot that divides every entry to the corner) and its
 elimination step `New.exists_eq_mul_diagonal_mul_of_pivot_dvd` (clearing the pivot's row and
 column). There the subring is a valuation pair inside a larger ring and the pivot comes from
-`New.IsValuationPair.exists_pivot_dvd`; here the ring is a valuation domain, the pivot is chosen by
+`New.IsValuationPair.exists_pivot_dvd`; here the ring is any commutative ring in which divisibility
+is total (`PreValuationRing`), the pivot is chosen by
 `TauCeti.PreValuationRing.exists_forall_dvd`, and the divisibility chain `s₀ ∣ s₁ ∣ ⋯`, which
 grh-lean does not state, is added.
 -/

@@ -20,8 +20,8 @@ Over a commutative ring `O` in which divisibility is total (`PreValuationRing`),
 valuation domain, a submodule of `O ^ ι` that contains the image of a square matrix `A`
 has colength dividing `det A`, in the sense of `Submodule.ColengthDvd` (`M ⊸_z N`: every finite
 family in `M` is carried into `N` by a square matrix whose determinant divides `z`). The ring need
-not be noetherian: the statement is used for the valuation ring `{z : |ι z| ≤ 1}` of a field
-isomorphism `ι : ℂ ≃ PadicAlgCl ℓ`.
+not be noetherian: an example is the valuation ring `{z : |ι z| ≤ 1}` of `ℂ` for a field
+isomorphism `ι : ℂ ≃ PadicAlgCl ℓ`, with the absolute value of `PadicAlgCl ℓ` pulled back.
 
 ## Main results
 
