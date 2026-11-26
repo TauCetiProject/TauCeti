@@ -21,7 +21,8 @@ not belong to any particular application.
 
 * `TauCeti.intervalIntegral.monotoneOn_primitive_of_nonneg`: the primitive `t ↦ ∫ x in a..t, f x`
   of a function that is nonnegative and interval integrable on `[a, b]` is nondecreasing on
-  `[a, b]`.
+  `[a, b]`; `TauCeti.intervalIntegral.strictMonoOn_primitive_of_pos`: it is strictly increasing
+  when the function is positive on `(a, b)`.
 * `TauCeti.intervalIntegral.eq_of_integral_eq_sub`: if the increments of `F` are the interval
   integrals of a function vanishing outside `[-r, r]` with total integral zero, then `F` is
   constant outside `[-r, r]`.
@@ -125,6 +126,20 @@ theorem monotoneOn_primitive_of_nonneg {f : ℝ → ℝ} {μ : Measure ℝ} {a b
   _root_.intervalIntegral.integral_mono_interval le_rfl hs.1 hst
     (ae_mono (Measure.restrict_mono (Ioc_subset_Ioc_right ht.2) le_rfl) hf)
     (hfi.mono_set (uIcc_subset_uIcc_left (mem_uIcc_of_le ht.1 ht.2)))
+
+/-- The primitive `t ↦ ∫ x in a..t, f x` of a function that is positive on `(a, b)` and interval
+integrable on `[a, b]` is strictly increasing on `[a, b]`. -/
+theorem strictMonoOn_primitive_of_pos {f : ℝ → ℝ} {a b : ℝ} (hf : ∀ x ∈ Ioo a b, 0 < f x)
+    (hfi : IntervalIntegrable f volume a b) :
+    StrictMonoOn (fun t ↦ ∫ x in a..t, f x) (Icc a b) := by
+  intro s hs t ht hst
+  have his : IntervalIntegrable f volume a s :=
+    hfi.mono_set (uIcc_subset_uIcc_left (Icc_subset_uIcc hs))
+  have hit : IntervalIntegrable f volume a t :=
+    hfi.mono_set (uIcc_subset_uIcc_left (Icc_subset_uIcc ht))
+  rw [← sub_pos, _root_.intervalIntegral.integral_interval_sub_left hit his]
+  exact _root_.intervalIntegral.intervalIntegral_pos_of_pos_on (his.symm.trans hit)
+    (fun x hx ↦ hf x ⟨hs.1.trans_lt hx.1, hx.2.trans_le ht.2⟩) hst
 
 /-- If the increments of `F` are the interval integrals of a function `f` that vanishes outside
 `[-r, r]` and has total integral zero, then `F` is constant outside `[-r, r]`. -/
