@@ -28,8 +28,8 @@ to the boundary,
 
 `‖∇u‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ(H)}`, `2 < p < ∞`,
 
-for every such `u` whose gradient lies in `Lᵖ` and is integrable, with `C` depending only on `n`,
-`p` and the ellipticity constants. It is the boundary counterpart of the whole-space estimate for
+for every such `u` whose gradient lies in `Lᵖ`, with `C` depending only on `n`, `p` and the
+ellipticity constants. It is the boundary counterpart of the whole-space estimate for
 coefficients of small mean oscillation,
 `TauCeti.PDE.exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le`.
 
@@ -50,7 +50,7 @@ space of the equation with the reflected coefficient `a'` and the reflected datu
 `G' = 1_H G - 1_H (R G) ∘ ρ`
 (`energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_setIntegral`, in
 the `TauCeti.PDE` namespace).
-Its gradient is `∇u - R (∇u ∘ ρ)`, again integrable and in `Lᵖ`, and `‖G'‖_{Lᵖ} ≤ 2 ‖G‖_{Lᵖ(H)}`.
+Its gradient is `∇u - R (∇u ∘ ρ)`, again in `Lᵖ`, and `‖G'‖_{Lᵖ} ≤ 2 ‖G‖_{Lᵖ(H)}`.
 The whole-space estimate applied to `w` bounds `‖∇w‖_{Lᵖ}`, which dominates `‖∇u‖_{Lᵖ}`, since
 `∇u` vanishes off `H` and agrees with `∇w` on `H`.
 
@@ -184,15 +184,13 @@ private theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_top_
   simp only [Pi.neg_apply, map_neg]
   rw [Set.indicator_neg', Set.indicator_neg, Pi.neg_apply, neg_sub_neg, neg_sub]
 
-/-- The gradient of the odd reflection `u - u ∘ ρ` of `u ∈ H¹(ℝ^{n+1})` is integrable and in `Lᵖ`
-when that of `u` is. -/
-private theorem integrable_and_memLp_gradient_sub_compHyperplaneReflectionL {p : ℝ≥0∞}
-    (ν : E) (c₀ : ℝ) {u : W1p volume (⊤ : Opens E) 2} (hint : Integrable (W1p.gradient u : E → E))
+/-- The gradient of the odd reflection `u - u ∘ ρ` of `u ∈ H¹(ℝ^{n+1})` is in `Lᵖ` when that of
+`u` is. -/
+private theorem memLp_gradient_sub_compHyperplaneReflectionL {p : ℝ≥0∞}
+    (ν : E) (c₀ : ℝ) {u : W1p volume (⊤ : Opens E) 2}
     (hgp : MemLp (W1p.gradient u : E → E) p volume) :
-    Integrable (W1p.gradient (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀
-        (mapsTo_hyperplaneReflection_top ν c₀) u) : E → E) ∧
-      MemLp (W1p.gradient (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀
-        (mapsTo_hyperplaneReflection_top ν c₀) u) : E → E) p volume := by
+    MemLp (W1p.gradient (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀
+      (mapsTo_hyperplaneReflection_top ν c₀) u) : E → E) p volume := by
   set R : E ≃ₗᵢ[ℝ] E := (ℝ ∙ ν)ᗮ.reflection
   have hρ := measurePreserving_hyperplaneReflection (volume : Measure E) ν c₀
   have hgw : W1p.gradient (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀
@@ -201,12 +199,10 @@ private theorem integrable_and_memLp_gradient_sub_compHyperplaneReflectionL {p :
     simpa only [Opens.coe_top, Measure.restrict_univ] using
       W1p.gradient_sub_compHyperplaneReflectionL_ae ENNReal.ofNat_ne_top
         (mapsTo_hyperplaneReflection_top ν c₀) u
-  -- Composing with `ρ` and with `R` preserves integrability and `Lᵖ` membership.
-  have hR : ∀ {q : ℝ≥0∞}, MemLp (W1p.gradient u : E → E) q volume →
-      MemLp (fun x => R (W1p.gradient u (hyperplaneReflection ν c₀ x))) q volume := fun hq =>
-    R.toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp' (hq.comp_measurePreserving hρ)
-  exact ⟨(hint.sub (memLp_one_iff_integrable.1 (hR (memLp_one_iff_integrable.2 hint)))).congr
-    hgw.symm, (hgp.sub (hR hgp)).ae_eq hgw.symm⟩
+  -- Composing with `ρ` and with `R` preserves `Lᵖ` membership.
+  have hR : MemLp (fun x => R (W1p.gradient u (hyperplaneReflection ν c₀ x))) p volume :=
+    R.toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp' (hgp.comp_measurePreserving hρ)
+  exact (hgp.sub hR).ae_eq hgw.symm
 
 /-- If `u ∈ H¹(ℝ^{n+1})` vanishes off `H`, then `|∇u|` is almost everywhere at most the gradient
 norm of its odd reflection `u - u ∘ ρ`: the two gradients agree on `H`, and `∇u` vanishes below
@@ -238,8 +234,8 @@ and bounded by `Λ` on the closed half-space `{c₀ ≤ ⟪x, ν⟫}`, whose ref
 (`TauCeti.PDE.reflectPrincipal`) has small mean oscillation at every scale: on every ball `B` some
 constant matrix `A`, uniformly elliptic with constants `λ, Λ`, has `⨍_B ‖a' - A‖ ≤ δ`. Let
 `u ∈ H¹(ℝ^{n+1})` vanish off `H` and solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly in `H`, that is
-`∫_H ⟨a ∇u, ∇v⟩ = ∫_H ⟨G, ∇v⟩` for every `v ∈ H¹₀(H)`, with `G ∈ L²(H) ∩ Lᵖ(H)`, and let `∇u` be
-integrable and in `Lᵖ`. Then
+`∫_H ⟨a ∇u, ∇v⟩ = ∫_H ⟨G, ∇v⟩` for every `v ∈ H¹₀(H)`, with `G ∈ L²(H) ∩ Lᵖ(H)`, and let `∇u` lie
+in `Lᵖ`. Then
 
 `‖∇u‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ(H)}`. -/
 theorem exists_eLpNorm_gradient_le_of_setAverage_reflectPrincipal_le {p : ℝ≥0∞} (hp : 2 < p)
@@ -259,16 +255,16 @@ theorem exists_eLpNorm_gradient_le_of_setAverage_reflectPrincipal_le {p : ℝ≥
           (∀ v : W1p0 volume H 2,
             energyFormH1 a 0 0 (W1p.restrictL (le_top : H ≤ ⊤) u) (v : W1p volume H 2) =
               ∫ x in H, ⟪G x, W1p.gradient (v : W1p volume H 2) x⟫_ℝ) →
-          Integrable (W1p.gradient u : E → E) → MemLp (W1p.gradient u : E → E) p volume →
+          MemLp (W1p.gradient u : E → E) p volume →
           MemLp G 2 (volume.restrict H) → MemLp G p (volume.restrict H) →
           eLpNorm (W1p.gradient u : E → E) p volume ≤ C * eLpNorm G p (volume.restrict H) := by
   obtain ⟨C, δ, hδ, h⟩ :=
     exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le (n := n) hp hp_top
       lam Lam
   refine ⟨2 * C, δ, hδ, ?_⟩
-  intro H ν c₀ a hν hH ham hbd hosc u G hu0 hu hint hgp hG2 hGp
+  intro H ν c₀ a hν hH ham hbd hosc u G hu0 hu hgp hG2 hGp
   obtain ⟨hG'p, hG'le⟩ := memLp_reflectDatum (one_le_two.trans hp.le) ν c₀ hGp
-  obtain ⟨hwint, hwgp⟩ := integrable_and_memLp_gradient_sub_compHyperplaneReflectionL ν c₀ hint hgp
+  have hwgp := memLp_gradient_sub_compHyperplaneReflectionL ν c₀ hgp
   -- The reflected coefficient is measurable and bounded.
   have hãm : AEStronglyMeasurable (reflectPrincipal ν c₀ a) volume := by
     simpa only [Opens.coe_top, Measure.restrict_univ] using
@@ -279,7 +275,7 @@ theorem exists_eLpNorm_gradient_le_of_setAverage_reflectPrincipal_le {p : ℝ≥
   -- The whole-space estimate for the odd reflection `w = u - u ∘ ρ`, whose gradient dominates.
   have hw := h hãm hãbd hosc _ _
     (energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_top_eq hν hH hãm hãbd hu0 hu hG2)
-    hwint hwgp hG'p
+    hwgp hG'p
   calc eLpNorm (W1p.gradient u : E → E) p volume
       ≤ eLpNorm (W1p.gradient (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀
           (mapsTo_hyperplaneReflection_top ν c₀) u) : E → E) p volume :=
@@ -310,18 +306,17 @@ private theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_reflection {p : ℝ
           (∀ v : W1p0 volume H 2,
             energyFormH1 a 0 0 (W1p.restrictL (le_top : H ≤ ⊤) u) (v : W1p volume H 2) =
               ∫ x in H, ⟪G x, W1p.gradient (v : W1p volume H 2) x⟫_ℝ) →
-          Integrable (W1p.gradient u : E → E) → MemLp (W1p.gradient u : E → E) p volume →
+          MemLp (W1p.gradient u : E → E) p volume →
           MemLp G 2 (volume.restrict H) → MemLp G p (volume.restrict H) →
           eLpNorm (W1p.gradient u : E → E) p volume ≤ C * eLpNorm G p (volume.restrict H) := by
   obtain ⟨C, δ, hδ, h⟩ :=
     exists_eLpNorm_gradient_le_of_setAverage_reflectPrincipal_le (n := n) hp hp_top lam (Lam + 1)
   refine ⟨C, min δ 1, lt_min hδ one_pos, ?_⟩
-  intro H ν c₀ a A hν hH ham hA hAinv ha u G hu0 hu hint hgp hG2 hGp
+  intro H ν c₀ a A hν hH ham hA hAinv ha u G hu0 hu hgp hG2 hGp
   have hm : 0 ≤ min δ 1 := (lt_min hδ one_pos).le
   have ha' := norm_matrixBilinearForm_reflectPrincipal_sub_le (c₀ := c₀) (a := a) hν hAinv
     (fun y _ => ha y)
-  refine h (a := a) hν hH ham (fun x _ => ?_) (fun c r _ => ⟨A, ?_, ?_⟩) u G hu0 hu hint hgp hG2
-    hGp
+  refine h (a := a) hν hH ham (fun x _ => ?_) (fun c r _ => ⟨A, ?_, ?_⟩) u G hu0 hu hgp hG2 hGp
   · -- `a x` is within `1` of `A`, whose form has norm at most `Λ`.
     exact (norm_le_insert' (matrixBilinearForm (a x)) (matrixBilinearForm A)).trans
       (add_le_add (hA.opNorm_matrixBilinearForm_le (mem_univ 0)) ((ha x).trans (min_le_right _ _)))
@@ -464,21 +459,18 @@ private theorem value_shearCompL_ae_eq_zero {H : Opens E} {ν e w : E} {c₀ : �
   rw [h1]
   exact h2 fun h => hx ((transvectionL_mem_iff hH (inner_neg_right_eq_zero hνw) x).1 h)
 
-/-- The gradient of `u ∘ Φ` is integrable and in `Lᵖ` when that of `u` is, and controls it:
+/-- The gradient of `u ∘ Φ` is in `Lᵖ` when that of `u` is, and controls it:
 `‖∇u‖_{Lᵖ} ≤ ‖T‖ ‖∇(u ∘ Φ)‖_{Lᵖ}` for the inverse shear `T x = x + ⟪e, x⟫ w`. -/
 private theorem gradient_shearCompL_memLp {e w : E} (hew : ⟪e, w⟫_ℝ = 0) {p : ℝ≥0∞}
-    {u : W1p volume (⊤ : Opens E) 2} (hint : Integrable (W1p.gradient u : E → E))
-    (hgp : MemLp (W1p.gradient u : E → E) p volume) {κ : ℝ≥0} (hκ : ‖transvectionL e w‖ ≤ κ) :
-    Integrable (W1p.gradient (shearCompL e w hew u) : E → E) ∧
-      MemLp (W1p.gradient (shearCompL e w hew u) : E → E) p volume ∧
+    {u : W1p volume (⊤ : Opens E) 2} (hgp : MemLp (W1p.gradient u : E → E) p volume) {κ : ℝ≥0}
+    (hκ : ‖transvectionL e w‖ ≤ κ) :
+    MemLp (W1p.gradient (shearCompL e w hew u) : E → E) p volume ∧
       eLpNorm (W1p.gradient u : E → E) p volume ≤
         κ * eLpNorm (W1p.gradient (shearCompL e w hew u) : E → E) p volume := by
   have hmp := measurePreserving_transvectionL volume (inner_neg_right_eq_zero hew)
   have hg := gradient_shearCompL_ae hew u
-  refine ⟨((transvectionL e (-w)).adjoint.integrable_comp
-      ((hmp.integrable_comp hint.aestronglyMeasurable).2 hint)).congr hg.symm,
-    ((transvectionL e (-w)).adjoint.comp_memLp' (hgp.comp_measurePreserving hmp)).ae_eq hg.symm,
-    ?_⟩
+  refine ⟨((transvectionL e (-w)).adjoint.comp_memLp' (hgp.comp_measurePreserving hmp)).ae_eq
+    hg.symm, ?_⟩
   -- `∇u ∘ Φ = T* ∇(u ∘ Φ)`, since `T* Φ* = (Φ T)* = 1`.
   have hTΦ : (transvectionL e w).adjoint ∘L (transvectionL e (-w)).adjoint =
       ContinuousLinearMap.id ℝ E := by
@@ -616,7 +608,7 @@ private theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_isSymm {p : ℝ≥0
           (∀ v : W1p0 volume H 2,
             energyFormH1 a 0 0 (W1p.restrictL (le_top : H ≤ ⊤) u) (v : W1p volume H 2) =
               ∫ x in H, ⟪G x, W1p.gradient (v : W1p volume H 2) x⟫_ℝ) →
-          Integrable (W1p.gradient u : E → E) → MemLp (W1p.gradient u : E → E) p volume →
+          MemLp (W1p.gradient u : E → E) p volume →
           MemLp G 2 (volume.restrict H) → MemLp G p (volume.restrict H) →
           eLpNorm (W1p.gradient u : E → E) p volume ≤ C * eLpNorm G p (volume.restrict H) := by
   -- `κ` bounds the shear and its inverse; the sheared problem has ellipticity `λ / κ², κⁿ⁺³ Λ`.
@@ -626,7 +618,7 @@ private theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_isSymm {p : ℝ≥0
   obtain ⟨C₀, δ₀, hδ₀, h₀⟩ := exists_eLpNorm_gradient_le_of_norm_sub_le_of_reflection (n := n) hp
     hp_top (lam / (κ : ℝ) ^ 2) ((κ : ℝ) ^ (n + 1) * (κ : ℝ) ^ 2 * Lam)
   refine ⟨κ * C₀ * κ, δ₀ / (κ : ℝ) ^ 2, div_pos hδ₀ (pow_pos hκ 2), ?_⟩
-  intro H ν c₀ a A hν hH ham hA hAs ha u G hu0 hu hint hgp hG2 hGp
+  intro H ν c₀ a A hν hH ham hA hAs ha u G hu0 hu hgp hG2 hGp
   -- The shear is `T x = x - ⟪ν, x⟫ s` for the conormal shear vector `s`; its inverse is `Φ`.
   set s := conormalShearVector A ν
   have hq : matrixBilinearForm A ν ν ≠ 0 := by
@@ -655,12 +647,12 @@ private theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_isSymm {p : ℝ≥0
       (fun η ξ => by rw [← matrixBilinearForm_transpose_apply, hAs.eq])
       (Φ := transvectionL ν (-(-s))) (x := 0) (by rw [ContinuousLinearMap.fderiv, neg_neg]) η ξ
   -- Apply the reflection-invariant estimate to `u ∘ Φ` and transform back.
-  obtain ⟨hgi, hgp', hgu⟩ := gradient_shearCompL_memLp hνs hint hgp hT
+  obtain ⟨hgp', hgu⟩ := gradient_shearCompL_memLp hνs hgp hT
   obtain ⟨hG2', -⟩ := pullbackDrift_shear_memLp hH hνs hνs hG2 hT
   obtain ⟨hGp', hGle⟩ := pullbackDrift_shear_memLp hH hνs hνs hGp hT
   have h := h₀ hν hH (aestronglyMeasurable_pullbackPrincipal_shear hH hνs hνs ham) hÃ hÃinv hãÃ
     (shearCompL ν (-s) hνs u) _ (value_shearCompL_ae_eq_zero hH hνs hνs hu0)
-    (energyFormH1_shearCompL_eq hH hνs hνs hu) hgi hgp' hG2' hGp'
+    (energyFormH1_shearCompL_eq hH hνs hνs hu) hgp' hG2' hGp'
   calc eLpNorm (W1p.gradient u : E → E) p volume
       ≤ κ * (C₀ * (κ * eLpNorm G p (volume.restrict H))) :=
         hgu.trans (by gcongr; exact h.trans (by gcongr))
@@ -685,13 +677,13 @@ private theorem exists_eLpNorm_gradient_le_of_norm_sub_le {p : ℝ≥0∞} (hp :
           (∀ v : W1p0 volume H 2,
             energyFormH1 a 0 0 (W1p.restrictL (le_top : H ≤ ⊤) u) (v : W1p volume H 2) =
               ∫ x in H, ⟪G x, W1p.gradient (v : W1p volume H 2) x⟫_ℝ) →
-          Integrable (W1p.gradient u : E → E) → MemLp (W1p.gradient u : E → E) p volume →
+          MemLp (W1p.gradient u : E → E) p volume →
           MemLp G 2 (volume.restrict H) → MemLp G p (volume.restrict H) →
           eLpNorm (W1p.gradient u : E → E) p volume ≤ C * eLpNorm G p (volume.restrict H) := by
   obtain ⟨C, δ, hδ, h⟩ := exists_eLpNorm_gradient_le_of_norm_sub_le_of_isSymm (n := n) hp hp_top
     lam Lam
   refine ⟨C, δ, hδ, ?_⟩
-  intro H ν c₀ a A hν hH ham hA ha u G hu0 hu hint hgp hG2 hGp
+  intro H ν c₀ a A hν hH ham hA ha u G hu0 hu hgp hG2 hGp
   set K := A - coefficientSymmetricPart A with hK
   have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (volume.restrict H) := by
     refine memLp_energyIntegrand_of_bounds (Lam := Lam + δ) (beta := 0) (gamma := 0)
@@ -709,7 +701,7 @@ private theorem exists_eLpNorm_gradient_le_of_norm_sub_le {p : ℝ≥0∞} (hp :
     ring
   refine h (a := fun x => a x + -K) hν hH (ham.add aestronglyMeasurable_const)
     hA.coefficientSymmetricPart (coefficientSymmetricPart_isSymm A) (fun y => ?_) u G hu0
-    (fun v => ?_) hint hgp hG2 hGp
+    (fun v => ?_) hgp hG2 hGp
   · rw [← matrixBilinearForm_sub,
       show a y + -K - coefficientSymmetricPart A = a y - A by rw [hK]; abel,
       matrixBilinearForm_sub]
@@ -723,8 +715,8 @@ matrix, uniformly elliptic with constants `λ, Λ` and not necessarily symmetric
 coefficient matrix measurable on `H` whose bilinear form is within `δ` of that of `A`, in operator
 norm, on `s ∩ H` for a measurable set `s`. Let `u ∈ H¹(ℝ^{n+1})` vanish off `H`, let `∇u` vanish
 off `s`, and let `u` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly in `H`, that is
-`∫_H ⟨a ∇u, ∇v⟩ = ∫_H ⟨G, ∇v⟩` for every `v ∈ H¹₀(H)`, with `G ∈ L²(H) ∩ Lᵖ(H)`. If `∇u` is
-integrable and in `Lᵖ`, then
+`∫_H ⟨a ∇u, ∇v⟩ = ∫_H ⟨G, ∇v⟩` for every `v ∈ H¹₀(H)`, with `G ∈ L²(H) ∩ Lᵖ(H)`. If `∇u` lies in
+`Lᵖ`, then
 
 `‖∇u‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ(H)}`.
 
@@ -744,18 +736,18 @@ theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_ae_gradient_eq_zero {p : �
           (∀ v : W1p0 volume H 2,
             energyFormH1 a 0 0 (W1p.restrictL (le_top : H ≤ ⊤) u) (v : W1p volume H 2) =
               ∫ x in H, ⟪G x, W1p.gradient (v : W1p volume H 2) x⟫_ℝ) →
-          Integrable (W1p.gradient u : E → E) → MemLp (W1p.gradient u : E → E) p volume →
+          MemLp (W1p.gradient u : E → E) p volume →
           MemLp G 2 (volume.restrict H) → MemLp G p (volume.restrict H) →
           eLpNorm (W1p.gradient u : E → E) p volume ≤ C * eLpNorm G p (volume.restrict H) := by
   obtain ⟨C, δ, hδ, h⟩ := exists_eLpNorm_gradient_le_of_norm_sub_le (n := n) hp hp_top lam Lam
   refine ⟨C, δ, hδ, ?_⟩
-  intro H ν c₀ a A s hν hH hs ham hA hsA u G hu0 hus hu hint hgp hG2 hGp
+  intro H ν c₀ a A s hν hH hs ham hA hsA u G hu0 hus hu hgp hG2 hGp
   classical
   -- Replace `a` by `A` off `s ∩ H`, where `∇u` vanishes.
   set b : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ := (s ∩ H).piecewise a (fun _ => A) with hbdef
   refine h (a := b) hν hH
     (ham.restrict.piecewise (hs.inter H.isOpen.measurableSet).nullMeasurableSet
-      aestronglyMeasurable_const) hA (fun y => ?_) u G hu0 (fun v => ?_) hint hgp hG2 hGp
+      aestronglyMeasurable_const) hA (fun y => ?_) u G hu0 (fun v => ?_) hgp hG2 hGp
   · by_cases hy : y ∈ s ∩ H
     · rw [hbdef, piecewise_eq_of_mem _ _ _ hy]
       exact hsA y hy.1 hy.2
