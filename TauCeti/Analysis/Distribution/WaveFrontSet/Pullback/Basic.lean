@@ -67,12 +67,15 @@ opposite wave front covectors over a common point is defined (Hörmander I, Theo
   functions, built as `TestFunction.tensorBump`.
 * `Distribution.pullbackInl_ofFun`: for a continuous function satisfying the hypothesis it is the
   restriction to `E × {0}`.
+* `TauCeti.pullbackInlCone Γ`: the cone `ιᵀ Γ = {(x, ξ) | ∃ η, ((x, 0), (ξ, η)) ∈ Γ}`.
 * `Distribution.isMicrolocallySmoothAt_pullbackInl`, `Distribution.waveFrontSet_pullbackInl_subset`:
-  the wave front set of the pullback lies in the image of that of `T` under `ιᵀ`.
+  the wave front set of the pullback lies in the image `ιᵀ WF(T)` of that of `T` under `ιᵀ`.
+* `Distribution.waveFrontSet_pullbackInl_subset_pullbackInlCone`: so it lies in `ιᵀ Γ` when the
+  wave front set of `T` lies in `Γ`.
 * `Distribution.localFourier_pullbackInl_eq_tsum`: the localized Fourier transform of the pullback
   as a lattice series of localized Fourier transforms of `T`, for a cutoff `χ` equal to one near
   the support of the cutoff of the pullback, as supplied by
-  `Distribution.exists_cutoff_eq_one_prod_closedBall`.
+  `TestFunction.exists_cutoff_eq_one_prod_closedBall`.
 * `Distribution.pullbackInl_add`, `Distribution.pullbackInl_smul`,
   `Distribution.pullbackInl_smul_of_ne_zero`, `Distribution.pullbackInl_zero`,
   `Distribution.pullbackInl_neg`, `Distribution.pullbackInl_sub`: linearity in `T`.
@@ -179,29 +182,7 @@ theorem tensorBump_apply [MeasurableSpace D] [BorelSpace D] (ψ : 𝓓(U, ℝ))
     tensorBump ψ σ hW p = ψ p.fst * σ.normed volume p.snd :=
   (rfl)
 
-end TestFunction
-
-namespace Distribution
-
-variable {E D : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup D] [InnerProductSpace ℝ D] [FiniteDimensional ℝ D]
-  {U : Opens E} {W : Opens (WithLp 2 (E × D))}
-
-/-! ### Neighbourhoods of `E × {0}` and decay in the conormal directions -/
-
-omit [FiniteDimensional ℝ E] in
-/-- An open cone of `E × D` containing the nonzero conormal vectors `(0, b)` contains a cone
-`‖ζ.fst‖ < c ‖ζ.snd‖` around them. -/
-private theorem exists_pos_forall_norm_fst_lt_imp_mem {Γ : Set (WithLp 2 (E × D))}
-    (hΓ : IsOpen Γ) (hcone : ∀ t : ℝ, 0 < t → ∀ ζ ∈ Γ, t • ζ ∈ Γ)
-    (hD : ∀ b : D, b ≠ 0 → toLp 2 ((0 : E), b) ∈ Γ) :
-    ∃ c > 0, ∀ ζ : WithLp 2 (E × D), ‖ζ.fst‖ < c * ‖ζ.snd‖ → ζ ∈ Γ := by
-  obtain ⟨c, hc, hcΓ⟩ :=
-    (hΓ.preimage (prod_continuous_toLp 2 E D)).exists_pos_setOf_norm_fst_lt_subset
-      (fun t ht q hq ↦ by simpa using hcone t ht _ hq) hD
-  refine ⟨c, hc, fun ζ hζ ↦ ?_⟩
-  simpa using hcΓ (a := ofLp ζ) (by simpa using hζ)
-
+variable [FiniteDimensional ℝ E] in
 /-- Around `K × {0}`, for a compact set `K` with `K × {0} ⊆ G ∩ W`, there is a cutoff `χ` supported
 in `G`, equal to one on `K × closedBall 0 δ` for some `δ > 0`. -/
 theorem exists_cutoff_eq_one_prod_closedBall {K : Set E} (hK : IsCompact K)
@@ -225,6 +206,50 @@ theorem exists_cutoff_eq_one_prod_closedBall {K : Set E} (hK : IsCompact K)
     simp [h1]
   · rw [postcompCLM_apply]
     exact (tsupport_comp_subset (map_zero ofRealCLM) χ).trans (hχG.trans inter_subset_left)
+
+end TestFunction
+
+namespace TauCeti
+
+section Cone
+
+variable {E D : Type*} [Zero D]
+
+/-- The cone `ιᵀ Γ = {(x, ξ) | ∃ η, ((x, 0), (ξ, η)) ∈ Γ}`: the part of `Γ` over `E × {0}`, moved
+by the transpose `(ξ, η) ↦ ξ` of the inclusion `ι : x ↦ (x, 0)`. The wave front set of the
+pullback along `ι` of a distribution with wave front set in `Γ` lies in it. -/
+def pullbackInlCone (Γ : Set (WithLp 2 (E × D) × WithLp 2 (E × D))) : Set (E × E) :=
+  {p | ∃ η : D, (toLp 2 (p.1, (0 : D)), toLp 2 (p.2, η)) ∈ Γ}
+
+@[simp]
+theorem mem_pullbackInlCone {Γ : Set (WithLp 2 (E × D) × WithLp 2 (E × D))} {p : E × E} :
+    p ∈ pullbackInlCone Γ ↔ ∃ η : D, (toLp 2 (p.1, (0 : D)), toLp 2 (p.2, η)) ∈ Γ :=
+  Iff.rfl
+
+end Cone
+
+end TauCeti
+
+namespace Distribution
+
+variable {E D : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup D] [InnerProductSpace ℝ D] [FiniteDimensional ℝ D]
+  {U : Opens E} {W : Opens (WithLp 2 (E × D))}
+
+/-! ### Neighbourhoods of `E × {0}` and decay in the conormal directions -/
+
+omit [FiniteDimensional ℝ E] in
+/-- An open cone of `E × D` containing the nonzero conormal vectors `(0, b)` contains a cone
+`‖ζ.fst‖ < c ‖ζ.snd‖` around them. -/
+private theorem exists_pos_forall_norm_fst_lt_imp_mem {Γ : Set (WithLp 2 (E × D))}
+    (hΓ : IsOpen Γ) (hcone : ∀ t : ℝ, 0 < t → ∀ ζ ∈ Γ, t • ζ ∈ Γ)
+    (hD : ∀ b : D, b ≠ 0 → toLp 2 ((0 : E), b) ∈ Γ) :
+    ∃ c > 0, ∀ ζ : WithLp 2 (E × D), ‖ζ.fst‖ < c * ‖ζ.snd‖ → ζ ∈ Γ := by
+  obtain ⟨c, hc, hcΓ⟩ :=
+    (hΓ.preimage (prod_continuous_toLp 2 E D)).exists_pos_setOf_norm_fst_lt_subset
+      (fun t ht q hq ↦ by simpa using hcone t ht _ hq) hD
+  refine ⟨c, hc, fun ζ hζ ↦ ?_⟩
+  simpa using hcΓ (a := ofLp ζ) (by simpa using hζ)
 
 /-! ### The limit of `T (ψ ⊗ ρ)` as `ρ` concentrates at `0` -/
 
@@ -770,8 +795,12 @@ private theorem complexPairing_pullbackInl_eq_tsum [MeasurableSpace E] [BorelSpa
   simp only [hF, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
   ring
 
-/-- The localized Fourier transform of the pullback with cutoff `φ` as a lattice series: the
-pullback evaluated at the modulated cutoff `φ e_ξ`, whose Fourier transform is `𝓕 φ (· + ξ)`. -/
+/-- **The localized Fourier transform of the pullback as a lattice series.** Let `χ` be equal to
+one on `tsupport φ × closedBall 0 δ`, let the translates of `tsupport χ` by the lattice `L` meet it
+only for the translation `0`, and let the localized Fourier transform of `T` with cutoff `χ` decay
+rapidly on the cone `‖ζ.fst‖ < c ‖ζ.snd‖`. Then
+
+`ι^* T (φ e_ξ) = ∑ m ∈ L*, (covolume L)⁻¹ 𝓕 φ (ξ + m.fst) T (χ e_(-m))`. -/
 theorem localFourier_pullbackInl_eq_tsum [MeasurableSpace E] [BorelSpace E]
     [MeasurableSpace D] [BorelSpace D] (T : 𝓓'(W, ℂ))
     (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
@@ -922,8 +951,7 @@ theorem waveFrontSet_pullbackInl_subset (T : 𝓓'(W, ℂ))
     (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
     (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
       (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) :
-    (T.pullbackInl hU h).waveFrontSet ⊆
-      {p : E × E | ∃ η : D, (toLp 2 (p.1, (0 : D)), toLp 2 (p.2, η)) ∈ T.waveFrontSet} := by
+    (T.pullbackInl hU h).waveFrontSet ⊆ TauCeti.pullbackInlCone T.waveFrontSet := by
   rintro ⟨x, ξ⟩ hxξ
   obtain ⟨hx, hξ, hns⟩ := mem_waveFrontSet_iff.1 hxξ
   by_contra hmem
@@ -931,5 +959,15 @@ theorem waveFrontSet_pullbackInl_subset (T : 𝓓'(W, ℂ))
   by_contra hns'
   refine hmem ⟨η, mem_waveFrontSet_iff.2 ⟨hU hx, fun h0 ↦ hξ ?_, hns'⟩⟩
   simpa using congrArg WithLp.fst h0
+
+/-- The wave front set of the pullback to `E × {0}` of a distribution with wave front set in `Γ`
+lies in the cone `ιᵀ Γ`. -/
+theorem waveFrontSet_pullbackInl_subset_pullbackInlCone
+    {Γ : Set (WithLp 2 (E × D) × WithLp 2 (E × D))}
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W) {T : 𝓓'(W, ℂ)}
+    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet)
+    (hT : T.waveFrontSet ⊆ Γ) : (T.pullbackInl hU h).waveFrontSet ⊆ TauCeti.pullbackInlCone Γ :=
+  (waveFrontSet_pullbackInl_subset T hU h).trans fun _ ⟨η, hη⟩ ↦ ⟨η, hT hη⟩
 
 end Distribution
