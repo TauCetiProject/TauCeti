@@ -43,13 +43,13 @@ coercivity, for a principal coefficient with ellipticity constant `λ`:
 * `c ≥ 0` and a Poincaré–Friedrichs inequality `‖u‖_{L²} ≤ P ‖∇u‖_{L²}` on `H¹_Γ(Ω)` give the
   constant `λ / (1 + P²)`.
 
-The second applies on a bounded connected Lipschitz domain when `Γ` meets the frontier in a set of
-positive surface measure: this is the Poincaré–Friedrichs inequality
-`TauCeti.W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule`.
-Lipschitz domains are set in the product `ℝ × E` of their boundary charts while the energy form
-lives on `EuclideanSpace ℝ ι`, so, as in `TauCeti/Analysis/PDE/DirichletProblem/Trace.lean`, the
-domain is an isometric copy of a Lipschitz domain. This gives unique solvability of the mixed
-problem for inverse-coercive `a`, no drift and `c ≥ 0`.
+The second applies on a bounded connected Lipschitz domain `Ω ⊆ EuclideanSpace ℝ ι` when `Γ`
+meets the frontier in a set of positive surface measure: this is the Poincaré–Friedrichs inequality
+`W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_isLipschitzDomain`
+for the intrinsic predicate `Set.IsLipschitzDomain`. This gives unique solvability of the mixed
+problem for inverse-coercive `a`, no drift and `c ≥ 0`. A variant, the `_of_isLipschitzDomainWith`
+theorems, instead takes `Ω` to be an affine-isometric copy of a Lipschitz domain in the product
+`ℝ × E` of its boundary charts, as in `TauCeti/Analysis/PDE/DirichletProblem/Trace.lean`.
 
 ## Interior and conormal data
 
