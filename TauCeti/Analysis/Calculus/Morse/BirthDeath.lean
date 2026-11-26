@@ -9,8 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.GradientFlow
 public import TauCeti.Analysis.Calculus.Morse.OneDimensional
 public import TauCeti.Analysis.Calculus.Morse.Prod
 public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
-import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
-import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 
 /-!
@@ -100,7 +99,7 @@ disappear, and they are joined by a single trajectory.
 public section
 
 open Filter Set
-open scoped Gradient Manifold Topology
+open scoped Gradient Topology
 
 namespace TauCeti
 
@@ -388,17 +387,11 @@ theorem exists_eq_birthDeathOrbit_comp_add (hs : 0 < s) {γ : ℝ → ℝ}
   have hδ : IsIntegralCurve (fun t ↦ birthDeathOrbit s (t + -t₀))
       (fun _ x ↦ -∇ (birthDeathPotential s) x) := fun t ↦
     (isIntegralCurve_birthDeathOrbit hs.le (t + -t₀)).comp_add_const t (-t₀)
-  -- Integral curves of the smooth field `s - x²` agreeing at one time agree everywhere: read the
-  -- line as a manifold modelled on itself and use the uniqueness of its integral curves.
-  let V : (x : ℝ) → TangentSpace 𝓘(ℝ, ℝ) x := fun x ↦ -∇ (birthDeathPotential s) x
-  have hV : ContDiff ℝ 1 V := by
-    simp only [V, gradient_birthDeathPotential]
+  -- Integral curves of the smooth field `s - x²` agreeing at one time agree everywhere.
+  have hV : ContDiff ℝ 1 fun x ↦ -∇ (birthDeathPotential s) x := by
+    simp only [gradient_birthDeathPotential]
     fun_prop
-  have hM : ∀ c : ℝ → ℝ, IsIntegralCurve c (fun _ x ↦ -∇ (birthDeathPotential s) x) →
-      IsMIntegralCurve c V := fun c hc ↦ isMIntegralCurve_iff_isMIntegralCurveOn.2
-    (isMIntegralCurveOn_iff_isIntegralCurveOn.2 (hc.isIntegralCurveOn _))
-  exact isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (t₀ := t₀)
-    (contMDiff_vectorSpace_iff_contDiff.2 hV) (hM γ hγ) (hM _ hδ) (by simp [ht₀])
+  exact hγ.eq_of_contDiff hV hδ (t₀ := t₀) (by simp [ht₀])
 
 /-! ### The model with transverse directions -/
 

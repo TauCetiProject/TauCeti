@@ -455,28 +455,18 @@ include hV hX₀ hC hγ h₀ in
 `γ` of a continuation field which meets the open slab, for every sufficiently negative time `a`
 the space component of `γ` is, up to time `a`, the orbit of `(γ a).1` under the flow of `X₀`. -/
 theorem eventually_atBot_eqOn_flow :
-    ∀ᶠ a in atBot, EqOn (fun s ↦ (γ s).1) (fun s ↦ hX₀.flow (s - a) (γ a).1) (Iic a) := by
-  obtain ⟨b, hb⟩ := eventually_atBot.1
-    ((hV.tendsto_snd_atBot hγ h₀ hC).eventually hV.eventually_fst_eq_left)
-  have hc : IsMIntegralCurveOn (fun s ↦ (γ s).1) X₀ (Iio b) :=
-    (hγ.isMIntegralCurveOn _).map_of_mfderiv_eq (f := Prod.fst) (fun _ _ ↦ mdifferentiableAt_fst)
-      fun s hs ↦ by rw [mfderiv_fst]; exact hb s (le_of_lt hs) (γ s).1
-  filter_upwards [eventually_lt_atBot b] with a hab
-  exact hX₀.eqOn_flow_of_isMIntegralCurveOn_Iio hc hab
+    ∀ᶠ a in atBot, EqOn (fun s ↦ (γ s).1) (fun s ↦ hX₀.flow (s - a) (γ a).1) (Iic a) :=
+  hX₀.eventually_atBot_eqOn_flow_of_tendsto_snd hV.eventually_fst_eq_left hγ
+    (hV.tendsto_snd_atBot hγ h₀ hC)
 
 include hV hX₁ hC hγ h₀ in
 /-- **Near `+∞` a trajectory through the slab follows `X₁`.** For `C > 0`, along an integral curve
 `γ` of a continuation field which meets the open slab, for every sufficiently large time `b` the
 space component of `γ` is, from time `b` on, the orbit of `(γ b).1` under the flow of `X₁`. -/
 theorem eventually_atTop_eqOn_flow :
-    ∀ᶠ b in atTop, EqOn (fun s ↦ (γ s).1) (fun s ↦ hX₁.flow (s - b) (γ b).1) (Ici b) := by
-  obtain ⟨a, ha⟩ := eventually_atTop.1
-    ((hV.tendsto_snd_atTop hγ h₀ hC).eventually hV.eventually_fst_eq_right)
-  have hc : IsMIntegralCurveOn (fun s ↦ (γ s).1) X₁ (Ioi a) :=
-    (hγ.isMIntegralCurveOn _).map_of_mfderiv_eq (f := Prod.fst) (fun _ _ ↦ mdifferentiableAt_fst)
-      fun s hs ↦ by rw [mfderiv_fst]; exact ha s (le_of_lt hs) (γ s).1
-  filter_upwards [eventually_gt_atTop a] with b hab
-  exact hX₁.eqOn_flow_of_isMIntegralCurveOn_Ioi hc hab
+    ∀ᶠ b in atTop, EqOn (fun s ↦ (γ s).1) (fun s ↦ hX₁.flow (s - b) (γ b).1) (Ici b) :=
+  hX₁.eventually_atTop_eqOn_flow_of_tendsto_snd hV.eventually_fst_eq_right hγ
+    (hV.tendsto_snd_atTop hγ h₀ hC)
 
 include hV hX₀ hC hγ h₀ in
 /-- **The backward limit of a trajectory through the slab.** For `C > 0`, an integral curve `γ`
@@ -513,33 +503,18 @@ include hV hX₀ hC hγ h₀ in
 curve of a continuation field from a pseudo-gradient `X₀` adapted to `f₀` which meets the open slab
 tends at `-∞` to `(p, 0)` for a critical point `p` of `f₀`. -/
 theorem exists_tendsto_atBot :
-    ∃ p ∈ criticalPoints 𝓘(ℝ, E) f₀, Tendsto γ atBot (𝓝 (p, 0)) := by
-  obtain ⟨a, ha⟩ := (hV.eventually_atBot_eqOn_flow hX₀ hC hγ h₀).exists
-  obtain ⟨p, hp, hlim⟩ := hX₀.exists_tendsto_atBot (γ a).1
-  refine ⟨p, mem_criticalPoints_iff_mfderiv_eq_zero.2 hp,
-    (hV.tendsto_atBot_iff hX₀ hC hγ h₀).2 ?_⟩
-  -- Up to time `a`, the space component runs along the orbit of `(γ a).1`, which lies in `W^u(p)`.
-  filter_upwards [Iic_mem_atBot a] with s hs
-  have hγs : (γ s).1 = hX₀.flow (s - a) (γ a).1 := ha hs
-  rw [hγs, Flow.apply_mem_unstableSet_iff]
-  exact Flow.mem_unstableSet.2 hlim
+    ∃ p ∈ criticalPoints 𝓘(ℝ, E) f₀, Tendsto γ atBot (𝓝 (p, 0)) :=
+  hX₀.exists_tendsto_atBot_of_tendsto_snd hV.eventually_fst_eq_left hγ
+    (hV.tendsto_snd_atBot hγ h₀ hC)
 
 include hV hX₁ hC hγ h₀ in
 /-- **A trajectory through the slab goes to a critical point of `f₁`.** For `C > 0`, an
 integral curve of a continuation field to a pseudo-gradient `X₁` adapted to `f₁` which meets the
 open slab tends at `+∞` to `(q, 1)` for a critical point `q` of `f₁`. -/
 theorem exists_tendsto_atTop :
-    ∃ q ∈ criticalPoints 𝓘(ℝ, E) f₁, Tendsto γ atTop (𝓝 (q, 1)) := by
-  obtain ⟨b, hb⟩ := (hV.eventually_atTop_eqOn_flow hX₁ hC hγ h₀).exists
-  obtain ⟨q, hq, hlim⟩ := hX₁.exists_tendsto_atTop (γ b).1
-  refine ⟨q, mem_criticalPoints_iff_mfderiv_eq_zero.2 hq,
-    (hV.tendsto_atTop_iff hX₁ hC hγ h₀).2 ?_⟩
-  -- From time `b` on, the space component runs along the orbit of `(γ b).1`, which lies in
-  -- `W^s(q)`.
-  filter_upwards [Ici_mem_atTop b] with s hs
-  have hγs : (γ s).1 = hX₁.flow (s - b) (γ b).1 := hb hs
-  rw [hγs, Flow.apply_mem_stableSet_iff]
-  exact Flow.mem_stableSet.2 hlim
+    ∃ q ∈ criticalPoints 𝓘(ℝ, E) f₁, Tendsto γ atTop (𝓝 (q, 1)) :=
+  hX₁.exists_tendsto_atTop_of_tendsto_snd hV.eventually_fst_eq_right hγ
+    (hV.tendsto_snd_atTop hγ h₀ hC)
 
 end Ends
 
