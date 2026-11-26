@@ -54,7 +54,7 @@ theorem mem_maxUnramifiedOutside_two_of_sq_eq_two (hx : x ^ 2 = 2) :
 
 /-- The compositum `ℚ(i) ⊔ ℚ(√2)` lies in `ℚ_S`, `S` the places above `2`: it is unramified
 outside `S` (`le_maxUnramifiedOutside_iff`). -/
-example {y : Ω} (hx : x ^ 2 = -1) (hy : y ^ 2 = 2) :
+theorem sup_le_maxUnramifiedOutside_two {y : Ω} (hx : x ^ 2 = -1) (hy : y ^ 2 = 2) :
     ℚ⟮x⟯ ⊔ ℚ⟮y⟯ ≤ maxUnramifiedOutside ℚ Ω {v | (2 : 𝓞 ℚ) ∈ v.asIdeal} :=
   sup_le (adjoin_simple_le_iff.2 (mem_maxUnramifiedOutside_two_of_sq_eq_neg_one hx))
     (adjoin_simple_le_iff.2 (mem_maxUnramifiedOutside_two_of_sq_eq_two hy))
@@ -63,8 +63,7 @@ example {y : Ω} (hx : x ^ 2 = -1) (hy : y ^ 2 = 2) :
 unramified outside `S` (`le_maxUnramifiedOutside_iff`). -/
 example {y : Ω} (hx : x ^ 2 = -1) (hy : y ^ 2 = 2) (L : IntermediateField ℚ Ω)
     (hL : L ≤ ℚ⟮x⟯ ⊔ ℚ⟮y⟯) : L ≤ maxUnramifiedOutside ℚ Ω {v | (2 : 𝓞 ℚ) ∈ v.asIdeal} :=
-  hL.trans <| sup_le (adjoin_simple_le_iff.2 (mem_maxUnramifiedOutside_two_of_sq_eq_neg_one hx))
-    (adjoin_simple_le_iff.2 (mem_maxUnramifiedOutside_two_of_sq_eq_two hy))
+  hL.trans (sup_le_maxUnramifiedOutside_two hx hy)
 
 /-- Every element of `ℚ(μ_{2^∞})` lies in a finite level `ℚ(μ_{2^n})`. -/
 example {z : Ω} (hz : z ∈ adjoin ℚ {x : Ω | ∃ n : ℕ, x ^ 2 ^ n = 1}) :
@@ -73,8 +72,7 @@ example {z : Ω} (hz : z ∈ adjoin ℚ {x : Ω | ∃ n : ℕ, x ^ 2 ^ n = 1}) :
   obtain ⟨T, hT, hzT⟩ := exists_finset_of_mem_adjoin hz
   choose! m hm using fun t (ht : t ∈ T) ↦ hT ht
   refine ⟨T.sup m, adjoin.mono ℚ _ _ (fun t ht ↦ ?_) hzT⟩
-  obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le (Finset.le_sup (f := m) ht)
-  simp only [Set.mem_ofPred_eq]
-  rw [hk, pow_add, pow_mul, hm t ht, one_pow]
+  exact orderOf_dvd_iff_pow_eq_one.1
+    ((orderOf_dvd_iff_pow_eq_one.2 (hm t ht)).trans (pow_dvd_pow 2 (Finset.le_sup ht)))
 
 end TauCeti.Examples.RestrictedRamification
