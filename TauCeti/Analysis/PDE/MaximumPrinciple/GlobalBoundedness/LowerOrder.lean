@@ -235,9 +235,9 @@ private theorem exists_ae_value_le_of_drift [Nonempty ι]
   have hp1 : 1 ≤ p := ENNReal.one_le_ofReal.2 ((one_le_inv₀ hδ0).2 (by linarith))
   have hptop : p ≠ ∞ := ENNReal.ofReal_ne_top
   have hps : p⁻¹ + (s : ℝ≥0∞)⁻¹ = 2⁻¹ := by
-    rw [← ENNReal.ofReal_inv_of_pos (inv_pos.2 hδ0), inv_inv, ← ENNReal.ofReal_coe_nnreal,
-      ← ENNReal.ofReal_inv_of_pos hs0, hs, ← ENNReal.ofReal_add hδ0.le (by linarith),
-      add_sub_cancel, ENNReal.ofReal_inv_of_pos two_pos, ENNReal.ofReal_ofNat]
+    refine (ENNReal.toReal_eq_toReal_iff' (by simp [p, s, hδ0, hδ2]) (by simp)).1 ?_
+    rw [ENNReal.toReal_add (by simp [p, hδ0]) (by simpa [s] using hδ2)]
+    simp [p, s, ENNReal.toReal_inv, hδ0.le, hδ2.le]
   have hbp : MemLp b p ν := hb.mono_exponent (ENNReal.ofReal_le_of_le_toReal (by
     rw [ENNReal.coe_toReal]
     exact (inv_le_comm₀ hδ0 hq0).2 hqδ.le))
@@ -832,10 +832,8 @@ private theorem memLp_and_toReal_eLpNorm_le_of_drift {q : ℝ≥0} (hq : 2 ≤ (
         eLpNorm H q ν ^ (2 : ℝ)) :
       eLpNorm (fun x => r * ‖H x‖ ^ 2) (q / 2 : ℝ≥0) ν =
         ENNReal.ofReal (r * (eLpNorm H q ν).toReal ^ 2) := by
-    rw [hsmul₀, eLpNorm_const_smul, hnH, Real.eNorm_of_nonneg hr, ENNReal.ofReal_mul hr,
-      ← ENNReal.ofReal_toReal hH.eLpNorm_ne_top,
-      ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg zero_le_two, Real.rpow_two,
-      ENNReal.toReal_ofReal ENNReal.toReal_nonneg]
+    rw [hsmul₀, eLpNorm_const_smul, hnH]
+    simp [Real.eNorm_of_nonneg hr, ENNReal.ofReal_mul hr, ENNReal.ofReal_pow, hH.eLpNorm_ne_top]
   have he1 := hsq lam⁻¹ (by positivity) hb hnb
   have he3 := hsq (lam * κ ^ 2)⁻¹ (by positivity) hF hnF
   have he2 : eLpNorm (fun x => κ⁻¹ * ‖g x‖) (q / 2 : ℝ≥0) ν =

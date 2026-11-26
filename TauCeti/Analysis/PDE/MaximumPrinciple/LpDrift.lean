@@ -105,17 +105,6 @@ private theorem integrable_const_add_norm_mul_norm_mul_norm {μ : Measure (Eucli
     (hd.integrable_norm_mul_norm_mul_norm (r := 2) (s := 2) hg hfq)).congr
     (ae_of_all _ fun x ↦ by simp only [Pi.add_apply, Pi.mul_apply]; ring)
 
-omit [mu.IsAddHaarMeasure] in
-/-- If `‖b‖ ≤ β + |d|` on `Ω`, then `|⟪b, g⟫ f| ≤ (β + |d|) |g| |f|` almost everywhere on `Ω`. -/
-private theorem ae_norm_inner_mul_le_const_add_norm_mul
-    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta + ‖d x‖)
-    (g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (f : EuclideanSpace ℝ ι → ℝ) :
-    ∀ᵐ x ∂mu.restrict Omega, ‖⟪b x, g x⟫_ℝ * f x‖ ≤ (beta + ‖d x‖) * (‖g x‖ * ‖f x‖) := by
-  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
-  rw [norm_mul, ← mul_assoc]
-  exact mul_le_mul_of_nonneg_right ((norm_inner_le_norm _ _).trans
-    (mul_le_mul_of_nonneg_right (hb_bound x hx) (norm_nonneg _))) (norm_nonneg _)
-
 /-- If `‖b‖ ≤ β + |d|` on `Ω` with `d ∈ Lᵖ`, `u ∈ H¹(Ω)` and `φ ∈ H¹(Ω) ∩ L^q` with
 `1/p + 1/q = 1/2`, then the drift term `⟪b, ∇u⟫ φ` of the weak form is integrable. -/
 private theorem integrable_inner_gradient_mul_value
@@ -127,7 +116,8 @@ private theorem integrable_inner_gradient_mul_value
   (integrable_const_add_norm_mul_norm_mul_norm beta hd hpq (Lp.memLp (W1p.gradient u))
     (Lp.memLp _) hφ).mono'
     ((hb.inner (Lp.aestronglyMeasurable _)).mul (Lp.aestronglyMeasurable _))
-    (ae_norm_inner_mul_le_const_add_norm_mul hb_bound _ _)
+    ((ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx ↦
+      norm_inner_mul_le_of_norm_le (hb_bound x hx) _ _)
 
 variable [DecidableEq ι]
 

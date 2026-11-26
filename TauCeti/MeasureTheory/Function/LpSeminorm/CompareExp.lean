@@ -319,19 +319,14 @@ theorem memLp_of_norm_le_of_measure_support_ne_top {F : Type*} [NormedAddCommGro
 /-- The square of the norm of a function in `L^q` lies in `L^{q/2}`. -/
 theorem MemLp.norm_sq {F : Type*} [NormedAddCommGroup F] {q : NNReal} {u : α → F}
     (hu : MemLp u q μ) : MemLp (fun x ↦ ‖u x‖ ^ 2) (q / 2 : NNReal) μ := by
-  have := hu.norm_rpow_div 2
-  rw [ENNReal.toReal_ofNat, ← ENNReal.coe_ofNat, ← ENNReal.coe_div two_ne_zero] at this
-  simpa only [Real.rpow_two] using this
+  simpa [Real.rpow_two, ENNReal.coe_div] using hu.norm_rpow_div 2
 
 /-- The `L^{q/2}` seminorm of the square of the norm of `u` is the square of its `L^q`
 seminorm. -/
 theorem eLpNorm_norm_sq {F : Type*} [NormedAddCommGroup F] {q : NNReal} {u : α → F}
     (hu : AEStronglyMeasurable u μ) :
     eLpNorm (fun x ↦ ‖u x‖ ^ 2) (q / 2 : NNReal) μ = eLpNorm u q μ ^ (2 : ℝ) := by
-  have := eLpNorm_norm_rpow (p := ((q / 2 : NNReal) : ℝ≥0∞)) (μ := μ) u hu two_pos
-  rw [ENNReal.coe_div two_ne_zero, ENNReal.ofReal_ofNat, ENNReal.coe_ofNat,
-    ENNReal.div_mul_cancel two_ne_zero ENNReal.ofNat_ne_top] at this
-  rw [ENNReal.coe_div two_ne_zero, ENNReal.coe_ofNat]
-  simpa only [Real.rpow_two] using this
+  simpa [Real.rpow_two, ENNReal.coe_div, ENNReal.div_mul_cancel] using
+    eLpNorm_norm_rpow (p := ((q / 2 : NNReal) : ℝ≥0∞)) (μ := μ) u hu two_pos
 
 end MeasureTheory
