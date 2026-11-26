@@ -286,16 +286,6 @@ section Shear
 variable {v} {i : ι} (hv : v i = 0) (g : C^∞⟮𝓘(ℝ), AddCircle (p i); ℝ⟯)
   {β : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ}
 
-omit [Fintype ι] in
-/-- A bilinear alternating form `β` on two vectors displaced along `v` is
-`β(u + a v, u' + b v) = β(u, u') + b β(u, v) + a β(v, u')`, since `β(v, v) = 0`. -/
-private theorem apply_add_smul_add_smul (β : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) (v u u' : ι → ℝ)
-    (a b : ℝ) : β ![u + a • v, u' + b • v] = β ![u, u'] + b * β ![u, v] + a * β ![v, u'] := by
-  have hvv : β ![v, v] = 0 := β.map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl Fin.zero_ne_one
-  simp only [ContinuousAlternatingMap.vecCons_add, ContinuousAlternatingMap.vecCons_smul,
-    β.apply_vecCons_add_right, β.apply_vecCons_smul_right, hvv, smul_eq_mul]
-  ring
-
 /-- The integrand of the flux form of a shear: `σ` at the moving point, on the velocity
 `g(x i) v` and the image `w + (t g'(x i) w i) v` of a spatial vector `w`, is `g(x i) β(v, w)`. -/
 private theorem apply_mfderiv_cylinderMap_torusShearDiffeotopy
@@ -315,7 +305,8 @@ private theorem apply_mfderiv_cylinderMap_torusShearDiffeotopy
   -- The vectors are `0 + g(x i) v` and `w + b v`, read in the model space `ι → ℝ`, and `β`
   -- vanishes when its first vector is `0`.
   have h (a b : ℝ) : β ![a • v, w + b • v] = a * β ![v, w] := by
-    simpa [β.map_coord_zero (m := ![0, _]) 0 rfl] using apply_add_smul_add_smul β v 0 w a b
+    simpa [β.map_coord_zero (m := ![0, _]) 0 rfl] using
+      β.apply_vecCons_add_smul_add_smul v 0 w a b
   exact h _ _
 
 /-- **The flux form of a shear.** For a two-form `σ` on the torus with constant coefficients `β`,
@@ -366,7 +357,7 @@ theorem timeSlice_torusShearDiffeotopy_mem_diffeomorphStabilizer
     ⟨W 0, W 1, funext fun j ↦ by fin_cases j <;> rfl⟩
   -- Expand `β` on the two displaced vectors `u + (t L (u i)) v` and `u' + (t L (u' i)) v`.
   refine (congrArg β (funext fun j ↦ by fin_cases j <;> exact hD _)).trans
-    ((apply_add_smul_add_smul β v u u' ((t : ℝ) * L (u i)) ((t : ℝ) * L (u' i))).trans ?_)
+    ((β.apply_vecCons_add_smul_add_smul v u u' ((t : ℝ) * L (u i)) ((t : ℝ) * L (u' i))).trans ?_)
   have h₁ := β.apply_vecCons_swap u v
   have h₂ := hβ u
   have h₃ := hβ u'
