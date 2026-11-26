@@ -518,7 +518,6 @@ theorem polarAngle_polarCanonical {x : (ℝ × ℝ) × (ℝ × ℝ)} (hr : 0 < x
   rw [polarAngle, h, Complex.arg_mul_cos_add_sin_mul_I_coe_angle hr]
 
 /-- The point with polar coordinates `(r, θ)`, `r > 0`, has angle `θ` modulo `2π`. -/
-@[simp]
 theorem polarAngle_smul_polarRadialUnit {r : ℝ} (hr : 0 < r) (θ : ℝ) :
     polarAngle u w (r • polarRadialUnit u w θ) = θ :=
   polarAngle_polarCanonical hu hw huw (x := ((r, 0), (θ, 0))) hr
@@ -604,6 +603,7 @@ theorem _root_.OrthonormalBasis.norm_smul_polarRadialUnit {r : ℝ} (hr : 0 ≤ 
 
 /-- `TauCeti.polarAngle_smul_polarRadialUnit` in the frame of an orthonormal basis `b`: the point
 with polar coordinates `(r, θ)`, `r > 0`, in the basis `b` has angle `θ` modulo `2π`. -/
+@[simp]
 theorem _root_.OrthonormalBasis.polarAngle_smul_polarRadialUnit {r : ℝ} (hr : 0 < r) (θ : ℝ) :
     polarAngle (b 0) (b 1) (r • polarRadialUnit (b 0) (b 1) θ) = θ :=
   TauCeti.polarAngle_smul_polarRadialUnit (b.norm_eq_one 0) (b.norm_eq_one 1)

@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Polar
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Coordinates
-import TauCeti.LinearAlgebra.Determinant.Prod
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # The punctured plane as a neighbourhood of the zero section of `T*S¹`
@@ -367,21 +367,20 @@ theorem contMDiffAt_polarCovector {h : ℝ → ℝ} {q : V} (hq : q ≠ 0)
 theorem injOn_polarCovector {h : ℝ → ℝ} (hh : InjOn h (Ioi 0)) :
     InjOn (polarCovector b h) {0}ᶜ := by
   intro q hq q' hq' hqq'
-  -- The actions give `‖q‖ = ‖q'‖`.
-  have hI := congrFun (congrArg (torusActions (2 * π)) hqq') 0
-  simp only [torusActions_polarCovector] at hI
+  -- The actions agree and the angle lifts differ by a multiple `m 0` of `2π`.
+  rw [polarCovector_def, polarCovector_def] at hqq'
+  obtain ⟨hI, m, hm⟩ := (actionAngleCover_eq_actionAngleCover_iff (2 * π)).1 hqq'
   have hn : ‖q‖ = ‖q'‖ :=
     hh (norm_pos_iff.2 (mem_compl_singleton_iff.1 hq))
-      (norm_pos_iff.2 (mem_compl_singleton_iff.1 hq')) hI
-  -- The base points give equal polar angles.
+      (norm_pos_iff.2 (mem_compl_singleton_iff.1 hq')) (congrFun hI 0).symm
+  -- So the polar angles agree.
   have hθ : ((polarAngle (b 0) (b 1) q).toReal : Real.Angle) =
-      ((polarAngle (b 0) (b 1) q').toReal : Real.Angle) := by
-    -- The base points are equal in `AddCircle (2 * π)`, so the lifts differ by a multiple of `2π`.
-    have h := congrFun (congrArg TotalSpace.proj hqq') 0
-    simp only [proj_polarCovector] at h
-    rw [← sub_eq_zero, ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff] at h
-    obtain ⟨k, hk⟩ := h
-    exact Real.Angle.angle_eq_iff_two_pi_dvd_sub.2 ⟨k, by rw [← hk, zsmul_eq_mul, mul_comm]⟩
+      ((polarAngle (b 0) (b 1) q').toReal : Real.Angle) :=
+    Real.Angle.angle_eq_iff_two_pi_dvd_sub.2 ⟨-m 0, by
+      have := congrFun hm 0
+      simp only [Pi.add_apply] at this
+      push_cast
+      linarith⟩
   rw [Real.Angle.coe_toReal, Real.Angle.coe_toReal] at hθ
   rw [← norm_smul_polarRadialUnit_of_coe_eq_polarAngle b hq (Real.Angle.coe_toReal _),
     ← norm_smul_polarRadialUnit_of_coe_eq_polarAngle b hq' (Real.Angle.coe_toReal _), hn, hθ]
