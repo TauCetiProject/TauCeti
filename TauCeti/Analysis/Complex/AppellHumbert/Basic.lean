@@ -37,7 +37,7 @@ Its factor of automorphy is `e_l (z) = χ (l) exp (B (l, z) + B (l, l) / 2)`, an
 The semicharacter law forces `E` to be integral on `L`
 (`TauCeti.AppellHumbertData.exists_riemannForm_eq_intCast`), so it reads
 `χ (l + m) = (-1) ^ E (l, m) χ (l) χ (m)`, and it makes `e` a cocycle:
-`e_(l + m) (z) = e_l (z + m) e_m (z)` (`TauCeti.AppellHumbertData.factor_add_eq_mul`).
+`e_(l + m) (z) = e_l (z + m) e_m (z)` (`TauCeti.AppellHumbertData.factor_cocycle`).
 
 **Hermitian data.** For a Hermitian form `H` on `V`, complex linear in the first variable, with
 `E = Im H` integral on `L`, and a semicharacter `α : L → U(1)` with
@@ -70,7 +70,7 @@ lattice `ℤ + τℤ` with `Im τ ≠ 0` and an integer `k`, the level-`k` facto
 * `TauCeti.AppellHumbertData`: Appell–Humbert data for a subgroup `L`.
 * `TauCeti.AppellHumbertData.riemannForm`: the Riemann form `E`.
 * `TauCeti.AppellHumbertData.factor`: the factor of automorphy `e_l (z)`.
-* `TauCeti.AppellHumbertData.factor_add_eq_mul`: the cocycle law.
+* `TauCeti.AppellHumbertData.factor_cocycle`: the cocycle law.
 * `TauCeti.AppellHumbertData.le_dualSubmodule`: `E` is integral on `L`.
 * `TauCeti.AppellHumbertData.thetaSpace`: the theta functions of a datum.
 * `TauCeti.AppellHumbertData.ofHermitian`: the datum of a Hermitian form and a semicharacter.
@@ -96,7 +96,7 @@ the sum, negative and multiples of data,
 Copyright 2026 Anthropic, PBC). The Riemann form here is the negative of the source's,
 so that `E = Im H`, and the semicharacter is a map
 `L → U(1)` rather than a function on `V` of modulus one on `L`. The bundled datum and its group
-structure, the cocycle law `TauCeti.AppellHumbertData.factor_add_eq_mul`, the integrality
+structure, the cocycle law `TauCeti.AppellHumbertData.factor_cocycle`, the integrality
 statement in `(-1) ^ E` form and the Hermitian constructor
 `TauCeti.AppellHumbertData.ofHermitian` are new here.
 
@@ -135,7 +135,7 @@ structure AppellHumbertData where
   semichar : L → Circle
   /-- The semicharacter law `χ (l + m) = exp (π i E (l, m)) χ (l) χ (m)`, where
   `π E (l, m) = Im (B (m, l) - B (l, m)) / 2`. -/
-  semichar_add_eq_mul (l m : L) :
+  semichar_add_eq_circleExp_mul_mul (l m : L) :
     semichar (l + m) = Circle.exp ((form m l - form l m).im / 2) * semichar l * semichar m
 
 namespace AppellHumbertData
@@ -191,7 +191,7 @@ theorem form_sub_form (u v : V) :
 /-- The semicharacter law `χ (l + m) = exp (π i E (l, m)) χ (l) χ (m)`. -/
 theorem semichar_add_eq_circleExp_mul (l m : L) :
     D.semichar (l + m) = Circle.exp (π * D.riemannForm l m) * D.semichar l * D.semichar m := by
-  rw [D.semichar_add_eq_mul, riemannForm_apply]
+  rw [D.semichar_add_eq_circleExp_mul_mul, riemannForm_apply]
   congr 3
   field_simp
 
@@ -241,7 +241,7 @@ theorem factor_ne_zero (l : L) (z : V) : D.factor l z ≠ 0 :=
 
 /-- **The cocycle law** `e_(l + m) (z) = e_l (z + m) e_m (z)` of the factor of automorphy, which
 makes `(z, w) ↦ (z + l, e_l (z) w)` an action of `L` on `V × ℂ`. -/
-theorem factor_add_eq_mul (l m : L) (z : V) :
+theorem factor_cocycle (l m : L) (z : V) :
     D.factor (l + m) z = D.factor l (z + m) * D.factor m z := by
   -- The exponents differ by `2πi E (l, m)`, by `form_sub_form`; this is `1` by integrality.
   have h_exp : ((π * D.riemannForm l m : ℝ) : ℂ) * I +
@@ -276,7 +276,7 @@ noncomputable instance : Zero (AppellHumbertData L) where
     { form := 0
       re_form_comm _ _ := rfl
       semichar := 1
-      semichar_add_eq_mul _ _ := by simp }
+      semichar_add_eq_circleExp_mul_mul _ _ := by simp }
 
 /-- The sum of two data: the forms add and the semicharacters multiply. -/
 noncomputable instance : Add (AppellHumbertData L) where
@@ -284,9 +284,10 @@ noncomputable instance : Add (AppellHumbertData L) where
     { form := D.form + D'.form
       re_form_comm u v := by simp [D.re_form_comm u v, D'.re_form_comm u v]
       semichar := D.semichar * D'.semichar
-      semichar_add_eq_mul l m := by
-        simp only [Pi.mul_apply, D.semichar_add_eq_mul, D'.semichar_add_eq_mul,
-          _root_.add_apply, add_sub_add_comm, Complex.add_im, add_div, Circle.exp_add]
+      semichar_add_eq_circleExp_mul_mul l m := by
+        simp only [Pi.mul_apply, D.semichar_add_eq_circleExp_mul_mul,
+          D'.semichar_add_eq_circleExp_mul_mul, _root_.add_apply, add_sub_add_comm, Complex.add_im,
+          add_div, Circle.exp_add]
         simp only [mul_comm, mul_assoc, mul_left_comm] }
 
 /-- The negative of a datum: `(-B, χ⁻¹)`. -/
@@ -295,13 +296,13 @@ noncomputable instance : Neg (AppellHumbertData L) where
     { form := -D.form
       re_form_comm u v := by simp [D.re_form_comm u v]
       semichar := D.semichar⁻¹
-      semichar_add_eq_mul l m := by
+      semichar_add_eq_circleExp_mul_mul l m := by
         have h : ((-D.form) m l - (-D.form) l m).im / 2 =
             -((D.form m l - D.form l m).im / 2) := by
           simp only [_root_.neg_apply, neg_sub_neg, ← neg_sub (D.form m l), Complex.neg_im,
             neg_div]
-        rw [h, Circle.exp_neg, Pi.inv_apply, Pi.inv_apply, Pi.inv_apply, D.semichar_add_eq_mul,
-          mul_inv, mul_inv] }
+        rw [h, Circle.exp_neg, Pi.inv_apply, Pi.inv_apply, Pi.inv_apply,
+          D.semichar_add_eq_circleExp_mul_mul, mul_inv, mul_inv] }
 
 /-- The difference of two data: `(B - B', χ / χ')`. -/
 noncomputable instance : Sub (AppellHumbertData L) where
@@ -313,8 +314,8 @@ noncomputable instance : SMul ℕ (AppellHumbertData L) where
     { form := n • D.form
       re_form_comm u v := by simp [D.re_form_comm u v]
       semichar := D.semichar ^ n
-      semichar_add_eq_mul l m := by
-        simp only [Pi.pow_apply, D.semichar_add_eq_mul, _root_.smul_apply, ← smul_sub,
+      semichar_add_eq_circleExp_mul_mul l m := by
+        simp only [Pi.pow_apply, D.semichar_add_eq_circleExp_mul_mul, _root_.smul_apply, ← smul_sub,
           Complex.smul_im, smul_div_assoc, Circle.exp_nsmul, mul_pow] }
 
 /-- The `n`-th multiple of a datum, for an integer `n`: `(n • B, χ ^ n)`. -/
@@ -323,8 +324,8 @@ noncomputable instance : SMul ℤ (AppellHumbertData L) where
     { form := n • D.form
       re_form_comm u v := by simp [D.re_form_comm u v]
       semichar := D.semichar ^ n
-      semichar_add_eq_mul l m := by
-        simp only [Pi.pow_apply, D.semichar_add_eq_mul, _root_.smul_apply, ← smul_sub,
+      semichar_add_eq_circleExp_mul_mul l m := by
+        simp only [Pi.pow_apply, D.semichar_add_eq_circleExp_mul_mul, _root_.smul_apply, ← smul_sub,
           Complex.smul_im, smul_div_assoc, Circle.exp_zsmul, mul_zpow] }
 
 /-- The form of the zero datum is `0`. -/
@@ -569,7 +570,7 @@ noncomputable def ofHermitian (H : V →L[ℂ] V →L⋆[ℂ] ℂ) (hH : ∀ u v
   re_form_comm u v := by
     simp [← hH u v]
   semichar := α
-  semichar_add_eq_mul l m := by
+  semichar_add_eq_circleExp_mul_mul l m := by
     obtain ⟨n, hn⟩ := h_int l m
     have h_im : ((π : ℂ) * H l m - π * H m l).im / 2 = n * π := by
       rw [← hH l m, ← hn]

@@ -93,7 +93,7 @@ noncomputable def ofAddChar (ψ : AddChar L Circle) : AppellHumbertData L where
   form := 0
   re_form_comm _ _ := rfl
   semichar := ψ
-  semichar_add_eq_mul l m := by simp [AddChar.map_add_eq_mul]
+  semichar_add_eq_circleExp_mul_mul l m := by simp [AddChar.map_add_eq_mul]
 
 /-- The form of the datum of a character is `0`. -/
 @[simp]
@@ -127,6 +127,16 @@ theorem riemannForm_ofAddChar (ψ : AddChar L Circle) : (ofAddChar ψ).riemannFo
 theorem ofAddChar_one : ofAddChar (1 : AddChar L Circle) = 0 :=
   AppellHumbertData.ext rfl rfl
 
+/-- Multiplying unitary characters adds their Appell–Humbert data. -/
+@[simp]
+theorem ofAddChar_mul (ψ φ : AddChar L Circle) :
+    ofAddChar (ψ * φ) = ofAddChar ψ + ofAddChar φ := by
+  apply AppellHumbertData.ext
+  · ext _ _
+    exact (add_zero (0 : ℂ)).symm
+  · ext l
+    rfl
+
 /-- The unitary character `l ↦ exp (2πi E (a, l))` of `L`, for `a ∈ V` and the Riemann form `E` of
 `D`. -/
 noncomputable def riemannChar (a : V) : AddChar L Circle :=
@@ -137,6 +147,24 @@ noncomputable def riemannChar (a : V) : AddChar L Circle :=
 @[simp]
 theorem riemannChar_apply (a : V) (l : L) :
     D.riemannChar a l = Circle.exp (2 * π * D.riemannForm a l) := (rfl)
+
+/-- The Riemann character of the zero vector is trivial. -/
+@[simp]
+theorem riemannChar_zero : D.riemannChar 0 = 1 := by
+  ext l
+  simp
+
+/-- Adding translation vectors multiplies their Riemann characters. -/
+@[simp]
+theorem riemannChar_add (a b : V) : D.riemannChar (a + b) = D.riemannChar a * D.riemannChar b := by
+  ext l
+  simp [mul_add, Circle.exp_add]
+
+/-- Negating a translation vector inverts its Riemann character. -/
+@[simp]
+theorem riemannChar_neg (a : V) : D.riemannChar (-a) = (D.riemannChar a)⁻¹ := by
+  ext l
+  simp [mul_neg, Circle.exp_neg]
 
 /-- The character `exp (2πi E (a, ·))` is trivial exactly when `a` lies in the dual of `L` for the
 Riemann form `E`. -/
