@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.LinearAlgebra.PiTensorProduct.Restricted
 
 /-!
@@ -65,7 +66,7 @@ the choice of the scalars `c i`. -/
 def rescale (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i) :
     RestrictedTensor R W w ≃ₗ[R] RestrictedTensor R W w' :=
   congr (fun i ↦ LinearEquiv.smulOfUnit (c i)) fun i ↦ by
-    rw [LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv_apply, Units.smul_def, hw]
+    rw [LinearEquiv.smulOfUnit_apply, hw]
 
 /-- On the stage `S`, `rescale c` is multiplication by `∏ i ∈ S, c i`. -/
 @[simp]
@@ -79,8 +80,7 @@ theorem rescale_ofFinite (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i)
       ((LinearEquiv.smulOfUnit (c i) : W i ≃ₗ[R] W i) : W i →ₗ[R] W i) =
         (c i : R) • LinearMap.id := by
     ext x
-    rw [LinearEquiv.coe_coe, LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv_apply,
-      Units.smul_def, LinearMap.smul_apply, LinearMap.id_apply]
+    simp
   simp [rescale, hc, h, Finset.prod_attach S fun i ↦ (c i : R)]
 
 /-- On pure tensors, `rescale c` is `⨂ₜ f ↦ ⨂ₜ (c i • f i)`. -/
@@ -90,8 +90,7 @@ theorem rescale_tprod (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i) (f
     rescale w w' c hw (tprod R w f hf) =
       tprod R w' (fun i ↦ (c i : R) • f i)
         (hf.subset fun i hi h ↦ hi (by rw [h, hw])) := by
-  rw [rescale, congr_tprod]
-  simp only [LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv_apply, Units.smul_def]
+  simp [rescale, congr_tprod]
 
 /-- Rescaling the references sends the pure tensor of the references to the pure tensor of the
 rescaled references. -/
@@ -108,8 +107,7 @@ theorem rescale_symm (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i) :
   have h : (fun i ↦ (LinearEquiv.smulOfUnit (c i) : W i ≃ₗ[R] W i).symm) =
       fun i ↦ LinearEquiv.smulOfUnit (c i)⁻¹ := by
     ext i x
-    rw [LinearEquiv.symm_apply_eq, LinearEquiv.smulOfUnit, LinearEquiv.smulOfUnit,
-      DistribMulAction.toLinearEquiv_apply, DistribMulAction.toLinearEquiv_apply, smul_inv_smul]
+    simp [LinearEquiv.symm_apply_eq, smul_smul]
   simp only [rescale, congr_symm, h]
 
 variable (w) in
@@ -120,8 +118,7 @@ theorem rescale_one :
   have h : (fun i ↦ (LinearEquiv.smulOfUnit 1 : W i ≃ₗ[R] W i)) =
       fun i ↦ LinearEquiv.refl R (W i) := by
     ext i x
-    rw [LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv_apply, one_smul,
-      LinearEquiv.refl_apply]
+    simp
   simp only [rescale, h]
   exact congr_refl w
 
@@ -134,8 +131,7 @@ theorem rescale_trans {w'' : ∀ i, W i} (c c' : ι → Rˣ) (hw : ∀ i, w' i =
   have h : (fun i ↦ (LinearEquiv.smulOfUnit (c i) : W i ≃ₗ[R] W i).trans
       (LinearEquiv.smulOfUnit (c' i))) = fun i ↦ LinearEquiv.smulOfUnit ((c * c') i) := by
     ext i x
-    simp only [LinearEquiv.trans_apply, LinearEquiv.smulOfUnit,
-      DistribMulAction.toLinearEquiv_apply, Pi.mul_apply, mul_comm (c i), mul_smul]
+    simp [mul_smul, smul_comm (c i : R)]
   simp only [rescale, congr_trans, h]
 
 end RestrictedTensor
