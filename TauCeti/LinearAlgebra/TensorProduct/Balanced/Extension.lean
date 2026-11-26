@@ -167,7 +167,7 @@ variable {f}
 
 @[simp]
 theorem zero_tmul (p : P) : tmul f 0 p = 0 := by
-  rw [tmul_def, map_zero, BalancedTensorProduct.zero_tmul]
+  rw [tmul_def, _root_.map_zero, BalancedTensorProduct.zero_tmul]
 
 @[simp]
 theorem tmul_zero (s : S) : tmul f s (0 : P) = 0 :=
@@ -326,6 +326,10 @@ theorem map_comp (g : P →ₗ[R] P') (g' : P' →ₗ[R] P'') :
 theorem map_add (g g' : P →ₗ[R] P') : map f (g + g') = map f g + map f g' :=
   hom_ext fun p ↦ by simp [tmul_add]
 
+@[simp]
+theorem map_zero : map f (0 : P →ₗ[R] P') = 0 :=
+  hom_ext fun p ↦ by simp
+
 /-- A retraction `r ∘ i = id` stays a retraction after extension of scalars. -/
 theorem map_comp_map_of_comp_eq_id {i : P →ₗ[R] P'} {r : P' →ₗ[R] P}
     (hri : r ∘ₗ i = LinearMap.id) : map f r ∘ₗ map f i = LinearMap.id := by
@@ -340,8 +344,7 @@ theorem map_map_of_comp_eq_id {i : P →ₗ[R] P'} {r : P' →ₗ[R] P}
 /-- A zero composite `g' ∘ g = 0` stays zero after extension of scalars. -/
 theorem map_map_of_comp_eq_zero {g : P →ₗ[R] P'} {g' : P' →ₗ[R] P''} (hg : g' ∘ₗ g = 0)
     (x : BalancedExtension f P) : map f g' (map f g x) = 0 := by
-  rw [← LinearMap.comp_apply, ← map_comp, hg,
-    show map f (0 : P →ₗ[R] P'') = 0 from hom_ext fun p ↦ by simp, LinearMap.zero_apply]
+  rw [← LinearMap.comp_apply, ← map_comp, hg, map_zero, LinearMap.zero_apply]
 
 /-! Extension of scalars preserves the identities `fst ∘ inl = id`, `snd ∘ inl = 0`,
 `fst ∘ inr = 0` and `snd ∘ inr = id` of a product. -/
