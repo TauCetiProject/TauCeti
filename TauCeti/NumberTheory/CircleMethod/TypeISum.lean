@@ -195,7 +195,7 @@ private theorem one_div_two_mul_le_distInt_sub_of_div_eq {α : ℝ} {a : ℤ} {q
   ring
 
 /-- Raising the cap `Y` raises `min(Y, 1 / ‖x‖)`. -/
-private theorem ite_min_inv_distInt_le_of_le {x Y Y' : ℝ} (h : Y ≤ Y') :
+theorem ite_min_inv_distInt_le_of_le {x Y Y' : ℝ} (h : Y ≤ Y') :
     (if distInt x = 0 then Y else min Y (distInt x)⁻¹) ≤
       if distInt x = 0 then Y' else min Y' (distInt x)⁻¹ := by
   split_ifs
