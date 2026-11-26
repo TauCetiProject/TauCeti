@@ -193,6 +193,20 @@ theorem IsMultiHomogeneous.prod {α : Type*} (s : Finset α) (φ : α → MvPoly
   simpa only [Finset.sum_apply] using
     IsWeightedHomogeneous.prod s φ (fun a ↦ d a h) fun a ha ↦ hφ a ha h
 
+/-- For `m ≤ d`, the block monomial `∏ h, X (h, i) ^ m h * X (h, j) ^ (d h - m h)`, with the
+coordinates `i` and `j` taken in every block, is multihomogeneous of multidegree `d`. -/
+theorem isMultiHomogeneous_prod_X_pow_mul_X_pow [Fintype κ] {m : κ → ℕ} (hm : ∀ h, m h ≤ d h)
+    (i j : ι) :
+    IsMultiHomogeneous d
+      (∏ h, X (h, i) ^ m h * X (h, j) ^ (d h - m h) : MvPolynomial (κ × ι) R) := by
+  have hprod := IsMultiHomogeneous.prod (R := R) Finset.univ
+    (fun h ↦ X (h, i) ^ m h * X (h, j) ^ (d h - m h)) (fun h ↦ Pi.single h (d h)) fun h _ ↦ by
+      have hXX := ((isMultiHomogeneous_X (R := R) h i).pow (m h)).mul
+        ((isMultiHomogeneous_X (R := R) h j).pow (d h - m h))
+      rwa [← add_smul, Nat.add_sub_cancel' (hm h), ← Pi.single_smul', smul_eq_mul,
+        mul_one] at hXX
+  rwa [Finset.univ_sum_single] at hprod
+
 /-- The multidegree of a nonzero multihomogeneous polynomial is unique. -/
 theorem IsMultiHomogeneous.inj_right (hP₀ : P ≠ 0) (hd : IsMultiHomogeneous d P)
     (he : IsMultiHomogeneous e P) : d = e :=

@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.VonMises.Basic
+public import TauCeti.Probability.Moments.IntegrableExpMul
 public import TauCeti.Probability.Quantile
 import TauCeti.MeasureTheory.Measure.AddCircle
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
@@ -16,7 +17,8 @@ import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 `vonMisesAngleMeasure` reads a von Mises circle point in `[-π, π)`. Its real density is
 the Haar density divided by `2π`. The cdf integrates that density from `-π`, is zero
 below the chart, and is one above it. The interior quantile is the unique root of this
-integral, is continuous and strictly increasing, and tends to the two chart endpoints.
+integral, is continuous and strictly increasing, and tends to the two chart endpoints. Since the
+chart is bounded, every exponential moment of its real coordinate exists.
 
 The location remains a circle point, so every formula is independent of its real
 representative. The angle cdf and quantile use the fixed chart, rather than a chart
@@ -88,6 +90,19 @@ theorem ae_mem_Ico_vonMisesAngleMeasure (m : AddCircle (2 * π)) (κ : ℝ) :
   exact ae_of_all _ fun θ ↦ by
     have hπ : -π + 2 * π = π := by ring
     simpa only [mem_Ico, hπ] using (AddCircle.equivIco (2 * π) (-π) θ).property
+
+/-- Every exponential moment of the fixed-chart von Mises angle exists. -/
+@[simp]
+theorem integrableExpSet_id_vonMisesAngleMeasure
+    (m : AddCircle (2 * π)) (κ : ℝ) :
+    integrableExpSet id (vonMisesAngleMeasure m κ) = univ := by
+  by_cases hκ : 0 ≤ κ
+  · let _ := isProbabilityMeasure_vonMisesAngleMeasure m hκ
+    apply TauCeti.integrableExpSet_eq_univ_of_mem_Icc measurable_id.aemeasurable
+    exact (ae_mem_Ico_vonMisesAngleMeasure m κ).mono
+      fun _ hx ↦ Set.Ico_subset_Icc_self hx
+  · rw [vonMisesAngleMeasure_of_neg (lt_of_not_ge hκ)]
+    simp [integrableExpSet]
 
 /-- The angle law has no atoms, for every concentration, including invalid ones. -/
 instance nullSingletonClass_vonMisesAngleMeasure (m : AddCircle (2 * π)) (κ : ℝ) :

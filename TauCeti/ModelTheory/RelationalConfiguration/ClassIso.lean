@@ -42,6 +42,12 @@ defined through it.
 * `TauCeti.RelationalConfiguration.borelReducible_classIso_of_mapsTo`: a measurable map between
   coding spaces that maps one class into another and preserves and reflects isomorphism on the
   first restricts to a Borel reduction.
+* `TauCeti.RelationalConfiguration.borelBireducible_classIso_image`: a measurable equivalence of
+  coding spaces that preserves and reflects isomorphism makes isomorphism on a class and on its
+  image Borel bireducible.
+* `TauCeti.RelationalConfiguration.borelBireducible_classIso_image_relabel`: in particular,
+  isomorphism on a class and on its relabelling along a bijection of carriers are Borel
+  bireducible.
 
 ## References
 
@@ -124,6 +130,29 @@ theorem borelReducible_classIso_of_mapsTo {L' : Language.{u', v'}} [L'.IsRelatio
     (classIso K').BorelReducible (classIso K) :=
   Setoid.borelReducible_iff.2 ⟨hK.restrict f K' K, (hf.comp measurable_subtypeVal).subtype_mk,
     fun x y => hiso x x.property y y.property⟩
+
+/-- **Transport.** A measurable equivalence of coding spaces that preserves and reflects
+isomorphism makes isomorphism on a class, invariant or not, and isomorphism on its image Borel
+bireducible. -/
+theorem borelBireducible_classIso_image {L' : Language.{u', v'}} [L'.IsRelational] {β : Type w'}
+    (f : RelationalConfiguration L α ≃ᵐ RelationalConfiguration L' β)
+    (hf : ∀ c d, isoSetoid L' β (f c) (f d) ↔ isoSetoid L α c d)
+    (K : Set (RelationalConfiguration L α)) :
+    (classIso K).BorelBireducible (classIso (f '' K)) := by
+  refine Setoid.borelBireducible_iff.2
+    ⟨borelReducible_classIso_of_mapsTo f.measurable (mapsTo_image f K) fun c _ d _ => (hf c d).symm,
+      borelReducible_classIso_of_mapsTo f.symm.measurable ?_ fun c _ d _ => ?_⟩
+  · rintro _ ⟨c, hc, rfl⟩
+    rwa [MeasurableEquiv.symm_apply_apply]
+  · simpa using hf (f.symm c) (f.symm d)
+
+/-- **Relabelling a class.** Isomorphism on a class of configurations on `α` and isomorphism on its
+image under relabelling along a bijection `e : α ≃ β` are Borel bireducible. -/
+theorem borelBireducible_classIso_image_relabel {β : Type w'} (e : α ≃ β)
+    (K : Set (RelationalConfiguration L α)) :
+    (classIso K).BorelBireducible (classIso (relabel e '' K)) := by
+  rw [← coe_relabelMeasurableEquiv]
+  exact borelBireducible_classIso_image _ (fun _ _ => by simp) K
 
 /-- Isomorphism on the empty class is Borel reducible to isomorphism on every class, through the
 empty map. -/

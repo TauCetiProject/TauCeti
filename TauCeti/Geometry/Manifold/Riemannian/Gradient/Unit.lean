@@ -24,6 +24,8 @@ near every point where the gradient does not vanish.
 
 * `TauCeti.Manifold.inner_normalize_mgradient`: `⟪grad f x / ‖grad f x‖, v⟫ = df_x v / ‖grad f x‖`.
 * `TauCeti.Manifold.mvfderiv_normalize_mgradient`: `df_x (grad f x / ‖grad f x‖) = ‖grad f x‖`.
+* `TauCeti.Manifold.contMDiffAt_norm_mgradient`: the norm of the gradient of a function that is
+  `C^{n+1}` at a point with nonzero gradient is `C^n` at that point, for a `C^n` metric.
 * `TauCeti.Manifold.contMDiffAt_normalize_mgradient`: the unit gradient of a function that is
   `C^{n+1}` at a point with nonzero gradient is `C^n` at that point, for a `C^n` metric.
 * `TauCeti.Manifold.contMDiff_normalize_mgradient`: the unit gradient of a `C^{n+1}` function with
@@ -60,23 +62,29 @@ theorem mvfderiv_normalize_mgradient :
 variable {n : ℕ∞ω} [IsManifold I (n + 1) M]
   [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
 
-/-- For a `C^n` metric, the unit gradient of a function that is `C^{n+1}` at a point where its
-gradient does not vanish is `C^n` at that point. -/
-theorem contMDiffAt_normalize_mgradient (hf : ContMDiffAt I 𝓘(ℝ) (n + 1) f x)
+/-- For a `C^n` metric, the norm of the gradient of a function that is `C^{n+1}` at a point where
+its gradient does not vanish is `C^n` at that point. -/
+theorem contMDiffAt_norm_mgradient (hf : ContMDiffAt I 𝓘(ℝ) (n + 1) f x)
     (hx : mgradient I f x ≠ 0) :
-    ContMDiffAt I I.tangent n
-      (fun y ↦ (⟨y, NormedSpace.normalize (mgradient I f y)⟩ : TangentBundle I M)) x := by
+    ContMDiffAt I 𝓘(ℝ) n (fun y ↦ ‖mgradient I f y‖) x := by
   have hgrad := contMDiffAt_mgradient hf
   have hsq : ContMDiffAt I 𝓘(ℝ) n (fun y ↦ ⟪mgradient I f y, mgradient I f y⟫_ℝ) x :=
     ContMDiffAt.inner_bundle (IB := I) (F := E) (E := fun y : M ↦ TangentSpace I y) (b := id)
       hgrad hgrad
   have hne : ⟪mgradient I f x, mgradient I f x⟫_ℝ ≠ 0 := by
     rwa [real_inner_self_eq_norm_sq, pow_ne_zero_iff two_ne_zero, norm_ne_zero_iff]
-  have hnorm : ContMDiffAt I 𝓘(ℝ) n (fun y ↦ ‖mgradient I f y‖) x := by
-    simpa only [Function.comp_def, real_inner_self_eq_norm_sq, Real.sqrt_sq (norm_nonneg _)] using
-      (Real.contDiffAt_sqrt hne).comp_contMDiffAt
-        (f := fun y ↦ ⟪mgradient I f y, mgradient I f y⟫_ℝ) hsq
-  exact (hnorm.inv₀ (norm_ne_zero_iff.mpr hx)).smul_section hgrad
+  simpa only [Function.comp_def, real_inner_self_eq_norm_sq, Real.sqrt_sq (norm_nonneg _)] using
+    (Real.contDiffAt_sqrt hne).comp_contMDiffAt
+      (f := fun y ↦ ⟪mgradient I f y, mgradient I f y⟫_ℝ) hsq
+
+/-- For a `C^n` metric, the unit gradient of a function that is `C^{n+1}` at a point where its
+gradient does not vanish is `C^n` at that point. -/
+theorem contMDiffAt_normalize_mgradient (hf : ContMDiffAt I 𝓘(ℝ) (n + 1) f x)
+    (hx : mgradient I f x ≠ 0) :
+    ContMDiffAt I I.tangent n
+      (fun y ↦ (⟨y, NormedSpace.normalize (mgradient I f y)⟩ : TangentBundle I M)) x :=
+  ((contMDiffAt_norm_mgradient hf hx).inv₀ (norm_ne_zero_iff.mpr hx)).smul_section
+    (contMDiffAt_mgradient hf)
 
 /-- For a `C^n` metric, the unit gradient of a `C^{n+1}` function with nowhere vanishing gradient
 is a `C^n` vector field. -/

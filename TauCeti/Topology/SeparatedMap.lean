@@ -18,7 +18,9 @@ is Hausdorff.
 
 The fibers of a locally injective map are discrete
 (`IsLocallyInjective.isDiscrete_preimage_singleton`), so a compact subset of one fiber is finite
-(`IsLocallyInjective.finite_preimage_singleton_inter`); this needs no topology on the codomain.
+(`IsLocallyInjective.finite_preimage_singleton_inter`), and every fiber of a locally injective map
+out of a compact space is finite (`IsLocallyInjective.finite_preimage_singleton`); this needs no
+topology on the codomain.
 On a Hausdorff space, the neighbourhoods on which a locally injective map is injective can be
 chosen pairwise disjoint over any finite set
 (`IsLocallyInjective.exists_isOpen_injOn_pairwiseDisjoint`).
@@ -28,7 +30,9 @@ A continuous section of a continuous locally injective map over an open set has 
 (`IsLocallyInjective.isOpen_image_of_leftInvOn`).
 For a separated, locally injective map, such as a covering map or any locally injective map with
 Hausdorff total space, two sections over a preconnected set that are continuous on that set and
-agree at one of its points agree on all of it (`IsSeparatedMap.eqOn_of_leftInvOn`).
+agree at one of its points agree on all of it (`IsSeparatedMap.eqOn_of_leftInvOn`). Two lifts of a
+map injective on a preconnected set, different at one of its points, have disjoint images on it
+(`IsSeparatedMap.disjoint_image_of_eqOn_comp`).
 Without separation, local injectivity still cancels a map on germs of continuous maps agreeing at
 a point (`IsLocallyInjective.eventuallyEq_of_comp`).
 
@@ -94,6 +98,19 @@ theorem IsLocallyInjective.finite_preimage_singleton_inter (hp : IsLocallyInject
     {s : Set E} {b : B} (hs : IsCompact (p ⁻¹' {b} ∩ s)) : (p ⁻¹' {b} ∩ s).Finite :=
   hs.finite <| (hp.isDiscrete_preimage_singleton b).mono inter_subset_left
 
+/-- Every fiber of a locally injective map out of a compact space, such as a local homeomorphism,
+is finite. -/
+theorem IsLocallyInjective.finite_preimage_singleton [CompactSpace E] (hp : IsLocallyInjective p)
+    (b : B) : (p ⁻¹' {b}).Finite := by
+  -- Finitely many open sets on which `p` is injective cover `E`, and each of them meets the fiber
+  -- in at most one point.
+  choose U hUo hxU hU using hp
+  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover U hUo fun x _ ↦ mem_iUnion.2 ⟨x, hxU x⟩
+  refine (t.finite_toSet.biUnion fun x _ ↦ Set.Subsingleton.finite (s := U x ∩ p ⁻¹' {b})
+    fun e he e' he' ↦ hU x he.1 he'.1 (he.2.trans he'.2.symm)).subset fun e he ↦ ?_
+  obtain ⟨x, hx, hex⟩ := mem_iUnion₂.1 (ht (mem_univ e))
+  exact mem_iUnion₂.2 ⟨x, hx, hex, he⟩
+
 /-- A locally injective map `p` on a Hausdorff space, such as a local homeomorphism, is injective
 on an open neighbourhood `W e` of each point `e`, and these neighbourhoods can be chosen pairwise
 disjoint over the points of any given finite set `F`. -/
@@ -140,6 +157,21 @@ theorem IsSeparatedMap.eqOn_of_leftInvOn [TopologicalSpace B] (sep : IsSeparated
     (hl' : LeftInvOn p s' S) {y : B} (hy : y ∈ S) (hee' : s y = s' y) : EqOn s s' S :=
   sep.eqOn_of_comp_eqOn hinj hS hs hs'
     (fun z hz ↦ by simp only [Function.comp_apply, hl hz, hl' hz]) hy hee'
+
+/-- Two lifts through `p` of a map `f` injective on a preconnected set `S`, continuous on `S` and
+taking different values at one point of `S`, have disjoint images on `S`, when `p` is separated and
+locally injective. Over a simply connected `S`, the lifts are therefore indexed by the fibre of `p`
+over a base point, with pairwise disjoint images. -/
+theorem IsSeparatedMap.disjoint_image_of_eqOn_comp {A : Type*} [TopologicalSpace A]
+    (sep : IsSeparatedMap p) (hinj : IsLocallyInjective p) {S : Set A} {f : A → B}
+    {g₁ g₂ : A → E} (hS : IsPreconnected S) (hf : InjOn f S) (h₁ : ContinuousOn g₁ S)
+    (h₂ : ContinuousOn g₂ S) (he₁ : EqOn (p ∘ g₁) f S) (he₂ : EqOn (p ∘ g₂) f S) {a : A}
+    (ha : a ∈ S) (hne : g₁ a ≠ g₂ a) : Disjoint (g₁ '' S) (g₂ '' S) := by
+  refine disjoint_left.2 ?_
+  rintro _ ⟨b, hb, rfl⟩ ⟨c, hc, hcb⟩
+  -- Both lifts lie over `f b = f c`, so `b = c`, and the lifts agree at `b`, hence everywhere.
+  obtain rfl : c = b := hf hc hb (((he₂ hc).symm.trans (congrArg p hcb)).trans (he₁ hb))
+  exact hne (sep.eqOn_of_comp_eqOn hinj hS h₁ h₂ (he₁.trans he₂.symm) hb hcb.symm ha)
 
 /-- If `p : E → B` is locally injective and two maps continuous at `a` agree at `a` and have
 eventually equal compositions with `p` near `a`, then they agree on a neighbourhood of `a`. No

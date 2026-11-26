@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.GroupTheory.SpecificGroups.KleinFour
 public import TauCeti.RingTheory.DiscreteValuationRing.AdjoinRoot
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.Data.Set.Card

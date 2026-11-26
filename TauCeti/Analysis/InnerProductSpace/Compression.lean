@@ -89,6 +89,19 @@ theorem compression_id : A.compression (ContinuousLinearMap.id 𝕜 E) = A := by
   ext x
   simp [compression_def, adjoint_id]
 
+/-- The adjoint of a linear isometry cancels it on the left of a composite: `V† (V Y) = Y`. -/
+@[simp]
+theorem _root_.LinearIsometry.adjoint_comp_self_comp (V : F →ₗᵢ[𝕜] E) {G : Type*}
+    [TopologicalSpace G] [AddCommMonoid G] [Module 𝕜 G] (Y : G →L[𝕜] F) :
+    adjoint V.toContinuousLinearMap ∘L (V.toContinuousLinearMap ∘L Y) = Y := by
+  rw [← comp_assoc, LinearIsometry.adjoint_comp_self, one_def, id_comp]
+
+/-- Compressing the identity along a linear isometry gives the identity, since `V† V = 1`. -/
+@[simp]
+theorem compression_one (V : F →ₗᵢ[𝕜] E) :
+    (1 : E →L[𝕜] E).compression V.toContinuousLinearMap = 1 := by
+  rw [compression_def, one_def, id_comp, LinearIsometry.adjoint_comp_self]
+
 /-- Compressing in two steps is compressing along the composite. -/
 theorem compression_comp {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
     [CompleteSpace G] (Y : G →L[𝕜] F) :

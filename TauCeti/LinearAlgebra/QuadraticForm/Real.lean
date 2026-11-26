@@ -38,11 +38,14 @@ criteria for real orthogonal groups with the usual order-theoretic notion of def
 
 * `QuadraticForm.anisotropic_iff_posDef_or_negDef`: real anisotropic forms are exactly the
   positive and negative definite forms, including forms on the zero space.
+* `QuadraticMap.Anisotropic.isSquare_inv_mul_inv`: for an anisotropic real form, the product of
+  the inverse values of two vectors is a real square.
 * `QuadraticForm.anisotropic_iff_sigNeg_eq_zero_or_sigPos_eq_zero`: a real form with trivial
   radical on a finite-dimensional space is anisotropic exactly when one of its two indices of
   inertia vanishes.
 * `QuadraticMap.anisotropic_weightedSumSquares_iff`: a real diagonal form is anisotropic exactly
   when its coefficients are all positive or all negative.
+* `QuadraticMap.sqrt_map_smul`: `v ↦ √(Q v)` is absolutely homogeneous.
 * `QuadraticMap.map_inv_sqrt_smul_eq_one`: a vector of positive quadratic value can be
   normalized to value one by inverse-square-root scaling. This normalization feeds the
   reflection-pair construction for compact real Clifford forms.
@@ -88,6 +91,12 @@ namespace QuadraticMap
 section AddCommMonoid
 
 variable {M : Type*} [AddCommMonoid M] [Module ℝ M]
+
+/-- Homogeneity of `v ↦ √(Q v)`: `√(Q (a • v)) = |a| √(Q v)`. -/
+theorem sqrt_map_smul (Q : QuadraticForm ℝ M) (a : ℝ) (v : M) :
+    √(Q (a • v)) = |a| * √(Q v) := by
+  rw [QuadraticMap.map_smul, smul_eq_mul, Real.sqrt_mul (mul_self_nonneg a),
+    Real.sqrt_mul_self_eq_abs]
 
 /-- Scaling a vector by the inverse square root of its positive quadratic value gives value one. -/
 @[simp]
@@ -186,6 +195,18 @@ theorem anisotropic_iff_posDef_or_negDef (Q : _root_.QuadraticForm ℝ M) :
   · rintro (hQ | hQ)
     · exact hQ.anisotropic
     · exact fun x hx ↦ hQ.anisotropic x (by simpa using hx)
+
+/-- For an anisotropic real form, the product of the inverse values of two vectors is a real
+square: the form is positive or negative definite, so its values are either all nonnegative or all
+nonpositive, and the product of their inverses is nonnegative, including when a vector is zero. -/
+theorem _root_.QuadraticMap.Anisotropic.isSquare_inv_mul_inv {Q : _root_.QuadraticForm ℝ M}
+    (hQ : Q.Anisotropic) (v w : M) : IsSquare ((Q v)⁻¹ * (Q w)⁻¹) := by
+  rw [Real.isSquare_iff]
+  rcases (anisotropic_iff_posDef_or_negDef Q).1 hQ with h | h
+  · exact mul_nonneg (inv_nonneg.2 (h.nonneg v)) (inv_nonneg.2 (h.nonneg w))
+  · have hv : Q v ≤ 0 := neg_nonneg.1 (h.nonneg v)
+    have hw : Q w ≤ 0 := neg_nonneg.1 (h.nonneg w)
+    exact mul_nonneg_of_nonpos_of_nonpos (inv_nonpos.2 hv) (inv_nonpos.2 hw)
 
 /-- A real quadratic form with trivial radical on a finite-dimensional space is anisotropic if and
 only if one of its two indices of inertia vanishes: an indefinite regular real form is isotropic. -/

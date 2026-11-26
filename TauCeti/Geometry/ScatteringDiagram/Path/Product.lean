@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Geometry.ScatteringDiagram.Path.CrossingEvents
+public import TauCeti.Geometry.ScatteringDiagram.Path.Crossing.Events
 public import TauCeti.Data.Finset.NoncommProd
 public import Mathlib.Combinatorics.Quiver.Path.Weight
 import TauCeti.Data.Finset.Sort
