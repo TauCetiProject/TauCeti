@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Basic
 public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Complex
 
 /-!
-# Checks: `𝔰𝔩_n(ℝ)` is split and `𝔰𝔩_n(ℂ)` viewed as real is not
+# Checks: the diagonal of `𝔰𝔩_n(ℝ)` is a Cartan subalgebra and the real diagonal of `𝔰𝔩_n(ℂ)` is not
 
 Checks of the criterion `LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff`: a maximal abelian
 subspace `𝔞` of `𝔭` is a Cartan subalgebra exactly when `𝔪 = 0`.
@@ -42,9 +42,10 @@ example (r : ℕ) :
 
 variable (n : Type*) [Fintype n] [DecidableEq n]
 
-/-- `𝔰𝔩_n(ℂ)` viewed as real is not split: for `i ≠ j`, its real trace-zero diagonal matrices,
-maximal abelian in `𝔭` for `θ X = -Xᴴ`, are not a Cartan subalgebra, since `𝔪 = i𝔞` contains
-`i (E_ii - E_jj) ≠ 0`. -/
+/-- The real trace-zero diagonal matrices of `𝔰𝔩_n(ℂ)` viewed as real, maximal abelian in `𝔭` for
+`θ X = -Xᴴ`, are not a Cartan subalgebra once there are `i ≠ j`, since `𝔪 = i𝔞` contains
+`i (E_ii - E_jj) ≠ 0`. (That `𝔰𝔩_n(ℂ)` viewed as real is not split follows only together with the
+conjugacy of maximal abelian subspaces of `𝔭`, which is not formalised here.) -/
 theorem not_isCartanSubalgebra_slComplexRealDiagonalSubalgebra {i j : n} (hij : i ≠ j) :
     ¬(slComplexRealDiagonalSubalgebra n).IsCartanSubalgebra := by
   rw [LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff
