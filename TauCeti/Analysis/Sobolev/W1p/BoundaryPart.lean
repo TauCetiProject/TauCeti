@@ -69,8 +69,9 @@ functions are only Lipschitz.
 * `TauCeti.w1pVanishingOnSubmodule_frontier`: at `Γ = frontier Ω` it is `W^{1,p}_0(Ω)`.
 * `TauCeti.W1pVanishingOn.valueL`: its value map into `Lᵖ(Ω)`, injective
   (`TauCeti.W1pVanishingOn.valueL_injective`), with dense range for `p = 2` when
-  `Γ` misses `Ω` (`TauCeti.W1pVanishingOn.denseRange_valueL_two`) and compact when the value map
-  of `W^{1,p}(Ω)` is (`TauCeti.W1pVanishingOn.isCompactOperator_valueL`).
+  `Γ` misses `Ω` (`TauCeti.W1pVanishingOn.denseRange_valueL_two`), nonzero on a nonempty `Ω` when
+  `Γ` misses `Ω` (`TauCeti.W1pVanishingOn.valueL_ne_zero`), and compact when the value map of
+  `W^{1,p}(Ω)` is (`TauCeti.W1pVanishingOn.isCompactOperator_valueL`).
 * `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule`: it is stable under multiplication by
   smooth functions bounded with their gradients, and
   `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_union`: a cutoff whose support misses
@@ -343,6 +344,19 @@ theorem W1pVanishingOn.denseRange_valueL_two (hΓ : Disjoint Γ Omega) :
     rintro _ ⟨w, rfl⟩
     exact ⟨⟨w, w1p0Submodule_le_w1pVanishingOnSubmodule hΓ w.property⟩, by
       simp only [W1pVanishingOn.valueL_apply, W1p0.valueL_apply]⟩
+
+/-- On a nonempty `Ω`, the value map `W^{1,p}_Γ(Ω) → Lᵖ(Ω)` is nonzero when `Γ` misses `Ω`, since
+`W^{1,p}_Γ(Ω)` then contains `W^{1,p}_0(Ω)`, whose value map is nonzero. -/
+theorem W1pVanishingOn.valueL_ne_zero (hΓ : Disjoint Γ Omega)
+    (hOmega : (Omega : Set E).Nonempty) :
+    (W1pVanishingOn.valueL (mu := mu) (Omega := Omega) (p := p) (Γ := Γ)) ≠ 0 := by
+  obtain ⟨w, hw⟩ := W1p0.exists_value_ne_zero (mu := mu) (Omega := Omega) (p := p) hOmega
+  intro hzero
+  refine hw ?_
+  have h : W1pVanishingOn.valueL (p := p) (Γ := Γ)
+      ⟨w, w1p0Submodule_le_w1pVanishingOnSubmodule (mu := mu) (p := p) hΓ w.property⟩ = 0 := by
+    rw [hzero, zero_apply]
+  simpa only [W1pVanishingOn.valueL_apply] using h
 
 /-- The value map `W^{1,p}_Γ(Ω) → Lᵖ(Ω)` is compact when the value map of `W^{1,p}(Ω)` is, as
 for a bounded Lipschitz domain by Rellich--Kondrachov. -/

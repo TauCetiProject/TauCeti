@@ -430,25 +430,10 @@ theorem firstDirichletEigenvalue_le
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) {kappa : ℝ}
     (hkappa : IsDirichletEigenvalue mu Omega a b c kappa) :
     firstDirichletEigenvalue hcoeff hcoercive ≤ kappa := by
-  have hkappa_pos := pos_of_isDirichletEigenvalue hcoeff hcoercive hkappa
-  have heigen : HasEigenvalue (dirichletSolutionOperator hcoeff hcoercive :
-      Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)) kappa⁻¹ :=
-    (isDirichletEigenvalue_iff_hasEigenvalue hcoeff hcoercive hkappa_pos.ne').mp hkappa
-  obtain ⟨v, hv, hvne⟩ := heigen.exists_hasEigenvector
-  rw [mem_eigenspace_iff] at hv
-  have hmul : |kappa⁻¹| * ‖v‖ ≤ ‖dirichletSolutionOperator hcoeff hcoercive‖ * ‖v‖ := by
-    calc
-      |kappa⁻¹| * ‖v‖ = ‖kappa⁻¹ • v‖ := by rw [norm_smul, Real.norm_eq_abs]
-      _ = ‖dirichletSolutionOperator hcoeff hcoercive v‖ := (congrArg norm hv).symm
-      _ ≤ ‖dirichletSolutionOperator hcoeff hcoercive‖ * ‖v‖ :=
-        ContinuousLinearMap.le_opNorm _ _
-  have hle : |kappa⁻¹| ≤ ‖dirichletSolutionOperator hcoeff hcoercive‖ := by
-    nlinarith [norm_pos_iff.mpr hvne]
-  rw [abs_of_pos (inv_pos.mpr hkappa_pos)] at hle
-  have hnorm_pos : 0 < ‖dirichletSolutionOperator hcoeff hcoercive‖ :=
-    (inv_pos.mpr hkappa_pos).trans_le hle
-  rw [firstDirichletEigenvalue_def]
-  exact (inv_le_comm₀ hnorm_pos hkappa_pos).mpr hle
+  obtain ⟨u, hu, heq⟩ := hkappa
+  rw [firstDirichletEigenvalue_def, dirichletSolutionOperator_def]
+  exact hcoercive.inv_norm_formSolutionOperator_le W1p0.valueL hu fun v ↦ by
+    rw [energyFormH1L0_apply, heq v, W1p0.valueL_apply, W1p0.valueL_apply]
 
 /-- A diagonal lower bound for the energy form bounds the first Dirichlet eigenvalue below. -/
 theorem le_firstDirichletEigenvalue
