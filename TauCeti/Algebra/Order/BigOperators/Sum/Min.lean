@@ -44,6 +44,7 @@ reindexing; this is the counting step in the uniqueness of elementary divisors.
   removing one box from each of some nonempty rows of a Young diagram, counted in all columns or
   in the first `k + 1` columns.
 * `Finset.sum_min_eq_sum_range_card_filter_lt`: a truncated sum is a sum of column lengths.
+* `Finset.sum_map_min_filter_ne_zero`: zero members do not contribute to truncated sums.
 * `Finset.sum_min_add_sum_min_eq`: the second-difference identity for truncated sums.
 * `Fintype.exists_equiv_of_forall_sum_min_eq`: two finite families of positive natural numbers
   with the same truncated sums agree up to a bijection of their index types.
@@ -111,6 +112,17 @@ theorem sum_min_eq_sum_range_card_filter_lt (u : Finset α) (c : α → ℕ) (k 
   induction k with
   | zero => simp
   | succ k ih => rw [sum_min_add_one, ih, sum_range_succ]
+
+/-- Zero members of a family `c` contribute nothing to its truncated sums: summing `min k` over
+the multiset of nonzero values of `c` on `s` gives `∑ l ∈ s, min k (c l)`. -/
+theorem sum_map_min_filter_ne_zero (s : Finset α) (c : α → ℕ) (k : ℕ) :
+    (((s.val.map c).filter (· ≠ 0)).map (min k)).sum = ∑ l ∈ s, min k (c l) := by
+  classical
+  rw [Multiset.filter_map, Multiset.map_map, ← Finset.filter_val, ← Finset.sum_eq_multiset_sum]
+  refine sum_filter_of_ne fun l _ h ↦ ?_
+  simp only [Function.comp_apply] at h ⊢
+  rintro hl
+  simp [hl] at h
 
 /-- For `p < q`, the second differences of the truncated sums `∑ l, min k (c l)` at `p` and `q`
 count the members of the family `c` strictly between `p` and `q`. -/

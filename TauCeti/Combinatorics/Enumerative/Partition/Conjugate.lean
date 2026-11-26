@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Order.BigOperators.Sum.Min
 public import TauCeti.Combinatorics.Enumerative.Partition.Dominance
 public import TauCeti.Combinatorics.Young.Partitions
 
@@ -270,16 +271,6 @@ theorem dominates_iff_forall_sum_map_min_le {n : ℕ} {μ ν : n.Partition} :
     TauCeti.sum_take_transpose_rowLens, YoungDiagram.rowLens_ofPartition_eq_sort_parts,
     YoungDiagram.rowLens_ofPartition_eq_sort_parts, hsort, hsort]
 
-/-- Zero parts do not contribute to the column counts `∑ a, min k (f a)` of a finite family. -/
-private theorem sum_map_min_filter_ne_zero {α : Type*} [Fintype α] (f : α → ℕ) (k : ℕ) :
-    (((Finset.univ.val.map f).filter (· ≠ 0)).map (min k)).sum = ∑ a, min k (f a) := by
-  classical
-  rw [Multiset.filter_map, Multiset.map_map, ← Finset.filter_val, ← Finset.sum_eq_multiset_sum]
-  refine Finset.sum_filter_of_ne fun a _ h ↦ ?_
-  simp only [Function.comp_apply] at h ⊢
-  rintro ha
-  simp [ha] at h
-
 /-- Dominance of partitions given by finite families of parts, compared column by column. For
 families `μ` and `ν` of natural numbers with the same total `n`, the partition of `n` whose parts
 are the nonzero `μ j` dominates the one whose parts are the nonzero `ν l` exactly when
@@ -291,7 +282,8 @@ theorem ofSums_dominates_ofSums_iff {ι κ : Type*} [Fintype ι] [Fintype κ] {n
       ∀ k, ∑ j, min k (μ j) ≤ ∑ l, min k (ν l) := by
   rw [dominates_iff_forall_sum_map_min_le]
   refine forall_congr' fun k ↦ ?_
-  rw [ofSums_parts, ofSums_parts, sum_map_min_filter_ne_zero, sum_map_min_filter_ne_zero]
+  rw [ofSums_parts, ofSums_parts, Finset.sum_map_min_filter_ne_zero,
+    Finset.sum_map_min_filter_ne_zero]
 
 end Nat.Partition
 
