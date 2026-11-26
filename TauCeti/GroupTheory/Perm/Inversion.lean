@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.Data.Fin.Sum
 public import TauCeti.Data.Finset.Inversions
+public import TauCeti.GroupTheory.Perm.Fin
 
 import TauCeti.Data.Fin.Basic
 
@@ -26,8 +27,12 @@ rotating index blocks.
 
 ## Main results
 
+* `Equiv.Perm.inversions_univ_consFin_comp_succ`: deleting the first position of
+  `Equiv.Perm.consFin j π` leaves the inversions of `π`.
 * `Equiv.Perm.card_inversion_decomposeFin'Symm`: inserting `i` at the first position adds `i`
   inversions.
+* `Equiv.Perm.inversions_univ_swap_castSucc_succ`: the only inversion of an adjacent
+  transposition is the exchanged pair.
 * `TauCeti.sign_eq_neg_one_pow_card_inversion`: the sign of a permutation `σ` of `Fin n` is
   `(-1)` to the number of its inversions `Finset.univ.inversions σ`.
 * `Fin.sign_revPerm`: reversing `Fin n` has sign `(-1) ^ n.choose 2`.
@@ -62,6 +67,12 @@ namespace Equiv.Perm
 
 open _root_.Finset
 
+/-- Deleting the first position of `consFin j π` leaves the inversions of `π`: the remaining
+entries `j.succAbove (π k)` are listed in the order of `π`. -/
+theorem inversions_univ_consFin_comp_succ {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    univ.inversions (consFin j π ∘ Fin.succ) = univ.inversions π := by
+  simp [inversions_univ, Function.comp_def, Fin.succAbove_lt_succAbove_iff]
+
 /-- Inserting `i` at the first position creates exactly `i` additional inversions. -/
 @[simp]
 theorem card_inversion_decomposeFin'Symm {n : ℕ} (σ : Perm (Fin (n + 1)))
@@ -77,14 +88,28 @@ theorem card_inversion_decomposeFin'Symm {n : ℕ} (σ : Perm (Fin (n + 1)))
     simp only [Fin.succAbove_lt_iff]
     rw [Equiv.sum_comp σ (fun j => if j.castSucc < i then (1 : ℕ) else 0), sum_boole]
     exact hcount
-  have h := card_univ_inversions_eq_comp_succAbove (decomposeFin'Symm i σ) 0
+  have h := card_univ_inversions_eq_comp_succAbove (consFin i σ) 0
+  rw [Fin.succAbove_zero, inversions_univ_consFin_comp_succ, consFin_eq_decomposeFin'Symm] at h
   simp only [inversions_univ, card_filter] at h
-  simp only [Function.comp_apply, Fin.zero_succAbove, decomposeFin'Symm_succ,
-    decomposeFin'Symm_zero, Fin.succAbove_lt_succAbove_iff, Fin.not_lt_zero, false_and,
-    ite_false, sum_const_zero, add_zero] at h
+  simp only [decomposeFin'Symm_zero, Fin.not_lt_zero, false_and, ite_false, sum_const_zero,
+    add_zero] at h
   rw [Fin.sum_univ_succ] at h
   simpa only [card_filter, lt_self_iff_false, false_and, ite_false, zero_add, add_zero,
     Fin.succ_pos, true_and, decomposeFin'Symm_succ, hfirst, add_comm] using h
+
+/-- The only inversion of the adjacent transposition of `i.castSucc` and `i.succ` is the
+exchanged pair. -/
+@[simp]
+theorem inversions_univ_swap_castSucc_succ {n : ℕ} (i : Fin n) :
+    univ.inversions (swap i.castSucc i.succ) = {(i.castSucc, i.succ)} := by
+  ext ⟨a, b⟩
+  simp only [inversions_univ, mem_filter, mem_univ, true_and, mem_singleton, Prod.mk.injEq]
+  constructor
+  · rintro ⟨hab, h⟩
+    rw [swap_apply_def, swap_apply_def] at h
+    split_ifs at h <;> grind [Fin.le_castSucc_iff]
+  · rintro ⟨rfl, rfl⟩
+    simp
 
 end Equiv.Perm
 

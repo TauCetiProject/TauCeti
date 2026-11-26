@@ -28,7 +28,8 @@ zero when `2` is invertible in the coefficient ring. These identities allow the 
 algebra to serve as a receiving supercommutative algebra in universal properties and tensor
 comparisons, for both integer and parity (`ZMod 2`) gradings. Permuting the factors of a product
 of homogeneous elements multiplies it by the Koszul sign `Equiv.Perm.koszulSign` of their degrees
-(`TauCeti.SignedSym.list_prod_ofFn_comp_perm`).
+(`TauCeti.SignedSym.list_prod_ofFn_comp_perm`), or of their parities for factors of pure parity
+(`TauCeti.SignedSym.list_prod_ofFn_comp_perm_of_mem_parityGrading`).
 
 The proof instantiates `TauCeti.mul_eq_smul_mul_of_adjoin_range_eq_top_of_isHomogeneous` from
 `TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Generators`.
@@ -145,6 +146,16 @@ theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading {i j : ZMod 2} {a b : SignedS
     (ha : a ∈ parityGrading (signedSymPiece G) i) (hb : b ∈ parityGrading (signedSymPiece G) j) :
     a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a) :=
   TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading (mul_eq_uzpow_smul_mul G) ha hb
+
+/-- Listing elements `a i` of pure parities `d i` in the order of a permutation `σ` multiplies
+their product by the Koszul sign `σ.koszulSign d` of the parities, even when the factors combine
+multiple integer degrees. -/
+theorem list_prod_ofFn_comp_perm_of_mem_parityGrading {n : ℕ} {d : Fin n → ZMod 2}
+    {a : Fin n → SignedSym G} (ha : ∀ i, a i ∈ parityGrading (signedSymPiece G) (d i))
+    (σ : Equiv.Perm (Fin n)) :
+    (List.ofFn (a ∘ σ)).prod = σ.koszulSign d • (List.ofFn a).prod :=
+  list_prod_ofFn_comp_perm_of_mul_eq_uzpow_smul_mul
+    (mul_eq_uzpow_smul_mul_of_mem_parityGrading G) ha σ
 
 /-- Every element of even parity commutes with all of `SignedSym G`. -/
 theorem commute_of_mem_parityGrading_zero {a : SignedSym G}

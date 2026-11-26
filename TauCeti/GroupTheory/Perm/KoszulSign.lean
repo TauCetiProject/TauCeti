@@ -81,12 +81,11 @@ theorem koszulSign_consFin (j : Fin (n + 1)) (π : Perm (Fin n)) (d : Fin (n + 1
     (consFin j π).koszulSign d =
       (∏ i ∈ Iio j, (-1) ^ (d j * d i)) * π.koszulSign (d ∘ j.succAbove) := by
   -- Delete the first position: the remaining letters are listed in the order of `π`.
-  have hπ : univ.inversions (consFin j π ∘ Fin.succAbove 0) = univ.inversions π := by
-    simp [inversions_univ, Function.comp_def, consFin_succ, Fin.succAbove_lt_succAbove_iff]
   rw [koszulSign_def, koszulSign_def, prod_univ_inversions_eq_comp_succAbove _ 0
-    fun a b ↦ (-1) ^ (d (consFin j π a) * d (consFin j π b)), hπ]
+    fun a b ↦ (-1) ^ (d (consFin j π a) * d (consFin j π b)), Fin.succAbove_zero,
+    inversions_univ_consFin_comp_succ]
   simp only [Fin.not_lt_zero, false_and, filter_false, prod_empty, mul_one, consFin_zero,
-    Fin.succAbove_zero, consFin_succ, Function.comp_apply]
+    consFin_succ, Function.comp_apply]
   rw [mul_comm]
   congr 1
   -- The inversions `(0, x)` are the positions `x` of the letters `consFin j π x < j`.
@@ -112,16 +111,8 @@ inversion of the adjacent transposition is the exchanged pair. -/
 @[simp]
 theorem koszulSign_swap_castSucc_succ (i : Fin n) (d : Fin (n + 1) → ι) :
     (swap i.castSucc i.succ).koszulSign d = (-1) ^ (d i.castSucc * d i.succ) := by
-  have h : univ.inversions (swap i.castSucc i.succ) = {(i.castSucc, i.succ)} := by
-    ext ⟨a, b⟩
-    simp only [inversions_univ, mem_filter, mem_univ, true_and, mem_singleton, Prod.mk.injEq]
-    constructor
-    · rintro ⟨hab, h⟩
-      rw [swap_apply_def, swap_apply_def] at h
-      split_ifs at h <;> grind [Fin.le_castSucc_iff]
-    · rintro ⟨rfl, rfl⟩
-      simp
-  rw [koszulSign_def, h, prod_singleton, swap_apply_left, swap_apply_right, mul_comm]
+  rw [koszulSign_def, inversions_univ_swap_castSucc_succ, prod_singleton, swap_apply_left,
+    swap_apply_right, mul_comm]
 
 /-- **The Koszul sign is a cocycle.** Listing letters in the order of `σ * τ` costs the Koszul
 sign of `σ`, times the Koszul sign of `τ` acting on the letters already listed in the order of
