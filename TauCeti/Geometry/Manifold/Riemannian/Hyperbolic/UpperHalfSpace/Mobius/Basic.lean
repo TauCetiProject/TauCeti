@@ -113,8 +113,7 @@ theorem denom_def (A : SL(2, ℂ)) (p : UpperHalfSpace ℂ) :
 /-- The denominator `J` of the Möbius action is positive: if `c = 0` then `d ≠ 0`. -/
 theorem denom_pos (A : SL(2, ℂ)) (p : UpperHalfSpace ℂ) : 0 < denom A p := by
   rcases eq_or_ne (A 1 0) 0 with hc | hc
-  · have hd : A 1 1 ≠ 0 := right_ne_zero_of_mul_eq_one
-      (SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc)
+  · have hd : A 1 1 ≠ 0 := SpecialLinearGroup.apply_one_one_ne_zero_of_apply_one_zero_eq_zero hc
     simpa [denom_def, hc] using hd
   · exact add_pos_of_nonneg_of_pos (Complex.normSq_nonneg _)
       (mul_pos (Complex.normSq_pos.2 hc) (pow_pos (height_pos p) 2))

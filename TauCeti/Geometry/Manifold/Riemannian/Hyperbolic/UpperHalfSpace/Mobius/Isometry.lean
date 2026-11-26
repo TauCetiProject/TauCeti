@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Mobius.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.UpperHalfSpace
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Borel
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
 /-!
 # Möbius transformations are isometries of hyperbolic three-space
@@ -24,7 +26,8 @@ decomposing the Möbius action into isometries already known on the upper half-s
 * the matrix `S = (0 -1; 1 0)` acts as the inversion in the unit sphere about the origin followed
   by the reflection `w ↦ -conj w`
   (`TauCeti.UpperHalfSpace.smul_eq_similarity_inversion_of_coe_eq_S`);
-* every matrix with `c ≠ 0` is `(1 a/c; 0 1) S (c d; 0 c⁻¹)`.
+* every matrix with `c ≠ 0` is `(1 a/c; 0 1) S (c d; 0 c⁻¹)`
+  (`TauCeti.SL2Borel.mk_mul_modularGroup_S_mul_mk`).
 
 The action of `SL(2, ℂ)` and of `PSL(2, ℂ)` is therefore by smooth maps preserving the metric, so
 it gives homomorphisms into the isometry group `TauCeti.Isom` of `ℍ³`. The one from `PSL(2, ℂ)` is
@@ -75,13 +78,13 @@ similarity `(w, t) ↦ (|a|² (a / conj a) w + a b, |a|² t)`, of scale `|a|²`,
 theorem smul_eq_similarity_of_apply_one_zero_eq_zero {A : SL(2, ℂ)} (hc : A 1 0 = 0)
     (p : UpperHalfSpace ℂ) :
     A • p = similarity (Complex.normSq (A 0 0))
-      (Complex.normSq_pos.2 (left_ne_zero_of_mul_eq_one
-        (SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc)))
-      (rotation (Circle.ofConjDivSelf (conj (A 0 0)) ((map_ne_zero _).2 (left_ne_zero_of_mul_eq_one
-        (SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc)))))
+      (Complex.normSq_pos.2
+        (SpecialLinearGroup.apply_zero_zero_ne_zero_of_apply_one_zero_eq_zero hc))
+      (rotation (Circle.ofConjDivSelf (conj (A 0 0)) ((map_ne_zero _).2
+        (SpecialLinearGroup.apply_zero_zero_ne_zero_of_apply_one_zero_eq_zero hc))))
       (A 0 0 * A 0 1) p := by
-  have ha : conj (A 0 0) ≠ 0 := (map_ne_zero _).2 (left_ne_zero_of_mul_eq_one
-    (SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc))
+  have ha : conj (A 0 0) ≠ 0 :=
+    (map_ne_zero _).2 (SpecialLinearGroup.apply_zero_zero_ne_zero_of_apply_one_zero_eq_zero hc)
   refine ext_fst_height ?_ ?_
   · simp only [fst_smul_of_apply_one_zero_eq_zero hc, coe_similarity_apply, WithLp.toLp_fst,
       rotation_apply, Circle.ofConjDivSelf_coe, Complex.conj_conj, Complex.real_smul,
@@ -103,7 +106,12 @@ theorem smul_eq_similarity_inversion_of_coe_eq_S {A : SL(2, ℂ)}
     rw [← Prod.zero_eq_mk, WithLp.toLp_zero, dist_zero_right, norm_coe_sq]
   refine ext_fst_height ?_ ?_
   · rw [fst_smul_of_coe_eq_S hA, coe_similarity_apply, coe_inversion_apply]
-    simp [EuclideanGeometry.inversion, hd]
+    simp only [Complex.ofReal_add, Complex.ofReal_pow, EuclideanGeometry.inversion, one_div,
+      inv_pow, hd, vsub_eq_sub, vadd_eq_add, WithLp.add_fst, WithLp.smul_fst, WithLp.sub_fst,
+      WithLp.toLp_fst, sub_zero, Complex.real_smul, Complex.ofReal_inv, add_zero,
+      LinearIsometryEquiv.trans_apply, Complex.conjLIE_apply, map_mul, map_inv₀, map_add,
+      Complex.conj_ofReal, map_pow, LinearIsometryEquiv.coe_neg, smul_neg, one_smul,
+      height_inversion_apply, one_mul]
     ring
   · rw [height_smul_of_coe_eq_S hA, height_similarity_apply, height_inversion_apply, div_pow,
       hd]
@@ -119,23 +127,6 @@ private theorem exists_isom_coe_eq_smul_mul {A B : SL(2, ℂ)}
   refine ⟨Φ * Ψ, funext fun p ↦ ?_⟩
   rw [RiemannianIsometry.mul_apply, hΦ, hΨ, mul_smul]
 
-/-- A matrix `A = (a b; c d)` of `SL(2, ℂ)` with `c ≠ 0` factors as
-`(1 a/c; 0 1) (0 -1; 1 0) (c d; 0 c⁻¹)`. -/
-private theorem exists_eq_mul_mul_of_apply_one_zero_ne_zero {A : SL(2, ℂ)} (hc : A 1 0 ≠ 0) :
-    ∃ U₁ S U₂ : SL(2, ℂ), U₁ 1 0 = 0 ∧ (S : Matrix (Fin 2) (Fin 2) ℂ) = !![0, -1; 1, 0] ∧
-      U₂ 1 0 = 0 ∧ A = U₁ * S * U₂ := by
-  have hdet := A.det_coe
-  rw [det_fin_two] at hdet
-  let U₁ : SL(2, ℂ) := ⟨!![1, A 0 0 / A 1 0; 0, 1], by simp [det_fin_two]⟩
-  let S : SL(2, ℂ) := ⟨!![0, -1; 1, 0], by simp [det_fin_two]⟩
-  let U₂ : SL(2, ℂ) := ⟨!![A 1 0, A 1 1; 0, (A 1 0)⁻¹], by simp [det_fin_two, hc]⟩
-  refine ⟨U₁, S, U₂, rfl, rfl, rfl, ?_⟩
-  ext i j
-  rw [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul]
-  fin_cases i <;> fin_cases j <;> simp [U₁, S, U₂, Matrix.mul_apply, Fin.sum_univ_two] <;>
-    field_simp
-  linear_combination -hdet
-
 /-- Every Möbius transformation is a Riemannian isometry of `ℍ³`: for `A ∈ SL(2, ℂ)` there is an
 isometry of the hyperbolic metric whose underlying map is `p ↦ A • p`. It is a similarity when `A`
 is upper triangular, and otherwise a similarity, an inversion in the unit sphere and a similarity
@@ -147,11 +138,14 @@ private theorem exists_isom_coe_eq_smul (A : SL(2, ℂ)) :
     ⟨_, funext fun p ↦ (smul_eq_similarity_of_apply_one_zero_eq_zero hB p).symm⟩
   rcases eq_or_ne (A 1 0) 0 with hc | hc
   · exact upper hc
-  obtain ⟨U₁, S, U₂, h₁, hS, h₂, rfl⟩ := exists_eq_mul_mul_of_apply_one_zero_ne_zero hc
-  refine exists_isom_coe_eq_smul_mul (exists_isom_coe_eq_smul_mul (upper h₁) ?_) (upper h₂)
+  rw [← SL2Borel.mk_mul_modularGroup_S_mul_mk A (Units.mk0 _ hc) rfl]
+  refine exists_isom_coe_eq_smul_mul
+    (exists_isom_coe_eq_smul_mul (upper (SL2Borel.apply_one_zero _)) ?_)
+    (upper (SL2Borel.apply_one_zero _))
   refine ⟨similarity 1 one_pos (Complex.conjLIE.trans (.neg ℝ)) 0 * inversion 0 1 one_ne_zero,
     funext fun p ↦ ?_⟩
-  rw [RiemannianIsometry.mul_apply, smul_eq_similarity_inversion_of_coe_eq_S hS]
+  rw [RiemannianIsometry.mul_apply,
+    smul_eq_similarity_inversion_of_coe_eq_S TauCeti.Matrix.SpecialLinearGroup.coe_modularGroup_S]
 
 /-- **Möbius transformations preserve the hyperbolic metric**: the differential of
 `p ↦ A • p` preserves the hyperbolic inner product `⟪v, w⟫ / t²` of `ℍ³`. -/
@@ -201,6 +195,12 @@ theorem slToIsom_symm_apply (A : SL(2, ℂ)) (p : UpperHalfSpace ℂ) :
     (slToIsom A).symm p = A⁻¹ • p := by
   rw [← RiemannianIsometry.inv_apply, ← map_inv, slToIsom_apply]
 
+/-- The underlying diffeomorphism of `slToIsom A` is `Diffeomorph.constSmul _ ∞ A`. -/
+@[simp]
+theorem toDiffeomorph_slToIsom (A : SL(2, ℂ)) :
+    (slToIsom A).toDiffeomorph = Diffeomorph.constSmul 𝓘(ℝ, WithLp 2 (ℂ × ℝ)) ∞ A := by
+  rw [slToIsom, RiemannianIsometry.constSMulHom_apply, RiemannianIsometry.toDiffeomorph_constSMul]
+
 /-- The homomorphism sending an element of `PSL(2, ℂ)` to its Möbius transformation, as a
 Riemannian isometry of hyperbolic three-space. -/
 def pslToIsom : PSL(2, ℂ) →* Isom 𝓘(ℝ, WithLp 2 (ℂ × ℝ)) (UpperHalfSpace ℂ) :=
@@ -225,6 +225,13 @@ theorem pslToIsom_symm_apply (g : PSL(2, ℂ)) (p : UpperHalfSpace ℂ) :
     (pslToIsom g).symm p = g⁻¹ • p := by
   rw [← RiemannianIsometry.inv_apply, ← map_inv, pslToIsom_apply]
 
+/-- The underlying diffeomorphism of `pslToIsom g` is `Diffeomorph.constSmul _ ∞ g`. -/
+@[simp]
+theorem toDiffeomorph_pslToIsom (g : PSL(2, ℂ)) :
+    (pslToIsom g).toDiffeomorph = Diffeomorph.constSmul 𝓘(ℝ, WithLp 2 (ℂ × ℝ)) ∞ g := by
+  ext p
+  rw [RiemannianIsometry.coe_toDiffeomorph, pslToIsom_apply, Diffeomorph.coe_constSmul]
+
 /-- **`PSL(2, ℂ)` is a group of isometries of `ℍ³`**: `pslToIsom` is injective, because only the
 identity of `PSL(2, ℂ)` fixes every point. -/
 theorem pslToIsom_injective : Function.Injective pslToIsom :=
@@ -235,10 +242,10 @@ theorem pslToIsom_injective : Function.Injective pslToIsom :=
 rotation `w ↦ (a / conj a) w` and translation `a b`. -/
 theorem slToIsom_eq_similarity {A : SL(2, ℂ)} (hc : A 1 0 = 0) :
     slToIsom A = similarity (Complex.normSq (A 0 0))
-      (Complex.normSq_pos.2 (left_ne_zero_of_mul_eq_one
-        (SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc)))
-      (rotation (Circle.ofConjDivSelf (conj (A 0 0)) ((map_ne_zero _).2 (left_ne_zero_of_mul_eq_one
-        (SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc)))))
+      (Complex.normSq_pos.2
+        (SpecialLinearGroup.apply_zero_zero_ne_zero_of_apply_one_zero_eq_zero hc))
+      (rotation (Circle.ofConjDivSelf (conj (A 0 0)) ((map_ne_zero _).2
+        (SpecialLinearGroup.apply_zero_zero_ne_zero_of_apply_one_zero_eq_zero hc))))
       (A 0 0 * A 0 1) := by
   ext p
   rw [slToIsom_apply, smul_eq_similarity_of_apply_one_zero_eq_zero hc]

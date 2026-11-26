@@ -99,6 +99,9 @@ proof is independent of the source's.
   row `(a, b)`.
 * `Matrix.SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero`: an
   upper triangular `(a b; 0 d)` in `SL₂(R)` has `a d = 1`.
+* `Matrix.SpecialLinearGroup.apply_zero_zero_ne_zero_of_apply_one_zero_eq_zero` and
+  `Matrix.SpecialLinearGroup.apply_one_one_ne_zero_of_apply_one_zero_eq_zero`: over a nontrivial
+  ring, both diagonal entries of such a matrix are nonzero.
 * `Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin`: the center of `SL(Fin n, A)` is
   `rootsOfUnity n A` when `0 < n`.
 * `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one` and
@@ -309,6 +312,16 @@ lemma mul_sub_mul_eq_one_of_lowerRow {R : Type*} [CommRing R] {c d : R} {σ : SL
 lemma apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero {R : Type*} [CommRing R]
     {σ : SL(2, R)} (hσ : σ 1 0 = 0) : σ 0 0 * σ 1 1 = 1 := by
   simpa [hσ] using fin_two_mul_sub_mul_eq_one σ
+
+/-- The upper-left entry of an upper triangular `σ = (a b; 0 d)` of `SL₂(R)` is nonzero. -/
+lemma apply_zero_zero_ne_zero_of_apply_one_zero_eq_zero {R : Type*} [CommRing R] [Nontrivial R]
+    {σ : SL(2, R)} (hσ : σ 1 0 = 0) : σ 0 0 ≠ 0 :=
+  left_ne_zero_of_mul_eq_one (apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hσ)
+
+/-- The lower-right entry of an upper triangular `σ = (a b; 0 d)` of `SL₂(R)` is nonzero. -/
+lemma apply_one_one_ne_zero_of_apply_one_zero_eq_zero {R : Type*} [CommRing R] [Nontrivial R]
+    {σ : SL(2, R)} (hσ : σ 1 0 = 0) : σ 1 1 ≠ 0 :=
+  right_ne_zero_of_mul_eq_one (apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hσ)
 
 /-- For `0 < n`, the center of `SL(Fin n, A)` is the group of `n`th roots of unity. -/
 noncomputable def centerMulEquivRootsOfUnityFin (n : ℕ) (hn : 0 < n)
