@@ -419,6 +419,13 @@ theorem gaugeFixedKernelEquivCoeff_apply (y : gaugeFixedKernel x) :
       degreeLTEquiv ℂ m (gaugeFixedKernelEquivDegreeLT hx hhol hlim hD y) :=
   (rfl)
 
+/-- The kernel element with divisor coordinates `v` is the kernel element whose divisor variation
+is the polynomial with coefficients `v`. -/
+theorem gaugeFixedKernelEquivCoeff_symm_apply (v : Fin m → ℂ) :
+    (gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm v =
+      (gaugeFixedKernelEquivDegreeLT hx hhol hlim hD).symm ((degreeLTEquiv ℂ m).symm v) :=
+  (rfl)
+
 /-- The divisor coordinates are complex linear for the complex structure `J` of the kernel. -/
 @[simp]
 theorem gaugeFixedKernelEquivCoeff_gaugeFixedKernelAlmostComplexStructure
