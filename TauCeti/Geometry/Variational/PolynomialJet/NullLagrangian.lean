@@ -114,10 +114,8 @@ variable [Algebra ℚ R]
 theorem mem_range_totalDivergence_of_isWeightedHomogeneous {L : PolynomialJet R ι α} {m : ℕ}
     (hm : m ≠ 0) (hL : L.IsWeightedHomogeneous (fieldWeight ι α) m) (hE : ∀ a, euler a L = 0) :
     L ∈ LinearMap.range (totalDivergence R ι α) := by
-  have h := Submodule.smul_mem _ (algebraMap ℚ R (m : ℚ)⁻¹)
-    (nsmul_mem_range_totalDivergence hL hE)
-  rwa [← Nat.cast_smul_eq_nsmul R, smul_smul, ← map_natCast (algebraMap ℚ R), ← map_mul,
-    inv_mul_cancel₀ (Nat.cast_ne_zero.2 hm), map_one, one_smul] at h
+  have h := Submodule.smul_of_tower_mem _ (m : ℚ)⁻¹ (nsmul_mem_range_totalDivergence hL hE)
+  rwa [← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ (Nat.cast_ne_zero.2 hm)] at h
 
 /-- **Null Lagrangians are total divergences up to a base polynomial.** Over a `ℚ`-algebra, if
 `E_a(L) = 0` for every field component `a`, then `L - L₀` is a total divergence, where `L₀` is the
