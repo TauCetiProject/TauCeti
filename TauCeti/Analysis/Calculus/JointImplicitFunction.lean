@@ -285,14 +285,13 @@ theorem analyticAt_jointImplicitFunctionOfProdDomain (dfu : HasStrictFDerivAt f 
   exact analyticAt_snd.comp (h.comp_of_eq (analyticAt_snd.prod analyticAt_fst) rfl)
 
 /-- For any neighbourhood `S ∈ 𝓝 u`, there exist neighbourhoods `U ∈ 𝓝 u` with `U ⊆ S` and
-`V ∈ 𝓝 (u.1, f u)` on which `q ↦ (q.1, f q)` and `p ↦ (p.1, ψ p)` (where `ψ` is the joint
-implicit function) map into each other (`Set.MapsTo`), are mutually inverse (`Set.InvOn`), and
-form a bijection (`Set.BijOn`). -/
+`V ∈ 𝓝 (u.1, f u)` on which `p ↦ (p.1, ψ p)` (where `ψ` is the joint implicit function) maps
+`V` into `U` (`Set.MapsTo`), `q ↦ (q.1, f q)` and `p ↦ (p.1, ψ p)` are mutually inverse
+(`Set.InvOn`), and `q ↦ (q.1, f q)` forms a bijection from `U` to `V` (`Set.BijOn`). -/
 theorem exists_nhds_bijOn_jointImplicitFunctionOfProdDomain
     (dfu : HasStrictFDerivAt f f'u u) (if₂u : (f'u ∘L .inr 𝕜 E₁ E₂).IsInvertible)
     {S : Set (E₁ × E₂)} (hS : S ∈ 𝓝 u) :
     ∃ U ∈ 𝓝 u, ∃ V ∈ 𝓝 (u.1, f u), U ⊆ S ∧
-      Set.MapsTo (fun q : E₁ × E₂ ↦ (q.1, f q)) U V ∧
       Set.MapsTo (fun p : E₁ × F ↦ (p.1, dfu.jointImplicitFunctionOfProdDomain if₂u p)) V U ∧
       Set.InvOn (fun p : E₁ × F ↦ (p.1, dfu.jointImplicitFunctionOfProdDomain if₂u p))
         (fun q : E₁ × E₂ ↦ (q.1, f q)) U V ∧
@@ -334,7 +333,7 @@ theorem exists_nhds_bijOn_jointImplicitFunctionOfProdDomain
       simpa [he_coe] using e.rightInvOn
     exact ⟨hleft.congr_left hU_maps he_symm, hright.congr_left he_symm⟩
   have hbij : Set.BijOn (fun q : E₁ × E₂ ↦ (q.1, f q)) e.source e.target := he_coe ▸ e.bijOn
-  exact ⟨e.source, hU_mem, e.target, hV_mem, hU_sub, hU_maps, hV_maps, hinv_UV, hbij⟩
+  exact ⟨e.source, hU_mem, e.target, hV_mem, hU_sub, hV_maps, hinv_UV, hbij⟩
 
 end HasStrictFDerivAt
 
