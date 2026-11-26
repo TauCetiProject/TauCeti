@@ -30,8 +30,8 @@ Hermite's theorem; see
 
 The proof: a cocycle `f` restricts to a continuous homomorphism on `U`, since `U` acts trivially.
 Let `W` be the common kernel of the finitely many continuous homomorphisms `U → ℤ/m`, an open
-normal subgroup of `U`, and `N ≤ W` an open normal subgroup of `G`
-(`OpenNormalSubgroup.exists_le_map_subtype`). For `g ∈ N` and any homomorphism `φ : B → ℤ/m`,
+normal subgroup of `U` (`TauCeti.continuousZModDualKer`), and `N ≤ W` an open normal subgroup of
+`G` (`OpenNormalSubgroup.exists_le_map_subtype`). For `g ∈ N` and any homomorphism `φ : B → ℤ/m`,
 `φ ∘ f` is a continuous homomorphism `U → ℤ/m`, so it vanishes at `g`; as the homomorphisms to
 `ℤ/m` separate the points of a group killed by `m`
 (`TauCeti.exists_addMonoidHom_zmod_apply_ne_zero`), `f g = 0`.
@@ -63,36 +63,7 @@ namespace TauCeti
 
 universe u v
 
-namespace ContCohomology
-
-section Cocycle
-
-variable {G : Type u} [Monoid G] [TopologicalSpace G]
-
-/-- A `1`-cocycle that vanishes at `n` satisfies `f (g * n) = f g` for every `g`. -/
-theorem apply_mul_eq_of_mem_Z1 {B : Type v} [AddCommGroup B] [TopologicalSpace B]
-    [IsTopologicalAddGroup B] [DistribMulAction G B] {f : G → B} (hf : f ∈ Z1 G B) (g : G) {n : G}
-    (hn : f n = 0) : f (g * n) = f g := by
-  have h : f (g * n) = g • f n + f g := (mem_Z1_iff.1 hf).2 g n
-  rw [h, hn, smul_zero, zero_add]
-
-end Cocycle
-
-end ContCohomology
-
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-
-/-- The common kernel in `U` of the continuous homomorphisms `U → ℤ/m`, when there are finitely
-many of them: an open normal subgroup of `U`. -/
-private def zmodDualKernel (U : Subgroup G) (m : ℕ) [Finite (continuousZModDual m U)] :
-    OpenNormalSubgroup U where
-  toSubgroup := ⨅ χ : continuousZModDual m U, (χ.toMul : U →* Multiplicative (ZMod m)).ker
-  isOpen' := by
-    change IsOpen ((⨅ χ : continuousZModDual m U,
-      (χ.toMul : U →* Multiplicative (ZMod m)).ker : Subgroup U) : Set U)
-    rw [Subgroup.coe_iInf]
-    exact isOpen_iInter_of_finite fun χ ↦ (isOpen_discrete {1}).preimage χ.toMul.continuous
-  isNormal' := Subgroup.normal_iInf_normal fun χ ↦ MonoidHom.normal_ker _
 
 /-- A continuous function `G → B` into a discrete group, additive on `U`, followed by a
 homomorphism `φ : B → ℤ/m`, as a continuous character of `U`. -/
@@ -109,6 +80,14 @@ private def toZModDual {U : Subgroup G} {m : ℕ} {B : Type v} [AddCommGroup B] 
       continuous_toFun := continuous_ofAdd.comp
         ((continuous_of_discreteTopology (f := φ)).comp (hf.comp continuous_subtypeVal)) }
 
+omit [IsTopologicalGroup G] in
+/-- The character `toZModDual φ f` sends `u` to `φ (f u)`. -/
+private theorem toZModDual_toMul_apply {U : Subgroup G} {m : ℕ} {B : Type v} [AddCommGroup B]
+    [TopologicalSpace B] [DiscreteTopology B] (φ : B →+ ZMod m) (f : G → B) (hf : Continuous f)
+    (hadd : ∀ g ∈ U, ∀ h ∈ U, f (g * h) = f g + f h) (u : U) :
+    (toZModDual φ f hf hadd).toMul u = Multiplicative.ofAdd (φ (f u)) :=
+  rfl
+
 /-- **Uniform vanishing of homomorphisms of bounded exponent.** Let `U` be an open subgroup of
 finite index of `G` with only finitely many continuous homomorphisms to `ℤ/m`, `m ≠ 0`. There is
 an open normal subgroup `N ≤ U` of `G` such that every continuous function `f : G → B` that is
@@ -119,14 +98,15 @@ theorem exists_openNormalSubgroup_forall_apply_eq_zero {U : Subgroup G} (hU : Is
       ∀ (B : Type v) [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B],
         (∀ b : B, m • b = 0) → ∀ f : G → B, Continuous f →
           (∀ g ∈ U, ∀ h ∈ U, f (g * h) = f g + f h) → ∀ g ∈ N, f g = 0 := by
-  obtain ⟨N, hN⟩ := OpenNormalSubgroup.exists_le_map_subtype hU (zmodDualKernel U m)
+  obtain ⟨N, hN⟩ := OpenNormalSubgroup.exists_le_map_subtype hU (continuousZModDualKer m U)
   refine ⟨N, hN.trans (Subgroup.map_subtype_le _), fun B _ _ _ hB f hf hadd g hg ↦ ?_⟩
   obtain ⟨u, hu, rfl⟩ := Subgroup.mem_map.1 (hN hg)
   by_contra h
   obtain ⟨φ, hφ⟩ := exists_addMonoidHom_zmod_apply_ne_zero hB h
   -- `φ ∘ f` is a continuous character of `U`, so it vanishes on the common kernel
-  have := Subgroup.mem_iInf.1 hu (toZModDual φ f hf hadd)
-  exact hφ (by simpa [toZModDual] using this)
+  have := mem_continuousZModDualKer_iff.1 hu (toZModDual φ f hf hadd)
+  rw [toZModDual_toMul_apply, ofAdd_eq_one] at this
+  exact hφ this
 
 namespace ContCohomology
 
