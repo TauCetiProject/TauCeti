@@ -72,6 +72,8 @@ values on compactly supported functions, and hence by its chart compressions.
   transported by `TauCeti.IsProperlySupported.conj`. Since the class is defined through every
   chart of the maximal atlas, the chart compressions of the transport are chart compressions of `P`
   (`OpenPartialHomeomorph.complexChartCompression_conj`).
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_dim_eq_zero`: on a manifold modelled on `ℝ⁰`,
+  every properly supported operator has every order.
 * `TauCeti.id_mem_classicalPseudodifferentialOperators` and
   `TauCeti.mulLeft_mem_classicalPseudodifferentialOperators`: the identity and multiplication by a
   smooth function have order `0`.
@@ -355,6 +357,27 @@ theorem classicalPseudodifferentialOperators_le {m m' : ℝ} (k : ℕ) (hk : m' 
     let ⟨a, ha⟩ := hP.2 e he φ ψ
     ⟨ClassicalSymbol.inclusion k hk a, fun u x ↦ by
       rw [ClassicalSymbol.toSymbol_inclusion, Symbol.coefficient_inclusion, ha]⟩⟩
+
+/-- **Dimension zero.** On a manifold modelled on `ℝ⁰`, every properly supported operator is a
+classical pseudodifferential operator of every order: each chart compression is multiplication by
+a constant, and on `ℝ⁰` a constant symbol is classical of every order. -/
+theorem mem_classicalPseudodifferentialOperators_of_dim_eq_zero (hn : n = 0)
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : IsProperlySupported P) (m : ℝ) : P ∈ classicalPseudodifferentialOperators m := by
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
+  set A := e.complexChartCompression he φ ψ P
+  obtain ⟨b, hb⟩ := Symbol.isSmoothing_iff.1
+    (Symbol.isSmoothing_of_dim_eq_zero hn (Symbol.const (A 1 0 • ContinuousLinearMap.id ℂ ℂ))) m
+  refine ⟨ClassicalSymbol.ofIsSmoothing b (Symbol.isSmoothing_of_dim_eq_zero hn b), fun u x ↦ ?_⟩
+  subst hn
+  -- On `ℝ⁰` the input is the constant `u x`, so the compression multiplies it by `A 1 0`.
+  have hu : ContMDiffMap.ofContDiff u (u.smooth ⊤) = u x • 1 := by
+    ext y
+    simp [Subsingleton.elim y x]
+  rw [ClassicalSymbol.toSymbol_ofIsSmoothing, hb, Symbol.quantizeSchwartzValue_const, hu,
+    map_smul, ContMDiffMap.complex_smul_apply, Subsingleton.elim x 0]
+  simp [mul_comm]
 
 /-! ### Locally finite sums of pseudodifferential operators -/
 

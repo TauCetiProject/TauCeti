@@ -73,7 +73,10 @@ every point of `M` (`TauCeti.SquareChartPartition.memSobolev_iff_forall_isLocall
 the sense of `TauCeti.BundleTest.IsLocallySobolevAt`, which does not depend on charts and frames.
 Indeed, `χᵢ Tᵢⱼ ∈ H^s` makes `Tᵢⱼ` locally `H^s` wherever `χᵢ ≠ 0`, and every point has such an
 `i` since `∑ᵢ χᵢ² = 1`; conversely, if all `Tᵢⱼ` are locally `H^s` on the support of `χᵢ`, then
-`χᵢ Tᵢⱼ ∈ H^s`. So two square chart partitions of `V` have the same `H^s` functionals
+`χᵢ Tᵢⱼ ∈ H^s`. This argument only uses these two cutoff properties of `H^s` and the invariance of
+local `H^s` regularity, and is stated once for all such notions
+(`TauCeti.SquareChartPartition.forall_localization_iff_forall_isLocallyAt`). So two square chart
+partitions of `V` have the same `H^s` functionals
 (`TauCeti.SquareChartPartition.memSobolev_iff_memSobolev`). Their Sobolev spaces are then
 isomorphic as Banach spaces (`TauCeti.SquareChartPartition.sobolevSpaceCongr`), so that the pinned
 norms are equivalent (`TauCeti.SquareChartPartition.exists_norm_ofMemSobolev_le`): the
@@ -679,14 +682,23 @@ section Independence
 
 open scoped BesselPotentialSpace
 
-variable [MeasurableSpace E] [BorelSpace E] {κ : Type*} [Fintype κ]
+variable {κ : Type*} [Fintype κ]
 
-/-- **`H^s` with respect to a partition is local `H^s` regularity.** A real functional `T` on
-bundle tests is `H^s` with respect to the square chart partition `A` exactly when it is `H^s` near
-every point of `M` (`TauCeti.BundleTest.IsLocallySobolevAt`). In particular this does not depend on
-the partition (`TauCeti.SquareChartPartition.memSobolev_iff_memSobolev`). -/
-theorem memSobolev_iff_forall_isLocallySobolevAt {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} :
-    A.MemSobolev s T ↔ ∀ x, BundleTest.IsLocallySobolevAt s T x := by
+/-- **Regularity of all localizations is local regularity.** Let `P` be an invariant notion of
+local regularity and `Q` a property of tempered distributions, related by cutoffs: `S` satisfies
+`P` near `y` whenever `χ S` satisfies `Q` for some test function `χ` with `χ y ≠ 0`, and `χ S`
+satisfies `Q` whenever `S` satisfies `P` near every point of `tsupport χ`. Then all localizations
+`χᵢ Tᵢⱼ` of a real functional `T` on bundle tests satisfy `Q` exactly when `T` satisfies `P` near
+every point of `M`. This is the common argument behind the independence of the partition for the
+Sobolev and Besov spaces of `A`. -/
+theorem forall_localization_iff_forall_isLocallyAt {P : (Ω : Opens E) → 𝓓'(Ω, ℂ) → E → Prop}
+    (hP : Distribution.IsInvariantLocalRegularity P) {Q : 𝓢'(E, ℂ) → Prop}
+    (hQP : ∀ (Ω : Opens E) (S : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℂ)) (y : E), χ y ≠ 0 →
+      Q (S.cutoffTempered χ) → P Ω S y)
+    (hPQ : ∀ (Ω : Opens E) (S : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℂ)), (∀ y ∈ tsupport χ, P Ω S y) →
+      Q (S.cutoffTempered χ))
+    {T : BundleTest I F V →L_c[ℝ] ℝ} :
+    (∀ i j, Q (A.localization i j T)) ↔ ∀ x, BundleTest.IsLocallyAt P T x := by
   constructor
   · intro hT x
     -- Some cutoff does not vanish at `x`, since their squares sum to one.
@@ -696,25 +708,36 @@ theorem memSobolev_iff_forall_isLocallySobolevAt {s : ℝ} {T : BundleTest I F V
     have hx : x ∈ (A.chartData i).chart.source :=
       A.tsupport_cutoff_subset i (subset_tsupport _ hi)
     have hcx := (A.chartData i).chart.map_source hx
-    refine (BundleTest.isLocallySobolevAt_iff T (A.chartData i).contMDiffOn_chart
+    refine (BundleTest.isLocallyAt_iff hP T (A.chartData i).contMDiffOn_chart
       (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset hx).2
-      (Bundle.Trivialization.chartComponent_of_basis
-        (Distribution.isInvariantLocalRegularity_isLocallySobolevAt s).toIsLocalRegularity
-        (Module.finBasis ℝ F) T hcx fun j ↦ ?_)
-    -- The localization `χᵢ Tᵢⱼ` is `H^s`, and the chart cutoff does not vanish at `cᵢ x`.
-    refine Distribution.isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2
-      ⟨A.chartCutoff i, ?_, hT i j⟩
+      (Bundle.Trivialization.chartComponent_of_basis hP.toIsLocalRegularity
+        (Module.finBasis ℝ F) T hcx fun j ↦ hQP _ _ (A.chartCutoff i) _ ?_ (hT i j))
+    -- The chart cutoff does not vanish at `cᵢ x`.
     rwa [A.chartCutoff_apply_of_mem hcx, (A.chartData i).chart.left_inv hx, ofReal_ne_zero]
   · intro hT i j
-    rw [localization_apply]
-    refine Distribution.memSobolev_cutoffTempered_of_forall_isLocallySobolevAt fun y hy ↦ ?_
+    refine hPQ _ _ _ fun y hy ↦ ?_
     -- A point of the support of the chart cutoff is `cᵢ x` for `x` in the support of `χᵢ`.
     obtain ⟨x, hx, rfl⟩ : y ∈ (A.chartData i).chart '' tsupport (A.cutoff i) := by
       rw [← A.coe_chartSupport]
       exact A.tsupport_chartCutoff_subset i hy
-    exact (BundleTest.isLocallySobolevAt_iff T (A.chartData i).contMDiffOn_chart
+    exact (BundleTest.isLocallyAt_iff hP T (A.chartData i).contMDiffOn_chart
       (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset
       (A.tsupport_cutoff_subset i hx)).1 (hT x) _
+
+variable [MeasurableSpace E] [BorelSpace E]
+
+/-- **`H^s` with respect to a partition is local `H^s` regularity.** A real functional `T` on
+bundle tests is `H^s` with respect to the square chart partition `A` exactly when it is `H^s` near
+every point of `M` (`TauCeti.BundleTest.IsLocallySobolevAt`). In particular this does not depend on
+the partition (`TauCeti.SquareChartPartition.memSobolev_iff_memSobolev`). -/
+theorem memSobolev_iff_forall_isLocallySobolevAt {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} :
+    A.MemSobolev s T ↔ ∀ x, BundleTest.IsLocallySobolevAt s T x :=
+  A.memSobolev_iff.trans <| (A.forall_localization_iff_forall_isLocallyAt
+    (Distribution.isInvariantLocalRegularity_isLocallySobolevAt s)
+    (fun _ _ χ _ hχ hS ↦ Distribution.isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2
+      ⟨χ, hχ, hS⟩)
+    fun _ _ _ ↦ Distribution.memSobolev_cutoffTempered_of_forall_isLocallySobolevAt).trans <|
+    forall_congr' fun _ ↦ BundleTest.isLocallySobolevAt_def.symm
 
 /-- **Independence of the partition.** A real functional on bundle tests is `H^s` with respect to
 one square chart partition of `V` exactly when it is `H^s` with respect to any other. -/

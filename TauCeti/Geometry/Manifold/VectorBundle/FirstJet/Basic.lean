@@ -657,6 +657,34 @@ at `x`. -/
 theorem jet_snd (s : ∀ x, V x) (x : M) :
     (jet I F s x).2 = fderivWithin 𝕜 (localRep I F s x) (range I) (extChartAt I x x) := (rfl)
 
+variable {I F} in
+/-- First jets are additive on differentiable sections. -/
+theorem jet_add {s t : ∀ x, V x} {x : M}
+    (hs : MDiffAt (T% s) x) (ht : MDiffAt (T% t) x) :
+    jet I F (s + t) x = jet I F s x + jet I F t x := by
+  have hx := mem_baseSet_self (H := H) F V x
+  have hmem := extChartAt_target_subset_range x (mem_extChartAt_target (I := I) x)
+  apply Prod.ext
+  · simp only [fst_add, jet_fst, Pi.add_apply]
+    exact (trivializationAt F V x).linear 𝕜 hx.1 |>.map_add (s x) (t x)
+  · rw [snd_add, jet_snd, jet_snd, jet_snd,
+      (localRep_add_eventuallyEq I F s t hx).fderivWithin_eq_of_nhds]
+    exact fderivWithin_add (I.uniqueDiffOn _ hmem)
+      (differentiableWithinAt_localRep I F hs hx) (differentiableWithinAt_localRep I F ht hx)
+
+variable {I F} in
+/-- First jets commute with constant scalar multiplication, even for nondifferentiable sections. -/
+theorem jet_const_smul (c : 𝕜) (s : ∀ x, V x) (x : M) :
+    jet I F (c • s) x = c • jet I F s x := by
+  have hx := mem_baseSet_self (H := H) F V x
+  apply Prod.ext
+  · simp only [smul_fst, jet_fst, Pi.smul_apply]
+    exact (trivializationAt F V x).linear 𝕜 hx.1 |>.map_smul c (s x)
+  · have hmem := extChartAt_target_subset_range x (mem_extChartAt_target (I := I) x)
+    rw [smul_snd, jet_snd, jet_snd,
+      (localRep_const_smul_eventuallyEq I F c s hx).fderivWithin_eq_of_nhds]
+    exact fderivWithin_const_smul_field c (I.uniqueDiffOn _ hmem)
+
 /-- **The first jet in an arbitrary chart.** In the chart and trivialization at `i`, the first jet
 of a section differentiable at `y` consists of the value and the chart derivative of the local
 representative of the section. -/
@@ -906,6 +934,45 @@ theorem ofDeriv_fst (x : M) (L : TangentSpace I x →L[𝕜] V x) : (ofDeriv I F
 theorem ofDeriv_snd (x : M) (L : TangentSpace I x →L[𝕜] V x) :
     (ofDeriv I F x L).2 = ((trivializationAt F V x).continuousLinearMapAt 𝕜 x).comp L :=
   (rfl)
+
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)] in
+variable {I F} in
+/-- The first-jet Leibniz rule; the derivative term lies in the kernel of the value projection. -/
+theorem jet_smul {f : M → 𝕜} {s : ∀ x, V x} {x : M}
+    (hf : MDiffAt f x) (hs : MDiffAt (T% s) x) :
+    letI := VectorBundle.isTopologicalAddGroup 𝕜 F V
+    letI := VectorBundle.continuousSMul 𝕜 F V
+    jet I F (f • s) x = f x • jet I F s x +
+      ofDeriv I F x ((mvfderiv I f x).smulRight (s x)) := by
+  have hx := mem_baseSet_self (H := H) F V x
+  have hrep : writtenInExtChartAt I 𝓘(𝕜) x f = f ∘ (extChartAt I x).symm := by
+    simp [writtenInExtChartAt]
+  have hf' : DifferentiableWithinAt 𝕜 (f ∘ (extChartAt I x).symm)
+      (range I) (extChartAt I x x) := by
+    rw [← hrep]
+    exact hf.differentiableWithinAt_writtenInExtChartAt
+  have hdf : fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (range I) (extChartAt I x x) =
+      mvfderiv I f x := by
+    rw [hf.mvfderiv, hrep]
+  have hmem := extChartAt_target_subset_range x (mem_extChartAt_target (I := I) x)
+  apply Prod.ext
+  · rw [fst_add, smul_fst, jet_fst, jet_fst, ofDeriv_fst, add_zero]
+    exact (trivializationAt F V x).linear 𝕜 hx.1 |>.map_smul (f x) (s x)
+  · have hrep_smul : localRep I F (f • s) x =ᶠ[𝓝 (extChartAt I x x)]
+        (f ∘ (extChartAt I x).symm) • localRep I F s x :=
+      localRep_smul_eventuallyEq I F f s hx
+    rw [snd_add, smul_snd, jet_snd, jet_snd, ofDeriv_snd, hrep_smul.fderivWithin_eq_of_nhds,
+      fderivWithin_smul (I.uniqueDiffOn _ hmem) hf'
+        (differentiableWithinAt_localRep I F hs hx), hdf,
+      Function.comp_apply, (extChartAt I x).left_inv (mem_extChartAt_source x),
+      localRep_extChartAt I F s hx.2]
+    congr 1
+    ext v
+    -- The domain is the tangent-space type synonym; evaluating both linear maps
+    -- exposes the scalar multiplication in the fibre.
+    change mvfderiv I f x v • (trivializationAt F V x ⟨x, s x⟩).2 =
+      (trivializationAt F V x).continuousLinearMapAt 𝕜 x (mvfderiv I f x v • s x)
+    rw [map_smul, Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hx.1]
 
 /-- The inclusion of `Hom(TₓM, Vₓ)` into the first jets is injective. -/
 theorem ofDeriv_injective (x : M) : Function.Injective (ofDeriv I F (V := V) x) := by
