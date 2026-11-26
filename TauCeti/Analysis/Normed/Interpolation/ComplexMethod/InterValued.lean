@@ -10,13 +10,14 @@ import Mathlib.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 
 /-!
-# Intersection-valued admissible functions compute the norm of the intersection
+# Intersection-valued functions approximate the `[X₀, X₁]_θ` norm on `X₀ ∩ X₁` from above
 
 For a Banach couple `(X₀, X₁)` and `0 < θ < 1`, every `x ∈ X₀ ∩ X₁` with `‖x‖_θ < r` is the value
 at `θ` of a function `Φ` with values in `X₀ ∩ X₁`, holomorphic on the open strip and continuous and
 bounded on the closed strip, whose boundary values have norm less than `r`
-(`ComplexMethodSpace.exists_inter_of_norm_ofInter_lt`). The norm of `[X₀, X₁]_θ` on `X₀ ∩ X₁` can
-therefore be computed with intersection-valued admissible functions; Calderón's duality estimate
+(`ComplexMethodSpace.exists_inter_of_norm_ofInter_lt`). So every bound `r > ‖x‖_θ` on `X₀ ∩ X₁` is
+witnessed by an intersection-valued function. Only this upper approximation is proved here, and
+the admissibility of `Φ` is not part of the statement. Calderón's duality estimate
 (`ComplexMethod/Duality.lean`) pairs such functions with upper strip functions of the dual couple.
 
 ## The argument
@@ -305,7 +306,7 @@ namespace ComplexMethodSpace
 
 variable {C}
 
-/-- **Intersection-valued functions compute the norm of the intersection.** For `0 < θ < 1`, an
+/-- **Intersection-valued functions approximate `‖x‖_θ` from above.** For `0 < θ < 1`, an
 element `x ∈ X₀ ∩ X₁` with `‖x‖_θ < r` is the value at `θ` of a function `Φ` with values in
 `X₀ ∩ X₁`, holomorphic on the open strip and continuous and bounded on the closed strip, whose
 boundary values have norm less than `r`: in `X₀` on the line `re z = 0` and in `X₁` on the line
