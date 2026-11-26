@@ -54,10 +54,11 @@ of `u` on `[0, T]` is at most the mixed norm on the whole line of the free solut
 `cos(tD) f + D⁻¹ sin(tD) g` plus that of this retarded integral
 (`TauCeti.eLpNorm_eLpNorm_waveDuhamelSolution_restrict_le`). The first is bounded by the
 homogeneous Strichartz estimates of `TauCeti.Analysis.PDE.Wave.HomogeneousStrichartz` for `q > 2`
-and of `TauCeti.Analysis.PDE.Wave.TimeExponentTwo` for `q = 2`, and the second by the retarded
-estimates of `TauCeti.Analysis.PDE.Wave.InhomogeneousStrichartz`. Since the
-blocks are linear, `Pⱼ G₀` is `Pⱼ G` restricted to `[0, T]`, so the forcing norms on the whole line
-are the norms on `[0, T]`.
+and of `TauCeti.Analysis.PDE.Wave.TimeExponentTwo` for `q = 2`, joined in
+`ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_two_le`,
+and the second by the retarded estimates of `TauCeti.Analysis.PDE.Wave.InhomogeneousStrichartz`.
+Since the blocks are linear, `Pⱼ G₀` is `Pⱼ G` restricted to `[0, T]`, so the forcing norms on the
+whole line are the norms on `[0, T]`.
 
 ## Main declarations
 
@@ -231,23 +232,8 @@ theorem exists_eLpNorm_eLpNorm_waveDuhamelSolution_le_tsum (hq : 2 ≤ q)
     (p₁ := p₁) (r₁' := r₁') (by exact_mod_cast hq) ENNReal.coe_ne_top hqr'
     (fun h ↦ hq2 (by exact_mod_cast h)) hq₁ hqr₁ hq₁2
   simp only [hqinv] at h₁
-  -- The free solution: the pairs with `q > 2`, and the pairs `(2, r)` in dimension `n ≥ 4`.
-  obtain ⟨C₀, h₀⟩ : ∃ C₀ : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
-      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
-      ∀ f g : Lp ℂ 2 (volume : Measure E),
-        eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f + waveSinPropagator ℂ t g) r volume) q
-            volume ≤
-          C₀ * (∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
-              Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) *
-                ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ +
-            ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
-              Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹ - 1)) *
-                ‖Lp.fourierMultiplierCLM ℂ (m j) g‖ₑ) := by
-    rcases hq.lt_or_eq with hq | rfl
-    · exact φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum hq hqr
-    · simp only [NNReal.coe_ofNat, div_self (two_ne_zero' ℝ)] at hqr ⊢
-      exact φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_le_endpoint
-        (hq2 rfl) hqr
+  obtain ⟨C₀, h₀⟩ :=
+    φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_two_le hq hqr hq2
   exact ⟨C₀ + C₁, fun m hm f g G T hG ↦
     eLpNorm_eLpNorm_waveDuhamelSolution_restrict_le_of_le (by exact_mod_cast one_le_two.trans hq)
       (one_le_two.trans hr2) (h₀ m hm) (h₁ m hm) f g hG⟩
