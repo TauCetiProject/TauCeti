@@ -57,7 +57,7 @@ gradient in `TauCeti.Analysis.PDE.Regularity.MeanOscillation`.
   `κ⁻² ⨍_{B_r} ‖∇u‖² + κ^(n + 1) (⨍_{B_r} ‖G‖² + δ^(1/q') (⨍_{B_r} ‖∇u‖^(2q))^(1/q))`, up to
   constants, for Hölder conjugate exponents `q, q'`.
 * **Sharp function and absorption.** These bounds on all balls give the estimate by Krylov's sharp
-  function method (`TauCeti.PDE.exists_eLpNorm_le_of_forall_setAverage_norm_sub_sq_le`): the
+  function method (`TauCeti.PDE.exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le`): the
   Fefferman–Stein inequality and the maximal inequality bound `∫ ‖∇u‖^p` by
   `(c₁ κ^(-p) + c₃ δ^(p/(2q'))) ∫ ‖∇u‖^p + c₂ ∫ ‖G‖^p`. Choosing first `κ` large and then `δ`
   small, the first term is absorbed, since `∫ ‖∇u‖^p` is finite.
@@ -258,11 +258,13 @@ theorem exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le {p
           MemLp G p volume →
           eLpNorm (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
             EuclideanSpace ℝ (Fin (n + 1))) p volume ≤ C * eLpNorm G p volume := by
-  obtain ⟨C, δ, hδ, h⟩ := exists_eLpNorm_le_of_forall_setAverage_norm_sub_sq_le (n := n)
-    (E := EuclideanSpace ℝ (Fin (n + 1))) (F := EuclideanSpace ℝ (Fin (n + 1))) hp hp_top
+  obtain ⟨C, δ, hδ, h⟩ := exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le (n := n)
+    (E := EuclideanSpace ℝ (Fin (n + 1))) (F := EuclideanSpace ℝ (Fin (n + 1))) one_le_two
+    (by rwa [ENNReal.ofReal_ofNat]) hp_top
     (decayConst n lam Lam) (forcingConst n lam Lam) (forcingConst n lam Lam) (2 * Lam)
   refine ⟨C, δ, hδ, fun {a} ha hbd hosc u G hu hgp hGp =>
     h hgp hGp fun q q' hq hqp c ρ κ hρ hκ => ?_⟩
+  simp only [Real.rpow_two]
   -- Freeze the coefficients on `B_{κρ}` and apply the mean oscillation estimate on one ball.
   obtain ⟨A, hA, hδA⟩ := hosc c (κ * ρ) (mul_pos (zero_lt_one.trans_le hκ) hρ)
   exact (setAverage_norm_gradient_sub_sq_le ha hbd hu hp.le hgp hGp hq hqp hρ hκ hA hδA).trans_eq
