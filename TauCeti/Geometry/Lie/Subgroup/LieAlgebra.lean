@@ -85,6 +85,8 @@ closed-subgroup theorem, promoting `K` to an embedded Lie subgroup with `Lie(K) 
 * `TauCeti.Lie.hasDerivAt_Ad_lieExp_smul_apply_zero`: the adjoint orbit `s ↦ Ad (lieExp (s • X)) Y`
   has derivative `⁅X, Y⁆` at the origin. This is the derivation-level infinitesimal adjoint, the
   analytic input to bracket closure.
+* `TauCeti.Lie.lie_mem_of_forall_Ad_lieExp_smul_mem`: a closed subspace containing the adjoint
+  orbit `s ↦ Ad (lieExp (s • X)) Y` contains `⁅X, Y⁆`.
 * `TauCeti.Lie.lie_mem_of_forall_Ad_mem`: a subspace of `𝔤` invariant under every `Ad g` is
   invariant under every `ad X`.
 * `TauCeti.Lie.forall_Ad_mem_iff_forall_lie_mem`: in a connected Lie group, a subspace of `𝔤` is
@@ -248,6 +250,18 @@ theorem hasDerivAt_Ad_lieExp_smul_apply_zero (X Y : LeftInvariantDerivation I G)
       0 key
   simpa [Function.comp_def] using hcomp
 
+/-- **A closed subspace containing the adjoint orbit of `Y` contains `⁅X, Y⁆`.** The curve
+`s ↦ Ad (lieExp (s • X)) Y` starts at `Y` and has derivative `⁅X, Y⁆` at `0`, so its difference
+quotients lie in `S` and the bracket is their limit. -/
+theorem lie_mem_of_forall_Ad_lieExp_smul_mem {S : Submodule ℝ (LeftInvariantDerivation I G)}
+    (hS : IsClosed (S : Set (LeftInvariantDerivation I G))) {X Y : LeftInvariantDerivation I G}
+    (h : ∀ s : ℝ, Ad (I := I) (lieExp (I := I) (s • X)) Y ∈ S) : ⁅X, Y⁆ ∈ S := by
+  refine hS.mem_of_tendsto
+    (hasDerivAt_iff_tendsto_slope.mp (hasDerivAt_Ad_lieExp_smul_apply_zero X Y))
+    (Eventually.of_forall fun s => ?_)
+  rw [slope_def_module]
+  exact S.smul_mem _ (S.sub_mem (h s) (h 0))
+
 omit [T2Space G] in
 /-- **An `Ad`-invariant subspace is `ad`-invariant.** If every `Ad g` preserves a subspace `S` of
 `𝔤`, then so does every `ad X`: `⁅X, Y⁆` is the derivative at `0` of the curve
@@ -258,11 +272,7 @@ theorem lie_mem_of_forall_Ad_mem {S : Submodule ℝ (LeftInvariantDerivation I G
   have _ : T2Space G := I.t2Space_of_lieGroup ∞
   have _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-  refine S.isClosed_of_finiteDimensional.mem_of_tendsto
-    (hasDerivAt_iff_tendsto_slope.mp (hasDerivAt_Ad_lieExp_smul_apply_zero X Y))
-    (Eventually.of_forall fun s => ?_)
-  rw [slope_def_module]
-  exact S.smul_mem _ (S.sub_mem (hS _ _ hY) (hS _ _ hY))
+  exact lie_mem_of_forall_Ad_lieExp_smul_mem S.isClosed_of_finiteDimensional fun _ => hS _ _ hY
 
 omit [T2Space G] in
 /-- **In a connected Lie group, `Ad`-invariance is `ad`-invariance.** A subspace of `𝔤` is
@@ -315,19 +325,9 @@ theorem lieExp_smul_lie_mem {K : Subgroup G} (hK : IsClosed (K : Set G))
     isClosed_setOf_forall_lieExp_smul_mem hK
   -- The adjoint orbit of `Y` along the one-parameter subgroup of `X`.
   set φ : ℝ → LeftInvariantDerivation I G := fun s => Ad (I := I) (lieExp (I := I) (s • X)) Y
-    with hφ
   have hφmem : ∀ s : ℝ, φ s ∈ S := fun s =>
     lieExp_smul_Ad_mem (Subgroup.le_normalizer (hX s)) hY
-  have hφzero : φ 0 = Y := by simp [hφ]
-  have hderiv : HasDerivAt φ ⁅X, Y⁆ 0 := hasDerivAt_Ad_lieExp_smul_apply_zero X Y
-  -- A difference quotient of a curve in `S` stays in `S`, and `S` is closed.
-  have hslope : ∀ s : ℝ, slope φ 0 s ∈ S := by
-    intro s
-    rw [slope_def_module]
-    exact S.smul_mem _ (S.sub_mem (hφmem s) (hφzero ▸ hφmem 0))
-  have hlie : ⁅X, Y⁆ ∈ S :=
-    hSclosed.mem_of_tendsto (hasDerivAt_iff_tendsto_slope.mp hderiv)
-      (Eventually.of_forall hslope)
+  have hlie : ⁅X, Y⁆ ∈ S := lie_mem_of_forall_Ad_lieExp_smul_mem hSclosed hφmem
   exact (hmemS _).mp hlie t
 
 /-! ### The Lie subalgebra -/
