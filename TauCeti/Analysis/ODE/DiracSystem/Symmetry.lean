@@ -19,7 +19,8 @@ solutions (`TauCeti.IsDiracSolution.eq_diracFundamentalMatrix_mulVec`).
 
 * **Reflection.** `Q_q` has real entries, so `M_q(t, conj z) = conj M_q(t, z)` entrywise for every
   complex potential: `A, B, C, D` are real entire functions
-  (`TauCeti.diracFundamentalMatrix_conj`, `TauCeti.conj_diracFundamentalMatrix_ofReal`).
+  (`TauCeti.diracFundamentalMatrix_conj`, `TauCeti.conj_diracFundamentalMatrix_conj`,
+  `TauCeti.conj_diracFundamentalMatrix_ofReal`).
 * **Sign of the potential.** `Ω Q_q Ω⁻¹ = -Q_q = Q_{-q}`, so conjugation by `Ω` carries solutions
   for `q` to solutions for `-q`, and `Ω M_q(t, z) = M_{-q}(t, z) Ω`
   (`TauCeti.mul_diracFundamentalMatrix_neg_potential`). In entries, `A_{-q} = D_q`,
@@ -137,6 +138,13 @@ theorem diracFundamentalMatrix_conj (hq : LocallyIntegrableOn q (Ici 0)) (ht : 0
     (Pi.single j 1)).star.eq_diracFundamentalMatrix_mulVec hqt ht) i
   rw [diracFundamentalMatrix_zero, one_mulVec, ← Pi.single_star, star_one, mulVec_single] at this
   simpa using this.symm
+
+/-- The entries of the fundamental matrix are real entire functions: for `q` locally integrable on
+`[0, ∞)` and `t ≥ 0`, `conj M_q(t, conj z) = M_q(t, z)` entrywise. -/
+theorem conj_diracFundamentalMatrix_conj (hq : LocallyIntegrableOn q (Ici 0)) (ht : 0 ≤ t)
+    (z : ℂ) (i j : Fin 2) :
+    conj (diracFundamentalMatrix q t (conj z) i j) = diracFundamentalMatrix q t z i j := by
+  rw [diracFundamentalMatrix_conj hq ht z, map_apply, conj_conj]
 
 /-- On the real axis the entries of the fundamental matrix are real: for `x : ℝ`,
 `conj M_q(t, x) = M_q(t, x)` entrywise. -/
