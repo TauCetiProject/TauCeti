@@ -87,19 +87,31 @@ def withLpProdEquiv : Lp (WithLp q (E × F)) p μ ≃L[𝕜] Lp E p μ × Lp F p
       rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply, h, h₁, h₂]
       rfl)
 
-@[simp]
 theorem withLpProdEquiv_apply (f : Lp (WithLp q (E × F)) p μ) :
     withLpProdEquiv 𝕜 q μ f =
       ((WithLp.fstL q 𝕜 E F).compLpL p μ f, (WithLp.sndL q 𝕜 E F).compLpL p μ f) :=
   (rfl)
 
-@[simp]
 theorem withLpProdEquiv_symm_apply (g : Lp E p μ × Lp F p μ) :
     (withLpProdEquiv 𝕜 q μ).symm g =
       (((WithLp.prodContinuousLinearEquiv q 𝕜 E F).symm : E × F →L[𝕜] WithLp q (E × F)).comp
           (ContinuousLinearMap.inl 𝕜 E F)).compLpL p μ g.1 +
         (((WithLp.prodContinuousLinearEquiv q 𝕜 E F).symm : E × F →L[𝕜] WithLp q (E × F)).comp
           (ContinuousLinearMap.inr 𝕜 E F)).compLpL p μ g.2 :=
+  (rfl)
+
+/-- The first component of `MeasureTheory.Lp.withLpProdEquiv f` is `f` followed by the first
+projection. -/
+@[simp]
+theorem withLpProdEquiv_apply_fst (f : Lp (WithLp q (E × F)) p μ) :
+    (withLpProdEquiv 𝕜 q μ f).1 = (WithLp.fstL q 𝕜 E F).compLpL p μ f :=
+  (rfl)
+
+/-- The second component of `MeasureTheory.Lp.withLpProdEquiv f` is `f` followed by the second
+projection. -/
+@[simp]
+theorem withLpProdEquiv_apply_snd (f : Lp (WithLp q (E × F)) p μ) :
+    (withLpProdEquiv 𝕜 q μ f).2 = (WithLp.sndL q 𝕜 E F).compLpL p μ f :=
   (rfl)
 
 /-- The first component of `MeasureTheory.Lp.withLpProdEquiv` is `s ↦ (f s).fst`. -/

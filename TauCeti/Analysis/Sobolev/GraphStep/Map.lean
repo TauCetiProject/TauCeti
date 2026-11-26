@@ -44,23 +44,6 @@ namespace TauCeti
 open MeasureTheory TopologicalSpace
 open scoped ENNReal
 
-section CompLp
-
-variable {E F F' : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [OpensMeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup F']
-  [NormedSpace ℝ F'] [CompleteSpace F'] {mu : Measure E} {Omega : Opens E} {p : ℝ≥0∞}
-
-/-- **Weak derivatives commute with continuous linear maps, for `Lᵖ` classes.** If `D` is a weak
-derivative of `f` on `Ω`, then `M ∘ D` is a weak derivative of `M ∘ f`. -/
-theorem HasWeakFDerivOn.compLp {f : Lp F p (mu.restrict Omega)}
-    {D : Lp (E →L[ℝ] F) p (mu.restrict Omega)} (h : HasWeakFDerivOn mu Omega f D)
-    (M : F →L[ℝ] F') :
-    HasWeakFDerivOn mu Omega (M.compLp f) ((ContinuousLinearMap.compL ℝ E F F' M).compLp D) :=
-  ((h.clm_comp M).congr_ae (M.coeFn_compLp' f).symm).congr_ae_deriv
-    ((ContinuousLinearMap.compL ℝ E F F' M).coeFn_compLp' D).symm
-
-end CompLp
-
 namespace WeakDerivStep
 
 variable {E F F' X X' : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -121,24 +104,26 @@ variable {α D₁ D₂ F₁ F₂ : Type*} {m : MeasurableSpace α} {μ : Measure
   [NormedAddCommGroup D₂] [NormedSpace ℝ D₂] [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
   [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] (ι₁ : D₁ →L[ℝ] F₁) (ι₂ : D₂ →L[ℝ] F₂)
 
+/-- Two composites of `compLpL` operators agree when the composites of the underlying maps do. -/
+private theorem compLpL_comp_compLpL_eq {G₁ G₂ G₃ G₄ : Type*} [NormedAddCommGroup G₁]
+    [NormedSpace ℝ G₁] [NormedAddCommGroup G₂] [NormedSpace ℝ G₂] [NormedAddCommGroup G₃]
+    [NormedSpace ℝ G₃] [NormedAddCommGroup G₄] [NormedSpace ℝ G₄] {A : G₂ →L[ℝ] G₃}
+    {B : G₁ →L[ℝ] G₂} {C : G₄ →L[ℝ] G₃} {D : G₁ →L[ℝ] G₄} (h : A.comp B = C.comp D) :
+    (A.compLpL p μ).comp (B.compLpL p μ) = (C.compLpL p μ).comp (D.compLpL p μ) := by
+  rw [ContinuousLinearMap.compLpL_comp_compLpL, ContinuousLinearMap.compLpL_comp_compLpL, h]
+
 /-! The compatibilities of `ι₁ ⊕ ι₂` with the projections onto and inclusions of the factors, in
 the form required by `TauCeti.WeakDerivStep.mapL`. -/
 
 private theorem withLpProd_fst_compat :
     (ι₁.compLpL p μ).comp ((WithLp.fstL q ℝ D₁ D₂).compLpL p μ) =
-      ((WithLp.fstL q ℝ F₁ F₂).compLpL p μ).comp ((ι₁.withLpProdMap q ι₂).compLpL p μ) := by
-  rw [ContinuousLinearMap.compLpL_comp_compLpL, ContinuousLinearMap.compLpL_comp_compLpL]
-  congr 1
-  ext x
-  simp
+      ((WithLp.fstL q ℝ F₁ F₂).compLpL p μ).comp ((ι₁.withLpProdMap q ι₂).compLpL p μ) :=
+  compLpL_comp_compLpL_eq (by ext; simp)
 
 private theorem withLpProd_snd_compat :
     (ι₂.compLpL p μ).comp ((WithLp.sndL q ℝ D₁ D₂).compLpL p μ) =
-      ((WithLp.sndL q ℝ F₁ F₂).compLpL p μ).comp ((ι₁.withLpProdMap q ι₂).compLpL p μ) := by
-  rw [ContinuousLinearMap.compLpL_comp_compLpL, ContinuousLinearMap.compLpL_comp_compLpL]
-  congr 1
-  ext x
-  simp
+      ((WithLp.sndL q ℝ F₁ F₂).compLpL p μ).comp ((ι₁.withLpProdMap q ι₂).compLpL p μ) :=
+  compLpL_comp_compLpL_eq (by ext; simp)
 
 private theorem withLpProd_inl_compat :
     ((ι₁.withLpProdMap q ι₂).compLpL p μ).comp
@@ -148,11 +133,8 @@ private theorem withLpProd_inl_compat :
       ((((WithLp.prodContinuousLinearEquiv q ℝ F₁ F₂).symm :
           F₁ × F₂ →L[ℝ] WithLp q (F₁ × F₂)).comp
             (ContinuousLinearMap.inl ℝ F₁ F₂)).compLpL p μ).comp
-        (ι₁.compLpL p μ) := by
-  rw [ContinuousLinearMap.compLpL_comp_compLpL, ContinuousLinearMap.compLpL_comp_compLpL]
-  congr 1
-  ext x
-  simp
+        (ι₁.compLpL p μ) :=
+  compLpL_comp_compLpL_eq (by ext; simp)
 
 private theorem withLpProd_inr_compat :
     ((ι₁.withLpProdMap q ι₂).compLpL p μ).comp
@@ -162,53 +144,76 @@ private theorem withLpProd_inr_compat :
       ((((WithLp.prodContinuousLinearEquiv q ℝ F₁ F₂).symm :
           F₁ × F₂ →L[ℝ] WithLp q (F₁ × F₂)).comp
             (ContinuousLinearMap.inr ℝ F₁ F₂)).compLpL p μ).comp
-        (ι₂.compLpL p μ) := by
-  rw [ContinuousLinearMap.compLpL_comp_compLpL, ContinuousLinearMap.compLpL_comp_compLpL]
-  congr 1
-  ext x
-  simp
+        (ι₂.compLpL p μ) :=
+  compLpL_comp_compLpL_eq (by ext; simp)
 
 end Compat
 
 section Prod
 
-variable [FiniteDimensional ℝ E] [BorelSpace E] {D₁ D₂ F₁ F₂ : Type*} [NormedAddCommGroup D₁]
-  [NormedSpace ℝ D₁] [NormedAddCommGroup D₂] [NormedSpace ℝ D₂] [NormedAddCommGroup F₁]
-  [NormedSpace ℝ F₁] [CompleteSpace F₁] [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
-  [CompleteSpace F₂] {q : ℝ≥0∞} [Fact (1 ≤ q)]
+variable {D₁ D₂ F₁ F₂ : Type*} [NormedAddCommGroup D₁] [NormedSpace ℝ D₁] [NormedAddCommGroup D₂]
+  [NormedSpace ℝ D₂] [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [CompleteSpace F₁]
+  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [CompleteSpace F₂] {q : ℝ≥0∞} [Fact (1 ≤ q)]
+
+variable (ι₁ : D₁ →L[ℝ] F₁) (ι₂ : D₂ →L[ℝ] F₂)
+
+/-- The splitting `u ↦ (u₁, u₂)` underlying `TauCeti.WeakDerivStep.withLpProdEquiv`. -/
+private def withLpProdSplit :
+    WeakDerivStep mu Omega p ((ι₁.withLpProdMap q ι₂).compLpL p (mu.restrict Omega)) →L[ℝ]
+      WeakDerivStep mu Omega p (ι₁.compLpL p (mu.restrict Omega)) ×
+        WeakDerivStep mu Omega p (ι₂.compLpL p (mu.restrict Omega)) :=
+  (mapL _ _ _ _ (withLpProd_fst_compat ι₁ ι₂)).prod (mapL _ _ _ _ (withLpProd_snd_compat ι₁ ι₂))
+
+/-- The pairing `(u₁, u₂) ↦ u` underlying the inverse of `TauCeti.WeakDerivStep.withLpProdEquiv`. -/
+private def withLpProdPair :
+    WeakDerivStep mu Omega p (ι₁.compLpL p (mu.restrict Omega)) ×
+        WeakDerivStep mu Omega p (ι₂.compLpL p (mu.restrict Omega)) →L[ℝ]
+      WeakDerivStep mu Omega p ((ι₁.withLpProdMap q ι₂).compLpL p (mu.restrict Omega)) :=
+  (mapL _ _ _ _ (withLpProd_inl_compat ι₁ ι₂)).coprod (mapL _ _ _ _ (withLpProd_inr_compat ι₁ ι₂))
+
+private theorem prev_withLpProdSplit
+    (u : WeakDerivStep mu Omega p ((ι₁.withLpProdMap q ι₂).compLpL p (mu.restrict Omega))) :
+    (prev _ (withLpProdSplit ι₁ ι₂ u).1, prev _ (withLpProdSplit ι₁ ι₂ u).2) =
+      Lp.withLpProdEquiv ℝ q (mu.restrict Omega) (prev _ u) := by
+  simp only [withLpProdSplit, ContinuousLinearMap.prod_apply, prev_mapL,
+    Lp.withLpProdEquiv_apply]
+
+private theorem prev_withLpProdPair
+    (w : WeakDerivStep mu Omega p (ι₁.compLpL p (mu.restrict Omega)) ×
+      WeakDerivStep mu Omega p (ι₂.compLpL p (mu.restrict Omega))) :
+    prev _ (withLpProdPair (q := q) ι₁ ι₂ w) =
+      (Lp.withLpProdEquiv ℝ q (mu.restrict Omega)).symm (prev _ w.1, prev _ w.2) := by
+  simp only [withLpProdPair, ContinuousLinearMap.coprod_apply, prev_add, prev_mapL,
+    Lp.withLpProdEquiv_symm_apply]
+
+variable [FiniteDimensional ℝ E] [BorelSpace E]
+
+private theorem withLpProdSplit_comp_withLpProdPair :
+    (withLpProdSplit (mu := mu) (Omega := Omega) (p := p) (q := q) ι₁ ι₂).comp
+      (withLpProdPair ι₁ ι₂) = .id ℝ _ := by
+  refine ContinuousLinearMap.ext fun w ↦ ?_
+  have h := prev_withLpProdSplit (mu := mu) (Omega := Omega) (p := p) ι₁ ι₂
+    (withLpProdPair (mu := mu) (Omega := Omega) (p := p) (q := q) ι₁ ι₂ w)
+  rw [prev_withLpProdPair, ContinuousLinearEquiv.apply_symm_apply, Prod.ext_iff] at h
+  exact Prod.ext (ext h.1) (ext h.2)
+
+private theorem withLpProdPair_comp_withLpProdSplit :
+    (withLpProdPair (mu := mu) (Omega := Omega) (p := p) (q := q) ι₁ ι₂).comp
+      (withLpProdSplit ι₁ ι₂) = .id ℝ _ := by
+  refine ContinuousLinearMap.ext fun u ↦ ext ?_
+  rw [ContinuousLinearMap.comp_apply, prev_withLpProdPair, prev_withLpProdSplit,
+    ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearMap.id_apply]
 
 /-- **The graph space over a direct sum is the product of the graph spaces.** For continuous
 linear maps `ι₁ : D₁ →L[ℝ] F₁` and `ι₂ : D₂ →L[ℝ] F₂`, a path `u` in `Lᵖ(Ω, WithLp q (D₁ × D₂))`
 has `(ι₁ ⊕ ι₂) ∘ u` weakly differentiable exactly when its components `u₁` and `u₂` have `ι₁ ∘ u₁`
 and `ι₂ ∘ u₂` weakly differentiable. This continuous linear equivalence sends `u` to `(u₁, u₂)`. -/
-def withLpProdEquiv (ι₁ : D₁ →L[ℝ] F₁) (ι₂ : D₂ →L[ℝ] F₂) :
+def withLpProdEquiv :
     WeakDerivStep mu Omega p ((ι₁.withLpProdMap q ι₂).compLpL p (mu.restrict Omega)) ≃L[ℝ]
       WeakDerivStep mu Omega p (ι₁.compLpL p (mu.restrict Omega)) ×
         WeakDerivStep mu Omega p (ι₂.compLpL p (mu.restrict Omega)) :=
-  .ofContinuousLinearMap
-    ((mapL _ _ _ _ (withLpProd_fst_compat ι₁ ι₂)).prod
-      (mapL _ _ _ _ (withLpProd_snd_compat ι₁ ι₂)))
-    ((mapL _ _ _ _ (withLpProd_inl_compat ι₁ ι₂)).coprod
-      (mapL _ _ _ _ (withLpProd_inr_compat ι₁ ι₂)))
-    (ContinuousLinearMap.ext fun w ↦ by
-      have h := (Lp.withLpProdEquiv ℝ q (mu.restrict Omega)).apply_symm_apply
-        (prev _ w.1, prev _ w.2)
-      simp only [Lp.withLpProdEquiv_apply, Lp.withLpProdEquiv_symm_apply, map_add] at h
-      refine Prod.ext (ext ?_) (ext ?_)
-      · simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
-          ContinuousLinearMap.coprod_apply, map_add, prev_add, prev_mapL,
-          ContinuousLinearMap.id_apply, Prod.fst_add] using congrArg Prod.fst h
-      · simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
-          ContinuousLinearMap.coprod_apply, map_add, prev_add, prev_mapL,
-          ContinuousLinearMap.id_apply, Prod.snd_add] using congrArg Prod.snd h)
-    (ContinuousLinearMap.ext fun u ↦ ext <| by
-      have h := (Lp.withLpProdEquiv ℝ q (mu.restrict Omega)).symm_apply_apply (prev _ u)
-      simp only [Lp.withLpProdEquiv_apply, Lp.withLpProdEquiv_symm_apply] at h
-      simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
-        ContinuousLinearMap.coprod_apply, prev_add, prev_mapL,
-        ContinuousLinearMap.id_apply] using h)
-
-variable (ι₁ : D₁ →L[ℝ] F₁) (ι₂ : D₂ →L[ℝ] F₂)
+  .ofContinuousLinearMap (withLpProdSplit ι₁ ι₂) (withLpProdPair ι₁ ι₂)
+    (withLpProdSplit_comp_withLpProdPair ι₁ ι₂) (withLpProdPair_comp_withLpProdSplit ι₁ ι₂)
 
 /-- The first component of `TauCeti.WeakDerivStep.withLpProdEquiv ι₁ ι₂ u` is the path of first
 components of `u`. -/
@@ -235,10 +240,8 @@ theorem prev_withLpProdEquiv_symm
     (w : WeakDerivStep mu Omega p (ι₁.compLpL p (mu.restrict Omega)) ×
       WeakDerivStep mu Omega p (ι₂.compLpL p (mu.restrict Omega))) :
     prev _ ((withLpProdEquiv (q := q) ι₁ ι₂).symm w) =
-      (Lp.withLpProdEquiv ℝ q (mu.restrict Omega)).symm (prev _ w.1, prev _ w.2) := by
-  simp only [withLpProdEquiv, ContinuousLinearEquiv.symm_ofContinuousLinearMap,
-    ContinuousLinearEquiv.coe_ofContinuousLinearMap, ContinuousLinearMap.coprod_apply, prev_add,
-    prev_mapL, Lp.withLpProdEquiv_symm_apply]
+      (Lp.withLpProdEquiv ℝ q (mu.restrict Omega)).symm (prev _ w.1, prev _ w.2) :=
+  prev_withLpProdPair ι₁ ι₂ w
 
 /-- The weak derivative of the first component of `TauCeti.WeakDerivStep.withLpProdEquiv ι₁ ι₂ u`
 is the first component of the weak derivative of `u`. -/
@@ -259,6 +262,24 @@ theorem weakFDeriv_withLpProdEquiv_snd
       (ContinuousLinearMap.compL ℝ E _ _ (WithLp.sndL q ℝ F₁ F₂)).compLpL p (mu.restrict Omega)
         (weakFDeriv _ u) :=
   weakFDeriv_mapL _ _ _ _ _ u
+
+/-- The weak derivative of the inverse of `TauCeti.WeakDerivStep.withLpProdEquiv ι₁ ι₂` pairs the
+weak derivatives of its two arguments: it is their sum after the inclusions of the factors. -/
+@[simp]
+theorem weakFDeriv_withLpProdEquiv_symm
+    (w : WeakDerivStep mu Omega p (ι₁.compLpL p (mu.restrict Omega)) ×
+      WeakDerivStep mu Omega p (ι₂.compLpL p (mu.restrict Omega))) :
+    weakFDeriv _ ((withLpProdEquiv (q := q) ι₁ ι₂).symm w) =
+      (ContinuousLinearMap.compL ℝ E _ _ (((WithLp.prodContinuousLinearEquiv q ℝ F₁ F₂).symm :
+          F₁ × F₂ →L[ℝ] WithLp q (F₁ × F₂)).comp (ContinuousLinearMap.inl ℝ F₁ F₂))).compLpL p
+          (mu.restrict Omega) (weakFDeriv _ w.1) +
+        (ContinuousLinearMap.compL ℝ E _ _ (((WithLp.prodContinuousLinearEquiv q ℝ F₁ F₂).symm :
+          F₁ × F₂ →L[ℝ] WithLp q (F₁ × F₂)).comp (ContinuousLinearMap.inr ℝ F₁ F₂))).compLpL p
+          (mu.restrict Omega) (weakFDeriv _ w.2) := by
+  rw [← weakFDerivL_apply]
+  simp only [withLpProdEquiv, ContinuousLinearEquiv.symm_ofContinuousLinearMap,
+    ContinuousLinearEquiv.coe_ofContinuousLinearMap, withLpProdPair,
+    ContinuousLinearMap.coprod_apply, map_add, weakFDerivL_apply, weakFDeriv_mapL]
 
 end Prod
 

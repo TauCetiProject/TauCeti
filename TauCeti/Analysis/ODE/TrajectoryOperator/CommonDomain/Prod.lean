@@ -22,7 +22,7 @@ from `Lᵖ(Ω, Dᵢ) ∩ W^{1,p}(Ω, Hᵢ)` to `Lᵖ(Ω, Hᵢ)`. On the direct s
 `A(s) = A₁(s) ⊕ A₂(s)` (`ContinuousLinearMap.withLpProdMap`), the trajectory operator `D_A` is
 `D_{A₁} × D_{A₂}`, read through the identifications of the domain
 (`TauCeti.WeakDerivStep.withLpProdEquiv`) and of the target (`MeasureTheory.Lp.withLpProdEquiv`)
-with products (`TauCeti.WeakDerivStep.withLpProdEquiv_familyDomainTrajectoryOperator`).
+with products (`TauCeti.WeakDerivStep.lpWithLpProdEquiv_familyDomainTrajectoryOperator`).
 
 Consequently `D_A` is Fredholm exactly when `D_{A₁}` and `D_{A₂}` are
 (`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator_withLpProdMap_iff`), and its
@@ -59,7 +59,7 @@ variable {D₁ D₂ H₁ H₂ : Type*} [NormedAddCommGroup D₁] [NormedSpace �
 /-- **The trajectory operator of a block-diagonal family splits.** If `A(s) = A₁(s) ⊕ A₂(s)` for
 almost every `s`, then the components of `(ι ∘ u)' + A u`, for `ι = ι₁ ⊕ ι₂`, are
 `(ι₁ ∘ u₁)' + A₁ u₁` and `(ι₂ ∘ u₂)' + A₂ u₂`, where `u₁` and `u₂` are the components of `u`. -/
-theorem withLpProdEquiv_familyDomainTrajectoryOperator
+theorem lpWithLpProdEquiv_familyDomainTrajectoryOperator
     (hAL : ∀ᵐ s ∂(mu.restrict Omega), AL s = (AL₁ s).withLpProdMap q (AL₂ s))
     (u : WeakDerivStep mu Omega p ((ι₁.withLpProdMap q ι₂).compLpL p (mu.restrict Omega))) :
     Lp.withLpProdEquiv ℝ q (mu.restrict Omega)
@@ -101,7 +101,7 @@ private theorem comp_familyDomainTrajectoryOperator_withLpProdMap
         (withLpProdEquiv (mu := mu) (Omega := Omega) (p := p) (q := q) ι₁ ι₂ :
           WeakDerivStep mu Omega p ((ι₁.withLpProdMap q ι₂).compLpL p (mu.restrict Omega)) →L[ℝ]
             _) :=
-  ContinuousLinearMap.ext fun u ↦ withLpProdEquiv_familyDomainTrajectoryOperator ι₁ ι₂ hAL u
+  ContinuousLinearMap.ext fun u ↦ lpWithLpProdEquiv_familyDomainTrajectoryOperator ι₁ ι₂ hAL u
 
 /-- **A block-diagonal trajectory operator is Fredholm exactly when its blocks are.** -/
 theorem isFredholm_familyDomainTrajectoryOperator_withLpProdMap_iff
