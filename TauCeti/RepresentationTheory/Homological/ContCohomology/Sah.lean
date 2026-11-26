@@ -152,7 +152,7 @@ theorem res_injective_of_smul_eq {R : Type*} [Ring R] [Module R M] [SMulCommClas
     (L : Subgroup G) {z : G} (hzL : ∀ g, (z * g)⁻¹ * (g * z) ∈ L) {r : R}
     (hzr : ∀ m : M, z • m = r • m) (hr : IsUnit (r - 1)) :
     Function.Injective (res L (ofDiscreteModule ℤ G M) 1) :=
-  res_injective_of_bijective L hzL (groupCohomology.smul_comm_of_smul_eq hzr)
-    (groupCohomology.bijective_smul_sub_of_smul_eq hzr hr)
+  res_injective_of_bijective L hzL (smul_comm_of_smul_eq hzr)
+    (bijective_smul_sub_of_smul_eq hzr hr)
 
 end TauCeti.ContinuousCohomology
