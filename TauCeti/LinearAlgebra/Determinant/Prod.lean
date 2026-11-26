@@ -19,6 +19,9 @@ Consequently `A` multiplies the wedge product of two linear forms `κ` and `α` 
 determinant: `κ (A e₁) α (A e₂) - κ (A e₂) α (A e₁) = det A (κ e₁ α e₂ - κ e₂ α e₁)`. This is the
 transformation rule of a two-form on the plane under pullback.
 
+For any basis `e` of a module of rank two, the determinant form `e.det` is nondegenerate: a vector
+`u` with `e.det ![u, v] = 0` for every `v` is zero.
+
 Over a field `K`, an endomorphism `B` of `K × V` that fixes the second component of every vector is
 block triangular, with diagonal blocks the scalar `(B (1, 0)).1` on the axis `K × 0` and the
 identity on the quotient `V`, so its determinant is `(B (1, 0)).1`.
@@ -28,6 +31,8 @@ identity on the quotient `V`, so its determinant is `(B (1, 0)).1`.
 * `Module.Basis.coe_finTwoProd`: the vectors of the basis `Module.Basis.finTwoProd R`.
 * `Module.Basis.det_finTwoProd_apply`: the determinant of two vectors of `R × R` with respect to
   the basis `Module.Basis.finTwoProd R`.
+* `Module.Basis.eq_zero_of_forall_det_eq_zero`: the determinant form of a rank-two basis is
+  nondegenerate.
 * `LinearMap.det_finTwoProd`: the determinant of an endomorphism of `R × R`.
 * `LinearMap.det_mul_wedge_finTwoProd`: an endomorphism of `R × R` multiplies the wedge product
   of two linear forms by its determinant.
@@ -51,6 +56,16 @@ theorem coe_finTwoProd (R : Type*) [Semiring R] :
 theorem det_finTwoProd_apply {R : Type*} [CommRing R] (v w : R × R) :
     (Module.Basis.finTwoProd R).det ![v, w] = v.1 * w.2 - v.2 * w.1 := by
   simp [Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply, mul_comm]
+
+/-- **The determinant form of a rank-two basis is nondegenerate.** A vector `u` with
+`e.det ![u, v] = 0` for every `v` is zero. -/
+theorem eq_zero_of_forall_det_eq_zero {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    (e : Module.Basis (Fin 2) R M) {u : M} (h : ∀ v, e.det ![u, v] = 0) : u = 0 := by
+  refine e.forall_coord_eq_zero_iff.1 fun i ↦ ?_
+  rw [Module.Basis.coord_apply]
+  fin_cases i
+  · simpa [Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply] using h (e 1)
+  · simpa [Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply] using h (e 0)
 
 end Module.Basis
 

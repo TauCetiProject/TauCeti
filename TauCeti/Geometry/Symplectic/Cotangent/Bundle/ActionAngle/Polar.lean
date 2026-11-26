@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Polar
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Coordinates
+import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
 # The punctured plane as a neighbourhood of the zero section of `T*S¹`
@@ -108,6 +110,19 @@ def polarCovector (h : ℝ → ℝ) (q : V) :
     CotangentBundle (ModelWithCorners.pi fun _ : Fin 1 ↦ 𝓘(ℝ)) (Fin 1 → AddCircle (2 * π)) :=
   actionAngleCover (2 * π) (fun _ ↦ (polarAngle (b 0) (b 1) q).toReal, fun _ ↦ h ‖q‖)
 
+/-- The defining formula of `Φ_h`: the covector with angle the polar angle of `q` and action
+`h(‖q‖)`. -/
+theorem polarCovector_def (h : ℝ → ℝ) (q : V) :
+    polarCovector b h q =
+      actionAngleCover (2 * π) (fun _ ↦ (polarAngle (b 0) (b 1) q).toReal, fun _ ↦ h ‖q‖) :=
+  (rfl)
+
+/-- The covector `Φ_h(q)` evaluates a tangent vector `v` of the circle as `h(‖q‖) v`. -/
+@[simp]
+theorem polarCovector_snd_apply (h : ℝ → ℝ) (q : V) (v : Fin 1 → ℝ) :
+    (polarCovector b h q).snd v = h ‖q‖ * v 0 := by
+  rw [polarCovector_def, actionAngleCover_snd_apply, Fin.sum_univ_one]
+
 /-- The covector `Φ_h(q)` lies over the polar angle of `q`. -/
 @[simp]
 theorem proj_polarCovector (h : ℝ → ℝ) (q : V) :
@@ -141,41 +156,6 @@ theorem polarCovector_eq_zero_iff (h : ℝ → ℝ) (q : V) :
 
 /-! ### Polar coordinates on the real cover -/
 
-/-- Polar coordinates `(r, θ) ↦ r e_r(θ)` of the plane, with a real angle. -/
-private def polarCover (x : ℝ × ℝ) : V :=
-  x.1 • polarRadialUnit (b 0) (b 1) x.2
-
-/-- The derivative of polar coordinates at `(r, θ)`: `(a, c) ↦ a e_r + r c e_θ`. -/
-private def polarCoverDeriv (x : ℝ × ℝ) : ℝ × ℝ →L[ℝ] V :=
-  (ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight (polarRadialUnit (b 0) (b 1) x.2) +
-    x.1 • (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (polarAngularUnit (b 0) (b 1) x.2)
-
-private theorem polarCoverDeriv_apply (x a : ℝ × ℝ) :
-    polarCoverDeriv b x a =
-      a.1 • polarRadialUnit (b 0) (b 1) x.2 + (x.1 * a.2) • polarAngularUnit (b 0) (b 1) x.2 := by
-  simp [polarCoverDeriv, mul_smul]
-
-private theorem hasFDerivAt_polarCover (x : ℝ × ℝ) :
-    HasFDerivAt (polarCover b) (polarCoverDeriv b x) x := by
-  have h := (hasFDerivAt_fst (p := x)).smul
-    ((hasDerivAt_polarRadialUnit (b 0) (b 1) x.2).hasFDerivAt.comp x hasFDerivAt_snd)
-  refine h.congr_fderiv ?_
-  ext <;> simp [polarCoverDeriv, add_comm]
-
-private theorem contDiff_polarCover : ContDiff ℝ ∞ (polarCover b) :=
-  contDiff_fst.smul ((contDiff_polarRadialUnit (b 0) (b 1)).comp contDiff_snd)
-
-/-- In polar coordinates, `‖r e_r(θ)‖ = r` for `r > 0`. -/
-private theorem norm_polarCover {x : ℝ × ℝ} (hr : 0 < x.1) : ‖polarCover b x‖ = x.1 := by
-  rw [polarCover, norm_smul, norm_polarRadialUnit (b.norm_eq_one 0) (b.norm_eq_one 1)
-    (b.inner_eq_zero (by decide)), mul_one, norm_of_nonneg hr.le]
-
-/-- The point `‖q‖ e_r(θ)`, for the polar angle `θ` of `q ≠ 0`, is `q`. -/
-private theorem polarCover_norm_polarAngle {q : V} (hq : q ≠ 0) :
-    polarCover b (‖q‖, (polarAngle (b 0) (b 1) q).toReal) = q := by
-  simpa [polarCanonical_apply, polarCover] using
-    congrArg Prod.fst (polarCanonical_polarAngle b 0 hq (Real.Angle.coe_toReal _))
-
 /-- **`Φ_h` in polar coordinates.** For `r > 0`, `Φ_h(r e_r(θ))` is the covector with angle `θ`
 and action `h(r)`. -/
 theorem polarCovector_smul_polarRadialUnit {r : ℝ} (hr : 0 < r) (θ : ℝ) (h : ℝ → ℝ) :
@@ -187,46 +167,15 @@ theorem polarCovector_smul_polarRadialUnit {r : ℝ} (hr : 0 < r) (θ : ℝ) (h 
         (x := ((r, 0), (θ, 0))) hr
   obtain ⟨k, hk⟩ :=
     Real.Angle.angle_eq_iff_two_pi_dvd_sub.1 (Real.Angle.coe_toReal (θ : Real.Angle))
-  have hn : ‖r • polarRadialUnit (b 0) (b 1) θ‖ = r := norm_polarCover b (x := (r, θ)) hr
+  have hn : ‖r • polarRadialUnit (b 0) (b 1) θ‖ = r := by
+    simpa using norm_polarPlaneMap b (y := (r, (θ : AddCircle (2 * π))))
+      (mem_polarHalfCylinder.2 hr)
   rw [polarCovector, hn, hθ]
   convert actionAngleCover_add_intCast_mul (2 * π) (fun _ : Fin 1 ↦ θ) (fun _ ↦ h r)
     (fun _ ↦ k) using 3
   funext i
   simp only [Pi.add_apply]
   linear_combination hk
-
-private theorem polarCovector_polarCover {x : ℝ × ℝ} (hr : 0 < x.1) (h : ℝ → ℝ) :
-    polarCovector b h (polarCover b x) = actionAngleCover (2 * π) (fun _ ↦ x.2, fun _ ↦ h x.1) :=
-  polarCovector_smul_polarRadialUnit b hr x.2 h
-
-/-- The derivative of polar coordinates is injective away from `r = 0`. -/
-private theorem injective_polarCoverDeriv {x : ℝ × ℝ} (hr : x.1 ≠ 0) :
-    Injective (polarCoverDeriv b x) := by
-  have hu := b.norm_eq_one 0
-  have hw := b.norm_eq_one 1
-  have huw : ⟪b 0, b 1⟫_ℝ = 0 := b.inner_eq_zero (by decide)
-  refine (injective_iff_map_eq_zero _).2 fun a ha ↦ ?_
-  rw [polarCoverDeriv_apply] at ha
-  -- Pair with the orthonormal frame `(e_r, e_θ)`.
-  have h1 := congrArg (fun v ↦ ⟪v, polarRadialUnit (b 0) (b 1) x.2⟫_ℝ) ha
-  have h2 := congrArg (fun v ↦ ⟪v, polarAngularUnit (b 0) (b 1) x.2⟫_ℝ) ha
-  simp only [inner_add_left, real_inner_smul_left, inner_polarRadialUnit_self hu hw huw,
-    inner_polarAngularUnit_self hu hw huw, inner_polarRadialUnit_polarAngularUnit hu hw huw,
-    inner_polarAngularUnit_polarRadialUnit hu hw huw, inner_zero_left, mul_one, mul_zero,
-    add_zero, zero_add] at h1 h2
-  exact Prod.ext h1 ((mul_eq_zero.1 h2).resolve_left hr)
-
-/-- Polar coordinates are a local diffeomorphism away from `r = 0`. -/
-private theorem isLocalDiffeomorphAt_polarCover {x : ℝ × ℝ} (hr : x.1 ≠ 0) :
-    IsLocalDiffeomorphAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) ∞ (polarCover b) x := by
-  have : FiniteDimensional ℝ V := b.toBasis.finiteDimensional_of_finite
-  refine isLocalDiffeomorphAt_of_injective_mfderiv (contDiff_polarCover b).contMDiff.contMDiffOn
-    isOpen_univ (mem_univ x) BoundarylessManifold.isInteriorPoint (by simp)
-    ((injective_iff_map_eq_zero _).2 fun a ha ↦ ?_) ?_
-  · rw [(hasFDerivAt_polarCover b x).hasMFDerivAt.mfderiv] at ha
-    exact injective_polarCoverDeriv b hr (ha.trans (map_zero _).symm)
-  · rw [Module.finrank_prod, Module.finrank_self, Module.finrank_eq_card_basis b.toBasis]
-    simp
 
 /-! ### The pullback of the canonical form -/
 
@@ -246,64 +195,55 @@ private theorem hasFDerivAt_polarActionAngle {h : ℝ → ℝ} {x : ℝ × ℝ}
   refine (hasFDerivAt_pi'.2 fun _ ↦ hasFDerivAt_snd).prodMk (hasFDerivAt_pi'.2 fun _ ↦ ?_)
   exact (hh.hasDerivAt.comp_hasFDerivAt x hasFDerivAt_fst).congr_fderiv (by ext <;> simp)
 
-/-- `Φ_h ∘ polarCover` agrees with `κ ∘ polarActionAngle` near every point with `r > 0`. -/
-private theorem polarCovector_comp_polarCover_eventuallyEq {x : ℝ × ℝ} (hr : 0 < x.1)
+/-- `Φ_h` in polar coordinates `(r, θ) ↦ r e_r` agrees with `κ ∘ polarActionAngle` near every
+point with `r > 0`. -/
+private theorem polarCovector_comp_smul_polarRadialUnit_eventuallyEq {x : ℝ × ℝ} (hr : 0 < x.1)
     (h : ℝ → ℝ) :
-    polarCovector b h ∘ polarCover b =ᶠ[nhds x] actionAngleCover (2 * π) ∘ polarActionAngle h :=
-  ((isOpen_lt continuous_const continuous_fst).eventually_mem hr).mono fun _ hy ↦
-    polarCovector_polarCover b hy h
-
-/-- In polar coordinates the area form `dx ∧ dy` is `r dr ∧ dθ`. -/
-private theorem det_polarCoverDeriv (x a c : ℝ × ℝ) :
-    b.toBasis.det ![polarCoverDeriv b x a, polarCoverDeriv b x c] =
-      x.1 * (a.1 * c.2 - c.1 * a.2) := by
-  simp only [polarCoverDeriv_apply, Module.Basis.det_apply, Matrix.det_fin_two,
-    Module.Basis.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply,
-    OrthonormalBasis.repr_apply_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    polarRadialUnit_apply, polarAngularUnit_apply, inner_add_right, real_inner_smul_right,
-    b.inner_eq_ite]
-  norm_num
-  linear_combination (x.1 * (a.1 * c.2 - c.1 * a.2)) * (sin_sq_add_cos_sq x.2)
+    polarCovector b h ∘ (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit (b 0) (b 1) x.2) =ᶠ[nhds x]
+      actionAngleCover (2 * π) ∘ polarActionAngle h :=
+  ((isOpen_lt continuous_const continuous_fst).eventually_mem hr).mono fun y hy ↦
+    polarCovector_smul_polarRadialUnit b hy y.2 h
 
 /-- `Φ_h^* (dθ ∧ dI) = -(h'(r) / r) dx ∧ dy` at a point of polar coordinates `(r, θ)`, `r > 0`,
 on the images of tangent vectors under polar coordinates. -/
-private theorem eval₂_symplecticForm_mfderiv_polarCovector_polarCover {h : ℝ → ℝ} {x : ℝ × ℝ}
-    (hr : 0 < x.1) (hh : DifferentiableAt ℝ h x.1) (a c : ℝ × ℝ) :
+private theorem eval₂_symplecticForm_mfderiv_polarCovector_smul_polarRadialUnit {h : ℝ → ℝ}
+    {x : ℝ × ℝ} (hr : 0 < x.1) (hh : DifferentiableAt ℝ h x.1) (a c : ℝ × ℝ) :
     SmoothBundleForm.eval₂
         (symplecticForm (ModelWithCorners.pi fun _ : Fin 1 ↦ 𝓘(ℝ)) (Fin 1 → AddCircle (2 * π)))
-        (polarCovector b h (polarCover b x))
+        (polarCovector b h (x.1 • polarRadialUnit (b 0) (b 1) x.2))
         (mfderiv 𝓘(ℝ, V) ((ModelWithCorners.pi fun _ : Fin 1 ↦ 𝓘(ℝ)).prod
-          𝓘(ℝ, (Fin 1 → ℝ) →L[ℝ] ℝ)) (polarCovector b h) (polarCover b x)
-          (polarCoverDeriv b x a))
+          𝓘(ℝ, (Fin 1 → ℝ) →L[ℝ] ℝ)) (polarCovector b h) (x.1 • polarRadialUnit (b 0) (b 1) x.2)
+          (fderiv ℝ (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit (b 0) (b 1) x.2) x a))
         (mfderiv 𝓘(ℝ, V) ((ModelWithCorners.pi fun _ : Fin 1 ↦ 𝓘(ℝ)).prod
-          𝓘(ℝ, (Fin 1 → ℝ) →L[ℝ] ℝ)) (polarCovector b h) (polarCover b x)
-          (polarCoverDeriv b x c)) =
-      -(deriv h x.1 / x.1) * b.toBasis.det ![polarCoverDeriv b x a, polarCoverDeriv b x c] := by
-  have hP := isLocalDiffeomorphAt_polarCover b hr.ne'
+          𝓘(ℝ, (Fin 1 → ℝ) →L[ℝ] ℝ)) (polarCovector b h) (x.1 • polarRadialUnit (b 0) (b 1) x.2)
+          (fderiv ℝ (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit (b 0) (b 1) x.2) x c)) =
+      -(deriv h x.1 / x.1) *
+        b.toBasis.det ![fderiv ℝ (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit (b 0) (b 1) x.2) x a,
+          fderiv ℝ (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit (b 0) (b 1) x.2) x c] := by
+  have hP := isLocalDiffeomorphAt_smul_polarRadialUnit b hr
+  have hPd := (hP.mdifferentiableAt (by simp)).differentiableAt.hasFDerivAt.hasMFDerivAt.mfderiv
   have hg := hasFDerivAt_polarActionAngle hh
   have hκ := ((contMDiff_actionAngleCover (ι := Fin 1) (2 * π)) (polarActionAngle h x))
     |>.mdifferentiableAt (by simp)
   -- The derivative of `Φ_h` along polar coordinates is that of `κ ∘ polarActionAngle`.
   have hd (e : ℝ × ℝ) :
       mfderiv 𝓘(ℝ, V) ((ModelWithCorners.pi fun _ : Fin 1 ↦ 𝓘(ℝ)).prod
-          𝓘(ℝ, (Fin 1 → ℝ) →L[ℝ] ℝ)) (polarCovector b h) (polarCover b x)
-          (polarCoverDeriv b x e) =
+          𝓘(ℝ, (Fin 1 → ℝ) →L[ℝ] ℝ)) (polarCovector b h) (x.1 • polarRadialUnit (b 0) (b 1) x.2)
+          (fderiv ℝ (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit (b 0) (b 1) x.2) x e) =
         mfderiv 𝓘(ℝ, (Fin 1 → ℝ) × (Fin 1 → ℝ)) ((ModelWithCorners.pi fun _ : Fin 1 ↦ 𝓘(ℝ)).prod
           𝓘(ℝ, (Fin 1 → ℝ) →L[ℝ] ℝ)) (actionAngleCover (2 * π)) (polarActionAngle h x)
           (polarActionAngleDeriv h x e) := by
     have h1 := DFunLike.congr_fun (hP.mfderiv_comp (I' := (ModelWithCorners.pi fun _ : Fin 1 ↦
       𝓘(ℝ)).prod 𝓘(ℝ, (Fin 1 → ℝ) →L[ℝ] ℝ)) (by simp) (polarCovector b h)) e
-    rw [(polarCovector_comp_polarCover_eventuallyEq b hr h).mfderiv_eq,
+    rw [(polarCovector_comp_smul_polarRadialUnit_eventuallyEq b hr h).mfderiv_eq,
       mfderiv_comp x hκ hg.differentiableAt.mdifferentiableAt, hg.hasMFDerivAt.mfderiv,
-      (hasFDerivAt_polarCover b x).hasMFDerivAt.mfderiv] at h1
+      hPd] at h1
     exact h1.symm
-  rw [hd, hd, polarCovector_polarCover b hr, ← polarActionAngle, det_polarCoverDeriv]
+  rw [hd, hd, polarCovector_smul_polarRadialUnit b hr, ← polarActionAngle,
+    det_fderiv_smul_polarRadialUnit]
   refine (eval₂_symplecticForm_mfderiv_actionAngleCover (2 * π) (polarActionAngle h x) _ _).trans
     ?_
-  simp only [polarActionAngleDeriv, Finset.univ_unique, Fin.default_eq_zero,
-    Finset.sum_singleton, ContinuousLinearMap.prod_apply, ContinuousLinearMap.pi_apply,
-    ContinuousLinearMap.coe_snd', FunLike.coe_smul, Pi.smul_apply,
-    ContinuousLinearMap.coe_fst', smul_eq_mul]
+  simp [polarActionAngleDeriv]
   field_simp
   ring
 
@@ -321,16 +261,20 @@ theorem eval₂_symplecticForm_mfderiv_polarCovector {h : ℝ → ℝ} {q : V} (
           𝓘(ℝ, (Fin 1 → ℝ) →L[ℝ] ℝ)) (polarCovector b h) q v) =
       -(deriv h ‖q‖ / ‖q‖) * b.toBasis.det ![u, v] := by
   -- Write `q = r e_r(θ)` in polar coordinates.
-  obtain ⟨x, hr, rfl⟩ : ∃ x : ℝ × ℝ, 0 < x.1 ∧ polarCover b x = q :=
-    ⟨_, norm_pos_iff.2 hq, polarCover_norm_polarAngle b hq⟩
-  rw [norm_polarCover b hr] at hh ⊢
+  obtain ⟨x, hr, rfl⟩ : ∃ x : ℝ × ℝ, 0 < x.1 ∧ x.1 • polarRadialUnit (b 0) (b 1) x.2 = q :=
+    ⟨(‖q‖, (polarAngle (b 0) (b 1) q).toReal), norm_pos_iff.2 hq,
+      norm_smul_polarRadialUnit_of_coe_eq_polarAngle b hq (Real.Angle.coe_toReal _)⟩
+  have hn : ‖x.1 • polarRadialUnit (b 0) (b 1) x.2‖ = x.1 := by
+    simpa using norm_polarPlaneMap b (y := (x.1, (x.2 : AddCircle (2 * π))))
+      (mem_polarHalfCylinder.2 hr)
+  rw [hn] at hh ⊢
   -- Every tangent vector at `q` is the image of a tangent vector in polar coordinates.
-  have hsurj :=
-    ((isLocalDiffeomorphAt_polarCover b hr.ne').isInvertible_mfderiv (by simp)).surjective
-  rw [(hasFDerivAt_polarCover b x).hasMFDerivAt.mfderiv] at hsurj
+  have hP := isLocalDiffeomorphAt_smul_polarRadialUnit b hr
+  have hsurj := (hP.isInvertible_mfderiv (by simp)).surjective
+  rw [(hP.mdifferentiableAt (by simp)).differentiableAt.hasFDerivAt.hasMFDerivAt.mfderiv] at hsurj
   obtain ⟨a, rfl⟩ := hsurj u
   obtain ⟨c, rfl⟩ := hsurj v
-  exact eval₂_symplecticForm_mfderiv_polarCovector_polarCover b hr hh a c
+  exact eval₂_symplecticForm_mfderiv_polarCovector_smul_polarRadialUnit b hr hh a c
 
 /-- **`Φ_h` is symplectic exactly when `h'(r) = -r`.** For a profile `h` differentiable on
 `(0, ∞)`, the map `Φ_h` pulls the canonical form `dθ ∧ dI` of `T*S¹` back to the area form
@@ -415,15 +359,19 @@ theorem contMDiffAt_polarCovector {h : ℝ → ℝ} {q : V} (hq : q ≠ 0)
     (hh : ContDiffAt ℝ ∞ h ‖q‖) :
     ContMDiffAt 𝓘(ℝ, V) ((ModelWithCorners.pi fun _ : Fin 1 ↦ 𝓘(ℝ)).prod
       𝓘(ℝ, (Fin 1 → ℝ) →L[ℝ] ℝ)) ∞ (polarCovector b h) q := by
-  obtain ⟨x, hr, rfl⟩ : ∃ x : ℝ × ℝ, 0 < x.1 ∧ polarCover b x = q :=
-    ⟨_, norm_pos_iff.2 hq, polarCover_norm_polarAngle b hq⟩
-  rw [norm_polarCover b hr] at hh
-  rw [← (isLocalDiffeomorphAt_polarCover b hr.ne').contMDiffAt_comp_iff le_rfl]
+  obtain ⟨x, hr, rfl⟩ : ∃ x : ℝ × ℝ, 0 < x.1 ∧ x.1 • polarRadialUnit (b 0) (b 1) x.2 = q :=
+    ⟨(‖q‖, (polarAngle (b 0) (b 1) q).toReal), norm_pos_iff.2 hq,
+      norm_smul_polarRadialUnit_of_coe_eq_polarAngle b hq (Real.Angle.coe_toReal _)⟩
+  have hn : ‖x.1 • polarRadialUnit (b 0) (b 1) x.2‖ = x.1 := by
+    simpa using norm_polarPlaneMap b (y := (x.1, (x.2 : AddCircle (2 * π))))
+      (mem_polarHalfCylinder.2 hr)
+  rw [hn] at hh
+  rw [← (isLocalDiffeomorphAt_smul_polarRadialUnit b hr).contMDiffAt_comp_iff le_rfl]
   have hg : ContDiffAt ℝ ∞ (polarActionAngle h) x :=
     (contDiffAt_pi.2 fun _ ↦ contDiffAt_snd).prodMk
       (contDiffAt_pi.2 fun _ ↦ hh.comp x contDiffAt_fst)
   exact ((contMDiff_actionAngleCover (2 * π) _).comp x hg.contMDiffAt).congr_of_eventuallyEq
-    (polarCovector_comp_polarCover_eventuallyEq b hr h)
+    (polarCovector_comp_smul_polarRadialUnit_eventuallyEq b hr h)
 
 /-- **`Φ_h` is injective on the punctured plane when `h` is injective on `(0, ∞)`.** -/
 theorem injOn_polarCovector {h : ℝ → ℝ} (hh : InjOn h (Ioi 0)) :
@@ -442,16 +390,8 @@ theorem injOn_polarCovector {h : ℝ → ℝ} (hh : InjOn h (Ioi 0)) :
     simp only [proj_polarCovector] at h
     exact h
   rw [Real.Angle.coe_toReal, Real.Angle.coe_toReal] at hθ
-  rw [← polarCover_norm_polarAngle b hq, ← polarCover_norm_polarAngle b hq', hn, hθ]
-
-/-- The area form is nondegenerate: a vector pairing to zero with every vector vanishes. -/
-private theorem eq_zero_of_forall_det_eq_zero {u : V} (h : ∀ v : V, b.toBasis.det ![u, v] = 0) :
-    u = 0 := by
-  refine b.toBasis.forall_coord_eq_zero_iff.1 fun i ↦ ?_
-  rw [Module.Basis.coord_apply]
-  fin_cases i
-  · simpa [Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply] using h (b 1)
-  · simpa [Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply] using h (b 0)
+  rw [← norm_smul_polarRadialUnit_of_coe_eq_polarAngle b hq (Real.Angle.coe_toReal _),
+    ← norm_smul_polarRadialUnit_of_coe_eq_polarAngle b hq' (Real.Angle.coe_toReal _), hn, hθ]
 
 /-- **`Φ_h` is a local diffeomorphism where `h' ≠ 0`.** At `q ≠ 0` with `h` smooth near `‖q‖` and
 `h'(‖q‖) ≠ 0`, the pullback `-(h'(r) / r) dx ∧ dy` of `dθ ∧ dI` is nondegenerate, so the
@@ -481,11 +421,8 @@ theorem isLocalDiffeomorphAt_polarCovector {h : ℝ → ℝ} {q : V} (hq : q ≠
             rw [hu, eval₂_symplecticForm]
             exact LinearMap.map_zero₂ _ _)
       exact (mul_eq_zero.1 h1).resolve_left (by simp [hh', hr])
-    exact eq_zero_of_forall_det_eq_zero b h
-  · rw [Module.finrank_prod, Module.finrank_fintype_fun_eq_card, Fintype.card_fin,
-      ContinuousLinearMap.dual_finrank_eq, Module.finrank_fintype_fun_eq_card, Fintype.card_fin,
-      Module.finrank_eq_card_basis b.toBasis]
-    simp
+    exact b.toBasis.eq_zero_of_forall_det_eq_zero h
+  · simp [Module.finrank_eq_card_basis b.toBasis, ContinuousLinearMap.dual_finrank_eq]
 
 /-- **The image of the punctured plane.** `Φ_h` maps the punctured plane onto the covectors of
 `T*S¹` whose action is a value of `h` on `(0, ∞)`. -/
@@ -499,8 +436,9 @@ theorem polarCovector_image_compl_zero (h : ℝ → ℝ) :
     obtain ⟨⟨θ, I⟩, rfl⟩ := surjective_actionAngleCover (2 * π) z
     simp only [torusActions_actionAngleCover] at hz
     refine ⟨r • polarRadialUnit (b 0) (b 1) (θ 0), fun h0 ↦ ?_, ?_⟩
-    · have := norm_polarCover b (x := (r, θ 0)) hr
-      rw [polarCover, mem_singleton_iff.1 h0, norm_zero] at this
+    · have := norm_polarPlaneMap b (y := (r, (θ 0 : AddCircle (2 * π))))
+        (mem_polarHalfCylinder.2 hr)
+      rw [polarPlaneMap_coe, mem_singleton_iff.1 h0, norm_zero] at this
       exact (ne_of_lt hr) this
     · rw [polarCovector_smul_polarRadialUnit b hr]
       congr 1

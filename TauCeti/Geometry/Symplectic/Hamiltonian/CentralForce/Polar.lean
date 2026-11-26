@@ -80,6 +80,9 @@ smooth polar canonical coordinates, with the angle in the circle `AddCircle (2 *
   their coordinates agree, with the angles compared modulo `2π`.
 * `TauCeti.polarCanonical_polarAngle`: every point off the collision set is the image of its
   polar coordinates.
+* `TauCeti.fderiv_smul_polarRadialUnit_apply`, `TauCeti.det_fderiv_smul_polarRadialUnit`: the
+  derivative of polar coordinates `(r, θ) ↦ r e_r` of the plane, and the area form
+  `dx ∧ dy = r dr ∧ dθ`.
 
 ## References
 
@@ -157,6 +160,17 @@ theorem polarAngularUnit_eq_of_coe_eq (u w : V) {θ θ' : ℝ} (h : (θ : Real.A
     polarAngularUnit u w θ = polarAngularUnit u w θ' := by
   rw [polarAngularUnit, polarAngularUnit, ← Real.Angle.cos_coe, ← Real.Angle.sin_coe, h,
     Real.Angle.cos_coe, Real.Angle.sin_coe]
+
+/-- **The derivative of polar coordinates.** At `(r, θ)`, the map `(r, θ) ↦ r e_r` of polar
+coordinates in the plane of `u` and `w` has derivative `(δr, δθ) ↦ δr e_r + r δθ e_θ`. -/
+theorem fderiv_smul_polarRadialUnit_apply (u w : V) (x δ : ℝ × ℝ) :
+    fderiv ℝ (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit u w x.2) x δ =
+      δ.1 • polarRadialUnit u w x.2 + (x.1 * δ.2) • polarAngularUnit u w x.2 := by
+  have h : HasFDerivAt (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit u w x.2) _ x :=
+    (hasFDerivAt_fst (p := x)).smul
+      ((hasDerivAt_polarRadialUnit u w x.2).hasFDerivAt.comp x hasFDerivAt_snd)
+  rw [h.fderiv]
+  simp [mul_smul, add_comm]
 
 section Orthonormal
 
@@ -549,6 +563,25 @@ theorem polarCanonical_polarAngle {q : V} (p : V) (hq : q ≠ 0) {θ : ℝ}
       linear_combination -⟪p, b 0⟫_ℝ * hn
     · field_simp
       linear_combination -⟪p, b 1⟫_ℝ * hn
+
+/-- **Every nonzero position is the image of its polar coordinates**: for `q ≠ 0` and every lift
+`θ` of the polar angle of `q`, `‖q‖ e_r(θ) = q`. -/
+theorem norm_smul_polarRadialUnit_of_coe_eq_polarAngle {q : V} (hq : q ≠ 0) {θ : ℝ}
+    (hθ : (θ : Real.Angle) = polarAngle (b 0) (b 1) q) :
+    ‖q‖ • polarRadialUnit (b 0) (b 1) θ = q := by
+  simpa using congrArg Prod.fst (polarCanonical_polarAngle b 0 hq hθ)
+
+/-- **The area form in polar coordinates is `r dr ∧ dθ`.** For an orthonormal basis `b` of a plane,
+the determinant `dx ∧ dy` of `b` evaluates on the images of `δ` and `δ'` under the derivative of
+polar coordinates `(r, θ) ↦ r e_r` at `(r, θ)` to `r (δr δ'θ - δ'r δθ)`. -/
+theorem det_fderiv_smul_polarRadialUnit (x δ δ' : ℝ × ℝ) :
+    b.toBasis.det ![fderiv ℝ (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit (b 0) (b 1) x.2) x δ,
+        fderiv ℝ (fun x : ℝ × ℝ ↦ x.1 • polarRadialUnit (b 0) (b 1) x.2) x δ'] =
+      x.1 * (δ.1 * δ'.2 - δ'.1 * δ.2) := by
+  rw [fderiv_smul_polarRadialUnit_apply, fderiv_smul_polarRadialUnit_apply]
+  simp [polarRadialUnit_apply, polarAngularUnit_apply, Module.Basis.det_apply, Matrix.det_fin_two,
+    Module.Basis.toMatrix_apply]
+  linear_combination (x.1 * (δ.1 * δ'.2 - δ'.1 * δ.2)) * (sin_sq_add_cos_sq x.2)
 
 end Angle
 
