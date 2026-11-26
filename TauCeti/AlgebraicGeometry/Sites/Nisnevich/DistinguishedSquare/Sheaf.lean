@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Sites.Nisnevich.DistinguishedSquare
 public import Mathlib.CategoryTheory.Limits.Types.Pullbacks
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Diagonal
 
 /-!
 # Nisnevich sheaves on elementary distinguished squares
@@ -59,31 +60,6 @@ noncomputable abbrev diagonalArrows : ∀ b : Bool,
       Q.V b : AlgebraicGeometry.Scheme.{u}) ⟶ Limits.pullback Q.p Q.p)
     (Limits.pullback.fst _ _) (Limits.pullback.diagonal Q.p)
 
-/-- Over the reduced closed complement `Z` of `U`, the scheme `V ×_X V` lies in the diagonal: the
-base change of `V ×_X V ⟶ X` to `Z` factors through the diagonal of `p`. -/
-private lemma pullback_fst_eq_comp_diagonal
-    (I : AlgebraicGeometry.Scheme.IdealSheafData X) [IsIso (Limits.pullback.snd Q.p I.subschemeι)] :
-    Limits.pullback.fst (Limits.pullback.fst Q.p Q.p ≫ Q.p) I.subschemeι =
-      (Limits.pullback.fst (Limits.pullback.fst Q.p Q.p ≫ Q.p) I.subschemeι ≫
-        Limits.pullback.fst Q.p Q.p) ≫ Limits.pullback.diagonal Q.p := by
-  set g := Limits.pullback.fst (Limits.pullback.fst Q.p Q.p ≫ Q.p) I.subschemeι
-  set h := Limits.pullback.snd (Limits.pullback.fst Q.p Q.p ≫ Q.p) I.subschemeι
-  -- The two projections of `g` to `V` agree, as both are determined by `h` through the
-  -- isomorphism `p⁻¹(Z) ⟶ Z`.
-  have e : ∀ π : Limits.pullback Q.p Q.p ⟶ Q.V,
-      π ≫ Q.p = Limits.pullback.fst Q.p Q.p ≫ Q.p → g ≫ π =
-        h ≫ inv (Limits.pullback.snd Q.p I.subschemeι) ≫ Limits.pullback.fst Q.p I.subschemeι := by
-    intro π hπ
-    have hl : Limits.pullback.lift (g ≫ π) h
-        (by rw [Category.assoc, hπ]; exact Limits.pullback.condition) =
-          h ≫ inv (Limits.pullback.snd Q.p I.subschemeι) := by
-      rw [← cancel_mono (Limits.pullback.snd Q.p I.subschemeι)]
-      simp
-    rw [← Category.assoc, ← hl, Limits.pullback.lift_fst]
-  have key : g ≫ Limits.pullback.fst Q.p Q.p = g ≫ Limits.pullback.snd Q.p Q.p := by
-    rw [e _ rfl, e _ Limits.pullback.condition.symm]
-  apply Limits.pullback.hom_ext <;> simp [key]
-
 /-- **The diagonal of `p` and the part of `V ×_X V` over `U` cover `V ×_X V`**: both are open
 immersions, and every point of `V ×_X V` over the reduced closed complement of `U` lies in the
 diagonal, since the base change of `p` to that complement is an isomorphism. -/
@@ -103,7 +79,7 @@ theorem isNisnevichCovering_diagonal : IsNisnevichCovering Q.diagonalArrows := b
       simpa using hw
     obtain ⟨z, hz⟩ := hz
     obtain ⟨w', hw', -⟩ := AlgebraicGeometry.Scheme.Pullback.exists_preimage_pullback w z hz.symm
-    have hd := pullback_fst_eq_comp_diagonal Q I
+    have hd := Limits.pullback.fst_eq_comp_diagonal_of_isIso_snd Q.p I.subschemeι
     refine ⟨(Limits.pullback.fst (Limits.pullback.fst Q.p Q.p ≫ Q.p) I.subschemeι ≫
       Limits.pullback.fst Q.p Q.p) w', ?_⟩
     rw [← hw']
