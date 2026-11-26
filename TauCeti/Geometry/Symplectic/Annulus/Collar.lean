@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Periodization
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem.DomRestrict
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Sobolev.Trace.Reflection.Seeley
 
 /-!
@@ -52,10 +53,8 @@ The construction has three steps.
 
 For a diffeomorphism of the closed strip preserving a smooth positive density `ρ dx ∧ dy`,
 preserving both boundary lines and twisting them in opposite directions, the collar extension is a
-Poincaré–Birkhoff lift for `ρ` (`TauCeti.exists_isPoincareBirkhoffLift_eqOn_univ_prod_Icc`). So
-the strict annulus fixed-point theorem, stated for Poincaré–Birkhoff lifts, applies to every
-smooth area-preserving diffeomorphism of the closed annulus which preserves each boundary circle
-and twists the two in opposite directions.
+Poincaré–Birkhoff lift for `ρ` (`TauCeti.exists_isPoincareBirkhoffLift_eqOn_univ_prod_Icc`), the
+hypothesis on which the strict annulus fixed-point theorem is to be stated.
 
 ## Main results
 
@@ -153,12 +152,6 @@ section Band
 
 variable {Φ : ℝ × ℝ → ℝ × ℝ}
 
-/-- The differential of a map commuting with the deck translation is periodic. -/
-private theorem fderiv_add_mk
-    (hper : ∀ (p : ℝ × ℝ) (k : ℤ), Φ (p + ((k : ℝ), 0)) = Φ p + ((k : ℝ), 0)) (p : ℝ × ℝ)
-    (k : ℤ) : fderiv ℝ Φ (p + ((k : ℝ), 0)) = fderiv ℝ Φ p := by
-  rw [← fderiv_comp_add_right, funext fun q ↦ hper q k, fderiv_add_const]
-
 /-- If a `C¹` map commuting with the deck translation has invertible differential on the strip,
 it has invertible differential on a band `ℝ × (-ε, 1 + ε)`. -/
 private theorem exists_band_isInvertible_fderiv (hΦ : ContDiff ℝ 1 Φ)
@@ -172,7 +165,7 @@ private theorem exists_band_isInvertible_fderiv (hΦ : ContDiff ℝ 1 Φ)
   refine ⟨δ, hδ, fun p hp ↦ ?_⟩
   have h : (fderiv ℝ Φ (p + (((-⌊p.1⌋ : ℤ) : ℝ), 0))).IsInvertible :=
     hsub (mem_thickening_Icc_prod_Icc hδ (fst_add_neg_floor_mem p) (by simpa using hp))
-  rwa [fderiv_add_mk hper] at h
+  rwa [periodic_fderiv_of_apply_add_eq_add (fun q ↦ hper q _) p] at h
 
 /-- A continuous map commuting with the deck translation moves the points of the band
 `ℝ × [-1, 2]` a bounded distance. -/
@@ -199,13 +192,8 @@ private theorem exists_band_injOn (hΦ : ContDiff ℝ 1 Φ)
   -- inverse function theorem, and on the strip itself.
   obtain ⟨t, ht, hKt, htinj⟩ :=
     (hinj.mono (prod_mono (subset_univ _) subset_rfl)).exists_isOpen_superset hK
-      (fun _ _ ↦ hΦ.continuous.continuousAt) fun p hp ↦ by
-      obtain ⟨e, he⟩ := hinv p ⟨mem_univ _, hp.2⟩
-      have hs : HasStrictFDerivAt Φ (e : ℝ × ℝ →L[ℝ] ℝ × ℝ) p := by
-        rw [he]
-        exact hΦ.contDiffAt.hasStrictFDerivAt_fderiv one_ne_zero
-      exact ⟨_, (hs.toOpenPartialHomeomorph Φ).open_source.mem_nhds
-        hs.mem_toOpenPartialHomeomorph_source, by simpa using (hs.toOpenPartialHomeomorph Φ).injOn⟩
+      (fun _ _ ↦ hΦ.continuous.continuousAt) fun p hp ↦
+      hΦ.contDiffAt.exists_mem_nhds_injOn one_ne_zero (hinv p ⟨mem_univ _, hp.2⟩)
   obtain ⟨δ, hδ, hδt⟩ := hK.exists_thickening_subset_open ht hKt
   refine ⟨min δ 1, lt_min hδ one_pos, fun p hp q hq hpq ↦ ?_⟩
   have hp' := Ioo_neg_min_one_subset_Icc δ hp.2
