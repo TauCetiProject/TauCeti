@@ -80,6 +80,8 @@ coefficient. Here `‖g‖_c` denotes the weighted norm `‖exp(c ρ) g‖₂` o
   (`exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul`), applied to
   `Q f`, to the kernel element `π e` and then to the derivatives, together with multiplication by
   `β` on `H^k` and the weighted `L²` bounds above, gives
+  `‖exp(c ρ) Q f‖_(H^(k+1)) ≤ K ‖exp(c ρ) f‖_(H^k)`
+  (`exists_forall_norm_exp_mul_smul_orthogonalRightInverse_le_of_forall_mem_norm_le`),
   `‖exp(c ρ) Q' f‖_(H^(k+1)) ≤ K M ‖exp(c ρ) f‖_(H^k)`
   (`exists_forall_norm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_forall_mem_norm_le`) and
   `‖exp(c ρ) π' e‖_(H^(k+1)) ≤ K M ‖e‖_c`
@@ -697,8 +699,13 @@ vortex with the degree-`m` end framing whose zeros lie in the closed disc of rad
 coordinates whose derivatives through order `k` are bounded by `B`, let `a` be its `L∞` class and
 `Q` the right inverse of the realization `L_a` with values `L²`-orthogonal to its kernel. If the
 coordinates of `exp(c ρ) f` are given by `w : Fin 4 → H^k(ℂ)`, then those of `exp(c ρ) Q f` are
-given by some `u : Fin 4 → H^(k+1)(ℂ)` with `‖u‖ ≤ K ‖w‖`. -/
-private theorem exists_forall_norm_exp_mul_smul_orthogonalRightInverse_le_of_forall_mem_norm_le
+given by some `u : Fin 4 → H^(k+1)(ℂ)` with `‖u‖ ≤ K ‖w‖`. That is,
+
+`‖exp(c ρ) Q f‖_(H^(k+1)) ≤ K ‖exp(c ρ) f‖_(H^k)`,
+
+with `K` depending only on `m`, `R₀`, `B`, `c` and `k`. The weighted `L²` estimate is
+`exists_forall_eLpNorm_exp_mul_smul_orthogonalRightInverse_le_of_forall_mem_norm_le`. -/
+theorem exists_forall_norm_exp_mul_smul_orthogonalRightInverse_le_of_forall_mem_norm_le
     (m : ℕ) (R₀ B : ℝ) {c : ℝ} (hc : |c| < 1 / 2) (k : ℕ) :
     ∃ K ≥ 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
       (∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ B) →
