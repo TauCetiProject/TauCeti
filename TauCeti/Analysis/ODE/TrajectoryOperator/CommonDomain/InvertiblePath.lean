@@ -10,6 +10,8 @@ public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Fredholm
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
 import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Family
+import TauCeti.MeasureTheory.Function.Lp.PathTruncation
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The trajectory operator of a path of invertible operators has index zero
@@ -74,15 +76,6 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddComm
 
 /-! ### Truncations of a path -/
 
-/-- Two `L∞` classes whose representatives are everywhere within `C` are within `C`. -/
-private theorem norm_sub_le_of_forall_norm_sub_le {F G : Lp (D →L[ℝ] H) ∞ μ₀}
-    {f g : ℝ → D →L[ℝ] H} (hF : F =ᵐ[μ₀] f) (hG : G =ᵐ[μ₀] g) {C : ℝ} (hC : 0 ≤ C)
-    (h : ∀ s, ‖f s - g s‖ ≤ C) : ‖F - G‖ ≤ C :=
-  Lp.norm_le_of_ae_bound_top hC <| by
-    filter_upwards [Lp.coeFn_sub F G, hF, hG] with s h₁ h₂ h₃
-    rw [h₁, Pi.sub_apply, h₂, h₃]
-    exact h s
-
 /-- For a continuous path, a bound through `ι` that holds for almost every time of a bounded
 interval holds for the truncation `s ↦ A (min s t)` at every time, with `A t` in place of the
 reference operator. -/
@@ -92,14 +85,10 @@ private theorem truncation_sub_bound (hA : Continuous A) {B : D →L[ℝ] H}
   set R := |T| + |t| + 1
   obtain ⟨c, hcR⟩ := hc R
   -- The almost-everywhere bound holds everywhere on `(-R, R)`, by continuity.
-  have hall (u : ℝ) (hu : u ∈ Ioo (-R) R) (x : D) : ‖(A u - B) x‖ ≤ c * ‖ι x‖ := by
-    have hcont : Continuous fun u ↦ max ‖(A u - B) x‖ (c * ‖ι x‖) :=
-      ((hA.sub continuous_const).clm_apply continuous_const).norm.max continuous_const
-    have heq := Measure.eqOn_open_of_ae_eq (μ := volume) (g := fun _ ↦ c * ‖ι x‖) ?_ isOpen_Ioo
-      hcont.continuousOn continuousOn_const hu
-    · exact max_eq_right_iff.1 heq
-    · rw [EventuallyEq, ae_restrict_iff' measurableSet_Ioo]
-      filter_upwards [hcR] with u hu' huR using max_eq_right (hu' huR x)
+  have hall (u : ℝ) (hu : u ∈ Ioo (-R) R) (x : D) : ‖(A u - B) x‖ ≤ c * ‖ι x‖ :=
+    ContinuousOn.le_of_ae_le (μ := volume) isOpen_Ioo
+      ((hA.sub continuous_const).clm_apply continuous_const).norm.continuousOn continuousOn_const
+      ((ae_restrict_iff' measurableSet_Ioo).2 (hcR.mono fun _ hu huR ↦ hu huR x)) u hu
   refine ⟨c + c, Eventually.of_forall fun s hs x ↦ ?_⟩
   have hT := le_abs_self T
   have ht := neg_abs_le t
@@ -113,69 +102,6 @@ private theorem truncation_sub_bound (hA : Continuous A) {B : D →L[ℝ] H}
     _ ≤ (c + c) * ‖ι x‖ := by
         rw [add_mul]
         exact add_le_add (hall _ hmin x) (hall t ⟨by linarith, by linarith⟩ x)
-
-variable {AT : ℝ → Lp (D →L[ℝ] H) ∞ μ₀}
-
-/-- The truncations `s ↦ A (min s t)` of a continuous path depend continuously on `t` in `L∞`. -/
-private theorem continuous_truncation (hA : Continuous A)
-    (hAT : ∀ t, AT t =ᵐ[μ₀] fun s ↦ A (min s t)) : Continuous AT := by
-  rw [Metric.continuous_iff]
-  intro t₀ ε hε
-  obtain ⟨δ, hδ, hAδ⟩ := Metric.continuousAt_iff.1 hA.continuousAt (ε / 3) (by positivity)
-  refine ⟨δ, hδ, fun t ht ↦ ?_⟩
-  rw [dist_eq_norm]
-  refine (norm_sub_le_of_forall_norm_sub_le (hAT t) (hAT t₀) (C := 2 * ε / 3) (by positivity)
-    fun s ↦ ?_).trans_lt (by linarith)
-  by_cases hs : s ≤ t ∧ s ≤ t₀
-  · rw [min_eq_left hs.1, min_eq_left hs.2, sub_self, norm_zero]
-    positivity
-  -- Otherwise both truncation times lie between `t` and `t₀`, hence near `t₀`.
-  have hlow : min t t₀ ≤ s := by
-    by_contra h
-    exact hs ⟨(lt_of_not_ge h).le.trans (min_le_left _ _),
-      (lt_of_not_ge h).le.trans (min_le_right _ _)⟩
-  have hnear {u : ℝ} (hu : u ∈ uIcc t t₀) : dist (A u) (A t₀) < ε / 3 := by
-    refine hAδ ((Real.dist_eq _ _).trans_lt ?_)
-    rw [abs_sub_comm]
-    exact (abs_sub_right_of_mem_uIcc hu).trans_lt (by rwa [abs_sub_comm, ← Real.dist_eq])
-  have h₁ := hnear (u := min s t) ⟨le_min hlow inf_le_left, (min_le_right s t).trans le_sup_left⟩
-  have h₂ := hnear (u := min s t₀) ⟨le_min hlow inf_le_right,
-    (min_le_right s t₀).trans le_sup_right⟩
-  rw [← dist_eq_norm]
-  linarith [dist_triangle_right (A (min s t)) (A (min s t₀)) (A t₀)]
-
-/-- As `t → ∞`, the truncations `s ↦ A (min s t)` of a path with a limit at `∞` converge in `L∞`
-to the path itself. -/
-private theorem tendsto_truncation_atTop {B : D →L[ℝ] H} (htop : Tendsto A atTop (𝓝 B))
-    {AL : Lp (D →L[ℝ] H) ∞ μ₀} (hAL : AL =ᵐ[μ₀] A)
-    (hAT : ∀ t, AT t =ᵐ[μ₀] fun s ↦ A (min s t)) : Tendsto AT atTop (𝓝 AL) := by
-  rw [Metric.tendsto_atTop]
-  intro ε hε
-  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 htop (ε / 3) (by positivity)
-  refine ⟨N, fun t ht ↦ ?_⟩
-  rw [dist_eq_norm]
-  refine (norm_sub_le_of_forall_norm_sub_le (hAT t) hAL (C := 2 * ε / 3) (by positivity)
-    fun s ↦ ?_).trans_lt (by linarith)
-  rcases le_total s t with hs | hs
-  · rw [min_eq_left hs, sub_self, norm_zero]
-    positivity
-  · rw [min_eq_right hs, ← dist_eq_norm]
-    linarith [dist_triangle_right (A t) (A s) B, hN t ht, hN s (ht.trans hs)]
-
-/-- As `t → -∞`, the truncations `s ↦ A (min s t)` of a path with limit `B` at `-∞` converge in
-`L∞` to the constant `B`. -/
-private theorem tendsto_truncation_atBot {B : D →L[ℝ] H} (hbot : Tendsto A atBot (𝓝 B))
-    (hAT : ∀ t, AT t =ᵐ[μ₀] fun s ↦ A (min s t)) :
-    Tendsto AT atBot (𝓝 ((memLp_top_const (μ := μ₀) B).toLp _)) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  obtain ⟨N, hN⟩ := eventually_atBot.1 (Metric.tendsto_nhds.1 hbot (ε / 2) (by positivity))
-  refine eventually_atBot.2 ⟨N, fun t ht ↦ ?_⟩
-  rw [dist_eq_norm]
-  refine (norm_sub_le_of_forall_norm_sub_le (hAT t) (memLp_top_const B).coeFn_toLp
-    (C := ε / 2) (by positivity) fun s ↦ ?_).trans_lt (by linarith)
-  rw [← dist_eq_norm]
-  exact (hN _ ((min_le_right s t).trans ht)).le
 
 /-! ### The index -/
 
@@ -215,10 +141,10 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible
         simp [min_eq_right hs]))
       (truncation_sub_bound hA hc t)
   have hcont := (continuous_familyDomainTrajectoryOperator (p := 2) ι).comp
-    (continuous_truncation hA hAT)
+    (Lp.continuous_of_forall_ae_eq_apply_min hA hAT)
   -- Far to the left the truncation is close to `Bbot`, so its operator is invertible.
   have hM : 0 < max ‖Bbot.inverse‖ 1 := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
-  obtain ⟨t₁, ht₁⟩ := ((tendsto_truncation_atBot hbot hAT).eventually
+  obtain ⟨t₁, ht₁⟩ := ((Lp.tendsto_atBot_of_forall_ae_eq_apply_min hbot hAT).eventually
     (Metric.ball_mem_nhds _ (inv_pos.2 hM))).exists
   have hinv₁ := isInvertible_familyDomainTrajectoryOperator_of_mul_norm_sub_lt hSymmbot hBbot
     ((lt_inv_mul_iff₀ hM).1 (by rw [mul_one, ← dist_eq_norm]; exact Metric.mem_ball.1 ht₁))
@@ -226,7 +152,7 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible
   have hFA := isFredholm_familyDomainTrajectoryOperator hι hSymmbot hBbot hSymmtop hBtop hAL hbot
     htop hc
   obtain ⟨t₂, ht₂⟩ := (((continuous_familyDomainTrajectoryOperator (p := 2) ι).tendsto AL).comp
-    (tendsto_truncation_atTop htop hAL hAT)).eventually
+    (Lp.tendsto_atTop_of_forall_ae_eq_apply_min htop hAL hAT)).eventually
       hFA.eventually_isFredholm_and_index_eq |>.exists
   exact ht₂.2.symm.trans ((hcont.index_eq_of_preconnectedSpace hF t₂ t₁).trans
     (ContinuousLinearMap.index_eq_zero_of_bijective _ hinv₁.bijective))
