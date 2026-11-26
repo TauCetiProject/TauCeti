@@ -46,9 +46,10 @@ On `X = (ℝ / pℤ) × Y_φ`, with the cup pairing on `[ℝ / pℤ] × [Y_φ]`,
 modulo torsion (`TauCeti.MappingTorus.exists_isOfFinAddOrder_sub_smul_add_smul_addCircleProd`),
 so the real extension of the pairing has both indices of inertia equal to one
 (`TauCeti.MappingTorus.sigPos_eq_one_and_sigNeg_eq_one_singularCupPairing_addCircleProd`). For
-`p = 1` and the symplectic suspension `X = (ℝ / ℤ)_s × Y_φ` of an area-preserving `φ`, this is
-`b₂⁺(X) = b₂⁻(X) = 1`; together with the evenness of the pairing
-(`TopCat.even_singularCupPairing_self_addCircle_singularHomologyCross`), `X` has no class of
+`p = 1` and the symplectic suspension `X = (ℝ / ℤ)_s × Y_φ` of an area-preserving `φ`, with
+`ℝ ⊗[ℤ] H²(X; ℤ) = H²(X; ℝ)` and `[ℝ / ℤ] × [Y_φ]` the fundamental class of `X` (neither is proved
+here), this says `b₂⁺(X) = b₂⁻(X) = 1`. The evenness of the pairing
+(`TopCat.even_singularCupPairing_self_addCircle_singularHomologyCross`) excludes classes of
 square `-1`.
 
 ## Main results
