@@ -39,8 +39,8 @@ This file computes it in the two ways in which Barraud, Damian, Humilière and O
   `TauCeti.IsFramedTube.singularHomologyπ_singularCap_eq`, which needs no closedness of the core).
   So when capping with `[M]` is a bijection `D_M`, as for the fundamental class of a closed
   oriented manifold (Poincaré duality,
-  `TauCeti.HomologicalOrientation.bijective_singularCap_fundamentalClass`, stated in its own
-  coefficient convention), the shriek map is
+  `TauCeti.HomologicalOrientation.bijective_singularCapAddHom_fundamentalClass`, stated in its
+  own coefficient convention), the shriek map is
   `i_! = (-1)^(r j) D_S ∘ f^* ∘ D_M⁻¹` with `D_S` the cap product with `[S] = i_![M]`
   (`TauCeti.IsFramedTube.shriek_eq_singularCap_symm`).
 * **Through the Thom space.** The Thom collapse `c : M → OnePoint (S × V)` onto the Thom space of
@@ -214,8 +214,8 @@ theorem shriek_singularCap (hr₀ : r ≠ 0) {j q m n : ℕ} (hn : r + (j + q) =
 /-- **The shriek map through Poincaré duality.** Let `r = dim V ≠ 0` and let `z ∈ H_n(M; k ⊗ L)`
 be a class such that capping with it is a bijection `D : Hʲ(M; k) → H_m(M; k ⊗ L)`, as capping
 with the fundamental class of a closed oriented manifold is (Poincaré duality,
-`TauCeti.HomologicalOrientation.bijective_singularCap_fundamentalClass`, in its own coefficient
-convention). Then the shriek map is
+`TauCeti.HomologicalOrientation.bijective_singularCapAddHom_fundamentalClass`, in its own
+coefficient convention). Then the shriek map is
 
 `i_!(y) = (-1)^(r j) i_!(z) ⌢ f^* (D⁻¹ y)`.
 
