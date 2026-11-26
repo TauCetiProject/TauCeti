@@ -573,9 +573,7 @@ variable [ConnectedSpace M]
 
 /-- **Twisted top classes are multiples of the twisted fundamental class.** On a compact connected
 manifold, orientable or not, every class of `Hₙ₊₁(M; o(TM))` is an integer multiple of `[M]_or`.
-If `M` is oriented, `o(TM)` is trivial and `[M]_or` is the fundamental class of `M`, which
-generates `Hₙ₊₁(M; ℤ)`. Otherwise the orientation cover is connected, its fundamental class `[M']`
-generates its top homology, and a twisted class is determined by its reading on the cover. -/
+-/
 theorem exists_eq_zsmul_twistedFundamentalClass
     (g : twistedHomology ((isCoveringMap_projHom E M).signLocalSystem ℤ _
       VectorBundleOrientationCover.proj_comp_deck) (n + 1)) :

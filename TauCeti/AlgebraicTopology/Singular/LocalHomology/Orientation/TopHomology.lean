@@ -56,9 +56,7 @@ variable {M E : Type} [TopologicalSpace M] [T2Space M]
   [CompactSpace M] [ConnectedSpace M] {n : ℕ}
 
 /-- **A nonzero integral top class orients a compact connected manifold.** If `Hₙ(M; ℤ)` contains
-a nonzero class, then transport along every loop fixes the local orientations, since the class
-maps onto the local homology at a point and its image there is invariant under transport. So the
-orientation character is trivial and `M` carries a homological orientation. -/
+a nonzero class, then the compact connected manifold `M` carries a homological orientation. -/
 theorem nonempty_homologicalOrientation_of_ne_zero (hn : finrank ℝ E = n)
     {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
       ModuleCat.{0} ℤ)} (hμ : μ ≠ 0) :
