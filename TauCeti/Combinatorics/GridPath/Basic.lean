@@ -135,6 +135,7 @@ theorem squares_right (p : GridPath a₀ b₀ a b) : p.right.squares = p.squares
   simp [squares]
 
 /-- The path down the first column from `(0, m)` to itself has no steps. -/
+@[simp]
 theorem column_self : column (le_refl m) = nil := by
   rw [column, Nat.decreasingInduction_self]
 
@@ -182,6 +183,13 @@ theorem bounds_of_mem_squares {p : GridPath a₀ b₀ a b} {s : ℕ × ℕ} (hs 
 @[simp]
 theorem squares_row (m a : ℕ) : (row m a).squares = ∅ := by
   induction a <;> simp [*]
+
+/-- The path down the first column has no square to the left of its steps down. -/
+@[simp]
+theorem squares_column (hb : b ≤ m) : (column hb).squares = ∅ := by
+  induction hb using Nat.decreasingInduction with
+  | self => simp
+  | of_succ b hb ih => simp [column_of_lt hb, ih]
 
 /-- Let a path follow `q` to `(i, j + 1)`, step down to `(i, j)`, step right to `(i + 1, j)` and
 follow `r`. Then the unit square with lower left corner `(i, j)` is not among the `squares` of the

@@ -23,9 +23,9 @@ off the diagonal it exchanges a step down and a step right at a corner of one ha
 diagonal it replaces the last step down of both halves by a step right, moving the diagonal node
 from `(j, j)` to `(j + 1, j + 1)`. The squares between the first path and a path
 (`TauCeti.TwoGridPath.squares`) gain exactly the square `(i, j)` under a turn at `(i, j)`
-(`TauCeti.TwoGridPath.Turn.squares_eq`). Every path but the last has a turn
-(`TauCeti.TwoGridPath.exists_turn`), so a property that holds at the last path and passes
-backwards along turns holds at the first path, collecting all `m²` squares
+(`TauCeti.TwoGridPath.Turn.notMem_squares`, `TauCeti.TwoGridPath.Turn.squares_eq`). Every path but
+the last has a turn (`TauCeti.TwoGridPath.exists_turn`), so a property that holds at the last path
+and passes backwards along turns holds at the first path, collecting all `m²` squares
 (`TauCeti.TwoGridPath.turn_induction`).
 
 In the application, periods of automorphic forms are moved, one square at a time, from the first
@@ -35,8 +35,9 @@ path (the chain of theta lifts) to the last, where all spaces are definite.
 
 * `TauCeti.TwoGridPath`, `TauCeti.TwoGridPath.first`, `TauCeti.TwoGridPath.last`.
 * `TauCeti.TwoGridPath.Turn`: turns.
-* `TauCeti.TwoGridPath.squares`, `TauCeti.TwoGridPath.Turn.squares_eq`: the squares between the
-  first path and a path, and their change under a turn.
+* `TauCeti.TwoGridPath.squares`, `TauCeti.TwoGridPath.Turn.notMem_squares`,
+  `TauCeti.TwoGridPath.Turn.squares_eq`: the squares between the first path and a path, and their
+  change under a turn.
 * `TauCeti.TwoGridPath.exists_turn`: every path but the last can be turned.
 * `TauCeti.TwoGridPath.turn_induction`: induction backwards along turns.
 
@@ -144,17 +145,17 @@ theorem squares_subset (Γ : TwoGridPath m) : Γ.squares ⊆ range m ×ˢ range 
 /-- No unit square lies between the first path, through `(0, 0)`, and itself. -/
 @[simp]
 theorem squares_first : (first m).squares = ∅ := by
-  grind [squares, first]
+  simp [squares]
 
 /-- For the last path `last m`, the one through `(m, m)`, the set `(last m).squares` is exactly the
 `(i, j)` with `i, j < m`, that is `range m ×ˢ range m`. -/
 @[simp]
 theorem squares_last : (last m).squares = range m ×ˢ range m := by
-  simp [squares, last]
+  simp [squares]
 
-/-- Let `Γ` and `Γ'` be paths in `TwoGridPath m` with `Γ.Turn s Γ'`. Then `s ∉ Γ.squares`, and
-`Γ'.squares` is `Γ.squares` with `s` inserted. -/
-theorem Turn.squares_eq (h_turn : Γ.Turn s Γ') :
+/-- Both halves of `Turn.notMem_squares` and `Turn.squares_eq`, proved together by cases on the
+turn. -/
+private theorem Turn.notMem_squares_and_squares_eq (h_turn : Γ.Turn s Γ') :
     s ∉ Γ.squares ∧ Γ'.squares = insert s Γ.squares := by
   cases h_turn with
   | @inner _ z a b q r hΓ =>
@@ -180,10 +181,19 @@ theorem Turn.squares_eq (h_turn : Γ.Turn s Γ') :
       insert_union]
     ac_rfl
 
+/-- Let `Γ` and `Γ'` be paths in `TwoGridPath m` with `Γ.Turn s Γ'`. Then the square `s` is not
+among `Γ.squares`. -/
+theorem Turn.notMem_squares (h_turn : Γ.Turn s Γ') : s ∉ Γ.squares :=
+  h_turn.notMem_squares_and_squares_eq.1
+
+/-- Let `Γ` and `Γ'` be paths in `TwoGridPath m` with `Γ.Turn s Γ'`. Then `Γ'.squares` is
+`Γ.squares` with `s` inserted. -/
+theorem Turn.squares_eq (h_turn : Γ.Turn s Γ') : Γ'.squares = insert s Γ.squares :=
+  h_turn.notMem_squares_and_squares_eq.2
+
 /-- If a path from `(m, 0)` to `(0, m)` has a turn at the node `s = (i, j)`, then `i, j < m`. -/
-theorem Turn.mem_product (h_turn : Γ.Turn s Γ') : s ∈ range m ×ˢ range m := by
-  obtain ⟨-, h_eq⟩ := h_turn.squares_eq
-  exact Γ'.squares_subset (by simp [h_eq])
+theorem Turn.mem_product (h_turn : Γ.Turn s Γ') : s ∈ range m ×ˢ range m :=
+  Γ'.squares_subset (by simp [h_turn.squares_eq])
 
 /-- A turn at a node `(i, j)` off the diagonal is an inner turn: in some half `z`, where the node
 appears as `(i, j)` for `z = false` and as `(j, i)` for `z = true`, the half splits as a path `q`
@@ -287,7 +297,8 @@ theorem turn_induction {motive : TwoGridPath m → Finset (ℕ × ℕ) → Prop}
     obtain rfl | h_ne := eq_or_ne Γ (last m)
     · simpa using h_last
     obtain ⟨s, Γ', hΓΓ' : Γ.Turn s Γ'⟩ := exists_turn h_ne
-    obtain ⟨hs : s ∉ Γ.squares, h_eq : Γ'.squares = insert s Γ.squares⟩ := hΓΓ'.squares_eq
+    have hs : s ∉ Γ.squares := hΓΓ'.notMem_squares
+    have h_eq : Γ'.squares = insert s Γ.squares := hΓΓ'.squares_eq
     have h_new : s ∉ range m ×ˢ range m \ Γ'.squares := by simp [h_eq]
     have h_above : range m ×ˢ range m \ Γ.squares =
         insert s (range m ×ˢ range m \ Γ'.squares) := by
