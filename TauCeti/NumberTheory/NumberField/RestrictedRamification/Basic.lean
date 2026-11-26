@@ -130,10 +130,11 @@ theorem maxUnramifiedOutside_mono {S S' : Set (HeightOneSpectrum (𝓞 K))} (h :
   maxUnramifiedOutside_le fun _ _ hL ↦ le_maxUnramifiedOutside fun v hv ↦ hL v (mt (@h v) hv)
 
 omit [NumberField K] in
-/-- **`K_S` for the set of all finite places** is the whole of `Ω`, for `Ω / K` algebraic: every
-element generates a finite subextension, and the condition outside `S` is empty. -/
+/-- **`K_S` for the set of all finite places** is the whole of `Ω`, for `Ω / K` algebraic. -/
+@[simp]
 theorem maxUnramifiedOutside_univ [Algebra.IsAlgebraic K Ω] :
     maxUnramifiedOutside K Ω Set.univ = ⊤ := by
+  -- every element generates a finite subextension, and the condition outside `univ` is empty
   refine eq_top_iff.2 fun x _ ↦ ?_
   have := adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral (R := K) x)
   exact le_maxUnramifiedOutside (L := K⟮x⟯) (fun v hv ↦ absurd (Set.mem_univ v) hv)
