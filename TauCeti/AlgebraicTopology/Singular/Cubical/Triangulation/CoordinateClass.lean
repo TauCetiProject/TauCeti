@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Triangulation.Compariso
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cube.Generator
 public import TauCeti.AlgebraicTopology.Disk.SupBall
 
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.Algebra.Ring.Parity
 
 /-!
@@ -150,17 +151,11 @@ theorem singularHomologyCubeBoundaryPairIso_inv_apply_one (m : ℕ) :
 /-- **The coordinate cube class generates**: `a ↦ a • [Iᵐ⁺¹, ∂Iᵐ⁺¹]` is a bijection from `k` onto
 `Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹; k)`. -/
 theorem bijective_smul_coordinateCubeClass (m : ℕ) :
-    Function.Bijective fun a : k ↦ a • coordinateCubeClass k m := by
-  set e := singularHomologyCubeBoundaryPairIso (ModuleCat.of k k) (m + 1)
-  set ε : k := (-1) ^ ((m + 1) * (m + 2) / 2)
-  have hε : ε * ε = 1 := neg_one_pow_mul_neg_one_pow _
-  have he : ∀ a : k, e.hom (a • coordinateCubeClass k m) = a * ε := fun a ↦ by
-    rw [map_smul, singularHomologyCubeBoundaryPairIso_hom_coordinateCubeClass, smul_eq_mul]
-  refine ⟨fun a b hab ↦ ?_, fun z ↦ ⟨e.hom z * ε, ?_⟩⟩
-  · have h := congrArg (· * ε) ((he a).symm.trans ((congrArg e.hom hab).trans (he b)))
-    simpa only [mul_assoc, hε, mul_one] using h
-  · apply (ModuleCat.mono_iff_injective e.hom).1 inferInstance
-    rw [he, mul_assoc, hε, mul_one]
+    Function.Bijective fun a : k ↦ a • coordinateCubeClass k m :=
+  (singularHomologyCubeBoundaryPairIso (ModuleCat.of k k) (m + 1)).toLinearEquiv
+    |>.bijective_smul_of_isUnit_apply <| by
+      rw [Iso.toLinearEquiv_apply, singularHomologyCubeBoundaryPairIso_hom_coordinateCubeClass]
+      exact isUnit_neg_one.pow _
 
 /-- In dimension one the coordinate cube class is the class of the singular simplex `t ↦ t`, whose
 boundary is `[1] - [0]` (`TauCeti.cubeRelClass_singularHomologyδ`). -/
@@ -224,9 +219,9 @@ theorem singularHomologyDiskBoundaryPairIso_hom_coordinateDiskClass (n : ℕ) :
   | zero =>
     have h : coordinateDiskClass k 0 =
         (singularHomologyDiskBoundaryPairIso (ModuleCat.of k k) 0).inv (1 : k) := by
-      rw [singularHomologyDiskBoundaryPairIso_zero_inv]
-      -- Both sides apply `singularHomology₀Section` and then the quotient map to `1`.
-      rfl
+      rw [singularHomologyDiskBoundaryPairIso_zero_inv, coordinateDiskClass_zero]
+      -- The composite is type-correct only up to unfolding the relative homology of `D⁰`.
+      exact (ModuleCat.comp_apply _ _ _).symm
     rw [h, Iso.inv_hom_id_apply]
     norm_num
   | succ m =>
@@ -248,16 +243,11 @@ theorem singularHomologyDiskBoundaryPairIso_inv_apply_one (n : ℕ) :
 /-- **The coordinate disk class generates**: `a ↦ a • [Dⁿ, Sⁿ⁻¹]` is a bijection from `k` onto
 `Hₙ(Dⁿ, Sⁿ⁻¹; k)`. -/
 theorem bijective_smul_coordinateDiskClass (n : ℕ) :
-    Function.Bijective fun a : k ↦ a • coordinateDiskClass k n := by
-  let e := (singularHomologyDiskBoundaryPairIso (ModuleCat.of k k) n).toLinearEquiv
-  have h : (fun a : k ↦ a • coordinateDiskClass k n) =
-      e.symm ∘ fun a : k ↦ a * (-1) ^ (n * (n + 1) / 2) := by
-    ext a
-    apply e.injective
-    rw [Function.comp_apply, LinearEquiv.apply_symm_apply, map_smul, smul_eq_mul]
-    exact congrArg (a * ·) (singularHomologyDiskBoundaryPairIso_hom_coordinateDiskClass k n)
-  rw [h]
-  exact e.symm.bijective.comp (IsUnit.isUnit_iff_mulRight_bijective.1 (isUnit_neg_one.pow _))
+    Function.Bijective fun a : k ↦ a • coordinateDiskClass k n :=
+  (singularHomologyDiskBoundaryPairIso (ModuleCat.of k k) n).toLinearEquiv
+    |>.bijective_smul_of_isUnit_apply <| by
+      rw [Iso.toLinearEquiv_apply, singularHomologyDiskBoundaryPairIso_hom_coordinateDiskClass]
+      exact isUnit_neg_one.pow _
 
 /-- The **coordinate sup-ball class** `[Bⁿ_∞, ∂Bⁿ_∞]` in the relative homology of the closed unit
 ball of the sup norm on `Fin n → ℝ` modulo its unit sphere: the image of the coordinate disk class

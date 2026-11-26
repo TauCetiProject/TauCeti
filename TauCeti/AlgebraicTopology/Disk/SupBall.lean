@@ -50,7 +50,7 @@ abbrev supBallPair : TopPair.{u} :=
 
 /-- The affine homeomorphism `TauCeti.cubeHomeomorphClosedBall` carries the boundary of the cube
 onto the unit sphere of the sup norm, read on the lifted ambient spaces of the two pairs. -/
-lemma mem_cubeBoundaryPair_iff_mem_supBallPair (z : ULift.{u} (Fin n → I)) :
+private lemma mem_cubeBoundaryPair_iff_mem_supBallPair (z : ULift.{u} (Fin n → I)) :
     z ∈ ULift.down ⁻¹' Cube.boundary (Fin n) ↔
       Homeomorph.ulift.trans ((cubeHomeomorphClosedBall (Fin n)).trans Homeomorph.ulift.symm) z ∈
         {z : ULift.{u} (closedBall (0 : Fin n → ℝ) 1) | ‖(z.down : Fin n → ℝ)‖ = 1} :=
@@ -71,10 +71,10 @@ variable {n}
 @[simp]
 lemma cubeBoundaryPairIsoSupBall_hom_fst_apply_down (z : (cubeBoundaryPair.{u} n).fst) :
     (TopPair.Hom.fst (cubeBoundaryPairIsoSupBall.{u} n).hom z).down =
-      cubeHomeomorphClosedBall (Fin n) z.down :=
-  (congrArg (fun f : cubeBoundaryPair.{u} n ⟶ supBallPair.{u} n ↦ (TopPair.Hom.fst f z).down)
-    (TopPair.ofSubsetIso_hom _ _)).trans
-      (congrArg ULift.down (TopPair.ofSubsetMap_fst_apply _ _ z))
+      cubeHomeomorphClosedBall (Fin n) z.down := by
+  rw [cubeBoundaryPairIsoSupBall, TopPair.ofSubsetIso_hom]
+  -- The ambient map of `TopPair.ofSubsetMap` is the given map, read through the universe lifts.
+  exact congrArg ULift.down (TopPair.ofSubsetMap_fst_apply _ _ z)
 
 /-- On ambient spaces, the inverse of `TauCeti.cubeBoundaryPairIsoSupBall` is the inverse of
 `TauCeti.cubeHomeomorphClosedBall`. -/
@@ -93,7 +93,8 @@ variable (n)
 /-- The radial homeomorphism `TauCeti.diskHomeomorphClosedBall` of the Euclidean disk onto the
 closed unit ball of the sup norm, as an isomorphism of pairs `(Dⁿ, Sⁿ⁻¹) ≅ (Bⁿ_∞, ∂Bⁿ_∞)`. It is
 `TauCeti.diskBoundaryPairIsoCube` followed by `TauCeti.cubeBoundaryPairIsoSupBall`, and is computed
-on points by `TauCeti.diskBoundaryPairIsoSupBall_hom_fst_apply_down`. -/
+on points by `TauCeti.diskBoundaryPairIsoSupBall_hom_fst_apply_down` and
+`TauCeti.diskBoundaryPairIsoSupBall_inv_fst_apply`. -/
 def diskBoundaryPairIsoSupBall : diskBoundaryPair.{u} n ≅ supBallPair.{u} n :=
   diskBoundaryPairIsoCube n ≪≫ cubeBoundaryPairIsoSupBall n
 
@@ -106,17 +107,29 @@ lemma diskBoundaryPairIsoSupBall_hom :
 
 variable {n}
 
+-- The two point lemmas below are not `@[simp]`: simp rewrites the source object
+-- `(diskBoundaryPair n).fst` of their left-hand sides to `TopCat.disk n` by
+-- `TauCeti.diskBoundaryPair_fst`, so they are not in simp-normal form.
+
 /-- On ambient spaces, `TauCeti.diskBoundaryPairIsoSupBall` is the radial homeomorphism
 `TauCeti.diskHomeomorphClosedBall`. -/
-lemma diskBoundaryPairIsoSupBall_hom_fst_apply_down (z : TopCat.disk.{u} n) :
+lemma diskBoundaryPairIsoSupBall_hom_fst_apply_down (z : (diskBoundaryPair.{u} n).fst) :
     (TopPair.Hom.fst (diskBoundaryPairIsoSupBall.{u} n).hom z).down =
       diskHomeomorphClosedBall n z := by
   rw [diskBoundaryPairIsoSupBall_hom, diskBoundaryPairIsoCube_hom]
-  -- The ambient map of a composite of maps of pairs applies the two factors in turn.
-  exact (cubeBoundaryPairIsoSupBall_hom_fst_apply_down
-    (TopPair.Hom.fst (diskBoundaryPairToCube.{u} n) z)).trans
-      ((congrArg (cubeHomeomorphClosedBall (Fin n))
-        ((diskBoundaryPairToCube_fst_apply_down z).trans (diskHomeomorphCube_apply z))).trans
-          (Homeomorph.apply_symm_apply _ _))
+  simp only [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply,
+    cubeBoundaryPairIsoSupBall_hom_fst_apply_down, diskBoundaryPairToCube_fst_apply_down,
+    diskHomeomorphCube_apply z, Homeomorph.apply_symm_apply]
+
+/-- On ambient spaces, the inverse of `TauCeti.diskBoundaryPairIsoSupBall` is the inverse of the
+radial homeomorphism `TauCeti.diskHomeomorphClosedBall`. -/
+lemma diskBoundaryPairIsoSupBall_inv_fst_apply (z : (supBallPair.{u} n).fst) :
+    (TopPair.Hom.fst (diskBoundaryPairIsoSupBall.{u} n).inv z : TopCat.disk.{u} n) =
+      (diskHomeomorphClosedBall n).symm z.down := by
+  have h := congrArg (fun f : supBallPair.{u} n ⟶ supBallPair.{u} n ↦ (TopPair.Hom.fst f z).down)
+    (diskBoundaryPairIsoSupBall.{u} n).inv_hom_id
+  simp only [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply,
+    diskBoundaryPairIsoSupBall_hom_fst_apply_down, TopPair.Hom.fst_id] at h
+  exact ((diskHomeomorphClosedBall n).symm_apply_eq.2 h.symm).symm
 
 end TauCeti
