@@ -69,17 +69,6 @@ attribute [local instance] Complex.finrank_real_complex_fact
 
 variable {k : ℕ∞} {ℓ : ℝ} [Fact (0 < ℓ)] (T : ConvexTable k ℓ)
 
-/-- The unit tangent `τ(s)` of a table, as a point of the unit circle. -/
-def tangent (s : ℝ) : Circle :=
-  ⟨deriv T s, mem_sphere_zero_iff_norm.2 (T.norm_deriv s)⟩
-
-@[simp]
-theorem coe_tangent (s : ℝ) : (T.tangent s : ℂ) = deriv T s :=
-  (rfl)
-
-theorem continuous_tangent : Continuous T.tangent :=
-  T.continuous_deriv.subtype_mk _
-
 /-- The **oriented line** `Λ(s, δ) = (exp(iδ) τ(s), exp(iδ) τ(s) × γ(s))` of the state `(s, δ)`:
 the line through `γ(s)` with direction `exp(iδ) τ(s)`. -/
 def orientedLine (s δ : ℝ) : Circle × ℝ :=
@@ -107,8 +96,7 @@ theorem continuous_orientedLine : Continuous fun x : ℝ × ℝ => T.orientedLin
     (T.continuous.comp continuous_fst)
 
 theorem periodic_orientedLine (δ : ℝ) : Periodic (fun s => T.orientedLine s δ) ℓ := fun s => by
-  have h1 : T.tangent (s + ℓ) = T.tangent s := Circle.ext (by simp [T.periodic_deriv s])
-  simp only [orientedLine_def, h1, T.periodic s]
+  simp only [orientedLine_def, T.periodic_tangent s, T.periodic s]
 
 /-- The table point `γ(s)` lies on the line `Λ(s, δ)`. -/
 theorem apply_mem_orientedLineSet (s δ : ℝ) : T s ∈ orientedLineSet (T.orientedLine s δ) :=
@@ -297,20 +285,26 @@ private theorem continuous_restrictedLine : Continuous T.restrictedLine :=
 private theorem isClosedMap_restrictedLine : IsClosedMap T.restrictedLine :=
   T.continuous_closedLine.isClosedMap.restrictPreimage _
 
+private theorem coe_restrictedLine_mk (s δ : ℝ) (hδ : δ ∈ Icc 0 Real.pi)
+    (h : ((s : AddCircle ℓ), (⟨δ, hδ⟩ : Icc 0 Real.pi)) ∈ T.closedLine ⁻¹' T.interiorLines) :
+    (T.restrictedLine ⟨((s : AddCircle ℓ), ⟨δ, hδ⟩), h⟩ : Circle × ℝ) = T.orientedLine s δ := by
+  simp only [restrictedLine, restrictPreimage_mk, closedLine, addCircleOrientedLine_mk]
+
 private theorem bijective_restrictedLine : Bijective T.restrictedLine := by
   constructor
   · rintro ⟨⟨a, ⟨δ, hδ⟩⟩, hx⟩ ⟨⟨a', ⟨δ', hδ'⟩⟩, hx'⟩ h
     obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective a
     obtain ⟨s', rfl⟩ := QuotientAddGroup.mk_surjective a'
     have hIoo := (T.mem_preimage_closedLine_iff _).1 hx
-    have h' : T.orientedLine s δ = T.orientedLine s' δ' := congrArg Subtype.val h
+    have h' : T.orientedLine s δ = T.orientedLine s' δ' := by
+      rw [← T.coe_restrictedLine_mk s δ hδ hx, ← T.coe_restrictedLine_mk s' δ' hδ' hx', h]
     obtain ⟨hss, hδδ⟩ := (T.orientedLine_eq_orientedLine_iff hIoo hδ').1 h'
     subst hδδ
     exact Subtype.ext (Prod.ext hss rfl)
   · rintro ⟨p, hp⟩
     obtain ⟨s, δ, hδ, rfl⟩ := T.exists_orientedLine_eq hp
-    exact ⟨⟨((s : AddCircle ℓ), ⟨δ, Ioo_subset_Icc_self hδ⟩),
-      (T.mem_preimage_closedLine_iff _).2 hδ⟩, rfl⟩
+    have hx := (T.mem_preimage_closedLine_iff ((s : AddCircle ℓ), ⟨δ, Ioo_subset_Icc_self hδ⟩)).2 hδ
+    exact ⟨⟨_, hx⟩, Subtype.ext (T.coe_restrictedLine_mk s δ _ hx)⟩
 
 /-- The phase cylinder as the preimage of the lines meeting the interior. -/
 private def phaseCylinderEquiv :
