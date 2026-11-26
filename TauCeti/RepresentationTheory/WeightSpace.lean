@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RepresentationTheory.Invariants
+import Mathlib.Algebra.Module.Submodule.EqLocus
 import TauCeti.LinearAlgebra.Trace.Exact
 
 /-!
@@ -44,12 +44,13 @@ open Module
 
 namespace Representation
 
-variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
+variable {k G V : Type*} [CommSemiring k] [Monoid G] [AddCommMonoid V] [Module k V]
 
 /-- The vectors on which the representation `ρ` acts through the character `c`. -/
 def weightSpace (ρ : Representation k G V) (c : G →* k) : Submodule k V :=
-  ⨅ g, Module.End.eigenspace (ρ g) (c g)
+  ⨅ g, (ρ g).eqLocus (c g • LinearMap.id)
 
+/-- Membership in a weight space means every monoid element acts by its character value. -/
 @[simp]
 theorem mem_weightSpace {ρ : Representation k G V} {c : G →* k} {v : V} :
     v ∈ ρ.weightSpace c ↔ ∀ g, ρ g v = c g • v := by
@@ -58,7 +59,8 @@ theorem mem_weightSpace {ρ : Representation k G V} {c : G →* k} {v : V} :
 /-- For a group, the subspace on which `ρ` acts through the trivial character is the subspace of
 invariants. -/
 @[simp]
-theorem weightSpace_one {G : Type*} [Group G] (ρ : Representation k G V) :
+theorem weightSpace_one {k G V : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
+    (ρ : Representation k G V) :
     ρ.weightSpace 1 = ρ.invariants := by
   ext
   simp
@@ -73,7 +75,8 @@ theorem weightSpace_le_comap (ρ : Representation k G V) (c : G →* k) (h : G) 
   rw [← mul_apply_eq_comp, ← map_mul, hv, hv, map_mul, mul_smul]
 
 /-- The trace of `ρ g` splits along the vectors on which `G` acts through `c`. -/
-theorem trace_eq_finrank_weightSpace_mul_add {F : Type*} [Field F] [Module F V]
+theorem trace_eq_finrank_weightSpace_mul_add {F V : Type*} [Field F] [AddCommGroup V]
+    [Module F V]
     [FiniteDimensional F V] (ρ : Representation F G V) (c : G →* F) (g : G) :
     LinearMap.trace F V (ρ g) = finrank F (ρ.weightSpace c) * c g +
       LinearMap.trace F _ (ρ.quotient _ (weightSpace_le_comap ρ c) g) := by
