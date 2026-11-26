@@ -53,7 +53,7 @@ public section
 
 open CategoryTheory Simplicial Convexity
 
-universe u
+universe v u
 
 namespace TauCeti.TopCat
 
@@ -364,11 +364,20 @@ lemma toTopObjMk_eq_toTopPoint (x : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) :
     toTop_map_toTopPoint, yonedaEquiv_symm_app_objEquiv_symm]
   simp
 
+/-- A map `f : |X| → |Y|` sending `toTopObjMk x (StdSimplex.single 0)` to `toTopObjMk y w'` sends
+`toTopPoint x` to `toTopPoint y`. -/
+lemma toTopPoint_eq_of_toTopObjMk {X : SSet.{u}} {Y : SSet.{v}} {f : |X| → |Y|}
+    {x : X _⦋0⦌} {y : Y _⦋0⦌} {w' : StdSimplex ℝ (Fin 1)}
+    (h : f (toTopObjMk x (StdSimplex.single 0)) = toTopObjMk y w') :
+    f (toTopPoint x) = toTopPoint y := by
+  rw [← toTopObjMk_eq_toTopPoint x (StdSimplex.single 0), h, toTopObjMk_eq_toTopPoint]
+
 /-- A vertex of an `n`-simplex `x` in `|X|` is the point of the corresponding `0`-simplex of `X`. -/
 lemma toTopObjMk_single {n : ℕ} (x : X _⦋n⦌) (i : Fin (n + 1)) :
     toTopObjMk x (StdSimplex.single i) = toTopPoint (X.map (⦋0⦌.const ⦋n⦌ i).op x) := by
   rw [← toTopObjMk_eq_toTopPoint _ (StdSimplex.single 0), toTopObjMk_map, StdSimplex.map_single]
-  rfl
+  exact congrArg (toTopObjMk x ∘ StdSimplex.single)
+    (SimplexCategory.const_apply ⦋0⦌ ⦋n⦌ i 0).symm
 
 /-- Every point of `|X|` lies in the image of `SSet.toTopObjMk` for some simplex of `X`. -/
 lemma exists_toTopObjMk (z : |X|) :
@@ -428,6 +437,17 @@ noncomputable def descToTop {T : TopCat.{u}}
   rw [descToTop, apply_toTopObjMk, Equiv.apply_symm_apply]
   exact congrFun (congrArg DFunLike.coe
     (Equiv.apply_symm_apply _ (ContinuousMap.mk (f n x) (hf_cont n x)))) w
+
+/-- Evaluating `descToTop` at a vertex `toTopPoint x` agrees with
+`f 0 x (StdSimplex.single 0)`. -/
+@[simp] lemma descToTop_toTopPoint {T : TopCat.{u}}
+    (f : ∀ n : ℕ, X _⦋n⦌ → StdSimplex ℝ (Fin (n + 1)) → T)
+    (hf_cont : ∀ n (x : X _⦋n⦌), Continuous (f n x))
+    (hf : ∀ (m n : ℕ) (θ : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (m + 1))),
+      f m (X.map θ.op x) w = f n x (StdSimplex.map θ w))
+    (x : X _⦋0⦌) :
+    descToTop f hf_cont hf (toTopPoint x) = f 0 x (StdSimplex.single 0) := by
+  rw [← toTopObjMk_eq_toTopPoint x (StdSimplex.single 0), descToTop_toTopObjMk]
 
 open Opposite in
 /-- The singular simplex of the unit interval given by an `n`-simplex `α : ⦋n⦌ ⟶ ⦋1⦌` of `Δ[1]`

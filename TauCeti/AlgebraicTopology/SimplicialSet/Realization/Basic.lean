@@ -80,8 +80,7 @@ theorem toTopPoint_injective (X : SSet.{u}) : Function.Injective (toTopPoint (X 
       simp_rw [← Functor.map_comp_apply, ← op_comp, hc, StdSimplex.sum_weights_map_mul]
   have eval (x : X _⦋0⦌) : (F (toTopPoint x)).down = g x := by
     have hc₀ : ⦋0⦌.const ⦋0⦌ 0 = 𝟙 ⦋0⦌ := by ext k; fin_cases k; rfl
-    rw [← toTopObjMk_eq_toTopPoint x (StdSimplex.single 0)]
-    exact (congrArg ULift.down (descToTop_toTopObjMk _ _ _ x _)).trans (by simp [hc₀])
+    exact (congrArg ULift.down (descToTop_toTopPoint _ _ _ x)).trans (by simp [hc₀])
   have h12 : g x₁ = g x₂ := by rw [← eval x₁, ← eval x₂, h]
   by_contra hne; simp [g, Ne.symm hne] at h12
 @[simp] lemma toTopPoint_inj {x₁ x₂ : X _⦋0⦌} : toTopPoint x₁ = toTopPoint x₂ ↔ x₁ = x₂ :=
@@ -165,8 +164,7 @@ noncomputable def constCompToTopIso :
         fun _ _ _ _ _ ↦ rfl
       hom_inv_id := by
         ext x; let j : ((Functor.const SimplexCategoryᵒᵖ : Type u ⥤ SSet.{u}).obj ι) _⦋0⦌ := x
-        exact (congrArg _ (toTopObjMk_eq_toTopPoint j (StdSimplex.single 0)).symm).trans
-          (descToTop_toTopObjMk _ _ _ j _)
+        exact descToTop_toTopPoint _ _ _ j
       inv_hom_id := toTop_hom_ext fun n i w ↦
         (congrArg _ (descToTop_toTopObjMk _ _ _ i w)).trans
           ((toTopObjMk_eq_toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj ι) i _).symm.trans
@@ -313,9 +311,8 @@ noncomputable def toTopUliftHomeomorph : |SSet.uliftFunctor.{v, u}.obj X| ≃ₜ
       toTopObjMk (X := SSet.uliftFunctor.{v, u}.obj X) (ULift.up x) w := by
   simp [toTopUliftHomeomorph]
 @[simp] lemma toTopUliftHomeomorph_toTopPoint (x : (SSet.uliftFunctor.{v, u}.obj X) _⦋0⦌) :
-    toTopUliftHomeomorph.{v, u} X (toTopPoint x) = toTopPoint x.down := by
-  rw [← toTopObjMk_eq_toTopPoint x (StdSimplex.single 0), toTopUliftHomeomorph_toTopObjMk,
-    toTopObjMk_eq_toTopPoint]
+    toTopUliftHomeomorph.{v, u} X (toTopPoint x) = toTopPoint x.down :=
+  toTopPoint_eq_of_toTopObjMk (toTopUliftHomeomorph_toTopObjMk X x _)
 @[simp] lemma toTopUliftHomeomorph_symm_toTopPoint (x : X _⦋0⦌) :
     (toTopUliftHomeomorph.{v, u} X).symm (toTopPoint x) =
       toTopPoint (X := SSet.uliftFunctor.{v, u}.obj X) (ULift.up x) :=
@@ -366,13 +363,11 @@ variable (X : SSet.{u})
     (w : StdSimplex ℝ (Fin (n + 1))) : dsimp% (opFunctorCompToTopIso.inv.app X) (toTopObjMk x w) =
       toTopObjMk (X.opObjEquiv.symm x) (StdSimplex.map Fin.rev w) := descToTop_toTopObjMk _ _ _ x w
 @[simp] lemma opFunctorCompToTopIso_hom_app_toTopPoint (y : X.op _⦋0⦌) :
-    dsimp% (opFunctorCompToTopIso.hom.app X) (toTopPoint y) = toTopPoint (X.opObjEquiv y) := by
-  rw [← toTopObjMk_eq_toTopPoint y (StdSimplex.single 0), opFunctorCompToTopIso_hom_app_toTopObjMk,
-    toTopObjMk_eq_toTopPoint]
+    dsimp% (opFunctorCompToTopIso.hom.app X) (toTopPoint y) = toTopPoint (X.opObjEquiv y) :=
+  toTopPoint_eq_of_toTopObjMk (opFunctorCompToTopIso_hom_app_toTopObjMk X y _)
 @[simp] lemma opFunctorCompToTopIso_inv_app_toTopPoint (x : X _⦋0⦌) :
-    dsimp% (opFunctorCompToTopIso.inv.app X) (toTopPoint x) = toTopPoint (X.opObjEquiv.symm x) := by
-  rw [← toTopObjMk_eq_toTopPoint x (StdSimplex.single 0), opFunctorCompToTopIso_inv_app_toTopObjMk,
-    toTopObjMk_eq_toTopPoint]
+    dsimp% (opFunctorCompToTopIso.inv.app X) (toTopPoint x) = toTopPoint (X.opObjEquiv.symm x) :=
+  toTopPoint_eq_of_toTopObjMk (opFunctorCompToTopIso_inv_app_toTopObjMk X x _)
 /-- Homeomorphism `|X.op| ≃ₜ |X|` reversing barycentric coordinates on each simplex. -/
 noncomputable def toTopOpHomeomorph : |X.op| ≃ₜ |X| :=
   TopCat.homeoOfIso (opFunctorCompToTopIso.app X)

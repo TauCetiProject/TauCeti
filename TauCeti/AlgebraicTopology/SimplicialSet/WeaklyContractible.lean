@@ -144,7 +144,8 @@ lemma evalAt_constMaps (x : K _⦋0⦌) (Z : SSet.{u}) :
     (pre (const x : L ⟶ K)).app Z = evalAt x Z ≫ constMaps L Z := by
   apply uncurry_injective
   rw [uncurry_pre, constMaps, uncurry_natural_left, uncurry_curry, whiskerLeft_snd, evalAt,
-    comp_lift_assoc]; rfl
+    comp_lift_assoc]
+  refine congrArg (· ≫ _) ?_; ext : 1 <;> simp [comp_const]
 
 private noncomputable def homotopyPreOfEq {f g : K ⟶ K} (H : Homotopy f g) (Z : SSet.{u})
     {φ ψ : (ihom K).obj Z ⟶ (ihom K).obj Z}

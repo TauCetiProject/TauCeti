@@ -75,7 +75,7 @@ simplicial inputs to classifying spaces and nerve homotopies.
 public section
 
 open CategoryTheory MonoidalCategory Opposite Simplicial
-universe w v u
+universe w v u v₁ u₁ v₂ u₂
 namespace CategoryTheory
 section Functoriality
 variable {C D E : Type u} [Category.{v} C] [Category.{v} D] [Category.{v} E]
@@ -225,6 +225,22 @@ theorem totalArrow_δ {n : ℕ} (k : Fin (n + 2)) (σ : ComposableArrows C (n + 
 lemma map_const {n : ℕ} (s : ComposableArrows C n) (i : Fin (n + 1)) :
     (nerve C).map (SimplexCategory.const ⦋0⦌ ⦋n⦌ i).op s = nerveEquiv.symm (s.obj i) :=
   ComposableArrows.ext₀ rfl
+
+/-- Reindexing a mapped string `(Φ.mapComposableArrows n).obj σ` in `nerve E₂` commutes with
+mapping `σ` in `nerve E₁`, for functors `Φ : E₁ ⥤ E₂` across arbitrary universes. -/
+lemma map_mapComposableArrows_obj {E₁ : Type u₁} [Category.{v₁} E₁] {E₂ : Type u₂}
+    [Category.{v₂} E₂] (Φ : E₁ ⥤ E₂) {m n : ℕ} (θ : ⦋m⦌ ⟶ ⦋n⦌) (σ : ComposableArrows E₁ n) :
+    (nerve E₂).map θ.op ((Φ.mapComposableArrows n).obj σ) =
+      (Φ.mapComposableArrows m).obj ((nerve E₁).map θ.op σ) :=
+  Functor.assoc _ σ Φ
+
+/-- Reindexing `ComposableArrows.mk₁ (Φ.map η)` in `nerve E₂` agrees with applying `Φ` to the
+reindexing of `ComposableArrows.mk₁ η` in `nerve E₁`. -/
+lemma map_mk₁ {E₁ : Type u₁} [Category.{v₁} E₁] {E₂ : Type u₂} [Category.{v₂} E₂]
+    (Φ : E₁ ⥤ E₂) {X Y : E₁} (η : X ⟶ Y) {m : ℕ} (β : ⦋m⦌ ⟶ ⦋1⦌) :
+    (nerve E₂).map β.op (ComposableArrows.mk₁ (Φ.map η)) =
+      (Φ.mapComposableArrows m).obj ((nerve E₁).map β.op (ComposableArrows.mk₁ η)) := by
+  rw [← Functor.mapComposableArrows_obj_mk₁, map_mapComposableArrows_obj]
 
 end Map
 

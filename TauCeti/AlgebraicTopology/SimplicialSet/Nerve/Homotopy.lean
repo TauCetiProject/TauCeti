@@ -48,13 +48,6 @@ lemma mapNerveCylinderObj_def {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) {n : Si
     (σ : ComposableArrows C n.unop.len) (β : n.unop ⟶ ⦋1⦌) :
     η.mapNerveCylinderObj σ β =
       σ.prod' ((nerve (C ⥤ D)).map β.op (ComposableArrows.mk₁ η)) ⋙ evaluationUncurried C D := (rfl)
-private lemma nerve_map_mk₁_map {E₁ : Type u₁} [Category.{v₁} E₁]
-    {E₂ : Type u₂} [Category.{v₂} E₂] (Φ : E₁ ⥤ E₂) {X Y : E₁} (η : X ⟶ Y)
-    {m : ℕ} (β : ⦋m⦌ ⟶ ⦋1⦌) :
-    (nerve E₂).map β.op (ComposableArrows.mk₁ (Φ.map η)) =
-      (Φ.mapComposableArrows m).obj ((nerve E₁).map β.op (ComposableArrows.mk₁ η)) := by
-  rw [← Functor.mapComposableArrows_obj_mk₁]
-  exact Functor.assoc _ (ComposableArrows.mk₁ η) Φ
 
 @[simp] lemma whiskerLeft_mapNerveCylinderObj (K : B ⥤ C) {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁)
     {n : SimplexCategoryᵒᵖ} (σ : ComposableArrows B n.unop.len) (β : n.unop ⟶ ⦋1⦌) :
@@ -62,7 +55,7 @@ private lemma nerve_map_mk₁_map {E₁ : Type u₁} [Category.{v₁} E₁]
       η.mapNerveCylinderObj ((K.mapComposableArrows n.unop.len).obj σ) β := by
   rcases n with ⟨m⟩; induction m using SimplexCategory.rec with | _ m =>
   rw [mapNerveCylinderObj_def, mapNerveCylinderObj_def, ← Functor.whiskeringLeft_obj_map,
-    nerve_map_mk₁_map]
+    nerve.map_mk₁]
   exact Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
 
 @[simp] lemma whiskerRight_mapNerveCylinderObj {F₀ F₁ : B ⥤ C} (η : F₀ ⟶ F₁) (G : C ⥤ D)
@@ -71,7 +64,7 @@ private lemma nerve_map_mk₁_map {E₁ : Type u₁} [Category.{v₁} E₁]
       (G.mapComposableArrows n.unop.len).obj (η.mapNerveCylinderObj σ β) := by
   rcases n with ⟨m⟩; induction m using SimplexCategory.rec with | _ m =>
   rw [mapNerveCylinderObj_def, mapNerveCylinderObj_def, ← Functor.whiskeringRight_obj_map,
-    nerve_map_mk₁_map]
+    nerve.map_mk₁]
   exact Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ heq_of_eq (G.map_comp _ _).symm
 end
 

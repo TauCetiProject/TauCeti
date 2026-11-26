@@ -254,7 +254,8 @@ homotopy between `(MonoidalClosed.pre f).app Z` and `(MonoidalClosed.pre g).app 
     rw [MonoidalClosed.uncurry_pre, MonoidalClosed.uncurry_natural_left,
       MonoidalClosed.uncurry_curry]
     simp only [comp_lift_assoc, reassoc_of% hi, whiskerLeft_snd_assoc, lift_fst,
-      Category.comp_id]; rfl
+      Category.comp_id]
+    refine congrArg (· ≫ _) ?_; ext : 1 <;> simp [comp_lift_assoc]
   mk' φ (by rw [ι₀, hlift, ← ι₀, H.h₀]) (by rw [ι₁, hlift, ← ι₁, H.h₁])
 
 @[simp] lemma pre_h (H : SSet.Homotopy f g) (Z : SSet.{w}) :
