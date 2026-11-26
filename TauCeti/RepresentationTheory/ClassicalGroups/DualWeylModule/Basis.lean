@@ -230,20 +230,10 @@ theorem hasLeadingTerm_columnMinor_extend (h : μ.InterlacedBy ν) (hμ : μ.col
     rw [h_rows, h_cols heq, lastRowEquiv_mvPolynomialMinor_castSucc, C_apply]
     exact colex.hasLeadingTerm_monomial _ _
 
-/-- The differences `μ.rowLen s - ν.rowLen s` of the row lengths of two Young diagrams, for the
-`n` rows `s < n`. -/
-noncomputable def rowLenDiff (μ ν : YoungDiagram) : Fin n →₀ ℕ :=
-  Finsupp.equivFunOnFinite.symm fun s => μ.rowLen s - ν.rowLen s
-
-@[simp]
-theorem rowLenDiff_apply (μ ν : YoungDiagram) (s : Fin n) :
-    rowLenDiff μ ν s = μ.rowLen s - ν.rowLen s := by
-  simp [rowLenDiff]
-
 /-- The cells of the horizontal strip `μ / ν` in the row `s` are counted by `μ.rowLen s -
 ν.rowLen s`, and each lies at the bottom of its column. -/
 theorem sum_borderExponent (h : μ.InterlacedBy ν) (hμ : μ.colLen 0 ≤ n) :
-    ∑ j ∈ range (μ.rowLen 0), borderExponent μ ν hμ j = rowLenDiff μ ν := by
+    ∑ j ∈ range (μ.rowLen 0), borderExponent μ ν hμ j = YoungDiagram.rowLenDiff μ ν := by
   classical
   ext s
   have h_apply (j : ℕ) : borderExponent μ ν hμ j s =
@@ -272,7 +262,7 @@ theorem sum_borderExponent (h : μ.InterlacedBy ν) (hμ : μ.colLen 0 ≤ n) :
       have h₄ : ¬ (s : ℕ) < ν.colLen j := fun h' => absurd (hB.mpr h') (not_lt.mpr hν)
       exact ⟨hμ'.trans_le hμs, by omega, by omega⟩
   simp only [Finsupp.finsetSum_apply, h_apply, Finset.sum_boole, h_filter, Nat.card_Ico,
-    rowLenDiff_apply, Nat.cast_id]
+    YoungDiagram.rowLenDiff_apply, Nat.cast_id]
 
 /-- **Bordering a bideterminant.** Let `T` be a tableau of shape `ν` in `N` letters, `ν`
 interlacing `μ`, and `extend h T` the tableau of shape `μ` in `N + 1` letters obtained by writing
@@ -283,7 +273,7 @@ theorem hasLeadingTerm_bideterminant_extend (h : μ.InterlacedBy ν) (hμ : μ.c
     (T : BoundedSSYT N ν) :
     colex.HasLeadingTerm
       (lastRowEquiv R N n (bideterminant R μ hμ (ssytFilling (BoundedSSYT.extend h T))))
-      (rowLenDiff μ ν)
+      (YoungDiagram.rowLenDiff μ ν)
       (bideterminant R ν ((YoungDiagram.colLen_le_of_le h.le 0).trans hμ) (ssytFilling T)) := by
   rw [bideterminant_eq_prod_range R μ _ _ le_rfl, map_prod,
     bideterminant_eq_prod_range R ν _ _ (h.rowLen_le 0),
@@ -327,45 +317,6 @@ end Tableau
 
 section Independence
 
-/-- The branching bijection: a tableau of shape `μ` in `N + 1` letters is a shape `ν` interlacing
-`μ` with at most `N` rows together with a tableau of shape `ν` in `N` letters, the top letter
-filling `μ / ν` (`TauCeti.BoundedSSYT.fiberEquiv`). -/
-noncomputable def branchingEquiv (N : ℕ) (μ : YoungDiagram) :
-    (Σ ν : YoungDiagram.interlacingShapes N μ, BoundedSSYT N ν) ≃ BoundedSSYT (N + 1) μ :=
-  (Equiv.sigmaCongrRight fun ν : YoungDiagram.interlacingShapes N μ =>
-    ((Equiv.subtypeEquivRight fun _ => Subtype.ext_iff).trans
-      (BoundedSSYT.fiberEquiv (YoungDiagram.mem_interlacingShapes.mp ν.property).1)).symm).trans
-    (Equiv.sigmaFiberEquiv fun T : BoundedSSYT (N + 1) μ =>
-      (⟨BoundedSSYT.restrictShape T, BoundedSSYT.restrictShape_mem_interlacingShapes T⟩ :
-        YoungDiagram.interlacingShapes N μ))
-
-@[simp]
-theorem branchingEquiv_apply (N : ℕ) (μ : YoungDiagram)
-    (i : Σ ν : YoungDiagram.interlacingShapes N μ, BoundedSSYT N ν) :
-    branchingEquiv N μ i =
-      BoundedSSYT.extend (YoungDiagram.mem_interlacingShapes.mp i.1.property).1 i.2 := by
-  simp [branchingEquiv]
-
-/-- A shape `ν ≤ μ` is determined by the differences of the row lengths, when `μ` has at most `n`
-rows. -/
-theorem rowLenDiff_injective {μ : YoungDiagram} (hμ : μ.colLen 0 ≤ n) :
-    Function.Injective fun ν : YoungDiagram.interlacingShapes N μ =>
-      (rowLenDiff μ ν.val : Fin n →₀ ℕ) := by
-  intro ν₁ ν₂ h_eq
-  have hle (ν : YoungDiagram.interlacingShapes N μ) :=
-    (YoungDiagram.mem_interlacingShapes.mp ν.property).1
-  refine Subtype.ext (YoungDiagram.rowLen_injective (funext fun s => ?_))
-  rcases lt_or_ge s n with hs | hs
-  · have := DFunLike.congr_fun h_eq ⟨s, hs⟩
-    simp only [rowLenDiff_apply] at this
-    have h₁ := (hle ν₁).rowLen_le s
-    have h₂ := (hle ν₂).rowLen_le s
-    omega
-  · have h_zero (ν : YoungDiagram.interlacingShapes N μ) : ν.val.rowLen s = 0 :=
-      Nat.eq_zero_of_le_zero ((((hle ν).rowLen_le s)).trans_eq
-        (YoungDiagram.rowLen_eq_zero_iff.mpr (hμ.trans hs)))
-    rw [h_zero, h_zero]
-
 variable (R) in
 /-- **The standard bideterminants are linearly independent** over every commutative ring: the
 bideterminants of the semistandard tableaux of shape `μ` in the letters `0, …, N - 1`. -/
@@ -384,15 +335,16 @@ theorem linearIndependent_bideterminant (N : ℕ) (μ : YoungDiagram) (hμ : μ.
       Finset.prod_range_zero, smul_eq_C_mul, mul_one, C_eq_zero] at hg
     rwa [Subsingleton.elim T default]
   | succ N ih =>
-    rw [← linearIndependent_equiv (branchingEquiv N μ)]
+    rw [← linearIndependent_equiv (BoundedSSYT.sigmaEquiv N μ)]
     refine LinearIndependent.of_comp (lastRowEquiv R N n).toLinearMap ?_
     have hν (ν : YoungDiagram.interlacingShapes N μ) : ν.val.colLen 0 ≤ n :=
       (YoungDiagram.colLen_le_of_le
         (YoungDiagram.mem_interlacingShapes.mp ν.property).1.le 0).trans hμ
-    refine MonomialOrder.linearIndependent_of_hasLeadingTerm (m := colex) (rowLenDiff_injective hμ)
+    refine MonomialOrder.linearIndependent_of_hasLeadingTerm (m := colex)
+      (YoungDiagram.rowLenDiff_injective hμ)
       (q := fun ν T => bideterminant R ν.val (hν ν) (ssytFilling T)) (fun i => ?_)
       fun ν => ih ν.val (hν ν)
-    rw [Function.comp_apply, Function.comp_apply, branchingEquiv_apply]
+    rw [Function.comp_apply, Function.comp_apply, BoundedSSYT.sigmaEquiv_apply]
     exact hasLeadingTerm_bideterminant_extend _ hμ i.2
 
 end Independence
@@ -419,7 +371,7 @@ private theorem exists_interlacedBy {f : MvPolynomial (Fin (N + 1) × Fin n) R}
     ∃ ν : YoungDiagram, μ.InterlacedBy ν ∧ ν.colLen 0 ≤ n ∧
       (fun s : Fin n => μ.rowLen s - colex.degree (lastRowEquiv R N n f) s) =
         (fun s : Fin n => ν.rowLen s) ∧
-      rowLenDiff μ ν = colex.degree (lastRowEquiv R N n f) := by
+      YoungDiagram.rowLenDiff μ ν = colex.degree (lastRowEquiv R N n f) := by
   have hγ := degree_lastRowEquiv_le hf
   have h_int (i j : Fin n) (hij : (j : ℕ) = i + 1) := degree_lastRowEquiv_add_le hf hf0 hij
   have hanti : Antitone fun s : Fin n =>
@@ -438,7 +390,7 @@ private theorem exists_interlacedBy {f : MvPolynomial (Fin (N + 1) × Fin n) R}
     YoungDiagram.rowLen_eq_zero_iff.mpr (hμ.trans hs)
   refine ⟨ν, YoungDiagram.interlacedBy_iff.mpr fun i => ?_,
     YoungDiagram.colLen_zero_ofRowLensFin_le _ _, funext fun s => (hν s).symm,
-    Finsupp.ext fun s => by rw [rowLenDiff_apply, hν]; have := hγ s; omega⟩
+    Finsupp.ext fun s => by rw [YoungDiagram.rowLenDiff_apply, hν]; have := hγ s; omega⟩
   rcases lt_or_ge i n with hi | hi
   · have h₁ := hν ⟨i, hi⟩
     have h₂ := hγ ⟨i, hi⟩
