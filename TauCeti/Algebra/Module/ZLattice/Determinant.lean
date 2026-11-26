@@ -72,6 +72,7 @@ diagonal (`Matrix.IsSymm.neg_one_pow_mul_det_modEq_zero_or_one`).
   discrete if and only if `L` is.
 * `ZLattice.instDiscreteTopologyDualOfFinite`: when `DiscriminantGroup L` is finite, `L^∨` is
   discrete.
+* `ZLattice.card_nsmul_mem_of_mem_dual`: `|A_L| • x ∈ L` for every `x ∈ L^∨`.
 * `ZLattice.card_discriminantGroup_comap`: the order of the discriminant group is invariant under
   linear isometry equivalences.
 * `ZLattice.IsIntegral.det_eq_card_discriminantGroup`: for integral `L`, `det L = |L^∨ ⧸ L|`.
@@ -248,6 +249,14 @@ theorem IsUnimodular.card_discriminantGroup_eq_one (h : IsUnimodular L) :
     Nat.card (DiscriminantGroup L) = 1 :=
   have := h.subsingleton_discriminantGroup
   Nat.card_unique
+
+/-- For every dual vector `x ∈ L^∨`, multiplying by the order of `DiscriminantGroup L` lands in `L`
+(trivially `0 ∈ L` when `DiscriminantGroup L` is infinite, since `Nat.card` is then `0`). -/
+theorem card_nsmul_mem_of_mem_dual {x : E} (hx : x ∈ dual L) :
+    Nat.card (DiscriminantGroup L) • x ∈ L := by
+  have := card_nsmul_eq_zero' (G := DiscriminantGroup L)
+    (x := Submodule.Quotient.mk (⟨x, hx⟩ : dual L))
+  rwa [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff] at this
 
 /-- The discriminant group `(½ ℤ)^∨ ⧸ ((½ ℤ) ∩ (½ ℤ)^∨)` of `½ ℤ ⊆ ℝ` has a single element, the
 zero class. -/

@@ -240,11 +240,7 @@ theorem level_dvd_two_mul_card_discriminantGroup :
   refine level_dvd_iff.mpr fun x hx ↦ ?_
   -- The order `d` of the discriminant group kills the class of `x`, so `d • x ∈ L` and
   -- `d ‖x‖² = ⟪x, d • x⟫` is an integer.
-  have hd : Nat.card (DiscriminantGroup L) • x ∈ L := by
-    have := card_nsmul_eq_zero' (G := DiscriminantGroup L)
-      (x := Submodule.Quotient.mk (⟨x, hx⟩ : dual L))
-    rwa [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff] at this
-  obtain ⟨m, hm⟩ := mem_dual.mp hx _ hd
+  obtain ⟨m, hm⟩ := mem_dual.mp hx _ (card_nsmul_mem_of_mem_dual hx)
   refine ⟨m, ?_⟩
   rw [← Nat.cast_smul_eq_nsmul ℝ, real_inner_smul_right, real_inner_self_eq_norm_sq] at hm
   push_cast
