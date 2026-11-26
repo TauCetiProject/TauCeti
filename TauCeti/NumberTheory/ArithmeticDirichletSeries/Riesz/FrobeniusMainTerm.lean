@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import TauCeti.RepresentationTheory.LinearCharacter.QuadraticCoset
-import Mathlib.Algebra.BigOperators.Field
 
 /-!
 # Averaging the main term of a Frobenius-restricted Riesz sum
@@ -44,17 +43,14 @@ theorem expect_frobeniusRiesz_main_term {G : Type*} [Group G] [Fintype G]
   classical
   by_cases ha : a = 0
   · simp [ha]
-  have hc₁ : q c ≠ 1 := by
-    intro h
-    norm_num [h] at hc
+  have hc₁ : q c ≠ 1 := (q.apply_ne_one_iff_of_mul_self_eq_one hq c).mpr hc
   have hq₁ : q ≠ 1 := fun h ↦ hc₁ (by simp [h])
   have hmem (g : G) : q g ≠ 1 ↔ q (c * g * τ) = 1 := by
     rcases q.apply_eq_one_or_eq_neg_one_of_mul_self_eq_one hq g with hg | hg
-    · have hg₁ : q g = 1 := Units.ext hg
-      simp [hg₁, hτ, hc₁]
-    · have hg₁ : q g ≠ 1 := fun h ↦ by norm_num [h] at hg
-      have he : q (c * g * τ) = 1 := Units.ext (by simp [hc, hg, hτ])
-      simp [hg₁, he]
+    · simp [hg, hτ, hc₁]
+    · have hc' : q c = -1 := Units.val_eq_neg_one.mp hc
+      exact ⟨fun _ ↦ by simp [hg, hc', hτ],
+        fun _ ↦ (q.apply_ne_one_iff_of_mul_self_eq_one hq g).mpr (by simp [hg])⟩
   let t := Finset.univ.filter fun g ↦ q g ≠ 1
   have ht : t.Nonempty := ⟨c, by simp [t, hc₁]⟩
   have hlog : (𝔼 g ∈ t, (Real.log (w (c * g * τ)) : ℂ)) =
