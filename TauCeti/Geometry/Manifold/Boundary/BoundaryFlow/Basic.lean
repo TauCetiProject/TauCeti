@@ -147,7 +147,7 @@ theorem IsOutwardPointingField.exists_contMDiffOn_boundaryFlow
           (∀ s ∈ Icc 0 t, (x, s) ∈ W) ∧ Φ x 0 = x ∧ IsMIntegralCurveOn (Φ x) (-V) (Icc 0 t) ∧
             (0 < t → Φ x t ∈ (𝓡∂ (n + 1)).interior M) := by
   exact TauCeti.exists_contMDiffOn_boundaryFlow (-V)
-    (fun x ↦ (hV.contMDiff x).neg_section) fun a ha ↦ by simpa using hV.isOutwardPointing ha
+    hV.contMDiff_neg hV.isOutwardPointing_neg_neg
 
 end HalfSpace
 
