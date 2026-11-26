@@ -15,9 +15,7 @@ import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormalTangential
-import TauCeti.MeasureTheory.Function.PreciseRepresentative
-import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
-import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.MeasureTheory.Function.PreciseRepresentative.HalfSpace
 
 /-!
 # Hölder continuity of the second derivatives up to the boundary of a half-space
@@ -87,10 +85,8 @@ coefficients on a half-space.
   `⟪e, a e⟫ ≥ λ`. Solving for it expresses `∇(∂ₑu)` almost everywhere through `f`, `a`, `∂a`, `∇u`
   and the tangential second derivatives, a field that is `α`-Hölder on the closed half-ball.
 * **The precise representative.** A function equal almost everywhere on `B(y₀, ρ) ∩ H` to a field
-  Hölder on the closed half-ball has that field as its precise representative there: composed with
-  the fold, the field is continuous on the whole ball, and every closed ball about a point of the
-  closed half-space meets `H` in positive measure
-  (`TauCeti.MeasureTheory.preciseRepresentative_eq_of_continuousAt_of_measure_closedBall_ne_zero`).
+  continuous on the closed half-ball has that field as its precise representative there
+  (`TauCeti.MeasureTheory.preciseRepresentative_restrict_setOf_lt_inner_eq_of_continuousOn`).
   A general direction `w` is `⟪e, w⟫ e` plus a tangential direction.
 
 ## Main declarations
@@ -429,40 +425,6 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restric
 
 /-! ### Every second derivative -/
 
-/-- **The precise representative of a function equal to a Hölder function up to the boundary.**
-If `F` agrees almost everywhere on `B(y₀, ρ) ∩ H` with a function `G` that is `α`-Hölder on the
-closed half-ball `closedBall y₀ ρ ∩ {c₀ ≤ ⟪y, ν⟫}`, then at each point of
-`B(y₀, ρ) ∩ {c₀ ≤ ⟪y, ν⟫}` the precise representative of `F` for the Lebesgue measure on `H` is the
-value of `G`: composed with the fold across the boundary hyperplane, `G` is continuous on the whole
-ball and agrees with `F` on `H`. -/
-private theorem preciseRepresentative_eq_of_ae_eq_of_holderOnWith {α : ℝ≥0} (hα : 0 < α)
-    {H : Opens E} {ν : E} {c₀ : ℝ} (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {y₀ : E}
-    (hy₀ : ⟪y₀, ν⟫_ℝ = c₀) {ρ : ℝ} {F G : E → E}
-    (hF : LocallyIntegrable F (volume.restrict (H : Set E)))
-    (hFG : F =ᵐ[volume.restrict (ball y₀ ρ ∩ H)] G) {C : ℝ≥0}
-    (hG : HolderOnWith C α G (closedBall y₀ ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ})) {x : E}
-    (hx : x ∈ ball y₀ ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}) :
-    preciseRepresentative (volume.restrict (H : Set E)) F x = G x := by
-  have hmaps : MapsTo (fun y => if c₀ ≤ ⟪y, ν⟫_ℝ then y else hyperplaneReflection ν c₀ y)
-      (ball y₀ ρ) (closedBall y₀ ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}) := fun y hy =>
-    ⟨ball_subset_closedBall (mapsTo_ite_hyperplaneReflection_ball hy₀ ρ hy),
-      le_inner_ite_hyperplaneReflection hν c₀ y⟩
-  have hcont := (hG.continuousOn hα).comp
-    (lipschitzWith_one_ite_hyperplaneReflection ν c₀).continuous.continuousOn hmaps
-  -- `H` fills at least half of every closed ball around a point of the closed half-space.
-  have hpos (ε : ℝ) (hε : 0 < ε) : volume.restrict (H : Set E) (closedBall x ε) ≠ 0 := by
-    rw [show (H : Set E) = {y | c₀ < ⟪y, ν⟫_ℝ} from Set.ext hH]
-    exact volume.restrict_closedBall_ne_zero_of_mul_le (c := 2⁻¹) (by norm_num) hε
-      (volume.inv_two_mul_addHaar_closedBall_le_addHaar_closedBall_inter_setOf_lt_inner hν hx.2.out)
-  refine (preciseRepresentative_eq_of_continuousAt_of_measure_closedBall_ne_zero hpos
-    (isOpen_ball.mem_nhds hx.1) (hF x) ?_ (hcont.continuousAt (isOpen_ball.mem_nhds hx.1))).trans ?_
-  · -- On `H` the fold is the identity.
-    rw [Measure.restrict_restrict isOpen_ball.measurableSet]
-    filter_upwards [hFG, ae_restrict_mem (isOpen_ball.measurableSet.inter H.isOpen.measurableSet)]
-      with y hy hyB
-    simp only [Function.comp_apply, ((hH y).1 hyB.2).le, ↓reduceIte, hy]
-  · simp only [Function.comp_apply, hx.2.out, ↓reduceIte]
-
 /-- **Solving the equation for the normal second derivative, pointwise.** Let `e` be a unit vector,
 `P` the orthogonal projection onto `(ℝ ∙ e)ᗮ` and `(bᵢ)` the standard basis. Suppose that the
 vector `v`, the gradient of `∂ₑu`, and the vectors `t i`, the gradients of `∂_{P bᵢ} u`, satisfy the
@@ -791,11 +753,16 @@ theorem exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_res
           inter_subset_right]
         with x h1 h2 h3 h4
       simp only [h1, h2, h3, h4, Pi.add_apply, Pi.smul_apply, gτ]
+    have hHs : (H : Set E) = {y | c₀ < ⟪y, ν⟫_ℝ} := Set.ext hH
     refine ⟨_, (hGw.mono (inter_subset_inter_left _
       (closedBall_subset_closedBall (by linarith)))).congr fun x hx => ?_⟩
-    exact (preciseRepresentative_eq_of_ae_eq_of_holderOnWith hα hν hH hy₀
-      ((Lp.memLp _).locallyIntegrable one_le_two) hae hGw
-      ⟨closedBall_subset_ball (by linarith) hx.1, hx.2⟩).symm
+    have h := preciseRepresentative_restrict_setOf_lt_inner_eq_of_continuousOn volume hν hy₀
+      (f := (W1p.gradient (⟪e, w⟫_ℝ • d + (dτ : W1p volume H 2)) : E → E))
+      (by rw [← hHs]; exact (Lp.memLp _).locallyIntegrable one_le_two) (by rwa [← hHs])
+      ((hGw.continuousOn hα).mono (inter_subset_inter_left _ ball_subset_closedBall))
+      ⟨closedBall_subset_ball (by linarith) hx.1, hx.2⟩
+    rw [← hHs] at h
+    exact h.symm
 
 end PDE
 
