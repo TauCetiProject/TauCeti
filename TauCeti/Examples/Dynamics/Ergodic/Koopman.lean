@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Ergodic.Action.Koopman
-public import Mathlib.Analysis.Fourier.AddCircle
+public import TauCeti.MeasureTheory.Measure.AddCircle
+import TauCeti.Analysis.Fourier.Monomial
 
 /-!
 # Checks: the Koopman group
 
-Checks for the Koopman group `U_t f = f ∘ (t +ᵥ ·)` (`TauCeti.koopmanGroup`) of §12.3 of the
-MathematicalBilliards roadmap.
+Worked examples for the Koopman group `U_t f = f ∘ (t +ᵥ ·)` (`TauCeti.koopmanGroup`): the
+trivial action and translation on `AddCircle 1`.
 
 * **The identity action.** If every `t` acts as the identity, then `U_t = 1` for every `t`
   (`koopmanGroup_eq_one_of_forall_vadd_eq`).
@@ -42,8 +43,7 @@ then `U_t = 1`. -/
 theorem koopmanGroup_eq_one_of_forall_vadd_eq (hp : p ≠ ∞) (h : ∀ (t : ℝ) (x : X), t +ᵥ x = x)
     (t : ℝ) : koopmanGroup μ E p hp t = 1 := by
   ext f : 1
-  rw [koopmanGroup_apply]
-  change _ = f
+  rw [koopmanGroup_apply, one_apply_eq_self]
   refine Lp.ext ?_
   filter_upwards [Lp.coeFn_compMeasurePreserving f (measurePreserving_vadd t μ)] with x hx
   rw [hx, Function.comp_apply, h]
@@ -51,20 +51,6 @@ theorem koopmanGroup_eq_one_of_forall_vadd_eq (hp : p ≠ ∞) (h : ∀ (t : ℝ
 end Identity
 
 section Circle
-
-/-- Mathlib's translation action of `ℝ` on `AddCircle 1` (`AddAction.quotient`) is
-`t +ᵥ x = t + x`. -/
-theorem vadd_def (t : ℝ) (x : AddCircle (1 : ℝ)) : t +ᵥ x = (t : AddCircle (1 : ℝ)) + x :=
-  (rfl)
-
-/-- The translation action of `ℝ` on `AddCircle 1` is jointly measurable. -/
-instance instMeasurableVAdd₂RealAddCircleOne : MeasurableVAdd₂ ℝ (AddCircle (1 : ℝ)) :=
-  ⟨continuous_vadd.measurable⟩
-
-/-- The translation action of `ℝ` on `AddCircle 1` preserves the normalised Haar measure. -/
-instance instVAddInvariantMeasureRealHaarAddCircle :
-    VAddInvariantMeasure ℝ (AddCircle (1 : ℝ)) (AddCircle.haarAddCircle (T := 1)) :=
-  ⟨fun t s _ => by simp only [vadd_def]; exact measure_preimage_add _ _ _⟩
 
 /-- **The modes are eigenvectors.** For the translation flow on `AddCircle 1`,
 `U_t e_n = exp(2πint) e_n`, where `e_n(x) = exp(2πinx)`. -/
@@ -79,9 +65,11 @@ theorem koopmanGroup_fourierLp (n : ℤ) (t : ℝ) :
       (coeFn_fourierLp 2 n),
     Lp.coeFn_smul (exp (2 * π * I * n * t)) (fourierLp 2 n), coeFn_fourierLp 2 n]
     with x h1 h2 h3 h4
-  rw [h1, h2, h3, Pi.smul_apply, h4, Function.comp_apply, vadd_def, smul_eq_mul]
-  rw [fourier_apply, smul_add, AddCircle.toCircle_add, Circle.coe_mul, ← fourier_apply,
-    fourier_coe_apply, ofReal_one, div_one, ← fourier_apply]
+  rw [h1, h2, h3, Pi.smul_apply, h4, Function.comp_apply, smul_eq_mul]
+  rw [show exp (2 * π * I * n * t) = fourier n (t : AddCircle (1 : ℝ)) by
+    rw [fourier_coe_apply, ofReal_one, div_one]]
+  -- the quotient action `t +ᵥ x` is `↑t + x` by definition
+  exact TauCeti.fourier_apply_add n (t : AddCircle (1 : ℝ)) x
 
 /-- The orbit `t ↦ U_t e_n` is continuous. -/
 example (n : ℤ) : Continuous fun t : ℝ =>
