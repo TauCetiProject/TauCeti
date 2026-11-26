@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Clutching
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Symplectic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chern
+public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Exact
+import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Generator
 
 /-!
 # The first Chern number of complex projective space
@@ -73,5 +75,28 @@ theorem firstChernHom_fubiniStudyForm_apply_mk_lineSquare :
       (Additive.ofMul (Quotient.mk _ (lineSquare n))) = n + 2 := by
   rw [firstChernHom_fubiniStudyForm_eq_clutchingNumberHom_tangentSpace,
     clutchingNumberHom_tangentSpace_lineSquare]
+
+/-- **The generator of `π₂(CPⁿ⁺¹)` has first Chern number `n + 2`** for the Fubini–Study form:
+it is the class of the coordinate line
+(`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_symm_ofAdd_one`). -/
+@[simp]
+theorem firstChernHom_fubiniStudyForm_apply_pi2MulEquivInt_symm_ofAdd_one :
+    (isSymplectic_fubiniStudyForm (n := n + 1)).isNondegenerate.firstChernHom
+      (mk (n + 1) (affineUnitVector 1 0))
+      (Additive.ofMul ((pi2MulEquivInt (affineUnitVector 1 0) n.add_one_ne_zero).symm
+        (Multiplicative.ofAdd 1))) = n + 2 := by
+  -- `lineClass n` is `⟦lineSquare n⟧` with its base point renamed by `HomotopyGroup.map` of the
+  -- identity.
+  have key : ∀ y (h : ContinuousMap.id _ (affineParam 1 0) = y),
+      (isSymplectic_fubiniStudyForm (n := n + 1)).isNondegenerate.firstChernHom y
+        (Additive.ofMul (HomotopyGroup.map (ContinuousMap.id _) h
+          (⟦lineSquare n⟧ : HomotopyGroup (Fin 2) _ (affineParam 1 0)))) = n + 2 := by
+    intro y h
+    obtain rfl : affineParam 1 0 = y := h
+    exact (congrArg (fun a ↦ isSymplectic_fubiniStudyForm.isNondegenerate.firstChernHom _
+      (Additive.ofMul a)) (HomotopyGroup.map_id_apply _)).trans
+      firstChernHom_fubiniStudyForm_apply_mk_lineSquare
+  rw [pi2MulEquivInt_symm_ofAdd_one, lineClass_def]
+  exact key _ _
 
 end TauCeti.ComplexProjectiveSpace

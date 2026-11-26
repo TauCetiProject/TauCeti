@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.FubiniStudySphere
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Clutching
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Symplectic
+public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Exact
 import Mathlib.Analysis.Calculus.FDeriv.Pi
+import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Generator
 
 /-!
 # The Fubini–Study area of a line in complex projective space
@@ -237,5 +239,25 @@ theorem sphereIntegral_fubiniStudyForm_lineSquare :
       (isSmoothForm_fubiniStudyForm (n + 1)) (mextDeriv_fubiniStudyForm (n + 1)) _).symm
   rw [hmap, hnat _ coordinateLine_infty, mpullback_coordinateLine_fubiniStudyForm,
     OnePoint.sphereIntegral_fubiniStudyForm_riemannSphereSquare]
+
+/-- **The generator of `π₂(CPⁿ⁺¹)` has Fubini–Study area `1`**: it is the class of the coordinate
+line (`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_symm_ofAdd_one`). -/
+@[simp]
+theorem sphereIntegral_fubiniStudyForm_pi2MulEquivInt_symm_ofAdd_one :
+    sphereIntegral (fubiniStudyForm (n + 1)).val (mk (n + 1) (affineUnitVector 1 0))
+      ((pi2MulEquivInt (affineUnitVector 1 0) n.add_one_ne_zero).symm
+        (Multiplicative.ofAdd 1)) = 1 := by
+  -- `lineClass n` is `⟦lineSquare n⟧` with its base point renamed by `HomotopyGroup.map` of the
+  -- identity.
+  have key : ∀ y (h : ContinuousMap.id _ (affineParam 1 0) = y),
+      sphereIntegral (fubiniStudyForm (n + 1)).val y
+        (HomotopyGroup.map (ContinuousMap.id _) h
+          (⟦lineSquare n⟧ : HomotopyGroup (Fin 2) _ (affineParam 1 0))) = 1 := by
+    intro y h
+    obtain rfl : affineParam 1 0 = y := h
+    exact (congrArg (sphereIntegral _ _) (HomotopyGroup.map_id_apply _)).trans
+      sphereIntegral_fubiniStudyForm_lineSquare
+  rw [pi2MulEquivInt_symm_ofAdd_one, lineClass_def]
+  exact key _ _
 
 end TauCeti.ComplexProjectiveSpace

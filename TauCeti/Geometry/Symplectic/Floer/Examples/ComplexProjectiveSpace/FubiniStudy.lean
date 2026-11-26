@@ -180,27 +180,6 @@ namespace ComplexProjectiveSpace
 
 open Floer Floer.SphericalPeriodGroup
 
-/-- **The generator of `π₂(CPⁿ⁺¹)` has Fubini–Study area `1`.** This is the simp normal form of
-the area of the generator of the period group
-(`SphericalPeriodGroup.area_projectiveSpaceGenerator_fubiniStudyForm`), so simp evaluates it. -/
-@[simp]
-theorem sphereIntegral_fubiniStudyForm_pi2MulEquivInt_symm_ofAdd_one :
-    sphereIntegral (fubiniStudyForm (n + 1)).val (mk (n + 1) (affineUnitVector 1 0))
-      ((pi2MulEquivInt (affineUnitVector 1 0) n.add_one_ne_zero).symm
-        (Multiplicative.ofAdd 1)) = 1 := by
-  simpa using area_projectiveSpaceGenerator_fubiniStudyForm
-
-/-- **The generator of `π₂(CPⁿ⁺¹)` has first Chern number `n + 2`** for the Fubini–Study form.
-This is the simp normal form of the first Chern number of the generator of the period group
-(`SphericalPeriodGroup.chern_projectiveSpaceGenerator_fubiniStudyForm`), so simp evaluates it. -/
-@[simp]
-theorem firstChernHom_fubiniStudyForm_apply_pi2MulEquivInt_symm_ofAdd_one :
-    (isSymplectic_fubiniStudyForm (n := n + 1)).isNondegenerate.firstChernHom
-      (mk (n + 1) (affineUnitVector 1 0))
-      (Additive.ofMul ((pi2MulEquivInt (affineUnitVector 1 0) n.add_one_ne_zero).symm
-        (Multiplicative.ofAdd 1))) = n + 2 := by
-  simpa using chern_projectiveSpaceGenerator_fubiniStudyForm
-
 /-- **`CPⁿ⁺¹` is spherically monotone with constant `1 / (n + 2)`.** For the Fubini–Study form,
 the symplectic area of every class of `H₂(CPⁿ⁺¹; ℤ)` is its first Chern number divided by
 `n + 2`. -/
