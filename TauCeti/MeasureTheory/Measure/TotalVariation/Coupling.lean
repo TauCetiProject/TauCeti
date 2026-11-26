@@ -35,10 +35,6 @@ distance between probability measures lies in `[0, 2]`.
 
 ## Main statements
 
-* `MeasureTheory.Measure.inf_apply_singleton`: the infimum of two measures gives a measurable
-  singleton the smaller of the two masses;
-* `MeasureTheory.etvDist_eq_two_mul_measure_univ_sub_inf`: on a countable space, total variation
-  is twice the mass of `μ` not shared with `ν`;
 * `TauCeti.IsCoupling.etvDist_le_two_mul_measure_ne` and
   `TauCeti.IsCoupling.tvDist_le_two_mul_measureReal_ne`: the **coupling inequality**, total
   variation is at most twice the probability of disagreement of any coupling;
@@ -57,42 +53,6 @@ public section
 
 open MeasureTheory Set
 open scoped ENNReal
-
-namespace MeasureTheory.Measure
-
-variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
-
-/-- The infimum of two measures gives a measurable singleton the smaller of its two masses. -/
-@[simp]
-theorem inf_apply_singleton (μ ν : Measure α) (x : α) : (μ ⊓ ν) {x} = min (μ {x}) (ν {x}) := by
-  rw [inf_apply (measurableSet_singleton x)]
-  refine le_antisymm (le_min (sInf_le ⟨univ, by simp⟩) (sInf_le ⟨∅, by simp⟩)) (le_sInf ?_)
-  rintro _ ⟨t, rfl⟩
-  by_cases hx : x ∈ t <;> simp [hx]
-
-end MeasureTheory.Measure
-
-namespace MeasureTheory
-
-variable {α : Type*} [MeasurableSpace α] [Countable α] [MeasurableSingletonClass α]
-  {μ ν : Measure α}
-
-/-- **Total variation and overlap.** On a countable space with measurable singletons, for a finite
-measure `μ` and a measure `ν` of the same total mass, the total variation distance is twice the mass
-of `μ` that is not shared with `ν`, the shared part being the infimum `μ ⊓ ν`. -/
-theorem etvDist_eq_two_mul_measure_univ_sub_inf [IsFiniteMeasure μ] (h : μ univ = ν univ) :
-    etvDist μ ν = 2 * (μ univ - (μ ⊓ ν) univ) := by
-  have hfin : (μ ⊓ ν) univ ≠ ∞ :=
-    ne_top_of_le_ne_top (measure_ne_top μ univ) (Measure.le_iff'.1 inf_le_left univ)
-  -- Pointwise, `μ {x}` splits as `min (μ {x}) (ν {x}) + (μ {x} - ν {x})`.
-  have hsplit : μ univ = (μ ⊓ ν) univ + ∑' x, (μ {x} - ν {x}) := by
-    rw [← μ.tsum_indicator_apply_singleton univ .univ,
-      ← (μ ⊓ ν).tsum_indicator_apply_singleton univ .univ, ← tsum_add]
-    simp only [indicator_univ, Measure.inf_apply_singleton]
-    exact tsum_congr fun x => by rw [add_comm, tsub_add_min]
-  rw [etvDist_eq_two_mul_tsum_singleton h, ENNReal.sub_eq_of_eq_add_rev hfin hsplit]
-
-end MeasureTheory
 
 namespace TauCeti
 
