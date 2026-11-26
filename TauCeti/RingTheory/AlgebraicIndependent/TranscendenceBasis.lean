@@ -7,7 +7,9 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 public import Mathlib.RingTheory.AlgebraicIndependent.Transcendental
+import Mathlib.RingTheory.Algebraic.Cardinality
 import Mathlib.RingTheory.AlgebraicIndependent.AlgebraicClosure
+import Mathlib.RingTheory.AlgebraicIndependent.RankAndCardinality
 
 /-!
 # Transcendence bases and transcendence degree in towers
@@ -29,6 +31,10 @@ bases of two domains with comparable transcendence degrees.
 * `IsTranscendenceBasis.nonempty_embedding_of_lift_trdeg_le`,
   `IsTranscendenceBasis.nonempty_equiv_of_lift_trdeg_eq`: comparing transcendence degrees of two
   domains compares the index types of their transcendence bases.
+* `IsTranscendenceBasis.cardinalMk_eq_of_aleph0_lt`: a transcendence basis of an uncountable
+  integral domain over a countable commutative ring has the domain's cardinality.
+* `TauCeti.trdeg_eq_cardinalMk`: the transcendence degree of an uncountable integral domain over a
+  countable field is its cardinality.
 -/
 
 public section
@@ -127,4 +133,40 @@ theorem nonempty_equiv_of_lift_trdeg_eq (hv : IsTranscendenceBasis R v)
   rw [lift_lift, lift_lift]
   exact h1.trans (h3.trans h2.symm)
 
+/-- A transcendence basis of an uncountable integral domain `E` over a countable commutative ring
+`R` has the same cardinality as `E`. -/
+theorem cardinalMk_eq_of_aleph0_lt {R : Type u} {E : Type v} [CommRing R] [Countable R]
+    [CommRing E] [IsDomain E] [Algebra R E] {s : Set E}
+    (hs : IsTranscendenceBasis R ((↑) : s → E)) (hE : ℵ₀ < #E) : #s = #E := by
+  have : Nontrivial R := RingHom.domain_nontrivial (algebraMap R E)
+  have : Nonempty s := by
+    by_contra hne
+    rw [not_nonempty_iff] at hne
+    have : Algebra.IsAlgebraic (Algebra.adjoin R (Set.range ((↑) : s → E))) E := hs.isAlgebraic
+    have hK : #(Algebra.adjoin R (Set.range ((↑) : s → E))) ≤ ℵ₀ := by
+      have hcarrier : (Algebra.adjoin R (Set.range ((↑) : s → E)) : Set E) =
+          Set.range (algebraMap R E) := by
+        rw [Set.range_eq_empty, Algebra.adjoin_empty, Algebra.coe_bot]
+      have : Countable (Algebra.adjoin R (Set.range ((↑) : s → E))) :=
+        Set.countable_coe_iff.1 (hcarrier ▸ Set.countable_range (algebraMap R E))
+      exact mk_le_aleph0
+    exact not_le_of_gt hE ((Algebra.IsAlgebraic.cardinalMk_le_max _ E).trans (max_le hK le_rfl))
+  have h := hs.lift_cardinalMk_eq_max_lift
+  have hE' : ℵ₀ < lift.{max u v} #E := by simpa using hE
+  have hs_gt : ℵ₀ < lift.{max u v} #s := by
+    by_contra hle
+    exact not_le_of_gt hE' (h.le.trans (sup_le (sup_le (by simp) (le_of_not_gt hle)) le_rfl))
+  have hR : lift.{v} #R ≤ lift.{max u v} #s := le_trans (by simp) hs_gt.le
+  rw [sup_eq_right.2 hR, sup_eq_left.2 hs_gt.le] at h
+  exact (lift_inj.1 h).symm
+
 end IsTranscendenceBasis
+
+/-- The transcendence degree of an uncountable integral domain `E` over a countable field `k` is
+the cardinality of `E`. -/
+theorem TauCeti.trdeg_eq_cardinalMk {k : Type*} {E : Type u} [Field k] [Countable k] [CommRing E]
+    [IsDomain E] [Algebra k E] (hE : Cardinal.aleph0 < Cardinal.mk E) :
+    Algebra.trdeg k E = Cardinal.mk E := by
+  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis k E
+  rw [← ht.cardinalMk_eq_trdeg]
+  exact ht.cardinalMk_eq_of_aleph0_lt hE

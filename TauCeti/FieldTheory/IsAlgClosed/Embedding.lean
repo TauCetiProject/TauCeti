@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.IsAlgClosed.Automorphism
-import Mathlib.Algebra.MvPolynomial.Cardinal
-import Mathlib.RingTheory.Algebraic.Cardinality
 
 /-!
 # Embeddings into an algebraically closed field of large transcendence degree
@@ -37,15 +35,11 @@ field into `ℂ` to a field of cardinality at most the continuum.
   basis to a given algebraically independent family.
 * `IsTranscendenceBasis.exists_algEquiv_apply_eq`: between algebraically closed fields, an
   isomorphism realising a bijection of transcendence bases.
-* `IsTranscendenceBasis.cardinalMk_eq_of_aleph0_lt`: a transcendence basis of an uncountable
-  integral domain over a countable commutative ring has the domain's cardinality.
 * `TauCeti.IsAlgClosed.nonempty_algHom_of_lift_trdeg_le`,
   `TauCeti.IsAlgClosed.nonempty_algEquiv_of_lift_trdeg_eq`: homomorphisms and isomorphisms from
   transcendence degrees.
 * `Transcendental.exists_algHom_apply_eq`, `Transcendental.exists_algEquiv_apply_eq`: the same,
   sending a transcendental element to a prescribed transcendental element.
-* `TauCeti.IsAlgClosed.trdeg_eq_cardinalMk`: the transcendence degree of an uncountable integral
-  domain over a countable field is its cardinality.
 * `TauCeti.IsAlgClosed.exists_ringEquiv_extend`: Steinitz extension of injective embeddings of a
   countable commutative ring into two uncountable algebraically closed fields of the same
   cardinality.
@@ -115,33 +109,6 @@ theorem exists_algEquiv_apply_eq {E : Type*} [Field E] [Algebra R E] [IsAlgClose
   obtain ⟨τ, hτ, hτv⟩ := hv.exists_ringEquiv_comp_algebraMap hw (RingEquiv.refl R) e
   exact ⟨AlgEquiv.ofRingEquiv (f := τ) fun r ↦ by simpa using RingHom.congr_fun hτ r, hτv⟩
 
-/-- A transcendence basis of an uncountable integral domain `E` over a countable commutative ring
-`R` has the same cardinality as `E`. -/
-theorem cardinalMk_eq_of_aleph0_lt {R : Type u} {E : Type v} [CommRing R] [Countable R]
-    [CommRing E] [IsDomain E] [Algebra R E] {s : Set E}
-    (hs : IsTranscendenceBasis R ((↑) : s → E)) (hE : ℵ₀ < #E) : #s = #E := by
-  have : Nontrivial R := RingHom.domain_nontrivial (algebraMap R E)
-  have := hs.isAlgebraic
-  have hle : Cardinal.lift.{u} #E ≤ max (Cardinal.lift.{u} #s) ℵ₀ := calc
-    Cardinal.lift.{u} #E
-      ≤ Cardinal.lift.{u} (max #(Algebra.adjoin R (Set.range ((↑) : s → E))) ℵ₀) :=
-        lift_le.2 (Algebra.IsAlgebraic.cardinalMk_le_max _ E)
-    _ = max #(MvPolynomial s R) ℵ₀ := by
-      have hA : Cardinal.lift.{u} #(Algebra.adjoin R (Set.range ((↑) : s → E))) =
-          #(MvPolynomial s R) := by
-        have h := Cardinal.lift_mk_eq'.2 ⟨hs.1.aevalEquiv.symm.toEquiv⟩
-        rwa [lift_umax.{v, u}, lift_id'.{v, u}] at h
-      rw [lift_max, lift_aleph0, hA]
-    _ ≤ max (max (max (Cardinal.lift.{v} #R) (Cardinal.lift.{u} #s)) ℵ₀) ℵ₀ :=
-      max_le_max MvPolynomial.cardinalMk_le_max_lift le_rfl
-    _ ≤ max (Cardinal.lift.{u} #s) ℵ₀ := by
-      have hR : Cardinal.lift.{v} #R ≤ ℵ₀ := by simp
-      exact max_le (max_le (max_le (hR.trans (le_max_right _ _)) (le_max_left _ _))
-        (le_max_right _ _)) (le_max_right _ _)
-  rcases le_max_iff.1 hle with h | h
-  · exact le_antisymm (mk_set_le s) (lift_le.1 h)
-  · exact (not_le_of_gt (by simpa using hE) h).elim
-
 end IsTranscendenceBasis
 
 variable {k : Type*} {Ω : Type v} [Field k] [Field Ω] [Algebra k Ω] [IsAlgClosed Ω]
@@ -169,14 +136,6 @@ theorem nonempty_algEquiv_of_lift_trdeg_eq {E : Type u} [Field E] [Algebra k E] 
   obtain ⟨e⟩ := hs.nonempty_equiv_of_lift_trdeg_eq ht h
   obtain ⟨φ, -⟩ := hs.exists_algEquiv_apply_eq ht e
   exact ⟨φ⟩
-
-/-- The transcendence degree of an uncountable integral domain `E` over a countable field `k` is
-the cardinality of `E`. -/
-theorem trdeg_eq_cardinalMk {E : Type u} [Countable k] [CommRing E] [IsDomain E] [Algebra k E]
-    (hE : ℵ₀ < #E) : trdeg k E = #E := by
-  obtain ⟨t, ht⟩ := exists_isTranscendenceBasis k E
-  rw [← ht.cardinalMk_eq_trdeg]
-  exact ht.cardinalMk_eq_of_aleph0_lt hE
 
 /-- **Steinitz extension for countable subrings.** Let `K` be a countable commutative ring, `E` and
 `L` uncountable algebraically closed fields of the same cardinality, and `f : K →+* E`,
