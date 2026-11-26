@@ -202,27 +202,27 @@ theorem fibreEquivOfNeZero_symm_apply (σ : ∀ z, L z) (hσ : ∀ z, σ z ≠ 0
     ContinuousLinearEquiv.unitsEquivAut_apply_symm, inv_inv, Units.val_mk0, ← smul_eq_mul,
     map_smul, ContinuousLinearEquiv.symm_apply_apply]
 
-variable [IsManifold 𝓘(ℂ) ∞ X] [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)]
+variable [ContMDiffVectorBundle n ℂ L 𝓘(ℝ, ℂ)]
 
-/-- **A line bundle with a nowhere-zero section is trivial.** If `σ` is a real-smooth section of a
-complex line bundle `L` without zeros, the fibre isomorphisms `fibreEquivOfNeZero σ` of `L` with
-the trivial bundle `𝒪(0)` are smooth on total spaces. -/
+/-- **A line bundle with a nowhere-zero section is trivial.** If `σ` is a real-`C^n` section of a
+real-`C^n` complex line bundle `L` without zeros, the fibre isomorphisms `fibreEquivOfNeZero σ` of
+`L` with the trivial bundle `𝒪(0)` are real `C^n` on total spaces. -/
 theorem contMDiff_fibreEquivOfNeZero {σ : ∀ z, L z}
-    (hσ : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) ∞ fun z ↦ TotalSpace.mk' ℂ z (σ z))
+    (hσ : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n fun z ↦ TotalSpace.mk' ℂ z (σ z))
     (hσ₀ : ∀ z, σ z ≠ 0) :
-    ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) ∞
+    ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n
       fun p : TotalSpace ℂ L ↦ TotalSpace.mk' ℂ (E := (divisorCore []).Fiber) p.proj
         (fibreEquivOfNeZero σ hσ₀ p.proj p.snd) := by
-  have : IsManifold 𝓘(ℝ, ℂ) ∞ X := IsManifold.restrictScalars ℝ ‹_›
+  have : IsManifold 𝓘(ℝ, ℂ) n X := IsManifold.restrictScalars ℝ ‹_›
   -- The inverse `w ↦ w • σ z` is smooth: in a chart of `L` it is `w` times the reading of `σ`.
-  have h : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) ∞
+  have h : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) n
       fun p : TotalSpace ℂ (divisorCore []).Fiber ↦ TotalSpace.mk' ℂ (E := L) p.proj
         ((show ℂ from p.snd) • σ p.proj) := by
     intro p
     rw [Bundle.contMDiffAt_totalSpace_iff]
     refine ⟨contMDiffAt_proj _, ?_⟩
     have hw := (Bundle.contMDiffAt_totalSpace_iff.mp
-      (contMDiffAt_id (I := 𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) (x := p) (n := ∞))).2
+      (contMDiffAt_id (I := 𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) (x := p) (n := n))).2
     have hg := (((trivializationAt ℂ L p.proj).contMDiffAt_section_iff
       (mem_baseSet_trivializationAt ℂ L p.proj)).1 (hσ p.proj)).comp p (contMDiffAt_proj _)
     refine (((ContinuousLinearMap.lsmul ℝ ℂ : ℂ →L[ℝ] ℂ →L[ℝ] ℂ).contMDiff.contMDiffAt.comp p
