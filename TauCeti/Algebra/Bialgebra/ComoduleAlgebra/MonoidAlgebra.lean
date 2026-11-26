@@ -79,7 +79,27 @@ noncomputable instance weightSpaceGradedAlgebra [DecidableEq G] :
   mul_mem _ _ _ _ := mul_mem_weightSpace
   toDecomposition := by
     apply DirectSum.IsInternal.chooseDecomposition
-    exact (Subsingleton.elim (Classical.decEq G) ‹DecidableEq G›) ▸ isInternal_weightSpace R G A
+    -- The internal direct sum uses classical decidability; this grading uses the supplied instance.
+    change DirectSum.IsInternal W
+    convert isInternal_weightSpace R G A
+
+/-- The component of the graded decomposition is the comodule weight projection. -/
+@[simp]
+theorem coe_decompose_weightSpace [DecidableEq G] (a : A) (g : Additive G) :
+    (DirectSum.decompose (fun i : Additive G ↦ W i.toMul) a g : A) =
+      weightProj R G A g.toMul a := by
+  let S (i : Additive G) := W i.toMul
+  suffices (S g).subtype ∘ₗ DirectSum.component R (Additive G) (fun i ↦ S i) g ∘ₗ
+      (DirectSum.decomposeLinearEquiv S).toLinearMap = weightProj R G A g.toMul from
+    LinearMap.congr_fun this a
+  apply DirectSum.decompose_lhom_ext S
+  intro i
+  ext x
+  by_cases hi : i = g
+  · subst i
+    simp [S, weightProj_of_mem x.property]
+  · have hne : g.toMul ≠ i.toMul := fun e ↦ hi (congrArg Additive.ofMul e.symm)
+    simp [DirectSum.component.of, hi, weightProj_of_mem_of_ne hne x.property]
 
 end Monoid
 
@@ -95,17 +115,10 @@ local notation "P" => weightProj R G A
 right multiplication by `h` on the character group. -/
 theorem weightProj_mul_right_of_mem_weightSpace {h : G} {b : A} (hb : b ∈ W h)
     (g : G) (a : A) : P (g * h) (a * b) = P g a * b := by
-  have ha : a ∈ ⨆ k, W k := by rw [iSup_weightSpace_eq_top]; exact Submodule.mem_top
-  refine Submodule.iSup_induction W
-    (motive := fun x ↦ P (g * h) (x * b) = P g x * b) ha ?_ (by simp) ?_
-  · intro k x hx
-    by_cases hk : g = k
-    · subst k
-      rw [weightProj_of_mem (mul_mem_weightSpace hx hb), weightProj_of_mem hx]
-    · rw [weightProj_of_mem_of_ne (fun e ↦ hk (mul_right_cancel e)) (mul_mem_weightSpace hx hb),
-        weightProj_of_mem_of_ne hk hx, zero_mul]
-  · intro x y hx hy
-    simp only [add_mul, map_add, hx, hy]
+  classical
+  simpa only [coe_decompose_weightSpace, toMul_add, toMul_ofMul] using
+    (DirectSum.coe_decompose_mul_add_of_right_mem (fun i : Additive G ↦ W i.toMul)
+      (i := Additive.ofMul g) (j := Additive.ofMul h) (a := a) hb)
 
 /-- Surjectivity of the Galois map forces a finite sum of products of opposite-weight elements
 to be equal to one. -/
@@ -158,23 +171,12 @@ theorem weightSpace_mul_eq (g h : G) (hInv : W h⁻¹ * W h = 1) : W g * W h = W
       gcongr
       simpa [mul_assoc] using (weightSpace_mul_le (R := R) (A := A) (g * h) h⁻¹)
 
-/-- If the product of the trivial weight with itself is the scalar submodule, the trivial weight
-is the scalar submodule. -/
-theorem weightSpace_one_eq_one (h : W (1 : G) * W (1 : G) = 1) : W (1 : G) = 1 := by
-  have hle : 1 ≤ W (1 : G) := Submodule.one_le.mpr one_mem_weightSpace
-  refine le_antisymm ?_ hle
-  calc
-    W (1 : G) = W (1 : G) * 1 := (mul_one _).symm
-    _ ≤ W (1 : G) * W (1 : G) := by gcongr
-    _ = 1 := h
-
 /-- In a strong grading the weights form a homomorphism to the group of invertible submodules
 of the coordinate algebra. -/
 noncomputable def weightSpaceUnits (hInv : ∀ g : G, W g⁻¹ * W g = 1) :
-    G →* (Submodule R A)ˣ where
-  toFun g := (Units.mkOfMulEqOne (W g⁻¹) (W g) (hInv g))⁻¹
-  map_one' := Units.ext (weightSpace_one_eq_one (by simpa only [inv_one] using hInv 1))
-  map_mul' g h := Units.ext (weightSpace_mul_eq g h (hInv h)).symm
+    G →* (Submodule R A)ˣ :=
+  MonoidHom.mk' (fun g ↦ (Units.mkOfMulEqOne (W g⁻¹) (W g) (hInv g))⁻¹)
+    fun g h ↦ Units.ext (weightSpace_mul_eq g h (hInv h)).symm
 
 variable (hInv : ∀ g : G, weightSpace R G A g⁻¹ * weightSpace R G A g = 1)
 
@@ -183,11 +185,18 @@ variable (hInv : ∀ g : G, weightSpace R G A g⁻¹ * weightSpace R G A g = 1)
 theorem coe_weightSpaceUnits (g : G) : (weightSpaceUnits hInv g : Submodule R A) = W g :=
   (rfl)
 
+/-- The inverse character unit has the opposite weight as its underlying submodule. -/
+@[simp]
+theorem coe_inv_weightSpaceUnits (g : G) :
+    (((weightSpaceUnits hInv g)⁻¹ : (Submodule R A)ˣ) : Submodule R A) = W g⁻¹ := by
+  rfl
+
 variable [FaithfulSMul R A]
 
 /-- A weight space whose product with its opposite is the scalar submodule is an invertible
 module over the base. -/
 theorem invertible_weightSpace (g : G) (h : W g⁻¹ * W g = 1) : Module.Invertible R (W g) :=
+  -- The inverse of the constructed unit has underlying submodule definitionally equal to `W g`.
   inferInstanceAs (Module.Invertible R ↥(↑((Units.mkOfMulEqOne (W g⁻¹) (W g) h)⁻¹) :
     Submodule R A))
 
@@ -226,27 +235,9 @@ theorem weightSpaceBaseChangeEquiv_tmul (g : G) (h : W g⁻¹ * W g = 1) (a : A)
     weightSpaceBaseChangeEquiv g h (a ⊗ₜ[R] b) = a * (b : A) := by
   simp [weightSpaceBaseChangeEquiv]
 
-end Group
-
-section Torsor
-
-variable {R G A : Type*} [CommRing R] [Group G] [CommRing A] [Algebra R A]
-  [ComoduleAlgebra R (MonoidAlgebra R G) A]
-
-local notation "W" => weightSpace R G A
-
-/-- On a faithfully flat comodule algebra with injective Galois map, the trivial weight
-submodule is the image of the base ring. -/
-theorem weightSpace_one_of_injective_galoisMap [Module.FaithfullyFlat R A]
-    (hinj : Function.Injective (galoisMap R
-      (fun r ↦ (coinvariants R (MonoidAlgebra R G) A).algebraMap_mem r))) : W 1 = 1 := by
-  rw [weightSpace_one_eq_coinvariants, coinvariants_eq_range _ hinj, Submodule.one_eq_range]
-  rfl
-
-/-- A strongly graded comodule algebra whose degree-one component is the base has a bijective
-Galois map. In the weight decomposition this map is multiplication on each summand after
-extending scalars to the coordinate algebra. -/
-theorem bijective_galoisMap_of_weightSpace_inv_mul [FaithfulSMul R A]
+/-- If opposite weight spaces in a faithful algebra multiply to the scalar submodule, the Galois
+map is bijective. -/
+theorem bijective_galoisMap_of_weightSpace_inv_mul_eq_one
     (hInv : ∀ g : G, W g⁻¹ * W g = 1) :
     Function.Bijective (galoisMap R
       (fun r ↦ (coinvariants R (MonoidAlgebra R G) A).algebraMap_mem r)) := by
@@ -282,10 +273,27 @@ theorem bijective_galoisMap_of_weightSpace_inv_mul [FaithfulSMul R A]
       (DirectSum.congrLinearEquiv m).bijective
   exact (f.bijective.of_comp_iff' β).1 ((Function.Bijective.of_comp_iff (f ∘ β) e.bijective).1 hb)
 
-/-- When weight multiplication is strong and the degree-one summand is the base ring, the
-coordinate algebra is faithfully flat. The character lines give flatness and the degree-one
-summand detects nonzero modules. -/
-theorem faithfullyFlat_of_weightSpace_inv_mul [FaithfulSMul R A]
+end Group
+
+section Torsor
+
+variable {R G A : Type*} [CommRing R] [Group G] [CommRing A] [Algebra R A]
+  [ComoduleAlgebra R (MonoidAlgebra R G) A]
+
+local notation "W" => weightSpace R G A
+
+/-- On a faithfully flat comodule algebra with injective Galois map, the trivial weight
+submodule is the image of the base ring. -/
+theorem weightSpace_one_eq_one_of_injective_galoisMap [Module.FaithfullyFlat R A]
+    (hinj : Function.Injective (galoisMap R
+      (fun r ↦ (coinvariants R (MonoidAlgebra R G) A).algebraMap_mem r))) : W 1 = 1 := by
+  rw [weightSpace_one_eq_coinvariants, coinvariants_eq_range _ hinj]
+  change (Algebra.ofId R A).range.toSubmodule = 1
+  rw [Algebra.range_ofId, Algebra.toSubmodule_bot]
+
+/-- If opposite weight spaces in a faithful algebra multiply to the scalar submodule, the
+coordinate algebra is faithfully flat. -/
+theorem faithfullyFlat_of_weightSpace_inv_mul_eq_one [FaithfulSMul R A]
     (hInv : ∀ g : G, W g⁻¹ * W g = 1) : Module.FaithfullyFlat R A := by
   classical
   let fromWeights := LinearEquiv.ofBijective (DirectSum.coeLinearMap W)
@@ -294,7 +302,7 @@ theorem faithfullyFlat_of_weightSpace_inv_mul [FaithfulSMul R A]
   let (g : G) : Module.Flat R (W g) := inferInstance
   rw [Module.FaithfullyFlat.iff_flat_and_lTensor_faithful]
   refine ⟨Module.Flat.of_linearEquiv fromWeights.symm, fun N _ _ hN ↦ ?_⟩
-  have h₁ := weightSpace_one_eq_one (by simpa only [inv_one] using hInv 1)
+  have h₁ : W (1 : G) = 1 := congrArg Units.val (map_one (weightSpaceUnits hInv))
   let base : W (1 : G) ≃ₗ[R] R :=
     (LinearEquiv.ofEq _ _ (h₁.trans Submodule.one_eq_range)).trans
       (LinearEquiv.ofInjective (Algebra.linearMap R A) (FaithfulSMul.algebraMap_injective R A)).symm
@@ -314,13 +322,13 @@ theorem faithfullyFlat_and_bijective_galoisMap_iff :
   constructor
   · rintro ⟨hFlat, hβ⟩
     let := hFlat
-    have h₁ := weightSpace_one_of_injective_galoisMap hβ.injective
+    have h₁ := weightSpace_one_eq_one_of_injective_galoisMap hβ.injective
     exact ⟨FaithfulSMul.algebraMap_injective R A,
       weightSpace_inv_mul_eq_one_of_surjective_galoisMap h₁ hβ.surjective⟩
   · rintro ⟨hinj, hInv⟩
     let : FaithfulSMul R A := (faithfulSMul_iff_algebraMap_injective R A).2 hinj
-    exact ⟨faithfullyFlat_of_weightSpace_inv_mul hInv,
-      bijective_galoisMap_of_weightSpace_inv_mul hInv⟩
+    exact ⟨faithfullyFlat_of_weightSpace_inv_mul_eq_one hInv,
+      bijective_galoisMap_of_weightSpace_inv_mul_eq_one hInv⟩
 
 end Torsor
 
