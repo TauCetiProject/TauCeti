@@ -7,17 +7,17 @@ module
 
 public import Mathlib.FieldTheory.Separable
 public import TauCeti.Analysis.Matrix.Eigenvalues.Schur.Coordinates
-public import TauCeti.Analysis.Matrix.Triangular
+public import TauCeti.Topology.Algebra.Module.Matrix
 import Mathlib.Topology.Algebra.Module.Equiv.Pi
 import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 import TauCeti.Analysis.Calculus.FDeriv.Unitary
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Matrix.Eigenvalues.Schur.Basic
-import TauCeti.Analysis.Matrix.UnitaryGroup.Conjugation
 import TauCeti.LinearAlgebra.Complex.Determinant
 import TauCeti.LinearAlgebra.Matrix.Kronecker.MulLeftMulRight
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.Prod
+import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
@@ -84,9 +84,6 @@ private theorem schurUpper_apply (a : {ij : Fin n × Fin n // ij.1 ≤ ij.2} →
   rw [schurUpper, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     ContinuousLinearMap.inl_apply, schurMatrixCLE_apply]
 
-private def schurFrame (b : FinStrictUpper n → ℂ) : unitaryGroup (Fin n) ℂ :=
-  expStrictUpper (schurAngleFlip b)
-
 open Matrix.UnitaryGroup
 
 private def schurConj (U : unitaryGroup (Fin n) ℂ) :
@@ -126,7 +123,8 @@ theorem _root_.Matrix.UnitaryGroup.contDiff_schurCoordinates (U : unitaryGroup (
   convert (schurMatrixCLE (𝕜 := ℝ)).symm.toContinuousLinearMap.contDiff.comp h using 1
   funext x
   simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe, schurCoordinates_apply,
-    ← coe_schurAngleFlip, schurMatrixCLE_symm_apply, schurUpper_apply, Unitary.conjStarAlgAut_apply]
+    schurFrame_apply, ← coe_schurAngleFlip, schurMatrixCLE_symm_apply, schurUpper_apply,
+    Unitary.conjStarAlgAut_apply]
 
 /-- The matrix-valued Schur parametrization is smooth in the triangular entries and angles. -/
 theorem _root_.Matrix.UnitaryGroup.contDiff_schurMatrix (U : unitaryGroup (Fin n) ℂ)
@@ -240,6 +238,26 @@ theorem schurAngularFDeriv_apply (b v : FinStrictUpper n → 𝕜) (ij : FinStri
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, ContinuousLinearEquiv.coe_coe]
   simpa only [schurAngleFlip_symm] using schurAngleFlip.symm_apply_apply v
 
+/-- The determinant of the Schur angular differential depends continuously on the angles. -/
+theorem continuous_det_schurAngularFDeriv :
+    Continuous (fun b : FinStrictUpper n → 𝕜 ↦ (schurAngularFDeriv b).det) := by
+  apply ContinuousLinearMap.continuous_det.comp
+  refine continuous_clm_apply.mpr fun v ↦ continuous_pi fun ij ↦ ?_
+  let F (b : FinStrictUpper n → 𝕜) :=
+    (expStrictUpper (schurAngleFlip b) : Matrix (Fin n) (Fin n) 𝕜)
+  have hF : ContDiff ℝ 1 F :=
+    (contDiff_expStrictUpper (n := n) (𝕜 := 𝕜)).comp
+      (schurAngleFlip (n := n) (𝕜 := 𝕜)).contDiff
+  have h (b : FinStrictUpper n → 𝕜) :
+      schurAngularFDeriv b v ij = (star (F b) * fderiv ℝ F b v) ij.val.2 ij.val.1 := by
+    rw [schurAngularFDeriv_apply]
+    simp only [← coe_schurAngleFlip, coe_relativeFrame]
+    -- Fold the two occurrences of the frame into the same smooth family.
+    change fderiv ℝ (fun c ↦ star (F b) * F c) b v ij.val.2 ij.val.1 = _
+    rw [fderiv_const_mul (hF.differentiable one_ne_zero b), smul_apply, smul_eq_mul]
+  simp_rw [h]
+  exact ((continuous_star.comp hF.continuous).mul
+    ((hF.continuous_fderiv one_ne_zero).clm_apply continuous_const)).matrix_elem _ _
 
 private theorem hasFDerivAt_schurCoordinates_relative (x : SchurCoordinates (Fin n) ℂ) :
     HasFDerivAt
@@ -275,11 +293,9 @@ private theorem hasFDerivAt_schurCoordinates (U : unitaryGroup (Fin n) ℂ)
   refine h.congr_of_eventuallyEq (.of_forall fun y ↦ ?_)
   have hu : (U * schurFrame x.2) * relativeFrame (schurAngleFlip x.2) (schurAngleFlip y.2) =
       U * schurFrame y.2 := by
-    rw [mul_assoc]
-    exact congrArg (U * ·) (expStrictUpper_mul_relativeFrame _ _)
+    simp only [mul_assoc, schurFrame_apply, ← coe_schurAngleFlip, expStrictUpper_mul_relativeFrame]
   simp only [Function.comp_apply, schurConj_apply, LinearEquiv.apply_symm_apply]
-  rw [schurCoordinates_apply, ← coe_schurAngleFlip, ← schurFrame, ← hu,
-    Unitary.conjStarAlgAut_mul_apply]
+  rw [schurCoordinates_apply, ← hu, Unitary.conjStarAlgAut_mul_apply]
 
 /-- The derivative of the Schur matrix is the triangular variation plus the angular
 commutator, conjugated by the frame at the base angle. Here `K` is the derivative of the
@@ -290,7 +306,7 @@ theorem _root_.Matrix.UnitaryGroup.fderiv_schurMatrix_apply (U : unitaryGroup (F
     let K := fderiv ℝ (fun b ↦ (relativeFrame (fun ij ↦ -star (x.2 ij)) (fun ij ↦ -star (b ij)) :
       Matrix (Fin n) (Fin n) ℂ)) x.2 v.2
     fderiv ℝ (schurMatrix U) x v =
-      Unitary.conjStarAlgAut ℂ _ (U * expStrictUpper (fun ij ↦ -star (x.2 ij)))
+      Unitary.conjStarAlgAut ℂ _ (U * schurFrame x.2)
         (schurMatrixEquiv (v.1, 0) + (K * T - T * K)) := by
   let e := schurMatrixCLE (𝕜 := ℝ) (ι := Fin n) (R := ℂ)
   have h := e.toContinuousLinearMap.hasFDerivAt.comp x (hasFDerivAt_schurCoordinates U x)
@@ -300,7 +316,7 @@ theorem _root_.Matrix.UnitaryGroup.fderiv_schurMatrix_apply (U : unitaryGroup (F
       schurMatrixEquiv_schurCoordinates]
   rw [he, h.fderiv]
   simp only [e, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, schurMatrixCLE_apply,
-    schurConj_apply, LinearEquiv.apply_symm_apply, schurFDeriv_apply, schurFrame,
+    schurConj_apply, LinearEquiv.apply_symm_apply, schurFDeriv_apply,
     ← (hasFDerivAt_schurRelativeFrame x.2).fderiv, coe_schurAngleFlip]
 
 /-- The real Jacobian of the Schur parametrization is the angular Jacobian times the

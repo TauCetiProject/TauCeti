@@ -26,15 +26,32 @@ namespace TauCeti
 
 open Matrix
 
-variable {n : ℕ}
+variable {n : ℕ} {𝕜 : Type*} [RCLike 𝕜]
+
+/-- The transverse unitary frame of the Schur parametrization. The angles specify strict lower
+entries, so the upper entries of the skew-adjoint generator are their negative conjugates. -/
+def schurFrame (b : FinStrictUpper n → 𝕜) : unitaryGroup (Fin n) 𝕜 :=
+  expStrictUpper (fun ij ↦ -star (b ij))
+
+/-- Evaluate the Schur frame using the transverse exponential in strict upper coordinates. -/
+theorem schurFrame_apply (b : FinStrictUpper n → 𝕜) :
+    schurFrame b = expStrictUpper (fun ij ↦ -star (b ij)) :=
+  (rfl)
+
+/-- The Schur frame at zero angle is the identity. -/
+@[simp] theorem schurFrame_zero : schurFrame (0 : FinStrictUpper n → 𝕜) = 1 := by
+  have h : (fun ij : FinStrictUpper n ↦ -star ((0 : FinStrictUpper n → 𝕜) ij)) = 0 := by
+    funext ij
+    simp
+  rw [schurFrame_apply, h, expStrictUpper_zero]
 
 /-- The input gives the upper triangular entries and the strict lower angular coordinates.
-Negatively conjugate the angles for `expStrictUpper`, apply the resulting unitary in the fixed
-frame, and split the resulting matrix into its upper triangular and strict lower entries. -/
+Apply the Schur frame in the fixed frame, then split the resulting matrix into its upper
+triangular and strict lower entries. -/
 def _root_.Matrix.UnitaryGroup.schurCoordinates (U : unitaryGroup (Fin n) ℂ)
     (x : SchurCoordinates (Fin n) ℂ) : SchurCoordinates (Fin n) ℂ :=
   schurMatrixEquiv.symm
-    (Unitary.conjStarAlgAut ℂ _ (U * expStrictUpper (fun ij ↦ -star (x.2 ij)))
+    (Unitary.conjStarAlgAut ℂ _ (U * schurFrame x.2)
       (schurMatrixEquiv (x.1, 0)))
 
 open Matrix.UnitaryGroup
@@ -44,7 +61,7 @@ by the unitary exponential in the fixed frame. -/
 theorem _root_.Matrix.UnitaryGroup.schurCoordinates_apply (U : unitaryGroup (Fin n) ℂ)
     (x : SchurCoordinates (Fin n) ℂ) :
     schurCoordinates U x = schurMatrixEquiv.symm
-      (Unitary.conjStarAlgAut ℂ _ (U * expStrictUpper (fun ij ↦ -star (x.2 ij)))
+      (Unitary.conjStarAlgAut ℂ _ (U * schurFrame x.2)
         (schurMatrixEquiv (x.1, 0))) :=
   (rfl)
 
@@ -53,10 +70,7 @@ theorem _root_.Matrix.UnitaryGroup.schurCoordinates_apply (U : unitaryGroup (Fin
     (a : {ij : Fin n × Fin n // ij.1 ≤ ij.2} → ℂ) :
     schurCoordinates U (a, 0) = schurMatrixEquiv.symm
       (Unitary.conjStarAlgAut ℂ _ U (schurMatrixEquiv (a, 0))) := by
-  have h : (fun ij : FinStrictUpper n ↦ -star ((0 : FinStrictUpper n → ℂ) ij)) = 0 := by
-    funext ij
-    simp
-  rw [schurCoordinates_apply, h, expStrictUpper_zero, mul_one]
+  rw [schurCoordinates_apply, schurFrame_zero, mul_one]
 
 /-- The complex matrix parametrized by the upper triangular entries and the angles in a
 fixed unitary frame. -/
@@ -81,8 +95,8 @@ def _root_.Matrix.UnitaryGroup.schurMatrix (U : unitaryGroup (Fin n) ℂ)
 the transverse unitary exponential. -/
 theorem _root_.Matrix.UnitaryGroup.schurMatrix_apply (U : unitaryGroup (Fin n) ℂ)
     (x : SchurCoordinates (Fin n) ℂ) :
-    schurMatrix U x = Unitary.conjStarAlgAut ℂ _
-      (U * expStrictUpper (fun ij ↦ -star (x.2 ij))) (schurMatrixEquiv (x.1, 0)) := by
+    schurMatrix U x = Unitary.conjStarAlgAut ℂ _ (U * schurFrame x.2)
+      (schurMatrixEquiv (x.1, 0)) := by
   rw [schurMatrix, schurCoordinates_apply, LinearEquiv.apply_symm_apply]
 
 /-- At zero angles the matrix parametrization conjugates the upper triangular matrix by the
@@ -98,7 +112,7 @@ theorem _root_.Matrix.UnitaryGroup.charpoly_schurMatrix (U : unitaryGroup (Fin n
     (x : SchurCoordinates (Fin n) ℂ) :
     (schurMatrix U x).charpoly =
       ∏ i : Fin n, (Polynomial.X - Polynomial.C (x.1 ⟨(i, i), le_rfl⟩)) := by
-  let V := U * expStrictUpper (fun ij ↦ -star (x.2 ij))
+  let V := U * schurFrame x.2
   have hconj (T : Matrix (Fin n) (Fin n) ℂ) :
       (Unitary.conjStarAlgAut ℂ _ V T).charpoly = T.charpoly := by
     simpa only [Unitary.conjStarAlgAut_apply, Unitary.coe_star, star_star] using
