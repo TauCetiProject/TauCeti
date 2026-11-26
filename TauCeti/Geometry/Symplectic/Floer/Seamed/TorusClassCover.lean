@@ -263,6 +263,19 @@ theorem torusClassCoverDeckEquiv_seamedTorusClass_apply_mk
       Quotient.mk'' (HomotopyGroup.pi1MulEquivFundamentalGroup a • e) :=
   deckAdditiveKerEquiv_apply_mk _ _ (seamedTorusClass_surjective γ₀) a e
 
+/-- The inverse of the deck transformation of the torus class of a loop `a` of seamed paths acts
+on the torus-class cover through the action of `a⁻¹` on the universal cover of the path component
+of `γ₀`. -/
+@[simp]
+theorem torusClassCoverDeckEquiv_seamedTorusClass_symm_apply_mk
+    (a : HomotopyGroup (Fin 1) (pathComponent γ₀) (pathComponentSelf γ₀))
+    (e : UniversalCover (pathComponentSelf γ₀)) :
+    (torusClassCoverDeckEquiv γ₀ (Multiplicative.ofAdd
+        (seamedTorusClass γ₀ (Additive.ofMul a)))).val.symm (Quotient.mk'' e) =
+      Quotient.mk'' ((HomotopyGroup.pi1MulEquivFundamentalGroup a)⁻¹ • e) := by
+  rw [Homeomorph.symm_apply_eq, torusClassCoverDeckEquiv_seamedTorusClass_apply_mk,
+    smul_inv_smul]
+
 /-- The group of swept classes acts on the torus-class cover through its deck group. -/
 noncomputable instance instAddActionTorusClassCover :
     AddAction (seamedTorusClassGroup γ₀) (TorusClassCover γ₀) :=
@@ -313,6 +326,14 @@ theorem TorusClassCover.coe_vadd_fiber {γ : pathComponent γ₀} (g : seamedTor
     ((g +ᵥ e : torusClassCoverProj γ₀ ⁻¹' {γ}) : TorusClassCover γ₀) =
       g +ᵥ (e : TorusClassCover γ₀) :=
   Deck.coe_fiberAddTorsorOfMulEquiv_vadd _ _ (torusClassCoverDeckEquiv γ₀) g e
+
+/-- The difference of two points of a fibre of the torus-class cover carries the second to the
+first on the cover. -/
+@[simp]
+theorem TorusClassCover.vsub_vadd_coe {γ : pathComponent γ₀}
+    (e₁ e₂ : torusClassCoverProj γ₀ ⁻¹' {γ}) :
+    (e₁ -ᵥ e₂) +ᵥ (e₂ : TorusClassCover γ₀) = e₁ := by
+  rw [← coe_vadd_fiber, vsub_vadd]
 
 /-- **The difference of two points of a fibre of the torus-class cover is the torus class of the
 loop relating them**: transporting `e` around a loop `a` of seamed paths gives the point whose
