@@ -75,30 +75,6 @@ variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {B : V →L[ℝ] V →L[ℝ] ℝ} {J : V →L[ℝ] H} {ι : Type*} {b : HilbertBasis ι ℝ H} {κ : ι → ℝ}
   {u : ι → V}
 
-/-- A finite combination of eigenvectors pairs with every `v` through the eigenvalues. -/
-private theorem apply_sum_smul (hJu : ∀ i, J (u i) = b i)
-    (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (c : ι → ℝ) (t : Finset ι) (v : V) :
-    B (∑ i ∈ t, c i • u i) v = ∑ i ∈ t, κ i * c i * ⟪b i, J v⟫_ℝ := by
-  simp only [map_sum, map_smul, sum_apply, smul_apply,
-    heq, hJu, smul_eq_mul]
-  exact Finset.sum_congr rfl fun i _ ↦ by ring
-
-/-- The coordinates of the image of a finite combination of eigenvectors. -/
-private theorem inner_apply_sum_smul (hJu : ∀ i, J (u i) = b i) (c : ι → ℝ) {t : Finset ι}
-    {i : ι} (hi : i ∈ t) : ⟪b i, J (∑ j ∈ t, c j • u j)⟫_ℝ = c i := by
-  simp only [map_sum, map_smul, hJu]
-  exact b.orthonormal.inner_right_sum c hi
-
-/-- The energy of a finite combination of eigenvectors: the eigenvectors are orthogonal for `B`,
-with `B (u i) (u i) = κ i`. -/
-private theorem apply_sum_smul_sum_smul (hJu : ∀ i, J (u i) = b i)
-    (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (c : ι → ℝ) (t : Finset ι) :
-    B (∑ i ∈ t, c i • u i) (∑ i ∈ t, c i • u i) = ∑ i ∈ t, κ i * c i ^ 2 := by
-  rw [apply_sum_smul hJu heq]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [inner_apply_sum_smul hJu c hi]
-  ring
-
 /-- The variational eigenvalues are positive. -/
 private theorem pos_of_hilbertBasis (hB : IsCoercive B) (hJu : ∀ i, J (u i) = b i)
     (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (i : ι) : 0 < κ i := by
@@ -141,7 +117,10 @@ theorem exists_apply_eq_and_hasSum_inner_smul_of_summable (hB : IsCoercive B)
     obtain ⟨s, hs⟩ := summable_iff_vanishing_norm.1 hsum (C * ε ^ 2) (by positivity)
     refine ⟨s, fun t ht ↦ ?_⟩
     have h1 := hle (∑ i ∈ t, ⟪b i, h⟫_ℝ • u i)
-    rw [apply_sum_smul_sum_smul hJu heq] at h1
+    have h3 : B (∑ i ∈ t, ⟪b i, h⟫_ℝ • u i) (∑ i ∈ t, ⟪b i, h⟫_ℝ • u i) =
+        ∑ i ∈ t, κ i * ⟪b i, h⟫_ℝ ^ 2 :=
+      TauCeti.apply_sum_smul_sum_smul_eq_sum_mul_sq (B := B.toLinearMap₁₂) b.orthonormal hJu heq _ t
+    rw [h3] at h1
     have h2 : ∑ i ∈ t, κ i * ⟪b i, h⟫_ℝ ^ 2 < C * ε ^ 2 := (le_abs_self _).trans_lt (hs t ht)
     have h4 : ‖∑ i ∈ t, ⟪b i, h⟫_ℝ • u i‖ ^ 2 < ε ^ 2 := by
       nlinarith
