@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.Transvection
 public import TauCeti.RingTheory.Length.Endomorphism
 import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 import Mathlib.RingTheory.Localization.Finiteness
+import TauCeti.Algebra.Module.Torsion.Localization
 import TauCeti.LinearAlgebra.Dimension.Localization
 import TauCeti.LinearAlgebra.Matrix.Diagonal.Length
 import TauCeti.RingTheory.OrderOfVanishing
@@ -317,13 +318,9 @@ omit [IsDomain A] in
 one that is injective after tensoring with the fraction field has a kernel of finite length. -/
 theorem length_ker_ne_top_of_injective_baseChange {N : Type*} [AddCommGroup N] [Module A N]
     {f : M →ₗ[A] N}
-    (hf : Function.Injective (f.baseChange K)) : Module.length A (LinearMap.ker f) ≠ ⊤ := by
-  have hle : LinearMap.ker f ≤ LinearMap.ker (TensorProduct.mk A K M 1) := fun m hm ↦ hf (by
-    rw [map_zero, TensorProduct.mk_apply, LinearMap.baseChange_tmul, LinearMap.mem_ker.1 hm,
-      tmul_zero])
-  exact ne_top_of_le_ne_top
-    (Module.length_ne_top_iff.2 (IsLocalizedModule.isFiniteLength_ker (TensorProduct.mk A K M 1)))
-    (Module.length_le_of_injective _ (Submodule.inclusion_injective hle))
+    (hf : Function.Injective (f.baseChange K)) : Module.length A (LinearMap.ker f) ≠ ⊤ :=
+  Module.length_ne_top_iff.2 (Module.IsTorsion.isFiniteLength
+    ((f.baseChange_injective_iff_isTorsion_ker K).1 hf))
 
 /-- An endomorphism of a finitely generated module over a Noetherian domain of dimension at most
 one that is injective after tensoring with the fraction field has a cokernel of finite length. -/
