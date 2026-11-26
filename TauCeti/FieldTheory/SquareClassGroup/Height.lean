@@ -248,6 +248,21 @@ theorem height_add_mul_sq (s t : SquareClassGroup K) :
     symmDiff_sup_inf _ _
   rw [hunion]
 
+/-- A square class has height one exactly when its odd support is empty. -/
+theorem height_eq_one_iff (t : SquareClassGroup K) : height R t = 1 ↔ t.oddSupport R = ∅ := by
+  rw [height_eq_prod, Finset.prod_eq_one_iff, ← (t.oddSupport_finite (R := R)).toFinset_eq_empty,
+    Finset.eq_empty_iff_forall_notMem]
+  refine forall_congr' fun v ↦ ?_
+  have := Ideal.absNorm_eq_one_iff.not.mpr v.isPrime.ne_top
+  tauto
+
+/-- **The square classes of height one are the Selmer group `K(∅, 2)`.** -/
+theorem height_squareClass_eq_one_iff_mk_mem_selmerGroup (u : Kˣ) :
+    height R (squareClass u) = 1 ↔
+      (QuotientGroup.mk u : Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) ∈
+        selmerGroup (R := R) (K := K) (S := ∅) (n := 2) := by
+  rw [height_eq_one_iff, oddSupport_squareClass, oddSupport_eq_empty_iff_mk_mem_selmerGroup]
+
 /-- If `K(∅, 2)` is finite, only finitely many square classes have empty odd support. -/
 private theorem finite_setOf_oddSupport_eq_empty
     [Finite (selmerGroup (R := R) (K := K) (S := ∅) (n := 2))] :
@@ -271,21 +286,6 @@ theorem absNorm_le_height {t : SquareClassGroup K} {v : HeightOneSpectrum R}
   refine Nat.le_of_dvd (height_pos t) ?_
   rw [height_eq_prod]
   exact Finset.dvd_prod_of_mem _ ((t.oddSupport_finite (R := R)).mem_toFinset.mpr hv)
-
-/-- A square class has height one exactly when its odd support is empty. -/
-theorem height_eq_one_iff (t : SquareClassGroup K) : height R t = 1 ↔ t.oddSupport R = ∅ := by
-  rw [height_eq_prod, Finset.prod_eq_one_iff, ← (t.oddSupport_finite (R := R)).toFinset_eq_empty,
-    Finset.eq_empty_iff_forall_notMem]
-  refine forall_congr' fun v ↦ ?_
-  have := (NumberField.HeightOneSpectrum.one_lt_absNorm v).ne'
-  tauto
-
-/-- **The square classes of height one are the Selmer group `K(∅, 2)`.** -/
-theorem height_squareClass_eq_one_iff_mk_mem_selmerGroup (u : Kˣ) :
-    height R (squareClass u) = 1 ↔
-      (QuotientGroup.mk u : Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) ∈
-        selmerGroup (R := R) (K := K) (S := ∅) (n := 2) := by
-  rw [height_eq_one_iff, oddSupport_squareClass, oddSupport_eq_empty_iff_mk_mem_selmerGroup]
 
 /-- **The height of a square class is Northcott**: if `R` has finite residue rings and the
 Selmer group `K(∅, 2)` is finite, only finitely many square classes have height at most any given
