@@ -24,12 +24,21 @@ the action of the abelian Lie algebra `V` by infinitesimal translations
 (`TauCeti.InfinitesimalAction.fundamental_multiplicative`). These are the generators of the
 phase-space translations of a symplectic vector space, whose moment maps are not equivariant.
 
+More generally, a linear subspace `W ≤ V` acts on `V` by translations, as the Lie group
+`Multiplicative W`. This action is smooth (`Submodule.contMDiffVAdd`), proper when `V` is
+finite-dimensional (`Submodule.properVAdd`, with `Multiplicative.properSMul`), and its
+fundamental vector field of `ξ` is the constant vector field `ξ`, read in `V`
+(`TauCeti.fundamentalVectorField_multiplicative_submodule`). These are the symmetries of
+cotangent reduction by translations along a subspace.
+
 ## Main results
 
 * `TauCeti.fundamentalVectorField_multiplicative`: the fundamental vector fields of translations
   are constant.
 * `TauCeti.InfinitesimalAction.fundamental_multiplicative`: the fundamental vector fields of the
   translation action form the infinitesimal translation action.
+* `TauCeti.fundamentalVectorField_multiplicative_submodule`: the fundamental vector fields of
+  translations along a subspace are constant.
 -/
 
 public section
@@ -67,4 +76,39 @@ theorem InfinitesimalAction.fundamental_multiplicative {V : Type*} [NormedAddCom
     InfinitesimalAction.translation_apply, LinearEquiv.coe_coe,
     ContinuousLinearEquiv.coe_toLinearEquiv]
 
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {V : Type*} [NormedAddCommGroup V]
+  [NormedSpace 𝕜 V] (W : Submodule 𝕜 V)
+
+/-- **The fundamental vector fields of translations along a subspace are constant.** For the
+action of `Multiplicative W` on `V` by translations, the fundamental vector field of `ξ` is the
+constant vector field `ξ`, read in `W ≤ V`. -/
+@[simp]
+theorem fundamentalVectorField_multiplicative_submodule
+    (ξ : GroupLieAlgebra 𝓘(𝕜, W) (Multiplicative W)) (x : V) :
+    fundamentalVectorField 𝓘(𝕜, V) ξ x =
+      (tangentSpaceCastModel 𝓘(𝕜, W) (1 : Multiplicative W) ξ : V) := by
+  rw [fundamentalVectorField_apply]
+  -- `Multiplicative W` carries the charts of `W`, so its orbit map is `w ↦ w + x`.
+  have h : mfderiv 𝓘(𝕜, W) 𝓘(𝕜, V) (fun g : Multiplicative W ↦ g • x) 1 =
+      fderiv 𝕜 (fun w : W ↦ W.subtypeL w + x) 0 := mfderiv_eq_fderiv
+  rw [h, fderiv_add_const, W.subtypeL.fderiv]
+  -- Both sides are `ξ`, read in the model space `V`.
+  rfl
+
 end TauCeti
+
+/-! ### The translation action of a subspace -/
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {V : Type*}
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+namespace Submodule
+
+/-- A subspace `W` of a finite-dimensional normed space `V` over a complete field acts properly on
+`V` by translations, since it is closed. Through `Multiplicative.properSMul`, so does the Lie group
+`Multiplicative W`. -/
+instance properVAdd [FiniteDimensional 𝕜 V] (W : Submodule 𝕜 V) : ProperVAdd W V :=
+  have : IsClosed (W.toAddSubgroup : Set V) := W.isClosed_of_finiteDimensional
+  inferInstanceAs (ProperVAdd W.toAddSubgroup V)
+
+end Submodule
