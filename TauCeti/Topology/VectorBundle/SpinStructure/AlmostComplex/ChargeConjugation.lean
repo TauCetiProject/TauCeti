@@ -23,13 +23,14 @@ anticanonical line `K⁻¹ = Λ²_ℂ (E, J)`
 
 The **canonical circle bundle** `TauCeti.OrthonormalFrameBundle.canonicalBundle` is the
 extension `P ×_{det_ℂ⁻¹} U(1)` of the unitary frames along the inverse complex determinant
-(`TauCeti.canonicalLineCharacter`). Its transition functions are `det_ℂ(g_αβ)⁻¹`, the inverses of
-those of `Λ²_ℂ (E, J)`: it is the principal `U(1)`-bundle of the canonical line
-`K = (Λ²_ℂ (E, J))*`, for an almost Hermitian four-manifold with `E` its tangent bundle the line
-`K = Λ^{2,0}`, described through the unitary frames. Its associated line is not compared here with
-the dual of `Λ²_ℂ (E, J)` as a vector bundle. This file identifies the bundles of the charge
-conjugation theorems of `TauCeti.Topology.VectorBundle.SpinStructure.Twist.ChargeConjugation` for
-`s_ω`:
+(`TauCeti.canonicalLineCharacter`, defined with the lift `σ` in
+`TauCeti.Topology.Algebra.CliffordAlgebra.Spin.UnitaryLift`). Its transition functions are
+`det_ℂ(g_αβ)⁻¹`, the inverses of those of `Λ²_ℂ (E, J)`: it is the principal `U(1)`-bundle of
+the canonical line `K = (Λ²_ℂ (E, J))*`, for an almost Hermitian four-manifold with `E` its tangent
+bundle the line `K = Λ^{2,0}`, described through the unitary frames. Its associated line is not
+compared here with the dual of `Λ²_ℂ (E, J)` as a vector bundle. This file identifies the bundles
+of the charge conjugation theorems of
+`TauCeti.Topology.VectorBundle.SpinStructure.Twist.ChargeConjugation` for `s_ω`:
 
 * **`L⁻¹ ≃ K`.** The inverse determinant bundle `P_ω ×_{det⁻¹} U(1)` of `s_ω`
   (`TauCeti.SpinCStructure.inverseDeterminantBundle`) is equivalent to the canonical circle
@@ -39,7 +40,7 @@ conjugation theorems of `TauCeti.Topology.VectorBundle.SpinStructure.Twist.Charg
 * **`conj s_ω ≃ s_ω ⊗ K`** (`TauCeti.OrthonormalFrameBundle.chargeConjEquivTwistCanonicalBundle`),
   from `conj s ≃ s ⊗ L⁻¹` (`TauCeti.SpinCStructure.chargeConjEquivTwist`).
 * **`conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`** for every principal `U(1)`-bundle `E`
-  (`TauCeti.OrthonormalFrameBundle.twistChargeConjEquivTwistCanonicalBundle`), from
+  (`TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle`), from
   `conj (s ⊗ E) ≃ s ⊗ (L⁻¹ ⊗ E⁻¹)` (`TauCeti.SpinCStructure.chargeConjTwistEquivTwist`) and the
   functoriality of the tensor product (`TauCeti.PrincipalBundle.Equiv.extend`).
 
@@ -48,26 +49,23 @@ Seiberg–Witten equations of the label `E` to those of the label `K ⊗ E⁻¹`
 `Spinᶜ` structures over the frame bundle, constructed through the `U(2)` and `Spinᶜ`
 representations, so it keeps every two-torsion label: no class is replaced by its first Chern
 class. In frames it sends `[[(p, e), 1], 1]` to `[(p, [([p, 1], [e, 1]), 1]), 1]` for a unitary
-frame `p` (`TauCeti.OrthonormalFrameBundle.twistChargeConjEquivTwistCanonicalBundle_toEquiv_inl`).
+frame `p` (`TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle_toEquiv_inl`).
 
 ## Main definitions
 
-* `TauCeti.canonicalLineCharacter`: the inverse complex determinant `U(ℝ⁴, J₀) → U(1)`.
 * `TauCeti.OrthonormalFrameBundle.canonicalBundle`: the circle bundle `P ×_{det_ℂ⁻¹} U(1)` of
   the canonical line `K`.
 * `TauCeti.OrthonormalFrameBundle.inverseDeterminantBundleEquivCanonicalBundle`: the equivalence
   of the inverse determinant bundle of `s_ω` with `K`.
 * `TauCeti.OrthonormalFrameBundle.chargeConjEquivTwistCanonicalBundle`: `conj s_ω ≃ s_ω ⊗ K`.
-* `TauCeti.OrthonormalFrameBundle.twistChargeConjEquivTwistCanonicalBundle`:
+* `TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle`:
   `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`.
 
 ## Main results
 
-* `TauCeti.inv_det_comp_unitarySpinCLift`: the inverse determinant of `Spinᶜ(4)` restricts along
-  the canonical lift to the character of `K`.
 * `TauCeti.OrthonormalFrameBundle.inverseDeterminantBundleEquivCanonicalBundle_toEquiv_mk`,
   `TauCeti.OrthonormalFrameBundle.chargeConjEquivTwistCanonicalBundle_toEquiv_mk` and
-  `TauCeti.OrthonormalFrameBundle.twistChargeConjEquivTwistCanonicalBundle_toEquiv_mk`: the three
+  `TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle_toEquiv_mk`: the three
   equivalences in frames, with their `_toEquiv_inl` versions.
 
 ## References
@@ -86,45 +84,6 @@ noncomputable section
 open Bundle CliffordAlgebra Module MulOpposite TauCeti.PrincipalBundle
 
 namespace TauCeti
-
-section CanonicalCharacter
-
-variable {J₀ : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))}
-  (hJ₀ : ∀ v, (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
-    ((J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) v) = -v)
-  (e : OrthonormalBasis (Fin 4) ℝ (EuclideanSpace ℝ (Fin 4)))
-  (h₀ : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e 0) = e 1)
-  (h₂ : (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (e 2) = e 3)
-
-/-- The **character of the canonical line**: the inverse complex determinant
-`U(ℝ⁴, J₀) → U(1)`, `g ↦ det_ℂ(g)⁻¹`, where `det_ℂ(g)` is the determinant of the unitary matrix of
-`g` in the frame `e` (`OrthonormalBasis.centralizerToUnitaryGroup`). The anticanonical line
-`Λ²_ℂ` is associated to the unitary frames by `det_ℂ`
-(`TauCeti.OrthonormalFrameBundle.unitaryFrameDetEquiv`), and the canonical line by its
-inverse. -/
-noncomputable def canonicalLineCharacter : Subgroup.centralizer {J₀} →ₜ* Circle where
-  toMonoidHom := (Matrix.UnitaryGroup.detCircle.comp (e.centralizerToUnitaryGroup hJ₀ h₀ h₂))⁻¹
-  continuous_toFun :=
-    (Matrix.UnitaryGroup.continuous_detCircle.comp
-      (e.continuous_centralizerToUnitaryGroup hJ₀ h₀ h₂)).inv
-
-@[simp]
-theorem canonicalLineCharacter_apply (g : Subgroup.centralizer {J₀}) :
-    canonicalLineCharacter hJ₀ e h₀ h₂ g =
-      (Matrix.UnitaryGroup.detCircle (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g))⁻¹ :=
-  (rfl)
-
-/-- The inverse determinant character of `Spinᶜ(4)` restricts along the canonical lift
-`σ = TauCeti.unitarySpinCLift` to the character of the canonical line: `(det σ(g))⁻¹ = det_ℂ(g)⁻¹`
-(`TauCeti.det_unitarySpinCLift`). -/
-theorem inv_det_comp_unitarySpinCLift :
-    (spinCGroup.det (realCliffordForm 4 0)
-        (nondegenerate_realCliffordForm 4 0).ne_zero)⁻¹.comp (unitarySpinCLift hJ₀ e h₀ h₂) =
-      (canonicalLineCharacter hJ₀ e h₀ h₂).toMonoidHom := by
-  ext g
-  simp [det_unitarySpinCLift]
-
-end CanonicalCharacter
 
 namespace OrthonormalFrameBundle
 
@@ -317,7 +276,7 @@ twist of `s_ω` by the tensor product of the canonical circle bundle with the in
 `L⁻¹ ⊗ E⁻¹ ≃ K ⊗ E⁻¹`, the tensor product of `L⁻¹ ≃ K`
 (`TauCeti.OrthonormalFrameBundle.inverseDeterminantBundleEquivCanonicalBundle`) with the
 identity. -/
-def twistChargeConjEquivTwistCanonicalBundle :
+def chargeConjTwistEquivTwistCanonicalBundle :
     ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).twist Q).chargeConj.Equiv
       ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).twist
         (Tensor Circle (canonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂) (Inverse Circle Q))) :=
@@ -330,9 +289,9 @@ def twistChargeConjEquivTwistCanonicalBundle :
 sends `[[([p, 1], q), 1], 1]` to `[([p, 1], [([p, 1], [q, 1]), 1]), 1]` for a unitary frame `p`
 and a point `q` of `Q`. -/
 @[simp]
-theorem twistChargeConjEquivTwistCanonicalBundle_toEquiv_inl {x : X}
+theorem chargeConjTwistEquivTwistCanonicalBundle_toEquiv_inl {x : X}
     (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x) (q : Q x) :
-    (twistChargeConjEquivTwistCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂ Q).toEquiv x
+    (chargeConjTwistEquivTwistCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂ Q).toEquiv x
         (Extend.inl χ hχ (Extend.inl μ hμ
           (P := FiberProd (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).P Q)
           (FiberProd.mk (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p) q))) =
@@ -342,7 +301,7 @@ theorem twistChargeConjEquivTwistCanonicalBundle_toEquiv_inl {x : X}
         (FiberProd.mk (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p)
           (Extend.inl τ hτ (FiberProd.mk (Extend.inl κ hκ p) (Extend.inl ν hν q)))) := by
   have hdef (a : ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).twist Q).chargeConj.P x) :
-      (twistChargeConjEquivTwistCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂ Q).toEquiv x a =
+      (chargeConjTwistEquivTwistCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂ Q).toEquiv x a =
         (SpinCStructure.twistEquiv (OrthonormalFrameLift.Equiv.refl _)
           (((inverseDeterminantBundleEquivCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂).fiberProd
             (PrincipalBundle.Equiv.refl Circle (Inverse Circle Q))).extend τ hτ)).toEquiv x
@@ -368,9 +327,9 @@ theorem twistChargeConjEquivTwistCanonicalBundle_toEquiv_inl {x : X}
 `[[([p, 1], q), 1], h]` to `[([p, 1], [([p, 1], [q, 1]), 1]), h]` for a unitary frame `p` and a
 point `q` of `Q`. Every point of `conj (s_ω ⊗ E)` has this form. -/
 @[simp]
-theorem twistChargeConjEquivTwistCanonicalBundle_toEquiv_mk {x : X}
+theorem chargeConjTwistEquivTwistCanonicalBundle_toEquiv_mk {x : X}
     (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x) (q : Q x) (h : SpinC) :
-    (twistChargeConjEquivTwistCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂ Q).toEquiv x
+    (chargeConjTwistEquivTwistCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂ Q).toEquiv x
         (Extend.mk χ hχ (Extend.inl μ hμ
           (P := FiberProd (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).P Q)
           (FiberProd.mk (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p) q)) h) =
@@ -379,11 +338,11 @@ theorem twistChargeConjEquivTwistCanonicalBundle_toEquiv_mk {x : X}
           (Tensor Circle (canonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂) (Inverse Circle Q)))
         (FiberProd.mk (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p)
           (Extend.inl τ hτ (FiberProd.mk (Extend.inl κ hκ p) (Extend.inl ν hν q)))) h :=
-  (congrArg ((twistChargeConjEquivTwistCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂ Q).toEquiv x)
+  (congrArg ((chargeConjTwistEquivTwistCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂ Q).toEquiv x)
     (Extend.smul_inl χ hχ _ h).symm).trans <|
-  ((twistChargeConjEquivTwistCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂ Q).map_smul x _ h).trans <|
+  ((chargeConjTwistEquivTwistCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂ Q).map_smul x _ h).trans <|
   (congrArg (op h • ·)
-    (twistChargeConjEquivTwistCanonicalBundle_toEquiv_inl hJ hJ₂ hJ₀ hF e h₀ h₂ Q p q)).trans
+    (chargeConjTwistEquivTwistCanonicalBundle_toEquiv_inl hJ hJ₂ hJ₀ hF e h₀ h₂ Q p q)).trans
     (Extend.smul_inl μ hμ _ h)
 
 end OrthonormalFrameBundle

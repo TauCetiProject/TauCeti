@@ -210,12 +210,7 @@ noncomputable def extendEquivOfEquivariant (t : OrthonormalFrameLift F E n H ρ'
     (hφc : Continuous fun p : TotalSpace G s.P ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace H t.P))
     (hφf : ∀ x (p : s.P x), t.toFrame ⟨x, φ x p⟩ = s.toFrame ⟨x, p⟩) :
     (s.extend σ hσ hσρ hρ'n hρ'c).Equiv t where
-  toEquiv := Extend.equivOfEquivariant σ hσ φ hφ
-  continuous_toFun := (Extend.homeomorphOfEquivariant σ hσ φ hφ hφc).continuous.congr
-    (Extend.homeomorphOfEquivariant_apply σ hσ φ hφ hφc)
-  continuous_invFun := (Extend.homeomorphOfEquivariant σ hσ φ hφ hφc).symm.continuous.congr
-    (Extend.homeomorphOfEquivariant_symm_apply σ hσ φ hφ hφc)
-  map_smul x z h := Extend.equivOfEquivariant_smul σ hσ φ hφ x h z
+  toPrincipalBundleEquiv := Extend.principalEquivOfEquivariant σ hσ φ hφ hφc
   toFrame_map x z := by
     obtain ⟨p, h, rfl⟩ := Extend.exists_mk (P := s.P) (ρ := σ) (hρ := hσ) (b := x) z
     refine OrthonormalFrameBundle.ext_totalSpaceMk fun v ↦ ?_
@@ -250,27 +245,27 @@ theorem extendEquivOfEquivariant_toEquiv_inl (t : OrthonormalFrameLift F E n H �
 /-- **Equivalences of lifts extend**: an equivalence `s ≃ t` of lifts along `ρ` induces an
 equivalence of their extensions along `σ`, sending `[p, h]` to `[φ p, h]`. -/
 noncomputable def Equiv.extend {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) :
-    (s.extend σ hσ hσρ hρ'n hρ'c).Equiv (t.extend σ hσ hσρ hρ'n hρ'c) :=
-  s.extendEquivOfEquivariant σ hσ hσρ hρ'n hρ'c (t.extend σ hσ hσρ hρ'n hρ'c)
+    (s.extend σ hσ hσρ hρ'n hρ'c).Equiv (t.extend σ hσ hσρ hρ'n hρ'c) where
+  toPrincipalBundleEquiv := φ.toPrincipalBundleEquiv.extend σ hσ
+  toFrame_map := (s.extendEquivOfEquivariant σ hσ hσρ hρ'n hρ'c (t.extend σ hσ hσρ hρ'n hρ'c)
     (fun x p ↦ Extend.inl σ hσ (φ.toEquiv x p))
     (fun x p g ↦ by rw [φ.map_smul]; exact Extend.inl_smul σ hσ _ g)
     ((Extend.continuous_inl t.P σ hσ).comp φ.continuous_toFun)
-    (fun x p ↦ by rw [toFrame_extend_inl, φ.toFrame_map])
+    (fun x p ↦ by rw [toFrame_extend_inl, φ.toFrame_map])).toFrame_map
 
 @[simp]
 theorem Equiv.extend_toEquiv_mk {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) (x : X)
     (p : s.P x) (h : H) :
     (φ.extend σ hσ hσρ hρ'n hρ'c).toEquiv x (Extend.mk σ hσ p h) =
       Extend.mk σ hσ (φ.toEquiv x p) h :=
-  (s.extendEquivOfEquivariant_toEquiv_mk σ hσ hσρ hρ'n hρ'c _ _ _ _ _ x p h).trans
-    (Extend.smul_inl σ hσ _ h)
+  φ.toPrincipalBundleEquiv.extend_toEquiv_mk σ hσ p h
 
 @[simp]
 theorem Equiv.extend_toEquiv_inl {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) (x : X)
     (p : s.P x) :
     (φ.extend σ hσ hσρ hρ'n hρ'c).toEquiv x (Extend.inl σ hσ p) =
       Extend.inl σ hσ (φ.toEquiv x p) :=
-  s.extendEquivOfEquivariant_toEquiv_inl σ hσ hσρ hρ'n hρ'c _ _ _ _ _ x p
+  φ.toPrincipalBundleEquiv.extend_toEquiv_inl σ hσ p
 
 /-- Extending the identity equivalence of a lift gives the identity equivalence. -/
 @[simp]
@@ -327,12 +322,7 @@ noncomputable def extendCompEquiv :
     (s.extend (τ.comp σ) (hτ.comp hσ) (by rw [← MonoidHom.comp_assoc, hτρ, hσρ]) hρ''n
         hρ''c).Equiv
       ((s.extend σ hσ hσρ hρ'n hρ'c).extend τ hτ hτρ hρ''n hρ''c) where
-  toEquiv x := (Extend.compEquiv σ hσ τ hτ x).symm
-  continuous_toFun := (Extend.compHomeomorph σ hσ τ hτ).symm.continuous.congr
-    (Extend.compHomeomorph_symm_apply σ hσ τ hτ)
-  continuous_invFun := (Extend.compHomeomorph σ hσ τ hτ).continuous.congr
-    (Extend.compHomeomorph_apply σ hσ τ hτ)
-  map_smul x z k := Extend.compEquiv_symm_smul σ hσ τ hτ x k z
+  toPrincipalBundleEquiv := (Extend.compPrincipalEquiv σ hσ τ hτ).symm
   toFrame_map x z := by
     obtain ⟨p, k, rfl⟩ := Extend.exists_mk (P := s.P) (ρ := τ.comp σ) (hρ := hτ.comp hσ) (b := x) z
     refine OrthonormalFrameBundle.ext_totalSpaceMk fun v ↦ ?_

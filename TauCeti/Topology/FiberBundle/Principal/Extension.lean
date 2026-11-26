@@ -394,10 +394,13 @@ theorem homeomorphOfEquivariant_symm_apply (q : TotalSpace H Q) :
 If `φ : ∀ b, P b → Q b` is a continuous `ρ`-equivariant map into a principal `H`-bundle `Q` and `H`
 is a topological group, then `[p, h] ↦ φ b p • h` is an equivalence of principal `H`-bundles
 `Extend P ρ hρ ≃ Q`. -/
-noncomputable def principalEquivOfEquivariant : PrincipalBundle.Equiv H (Extend P ρ hρ) Q where
+@[expose] noncomputable def principalEquivOfEquivariant :
+    PrincipalBundle.Equiv H (Extend P ρ hρ) Q where
   toEquiv := equivOfEquivariant ρ hρ φ hφ
-  continuous_toFun := (homeomorphOfEquivariant ρ hρ φ hφ hφc).continuous
-  continuous_invFun := (homeomorphOfEquivariant ρ hρ φ hφ hφc).symm.continuous
+  continuous_toFun := (homeomorphOfEquivariant ρ hρ φ hφ hφc).continuous.congr
+    (homeomorphOfEquivariant_apply ρ hρ φ hφ hφc)
+  continuous_invFun := (homeomorphOfEquivariant ρ hρ φ hφ hφc).symm.continuous.congr
+    (homeomorphOfEquivariant_symm_apply ρ hρ φ hφ hφc)
   map_smul b z h := equivOfEquivariant_smul ρ hρ φ hφ b h z
 
 @[simp] theorem principalEquivOfEquivariant_toEquiv :
@@ -445,7 +448,7 @@ theorem congrHomeomorph_symm :
     (congrHomeomorph (P := P) h hρ₁ hρ₂).symm = congrHomeomorph h.symm hρ₂ hρ₁ := by subst h; rfl
 /-- Equal homomorphisms produce equivalent principal bundles: `congrEquiv` as an equivalence of
 principal `H`-bundles. -/
-noncomputable def congrPrincipalEquiv :
+@[expose] noncomputable def congrPrincipalEquiv :
     PrincipalBundle.Equiv H (Extend P ρ₁ hρ₁) (Extend P ρ₂ hρ₂) where
   toEquiv := congrEquiv h hρ₁ hρ₂
   continuous_toFun := by subst h; exact continuous_id
@@ -642,7 +645,7 @@ theorem compHomeomorph_symm_apply (z : TotalSpace K (Extend P (σ.comp ρ) (hσ.
   exact congrArg (TotalSpace.mk z.proj) (compEquiv_smul ρ hρ σ hσ z.proj k' z.snd)
 /-- **Functoriality of structure-group extension under composition**, as an equivalence of
 principal `K`-bundles `(P ×_ρ H) ×_σ K ≃ P ×_{σ ∘ ρ} K`, sending `[[p, h], k]` to `[p, σ h * k]`. -/
-noncomputable def compPrincipalEquiv :
+@[expose] noncomputable def compPrincipalEquiv :
     PrincipalBundle.Equiv K (Extend (Extend P ρ hρ) σ hσ) (Extend P (σ.comp ρ) (hσ.comp hρ)) where
   toEquiv := compEquiv ρ hρ σ hσ
   continuous_toFun := (compHomeomorph ρ hρ σ hσ).continuous.congr (compHomeomorph_apply ρ hρ σ hσ)
@@ -830,7 +833,8 @@ variable {G H B : Type*} [TopologicalSpace B] [Group G] [TopologicalSpace G]
 /-- **Functoriality of structure-group extension under equivalences.** An equivalence
 `ψ : P ≃ P'` of principal `G`-bundles induces the equivalence of principal `H`-bundles
 `P ×_ρ H ≃ P' ×_ρ H` sending `[p, h]` to `[ψ p, h]`. -/
-noncomputable def extend (ψ : PrincipalBundle.Equiv G P P') (ρ : G →* H) (hρ : Continuous ρ) :
+@[expose] noncomputable def extend (ψ : PrincipalBundle.Equiv G P P') (ρ : G →* H)
+    (hρ : Continuous ρ) :
     PrincipalBundle.Equiv H (Extend P ρ hρ) (Extend P' ρ hρ) :=
   Extend.principalEquivOfEquivariant ρ hρ (fun b p ↦ Extend.inl ρ hρ (ψ.toEquiv b p))
     (fun b p g ↦ by rw [ψ.map_smul, Extend.inl_smul])
