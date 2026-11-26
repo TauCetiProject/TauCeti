@@ -91,7 +91,7 @@ theorem iterate_partialDeriv_eq_zero_iff_exists_degree_lt {ι : Type*} [Decidabl
           rw [iteratedDeriv_comp_update hf i z k,
             show k = (k - (n + 1)) + (n + 1) by omega, iterate_add_apply, h,
             iterate_fixed (partialDeriv_zero_fun i) _]
-          rfl
+          simp only [Pi.zero_apply]
       refine ⟨Q, (natDegree_le_iff_degree_le.mp hQdeg).trans_lt
         (by exact_mod_cast Nat.lt_succ_self n), fun w ↦ by simpa using congrFun hQ w⟩
   · intro h

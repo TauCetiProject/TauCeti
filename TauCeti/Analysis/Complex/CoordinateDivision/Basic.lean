@@ -60,28 +60,53 @@ section Multivariate
 
 variable {ι : Type*} [LinearOrder ι]
 
+/-- Subtraction preserves a coordinate-`j` polynomial degree bound `< d`. -/
+private theorem exists_degree_lt_sub {f g : (ι → ℂ) → ℂ} {j : ι} {d : WithBot ℕ}
+    (hf : ∀ z, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f (update z j w) = Q.eval w)
+    (hg : ∀ z, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, g (update z j w) = Q.eval w) (z : ι → ℂ) :
+    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, (f - g) (update z j w) = Q.eval w := by
+  obtain ⟨Qf, hQf, hfe⟩ := hf z
+  obtain ⟨Qg, hQg, hge⟩ := hg z
+  exact ⟨Qf - Qg, (degree_sub_le Qf Qg).trans_lt (max_lt hQf hQg),
+    fun w ↦ by simp [hfe w, hge w]⟩
+
 /-- Adding finite sums `∑ a ∈ t, g a z * (P a).eval (z a)` preserves a coordinate-`j`
-polynomial degree bound `< n` when `j ∉ t`. -/
+polynomial degree bound `< d` when `j ∉ t`. -/
 private theorem exists_degree_lt_add_sum_mul_eval {f₀ : (ι → ℂ) → ℂ} {g : ι → (ι → ℂ) → ℂ}
-    {P : ι → ℂ[X]} {j : ι} {n : ℕ} {t : Finset ι} (hjt : j ∉ t)
-    (hf₀ : ∀ z, ∃ Q : ℂ[X], Q.degree < n ∧ ∀ w, f₀ (update z j w) = Q.eval w)
-    (hg : ∀ a ∈ t, ∀ z, ∃ Q : ℂ[X], Q.degree < n ∧ ∀ w, g a (update z j w) = Q.eval w)
+    {P : ι → ℂ[X]} {j : ι} {d : WithBot ℕ} {t : Finset ι} (hjt : j ∉ t)
+    (hf₀ : ∀ z, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f₀ (update z j w) = Q.eval w)
+    (hg : ∀ a ∈ t, ∀ z, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, g a (update z j w) = Q.eval w)
     (z : ι → ℂ) :
-    ∃ Q : ℂ[X], Q.degree < n ∧
+    ∃ Q : ℂ[X], Q.degree < d ∧
       ∀ w, f₀ (update z j w) + ∑ a ∈ t, g a (update z j w) * (P a).eval (update z j w a) =
         Q.eval w := by
-  have heq : (fun w ↦ f₀ (update z j w) +
-      ∑ a ∈ t, g a (update z j w) * (P a).eval (update z j w a)) =
-      (fun w ↦ f₀ (update z j w)) +
-        ∑ a ∈ t, (P a).eval (z a) • fun w ↦ g a (update z j w) := by
-    ext w
-    simp only [Pi.add_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
-    refine congrArg (f₀ (update z j w) + ·) (Finset.sum_congr rfl fun a ha ↦ ?_)
-    rw [update_of_ne (fun (h : a = j) ↦ hjt (h ▸ ha)), mul_comm]
-  rw [← mem_evalDegreeLT, heq]
-  exact (evalDegreeLT ℂ n).add_mem (mem_evalDegreeLT.mpr (hf₀ z))
-    ((evalDegreeLT ℂ n).sum_mem fun a ha ↦
-      (evalDegreeLT ℂ n).smul_mem ((P a).eval (z a)) (mem_evalDegreeLT.mpr (hg a ha z)))
+  cases d with
+  | bot => exact absurd (hf₀ z).choose_spec.1 not_lt_bot
+  | coe n =>
+    simp only [← Nat.cast_withBot] at hf₀ hg ⊢
+    have heq : (fun w ↦ f₀ (update z j w) +
+        ∑ a ∈ t, g a (update z j w) * (P a).eval (update z j w a)) =
+        (fun w ↦ f₀ (update z j w)) +
+          ∑ a ∈ t, (P a).eval (z a) • fun w ↦ g a (update z j w) := by
+      ext w
+      simp only [Pi.add_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+      refine congrArg (f₀ (update z j w) + ·) (Finset.sum_congr rfl fun a ha ↦ ?_)
+      rw [update_of_ne (fun (h : a = j) ↦ hjt (h ▸ ha)), mul_comm]
+    rw [← mem_evalDegreeLT, heq]
+    exact (evalDegreeLT ℂ n).add_mem (mem_evalDegreeLT.mpr (hf₀ z))
+      ((evalDegreeLT ℂ n).sum_mem fun a ha ↦
+        (evalDegreeLT ℂ n).smul_mem ((P a).eval (z a)) (mem_evalDegreeLT.mpr (hg a ha z)))
+
+/-- Adding a single term `gᵢ w * Pᵢ.eval (w i)` with `i ≠ j` preserves a coordinate-`j`
+polynomial degree bound `< d`. -/
+private theorem exists_degree_lt_add_mul_eval {f₀ gᵢ : (ι → ℂ) → ℂ} {Pᵢ : ℂ[X]} (i j : ι)
+    (hij : i ≠ j) {d : WithBot ℕ}
+    (hf₀ : ∀ z, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f₀ (update z j w) = Q.eval w)
+    (hgᵢ : ∀ z, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, gᵢ (update z j w) = Q.eval w) (z : ι → ℂ) :
+    ∃ Q : ℂ[X], Q.degree < d ∧
+      ∀ w, (fun w' ↦ f₀ w' + gᵢ w' * Pᵢ.eval (w' i)) (update z j w) = Q.eval w := by
+  simpa only [sum_singleton] using exists_degree_lt_add_sum_mul_eval (g := fun _ ↦ gᵢ)
+    (P := fun _ ↦ Pᵢ) (t := {i}) (Finset.notMem_singleton.mpr hij.symm) hf₀ (fun _ _ ↦ hgᵢ) z
 
 /-- Homogeneous uniqueness of multivariate coordinate division over any finite subset `s` of
 coordinates under triangular degree bounds and continuous quotients. -/
@@ -100,7 +125,6 @@ private theorem eq_zero_of_add_sum_mul_eval_eq_zero
   | insert j s hj ih =>
     have hjs : j ∉ s := fun h ↦ lt_irrefl j (hj j h)
     have hPj0 : P j ≠ 0 := ne_zero_of_degree_gt (hdeg₀ j (mem_insert_self j s) 0).choose_spec.1
-    have hPj_deg : (P j).degree = ((P j).natDegree : ℕ) := degree_eq_natDegree hPj0
     set F : (ι → ℂ) → ℂ := fun z ↦ f₀ z + ∑ a ∈ s, g a z * (P a).eval (z a) with hF_def
     have hsplit (z : ι → ℂ) : F z + g j z * (P j).eval (z j) = 0 := by
       have h := hdiv z
@@ -108,12 +132,9 @@ private theorem eq_zero_of_add_sum_mul_eval_eq_zero
       rw [hF_def]
       linear_combination h
     have hF_deg (z : ι → ℂ) :
-        ∃ Q : ℂ[X], Q.degree < (P j).degree ∧ ∀ w, F (update z j w) = Q.eval w := by
-      simpa only [hF_def, hPj_deg] using exists_degree_lt_add_sum_mul_eval hjs
-        (by simpa only [hPj_deg] using hdeg₀ j (mem_insert_self j s))
-        (fun a ha ↦ by
-          simpa only [hPj_deg] using
-            hdeg_g a (mem_insert_of_mem ha) j (mem_insert_self j s) (hj a ha)) z
+        ∃ Q : ℂ[X], Q.degree < (P j).degree ∧ ∀ w, F (update z j w) = Q.eval w :=
+      exists_degree_lt_add_sum_mul_eval hjs (hdeg₀ j (mem_insert_self j s))
+        (fun a ha ↦ hdeg_g a (mem_insert_of_mem ha) j (mem_insert_self j s) (hj a ha)) z
     have hcont (z : ι → ℂ) : Continuous fun w ↦ g j (update z j w) :=
       (hg j).comp (continuous_const.update j continuous_id)
     have hF0 : F = 0 := by
@@ -156,19 +177,9 @@ theorem eq_of_eq_add_sum_mul_eval [Fintype ι]
       exact sum_congr rfl fun i _ ↦ sub_mul (g i z) (g' i z) _
     rw [hsum, Pi.sub_apply]
     linear_combination hdiv' z - hdiv z
-  have hPj_deg (j : ι) : (P j).degree = ((P j).natDegree : ℕ) :=
-    degree_eq_natDegree (ne_zero_of_degree_gt (hdeg₀ j 0).choose_spec.1)
   obtain ⟨hf₀0, hg0⟩ := eq_zero_of_add_sum_mul_eval_eq_zero (fun i ↦ (hg i).sub (hg' i)) univ hsub
-    (fun j _ z ↦ by
-      simpa only [hPj_deg j, Pi.sub_apply] using mem_evalDegreeLT.mp <|
-        (evalDegreeLT ℂ (P j).natDegree).sub_mem
-          (mem_evalDegreeLT.mpr (by simpa only [hPj_deg j] using hdeg₀ j z))
-          (mem_evalDegreeLT.mpr (by simpa only [hPj_deg j] using hdeg₀' j z)))
-    (fun i _ j _ hij z ↦ by
-      simpa only [hPj_deg j, Pi.sub_apply] using mem_evalDegreeLT.mp <|
-        (evalDegreeLT ℂ (P j).natDegree).sub_mem
-          (mem_evalDegreeLT.mpr (by simpa only [hPj_deg j] using hdeg_g i j hij z))
-          (mem_evalDegreeLT.mpr (by simpa only [hPj_deg j] using hdeg_g' i j hij z)))
+    (fun j _ ↦ exists_degree_lt_sub (hdeg₀ j) (hdeg₀' j))
+    (fun i _ j _ hij ↦ exists_degree_lt_sub (hdeg_g i j hij) (hdeg_g' i j hij))
   exact ⟨sub_eq_zero.mp hf₀0, funext fun i ↦ sub_eq_zero.mp (hg0 i (mem_univ i))⟩
 
 /-- Multivariate coordinate division along a strictly increasing list `l : List ι`: produces entire
@@ -236,6 +247,35 @@ private theorem exists_eq_add_sum_mul_eval_of_list [Finite ι] {f : (ι → ℂ)
           (hab.trans (hbi ▸ hilt a hal')).false
         simpa [g, hai] using hdeg_g' a hal' b hbl' hab z
 
+omit [LinearOrder ι] in
+/-- Combines the univariate head bounds and tail induction bounds at a `cons` step of
+`norm_le_of_eq_add_sum_mul_eval_of_list`. -/
+private theorem norm_cons_of_norm_tail {P : ι → ℂ[X]} {i : ι} {l' : List ι}
+    {f₀ : (ι → ℂ) → ℂ} {g : ι → (ι → ℂ) → ℂ} {R M : ℝ} {z : ι → ℂ}
+    (hR : 0 < R) (hM0 : 0 ≤ M)
+    (hf₀_z :
+      ‖f₀ z‖ ≤ 3 ^ (P i).natDegree * ((3 : ℝ) ^ (l'.map fun j ↦ (P j).natDegree).sum * M))
+    (hgi_z :
+      ‖g i z‖ ≤ (3 / R) ^ (P i).natDegree * ((3 : ℝ) ^ (l'.map fun j ↦ (P j).natDegree).sum * M))
+    (htail : ∀ m ∈ l', ‖g m z‖ ≤
+      3 ^ (l'.map fun j ↦ (P j).natDegree).sum / R ^ (P m).natDegree * M) :
+    ‖f₀ z‖ ≤ 3 ^ ((i :: l').map fun j ↦ (P j).natDegree).sum * M ∧
+      ∀ m ∈ i :: l', ‖g m z‖ ≤
+        3 ^ ((i :: l').map fun j ↦ (P j).natDegree).sum / R ^ (P m).natDegree * M := by
+  set S' : ℕ := (l'.map fun j ↦ (P j).natDegree).sum
+  have hpow_sum : (3 : ℝ) ^ (P i).natDegree * (3 : ℝ) ^ S' =
+      (3 : ℝ) ^ ((i :: l').map fun j ↦ (P j).natDegree).sum := by simp [S', pow_add]
+  refine ⟨?_, fun m hm ↦ ?_⟩
+  · calc ‖f₀ z‖ ≤ (3 : ℝ) ^ (P i).natDegree * ((3 : ℝ) ^ S' * M) := hf₀_z
+      _ = (3 : ℝ) ^ ((i :: l').map fun j ↦ (P j).natDegree).sum * M := by
+        rw [← mul_assoc, hpow_sum]
+  · rcases List.mem_cons.mp hm with rfl | hml'
+    · simpa only [div_pow, ← hpow_sum] using hgi_z.trans_eq (by ring)
+    · refine (htail m hml').trans (mul_le_mul_of_nonneg_right
+        (div_le_div_of_nonneg_right ?_ (by positivity)) hM0)
+      simpa only [List.map_cons, List.sum_cons] using
+        pow_le_pow_right₀ (by norm_num : (1 : ℝ) ≤ 3) (Nat.le_add_left S' (P i).natDegree)
+
 /-- Polydisc supremum bounds for any entire multivariate coordinate division along a strictly
 increasing list `l : List ι`. -/
 private theorem norm_le_of_eq_add_sum_mul_eval_of_list [Fintype ι]
@@ -264,6 +304,7 @@ private theorem norm_le_of_eq_add_sum_mul_eval_of_list [Fintype ι]
     intro f₀ g hf₀ hg hdiv hdeg₀ hdeg_g z hz
     obtain ⟨hilt, hsort'⟩ := List.pairwise_cons.mp hsort
     have hi_not : i ∉ l'.toFinset := by simpa using fun h ↦ lt_irrefl i (hilt i h)
+    -- Phase 1: fold the `i`-th term into `r'` and apply the induction hypothesis on `l'`.
     let r' : (ι → ℂ) → ℂ := fun w ↦ f₀ w + g i w * (P i).eval (w i)
     have hr' : Differentiable ℂ r' :=
       hf₀.add ((hg i List.mem_cons_self).mul ((P i).differentiable.comp (differentiable_apply i)))
@@ -271,20 +312,14 @@ private theorem norm_le_of_eq_add_sum_mul_eval_of_list [Fintype ι]
       have h := hdiv w
       rw [List.toFinset_cons, sum_insert hi_not] at h
       linear_combination h
-    have hdeg_r' (j : ι) (hjl' : j ∈ l') (w : ι → ℂ) :
-        ∃ Q : ℂ[X], Q.degree < (P j).degree ∧ ∀ u, r' (update w j u) = Q.eval u := by
-      have hPj_deg : (P j).degree = ((P j).natDegree : ℕ) :=
-        degree_eq_natDegree (hP j).ne_zero
-      simpa only [r', sum_singleton, hPj_deg] using exists_degree_lt_add_sum_mul_eval (t := {i})
-        (Finset.notMem_singleton.mpr (hilt j hjl').ne')
-        (by simpa only [hPj_deg] using hdeg₀ j (List.mem_cons_of_mem i hjl'))
-        (fun a ha ↦ by
-          rw [Finset.mem_singleton.mp ha]
-          simpa only [hPj_deg] using
-            hdeg_g i List.mem_cons_self j (List.mem_cons_of_mem i hjl') (hilt j hjl')) w
+    have hdeg_r' (j : ι) (hjl' : j ∈ l') :
+        ∀ w, ∃ Q : ℂ[X], Q.degree < (P j).degree ∧ ∀ u, r' (update w j u) = Q.eval u :=
+      exists_degree_lt_add_mul_eval i j (hilt j hjl').ne (hdeg₀ j (List.mem_cons_of_mem i hjl'))
+        (hdeg_g i List.mem_cons_self j (List.mem_cons_of_mem i hjl') (hilt j hjl'))
     have hnorm' := fun w hw ↦ ih hsort' hr' (fun m hm ↦ hg m (List.mem_cons_of_mem i hm))
       hdiv' hdeg_r' (fun a ha b hb ↦ hdeg_g a (List.mem_cons_of_mem i ha) b
         (List.mem_cons_of_mem i hb)) w hw
+    -- Phase 2: identify `f₀` and `g i` as the univariate remainder and quotient of `r'` by `P i`.
     have hdeg_f₀ : (partialDeriv i)^[(P i).natDegree] f₀ = 0 :=
       (iterate_partialDeriv_eq_zero_iff_exists_degree_lt hf₀ i (P i).natDegree).mpr
         (by simpa only [degree_eq_natDegree (hP i).ne_zero] using hdeg₀ i List.mem_cons_self)
@@ -294,28 +329,15 @@ private theorem norm_le_of_eq_add_sum_mul_eval_of_list [Fintype ι]
       eq_partialModByMonic (hP i) hf₀ (hg i List.mem_cons_self).continuous hdeg_f₀ hr'_eq
     have hgi_eq : g i = partialDivByMonic i r' (P i) :=
       eq_partialDivByMonic (hP i) hf₀ (hg i List.mem_cons_self).continuous hdeg_f₀ hr'_eq
+    -- Phase 3: combine the univariate `P i` bounds with the `3 ^ _` tail bounds.
     have hroots_i : ∀ ζ ∈ (P i).roots, ζ ∈ closedBall (c i) r :=
       fun ζ hζ ↦ hroots i ζ ((mem_roots (hP i).ne_zero).mp hζ)
-    let S' : ℕ := (l'.map fun j ↦ (P j).natDegree).sum
-    have hf₀_z : ‖f₀ z‖ ≤ 3 ^ (P i).natDegree * ((3 : ℝ) ^ S' * M) := hf₀_eq ▸
-      norm_partialModByMonic_le_of_five_mul_le (hP i) hr' hroots_i hR hrR
-        (fun w hw ↦ (hnorm' w hw).1) hz
-    have hgi_z : ‖g i z‖ ≤ (3 / R) ^ (P i).natDegree * ((3 : ℝ) ^ S' * M) := hgi_eq ▸
-      norm_partialDivByMonic_le_of_five_mul_le hr' hroots_i hR hrR
-        (fun w hw ↦ (hnorm' w hw).1) hz
-    have hpow_sum : (3 : ℝ) ^ (P i).natDegree * (3 : ℝ) ^ S' =
-        (3 : ℝ) ^ ((i :: l').map fun j ↦ (P j).natDegree).sum := by simp [S', pow_add]
-    have hM0 : 0 ≤ M := (norm_nonneg (f z)).trans (hM z hz)
-    refine ⟨?_, fun m hm ↦ ?_⟩
-    · calc ‖f₀ z‖ ≤ (3 : ℝ) ^ (P i).natDegree * ((3 : ℝ) ^ S' * M) := hf₀_z
-        _ = (3 : ℝ) ^ ((i :: l').map fun j ↦ (P j).natDegree).sum * M := by
-          rw [← mul_assoc, hpow_sum]
-    · rcases List.mem_cons.mp hm with rfl | hml'
-      · simpa only [div_pow, ← hpow_sum] using hgi_z.trans_eq (by ring)
-      · refine ((hnorm' z hz).2 m hml').trans (mul_le_mul_of_nonneg_right
-          (div_le_div_of_nonneg_right ?_ (by positivity)) hM0)
-        simpa only [List.map_cons, List.sum_cons] using
-          pow_le_pow_right₀ (by norm_num : (1 : ℝ) ≤ 3) (Nat.le_add_left S' (P i).natDegree)
+    have hf₀_z := hf₀_eq ▸ norm_partialModByMonic_le_of_five_mul_le (hP i) hr' hroots_i hR hrR
+      (fun w hw ↦ (hnorm' w hw).1) hz
+    have hgi_z := hgi_eq ▸ norm_partialDivByMonic_le_of_five_mul_le hr' hroots_i hR hrR
+      (fun w hw ↦ (hnorm' w hw).1) hz
+    exact norm_cons_of_norm_tail hR ((norm_nonneg (f z)).trans (hM z hz)) hf₀_z hgi_z
+      (hnorm' z hz).2
 
 /-- **Multivariate coordinate division by nonzero polynomials (Waldschmidt, Lemma 4.8).**
 For any entire function `f : (ι → ℂ) → ℂ` and nonzero polynomials `P : ι → ℂ[X]`, there exist

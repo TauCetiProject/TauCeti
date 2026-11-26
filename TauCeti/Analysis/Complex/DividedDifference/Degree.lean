@@ -28,12 +28,7 @@ commutes with `partialDeriv j` (`j ≠ i`) and lowers iterated `partialDeriv i` 
 
 * `TauCeti.partialDslope_update_eq_eval_divByMonic`: exact polynomial division formula
   `partialDslope i f ζ (update z i w) = (P /ₘ (X - C ζ)).eval w`.
-* `TauCeti.exists_natDegree_le_sub_one_and_partialDslope_eq_eval_self`: degree reduction in the
-  divided coordinate.
-* `TauCeti.exists_degree_lt_and_update_eq_eval`, `TauCeti.exists_natDegree_le_and_update_eq_eval`:
-  fixing one coordinate preserves coordinate-slice polynomial degree bounds.
-* `TauCeti.exists_degree_lt_and_partialDslope_eq_eval`,
-  `TauCeti.exists_natDegree_le_and_partialDslope_eq_eval`: coordinate polynomial degree preservation
+* `TauCeti.exists_degree_lt_and_partialDslope_eq_eval`: coordinate polynomial degree preservation
   under `partialDslope`.
 * `TauCeti.partialDeriv_partialDslope_of_ne`, `TauCeti.iterate_partialDeriv_partialDslope_of_ne`:
   `∂ⱼ` commutes with `f ↦ partialDslope i f ζ` for `j ≠ i`.
@@ -70,51 +65,6 @@ theorem partialDslope_update_eq_eval_divByMonic {f : (ι → ℂ) → ℂ} {i : 
     · simp
     · simp [dslope_of_ne _ hw, slope_def_field, sub_ne_zero.mpr hw]
   simp [hderiv]
-
-/-- **Degree reduction in the divided coordinate.** If `f` is a polynomial of degree at most `e` in
-`z i` along the `i`-th coordinate line through `z`, then `partialDslope i f ζ` is a polynomial of
-degree at most `e - 1` along that line. -/
-theorem exists_natDegree_le_sub_one_and_partialDslope_eq_eval_self {f : (ι → ℂ) → ℂ} (i : ι)
-    (ζ : ℂ) {e : ℕ} {z : ι → ℂ}
-    (hf : ∃ Q : ℂ[X], Q.natDegree ≤ e ∧ ∀ w, f (update z i w) = Q.eval w) :
-    ∃ Q : ℂ[X], Q.natDegree ≤ e - 1 ∧ ∀ w, partialDslope i f ζ (update z i w) = Q.eval w := by
-  obtain ⟨P, hPdeg, hP⟩ := hf
-  refine ⟨P /ₘ (X - C ζ), ?_, partialDslope_update_eq_eval_divByMonic hP⟩
-  calc (P /ₘ (X - C ζ)).natDegree
-      = P.natDegree - (X - C ζ).natDegree := natDegree_divByMonic P (monic_X_sub_C ζ)
-    _ ≤ e - 1 := by rw [natDegree_X_sub_C]; omega
-
-/-- Fixing the `i`-th coordinate at `ζ` preserves a strict polynomial degree bound `< d` in any
-coordinate `j` (becoming constant in coordinate `i` itself). -/
-theorem exists_degree_lt_and_update_eq_eval {R : Type*} [Semiring R] {f : (ι → R) → R}
-    (i j : ι) (ζ : R) {d : WithBot ℕ}
-    (hf : ∀ y, ∃ Q : R[X], Q.degree < d ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → R) :
-    ∃ Q : R[X], Q.degree < d ∧ ∀ w, f (update (update z j w) i ζ) = Q.eval w := by
-  by_cases hij : j = i
-  · subst hij
-    obtain ⟨Q, hQdeg, hQ⟩ := hf z
-    refine ⟨C (Q.eval ζ), ?_, fun w ↦ by simp [hQ ζ]⟩
-    rcases eq_or_ne Q 0 with rfl | hQ0
-    · simpa using hQdeg
-    · exact degree_C_le.trans_lt ((zero_le_degree_iff.mpr hQ0).trans_lt hQdeg)
-  · obtain ⟨Q, hQdeg, hQ⟩ := hf (update z i ζ)
-    exact ⟨Q, hQdeg, fun w ↦ by rw [update_comm hij, hQ]⟩
-
-/-- Rewrites an existential `natDegree ≤ e` bound as a strict `degree < Order.succ e` bound. -/
-private theorem exists_natDegree_le_iff {R : Type*} [Semiring R] (e : ℕ) (p : R[X] → Prop) :
-    (∃ Q : R[X], Q.natDegree ≤ e ∧ p Q) ↔
-      ∃ Q : R[X], Q.degree < Order.succ (e : WithBot ℕ) ∧ p Q := by
-  simp only [Order.lt_succ_iff, ← natDegree_le_iff_degree_le]
-
-/-- Fixing the `i`-th coordinate at `ζ` preserves a polynomial degree bound `≤ e` in any
-coordinate `j` (becoming constant in coordinate `i` itself). -/
-theorem exists_natDegree_le_and_update_eq_eval {R : Type*} [Semiring R] {f : (ι → R) → R}
-    (i j : ι) (ζ : R) {e : ℕ}
-    (hf : ∀ y, ∃ Q : R[X], Q.natDegree ≤ e ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → R) :
-    ∃ Q : R[X], Q.natDegree ≤ e ∧ ∀ w, f (update (update z j w) i ζ) = Q.eval w := by
-  rw [exists_natDegree_le_iff]
-  exact exists_degree_lt_and_update_eq_eval i j ζ
-    (fun y ↦ (exists_natDegree_le_iff e _).mp (hf y)) z
 
 /-- **Coordinate degree preservation under `partialDslope`.** If `f` is entire and a polynomial of
 degree strictly less than `d` in coordinate `j`, then so is `partialDslope i f ζ`. -/
@@ -159,16 +109,6 @@ theorem exists_degree_lt_and_partialDslope_eq_eval [Finite ι] {f : (ι → ℂ)
       refine Finset.sum_congr rfl fun m _ ↦ ?_
       rw [congrFun (dslope_const_mul _ _ ζ) (z i), eval_mul, eval_C, mul_comm, partialDslope_apply,
         update_of_ne (Ne.symm hij)]
-
-/-- If `f` is entire and a polynomial of degree at most `e` in coordinate `j`, then so is
-`partialDslope i f ζ`. -/
-theorem exists_natDegree_le_and_partialDslope_eq_eval [Finite ι] {f : (ι → ℂ) → ℂ}
-    (hf : Differentiable ℂ f) (i j : ι) (ζ : ℂ) {e : ℕ}
-    (hdeg : ∀ y, ∃ Q : ℂ[X], Q.natDegree ≤ e ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → ℂ) :
-    ∃ Q : ℂ[X], Q.natDegree ≤ e ∧ ∀ w, partialDslope i f ζ (update z j w) = Q.eval w := by
-  rw [exists_natDegree_le_iff]
-  exact exists_degree_lt_and_partialDslope_eq_eval hf i j ζ
-    (fun y ↦ (exists_natDegree_le_iff e _).mp (hdeg y)) z
 
 section PartialDeriv
 
