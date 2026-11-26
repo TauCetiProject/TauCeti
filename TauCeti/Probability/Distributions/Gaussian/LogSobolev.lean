@@ -399,9 +399,7 @@ private theorem entropy_add_pos_le_two_mul_integral_deriv_sq_gaussianReal
         simpa only [I, D, g, hderiv_g] using integral_sq_deriv_div_gaussianInterp_le hf hA hB hε θ)
   have hle := hmono ⟨le_rfl, by linarith [pi_pos]⟩ ⟨by linarith [pi_pos], le_rfl⟩
     (by linarith [pi_pos])
-  simp only [sin_zero, sin_pi_div_two, ψ, gaussianInterp, cos_zero, one_mul, zero_mul, add_zero,
-    cos_pi_div_two, zero_add, sin_pi_div_two, one_mul, integral_const, probReal_univ,
-    one_smul] at hle
+  simp [ψ, gaussianInterp] at hle
   rw [Measure.entropy_def]; linarith
 
 /-- **Gross's Gaussian logarithmic Sobolev inequality on `ℝ`** for bounded `C¹` test functions:

@@ -70,8 +70,7 @@ theorem PoincareInequality.of_piLp {μ : ∀ i, Measure (E i)}
   classical
   let ρ := (Measure.pi μ).map (WithLp.toLp 2)
   let q := (PiLp.proj 2 E i : PiLp 2 E →L[ℝ] E i)
-  have hm : MeasurePreserving q ρ (μ i) :=
-    funext (PiLp.proj_apply (𝕜 := ℝ) 2 E i) ▸ PiLp.measurePreserving_eval_map_toLp 2 μ i
+  have hm : MeasurePreserving q ρ (μ i) := PiLp.measurePreserving_proj_map_toLp 2 μ i
   rw [PoincareInequality_def]
   intro f hf hfL hdf
   have hn (x : PiLp 2 E) :
@@ -100,8 +99,7 @@ theorem LogSobolevInequality.of_piLp {μ : ∀ i, Measure (E i)}
   classical
   let ρ := (Measure.pi μ).map (WithLp.toLp 2)
   let q := (PiLp.proj 2 E i : PiLp 2 E →L[ℝ] E i)
-  have hm : MeasurePreserving q ρ (μ i) :=
-    funext (PiLp.proj_apply (𝕜 := ℝ) 2 E i) ▸ PiLp.measurePreserving_eval_map_toLp 2 μ i
+  have hm : MeasurePreserving q ρ (μ i) := PiLp.measurePreserving_proj_map_toLp 2 μ i
   have hn (x : PiLp 2 E) : ‖fderiv ℝ (fun y : PiLp 2 E ↦ f (q y)) x‖ = ‖fderiv ℝ f (q x)‖ :=
     PiLp.norm_fderiv_comp_proj (hf.differentiable (by simp) _)
   have hv := h.apply (fun x ↦ f (q x)) (hf.comp q.contDiff)
