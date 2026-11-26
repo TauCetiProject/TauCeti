@@ -24,7 +24,8 @@ of implicit atlases are assembled from homotopy K-sheaves by such finite totals,
 flag totals of interval diagrams, and this lemma is what keeps them homotopy K-sheaves.
 
 The proof is an induction on the number of columns. The brutal truncations of `F` in its columns
-give the short exact sequence `σ^{≥ a + 1} F ⟶ F ⟶ σ^{≤ a} F`, split in each bidegree, hence a
+give the short exact sequence `σ^{≥ a + 1} F ⟶ F ⟶ σ^{≤ a} F`
+(`CategoryTheory.Functor.stupidTruncShortComplex`), split in each bidegree, hence a
 short exact sequence of total complexes
 (`CategoryTheory.ShortComplex.shortExact_totalComplex`); homotopy K-sheaves are closed under
 extensions (`CategoryTheory.ShortComplex.ShortExact.isHomotopyKSheaf_X₂`). The total complex of
@@ -65,21 +66,6 @@ private theorem isHomotopyKSheaf_totalComplex_of_isZero
     IsHomotopyKSheaf (F.totalComplex (ComplexShape.up ℤ)) :=
   (hc.comp_shiftFunctor (-c)).of_iso (F.shiftIsoTotalComplexOfIsZero c hF)
 
-/-- The short complex `σ^{≥ a + 1} F ⟶ F ⟶ σ^{≤ a} F` of brutal truncations of a K-presheaf
-of double complexes in its columns. -/
-private noncomputable def stupidTruncShortComplex
-    (F : KPresheaf (HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up ℤ)) X) (a : ℤ) :
-    ShortComplex (KPresheaf (HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up ℤ)) X) :=
-  ShortComplex.mk (X₁ := F ⋙ (ComplexShape.embeddingUpIntGE (a + 1)).stupidTruncFunctor _)
-    (X₃ := F ⋙ (ComplexShape.embeddingUpIntLE a).stupidTruncFunctor _)
-    { app K := (F.obj K).ιStupidTrunc _
-      naturality _ _ f := HomologicalComplex.ιStupidTrunc_naturality (φ := F.map f) _ }
-    { app K := (F.obj K).πStupidTrunc _
-      naturality _ _ f := (HomologicalComplex.πStupidTrunc_naturality (φ := F.map f) _).symm }
-    (by
-      ext K : 2
-      exact CochainComplex.ιStupidTruncGE_comp_πStupidTruncLE (F.obj K) a)
-
 /-- Pardon's Lemma A.2.11 for the columns `[a, a + k]`, by induction on `k`. -/
 private theorem isHomotopyKSheaf_totalComplex_aux (k : ℕ) :
     ∀ (a : ℤ) (F : KPresheaf (HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up ℤ)) X)
@@ -94,7 +80,9 @@ private theorem isHomotopyKSheaf_totalComplex_aux (k : ℕ) :
   | succ k ih =>
     intro a F _ hF hcol
     -- Split off the column `a` by the short exact sequence `σ^{≥ a + 1} F ⟶ F ⟶ σ^{≤ a} F`.
-    let S := stupidTruncShortComplex F a
+    set S : ShortComplex (KPresheaf (HomologicalComplex₂ C (.up ℤ) (.up ℤ)) X) :=
+      F.stupidTruncShortComplex a with hS
+    -- `S.X₁.obj K`, `S.X₃.obj K` are truncations of `F.obj K` (`stupidTruncShortComplex_X₁`)
     have h₁ : ∀ K p, p < a + 1 ∨ a + 1 + k < p → IsZero ((S.X₁.obj K).X p) := by
       rintro K p (hp | hp)
       · exact CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X (F.obj K) (a + 1) hp
@@ -114,20 +102,25 @@ private theorem isHomotopyKSheaf_totalComplex_aux (k : ℕ) :
     have hcol₁ (p : ℤ) : IsHomotopyKSheaf (S.X₁ ⋙ HomologicalComplex.eval _ _ p) := by
       by_cases hp : a + 1 ≤ p
       · have : ∀ K, IsIso ((Functor.whiskerRight S.f (HomologicalComplex.eval _ _ p)).app K) :=
-          fun K ↦ (F.obj K).isIso_ιStupidTrunc_f (ComplexShape.embeddingUpIntGE (a + 1))
-            (i := (p - (a + 1)).toNat) (by simp; omega)
+          fun K ↦ by
+            dsimp [S]
+            exact (F.obj K).isIso_ιStupidTrunc_f
+              (ComplexShape.embeddingUpIntGE (a + 1)) (i := (p - (a + 1)).toNat) (by simp; omega)
         have := NatIso.isIso_of_isIso_app (Functor.whiskerRight S.f (HomologicalComplex.eval _ _ p))
         exact (hcol p).of_iso (asIso (Functor.whiskerRight S.f _)).symm
       · exact isHomotopyKSheaf_of_acyclic fun K ↦ acyclic_of_isZero _ (h₁ (op K) p (by omega))
     -- The column `a` of `σ^{≤ a} F` is that of `F`.
     have hcol₃ : IsHomotopyKSheaf (S.X₃ ⋙ HomologicalComplex.eval _ _ a) := by
       have : ∀ K, IsIso ((Functor.whiskerRight S.g (HomologicalComplex.eval _ _ a)).app K) :=
-        fun K ↦ (F.obj K).isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE a) (i := 0) (by simp)
+        fun K ↦ by
+          dsimp [S]
+          exact (F.obj K).isIso_πStupidTrunc_f (ComplexShape.embeddingUpIntLE a) (i := 0) (by simp)
       have := NatIso.isIso_of_isIso_app (Functor.whiskerRight S.g (HomologicalComplex.eval _ _ a))
       exact (hcol a).of_iso (asIso (Functor.whiskerRight S.g _))
-    exact (S.shortExact_totalComplex (ComplexShape.up ℤ) fun K p q ↦
-      (CochainComplex.stupidTruncShortComplexSplitting (F.obj K) a p).map _).isHomotopyKSheaf_X₂
+    refine (S.shortExact_totalComplex (ComplexShape.up ℤ) fun K p q ↦ ?_).isHomotopyKSheaf_X₂
       (ih (a + 1) S.X₁ h₁ hcol₁) (isHomotopyKSheaf_totalComplex_of_isZero S.X₃ a h₃ hcol₃)
+    rw [hS, Functor.stupidTruncShortComplex_map_evaluation]
+    exact (CochainComplex.stupidTruncShortComplexSplitting (F.obj K) a p).map _
 
 /-- **Pardon, Lemma A.2.11.** Let `F` be a K-presheaf of double complexes indexed by `ℤ × ℤ`, that
 is a sequence `⋯ ⟶ F_p ⟶ F_(p+1) ⟶ ⋯` of K-presheaves of cochain complexes `F_p = (F -).X p`

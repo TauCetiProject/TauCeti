@@ -41,12 +41,10 @@ length two of Pardon's Lemma A.2.11.
   in the short exact sequence `G ⟶ cone τ ⟶ F⟦1⟧`, whose third term, the shift of `F`, is
   the cokernel of `F ⟶ cone (𝟙 F)` into the acyclic mapping cone of the identity
   (`CategoryTheory.NatTrans.shortExact_mappingConeInrShortComplex`).
-* **Isomorphisms and shifts** (`TopCat.KPresheaf.IsHomotopyKSheaf.of_iso`,
-  `TopCat.KPresheaf.IsHomotopyKSheaf.comp_shiftFunctor`,
-  `TopCat.KPresheaf.isHomotopyKSheaf_comp_shiftFunctor_iff`). A K-presheaf isomorphic to a
-  homotopy K-sheaf is one, being an extension of it by zero, and so is the shift `K ↦ F(K)⟦n⟧` of
-  a homotopy K-sheaf for every `n : ℤ`: the shift by `1` is the cokernel of `F ⟶ cone (𝟙 F)`, and
-  `F` is the kernel of `cone (𝟙 F) ⟶ F⟦1⟧`.
+* **Shifts** (`TopCat.KPresheaf.IsHomotopyKSheaf.comp_shiftFunctor`,
+  `TopCat.KPresheaf.isHomotopyKSheaf_comp_shiftFunctor_iff`). The shift `K ↦ F(K)⟦n⟧` of a
+  homotopy K-sheaf is one for every `n : ℤ`: the shift by `1` is the cokernel of
+  `F ⟶ cone (𝟙 F)`, and `F` is the kernel of `cone (𝟙 F) ⟶ F⟦1⟧`.
 
 The colimit axiom uses that filtered colimits in `C` are exact and that `X` is weakly locally
 compact, as in Pardon's setting of locally compact Hausdorff spaces.
@@ -58,8 +56,8 @@ compact, as in Pardon's setting of locally compact Hausdorff spaces.
 * `TopCat.KPresheaf.isHomotopyKSheaf_of_acyclic`: acyclic K-presheaves are homotopy K-sheaves.
 * `TopCat.KPresheaf.isHomotopyKSheaf_mappingConeFunctor`: mapping cones of morphisms of homotopy
   K-sheaves are homotopy K-sheaves.
-* `TopCat.KPresheaf.IsHomotopyKSheaf.of_iso`, `TopCat.KPresheaf.IsHomotopyKSheaf.comp_shiftFunctor`:
-  homotopy K-sheaves are closed under isomorphisms and shifts.
+* `TopCat.KPresheaf.IsHomotopyKSheaf.comp_shiftFunctor`: homotopy K-sheaves are closed under
+  shifts.
 
 ## References
 
@@ -280,23 +278,13 @@ theorem isHomotopyKSheaf_mappingConeFunctor (hF : F.IsHomotopyKSheaf) (hG : G.Is
 
 end TopCat.KPresheaf
 
-/-! ### Isomorphisms and shifts -/
+/-! ### Shifts -/
 
 namespace TopCat.KPresheaf
 
-open ZeroObject
-
 variable {X : TopCat.{w}} [T2Space X] {C : Type u} [Category.{v} C] [Abelian C]
   [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C] [WeaklyLocallyCompactSpace X]
-  {F G : KPresheaf (CochainComplex C ℤ) X}
-
-/-- A K-presheaf isomorphic to a homotopy K-sheaf is a homotopy K-sheaf. -/
-theorem IsHomotopyKSheaf.of_iso (e : F ≅ G) (hF : F.IsHomotopyKSheaf) : G.IsHomotopyKSheaf :=
-  -- `0 ⟶ F ⟶ G ⟶ 0` is short exact, and the zero K-presheaf is a homotopy K-sheaf
-  (ShortComplex.ShortExact.mk' (S := ShortComplex.mk (0 : 0 ⟶ F) e.hom (by simp))
-    ((ShortComplex.exact_iff_mono _ rfl).2 inferInstance) inferInstance
-    inferInstance).isHomotopyKSheaf_X₃
-    (isHomotopyKSheaf_of_acyclic fun _ ↦ acyclic_of_isZero _ ((isZero_zero _).obj _)) hF
+  {F : KPresheaf (CochainComplex C ℤ) X}
 
 /-- The shift by `1` of a homotopy K-sheaf is a homotopy K-sheaf: it is the cokernel of
 `F ⟶ cone (𝟙 F)`, whose middle term is acyclic. -/

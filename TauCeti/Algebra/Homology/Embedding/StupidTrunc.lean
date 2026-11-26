@@ -51,6 +51,10 @@ projection onto `σ^{≤ n} K` form the short complex `CochainComplex.stupidTrun
 which is split in each degree (`CochainComplex.stupidTruncShortComplexSplitting`). For a complex of
 complexes, a double complex, it splits off the columns `> n`, which is how the total complex of a
 double complex is filtered by its columns.
+For a diagram `G` of cochain complexes, these short complexes form a short complex of diagrams
+`CategoryTheory.Functor.stupidTruncShortComplex G n`, whose maps are Mathlib's natural
+transformations `ComplexShape.Embedding.ιStupidTruncNatTrans` and
+`ComplexShape.Embedding.πStupidTruncNatTrans`.
 
 When `C` has equalizers, the kernel of `K ⟶ σ^{≤ n} K` is the brutal truncation `σ^{≥ n + 1} K`,
 the subcomplex of the terms of `K` in degrees `> n`. These subcomplexes exhaust `K`: the
@@ -67,6 +71,8 @@ sequential colimit of bounded complexes.
 * `CochainComplex.stupidTruncShortComplex K n` and
   `CochainComplex.stupidTruncShortComplexSplitting K n`: the degreewise split short complex
   `σ^{≥ n + 1} K ⟶ K ⟶ σ^{≤ n} K`.
+* `CategoryTheory.Functor.stupidTruncShortComplex G n`: the short complex
+  `σ^{≥ n + 1} G ⟶ G ⟶ σ^{≤ n} G` of a diagram `G` of cochain complexes.
 * `CochainComplex.stupidTruncGESequence K`: the sequence of brutal truncations `σ^{≥ -m} K`,
   realized as the kernels of the projections `K ⟶ σ^{≤ -m-1} K`.
 * `CochainComplex.isColimitStupidTruncGESequenceCocone K`: `K` is the colimit of this sequence.
@@ -419,3 +425,32 @@ noncomputable def topShortComplexSplitting (i : ℤ) :
 end Preadditive
 
 end CochainComplex
+
+namespace CategoryTheory.Functor
+
+variable {J C : Type*} [Category* J] [Category* C] [HasZeroMorphisms C] [HasZeroObject C]
+  (G : J ⥤ CochainComplex C ℤ) (n : ℤ)
+
+/-- The short complex `σ^{≥ n + 1} G ⟶ G ⟶ σ^{≤ n} G` of brutal truncations of a diagram `G` of
+cochain complexes, whose value at each `j` is `CochainComplex.stupidTruncShortComplex (G.obj j) n`
+(`CategoryTheory.Functor.stupidTruncShortComplex_map_evaluation`). -/
+@[expose, simps]
+noncomputable def stupidTruncShortComplex : ShortComplex (J ⥤ CochainComplex C ℤ) where
+  X₁ := G ⋙ (ComplexShape.embeddingUpIntGE (n + 1)).stupidTruncFunctor C
+  X₂ := G
+  X₃ := G ⋙ (ComplexShape.embeddingUpIntLE n).stupidTruncFunctor C
+  -- `G ⋙ 𝟭 _` is `G` by definition
+  f := G.whiskerLeft ((ComplexShape.embeddingUpIntGE (n + 1)).ιStupidTruncNatTrans C)
+  g := G.whiskerLeft ((ComplexShape.embeddingUpIntLE n).πStupidTruncNatTrans C)
+  zero := by
+    ext j : 2
+    exact (G.obj j).ιStupidTruncGE_comp_πStupidTruncLE n
+
+/-- The value of the short complex of brutal truncations of a diagram `G` at `j` is the short
+complex of brutal truncations of `G.obj j`. -/
+theorem stupidTruncShortComplex_map_evaluation (j : J) :
+    (G.stupidTruncShortComplex n).map ((evaluation J _).obj j) =
+      (G.obj j).stupidTruncShortComplex n :=
+  rfl
+
+end CategoryTheory.Functor

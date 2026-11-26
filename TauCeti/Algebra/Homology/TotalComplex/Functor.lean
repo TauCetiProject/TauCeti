@@ -120,11 +120,10 @@ noncomputable def Functor.shiftIsoTotalComplexOfIsZero (c : ℤ)
       G.totalComplex (ComplexShape.up ℤ) :=
   NatIso.ofComponents (fun j ↦ (G.obj j).shiftIsoTotalOfIsZero c (hG j)) fun f ↦ by
     ext n
-    rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-      HomologicalComplex₂.shiftIsoTotalOfIsZero_hom_f,
-      HomologicalComplex₂.shiftIsoTotalOfIsZero_hom_f, Functor.totalComplex_map]
+    rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f]
+    simp only [HomologicalComplex₂.shiftIsoTotalOfIsZero_hom_f]
     -- the shift of `(G.map f).f c` is `(G.map f).f c` in degree `n + -c`
-    exact (HomologicalComplex₂.ιTotal_map _ _ (G.map f) (ComplexShape.up ℤ) c (n + -c) n _).symm
+    exact (HomologicalComplex₂.ιTotal_map ..).symm
 
 @[simp]
 theorem Functor.shiftIsoTotalComplexOfIsZero_hom_app (c : ℤ)
@@ -155,6 +154,9 @@ theorem ShortComplex.shortExact_totalComplex
       inferInstanceAs ((S.X₂.obj j).HasTotal c₁₂)
     have : (S.map ((evaluation J _).obj j)).X₃.HasTotal c₁₂ :=
       inferInstanceAs ((S.X₃.obj j).HasTotal c₁₂)
+    -- by `NatTrans.totalComplex_app`, the maps of `S.totalComplex c₁₂` at `j` are `total.map` of
+    -- those of `S` at `j`, so `(S.totalComplex c₁₂).map ((evaluation J _).obj j)` is by
+    -- definition `totalShortComplex c₁₂ (S.map ((evaluation J _).obj j))`
     exact ShortComplex.shortExact_of_iso (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
       ((Category.id_comp _).trans (Category.comp_id _).symm)
       ((Category.id_comp _).trans (Category.comp_id _).symm))
