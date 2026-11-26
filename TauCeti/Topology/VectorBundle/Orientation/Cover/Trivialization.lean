@@ -37,9 +37,6 @@ arc and `A` on the other, `M` is `A`, so the orientation character of the circle
 the bundle itself, not of a larger bundle containing it: the rank-two transition `diag(1, -1)`
 reverses orientations, while `diag(1, -1, -1)` preserves them.
 
-The orientation character is also characterized through transport along a representing loop
-(`orientationCharacter_fromPath_eq_one_iff`, `orientationCharacter_fromPath_eq_neg_one_iff`).
-
 ## Main results
 
 * `TauCeti.VectorBundleOrientationCover.mapOrientation_orientationTransport_trans`: transport
@@ -103,25 +100,6 @@ theorem mapOrientation_orientationTransport_trans (γ : Path b₀ b₁) (γ' : P
     ContinuousLinearEquiv.trans_toLinearEquiv, Orientation.map_trans]
 
 variable [FiniteDimensional ℝ F]
-
-/-- The orientation character of the class of a loop `γ` is `1` exactly when transport along `γ`
-returns an orientation `o` of the fibre to itself. -/
-theorem orientationCharacter_fromPath_eq_one_iff {b : B} (γ : Path b b)
-    (o : Orientation ℝ (E b) ι) :
-    orientationCharacter F E hι b (FundamentalGroup.fromPath (.mk γ)) = 1 ↔
-      orientationTransport E hι γ o = o := by
-  rw [orientationCharacter_eq_one_iff_monodromy_eq hι _ ⟨⟨b, o⟩, rfl⟩,
-    orientationTransport_apply, ← (fiberEquiv F E ι b).injective.eq_iff, fiberEquiv_mk]
-
-/-- The orientation character of the class of a loop `γ` is `-1` exactly when transport along `γ`
-carries an orientation `o` of the fibre to the opposite orientation. -/
-theorem orientationCharacter_fromPath_eq_neg_one_iff {b : B} (γ : Path b b)
-    (o : Orientation ℝ (E b) ι) :
-    orientationCharacter F E hι b (FundamentalGroup.fromPath (.mk γ)) = -1 ↔
-      orientationTransport E hι γ o = -o := by
-  rw [orientationCharacter_eq_neg_one_iff hι _ ⟨⟨b, o⟩, rfl⟩, orientationTransport_apply,
-    ← fiberEquiv_mk (F := F) (-o), (fiberEquiv F E ι b).injective.eq_iff, Subtype.ext_iff,
-    deck_apply]
 
 /-- **The orientation character is the sign of the transition determinant.** Let `γ` run from
 `b₀` to `b₁` inside the base set of `e` and `γ'` back from `b₁` to `b₀` inside the base set of
