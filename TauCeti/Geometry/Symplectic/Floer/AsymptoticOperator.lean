@@ -17,7 +17,6 @@ import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Analysis.Calculus.PeriodicDeriv
-import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Geometry.Symplectic.Transport
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -111,10 +110,10 @@ a nondegenerate orbit so are the loop operators of the weighted shifts `A - δ` 
 weights `δ` (`SymplecticForm.eventually_isInvertible_loopOperator_sub_smul`). The Sobolev
 realization of the cylinder operator `D` is not treated here. For an actual orbit,
 the continuity hypothesis on `S` is
-`TauCeti.SymplecticForm.continuous_fderiv_hamiltonianVectorField_comp`, and for a one-periodic orbit
-of a one-periodic `C³` Hamiltonian, `S` is a `C¹` loop on the circle
-(`SymplecticForm.exists_loop_eq_fderiv_hamiltonianVectorField`). The model case of a
-constant orthogonal complex structure on an inner product space is the operator
+`TauCeti.SymplecticForm.continuous_fderiv_hamiltonianVectorField_comp`, and for a one-periodic `C³`
+Hamiltonian, `S` is a `C¹` loop on the circle along any one-periodic `C¹` loop, such as a
+one-periodic orbit (`SymplecticForm.exists_loop_eq_fderiv_hamiltonianVectorField`). The model case
+of a constant orthogonal complex structure on an inner product space is the operator
 `TauCeti.orbitTorusOperator`.
 
 ## References
@@ -1032,24 +1031,20 @@ theorem eventually_eq_zero_of_asymptoticOperator_eq_smul
   by_contra hne
   exact hδ ⟨ζ, hζ, hζp, hne, hA⟩
 
-/-- **The linearized Hamiltonian vector field along a periodic orbit is a loop.** Along a
-one-periodic orbit `x` of a one-periodic, jointly `C³` time-dependent Hamiltonian `H`, the
-linearized Hamiltonian vector field `S_t = dX_{H_t}(x(t))` descends to a continuous loop on the
-circle `ℝ / ℤ`, and it is of class `C¹` in `t`. -/
+/-- **The linearized Hamiltonian vector field along a periodic loop is a loop.** Along a
+one-periodic `C¹` loop `x`, for instance a one-periodic orbit, and for a one-periodic, jointly `C³`
+time-dependent Hamiltonian `H`, the linearized Hamiltonian vector field `S_t = dX_{H_t}(x(t))`
+descends to a continuous loop on the circle `ℝ / ℤ`, and it is of class `C¹` in `t`. -/
 theorem exists_loop_eq_fderiv_hamiltonianVectorField (ω : SymplecticForm V) {H : ℝ → V → ℝ}
-    (hH : ContDiff ℝ 3 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1) :
+    (hH : ContDiff ℝ 3 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V} (hx : ContDiff ℝ 1 x)
+    (hxp : Periodic x 1) :
     ∃ S : C(AddCircle (1 : ℝ), V →L[ℝ] V),
       (∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ∧
         ContDiff ℝ 1 fun t : ℝ ↦ S t := by
   set f : ℝ → V →L[ℝ] V := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)
-  have hxc : ContDiff ℝ 1 x :=
-    contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
-      (ω.contDiff_hamiltonianVectorField_uncurry (n := 0)
-        (by simpa using hH.of_le (by norm_num))).continuous hx
   have hf : ContDiff ℝ 1 f :=
     ContDiff.fderiv (f := fun t ↦ ω.hamiltonianVectorField (H t))
-      (ω.contDiff_hamiltonianVectorField_uncurry (n := 2) (hH.of_le (by norm_num))) hxc
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 2) (hH.of_le (by norm_num))) hx
       (by norm_num)
   have hper : Periodic f 1 := fun t ↦ by simp only [f, hHp t, hxp t]
   refine ⟨⟨hper.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hf.continuous⟩,
