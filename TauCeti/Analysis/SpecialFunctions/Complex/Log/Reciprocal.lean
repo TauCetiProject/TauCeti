@@ -99,10 +99,7 @@ theorem continuousAt_inv_log_re {z : ℂ} (hz : z ≠ 1) :
   have hnorm : ContinuousAt (fun w : ℂ ↦ Real.log ‖w‖) z :=
     (Real.continuousAt_log (norm_ne_zero_iff.2 hz0)).comp continuous_norm.continuousAt
   refine hnorm.div ((hnorm.pow 2).add ((TauCeti.continuousAt_abs_arg hz0).pow 2)) ?_
-  have hpos := normSq_pos.2 hlog
-  rw [normSq_apply, log_re, log_im] at hpos
-  rw [sq_abs]
-  nlinarith
+  simpa [normSq_apply, log_re, log_im, sq] using (normSq_pos.2 hlog).ne'
 
 /-- **`Re (1 / log z)` is harmonic on the slit plane away from `1`**, being the real part of the
 holomorphic function `1 / log z` there. -/

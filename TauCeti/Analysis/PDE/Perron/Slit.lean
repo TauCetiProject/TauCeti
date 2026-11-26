@@ -103,46 +103,47 @@ theorem isBarrier_neg_inv_log_re (L : E ≃ₗᵢ[ℝ] ℂ) {r : ℝ} (hr : r < 
   · have hz : L (x - ξ) ≠ 0 := L.map_ne_zero_iff.2 (sub_ne_zero.2 hxξ)
     exact neg_pos.2 (Complex.inv_log_re_neg hz (hcl x hx))
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Let `L` be a linear isometry of `E` onto `ℂ` taking `η - ξ` to the negative real axis. A point
+`x` no farther from `ξ` than `η` whose image `L (x - ξ)` is off the slit plane, that is, on the
+nonpositive real axis, lies on the segment `[ξ, η]`. -/
+private theorem mem_segment_of_not_mem_slitPlane (L : E ≃ₗᵢ[ℝ] ℂ) {x η : E} (hη : η ≠ ξ)
+    (hL : L (η - ξ) = -(‖η - ξ‖ : ℂ)) (hx : L (x - ξ) ∉ Complex.slitPlane)
+    (hle : ‖x - ξ‖ ≤ ‖η - ξ‖) : x ∈ segment ℝ ξ η := by
+  rw [Complex.mem_slitPlane_iff_not_le_zero, not_not] at hx
+  -- `L (x - ξ)` is the nonpositive real `-‖x - ξ‖`.
+  have hre := Complex.re_eq_neg_norm.2 hx
+  rw [L.norm_map] at hre
+  have hz : L (x - ξ) = -(‖x - ξ‖ : ℂ) :=
+    Complex.ext (by simpa using hre) (by simpa using (Complex.le_def.1 hx).2)
+  have hpos : 0 < ‖η - ξ‖ := norm_pos_iff.2 (sub_ne_zero.2 hη)
+  have hpos' : (‖η - ξ‖ : ℂ) ≠ 0 := by exact_mod_cast hpos.ne'
+  have hxt : x - ξ = (‖x - ξ‖ / ‖η - ξ‖) • (η - ξ) := L.injective <| by
+    rw [L.map_smul, hL, hz, Complex.real_smul]
+    push_cast
+    field_simp
+  rw [segment_eq_image']
+  exact ⟨‖x - ξ‖ / ‖η - ξ‖, ⟨by positivity, (div_le_one hpos).2 hle⟩, by simp [← hxt]⟩
+
 /-- **The end of a segment outside the domain is a regular boundary point.** In a
 two-dimensional real inner product space, let `Ω` be open and let `[ξ, η]`, `η ≠ ξ`, be a
 segment missing `Ω`. Then `ξ` admits a barrier relative to `Ω`. -/
 theorem exists_isBarrier_of_disjoint_segment (hE : Module.finrank ℝ E = 2) (hΩ : IsOpen Ω)
     {η : E} (hη : η ≠ ξ) (hseg : Disjoint (segment ℝ ξ η) Ω) : ∃ w, IsBarrier Ω ξ w := by
-  set d := η - ξ with hd_def
-  have hd : d ≠ 0 := sub_ne_zero.2 hη
-  -- A linear isometry onto `ℂ` taking `d` to the negative real axis.
-  obtain ⟨L, hL⟩ : ∃ L : E ≃ₗᵢ[ℝ] ℂ, L d = -(‖d‖ : ℂ) :=
+  -- A linear isometry onto `ℂ` taking `η - ξ` to the negative real axis.
+  obtain ⟨L, hL⟩ : ∃ L : E ≃ₗᵢ[ℝ] ℂ, L (η - ξ) = -(‖η - ξ‖ : ℂ) :=
     exists_linearIsometryEquiv_apply_eq (hE.trans Complex.finrank_real_complex.symm)
       (by rw [norm_neg, Complex.norm_real, norm_norm])
-  set ρ := min ‖d‖ (1 / 2)
-  have hρ : 0 < ρ := lt_min (norm_pos_iff.2 hd) one_half_pos
+  set ρ := min ‖η - ξ‖ (1 / 2)
+  have hρ : 0 < ρ := lt_min (norm_pos_iff.2 (sub_ne_zero.2 hη)) one_half_pos
   refine (isBarrier_neg_inv_log_re (Ω := Ω ∩ ball ξ ρ) L
     ((min_le_right _ _).trans_lt one_half_lt_one) inter_subset_right ?_).exists_isBarrier_of_inter
     hΩ (ball_mem_nhds ξ hρ)
-  -- A point of `Ω` near `ξ` whose image is on the nonpositive real axis would lie on `[ξ, η]`.
+  -- A point of `Ω` near `ξ` whose image is off the slit plane would lie on `[ξ, η]`.
   rintro x ⟨hxΩ, hxρ⟩
   by_contra hx
-  rw [Complex.mem_slitPlane_iff, not_or, not_lt, not_not] at hx
-  set s := ‖x - ξ‖
-  have hs : s < ‖d‖ := (mem_ball_iff_norm.1 hxρ).trans_le (min_le_left _ _)
-  have hz : L (x - ξ) = -(s : ℂ) := by
-    have habs : |(L (x - ξ)).re| = s := by rw [Complex.abs_re_eq_norm.2 hx.2, L.norm_map]
-    rw [abs_of_nonpos hx.1] at habs
-    refine Complex.ext ?_ ?_
-    · rw [Complex.neg_re, Complex.ofReal_re]
-      linarith
-    · rw [Complex.neg_im, Complex.ofReal_im, neg_zero]
-      exact hx.2
-  set t := s / ‖d‖
-  have hdpos : 0 < ‖d‖ := norm_pos_iff.2 hd
-  have ht : t * ‖d‖ = s := div_mul_cancel₀ s hdpos.ne'
-  have hxt : x - ξ = t • d := L.injective <| by
-    rw [hz, L.map_smul, hL, Complex.real_smul, mul_neg, ← Complex.ofReal_mul, ht]
-  refine disjoint_left.1 hseg ?_ hxΩ
-  rw [segment_eq_image']
-  refine ⟨t, ⟨by positivity, (div_le_one hdpos).2 hs.le⟩, ?_⟩
-  simp only [← hd_def]
-  rw [← hxt, add_sub_cancel]
+  exact disjoint_left.1 hseg (mem_segment_of_not_mem_slitPlane L hη hL hx
+    ((mem_ball_iff_norm.1 hxρ).le.trans (min_le_left _ _))) hxΩ
 
 /-- **The Dirichlet problem when every boundary point ends a segment outside the domain.** In a
 two-dimensional real inner product space, let `Ω` be a bounded open set such that every
