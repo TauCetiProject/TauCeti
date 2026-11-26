@@ -16,7 +16,8 @@ import TauCeti.Topology.DiscreteSubset
 
 Hecke's theta kernel has one positive parameter per infinite place, not just a radial
 parameter. The Gaussian `archGaussian y x` is `exp (-π ∑ w, y w * |x w|²)`; a complex place
-occurs once in this sum, in accordance with the Euclidean pairing `mixedInner`.
+occurs once in this sum, in accordance with the Euclidean pairing `mixedInner`. At a constant
+parameter `t` it is the one-parameter Gaussian `mixedGaussian K t x = exp (-π t ⟨x, x⟩)`.
 
 For positive parameters, the coordinatewise square-root dilation identifies this Gaussian with
 the standard Euclidean Schwartz Gaussian. Its sum over any discrete lattice converges absolutely,
@@ -108,15 +109,30 @@ theorem archGaussian_one_archGaussianDilation (y : realSpace K) (hy : ∀ w, 0 <
     (x : mixedSpace K) : archGaussian 1 (archGaussianDilation y hy x) = archGaussian y x := by
   simp only [archGaussian_apply, normAtPlace_archGaussianDilation_sq, Pi.one_apply, one_mul]
 
-/-- At a constant parameter, the Gaussian uses the Euclidean mixed-space pairing. -/
+variable (K) in
+/-- The one-parameter Gaussian `exp (-π t ⟨x, x⟩)` of the Euclidean pairing `mixedInner`. It is
+the archimedean Gaussian at the constant parameter `t` (`archGaussian_const`). -/
+def mixedGaussian (t : ℝ) (x : mixedSpace K) : ℂ :=
+  ↑(Real.exp (-Real.pi * (t * mixedInner K x x)))
+
+theorem mixedGaussian_apply (t : ℝ) (x : mixedSpace K) :
+    mixedGaussian K t x = ↑(Real.exp (-Real.pi * (t * mixedInner K x x))) := (rfl)
+
+@[simp]
+theorem mixedGaussian_zero (t : ℝ) : mixedGaussian K t 0 = 1 := by
+  simp [mixedGaussian_apply, mixedInner_self_eq_sum]
+
+/-- At a constant parameter, the archimedean Gaussian is the one-parameter Gaussian of the
+Euclidean mixed-space pairing. -/
+@[simp]
 theorem archGaussian_const (t : ℝ) (x : mixedSpace K) :
-    archGaussian (fun _ ↦ t) x = ↑(Real.exp (-Real.pi * (t * mixedInner K x x))) := by
-  rw [archGaussian_apply, ← Finset.mul_sum, ← mixedInner_self_eq_sum]
+    archGaussian (fun _ ↦ t) x = mixedGaussian K t x := by
+  rw [archGaussian_apply, mixedGaussian_apply, ← Finset.mul_sum, ← mixedInner_self_eq_sum]
 
 /-- At the constant parameter `1`, the Gaussian uses the Euclidean mixed-space pairing. -/
 theorem archGaussian_one (x : mixedSpace K) :
     archGaussian (1 : realSpace K) x = ↑(Real.exp (-Real.pi * mixedInner K x x)) := by
-  simpa only [Pi.one_def, one_mul] using archGaussian_const (K := K) 1 x
+  simpa only [Pi.one_def, mixedGaussian_apply, one_mul] using archGaussian_const (K := K) 1 x
 
 open scoped Classical in
 /-- The archimedean Gaussian is the standard Euclidean Gaussian after square-root dilation. -/
