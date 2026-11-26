@@ -227,7 +227,7 @@ private theorem gradient_comp_coordEquiv_apply [I.Boundaryless] [IsManifold I �
   rw [hcoord, gradient, InnerProductSpace.toDual_symm_apply,
     ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, coordEquiv_symm_single, ← hz_eq, chartLocalFrame_def,
-    TauCeti.Manifold.mvfderiv_localFrame_trivializationAt_eq_fderivWithin (Module.finBasis ℝ E) p
+    (Module.finBasis ℝ E).mvfderiv_localFrame_trivializationAt_eq_fderivWithin p
       hx_src u k, I.range_eq_univ, fderivWithin_univ]
 
 /-- Pointwise identity between the Riemannian gradient inner product and the inverse chart Gram

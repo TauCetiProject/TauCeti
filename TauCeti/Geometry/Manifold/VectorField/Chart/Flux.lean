@@ -23,13 +23,13 @@ manifolds with or without boundary.
 
 ## Main definitions and results
 
-* `TauCeti.chartFlux`: the density-weighted chart-frame flux in coordinates, extended by zero off
-  the extended chart target.
-* `TauCeti.chartFlux_apply_of_mem` and `TauCeti.chartFlux_apply_of_notMem`: evaluation inside and
-  outside the extended chart target.
-* `TauCeti.chartFlux_eq_zero` and `TauCeti.chartFlux_eventuallyEq_zero`: vanishing outside the
-  chart image of `tsupport X`.
-* `TauCeti.contDiffOn_chartFlux`: `C^k` regularity of `chartFlux` on `range I` when the chart
+* `Module.Basis.chartFlux`: the density-weighted chart-frame flux in coordinates, extended by
+  zero off the extended chart target.
+* `Module.Basis.chartFlux_apply_of_mem` and `Module.Basis.chartFlux_apply_of_notMem`: evaluation
+  inside and outside the extended chart target.
+* `Module.Basis.chartFlux_eq_zero` and `Module.Basis.chartFlux_eventuallyEq_zero`: vanishing outside
+  the chart image of `tsupport X`.
+* `Module.Basis.contDiffOn_chartFlux`: `C^k` regularity of `chartFlux` on `range I` when the chart
   image of `tsupport X` is compact and contained in the chart target.
 -/
 
@@ -38,7 +38,7 @@ public section
 open Bundle Set
 open scoped ContDiff Manifold Topology
 
-namespace TauCeti
+namespace Module.Basis
 
 variable {𝕜 ι E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
@@ -134,4 +134,4 @@ theorem contDiffOn_chartFlux [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] {k 
   · exact (contDiffAt_const.congr_of_eventuallyEq
       (chartFlux_eventuallyEq_zero b ρ hKc i fun h ↦ hz (himage h))).contDiffWithinAt
 
-end TauCeti
+end Module.Basis
