@@ -12,7 +12,6 @@ public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.RingTheory.HahnSeries.Map
 public import TauCeti.RingTheory.LaurentSeries.Ramified
 import Mathlib.FieldTheory.IsSepClosed
-import TauCeti.FieldTheory.IsAlgClosed.FrobeniusFixedPoints
 import TauCeti.RingTheory.LaurentSeries.Basic
 
 /-!
@@ -21,7 +20,7 @@ import TauCeti.RingTheory.LaurentSeries.Basic
 This file defines the arithmetic `p^f`-Frobenius automorphism
 `TauCeti.coefficientFrobenius p f k : LaurentSeries k ≃+* LaurentSeries k` acting on coefficients
 and fixing the uniformizer `X = HahnSeries.single 1 1`, together with its surjectivity equation
-`π^d * σ^N(g) - g = y`.
+`X^d * σ^N(g) - g = y`.
 
 ## Main definitions
 
@@ -38,9 +37,8 @@ and fixing the uniformizer `X = HahnSeries.single 1 1`, together with its surjec
 
 ## References
 
-* L. Fargues and J.-M. Fontaine, *Courbes et fibrés vectoriels en théorie de Hodge p-adique*,
-  Astérisque 406 (2018), §8.2.3.
-* K. S. Kedlaya, *A p-adic local monodromy theorem*, Ann. of Math. 160 (2004), §§4.1–4.5.
+* K. S. Kedlaya, *Slope filtrations revisited*, Doc. Math. 10 (2005), 447–525, §4.5
+  (4.5.3–4.5.8, pp. 497–499).
 -/
 
 public section
@@ -81,7 +79,6 @@ theorem coefficientFrobenius_apply (x : LaurentSeries k) :
   (rfl)
 
 /-- The underlying `RingHom` of `coefficientFrobenius p f k`. -/
-@[simp]
 theorem toRingHom_coefficientFrobenius :
     (coefficientFrobenius p f k).toRingHom =
       have : ExpChar k p := expChar_prime k p
@@ -89,7 +86,6 @@ theorem toRingHom_coefficientFrobenius :
   (rfl)
 
 /-- The underlying `RingHom` of `(coefficientFrobenius p f k).symm`. -/
-@[simp]
 theorem symm_toRingHom_coefficientFrobenius :
     (coefficientFrobenius p f k).symm.toRingHom =
       have : ExpChar k p := expChar_prime k p
@@ -170,7 +166,7 @@ end CoefficientFrobenius
 
 section LaurentEquation
 
-private theorem coeff_iterate_single_mul_mapRingHom {R : Type*} [CommRing R] (τ : R ≃+* R)
+private theorem coeff_iterate_single_mul_mapRingHom {R : Type*} [Ring R] (τ : R ≃+* R)
     (d : ℤ) (y : LaurentSeries R) (n : ℕ) (m : ℤ) :
     ((fun g ↦ HahnSeries.single d 1 * HahnSeries.mapRingHom τ.toRingHom g)^[n] y).coeff m =
       τ^[n] (y.coeff (m - n * d)) := by
@@ -183,25 +179,22 @@ private theorem coeff_iterate_single_mul_mapRingHom {R : Type*} [CommRing R] (τ
     push_cast
     ring
 
-private theorem surjective_single_mul_mapRingHom_sub_of_pos {R : Type*} [CommRing R]
+private theorem coeff_iterate_single_mul_mapRingHom_eq_zero {R : Type*} [Ring R] (τ : R ≃+* R)
+    {d : ℤ} (hd : 0 < d) (y : LaurentSeries R) (m : ℤ) {n : ℕ}
+    (hn : Int.toNat (m - y.order) + 1 ≤ n) :
+    ((fun g ↦ HahnSeries.single d 1 * HahnSeries.mapRingHom τ.toRingHom g)^[n] y).coeff m = 0 := by
+  rw [coeff_iterate_single_mul_mapRingHom]
+  have hnd : (n : ℤ) ≤ n * d := le_mul_of_one_le_right (Int.natCast_nonneg n) hd
+  have hlt : m - n * d < y.order := by omega
+  rw [HahnSeries.coeff_eq_zero_of_lt_order hlt, iterate_fixed (map_zero τ) n]
+
+private theorem surjective_single_mul_mapRingHom_sub_of_pos {R : Type*} [Ring R]
     (τ : R ≃+* R) {d : ℤ} (hd : 0 < d) :
     Surjective fun g : LaurentSeries R ↦
       HahnSeries.single d 1 * HahnSeries.mapRingHom τ.toRingHom g - g := by
-  let T : LaurentSeries R →+ LaurentSeries R :=
-    { toFun g := HahnSeries.single d 1 * HahnSeries.mapRingHom τ.toRingHom g
-      map_zero' := by simp
-      map_add' x y := by simp [mul_add] }
-  have hT (g : LaurentSeries R) :
-      T g = HahnSeries.single d 1 * HahnSeries.mapRingHom τ.toRingHom g := rfl
-  have hTcoeff (n : ℕ) (y : LaurentSeries R) (m : ℤ) :
-      (T^[n] y).coeff m = τ^[n] (y.coeff (m - n * d)) :=
-    coeff_iterate_single_mul_mapRingHom τ d y n m
-  have hTvanish (y : LaurentSeries R) (m : ℤ) (n : ℕ)
-      (hn : Int.toNat (m - y.order) + 1 ≤ n) : (T^[n] y).coeff m = 0 := by
-    rw [hTcoeff]
-    have hnd : (n : ℤ) ≤ n * d := le_mul_of_one_le_right (Int.natCast_nonneg n) hd
-    have hlt : m - n * d < y.order := by omega
-    rw [HahnSeries.coeff_eq_zero_of_lt_order hlt, iterate_fixed (map_zero τ) n]
+  let T : LaurentSeries R → LaurentSeries R :=
+    fun g ↦ HahnSeries.single d 1 * HahnSeries.mapRingHom τ.toRingHom g
+  have hTvanish := coeff_iterate_single_mul_mapRingHom_eq_zero τ hd
   intro y
   let bound (m : ℤ) : ℕ := Int.toNat (m - y.order) + 1
   let gcoeff (m : ℤ) : R := -∑ n ∈ Finset.range (bound m), (T^[n] y).coeff m
@@ -209,37 +202,32 @@ private theorem surjective_single_mul_mapRingHom_sub_of_pos {R : Type*} [CommRin
     refine ⟨y.order, fun m hm ↦ ?_⟩
     rw [Function.mem_support] at hm
     by_contra! hlt
-    apply hm
-    have hb : bound m = 1 := by simp [bound]; omega
-    simp [gcoeff, hb, HahnSeries.coeff_eq_zero_of_lt_order hlt]
+    exact hm (by simp [gcoeff, show bound m = 1 by simp [bound]; omega,
+      HahnSeries.coeff_eq_zero_of_lt_order hlt])
   let g : LaurentSeries R := HahnSeries.ofSuppBddBelow gcoeff hg_bdd
   refine ⟨g, ?_⟩
   ext m
   set M := max (bound m) (bound (m - d) + 1)
-  have hg_eq : g.coeff m = -∑ n ∈ Finset.range M, (T^[n] y).coeff m := by
+  have hg_eq (k : ℤ) (hk : bound k ≤ M) :
+      g.coeff k = -∑ n ∈ Finset.range M, (T^[n] y).coeff k := by
     rw [HahnSeries.coeff_ofSuppBddBelow]
-    simp only [gcoeff, neg_inj]
-    exact Finset.sum_subset (Finset.range_mono (le_max_left _ _)) fun n _ hnb ↦
-      hTvanish y m n (not_lt.1 (Finset.mem_range.not.1 hnb))
-  have hg_shift : g.coeff (m - d) = -∑ n ∈ Finset.range M, (T^[n] y).coeff (m - d) := by
-    rw [HahnSeries.coeff_ofSuppBddBelow]
-    simp only [gcoeff, neg_inj]
-    exact Finset.sum_subset (Finset.range_mono (Nat.le_trans (Nat.le_succ _) (le_max_right _ _)))
-      fun n _ hnb ↦ hTvanish y (m - d) n (not_lt.1 (Finset.mem_range.not.1 hnb))
+    exact congrArg Neg.neg <| Finset.sum_subset (Finset.range_mono hk) fun n _ hnb ↦
+      hTvanish y k (not_lt.1 (Finset.mem_range.not.1 hnb))
   have hTg : (T g).coeff m = -∑ n ∈ Finset.range M, (T^[n + 1] y).coeff m := by
-    rw [hT, HahnSeries.coeff_single_mul, one_mul, HahnSeries.coeff_mapRingHom,
-      RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, hg_shift, map_neg, map_sum, neg_inj]
+    rw [HahnSeries.coeff_single_mul, one_mul, HahnSeries.coeff_mapRingHom,
+      RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+      hg_eq (m - d) (Nat.le_trans (Nat.le_succ _) (le_max_right _ _)), map_neg, map_sum, neg_inj]
     refine Finset.sum_congr rfl fun n _ ↦ ?_
-    rw [iterate_succ_apply', hT, HahnSeries.coeff_single_mul, one_mul, HahnSeries.coeff_mapRingHom,
+    rw [iterate_succ_apply', HahnSeries.coeff_single_mul, one_mul, HahnSeries.coeff_mapRingHom,
       RingEquiv.toRingHom_eq_coe, RingHom.coe_coe]
-  dsimp only
-  rw [← hT g, HahnSeries.coeff_sub, hTg, hg_eq, neg_sub_neg, ← Finset.sum_sub_distrib,
+  change (T g).coeff m - g.coeff m = y.coeff m
+  rw [hTg, hg_eq m (le_max_left _ _), neg_sub_neg, ← Finset.sum_sub_distrib,
     Finset.sum_range_sub' (fun n ↦ (T^[n] y).coeff m), iterate_zero, id_eq,
-    hTvanish y m M (le_max_left _ _), sub_zero]
+    hTvanish y m (le_max_left _ _), sub_zero]
 
 /-- For any ring automorphism `τ` of `R` and nonzero integer `d`, the operator
 `g ↦ X ^ d * τ(g) - g` is surjective on `LaurentSeries R`. -/
-theorem surjective_single_mul_mapRingHom_sub_of_ne_zero {R : Type*} [CommRing R]
+theorem surjective_single_mul_mapRingHom_sub_of_ne_zero {R : Type*} [Ring R]
     (τ : R ≃+* R) {d : ℤ} (hd : d ≠ 0) :
     Surjective fun g : LaurentSeries R ↦
       HahnSeries.single d 1 * HahnSeries.mapRingHom τ.toRingHom g - g := by
@@ -255,7 +243,8 @@ theorem surjective_single_mul_mapRingHom_sub_of_ne_zero {R : Type*} [CommRing R]
       simp
     have hh' : h - HahnSeries.single (-d) 1 * HahnSeries.mapRingHom τ.symm.toRingHom h =
         HahnSeries.single (-d) 1 * y := by
-      linear_combination -hh
+      dsimp only at hh
+      rw [← neg_sub, hh, neg_neg]
     dsimp only
     rw [hcomp]
     calc HahnSeries.single d 1 * h - HahnSeries.mapRingHom τ.symm.toRingHom h
@@ -271,7 +260,8 @@ theorem surjective_single_mul_mapRingHom_sub_of_ne_zero {R : Type*} [CommRing R]
 
 /-- Over an algebraically closed field `k` of characteristic `p > 0`, the operator
 `g ↦ X ^ d * σ^[N](g) - g` is surjective on `LaurentSeries k` for every `d : ℤ`, `N > 0`, and
-`f > 0`. -/
+`f > 0` (the surjectivity step used to split Frobenius extensions in
+Kedlaya 2005, §4.5, 4.5.3–4.5.8). -/
 theorem surjective_iterate_coefficientFrobenius_sub {p : ℕ} [Fact p.Prime] {f : ℕ}
     (hf : f ≠ 0) {k : Type*} [Field k] [CharP k p] [IsAlgClosed k] (N : ℕ+) (d : ℤ) :
     Surjective fun g : LaurentSeries k ↦
@@ -292,18 +282,16 @@ theorem surjective_iterate_coefficientFrobenius_sub {p : ℕ} [Fact p.Prime] {f 
     choose s hs using fun m : ℤ ↦ IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C' p
       (p ^ (f * (N : ℕ))) 1 (-1) (-y.coeff m) (dvd_pow_self p hfn) hq (by simp)
     let gcoeff (m : ℤ) : k := if y.coeff m = 0 then 0 else s m
-    have hg_pwo : gcoeff.support.IsPWO := by
-      refine y.isPWO_support.mono fun m hm ↦ ?_
+    have hg_pwo : gcoeff.support.IsPWO := y.isPWO_support.mono fun m hm ↦ by
       rw [Function.mem_support] at hm
-      rw [HahnSeries.mem_support]
-      intro hy0
-      exact hm (by simp [gcoeff, hy0])
+      exact (HahnSeries.mem_support y m).2 fun hy0 ↦ hm (by simp [gcoeff, hy0])
     let g : LaurentSeries k := ⟨gcoeff, hg_pwo⟩
     refine ⟨g, ?_⟩
     ext m
     dsimp only
     rw [HahnSeries.single_zero_one, one_mul, HahnSeries.coeff_sub, HahnSeries.coeff_mapRingHom,
       RingEquiv.toRingHom_eq_coe, RingHom.coe_coe]
+    -- `HahnSeries.coeff ⟨gcoeff, _⟩ m` is definitionally the underlying function `gcoeff m`.
     have hg_coeff : g.coeff m = gcoeff m := rfl
     rw [hg_coeff]
     by_cases hym : y.coeff m = 0

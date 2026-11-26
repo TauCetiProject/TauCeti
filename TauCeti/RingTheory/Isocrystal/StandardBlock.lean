@@ -112,6 +112,52 @@ theorem standardBlockFrobenius_single_last {n : ℕ} (c : L) :
   · simp
   · simp [Fin.castSucc_ne_last, Fin.succ_ne_zero]
 
+/-- The Frobenius of `D(s, r)` sends `Pi.single j c` to `Pi.single (finRotate r j) (σ c)`
+before the last index. -/
+theorem standardBlockFrobenius_single_of_val_add_one_ne {r : ℕ} [NeZero r] {j : Fin r}
+    (hj : j.val + 1 ≠ r) (c : L) :
+    standardBlockFrobenius σ π s r (Pi.single j c) = Pi.single (finRotate r j) (σ c) := by
+  obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne r)
+  subst hn
+  have hj_lt : j ≠ Fin.last n := fun h ↦ hj (by simp [h])
+  obtain ⟨i, rfl⟩ := Fin.exists_castSucc_eq.2 hj_lt
+  have hrot : finRotate (n + 1) i.castSucc = i.succ :=
+    Fin.ext (by rw [coe_finRotate_of_ne_last hj_lt, Fin.val_castSucc, Fin.val_succ])
+  rw [hrot, standardBlockFrobenius_single_castSucc]
+
+/-- The Frobenius of `D(s, r)` sends `Pi.single j c` at the last index to
+`Pi.single (finRotate r j) (π ^ s * σ c)`. -/
+theorem standardBlockFrobenius_single_of_val_add_one_eq {r : ℕ} [NeZero r] {j : Fin r}
+    (hj : j.val + 1 = r) (c : L) :
+    standardBlockFrobenius σ π s r (Pi.single j c) =
+      Pi.single (finRotate r j) (π ^ s * σ c) := by
+  obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne r)
+  subst hn
+  obtain rfl : j = Fin.last n := Fin.ext (by simp only [Fin.val_last]; omega)
+  rw [finRotate_last, standardBlockFrobenius_single_last]
+
+/-- An `L`-linear map from `L^r` whose values on the standard basis `Pi.single j 1` satisfy
+the cyclic Frobenius recurrence intertwines `standardBlockFrobenius σ π s r` with `Φ`. -/
+theorem intertwines_standardBlockFrobenius_of_single {r : ℕ} [NeZero r] {V : Type*}
+    [AddCommGroup V] [Module L V] {Φ : V →ₛₗ[(σ : L →+* L)] V} (g : (Fin r → L) →ₗ[L] V)
+    (hg : ∀ j : Fin r, Φ (g (Pi.single j 1)) =
+      (if j.val + 1 = r then π ^ s else 1) • g (Pi.single (finRotate r j) 1))
+    (x : Fin r → L) :
+    g (standardBlockFrobenius σ π s r x) = Φ (g x) := by
+  have heq : g.comp (standardBlockFrobenius σ π s r) = Φ.comp g :=
+    (Pi.basisFun L (Fin r)).ext fun j ↦ by
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, Pi.basisFun_apply]
+      by_cases hj : j.val + 1 = r
+      · rw [standardBlockFrobenius_single_of_val_add_one_eq hj, map_one, mul_one, hg j]
+        simp only [hj, ↓reduceIte]
+        rw [← map_smul]
+        congr 1
+        ext l
+        simp [Pi.single_apply]
+      · rw [standardBlockFrobenius_single_of_val_add_one_ne hj, map_one, hg j]
+        simp only [hj, ↓reduceIte, one_smul]
+  exact LinearMap.congr_fun heq x
+
 /-- For `π ≠ 0` the Frobenius of `D(s, r)` is bijective, so `D(s, r)` is an isocrystal. -/
 theorem standardBlockFrobenius_bijective (hπ : π ≠ 0) :
     Bijective (standardBlockFrobenius σ π s r) := by

@@ -49,6 +49,12 @@ namespace TauCeti
 
 variable {R : Type*} [CommSemiring R] {p : ℕ} [ExpChar R p] [PerfectRing R p]
 
+/-- For a perfect ring `R` of exponential characteristic `p`, every iterated Frobenius map
+`iterateFrobenius R p n` is surjective. -/
+instance instRingHomSurjectiveIterateFrobenius (n : ℕ) :
+    RingHomSurjective (iterateFrobenius R p n) :=
+  ⟨(iterateFrobeniusEquiv R p n).surjective⟩
+
 /-- The `p ^ n`-th power of the `p ^ (m + n)`-th root of `x` is its `p ^ m`-th root. -/
 @[simp]
 theorem iterateFrobeniusEquiv_symm_add_pow (x : R) (m n : ℕ) :

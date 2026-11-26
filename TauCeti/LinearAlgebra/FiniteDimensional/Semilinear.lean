@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.DivisionRing
 public import Mathlib.LinearAlgebra.Dimension.RankNullity
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
@@ -15,11 +16,14 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 An injective linear endomorphism of a finite-dimensional vector space is surjective, and vice versa
 (`LinearMap.injective_iff_surjective`). The same holds for an endomorphism that is semilinear with
-respect to a surjective ring endomorphism `σ` of the scalars:
-`LinearMap.surjective_of_injectiveₛₗ` and `LinearMap.injective_of_surjectiveₛₗ`.
-Moreover, the descending chain of iterated images `(Submodule.map f)^[n] ⊤` stabilizes by step
-`Module.finrank K V`, so `f` restricts to a bijection on
-`(Submodule.map f)^[Module.finrank K V] ⊤`.
+respect to a ring endomorphism `σ` of the scalars: `LinearMap.surjective_of_injectiveₛₗ` (when
+`σ` is surjective) and `LinearMap.injective_of_surjectiveₛₗ` (for any `σ : K →+* K`). Moreover,
+the descending chain of iterated images `(Submodule.map f)^[n] ⊤` stabilizes by step
+`Module.finrank K V` (`LinearMap.iterate_map_top_finrank_add_one`,
+`LinearMap.map_iterate_map_top_finrank`), so `f` restricts to a bijection on
+`(Submodule.map f)^[Module.finrank K V] ⊤` (`LinearMap.bijective_restrict_iterate_map_top`). We
+also record that the representation matrix of a surjective semilinear endomorphism in a finite
+basis has unit determinant (`LinearMap.isUnit_det_basis_matrix_of_surjectiveₛₗ`).
 -/
 
 public section
@@ -29,26 +33,66 @@ namespace LinearMap
 section SurjectiveInjective
 
 variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-  {σ : K →+* K} [RingHomSurjective σ]
+  {σ : K →+* K}
 
-/-- An injective endomorphism of a finite-dimensional vector space that is semilinear with
-respect to a surjective ring endomorphism of the scalars is surjective. -/
-theorem surjective_of_injectiveₛₗ {f : V →ₛₗ[σ] V} (hf : Function.Injective f) :
-    Function.Surjective f := by
-  have hσ : Function.Bijective σ := ⟨σ.injective, RingHomSurjective.is_surjective⟩
-  have hrank : Module.rank K V = Module.rank K (range f) :=
-    rank_eq_of_equiv_equiv σ
-      (AddEquiv.ofBijective f.rangeRestrict.toAddMonoidHom
-        ⟨fun x y h => hf (congrArg Subtype.val h), f.surjective_rangeRestrict⟩)
-      hσ fun r x => Subtype.ext (map_smulₛₗ f r x)
-  rw [← range_eq_top]
-  exact Submodule.eq_top_of_finrank_eq (congrArg Cardinal.toNat hrank).symm
+/-- On a nontrivial finite-dimensional vector space over a division ring, any ring endomorphism `σ`
+admitting a surjective `σ`-semilinear endomorphism `f` is itself surjective. -/
+private theorem ringHomSurjective_of_surjectiveₛₗ [Nontrivial V] {f : V →ₛₗ[σ] V}
+    (hf : Function.Surjective f) : RingHomSurjective σ := by
+  refine ⟨fun c ↦ ?_⟩; by_contra hc
+  let b := Module.finBasis K V; set d := Module.finrank K V
+  have hd : 0 < d := Module.finrank_pos
+  have hspan (v : V) : ∃ a : Fin d → K, ∑ j, σ (a j) • f (b j) = v := by
+    obtain ⟨u, rfl⟩ := hf v
+    refine ⟨b.repr u, ?_⟩
+    conv_rhs => rw [← b.sum_repr u, map_sum]
+    simp [map_smulₛₗ]
+  choose A hA using fun i : Fin d ↦ hspan (b i)
+  choose B hB using fun i : Fin d ↦ hspan (c • b i)
+  let u : Fin d × Bool → (Fin d → K) := fun p ↦ if p.2 then B p.1 else A p.1
+  have hnot : ¬ LinearIndependent K u := fun hli ↦ by
+    have hcard := hli.fintype_card_le_finrank
+    rw [Fintype.card_prod, Fintype.card_fin, Fintype.card_bool, Module.finrank_pi,
+      Fintype.card_fin] at hcard
+    omega
+  rw [Fintype.not_linearIndependent_iff] at hnot
+  obtain ⟨g, hg0, ⟨p₀, hp₀⟩⟩ := hnot
+  have hsum_j (j : Fin d) :
+      ∑ i, (σ (g (i, false)) * σ (A i j) + σ (g (i, true)) * σ (B i j)) = 0 := by
+    have hgj := congrFun hg0 j
+    simp only [Fintype.sum_prod_type, Fintype.sum_bool, u, Bool.false_eq_true, ↓reduceIte,
+      Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply] at hgj
+    simpa only [map_sum, map_add, map_mul, map_zero, add_comm] using congrArg σ hgj
+  have hcomb : ∑ i : Fin d, (σ (g (i, false)) + σ (g (i, true)) * c) • b i = 0 := by
+    calc ∑ i : Fin d, (σ (g (i, false)) + σ (g (i, true)) * c) • b i
+        = ∑ i : Fin d, (σ (g (i, false)) • ∑ j, σ (A i j) • f (b j) +
+            σ (g (i, true)) • ∑ j, σ (B i j) • f (b j)) := by
+          refine Finset.sum_congr rfl fun i _ ↦ ?_; rw [hA i, hB i, add_smul, smul_smul]
+      _ = ∑ j : Fin d, (∑ i : Fin d,
+            (σ (g (i, false)) * σ (A i j) + σ (g (i, true)) * σ (B i j))) • f (b j) := by
+          simp only [Finset.smul_sum, smul_smul, Finset.sum_smul, add_smul, Finset.sum_add_distrib]
+          rw [Finset.sum_comm]
+          conv_lhs => arg 2; rw [Finset.sum_comm]
+      _ = 0 := by simp [hsum_j]
+  rcases p₀ with ⟨i₀, b₀⟩
+  have hcoeff := Fintype.linearIndependent_iff.1 b.linearIndependent _ hcomb i₀
+  by_cases hy : g (i₀, true) = 0
+  · have hx : g (i₀, false) ≠ 0 := by cases b₀ <;> simp_all
+    rw [hy, map_zero, zero_mul, add_zero] at hcoeff
+    exact hx (σ.injective (hcoeff.trans (map_zero σ).symm))
+  · refine hc ⟨-(g (i₀, true))⁻¹ * g (i₀, false), ?_⟩
+    have hσy : σ (g (i₀, true)) ≠ 0 := fun h ↦ hy (σ.injective (h.trans (map_zero σ).symm))
+    have h1 := eq_neg_of_add_eq_zero_left hcoeff
+    rw [map_mul, map_neg, map_inv₀, neg_mul, h1, mul_neg, neg_neg, inv_mul_cancel_left₀ hσy]
 
 /-- A surjective endomorphism of a finite-dimensional vector space that is semilinear with
-respect to a surjective ring endomorphism of the scalars is injective. -/
+respect to a ring endomorphism of the scalars is injective. -/
 theorem injective_of_surjectiveₛₗ {f : V →ₛₗ[σ] V} (hf : Function.Surjective f) :
     Function.Injective f := by
-  have hσ : Function.Bijective σ := ⟨σ.injective, RingHomSurjective.is_surjective⟩
+  rcases subsingleton_or_nontrivial V with hV | hV
+  · exact Function.injective_of_subsingleton f
+  have hσ : Function.Bijective σ :=
+    ⟨σ.injective, (ringHomSurjective_of_surjectiveₛₗ hf).is_surjective⟩
   let g : (V ⧸ ker f) →ₛₗ[σ] V := (ker f).liftQ f le_rfl
   have hginj : Function.Injective g := (injective_iff_map_eq_zero g).2 fun x hx => by
     induction x using Submodule.Quotient.induction_on with
@@ -68,13 +112,50 @@ theorem injective_of_surjectiveₛₗ {f : V →ₛₗ[σ] V} (hf : Function.Sur
     rw [← mem_ker, hbot, Submodule.mem_bot] at hx
     exact hx
 
+/-- An injective endomorphism of a finite-dimensional vector space that is semilinear with
+respect to a surjective ring endomorphism of the scalars is surjective. -/
+theorem surjective_of_injectiveₛₗ [RingHomSurjective σ] {f : V →ₛₗ[σ] V}
+    (hf : Function.Injective f) : Function.Surjective f := by
+  have hσ : Function.Bijective σ := ⟨σ.injective, RingHomSurjective.is_surjective⟩
+  have hrank : Module.rank K V = Module.rank K (range f) :=
+    rank_eq_of_equiv_equiv σ
+      (AddEquiv.ofBijective f.rangeRestrict.toAddMonoidHom
+        ⟨fun x y h => hf (congrArg Subtype.val h), f.surjective_rangeRestrict⟩)
+      hσ fun r x => Subtype.ext (map_smulₛₗ f r x)
+  rw [← range_eq_top]
+  exact Submodule.eq_top_of_finrank_eq (congrArg Cardinal.toNat hrank).symm
+
 /-- On a finite-dimensional vector space, an endomorphism semilinear with respect to a surjective
 ring endomorphism of the scalars is injective if and only if it is surjective. -/
-theorem injective_iff_surjectiveₛₗ {f : V →ₛₗ[σ] V} :
+theorem injective_iff_surjectiveₛₗ [RingHomSurjective σ] {f : V →ₛₗ[σ] V} :
     Function.Injective f ↔ Function.Surjective f :=
   ⟨surjective_of_injectiveₛₗ, injective_of_surjectiveₛₗ⟩
 
 end SurjectiveInjective
+
+section BasisMatrix
+
+/-- If `f : V →ₛₗ[σ] V` is a surjective `σ`-semilinear endomorphism of a free module with finite
+basis `b : Basis ι K V`, then the matrix `(b.repr (f (b i)) k)` has unit determinant. -/
+theorem isUnit_det_basis_matrix_of_surjectiveₛₗ {ι K V : Type*} [CommRing K]
+    [AddCommGroup V] [Module K V] [Fintype ι] [DecidableEq ι] {σ : K →+* K}
+    (b : Module.Basis ι K V) {f : V →ₛₗ[σ] V} (hf : Function.Surjective f) :
+    IsUnit (Matrix.of fun i k ↦ b.repr (f (b i)) k).det := by
+  let B : Matrix ι ι K := Matrix.of fun i k ↦ b.repr (f (b i)) k
+  choose u hu using fun j : ι ↦ hf (b j)
+  let A : Matrix ι ι K := Matrix.of fun j i ↦ σ (b.repr (u j) i)
+  have hAB : A * B = 1 := by
+    ext j k
+    have hrep := congrArg (fun x ↦ b.repr x k) (hu j)
+    have hmap : f (u j) = ∑ i, σ (b.repr (u j) i) • f (b i) := by
+      conv_lhs => rw [← b.sum_repr (u j), map_sum]
+      simp [map_smulₛₗ]
+    rw [hmap, map_sum] at hrep
+    simp only [map_smul, Module.Basis.repr_self, Finsupp.single_apply] at hrep
+    simpa [A, B, Matrix.mul_apply, Matrix.one_apply, eq_comm] using hrep.symm
+  exact isUnit_iff_exists_inv'.2 ⟨A.det, by rw [← Matrix.det_mul, hAB, Matrix.det_one]⟩
+
+end BasisMatrix
 
 section IterateImage
 
@@ -121,7 +202,7 @@ end IterateImage
 
 /-- The descending chain of iterated images of a semilinear endomorphism stabilizes by step
 `Module.finrank K V`. -/
-theorem iterate_map_top_succ_eq_finrank {K V : Type*} [DivisionRing K] [AddCommGroup V]
+theorem iterate_map_top_finrank_add_one {K V : Type*} [DivisionRing K] [AddCommGroup V]
     [Module K V] [FiniteDimensional K V] {σ : K →+* K} [RingHomSurjective σ]
     (f : V →ₛₗ[σ] V) :
     (Submodule.map f)^[Module.finrank K V + 1] (⊤ : Submodule K V) =
@@ -156,5 +237,34 @@ theorem iterate_map_top_succ_eq_finrank {K V : Type*} [DivisionRing K] [AddCommG
       omega
   have := hdec (Module.finrank K V + 1) le_rfl
   omega
+
+/-- Applying a semilinear endomorphism `f` to its stabilized iterated image
+`(Submodule.map f)^[Module.finrank K V] ⊤` maps that submodule onto itself. -/
+theorem map_iterate_map_top_finrank {K V : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] {σ : K →+* K} [RingHomSurjective σ]
+    (f : V →ₛₗ[σ] V) :
+    Submodule.map f ((Submodule.map f)^[Module.finrank K V] (⊤ : Submodule K V)) =
+      (Submodule.map f)^[Module.finrank K V] ⊤ := by
+  rw [← Function.iterate_succ_apply' (Submodule.map f) (Module.finrank K V) ⊤]
+  exact iterate_map_top_finrank_add_one f
+
+/-- Restricting a semilinear endomorphism `f` to its stabilized iterated image
+`(Submodule.map f)^[Module.finrank K V] ⊤` gives a bijective endomorphism. -/
+theorem bijective_restrict_iterate_map_top {K V : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] {σ : K →+* K} [RingHomSurjective σ]
+    (f : V →ₛₗ[σ] V) :
+    Function.Bijective
+      (f.restrict (p := (Submodule.map f)^[Module.finrank K V] ⊤)
+        (q := (Submodule.map f)^[Module.finrank K V] ⊤)
+        fun _ hx ↦ (map_iterate_map_top_finrank f).le (Submodule.mem_map_of_mem hx)) := by
+  have hsurj : Function.Surjective
+      (f.restrict (p := (Submodule.map f)^[Module.finrank K V] ⊤)
+        (q := (Submodule.map f)^[Module.finrank K V] ⊤)
+        fun _ hx ↦ (map_iterate_map_top_finrank f).le (Submodule.mem_map_of_mem hx)) := by
+    rintro ⟨y, hy⟩
+    rw [← map_iterate_map_top_finrank f, Submodule.mem_map] at hy
+    obtain ⟨x, hx, hfx⟩ := hy
+    exact ⟨⟨x, hx⟩, Subtype.ext hfx⟩
+  exact ⟨injective_of_surjectiveₛₗ hsurj, hsurj⟩
 
 end LinearMap
