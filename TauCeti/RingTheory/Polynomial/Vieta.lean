@@ -267,6 +267,12 @@ theorem sum_mul_sum_map_mul_esymm_erase (hs : card s = m) (hv : v ∈ s) (f : R 
   rw [Nat.add_sub_cancel, Nat.sub_sub, add_comm 1 i]
   ring
 
+end Multiset
+
+namespace Multiset
+
+variable {R : Type*} [CommSemiring R] [DecidableEq R]
+
 /-- **Adjoining an element to the weighted sums of the erased elementary symmetric functions.**
 For any weights `f`,
 `∑_{w ∈ a :: s} f(w) e_{k+1}((a :: s) ∖ w) = f(a) e_{k+1}(s) + ∑_{w ∈ s} f(w) e_{k+1}(s ∖ w) +

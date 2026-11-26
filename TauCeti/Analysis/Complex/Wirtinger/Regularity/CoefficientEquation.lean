@@ -38,25 +38,26 @@ times `|z - z'|^(α / m)`. Replacing one root `a` of a multiset `u` by `b` chang
 `(\bar a - \bar b) e_{j-1}(u) + (a - b) ∑_{w ∈ u} \bar w e_{j-2}(u ∖ w)`
 (`Multiset.sum_map_mul_esymm_erase_cons`), at most a constant times `|a - b|` for bounded roots,
 so the sum is Hölder of exponent `α / m` on compact sets
-(`TauCeti.holderOnWith_sum_map_conj_mul_esymm_erase`). With `ν` and `μ` Hölder of the same
-exponent, the right side of `\bar∂ c_j = -(j ν c_j + μ ∑ \bar w e_{j-1}(R ∖ w))` is locally Hölder,
-and the interior Schauder estimate for `\bar∂`
+(`TauCeti.exists_holderOnWith_sum_map_conj_mul_esymm_erase`). With `ν` and `μ` Hölder of the
+same exponent, the right side of `\bar∂ c_j = -(j ν c_j + μ ∑ \bar w e_{j-1}(R ∖ w))` is locally
+Hölder, and the interior Schauder estimate for `\bar∂`
 (`TauCeti.HasWeakConjWirtingerDerivOn.contDiffOn_one_of_holderOnWith`) makes `c_j` a `C¹`
 classical solution with locally `(α / m)`-Hölder derivative
 (`TauCeti.contDiffOn_and_conjWirtingerDeriv_add_add_eq_zero_of_esymm`). Applied to the limits of
-`TauCeti.exists_strictMono_hasWeakConjWirtingerDerivOn_of_esymm`, this gives `C¹` limits solving
-the equation classically (`TauCeti.exists_strictMono_contDiffOn_of_esymm`).
+`TauCeti.exists_strictMono_hasWeakConjWirtingerDerivOn_of_esymm`, when the limit forms `ν₀` and
+`μ₀` are `((1 - 2 / p) / m)`-Hölder on compact sets, this gives `C¹` limits solving the equation
+classically (`TauCeti.exists_strictMono_contDiffOn_of_esymm`).
 
 ## Main results
 
-* `TauCeti.holderOnWith_sum_map_conj_mul_esymm_erase`: if the elementary symmetric functions of
-  multisets `R z` of `m` complex numbers are bounded and `α`-Hölder on a set, then
+* `TauCeti.exists_holderOnWith_sum_map_conj_mul_esymm_erase`: if the elementary symmetric
+  functions of multisets `R z` of `m` complex numbers are bounded and `α`-Hölder on a set, then
   `∑_{w ∈ R z} \bar w e_k(R z ∖ w)` is `(α / m)`-Hölder there.
 * `TauCeti.contDiffOn_and_conjWirtingerDeriv_add_add_eq_zero_of_esymm`: locally `α`-Hölder weak
   solutions of the equation of elementary symmetric functions, with locally `(α / m)`-Hölder
   coefficients `ν` and `μ`, are `C¹` classical solutions.
 * `TauCeti.exists_strictMono_contDiffOn_of_esymm`: subsequential limits of approximate solutions
-  are `C¹` classical solutions.
+  are `C¹` classical solutions when the limit forms are Hölder on compact sets.
 
 ## References
 
@@ -113,7 +114,7 @@ private theorem norm_sum_map_conj_mul_esymm_erase_cons_sub_le {m k : ℕ} {M : �
 multiset of `m` complex numbers for `z ∈ K`, whose elementary symmetric functions `e_j(R z)`,
 `1 ≤ j ≤ m`, have norm at most `B` and are `α`-Hölder on `K` with constant `C`. Then for every `k`,
 `z ↦ ∑_{w ∈ R z} \bar w e_k(R z ∖ w)` is `(α / m)`-Hölder on `K`. -/
-theorem holderOnWith_sum_map_conj_mul_esymm_erase {m : ℕ} (k : ℕ) {K : Set ℂ}
+theorem exists_holderOnWith_sum_map_conj_mul_esymm_erase {m : ℕ} (k : ℕ) {K : Set ℂ}
     {R : ℂ → Multiset ℂ} {B C α : ℝ≥0} (hcard : ∀ z ∈ K, Multiset.card (R z) = m)
     (hB : ∀ j ∈ Finset.Icc 1 m, ∀ z ∈ K, ‖(R z).esymm j‖ ≤ B)
     (hC : ∀ j ∈ Finset.Icc 1 m, HolderOnWith C α (fun z ↦ (R z).esymm j) K) :
@@ -164,12 +165,6 @@ theorem holderOnWith_sum_map_conj_mul_esymm_erase {m : ℕ} (k : ℕ) {K : Set �
 
 /-! ### The equation of elementary symmetric functions -/
 
-/-- An antilinear map `ℂ → ℂ` vanishing at `1` vanishes. -/
-private theorem eq_zero_of_apply_one_eq_zero {T : ℂ →L⋆[ℂ] ℂ} (h : T 1 = 0) : T = 0 := by
-  ext w
-  rw [show w = w • (1 : ℂ) by simp, T.map_smulₛₗ, h, smul_zero]
-  rfl
-
 /-- The right side `-(j ν c_j + μ ∑_{w ∈ R} \bar w e_{j-1}(R ∖ w))(1)` of the equation of
 elementary symmetric functions is `(α / m)`-Hölder on a compact set `K` on which the coefficients
 `c_i = e_i(R)` are `α`-Hölder and the forms `ν` and `μ` are `(α / m)`-Hölder. -/
@@ -193,7 +188,7 @@ private theorem exists_holderOnWith_neg_smul_add_smul_apply_one {m j : ℕ}
   choose! Dc hDc using fun i hi ↦ hbd (hCc i hi)
   have hjc := ((hCc j hj).of_le_of_norm_le (hDc j hj) hβα one_pos).smul (j : ℂ)
   -- the zeroth-order term, through the roots
-  obtain ⟨CS, hCS⟩ := holderOnWith_sum_map_conj_mul_esymm_erase (j - 1)
+  obtain ⟨CS, hCS⟩ := exists_holderOnWith_sum_map_conj_mul_esymm_erase (j - 1)
     (R := R) (B := ∑ i ∈ Finset.Icc 1 m, Dc i) (C := ∑ i ∈ Finset.Icc 1 m, Cc i)
     (fun z hz ↦ (hR z hz).1)
     (fun i hi z hz ↦ (hR z hz).2 i hi ▸ (hDc i hi z hz).trans
@@ -249,8 +244,9 @@ theorem contDiffOn_and_conjWirtingerDeriv_add_add_eq_zero_of_esymm {m : ℕ} {α
     (continuousOn_of_forall_isCompact_holderOnWith hU hα (hc j hj)) fun K hKU hK ↦
       exists_holderOnWith_neg_smul_add_smul_apply_one hj hK (fun z hz ↦ hR z (hKU hz))
         (fun i hi ↦ hc i hi K hKU hK) (hν K hKU hK) (hμ K hKU hK)
-  refine ⟨hcd, fun z hz ↦ eq_zero_of_apply_one_eq_zero ?_, hcH⟩
-  rw [add_apply, add_apply, hcl z hz, add_apply]
+  refine ⟨hcd, fun z hz ↦ ContinuousLinearMap.coe_injective (LinearMap.ext_ring ?_), hcH⟩
+  simp only [ContinuousLinearMap.coe_coe, add_apply, hcl z hz, ContinuousLinearMap.toLinearMap_zero,
+    LinearMap.zero_apply]
   ring
 
 /-- **Subsequential limits of the coefficients are classical solutions.** Under the hypotheses of

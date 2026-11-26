@@ -62,8 +62,9 @@ where `R₀(z)` is the multiset of the `m` roots of `Wᵐ - c₁ Wᵐ⁻¹ + ⋯
 (`TauCeti.exists_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn_esymm`). This is the
 equation of the elementary symmetric functions of `m` solutions of `D`, which the root branches of
 `TauCeti.Analysis.Complex.Wirtinger.Root.Branch` and their normalization across collisions take
-as input, there for `C¹` coefficients solving it classically; that the limits have this
-regularity is `TauCeti.exists_strictMono_contDiffOn_of_esymm`, in
+as input, there for `C¹` coefficients solving it classically; when the limit forms `ν₀` and `μ₀`
+are Hölder of exponent `(1 - 2 / p) / m` on compact sets, that the limits have this regularity is
+`TauCeti.exists_strictMono_contDiffOn_of_esymm`, in
 `TauCeti.Analysis.Complex.Wirtinger.Regularity.CoefficientEquation`. The zeroth-order term
 `∑_{V ∈ R} \bar V e_{j-1}(R ∖ V)` is a continuous function of the unordered tuple `R ∈ Sym ℂ m`
 (`TauCeti.continuous_sum_map_conj_mul_esymm_erase`), hence of the coefficients, through the

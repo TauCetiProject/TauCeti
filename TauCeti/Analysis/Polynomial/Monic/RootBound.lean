@@ -98,7 +98,7 @@ theorem IsRoot.norm_le_two_mul {p : K[X]} (hp : p.Monic) {c : ℝ}
 
 /-- **Cauchy's bound.** If the coefficients below the top of a monic polynomial `p` have norm at
 most `B`, every root `z` of `p` satisfies `‖z‖ < B + 1`. -/
-theorem IsRoot.norm_lt_add_one {p : K[X]} (hp : p.Monic) {B : ℝ}
+theorem IsRoot.norm_lt_add_one {K : Type*} [NormedDivisionRing K] {p : K[X]} (hp : p.Monic) {B : ℝ}
     (hB : ∀ i < p.natDegree, ‖p.coeff i‖ ≤ B) {z : K} (hz : p.IsRoot z) : ‖z‖ < B + 1 := by
   -- a root forces positive degree, so `B ≥ ‖p.coeff 0‖ ≥ 0`
   have hd : 0 < p.natDegree := by
