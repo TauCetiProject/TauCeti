@@ -12,7 +12,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 Let `U` be a finite-dimensional vector space over a division ring `K`. Two injective linear maps
 `f₁ f₂ : U → V` differ by a linear automorphism of `V`, whatever the dimension of `V`: there is
-`e : V ≃ₗ[K] V` with `e ∘ f₁ = f₂` (`LinearMap.exists_linearEquiv_comp_eq_of_injective`). The
+`e : V ≃ₗ[K] V` with `e ∘ f₁ = f₂` (`TauCeti.exists_linearEquiv_comp_eq_of_injective`). The
 automorphism extends the isomorphism `f₂ ∘ f₁⁻¹` from the range of `f₁` onto that of `f₂`
 (`Submodule.exists_linearEquiv_restrict_eq`).
 
@@ -23,7 +23,7 @@ under a projective linear transformation.
 
 public section
 
-namespace LinearMap
+namespace TauCeti
 
 variable {K U V : Type*} [DivisionRing K] [AddCommGroup U] [Module K U] [AddCommGroup V]
   [Module K V] [FiniteDimensional K U]
@@ -38,9 +38,9 @@ theorem exists_linearEquiv_comp_eq_of_injective {f₁ f₂ : U →ₗ[K] V}
   obtain ⟨e, he⟩ := Submodule.exists_linearEquiv_restrict_eq
     ((LinearEquiv.ofInjective f₁ hf₁).symm.trans (LinearEquiv.ofInjective f₂ hf₂))
   refine ⟨e, LinearMap.ext fun u ↦ ?_⟩
-  have hs : (LinearEquiv.ofInjective f₁ hf₁).symm ⟨f₁ u, mem_range_self f₁ u⟩ = u :=
+  have hs : (LinearEquiv.ofInjective f₁ hf₁).symm ⟨f₁ u, LinearMap.mem_range_self f₁ u⟩ = u :=
     (LinearEquiv.ofInjective f₁ hf₁).symm_apply_eq.2
       (Subtype.ext (LinearEquiv.ofInjective_apply ..).symm)
-  simpa [hs, LinearEquiv.ofInjective_apply] using (he ⟨f₁ u, mem_range_self f₁ u⟩).symm
+  simpa [hs, LinearEquiv.ofInjective_apply] using (he ⟨f₁ u, LinearMap.mem_range_self f₁ u⟩).symm
 
-end LinearMap
+end TauCeti

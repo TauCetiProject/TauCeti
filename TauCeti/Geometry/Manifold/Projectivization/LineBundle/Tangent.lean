@@ -50,7 +50,7 @@ total spaces over `ℙ¹`.
 **Every line.** A line of `ℙᵐ⁺¹` is a map `ℓ' : [v] ↦ [f v]` for an injective linear map
 `f : 𝕜² → 𝕜ᵐ⁺²`. It is the image `A ∘ ℓ` of the coordinate line under the projective
 transformation of a linear automorphism `A` of `𝕜ᵐ⁺²` with `A ∘ ι = f`, for the inclusion `ι` of
-the first two coordinates (`LinearMap.exists_linearEquiv_comp_eq_of_injective`). The differential
+the first two coordinates (`TauCeti.exists_linearEquiv_comp_eq_of_injective`). The differential
 of that transformation identifies `ℓ* Tℙᵐ⁺¹` with `ℓ'* Tℙᵐ⁺¹`
 (`Diffeomorph.pullbackTangentDiffeomorph`), so `ℓ'* Tℙᵐ⁺¹` is `𝒪(2) ⊕ 𝒪(1)ᵐ` as well
 (`Projectivization.lineTangentDiffeomorph`,
@@ -527,7 +527,7 @@ are linear isomorphisms of their fibres which form an analytic map of total spac
 analytic diffeomorphism of total spaces (`TauCeti.bundleDiffeomorph`). For `𝕜 = ℂ` this is the
 holomorphic splitting `ℓ'* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` along every line of `ℂPⁿ`. The line is the image
 of the coordinate line under a projective linear transformation
-(`LinearMap.exists_linearEquiv_comp_eq_of_injective`), and the isomorphism is
+(`TauCeti.exists_linearEquiv_comp_eq_of_injective`), and the isomorphism is
 `Projectivization.lineTangentDiffeomorph` for it. -/
 theorem exists_continuousLinearEquiv_pullback_map_tangentSpace_twistSumCore_lineTwist
     (f : (Fin 2 → 𝕜) →ₗ[𝕜] Fin (m + 2) → 𝕜) (hf : Function.Injective f)
@@ -546,7 +546,7 @@ theorem exists_continuousLinearEquiv_pullback_map_tangentSpace_twistSumCore_line
             (E := (twistSumCore (𝕜 := 𝕜) (n := 1) (lineTwist m)).Fiber) q.proj
             (e q.proj q.snd)) := by
   obtain ⟨A, hA⟩ :=
-    LinearMap.exists_linearEquiv_comp_eq_of_injective (coordLineEmbedding_injective m) hf
+    TauCeti.exists_linearEquiv_comp_eq_of_injective (coordLineEmbedding_injective m) hf
   have hℓA : ∀ x, ℓ' x = mapDiffeomorph A ω (coordLine m x) := fun x ↦ by
     induction x using Projectivization.ind with | h v hv => ?_
     rw [hℓ', coordLine_mk, coe_mapDiffeomorph, map_mk, map_mk]

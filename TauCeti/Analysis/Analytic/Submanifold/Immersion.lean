@@ -26,7 +26,7 @@ The second hypothesis says that `p` is relatively open at `u₀` as a map into `
 dropped: near its crossing point, a figure-eight is not the image of a small interval.
 
 The chart is built by extending the injective derivative to a linear automorphism `L` of `𝕜ⁿ`
-(`LinearMap.exists_linearEquiv_comp_eq_of_injective`) and inverting
+(`TauCeti.exists_linearEquiv_comp_eq_of_injective`) and inverting
 `y ↦ p (y₁, …, y_d) + L y - L (y₁, …, y_d, 0)`, whose derivative at `(u₀, 0)` is `L`, by the
 analytic inverse function theorem.
 
@@ -98,7 +98,7 @@ theorem exists_isAnalyticChart_of_injective_fderiv {T : Set (Fin n → 𝕜)}
   have hπι (u : Fin d → 𝕜) : π (ι u) = u := firstCoords_firstCoords_of_le hd u
   -- Extend the injective derivative `P` from the coordinate subspace to an automorphism `L`.
   have hιinj : Function.Injective ι := fun u v huv ↦ by simpa [hπι] using congrArg π huv
-  obtain ⟨L₀, hL₀⟩ := LinearMap.exists_linearEquiv_comp_eq_of_injective
+  obtain ⟨L₀, hL₀⟩ := exists_linearEquiv_comp_eq_of_injective
     (f₁ := ι.toLinearMap) (f₂ := P.toLinearMap) hιinj hinj
   let L := L₀.toContinuousLinearEquiv
   have hLι (u : Fin d → 𝕜) : L (ι u) = P u := LinearMap.congr_fun hL₀ u
