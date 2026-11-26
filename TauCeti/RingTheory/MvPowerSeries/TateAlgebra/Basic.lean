@@ -197,33 +197,6 @@ variable [IsUltrametricDist R] {c : σ → ℝ} [hc : ∀ i, Fact (0 < c i)]
 theorem prod_pow_pos (t : σ →₀ ℕ) : 0 < t.prod (c · ^ ·) :=
   Finset.prod_pos fun i _ ↦ pow_pos (hc i).out _
 
-omit [IsUltrametricDist R] hc in
-/-- A sequence of families that is uniformly Cauchy in the weighted coefficient norms
-`‖A k t‖ * w t` has a family `a` approximating it uniformly in these weighted norms; at indices
-with positive weight `a t` is the coefficientwise limit. No decay, boundedness or positivity
-hypothesis on the weights is needed. -/
-theorem _root_.TauCeti.MvPowerSeries.exists_weighted_uniform_limit {ι E : Type*}
-    [SeminormedAddCommGroup E] [CompleteSpace E] (w : ι → ℝ) (A : ℕ → ι → E)
-    (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t, ‖A k t - A l t‖ * w t < ε) :
-    ∃ a : ι → E, ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * w t ≤ ε := by
-  have hlim : ∀ t, ∃ a : E, 0 < w t → Tendsto (fun k ↦ A k t) atTop (𝓝 a) := fun t ↦ by
-    by_cases ht : 0 < w t
-    · refine (cauchySeq_tendsto_of_complete ?_).imp fun a ha _ ↦ ha
-      refine Metric.cauchySeq_iff.mpr fun ε hε ↦ ?_
-      obtain ⟨N, hN⟩ := hC (ε * w t) (mul_pos hε ht)
-      exact ⟨N, fun k hk l hl ↦ by
-        rw [dist_eq_norm]
-        exact lt_of_mul_lt_mul_right (hN k hk l hl t) ht.le⟩
-    · exact ⟨0, fun h ↦ absurd h ht⟩
-  choose a ha using hlim
-  refine ⟨a, fun ε hε ↦ ?_⟩
-  obtain ⟨N, hN⟩ := hC ε hε
-  refine ⟨N, fun k hk t ↦ ?_⟩
-  by_cases ht : 0 < w t
-  · exact le_of_tendsto (((tendsto_const_nhds.sub (ha t ht)).norm).mul_const (w t))
-      (eventually_atTop.mpr ⟨N, fun l hl ↦ (hN k hk l hl t).le⟩)
-  · exact (mul_nonpos_of_nonneg_of_nonpos (norm_nonneg _) (not_lt.mp ht)).trans hε.le
-
 /-- A sequence of restricted families that is uniformly Cauchy in the
 weighted coefficient norms has a restricted limit, with uniform weighted error estimates.
 This is the common limit construction for scalar and module-valued Gauss completeness. -/
@@ -236,7 +209,7 @@ theorem _root_.TauCeti.MvPowerSeries.exists_weighted_coefficient_limit {σ E : T
     ∃ a : (σ →₀ ℕ) → E,
       Tendsto (fun t ↦ ‖a t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0) ∧
       ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * t.prod (c · ^ ·) ≤ ε := by
-  obtain ⟨a, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_uniform_limit _ A hC
+  obtain ⟨a, hunif⟩ := TauCeti.exists_weighted_uniform_limit _ A hC
   refine ⟨a, ?_, hunif⟩
   exact TauCeti.tendsto_zero_of_weighted_uniform_limit _
     (fun t ↦ Finset.prod_nonneg fun i _ ↦ pow_nonneg (hc i) _) A a hres hunif

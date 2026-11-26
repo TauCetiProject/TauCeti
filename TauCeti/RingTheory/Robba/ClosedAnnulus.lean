@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Robba.Basic
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
-import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
@@ -24,7 +23,7 @@ convolution. Restriction to a smaller annulus is the identity on coefficients an
 norm. Finite Laurent polynomials are dense in the endpoint maximum norm.
 
 The convolution estimates come from `TauCeti.RingTheory.Robba.Basic`. Completeness uses the
-weighted uniform coefficient limit of `TauCeti.MvPowerSeries.exists_weighted_uniform_limit`.
+weighted uniform coefficient limit of `TauCeti.exists_weighted_uniform_limit`.
 
 ## References
 
@@ -228,7 +227,7 @@ private theorem limit_mem (F : ℕ → ClosedAnnulusRing R r s) (a : ℤ → R)
 /-- Closed annuli are complete for the endpoint maximum norm over a complete coefficient ring. -/
 instance instCompleteSpace : CompleteSpace (ClosedAnnulusRing R r s) := by
   refine Metric.complete_of_cauchySeq_tendsto (α := ClosedAnnulusRing R r s) fun F hF ↦ ?_
-  obtain ⟨a, hunif⟩ := MvPowerSeries.exists_weighted_uniform_limit
+  obtain ⟨a, hunif⟩ := exists_weighted_uniform_limit
     (fun n : ℤ ↦ max (r ^ n) (s ^ n)) (fun k ↦ (F k : ℤ → R)) (by
       intro ε hε
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hF ε hε
