@@ -231,19 +231,20 @@ abbrev spatial (p : RepresentationPair A B) : CommutingRepresentationPair A B :=
   CommutingRepresentationPair.spatial p.left p.right
 
 variable (A B) in
-/-- There is a pair of representations whose spatial tensor homomorphism is injective and has
-norm `‖a‖ ‖b‖` at every `a ⊗ b`: a pair of faithful representations. -/
-theorem exists_spatialTensorHom_injective_and_norm_spatialTensorHom_tmul :
-    ∃ p : RepresentationPair A B, Function.Injective (p.left.spatialTensorHom p.right) ∧
-      ∀ a b, ‖p.left.spatialTensorHom p.right (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ := by
+/-- There is a pair of representations whose spatial commuting pair has injective integrated
+form, with norm `‖a‖ ‖b‖` at every `a ⊗ b`: a pair of faithful representations. -/
+theorem exists_tensorHom_spatial_injective_and_norm_tensorHom_spatial_tmul :
+    ∃ p : RepresentationPair A B, Function.Injective p.spatial.tensorHom ∧
+      ∀ a b, ‖p.spatial.tensorHom (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ := by
   obtain ⟨E, _, _, _, π, hπ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation A
   obtain ⟨F, _, _, _, ρ, hρ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation B
-  refine ⟨⟨E, F, π, ρ⟩, NonUnitalStarAlgHom.spatialTensorHom_injective hπ hρ, fun a b ↦ ?_⟩
-  rw [NonUnitalStarAlgHom.spatialTensorHom_tmul, norm_mapLCompletion,
-    NonUnitalStarAlgHom.norm_map π hπ, NonUnitalStarAlgHom.norm_map ρ hρ]
+  refine ⟨⟨E, F, π, ρ⟩, CommutingRepresentationPair.tensorHom_spatial_injective hπ hρ,
+    fun a b ↦ ?_⟩
+  rw [CommutingRepresentationPair.norm_tensorHom_spatial_tmul, NonUnitalStarAlgHom.norm_map π hπ,
+    NonUnitalStarAlgHom.norm_map ρ hρ]
 
 instance : Nonempty (RepresentationPair A B) :=
-  (exists_spatialTensorHom_injective_and_norm_spatialTensorHom_tmul A B).nonempty
+  (exists_tensorHom_spatial_injective_and_norm_tensorHom_spatial_tmul A B).nonempty
 
 end RepresentationPair
 
@@ -253,11 +254,10 @@ namespace CommutingRepresentationPair
 `a ⊗ b`: the spatial pair of faithful representations. -/
 theorem exists_tensorHom_injective_and_norm_tensorHom_tmul :
     ∃ p : CommutingRepresentationPair A B, Function.Injective p.tensorHom ∧
-      ∀ a b, ‖p.tensorHom (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ := by
-  obtain ⟨p, h⟩ :=
-    RepresentationPair.exists_spatialTensorHom_injective_and_norm_spatialTensorHom_tmul A B
-  refine ⟨p.spatial, ?_⟩
-  rwa [CommutingRepresentationPair.tensorHom_spatial p.left p.right]
+      ∀ a b, ‖p.tensorHom (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ :=
+  let ⟨p, h⟩ :=
+    RepresentationPair.exists_tensorHom_spatial_injective_and_norm_tensorHom_spatial_tmul A B
+  ⟨p.spatial, h⟩
 
 /-- There is a commuting pair whose integrated form is injective. -/
 theorem exists_tensorHom_injective :
@@ -398,8 +398,9 @@ theorem norm_tensorHom_le_maxTensorNorm (p : CommutingRepresentationPair A B) (x
 
 /-- To bound the maximal norm it suffices to bound every commuting pair. -/
 theorem maxTensorNorm_le_of_forall {x : A ⊗[ℂ] B} {c : ℝ}
-    (h : ∀ p : CommutingRepresentationPair A B, ‖p.tensorHom x‖ ≤ c) : maxTensorNorm A B x ≤ c :=
-  ciSup_le h
+    (h : ∀ p : CommutingRepresentationPair A B, ‖p.tensorHom x‖ ≤ c) : maxTensorNorm A B x ≤ c := by
+  rw [maxTensorNorm_def]
+  exact ciSup_le h
 
 theorem maxTensorNorm_nonneg (x : A ⊗[ℂ] B) : 0 ≤ maxTensorNorm A B x :=
   supTensorNorm_nonneg id x

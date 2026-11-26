@@ -140,17 +140,13 @@ theorem minTensorNorm_star_mul_self (x : A ⊗[ℂ] B) :
 @[simp]
 theorem minTensorNorm_eq_zero_iff {x : A ⊗[ℂ] B} : minTensorNorm A B x = 0 ↔ x = 0 :=
   supTensorNorm_eq_zero_iff _
-    ((exists_spatialTensorHom_injective_and_norm_spatialTensorHom_tmul A B).imp fun p h ↦ by
-      rw [CommutingRepresentationPair.tensorHom_spatial p.left p.right]
-      exact h.1)
+    ((exists_tensorHom_spatial_injective_and_norm_tensorHom_spatial_tmul A B).imp fun _ h ↦ h.1)
 
 /-- The minimal norm is a **cross norm**: `‖a ⊗ b‖_min = ‖a‖ ‖b‖`. -/
 @[simp]
 theorem minTensorNorm_tmul (a : A) (b : B) : minTensorNorm A B (a ⊗ₜ b) = ‖a‖ * ‖b‖ :=
   supTensorNorm_tmul _
-    ((exists_spatialTensorHom_injective_and_norm_spatialTensorHom_tmul A B).imp fun p h ↦ by
-      rw [CommutingRepresentationPair.tensorHom_spatial p.left p.right]
-      exact h.2 a b)
+    ((exists_tensorHom_spatial_injective_and_norm_tensorHom_spatial_tmul A B).imp fun _ h ↦ h.2 a b)
 
 end TauCeti
 
