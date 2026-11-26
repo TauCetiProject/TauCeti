@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.Trace.Defs
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.GammaOneThree.Basic

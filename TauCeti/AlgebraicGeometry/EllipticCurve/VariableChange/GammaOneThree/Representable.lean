@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.Ring.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import TauCeti.Algebra.Ring.Invertible
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.GammaOneThree.ArrowRing
-public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.GammaOneThree.Basic
 import Mathlib.Tactic.FinCases
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
