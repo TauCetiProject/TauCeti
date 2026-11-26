@@ -58,6 +58,9 @@ reflection `J • τ = -conj τ`, which commutes with `Δ`.
 
 * `TauCeti.UpperHalfPlane.hyperbolicLaplacian`: the hyperbolic Laplacian `Δ`.
 * `TauCeti.UpperHalfPlane.weightLaplacian`: the weight-`k` Laplacian `Δ_k`.
+* `TauCeti.UpperHalfPlane.hyperbolicLaplacian_congr_nhds`: `Δ f` at `z` only depends on `f`
+  near `z`, so `Δ` does not enlarge supports
+  (`TauCeti.UpperHalfPlane.tsupport_hyperbolicLaplacian_subset`).
 * `TauCeti.UpperHalfPlane.weightLaplacian_im_cpow`: `Δ_k y^s = s (1 - k - s) y^s`.
 * `TauCeti.UpperHalfPlane.hyperbolicLaplacian_im_cpow`: `Δ y^s = s (1 - s) y^s`.
 * `TauCeti.UpperHalfPlane.hyperbolicLaplacian_comp_J_smul`: `Δ (f ∘ J) = (Δ f) ∘ J` for the
@@ -137,6 +140,32 @@ theorem hyperbolicLaplacian_const (c : ℂ) : hyperbolicLaplacian (fun _ ↦ c) 
 theorem weightLaplacian_const (k : ℝ) (c : ℂ) : weightLaplacian k (fun _ ↦ c) = 0 := by
   ext z
   simp [weightLaplacian_apply, Function.comp_def]
+
+section Local
+
+variable {f f₀ : ℍ → ℂ} {z : ℍ}
+
+/-- **Locality of the hyperbolic Laplacian**: `Δ f` at `z` only depends on `f` near `z`. -/
+theorem hyperbolicLaplacian_congr_nhds (h : f ∘ ofComplex =ᶠ[𝓝 (z : ℂ)] f₀ ∘ ofComplex) :
+    hyperbolicLaplacian f z = hyperbolicLaplacian f₀ z := by
+  rw [hyperbolicLaplacian_apply, hyperbolicLaplacian_apply, (laplacian_congr_nhds h).self_of_nhds]
+
+/-- The hyperbolic Laplacian of `f` vanishes off the topological support of `f`. -/
+theorem hyperbolicLaplacian_eq_zero_of_notMem_tsupport (hz : z ∉ tsupport f) :
+    hyperbolicLaplacian f z = 0 := by
+  have h : f ∘ ofComplex =ᶠ[𝓝 (z : ℂ)] (fun _ : ℍ ↦ (0 : ℂ)) ∘ ofComplex := by
+    rw [← isOpenEmbedding_coe.map_nhds_eq, eventuallyEq_map]
+    simpa [Function.comp_def, ofComplex_apply, Pi.zero_def] using
+      notMem_tsupport_iff_eventuallyEq.1 hz
+  rw [hyperbolicLaplacian_congr_nhds h, hyperbolicLaplacian_const, Pi.zero_apply]
+
+/-- The hyperbolic Laplacian does not enlarge topological supports. -/
+theorem tsupport_hyperbolicLaplacian_subset (f : ℍ → ℂ) :
+    tsupport (hyperbolicLaplacian f) ⊆ tsupport f :=
+  closure_minimal (Function.support_subset_iff'.2 fun _ ↦
+    hyperbolicLaplacian_eq_zero_of_notMem_tsupport) (isClosed_tsupport f)
+
+end Local
 
 section Linear
 
@@ -395,3 +424,9 @@ theorem weightLaplacian_slash (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) (k
 end Slash
 
 end TauCeti.UpperHalfPlane
+
+/-- The hyperbolic Laplacian of a compactly supported function on `ℍ` is compactly supported. -/
+theorem HasCompactSupport.hyperbolicLaplacian {f : ℍ → ℂ} (hf : HasCompactSupport f) :
+    HasCompactSupport (TauCeti.UpperHalfPlane.hyperbolicLaplacian f) :=
+  hf.mono' <|
+    (subset_tsupport _).trans (TauCeti.UpperHalfPlane.tsupport_hyperbolicLaplacian_subset f)

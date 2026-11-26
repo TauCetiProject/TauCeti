@@ -180,13 +180,6 @@ theorem integral_hyperbolicLaplacian_mul_conj_eq_integral_mul_conj_hyperbolicLap
     (hg : ContDiffOn ℝ 2 (g ∘ ofComplex) upperHalfPlaneSet) (hgc : HasCompactSupport g) :
     ∫ z, hyperbolicLaplacian f z * conj (g z) = ∫ z, f z * conj (hyperbolicLaplacian g z) := by
   obtain ⟨f₀, hf₀, hf₀c, hff₀⟩ := exists_contDiffOn_hasCompactSupport_eventuallyEq hf hgc
-  have hg0 (z : ℍ) (hz : z ∉ tsupport g) : hyperbolicLaplacian g z = 0 := by
-    have h : g ∘ ofComplex =ᶠ[𝓝 (z : ℂ)] (fun _ : ℍ ↦ (0 : ℂ)) ∘ ofComplex := by
-      rw [← isOpenEmbedding_coe.map_nhds_eq, eventuallyEq_map]
-      simpa [Function.comp_def, ofComplex_apply, Pi.zero_def] using
-        notMem_tsupport_iff_eventuallyEq.1 hz
-    rw [hyperbolicLaplacian_apply, (InnerProductSpace.laplacian_congr_nhds h).self_of_nhds,
-      ← hyperbolicLaplacian_apply, hyperbolicLaplacian_const, Pi.zero_apply]
   have hf₀' (z : ℍ) (_ : z ∈ tsupport g) : ContDiffAt ℝ 2 (f₀ ∘ ofComplex) z :=
     hf₀.contDiffAt (isOpen_upperHalfPlaneSet.mem_nhds z.im_pos)
   have hg' (z : ℍ) (_ : z ∈ tsupport f₀) : ContDiffAt ℝ 2 (g ∘ ofComplex) z :=
@@ -194,8 +187,7 @@ theorem integral_hyperbolicLaplacian_mul_conj_eq_integral_mul_conj_hyperbolicLap
   calc ∫ z, hyperbolicLaplacian f z * conj (g z)
       = ∫ z, hyperbolicLaplacian f₀ z * conj (g z) := integral_congr_ae <| ae_of_all _ fun z ↦ by
         by_cases hz : z ∈ tsupport g
-        · simp only [hyperbolicLaplacian_apply,
-            (InnerProductSpace.laplacian_congr_nhds (hff₀ z hz)).self_of_nhds]
+        · simp only [hyperbolicLaplacian_congr_nhds (hff₀ z hz)]
         · simp [image_eq_zero_of_notMem_tsupport hz]
     _ = conj (∫ z, hyperbolicLaplacian g z * conj (f₀ z)) := by
         rw [integral_hyperbolicLaplacian_mul_conj hf₀' (hg.of_le one_le_two) hgc,
@@ -210,6 +202,6 @@ theorem integral_hyperbolicLaplacian_mul_conj_eq_integral_mul_conj_hyperbolicLap
         by_cases hz : z ∈ tsupport g
         · simpa [ofComplex_apply] using congrArg (· * conj (hyperbolicLaplacian g z))
             (hff₀ z hz).self_of_nhds.symm
-        · simp [hg0 z hz]
+        · simp [hyperbolicLaplacian_eq_zero_of_notMem_tsupport hz]
 
 end TauCeti.UpperHalfPlane
