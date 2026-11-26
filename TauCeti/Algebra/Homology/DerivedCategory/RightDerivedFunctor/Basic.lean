@@ -26,6 +26,8 @@ Together with the transformation `F.rightDerivedFunctorUnith` induced by the rep
 `K ⟶ I(K)`, it is a right derived functor of `F.mapHomotopyCategory (.up ℤ) ⋙ DerivedCategory.Qh`
 with respect to the quasi-isomorphisms, in the sense of Mathlib's
 `CategoryTheory.Functor.IsRightDerivedFunctor`: a left Kan extension along `DerivedCategory.Qh`.
+This right derived functor is absolute: it remains one after postcomposition with any functor
+(`CategoryTheory.Functor.isRightDerivedFunctor_rightDerivedFunctor_comp`).
 It is triangulated, and its value on a K-injective complex `I` is `F(I)`
 (`CategoryTheory.Functor.rightDerivedFunctorObjIso`), naturally in `I`
 (`CategoryTheory.Functor.rightDerivedFunctorObjIso_hom_naturality`). An exact functor is its own
@@ -85,6 +87,22 @@ lemma rightDerivedFunctorUnith_app (K : HomotopyCategory C (.up ℤ)) :
 instance : F.rightDerivedFunctor.IsRightDerivedFunctor F.rightDerivedFunctorUnith
     (HomotopyCategory.quasiIso C (.up ℤ)) :=
   (kInjectiveReplacementAdjunction C).isRightDerivedFunctor_whiskerRightUnit _ _
+
+/-- **The right derived functor is absolute.** For every functor `H` out of `D(D)`, the composite
+`RF ⋙ H` is a right derived functor of `F.mapHomotopyCategory (.up ℤ) ⋙ Qh ⋙ H`, with the
+transformation induced by `F.rightDerivedFunctorUnith`: it is computed by K-injective replacements,
+which are given by an adjunction. -/
+lemma isRightDerivedFunctor_rightDerivedFunctor_comp {E : Type*} [Category* E]
+    (H : DerivedCategory D ⥤ E) :
+    (F.rightDerivedFunctor ⋙ H).IsRightDerivedFunctor
+      (whiskerRight F.rightDerivedFunctorUnith H ≫ (Functor.associator _ _ _).hom)
+      (HomotopyCategory.quasiIso C (.up ℤ)) := by
+  have := (kInjectiveReplacementAdjunction C).isRightDerivedFunctor_whiskerRightUnit
+    (F.mapHomotopyCategory (.up ℤ) ⋙ Qh ⋙ H) (HomotopyCategory.quasiIso C (.up ℤ))
+  refine (Functor.isRightDerivedFunctor_iff_of_iso _ _ _
+    (Functor.isoWhiskerRight F.rightDerivedFunctorIsoKInjectiveReplacement.symm H) ?_).1 this
+  ext X
+  simp [Functor.rightDerivedFunctorUnith_app]
 
 noncomputable instance : F.rightDerivedFunctor.CommShift ℤ :=
   inferInstanceAs ((kInjectiveReplacement C ⋙ F.mapHomotopyCategory (.up ℤ) ⋙ Qh).CommShift ℤ)

@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.WeakSerre
+import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Images
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
@@ -26,6 +27,8 @@ of the cohomology sheaf differ. This file gives conditions under which they agre
 form that `Γ(X, -)` preserves the homology of the short complex `K.sc m`, so that Mathlib's
 `ShortComplex.mapHomologyIso` identifies `Hᵐ(Γ(X, K))` with `Γ(X, Hᵐ(K))` naturally.
 
+* `Scheme.Modules.shortExact_map_sectionsFunctor`: global sections of a short exact sequence of
+  `𝒪_X`-modules whose last map is surjective on global sections are short exact.
 * `Scheme.Modules.exactAt_of_forall_isAffineOpen`: exactness of a complex of `𝒪_X`-modules follows
   from exactness of the global sections of its restrictions to all affine opens.
 * `Scheme.Modules.preservesLeftHomologyOf_sectionsFunctor`: for a short complex
@@ -66,6 +69,14 @@ universe u
 namespace TauCeti.AlgebraicGeometry.Scheme.Modules
 
 variable {X : Scheme.{u}}
+
+/-- Global sections of a short exact sequence of `𝒪_X`-modules whose last map is surjective on
+global sections form a short exact sequence of modules. -/
+theorem shortExact_map_sectionsFunctor {S : ShortComplex X.Modules} (hS : S.ShortExact)
+    (hg : Function.Surjective (S.g.app ⊤)) :
+    (S.map (Scheme.Modules.sectionsFunctor (⊤ : X.Opens))).ShortExact :=
+  have := hS.mono_f
+  ModuleCat.shortComplex_shortExact _ (exact_sections hS) (sections_injective S.f) hg
 
 /-- **Global sections preserve the homology of a short complex with acyclic boundaries.** For a
 short complex `S = (M₁ ⟶ M₂ ⟶ M₃)` of `𝒪_X`-modules, if the kernel and the image of the map
@@ -110,19 +121,13 @@ theorem preservesLeftHomologyOf_sectionsFunctor_of_isQuasicoherent [IsAffine X]
     (S : ShortComplex X.Modules) [S.X₁.IsQuasicoherent] [S.X₂.IsQuasicoherent]
     [S.X₃.IsQuasicoherent] :
     (Scheme.Modules.sectionsFunctor (⊤ : X.Opens)).PreservesLeftHomologyOf S := by
-  have hZ : S.cycles.IsQuasicoherent :=
+  have : S.cycles.IsQuasicoherent :=
     (Scheme.Modules.isQuasicoherent X).prop_of_isLimit_kernelFork S.cyclesIsKernel
       (inferInstanceAs S.X₂.IsQuasicoherent) (inferInstanceAs S.X₃.IsQuasicoherent)
-  have hK : (kernel S.toCycles).IsQuasicoherent :=
-    (Scheme.Modules.isQuasicoherent X).prop_kernel _ (inferInstanceAs S.X₁.IsQuasicoherent) hZ
-  have hI : (image S.toCycles).IsQuasicoherent :=
-    (Scheme.Modules.isQuasicoherent X).prop_of_iso (Abelian.imageIsoImage S.toCycles)
-      ((Scheme.Modules.isQuasicoherent X).prop_kernel _ hZ
-        ((Scheme.Modules.isQuasicoherent X).prop_cokernel _
-          (inferInstanceAs S.X₁.IsQuasicoherent) hZ))
+  -- the kernel and the image of `S.toCycles` are quasi-coherent
   exact preservesLeftHomologyOf_sectionsFunctor S
-    (Scheme.Modules.subsingleton_cohomology_succ_of_isAffine _ 0)
-    (Scheme.Modules.subsingleton_cohomology_succ_of_isAffine _ 0)
+    (Scheme.Modules.subsingleton_cohomology_succ_of_isAffine (kernel S.toCycles) 0)
+    (Scheme.Modules.subsingleton_cohomology_succ_of_isAffine (image S.toCycles) 0)
 
 section Complex
 

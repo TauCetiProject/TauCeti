@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Category.ModuleCat.Tower.KInjective
 public import TauCeti.Algebra.Homology.DerivedCategory.KInjective
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 public import TauCeti.Algebra.Homology.ModelCategory.KInjective.Tower
-import Mathlib.CategoryTheory.Functor.OfSequence
 
 /-!
 # Unbounded K-injective replacements of module complexes

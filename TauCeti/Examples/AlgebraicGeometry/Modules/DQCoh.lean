@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Derived.DQCoh
+public import TauCeti.AlgebraicGeometry.Modules.Derived.DQCoh.Affine
 public import TauCeti.Examples.AlgebraicGeometry.Modules.PseudoCoherent
 
 import TauCeti.AlgebraicGeometry.Modules.Tensor.Product

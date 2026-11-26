@@ -65,6 +65,9 @@ variable, such as for the cup product in Tate cohomology.
   `CategoryTheory.ShortComplex.ShortExact.quasiIso_g_iff`: in a short exact sequence of
   complexes, the first map is a quasi-isomorphism if and only if the third term is acyclic, and
   the second map is one if and only if the first term is acyclic.
+* `CategoryTheory.ShortComplex.ShortExact.quasiIsoAt_g`: the degreewise form, read off from the
+  long exact homology sequence: the second map is a quasi-isomorphism in degree `i` as soon as the
+  first term is exact in degree `i` and in the degree following `i`.
 * `CategoryTheory.ShortComplex.ShortExact.exists_cycles_lift_δ`: the connecting map of a short
   exact sequence of complexes, computed on all cycles at once through a pullback lift.
 * `CategoryTheory.ShortComplex.ShortExact.liftδIso`,
@@ -255,20 +258,25 @@ lemma quasiIso_f_iff : _root_.QuasiIso S.f ↔ S.X₃.Acyclic := by
       exact mono_homologyMap_of_mono_of_not_rel S.f j hj
   exact isIso_of_mono_of_epi _
 
-/-- In a short exact sequence of complexes, the second map is a quasi-isomorphism if and only if
-the first term is acyclic. -/
-lemma quasiIso_g_iff : _root_.QuasiIso S.g ↔ S.X₁.Acyclic := by
-  refine ⟨hS.acyclic_X₁, fun h ↦ (_root_.quasiIso_iff _).2 fun i ↦ ?_⟩
+/-- In a short exact sequence of complexes, the second map is a quasi-isomorphism in degree `i` as
+soon as the first term is exact in degree `i` and in the degree following `i`. -/
+lemma quasiIsoAt_g (i : ι) (h₁ : S.X₁.ExactAt i) (h₂ : ∀ j, c.Rel i j → S.X₁.ExactAt j) :
+    QuasiIsoAt S.g i := by
   rw [quasiIsoAt_iff_isIso_homologyMap]
   have : Mono (HomologicalComplex.homologyMap S.g i) :=
-    (hS.homology_exact₂ i).mono_g ((h i).isZero_homology.eq_of_src _ _)
+    (hS.homology_exact₂ i).mono_g (h₁.isZero_homology.eq_of_src _ _)
   have : Epi (HomologicalComplex.homologyMap S.g i) := by
     by_cases! hi : ∃ j, c.Rel i j
     · obtain ⟨j, hij⟩ := hi
-      exact (hS.homology_exact₃ i j hij).epi_f ((h j).isZero_homology.eq_of_tgt _ _)
+      exact (hS.homology_exact₃ i j hij).epi_f ((h₂ j hij).isZero_homology.eq_of_tgt _ _)
     · have := hS.epi_g
       exact epi_homologyMap_of_epi_of_not_rel S.g i hi
   exact isIso_of_mono_of_epi _
+
+/-- In a short exact sequence of complexes, the second map is a quasi-isomorphism if and only if
+the first term is acyclic. -/
+lemma quasiIso_g_iff : _root_.QuasiIso S.g ↔ S.X₁.Acyclic :=
+  ⟨hS.acyclic_X₁, fun h ↦ (_root_.quasiIso_iff _).2 fun i ↦ hS.quasiIsoAt_g i (h i) fun j _ ↦ h j⟩
 
 end CategoryTheory.ShortComplex.ShortExact
 

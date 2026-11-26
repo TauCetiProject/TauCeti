@@ -665,23 +665,25 @@ theorem quasiIso_isLimitLimComplexCone_lift (hC : ∀ i, Function.Surjective (C.
 
 /-- **Projections of a limit with eventually invertible homology.** Let `C` be a tower of complexes
 whose shift is surjective in every degree, and suppose that from the index `N` on, the transitions
-of `C` induce isomorphisms on homology in degree `j` and in the degrees `i` with `c.Rel i j`. Then
-for every `n ≥ N`, the projection `lim C → Cₙ` induces an isomorphism on degree-`j` homology. -/
+of `C` induce isomorphisms on homology in degree `j` and epimorphisms on homology in the degrees `i`
+with `c.Rel i j`. Then for every `n ≥ N`, the projection `lim C → Cₙ` induces an isomorphism on
+degree-`j` homology. -/
 theorem quasiIsoAt_limComplexπ (hC : ∀ i, Function.Surjective (C.term i).shift) (j : ι) (N : ℕ)
     (hj : ∀ k, N ≤ k → QuasiIsoAt (C.map (homOfLE (Nat.le_succ k)).op) j)
-    (hi : ∀ i, c.Rel i j → ∀ k, N ≤ k → QuasiIsoAt (C.map (homOfLE (Nat.le_succ k)).op) i)
+    (hi : ∀ i, c.Rel i j → ∀ k, N ≤ k →
+      Epi (HomologicalComplex.homologyMap (C.map (homOfLE (Nat.le_succ k)).op) i))
     {n : ℕ} (hn : N ≤ n) : QuasiIsoAt (C.limComplexπ n) j := by
-  have hbij (i : ι) (k : ℕ) (h : QuasiIsoAt (C.map (homOfLE (Nat.le_succ k)).op) i) :
-      Function.Bijective ((C.homology i).transition k) := by
-    rw [homology_transition]
-    exact (ConcreteCategory.isIso_iff_bijective _).1 ((quasiIsoAt_iff_isIso_homologyMap _ _).1 h)
   -- the Milnor map is bijective, the `lim¹` of the homology in degree `i` vanishing
   have hlim : Function.Bijective (C.homologyToLim j) :=
     homologyToLim_bijective_of_subsingleton_limOne hC j fun i hij ↦
-      (C.homology i).subsingleton_limOne_of_surjective_of_le N fun k hk ↦
-        (hbij i k (hi i hij k hk)).2
+      (C.homology i).subsingleton_limOne_of_surjective_of_le N fun k hk ↦ by
+        rw [homology_transition]
+        exact (ModuleCat.epi_iff_surjective _).1 (hi i hij k hk)
   -- the tower of homology modules in degree `j` is constant from `N` on
-  have hπ := (C.homology j).limπ_bijective_of_le N (fun k hk ↦ hbij j k (hj k hk)) hn
+  have hπ := (C.homology j).limπ_bijective_of_le N (fun k hk ↦ by
+    rw [homology_transition]
+    exact (ConcreteCategory.isIso_iff_bijective _).1
+      ((quasiIsoAt_iff_isIso_homologyMap _ _).1 (hj k hk))) hn
   rw [quasiIsoAt_iff_isIso_homologyMap, ConcreteCategory.isIso_iff_bijective]
   have : ⇑(HomologicalComplex.homologyMap (C.limComplexπ n) j).hom =
       (C.homology j).limπ n ∘ C.homologyToLim j :=

@@ -8,12 +8,10 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Milnor.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.DegreewiseQuasiIso
 public import TauCeti.Algebra.Homology.ModelCategory.KInjective.Tower
-public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsHomology
 public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.WeakSerre
-public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
+import TauCeti.Algebra.Homology.HomologySequenceLemmas
 
 /-!
 # Global sections of unbounded complexes with quasi-coherent cohomology
@@ -162,7 +160,8 @@ private lemma GoodTower.quasiIsoAt_map_π {X : Scheme.{u}} [IsAffine X]
     (fun i ↦ (E.term i).shift_surjective (hD.surjective_transition i))
     j N (hE j (by lia) le_rfl) (fun i hij k hk ↦ by
       obtain rfl : i = j - 1 := by simp at hij; lia
-      exact hE (j - 1) le_rfl (by lia) k hk) hn
+      have := (quasiIsoAt_iff_isIso_homologyMap _ _).1 (hE (j - 1) le_rfl (by lia) k hk)
+      infer_instance) hn
   rw [← he]
   infer_instance
 
