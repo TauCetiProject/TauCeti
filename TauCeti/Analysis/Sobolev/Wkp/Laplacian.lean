@@ -112,8 +112,8 @@ theorem integral_fderiv_fderiv_smul_value_eq_inner_iteratedGradient (u : Wkp mu 
   rw [value_succ, ← neg_neg (∫ x, (φ : E → ℝ) x • _ ∂mu), ← e2, ← e1]
   refine integral_congr_ae (ae_of_all _ fun x => ?_)
   dsimp only
-  rw [← TestFunction.lineDerivCLM_lineDerivCLM_apply, TestFunction.coe_lineDerivCLM]
-  rfl
+  rw [← TestFunction.lineDerivCLM_lineDerivCLM_apply, TestFunction.coe_lineDerivCLM,
+    TestFunction.lineDerivOp_eq_lineDerivCLM ℝ]
 
 /-- **Weak and strong solutions of `Δu = f` agree in `W^{2,p}(Ω)`.** For `u ∈ W^{2,p}(Ω)` and `f`
 locally integrable on `Ω`, `∫ Δφ • u = ∫ φ • f` holds for every test function `φ` on `Ω` if and
