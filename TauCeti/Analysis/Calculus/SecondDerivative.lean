@@ -109,6 +109,8 @@ Morse-theoretic definitions that use them.
   the coefficients where the second derivative of `g` is nonzero.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
   symmetric in its last two directions.
+* `TauCeti.fderiv_sum_fderiv_fderiv_apply`: the derivative of a trace `∑ᵢ D²g(uᵢ, uᵢ)` of the
+  second derivative is the same trace of the second derivative of the directional derivative.
 * `TauCeti.fderiv_fderiv_const_smul`: the second derivative of a constant multiple.
 * `TauCeti.fderiv_fderiv_comp_add_right`: the second derivative of a translate is the translate
   of the second derivative.
@@ -525,6 +527,30 @@ theorem fderiv_fderiv_fderiv_apply_comm {n : WithTop ℕ∞} {g : E → F} {x : 
     hD2.clm_apply (differentiableAt_const c)
   rwa [fderiv_clm_apply_const_apply hb, fderiv_clm_apply_const_apply hc,
     fderiv_clm_apply_const_apply hD2, fderiv_clm_apply_const_apply hD2] at h
+
+/-- **Traces of the second derivative commute with differentiation.** For a map that is
+`C^{minSmoothness 𝕜 3}` at `x` (so `C³` over `ℝ` or `ℂ`) and a finite family of directions `u`,
+the derivative in the direction `v` of `y ↦ ∑ᵢ D²g(y)(uᵢ, uᵢ)` is `∑ᵢ D²(Dg(·) v)(x)(uᵢ, uᵢ)`:
+both are traces of the symmetric third derivative. -/
+theorem fderiv_sum_fderiv_fderiv_apply {ι : Type*} [Fintype ι] {n : WithTop ℕ∞} {g : E → F}
+    {x : E} (hg : ContDiffAt 𝕜 n g x) (hn : minSmoothness 𝕜 3 ≤ n) (u : ι → E) (v : E) :
+    fderiv 𝕜 (fun y ↦ ∑ i, fderiv 𝕜 (fderiv 𝕜 g) y (u i) (u i)) x v =
+      ∑ i, fderiv 𝕜 (fderiv 𝕜 fun y ↦ fderiv 𝕜 g y v) x (u i) (u i) := by
+  have h3 : ContDiffAt 𝕜 3 g x := hg.of_le (le_minSmoothness.trans hn)
+  have hDg : ContDiffAt 𝕜 (minSmoothness 𝕜 2) (fderiv 𝕜 g) x :=
+    hg.fderiv_right (by rw [← minSmoothness_add]; exact hn)
+  have hD2 : DifferentiableAt 𝕜 (fderiv 𝕜 (fderiv 𝕜 g)) x :=
+    ((h3.fderiv_right (m := 2) (by norm_num)).fderiv_right (m := 1) (by norm_num)).differentiableAt
+      (by norm_num)
+  rw [fderiv_fun_sum fun i _ ↦ (hD2.clm_apply (differentiableAt_const _)).clm_apply
+    (differentiableAt_const _)]
+  simp only [FunLike.coe_sum, Finset.sum_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [fderiv_fderiv_fderiv_apply h3, fderiv_fderiv_fderiv_apply_comm hg hn,
+    (hDg.isSymmSndFDerivAt le_rfl) (u i) v,
+    fderiv_clm_apply (hD2.clm_apply (differentiableAt_const _)) (differentiableAt_const _),
+    fderiv_clm_apply hD2 (differentiableAt_const _)]
+  simp
 
 /-- The second derivative of a constant multiple `c • g` is `c` times the second derivative of
 `g`. No regularity is needed. -/

@@ -10,6 +10,11 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Polynomial
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.InnerProductSpace.Laplacian.DerivativeDecay
+import TauCeti.Analysis.Normed.Group.Prod
+import TauCeti.Analysis.PDE.Vortex.ScalarEquation
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.PDE.Vortex.Divisor.JointSmooth
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.DerivativeDecay
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.UniformDerivativeDecay
@@ -72,8 +77,20 @@ ball (`TauCeti.Vortex.contDiff_normalizedVortex_uncurry`), hence Lipschitz
 there. So the boundary value of `u = ℓ_b - ℓ_a` is at most `L ‖b - a‖`, and the comparison
 above gives the Lipschitz bound with the decaying constant.
 
-Higher derivatives in the coefficients, and mixed derivatives in the coefficients and the point,
-are not treated here.
+**Derivatives of every order.** For `m ≥ 1`, all joint derivatives of `(a, z) ↦ y_a(z) - (0, 1)`
+in the coefficients and the point decay at the same rates, uniformly over bounded sets of
+coefficients and over compact windows of divisors, collisions of zeros included
+(`exists_norm_iteratedFDeriv_uncurry_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_isBounded`,
+`exists_norm_iteratedFDeriv_uncurry_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_isCompact`).
+Outside a disc, `y_a(z) - (0, 1)` is the end field
+`(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)` of the logarithmic modulus
+`ℓ(a, z) = log |α_a(z)|²`, a family of solutions of `Δ_z ℓ = (exp ℓ - 1) / 4` that decays like
+`exp (-c |z|)` uniformly over bounded sets of coefficients
+(`TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub`). The joint derivatives
+of such a family decay at the same rate
+(`TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_exp_sub_one`), and those of
+the end field follow, its section part by the Faà di Bruno bound
+(`ContDiffAt.norm_iteratedFDeriv_exp_sub_one_le`) since `ℓ ≤ 0`.
 
 ## Main results
 
@@ -83,6 +100,11 @@ are not treated here.
   `TauCeti.Vortex.exists_norm_fderiv_gaugeTransform_inv_le_mul_exp_of_isCompact`: the first
   derivatives in the coefficients decay like `exp (-c |z|)`, uniformly over bounded sets of
   coefficients and over compact windows of divisors.
+* `exists_norm_iteratedFDeriv_uncurry_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_isBounded`,
+  `exists_norm_iteratedFDeriv_uncurry_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_isCompact`:
+  for `m ≥ 1`, the joint derivatives of every order in the coefficients and the point decay like
+  `exp (-c |z|)`, uniformly over bounded sets of coefficients and over compact windows of
+  divisors.
 
 ## References
 
@@ -254,5 +276,191 @@ theorem exists_norm_fderiv_gaugeTransform_inv_le_mul_exp_of_isCompact {S : Set (
   exact ⟨K, R, hK, fun D hD z hz ↦ h _ ⟨D, hD, rfl⟩ z hz⟩
 
 end Family
+
+/-! ### Derivatives of every order in the coefficients and the point -/
+
+section Joint
+
+variable {m : ℕ}
+
+/-- The squared modulus `|α_a(z)|²` of the normalized vortices, jointly in the coefficients and
+the point. -/
+private noncomputable def normSqFamily (q : (Fin m → ℂ) × ℂ) : ℝ :=
+  4 * (normalizedVortex q.1 q.2 2 ^ 2 + normalizedVortex q.1 q.2 3 ^ 2)
+
+/-- **The logarithmic moduli of the normalized vortices.** For `m ≥ 1`, coefficients of norm less
+than `r + 1` and a rate `0 < c < 1 / 2`, outside a disc the family `ℓ(a, z) = log |α_a(z)|²`
+is smooth, solves `Δ_z ℓ = (exp ℓ - 1) / 4` and is at most `K exp (-c |z|)`, with `|α|² > 1 / 2`
+there. -/
+private theorem exists_log_normSqFamily_spec (hm : 0 < m) (r : ℝ) {c : ℝ} (hc₀ : 0 < c)
+    (hc : c < 1 / 2) :
+    ∃ R₀ K, ∀ q : (Fin m → ℂ) × ℂ, ‖q.1‖ < r + 1 → R₀ < ‖q.2‖ → 1 / 2 < normSqFamily q ∧
+      ContDiffAt ℝ ∞ (fun q ↦ Real.log (normSqFamily q)) q ∧
+      Δ (fun y ↦ Real.log (normSqFamily (q.1, y))) q.2 =
+        1 / 4 * (Real.exp (Real.log (normSqFamily q)) - 1) ∧
+      |Real.log (normSqFamily q)| ≤ K * Real.exp (-(c * ‖q.2‖)) := by
+  have hX := contDiff_normalizedVortex_uncurry (m := m)
+  have hs : ContDiff ℝ ∞ (normSqFamily (m := m)) :=
+    contDiff_const.mul ((((contDiff_piLp 2).1 hX 2).pow 2).add (((contDiff_piLp 2).1 hX 3).pow 2))
+  have hspec (a : Fin m → ℂ) := gaugeTransform_polynomialGauge_polynomialVortex_spec hm a
+  simp only [← normalizedVortex_def] at hspec
+  -- The zeros of the vortices with coefficients of norm less than `r + 1` have norm at most
+  -- `r + 2`, so outside a disc their moduli exceed `1 / 2`.
+  have hroots : ∀ a : Fin m → ℂ, ‖a‖ < r + 1 → ∀ b ∈ (monicOfCoeff a).roots, ‖b‖ ≤ r + 2 :=
+    fun a ha b hb ↦ by
+      have := norm_lt_of_isRoot_monicOfCoeff a (_root_.Polynomial.isRoot_of_mem_roots hb)
+      linarith
+  obtain ⟨R₀, hR₀⟩ := exists_forall_lt_normSq_of_forall_mem_norm_le m (r + 2) (θ := 1 / 2)
+    (by norm_num)
+  obtain ⟨K₁, -, hK₁⟩ := exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub m hc₀.le hc
+  refine ⟨R₀, 2 * K₁ * Real.exp (c * (r + 2)), fun q h₁ h₂ ↦ ?_⟩
+  obtain ⟨hx, hsol, hframe, hD⟩ := hspec q.1
+  have hpos : 1 / 2 < normSqFamily q := hR₀ _ _ hx hsol hframe hD (hroots q.1 h₁) q.2 h₂
+  refine ⟨hpos, hs.contDiffAt.log (by linarith), ?_, ?_⟩
+  · -- The scalar equation of the vortex.
+    simp only [normSqFamily]
+    rw [laplacian_log_normSq_eq_exp (((contDiff_piLp 2).1 hx 2).contDiffAt.of_le (by simp))
+      (((contDiff_piLp 2).1 hx 3).contDiffAt.of_le (by simp))
+      ((by norm_num : (0 : ℝ) < 1 / 2).trans hpos) (Eventually.of_forall hsol)]
+    ring
+  · -- `|log |α|²| ≤ 2 (1 - |α|²)`, and `1 - |α|²` decays at distance from the zeros.
+    have h₃ := hK₁ _ _ hx hsol hframe hD q.2 (‖q.2‖ - (r + 2)) fun b hb ↦ by
+      linarith [norm_sub_norm_le q.2 b, hroots q.1 h₁ b hb]
+    have h₁' := normSq_le_one_of_tendsto_sectionValue_mul_inv_pow (hx.of_le (by simp)) hsol
+      hframe q.2
+    calc |Real.log (normSqFamily q)| ≤ 2 * (1 - normSqFamily q) :=
+          Real.abs_log_le_two_mul_one_sub hpos.le h₁'
+      _ ≤ 2 * (K₁ * Real.exp (-(c * (‖q.2‖ - (r + 2))))) := by
+          simp only [normSqFamily]
+          gcongr
+      _ = 2 * K₁ * Real.exp (c * (r + 2)) * Real.exp (-(c * ‖q.2‖)) := by
+        rw [exp_neg_mul_sub]
+        ring
+
+/-- **The end field of the logarithmic moduli.** Outside a disc, for coefficients of norm less
+than `r + 1`, the end trivialization of the normalized vortices minus the vacuum is
+`L₁ (Dℓ) + L₂ (exp (ℓ / 2) - 1)` for the joint derivative `Dℓ` of `ℓ = log |α|²`. -/
+private theorem exists_gaugeTransform_inv_sub_vacuumField_eq_add (hm : 0 < m) (r : ℝ)
+    {L₁ : ((Fin m → ℂ) × ℂ →L[ℝ] ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 4)}
+    {L₂ : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 4)}
+    (hL : ∀ (φ : (Fin m → ℂ) × ℂ →L[ℝ] ℝ) (t : ℝ),
+      !₂[-(φ (0, I) / 2), φ (0, 1) / 2, t / 2, 0] = L₁ φ + L₂ t) :
+    ∃ R₁, ∀ q : (Fin m → ℂ) × ℂ, ‖q.1‖ < r + 1 → R₁ < ‖q.2‖ →
+      gaugeTransform (windingPhase m)⁻¹ (normalizedVortex q.1) q.2 - vacuumField q.2 =
+        L₁ (fderiv ℝ (fun q ↦ Real.log (normSqFamily q)) q) +
+          L₂ (Real.exp (Real.log (normSqFamily q) / 2) - 1) := by
+  obtain ⟨R₀, _, hR₀⟩ := exists_log_normSqFamily_spec hm r (c := 1 / 4) (by norm_num)
+    (by norm_num)
+  -- Outside a disc the sections have the winding phase.
+  obtain ⟨R', hR'⟩ := exists_eventually_sectionValue_eq_norm_mul_windingPhase
+    (isBounded_ball (x := (0 : Fin m → ℂ)) (r := r + 1))
+  simp only [← normalizedVortex_def] at hR'
+  refine ⟨max R₀ R', fun q h₁ h₂ ↦ ?_⟩
+  obtain ⟨hpos, hsmooth, -, -⟩ := hR₀ q h₁ ((le_max_left _ _).trans_lt h₂)
+  obtain ⟨hx, hsol, -, -⟩ := gaugeTransform_polynomialGauge_polynomialVortex_spec hm q.1
+  rw [← normalizedVortex_def] at hx hsol
+  -- The derivative in `z` is the joint derivative along `(0, v)`.
+  have hpart : ∀ v : ℂ, fderiv ℝ (fun y ↦ Real.log (normSqFamily (q.1, y))) q.2 v =
+      fderiv ℝ (fun q ↦ Real.log (normSqFamily q)) q (0, v) := by
+    have hq : DifferentiableAt ℝ (fun q ↦ Real.log (normSqFamily q)) (q.1, q.2) := by
+      rw [Prod.mk.eta]
+      exact hsmooth.differentiableAt (by simp)
+    intro v
+    simp [fderiv_slice_right hq]
+  have h := gaugeTransform_inv_apply_sub_vacuumField_eq (u := windingPhase m)
+    (ℓ := fun y ↦ Real.log (normSqFamily (q.1, y)))
+    (((contDiff_piLp 2).1 hx 2).differentiable (by simp) q.2)
+    (((contDiff_piLp 2).1 hx 3).differentiable (by simp) q.2)
+    (right_ne_zero_of_mul (by linarith : normSqFamily q ≠ 0))
+    (by simp [hsol q.2]) (by simp [hsol q.2])
+    (hR' q.1 (mem_ball_zero_iff.2 h₁) q.2 ((le_max_right _ _).trans_lt h₂)) EventuallyEq.rfl
+  rw [h, hpart, hpart, ← hL]
+
+/-- **The derivatives of every order of the normalized vortices in the coefficients and the
+point decay exponentially.** Let `m ≥ 1`, and for lower coefficients `a ∈ ℂᵐ` let `y_a` be the
+winding-`m` end trivialization of the plane vortex with zero divisor the monic polynomial `P_a`,
+normalized at its end by the polynomial gauge `g_a`. For every bounded set `S` of coefficients,
+order `n` and rate `c < 1 / 2` there are constants `K` and `R` such that the `n`-th joint
+derivative of `(a, z) ↦ y_a(z) - (0, 1)` in the coefficients and the point satisfies
+`‖Dⁿ (y_a(z) - (0, 1))‖ ≤ K exp (-c |z|)` for every `a ∈ S` and `|z| ≥ R`. -/
+theorem
+    exists_norm_iteratedFDeriv_uncurry_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_isBounded
+    (hm : 0 < m) {S : Set (Fin m → ℂ)} (hS : Bornology.IsBounded S) (n : ℕ) {c : ℝ}
+    (hc : c < 1 / 2) :
+    ∃ K R, ∀ a ∈ S, ∀ z : ℂ, R ≤ ‖z‖ →
+      ‖iteratedFDeriv ℝ n (fun q : (Fin m → ℂ) × ℂ ↦ gaugeTransform (windingPhase m)⁻¹
+          (gaugeTransform (polynomialGauge q.1) (polynomialVortex (monicOfCoeff q.1))) q.2 -
+        vacuumField q.2) (a, z)‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
+  obtain ⟨r, hr⟩ := hS.exists_norm_le
+  set r₀ := max r 0
+  -- A positive rate `c' ≥ c` below `1 / 2`.
+  set c' := max c (1 / 4)
+  have hc'₀ : 0 < c' := lt_max_of_lt_right (by norm_num)
+  have hc' : c' < 1 / 2 := max_lt hc (by norm_num)
+  -- All joint derivatives of `ℓ = log |α|²` of order at most `n + 1` decay like
+  -- `exp (-c' |z|)`.
+  obtain ⟨R₀, K₀, hspec⟩ := exists_log_normSqFamily_spec hm r₀ hc'₀ hc'
+  obtain ⟨C, R, hCR⟩ := exists_forall_norm_iteratedFDeriv_le_mul_exp_of_laplacian_eq_exp_sub_one
+    (κ := 1 / 4) (r := r₀) (r₁ := r₀ + 1) hc'₀ (by nlinarith) (by linarith)
+    (fun q h₁ h₂ ↦ (hspec q h₁ h₂).2.1) (fun q h₁ h₂ ↦ (hspec q h₁ h₂).2.2.1)
+    (fun q h₁ h₂ ↦ (hspec q h₁ h₂).2.2.2) (n + 1)
+  -- Outside a disc, the field is the end field of `ℓ`.
+  obtain ⟨L₁, L₂, hL⟩ := exists_endField_eq_add ((0 : Fin m → ℂ), I) ((0 : Fin m → ℂ), (1 : ℂ))
+  obtain ⟨R₁, hend⟩ := exists_gaugeTransform_inv_sub_vacuumField_eq_add hm r₀ hL
+  refine ⟨‖L₁‖ * C + ‖L₂‖ * ((Nat.factorial n : ℝ) * max 1 C ^ (n + 1)),
+    max (max R (R₀ + 1)) (R₁ + 1), fun a ha z hz ↦ ?_⟩
+  have ha₁ : ‖a‖ < r₀ + 1 := by linarith [hr a ha, le_max_left r 0]
+  have hzR : R ≤ ‖z‖ := (le_max_left _ _).trans ((le_max_left _ _).trans hz)
+  have hzR₀ : R₀ < ‖z‖ := by
+    linarith [le_max_right R (R₀ + 1), le_max_left (max R (R₀ + 1)) (R₁ + 1)]
+  have hzR₁ : R₁ < ‖z‖ := by linarith [le_max_right (max R (R₀ + 1)) (R₁ + 1)]
+  have hε₁ : Real.exp (-(c' * ‖z‖)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [norm_nonneg z])
+  have hD := hCR (a, z) ((hr a ha).trans (le_max_left _ _)) hzR
+  have hC₀ : 0 ≤ C :=
+    (mul_nonneg_iff_of_pos_right (Real.exp_pos _)).1 ((norm_nonneg _).trans (hD 0 (Nat.zero_le _)))
+  -- Near `(a, z)` the field is the end field of `ℓ`.
+  have hloc : (fun q : (Fin m → ℂ) × ℂ ↦ gaugeTransform (windingPhase m)⁻¹
+      (gaugeTransform (polynomialGauge q.1) (polynomialVortex (monicOfCoeff q.1))) q.2 -
+        vacuumField q.2) =ᶠ[𝓝 (a, z)] fun q ↦ L₁ (fderiv ℝ (fun q ↦ Real.log (normSqFamily q)) q) +
+          L₂ (Real.exp (Real.log (normSqFamily q) / 2) - 1) := by
+    filter_upwards [(isOpen_setOf_norm_fst_lt_and_lt_norm_snd (r₀ + 1) R₁).mem_nhds ⟨ha₁, hzR₁⟩]
+      with q hq
+    rw [← normalizedVortex_def]
+    exact hend q hq.1 hq.2
+  have hℓ₀ : Real.log (normSqFamily (a, z)) ≤ 0 := by
+    obtain ⟨hx, hsol, hframe, -⟩ := gaugeTransform_polynomialGauge_polynomialVortex_spec hm a
+    rw [← normalizedVortex_def] at hx hsol hframe
+    exact log_normSq_nonpos (((contDiff_piLp 2).1 hx 2).of_le (by simp))
+      (((contDiff_piLp 2).1 hx 3).of_le (by simp)) hsol
+      (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z
+  rw [(hloc.iteratedFDeriv ℝ n).eq_of_nhds]
+  refine (norm_iteratedFDeriv_endField_le L₁ L₂ (hspec (a, z) ha₁ hzR₀).2.1 hℓ₀
+    (Real.exp_pos _).le hε₁ hD).trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
+  exact Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left c (1 / 4))
+    (norm_nonneg z)))
+
+/-- **The derivatives of every order of the normalized vortices in the symmetric coordinates and
+the point decay exponentially over a compact window of divisors.** Let `m ≥ 1`, and for lower
+coefficients `a ∈ ℂᵐ` let `y_a` be the winding-`m` end trivialization of the plane vortex with zero
+divisor the monic polynomial `P_a`, normalized at its end by the polynomial gauge `g_a`. For every
+compact set `S` of divisors in `Sym ℂ m`, collisions of zeros included, order `n` and rate
+`c < 1 / 2` there are constants `K` and `R` such that the `n`-th joint derivative of
+`(a, z) ↦ y_a(z) - (0, 1)` at the symmetric coordinates `a` of every `D ∈ S` and every `|z| ≥ R`
+is at most `K exp (-c |z|)`. -/
+theorem
+    exists_norm_iteratedFDeriv_uncurry_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_isCompact
+    (hm : 0 < m) {S : Set (Sym ℂ m)} (hS : IsCompact S) (n : ℕ) {c : ℝ} (hc : c < 1 / 2) :
+    ∃ K R, ∀ D ∈ S, ∀ z : ℂ, R ≤ ‖z‖ →
+      ‖iteratedFDeriv ℝ n (fun q : (Fin m → ℂ) × ℂ ↦ gaugeTransform (windingPhase m)⁻¹
+          (gaugeTransform (polynomialGauge q.1) (polynomialVortex (monicOfCoeff q.1))) q.2 -
+        vacuumField q.2) (Sym.coeffEquiv ℂ m D, z)‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
+  have hS' : IsCompact (Sym.coeffEquiv ℂ m '' S) := by
+    simpa only [Sym.coeffHomeomorph_apply] using hS.image (Sym.coeffHomeomorph ℂ m).continuous
+  obtain ⟨K, R, h⟩ :=
+    exists_norm_iteratedFDeriv_uncurry_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_isBounded
+      hm hS'.isBounded n hc
+  exact ⟨K, R, fun D hD z hz ↦ h _ ⟨D, hD, rfl⟩ z hz⟩
+
+end Joint
 
 end TauCeti.Vortex

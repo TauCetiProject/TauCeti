@@ -36,7 +36,8 @@ disc, and so over every compact window of divisors, collisions of zeros included
   obey such bounds (`TauCeti.Vortex.exists_forall_le_norm_iteratedFDeriv_log_normSq_le_mul_exp`);
   the connection part of the end field is linear in `Dℓ` (`TauCeti.Vortex.exists_endField_eq_add`),
   and the derivatives of its section part `exp (ℓ / 2) - 1` follow by the Faà di Bruno bound
-  (`ContDiffAt.norm_iteratedFDeriv_exp_sub_one_le`) since `ℓ ≤ 0`.
+  (`ContDiffAt.norm_iteratedFDeriv_exp_sub_one_le`) since `ℓ ≤ 0`
+  (`TauCeti.Vortex.norm_iteratedFDeriv_endField_le`).
 * `exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_forall_mem_norm_le`:
   if the zeros lie in the closed disc of radius `r`, the same bound holds with `exp (-c |z|)` for
   `|z| ≥ R`, with `K` and `R` depending only on `m`, `n`, `c` and `r`.
@@ -56,7 +57,8 @@ trivialization, the fields `g_a · x_a` tend to the vacuum with all spatial deri
 a compact set of divisors in `Sym ℂ m`
 (`exists_norm_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField_le_mul_exp_of_isCompact`).
 This is the spatial part of the decay of the normalized families over compact divisor windows;
-derivatives in the coefficients are not treated here.
+derivatives in the coefficients are treated in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.CoefficientDecay`.
 
 ## References
 
@@ -89,40 +91,11 @@ private theorem exists_norm_iteratedFDeriv_endField_le (n : ℕ) {K : ℝ} (hK :
       ‖iteratedFDeriv ℝ n (fun w ↦ !₂[-(fderiv ℝ ℓ w I / 2), fderiv ℝ ℓ w 1 / 2,
         (Real.exp (ℓ w / 2) - 1) / 2, 0]) z‖ ≤ C * E := by
   -- The end field is `L₁ (Dℓ) + L₂ (exp (ℓ / 2) - 1)` for two fixed linear maps.
-  obtain ⟨L₁, L₂, hL⟩ := exists_endField_eq_add
+  obtain ⟨L₁, L₂, hL⟩ := exists_endField_eq_add I 1
   refine ⟨‖L₁‖ * K + ‖L₂‖ * (n ! * max 1 K ^ (n + 1)), by positivity,
     fun ℓ z E hℓ hℓ₀ hE₀ hE₁ hD ↦ ?_⟩
-  have hDℓ : ContDiffAt ℝ ∞ (fderiv ℝ ℓ) z := hℓ.fderiv_right (by norm_cast)
-  have hE : ContDiffAt ℝ ∞ (fun w ↦ Real.exp (ℓ w / 2) - 1) z :=
-    (Real.contDiff_exp.contDiffAt.comp z (hℓ.div_const 2)).sub contDiffAt_const
-  -- The connection part: its derivative of order `n` is controlled by `Dⁿ⁺¹ ℓ`.
-  have h₁ : ‖iteratedFDeriv ℝ n (fun w ↦ L₁ (fderiv ℝ ℓ w)) z‖ ≤ ‖L₁‖ * (K * E) := by
-    have h := L₁.norm_iteratedFDeriv_comp_left hDℓ (n := n) (by exact_mod_cast le_top)
-    rw [Function.comp_def, norm_iteratedFDeriv_fderiv] at h
-    exact h.trans (mul_le_mul_of_nonneg_left (hD (n + 1) le_rfl) (norm_nonneg _))
-  -- The section part: the derivatives of `ℓ / 2` of order at most `n` are at most `K E`.
-  have hD₂ : ∀ j ≤ n, ‖iteratedFDeriv ℝ j (fun w ↦ ℓ w / 2) z‖ ≤ K * E := fun j hj ↦ by
-    have h := iteratedFDeriv_fun_const_smul_apply ℓ (2⁻¹ : ℝ) z j
-    simp only [smul_eq_mul] at h
-    rw [show (fun w ↦ ℓ w / 2) = fun w ↦ 2⁻¹ * ℓ w by ext w; ring, h, norm_smul,
-      Real.norm_eq_abs, abs_of_pos (by norm_num : (0 : ℝ) < 2⁻¹)]
-    have := hD j (by omega)
-    nlinarith [norm_nonneg (iteratedFDeriv ℝ j ℓ z)]
-  have hS := ((hℓ.div_const 2).of_le (by simp)).norm_iteratedFDeriv_exp_sub_one_le
-    (by linarith) hE₀ hE₁ hD₂
-  have h₂ : ‖iteratedFDeriv ℝ n (fun w ↦ L₂ (Real.exp (ℓ w / 2) - 1)) z‖ ≤
-      ‖L₂‖ * (n ! * max 1 K ^ (n + 1) * E) :=
-    (L₂.norm_iteratedFDeriv_comp_left hE (n := n) (by exact_mod_cast le_top)).trans
-      (mul_le_mul_of_nonneg_left hS (norm_nonneg _))
-  have hadd : iteratedFDeriv ℝ n (fun w ↦ L₁ (fderiv ℝ ℓ w) + L₂ (Real.exp (ℓ w / 2) - 1)) z =
-      iteratedFDeriv ℝ n (fun w ↦ L₁ (fderiv ℝ ℓ w)) z +
-        iteratedFDeriv ℝ n (fun w ↦ L₂ (Real.exp (ℓ w / 2) - 1)) z :=
-    fun_iteratedFDeriv_add_apply ((L₁.contDiff.contDiffAt.comp z hDℓ).of_le (by simp))
-      ((L₂.contDiff.contDiffAt.comp z hE).of_le (by simp))
-  rw [hL ℓ, hadd]
-  calc _ ≤ ‖L₁‖ * (K * E) + ‖L₂‖ * (n ! * max 1 K ^ (n + 1) * E) :=
-        (norm_add_le _ _).trans (add_le_add h₁ h₂)
-    _ = _ := by ring
+  simp only [hL]
+  exact norm_iteratedFDeriv_endField_le L₁ L₂ hℓ hℓ₀ hE₀ hE₁ hD
 
 /-! ### Uniform decay in the end trivialization -/
 
