@@ -13,7 +13,7 @@ public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Banding
 For every banding of a pseudofunctor with groupoid fibres:
 
 * the zero coefficient gives the identity central unit and the identity central section;
-* the central unit of `-a` has component the inverse of `b(U, x)(a)`, not `b(U, x)(a)` itself;
+* the central unit of `-a` has component the inverse of `b(U, x)(a)`;
 * evaluating the central section of `a` at the identity arrow recovers `b(U, x)(a)`.
 -/
 
