@@ -238,13 +238,6 @@ theorem perimeter_ball_zero_preimage_add_smul_eq_div {x : E} (R : ℝ) :
 
 section BV
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- If `V` is the preimage of `Ω` under the dilation by a nonzero ratio `r`, then `Ω` is the
-preimage of `V` under the inverse dilation. -/
-theorem coe_eq_preimage_inv_smul (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) :
-    (Ω : Set E) = (r⁻¹ • ·) ⁻¹' V := by
-  rw [hVO, preimage_smul_inv₀ hr, preimage_smul₀ hr, smul_inv_smul₀ hr]
-
 /-- **Dilation of BV functions.** For a nonzero ratio `r` and `V = (r • ·) ⁻¹' Ω`, the pullback
 `x ↦ u (r • x)` belongs to BV on `V` exactly when `u` belongs to BV on `Ω`. -/
 theorem memBV_comp_smul_iff (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) :

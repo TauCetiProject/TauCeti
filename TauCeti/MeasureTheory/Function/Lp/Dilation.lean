@@ -43,6 +43,8 @@ the `Lᵖ` seminorm on `s`, for any set `s`. The codomain only needs a continuou
   `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
 * `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`: the same identity
   for the `Lᵖ` seminorms on `e ⁻¹' s` and on `s`.
+* `MeasureTheory.Measure.eLpNorm_comp_smul_restrict_preimage`: the dilation case,
+  `‖u (c • ·)‖_{Lᵖ((c • ·)⁻¹' s)} = |c| ^ (-n / p) * ‖u‖_{Lᵖ(s)}`.
 * `MeasureTheory.MemLp.comp_continuousLinearEquiv`: so composing with `e` preserves `Lᵖ`, and
   `MeasureTheory.MemLp.comp_continuousLinearEquiv_restrict_preimage` carries `Lᵖ` on `s` to `Lᵖ`
   on `e ⁻¹' s`.
@@ -95,6 +97,26 @@ theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p 
     eLpNorm (u ∘ e) p μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
       eLpNorm u p μ := by
   simpa using eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := Set.univ)
+
+/-- **Dilation scaling of the `Lᵖ` seminorm on a set:** for `c ≠ 0` and any set `s`,
+`‖u (c • ·)‖_{Lᵖ((c • ·)⁻¹' s)} = |c| ^ (-n / p) * ‖u‖_{Lᵖ(s)}`, where `n` is the dimension of the
+ambient space. This is the dilation case of `eLpNorm_comp_continuousLinearEquiv_restrict_preimage`,
+the restricted counterpart of `eLpNorm_comp_inv_smul`. The exponent `n / p` is `n / p.toReal`,
+which is `0` at `p = 0` and `p = ∞`, where the factor is thus `1`. -/
+theorem eLpNorm_comp_smul_restrict_preimage (u : E → G) {c : ℝ} (hc : c ≠ 0) (p : ℝ≥0∞)
+    (s : Set E) :
+    eLpNorm (fun x => u (c • x)) p (μ.restrict ((c • ·) ⁻¹' s)) =
+      ENNReal.ofReal (|c| ^ ((finrank ℝ E : ℝ) / p.toReal))⁻¹ * eLpNorm u p (μ.restrict s) := by
+  let e : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)
+  have hdet : LinearMap.det (e : E →ₗ[ℝ] E) = c ^ finrank ℝ E := by
+    rw [show (e : E →ₗ[ℝ] E) = c • LinearMap.id from rfl, LinearMap.det_smul, LinearMap.det_id,
+      mul_one]
+  change eLpNorm (u ∘ e) p (μ.restrict (e ⁻¹' s)) = _
+  rw [eLpNorm_comp_continuousLinearEquiv_restrict_preimage, hdet]
+  congr 1
+  rw [ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) ENNReal.toReal_nonneg, abs_inv, abs_pow,
+    Real.inv_rpow (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul (abs_nonneg c), one_div,
+    ENNReal.toReal_inv, div_eq_mul_inv]
 
 variable {μ} in
 /-- Precomposition with a linear automorphism `e` maps `Lᵖ` on a set `s` to `Lᵖ` on `e ⁻¹' s`, for
