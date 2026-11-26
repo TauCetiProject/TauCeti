@@ -227,11 +227,11 @@ theorem HasStableRangeLE.exists_extension_sphere [NormalSpace X] {s : ℕ}
   -- Extend `f` as a nonvanishing map and normalize the extension.
   obtain ⟨G, hGA, hG0⟩ := hR.exists_extension_ne_zero hA
     ((ContinuousMap.mk _ continuous_subtypeVal).comp f) fun x ↦ ne_zero_of_mem_unit_sphere (f x)
-  refine ⟨G.normalizeToSphere hG0, ?_⟩
+  refine ⟨normalizeToSphere G G.continuous hG0, ?_⟩
   ext x : 1
   have hx : G x = f x := congr($hGA x)
   apply Subtype.ext
-  simp [hx, norm_eq_of_mem_sphere (f x)]
+  simp [hx, NormedSpace.normalize_eq_self_of_norm_eq_one (norm_eq_of_mem_sphere (f x))]
 
 /-! ### Lower bounds on the covering dimension -/
 

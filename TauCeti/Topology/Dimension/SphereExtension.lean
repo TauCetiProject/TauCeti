@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Module.Normalize
 public import TauCeti.Topology.Dimension.Covering
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Analysis.Normed.Module.Normalize
 public import Mathlib.Topology.ShrinkingLemma
 public import Mathlib.Topology.UrysohnsLemma
 
@@ -34,11 +34,6 @@ positive off `Uᵢ`, and they have no common zero. The sets `{gᵢ < 0}` for `i 
 the part of `U_{d+1}` where some `gᵢ` is positive, form the required shrinking. The extension
 property also makes `X` normal, which the closed shrinking and the Urysohn functions use.
 
-## Main definitions
-
-* `ContinuousMap.normalizeToSphere`: the normalization `y ↦ ‖a y‖⁻¹ • a y` of a nowhere vanishing
-  map `a` into a real normed space, as a map into the unit sphere.
-
 ## Main results
 
 * `TauCeti.normalSpace_of_forall_exists_extension_sphere`: if every map from a closed subset to
@@ -61,28 +56,6 @@ public section
 open Set Topology Module Metric
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-namespace ContinuousMap
-
-variable {Y : Type*} [TopologicalSpace Y]
-
-/-- The normalization `y ↦ ‖a y‖⁻¹ • a y` (that is, `NormedSpace.normalize ∘ a`) of a nowhere
-vanishing continuous map `a` into a real normed space, as a continuous map into the unit sphere. -/
-noncomputable def normalizeToSphere (a : C(Y, E)) (ha : ∀ y, a y ≠ 0) :
-    C(Y, sphere (0 : E) 1) where
-  toFun y := ⟨NormedSpace.normalize (a y),
-    mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize (ha y))⟩
-  continuous_toFun := Continuous.subtype_mk
-    (((continuous_norm.comp a.continuous).inv₀ fun y ↦ norm_ne_zero_iff.2 (ha y)).smul
-      a.continuous) _
-
-/-- The value of `ContinuousMap.normalizeToSphere a ha` at `y`, as a vector of `E`. -/
-@[simp]
-theorem coe_normalizeToSphere_apply (a : C(Y, E)) (ha : ∀ y, a y ≠ 0) (y : Y) :
-    (a.normalizeToSphere ha y : E) = ‖a y‖⁻¹ • a y := by
-  simp [normalizeToSphere, NormedSpace.normalize]
-
-end ContinuousMap
 
 namespace TauCeti
 
@@ -175,11 +148,11 @@ private theorem exists_neg_pos_forall_exists_ne_zero_of_forall_exists_extension_
   -- Normalize `a` on `K` into the sphere and extend; `g i` is the `i`-th coordinate of the
   -- extension, which on `K` is a positive multiple of `φ i - 1 / 2`.
   have haK (x : K) : a.restrict K x ≠ 0 := ha x x.property
-  obtain ⟨G, hG⟩ := h K hK ((a.restrict K).normalizeToSphere haK)
+  obtain ⟨G, hG⟩ := h K hK (normalizeToSphere (a.restrict K) (a.restrict K).continuous haK)
   have hgK (x : X) (hx : x ∈ K) (i : Fin (d + 1)) :
       L (G x) i = ‖a x‖⁻¹ * (φ i x - 1 / 2) := by
     have : (G x : E) = ‖a x‖⁻¹ • a x := by
-      simpa using congr(($hG ⟨x, hx⟩ : E))
+      simpa [NormedSpace.normalize] using congr(($hG ⟨x, hx⟩ : E))
     simp [this, hLa]
   have hapos (x : X) (hx : x ∈ K) : 0 < ‖a x‖⁻¹ := inv_pos.2 (norm_pos_iff.2 (ha x hx))
   refine ⟨fun i ↦ ⟨fun x ↦ L (G x) i, by fun_prop⟩, fun i x hx ↦ ?_, fun i x hx ↦ ?_, fun x ↦ ?_⟩
