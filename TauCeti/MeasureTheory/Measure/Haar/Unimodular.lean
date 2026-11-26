@@ -15,8 +15,9 @@ On a second countable locally compact group whose left Haar measure `μ` is also
 every s-finite right invariant measure is a multiple of `μ`
 (`MeasureTheory.Measure.exists_eq_smul_of_isMulRightInvariant`), and `μ` is invariant under
 inversion (`MeasureTheory.Measure.isInvInvariant_of_isMulRightInvariant`). Mathlib's uniqueness
-theorems for Haar measures ask for left invariance and regularity; the first statement asks only
-for s-finiteness and right invariance.
+theorem for Haar measures on second countable groups (`MeasureTheory.Measure.haarMeasure_unique`)
+asks for a σ-finite left invariant measure; the first statement weakens σ-finiteness to
+s-finiteness and is about right invariant measures.
 
 ## References
 

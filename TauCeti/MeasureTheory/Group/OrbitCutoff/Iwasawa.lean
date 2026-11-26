@@ -12,18 +12,19 @@ public import TauCeti.MeasureTheory.Measure.Haar.Unique
 /-!
 # Integration in Iwasawa coordinates
 
-Let `G` be a unimodular second countable locally compact group, `N ⊂ G` a closed subgroup, `K ⊂ G`
-a compact subgroup and `i : M → G` a continuous homomorphism from a unimodular group `M`, with
-`G = N · i(M) · K`, and suppose that conjugation by `i(m)` multiplies the Haar measure of `N` by
-`w(m) > 0`. Then the measure `dn dm dk` in the coordinates `i(m) n k` is a multiple of the Haar
-measure of `G` (`MeasureTheory.exists_lintegral_iwasawa_eq_mul`); the constant is not computed, and
-may be infinite.
+Let `G` be a unimodular second countable locally compact group, `N ⊂ G` a closed unimodular
+subgroup, `K ⊂ G` a compact subgroup and `i : M → G` a continuous homomorphism from a unimodular
+group `M`, with `G = N · i(M) · K`, and suppose that conjugation by `i(m)` multiplies the Haar
+measure of `N` by `w(m) > 0`. Then the measure `dn dm dk` in the coordinates `i(m) n k` is a
+multiple of the Haar measure of `G` (`MeasureTheory.exists_lintegral_iwasawa_eq_mul`); the constant
+is not computed, and may be infinite.
 
 Combined with a discrete subgroup `Γ` with `Γ ∩ N` cocompact in `N` and `Γ = (Γ ∩ N) · i(Δ)`, the
 integral over `Γ \ G` of a function `F` left invariant under `N` and `Γ` is
 `c ∫_{Δ\M} ∫_K w(m) F(i(m) k) dk dm` for a constant `c ≠ 0`
-(`MeasureTheory.exists_integral_cutoffMeasure_iwasawa`). Here `Δ \ M` is described by a measure `α`
-on `M` whose unfolding along `Δ` is the Haar measure of `M`.
+(`MeasureTheory.exists_integral_cutoffMeasure_iwasawa`). Here unimodularity of `N` is not assumed:
+it follows from cocompactness of `Γ ∩ N`. The quotient `Δ \ M` is described by a measure `α` on `M`
+whose unfolding along `Δ` is the Haar measure of `M`.
 
 ## Main results
 
@@ -136,6 +137,30 @@ theorem _root_.Subgroup.exists_equiv_prod_subgroupOf {G M D : Type*} [Group G] [
       ⟨⟨(g : G)⁻¹ * i (δ d), h_mem⟩, mul_mem (inv_mem g.property) (hδ_mem d)⟩
     exact ⟨(d, γ⁻¹), by simp [φ, γ]⟩
 
+/-- **Change of variables `x = b(p) y k⁻¹`, averaged over a measure on the translations.** For a
+left and right invariant s-finite measure `μ` on `G`, a measurable `b : P → G`, a subgroup `K` and
+an s-finite measure `π` on `P × K`,
+`∫ g(y) ∫ f(b(p) y k⁻¹) dπ(p, k) dμ(y) = ∫ (∫ g(b(p)⁻¹ x k) dπ(p, k)) f(x) dμ(x)`. -/
+theorem lintegral_mul_lintegral_translate {G P : Type*} [Group G] [MeasurableSpace G]
+    [MeasurableMul₂ G] [MeasurableInv G] [MeasurableSpace P] {K : Subgroup G} (μ : Measure G)
+    [μ.IsMulLeftInvariant] [μ.IsMulRightInvariant] [SFinite μ] {π : Measure (P × K)} [SFinite π]
+    {b : P → G} (hb : Measurable b) {g f : G → ℝ≥0∞} (hg : Measurable g) (hf : Measurable f) :
+    ∫⁻ y, g y * ∫⁻ h, f (b h.1 * y * h.2⁻¹) ∂π ∂μ =
+      ∫⁻ x, (∫⁻ h, g ((b h.1)⁻¹ * (x * h.2)) ∂π) * f x ∂μ := by
+  have : MeasurableInv K := ⟨measurable_subtypeVal.inv.subtype_mk⟩
+  calc ∫⁻ y, g y * ∫⁻ h, f (b h.1 * y * h.2⁻¹) ∂π ∂μ
+    _ = ∫⁻ h, ∫⁻ y, g y * f (b h.1 * y * h.2⁻¹) ∂μ ∂π := by
+      simp (disch := fun_prop) only [← lintegral_const_mul]
+      exact lintegral_lintegral_swap (by fun_prop)
+    _ = ∫⁻ h, ∫⁻ x, g ((b h.1)⁻¹ * (x * h.2)) * f x ∂μ ∂π := by
+      congr with ⟨p, k⟩
+      rw [← lintegral_mul_left_eq_self _ (b p)⁻¹, ← lintegral_mul_right_eq_self _ (k : G)]
+      simp [mul_assoc]
+    _ = ∫⁻ x, ∫⁻ h, g ((b h.1)⁻¹ * (x * h.2)) * f x ∂π ∂μ :=
+      lintegral_lintegral_swap (by fun_prop)
+    _ = ∫⁻ x, (∫⁻ h, g ((b h.1)⁻¹ * (x * h.2)) ∂π) * f x ∂μ :=
+      lintegral_congr fun x ↦ lintegral_mul_const _ (by fun_prop)
+
 variable {G M : Type*} [Group G] [Group M] [TopologicalSpace G] [IsTopologicalGroup G]
   [MeasurableSpace G] [BorelSpace G] [TopologicalSpace M] [IsTopologicalGroup M]
   [MeasurableSpace M] [BorelSpace M] {w : M → ℝ}
@@ -201,29 +226,6 @@ private theorem lintegral_iwasawa_inv_mul_translate [ν.IsMulLeftInvariant]
 
 variable [LocallyCompactSpace G] [SecondCountableTopology G] [T2Space G] [LocallyCompactSpace M]
   [SecondCountableTopology M] [ν.IsHaarMeasure] [lam.IsHaarMeasure]
-
-omit [LocallyCompactSpace G] [T2Space G] [CompactSpace K] in
-/-- **Change of variables `x = b(p) y k⁻¹`, averaged over a measure on the translations.** For a
-left and right invariant s-finite measure `μ` on `G`, a measurable `b : P → G`, a subgroup `K` and
-an s-finite measure `π` on `P × K`,
-`∫ g(y) ∫ f(b(p) y k⁻¹) dπ(p, k) dμ(y) = ∫ (∫ g(b(p)⁻¹ x k) dπ(p, k)) f(x) dμ(x)`. -/
-theorem lintegral_mul_lintegral_translate {P : Type*} [MeasurableSpace P] (μ : Measure G)
-    [μ.IsMulLeftInvariant] [μ.IsMulRightInvariant] [SFinite μ] {π : Measure (P × K)} [SFinite π]
-    {b : P → G} (hb : Measurable b) {g f : G → ℝ≥0∞} (hg : Measurable g) (hf : Measurable f) :
-    ∫⁻ y, g y * ∫⁻ h, f (b h.1 * y * h.2⁻¹) ∂π ∂μ =
-      ∫⁻ x, (∫⁻ h, g ((b h.1)⁻¹ * (x * h.2)) ∂π) * f x ∂μ := by
-  calc ∫⁻ y, g y * ∫⁻ h, f (b h.1 * y * h.2⁻¹) ∂π ∂μ
-    _ = ∫⁻ h, ∫⁻ y, g y * f (b h.1 * y * h.2⁻¹) ∂μ ∂π := by
-      simp (disch := fun_prop) only [← lintegral_const_mul]
-      exact lintegral_lintegral_swap (by fun_prop)
-    _ = ∫⁻ h, ∫⁻ x, g ((b h.1)⁻¹ * (x * h.2)) * f x ∂μ ∂π := by
-      congr with ⟨p, k⟩
-      rw [← lintegral_mul_left_eq_self _ (b p)⁻¹, ← lintegral_mul_right_eq_self _ (k : G)]
-      simp [mul_assoc]
-    _ = ∫⁻ x, ∫⁻ h, g ((b h.1)⁻¹ * (x * h.2)) * f x ∂π ∂μ :=
-      lintegral_lintegral_swap (by fun_prop)
-    _ = ∫⁻ x, (∫⁻ h, g ((b h.1)⁻¹ * (x * h.2)) ∂π) * f x ∂μ :=
-      lintegral_congr fun x ↦ lintegral_mul_const _ (by fun_prop)
 
 /-- **The Iwasawa integration formula**, up to a constant. Let `G` and `M` be unimodular, `N ⊂ G`
 closed and unimodular, `K ⊂ G` compact, `i : M → G` a continuous homomorphism with `G = N i(M) K`,
