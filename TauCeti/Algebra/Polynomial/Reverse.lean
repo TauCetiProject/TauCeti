@@ -410,6 +410,7 @@ theorem reverse_multiset_prod_of_monic [CommSemiring R] {s : Multiset R[X]}
 
 /-- Over a semiring without zero divisors, the reverse of a finite product is the product of the
 reverses. -/
+@[simp]
 theorem reverse_prod_of_domain [CommSemiring R] [NoZeroDivisors R] {ι : Type*} (s : Finset ι)
     (f : ι → R[X]) : (∏ i ∈ s, f i).reverse = ∏ i ∈ s, (f i).reverse := by
   induction s using Finset.cons_induction with
