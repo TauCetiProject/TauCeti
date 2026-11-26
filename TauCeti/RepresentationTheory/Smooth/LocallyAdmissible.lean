@@ -7,8 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Smooth.Admissible
 public import TauCeti.Topology.Algebra.Group.Profinite.UnitProOrder
-import TauCeti.RepresentationTheory.AsModule
-import TauCeti.RepresentationTheory.Intertwining.DirectSum
+import TauCeti.RepresentationTheory.FinitelyGenerated
 import TauCeti.RepresentationTheory.Smooth.Admissible.Quotient
 
 /-!
@@ -110,14 +109,8 @@ theorem IsAdmissible.of_finite_asModule [SeparatelyContinuousMul G] [IsLocallyAd
   let C : Fin n → Subrepresentation ρ := fun i ↦ cyclicSubrepresentation ρ (ρ.asModuleEquiv (s i))
   have : ∀ i, IsAdmissible (C i).toRepresentation := fun i ↦
     IsLocallyAdmissible.isAdmissible_cyclicSubrepresentation _
-  let f := IntertwiningMap.directSumToModule fun i ↦ (C i).subtype
-  refine IsAdmissible.of_surjective hA f
-    ((IntertwiningMap.equivLinearMapAsModule_surjective_iff f).1 ?_)
-  rw [← LinearMap.range_eq_top, eq_top_iff, ← hs, Submodule.span_le]
-  rintro _ ⟨i, rfl⟩
-  refine ⟨(Representation.directSum _).asModuleEquiv.symm
-    (DirectSum.lof A _ _ i ⟨ρ.asModuleEquiv (s i), mem_cyclicSubrepresentation_self _⟩), ?_⟩
-  rw [IntertwiningMap.equivLinearMapAsModule_apply]
-  simp [f, IntertwiningMap.directSumToModule_lof]
+  exact IsAdmissible.of_surjective hA _
+    (IntertwiningMap.directSumToModule_surjective_of_span_eq_top (fun i ↦ (C i).subtype) hs
+      fun i ↦ ⟨⟨_, mem_cyclicSubrepresentation_self _⟩, by rw [Subrepresentation.coe_subtype]⟩)
 
 end Representation
