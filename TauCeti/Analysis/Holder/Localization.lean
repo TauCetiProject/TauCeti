@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Holder.Leibniz
 public import TauCeti.Analysis.Holder.Iterated
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Topology.MetricSpace.Bounded
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Topology.MetricSpace.Thickening
@@ -193,11 +194,8 @@ theorem _root_.ContDiff.exists_eqOn_ball_holderWith_fderiv_and_norm_le [FiniteDi
   have hρL : LipschitzWith Lσ ρ := LipschitzWith.of_dist_le_mul fun x y ↦ by
     simpa only [hσ_def, dist_sub_right] using hLσ.dist_le_mul x y
   -- The derivative of `γ` is bounded and `β`-Hölder on `closedBall c (2 r)`.
-  have hD : ∀ x ∈ closedBall c (2 * r), ∀ y ∈ closedBall c (2 * r),
-      edist x y ≤ ((4 * r).toNNReal : ENNReal) := fun x hx y hy ↦ by
-    rw [edist_dist, ← ENNReal.ofReal_coe_nnreal, Real.coe_toNNReal _ (by positivity)]
-    exact ENNReal.ofReal_le_ofReal ((dist_triangle_right x y c).trans (by
-      linarith [mem_closedBall.1 hx, mem_closedBall.1 hy]))
+  have hD := fun x (hx : x ∈ closedBall c (2 * r)) y (hy : y ∈ closedBall c (2 * r)) ↦
+    Metric.edist_le_diam_of_mem isBounded_closedBall hx hy
   have hA := ((hK.holderOnWith (closedBall c (2 * r))).of_le hD hβα).comp_holderWith
     (holderWith_one.2 hρL) hρc
   rw [mul_one] at hA

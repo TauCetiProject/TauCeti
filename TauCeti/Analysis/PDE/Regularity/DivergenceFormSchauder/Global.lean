@@ -60,7 +60,8 @@ there and the structural constants, so the global constant does not depend on `u
 * `TauCeti.PDE.exists_holderOnWith_gradient_closure_of_forall_graph`: the global `C^{1,β}`
   estimate for the Dirichlet problem with zero boundary values on a bounded `C^{1,α}` domain.
 * `TauCeti.PDE.forall_graph_holderWith_fderiv_of_le`: a `C^{1,α}` boundary is `C^{1,β}` for
-  `β ≤ α`, `β ≤ 1`, with the same charts on the same cylinders.
+  `β ≤ α`, `β ≤ 1`, with the same rigid coordinates and cylinders; each graph is replaced by one
+  agreeing with it on the cylinder.
 
 ## References
 
