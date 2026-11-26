@@ -41,8 +41,13 @@ of the augmentation ideal under `f`.
   and `TauCeti.HopfIdeal.map_sSup`: the image preserves the join structure.
 * `TauCeti.HopfIdeal.map_id` and `TauCeti.HopfIdeal.map_map`: identity and composition
   laws.
-* `TauCeti.HopfIdeal.map_le_iff_le_comapOfSurjective`: the image is left adjoint to the inverse
-  image along a surjective morphism, with the correspondence lemmas
+* `TauCeti.HopfIdeal.giMapComapOfSurjective`: along a surjective morphism the image and the
+  inverse image form a Galois insertion; `TauCeti.HopfIdeal.map_le_iff_le_comapOfSurjective` is
+  the adjunction, and `TauCeti.HopfIdeal.comapOfSurjective_le_comapOfSurjective_iff` and
+  `TauCeti.HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff` follow from the insertion.
+* `TauCeti.HopfIdeal.relIsoOfSurjective`: the correspondence theorem, an order isomorphism
+  between the Hopf ideals of the codomain and the Hopf ideals containing the kernel, built from
+  the correspondence lemmas
   `TauCeti.HopfIdeal.map_comapOfSurjective`, `TauCeti.HopfIdeal.comapOfSurjective_map`,
   `TauCeti.HopfIdeal.comapOfSurjective_map_of_bijective`, and
   `TauCeti.HopfIdeal.map_eq_bot_iff_le_ker`.
@@ -313,6 +318,32 @@ theorem map_comapOfSurjective (J : HopfIdeal R K) (f : H →ₐc[R] K)
   rw [← mem_toIdeal, map_toIdeal, comapOfSurjective_toIdeal,
     Ideal.map_comap_of_surjective (f : H →+* K) hf, mem_toIdeal]
 
+/-- Along a surjective morphism, the image and the inverse image of Hopf ideals form a Galois
+insertion: the image is left adjoint to the inverse image, and recovers every Hopf ideal of the
+codomain from its inverse image. -/
+noncomputable def giMapComapOfSurjective (f : H →ₐc[R] K) (hf : Function.Surjective f) :
+    haveI : RingHomSurjective (f : H →+* K) := ⟨hf⟩
+    GaloisInsertion (fun I : HopfIdeal R H => I.map f) (comapOfSurjective · f hf) :=
+  haveI : RingHomSurjective (f : H →+* K) := ⟨hf⟩
+  GaloisInsertion.monotoneIntro (fun _ _ => comapOfSurjective_mono f hf)
+    (fun _ _ => map_mono f) (fun _ => (map_le_iff_le_comapOfSurjective hf).mp le_rfl)
+    (fun J => map_comapOfSurjective J f hf)
+
+/-- For a surjective morphism, containment after inverse image is equivalent to containment
+before inverse image. -/
+@[simp]
+theorem comapOfSurjective_le_comapOfSurjective_iff (f : H →ₐc[R] K)
+    (hf : Function.Surjective f) {I J : HopfIdeal R K} :
+    I.comapOfSurjective f hf ≤ J.comapOfSurjective f hf ↔ I ≤ J :=
+  (giMapComapOfSurjective f hf).u_le_u_iff
+
+/-- For a surjective morphism, inverse image of Hopf ideals reflects equality. -/
+@[simp]
+theorem comapOfSurjective_eq_comapOfSurjective_iff (f : H →ₐc[R] K)
+    (hf : Function.Surjective f) {I J : HopfIdeal R K} :
+    I.comapOfSurjective f hf = J.comapOfSurjective f hf ↔ I = J :=
+  (giMapComapOfSurjective f hf).u_injective.eq_iff
+
 /-- Along a surjective morphism, inverse image after image is the join with the kernel. -/
 theorem comapOfSurjective_map (I : HopfIdeal R H) (f : H →ₐc[R] K)
     (hf : Function.Surjective f) :
@@ -332,6 +363,34 @@ theorem comapOfSurjective_map_of_bijective (I : HopfIdeal R H) (f : H →ₐc[R]
     (I.map f).comapOfSurjective f hf.2 = I := by
   have : RingHomSurjective (f : H →+* K) := ⟨hf.surjective⟩
   rw [comapOfSurjective_map, (kerOfSurjective_eq_bot_iff f hf.2).2 hf.1, sup_bot_eq]
+
+/-- The correspondence theorem for Hopf ideals: along a surjective morphism `f : H → K`, the
+inverse image identifies the Hopf ideals of `K` with the Hopf ideals of `H` containing the
+kernel of `f`, with inverse the image. -/
+@[expose] noncomputable def relIsoOfSurjective (f : H →ₐc[R] K) (hf : Function.Surjective f) :
+    HopfIdeal R K ≃o {I : HopfIdeal R H // kerOfSurjective f hf ≤ I} :=
+  haveI : RingHomSurjective (f : H →+* K) := ⟨hf⟩
+  { toFun J := ⟨J.comapOfSurjective f hf,
+      comapOfSurjective_bot f hf ▸ comapOfSurjective_mono f hf bot_le⟩
+    invFun I := I.val.map f
+    left_inv J := map_comapOfSurjective J f hf
+    right_inv I := Subtype.ext <| show (I.val.map f).comapOfSurjective f hf = I.val by
+      rw [comapOfSurjective_map, sup_eq_left]
+      exact I.property
+    map_rel_iff' := comapOfSurjective_le_comapOfSurjective_iff f hf }
+
+@[simp]
+theorem coe_relIsoOfSurjective_apply (f : H →ₐc[R] K) (hf : Function.Surjective f)
+    (J : HopfIdeal R K) :
+    (relIsoOfSurjective f hf J : HopfIdeal R H) = J.comapOfSurjective f hf :=
+  rfl
+
+@[simp]
+theorem relIsoOfSurjective_symm_apply (f : H →ₐc[R] K) (hf : Function.Surjective f)
+    (I : {I : HopfIdeal R H // kerOfSurjective f hf ≤ I}) :
+    haveI : RingHomSurjective (f : H →+* K) := ⟨hf⟩
+    (relIsoOfSurjective f hf).symm I = I.val.map f :=
+  rfl
 
 /-- The image vanishes exactly on Hopf ideals contained in the kernel Hopf ideal: the
 surjective bundled form of `TauCeti.HopfIdeal.map_eq_bot_iff`. -/
