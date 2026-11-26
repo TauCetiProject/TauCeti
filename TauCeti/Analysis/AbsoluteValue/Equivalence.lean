@@ -68,6 +68,12 @@ theorem _root_.AbsoluteValue.IsEquiv.eq_of_apply_eq {F : Type*} [Field F]
 def _root_.Rat.AbsoluteValue.IsStandard (a : AbsoluteValue ℚ ℝ) : Prop :=
   a = Rat.AbsoluteValue.real ∨ ∃ (q : ℕ) (_ : Fact q.Prime), a = Rat.AbsoluteValue.padic q
 
+/-- An absolute value on `ℚ` is standard if and only if it is the real or a `q`-adic one. -/
+theorem _root_.Rat.AbsoluteValue.isStandard_iff {a : AbsoluteValue ℚ ℝ} :
+    Rat.AbsoluteValue.IsStandard a ↔
+      a = Rat.AbsoluteValue.real ∨ ∃ (q : ℕ) (_ : Fact q.Prime), a = Rat.AbsoluteValue.padic q :=
+  .rfl
+
 /-- The real absolute value on `ℚ` is standard. -/
 theorem _root_.Rat.AbsoluteValue.IsStandard.real :
     Rat.AbsoluteValue.IsStandard Rat.AbsoluteValue.real :=
