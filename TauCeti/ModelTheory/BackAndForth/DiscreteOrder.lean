@@ -75,7 +75,7 @@ universe w w' o
 
 namespace TauCeti
 
-open FirstOrder FirstOrder.Language Order
+open FirstOrder FirstOrder.Language _root_.Order
 
 section Atomic
 

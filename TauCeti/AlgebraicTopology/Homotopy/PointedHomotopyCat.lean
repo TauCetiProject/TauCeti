@@ -111,6 +111,14 @@ theorem fundamentalGroupFunctor_map_hom {X Y : BasedTopologicalSpace.{u}} (f : X
       FundamentalGroup.mapOfEq f.toContinuousMap f.map_basepoint :=
   (rfl)
 
+/-- Based maps inducing the same morphism of fundamental groups induce the same homomorphism
+`FundamentalGroup.mapOfEq`. -/
+theorem mapOfEq_eq_of_fundamentalGroupFunctor_map_eq {X Y : BasedTopologicalSpace.{u}}
+    {f g : X ⟶ Y} (h : fundamentalGroupFunctor.map f = fundamentalGroupFunctor.map g) :
+    FundamentalGroup.mapOfEq f.toContinuousMap f.map_basepoint =
+      FundamentalGroup.mapOfEq g.toContinuousMap g.map_basepoint :=
+  congrArg GrpCat.Hom.hom h
+
 /-- Pointed-homotopic based maps induce the same homomorphism of fundamental groups. -/
 theorem fundamentalGroupFunctor_map_eq_of_homotopicRel {X Y : BasedTopologicalSpace.{u}}
     {f g : X ⟶ Y} (h : homotopicRel f g) :

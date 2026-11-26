@@ -10,6 +10,7 @@ public import Mathlib.Topology.VectorBundle.Constructions
 public import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Category.TopPair.ContinuousLinearEquiv
+public import TauCeti.Topology.FiberBundle.ModelFiber
 public import TauCeti.Topology.VectorBundle.ZeroSection
 import TauCeti.Topology.VectorBundle.Smul
 
@@ -122,6 +123,36 @@ variable [TopologicalSpace (TotalSpace F E)]
 section. -/
 abbrev thomPair : TopPair.{w} :=
   TopPair.ofSubset (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E)
+
+variable {F E} in
+/-- The Thom pair of a bundle does not depend on its model fibre: when the topology on the total
+space with model fibre `F'` is induced along the identity of points from the total space with model
+fibre `F`, the identity of points is an isomorphism of Thom pairs `(E, E₀)`
+(`TauCeti.totalSpaceModelFiberHomeomorph`). -/
+def thomPairModelFiberIso {F' : Type*} [TopologicalSpace (TotalSpace F' E)]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd) :
+    thomPair F' E ≅ thomPair F E :=
+  TopPair.ofSubsetIso (totalSpaceModelFiberHomeomorph F E h_ind) fun _ ↦ by simp
+
+variable {F E} in
+@[simp]
+theorem thomPairModelFiberIso_hom_fst_apply {F' : Type*} [TopologicalSpace (TotalSpace F' E)]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd)
+    (p : TotalSpace F' E) :
+    TopPair.Hom.fst (thomPairModelFiberIso h_ind).hom p = TotalSpace.mk' F p.proj p.snd := by
+  simp only [thomPairModelFiberIso, TopPair.ofSubsetIso_hom]
+  exact (TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F' E))
+    (B := zeroSectionCompl F' E) _ _ p).trans (totalSpaceModelFiberHomeomorph_apply h_ind p)
+
+variable {F E} in
+@[simp]
+theorem thomPairModelFiberIso_inv_fst_apply {F' : Type*} [TopologicalSpace (TotalSpace F' E)]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd)
+    (p : TotalSpace F E) :
+    TopPair.Hom.fst (thomPairModelFiberIso h_ind).inv p = TotalSpace.mk' F' p.proj p.snd := by
+  simp only [thomPairModelFiberIso, TopPair.ofSubsetIso_inv]
+  exact (TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F E))
+    (B := zeroSectionCompl F E) _ _ p).trans (totalSpaceModelFiberHomeomorph_symm_apply h_ind p)
 
 /-- The Thom pair `(E|_W, E₀|_W)` of the restriction of a bundle to a subset `W` of its base: the
 vectors over `W`, relative to the nonzero ones, as subspaces of the total space. -/

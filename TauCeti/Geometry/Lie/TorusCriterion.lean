@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Lie.Exponential.Commute
 public import TauCeti.Geometry.Lie.Integration
 public import TauCeti.Geometry.Lie.ModelTransport
 public import TauCeti.RepresentationTheory.SU2.LieGroup
+import TauCeti.Analysis.Complex.Circle.Torsion
 
 /-!
 # The torus criterion for compact Lie groups
@@ -42,6 +43,12 @@ torus (`TauCeti.nonempty_continuousMulEquiv_pi_circle`).
 This route detects a copy of `SU(2)` inside `G` directly. It does not pass through the finite
 covering `T × K → G` by a torus and a simply connected semisimple group.
 
+The Lie group structure is needed. The product `ℕ → S¹` of countably many circles is a compact
+connected commutative topological group, and it is aspherical, but it is not a torus: it has
+infinitely many elements of order two, while `(S¹)ʳ` has only finitely many
+(`Circle.not_exists_continuousMulEquiv_pi_fin`). So the criterion fails for it
+(`TauCeti.Lie.not_forall_isAspherical_iff_exists_continuousMulEquiv_torus`).
+
 The integration of Lie-algebra homomorphisms (`LieHom.integrate`) is available for Lie groups
 modelled without boundary on a finite-dimensional space in the lowest universe, so the statement
 about `SU(2) → G` carries these hypotheses. The later statements hold for every model with
@@ -62,6 +69,8 @@ matrices.
 * `TauCeti.Lie.isMulCommutative_of_isAspherical`: an aspherical compact connected Lie group is
   commutative.
 * `TauCeti.Lie.isAspherical_iff_exists_continuousMulEquiv_torus`: **the torus criterion**.
+* `TauCeti.Lie.not_forall_isAspherical_iff_exists_continuousMulEquiv_torus`: the criterion fails
+  for the compact connected group `ℕ → S¹`, which is not a Lie group.
 
 ## References
 
@@ -210,6 +219,18 @@ theorem isAspherical_iff_exists_continuousMulEquiv_torus [ConnectedSpace G] {g :
   · have := isMulCommutative_of_isAspherical I hG
     exact ⟨_, nonempty_continuousMulEquiv_pi_circle (I := I)⟩
   · exact (Circle.isAspherical_pi 1).of_homotopyEquiv e.toHomeomorph.symm.toHomotopyEquiv g
+
+/-- **The torus criterion needs the Lie group hypothesis.** The product `ℕ → S¹` of countably many
+circles is a compact connected commutative topological group which is aspherical
+(`Circle.isAspherical_pi`) but not isomorphic to any torus `(S¹)ʳ`
+(`Circle.not_exists_continuousMulEquiv_pi_fin`). So the equivalence of
+`TauCeti.Lie.isAspherical_iff_exists_continuousMulEquiv_torus` fails for compact connected
+commutative topological groups in general. -/
+theorem not_forall_isAspherical_iff_exists_continuousMulEquiv_torus :
+    ¬∀ (G : Type) [TopologicalSpace G] [CommGroup G] [IsTopologicalGroup G] [CompactSpace G]
+      [ConnectedSpace G] (g : G), IsAspherical G g ↔ ∃ r : ℕ, Nonempty (G ≃ₜ* (Fin r → Circle)) :=
+  fun h ↦ Circle.not_exists_continuousMulEquiv_pi_fin
+    ((h (ℕ → Circle) 1).1 (Circle.isAspherical_pi 1))
 
 end Lie
 
