@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.TurningPoint
 
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import TauCeti.Analysis.Calculus.Deriv.Slope
-import TauCeti.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Calculus.Deriv.TurningPoint
 
 /-!
 # Periodicity of the radial motion in a potential well
@@ -32,9 +32,11 @@ times and starting in the potential well `[r₁, r₂]` is periodic, with period
   at the turning points.
 * **Oscillation.** While `p_r ≠ 0` the radius is monotone, so such a passage lasts at most the
   time quadrature, which converges at simple turning points. At a turning point `p_r = 0` and
-  `p_r' = -U_ℓ'(rᵢ) ≠ 0`, so the radial momentum changes sign there. Hence every motion reaches the
-  inner turning point (`TauCeti.exists_fst_eq_of_forall_hasDerivAt_effectivePotential`), and from
-  there the radius rises to `r₂` and falls back to `r₁` in exactly the time `T`
+  `p_r' = -U_ℓ'(rᵢ) ≠ 0`, so the radial momentum changes sign there. Hence, by the oscillation
+  between two turning points of `TauCeti.Analysis.Calculus.Deriv.TurningPoint`, every motion
+  reaches the inner turning point
+  (`TauCeti.exists_fst_eq_of_forall_hasDerivAt_effectivePotential`), and from there the radius
+  rises to `r₂` and falls back to `r₁` in exactly the time `T`
   (`TauCeti.exists_mem_Ioo_fst_eq_of_forall_hasDerivAt_effectivePotential`).
 * **Periodicity.** Along a rising stretch from `r₁` the elapsed time is the quadrature
   `∫_{r₁}^{r} m dr / |p_r|`, a strictly increasing function of the radius `r` reached, and along a
@@ -134,6 +136,13 @@ private theorem intervalIntegrable_div_absRadialMomentum_well :
     (fun _ ↦ ⟨_, hd₂, (hasDerivAt_deriv_effectivePotential hU (hr₁.trans h₁₂)).hasDerivWithinAt⟩)
 
 include hm hr₁ h₁₂ hU hlt hd₁ hd₂ in
+/-- The radial period of the well is positive. -/
+private theorem radialPeriod_pos_well : 0 < radialPeriod m U ℓ E r₁ r₂ :=
+  radialPeriod_pos hm hr₁ h₁₂ (hU.continuousOn.mono fun _ hr ↦ hr₁.trans_le hr.1) hlt
+    (fun _ ↦ ⟨_, hd₁, (hasDerivAt_deriv_effectivePotential hU hr₁).hasDerivWithinAt⟩)
+    (fun _ ↦ ⟨_, hd₂, (hasDerivAt_deriv_effectivePotential hU (hr₁.trans h₁₂)).hasDerivWithinAt⟩)
+
+include hm hr₁ h₁₂ hU hlt hd₁ hd₂ in
 /-- **The time to reach a radius.** The quadrature `ρ ↦ ∫_{r₁}^{ρ} m dr / |p_r|` is strictly
 increasing on the well. -/
 private theorem strictMonoOn_integral_div_absRadialMomentum :
@@ -145,10 +154,8 @@ private theorem strictMonoOn_integral_div_absRadialMomentum :
   have hib : IntervalIntegrable (fun r ↦ m / absRadialMomentum m U ℓ E r) volume r₁ b :=
     hint.mono_set (uIcc_subset_uIcc_left (Icc_subset_uIcc hb))
   rw [← sub_pos, integral_interval_sub_left hib hia]
-  refine intervalIntegral_pos_of_pos_on ((hia.symm.trans hib)) (fun r hr ↦ ?_) hab
-  have hr' : r ∈ Ioo r₁ r₂ := ⟨ha.1.trans_lt hr.1, hr.2.trans_le hb.2⟩
-  rw [absRadialMomentum_eq_sqrt hm.ne']
-  exact div_pos hm (Real.sqrt_pos.2 (mul_pos (by positivity) (sub_pos.2 (hlt r hr'))))
+  exact intervalIntegral_pos_of_pos_on (hia.symm.trans hib)
+    (fun r hr ↦ div_absRadialMomentum_pos hm (hlt r ⟨ha.1.trans_lt hr.1, hr.2.trans_le hb.2⟩)) hab
 
 /-! ### Motions in the well -/
 
@@ -229,13 +236,13 @@ theorem mem_Icc_of_forall_hasDerivAt_effectivePotential (t : ℝ) : (γ t).1 ∈
   (mem_Icc_and_eq hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE t).1
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
-/-- Along the motion, the radius moves with velocity `p_r / m`. -/
+/-- Along the motion, the radius moves with velocity `m⁻¹ p_r`. -/
 private theorem hasDerivAt_radius (t : ℝ) :
-    HasDerivAt (fun s ↦ (γ s).1) ((γ t).2 / m) t := by
+    HasDerivAt (fun s ↦ (γ s).1) (m⁻¹ * (γ t).2) t := by
   have hpos := hr₁.trans_le (mem_Icc_of_forall_hasDerivAt_effectivePotential hm hr₁ h₁₂ hU hE₁ hE₂
     hlt hd₁ hd₂ hγ h₀ hE t).1
-  exact hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential (hγ t) hpos
-    (hU.differentiableAt (Ioi_mem_nhds hpos))
+  exact (hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential (hγ t) hpos
+    (hU.differentiableAt (Ioi_mem_nhds hpos))).congr_deriv (div_eq_inv_mul _ _)
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
 /-- Along the motion, the radial momentum moves with velocity `-U_ℓ'(r)`. -/
@@ -248,6 +255,12 @@ private theorem hasDerivAt_momentum (t : ℝ) :
     hUd).congr_deriv ?_
   rw [(hasDerivAt_effectivePotential (m := m) (ℓ := ℓ) hUd.hasDerivAt hpos.ne').deriv]
   ring
+
+include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
+/-- Along the motion, the radial momentum is continuous. -/
+private theorem continuous_momentum : Continuous fun s ↦ (γ s).2 :=
+  continuous_iff_continuousAt.2 fun t ↦
+    (hasDerivAt_momentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE t).continuousAt
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
 /-- Along the motion, the radial momentum vanishes exactly at the turning points. -/
@@ -270,17 +283,6 @@ private theorem momentum_ne_zero_iff (t : ℝ) : (γ t).2 ≠ 0 ↔ (γ t).1 ∈
     linarith
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
-/-- Where the radial momentum vanishes, the radius is a turning point. -/
-private theorem radius_eq_or_eq {t : ℝ} (hp : (γ t).2 = 0) : (γ t).1 = r₁ ∨ (γ t).1 = r₂ := by
-  have hmem := mem_Icc_of_forall_hasDerivAt_effectivePotential hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂
-    hγ h₀ hE t
-  have hnot := mt (momentum_ne_zero_iff hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE t).2
-    (not_not.2 hp)
-  rcases hmem.1.eq_or_lt with h | h
-  · exact Or.inl h.symm
-  · exact Or.inr (le_antisymm hmem.2 (not_lt.1 fun h' ↦ hnot ⟨h, h'⟩))
-
-include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
 /-- At the turning points the radial momentum vanishes. -/
 private theorem momentum_eq_zero {u : ℝ} (h : (γ u).1 = r₁ ∨ (γ u).1 = r₂) : (γ u).2 = 0 :=
   not_not.1 fun hp ↦ by
@@ -296,34 +298,13 @@ private theorem abs_momentum (t : ℝ) : |(γ t).2| = absRadialMomentum m U ℓ 
   exact (absRadialMomentum_eq_abs hm.ne' (hr₁.trans_le hmem.1) hEt).symm
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
-/-- While the radial momentum is positive, the radius increases strictly. -/
-private theorem strictMonoOn_radius {s t : ℝ} (hp : ∀ u ∈ Ioo s t, 0 < (γ u).2) :
-    StrictMonoOn (fun u ↦ (γ u).1) (Icc s t) :=
-  strictMonoOn_of_deriv_pos (convex_Icc s t)
-    (fun u _ ↦ (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE u).continuousAt
-      |>.continuousWithinAt) fun u hu ↦ by
-      rw [interior_Icc] at hu
-      rw [(hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE u).deriv]
-      exact div_pos (hp u hu) hm
-
-include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
-/-- While the radial momentum is negative, the radius decreases strictly. -/
-private theorem strictAntiOn_radius {s t : ℝ} (hp : ∀ u ∈ Ioo s t, (γ u).2 < 0) :
-    StrictAntiOn (fun u ↦ (γ u).1) (Icc s t) :=
-  strictAntiOn_of_deriv_neg (convex_Icc s t)
-    (fun u _ ↦ (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE u).continuousAt
-      |>.continuousWithinAt) fun u hu ↦ by
-      rw [interior_Icc] at hu
-      rw [(hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE u).deriv]
-      exact div_neg_of_neg_of_pos (hp u hu) hm
-
-include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
 /-- **Time along a rising stretch.** While the radial momentum is positive on `(s, t)`, the elapsed
 time is the quadrature `t - s = ∫_{r(s)}^{r(t)} m dr / |p_r|`. -/
 private theorem sub_eq_integral_of_pos {s t : ℝ} (hst : s ≤ t) (hp : ∀ u ∈ Ioo s t, 0 < (γ u).2) :
     t - s = ∫ r in (γ s).1..(γ t).1, m / absRadialMomentum m U ℓ E r := by
   have hmem := mem_Icc_and_eq hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
-  have hmono := strictMonoOn_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hp
+  have hmono := strictMonoOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hm)
+      (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) hp
   have hpos (u : ℝ) : 0 < (γ u).1 := hr₁.trans_le (hmem u).1.1
   exact sub_eq_integral_div_absRadialMomentum hm hst (fun u _ ↦ hγ u) (fun u _ ↦ hpos u)
     (fun u _ ↦ hU.differentiableAt (Ioi_mem_nhds (hpos u))) (hmem s).2
@@ -337,7 +318,8 @@ elapsed time is the quadrature `t - s = ∫_{r(t)}^{r(s)} m dr / |p_r|`. -/
 private theorem sub_eq_integral_of_neg {s t : ℝ} (hst : s ≤ t) (hp : ∀ u ∈ Ioo s t, (γ u).2 < 0) :
     t - s = ∫ r in (γ t).1..(γ s).1, m / absRadialMomentum m U ℓ E r := by
   have hmem := mem_Icc_and_eq hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
-  have hanti := strictAntiOn_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hp
+  have hanti := strictAntiOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hm)
+      (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) hp
   have hpos (u : ℝ) : 0 < (γ u).1 := hr₁.trans_le (hmem u).1.1
   exact sub_eq_integral_div_absRadialMomentum hm hst (fun u _ ↦ hγ u) (fun u _ ↦ hpos u)
     (fun u _ ↦ hU.differentiableAt (Ioi_mem_nhds (hpos u))) (hmem s).2
@@ -356,8 +338,7 @@ private theorem sub_le_integral {s t : ℝ} (hst : s ≤ t) (hp : ∀ u ∈ Ioo 
     ae_of_all _ fun r ↦ div_nonneg hm.le (absRadialMomentum_nonneg _ _ _ _ _)
   have hmem := mem_Icc_of_forall_hasDerivAt_effectivePotential hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂
     hγ h₀ hE
-  have hpc : Continuous fun u ↦ (γ u).2 := continuous_iff_continuousAt.2 fun u ↦
-    (hasDerivAt_momentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE u).continuousAt
+  have hpc := continuous_momentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
   rcases hst.eq_or_lt with rfl | hst'
   · rw [sub_self]
     exact intervalIntegral.integral_nonneg h₁₂.le fun r _ ↦
@@ -370,97 +351,74 @@ private theorem sub_le_integral {s t : ℝ} (hst : s ≤ t) (hp : ∀ u ∈ Ioo 
   rcases (hp _ hmid).lt_or_gt with hneg | hpos
   · have hp' (u : ℝ) (hu : u ∈ Ioo s t) : (γ u).2 < 0 :=
       sign_eq_neg_one_iff.1 ((hsign hu hmid).trans (sign_eq_neg_one_iff.2 hneg))
-    have hlt' := strictAntiOn_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hp'
+    have hlt' := strictAntiOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hm)
+      (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) hp'
       ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst'
     rw [sub_eq_integral_of_neg hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hst hp']
     exact intervalIntegral.integral_mono_interval (hmem t).1 hlt'.le (hmem s).2 hnn hint
   · have hp' (u : ℝ) (hu : u ∈ Ioo s t) : 0 < (γ u).2 :=
       sign_eq_one_iff.1 ((hsign hu hmid).trans (sign_eq_one_iff.2 hpos))
-    have hlt' := strictMonoOn_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hp'
+    have hlt' := strictMonoOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hm)
+      (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) hp'
       ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst'
     rw [sub_eq_integral_of_pos hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hst hp']
     exact intervalIntegral.integral_mono_interval (hmem s).1 hlt'.le (hmem t).2 hnn hint
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
-/-- **The next turning time.** If the radial momentum vanishes at time `t₁` and `σ p_r` has
-positive derivative there, then `p_r` vanishes again at a later time `t₂`, and `σ p_r` is positive
-in between. -/
-private theorem exists_next_turning {σ t₁ : ℝ} (hσ : σ ≠ 0) (hp₀ : (γ t₁).2 = 0)
-    (hd : 0 < σ * -deriv (effectivePotential m ℓ U) (γ t₁).1) :
-    ∃ t₂, t₁ < t₂ ∧ (γ t₂).2 = 0 ∧ ∀ u ∈ Ioo t₁ t₂, 0 < σ * (γ u).2 := by
-  have hfd (t : ℝ) :=
-    (hasDerivAt_momentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE t).const_mul σ
-  have hfc : Continuous fun t ↦ σ * (γ t).2 :=
-    continuous_iff_continuousAt.2 fun t ↦ (hfd t).continuousAt
-  have hL : 0 ≤ ∫ r in r₁..r₂, m / absRadialMomentum m U ℓ E r :=
-    intervalIntegral.integral_nonneg h₁₂.le fun r _ ↦
-      div_nonneg hm.le (absRadialMomentum_nonneg _ _ _ _ _)
-  obtain ⟨t₂, ⟨h₁₂', -⟩, hf₂, hpos⟩ := hfc.continuousOn.exists_mem_Ioo_eq_and_forall_gt
-    (b := t₁ + 1 + ∫ r in r₁..r₂, m / absRadialMomentum m U ℓ E r)
-    -- `σ p_r` vanishes at `t₁` with positive derivative, so it is positive right after `t₁`.
-    (by simpa [hp₀] using (hfd t₁).hasDerivWithinAt.eventually_nhdsGT_lt_of_pos hd) <| by
-    -- Passages are short, so `σ p_r` does not stay positive.
-    by_contra! hfpos
-    have := sub_le_integral hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE (s := t₁) (by linarith)
-      fun w hw ↦ right_ne_zero_of_mul (hfpos w hw).ne'
-    linarith
-  exact ⟨t₂, h₁₂', (mul_eq_zero.1 hf₂).resolve_left hσ, hpos⟩
+/-- At the inner turning point the radial momentum has positive derivative `-U_ℓ'(r₁)`. -/
+private theorem exists_hasDerivAt_momentum_pos {t : ℝ} (h : (γ t).1 = r₁) :
+    ∃ d, 0 < d ∧ HasDerivAt (fun s ↦ (γ s).2) d t :=
+  ⟨_, by rw [h, neg_pos]; exact deriv_effectivePotential_neg hr₁ h₁₂ hU hE₁ hlt hd₁,
+    hasDerivAt_momentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE t⟩
+
+include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
+/-- At the outer turning point the radial momentum has negative derivative `-U_ℓ'(r₂)`. -/
+private theorem exists_hasDerivAt_momentum_neg {t : ℝ} (h : (γ t).1 = r₂) :
+    ∃ d, d < 0 ∧ HasDerivAt (fun s ↦ (γ s).2) d t :=
+  ⟨_, by rw [h, neg_lt_zero]; exact deriv_effectivePotential_pos hr₁ h₁₂ hU hE₂ hlt hd₂,
+    hasDerivAt_momentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE t⟩
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
 /-- From the inner turning point the radius rises to the outer one, with positive radial momentum
 in between. -/
 private theorem exists_outer {t₁ : ℝ} (h₁ : (γ t₁).1 = r₁) :
-    ∃ t₂, t₁ < t₂ ∧ (γ t₂).1 = r₂ ∧ ∀ u ∈ Ioo t₁ t₂, 0 < (γ u).2 := by
-  have hp₁ := momentum_eq_zero hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE (Or.inl h₁)
-  obtain ⟨t₂, h₁₂', hp₂, hpos⟩ := exists_next_turning hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
-    one_ne_zero hp₁ (by
-      rw [one_mul, h₁, neg_pos]
-      exact deriv_effectivePotential_neg hr₁ h₁₂ hU hE₁ hlt hd₁)
-  simp only [one_mul] at hpos
-  refine ⟨t₂, h₁₂', ?_, hpos⟩
-  refine (radius_eq_or_eq hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hp₂).resolve_left fun h₂ ↦ ?_
-  have := strictMonoOn_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hpos
-    ⟨le_rfl, h₁₂'.le⟩ ⟨h₁₂'.le, le_rfl⟩ h₁₂'
-  simp only [h₁, h₂, lt_self_iff_false] at this
+    ∃ t₂, t₁ < t₂ ∧ (γ t₂).1 = r₂ ∧ ∀ u ∈ Ioo t₁ t₂, 0 < (γ u).2 :=
+  exists_gt_eq_and_forall_pos_of_forall_hasDerivAt_mul (inv_pos.2 hm)
+    (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (continuous_momentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (mem_Icc_of_forall_hasDerivAt_effectivePotential hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀
+      hE)
+    (momentum_ne_zero_iff hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (fun _ ↦ exists_hasDerivAt_momentum_pos hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (fun _ _ ↦ sub_le_integral hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) h₁
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
 /-- From the outer turning point the radius falls to the inner one, with negative radial momentum
 in between. -/
 private theorem exists_inner {t₂ : ℝ} (h₂ : (γ t₂).1 = r₂) :
-    ∃ t₃, t₂ < t₃ ∧ (γ t₃).1 = r₁ ∧ ∀ u ∈ Ioo t₂ t₃, (γ u).2 < 0 := by
-  have hp₂ := momentum_eq_zero hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE (Or.inr h₂)
-  obtain ⟨t₃, h₂₃, hp₃, hneg⟩ := exists_next_turning hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
-    (neg_ne_zero.2 one_ne_zero) hp₂ (by
-      rw [h₂, neg_one_mul, neg_neg]
-      exact deriv_effectivePotential_pos hr₁ h₁₂ hU hE₂ hlt hd₂)
-  simp only [neg_one_mul, neg_pos] at hneg
-  refine ⟨t₃, h₂₃, ?_, hneg⟩
-  refine (radius_eq_or_eq hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hp₃).resolve_right
-    fun h₃ ↦ ?_
-  have := strictAntiOn_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hneg
-    ⟨le_rfl, h₂₃.le⟩ ⟨h₂₃.le, le_rfl⟩ h₂₃
-  simp only [h₂, h₃, lt_self_iff_false] at this
+    ∃ t₃, t₂ < t₃ ∧ (γ t₃).1 = r₁ ∧ ∀ u ∈ Ioo t₂ t₃, (γ u).2 < 0 :=
+  exists_gt_eq_and_forall_neg_of_forall_hasDerivAt_mul (inv_pos.2 hm)
+    (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (continuous_momentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (mem_Icc_of_forall_hasDerivAt_effectivePotential hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀
+      hE)
+    (momentum_ne_zero_iff hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (fun _ ↦ exists_hasDerivAt_momentum_neg hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (fun _ _ ↦ sub_le_integral hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) h₂
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
 /-- After any time `a`, the radius reaches the inner turning point within the time
 `1 + 2 ∫_{r₁}^{r₂} m dr / |p_r|`. -/
 private theorem exists_mem_Ioo_fst_eq (a : ℝ) :
-    ∃ s ∈ Ioo a (a + 1 + 2 * ∫ r in r₁..r₂, m / absRadialMomentum m U ℓ E r), (γ s).1 = r₁ := by
-  have hL : 0 ≤ ∫ r in r₁..r₂, m / absRadialMomentum m U ℓ E r :=
-    intervalIntegral.integral_nonneg h₁₂.le fun r _ ↦
-      div_nonneg hm.le (absRadialMomentum_nonneg _ _ _ _ _)
-  -- Passages are short, so the radial momentum vanishes at some time, at a turning point.
-  obtain ⟨u, hu, hpu⟩ : ∃ u ∈ Ioo a (a + 1 + ∫ r in r₁..r₂, m / absRadialMomentum m U ℓ E r),
-      (γ u).2 = 0 := by
-    by_contra! hne
-    have := sub_le_integral hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE (by linarith) hne
-    linarith
-  rcases radius_eq_or_eq hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hpu with hu' | hu'
-  · exact ⟨u, ⟨hu.1, by linarith [hu.2]⟩, hu'⟩
-  · obtain ⟨t, hut, ht, hneg⟩ := exists_inner hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hu'
-    have := sub_le_integral hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE hut.le
-      fun w hw ↦ (hneg w hw).ne
-    exact ⟨t, ⟨hu.1.trans hut, by linarith [hu.2]⟩, ht⟩
+    ∃ s ∈ Ioo a (a + 1 + 2 * ∫ r in r₁..r₂, m / absRadialMomentum m U ℓ E r), (γ s).1 = r₁ :=
+  exists_mem_Ioo_eq_of_forall_hasDerivAt_mul (inv_pos.2 hm)
+    (hasDerivAt_radius hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (continuous_momentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (mem_Icc_of_forall_hasDerivAt_effectivePotential hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀
+      hE)
+    (momentum_ne_zero_iff hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (fun _ ↦ exists_hasDerivAt_momentum_neg hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE)
+    (fun _ _ ↦ sub_le_integral hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE) a
 
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE in
 /-- **The motion reaches the inner turning point.** Under the hypotheses of
@@ -594,10 +552,7 @@ theorem periodic_of_forall_hasDerivAt_effectivePotential :
     Periodic γ (radialPeriod m U ℓ E r₁ r₂) := by
   intro t
   set T := radialPeriod m U ℓ E r₁ r₂
-  have hT : 0 < T := radialPeriod_pos hm hr₁ h₁₂
-    (hU.continuousOn.mono fun _ hr ↦ hr₁.trans_le hr.1) hlt
-    (fun _ ↦ ⟨_, hd₁, (hasDerivAt_deriv_effectivePotential hU hr₁).hasDerivWithinAt⟩)
-    (fun _ ↦ ⟨_, hd₂, (hasDerivAt_deriv_effectivePotential hU (hr₁.trans h₁₂)).hasDerivWithinAt⟩)
+  have hT : 0 < T := radialPeriod_pos_well hm hr₁ h₁₂ hU hlt hd₁ hd₂
   -- A passage through the inner turning point before `t`, and its translates by multiples of `T`.
   obtain ⟨s, hs, hs₁⟩ := exists_mem_Ioo_fst_eq hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
     (t - (1 + 2 * ∫ r in r₁..r₂, m / absRadialMomentum m U ℓ E r))
