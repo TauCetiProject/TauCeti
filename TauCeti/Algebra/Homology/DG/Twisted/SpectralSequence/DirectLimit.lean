@@ -134,17 +134,14 @@ noncomputable def indexSpectralSequenceFunctor :
   map_id i := by
     obtain ⟨η⟩ := S.nonempty_refl i
     rw [← η.reindexMap_indexSpectralSequenceMap_eq hM h𝒜,
-      ContinuationCocycle.indexSpectralSequenceMap_refl]
-    exact (SpectralSequence.reindexFunctor _ _ 3 0 (Equiv.refl _) (fun _ _ _ ↦ by simp)
-      (by lia)).map_id _
+      ContinuationCocycle.indexSpectralSequenceMap_refl, SpectralSequence.reindexMap_id]
   map_comp g g' := by
     obtain ⟨η⟩ := S.nonempty_comp (leOfHom g) (leOfHom g')
     rw [← η.reindexMap_indexSpectralSequenceMap_eq hM h𝒜,
       ContinuationCocycle.indexSpectralSequenceMap_comp hM _ _
         (fun _ _ ↦ ContinuationCocycle.ν_eq_zero_of_lt_of_nonpos _ h𝒜)
-        (fun _ _ ↦ ContinuationCocycle.ν_eq_zero_of_lt_of_nonpos _ h𝒜)]
-    exact (SpectralSequence.reindexFunctor _ _ 3 0 (Equiv.refl _) (fun _ _ _ ↦ by simp)
-      (by lia)).map_comp _ _
+        (fun _ _ ↦ ContinuationCocycle.ν_eq_zero_of_lt_of_nonpos _ h𝒜),
+      SpectralSequence.reindexMap_comp]
 
 /-- The value of `indexSpectralSequenceFunctor` at `i` is the index spectral sequence of `m i`
 from `E₂` on. -/
@@ -196,12 +193,14 @@ variable {P : Type uP} [Fintype P] [DecidableEq P] {ind : P → ℤ} (m : Twisti
 /-- The index spectral sequence functor of a constant continuation system has identity maps. -/
 theorem indexSpectralSequenceFunctor_const_map {i j : ι} (g : i ⟶ j) :
     ((const h ι m).indexSpectralSequenceFunctor hM h𝒜).map g = 𝟙 _ := by
-  rw [indexSpectralSequenceFunctor_map]
-  refine (congrArg (SpectralSequence.reindexMap (r₀' := 3) 0 (Equiv.refl _) (fun _ _ _ ↦ by simp)
-    (by lia)) (ContinuationCocycle.indexSpectralSequenceMap_refl (mP := m) hM fun _ _ ↦
-      ContinuationCocycle.ν_eq_zero_of_lt_of_nonpos _ h𝒜)).trans ?_
-  exact (SpectralSequence.reindexFunctor _ _ 3 0 (Equiv.refl _) (fun _ _ _ ↦ by simp)
-    (by lia)).map_id _
+  have hm := congrArg (SpectralSequence.reindexMap
+    (c' := fun r ↦ ComplexShape.up' (⟨r, 1 - r⟩ : ℤ × ℤ)) (r₀' := 3) 0 (Equiv.refl _)
+    (fun _ _ _ ↦ by simp) (by lia)) (ContinuationCocycle.indexSpectralSequenceMap_refl (mP := m)
+      hM fun _ _ ↦ ContinuationCocycle.ν_eq_zero_of_lt_of_nonpos _ h𝒜)
+  rw [SpectralSequence.reindexMap_id] at hm
+  rw [indexSpectralSequenceFunctor_map, const_ν]
+  -- `(const h ι m).m i` is `m` by definition (`const_m`).
+  exact hm
 
 end Const
 

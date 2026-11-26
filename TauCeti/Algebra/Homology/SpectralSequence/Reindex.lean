@@ -150,6 +150,17 @@ lemma reindexMap_congr {φ φ' : E ⟶ E'} (h : ∀ r (hr : r₀' ≤ r), φ.hom
   ext r hr j
   rw [reindexMap_hom_f, reindexMap_hom_f, h r hr]
 
+/-- Reindexing the identity morphism gives the identity morphism. -/
+@[simp]
+lemma reindexMap_id : reindexMap d f hf hd (𝟙 E) = 𝟙 _ :=
+  (rfl)
+
+/-- Reindexing a composite of morphisms gives the composite of the reindexed morphisms. -/
+@[simp, reassoc]
+lemma reindexMap_comp (φ : E ⟶ E') (ψ : E' ⟶ E'') :
+    reindexMap d f hf hd (φ ≫ ψ) = reindexMap d f hf hd φ ≫ reindexMap d f hf hd ψ :=
+  (rfl)
+
 variable (C c' r₀')
 
 /-- Reindexing spectral sequences, as a functor. -/
