@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
+import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.PDE.Vortex.Divisor.Normalized
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.WindowBound
 
@@ -72,98 +73,6 @@ namespace TauCeti.Vortex
 open Complex Filter Metric Set Topology
 open TauCeti.Polynomial
 open scoped ContDiff
-
-/-! ### The principal symbol of the linearized equation -/
-
-/-- The principal symbol of the linearized vortex equation `d₁ = TauCeti.Vortex.linearizedEquation`,
-as a bilinear map of a real covector `d` and a field value `v`: the terms of `d₁ (w v)` in the
-derivative `d = dw` of a real function `w` (`TauCeti.Vortex.linearizedEquation_fun_smul`). These
-are the last three rows of the symbol of the gauge-fixed operator
-(`TauCeti.Vortex.gaugeFixedOperatorSymbol_apply_succ`). -/
-def linearizedEquationSymbol :
-    (ℂ →L[ℝ] ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 3) :=
-  LinearMap.toContinuousLinearMap <|
-    (LinearMap.toContinuousLinearMap :
-        (EuclideanSpace ℝ (Fin 4) →ₗ[ℝ] EuclideanSpace ℝ (Fin 3)) ≃ₗ[ℝ]
-          (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 3))).toLinearMap ∘ₗ
-      LinearMap.mk₂ ℝ (fun (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) ↦
-        !₂[d I * v 0 - d 1 * v 1, d 1 * v 2 - d I * v 3, d 1 * v 3 + d I * v 2])
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-
-/-- The defining formula of `linearizedEquationSymbol`. -/
-@[simp]
-theorem linearizedEquationSymbol_apply (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4)) :
-    linearizedEquationSymbol d v =
-      !₂[d I * v 0 - d 1 * v 1, d 1 * v 2 - d I * v 3, d 1 * v 3 + d I * v 2] :=
-  (rfl)
-
-/-- The last three rows of the symbol of the gauge-fixed operator `L_x = d₀* ⊕ d₁` are the symbol of
-the linearized equation `d₁`, as the last three rows of `L_x` are
-`TauCeti.Vortex.linearizedEquation`. -/
-@[simp]
-theorem gaugeFixedOperatorSymbol_apply_succ (d : ℂ →L[ℝ] ℝ) (v : EuclideanSpace ℝ (Fin 4))
-    (i : Fin 3) : gaugeFixedOperatorSymbol d v i.succ = linearizedEquationSymbol d v i := by
-  fin_cases i <;> simp
-
-/-- **The Leibniz rule of the linearized equation** for a real weight `w`, with its exact symbol
-commutator: `d₁ (w y) = w d₁ y + σ(dw) y`. -/
-theorem linearizedEquation_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} {w : ℂ → ℝ} {z : ℂ}
-    (hw : DifferentiableAt ℝ w z) (hy : DifferentiableAt ℝ y z) :
-    linearizedEquation x (fun t ↦ w t • y t) z =
-      w z • linearizedEquation x y z + linearizedEquationSymbol (fderiv ℝ w z) (y z) := by
-  have hyi (i : Fin 4) : DifferentiableAt ℝ (fun t ↦ y t i) z :=
-    (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hy
-  have hd (i : Fin 4) (v : ℂ) :
-      fderiv ℝ (fun t ↦ w t * y t i) z v =
-        fderiv ℝ w z v * y z i + w z * fderiv ℝ (fun t ↦ y t i) z v := by
-    rw [fderiv_fun_mul hw (hyi i)]
-    simp only [add_apply, smul_apply, smul_eq_mul]
-    ring
-  ext i
-  fin_cases i <;>
-    simp [linearizedEquation_apply_zero, linearizedEquation_apply_one,
-      linearizedEquation_apply_two, hd] <;> ring
-
-/-- The quadratic term is homogeneous of degree two under multiplication by a real function. -/
-theorem quadraticTerm_fun_smul (y : ℂ → EuclideanSpace ℝ (Fin 4)) (w : ℂ → ℝ) (z : ℂ) :
-    quadraticTerm (fun t ↦ w t • y t) z = w z ^ 2 • quadraticTerm y z := by
-  ext i
-  fin_cases i <;>
-    simp [quadraticTerm_apply_zero, quadraticTerm_apply_one, quadraticTerm_apply_two] <;> ring
-
-/-! ### The equation on a graft -/
-
-/-- **The vortex defect of a graft.** For a cutoff `χ` and fields `x`, `y`, differentiable at
-`z`, the graft `x + χ (y - x)` has defect
-`(1 - χ) equation x + χ equation y + σ(dχ) (y - x) + (χ² - χ) quadraticTerm (y - x)` at `z`. -/
-theorem equation_lineMap {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {χ : ℂ → ℝ} {z : ℂ}
-    (hx : DifferentiableAt ℝ x z) (hy : DifferentiableAt ℝ y z) (hχ : DifferentiableAt ℝ χ z) :
-    equation (fun t ↦ AffineMap.lineMap (x t) (y t) (χ t)) z =
-      (1 - χ z) • equation x z + χ z • equation y z +
-        linearizedEquationSymbol (fderiv ℝ χ z) (y z - x z) +
-        (χ z ^ 2 - χ z) • quadraticTerm (y - x) z := by
-  have hi {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : DifferentiableAt ℝ u z) (i : Fin 4) :
-      DifferentiableAt ℝ (fun t ↦ u t i) z :=
-    (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp z hu
-  have hv : DifferentiableAt ℝ (y - x) z := hy.sub hx
-  have hχv : DifferentiableAt ℝ (fun t ↦ χ t • (y - x) t) z := hχ.smul hv
-  have hG : (fun t ↦ AffineMap.lineMap (x t) (y t) (χ t)) =
-      x + (1 : ℝ) • fun t ↦ χ t • (y - x) t := by
-    ext1 t
-    simp [AffineMap.lineMap_apply, add_comm]
-  have hy' : y = x + (1 : ℝ) • (y - x) := by simp
-  have hey : equation y z = equation x z + linearizedEquation x (y - x) z + quadraticTerm (y - x) z
-      := by
-    conv_lhs => rw [hy']
-    simpa using equation_add_smul (hi hx) (hi hv) 1
-  rw [hG, equation_add_smul (hi hx) (hi hχv), linearizedEquation_fun_smul x hχ hv,
-    quadraticTerm_fun_smul, hey]
-  simp only [Pi.sub_apply, one_smul, one_pow]
-  module
 
 /-! ### The initial vortex graft -/
 
@@ -261,47 +170,6 @@ theorem equation_vortexGraft_eq (hm : 0 < m) (f : ContDiffBump (0 : ℝ)) {χ : 
 
 /-! ### Uniform bounds for the cutoff error -/
 
-/-- The polarization of `TauCeti.Vortex.quadraticTerm`, a bilinear map of two field values. -/
-private def quadraticPairing :
-    EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 3) :=
-  LinearMap.toContinuousLinearMap <|
-    (LinearMap.toContinuousLinearMap :
-        (EuclideanSpace ℝ (Fin 4) →ₗ[ℝ] EuclideanSpace ℝ (Fin 3)) ≃ₗ[ℝ]
-          (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 3))).toLinearMap ∘ₗ
-      LinearMap.mk₂ ℝ (fun u v : EuclideanSpace ℝ (Fin 4) ↦
-        !₂[(u 2 * v 2 + u 3 * v 3) / 2, -u 0 * v 3 - u 1 * v 2, u 0 * v 2 - u 1 * v 3])
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-        (fun _ _ _ ↦ by ext i; fin_cases i <;> simp <;> ring)
-
-private theorem quadraticTerm_eq_quadraticPairing (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    quadraticTerm y = fun z ↦ quadraticPairing (y z) (y z) := by
-  ext z i
-  fin_cases i <;>
-    simp [quadraticPairing, quadraticTerm_apply_zero, quadraticTerm_apply_one,
-      quadraticTerm_apply_two]
-  ring
-
-/-- The derivatives of order `i ≤ n` of `χ² - χ` at `z` are at most `2ⁿ B² + B` when those of `χ`
-of order at most `n` are at most `B`. -/
-private theorem norm_iteratedFDeriv_sq_sub_le {n i : ℕ} {B : ℝ} {χ : ℂ → ℝ} {z : ℂ}
-    (hχ : ContDiff ℝ ∞ χ) (hχB : ∀ j ≤ n, ‖iteratedFDeriv ℝ j χ z‖ ≤ B) (hi : i ≤ n) :
-    ‖iteratedFDeriv ℝ i (fun z ↦ χ z ^ 2 - χ z) z‖ ≤ 2 ^ n * B * B + B := by
-  have hsq : ‖iteratedFDeriv ℝ i (fun z ↦ χ z * χ z) z‖ ≤ 2 ^ n * B * B := by
-    refine ((ContinuousLinearMap.mul ℝ ℝ).norm_iteratedFDeriv_le_of_bilinear_of_forall_le
-      (hχ.of_le (mod_cast le_top)).contDiffAt (hχ.of_le (mod_cast le_top)).contDiffAt
-      (fun j hj ↦ hχB j (by omega)) fun j hj ↦ hχB j (by omega)).trans ?_
-    have hB : 0 ≤ B := (norm_nonneg _).trans (hχB 0 (Nat.zero_le _))
-    have : (2 : ℝ) ^ i ≤ 2 ^ n := pow_le_pow_right₀ one_le_two hi
-    calc ‖ContinuousLinearMap.mul ℝ ℝ‖ * 2 ^ i * B * B ≤ 1 * 2 ^ n * B * B := by
-          gcongr; exact ContinuousLinearMap.opNorm_mul_le ℝ ℝ
-      _ = 2 ^ n * B * B := by ring
-  simp_rw [sq]
-  rw [fun_iteratedFDeriv_sub_apply ((hχ.mul hχ).of_le (mod_cast le_top)).contDiffAt
-    (hχ.of_le (mod_cast le_top)).contDiffAt]
-  exact (norm_sub_le _ _).trans (add_le_add hsq (hχB i hi))
-
 /-- **The cutoff error is bounded by the field it cuts off.** Let `χ` be a smooth real function
 whose derivatives of order at most `n + 1` are bounded by `B`, and `v` a smooth field whose
 derivatives of order at most `n + 1` at `z` are bounded by `K w`, with `0 ≤ w ≤ 1`. Then the
@@ -314,12 +182,12 @@ private theorem norm_iteratedFDeriv_cutoffError_le (n : ℕ) {B : ℝ} {χ : ℂ
     ‖iteratedFDeriv ℝ n (fun z ↦ linearizedEquationSymbol (fderiv ℝ χ z) (v z) +
         (χ z ^ 2 - χ z) • quadraticTerm v z) z‖ ≤
       (‖linearizedEquationSymbol‖ * 2 ^ n * B * K +
-        2 ^ n * (2 ^ n * B * B + B) * (‖quadraticPairing‖ * 2 ^ n * K ^ 2)) * w := by
+        2 ^ n * ((2 ^ n * (B * B) + B) * (‖quadraticTermBilinear‖ * 2 ^ n * K ^ 2))) * w := by
   have hχ' : ContDiff ℝ ∞ (fderiv ℝ χ) := hχ.fderiv_right le_rfl
   have hχ₂ : ContDiff ℝ ∞ fun z ↦ χ z ^ 2 - χ z := (hχ.pow 2).sub hχ
   have hQ : ContDiff ℝ ∞ (quadraticTerm v) := by
-    rw [quadraticTerm_eq_quadraticPairing]
-    exact (quadraticPairing.contDiff.comp hv).clm_apply hv
+    rw [quadraticTerm_eq_quadraticTermBilinear]
+    exact (quadraticTermBilinear.contDiff.comp hv).clm_apply hv
   have hS : ContDiff ℝ ∞ fun z ↦ linearizedEquationSymbol (fderiv ℝ χ z) (v z) :=
     (linearizedEquationSymbol.contDiff.comp hχ').clm_apply hv
   have hT : ContDiff ℝ ∞ fun z ↦ (χ z ^ 2 - χ z) • quadraticTerm v z := hχ₂.smul hQ
@@ -332,31 +200,25 @@ private theorem norm_iteratedFDeriv_cutoffError_le (n : ℕ) {B : ℝ} {χ : ℂ
       fun i hi ↦ hvK i (by omega)
   -- The quadratic term, bilinear in `v`, with `(K w)² ≤ K² w`.
   have hq (i : ℕ) (hi : i ≤ n) :
-      ‖iteratedFDeriv ℝ i (quadraticTerm v) z‖ ≤ ‖quadraticPairing‖ * 2 ^ n * K ^ 2 * w := by
-    rw [quadraticTerm_eq_quadraticPairing]
-    refine (quadraticPairing.norm_iteratedFDeriv_le_of_bilinear_of_forall_le
+      ‖iteratedFDeriv ℝ i (quadraticTerm v) z‖ ≤ ‖quadraticTermBilinear‖ * 2 ^ n * K ^ 2 * w := by
+    rw [quadraticTerm_eq_quadraticTermBilinear]
+    refine (quadraticTermBilinear.norm_iteratedFDeriv_le_of_bilinear_of_forall_le
       (hv.of_le (mod_cast le_top)).contDiffAt (hv.of_le (mod_cast le_top)).contDiffAt
       (fun j hj ↦ hvK j (by omega)) fun j hj ↦ hvK j (by omega)).trans ?_
     have : (2 : ℝ) ^ i ≤ 2 ^ n := pow_le_pow_right₀ one_le_two hi
     have : K ^ 2 * (w * w) ≤ K ^ 2 * w := by gcongr; exact mul_le_of_le_one_right hw₀ hw
-    calc ‖quadraticPairing‖ * 2 ^ i * (K * w) * (K * w) =
-          ‖quadraticPairing‖ * 2 ^ i * (K ^ 2 * (w * w)) := by ring
-      _ ≤ ‖quadraticPairing‖ * 2 ^ n * (K ^ 2 * w) := by gcongr
+    calc ‖quadraticTermBilinear‖ * 2 ^ i * (K * w) * (K * w) =
+          ‖quadraticTermBilinear‖ * 2 ^ i * (K ^ 2 * (w * w)) := by ring
+      _ ≤ ‖quadraticTermBilinear‖ * 2 ^ n * (K ^ 2 * w) := by gcongr
       _ = _ := by ring
-  have hc (i : ℕ) (hi : i ≤ n) :
-      ‖iteratedFDeriv ℝ i (fun z ↦ χ z ^ 2 - χ z) z‖ ≤ 2 ^ n * B * B + B :=
-    norm_iteratedFDeriv_sq_sub_le hχ (fun j hj ↦ hχB j (by omega) z) hi
+  have hc : ∀ i ≤ n, ‖iteratedFDeriv ℝ i (fun z ↦ χ z ^ 2 - χ z) z‖ ≤ 2 ^ n * (B * B) + B :=
+    (hχ.of_le (mod_cast le_top)).norm_iteratedFDeriv_sq_sub_self_le_two_pow
+      fun j hj ↦ hχB j (by omega) z
   have h₂ : ‖iteratedFDeriv ℝ n (fun z ↦ (χ z ^ 2 - χ z) • quadraticTerm v z) z‖ ≤
-      2 ^ n * (2 ^ n * B * B + B) * (‖quadraticPairing‖ * 2 ^ n * K ^ 2 * w) := by
-    refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_iteratedFDeriv_le_of_bilinear_of_forall_le
-      (hχ₂.of_le (mod_cast le_top)).contDiffAt (hQ.of_le (mod_cast le_top)).contDiffAt
-      (fun i hi ↦ hc i hi) fun i hi ↦ hq i hi).trans ?_
-    have hB : 0 ≤ 2 ^ n * B * B + B := (norm_nonneg _).trans (hc 0 (Nat.zero_le _))
-    calc ‖(ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] _ →L[ℝ] EuclideanSpace ℝ (Fin 3))‖ * 2 ^ n *
-          (2 ^ n * B * B + B) * (‖quadraticPairing‖ * 2 ^ n * K ^ 2 * w) ≤
-          1 * 2 ^ n * (2 ^ n * B * B + B) * (‖quadraticPairing‖ * 2 ^ n * K ^ 2 * w) := by
-          gcongr; exact ContinuousLinearMap.opNorm_lsmul_le
-      _ = _ := by ring
+      2 ^ n * ((2 ^ n * (B * B) + B) * (‖quadraticTermBilinear‖ * 2 ^ n * K ^ 2 * w)) :=
+    (ContinuousLinearMap.lsmul ℝ ℝ).norm_iteratedFDeriv_le_two_pow_mul_of_bilinear
+      ContinuousLinearMap.opNorm_lsmul_le (hχ₂.of_le (mod_cast le_top))
+      (hQ.of_le (mod_cast le_top)) hc hq le_rfl
   rw [fun_iteratedFDeriv_add_apply (hS.of_le (mod_cast le_top)).contDiffAt
     (hT.of_le (mod_cast le_top)).contDiffAt]
   refine (norm_add_le _ _).trans ((add_le_add h₁ h₂).trans_eq ?_)
@@ -392,7 +254,7 @@ theorem exists_norm_iteratedFDeriv_equation_vortexGraft_le_mul_exp_of_isBounded 
   have hL₀ : 0 ≤ L := Finset.sum_nonneg fun j _ ↦ hK₀ j
   set B' := max B 0
   refine ⟨‖linearizedEquationSymbol‖ * 2 ^ n * B' * L +
-    2 ^ n * (2 ^ n * B' * B' + B') * (‖quadraticPairing‖ * 2 ^ n * L ^ 2), by positivity,
+    2 ^ n * ((2 ^ n * (B' * B') + B') * (‖quadraticTermBilinear‖ * 2 ^ n * L ^ 2)), by positivity,
     fun χ hχ hχB h₁ a ha z ↦ ?_⟩
   rw [equation_vortexGraft_eq hm f (hχ.differentiable (by simp)) h₁ a]
   have hexp : Real.exp (-(c' * ‖z‖)) ≤ 1 :=
@@ -405,11 +267,6 @@ theorem exists_norm_iteratedFDeriv_equation_vortexGraft_le_mul_exp_of_isBounded 
   exact le_max_left c 0
 
 /-! ### Dilated cutoffs -/
-
-/-- `‖R⁻¹ • z‖ ≤ r` exactly when `‖z‖ ≤ r R`, for `R > 0`. -/
-private theorem norm_inv_smul_le_iff {R r : ℝ} (hR : 0 < R) (z : ℂ) :
-    ‖R⁻¹ • z‖ ≤ r ↔ ‖z‖ ≤ r * R := by
-  rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, inv_mul_le_iff₀ hR, mul_comm]
 
 /-- **The graft with a dilated cutoff is an exact solution off an annulus.** Let `φ` be a bump
 function on `ℂ`, one on the closed ball of radius `φ.rIn` and zero outside the ball of radius
@@ -426,7 +283,8 @@ theorem equation_vortexGraft_comp_smul_eventuallyEq_zero (hm : 0 < m) (f : ContD
     have h₁ : (fun w ↦ φ (R⁻¹ • w)) =ᶠ[𝓝 w] 1 := by
       filter_upwards [hU.mem_nhds hw] with u hu
       exact φ.one_of_mem_closedBall (by
-        rw [mem_closedBall, dist_zero_right, norm_inv_smul_le_iff hR]; exact hu.le)
+        rw [mem_closedBall, dist_zero_right, norm_inv_smul_of_nonneg hR.le, div_le_iff₀ hR]
+        exact hu.le)
     rw [Pi.zero_apply, equation_congr_nhds (vortexGraft_eventuallyEq_normalizedVortex f a h₁),
       equation_normalizedVortex hm a w]
   · have hU : IsOpen {w : ℂ | φ.rOut * R < ‖w‖} := isOpen_lt continuous_const continuous_norm
@@ -434,9 +292,8 @@ theorem equation_vortexGraft_comp_smul_eventuallyEq_zero (hm : 0 < m) (f : ContD
     have h₀ : (fun w ↦ φ (R⁻¹ • w)) =ᶠ[𝓝 w] 0 := by
       filter_upwards [hU.mem_nhds hw] with u hu
       refine φ.zero_of_le_dist ?_
-      rw [dist_zero_right]
-      by_contra h
-      exact (((norm_inv_smul_le_iff hR u).1 (not_le.1 h).le).trans_lt hu).false
+      rw [dist_zero_right, norm_inv_smul_of_nonneg hR.le, le_div_iff₀ hR]
+      exact hu.le
     have hw' : f.rOut < ‖w‖ ^ 2 := by
       have : φ.rIn * R < ‖w‖ :=
         (mul_lt_mul_of_pos_right φ.rIn_lt_rOut hR).trans hw
@@ -488,7 +345,7 @@ theorem exists_norm_iteratedFDeriv_equation_vortexGraft_comp_smul_le_mul_exp (hm
         (hC j hj _) (norm_nonneg _) (by positivity)
     have h₁ (w : ℂ) (hw : ‖w‖ ^ 2 ≤ f.rOut) : φ (R⁻¹ • w) = 1 := by
       refine φ.one_of_mem_closedBall ?_
-      rw [mem_closedBall, dist_zero_right, norm_inv_smul_le_iff hR₀]
+      rw [mem_closedBall, dist_zero_right, norm_inv_smul_of_nonneg hR₀.le, div_le_iff₀ hR₀]
       by_contra h
       exact (hw.trans_lt hrOut).not_ge
         (pow_le_pow_left₀ (mul_pos φ.rIn_pos hR₀).le (le_of_not_ge h) 2)
