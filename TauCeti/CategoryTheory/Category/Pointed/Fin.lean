@@ -106,6 +106,14 @@ lemma id_toFun (i : Fin (n.len + 1)) : Hom.toFun (𝟙 n) i = i := rfl
 lemma comp_toFun (f : m ⟶ n) (g : n ⟶ k) (i : Fin (m.len + 1)) :
     (f ≫ g).toFun i = g.toFun (f.toFun i) := rfl
 
+/-- If `g` sends `x` to an element other than the basepoint, then `x` is not the basepoint. -/
+lemma exists_eq_succ_of_toFun_eq_succ {g : n ⟶ k} {x : Fin (n.len + 1)} {c : Fin k.len}
+    (h : g.toFun x = c.succ) : ∃ j : Fin n.len, x = j.succ := by
+  obtain h0 | hj := Fin.eq_zero_or_eq_succ x
+  · rw [h0, Hom.map_zero] at h
+    exact absurd h.symm (Fin.succ_ne_zero c)
+  · exact hj
+
 /-! ### The comparison with pointed types -/
 
 /-- The functor from `FinPointed` to pointed types, sending `⟨n⟩` to `Fin (n + 1)` pointed at
