@@ -10,7 +10,7 @@ public import TauCeti.Examples.CategoryTheory.Sites.Descent.BandFixtures.Constan
 /-!
 # Checks for the evaluation of intrinsic central sections
 
-On the point site `Discrete PUnit`, the constant pseudofunctor `B(G)` (`BandFixtures.constant`)
+On the point site `Discrete PUnit`, the constant pseudofunctor `B(G)` (`Pseudofunctor.constant`)
 has as its only fibre the one-object groupoid of a group `G`. The evaluation of an intrinsic
 central section of `B(G)` is a central element of `G` (`IntrinsicBandSections.evaluation_comm`).
 

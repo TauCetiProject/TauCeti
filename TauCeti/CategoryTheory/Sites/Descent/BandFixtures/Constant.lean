@@ -5,33 +5,29 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
+public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Basic
 
 /-!
 # Central sections of a constant pseudofunctor
 
-For a category `D`, the constant pseudofunctor `BandFixtures.constant C D` on `C` has every fibre
-`D` and every pullback functor the identity (Mathlib's `Functor.toPseudofunctor'` of the constant
-functor at `D`). A unit `z` of the categorical centre of `D` is then a central section over every
-`U`, with value `z` at every arrow `V ⟶ U` (`BandFixtures.constantSection`), and every central
-section is of this form: the units of the centre of `D` are the central sections over `U`
-(`BandFixtures.constantSectionsEquiv`), the inverse evaluating a section at the identity of `U`.
+For a category `D`, the constant pseudofunctor `Pseudofunctor.constant C D` on `C` has every
+fibre `D` and every pullback functor the identity. A unit `z` of the categorical centre of `D` is
+then a central section over every `U`, with value `z` at every arrow `V ⟶ U`
+(`BandFixtures.constantSection`), and every central section is of this form: the units of the
+centre of `D` are the central sections over `U` (`BandFixtures.constantSectionsEquiv`), the
+inverse evaluating a section at the identity of `U`.
 Restriction along any arrow keeps the centre unit. No topology or terminal object is used.
 
 ## Main definitions
 
 In the namespace `CategoryTheory.Pseudofunctor.BandFixtures`:
 
-* `constant C D`: the constant pseudofunctor on `C` with fibre `D`.
 * `constantSection U z`: the central section over `U` with value `z` at every arrow.
 * `constantSectionsEquiv C D U : (CatCenter D)ˣ ≃* IntrinsicBandSections (constant C D) U`.
 
 ## Main results
 
-* `constant_obj`, `constant_map`, `constant_mapId`, `constant_mapComp`: every fibre of
-  `constant C D` is `D`, every pullback functor is the identity, and the unit and composition
-  isomorphisms are identities.
 * `val_constantSection`, `restrict_constantSection`: the value at every arrow is `z`, and
   restriction gives the constant section of the same `z`.
 * `val_eq_val_id_of_constant`: a central section has the same value at every arrow as at the
@@ -53,38 +49,7 @@ open CategoryTheory Opposite Bicategory
 
 namespace CategoryTheory.Pseudofunctor.BandFixtures
 
-variable (C : Type u) [Category.{v} C] (D : Type u') [Category.{v'} D]
-
-/-- The **constant pseudofunctor** on `C` with fibre `D`: every fibre is `D` and every pullback
-functor is the identity. -/
-@[expose]
-def constant : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'} :=
-  ((Functor.const Cᵒᵖ).obj (Cat.of D)).toPseudofunctor'
-
-variable {C D}
-
--- Not `@[simp]`: `simp` would rewrite the fibre inside the types of central sections, so the
--- left-hand sides of `constantSectionsEquiv_apply` and similar lemmas would not be in normal form.
-/-- The fibres of the constant pseudofunctor are `D`. -/
-theorem constant_obj (X : LocallyDiscrete Cᵒᵖ) : (constant C D).obj X = Cat.of D :=
-  rfl
-
-/-- The pullback functors of the constant pseudofunctor are the identity. -/
-@[simp]
-theorem constant_map {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) :
-    (constant C D).map f = 𝟙 (Cat.of D) :=
-  rfl
-
-/-- The unit isomorphisms of the constant pseudofunctor are identities. -/
-@[simp]
-theorem constant_mapId (X : LocallyDiscrete Cᵒᵖ) : (constant C D).mapId X = Iso.refl _ :=
-  rfl
-
-/-- The composition isomorphisms of the constant pseudofunctor are identities. -/
-@[simp]
-theorem constant_mapComp {X Y Z : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    (constant C D).mapComp f g = Iso.refl _ :=
-  rfl
+variable {C : Type u} [Category.{v} C] {D : Type u'} [Category.{v'} D]
 
 /-- The **constant section** over `U` of a unit `z` of the centre of `D`: the central section of
 the constant pseudofunctor with value `z` at every arrow `V ⟶ U`. -/
