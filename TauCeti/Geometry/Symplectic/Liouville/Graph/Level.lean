@@ -116,6 +116,12 @@ theorem liouvilleGraphFunction_def [Nonempty S] (x : M) :
       f (invFunOn (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) (Ioi 0 ×ˢ univ) x).2 :=
   (rfl)
 
+/-- The defining function of the Liouville graph of a positive function is positive. -/
+theorem liouvilleGraphFunction_pos [Nonempty S] (hf : ∀ s, 0 < f s) (x : M) :
+    0 < liouvilleGraphFunction Z W ι f x := by
+  rw [liouvilleGraphFunction_def]
+  exact div_pos (liouvilleRadialCoordinate_pos Z W x) (hf _)
+
 namespace IsLiouvilleCompletion
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I (⊤ : ℕ∞) M] [T2Space M]
