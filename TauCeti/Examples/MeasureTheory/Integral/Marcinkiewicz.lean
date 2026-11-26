@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 public import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -70,11 +71,6 @@ theorem rankOneOperator_apply (g : ℝ → ℝ) (y : ℝ) :
     rankOneOperator g y = (∫⁻ x in Icc 0 1, ‖g x‖ₑ) * ‖y‖ₑ ^ (-(1 / 2 : ℝ)) :=
   (rfl)
 
-/-- For `y ≠ 0`, the extended norm of the real power `|y| ^ s` is `‖y‖ₑ ^ s`. -/
-private theorem eNorm_abs_rpow {y : ℝ} (hy : y ≠ 0) (s : ℝ) : ‖|y| ^ s‖ₑ = ‖y‖ₑ ^ s := by
-  rw [Real.eNorm_eq_ofReal (Real.rpow_nonneg (abs_nonneg y) _), Real.eNorm_eq_ofReal_abs,
-    ENNReal.ofReal_rpow_of_pos (abs_pos.2 hy)]
-
 /-- The rank-one operator dominates the modulus of the linear operator
 `f ↦ (∫_0^1 f) |y|^{-1/2}`. -/
 theorem eNorm_setIntegral_mul_abs_rpow_le_rankOneOperator (g : ℝ → ℝ) (y : ℝ) :
@@ -84,7 +80,7 @@ theorem eNorm_setIntegral_mul_abs_rpow_le_rankOneOperator (g : ℝ → ℝ) (y :
   · simp
   · gcongr
     · exact eNorm_integral_le_lintegral_eNorm _
-    · rw [eNorm_abs_rpow hy]
+    · rw [Real.eNorm_abs_rpow_of_ne_zero hy]
 
 /-- The rank-one operator is subadditive. -/
 theorem rankOneOperator_add_le {g : ℝ → ℝ} (hg : AEMeasurable g (volume.restrict (Icc 0 1)))
@@ -232,7 +228,7 @@ theorem not_exists_lintegral_eNorm_setIntegral_mul_abs_rpow_le :
   rw [← lintegral_eNorm_rpow_neg_one_eq_top]
   refine lintegral_congr_ae ((Measure.ae_ne volume 0).mono fun y hy => ?_)
   simp only [hint, one_mul]
-  rw [eNorm_abs_rpow hy, ← ENNReal.rpow_mul]
+  rw [Real.eNorm_abs_rpow_of_ne_zero hy, ← ENNReal.rpow_mul]
   norm_num
 
 end TauCeti.Examples.MarcinkiewiczRankOne
