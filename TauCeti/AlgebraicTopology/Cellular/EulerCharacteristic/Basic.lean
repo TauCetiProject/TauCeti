@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.DirectSum.Finite
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
 public import TauCeti.AlgebraicTopology.Cellular.Projective
+import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
 # Euler--Poincaré for cellular chains

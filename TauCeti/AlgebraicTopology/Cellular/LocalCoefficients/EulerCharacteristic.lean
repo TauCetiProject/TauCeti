@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWTyp
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Coproduct
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Homology
 public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
+import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
 # Finiteness and Euler--Poincaré for homology with local coefficients

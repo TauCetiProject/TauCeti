@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.ObjectProperty.Extensions
+public import Mathlib.Data.Int.Interval
 public import TauCeti.Algebra.Homology.SpectralObject.Basic
 public import TauCeti.Algebra.Homology.SpectralObject.Stabilization
+import Mathlib.CategoryTheory.ObjectProperty.EpiMono
+import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # The abutment of a spectral object indexed by `EInt` and its filtration
@@ -16,7 +20,8 @@ Let `X` be a spectral object in an abelian category, indexed by `EInt`. Its abut
 filtered by the images of the maps `H^n(⊥ ≤ q) ⟶ H^n(⊥ ≤ ⊤)`: the `q`th piece is
 `opZ^n(⊥ ≤ q, q ≤ ⊤)`, the cokernel of `δ : H^{n-1}(q ≤ ⊤) ⟶ H^n(⊥ ≤ q)`, embedded in the abutment
 by `X.abutmentFiltrationι q n` (a monomorphism, by exactness). The pieces increase with `q`
-(`X.abutmentFiltrationMap q n`, a monomorphism compatible with the embeddings), and the limit object
+(`X.abutmentFiltrationMap q n`, a monomorphism compatible with the embeddings whose cokernel
+sequence is short exact via `TauCeti.cokernelSequence_shortExact`), and the limit object
 `X.EInfty q n = E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` of the spectral sequence is the graded piece: the cokernel
 of `F_q H^n ⟶ F_{q+1} H^n` (`X.EInftyIsoCokernel`), from Mathlib's short exact sequence
 `shortComplexOpcyclesThreeδ₂Toδ₁_shortExact`.
@@ -32,7 +37,13 @@ abutment, so is `F_a H^n` (`isIso_abutmentFiltrationι_of_isZero_EInfty`). If `H
 `H^n(b ≤ ⊤)` vanish for some `b ≤ a`, the abutment itself vanishes
 (`isZero_abutment_of_le`); this is the case `⊥ ≤ b ≤ a ≤ ⊤` of
 `isZero_H_obj_mk₁_of_isZero_of_isZero`, which holds for three composable morphisms in any index
-category.
+category. Any extension-closed `ObjectProperty` propagates along the filtration from `F_a H^n` and
+the graded pieces on `Ico a b` to `F_b H^n` (`prop_abutmentFiltration_of_forall_prop_cokernel`)
+and, when also closed under isomorphisms and exhaustive at `b`, to `X.abutment n`
+(`prop_abutment_of_forall_prop_cokernel`). Specializing to `IsZero` yields vanishing of the
+filtration and abutment from vanishing graded pieces
+(`isZero_abutmentFiltration_of_forall_isZero_cokernel`,
+`isZero_abutment_of_forall_isZero_cokernel`).
 
 ## Main definitions
 
@@ -43,6 +54,11 @@ category.
 * `CategoryTheory.Abelian.SpectralObject.abutmentFiltrationMapOfLE X a b n hab`: the comparison
   `F_a H^n ⟶ F_b H^n`, an isomorphism under the vanishing of the limit objects between `a` and
   `b` (`isIso_abutmentFiltrationMapOfLE_of_isZero_EInfty`).
+* `CategoryTheory.Abelian.SpectralObject.prop_abutmentFiltration_of_forall_prop_cokernel` and
+  `CategoryTheory.Abelian.SpectralObject.prop_abutment_of_forall_prop_cokernel`: propagation of an
+  extension-closed `ObjectProperty` along a finite abutment filtration, specialized to `IsZero` in
+  `isZero_abutmentFiltration_of_forall_isZero_cokernel` and
+  `isZero_abutment_of_forall_isZero_cokernel`.
 -/
 
 public section
@@ -104,6 +120,48 @@ lemma abutmentFiltrationMap_ι (q n : ℤ) :
 a monomorphism, since both embed into the abutment compatibly. -/
 instance (q n : ℤ) : Mono (X.abutmentFiltrationMap q n) :=
   mono_of_mono_fac (X.abutmentFiltrationMap_ι q n)
+
+/-- If an extension-closed property `P` holds for `F_a H^n` and for every graded piece
+`F_{q+1} H^n / F_q H^n` on `Ico a b`, then it holds for `F_b H^n`. -/
+theorem prop_abutmentFiltration_of_forall_prop_cokernel (P : ObjectProperty C)
+    [P.IsClosedUnderExtensions] {a b n : ℤ} (hab : a ≤ b) (ha : P (X.abutmentFiltration a n))
+    (hcok : ∀ q ∈ Finset.Ico a b, P (cokernel (X.abutmentFiltrationMap q n))) :
+    P (X.abutmentFiltration b n) := by
+  induction b, hab using Int.leInduction with
+  | base => exact ha
+  | succ q haq ih =>
+    exact P.prop_X₂_of_shortExact
+      (TauCeti.cokernelSequence_shortExact (X.abutmentFiltrationMap q n))
+      (ih fun i hi ↦ hcok i (Finset.Ico_subset_Ico_right (Int.le_add_one le_rfl) hi))
+      (hcok q (Finset.mem_Ico.2 ⟨haq, Int.lt_add_one_iff.2 le_rfl⟩))
+
+/-- If a property `P` closed under extensions and isomorphisms holds for `F_a H^n` and for every
+graded piece `F_{q+1} H^n / F_q H^n` on `Ico a b`, and the filtration is exhaustive at `b ≥ a`,
+then `P` holds for `X.abutment n`. -/
+theorem prop_abutment_of_forall_prop_cokernel (P : ObjectProperty C)
+    [P.IsClosedUnderExtensions] [P.IsClosedUnderIsomorphisms] {a b n : ℤ} (hab : a ≤ b)
+    (ha : P (X.abutmentFiltration a n)) (hb : IsIso (X.abutmentFiltrationι b n))
+    (hcok : ∀ q ∈ Finset.Ico a b, P (cokernel (X.abutmentFiltrationMap q n))) :
+    P (X.abutment n) :=
+  have := hb
+  P.prop_of_iso (asIso (X.abutmentFiltrationι b n))
+    (X.prop_abutmentFiltration_of_forall_prop_cokernel P hab ha hcok)
+
+/-- If `F_a H^n` is zero and every graded piece `F_{q+1} H^n / F_q H^n` for `a ≤ q < b` is zero,
+then `F_b H^n` is zero. -/
+theorem isZero_abutmentFiltration_of_forall_isZero_cokernel {a b n : ℤ} (hab : a ≤ b)
+    (ha : IsZero (X.abutmentFiltration a n))
+    (hcok : ∀ q ∈ Finset.Ico a b, IsZero (cokernel (X.abutmentFiltrationMap q n))) :
+    IsZero (X.abutmentFiltration b n) :=
+  X.prop_abutmentFiltration_of_forall_prop_cokernel IsZero hab ha hcok
+
+/-- If the filtration of `X.abutment n` starts at `0` at `a`, exhausts the abutment at `b ≥ a`, and
+has vanishing graded pieces on `Ico a b`, then `X.abutment n` is zero. -/
+theorem isZero_abutment_of_forall_isZero_cokernel {a b n : ℤ} (hab : a ≤ b)
+    (ha : IsZero (X.abutmentFiltration a n)) (hb : IsIso (X.abutmentFiltrationι b n))
+    (hcok : ∀ q ∈ Finset.Ico a b, IsZero (cokernel (X.abutmentFiltrationMap q n))) :
+    IsZero (X.abutment n) :=
+  X.prop_abutment_of_forall_prop_cokernel IsZero hab ha hb hcok
 
 /-- The limit object `E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` of the spectral sequence is the graded piece
 `F_{q+1} H^n / F_q H^n` of the filtration of the abutment. -/

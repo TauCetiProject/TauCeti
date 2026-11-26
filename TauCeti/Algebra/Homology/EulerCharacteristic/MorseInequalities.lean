@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
 public import TauCeti.Algebra.Polynomial.BigOperators
+import Mathlib.LinearAlgebra.Dimension.DivisionRing
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Algebra.BigOperators.AlternatingSum
 
 /-!
 # The Morse inequalities for chain complexes of vector spaces

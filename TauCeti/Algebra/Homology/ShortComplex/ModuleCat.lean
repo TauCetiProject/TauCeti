@@ -20,13 +20,24 @@ modulo the range of the first.  The projection of Mathlib's explicit left homolo
 `S.moduleCatLeftHomologyData` from the kernel onto the homology is surjective, and identifies two
 elements exactly when their difference is in the range of the first map
 (`CategoryTheory.ShortComplex.moduleCatLeftHomologyData_π_hom_eq_iff`).  This file also records
-two finiteness consequences of that description:
+three finiteness and rank consequences of that description:
 
 * over a ring for which the middle module is noetherian, the homology is finitely generated;
-* over a ring satisfying the strong rank condition, when the middle term is finite, the
-  homology has rank at most that of the middle term; if the ring also satisfies rank-nullity
-  (for instance a division ring or a commutative domain), the rank of the homology plus the rank
-  of the range of the first map is the rank of the kernel of the second.
+* over any ring, if a short complex is exact with epimorphic second map and finitely generated
+  outer terms, the middle term is finitely generated
+  (`CategoryTheory.ShortComplex.Exact.moduleCat_finite_X₂`,
+  `CategoryTheory.ShortComplex.ShortExact.moduleCat_finite_X₂`);
+* over a ring satisfying rank-nullity (for instance a division ring or a commutative domain), when
+  the middle term has finite cardinal rank (`Module.rank k S.X₂ < ℵ₀`), the rank of the homology
+  plus the rank of the range of the first map is the rank of the kernel of the second
+  (`CategoryTheory.ShortComplex.finrank_homology_add_finrank_range_f_of_rank_lt_aleph0`), so the
+  rank of the middle term is the rank of the homology plus the ranks of the incoming and outgoing
+  images (`CategoryTheory.ShortComplex.finrank_X₂_eq_finrank_homology_add_of_rank_lt_aleph0`).
+  Over a ring also satisfying the strong rank condition, the same identities hold whenever the
+  middle term is finitely generated
+  (`CategoryTheory.ShortComplex.finrank_homology_add_finrank_range_f`,
+  `CategoryTheory.ShortComplex.finrank_X₂_eq_finrank_homology_add`), and the homology has rank at
+  most that of the middle term.
 
 It also defines the `A`-dual `X₃* ⟶ X₂* ⟶ X₁*` of a short complex of left `A`-modules, a short
 complex of right `A`-modules (`CategoryTheory.ShortComplex.moduleCatOpDual`), and shows that the
@@ -57,13 +68,29 @@ theorem finite_homology {k : Type u} [Ring k] (S : ShortComplex (ModuleCat.{v} k
     inferInstanceAs (Module.Finite k (LinearMap.ker S.g.hom ⧸ LinearMap.range S.moduleCatToCycles))
   .equiv S.moduleCatHomologyIso.toLinearEquiv.symm
 
-variable {k : Type u} [Ring k] [StrongRankCondition k]
+/-- Over any ring `R`, if `X₁ ⟶ X₂ ⟶ X₃` is exact in `ModuleCat R` with `X₂ ⟶ X₃` an epimorphism
+and `X₁`, `X₃` finitely generated, then `X₂` is finitely generated. -/
+theorem Exact.moduleCat_finite_X₂ {R : Type u} [Ring R] {S : ShortComplex (ModuleCat.{v} R)}
+    (hS : S.Exact) [Epi S.g] [Module.Finite R S.X₁] [Module.Finite R S.X₃] :
+    Module.Finite R S.X₂ :=
+  Module.Finite.of_exact (f := S.f.hom) (g := S.g.hom)
+    ((ShortExact.moduleCat_exact_iff_function_exact S).1 hS)
+    ((ModuleCat.epi_iff_surjective S.g).1 inferInstance)
 
-/-- For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules with `X₂` finite, over a ring satisfying
-rank-nullity and the strong rank condition (for instance a division ring or a commutative domain),
+/-- Over any ring `R`, if `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` is a short exact sequence in `ModuleCat R` with
+`X₁` and `X₃` finitely generated, then `X₂` is finitely generated. -/
+theorem ShortExact.moduleCat_finite_X₂ {R : Type u} [Ring R] {S : ShortComplex (ModuleCat.{v} R)}
+    (hS : S.ShortExact) [Module.Finite R S.X₁] [Module.Finite R S.X₃] :
+    Module.Finite R S.X₂ :=
+  have := hS.epi_g
+  hS.exact.moduleCat_finite_X₂
+
+/-- For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules whose middle term has finite cardinal rank,
+over a ring satisfying rank-nullity (for instance a division ring or a commutative domain),
 the rank of the homology plus the rank of `im f` is the rank of `ker g`. -/
-theorem finrank_homology_add_finrank_range_f [HasRankNullity.{v} k]
-    (S : ShortComplex (ModuleCat.{v} k)) [Module.Finite k S.X₂] :
+theorem finrank_homology_add_finrank_range_f_of_rank_lt_aleph0 {k : Type u} [Ring k]
+    [HasRankNullity.{v} k] (S : ShortComplex (ModuleCat.{v} k))
+    (hX : Module.rank k S.X₂ < ℵ₀) :
     finrank k S.homology + finrank k (LinearMap.range S.f.hom) =
       finrank k (LinearMap.ker S.g.hom) := by
   have hle : LinearMap.range S.f.hom ≤ LinearMap.ker S.g.hom := by
@@ -72,13 +99,52 @@ theorem finrank_homology_add_finrank_range_f [HasRankNullity.{v} k]
   -- Rank-nullity for the boundaries inside the cycles, at the level of cardinal ranks: the cycles
   -- need not be finitely generated, but their rank is finite as a submodule of `X₂`.
   have h := (LinearMap.range S.moduleCatToCycles).rank_quotient_add_rank
-  have hK : Module.rank k (LinearMap.ker S.g.hom) < ℵ₀ :=
-    (Submodule.rank_le _).trans_lt (Module.rank_lt_aleph0 k S.X₂)
+  have hK : Module.rank k (LinearMap.ker S.g.hom) < ℵ₀ := (Submodule.rank_le _).trans_lt hX
   rw [← h, add_lt_aleph0_iff] at hK
   rw [S.moduleCatHomologyIso.toLinearEquiv.finrank_eq, moduleCatLeftHomologyData_H,
     ← (Submodule.comapSubtypeEquivOfLe hle).finrank_eq,
     ← LinearMap.range_codRestrict _ _ S.moduleCat_zero_apply]
   simp only [finrank, ← h, toNat_add hK.1 hK.2]
+
+/-- For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules whose middle term has finite cardinal rank,
+over a ring satisfying rank-nullity, the rank of `X₂` is the rank of the homology plus the ranks
+of the incoming and outgoing images. -/
+theorem finrank_X₂_eq_finrank_homology_add_of_rank_lt_aleph0 {k : Type u} [Ring k]
+    [HasRankNullity.{v} k] (S : ShortComplex (ModuleCat.{v} k))
+    (hX : Module.rank k S.X₂ < ℵ₀) :
+    finrank k S.X₂ =
+      finrank k S.homology + finrank k (LinearMap.range S.f.hom) +
+        finrank k (LinearMap.range S.g.hom) := by
+  have h₁ := S.finrank_homology_add_finrank_range_f_of_rank_lt_aleph0 hX
+  have h := (LinearMap.ker S.g.hom).rank_quotient_add_rank
+  have hX' := hX
+  rw [← h, add_lt_aleph0_iff] at hX'
+  have h₂ : finrank k (LinearMap.range S.g.hom) + finrank k (LinearMap.ker S.g.hom) =
+      finrank k S.X₂ := by
+    rw [← S.g.hom.quotKerEquivRange.finrank_eq]
+    simp only [finrank, ← h, toNat_add hX'.1 hX'.2]
+  lia
+
+variable {k : Type u} [Ring k] [StrongRankCondition k]
+
+/-- For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules with `X₂` finite, over a ring satisfying
+rank-nullity and the strong rank condition (for instance a division ring or a commutative domain),
+the rank of the homology plus the rank of `im f` is the rank of `ker g`. -/
+theorem finrank_homology_add_finrank_range_f [HasRankNullity.{v} k]
+    (S : ShortComplex (ModuleCat.{v} k)) [Module.Finite k S.X₂] :
+    finrank k S.homology + finrank k (LinearMap.range S.f.hom) =
+      finrank k (LinearMap.ker S.g.hom) :=
+  S.finrank_homology_add_finrank_range_f_of_rank_lt_aleph0 (Module.rank_lt_aleph0 k S.X₂)
+
+/-- For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules with `X₂` finitely generated, over a ring
+satisfying `StrongRankCondition` and `HasRankNullity`, the rank of `X₂` is the rank of the homology
+plus the ranks of the incoming and outgoing images. -/
+theorem finrank_X₂_eq_finrank_homology_add [HasRankNullity.{v} k]
+    (S : ShortComplex (ModuleCat.{v} k)) [Module.Finite k S.X₂] :
+    finrank k S.X₂ =
+      finrank k S.homology + finrank k (LinearMap.range S.f.hom) +
+        finrank k (LinearMap.range S.g.hom) :=
+  S.finrank_X₂_eq_finrank_homology_add_of_rank_lt_aleph0 (Module.rank_lt_aleph0 k S.X₂)
 
 /-- The homology of a short complex of modules with finite middle term, over a ring satisfying
 the strong rank condition, has rank at most that of the middle term. -/
