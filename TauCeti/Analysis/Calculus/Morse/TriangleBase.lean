@@ -8,6 +8,10 @@ module
 public import TauCeti.Analysis.Calculus.Morse.IntervalBase
 public import TauCeti.Analysis.Calculus.Morse.Prod
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.Deriv.Shift
+import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 
 /-!
 # The ordered-triangle base of a composition of continuations
@@ -66,8 +70,12 @@ states its own hypothesis on `C`.
 * `TauCeti.morseIndex_triangleBasePotential_toLp_zero_zero`,
   `TauCeti.morseIndex_triangleBasePotential_toLp_one_zero`,
   `TauCeti.morseIndex_triangleBasePotential_toLp_one_one`: the vertex indices `2`, `1`, `0`.
+* `TauCeti.isCompact_triangleBase`: the triangle is compact.
 * `TauCeti.triangleBaseFlow`, `TauCeti.isIntegralCurve_triangleBaseFlow`,
   `TauCeti.triangleBaseFlow_add`: the flow.
+* `TauCeti.eq_of_isIntegralCurve_triangleBasePotential`,
+  `TauCeti.eq_triangleBaseFlow_of_isIntegralCurve`: trajectories are determined by one of their
+  points, and those through the square `[-1, 1]²` are flow lines.
 * `TauCeti.mapsTo_triangleBaseFlow`, `TauCeti.snd_triangleBaseFlow_eq_zero_iff`,
   `TauCeti.fst_triangleBaseFlow_eq_one_iff`, `TauCeti.fst_triangleBaseFlow_eq_snd_iff`: invariance
   of the triangle and of its faces.
@@ -123,7 +131,7 @@ states its own hypothesis on `C`.
 public section
 
 open Filter Set
-open scoped Gradient Topology
+open scoped Gradient Manifold Topology
 
 namespace TauCeti
 
@@ -164,6 +172,16 @@ def triangleBase : Set (WithLp 2 (ℝ × ℝ)) :=
 theorem mem_triangleBase {z : WithLp 2 (ℝ × ℝ)} :
     z ∈ triangleBase ↔ 0 ≤ z.snd ∧ z.snd ≤ z.fst ∧ z.fst ≤ 1 :=
   Iff.rfl
+
+/-- The triangle is compact. -/
+theorem isCompact_triangleBase : IsCompact triangleBase := by
+  have hS : IsCompact {p : ℝ × ℝ | 0 ≤ p.2 ∧ p.2 ≤ p.1 ∧ p.1 ≤ 1} :=
+    (isCompact_Icc.prod isCompact_Icc).of_isClosed_subset
+      ((isClosed_le continuous_const continuous_snd).inter
+        ((isClosed_le continuous_snd continuous_fst).inter
+          (isClosed_le continuous_fst continuous_const)))
+      fun p hp ↦ ⟨⟨hp.1.trans hp.2.1, hp.2.2⟩, ⟨hp.1, hp.2.1.trans hp.2.2⟩⟩
+  exact (WithLp.homeomorphProd 2 ℝ ℝ).isCompact_preimage.2 hS
 
 private theorem fst_mem_Icc_of_mem_triangleBase {z : WithLp 2 (ℝ × ℝ)} (hz : z ∈ triangleBase) :
     z.fst ∈ Icc 0 1 :=
@@ -298,6 +316,36 @@ theorem isIntegralCurve_triangleBaseFlow (C : ℝ) {z : WithLp 2 (ℝ × ℝ)} (
   unfold triangleBaseFlow triangleBasePotential
   exact (isIntegralCurve_intervalBaseFlow C hu).separatedSum (isIntegralCurve_intervalBaseFlow C hv)
     (fun _ ↦ hd _) (fun _ ↦ hd _)
+
+/-- **Uniqueness of trajectories.** Two trajectories of the triangle base field on the plane
+which agree at one time agree at all times. -/
+theorem eq_of_isIntegralCurve_triangleBasePotential {γ γ' : ℝ → WithLp 2 (ℝ × ℝ)}
+    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (triangleBasePotential C) z))
+    (hγ' : IsIntegralCurve γ' (fun _ z ↦ -∇ (triangleBasePotential C) z)) {t₀ : ℝ}
+    (h : γ t₀ = γ' t₀) : γ = γ' := by
+  -- Read the plane as a manifold modelled on itself, where the smooth field has unique integral
+  -- curves.
+  let V : (z : WithLp 2 (ℝ × ℝ)) → TangentSpace 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) z :=
+    fun z ↦ -∇ (triangleBasePotential C) z
+  have hV : ContDiff ℝ 1 V :=
+    ((contDiff_triangleBasePotential C (n := ⊤)).gradient_right le_top).neg
+  have hM : ∀ c : ℝ → WithLp 2 (ℝ × ℝ),
+      IsIntegralCurve c (fun _ z ↦ -∇ (triangleBasePotential C) z) → IsMIntegralCurve c V :=
+    fun c hc ↦ isMIntegralCurve_iff_isMIntegralCurveOn.2
+      (isMIntegralCurveOn_iff_isIntegralCurveOn.2 (hc.isIntegralCurveOn _))
+  exact isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (contMDiff_vectorSpace_iff_contDiff.2 hV)
+    (hM γ hγ) (hM γ' hγ') h
+
+/-- **The trajectories through the square are flow lines.** A trajectory of the triangle base field
+which lies in the square `[-1, 1]²` at time `s₀` is, at every time `s`, the image of that point
+under the flow for time `s - s₀`. -/
+theorem eq_triangleBaseFlow_of_isIntegralCurve {γ : ℝ → WithLp 2 (ℝ × ℝ)}
+    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (triangleBasePotential C) z)) {s₀ : ℝ}
+    (hu : (γ s₀).fst ∈ Icc (-1) 1) (hv : (γ s₀).snd ∈ Icc (-1) 1) (s : ℝ) :
+    γ s = triangleBaseFlow C (s - s₀) (γ s₀) :=
+  congrFun (eq_of_isIntegralCurve_triangleBasePotential hγ
+    (fun s ↦ (isIntegralCurve_triangleBaseFlow C hu hv (s - s₀)).comp_sub_const s s₀)
+    (t₀ := s₀) (by simp)) s
 
 /-- **The flow preserves the triangle.** -/
 theorem mapsTo_triangleBaseFlow (C s : ℝ) :
