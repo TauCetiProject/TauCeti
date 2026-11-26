@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -34,6 +35,10 @@ composition and inverses.
 
 * `TauCeti.strongDualCotangentSymplecticForm`: the canonical symplectic form on
   `V × StrongDual ℝ V`.
+* `TauCeti.strongDualCotangentFlat`: the same form as a continuous bilinear map, that is its flat
+  map `x ↦ ω(x, ·)` into the continuous dual.
+* `TauCeti.surjective_strongDualCotangentFlat_iff`: the flat map is onto the continuous dual
+  exactly when `V` is reflexive.
 * `TauCeti.strongDualCotangentZeroSection`: the zero section of `V × StrongDual ℝ V`.
 * `TauCeti.strongDualCotangentFiber`: the vertical subspace `{0} × V*`, which is Lagrangian
   (`TauCeti.isLagrangian_strongDualCotangentFiber`).
@@ -102,6 +107,65 @@ noncomputable def strongDualCotangentSymplecticForm :
 lemma strongDualCotangentSymplecticForm_apply (x y : V × StrongDual ℝ V) :
     strongDualCotangentSymplecticForm x y = y.2 x.1 - x.2 y.1 := by
   exact strongDualCotangentBilinForm_apply x y
+
+variable (V) in
+/-- The canonical form `ω((q, α), (q', β)) = β(q) - α(q')` on `V × V*` as a continuous bilinear
+map, that is its flat map `x ↦ ω(x, ·)` into the continuous dual. It is the bilinear form of
+`TauCeti.strongDualCotangentSymplecticForm`
+(`TauCeti.strongDualCotangentFlat_apply_apply_eq_strongDualCotangentSymplecticForm`). -/
+def strongDualCotangentFlat :
+    (V × StrongDual ℝ V) →L[ℝ] (V × StrongDual ℝ V) →L[ℝ] ℝ :=
+  strongDualCotangentSymplecticForm.toBilinForm.mkContinuous₂ 2 fun x y ↦ by
+    -- `|β(q) - α(q')| ≤ ‖β‖ ‖q‖ + ‖α‖ ‖q'‖`, and each factor is bounded by a norm of `x` or `y`.
+    -- The `CoeFun` of `SymplecticForm` is `ω.toBilinForm` up to beta, so the evaluation lemma
+    -- applies to `toBilinForm x y` directly.
+    simp only [strongDualCotangentSymplecticForm_apply]
+    calc ‖y.2 x.1 - x.2 y.1‖ ≤ ‖y.2‖ * ‖x.1‖ + ‖x.2‖ * ‖y.1‖ :=
+          (norm_sub_le _ _).trans (add_le_add (y.2.le_opNorm _) (x.2.le_opNorm _))
+      _ ≤ ‖y‖ * ‖x‖ + ‖x‖ * ‖y‖ := by
+        gcongr
+        exacts [norm_snd_le y, norm_fst_le x, norm_snd_le x, norm_fst_le y]
+      _ = 2 * ‖x‖ * ‖y‖ := by ring
+
+/-- The flat map evaluates as the canonical symplectic form. -/
+theorem strongDualCotangentFlat_apply_apply_eq_strongDualCotangentSymplecticForm
+    (x y : V × StrongDual ℝ V) :
+    strongDualCotangentFlat V x y = strongDualCotangentSymplecticForm x y := by
+  -- After `mkContinuous₂_apply` both sides agree up to the beta-redex of the `CoeFun` instance.
+  rw [strongDualCotangentFlat, LinearMap.mkContinuous₂_apply]
+
+@[simp]
+theorem strongDualCotangentFlat_apply_apply (x y : V × StrongDual ℝ V) :
+    strongDualCotangentFlat V x y = y.2 x.1 - x.2 y.1 := by
+  rw [strongDualCotangentFlat_apply_apply_eq_strongDualCotangentSymplecticForm,
+    strongDualCotangentSymplecticForm_apply]
+
+/-- The canonical form is alternating: it vanishes on the diagonal. -/
+theorem strongDualCotangentFlat_apply_self (x : V × StrongDual ℝ V) :
+    strongDualCotangentFlat V x x = 0 := by
+  rw [strongDualCotangentFlat_apply_apply, sub_self]
+
+/-- **The canonical form on `V × V*` is strongly nondegenerate exactly when `V` is reflexive**:
+its flat map is onto the continuous dual exactly when the inclusion of `V` into its double dual
+is. A form `ℓ` is `ω(x, ·)` for `x = (q, -ℓ ∘ inl)` as soon as `ℓ ∘ inr` is evaluation at `q`,
+and conversely `ω((q, α), (0, ·))` is evaluation at `q`. -/
+theorem surjective_strongDualCotangentFlat_iff :
+    Function.Surjective (strongDualCotangentFlat V) ↔
+      Function.Surjective (NormedSpace.inclusionInDoubleDual ℝ V) := by
+  refine ⟨fun h Ψ ↦ ?_, fun h ℓ ↦ ?_⟩
+  · -- The form `(q', β) ↦ Ψ β` is `ω((q, α), ·)`; testing on `(0, β)` gives `β q = Ψ β`.
+    obtain ⟨x, hx⟩ := h (Ψ.comp (ContinuousLinearMap.snd ℝ V (StrongDual ℝ V)))
+    refine ⟨x.1, ContinuousLinearMap.ext fun β ↦ ?_⟩
+    simpa using congrArg (fun φ ↦ φ ((0 : V), β)) hx
+  · -- Write `ℓ (q', β) = a q' + Ψ β` and take `q` with `Ψ = ev_q`.
+    obtain ⟨q, hq⟩ := h (ℓ.comp (ContinuousLinearMap.inr ℝ V (StrongDual ℝ V)))
+    refine ⟨(q, -ℓ.comp (ContinuousLinearMap.inl ℝ V (StrongDual ℝ V))),
+      ContinuousLinearMap.ext fun y ↦ ?_⟩
+    have hβ := congrArg (fun Φ ↦ Φ y.2) hq
+    simp only [NormedSpace.dual_def, ContinuousLinearMap.coe_comp, Function.comp_apply,
+      ContinuousLinearMap.inr_apply] at hβ
+    rw [strongDualCotangentFlat_apply_apply, hβ]
+    simp [← map_add]
 
 /-- The zero section in the normed linear cotangent space `V × StrongDual ℝ V`. -/
 def strongDualCotangentZeroSection : Submodule ℝ (V × StrongDual ℝ V) :=
