@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Lojasiewicz
 public import TauCeti.Dynamics.Flow.Stable.Retraction
-import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 
 /-!
 # Stable sets of a Łojasiewicz critical set of a negative gradient flow
