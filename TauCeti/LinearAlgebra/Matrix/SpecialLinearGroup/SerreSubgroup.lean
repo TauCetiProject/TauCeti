@@ -56,8 +56,9 @@ lies in `Eˢ(A, I)` as soon as both matrices are congruent to `1` modulo `I`.
   homomorphisms.
 * `Ideal.closure_transvections_le_serreElementarySubgroup`: `Eˢ(A, I)` contains every
   transvection with parameter in `I`, hence the subgroup they generate.
-* `Ideal.serreElementarySubgroup_top_of_field`, `Ideal.serreElementarySubgroup_top_int`: over a
-  field and over `ℤ` the unit level is all of `SL₂`.
+* `Ideal.serreElementarySubgroup_top_of_closure_eq_top`: when transvections generate `SL₂(A)`,
+  the unit level is all of `SL₂(A)`; `Ideal.serreElementarySubgroup_top_of_field` and
+  `Ideal.serreElementarySubgroup_top_int` are the cases of a field and of `ℤ`.
 * `Ideal.mul_inv_mem_serreElementarySubgroup_of_row_zero_eq`: two matrices of `Γ₂(I)` with the
   same first row are congruent modulo `Eˢ(A, I)`.
 * `Subgroup.exists_serreElementarySubgroup_le`: in characteristic zero, every finite-index
@@ -205,21 +206,27 @@ theorem closure_transvections_le_serreElementarySubgroup :
   rintro _ ⟨t, ht, rfl⟩
   exact t.toSpecialLinearGroup_mem_serreElementarySubgroup ht
 
+/-- If the transvections generate `SL₂(A)`, then Serre's relative elementary subgroup at the unit
+level is all of `SL₂(A)`. -/
+theorem serreElementarySubgroup_top_of_closure_eq_top
+    (h : Subgroup.closure (Set.range (TransvectionStruct.toSpecialLinearGroup :
+      TransvectionStruct (Fin 2) A → SpecialLinearGroup (Fin 2) A)) = ⊤) :
+    (⊤ : Ideal A).serreElementarySubgroup = ⊤ := by
+  refine eq_top_iff.2 (le_trans ?_ (closure_transvections_le_serreElementarySubgroup ⊤))
+  rw [← h]
+  exact Subgroup.closure_mono fun _ ⟨t, ht⟩ ↦ ⟨t, Submodule.mem_top, ht⟩
+
 /-- Over a field, Serre's relative elementary subgroup at the unit level is all of `SL₂`. -/
 @[simp]
 theorem serreElementarySubgroup_top_of_field (K : Type*) [Field K] :
-    (⊤ : Ideal K).serreElementarySubgroup = ⊤ := by
-  refine eq_top_iff.2 (le_trans ?_ (closure_transvections_le_serreElementarySubgroup ⊤))
-  rw [← closure_range_toSpecialLinearGroup_eq_top_of_field]
-  exact Subgroup.closure_mono fun _ ⟨t, ht⟩ ↦ ⟨t, Submodule.mem_top, ht⟩
+    (⊤ : Ideal K).serreElementarySubgroup = ⊤ :=
+  serreElementarySubgroup_top_of_closure_eq_top closure_range_toSpecialLinearGroup_eq_top_of_field
 
 /-- Over `ℤ`, Serre's relative elementary subgroup at the unit level is all of `SL₂(ℤ)`. -/
 @[simp]
 theorem serreElementarySubgroup_top_int :
-    (⊤ : Ideal ℤ).serreElementarySubgroup = ⊤ := by
-  refine eq_top_iff.2 (le_trans ?_ (closure_transvections_le_serreElementarySubgroup ⊤))
-  rw [← closure_range_toSpecialLinearGroup_eq_top]
-  exact Subgroup.closure_mono fun _ ⟨t, ht⟩ ↦ ⟨t, Submodule.mem_top, ht⟩
+    (⊤ : Ideal ℤ).serreElementarySubgroup = ⊤ :=
+  serreElementarySubgroup_top_of_closure_eq_top closure_range_toSpecialLinearGroup_eq_top
 
 end Ideal
 
