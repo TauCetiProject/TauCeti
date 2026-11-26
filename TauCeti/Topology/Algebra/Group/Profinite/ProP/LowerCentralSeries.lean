@@ -74,6 +74,8 @@ with it. This is the bonding operation of a levelwise comparison along the lower
   generated pro-`p` group the lower `p`-series is a neighbourhood basis of `1`.
 * `TauCeti.IsProP.mem_of_forall_mk_mem_map_pLowerCentralSeries`: in a pro-`p` group, membership
   in a closed subgroup is detected on the quotients `G ⧸ λ_k`.
+* `TauCeti.IsProP.isMulTorsionFree_of_gradedPow_injective`: a pro-`p` group whose `p`-power
+  operators `π : gr_k(G) → gr_{k+1}(G)` are all injective is torsion-free.
 
 ## References
 
@@ -185,13 +187,13 @@ theorem IsTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries
     have hle : (proPFrattini p U.toSubgroup).map U.toSubgroup.subtype ≤
         pLowerCentralSeries p G (k + 1) := by
       rw [proPFrattini_eq_topologicalClosure hp, pLowerCentralSeries_succ, pLowerCentralStep_def]
-      refine (U.toSubgroup.subtype.map_topologicalClosure_le continuous_subtype_val _).trans
+      refine (U.toSubgroup.subtype.map_topologicalClosure_le continuous_subtypeVal _).trans
         (topologicalClosure_mono ?_)
       rw [Subgroup.map_sup, MonoidHom.map_closure, commutator_def, map_commutator]
       refine sup_le (le_sup_of_le_left ((Subgroup.closure_le _).mpr ?_))
         (le_sup_of_le_right (commutator_mono (map_subtype_le _) le_top))
       rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
-      exact Subgroup.subset_closure ⟨x, x.2, (Subgroup.coe_pow _ x p).symm⟩
+      exact Subgroup.subset_closure ⟨x, x.property, (Subgroup.coe_pow _ x p).symm⟩
     exact isOpen_mono hle (hG.isOpen_map_subtype_proPFrattini p U)
 
 /-- For a prime `p`, in a topologically finitely generated profinite group every quotient
@@ -336,5 +338,53 @@ theorem IsProP.continuous_iff_forall_continuous_mk_pLowerCentralSeries (hG : IsP
     Continuous f ↔ ∀ k, Continuous fun x ↦ (f x : G ⧸ pLowerCentralSeries p G k) :=
   continuous_iff_forall_continuous_mk_of_iInf_eq_bot isClosed_pLowerCentralSeries
     (hG.iInf_pLowerCentralSeries_eq_bot hp)
+
+/-! ### Torsion and the `p`-power operator -/
+
+/-- **A pro-`p` group on which the `p`-power operator is injective is torsion-free**: if
+`π : gr_k(G) → gr_{k+1}(G)` is injective in every degree, for a prime `p`, then `G` has no
+nontrivial element of finite order. -/
+theorem IsProP.isMulTorsionFree_of_gradedPow_injective (hG : IsProP p G) (hp : p.Prime)
+    (h : ∀ k, Function.Injective (gradedPow p G k)) : IsMulTorsionFree G := by
+  have := Fact.mk hp
+  refine IsMulTorsionFree.of_not_isOfFinOrder fun g hg hfin ↦ ?_
+  -- An element `g ≠ 1` has a degree `k`. For `b` prime to `p`, `g ^ b` has the same degree, and
+  -- injectivity of `π` gives `(g ^ b) ^ (p ^ e) ∉ λ_{k+e+1}`, so no `g ^ (p ^ e * b)` is trivial.
+  have hex : ∃ m, g ∉ pLowerCentralSeries p G m := by
+    by_contra! H
+    rw [← Subgroup.mem_iInf, hG.iInf_pLowerCentralSeries_eq_bot hp, Subgroup.mem_bot] at H
+    exact hg H
+  classical
+  obtain ⟨k, hk, hk'⟩ :
+      ∃ k, g ∈ pLowerCentralSeries p G k ∧ g ∉ pLowerCentralSeries p G (k + 1) := by
+    rcases hm : Nat.find hex with _ | k
+    · exact absurd (mem_pLowerCentralSeries_zero p g) (hm ▸ Nat.find_spec hex)
+    · exact ⟨k, not_not.mp (Nat.find_min hex (by omega)), hm ▸ Nat.find_spec hex⟩
+  obtain ⟨n, hn, hgn⟩ := isOfFinOrder_iff_pow_eq_one.mp hfin
+  obtain ⟨e, b, hb, rfl⟩ := Nat.exists_eq_pow_mul_and_not_dvd hn.ne' p hp.ne_one
+  -- Each `p`-th power of `g ^ b` raises its degree by exactly one, starting from `k`.
+  have hpow (i : ℕ) : ∃ hi : (g ^ b) ^ p ^ i ∈ pLowerCentralSeries p G (k + i),
+      gradedMk p G (k + i) ⟨_, hi⟩ ≠ 0 := by
+    induction i with
+    | zero =>
+      refine ⟨by simpa using pow_mem hk b, ?_⟩
+      have hb' : (b : ZMod p) ≠ 0 := by rwa [Ne, ZMod.natCast_eq_zero_iff]
+      have hg' : gradedMk p G k ⟨g, hk⟩ ≠ 0 := by rwa [Ne, gradedMk_eq_zero_iff]
+      have hpow1 : (⟨(g ^ b) ^ p ^ 0, by simpa using pow_mem hk b⟩ : pLowerCentralSeries p G k) =
+          ⟨g, hk⟩ ^ b := Subtype.ext (by simp)
+      rw [hpow1, gradedMk_pow, ← Nat.cast_smul_eq_nsmul (ZMod p)]
+      exact smul_ne_zero hb' hg'
+    | succ i ih =>
+      obtain ⟨hi, hne⟩ := ih
+      have hpi : (g ^ b) ^ p ^ (i + 1) = ((g ^ b) ^ p ^ i) ^ p := by rw [pow_succ, pow_mul]
+      refine ⟨hpi ▸ pow_mem_pLowerCentralSeries hi, ?_⟩
+      have hne' := (h (k + i)).ne hne
+      rw [gradedPow_gradedMk, gradedPow_zero] at hne'
+      convert hne' using 2
+      exact Subtype.ext hpi
+  obtain ⟨he, hne⟩ := hpow e
+  refine hne ((gradedMk_eq_zero_iff).mpr ?_)
+  rw [Subgroup.coe_mk, ← pow_mul, mul_comm, hgn]
+  exact one_mem _
 
 end TauCeti

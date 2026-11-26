@@ -105,8 +105,8 @@ theorem posDefProperClassEquivGal_mk (f : ↥(posDef n ⊓ primitiveForms (-n)))
     posDefProperClassEquivGal n hn (Quotient.mk _ f) =
       ringClassArtinMap (QuadraticOrder.numberFieldOrder (-n) hn)
         ((f : BinaryQuadraticForm ℤ).invertibleFractionalIdeal (-n)
-          ((mem_posDef_inf_primitiveForms n).mp f.2).1
-          ((mem_posDef_inf_primitiveForms n).mp f.2).2.2) := by
+          ((mem_posDef_inf_primitiveForms n).mp f.property).1
+          ((mem_posDef_inf_primitiveForms n).mp f.property).2.2) := by
   rw [posDefProperClassEquivGal_apply, posDefProperClassToPic_mk, picClass_def,
     ringClassArtinMap_apply]
 
@@ -176,9 +176,9 @@ theorem ringClassArtinMap_primitiveReducedForms_bijective :
       ringClassArtinMap (QuadraticOrder.numberFieldOrder (-n) hn)
         ((f : BinaryQuadraticForm ℤ).invertibleFractionalIdeal (-n)
           ((mem_posDef_inf_primitiveForms n).mp
-            (mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.2)).1
+            (mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.property)).1
           ((mem_posDef_inf_primitiveForms n).mp
-            (mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.2)).2.2) := by
+            (mem_posDef_inf_primitiveForms_of_mem_primitiveReducedForms f.property)).2.2) := by
   simpa only [Function.comp_def, picClass_def, ringClassArtinMap_apply] using
     (ringClassArtinEquiv (QuadraticOrder.numberFieldOrder (-n) hn)).bijective.comp
       (picClass_primitiveReducedForms_bijective n hn)
@@ -201,6 +201,14 @@ theorem finrank_ringClassField_neg_twenty_three_eq_three :
     Module.finrank (QuadraticAlgebra ℚ ((-(23 : ℕ) : ℤ) : ℚ) 0)
         (ringClassField (QuadraticOrder.numberFieldOrder (-(23 : ℕ)) (by decide))) = 3 := by
   rw [finrank_ringClassField_eq_card_primitiveReducedForms]
+  decide +kernel
+
+/-- **The ring class field of `ℤ[2i]` is trivial.** The order `ℤ[2i] = ℤ + 2ℤ[i]` of
+discriminant `-16` has the single primitive reduced form `x² + 4 y²`, so its Picard group is
+trivial and its ring class field is `ℚ(√(-16)) = ℚ(i)` itself. -/
+theorem ringClassField_neg_sixteen_eq_bot :
+    ringClassField (QuadraticOrder.numberFieldOrder (-(16 : ℕ)) (by decide)) = ⊥ := by
+  rw [← IntermediateField.finrank_eq_one_iff, finrank_ringClassField_eq_card_primitiveReducedForms]
   decide +kernel
 
 /-- **A ring class field of a nonmaximal order.** The order `ℤ[3i]` of discriminant `-36` has a

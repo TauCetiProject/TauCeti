@@ -80,7 +80,7 @@ private theorem page_two_d_comp_eq (a b : ℤ) :
         (a + b + 1) (by simp only; omega)).hom =
     HomologicalComplex.homologyMap (m.twistedIndexCokernelIsoOfEq dM hM b (b + 1) rfl).inv
         (a + b) ≫
-      (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _).δ (a + b) (a + b + 1)
+      (TauCeti.cokernelCompSequence_shortExact _ _).δ (a + b) (a + b + 1)
         rfl ≫
       HomologicalComplex.homologyMap
         (m.twistedIndexCokernelIsoOfEq dM hM (b - 1) b (by omega)).hom (a + b + 1) := by
@@ -90,8 +90,6 @@ private theorem page_two_d_comp_eq (a b : ℤ) :
   simp only [indexSpectralSequenceFirstPageXIsoOfEq_eq, Iso.trans_inv, Iso.trans_hom,
     HomologicalComplex.homologyMapIso_inv, HomologicalComplex.homologyMapIso_hom,
     Category.assoc, Iso.inv_hom_id_assoc]
-  congr 1
-  exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) (Iso.inv_hom_id_assoc _ _))
 
 /-- **A cycle of a graded piece lifts to the index filtration.** A cycle `f` of the graded piece
 of index `b + 1` is the projection of an element `s` of the `(b + 1)`-st stage of the filtration,
@@ -116,7 +114,7 @@ private theorem exists_lift_indexGradedPieceD1X (a b : ℤ)
       ⟨(mem_twistedIndexFiltration_iff _).1 (indexExtend_mem_twistedIndexFiltration _),
         mem_twistedTotalGrading_iff.1
           (indexExtend_mem_twistedTotalGrading (indexGradedPieceComplexXEquiv hM ind (b + 1)
-            (a + b) f).2)⟩
+            (a + b) f).property)⟩
   let s' := (m.twistedIndexCochainComplexXEquiv hM (b + 1) (a + b)).symm ⟨ef, hef_mem⟩
   have hs' : (m.twistedIndexCochainComplexXEquiv hM (b + 1) (a + b) s' : P → M) = ef :=
     congrArg Subtype.val ((m.twistedIndexCochainComplexXEquiv hM (b + 1) (a + b)).apply_symm_apply
@@ -132,7 +130,7 @@ private theorem exists_lift_indexGradedPieceD1X (a b : ℤ)
           rw [← hds']
           exact (mem_twistedIndexGrading_iff.1 (m.twistedIndexCochainComplexXEquiv hM (b + 1)
             (a + b + 1) (((m.twistedIndexCochainComplex hM (b + 1)).d (a + b)
-              (a + b + 1)).hom s')).2).2⟩
+              (a + b + 1)).hom s')).property).2⟩
   let w := (m.twistedIndexCochainComplexXEquiv hM b (a + b + 1)).symm ⟨_, hw_mem⟩
   have hw : (m.twistedIndexCochainComplexXEquiv hM b (a + b + 1) w : P → M) =
       twistedDifferential m.m ℳ dM ef :=
@@ -267,7 +265,7 @@ theorem indexSpectralSequence_page_two_d_apply (a b : ℤ)
       (((m.twistedIndexCokernelIsoOfEq dM hM b (b + 1) rfl).inv.f (a + b)).hom f) = 0 := by
     rw [HomologicalComplex.Hom.comm_apply]
     exact (congrArg _ hf).trans (map_zero _)
-  obtain ⟨hc, hδ⟩ := exists_δ_kernelCokernelSequence_L₃_eq
+  obtain ⟨hc, hδ⟩ := exists_δ_cokernelCompSequence_eq
     ((m.twistedIndexFiltrationFunctor dM hM).map
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (show b - 1 = b - 1 from rfl)
       (show b = b - 1 + 1 by lia))))

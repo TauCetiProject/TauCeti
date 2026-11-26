@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
@@ -110,7 +110,7 @@ def diffeomorphOfInjective (hf : IsLocalDiffeomorph I J n f) (hinj : Injective f
     rintro ⟨_, x, rfl⟩
     let h := hf x
     refine (contMDiffAt_subtype_iff.2 h.contMDiffAt_localInverse).congr_of_eventuallyEq ?_
-    filter_upwards [(h.localInverse_open_source.preimage continuous_subtype_val).mem_nhds
+    filter_upwards [(h.localInverse_open_source.preimage continuous_subtypeVal).mem_nhds
       h.localInverse_mem_source] with y hy
     exact hinj ((Equiv.apply_ofInjective_symm hinj y).trans (h.localInverse_right_inv hy).symm)
 

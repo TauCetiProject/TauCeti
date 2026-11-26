@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.GuitartExact.KanExtension
 public import Mathlib.CategoryTheory.Sites.DenseSubsite.InducedTopology
 public import Mathlib.Topology.Sheaves.Functors
-public import TauCeti.CategoryTheory.Sites.DenseSubsite
+public import TauCeti.CategoryTheory.Sites.DenseSubsite.Basic
 public import TauCeti.CategoryTheory.Sites.IsSheafFor
 public import TauCeti.CategoryTheory.Sites.TopologicalBasis
 public import TauCeti.CategoryTheory.Thin
@@ -93,7 +93,7 @@ variable {F} {B} {B' : Set (Opens X)}
 private def inducedOfSubset (hBB' : B ⊆ B') :
     InducedCategory (Opens X) (Subtype.val : B → Opens X) ⥤
       InducedCategory (Opens X) (Subtype.val : B' → Opens X) where
-  obj b := ⟨b.1, hBB' b.2⟩
+  obj b := ⟨b.val, hBB' b.property⟩
   map φ := InducedCategory.homMk φ.hom
 
 /-- For `B ⊆ B'`, the functor from the members of `B` below an open `Y` to the members of `B'`
@@ -178,7 +178,7 @@ members of `B`, taking preimages. -/
 private def inducedMapIso :
     InducedCategory (Opens Y) (Subtype.val : (Opens.map f.hom).obj ⁻¹' B → Opens Y) ⥤
       InducedCategory (Opens X) (Subtype.val : B → Opens X) where
-  obj b := ⟨(Opens.map f.hom).obj b.1, b.2⟩
+  obj b := ⟨(Opens.map f.hom).obj b.val, b.property⟩
   map φ := InducedCategory.homMk ((Opens.map f.hom).map φ.hom)
 
 private instance : (inducedMapIso B f).Full where
@@ -190,11 +190,11 @@ private instance : (inducedMapIso B f).Full where
 private instance : (inducedMapIso B f).EssSurj where
   mem_essImage b := by
     -- the member `f(U)` of the preimage of `B`, for `U = b` a member of `B`
-    have hmem : (Opens.map f.inv).obj b.1 ∈ (Opens.map f.hom).obj ⁻¹' B := by
+    have hmem : (Opens.map f.inv).obj b.val ∈ (Opens.map f.hom).obj ⁻¹' B := by
       rw [Set.mem_preimage, Opens.map_hom_obj_map_inv_obj]
-      exact b.2
-    exact ⟨⟨(Opens.map f.inv).obj b.1, hmem⟩,
-      ⟨eqToIso (Subtype.ext (Opens.map_hom_obj_map_inv_obj f b.1))⟩⟩
+      exact b.property
+    exact ⟨⟨(Opens.map f.inv).obj b.val, hmem⟩,
+      ⟨eqToIso (Subtype.ext (Opens.map_hom_obj_map_inv_obj f b.val))⟩⟩
 
 private instance : (inducedMapIso B f).IsEquivalence where
 
@@ -256,7 +256,7 @@ to the members of `B`, taking images. -/
 private def inducedFunctorObj :
     InducedCategory (Opens U) (Subtype.val : hf.functor.obj ⁻¹' B → Opens U) ⥤
       InducedCategory (Opens X) (Subtype.val : B → Opens X) where
-  obj b := ⟨hf.functor.obj b.1, b.2⟩
+  obj b := ⟨hf.functor.obj b.val, b.property⟩
   map φ := InducedCategory.homMk (hf.functor.map φ.hom)
 
 /-- The commutative square of the inclusions of the opens of `U` with image in `B` and of `B` into
@@ -273,24 +273,25 @@ private instance (W : Opens U) :
   faithful.map_injective _ := StructuredArrow.hom_ext _ _ (Subsingleton.elim _ _)
   full.map_surjective {a b} φ := by
     -- the image functor of an open embedding reflects inclusions
-    have hle : b.right.unop.1 ≤ a.right.unop.1 := by
-      rw [← Opens.map_functor_eq' f hf b.right.unop.1, ← Opens.map_functor_eq' f hf a.right.unop.1]
+    have hle : b.right.unop.val ≤ a.right.unop.val := by
+      rw [← Opens.map_functor_eq' f hf b.right.unop.val,
+          ← Opens.map_functor_eq' f hf a.right.unop.val]
       exact (Opens.map f).monotone φ.right.unop.hom.le
     exact ⟨StructuredArrow.homMk (InducedCategory.homMk (homOfLE hle)).op
       (Subsingleton.elim _ _), StructuredArrow.hom_ext _ _ (Subsingleton.elim _ _)⟩
   essSurj.mem_essImage c := by
     -- a member of `B` below the image of `W` is the image of its preimage
-    have hcW : c.right.unop.1 ≤ hf.functor.obj W := c.hom.unop.le
-    have hc : hf.functor.obj ((Opens.map f).obj c.right.unop.1) = c.right.unop.1 := by
+    have hcW : c.right.unop.val ≤ hf.functor.obj W := c.hom.unop.le
+    have hc : hf.functor.obj ((Opens.map f).obj c.right.unop.val) = c.right.unop.val := by
       rw [Opens.functor_obj_map_obj, inf_eq_right]
       exact hcW.trans (hf.functor.monotone le_top)
-    have hmem : (Opens.map f).obj c.right.unop.1 ∈ hf.functor.obj ⁻¹' B := by
+    have hmem : (Opens.map f).obj c.right.unop.val ∈ hf.functor.obj ⁻¹' B := by
       rw [Set.mem_preimage, hc]
-      exact c.right.unop.2
-    have hW : (Opens.map f).obj c.right.unop.1 ≤ W :=
+      exact c.right.unop.property
+    have hW : (Opens.map f).obj c.right.unop.val ≤ W :=
       ((Opens.map f).monotone hcW).trans_eq (Opens.map_functor_eq' f hf W)
     let b : InducedCategory (Opens U) (Subtype.val : hf.functor.obj ⁻¹' B → Opens U) :=
-      ⟨(Opens.map f).obj c.right.unop.1, hmem⟩
+      ⟨(Opens.map f).obj c.right.unop.val, hmem⟩
     let a : StructuredArrow (op W)
         (inducedFunctor (Subtype.val : hf.functor.obj ⁻¹' B → Opens U)).op :=
       StructuredArrow.mk (Y := op b) (homOfLE hW).op
@@ -384,7 +385,7 @@ theorem isSheaf_of_isAdapted_of_forall_exists_le (hB : Opens.IsBasis B) (hF : F.
       IsSheaf (X := (Opens.toTopCat X).obj U) (U.isOpenEmbedding.functor.op ⋙ F)) :
     F.IsSheaf := by
   refine isSheaf_of_isAdapted_of_isSheaf_restrictedTopology F B hB hF fun E b S hS ↦ ?_
-  obtain ⟨U, hbU, hU⟩ := h b.1 b.2
+  obtain ⟨U, hbU, hU⟩ := h b.val b.property
   -- the pushforward `G` of the restriction of `F` to `U` is a sheaf, with `G(W) = F(W ⊓ U)`
   have hG := (TopCat.Sheaf.pushforward_sheaf_of_sheaf U.inclusion' hU).isSheaf_restrictedTopology hB
   -- restriction `F(W) ⟶ F(W ⊓ U) = G(W)`, along the counit of the adjunction for `U`
@@ -394,11 +395,11 @@ theorem isSheaf_of_isAdapted_of_forall_exists_le (hB : Opens.IsBasis B) (hF : F.
   have hα : ∀ ⦃b'⦄, (b' ⟶ b) → Function.Bijective
       ((Functor.whiskerLeft (inducedFunctor (Subtype.val : B → Opens X)).op
         (Functor.whiskerRight α (coyoneda.obj (op E)))).app (op b')) := fun b' f ↦ by
-    have : IsIso (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.1) :=
+    have : IsIso (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.val) :=
       ⟨homOfLE fun x hx ↦ ⟨⟨x, hbU (f.hom.le hx)⟩, hx, rfl⟩, Subsingleton.elim _ _,
         Subsingleton.elim _ _⟩
     exact (isIso_iff_bijective _).mp ((coyoneda.obj (op E)).map_isIso
-      (F.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.1).op))
+      (F.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.val).op))
   exact Presieve.isSheafFor_of_bijective_app _ (hα (𝟙 b)) (fun _ f _ ↦ (hα f).1) (hG E S hS)
 
 /-! ### Sheaves are adapted to every basis -/

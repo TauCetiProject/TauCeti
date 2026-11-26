@@ -51,6 +51,7 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
   canonical quotient map.
 * `TauCeti.quotientInertiaSubgroupEquiv K`: the unramified quotient `G_K ⧸ I_K ≃ₜ* Gal(K^{ur}/K)`.
 * `TauCeti.IsArithFrobeniusLift K σ`: `σ ∈ G_K` restricts to the arithmetic Frobenius of `K^{ur}`.
+* `TauCeti.arithFrobLift K`: a chosen arithmetic Frobenius lift.
 
 ## Main results
 
@@ -217,6 +218,11 @@ abbrev unramifiedQuotient := Field.absoluteGaloisGroup K ⧸ inertiaSubgroup K
 def unramifiedDegree : Field.absoluteGaloisGroup K →* unramifiedQuotient K :=
   QuotientGroup.mk' (inertiaSubgroup K)
 
+/-- The unramified degree map sends `σ` to its coset in `G_K ⧸ I_K`. -/
+theorem unramifiedDegree_apply (σ : Field.absoluteGaloisGroup K) :
+    unramifiedDegree K σ = (σ : unramifiedQuotient K) :=
+  (rfl)
+
 /-- The unramified degree map `G_K → G_K ⧸ I_K` is surjective. -/
 theorem unramifiedDegree_surjective : Function.Surjective (unramifiedDegree K) :=
   QuotientGroup.mk'_surjective _
@@ -321,7 +327,7 @@ theorem restrictNormal_mem_lowerRamificationGroup_zero
   have hτxω : τ • (x - ω) ∈ 𝓂[L] := by
     have h : ((τ.maximalIdealEquiv ⟨x - ω, hxω⟩ : 𝓂[L]) : 𝒪[L]) = τ • (x - ω) :=
       Subtype.ext (by rw [AlgEquiv.coe_maximalIdealEquiv, AlgEquiv.coe_smul_integerRing])
-    exact h ▸ (τ.maximalIdealEquiv ⟨x - ω, hxω⟩).2
+    exact h ▸ (τ.maximalIdealEquiv ⟨x - ω, hxω⟩).property
   rw [zero_add, Int.toNat_one, pow_one, show τ • x - x = τ • (x - ω) - (x - ω) by
     rw [smul_sub, hω]
     ring]
@@ -389,6 +395,16 @@ variable (K) in
 /-- **Arithmetic Frobenius lifts exist**, since restriction to `K^{ur}` is surjective. -/
 theorem exists_isArithFrobeniusLift : ∃ σ : Field.absoluteGaloisGroup K, IsArithFrobeniusLift K σ :=
   restrictMaximalUnramifiedHom_surjective K _
+
+variable (K) in
+/-- A chosen arithmetic Frobenius lift in the absolute Galois group of a nonarchimedean local
+field (`TauCeti.exists_isArithFrobeniusLift`). -/
+def arithFrobLift : Field.absoluteGaloisGroup K :=
+  (exists_isArithFrobeniusLift K).choose
+
+variable (K) in
+theorem isArithFrobeniusLift_arithFrobLift : IsArithFrobeniusLift K (arithFrobLift K) :=
+  (exists_isArithFrobeniusLift K).choose_spec
 
 namespace IsArithFrobeniusLift
 

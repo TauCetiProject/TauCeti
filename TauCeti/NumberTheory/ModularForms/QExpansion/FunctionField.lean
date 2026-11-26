@@ -55,6 +55,8 @@ fields `F_N`.
 * `Subgroup.CompactifiedQuotient.coeffSubfield`, `Subgroup.CompactifiedQuotient.mem_coeffSubfield`
   and `Subgroup.CompactifiedQuotient.mem_coeffSubfield_iff_exists_mapRingHom_eq`: the subfield of
   functions with coefficients in a subfield of `ℂ`.
+* `Subgroup.CompactifiedQuotient.mapRingHom_laurentQExpansion_eq_of_mem_coeffSubfield`: a
+  coefficient map fixing that subfield pointwise fixes their expansions.
 * `Subgroup.CompactifiedQuotient.laurentQExpansion_compactifiedQuotientComap` and
   `Subgroup.CompactifiedQuotient.compactifiedQuotientComap_mem_coeffSubfield_iff`: the expansion
   and the coefficients of a pullback along the map induced by an inclusion of subgroups.
@@ -240,7 +242,7 @@ theorem mem_coeffSubfield_iff_exists_mapRingHom_eq {K : Subfield ℂ} :
     F ∈ coeffSubfield D K ↔
       ∃ φ : LaurentSeries K, HahnSeries.mapRingHom K.subtype φ = laurentQExpansion D F := by
   rw [← RingHom.mem_rangeS, HahnSeries.mem_map_rangeS, mem_coeffSubfield]
-  exact forall_congr' fun n ↦ ⟨fun h ↦ ⟨⟨_, h⟩, rfl⟩, fun ⟨c, hc⟩ ↦ hc ▸ c.2⟩
+  exact forall_congr' fun n ↦ ⟨fun h ↦ ⟨⟨_, h⟩, rfl⟩, fun ⟨c, hc⟩ ↦ hc ▸ c.property⟩
 
 /-- A constant function lies in `coeffSubfield D K` exactly when its value lies in `K`. -/
 @[simp]
@@ -261,6 +263,15 @@ theorem coeffSubfield_mono {K L : Subfield ℂ} (h : K ≤ L) : coeffSubfield D 
 @[simp]
 theorem coeffSubfield_top : coeffSubfield D (⊤ : Subfield ℂ) = ⊤ :=
   eq_top_iff.mpr fun _ _ ↦ (mem_coeffSubfield D).mpr fun _ ↦ Subfield.mem_top _
+
+/-- A coefficient map fixing every element of `K` fixes the Laurent `q`-expansion of a meromorphic
+function with coefficients in `K`. -/
+theorem mapRingHom_laurentQExpansion_eq_of_mem_coeffSubfield {K : Subfield ℂ} {σ : ℂ →+* ℂ}
+    (hσ : ∀ x ∈ K, σ x = x) (hF : F ∈ coeffSubfield D K) :
+    HahnSeries.mapRingHom σ (laurentQExpansion D F) = laurentQExpansion D F := by
+  ext n
+  rw [HahnSeries.coeff_mapRingHom]
+  exact hσ _ ((mem_coeffSubfield D).mp hF n)
 
 /-! ### Pullback along maps of compactified quotients -/
 

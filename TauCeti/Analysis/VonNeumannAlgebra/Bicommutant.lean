@@ -9,6 +9,10 @@ public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
 public import TauCeti.Analysis.VonNeumannAlgebra.Density
 public import TauCeti.Analysis.LocallyConvex.WeakOperatorTopology
 public import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology.Compact
+public import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology
+public import TauCeti.Analysis.InnerProductSpace.StrongStarTopology
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.VonNeumannAlgebra.NonUnital
 
 /-!
 # The bicommutant theorem
@@ -27,14 +31,24 @@ first is essential for a set not closed under adjoints.
 Since operator balls are weak operator compact, weak operator closedness makes every closed
 norm ball of a concrete von Neumann algebra weak operator compact.
 
-The approximation input is the finite-vector density theorem in
-`TauCeti.Analysis.VonNeumannAlgebra.Density`.
+The strong and weak operator closures are obtained as the nondegenerate special case of the
+nonunital operator-closure theorems in `TauCeti.Analysis.VonNeumannAlgebra.NonUnital` (built on
+the finite-vector density theorem in `TauCeti.Analysis.VonNeumannAlgebra.Density`).
 
 The same holds for self-adjoint parts: the strong and weak operator closures of the self-adjoint
 elements of the algebra are the self-adjoint elements of the double commutant. The weak form
 applies the weak-operator continuous map `A ↦ 2⁻¹ • (A + A⋆)` to the bicommutant theorem; the
 strong form follows because the self-adjoint part is convex, so its two closures agree. This is
-the density statement used in the proof of the Kaplansky density theorem.
+the density statement used in the proof of the Kaplansky density theorem. Skew-adjoint parts
+are handled in the same way, with `A ↦ 2⁻¹ • (A - A⋆)`.
+
+The strong-star closure is the double commutant as well
+(`StarSubalgebra.closure_image_strongStar_ofCLM`), on the type copy
+`TauCeti.ContinuousLinearMapStrongStar`. Strong-star closedness of the double commutant follows
+from weak operator closedness. For the converse, the strong-star and strong topologies agree on
+normal operators, so the strong-star closures of the self-adjoint and skew-adjoint parts of the
+algebra are the corresponding parts of the double commutant; a general element of the double
+commutant is the sum of its self-adjoint and skew-adjoint parts.
 
 ## References
 
@@ -58,51 +72,53 @@ theorem closure_image_toPointwiseConvergenceCLM
       (S : Set (H →L[𝕜] H))) =
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H ''
         (S : Set (H →L[𝕜] H)).centralizer.centralizer := by
-  let q := ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H
-  have hclosed : IsClosed (q '' (S : Set (H →L[𝕜] H)).centralizer.centralizer) := by
-    -- The pointwise copy has the same underlying maps; the preimage is along the
-    -- continuous identity to the WOT copy, not along a norm-continuous inverse.
-    convert ((S : Set (H →L[𝕜] H)).centralizer.isClosed_image_ofCLM_centralizer).preimage
-      ContinuousLinearMapWOT.continuous_ofPointwiseConvergenceCLM using 1
-    ext T
-    simp only [q, Set.mem_image, Set.mem_preimage,
-      ContinuousLinearMap.toPointwiseConvergenceCLM_apply]
-    constructor
-    · rintro ⟨a, ha, h⟩
-      exact ⟨a, ha, congrArg ContinuousLinearMapWOT.ofCLM h⟩
-    · rintro ⟨a, ha, h⟩
-      exact ⟨a, ha, ContinuousLinearMapWOT.ofCLM_injective h⟩
-  refine subset_antisymm
-    (closure_minimal (Set.image_mono Set.subset_centralizer_centralizer) hclosed) ?_
-  rintro _ ⟨x, hx, rfl⟩
-  rw [mem_closure_iff_nhds_basis
-    ((PointwiseConvergenceCLM.hasBasis_nhds_zero_of_basis
-      (σ := RingHom.id 𝕜) (E := H) Metric.nhds_basis_ball).nhds_of_zero (q x))]
-  rintro ⟨F, ε⟩ ⟨hF, hε⟩
-  obtain ⟨s, hs, happrox⟩ := S.exists_forall_norm_sub_apply_lt_of_mem_centralizer_centralizer
-    hx (fun v : F => (v : H)) hε
-  refine ⟨q s, ⟨s, hs, rfl⟩, ?_⟩
-  intro v hv
-  rw [Metric.mem_ball, dist_zero_right, sub_apply, norm_sub_rev]
-  exact happrox ⟨v, hv⟩
+  have hScoe : (S.toNonUnitalStarSubalgebra : Set (H →L[𝕜] H)) = (S : Set (H →L[𝕜] H)) :=
+    Set.ext fun _ => StarSubalgebra.mem_toNonUnitalStarSubalgebra
+  rw [← hScoe]
+  open NonUnitalStarSubalgebra in
+  exact closure_image_toPointwiseConvergenceCLM_of_essentialSubspace_eq_top
+    (essentialSubspace_toNonUnitalStarSubalgebra S)
 
 /-- The weak operator closure of a unital star subalgebra is its double commutant. -/
 theorem closure_image_ofCLM (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
     closure (ContinuousLinearMapWOT.ofCLM '' (S : Set (H →L[𝕜] H))) =
       ContinuousLinearMapWOT.ofCLM '' (S : Set (H →L[𝕜] H)).centralizer.centralizer := by
-  refine subset_antisymm
-    (closure_minimal (Set.image_mono Set.subset_centralizer_centralizer)
-      ((S : Set (H →L[𝕜] H)).centralizer.isClosed_image_ofCLM_centralizer)) ?_
-  rintro _ ⟨x, hx, rfl⟩
-  have hx' : ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H x ∈
-      closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H ''
-        (S : Set (H →L[𝕜] H))) := by
-    rw [S.closure_image_toPointwiseConvergenceCLM]
-    exact ⟨x, hx, rfl⟩
-  simpa only [Set.image_image, Function.comp_def,
-    ContinuousLinearMap.toPointwiseConvergenceCLM_apply] using
-    mem_closure_image
-      ContinuousLinearMapWOT.continuous_ofPointwiseConvergenceCLM.continuousAt hx'
+  have hScoe : (S.toNonUnitalStarSubalgebra : Set (H →L[𝕜] H)) = (S : Set (H →L[𝕜] H)) :=
+    Set.ext fun _ => StarSubalgebra.mem_toNonUnitalStarSubalgebra
+  rw [← hScoe]
+  open NonUnitalStarSubalgebra in
+  exact closure_image_ofCLM_of_essentialSubspace_eq_top
+    (essentialSubspace_toNonUnitalStarSubalgebra S)
+
+/-- Weak operator closures of the part `S ∩ t` of a unital star subalgebra: if a map `f`, weak
+operator continuous on the underlying operators, sends `S` into itself, takes values in `t` and
+fixes `t` pointwise, then the weak operator closure of `S ∩ t` is `S'' ∩ t`. -/
+private theorem closure_image_ofCLM_inter_of_retraction (S : StarSubalgebra 𝕜 (H →L[𝕜] H))
+    {t : Set (H →L[𝕜] H)} {f : (H →L[𝕜] H) → H →L[𝕜] H}
+    (hf : Continuous fun A : H →WOT[𝕜] H ↦ ContinuousLinearMapWOT.ofCLM (f A.toCLM))
+    (hfS : ∀ a ∈ S, f a ∈ S) (hft : ∀ a, f a ∈ t) (hfix : ∀ a ∈ t, f a = a) :
+    closure (ContinuousLinearMapWOT.ofCLM '' ((S : Set (H →L[𝕜] H)) ∩ t)) =
+      ContinuousLinearMapWOT.ofCLM '' ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ t) := by
+  refine subset_antisymm (fun A hA ↦ ?_) ?_
+  · obtain ⟨x, hx, rfl⟩ :
+        A ∈ ContinuousLinearMapWOT.ofCLM '' (S : Set (H →L[𝕜] H)).centralizer.centralizer :=
+      S.closure_image_ofCLM ▸ closure_mono (Set.image_mono Set.inter_subset_left) hA
+    -- The fixed points of `f` form a weak operator closed set containing `S ∩ t`.
+    have hfx : ContinuousLinearMapWOT.ofCLM (f x) = ContinuousLinearMapWOT.ofCLM x := by
+      refine closure_minimal (t := {B | ContinuousLinearMapWOT.ofCLM (f B.toCLM) = B}) ?_
+        (isClosed_eq hf continuous_id) hA
+      rintro _ ⟨a, ha, rfl⟩
+      exact congrArg ContinuousLinearMapWOT.ofCLM (hfix a ha.2)
+    exact ⟨x, ⟨hx, ContinuousLinearMapWOT.ofCLM_injective hfx ▸ hft x⟩, rfl⟩
+  · rintro _ ⟨x, ⟨hx, hxt⟩, rfl⟩
+    have hmem : ContinuousLinearMapWOT.ofCLM x ∈
+        closure (ContinuousLinearMapWOT.ofCLM '' (S : Set (H →L[𝕜] H))) :=
+      S.closure_image_ofCLM ▸ ⟨x, hx, rfl⟩
+    have := map_mem_closure hf hmem
+      (t := ContinuousLinearMapWOT.ofCLM '' ((S : Set (H →L[𝕜] H)) ∩ t)) (by
+        rintro _ ⟨a, ha, rfl⟩
+        exact ⟨f a, ⟨hfS a ha, hft a⟩, rfl⟩)
+    rwa [ContinuousLinearMapWOT.toCLM_ofCLM, hfix x hxt] at this
 
 /-- The weak operator closure of the self-adjoint part of a unital star subalgebra is the
 self-adjoint part of its double commutant. -/
@@ -111,61 +127,90 @@ theorem closure_image_ofCLM_inter_selfAdjoint (S : StarSubalgebra 𝕜 (H →L[�
       ((S : Set (H →L[𝕜] H)) ∩ selfAdjoint (H →L[𝕜] H))) =
       ContinuousLinearMapWOT.ofCLM ''
         ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ selfAdjoint (H →L[𝕜] H)) := by
-  -- Adjoints on the WOT copy are computed on the underlying operators.
-  have hsa {x : H →L[𝕜] H} : IsSelfAdjoint (ContinuousLinearMapWOT.ofCLM x) ↔
-      IsSelfAdjoint x :=
-    ContinuousLinearMapWOT.ofCLM_injective.eq_iff
-  refine subset_antisymm (fun A hA ↦ ?_) ?_
-  · have hA' :
-        A ∈ ContinuousLinearMapWOT.ofCLM '' (S : Set (H →L[𝕜] H)).centralizer.centralizer :=
-      S.closure_image_ofCLM ▸ closure_mono (Set.image_mono Set.inter_subset_left) hA
-    have hAsa : IsSelfAdjoint A := by
-      refine closure_minimal ?_ (isClosed_eq continuous_star continuous_id) hA
-      rintro _ ⟨a, ha, rfl⟩
-      exact hsa.mpr ha.2
-    obtain ⟨x, hx, rfl⟩ := hA'
-    exact ⟨x, ⟨hx, hsa.mp hAsa⟩, rfl⟩
-  · rintro _ ⟨x, ⟨hx, hxsa⟩, rfl⟩
-    -- Apply the WOT-continuous real part `A ↦ 2⁻¹ • (A + A⋆)` to the WOT density of `S`.
-    have hmem : ContinuousLinearMapWOT.ofCLM x ∈
-        closure (ContinuousLinearMapWOT.ofCLM '' (S : Set (H →L[𝕜] H))) :=
-      S.closure_image_ofCLM ▸ ⟨x, hx, rfl⟩
-    have h2 : IsSelfAdjoint (2⁻¹ : 𝕜) := by simp [IsSelfAdjoint]
-    have hre := map_mem_closure (f := fun A : H →WOT[𝕜] H ↦ (2⁻¹ : 𝕜) • (A + star A))
-      (by fun_prop) hmem (t := ContinuousLinearMapWOT.ofCLM ''
-        ((S : Set (H →L[𝕜] H)) ∩ selfAdjoint (H →L[𝕜] H))) (by
-        rintro _ ⟨a, ha, rfl⟩
-        exact ⟨(2⁻¹ : 𝕜) • (a + star a),
-          ⟨SMulMemClass.smul_mem _ (add_mem ha (star_mem ha)), h2.smul (.add_star_self a)⟩, rfl⟩)
-    have hx2 : (2⁻¹ : 𝕜) • (x + star x) = x := by
-      rw [hxsa.star_eq, ← two_smul 𝕜 x, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
-    convert hre using 1
-    exact congrArg ContinuousLinearMapWOT.ofCLM hx2.symm
+  let _ : NormedSpace ℝ H := .restrictScalars ℝ 𝕜 H
+  have : IsScalarTower ℝ 𝕜 H := .restrictScalars ℝ 𝕜 H
+  -- The self-adjoint part `A ↦ 2⁻¹ • (A + A⋆)` is a weak operator continuous retraction.
+  refine S.closure_image_ofCLM_inter_of_retraction (f := fun a ↦ selfAdjointPart ℝ a) ?_
+    (fun a ha ↦ ?_) (fun a ↦ (selfAdjointPart ℝ a).property) fun a ha ↦
+      ha.coe_selfAdjointPart_apply ℝ
+  · simp only [selfAdjointPart_apply_coe, RCLike.real_smul_eq_coe_smul (K := 𝕜),
+      ContinuousLinearMapWOT.ofCLM_smul, ContinuousLinearMapWOT.ofCLM_add,
+      ContinuousLinearMapWOT.ofCLM_star,
+      ContinuousLinearMapWOT.ofCLM_toCLM]
+    fun_prop
+  · rw [selfAdjointPart_apply_coe]
+    exact S.toSubalgebra.toSubmodule.smul_of_tower_mem _ (add_mem ha (star_mem ha) : _ ∈ S)
+
+/-- The weak operator closure of the skew-adjoint part of a unital star subalgebra is the
+skew-adjoint part of its double commutant. -/
+theorem closure_image_ofCLM_inter_skewAdjoint (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
+    closure (ContinuousLinearMapWOT.ofCLM ''
+      ((S : Set (H →L[𝕜] H)) ∩ skewAdjoint (H →L[𝕜] H))) =
+      ContinuousLinearMapWOT.ofCLM ''
+        ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ skewAdjoint (H →L[𝕜] H)) := by
+  let _ : NormedSpace ℝ H := .restrictScalars ℝ 𝕜 H
+  have : IsScalarTower ℝ 𝕜 H := .restrictScalars ℝ 𝕜 H
+  -- The skew-adjoint part `A ↦ 2⁻¹ • (A - A⋆)` is a weak operator continuous retraction.
+  refine S.closure_image_ofCLM_inter_of_retraction (f := fun a ↦ skewAdjointPart ℝ a) ?_
+    (fun a ha ↦ ?_) (fun a ↦ (skewAdjointPart ℝ a).property) fun a ha ↦
+      congrArg Subtype.val (LinearMap.congr_fun (skewAdjointPart_comp_subtype_skewAdjoint ℝ)
+        (⟨a, ha⟩ : skewAdjoint.submodule ℝ (H →L[𝕜] H)))
+  · simp only [skewAdjointPart_apply_coe, RCLike.real_smul_eq_coe_smul (K := 𝕜),
+      ContinuousLinearMapWOT.ofCLM_smul, ContinuousLinearMapWOT.ofCLM_sub,
+      ContinuousLinearMapWOT.ofCLM_star,
+      ContinuousLinearMapWOT.ofCLM_toCLM]
+    fun_prop
+  · rw [skewAdjointPart_apply_coe]
+    exact S.toSubalgebra.toSubmodule.smul_of_tower_mem _ (sub_mem ha (star_mem ha) : _ ∈ S)
+
+/-- Strong operator closures of a convex part `S ∩ t` of a unital star subalgebra are computed
+by its weak operator closure. -/
+private theorem closure_image_toPointwiseConvergenceCLM_inter_of_convex
+    [NormedSpace ℝ H] [IsScalarTower ℝ 𝕜 H] (S : StarSubalgebra 𝕜 (H →L[𝕜] H))
+    {t : Set (H →L[𝕜] H)} (hconv : Convex ℝ ((S : Set (H →L[𝕜] H)) ∩ t))
+    (h : closure (ContinuousLinearMapWOT.ofCLM '' ((S : Set (H →L[𝕜] H)) ∩ t)) =
+      ContinuousLinearMapWOT.ofCLM '' ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ t)) :
+    closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H ''
+      ((S : Set (H →L[𝕜] H)) ∩ t)) =
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H ''
+        ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ t) := by
+  set q := ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H
+  ext T
+  -- `q` is the identity on underlying operators.
+  obtain ⟨x, rfl⟩ : ∃ x : H →L[𝕜] H, q x = T := ⟨T, rfl⟩
+  rw [hconv.toPointwiseConvergenceCLM_mem_closure_image_iff, h,
+    ContinuousLinearMapWOT.ofCLM_injective.mem_set_image,
+    ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image]
 
 /-- The strong operator closure of the self-adjoint part of a unital star subalgebra is the
 self-adjoint part of its double commutant. -/
-theorem closure_image_toPointwiseConvergenceCLM_inter_selfAdjoint [NormedSpace ℝ H]
-    [IsScalarTower ℝ 𝕜 H] (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
+theorem closure_image_toPointwiseConvergenceCLM_inter_selfAdjoint
+    (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
     closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H ''
       ((S : Set (H →L[𝕜] H)) ∩ selfAdjoint (H →L[𝕜] H))) =
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H ''
         ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ selfAdjoint (H →L[𝕜] H)) := by
-  set q := ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H
   -- The self-adjoint part is convex, so its strong and weak operator closures agree.
-  -- Mathlib records only `StarModule 𝕜` here; real scalars act through `𝕜`, so they commute
-  -- with adjoints and `selfAdjoint.submodule ℝ` is available.
-  have : StarModule ℝ (H →L[𝕜] H) := ⟨fun r a ↦ by
-    simp only [RCLike.real_smul_eq_coe_smul (K := 𝕜), star_smul, RCLike.star_def,
-      RCLike.conj_ofReal, star_trivial]⟩
-  have hconv : Convex ℝ ((S : Set (H →L[𝕜] H)) ∩ selfAdjoint (H →L[𝕜] H)) :=
-    (S.toSubalgebra.toSubmodule.restrictScalars ℝ).convex.inter
-      (selfAdjoint.submodule ℝ (H →L[𝕜] H)).convex
-  ext T
-  -- `q` is the identity on underlying operators.
-  obtain ⟨x, rfl⟩ : ∃ x : H →L[𝕜] H, q x = T := ⟨T, rfl⟩
-  rw [hconv.toPointwiseConvergenceCLM_mem_closure_image_iff,
-    S.closure_image_ofCLM_inter_selfAdjoint, ContinuousLinearMapWOT.ofCLM_injective.mem_set_image,
-    ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image]
+  let _ : NormedSpace ℝ H := .restrictScalars ℝ 𝕜 H
+  have : IsScalarTower ℝ 𝕜 H := .restrictScalars ℝ 𝕜 H
+  exact S.closure_image_toPointwiseConvergenceCLM_inter_of_convex
+    ((S.toSubalgebra.toSubmodule.restrictScalars ℝ).convex.inter
+      (selfAdjoint.submodule ℝ (H →L[𝕜] H)).convex) S.closure_image_ofCLM_inter_selfAdjoint
+
+/-- The strong operator closure of the skew-adjoint part of a unital star subalgebra is the
+skew-adjoint part of its double commutant. -/
+theorem closure_image_toPointwiseConvergenceCLM_inter_skewAdjoint
+    (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
+    closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H ''
+      ((S : Set (H →L[𝕜] H)) ∩ skewAdjoint (H →L[𝕜] H))) =
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H ''
+        ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ skewAdjoint (H →L[𝕜] H)) := by
+  -- The skew-adjoint part is convex, so its strong and weak operator closures agree.
+  let _ : NormedSpace ℝ H := .restrictScalars ℝ 𝕜 H
+  have : IsScalarTower ℝ 𝕜 H := .restrictScalars ℝ 𝕜 H
+  exact S.closure_image_toPointwiseConvergenceCLM_inter_of_convex
+    ((S.toSubalgebra.toSubmodule.restrictScalars ℝ).convex.inter
+      (skewAdjoint.submodule ℝ (H →L[𝕜] H)).convex) S.closure_image_ofCLM_inter_skewAdjoint
 
 /-- **The bicommutant theorem:** a unital star subalgebra equals its double commutant
 if and only if it is weak operator closed. -/
@@ -187,6 +232,85 @@ theorem double_commutant_iff_isClosed_image_toPointwiseConvergenceCLM
   exact (Set.image_injective.mpr
     ContinuousLinearMap.toPointwiseConvergenceCLM_injective).eq_iff.symm
 
+section StrongStar
+
+open TauCeti
+
+/-- The strong-star closure of the self-adjoint part of a unital star subalgebra is the
+self-adjoint part of its double commutant. -/
+theorem closure_image_strongStar_ofCLM_inter_selfAdjoint (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
+    closure (ContinuousLinearMapStrongStar.ofCLM ''
+      ((S : Set (H →L[𝕜] H)) ∩ selfAdjoint (H →L[𝕜] H))) =
+      ContinuousLinearMapStrongStar.ofCLM ''
+        ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ selfAdjoint (H →L[𝕜] H)) :=
+  ContinuousLinearMapStrongStar.closure_image_ofCLM_eq_of_isStarNormal
+    (fun _ hx ↦ hx.2.isStarNormal)
+    S.closure_image_toPointwiseConvergenceCLM_inter_selfAdjoint
+
+/-- The strong-star closure of the skew-adjoint part of a unital star subalgebra is the
+skew-adjoint part of its double commutant. -/
+theorem closure_image_strongStar_ofCLM_inter_skewAdjoint (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
+    closure (ContinuousLinearMapStrongStar.ofCLM ''
+      ((S : Set (H →L[𝕜] H)) ∩ skewAdjoint (H →L[𝕜] H))) =
+      ContinuousLinearMapStrongStar.ofCLM ''
+        ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ skewAdjoint (H →L[𝕜] H)) :=
+  ContinuousLinearMapStrongStar.closure_image_ofCLM_eq_of_isStarNormal
+    (fun _ hx ↦ skewAdjoint.isStarNormal_of_mem hx.2)
+    S.closure_image_toPointwiseConvergenceCLM_inter_skewAdjoint
+
+/-- The strong-star closure of a unital star subalgebra is its double commutant. -/
+theorem closure_image_strongStar_ofCLM (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
+    closure (ContinuousLinearMapStrongStar.ofCLM '' (S : Set (H →L[𝕜] H))) =
+      ContinuousLinearMapStrongStar.ofCLM '' (S : Set (H →L[𝕜] H)).centralizer.centralizer := by
+  have hclosed : IsClosed (ContinuousLinearMapStrongStar.ofCLM ''
+      (S : Set (H →L[𝕜] H)).centralizer.centralizer) :=
+    ContinuousLinearMapStrongStar.isClosed_image_ofCLM_of_isClosed_image_wot
+      (S : Set (H →L[𝕜] H)).centralizer.isClosed_image_ofCLM_centralizer
+  refine subset_antisymm
+    (closure_minimal (Set.image_mono Set.subset_centralizer_centralizer) hclosed) ?_
+  -- Split a general element of `S''` into its self-adjoint and skew-adjoint parts, which lie
+  -- in `S''`.
+  let _ : NormedSpace ℝ H := .restrictScalars ℝ 𝕜 H
+  have : IsScalarTower ℝ 𝕜 H := .restrictScalars ℝ 𝕜 H
+  let T := StarSubalgebra.centralizer 𝕜 (StarSubalgebra.centralizer 𝕜 (S : Set (H →L[𝕜] H)) :
+    Set (H →L[𝕜] H))
+  have hT : (T : Set (H →L[𝕜] H)) = (S : Set (H →L[𝕜] H)).centralizer.centralizer := by
+    rw [StarSubalgebra.coe_centralizer_centralizer, StarMemClass.star_coe_eq, Set.union_self]
+  rintro _ ⟨x, hx, rfl⟩
+  rw [← hT, SetLike.mem_coe] at hx
+  rw [← StarModule.selfAdjointPart_add_skewAdjointPart ℝ x,
+    ContinuousLinearMapStrongStar.ofCLM_add]
+  -- Each part lies in the strong-star closure of the corresponding part of `S`.
+  have hmem {t : Set (H →L[𝕜] H)} (ht : closure (ContinuousLinearMapStrongStar.ofCLM ''
+      ((S : Set (H →L[𝕜] H)) ∩ t)) = ContinuousLinearMapStrongStar.ofCLM ''
+        ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ t)) {a : H →L[𝕜] H} (ha : a ∈ T)
+      (hat : a ∈ t) : ContinuousLinearMapStrongStar.ofCLM a ∈
+        closure (ContinuousLinearMapStrongStar.ofCLM '' (S : Set (H →L[𝕜] H))) := by
+    rw [← SetLike.mem_coe, hT] at ha
+    exact closure_mono (Set.image_mono Set.inter_subset_left)
+      (ht ▸ Set.mem_image_of_mem _ (Set.mem_inter ha hat))
+  refine map_mem_closure₂ continuous_add
+    (hmem S.closure_image_strongStar_ofCLM_inter_selfAdjoint ?_
+      (selfAdjointPart ℝ x).property)
+    (hmem S.closure_image_strongStar_ofCLM_inter_skewAdjoint ?_
+      (skewAdjointPart ℝ x).property) ?_
+  · rw [selfAdjointPart_apply_coe]
+    exact T.toSubalgebra.toSubmodule.smul_of_tower_mem _ (add_mem hx (star_mem hx) : _ ∈ T)
+  · rw [skewAdjointPart_apply_coe]
+    exact T.toSubalgebra.toSubmodule.smul_of_tower_mem _ (sub_mem hx (star_mem hx) : _ ∈ T)
+  · rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩
+    exact ⟨a + b, add_mem ha hb, ContinuousLinearMapStrongStar.ofCLM_add a b⟩
+
+/-- A unital star subalgebra equals its double commutant if and only if it is strong-star
+closed. -/
+theorem double_commutant_iff_isClosed_image_strongStar_ofCLM (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
+    (S : Set (H →L[𝕜] H)).centralizer.centralizer = S ↔
+      IsClosed (ContinuousLinearMapStrongStar.ofCLM '' (S : Set (H →L[𝕜] H))) := by
+  rw [← closure_eq_iff_isClosed, S.closure_image_strongStar_ofCLM]
+  exact (Set.image_injective.mpr ContinuousLinearMapStrongStar.ofCLM_injective).eq_iff.symm
+
+end StrongStar
+
 end StarSubalgebra
 
 namespace VonNeumannAlgebra
@@ -203,10 +327,9 @@ particular, so is its unit ball. -/
 theorem isCompact_image_ofCLM_inter_closedBall (M : VonNeumannAlgebra H) (A : H →L[ℂ] H)
     (r : ℝ) :
     IsCompact (ContinuousLinearMapWOT.ofCLM ''
-      ((M : Set (H →L[ℂ] H)) ∩ Metric.closedBall A r)) := by
-  rw [Set.image_inter ContinuousLinearMapWOT.ofCLM_injective]
-  exact (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall A r).inter_left
-    M.isClosed_image_ofCLM
+      ((M : Set (H →L[ℂ] H)) ∩ Metric.closedBall A r)) :=
+  ContinuousLinearMapWOT.isCompact_image_ofCLM_inter_closedBall_of_isClosed M.isClosed_image_ofCLM
+    A r
 
 /-- A concrete von Neumann algebra is strong operator closed. -/
 theorem isClosed_image_toPointwiseConvergenceCLM (M : VonNeumannAlgebra H) :
@@ -221,7 +344,7 @@ theorem image_ofCLM_adjoin_eq_closure (s : Set (H →L[ℂ] H)) :
     ContinuousLinearMapWOT.ofCLM '' (adjoin s : Set (H →L[ℂ] H)) =
       closure (ContinuousLinearMapWOT.ofCLM '' (StarAlgebra.adjoin ℂ s : Set (H →L[ℂ] H))) := by
   rw [StarSubalgebra.closure_image_ofCLM, ← adjoin_starAlgebraAdjoin,
-    coe_adjoin_of_star_subset (StarMemClass.star_coe_eq _).subset]
+    coe_adjoin_starSubalgebra]
 
 /-- The von Neumann algebra generated by `s` is the strong operator closure of the star algebra
 generated by `s`. -/
@@ -231,6 +354,21 @@ theorem image_toPointwiseConvergenceCLM_adjoin_eq_closure (s : Set (H →L[ℂ] 
       closure (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) H H ''
         (StarAlgebra.adjoin ℂ s : Set (H →L[ℂ] H))) := by
   rw [StarSubalgebra.closure_image_toPointwiseConvergenceCLM, ← adjoin_starAlgebraAdjoin,
+    coe_adjoin_starSubalgebra]
+
+/-- A concrete von Neumann algebra is strong-star closed. -/
+theorem isClosed_image_strongStar_ofCLM (M : VonNeumannAlgebra H) :
+    IsClosed (TauCeti.ContinuousLinearMapStrongStar.ofCLM '' (M : Set (H →L[ℂ] H))) :=
+  M.toStarSubalgebra.double_commutant_iff_isClosed_image_strongStar_ofCLM.mp
+    M.centralizer_centralizer
+
+/-- The von Neumann algebra generated by `s` is the strong-star closure of the star algebra
+generated by `s`. -/
+theorem image_strongStar_ofCLM_adjoin_eq_closure (s : Set (H →L[ℂ] H)) :
+    TauCeti.ContinuousLinearMapStrongStar.ofCLM '' (adjoin s : Set (H →L[ℂ] H)) =
+      closure (TauCeti.ContinuousLinearMapStrongStar.ofCLM ''
+        (StarAlgebra.adjoin ℂ s : Set (H →L[ℂ] H))) := by
+  rw [StarSubalgebra.closure_image_strongStar_ofCLM, ← adjoin_starAlgebraAdjoin,
     coe_adjoin_of_star_subset (StarMemClass.star_coe_eq _).subset]
 
 end VonNeumannAlgebra

@@ -66,7 +66,7 @@ to `y`". A zigzag is thus a proof-relevant witness of `Relation.EqvGen`. -/
 theorem nonempty_path_symmetrify_iff_eqvGen :
     Nonempty (@Path (Symmetrify V) _ a b) ↔
       Relation.EqvGen (fun x y : V ↦ Nonempty (x ⟶ y)) a b := by
-  rw [← Relation.EqvGen.reflTransGen_symmGen]
+  rw [← Relation.reflTransGen_symmGen]
   refine (reachable_iff_reflTransGen (V := Symmetrify V)).trans (Iff.of_eq ?_)
   -- An arrow of the symmetrized quiver from `x` to `y` is an arrow from `x` to `y` or back.
   exact congrArg (Relation.ReflTransGen · a b) (funext₂ fun x y ↦ propext nonempty_sum)
@@ -94,6 +94,15 @@ theorem nonempty_path_symmetrify_iff_reachable :
     tauto
   exact ⟨fun hab ↦ Relation.TransGen.mono (fun x y ↦ (h x y).1) a b hab,
     fun hab ↦ Relation.TransGen.mono (fun x y ↦ (h x y).2) a b hab⟩
+
+/-- The symmetrized quiver is strongly connected exactly when its underlying graph is
+preconnected. -/
+theorem isStronglyConnected_symmetrify_iff_preconnected :
+    @IsStronglyConnected (Symmetrify V) (@symmetrifyQuiver V ‹_root_.Quiver V›) ↔
+      (underlyingGraph V).Preconnected := by
+  rw [isStronglyConnected_iff, SimpleGraph.Preconnected]
+  refine forall_congr' fun x ↦ forall_congr' fun y ↦ ?_
+  exact @nonempty_path_symmetrify_iff_reachable V ‹_root_.Quiver V› x y
 
 /-- Two vertices lie in the same weakly connected component exactly when they are reachable in the
 underlying graph. -/
@@ -140,7 +149,7 @@ abbrev ComponentVertex (Q : V → V → Type v)
 abbrev ComponentHom (Q : V → V → Type v)
     (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩) :
     ComponentVertex Q C → ComponentVertex Q C → Type v :=
-  fun x y ↦ Q x.1 y.1
+  fun x y ↦ Q x.val y.val
 
 /-- A component of a finite vertex type has finitely many vertices. -/
 noncomputable instance instFintypeComponentVertex [Fintype V]
@@ -159,32 +168,32 @@ theorem weaklyConnectedComponent_mk_eq_of_hom {x y : V} (e : Q x y) :
 vertex. -/
 abbrev componentIncomingEquiv (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩)
     (x : ComponentVertex Q C) :
-    (Σ y : ComponentVertex Q C, Q y.1 x.1) ≃ (Σ y : V, Q y x.1) :=
-  Equiv.sigmaSubtypeEquivOfSubset (fun y ↦ Q y x.1)
+    (Σ y : ComponentVertex Q C, Q y.val x.val) ≃ (Σ y : V, Q y x.val) :=
+  Equiv.sigmaSubtypeEquivOfSubset (fun y ↦ Q y x.val)
     (fun y ↦ @_root_.Quiver.WeaklyConnectedComponent.mk V ⟨Q⟩ y = C)
-    fun _ e ↦ (weaklyConnectedComponent_mk_eq_of_hom e).trans x.2
+    fun _ e ↦ (weaklyConnectedComponent_mk_eq_of_hom e).trans x.property
 
 /-- The incoming-arrow equivalence retains the vertex and arrow. -/
 @[simp]
 theorem componentIncomingEquiv_apply (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩)
-    (x : ComponentVertex Q C) (a : Σ y : ComponentVertex Q C, Q y.1 x.1) :
-    componentIncomingEquiv C x a = ⟨a.1.1, a.2⟩ :=
+    (x : ComponentVertex Q C) (a : Σ y : ComponentVertex Q C, Q y.val x.val) :
+    componentIncomingEquiv C x a = ⟨a.1.val, a.2⟩ :=
   (rfl)
 
 /-- The arrows leaving a vertex for vertices within its component are exactly all arrows leaving
 that vertex. -/
 abbrev componentOutgoingEquiv (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩)
     (x : ComponentVertex Q C) :
-    (Σ y : ComponentVertex Q C, Q x.1 y.1) ≃ (Σ y : V, Q x.1 y) :=
-  Equiv.sigmaSubtypeEquivOfSubset (fun y ↦ Q x.1 y)
+    (Σ y : ComponentVertex Q C, Q x.val y.val) ≃ (Σ y : V, Q x.val y) :=
+  Equiv.sigmaSubtypeEquivOfSubset (fun y ↦ Q x.val y)
     (fun y ↦ @_root_.Quiver.WeaklyConnectedComponent.mk V ⟨Q⟩ y = C)
-    fun _ e ↦ (weaklyConnectedComponent_mk_eq_of_hom e).symm.trans x.2
+    fun _ e ↦ (weaklyConnectedComponent_mk_eq_of_hom e).symm.trans x.property
 
 /-- The outgoing-arrow equivalence retains the vertex and arrow. -/
 @[simp]
 theorem componentOutgoingEquiv_apply (C : @_root_.Quiver.WeaklyConnectedComponent V ⟨Q⟩)
-    (x : ComponentVertex Q C) (a : Σ y : ComponentVertex Q C, Q x.1 y.1) :
-    componentOutgoingEquiv C x a = ⟨a.1.1, a.2⟩ :=
+    (x : ComponentVertex Q C) (a : Σ y : ComponentVertex Q C, Q x.val y.val) :
+    componentOutgoingEquiv C x a = ⟨a.1.val, a.2⟩ :=
   (rfl)
 
 end Explicit

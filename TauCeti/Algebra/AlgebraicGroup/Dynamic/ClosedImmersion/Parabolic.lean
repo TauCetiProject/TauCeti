@@ -52,7 +52,7 @@ theorem mapDomain_mem_parabolic (φ : H →ₐc[R] K)
 theorem mapDomain_extend (φ : H →ₐc[R] K)
     (l : K →ₐc[R] LaurentPolynomial R) (g : parabolic A l) :
     BialgHom.mapDomain φ (extend A l g) =
-      extend A (l.comp φ) ⟨BialgHom.mapDomain φ g.1, mapDomain_mem_parabolic φ l g.2⟩ := by
+      extend A (l.comp φ) ⟨BialgHom.mapDomain φ g.val, mapDomain_mem_parabolic φ l g.property⟩ := by
   apply Eq.symm
   apply extend_unique
   rw [← mapDomain_ofPolyPoint, ofPolyPoint_extend, mapDomain_conjugate]
@@ -61,7 +61,7 @@ theorem mapDomain_extend (φ : H →ₐc[R] K)
 theorem mapDomain_limit (φ : H →ₐc[R] K)
     (l : K →ₐc[R] LaurentPolynomial R) (g : parabolic A l) :
     BialgHom.mapDomain φ (limit A l g) =
-      limit A (l.comp φ) ⟨BialgHom.mapDomain φ g.1, mapDomain_mem_parabolic φ l g.2⟩ := by
+      limit A (l.comp φ) ⟨BialgHom.mapDomain φ g.val, mapDomain_mem_parabolic φ l g.property⟩ := by
   rw [limit_apply, mapDomain_evalZeroPoint, mapDomain_extend, limit_apply]
 
 /-- A group homomorphism carries the dynamic unipotent subgroup into its induced counterpart. -/

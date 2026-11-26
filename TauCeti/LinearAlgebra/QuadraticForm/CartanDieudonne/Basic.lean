@@ -46,24 +46,20 @@ variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
 
 private abbrev AnisotropicVector (Q : QuadraticForm K V) := {x : V // Q x ≠ 0}
 
-private noncomputable def anisotropicReflection (Q : QuadraticForm K V)
-    (x : AnisotropicVector Q) : QuadraticMap.orthogonalGroup Q := by
-  let _ := invertibleOfNonzero x.2
-  exact QuadraticMap.reflectionOrthogonal Q x
-
 private noncomputable def reflectionWord (Q : QuadraticForm K V)
     (l : List (AnisotropicVector Q)) : QuadraticMap.orthogonalGroup Q :=
-  (l.map (anisotropicReflection Q)).prod
+  (l.map fun x : AnisotropicVector Q ↦ reflectionOrthogonalOfNeZero Q x x.property).prod
 
 private theorem reflectionWord_cons (Q : QuadraticForm K V) (a : AnisotropicVector Q)
     (l : List (AnisotropicVector Q)) :
-    reflectionWord Q (a :: l) = anisotropicReflection Q a * reflectionWord Q l := by
+    reflectionWord Q (a :: l) =
+      reflectionOrthogonalOfNeZero Q a a.property * reflectionWord Q l := by
   simp [reflectionWord]
 
 private theorem coe_reflectionWord_cons_apply (Q : QuadraticForm K V) (a : AnisotropicVector Q)
     (l : List (AnisotropicVector Q)) (y : V) :
     ((reflectionWord Q (a :: l) : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y =
-      ((anisotropicReflection Q a : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)
+      ((reflectionOrthogonalOfNeZero Q a a.property : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)
         (((reflectionWord Q l : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) := by
   rw [reflectionWord_cons]
   rfl
@@ -87,47 +83,15 @@ theorem det_list_prod_of_reflectionOrthogonal [FiniteDimensional K V]
 private theorem det_reflectionWord [FiniteDimensional K V] (Q : QuadraticForm K V)
     (l : List (AnisotropicVector Q)) :
     LinearEquiv.det (reflectionWord Q l : V ≃ₗ[K] V) = (-1) ^ l.length := by
-  unfold reflectionWord
-  calc
-    LinearEquiv.det ((l.map (anisotropicReflection Q)).prod : V ≃ₗ[K] V) =
-        (-1) ^ (l.map (anisotropicReflection Q)).length := by
-      apply det_list_prod_of_reflectionOrthogonal
-      intro r hr
-      obtain ⟨x, _, rfl⟩ := List.mem_map.mp hr
-      let _ := invertibleOfNonzero x.2
-      exact ⟨x, inferInstance, rfl⟩
-    _ = (-1) ^ l.length := by rw [List.length_map]
-
-private theorem anisotropicReflection_mul_self (Q : QuadraticForm K V)
-    (x : AnisotropicVector Q) :
-    anisotropicReflection Q x * anisotropicReflection Q x = 1 := by
-  let _ := invertibleOfNonzero x.2
-  unfold anisotropicReflection
-  exact QuadraticMap.reflectionOrthogonal_mul_self Q x
+  rw [reflectionWord, det_list_prod_of_reflectionOrthogonal, List.length_map]
+  intro r hr
+  obtain ⟨x, _, rfl⟩ := List.mem_map.mp hr
+  let _ := invertibleOfNonzero x.property
+  exact ⟨x, inferInstance, (reflectionOrthogonalOfNeZero_eq Q x x.property).symm⟩
 
 private abbrev anisotropicVectorOfRestrict (Q : QuadraticForm K V) (U : Submodule K V)
     (x : AnisotropicVector (Q.restrict U)) : AnisotropicVector Q :=
-  ⟨x.1.1, by simpa only [QuadraticMap.restrict_apply] using x.2⟩
-
-private theorem anisotropicReflection_restrict_apply (Q : QuadraticForm K V)
-    (U : Submodule K V) (x : AnisotropicVector (Q.restrict U)) (y : U) :
-    ((anisotropicReflection Q (anisotropicVectorOfRestrict Q U x) :
-      QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y =
-      (((anisotropicReflection (Q.restrict U) x : QuadraticMap.orthogonalGroup (Q.restrict U)) :
-        U ≃ₗ[K] U) y : U) := by
-  unfold anisotropicReflection
-  rw [QuadraticMap.coe_reflectionOrthogonal, QuadraticMap.coe_reflectionOrthogonal,
-    QuadraticMap.reflection_apply, QuadraticMap.reflection_apply]
-  simp [anisotropicVectorOfRestrict, QuadraticMap.restrict_apply, QuadraticMap.polar,
-    invOf_eq_inv]
-
-private theorem anisotropicReflection_apply_of_isOrtho (Q : QuadraticForm K V)
-    (x : AnisotropicVector Q) (y : V) (hxy : Q.IsOrtho x y) :
-    ((anisotropicReflection Q x : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y = y := by
-  let _ := invertibleOfNonzero x.2
-  unfold anisotropicReflection
-  rw [QuadraticMap.coe_reflectionOrthogonal]
-  exact QuadraticMap.reflection_apply_of_isOrtho Q x hxy
+  ⟨x.val.val, by simpa only [QuadraticMap.restrict_apply] using x.property⟩
 
 private theorem reflectionWord_restrict_apply (Q : QuadraticForm K V)
     (U : Submodule K V) (l : List (AnisotropicVector (Q.restrict U))) (y : U) :
@@ -140,14 +104,15 @@ private theorem reflectionWord_restrict_apply (Q : QuadraticForm K V)
   | cons x l ih =>
       rw [List.map_cons, coe_reflectionWord_cons_apply Q, ih,
         coe_reflectionWord_cons_apply (Q.restrict U)]
-      exact anisotropicReflection_restrict_apply Q U x _
+      exact reflectionOrthogonalOfNeZero_restrict_apply Q U x.val x.property _
 
 /-- A reflection word is `g` once the word of the remaining reflections is the reflection in the
 head times `g`. -/
 private theorem reflectionWord_cons_eq_of_eq (Q : QuadraticForm K V) (a : AnisotropicVector Q)
     {l : List (AnisotropicVector Q)} {g : QuadraticMap.orthogonalGroup Q}
-    (h : reflectionWord Q l = anisotropicReflection Q a * g) : reflectionWord Q (a :: l) = g := by
-  rw [reflectionWord_cons, h, ← mul_assoc, anisotropicReflection_mul_self, one_mul]
+    (h : reflectionWord Q l = reflectionOrthogonalOfNeZero Q a a.property * g) :
+    reflectionWord Q (a :: l) = g := by
+  rw [reflectionWord_cons, h, ← mul_assoc, reflectionOrthogonalOfNeZero_mul_self, one_mul]
 
 private theorem finrank_ne_one_of_exceptional
     [FiniteDimensional K V] [Invertible (2 : K)]
@@ -167,7 +132,7 @@ private theorem finrank_ne_one_of_exceptional
   obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp
     (show (g : V ≃ₗ[K] V) x ∈ K ∙ x by rw [hxspan]; simp)
   have hQa : a ^ 2 * Q x = Q x := by
-    have hmap := QuadraticMap.map_app_of_mem_orthogonalGroup g.2 x
+    have hmap := QuadraticMap.map_app_of_mem_orthogonalGroup g.property x
     rw [← ha, Q.map_smul] at hmap
     simpa only [smul_eq_mul, pow_two] using hmap
   have ha2 : a ^ 2 = 1 := by
@@ -201,7 +166,7 @@ private theorem finrank_ne_two_of_exceptional
   have hyne : y ≠ 0 := sub_ne_zero.mpr (hexceptional x hxQ).1
   have hyQ : Q y = 0 := (hexceptional x hxQ).2
   have hmap : Q ((g : V ≃ₗ[K] V) x) = Q x :=
-    QuadraticMap.map_app_of_mem_orthogonalGroup g.2 x
+    QuadraticMap.map_app_of_mem_orthogonalGroup g.property x
   have hyx : B y x = 0 := by
     have hpolar : QuadraticMap.polar Q ((g : V ≃ₗ[K] V) x) x = 2 * Q x := by
       dsimp only [y] at hyQ
@@ -291,7 +256,7 @@ private theorem exceptional_displacement_ker_eq_range
     hrange_isotropic.polar_eq_zero ⟨x, rfl⟩ ⟨y, rfl⟩
   have hf_polar (x y : V) :
       QuadraticMap.polar Q (f x) y = -QuadraticMap.polar Q x (f y) := by
-    have hpreserve := QuadraticMap.polar_apply_of_mem_orthogonalGroup g.2 x y
+    have hpreserve := QuadraticMap.polar_apply_of_mem_orthogonalGroup g.property x y
     have hgx : (g : V ≃ₗ[K] V) x = f x + x := by simp [f]
     have hgy : (g : V ≃ₗ[K] V) y = f y + y := by simp [f]
     rw [hgx, hgy, QuadraticMap.polar_add_left, QuadraticMap.polar_add_right,
@@ -373,7 +338,8 @@ private theorem reflectionWord_restrict_apply_of_isOrtho (Q : QuadraticForm K V)
   | cons x l ih =>
       rw [List.map_cons, coe_reflectionWord_cons_apply]
       rw [ih]
-      exact anisotropicReflection_apply_of_isOrtho Q _ v (hv _ x.1.2)
+      exact reflectionOrthogonalOfNeZero_apply_of_polar_eq_zero Q _ _
+        (hv _ x.val.property).polar_eq_zero
 
 /-- The fixed case of the induction step: an orthogonal map fixing an anisotropic vector `a` is
 a word of fewer than `dim V` reflections, given the result in smaller dimensions (`ih`), because
@@ -394,7 +360,7 @@ private theorem exists_reflectionWord_of_apply_eq_self
     LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)
   let U : Submodule K V := B.orthogonal (K ∙ (a : V))
   have haa : B (a : V) a ≠ 0 := by
-    simpa only [B, QuadraticMap.associated_eq_self_apply] using a.2
+    simpa only [B, QuadraticMap.associated_eq_self_apply] using a.property
   have hQU : (Q.restrict U).Nondegenerate := by
     apply QuadraticMap.nondegenerate_associated_iff.mp
     -- `restrict` is implemented as composition with the subtype map; the associated-form
@@ -402,11 +368,11 @@ private theorem exists_reflectionWord_of_apply_eq_self
     change (QuadraticMap.associated (Q.comp U.subtype)).Nondegenerate
     rw [QuadraticMap.associated_comp]
     exact B.restrict_nondegenerate_orthogonal_spanSingleton hB hBsymm.isRefl haa
-  have hane : (a : V) ≠ 0 := fun h ↦ a.2 (by rw [h, Q.map_zero])
+  have hane : (a : V) ≠ 0 := fun h ↦ a.property (by rw [h, Q.map_zero])
   have hpos : 0 < n := hn ▸ Module.finrank_pos_iff_exists_ne_zero.mpr ⟨a, hane⟩
   obtain ⟨l, hllen, hlprod⟩ := ih (n - 1) (by omega)
     (by rw [B.finrank_orthogonal hB, finrank_span_singleton hane, hn]) (Q.restrict U) hQU
-    (orthogonalGroup.restrict g (map_orthogonal_of_mem_orthogonalGroup g.2
+    (orthogonalGroup.restrict g (map_orthogonal_of_mem_orthogonalGroup g.property
       (by rw [Submodule.map_span_singleton, LinearEquiv.coe_coe, ha])))
   refine ⟨l.map (anisotropicVectorOfRestrict Q U), by simp only [List.length_map]; omega,
     Subtype.ext (LinearEquiv.toLinearMap_injective ?_)⟩
@@ -435,17 +401,16 @@ private theorem exists_reflectionWord_of_good {n : ℕ} (Q : QuadraticForm K V)
   · obtain ⟨l, hllen, hlprod⟩ := fixed g a ha
     exact ⟨l, Nat.le_of_lt hllen, hlprod⟩
   · let d : AnisotropicVector Q := ⟨(g : V ≃ₗ[K] V) a - a, ha⟩
-    let r : QuadraticMap.orthogonalGroup Q := anisotropicReflection Q d
+    let r : QuadraticMap.orthogonalGroup Q := reflectionOrthogonalOfNeZero Q d d.property
     have hrfix : (((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) a) = a := by
       -- The reflection identity is pointwise on linear equivalences, whereas the goal is
       -- evaluation of a product in the orthogonal subgroup.
-      change ((anisotropicReflection Q d : QuadraticMap.orthogonalGroup Q) :
+      change ((reflectionOrthogonalOfNeZero Q d d.property : QuadraticMap.orthogonalGroup Q) :
         V ≃ₗ[K] V) ((g : V ≃ₗ[K] V) a) = a
-      let _ := invertibleOfNonzero d.2
-      unfold anisotropicReflection
-      rw [QuadraticMap.coe_reflectionOrthogonal]
+      let _ := invertibleOfNonzero d.property
+      rw [reflectionOrthogonalOfNeZero_eq, QuadraticMap.coe_reflectionOrthogonal]
       exact QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ a
-        (QuadraticMap.map_app_of_mem_orthogonalGroup g.2 a)
+        (QuadraticMap.map_app_of_mem_orthogonalGroup g.property a)
     obtain ⟨l, hllen, hlprod⟩ := fixed (r * g) a hrfix
     refine ⟨d :: l, by simp only [List.length_cons]; omega, ?_⟩
     exact reflectionWord_cons_eq_of_eq Q d hlprod
@@ -471,7 +436,7 @@ private theorem exists_reflectionWord_of_exceptional
   let _ := (Module.finrank_pos_iff (R := K) (M := V)).mp (by omega)
   obtain ⟨x, hxQ⟩ : ∃ x, Q x ≠ 0 := hQ.exists_isUnit.imp fun _ ↦ IsUnit.ne_zero
   let a : AnisotropicVector Q := ⟨x, hxQ⟩
-  let r : QuadraticMap.orthogonalGroup Q := anisotropicReflection Q a
+  let r : QuadraticMap.orthogonalGroup Q := reflectionOrthogonalOfNeZero Q a a.property
   have hdetg' : LinearEquiv.det ((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) = -1 := by
     have hdetr : LinearEquiv.det (r : V ≃ₗ[K] V) = -1 := by
       simpa [reflectionWord] using det_reflectionWord Q [a]
@@ -524,14 +489,12 @@ theorem exists_reflectionOrthogonal_list_prod_eq [FiniteDimensional K V] [NeZero
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   obtain ⟨v, hvlen, hvprod⟩ :=
     exists_reflectionWord_of_finrank_eq (Module.finrank K V) rfl Q hQ g
-  let l := v.map (anisotropicReflection Q)
+  let l := v.map fun x : AnisotropicVector Q ↦ reflectionOrthogonalOfNeZero Q x x.property
   refine ⟨l, ?_, by simpa only [l, List.length_map] using hvlen, ?_⟩
   · intro r hr
     obtain ⟨x, _, rfl⟩ := List.mem_map.mp hr
-    let _ : Invertible (Q x) := invertibleOfNonzero x.2
-    refine ⟨x, inferInstance, ?_⟩
-    unfold anisotropicReflection
-    rfl
+    let _ : Invertible (Q x) := invertibleOfNonzero x.property
+    exact ⟨x, inferInstance, (reflectionOrthogonalOfNeZero_eq Q x x.property).symm⟩
   · exact hvprod
 
 /-- **Cartan--Dieudonné generation.** Any subgroup of the orthogonal group that contains every

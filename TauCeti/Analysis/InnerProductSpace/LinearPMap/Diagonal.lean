@@ -8,7 +8,10 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Diagonal
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
-import TauCeti.Analysis.InnerProductSpace.Parseval
+import Mathlib.Algebra.FiniteSupport.Basic
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+import TauCeti.Analysis.Normed.Lp.Finsupp
+import TauCeti.Topology.Algebra.Module.LinearPMap.Basic
 
 /-!
 # Diagonal operators in a Hilbert basis
@@ -26,7 +29,11 @@ coordinatewise (`HilbertBasis.mem_graph_diagonalPMap_iff`), so it is closed. Its
 every basis vector and is dense, and its adjoint is the diagonal operator of the conjugate family
 (`HilbertBasis.adjoint_diagonalPMap`), so it is self-adjoint for a real family.
 Composition multiplies the families (`HilbertBasis.diagonalPMap_apply_diagonalPMap_apply`) and
-addition adds them on the common domain (`HilbertBasis.diagonalPMap_add_diagonalPMap_le`).
+addition adds them on the common domain (`HilbertBasis.diagonalPMap_add_diagonalPMap_le`). Its
+kernel is the closed span of the basis vectors `b i` with `c i = 0`
+(`HilbertBasis.ker_diagonalPMap`), and its `finrank` is the number `Nat.card {i | c i = 0}` of
+these indices, which is `0` when infinitely many coefficients vanish
+(`HilbertBasis.finrank_ker_diagonalPMap`).
 
 Diagonal operators are the functional calculus of operators with a Hilbert basis of eigenvectors.
 If a closed symmetric operator `A`, for instance a self-adjoint one, has a Hilbert basis `b` of
@@ -55,11 +62,17 @@ so `f` only enters through its values `f (λ i)` at the eigenvalues.
 * `HilbertBasis.mem_diagonalPMap_domain_iff`, `HilbertBasis.inner_diagonalPMap_apply`,
   `HilbertBasis.mem_graph_diagonalPMap_iff`: the domain, the coordinates and the graph of a
   diagonal operator.
+* `HilbertBasis.default_diagonalPMap_apply`: in the standard Hilbert basis of `ℓ²(ι, 𝕜)` a
+  diagonal operator multiplies the entries.
+* `HilbertBasis.mem_diagonalPMap_domain_of_hasFiniteSupport`: finitely supported vectors lie in
+  the domain.
 * `HilbertBasis.hasSum_diagonalPMap_apply`: the expansion
   `b.diagonalPMap c x = ∑ᵢ c i ⟪b i, x⟫ • b i`.
 * `HilbertBasis.diagonalPMap_domain_eq_top`: a bounded family gives an everywhere defined operator,
   and `HilbertBasis.diagonalPMap_eq_toPMap` identifies it with the bounded diagonal operator.
 * `HilbertBasis.isClosed_diagonalPMap`: diagonal operators are closed.
+* `HilbertBasis.mem_ker_diagonalPMap_iff`, `HilbertBasis.ker_diagonalPMap` and
+  `HilbertBasis.finrank_ker_diagonalPMap`: the kernel and its dimension.
 * `HilbertBasis.adjoint_diagonalPMap`, `HilbertBasis.isSelfAdjoint_diagonalPMap`: the adjoint of
   `b.diagonalPMap c` is `b.diagonalPMap (star c)`, so diagonal operators are self-adjoint for
   self-adjoint coefficient families.
@@ -114,7 +127,7 @@ def diagonalPMap : E →ₗ.[𝕜] E where
       smul_mem' a x hx := by
         simpa only [Set.mem_ofPred_eq, inner_smul_right, mul_left_comm] using hx.const_mul a }
   toFun :=
-    { toFun x := b.repr.symm ⟨fun i ↦ c i * ⟪b i, (x : E)⟫_𝕜, x.2⟩
+    { toFun x := b.repr.symm ⟨fun i ↦ c i * ⟪b i, (x : E)⟫_𝕜, x.property⟩
       map_add' x y := by
         rw [← _root_.map_add]
         congr 1
@@ -127,7 +140,7 @@ def diagonalPMap : E →ₗ.[𝕜] E where
         simp [inner_smul_right, mul_left_comm] }
 
 private theorem diagonalPMap_apply_eq_repr_symm (x : (b.diagonalPMap c).domain) :
-    b.diagonalPMap c x = b.repr.symm ⟨fun i ↦ c i * ⟪b i, (x : E)⟫_𝕜, x.2⟩ :=
+    b.diagonalPMap c x = b.repr.symm ⟨fun i ↦ c i * ⟪b i, (x : E)⟫_𝕜, x.property⟩ :=
   rfl
 
 /-- A vector lies in the domain of `b.diagonalPMap c` if and only if its rescaled coordinate family
@@ -143,6 +156,13 @@ theorem mem_diagonalPMap_domain_iff {x : E} :
   rw [mem_diagonalPMap_domain_iff_memℓp, memℓp_gen_iff (by norm_num)]
   norm_num
 
+/-- A vector with finitely many nonzero coordinates `⟪b i, x⟫` lies in the domain of every
+diagonal operator `b.diagonalPMap c`. -/
+theorem mem_diagonalPMap_domain_of_hasFiniteSupport {x : E}
+    (hx : (fun i ↦ ⟪b i, x⟫_𝕜).HasFiniteSupport) : x ∈ (b.diagonalPMap c).domain := by
+  rw [mem_diagonalPMap_domain_iff_memℓp]
+  exact (Function.HasFiniteSupport.fun_mul_right c hx).memℓp 2
+
 /-- The coordinates of `b.diagonalPMap c x` in the Hilbert basis `b` are `c i * ⟪b i, x⟫`. -/
 @[simp]
 theorem repr_diagonalPMap_apply (x : (b.diagonalPMap c).domain) (i : ι) :
@@ -154,6 +174,17 @@ theorem repr_diagonalPMap_apply (x : (b.diagonalPMap c).domain) (i : ι) :
 theorem inner_diagonalPMap_apply (x : (b.diagonalPMap c).domain) (i : ι) :
     ⟪b i, b.diagonalPMap c x⟫_𝕜 = c i * ⟪b i, (x : E)⟫_𝕜 := by
   rw [← b.repr_apply_apply, repr_diagonalPMap_apply]
+
+open scoped lp in
+/-- In the standard Hilbert basis of `ℓ²(ι, 𝕜)` the diagonal operator multiplies the entries:
+`(diagonalPMap c x) i = c i * x i`. -/
+@[simp]
+theorem default_diagonalPMap_apply (c : ι → 𝕜)
+    (x : ((default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).diagonalPMap c).domain) (i : ι) :
+    ((default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).diagonalPMap c x : ℓ²(ι, 𝕜)) i =
+      c i * (x : ℓ²(ι, 𝕜)) i := by
+  rw [← inner_default_apply, ← inner_default_apply (x : ℓ²(ι, 𝕜))]
+  exact inner_diagonalPMap_apply _ _ x i
 
 /-- A vector `y` is the image of `x` under the diagonal operator if and only if its coordinates are
 those of `x` multiplied by `c`. -/
@@ -190,7 +221,7 @@ theorem hasSum_diagonalPMap_apply (x : (b.diagonalPMap c).domain) :
 `‖b.diagonalPMap c x‖² = ∑ᵢ ‖c i * ⟪b i, x⟫‖²`. -/
 theorem hasSum_norm_diagonalPMap_apply_sq (x : (b.diagonalPMap c).domain) :
     HasSum (fun i ↦ ‖c i * ⟪b i, (x : E)⟫_𝕜‖ ^ 2) (‖b.diagonalPMap c x‖ ^ 2) := by
-  simpa only [inner_diagonalPMap_apply] using b.hasSum_norm_sq_inner (b.diagonalPMap c x)
+  simpa only [inner_diagonalPMap_apply] using b.hasSum_norm_inner_sq (b.diagonalPMap c x)
 
 /-- The coordinates of `c i • b i` are those of `b i` multiplied by `c`. -/
 private theorem inner_smul_self (i j : ι) : ⟪b j, c i • b i⟫_𝕜 = c j * ⟪b j, b i⟫_𝕜 := by
@@ -233,7 +264,7 @@ theorem dense_diagonalPMap_domain : Dense ((b.diagonalPMap c).domain : Set E) :=
 theorem diagonalPMap_domain_eq_top {C : ℝ} (hc : ∀ i, ‖c i‖ ≤ C) :
     (b.diagonalPMap c).domain = ⊤ := by
   refine Submodule.eq_top_iff'.2 fun x ↦ (b.mem_diagonalPMap_domain_iff c).2 ?_
-  refine ((b.summable_norm_sq_inner x).mul_left (C ^ 2)).of_nonneg_of_le (fun _ ↦ by positivity)
+  refine ((b.summable_norm_inner_sq x).mul_left (C ^ 2)).of_nonneg_of_le (fun _ ↦ by positivity)
     fun i ↦ ?_
   rw [norm_mul, mul_pow]
   gcongr
@@ -287,6 +318,61 @@ theorem isClosed_diagonalPMap : (b.diagonalPMap c).IsClosed := by
     exact b.mem_graph_diagonalPMap_iff c
   rw [LinearPMap.IsClosed, h]
   exact isClosed_iInter fun i ↦ isClosed_eq (by fun_prop) (by fun_prop)
+
+/-- **The kernel of a diagonal operator.** A vector lies in the kernel of `b.diagonalPMap c` if and
+only if its coordinates `⟪b i, x⟫` vanish at every index `i` with `c i ≠ 0`. -/
+theorem mem_ker_diagonalPMap_iff {x : E} :
+    x ∈ (b.diagonalPMap c).ker ↔ ∀ i, c i ≠ 0 → ⟪b i, x⟫_𝕜 = 0 := by
+  rw [mem_ker_iff_mem_graph, mem_graph_diagonalPMap_iff]
+  refine forall_congr' fun i ↦ ?_
+  rw [inner_zero_right, eq_comm, mul_eq_zero]
+  exact ⟨fun h hc ↦ h.resolve_left hc, fun h ↦ or_iff_not_imp_left.2 h⟩
+
+/-- The kernel of a diagonal operator is the closed span of the basis vectors `b i` at which the
+coefficient `c i` vanishes. -/
+theorem ker_diagonalPMap :
+    (b.diagonalPMap c).ker = (Submodule.span 𝕜 (b '' {i | c i = 0})).topologicalClosure := by
+  refine le_antisymm (fun x hx ↦ ?_) (Submodule.topologicalClosure_minimal _ ?_ ?_)
+  · -- The basis expansion of a vector of the kernel only involves the basis vectors `b i` with
+    -- `c i = 0`.
+    rw [mem_ker_diagonalPMap_iff] at hx
+    refine (Submodule.isClosed_topologicalClosure _).mem_of_tendsto (b.hasSum_repr x)
+      (Filter.Eventually.of_forall fun s ↦ Submodule.sum_mem _ fun i _ ↦ ?_)
+    by_cases hc : c i = 0
+    · exact Submodule.le_topologicalClosure _
+        (Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hc, rfl⟩))
+    · rw [b.repr_apply_apply, hx i hc, zero_smul]
+      exact Submodule.zero_mem _
+  · refine Submodule.span_le.2 ?_
+    rintro _ ⟨i, hi, rfl⟩
+    rw [SetLike.mem_coe, mem_ker_diagonalPMap_iff]
+    intro j hj
+    exact b.orthonormal.inner_eq_zero fun hji ↦ hj (hji ▸ hi)
+  · exact (b.isClosed_diagonalPMap c).isClosed_ker
+
+/-- **The dimension of the kernel of a diagonal operator** is the number of indices `i` with
+`c i = 0`. Both sides are `0` when there are infinitely many such indices. -/
+theorem finrank_ker_diagonalPMap :
+    Module.finrank 𝕜 (b.diagonalPMap c).ker = Nat.card {i | c i = 0} := by
+  rcases finite_or_infinite {i | c i = 0} with hZ | hZ
+  · have : Fintype {i | c i = 0} := Fintype.ofFinite _
+    have : FiniteDimensional 𝕜 (Submodule.span 𝕜 (b '' {i | c i = 0})) :=
+      FiniteDimensional.span_of_finite 𝕜 ((Set.toFinite _).image b)
+    rw [ker_diagonalPMap,
+      (Submodule.span 𝕜 _).isClosed_of_finiteDimensional.submodule_topologicalClosure_eq,
+      Set.image_eq_range, Nat.card_eq_fintype_card]
+    exact finrank_span_eq_card (b.orthonormal.linearIndependent.comp _ Subtype.val_injective)
+  · -- Infinitely many orthonormal vectors lie in the kernel, so it is infinite-dimensional.
+    rw [Nat.card_eq_zero_of_infinite]
+    refine Module.finrank_of_not_finite fun hfin ↦ ?_
+    have hmem (i : {i | c i = 0}) : b i ∈ (b.diagonalPMap c).ker := by
+      rw [ker_diagonalPMap]
+      exact Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨i, i.property, rfl⟩)
+    have : Finite {i | c i = 0} :=
+      LinearIndependent.finite (f := fun i ↦ (⟨b i, hmem i⟩ : (b.diagonalPMap c).ker)) <|
+        LinearIndependent.of_comp (b.diagonalPMap c).ker.subtype
+          (b.orthonormal.linearIndependent.comp _ Subtype.val_injective)
+    exact not_finite {i | c i = 0}
 
 variable [CompleteSpace E]
 
@@ -349,7 +435,7 @@ theorem IsFormalAdjoint.hasSum_norm_sq_add_norm_apply_sq (hA : A.IsFormalAdjoint
     {lam : ι → ℝ} (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i)
     (x : A.domain) :
     HasSum (fun i ↦ (1 + lam i ^ 2) * ‖⟪b i, (x : E)⟫_𝕜‖ ^ 2) (‖(x : E)‖ ^ 2 + ‖A x‖ ^ 2) := by
-  have h := (b.hasSum_norm_sq_inner (x : E)).add (b.hasSum_norm_sq_inner (A x))
+  have h := (b.hasSum_norm_inner_sq (x : E)).add (b.hasSum_norm_inner_sq (A x))
   refine h.congr_fun fun i ↦ ?_
   rw [(b.le_diagonalPMap_iff _).1 (hA.le_diagonalPMap hb) x, norm_mul, RCLike.norm_ofReal,
     mul_pow, sq_abs]

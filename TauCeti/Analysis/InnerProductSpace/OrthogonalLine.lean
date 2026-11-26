@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 
 /-!
-# Covectors on a line and its orthogonal hyperplane
+# Covectors and graphs over an orthogonal hyperplane
 
 Let `e` be a unit vector of a real inner product space and `v` a vector of the orthogonal
 hyperplane `(ℝ ∙ e)ᗮ` with `‖v‖ ≤ 1`. By Pythagoras in orthogonal line coordinates
@@ -17,13 +17,26 @@ hyperplane `(ℝ ∙ e)ᗮ` with `‖v‖ ≤ 1`. By Pythagoras in orthogonal li
 of a function along `e`, weighted by `√(1 - ‖v‖²)`, be combined with its variation in the
 transverse direction `-v` without exceeding its total variation.
 
+Orthogonal line coordinates `TauCeti.orthogonalLineEquiv` also identify the graph
+`Set.range (fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v)` of a scalar function `g : (ℝ ∙ v)ᗮ → ℝ` over
+the orthogonal hyperplane of a unit vector `v` with the image of `g.graph`: when `g` is continuous
+(and in particular when `g` is Lipschitz), this graph is closed in `E`, and when `g` is
+`K`-Lipschitz the parametrization `w ↦ (w : E) + g w • v` is `(1 + K)`-Lipschitz.
+
 ## Main results
 
 * `TauCeti.sqrt_mul_abs_apply_sub_apply_le`: `√(1 - ‖v‖²) |L e| - L v ≤ ‖L‖` for a covector `L`,
   a unit vector `e` and `v ⊥ e` with `‖v‖ ≤ 1`.
+* `TauCeti.lipschitzWith_coe_add_smul`: `w ↦ (w : E) + g w • v` is `(1 + K)`-Lipschitz when
+  `‖v‖ = 1` and `g : (ℝ ∙ v)ᗮ → ℝ` is `K`-Lipschitz.
+* `TauCeti.isClosed_range_add_smul_of_continuous` and
+  `TauCeti.isClosed_range_add_smul_of_lipschitzWith`: a continuous or globally Lipschitz graph over
+  `(ℝ ∙ v)ᗮ` (`‖v‖ = 1`) is closed.
 -/
 
 public section
+
+open scoped NNReal
 
 namespace TauCeti
 
@@ -47,5 +60,31 @@ theorem sqrt_mul_abs_apply_sub_apply_le (e : E) (he : ‖e‖ = 1) (L : E →L[�
   rcases le_total 0 (L e) with h | h
   · simpa [abs_of_nonneg h] using key 1 (by norm_num)
   · simpa [abs_of_nonpos h] using key (-1) (by norm_num)
+
+/-- The graph map `w ↦ (w : E) + g w • v` over `(ℝ ∙ v)ᗮ` along a unit vector `v` is
+`(1 + K)`-Lipschitz when `g` is `K`-Lipschitz. -/
+theorem lipschitzWith_coe_add_smul {v : E} (hv : ‖v‖ = 1) {K : ℝ≥0} {g : (ℝ ∙ v)ᗮ → ℝ}
+    (hg : LipschitzWith K g) :
+    LipschitzWith (1 + K) (fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v) := by
+  simpa using (ℝ ∙ v)ᗮ.subtypeₗᵢ.lipschitzWith.add
+    ((LinearIsometry.toSpanSingleton ℝ E hv).lipschitzWith.comp hg)
+
+/-- The graph `Set.range (fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v)` over the orthogonal complement of
+a unit vector `v` is closed whenever `g` is continuous (in particular whenever `g` is Lipschitz). -/
+theorem isClosed_range_add_smul_of_continuous {v : E} (hv : ‖v‖ = 1) {g : (ℝ ∙ v)ᗮ → ℝ}
+    (hg : Continuous g) :
+    IsClosed (Set.range fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v) := by
+  have heq : (Set.range fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v) =
+      orthogonalLineEquiv v hv '' g.graph := by
+    ext z
+    simp [Function.graph, eq_comm]
+  rw [heq]
+  exact (orthogonalLineEquiv v hv).toHomeomorph.isClosed_image.mpr hg.isClosed_graph
+
+/-- A globally Lipschitz graph over `(ℝ ∙ v)ᗮ` (`‖v‖ = 1`) is closed. -/
+theorem isClosed_range_add_smul_of_lipschitzWith {v : E} (hv : ‖v‖ = 1) {K : ℝ≥0}
+    {g : (ℝ ∙ v)ᗮ → ℝ} (hg : LipschitzWith K g) :
+    IsClosed (Set.range fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v) :=
+  isClosed_range_add_smul_of_continuous hv hg.continuous
 
 end TauCeti

@@ -32,6 +32,8 @@ lattice span, and the two descriptions agree.
 * `TauCeti.AlmostComplexStructure.latticeComplexification`: the complex-linear extension of `J`
   acting on the chosen abstract complexification; on the real points coming from the realification
   it acts by `J` (`latticeComplexification_realificationComplexEquiv_one_tmul`).
+* `TauCeti.AlmostComplexStructure.latticeComplexification_neg`: the transported extension of `-J`
+  is minus that of `J`.
 * `TauCeti.AlmostComplexStructure.latticeHodgeStructure`: the associated effective integral Hodge
   structure of weight one.
 * `TauCeti.AlmostComplexStructure.latticeHodgeStructure_piece_one` and
@@ -97,6 +99,14 @@ theorem latticeComplexification_comp_self
     J.latticeComplexification hℂ ∘ₗ J.latticeComplexification hℂ = -LinearMap.id := by
   rw [latticeComplexification, ← LinearEquiv.conj_comp, J.baseChange_comp_self,
     map_neg, LinearEquiv.conj_id]
+
+/-- The transported complex-linear extension of `-J` is minus that of `J`. -/
+@[simp]
+theorem latticeComplexification_neg (J : AlmostComplexStructure (Hodge.Realification V))
+    (hℂ : IsBaseChange ℂ ιℂ) :
+    (-J).latticeComplexification hℂ = -J.latticeComplexification hℂ := by
+  rw [latticeComplexification, latticeComplexification, neg_toLinearMap, LinearMap.baseChange_neg,
+    map_neg]
 
 /-- The eigenspaces of the transported endomorphism are the transports of the eigenspaces of the
 literal scalar extension. -/
@@ -300,10 +310,11 @@ noncomputable def latticeHodgeStructureEquiv (hℂ : IsBaseChange ℂ ιℂ) :
     AlmostComplexStructure (Hodge.Realification V) ≃
       {hs : Hodge.HodgeStructure hℂ 1 // hs.IsEffective} where
   toFun J := ⟨J.latticeHodgeStructure hℂ, J.isEffective_latticeHodgeStructure hℂ⟩
-  invFun hs := hs.1.latticeAlmostComplexStructure odd_one
+  invFun hs := hs.val.latticeAlmostComplexStructure odd_one
   left_inv J := J.latticeAlmostComplexStructure_latticeHodgeStructure hℂ
   right_inv hs := Subtype.ext
-    (hs.1.latticeHodgeStructure_latticeAlmostComplexStructure (hs.1.isEffective_iff.mp hs.2))
+    (hs.val.latticeHodgeStructure_latticeAlmostComplexStructure
+        (hs.val.isEffective_iff.mp hs.property))
 
 /-- The equivalence sends `J` to its integral weight-one Hodge structure. -/
 @[simp]
@@ -316,7 +327,7 @@ theorem coe_latticeHodgeStructureEquiv_apply (hℂ : IsBaseChange ℂ ιℂ)
 @[simp]
 theorem latticeHodgeStructureEquiv_symm_apply (hℂ : IsBaseChange ℂ ιℂ)
     (hs : {hs : Hodge.HodgeStructure hℂ 1 // hs.IsEffective}) :
-    (latticeHodgeStructureEquiv hℂ).symm hs = hs.1.latticeAlmostComplexStructure odd_one :=
+    (latticeHodgeStructureEquiv hℂ).symm hs = hs.val.latticeAlmostComplexStructure odd_one :=
   (rfl)
 
 end TauCeti.AlmostComplexStructure

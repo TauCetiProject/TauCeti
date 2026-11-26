@@ -25,9 +25,13 @@ construction as for the left duals of finite-dimensional vector spaces in
 
 The bijectivity of the antipode is an explicit hypothesis `hS`, and the left duals depend on it
 through the action of `S⁻¹`. The rigid structure `rigidCategory hS` is therefore a definition and
-not an instance; statements about its left duals install it locally. No commutativity or
-finite-dimensionality hypothesis is imposed on `H`. The right duals are those of
-`instRightRigidCategory`.
+not an instance; statements about its left duals install it locally. No commutativity,
+cocommutativity, or finite-dimensionality hypothesis is imposed on `H` for `rigidCategory`. The
+right duals are those of `instRightRigidCategory`.
+
+When `H` is cocommutative, `S` is involutive (`TauCeti.HopfAlgebra.antipode_bijective_of_isCocomm`)
+with `S⁻¹ = S`, so `cocommRigidCategory k H` specializes `rigidCategory` and `leftDualIsoDual`
+identifies `leftDual hS M` with `dual M` by the identity on linear functionals.
 
 ## Main declarations
 
@@ -41,6 +45,9 @@ finite-dimensionality hypothesis is imposed on `H`. The right duals are those of
   exact left dual.
 * `TauCeti.FiniteHopfModuleCat.rigidCategory`: finite-dimensional modules over a Hopf algebra
   with bijective antipode form a rigid monoidal category.
+* `TauCeti.FiniteHopfModuleCat.leftDualIsoDual` and
+  `TauCeti.FiniteHopfModuleCat.cocommRigidCategory`: for cocommutative `H`, the isomorphism
+  `leftDual hS M ≅ dual M` (`S⁻¹ = S`) and the specialized rigid structure.
 
 ## References
 
@@ -59,7 +66,10 @@ open BialgebraModule
 universe u v
 
 variable {k : Type u} [Field k] {H : Type v} [Ring H] [HopfAlgebra k H]
-  (hS : Function.Bijective (HopfAlgebra.antipode k : H →ₗ[k] H))
+
+section BijectiveAntipode
+
+variable (hS : Function.Bijective (HopfAlgebra.antipode k : H →ₗ[k] H))
 
 /-- The inverse-antipode contragredient of a finite-dimensional module: its linear dual, on
 which `H` acts through the inverse of the antipode. -/
@@ -167,5 +177,55 @@ theorem rigidCategory_coevaluation (M : FiniteHopfModuleCat k H) :
     letI := rigidCategory hS
     η_ (ᘁM) M = leftDualCoevaluation hS M :=
   (rfl)
+
+end BijectiveAntipode
+
+section Cocommutative
+
+variable [Coalgebra.IsCocomm k H]
+
+section LeftDualIsoDual
+
+variable (hS : Function.Bijective (HopfAlgebra.antipode k : H →ₗ[k] H))
+
+/-- Over a cocommutative Hopf algebra, `S⁻¹ = S`, so the identity on underlying linear functionals
+is an isomorphism `leftDual hS M ≅ dual M` in `FiniteHopfModuleCat k H`. -/
+def leftDualIsoDual (M : FiniteHopfModuleCat k H) : leftDual hS M ≅ dual M :=
+  (leftDualEquivDual k H M hS).toFiniteHopfModuleCatIso
+
+/-- The underlying map of `leftDualIsoDual` is `leftDualEquivDual`. -/
+@[simp]
+theorem leftDualIsoDual_hom_hom (M : FiniteHopfModuleCat k H) :
+    (leftDualIsoDual hS M).hom.hom.hom = (leftDualEquivDual k H M hS).toLinearMap :=
+  LinearEquiv.toFiniteHopfModuleCatIso_hom_hom _
+
+/-- The underlying map of the inverse of `leftDualIsoDual` is the inverse of `leftDualEquivDual`. -/
+@[simp]
+theorem leftDualIsoDual_inv_hom (M : FiniteHopfModuleCat k H) :
+    (leftDualIsoDual hS M).inv.hom.hom = (leftDualEquivDual k H M hS).symm.toLinearMap :=
+  LinearEquiv.toFiniteHopfModuleCatIso_inv_hom _
+
+/-- `leftDualIsoDual` preserves underlying linear functionals. -/
+theorem dualEquiv_leftDualIsoDual_hom_apply (M : FiniteHopfModuleCat k H) (φ : leftDual hS M) :
+    dualEquiv k H M ((leftDualIsoDual hS M).hom.hom.hom φ) = leftDualEquiv k H M hS φ := by
+  rw [leftDualIsoDual_hom_hom]
+  exact dualEquiv_leftDualEquivDual k H M hS φ
+
+/-- The inverse of `leftDualIsoDual` preserves underlying linear functionals. -/
+theorem leftDualEquiv_leftDualIsoDual_inv_apply (M : FiniteHopfModuleCat k H) (φ : dual M) :
+    leftDualEquiv k H M hS ((leftDualIsoDual hS M).inv.hom.hom φ) = dualEquiv k H M φ := by
+  rw [leftDualIsoDual_inv_hom]
+  exact leftDualEquiv_leftDualEquivDual_symm k H M hS φ
+
+end LeftDualIsoDual
+
+variable (k H) in
+/-- The rigid structure on finite-dimensional modules over a cocommutative Hopf algebra: right duals
+are `S`-contragredients and left duals are `S⁻¹`-contragredients, using bijectivity of the
+involutive antipode. -/
+abbrev cocommRigidCategory : RigidCategory (FiniteHopfModuleCat k H) :=
+  rigidCategory HopfAlgebra.antipode_bijective_of_isCocomm
+
+end Cocommutative
 
 end TauCeti.FiniteHopfModuleCat

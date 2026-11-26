@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
-public import TauCeti.Algebra.Algebra.NatCast
+public import TauCeti.Algebra.Algebra.Subalgebra.Basic
 import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Data.Multiset.Fintype
+import Mathlib.RingTheory.Polynomial.Vieta
 import Mathlib.Tactic.Ring
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
@@ -54,6 +55,10 @@ Seiberg–Witten solutions near a pseudoholomorphic curve.
 * `Multiset.esymm_mem_of_sum_map_pow_mem`: the elementary symmetric functions of `s` lie in every
   subalgebra containing its first `card s` power sums.
 * `Multiset.sum_map_pow_mem_of_sum_map_pow_mem`: so do all the power sums of `s`.
+* `Multiset.esymm_eq_zero_of_sum_map_pow_eq_zero`: if the first `j` power sums of `s` vanish
+  and division by positive integers is unique, then so does `s.esymm j`.
+* `Multiset.eq_replicate_card_zero_of_sum_map_pow_eq_zero`: in a domain of characteristic zero,
+  a multiset whose first `card s` power sums vanish consists of zeros.
 * `TauCeti.newton_variation_eq_sum`: the variation of the Newton coefficients of a sequence.
 * `TauCeti.newton_eq_pow_mul`: homogeneity of the Newton coefficients.
 
@@ -108,6 +113,37 @@ theorem _root_.Multiset.sum_map_pow_three_eq_esymm {R : Type*} [CommRing R] (s :
   | cons x s ih =>
     simp only [Multiset.map_cons, Multiset.sum_cons, Multiset.esymm_cons, Multiset.esymm_zero, ih]
     ring
+
+/-- In a commutative ring in which division by positive integers is unique, for instance a domain
+of characteristic zero, if the power sums `(s.map (· ^ i)).sum` of a multiset vanish for
+`1 ≤ i ≤ j`, then so does its `j`-th elementary symmetric function, for `j > 0`. -/
+theorem _root_.Multiset.esymm_eq_zero_of_sum_map_pow_eq_zero {R : Type*} [CommRing R]
+    [HasUniqueDiv R] {s : Multiset R} {j : ℕ}
+    (h : ∀ i, 0 < i → i ≤ j → (s.map (· ^ i)).sum = 0) (hj : 0 < j) : s.esymm j = 0 := by
+  -- Every term of Newton's identity at `j` contains a power sum of degree between `1` and `j`.
+  have hrec := s.mul_esymm_eq_sum j
+  rw [sum_eq_zero fun a ha ↦ by
+    rw [mem_filter, mem_antidiagonal] at ha
+    rw [h a.2 (by omega) (by omega), mul_zero], mul_zero, ← nsmul_eq_mul, ← nsmul_zero j] at hrec
+  exact (nsmul_right_inj hj.ne').1 hrec
+
+/-- In a domain of characteristic zero, a multiset whose power sums `(s.map (· ^ j)).sum` vanish
+for `1 ≤ j ≤ card s` consists of zeros only. -/
+theorem _root_.Multiset.eq_replicate_card_zero_of_sum_map_pow_eq_zero {R : Type*} [CommRing R]
+    [IsDomain R] [CharZero R] {s : Multiset R}
+    (h : ∀ j, 0 < j → j ≤ Multiset.card s → (s.map (· ^ j)).sum = 0) :
+    s = Multiset.replicate (Multiset.card s) 0 := by
+  -- By Vieta's formulas `∏_{t ∈ s} (X - t) = Xⁿ`, whose roots are `n` zeros.
+  have hprod : (s.map fun t ↦ Polynomial.X - Polynomial.C t).prod =
+      Polynomial.X ^ Multiset.card s := by
+    rw [Multiset.prod_X_sub_X_eq_sum_esymm, sum_eq_single 0 (fun j hj hj0 ↦ ?_) (by simp)]
+    · simp
+    rw [Multiset.esymm_eq_zero_of_sum_map_pow_eq_zero
+      (fun i hi hij ↦ h i hi (hij.trans (Nat.lt_succ_iff.1 (mem_range.1 hj))))
+      (Nat.pos_of_ne_zero hj0)]
+    simp
+  have hroots := Polynomial.roots_multiset_prod_X_sub_C s
+  rwa [hprod, Polynomial.roots_X_pow, Multiset.nsmul_singleton, eq_comm] at hroots
 
 section Subalgebra
 

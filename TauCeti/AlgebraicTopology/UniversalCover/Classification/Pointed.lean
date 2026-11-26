@@ -242,18 +242,18 @@ noncomputable def deckMulEquivOfRangeEq : deck p ≃* deck q :=
 conjugation by the comparison homeomorphism. -/
 @[simp]
 theorem deckMulEquivOfRangeEq_apply_coe (φ : deck p) (f : F) :
-    ((IsCoveringMap.deckMulEquivOfRangeEq hp hq hpe hqf hrange φ).1 f) =
+    ((IsCoveringMap.deckMulEquivOfRangeEq hp hq hpe hqf hrange φ).val f) =
       IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange
-        (φ.1 ((IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange).symm f)) :=
+        (φ.val ((IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange).symm f)) :=
   TauCeti.Deck.conjMulEquiv_apply_coe _ _ φ f
 
 /-- The inverse of that deck-group isomorphism is conjugation by the inverse comparison
 homeomorphism. -/
 @[simp]
 theorem deckMulEquivOfRangeEq_symm_apply_coe (ψ : deck q) (e : E) :
-    (((IsCoveringMap.deckMulEquivOfRangeEq hp hq hpe hqf hrange).symm ψ).1 e) =
+    (((IsCoveringMap.deckMulEquivOfRangeEq hp hq hpe hqf hrange).symm ψ).val e) =
       (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange).symm
-        (ψ.1 (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange e)) :=
+        (ψ.val (IsCoveringMap.totalSpaceHomeomorphOfRangeEq hp hq hpe hqf hrange e)) :=
   TauCeti.Deck.conjMulEquiv_symm_apply_coe _ _ ψ e
 
 end
@@ -267,8 +267,7 @@ theorem exists_homeomorph_comp_eq_of_simplyConnectedSpace
     [SimplyConnectedSpace F] [LocallyPathConnectedSpace F]
     (hp : _root_.IsCoveringMap p) (hq : _root_.IsCoveringMap q) (hpe : p e₀ = x) (hqf : q f₀ = x) :
     ∃ h : E ≃ₜ F, h e₀ = f₀ ∧ q ∘ h = p :=
-  IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq hp hq hpe hqf <| by
-    rw [TauCeti.FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton,
-      TauCeti.FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton]
+  IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq hp hq hpe hqf <|
+    TauCeti.FundamentalGroup.mapOfEq_range_eq_of_subsingleton ..
 
 end IsCoveringMap
