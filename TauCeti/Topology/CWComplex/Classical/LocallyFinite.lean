@@ -125,13 +125,14 @@ instance LocallyFinite.weaklyLocallyCompactSpace [LocallyFinite C] :
 instance LocallyFinite.subcomplex [LocallyFinite C] (E : Subcomplex C) :
     LocallyFinite (E : Set X) where
   locallyFinite_closedCell := by
-    refine ((LocallyFinite.locallyFinite_closedCell (C := C)).preimage_continuous
-      (ContinuousMap.inclusion E.subset_complex).continuous).comp_injective
-      (g := fun p : Σ n, cell (E : Set X) n ↦ (⟨p.1, p.2.val⟩ : Σ n, cell C n)) ?_
-    rintro ⟨n₁, i₁, _⟩ ⟨n₂, i₂, _⟩ h
-    obtain rfl : n₁ = n₂ := congrArg Sigma.fst h
-    obtain rfl : i₁ = i₂ := eq_of_heq (Sigma.ext_iff.1 h).2
-    rfl
+    convert ((LocallyFinite.locallyFinite_closedCell (C := C)).preimage_continuous
+      (continuous_inclusion E.subset_complex)).comp_injective
+      (Function.injective_id.sigma_map fun n ↦
+        (Subtype.val_injective : Function.Injective (Subtype.val : cell (E : Set X) n → cell C n)))
+      using 1
+    ext ⟨n, i⟩ ⟨x, hxE⟩
+    simp only [Function.comp_apply, Sigma.map_mk, id_eq, mem_preimage,
+      RelCWComplex.Subcomplex.closedCell_eq, inclusion_mk]
 
 /-- Every subcomplex of a strongly locally finite Hausdorff CW complex is strongly locally
 finite. -/
@@ -155,10 +156,10 @@ instance StronglyLocallyFinite.subcomplex [StronglyLocallyFinite C] (E : Subcomp
       exact ⟨fun ⟨_, hxE, _⟩ ↦ hxE, fun hxE ↦
         let ⟨k, hxk⟩ := mem_iUnion.1 (hF_cov.symm.subset (E.subset_complex hxE))
         ⟨k, hxE, hxk⟩⟩
-    · convert hF_lf.preimage_continuous
-        (ContinuousMap.inclusion E.subset_complex).continuous using 1
+    · convert hF_lf.preimage_continuous (continuous_inclusion E.subset_complex) using 1
       ext k ⟨x, hxE⟩
-      simp [G, ContinuousMap.inclusion, hxE]
+      simp only [G, mem_preimage, RelCWComplex.Subcomplex.coe_ofLE, RelCWComplex.Subcomplex.coe_inf,
+        mem_inter_iff, inclusion_mk, hxE, true_and]
 
 /-- **Every strongly locally finite Hausdorff CW complex is locally finite.** -/
 instance StronglyLocallyFinite.locallyFinite [StronglyLocallyFinite C] : LocallyFinite C where
