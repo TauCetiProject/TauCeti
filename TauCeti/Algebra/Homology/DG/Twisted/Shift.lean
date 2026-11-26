@@ -186,7 +186,6 @@ noncomputable def twistedCochainComplexShiftIso :
         twistedCochainComplexXEquiv_d, shiftPiEquiv_twistedDifferential, Units.smul_def]
 
 /-- The shift isomorphism is the identity of the underlying elements of `P → M`. -/
-@[simp]
 theorem twistedCochainComplexXEquiv_twistedCochainComplexShiftIso_hom_f_apply (k : ℤ)
     (g : (m.twistedCochainComplex (M.shift n).differential (M.shift n).isDGRightModule).X k) :
     (twistedCochainComplexXEquiv m.mem_graded m.twisting M.isDGRightModule (k + n)
@@ -196,7 +195,6 @@ theorem twistedCochainComplexXEquiv_twistedCochainComplexShiftIso_hom_f_apply (k
   m.twistedCochainComplexXEquiv_twistedCochainComplexShiftXEquiv M n k g
 
 /-- The inverse of the shift isomorphism is again the identity of the underlying elements. -/
-@[simp]
 theorem twistedCochainComplexXEquiv_twistedCochainComplexShiftIso_inv_f_apply (k : ℤ)
     (g : ((m.twistedCochainComplex M.differential M.isDGRightModule)⟦n⟧).X k) :
     (twistedCochainComplexXEquiv m.mem_graded m.twisting (M.shift n).isDGRightModule k
@@ -273,7 +271,6 @@ noncomputable def twistedCochainComplexRightShiftIso :
 /-- **The Koszul factor of the right-shift isomorphism**: it multiplies the coefficient `α` of each
 generator by `(-1)^(n p)` on the part of degree `p` of `α` in `M`, the Koszul twist of
 parameter `n`. -/
-@[simp]
 theorem twistedCochainComplexXEquiv_twistedCochainComplexRightShiftIso_hom_f_apply (k : ℤ)
     (g : (m.twistedCochainComplex (M.rightShift n).differential
       (M.rightShift n).isDGRightModule).X k) (x : P) :
@@ -290,7 +287,6 @@ theorem twistedCochainComplexXEquiv_twistedCochainComplexRightShiftIso_hom_f_app
 /-- The inverse of the right-shift isomorphism is again the Koszul twist of parameter `n`: read in
 `M`, it multiplies the coefficient `α` of each generator by `(-1)^(n p)` on the part of degree `p`
 of `α`. -/
-@[simp]
 theorem twistedCochainComplexXEquiv_twistedCochainComplexRightShiftIso_inv_f_apply (k : ℤ)
     (g : ((m.twistedCochainComplex M.differential M.isDGRightModule)⟦n⟧).X k) (x : P) :
     M.rightShiftEquiv n ((twistedCochainComplexXEquiv m.mem_graded m.twisting
