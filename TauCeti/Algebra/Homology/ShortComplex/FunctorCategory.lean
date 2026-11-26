@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Abelian.Refinements
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
@@ -16,9 +15,7 @@ public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 
 A short complex of functors into an abelian category is exact if and only if its
 value at each object is exact. This allows sectionwise exact sequences of
-presheaves to be sheafified using exactness of sheafification. Likewise it is short exact if and
-only if, at each object, the short complex of its components is short exact
-(`CategoryTheory.ShortComplex.shortExact_iff_forall_shortExact_mk_app`).
+presheaves to be sheafified using exactness of sheafification.
 
 Additive functors are stable under extensions: when the source category has binary biproducts,
 the middle term of an exact sequence `F' ⟶ F ⟶ F''` with `F'` and `F''` additive is additive.
@@ -38,23 +35,6 @@ lemma exact_iff_evaluation (S : ShortComplex (J ⥤ C)) :
   have h : JointlyFaithful (fun j ↦ (evaluation J C).obj j) :=
     ⟨fun h ↦ NatTrans.ext (funext h)⟩
   exact h.jointlyReflectsIsomorphisms.exact_iff S
-
-/-- A short complex of functors into an abelian category is short exact exactly when, at every
-object `j`, the short complex `S.X₁.obj j ⟶ S.X₂.obj j ⟶ S.X₃.obj j` of its components is short
-exact. -/
-lemma shortExact_iff_forall_shortExact_mk_app (S : ShortComplex (J ⥤ C)) :
-    S.ShortExact ↔ ∀ j, (ShortComplex.mk (S.f.app j) (S.g.app j) (by
-      rw [← NatTrans.comp_app, S.zero, NatTrans.app_zero])).ShortExact := by
-  have e (j : J) : S.map ((evaluation J C).obj j) ≅ ShortComplex.mk (S.f.app j) (S.g.app j) (by
-      rw [← NatTrans.comp_app, S.zero, NatTrans.app_zero]) :=
-    isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp) (by simp)
-  refine ⟨fun hS j ↦ shortExact_of_iso (e j) (hS.map_of_exact _), fun h ↦ ?_⟩
-  have (j : J) : Mono (S.f.app j) := (h j).mono_f
-  have (j : J) : Epi (S.g.app j) := (h j).epi_g
-  have : Mono S.f := NatTrans.mono_of_mono_app S.f
-  have : Epi S.g := NatTrans.epi_of_epi_app S.g
-  exact ShortExact.mk' ((exact_iff_evaluation S).2 fun j ↦ exact_of_iso (e j).symm (h j).exact)
-    inferInstance inferInstance
 
 /-- The middle term of an exact sequence `F' ⟶ F ⟶ F''` of functors into an abelian category is
 additive when `F'` and `F''` are, provided the source category has binary biproducts. -/

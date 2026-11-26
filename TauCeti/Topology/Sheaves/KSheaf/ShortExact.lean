@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Homology.GrothendieckAbelian
 public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
-public import TauCeti.Algebra.Homology.ShortComplex.FunctorCategory
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShortExact
 public import TauCeti.Topology.Sets.Compacts
@@ -32,8 +31,8 @@ length two of Pardon's Lemma A.2.11.
   sections; the mapping cones of the Mayer–Vietoris maps of the three terms, which form a short
   exact sequence (`CochainComplex.mappingCone.shortExact_mapShortComplex`) mapping to the
   sections over the intersection by the natural map `TopCat.KPresheaf.mayerVietorisDesc`
-  (`TopCat.KPresheaf.map_mayerVietorisDesc`); and the colimits over compact neighbourhoods, which
-  remain short exact because filtered colimits are exact.
+  (`TopCat.KPresheaf.mappingConeMap_comp_mayerVietorisDesc`); and the colimits over compact
+  neighbourhoods, which remain short exact because filtered colimits are exact.
 * **Acyclic K-presheaves** (`TopCat.KPresheaf.isHomotopyKSheaf_of_acyclic`). A K-presheaf of
   acyclic complexes is a homotopy K-sheaf, since every map between acyclic complexes is a
   quasi-isomorphism.
@@ -41,7 +40,7 @@ length two of Pardon's Lemma A.2.11.
   `K ↦ cone (τ_K)` of a morphism `τ : F ⟶ G` of homotopy K-sheaves is a homotopy K-sheaf. It sits
   in the short exact sequence `G ⟶ cone τ ⟶ cone (F ⟶ 0)`, whose third term, the shift of `F`, is
   the cokernel of `F ⟶ cone (𝟙 F)` into the acyclic mapping cone of the identity
-  (`CochainComplex.mappingCone.shortExact_inrShortComplex`).
+  (`CategoryTheory.NatTrans.shortExact_mappingConeInrShortComplex`).
 
 The colimit axiom uses that filtered colimits in `C` are exact and that `X` is weakly locally
 compact, as in Pardon's setting of locally compact Hausdorff spaces.
@@ -70,28 +69,6 @@ universe w v u
 namespace TopCat.KPresheaf
 
 variable {X : TopCat.{w}} [T2Space X] {C : Type u} [Category.{v} C] [Abelian C]
-
-/-- **Naturality of the Mayer–Vietoris map.** A morphism `τ : F ⟶ G` of K-presheaves of cochain
-complexes induces a map between the mapping cones of the restrictions
-`F(K₂ ∪ K₃) ⟶ F(K₂) ⊞ F(K₃)` and `G(K₂ ∪ K₃) ⟶ G(K₂) ⊞ G(K₃)`, and the Mayer–Vietoris maps
-`mappingCone _ ⟶ F(K₂ ∩ K₃)` and `mappingCone _ ⟶ G(K₂ ∩ K₃)` commute with it and with
-`τ_(K₂ ∩ K₃)`. -/
-@[reassoc]
-theorem map_mayerVietorisDesc {F G : KPresheaf (CochainComplex C ℤ) X} (τ : F ⟶ G)
-    {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.BicartSq K₁ K₂ K₃ K₄) :
-    mappingCone.map (biprod.lift (F.map (opHomOfLE h.le₂₄)) (F.map (opHomOfLE h.le₃₄)))
-      (biprod.lift (G.map (opHomOfLE h.le₂₄)) (G.map (opHomOfLE h.le₃₄))) (τ.app (op K₄))
-      (biprod.map (τ.app (op K₂)) (τ.app (op K₃))) (by apply biprod.hom_ext <;> simp) ≫
-        G.mayerVietorisDesc h =
-      F.mayerVietorisDesc h ≫ τ.app (op K₁) := by
-  have hdesc : biprod.map (τ.app (op K₂)) (τ.app (op K₃)) ≫
-      biprod.desc (G.map (opHomOfLE h.le₁₂)) (-G.map (opHomOfLE h.le₁₃)) =
-      biprod.desc (F.map (opHomOfLE h.le₁₂)) (-F.map (opHomOfLE h.le₁₃)) ≫ τ.app (op K₁) := by
-    apply biprod.hom_ext' <;> simp
-  ext n
-  apply mappingCone.ext_from _ (n + 1) n rfl
-  · simp
-  · simpa using HomologicalComplex.congr_hom hdesc n
 
 variable {S : ShortComplex (KPresheaf (CochainComplex C ℤ) X)}
 
@@ -129,13 +106,13 @@ private noncomputable def mayerVietorisHom (S : ShortComplex (KPresheaf (Cochain
   τ₁ := S.X₁.mayerVietorisDesc h
   τ₂ := S.X₂.mayerVietorisDesc h
   τ₃ := S.X₃.mayerVietorisDesc h
-  comm₁₂ := (map_mayerVietorisDesc S.f h).symm
-  comm₂₃ := (map_mayerVietorisDesc S.g h).symm
+  comm₁₂ := (mappingConeMap_comp_mayerVietorisDesc S.f h).symm
+  comm₂₃ := (mappingConeMap_comp_mayerVietorisDesc S.g h).symm
 
 omit [T2Space X] in
 private lemma shortExact_sectionsShortComplex (hS : S.ShortExact) (K : Compacts X) :
     (sectionsShortComplex S K).ShortExact :=
-  (ShortComplex.shortExact_iff_forall_shortExact_mk_app S).1 hS (op K)
+  hS.map_of_exact ((evaluation _ _).obj (op K))
 
 omit [T2Space X] in
 private lemma shortExact_restrictionHom_target (hS : S.ShortExact) (K₂ K₃ : Compacts X) :
@@ -184,7 +161,7 @@ private lemma shortExact_colimitShortComplex (hS : S.ShortExact) (K : Compacts X
       (Functor.whiskerLeft (Set.mono_coe K.compactNhds).functor.op S.g) (by
         ext L : 2
         simp [f_app_comp_g_app])
-  have hS' : S'.ShortExact := (ShortComplex.shortExact_iff_forall_shortExact_mk_app S').2 fun L ↦
+  have hS' : S'.ShortExact := ShortComplex.shortExact_of_forall_evaluation S' fun L ↦
     shortExact_sectionsShortComplex hS L.unop.val
   exact ShortComplex.shortExact_of_iso (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
     (by simp) (by simp)) (hS'.map_of_exact colim)
@@ -282,52 +259,6 @@ theorem isHomotopyKSheaf_of_acyclic {F : KPresheaf (CochainComplex C ℤ) X}
 
 variable {F G : KPresheaf (CochainComplex C ℤ) X} (τ : F ⟶ G)
 
-/-- For a morphism `τ : F ⟶ G` of K-presheaves of cochain complexes, the short exact sequence
-`G ⟶ cone τ ⟶ cone (F ⟶ 0)` of K-presheaves.
-
-The identities below are first stated with the objects `mappingCone (τ.app K)` of the sections of
-`NatTrans.mappingConeFunctor τ`, where the component lemmas of mapping cones apply, and then used
-for the functor, whose objects and maps are these by definition. -/
-private noncomputable def coneShortComplex : ShortComplex (KPresheaf (CochainComplex C ℤ) X) where
-  X₁ := G
-  X₂ := NatTrans.mappingConeFunctor τ
-  X₃ := NatTrans.mappingConeFunctor (0 : F ⟶ 0)
-  f :=
-    { app K := mappingCone.inr (τ.app K)
-      naturality K K' f := by
-        have key : G.map f ≫ mappingCone.inr (τ.app K') =
-            mappingCone.inr (τ.app K) ≫
-              mappingCone.map (τ.app K) (τ.app K') (F.map f) (G.map f) (τ.naturality f).symm := by
-          ext n
-          simp
-        exact key }
-  g :=
-    { app K := mappingCone.map (τ.app K) ((0 : F ⟶ 0).app K) (𝟙 _) 0 (by simp)
-      naturality K K' f := by
-        have key :
-            mappingCone.map (τ.app K) (τ.app K') (F.map f) (G.map f) (τ.naturality f).symm ≫
-              mappingCone.map (τ.app K') ((0 : F ⟶ 0).app K') (𝟙 _) 0 (by simp) =
-            mappingCone.map (τ.app K) ((0 : F ⟶ 0).app K) (𝟙 _) 0 (by simp) ≫
-              mappingCone.map ((0 : F ⟶ 0).app K) ((0 : F ⟶ 0).app K') (F.map f)
-                ((0 : KPresheaf (CochainComplex C ℤ) X).map f) (by simp) := by
-          rw [← mappingCone.map_comp, ← mappingCone.map_comp]
-          congr 1 <;> simp
-        exact key }
-  zero := by
-    ext K : 2
-    have key : mappingCone.inr (τ.app K) ≫
-        mappingCone.map (τ.app K) ((0 : F ⟶ 0).app K) (𝟙 _) 0 (by simp) = 0 := by
-      ext n
-      simp
-    exact key
-
-omit [T2Space X] [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C]
-  [WeaklyLocallyCompactSpace X] in
-private lemma shortExact_coneShortComplex : (coneShortComplex τ).ShortExact :=
-  (ShortComplex.shortExact_iff_forall_shortExact_mk_app _).2 fun K ↦
-    mappingCone.shortExact_inrShortComplex (τ.app K) ((0 : F ⟶ 0).app K)
-      ((isZero_zero _).obj K)
-
 /-- **Pardon, Lemma A.2.11, for mapping cones.** The mapping cone `K ↦ cone (τ_K)` of a morphism
 `τ : F ⟶ G` of homotopy K-sheaves is a homotopy K-sheaf. -/
 theorem isHomotopyKSheaf_mappingConeFunctor (hF : F.IsHomotopyKSheaf) (hG : G.IsHomotopyKSheaf) :
@@ -337,7 +268,7 @@ theorem isHomotopyKSheaf_mappingConeFunctor (hF : F.IsHomotopyKSheaf) (hG : G.Is
   have hcone : IsHomotopyKSheaf (NatTrans.mappingConeFunctor (𝟙 F)) :=
     isHomotopyKSheaf_of_acyclic fun K ↦
       (quasiIso_iff_acyclic_mappingCone (𝟙 (F.obj (op K)))).1 inferInstance
-  exact (shortExact_coneShortComplex τ).isHomotopyKSheaf_X₂ hG
-    ((shortExact_coneShortComplex (𝟙 F)).isHomotopyKSheaf_X₃ hF hcone)
+  exact (NatTrans.shortExact_mappingConeInrShortComplex τ).isHomotopyKSheaf_X₂ hG
+    ((NatTrans.shortExact_mappingConeInrShortComplex (𝟙 F)).isHomotopyKSheaf_X₃ hF hcone)
 
 end TopCat.KPresheaf

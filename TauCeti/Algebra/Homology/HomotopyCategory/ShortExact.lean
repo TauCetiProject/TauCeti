@@ -48,9 +48,10 @@ components, with the maps of mapping cones induced by `S₁` and `S₂`, form a 
 the sequences of `S₁` in degree `n + 1` and of `S₂` in degree `n`. And for `φ : K ⟶ L`, the
 inclusion of `L` in the mapping cone of `φ` is followed by the degreewise split epimorphism onto
 the mapping cone of `K ⟶ 0`, which is `K` shifted by one
-(`CochainComplex.mappingCone.shortExact_inrShortComplex`). Short exactness is checked through the
-degreewise components of a short complex of complexes
-(`HomologicalComplex.shortExact_iff_forall_shortExact_mk`).
+(`CochainComplex.mappingCone.shortExact_inrShortComplex`). Objectwise, for a natural
+transformation `τ : F ⟶ G` of functors with values in cochain complexes, this gives the short exact
+sequence `G ⟶ cone τ ⟶ cone (F ⟶ 0)` of functors
+(`CategoryTheory.NatTrans.shortExact_mappingConeInrShortComplex`).
 -/
 
 public section
@@ -185,23 +186,6 @@ end CochainComplex.mappingCone
 
 /-! ### Short exact sequences of mapping cones -/
 
-namespace HomologicalComplex
-
-variable {C ι : Type*} [Category* C] [Abelian C] {c : ComplexShape ι}
-
-/-- A short complex of homological complexes is short exact exactly when, in each degree `i`, the
-short complex `S.X₁.X i ⟶ S.X₂.X i ⟶ S.X₃.X i` of its components is short exact. This is
-`HomologicalComplex.shortExact_iff_degreewise_shortExact`, with the degreewise short complexes
-written through the components `S.f.f i` and `S.g.f i`. -/
-lemma shortExact_iff_forall_shortExact_mk (S : ShortComplex (HomologicalComplex C c)) :
-    S.ShortExact ↔ ∀ i, (ShortComplex.mk (S.f.f i) (S.g.f i) (by
-      rw [← comp_f, S.zero, zero_f])).ShortExact := by
-  rw [shortExact_iff_degreewise_shortExact]
-  exact forall_congr' fun i ↦ ShortComplex.shortExact_iff_of_iso
-    (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp) (by simp))
-
-end HomologicalComplex
-
 namespace CochainComplex.mappingCone
 
 open HomComplex
@@ -215,7 +199,8 @@ variable {S₁ S₂ : ShortComplex (CochainComplex C ℤ)} (φ : S₁ ⟶ S₂)
 /-- The mapping cones `cone φ.τ₁ ⟶ cone φ.τ₂ ⟶ cone φ.τ₃` of the components of a morphism
 `φ : S₁ ⟶ S₂` of short complexes of cochain complexes, with the maps of mapping cones induced by
 the maps of `S₁` and `S₂`. -/
-noncomputable abbrev mapShortComplex : ShortComplex (CochainComplex C ℤ) :=
+@[expose, simps]
+noncomputable def mapShortComplex : ShortComplex (CochainComplex C ℤ) :=
   ShortComplex.mk (map φ.τ₁ φ.τ₂ S₁.f S₂.f φ.comm₁₂) (map φ.τ₂ φ.τ₃ S₁.g S₂.g φ.comm₂₃) (by
     have h₁ (p : ℤ) : S₁.f.f p ≫ S₁.g.f p = 0 := by
       rw [← HomologicalComplex.comp_f, S₁.zero, HomologicalComplex.zero_f]
@@ -229,9 +214,11 @@ noncomputable abbrev mapShortComplex : ShortComplex (CochainComplex C ℤ) :=
 of `S₂` in degree `n`. -/
 lemma shortExact_mapShortComplex (h₁ : S₁.ShortExact) (h₂ : S₂.ShortExact) :
     (mapShortComplex φ).ShortExact := by
-  refine (HomologicalComplex.shortExact_iff_forall_shortExact_mk _).2 fun n ↦ ?_
-  have e₁ := (HomologicalComplex.shortExact_iff_forall_shortExact_mk S₁).1 h₁ (n + 1)
-  have e₂ := (HomologicalComplex.shortExact_iff_forall_shortExact_mk S₂).1 h₂ n
+  refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦ ?_
+  change (ShortComplex.mk ((map φ.τ₁ φ.τ₂ S₁.f S₂.f φ.comm₁₂).f n)
+    ((map φ.τ₂ φ.τ₃ S₁.g S₂.g φ.comm₂₃).f n) _).ShortExact
+  have e₁ := (HomologicalComplex.shortExact_iff_degreewise_shortExact S₁).1 h₁ (n + 1)
+  have e₂ := (HomologicalComplex.shortExact_iff_degreewise_shortExact S₂).1 h₂ n
   have : Mono (S₁.f.f (n + 1)) := e₁.mono_f
   have : Mono (S₂.f.f n) := e₂.mono_f
   have : Epi (S₁.g.f (n + 1)) := e₁.epi_g
@@ -279,23 +266,84 @@ variable {K L Z : CochainComplex C ℤ} (φ : K ⟶ L) (α : K ⟶ Z) (hZ : IsZe
 /-- For `φ : K ⟶ L` and a map `α` from `K` to a zero complex, the sequence
 `L ⟶ cone φ ⟶ cone α`: the inclusion of `L`, followed by the map of cones which forgets the summand
 `L`. The mapping cone `cone α` is `K` shifted by one, with negated differential. -/
-noncomputable abbrev inrShortComplex : ShortComplex (CochainComplex C ℤ) :=
+@[expose, simps]
+noncomputable def inrShortComplex : ShortComplex (CochainComplex C ℤ) :=
   ShortComplex.mk (inr φ) (map φ α (𝟙 K) 0 (by simp [hZ.eq_of_tgt α 0])) (by ext n; simp)
 
 /-- The sequence `L ⟶ cone φ ⟶ cone α` of a mapping cone, for `α` a map from `K` to a zero
-complex, is short exact, and split in each degree. -/
+complex, is short exact. -/
 lemma shortExact_inrShortComplex : (inrShortComplex φ α hZ).ShortExact := by
-  refine (HomologicalComplex.shortExact_iff_forall_shortExact_mk _).2 fun n ↦
-    ShortComplex.Splitting.shortExact
-      { r := (snd φ).v n n (add_zero n)
-        s := (fst α).val.v n (n + 1) rfl ≫ (inl φ).v (n + 1) n (by lia)
-        f_r := by simp
-        s_g := by
-          apply ext_from α (n + 1) n rfl
-          · simp
-          · exact ((HomologicalComplex.eval C _ n).map_isZero hZ).eq_of_src _ _
-        id := by simpa [add_comm] using id_X φ n (n + 1) rfl }
+  refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦ ?_
+  change (ShortComplex.mk ((inr φ).f n)
+    ((map φ α (𝟙 K) 0 (by simp [hZ.eq_of_tgt α 0])).f n) _).ShortExact
+  exact ShortComplex.Splitting.shortExact
+    { r := (snd φ).v n n (add_zero n)
+      s := (fst α).val.v n (n + 1) rfl ≫ (inl φ).v (n + 1) n (by lia)
+      f_r := by simp
+      s_g := by
+        apply ext_from α (n + 1) n rfl
+        · simp
+        · exact ((HomologicalComplex.eval C _ n).map_isZero hZ).eq_of_src _ _
+      id := by simpa [add_comm] using id_X φ n (n + 1) rfl }
 
 end Inr
 
 end CochainComplex.mappingCone
+
+namespace CategoryTheory.NatTrans
+
+open CochainComplex Limits ZeroObject
+
+variable {C : Type*} [Category* C] [Abelian C] {D : Type*} [Category* D]
+  {F G : D ⥤ CochainComplex C ℤ} (τ : F ⟶ G)
+
+/-- For a natural transformation `τ : F ⟶ G` of functors with values in cochain complexes, the
+sequence `G ⟶ cone τ ⟶ cone (F ⟶ 0)` of functors: objectwise, the inclusion of `G` in the mapping
+cone, followed by the map of mapping cones which forgets the summand `G`.
+
+The identities below are first stated with the objects `mappingCone (τ.app X)` of
+`NatTrans.mappingConeFunctor τ`, where the component lemmas of mapping cones apply, and then used
+for the functor, whose objects and maps are these by definition. -/
+@[expose, simps]
+noncomputable def mappingConeInrShortComplex : ShortComplex (D ⥤ CochainComplex C ℤ) where
+  X₁ := G
+  X₂ := mappingConeFunctor τ
+  X₃ := mappingConeFunctor (0 : F ⟶ 0)
+  f :=
+    { app X := mappingCone.inr (τ.app X)
+      naturality X X' f := by
+        have key : G.map f ≫ mappingCone.inr (τ.app X') =
+            mappingCone.inr (τ.app X) ≫
+              mappingCone.map (τ.app X) (τ.app X') (F.map f) (G.map f) (τ.naturality f).symm := by
+          ext n
+          simp
+        exact key }
+  g :=
+    { app X := mappingCone.map (τ.app X) ((0 : F ⟶ 0).app X) (𝟙 _) 0 (by simp)
+      naturality X X' f := by
+        have key :
+            mappingCone.map (τ.app X) (τ.app X') (F.map f) (G.map f) (τ.naturality f).symm ≫
+              mappingCone.map (τ.app X') ((0 : F ⟶ 0).app X') (𝟙 _) 0 (by simp) =
+            mappingCone.map (τ.app X) ((0 : F ⟶ 0).app X) (𝟙 _) 0 (by simp) ≫
+              mappingCone.map ((0 : F ⟶ 0).app X) ((0 : F ⟶ 0).app X') (F.map f)
+                ((0 : D ⥤ CochainComplex C ℤ).map f) (by simp) := by
+          rw [← mappingCone.map_comp, ← mappingCone.map_comp]
+          congr 1 <;> simp
+        exact key }
+  zero := by
+    ext X : 2
+    have key : mappingCone.inr (τ.app X) ≫
+        mappingCone.map (τ.app X) ((0 : F ⟶ 0).app X) (𝟙 _) 0 (by simp) = 0 := by
+      ext n
+      simp
+    exact key
+
+/-- For a natural transformation `τ : F ⟶ G` of functors with values in cochain complexes, the
+sequence `G ⟶ cone τ ⟶ cone (F ⟶ 0)` of functors is short exact: objectwise it is the short exact
+sequence `CochainComplex.mappingCone.shortExact_inrShortComplex`. -/
+lemma shortExact_mappingConeInrShortComplex : (mappingConeInrShortComplex τ).ShortExact :=
+  ShortComplex.shortExact_of_forall_evaluation _ fun X ↦
+    mappingCone.shortExact_inrShortComplex (τ.app X) ((0 : F ⟶ 0).app X)
+      ((isZero_zero _).obj X)
+
+end CategoryTheory.NatTrans
