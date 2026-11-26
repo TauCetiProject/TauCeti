@@ -88,6 +88,11 @@ theorem prefixSum_succ {k : ℕ} (hk : k < n) (x : Fin n → M) :
     omega
   rw [prefixSum, prefixSum, hfilter, sum_insert (by simp), add_comm]
 
+/-- The prefix sum of length one is the first coordinate. -/
+@[simp]
+theorem prefixSum_one (x : Fin (n + 1) → M) : prefixSum 1 x = x 0 := by
+  rw [prefixSum_succ n.succ_pos, prefixSum_zero, zero_add, Fin.mk_zero]
+
 /-- A prefix sum of length at least `n` is the total sum. -/
 theorem prefixSum_of_le {k : ℕ} (hk : n ≤ k) (x : Fin n → M) : prefixSum k x = ∑ i, x i := by
   rw [prefixSum, filter_true_of_mem fun i _ ↦ i.isLt.trans_le hk]
@@ -214,6 +219,21 @@ theorem monotone_prefixSum [Preorder M] [IsOrderedAddMonoid M] {x : Fin n → M}
   fun _ _ h ↦ sum_le_sum_of_subset_of_nonneg
     (fun i hi ↦ by simp only [mem_filter, mem_univ, true_and] at hi ⊢; omega)
     (fun i _ _ ↦ hx i)
+
+/-- The prefix sums of an antitone tuple are concave in the length: the increment from `k + 1`
+to `k + 2` is at most the increment from `k` to `k + 1`. -/
+theorem prefixSum_add_prefixSum_add_two_le [Preorder M] [IsOrderedAddMonoid M] {x : Fin n → M}
+    (hx : Antitone x) {k : ℕ} (hk : k + 2 ≤ n) :
+    prefixSum k x + prefixSum (k + 2) x ≤ prefixSum (k + 1) x + prefixSum (k + 1) x := by
+  have h₁ := prefixSum_succ (k := k) (by omega) x
+  have h₂ : prefixSum (k + 2) x = prefixSum (k + 1) x + x ⟨k + 1, by omega⟩ :=
+    prefixSum_succ (by omega) x
+  calc prefixSum k x + prefixSum (k + 2) x
+      = prefixSum (k + 1) x + (prefixSum k x + x ⟨k + 1, by omega⟩) := by
+        rw [h₂, add_left_comm]
+    _ ≤ prefixSum (k + 1) x + (prefixSum k x + x ⟨k, by omega⟩) := by
+        gcongr; exact hx (Fin.mk_le_mk.mpr (by omega))
+    _ = prefixSum (k + 1) x + prefixSum (k + 1) x := by rw [← h₁]
 
 /-- If `y` has at least the total sum of `x` and lies below `x` from coordinate `k` on, then the
 prefix sum of length `k` of `x` is at most that of `y`. -/

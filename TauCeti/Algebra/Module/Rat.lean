@@ -21,7 +21,8 @@ Consumers activate it where they need it with
 `ℚ`-algebra such as a universal enveloping algebra, so that `Ring.choose` elaborates there.
 
 Over a semiring that is a `ℚ`-module, scaling by `(n : ℚ)⁻¹` undoes multiplication by a nonzero
-natural number `n`.
+natural number `n`. More generally, multiplication by a nonzero integer is bijective on any module
+over a division ring of characteristic zero.
 
 ## Main definitions
 
@@ -30,6 +31,8 @@ natural number `n`.
 ## Main statements
 
 * `TauCeti.inv_natCast_smul_natCast_mul`: `(n : ℚ)⁻¹ • (n * x) = x` for `n ≠ 0`.
+* `TauCeti.bijective_zsmul_of_ne_zero`: multiplication by a nonzero integer is bijective on a module
+  over a division ring of characteristic zero.
 -/
 
 public section
@@ -46,5 +49,12 @@ number `n`. -/
 theorem inv_natCast_smul_natCast_mul {A : Type*} [Semiring A] [Module ℚ A] {n : ℕ} (hn : n ≠ 0)
     (x : A) : (n : ℚ)⁻¹ • ((n : A) * x) = x := by
   rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ (Nat.cast_ne_zero.2 hn)]
+
+/-- Multiplication by a nonzero integer is bijective on a module over a division ring of
+characteristic zero. -/
+theorem bijective_zsmul_of_ne_zero (K : Type*) {M : Type*} [DivisionRing K] [CharZero K]
+    [AddCommGroup M] [Module K M] {n : ℤ} (hn : n ≠ 0) : Function.Bijective fun x : M ↦ n • x := by
+  simpa only [← Int.cast_smul_eq_zsmul K] using
+    (Int.cast_ne_zero.mpr hn : (n : K) ≠ 0).isUnit.smul_bijective (β := M)
 
 end TauCeti

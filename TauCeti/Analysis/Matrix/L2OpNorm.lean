@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.OpNorm
+public import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
-import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.Matrix.Frobenius
 
 /-!
@@ -26,6 +27,8 @@ rather than restricting scalars, so that no algebra diamond arises.
 
 ## Main results
 
+* `Matrix.opNorm_toEuclideanLin`: the operator-norm unitarily invariant seminorm of
+  `A.toEuclideanLin` equals the scoped `ℓ²` operator norm of `A`.
 * `Matrix.norm_apply_le_l2_opNorm`: an entrywise bound, including rectangular matrices.
 * `Matrix.l2_opNorm_one_le`: an identity bound that also applies to empty matrices.
 * `Matrix.norm_trace_le_card_mul_l2_opNorm` and `Matrix.norm_normalized_trace_le_l2_opNorm`:
@@ -54,6 +57,15 @@ namespace Matrix
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
 open scoped Matrix.Norms.L2Operator
+
+/-- The operator-norm unitarily invariant seminorm of `A.toEuclideanLin` equals the scoped `ℓ²`
+operator norm of `A`. -/
+theorem opNorm_toEuclideanLin {m : Type*} [Fintype m] (A : Matrix m n 𝕜) :
+    TauCeti.UnitarilyInvariantSeminorm.opNorm 𝕜
+        (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) A.toEuclideanLin =
+      ‖A‖ := by
+  rw [TauCeti.UnitarilyInvariantSeminorm.opNorm_apply, Matrix.l2_opNorm_def,
+    LinearEquiv.trans_apply]
 
 /-- Every entry is bounded by the Euclidean operator norm. -/
 theorem norm_apply_le_l2_opNorm {m : Type*} [Fintype m] (A : Matrix m n 𝕜)
