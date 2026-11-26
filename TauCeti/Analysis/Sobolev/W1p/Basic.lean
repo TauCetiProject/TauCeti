@@ -1290,4 +1290,28 @@ theorem W1p.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow {r : ENNReal} [Fact (1
 
 end Exponent
 
+section Real
+
+variable {mu : Measure ℝ} [mu.IsAddHaarMeasure] {Omega : Opens ℝ}
+
+/-- On a domain in `ℝ`, the Dirichlet form `∫_Ω u' v'` is the `L²` inner product of the weak
+gradients. -/
+theorem W1p.setIntegral_gradient_mul_gradient_eq_inner (u v : W1p mu Omega 2) :
+    ∫ x in Omega, W1p.gradient u x * W1p.gradient v x ∂mu =
+      ⟪W1p.gradient u, W1p.gradient v⟫_ℝ := by
+  rw [L2.inner_def]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun x => by simp [mul_comm])
+
+/-- On a domain in `ℝ`, the Dirichlet form `∫_Ω u' v'` is additive in its left argument up to
+subtraction. -/
+theorem W1p.setIntegral_gradient_sub_mul_gradient (u u' v : W1p mu Omega 2) :
+    ∫ x in Omega, W1p.gradient (u - u') x * W1p.gradient v x ∂mu =
+      (∫ x in Omega, W1p.gradient u x * W1p.gradient v x ∂mu) -
+        ∫ x in Omega, W1p.gradient u' x * W1p.gradient v x ∂mu := by
+  rw [W1p.setIntegral_gradient_mul_gradient_eq_inner,
+    W1p.setIntegral_gradient_mul_gradient_eq_inner, W1p.setIntegral_gradient_mul_gradient_eq_inner,
+    W1p.gradient_sub, inner_sub_left]
+
+end Real
+
 end TauCeti
