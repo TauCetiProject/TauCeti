@@ -38,7 +38,7 @@ For instance, for `G = U(n)` the factor `K` is `SU(n)`, and for a torus `K` is t
 
 ## Main definitions
 
-* `TauCeti.UniversalCover.derivedFactorMap`: the map `K → G`, `k ↦ π(k)`.
+* `TauCeti.UniversalCover.derivedFactorMap`: the continuous homomorphism `K → G`, `k ↦ π(k)`.
 
 ## Main results
 
@@ -81,12 +81,13 @@ variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensiona
   [IsTopologicalGroup G] [LocallyPathConnectedSpace G] [SemilocallySimplyConnectedSpace G]
   [T2Space G] [SecondCountableTopology G] [CompactSpace G]
 
-/-- The map `K → G`, `k ↦ π(k)`, from the subgroup `K` of the universal covering group integrating
-the derived algebra: the restriction of the covering homomorphism `𝔷 × K → G`
-(`TauCeti.UniversalCover.centerProdDerivedProjHom`) to `{0} × K`. -/
-noncomputable def derivedFactorMap : C(derivedFactor I G, G) :=
-  ⟨fun k ↦ centerProdDerivedProjHom I G (1, k),
-    (continuous_centerProdDerivedProjHom I G).comp (continuous_const.prodMk continuous_id)⟩
+/-- The continuous homomorphism `K → G`, `k ↦ π(k)`, from the subgroup `K` of the universal
+covering group integrating the derived algebra: the restriction of the covering homomorphism
+`𝔷 × K → G` (`TauCeti.UniversalCover.centerProdDerivedProjHom`) to `{0} × K`. -/
+noncomputable def derivedFactorMap : derivedFactor I G →ₜ* G where
+  toMonoidHom := (centerProdDerivedProjHom I G).comp (MonoidHom.inr _ _)
+  continuous_toFun :=
+    (continuous_centerProdDerivedProjHom I G).comp (continuous_const.prodMk continuous_id)
 
 @[simp]
 theorem derivedFactorMap_apply (k : derivedFactor I G) :
@@ -99,7 +100,7 @@ variable [ConnectedSpace G]
 `k ↦ π(k)` from the subgroup `K` of the universal covering group integrating the derived algebra
 induces a bijection `π_(n + 2)(K, k) → π_(n + 2)(G, π(k))`. -/
 theorem bijective_homotopyGroupMap_derivedFactorMap (k : derivedFactor I G) (n : ℕ) :
-    Bijective (HomotopyGroup.map (N := Fin (n + 2)) (derivedFactorMap I G) rfl :
+    Bijective (HomotopyGroup.map (N := Fin (n + 2)) (derivedFactorMap I G : C(_, G)) rfl :
       π_ (n + 2) (derivedFactor I G) k → π_ (n + 2) G (derivedFactorMap I G k)) := by
   have : ContractibleSpace (Multiplicative (centerFactor I G)) :=
     inferInstanceAs (ContractibleSpace (centerFactor I G))
@@ -111,11 +112,9 @@ theorem bijective_homotopyGroupMap_derivedFactorMap (k : derivedFactor I G) (n :
   have heq : (e : C(_, G)).comp q = derivedFactorMap I G := by
     ext k
     exact quotientKerCenterProdDerivedProjHom_apply_mk I G (1, k)
-  -- Replace the map by the composite everywhere, base point included, to split `HomotopyGroup.map`.
-  generalize derivedFactorMap I G = f at heq ⊢
-  subst heq
-  rw [← HomotopyGroup.map_comp_map (hf := rfl)]
-  exact (HomotopyGroup.homeomorphEquivOfEq e rfl).bijective.comp
+  -- Split `HomotopyGroup.map` along this factorisation.
+  rw [← HomotopyGroup.map_comp_map_of_comp_eq heq (DFunLike.congr_fun heq k) rfl]
+  exact (HomotopyGroup.homeomorphEquivOfEq e (DFunLike.congr_fun heq k)).bijective.comp
     ((centerProdDerivedProjHom I G).ker.bijective_homotopyGroupMap_quotientMk_inr k n)
 
 omit [T2Space G] in
@@ -140,10 +139,9 @@ theorem nontrivial_homotopyGroup_three_derivedFactor [Nontrivial (derivedFactor 
 semisimple factor `K` is nontrivial**, at every base point. -/
 theorem nontrivial_homotopyGroup_three_iff_nontrivial_derivedFactor (g : G) :
     Nontrivial (π_ 3 G g) ↔ Nontrivial (derivedFactor I G) := by
-  -- `π₃(G, g)` is `π₃(G, π(1))`, by left translation, hence `π₃(K, 1)`.
-  let t := Homeomorph.mulLeft (g * (derivedFactorMap I G 1)⁻¹)
+  -- `π₃(G, g)` is `π₃(G, 1)`, by left translation, hence `π₃(K, 1)`.
   let eG : π_ 3 G (derivedFactorMap I G 1) ≃ π_ 3 G g :=
-    HomotopyGroup.homeomorphEquivOfEq t (by simp [t])
+    HomotopyGroup.homeomorphEquivOfEq (Homeomorph.mulLeft g) (by simp)
   let e : π_ 3 (derivedFactor I G) 1 ≃ π_ 3 G g :=
     (Equiv.ofBijective _ (bijective_homotopyGroupMap_derivedFactorMap I G 1 1)).trans eG
   refine ⟨fun h ↦ ?_, fun h ↦
