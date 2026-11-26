@@ -98,12 +98,6 @@ theorem map_conductor_ideal (U : Y.affineOpens) :
   rw [conductor_ideal]
   exact TauCeti.Algebra.map_conductor
 
-/-- The section map of `f` over an affine open `U` carries the conductor ideal into the ambient
-conductor of its image. -/
-theorem conductor_ideal_le_comap (U : Y.affineOpens) :
-    f.conductor.ideal U ≤ (f.app U).hom.range.conductor.comap (f.app U).hom :=
-  Ideal.map_le_iff_le_comap.mp (f.map_conductor_ideal U).le
-
 /-- **The source conductor ideal.** Over the inverse image of an affine open `U`, the inverse image
 of the conductor ideal sheaf of `f` is the ambient conductor of the image of `Γ(Y, U)` in
 `Γ(X, f⁻¹ U)`: the largest ideal of `Γ(X, f⁻¹ U)` contained in that image. -/
@@ -112,6 +106,14 @@ theorem ideal_comap_conductor (U : Y.affineOpens) :
       (f.app U).hom.range.conductor := by
   rw [f.conductor.ideal_comap_of_le f U ⟨f ⁻¹ᵁ U, U.property.preimage f⟩ le_rfl,
     Scheme.Hom.appLE_eq_app, map_conductor_ideal]
+
+/-- The section map of `f` over an affine open `U` carries the conductor ideal into the ambient
+conductor of its image. -/
+theorem conductor_ideal_le_comap (U : Y.affineOpens) :
+    f.conductor.ideal U ≤ (f.app U).hom.range.conductor.comap (f.app U).hom := by
+  simpa [ideal_comap_conductor, Scheme.Hom.appLE_eq_app] using
+    Scheme.IdealSheafData.ideal_le_comap_ideal_of_le_map (f.conductor.le_map_comap f) U
+      ⟨f ⁻¹ᵁ U, U.property.preimage f⟩ le_rfl
 
 /-- A section `b` over `f⁻¹ U` lies in the source conductor ideal exactly when `b * c` lies in the
 image of `Γ(Y, U)` for every section `c` over `f⁻¹ U`. -/
@@ -214,11 +216,12 @@ theorem conductorSubschemeMap_appLE :
       (f.conductor.subschemeObjIso U).hom ≫
         CommRingCat.ofHom (Ideal.quotientMap (f.app U).hom.range.conductor (f.app U).hom
           (f.conductor_ideal_le_comap U)) := by
-  have := ConcreteCategory.epi_of_surjective _ (f.conductor.subschemeι_app_surjective U)
-  rw [← cancel_epi (f.conductor.subschemeι.app U), subschemeι_app_conductorSubschemeMap_appLE_assoc,
-    subschemeι_app_conductorComapObjIso_hom, Scheme.IdealSheafData.subschemeι_app,
-    Category.assoc, Iso.inv_hom_id_assoc, ← CommRingCat.ofHom_comp, Ideal.quotientMap_comp_mk,
-    CommRingCat.ofHom_comp, CommRingCat.ofHom_hom]
+  refine (congrArg (· ≫ _) (Scheme.IdealSheafData.subschemeMap_appLE _ U
+    ⟨f ⁻¹ᵁ U, U.property.preimage f⟩ le_rfl)).trans ?_
+  simp only [conductorComapObjIso, Iso.trans_hom, Category.assoc, Iso.inv_hom_id_assoc]
+  congr 1
+  ext a
+  simp [Scheme.Hom.appLE_eq_app]
 
 end Chart
 

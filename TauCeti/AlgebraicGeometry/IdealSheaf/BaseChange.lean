@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.AlgebraicGeometry.Pullbacks
 import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
+import TauCeti.AlgebraicGeometry.IdealSheaf.SubschemeMap
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
@@ -197,10 +198,7 @@ theorem isPullback_subschemeMap_comap {X' S' : Scheme.{u}} (I : X.IdealSheafData
     {g : X' ⟶ X} {f' : X' ⟶ S'} {h : S' ⟶ S} (H : IsPullback g f' f h) :
     IsPullback (subschemeMap (I.comap g) I g (I.le_map_comap g))
       ((I.comap g).subschemeι ≫ f') (I.subschemeι ≫ f) h := by
-  have hI : IsPullback (I.comap g).subschemeι (subschemeMap (I.comap g) I g (I.le_map_comap g))
-      g I.subschemeι :=
-    isPullback_of_isClosedImmersion _ _ _ _ (by simp) (by simp)
-  simpa [Category.assoc] using (hI.paste_horiz H.flip).flip
+  simpa [Category.assoc] using ((I.isPullback_comap_subschemeι g).paste_horiz H.flip).flip
 
 /-- The degree of a finite flat closed subscheme is preserved by base change. More precisely, if
 `X' ⟶ X` is the base change of `X ⟶ S` along `S' ⟶ S`, then the closed subscheme cut out by
