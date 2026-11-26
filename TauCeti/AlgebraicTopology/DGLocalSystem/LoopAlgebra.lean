@@ -57,6 +57,9 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 * `TauCeti.loopChainToGroupAlgebra_loopChainMap`: naturality in based maps.
 * `TauCeti.loopChainToGroupAlgebra_cubicalChainPoint`: it sends the point chain of a loop to the
   basis element of its class.
+* `TauCeti.loopChainToGroupAlgebra_cubicalChainSumMap`: on the push-forward of the chains of a
+  space along a map into the Moore loops, it is the sum of the classes of the images of the points
+  of the `0`-chain, weighted by their coefficients.
 * `TauCeti.loopChainToGroupAlgebra_apply`, `TauCeti.loopChainToGroupAlgebra_surjective`: it only
   sees the component of dimension zero, and it is surjective.
 * `TauCeti.augmentation_loopChainToGroupAlgebra`: it is compatible with the augmentations.
@@ -386,6 +389,32 @@ theorem loopChainToGroupAlgebra_loopChainMap {B' : Type u} [TopologicalSpace B']
       loopChainToGroupAlgebra_lof_component]
     exact loopChainToGroupAlgebraComponent_map f hf n y
   | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- **The degree-zero ring map on a push-forward into the Moore loops.** Push chains of a space `Z`
+forward along `e : Z → Ω_b B` and truncate: the `0`-chain `∑ r_z [z]` of `Z`, read as a finitely
+supported function by `NormalizedCubicalChain.zeroEquiv`, goes to `∑ r_z [e z]`, the classes in
+`π₁(B, b)` of the loops `e z` weighted by the coefficients; the chains of positive dimension of `Z`
+do not contribute. -/
+theorem loopChainToGroupAlgebra_cubicalChainSumMap {Z : Type*} [TopologicalSpace Z]
+    (e : C(Z, MooreLoopSpace B b)) (a : normalizedCubicalChainAlgebra Z R) :
+    loopChainToGroupAlgebra B b R (cubicalChainSumMap R e a) =
+      (NormalizedCubicalChain.zeroEquiv Z R (a 0)).sum fun z r ↦
+        MonoidAlgebra.single (MooreLoopSpace.fundamentalGroupHom b (e z)) r := by
+  rw [loopChainToGroupAlgebra_apply, cubicalChainSumMap_apply]
+  induction a 0 using NormalizedCubicalChain.induction_on with
+  | zero => simp
+  | add a₁ a₂ h₁ h₂ =>
+    rw [map_add, map_add, map_add, h₁, h₂,
+      Finsupp.sum_add_index' (fun _ ↦ MonoidAlgebra.single_zero _)
+        fun _ _ _ ↦ MonoidAlgebra.single_add _ _ _]
+  | smul r a h =>
+    rw [map_smul, map_smul, map_smul, h,
+      Finsupp.sum_smul_index' fun _ ↦ MonoidAlgebra.single_zero _, Finsupp.smul_sum]
+    simp
+  | ofCube σ =>
+    rw [NormalizedCubicalChain.map_ofCube, loopZeroChainToGroupAlgebra_ofCube,
+      SingularCube.eq_point σ, NormalizedCubicalChain.zeroEquiv_ofCube_point,
+      Finsupp.sum_single_index (by simp), ContinuousMap.comp_apply, SingularCube.point_apply]
 
 variable (B b R) in
 /-- **The degree-zero truncation as a morphism of DG algebras**: `loopChainToGroupAlgebra` from
