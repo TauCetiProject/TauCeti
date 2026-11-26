@@ -918,7 +918,7 @@ theorem exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off
     hpt hz (huC k hz) (((hu k).contMDiffAt (hΩ.mem_nhds hz)).mdifferentiableAt (by simp))
   obtain ⟨ψ, Z, w, m, hψ, hZΩ, hconc, hw1, hwC, hlim, hdlim, hweq, hwint, hm, hmlim, hmE⟩ :=
     hconv (u := fun k ↦ φ ∘ u k) hΩ hΩD
-      (fun k ↦ contMDiffOn_iff_contDiffOn.1 <| φ.contMDiffOn.comp (hu k) ((huC k).mono_right hCφ))
+      (fun k ↦ φ.contDiffOn_comp_of_contMDiffOn le_rfl (hu k) ((huC k).mono_right hCφ))
       (fun k z hz ↦ ((hptu k hz).2).2 (hfl k z hz)) (fun k z hz ↦ ⟨u k z, huC k hz, rfl⟩)
       (fun k ↦ (hint k).congr_fun (fun y hy ↦ ((hptu k hy).1).symm) hΩ.measurableSet)
       (fun k ↦ (setIntegral_congr_fun hΩ.measurableSet fun y hy ↦ (hptu k hy).1).trans_le
