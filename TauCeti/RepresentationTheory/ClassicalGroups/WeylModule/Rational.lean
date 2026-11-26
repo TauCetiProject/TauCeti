@@ -192,11 +192,8 @@ theorem nonempty_iso_tensorUnit_rationalWeylFDRep_zero :
   refine ⟨e.toFDRepIso fun g x => Subtype.ext ?_⟩
   rw [FDRep.tensorUnit_ρ, LinearMap.id_apply, FDRep.of_ρ',
     rationalWeylRep_eq_weylRepOfShape_of_detShift_eq_zero k n DominantWeight.detShift_zero,
-    weylRepOfShape_apply_coe]
-  simp only [e, LinearEquiv.trans_apply, LinearEquiv.coe_ofTop_symm_apply]
-  simp only [PiTensorProduct.isEmptyEquiv, LinearEquiv.coe_symm_mk, map_smul,
-    tensorPowerRep, Representation.tensorPower_apply, PiTensorProduct.map_tprod]
-  congr 2; exact funext isEmptyElim
+    weylRepOfShape_apply_coe, Representation.tensorPower_apply,
+    TauCeti.PiTensorProduct.map_of_isEmpty, LinearMap.id_apply]
 
 end Bundled
 
