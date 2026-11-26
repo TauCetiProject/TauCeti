@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.Order.CompactlyGenerated.Basic
 public import Mathlib.RingTheory.Noetherian.Basic
+public import Mathlib.RingTheory.Finiteness.Nilpotent
 
 /-!
 # Restricted root spaces and maximal abelian subspaces of `𝔭`
@@ -40,10 +41,15 @@ in a maximal abelian subspace of `𝔭`, by Zorn's lemma.
 ## Main results
 
 * `Submodule.lie_mem_restrictedRootSpace`: `[𝔤_λ, 𝔤_μ] ⊆ 𝔤_{λ + μ}`.
+* `Submodule.pow_ad_apply_mem_restrictedRootSpace`: `(ad x)^k 𝔤_ν ⊆ 𝔤_{ν + kμ}` for
+  `x ∈ 𝔤_μ`.
 * `Submodule.killingForm_eq_zero_of_mem_restrictedRootSpace`: `B(𝔤_λ, 𝔤_μ) = 0` unless
   `λ + μ = 0`.
 * `Submodule.iSupIndep_restrictedRootSpace`, `Submodule.finite_restrictedRoots`: the restricted
   root spaces are independent, and there are finitely many restricted roots.
+* `Submodule.isNilpotent_ad_of_mem_restrictedRootSpace`: if the restricted root spaces span a
+  Noetherian Lie algebra over a domain of characteristic zero, then `ad x` is nilpotent for `x` in
+  the restricted root space of a nonzero functional.
 * `Submodule.exists_dual_eq_of_iInf_eigenspace_ne_bot`: a nonzero joint eigenspace of the
   operators `ad H`, `H ∈ 𝔞`, has a linear eigenvalue function.
 * `LieEquiv.map_restrictedRootSpace`: `θ 𝔤_λ = 𝔤_{-λ}` for `𝔞 ⊆ 𝔭`, so that
@@ -121,6 +127,19 @@ theorem lie_mem_restrictedRootSpace (hx : x ∈ 𝔞.restrictedRootSpace μ)
   simp only [LinearMap.add_apply]
   exact TauCeti.lie_mem_iInf_eigenspace_ad (H := ((↑) : 𝔞 → L)) hx hy
 
+/-- The powers of `ad x` for `x ∈ 𝔤_μ` carry `𝔤_ν` into `𝔤_{ν + kμ}`. Analogue of Mathlib's
+`LieAlgebra.toEnd_pow_apply_mem` for root spaces of a Cartan subalgebra. -/
+theorem pow_ad_apply_mem_restrictedRootSpace (hx : x ∈ 𝔞.restrictedRootSpace μ) (k : ℕ)
+    (hy : y ∈ 𝔞.restrictedRootSpace ν) :
+    ((ad R L x) ^ k) y ∈ 𝔞.restrictedRootSpace (ν + k • μ) := by
+  induction k with
+  | zero => simpa using hy
+  | succ k ih =>
+    rw [pow_succ', mul_apply_eq_comp, ad_apply]
+    convert lie_mem_restrictedRootSpace hx ih using 2
+    rw [succ_nsmul]
+    abel
+
 /-- The Killing form pairs `𝔤_λ` and `𝔤_μ` trivially unless `λ + μ = 0`. -/
 theorem killingForm_eq_zero_of_mem_restrictedRootSpace [NoZeroDivisors R]
     (hx : x ∈ 𝔞.restrictedRootSpace μ) (hy : y ∈ 𝔞.restrictedRootSpace ν) (h : μ + ν ≠ 0) :
@@ -162,6 +181,34 @@ theorem exists_dual_eq_of_iInf_eigenspace_ne_bot [IsDomain R] [IsTorsionFree R L
 theorem finite_restrictedRoots [IsDomain R] [IsTorsionFree R L] [IsNoetherian R L] :
     𝔞.restrictedRoots.Finite :=
   (finite_ne_bot_of_iSupIndep iSupIndep_restrictedRootSpace).subset fun _ hμ ↦ hμ.2
+
+/-- **`ad x` is nilpotent on a nonzero restricted root space.** If the restricted root spaces of
+`𝔞` span a Noetherian Lie algebra over a domain of characteristic zero, and `x ∈ 𝔤_μ` with
+`μ ≠ 0`, then `ad x` is nilpotent: `(ad x)^k` carries `𝔤_ν` into `𝔤_{ν + kμ}`, and only finitely
+many restricted root spaces are nonzero. Adapted from Mathlib's
+`LieModule.isNilpotent_toEnd_of_mem_rootSpace` for root spaces of a Cartan subalgebra. -/
+theorem isNilpotent_ad_of_mem_restrictedRootSpace [IsDomain R] [CharZero R] [IsTorsionFree R L]
+    [IsNoetherian R L] (hspan : ⨆ ν : Dual R 𝔞, 𝔞.restrictedRootSpace ν = ⊤) (hμ : μ ≠ 0)
+    (hx : x ∈ 𝔞.restrictedRootSpace μ) : IsNilpotent (ad R L x) := by
+  have hfin : {ν : Dual R 𝔞 | 𝔞.restrictedRootSpace ν ≠ ⊥}.Finite :=
+    finite_ne_bot_of_iSupIndep iSupIndep_restrictedRootSpace
+  obtain ⟨H, hH⟩ := not_forall.mp fun h ↦ hμ (LinearMap.ext h)
+  have hone (ν : Dual R 𝔞) {z : L} (hz : z ∈ 𝔞.restrictedRootSpace ν) :
+      ∃ k, ((ad R L x) ^ k) z = 0 := by
+    have hinj : Function.Injective fun k : ℕ ↦ ν + k • μ := fun k l hkl ↦ by
+      have h := LinearMap.congr_fun (add_left_cancel hkl) H
+      simp only [LinearMap.smul_apply, nsmul_eq_mul] at h
+      exact_mod_cast mul_right_cancel₀ hH h
+    obtain ⟨k, hk⟩ : ∃ k : ℕ, 𝔞.restrictedRootSpace (ν + k • μ) = ⊥ := by
+      by_contra! h
+      exact Set.infinite_of_injective_forall_mem hinj h hfin
+    exact ⟨k, (Submodule.eq_bot_iff _).mp hk _ (pow_ad_apply_mem_restrictedRootSpace hx k hz)⟩
+  refine End.isNilpotent_iff_of_finite.mpr fun y ↦ ?_
+  have hy : y ∈ ⨆ ν : Dual R 𝔞, 𝔞.restrictedRootSpace ν := hspan ▸ mem_top
+  refine iSup_induction _ (motive := fun y ↦ ∃ k, ((ad R L x) ^ k) y = 0) hy hone
+    ⟨0, map_zero _⟩ fun z w ⟨a, ha⟩ ⟨b, hb⟩ ↦ ⟨max a b, ?_⟩
+  rw [map_add, End.pow_map_zero_of_le (le_max_left a b) ha,
+    End.pow_map_zero_of_le (le_max_right a b) hb, add_zero]
 
 /-- The zero subspace has the whole Lie algebra as its only restricted root space. -/
 @[simp]

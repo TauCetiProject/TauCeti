@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Dynamics.Billiard.ConvexTable
 public import TauCeti.Dynamics.Billiard.ClosedCylinder
+public import TauCeti.Dynamics.Billiard.ConvexTable.Region
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 
 /-!
@@ -22,6 +23,11 @@ exactly one point `γ(s₁)` with `s < s₁ < s + ℓ`. This file defines the ex
   `r = ‖γ(s₁) − γ(s)‖ > 0`;
 * `TauCeti.ConvexTable.eq_exitParam`: uniqueness, every `t ∈ (s, s + ℓ)` with `γ(t)` on the ray
   is `s₁`;
+* `TauCeti.ConvexTable.setOf_mem_range_ray_eq`: the open ray meets the image of `γ` exactly at
+  `γ(s₁)`;
+* `TauCeti.ConvexTable.openSegment_exitParam_subset_interior_region`: the open chord between
+  `γ(s)` and `γ(s₁)` lies in the interior of the region `Ω` bounded by `γ`, so the ray points into
+  the interior (`TauCeti.ConvexTable.eventually_add_smul_mem_interior_region`);
 * `TauCeti.ConvexTable.continuous_exitParam`: `s₁` is continuous in `(s, δ)`, where it is
   extended by `s₁ = s` at `δ = 0` and `s₁ = s + ℓ` at `δ = π` (`exitParam_zero`, `exitParam_pi`),
   so `s₁ → s` as `δ → 0` and `s₁ → s + ℓ` as `δ → π`, locally uniformly in `s`
@@ -113,6 +119,54 @@ theorem eq_exitParam {s δ t r : ℝ} (hδ : δ ∈ Ioo 0 Real.pi) (ht : t ∈ I
   rw [toStrictConvexBilliardTable_outgoingDir_cos T ⟨hδ.1.le, hδ.2.le⟩,
     coe_toStrictConvexBilliardTable, h, add_sub_cancel_left, map_smul,
     Orientation.areaForm_apply_self, smul_zero]
+
+/-- **The ray meets the curve exactly once.** For `0 < δ < π`, the open ray
+`{γ(s) + r exp(iδ) τ(s) : r > 0}` meets the image of `γ` exactly at the exit point `γ(s₁)`. -/
+theorem setOf_mem_range_ray_eq {s δ : ℝ} (hδ : δ ∈ Ioo 0 Real.pi) :
+    {z | z ∈ range T ∧ ∃ r : ℝ, 0 < r ∧ z = T s + r • (exp (δ * I) * deriv T s)} =
+      {T (T.exitParam s δ)} := by
+  ext z
+  simp only [mem_ofPred_eq, mem_singleton_iff]
+  constructor
+  · rintro ⟨⟨t, rfl⟩, r, hr, hz⟩
+    -- The representative `t' ∈ (s, s + ℓ]` of `t` is not `s + ℓ`, since `γ(t) ≠ γ(s)`.
+    set t' := toIocMod (Fact.out : 0 < ℓ) s t with ht'_def
+    have ht' : T t' = T t := by
+      rw [ht'_def, ← self_sub_toIocDiv_zsmul]
+      exact T.periodic.sub_zsmul_eq _
+    have hne : T t ≠ T s := by
+      rw [hz, Ne, add_eq_left, smul_eq_zero, not_or]
+      exact ⟨hr.ne', mul_ne_zero (exp_ne_zero _) (T.deriv_ne_zero s)⟩
+    have hmem := toIocMod_mem_Ioc (Fact.out : 0 < ℓ) s t
+    have hlt : t' < s + ℓ := hmem.2.lt_of_ne fun h => hne <| by
+      rw [← ht', ht'_def, h, apply_add_period]
+    rw [← ht', ← T.eq_exitParam hδ ⟨hmem.1, hlt⟩ (ht'.trans hz)]
+  · rintro rfl
+    refine ⟨mem_range_self _, _,
+      norm_pos_iff.2 (sub_ne_zero.2 (T.apply_exitParam_ne (s := s) hδ)), ?_⟩
+    rw [← T.apply_exitParam_sub_eq_norm_smul hδ, add_sub_cancel]
+
+/-- **The open chord lies in the interior of the region.** For `0 < δ < π`, the open segment
+between `γ(s)` and the exit point `γ(s₁)` lies in the interior of the region `Ω` bounded by `γ`. -/
+theorem openSegment_exitParam_subset_interior_region {s δ : ℝ} (hδ : δ ∈ Ioo 0 Real.pi) :
+    openSegment ℝ (T s) (T (T.exitParam s δ)) ⊆ interior T.region :=
+  T.strictConvex_region.openSegment_subset (T.apply_mem_region s) (T.apply_mem_region _)
+    (T.apply_exitParam_ne hδ).symm
+
+/-- **The ray points into the interior of the region.** For `0 < δ < π`, the points
+`γ(s) + r exp(iδ) τ(s)` with `r > 0` small lie in the interior of `Ω`. -/
+theorem eventually_add_smul_mem_interior_region {s δ : ℝ} (hδ : δ ∈ Ioo 0 Real.pi) :
+    ∀ᶠ r in 𝓝[>] (0 : ℝ), T s + r • (exp (δ * I) * deriv T s) ∈ interior T.region := by
+  set d := ‖T (T.exitParam s δ) - T s‖
+  have hd : 0 < d := norm_pos_iff.2 (sub_ne_zero.2 (T.apply_exitParam_ne (s := s) hδ))
+  filter_upwards [Ioo_mem_nhdsGT hd] with r hr
+  have hmem := (openSegment_subset_iff ℝ).1
+    (T.openSegment_exitParam_subset_interior_region (s := s) hδ)
+    (1 - r / d) (r / d) (sub_pos.2 ((div_lt_one hd).2 hr.2)) (div_pos hr.1 hd) (sub_add_cancel _ _)
+  convert hmem using 1
+  rw [eq_add_of_sub_eq' (T.apply_exitParam_sub_eq_norm_smul (s := s) hδ), smul_add, smul_smul,
+    div_mul_cancel₀ _ hd.ne']
+  module
 
 /-- **Continuity of the exit parameter** in `(s, δ)`. -/
 theorem continuous_exitParam : Continuous (fun p : ℝ × ℝ => T.exitParam p.1 p.2) :=

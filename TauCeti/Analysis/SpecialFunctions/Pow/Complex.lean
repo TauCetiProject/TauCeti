@@ -56,6 +56,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 ## Main results
 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
+* `TauCeti.div_ofReal_cpow` -- a principal power splits across division by a nonnegative real.
 * `TauCeti.ofReal_prod_cpow` -- a principal power splits across a finite product of nonnegative
   reals.
 * `TauCeti.mul_cpow_of_arg_add_mem` -- a principal power splits across a product when the
@@ -94,6 +95,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
 * `TauCeti.ofReal_cpow_mul_inv_mul_inv_cpow` -- for `a > 0` and `w` off the negative real axis,
   `a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`.
+* `Complex.mul_cpow_sub_one` -- `x * x ^ (s - 1) = x ^ s` for `x ≠ 0`.
 * `Complex.exp_log_add_mul` -- split an exponential at a principal logarithm.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
   `Complex.neg_cpow_half_eq_or_eq_neg` -- algebraic identities for principal `±1/2` powers,
@@ -157,6 +159,14 @@ theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
     Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hr'.ne'),
     Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr' hz, add_mul, Complex.exp_add]
   rw [Complex.ofReal_log hr]
+
+/-- A principal complex power splits across division by a nonnegative real scalar:
+`(z / r) ^ w = z ^ w / (r : ℂ) ^ w` for all complex `z` and `w`, without a branch hypothesis on
+`z`.  This generalizes `Complex.div_cpow_ofReal_nonneg` to a complex numerator. -/
+theorem div_ofReal_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
+    (z / r) ^ w = z ^ w / (r : ℂ) ^ w := by
+  rw [div_eq_inv_mul, ← Complex.ofReal_inv, ofReal_mul_cpow (inv_nonneg.mpr hr), Complex.ofReal_inv,
+    Complex.inv_cpow_ofReal_nonneg hr, inv_mul_eq_div]
 
 /-- A principal complex power splits across a finite product of nonnegative reals:
 `((∏ i ∈ s, f i : ℝ) : ℂ) ^ z = ∏ i ∈ s, (f i : ℂ) ^ z`. -/
@@ -740,6 +750,11 @@ theorem norm_natCast_add_two_cpow_neg_sub_sub_le {z : ℂ} (hz : 0 ≤ z.re) {k 
 end TauCeti
 
 namespace Complex
+
+/-- Multiplying a principal power of a nonzero base by the base raises the exponent by one:
+`x * x ^ (s - 1) = x ^ s`. -/
+theorem mul_cpow_sub_one {x : ℂ} (hx : x ≠ 0) (s : ℂ) : x * x ^ (s - 1) = x ^ s := by
+  rw [cpow_sub _ _ hx, cpow_one, mul_div_cancel₀ _ hx]
 
 /-- An exponential based at a principal logarithm splits into a principal power and the
 exponential of the remaining summand. -/
