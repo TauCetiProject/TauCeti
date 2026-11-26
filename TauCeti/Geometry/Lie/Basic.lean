@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.SigmaCompact
+
 /-!
 # Basic facts about Lie groups
 
@@ -16,6 +18,9 @@ This file records lightweight consequences of the Lie-group regularity hierarchy
 ## Main results
 
 * `ModelWithCorners.t2Space_of_lieGroup`: a Lie group modeled on a normed space is Hausdorff.
+* `LieGroup.secondCountableTopology_of_preconnectedSpace`: a preconnected Lie group modeled on a
+  locally compact second-countable space, for instance a finite-dimensional real one, is second
+  countable.
 * `LieGroup.minSmoothness_of_isRCLikeNormedField`: over a field satisfying
   `IsRCLikeNormedField`, a `Cⁿ` Lie group is a `C^(minSmoothness 𝕜 n)` Lie group; Mathlib's
   tangent Lie algebra `GroupLieAlgebra` assumes regularity `minSmoothness 𝕜 3`.
@@ -36,6 +41,21 @@ theorem ModelWithCorners.t2Space_of_lieGroup (n : ℕ∞ω) [LieGroup I n G] : T
   have := I.t1Space G
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I n
   infer_instance
+
+variable (I) in
+/-- **A preconnected Lie group is second countable**, when its model space is locally compact and
+second countable, for instance finite-dimensional over `ℝ`: it is a preconnected locally compact
+group, hence σ-compact, and a σ-compact manifold over a second-countable model is second
+countable. -/
+theorem LieGroup.secondCountableTopology_of_preconnectedSpace [LocallyCompactSpace E]
+    [SecondCountableTopology E] (n : ℕ∞ω) [LieGroup I n G] [PreconnectedSpace G] :
+    SecondCountableTopology G :=
+  have := topologicalGroup_of_lieGroup I n (G := G)
+  have := I.locallyCompactSpace
+  have := ChartedSpace.locallyCompactSpace H G
+  have := IsTopologicalGroup.sigmaCompactSpace_of_preconnectedSpace (G := G)
+  have := I.secondCountableTopology
+  ChartedSpace.secondCountable_of_sigmaCompact H G
 
 /-- Over a field satisfying `IsRCLikeNormedField`, `minSmoothness 𝕜 n = n`, so a `Cⁿ` Lie group
 is a `C^(minSmoothness 𝕜 n)` Lie group. Mathlib's tangent Lie algebra `GroupLieAlgebra` assumes
