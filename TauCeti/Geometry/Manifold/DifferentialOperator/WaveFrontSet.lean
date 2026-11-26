@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.WaveFrontSet.DifferentialOperator
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
+import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 
 /-!
 # Differential operators on bundles and wave front sets
@@ -205,32 +206,6 @@ theorem chartComponent_localOperatorDualCLM_apply
     localOperatorCLM_chartTestCLM hP he hV hW hχ hf v b ψ hψ]
   simp [chartComponent_apply]
 
-/-- A cutoff `χ` on `Ω` equal to `1` on an open neighbourhood `B ⊆ Ω` of a point `y` of `Ω`. -/
-private theorem exists_testFunction_eqOn_one {Ω : Opens E} {y : E} (hy : y ∈ Ω) :
-    ∃ (χ : 𝓓(Ω, ℝ)) (B : Opens E), B ≤ Ω ∧ y ∈ B ∧ ∀ z ∈ B, χ z = 1 := by
-  obtain ⟨χ, hχ⟩ := TestFunction.exists_eventually_eq_one_nhds (n := ⊤) hy
-  obtain ⟨U, hU1, hU, hyU⟩ := eventually_nhds_iff.1 hχ
-  exact ⟨χ, ⟨U ∩ Ω, hU.inter Ω.isOpen⟩, fun _ hz ↦ hz.2, ⟨hyU, hy⟩, fun z hz ↦ hU1 z hz.1⟩
-
-omit [FiniteDimensional ℝ E] [T2Space M] [LindelofSpace M] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
-  [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] [NormedSpace ℝ F'] [FiniteDimensional ℝ F']
-  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [VectorBundle ℝ F' W]
-  [ContMDiffVectorBundle ∞ F' W 𝓘(ℝ, E)] in
-variable (E F V F' W) in
-/-- A chart of the maximal atlas at `x` whose source lies in the base sets of the trivializations
-of `V` and `W` at `x`. -/
-private theorem exists_mem_maximalAtlas_source_subset_baseSet (x : M) :
-    ∃ c : OpenPartialHomeomorph M E, c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧ x ∈ c.source ∧
-      c.source ⊆ (trivializationAt F V x).baseSet ∧
-        c.source ⊆ (trivializationAt F' W x).baseSet := by
-  have hopen : IsOpen ((trivializationAt F V x).baseSet ∩ (trivializationAt F' W x).baseSet) :=
-    (trivializationAt F V x).open_baseSet.inter (trivializationAt F' W x).open_baseSet
-  refine ⟨_, restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x) hopen, ?_⟩
-  rw [OpenPartialHomeomorph.restr_source' _ _ hopen]
-  exact ⟨⟨mem_chart_source E x, FiberBundle.mem_baseSet_trivializationAt' x,
-    FiberBundle.mem_baseSet_trivializationAt' x⟩, fun _ hy ↦ hy.2.1, fun _ hy ↦ hy.2.2⟩
-
 /-- **A differential operator in a chart.** In a chart `c` of the maximal atlas with frames `tV` and
 `tW` over its source, if every component of the local representative of `T` is microlocally smooth
 at `(y, η)`, then so is every component of that of its transpose `T ∘ P` by a differential
@@ -253,7 +228,7 @@ private theorem isMicrolocallySmoothAt_chartComponent_localOperatorDualCLM {r : 
     fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP
   -- A cutoff `χ` equal to `1` on a neighbourhood `B` of `y` in the chart target.
   obtain ⟨χ, B, hBt, hyB, hB1⟩ :=
-    exists_testFunction_eqOn_one (Ω := ⟨c.target, c.open_target⟩) hy
+    TestFunction.exists_opens_le_forall_eq_one (n := ⊤) (Ω := ⟨c.target, c.open_target⟩) hy
   -- The entries of the chart compression of `P` by `χ` act on the components of `T`.
   let b := Module.finBasis ℝ F'
   let D (i : Fin (Module.finrank ℝ F')) := c.sectionChartCompression he tV hV tW hW χ χ
@@ -296,7 +271,8 @@ theorem IsMicrolocallySmoothAt.localOperatorDualCLM {r : ℕ}
     IsMicrolocallySmoothAt (localOperatorDualCLM P
       (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x ξ := by
   -- A chart of the maximal atlas at `x` over which both bundles are trivial.
-  obtain ⟨c, he, hxc, hV, hW⟩ := exists_mem_maximalAtlas_source_subset_baseSet E F V F' W x
+  obtain ⟨c, he, hxc, hV, hW⟩ :=
+    exists_mem_maximalAtlas_source_subset_baseSet F 𝓘(ℝ, E) (n := ∞) V F' W x
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
   -- Microlocal smoothness is read on the components in this chart and these frames.
@@ -416,7 +392,7 @@ private theorem isMicrolocallySmoothAt_chartComponent_of_localOperatorDualCLM {r
     fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP
   -- A cutoff `χ` equal to `1` on a neighbourhood `B` of `c x` in the chart target.
   obtain ⟨χ, B, hBt, hyB, hB1⟩ :=
-    exists_testFunction_eqOn_one (Ω := ⟨c.target, c.open_target⟩) hy
+    TestFunction.exists_opens_le_forall_eq_one (n := ⊤) (Ω := ⟨c.target, c.open_target⟩) hy
   -- The model fibre of `W` is a line, with basis `b 0`.
   let b := Module.finBasisOfFinrankEq ℝ F' hF'
   -- Over `B`, the component of `T ∘ P` along `v` is the transpose of the component of `T` along
@@ -460,7 +436,8 @@ theorem IsMicrolocallySmoothAt.of_localOperatorDualCLM {r : ℕ} (hF' : Module.f
       (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x ξ) :
     IsMicrolocallySmoothAt T x ξ := by
   -- A chart of the maximal atlas at `x` over which both bundles are trivial.
-  obtain ⟨c, he, hxc, hV, hW⟩ := exists_mem_maximalAtlas_source_subset_baseSet E F V F' W x
+  obtain ⟨c, he, hxc, hV, hW⟩ :=
+    exists_mem_maximalAtlas_source_subset_baseSet F 𝓘(ℝ, E) (n := ∞) V F' W x
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
   -- A vector `u ∈ V_x` with `σ(P)(ξ) u ≠ 0`, whose coefficients in the frame `tV` are `v`.
