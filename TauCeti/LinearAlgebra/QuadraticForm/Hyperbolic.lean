@@ -48,6 +48,8 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
   `QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal_span_pair`: such a pair splits a
   finite-dimensional form as the orthogonal sum of its hyperbolic plane and the orthogonal
   complement, which is regular when the form is.
+* `QuadraticForm.finrank_orthogonal_span_pair_add_two`: the orthogonal complement of such a
+  hyperbolic plane has codimension two.
 * `TauCeti.exists_hyperbolicPlane_prod_equivalent`: in characteristic not two, every
   finite-dimensional nondegenerate isotropic form splits off a hyperbolic plane.
 * `TauCeti.formClass_hyperbolicPlane`: the regular-form class of the hyperbolic plane is
@@ -354,6 +356,17 @@ theorem _root_.QuadraticForm.equivalent_hyperbolicPlane_prod_restrict_orthogonal
   exact QuadraticMap.Equivalent.trans
     ⟨(QuadraticMap.IsometryEquiv.prodRestrictOrthogonal Q W hcomp).symm⟩
     (QuadraticMap.Equivalent.prod ⟨eH⟩ (QuadraticMap.Equivalent.refl _))
+
+/-- The orthogonal complement of the hyperbolic plane spanned by isotropic vectors `x, y` with
+`polar Q x y = 1` has codimension two. -/
+theorem _root_.QuadraticForm.finrank_orthogonal_span_pair_add_two [Invertible (2 : K)]
+    [FiniteDimensional K V] (Q : QuadraticForm K V) {x y : V}
+    (hxQ : Q x = 0) (hyQ : Q y = 0) (hxy : polar Q x y = 1) :
+    Module.finrank K
+        (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {x, y})) + 2 =
+      Module.finrank K V := by
+  obtain ⟨e⟩ := Q.equivalent_hyperbolicPlane_prod_restrict_orthogonal hxQ hyQ hxy
+  rw [e.toLinearEquiv.finrank_eq, Module.finrank_prod, Module.finrank_fin_fun, add_comm]
 
 /-- In a regular quadratic space, the orthogonal complement of the hyperbolic
 plane spanned by isotropic vectors `x, y` with `polar Q x y = 1` is regular. -/

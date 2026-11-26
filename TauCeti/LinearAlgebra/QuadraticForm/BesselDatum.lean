@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.TotallyIsotropic
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
 # Orthogonal Bessel data
@@ -132,21 +133,29 @@ theorem e_mem_flag {i : Fin ℓ} {j : ℕ} (hij : (i : ℕ) < j) : D.e i ∈ D.f
 @[simp]
 theorem flag_zero : D.flag 0 = ⊥ := by simp [flag]
 
+/-- From index `ℓ` on, the flag is the whole span of the `eᵢ`. -/
+theorem flag_of_le {j : ℕ} (hj : ℓ ≤ j) : D.flag j = Submodule.span R (Set.range D.e) := by
+  have h : {i : Fin ℓ | (i : ℕ) < j} = Set.univ :=
+    Set.eq_univ_of_forall fun i ↦ i.isLt.trans_le hj
+  rw [flag, h, Set.image_univ]
+
+/-- Each step of the flag adjoins one vector: `⟨e₁, …, e_{i+1}⟩ = ⟨e₁, …, e_i⟩ ⊔ ⟨e_{i+1}⟩`. -/
+@[simp]
+theorem flag_succ (i : Fin ℓ) : D.flag (i + 1) = D.flag i ⊔ R ∙ D.e i := by
+  have h : {k : Fin ℓ | (k : ℕ) < i + 1} = insert i {k : Fin ℓ | (k : ℕ) < i} := by
+    ext k
+    simp [le_iff_eq_or_lt, Fin.val_inj]
+  rw [flag, flag, h, Set.image_insert_eq, Submodule.span_insert, sup_comm]
+
 /-- Every subspace of the flag is totally isotropic. -/
 theorem isTotallyIsotropic_flag (j : ℕ) : Q.IsTotallyIsotropic (D.flag j) := by
   -- Every vector of the flag is `associated Q`-orthogonal to every vector of the flag.
   have hle : D.flag j ≤ LinearMap.BilinForm.orthogonal (associated Q) (D.flag j) := by
     refine Submodule.span_le.mpr ?_
     rintro _ ⟨i, -, rfl⟩
-    rw [SetLike.mem_coe, LinearMap.BilinForm.mem_orthogonal_iff]
-    intro x hx
-    induction hx using Submodule.span_induction with
-    | mem _ h =>
-      obtain ⟨k, -, rfl⟩ := h
-      exact D.associated_e_e k i
-    | zero => simp
-    | add _ _ _ _ hx hy => simp [hx, hy]
-    | smul _ _ _ hx => simp [hx]
+    rw [SetLike.mem_coe, flag, LinearMap.BilinForm.orthogonal, Submodule.mem_orthogonalBilin_span]
+    rintro _ ⟨k, -, rfl⟩
+    exact D.associated_e_e k i
   rw [isTotallyIsotropic_iff]
   intro x hx
   rw [← associated_eq_self_apply R]
@@ -159,16 +168,8 @@ def middleSpace : Submodule R M :=
 
 theorem mem_middleSpace_iff {x : M} :
     x ∈ D.middleSpace ↔ (∀ i, associated Q (D.e i) x = 0) ∧ ∀ i, associated Q (D.f i) x = 0 := by
-  simp only [middleSpace, LinearMap.BilinForm.mem_orthogonal_iff]
-  refine ⟨fun hx ↦ ⟨fun i ↦ hx _ (Submodule.subset_span (Or.inl ⟨i, rfl⟩)),
-      fun i ↦ hx _ (Submodule.subset_span (Or.inr ⟨i, rfl⟩))⟩, fun ⟨he, hf⟩ y hy ↦ ?_⟩
-  induction hy using Submodule.span_induction with
-  | mem _ h =>
-    obtain ⟨i, rfl⟩ | ⟨i, rfl⟩ := h
-    exacts [he i, hf i]
-  | zero => simp
-  | add _ _ _ _ ha hb => simp [ha, hb]
-  | smul _ _ _ ha => simp [ha]
+  simp only [middleSpace, LinearMap.BilinForm.orthogonal, Submodule.mem_orthogonalBilin_span,
+    Set.forall_mem_union, Set.forall_mem_range]
 
 theorem w_mem_middleSpace : D.w ∈ D.middleSpace :=
   D.mem_middleSpace_iff.mpr ⟨D.associated_e_w, D.associated_f_w⟩
@@ -205,19 +206,16 @@ theorem isCompl_span_middleSpace :
 /-! ### Transport along isometries -/
 
 /-- An isometry carries a Bessel datum of index `ℓ` to a Bessel datum of index `ℓ`. -/
-def map {Q' : QuadraticForm R N} (φ : Q →qᵢ Q') : OrthogonalBesselDatum Q' ℓ :=
-  -- An isometry preserves the associated bilinear forms.
-  have hφ (x y : M) : associated Q' (φ x) (φ y) = associated Q x y := by
-    rw [associated_apply, associated_apply, ← map_add, φ.map_app, φ.map_app, φ.map_app]
-  { e i := φ (D.e i)
-    f i := φ (D.f i)
-    w := φ D.w
-    associated_e_e i k := by rw [hφ, D.associated_e_e]
-    associated_f_f i k := by rw [hφ, D.associated_f_f]
-    associated_e_f i k := by rw [hφ, D.associated_e_f]
-    associated_e_w i := by rw [hφ, D.associated_e_w]
-    associated_f_w i := by rw [hφ, D.associated_f_w]
-    apply_w_ne_zero := by rw [φ.map_app]; exact D.apply_w_ne_zero }
+def map {Q' : QuadraticForm R N} (φ : Q →qᵢ Q') : OrthogonalBesselDatum Q' ℓ where
+  e i := φ (D.e i)
+  f i := φ (D.f i)
+  w := φ D.w
+  associated_e_e i k := by rw [φ.associated_apply, D.associated_e_e]
+  associated_f_f i k := by rw [φ.associated_apply, D.associated_f_f]
+  associated_e_f i k := by rw [φ.associated_apply, D.associated_e_f]
+  associated_e_w i := by rw [φ.associated_apply, D.associated_e_w]
+  associated_f_w i := by rw [φ.associated_apply, D.associated_f_w]
+  apply_w_ne_zero := by rw [φ.map_app]; exact D.apply_w_ne_zero
 
 @[simp]
 theorem map_e {Q' : QuadraticForm R N} (φ : Q →qᵢ Q') (i : Fin ℓ) :
@@ -394,27 +392,22 @@ private theorem nonempty_of_le : ∀ (ℓ : ℕ) {V : Type v} [AddCommGroup V] [
     obtain ⟨x, y, -, hx, hy, hxy⟩ := exists_isotropic_pair_of_radical_eq_bot hQ.radical_eq_bot hiso
     set U := LinearMap.BilinForm.orthogonal (polarBilin Q) (Submodule.span K {x, y})
     have hU := hQ.nondegenerate_restrict_orthogonal_span_pair hx hy hxy
-    have hequiv := Q.equivalent_hyperbolicPlane_prod_restrict_orthogonal hx hy hxy
     have hindex : RegularFormClass.wittIndex (formClass Q hQ) =
         RegularFormClass.wittIndex (formClass (Q.restrict U) hU) + 1 :=
       (Q.wittIndex_formClass_restrict_orthogonal_span_pair_add_one hQ hx hy hxy).symm
-    have hdim : finrank K V = finrank K U + 2 := by
-      obtain ⟨e⟩ := hequiv
-      rw [e.toLinearEquiv.finrank_eq, Module.finrank_prod, Module.finrank_fin_fun, add_comm]
+    have hdim : finrank K V = finrank K U + 2 :=
+      (Q.finrank_orthogonal_span_pair_add_two hx hy hxy).symm
     obtain ⟨D⟩ := nonempty_of_le ℓ (Q.restrict U) hU (by omega) (by omega)
     -- Every vector of `U` is orthogonal to `x` and to `y`; rescale `y` to `B x y = 1`.
-    have hpolar (a b : V) : polar Q a b = 2 * associated Q a b := by
-      rw [← polarBilin_apply_apply, ← two_nsmul_associated K Q, LinearMap.smul_apply,
-        LinearMap.smul_apply, two_nsmul, two_mul]
     have hUxy (u : U) : associated Q x u = 0 ∧ associated Q ((2 : K) • y) u = 0 := by
       have h := LinearMap.BilinForm.mem_orthogonal_iff.mp u.property
       have hx' := h x (Submodule.subset_span (by simp))
       have hy' := h y (Submodule.subset_span (by simp))
-      simp only [polarBilin_apply_apply, hpolar,
+      simp only [polarBilin_apply_apply, polar_eq_two_nsmul_associated, two_nsmul, ← two_mul,
         (isUnit_of_invertible (2 : K)).mul_right_eq_zero] at hx' hy'
       simp [hx', hy']
     have hxy' : associated Q x ((2 : K) • y) = 1 := by
-      rw [map_smul, smul_eq_mul, ← hpolar, hxy]
+      rw [map_smul, smul_eq_mul, two_mul, ← two_nsmul, ← polar_eq_two_nsmul_associated, hxy]
     refine ⟨cons (D.map ⟨U.subtype, fun _ ↦ rfl⟩) (y := (2 : K) • y) hx
       (by rw [QuadraticMap.map_smul, hy, smul_zero]) hxy' ?_⟩
     rintro _ ((⟨i, rfl⟩ | ⟨i, rfl⟩) | rfl) <;> exact hUxy _
