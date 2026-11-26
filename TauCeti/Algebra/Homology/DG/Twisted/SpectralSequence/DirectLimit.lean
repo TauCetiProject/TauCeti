@@ -25,24 +25,26 @@ a loop space are. Then no continuation cocycle raises the index, and the homotop
 parametrized cocycles raise the index filtration by at most one, so homotopic continuation cocycles
 induce the same morphisms from the second page `E₂` on
 (`TauCeti.ParametrizedCocycle.indexSpectralSequenceMap_hom_eq`). On the first page they need not.
-So the index spectral sequences of the system, read from `E₂` on (page `3` in Mathlib's numbering,
-through `CategoryTheory.SpectralSequence.reindex` with no page shift), form a functor on `ι`
+Read from `E₂` on (page `3` in Mathlib's numbering, through
+`CategoryTheory.SpectralSequence.reindex` with no page shift), they induce the same morphism of
+spectral sequences (`TauCeti.ParametrizedCocycle.reindexMap_indexSpectralSequenceMap_eq`). So the
+index spectral sequences of the system, read from `E₂` on, form a functor on `ι`
 (`TauCeti.ContinuationSystem.indexSpectralSequenceFunctor`). This is the spectral sequence
 counterpart of the cohomology functor `TauCeti.ContinuationSystem.homologyFunctor`, whose maps are
 also only functorial up to these homotopies.
 
 When colimits of shape `ι` of modules exist and are exact, as filtered colimits are, spectral
 sequences have colimits of shape `ι`, computed page by page
-(`CategoryTheory.SpectralSequence.hasColimitsOfShape`). The colimit of the index spectral sequences
-of the system is the spectral sequence of the direct limit of the system: each of its terms, from
-`E₂` on, is the colimit over `ι` of the corresponding terms of the index spectral sequences
-(`TauCeti.ContinuationSystem.isColimitPageXMapCocone`). For a system of Floer complexes of
-Hamiltonians of increasing slopes, with coefficients in a DG local system `𝓕`, this colimit is the
-spectral sequence of symplectic homology with DG coefficients of Barraud–Damian–Humilière–Oancea
-(Theorem 3.49(i)). The `E₂` term of each index spectral sequence is the homology of its classical
-complex (`TauCeti.TwistingCocycle.indexSpectralSequenceSecondPageXIso`); the maps between these
-`E₂` terms are not compared here with the classical continuation maps, and the convergence of the
-colimit (Theorem 3.49(ii)) is not treated.
+(`CategoryTheory.SpectralSequence.hasColimitsOfShape`). Each term of the colimit of the index
+spectral sequences of the system, from `E₂` on, is the colimit over `ι` of the corresponding terms
+of the index spectral sequences (`TauCeti.ContinuationSystem.isColimitPageXMapCocone`). For a
+system of Floer complexes of Hamiltonians of increasing slopes, with coefficients in a DG local
+system `𝓕`, this colimit is the spectral sequence of symplectic homology with DG coefficients of
+Barraud–Damian–Humilière–Oancea (Theorem 3.49(i)). The `E₂` term of each index spectral sequence
+is the homology of its classical complex
+(`TauCeti.TwistingCocycle.indexSpectralSequenceSecondPageXIso`); the maps between these `E₂` terms
+are not compared here with the classical continuation maps, and the convergence of the colimit
+(Theorem 3.49(ii)) is not treated.
 
 For a constant continuation system the functor has identity maps
 (`TauCeti.ContinuationSystem.indexSpectralSequenceFunctor_const_map`).
@@ -56,6 +58,8 @@ For a constant continuation system the functor has identity maps
 
 ## Main results
 
+* `TauCeti.ParametrizedCocycle.reindexMap_indexSpectralSequenceMap_eq`: homotopic continuation
+  cocycles induce the same morphism of index spectral sequences from `E₂` on.
 * `TauCeti.ContinuationSystem.indexSpectralSequenceFunctor_map_hom_f`: the maps of the functor are
   those of the continuation cocycles.
 * `TauCeti.ContinuationSystem.isColimitPageXMapCocone`: from `E₂` on, a term of a page of the
@@ -84,6 +88,28 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
   {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ] {dM : M →ₗ[R] M}
 
+namespace ParametrizedCocycle
+
+variable {h : IsDGAlgebra 𝒜 d} {P Q : Type uP} [Fintype P] [Fintype Q] {ind : P → ℤ}
+  {indQ : Q → ℤ} {mP : TwistingCocycle 𝒜 d P ind} {mQ : TwistingCocycle 𝒜 d Q indQ}
+  {ν₀ ν₁ : ContinuationCocycle mP mQ}
+
+/-- **Homotopic continuation cocycles induce the same morphism of index spectral sequences from
+`E₂` on**: over an algebra concentrated in degrees `≤ 0`, continuation cocycles joined by a
+parametrized cocycle induce the same morphism once the first pages are dropped. -/
+theorem reindexMap_indexSpectralSequenceMap_eq (η : ParametrizedCocycle ν₀ ν₁)
+    (hM : IsDGRightModule h ℳ dM) (h𝒜 : ∀ n, 0 < n → 𝒜 n = ⊥) :
+    SpectralSequence.reindexMap (c' := fun r ↦ ComplexShape.up' (⟨r, 1 - r⟩ : ℤ × ℤ))
+        (r₀' := 3) 0 (Equiv.refl _) (fun _ _ _ ↦ by simp) (by lia)
+        (ν₀.indexSpectralSequenceMap hM fun _ _ ↦ ν₀.ν_eq_zero_of_lt_of_nonpos h𝒜) =
+      SpectralSequence.reindexMap (c' := fun r ↦ ComplexShape.up' (⟨r, 1 - r⟩ : ℤ × ℤ))
+        (r₀' := 3) 0 (Equiv.refl _) (fun _ _ _ ↦ by simp) (by lia)
+        (ν₁.indexSpectralSequenceMap hM fun _ _ ↦ ν₁.ν_eq_zero_of_lt_of_nonpos h𝒜) :=
+  SpectralSequence.reindexMap_congr _ _ _ _ fun r _ ↦ η.indexSpectralSequenceMap_hom_eq hM _ _
+    (fun _ _ ↦ η.h_eq_zero_of_add_one_lt_of_nonpos h𝒜) (r + 0) (by lia)
+
+end ParametrizedCocycle
+
 namespace ContinuationSystem
 
 variable {h : IsDGAlgebra 𝒜 d} {ι : Type w} [Preorder ι]
@@ -94,9 +120,9 @@ variable {h : IsDGAlgebra 𝒜 d} {ι : Type w} [Preorder ι]
 `3` in Mathlib's numbering), as a functor on `ι`: `i` goes to the index spectral sequence of the
 twisted complex of `m i` with its first page dropped, and `i ≤ j` to the morphism induced by the
 continuation cocycle `ν`. It is a functor because, over an algebra concentrated in degrees `≤ 0`,
-homotopic continuation cocycles induce the same morphisms from `E₂` on. The body is exposed, as for
-`TauCeti.ContinuationSystem.homologyFunctor`: its values and maps are those of the index spectral
-sequences and of the continuation cocycles. -/
+homotopic continuation cocycles induce the same morphisms from `E₂` on. The body is exposed
+because the statements of `indexSpectralSequenceFunctor_map` and
+`indexSpectralSequenceFunctor_const_map` only typecheck by unfolding its values. -/
 @[expose]
 noncomputable def indexSpectralSequenceFunctor :
     ι ⥤ CohomologicalSpectralSequence (ModuleCat.{max uP uM} R) 3 where
@@ -107,24 +133,18 @@ noncomputable def indexSpectralSequenceFunctor :
       (S.ν (leOfHom g)).ν_eq_zero_of_lt_of_nonpos h𝒜)
   map_id i := by
     obtain ⟨η⟩ := S.nonempty_refl i
-    refine (SpectralSequence.reindexMap_congr _ _ _ _ fun r hr ↦ ?_).trans
-      ((SpectralSequence.reindexFunctor _ _ 3 0 (Equiv.refl _) (fun _ _ _ ↦ by simp)
-        (by lia)).map_id _)
-    refine (η.indexSpectralSequenceMap_hom_eq hM (fun _ _ ↦
-      ContinuationCocycle.ν_eq_zero_of_lt_of_nonpos _ h𝒜) _
-        (fun _ _ ↦ η.h_eq_zero_of_add_one_lt_of_nonpos h𝒜) (r + 0) (by lia)).symm.trans ?_
-    rw [ContinuationCocycle.indexSpectralSequenceMap_refl]
-  map_comp {i j k} g g' := by
+    rw [← η.reindexMap_indexSpectralSequenceMap_eq hM h𝒜,
+      ContinuationCocycle.indexSpectralSequenceMap_refl]
+    exact (SpectralSequence.reindexFunctor _ _ 3 0 (Equiv.refl _) (fun _ _ _ ↦ by simp)
+      (by lia)).map_id _
+  map_comp g g' := by
     obtain ⟨η⟩ := S.nonempty_comp (leOfHom g) (leOfHom g')
-    refine (SpectralSequence.reindexMap_congr _ _ _ _ fun r hr ↦ ?_).trans
-      ((SpectralSequence.reindexFunctor _ _ 3 0 (Equiv.refl _) (fun _ _ _ ↦ by simp)
-        (by lia)).map_comp _ _)
-    refine (η.indexSpectralSequenceMap_hom_eq hM (fun _ _ ↦
-      ContinuationCocycle.ν_eq_zero_of_lt_of_nonpos _ h𝒜) _
-        (fun _ _ ↦ η.h_eq_zero_of_add_one_lt_of_nonpos h𝒜) (r + 0) (by lia)).symm.trans ?_
-    rw [ContinuationCocycle.indexSpectralSequenceMap_comp hM _ _
-      (fun _ _ ↦ ContinuationCocycle.ν_eq_zero_of_lt_of_nonpos _ h𝒜)
-      (fun _ _ ↦ ContinuationCocycle.ν_eq_zero_of_lt_of_nonpos _ h𝒜)]
+    rw [← η.reindexMap_indexSpectralSequenceMap_eq hM h𝒜,
+      ContinuationCocycle.indexSpectralSequenceMap_comp hM _ _
+        (fun _ _ ↦ ContinuationCocycle.ν_eq_zero_of_lt_of_nonpos _ h𝒜)
+        (fun _ _ ↦ ContinuationCocycle.ν_eq_zero_of_lt_of_nonpos _ h𝒜)]
+    exact (SpectralSequence.reindexFunctor _ _ 3 0 (Equiv.refl _) (fun _ _ _ ↦ by simp)
+      (by lia)).map_comp _ _
 
 /-- The value of `indexSpectralSequenceFunctor` at `i` is the index spectral sequence of `m i`
 from `E₂` on. -/
@@ -192,10 +212,10 @@ section Colimit
 variable [HasColimitsOfShape ι (ModuleCat.{max uP uM} R)]
   [HasExactColimitsOfShape ι (ModuleCat.{max uP uM} R)]
 
-/-- **The terms of the spectral sequence of the direct limit are the direct limits of the terms**:
-the colimit of `indexSpectralSequenceFunctor` is the spectral sequence of the direct limit of the
-system, and from `E₂` on its term at `pq` on page `r` is the colimit over `ι` of the terms at `pq`
-on page `r` of the index spectral sequences of the system, through the maps into the colimit. -/
+/-- **The terms of the colimit spectral sequence are the colimits of the terms**: from `E₂` on,
+the term at `pq` on page `r` of the colimit of `indexSpectralSequenceFunctor` is the colimit over
+`ι` of the terms at `pq` on page `r` of the index spectral sequences of the system, through the
+maps into the colimit. -/
 noncomputable def isColimitPageXMapCocone (r : ℤ) (hr : 3 ≤ r) (pq : ℤ × ℤ) :
     IsColimit ((SpectralSequence.pageFunctor (ModuleCat.{max uP uM} R) _ 3 r hr ⋙
       HomologicalComplex.eval (ModuleCat.{max uP uM} R) _ pq).mapCocone
