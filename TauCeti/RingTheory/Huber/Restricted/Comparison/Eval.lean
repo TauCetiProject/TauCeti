@@ -19,8 +19,8 @@ This file compares Huber's topological evaluation homomorphisms `TauCeti.Huber.w
 `TauCeti.Huber.restrictedMvPowerSeriesCompletionGaussEquiv`.
 
 From this identification, we transfer the coefficient-map norm bound to both `weightedEvalHom` and
-`weightedEvalHomCompletion`, and the ultrametric argument-perturbation bound to `weightedEvalHom`,
-without pulling in adic ideal reduction or noetherianity infrastructure.
+`weightedEvalHomCompletion`, without pulling in adic ideal reduction or noetherianity
+infrastructure.
 
 ## Main results
 
@@ -30,8 +30,6 @@ without pulling in adic ideal reduction or noetherianity infrastructure.
 * `TauCeti.Huber.norm_weightedEvalHom_le` and
   `TauCeti.Huber.norm_weightedEvalHomCompletion_le`: Huber evaluation obeys the coefficient-map
   norm bound, measured in the Gauss norm.
-* `TauCeti.Huber.norm_weightedEvalHom_sub_le`: ultrametric perturbation bound for `weightedEvalHom`
-  in its evaluation point.
 
 ## References
 
@@ -101,30 +99,5 @@ theorem norm_weightedEvalHomCompletion_le (f : restrictedMvPowerSeriesCompletion
   exact φ.norm_restrictedEval₂OfBound_le a hφ ha _
 
 end Evaluation
-
-section EvaluationPerturbation
-
-variable [CompleteSpace S]
-
-/-- **Ultrametric perturbation bound for Huber evaluation.** If `φ` is continuous at `0` and
-satisfies `‖φ r‖ ≤ C * ‖r‖`, and `a`, `b` satisfy `‖a i‖ ≤ 1`, `‖b i‖ ≤ 1`, and `‖a i - b i‖ ≤ δ`
-for every `i` with `0 ≤ δ`, then `‖f(a) - f(b)‖ ≤ δ * C * ‖f‖`. -/
-theorem norm_weightedEvalHom_sub_le
-    (hφc : ContinuousAt φ 0) (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
-    {a b : Fin k → S} (ha : ∀ i, ‖a i‖ ≤ 1) (hb : ∀ i, ‖b i‖ ≤ 1)
-    (ha_bd : IsWeightBounded φ (fun _ : Fin k ↦ ({1} : Set R)) a)
-    (hb_bd : IsWeightBounded φ (fun _ : Fin k ↦ ({1} : Set R)) b)
-    {δ : ℝ} (hδ : 0 ≤ δ) (hab : ∀ i, ‖a i - b i‖ ≤ δ)
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R))
-      isWeightFamily_one_weight) :
-    ‖weightedEvalHom isWeightFamily_one_weight hφc ha_bd f -
-      weightedEvalHom isWeightFamily_one_weight hφc hb_bd f‖ ≤
-      δ * C * ‖restrictedMvPowerSeriesGaussEquiv f‖ := by
-  rw [weightedEvalHom_eq_restrictedEval₂OfBound hφc hφ ha ha_bd f,
-    weightedEvalHom_eq_restrictedEval₂OfBound hφc hφ hb hb_bd f]
-  exact RingHom.norm_restrictedEval₂OfBound_sub_le φ hφ ha hb hδ
-    (fun i ↦ by simpa only [mul_one] using hab i) _
-
-end EvaluationPerturbation
 
 end TauCeti.Huber

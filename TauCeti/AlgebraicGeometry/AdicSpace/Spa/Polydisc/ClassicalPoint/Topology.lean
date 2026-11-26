@@ -47,7 +47,7 @@ metric space. When `K` is nontrivially normed, transporting along this homeomorp
 
 * `TauCeti.ValuationSpectrum.continuous_classicalPoint`: the classical-point map
   `(K°)ᵏ → closedPolydisc k K` is continuous.
-* `TauCeti.ValuationSpectrum.preimage_rationalSubset_classicalPoint_closedBall`: the preimage of
+* `TauCeti.ValuationSpectrum.preimage_classicalPoint_rationalSubset_eq_closedBall`: the preimage of
   the basic open `R({Tᵢ - a₀,ᵢ} / c)` under the classical-point map is the closed metric ball of
   radius `‖c‖` about `a₀`.
 * `TauCeti.ValuationSpectrum.isEmbedding_classicalPoint`: over a complete nontrivially normed
@@ -122,7 +122,7 @@ open scoped Classical in
 /-- **Basic-open balls pull back to metric closed balls on `(K°)ᵏ`.** For any centre `a₀ ∈ (K°)ᵏ`
 and any nonzero `c ∈ K`, the preimage of the basic open `R({T₁ - a₀,₁, …, Tₖ - a₀,ₖ} / c)`
 under the classical-point map is the closed ball of radius `‖c‖` about `a₀`. -/
-theorem preimage_rationalSubset_classicalPoint_closedBall (x : spa (powerBoundedSubring K))
+theorem preimage_classicalPoint_rationalSubset_eq_closedBall (x : spa (powerBoundedSubring K))
     (a₀ : {a : Fin k → K // ∀ i, IsPowerBounded (a i)}) {c : K} (hc : c ≠ 0) :
     (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
         classicalPoint x a.val a.property) ⁻¹'
@@ -171,7 +171,7 @@ theorem isEmbedding_classicalPoint (x : spa (powerBoundedSubring K)) :
     Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T (weightedC _ _ c)
   have hpre : (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
       classicalPoint x a.val a.property) ⁻¹' V = Metric.closedBall a₀ ‖c‖ :=
-    preimage_rationalSubset_classicalPoint_closedBall x a₀ hc
+    preimage_classicalPoint_rationalSubset_eq_closedBall x a₀ hc
   have hVopen : IsOpen V :=
     isOpen_val_preimage_rationalSubset_closedPolydisc T (weightedC _ _ c)
   have ha₀V : classicalPoint x a₀.val a₀.property ∈ V :=

@@ -14,16 +14,14 @@ public import TauCeti.RingTheory.Huber.Restricted.Comparison.Eval
 This file compares Wedhorn's evaluation homomorphism `TauCeti.ValuationSpectrum.evalAtHom` on the
 unit Tate algebra `A⟨T₁, …, Tₖ⟩` with the normed restricted evaluation
 `MvPowerSeries.restrictedEval₂` by specializing the Huber evaluation comparison in
-`TauCeti.RingTheory.Huber.Restricted.Comparison.Eval`, and transfers the Gauss-norm bound,
-ultrametric Lipschitz estimate, and continuity in the evaluation argument to `evalAtHom`.
+`TauCeti.RingTheory.Huber.Restricted.Comparison.Eval`, and transfers the Gauss-norm bound and
+continuity in the evaluation argument to `evalAtHom`.
 
 ## Main results
 
 * `TauCeti.ValuationSpectrum.evalAtHom_eq_restrictedEval₂`: comparison of `evalAtHom` with
   `MvPowerSeries.restrictedEval₂` via `restrictedMvPowerSeriesGaussEquiv`.
-* `TauCeti.ValuationSpectrum.norm_evalAtHom_le` and
-  `TauCeti.ValuationSpectrum.norm_evalAtHom_sub_le`: Gauss-norm bound and Lipschitz bound for
-  `evalAtHom` in its evaluation point.
+* `TauCeti.ValuationSpectrum.norm_evalAtHom_le`: Gauss-norm bound for `evalAtHom`.
 * `TauCeti.ValuationSpectrum.continuous_evalAtHom_arg`: for fixed `f`, `a ↦ evalAtHom a.1 a.2 f`
   is continuous on `(K°)ᵏ`.
 
@@ -64,18 +62,6 @@ theorem norm_evalAtHom_le (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
     ‖evalAtHom a ha f‖ ≤ ‖restrictedMvPowerSeriesGaussEquiv f‖ := by
   rw [evalAtHom_eq_restrictedEval₂ a ha ha' f]
   exact MvPowerSeries.norm_restrictedEval₂_le (RingHom.id A) a (fun _ ↦ le_rfl) ha' _
-
-/-- **Ultrametric Lipschitz bound for `evalAtHom` in its argument.** If `a` and `b` lie in the
-closed unit polydisc and satisfy `‖a i - b i‖ ≤ δ` for every `i` with `0 ≤ δ`, then
-`‖f(a) - f(b)‖ ≤ δ * ‖f‖`. -/
-theorem norm_evalAtHom_sub_le {a b : Fin k → A} (ha : ∀ i, IsPowerBounded (a i))
-    (ha' : ∀ i, ‖a i‖ ≤ 1) (hb : ∀ i, IsPowerBounded (b i)) (hb' : ∀ i, ‖b i‖ ≤ 1)
-    {δ : ℝ} (hδ : 0 ≤ δ) (hab : ∀ i, ‖a i - b i‖ ≤ δ)
-    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    ‖evalAtHom a ha f - evalAtHom b hb f‖ ≤ δ * ‖restrictedMvPowerSeriesGaussEquiv f‖ := by
-  rw [evalAtHom_eq_weightedEvalHom a ha, evalAtHom_eq_weightedEvalHom b hb]
-  simpa only [mul_one] using norm_weightedEvalHom_sub_le (φ := RingHom.id A) (C := 1)
-    continuousAt_id (fun r ↦ by simp) ha' hb' _ _ hδ hab f
 
 end NormedCommRing
 
