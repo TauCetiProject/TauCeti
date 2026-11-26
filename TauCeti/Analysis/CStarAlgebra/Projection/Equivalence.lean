@@ -190,16 +190,17 @@ theorem zero_murrayVonNeumannEquiv_iff :
 
 /-- Reindexing a star projection along any bijection `e : m ≃ n` yields a Murray–von Neumann
 equivalent projection. -/
-theorem _root_.IsStarProjection.murrayVonNeumannEquiv_reindex
+theorem _root_.IsStarProjection.murrayVonNeumannEquiv_reindex {R : Type*} [Semiring R] [Module R A]
     (hp : IsStarProjection p) (e : m ≃ n) :
-    MurrayVonNeumannEquiv p (reindexₐ ℕ A e p) := by
+    MurrayVonNeumannEquiv p (reindexₐ R A e p) := by
   rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent, ofMatrix_symm_reindexₐ]
   exact (isStarProjection_ofMatrix_symm_iff.mpr hp).isMurrayVonNeumannEquivalent_reindex e
 
 /-- `MurrayVonNeumannEquiv` is invariant under arbitrary finite reindexings on both sides. -/
 @[simp]
-theorem MurrayVonNeumannEquiv.reindex_iff (e₁ : m ≃ k) (e₂ : n ≃ l) :
-    MurrayVonNeumannEquiv (reindexₐ ℕ A e₁ p) (reindexₐ ℕ A e₂ q) ↔
+theorem MurrayVonNeumannEquiv.reindex_iff {R : Type*} [Semiring R] [Module R A]
+    (e₁ : m ≃ k) (e₂ : n ≃ l) :
+    MurrayVonNeumannEquiv (reindexₐ R A e₁ p) (reindexₐ R A e₂ q) ↔
       MurrayVonNeumannEquiv p q := by
   simp only [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent, ofMatrix_symm_reindexₐ]
   refine ⟨fun h => ?_, fun h => h.reindex e₁ e₂⟩
@@ -236,13 +237,13 @@ theorem _root_.IsStarProjection.murrayVonNeumannEquiv_fromBlocks_assoc
 
 end Algebraic
 
-/-- A `1 × 1` star projection `toOneByOne u ℕ A a` is Murray–von Neumann equivalent to its `(i, i)`
+/-- A `1 × 1` star projection `toOneByOne u R A a` is Murray–von Neumann equivalent to its `(i, i)`
 diagonal corner `singleCorner i a` in `CStarMatrix n n A`. -/
-theorem _root_.IsStarProjection.murrayVonNeumannEquiv_singleCorner {u : Type*}
-    [Unique u] [DecidableEq n] [NonUnitalSemiring A] [StarRing A] {a : A}
-    (ha : IsStarProjection a) (i : n) :
-    MurrayVonNeumannEquiv (toOneByOne u ℕ A a) (singleCorner (R := ℕ) i a) := by
-  refine ⟨ha.map (toOneByOne u ℕ A), (isStarProjection_singleCorner (R := ℕ) i).mpr ha,
+theorem _root_.IsStarProjection.murrayVonNeumannEquiv_singleCorner {u R : Type*}
+    [Unique u] [DecidableEq n] [Semiring R] [NonUnitalSemiring A] [Module R A] [StarRing A]
+    {a : A} (ha : IsStarProjection a) (i : n) :
+    MurrayVonNeumannEquiv (toOneByOne u R A a) (singleCorner (R := R) i a) := by
+  refine ⟨ha.map (toOneByOne u R A), (isStarProjection_singleCorner (R := R) i).mpr ha,
     ofMatrix (Matrix.single i (default : u) a), ?_, ?_⟩
   · ext x y
     rw [Subsingleton.elim x default, Subsingleton.elim y default]

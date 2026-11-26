@@ -11,13 +11,12 @@ public import TauCeti.Analysis.CStarAlgebra.Projection.Equivalence
 import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
-import Mathlib.Analysis.CStarAlgebra.Projection
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Topology.Connected.Clopen
 import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Algebra.Star.Projection.Pair
+import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
 # Nearby and homotopic projections, exponential formulas, and stabilized rotation paths
@@ -39,18 +38,17 @@ so they have the same class in the projection monoid `V(A)`.
 
 Conversely, over any (possibly non-unital) C⋆-algebra `A`, equivalent matrix projections `p` and
 `q` are joined by an explicit rotation path `CStarMatrix.stabilizedPath p q v` from `p ⊕ 0` to
-`0 ⊕ q`. Using the projection exponential formula `exp (z • r) = 1 + (exp z - 1) • r`, this path
+`0 ⊕ q`. Using the idempotent exponential formula `IsIdempotentElem.exp_smul`, this path
 equals unitary conjugation by `expUnitary ((t * π) • r)` in the unitization for
 `r = CStarMatrix.stabilizedProjection p q v` while remaining inside `CStarMatrix (m ⊕ n) (m ⊕ n) A`
 even when `A` has no unit, characterizing `CStarMatrix.MurrayVonNeumannEquiv` by stabilized
-projection homotopy (`CStarMatrix.murrayVonNeumannEquiv_iff_exists_stabilized_path`) and extending
-`Matrix.IsMurrayVonNeumannEquivalent.exists_path_fromBlocks` to non-unital C⋆-algebras.
+projection homotopy (`CStarMatrix.murrayVonNeumannEquiv_iff_exists_stabilized_path`) and proving
+`Matrix.IsMurrayVonNeumannEquivalent.exists_path_fromBlocks` for possibly non-unital C⋆-algebras.
 
 ## Main statements
 
-* `IsStarProjection.exp_smul`, `IsStarProjection.coe_expUnitary_smul`,
-  `IsStarProjection.coe_expUnitary_pi_smul`: exponential of scalar multiples of a star projection,
-  with `expUnitary (π • p) = 1 - 2 • p`.
+* `IsStarProjection.coe_expUnitary_smul`, `IsStarProjection.coe_expUnitary_pi_smul`: exponential
+  unitary of real scalar multiples of a star projection, with `expUnitary (π • p) = 1 - 2 • p`.
 * `IsStarProjection.exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one`: projections `p` and
   `q` of a unital C⋆-algebra with `‖p - q‖ < 1` are conjugate by a unitary `u` with
   `‖u - 1‖ ≤ √2 * ‖p - q‖`.
@@ -97,24 +95,8 @@ namespace IsStarProjection
 
 section Exponential
 
-variable {A : Type*} [CStarAlgebra A]
-
-/-- Exponential of a complex scalar multiple of a star projection:
-`exp (z • p) = 1 + (Complex.exp z - 1) • p`. -/
-theorem exp_smul {p : A} (hp : IsStarProjection p) (z : ℂ) :
-    NormedSpace.exp (z • p) = 1 + (Complex.exp z - 1) • p := by
-  obtain ⟨hp_spec, hp_norm⟩ := isStarProjection_iff_spectrum_subset_and_isStarNormal.mp hp
-  have hzp_norm : IsStarNormal (z • p) :=
-    ⟨by rw [star_smul]; exact (hp_norm.star_comm_self.smul_left (star z)).smul_right z⟩
-  rw [← CFC.exp_eq_normedSpace_exp (𝕜 := ℂ) hzp_norm,
-    ← cfc_comp_smul z (NormedSpace.exp : ℂ → ℂ) p]
-  have hlin : cfc (fun w : ℂ ↦ 1 + (Complex.exp z - 1) * w) p = 1 + (Complex.exp z - 1) • p := by
-    rw [cfc_const_add (1 : ℂ) ((Complex.exp z - 1) * ·) p, map_one,
-      cfc_const_mul_id (Complex.exp z - 1) p]
-  rw [← hlin]
-  refine cfc_congr fun w hw ↦ ?_
-  rw [← Complex.exp_eq_exp_ℂ]
-  rcases hp_spec hw with hw0 | hw1 <;> simp [Set.mem_singleton_iff.mp ‹_›]
+variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [StarRing A] [ContinuousStar A]
+  [CompleteSpace A] [StarModule ℂ A]
 
 /-- For a star projection `p` and `t : ℝ`, `expUnitary (t • p)` has underlying element
 `1 + (Complex.exp (Complex.I * t) - 1) • p`. -/
@@ -122,7 +104,7 @@ theorem coe_expUnitary_smul {p : A} (hp : IsStarProjection p) (t : ℝ) :
     (selfAdjoint.expUnitary (t • ⟨p, hp.isSelfAdjoint⟩) : A) =
       1 + (Complex.exp (Complex.I * t) - 1) • p := by
   rw [selfAdjoint.expUnitary_coe, selfAdjoint.val_smul, ← Complex.coe_smul t p, smul_smul,
-    hp.exp_smul]
+    hp.isIdempotentElem.exp_smul, ← Complex.exp_eq_exp_ℂ]
 
 /-- At angle `π`, `expUnitary (π • p)` equals the self-adjoint reflection `1 - 2 • p`. -/
 theorem coe_expUnitary_pi_smul {p : A} (hp : IsStarProjection p) :
