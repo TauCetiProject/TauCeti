@@ -102,6 +102,9 @@ instance : IsModuleTopology 𝕜 (FredholmDetLine 𝕜 E F T) := ⟨rfl⟩
 
 instance : ContinuousAdd (FredholmDetLine 𝕜 E F T) := IsModuleTopology.toContinuousAdd 𝕜 _
 
+instance : IsTopologicalAddGroup (FredholmDetLine 𝕜 E F T) :=
+  IsModuleTopology.isTopologicalAddGroup 𝕜 _
+
 variable (T) in
 /-- The fibre of `TauCeti.FredholmDetLine` over `T` is the determinant line of `T`. -/
 def linearEquiv : FredholmDetLine 𝕜 E F T ≃ₗ[𝕜] (T.val : E →ₗ[𝕜] F).detLine :=
