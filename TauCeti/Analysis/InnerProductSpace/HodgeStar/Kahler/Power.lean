@@ -44,6 +44,8 @@ complex-linear isometries, and in particular invariant under the unitary group o
   orthonormal exactly when `u` is orthonormal for the Hermitian metric of `J`.
 * `TauCeti.AlmostComplexStructure.kahlerPowerForm_apply_complexRealFrame`: `ω ^ r / r!` takes the
   value one on the frame of a Hermitian-orthonormal family.
+* `TauCeti.AlmostComplexStructure.eq_smul_kahlerPowerForm`: on a space of dimension `2r`, a form
+  of top degree is its value on such a frame times `ω ^ r / r!`.
 * `TauCeti.AlmostComplexStructure.norm_kahlerPowerForm_le`: the Wirtinger inequality
   `‖ω ^ r / r!‖ ≤ 1`.
 * `TauCeti.AlmostComplexStructure.norm_kahlerPowerForm`: `‖ω ^ r / r!‖ = 1` when `2r ≤ dim V`.
@@ -81,6 +83,13 @@ vectors. -/
 def complexRealFrame (u : Fin r → V) : Fin (2 * r) → V :=
   fun k ↦ (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2)
     (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 r) k))
+
+/-- The frame of `u` is the family `(i, 0) ↦ u i`, `(i, 1) ↦ J (u i)` on `Fin r × Fin 2`,
+evaluated at `finProdFinEquiv.symm` of the index cast to `Fin (r * 2)`. -/
+theorem complexRealFrame_def (u : Fin r → V) :
+    J.complexRealFrame u = fun k ↦ (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2)
+      (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 r) k)) :=
+  (rfl)
 
 /-- The frame of `u` is the family `(i, 0) ↦ u i`, `(i, 1) ↦ J (u i)` on `Fin r × Fin 2`,
 reindexed by `Fin (2 * r)` through `finProdFinEquiv`. -/
@@ -176,22 +185,63 @@ theorem kahlerPowerForm_eq_zero {r : ℕ} (h : finrank ℝ V < 2 * r) : J.kahler
 variable {J} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
 include hJ
 
+/-! The frame `(u₀, J u₀, u₁, J u₁, …)` of a family `u` that is orthonormal for the Hermitian
+metric of `J` is a symplectic basis for the Kähler form `ω(a, b) = ⟪J a, b⟫`: `ω(uᵢ, uⱼ) = 0`,
+`ω(uᵢ, J uⱼ) = δᵢⱼ` and `ω(J uᵢ, J uⱼ) = 0`. -/
+
+/-- The Kähler form vanishes on two vectors of a family `u` with `⟪J uᵢ, uⱼ⟫ = 0`. -/
+theorem alternatingFormEquiv_kahlerForm_vecCons_eq_zero {ι : Type*} {u : ι → V}
+    (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0) (i j : ι) :
+    alternatingFormEquiv V 2 J.kahlerForm ![u i, u j] = 0 := by
+  simpa [alternatingFormEquiv_kahlerForm_apply hJ] using hJu i j
+
+/-- The Kähler form pairs an orthonormal family `u` with `J u` by the Kronecker delta. -/
+theorem alternatingFormEquiv_kahlerForm_vecCons_apply {ι : Type*} [DecidableEq ι] {u : ι → V}
+    (hu : Orthonormal ℝ u) (i j : ι) :
+    alternatingFormEquiv V 2 J.kahlerForm ![u i, J (u j)] = if i = j then 1 else 0 := by
+  simpa [alternatingFormEquiv_kahlerForm_apply hJ, hJ] using (orthonormal_iff_ite.1 hu) i j
+
+/-- The Kähler form vanishes on the images under `J` of two vectors of a family `u` with
+`⟪J uᵢ, uⱼ⟫ = 0`. -/
+theorem alternatingFormEquiv_kahlerForm_vecCons_apply_apply_eq_zero {ι : Type*} {u : ι → V}
+    (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0) (i j : ι) :
+    alternatingFormEquiv V 2 J.kahlerForm ![J (u i), J (u j)] = 0 := by
+  simpa [alternatingFormEquiv_kahlerForm_apply hJ, hJ, real_inner_comm] using hJu j i
+
+/-- `ω ^ r` takes the value `r!` on the frame `(u₀, J u₀, u₁, J u₁, …)` of a family `u` that is
+orthonormal for the Hermitian metric of `J`. -/
+theorem wedgePow_kahlerForm_apply_complexRealFrame {r : ℕ} {u : Fin r → V}
+    (hu : Orthonormal ℝ u) (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0) :
+    (alternatingFormEquiv V 2 J.kahlerForm).wedgePow r (J.complexRealFrame u) = r.factorial := by
+  -- The frame vectors `b (i, 0)` and `b (i, 1)` reduce to `u i` and `J (u i)`.
+  rw [complexRealFrame_def]
+  exact wedgePow_apply_finProdFinEquiv (alternatingFormEquiv V 2 J.kahlerForm)
+    (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2)
+    (alternatingFormEquiv_kahlerForm_vecCons_eq_zero hJ hJu)
+    (alternatingFormEquiv_kahlerForm_vecCons_apply hJ hu)
+
 /-- `ω ^ r / r!` takes the value `1` on the frame `(u₀, J u₀, u₁, J u₁, …)` of a family `u` that
 is orthonormal for the Hermitian metric of `J`. -/
 theorem kahlerPowerForm_apply_complexRealFrame {r : ℕ} {u : Fin r → V} (hu : Orthonormal ℝ u)
     (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0) : J.kahlerPowerForm r (J.complexRealFrame u) = 1 := by
-  have hω (a b : V) : alternatingFormEquiv V 2 J.kahlerForm ![a, b] = ⟪J a, b⟫ := by
-    rw [alternatingFormEquiv_apply, inner_kahlerForm_ιMulti hJ]
-  have h := wedgePow_apply_finProdFinEquiv (alternatingFormEquiv V 2 J.kahlerForm)
-    (fun p : Fin r × Fin 2 ↦ ![u p.1, J (u p.1)] p.2) (fun i j ↦ by simpa [hω] using hJu i j)
-    (fun i j ↦ by simpa [hω, hJ] using (orthonormal_iff_ite.1 hu) i j)
-  -- `h` evaluates the wedge power on the frame `(u₀, J u₀, …)`.
-  have h' : (alternatingFormEquiv V 2 J.kahlerForm).wedgePow r (J.complexRealFrame u) =
-      r.factorial := by
-    unfold complexRealFrame
-    exact h
-  rw [kahlerPowerForm_def, ContinuousAlternatingMap.smul_apply, smul_eq_mul, h',
-    inv_mul_cancel₀ (by positivity)]
+  rw [kahlerPowerForm_def, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    wedgePow_kahlerForm_apply_complexRealFrame hJ hu hJu, inv_mul_cancel₀ (by positivity)]
+
+/-- On a space of dimension `2r`, a form `φ` of top degree is `φ(u₀, J u₀, …) ω ^ r / r!` for the
+frame of any family `u` of `r` vectors that is orthonormal for the Hermitian metric of `J`. -/
+theorem eq_smul_kahlerPowerForm {r : ℕ} (hr : finrank ℝ V = 2 * r) {u : Fin r → V}
+    (hu : Orthonormal ℝ u) (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0) (φ : V [⋀^Fin (2 * r)]→L[ℝ] ℝ) :
+    φ = φ (J.complexRealFrame u) • J.kahlerPowerForm r := by
+  -- Both sides are forms of top degree, compared on the orthonormal basis given by the frame.
+  let B : Basis (Fin (2 * r)) ℝ V := basisOfLinearIndependentOfCardEqFinrank' _
+    ((orthonormal_complexRealFrame_iff hJ).2 ⟨hu, hJu⟩).linearIndependent (by simp [hr])
+  have hB : (B : Fin (2 * r) → V) = J.complexRealFrame u :=
+    coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _
+  ext v
+  rw [ContinuousAlternatingMap.smul_apply, apply_eq_det_mul φ B v,
+    apply_eq_det_mul (J.kahlerPowerForm r) B v, hB,
+    kahlerPowerForm_apply_complexRealFrame hJ hu hJu, smul_eq_mul]
+  ring
 
 /-- The frame `(u₀, J u₀, u₁, J u₁, …)` of a family `u` that is orthonormal for the Hermitian
 metric of `J` is calibrated by `ω ^ r / r!`. -/

@@ -24,6 +24,10 @@ a period pair `L`:
 * `PeriodPair.differentiable_of_periodic`: a lattice-periodic function that is differentiable at
   `0` and off the lattice is entire.
 
+The lattice is stable under integer multiples (`PeriodPair.intCast_mul_mem_lattice`), and the
+coordinates of `m ω₁ + n ω₂` in `PeriodPair.latticeBasis` are `m` and `n`
+(`PeriodPair.latticeBasis_repr_eq`).
+
 At positive level `N`, the division point `(m ω₁ + n ω₂) / N` lies in the lattice exactly when
 `m` and `n` vanish modulo `N` (`PeriodPair.div_mem_lattice_iff_intCast_eq_zero`); for a residue
 pair `a : (ℤ/Nℤ)²` this says that its division point is a period only for `a = 0`
@@ -80,6 +84,20 @@ lemma differentiable_of_periodic {H : ℂ → ℂ} (hper : ∀ w ∈ L.lattice, 
     rw [hcomp]
     exact differentiableAt_comp_sub_const.mpr (by simpa using h₀)
   · exact hoff x hx
+
+/-- The lattice is stable under multiplication by integers. -/
+lemma intCast_mul_mem_lattice (n : ℤ) {z : ℂ} (hz : z ∈ L.lattice) : (n : ℂ) * z ∈ L.lattice := by
+  simpa [zsmul_eq_mul] using zsmul_mem hz n
+
+/-- The coordinates of `m ω₁ + n ω₂` in the basis `ω₁, ω₂` of the lattice are `m` and `n`. -/
+lemma latticeBasis_repr_eq {L : PeriodPair} {m n : ℤ} {x : L.lattice}
+    (hx : (m : ℂ) * L.ω₁ + n * L.ω₂ = x) :
+    L.latticeBasis.repr x 0 = m ∧ L.latticeBasis.repr x 1 = n := by
+  have : x = m • L.latticeBasis 0 + n • L.latticeBasis 1 := by
+    ext
+    simp [← hx, zsmul_eq_mul]
+  subst this
+  simp
 
 /-- If both integer coordinates vanish modulo `N`, their division point lies in the period
 lattice. At `N = 0` the quotient is zero by Lean's division-by-zero convention. -/

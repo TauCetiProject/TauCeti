@@ -117,6 +117,19 @@ theorem relativeVolumeDensity_homothety
   congr 1
   ring
 
+/-- A metric equal to `c² g` at `x`, for a constant `c > 0`, has relative volume density `c^dim`
+with respect to `g` at `x`. -/
+theorem relativeVolumeDensity_eq_pow_of_inner_eq_sq_smul
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    (g' : ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x)) {c : ℝ} (hc : 0 < c)
+    {x : M} (h : g'.inner x = c ^ 2 • g.inner x) :
+    relativeVolumeDensity g g' x = c ^ Module.finrank ℝ E := by
+  rw [relativeVolumeDensity_congr g g' (g₁ := g)
+    (g₂ := g.rescale (fun _ : M ↦ c ^ 2) contMDiff_const fun _ ↦ pow_pos hc 2) rfl ?_]
+  · exact relativeVolumeDensity_homothety g hc x
+  · ext v w
+    simp [h]
+
 end Bundle.ContMDiffRiemannianMetric
 
 namespace TauCeti.WithMetric

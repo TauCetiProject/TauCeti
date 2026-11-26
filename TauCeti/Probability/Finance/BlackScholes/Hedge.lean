@@ -126,14 +126,15 @@ theorem hedgeBondHolding_putPrice_pos (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0)
 stock have drift `μ` and volatility `σ`, and let the bond, at price `β`, grow at rate `r`. The Itô
 drift `V_t + μ s V_s + σ² s² / 2 V_ss` of `V(S_t, t)` equals the drift `μ s a + r β b` of the
 delta hedge `a = V_s`, `b = hedgeBondHolding (V · t) s β` exactly when `V` satisfies the
-Black–Scholes equation `V_t + σ² s² / 2 V_ss + r (s V_s - V) = 0` at `(s, t)`. -/
+Black–Scholes equation `V_t + σ² s² / 2 V_ss + r (s V_s - V) = 0` at `(s, t)`, i.e. its
+`residual` vanishes there. -/
 theorem itoDrift_eq_hedgeDrift_iff_pde (V : ℝ → ℝ → ℝ) (μ σ r s t : ℝ) (hβ : β ≠ 0) :
     deriv (fun u => V s u) t + μ * s * deriv (fun x => V x t) s +
         σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => V x t) s =
       μ * s * deriv (fun x => V x t) s + r * β * hedgeBondHolding (fun x => V x t) s β ↔
-    deriv (fun u => V s u) t + σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => V x t) s +
-      r * (s * deriv (fun x => V x t) s - V s t) = 0 := by
+    residual r σ V s t = 0 := by
   have hV := mul_deriv_add_mul_hedgeBondHolding (fun x => V x t) s hβ
+  rw [residual_def]
   constructor <;> intro h
   · linear_combination h + r * hV
   · linear_combination h - r * hV

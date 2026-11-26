@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
-public import TauCeti.MeasureTheory.Covering.EssentialBoundary
+public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
