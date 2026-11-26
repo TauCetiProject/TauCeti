@@ -491,8 +491,7 @@ theorem isOrthogonallyComplemented_iff_exists_bounded_selfAdjoint_idempotent
   · rintro ⟨Q, hQ, hidem, hrange⟩
     refine isOrthogonallyComplemented_iff_exists_selfAdjoint_idempotent.mpr
       ⟨Q, hQ, fun x ↦ by simpa using DFunLike.congr_fun hidem.eq x, ?_⟩
-    rw [← coe_toSubmodule, ← hrange]
-    rfl
+    rw [← coe_toSubmodule, ← hrange, LinearMap.coe_range, ContinuousLinearMap.coe_coe]
 
 end ComplementedAnalytic
 

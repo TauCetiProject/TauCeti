@@ -43,8 +43,10 @@ algebra. When `A` has a proper involution (in particular, when `A` is a C⋆-alg
 
 ## Main declarations
 
-* `TwoSidedIdeal.smul_mem_of_isClosed`: closed two-sided ideals in C⋆-algebras absorb complex
-  scalars (specializing `TwoSidedIdeal.smul_mem_of_isApproximateUnit`).
+* `TwoSidedIdeal.smul_mem_of_isClosed`, `AddSubgroup.smul_mem_of_isClosed_right`: closed
+  two-sided ideals and closed right additive subgroups in C⋆-algebras absorb complex scalars
+  (specializing `TwoSidedIdeal.smul_mem_of_isApproximateUnit` and
+  `AddSubgroup.smul_mem_of_isClosed_right_of_tendsto`).
 * `TwoSidedIdeal.star_mem_of_isClosed` and `Ideal.star_mem_of_isClosed`: closed two-sided ideals in
   C⋆-algebras are closed under `star`.
 * `TwoSidedIdeal.toSubmodule` and `TwoSidedIdeal.toNonUnitalStarSubalgebra`: bundle a closed
@@ -81,6 +83,22 @@ public section
 
 open Filter Topology
 open scoped CStarAlgebra NNReal
+
+namespace AddSubgroup
+
+/-- Every closed right additive subgroup of a (possibly nonunital) C⋆-algebra `A` is automatically
+closed under complex scalar multiplication. -/
+theorem smul_mem_of_isClosed_right {A : Type*} [NonUnitalCStarAlgebra A]
+    (I : AddSubgroup A) (hI : IsClosed (I : Set A))
+    (hmul : ∀ {a : A}, a ∈ I → ∀ b : A, a * b ∈ I) (c : ℂ) {a : A} (ha : a ∈ I) :
+    c • a ∈ I := by
+  let _ := CStarAlgebra.spectralOrder A
+  have _ := CStarAlgebra.spectralOrderedRing A
+  have hl := CStarAlgebra.increasingApproximateUnit A
+  have := hl.neBot
+  exact I.smul_mem_of_isClosed_right_of_tendsto hI hmul c (hl.tendsto_mul_left a) ha
+
+end AddSubgroup
 
 namespace TwoSidedIdeal
 

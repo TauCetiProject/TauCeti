@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Module.Constructions
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 public import TauCeti.Analysis.CStarAlgebra.Module.Semidef
 public import TauCeti.Analysis.CStarAlgebra.Module.Submodule
+public import TauCeti.Topology.Algebra.Module.Orthogonal
 
 import TauCeti.Analysis.CStarAlgebra.Module.Action
 
@@ -122,11 +123,9 @@ variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
 /-- Orthogonal summands are bounded in norm by their sum: if `⟪x, y⟫_A = 0`, then
 `‖x‖ ≤ ‖x + y‖`. -/
 theorem norm_le_norm_add_right_of_inner_eq_zero [StarOrderedRing A] {x y : E}
-    (h : inner A x y = 0) : ‖x‖ ≤ ‖x + y‖ := by
-  rw [← sq_le_sq₀ (CStarModule.norm_nonneg A) (CStarModule.norm_nonneg A), norm_sq_eq A,
-    norm_sq_eq A, inner_add_self_of_inner_eq_zero h]
-  exact CStarAlgebra.norm_le_norm_of_le_of_nonneg
-    (le_add_of_nonneg_right inner_self_nonneg) inner_self_nonneg
+    (h : inner A x y = 0) : ‖x‖ ≤ ‖x + y‖ :=
+  CStarModule.norm_le_of_inner_self_le (A := A)
+    (by rw [inner_add_self_of_inner_eq_zero h]; exact le_add_of_nonneg_right inner_self_nonneg)
 
 /-- Orthogonal summands are bounded in norm by their sum: if `⟪x, y⟫_A = 0`, then
 `‖y‖ ≤ ‖x + y‖`. -/
@@ -157,29 +156,6 @@ theorem smul_mem_orthogonalBilin_innerₛₗ (S : Submodule ℂ E) (a : A) {y : 
     ← CStarModule.innerₛₗ_apply, hy x hx, mul_zero]
 
 end Algebraic
-
-section Topological
-
-variable {R R₁ R₂ M M₁ M₂ : Type*}
-  [CommSemiring R] [CommSemiring R₁] [CommSemiring R₂]
-  [AddCommMonoid M] [Module R M] [TopologicalSpace M] [T1Space M]
-  [AddCommMonoid M₁] [Module R₁ M₁]
-  [AddCommMonoid M₂] [Module R₂ M₂] [TopologicalSpace M₂]
-  {I₁ : R₁ →+* R} {I₂ : R₂ →+* R}
-
-/-- The orthogonal complement of a submodule with respect to a sesquilinear pairing that is
-continuous in the second variable on each element of the submodule is closed, provided the codomain
-is `T₁`. -/
-theorem isClosed_orthogonalBilin (B : M₁ →ₛₗ[I₁] M₂ →ₛₗ[I₂] M) (S : Submodule R₁ M₁)
-    (hB : ∀ x ∈ S, Continuous (B x)) :
-    IsClosed (S.orthogonalBilin B : Set M₂) := by
-  have heq : (S.orthogonalBilin B : Set M₂) = ⋂ x ∈ S, {y : M₂ | B x y = 0} := by
-    ext y
-    simp
-  rw [heq]
-  exact isClosed_biInter fun x hx ↦ isClosed_singleton.preimage (hB x hx)
-
-end Topological
 
 section Analytic
 
@@ -386,8 +362,8 @@ noncomputable def addₗᵢ (F G : CStarSubmodule A E) (hFG : G ≤ F.orthogonal
       inner_right_of_mem_orthogonal p.1.property (hFG p.2.property)
     have hnorm : ‖(p.1 : E) + (p.2 : E)‖ = ‖p‖ := by
       rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A),
-        CStarModule.inner_add_self_of_inner_eq_zero horth, WithCStarModule.prod_norm]
-      rfl
+        CStarModule.inner_add_self_of_inner_eq_zero horth, WithCStarModule.prod_norm,
+        inner_coe, inner_coe]
     exact hnorm
 
 @[simp]
@@ -430,8 +406,8 @@ theorem isClosed_sup_of_le_orthogonal {F G : CStarSubmodule A E} (hFG : G ≤ F.
     [CompleteSpace F] [CompleteSpace G] :
     IsClosed ((F ⊔ G : CStarSubmodule A E) : Set E) := by
   have hrange : ((F ⊔ G : CStarSubmodule A E) : Set E) = Set.range (F.addₗᵢ G hFG) := by
-    rw [← coe_toSubmodule, ← range_addₗᵢ F G hFG]
-    rfl
+    rw [← coe_toSubmodule, ← range_addₗᵢ F G hFG, LinearMap.coe_range,
+      LinearIsometry.coe_toLinearMap]
   rw [hrange]
   exact (F.addₗᵢ G hFG).isometry.isUniformInducing.isComplete_range.isClosed
 

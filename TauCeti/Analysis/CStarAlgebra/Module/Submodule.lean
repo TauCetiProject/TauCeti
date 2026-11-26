@@ -259,8 +259,7 @@ instance : Inhabited (CStarSubmodule A E) :=
 @[simp]
 theorem toSubmodule_iInf {ι : Sort*} (f : ι → CStarSubmodule A E) :
     (⨅ i, f i).toSubmodule = ⨅ i, (f i).toSubmodule := by
-  rw [iInf, toSubmodule_sInf, ← Set.range_comp, ← iInf]
-  rfl
+  simp only [iInf, toSubmodule_sInf, ← Set.range_comp, Function.comp_def]
 
 @[simp]
 theorem mem_iInf {ι : Sort*} {f : ι → CStarSubmodule A E} {x : E} :
@@ -297,8 +296,7 @@ theorem coe_bot :
 
 theorem eq_bot_iff {F : CStarSubmodule A E} :
     F = ⊥ ↔ ∀ x ∈ F, x = 0 := by
-  rw [← toSubmodule_inj, toSubmodule_bot, Submodule.eq_bot_iff]
-  rfl
+  simp only [← toSubmodule_inj, toSubmodule_bot, Submodule.eq_bot_iff, mem_toSubmodule]
 
 theorem disjoint_iff {F G : CStarSubmodule A E} :
     Disjoint F G ↔ Disjoint F.toSubmodule G.toSubmodule := by
@@ -330,8 +328,7 @@ theorem toSubmodule_sup (F G : CStarSubmodule A E) :
 
 theorem mem_sup {F G : CStarSubmodule A E} {z : E} :
     z ∈ F ⊔ G ↔ ∃ x ∈ F, ∃ y ∈ G, x + y = z := by
-  rw [← mem_toSubmodule, toSubmodule_sup, Submodule.mem_sup]
-  rfl
+  simp only [← mem_toSubmodule, toSubmodule_sup, Submodule.mem_sup]
 
 /-- When the coefficient action distributes over addition and commutes with complex scalar
 multiplication, `sSup S` has underlying subspace `sSup (toSubmodule '' S)`. -/
@@ -370,8 +367,7 @@ theorem toSubmodule_sSup [SMulCommClass ℂ A E] (S : Set (CStarSubmodule A E)) 
 @[simp]
 theorem toSubmodule_iSup [SMulCommClass ℂ A E] {ι : Sort*} (f : ι → CStarSubmodule A E) :
     (⨆ i, f i).toSubmodule = ⨆ i, (f i).toSubmodule := by
-  rw [iSup, toSubmodule_sSup, ← Set.range_comp, ← iSup]
-  rfl
+  simp only [iSup, toSubmodule_sSup, ← Set.range_comp, Function.comp_def]
 
 end LatticeSup
 
@@ -475,8 +471,7 @@ instance instCStarModule (F : CStarSubmodule A E) : CStarModule A F where
   inner_add_right := CStarModule.inner_add_right
   inner_self_nonneg := CStarModule.inner_self_nonneg
   inner_self {x} := by
-    rw [inner_coe, CStarModule.inner_self, Subtype.ext_iff]
-    rfl
+    rw [inner_coe, CStarModule.inner_self, Subtype.ext_iff, ZeroMemClass.coe_zero]
   inner_op_smul_right := CStarModule.inner_op_smul_right
   inner_smul_right_complex := CStarModule.inner_smul_right_complex
   star_inner _ _ := CStarModule.star_inner _ _
@@ -641,35 +636,6 @@ theorem toSubmodule_ofRightIdeal {A : Type*} [NonUnitalRing A] [Module ℂ A] (I
     (hmul : ∀ {a : A}, a ∈ I → ∀ b : A, a * b ∈ I) :
     (ofRightIdeal I hmul).toSubmodule = I :=
   (rfl)
-
-end RightIdeals
-
-end CStarSubmodule
-
-end TauCeti
-
-namespace AddSubgroup
-
-/-- Every closed right additive subgroup of a (possibly nonunital) C⋆-algebra `A` is automatically
-closed under complex scalar multiplication, hence forms a closed right Hilbert `A`-submodule of
-the right self-module `CStarModule Aᵐᵒᵖ A`. -/
-theorem smul_mem_of_isClosed_right {A : Type*} [NonUnitalCStarAlgebra A]
-    (I : AddSubgroup A) (hI : IsClosed (I : Set A))
-    (hmul : ∀ {a : A}, a ∈ I → ∀ b : A, a * b ∈ I) (c : ℂ) {a : A} (ha : a ∈ I) :
-    c • a ∈ I := by
-  let _ := CStarAlgebra.spectralOrder A
-  have _ := CStarAlgebra.spectralOrderedRing A
-  have hl := CStarAlgebra.increasingApproximateUnit A
-  have := hl.neBot
-  exact I.smul_mem_of_isClosed_right_of_tendsto hI hmul c (hl.tendsto_mul_left a) ha
-
-end AddSubgroup
-
-namespace TauCeti
-
-namespace CStarSubmodule
-
-section RightIdeals
 
 /-- Bundle a closed right ring ideal (an `AddSubgroup A` closed under right multiplication and
 topologically closed) of a possibly nonunital C⋆-algebra `A` as a submodule of the right

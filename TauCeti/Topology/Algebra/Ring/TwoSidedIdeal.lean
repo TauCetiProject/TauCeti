@@ -218,25 +218,9 @@ theorem smul_mem_of_isClosed_left_of_tendsto [IsScalarTower R A A]
     (hmul : ∀ {a : A}, a ∈ I → ∀ b : A, b * a ∈ I)
     {l : Filter A} [l.NeBot] (c : R) {a : A}
     (hl : Tendsto (· * a) l (𝓝 a)) (ha : a ∈ I) : c • a ∈ I := by
-  let Iop : AddSubgroup Aᵐᵒᵖ := I.comap MulOpposite.opAddEquiv.symm.toAddMonoidHom
-  have hIop : IsClosed (Iop : Set Aᵐᵒᵖ) := hI.preimage MulOpposite.continuous_unop
-  have hmul_op : ∀ {x : Aᵐᵒᵖ}, x ∈ Iop → ∀ y : Aᵐᵒᵖ, x * y ∈ Iop := fun {x} hx y => by
-    change MulOpposite.unop (x * y) ∈ I
-    rw [MulOpposite.unop_mul]
-    exact hmul hx y.unop
-  have _ : SMulCommClass R Aᵐᵒᵖ Aᵐᵒᵖ := ⟨fun r x y => by
-    apply MulOpposite.unop_injective
-    simp [smul_mul_assoc]⟩
-  have hl_op : Tendsto (MulOpposite.op a * ·) (l.map MulOpposite.op) (𝓝 (MulOpposite.op a)) := by
-    rw [tendsto_map'_iff]
-    have hfun : (fun e => MulOpposite.op a * MulOpposite.op e) =
-        fun e => MulOpposite.op (e * a) :=
-      funext fun e => by rw [MulOpposite.op_mul]
-    rw [Function.comp_def, hfun]
-    simpa only [Function.comp_def] using
-      (MulOpposite.continuous_op.tendsto a).comp hl
-  exact Iop.smul_mem_of_isClosed_right_of_tendsto hIop hmul_op c hl_op
-    (show MulOpposite.op a ∈ Iop from ha)
+  have hlim : Tendsto (fun e : A => (c • e) * a) l (𝓝 (c • a)) := by
+    simpa only [smul_mul_assoc] using hl.const_smul c
+  exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => hmul ha (c • e))
 
 end ApproximateUnit
 

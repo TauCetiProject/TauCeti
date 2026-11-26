@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+public import TauCeti.Topology.Algebra.Module.Orthogonal
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
@@ -54,20 +55,13 @@ variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- A preannihilator is norm closed in the original space. -/
 theorem isClosed_orthogonalBilin_topDualPairing (G : Submodule 𝕜 (StrongDual 𝕜 E)) :
-    IsClosed (G.orthogonalBilin (topDualPairing 𝕜 E) : Set E) := by
-  have heq : (G.orthogonalBilin (topDualPairing 𝕜 E) : Set E) =
-      ⋂ f ∈ G, {x | f x = 0} := by ext; simp
-  rw [heq]
-  exact isClosed_biInter fun f _ => isClosed_eq f.continuous continuous_const
+    IsClosed (G.orthogonalBilin (topDualPairing 𝕜 E) : Set E) :=
+  G.isClosed_orthogonalBilin _ fun f _ ↦ f.continuous
 
 /-- A continuous annihilator is norm closed in the strong dual. -/
 theorem isClosed_orthogonalBilin_topDualPairing_flip (S : Submodule 𝕜 E) :
-    IsClosed (S.orthogonalBilin (topDualPairing 𝕜 E).flip : Set (StrongDual 𝕜 E)) := by
-  have heq : (S.orthogonalBilin (topDualPairing 𝕜 E).flip : Set (StrongDual 𝕜 E)) =
-      ⋂ x ∈ S, {f | f x = 0} := by ext; simp
-  rw [heq]
-  exact isClosed_biInter fun x _ => isClosed_eq (ContinuousLinearMap.apply 𝕜 𝕜 x).continuous
-    continuous_const
+    IsClosed (S.orthogonalBilin (topDualPairing 𝕜 E).flip : Set (StrongDual 𝕜 E)) :=
+  S.isClosed_orthogonalBilin _ fun x _ ↦ (ContinuousLinearMap.apply 𝕜 𝕜 x).continuous
 
 /-- Passing to norm closure does not change the continuous annihilator. -/
 @[simp]
