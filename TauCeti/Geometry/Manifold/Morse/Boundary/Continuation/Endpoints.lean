@@ -34,6 +34,16 @@ single integral continuation map.
   `TauCeti.IsAdaptedPseudoGradient.stableNormal_mfderiv_flow`), so the comparison map at `y` is
   `e^{s + t}` times the comparison map of `Φ` at `Φ_s^{X₀} y`, and has the same sign
   (`Orientation.linearMapSign_smul_of_pos`).
+* **Flow maps alone.** Along the identity of `M` the integral continuation map is the signed pair
+  map of `(X₀, X₁)` (`TauCeti.IsAdaptedPseudoGradient.signedContinuationMap_refl`), so by the
+  invariance it is that map along every composite `Φ_t^{X₁} ∘ Φ_s^{X₀}` of time maps of the two
+  flows
+  (`TauCeti.IsAdaptedPseudoGradient.signedContinuationMap_eq_signedPairMap_of_apply_eq_flow`). For
+  a single Morse–Smale pseudo-gradient with the same orientation data at both ends this is the
+  identity
+  (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedContinuationMap_eq_id_of_coe_eq_flow`), the
+  input of the constant-path identity in
+  `TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Constant`.
 * **Independence of the endpoints.** For a smooth continuation field at rate `C > 0`, moving the
   endpoints of the slab further out composes the transition diffeomorphism with the end flows
   (`TauCeti.IsContinuationField.eventually_continuationTransition_apply_eq_flow`). So for all
@@ -47,6 +57,14 @@ single integral continuation map.
 * `TauCeti.IsAdaptedPseudoGradient.signedContinuationCoeff_eq_of_apply_eq_flow`,
   `TauCeti.IsAdaptedPseudoGradient.signedContinuationMap_eq_of_apply_eq_flow`: the integral
   continuation coefficients and maps are invariant under the end flows.
+* `TauCeti.IsAdaptedPseudoGradient.signedContinuationCoeff_refl`,
+  `TauCeti.IsAdaptedPseudoGradient.signedContinuationMap_refl`: along the identity, they are the
+  signed pair coefficients and map.
+* `TauCeti.IsAdaptedPseudoGradient.signedContinuationCoeff_eq_signedPairCoeff_of_apply_eq_flow`,
+  `TauCeti.IsAdaptedPseudoGradient.signedContinuationMap_eq_signedPairMap_of_apply_eq_flow`: the
+  same along composites of time maps of the two flows.
+* `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedContinuationMap_eq_id_of_coe_eq_flow`: along
+  a flow map of a Morse–Smale pseudo-gradient, the integral continuation map is the identity.
 * `TauCeti.IsContinuationField.eventually_signedContinuationCoeff_continuationTransition_eq`,
   `TauCeti.IsContinuationField.eventually_signedContinuationMap_continuationTransition_eq`: for a
   continuation field, they do not depend on the endpoints of the slab once these are far enough
@@ -223,6 +241,21 @@ private theorem transportedCount_flow_comp (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
       ((Flow.apply_mem_stableSet_iff _ _).1 hy.2), ContinuousLinearMap.toLinearMap_smul,
     Orientation.linearMapSign_smul_of_pos (Real.exp_pos _)]
 
+/-- **Along the identity, the signed count is that of the pair.** Read along the identity of `M`,
+the comparison maps are those of the pair `(X₀, X₁)`, so the signed count in the chart of `𝔬₁` at
+`q` is the signed count of `W^u_{X₀}(p) ∩ W^s_{X₁}(q)`. -/
+private theorem transportedCount_id (p : criticalPoints 𝓘(ℝ, E) f₀)
+    (q : criticalPoints 𝓘(ℝ, E) f₁)
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q) :
+    transportedCount hX₀ hX₁ 𝔬₀ 𝔬₁ id p q hpq =
+      hX₀.signedPairCount hX₁ (𝔬₀.chart p) (𝔬₁.chart q) (𝔬₀.orientation p) (𝔬₁.orientation q)
+        hpq := by
+  rw [transportedCount, signedPairCount_def, preimage_id]
+  refine finsum_mem_congr rfl fun y _ ↦ ?_
+  rw [pairSign_def]
+  refine congrArg (fun L ↦ (𝔬₀.orientation p).linearMapSign _ L) (LinearMap.ext fun v ↦ ?_)
+  simp [transportedComparison_apply, mfderiv_id]
+
 end Transported
 
 /-! ### Invariance under the end flows -/
@@ -259,6 +292,61 @@ theorem signedContinuationMap_eq_of_apply_eq_flow (hf₀ : IsMorse 𝓘(ℝ, E) 
     hX₀.signedContinuationMap hX₁ 𝔬₀ 𝔬₁ Ψ hf₁ R = hX₀.signedContinuationMap hX₁ 𝔬₀ 𝔬₁ Φ hf₁ R :=
   Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ by
     simp [signedContinuationCoeff_eq_of_apply_eq_flow 𝔬₀ 𝔬₁ hf₀ hΨ]
+
+/-- **Along the identity, the integral continuation coefficients are the signed pair counts**: the
+coefficient of `q` in the image of `p` counts the points of `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` with their
+signs. -/
+@[simp]
+theorem signedContinuationCoeff_refl (p : criticalPoints 𝓘(ℝ, E) f₀)
+    (q : criticalPoints 𝓘(ℝ, E) f₁) :
+    hX₀.signedContinuationCoeff hX₁ 𝔬₀ 𝔬₁ (Diffeomorph.refl 𝓘(ℝ, E) M ∞) p q =
+      hX₀.signedPairCoeff hX₁ 𝔬₀ 𝔬₁ p q := by
+  by_cases hpq : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q
+  · rw [signedContinuationCoeff_eq_transportedCount hX₀ hX₁ 𝔬₀ 𝔬₁ _ hpq, Diffeomorph.coe_refl,
+      transportedCount_id, signedPairCoeff_of_morseIndex_eq hpq]
+  · rw [signedContinuationCoeff_eq_zero_of_morseIndex_ne 𝔬₀ 𝔬₁ hpq,
+      signedPairCoeff_eq_zero_of_morseIndex_ne hpq]
+
+/-- **Along the identity, the integral continuation map is the signed pair map** of `(X₀, X₁)`,
+with coefficients in any ring. -/
+@[simp]
+theorem signedContinuationMap_refl (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (R : Type*) [Ring R] :
+    hX₀.signedContinuationMap hX₁ 𝔬₀ 𝔬₁ (Diffeomorph.refl 𝓘(ℝ, E) M ∞) hf₁ R =
+      hX₀.signedPairMap hX₁ 𝔬₀ 𝔬₁ hf₁ R :=
+  Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ by simp
+
+/-- **Along the end flows alone, the integral continuation coefficients are the signed pair
+counts.** If the diffeomorphism `Ψ` is the time-`s` map of the flow of `X₀` followed by the
+time-`t` map of the flow of `X₁`, the coefficient of `q` in the image of `p` along `Ψ` counts the
+points of `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` with their signs. -/
+theorem signedContinuationCoeff_eq_signedPairCoeff_of_apply_eq_flow (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
+    {Ψ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M} {s t : ℝ} (hΨ : ∀ x, Ψ x = hX₁.flow t (hX₀.flow s x))
+    (p : criticalPoints 𝓘(ℝ, E) f₀) (q : criticalPoints 𝓘(ℝ, E) f₁) :
+    hX₀.signedContinuationCoeff hX₁ 𝔬₀ 𝔬₁ Ψ p q = hX₀.signedPairCoeff hX₁ 𝔬₀ 𝔬₁ p q := by
+  rw [signedContinuationCoeff_eq_of_apply_eq_flow 𝔬₀ 𝔬₁ hf₀ (Φ := Diffeomorph.refl 𝓘(ℝ, E) M ∞)
+    hΨ, signedContinuationCoeff_refl]
+
+/-- **Along the end flows alone, the integral continuation map is the signed pair map.** If the
+diffeomorphism `Ψ` is the time-`s` map of the flow of `X₀` followed by the time-`t` map of the
+flow of `X₁`, the integral continuation map along `Ψ` is the signed pair map of `(X₀, X₁)`, with
+coefficients in any ring. -/
+theorem signedContinuationMap_eq_signedPairMap_of_apply_eq_flow (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
+    (hf₁ : IsMorse 𝓘(ℝ, E) f₁) {Ψ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M} {s t : ℝ}
+    (hΨ : ∀ x, Ψ x = hX₁.flow t (hX₀.flow s x)) (R : Type*) [Ring R] :
+    hX₀.signedContinuationMap hX₁ 𝔬₀ 𝔬₁ Ψ hf₁ R = hX₀.signedPairMap hX₁ 𝔬₀ 𝔬₁ hf₁ R := by
+  rw [signedContinuationMap_eq_of_apply_eq_flow 𝔬₀ 𝔬₁ hf₀ hf₁
+    (Φ := Diffeomorph.refl 𝓘(ℝ, E) M ∞) hΨ, signedContinuationMap_refl]
+
+/-- **Along a flow map of a Morse–Smale pseudo-gradient, the integral continuation map is the
+identity**, with the same orientation data at both ends and coefficients in any ring: a critical
+point counts once in its own image, and not at all in the image of another critical point. -/
+theorem IsMorseSmale.signedContinuationMap_eq_id_of_coe_eq_flow
+    {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} {f : M → ℝ} {hX : IsAdaptedPseudoGradient f X}
+    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) (𝔬 : MorseOrientation f X)
+    {Ψ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M} {t : ℝ} (hΨ : ⇑Ψ = hX.flow t)
+    (R : Type*) [Ring R] : hX.signedContinuationMap hX 𝔬 𝔬 Ψ hf R = LinearMap.id := by
+  rw [signedContinuationMap_eq_signedPairMap_of_apply_eq_flow 𝔬 𝔬 hf hf (s := 0) (t := t)
+    (fun x ↦ by rw [hΨ, Flow.map_zero_apply]), h.signedPairMap_self hf]
 
 end Flow
 
