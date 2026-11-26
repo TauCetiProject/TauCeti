@@ -16,18 +16,17 @@ An isometry `Φ : M → M'` of Riemannian manifolds with boundary maps `∂M` on
 (`TauCeti.BoundaryTangentCorr`) when `dι' u' = dΦ (dι u)`, that is, when `u'` is the image of `u`
 under the boundary tangent map `TauCeti.boundaryTangentMap`
 (`TauCeti.RiemannianIsometry.boundaryTangentCorr_boundaryTangentMap`). This file shows that `Φ`
-preserves the whole extrinsic geometry of the boundary built on the second fundamental form:
+preserves the extrinsic geometry of the boundary built on the second fundamental form:
 
-* the induced metric, `h'(u', w') = h(u, w)` for corresponding vectors
-  (`TauCeti.RiemannianIsometry.boundaryInducedForm_map`);
 * the Weingarten map: if `u` and `u'` correspond, so do `S_q u` and `S'_{Φ q} u'`
   (`TauCeti.RiemannianIsometry.boundaryWeingarten_map`), that is `(Φ|∂M)^* S' = S`;
 * the principal curvatures and the mean curvature, `κ'(Φ q) = κ(q)` and `H'(Φ q) = H(q)`
   (`TauCeti.RiemannianIsometry.boundaryPrincipalCurvatures_map`,
   `TauCeti.RiemannianIsometry.boundaryMeanCurvature_map`).
 
-The Weingarten map is determined by `h(S_q u, w) = II_q(u, w)`, and both `h` and the second
-fundamental form are natural (`TauCeti.RiemannianIsometry.boundarySecondFundamentalForm_map`).
+The Weingarten map is determined by `h(S_q u, w) = II_q(u, w)`, and both the induced metric `h`
+and the second fundamental form are natural (`TauCeti.RiemannianIsometry.boundaryInducedForm_map`,
+`TauCeti.RiemannianIsometry.boundarySecondFundamentalForm_map`).
 
 ## References
 
@@ -57,34 +56,6 @@ variable {n : ℕ} {M M' : Type*} [TopologicalSpace M]
 namespace RiemannianIsometry
 
 variable (Φ : RiemannianIsometry (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) M M') (q : (𝓡∂ (n + 1)).boundary M)
-
-omit [IsManifold (𝓡∂ (n + 1)) 2 M] [IsManifold (𝓡∂ (n + 1)) 2 M']
-  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
-    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
-  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
-    (fun x : M' ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
-/-- **Naturality of the induced metric of the boundary.** If `u, w ∈ T_q∂M` correspond under an
-isometry `Φ` to `u', w' ∈ T_{Φ q}∂M'`, then `h'(u', w') = h(u, w)`. -/
-theorem boundaryInducedForm_map {u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q}
-    {u' w' : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
-      (⟨Φ q, Φ.apply_mem_boundary q.property⟩ : (𝓡∂ (n + 1)).boundary M')}
-    (hu : BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u u')
-    (hw : BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ w w') :
-    boundaryInducedForm ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u' w' =
-      boundaryInducedForm q u w := by
-  rw [boundaryInducedForm_apply, boundaryInducedForm_apply, hu, hw, Φ.inner_mfderiv]
-
-omit [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
-    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
-  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
-    (fun x : M' ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
-/-- An isometry `Φ` carries `u ∈ T_q∂M` to the corresponding vector of `T_{Φ q}∂M'` given by the
-boundary tangent map of its underlying diffeomorphism. -/
-theorem boundaryTangentCorr_boundaryTangentMap (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
-    BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u
-      (boundaryTangentMap (by simp) Φ.toDiffeomorph q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ rfl
-        u) :=
-  TauCeti.boundaryTangentCorr_boundaryTangentMap _ Φ.toDiffeomorph q _ rfl u
 
 /-- **Naturality of the Weingarten map of the boundary.** If `u ∈ T_q∂M` corresponds under an
 isometry `Φ` to `u' ∈ T_{Φ q}∂M'`, then `S_q u` corresponds to `S'_{Φ q} u'`:
