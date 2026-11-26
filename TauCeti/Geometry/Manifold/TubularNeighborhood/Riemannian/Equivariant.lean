@@ -53,7 +53,7 @@ tubular neighbourhood of `f` is equivariant for this action.
 So near a submanifold of fixed points the action of a group of isometries, or of a compact Lie
 group, is its linear isotropy representation on the normal bundle. This applies to the fixed
 components of torus actions: the components of the fixed set of a group of isometries are embedded
-submanifolds (`TauCeti.exists_isSmoothEmbedding_fixedPointsOfFinrank`).
+submanifolds (`TauCeti.exists_isSmoothEmbedding_connectedComponentIn_fixedPoints`).
 
 ## Main results
 
