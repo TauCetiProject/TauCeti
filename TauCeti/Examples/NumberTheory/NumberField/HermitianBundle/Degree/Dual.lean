@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NumberField.ArakelovDivisor.Class
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree.Dual
 
 /-!
@@ -13,7 +14,8 @@ public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree.Dual
 Over `ℚ`, the trivial line with generator norm `e^{-a}` has degree `a` and its dual has degree
 `-a`, computed with any functional `f` and section `s` with `f s ≠ 0`, also when `s` does not
 generate the line (for instance `s = 2`), and in particular with the generator `1` and the
-identity functional.
+identity functional. The section-free degree `lineDegree` and the degree of the class in the
+compactified Picard group give the same values.
 -/
 
 public section
@@ -44,5 +46,15 @@ example (a : ℝ) :
     simp
   refine ⟨h1, ?_⟩
   rw [HermitianMetric.sectionDegree_dual_eq_neg _ (s := 1) (by simp), h1]
+
+/-- Over `ℚ`, the section-free degree of the dual of `(ℤ, e^{-a} |·|)` is `-a`. -/
+example (a : ℝ) : ((HermitianMetric.trivial ℚ).rescale a).dual.lineDegree = -a := by
+  simp [Module.finrank_self]
+
+/-- Over `ℚ`, the class of the dual of `(ℤ, e^{-a} |·|)` in `Pic^(ℤ)` has degree `-a`. -/
+example (a : ℝ) :
+    ArakelovPicardGroup.degree ℚ ((HermitianMetric.trivial ℚ).rescale a).dual.arakelovClass =
+      -a := by
+  simp [Module.finrank_self]
 
 end TauCeti.HermitianDualDegreeChecks

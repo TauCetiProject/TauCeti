@@ -212,6 +212,33 @@ end
 
 end CategoryTheory.Functor
 
+namespace CategoryTheory
+universe v u vA uA
+variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
+  {A : Type uA} [Category.{vA} A] [HasWeakSheafify J A]
+
+/-- The constant-sheaf adjunction evaluates the sheafification hom at a terminal object. -/
+lemma constantSheafAdj_homEquiv_apply {T : C} (hT : IsTerminal T) (M : A) (F : Sheaf J A)
+    (f : (constantSheaf J A).obj M ⟶ F) :
+    (constantSheafAdj J A hT).homEquiv M F f =
+      ((sheafificationAdjunction J A).homEquiv ((Functor.const Cᵒᵖ).obj M) F f).app
+        (Opposite.op T) := by
+  rw [constantSheafAdj, Adjunction.comp_homEquiv]
+  -- The constant-presheaf adjunction has identity unit; evaluation extracts this component.
+  change 𝟙 M ≫ _ = _
+  exact Category.id_comp _
+
+/-- The constant-sheaf adjunction is compatible with a map of terminal objects. -/
+lemma constantSheafAdj_homEquiv_comp_map {S T : C} (hS : IsTerminal S) (hT : IsTerminal T)
+    (i : S ⟶ T) (M : A) (F : Sheaf J A) (f : (constantSheaf J A).obj M ⟶ F) :
+    (constantSheafAdj J A hT).homEquiv M F f ≫ F.obj.map i.op =
+      (constantSheafAdj J A hS).homEquiv M F f := by
+  simp only [constantSheafAdj_homEquiv_apply]
+  exact (((sheafificationAdjunction J A).homEquiv
+    ((Functor.const Cᵒᵖ).obj M) F f).naturality i.op).symm.trans (Category.id_comp _)
+
+end CategoryTheory
+
 namespace CategoryTheory.Sheaf
 
 section

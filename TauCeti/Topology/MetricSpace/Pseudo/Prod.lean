@@ -24,6 +24,10 @@ of a set with a ball about a common centre, is injective on their union, since o
 In `ℝ × ℝ` with the sup distance, every point is within `1 / 2` of the integer point obtained by
 rounding its coordinates (`Prod.dist_round_le`), so the open unit balls about the integer points
 cover the plane.
+
+A neighbourhood of `(t, x)` in a product contains every point `(s, y)` with `dist s t < r` and
+`y ∈ ball x r` for small `r > 0`, and `r` can be chosen so that a function continuous at `x` also
+moves by less than a given `δ` on that ball (`TauCeti.exists_pos_forall_mem_of_mem_nhds`).
 -/
 
 public section
@@ -54,6 +58,27 @@ theorem Prod.dist_round_le (y : ℝ × ℝ) : dist y ((round y.1 : ℝ), (round 
   exact max_le (abs_sub_round _) (abs_sub_round _)
 
 namespace TauCeti
+
+section Neighbourhood
+
+variable {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y]
+
+/-- **Small product balls in a neighbourhood.** If `N` is a neighbourhood of `(t, x)` in `X × Y`
+and `g : Y → ℝ` is continuous at `x`, then for some `r > 0` every `(s, y)` with `dist s t < r` and
+`y ∈ ball x r` lies in `N` and has `g y - g x ∈ (-δ, δ)`. -/
+theorem exists_pos_forall_mem_of_mem_nhds {N : Set (X × Y)} {t : X} {x : Y} (hN : N ∈ 𝓝 (t, x))
+    {g : Y → ℝ} (hg : ContinuousAt g x) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ r > 0, ∀ s y, dist s t < r → y ∈ Metric.ball x r → (s, y) ∈ N ∧ g y - g x ∈ Ioo (-δ) δ := by
+  obtain ⟨r₁, hr₁, hr₁N⟩ := Metric.mem_nhds_iff.1 hN
+  obtain ⟨r₂, hr₂, hr₂g⟩ := Metric.eventually_nhds_iff.1 (Metric.tendsto_nhds.1 hg δ hδ)
+  refine ⟨min r₁ r₂, lt_min hr₁ hr₂, fun s y hs hy ↦ ⟨hr₁N ?_, ?_⟩⟩
+  · rw [Metric.mem_ball, Prod.dist_eq, max_lt_iff]
+    exact ⟨hs.trans_le (min_le_left _ _), (Metric.mem_ball.1 hy).trans_le (min_le_left _ _)⟩
+  · have := hr₂g ((Metric.mem_ball.1 hy).trans_le (min_le_right _ _))
+    rw [Real.dist_eq] at this
+    exact mem_Ioo.2 (abs_lt.1 this)
+
+end Neighbourhood
 
 variable {ι X F F' : Type*} [PseudoMetricSpace F] {Φ : X × F → X × F'} {U : Set ι}
   {V : ι → Set X} {c : F} {r : ι → ℝ}
