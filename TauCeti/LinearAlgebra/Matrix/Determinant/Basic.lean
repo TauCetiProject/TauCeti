@@ -49,8 +49,12 @@ differences of the remaining columns.
   the matrix `P * g + 1 - P` has invertible determinant.
 * `Matrix.isUnit_det_map_intCast`: an integer matrix with nonzero determinant has unit
   determinant over every field of characteristic zero.
+* `Matrix.intCast_det_one_sub`: the determinant of `1 - M` for an integer matrix `M`, cast to a
+  commutative ring, is the determinant of `1 - M` over that ring.
 * `RingHom.det_map_ne_zero_of_isUnit_det`: the image of a matrix with unit determinant under a ring
   homomorphism to a nontrivial commutative ring has nonzero determinant.
+* `RingHom.det_map_eq_one`: the image of a matrix of determinant one under a ring homomorphism has
+  determinant one.
 * `Matrix.isUnit_det_one_add_smul`: a matrix congruent to `1` modulo an element of the Jacobson
   radical has unit determinant.
 -/
@@ -163,6 +167,12 @@ theorem isUnit_det_map_intCast {n K : Type*} [Fintype n] [DecidableEq n] [Field 
   rw [← Int.cast_det]
   exact (Int.cast_ne_zero.2 hA).isUnit
 
+/-- The determinant of `1 - M` for an integer matrix `M`, cast to a commutative ring `R`, is the
+determinant of `1 - M` computed over `R`. -/
+theorem intCast_det_one_sub {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    (M : Matrix n n ℤ) : (((1 - M).det : ℤ) : R) = (1 - M.map (Int.castRingHom R)).det := by
+  rw [← eq_intCast (Int.castRingHom R), RingHom.map_det, map_sub, map_one, RingHom.mapMatrix_apply]
+
 /-- **Multilinearity of the determinant in all rows at once.** The determinant of a matrix whose
 `i`-th row is a sum over a finite set `A i` is the sum, over the choices of one summand in each
 row, of the determinants of the resulting matrices. -/
@@ -205,5 +215,10 @@ theorem det_map_ne_zero_of_isUnit_det {ι R K : Type*} [Fintype ι] [DecidableEq
     (A.map f).det ≠ 0 := by
   rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
   exact (hdet.map _).ne_zero
+
+/-- The image of a matrix of determinant one under a ring homomorphism has determinant one. -/
+theorem det_map_eq_one {ι R S : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [CommRing S]
+    (f : R →+* S) {A : Matrix ι ι R} (hdet : A.det = 1) : (A.map f).det = 1 := by
+  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, hdet, map_one]
 
 end RingHom

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Torus
 public import TauCeti.Geometry.Manifold.DeRham.Torus
 public import TauCeti.Geometry.Symplectic.Flux
 public import TauCeti.Geometry.Symplectic.Flux.Endpoint
+public import TauCeti.Geometry.Symplectic.Flux.Hamiltonian
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Topology.Covering.AddCircle
 import TauCeti.Geometry.Manifold.Instances.AddCircle.Lift
@@ -33,7 +34,10 @@ coordinates `(x, y)` and `v = a ∂_x + b ∂_y`, this is `A (a [dy] - b [dx])`:
 `x`-direction has flux `A [dy]` and that in the `y`-direction has flux `-A [dx]`. The diffeotopy is
 a loop exactly when `v` lies in the period lattice
 (`TauCeti.final_torusTranslationDiffeotopy_eq_refl_iff`), and for `A ≠ 0` its flux vanishes only
-when `v = 0`, since `[dt_0]` and `[dt_1]` are linearly independent. Integrated around the two
+when `v = 0`, since `[dt_0]` and `[dt_1]` are linearly independent. So for `A ≠ 0` and `v ≠ 0` it
+is not homotopic relative to both time ends to any Hamiltonian diffeotopy
+(`TauCeti.not_homotopic_torusTranslationDiffeotopy_of_isHamiltonian`), even when it is a loop at
+the identity. Integrated around the two
 coordinate circles, the flux form has periods `-A v 1 p 0` and `A v 0 p 1`
 (`TauCeti.pathIntegral_fluxForm_torusTranslationDiffeotopy_smul_torusVolumeForm_update`); for unit
 periods and integer `v` these are integer multiples of `A`. So the fluxes of the translation loops
@@ -81,6 +85,8 @@ topology of the group of area-preserving diffeomorphisms.
   translation of the two-torus for the area form `A dt_0 ∧ dt_1`.
 * `TauCeti.flux_torusTranslationDiffeotopy_smul_torusVolumeForm_eq_zero_iff`: this flux vanishes
   exactly when `A = 0` or `v = 0`.
+* `TauCeti.not_homotopic_torusTranslationDiffeotopy_of_isHamiltonian`: for `A ≠ 0` and `v ≠ 0`
+  the translation is not homotopic relative to both time ends to a Hamiltonian diffeotopy.
 * `TauCeti.pathIntegral_fluxForm_torusTranslationDiffeotopy_smul_torusVolumeForm_update`: its
   periods along the coordinate circles.
 * `TauCeti.exists_final_eq_refl_and_flux_smul_torusVolumeForm_eq`: every class
@@ -334,6 +340,25 @@ theorem flux_torusTranslationDiffeotopy_smul_torusVolumeForm_eq_zero_iff
     · exact h₁.resolve_left hA
     · exact h₀.resolve_left hA
   · rintro (rfl | rfl) <;> ext i <;> fin_cases i <;> simp
+
+/-- **Translations of the two-torus are not homotopic to Hamiltonian isotopies.** For a nonzero
+area form `A dt_0 ∧ dt_1` and `v ≠ 0`, the translation diffeotopy along `v` is not homotopic,
+relative to both time ends, to any Hamiltonian diffeotopy of the area form: its flux is nonzero,
+while homotopic diffeotopies have the same flux and Hamiltonian ones have zero flux. This holds
+also when `v` lies in the period lattice, where the translation diffeotopy is a loop at the
+identity, itself a Hamiltonian diffeomorphism. -/
+theorem not_homotopic_torusTranslationDiffeotopy_of_isHamiltonian (hA : A ≠ 0) (hv : v ≠ 0)
+    {Ψ : Diffeotopy (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) ∞ (∀ i, AddCircle (p i))}
+    (hΨ : Ψ.IsHamiltonian (A • torusVolumeForm p)) :
+    ¬ (torusTranslationDiffeotopy p v).Homotopic Ψ := by
+  intro h
+  have hΨfin := SmoothForm.final_mem_diffeomorphStabilizer hΨ.timeSlice_mem_diffeomorphStabilizer
+  have hfin : (torusTranslationDiffeotopy p v).final ∈
+      SmoothForm.diffeomorphStabilizer (A • torusVolumeForm p) := h.final_eq ▸ hΨfin
+  have h0 := (h.flux_eq ⟨A • torusVolumeForm p, mem_closedForms_of_finrank_le _ (by simp) _⟩ hfin
+    hΨfin).trans (hΨ.flux_eq_zero hΨfin)
+  exact ((flux_torusTranslationDiffeotopy_smul_torusVolumeForm_eq_zero_iff p v A hfin).1 h0).elim
+    hA hv
 
 /-- **Integral translation loops realize the area lattice as fluxes.** On the two-torus with the
 area form `A dt_0 ∧ dt_1`, for all integers `m` and `n` there is a loop of diffeomorphisms based at
