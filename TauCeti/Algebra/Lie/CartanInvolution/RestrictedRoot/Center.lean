@@ -22,7 +22,7 @@ statements of restricted root theory:
 * every restricted root vanishes on `𝔞 ∩ 𝔷(𝔤₀)`
   (`Submodule.apply_eq_zero_of_mem_restrictedRoots_of_mem_center`);
 * over a field, the restricted root space of a nonzero functional lies in the derived algebra
-  `[𝔤₀, 𝔤₀]` (`Submodule.restrictedRootSpace_le_derived`).
+  `[𝔤₀, 𝔤₀]` (`Submodule.restrictedRootSpace_le_derivedSeries_one`).
 
 None of these needs `θ` to be a Cartan involution.
 
@@ -51,8 +51,8 @@ theorem apply_eq_zero_of_mem_restrictedRoots_of_mem_center [IsDomain R] [IsTorsi
 
 /-- **Restricted root spaces of nonzero functionals lie in the derived algebra**: for `x ∈ 𝔤_μ`
 and `H ∈ 𝔞` with `μ(H) ≠ 0`, `x = μ(H)⁻¹ [H, x]`. -/
-theorem restrictedRootSpace_le_derived {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
-    {𝔞 : Submodule K L} {μ : Dual K 𝔞} (hμ : μ ≠ 0) :
+theorem restrictedRootSpace_le_derivedSeries_one {K L : Type*} [Field K] [LieRing L]
+    [LieAlgebra K L] {𝔞 : Submodule K L} {μ : Dual K 𝔞} (hμ : μ ≠ 0) :
     𝔞.restrictedRootSpace μ ≤ (derivedSeries K L 1).toSubmodule := by
   intro x hx
   obtain ⟨H, hH⟩ := not_forall.mp (mt LinearMap.ext hμ)
