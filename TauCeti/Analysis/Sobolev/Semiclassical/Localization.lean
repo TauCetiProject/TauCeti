@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.Semiclassical.UniformlyLocal
 import TauCeti.Algebra.Order.Chebyshev
 import TauCeti.Analysis.Calculus.BumpFunction.Translates
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Analysis.Calculus.ContDiff.Scaling
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 
 /-!
@@ -99,18 +99,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {k : ℕ} {h : ℝ} {η ψ : E → ℝ} {f : E → F}
 
 /-! ### The scaled jet of a localization -/
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A cutoff with `‖Dⁱ η‖ ≤ B` for `i ≤ k`, placed at scale `h > 0` about any centre, has the
-semiclassical bounds `hⁱ ‖Dⁱ (η (h⁻¹ • (· - x)))‖ ≤ B`. -/
-private theorem pow_mul_norm_iteratedFDeriv_cutoff_le {B : ℝ}
-    (hB : ∀ i ≤ k, ∀ z, ‖iteratedFDeriv ℝ i η z‖ ≤ B) (hh : 0 < h) (x : E) :
-    ∀ i ≤ k, ∀ y, h ^ i * ‖iteratedFDeriv ℝ i (fun z ↦ η (h⁻¹ • (z - x))) y‖ ≤ B := by
-  intro i hi y
-  rw [iteratedFDeriv_comp_sub (f := fun w ↦ η (h⁻¹ • w)), norm_iteratedFDeriv_comp_const_smul,
-    norm_inv, Real.norm_of_nonneg hh.le, ← mul_assoc, ← mul_pow, mul_inv_cancel₀ hh.ne', one_pow,
-    one_mul]
-  exact hB i hi _
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 open Classical in
@@ -253,7 +241,8 @@ theorem sum_sq_semiclassicalSobolevNorm_localization_le {ι : Type*} (s : Finset
       (k + 1) ^ 4 * 4 ^ k * B ^ 2 * K * semiclassicalSobolevNorm k h f ^ 2 :=
   sum_sq_semiclassicalSobolevNorm_smul_le s (χ := fun a z ↦ η (h⁻¹ • (z - x a)))
     (card_filter_mem_tsupport_le hK) (fun a _ ↦ hη.comp_inv_smul_sub h (x a))
-    (fun a _ ↦ pow_mul_norm_iteratedFDeriv_cutoff_le hB hh (x a)) hf hfm hh
+    (fun a _ i hi y ↦ (pow_mul_norm_iteratedFDeriv_comp_inv_smul_sub _ hh (x a) i y).trans_le
+      (hB i hi _)) hf hfm hh
 
 /-! ### Recovering the norm from the localizations -/
 
@@ -393,7 +382,8 @@ theorem sq_semiclassicalSobolevNorm_le_sum_sq_localization {ι : Type*} (s : Fin
     (ψ := fun a z ↦ ψ (h⁻¹ • (z - x a))) (card_filter_mem_tsupport_le hK)
     (fun a _ ↦ hη.comp_inv_smul_sub h (x a)) (fun a _ ↦ hηc.comp_inv_smul_sub hh.ne' (x a))
     (fun a _ ↦ hψ.comp_inv_smul_sub h (x a))
-    (fun a _ ↦ pow_mul_norm_iteratedFDeriv_cutoff_le hB hh (x a)) hf hpart hh
+    (fun a _ i hi y ↦ (pow_mul_norm_iteratedFDeriv_comp_inv_smul_sub _ hh (x a) i y).trans_le
+      (hB i hi _)) hf hpart hh
 
 /-! ### Comparison with the uniformly local norm -/
 
@@ -411,7 +401,8 @@ theorem uniformlyLocalSemiclassicalSobolevNorm_le_mul_semiclassicalSobolevNorm
   have hle (x : E) : semiclassicalSobolevNorm k h (fun y ↦ η (h⁻¹ • (y - x)) • f y) ≤
       (k + 1) * 2 ^ k * B * semiclassicalSobolevNorm k h f :=
     (semiclassicalSobolevNorm_smul_le_of_le_left (hη.comp_inv_smul_sub h x) hf hfm hh
-      (pow_mul_norm_iteratedFDeriv_cutoff_le hB hh x)).2
+      fun i hi y ↦ (pow_mul_norm_iteratedFDeriv_comp_inv_smul_sub _ hh x i y).trans_le
+        (hB i hi _)).2
   exact ⟨⟨_, forall_mem_range.2 hle⟩, uniformlyLocalSemiclassicalSobolevNorm_le hle⟩
 
 open Classical in
