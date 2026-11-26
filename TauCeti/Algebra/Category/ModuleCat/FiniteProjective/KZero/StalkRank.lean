@@ -292,18 +292,15 @@ theorem map_of_clopenProjective (f : R →+* S) (U : Clopens (PrimeSpectrum R)) 
       := by
     rw [isIdempotentElemEquivClopens_symm_preimage, Ideal.map_span, Set.image_singleton, map_sub,
       map_one, RingHom.algebraMap_toAlgebra]
-  rw [SplitK0.map_of]
   -- The balanced extension of `P_U` is Mathlib's base change `S ⊗[R] (R ⧸ (1 - e_U))`, which is
   -- `S ⧸ (1 - f e_U)` by `Ideal.quotMapEquivTensorQuot`.
-  exact SplitK0.of_congr ((finiteProjectiveModules S).fullyFaithfulι.preimageIso
-    (f.finiteProjectiveModulesExtendScalarsCompιIso.app _ ≪≫
-      (BalancedExtension.extendScalarsIso f).app _ ≪≫
-      ModuleCat.extendScalarsAlgebraMapIso _ ≪≫
-      LinearEquiv.toModuleIso
-        (TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl S S)
-            (eqToIso (clopenProjective_obj R U)).toLinearEquiv ≪≫ₗ
-          (Ideal.quotMapEquivTensorQuot S).symm ≪≫ₗ Submodule.quotEquivOfEq _ _ hspan) ≪≫
-      eqToIso (clopenProjective_obj S _).symm))
+  exact (SplitK0.map_of _ _).trans (SplitK0.of_extendScalars_obj
+    (((BalancedExtension.extendScalarsIso f).app _ ≪≫
+        ModuleCat.extendScalarsAlgebraMapIso _).toLinearEquiv ≪≫ₗ
+      TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl S S)
+        (eqToIso (clopenProjective_obj R U)).toLinearEquiv ≪≫ₗ
+      (Ideal.quotMapEquivTensorQuot S).symm ≪≫ₗ Submodule.quotEquivOfEq _ _ hspan ≪≫ₗ
+      (eqToIso (clopenProjective_obj S _)).toLinearEquiv.symm))
 
 /-- **The rank section is natural under extension of scalars.** Along a ring homomorphism
 `f : R →+* S`, extending the class `rankSection g` of a locally constant function `g` on `Spec R`
@@ -318,14 +315,9 @@ theorem map_rankSection (f : R →+* S) (g : LocallyConstant (PrimeSpectrum R) �
           ⟨PrimeSpectrum.comap f, PrimeSpectrum.continuous_comap f⟩) from
     DFunLike.congr_fun h g
   refine LocallyConstant.addMonoidHom_ext_charFn fun U ↦ ?_
-  -- The pullback of the characteristic function of `U` is that of its preimage.
-  have hcomap : (LocallyConstant.charFn ℤ U.isClopen).comap
-      ⟨PrimeSpectrum.comap f, PrimeSpectrum.continuous_comap f⟩ =
-      LocallyConstant.charFn ℤ (U.isClopen.preimage (PrimeSpectrum.continuous_comap f)) := by
-    ext p
-    by_cases hp : PrimeSpectrum.comap f p ∈ U <;> simp [LocallyConstant.coe_charFn, hp]
   simp only [AddMonoidHom.coe_comp, Function.comp_apply, RingHom.toAddMonoidHom_eq_coe,
-    AddMonoidHom.coe_ofClass, LocallyConstant.comapAddMonoidHom_apply, hcomap, rankSection_charFn]
+    AddMonoidHom.coe_ofClass, LocallyConstant.comapAddMonoidHom_apply,
+    LocallyConstant.comap_charFn, rankSection_charFn]
   exact (map_of_clopenProjective f U).trans (rankSection_charFn S _).symm
 
 end FiniteProjectiveModules
