@@ -5,17 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.SphericalPeriodGroup
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Spherical
+public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
 
 /-!
 # w⁺-monotone symplectic manifolds
 
 Let `(M, ω)` be a closed symplectic manifold of dimension `2n`, with first Chern class `c₁`. It is
 **w⁺-monotone** if every spherical class `A ∈ H₂(M; ℤ)` with `0 < c₁(A) ≤ n - 2` has positive
-area `ω(A) > 0`. This is the range of symplectic manifolds on which Lee counts the
-pseudoholomorphic tori of a symplectomorphism and builds the Floer–Novikov torsion. Since a
-nonconstant pseudoholomorphic sphere has positive area, on a w⁺-monotone manifold no class of
-first Chern number in `[2 - n, 0)` is represented by one.
+area `ω(A) > 0`. Since a nonconstant pseudoholomorphic sphere has positive area, on a
+w⁺-monotone manifold no class of first Chern number in `[2 - n, 0)` is represented by one.
+
+This is the strict form of the condition. Lee counts the pseudoholomorphic tori of a
+symplectomorphism and builds the Floer–Novikov torsion under a w⁺-monotonicity assumption in the
+style of Hofer–Salamon weak monotonicity, which asks only `ω(A) ≥ 0` on the same range. The strict
+form implies the weak one, and for `n ≥ 3` it is strictly stronger: it fails, for instance, when
+`ω` vanishes on spherical classes while `c₁` takes a value in `(0, n - 2]`.
 
 As for the period group `TauCeti.Floer.PeriodGroup`, the condition is stated for an arbitrary
 additive group `S` with homomorphisms `ω : S →+ ℝ` and `c : S →+ ℤ`
@@ -46,6 +51,8 @@ evaluation of the first Chern class.
 
 ## References
 
+* H. Hofer and D. Salamon, *Floer homology and Novikov rings*, in *The Floer memorial volume*,
+  Progr. Math. 133, Birkhäuser, 1995, 483–524 (weak monotonicity).
 * Y.-J. Lee, *Reidemeister torsion in Floer–Novikov theory and counting pseudo-holomorphic tori,
   I*, J. Symplectic Geom. 3 (2005), 221–311, arXiv:math/0111313, the w⁺-monotonicity
   assumption.
@@ -63,7 +70,8 @@ variable {S S' : Type*} [AddGroup S] [AddGroup S'] {ω : S →+ ℝ} {c : S →+
 
 variable (ω c n) in
 /-- The class data `(ω, c)` of a symplectic manifold of dimension `2n` is **w⁺-monotone** if every
-class whose first Chern number lies in `(0, n - 2]` has positive area. -/
+class whose first Chern number lies in `(0, n - 2]` has positive area. This is the strict form of
+the condition; the weak form asks only for nonnegative area. -/
 def IsWPlusMonotone : Prop :=
   ∀ s, 0 < c s → c s ≤ (n : ℤ) - 2 → 0 < ω s
 
