@@ -11,6 +11,7 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
+import TauCeti.NumberTheory.LSeries.RiemannZeta.RiemannHypothesis
 
 /-!
 # Bounded-height Riemann hypotheses and verified zero-free strips

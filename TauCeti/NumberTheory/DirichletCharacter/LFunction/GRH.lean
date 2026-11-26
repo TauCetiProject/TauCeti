@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
-import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.RiemannHypothesis
 
 /-!
 # The generalized Riemann hypothesis for Dirichlet L-functions

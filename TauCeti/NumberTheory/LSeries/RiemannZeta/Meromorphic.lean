@@ -24,7 +24,9 @@ right of `σ` in the order sense of `TauCeti.ZeroFreeRightOf` exactly when it ha
 with `σ < Re s`, the pole `1` included. Every closed disc whose radius
 is less than the distance `|Im c|` from its centre `c` to the real axis avoids the pole, so
 `riemannZeta` is analytic on it, and nonvanishing on `1 ≤ Re s`
-(`riemannZeta_ne_zero_of_one_le_re`) puts every zero in `Re s < 1`.
+(`riemannZeta_ne_zero_of_one_le_re`) puts every zero in `Re s < 1`. Since the zeros with
+`Re s ≤ 0` are the trivial zeros `-2(n + 1)` (`riemannZeta_eq_zero_iff_of_re_nonpos`), every
+other zero lies in the open critical strip `0 < Re s < 1`.
 
 ## Main results
 
@@ -37,6 +39,8 @@ is less than the distance `|Im c|` from its centre `c` to the real axis avoids t
 * `TauCeti.analyticOnNhd_riemannZeta_closedBall`: analyticity on `closedBall c r` for
   `r < |Im c|`.
 * `TauCeti.re_lt_one_of_riemannZeta_eq_zero`: every zero of `riemannZeta` has `Re s < 1`.
+* `TauCeti.re_mem_Ioo_of_riemannZeta_eq_zero`: every nontrivial zero of `riemannZeta` lies in
+  the open critical strip `0 < Re s < 1`.
 * `TauCeti.one_le_toNat_analyticOrderAt_riemannZeta`: at a zero of `riemannZeta` the analytic
   order is a positive natural number.
 
@@ -108,6 +112,12 @@ theorem analyticOnNhd_riemannZeta_closedBall {c : ℂ} {r : ℝ} (hr : r < |c.im
 /-- Every zero of the Riemann zeta function lies in the open half-plane `Re s < 1`. -/
 theorem re_lt_one_of_riemannZeta_eq_zero {s : ℂ} (h : riemannZeta s = 0) : s.re < 1 :=
   not_le.mp fun hs ↦ riemannZeta_ne_zero_of_one_le_re hs h
+
+/-- Every nontrivial zero of `riemannZeta` lies in the open critical strip `0 < re s < 1`. -/
+theorem re_mem_Ioo_of_riemannZeta_eq_zero {s : ℂ} (hs : riemannZeta s = 0)
+    (htriv : ¬∃ n : ℕ, s = -2 * (n + 1)) : s.re ∈ Set.Ioo 0 1 :=
+  ⟨lt_of_not_ge fun hle ↦ htriv ((riemannZeta_eq_zero_iff_of_re_nonpos hle).1 hs),
+    re_lt_one_of_riemannZeta_eq_zero hs⟩
 
 /-- At a zero of `riemannZeta`, the analytic order is finite and positive, so its `toNat` is at
 least `1`. It is finite because `riemannZeta` is meromorphic on the connected set `ℂ` and has
