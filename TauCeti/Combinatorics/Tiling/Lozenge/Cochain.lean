@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.Region
+public import TauCeti.Combinatorics.Tiling.Lozenge.Region.Basic
 import TauCeti.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Order.Interval.Finset.Defs
@@ -173,6 +173,12 @@ theorem neutralIncrement_eq_zero_or_eq_one (e : TriEdge) :
     neutralIncrement e = 0 ∨ neutralIncrement e = 1 := by
   rw [neutralIncrement_def]
   split_ifs <;> simp
+
+/-- An increment in `{0, 1}` differs from `1 - neutralIncrement e` exactly when it is the neutral
+increment. -/
+theorem ne_one_sub_neutralIncrement_iff {d : ℤ} {e : TriEdge} (hd : d = 0 ∨ d = 1) :
+    d ≠ 1 - neutralIncrement e ↔ d = neutralIncrement e := by
+  rcases neutralIncrement_eq_zero_or_eq_one e with h | h <;> rw [h] <;> omega
 
 theorem IsClosedCochainOn.mono (h : IsClosedCochainOn S c) (hRS : R ⊆ S) :
     IsClosedCochainOn R c :=
