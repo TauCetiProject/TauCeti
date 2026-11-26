@@ -46,6 +46,8 @@ This file defines the action of the gauge group on connections, with the left co
   `Ad_g` (`TauCeti.mgaugeAction_add`), and the curvature transforms by conjugation,
   `F_(g · A) = Ad_g F_A` (`TauCeti.gaugeCurvature_mgaugeAction`). In particular the gauge group
   preserves the flat connections, and the pure gauge connections `g · 0 = -θ_g` are flat.
+  The covariant derivative is equivariant, `d_(g · A) (g ξ g⁻¹) = g (d_A ξ) g⁻¹`
+  (`TauCeti.gaugeCovariantDeriv_mgaugeAction`).
 * **The infinitesimal action.** For a complete `𝔸`, a smooth function `ξ : M → 𝔸` generates the
   gauge transformations `exp (t ξ)` (`TauCeti.gaugeExp`), and
   `d/dt|_(t=0) exp (t ξ) · A = [ξ, A] - dξ = -d_A ξ`
@@ -71,6 +73,7 @@ manifold.
 
 * `TauCeti.mgaugeAction_one`, `TauCeti.mgaugeAction_mul`: the gauge action is a left action.
 * `TauCeti.gaugeCurvature_mgaugeAction`: `F_(g · A) = g F_A g⁻¹`.
+* `TauCeti.gaugeCovariantDeriv_mgaugeAction`: `d_(g · A) (g ξ g⁻¹) = g (d_A ξ) g⁻¹`.
 * `TauCeti.hasDerivAt_mgaugeAction_gaugeExp_smul_apply`: the infinitesimal gauge action is
   `ξ ↦ -d_A ξ`.
 
@@ -207,6 +210,12 @@ theorem gaugeConj_gaugeConj_inv (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ)
 theorem gaugeConj_inv_gaugeConj (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) (φ : SmoothForm I M 𝔸 k) :
     gaugeConj g⁻¹ (gaugeConj g φ) = φ := by
   rw [← LinearMap.comp_apply, ← gaugeConj_mul, inv_mul_cancel, gaugeConj_one, LinearMap.id_apply]
+
+/-- A conjugate of a form vanishes exactly when the form does. -/
+@[simp]
+theorem gaugeConj_eq_zero_iff {g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ} {φ : SmoothForm I M 𝔸 k} :
+    gaugeConj g φ = 0 ↔ φ = 0 :=
+  ⟨fun h ↦ by rw [← gaugeConj_inv_gaugeConj g φ, h, map_zero], fun h ↦ by rw [h, map_zero]⟩
 
 /-- Conjugation commutes with the commutator bracket of `1`-forms:
 `[Ad_g φ ∧ Ad_g ψ] = Ad_g [φ ∧ ψ]`. -/
@@ -392,9 +401,43 @@ theorem gaugeCurvature_mgaugeAction_eq_zero_iff (g : (C^∞⟮I, M; 𝓘(ℝ, �
     gaugeCurvature (ContinuousLinearMap.mul ℝ 𝔸 - (ContinuousLinearMap.mul ℝ 𝔸).flip)
         (mgaugeAction g A) = 0 ↔
       gaugeCurvature (ContinuousLinearMap.mul ℝ 𝔸 - (ContinuousLinearMap.mul ℝ 𝔸).flip) A = 0 := by
-  rw [gaugeCurvature_mgaugeAction]
-  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero]⟩
-  rw [← gaugeConj_inv_gaugeConj g (gaugeCurvature _ A), h, map_zero]
+  rw [gaugeCurvature_mgaugeAction, gaugeConj_eq_zero_iff]
+
+/-! ### The covariant derivative -/
+
+/-- **The covariant derivative transforms by conjugation** under the gauge action:
+`d_(g · A) (g ξ g⁻¹) = g (d_A ξ) g⁻¹`. This is the counterpart for forms on a manifold of the
+pointwise `TauCeti.connectionCovariantDerivative_gaugeAction`. -/
+theorem gaugeCovariantDeriv_mgaugeAction (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ)
+    (A : SmoothForm I M 𝔸 1) (ξ : SmoothForm I M 𝔸 0) :
+    gaugeCovariantDeriv (ContinuousLinearMap.mul ℝ 𝔸 - (ContinuousLinearMap.mul ℝ 𝔸).flip)
+        (mgaugeAction g A) (gaugeConj g ξ) =
+      gaugeConj g (gaugeCovariantDeriv
+        (ContinuousLinearMap.mul ℝ 𝔸 - (ContinuousLinearMap.mul ℝ 𝔸).flip) A ξ) :=
+  SmoothBundleForm.ext_eval₁ fun x v ↦ by
+    have hG : MDifferentiableAt I 𝓘(ℝ, 𝔸) (g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x :=
+      (g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯).contMDiff.mdifferentiableAt (by simp)
+    have hGi : MDifferentiableAt I 𝓘(ℝ, 𝔸) (↑g⁻¹ : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x :=
+      (↑g⁻¹ : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯).contMDiff.mdifferentiableAt (by simp)
+    have hξ := (SmoothForm.contMDiff_apply_zero ξ).mdifferentiableAt (x := x) (by simp)
+    have hξGi : MDifferentiableAt I 𝓘(ℝ, 𝔸)
+        ((fun y ↦ ξ.val y 0) • ⇑(↑g⁻¹ : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)) x :=
+      hξ.mul hGi
+    -- The function underlying `g ξ g⁻¹` is a product of three `𝔸`-valued functions.
+    have hfun : (fun y ↦ (gaugeConj g ξ).val y 0) = ⇑(g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) •
+        ((fun y ↦ ξ.val y 0) • ⇑(↑g⁻¹ : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)) := by
+      funext y
+      simp only [gaugeConj_val, Pi.smul_apply', smul_eq_mul, Pi.mul_apply, mul_assoc]
+    rw [gaugeCovariantDeriv_val, gaugeConj_val g (gaugeCovariantDeriv _ A ξ),
+      gaugeCovariantDeriv_val, gaugeConj_val g ξ x 0, mgaugeAction_val, ← mextDerivₗ_apply,
+      mextDerivₗ_zero_apply, ← mextDerivₗ_apply, mextDerivₗ_zero_apply, hfun,
+      mvfderiv_smul_algebra (F := 𝔸) hG hξGi, mvfderiv_smul_algebra (F := 𝔸) hξ hGi]
+    simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul,
+      Pi.smul_apply', mvfderiv_inv_apply, sub_apply, ContinuousLinearMap.mul_apply',
+      ContinuousLinearMap.flip_apply, Matrix.cons_val_zero]
+    simp only [← ContMDiffMap.coe_evalUnitsHom_apply, map_inv, mul_add, add_mul, mul_sub, sub_mul,
+      mul_neg, mul_assoc, Units.inv_mul_cancel_left]
+    abel
 
 /-! ### The infinitesimal gauge action -/
 
