@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.MaximumPrinciple.Drift
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 import TauCeti.Analysis.Sobolev.W1p.LevelSet
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # The weak maximum principle with a drift in `Lᵖ`
