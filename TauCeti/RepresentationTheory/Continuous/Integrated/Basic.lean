@@ -116,7 +116,7 @@ omit [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E] in
 private theorem integrable_smul_apply (hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v)
     {C : ℝ} (hC : ∀ g, ‖π g‖ ≤ C) {f : G → 𝕜} (hf : Integrable f μ) (v : E) :
     Integrable (fun g ↦ f g • π (.ofAdd g) v) μ :=
-  hf.smul_continuous_of_norm_le (hcont v) fun _ ↦ (π _).le_of_opNorm_le (hC _) v
+  hf.smul_bdd_of_continuous (C * ‖v‖) (hcont v) fun _ ↦ (π _).le_of_opNorm_le (hC _) v
 
 omit [TopologicalSpace G] [R1Space G] [BorelSpace G] [μ.InnerRegularCompactLTTop]
   [SMulCommClass ℝ 𝕜 E] in

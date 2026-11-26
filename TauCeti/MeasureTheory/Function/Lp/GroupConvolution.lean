@@ -122,7 +122,7 @@ omit [NormedSpace ℝ E] [SMulCommClass ℝ 𝕜 E] in
 `h ⋆ f`. -/
 theorem integrable_smul_leftTranslation (hp : p ≠ ∞) {h : G → 𝕜} (hh : Integrable h μ)
     (f : Lp E p μ) : Integrable (fun y ↦ h y • leftTranslation μ p 𝕜 y f) μ :=
-  hh.smul_continuous_of_norm_le (continuous_leftTranslation_apply hp f) fun _ ↦
+  hh.smul_bdd_of_continuous ‖f‖ (continuous_leftTranslation_apply hp f) fun _ ↦
     (LinearIsometryEquiv.norm_map _ _).le
 
 omit [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] [SMulCommClass ℝ 𝕜 E] in

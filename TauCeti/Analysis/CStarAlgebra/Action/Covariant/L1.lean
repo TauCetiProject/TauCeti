@@ -416,7 +416,7 @@ theorem integratedOperatorBochnerL1_compLp_smulRight (φ : Lp ℂ 1 μ) (a : A) 
     filter_upwards [Lp.coeFn_compMeasurePreserving φ hmp] with x hx
     rw [hx, Function.comp_apply]
   have hi : Integrable (fun g => φ g • P.group g v) μ :=
-    (L1.integrable_coeFn φ).smul_continuous_of_norm_le (P.continuous_orbit v) fun g =>
+    (L1.integrable_coeFn φ).smul_bdd_of_continuous ‖v‖ (P.continuous_orbit v) fun g =>
       (P.isUnitary.norm_map g v).le
   calc
     P.integratedOperatorBochnerL1 μ

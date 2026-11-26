@@ -84,7 +84,7 @@ variable [BorelSpace G] [μ.InnerRegularCompactLTTop]
 /-- For an integrable `h`, the orbit integrand `y ↦ h y • L_y f` is integrable in `UCB G`. -/
 theorem integrable_smul_leftTranslation (hh : Integrable h μ) (f : UCB G) :
     Integrable (fun y => h y • leftTranslation y f) μ :=
-  hh.smul_continuous_of_norm_le (continuous_leftTranslation_apply f) fun _ =>
+  hh.smul_bdd_of_continuous ‖f‖ (continuous_leftTranslation_apply f) fun _ =>
     (LinearIsometryEquiv.norm_map _ _).le
 
 end UCB

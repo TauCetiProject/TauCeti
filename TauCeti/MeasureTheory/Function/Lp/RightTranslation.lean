@@ -387,7 +387,7 @@ the convolution `h ⋆ k`. -/
 theorem integrable_smul_rightTranslation_inv (hp : p ≠ ∞) {k : G → 𝕜} (hk : Integrable k μ)
     (h : Lp E p μ) :
     Integrable (fun z => k z • rightTranslation μ p 𝕜 z⁻¹ h) μ :=
-  hk.smul_continuous_of_norm_le ((continuous_rightTranslation_apply (𝕜 := 𝕜) hp h).comp
+  hk.smul_bdd_of_continuous ‖h‖ ((continuous_rightTranslation_apply (𝕜 := 𝕜) hp h).comp
     continuous_inv) fun _ => (LinearIsometryEquiv.norm_map _ _).le
 
 /-- Modular inversion commutes with pointwise `star` on `Lᵖ`. -/
