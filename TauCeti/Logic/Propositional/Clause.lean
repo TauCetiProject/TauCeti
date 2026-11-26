@@ -18,10 +18,9 @@ which `(v, true)` is the positive and `(v, false)` the negative literal of `v`; 
 form is a finite set of clauses, while a clause set is an arbitrary, possibly infinite, set of
 clauses. An assignment `τ : V → Bool` makes the literal `l` true when `τ l.1 = l.2`.
 
-These are the objects on which restriction, compactness, the translation of formulas into clause
-sets, resolution and unit propagation are stated. No hypothesis is placed on `V` for the semantic
-notions; decidable equality is assumed only where clauses are built (`Clause.vars`, `CNF.vars`,
-`Clause.relabel`).
+Clause sets are the standard input format for satisfiability procedures such as resolution and
+unit propagation. No hypothesis is placed on `V` for the semantic notions; decidable equality is
+assumed only where clauses are built (`Clause.vars`, `CNF.vars`, `Clause.relabel`).
 
 Lean core's `Std.Sat.CNF`, with its `Std.Sat.CNF.Sat` and `Std.Sat.CNF.Entails`, stores a clause
 as an array of literals and a formula as an array of clauses, so that order and multiplicity are
@@ -416,6 +415,7 @@ theorem relabel_relabel {X : Type*} [DecidableEq X] {g : W → X} :
     (C.relabel f).relabel g = C.relabel (g ∘ f) := by
   simp [relabel, Finset.image_image, Prod.map_comp_map]
 
+@[simp]
 theorem vars_relabel [DecidableEq V] : (C.relabel f).vars = C.vars.image f := by
   ext w
   simp only [mem_vars, mem_relabel, Finset.mem_image]
