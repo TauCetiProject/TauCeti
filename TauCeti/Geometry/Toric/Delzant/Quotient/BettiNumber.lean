@@ -69,7 +69,7 @@ The count does not depend on the generic `X`, although the descending edges at a
 * T. Delzant, *Hamiltoniens périodiques et images convexes de l'application moment*,
   Bull. Soc. Math. France 116 (1988), 315–339.
 * V. Guillemin, *Moment Maps and Combinatorial Invariants of Hamiltonian `T^n`-spaces*,
-  Birkhäuser, 1994, Chapter 2.
+  Birkhäuser, 1994.
 * W. Fulton, *Introduction to Toric Varieties*, Annals of Mathematics Studies 131, Princeton
   University Press, 1993, Section 5.2 (the Betti numbers of a smooth projective toric variety
   from a generic linear function on its polytope).
