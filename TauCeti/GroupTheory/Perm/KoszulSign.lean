@@ -43,6 +43,8 @@ homogeneous elements of a supercommutative algebra changes when its factors are 
 * `Equiv.Perm.koszulSign_eq_sign`: when every letter is odd, the Koszul sign is the sign of the
   permutation.
 * `Equiv.Perm.koszulSign_eq_one`: when every letter is even, the Koszul sign is trivial.
+* `Equiv.Perm.koszulSign_intCast`: the Koszul sign of integer degrees is the Koszul sign of their
+  images in any Koszul-signed degree ring, such as their parities in `ZMod 2`.
 * `Equiv.Perm.koszulSign_eq_sign_blockPerm`: for degrees in `ℕ`, the Koszul sign is the sign of
   the permutation `Equiv.Perm.blockPerm σ d` reordering consecutive blocks of sizes `d i`, so a
   letter of degree `k` behaves like a block of `k` odd letters.
@@ -77,22 +79,11 @@ theorem koszulSign_one (d : Fin n → ι) : koszulSign 1 d = 1 := by
 /-- **Insertion of a first letter.** Listing the letter `j` first and the remaining letters in the
 order of `π` costs the Koszul sign of `π` on the remaining letters, times the signs of moving the
 letter `j` past each letter `i < j`. -/
+@[simp]
 theorem koszulSign_consFin (j : Fin (n + 1)) (π : Perm (Fin n)) (d : Fin (n + 1) → ι) :
     (consFin j π).koszulSign d =
-      (∏ i ∈ Iio j, (-1) ^ (d j * d i)) * π.koszulSign (d ∘ j.succAbove) := by
-  -- Delete the first position: the remaining letters are listed in the order of `π`.
-  rw [koszulSign_def, koszulSign_def, prod_univ_inversions_eq_comp_succAbove _ 0
-    fun a b ↦ (-1) ^ (d (consFin j π a) * d (consFin j π b)), Fin.succAbove_zero,
-    inversions_univ_consFin_comp_succ]
-  simp only [Fin.not_lt_zero, false_and, filter_false, prod_empty, mul_one, consFin_zero,
-    consFin_succ, Function.comp_apply]
-  rw [mul_comm]
-  congr 1
-  -- The inversions `(0, x)` are the positions `x` of the letters `consFin j π x < j`.
-  refine prod_equiv (consFin j π) (fun x ↦ ?_) fun _ _ ↦ rfl
-  simp only [mem_filter, mem_univ, true_and, mem_Iio, and_iff_right_iff_imp, Fin.pos_iff_ne_zero]
-  rintro h rfl
-  simp at h
+      (∏ i ∈ Iio j, (-1) ^ (d j * d i)) * π.koszulSign (d ∘ j.succAbove) :=
+  prod_univ_inversions_consFin j π fun a b ↦ (-1) ^ (d a * d b)
 
 /-- The Koszul sign as a product over the increasing pairs of positions, in the form of
 `Equiv.Perm.sign_eq_prod_prod_Ioi`. -/
@@ -164,5 +155,12 @@ block of `k` odd letters. -/
 theorem koszulSign_eq_sign_blockPerm (σ : Perm (Fin n)) (d : Fin n → ℕ) :
     σ.koszulSign d = sign (blockPerm σ d) := by
   rw [sign_blockPerm, koszulSign_def, ← prod_pow_eq_pow_sum]
+
+/-- The Koszul sign of integer degrees `d` only depends on their images in a Koszul-signed degree
+ring `R`; for `R = ZMod 2`, it is the Koszul sign of their parities. -/
+theorem koszulSign_intCast {R : Type*} [CommRing R] [Module R (Additive ℤˣ)]
+    (σ : Perm (Fin n)) (d : Fin n → ℤ) :
+    σ.koszulSign (fun i ↦ (d i : R)) = σ.koszulSign d := by
+  simp only [koszulSign_def, ← Int.cast_mul, uzpow_intCast]
 
 end Equiv.Perm
