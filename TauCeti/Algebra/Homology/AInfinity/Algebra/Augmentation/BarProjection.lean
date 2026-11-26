@@ -69,10 +69,12 @@ private theorem of_tprod_sub_map_eq_sum_erase (ε : 𝒜.Augmentation) (n : {n :
       ∑ f : Fin n.val → Bool, PiTensorProduct.tprod R (fun i ↦ piece i (f i)) := by
     rw [← Fintype.piFinset_univ, ← (PiTensorProduct.tprod R).map_sum_finset]
     exact congrArg _ (funext fun i ↦ (hx i).symm)
-  conv_lhs =>
-    arg 1
+  have hof : ReducedTensorWords.of R A n (PiTensorProduct.tprod R x) =
+      ReducedTensorWords.of R A n (PiTensorProduct.tprod R (fun i ↦ piece i false)) +
+        ∑ f ∈ (Finset.univ : Finset (Fin n.val → Bool)).erase (fun _ ↦ false),
+          ReducedTensorWords.of R A n (PiTensorProduct.tprod R (fun i ↦ piece i (f i))) := by
     rw [hsum, map_sum, ← Finset.add_sum_erase _ _ (Finset.mem_univ (fun _ : Fin n.val ↦ false))]
-  rw [ReducedTensorWords.map_of_tprod, ReducedTensorWords.map_of_tprod]
+  rw [ReducedTensorWords.map_of_tprod, ReducedTensorWords.map_of_tprod, hof]
   have hfalse : (fun i : Fin n.val ↦ piece i false) =
       fun i ↦ ε.augmentationIdeal.subtype (ε.reducedPart (x i)) := by
     funext i
@@ -131,22 +133,25 @@ component. -/
 private noncomputable def scalarPart (ε : 𝒜.Augmentation) : ReducedTensorWords R A →ₗ[R] R :=
   ε.toLinearMap ∘ₗ ReducedTensorWords.letter R A
 
-/-- The left unit-contraction term `z ↦ ∑ ε(letter z₁) • π(z₂)` of `π ∘ b_A`. -/
-private noncomputable def leftUnitTerm (ε : 𝒜.Augmentation) :
+/-- The left unit-contraction term `z ↦ ∑ ε(letter z₁) • map ε.reducedPart z₂` of
+`map ε.reducedPart ∘ₗ 𝒜.barDifferential`. -/
+@[expose] noncomputable def leftUnitTerm (ε : 𝒜.Augmentation) :
     ReducedTensorWords R A →ₗ[R] ReducedTensorWords R ε.augmentationIdeal :=
   (TensorProduct.lid R (ReducedTensorWords R ε.augmentationIdeal)).toLinearMap ∘ₗ
-    TensorProduct.map ε.scalarPart (ReducedTensorWords.map (R := R) ε.reducedPart) ∘ₗ
+    TensorProduct.map (ε.toLinearMap ∘ₗ ReducedTensorWords.letter R A)
+      (ReducedTensorWords.map (R := R) ε.reducedPart) ∘ₗ
     ReducedTensorWords.deconcatenation R A
 
-/-- The right unit-contraction term `z ↦ ∑ ε(letter z₂) • π(τ z₁)` of `π ∘ b_A`, where `τ` is the
-degree-one letterwise Koszul twist of the suspended grading. -/
-private noncomputable def rightUnitTerm (ε : 𝒜.Augmentation) :
+/-- The right unit-contraction term `z ↦ ∑ ε(letter z₂) • map ε.reducedPart (τ z₁)` of
+`map ε.reducedPart ∘ₗ 𝒜.barDifferential`, where `τ` is the degree-one letterwise Koszul twist of
+the suspended grading. -/
+@[expose] noncomputable def rightUnitTerm (ε : 𝒜.Augmentation) :
     ReducedTensorWords R A →ₗ[R] ReducedTensorWords R ε.augmentationIdeal :=
   (TensorProduct.rid R (ReducedTensorWords R ε.augmentationIdeal)).toLinearMap ∘ₗ
     TensorProduct.map
       (ReducedTensorWords.map (R := R) ε.reducedPart ∘ₗ
         ReducedTensorWords.map (R := R) ((𝒜.grading.shift 1).koszulTwist 1))
-      ε.scalarPart ∘ₗ
+      (ε.toLinearMap ∘ₗ ReducedTensorWords.letter R A) ∘ₗ
     ReducedTensorWords.deconcatenation R A
 
 private theorem leftUnitTerm_eq (ε : 𝒜.Augmentation) :
@@ -154,7 +159,7 @@ private theorem leftUnitTerm_eq (ε : 𝒜.Augmentation) :
       ((TensorProduct.lid R (ReducedTensorWords R ε.augmentationIdeal)).toLinearMap ∘ₗ
         TensorProduct.map ε.scalarPart (ReducedTensorWords.map (R := R) ε.reducedPart)) ∘ₗ
       ReducedTensorWords.deconcatenation R A := by
-  simp only [leftUnitTerm, LinearMap.comp_assoc]
+  simp only [leftUnitTerm, scalarPart, LinearMap.comp_assoc]
 
 private theorem rightUnitTerm_eq (ε : 𝒜.Augmentation) :
     ε.rightUnitTerm =
@@ -164,7 +169,7 @@ private theorem rightUnitTerm_eq (ε : 𝒜.Augmentation) :
             ReducedTensorWords.map (R := R) ((𝒜.grading.shift 1).koszulTwist 1))
           ε.scalarPart) ∘ₗ
       ReducedTensorWords.deconcatenation R A := by
-  simp only [rightUnitTerm, LinearMap.comp_assoc]
+  simp only [rightUnitTerm, scalarPart, LinearMap.comp_assoc]
 
 /-- Coassociativity comparison for `leftUnitTerm`. -/
 private theorem deconcatenation_comp_leftUnitTerm (ε : 𝒜.Augmentation) :
@@ -258,7 +263,7 @@ private theorem map_leftUnitTerm_comp_deconcatenation (ε : 𝒜.Augmentation) :
   rw [← LinearMap.comp_assoc]
   refine ReducedTensorWords.comp_deconcatenation_eq_of_lTensor_eq_assoc_rTensor R A (F := M₂) ?_ ?_
   · refine TensorProduct.ext' fun x y ↦ ?_
-    simp [M₂, leftUnitTerm, π, τ]
+    simp [M₂, leftUnitTerm, scalarPart, π, τ]
   · have hright : TensorProduct.map ε.rightUnitTerm π =
         TensorProduct.map fR π ∘ₗ
           LinearMap.rTensor _ (ReducedTensorWords.deconcatenation R A) := by
@@ -270,9 +275,9 @@ private theorem map_leftUnitTerm_comp_deconcatenation (ε : 𝒜.Augmentation) :
       simp [M₂, fR, TensorProduct.smul_tmul, TensorProduct.tmul_smul]
     rw [hright, hassoc, LinearMap.comp_assoc]
 
-/-- The combination `leftUnitTerm + (-1) • rightUnitTerm` is a graded coderivation along the
-letterwise reduced-part projection `π = map reducedPart`. -/
-private theorem isGradedCoderivationAlong_unitTerms (ε : 𝒜.Augmentation) :
+/-- The combination `ε.leftUnitTerm + (-1 : R) • ε.rightUnitTerm` is a graded coderivation along
+the letterwise reduced-part projection `ReducedTensorWords.map ε.reducedPart`. -/
+theorem isGradedCoderivationAlong_unitTerms (ε : 𝒜.Augmentation) :
     ReducedTensorWords.IsGradedCoderivationAlong (𝒜.grading.shift 1) 1
       (ReducedTensorWords.map (R := R) ε.reducedPart)
       (ReducedTensorWords.map (R := R) ε.reducedPart)
@@ -297,69 +302,67 @@ private theorem m_two_eq_reduced_add (ε : 𝒜.Augmentation) (a b : A) :
       (ε.reducedAlgebra.grading.koszulTwist 1 (ε.reducedPart a) : A) + ε a • ε.unit := by
     rw [ε.reducedAlgebra_grading, ← ε.reducedPart_koszulTwist, ← ε.map_koszulTwist 1 a,
       ε.coe_reducedPart_add_smul_unit]
-  have hm2 : (ε.reducedAlgebra.m 2
-      ![ε.reducedAlgebra.grading.koszulTwist 1 (ε.reducedPart a), ε.reducedPart b] : A) =
-      𝒜.m 2 ![(ε.reducedAlgebra.grading.koszulTwist 1 (ε.reducedPart a) : A),
-        (ε.reducedPart b : A)] := by
-    rw [reducedAlgebra_m, coe_reducedOperation]
-    congr 1
-    exact funext <| Fin.forall_fin_two.2 ⟨by simp, by simp⟩
-  rw [hm2, ← 𝒜.mul_apply, ← 𝒜.mul_apply, htwist_a]
-  conv_lhs => rw [← ε.coe_reducedPart_add_smul_unit b]
-  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, 𝒜.mul_apply,
-    ε.isStrictUnit.binary_left, ε.isStrictUnit.binary_right, smul_add, smul_smul,
-    mul_comm (ε b) (ε a)]
-  abel
+  have hmul : 𝒜.mul ((ε.reducedAlgebra.grading.koszulTwist 1 (ε.reducedPart a) : A) +
+        ε a • ε.unit) ((ε.reducedPart b : A) + ε b • ε.unit) =
+      (ε.reducedAlgebra.m 2 ![ε.reducedAlgebra.grading.koszulTwist 1 (ε.reducedPart a),
+        ε.reducedPart b] : A) +
+      ε a • (ε.reducedPart b : A) +
+      ε b • (ε.reducedAlgebra.grading.koszulTwist 1 (ε.reducedPart a) : A) +
+      (ε a * ε b) • ε.unit := by
+    rw [reducedAlgebra_m, coe_reducedOperation_two, ← 𝒜.mul_apply]
+    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, 𝒜.mul_apply,
+      ε.isStrictUnit.binary_left, ε.isStrictUnit.binary_right, smul_add, smul_smul,
+      mul_comm (ε b) (ε a)]
+    abel
+  rwa [← htwist_a, ε.coe_reducedPart_add_smul_unit, 𝒜.mul_apply] at hmul
+
+private theorem letter_map_apply {M N : Type*} [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] (g : M →ₗ[R] N) (w : ReducedTensorWords R M) :
+    ReducedTensorWords.letter R N (ReducedTensorWords.map (R := R) g w) =
+      g (ReducedTensorWords.letter R M w) :=
+  LinearMap.congr_fun (ReducedTensorWords.letter_comp_map g) w
+
+private theorem letter_comp_deconcatenation_eq_zero (ε : 𝒜.Augmentation)
+    {P Q : Type*} [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
+    (H : ReducedTensorWords R A ⊗[R] ReducedTensorWords R A →ₗ[R]
+      ReducedTensorWords R ε.augmentationIdeal)
+    (F : P ⊗[R] Q →ₗ[R] ε.augmentationIdeal)
+    (f : A →ₗ[R] P) (g : A →ₗ[R] Q)
+    (hH : ∀ u v : ReducedTensorWords R A,
+      ReducedTensorWords.letter R _ (H (u ⊗ₜ[R] v)) =
+        F (f (ReducedTensorWords.letter R A u) ⊗ₜ[R] g (ReducedTensorWords.letter R A v)))
+    (n : {n : ℕ // 0 < n}) (hn : n.val ≠ 2) (x : Fin n.val → A) :
+    ReducedTensorWords.letter R _
+      ((H ∘ₗ ReducedTensorWords.deconcatenation R A)
+        (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x))) = 0 := by
+  rw [← LinearMap.comp_apply (ReducedTensorWords.letter R _)]
+  refine ReducedTensorWords.eq_zero_of_factor_letter_pair R A F f g ?_ n hn x
+  rw [← LinearMap.comp_assoc, ← LinearMap.comp_assoc]
+  refine congrArg (· ∘ₗ ReducedTensorWords.deconcatenation R A) (TensorProduct.ext' fun u v ↦ ?_)
+  simpa only [LinearMap.comp_apply, TensorProduct.map_tmul] using hH u v
 
 /-- On pure words of length other than two, the letter component of `leftUnitTerm` vanishes. -/
 private theorem letter_leftUnitTerm_of_ne_two (ε : 𝒜.Augmentation) (n : {n : ℕ // 0 < n})
     (hn : n.val ≠ 2) (x : Fin n.val → A) :
     ReducedTensorWords.letter R _
       (ε.leftUnitTerm (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x))) = 0 := by
-  rw [← LinearMap.comp_apply (ReducedTensorWords.letter R _)]
-  have hfac : ReducedTensorWords.letter R _ ∘ₗ
-      ((TensorProduct.lid R (ReducedTensorWords R ε.augmentationIdeal)).toLinearMap ∘ₗ
-        TensorProduct.map ε.scalarPart (ReducedTensorWords.map (R := R) ε.reducedPart)) =
-      (TensorProduct.lid R ε.augmentationIdeal).toLinearMap ∘ₗ
-        TensorProduct.map (ε.toLinearMap ∘ₗ ReducedTensorWords.letter R A)
-          (ε.reducedPart ∘ₗ ReducedTensorWords.letter R A) := by
-    refine TensorProduct.ext' fun u v ↦ ?_
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.map_tmul,
-      TensorProduct.lid_tmul, map_smul, scalarPart]
-    rw [← LinearMap.comp_apply (ReducedTensorWords.letter R _),
-      ReducedTensorWords.letter_comp_map, LinearMap.comp_apply]
-  refine ReducedTensorWords.eq_zero_of_factor_letter_pair R A
-    (TensorProduct.lid R ε.augmentationIdeal).toLinearMap ε.toLinearMap ε.reducedPart ?_ n hn x
-  rw [ε.leftUnitTerm_eq, ← LinearMap.comp_assoc, hfac, LinearMap.comp_assoc]
+  rw [ε.leftUnitTerm_eq]
+  exact ε.letter_comp_deconcatenation_eq_zero _
+    (TensorProduct.lid R ε.augmentationIdeal).toLinearMap ε.toLinearMap ε.reducedPart
+    (fun u v ↦ by simp [scalarPart, letter_map_apply]) n hn x
 
 /-- On pure words of length other than two, the letter component of `rightUnitTerm` vanishes. -/
 private theorem letter_rightUnitTerm_of_ne_two (ε : 𝒜.Augmentation) (n : {n : ℕ // 0 < n})
     (hn : n.val ≠ 2) (x : Fin n.val → A) :
     ReducedTensorWords.letter R _
       (ε.rightUnitTerm (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x))) = 0 := by
-  rw [← LinearMap.comp_apply (ReducedTensorWords.letter R _)]
-  have hfac : ReducedTensorWords.letter R _ ∘ₗ
-      ((TensorProduct.rid R (ReducedTensorWords R ε.augmentationIdeal)).toLinearMap ∘ₗ
-        TensorProduct.map
-          (ReducedTensorWords.map (R := R) ε.reducedPart ∘ₗ
-            ReducedTensorWords.map (R := R) ((𝒜.grading.shift 1).koszulTwist 1))
-          ε.scalarPart) =
-      (TensorProduct.rid R ε.augmentationIdeal).toLinearMap ∘ₗ
-        TensorProduct.map ((ε.reducedPart ∘ₗ (𝒜.grading.shift 1).koszulTwist 1) ∘ₗ
-          ReducedTensorWords.letter R A) (ε.toLinearMap ∘ₗ ReducedTensorWords.letter R A) := by
-    refine TensorProduct.ext' fun u v ↦ ?_
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, TensorProduct.map_tmul,
-      TensorProduct.rid_tmul, map_smul, scalarPart]
-    rw [← LinearMap.comp_apply (ReducedTensorWords.letter R _),
-      ReducedTensorWords.letter_comp_map, LinearMap.comp_apply,
-      ← LinearMap.comp_apply (ReducedTensorWords.letter R _),
-      ReducedTensorWords.letter_comp_map, LinearMap.comp_apply]
-  refine ReducedTensorWords.eq_zero_of_factor_letter_pair R A
+  rw [ε.rightUnitTerm_eq]
+  exact ε.letter_comp_deconcatenation_eq_zero _
     (TensorProduct.rid R ε.augmentationIdeal).toLinearMap
-    (ε.reducedPart ∘ₗ (𝒜.grading.shift 1).koszulTwist 1) ε.toLinearMap ?_ n hn x
-  rw [ε.rightUnitTerm_eq, ← LinearMap.comp_assoc, hfac, LinearMap.comp_assoc]
+    (ε.reducedPart ∘ₗ (𝒜.grading.shift 1).koszulTwist 1) ε.toLinearMap
+    (fun u v ↦ by simp [scalarPart, letter_map_apply]) n hn x
 
-/-- The Taylor-level letter identity for `map_reducedPart_comp_barDifferential_aux` on a
+/-- The Taylor-level letter identity for `map_reducedPart_comp_barDifferential` on a
 two-letter word. -/
 private theorem taylor_map_reducedPart_two (ε : 𝒜.Augmentation) (a b : A) :
     ε.reducedPart (𝒜.taylor (ReducedTensorWords.of R A (2 : ℕ+)
@@ -380,18 +383,17 @@ private theorem taylor_map_reducedPart_two (ε : 𝒜.Augmentation) (a b : A) :
         (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) =
       ReducedTensorWords.of R ε.augmentationIdeal (2 : ℕ+)
         (PiTensorProduct.tprod R ![ε.reducedPart a, ε.reducedPart b]) := by
-    refine (ReducedTensorWords.map_of_tprod (R := R) ε.reducedPart (2 : ℕ+) ![a, b]).trans ?_
-    congr 2
-    exact funext <| Fin.forall_fin_two.2 ⟨by simp, by simp⟩
+    rw [← ReducedTensorWords.prepend_ofLetter, ReducedTensorWords.map_prepend,
+      ReducedTensorWords.map_ofLetter, ReducedTensorWords.prepend_ofLetter]
   rw [hπ_two, 𝒜.taylor_of_two, ε.reducedAlgebra.taylor_of_two, ε.m_two_eq_reduced_add a b]
   simp only [map_add, map_smul, ε.reducedPart_coe, ε.reducedPart_unit, smul_zero, add_zero,
     leftUnitTerm, rightUnitTerm, LinearMap.comp_apply,
-    ReducedTensorWords.deconcatenation_of_two, TensorProduct.map_tmul, scalarPart,
+    ReducedTensorWords.deconcatenation_of_two, TensorProduct.map_tmul,
     ReducedTensorWords.letter_ofLetter, ReducedTensorWords.map_ofLetter, LinearEquiv.coe_coe,
     TensorProduct.lid_tmul, TensorProduct.rid_tmul, htwist_red, smul_neg, neg_one_smul, neg_neg]
   abel
 
-/-- The Taylor-level letter identity for `map_reducedPart_comp_barDifferential_aux` on pure words
+/-- The Taylor-level letter identity for `map_reducedPart_comp_barDifferential` on pure words
 of length other than two. -/
 private theorem taylor_map_reducedPart_of_ne_two (ε : 𝒜.Augmentation) (n : {n : ℕ // 0 < n})
     (hn : n.val ≠ 2) (x : Fin n.val → A) :
@@ -406,7 +408,7 @@ private theorem taylor_map_reducedPart_of_ne_two (ε : 𝒜.Augmentation) (n : {
     smul_zero, add_zero, reducedAlgebra_taylor, LinearMap.comp_apply,
     ε.taylor_of_tprod_eq_of_ne_two n hn x]
 
-/-- Reducing the letter-projection comparison for `map_reducedPart_comp_barDifferential_aux` to a
+/-- Reducing the letter-projection comparison for `map_reducedPart_comp_barDifferential` to a
 Taylor-map identity. -/
 private theorem letter_comp_barDifferential_eq_of_taylor (ε : 𝒜.Augmentation)
     (h : ε.reducedPart ∘ₗ 𝒜.taylor =
@@ -424,9 +426,9 @@ private theorem letter_comp_barDifferential_eq_of_taylor (ε : 𝒜.Augmentation
     AInfinityAlgebra.letter_comp_barDifferential]
 
 /-- The letterwise reduced-part projection `π = map reducedPart` intertwines the bar differential
-of `𝒜` with that of the reduced algebra `ε.reducedAlgebra`, up to the two unit-contraction terms
-`leftUnitTerm + (-1) • rightUnitTerm`. -/
-private theorem map_reducedPart_comp_barDifferential_aux (ε : 𝒜.Augmentation) :
+of `𝒜` with that of the reduced algebra `ε.reducedAlgebra`, up to the left and right
+unit-contraction terms `ε.leftUnitTerm + (-1 : R) • ε.rightUnitTerm`. -/
+theorem map_reducedPart_comp_barDifferential (ε : 𝒜.Augmentation) :
     ReducedTensorWords.map (R := R) ε.reducedPart ∘ₗ 𝒜.barDifferential =
       ε.reducedAlgebra.barDifferential ∘ₗ ReducedTensorWords.map (R := R) ε.reducedPart +
         (ε.leftUnitTerm + (-1 : R) • ε.rightUnitTerm) := by
@@ -454,26 +456,6 @@ private theorem map_reducedPart_comp_barDifferential_aux (ε : 𝒜.Augmentation
         (fun n hn x ↦ by
           simpa only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply] using
             ε.taylor_map_reducedPart_of_ne_two n hn x)))
-
-/-- The letterwise reduced-part projection `π = map reducedPart` intertwines the bar differential
-of `𝒜` with that of the reduced algebra `ε.reducedAlgebra`, up to the left and right
-unit-contraction terms coming from the strict unit acting in arity two. -/
-theorem map_reducedPart_comp_barDifferential (ε : 𝒜.Augmentation) :
-    ReducedTensorWords.map (R := R) ε.reducedPart ∘ₗ 𝒜.barDifferential =
-      ε.reducedAlgebra.barDifferential ∘ₗ ReducedTensorWords.map (R := R) ε.reducedPart +
-        ((TensorProduct.lid R (ReducedTensorWords R ε.augmentationIdeal)).toLinearMap ∘ₗ
-            TensorProduct.map (ε.toLinearMap ∘ₗ ReducedTensorWords.letter R A)
-              (ReducedTensorWords.map (R := R) ε.reducedPart) ∘ₗ
-            ReducedTensorWords.deconcatenation R A +
-          (-1 : R) •
-            ((TensorProduct.rid R (ReducedTensorWords R ε.augmentationIdeal)).toLinearMap ∘ₗ
-              TensorProduct.map
-                (ReducedTensorWords.map (R := R) ε.reducedPart ∘ₗ
-                  ReducedTensorWords.map (R := R) ((𝒜.grading.shift 1).koszulTwist 1))
-                (ε.toLinearMap ∘ₗ ReducedTensorWords.letter R A) ∘ₗ
-              ReducedTensorWords.deconcatenation R A)) := by
-  simpa only [leftUnitTerm, rightUnitTerm, scalarPart] using
-    ε.map_reducedPart_comp_barDifferential_aux
 
 end AInfinityAlgebra.Augmentation
 
