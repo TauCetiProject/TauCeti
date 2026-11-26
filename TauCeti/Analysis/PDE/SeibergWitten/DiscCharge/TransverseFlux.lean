@@ -36,12 +36,13 @@ winding number of `α` around any normal circle `{z} × {‖w‖ = ρ}` outside 
   closedness of `Θ` is used for this, only the continuity of a `C²` section and a `C¹`
   connection form.
 * With the closedness of `Θ`, the pairing of the cutoff current with a form `k π^*β + dη` on a
-  two-dimensional base is topological,
+  two-dimensional base, for a compactly supported continuous base form `β` and a compactly
+  supported `C¹` one-form `η`, is topological,
   `∫ Θ ∧ (k π^*β + dη) = 2π n k ∫ β`
   (`exists_int_integral_cutoffCurrent_wedge_smul_compContinuousLinearMap_fst_add_extDeriv`).
-  When `β` is the area form of the curve and `k π^*β + dη` tames the almost complex structure,
-  this is the identity `Θ(Ω) = 2π n k area(C)` through which the mass of the cutoff current is
-  controlled.
+  This is a model, on the flat product chart `E × ℂ` and with `n` the winding number above, of the
+  pairing of the cutoff current with a taming form; it does not by itself transport to a curved
+  tube or identify `n` with the degree of the curve.
 * The normal dilation `Φ_a (z, W) = (z, a W)` carries the cutoff current of `(b, α)` to that of
   the dilated pair `(Φ_a^* b, α ∘ Φ_a)`, whose slice moments are those of `Θ` with the weight
   rescaled by `a⁻¹` (`TauCeti.SeibergWitten.sliceMoment_cutoffCurrent_comp_prodMap_smul`). So the
