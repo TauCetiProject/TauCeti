@@ -113,61 +113,28 @@ private theorem mixedForm_laplacian_zero_comm (u v : W1pVanishingOn mu Omega 2 �
         (1 : Matrix ι ι ℝ)) Γ 0 v u := by
   rw [mixedForm_laplacian_zero_apply, mixedForm_laplacian_zero_apply, real_inner_comm]
 
-/-- If `κ P² < 1`, then also `κ⁺ P² < 1`. -/
-private theorem max_mul_sq_lt_one {kappa : ℝ} (hkappa : kappa * P ^ 2 < 1) :
-    max kappa 0 * P ^ 2 < 1 := by
-  rcases le_total kappa 0 with h | h
-  · rw [max_eq_right h, zero_mul]
-    exact one_pos
-  · rwa [max_eq_left h]
-
-/-- The constant of the Gårding inequality below is positive when `κ P² < 1`. -/
-private theorem garding_const_pos {kappa : ℝ} (hkappa : kappa * P ^ 2 < 1) :
-    0 < (1 - max kappa 0 * P ^ 2) / (1 + P ^ 2) :=
-  div_pos (sub_pos.2 (max_mul_sq_lt_one hkappa)) (by positivity)
-
 /-- **The Gårding inequality of `-Δ - κ` from a Poincaré–Friedrichs inequality.** If
-`‖u‖ ≤ P ‖∇u‖` on `H¹_Γ(Ω)` and `κ P² < 1`, then
-`(1 - κ⁺ P²) / (1 + P²) ‖v‖²_{H¹} ≤ ‖∇v‖² - κ ‖v‖²` on `H¹_Γ(Ω)`. -/
+`‖u‖ ≤ P ‖∇u‖` on `H¹_Γ(Ω)` and `0 ≤ κ`, then
+`(1 - κ P²) / (P² + 1) ‖v‖²_{H¹} ≤ ‖∇v‖² - κ ‖v‖²` on `H¹_Γ(Ω)`. -/
 private theorem garding_of_poincare
     (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖)
-    {kappa : ℝ} (hkappa : kappa * P ^ 2 < 1) (v : W1pVanishingOn mu Omega 2 Γ) :
-    (1 - max kappa 0 * P ^ 2) / (1 + P ^ 2) * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
+    {kappa : ℝ} (hkappa : 0 ≤ kappa) (v : W1pVanishingOn mu Omega 2 Γ) :
+    (1 - kappa * P ^ 2) / (P ^ 2 + 1) * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤
       energyFormH1 (fun _ ↦ 1) 0 0 (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
-        -kappa * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2 := by
-  rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
-    W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
-  -- Write `w = ‖v‖²` and `g = ‖∇v‖²`; the Poincaré–Friedrichs inequality gives `w ≤ P² g`.
-  set w := ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2
-  set g := ‖W1p.gradient (v : W1p mu Omega 2)‖ ^ 2
-  have hw : w ≤ P ^ 2 * g := by
-    have h := pow_le_pow_left₀ (norm_nonneg _) (hP _ v.property) 2
-    rwa [mul_pow] at h
-  have hw0 : 0 ≤ w := by positivity
-  have hk0 : 0 ≤ 1 - max kappa 0 * P ^ 2 := (sub_pos.2 (max_mul_sq_lt_one hkappa)).le
-  -- `θ (w + g) ≤ θ (1 + P²) g = (1 - κ⁺ P²) g ≤ g - κ w`.
-  have hmain : (1 - max kappa 0 * P ^ 2) * (w + g) ≤ (g + -kappa * w) * (1 + P ^ 2) := by
-    have h1 : (1 - max kappa 0 * P ^ 2) * (w + g) ≤
-        (1 - max kappa 0 * P ^ 2) * g * (1 + P ^ 2) := by
-      nlinarith [mul_le_mul_of_nonneg_left hw hk0]
-    have h2 : max kappa 0 * w ≤ max kappa 0 * P ^ 2 * g := by
-      nlinarith [mul_le_mul_of_nonneg_left hw (le_max_right kappa 0)]
-    have h3 : kappa * w ≤ max kappa 0 * w := mul_le_mul_of_nonneg_right (le_max_left _ _) hw0
-    nlinarith [h1, mul_le_mul_of_nonneg_right (h3.trans h2) (by positivity : (0 : ℝ) ≤ 1 + P ^ 2)]
-  rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
-  exact hmain
+        -kappa * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2 :=
+  mul_norm_sq_le_of_gradient_sub_value_bound (A := 1) (B := kappa) (by linarith)
+    (by rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq]; linarith)
+    (hP _ v.property)
 
 /-- **The energy form of `-Δ` is coercive on `H¹_Γ(Ω)`** under a Poincaré–Friedrichs inequality
-`‖u‖_{L²} ≤ P ‖∇u‖_{L²}` on `H¹_Γ(Ω)`, with constant `1 / (1 + P²)`: no shift by a multiple of
+`‖u‖_{L²} ≤ P ‖∇u‖_{L²}` on `H¹_Γ(Ω)`, with constant `1 / (P² + 1)`: no shift by a multiple of
 the `L²` inner product is needed. -/
 theorem isCoercive_mixedForm_laplacian_of_poincare
     (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
     IsCoercive (mixedForm (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
-      (1 : Matrix ι ι ℝ)) Γ 0) := by
-  have hkappa : (0 : ℝ) * P ^ 2 < 1 := by rw [zero_mul]; exact one_pos
-  refine isCoercive_mixedForm _ (garding_const_pos hkappa) fun v ↦ ?_
-  have h := garding_of_poincare hP hkappa v
-  rwa [neg_zero] at h
+      (1 : Matrix ι ι ℝ)) Γ 0) :=
+  isCoercive_mixedForm _ (by positivity : (0 : ℝ) < 1 / (P ^ 2 + 1)) fun v ↦ by
+    simpa using garding_of_poincare hP le_rfl v
 
 /-- **The spectrum of the mixed Laplacian lies in `[P⁻², ∞)`** under a Poincaré–Friedrichs
 inequality `‖u‖_{L²} ≤ P ‖∇u‖_{L²}` on `H¹_Γ(Ω)`: every `κ` with `κ P² < 1` is a resolvent point of
@@ -177,9 +144,11 @@ theorem mem_resolventSet_mixedOperator_laplacian_of_poincare (hΓ : Disjoint Γ 
     {kappa : ℝ} (hkappa : kappa * P ^ 2 < 1) :
     kappa ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
       (1 : Matrix ι ι ℝ)) Γ).resolventSet := by
+  rcases lt_or_ge kappa 0 with hneg | hnonneg
+  · exact mem_resolventSet_mixedOperator_laplacian_of_neg hΓ hneg
   have h := neg_mem_resolventSet_mixedOperator
     (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega) (1 : Matrix ι ι ℝ)) hΓ
-    (garding_const_pos hkappa) (garding_of_poincare hP hkappa)
+    (div_pos (sub_pos.2 hkappa) (by positivity)) (garding_of_poincare hP hnonneg)
   rwa [neg_neg] at h
 
 /-- **The mixed Laplacian is invertible** under a Poincaré–Friedrichs inequality on `H¹_Γ(Ω)`:
