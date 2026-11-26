@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.PrimesInAP
 public import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
+import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Algebra.Order.GroupWithZero.Basic
 import TauCeti.NumberTheory.LSeries.ThreeFourOne
 
@@ -51,6 +52,10 @@ The constant's summability, `ArithmeticFunction.vonMangoldt.summable_nonprime_di
 * `DirichletCharacter.norm_term_twist_vonMangoldt` and
   `DirichletCharacter.re_term_twist_vonMangoldt_add`: norm and real-part formulas for terms of the
   twisted von Mangoldt series.
+* `DirichletCharacter.abscissaOfAbsConv_twist_vonMangoldt_le_one` and
+  `DirichletCharacter.norm_add_term_twist_vonMangoldt_le`: absolute convergence of the twisted
+  series right of `re s = 1`, and the termwise comparison of the `χ` and `χψ` terms with the
+  principal and `ψ` terms for a real-valued `ψ`.
 * `DirichletCharacter.norm_logDeriv_LFunction_le_of_le_re`,
   `DirichletCharacter.norm_logDeriv_LFunction_le`,
   `DirichletCharacter.neg_re_logDeriv_LFunction_le_max_mul_of_bound_on_left`,
@@ -102,6 +107,48 @@ private theorem re_term_modOne_twist_vonMangoldt_ofReal (χ₀ : DirichletCharac
   simpa [Subsingleton.elim χ₀ 1, MulChar.one_apply (isUnit_of_subsingleton _)] using
     χ₀.re_term_twist_vonMangoldt_add σ 0 n
 
+omit χ in
+/-- A Dirichlet twist of the von Mangoldt series has abscissa of absolute convergence at most 1. -/
+theorem abscissaOfAbsConv_twist_vonMangoldt_le_one (χ : DirichletCharacter ℂ N) :
+    abscissaOfAbsConv (↗χ * ↗Λ) ≤ 1 := by
+  apply abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable'
+  exact fun _ hz ↦ LSeriesSummable_twist_vonMangoldt χ (by exact_mod_cast hz)
+
+open scoped ComplexOrder in
+omit χ in
+/-- For a character `ψ` with `ψ n` real, the `n`-th terms of the twisted von Mangoldt series for
+`χ` and `χψ` at `s` have sum of norm at most the real part of the sum of the terms for the
+principal character and `ψ` at any real `σ ≤ re s`. -/
+theorem norm_add_term_twist_vonMangoldt_le (χ ψ : DirichletCharacter ℂ N)
+    {σ : ℝ} {s : ℂ} (hs : σ ≤ s.re) (n : ℕ) (hψ : (ψ n).im = 0) :
+    ‖term (↗χ * ↗Λ) s n + term (↗(χ * ψ) * ↗Λ) s n‖ ≤
+      (term (↗(1 : DirichletCharacter ℂ N) * ↗Λ) σ n + term (↗ψ * ↗Λ) σ n).re := by
+  let A : ℕ → ℂ := ↗(1 : DirichletCharacter ℂ N) * ↗Λ + ↗ψ * ↗Λ
+  let B : ℕ → ℂ := ↗χ * ↗Λ + ↗(χ * ψ) * ↗Λ
+  have hA : 0 ≤ A n := by
+    rw [Complex.le_def]
+    simp only [A, Pi.add_apply, Pi.mul_apply, ← add_mul, Complex.zero_re, Complex.zero_im,
+      mul_comm _ (↑(Λ n) : ℂ), Complex.re_ofReal_mul, Complex.im_ofReal_mul]
+    by_cases hu : IsUnit (n : ZMod N)
+    · simp only [MulChar.one_apply hu, Complex.add_re, Complex.add_im, Complex.one_re,
+        Complex.one_im, hψ, add_zero, mul_zero, and_true]
+      have h := (Complex.abs_re_le_norm (ψ n)).trans (ψ.norm_le_one n)
+      exact mul_nonneg vonMangoldt_nonneg (by linarith [(abs_le.mp h).1])
+    · rw [MulChar.map_nonunit _ hu, ψ.map_nonunit hu]
+      simp
+  have hB : B n = χ n * A n := by
+    have hχ : χ n * (1 : DirichletCharacter ℂ N) n = χ n := by
+      rw [← MulChar.mul_apply, mul_one]
+    simp only [A, B, Pi.add_apply, Pi.mul_apply, MulChar.mul_apply]
+    rw [mul_add, ← mul_assoc, ← mul_assoc, hχ]
+  simp only [← term_add_apply]
+  calc
+    ‖term B s n‖ ≤ ‖term A s n‖ := norm_term_le s (by
+      rw [hB, norm_mul]
+      exact mul_le_of_le_one_left (norm_nonneg _) (χ.norm_le_one n))
+    _ ≤ ‖term A σ n‖ := norm_term_le_of_re_le_re A (by simpa using hs) n
+    _ = (term A σ n).re := (Complex.re_eq_norm.mpr (term_nonneg hA σ)).symm
+
 /-- On `1 ≤ re s`, the terms of the twisted von Mangoldt series at non-prime `n` are bounded by
 `Λ n / n`, independently of the character and of `s`. -/
 theorem norm_term_twist_vonMangoldt_nonprime_le (hs : 1 ≤ s.re) (n : ℕ) :
@@ -123,7 +170,7 @@ private theorem summable_term_twist_vonMangoldt_nonprime (hs : 1 ≤ s.re) :
 
 private theorem summable_term_twist_vonMangoldt_prime (hs : 1 < s.re) :
     Summable fun n ↦ if n.Prime then term (↗χ * ↗Λ) s n else 0 :=
-  ((LSeriesSummable_twist_vonMangoldt χ hs).sub
+  (Summable.sub (LSeriesSummable_twist_vonMangoldt χ hs)
     (χ.summable_term_twist_vonMangoldt_nonprime hs.le)).congr fun n ↦ by split_ifs <;> simp
 
 /-- The prime terms of the twisted von Mangoldt series, indexed by the primes. -/
