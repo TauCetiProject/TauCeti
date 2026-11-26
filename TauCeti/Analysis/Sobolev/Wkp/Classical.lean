@@ -235,13 +235,7 @@ derivative seminorm for any almost-everywhere representative on the domain. -/
 theorem Wkp.norm_value_eq_lpNorm_iteratedFDeriv_zero (k : ℕ) (u : Wkp mu Omega p k)
     {f : E → ℝ} (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     ‖value k u‖ = lpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) := by
-  rw [Lp.norm_def, lpNorm]
-  congr 1
-  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
-    ((continuousMultilinearCurryFin0 ℝ E ℝ).symm.continuous.comp_aestronglyMeasurable
-      ((Lp.aestronglyMeasurable _).congr hu)) ?_
-  filter_upwards [hu] with x hx
-  rw [hx, norm_iteratedFDeriv_zero]
+  rw [lpNorm_iteratedFDeriv_zero, Lp.norm_def, lpNorm, eLpNorm_congr_ae hu]
 
 /-- **The Sobolev norm of a `Cᵏ` representative.** If `u ∈ W^{k,p}(Ω)` is represented by a
 function `f` that is `Cᵏ` on `Ω`, then `‖u‖` is at most the sum of the `Lᵖ` seminorms of the
