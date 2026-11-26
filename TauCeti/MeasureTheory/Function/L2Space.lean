@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Algebra.Order.Ring.PosPart.Sq
 import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -42,7 +43,8 @@ More generally, the L² pairing of an L² function with the class of any square-
 function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`), also
 in the other order for an L² function given by an almost-everywhere representative
 (`MeasureTheory.L2.toLp_inner_of_ae_eq`). The zero class pairs to zero with every function
-(`MeasureTheory.Lp.integral_inner_coeFn_zero_left`).
+(`MeasureTheory.Lp.integral_inner_coeFn_zero_left`), and composition with a measure-preserving map
+preserves the L² inner product (`MeasureTheory.Lp.inner_compMeasurePreserving`).
 An L² function orthogonal to every L² function vanishing outside a measurable set vanishes
 almost everywhere on that set (`MeasureTheory.L2.ae_restrict_eq_zero_of_forall_inner_eq_zero`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
@@ -309,6 +311,14 @@ theorem Lp.integral_inner_coeFn_zero_left {p : ℝ≥0∞} (g : α → E) :
     ∫ x, ⟪(0 : Lp E p μ) x, g x⟫_𝕜 ∂μ = 0 := by
   rw [integral_congr_ae ((Lp.coeFn_zero E p μ).mono fun x hx ↦ by
     rw [hx, Pi.zero_apply, inner_zero_left]), integral_zero]
+
+/-- Composition with a measure-preserving map preserves the `L²` inner product. -/
+@[simp]
+theorem Lp.inner_compMeasurePreserving {β : Type*} [MeasurableSpace β] {ν : Measure β}
+    {f : α → β} (hf : MeasurePreserving f μ ν) (u v : Lp E 2 ν) :
+    ⟪Lp.compMeasurePreserving f hf u, Lp.compMeasurePreserving f hf v⟫_𝕜 = ⟪u, v⟫_𝕜 := by
+  simpa only [Lp.compMeasurePreservingₗᵢ_apply] using
+    (Lp.compMeasurePreservingₗᵢ 𝕜 f hf).inner_map_map u v
 
 /-- An L² function orthogonal to every L² function vanishing outside a measurable set `A`
 vanishes almost everywhere on `A`: it is orthogonal to its own restriction to `A`. -/

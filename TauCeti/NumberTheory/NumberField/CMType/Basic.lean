@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
+public import TauCeti.Algebra.Star.Basic
 public import TauCeti.NumberTheory.NumberField.ComplexConjugation.CMField
 import Mathlib.Data.Sym.Sym2
+import TauCeti.Algebra.Algebra.Pi
 
 /-!
 # CM types
@@ -56,6 +58,8 @@ complex. In particular `ℚ` has no CM type.
 * `TauCeti.CMType.exists_induced_algebraMap_eq_iff`: the fibre criterion, a CM type on `E` is
   induced from the subextension `F` exactly when membership depends only on the restriction
   to `F`.
+* `TauCeti.CMType.instStarCompCommutePi`: a finite product of rings with `StarCompCommute`, such
+  as a finite product of CM fields, has it.
 * `TauCeti.CMType.coe_smul`: `σΦ` is the image of `Φ` under `φ ↦ σ ∘ φ`, and
   `TauCeti.CMType.star_smul`: `ι(σΦ) = σ(ιΦ)`.
 
@@ -252,8 +256,7 @@ restricting into `Φ₀`. -/
 def induced (Φ₀ : CMType E₀) (f : E₀ →+* E) : CMType E where
   carrier := {φ | φ.comp f ∈ Φ₀}
   star_mem_iff' φ := by
-    have : (star φ).comp f = star (φ.comp f) := RingHom.ext fun _ ↦ by simp [RingHom.star_apply]
-    simp [this]
+    simp [← RingHom.star_comp_right]
 
 @[simp]
 theorem mem_induced {Φ₀ : CMType E₀} {f : E₀ →+* E} {φ : E →+* ℂ} :
@@ -290,6 +293,20 @@ embeddings (`RingHom.star_comp`). -/
 instance instStarCompCommuteOfIsCMField {K : Type*} [Field K] [CharZero K]
     [Algebra.IsIntegral ℚ K] [IsCMField K] : StarCompCommute K :=
   ⟨RingHom.star_comp⟩
+
+/-- A finite product of rings on whose complex embeddings every endomorphism of `ℂ` commutes with
+complex conjugation has the same property, since every complex embedding of the product factors
+through a projection (`AlgHom.exists_eq_comp_piEvalAlgHom`). In particular this holds for a
+finite product of CM fields. -/
+instance instStarCompCommutePi {ι : Type*} [Finite ι] (F : ι → Type*) [∀ i, CommRing (F i)]
+    [∀ i, StarCompCommute (F i)] : StarCompCommute (∀ i, F i) where
+  star_comp σ φ := by
+    obtain ⟨i, ψ, h⟩ := AlgHom.exists_eq_comp_piEvalAlgHom φ.toNatAlgHom
+    obtain rfl : φ = (ψ : F i →+* ℂ).comp (Pi.evalRingHom F i) := RingHom.ext fun x ↦ by
+      simpa using (AlgHom.congr_fun h x).trans (AlgHom.comp_apply ψ (Pi.evalAlgHom ℕ F i) x)
+    ext x
+    simpa [RingHom.star_apply, RingHom.comp_apply] using
+      RingHom.congr_fun (StarCompCommute.star_comp σ (ψ : F i →+* ℂ)) (x i)
 
 section StarCompCommute
 

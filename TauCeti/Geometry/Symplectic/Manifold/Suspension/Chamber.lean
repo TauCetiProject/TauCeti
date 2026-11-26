@@ -177,9 +177,6 @@ theorem sign_baseChange_tmul_two_smul_sub_apply {𝕜 : Type*} [Field 𝕜] [Lin
     (hy : 0 < B.baseChange 𝕜 y y)
     (hyΩ : 0 < B.baseChange 𝕜 y ((1 : 𝕜) ⊗ₜ t + L • (1 : 𝕜) ⊗ₜ v)) :
     SignType.sign (B.baseChange 𝕜 ((1 : 𝕜) ⊗ₜ ((2 : ℤ) • e - κ)) y) = SignType.sign c := by
-  -- The `Module ℤ H` instance agrees with `AddCommGroup.toIntModule H`, which the
-  -- hyperbolic-pair API is stated for.
-  obtain rfl : ‹Module ℤ H› = AddCommGroup.toIntModule H := Subsingleton.elim _ _
   set Bk := B.baseChange 𝕜
   set Q := Bk.toQuadraticMap
   set Ω := (1 : 𝕜) ⊗ₜ[ℤ] t + L • (1 : 𝕜) ⊗ₜ[ℤ] v

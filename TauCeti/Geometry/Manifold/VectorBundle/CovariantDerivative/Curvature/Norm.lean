@@ -115,6 +115,24 @@ theorem riemannCurvatureNorm_le_of_bound {ι : Type*} [Fintype ι] (x : M)
         exact sq_le_sq.mpr ((hR i j k l).trans_eq (abs_of_nonneg hC).symm)
       _ = _ := by simp; ring
 
+/-- A pointwise bound on `R(u,v)w` by `C` times the three input norms bounds the full curvature
+norm by `n² C`, where `n` is the model dimension. No sign assumption on `C` is required. -/
+theorem riemannCurvatureNorm_le_finrank_sq_mul_of_norm_curvatureTensor_le
+    (x : M) {C : ℝ}
+    (hR : ∀ u v w : TangentSpace I x,
+      ‖cov.curvatureTensor x u v w‖ ≤ C * ‖u‖ * ‖v‖ * ‖w‖) :
+    cov.riemannCurvatureNorm x ≤ (Module.finrank ℝ E : ℝ) ^ 2 * C := by
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  have hcoeff i j k l : |cov.riemannCurvatureTensor x (b i) (b j) (b k) (b l)| ≤ C := by
+    rw [riemannCurvatureTensor_apply]
+    calc
+      _ ≤ ‖cov.curvatureTensor x (b i) (b j) (b k)‖ * ‖b l‖ := abs_real_inner_le_norm _ _
+      _ ≤ C * ‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖ :=
+        mul_le_mul_of_nonneg_right (hR _ _ _) (norm_nonneg _)
+      _ = C := by simp only [b.orthonormal.1, mul_one]
+  simpa only [Fintype.card_fin, VectorBundle.finrank_eq ℝ E (TangentSpace I) x] using
+    cov.riemannCurvatureNorm_le_of_bound x b hcoeff
+
 variable [IsContinuousRiemannianBundle E (TangentSpace I : M → Type _)]
 
 /-- The full Riemann curvature norm of a smooth connection is uniformly bounded on every compact
@@ -125,20 +143,11 @@ theorem exists_riemannCurvatureNorm_le_of_isCompact {K : Set M} (hK : IsCompact 
     (I := I) (F := E) (V := TangentSpace I) hK
   refine ⟨(Module.finrank ℝ E : ℝ) ^ 2 * max C 0 + 1, by positivity, ?_⟩
   intro x hx
-  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  have hcoeff i j k l :
-      |cov.riemannCurvatureTensor x (b i) (b j) (b k) (b l)| ≤ max C 0 := by
-    rw [riemannCurvatureTensor_apply]
-    calc
-      _ ≤ ‖cov.curvatureTensor x (b i) (b j) (b k)‖ * ‖b l‖ :=
-        abs_real_inner_le_norm _ _
-      _ ≤ C * ‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖ :=
-        mul_le_mul_of_nonneg_right (hC x hx _ _ _) (norm_nonneg _)
-      _ = C := by simp only [b.orthonormal.1, mul_one]
-      _ ≤ max C 0 := le_max_left _ _
-  have hb := cov.riemannCurvatureNorm_le_of_bound x b hcoeff
-  have hbound : cov.riemannCurvatureNorm x ≤ (Module.finrank ℝ E : ℝ) ^ 2 * max C 0 := by
-    simpa only [Fintype.card_fin, VectorBundle.finrank_eq ℝ E (TangentSpace I) x] using hb
+  have hbound := cov.riemannCurvatureNorm_le_finrank_sq_mul_of_norm_curvatureTensor_le x
+    (hC x hx)
+  have hmax : (Module.finrank ℝ E : ℝ) ^ 2 * C ≤
+      (Module.finrank ℝ E : ℝ) ^ 2 * max C 0 :=
+    mul_le_mul_of_nonneg_left (le_max_left _ _) (sq_nonneg _)
   linarith
 
 end CovariantDerivative

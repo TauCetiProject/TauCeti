@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Word
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Word.Basic
 public import Mathlib.Data.Set.Card
 public import TauCeti.Data.Matrix.Block
 
@@ -19,7 +19,7 @@ concatenating their inclusions. Consequently the full class is finite exactly wh
 component classes are finite, and its cardinality is their product.
 
 The projection and realization use `TauCeti.matrixMutationWord_fromBlocks` and its
-`_inl` and `_inr` specializations in `ExchangeMatrix.Word`. For rectangular matrices,
+`_inl` and `_inr` specializations in `ExchangeMatrix.Word.Basic`. For rectangular matrices,
 a nonnegative uniform bound on absolute principal-entry products at distinct mutable indices
 holds exactly when it holds in each block.
 This reduces the product-bound part of two-finiteness to components; for skew-symmetrizable
