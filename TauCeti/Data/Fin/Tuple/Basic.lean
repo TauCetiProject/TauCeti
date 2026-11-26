@@ -201,7 +201,7 @@ def blockHeadTailEquiv {β : Type*} (r k : ℕ) :
       (Equiv.arrowProdEquivProdArrow _ _ _))
 
 /-- Prepending the head to the tail of a block recovers the corresponding entries of the tuple. -/
-@[simp]
+@[simp↓]
 theorem cons_blockHeadTailEquiv {β : Type*} {r k : ℕ} (u : Fin (r * (k + 1)) → β)
     (a : Fin r) (t : Fin (k + 1)) :
     cons (α := fun _ ↦ β) ((blockHeadTailEquiv r k u).1 a) ((blockHeadTailEquiv r k u).2 a) t =
@@ -209,6 +209,28 @@ theorem cons_blockHeadTailEquiv {β : Type*} {r k : ℕ} (u : Fin (r * (k + 1)) 
   have h := (consEquiv fun _ : Fin (k + 1) ↦ β).apply_symm_apply
     (fun t ↦ u (finProdFinEquiv (a, t)))
   exact congrFun h t
+
+/-- The first component gives the entry at the start of each block. -/
+@[simp]
+theorem blockHeadTailEquiv_apply_fst {β : Type*} {r k : ℕ} (u : Fin (r * (k + 1)) → β)
+    (a : Fin r) : (blockHeadTailEquiv r k u).1 a = u (finProdFinEquiv (a, 0)) := by
+  simpa only [cons_zero] using cons_blockHeadTailEquiv u a 0
+
+/-- The second component gives the entries after the head of each block. -/
+@[simp]
+theorem blockHeadTailEquiv_apply_snd {β : Type*} {r k : ℕ} (u : Fin (r * (k + 1)) → β)
+    (a : Fin r) (t : Fin k) :
+    (blockHeadTailEquiv r k u).2 a t = u (finProdFinEquiv (a, t.succ)) := by
+  simpa only [cons_succ] using cons_blockHeadTailEquiv u a t.succ
+
+/-- The inverse reconstructs each block by prepending its head to its tail. -/
+@[simp]
+theorem blockHeadTailEquiv_symm_apply {β : Type*} {r k : ℕ}
+    (uv : (Fin r → β) × (Fin r → Fin k → β)) (a : Fin r) (t : Fin (k + 1)) :
+    (blockHeadTailEquiv r k).symm uv (finProdFinEquiv (a, t)) =
+      cons (α := fun _ ↦ β) (uv.1 a) (uv.2 a) t := by
+  simpa only [Equiv.apply_symm_apply] using
+    (cons_blockHeadTailEquiv ((blockHeadTailEquiv r k).symm uv) a t).symm
 
 /-- Updating `Fin.append u v` at a position of `u` is appending the updated `u` to `v`. -/
 @[simp]

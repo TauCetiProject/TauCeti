@@ -227,10 +227,11 @@ private theorem walkRows_blockHeadTailEquiv_succ {r k : ℕ} (u : Fin (r * (k + 
   induction t using Fin.lastCases with
   | last =>
     rw [Fin.finRotate_finProdFinEquiv_last, Fin.succ_last, walkRows, Fin.snoc_last]
-    simpa only [Fin.cons_zero] using (Fin.cons_blockHeadTailEquiv u (finRotate r a) 0)
+    exact Fin.blockHeadTailEquiv_apply_fst u (finRotate r a)
   | cast t =>
-    rw [Fin.finRotate_finProdFinEquiv_castSucc, walkRows, Fin.succ_castSucc, Fin.snoc_castSucc]
-    exact Fin.cons_blockHeadTailEquiv u a t.succ
+    rw [Fin.finRotate_finProdFinEquiv_castSucc, walkRows, Fin.succ_castSucc, Fin.snoc_castSucc,
+      Fin.cons_succ]
+    exact Fin.blockHeadTailEquiv_apply_snd u a t
 
 /-- The trace of the rth power of the row block of the bipartite non-backtracking walk matrix
 of length 2(k + 1) is the sum over closed bipartite words with r(k + 1) row visits.
