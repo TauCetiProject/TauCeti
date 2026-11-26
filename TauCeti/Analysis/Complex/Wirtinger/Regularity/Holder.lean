@@ -207,6 +207,6 @@ theorem HasWeakConjWirtingerDerivOn.contDiffOn_one_of_holderOnWith (hα : 0 < α
     (contDiffOn_zero.2 hg) fun K hKΩ hK ↦
       (hgH K hKΩ hK).imp fun _ hC ↦ holderOnWith_iteratedFDeriv_zero_iff.2 hC
   refine ⟨by simpa using h1, h2, fun K hKΩ hK ↦ (h3 K hKΩ hK).imp fun _ hC ↦ ?_⟩
-  exact holderOnWith_iteratedFDeriv_zero_iff.1 (holderOnWith_iteratedFDeriv_succ_iff.1 hC)
+  exact holderOnWith_iteratedFDeriv_one_iff.1 hC
 
 end TauCeti
