@@ -75,6 +75,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   isomorphism, and the sign of the trajectory times the fundamental sign of its source compares,
   through this map, the orientation of `M` with the standard orientation of `ℝ` followed by the
   orientation of the unstable manifold of `q`.
+* `augmentationSign_add_fundamentalSign_mul_self_of_finrank_eq_one`: on a manifold of dimension
+  `1`, the sum of the augmentation and fundamental signs of a critical point squares to `1`.
 * `fundamentalSign_mul_trajectorySign_of_finrank_eq_one`: on an oriented manifold of dimension
   `1`, the sign of a trajectory from a critical point of index `1` to one of index `0`, weighted by
   the fundamental sign of its source and the augmentation sign of its end, is the sign of the
@@ -197,6 +199,22 @@ theorem intCast_fundamentalSign (p : criticalPoints 𝓘(ℝ, E) f) :
     rcases fundamentalSign_eq_one_or_eq_neg_one (𝔬 := 𝔬) (oM := oM) hp with h | h <;>
       rw [h] <;> decide
   · rw [ite_eq_right hp, fundamentalSign_of_morseIndex_ne hp, Int.cast_zero]
+
+/-- **The signs of a critical point in dimension one.** On a manifold of dimension `1`, a critical
+point `p` has index `0`, where the fundamental sign vanishes and the augmentation sign is `±1`, or
+index `1`, where the augmentation sign vanishes and the fundamental sign is `±1`. So the sum of the
+two signs at `p` squares to `1`. -/
+theorem augmentationSign_add_fundamentalSign_mul_self_of_finrank_eq_one (hE : finrank ℝ E = 1)
+    (p : criticalPoints 𝓘(ℝ, E) f) :
+    (𝔬.augmentationSign p + hX.fundamentalSign 𝔬 oM p) *
+      (𝔬.augmentationSign p + hX.fundamentalSign 𝔬 oM p) = 1 := by
+  have hp₁ : manifoldMorseIndex 𝓘(ℝ, E) f p ≤ 1 := hE ▸ manifoldMorseIndex_le_finrank
+  rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hp₁ with hp | hp
+  · rw [fundamentalSign_of_morseIndex_ne (hX := hX) (by omega), add_zero]
+    rcases 𝔬.augmentationSign_eq_one_or_eq_neg_one hp with h | h <;> simp [h]
+  · rw [MorseOrientation.augmentationSign_of_morseIndex_ne_zero _ (by omega), zero_add]
+    rcases fundamentalSign_eq_one_or_eq_neg_one (hX := hX) (𝔬 := 𝔬) (oM := oM) (hp.trans hE.symm)
+      with h | h <;> simp [h]
 
 /-- **Reversing the orientation of `M` reverses the fundamental signs.** -/
 @[simp]

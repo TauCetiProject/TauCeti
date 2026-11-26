@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent.Orientation
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Signed
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Pair.ExtremeIndex
+public import TauCeti.Geometry.Manifold.Morse.Boundary.PullbackSign
 
 /-!
 # Integral continuation coefficients at critical points of extreme index
@@ -20,11 +21,10 @@ continuation map along a diffeomorphism `Φ` of `M`
 coefficients between critical points of index `0` and between critical points of top index, through
 the formulas of `TauCeti.Geometry.Manifold.Morse.Boundary.Pair.ExtremeIndex`.
 
-* **Pulled-back signs.** Pulling orientation data back along a diffeomorphism `σ` keeps the
-  augmentation signs (`TauCeti.MorseOrientation.augmentationSign_pullback`), and keeps the
-  fundamental signs when `σ` preserves the orientations of the manifolds
-  (`TauCeti.IsAdaptedPseudoGradient.fundamentalSign_pullback`): the derivative of `σ` carries the
-  unstable frames of the pullback to those of the original field.
+The signs of `𝔬₁` pulled back along `Φ` are those of `𝔬₁`
+(`TauCeti.Geometry.Manifold.Morse.Boundary.PullbackSign`), the fundamental signs as long as `Φ`
+preserves the orientation of `M`.
+
 * **Index `0`.** The coefficient of `q` in the image of `p` is
   `𝔬₀.augmentationSign p * 𝔬₁.augmentationSign q` when `Φ p` lies in `W^s_{X₁}(q)`, and `0`
   otherwise (`TauCeti.IsAdaptedPseudoGradient.signedContinuationCoeff_of_morseIndex_eq_zero`).
@@ -55,9 +55,6 @@ pseudo-gradients is not proved here.
 
 ## Main results
 
-* `TauCeti.MorseOrientation.augmentationSign_pullback`,
-  `TauCeti.IsAdaptedPseudoGradient.fundamentalSign_pullback`: signs of pulled-back orientation
-  data.
 * `TauCeti.isOrientationPreservingAt_continuationTransition`: transition diffeomorphisms preserve
   orientations.
 * `TauCeti.IsAdaptedPseudoGradient.signedContinuationCoeff_of_morseIndex_eq_zero`,
@@ -87,91 +84,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M]
-
-/-! ### Signs of pulled-back orientation data -/
-
-section Pullback
-
-variable {M' : Type*} [TopologicalSpace M'] [ChartedSpace E M'] [IsManifold 𝓘(ℝ, E) ∞ M']
-  [CompactSpace M'] [T2Space M']
-  {f : M → ℝ} {f' : M' → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
-  {X' : (x : M') → TangentSpace 𝓘(ℝ, E) x} {σ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M'}
-  (hf : f' ∘ σ = f) (hσX : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) σ y (X y) = X' (σ y))
-  (𝔬' : MorseOrientation f' X')
-
-omit [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M] [CompactSpace M'] [T2Space M'] in
-/-- **Augmentation signs pull back.** The augmentation sign of the orientation data pulled back
-along `σ` at a critical point `p` is the augmentation sign of `𝔬'` at `σ p`. -/
-@[simp]
-theorem MorseOrientation.augmentationSign_pullback (p : criticalPoints 𝓘(ℝ, E) f) :
-    (𝔬'.pullback hf hσX).augmentationSign p =
-      𝔬'.augmentationSign (criticalPointsEquivOfComp hf p) := by
-  have hind : manifoldMorseIndex 𝓘(ℝ, E) f p =
-      manifoldMorseIndex 𝓘(ℝ, E) f' (criticalPointsEquivOfComp hf p) := by
-    have h := (𝔬'.chart (criticalPointsEquivOfComp hf p)
-      ).manifoldMorseIndex_criticalPointsEquivOfComp_symm hf
-    rwa [Equiv.symm_apply_apply] at h
-  by_cases hp : manifoldMorseIndex 𝓘(ℝ, E) f p = 0
-  · rw [augmentationSign_of_morseIndex_eq_zero _ hp,
-      augmentationSign_of_morseIndex_eq_zero _ (hind ▸ hp), pullback_orientation]
-    -- Bases of the zero space indexed by an empty type agree.
-    rw [show Module.finBasisOfFinrankEq ℝ _
-        ((𝔬'.pullback hf hσX).chart p).finrank_negativeWeight_fun =
-        (Module.finBasisOfFinrankEq ℝ _
-          (𝔬'.chart (criticalPointsEquivOfComp hf p)).finrank_negativeWeight_fun).reindex
-          (finCongr hind.symm) from
-        Module.Basis.eq_of_apply_eq fun i ↦ absurd i.isLt (by omega)]
-    exact congrArg _ (Orientation.signBasis_reindex _ _ _)
-  · rw [augmentationSign_of_morseIndex_ne_zero _ hp,
-      augmentationSign_of_morseIndex_ne_zero _ (hind ▸ hp)]
-
-variable {hX : IsAdaptedPseudoGradient f X} {hX' : IsAdaptedPseudoGradient f' X'}
-
-/-- **Fundamental signs pull back along orientation-preserving diffeomorphisms.** If `σ` carries the
-orientation `oM` of `M` to the orientation `oM'` of `M'` at a critical point `p` of `f`, the
-fundamental sign of the orientation data pulled back along `σ` at `p`, for `oM`, is the fundamental
-sign of `𝔬'` at `σ p`, for `oM'`: the derivative of `σ` at `p` carries the unstable frame of the
-pullback at `p` to the unstable frame of `X'` at `σ p`. -/
-theorem IsAdaptedPseudoGradient.fundamentalSign_pullback (hf' : IsMorse 𝓘(ℝ, E) f')
-    (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E)))
-    (oM' : Manifold.Orientation 𝓘(ℝ, E) M' (Fin (finrank ℝ E))) {p : criticalPoints 𝓘(ℝ, E) f}
-    (hσ : oM.IsOrientationPreservingAt oM' σ p) :
-    hX.fundamentalSign (𝔬'.pullback hf hσX) oM p =
-      hX'.fundamentalSign 𝔬' oM' (criticalPointsEquivOfComp hf p) := by
-  classical
-  set p' := criticalPointsEquivOfComp hf p
-  have hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f' p' := by
-    have h := (𝔬'.chart p').manifoldMorseIndex_criticalPointsEquivOfComp_symm hf
-    rwa [Equiv.symm_apply_apply] at h
-  by_cases hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E
-  · have hp' : manifoldMorseIndex 𝓘(ℝ, E) f' p' = finrank ℝ E := hind ▸ hp
-    rw [fundamentalSign_of_morseIndex_eq hp, fundamentalSign_of_morseIndex_eq hp']
-    refine if_congr ?_ rfl rfl
-    obtain ⟨e, he, hmap⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff oM oM' σ p).1 hσ
-    rw [← (Orientation.map _ e.toLinearEquiv).injective.eq_iff, hmap, unstableOrientation_def,
-      unstableOrientation_def, ← Orientation.map_trans, MorseOrientation.pullback_orientation]
-    -- The coordinates of negative weight of the pulled-back chart are those of the chart of `𝔬'`
-    -- only up to unfolding `MorseChart.pullback_weight`, so the two rewrites below match up to
-    -- definitional equality.
-    erw [Orientation.reindex_finCongr_reindex_finCongr]
-    -- The derivative of `σ` carries the unstable frame of the pullback to that of `X'`.
-    have hF : (LinearEquiv.ofBijective
-        (hX.unstableFrame ((𝔬'.pullback hf hσX).chart p) p).toLinearMap
-        (bijective_unstableFrame_self (hX := hX) (𝔬'.pullback hf hσX) hp)).trans e.toLinearEquiv =
-        LinearEquiv.ofBijective (hX'.unstableFrame (𝔬'.chart p') p').toLinearMap
-          (bijective_unstableFrame_self (hX := hX') 𝔬' hp') := by
-      refine LinearEquiv.ext fun c ↦ ?_
-      rw [LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
-        ← ContinuousLinearEquiv.coe_coe, he]
-      exact mfderiv_unstableFrame_pullback hf hX hX' hσX (𝔬'.coord_mfderiv_chart p') hf'
-        (hX.mem_unstableSet_inter_stableSet_self
-          (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property)).1 c
-    erw [hF]
-    rfl
-  · have hp' : manifoldMorseIndex 𝓘(ℝ, E) f' p' ≠ finrank ℝ E := hind ▸ hp
-    rw [fundamentalSign_of_morseIndex_ne hp, fundamentalSign_of_morseIndex_ne hp']
-
-end Pullback
 
 /-! ### Transition diffeomorphisms preserve orientations -/
 
@@ -291,10 +203,8 @@ theorem eventually_signedContinuationCoeff_eq_of_finrank_eq_one
       hX₀.unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero hf₀
         (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property) hp]
     split_ifs with h
-    · rw [singleton_inter_of_mem (mem_preimage.2 h), ncard_singleton, Nat.cast_one,
-        ZMod.val_one, Nat.cast_one, mul_one]
-    · rw [singleton_inter_eq_empty.2 (h ∘ mem_preimage.1), ncard_empty, Nat.cast_zero,
-        ZMod.val_zero, Nat.cast_zero, mul_zero]
+    · simp [-ZMod.natCast_val, ZMod.val_one_eq_one_mod, singleton_inter_of_mem (mem_preimage.2 h)]
+    · simp [singleton_inter_eq_empty.2 (h ∘ mem_preimage.1)]
   · -- Both critical points have index `1 = dim M`.
     have hq : manifoldMorseIndex 𝓘(ℝ, E) f₁ q = 1 := hpq ▸ hp
     rw [hX₀.signedContinuationCoeff_of_morseIndex_eq_finrank hX₁ 𝔬₀ 𝔬₁ Φ hf₀ hf₁ oM
@@ -308,10 +218,8 @@ theorem eventually_signedContinuationCoeff_eq_of_finrank_eq_one
         rw [mem_preimage, mem_singleton_iff, mem_singleton_iff]
         exact Φ.toEquiv.eq_symm_apply.symm]
     split_ifs with h
-    · rw [inter_singleton_of_mem h, ncard_singleton, Nat.cast_one, ZMod.val_one, Nat.cast_one,
-        mul_one]
-    · rw [inter_singleton_eq_empty.2 h, ncard_empty, Nat.cast_zero, ZMod.val_zero, Nat.cast_zero,
-        mul_zero]
+    · simp [-ZMod.natCast_val, ZMod.val_one_eq_one_mod, inter_singleton_of_mem h]
+    · simp [inter_singleton_eq_empty.2 h]
 
 /-- **An integral continuation map in dimension one is the identity when its mod-two reduction
 is.** Let `V` be a smooth continuation field at rate `C > 0` from a pseudo-gradient `X` adapted to
@@ -339,17 +247,8 @@ theorem eventually_signedContinuationMap_eq_id_of_finrank_eq_one {f : M → ℝ}
     LinearMap.id_apply, Finsupp.single_apply]
   split_ifs with hpq
   · subst hpq
-    -- Exactly one of the two signs at `p` is nonzero, and it is `±1`.
-    have hsq : (𝔬.augmentationSign p + hX.fundamentalSign 𝔬 oM p) *
-        (𝔬.augmentationSign p + hX.fundamentalSign 𝔬 oM p) = 1 := by
-      have hp₁ : manifoldMorseIndex 𝓘(ℝ, E) f p ≤ 1 := hE ▸ manifoldMorseIndex_le_finrank
-      rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hp₁ with hp | hp
-      · rw [IsAdaptedPseudoGradient.fundamentalSign_of_morseIndex_ne (by omega), add_zero]
-        rcases 𝔬.augmentationSign_eq_one_or_eq_neg_one hp with h | h <;> rw [h] <;> rfl
-      · rw [MorseOrientation.augmentationSign_of_morseIndex_ne_zero _ (by omega), zero_add]
-        rcases hX.fundamentalSign_eq_one_or_eq_neg_one (𝔬 := 𝔬) (oM := oM) (hp.trans hE.symm)
-          with h | h <;> rw [h] <;> rfl
-    rw [hsq, ZMod.val_one, Nat.cast_one, mul_one, Int.cast_one, mul_one]
+    simp [-ZMod.natCast_val, ZMod.val_one_eq_one_mod,
+      hX.augmentationSign_add_fundamentalSign_mul_self_of_finrank_eq_one hE]
   · simp
 
 end IsContinuationField
