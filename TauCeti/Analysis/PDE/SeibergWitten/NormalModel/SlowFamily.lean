@@ -107,7 +107,7 @@ variable {x κ : ℂ → EuclideanSpace ℝ (Fin 4)} {Ξ Η : ℂ × ℂ → Euc
 
 /-- The term `L_x* η` of the paired row is integrable against a `C¹` field `κ` and, when
 `L_x κ = 0`, integrates to zero against it, as `L_x*` is the formal adjoint of `L_x`. -/
-private theorem integrable_inner_gaugeFixedAdjoint_and_integral_eq_zero (hx : Continuous x)
+theorem integrable_inner_gaugeFixedAdjoint_and_integral_eq_zero (hx : Continuous x)
     {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
     (hκ : ContDiff ℝ 1 κ) (hLκ : ∀ z, Vortex.gaugeFixedOperator x κ z = 0) :
     Integrable (fun z ↦ ⟪κ z, Vortex.gaugeFixedAdjoint x η z⟫) ν ∧

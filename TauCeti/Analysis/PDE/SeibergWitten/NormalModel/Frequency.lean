@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Basic
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Coercivity
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Tangent
+import TauCeti.Analysis.PDE.SeibergWitten.NormalModel.SlowFamily
 import TauCeti.Analysis.PDE.Vortex.Gauge.ComplexStructure
 import TauCeti.Analysis.PDE.Vortex.SpectralGap
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -148,13 +149,12 @@ theorem pairedBaseCoupling_smulRight_innerSL (ξ : ℂ) (u : EuclideanSpace ℝ 
 `w ↦ ⟪ξ, w⟫ v`. -/
 theorem norm_normalBaseCoupling_smulRight_innerSL (ξ : ℂ) (v : EuclideanSpace ℝ (Fin 4)) :
     ‖normalBaseCoupling ((innerSL ℝ ξ).smulRight v)‖ = ‖ξ‖ * ‖v‖ := by
+  -- `v` and `J' v` are orthogonal and have the same length.
+  have h0 : ⟪v, Vortex.targetComplexStructure v⟫ = 0 := Vortex.isAlt_compl₂_targetComplexStructure v
   have h : ‖normalBaseCoupling ((innerSL ℝ ξ).smulRight v)‖ ^ 2 = (‖ξ‖ * ‖v‖) ^ 2 := by
-    rw [normalBaseCoupling_smulRight_innerSL, mul_pow, Complex.sq_norm, Complex.normSq_apply,
-      EuclideanSpace.norm_sq_eq, EuclideanSpace.norm_sq_eq]
-    simp only [Fin.sum_univ_four, PiLp.sub_apply, PiLp.smul_apply, smul_eq_mul,
-      Vortex.targetComplexStructure_apply_zero, Vortex.targetComplexStructure_apply_one,
-      Vortex.targetComplexStructure_apply_two, Vortex.targetComplexStructure_apply_three,
-      Real.norm_eq_abs, sq_abs]
+    rw [normalBaseCoupling_smulRight_innerSL, norm_sub_sq_real, inner_smul_left, inner_smul_right,
+      h0, norm_smul, norm_smul, LinearIsometryEquiv.norm_map]
+    simp only [mul_pow, Complex.sq_norm, Complex.normSq_apply, Real.norm_eq_abs, sq_abs]
     ring
   exact (pow_left_inj₀ (norm_nonneg _) (by positivity) two_ne_zero).1 h
 
@@ -162,13 +162,13 @@ theorem norm_normalBaseCoupling_smulRight_innerSL (ξ : ℂ) (v : EuclideanSpace
 `w ↦ ⟪ξ, w⟫ u`. -/
 theorem norm_pairedBaseCoupling_smulRight_innerSL (ξ : ℂ) (u : EuclideanSpace ℝ (Fin 4)) :
     ‖pairedBaseCoupling ((innerSL ℝ ξ).smulRight u)‖ = ‖ξ‖ * ‖u‖ := by
+  -- `u` and `J u` are orthogonal and have the same length.
+  have h0 : ⟪u, Vortex.variationComplexStructure u⟫ = 0 :=
+    Vortex.isAlt_compl₂_variationComplexStructure u
   have h : ‖pairedBaseCoupling ((innerSL ℝ ξ).smulRight u)‖ ^ 2 = (‖ξ‖ * ‖u‖) ^ 2 := by
-    rw [pairedBaseCoupling_smulRight_innerSL, mul_pow, Complex.sq_norm, Complex.normSq_apply,
-      EuclideanSpace.norm_sq_eq, EuclideanSpace.norm_sq_eq]
-    simp only [Fin.sum_univ_four, PiLp.add_apply, PiLp.smul_apply, smul_eq_mul,
-      Vortex.variationComplexStructure_apply_zero, Vortex.variationComplexStructure_apply_one,
-      Vortex.variationComplexStructure_apply_two, Vortex.variationComplexStructure_apply_three,
-      Real.norm_eq_abs, sq_abs]
+    rw [pairedBaseCoupling_smulRight_innerSL, norm_add_sq_real, inner_smul_left, inner_smul_right,
+      h0, norm_smul, norm_smul, LinearIsometryEquiv.norm_map]
+    simp only [mul_pow, Complex.sq_norm, Complex.normSq_apply, Real.norm_eq_abs, sq_abs]
     ring
   exact (pow_left_inj₀ (norm_nonneg _) (by positivity) two_ne_zero).1 h
 
@@ -354,8 +354,8 @@ theorem integral_inner_frequencyNormalRow_add_integral_inner_frequencyPairedRow 
   -- A pairing of continuous fields, one of which is compactly supported, is integrable.
   have hI {f g : ℂ → EuclideanSpace ℝ (Fin 4)} (hf : Continuous f) (hg : Continuous g)
       (h : HasCompactSupport f ∨ HasCompactSupport g) : Integrable (fun z ↦ ⟪f z, g z⟫) ν :=
-    (hf.inner hg).integrable_of_hasCompactSupport
-      (h.elim (·.mono fun z hz h0 ↦ hz (by simp [h0])) (·.mono fun z hz h0 ↦ hz (by simp [h0])))
+    h.elim (hf.integrable_inner_of_hasCompactSupport_left hg)
+      (hf.integrable_inner_of_hasCompactSupport_right hg)
   -- In each of the eight pairings, one factor is compactly supported.
   obtain ⟨c₁, c₂, c₃, c₄, c₅, c₆, c₇, c₈⟩ :
       (HasCompactSupport (frequencyNormalRow x ξ u v) ∨ HasCompactSupport n) ∧
@@ -450,19 +450,15 @@ theorem integral_norm_sq_add_norm_sq_frequencyNormalModel (hx : Continuous x)
   have a₄ := hv.continuous.integrable_norm_sq_of_hasCompactSupport (μ := ν) hvc
   -- The pairings in the cross terms are continuous and supported in the supports of `u`, `v`.
   have c₁ : Integrable (fun z ↦ ⟪u z, Vortex.gaugeFixedAdjoint x v z⟫) ν :=
-    (hu.continuous.inner hLv).integrable_of_hasCompactSupport
-      (huc.mono fun z hz h0 ↦ hz (by simp [h0]))
+    hu.continuous.integrable_inner_of_hasCompactSupport_left hLv huc
   have c₂ : Integrable (fun z ↦ ⟪Vortex.gaugeFixedOperator x u z, v z⟫) ν :=
-    (hLu.inner hv.continuous).integrable_of_hasCompactSupport
-      (hvc.mono fun z hz h0 ↦ hz (by simp [h0]))
+    hLu.integrable_inner_of_hasCompactSupport_right hv.continuous hvc
   have c₃ : Integrable (fun z ↦
       ⟪Vortex.variationComplexStructure (u z), Vortex.gaugeFixedAdjoint x v z⟫) ν :=
-    (hJu.continuous.inner hLv).integrable_of_hasCompactSupport
-      (hJuc.mono fun z hz h0 ↦ hz (by simp [h0]))
+    hJu.continuous.integrable_inner_of_hasCompactSupport_left hLv hJuc
   have c₄ : Integrable (fun z ↦
       ⟪Vortex.gaugeFixedOperator x (fun w ↦ Vortex.variationComplexStructure (u w)) z, v z⟫) ν :=
-    (hLJu.inner hv.continuous).integrable_of_hasCompactSupport
-      (hvc.mono fun z hz h0 ↦ hz (by simp [h0]))
+    hLJu.integrable_inner_of_hasCompactSupport_right hv.continuous hvc
   -- The two cross terms integrate to zero by integration by parts.
   have e₁ : ∫ z, (⟪u z, Vortex.gaugeFixedAdjoint x v z⟫ -
       ⟪Vortex.gaugeFixedOperator x u z, v z⟫) ∂ν = 0 := by
@@ -518,9 +514,7 @@ theorem frequencyPairedRow_zero_right (ξ : ℂ) (u : ℂ → EuclideanSpace ℝ
     frequencyPairedRow x ξ u 0 =
       fun z ↦ ξ.re • u z + ξ.im • Vortex.variationComplexStructure (u z) := by
   funext z
-  have h0 : Vortex.gaugeFixedAdjoint x 0 z = 0 := by
-    simpa using Vortex.gaugeFixedAdjoint_smul x 0 0 z
-  rw [frequencyPairedRow_apply, h0, zero_add]
+  simp [frequencyPairedRow_apply]
 
 /-- **The slow block maps the kernel of `L_x` to itself.** If `κ` lies in the kernel of `L_x`,
 so does the paired row `Re ξ • κ + Im ξ • J κ` of the family on `(κ, 0)`. -/
@@ -549,22 +543,14 @@ theorem integral_inner_frequencyPairedRow (hx : Continuous x) (hκ₁ : ContDiff
         ξ.im * ∫ z, ⟪Vortex.variationComplexStructure (κ z), u z⟫ ∂ν := by
   have hJκ : Continuous fun z ↦ Vortex.variationComplexStructure (κ z) :=
     Vortex.variationComplexStructure.continuous.comp hκ₁.continuous
-  -- The pairings are continuous and supported in the supports of `u` and of `L_x* v`.
-  have i₁ : Integrable (fun z ↦ ⟪κ z, Vortex.gaugeFixedAdjoint x v z⟫) ν :=
-    (hκ₁.continuous.inner
-      (Vortex.continuous_gaugeFixedAdjoint hx hv)).integrable_of_hasCompactSupport
-      ((Vortex.hasCompactSupport_gaugeFixedAdjoint (x := x) hvc).mono fun z hz h0 ↦
-        hz (by simp [h0]))
+  -- `⟪κ, L_x* v⟫` is integrable and `∫ ⟪κ, L_x* v⟫ = ∫ ⟪L_x κ, v⟫ = 0`.
+  obtain ⟨i₁, h₀⟩ :=
+    integrable_inner_gaugeFixedAdjoint_and_integral_eq_zero (ν := ν) hx hv hvc hκ₁ hLκ
+  -- The other pairings are continuous and supported in the support of `u`.
   have i₂ : Integrable (fun z ↦ ⟪κ z, u z⟫) ν :=
-    (hκ₁.continuous.inner hu).integrable_of_hasCompactSupport
-      (huc.mono fun z hz h0 ↦ hz (by simp [h0]))
+    hκ₁.continuous.integrable_inner_of_hasCompactSupport_right hu huc
   have i₃ : Integrable (fun z ↦ ⟪Vortex.variationComplexStructure (κ z), u z⟫) ν :=
-    (hJκ.inner hu).integrable_of_hasCompactSupport
-      (huc.mono fun z hz h0 ↦ hz (by simp [h0]))
-  -- `∫ ⟪κ, L_x* v⟫ = ∫ ⟪L_x κ, v⟫ = 0`.
-  have h₀ : ∫ z, ⟪κ z, Vortex.gaugeFixedAdjoint x v z⟫ ∂ν = 0 := by
-    rw [← Vortex.integral_inner_gaugeFixedOperator hκ₁ hv (.inr hvc)]
-    simp [hLκ]
+    hJκ.integrable_inner_of_hasCompactSupport_right hu huc
   have hpt (z : ℂ) : ⟪κ z, frequencyPairedRow x ξ u v z⟫ =
       ⟪κ z, Vortex.gaugeFixedAdjoint x v z⟫ +
         (ξ.re * ⟪κ z, u z⟫ - ξ.im * ⟪Vortex.variationComplexStructure (κ z), u z⟫) := by
