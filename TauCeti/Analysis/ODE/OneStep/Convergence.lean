@@ -108,9 +108,11 @@ theorem norm_sub_oneStepSeq_le {Φ : ℝ → E → ℝ → E} {y : ℝ → E} {t
   simpa using norm_sub_le_gronwallBound_of_perturbed_oneStep_of_defect_le (ε := 0)
     (Y := oneStepSeq Φ t₀ h y₀) (r := 0) hh hb hΦ hdef (fun n _ ↦ by simp) (fun n _ ↦ by simp) hn
 
-/-- **The convergence theorem on uniform meshes.** On the uniform mesh of `N ≥ 1` steps of
-length `(b - t₀) / N` on `[t₀, b]`, the error at every node of the numerical solution started at
-`y t₀` is at most `gronwallBound 0 L (C ((b - t₀) / N) ^ p) (b - t₀)`. -/
+/-- **The convergence theorem on uniform meshes.** Let `t₀ ≤ b`, `N ≥ 1` and
+`η = (b - t₀) / N`. If `u ↦ Φ (t₀ + k η) u η` is `L`-Lipschitz for `k < N` and the defect of `y`
+is at most `C s ^ (p + 1)` for steps `s ∈ [0, η]` inside `[t₀, b]`, then on the uniform mesh of
+`N` steps of length `η` the error at every node of the numerical solution started at `y t₀` is at
+most `gronwallBound 0 L (C η ^ p) (b - t₀)`. No sign condition on `C` is needed. -/
 theorem norm_sub_oneStepSeq_uniform_le {Φ : ℝ → E → ℝ → E} {y : ℝ → E} {t₀ b C : ℝ}
     {L : ℝ≥0} {p N : ℕ} (hN : 0 < N) (htb : t₀ ≤ b)
     (hΦ : ∀ n < N, LipschitzWith L fun u ↦ Φ (t₀ + n * ((b - t₀) / N)) u ((b - t₀) / N))
