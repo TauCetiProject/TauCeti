@@ -114,6 +114,12 @@ theorem domainCrossingForm_apply (ι A A' : D →L[ℝ] H) (x : A.ker) :
 
 variable {ι A A' : D →L[ℝ] H} {c : ℝ}
 
+/-- Over `ℝ` the coercion `RCLike.ofReal` is the identity, so the shift `(c : 𝕜) • ι - A` of the
+`RCLike` shifted resolvent theory at `𝕜 = ℝ` is the real shift `c • ι - A`. -/
+private theorem isInvertible_ofReal_smul_sub_iff :
+    ((RCLike.ofReal c : ℝ) • ι - A).IsInvertible ↔ (c • ι - A).IsInvertible := by
+  rw [RCLike.ofReal_real_eq_id, id]
+
 /-- At an invertible shift `c ι - A`, `ι` is injective on the kernel of `A`: a vector `x` with
 `A x = 0` and `ι x = 0` is sent to `0` by `c ι - A`. -/
 private theorem injective_comp_subtype_ker (h : (c • ι - A).IsInvertible) :
@@ -132,7 +138,8 @@ private noncomputable def kerEquivKerShiftedResolventTransform (h : (c • ι - 
     A.ker ≃ₗ[ℝ] (((innerSL ℝ).comp (ι.shiftedResolventTransform A c) : H →L[ℝ] H →L[ℝ] ℝ) :
       H →ₗ[ℝ] H →L[ℝ] ℝ).ker :=
   (LinearEquiv.ofInjective _ (injective_comp_subtype_ker h)).trans <| LinearEquiv.ofEq _ _ <| by
-    rw [ker_innerSL_comp, ker_shiftedResolventTransform h hc, LinearMap.range_comp,
+    rw [ker_innerSL_comp, ker_shiftedResolventTransform (isInvertible_ofReal_smul_sub_iff.2 h) hc,
+      LinearMap.range_comp,
       Submodule.range_subtype]
 
 private theorem kerEquivKerShiftedResolventTransform_apply (h : (c • ι - A).IsInvertible)
@@ -193,6 +200,7 @@ private theorem exists_ball_isInvertible_smul_sub (hι : IsCompactOperator ι)
   obtain ⟨c, hc, hinv⟩ := ι.exists_mem_Ioo_eventually_isInvertible_ofReal_smul_sub hι
     (s := univ) hA.self_of_nhds.continuousWithinAt hc₀ zero_lt_one
   rw [nhdsWithin_univ] at hinv
+  replace hinv := hinv.mono fun _ ↦ isInvertible_ofReal_smul_sub_iff.1
   obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff_ball.1 (hA.and (hinv.and hsymm))
   exact ⟨c, hc.1.ne', ε, hε, fun t ht ↦ ⟨(hball t ht).1, (hball t ht).2.1, (hball t ht).2.2⟩⟩
 
@@ -215,6 +223,31 @@ private theorem shiftedResolventTransform_regular (hι : IsCompactOperator ι) {
       ι.isSelfAdjoint_shiftedResolventTransform (hball t ht).2.2,
     ι.isFredholm_shiftedResolventTransform hι hc (hball t₀ (mem_ball_self hε)).2.1⟩
 
+omit [CompleteSpace H] in
+/-- At a regular crossing `t₀` of a path continuous and symmetric near `t₀` with an invertible
+shift at `t₀`, a single shift `c ≠ 0` is admissible on a ball around `t₀`, on which `A` is
+continuous and symmetric. The crossing form of `A` at `t₀` is equivalent to that of the shifted
+resolvent transforms at `c`, which is therefore nondegenerate. -/
+private theorem exists_ball_domainCrossingForm_equivalent (hι : IsCompactOperator ι)
+    (hA : ∀ᶠ t in 𝓝 t₀, ContinuousAt A t)
+    (hsymm : ∀ᶠ t in 𝓝 t₀, ∀ x y, ⟪A t x, ι y⟫_ℝ = ⟪ι x, A t y⟫_ℝ)
+    (h₀ : ∃ c₀ : ℝ, (c₀ • ι - A t₀).IsInvertible)
+    (hreg : (ι.domainCrossingForm (A t₀) A').Nondegenerate) :
+    ∃ c : ℝ, c ≠ 0 ∧ ∃ ε > 0, (∀ t ∈ ball t₀ ε, ContinuousAt A t ∧ (c • ι - A t).IsInvertible ∧
+      ∀ x y, ⟪A t x, ι y⟫_ℝ = ⟪ι x, A t y⟫_ℝ) ∧
+      (ι.domainCrossingForm (A t₀) A').Equivalent
+        (crossingForm ((innerSL ℝ).comp (ι.shiftedResolventTransform (A t₀) c))
+          ((innerSL ℝ).comp
+            (c ^ 2 • (ι ∘L (c • ι - A t₀).inverse ∘L A' ∘L (c • ι - A t₀).inverse)))) ∧
+      (crossingForm ((innerSL ℝ).comp (ι.shiftedResolventTransform (A t₀) c))
+          ((innerSL ℝ).comp (c ^ 2 •
+            (ι ∘L (c • ι - A t₀).inverse ∘L A' ∘L (c • ι - A t₀).inverse)))).Nondegenerate := by
+  obtain ⟨c, hc, ε, hε, hball⟩ := exists_ball_isInvertible_smul_sub hι hA hsymm h₀
+  have h₀' := hball t₀ (mem_ball_self hε)
+  obtain ⟨e⟩ := domainCrossingForm_equivalent_crossingForm_shiftedResolventTransform (A' := A') hc
+    h₀'.2.1 h₀'.2.2
+  exact ⟨c, hc, ε, hε, hball, ⟨e⟩, e.nondegenerate_iff.1 hreg⟩
+
 /-- **The spectral flow across a regular crossing.** Let `ι` be compact, and let `A` be continuous
 and symmetric through `ι` near `t₀`, with an invertible shift at `t₀` and a derivative `A'` at
 `t₀` whose crossing form `x ↦ ⟪A' x, ι x⟫` on the kernel of `A t₀` is nondegenerate. Then for `a`
@@ -227,14 +260,12 @@ theorem eventually_domainSpectralFlow_eq_sigPos_sub_sigNeg_domainCrossingForm
     (hreg : (ι.domainCrossingForm (A t₀) A').Nondegenerate) :
     ∀ᶠ a in 𝓝[<] t₀, ∀ᶠ b in 𝓝[>] t₀, domainSpectralFlow ι A a b =
       (sigPos (ι.domainCrossingForm (A t₀) A') : ℤ) - sigNeg (ι.domainCrossingForm (A t₀) A') := by
-  obtain ⟨c, hc, ε, hε, hball⟩ := exists_ball_isInvertible_smul_sub hι hA hsymm h₀
+  obtain ⟨c, hc, ε, hε, hball, ⟨e⟩, hτreg⟩ :=
+    exists_ball_domainCrossingForm_equivalent hι hA hsymm h₀ hreg
   obtain ⟨hτc, hτsa, hτF⟩ := shiftedResolventTransform_regular hι hc hε hball
-  have h₀' := hball t₀ (mem_ball_self hε)
-  obtain ⟨e⟩ := domainCrossingForm_equivalent_crossingForm_shiftedResolventTransform (A' := A') hc
-    h₀'.2.1 h₀'.2.2
   -- The transforms cross regularly at `t₀`, and their spectral flow jumps by the signature.
   filter_upwards [eventually_spectralFlow_eq_sigPos_sub_sigNeg_crossingForm hτc hτsa hτF
-      (hd.shiftedResolventTransform h₀'.2.1) (e.nondegenerate_iff.1 hreg),
+      (hd.shiftedResolventTransform (hball t₀ (mem_ball_self hε)).2.1) hτreg,
     Ioo_mem_nhdsLT (show t₀ - ε < t₀ by linarith)] with a ha haε
   filter_upwards [ha, Ioo_mem_nhdsGT (show t₀ < t₀ + ε by linarith)] with b hb hbε
   -- On `[a, b]` the shift `c` is admissible, so the spectral flow is that of the transforms.
@@ -243,8 +274,8 @@ theorem eventually_domainSpectralFlow_eq_sigPos_sub_sigNeg_domainCrossingForm
     exact Icc_subset_Ioo haε.1 hbε.2
   rw [domainSpectralFlow_eq_spectralFlow_shiftedResolventTransform hι (haε.2.trans hbε.1).le
     (fun t ht ↦ (hball t (hsub ht)).1.continuousWithinAt) (fun t ht ↦ (hball t (hsub ht)).2.2) hc
-    (fun t ht ↦ (hball t (hsub ht)).2.1), hb, (QuadraticMap.Equivalent.sigPos_eq ⟨e⟩),
-    (QuadraticMap.Equivalent.sigNeg_eq ⟨e⟩)]
+    (fun t ht ↦ isInvertible_ofReal_smul_sub_iff.2 (hball t (hsub ht)).2.1), hb,
+    (QuadraticMap.Equivalent.sigPos_eq ⟨e⟩), (QuadraticMap.Equivalent.sigNeg_eq ⟨e⟩)]
 
 /-- **Regular crossings are isolated.** Under the hypotheses of
 `TauCeti.eventually_domainSpectralFlow_eq_sigPos_sub_sigNeg_domainCrossingForm`, `A t` is
@@ -255,34 +286,21 @@ theorem eventually_ker_eq_bot_of_domainCrossingForm_nondegenerate (hι : IsCompa
     (h₀ : ∃ c₀ : ℝ, (c₀ • ι - A t₀).IsInvertible) (hd : HasDerivAt A A' t₀)
     (hreg : (ι.domainCrossingForm (A t₀) A').Nondegenerate) :
     ∀ᶠ t in 𝓝[≠] t₀, (A t).ker = ⊥ := by
-  obtain ⟨c, hc, ε, hε, hball⟩ := exists_ball_isInvertible_smul_sub hι hA hsymm h₀
+  obtain ⟨c, hc, ε, hε, hball, -, hτreg⟩ :=
+    exists_ball_domainCrossingForm_equivalent hι hA hsymm h₀ hreg
   obtain ⟨hτc, hτsa, hτF⟩ := shiftedResolventTransform_regular hι hc hε hball
-  have h₀' := hball t₀ (mem_ball_self hε)
-  obtain ⟨e⟩ := domainCrossingForm_equivalent_crossingForm_shiftedResolventTransform (A' := A') hc
-    h₀'.2.1 h₀'.2.2
   filter_upwards [eventually_ker_eq_bot_of_crossingForm_nondegenerate hτc hτsa hτF
-      (hd.shiftedResolventTransform h₀'.2.1) (e.nondegenerate_iff.1 hreg),
+      (hd.shiftedResolventTransform (hball t₀ (mem_ball_self hε)).2.1) hτreg,
     nhdsWithin_le_nhds (ball_mem_nhds t₀ hε)] with t hτ ht
   -- `ker τ_c (A t) = ι (ker A t)`, and `ι` is injective on `ker A t`.
   have hinv := (hball t ht).2.1
-  rw [ker_shiftedResolventTransform hinv hc] at hτ
+  rw [ker_shiftedResolventTransform (isInvertible_ofReal_smul_sub_iff.2 hinv) hc] at hτ
   rw [eq_bot_iff]
   intro x hx
   have hιx : ι x = 0 := by
     have hmem := Submodule.mem_map_of_mem (f := (ι : D →ₗ[ℝ] H)) hx
     rwa [hτ, Submodule.mem_bot] at hmem
-  have hAx : A t x = 0 := hx
-  simpa using hinv.injective (a₁ := x) (a₂ := 0) (by simp [hAx, hιx])
-
-omit [CompleteSpace H] in
-/-- An operator on a common domain embedded by a compact `ι`, with an invertible shift, is
-invertible as soon as it is injective. -/
-private theorem isInvertible_of_ker_eq_bot (hι : IsCompactOperator ι) {B : D →L[ℝ] H}
-    (h₀ : ∃ c₀ : ℝ, (c₀ • ι - B).IsInvertible) (hker : B.ker = ⊥) : B.IsInvertible := by
-  obtain ⟨c₀, hc₀⟩ := h₀
-  have h := (isInvertible_smul_sub_iff_injective (c := 0) hι hc₀).2 fun x y hxy ↦
-    LinearMap.ker_eq_bot.1 hker (by simpa using hxy)
-  rwa [zero_smul, zero_sub, isInvertible_neg_iff] at h
+  simpa using injective_comp_subtype_ker hinv (a₁ := ⟨x, hx⟩) (a₂ := 0) (by simp [hιx])
 
 /-- **A path without crossings has no spectral flow.** If every `A t` with `t ∈ [a, b]` is
 injective, the spectral flow of `A` from `a` to `b` vanishes. -/
@@ -291,8 +309,10 @@ theorem domainSpectralFlow_eq_zero_of_forall_ker_eq_bot (hι : IsCompactOperator
     (hsymm : ∀ t ∈ Icc a b, ∀ x y, ⟪A t x, ι y⟫_ℝ = ⟪ι x, A t y⟫_ℝ)
     (h₀ : ∀ t ∈ Icc a b, ∃ c₀ : ℝ, (c₀ • ι - A t).IsInvertible)
     (hker : ∀ t ∈ Icc a b, (A t).ker = ⊥) : domainSpectralFlow ι A a b = 0 :=
-  domainSpectralFlow_eq_zero_of_forall_isInvertible hι hab hA hsymm fun t ht ↦
-    isInvertible_of_ker_eq_bot hι (h₀ t ht) (hker t ht)
+  domainSpectralFlow_eq_zero_of_forall_isInvertible hι hab hA hsymm fun t ht ↦ by
+    obtain ⟨c₀, hc₀⟩ := h₀ t ht
+    exact (isInvertible_iff_injective_of_isInvertible_smul_sub hι hc₀).2
+      (LinearMap.ker_eq_bot.1 (hker t ht))
 
 omit [CompleteSpace D] [CompleteSpace H] in
 /-- At an interior time of `[a, b]`, a path continuous and symmetric on `[a, b]` is continuous and
@@ -331,7 +351,9 @@ theorem finite_setOf_ker_ne_bot_of_domainCrossingForm (hι : IsCompactOperator �
     mem_of_superset h fun t ht ↦ (em (t ∈ Icc a b)).imp ht id
   by_cases hnz : (A z).ker = ⊥
   · -- `A z` is invertible, and so is `A t` for every `t ∈ [a, b]` near `z`.
-    have hinv := isInvertible_of_ker_eq_bot hι (h₀ z hz) hnz
+    obtain ⟨c₀, hc₀⟩ := h₀ z hz
+    have hinv := (isInvertible_iff_injective_of_isInvertible_smul_sub hι hc₀).2
+      (LinearMap.ker_eq_bot.1 hnz)
     have hopen := eventually_nhdsWithin_iff.1 <| (hA z hz).eventually hinv.eventually_nhds
     filter_upwards [nhdsWithin_le_nhds hopen] with t ht htI
     exact LinearMap.ker_eq_bot.2 (ht htI).injective
@@ -410,10 +432,9 @@ private theorem domainSpectralFlow_eq_sum_domainCrossingForm_of_finset (hι : Is
     -- Concatenate the spectral flows over `[a, t₁]`, `[t₁, t₂]` and `[t₂, b]`.
     have ht₁t₂ : t₁ ≤ t₂ := (ht₁s.trans hst₂).le
     have hsub₂ : Icc a t₂ ⊆ Icc a b := Icc_subset_Icc le_rfl ht₂b.le
-    have h₀' : ∀ t ∈ Icc a b, ∃ c₀ : ℝ, (c₀ • ι - A t).IsInvertible := h₀
-    rw [domainSpectralFlow_add_adjacent_intervals hι (hat₁.le.trans ht₁t₂) ht₂b.le hA hsymm h₀',
+    rw [domainSpectralFlow_add_adjacent_intervals hι (hat₁.le.trans ht₁t₂) ht₂b.le hA hsymm h₀,
       domainSpectralFlow_add_adjacent_intervals hι hat₁.le ht₁t₂ (hA.mono hsub₂)
-        (fun t ht ↦ hsymm t (hsub₂ ht)) (fun t ht ↦ h₀' t (hsub₂ ht)),
+        (fun t ht ↦ hsymm t (hsub₂ ht)) (fun t ht ↦ h₀ t (hsub₂ ht)),
       hinit, hjump, hright, Finset.sum_insert fun h ↦ (hlt s h).false]
     ring
 

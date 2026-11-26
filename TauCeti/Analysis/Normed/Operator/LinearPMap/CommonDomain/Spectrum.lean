@@ -28,7 +28,8 @@ Write `K = (c₀ • ι - A)⁻¹ ∘ ι`, a compact operator on `D`. For `c ≠
 eigenvalues away from `0` transfer to the shifts:
 
 * `c • ι - A` is invertible exactly when it is injective
-  (`ContinuousLinearMap.isInvertible_smul_sub_iff_injective`);
+  (`ContinuousLinearMap.isInvertible_smul_sub_iff_injective`), and so is `A` itself, the shift at
+  `0` (`ContinuousLinearMap.isInvertible_iff_injective_of_isInvertible_smul_sub`);
 * only finitely many shifts in a bounded set fail to be invertible
   (`ContinuousLinearMap.finite_inter_setOf_not_isInvertible_smul_sub`), so near every scalar all
   other shifts are invertible (`ContinuousLinearMap.eventually_isInvertible_smul_sub`).
@@ -53,6 +54,8 @@ such as the spectral flow of the bounded transforms `c A (c ι - A)⁻¹`, are g
 
 * `ContinuousLinearMap.isInvertible_smul_sub_iff_injective`: a shift is invertible exactly when
   it is injective.
+* `ContinuousLinearMap.isInvertible_iff_injective_of_isInvertible_smul_sub`: `A` is invertible
+  exactly when it is injective.
 * `ContinuousLinearMap.finite_inter_setOf_not_isInvertible_smul_sub`: the non-invertible shifts
   in a bounded set are finitely many.
 * `ContinuousLinearMap.eventually_isInvertible_smul_sub`: the non-invertible shifts are isolated.
@@ -133,6 +136,16 @@ theorem isInvertible_smul_sub_iff_injective [CompleteSpace D] (hcpt : IsCompactO
     abel
   rw [hfac]
   exact h₀.comp (isInvertible_iff_isUnit.2 ((isUnit_iff_ne_zero.2 hc').map _ |>.mul hres))
+
+/-- **Fredholm alternative over a compactly embedded domain.** If `ι` is compact and one shift
+`c₀ • ι - A` is invertible, `A` itself is invertible exactly when it is injective. -/
+theorem isInvertible_iff_injective_of_isInvertible_smul_sub [CompleteSpace D]
+    (hcpt : IsCompactOperator ι) (h₀ : (c₀ • ι - A).IsInvertible) :
+    A.IsInvertible ↔ Injective A := by
+  refine ⟨fun h ↦ h.bijective.1, fun hinj ↦ ?_⟩
+  have h := (isInvertible_smul_sub_iff_injective (c := 0) hcpt h₀).2 fun x y hxy ↦
+    hinj (by simpa using hxy)
+  rwa [zero_smul, zero_sub, isInvertible_neg_iff] at h
 
 /-- **Discreteness of the spectrum over a compactly embedded domain.** If `ι` is compact and one
 shift `c₀ • ι - A` is invertible, only finitely many shifts `c • ι - A` with `c` in a bounded set

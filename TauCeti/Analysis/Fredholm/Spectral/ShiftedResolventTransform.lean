@@ -35,11 +35,12 @@ multiple of a compact perturbation of the identity when `ι` is compact, hence F
 (`ContinuousLinearMap.isFredholm_shiftedResolventTransform`), and it depends continuously on `A`
 (`ContinuousOn.shiftedResolventTransform`). An eigenvector `ι x` of the unbounded operator, with
 `A x = λ ι x`, is an eigenvector of `τ_c A` with eigenvalue `c λ / (c - λ)`
-(`ContinuousLinearMap.shiftedResolventTransform_apply_of_apply_eq_smul`); only this direction of
-the spectral correspondence is proved here. The function `λ ↦ c λ / (c - λ)` fixes `0` and has
-derivative `1` there. In particular the kernel of `τ_c A` is the image under `ι` of the kernel of
-`A` (`ContinuousLinearMap.ker_shiftedResolventTransform`). Along a real path `A` with derivative
-`A'` at `t₀`, the transforms have derivative `c² ι R A' R` at `t₀`, for `R = (c ι - A t₀)⁻¹`
+(`ContinuousLinearMap.shiftedResolventTransform_apply_of_apply_eq_smul`). The full spectral
+correspondence is proved here only for the eigenvalue `0`: at a shift `c ≠ 0` with `c ι - A`
+invertible, the kernel of `τ_c A` is the image under `ι` of the kernel of `A`
+(`ContinuousLinearMap.ker_shiftedResolventTransform`). The function `λ ↦ c λ / (c - λ)` fixes `0`
+and has derivative `1` there. Along a real path `A` with derivative `A'` at `t₀`, the transforms
+have derivative `c² ι R A' R` at `t₀`, for `R = (c ι - A t₀)⁻¹`
 (`HasDerivAt.shiftedResolventTransform`).
 
 The shift is a choice, and a single shift need not be admissible along a whole path. The transforms
