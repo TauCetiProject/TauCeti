@@ -130,7 +130,7 @@ theorem nonempty_wittGLIsocrystalEquiv_iff
     exact ⟨wittGLConjugatorEquiv p k b c ⟨g, hg⟩⟩
 
 /-- Transport an isocrystal to a matrix using any linear coordinates. -/
-theorem exists_wittGLIsocrystalEquiv_of_linearEquiv {V : Type*} [AddCommGroup V] [Isocrystal p k V]
+theorem exists_isocrystalEquiv_toLinearEquiv_eq {V : Type*} [AddCommGroup V] [Isocrystal p k V]
     (e : (Fin n → K(p, k)) ≃ₗ[K(p, k)] V) :
     ∃ b : Matrix.GeneralLinearGroup (Fin n) K(p, k),
       letI := wittGLIsocrystal p k b
@@ -157,7 +157,7 @@ theorem wittGL_isocrystal_classes (V : Type*) [AddCommGroup V] [Isocrystal p k V
         TwistedConj.Classes.mk (mapEquiv (Fin n) (FractionRing.frobenius p k)).toMonoidHom c := by
   obtain ⟨e⟩ := FiniteDimensional.nonempty_linearEquiv_of_finrank_eq
     (R := K(p, k)) (M := Fin n → K(p, k)) (M' := V) (by simp [hdim])
-  obtain ⟨b, f, -⟩ := exists_wittGLIsocrystalEquiv_of_linearEquiv p k e
+  obtain ⟨b, f, -⟩ := exists_isocrystalEquiv_toLinearEquiv_eq p k e
   refine ⟨b, fun c => ?_⟩
   let bIsocrystal := wittGLIsocrystal p k b
   let cIsocrystal := wittGLIsocrystal p k c
