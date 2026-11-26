@@ -190,12 +190,12 @@ private theorem fst_polarCanonical_ne_zero_of_pos (hr : 0 < r) :
   rw [← norm_ne_zero_iff, norm_fst_polarCanonical_of_pos b hr]
   exact hr.ne'
 
-/-- A potential `C²` at `r > 0` is differentiable at the distance to the origin of the point with
-polar coordinates `(r, 0, θ, L)`. -/
-private theorem hasDerivAt_norm_fst_polarCanonical_of_pos (hU : ContDiffAt ℝ 2 U r)
+/-- A potential differentiable at `r > 0` is differentiable at the distance to the origin of the
+point with polar coordinates `(r, 0, θ, L)`. -/
+private theorem hasDerivAt_norm_fst_polarCanonical_of_pos (hU : DifferentiableAt ℝ U r)
     (hr : 0 < r) : HasDerivAt U (deriv U r) ‖(polarCanonical (b 0) (b 1) ((r, 0), (θ, L))).1‖ := by
   rw [norm_fst_polarCanonical_of_pos b hr]
-  exact (hU.differentiableAt two_ne_zero).hasDerivAt
+  exact hU.hasDerivAt
 
 /-- For a potential `C²` at `r > 0`, the energy–momentum map is `C²` at the point with polar
 coordinates `(r, 0, θ, L)`. -/
@@ -207,14 +207,15 @@ private theorem contDiffAt_centralForceEnergyMomentum_polarCanonical (hU : ContD
 
 /-- The chain rule for the energy–momentum map in polar coordinates at `(r, 0, θ, L)`, `r > 0`. -/
 private theorem hasFDerivAt_centralForceEnergyMomentum_comp_polarCanonical
-    (hU : ContDiffAt ℝ 2 U r) (hr : 0 < r) :
+    (hU : DifferentiableAt ℝ U r) (hr : 0 < r) :
     HasFDerivAt (centralForceEnergyMomentum b m U ∘ polarCanonical (b 0) (b 1))
       ((fderiv ℝ (centralForceEnergyMomentum b m U)
         (polarCanonical (b 0) (b 1) ((r, 0), (θ, L)))).comp
         (fderiv ℝ (polarCanonical (b 0) (b 1)) ((r, 0), (θ, L)))) ((r, 0), (θ, L)) :=
-  (((contDiffAt_centralForceEnergyMomentum_polarCanonical b hU hr).differentiableAt
-    two_ne_zero).hasFDerivAt).comp _ ((contDiffAt_polarCanonical (b 0) (b 1) (n := 1)
-      hr.ne').differentiableAt one_ne_zero).hasFDerivAt
+  (hasFDerivAt_centralForceEnergyMomentum b (hasDerivAt_norm_fst_polarCanonical_of_pos b hU hr)
+    (fst_polarCanonical_ne_zero_of_pos b hr)).differentiableAt.hasFDerivAt.comp _
+    ((contDiffAt_polarCanonical (b 0) (b 1) (n := 1) hr.ne').differentiableAt
+      one_ne_zero).hasFDerivAt
 
 /-- At the point with polar coordinates `(r, 0, θ, L)`, `r > 0`, the momentum is orthogonal to the
 position. -/
@@ -252,7 +253,8 @@ private theorem fderiv_centralForceEnergyMomentum_fderiv_polarCanonical_inl
         (fderiv ℝ (polarCanonical (b 0) (b 1)) y))
       (y + ContinuousLinearMap.inl ℝ (ℝ × ℝ) (ℝ × ℝ) 0) := by
     rw [ContinuousLinearMap.inl_apply, Prod.mk_zero_zero, add_zero]
-    exact hasFDerivAt_centralForceEnergyMomentum_comp_polarCanonical b hU hr
+    exact hasFDerivAt_centralForceEnergyMomentum_comp_polarCanonical b
+      (hU.differentiableAt two_ne_zero) hr
   have h := ((hg.comp (0 : ℝ × ℝ)
     ((ContinuousLinearMap.inl ℝ (ℝ × ℝ) (ℝ × ℝ)).hasFDerivAt.const_add y)).congr_of_eventuallyEq
     (eventuallyEq_centralForceEnergyMomentum_polarCanonical b hr).symm).unique
@@ -377,21 +379,21 @@ theorem
 
 /-- On a circular orbit the potential has derivative `U'(r) = L² / (m r³)`, read at the point with
 polar coordinates `(r, 0, θ, L)`. -/
-private theorem deriv_eq_of_deriv_effectivePotential_eq_zero (hU : ContDiffAt ℝ 2 U r)
+private theorem deriv_eq_of_deriv_effectivePotential_eq_zero (hU : DifferentiableAt ℝ U r)
     (hr : 0 < r) (hc : deriv (effectivePotential m L U) r = 0) :
     deriv U r = angularMomentum (b 0) (b 1) (polarCanonical (b 0) (b 1) ((r, 0), (θ, L))) ^ 2 /
       (m * ‖(polarCanonical (b 0) (b 1) ((r, 0), (θ, L))).1‖ ^ 3) := by
   rw [angularMomentum_polarCanonical (b.norm_eq_one 0) (b.norm_eq_one 1)
     (b.inner_eq_zero (by decide)) hr.ne', norm_fst_polarCanonical_of_pos b hr]
-  have h := ((hasDerivAt_effectivePotential (m := m) (ℓ := L)
-    (hU.differentiableAt two_ne_zero).hasDerivAt hr.ne').deriv).symm.trans hc
+  have h := ((hasDerivAt_effectivePotential (m := m) (ℓ := L) hU.hasDerivAt
+    hr.ne').deriv).symm.trans hc
   linarith
 
 /-- In polar coordinates the angular-momentum component of the derivative is `δL`: the derivative
 of the energy–momentum map sends the image of `(0, 0, 0, 1)` to a vector with second component
 `1`. -/
 private theorem fderiv_centralForceEnergyMomentum_fderiv_polarCanonical_one
-    (hU : ContDiffAt ℝ 2 U r) (hr : 0 < r) :
+    (hU : DifferentiableAt ℝ U r) (hr : 0 < r) :
     fderiv ℝ (centralForceEnergyMomentum b m U) (polarCanonical (b 0) (b 1) ((r, 0), (θ, L)))
       (fderiv ℝ (polarCanonical (b 0) (b 1)) ((r, 0), (θ, L)) ((0, 0), (0, 1))) 1 = 1 := by
   -- Off `r = 0`, the angular momentum of the point with polar coordinates `z` is `z.2.2`.
@@ -425,7 +427,7 @@ variable [FiniteDimensional ℝ V]
 /-- **The critical functional of a circular orbit.** At the point with polar coordinates
 `(r, 0, θ, L)` of a circular orbit, `dH = Ω dL` with the angular velocity `Ω = L / (m r²)`: the
 functional `(h, l) ↦ h - Ω l` kills the image of the derivative of the energy–momentum map. -/
-theorem comp_fderiv_centralForceEnergyMomentum_eq_zero (hU : ContDiffAt ℝ 2 U r)
+theorem comp_fderiv_centralForceEnergyMomentum_eq_zero (hU : DifferentiableAt ℝ U r)
     (hr : 0 < r) (hc : deriv (effectivePotential m L U) r = 0) :
     (ContinuousLinearMap.proj 0 - (L / (m * r ^ 2)) • ContinuousLinearMap.proj 1 :
         (Fin 2 → ℝ) →L[ℝ] ℝ).comp (fderiv ℝ (centralForceEnergyMomentum b m U)
@@ -452,7 +454,7 @@ theorem comp_fderiv_centralForceEnergyMomentum_eq_zero (hU : ContDiffAt ℝ 2 U 
 `(r, 0, θ, L)`, `r > 0`, of a circular orbit, the derivative of the energy–momentum map has rank
 one. -/
 theorem finrank_range_fderiv_centralForceEnergyMomentum_polarCanonical (hm : m ≠ 0)
-    (hU : ContDiffAt ℝ 2 U r) (hr : 0 < r) (hc : deriv (effectivePotential m L U) r = 0) :
+    (hU : DifferentiableAt ℝ U r) (hr : 0 < r) (hc : deriv (effectivePotential m L U) r = 0) :
     finrank ℝ (fderiv ℝ (centralForceEnergyMomentum b m U)
       (polarCanonical (b 0) (b 1) ((r, 0), (θ, L)))).range = 1 := by
   set P := polarCanonical (b 0) (b 1) ((r, 0), (θ, L))
@@ -493,7 +495,8 @@ private theorem finrank_reducedSpace_ker_fderiv_centralForceEnergyMomentum (hm :
     ((contDiffAt_centralForceEnergyMomentum_polarCanonical b (m := m) (θ := θ) (L := L) hU
       hr).differentiableAt two_ne_zero)
     fun ℓ ℓ' ↦ stdSymplecticForm_poissonBracket_comp_centralForceEnergyMomentum b m U ℓ ℓ' _
-  rw [finrank_range_fderiv_centralForceEnergyMomentum_polarCanonical b hm hU hr hc,
+  rw [finrank_range_fderiv_centralForceEnergyMomentum_polarCanonical b hm
+      (hU.differentiableAt two_ne_zero) hr hc,
     Module.finrank_prod, Module.finrank_eq_card_basis b.toBasis, Fintype.card_fin] at h
   omega
 
@@ -538,16 +541,17 @@ theorem isNondegeneratePoint_centralForceEnergyMomentum_polarCanonical_iff (hm :
     exact hessianQuadraticForm_comp_centralForceEnergyMomentum_comp_fderiv_polarCanonical_inl b hU
       hr ℓ.property
   rw [hfam, SymplecticForm.isNondegenerateQuadraticFamily_smul_iff
-      (i := ⟨_, comp_fderiv_centralForceEnergyMomentum_eq_zero b hU hr hc⟩) (by simp),
+      (i := ⟨_, comp_fderiv_centralForceEnergyMomentum_eq_zero b (hU.differentiableAt two_ne_zero)
+        hr hc⟩) (by simp),
     SymplecticForm.isNondegenerateQuadraticFamily_const_iff (by simp),
     nondegenerate_hessianQuadraticForm_transversalModel_iff hm hU hr.ne' hc]
 
 /-- **Circular orbits have rank one.** Let `(q, p)` be a point of a circular orbit of a planar
 central force with angular momentum `L`: `q ≠ 0`, `⟪q, p⟫ = 0`, and `‖q‖` is a critical point of
-the effective potential `U_L`, at which the potential is `C²`. Then the derivative of the
-energy–momentum map `(H, L)` has rank one at `(q, p)`. -/
+the effective potential `U_L`, at which the potential is differentiable. Then the derivative of
+the energy–momentum map `(H, L)` has rank one at `(q, p)`. -/
 theorem finrank_range_fderiv_centralForceEnergyMomentum (hm : m ≠ 0) {x : V × V}
-    (hq : x.1 ≠ 0) (hU : ContDiffAt ℝ 2 U ‖x.1‖) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+    (hq : x.1 ≠ 0) (hU : DifferentiableAt ℝ U ‖x.1‖) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
     (hc : deriv (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ = 0) :
     finrank ℝ (fderiv ℝ (centralForceEnergyMomentum b m U) x).range = 1 := by
   obtain ⟨θ, hx⟩ := exists_polarCanonical_eq b hq h0
