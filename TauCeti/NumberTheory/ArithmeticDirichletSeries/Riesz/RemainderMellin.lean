@@ -11,6 +11,8 @@ public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.Analysis.Meromorphic.LogDeriv
 import Mathlib.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.Calculus.LogDeriv
+import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
+import TauCeti.Analysis.Meromorphic.Conj
 
 /-!
 # Meromorphic Mellin expression for a first Riesz remainder
@@ -30,7 +32,7 @@ The Dirichlet-character pole formula is used in L. Alpöge's
 
 public section
 
-open Filter Set Topology
+open ComplexConjugate Filter Set Topology
 
 namespace TauCeti
 
@@ -46,6 +48,18 @@ noncomputable def rieszRemainderMellin (L : ℂ → ℂ) : ℂ → ℂ :=
 theorem meromorphicNFOn_rieszRemainderMellin (L : ℂ → ℂ) :
     MeromorphicNFOn (rieszRemainderMellin L) univ :=
   meromorphicNFOn_toMeromorphicNFOn _ _
+
+/-- The normalized Riesz Mellin expression commutes with reflection across the real axis.
+This is an equality of total functions, including the normal-form values at poles. -/
+@[simp] theorem rieszRemainderMellin_conj_conj (L : ℂ → ℂ) :
+    rieszRemainderMellin (conj ∘ L ∘ conj) = conj ∘ rieszRemainderMellin L ∘ conj := by
+  simp only [rieszRemainderMellin]
+  rw [← preimage_univ (f := (conj : ℂ → ℂ)), ← toMeromorphicNFOn_conj_conj, preimage_univ]
+  congr 1
+  funext z
+  simp only [logDerivFinitePart_conj_conj, meromorphicOrderAt_conj_conj, logDeriv_conj_conj,
+    map_one, Function.comp_apply, map_div₀, map_mul, map_sub, map_intCast,
+    Complex.conj_conj]
 
 /-- The quotient defining the Mellin expression, before normalization, describes its
 punctured germ at every point. -/
