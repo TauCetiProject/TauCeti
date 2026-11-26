@@ -16,9 +16,9 @@ import TauCeti.Analysis.Meromorphic.Divisor
 
 Removing the simple fractions contributed by the zeros in a closed disc leaves a holomorphic
 remainder. Applying Landau's local logarithmic-derivative bound to this remainder and using
-Cauchy's inequality gives geometric decay of its normalized Taylor coefficients. In particular,
-a relative growth estimate on an outer circle controls the error when replacing the Taylor
-coefficients of a logarithmic derivative by inverse powers of the displacements of its zeros.
+Cauchy's inequality gives a geometric bound `C / t ^ k` on its normalized Taylor coefficients. In
+particular, a relative growth estimate on an outer circle controls the error when replacing the
+Taylor coefficients of a logarithmic derivative by inverse powers of the displacements of its zeros.
 
 The pointwise estimate used here is the finite Blaschke product form of Landau's lemma
 (Montgomery and Vaughan, *Multiplicative Number Theory I*, Lemma 6.3).
@@ -108,7 +108,7 @@ private theorem norm_iteratedDeriv_logDeriv_sub_finsum_divisor_le
 /-- The reflected Taylor coefficient of `logDeriv f` at `c` differs from the inverse-power sum
 of the displacements of the zeros in the closed disc of radius `r` by a geometrically bounded
 error. The bound is the local Landau estimate at distance `t`, divided by `t ^ k`. -/
-theorem norm_reflectedTaylorCoeff_logDeriv_sub_finsum_divisor_le
+theorem norm_neg_one_pow_mul_iteratedDeriv_logDeriv_div_factorial_sub_finsum_divisor_le
     (hf : AnalyticOnNhd ℂ f (closedBall c R)) (hf₀ : f c ≠ 0)
     (ht : 0 < t) (htr : t < r) (hrR : r < R)
     (hM : ∀ w ∈ sphere c R, ‖f w‖ ≤ M * ‖f c‖) (k : ℕ) :
@@ -126,14 +126,8 @@ theorem norm_reflectedTaylorCoeff_logDeriv_sub_finsum_divisor_le
       exact hρ (by simp [hzero]))
   have hfc := hf c (mem_closedBall_self (by linarith))
   have hDc : D c = 0 := hfc.divisor_apply_eq_zero hf₀
-  have hsum : ContDiffAt ℂ k (fun z ↦ ∑ ρ ∈ S, (D ρ : ℂ) / (z - ρ)) c := by
-    have hterm (ρ : ℂ) (hρ : ρ ∈ S) : ContDiffAt ℂ k (fun z ↦ (D ρ : ℂ) / (z - ρ)) c := by
-      have hcρ : c ≠ ρ := by
-        rintro rfl
-        simp [S, mem_support, hDc] at hρ
-      have hne := sub_ne_zero.mpr hcρ
-      fun_prop
-    simpa only [Finset.sum_apply] using (ContDiffAt.sum hterm)
+  have hsum : ContDiffAt ℂ k (fun z ↦ ∑ ρ ∈ S, (D ρ : ℂ) / (z - ρ)) c :=
+    S.contDiffAt_sum_div_sub _ _ _ (fun _ ↦ by simp [hDc])
   have h := hf.norm_iteratedDeriv_logDeriv_sub_finsum_divisor_le hf₀ ht htr hrR hM k
   have heq (z : ℂ) : ∑ᶠ ρ, (MeromorphicOn.divisor f (closedBall c r) ρ : ℂ) / (z - ρ) =
       ∑ ρ ∈ S, (D ρ : ℂ) / (z - ρ) := by
