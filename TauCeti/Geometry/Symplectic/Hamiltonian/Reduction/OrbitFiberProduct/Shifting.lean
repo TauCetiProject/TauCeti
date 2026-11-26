@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Prod
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct.ReducedForm
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 
-import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.Diffeomorph.Subtype
 import TauCeti.Geometry.Manifold.Submersion.Diffeomorph
 import TauCeti.Geometry.Manifold.Submersion.Split
 
@@ -41,12 +41,15 @@ Unless stated otherwise, the declarations named below are in the namespace
 * The map `Ψ⁻¹(0) → μ⁻¹(c) ⧸ G_c`, `(x, g G_c) ↦ [g⁻¹ • x]`, is a surjective smooth submersion
   whose fibres are the orbits of `G_0`: on points it is the orbit projection of the orbit fibre
   product `W_O`, whose transverse fibre-product atlas agrees with the regular-level atlas of
-  `Ψ⁻¹(0)`. It
-  therefore descends to a diffeomorphism of reduced spaces
+  `Ψ⁻¹(0)`: the identity of points is a diffeomorphism `j : Ψ⁻¹(0) ≃ W_O`
+  (`levelDiffeomorphOrbitFiberProduct`). It therefore descends to a diffeomorphism of reduced
+  spaces
 
   `Φ : Ψ⁻¹(0) ⧸ G_0 ≃ μ⁻¹(c) ⧸ G_c`, `Φ [(x, g G_c)] = [g⁻¹ • x]`
 
-  (`shiftingReducedSpaceDiffeomorph`), with inverse `[z] ↦ [(z, G_c)]`.
+  (`shiftingReducedSpaceDiffeomorph`), with inverse `[z] ↦ [(z, G_c)]`, and `Φ ∘ π₀ = q_W ∘ j`
+  for the orbit projections `π₀` of `Ψ⁻¹(0)` and `q_W` of `W_O`
+  (`shiftingReducedSpaceDiffeomorph_comp_quotientMk`).
 * `Φ` pulls the reduced form of `M` at `c` back to the reduced form of `M × O⁻` at zero
   (`mpullback_shiftingReducedSpaceDiffeomorph`):
   pulled back to `Ψ⁻¹(0)`, the first is `pr_M^* σ - pr_O^* ω_KKS`
@@ -64,8 +67,13 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMoment
 * `prod_neg_coadjointOrbitForm`: `Ψ` is a coadjoint-equivariant moment map on `M × O⁻`.
 * `forall_differential_surjective_prod_neg_coadjointOrbitForm`: zero is a regular value of `Ψ`.
 * `isCancelSMul_levelSubMulAction_prod_neg_coadjointOrbitForm`: `G_0` acts freely on `Ψ⁻¹(0)`.
+* `levelDiffeomorphOrbitFiberProduct`: the identity of points `j : Ψ⁻¹(0) ≃ W_O` is a
+  diffeomorphism.
+* `levelDiffeomorphShiftingLevel`: the identity of points is a diffeomorphism from `Ψ⁻¹(0)` to
+  `TauCeti.ShiftingLevel`, the same zero level with `Ψ` read in a basis.
 * `shiftingReducedSpaceDiffeomorph`, `shiftingReducedSpaceDiffeomorph_mk`,
   `shiftingReducedSpaceDiffeomorph_symm_mk`: the diffeomorphism of reduced spaces.
+* `shiftingReducedSpaceDiffeomorph_comp_quotientMk`: `Φ ∘ π₀ = q_W ∘ j`.
 * `mpullback_shiftingReducedSpaceDiffeomorph`: **the shifting theorem**, it is a symplectomorphism.
 
 ## References
@@ -181,28 +189,16 @@ variable [FiniteDimensional ℝ E'] [I'.Boundaryless] [ProperSMul G M]
   {F₀ : Type*} [NormedAddCommGroup F₀] [NormedSpace ℝ F₀] [FiniteDimensional ℝ F₀]
   (d₀ : Lie.EmbeddedLieSubgroupData I ((Lie.coadjointRepresentation ℝ I G).stabilizer 0) F₀)
 
-/-- The zero level of the shifting moment map and the orbit fibre product, read in the basis
-`Module.finBasis`, have the same points. -/
-private def levelEquivOrbitFiberProduct :
-    (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0 ≃
-      OrbitFiberProduct μ c (Module.finBasis ℝ (GroupLieAlgebra I G)) :=
-  (Equiv.refl _).subtypeEquiv fun _ ↦ h.mem_levelSubMulAction_prod_neg_coadjointOrbitForm.trans
-    (components_eq_orbitMap_iff_apply_eq _).symm
-
-omit [FiniteDimensional ℝ E'] [I'.Boundaryless] [ProperSMul G M]
+omit [ProperSMul G M]
   [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
-/-- The identification of the zero level with the orbit fibre product is the identity of points. -/
-private theorem coe_levelEquivOrbitFiberProduct
-    (p : (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) :
-    ((h.levelEquivOrbitFiberProduct p : OrbitFiberProduct μ c
-      (Module.finBasis ℝ (GroupLieAlgebra I G))) :
-        M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) = p :=
-  (rfl)
-
-/-- The identity of points is a diffeomorphism from the regular-level atlas of the zero level of
-the shifting moment map to the transverse fibre-product atlas of the orbit fibre product: both make
-the inclusion into `M × O` a smooth embedding. -/
-private def levelDiffeomorphOrbitFiberProduct :
+/-- **The zero level of the shifting moment map is the orbit fibre product.** The identity of
+points is a diffeomorphism `j` from the regular-level atlas of the zero level `Ψ⁻¹(0)` of the
+shifting moment map to the transverse fibre-product atlas of the orbit fibre product `W_O`, read in
+the basis `Module.finBasis`: both make the inclusion into `M × O` a smooth embedding. Composed with
+`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorphShiftingLevel`, it
+identifies `Ψ⁻¹(0)` with `TauCeti.ShiftingLevel`
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelDiffeomorphShiftingLevel`). -/
+def levelDiffeomorphOrbitFiberProduct :
     letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
       (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
     letI := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
@@ -214,52 +210,127 @@ private def levelDiffeomorphOrbitFiberProduct :
   letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
   letI := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
-  { toEquiv := h.levelEquivOrbitFiberProduct
-    contMDiff_toFun :=
-      (h.isSmoothEmbedding_coe_orbitFiberProduct hreg _).contMDiff_iff_comp.2
-        ((h.prod_neg_coadjointOrbitForm c).isSmoothEmbedding_coe_levelSubMulAction
-          (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀).contMDiff
-    contMDiff_invFun :=
-      ((h.prod_neg_coadjointOrbitForm c).isSmoothEmbedding_coe_levelSubMulAction
-        (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg)
-          hn₀).contMDiff_iff_comp.2 (h.isSmoothEmbedding_coe_orbitFiberProduct hreg _).contMDiff }
+  (Diffeomorph.refl _ (M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c)
+    ∞).subtypeOfIsSmoothEmbedding
+    (s := ((h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0 :
+      Set (M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c)))
+    (t := {p | (fun i ↦ μ p.1 (Module.finBasis ℝ (GroupLieAlgebra I G) i)) =
+      fun i ↦ (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2
+        (Module.finBasis ℝ (GroupLieAlgebra I G) i)})
+    ((h.prod_neg_coadjointOrbitForm c).isSmoothEmbedding_coe_levelSubMulAction
+      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀)
+    (h.isSmoothEmbedding_coe_orbitFiberProduct hreg _) fun _ ↦
+      h.mem_levelSubMulAction_prod_neg_coadjointOrbitForm.trans
+        (components_eq_orbitMap_iff_apply_eq _).symm
+
+omit [ProperSMul G M]
+  [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
+/-- The identification of the zero level of the shifting moment map with the orbit fibre product
+is the identity of points. -/
+@[simp]
+theorem coe_levelDiffeomorphOrbitFiberProduct
+    (p : (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) :
+    letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+    letI := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
+    (h.levelDiffeomorphOrbitFiberProduct hreg hn₀ p :
+        M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) = p.val := by
+  let _ := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+  let _ := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
+  exact Diffeomorph.subtypeOfIsSmoothEmbedding_apply_coe ..
+
+omit [ProperSMul G M]
+  [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
+/-- The inverse identification of the orbit fibre product with the zero level of the shifting
+moment map is the identity of points. -/
+@[simp]
+theorem coe_levelDiffeomorphOrbitFiberProduct_symm
+    (q : OrbitFiberProduct μ c (Module.finBasis ℝ (GroupLieAlgebra I G))) :
+    letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+    letI := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
+    ((h.levelDiffeomorphOrbitFiberProduct hreg hn₀).symm q :
+        M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) = q.val := by
+  let _ := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+  let _ := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
+  exact Diffeomorph.subtypeOfIsSmoothEmbedding_symm_apply_coe ..
+
+omit [ProperSMul G M]
+  [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
+/-- **The two models of the zero level of the shifting moment map agree.** The identity of points
+is a diffeomorphism from the regular-level atlas of the zero level `Ψ⁻¹(0)` of the moment map `Ψ`
+of `M × O⁻` to the regular-fibre atlas of `TauCeti.ShiftingLevel`, with `Ψ` read in the basis
+`Module.finBasis`: it is
+`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelDiffeomorphOrbitFiberProduct` followed by
+`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorphShiftingLevel`. -/
+def levelDiffeomorphShiftingLevel :
+    letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+    letI := h.shiftingLevelChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
+    (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0 ≃ₘ⟮𝓘(ℝ, Fin n₀ → ℝ),
+      𝓘(ℝ, Fin (finrank ℝ (E' × Subgroup.QuotientModelSpace I
+        ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) -
+          finrank ℝ (Fin (finrank ℝ (GroupLieAlgebra I G)) → ℝ)) → ℝ)⟯
+      ShiftingLevel μ c (Module.finBasis ℝ (GroupLieAlgebra I G)) :=
+  letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+  letI := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
+  letI := h.shiftingLevelChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
+  (h.levelDiffeomorphOrbitFiberProduct hreg hn₀).trans
+    (h.orbitFiberProductDiffeomorphShiftingLevel hreg _)
+
+omit [ProperSMul G M]
+  [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
+/-- The identification of the two models of the zero level of the shifting moment map is the
+identity of points. -/
+@[simp]
+theorem coe_levelDiffeomorphShiftingLevel
+    (p : (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) :
+    letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+    letI := h.shiftingLevelChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
+    (h.levelDiffeomorphShiftingLevel hreg hn₀ p :
+        M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) = p.val := by
+  let _ := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+  let _ := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
+  let _ := h.shiftingLevelChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
+  exact (h.coe_orbitFiberProductDiffeomorphShiftingLevel hreg _ _).trans
+    (h.coe_levelDiffeomorphOrbitFiberProduct hreg hn₀ p)
 
 /-- The map `Ψ⁻¹(0) → μ⁻¹(c) ⧸ G_c`, `(x, g G_c) ↦ [g⁻¹ • x]`, is a smooth submersion: it is the
 orbit projection of the orbit fibre product read through the identification of points. -/
-private theorem isSubmersion_orbitFiberProductProj_comp_levelEquiv :
+private theorem isSubmersion_orbitFiberProductProj_comp_levelDiffeomorph :
     letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
       (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+    letI := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
     letI := h.orbitRelQuotientChartedSpace c hreg hn d
     IsSubmersion 𝓘(ℝ, Fin n₀ → ℝ) 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ)) ∞
       (h.orbitFiberProductProj c (Module.finBasis ℝ (GroupLieAlgebra I G)) ∘
-        h.levelEquivOrbitFiberProduct) := by
+        h.levelDiffeomorphOrbitFiberProduct hreg hn₀) := by
   let _ := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
   have := (h.prod_neg_coadjointOrbitForm c).isManifold_levelSubMulAction
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
   let _ := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
-  have := h.isManifold_orbitFiberProduct hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
   let _ := h.orbitRelQuotientChartedSpace c hreg hn d
   have := h.isManifold_orbitRelQuotient hreg hn d
-  have hq := h.isSubmersion_orbitFiberProductProj hreg hn d
-    (Module.finBasis ℝ (GroupLieAlgebra I G))
-  set j := h.levelDiffeomorphOrbitFiberProduct hreg hn₀
-  refine (ContMDiff.isSubmersionOfComplement_of_surjective_mfderiv
-    (hq.contMDiff.comp j.contMDiff) (by simp) fun p ↦ ?_).isSubmersion
-  exact LinearMap.range_eq_top.1 ((j.range_mfderiv_comp_diffeomorph (by simp) _ p).trans
-    (LinearMap.range_eq_top.2 (hq.surjective_mfderiv (by simp) _)))
+  exact (h.isSubmersion_orbitFiberProductProj hreg hn d _).comp_diffeomorph
+    (h.levelDiffeomorphOrbitFiberProduct hreg hn₀) (by simp)
 
-omit [I'.Boundaryless] [ProperSMul G M]
+omit [ProperSMul G M]
   [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
 /-- The fibres of `(x, g G_c) ↦ [g⁻¹ • x]` on the zero level of the shifting moment map are the
 orbits of the coadjoint stabilizer `G_0`, which is all of `G`. -/
-private theorem orbitFiberProductProj_levelEquiv_eq_iff
+private theorem orbitFiberProductProj_levelDiffeomorph_eq_iff
     (p p' : (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) :
-    h.orbitFiberProductProj c _ (h.levelEquivOrbitFiberProduct p) =
-        h.orbitFiberProductProj c _ (h.levelEquivOrbitFiberProduct p') ↔
+    h.orbitFiberProductProj c _ (h.levelDiffeomorphOrbitFiberProduct hreg hn₀ p) =
+        h.orbitFiberProductProj c _ (h.levelDiffeomorphOrbitFiberProduct hreg hn₀ p') ↔
       ∃ k : (Lie.coadjointRepresentation ℝ I G).stabilizer 0, k • p' = p := by
-  rw [h.orbitFiberProductProj_eq_orbitFiberProductProj_iff, coe_levelEquivOrbitFiberProduct,
-    coe_levelEquivOrbitFiberProduct]
+  rw [h.orbitFiberProductProj_eq_orbitFiberProductProj_iff, coe_levelDiffeomorphOrbitFiberProduct,
+    coe_levelDiffeomorphOrbitFiberProduct]
   constructor
   · rintro ⟨k, hk⟩
     refine ⟨⟨k⁻¹, Representation.mem_stabilizer.2 (map_zero _)⟩, Subtype.ext ?_⟩
@@ -268,7 +339,7 @@ private theorem orbitFiberProductProj_levelEquiv_eq_iff
   · rintro ⟨k, rfl⟩
     exact ⟨(k : G)⁻¹, by rw [SubMulAction.val_smul, Subgroup.smul_def, inv_smul_smul]⟩
 
-omit [I'.Boundaryless] [ProperSMul G M]
+omit [ProperSMul G M]
   [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
 /-- The bijection `Ψ⁻¹(0) ⧸ G_0 ≃ μ⁻¹(c) ⧸ G_c`, `[(x, g G_c)] ↦ [g⁻¹ • x]`, induced by the
 map `(x, g G_c) ↦ [g⁻¹ • x]`, which is onto and has the `G_0`-orbits as fibres. -/
@@ -277,9 +348,21 @@ private def shiftingReducedSpaceEquiv :
         ((h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) ≃
       MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
         (h.levelSubMulAction c) :=
-  (Quotient.congrRight fun p p' ↦ (h.orbitFiberProductProj_levelEquiv_eq_iff p p').symm).trans
-    (Setoid.quotientKerEquivOfSurjective _
-      ((h.orbitFiberProductProj_surjective _).comp h.levelEquivOrbitFiberProduct.surjective))
+  (Quotient.congrRight fun p p' ↦
+    (h.orbitFiberProductProj_levelDiffeomorph_eq_iff hreg hn₀ p p').symm).trans
+    (Setoid.quotientKerEquivOfSurjective _ ((h.orbitFiberProductProj_surjective _).comp
+      (h.levelDiffeomorphOrbitFiberProduct hreg hn₀).surjective))
+
+omit [ProperSMul G M]
+  [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
+/-- The bijection of reduced spaces sends the orbit of `p` to the image of `p` under
+`(x, g G_c) ↦ [g⁻¹ • x]`. This holds by definition: `Quotient.congrRight` and
+`Setoid.quotientKerEquivOfSurjective` both act on representatives. -/
+private theorem shiftingReducedSpaceEquiv_mk
+    (p : (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) :
+    h.shiftingReducedSpaceEquiv hreg hn₀ (Quotient.mk _ p) =
+      h.orbitFiberProductProj c _ (h.levelDiffeomorphOrbitFiberProduct hreg hn₀ p) :=
+  (rfl)
 
 variable (c) in
 /-- **The shifting diffeomorphism of reduced spaces.** With the hypotheses of the
@@ -316,31 +399,56 @@ def shiftingReducedSpaceDiffeomorph :
   letI := h.orbitRelQuotientChartedSpace c hreg hn d
   -- Smoothness of `Φ` and of its inverse is checked on the two surjective submersions out of
   -- `Ψ⁻¹(0)`: the orbit projection, and `(x, g G_c) ↦ [g⁻¹ • x]`.
-  h.shiftingReducedSpaceEquiv.diffeomorphOfSubmersions
+  (h.shiftingReducedSpaceEquiv hreg hn₀).diffeomorphOfSubmersions
     ((h.prod_neg_coadjointOrbitForm c).isSubmersion_quotientMk_levelSubMulAction
       (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀)
-    Quotient.mk_surjective (h.isSubmersion_orbitFiberProductProj_comp_levelEquiv hreg hn d hn₀)
-    (funext fun _ ↦ rfl)
+    Quotient.mk_surjective
+    (h.isSubmersion_orbitFiberProductProj_comp_levelDiffeomorph hreg hn d hn₀)
+    (funext (h.shiftingReducedSpaceEquiv_mk hreg hn₀))
 
-/-- The shifting diffeomorphism sends the orbit of `p` to the image of `p` under
-`(x, g G_c) ↦ [g⁻¹ • x]`. -/
-private theorem shiftingReducedSpaceDiffeomorph_quotientMk
-    (p : (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) :
+/-- **The shifting diffeomorphism on the zero level**: `Φ ∘ π₀ = q_W ∘ j`, where `π₀` is the orbit
+projection of `Ψ⁻¹(0)`, `j` identifies `Ψ⁻¹(0)` with the orbit fibre product
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelDiffeomorphOrbitFiberProduct`), and
+`q_W (x, g G_c) = [g⁻¹ • x]` is the orbit projection of the orbit fibre product. -/
+theorem shiftingReducedSpaceDiffeomorph_comp_quotientMk :
     haveI : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
     haveI := h.isCancelSMul_levelSubMulAction_prod_neg_coadjointOrbitForm (c := c)
+    letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
     letI := (h.prod_neg_coadjointOrbitForm c).orbitRelQuotientChartedSpace 0
       (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
+    letI := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
     letI := h.orbitRelQuotientChartedSpace c hreg hn d
-    h.shiftingReducedSpaceDiffeomorph c hreg hn d hn₀ d₀ (Quotient.mk _ p) =
-      h.orbitFiberProductProj c _ (h.levelEquivOrbitFiberProduct p) := by
+    ⇑(h.shiftingReducedSpaceDiffeomorph c hreg hn d hn₀ d₀) ∘ Quotient.mk _ =
+      h.orbitFiberProductProj c _ ∘ h.levelDiffeomorphOrbitFiberProduct hreg hn₀ := by
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   have := h.isCancelSMul_levelSubMulAction_prod_neg_coadjointOrbitForm (c := c)
   let _ := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
   let _ := (h.prod_neg_coadjointOrbitForm c).orbitRelQuotientChartedSpace 0
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
+  let _ := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
   let _ := h.orbitRelQuotientChartedSpace c hreg hn d
-  exact Equiv.diffeomorphOfSubmersions_apply _ _ _ _ _ _
+  exact funext fun p ↦ (Equiv.diffeomorphOfSubmersions_apply _ _ _ _ _ _).trans
+    (h.shiftingReducedSpaceEquiv_mk hreg hn₀ p)
+
+/-- **The shifting diffeomorphism on a point of the zero level**: `Φ [p] = q_W (j p)`, where `j`
+identifies `Ψ⁻¹(0)` with the orbit fibre product
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelDiffeomorphOrbitFiberProduct`) and
+`q_W (x, g G_c) = [g⁻¹ • x]` is the orbit projection of the orbit fibre product. -/
+theorem shiftingReducedSpaceDiffeomorph_quotientMk
+    (p : (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) :
+    haveI : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+    haveI := h.isCancelSMul_levelSubMulAction_prod_neg_coadjointOrbitForm (c := c)
+    letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+    letI := (h.prod_neg_coadjointOrbitForm c).orbitRelQuotientChartedSpace 0
+      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
+    letI := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    h.shiftingReducedSpaceDiffeomorph c hreg hn d hn₀ d₀ (Quotient.mk _ p) =
+      h.orbitFiberProductProj c _ (h.levelDiffeomorphOrbitFiberProduct hreg hn₀ p) :=
+  congrFun (h.shiftingReducedSpaceDiffeomorph_comp_quotientMk hreg hn d hn₀ d₀) p
 
 /-- **The formula for the shifting diffeomorphism**: `Φ [(x, g G_c)] = [g⁻¹ • x]`. -/
 @[simp]
@@ -355,9 +463,18 @@ theorem shiftingReducedSpaceDiffeomorph_mk (x : M) (g : G)
     letI := h.orbitRelQuotientChartedSpace c hreg hn d
     h.shiftingReducedSpaceDiffeomorph c hreg hn d hn₀ d₀ (Quotient.mk _ ⟨_, hx⟩) =
       Quotient.mk _ ⟨g⁻¹ • x, h.mem_levelSubMulAction.2 (h.apply_eq_orbitMap_iff.1
-        (h.mem_levelSubMulAction_prod_neg_coadjointOrbitForm.1 hx))⟩ :=
-  (h.shiftingReducedSpaceDiffeomorph_quotientMk hreg hn d hn₀ d₀ _).trans
-    (h.orbitFiberProductProj_eq _ _ rfl)
+        (h.mem_levelSubMulAction_prod_neg_coadjointOrbitForm.1 hx))⟩ := by
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  have := h.isCancelSMul_levelSubMulAction_prod_neg_coadjointOrbitForm (c := c)
+  let _ := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀
+  let _ := (h.prod_neg_coadjointOrbitForm c).orbitRelQuotientChartedSpace 0
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
+  let _ := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
+  let _ := h.orbitRelQuotientChartedSpace c hreg hn d
+  rw [h.shiftingReducedSpaceDiffeomorph_quotientMk hreg hn d hn₀ d₀, h.orbitFiberProductProj_eq _ _
+    (congrArg Prod.snd (h.coe_levelDiffeomorphOrbitFiberProduct hreg hn₀ ⟨_, hx⟩)).symm]
+  exact congrArg _ (Subtype.ext (by simp))
 
 /-- **The inverse of the shifting diffeomorphism** sends the orbit `[z]` of a point `z` of the
 level `μ⁻¹(c)` to the orbit of `(z, G_c)`. -/
@@ -420,10 +537,12 @@ private theorem mpullback_levelDiffeomorphOrbitFiberProduct_sub :
   -- projections of `M × O` restricted to the zero level.
   rw [LinearMap.map_sub, SmoothForm.mpullback_mpullback_of_comp_eq
       (g := fun p : OrbitFiberProduct μ c (Module.finBasis ℝ (GroupLieAlgebra I G)) ↦ p.val.1)
-      (g' := Prod.fst) j.contMDiff (contMDiff_fst.comp hi) hi₀ contMDiff_fst rfl,
+      (g' := Prod.fst) j.contMDiff (contMDiff_fst.comp hi) hi₀ contMDiff_fst
+      (funext fun p ↦ congrArg Prod.fst (h.coe_levelDiffeomorphOrbitFiberProduct hreg hn₀ p)),
     SmoothForm.mpullback_mpullback_of_comp_eq
       (g := fun p : OrbitFiberProduct μ c (Module.finBasis ℝ (GroupLieAlgebra I G)) ↦ p.val.2)
-      (g' := Prod.snd) j.contMDiff (contMDiff_snd.comp hi) hi₀ contMDiff_snd rfl,
+      (g' := Prod.snd) j.contMDiff (contMDiff_snd.comp hi) hi₀ contMDiff_snd
+      (funext fun p ↦ congrArg Prod.snd (h.coe_levelDiffeomorphOrbitFiberProduct hreg hn₀ p)),
     congrArg (SmoothForm.mpullback Subtype.val hi₀) (prod_def σ (-c.coadjointOrbitForm)),
     LinearMap.map_add, LinearMap.map_neg, LinearMap.map_neg, sub_eq_add_neg]
 
@@ -504,7 +623,7 @@ theorem mpullback_shiftingReducedSpaceDiffeomorph
   -- reduced form of `M` pulls back to `pr_M^* σ - pr_O^* ω_KKS`.
   have hk : ⇑(h.shiftingReducedSpaceDiffeomorph c hreg hn d hn₀ d₀) ∘ Quotient.mk _ =
       h.orbitFiberProductProj c b ∘ j :=
-    funext (h.shiftingReducedSpaceDiffeomorph_quotientMk hreg hn d hn₀ d₀)
+    h.shiftingReducedSpaceDiffeomorph_comp_quotientMk hreg hn d hn₀ d₀
   have hqW :=
     (h.mpullback_quotientMk_eq_iff_mpullback_orbitFiberProductProj_eq_sub hreg hn d b hG η).1 hη
   -- Pullback along the surjective submersion `π₀` is injective.

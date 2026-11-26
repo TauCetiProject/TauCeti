@@ -363,7 +363,7 @@ theorem isSubmersion_orbitFiberProductProj :
   have := h.isManifold_orbitFiberProduct hreg b
   have hq := BalancedProduct.isSubmersion_orbitProj_rightTranslation (I := I) (F := F)
     (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d)
-  -- `q_W = q_Y ∘ Φ⁻¹`, and precomposing with a diffeomorphism keeps the differentials onto.
+  -- `q_W = q_Y ∘ Φ⁻¹`, and a submersion precomposed with a diffeomorphism is a submersion.
   set Φ := h.orbitFiberProductDiffeomorph hreg hn d b
   have hqΦ : h.orbitFiberProductProj c b = BalancedProduct.orbitProj ∘ Φ.symm :=
     funext fun p ↦ by
@@ -371,10 +371,7 @@ theorem isSubmersion_orbitFiberProductProj :
         ← h.orbitFiberProductProj_orbitFiberProductDiffeomorph hreg hn d b (Φ.symm p),
         Φ.apply_symm_apply]
   rw [hqΦ]
-  refine (ContMDiff.isSubmersionOfComplement_of_surjective_mfderiv
-    (hq.contMDiff.comp Φ.symm.contMDiff) (by simp) fun p ↦ ?_).isSubmersion
-  exact LinearMap.range_eq_top.1 ((Φ.symm.range_mfderiv_comp_diffeomorph (by simp) _ p).trans
-    (LinearMap.range_eq_top.2 (hq.surjective_mfderiv (by simp) _)))
+  exact hq.comp_diffeomorph Φ.symm (by simp)
 
 /-- **Reduced forms read on the orbit fibre product.** With the hypotheses of the
 Marsden–Weinstein–Meyer theorem, and for an action of `G` preserving `σ`, a two-form `η` on the
