@@ -101,7 +101,8 @@ modulo norms with the quadratic forms of zero polar form. -/
 theorem exact_skewNorm_skewDiagonal [Module.Projective R M] :
     Function.Exact (skewNorm R M) (skewDiagonal R M) := fun B => by
   refine ⟨fun hB => ?_, ?_⟩
-  · obtain ⟨C, hC⟩ := IsAlt.exists_sub_flip_eq (BilinMap.toQuadraticMap_eq_zero.mp hB)
+  · rw [skewDiagonal_apply] at hB
+    obtain ⟨C, hC⟩ := IsAlt.exists_sub_flip_eq (BilinMap.toQuadraticMap_eq_zero.mp hB)
     exact ⟨C, Subtype.ext hC⟩
   · rintro ⟨C, rfl⟩
     ext x
@@ -144,6 +145,7 @@ theorem mem_range_skewDiagonal [Module.Projective R M] {Q : QuadraticForm R M} :
     Q ∈ LinearMap.range (skewDiagonal R M) ↔ polarBilin Q = 0 := by
   constructor
   · rintro ⟨B, rfl⟩
+    rw [skewDiagonal_apply]
     exact mem_skewSubmodule_iff_polarBilin_toQuadraticMap_eq_zero.mp B.property
   intro hQ
   obtain ⟨s, hs⟩ := (Module.projective_def' (R := R) (P := M)).mp ‹_›
