@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitian
+public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -21,8 +21,8 @@ skew-symmetric bilinear forms. These are the spaces whose isometry groups are th
 symplectic and orthogonal groups over local fields, as in Kurinczuk–Skodlerack–Stevens.
 
 This file adds to the carrier and adjoint of `TauCeti/LinearAlgebra/SesquilinearForm/
-SignedHermitian.lean` the rank-one spaces, the induced isomorphism onto the dual, and the adjoint
-as an equivalence.
+SignedHermitianSpace/Basic.lean` the rank-one spaces, the induced isomorphism onto the dual, and
+the adjoint as an equivalence.
 
 ## Main definitions
 
@@ -97,10 +97,11 @@ end CommRing
 
 section Field
 
-variable {K V : Type*} [Field K] [StarRing K] [AddCommGroup V] [Module K V] {ε : ℤˣ}
-  (h : SignedHermitianSpace K V (starRingEnd K) ε) [FiniteDimensional K V]
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {σ : K →+* K} [RingHomSurjective σ]
+  {ε : ℤˣ} (h : SignedHermitianSpace K V σ ε) [FiniteDimensional K V]
 
-/-- Over a field and in finite dimension, `v ↦ form v ·` is bijective onto the dual. -/
+/-- Over a field and in finite dimension, `v ↦ form v ·` is bijective onto the dual, for any
+surjective `σ`. -/
 theorem form_bijective : Function.Bijective h.form := by
   have hinj : Function.Injective h.form :=
     LinearMap.ker_eq_bot.1 (LinearMap.separatingLeft_iff_ker_eq_bot.1 h.separatingLeft)
@@ -108,10 +109,17 @@ theorem form_bijective : Function.Bijective h.form := by
   refine le_antisymm (Submodule.finrank_le _) ?_
   rw [Subspace.dual_finrank_eq]
   refine finrank_le_finrank_of_rank_le_rank ?_ (rank_lt_aleph0 _ _)
-  simpa using lift_rank_le_of_surjective_injective (starRingEnd K)
-    h.form.rangeRestrict.toAddMonoidHom (starRingEnd K).surjective
+  simpa using lift_rank_le_of_surjective_injective σ
+    h.form.rangeRestrict.toAddMonoidHom (RingHomSurjective.is_surjective (σ := σ))
     ((LinearMap.injective_rangeRestrict_iff _).2 hinj)
     (fun r m => h.form.rangeRestrict.map_smulₛₗ r m)
+
+end Field
+
+section StarField
+
+variable {K V : Type*} [Field K] [StarRing K] [AddCommGroup V] [Module K V] {ε : ℤˣ}
+  (h : SignedHermitianSpace K V (starRingEnd K) ε) [FiniteDimensional K V]
 
 /-- Over a field and in finite dimension, the form of a signed hermitian space induces a
 conjugate-linear isomorphism `v ↦ form v ·` of `V` onto its dual. -/
@@ -126,7 +134,7 @@ theorem toDual_apply (v w : V) : h.toDual v w = h.form v w := by
 theorem form_toDual_symm_apply (f : Dual K V) (w : V) : h.form (h.toDual.symm f) w = f w := by
   rw [← toDual_apply, LinearEquiv.apply_symm_apply]
 
-end Field
+end StarField
 
 section AdjointEquiv
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.NumberField.Units.Elimination.Basic
-import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 import TauCeti.NumberTheory.Real.GoldenRatio
 
@@ -86,7 +86,7 @@ at `ℚ(√5)`). -/
 theorem log_goldenRatio_le_regulator (hdeg : Module.finrank ℚ K = 2) :
     Real.log Real.goldenRatio ≤ NumberField.Units.regulator K := by
   rcases lt_or_gt_of_ne (discr_ne_zero K) with hneg | hpos
-  · have : IsTotallyComplex K := isTotallyComplex_of_finrank_eq_two_of_discr_neg hdeg hneg
+  · have : IsTotallyComplex K := IsTotallyComplex.of_discr_lt_zero hneg hdeg
     rw [NumberField.Units.regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two K hdeg]
     linarith [TauCeti.log_goldenRatio_lt_one_half]
   · have : IsTotallyReal K := IsTotallyReal.of_zero_lt_discr hpos (by omega)

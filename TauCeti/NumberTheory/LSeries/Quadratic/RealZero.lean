@@ -95,6 +95,11 @@ theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re
   rw [hχ_eq, Nat.cast_natAbs, Int.cast_abs]
   exact TauCeti.Multiquadratic.two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re hD hD1
 
+private theorem three_le_conductor_and_conductor_le_of_ne_one (hχ : χ ≠ 1) :
+    3 ≤ (χ.conductor : ℝ) ∧ (χ.conductor : ℝ) ≤ N :=
+  ⟨Nat.ofNat_le_cast.mpr (χ.three_le_conductor_of_ne_one hχ),
+    Nat.cast_le.mpr (Nat.le_of_dvd (NeZero.pos N) χ.conductor_dvd_level)⟩
+
 /-- **Conductor-level logarithmic-square real-zero gap for quadratic characters**
 (Koukoulopoulos, (12.12)). Every real zero `β` of a nonprincipal quadratic character `χ` (primitive
 or imprimitive) of nonzero level `N` satisfies
@@ -102,11 +107,10 @@ or imprimitive) of nonzero level `N` satisfies
 theorem div_sqrt_conductor_mul_log_sq_le_one_sub_of_LFunction_eq_zero
     (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {β : ℝ} (hβ : χ.LFunction β = 0) :
     Real.log Real.goldenRatio / (32 * √(χ.conductor : ℝ) * Real.log χ.conductor ^ 2) ≤ 1 - β := by
-  have hc3 : 3 ≤ χ.conductor := χ.three_le_conductor_of_ne_one hχ
-  have hlog_gt1 : 1 < Real.log χ.conductor := Real.one_lt_log_of_three_le (mod_cast hc3)
+  obtain ⟨hc3, _⟩ := χ.three_le_conductor_and_conductor_le_of_ne_one hχ
+  have hlog_gt1 : 1 < Real.log χ.conductor := Real.one_lt_log_of_three_le hc3
   rcases le_or_gt β 0 with hβ0 | hβ0
-  · have hsqrt_ge1 : 1 ≤ √(χ.conductor : ℝ) :=
-      Real.one_le_sqrt.mpr (by exact_mod_cast (by omega : 1 ≤ χ.conductor))
+  · have hsqrt_ge1 : 1 ≤ √(χ.conductor : ℝ) := Real.one_le_sqrt.mpr (by linarith)
     have hden_ge1 : 1 ≤ 32 * √(χ.conductor : ℝ) * Real.log χ.conductor ^ 2 := by nlinarith
     have hdiv_le1 :
         Real.log Real.goldenRatio / (32 * √(χ.conductor : ℝ) * Real.log χ.conductor ^ 2) ≤ 1 := by
@@ -135,13 +139,10 @@ of a nonprincipal quadratic character `χ` of nonzero level `N` satisfies
 theorem div_sqrt_mul_log_sq_le_one_sub_of_LFunction_eq_zero
     (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {β : ℝ} (hβ : χ.LFunction β = 0) :
     Real.log Real.goldenRatio / (32 * √(N : ℝ) * Real.log N ^ 2) ≤ 1 - β := by
-  have hc3 : 3 ≤ χ.conductor := χ.three_le_conductor_of_ne_one hχ
-  have hcN : (χ.conductor : ℝ) ≤ N :=
-    Nat.cast_le.mpr (Nat.le_of_dvd (NeZero.pos N) χ.conductor_dvd_level)
-  have hc_pos : (0 : ℝ) < χ.conductor := by exact_mod_cast (by omega : 0 < χ.conductor)
+  obtain ⟨hc3, hcN⟩ := χ.three_le_conductor_and_conductor_le_of_ne_one hχ
   have hlog_pos : 0 < Real.log χ.conductor :=
-    Real.log_pos (by exact_mod_cast (by omega : 1 < χ.conductor))
-  have hlog_le : Real.log χ.conductor ≤ Real.log N := Real.log_le_log hc_pos hcN
+    zero_lt_one.trans (Real.one_lt_log_of_three_le hc3)
+  have hlog_le : Real.log χ.conductor ≤ Real.log N := Real.log_le_log (by linarith) hcN
   have hphi : 0 ≤ Real.log Real.goldenRatio := (Real.log_pos Real.one_lt_goldenRatio).le
   refine le_trans ?_ (χ.div_sqrt_conductor_mul_log_sq_le_one_sub_of_LFunction_eq_zero hq hχ hβ)
   gcongr
@@ -153,23 +154,19 @@ theorem mul_rpow_conductor_neg_half_sub_le_one_sub_of_LFunction_eq_zero
     (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {ε : ℝ} (hε : 0 < ε) {β : ℝ}
     (hβ : χ.LFunction β = 0) :
     Real.log Real.goldenRatio * ε ^ 2 / 128 * (χ.conductor : ℝ) ^ (-(1 / 2 : ℝ) - ε) ≤ 1 - β := by
-  have hc3 : 3 ≤ χ.conductor := χ.three_le_conductor_of_ne_one hχ
-  have hc0 : (0 : ℝ) < χ.conductor := by exact_mod_cast (by omega : 0 < χ.conductor)
+  obtain ⟨hc3, _⟩ := χ.three_le_conductor_and_conductor_le_of_ne_one hχ
+  have hc0 : (0 : ℝ) < χ.conductor := by linarith
   have hlog_pos : 0 < Real.log χ.conductor :=
-    Real.log_pos (by exact_mod_cast (by omega : 1 < χ.conductor))
+    zero_lt_one.trans (Real.one_lt_log_of_three_le hc3)
   have hphi : 0 ≤ Real.log Real.goldenRatio := (Real.log_pos Real.one_lt_goldenRatio).le
-  have hlog_sq : Real.log χ.conductor ^ 2 ≤ 4 / ε ^ 2 * (χ.conductor : ℝ) ^ ε := by
-    have hc1 : (1 : ℝ) ≤ χ.conductor := by exact_mod_cast (by omega : 1 ≤ χ.conductor)
-    convert TauCeti.log_pow_le_div_pow_mul_rpow hc1 hε 2 using 1
-    ring
   have hpow : 32 * √(χ.conductor : ℝ) * Real.log χ.conductor ^ 2 ≤
       128 / ε ^ 2 * (χ.conductor : ℝ) ^ ((1 / 2 : ℝ) + ε) := by
     calc 32 * √(χ.conductor : ℝ) * Real.log χ.conductor ^ 2
-        ≤ 32 * (χ.conductor : ℝ) ^ (1 / 2 : ℝ) * (4 / ε ^ 2 * (χ.conductor : ℝ) ^ ε) := by
-          rw [← Real.sqrt_eq_rpow]
-          gcongr
-      _ = 128 / ε ^ 2 * ((χ.conductor : ℝ) ^ (1 / 2 : ℝ) * (χ.conductor : ℝ) ^ ε) := by ring
-      _ = 128 / ε ^ 2 * (χ.conductor : ℝ) ^ ((1 / 2 : ℝ) + ε) := by rw [← Real.rpow_add hc0]
+        = 32 * (√(χ.conductor : ℝ) * Real.log χ.conductor ^ 2) := by ring
+      _ ≤ 32 * ((2 / ε) ^ 2 * (χ.conductor : ℝ) ^ ((1 / 2 : ℝ) + ε)) :=
+          mul_le_mul_of_nonneg_left
+            (TauCeti.sqrt_mul_log_sq_le_div_sq_mul_rpow (by linarith) hε) (by positivity)
+      _ = 128 / ε ^ 2 * (χ.conductor : ℝ) ^ ((1 / 2 : ℝ) + ε) := by ring
   have : 0 < √(χ.conductor : ℝ) := Real.sqrt_pos.mpr hc0
   have hexp : -(1 / 2 : ℝ) - ε = -((1 / 2 : ℝ) + ε) := by ring
   calc Real.log Real.goldenRatio * ε ^ 2 / 128 * (χ.conductor : ℝ) ^ (-(1 / 2 : ℝ) - ε)
@@ -187,15 +184,12 @@ theorem mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero
     (hq : χ.IsQuadratic) (hχ : χ ≠ 1) {ε : ℝ} (hε : 0 < ε) {β : ℝ}
     (hβ : χ.LFunction β = 0) :
     Real.log Real.goldenRatio * ε ^ 2 / 128 * (N : ℝ) ^ (-(1 / 2 : ℝ) - ε) ≤ 1 - β := by
-  have hc3 : 3 ≤ χ.conductor := χ.three_le_conductor_of_ne_one hχ
-  have hc0 : (0 : ℝ) < χ.conductor := by exact_mod_cast (by omega : 0 < χ.conductor)
-  have hcN : (χ.conductor : ℝ) ≤ N :=
-    Nat.cast_le.mpr (Nat.le_of_dvd (NeZero.pos N) χ.conductor_dvd_level)
+  obtain ⟨hc3, hcN⟩ := χ.three_le_conductor_and_conductor_le_of_ne_one hχ
   have hphi : 0 ≤ Real.log Real.goldenRatio * ε ^ 2 / 128 := by
     have := Real.log_pos Real.one_lt_goldenRatio
     positivity
   have hrpow : (N : ℝ) ^ (-(1 / 2 : ℝ) - ε) ≤ (χ.conductor : ℝ) ^ (-(1 / 2 : ℝ) - ε) :=
-    Real.rpow_le_rpow_of_nonpos hc0 hcN (by linarith)
+    Real.rpow_le_rpow_of_nonpos (by linarith) hcN (by linarith)
   exact (mul_le_mul_of_nonneg_left hrpow hphi).trans
     (χ.mul_rpow_conductor_neg_half_sub_le_one_sub_of_LFunction_eq_zero hq hχ hε hβ)
 
@@ -270,13 +264,12 @@ theorem mul_rpow_neg_half_sub_le_one_sub_of_squarefree_of_LFunction_eq_zero
     · push_cast
       rw [abs_mul, abs_of_pos (by norm_num)]
   have hφ0 : 0 < Real.log Real.goldenRatio := Real.log_pos Real.one_lt_goldenRatio
-  have hexp : -(1 / 2 : ℝ) - ε = -((1 / 2 : ℝ) + ε) := by ring
-  have hsqrt4 : √(4 : ℝ) = 2 := by
-    have h4 : (4 : ℝ) = 2 ^ 2 := by norm_num
-    rw [h4, Real.sqrt_sq (by norm_num)]
   have h4_rpow : (4 : ℝ) ^ (-(1 / 2 : ℝ) - ε) = (2 * (4 : ℝ) ^ ε)⁻¹ := by
-    rw [hexp, Real.rpow_neg (by norm_num), Real.rpow_add (by norm_num), ← Real.sqrt_eq_rpow,
-      hsqrt4]
+    have h4_half : (4 : ℝ) ^ (-(1 / 2 : ℝ)) = 2⁻¹ := by
+      have h4 : (4 : ℝ) = 2 ^ (2 : ℝ) := by norm_num
+      rw [h4, ← Real.rpow_mul (by norm_num)]
+      norm_num
+    rw [sub_eq_add_neg, Real.rpow_add (by norm_num), h4_half, Real.rpow_neg (by norm_num), mul_inv]
   have hrpow_le : (4 * |(d : ℝ)|) ^ (-(1 / 2 : ℝ) - ε) ≤ |(D : ℝ)| ^ (-(1 / 2 : ℝ) - ε) :=
     Real.rpow_le_rpow_of_nonpos hD_pos hD_le (by linarith)
   calc

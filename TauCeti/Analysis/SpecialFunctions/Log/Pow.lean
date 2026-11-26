@@ -25,9 +25,13 @@ for the boundary case `p = 0`, where the statement reduces to `1 ≤ x ^ ε`.
   `0 < ε`, and `0 ≤ p`.
 * `TauCeti.log_pow_le_div_pow_mul_rpow`: `(Real.log x) ^ k ≤ ((k : ℝ) / ε) ^ k * x ^ ε` for
   `1 ≤ x`, `0 < ε`, and `k : ℕ`.
+* `TauCeti.sqrt_mul_log_sq_le_div_sq_mul_rpow`:
+  `√x * (Real.log x) ^ 2 ≤ (2 / ε) ^ 2 * x ^ (1 / 2 + ε)` for `1 ≤ x` and `0 < ε`.
 -/
 
 public section
+
+open scoped Real
 
 namespace TauCeti
 
@@ -55,5 +59,16 @@ theorem log_pow_le_div_pow_mul_rpow {x ε : ℝ} (hx : 1 ≤ x) (hε : 0 < ε) (
     Real.log x ^ k ≤ ((k : ℝ) / ε) ^ k * x ^ ε := by
   simpa only [Real.rpow_natCast] using
     log_rpow_le_div_rpow_mul_rpow hx hε (Nat.cast_nonneg k)
+
+/-- For `1 ≤ x` and `0 < ε`, `√x * (log x) ^ 2 ≤ (2 / ε) ^ 2 * x ^ (1 / 2 + ε)`. -/
+theorem sqrt_mul_log_sq_le_div_sq_mul_rpow {x ε : ℝ} (hx : 1 ≤ x) (hε : 0 < ε) :
+    √x * Real.log x ^ 2 ≤ (2 / ε) ^ 2 * x ^ ((1 / 2 : ℝ) + ε) := by
+  have hx0 : 0 < x := zero_lt_one.trans_le hx
+  calc
+    √x * Real.log x ^ 2 ≤ x ^ (1 / 2 : ℝ) * (((2 : ℝ) / ε) ^ 2 * x ^ ε) := by
+      rw [← Real.sqrt_eq_rpow]
+      exact mul_le_mul_of_nonneg_left (log_pow_le_div_pow_mul_rpow hx hε 2) (Real.sqrt_nonneg x)
+    _ = (2 / ε) ^ 2 * (x ^ (1 / 2 : ℝ) * x ^ ε) := by ring
+    _ = (2 / ε) ^ 2 * x ^ ((1 / 2 : ℝ) + ε) := by rw [← Real.rpow_add hx0]
 
 end TauCeti

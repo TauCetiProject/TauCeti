@@ -25,7 +25,6 @@ import TauCeti.NumberTheory.LSeries.Zeta.Mul
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.LSeries.Quadratic.Character
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
-import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
 import TauCeti.NumberTheory.NumberField.Quadratic.Units
 import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
@@ -344,7 +343,7 @@ theorem classNumber_eq_card_units_mul_LFunction_one :
     rw [NumberField.Units.torsionOrder, Units.torsion_eq_top_of_isTotallyComplex hK,
       Subgroup.card_top]
   have hD : ((√|(discr K : ℝ)| : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr
-    (Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K)))).ne'
+    (sqrt_abs_cast_discr_pos K).ne'
   have hw0 : (NumberField.Units.torsionOrder K : ℂ) ≠ 0 :=
     Nat.cast_ne_zero.mpr (NumberField.Units.torsionOrder_pos K).ne'
   rw [← dedekindZeta_residue_eq_LFunction_one hK, dedekindZeta_residue_def,
@@ -361,8 +360,7 @@ theorem LFunction_one_eq_two_mul_pi_mul_classNumber_div :
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
         (Int.castRingHom ℂ)) 1 =
       ((2 * π * classNumber K / (Nat.card (𝓞 K)ˣ * √|(discr K : ℝ)|) : ℝ) : ℂ) := by
-  have hD : (√|(discr K : ℝ)| : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr
-    (Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K)))).ne'
+  have hD : (√|(discr K : ℝ)| : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (sqrt_abs_cast_discr_pos K).ne'
   have hw : (Nat.card (𝓞 K)ˣ : ℂ) ≠ 0 := by
     rw [Units.card_units_of_isTotallyComplex_of_discr hK]
     split_ifs <;> norm_num
@@ -377,8 +375,7 @@ theorem sqrt_mul_LFunction_one_re_div_le_classNumber :
     √|(discr K : ℝ)| * (DirichletCharacter.LFunction
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
         (Int.castRingHom ℂ)) 1).re / π ≤ classNumber K := by
-  have hD : 0 < √|(discr K : ℝ)| :=
-    Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K)))
+  have hD : 0 < √|(discr K : ℝ)| := sqrt_abs_cast_discr_pos K
   have hw : (2 : ℝ) ≤ Nat.card (𝓞 K)ˣ := by
     rw [Units.card_units_of_isTotallyComplex_of_discr hK]
     split_ifs <;> norm_num
@@ -397,7 +394,7 @@ theorem pi_div_three_mul_sqrt_le_LFunction_one_re :
     π / (3 * √|(discr K : ℝ)|) ≤ (DirichletCharacter.LFunction
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
         (Int.castRingHom ℂ)) 1).re := by
-  have hD : 0 < √|(discr K : ℝ)| := Real.sqrt_pos.mpr (abs_cast_discr_pos K)
+  have hD : 0 < √|(discr K : ℝ)| := sqrt_abs_cast_discr_pos K
   have hw_pos : (0 : ℝ) < Nat.card (𝓞 K)ˣ := by
     rw [Units.card_units_of_isTotallyComplex_of_discr hK]; split_ifs <;> norm_num
   have hw_le : (Nat.card (𝓞 K)ˣ : ℝ) ≤ 6 := by
@@ -494,7 +491,7 @@ theorem classNumber_mul_regulator_eq_LFunction_one :
   have hw : NumberField.Units.torsionOrder K = 2 :=
     Units.torsionOrder_eq_two_of_isReal (IsTotallyReal.isReal v)
   have hD : ((√|(discr K : ℝ)| : ℝ) : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (abs_cast_discr_pos K)).ne'
+    Complex.ofReal_ne_zero.mpr (sqrt_abs_cast_discr_pos K).ne'
   rw [← dedekindZeta_residue_eq_LFunction_one hK, dedekindZeta_residue_def,
     hr, IsTotallyReal.nrComplexPlaces_eq_zero, hw]
   push_cast
@@ -508,7 +505,7 @@ theorem LFunction_one_eq_two_mul_classNumber_mul_regulator_div :
         (Int.castRingHom ℂ)) 1 =
       ((2 * classNumber K * NumberField.Units.regulator K / √|(discr K : ℝ)| : ℝ) : ℂ) := by
   have hD : (√|(discr K : ℝ)| : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (abs_cast_discr_pos K)).ne'
+    Complex.ofReal_ne_zero.mpr (sqrt_abs_cast_discr_pos K).ne'
   push_cast
   rw [mul_assoc (2 : ℂ), classNumber_mul_regulator_eq_LFunction_one hK]
   field_simp
@@ -540,7 +537,7 @@ theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re :
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
         (Int.castRingHom ℂ)) 1).re := by
   rcases lt_trichotomy (discr K) 0 with hd | hd | hd
-  · have : IsTotallyComplex K := isTotallyComplex_of_finrank_eq_two_of_discr_neg hK hd
+  · have : IsTotallyComplex K := IsTotallyComplex.of_discr_lt_zero hd hK
     have hD : 0 ≤ √|(discr K : ℝ)| := Real.sqrt_nonneg _
     have hφπ : 2 * Real.log Real.goldenRatio ≤ π / 3 := by
       linarith [TauCeti.log_goldenRatio_lt_one_half, Real.pi_gt_three]
@@ -549,7 +546,7 @@ theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re :
     exact mul_le_mul_of_nonneg_right hφπ (inv_nonneg.mpr hD)
   · exact absurd hd (discr_ne_zero K)
   · have : IsTotallyReal K := IsTotallyReal.of_zero_lt_discr hd (by omega)
-    have hD : 0 < √|(discr K : ℝ)| := Real.sqrt_pos.mpr (abs_cast_discr_pos K)
+    have hD : 0 < √|(discr K : ℝ)| := sqrt_abs_cast_discr_pos K
     have hh : (1 : ℝ) ≤ classNumber K := Nat.one_le_cast.mpr (classNumber_pos K)
     have hreg : Real.log Real.goldenRatio ≤ NumberField.Units.regulator K :=
       Units.log_goldenRatio_le_regulator hK

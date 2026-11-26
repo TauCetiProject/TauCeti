@@ -968,12 +968,10 @@ theorem discr_eq_discrim_of_degree_eq_two {f : R[X]} (hf : f.degree = 2) :
 theorem Monic.discr_eq_sub_coeff_zero_div_sq_of_isRoot {F : Type*} [Field F] {f : F[X]}
     (hf : f.Monic) (hdeg : f.natDegree = 2) {x : F} (hx : x ≠ 0) (hroot : f.IsRoot x) :
     f.discr = (x - f.coeff 0 / x) ^ 2 := by
-  have hdeg2 : f.degree = 2 := by
-    rw [degree_eq_natDegree hf.ne_zero, hdeg]
-    rfl
+  have hdeg2 : f.degree = 2 := (degree_eq_iff_natDegree_eq hf.ne_zero).mpr hdeg
   have hc2 : f.coeff 2 = 1 := hdeg ▸ hf.coeff_natDegree
   have heval : 1 * (x * x) + f.coeff 1 * x + f.coeff 0 = 0 := by
-    have hr : eval x f = 0 := hroot
+    have hr : eval x f = 0 := hroot.eq_zero
     rw [eval_eq_sum_range, hdeg] at hr
     simp only [Finset.sum_range_succ, Finset.sum_range_zero, hc2, pow_zero, pow_one, zero_add] at hr
     linear_combination hr
