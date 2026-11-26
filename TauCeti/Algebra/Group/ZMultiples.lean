@@ -25,6 +25,8 @@ group is transported along surjective additive maps.
 ## Main declarations
 
 * `TauCeti.intEquivZMultiples`: the isomorphism `ℤ ≃+ zmultiples p` for a non-torsion `p`.
+* `TauCeti.intEquivOpZMultiples`: the bijection `ℤ ≃ (zmultiples p).op`, under which `n` acts on
+  the group by right translation by `n • p`.
 * `TauCeti.zmultiples_apply_eq_top_of_surjective`: a surjective additive map sends a generator
   of the source to a generator of the target.
 * `AddMonoidHom.comp_zmultiples_subtype_injective`: injectivity on a cyclic subgroup when
@@ -72,6 +74,34 @@ theorem intEquivZMultiples_symm_mk_zsmul (hp : ¬ IsOfFinAddOrder p) (n : ℤ) :
 theorem intEquivZMultiples_symm_zsmul (hp : ¬ IsOfFinAddOrder p) (a : zmultiples p) :
     (intEquivZMultiples hp).symm a • p = (a : G) := by
   rw [← intEquivZMultiples_apply hp, AddEquiv.apply_symm_apply]
+
+/-- For an element `p` of infinite additive order, `n ↦ op (n • p)` identifies `ℤ` with the
+opposite subgroup `(zmultiples p).op`, whose elements act on the group by right translation. -/
+noncomputable def intEquivOpZMultiples (hp : ¬ IsOfFinAddOrder p) : ℤ ≃ (zmultiples p).op :=
+  (intEquivZMultiples hp).toEquiv.trans (equivOp _)
+
+@[simp]
+theorem coe_intEquivOpZMultiples (hp : ¬ IsOfFinAddOrder p) (n : ℤ) :
+    (intEquivOpZMultiples hp n : Gᵃᵒᵖ) = AddOpposite.op (n • p) :=
+  (rfl)
+
+/-- The integer `n` acts through `intEquivOpZMultiples` by right translation by `n • p`. -/
+@[simp]
+theorem intEquivOpZMultiples_vadd (hp : ¬ IsOfFinAddOrder p) (n : ℤ) (x : G) :
+    intEquivOpZMultiples hp n +ᵥ x = x + n • p :=
+  (rfl)
+
+@[simp]
+theorem intEquivOpZMultiples_symm_mk_zsmul_op (hp : ¬ IsOfFinAddOrder p) (n : ℤ) :
+    (intEquivOpZMultiples hp).symm
+      ⟨n • AddOpposite.op p, zsmul_mem (mem_op.2 (mem_zmultiples p)) n⟩ = n :=
+  (intEquivOpZMultiples hp).symm_apply_eq.2 (Subtype.ext (by simp))
+
+@[simp]
+theorem intEquivOpZMultiples_symm_zsmul (hp : ¬ IsOfFinAddOrder p) (a : (zmultiples p).op) :
+    (intEquivOpZMultiples hp).symm a • p = (a : Gᵃᵒᵖ).unop := by
+  rw [← AddOpposite.op_inj, ← coe_intEquivOpZMultiples hp, Equiv.apply_symm_apply,
+    AddOpposite.op_unop]
 
 /-- A surjective additive map sends an element whose `ℤ`-multiples exhaust the source to an element
 whose `ℤ`-multiples exhaust the target. -/

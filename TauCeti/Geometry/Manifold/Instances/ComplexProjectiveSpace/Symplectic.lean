@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.FubiniStudy
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Hopf
 public import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
@@ -55,6 +56,16 @@ expression is `TauCeti.ComplexProjectiveSpace.fubiniStudyHermitian_affineVector_
 derivative of the unit representative `a(z) / ‖a(z)‖` differs from `‖a(z)‖⁻¹` times the lift by a
 real multiple of `a(z)`, which the Hermitian form does not see.
 
+**Compatibility with the complex structure.** The tangent space of `CPⁿ` at `x` is `ℂⁿ`, read in the
+preferred chart `X_k ≠ 0` at `x`, whose parametrization `affineParam k` has the identity as
+derivative at the chart point of `x`. So the chart expression computes `ω_FS` at `x` directly:
+`ω_FS(v, w) = Im H(v', w')`, for the Fubini–Study Hermitian form `H` at the homogeneous coordinate
+vector of `x` and the lifts `v'`, `w'` of `v`, `w`. Since `H` is sesquilinear, `ω_FS` is invariant
+under multiplication by `i`, and `ω_FS(v, i v) = Re H(v', v')` is positive for `v ≠ 0`
+(`TauCeti.ComplexProjectiveSpace.re_fubiniStudyHermitian_affineVector_insertZeroL_self_pos`). Hence
+`ω_FS` is compatible with the standard complex structure of `CPⁿ`
+(`TauCeti.ComplexProjectiveSpace.compatible_fubiniStudyForm`): `(CPⁿ, ω_FS, i)` is Kähler.
+
 ## Main definitions
 
 * `TauCeti.ComplexProjectiveSpace.fubiniStudyForm n`: the Fubini–Study form of `CPⁿ`.
@@ -76,6 +87,8 @@ real multiple of `a(z)`, which the Hermitian form does not see.
   it is the imaginary part of the homogeneous Fubini–Study Hermitian form.
 * `TauCeti.ComplexProjectiveSpace.eval₂_mpullback_affineParam_fubiniStudyForm`: its expression in
   the affine chart `X_k ≠ 0`.
+* `TauCeti.ComplexProjectiveSpace.compatible_fubiniStudyForm`: it is compatible with the standard
+  complex structure of `CPⁿ`.
 
 ## References
 
@@ -400,5 +413,45 @@ theorem eval₂_mpullback_affineParam_fubiniStudyForm (k : Fin (n + 1)) (z : Fin
   -- `exact` rather than rewritten.
   exact congrArg Complex.im ((fubiniStudyHermitian_smul_apply_smul_smul hc _ _ _).trans
     (fubiniStudyHermitian_apply_add_smul_add_smul _ _ _ _ _))
+
+/-! ### Compatibility with the complex structure -/
+
+/-- The Fubini–Study form at `x`, on tangent vectors with coordinates `v`, `w` in the preferred
+chart `X_k ≠ 0` at `x`: the imaginary part of the homogeneous Fubini–Study Hermitian form at the
+homogeneous coordinate vector of `x` on the lifts `insertZeroL k v`, `insertZeroL k w`. -/
+private theorem eval₂_fubiniStudyForm_eq_im_fubiniStudyHermitian (x : ComplexProjectiveSpace n)
+    (v w : Fin n → ℂ) :
+    SmoothBundleForm.eval₂ (fubiniStudyForm n) x v w =
+      (fubiniStudyHermitian ℂ
+        (affineVector (chartIndex x) (chartAt (Fin n → ℂ) x x))
+        (insertZeroL (chartIndex x) v)
+        (insertZeroL (chartIndex x) w)).im := by
+  have h := (SmoothForm.eval₂_mpullback (affineParam (chartIndex x))
+    (contMDiff_affineParam_real _ ∞) (fubiniStudyForm n) (chartAt (Fin n → ℂ) x x) v w).symm.trans
+    (eval₂_mpullback_affineParam_fubiniStudyForm _ (chartAt (Fin n → ℂ) x x) v w)
+  rwa [mfderiv_affineParam_chartAt_apply x v, mfderiv_affineParam_chartAt_apply x w,
+    affineParam_chartAt] at h
+
+/-- **The Fubini–Study form is compatible with the complex structure** of `CPⁿ`: it is invariant
+under multiplication by `i` on the tangent spaces, and `ω_FS(v, i v) > 0` for `v ≠ 0`. So `ω_FS`
+is a Kähler form for the standard complex structure. -/
+theorem compatible_fubiniStudyForm :
+    (fubiniStudyForm n).Compatible
+      (SmoothAlmostComplexStructure.ofComplexManifold (Fin n → ℂ) (ComplexProjectiveSpace n)) := by
+  -- Each tangent space is `Fin n → ℂ`, on which the complex structure is multiplication by `I`.
+  refine ⟨SmoothTwoForm.invariant_iff.2 fun x (v w : Fin n → ℂ) ↦ ?_,
+    SmoothTwoForm.tames_iff.2 fun x (v : Fin n → ℂ) hv ↦ ?_⟩
+  · -- `H(I v', I w') = conj I * I * H(v', w') = H(v', w')`.
+    refine (congrArg₂ (SmoothBundleForm.eval₂ (fubiniStudyForm n) x)
+      (SmoothAlmostComplexStructure.ofComplexManifold_apply x v)
+      (SmoothAlmostComplexStructure.ofComplexManifold_apply x w)).trans ?_
+    simp only [eval₂_fubiniStudyForm_eq_im_fubiniStudyHermitian, map_smul, LinearMap.map_smulₛₗ₂,
+      smul_eq_mul, Complex.conj_I, ← mul_assoc, mul_neg, Complex.I_mul_I, neg_neg, one_mul]
+  · -- `ω_FS(v, I v) = Im (I * H(v', v')) = Re H(v', v')` for the lift `v'` of `v`.
+    refine (congrArg (SmoothBundleForm.eval₂ (fubiniStudyForm n) x v)
+      (SmoothAlmostComplexStructure.ofComplexManifold_apply x v)).trans_gt ?_
+    rw [eval₂_fubiniStudyForm_eq_im_fubiniStudyHermitian, map_smul, map_smul, smul_eq_mul,
+      Complex.I_mul_im]
+    exact re_fubiniStudyHermitian_affineVector_insertZeroL_self_pos _ _ hv
 
 end TauCeti.ComplexProjectiveSpace
