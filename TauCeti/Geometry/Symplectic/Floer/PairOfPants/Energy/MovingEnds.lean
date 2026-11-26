@@ -290,25 +290,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
   {ι : Type*} [Fintype ι] {c a : ι → ℂ} {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 
-omit [TopologicalSpace M] in
-/-- On the part `s > 0` of the input end `i`, the datum of a sphere with moving input ends is the
-continuation datum `β(s - 1) H_i(t) dt` in the coordinates of the end lift
-`z ↦ c i + a i φ₀(z)`. -/
-private theorem perturbationPullback_realChart_puncturedSpherePerturbation
-    (hH : ∀ i, Periodic (H i) 1) (ha : ∀ i, a i ≠ 0)
-    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) (i : ι) {w : ℝ × ℝ} (hw : 0 < w.1)
-    (v : ℝ × ℝ) (x : M) :
-    perturbationPullback (realChart fun z ↦ c i + a i * zero.cylindricalEndLift z)
-        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
-          Complex.I) v w x =
-      (Complex.equivRealProdCLM.symm v).im * (smoothTransition (w.1 - 1) * H i w.2 x) := by
-  rw [perturbationPullback_realChart _ (hasDerivAt_add_mul_cylindricalEndLift _ _ _), mul_assoc,
-    puncturedSpherePerturbation_cylindricalEndLift_of_pos hsep hout (hH i) (ha i)
-      (by simpa using hw)]
-  simp
-
 omit [Fintype ι] in
 /-- Points with `s ≤ -1` on the output end lie outside every disc
 `‖w‖ ≤ ‖c i‖ + ‖a i‖ exp (-2π) / 2`, if the discs `‖w - c i‖ < ‖a i‖ / 2` lie in

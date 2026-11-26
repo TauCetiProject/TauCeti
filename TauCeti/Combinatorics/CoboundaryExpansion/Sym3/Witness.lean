@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Complete
-import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
 import TauCeti.GroupTheory.Perm.FinThree.Basic
 import Mathlib.Data.List.GetD
 import TauCeti.Algebra.BigOperators.Finset.Filter
@@ -26,7 +25,7 @@ Beasley, Corollary 7, is the replicated-seed ratio in that module:
 each `Cochain.ofLt` of `Sym3.edge5` through `Sym3.edge8`. `defect_witness*` is the moved-point
 defect and `cost_one_witness*` is the identity-gauge cost. `gaugeDist_witness*` is the gauge
 distance, equal to that cost (`6`, `18`, `12` and `27`) and attained by the identity gauge.
-`defect_div_gaugeDist_witness*` is `defect / gaugeDist = h1`.
+`defect_div_gaugeDist_witness*_eq_h1` is `defect / gaugeDist = h1`.
 
 ## References
 
@@ -149,7 +148,8 @@ theorem witness8_def : witness8 = Cochain.ofLt (complete (Fin 8)) edge8 := (rfl)
 
 /-- `witness5` has moved-point defect `10`. -/
 theorem defect_witness5 : witness5.defect (movedNorm (Fin 3)) = 10 := by
-  rw [witness5, Cochain.defect_ofLt_complete_movedNorm]
+  rw [witness5, Cochain.defect_ofLt_complete]
+  simp only [movedNorm_apply, ← Nat.cast_sum]
   have h10 : ∑ p ∈ univ.filter fun p : Fin 5 × Fin 5 × Fin 5 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
       (edge5 p.1 p.2.1 * edge5 p.2.1 p.2.2 * (edge5 p.1 p.2.2)⁻¹).support.card = 10 := by
     decide +kernel
@@ -157,7 +157,8 @@ theorem defect_witness5 : witness5.defect (movedNorm (Fin 3)) = 10 := by
 
 /-- `witness6` has moved-point defect `36`. -/
 theorem defect_witness6 : witness6.defect (movedNorm (Fin 3)) = 36 := by
-  rw [witness6, Cochain.defect_ofLt_complete_movedNorm]
+  rw [witness6, Cochain.defect_ofLt_complete]
+  simp only [movedNorm_apply, ← Nat.cast_sum]
   have h36 : ∑ p ∈ univ.filter fun p : Fin 6 × Fin 6 × Fin 6 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
       (edge6 p.1 p.2.1 * edge6 p.2.1 p.2.2 * (edge6 p.1 p.2.2)⁻¹).support.card = 36 := by
     decide +kernel
@@ -165,7 +166,8 @@ theorem defect_witness6 : witness6.defect (movedNorm (Fin 3)) = 36 := by
 
 /-- `witness7` has moved-point defect `28`. -/
 theorem defect_witness7 : witness7.defect (movedNorm (Fin 3)) = 28 := by
-  rw [witness7, Cochain.defect_ofLt_complete_movedNorm]
+  rw [witness7, Cochain.defect_ofLt_complete]
+  simp only [movedNorm_apply, ← Nat.cast_sum]
   have h28 : ∑ p ∈ univ.filter fun p : Fin 7 × Fin 7 × Fin 7 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
       (edge7 p.1 p.2.1 * edge7 p.2.1 p.2.2 * (edge7 p.1 p.2.2)⁻¹).support.card = 28 := by
     decide +kernel
@@ -173,7 +175,8 @@ theorem defect_witness7 : witness7.defect (movedNorm (Fin 3)) = 28 := by
 
 /-- `witness8` has moved-point defect `72`. -/
 theorem defect_witness8 : witness8.defect (movedNorm (Fin 3)) = 72 := by
-  rw [witness8, Cochain.defect_ofLt_complete_movedNorm]
+  rw [witness8, Cochain.defect_ofLt_complete]
+  simp only [movedNorm_apply, ← Nat.cast_sum]
   have h72 : ∑ p ∈ univ.filter fun p : Fin 8 × Fin 8 × Fin 8 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
       (edge8 p.1 p.2.1 * edge8 p.2.1 p.2.2 * (edge8 p.1 p.2.2)⁻¹).support.card = 72 := by
     decide +kernel
@@ -181,7 +184,8 @@ theorem defect_witness8 : witness8.defect (movedNorm (Fin 3)) = 72 := by
 
 /-- The identity gauge costs `6` against `witness5`. -/
 theorem cost_one_witness5 : witness5.cost (movedNorm (Fin 3)) (fun _ => 1) = 6 := by
-  rw [witness5, Cochain.cost_ofLt_complete_movedNorm]
+  rw [witness5, Cochain.cost_ofLt_complete]
+  simp only [movedNorm_apply, ← Nat.cast_sum]
   simp only [inv_one, one_mul, mul_one]
   have h6 : ∑ p ∈ univ.filter fun p : Fin 5 × Fin 5 => p.1 < p.2,
       (edge5 p.1 p.2).support.card = 6 := by decide +kernel
@@ -189,7 +193,8 @@ theorem cost_one_witness5 : witness5.cost (movedNorm (Fin 3)) (fun _ => 1) = 6 :
 
 /-- The identity gauge costs `18` against `witness6`. -/
 theorem cost_one_witness6 : witness6.cost (movedNorm (Fin 3)) (fun _ => 1) = 18 := by
-  rw [witness6, Cochain.cost_ofLt_complete_movedNorm]
+  rw [witness6, Cochain.cost_ofLt_complete]
+  simp only [movedNorm_apply, ← Nat.cast_sum]
   simp only [inv_one, one_mul, mul_one]
   have h18 : ∑ p ∈ univ.filter fun p : Fin 6 × Fin 6 => p.1 < p.2,
       (edge6 p.1 p.2).support.card = 18 := by decide +kernel
@@ -197,7 +202,8 @@ theorem cost_one_witness6 : witness6.cost (movedNorm (Fin 3)) (fun _ => 1) = 18 
 
 /-- The identity gauge costs `12` against `witness7`. -/
 theorem cost_one_witness7 : witness7.cost (movedNorm (Fin 3)) (fun _ => 1) = 12 := by
-  rw [witness7, Cochain.cost_ofLt_complete_movedNorm]
+  rw [witness7, Cochain.cost_ofLt_complete]
+  simp only [movedNorm_apply, ← Nat.cast_sum]
   simp only [inv_one, one_mul, mul_one]
   have h12 : ∑ p ∈ univ.filter fun p : Fin 7 × Fin 7 => p.1 < p.2,
       (edge7 p.1 p.2).support.card = 12 := by decide +kernel
@@ -205,7 +211,8 @@ theorem cost_one_witness7 : witness7.cost (movedNorm (Fin 3)) (fun _ => 1) = 12 
 
 /-- The identity gauge costs `27` against `witness8`. -/
 theorem cost_one_witness8 : witness8.cost (movedNorm (Fin 3)) (fun _ => 1) = 27 := by
-  rw [witness8, Cochain.cost_ofLt_complete_movedNorm]
+  rw [witness8, Cochain.cost_ofLt_complete]
+  simp only [movedNorm_apply, ← Nat.cast_sum]
   simp only [inv_one, one_mul, mul_one]
   have h27 : ∑ p ∈ univ.filter fun p : Fin 8 × Fin 8 => p.1 < p.2,
       (edge8 p.1 p.2).support.card = 27 := by decide +kernel
@@ -363,7 +370,8 @@ private theorem le_cost_of_search {m : ℕ}
   have he : List.ofFn β = [g0] ++ List.ofFn fun i : Fin m => β i.succ := by
     rw [List.ofFn_succ, hβ, g0, ← List.singleton_append]
   rw [← he] at hs
-  rw [Cochain.cost_ofLt_complete_movedNorm]
+  rw [Cochain.cost_ofLt_complete]
+  simp only [movedNorm_apply, ← Nat.cast_sum]
   have hsum := pcost_ofFn α β
   simp only [movedFast_eq] at hsum
   rw [hsum] at hs
@@ -542,52 +550,33 @@ private theorem search8_root : search edge8 27 7 [g0] = true :=
     search8_mid_0 search8_mid_1 search8_mid_2
     search8_mid_3 search8_mid_4 search8_mid_5
 
-private theorem witness5_le_cost (β : Fin 5 → Perm (Fin 3)) (hβ : β 0 = 1) :
-    (6 : ℝ) ≤ witness5.cost (movedNorm (Fin 3)) β := by
-  rw [witness5]; exact le_cost_of_search edge5 6 search5_root β hβ
-
-private theorem witness6_le_cost (β : Fin 6 → Perm (Fin 3)) (hβ : β 0 = 1) :
-    (18 : ℝ) ≤ witness6.cost (movedNorm (Fin 3)) β := by
-  rw [witness6]; exact le_cost_of_search edge6 18 search6_root β hβ
-
-private theorem witness7_le_cost (β : Fin 7 → Perm (Fin 3)) (hβ : β 0 = 1) :
-    (12 : ℝ) ≤ witness7.cost (movedNorm (Fin 3)) β := by
-  rw [witness7]; exact le_cost_of_search edge7 12 search7_root β hβ
-
-private theorem witness8_le_cost (β : Fin 8 → Perm (Fin 3)) (hβ : β 0 = 1) :
-    (27 : ℝ) ≤ witness8.cost (movedNorm (Fin 3)) β := by
-  rw [witness8]; exact le_cost_of_search edge8 27 search8_root β hβ
+private theorem gaugeDist_ofLt_eq_of_search {m : ℕ}
+    (α : Fin (m + 1) → Fin (m + 1) → Perm (Fin 3)) (D : ℕ)
+    (hc : (Cochain.ofLt (complete _) α).cost (movedNorm (Fin 3)) (fun _ => 1) = D)
+    (hs : search α D m [g0] = true) :
+    (Cochain.ofLt (complete _) α).gaugeDist (movedNorm (Fin 3)) = D := by
+  refine le_antisymm (((Cochain.ofLt (complete _) α).gaugeDist_le_cost _ _).trans_eq hc) ?_
+  exact (Cochain.le_gaugeDist_iff_apply_eq_one isConjInvariant_movedNorm _ 0).mpr
+    (le_cost_of_search α D hs)
 
 /-- `witness5` has gauge distance `6`, attained by the identity gauge. -/
-theorem gaugeDist_witness5 : witness5.gaugeDist (movedNorm (Fin 3)) = 6 := by
-  refine le_antisymm ((witness5.gaugeDist_le_cost _ (fun _ => 1)).trans_eq cost_one_witness5) ?_
-  rw [Cochain.le_gaugeDist_iff_apply_eq_one isConjInvariant_movedNorm witness5 0]
-  intro β hβ
-  exact witness5_le_cost β hβ
+theorem gaugeDist_witness5 : witness5.gaugeDist (movedNorm (Fin 3)) = 6 :=
+  gaugeDist_ofLt_eq_of_search edge5 6 cost_one_witness5 search5_root
 
 /-- `witness6` has gauge distance `18`, attained by the identity gauge. -/
-theorem gaugeDist_witness6 : witness6.gaugeDist (movedNorm (Fin 3)) = 18 := by
-  refine le_antisymm ((witness6.gaugeDist_le_cost _ (fun _ => 1)).trans_eq cost_one_witness6) ?_
-  rw [Cochain.le_gaugeDist_iff_apply_eq_one isConjInvariant_movedNorm witness6 0]
-  intro β hβ
-  exact witness6_le_cost β hβ
+theorem gaugeDist_witness6 : witness6.gaugeDist (movedNorm (Fin 3)) = 18 :=
+  gaugeDist_ofLt_eq_of_search edge6 18 cost_one_witness6 search6_root
 
 /-- `witness7` has gauge distance `12`, attained by the identity gauge. -/
-theorem gaugeDist_witness7 : witness7.gaugeDist (movedNorm (Fin 3)) = 12 := by
-  refine le_antisymm ((witness7.gaugeDist_le_cost _ (fun _ => 1)).trans_eq cost_one_witness7) ?_
-  rw [Cochain.le_gaugeDist_iff_apply_eq_one isConjInvariant_movedNorm witness7 0]
-  intro β hβ
-  exact witness7_le_cost β hβ
+theorem gaugeDist_witness7 : witness7.gaugeDist (movedNorm (Fin 3)) = 12 :=
+  gaugeDist_ofLt_eq_of_search edge7 12 cost_one_witness7 search7_root
 
 /-- `witness8` has gauge distance `27`, attained by the identity gauge. -/
-theorem gaugeDist_witness8 : witness8.gaugeDist (movedNorm (Fin 3)) = 27 := by
-  refine le_antisymm ((witness8.gaugeDist_le_cost _ (fun _ => 1)).trans_eq cost_one_witness8) ?_
-  rw [Cochain.le_gaugeDist_iff_apply_eq_one isConjInvariant_movedNorm witness8 0]
-  intro β hβ
-  exact witness8_le_cost β hβ
+theorem gaugeDist_witness8 : witness8.gaugeDist (movedNorm (Fin 3)) = 27 :=
+  gaugeDist_ofLt_eq_of_search edge8 27 cost_one_witness8 search8_root
 
 /-- `defect / gaugeDist` for `witness5` equals `h1 (complete (Fin 5)) (movedNorm (Fin 3))`. -/
-theorem defect_div_gaugeDist_witness5 :
+theorem defect_div_gaugeDist_witness5_eq_h1 :
     witness5.defect (movedNorm (Fin 3)) / witness5.gaugeDist (movedNorm (Fin 3)) =
       h1 (complete (Fin 5)) (movedNorm (Fin 3)) := by
   rw [defect_witness5, gaugeDist_witness5,
@@ -595,7 +584,7 @@ theorem defect_div_gaugeDist_witness5 :
   norm_num
 
 /-- `defect / gaugeDist` for `witness6` equals `h1 (complete (Fin 6)) (movedNorm (Fin 3))`. -/
-theorem defect_div_gaugeDist_witness6 :
+theorem defect_div_gaugeDist_witness6_eq_h1 :
     witness6.defect (movedNorm (Fin 3)) / witness6.gaugeDist (movedNorm (Fin 3)) =
       h1 (complete (Fin 6)) (movedNorm (Fin 3)) := by
   rw [defect_witness6, gaugeDist_witness6,
@@ -603,7 +592,7 @@ theorem defect_div_gaugeDist_witness6 :
   norm_num
 
 /-- `defect / gaugeDist` for `witness7` equals `h1 (complete (Fin 7)) (movedNorm (Fin 3))`. -/
-theorem defect_div_gaugeDist_witness7 :
+theorem defect_div_gaugeDist_witness7_eq_h1 :
     witness7.defect (movedNorm (Fin 3)) / witness7.gaugeDist (movedNorm (Fin 3)) =
       h1 (complete (Fin 7)) (movedNorm (Fin 3)) := by
   rw [defect_witness7, gaugeDist_witness7,
@@ -611,7 +600,7 @@ theorem defect_div_gaugeDist_witness7 :
   norm_num
 
 /-- `defect / gaugeDist` for `witness8` equals `h1 (complete (Fin 8)) (movedNorm (Fin 3))`. -/
-theorem defect_div_gaugeDist_witness8 :
+theorem defect_div_gaugeDist_witness8_eq_h1 :
     witness8.defect (movedNorm (Fin 3)) / witness8.gaugeDist (movedNorm (Fin 3)) =
       h1 (complete (Fin 8)) (movedNorm (Fin 3)) := by
   rw [defect_witness8, gaugeDist_witness8,

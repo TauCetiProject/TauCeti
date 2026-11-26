@@ -77,6 +77,8 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
 * `SymplecticForm.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity` and
   `SymplecticForm.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le`: the energy controls the
   perturbed derivative, pointwise and in `L²`.
+* `SymplecticForm.mul_opNorm_sq_le_of_isComplexLinearMap`: the area of a complex-linear map from
+  the standard complex line controls its operator norm.
 * `SymplecticForm.norm_fderiv_stdComplexLineReal_sq_le`: the energy density and the Hamiltonian
   vector field control `‖∂_s u‖²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
@@ -95,6 +97,13 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   component. Its local form along a line near which the perturbation is cylindrical is
   `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`, the constant-form case of the
   manifold statement in `TauCeti.Geometry.Symplectic.Floer.Manifold`.
+* `SymplecticForm.hamiltonianCurvature_autonomous`,
+  `SymplecticForm.floerEnergyDensity_fun_const`,
+  `SymplecticForm.floerEnergyDensity_fun_const_add_hamiltonianCurvature`: for a perturbation
+  `F ds + G dt` that does not depend on the domain point (as opposed to the target-independent
+  case `SymplecticForm.hamiltonianCurvature_const`), the curvature is `-{F, G}`; a constant map
+  has energy density `{K_s, K_t}`, so at constant maps the energy identity holds with no
+  regularity assumption.
 * `SymplecticForm.perturbedFDeriv_add_const`, `SymplecticForm.floerEnergyDensity_add_const`,
   `SymplecticForm.hamiltonianCurvature_add_const`: adding a target-independent one-form
   `k = k_s ds + k_t dt` to `K` changes neither the perturbed derivative nor the energy density,
@@ -285,6 +294,14 @@ theorem hamiltonianCurvature_add_of_eq_zero_on (ω : SymplecticForm V)
       (hs.mono fun w hw ↦ by simp [hw]) (ht.mono fun w hw ↦ by simp [hw]),
       ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero hs ht x, add_zero]
 
+/-- A perturbation `K = F ds + G dt` that does not depend on the domain point has curvature
+`R_K = -{F, G}`: only the Poisson bracket term remains. -/
+@[simp]
+theorem hamiltonianCurvature_autonomous (ω : SymplecticForm V) (F G : V → ℝ)
+    (z : ℝ × ℝ) (x : V) :
+    ω.hamiltonianCurvature (fun _ ↦ F) (fun _ ↦ G) z x = -ω.poissonBracket F G x := by
+  simp [hamiltonianCurvature_def]
+
 /-- Curvature commutes with translations of the domain. -/
 theorem hamiltonianCurvature_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
     (v z : ℝ × ℝ) (x : V) :
@@ -366,6 +383,13 @@ theorem perturbedFDeriv_eq_sub (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V
     (z : ℝ × ℝ) :
     ω.perturbedFDeriv Ks Kt u z = fderiv ℝ u z - ω.hamiltonianOneForm Ks Kt z (u z) := by
   ext <;> simp [perturbedFDeriv_apply]
+
+/-- The perturbed derivative of a constant map is `-X_K` at its value. -/
+@[simp]
+theorem perturbedFDeriv_fun_const (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (x : V)
+    (z : ℝ × ℝ) :
+    ω.perturbedFDeriv Ks Kt (fun _ ↦ x) z = -ω.hamiltonianOneForm Ks Kt z x := by
+  simp [perturbedFDeriv_eq_sub]
 
 /-- The `∂_s` component of the perturbed derivative is `∂_s u - X_{K_s}(u)`. -/
 @[simp]
@@ -450,6 +474,27 @@ theorem floerEnergyDensity_zero (ω : SymplecticForm V) (u : ℝ × ℝ → V) (
       ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
   simp [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
     perturbedFDeriv_apply_stdComplexLineImag]
+
+/-- The Floer energy density of a constant map is the Poisson bracket `{K_s, K_t}` at its value:
+`ω(-X_{K_s}, -X_{K_t}) = ω(X_{K_s}, X_{K_t})`. -/
+@[simp]
+theorem floerEnergyDensity_fun_const (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (x : V)
+    (z : ℝ × ℝ) :
+    ω.floerEnergyDensity Ks Kt (fun _ ↦ x) z = ω.poissonBracket (Ks z) (Kt z) x := by
+  simp [floerEnergyDensity_def, poissonBracket_def]
+
+/-- **The energy identity at a constant map.** The Floer energy density of a constant map plus the
+curvature is the exterior derivative `∂_s K_t - ∂_t K_s` of the perturbation at its value, with no
+regularity assumption. This is the constant-map case of the pointwise energy identity
+`floerEnergyDensity_eq`, where `∂_s u = ∂_t u = 0`, holding without its differentiability
+hypotheses. -/
+theorem floerEnergyDensity_fun_const_add_hamiltonianCurvature (ω : SymplecticForm V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (x : V) (z : ℝ × ℝ) :
+    ω.floerEnergyDensity Ks Kt (fun _ ↦ x) z + ω.hamiltonianCurvature Ks Kt z x =
+      fderiv ℝ (fun w ↦ Kt w x) z stdComplexLineReal -
+        fderiv ℝ (fun w ↦ Ks w x) z stdComplexLineImag := by
+  rw [floerEnergyDensity_fun_const, hamiltonianCurvature_def]
+  ring
 
 /-- The Floer energy density commutes with translations of the domain. -/
 theorem floerEnergyDensity_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
@@ -597,6 +642,34 @@ theorem mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity
       h.apply_stdComplexLineImag, ← mul_pow]
     exact pow_le_pow_left₀ (norm_nonneg _) (hJM a) 2
   nlinarith [hJc a, mul_le_mul_of_nonneg_left hM hc, sq_nonneg M, sq_nonneg ‖a‖]
+
+omit [FiniteDimensional ℝ V] in
+/-- **Coercivity of the area of a complex-linear map.** The operator norm of a complex-linear map
+`F` from the standard complex line, for a structure `J` with `‖J a‖ ≤ M ‖a‖` and
+`c ‖a‖² ≤ ω(a, J a)`, is controlled by its area: `c ‖F‖² ≤ (1 + M)² ω(F(1, 0), F(0, 1))`. Applied
+to `F = du`, this bounds `‖du‖²` by a multiple of the area density of a pseudoholomorphic map. -/
+theorem mul_opNorm_sq_le_of_isComplexLinearMap (ω : SymplecticForm V)
+    {J₀ : AlmostComplexStructure V} {c M : ℝ} (hc : 0 < c) (hJc : ∀ a, c * ‖a‖ ^ 2 ≤ ω a (J₀ a))
+    (hJM : ∀ a, ‖J₀ a‖ ≤ M * ‖a‖) {F : ℝ × ℝ →L[ℝ] V}
+    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J₀ (F : ℝ × ℝ →ₗ[ℝ] V)) :
+    c * ‖F‖ ^ 2 ≤ (1 + M) ^ 2 * ω (F stdComplexLineReal) (F stdComplexLineImag) := by
+  set a := F stdComplexLineReal
+  have hb : F stdComplexLineImag = J₀ a := by simpa using hF.apply_stdComplexLineImag
+  -- `‖F‖ ≤ ‖F(1, 0)‖ + ‖F(0, 1)‖ ≤ (1 + M) ‖a‖`.
+  have hF : ‖F‖ ≤ (1 + M) * ‖a‖ := by
+    have hM : 0 ≤ (1 + M) * ‖a‖ := by nlinarith [hJM a, norm_nonneg a, norm_nonneg (J₀ a)]
+    refine F.opNorm_le_bound hM fun z ↦ ?_
+    rw [F.apply_stdComplexLine z]
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_smul, norm_smul, hb]
+    have h1 := mul_le_mul_of_nonneg_right (norm_fst_le z) (norm_nonneg a)
+    have h2 := mul_le_mul (norm_snd_le z) (hJM a) (norm_nonneg _) (norm_nonneg z)
+    nlinarith
+  have hsq : ‖F‖ ^ 2 ≤ (1 + M) ^ 2 * ‖a‖ ^ 2 := by
+    rw [← mul_pow]
+    exact pow_le_pow_left₀ (norm_nonneg F) hF 2
+  rw [hb]
+  nlinarith [hJc a, sq_nonneg (1 + M)]
 
 /-- **The energy density bounds the derivative.** Let `u` solve the Floer equation at `z` for an
 almost complex structure `J` with `c ‖v‖² ≤ ω(v, J v)` for all `v`, where `0 < c`. Then `∂_s u` is

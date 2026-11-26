@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.MeasureTheory.Measure.Restrict
 public import TauCeti.MeasureTheory.Measure.Subtype
 public import TauCeti.MeasureTheory.Measure.Support
-public import TauCeti.Topology.Grassmannian.StarProjection
+public import TauCeti.Topology.Grassmannian.StarProjection.Basic
 public import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -203,7 +203,8 @@ theorem ae_mem_support_weight [SecondCountableTopology E] :
 
 /-! ### Restriction to an open subset: weight, support and gluing -/
 
-private theorem measurableEmbedding_inclusion_prodMap (h : W' ≤ W) :
+/-- For open `W' ⊆ W`, the inclusion `W' × G(E, k) → W × G(E, k)` is a measurable embedding. -/
+theorem measurableEmbedding_inclusion_prodMap (h : W' ≤ W) :
     MeasurableEmbedding
       (Prod.map (inclusion h) id : W' × grassmannian ℝ E k → W × grassmannian ℝ E k) :=
   (W'.isOpen.measurableSet.measurableEmbedding_inclusion h).prodMap .id

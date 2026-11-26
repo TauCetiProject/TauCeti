@@ -58,16 +58,11 @@ theorem exists_piece_eq_bot_of_lt_of_moduleFinite [Module.Finite A M]
     (h𝒜 : ∀ i < 0, 𝒜 i = ⊥) :
     ∃ b : ℤ, ∀ p < b, G.piece p = ⊥ := by
   classical
-  have hspan : Submodule.span A {x : M | ∃ d, x ∈ G.piece d} = ⊤ :=
-    G.span_setOf_exists_mem_piece_eq_top A
-  obtain ⟨s, hs, hfg⟩ := (Submodule.fg_span_iff_fg_span_finset_subset _).mp
-    (hspan.symm ▸ Module.Finite.fg_top)
-  choose d hd using fun x : s ↦ hs x.property
+  obtain ⟨s, hs, hspan⟩ := G.exists_finset_span_eq_top A
+  choose d hd using fun x : s ↦ hs x x.property
   obtain ⟨b, hb⟩ := (Set.finite_range d).bddBelow
   refine ⟨b, fun p hp ↦ (Submodule.eq_bot_iff _).mpr fun y hy ↦ ?_⟩
-  have hmem : y ∈ Submodule.span A (s : Set M) := by
-    rw [← hfg, hspan]
-    exact Submodule.mem_top
+  have hmem : y ∈ Submodule.span A (s : Set M) := hspan ▸ Submodule.mem_top
   obtain ⟨n, c, g, rfl⟩ := Submodule.mem_span_set'.mp hmem
   rw [← decompose_of_mem_same G.piece hy, decompose_sum,
     DFinsupp.finsetSum_apply, AddSubmonoidClass.coe_finsetSum]

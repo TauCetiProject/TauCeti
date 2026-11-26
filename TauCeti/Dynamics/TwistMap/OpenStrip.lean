@@ -95,4 +95,10 @@ structure IsMonotoneTwistMap (ℓ : ℝ) (J : Set ℝ) (F : OpenPartialHomeomorp
   /-- The derivative `∂F₁/∂y` is positive on the strip. -/
   fderiv_fst_pos : ∀ p ∈ univ ×ˢ J, 0 < (fderiv ℝ F p (0, 1)).1
 
+/-- The strip `ℝ × J` of a twist lift on the open strip is open. -/
+theorem IsOpenStripTwistLift.isOpen_strip {ℓ : ℝ} {J : Set ℝ}
+    {F : OpenPartialHomeomorph (ℝ × ℝ) (ℝ × ℝ)} (hF : IsOpenStripTwistLift ℓ J F) :
+    IsOpen (univ ×ˢ J : Set (ℝ × ℝ)) :=
+  isOpen_univ.prod hF.isOpen
+
 end TauCeti

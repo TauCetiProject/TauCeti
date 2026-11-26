@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Continuous.Integrated.Lie
+public import TauCeti.RepresentationTheory.Continuous.Integrated.Lie.Basic
 public import TauCeti.RepresentationTheory.Continuous.LieSmoothVector
 import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Weighted
 

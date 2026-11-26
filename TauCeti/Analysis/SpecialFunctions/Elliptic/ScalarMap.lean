@@ -23,6 +23,7 @@ For `α ≠ 0` these are the analytic isogenies of the complex uniformization. T
 basic dictionary between them and the lattices:
 
 * the identity and composition laws: `α = 1` gives the identity and `β ∘ α` is `β α`;
+* additivity in the scalar, and the map of `α` vanishes exactly when `α = 0`;
 * integer scalars give the multiplication-by-`n` maps of the group law;
 * the kernel of the map of `α ≠ 0` is the image of `α⁻¹ Λ'`, and its cardinality (the degree) is
   the index `[Λ' : α Λ]`, which is finite and nonzero;
@@ -39,6 +40,8 @@ basic dictionary between them and the lattices:
 * `PeriodPair.scalarPointHom_one`, `PeriodPair.scalarPointHom_comp`,
   `PeriodPair.scalarPointHom_scalarPointHom`: functoriality.
 * `PeriodPair.scalarPointHom_intCast`: the map of `n : ℤ` is multiplication by `n`.
+* `PeriodPair.scalarPointHom_add`, `PeriodPair.scalarPointHom_eq_zero_iff`: the scalar maps are
+  additive in the scalar and vanish only for the scalar `0`.
 * `PeriodPair.weierstrassPoint_mem_ker_scalarPointHom_iff`: `P_Λ(z)` lies in the kernel iff
   `α z ∈ Λ'`.
 * `PeriodPair.scalarPointHom_surjective`: the map of `α ≠ 0` is surjective.
@@ -104,6 +107,18 @@ lemma scalarPointHom_intCast (n : ℤ) (P : L.weierstrassCurve.toAffine.Point) :
   obtain ⟨z, rfl⟩ := L.weierstrassPoint_surjective P
   rw [scalarPointHom_weierstrassPoint, zsmul_weierstrassPoint]
 
+/-- The scalar maps are additive in the scalar. -/
+lemma scalarPointHom_add {α β : ℂ} (hα : ∀ z ∈ L.lattice, α * z ∈ L'.lattice)
+    (hβ : ∀ z ∈ L.lattice, β * z ∈ L'.lattice) :
+    scalarPointHom (α + β) (fun z hz ↦ by rw [add_mul]; exact add_mem (hα z hz) (hβ z hz)) =
+      scalarPointHom α hα + scalarPointHom β hβ :=
+  L.pointHom_ext fun z ↦ by simp [add_mul]
+
+/-- The scalar `0` induces the zero map. -/
+@[simp]
+lemma scalarPointHom_zero : scalarPointHom (L := L) (L' := L') 0 (fun z _ ↦ by simp) = 0 :=
+  L.pointHom_ext fun z ↦ by simp [weierstrassPoint_zero]
+
 /-! ### Kernel and degree -/
 
 /-- `P_Λ(z)` is in the kernel of the map induced by `α` exactly when `α z ∈ Λ'`. -/
@@ -118,6 +133,15 @@ lemma scalarPointHom_surjective {α : ℂ} (hα : α ≠ 0) (h : ∀ z ∈ L.lat
   intro P
   obtain ⟨w, rfl⟩ := L'.weierstrassPoint_surjective P
   exact ⟨L.weierstrassPoint (α⁻¹ * w), by simp [mul_inv_cancel_left₀ hα]⟩
+
+/-- A scalar map vanishes exactly when the scalar is `0`. -/
+@[simp]
+lemma scalarPointHom_eq_zero_iff {α : ℂ} (h : ∀ z ∈ L.lattice, α * z ∈ L'.lattice) :
+    scalarPointHom α h = 0 ↔ α = 0 := by
+  refine ⟨fun h0 ↦ by_contra fun hα ↦ ?_, fun hα ↦ by subst hα; exact scalarPointHom_zero⟩
+  obtain ⟨P, hP⟩ := scalarPointHom_surjective hα h (L'.weierstrassPoint (L'.ω₁ / 2))
+  rw [h0, AddMonoidHom.zero_apply, eq_comm, weierstrassPoint_eq_zero_iff] at hP
+  exact L'.ω₁_div_two_notMem_lattice hP
 
 /-- The homomorphism `Λ' →+ E_Λ(ℂ)`, `l' ↦ P_Λ(α⁻¹ l')`. For `α ≠ 0` its kernel is `α Λ ∩ Λ'`,
 and if moreover `α Λ ⊆ Λ'` then its range is the kernel of the map induced by `α`. -/

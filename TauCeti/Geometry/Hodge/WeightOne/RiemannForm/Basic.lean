@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Hodge.WeightOne.Lattice
+public import TauCeti.Geometry.Hodge.WeightOne.Lattice.Basic
 public import TauCeti.Geometry.Hodge.WeightOne.Polarization
 import Mathlib.RingTheory.Flat.TorsionFree
 
@@ -43,6 +43,8 @@ compatibility predicate `TauCeti.SymplecticForm.Compatible` uses the opposite si
 * `TauCeti.AlmostComplexStructure.IsRiemannForm`: `E` is a Riemann form for `J`.
 * `TauCeti.AlmostComplexStructure.IsRiemannForm.nondegenerate`: a Riemann form is nondegenerate
   when `V` is flat over `ℤ`.
+* `TauCeti.AlmostComplexStructure.IsRiemannForm.injective_neg`: on a flat integral module,
+  `x ↦ -E(x, ·)` is injective.
 * `TauCeti.AlmostComplexStructure.IsRiemannForm.not_neg`: the negative of a Riemann form is not
   a Riemann form when the realification is nonzero.
 * `TauCeti.AlmostComplexStructure.IsRiemannForm.isPolarization`: **when `V` is flat over `ℤ`,
@@ -126,6 +128,11 @@ theorem nondegenerate [Module.Flat ℤ V] (h : IsRiemannForm J E) : E.Nondegener
       hx0 (Hodge.realificationMap_injective (by simpa using h0))
     exact (h.positive _ hne).ne' hpair
   exact (LinearMap.IsRefl.nondegenerate_iff_separatingLeft h.isAlt.isRefl).mpr hleft
+
+/-- The map `x ↦ -E(x, ·)` is injective for a Riemann form `E`, on a flat integral module. -/
+theorem injective_neg [Module.Flat ℤ V] (h : IsRiemannForm J E) : Function.Injective (-E) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_neg]
+  exact LinearMap.separatingLeft_iff_ker_eq_bot.mp h.nondegenerate.1
 
 /-- **The negative of a Riemann form is not a Riemann form** once the realification is nonzero:
 `(-E)_ℝ (J x) x = -E_ℝ (J x) x` is negative for every nonzero real `x`, so positivity fails. -/

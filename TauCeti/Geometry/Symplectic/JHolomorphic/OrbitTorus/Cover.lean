@@ -54,7 +54,8 @@ the analytic counterpart of `TauCeti.orbitTorusTwistSign_sq_zero`.
 The covers along the circle factor need nothing new: the results for the operators periodic of
 period `ℓ` in `s` hold for every `ℓ ≠ 0`, in particular for `k ℓ`, so the statements here cover
 every cover whose deck group is spanned by `(k ℓ, 0)` and `(0, n T)`. The covers whose deck group is
-not spanned by translations along the two factors are not treated here.
+not spanned by translations along the two factors are treated in
+`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.SkewCover` (`TauCeti.skewTorusOperator`).
 
 ## Main results
 
@@ -113,8 +114,9 @@ theorem im_inner_coverPullback_add_eq_zero {S : C(AddCircle T, F →L[ℝ] F)}
 
 /-- The pullback of a loop of complex-linear maps to the `n`-fold cover is a loop of
 complex-linear maps. -/
-theorem coverPullback_apply_I_smul {S : C(AddCircle T, F →L[ℝ] F)}
-    (hS : ∀ t v, S t (I • v) = I • S t v) (t : AddCircle ((n : ℝ) * T)) (v : F) :
+theorem coverPullback_apply_I_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {S : C(AddCircle T, E →L[ℝ] E)} (hS : ∀ t v, S t (I • v) = I • S t v)
+    (t : AddCircle ((n : ℝ) * T)) (v : E) :
     AddCircle.coverPullback n S t (I • v) = I • AddCircle.coverPullback n S t v := by
   rw [AddCircle.coverPullback_apply]
   exact hS _ v
