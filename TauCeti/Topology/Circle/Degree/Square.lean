@@ -501,11 +501,11 @@ theorem squareCenterOffset_ne_zero_of_mem {y : Fin 2 → I} (hy : y ∈ Cube.bou
 /-- The direction of a point of the square from its centre, the point `c / ‖c‖` of the circle for
 `c = squareCenterOffset y` (`TauCeti.coe_squareCenterDirection`). It is `1` at the centre. -/
 def squareCenterDirection (y : Fin 2 → I) : Circle :=
-  (1 : Circle).phase (squareCenterOffset y)
+  Circle.phase (squareCenterOffset y) 1
 
 /-- The square centre direction is the circle direction of the offset. -/
 theorem squareCenterDirection_eq_phase (y : Fin 2 → I) :
-    squareCenterDirection y = (1 : Circle).phase (squareCenterOffset y) :=
+    squareCenterDirection y = Circle.phase (squareCenterOffset y) 1 :=
   (rfl)
 
 /-- Away from the centre, the direction from the centre is `c / ‖c‖` for the offset `c`. -/
@@ -536,7 +536,7 @@ private theorem pathAngle_squareCenterDirection_eq_arg_sub {a b : Fin 2 → I} (
     (continuous_iff_continuousAt.2 fun t ↦ (Complex.continuousAt_arg (hslit t)).comp
       (f := fun s ↦ squareCenterOffset (γ s)) (by fun_prop)) fun t ↦ by
       simpa only [squareCenterDirection_eq_phase, Function.comp_apply] using
-        (Complex.circlePhase_one_eq_exp_arg (squareCenterOffset (γ t))).symm]
+        (Circle.phase_one_eq_exp_arg (squareCenterOffset (γ t))).symm]
   simp only [comp_apply, Path.source, Path.target]
 
 /-- Along an edge of the square that avoids the closed positive real axis, as seen from the

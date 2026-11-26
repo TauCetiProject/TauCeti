@@ -64,8 +64,8 @@ def circleIndexAffineParametrization : ℂ → Circle × ℝ :=
 /-- The circle point and covector of the Cayley parametrization. -/
 @[simp] theorem circleIndexAffineParametrization_apply (w : ℂ) :
     circleIndexAffineParametrization w = (boundaryCayley (w.re / 2), w.im) := by
-  rw [circleIndexAffineParametrization, Function.comp_apply, circleIndexAffineHomeomorph_apply]
-  rfl
+  simp only [circleIndexAffineParametrization, Function.comp_apply,
+    circleIndexAffineHomeomorph_apply, Prod.map_apply', id_eq]
 
 /-- The parametrization is an open embedding into the cylinder. -/
 theorem isOpenEmbedding_circleIndexAffineParametrization :
@@ -79,6 +79,7 @@ theorem range_circleIndexAffineParametrization :
     range circleIndexAffineParametrization = {p : Circle × ℝ | p.1 ≠ 1} := by
   rw [circleIndexAffineParametrization, EquivLike.range_comp, Set.range_prodMap,
     Subtype.range_val_subtype, Set.range_id, Set.prod_univ]
-  rfl
+  ext p
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq]
 
 end TauCeti

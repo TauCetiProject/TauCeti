@@ -152,7 +152,7 @@ theorem exists_continuousOn_smul_eq_mul_of_stabilizer_eq_bot [NormalSpace X] [T2
   have hF (j : ι) : Continuous (F j) := continuous_characterAverage (hχ j) (f j).continuous
   have hF₀ (j : ι) : F j x₀ = 1 := characterAverage_eq_one (χ j) (hf j)
   -- The phases `F j / ‖F j‖` of the averages assemble to the equivariant map.
-  let v (j : ι) (x : X) : Circle := (1 : Circle).phase (F j x)
+  let v (j : ι) (x : X) : Circle := Circle.phase (F j x) 1
   have hv_eq (j : ι) (x : X) (hx : F j x ≠ 0) : (v j x : ℂ) = F j x / ‖F j x‖ :=
     Circle.coe_phase_of_ne_zero 1 hx
   have hv (j : ι) : ContinuousOn (v j) {x | F j x ≠ 0} :=

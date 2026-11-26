@@ -115,7 +115,7 @@ open scoped Topology ContDiff
 /-- The winding phase `(z / |z|)^m` as a circle-valued map on the plane. At the origin, where it
 has no continuous extension for `m ≠ 0`, its value is `1`. -/
 def windingPhase (m : ℕ) (z : ℂ) : Circle :=
-  (1 : Circle).phase z ^ m
+  Circle.phase z 1 ^ m
 
 /-- The winding phase of degree zero is `1`. -/
 @[simp]
@@ -150,7 +150,7 @@ phase `m Im (log (w / z))`, which is smooth near `w = z`. -/
 private theorem windingPhase_eq_mul_exp (m : ℕ) {z w : ℂ} (hz : z ≠ 0) (hw : w ≠ 0) :
     windingPhase m w = windingPhase m z * Circle.exp (m * (log (w / z)).im) := by
   simp only [windingPhase, log_im, Circle.exp_natCast_mul, ← mul_pow]
-  rw [← Complex.circlePhase_one_eq_exp_arg,
+  rw [← Circle.phase_one_eq_exp_arg,
     ← Circle.phase_mul_of_ne_zero 1 hz (div_ne_zero hw hz),
     mul_div_cancel₀ w hz]
 

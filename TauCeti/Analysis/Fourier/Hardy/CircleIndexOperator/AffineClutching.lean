@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.Analysis.Fourier.Hardy.CircleIndexOperator.Chart
 import TauCeti.Topology.Algebra.GroupWithZero.Inversion
-import TauCeti.Topology.ContinuousMap.CodRestrict
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
@@ -116,24 +115,20 @@ theorem two_mul_circleIndexAffineScalar_circleIndexAffineParametrization (w : �
 local notation "U" => {w : ℂ // w ≠ 0}
 
 /-- The affine scalar in chart coordinates, restricted to the punctured complex plane. -/
-def circleIndexAffineLocalScalar : C(U, U) :=
-  let s := {w : ℂ | w ≠ 0}
-  let f := circleIndexAffineScalar.comp
-    ⟨circleIndexAffineParametrization,
-      isOpenEmbedding_circleIndexAffineParametrization.continuous⟩
-  have h : Set.MapsTo f s s := fun _ hw h₀ ↦ hw <|
-    isOpenEmbedding_circleIndexAffineParametrization.injective <|
-      ((circleIndexAffineScalar_eq_zero_iff _).mp h₀).trans (by simp)
-  (f.restrict s).codRestrict s fun w ↦ h w.property
+def circleIndexAffineLocalScalar : C(U, U) where
+  toFun w := ⟨circleIndexAffineScalar (circleIndexAffineParametrization w), fun h₀ ↦
+    w.property <| isOpenEmbedding_circleIndexAffineParametrization.injective <|
+      ((circleIndexAffineScalar_eq_zero_iff _).mp h₀).trans (by simp)⟩
+  continuous_toFun :=
+    (circleIndexAffineScalar.continuous.comp
+      (isOpenEmbedding_circleIndexAffineParametrization.continuous.comp
+        continuous_subtypeVal)).subtype_mk _
 
 /-- In the ambient complex plane the restricted scalar has its original value. -/
 @[simp] theorem coe_circleIndexAffineLocalScalar (w : U) :
     (circleIndexAffineLocalScalar w : ℂ) =
-      circleIndexAffineScalar (circleIndexAffineParametrization w) := by
-  dsimp only [circleIndexAffineLocalScalar]
-  refine (ContinuousMap.coe_codRestrict_apply _ _ _ _).trans ?_
-  rw [ContinuousMap.restrict_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk]
-  rfl
+      circleIndexAffineScalar (circleIndexAffineParametrization w) :=
+  (rfl)
 
 private def localPhase (t : unitInterval) : ℂ :=
   Complex.exp ((-(1 - (t : ℝ)) * Real.pi / 2 : ℝ) * Complex.I)

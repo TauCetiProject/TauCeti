@@ -120,12 +120,12 @@ private theorem norm_squareScalar_of_mem_boundary {y : Fin 2 → unitInterval}
 
 /-- The circle-valued phase of the full symbol on the square, with value `1` at its zeros. -/
 def circleIndexSquarePhase (y : Fin 2 → unitInterval) : Circle :=
-  (1 : Circle).phase (circleIndexSquareScalar ρ y)
+  Circle.phase (circleIndexSquareScalar ρ y) 1
 
 /-- The phase is the circle direction of the scalar on the square. -/
 theorem circleIndexSquarePhase_eq_phase (y : Fin 2 → unitInterval) :
     circleIndexSquarePhase ρ y =
-      (1 : Circle).phase (circleIndexSquareScalar ρ y) :=
+      Circle.phase (circleIndexSquareScalar ρ y) 1 :=
   (rfl)
 
 /-- At a zero of the square scalar the phase is `1`. -/
@@ -136,9 +136,9 @@ theorem circleIndexSquarePhase_eq_phase (y : Fin 2 → unitInterval) :
 
 /-- The phase of the actual coefficient at frequency twice the normalized covector. -/
 theorem circleIndexSquarePhase_apply (y : Fin 2 → unitInterval) :
-    circleIndexSquarePhase ρ y = (1 : Circle).phase
+    circleIndexSquarePhase ρ y = Circle.phase
       ((circleFourierIndexSymbol ρ).toSymbol.coefficient
-        (ι (y 0), ι (2 * (2 * (y 1 : ℝ) - 1))) 1) := by
+        (ι (y 0), ι (2 * (2 * (y 1 : ℝ) - 1))) 1) 1 := by
   rw [circleIndexSquarePhase_eq_phase,
     coefficient_toSymbol_circleFourierIndexSymbol_apply_one,
     circleIndexSquareScalar_apply, unitToCircle_apply]
