@@ -83,33 +83,6 @@ namespace TauCeti.PDE
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {a b : ι → ℝ} {i : ι}
 
-omit [Fintype ι] in
-/-- For a continuous `F ≥ 0`, the lower integral of `ofReal ∘ F` over `(α, β)` is `ofReal` of the
-interval integral of `F`. -/
-private theorem setLIntegral_Ioo_ofReal_eq {α β : ℝ} (hαβ : α ≤ β) {F : ℝ → ℝ}
-    (hF : Continuous F) (hF0 : ∀ t, 0 ≤ F t) :
-    ∫⁻ t in Ioo α β, ENNReal.ofReal (F t) = ENNReal.ofReal (∫ t in α..β, F t) := by
-  rw [intervalIntegral.integral_of_le hαβ, integral_Ioc_eq_integral_Ioo,
-    ofReal_integral_eq_lintegral_ofReal (hF.integrableOn_Icc.mono_set Ioo_subset_Icc_self)
-      (ae_of_all _ hF0)]
-
-omit [Fintype ι] in
-/-- **Wirtinger's inequality with one Dirichlet endpoint, for lower integrals.** A `C¹` function `h`
-vanishing at `α < β` satisfies `∫⁻_{(α, β)} k² h² ≤ ∫⁻_{(α, β)} h'²` with `k = π / (2 (β - α))`. -/
-private theorem setLIntegral_Ioo_mul_sq_le_deriv_sq {α β : ℝ} (hαβ : α < β) {h : ℝ → ℝ}
-    (hh : ContDiff ℝ 1 h) (h0 : h α = 0) :
-    ∫⁻ t in Ioo α β, ENNReal.ofReal ((π / (2 * (β - α))) ^ 2 * h t ^ 2) ≤
-      ∫⁻ t in Ioo α β, ENNReal.ofReal (deriv h t ^ 2) := by
-  have hdc : Continuous (deriv h) := hh.continuous_deriv le_rfl
-  rw [setLIntegral_Ioo_ofReal_eq (F := fun t => (π / (2 * (β - α))) ^ 2 * h t ^ 2) hαβ.le
-      (continuous_const.mul (hh.continuous.pow 2)) fun t => by positivity,
-    setLIntegral_Ioo_ofReal_eq (F := fun t => deriv h t ^ 2) hαβ.le (hdc.pow 2)
-      fun t => by positivity,
-    intervalIntegral.integral_const_mul]
-  exact ENNReal.ofReal_le_ofReal
-    (AbsolutelyContinuousOnInterval.mul_integral_sq_le_integral_deriv_sq_of_eq_zero_left
-      hh.contDiffOn.absolutelyContinuousOnInterval hαβ h0 ((hdc.pow 2).intervalIntegrable _ _))
-
 variable [DecidableEq ι] in
 /-- Along the line through `x` parallel to the `i`-th axis, the integral over the box is the
 integral over the `i`-th side when the other coordinates of `x` lie in the box, and `0`
@@ -180,7 +153,7 @@ private theorem mul_setIntegral_sq_le_setIntegral_norm_gradient_sq (hab : a i < 
     rw [← sq_abs, ← Real.norm_eq_abs, norm_deriv_eq_norm_fderiv,
       PiLp.norm_fderiv_update φ x i t (hφ.differentiable one_ne_zero _)]
     exact pow_le_pow_left₀ (norm_nonneg _) (PiLp.norm_apply_le _ i) 2
-  exact (setLIntegral_Ioo_mul_sq_le_deriv_sq hab hhc (hφ0 x hx)).trans
+  exact (setLIntegral_Ioo_mul_sq_le_deriv_sq_of_eq_zero_left hab hhc (hφ0 x hx)).trans
     (lintegral_mono fun t => ENNReal.ofReal_le_ofReal (hdle t))
 
 variable {Γ : Set (EuclideanSpace ℝ ι)}
@@ -229,7 +202,10 @@ private theorem setIntegral_comp_apply_le (hab : a i ≤ b i) {F G : ℝ → ℝ
   refine setIntegral_boxDomain_le (i := i) (hF.comp hci) (hG.comp hci) (fun _ => hF0 _)
     (fun _ => hG0 _) fun x _ => ?_
   simp only [Function.update_self]
-  rw [setLIntegral_Ioo_ofReal_eq hab hF hF0, setLIntegral_Ioo_ofReal_eq hab hG hG0]
+  rw [setLIntegral_Ioo_ofReal_eq_ofReal_intervalIntegral hab (hF.intervalIntegrable _ _)
+      fun t _ => hF0 t,
+    setLIntegral_Ioo_ofReal_eq_ofReal_intervalIntegral hab (hG.intervalIntegrable _ _)
+      fun t _ => hG0 t]
   exact ENNReal.ofReal_le_ofReal h
 
 /-! ### The extremal function -/

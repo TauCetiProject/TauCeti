@@ -47,6 +47,8 @@ vanishes at `a`.
 * `AbsolutelyContinuousOnInterval.mul_integral_sq_le_integral_deriv_sq_of_eq_zero_left` and
   `AbsolutelyContinuousOnInterval.mul_integral_sq_le_integral_deriv_sq_of_eq_zero_right`:
   Wirtinger's inequality for a function vanishing at `a`, respectively at `b`.
+* `TauCeti.setLIntegral_Ioo_mul_sq_le_deriv_sq_of_eq_zero_left`: the inequality for a `C¹`
+  function vanishing at `a`, stated with lower integrals over `(a, b)`.
 
 ## References
 
@@ -193,3 +195,36 @@ theorem mul_integral_sq_le_integral_deriv_sq_of_eq_zero_right
     mul_integral_sq_le_integral_deriv_sq_of_eq_zero_right_of_pos hf hab hfb hdf hδ
 
 end AbsolutelyContinuousOnInterval
+
+namespace TauCeti
+
+/-- For an interval integrable `F` that is nonnegative on `(a, b)`, the lower integral of
+`ofReal ∘ F` over `(a, b)` is `ofReal` of the interval integral of `F`. -/
+theorem setLIntegral_Ioo_ofReal_eq_ofReal_intervalIntegral (hab : a ≤ b) {F : ℝ → ℝ}
+    (hF : IntervalIntegrable F volume a b) (hF0 : ∀ t ∈ Ioo a b, 0 ≤ F t) :
+    ∫⁻ t in Ioo a b, ENNReal.ofReal (F t) = ENNReal.ofReal (∫ t in a..b, F t) := by
+  rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
+    ofReal_integral_eq_lintegral_ofReal
+      (((intervalIntegrable_iff_integrableOn_Ioc_of_le hab).1 hF).mono_set Ioo_subset_Ioc_self)
+      (ae_restrict_of_forall_mem measurableSet_Ioo hF0)]
+
+/-- **Wirtinger's inequality with one Dirichlet endpoint, for lower integrals.** A `C¹` function
+`f` vanishing at `a < b` satisfies `∫⁻_{(a, b)} k² f² ≤ ∫⁻_{(a, b)} f'²` with
+`k = π / (2 (b - a))`. -/
+theorem setLIntegral_Ioo_mul_sq_le_deriv_sq_of_eq_zero_left (hab : a < b)
+    (hf : ContDiff ℝ 1 f) (hfa : f a = 0) :
+    ∫⁻ t in Ioo a b, ENNReal.ofReal ((π / (2 * (b - a))) ^ 2 * f t ^ 2) ≤
+      ∫⁻ t in Ioo a b, ENNReal.ofReal (deriv f t ^ 2) := by
+  have hdc : Continuous (deriv f) := hf.continuous_deriv le_rfl
+  rw [setLIntegral_Ioo_ofReal_eq_ofReal_intervalIntegral
+      (F := fun t ↦ (π / (2 * (b - a))) ^ 2 * f t ^ 2) hab.le
+      ((continuous_const.mul (hf.continuous.pow 2)).intervalIntegrable _ _) fun t _ ↦ by
+        positivity,
+    setLIntegral_Ioo_ofReal_eq_ofReal_intervalIntegral (F := fun t ↦ deriv f t ^ 2) hab.le
+      ((hdc.pow 2).intervalIntegrable _ _) fun t _ ↦ by positivity,
+    intervalIntegral.integral_const_mul]
+  exact ENNReal.ofReal_le_ofReal
+    (AbsolutelyContinuousOnInterval.mul_integral_sq_le_integral_deriv_sq_of_eq_zero_left
+      hf.contDiffOn.absolutelyContinuousOnInterval hab hfa ((hdc.pow 2).intervalIntegrable _ _))
+
+end TauCeti
