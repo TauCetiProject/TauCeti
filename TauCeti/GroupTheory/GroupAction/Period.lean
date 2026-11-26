@@ -8,26 +8,28 @@ module
 public import Mathlib.Dynamics.PeriodicPts.Defs
 
 /-!
-# Orbit invariance of action periods
+# The period of a group element along its orbit
 
-In a group action, translating a point by an integer power of `g` preserves its minimal period
-under `g • ·` (`MulAction.minimalPeriod_zpow_smul`).
+For a group `G` acting on `α`, the period of `g : G` at a point (the least `n > 0` with
+`g ^ n • a = a`) is constant along the orbit of `a` under the powers of `g`
+(`MulAction.minimalPeriod_zpow_smul`). Mathlib has `MulAction.period` and its divisibility API
+(`MulAction.pow_smul_eq_iff_minimalPeriod_dvd`) but not this invariance.
 -/
 
 public section
 
 namespace MulAction
 
-/-- **Orbit invariance of minimal periods.** In a group action, translating a point by an integer
-power of `g` preserves its minimal period under `g • ·`. -/
-@[to_additive
+/-- **The period of `g` is constant along the orbit of `⟨g⟩`**: translating a point by a power of
+`g` does not change the period of `g` there. -/
+@[to_additive (attr := simp)
 /-- **Orbit invariance of minimal periods.** In an additive group action, translating a point by
 an integer multiple of `g` preserves its minimal period under `g +ᵥ ·`. -/]
 theorem minimalPeriod_zpow_smul {G α : Type*} [Group G] [MulAction G α] (g : G) (j : ℤ)
     (a : α) : Function.minimalPeriod (g • ·) (g ^ j • a) = Function.minimalPeriod (g • ·) a := by
-  have key (b : α) (i : ℤ) :
+  have key : ∀ (b : α) (i : ℤ),
       Function.minimalPeriod (g • ·) (g ^ i • b) ∣ Function.minimalPeriod (g • ·) b :=
-    pow_smul_eq_iff_minimalPeriod_dvd.mp (by
+    fun b i ↦ pow_smul_eq_iff_minimalPeriod_dvd.mp (by
       rw [← mul_smul, ← zpow_natCast, ← zpow_add, add_comm, zpow_add, zpow_natCast, mul_smul,
         pow_smul_eq_iff_minimalPeriod_dvd.mpr dvd_rfl])
   refine Nat.dvd_antisymm (key a j) ?_

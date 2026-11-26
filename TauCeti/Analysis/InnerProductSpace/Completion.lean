@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Topology.Algebra.LinearMapCompletion
+import Mathlib.Analysis.InnerProductSpace.LinearMap
 
 /-!
 # Adjoints of operators extended to completions
@@ -20,7 +21,9 @@ Hilbert space adjoint of the extension of `f` (`ContinuousLinearMap.adjoint_comp
 both sides of the defining identity are continuous and the spaces are dense in their completions.
 
 This computes adjoints of operators on completed tensor products of Hilbert spaces, where the
-algebraic tensor product is not complete.
+algebraic tensor product is not complete. For the same reason, the norm of an operator between
+completions is bounded by its matrix coefficients between vectors of the uncompleted spaces
+(`ContinuousLinearMap.opNorm_le_of_forall_inner_coe_le`).
 -/
 
 public section
@@ -73,5 +76,18 @@ theorem rank_orthogonal_map_toComplL_le (M : Submodule 𝕜 E) [FiniteDimensiona
         hdense.closure_range
   exact LinearMap.rank_le_of_surjective ψ (LinearMap.range_eq_top.mp htop)
 
+/-- An operator `T` between the completions of inner product spaces `E` and `F` with
+`‖⟪y, T x⟫‖ ≤ C ‖y‖ ‖x‖` for all `y ∈ F` and `x ∈ E` has norm at most `C`. -/
+theorem opNorm_le_of_forall_inner_coe_le (T : Completion E →L[𝕜] Completion F) {C : ℝ}
+    (hC : 0 ≤ C) (h : ∀ (y : F) (x : E), ‖⟪(y : Completion F), T x⟫_𝕜‖ ≤ C * ‖y‖ * ‖x‖) :
+    ‖T‖ ≤ C := by
+  have h' (v : Completion F) (u : Completion E) : ‖⟪v, T u⟫_𝕜‖ ≤ C * ‖v‖ * ‖u‖ := by
+    induction v, u using Completion.induction_on₂ with
+    | hp => exact isClosed_le (by fun_prop) (by fun_prop)
+    | ih y x => simpa only [Completion.norm_coe] using h y x
+  refine opNorm_le_of_re_inner_le hC fun u v hu hv ↦ ?_
+  calc RCLike.re ⟪T u, v⟫_𝕜 ≤ ‖⟪T u, v⟫_𝕜‖ := RCLike.re_le_norm _
+    _ = ‖⟪v, T u⟫_𝕜‖ := norm_inner_symm _ _
+    _ ≤ C := by simpa [hu, hv] using h' v u
 
 end ContinuousLinearMap

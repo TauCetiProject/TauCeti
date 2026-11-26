@@ -227,6 +227,15 @@ def cellSectionPathChain (j : cell C (m + 1)) : cubicalChainModule (MoorePathFro
       (NormalizedCubicalChain.ofCube _ R (cellSectionCube C (m + 1) γ j)))
 
 omit [T2Space B] in
+/-- The chain of the `(m + 1)`-cell `j` is the push-forward of its section cube. -/
+theorem cellSectionPathChain_def (j : cell C (m + 1)) :
+    cellSectionPathChain (H := H) (R := R) γ j =
+      cubicalChainModuleLinearMap (G' := H) R MoorePathPullback.toMoorePathFrom
+        (cubicalChainModuleLof (MoorePathPullback (sigmaCellMap C (m + 1)) b) H R (m + 1)
+          (NormalizedCubicalChain.ofCube _ R (cellSectionCube C (m + 1) γ j))) :=
+  (rfl)
+
+omit [T2Space B] in
 /-- The chain of an `(m + 1)`-cell has dimension `m + 1`. -/
 theorem cellSectionPathChain_mem_cubicalChainModuleGrading (j : cell C (m + 1)) :
     cellSectionPathChain (H := H) (R := R) γ j ∈

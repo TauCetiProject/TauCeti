@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GroupWithZero.Units.Basic
+public import Mathlib.RingTheory.LocalRing.Pullback
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import Mathlib.Topology.Sets.Opens
 import Mathlib.Algebra.GroupWithZero.Units.Lemmas
@@ -20,6 +21,11 @@ evaluating `f⁻¹ʳ` at `x : X` agrees with `(f x)⁻¹ʳ` (`ContinuousMap.ring
 For a continuous map `f : s → X` on a subset `s` of a topological additive group, the
 *displacement* `ContinuousMap.displacement f` is the continuous map `z ↦ z - f z`, whose zeros are
 the fixed points of `f` (`ContinuousMap.preimage_displacement_zero`).
+
+For continuous maps `i : C(S, X)` and `j : C(S, Y)`, a pair `(f, g)` of functions with values in a
+topological algebra lies in the fibre product `AlgHom.pullback` of the restrictions
+`ContinuousMap.compRightAlgHom R A i` and `ContinuousMap.compRightAlgHom R A j` exactly when
+`f ∘ i = g ∘ j` (`ContinuousMap.mem_pullback_compRightAlgHom_iff`).
 -/
 
 public section
@@ -66,5 +72,14 @@ theorem displacement_comp_inclusion {U V : Opens X} (hVU : V ≤ U) (f : C(U, X)
   simp [inclusion]
 
 end Displacement
+
+/-- A pair of functions lies in the fibre product of the restrictions along `i : C(S, X)` and
+`j : C(S, Y)` exactly when the two functions agree on `S`. -/
+theorem mem_pullback_compRightAlgHom_iff {R A X Y S : Type*} [CommSemiring R] [Semiring A]
+    [Algebra R A] [TopologicalSpace A] [IsTopologicalSemiring A] [TopologicalSpace X]
+    [TopologicalSpace Y] [TopologicalSpace S] {i : C(S, X)} {j : C(S, Y)} {p : C(X, A) × C(Y, A)} :
+    p ∈ AlgHom.pullback (compRightAlgHom R A i) (compRightAlgHom R A j) ↔
+      ∀ s, p.1 (i s) = p.2 (j s) := by
+  simp [ContinuousMap.ext_iff]
 
 end ContinuousMap

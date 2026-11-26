@@ -132,8 +132,7 @@ variable (T) in
 `Ω[S⁄R] → N` classifying `D` along `T ⊗[S] Ω[S⁄R] ≃ Ω[T⁄R]`. By
 `Derivation.eq_of_formallyUnramified` it is the only derivation of `T` agreeing with `D` on `S`. -/
 noncomputable def extendOfFormallyEtale (D : Derivation R S N) : Derivation R T N :=
-  haveI : IsScalarTower R T N := .of_algebraMap_smul fun r n ↦ by
-    rw [IsScalarTower.algebraMap_apply R S T, algebraMap_smul, algebraMap_smul]
+  haveI := IsScalarTower.to₁₃₄ R S T N
   (D.liftKaehlerDifferential.liftBaseChange T ∘ₗ
     (KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale R S T).symm.toLinearMap).compDer
     (KaehlerDifferential.D R T)
