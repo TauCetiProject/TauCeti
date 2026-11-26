@@ -20,6 +20,10 @@ outside it to `sign(x) √a` (`TauCeti.coe_sqSublevelRetraction_apply_of_sqrt_le
 along the field `-1 / (2x)`, for which `f` decreases with derivative `-1`, takes a point `x` of the
 band `f⁻¹[a, b]` at time `x² - a`.
 
+The sublevels are closed: the point `x = 1` of the level `x² = 1` lies in `{x² ≤ 1}` and stays in
+`{x² ≤ 4}` under the inclusion `TauCeti.sublevelInclusion`, while the open sublevel `{x² < 1}`
+excludes it.
+
 This file tests two statements about the retractions across a band without critical points on this
 example.
 
@@ -47,6 +51,15 @@ open Set
 open scoped Manifold
 
 namespace TauCeti
+
+/-- **Sublevels are closed.** The point `x = 1` on the level `x² = 1` lies in the sublevel
+`{x² ≤ 1}`, and the inclusion of `{x² ≤ 1}` into `{x² ≤ 4}` keeps it. -/
+example : (sublevelInclusion (fun x : ℝ ↦ x ^ 2) 1 4 (by norm_num) ⟨1, by norm_num⟩ : ℝ) = 1 :=
+  coe_sublevelInclusion_apply _ _ _
+
+/-- The open sublevel `{x² < 1}` does not contain the point `x = 1` of the level `x² = 1`. -/
+example : (1 : ℝ) ∉ {x : ℝ | x ^ 2 < 1} := by
+  norm_num
 
 /-- The clamp of the sublevel `{x² ≤ b}` of `x ↦ x²` on `ℝ` into the sublevel
 `{x² ≤ a} = [-√a, √a]`, for `0 ≤ a`, sending `x` to the nearest point of that interval by

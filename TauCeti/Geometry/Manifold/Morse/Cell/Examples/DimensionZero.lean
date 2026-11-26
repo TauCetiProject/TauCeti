@@ -11,7 +11,7 @@ import Mathlib.Topology.Category.TopCat.Limits.Products
 import TauCeti.AlgebraicTopology.Disk
 
 /-!
-# Handle attachment in dimension zero
+# Deformation and handle attachment in dimension zero
 
 Milnor's handle attachment theorem in pushout form
 (`TauCeti.IsMorse.exists_isPushout_sublevel_handles`) attaches, across a critical level `c`, one
@@ -29,6 +29,12 @@ points of the level `c` added as isolated points
 handle attachment theorem, not built by hand, and tests that its conventions (the empty unit sphere
 `∂𝔻 0`, the one-point disc `𝔻 0`, the coindex `m - λ` in `ℕ`) behave as they should in this edge
 case.
+
+The deformation across a band without critical points is degenerate there too: every point being
+critical, such a band `f⁻¹[a, b]` is empty
+(`TauCeti.preimage_Icc_eq_empty_of_subsingleton`), so the sublevels `{f ≤ a}` and `{f ≤ b}` have the
+same points and the inclusion of the first into the second is onto
+(`TauCeti.surjective_sublevelInclusion_of_subsingleton`).
 
 ## References
 
@@ -48,6 +54,25 @@ namespace TauCeti
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
   [Subsingleton E]
+
+/-- **A band without critical points is empty in dimension zero.** On a manifold modelled on a
+zero-dimensional space every point is critical, so a band `f⁻¹[a, b]` containing no critical point
+is empty. -/
+theorem preimage_Icc_eq_empty_of_subsingleton (f : M → ℝ) {a b : ℝ}
+    (hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0) : f ⁻¹' Icc a b = ∅ :=
+  eq_empty_of_forall_notMem fun x hx ↦ hreg x hx.1 hx.2 <|
+    mem_criticalPoints_iff_mfderiv_eq_zero.1 (by simp)
+
+/-- **The sublevels across a band without critical points agree in dimension zero.** On a manifold
+modelled on a zero-dimensional space, if the band `f⁻¹[a, b]` contains no critical point, then it is
+empty, and the inclusion of `{f ≤ a}` into `{f ≤ b}` is onto. -/
+theorem surjective_sublevelInclusion_of_subsingleton (f : M → ℝ) {a b : ℝ} (hab : a ≤ b)
+    (hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0) :
+    Function.Surjective (sublevelInclusion f a b hab) := by
+  rw [← range_eq_univ, range_sublevelInclusion]
+  refine eq_univ_of_forall fun x ↦ not_lt.1 fun hx ↦ ?_
+  have h := preimage_Icc_eq_empty_of_subsingleton f hreg
+  exact h.subset ⟨hx.le, x.property⟩
 
 /-- **Handle attachment in dimension zero.** Let `M` be a manifold modelled on a zero-dimensional
 space, `f : M → ℝ` any function and `c` a value whose band `f⁻¹[c - δ, c + δ]` is compact for some
