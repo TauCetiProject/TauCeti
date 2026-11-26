@@ -814,23 +814,7 @@ private def normalizedFactorsEquiv {φ : P.integers[X]}
 
 variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsIntegral k k']
 
-/-- The constants of `F' / k'` lie in the integral closure `𝒪'_P` of `𝒪_P` in `F'`, because they
-are integral over `k ⊆ 𝒪_P`. -/
-private theorem algebraMap_mem_integralClosure (P : Place k F) (c : k') :
-    algebraMap k' F' c ∈ integralClosure P.integers F' :=
-  have : IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply P.integers F F',
-      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
-  (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
-
-/-- The action of the constants `k'` on the local model `𝒪'_P`. -/
-private noncomputable instance algebraConstantsIntegralClosure (P : Place k F) :
-    Algebra k' (integralClosure P.integers F') :=
-  ((algebraMap k' F').codRestrict _ (algebraMap_mem_integralClosure P)).toAlgebra
-
-private instance isScalarTowerConstantsIntegralClosure (P : Place k F) :
-    IsScalarTower k' (integralClosure P.integers F') F' :=
-  .of_algebraMap_eq fun _ ↦ rfl
+attribute [local instance] algebraConstantsIntegralClosure isScalarTower_constants_integralClosure
 
 variable [FiniteDimensional F F']
 variable (k k' F) (P)

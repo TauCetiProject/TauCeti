@@ -38,6 +38,8 @@ none of the further theory built on it.
   of the coefficientwise map along `f : R →+* S` is `ker f • R[M]`.
 * `MonoidAlgebra.mem_rangeS_mapRingHom_iff` and its additive form characterize the image of
   a coefficient homomorphism by the image membership of every coefficient.
+* `MonoidAlgebra.mapRingHom_injective` and its additive form: mapping the coefficients along an
+  injective ring homomorphism is injective.
 * The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
   Mathlib.
@@ -60,8 +62,12 @@ none of the further theory built on it.
   exactly when it acts injectively on `R`.
 * `MonoidAlgebra.smul_single_one`: an element `single g r` supported at a single point is the
   scalar multiple `r • single g 1` of the basis element there.
+* `MonoidAlgebra.eq_single_of_subsingleton`: the monoid algebra of a one-point monoid is
+  one-dimensional, each element being the monomial at any point with its coefficient there.
 * `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by the monomial `single u 1` at a
   unit `u` of `M` conjugates the indices of the coefficients.
+* `MonoidAlgebra.lift_apply_eq_sum`: over a finite monoid, `lift F x` is the finite sum
+  `∑ m, x_m • F m`.
 * `MonoidAlgebra.coeff_mul_eq_sum`: the coefficients of a product in the group algebra of a finite
   group, as a convolution.
 
@@ -166,6 +172,15 @@ theorem _root_.MonoidAlgebra.mem_rangeS_mapRingHom_iff {R : Type*} [Semiring R]
   rw [← SetLike.mem_coe, RingHom.coe_rangeS, MonoidAlgebra.coe_mapRingHom,
     MonoidAlgebra.range_map]
   simp
+
+/-- Mapping the coefficients along an injective ring homomorphism is injective. -/
+@[to_additive (dont_translate := R S)
+/-- Mapping the coefficients along an injective ring homomorphism is injective. -/]
+theorem _root_.MonoidAlgebra.mapRingHom_injective {R : Type*} [Semiring R] {M S : Type*}
+    [Semiring S] [Monoid M] {f : R →+* S} (hf : Function.Injective f) :
+    Function.Injective (MonoidAlgebra.mapRingHom M f) := by
+  rw [MonoidAlgebra.coe_mapRingHom]
+  exact MonoidAlgebra.map_injective _ hf
 
 /-- **The monoid algebra of a commutative torsion monoid is integral over its coefficients.**
 Every basis element `single g 1` with `g ^ n = 1` is a root of the monic polynomial `X ^ n - 1`. -/
@@ -380,6 +395,17 @@ theorem smul_single_one {k G : Type*} [Semiring k] (g : G) (r : k) :
     r • single g (1 : k) = single g r := by
   rw [smul_single', mul_one]
 
+/-- The monoid algebra of a one-point monoid is one-dimensional: each element is the monomial at
+any point `m` with its coefficient there. Mathlib's `MonoidAlgebra.uniqueLinearEquiv` gives this
+only at an index `1` found by instance search. -/
+@[to_additive (dont_translate := R)
+/-- The additive monoid algebra of a one-point monoid is one-dimensional: each element is the
+monomial at any point `m` with its coefficient there. -/]
+theorem eq_single_of_subsingleton {R M : Type*} [Semiring R] [Subsingleton M]
+    (x : MonoidAlgebra R M) (m : M) : x = single m (x.coeff m) := by
+  ext n
+  simp [Subsingleton.elim n m]
+
 /-- Conjugating by the monomial at a unit `u` of `M` conjugates the indices of the coefficients:
 `(u x u⁻¹)_h = x_{u⁻¹ h u}`. For a group element `g`, take `u = toUnits g`. -/
 theorem coeff_single_mul_mul_single_inv {R M : Type*} [Semiring R] [Monoid M]
@@ -388,6 +414,13 @@ theorem coeff_single_mul_mul_single_inv {R M : Type*} [Semiring R] [Monoid M]
   rw [coeff_mul_single_eq_coeff_mul (h * u) fun _ _ ↦ Units.mul_inv_eq_iff_eq_mul u,
     coeff_single_mul_eq_mul_coeff (↑u⁻¹ * (h * u)) fun _ _ ↦ (Units.eq_inv_mul_iff_mul_eq u).symm,
     one_mul, mul_one, mul_assoc]
+
+/-- Over a finite monoid, the algebra map `lift F` out of `R[M]` sends `x` to the finite sum
+`∑ m, x_m • F m`. -/
+theorem lift_apply_eq_sum {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Monoid M]
+    [Fintype M] (F : M →* A) (x : MonoidAlgebra R M) :
+    lift R A M F x = ∑ m, x.coeff m • F m := by
+  rw [lift_apply, Finsupp.sum_fintype _ _ (by simp)]
 
 /-- The coefficients of a product in the group algebra of a finite group, as a convolution. -/
 theorem coeff_mul_eq_sum {k G : Type*} [Semiring k] [Group G] [Fintype G]

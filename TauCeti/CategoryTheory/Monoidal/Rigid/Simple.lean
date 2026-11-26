@@ -33,13 +33,11 @@ If a member of an exact pairing has scalar endomorphisms over a commutative semi
 (the structure map `algebraMap R (End _)` is surjective, as for a simple object with
 finite-dimensional endomorphisms over an algebraically closed field), Frobenius reciprocity shows
 that every morphism from the paired tensor product to the unit is a scalar multiple of the
-evaluation, and dually every morphism from the unit to the paired tensor product is a scalar
-multiple of the coevaluation. Both choices of the member are available; they control the two
-categorical trace pairings and the uniqueness of opposite pairings on simple objects. In a finite
-semisimple category, a nonzero morphism `η : 𝟙_ C ⟶ Y ⊗ X` is split on some simple summand of
-the unit, and the retraction there is a scalar multiple of the evaluation, so composing `η` with
-the evaluation gives a nonzero endomorphism of the unit. The unit need not be simple; when it is,
-this endomorphism is invertible by Schur's lemma.
+evaluation. Both choices of the member are available; they control the two categorical trace
+pairings. In a finite semisimple category, a nonzero morphism `η : 𝟙_ C ⟶ Y ⊗ X` is split on some
+simple summand of the unit, and the retraction there is a scalar multiple of the evaluation, so
+composing `η` with the evaluation gives a nonzero endomorphism of the unit. The unit need not be
+simple; when it is, this endomorphism is invertible by Schur's lemma.
 
 ## References
 
@@ -137,38 +135,6 @@ theorem hom_tensorUnit_eq_smul_evaluation_of_surjective_left {R : Type*} [CommSe
   simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,
     Category.id_comp, tensorLeftHomLinearEquiv_apply]
   simp [tensorLeftHomEquiv, ExactPairing.evaluation_coevaluation]
-
-/-- If the right member `Y` of an exact pairing has scalar endomorphisms over `R`, every morphism
-from the unit to the paired tensor product is a scalar multiple of the coevaluation. -/
-theorem hom_from_tensorUnit_eq_smul_coevaluation_of_surjective_right {R : Type*} [CommSemiring R]
-    [Preadditive C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
-    {X Y : C} [ExactPairing X Y] (hY : Function.Surjective (algebraMap R (End Y)))
-    (f : 𝟙_ C ⟶ X ⊗ Y) : ∃ c : R, f = c • η_ X Y := by
-  let e := (tensorLeftHomLinearEquiv R (𝟙_ C) X Y Y).symm.trans
-    (Linear.homCongr R (ρ_ Y) (Iso.refl Y))
-  obtain ⟨c, hc⟩ := End.exists_smul_id_eq_of_surjective hY (e f)
-  refine ⟨c, e.injective ?_⟩
-  rw [map_smul, ← hc]; congr 1; symm
-  simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_hom, Category.comp_id,
-    tensorLeftHomLinearEquiv_symm_apply]
-  rw [← Category.comp_id (η_ X Y), ← whiskerLeft_id X Y,
-    tensorLeftHomEquiv_symm_coevaluation_comp_whiskerLeft]; simp
-
-/-- If the left member `X` of an exact pairing has scalar endomorphisms over `R`, every morphism
-from the unit to the paired tensor product is a scalar multiple of the coevaluation. -/
-theorem hom_from_tensorUnit_eq_smul_coevaluation_of_surjective_left {R : Type*} [CommSemiring R]
-    [Preadditive C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
-    {X Y : C} [ExactPairing X Y] (hX : Function.Surjective (algebraMap R (End X)))
-    (f : 𝟙_ C ⟶ X ⊗ Y) : ∃ c : R, f = c • η_ X Y := by
-  let e := (tensorRightHomLinearEquiv R (𝟙_ C) X Y X).symm.trans
-    (Linear.homCongr R (λ_ X) (Iso.refl X))
-  obtain ⟨c, hc⟩ := End.exists_smul_id_eq_of_surjective hX (e f)
-  refine ⟨c, e.injective ?_⟩
-  rw [map_smul, ← hc]; congr 1; symm
-  simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_hom, Category.comp_id,
-    tensorRightHomLinearEquiv_symm_apply]
-  rw [← Category.comp_id (η_ X Y), ← id_whiskerRight X Y,
-    tensorRightHomEquiv_symm_coevaluation_comp_whiskerRight]; simp
 
 section FiniteSemisimple
 

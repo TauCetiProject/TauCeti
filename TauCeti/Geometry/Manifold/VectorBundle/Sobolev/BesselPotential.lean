@@ -8,13 +8,15 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.SquareChartPartition
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalSobolev
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
-import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.Normed.Operator.Banach
 
 /-!
 # Sobolev spaces of distributions on bundle tests
@@ -66,6 +68,23 @@ localization because the localization of a reconstruction, tested on a Schwartz 
 involves finitely many values of the tempered distributions being reconstructed, so the defining
 equations of the subspace are closed.
 
+**Independence of the partition.** `T` is `H^s` with respect to `A` exactly when it is `H^s` near
+every point of `M` (`TauCeti.SquareChartPartition.memSobolev_iff_forall_isLocallySobolevAt`), in
+the sense of `TauCeti.BundleTest.IsLocallySobolevAt`, which does not depend on charts and frames.
+Indeed, `χᵢ Tᵢⱼ ∈ H^s` makes `Tᵢⱼ` locally `H^s` wherever `χᵢ ≠ 0`, and every point has such an
+`i` since `∑ᵢ χᵢ² = 1`; conversely, if all `Tᵢⱼ` are locally `H^s` on the support of `χᵢ`, then
+`χᵢ Tᵢⱼ ∈ H^s`. This argument only uses these two cutoff properties of `H^s` and the invariance of
+local `H^s` regularity, and is stated once for all such notions
+(`TauCeti.SquareChartPartition.forall_localization_iff_forall_isLocallyAt`). So two square chart
+partitions of `V` have the same `H^s` functionals
+(`TauCeti.SquareChartPartition.memSobolev_iff_memSobolev`). Their Sobolev spaces are then
+isomorphic as Banach spaces (`TauCeti.SquareChartPartition.sobolevSpaceCongr`), so that the pinned
+norms are equivalent (`TauCeti.SquareChartPartition.exists_norm_ofMemSobolev_le`): the
+identification is a linear bijection between Banach spaces whose graph is closed, because the
+represented functional depends continuously on an element of either space, test by test, and the
+closed graph theorem applies. No quantitative Sobolev estimate for chart changes or cutoffs is
+needed for this comparison; such estimates would make the equivalence constants explicit.
+
 ## Main declarations
 
 * `TauCeti.SquareChartPartition.localization`, `TauCeti.SquareChartPartition.reconstruction` and
@@ -79,9 +98,15 @@ equations of the subspace are closed.
   `TauCeti.SquareChartPartition.sobolevSpaceEquiv`: the Sobolev space represents exactly the
   functionals that are `H^s` with respect to the partition.
 * `TauCeti.SquareChartPartition.norm_ofMemSobolev_sq`: the pinned norm.
-
-The independence of the space from the partition, up to equivalent norms, needs the Sobolev
-estimates for multiplication by cutoffs and for chart changes, and is not proved here.
+* `TauCeti.SquareChartPartition.inclusion`: the norm-nonincreasing inclusion `H^s ⊆ H^r` for
+  `r ≤ s`, representing the same functionals; it is compact for `r < s`
+  (`TauCeti.SquareChartPartition.isCompactOperator_inclusion`).
+* `TauCeti.SquareChartPartition.memSobolev_iff_forall_isLocallySobolevAt` and
+  `TauCeti.SquareChartPartition.memSobolev_iff_memSobolev`: being `H^s` with respect to a partition
+  is local `H^s` regularity, and does not depend on the partition.
+* `TauCeti.SquareChartPartition.sobolevSpaceCongr` and
+  `TauCeti.SquareChartPartition.exists_norm_ofMemSobolev_le`: the Sobolev spaces of two partitions
+  are isomorphic Banach spaces, and their pinned norms are equivalent.
 
 ## References
 
@@ -356,6 +381,29 @@ private theorem exists_localization_apply (i : ι) (j : Fin (Module.finrank ℝ 
     rw [localization_apply, Distribution.cutoffTempered_def, Distribution.complexPairing_apply,
       Bundle.Trivialization.chartComponent_apply, Bundle.Trivialization.chartComponent_apply]⟩
 
+/-- **Being a tuple of localizations is a closed condition.** Let `v x` be a tuple of tempered
+distributions depending on a parameter `x` in a topological space, such that each value
+`v x k ψ` on a Schwartz function depends continuously on `x`. Then the parameters for which
+`v x` is reproduced by localizing its reconstruction, that is, for which `v x` is the tuple of
+localizations of a functional on bundle tests
+(`TauCeti.SquareChartPartition.mem_sobolevSpace_iff_exists_localization`), form a closed set: a
+value of the localization of a reconstruction only involves finitely many values of the `v x l`. -/
+theorem isClosed_setOf_forall_localization_reconstruction_eq {X : Type*} [TopologicalSpace X]
+    (v : X → ι × Fin (Module.finrank ℝ F) → 𝓢'(E, ℂ))
+    (hv : ∀ k (ψ : 𝓢(E, ℂ)), Continuous fun x ↦ v x k ψ) :
+    IsClosed {x | ∀ k, A.localization k.1 k.2 (A.reconstruction (v x)) = v x k} := by
+  have h : {x | ∀ k, A.localization k.1 k.2 (A.reconstruction (v x)) = v x k} =
+      ⋂ k, ⋂ ψ : 𝓢(E, ℂ), {x | A.localization k.1 k.2 (A.reconstruction (v x)) ψ = v x k ψ} := by
+    ext x
+    simp only [mem_iInter, Set.mem_ofPred_eq]
+    exact forall_congr' fun k ↦ ⟨fun h ψ ↦ by rw [h], fun h ↦ ContinuousLinearMap.ext h⟩
+  rw [h]
+  refine isClosed_iInter fun k ↦ isClosed_iInter fun ψ ↦ isClosed_eq ?_ (hv k ψ)
+  obtain ⟨g, g', hg⟩ := A.exists_localization_apply k.1 k.2 ψ
+  simp only [hg, reconstruction_apply]
+  refine ((continuous_ofReal.comp ?_).add (continuous_const.mul (continuous_ofReal.comp ?_))) <;>
+    exact continuous_finsetSum _ fun l _ ↦ continuous_re.comp (hv l _)
+
 /-! ### Sobolev regularity and the Sobolev spaces -/
 
 section Sobolev
@@ -439,10 +487,7 @@ def sobolevSpace :
     simp only [PiLp.zero_apply, BesselPotentialSpace.toDistr_zero]
     rw [← Pi.zero_def, map_zero, map_zero]
   smul_mem' a u hu k := by
-    -- The real action on `H^s(E, ℂ)` here is the restriction of the complex one
-    -- (`NormedSpace.complexToReal`), so `BesselPotentialSpace.toDistr_smul` applies at `(a : ℂ)`.
-    simp only [PiLp.smul_apply, ← Complex.coe_smul, BesselPotentialSpace.toDistr_smul]
-    simp only [Complex.coe_smul]
+    simp only [PiLp.smul_apply, BesselPotentialSpace.toDistr_real_smul]
     rw [← Pi.smul_def, map_smul, map_smul, hu k]
 
 theorem mem_sobolevSpace {u : PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)} :
@@ -465,25 +510,12 @@ theorem mem_sobolevSpace_iff_exists_localization
 /-- The `H^s` spaces of `A` are closed in the Hilbert sum `⨁ᵢⱼ H^s(E, ℂ)`. -/
 theorem isClosed_sobolevSpace :
     IsClosed
-      (A.sobolevSpace s : Set (PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ))) := by
-  have hcont (k : ι × Fin (Module.finrank ℝ F)) (ψ : 𝓢(E, ℂ)) :
-      Continuous fun u : PiLp 2 (fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)) ↦
-        (u k).toDistr ψ :=
+      (A.sobolevSpace s : Set (PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ))) :=
+  A.isClosed_setOf_forall_localization_reconstruction_eq
+    (fun (u : PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)) l ↦ (u l).toDistr)
+    fun k ψ ↦
     (ContinuousEvalConst.continuous_eval_const ψ).comp
       (BesselPotentialSpace.continuous_toDistr.comp (PiLp.continuous_apply 2 _ k))
-  have h : (A.sobolevSpace s : Set (PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ))) =
-      ⋂ k, ⋂ ψ : 𝓢(E, ℂ),
-      {u | A.localization k.1 k.2 (A.reconstruction fun l ↦ (u l).toDistr) ψ =
-        (u k).toDistr ψ} := by
-    ext u
-    simp only [SetLike.mem_coe, mem_sobolevSpace, mem_iInter, Set.mem_ofPred_eq]
-    exact forall_congr' fun k ↦ ⟨fun h ψ ↦ by rw [h], fun h ↦ ContinuousLinearMap.ext h⟩
-  rw [h]
-  refine isClosed_iInter fun k ↦ isClosed_iInter fun ψ ↦ isClosed_eq ?_ (hcont k ψ)
-  obtain ⟨g, g', hg⟩ := A.exists_localization_apply k.1 k.2 ψ
-  simp only [hg, reconstruction_apply]
-  refine ((continuous_ofReal.comp ?_).add (continuous_const.mul (continuous_ofReal.comp ?_))) <;>
-    exact continuous_finsetSum _ fun l _ ↦ continuous_re.comp (hcont l _)
 
 instance : CompleteSpace (A.sobolevSpace s) :=
   (A.isClosed_sobolevSpace s).completeSpace_coe
@@ -510,10 +542,8 @@ def toDistribution : A.sobolevSpace s →ₗ[ℝ] (BundleTest I F V →L_c[ℝ] 
     simp only [Submodule.coe_add, PiLp.add_apply, BesselPotentialSpace.toDistr_add]
     rw [← Pi.add_def, map_add]
   map_smul' a u := by
-    -- As in `sobolevSpace`, `BesselPotentialSpace.toDistr_smul` applies at `(a : ℂ)`.
-    simp only [Submodule.coe_smul, PiLp.smul_apply, ← Complex.coe_smul,
-      BesselPotentialSpace.toDistr_smul, RingHom.id_apply]
-    simp only [Complex.coe_smul]
+    simp only [Submodule.coe_smul, PiLp.smul_apply, BesselPotentialSpace.toDistr_real_smul,
+      RingHom.id_apply]
     rw [← Pi.smul_def, map_smul]
 
 theorem toDistribution_apply (u : A.sobolevSpace s) :
@@ -589,7 +619,225 @@ theorem norm_ofMemSobolev_sq {T : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemS
   rw [← Submodule.norm_coe, PiLp.norm_sq_eq_of_L2, Fintype.sum_prod_type]
   simp only [ofMemSobolev_apply]
 
+/-! ### The inclusions between the Sobolev spaces -/
+
+variable {s} {r : ℝ}
+
+/-- The **inclusion `H^s ⊆ H^r`** of the Sobolev spaces of `A`, for `r ≤ s`: the inclusion
+`H^s(E, ℂ) ⊆ H^r(E, ℂ)` (`BesselPotentialSpace.inclusion`) in every component
+(`TauCeti.SquareChartPartition.inclusion_apply`). It represents the same functional on bundle
+tests (`TauCeti.SquareChartPartition.toDistribution_inclusion`). -/
+def inclusion (h : r ≤ s) : A.sobolevSpace s →L[ℝ] A.sobolevSpace r :=
+  (((PiLp.continuousLinearEquiv 2 ℂ _).symm.toContinuousLinearMap ∘L
+      ContinuousLinearMap.pi fun k : ι × Fin (Module.finrank ℝ F) ↦
+        BesselPotentialSpace.inclusion h ∘L PiLp.proj 2 (fun _ ↦ H^{s}(E, ℂ)) k).restrictScalars
+      ℝ ∘L (A.sobolevSpace s).subtypeL).codRestrict (A.sobolevSpace r) fun u ↦
+    (A.mem_sobolevSpace r).2 fun k ↦ by
+      simpa [BesselPotentialSpace.toDistr_inclusion] using u.property k
+
+@[simp]
+theorem inclusion_apply (h : r ≤ s) (u : A.sobolevSpace s) (k : ι × Fin (Module.finrank ℝ F)) :
+    (A.inclusion h u).val k = BesselPotentialSpace.inclusion h (u.val k) :=
+  (rfl)
+
+/-- The inclusion `H^s ⊆ H^r` does not change the represented functional on bundle tests. -/
+@[simp]
+theorem toDistribution_inclusion (h : r ≤ s) (u : A.sobolevSpace s) :
+    A.toDistribution r (A.inclusion h u) = A.toDistribution s u := by
+  simp [toDistribution_apply]
+
+@[simp]
+theorem inclusion_ofMemSobolev (h : r ≤ s) {T : BundleTest I F V →L_c[ℝ] ℝ}
+    (hT : A.MemSobolev s T) : A.inclusion h (A.ofMemSobolev s hT) = A.ofMemSobolev r (hT.mono h) :=
+  A.toDistribution_injective r (by simp)
+
+theorem inclusion_injective (h : r ≤ s) : Function.Injective (A.inclusion h) := fun u u' huu' ↦
+  A.toDistribution_injective s <| by
+    rw [← A.toDistribution_inclusion h u, ← A.toDistribution_inclusion h u', huu']
+
+@[simp]
+theorem inclusion_self (u : A.sobolevSpace s) : A.inclusion le_rfl u = u :=
+  A.toDistribution_injective s (A.toDistribution_inclusion le_rfl u)
+
+@[simp]
+theorem inclusion_inclusion {t : ℝ} (h₁ : r ≤ s) (h₂ : t ≤ r) (u : A.sobolevSpace s) :
+    A.inclusion h₂ (A.inclusion h₁ u) = A.inclusion (h₂.trans h₁) u :=
+  A.toDistribution_injective t (by simp)
+
+/-- The inclusion `H^s ⊆ H^r` does not increase the norm. -/
+theorem norm_inclusion_apply_le (h : r ≤ s) (u : A.sobolevSpace s) : ‖A.inclusion h u‖ ≤ ‖u‖ := by
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe u, PiLp.norm_eq_of_L2, PiLp.norm_eq_of_L2]
+  gcongr with k
+  exact BesselPotentialSpace.norm_inclusion_apply_le h _
+
+theorem norm_inclusion_le (h : r ≤ s) : ‖A.inclusion h‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
+    simpa using A.norm_inclusion_apply_le h u
+
 end Sobolev
+
+/-! ### Independence of the partition -/
+
+section Independence
+
+open scoped BesselPotentialSpace
+
+variable {κ : Type*} [Fintype κ]
+
+/-- **Regularity of all localizations is local regularity.** Let `P` be an invariant notion of
+local regularity and `Q` a property of tempered distributions, related by cutoffs: `S` satisfies
+`P` near `y` whenever `χ S` satisfies `Q` for some test function `χ` with `χ y ≠ 0`, and `χ S`
+satisfies `Q` whenever `S` satisfies `P` near every point of `tsupport χ`. Then all localizations
+`χᵢ Tᵢⱼ` of a real functional `T` on bundle tests satisfy `Q` exactly when `T` satisfies `P` near
+every point of `M`. This is the common argument behind the independence of the partition for the
+Sobolev and Besov spaces of `A`. -/
+theorem forall_localization_iff_forall_isLocallyAt {P : (Ω : Opens E) → 𝓓'(Ω, ℂ) → E → Prop}
+    (hP : Distribution.IsInvariantLocalRegularity P) {Q : 𝓢'(E, ℂ) → Prop}
+    (hQP : ∀ (Ω : Opens E) (S : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℂ)) (y : E), χ y ≠ 0 →
+      Q (S.cutoffTempered χ) → P Ω S y)
+    (hPQ : ∀ (Ω : Opens E) (S : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℂ)), (∀ y ∈ tsupport χ, P Ω S y) →
+      Q (S.cutoffTempered χ))
+    {T : BundleTest I F V →L_c[ℝ] ℝ} :
+    (∀ i j, Q (A.localization i j T)) ↔ ∀ x, BundleTest.IsLocallyAt P T x := by
+  constructor
+  · intro hT x
+    -- Some cutoff does not vanish at `x`, since their squares sum to one.
+    obtain ⟨i, hi⟩ : ∃ i, A.cutoff i x ≠ 0 := by
+      by_contra! h
+      simpa [h] using A.sum_sq_cutoff x
+    have hx : x ∈ (A.chartData i).chart.source :=
+      A.tsupport_cutoff_subset i (subset_tsupport _ hi)
+    have hcx := (A.chartData i).chart.map_source hx
+    refine (BundleTest.isLocallyAt_iff hP T (A.chartData i).contMDiffOn_chart
+      (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset hx).2
+      (Bundle.Trivialization.chartComponent_of_basis hP.toIsLocalRegularity
+        (Module.finBasis ℝ F) T hcx fun j ↦ hQP _ _ (A.chartCutoff i) _ ?_ (hT i j))
+    -- The chart cutoff does not vanish at `cᵢ x`.
+    rwa [A.chartCutoff_apply_of_mem hcx, (A.chartData i).chart.left_inv hx, ofReal_ne_zero]
+  · intro hT i j
+    refine hPQ _ _ _ fun y hy ↦ ?_
+    -- A point of the support of the chart cutoff is `cᵢ x` for `x` in the support of `χᵢ`.
+    obtain ⟨x, hx, rfl⟩ : y ∈ (A.chartData i).chart '' tsupport (A.cutoff i) := by
+      rw [← A.coe_chartSupport]
+      exact A.tsupport_chartCutoff_subset i hy
+    exact (BundleTest.isLocallyAt_iff hP T (A.chartData i).contMDiffOn_chart
+      (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset
+      (A.tsupport_cutoff_subset i hx)).1 (hT x) _
+
+variable [MeasurableSpace E] [BorelSpace E]
+
+/-- **`H^s` with respect to a partition is local `H^s` regularity.** A real functional `T` on
+bundle tests is `H^s` with respect to the square chart partition `A` exactly when it is `H^s` near
+every point of `M` (`TauCeti.BundleTest.IsLocallySobolevAt`). In particular this does not depend on
+the partition (`TauCeti.SquareChartPartition.memSobolev_iff_memSobolev`). -/
+theorem memSobolev_iff_forall_isLocallySobolevAt {s : ℝ} {T : BundleTest I F V →L_c[ℝ] ℝ} :
+    A.MemSobolev s T ↔ ∀ x, BundleTest.IsLocallySobolevAt s T x :=
+  A.memSobolev_iff.trans <| (A.forall_localization_iff_forall_isLocallyAt
+    (Distribution.isInvariantLocalRegularity_isLocallySobolevAt s)
+    (fun _ _ χ _ hχ hS ↦ Distribution.isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered.2
+      ⟨χ, hχ, hS⟩)
+    fun _ _ _ ↦ Distribution.memSobolev_cutoffTempered_of_forall_isLocallySobolevAt).trans <|
+    forall_congr' fun _ ↦ BundleTest.isLocallySobolevAt_def.symm
+
+/-- **Independence of the partition.** A real functional on bundle tests is `H^s` with respect to
+one square chart partition of `V` exactly when it is `H^s` with respect to any other. -/
+theorem memSobolev_iff_memSobolev (B : SquareChartPartition κ I F V) {s : ℝ}
+    {T : BundleTest I F V →L_c[ℝ] ℝ} : A.MemSobolev s T ↔ B.MemSobolev s T := by
+  rw [memSobolev_iff_forall_isLocallySobolevAt, memSobolev_iff_forall_isLocallySobolevAt]
+
+/-- Two square chart partitions of `V` have the same `H^s` functionals. -/
+theorem memSobolevSubmodule_eq (B : SquareChartPartition κ I F V) (s : ℝ) :
+    A.memSobolevSubmodule s = B.memSobolevSubmodule s :=
+  Submodule.ext fun _ ↦ A.memSobolev_iff_memSobolev B
+
+/-- The value of the functional represented by an element of the Sobolev space at a fixed bundle
+test depends continuously on the element. -/
+theorem continuous_toDistribution_apply (s : ℝ) (φ : BundleTest I F V) :
+    Continuous fun u : A.sobolevSpace s ↦ A.toDistribution s u φ := by
+  simp only [toDistribution_apply, reconstruction_apply]
+  exact continuous_finsetSum _ fun k _ ↦ continuous_re.comp
+    ((ContinuousEvalConst.continuous_eval_const _).comp
+      (BesselPotentialSpace.continuous_toDistr.comp
+        ((PiLp.continuous_apply 2 _ k).comp continuous_subtypeVal)))
+
+/-- The identification of the Sobolev spaces of two square chart partitions as a linear
+equivalence: an element of one goes to the element of the other representing the same
+functional. -/
+private def sobolevSpaceLinearEquiv (B : SquareChartPartition κ I F V) (s : ℝ) :
+    A.sobolevSpace s ≃ₗ[ℝ] B.sobolevSpace s :=
+  (A.sobolevSpaceEquiv s).trans
+    ((LinearEquiv.ofEq _ _ (A.memSobolevSubmodule_eq B s)).trans (B.sobolevSpaceEquiv s).symm)
+
+private theorem toDistribution_sobolevSpaceLinearEquiv (B : SquareChartPartition κ I F V) (s : ℝ)
+    (u : A.sobolevSpace s) :
+    B.toDistribution s (A.sobolevSpaceLinearEquiv B s u) = A.toDistribution s u := by
+  simp [sobolevSpaceLinearEquiv]
+
+/-- **Equivalence of the Sobolev spaces of two partitions.** The Sobolev spaces `H^s` of two
+square chart partitions `A` and `B` of `V` are isomorphic as Banach spaces, through the map sending
+an element of `A.sobolevSpace s` to the element of `B.sobolevSpace s` representing the same
+functional on bundle tests
+(`TauCeti.SquareChartPartition.toDistribution_sobolevSpaceCongr_apply`). So the pinned norms of
+the two partitions are equivalent (`TauCeti.SquareChartPartition.exists_norm_ofMemSobolev_le`).
+Continuity comes from the closed graph theorem. -/
+def sobolevSpaceCongr (B : SquareChartPartition κ I F V) (s : ℝ) :
+    A.sobolevSpace s ≃L[ℝ] B.sobolevSpace s :=
+  (A.sobolevSpaceLinearEquiv B s).toContinuousLinearEquivOfContinuous
+    ((A.sobolevSpaceLinearEquiv B s).toLinearMap.continuous_of_injective_comp_eq
+      (continuous_pi (A.continuous_toDistribution_apply s))
+      (continuous_pi (B.continuous_toDistribution_apply s))
+      (DFunLike.coe_injective.comp (B.toDistribution_injective s))
+      fun u ↦ congrArg DFunLike.coe (A.toDistribution_sobolevSpaceLinearEquiv B s u))
+
+/-- The identification of the Sobolev spaces of two partitions preserves the represented
+functional. -/
+@[simp]
+theorem toDistribution_sobolevSpaceCongr_apply (B : SquareChartPartition κ I F V) (s : ℝ)
+    (u : A.sobolevSpace s) :
+    B.toDistribution s (A.sobolevSpaceCongr B s u) = A.toDistribution s u :=
+  A.toDistribution_sobolevSpaceLinearEquiv B s u
+
+/-- The identification sends the tuple of localizations of `T` with respect to `A` to its tuple of
+localizations with respect to `B`. -/
+@[simp]
+theorem sobolevSpaceCongr_ofMemSobolev (B : SquareChartPartition κ I F V) {s : ℝ}
+    {T : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemSobolev s T) :
+    A.sobolevSpaceCongr B s (A.ofMemSobolev s hT) =
+      B.ofMemSobolev s ((A.memSobolev_iff_memSobolev B).1 hT) :=
+  B.toDistribution_injective s (by simp)
+
+/-- The identification of the Sobolev spaces of a partition with itself is the identity. -/
+@[simp]
+theorem sobolevSpaceCongr_refl (s : ℝ) :
+    A.sobolevSpaceCongr A s = ContinuousLinearEquiv.refl ℝ (A.sobolevSpace s) :=
+  ContinuousLinearEquiv.ext <| funext fun u ↦ A.toDistribution_injective s (by simp)
+
+/-- The inverse of the identification from `A` to `B` is the identification from `B` to `A`. -/
+@[simp]
+theorem sobolevSpaceCongr_symm (B : SquareChartPartition κ I F V) (s : ℝ) :
+    (A.sobolevSpaceCongr B s).symm = B.sobolevSpaceCongr A s :=
+  ContinuousLinearEquiv.ext <| funext fun u ↦ (A.sobolevSpaceCongr B s).symm_apply_eq.2 <|
+    B.toDistribution_injective s (by simp)
+
+/-- The identifications compose: going from `A` to `B` and then to `C` is going from `A` to
+`C`. -/
+@[simp]
+theorem sobolevSpaceCongr_trans {ν : Type*} [Fintype ν] (B : SquareChartPartition κ I F V)
+    (C : SquareChartPartition ν I F V) (s : ℝ) :
+    (A.sobolevSpaceCongr B s).trans (B.sobolevSpaceCongr C s) = A.sobolevSpaceCongr C s :=
+  ContinuousLinearEquiv.ext <| funext fun u ↦ C.toDistribution_injective s (by simp)
+
+/-- **Equivalence of the pinned norms.** For two square chart partitions `A` and `B` of `V`, the
+`H^s` norm of a functional with respect to `B` is bounded by a constant multiple of its `H^s` norm
+with respect to `A`. -/
+theorem exists_norm_ofMemSobolev_le (B : SquareChartPartition κ I F V) (s : ℝ) :
+    ∃ C, ∀ (T : BundleTest I F V →L_c[ℝ] ℝ) (hA : A.MemSobolev s T) (hB : B.MemSobolev s T),
+      ‖B.ofMemSobolev s hB‖ ≤ C * ‖A.ofMemSobolev s hA‖ :=
+  ⟨‖(A.sobolevSpaceCongr B s : A.sobolevSpace s →L[ℝ] B.sobolevSpace s)‖, fun T hA hB ↦ by
+    simpa using (A.sobolevSpaceCongr B s : A.sobolevSpace s →L[ℝ] B.sobolevSpace s).le_opNorm
+      (A.ofMemSobolev s hA)⟩
+
+end Independence
 
 end Localization
 

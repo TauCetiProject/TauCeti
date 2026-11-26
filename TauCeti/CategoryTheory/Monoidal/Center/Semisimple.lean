@@ -30,16 +30,15 @@ This yields the arbitrary-characteristic structural theorems of Etingof–Nikshy
   isomorphism classes (without assuming simplicity of `𝟙_ C` or a pivotal structure).
 * `simpleMultiplicities_inductionCenterObj_apply`, `simpleMultiplicities_induction_obj_apply`:
   Frobenius reciprocity for simple multiplicities of induced objects.
-* `forgetInductionAdjunction_unit_app_f_comp_inductionForgetAdjunction_counit_app_f`,
-  `forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app`: pivot-free
-  averaging identity (`= normGlobalDim C a • 𝟙 Z`).
+* `forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app`: pivot-free
+  averaging identity (`= normGlobalDim C a • 𝟙 Z`);
 * `isSplitMono_forgetInductionAdjunction_unit_app_of_normGlobalDim_ne_zero`,
   `isSplitEpi_inductionForgetAdjunction_counit_app_of_normGlobalDim_ne_zero`,
   `isFiniteSemisimpleCategory_of_normGlobalDim_ne_zero`,
   `finite_simpleClasses_of_normGlobalDim_ne_zero`: pivot-free Maschke splittings, semisimplicity,
   and finiteness when `normGlobalDim C a ≠ 0` (necessary in characteristic `p > 0`, e.g. `ℤ/p`-
   graded vector spaces have `dim C = p = 0` and non-semisimple centre).
-* `forgetInductionAdjunction_unit_app_f_comp_inductionForgetAdjunction_counit_app_f_of_pivotal`,
+* `forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_f_of_pivotal`,
   `forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_of_pivotal`,
   `isSplitMono_forgetInductionAdjunction_unit_app_of_globalDim_ne_zero`,
   `isSplitEpi_inductionForgetAdjunction_counit_app_of_globalDim_ne_zero`,
@@ -117,48 +116,6 @@ theorem simpleMultiplicities_induction_obj_apply [IsFiniteSemisimpleCategory (Ce
 
 variable [Simple (𝟙_ C)]
 
-/-- On underlying objects in a fusion category `C` over an algebraically closed field `k`, the
-composite of the unit of `forgetInductionAdjunction` with the counit of `inductionForgetAdjunction`
-at `Z : Center C` acts as multiplication by the pivot-free global dimension
-`TauCeti.normGlobalDim C a`, for any family `a S : S.repr ≅ S.reprᘁᘁ`. -/
-@[reassoc]
-theorem forgetInductionAdjunction_unit_app_f_comp_inductionForgetAdjunction_counit_app_f
-    (a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ) (Z : Center C) :
-    ((forgetInductionAdjunction k C).unit.app Z).f ≫
-        ((inductionForgetAdjunction k C).counit.app Z).f =
-      (ρ_ Z.1).inv ≫ Z.1 ◁ normGlobalDim C a ≫ (ρ_ Z.1).hom := by
-  have hsum : (∑ S : SimpleClasses C, η_ S.repr S.reprᘁ ≫
-        @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleOppositeExactPairing S.repr)) =
-      normGlobalDim C a := by
-    simp_rw [← squaredNorm_simpleDoubleDualIso]
-    rw [← normGlobalDim_def]
-    exact normGlobalDim_congr C k (fun S ↦ simpleDoubleDualIso S.repr) a
-  rw [← hsum]
-  have hu : biproduct.lift (fun S : SimpleClasses C ↦
-      (ρ_ Z.1).inv ≫ Z.1 ◁ η_ S.repr S.reprᘁ ≫ (α_ Z.1 S.repr S.reprᘁ).inv ≫
-        (Z.2.β S.repr).hom ▷ S.reprᘁ ≫ (α_ S.repr Z.1 S.reprᘁ).hom) =
-      ((forgetInductionAdjunction k C).unit.app Z).f := by
-    refine biproduct.hom_ext _ _ fun S ↦ ?_
-    rw [biproduct.lift_π]
-    exact (forgetInductionAdjunction_unit_app_f_comp_π k C Z S).symm
-  have hc : biproduct.desc (fun S : SimpleClasses C ↦
-      (α_ S.repr Z.1 S.reprᘁ).inv ≫ (Z.2.β S.repr).inv ▷ S.reprᘁ ≫ (α_ Z.1 S.repr S.reprᘁ).hom ≫
-        Z.1 ◁ @ExactPairing.evaluation C _ _ S.reprᘁ S.repr (simpleOppositeExactPairing S.repr) ≫
-        (ρ_ Z.1).hom) =
-      ((inductionForgetAdjunction k C).counit.app Z).f := by
-    refine biproduct.hom_ext' _ _ fun S ↦ ?_
-    rw [biproduct.ι_desc]
-    exact (ι_comp_inductionForgetAdjunction_counit_app_f k C Z S).symm
-  have hcomp := congrArg₂
-    (· ≫ · : (Z.1 ⟶ inductionObj Z.1) → (inductionObj Z.1 ⟶ Z.1) → (Z.1 ⟶ Z.1)) hu.symm hc.symm
-  refine hcomp.trans ?_
-  rw [biproduct.lift_desc]
-  simp only [whiskerLeft_sum, Preadditive.comp_sum, Preadditive.sum_comp]
-  refine Finset.sum_congr rfl fun S _ ↦ ?_
-  simp only [Category.assoc, Iso.hom_inv_id_assoc]
-  rw [← comp_whiskerRight_assoc, Iso.hom_inv_id, id_whiskerRight, Category.id_comp,
-    Iso.inv_hom_id_assoc, ← whiskerLeft_comp_assoc]
-
 /-- In a fusion category `C` over an algebraically closed field `k`, the composite of the unit of
 `forgetInductionAdjunction` with the counit of `inductionForgetAdjunction` at `Z : Center C` is
 scalar multiplication by the pivot-free global dimension `TauCeti.normGlobalDim C a` (read in `k`),
@@ -173,9 +130,9 @@ theorem forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit
   set d := endAlgEquivOfSimple k (𝟙_ C) (End.of (normGlobalDim C a))
   have hg : normGlobalDim C a = d • 𝟙 (𝟙_ C) :=
     (endAlgEquivOfSimple_smul_id (k := k) (End.of (normGlobalDim C a))).symm
-  rw [comp_f, smul_f, id_f,
-    forgetInductionAdjunction_unit_app_f_comp_inductionForgetAdjunction_counit_app_f k a Z, hg,
-    MonoidalLinear.whiskerLeft_smul, whiskerLeft_id, Linear.smul_comp, Linear.comp_smul,
+  rw [smul_f, id_f,
+    forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_f k Z a, hg,
+    MonoidalLinear.smul_whiskerRight, id_whiskerRight, Linear.smul_comp, Linear.comp_smul,
     Category.id_comp, Iso.inv_hom_id]
 
 private theorem inv_endAlgEquivOfSimple_normGlobalDim_smul_unit_comp_counit
@@ -246,15 +203,14 @@ variable [PivotalCategory C]
 /-- On underlying objects in a pivotal fusion category `C` over an algebraically closed field `k`,
 the composite of the unit of `forgetInductionAdjunction` with the counit of
 `inductionForgetAdjunction` at `Z : Center C` is multiplication by `globalDim C`. -/
-@[reassoc]
-theorem forgetInductionAdjunction_unit_app_f_comp_inductionForgetAdjunction_counit_app_f_of_pivotal
+theorem forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_f_of_pivotal
     (Z : Center C) :
-    ((forgetInductionAdjunction k C).unit.app Z).f ≫
-        ((inductionForgetAdjunction k C).counit.app Z).f =
-      (ρ_ Z.1).inv ≫ Z.1 ◁ globalDim C ≫ (ρ_ Z.1).hom := by
+    ((forgetInductionAdjunction k C).unit.app Z ≫
+        (inductionForgetAdjunction k C).counit.app Z).f =
+      (λ_ Z.1).inv ≫ globalDim C ▷ Z.1 ≫ (λ_ Z.1).hom := by
   rw [← normGlobalDim_eq_globalDim C k (fun S ↦ pivotalIsoApp S.repr)]
-  exact forgetInductionAdjunction_unit_app_f_comp_inductionForgetAdjunction_counit_app_f
-    k (fun S ↦ pivotalIsoApp S.repr) Z
+  exact forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_f
+    k Z (fun S ↦ pivotalIsoApp S.repr)
 
 /-- In a pivotal fusion category `C` over an algebraically closed field `k`, the composite of the
 unit of `forgetInductionAdjunction` with the counit of `inductionForgetAdjunction` at
@@ -269,14 +225,19 @@ theorem forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit
   exact forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app
     k (fun S ↦ pivotalIsoApp S.repr) Z
 
+omit [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)] in
+include k in
+private theorem normGlobalDim_pivotalIsoApp_ne_zero (hdim : globalDim C ≠ 0) :
+    normGlobalDim C (fun S ↦ pivotalIsoApp S.repr) ≠ 0 := by
+  rwa [normGlobalDim_eq_globalDim C k (fun S ↦ pivotalIsoApp S.repr)]
+
 /-- In a pivotal fusion category `C` over an algebraically closed field `k` with `globalDim C ≠ 0`,
 every component of `(forgetInductionAdjunction k C).unit` is a split monomorphism. -/
 theorem isSplitMono_forgetInductionAdjunction_unit_app_of_globalDim_ne_zero
     (hdim : globalDim C ≠ 0) (Z : Center C) :
     IsSplitMono ((forgetInductionAdjunction k C).unit.app Z) :=
   isSplitMono_forgetInductionAdjunction_unit_app_of_normGlobalDim_ne_zero k
-    (a := fun S ↦ pivotalIsoApp S.repr)
-    (by rwa [normGlobalDim_eq_globalDim C k (fun S ↦ pivotalIsoApp S.repr)]) Z
+    (normGlobalDim_pivotalIsoApp_ne_zero k hdim) Z
 
 /-- In a pivotal fusion category `C` over an algebraically closed field `k` with `globalDim C ≠ 0`,
 every component of `(inductionForgetAdjunction k C).counit` is a split epimorphism. -/
@@ -284,8 +245,7 @@ theorem isSplitEpi_inductionForgetAdjunction_counit_app_of_globalDim_ne_zero
     (hdim : globalDim C ≠ 0) (Z : Center C) :
     IsSplitEpi ((inductionForgetAdjunction k C).counit.app Z) :=
   isSplitEpi_inductionForgetAdjunction_counit_app_of_normGlobalDim_ne_zero k
-    (a := fun S ↦ pivotalIsoApp S.repr)
-    (by rwa [normGlobalDim_eq_globalDim C k (fun S ↦ pivotalIsoApp S.repr)]) Z
+    (normGlobalDim_pivotalIsoApp_ne_zero k hdim) Z
 
 include k in
 /-- **Maschke's theorem for the Drinfeld centre** (Etingof–Nikshych–Ostrik, Müger): if `C` is a
@@ -294,8 +254,7 @@ pivotal fusion category over an algebraically closed field `k` with `globalDim C
 theorem isFiniteSemisimpleCategory_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
     IsFiniteSemisimpleCategory (Center C) :=
   isFiniteSemisimpleCategory_of_normGlobalDim_ne_zero k
-    (a := fun S ↦ pivotalIsoApp S.repr)
-    (by rwa [normGlobalDim_eq_globalDim C k (fun S ↦ pivotalIsoApp S.repr)])
+    (normGlobalDim_pivotalIsoApp_ne_zero k hdim)
 
 include k in
 /-- If `C` is a pivotal fusion category over an algebraically closed field `k` with
@@ -303,8 +262,7 @@ include k in
 theorem finite_simpleClasses_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
     Finite (SimpleClasses (Center C)) :=
   finite_simpleClasses_of_normGlobalDim_ne_zero k
-    (a := fun S ↦ pivotalIsoApp S.repr)
-    (by rwa [normGlobalDim_eq_globalDim C k (fun S ↦ pivotalIsoApp S.repr)])
+    (normGlobalDim_pivotalIsoApp_ne_zero k hdim)
 
 /-- In a pivotal fusion category `C` over an algebraically closed field `k`, the left dimension of
 `(induction k C).obj X`, read in `C`, is `globalDim C ≫ leftDim X`. -/
