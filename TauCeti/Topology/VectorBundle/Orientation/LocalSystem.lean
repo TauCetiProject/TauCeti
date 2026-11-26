@@ -369,6 +369,7 @@ instance finite_signLocalSystem_obj (x : FundamentalGroupoid (TopCat.of B)) :
 /-- **The orientation local system has rank one.** Over a ring with the strong rank condition,
 every fibre of the orientation local system has rank `1`: evaluation at either orientation of the
 fibre of `E` identifies it with `R`. -/
+@[simp]
 theorem finrank_signLocalSystem_obj [StrongRankCondition R]
     (x : FundamentalGroupoid (TopCat.of B)) :
     finrank R ((signLocalSystem F E R hι).obj x) = 1 := by
