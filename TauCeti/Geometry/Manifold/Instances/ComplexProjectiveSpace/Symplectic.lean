@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Hopf
 public import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Descent
 public import TauCeti.Geometry.Symplectic.Manifold.Rescale
-import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Coisotropic.Sphere
+import TauCeti.Geometry.Contact.Sphere
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
