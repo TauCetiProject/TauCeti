@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.ComplexConjugation.HalfWeight
+public import TauCeti.NumberTheory.NumberField.ComplexConjugation.AlgebraicClosure
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
 
 /-!
