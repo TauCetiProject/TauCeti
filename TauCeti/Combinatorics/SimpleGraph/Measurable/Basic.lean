@@ -36,6 +36,8 @@ its cylinder masses are.
 
 * `SimpleGraph.instMeasurableSingletonClass` — singletons of graphs on a countable vertex type are
   measurable;
+* `SimpleGraph.measurableSet_Iic` — on a countable vertex type, the subgraphs of a fixed graph
+  form a measurable set;
 * `SimpleGraph.measurable_comap` — pulling back along a map of vertex types is measurable;
 * `SimpleGraph.measurable_restrictFin` — taking a window is measurable;
 * `SimpleGraph.isPiSystem_restrictFinCylinders` and
@@ -67,6 +69,12 @@ instance instMeasurableSingletonClass [Countable V] :
   measurableSet_singleton G := by
     rw [← measurableEmbedding_edgeSet.measurableSet_image, Set.image_singleton]
     exact MeasurableSet.singleton _
+
+/-- On a countable vertex type, the subgraphs of a fixed graph form a measurable set: a graph lies
+below `H` when none of the countably many non-edges of `H` is one of its edges. -/
+theorem measurableSet_Iic [Countable V] (H : SimpleGraph V) : MeasurableSet (Set.Iic H) :=
+  measurableSet_setOfPred.2 <| Measurable.forall fun x => .forall fun y =>
+    (measurable_iff_adj.1 measurable_id x y).imp measurable_const
 
 variable {W : Type*}
 
