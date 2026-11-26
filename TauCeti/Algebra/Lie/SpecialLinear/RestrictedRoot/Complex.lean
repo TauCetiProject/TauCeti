@@ -10,14 +10,13 @@ public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Basic
 public import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
 
 /-!
 # Restricted roots of `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra
 
-On `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra, with the Cartan involution `θ X = -Xᴴ`
-(`TauCeti.isCartanInvolution_restrictNegConjTranspose_slComplex`), the real trace-zero diagonal
-matrices `𝔞` (`TauCeti.slComplexRealDiagonal`) form a maximal abelian subspace of the
+On `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra (`TauCeti.slComplexReal`), with the Cartan involution
+`θ X = -Xᴴ` (`TauCeti.isCartanInvolution_restrictNegConjTranspose_slComplex`), the real trace-zero
+diagonal matrices `𝔞` (`TauCeti.slComplexRealDiagonal`) form a maximal abelian subspace of the
 `-1`-eigenspace `𝔭` (the Hermitian matrices). For `H ∈ 𝔞` the bracket `[H, X]` has `(k, l)` entry
 `(H k k - H l l) X k l`, so:
 
@@ -32,8 +31,6 @@ and `𝔪 = i𝔞`.
 
 ## Main definitions
 
-* `TauCeti.slComplexReal`: `𝔰𝔩_n(ℂ)` viewed as a real Lie subalgebra of `𝔤𝔩_n(ℂ)`, with the Cartan
-  involution `TauCeti.slComplexNegConjTranspose`.
 * `TauCeti.slComplexRealDiagonal`: the real trace-zero diagonal matrices in `𝔰𝔩_n(ℂ)`.
 * `TauCeti.slComplexRestrictedRoot`: the functional `e_i - e_j` on them.
 
@@ -66,23 +63,6 @@ namespace TauCeti
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
 variable (n) in
-/-- `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra, as a real Lie subalgebra of `𝔤𝔩_n(ℂ)`. -/
-noncomputable abbrev slComplexReal : LieSubalgebra ℝ (Matrix n n ℂ) :=
-  ((SpecialLinear.sl n ℂ).restrictScalarsIncl ℝ).range
-
-/-- A complex matrix lies in `𝔰𝔩_n(ℂ)` viewed as real exactly when its trace vanishes. -/
-theorem mem_slComplexReal_iff {A : Matrix n n ℂ} : A ∈ slComplexReal n ↔ A.trace = 0 :=
-  (LieSubalgebra.mem_range_restrictScalarsIncl _ _ _).trans SpecialLinear.mem_sl_iff
-
-variable (n) in
-/-- The Cartan involution `X ↦ -Xᴴ` of `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra
-(`TauCeti.isCartanInvolution_restrictNegConjTranspose_slComplex`). -/
-noncomputable abbrev slComplexNegConjTranspose : slComplexReal n ≃ₗ⁅ℝ⁆ slComplexReal n :=
-  (slComplexReal n).restrictNegConjTranspose
-    ((SpecialLinear.sl n ℂ).conjTranspose_mem_range_restrictScalarsIncl
-      fun _ ↦ SpecialLinear.conjTranspose_mem_sl)
-
-variable (n) in
 /-- The real trace-zero diagonal matrices, as a real subspace of `𝔰𝔩_n(ℂ)` viewed as a real Lie
 algebra: a maximal abelian subspace of the Hermitian matrices
 (`TauCeti.isMaximalAbelianInP_slComplexRealDiagonal`). -/
@@ -93,6 +73,7 @@ def slComplexRealDiagonal :
   zero_mem' := ⟨by simp, fun _ ↦ by simp⟩
   smul_mem' c X hX := ⟨by simpa using hX.1.smul c, fun k ↦ by simp [hX.2 k]⟩
 
+@[simp]
 theorem mem_slComplexRealDiagonal {X : slComplexReal n} :
     X ∈ slComplexRealDiagonal n ↔
       (X : Matrix n n ℂ).IsDiag ∧ ∀ k, ((X : Matrix n n ℂ) k k).im = 0 :=
@@ -176,12 +157,15 @@ theorem mem_restrictedRootSpace_slComplexRealDiagonal_iff {μ : Dual ℝ (slComp
   refine forall_congr' fun H ↦ ⟨fun h k l ↦ ?_, fun h ↦ ?_⟩
   · have := congrFun (congrFun (congrArg Subtype.val h) k) l
     rw [coe_lie_apply_of_mem_slComplexRealDiagonal H.property] at this
-    rw [SetLike.val_smul, Matrix.smul_apply, Complex.real_smul] at this
-    rw [Complex.ofReal_sub, sub_mul, slComplexRestrictedRoot_apply, this, sub_self]
+    simp only [slComplexRestrictedRoot_apply, Complex.ofReal_sub, SetLike.val_smul,
+      Matrix.smul_apply, Complex.real_smul] at this ⊢
+    linear_combination this
   · ext k l
-    rw [coe_lie_apply_of_mem_slComplexRealDiagonal H.property, SetLike.val_smul, Matrix.smul_apply,
-      Complex.real_smul, ← sub_eq_zero, ← sub_mul, ← Complex.ofReal_sub]
-    exact h k l
+    have := h k l
+    rw [coe_lie_apply_of_mem_slComplexRealDiagonal H.property]
+    simp only [slComplexRestrictedRoot_apply, Complex.ofReal_sub, SetLike.val_smul,
+      Matrix.smul_apply, Complex.real_smul] at this ⊢
+    linear_combination this
 
 /-- **The centralizer `𝔤_0` of `𝔞` is the diagonal matrices.** -/
 theorem mem_restrictedRootSpace_zero_slComplexRealDiagonal_iff
@@ -203,12 +187,10 @@ theorem slComplexRealDiagonal_le_cartanP :
       (slComplexNegConjTranspose n).cartanP := fun X hX ↦ by
   rw [LieSubalgebra.mem_cartanP_restrictNegConjTranspose_iff]
   ext k l
-  rw [conjTranspose_apply]
   by_cases hkl : k = l
   · subst hkl
-    rw [← ofReal_re_apply_self_of_mem_slComplexRealDiagonal hX, RCLike.star_def,
-      Complex.conj_ofReal]
-  · rw [hX.1 hkl, hX.1 (Ne.symm hkl), star_zero]
+    simp [Complex.conj_eq_iff_im, hX.2 k]
+  · simp [hX.1 hkl, hX.1 (Ne.symm hkl)]
 
 /-- **The real trace-zero diagonal matrices are a maximal abelian subspace of `𝔭`.** -/
 theorem isMaximalAbelianInP_slComplexRealDiagonal :
@@ -220,10 +202,8 @@ theorem isMaximalAbelianInP_slComplexRealDiagonal :
     mem_restrictedRootSpace_zero_slComplexRealDiagonal_iff.mp
       (mem_restrictedRootSpace_zero.mpr fun H ↦ h𝔟.2 _ (hle H.property) Y hY)
   refine ⟨hdiag, fun k ↦ ?_⟩
-  have hherm := congrFun (congrFun
+  simpa [Complex.conj_eq_iff_im] using congrFun (congrFun
     ((LieSubalgebra.mem_cartanP_restrictNegConjTranspose_iff _ _).mp (h𝔟.1 hY)) k) k
-  rw [conjTranspose_apply, RCLike.star_def] at hherm
-  exact Complex.conj_eq_iff_im.mp hherm
 
 /-- **`𝔪 = i𝔞`**: an element of the fixed subalgebra `𝔨` (the skew-Hermitian matrices) centralizes
 `𝔞` exactly when it is `i` times an element of `𝔞`. -/
@@ -240,11 +220,9 @@ theorem mem_restrictedRootSpace_zero_inf_fixedSubalgebra_slComplexRealDiagonal_i
       mem_slComplexReal_iff.mpr <| by
         rw [trace_smul, mem_slComplexReal_iff.mp X.property, smul_zero]
     refine ⟨⟨_, hmem⟩, ⟨hdiag.smul _, fun k ↦ ?_⟩, ?_⟩
-    · have := congrFun (congrFun hskew k) k
-      rw [conjTranspose_apply, RCLike.star_def, Matrix.neg_apply] at this
-      have hre : ((X : Matrix n n ℂ) k k).re = 0 := by
-        have := congrArg Complex.re this
-        rw [Complex.conj_re, Complex.neg_re] at this
+    · have hre : ((X : Matrix n n ℂ) k k).re = 0 := by
+        have := congrArg Complex.re (congrFun (congrFun hskew k) k)
+        simp at this
         linarith
       simp [hre]
     · rw [smul_smul]
@@ -303,7 +281,7 @@ theorem mem_restrictedRootSpace_slComplexRestrictedRoot_iff {i j : n} (hij : i �
     intro H k l
     rw [h, single_apply]
     split_ifs with hkl
-    · rw [hkl.1, hkl.2, sub_self, Complex.ofReal_zero, zero_mul]
+    · simp [hkl.1, hkl.2]
     · rw [mul_zero]
 
 /-- **The restricted roots of `𝔰𝔩_n(ℂ)` viewed as real are the `e_i - e_j` with `i ≠ j`.** -/

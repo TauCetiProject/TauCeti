@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.Algebra.Lie.SpecialLinear.ConjTranspose
 public import TauCeti.Algebra.Lie.Subalgebra.RestrictScalars
 public import TauCeti.Algebra.Lie.Symplectic.Basic
+import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.Radical
 import TauCeti.Algebra.Lie.Orthogonal.Killing
 import TauCeti.Algebra.Lie.Symplectic.Killing
@@ -27,6 +28,11 @@ Cartan involution of `𝔩` as a real Lie algebra (Knapp, Prop. 6.28).
 This applies to the complex classical Lie algebras `𝔰𝔩_n(ℂ)`, `𝔰𝔬_n(ℂ)` (for `n ≥ 3`) and
 `𝔰𝔭_{2n}(ℂ)`. Here the fixed algebra of `θ` is the compact real form of skew-Hermitian matrices
 in `𝔩`, and `𝔭` consists of the Hermitian ones.
+
+## Main definitions
+
+* `TauCeti.slComplexReal`: `𝔰𝔩_n(ℂ)` viewed as a real Lie subalgebra of `𝔤𝔩_n(ℂ)`.
+* `TauCeti.slComplexNegConjTranspose`: its Cartan involution `X ↦ -Xᴴ`.
 
 ## Main results
 
@@ -77,11 +83,26 @@ namespace TauCeti
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
+variable (n) in
+/-- `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra, as a real Lie subalgebra of `𝔤𝔩_n(ℂ)`. -/
+noncomputable abbrev slComplexReal : LieSubalgebra ℝ (Matrix n n ℂ) :=
+  ((SpecialLinear.sl n ℂ).restrictScalarsIncl ℝ).range
+
+/-- A complex matrix lies in `𝔰𝔩_n(ℂ)` viewed as real exactly when its trace vanishes. -/
+theorem mem_slComplexReal_iff {A : Matrix n n ℂ} : A ∈ slComplexReal n ↔ A.trace = 0 :=
+  (LieSubalgebra.mem_range_restrictScalarsIncl _ _ _).trans SpecialLinear.mem_sl_iff
+
+variable (n) in
+/-- The Cartan involution `X ↦ -Xᴴ` of `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra
+(`TauCeti.isCartanInvolution_restrictNegConjTranspose_slComplex`). -/
+noncomputable abbrev slComplexNegConjTranspose : slComplexReal n ≃ₗ⁅ℝ⁆ slComplexReal n :=
+  (slComplexReal n).restrictNegConjTranspose
+    ((SpecialLinear.sl n ℂ).conjTranspose_mem_range_restrictScalarsIncl
+      fun _ ↦ SpecialLinear.conjTranspose_mem_sl)
+
 /-- **`X ↦ -Xᴴ` is a Cartan involution of `𝔰𝔩_n(ℂ)` viewed as a real Lie algebra.** -/
 theorem isCartanInvolution_restrictNegConjTranspose_slComplex :
-    (((SpecialLinear.sl n ℂ).restrictScalarsIncl ℝ).range.restrictNegConjTranspose
-      ((SpecialLinear.sl n ℂ).conjTranspose_mem_range_restrictScalarsIncl
-        fun _ ↦ SpecialLinear.conjTranspose_mem_sl)).IsCartanInvolution :=
+    (slComplexNegConjTranspose n).IsCartanInvolution :=
   LieSubalgebra.isCartanInvolution_restrictNegConjTranspose_range_restrictScalarsIncl _
     (center_eq_bot ℂ _) fun _ ↦ SpecialLinear.conjTranspose_mem_sl
 
