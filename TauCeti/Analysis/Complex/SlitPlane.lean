@@ -80,7 +80,7 @@ half-plane.
   `Complex.add_one_div_sub_one_mem_slitPlane`, `Complex.sq_sub_one_mem_slitPlane`,
   `Complex.one_sub_inv_sq_mem_slitPlane_iff`, `Complex.one_sub_inv_sq_mem_slitPlane`
 * `Complex.isOpen_setOf_sub_one_mem_slitPlane`,
-  `Complex.starConvex_two_setOf_sub_one_mem_slitPlane`,
+  `Complex.starConvex_ofReal_setOf_sub_one_mem_slitPlane`,
   `Complex.isConnected_setOf_sub_one_mem_slitPlane`
 * `TauCeti.isOpen_setOf_im_ne_zero_or_re_mem`, `Convex.starConvex_setOf_im_ne_zero_or_re_mem`,
   `TauCeti.ofReal_mem_setOf_im_ne_zero_or_re_mem_iff`
@@ -760,19 +760,20 @@ theorem one_sub_inv_sq_mem_slitPlane {z : ℂ} (hz : z - 1 ∈ slitPlane) :
 theorem isOpen_setOf_sub_one_mem_slitPlane : IsOpen {z : ℂ | z - 1 ∈ slitPlane} :=
   isOpen_slitPlane.preimage (continuous_id.sub continuous_const)
 
-/-- The cut plane `ℂ \ (-∞, 1]` is star-convex about `2`. -/
-theorem starConvex_two_setOf_sub_one_mem_slitPlane :
-    StarConvex ℝ (2 : ℂ) {z : ℂ | z - 1 ∈ slitPlane} := by
-  have h₁ : StarConvex ℝ ((-1 : ℂ) + 2) slitPlane := by
-    rw [show (-1 : ℂ) + 2 = 1 by norm_num]
-    exact starConvex_one_slitPlane
+/-- The cut plane `ℂ \ (-∞, 1]` is star-convex about every real number `x > 1`. -/
+theorem starConvex_ofReal_setOf_sub_one_mem_slitPlane {x : ℝ} (hx : 1 < x) :
+    StarConvex ℝ (x : ℂ) {z : ℂ | z - 1 ∈ slitPlane} := by
+  have h₁ : StarConvex ℝ ((-1 : ℂ) + x) slitPlane := by
+    rw [neg_add_eq_sub, ← ofReal_one, ← ofReal_sub]
+    exact starConvex_ofReal_slitPlane (sub_pos.2 hx)
   convert h₁.preimage_add_right using 1
   ext z
   simp [neg_add_eq_sub]
 
 /-- The cut plane `ℂ \ (-∞, 1]` is connected. -/
 theorem isConnected_setOf_sub_one_mem_slitPlane : IsConnected {z : ℂ | z - 1 ∈ slitPlane} :=
-  (starConvex_two_setOf_sub_one_mem_slitPlane.isPathConnected (by norm_num)).isConnected
+  ((starConvex_ofReal_setOf_sub_one_mem_slitPlane (x := 2) one_lt_two).isPathConnected
+    (by norm_num)).isConnected
 
 /-- A closed ball centered at `1` lies in the slit plane iff its radius is strictly less than
 `1`. -/

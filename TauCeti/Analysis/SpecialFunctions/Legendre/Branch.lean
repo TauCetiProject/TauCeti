@@ -35,10 +35,10 @@ function, and the branch identities between these powers: on all of `D` for `(1 
 * `Complex.add_one_div_sub_one_cpow`: on `U`, `((z + 1) / (z - 1))^s = (z + 1)^s (z - 1)^(-s)`.
 * `Complex.sq_sub_one_cpow`: for `0 < re z`, `(z² - 1)^s = (z - 1)^s (z + 1)^s`, so the product
   `(z - 1)^s (z + 1)^s`, which is holomorphic on `U`, is the principal power on the right
-  half-plane, and on `[1, ∞)` the principal power of the nonnegative real `x² - 1`
-  (`Complex.ofReal_sub_one_cpow_mul_ofReal_add_one_cpow`). On the left half-plane the principal
-  `(z² - 1)^s` jumps across the imaginary axis, which is why the definition of `𝑸^μ_ν` uses the
-  product.
+  half-plane, and for real `x > 0` the principal power of the real number `x² - 1`, nonnegative
+  on `[1, ∞)` (`Complex.ofReal_sub_one_cpow_mul_ofReal_add_one_cpow`). On the left half-plane the
+  principal `(z² - 1)^s` jumps across the imaginary axis, which is why the definition of `𝑸^μ_ν`
+  uses the product.
 * `Complex.differentiableOn_one_add_div_one_sub_cpow`, `Complex.differentiableOn_one_sub_sq_cpow`,
   `Complex.differentiableOn_add_one_div_sub_one_cpow`,
   `Complex.differentiableOn_sub_one_cpow_mul_add_one_cpow`: the power prefactors are holomorphic on
@@ -124,9 +124,9 @@ theorem sq_sub_one_cpow {z : ℂ} (hre : 0 < z.re) (s : ℂ) :
   rw [show z ^ 2 - 1 = (z - 1) * (z + 1) by ring]
   exact TauCeti.mul_cpow_of_arg_add_mem (arg_sub_one_add_arg_add_one_mem_Ioc hre) s
 
-/-- On `[1, ∞)` the product `(x - 1)^s (x + 1)^s` is the principal power of the nonnegative real
-number `x² - 1`. -/
-theorem ofReal_sub_one_cpow_mul_ofReal_add_one_cpow {x : ℝ} (hx : 1 ≤ x) (s : ℂ) :
+/-- On the positive real axis the product `(x - 1)^s (x + 1)^s` is the principal power of the
+real number `x² - 1`, which is nonnegative on `[1, ∞)`. -/
+theorem ofReal_sub_one_cpow_mul_ofReal_add_one_cpow {x : ℝ} (hx : 0 < x) (s : ℂ) :
     ((x : ℂ) - 1) ^ s * ((x : ℂ) + 1) ^ s = ((x ^ 2 - 1 : ℝ) : ℂ) ^ s := by
   rw [← sq_sub_one_cpow (by simp; linarith), ofReal_sub, ofReal_pow, ofReal_one]
 
