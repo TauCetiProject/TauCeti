@@ -117,8 +117,9 @@ def strongDualCotangentFlat :
     (V × StrongDual ℝ V) →L[ℝ] (V × StrongDual ℝ V) →L[ℝ] ℝ :=
   strongDualCotangentSymplecticForm.toBilinForm.mkContinuous₂ 2 fun x y ↦ by
     -- `|β(q) - α(q')| ≤ ‖β‖ ‖q‖ + ‖α‖ ‖q'‖`, and each factor is bounded by a norm of `x` or `y`.
-    change ‖strongDualCotangentSymplecticForm x y‖ ≤ 2 * ‖x‖ * ‖y‖
-    rw [strongDualCotangentSymplecticForm_apply]
+    -- The `CoeFun` of `SymplecticForm` is `ω.toBilinForm` up to beta, so the evaluation lemma
+    -- applies to `toBilinForm x y` directly.
+    simp only [strongDualCotangentSymplecticForm_apply]
     calc ‖y.2 x.1 - x.2 y.1‖ ≤ ‖y.2‖ * ‖x.1‖ + ‖x.2‖ * ‖y.1‖ :=
           (norm_sub_le _ _).trans (add_le_add (y.2.le_opNorm _) (x.2.le_opNorm _))
       _ ≤ ‖y‖ * ‖x‖ + ‖x‖ * ‖y‖ := by
@@ -129,8 +130,9 @@ def strongDualCotangentFlat :
 /-- The flat map evaluates as the canonical symplectic form. -/
 theorem strongDualCotangentFlat_apply_apply_eq_strongDualCotangentSymplecticForm
     (x y : V × StrongDual ℝ V) :
-    strongDualCotangentFlat V x y = strongDualCotangentSymplecticForm x y :=
-  (rfl)
+    strongDualCotangentFlat V x y = strongDualCotangentSymplecticForm x y := by
+  -- After `mkContinuous₂_apply` both sides agree up to the beta-redex of the `CoeFun` instance.
+  rw [strongDualCotangentFlat, LinearMap.mkContinuous₂_apply]
 
 @[simp]
 theorem strongDualCotangentFlat_apply_apply (x y : V × StrongDual ℝ V) :

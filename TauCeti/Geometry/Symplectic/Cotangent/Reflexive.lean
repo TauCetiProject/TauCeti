@@ -237,7 +237,6 @@ function `(q, α) ↦ q(0)` is not a Hamiltonian vector field. -/
 theorem not_isHamiltonianVectorField_strongDualCotangentTwoForm_c0 :
     ¬ (strongDualCotangentTwoForm C₀(ℕ, ℝ)).IsHamiltonianVectorField (fun z ↦ z.1 0)
       ((strongDualCotangentTwoForm C₀(ℕ, ℝ)).hamiltonianVectorField fun z ↦ z.1 0) := by
-  classical
   have ha : ZeroAtInftyContinuousMap.evalCLM ℝ (0 : ℕ) ≠ (0 : StrongDual ℝ C₀(ℕ, ℝ)) := fun h ↦ by
     simpa [ZeroAtInftyContinuousMap.single_apply] using
       congrArg (fun φ ↦ φ (ZeroAtInftyContinuousMap.single 0 1)) h
