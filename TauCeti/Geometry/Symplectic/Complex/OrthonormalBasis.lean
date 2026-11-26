@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.Algebra.Star.Unitary
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.AlmostComplex.UnitaryGroup
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
@@ -1068,6 +1069,19 @@ theorem continuous_centralizerToUnitaryGroup :
     ((e.complexCoords 2).toLinearMap.continuous_of_finiteDimensional.comp
       ((continuous_subtypeVal.comp continuous_subtypeVal).clm_apply continuous_const))).congr
     fun g ↦ (e.coe_centralizerToUnitaryGroup_apply hJ₀ h₀ h₂ g i j).symm
+
+/-- `OrthonormalBasis.centralizerToUnitaryGroup`, the unitary matrices of the orthogonal
+transformations commuting with `J₀` in the complex coordinates of `e`, as a continuous
+homomorphism. -/
+noncomputable def centralizerToUnitaryGroupContinuousMonoidHom :
+    Subgroup.centralizer {J₀} →ₜ* Matrix.unitaryGroup (Fin 2) ℂ :=
+  ⟨e.centralizerToUnitaryGroup hJ₀ h₀ h₂, e.continuous_centralizerToUnitaryGroup hJ₀ h₀ h₂⟩
+
+@[simp]
+theorem centralizerToUnitaryGroupContinuousMonoidHom_apply (g : Subgroup.centralizer {J₀}) :
+    e.centralizerToUnitaryGroupContinuousMonoidHom hJ₀ h₀ h₂ g =
+      e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g :=
+  (rfl)
 
 end CentralizerUnitaryGroup
 

@@ -139,6 +139,22 @@ theorem ext {J K : ContinuousComplexStructure F V} (h : ∀ b v, J b v = K b v) 
 theorem apply_apply (b : B) (v : V b) : J b (J b v) = -v := by
   simpa using congrArg (fun T : V b →L[ℝ] V b ↦ T v) (J.comp_self b)
 
+/-- The continuous complex structure given by fibrewise endomorphisms `J b` with `J b ∘ J b = -1`
+that are continuous on the total space of `V`. For a finite-dimensional model fibre this is
+continuity of `J` as a section of the endomorphism bundle (`TauCeti.continuous_hom_bundle_iff`). -/
+def ofContinuous [FiniteDimensional ℝ F] (J : ∀ b, V b →L[ℝ] V b)
+    (hJ : Continuous fun v : TotalSpace F V ↦ TotalSpace.mk' F v.proj (J v.proj v.snd))
+    (hJ₂ : ∀ b v, J b (J b v) = -v) : ContinuousComplexStructure F V where
+  toFun := J
+  comp_self b := ContinuousLinearMap.ext (hJ₂ b)
+  continuous := (TauCeti.continuous_hom_bundle_iff J).2 hJ
+
+@[simp]
+theorem ofContinuous_apply [FiniteDimensional ℝ F] (J : ∀ b, V b →L[ℝ] V b)
+    (hJ : Continuous fun v : TotalSpace F V ↦ TotalSpace.mk' F v.proj (J v.proj v.snd))
+    (hJ₂ : ∀ b v, J b (J b v) = -v) (b : B) (v : V b) : ofContinuous J hJ hJ₂ b v = J b v :=
+  (rfl)
+
 /-- The value of `J` at `b`, as an almost complex structure on the fibre `V b`. -/
 def almostComplexStructureAt (b : B) : TauCeti.AlmostComplexStructure (V b) where
   toLinearMap := (J b).toLinearMap
