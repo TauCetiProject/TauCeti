@@ -220,15 +220,10 @@ of `X`: lifting a finite CW model of `X` along `ULift` keeps its cells. -/
 theorem eulerChar_ulift : eulerChar (ULift.{v} X) = eulerChar X := by
   obtain ⟨Y, _, _, C, _, _, ⟨e⟩⟩ := ‹FiniteCWType X›.exists_homotopyEquiv
   -- The lift of `C` to `ULift.{v} Y` is a finite CW complex with the cells of `C`.
-  let : RelCWComplex (ULift.down ⁻¹' C : Set (ULift.{v} Y)) ∅ :=
-    RelCWComplex.ulift (C := C) (D := ∅)
-  let : CWComplex (ULift.down ⁻¹' C : Set (ULift.{v} Y)) := RelCWComplex.toCWComplex _
-  have : RelCWComplex.Finite (ULift.down ⁻¹' C : Set (ULift.{v} Y)) :=
-    finite_ulift (C := C) (D := ∅)
-  rw [eulerChar_eq_cwEulerChar (C := (ULift.down ⁻¹' C : Set (ULift.{v} Y)))
-      ((Homeomorph.ulift.toHomotopyEquiv.trans e).trans
-      (Homeomorph.ulift.subtype fun _ ↦ Iff.rfl).symm.toHomotopyEquiv),
-    eulerChar_eq_cwEulerChar e, cwEulerChar_def, cwEulerChar_def]
+  let := CWComplex.ulift.{v} (C := C)
+  have := finite_ulift.{v} (C := C) (D := ∅)
+  rw [eulerChar_eq_cwEulerChar e.ulift, eulerChar_eq_cwEulerChar e, cwEulerChar_def,
+    cwEulerChar_def]
   exact finsum_congr fun n ↦ by rw [Nat.card_congr (uliftCellEquiv (C := C) (D := ∅) n)]
 
 end

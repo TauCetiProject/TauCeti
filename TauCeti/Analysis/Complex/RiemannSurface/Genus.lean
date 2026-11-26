@@ -10,12 +10,12 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Branch.EulerCharacteristic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch
 public import TauCeti.Geometry.Manifold.Complex.FiniteCWType
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.Topology.Instances.Shrink
 import TauCeti.Analysis.Complex.RiemannSurface.Branch.Sphere
 import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Duality
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Complex.FundamentalClass
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Topology.Instances.Shrink
 
 /-!
 # The genus of a Riemann surface
@@ -256,8 +256,6 @@ theorem eulerChar_eq_two_sub_two_mul_genus (X : Type*) [TopologicalSpace X] [Cha
   let e : X ≃ₜ Shrink.{0} X := Shrink.homeomorph X
   let : ChartedSpace ℂ (Shrink.{0} X) := e.symm.pullbackChartedSpace
   have : IsManifold 𝓘(ℂ) 1 (Shrink.{0} X) := e.symm.pullback_isManifold 𝓘(ℂ) 1
-  have : T2Space (Shrink.{0} X) := e.symm.isEmbedding.t2Space
-  have : CompactSpace (Shrink.{0} X) := e.compactSpace
   have : ConnectedSpace (Shrink.{0} X) := e.surjective.connectedSpace e.continuous
   have hχ : eulerChar X = eulerChar (Shrink.{0} X) :=
     (e.trans Homeomorph.ulift.symm).eulerChar_eq.trans (eulerChar_ulift _)
@@ -279,8 +277,8 @@ theorem riemannHurwitz {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
   exact f.two_mul_genus_sub_two_eq_of_eulerChar_eq (eulerChar_eq_two_sub_two_mul_genus X)
     (eulerChar_eq_two_sub_two_mul_genus Y)
 
-/-- **The first Betti number of a compact Riemann surface is even.** A compact connected Hausdorff
-Riemann surface `X` has `dim H₁(X; ℚ) = 2 · genus X`, an even number. -/
+/-- **The first Betti number of a compact Riemann surface is even.** The first rational Betti
+number `dim H₁(X; ℚ)` of a compact connected Hausdorff Riemann surface `X` is even. -/
 theorem even_finrank_singularHomology_one (X : Type) [TopologicalSpace X] [ChartedSpace ℂ X]
     [IsManifold 𝓘(ℂ) 1 X] [T2Space X] [CompactSpace X] [ConnectedSpace X] :
     Even (Module.finrank ℚ (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℚ) 1).obj

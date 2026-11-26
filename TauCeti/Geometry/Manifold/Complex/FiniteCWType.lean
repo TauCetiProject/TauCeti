@@ -33,7 +33,8 @@ Since a complex vector space of dimension `n` is a real normed space of dimensio
 connected Riemann surface (see the check on the Riemann sphere below).
 
 These statements do not assert `b₂ = 1` or that `b₁` is even. The first needs the fundamental
-class of the complex orientation, the second Poincaré duality.
+class of the complex orientation; the second, for compact connected Riemann surfaces, is
+`TauCeti.RiemannSurface.even_finrank_singularHomology_one`.
 
 With the underlying real manifold structure `IsManifold.restrictScalars`, `eulerChar M` is the
 signed count of the critical points of any Morse function on `M`, by

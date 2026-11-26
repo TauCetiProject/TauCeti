@@ -27,6 +27,9 @@ homeomorphic spaces in different universes.
 * `Topology.RelCWComplex.ulift`: the CW structure on `ULift.down ⁻¹' C` relative to
   `ULift.down ⁻¹' D`.
 * `Topology.RelCWComplex.uliftCellEquiv`: its `n`-cells are the `n`-cells of `C`.
+* `Topology.CWComplex.ulift`: the lift of an absolute CW complex, with empty base.
+* `ContinuousMap.HomotopyEquiv.ulift`: a homotopy equivalence `X ≃ₕ C` lifted to
+  `ULift.{v} X ≃ₕ ULift.down ⁻¹' C`.
 
 ## Main results
 
@@ -61,8 +64,8 @@ private lemma coe_uliftCellMap (n : ℕ) (i : cell C n) :
 
 private lemma image_uliftCellMap (n : ℕ) (i : cell C n) (s : Set (Fin n → ℝ)) :
     uliftCellMap.{v} n i '' s = ULift.down ⁻¹' (map n i '' s) := by
-  rw [coe_uliftCellMap, image_comp, ← Equiv.ulift_symm_apply, Equiv.image_eq_preimage_symm]
-  rfl
+  ext ⟨x⟩
+  simp [coe_uliftCellMap]
 
 /-- **The lift of a relative CW complex to a higher universe.** If `C` is a CW complex relative
 to `D` in `X`, then `ULift.down ⁻¹' C` is a CW complex relative to `ULift.down ⁻¹' D` in
@@ -139,6 +142,26 @@ lemma finite_ulift [RelCWComplex.Finite C] :
 
 end Topology.RelCWComplex
 
+namespace Topology.CWComplex
+
+variable {X : Type w} [TopologicalSpace X] {C : Set X} [CWComplex C]
+
+/-- The lift of a CW complex `C` in `X` to the CW complex `ULift.down ⁻¹' C` in `ULift.{v} X`:
+`Topology.RelCWComplex.ulift` with empty base, since the preimage of the empty base is empty. -/
+@[expose, instance_reducible]
+def ulift : CWComplex (ULift.down ⁻¹' C : Set (ULift.{v} X)) :=
+  @RelCWComplex.toCWComplex _ _ _ (RelCWComplex.ulift (C := C) (D := ∅))
+
+end Topology.CWComplex
+
+/-- A homotopy equivalence `X ≃ₕ C` with a subset `C` of `Y` lifts to a homotopy equivalence
+`ULift.{v} X ≃ₕ ULift.down ⁻¹' C` with the preimage of `C` in `ULift.{v} Y`. -/
+def ContinuousMap.HomotopyEquiv.ulift {X : Type*} {Y : Type w} [TopologicalSpace X]
+    [TopologicalSpace Y] {C : Set Y} (e : ContinuousMap.HomotopyEquiv X C) :
+    ContinuousMap.HomotopyEquiv (ULift.{v} X) (ULift.down ⁻¹' C : Set (ULift.{v} Y)) :=
+  (Homeomorph.ulift.toHomotopyEquiv.trans e).trans
+    (Homeomorph.ulift.subtype fun _ ↦ Iff.rfl).symm.toHomotopyEquiv
+
 namespace TauCeti
 
 open Topology Topology.RelCWComplex
@@ -149,14 +172,7 @@ complex `C` in `Y`, then `ULift.{v} X` is homotopy equivalent to its lift
 instance FiniteCWType.ulift (X : Type w) [TopologicalSpace X] [h : FiniteCWType X] :
     FiniteCWType (ULift.{v} X) := by
   obtain ⟨Y, _, _, C, _, _, ⟨e⟩⟩ := h.exists_homotopyEquiv
-  -- The preimage of the empty base is empty, so the lift of `C` is an absolute CW complex.
-  let : RelCWComplex (ULift.down ⁻¹' C : Set (ULift.{v} Y)) ∅ :=
-    RelCWComplex.ulift (C := C) (D := ∅)
-  let : CWComplex (ULift.down ⁻¹' C : Set (ULift.{v} Y)) := RelCWComplex.toCWComplex _
-  have : RelCWComplex.Finite (ULift.down ⁻¹' C : Set (ULift.{v} Y)) :=
-    finite_ulift (C := C) (D := ∅)
-  exact ⟨ULift.{v} Y, _, inferInstance, _, inferInstance, this,
-    ⟨(Homeomorph.ulift.toHomotopyEquiv.trans e).trans
-      (Homeomorph.ulift.subtype fun _ ↦ Iff.rfl).symm.toHomotopyEquiv⟩⟩
+  exact ⟨ULift.{v} Y, _, inferInstance, _, CWComplex.ulift (C := C),
+    finite_ulift (C := C) (D := ∅), ⟨e.ulift⟩⟩
 
 end TauCeti
