@@ -286,10 +286,8 @@ include hV hC in
 is `X₀` at all sufficiently negative times. -/
 theorem eventually_atBot_continuationSpaceField_eq :
     ∀ᶠ s in atBot, continuationSpaceField C V s = X₀ := by
-  have hq : Tendsto (intervalBaseOrbit C) atBot (𝓝[>] 0) :=
-    tendsto_nhdsWithin_iff.2
-      ⟨tendsto_intervalBaseOrbit_atBot hC, .of_forall fun s ↦ (intervalBaseOrbit_mem_Ioo C s).1⟩
-  filter_upwards [hq.eventually hV.eventually_fst_eq_left] with s hs
+  filter_upwards [(tendsto_intervalBaseOrbit_atBot_nhdsGT hC).eventually hV.eventually_fst_eq_left]
+    with s hs
   exact funext fun x ↦ hs x
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
@@ -298,10 +296,8 @@ include hV hC in
 is `X₁` at all sufficiently positive times. -/
 theorem eventually_atTop_continuationSpaceField_eq :
     ∀ᶠ s in atTop, continuationSpaceField C V s = X₁ := by
-  have hq : Tendsto (intervalBaseOrbit C) atTop (𝓝[<] 1) :=
-    tendsto_nhdsWithin_iff.2
-      ⟨tendsto_intervalBaseOrbit_atTop hC, .of_forall fun s ↦ (intervalBaseOrbit_mem_Ioo C s).2⟩
-  filter_upwards [hq.eventually hV.eventually_fst_eq_right] with s hs
+  filter_upwards [(tendsto_intervalBaseOrbit_atTop_nhdsLT hC).eventually hV.eventually_fst_eq_right]
+    with s hs
   exact funext fun x ↦ hs x
 
 include hV hX₀ hX₁ hC hVs in

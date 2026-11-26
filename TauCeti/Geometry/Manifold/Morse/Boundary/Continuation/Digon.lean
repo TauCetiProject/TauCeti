@@ -174,10 +174,8 @@ include hV hC
 are all `X₀` before a common time. -/
 theorem exists_forall_lt_continuationSpaceField_eq :
     ∃ a₀, ∀ s < a₀, ∀ l ∈ Icc (0 : ℝ) 1, continuationSpaceField C (V l) s = X₀ := by
-  have hq : Tendsto (intervalBaseOrbit C) atBot (𝓝[>] 0) :=
-    tendsto_nhdsWithin_iff.2
-      ⟨tendsto_intervalBaseOrbit_atBot hC, .of_forall fun s ↦ (intervalBaseOrbit_mem_Ioo C s).1⟩
-  obtain ⟨a₀, ha₀⟩ := eventually_atBot.1 (hq.eventually hV.eventually_fst_eq_left)
+  obtain ⟨a₀, ha₀⟩ := eventually_atBot.1
+    ((tendsto_intervalBaseOrbit_atBot_nhdsGT hC).eventually hV.eventually_fst_eq_left)
   exact ⟨a₀, fun s hs l hl ↦ funext fun x ↦ by
     rw [continuationSpaceField_apply]
     exact ha₀ s hs.le l hl x⟩
@@ -186,10 +184,8 @@ theorem exists_forall_lt_continuationSpaceField_eq :
 are all `X₁` after a common time. -/
 theorem exists_forall_gt_continuationSpaceField_eq :
     ∃ b₀, ∀ s > b₀, ∀ l ∈ Icc (0 : ℝ) 1, continuationSpaceField C (V l) s = X₁ := by
-  have hq : Tendsto (intervalBaseOrbit C) atTop (𝓝[<] 1) :=
-    tendsto_nhdsWithin_iff.2
-      ⟨tendsto_intervalBaseOrbit_atTop hC, .of_forall fun s ↦ (intervalBaseOrbit_mem_Ioo C s).2⟩
-  obtain ⟨b₀, hb₀⟩ := eventually_atTop.1 (hq.eventually hV.eventually_fst_eq_right)
+  obtain ⟨b₀, hb₀⟩ := eventually_atTop.1
+    ((tendsto_intervalBaseOrbit_atTop_nhdsLT hC).eventually hV.eventually_fst_eq_right)
   exact ⟨b₀, fun s hs l hl ↦ funext fun x ↦ by
     rw [continuationSpaceField_apply]
     exact hb₀ s hs.le l hl x⟩
@@ -311,8 +307,7 @@ theorem eventually_morseDegreeOneMap_morseDigonSlice_eq (hf₁ : IsMorse 𝓘(�
   obtain ⟨σ, hσ⟩ := exists_intervalBaseOrbit_eq hC.ne' (by norm_num : (1 / 2 : ℝ) ∈ Ioo 0 1)
   filter_upwards [hV.eventually_bijOn_morseDigonSlice hX₀ hX₁ hC hVs hσ] with a ha
   filter_upwards [ha] with b hb
-  exact morseDegreeOneMap_congr_ncard hf₁ fun p q _ ↦ by
-    rw [← (hb p q).image_eq, (hb p q).injOn.ncard_image]
+  exact morseDegreeOneMap_congr_ncard hf₁ fun p q _ ↦ (hb p q).ncard_eq
 
 variable {hX₀ hX₁} (h₀ : hX₀.IsMorseSmale) (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
   (h₁ : hX₁.IsMorseSmale) (hf₁ : IsMorse 𝓘(ℝ, E) f₁)
