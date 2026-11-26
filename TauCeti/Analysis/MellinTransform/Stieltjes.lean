@@ -83,7 +83,8 @@ private theorem integrableOn_Ioc_pow_smul_cpow_smul (hα₁ : α < 1) {m k : ℕ
     IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ m • ((t : ℂ) ^ (-((k : ℂ) + α)) • c)) (Ioc 0 1) := by
   have hk' : (k : ℝ) ≤ m := by exact_mod_cast hk
   refine (integrableOn_Ioc_cpow_smul_cpow_smul (z := (m : ℂ) + 1) (w := -((k : ℂ) + α))
-    (by simp; linarith) c).congr_fun (fun t _ ↦ ?_) measurableSet_Ioc
+    (by simp only [add_re, neg_re, natCast_re, ofReal_re, one_re]; linarith) c).congr_fun
+    (fun t _ ↦ ?_) measurableSet_Ioc
   simp only [add_sub_cancel_right, cpow_natCast]
 
 /-- Near `0`, `t ^ m` times the remainder after `j ≤ m + 1` terms is integrable on `(0, 1]`. -/
@@ -150,6 +151,18 @@ private theorem integrableOn_pow_mul_inv_add_smul_sub_sum (hα₀ : 0 < α) (hα
       _ ≤ t ^ m * (c⁻¹ * t⁻¹) := by gcongr; linarith
       _ = c⁻¹ * (t ^ m / t) := by ring
 
+/-- `tⁿ` times the remainder after `n + 1` terms is integrable on `(0, ∞)`. -/
+private theorem integrableOn_pow_smul_sub_sum_succ (hα₀ : 0 < α) (hα₁ : α < 1)
+    (hf : LocallyIntegrableOn f (Ici 0)) {n : ℕ}
+    (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range (n + 1), (t : ℂ) ^ (-((k : ℂ) + α)) • a k)
+      =O[atTop] fun t ↦ (t : ℂ) ^ (-(((n + 1 : ℕ) : ℂ) + α))) :
+    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ n •
+      (f t - ∑ k ∈ Finset.range (n + 1), (t : ℂ) ^ (-((k : ℂ) + α)) • a k)) (Ioi 0) := by
+  rw [← Ioc_union_Ioi_eq_Ioi zero_le_one]
+  refine (integrableOn_Ioc_pow_smul_sub_sum hα₁ hf le_rfl).union ?_
+  simpa only [add_sub_cancel_right, cpow_natCast] using
+    integrableOn_Ioi_cpow_smul_sub_sum hα₀ hf hn (w := (n : ℂ) + 1) (by simp)
+
 /-! ### The expansion -/
 
 /-- An expansion at `+∞` through `n + 1` terms gives one through `n` terms. -/
@@ -164,7 +177,8 @@ private theorem isBigO_sub_sum_of_succ {n : ℕ}
     filter_upwards [eventually_ge_atTop 1] with t ht
     rw [norm_cpow_eq_rpow_re_of_pos (one_pos.trans_le ht),
       norm_cpow_eq_rpow_re_of_pos (one_pos.trans_le ht), one_mul]
-    exact Real.rpow_le_rpow_of_exponent_le ht (by simp; linarith)
+    exact Real.rpow_le_rpow_of_exponent_le ht
+      (by simp only [neg_re, add_re, natCast_re, ofReal_re, one_re, Nat.cast_add_one]; linarith)
   have hterm : (fun t : ℝ ↦ (t : ℂ) ^ (-((n : ℂ) + α)) • a n) =O[atTop]
       fun t ↦ (t : ℂ) ^ (-((n : ℂ) + α)) :=
     IsBigO.of_bound ‖a n‖ (Eventually.of_forall fun t ↦ by rw [norm_smul, mul_comm])
@@ -183,7 +197,7 @@ private theorem mellinContAtTop_succ_natCast_add_one [CompleteSpace E] (hα₀ :
       mellinContAtTop f a (fun k ↦ (k : ℂ) + α) n ((s : ℂ) + 1) := by
   have hs' : (s : ℝ) + 1 ≤ n := by exact_mod_cast hs
   exact mellinContAtTop_succ (integrableOn_Ioi_cpow_smul_sub_sum hα₀ hf hn (by simpa using hs'))
-    (Or.inr (by simp; linarith))
+    (Or.inr (by simp only [add_re, natCast_re, ofReal_re, one_re]; linarith))
 
 /-- At `n + 1`, the continued Mellin transform through `n + 1` terms is the absolutely convergent
 Mellin integral of the remainder `f_{n+1}`. -/
@@ -194,10 +208,9 @@ private theorem mellinContAtTop_natCast_add_one_eq_integral [CompleteSpace E] (h
     mellinContAtTop f a (fun k ↦ (k : ℂ) + α) (n + 1) ((n : ℂ) + 1) =
       ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ n •
         (f t - ∑ k ∈ Finset.range (n + 1), (t : ℂ) ^ (-((k : ℂ) + α)) • a k) := by
-  have hIoi := integrableOn_Ioi_cpow_smul_sub_sum hα₀ hf hn (w := (n : ℂ) + 1) (by simp)
-  simp only [add_sub_cancel_right, cpow_natCast] at hIoi
+  have h := integrableOn_pow_smul_sub_sum_succ hα₀ hα₁ hf hn
   rw [← Ioc_union_Ioi_eq_Ioi zero_le_one, setIntegral_union (Ioc_disjoint_Ioi le_rfl)
-    measurableSet_Ioi (integrableOn_Ioc_pow_smul_sub_sum hα₁ hf le_rfl) hIoi,
+    measurableSet_Ioi (h.mono_set Ioc_subset_Ioi_self) (h.mono_set (Ioi_subset_Ioi zero_le_one)),
     mellinContAtTop_def]
   simp only [add_sub_cancel_right, cpow_natCast]
   -- on `(0, 1]` the subtracted terms integrate to the principal parts
@@ -206,7 +219,7 @@ private theorem mellinContAtTop_natCast_add_one_eq_integral [CompleteSpace E] (h
         ((n : ℂ) + 1 - ((k : ℂ) + α))⁻¹ • a k := by
     have hk' : (k : ℝ) ≤ n := by exact_mod_cast Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
     have h := integral_Ioc_cpow_smul_cpow_smul (z := (n : ℂ) + 1) (w := -((k : ℂ) + α))
-      (by simp; linarith) (a k)
+      (by simp only [add_re, neg_re, natCast_re, ofReal_re, one_re]; linarith) (a k)
     simpa only [add_sub_cancel_right, cpow_natCast, ← sub_eq_add_neg] using h
   have hint (k : ℕ) (hk : k ∈ Finset.range (n + 1)) :=
     integrableOn_Ioc_pow_smul_cpow_smul hα₁ (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)) (a k)
@@ -289,11 +302,8 @@ private theorem stieltjes_rhs_succ [CompleteSpace E] (hα₀ : 0 < α) (hα₁ :
     simp only [hR, hR', Finset.sum_range_succ]
     abel
   -- integrability of the integrands that appear
-  have h₁ : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ n • R' t) (Ioi 0) := by
-    rw [← Ioc_union_Ioi_eq_Ioi zero_le_one]
-    refine (integrableOn_Ioc_pow_smul_sub_sum hα₁ hf le_rfl).union ?_
-    simpa only [add_sub_cancel_right, cpow_natCast] using
-      integrableOn_Ioi_cpow_smul_sub_sum hα₀ hf hn (w := (n : ℂ) + 1) (by simp)
+  have h₁ : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ n • R' t) (Ioi 0) :=
+    integrableOn_pow_smul_sub_sum_succ hα₀ hα₁ hf hn
   have h₂ := integrableOn_pow_mul_inv_add_smul_sub_sum hα₀ hα₁ hf hn (m := n) le_rfl
     (Nat.le_succ n) hz
   have h₃ := integrableOn_pow_mul_inv_add_smul_sub_sum hα₀ hα₁ hf hn' (m := n) (Nat.le_succ n)
@@ -358,13 +368,11 @@ with `‖z‖ ≥ 1`. Then the integrand of the remainder is at most
 `ψ(t) = tⁿ ‖g t‖ / (t + 1)` is integrable. -/
 private theorem norm_pow_mul_inv_add_smul_le {g : ℝ → E} {n : ℕ} {C T δ : ℝ}
     (hT : ∀ t, T ≤ t → ‖g t‖ ≤ C * ‖(t : ℂ) ^ (-((n : ℂ) + α))‖) (hT1 : 1 ≤ T)
-    (hC0 : 0 < C) (hδ : 0 < δ) {z : ℂ} (hz : |z.arg| ≤ Real.pi - δ) (hr : 1 ≤ ‖z‖) {t : ℝ}
-    (ht : 0 < t) :
+    (hC0 : 0 < C) (hδ : 0 < δ) (hs0 : 0 < Real.sin (δ / 2)) {z : ℂ}
+    (hz : |z.arg| ≤ Real.pi - δ) (hr : 1 ≤ ‖z‖) {t : ℝ} (ht : 0 < t) :
     ‖((t : ℂ) ^ n * ((t : ℂ) + z)⁻¹) • g t‖ ≤
       (Real.sin (δ / 2))⁻¹ * ((T + 1) / ‖z‖ * ‖((t : ℂ) ^ n * ((t : ℂ) + ((1 : ℝ) : ℂ))⁻¹) • g t‖ +
         C * (t ^ (-α) / (t + ‖z‖))) := by
-  have hs0 : 0 < Real.sin (δ / 2) :=
-    Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith [abs_nonneg z.arg, Real.pi_pos])
   have hψt : ‖((t : ℂ) ^ n * ((t : ℂ) + ((1 : ℝ) : ℂ))⁻¹) • g t‖ = t ^ n * ‖g t‖ / (t + 1) := by
     rw [← ofReal_add]
     simp only [norm_smul, norm_mul, norm_inv, norm_pow, norm_real, Real.norm_of_nonneg ht.le,
@@ -432,13 +440,14 @@ theorem isBigO_stieltjes_remainder (hα₀ : 0 < α) (hα₁ : α < 1)
     (Real.sin (δ / 2))⁻¹ * (C * (Real.pi / Real.sin (Real.pi * α)))) ?_
   filter_upwards [hlow] with z ⟨hr, hz⟩
   have hr0 : 0 < ‖z‖ := one_pos.trans_le hr
-  have hs0 : 0 ≤ (Real.sin (δ / 2))⁻¹ := inv_nonneg.mpr
-    (Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith [abs_nonneg z.arg, Real.pi_pos])).le
+  have hs0 : 0 < Real.sin (δ / 2) :=
+    Real.sin_pos_of_pos_of_lt_pi (by linarith) (by linarith [abs_nonneg z.arg, Real.pi_pos])
   -- integrate the pointwise bound, with the real model integral `∫₀^∞ t^{-α} / (t + ‖z‖) dt`
   have hmodel := integrableOn_rpow_neg_div_add α ‖z‖ hα₀ hα₁ hr0
   have hI := norm_integral_le_of_norm_le (((hψ.const_mul _).add (hmodel.const_mul C)).const_mul _)
     ((ae_restrict_mem measurableSet_Ioi).mono fun t ht ↦
-      norm_pow_mul_inv_add_smul_le (fun t ht ↦ (hT t ht).1) (hT T le_rfl).2 hC0 hδ hz hr ht)
+      norm_pow_mul_inv_add_smul_le (fun t ht ↦ (hT t ht).1) (hT T le_rfl).2 hC0 hδ hs0 hz hr
+        ht)
   rw [integral_const_mul] at hI
   simp only [Pi.add_apply] at hI
   rw [integral_add (hψ.const_mul _) (hmodel.const_mul C), integral_const_mul,
