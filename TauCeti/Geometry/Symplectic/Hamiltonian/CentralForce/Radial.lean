@@ -186,6 +186,14 @@ theorem hasDerivAt_effectivePotential_zero_iff {m ℓ : ℝ} {U : ℝ → ℝ} {
   have h := hasDerivAt_effectivePotential (m := m) (ℓ := ℓ) hU hr
   exact ⟨fun h' ↦ sub_eq_zero.1 (h.unique h'), fun h' ↦ by rwa [h', sub_self] at h⟩
 
+/-- Away from `r = 0`, at a point where `U` is differentiable, `r` is a critical point of the
+effective potential exactly when the force balances the centrifugal term,
+`U'(r) = ℓ² / (m r³)`. -/
+theorem deriv_effectivePotential_eq_zero_iff {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ}
+    (hU : DifferentiableAt ℝ U r) (hr : r ≠ 0) :
+    deriv (effectivePotential m ℓ U) r = 0 ↔ deriv U r = ℓ ^ 2 / (m * r ^ 3) := by
+  rw [(hasDerivAt_effectivePotential (m := m) (ℓ := ℓ) hU.hasDerivAt hr).deriv, sub_eq_zero]
+
 /-- On the closed half-line `r ≥ 0`, the reduced Hamiltonian, the one-dimensional central-force
 Hamiltonian of the effective potential, is `H_ℓ(r, p_r) = p_r² / (2m) + ℓ² / (2 m r²) + U(r)`. -/
 theorem centralForceHamiltonian_effectivePotential_apply {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ}
