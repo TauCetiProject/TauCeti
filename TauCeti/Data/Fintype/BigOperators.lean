@@ -9,7 +9,10 @@ public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Order.Prod.Lex.Basic
 public import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.Algebra.Module.Defs
 import Mathlib.Tactic.Linarith
+import Mathlib.Algebra.NoZeroSMulDivisors.Basic
+import Mathlib.Tactic.Module
 
 /-!
 # Sums over finite types
@@ -57,6 +60,11 @@ sum over strictly increasing pairs `p.1 < p.2` splits into intra-cluster and int
 (`Fintype.sum_filter_lt_lex`). A sum over strictly increasing triples of a function of the clusters
 that vanishes when two consecutive clusters coincide counts each strictly increasing triple of
 clusters `(Fintype.card ι) ^ 3` times (`Fintype.sum_filter_lt_lex_triple`).
+
+A triple sum `∑ i, ∑ k, ∑ l, c i k l • x i k l` of a coefficient invariant under cyclic
+permutations of its indices against a family whose cyclic sums `x i k l + x k l i + x l i k`
+vanish is zero (`Fintype.sum_sum_sum_smul_eq_zero_of_cyclic`), over any field of characteristic
+zero.
 -/
 
 public section
@@ -433,5 +441,34 @@ theorem prod_filter_lt_lex_triple {V ι M : Type*} [Fintype V] [PartialOrder V] 
     rcases hnot with h | h
     · rw [(Prod.Lex.monotone_fst _ _ hp.1.le).eq_of_not_lt h]; exact hg₁ _ _
     · rw [(Prod.Lex.monotone_fst _ _ hp.2.le).eq_of_not_lt h]; exact hg₂ _ _
+
+/-- **Cyclic sums.** If the coefficient `c` is invariant under the cyclic permutation of its three
+indices and the family `x` has vanishing cyclic sums, `x i k l + x k l i + x l i k = 0`, then
+`∑ i, ∑ k, ∑ l, c i k l • x i k l = 0`. -/
+theorem sum_sum_sum_smul_eq_zero_of_cyclic {ι R W : Type*} [Fintype ι] [Field R] [CharZero R]
+    [AddCommGroup W] [Module R W] (c : ι → ι → ι → R) (x : ι → ι → ι → W)
+    (hc : ∀ i k l, c k l i = c i k l)
+    (hx : ∀ i k l, x i k l + x k l i + x l i k = 0) :
+    ∑ i, ∑ k, ∑ l, c i k l • x i k l = 0 := by
+  -- Reindexing the sum cyclically moves each cyclic shift of `x` onto `x` itself.
+  have h₁ : ∑ i, ∑ k, ∑ l, c i k l • x k l i = ∑ i, ∑ k, ∑ l, c i k l • x i k l := by
+    calc ∑ i, ∑ k, ∑ l, c i k l • x k l i = ∑ i, ∑ k, ∑ l, c k l i • x k l i :=
+          Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k _ ↦
+            Finset.sum_congr rfl fun l _ ↦ by rw [hc i k l]
+      _ = ∑ k, ∑ i, ∑ l, c k l i • x k l i := Finset.sum_comm
+      _ = ∑ k, ∑ l, ∑ i, c k l i • x k l i := Finset.sum_congr rfl fun k _ ↦ Finset.sum_comm
+  have h₂ : ∑ i, ∑ k, ∑ l, c i k l • x l i k = ∑ i, ∑ k, ∑ l, c i k l • x i k l := by
+    calc ∑ i, ∑ k, ∑ l, c i k l • x l i k = ∑ i, ∑ k, ∑ l, c l i k • x l i k :=
+          Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k _ ↦
+            Finset.sum_congr rfl fun l _ ↦ by rw [hc l i k]
+      _ = ∑ i, ∑ l, ∑ k, c l i k • x l i k := Finset.sum_congr rfl fun i _ ↦ Finset.sum_comm
+      _ = ∑ l, ∑ i, ∑ k, c l i k • x l i k := Finset.sum_comm
+  -- So three times the sum is the sum against the cyclic sums of `x`, which vanish.
+  have h : ∑ i, ∑ k, ∑ l, c i k l • (x i k l + x k l i + x l i k) = 0 := by simp [hx]
+  simp only [smul_add, Finset.sum_add_distrib, h₁, h₂] at h
+  have h₃ : (3 : R) • ∑ i, ∑ k, ∑ l, c i k l • x i k l = 0 := by
+    rw [← h]
+    module
+  exact (smul_eq_zero.1 h₃).resolve_left (OfNat.ofNat_ne_zero 3)
 
 end Fintype

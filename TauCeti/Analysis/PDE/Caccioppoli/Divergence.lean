@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Caccioppoli.Basic
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
@@ -51,6 +52,10 @@ interior Schauder estimate of divergence-form equations, whose datum has both pa
   Caccioppoli inequality for a datum in divergence form, the case `f = 0`.
 * `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_divergence`: its form on concentric
   balls.
+* `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_of_forall_testFunction`: the same for
+  a solution tested against test functions, with `a` and the datum controlled only on the larger
+  ball.
+* `TauCeti.PDE.exists_eLpNorm_gradient_ball_le_of_forall_testFunction`: its form in `L²` norms.
 * `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_sub_setAverage_divergence`: the form
   on concentric balls with the mean of `u` over the larger ball subtracted.
 * `TauCeti.PDE.exists_setIntegral_ball_norm_indicator_gradient_sq_le_divergence`: the form on
@@ -311,6 +316,117 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_divergence :
   obtain ⟨C, hC0, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_add_divergence (ι := ι)
   refine ⟨C, hC0, fun h ha hF hu hrR hball => ?_⟩
   simpa using hC h ha (f := 0) MemLp.zero hF (fun v => by simp [hu v]) hrR hball
+
+open Metric Distributions in
+/-- **The Caccioppoli inequality for a datum in divergence form, tested against test functions.**
+There is a constant `C > 0`, depending only on the dimension, such that the following holds for
+every additive Haar measure `μ`. Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` in `Ω` against
+test functions, `a(u, φ) = ∫_Ω ⟪G, ∇φ⟫` for every `φ ∈ 𝓓(Ω)`. Let `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with
+`r < R`, let `a` be measurable and uniformly elliptic with constants `0 < λ ≤ Λ` on `B(x₀, R)`,
+and let `G ∈ L²(B(x₀, R))`. Then
+
+`∫_{B(x₀, r)} ‖∇u‖² ≤ 2 ((2Λ/λ)² + 1) (C / (R - r))² ∫_{B(x₀, R)} u² + (12/λ²) ∫_{B(x₀, R)} ‖G‖²`.
+
+Unlike `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_divergence`, nothing is assumed of
+`a` and `G` outside `B(x₀, R)`: the equation is restricted to that ball, where it holds against
+`H¹₀(B(x₀, R))`, by
+`TauCeti.PDE.forall_energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_neg_inner`. -/
+theorem exists_setIntegral_ball_norm_gradient_sq_le_of_forall_testFunction :
+    ∃ C : ℝ, 0 < C ∧ ∀ {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
+      {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+      {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {r R : ℝ},
+      UniformlyEllipticOn (ball x₀ R) a lam Lam → AEStronglyMeasurable a (mu.restrict (ball x₀ R)) →
+      MemLp G 2 (mu.restrict (ball x₀ R)) →
+      (∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+        ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu) →
+      r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ∫ x in ball x₀ r, ‖W1p.gradient u x‖ ^ 2 ∂mu ≤
+        2 * ((2 * Lam / lam) ^ 2 + 1) * (C / (R - r)) ^ 2 *
+            ∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu
+          + 12 / lam ^ 2 * ∫ x in ball x₀ R, ‖G x‖ ^ 2 ∂mu := by
+  obtain ⟨C, hC0, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_divergence (ι := ι)
+  refine ⟨C, hC0, fun {mu} _ {Omega a lam Lam G u x₀ r R} hell ham hG hu hrR hball => ?_⟩
+  set B : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ R, isOpen_ball⟩
+  have hB : B ≤ Omega := hball
+  have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B) :=
+    memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) hell.upper_nonneg ham
+      aestronglyMeasurable_const aestronglyMeasurable_const (fun _ hx => hell.upper_bound hx)
+      (fun _ _ => by simp) (fun _ _ => by simp)
+  -- On `B`, the restriction of `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = div F` with `F = -G`, against `H¹₀(B)`.
+  have hw (v : W1p0 mu B 2) : energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p mu B 2) =
+      -∫ x in B, ⟪(-G) x, W1p.gradient (v : W1p mu B 2) x⟫_ℝ ∂mu := by
+    simpa using forall_energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_neg_inner hB hcoeff
+      (f := 0) (fun φ => by simp [hu φ]) hG MemLp.zero v
+  have hcacc := hC (mu := mu) (Omega := B) (u := W1p.restrictL hB u) hell ham hG.neg hw hrR
+    subset_rfl
+  -- On `B`, the jets of the restriction are those of `u`.
+  have e1 : ∫ x in ball x₀ r, ‖W1p.gradient (W1p.restrictL hB u) x‖ ^ 2 ∂mu =
+      ∫ x in ball x₀ r, ‖W1p.gradient u x‖ ^ 2 ∂mu := by
+    refine integral_congr_ae (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hrR.le) ?_)
+    filter_upwards [W1p.gradient_restrictL_ae hB u] with x hx
+    rw [hx]
+  have e2 : ∫ x in ball x₀ R, W1p.value (W1p.restrictL hB u) x ^ 2 ∂mu =
+      ∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu := by
+    refine integral_congr_ae ?_
+    filter_upwards [W1p.value_restrictL_ae hB u] with x hx
+    rw [hx]
+  simp only [Pi.neg_apply, norm_neg] at hcacc
+  rwa [e1, e2] at hcacc
+
+open Metric Distributions in
+/-- **The Caccioppoli inequality in `L²` norms, tested against test functions.** There are
+constants `α` and `β`, depending only on the dimension, `λ` and `Λ`, such that under the
+hypotheses of `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_of_forall_testFunction`
+
+`‖∇u‖_{L²(B(x₀, r))} ≤ α (R - r)⁻¹ ‖u‖_{L²(B(x₀, R))} + β ‖G‖_{L²(B(x₀, R))}`.
+
+This is that inequality after taking square roots. -/
+theorem exists_eLpNorm_gradient_ball_le_of_forall_testFunction (lam Lam : ℝ) :
+    ∃ α β : ℝ, ∀ {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
+      {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+      {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {r R : ℝ},
+      UniformlyEllipticOn (ball x₀ R) a lam Lam → AEStronglyMeasurable a (mu.restrict (ball x₀ R)) →
+      MemLp G 2 (mu.restrict (ball x₀ R)) →
+      (∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+        ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu) →
+      r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      eLpNorm (W1p.gradient u) 2 (mu.restrict (ball x₀ r)) ≤
+        ENNReal.ofReal α * ENNReal.ofReal (R - r)⁻¹ *
+            eLpNorm (W1p.value u) 2 (mu.restrict (ball x₀ R)) +
+          ENNReal.ofReal β * eLpNorm G 2 (mu.restrict (ball x₀ R)) := by
+  obtain ⟨K, hK0, hK⟩ := exists_setIntegral_ball_norm_gradient_sq_le_of_forall_testFunction (ι := ι)
+  set c₁ : ℝ := 2 * ((2 * Lam / lam) ^ 2 + 1) with hc₁_def
+  set c₂ : ℝ := 12 / lam ^ 2 with hc₂_def
+  refine ⟨√c₁ * K, √c₂, fun {mu} _ {Omega a G u x₀ r R} hell ham hG hu hrR hball => ?_⟩
+  have hcacc := hK hell ham hG hu hrR hball
+  rw [← hc₁_def, ← hc₂_def] at hcacc
+  have hgrad : MemLp (W1p.gradient u) 2 (mu.restrict (ball x₀ r)) :=
+    (Lp.memLp _).mono_measure
+      (Measure.restrict_mono ((ball_subset_ball hrR.le).trans hball) le_rfl)
+  have hval : MemLp (W1p.value u) 2 (mu.restrict (ball x₀ R)) :=
+    (Lp.memLp _).mono_measure (Measure.restrict_mono hball le_rfl)
+  rw [hgrad.eLpNorm_two_eq_ofReal_sqrt_integral, hval.eLpNorm_two_eq_ofReal_sqrt_integral,
+    hG.eLpNorm_two_eq_ofReal_sqrt_integral]
+  simp only [Real.norm_eq_abs, sq_abs]
+  set I₂ := ∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu
+  set I₃ := ∫ x in ball x₀ R, ‖G x‖ ^ 2 ∂mu
+  have hc₁ : 0 ≤ c₁ := by positivity
+  have hI₂ : 0 ≤ I₂ := integral_nonneg fun _ => by positivity
+  have hI₃ : 0 ≤ I₃ := integral_nonneg fun _ => by positivity
+  rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul (by positivity),
+    ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_add (by positivity) (by positivity)]
+  refine ENNReal.ofReal_le_ofReal (Real.sqrt_le_iff.2 ⟨by positivity, hcacc.trans ?_⟩)
+  -- `(√c₁ K (R - r)⁻¹ √I₂ + √c₂ √I₃)² ≥ c₁ (K / (R - r))² I₂ + c₂ I₃`.
+  have hA : (√c₁ * K * (R - r)⁻¹ * √I₂) ^ 2 = c₁ * (K / (R - r)) ^ 2 * I₂ := by
+    rw [mul_pow, mul_pow, mul_pow, Real.sq_sqrt hc₁, Real.sq_sqrt hI₂, div_pow, inv_pow,
+      div_eq_mul_inv]
+    ring
+  have hB : (√c₂ * √I₃) ^ 2 = c₂ * I₃ := by
+    rw [mul_pow, Real.sq_sqrt (by positivity), Real.sq_sqrt hI₃]
+  have hcross : 0 ≤ √c₁ * K * (R - r)⁻¹ * √I₂ * (√c₂ * √I₃) := by positivity
+  nlinarith [hA, hB, hcross]
 
 open Filter Metric in
 /-- **The Caccioppoli inequality for a datum in divergence form, with the mean subtracted.**

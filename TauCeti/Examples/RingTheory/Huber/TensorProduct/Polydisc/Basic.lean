@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.TensorProduct.Restricted.Polydisc
 public import TauCeti.RingTheory.Huber.TensorProduct.Associator
-public import TauCeti.RingTheory.Huber.TensorProduct.Map
+public import TauCeti.RingTheory.Huber.TensorProduct.Map.Basic
 public import TauCeti.RingTheory.Huber.TensorProduct.Symmetry
 public import TauCeti.RingTheory.Huber.Padic.Field
 

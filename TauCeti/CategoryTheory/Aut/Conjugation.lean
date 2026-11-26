@@ -33,6 +33,8 @@ commutative.
 * `CategoryTheory.Aut.autMulEquivOfIso_trans`, `CategoryTheory.Aut.autMulEquivOfIso_refl`:
   composition and identity, from the corresponding facts for `Iso.conjAut`.
 * `CategoryTheory.Functor.mapAut_autMulEquivOfIso`: compatibility with a functor.
+* `CategoryTheory.Functor.mapAut_eq_autMulEquivOfIso_app`: a natural isomorphism of functors
+  conjugates their actions on automorphisms.
 * `CategoryTheory.Aut.autMulEquivOfIso_hom_comp_of_commute`: conjugates of related automorphisms
   are related.
 
@@ -108,5 +110,11 @@ theorem Functor.mapAut_autMulEquivOfIso (G : C ⥤ D) {x y : C} (e : x ≅ y) (a
       Aut.autMulEquivOfIso (G.mapIso e) (G.mapAut x a) := by
   simp only [Aut.autMulEquivOfIso_eq_conjAut]
   exact Aut.ext (G.map_conjAut e a)
+
+/-- A natural isomorphism `α : G ≅ H` conjugates the action of `G` on automorphisms to that of
+`H`: `H b` is the conjugate of `G b` along `α_y`. -/
+theorem Functor.mapAut_eq_autMulEquivOfIso_app {G H : C ⥤ D} (α : G ≅ H) (y : C) (b : Aut y) :
+    H.mapAut y b = Aut.autMulEquivOfIso (α.app y) (G.mapAut y b) :=
+  Aut.ext (Iso.ext (by simp))
 
 end CategoryTheory

@@ -203,9 +203,10 @@ namespace ContinuousMulEquiv
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [LieGroup I ∞ G] [LieGroup I' ∞ G']
 
 variable (I I') in
-/-- An isomorphism of topological groups between finite-dimensional real Lie groups, as a
-diffeomorphism: it is smooth in both directions by automatic smoothness
-(`TauCeti.Lie.contMDiff_of_continuous_monoidHom`). -/
+/-- **A topological group isomorphism of Lie groups is a diffeomorphism.** An isomorphism of
+topological groups between finite-dimensional real Lie groups is smooth in both directions
+(`TauCeti.Lie.contMDiff_of_continuous_monoidHom`), so any two Lie group structures on one
+topological group have the same smooth maps. -/
 def toDiffeomorph (e : G ≃ₜ* G') : G ≃ₘ⟮I, I'⟯ G' where
   toEquiv := e.toEquiv
   contMDiff_toFun := TauCeti.Lie.contMDiff_of_continuous_monoidHom e e.continuous
@@ -216,6 +217,10 @@ theorem coe_toDiffeomorph (e : G ≃ₜ* G') : ⇑(e.toDiffeomorph I I') = e :=
   (rfl)
 
 @[simp]
+theorem toDiffeomorph_symm (e : G ≃ₜ* G') :
+    (e.toDiffeomorph I I').symm = e.symm.toDiffeomorph I' I :=
+  (rfl)
+
 theorem coe_toDiffeomorph_symm (e : G ≃ₜ* G') : ⇑(e.toDiffeomorph I I').symm = e.symm :=
   (rfl)
 
