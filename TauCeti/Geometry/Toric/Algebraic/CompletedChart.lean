@@ -32,9 +32,8 @@ nonzero.
   have some `a_i < h`, that is, have `a` outside the diagonal tail `(h, …, h) + ℕ^r`
   (`TauCeti.Toric.completedChartFamilies`).
 * `TauCeti.Toric.completedChartCoeff_mul`: multiplication in the completion is the convolution of
-  coefficient families. The convolution sum is finite: an exponent `(a, b)` only decomposes into
-  exponents whose ray parts are bounded by `a`, and only finitely many of those carry nonzero
-  coefficients.
+  coefficient families: the coefficient of a product at `(a, b)` is the `finsum`, over the
+  decompositions `(a, b) = p₁ + p₂`, of the products of the coefficients.
 * `TauCeti.Toric.completedChartCoeff_of` and `TauCeti.Toric.completedChartCoeff_one`: an element
   of `A_R`, in particular `1`, keeps its coefficients in the completion.
 
@@ -223,9 +222,16 @@ theorem coe_completedChartCoeffEquiv_apply (x : AdicCompletion
     (completedChartCoeffEquiv R ι Q x : (ι →₀ ℕ) × Q → R) = completedChartCoeff x := by
   rfl
 
+/-- The element of the completion with a given admissible coefficient family has that family as
+its coefficients. -/
+@[simp]
+theorem completedChartCoeff_completedChartCoeffEquiv_symm (c : completedChartFamilies R ι Q) :
+    completedChartCoeff ((completedChartCoeffEquiv R ι Q).symm c) = c := by
+  rw [← coe_completedChartCoeffEquiv_apply, LinearEquiv.apply_symm_apply]
+
 /-- **Multiplication in a completed regular chart is convolution.** The coefficient of a product
-at `p` is the sum, over the decompositions `p = p₁ + p₂`, of the products of the coefficients;
-only finitely many terms are nonzero. -/
+at `p` is the `finsum`, over the decompositions `p = p₁ + p₂`, of the products of the
+coefficients. -/
 theorem completedChartCoeff_mul (x y : AdicCompletion (Ideal.span {boundaryMonomial R ι Q})
       (AddMonoidAlgebra R ((ι →₀ ℕ) × Q))) (p : (ι →₀ ℕ) × Q) :
     completedChartCoeff (x * y) p =
