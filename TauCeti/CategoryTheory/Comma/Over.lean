@@ -32,6 +32,8 @@ to the source is a strong epimorphism. This uses Mathlib's `StrongEpi.llp` and `
 
 * `CategoryTheory.Over.isIso_left`: the underlying morphism of an isomorphism over a base is
   an isomorphism.
+* `CategoryTheory.Over.isIso_of_isIso_left`: a morphism over a base whose underlying morphism is
+  an isomorphism is an isomorphism.
 * `CategoryTheory.Over.mapMkIso`: an object `Z` over `S` is the image under `Over.map p` of
   `Over.mk a`, for a lift `a` of its structure morphism through `p : S' ⟶ S`.
 * `CategoryTheory.Over.isPullback_pullback_map_left`: base change of a morphism over `S` is a
@@ -56,6 +58,12 @@ namespace Over
 instance isIso_left {T : Type u} [Category.{v} T] {X : T} {f g : Over X} (φ : f ⟶ g)
     [IsIso φ] : IsIso φ.left :=
   (Over.forget X).map_isIso φ
+
+/-- A morphism in `Over X` is an isomorphism if its underlying morphism is an isomorphism. -/
+theorem isIso_of_isIso_left {T : Type u} [Category.{v} T] {X : T} {f g : Over X} (φ : f ⟶ g)
+    [IsIso φ.left] : IsIso φ :=
+  have : IsIso ((Over.forget X).map φ) := by rw [Over.forget_map]; infer_instance
+  isIso_of_reflects_iso φ (Over.forget X)
 
 /-- An object `Z` over `S` is the image under `Over.map p` of `Over.mk a`, for a lift
 `a : Z.left ⟶ S'` of its structure morphism through `p : S' ⟶ S`. -/

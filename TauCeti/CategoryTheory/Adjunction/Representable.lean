@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Adjunction.Basic
+public import Mathlib.CategoryTheory.Comma.Over.Basic
 
 /-!
 # Representable presheaves restricted along a left adjoint
@@ -20,10 +21,16 @@ for a morphism `g : S' ⟶ S` is base change of functors of points, and its righ
 `CategoryTheory.Adjunction.representableBy` is the case of `F = yoneda.obj Y`, represented by
 `Y`.
 
+As a special case, if `U₀` is a terminal object of `C` and the restriction `(Over.forget U₀).op ⋙ F`
+is represented by `Over.mk (hU₀.from X)`, then `F` itself is represented by `X`
+(`CategoryTheory.Functor.RepresentableBy.ofOverIsTerminal`).
+
 ## Main declarations
 
 * `CategoryTheory.Adjunction.representableByComp`: `L.op ⋙ F` is represented by `R.obj Y`
   when `F` is represented by `Y`.
+* `CategoryTheory.Functor.RepresentableBy.ofOverIsTerminal`: `F` is represented by `X` when its
+  restriction to `Over U₀` at a terminal object `U₀` is represented by `Over.mk (hU₀.from X)`.
 -/
 
 public section
@@ -53,5 +60,47 @@ lemma representableByComp_homEquiv_apply (e : F.RepresentableBy Y) {X : C} (φ :
   (rfl)
 
 end Adjunction
+
+namespace Functor.RepresentableBy
+
+/-- If `U₀` is a terminal object of `C` and the restriction `(Over.forget U₀).op ⋙ F` of a
+presheaf `F : Cᵒᵖ ⥤ Type w` to `Over U₀` is represented by `Over.mk (hU₀.from X)`, then `F`
+is represented by `X`. -/
+def ofOverIsTerminal {U₀ : C} (hU₀ : Limits.IsTerminal U₀) {F : Cᵒᵖ ⥤ Type w} {X : C}
+    (e : ((Over.forget U₀).op ⋙ F).RepresentableBy (Over.mk (hU₀.from X))) :
+    F.RepresentableBy X :=
+  let eqU₀ := (Over.equivalenceOfIsTerminal hU₀).symm
+  (eqU₀.toAdjunction.representableByComp e).ofIso
+    ((Functor.associator eqU₀.functor.op (Over.forget U₀).op F).symm ≪≫
+      Functor.isoWhiskerRight
+        (NatIso.op (Over.equivalenceOfIsTerminal hU₀).counitIso.symm) F ≪≫
+      Functor.leftUnitor F)
+
+/-- The representation `ofOverIsTerminal` sends `φ : Y ⟶ X` to the section corresponding via `e`
+to the induced morphism `Over.mk (hU₀.from Y) ⟶ Over.mk (hU₀.from X)` over `U₀`. -/
+@[simp]
+lemma ofOverIsTerminal_homEquiv_apply {U₀ : C} (hU₀ : Limits.IsTerminal U₀)
+    {F : Cᵒᵖ ⥤ Type w} {X : C}
+    (e : ((Over.forget U₀).op ⋙ F).RepresentableBy (Over.mk (hU₀.from X)))
+    {Y : C} (φ : Y ⟶ X) :
+    (ofOverIsTerminal hU₀ e).homEquiv φ =
+      e.homEquiv (Over.homMk φ (hU₀.hom_ext _ _) :
+        Over.mk (hU₀.from Y) ⟶ Over.mk (hU₀.from X)) := by
+  have h1 : (ofOverIsTerminal hU₀ e).homEquiv φ =
+      e.homEquiv (((Over.equivalenceOfIsTerminal hU₀).symm.toAdjunction.homEquiv _ _).symm φ) := by
+    simp [ofOverIsTerminal, Functor.RepresentableBy.ofIso, Over.equivalenceOfIsTerminal]
+    rfl
+  let ψ : Y ⟶ (Over.equivalenceOfIsTerminal hU₀).symm.inverse.obj (Over.mk (hU₀.from X)) := φ
+  have h2 :
+      (((Over.equivalenceOfIsTerminal hU₀).symm.toAdjunction.homEquiv Y
+          (Over.mk (hU₀.from X))).symm ψ) =
+      Over.homMk φ (hU₀.hom_ext _ _) := by
+    rw [Adjunction.homEquiv_counit]
+    ext1
+    simp [Equivalence.toAdjunction, Over.equivalenceOfIsTerminal, ψ]
+    rfl
+  exact h1.trans (congrArg e.homEquiv h2)
+
+end Functor.RepresentableBy
 
 end CategoryTheory

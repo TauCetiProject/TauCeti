@@ -275,11 +275,6 @@ copies of the identity `S ⟶ S`. -/
 noncomputable def trivialCover (S : Scheme.{u}) (M : Type u) [Finite M] : FiniteEtaleScheme S :=
   ∐ fun _ : M ↦ ofHom (𝟙 S)
 
-/-- Characterization of `trivialCover S M` as the coproduct of `M` copies of `ofHom (𝟙 S)`. -/
-theorem trivialCover_eq (S : Scheme.{u}) (M : Type u) [Finite M] :
-    trivialCover S M = ∐ fun _ : M ↦ ofHom (𝟙 S) :=
-  (rfl)
-
 /-- The canonical `m`-th component inclusion into the trivial cover `trivialCover S M`. -/
 noncomputable def trivialCover.ι (S : Scheme.{u}) (M : Type u) [Finite M] (m : M) :
     ofHom (𝟙 S) ⟶ trivialCover S M :=

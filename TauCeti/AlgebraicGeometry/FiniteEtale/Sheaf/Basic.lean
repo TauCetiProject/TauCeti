@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 public import TauCeti.CategoryTheory.Sites.ConstantSheaf
 public import TauCeti.CategoryTheory.Sites.Point.Representable
+import TauCeti.CategoryTheory.Limits.Types.Coproducts
 
 /-!
 # Finite étale covers as étale sheaves
@@ -244,12 +245,6 @@ noncomputable def toSheafOfHomIdIso (S : Scheme.{u}) :
     (asIso ((sheafificationAdjunction (Scheme.smallEtaleTopology S) (Type u)).counit.app
       (Sheaf.terminal (Scheme.smallEtaleTopology S) Types.isTerminalPUnit.{u}))).symm
 
-private noncomputable def isColimitPUnitCofan (M : Type u) :
-    IsColimit (Cofan.mk M (fun m ↦ TypeCat.ofHom (fun _ : PUnit.{u + 1} ↦ m))) :=
-  Cofan.IsColimit.mk _ (fun s ↦ TypeCat.ofHom fun m ↦ s.inj m PUnit.unit)
-    (fun s m ↦ by ext ⟨⟩; rfl)
-    (fun s f hf ↦ by ext m; exact congrArg (fun g ↦ g PUnit.unit) (hf m))
-
 private noncomputable def trivialCoverToSheafNatIso (S : Scheme.{u}) (M : Type u) :
     Discrete.functor (fun _ : M ↦ ofHom (𝟙 S)) ⋙ toSheaf S ≅
       Discrete.functor (fun _ : M ↦ PUnit.{u + 1}) ⋙
@@ -273,7 +268,7 @@ private noncomputable def isColimitConstantSheafCofan (S : Scheme.{u}) (M : Type
   have := (constantSheafAdj (Scheme.smallEtaleTopology S) (Type u)
       (Scheme.Etale.mkIdTerminal S)).isLeftAdjoint
   isColimitOfPreserves (constantSheaf (Scheme.smallEtaleTopology S) (Type u))
-    (isColimitPUnitCofan M)
+    (TauCeti.Types.isColimitPUnitCofan M)
 
 /-- The sheaf of sections of `trivialCover S M` is the constant étale sheaf with value `M`. -/
 noncomputable def toSheafTrivialCoverIso (S : Scheme.{u}) (M : Type u) [Finite M] :

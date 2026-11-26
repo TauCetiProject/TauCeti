@@ -63,13 +63,16 @@ private noncomputable def toEtaleCompSmallEtaleBaseChangeForgetIso (p : T ⟶ S)
 
 /-- Compatibility of `toEtale` and base change `smallEtaleBaseChange` with `pullback p`, lifted
 from `Over T` along the fully faithful forgetful functor `Etale.forget T`. -/
-private noncomputable def toEtaleCompSmallEtaleBaseChangeIso (p : T ⟶ S) :
+noncomputable def toEtaleCompSmallEtaleBaseChangeIso (p : T ⟶ S) :
     toEtale S ⋙ p.smallEtaleBaseChange ≅
       TauCeti.FiniteEtaleScheme.pullback p ⋙ toEtale T :=
   ((Functor.FullyFaithful.ofFullyFaithful (Etale.forget T)).whiskeringRight _).preimageIso
     (toEtaleCompSmallEtaleBaseChangeForgetIso p)
 
-private lemma toEtaleCompSmallEtaleBaseChangeIso_hom_app_left (p : T ⟶ S)
+/-- On underlying schemes, the forward component of `toEtaleCompSmallEtaleBaseChangeIso` is the
+identity on `Limits.pullback X.obj.hom p`. -/
+@[simp]
+lemma toEtaleCompSmallEtaleBaseChangeIso_hom_app_left (p : T ⟶ S)
     (X : TauCeti.FiniteEtaleScheme S) :
     ((toEtaleCompSmallEtaleBaseChangeIso p).hom.app X).left =
       𝟙 (Limits.pullback X.obj.hom p) := by
@@ -77,17 +80,20 @@ private lemma toEtaleCompSmallEtaleBaseChangeIso_hom_app_left (p : T ⟶ S)
       (toEtaleCompSmallEtaleBaseChangeForgetIso p).hom :=
     ((Functor.FullyFaithful.ofFullyFaithful (Etale.forget T)).whiskeringRight _).map_preimage _
   refine (congrArg (fun η ↦ (η.app X).left) h).trans ?_
-  simp only [toEtaleCompSmallEtaleBaseChangeForgetIso, Iso.trans_hom, Iso.symm_hom,
-    Functor.isoWhiskerLeft_hom, Functor.isoWhiskerRight_hom, NatTrans.comp_app,
-    Functor.whiskerLeft_app, Functor.whiskerRight_app, Functor.associator_hom_app,
-    Functor.associator_inv_app, eqToIso.hom, Category.id_comp, Category.comp_id,
-    smallEtaleBaseChangeCompForgetIso_hom_app_left, Over.comp_left]
-  simp only [Functor.comp_obj, Etale.forget_obj_left, Over.pullback_obj_left,
+  simp only [toEtaleCompSmallEtaleBaseChangeForgetIso, Iso.trans_hom, Functor.isoWhiskerLeft_hom,
+    Functor.isoWhiskerRight_hom, NatTrans.comp_app, Functor.whiskerLeft_app,
+    Functor.whiskerRight_app, Functor.associator_hom_app,
+    eqToIso.hom, Category.id_comp,
+    smallEtaleBaseChangeCompForgetIso_hom_app_left, Over.comp_left,
+    Functor.comp_obj, Etale.forget_obj_left, Over.pullback_obj_left,
     Etale.forget_obj_hom, Functor.id_obj, Functor.const_obj_obj, ObjectProperty.ι_obj,
     CategoryTheory.eqToHom_app, CategoryTheory.eqToHom_map, Over.eqToHom_left]
   exact (Category.id_comp _).trans (eqToHom_refl (Limits.pullback X.obj.hom p) rfl)
 
-private lemma toEtaleCompSmallEtaleBaseChangeIso_inv_app_left (p : T ⟶ S)
+/-- On underlying schemes, the inverse component of `toEtaleCompSmallEtaleBaseChangeIso` is the
+identity on `Limits.pullback X.obj.hom p`. -/
+@[simp]
+lemma toEtaleCompSmallEtaleBaseChangeIso_inv_app_left (p : T ⟶ S)
     (X : TauCeti.FiniteEtaleScheme S) :
     ((toEtaleCompSmallEtaleBaseChangeIso p).inv.app X).left =
       𝟙 (Limits.pullback X.obj.hom p) := by
@@ -121,6 +127,28 @@ noncomputable def toSheafCompSmallEtaleMapPushforwardIso (p : T ⟶ S) [Etale p]
   Functor.isoWhiskerLeft (toSheaf S) (p.smallEtalePullbackIsoMapPushforward (Type u)).symm ≪≫
     p.toSheafCompSmallEtalePullbackIso
 
+/-- On components, `(p.toSheafCompSmallEtaleMapPushforwardIso).hom.app X` factors through
+`p.yonedaCompSmallEtaleMapPushforwardIso` and `toEtaleCompSmallEtaleBaseChangeIso`. -/
+@[reassoc]
+lemma toSheafCompSmallEtaleMapPushforwardIso_hom_app (p : T ⟶ S) [Etale p]
+    (X : TauCeti.FiniteEtaleScheme S) :
+    (p.toSheafCompSmallEtaleMapPushforwardIso).hom.app X =
+      p.yonedaCompSmallEtaleMapPushforwardIso.hom.app ((toEtale S).obj X) ≫
+        (smallEtaleTopology T).yoneda.map ((toEtaleCompSmallEtaleBaseChangeIso p).hom.app X) := by
+  simp [toSheafCompSmallEtaleMapPushforwardIso, toSheafCompSmallEtalePullbackIso, toSheaf,
+    yonedaCompSmallEtalePullbackIso_hom_app_of_etale]
+
+/-- On components, `(p.toSheafCompSmallEtaleMapPushforwardIso).inv.app X` factors through
+`toEtaleCompSmallEtaleBaseChangeIso` and `p.yonedaCompSmallEtaleMapPushforwardIso`. -/
+@[reassoc]
+lemma toSheafCompSmallEtaleMapPushforwardIso_inv_app (p : T ⟶ S) [Etale p]
+    (X : TauCeti.FiniteEtaleScheme S) :
+    (p.toSheafCompSmallEtaleMapPushforwardIso).inv.app X =
+      (smallEtaleTopology T).yoneda.map ((toEtaleCompSmallEtaleBaseChangeIso p).inv.app X) ≫
+        p.yonedaCompSmallEtaleMapPushforwardIso.inv.app ((toEtale S).obj X) := by
+  simp [toSheafCompSmallEtaleMapPushforwardIso, toSheafCompSmallEtalePullbackIso, toSheaf,
+    yonedaCompSmallEtalePullbackIso_inv_app_of_etale]
+
 /-- Transporting a section of `(toSheaf S).obj X` along
 `p.toSheafCompSmallEtaleMapPushforwardIso` applies the base-change adjunction
 `p.smallEtaleMapBaseChangeAdj`. -/
@@ -134,32 +162,26 @@ lemma toSheafCompSmallEtaleMapPushforwardIso_hom_app_hom_app_apply (p : T ⟶ S)
         (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X) s).left
         (MorphismProperty.Over.w
           (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X) s)) := by
-  have h1 : (p.toSheafCompSmallEtaleMapPushforwardIso).hom.app X =
-      p.yonedaCompSmallEtaleMapPushforwardIso.hom.app ((toEtale S).obj X) ≫
-        (smallEtaleTopology T).yoneda.map ((toEtaleCompSmallEtaleBaseChangeIso p).hom.app X) := by
-    simp only [toSheafCompSmallEtaleMapPushforwardIso, toSheafCompSmallEtalePullbackIso, toSheaf,
-      Iso.trans_hom, Iso.symm_hom, Functor.isoWhiskerLeft_hom, Functor.isoWhiskerRight_hom,
-      NatTrans.comp_app, Functor.whiskerLeft_app, Functor.whiskerRight_app,
-      Functor.associator_hom_app, Functor.associator_inv_app, Functor.comp_obj,
-      Category.id_comp, Category.comp_id]
-    rw [yonedaCompSmallEtalePullbackIso_hom_app_of_etale, ← Category.assoc,
-      Iso.inv_hom_id_app_assoc]
-  rw [h1]
+  have hs :
+      (((p.toSheafCompSmallEtaleMapPushforwardIso).hom.app X).hom.app (Opposite.op W)) s =
+        ((smallEtaleTopology T).yoneda.map
+            ((toEtaleCompSmallEtaleBaseChangeIso p).hom.app X)).hom.app (Opposite.op W)
+          ((p.yonedaCompSmallEtaleMapPushforwardIso.hom.app ((toEtale S).obj X)).hom.app
+            (Opposite.op W) s) :=
+    congrArg (fun η ↦ (η.hom.app (Opposite.op W)) s)
+      (p.toSheafCompSmallEtaleMapPushforwardIso_hom_app X)
+  rw [hs]
   apply MorphismProperty.Over.Hom.ext
-  have heval : ((((p.yonedaCompSmallEtaleMapPushforwardIso.hom.app ((toEtale S).obj X) ≫
-        (smallEtaleTopology T).yoneda.map
-          ((toEtaleCompSmallEtaleBaseChangeIso p).hom.app X)).hom.app (Opposite.op W))) s).left =
-      (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X) s ≫
-        (toEtaleCompSmallEtaleBaseChangeIso p).hom.app X).left :=
-    congrArg (·.left)
-      (congrArg (((smallEtaleTopology T).yoneda.map
-        ((toEtaleCompSmallEtaleBaseChangeIso p).hom.app X)).hom.app (Opposite.op W))
-        (p.yonedaCompSmallEtaleMapPushforwardIso_hom_app_hom_app_apply
-          ((toEtale S).obj X) W s))
-  exact heval.trans
-    ((MorphismProperty.Comma.comp_left _ _).trans
-      ((congrArg (_ ≫ ·) (toEtaleCompSmallEtaleBaseChangeIso_hom_app_left p X)).trans
-        (Category.comp_id _)))
+  have h :
+      (((smallEtaleTopology T).yoneda.map
+            ((toEtaleCompSmallEtaleBaseChangeIso p).hom.app X)).hom.app (Opposite.op W)
+          ((p.yonedaCompSmallEtaleMapPushforwardIso.hom.app ((toEtale S).obj X)).hom.app
+            (Opposite.op W) s)).left =
+        (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X) s).left ≫
+          𝟙 (Limits.pullback X.obj.hom p) := by
+    simp
+    rfl
+  exact h.trans (Category.comp_id _)
 
 /-- Transporting a section of `(toSheaf T).obj ((FiniteEtaleScheme.pullback p).obj X)` along the
 inverse of `p.toSheafCompSmallEtaleMapPushforwardIso` applies the inverse of
@@ -172,28 +194,26 @@ lemma toSheafCompSmallEtaleMapPushforwardIso_inv_app_hom_app_apply (p : T ⟶ S)
       (((p.toSheafCompSmallEtaleMapPushforwardIso).inv.app X).hom.app (Opposite.op W)) t =
       (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X)).symm
         (MorphismProperty.Over.homMk t.left (MorphismProperty.Over.w t)) := by
-  have h1 : (p.toSheafCompSmallEtaleMapPushforwardIso).inv.app X =
-      (smallEtaleTopology T).yoneda.map ((toEtaleCompSmallEtaleBaseChangeIso p).inv.app X) ≫
-        p.yonedaCompSmallEtaleMapPushforwardIso.inv.app ((toEtale S).obj X) := by
-    simp only [toSheafCompSmallEtaleMapPushforwardIso, toSheafCompSmallEtalePullbackIso, toSheaf,
-      Iso.trans_inv, Iso.symm_inv, Functor.isoWhiskerLeft_inv, Functor.isoWhiskerRight_inv,
-      NatTrans.comp_app, Functor.whiskerLeft_app, Functor.whiskerRight_app,
-      Functor.associator_hom_app, Functor.associator_inv_app, Functor.comp_obj,
-      Category.id_comp, Category.comp_id]
-    rw [yonedaCompSmallEtalePullbackIso_inv_app_of_etale, Category.assoc, Category.assoc,
-      Iso.inv_hom_id_app]
-    exact congrArg (_ ≫ ·) (Category.comp_id _)
-  rw [h1]
-  have heval : (((((smallEtaleTopology T).yoneda.map
-        ((toEtaleCompSmallEtaleBaseChangeIso p).inv.app X) ≫
-        p.yonedaCompSmallEtaleMapPushforwardIso.inv.app ((toEtale S).obj X)).hom.app
-          (Opposite.op W))) t) =
-      (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X)).symm
-        (t ≫ (toEtaleCompSmallEtaleBaseChangeIso p).inv.app X) :=
-    p.yonedaCompSmallEtaleMapPushforwardIso_inv_app_hom_app_apply ((toEtale S).obj X) W
-      (t ≫ (toEtaleCompSmallEtaleBaseChangeIso p).inv.app X)
-  refine heval.trans
-    (congrArg (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X)).symm ?_)
+  have ht :
+      (((p.toSheafCompSmallEtaleMapPushforwardIso).inv.app X).hom.app (Opposite.op W)) t =
+        (p.yonedaCompSmallEtaleMapPushforwardIso.inv.app ((toEtale S).obj X)).hom.app
+          (Opposite.op W)
+          (((smallEtaleTopology T).yoneda.map
+            ((toEtaleCompSmallEtaleBaseChangeIso p).inv.app X)).hom.app (Opposite.op W) t) :=
+    congrArg (fun η ↦ (η.hom.app (Opposite.op W)) t)
+      (p.toSheafCompSmallEtaleMapPushforwardIso_inv_app X)
+  rw [ht]
+  dsimp only [toSheaf]
+  have h1 :
+      (p.yonedaCompSmallEtaleMapPushforwardIso.inv.app ((toEtale S).obj X)).hom.app
+          (Opposite.op W)
+          (((smallEtaleTopology T).yoneda.map
+            ((toEtaleCompSmallEtaleBaseChangeIso p).inv.app X)).hom.app (Opposite.op W) t) =
+        (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X)).symm
+          (t ≫ (toEtaleCompSmallEtaleBaseChangeIso p).inv.app X) := by
+    simp
+    rfl
+  refine h1.trans (congrArg (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X)).symm ?_)
   apply MorphismProperty.Over.Hom.ext
   exact (MorphismProperty.Comma.comp_left _ _).trans
     ((congrArg (_ ≫ ·) (toEtaleCompSmallEtaleBaseChangeIso_inv_app_left p X)).trans

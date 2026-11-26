@@ -104,7 +104,7 @@ theorem mem_over_smallEtaleTopology_iff {U : S.Etale} {V : Over U} (R : Sieve V)
     exact Sieve.image_mem_functorPushforward _ _ hf
 
 /-- A surjective morphism in the small étale site of `S` generates a covering sieve. -/
-theorem mem_smallEtaleTopology_singleton_of_surjective {U V : S.Etale} (f : U ⟶ V)
+theorem generate_singleton_mem_smallEtaleTopology_of_surjective {U V : S.Etale} (f : U ⟶ V)
     [Surjective f.left] :
     Sieve.generate (.singleton f) ∈ smallEtaleTopology S V := by
   rw [← Presieve.ofArrows_pUnit.{0}, ← Sieve.ofArrows,
@@ -113,13 +113,13 @@ theorem mem_smallEtaleTopology_singleton_of_surjective {U V : S.Etale} (f : U �
 
 /-- A morphism in `Over U` whose underlying morphism of schemes is surjective generates a covering
 sieve in the localized small étale topology `(smallEtaleTopology S).over U`. -/
-theorem mem_over_smallEtaleTopology_singleton_of_surjective {U : S.Etale} {A B : Over U}
+theorem generate_singleton_mem_over_smallEtaleTopology_of_surjective {U : S.Etale} {A B : Over U}
     (g : A ⟶ B) [Surjective g.left.left] :
     Sieve.generate (.singleton g) ∈ (smallEtaleTopology S).over U B := by
   rw [GrothendieckTopology.mem_over_iff, Sieve.overEquiv_generate,
     ← Sieve.arrows_generate_map_eq_functorPushforward, Sieve.generate_sieve,
     Presieve.map_singleton]
-  exact mem_smallEtaleTopology_singleton_of_surjective g.left
+  exact generate_singleton_mem_smallEtaleTopology_of_surjective g.left
 
 /-- An étale sheaf of sets on `S` satisfies the sheaf condition for any singleton family in
 `Over U` whose underlying morphism of schemes is surjective. -/
@@ -128,7 +128,7 @@ theorem isSheafFor_singleton_over_of_surjective (F : Sheaf (smallEtaleTopology S
     Presieve.IsSheafFor (F.over U).obj (.singleton g) := by
   rw [Presieve.isSheafFor_iff_generate]
   exact (isSheaf_iff_isSheaf_of_type _ _).mp (F.over U).property _
-    (mem_over_smallEtaleTopology_singleton_of_surjective g)
+    (generate_singleton_mem_over_smallEtaleTopology_of_surjective g)
 
 /-- A family of étale `S`-schemes covers the small étale site of `S`, in the sense that it
 generates a covering sieve of every object, if and only if every point of `S` lies in the image of

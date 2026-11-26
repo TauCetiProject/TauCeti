@@ -78,6 +78,6 @@ generates a covering sieve for the subcanonical small étale topology. -/
 theorem Etale.effectiveEpi_of_surjective {S : Scheme.{u}} {U V : S.Etale} (f : U ⟶ V)
     [Surjective f.left] : EffectiveEpi f :=
   (smallEtaleTopology S).effectiveEpi_of_generate_singleton_mem f
-    (mem_smallEtaleTopology_singleton_of_surjective f)
+    (generate_singleton_mem_smallEtaleTopology_of_surjective f)
 
 end AlgebraicGeometry.Scheme

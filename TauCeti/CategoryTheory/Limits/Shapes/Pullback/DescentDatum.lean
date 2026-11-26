@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Descent data on objects over a base, relative to a morphism
@@ -1156,11 +1157,10 @@ theorem baseChangeMapHom_hom_left (p : S' ⟶ S) (X₀ : Over S) :
 /-- The canonical base-change comparison `baseChangeMapHom L p X₀` is an isomorphism of descent
 data. -/
 instance isIso_baseChangeMapHom_hom (p : S' ⟶ S) (X₀ : Over S) :
-    IsIso (baseChangeMapHom L p X₀).hom := by
-  suffices IsIso ((Over.forget (L.obj S')).map (baseChangeMapHom L p X₀).hom) from
-    isIso_of_reflects_iso _ (Over.forget (L.obj S'))
-  rw [Over.forget_map, baseChangeMapHom_hom_left]
-  infer_instance
+    IsIso (baseChangeMapHom L p X₀).hom :=
+  have : IsIso (baseChangeMapHom L p X₀).hom.left := by
+    rw [baseChangeMapHom_hom_left]; infer_instance
+  Over.isIso_of_isIso_left _
 
 end Map
 
