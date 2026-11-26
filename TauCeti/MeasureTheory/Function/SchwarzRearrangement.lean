@@ -458,15 +458,12 @@ variable (μ)
 a closed ball of positive radius. -/
 theorem exists_radius_schwarzRearrangement_eq_zero (hfin0 : μ {y | 0 < f y} ≠ ∞) :
     ∃ R > 0, ∀ x : E, R ≤ ‖x‖ → schwarzRearrangement μ f x = 0 := by
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · exact ⟨1, one_pos, fun x hx ↦ by have := norm_of_subsingleton x; linarith⟩
-  · obtain ⟨r, -, hr⟩ := μ.exists_nonneg_addHaar_ball_eq hfin0
-    refine ⟨max 1 r, lt_of_lt_of_le one_pos (le_max_left _ _), fun x hx ↦ ?_⟩
-    have hsup : {y | 0 < schwarzRearrangement μ f y} = ball (0 : E) r := by
-      rw [setOf_lt_schwarzRearrangement, ← hr, μ.setOf_addHaar_ball_norm_lt_addHaar_ball]
-    by_contra hne
-    have hxball : x ∈ ball (0 : E) r := hsup ▸ pos_iff_ne_zero.2 hne
-    exact (mem_ball_zero_iff.1 hxball).not_ge ((le_max_right _ _).trans hx)
+  obtain ⟨r, -, hr, -⟩ := exists_setOf_lt_schwarzRearrangement_eq_ball μ f 0 hfin0
+  refine ⟨max 1 r, by positivity, fun x hx ↦ ?_⟩
+  have hxball : x ∉ ball (0 : E) r :=
+    fun h ↦ (mem_ball_zero_iff.1 h).not_ge ((le_max_right _ _).trans hx)
+  rw [← hr] at hxball
+  exact nonpos_iff_eq_zero.1 (not_lt.1 hxball)
 
 /-- If `{0 < f}` has finite Haar measure, then the Schwarz rearrangement of `f` has compact
 support. -/

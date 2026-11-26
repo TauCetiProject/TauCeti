@@ -25,7 +25,7 @@ a vanishing derivative of a norm-composition forces the one-dimensional profile 
 vanish, and a radial function on a real inner product space has Fréchet derivatives of equal
 operator norm at points of equal norm (`TauCeti.norm_fderiv_eq_of_norm_eq`). Moreover, along any
 unit ray a radial function's one-dimensional derivative is bounded in norm by the operator norm of
-its Fréchet derivative (`TauCeti.norm_deriv_comp_smul_le`, `TauCeti.deriv_radial_sq_le`), and a
+its Fréchet derivative (`TauCeti.norm_deriv_comp_smul_le`), and a
 function that is nonincreasing in the norm has derivatives of equal norm at any two points of one
 level where they do not vanish (`TauCeti.norm_fderiv_eq_of_antitone_norm`). Likewise, the
 `0`-homogeneous radial extension `TauCeti.sphereExtend f` has vanishing radial derivative everywhere
@@ -101,16 +101,6 @@ theorem norm_deriv_comp_smul_le {v : F → E} (hv_rad : ∀ x y, ‖x‖ = ‖y�
     simpa only [he₀, mul_one] using (fderiv ℝ v (r • e₀)).le_opNorm e₀
   · rw [deriv_zero_of_not_differentiableAt hg, norm_zero]
     exact norm_nonneg _
-
-/-- Along a unit ray `s ↦ s • e₀` at `r > 0`, the squared derivative of a real radial function
-`v : F → ℝ` on a real inner product space is at most `‖fderiv ℝ v (r • e₀)‖ ^ 2`. -/
-theorem deriv_radial_sq_le {v : F → ℝ} (hv_rad : ∀ x y, ‖x‖ = ‖y‖ → v x = v y)
-    {e₀ : F} (he₀ : ‖e₀‖ = 1) {r : ℝ} (hr : 0 < r) :
-    (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2 ≤ ‖fderiv ℝ v (r • e₀)‖ ^ 2 :=
-  calc (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2
-      = ‖deriv (fun s : ℝ ↦ v (s • e₀)) r‖ ^ 2 := by rw [Real.norm_eq_abs, sq_abs]
-    _ ≤ ‖fderiv ℝ v (r • e₀)‖ ^ 2 :=
-      pow_le_pow_left₀ (norm_nonneg _) (norm_deriv_comp_smul_le hv_rad he₀ hr) 2
 
 /-- **Gradients of radially nonincreasing functions.** If `v` is nonincreasing in the norm, then
 its totalized derivatives have the same norm at any two points of the same level of `v` at which

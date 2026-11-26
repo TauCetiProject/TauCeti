@@ -57,7 +57,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E]
 
 private theorem radial_sharp_sobolev (hn : 2 < finrank ℝ E) {K : ℝ≥0} {v : E → ℝ}
-    (hv_lip : LipschitzWith K v) (hv_nonneg : ∀ x, 0 ≤ v x)
+    (hv_lip : LipschitzWith K v) (hv_supp : HasCompactSupport v) (hv_nonneg : ∀ x, 0 ≤ v x)
     (hv_anti : ∀ x y, ‖x‖ ≤ ‖y‖ → v y ≤ v x) {R : ℝ} (hR : 0 < R)
     (hvR : ∀ x, R ≤ ‖x‖ → v x = 0) :
     sphereYamabeConstant (finrank ℝ E) *
@@ -67,9 +67,6 @@ private theorem radial_sharp_sobolev (hn : 2 < finrank ℝ E) {K : ℝ≥0} {v :
   set n := finrank ℝ E with hn_def
   set pₙ := criticalExponent n
   have hpₙ : 0 < pₙ := criticalExponent_pos hn
-  have hv_supp : HasCompactSupport v :=
-    HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall (0 : E) R) fun x hx ↦
-      mem_closedBall_zero_iff.2 (not_lt.1 fun hlt ↦ hx (hvR x hlt.le))
   set M := ∫ x, v x ^ pₙ
   have hM_nn : 0 ≤ M := integral_nonneg fun x ↦ Real.rpow_nonneg (hv_nonneg x) _
   rcases hM_nn.eq_or_lt with hM0 | hM_pos
@@ -235,8 +232,8 @@ theorem sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral_of_li
           integrable_norm_fderiv_sq_of_lipschitzWith (𝕜 := ℝ) (μ := volume) hu hsupp)
   -- Stage 3: Apply the radial sharp Sobolev inequality to `v`.
   rw [← hmass_eq]
-  exact (radial_sharp_sobolev hn hv_lip (fun _ ↦ ENNReal.toReal_nonneg) hv_anti hR hvR).trans
-    (mul_le_mul_of_nonneg_left hps (conformalCoefficient_pos hn).le)
+  exact (radial_sharp_sobolev hn hv_lip hv_supp (fun _ ↦ ENNReal.toReal_nonneg)
+    hv_anti hR hvR).trans (mul_le_mul_of_nonneg_left hps (conformalCoefficient_pos hn).le)
 
 /-- **The sharp Euclidean Sobolev inequality for compactly supported `C¹` functions.** -/
 theorem sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral

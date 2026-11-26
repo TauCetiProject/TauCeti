@@ -237,7 +237,10 @@ theorem mul_integral_pow_mul_deriv_comp_smul_sq_le_integral_norm_fderiv_sq
       measurableSet_Ioi
   have hpt : ∀ r ∈ Ioi (0 : ℝ), r ^ (n - 1) * (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2 ≤
       r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2 := fun r (hr : 0 < r) ↦
-    mul_le_mul_of_nonneg_left (deriv_radial_sq_le hv_rad he₀ hr) (pow_nonneg hr.le _)
+    mul_le_mul_of_nonneg_left (by
+      simpa only [Real.norm_eq_abs, sq_abs] using
+        pow_le_pow_left₀ (norm_nonneg _) (norm_deriv_comp_smul_le hv_rad he₀ hr) 2)
+      (pow_nonneg hr.le _)
   have hderiv_int :
       IntegrableOn (fun r ↦ r ^ (n - 1) * (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2) (Ioi 0) :=
     hφ_int.mono' (((continuous_pow (n - 1)).measurable.mul
