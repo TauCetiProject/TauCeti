@@ -36,7 +36,7 @@ for all continuous `u` and `v` mapping `Ω` into `L`. By Hadamard's lemma
 (`ContDiff.sub_eq_hadamardFactor_apply`), `g (v z) - g (u z) = H(u z, v z) (v z - u z)` for the
 averaged derivative `H = TauCeti.hadamardFactor g`, which is `Cᵏ` jointly in both points. The
 composition bound `TauCeti.exists_eLpNormWkp_comp_le_of_two_lt_mul` for `H` on `L × L` and the
-product bound `TauCeti.exists_eLpNormWkp_bilin_le_of_two_lt_add_sub_mul` for evaluation give the
+product bound `TauCeti.exists_eLpNormWkp_clm_apply_le_of_two_lt_mul` for evaluation give the
 estimate. For `g` that is `C^{k+1}` only on `W`, the continuity theorem replaces `g` by a global
 `C^{k+1}` map that agrees with it on a compact neighbourhood of `u₀(K)` in `W`, which contains
 `uₙ(K)` eventually by the locally uniform convergence.
@@ -85,32 +85,30 @@ theorem exists_eLpNormWkp_comp_sub_le_of_two_lt_mul {p : ℝ≥0} (hp : 1 < p) {
   have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast hp.le
   obtain ⟨V, hUV, hVΩ, hVc⟩ := Opens.exists_between_and_isCompact_closure hU hUΩ
   -- The product bound for evaluation `(A, w) ↦ A w`, from `V` to `U`.
-  obtain ⟨N, hN⟩ := exists_eLpNormWkp_bilin_le_of_two_lt_add_sub_mul (F := F →L[ℝ] G) (G := F)
-    (H := G) (Ω := V) hp (a := k) (b := k) le_rfl le_rfl (by rwa [Nat.add_sub_cancel]) hU hUV
+  obtain ⟨N, hN⟩ := exists_eLpNormWkp_clm_apply_le_of_two_lt_mul (F := F) (G := G) (Ω := V) hp hkp
+    hU hUV
   -- The composition bound for the averaged derivative `H`, from `Ω` to `V`.
   obtain ⟨M, hM⟩ := exists_eLpNormWkp_comp_le_of_two_lt_mul (Ω := Ω) hp hkp
     (g := fun q : F × F => hadamardFactor g q.1 q.2) isOpen_univ
     (ContDiff.contDiff_hadamardFactor_uncurry_of_succ k g (by exact_mod_cast hg)).contDiffOn
     (hL.prod hL) (subset_univ _) hVc hVΩ
   refine ⟨N * M, fun u v huc huL hvc hvL => ?_⟩
-  have hid : ‖ContinuousLinearMap.id ℝ (F →L[ℝ] G)‖ₑ ≤ 1 :=
-    (ofReal_norm _).symm.trans_le (ENNReal.ofReal_le_one.2 ContinuousLinearMap.norm_id_le)
   -- Hadamard's lemma: `g (v z) - g (u z) = H(u z, v z) (v z - u z)`.
   have hfun : (fun z => g (v z) - g (u z)) = fun z =>
-      ContinuousLinearMap.id ℝ (F →L[ℝ] G) (hadamardFactor g (u z) (v z)) ((v - u) z) :=
+      hadamardFactor g (u z) (v z) ((v - u) z) :=
     funext fun z => by
       simp [ContDiff.sub_eq_hadamardFactor_apply g (hg.of_le (by simp)) (u z) (v z)]
   have hH := hM (fun z => (u z, v z)) (huc.prodMk hvc) fun z hz => ⟨huL hz, hvL hz⟩
   rw [hfun]
   calc
-    _ ≤ N * ‖ContinuousLinearMap.id ℝ (F →L[ℝ] G)‖ₑ *
-        eLpNormWkp p V k (fun z => hadamardFactor g (u z) (v z)) * eLpNormWkp p V k (v - u) :=
-      hN _ _ _
-    _ ≤ N * 1 * (M * (1 + eLpNormWkp p Ω k (fun z => (u z, v z))) ^ k) *
+    _ ≤ N * eLpNormWkp p V k (fun z => hadamardFactor g (u z) (v z)) *
+        eLpNormWkp p V k (v - u) :=
+      hN (fun z => hadamardFactor g (u z) (v z)) (v - u)
+    _ ≤ N * (M * (1 + eLpNormWkp p Ω k (fun z => (u z, v z))) ^ k) *
         eLpNormWkp p Ω k (v - u) := by
       gcongr
       exact eLpNormWkp_mono_set (subset_closure.trans hVΩ)
-    _ ≤ N * 1 * (M * (1 + (eLpNormWkp p Ω k u + eLpNormWkp p Ω k v)) ^ k) *
+    _ ≤ N * (M * (1 + (eLpNormWkp p Ω k u + eLpNormWkp p Ω k v)) ^ k) *
         eLpNormWkp p Ω k (v - u) := by
       gcongr
       exact eLpNormWkp_prodMk_le hp1
