@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 import TauCeti.Analysis.Calculus.IteratedFDeriv.SpatialJets
 
@@ -19,7 +19,9 @@ jointly continuous in the parameter and the position-frequency variables. The sy
 on each compact set of positions must have constants independent of the parameter.
 
 Mixed coordinate derivatives commute with this coefficient integral
-(`TauCeti.Symbol.mixedDeriv_integral_of_continuous_jets`). If the seminorm `p_{K,α,β}` of every
+(`TauCeti.Symbol.mixedDeriv_integral_of_continuous_jets`), so a pointwise estimate with a
+constant `C` for every member gives the estimate with constant `μ.real Set.univ * C` for the
+integral (`TauCeti.Symbol.norm_mixedDeriv_integral_le`). If the seminorm `p_{K,α,β}` of every
 member of the family is at most `C ≥ 0`, the integral has that seminorm at most
 `μ.real Set.univ * C` (`TauCeti.Symbol.seminorm_integral_le`), as does any symbol whose
 coefficient is that pointwise integral (`TauCeti.Symbol.seminorm_le_of_coefficient_eq_integral`).
@@ -144,7 +146,10 @@ theorem mixedDeriv_integral_of_continuous_jets (α β : List (Fin n))
   exact Filter.Eventually.of_forall fun y ↦
     (mixedDeriv_eq_iteratedFDeriv α β ((a y).contDiff_coefficient.of_le (by simp)) x ξ).symm
 
-private theorem norm_mixedDeriv_integral_le (α β : List (Fin n)) (x ξ : CoordinateSpace n)
+/-- A symbol estimate at `(x, ξ)` with constant `C` for every member of a compact family with
+jointly continuous spatial jets gives the estimate with constant `μ.real univ * C` for the
+coefficient integral. -/
+theorem norm_mixedDeriv_integral_le (α β : List (Fin n)) (x ξ : CoordinateSpace n)
     {C : ℝ} (hC : ∀ y, ‖mixedDeriv α β (a y).coefficient x ξ‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) :
     ‖mixedDeriv α β (fun p ↦ ∫ y, (a y).coefficient p ∂μ) x ξ‖ ≤
@@ -417,7 +422,7 @@ include hjets in
 /-- A frequency cutoff `χ` times the members of the family gives a family whose jets are jointly
 continuous everywhere: away from the zero frequency by the Leibniz rule, and near it because `χ`
 vanishes there. -/
-private theorem continuous_iteratedFDeriv_smul_coefficient (χ : FrequencyCutoff E) (k : ℕ) :
+theorem continuous_iteratedFDeriv_smul_coefficient (χ : FrequencyCutoff E) (k : ℕ) :
     Continuous (fun p : Y × (X × E) ↦
       iteratedFDeriv ℝ k (fun q : X × E ↦ χ q.2 • (a p.1).coefficient q) p.2) := by
   have hopen : IsOpen {p : X × E | p.2 ≠ 0} := isOpen_ne_fun continuous_snd continuous_const
@@ -479,6 +484,28 @@ def integral : HomogeneousSymbol X E V W m where
 theorem coefficient_integral (p : X × E) :
     (integral μ a hjets).coefficient p = ∫ y, (a y).coefficient p ∂μ :=
   (rfl)
+
+/-- Integration preserves addition of compact families of homogeneous symbols. -/
+theorem integral_add (b : Y → HomogeneousSymbol X E V W m)
+    (hb : ∀ k : ℕ, ContinuousOn
+      (fun p : Y × (X × E) ↦ iteratedFDeriv ℝ k (b p.1).coefficient p.2) (univ ×ˢ {p | p.2 ≠ 0}))
+    {hab : ∀ k : ℕ, ContinuousOn
+      (fun p : Y × (X × E) ↦ iteratedFDeriv ℝ k (a p.1 + b p.1).coefficient p.2)
+      (univ ×ˢ {p | p.2 ≠ 0})} :
+    integral μ (fun y ↦ a y + b y) hab = integral μ a hjets + integral μ b hb := by
+  refine HomogeneousSymbol.ext (funext fun p ↦ ?_)
+  simp only [coefficient_integral, coefficient_add, Pi.add_apply]
+  exact MeasureTheory.integral_add (integrable_coefficient_family μ a hjets p)
+    (integrable_coefficient_family μ b hb p)
+
+/-- Integration of homogeneous symbols commutes with multiplication by a fixed complex scalar. -/
+theorem integral_smul (c : ℂ)
+    {hcs : ∀ k : ℕ, ContinuousOn
+      (fun p : Y × (X × E) ↦ iteratedFDeriv ℝ k (c • a p.1).coefficient p.2)
+      (univ ×ˢ {p | p.2 ≠ 0})} :
+    integral μ (fun y ↦ c • a y) hcs = c • integral μ a hjets := by
+  refine HomogeneousSymbol.ext (funext fun p ↦ ?_)
+  simp only [coefficient_integral, coefficient_smul, Pi.smul_apply, MeasureTheory.integral_smul]
 
 /-- A probability average fixes a constant family of homogeneous symbols. -/
 @[simp]

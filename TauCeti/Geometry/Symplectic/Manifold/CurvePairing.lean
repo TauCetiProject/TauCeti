@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Complex.Family.Block
+public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
@@ -12,11 +14,17 @@ public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.TwoForm.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 
+import TauCeti.Geometry.Manifold.DeRham.Map
+import TauCeti.Geometry.Manifold.DeRham.NormedSpace
+import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.TwoForm.Closed
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Orientation
 
 /-!
-# Pairings of two-forms with pseudoholomorphic curves are bounded by area
+# Pairings of two-forms with pseudoholomorphic curves
 
 Let `u : (C, j) → (X, J)` be a smooth pseudoholomorphic map from a surface, oriented so that the
 frames `(e, j e)` are positive, and let `θ` and `σ` be two-forms on `X`. Pulled back along `u`, a
@@ -44,12 +52,42 @@ homology class of a curve of bounded area, and then uses
 classes. That step depends on identifying `∫_C u^* θ` with
 the pairing of `[θ]` with the class of the curve, a de Rham comparison not provided here.
 
+If `θ` tames `J` strictly along `u`, that is `θ(v, J v) > 0` for every nonzero tangent vector `v`
+at a point of the image, the pairing also detects whether `u` is constant: the integrand
+`θ(du e, J du e)` is positive wherever `du` is nonzero, so `∫_C u^* θ = 0` forces `du = 0`
+(`TauCeti.mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero`). When `C` is closed and connected
+and `u^* θ` is exact, Stokes' theorem gives `∫_C u^* θ = 0`, so `u` is constant
+(`TauCeti.apply_eq_of_mpullback_mem_exactForms`). This applies when `θ` itself is exact
+(`TauCeti.apply_eq_of_mem_exactForms`), and so, by the Poincaré lemma, to every closed taming form
+on a real normed space (`TauCeti.apply_eq_of_mem_closedForms_normedSpace`). In particular a closed
+connected curve that is pseudoholomorphic for a constant linear complex structure `J₀` on a normed
+space, tamed by an alternating bilinear form, is constant
+(`TauCeti.apply_eq_of_isPseudoholomorphicAt_const`).
+
+The same argument excludes closed curves in the fibres of a product `B × W` with a block almost
+complex structure `J`, one for which the projection to `B` is pseudoholomorphic for a constant
+structure `i` (`TauCeti.ComplexStructureFamily`). The fibres are then `J`-complex, and the fibre
+component of a curve in the fibre over `b` is pseudoholomorphic for the fibre structure
+`TauCeti.ComplexStructureFamily.fiberAlmostComplexStructure` over `b`. So a closed connected curve
+in one fibre is constant as soon as the fibre structure is tamed by a closed two-form
+(`TauCeti.ComplexStructureFamily.apply_eq_of_isPseudoholomorphicAt_of_forall_fst_eq`). If moreover
+`i` is tamed, the base component of every closed connected curve is constant, so the curve lies in
+one fibre: closed connected curves in `B × W` are constant
+(`TauCeti.ComplexStructureFamily.apply_eq_of_isPseudoholomorphic_fst`). This applies to the
+vertical curves of the normal model of an embedded pseudoholomorphic curve, whose almost complex
+structure `J_N` is a block structure over the base with the standard structure on every normal
+fibre.
+
 ## References
 
 * M. Gromov, *Pseudo holomorphic curves in symplectic manifolds*, Invent. Math. 82 (1985),
   307–347, §1.
 * C. H. Taubes, *Counting pseudo-holomorphic submanifolds in dimension 4*, J. Differential Geom.
   44 (1996), 818–893, §2.
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
+  Colloquium Publications 52, 2012, Section 2.2 (energy of closed curves for exact forms).
+* C. H. Taubes, *SW ⇒ Gr: From the Seiberg–Witten equations to pseudo-holomorphic curves*,
+  J. Amer. Math. Soc. 9 (1996), 845–918.
 -/
 
 public section
@@ -123,5 +161,175 @@ theorem abs_integralTopForm_mpullback_le [CompactSpace C] (hu : ContMDiff I' I �
   have h₂ := key (-1) (by simp)
   rw [abs_le]
   constructor <;> linarith
+
+/-! ### Closed curves with exact pairing are constant -/
+
+/-- **A taming form with vanishing pairing kills the differential.** Let `u` be a smooth
+pseudoholomorphic map from a compact surface `C`, oriented so that the frames `(e, j e)` are
+positive, and let `θ` tame `J` along `u`: `θ(v, J v) > 0` for every nonzero tangent vector `v` at a
+point of the image. If `∫_C u^* θ = 0`, then the differential of `u` vanishes everywhere. -/
+theorem mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero [CompactSpace C]
+    (hu : ContMDiff I' I ∞ u)
+    (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j J u c) {θ : SmoothTwoForm I X}
+    (hθ : ∀ c (v : TangentSpace I (u c)), v ≠ 0 →
+      0 < SmoothBundleForm.eval₂ θ (u c) v (J (u c) v))
+    (h : integralTopForm o (SmoothForm.mpullback u hu θ).val = 0) (c : C) :
+    mfderiv I' I u c = 0 := by
+  -- On a frame `(e, j e)` the pullback is `θ(du e, J du e)`.
+  have hframe (c' : C) (e : TangentSpace I' c') :
+      (SmoothForm.mpullback u hu θ).val c' ![e, j c' e] =
+        SmoothBundleForm.eval₂ θ (u c') (mfderiv I' I u c' e)
+          (J (u c') (mfderiv I' I u c' e)) := by
+    rw [← SmoothBundleForm.eval₂_apply, SmoothForm.eval₂_mpullback,
+      (hhol c').mfderiv_apply_commute]
+  have hnn (c' : C) (e : TangentSpace I' c') :
+      0 ≤ (SmoothForm.mpullback u hu θ).val c' ![e, j c' e] := by
+    rw [hframe]
+    rcases eq_or_ne (mfderiv I' I u c' e) 0 with he | he
+    · rw [he, SmoothBundleForm.eval₂_zero_left]
+    · exact (hθ c' _ he).le
+  refine ContinuousLinearMap.ext (σ₁₂ := RingHom.id ℝ) fun e ↦ ?_
+  by_contra he
+  have hpos : 0 < (SmoothForm.mpullback u hu θ).val c ![e, j c e] := by
+    rw [hframe]
+    exact hθ c _ he
+  refine (j.integralTopForm_pos_of_forall_nonneg ho
+    ((SmoothForm.isSmoothForm _).of_le (by simp))
+    (isClosed_tsupport _).isCompact hnn hpos).ne' h
+
+variable [BoundarylessManifold I' C] [T2Space C] [CompactSpace C] [PreconnectedSpace C]
+
+/-- **Closed pseudoholomorphic curves with exact pairing are constant.** Let `u` be a smooth
+pseudoholomorphic map from a closed connected surface `C`, oriented so that the frames `(e, j e)`
+are positive, and let `θ` tame `J` along `u`. If the pullback `u^* θ` is exact, then `u` is
+constant: by Stokes' theorem `∫_C u^* θ = 0`, while the integrand is positive wherever the
+differential of `u` is nonzero. -/
+theorem apply_eq_of_mpullback_mem_exactForms (hu : ContMDiff I' I ∞ u)
+    (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j J u c) {θ : SmoothTwoForm I X}
+    (hθ : ∀ c (v : TangentSpace I (u c)), v ≠ 0 →
+      0 < SmoothBundleForm.eval₂ θ (u c) v (J (u c) v))
+    (hex : SmoothForm.mpullback u hu θ ∈ exactForms I' C 2) (c c' : C) : u c = u c' := by
+  have hint : integralTopForm o (SmoothForm.mpullback u hu θ).val = 0 :=
+    integralTopForm_eq_zero_of_mem_exactForms o hex
+  exact hu.mdifferentiable (by simp) |>.apply_eq_of_mfderiv_eq_zero
+    (mfderiv_eq_zero_of_integralTopForm_mpullback_eq_zero hu ho hhol hθ hint) c c'
+
+/-- **Pseudoholomorphic curves are constant for exact taming forms.** A smooth pseudoholomorphic
+map from a closed connected surface into an almost complex manifold tamed along the map by an
+exact two-form is constant. -/
+theorem apply_eq_of_mem_exactForms (hu : ContMDiff I' I ∞ u)
+    (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j J u c) {θ : SmoothTwoForm I X}
+    (hθ : ∀ c (v : TangentSpace I (u c)), v ≠ 0 →
+      0 < SmoothBundleForm.eval₂ θ (u c) v (J (u c) v))
+    (hex : θ ∈ exactForms I X 2) (c c' : C) : u c = u c' := by
+  refine apply_eq_of_mpullback_mem_exactForms hu ho hhol hθ ?_ c c'
+  simpa using closedForms.mpullback_mem_exactForms u hu 2 ⟨θ, exactForms_le_closedForms I 2 hex⟩ hex
+
+/-- **Closed pseudoholomorphic curves in a normed space are constant.** On a real normed space `V`
+with an almost complex structure tamed along the map by a closed two-form, every smooth
+pseudoholomorphic map from a closed connected surface is constant. By the Poincaré lemma the
+taming form is exact. -/
+theorem apply_eq_of_mem_closedForms_normedSpace {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {J : SmoothAlmostComplexStructure 𝓘(ℝ, V) V} {u : C → V}
+    (hu : ContMDiff I' 𝓘(ℝ, V) ∞ u)
+    (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j J u c) {θ : SmoothTwoForm 𝓘(ℝ, V) V}
+    (hθ : ∀ c (v : TangentSpace 𝓘(ℝ, V) (u c)), v ≠ 0 →
+      0 < SmoothBundleForm.eval₂ θ (u c) v (J (u c) v))
+    (hcl : θ ∈ closedForms 𝓘(ℝ, V) V 2) (c c' : C) : u c = u c' :=
+  apply_eq_of_mem_exactForms hu ho hhol hθ
+    ((exactForms_succ_eq_closedForms_normedSpace V 1).ge hcl) c c'
+
+/-- **Closed pseudoholomorphic curves for a tamed constant complex structure are constant.** Let
+`Jc` be a linear complex structure on a real normed space `V`, tamed by an alternating bilinear
+form `B`: `B v (Jc v) > 0` for `v ≠ 0`. Every smooth map from a closed connected surface that is
+pseudoholomorphic for the constant structure `Jc` is constant.
+
+For curves in the fibres of a block almost complex structure on a product, see
+`TauCeti.ComplexStructureFamily.apply_eq_of_isPseudoholomorphicAt_of_forall_fst_eq` and
+`TauCeti.ComplexStructureFamily.apply_eq_of_isPseudoholomorphic_fst`. -/
+theorem apply_eq_of_isPseudoholomorphicAt_const {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {Jc : V →L[ℝ] V} (hJc : ∀ v, Jc (Jc v) = -v) {B : V →L[ℝ] V →L[ℝ] ℝ}
+    (hB : ∀ v, B v v = 0) (hBJ : ∀ v, v ≠ 0 → 0 < B v (Jc v)) {u : C → V}
+    (hu : ContMDiff I' 𝓘(ℝ, V) ∞ u)
+    (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j (SmoothAlmostComplexStructure.const Jc hJc) u c)
+    (c c' : C) : u c = u c' := by
+  refine apply_eq_of_mem_closedForms_normedSpace hu ho hhol (θ := SmoothTwoForm.const B)
+    (fun c v hv ↦ ?_) ?_ c c'
+  · rw [SmoothTwoForm.const_apply B hB]
+    simp only [SmoothAlmostComplexStructure.const_toEndomorphism_apply]
+    -- `NormedSpace.fromTangentSpace` is Mathlib's identification of `TangentSpace 𝓘(ℝ, V) x`
+    -- with `V`, which is the identity map.
+    exact hBJ v hv
+  · exact (mem_closedForms _ _).mpr
+      ((SmoothForm.isClosed_def _).mp (SmoothTwoForm.isClosed_const B))
+
+/-! ### Closed curves in block almost complex structures -/
+
+namespace ComplexStructureFamily
+
+/-- **Closed vertical curves are constant.** Let `K` be a block almost complex structure on
+`B × W`, one for which the projection to `B` is pseudoholomorphic for a constant structure `i`, and
+let `v` be a smooth pseudoholomorphic map from a closed connected surface into the fibre over `b`.
+If the fibre structure over `b` is tamed along `v` by a closed two-form on `W`, then `v` is
+constant. -/
+theorem apply_eq_of_isPseudoholomorphicAt_of_forall_fst_eq {B W : Type*} [NormedAddCommGroup B]
+    [NormedSpace ℝ B] [NormedAddCommGroup W] [NormedSpace ℝ W]
+    {K : SmoothAlmostComplexStructure 𝓘(ℝ, B × W) (B × W)} {i : B →L[ℝ] B}
+    {hi : ∀ a, i (i a) = -a}
+    (hK : IsPseudoholomorphic K (SmoothAlmostComplexStructure.const i hi) Prod.fst) {b : B}
+    {v : C → B × W} (hv : ContMDiff I' 𝓘(ℝ, B × W) ∞ v)
+    (ho : ∀ c (e : Basis (Fin 2) ℝ (TangentSpace I' c)), e 1 = j c (e 0) →
+      e.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j K v c) (hb : ∀ c, (v c).1 = b)
+    {θ : SmoothTwoForm 𝓘(ℝ, W) W}
+    (hθ : ∀ c (w : TangentSpace 𝓘(ℝ, W) (v c).2), w ≠ 0 →
+      0 < SmoothBundleForm.eval₂ θ (v c).2 w
+        (fiberAlmostComplexStructure K hK b (v c).2 w))
+    (hcl : θ ∈ closedForms 𝓘(ℝ, W) W 2) (c c' : C) : v c = v c' := by
+  have hsnd : ContMDiff I' 𝓘(ℝ, W) ∞ (fun c ↦ (v c).2) :=
+    (ContinuousLinearMap.snd ℝ B W).contDiff.contMDiff.comp hv
+  exact Prod.ext ((hb c).trans (hb c').symm) (apply_eq_of_mem_closedForms_normedSpace hsnd ho
+    (fun c ↦ (hhol c).snd_of_forall_fst_eq hK hb) hθ hcl c c')
+
+/-- **Closed curves in a tamed block structure are constant.** Let `K` be a block almost
+complex structure on `B × W`, one for which the projection to `B` is pseudoholomorphic for a
+constant structure `i`. Suppose that `i` is tamed by an alternating bilinear form and that the
+fibre structure over every point of `B` is tamed by a closed two-form on `W`. Then every smooth
+pseudoholomorphic map from a closed connected surface to `B × W` is constant: its base component
+is a closed curve for the constant structure `i`, hence constant, and the map is then a closed
+curve in one fibre. -/
+theorem apply_eq_of_isPseudoholomorphic_fst {B W : Type*} [NormedAddCommGroup B]
+    [NormedSpace ℝ B] [NormedAddCommGroup W] [NormedSpace ℝ W]
+    {K : SmoothAlmostComplexStructure 𝓘(ℝ, B × W) (B × W)} {i : B →L[ℝ] B}
+    {hi : ∀ a, i (i a) = -a}
+    (hK : IsPseudoholomorphic K (SmoothAlmostComplexStructure.const i hi) Prod.fst)
+    {β : B →L[ℝ] B →L[ℝ] ℝ} (hβ : ∀ a, β a a = 0) (hβi : ∀ a, a ≠ 0 → 0 < β a (i a))
+    {θ : B → SmoothTwoForm 𝓘(ℝ, W) W}
+    (hθ : ∀ b (w : W) (w' : TangentSpace 𝓘(ℝ, W) w), w' ≠ 0 →
+      0 < SmoothBundleForm.eval₂ (θ b) w w'
+        (fiberAlmostComplexStructure K hK b w w'))
+    (hcl : ∀ b, θ b ∈ closedForms 𝓘(ℝ, W) W 2) {v : C → B × W}
+    (hv : ContMDiff I' 𝓘(ℝ, B × W) ∞ v)
+    (ho : ∀ c (e : Basis (Fin 2) ℝ (TangentSpace I' c)), e 1 = j c (e 0) →
+      e.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j K v c) (c c' : C) : v c = v c' := by
+  have hfst : ∀ c c', (v c).1 = (v c').1 :=
+    apply_eq_of_isPseudoholomorphicAt_const hi hβ hβi
+      ((ContinuousLinearMap.fst ℝ B W).contDiff.contMDiff.comp hv) ho
+      (fun c ↦ (hK.isPseudoholomorphicAt (v c)).comp (hhol c))
+  exact apply_eq_of_isPseudoholomorphicAt_of_forall_fst_eq hK hv ho hhol (fun c'' ↦ hfst c'' c)
+    (fun c'' w hw ↦ hθ _ _ w hw) (hcl _) c c'
+
+end ComplexStructureFamily
 
 end TauCeti

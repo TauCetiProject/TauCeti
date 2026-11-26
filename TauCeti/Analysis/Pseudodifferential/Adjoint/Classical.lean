@@ -40,12 +40,23 @@ The homogeneous symbols `TauCeti.HomogeneousSymbol.adjointTerm k a` and the form
 * `TauCeti.ClassicalSymbol.adjointTerm a k`: the term of order `m - k` of the adjoint expansion of
   a classical symbol `a`, again classical, with full symbol `TauCeti.Symbol.adjointTerm`
   (`TauCeti.ClassicalSymbol.toSymbol_adjointTerm`).
+* `TauCeti.ClassicalSymbol.exists_remainder_adjointTerms_of_isAsymptoticSum`: a symbol that is an
+  asymptotic sum of the terms `adjointTerm a k` has remainders of order `m - N` after the first `N`
+  homogeneous terms `adjointTerms a.term`.
 * `TauCeti.ClassicalSymbol.adjoint`: **the adjoint of a classical symbol is classical**, with full
   symbol the adjoint symbol (`TauCeti.ClassicalSymbol.toSymbol_adjoint`) and homogeneous terms
   `adjointTerms a.term` (`TauCeti.ClassicalSymbol.term_adjoint`).
 * `TauCeti.ClassicalSymbol.principal_adjoint`: the principal symbol of `a*` is `a_m†`.
 * `TauCeti.ClassicalSymbol.coefficient_term_one_adjoint`: the term of degree `m - 1` of `a*`.
 * `TauCeti.ClassicalSymbol.isElliptic_adjoint_iff`: `a*` is elliptic exactly when `a` is.
+* `TauCeti.ClassicalSymbol.exists_inclusion_eq_adjoint_sub_pointwiseAdjoint`: `a* - a†` is a
+  classical symbol of order `m - 1` with principal symbol `-i ∑ⱼ (∂_{xⱼ} ∂_{ξⱼ} a_m)†`, where `a†`
+  is the pointwise adjoint `TauCeti.ClassicalSymbol.pointwiseAdjoint`.
+* `TauCeti.ClassicalSymbol.eq_adjoint_of_forall_integral_inner_eq`: if the quantization of `b` is
+  the formal adjoint of that of `a` on compactly supported Schwartz functions, then `b = a*`, and
+  `TauCeti.ClassicalSymbol.adjoint_principal_eq_of_forall_integral_inner_eq`: the principal symbol
+  of `b` is `a_m†`. For `b = a`, a formally self-adjoint quantization has `a* = a` and a pointwise
+  self-adjoint principal symbol.
 
 ## References
 
@@ -59,6 +70,7 @@ public section
 noncomputable section
 
 open Finset
+open scoped SchwartzMap
 
 namespace TauCeti
 
@@ -137,29 +149,20 @@ section Adjoint
 
 variable {m : ℝ}
 
-/-- The remainder of the adjoint symbol of a classical symbol after `N` terms has order `m - N`:
-it is the remainder of the adjoint expansion after `N` terms, plus the remainder after `N - k`
-homogeneous terms of each term `adjointTerm a k`, `k < N`. -/
-private theorem exists_remainder_adjoint (a : ClassicalSymbol n V W m)
-    (ha : a.toSymbol.HasCompactSpatialSupport) (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
+/-- **Classical remainders of the adjoint expansion.** If a symbol `c` of order `m` is an
+asymptotic sum `c ∼ ∑ₖ adjointTerm a k` of the terms of the adjoint expansion of a classical symbol
+`a`, then its remainder after the first `N` homogeneous terms `adjointTerms a.term` has order
+`m - N`: it is the remainder of the asymptotic sum after `N` terms, plus the remainder after
+`N - k` homogeneous terms of each term `adjointTerm a k`, `k < N`. -/
+theorem exists_remainder_adjointTerms_of_isAsymptoticSum (a : ClassicalSymbol n V W m)
+    {c : Symbol n W V m}
+    (hc : (Symbol.inclusion (by simp) c : Symbol n W V (m - ((0 : ℕ) : ℝ))).IsAsymptoticSum
+      a.toSymbol.adjointTerm)
+    (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
     ∃ r : Symbol n W V (m - N), ∀ p, r.coefficient p =
-      (a.toSymbol.adjoint ha).coefficient p -
-        ∑ j ∈ range N, χ p.2 • (adjointTerms a.term j).coefficient p := by
-  -- The remainder of `adjointTerm a k` after `N - k` terms has order `m - N` for `k ≤ N`.
-  have hord (k : ℕ) : m - k - ((N - k : ℕ) : ℝ) ≤ m - N := by
-    have : (N : ℝ) ≤ k + ((N - k : ℕ) : ℝ) := by exact_mod_cast le_add_tsub
-    linarith
-  refine ⟨a.toSymbol.adjointRemainder ha N +
-    ∑ k ∈ range N, Symbol.inclusion (hord k) ((a.adjointTerm k).remainder χ (N - k)),
-    fun p ↦ ?_⟩
-  simp only [Symbol.coefficient_add, Symbol.coefficient_sum, Symbol.coefficient_inclusion,
-    Symbol.coefficient_adjointRemainder, Pi.add_apply, Pi.sub_apply, Finset.sum_apply,
-    coefficient_remainder, toSymbol_adjointTerm, term_adjointTerm, coefficient_castDegree,
-    coefficient_adjointTerms, Finset.smul_sum, Finset.sum_sub_distrib]
-  -- Reindex the double sum over `k + i = j < N` by `k < N`, `i < N - k`.
-  rw [Finset.sum_range_diag_flip N
-    fun k i ↦ χ p.2 • (HomogeneousSymbol.adjointTerm k (a.term i)).coefficient p]
-  abel
+      c.coefficient p - ∑ j ∈ range N, χ p.2 • (adjointTerms a.term j).coefficient p := by
+  obtain ⟨r, hr⟩ := exists_remainder_of_isAsymptoticSum (fun k ↦ a.adjointTerm k) hc χ N
+  exact ⟨r, fun p ↦ by simp [hr p, coefficient_adjointTerms]⟩
 
 /-- **The adjoint of a classical symbol is classical.** For a classical symbol `a` of order `m`
 between complex Hilbert spaces, with compact spatial support, the adjoint symbol `a*`, whose
@@ -170,7 +173,8 @@ def adjoint (a : ClassicalSymbol n V W m) (ha : a.toSymbol.HasCompactSpatialSupp
     ClassicalSymbol n W V m where
   toSymbol := a.toSymbol.adjoint ha
   term := adjointTerms a.term
-  exists_remainder' := ⟨default, exists_remainder_adjoint a ha default⟩
+  exists_remainder' := ⟨default,
+    exists_remainder_adjointTerms_of_isAsymptoticSum a (Symbol.isAsymptoticSum_adjoint ha) default⟩
 
 variable (a : ClassicalSymbol n V W m) (ha : a.toSymbol.HasCompactSpatialSupport)
 
@@ -206,7 +210,62 @@ theorem coefficient_term_one_adjoint (z : CoordinateSpace n × CoordinateSpace n
 theorem isElliptic_adjoint_iff : (a.adjoint ha).IsElliptic ↔ a.IsElliptic := by
   rw [isElliptic_def, isElliptic_def, principal_adjoint, HomogeneousSymbol.isElliptic_adjoint_iff]
 
+/-- **The adjoint up to order `m - 1`.** The adjoint symbol `a*` differs from the pointwise adjoint
+`a†` by a classical symbol of order `m - 1`, whose principal symbol is
+`-i ∑ⱼ (∂_{xⱼ} ∂_{ξⱼ} a_m)†`. -/
+theorem exists_inclusion_eq_adjoint_sub_pointwiseAdjoint :
+    ∃ c : ClassicalSymbol n W V (m - 1),
+      inclusion 1 (by simp) c = a.adjoint ha - a.pointwiseAdjoint ∧
+      ∀ z, c.principal.coefficient z =
+        -Complex.I • ∑ j, ContinuousLinearMap.adjoint
+          (((a.principal.frequencyDeriv (EuclideanSpace.single j 1)).spatialDeriv
+            (EuclideanSpace.single j 1)).coefficient z) := by
+  have h0 : (a.adjoint ha - a.pointwiseAdjoint).principal = 0 := by
+    simp [principal_sub]
+  obtain ⟨c, hc⟩ := (principal_eq_zero_iff_exists_inclusion _).1 h0
+  refine ⟨c, hc, fun z => ?_⟩
+  rw [coefficient_principal_of_inclusion_eq hc, term_sub, HomogeneousSymbol.coefficient_sub,
+    Pi.sub_apply, coefficient_term_one_adjoint, term_pointwiseAdjoint, coefficient_adjoint,
+    neg_smul]
+  abel
+
 end Adjoint
+
+/-! ### Uniqueness of the adjoint -/
+
+section FormalAdjoint
+
+variable {m : ℝ} (a : ClassicalSymbol n V W m) (ha : a.toSymbol.HasCompactSpatialSupport)
+
+/-- **Uniqueness of the adjoint.** Let `a` be a classical symbol with compact spatial support. If
+the quantization of a classical symbol `b` is the formal adjoint of that of `a` on compactly
+supported Schwartz functions, `∫ ⟪Op(a) u, v⟫ = ∫ ⟪u, Op(b) v⟫`, then `b` is the adjoint symbol
+`a*`. For `b = a` this says that a formally self-adjoint quantization has `a* = a`. -/
+theorem eq_adjoint_of_forall_integral_inner_eq {b : ClassicalSymbol n W V m}
+    (h : ∀ (u : 𝓢(CoordinateSpace n, V)) (v : 𝓢(CoordinateSpace n, W)), HasCompactSupport u →
+      HasCompactSupport v →
+        ∫ x, inner ℂ (quantizeSchwartzValue a.toSymbol.coefficient u x) (v x) =
+          ∫ x, inner ℂ (u x) (quantizeSchwartzValue b.toSymbol.coefficient v x)) :
+    b = a.adjoint ha := by
+  ext1
+  rw [toSymbol_adjoint]
+  exact Symbol.ext (Symbol.coefficient_eq_adjoint_of_forall_integral_inner_eq ha h)
+
+include ha in
+/-- **The principal symbol of a formal adjoint.** Let `a` be a classical symbol with compact
+spatial support. If the quantization of a classical symbol `b` is the formal adjoint of that of
+`a` on compactly supported Schwartz functions, then the principal symbol of `b` is the pointwise
+adjoint `a_m(x, ξ)†` of that of `a`. For `b = a`: the principal symbol of a formally self-adjoint
+quantization is a self-adjoint operator at every position and frequency. -/
+theorem adjoint_principal_eq_of_forall_integral_inner_eq {b : ClassicalSymbol n W V m}
+    (h : ∀ (u : 𝓢(CoordinateSpace n, V)) (v : 𝓢(CoordinateSpace n, W)), HasCompactSupport u →
+      HasCompactSupport v →
+        ∫ x, inner ℂ (quantizeSchwartzValue a.toSymbol.coefficient u x) (v x) =
+          ∫ x, inner ℂ (u x) (quantizeSchwartzValue b.toSymbol.coefficient v x)) :
+    a.principal.adjoint = b.principal := by
+  rw [← principal_adjoint a ha, eq_adjoint_of_forall_integral_inner_eq a ha h]
+
+end FormalAdjoint
 
 end ClassicalSymbol
 

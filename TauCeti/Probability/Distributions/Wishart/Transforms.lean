@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.Gaussian.QuadraticForm
+public import TauCeti.Probability.Distributions.Gaussian.QuadraticForm.Basic
 public import TauCeti.Probability.Distributions.Wishart.Basic
 public import TauCeti.Probability.Distributions.Wishart.Nonsingular
 
@@ -32,7 +32,7 @@ a finite moment whether or not the pencil is positive definite.
 For the Gaussian-Gram family, writing the law as the image of a product of `ν` centred Gaussian
 factors turns the trace statistic into a sum of `ν` independent Gaussian quadratic forms, which
 reduces all three answers to the one-factor answers of
-`TauCeti.Probability.Distributions.Gaussian.QuadraticForm`. The factors being identically
+`TauCeti.Probability.Distributions.Gaussian.QuadraticForm.Basic`. The factors being identically
 distributed, the domain of the sum is their common domain; the moment-generating function is the
 `ν`-th power of the one-factor one; and the cumulant-generating function is `ν` times the
 one-factor one. At degree zero the law is a Dirac mass and the statistic vanishes identically, so

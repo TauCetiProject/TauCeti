@@ -37,24 +37,27 @@ proves the complementary uniqueness statements:
    `expAdSubgroup K e₂ ≤ Int(L)`, which also preserves `S(L*)^L`, so `h₁` and `h₂` agree on
    `S(L*)^L`. In particular, each `Int(L)`-orbit of neutral elements meets
    `b.dominantNeutralElements` in a unique point
-   (`RootPairing.Base.injOn_orbit_dominantNeutralElements`), and the weighted Dynkin diagram depends
-   only on the `Int(L)`-orbit of the nilpositive element.
+   (`RootPairing.Base.injOn_orbit_dominantNeutralElements`), so these orbits are exactly as many
+   as the dominant neutral elements, and the weighted Dynkin diagram depends only on the
+   `Int(L)`-orbit of the nilpositive element. Combined with Jacobson–Morozov, every nonzero
+   `ad`-nilpotent element has exactly one dominant neutral element
+   (`RootPairing.Base.existsUnique_mem_dominantNeutralElements_isSl2Triple_smul`).
 
 ## Main results
 
 * `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq`,
   `RootPairing.Base.injOn_orbit_dominantNeutralElements`,
   `IsSl2Triple.existsUnique_mem_dominantNeutralElements_mem_orbit_intLieAlgebra`, and
-  `TauCeti.ncard_image_orbit_setOf_exists_isSl2Triple_eq`: distinct dominant neutral elements have
-  disjoint `Int(L)`-orbits, so the number of `Int(L)`-orbits of neutral elements equals
-  `b.dominantNeutralElements.ncard`.
+  `RootPairing.Base.ncard_image_orbit_setOf_exists_isSl2Triple_eq`: distinct dominant neutral
+  elements have disjoint `Int(L)`-orbits, so the number of `Int(L)`-orbits of neutral elements
+  equals `b.dominantNeutralElements.ncard`.
 * `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`: an invariant-preserving Lie
   automorphism carrying `e₁` to `e₂` identifies the dominant neutral elements `h₁` and `h₂`.
-* `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq`,
-  `IsSl2Triple.weightedDynkinDiagram_eq_of_mem_intLieAlgebra_smul_eq`, and
-  `TauCeti.existsUnique_mem_dominantNeutralElements_exists_mem_intLieAlgebra_isSl2Triple`:
-  `Int(L)`-conjugate nilpositive elements share a unique dominant neutral element and equal
-  weighted Dynkin diagrams.
+* `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq` and
+  `IsSl2Triple.weightedDynkinDiagram_eq_of_mem_intLieAlgebra_smul_eq`: `Int(L)`-conjugate
+  nilpositive elements share the same dominant neutral element and weighted Dynkin diagram.
+* `RootPairing.Base.existsUnique_mem_dominantNeutralElements_isSl2Triple_smul`: a nonzero
+  `ad`-nilpotent element has exactly one dominant neutral element.
 
 ## References
 
@@ -102,6 +105,13 @@ theorem injOn_orbit_dominantNeutralElements (b : (rootSystem H).Base) :
   obtain ⟨⟨g, hg⟩, hgh⟩ := MulAction.orbit_eq_iff.mp horb.symm
   exact b.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq hh₁ hh₂ hg hgh
 
+/-- **Counting orbits of neutral elements exactly.** The `Int(L)`-orbits of neutral elements of
+`sl₂` triples are exactly as many as the dominant neutral elements for any base `b`. -/
+theorem ncard_image_orbit_setOf_exists_isSl2Triple_eq (b : (rootSystem H).Base) :
+    (MulAction.orbit (intLieAlgebra K L) '' {h : L | ∃ e f, IsSl2Triple h e f}).ncard =
+      b.dominantNeutralElements.ncard := by
+  rw [← b.image_orbit_dominantNeutralElements, b.injOn_orbit_dominantNeutralElements.ncard_image]
+
 end IntOrbits
 
 end RootPairing.Base
@@ -132,11 +142,11 @@ theorem eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq (b : (rootSystem 
     hφe ▸ t₁.map φ.toLieHom ((map_ne_zero_iff φ.toLieHom φ.injective).mpr t₁.h_ne_zero)
   -- Kostant's conjugacy theorem moves `(φ h₁, e₂, φ f₁)` to `(h₂, e₂, f₂)` inside `Int(L)`.
   obtain ⟨ψ, hψ, -, hψh, -⟩ := t₁'.exists_lieEquiv_apply_eq (K := K) t₂
-  let g : LinearMap.GeneralLinearGroup K L :=
-    (LinearMap.GeneralLinearGroup.generalLinearEquiv K L).symm ψ.toLinearEquiv
+  let g := LinearMap.GeneralLinearGroup.ofLinearEquiv ψ.toLinearEquiv
   have hg : g ∈ intLieAlgebra K L :=
     map_expAdSubgroup_le_intLieAlgebra e₂ ⟨ψ.toLinearEquiv, hψ, rfl⟩
-  have hgh : g • φ (h₁ : L) = (h₂ : L) := hψh
+  have hgh : g • φ (h₁ : L) = (h₂ : L) :=
+    (LinearMap.GeneralLinearGroup.ofLinearEquiv_smul _ _).trans hψh
   refine b.eq_of_forall_mem_lieInvariants_lift_eval_eq_of_dominant
     ((b.mem_dominantNeutralElements_iff h₁).mp hh₁).2
     ((b.mem_dominantNeutralElements_iff h₂).mp hh₂).2 fun p hp ↦ ?_
@@ -190,32 +200,26 @@ end IntConjugacy
 
 end IsSl2Triple
 
-namespace TauCeti
+namespace RootPairing.Base
+
+open TauCeti
 
 variable {K L : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
   [LieAlgebra ℚ L] [FiniteDimensional K L] [IsKilling K L] {H : LieSubalgebra K L}
   [H.IsCartanSubalgebra]
 
-/-- **Exact count of `Int(L)`-orbits of neutral elements.** Over an algebraically closed field of
-characteristic zero, the `Int(L)`-orbits of neutral elements of `sl₂` triples are in bijection with
-`b.dominantNeutralElements`, so the two sets have the same cardinality. -/
-theorem ncard_image_orbit_setOf_exists_isSl2Triple_eq (b : (rootSystem H).Base) :
-    (MulAction.orbit (intLieAlgebra K L) '' {h : L | ∃ e f, IsSl2Triple h e f}).ncard =
-      b.dominantNeutralElements.ncard := by
-  rw [← b.image_orbit_dominantNeutralElements]
-  exact b.injOn_orbit_dominantNeutralElements.ncard_image
-
-/-- **Every nonzero `ad`-nilpotent element determines a unique dominant neutral element up to
-`Int(L)`.** -/
-theorem existsUnique_mem_dominantNeutralElements_exists_mem_intLieAlgebra_isSl2Triple
-    (b : (rootSystem H).Base) {e : L} (he : IsNilpotent (ad K L e)) (he0 : e ≠ 0) :
+/-- **The dominant neutral element of a nilpotent element.** For any base `b`, a nonzero
+`ad`-nilpotent element `e` has exactly one dominant neutral element `h`: the neutral element of an
+`sl₂` triple whose nilpositive element is an `Int(L)`-conjugate of `e`. -/
+theorem existsUnique_mem_dominantNeutralElements_isSl2Triple_smul (b : (rootSystem H).Base)
+    {e : L} (he : IsNilpotent (ad K L e)) (he0 : e ≠ 0) :
     ∃! h : H, h ∈ b.dominantNeutralElements ∧
       ∃ g ∈ intLieAlgebra K L, ∃ f : L, IsSl2Triple (h : L) (g • e) f := by
-  obtain ⟨g₁, hg₁, h₁, hh₁, f₁, t₁⟩ :=
+  obtain ⟨g, hg, h, hh, f, t⟩ :=
     exists_mem_intLieAlgebra_isSl2Triple_smul_of_isNilpotent_ad b he he0
-  refine ⟨h₁, ⟨hh₁, g₁, hg₁, f₁, t₁⟩, ?_⟩
-  rintro h₂ ⟨hh₂, g₂, hg₂, f₂, t₂⟩
-  exact (t₁.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq b t₂ hh₁ hh₂
-    (mul_mem hg₂ (inv_mem hg₁)) (by rw [mul_smul, inv_smul_smul])).symm
+  refine ⟨h, ⟨hh, g, hg, f, t⟩, fun h' ⟨hh', g', hg', f', t'⟩ ↦
+    (t.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq b t' hh hh'
+      (mul_mem hg' (inv_mem hg)) ?_).symm⟩
+  rw [mul_smul, inv_smul_smul]
 
-end TauCeti
+end RootPairing.Base

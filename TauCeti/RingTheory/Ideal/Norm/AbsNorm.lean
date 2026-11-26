@@ -5,24 +5,53 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import Mathlib.RingTheory.DedekindDomain.Factorization
 import TauCeti.Data.ZMod.Divisibility
 import TauCeti.RingTheory.Norm.Congruence
 
 /-!
-# The absolute ideal norm under a ring isomorphism, and congruences of norms
+# The absolute ideal norm under ring isomorphisms, prime factorizations, and congruences
 
 Identifying two rings along an isomorphism identifies their ideals, and the absolute norm is
 insensitive to that identification. In a Dedekind domain with finite quotients, the absolute
 norm of a nonzero ideal stays nonzero when cast into characteristic zero. A proper ideal
-contains no natural number prime to its absolute norm. Over `ℤ` itself, the absolute norm of
-the ideal `(n)` is `|n|`.
+contains no natural number prime to its absolute norm, and for any nonzero ideal of a Dedekind
+domain its absolute norm factors as the product over all height-one primes of the residue
+cardinality raised to the prime multiplicity. Over `ℤ` itself, the absolute norm of the ideal
+`(n)` is `|n|`.
+
+The cardinality of the quotient of a submodule `p` by a submodule `N` of `p` is the index of the
+image of `N` in `p`, as additive subgroups of the ambient module.
+A submodule with finite quotient has nonzero index, and the index of the image of a submodule
+under an injective linear map is its index times the index of the range; in particular a linear
+equivalence preserves the index. Preimages under a surjective linear map keep the index, so a
+linear equivalence matches the submodules of a given index.
 
 In a Dedekind domain that is free of finite rank over `ℤ`, congruent elements whose norms
 have nonnegative product generate principal ideals with congruent absolute norms.
 
+In a torsion-free module, the multiples of `a • s` have index `#(R ⧸ (a))` in the multiples of a
+nonzero `s`, so the index `Submodule.cardQuot` is multiplicative along this chain.
+
 ## Main results
 
+* `Submodule.cardQuot_eq_relIndex_map_subtype`: for a submodule `N` of a submodule `p`,
+  `#(p ⧸ N)` is the index of the image of `N` in `p`.
+* `Submodule.cardQuot_ne_zero`: a submodule with finite quotient has nonzero index.
+* `Submodule.finite_quotient_of_cardQuot_ne_zero`: conversely, a submodule with nonzero index has
+  finite quotient.
+* `Submodule.cardQuot_map_of_injective`: for an injective linear map `f`,
+  `#(N ⧸ f P) = #(M ⧸ P) * #(N ⧸ range f)`.
+* `Submodule.cardQuot_map_equiv`: a linear equivalence preserves the index of a submodule.
+* `Submodule.cardQuot_span_singleton_map_equiv`: in particular it preserves the index of a cyclic
+  submodule, `#(N ⧸ R ∙ e x) = #(M ⧸ R ∙ x)`.
+* `Submodule.cardQuot_comap_of_surjective`: preimages under a surjective linear map keep the
+  index.
+* `Submodule.subtypeCardQuotEquiv`: a linear equivalence matches the submodules of a given index,
+  by images (`Submodule.coe_subtypeCardQuotEquiv_apply`) and preimages
+  (`Submodule.coe_subtypeCardQuotEquiv_symm_apply`).
 * `Ideal.absNorm_comap_of_ringEquiv`, `Ideal.absNorm_map_of_ringEquiv`: the absolute norm of an
   ideal is unchanged by transporting it along a ring isomorphism, in either direction.
 * `Ideal.absNorm_map_of_ringEquiv_eq_natCard`: the absolute norm of an ideal transported from an
@@ -32,14 +61,102 @@ have nonnegative product generate principal ideals with congruent absolute norms
   of a height-one prime, stays nonzero when cast into characteristic zero.
 * `Ideal.natCast_notMem_of_coprime_absNorm`: a natural number prime to the absolute norm of a
   proper ideal does not lie in it.
+* `Ideal.finprod_pow_count_eq_absNorm`: for a nonzero ideal `J` of a Dedekind domain `R`, the
+  absolute norm equals `∏ᶠ v, (#(R ⧸ v)) ^ count v J`.
 * `Int.absNorm_span_singleton`, `Int.absNorm_le_natAbs_of_dvd_span_singleton`: the absolute norm
   of the ideal `(n)` of `ℤ` is `|n|`, and that of an ideal dividing `(n)`, for `n ≠ 0`, is at most
   `|n|`.
 * `Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem`: congruent elements whose norms have
   nonnegative product generate ideals with absolute norms congruent modulo `m`.
+* `Submodule.cardQuot_span_singleton_smul`: `#(M ⧸ R • (a • s)) = #(R ⧸ (a)) * #(M ⧸ R • s)` for
+  `s ≠ 0` in a torsion-free module `M`.
 -/
 
 public section
+
+namespace Submodule
+
+/-- The cardinality of the quotient of `p` by a submodule `N` of `p` is the index of the image of
+`N` in `p`, as additive subgroups of the ambient module. -/
+theorem cardQuot_eq_relIndex_map_subtype {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (p : Submodule R M) (N : Submodule R p) :
+    N.cardQuot = (N.map p.subtype).toAddSubgroup.relIndex p.toAddSubgroup := by
+  have hp : (⊤ : AddSubgroup p).map (p.subtype : p →+ M) = p.toAddSubgroup := by
+    rw [← AddMonoidHom.range_eq_map]
+    ext x
+    simp
+  rw [cardQuot, ← AddSubgroup.relIndex_top_right, map_toAddSubgroup, ← hp,
+    AddSubgroup.relIndex_map_map_of_injective _ _ p.injective_subtype]
+
+/-- A submodule with finite quotient has nonzero index. -/
+theorem cardQuot_ne_zero {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (S : Submodule R M) [Finite (M ⧸ S)] : S.cardQuot ≠ 0 := by
+  rw [cardQuot_apply]
+  exact Nat.card_pos.ne'
+
+/-- A submodule with nonzero index has finite quotient. -/
+theorem finite_quotient_of_cardQuot_ne_zero {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    {S : Submodule R M} (hS : S.cardQuot ≠ 0) : Finite (M ⧸ S) :=
+  Nat.finite_of_card_ne_zero (by rwa [← cardQuot_apply])
+
+/-- **The index of an injective image**: for an injective linear map `f : M → N`, the index of
+`f P` in `N` is the index of `P` in `M` times the index of the range of `f`. Both sides are `0`
+when an index is infinite. -/
+theorem cardQuot_map_of_injective {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] {f : M →ₗ[R] N} (hf : Function.Injective f)
+    (P : Submodule R M) : (P.map f).cardQuot = P.cardQuot * (LinearMap.range f).cardQuot := by
+  rw [cardQuot, cardQuot, cardQuot, map_toAddSubgroup, LinearMap.range_toAddSubgroup]
+  exact AddSubgroup.index_map_of_injective _ hf
+
+/-- **The index is invariant under linear equivalences**: the image of `P` under a linear
+equivalence `e : M ≃ N` has the same index in `N` as `P` has in `M`. -/
+@[simp]
+theorem cardQuot_map_equiv {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (e : M ≃ₗ[R] N) (P : Submodule R M) :
+    (P.map (e : M →ₗ[R] N)).cardQuot = P.cardQuot := by
+  rw [cardQuot_map_of_injective e.injective, LinearEquiv.range, cardQuot_top, mul_one]
+
+/-- A linear equivalence `e` preserves the index of the cyclic submodule generated by `x`:
+`R ∙ e x` has the same index as `R ∙ x`. -/
+@[simp]
+theorem cardQuot_span_singleton_map_equiv {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (e : M ≃ₗ[R] N) (x : M) :
+    (span R {e x}).cardQuot = (span R {x}).cardQuot := by
+  rw [← cardQuot_map_equiv e, map_span, Set.image_singleton, LinearEquiv.coe_coe]
+
+/-- Pulling a submodule back along a surjective linear map preserves its index. Adapted from
+`cardQuot_comap_of_surjective` in `src/New/Spanning/RemainingTerms/Discriminants.lean` of
+grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). -/
+theorem cardQuot_comap_of_surjective {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] {f : M →ₗ[R] N} (hf : Function.Surjective f)
+    (P : Submodule R N) : (P.comap f).cardQuot = P.cardQuot :=
+  P.toAddSubgroup.index_comap_of_surjective (f := f.toAddMonoidHom) hf
+
+/-- A linear equivalence `M ≃ N` matches the submodules of `M` of index `n` with those of `N`,
+by taking images. -/
+noncomputable def subtypeCardQuotEquiv {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (e : M ≃ₗ[R] N) (n : ℕ) :
+    {P : Submodule R M // P.cardQuot = n} ≃ {P : Submodule R N // P.cardQuot = n} :=
+  (orderIsoMapComap e).toEquiv.subtypeEquiv fun P ↦ by
+    rw [RelIso.coe_fn_toEquiv, orderIsoMapComap_apply, cardQuot_map_equiv]
+
+@[simp]
+theorem coe_subtypeCardQuotEquiv_apply {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (e : M ≃ₗ[R] N) (n : ℕ)
+    (P : {P : Submodule R M // P.cardQuot = n}) :
+    (subtypeCardQuotEquiv e n P : Submodule R N) = P.val.map (e : M →ₗ[R] N) :=
+  by
+  simp [subtypeCardQuotEquiv]
+
+@[simp]
+theorem coe_subtypeCardQuotEquiv_symm_apply {R M N : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (e : M ≃ₗ[R] N) (n : ℕ)
+    (P : {P : Submodule R N // P.cardQuot = n}) :
+    ((subtypeCardQuotEquiv e n).symm P : Submodule R M) = P.val.comap (e : M →ₗ[R] N) :=
+  by
+  simp [subtypeCardQuotEquiv]
+
+end Submodule
 
 namespace Ideal
 
@@ -90,6 +207,21 @@ theorem natCast_notMem_of_coprime_absNorm {I : Ideal R} (hI : I ≠ ⊤) {a : �
   obtain ⟨u, v, huv⟩ := (Nat.isCoprime_iff_coprime.mpr ha).map (Int.castRingHom R)
   rw [eq_top_iff_one, ← huv]
   simpa using I.add_mem (I.mul_mem_left u h) (I.mul_mem_left v (absNorm_mem I))
+
+open _root_.IsDedekindDomain in
+/-- **Prime-factorization formula for the absolute norm of a nonzero ideal.** -/
+theorem finprod_pow_count_eq_absNorm {J : Ideal R} (hJ : J ≠ ⊥) :
+    (∏ᶠ v : HeightOneSpectrum R,
+        Nat.card (R ⧸ v.asIdeal) ^ (Associates.mk v.asIdeal).count (Associates.mk J).factors) =
+      Ideal.absNorm J := by
+  have hJ0 : J ≠ 0 := by rwa [Ideal.zero_eq_bot]
+  have hfact := congrArg Ideal.absNorm.toMonoidHom
+    (Ideal.finprod_heightOneSpectrum_factorization hJ0)
+  rw [MonoidHom.map_finprod _ (Ideal.hasFiniteMulSupport hJ0)] at hfact
+  refine Eq.trans ?_ hfact
+  refine finprod_congr fun v ↦ ?_
+  simp [IsDedekindDomain.HeightOneSpectrum.maxPowDividing, Ideal.absNorm_of_ne_bot v.ne_bot,
+    Submodule.cardQuot_apply]
 
 end Ideal
 
@@ -163,3 +295,20 @@ theorem Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem [IsDedekindDomain S]
   exact ZMod.natCast_natAbs_eq_of_mul_nonneg hab (Algebra.intCast_norm_eq_of_sub_mem_span_natCast h)
 
 end AbsNormCongruence
+
+namespace Submodule
+
+variable {R M : Type*} [CommRing R] [IsDomain R] [AddCommGroup M] [Module R M]
+  [Module.IsTorsionFree R M]
+
+/-- **The index of the multiples of `a • s`** in a torsion-free module is the index of `(a)` in `R`
+times the index of the multiples of `s`, for `s ≠ 0`: the multiples of `s` form a copy of `R` in
+which those of `a • s` are the ideal `(a)`. Both sides are `0` when an index is infinite. -/
+theorem cardQuot_span_singleton_smul (a : R) {s : M} (hs : s ≠ 0) :
+    (span R {a • s}).cardQuot = (Ideal.span {a}).cardQuot * (span R {s}).cardQuot := by
+  let f := LinearMap.toSpanSingleton R M s
+  have hmap : span R {a • s} = Submodule.map f (Ideal.span {a}) := by
+    rw [← Ideal.submodule_span_eq, map_span, Set.image_singleton, LinearMap.toSpanSingleton_apply]
+  rw [hmap, cardQuot_map_of_injective (smul_left_injective R hs), LinearMap.range_toSpanSingleton]
+
+end Submodule

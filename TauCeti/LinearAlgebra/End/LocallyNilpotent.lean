@@ -47,7 +47,7 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
   locally nilpotent.
 * `Module.End.bijective_of_sub_mem_filtration`: an endomorphism which is the identity up to a
   map lowering an exhaustive filtration starting at `⊥` is bijective.
-* `TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add`: the inverse of `1 + f` has degree zero
+* `LinearMap.IsHomogeneous.ringInverse_one_add`: the inverse of `1 + f` has degree zero
   when `f` is locally nilpotent of degree zero.
 * `Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt`: an endomorphism of `ι →₀ R`
   that strictly lowers a well-founded weight on the basis is locally nilpotent.
@@ -153,11 +153,11 @@ variable {S N : Type*} [Ring S] [AddCommGroup N] [Module S N]
 
 /-- If `f` is locally nilpotent and homogeneous of degree zero for a grading by submodules, then so
 is the inverse of `1 + f`: on a homogeneous vector it is a finite geometric series in `-f`. -/
-theorem TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add {ι : Type*} [AddMonoid ι]
+theorem LinearMap.IsHomogeneous.ringInverse_one_add {ι : Type*} [AddMonoid ι]
     {𝒜 : ι → Submodule S N} {f : Module.End S N}
-    (hf : TauCeti.LinearMap.IsHomogeneous f 𝒜 𝒜 0) (hnil : ∀ x, ∃ n, (f ^ n) x = 0) :
-    TauCeti.LinearMap.IsHomogeneous (Ring.inverse (1 + f)) 𝒜 𝒜 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+    (hf : LinearMap.IsHomogeneous f 𝒜 𝒜 0) (hnil : ∀ x, ∃ n, (f ^ n) x = 0) :
+    LinearMap.IsHomogeneous (Ring.inverse (1 + f)) 𝒜 𝒜 0 := by
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   obtain ⟨n, hn⟩ := hnil x
   have hpow : ∀ i : ℕ, ((-f) ^ i) x ∈ 𝒜 p := by

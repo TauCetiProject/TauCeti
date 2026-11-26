@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Normalize
+public import TauCeti.Dynamics.Billiard.CotangentGeneratingFunction
 public import TauCeti.Dynamics.Billiard.NextCollision
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Topology.Order.MonotoneContinuity
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.Real.Sqrt
+import TauCeti.Dynamics.Billiard.Continuous
 
 /-!
 # The generating function of the billiard map
@@ -68,6 +69,8 @@ is used; the joint smoothness of the billiard map is a separate matter.
 
 ## Main results
 
+* `TauCeti.StrictConvexBilliardTable.generatingFunction_eq_billiardGeneratingFunction`: `S` is the
+  generating function `TauCeti.billiardGeneratingFunction` of the parametrization, in curried form.
 * `TauCeti.StrictConvexBilliardTable.generatingFunction_add_period`: `S(s + L, t + L) = S(s, t)`.
 * `TauCeti.StrictConvexBilliardTable.hasDerivAt_generatingFunction_left`,
   `TauCeti.StrictConvexBilliardTable.hasDerivAt_generatingFunction_right`: the partial derivatives
@@ -85,9 +88,8 @@ is used; the joint smoothness of the billiard map is a separate matter.
   `TauCeti.StrictConvexBilliardTable.deriv_deriv_generatingFunction_right_neg`: the twist
   condition `∂_t ∂_s S = ∂_s ∂_t S < 0`.
 * `TauCeti.StrictConvexBilliardTable.strictAntiOn_nextParam`,
-  `TauCeti.StrictConvexBilliardTable.image_nextParam_Ioo`,
-  `TauCeti.StrictConvexBilliardTable.continuousOn_nextParam`: for fixed `s`, the next collision
-  parameter is a strictly decreasing continuous bijection of `(-1, 1)` onto `(s, s + L)`.
+  `TauCeti.StrictConvexBilliardTable.image_nextParam_Ioo`: for fixed `s`, the next collision
+  parameter is a strictly decreasing bijection of `(-1, 1)` onto `(s, s + L)`.
 * `TauCeti.StrictConvexBilliardTable.hasDerivAt_nextParam`,
   `TauCeti.StrictConvexBilliardTable.deriv_nextParam_neg`: its derivative, which is negative.
 
@@ -125,6 +127,10 @@ def chordDir (s t : ℝ) : E :=
 theorem chordDir_def (s t : ℝ) : χ.chordDir s t = NormedSpace.normalize (χ t - χ s) :=
   (rfl)
 
+/-- The chord direction written out: `(χ(t) - χ(s))` scaled by `‖χ(t) - χ(s)‖⁻¹`. -/
+theorem chordDir_eq_inv_norm_smul (s t : ℝ) : χ.chordDir s t = ‖χ t - χ s‖⁻¹ • (χ t - χ s) := by
+  rw [chordDir_def, NormedSpace.normalize]
+
 /-- The chord direction vanishes exactly when the two boundary points coincide. -/
 @[simp]
 theorem chordDir_eq_zero_iff {s t : ℝ} : χ.chordDir s t = 0 ↔ χ t = χ s := by
@@ -141,6 +147,17 @@ theorem chordDir_add_period (s t : ℝ) :
 
 theorem norm_chordDir {s t : ℝ} (h : χ t ≠ χ s) : ‖χ.chordDir s t‖ = 1 :=
   NormedSpace.norm_normalize (sub_ne_zero.2 h)
+
+/-- The chord direction is differentiable, jointly in both endpoints, at every chord between
+distinct boundary points. -/
+theorem differentiableAt_chordDir {p : ℝ × ℝ} (h : χ p.2 ≠ χ p.1) :
+    DifferentiableAt ℝ (fun q : ℝ × ℝ ↦ χ.chordDir q.1 q.2) p := by
+  have hd : DifferentiableAt ℝ (fun q : ℝ × ℝ ↦ χ q.2 - χ q.1) p :=
+    ((χ.differentiableAt p.2).comp p differentiableAt_snd).sub
+      ((χ.differentiableAt p.1).comp p differentiableAt_fst)
+  have hne : χ p.2 - χ p.1 ≠ 0 := sub_ne_zero.2 h
+  simp only [chordDir_eq_inv_norm_smul]
+  exact ((hd.norm ℝ hne).inv (norm_ne_zero_iff.2 hne)).smul hd
 
 /-- The chord from `χ(s)` to the next collision point of the state `(s, v)` is along its outgoing
 velocity. -/
@@ -214,6 +231,12 @@ def generatingFunction (s t : ℝ) : ℝ :=
 
 theorem generatingFunction_def (s t : ℝ) : χ.generatingFunction s t = -‖χ t - χ s‖ :=
   (rfl)
+
+/-- The generating function of the table is the billiard generating function of its
+parametrization, `TauCeti.billiardGeneratingFunction`, in curried form. -/
+theorem generatingFunction_eq_billiardGeneratingFunction (s t : ℝ) :
+    χ.generatingFunction s t = billiardGeneratingFunction χ (s, t) := by
+  rw [generatingFunction_def, billiardGeneratingFunction_apply]
 
 /-- The generating function is invariant under translating both arguments by the period. -/
 @[simp]
@@ -399,22 +422,6 @@ theorem image_nextParam_Ioo (s : ℝ) : χ.nextParam s '' Ioo (-1) 1 = Ioo s (s 
   · rintro _ ⟨v, hv, rfl⟩
     exact χ.nextParam_mem_Ioo hv
   exact ⟨_, χ.inner_deriv_chordDir_mem_Ioo s t, χ.nextParam_inner_deriv_chordDir ht⟩
-
-/-- For fixed `s`, the next collision parameter depends continuously on the tangential component. -/
-theorem continuousOn_nextParam (s : ℝ) : ContinuousOn (χ.nextParam s) (Ioo (-1) 1) := by
-  intro v hv
-  have ht := χ.nextParam_mem_Ioo (s := s) hv
-  -- `-nextParam s` is strictly increasing and maps `(-1, 1)` onto an open interval.
-  have hc : ContinuousAt (fun w ↦ -χ.nextParam s w) v := by
-    refine (χ.strictAntiOn_nextParam s).neg.continuousAt_of_image_mem_nhds
-      (Ioo_mem_nhds hv.1 hv.2) (mem_of_superset (Ioo_mem_nhds (neg_lt_neg ht.2)
-        (neg_lt_neg ht.1)) fun y hy ↦ ?_)
-    obtain ⟨w, hw, hwy⟩ : -y ∈ χ.nextParam s '' Ioo (-1) 1 := by
-      rw [χ.image_nextParam_Ioo]
-      exact ⟨by linarith [hy.2], by linarith [hy.1]⟩
-    exact ⟨w, hw, by simp [hwy]⟩
-  have hc' : ContinuousAt (χ.nextParam s) v := by simpa using hc.neg
-  exact hc'.continuousWithinAt
 
 /-- The quotient `ℓ / (√(1 - v²) √(1 - w²))` of the chord length by the sines of the angles of the
 chord with the boundary at the state `(s, v)` and at its next collision is positive. -/

@@ -29,17 +29,17 @@ Named compatibility proofs describe subgroup inclusions and composition of scala
 for pullbacks of cochains; composition uses Mathlib's semiconjugacy API.
 `Subgroup.fixedPoints_subtype_quotientMk_smul` records compatibility of the quotient map with the
 inclusion of additive fixed points, without a continuity assumption on the action.
-A homomorphism from a group with continuous left translations and open kernel is continuous for
-every topology on the target; for a discrete target, continuity is equivalent to openness of the
-kernel. The projections of a product of topological monoids onto its factors are
-packaged as `ContinuousMonoidHom.proj`, next to Mathlib's `ContinuousMonoidHom.fst` and
-`ContinuousMonoidHom.snd`. Integer powers of continuous homomorphisms into a commutative
-topological group are computed pointwise, and the multiplicative isomorphism underlying a
-continuous multiplicative isomorphism has the same underlying function. A topologically embedded
-continuous group homomorphism is also packaged as a continuous multiplicative equivalence with its
-range, with forward and inverse computation rules. The file also records the
-agreement of finite order before and after forgetting continuity, and the open kernel of a
-finite-order continuous character into the units of a `T1` commutative integral domain.
+A homomorphism, multiplicative or additive, from a group with continuous left translations and open
+kernel is continuous for every topology on the target; for a multiplicative homomorphism into a
+discrete target, continuity is equivalent to openness of the kernel. The projections of a product of
+topological monoids onto its factors are packaged as `ContinuousMonoidHom.proj`, next to Mathlib's
+`ContinuousMonoidHom.fst` and `ContinuousMonoidHom.snd`. Inverses and integer powers of continuous
+homomorphisms into a commutative topological group are computed pointwise, and the multiplicative
+isomorphism underlying a continuous multiplicative isomorphism has the same underlying function. A
+topologically embedded continuous group homomorphism is also packaged as a continuous
+multiplicative equivalence with its range, with forward and inverse computation rules. The file
+also records the agreement of finite order before and after forgetting continuity, and the open
+kernel of a finite-order continuous character into the units of a `T1` commutative integral domain.
 Kernels of continuous homomorphisms into a `T1` monoid are closed, so on a compact group the
 common kernel of a family of them is approximated from outside by the common kernels of its
 finite subfamilies, and the range of a continuous homomorphism out of a compact group into a
@@ -99,6 +99,9 @@ theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder
 
 /-- A homomorphism with open kernel out of a group with continuous left translations is continuous
 for every topology on the target: it is constant on the open coset `x * ker f` of each point `x`. -/
+@[to_additive /-- An additive homomorphism with open kernel out of an additive group with continuous
+left translations is continuous for every topology on the target: it is constant on the open coset
+`x + ker f` of each point `x`. -/]
 theorem _root_.MonoidHom.continuous_of_isOpen_ker [ContinuousConstSMul G G] {F : Type*}
     [MulOneClass F] [TopologicalSpace F] (f : G →* F) (hf : IsOpen (f.ker : Set G)) :
     Continuous f := by
@@ -227,6 +230,15 @@ theorem _root_.ContinuousMonoidHom.equivRangeOfIsEmbedding_symm_apply
   rw [← f.equivRangeOfIsEmbedding_apply hf]
   exact (f.equivRangeOfIsEmbedding hf).symm_apply_apply x
 
+/-- The inverse of a continuous homomorphism into a commutative topological group is computed
+pointwise. -/
+@[to_additive (attr := simp) /-- The negative of a continuous additive homomorphism into a
+commutative additive topological group is computed pointwise. -/]
+theorem _root_.ContinuousMonoidHom.inv_apply {A E : Type*} [Monoid A] [TopologicalSpace A]
+    [CommGroup E] [TopologicalSpace E] [IsTopologicalGroup E] (f : A →ₜ* E) (a : A) :
+    f⁻¹ a = (f a)⁻¹ :=
+  (rfl)
+
 /-- Integer powers of continuous homomorphisms into a commutative topological group are computed
 pointwise. -/
 @[simp]
@@ -243,15 +255,18 @@ theorem _root_.ContinuousMonoidHom.zpow_apply {A E : Type*} [Monoid A] [Topologi
 -- of `TopRep.res H.subtype X` serve as the coefficient map of `ContinuousCohomology.map` along the
 -- inclusion `H ↪ S` (the restriction `TauCeti.ContinuousCohomology.resLE`).
 /-- The inclusion of a subgroup, carrying the subspace topology, as a continuous homomorphism. -/
-@[expose] def subgroupSubtype (S : Subgroup G) : S →ₜ* G where
+@[expose, to_additive _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupSubtype
+  /-- The inclusion of an additive subgroup, carrying the subspace topology, as a continuous
+  additive homomorphism. -/]
+def subgroupSubtype (S : Subgroup G) : S →ₜ* G where
   __ := S.subtype
   continuous_toFun := continuous_subtypeVal
 
-@[simp]
+@[to_additive (attr := simp) _root_.TauCeti.ContinuousAddMonoidHom.coe_addSubgroupSubtype]
 theorem coe_subgroupSubtype (S : Subgroup G) : (subgroupSubtype S : S →* G) = S.subtype :=
   (rfl)
 
-@[simp]
+@[to_additive (attr := simp) _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupSubtype_apply]
 theorem subgroupSubtype_apply (S : Subgroup G) (s : S) : subgroupSubtype S s = (s : G) :=
   (rfl)
 
@@ -263,35 +278,44 @@ theorem id_subgroupSubtype_smul (M : Type*) [AddZero M] [SMul G M]
 
 /-- The inclusion of a subgroup into a larger subgroup, both carrying the subspace topology, as a
 continuous homomorphism. -/
-@[expose] def subgroupInclusion {H S : Subgroup G} (h : H ≤ S) : H →ₜ* S where
+@[expose, to_additive _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupInclusion
+  /-- The inclusion of an additive subgroup into a larger additive subgroup, both carrying the
+  subspace topology, as a continuous additive homomorphism. -/]
+def subgroupInclusion {H S : Subgroup G} (h : H ≤ S) : H →ₜ* S where
   __ := Subgroup.inclusion h
   continuous_toFun := continuous_subtypeVal.subtype_mk _
 
-@[simp]
+@[to_additive (attr := simp) _root_.TauCeti.ContinuousAddMonoidHom.coe_addSubgroupInclusion]
 theorem coe_subgroupInclusion {H S : Subgroup G} (h : H ≤ S) :
     (subgroupInclusion h : H →* S) = Subgroup.inclusion h :=
   (rfl)
 
-@[simp]
+@[to_additive (attr := simp) _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupInclusion_apply]
 theorem subgroupInclusion_apply {H S : Subgroup G} (h : H ≤ S) (x : H) :
     subgroupInclusion h x = Subgroup.inclusion h x :=
   (rfl)
 
 /-- The inclusion of a subgroup into itself is the identity. -/
-@[simp]
+@[to_additive (attr := simp) _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupInclusion_refl
+  /-- The inclusion of an additive subgroup into itself is the identity. -/]
 theorem subgroupInclusion_refl (H : Subgroup G) :
     subgroupInclusion (le_refl H) = ContinuousMonoidHom.id H :=
   (rfl)
 
 /-- Inclusions of subgroups compose: including `H` into `S` and then `S` into `T` is including `H`
 into `T`. -/
-@[simp]
+@[to_additive (attr := simp)
+  _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupInclusion_comp_addSubgroupInclusion
+  /-- Inclusions of additive subgroups compose: including `H` into `S` and then `S` into `T` is
+  including `H` into `T`. -/]
 theorem subgroupInclusion_comp_subgroupInclusion {H S T : Subgroup G} (hHS : H ≤ S) (hST : S ≤ T) :
     (subgroupInclusion hST).comp (subgroupInclusion hHS) = subgroupInclusion (hHS.trans hST) :=
   (rfl)
 
 /-- The inclusion of a subgroup factors through any larger subgroup. -/
-@[simp]
+@[to_additive (attr := simp)
+  _root_.TauCeti.ContinuousAddMonoidHom.addSubgroupSubtype_comp_addSubgroupInclusion
+  /-- The inclusion of an additive subgroup factors through any larger additive subgroup. -/]
 theorem subgroupSubtype_comp_subgroupInclusion {H S : Subgroup G} (h : H ≤ S) :
     (subgroupSubtype S).comp (subgroupInclusion h) = subgroupSubtype H :=
   (rfl)

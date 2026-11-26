@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Regular
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 
@@ -34,6 +36,11 @@ of `μ.comap (↑)`:
   (`IsSigmaCompact.sigmaFinite_comap`).
 * Inner regularity for compact sets on sets of finite measure (`InnerRegularCompactLTTop`) passes
   from `μ` to `μ.comap ((↑) : s → α)` for every measurable set `s`.
+* `μ.comap ((↑) : s → α)` is finite when `μ s` is, so a locally finite measure pulls back to a
+  finite measure on every bounded interval, and a measure charging every nonempty open set pulls
+  back to one on every open interval.
+* For a measurable set `s`, `Prod.map id (↑)` carries `μ.prod (ν.comap (↑))` on `α × s` to the
+  restriction of `μ.prod ν` to `univ ×ˢ s`.
 
 ## Main declarations
 
@@ -44,12 +51,21 @@ of `μ.comap (↑)`:
   nested subtypes `s ⊆ t` with `t` measurable.
 * `MeasureTheory.Measure.isProbabilityMeasure_comap_subtype`: pulling `μ` back to a measurable
   subtype of `μ`-mass `1` yields a probability measure.
+* `MeasureTheory.Measure.isFiniteMeasure_comap_subtype_coe`: finiteness of `μ.comap ((↑) : s → α)`
+  when `μ s < ∞`.
 * `MeasureTheory.Measure.instIsLocallyFiniteMeasureComapSubtype`,
   `MeasureTheory.Measure.instIsFiniteMeasureOnCompactsComapSubtype`: local finiteness and finiteness
   on compact sets for `μ.comap (Subtype.val)`.
 * `IsSigmaCompact.sigmaFinite_comap`: σ-finiteness of `μ.comap ((↑) : s → α)` on σ-compact `s`.
 * `MeasureTheory.Measure.InnerRegularCompactLTTop.comap_subtype_coe`: compact inner regularity on
   finite-measure sets for `μ.comap ((↑) : s → α)` when `s` is measurable.
+* `MeasureTheory.Measure.instIsFiniteMeasureComapSubtypeIoo`, `...Ico`, `...Ioc`: finiteness of the
+  pullback of a locally finite measure to a bounded interval (the closed case `[a, b]` follows from
+  compactness and `instIsFiniteMeasureOnCompactsComapSubtype`).
+* `MeasureTheory.Measure.instIsOpenPosMeasureComapSubtypeIoo`: the pullback to an open interval of
+  a measure charging every nonempty open set charges every nonempty open set.
+* `MeasureTheory.measurePreserving_prodMap_subtype_coe`: the inclusion `α × s → α × β` is
+  measure preserving from `μ.prod (ν.comap (↑))` to `(μ.prod ν).restrict (univ ×ˢ s)`.
 -/
 
 public section
@@ -94,6 +110,14 @@ theorem isProbabilityMeasure_comap_subtype {p : α → Prop} (hp : MeasurableSet
   ⟨((MeasurableEmbedding.subtypeVal hp).comap_apply μ univ).trans
     (by rw [Subtype.coe_image_univ, hμ])⟩
 
+/-- Pulling `μ` back to a subtype `s` of finite measure yields a finite measure, with no
+measurability assumption on `s`. -/
+theorem isFiniteMeasure_comap_subtype_coe (μ : Measure α) {s : Set α} (hs : μ s ≠ ∞) :
+    IsFiniteMeasure (μ.comap ((↑) : s → α)) :=
+  ⟨by
+    convert (comap_preimage_le measurable_subtypeVal μ s).trans_lt hs.lt_top
+    exact (eq_univ_of_forall Subtype.prop).symm⟩
+
 end Measurable
 
 section Topological
@@ -136,4 +160,49 @@ theorem InnerRegularCompactLTTop.comap_subtype_coe [μ.InnerRegularCompactLTTop]
 
 end Topological
 
+section Interval
+
+variable {α : Type*} [MeasurableSpace α] [TopologicalSpace α] [Preorder α] (μ : Measure α)
+  (a b : α)
+
+/-- Pulling a locally finite measure back to a bounded open interval yields a finite measure. -/
+instance instIsFiniteMeasureComapSubtypeIoo [CompactIccSpace α] [IsLocallyFiniteMeasure μ] :
+    IsFiniteMeasure (μ.comap ((↑) : Ioo a b → α)) :=
+  isFiniteMeasure_comap_subtype_coe μ measure_Ioo_lt_top.ne
+
+/-- Pulling a locally finite measure back to a bounded half-open interval `[a, b)` yields a finite
+measure. -/
+instance instIsFiniteMeasureComapSubtypeIco [CompactIccSpace α] [IsLocallyFiniteMeasure μ] :
+    IsFiniteMeasure (μ.comap ((↑) : Ico a b → α)) :=
+  isFiniteMeasure_comap_subtype_coe μ measure_Ico_lt_top.ne
+
+/-- Pulling a locally finite measure back to a bounded half-open interval `(a, b]` yields a finite
+measure. -/
+instance instIsFiniteMeasureComapSubtypeIoc [CompactIccSpace α] [IsLocallyFiniteMeasure μ] :
+    IsFiniteMeasure (μ.comap ((↑) : Ioc a b → α)) :=
+  isFiniteMeasure_comap_subtype_coe μ measure_Ioc_lt_top.ne
+
+/-- Pulling a measure that charges every nonempty open set back to an open interval yields a
+measure that charges every nonempty open set. -/
+instance instIsOpenPosMeasureComapSubtypeIoo {α : Type*} [MeasurableSpace α] [TopologicalSpace α]
+    [LinearOrder α] [OrderClosedTopology α] [BorelSpace α] (μ : Measure α) [IsOpenPosMeasure μ]
+    (a b : α) : (μ.comap ((↑) : Ioo a b → α)).IsOpenPosMeasure :=
+  .comap μ isOpen_Ioo.isOpenEmbedding_subtypeVal
+
+end Interval
+
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+/-- For a measurable set `s`, the inclusion `Prod.map id (↑) : α × s → α × β` carries the product
+of `μ` with the pullback of `ν` to `s` to the restriction of `μ.prod ν` to `univ ×ˢ s`. -/
+theorem measurePreserving_prodMap_subtype_coe {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] (μ : Measure α) (ν : Measure β) [SFinite μ] [SFinite ν] {s : Set β}
+    (hs : MeasurableSet s) :
+    MeasurePreserving (Prod.map id ((↑) : s → β)) (μ.prod (ν.comap (↑)))
+      ((μ.prod ν).restrict (univ ×ˢ s)) := by
+  have := (MeasurePreserving.id μ).prod (measurePreserving_subtypeVal (μa := ν) hs)
+  rwa [← Measure.prod_restrict, Measure.restrict_univ]
+
+end MeasureTheory

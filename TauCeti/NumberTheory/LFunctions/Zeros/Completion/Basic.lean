@@ -31,11 +31,15 @@ reflection across the real axis gives `Λ₀(d^∨)(s) = conj (Λ₀(d)(conj s))
 `Λ₀(d)(1 - s) = (-1) ^ deg(P_d) * ε * Λ₀(d^∨)(s)` and
 `logDeriv Λ₀(d) (1 - s) = -logDeriv Λ₀(d^∨) s`. Together, `s ↦ 1 - conj s` preserves the orders
 and divisor of `Λ₀(d)`, and nonvanishing on `1 ≤ Re s` reflects to `Re s ≤ 0`, confining all zeros
-of `Λ₀(d)` to the open critical strip `0 < Re ρ < 1`.
+of `Λ₀(d)` to the open critical strip `0 < Re ρ < 1`. Reflection `s ↦ 1 - conj s` likewise
+preserves the analytic orders and natural zero multiplicities of `Λ₀(d)`, sends
+`logDeriv Λ₀(d) s` to `-conj (logDeriv Λ₀(d) s)` at every point, including zeros and cleared poles,
+and hence `Re (logDeriv Λ₀(d) 1) = -Re (logDeriv Λ₀(d) 0)`.
 
 ## References
 
 * H. Davenport, *Multiplicative Number Theory*, 3rd ed., §11–12.
+* H. L. Montgomery and R. C. Vaughan, *Multiplicative Number Theory I* (2006), §10.2.
 -/
 
 public section
@@ -95,6 +99,19 @@ theorem natDegree_polarPolynomial :
   rw [polarPolynomial_def, Finsupp.prod,
     natDegree_prod_of_monic _ _ fun p _ ↦ (monic_X_sub_C p).pow _]
   simp [natDegree_pow]
+
+/-- The polar polynomial of the dual card has the same degree as that of `d`. -/
+@[simp]
+theorem natDegree_dual_polarPolynomial :
+    d.dual.polarPolynomial.natDegree = d.polarPolynomial.natDegree := by
+  classical
+  let e : ℂ ≃ ℂ := ⟨conj, conj, Complex.conj_conj, Complex.conj_conj⟩
+  rw [natDegree_polarPolynomial, natDegree_polarPolynomial]
+  refine (Finset.sum_equiv e ?_ ?_).symm
+  · intro p
+    simp [e, Finsupp.mem_support_iff]
+  · intro p _
+    simp [e]
 
 /-- Evaluating the dual polar polynomial at `s` conjugates the polar polynomial at `conj s`. -/
 theorem dual_polarPolynomial_eval (s : ℂ) :
@@ -245,6 +262,22 @@ theorem HasMeromorphicContinuation.meromorphicOrderAt_dual_entireCompletion_conj
     dual_completed, TauCeti.meromorphicOrderAt_conj_conj, dual_polarOrder_apply,
     Complex.conj_conj]
 
+/-- Reflection across the real axis carries the analytic order of the entire completion at `s` to
+that of the dual card at `conj s`. -/
+theorem HasMeromorphicContinuation.analyticOrderAt_dual_entireCompletion_conj (s : ℂ) :
+    analyticOrderAt d.dual.entireCompletion (conj s) = analyticOrderAt d.entireCompletion s := by
+  have hm := h.meromorphicOrderAt_dual_entireCompletion_conj s
+  rw [(h.dual.analyticAt_entireCompletion _).meromorphicOrderAt_eq,
+    (h.analyticAt_entireCompletion _).meromorphicOrderAt_eq] at hm
+  exact ENat.map_natCast_injective hm
+
+/-- Reflection across the real axis carries the natural zero multiplicity of the entire completion
+at `s` to that of the dual card at `conj s`. -/
+theorem HasMeromorphicContinuation.analyticOrderNatAt_dual_entireCompletion_conj (s : ℂ) :
+    analyticOrderNatAt d.dual.entireCompletion (conj s) =
+      analyticOrderNatAt d.entireCompletion s :=
+  congrArg ENat.toNat (h.analyticOrderAt_dual_entireCompletion_conj s)
+
 /-- The divisor form of `HasMeromorphicContinuation.meromorphicOrderAt_dual_entireCompletion_conj`.
 -/
 theorem HasMeromorphicContinuation.divisor_dual_entireCompletion_conj (s : ℂ) :
@@ -260,16 +293,27 @@ theorem HasFunctionalEquation.meromorphicOrderAt_entireCompletion_one_sub
     (hfe : d.HasFunctionalEquation) (s : ℂ) :
     meromorphicOrderAt d.entireCompletion (1 - s) =
       meromorphicOrderAt d.dual.entireCompletion s := by
-  have hε : d.rootNumber ≠ 0 := norm_ne_zero_iff.mp (by simp [hfe.norm_rootNumber])
-  have hc : meromorphicOrderAt d.completed (1 - s) = meromorphicOrderAt d.dual.completed s := by
-    rw [meromorphicOrderAt_congr (hfe.eventuallyEq (1 - s)),
-      show (fun z ↦ d.rootNumber * d.dual.completed (1 - z)) =
-        d.rootNumber • (d.dual.completed ∘ fun z ↦ 1 - z) by
-          funext z; simp [Function.comp_def, smul_eq_mul],
-      meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hε,
-      meromorphicOrderAt_comp_of_deriv_ne_zero (by fun_prop) (by simp), sub_sub_cancel]
-  rw [h.meromorphicOrderAt_entireCompletion, h.dual.meromorphicOrderAt_entireCompletion, hc,
-    dual_polarOrder_apply, ← hfe.polarOrder_one_sub_conj (conj s), Complex.conj_conj]
+  rw [h.meromorphicOrderAt_entireCompletion, h.dual.meromorphicOrderAt_entireCompletion,
+    hfe.meromorphicOrderAt_completed_one_sub, dual_polarOrder_apply,
+    ← hfe.polarOrder_one_sub_conj (conj s), Complex.conj_conj]
+
+/-- The functional equation carries the analytic order of the dual entire completion at `s` to that
+of `d.entireCompletion` at `1 - s`. -/
+theorem HasFunctionalEquation.analyticOrderAt_entireCompletion_one_sub
+    (hfe : d.HasFunctionalEquation) (s : ℂ) :
+    analyticOrderAt d.entireCompletion (1 - s) = analyticOrderAt d.dual.entireCompletion s := by
+  have hm := hfe.meromorphicOrderAt_entireCompletion_one_sub h s
+  rw [(h.analyticAt_entireCompletion _).meromorphicOrderAt_eq,
+    (h.dual.analyticAt_entireCompletion _).meromorphicOrderAt_eq] at hm
+  exact ENat.map_natCast_injective hm
+
+/-- The functional equation carries the natural zero multiplicity of the dual entire completion at
+`s` to that of `d.entireCompletion` at `1 - s`. -/
+theorem HasFunctionalEquation.analyticOrderNatAt_entireCompletion_one_sub
+    (hfe : d.HasFunctionalEquation) (s : ℂ) :
+    analyticOrderNatAt d.entireCompletion (1 - s) =
+      analyticOrderNatAt d.dual.entireCompletion s :=
+  congrArg ENat.toNat (hfe.analyticOrderAt_entireCompletion_one_sub h s)
 
 /-- The divisor form of `HasFunctionalEquation.meromorphicOrderAt_entireCompletion_one_sub`. -/
 theorem HasFunctionalEquation.divisor_entireCompletion_one_sub (hfe : d.HasFunctionalEquation)
@@ -287,6 +331,19 @@ theorem HasFunctionalEquation.meromorphicOrderAt_entireCompletion_one_sub_conj
       meromorphicOrderAt d.entireCompletion s := by
   rw [hfe.meromorphicOrderAt_entireCompletion_one_sub h,
     h.meromorphicOrderAt_dual_entireCompletion_conj]
+
+/-- Reflection `s ↦ 1 - conj s` preserves the analytic order of the entire completion. -/
+theorem HasFunctionalEquation.analyticOrderAt_entireCompletion_one_sub_conj
+    (hfe : d.HasFunctionalEquation) (s : ℂ) :
+    analyticOrderAt d.entireCompletion (1 - conj s) = analyticOrderAt d.entireCompletion s := by
+  rw [hfe.analyticOrderAt_entireCompletion_one_sub h, h.analyticOrderAt_dual_entireCompletion_conj]
+
+/-- Reflection `s ↦ 1 - conj s` preserves the natural zero multiplicity of the entire completion. -/
+theorem HasFunctionalEquation.analyticOrderNatAt_entireCompletion_one_sub_conj
+    (hfe : d.HasFunctionalEquation) (s : ℂ) :
+    analyticOrderNatAt d.entireCompletion (1 - conj s) =
+      analyticOrderNatAt d.entireCompletion s :=
+  congrArg ENat.toNat (hfe.analyticOrderAt_entireCompletion_one_sub_conj h s)
 
 /-- The reflection `s ↦ 1 - conj s` preserves the divisor of the entire completion. -/
 theorem HasFunctionalEquation.divisor_entireCompletion_one_sub_conj
@@ -308,6 +365,11 @@ theorem HasMeromorphicContinuation.dual_entireCompletion (s : ℂ) :
       rw [dual_polarOrder_apply] at hz
       rw [h.entireCompletion_eq hz, map_mul, ← dual_polarPolynomial_eval, dual_completed_apply]
   exact (congrFun heq s).symm
+
+/-- Reflection across the real axis conjugates the entire completion into that of the dual card. -/
+theorem HasMeromorphicContinuation.dual_entireCompletion_conj (s : ℂ) :
+    d.dual.entireCompletion (conj s) = conj (d.entireCompletion s) := by
+  rw [h.dual_entireCompletion, Complex.conj_conj]
 
 /-- The functional equation of the entire completion, with the sign `(-1) ^ deg(P_d)` from
 reflecting the polar polynomial across `1/2`. -/
@@ -339,6 +401,14 @@ theorem HasFunctionalEquation.entireCompletion_one_sub_eq_mul_conj_conj
         conj (d.entireCompletion (conj s)) := by
   rw [hfe.entireCompletion_one_sub h, h.dual_entireCompletion]
 
+/-- Reflection `s ↦ 1 - conj s` conjugates the entire completion and multiplies by
+`(-1) ^ d.polarPolynomial.natDegree * d.rootNumber`. -/
+theorem HasFunctionalEquation.entireCompletion_one_sub_conj (hfe : d.HasFunctionalEquation)
+    (s : ℂ) :
+    d.entireCompletion (1 - conj s) =
+      (-1 : ℂ) ^ d.polarPolynomial.natDegree * d.rootNumber * conj (d.entireCompletion s) := by
+  rw [hfe.entireCompletion_one_sub h, h.dual_entireCompletion_conj]
+
 /-- Reflection across the real axis conjugates and dualizes the logarithmic derivative of the
 entire completion, relating `logDeriv d.dual.entireCompletion (conj s)` to
 `conj (logDeriv d.entireCompletion s)`. -/
@@ -354,8 +424,7 @@ theorem HasFunctionalEquation.logDeriv_entireCompletion_one_sub
     (hfe : d.HasFunctionalEquation) (s : ℂ) :
     logDeriv d.entireCompletion (1 - s) = -logDeriv d.dual.entireCompletion s := by
   have hc : (-1 : ℂ) ^ d.polarPolynomial.natDegree * d.rootNumber ≠ 0 :=
-    mul_ne_zero (pow_ne_zero _ (by norm_num))
-      (norm_ne_zero_iff.mp (by simp [hfe.norm_rootNumber]))
+    mul_ne_zero (pow_ne_zero _ (by norm_num)) hfe.rootNumber_ne_zero
   have hfun : (fun z ↦ d.entireCompletion (1 - z)) =
       fun z ↦ ((-1 : ℂ) ^ d.polarPolynomial.natDegree * d.rootNumber) *
         d.dual.entireCompletion z :=
@@ -364,15 +433,35 @@ theorem HasFunctionalEquation.logDeriv_entireCompletion_one_sub
   rw [TauCeti.logDeriv_comp_const_sub, logDeriv_const_mul _ _ hc] at h1
   exact neg_eq_iff_eq_neg.mp h1
 
+/-- Reflection `s ↦ 1 - conj s` sends `logDeriv d.entireCompletion s` to `-conj` of itself. -/
+theorem HasFunctionalEquation.logDeriv_entireCompletion_one_sub_conj (hfe : d.HasFunctionalEquation)
+    (s : ℂ) : logDeriv d.entireCompletion (1 - conj s) = -conj (logDeriv d.entireCompletion s) := by
+  rw [hfe.logDeriv_entireCompletion_one_sub h, h.logDeriv_dual_entireCompletion_conj]
+
+/-- At `0` and `1`, the real parts of `logDeriv d.entireCompletion` are negatives of one another. -/
+theorem HasFunctionalEquation.re_logDeriv_entireCompletion_one (hfe : d.HasFunctionalEquation) :
+    (logDeriv d.entireCompletion 1).re = -(logDeriv d.entireCompletion 0).re := by
+  simpa using congrArg Complex.re (hfe.logDeriv_entireCompletion_one_sub_conj h 0)
+
 /-- Under a functional equation, `s ↦ 1 - conj s` preserves zeros of the entire completion. -/
 theorem HasFunctionalEquation.entireCompletion_eq_zero_iff_one_sub_conj
     (hfe : d.HasFunctionalEquation) (s : ℂ) :
     d.entireCompletion (1 - conj s) = 0 ↔ d.entireCompletion s = 0 := by
   have hc : (-1 : ℂ) ^ d.polarPolynomial.natDegree * d.rootNumber ≠ 0 :=
-    mul_ne_zero (pow_ne_zero _ (by norm_num))
-      (norm_ne_zero_iff.mp (by simp [hfe.norm_rootNumber]))
+    mul_ne_zero (pow_ne_zero _ (by norm_num)) hfe.rootNumber_ne_zero
   rw [hfe.entireCompletion_one_sub_eq_mul_conj_conj h (conj s), Complex.conj_conj,
     mul_eq_zero, or_iff_right hc, map_eq_zero]
+
+/-- Under a functional equation, `d.entireCompletion` vanishes at `1` if and only if it vanishes at
+`0`. -/
+theorem HasFunctionalEquation.entireCompletion_one_eq_zero_iff (hfe : d.HasFunctionalEquation) :
+    d.entireCompletion 1 = 0 ↔ d.entireCompletion 0 = 0 := by
+  simpa using hfe.entireCompletion_eq_zero_iff_one_sub_conj h 0
+
+/-- Nonvanishing of the entire completion at `0` transfers to `1` under a functional equation. -/
+theorem HasFunctionalEquation.entireCompletion_one_ne_zero (hfe : d.HasFunctionalEquation)
+    (h0 : d.entireCompletion 0 ≠ 0) : d.entireCompletion 1 ≠ 0 :=
+  (hfe.entireCompletion_one_eq_zero_iff h).not.mpr h0
 
 /-- Under a functional equation, nonvanishing of the entire completion on `1 ≤ Re s` reflects to
 nonvanishing on `Re s ≤ 0`. -/

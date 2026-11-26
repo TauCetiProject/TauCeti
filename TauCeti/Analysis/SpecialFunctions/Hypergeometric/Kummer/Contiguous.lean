@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 /-!
 # Contiguous relations and derivative of the regularized Kummer function
@@ -16,8 +16,9 @@ Because `1 / Γ` is entire on `ℂ` (with Mathlib's convention `Γ(-n) = 0`), `�
 in `z` for every pair of complex parameters `a` and `b`, including nonpositive integer values of
 `b`.
 
-This file establishes the derivative `∂𝐌(a, b, z)/∂z = a 𝐌(a + 1, b + 1, z)` and the contiguous
-relations of `𝐌(a, b, z)` in `a` and `b` unconditionally for all `a, b, z : ℂ`. In particular,
+This file establishes the derivative `∂𝐌(a, b, z)/∂z = a 𝐌(a + 1, b + 1, z)`, the contiguous
+relations of `𝐌(a, b, z)` in `a` and `b`, and Kummer's differential equation, unconditionally for
+all `a, b, z : ℂ`. In particular,
 `regularizedHGFun_one_singleton_eq_inv_Gamma_add_mul`, `regularizedHGFun_singleton_sub_mul`, and
 `regularizedHGFun_singleton_sub_mul_add_one_left` drive the three-term recurrence for the explicit
 Kummer solution of the incomplete Gamma continued fraction (DLMF 8.9.1).
@@ -36,6 +37,8 @@ Kummer solution of the incomplete Gamma continued fraction (DLMF 8.9.1).
   `𝐌(a, b, z) - b 𝐌(a + 1, b + 1, z) = (a - b) z 𝐌(a + 1, b + 2, z)`.
 * `Complex.regularizedHGFun_singleton_eq_sub_mul_add_mul` —
   `𝐌(a, b, z) = (b - a) 𝐌(a, b + 1, z) + a 𝐌(a + 1, b + 1, z)` (DLMF 13.3.3).
+* `Complex.regularizedHGFun_singleton_ode` — Kummer's equation
+  `z w'' + (b - z) w' - a w = 0` for `w = 𝐌(a, b, ·)` (DLMF 13.2.1).
 
 ## References
 
@@ -68,22 +71,8 @@ theorem regularizedHGFunCoeff_singleton_zero (a b : ℂ) :
 `∂𝐌(a, b, z)/∂z = a 𝐌(a + 1, b + 1, z)`, valid for all complex `a`, `b`, and `z`. -/
 theorem hasDerivAt_regularizedHGFun_singleton (a b z : ℂ) :
     HasDerivAt (regularizedHGFun {a} {b}) (a * regularizedHGFun {a + 1} {b + 1} z) z := by
-  have hcard : ({a} : Multiset ℂ).card ≤ ({b} : Multiset ℂ).card := by simp
-  have hcard' : ({a + 1} : Multiset ℂ).card ≤ ({b + 1} : Multiset ℂ).card := by simp
-  have hderiv : deriv (regularizedHGFun {a} {b}) z = a * regularizedHGFun {a + 1} {b + 1} z := by
-    refine (hasSum_deriv_regularizedHGFun hcard z).unique ?_
-    refine ((hasSum_regularizedHGFun hcard' z).mul_left a).congr_fun fun n => ?_
-    rw [regularizedHGFunCoeff_singleton, regularizedHGFunCoeff_singleton,
-      ascPochhammer_succ_left, eval_mul, eval_X, eval_comp, eval_add, eval_X, eval_one,
-      Nat.factorial_succ]
-    have hn : (n : ℂ) + 1 ≠ 0 := mod_cast n.succ_ne_zero
-    have hshift : b + ((n + 1 : ℕ) : ℂ) = b + 1 + n := by push_cast; ring
-    rw [hshift]
-    push_cast
-    simp only [div_eq_mul_inv, mul_inv]
-    linear_combination a * (ascPochhammer ℂ n).eval (a + 1) * (n ! : ℂ)⁻¹ *
-      (Gamma (b + 1 + n))⁻¹ * z ^ n * inv_mul_cancel₀ hn
-  exact hderiv ▸ (differentiable_regularizedHGFun_of_card_le hcard z).hasDerivAt
+  simpa using hasDerivAt_regularizedHGFun (a := {a}) (b := {b}) (z := z)
+    (by simp [radius_regularizedHGFunSeries_eq_top])
 
 /-- The derivative of `𝐌(a, b, ·)` as a function: `deriv (𝐌(a, b, ·)) = a 𝐌(a + 1, b + 1, ·)`. -/
 @[simp]
@@ -182,5 +171,20 @@ theorem regularizedHGFun_singleton_eq_sub_mul_add_mul (a b z : ℂ) :
   have hb : b + 1 + 1 = b + 2 := by ring
   rw [hb] at h1
   linear_combination h2 - a * h1
+
+/-- **Kummer's equation** (DLMF 13.2.1): `w = 𝐌(a, b, ·)` satisfies
+`z w''(z) + (b - z) w'(z) - a w(z) = 0`, for all `a, b, z : ℂ`. -/
+theorem regularizedHGFun_singleton_ode (a b z : ℂ) :
+    z * deriv^[2] (regularizedHGFun {a} {b}) z + (b - z) * deriv (regularizedHGFun {a} {b}) z -
+      a * regularizedHGFun {a} {b} z = 0 := by
+  have h2 : deriv^[2] (regularizedHGFun {a} {b}) z =
+      a * ((a + 1) * regularizedHGFun {a + 1 + 1} {b + 1 + 1} z) := by
+    rw [Function.iterate_succ_apply', Function.iterate_one, deriv_regularizedHGFun_singleton]
+    exact ((hasDerivAt_regularizedHGFun_singleton (a + 1) (b + 1) z).const_mul a).deriv
+  have h1 := regularizedHGFun_singleton_sub_mul (a + 1) b z
+  have h3 := regularizedHGFun_add_one_singleton_sub a b z
+  have hb : b + 1 + 1 = b + 2 := by ring
+  rw [h2, deriv_regularizedHGFun_singleton, hb]
+  linear_combination (-a) * h1 + a * h3
 
 end Complex

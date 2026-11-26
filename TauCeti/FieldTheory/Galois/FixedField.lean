@@ -7,10 +7,13 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.KrullTopology
-public import Mathlib.FieldTheory.PurelyInseparable.Basic
+public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.FieldTheory.Galois.Infinite
+import Mathlib.RingTheory.Invariant.Basic
+import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
 # Fixed fields and fixing subgroups
@@ -49,7 +52,8 @@ once `⟨σ⟩` is finite.
 Neither `M / K` Galois nor `M / K` finite is needed, and neither is faithfulness of the action:
 `FixedPoints.toAlgAut_surjective` asks only that the group be finite, and cyclicity passes along
 its surjection. The fixed-point subfield it produces is the one underlying
-`IntermediateField.fixedField`.
+`IntermediateField.fixedField`. Finiteness of the group alone also makes `M` algebraic over any
+`K` over which the fixed field is purely inseparable.
 
 A simple extension `K⟮x⟯` is fixed pointwise by exactly those automorphisms that fix `x`, so
 its fixing subgroup is the stabilizer of `x`; this too needs no hypothesis on `M / K` at all.
@@ -60,6 +64,9 @@ intersection over the finite simple subextensions of their open fixing subgroups
 unchanged by cutting `E` down to its part inside `separableClosure K M`, because every element of
 `E` has a `q`-th power iterate there. The second is why a Galois correspondence over an
 inseparable extension can only be indexed by the intermediate fields of the separable closure.
+Closedness of fixing subgroups also means that a subgroup and its closure
+cut out the same field, so over a Galois `M / K` the fixers of the field fixed by `H` are exactly
+the closure of `H`.
 
 ## Main results
 
@@ -70,6 +77,9 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `IntermediateField.fixingSubgroup_inf`
 * `IntermediateField.fixingSubgroup_iSup`
 * `IntermediateField.fixingSubgroup_isClosed_of_isAlgebraic`
+* `IntermediateField.fixedField_topologicalClosure` and
+  `IntermediateField.fixingSubgroup_fixedField_eq_topologicalClosure`: a subgroup and its Krull
+  closure have the same fixed field, whose fixers are that closure when `M / K` is Galois
 * `IntermediateField.fixingSubgroup_inf_separableClosure`
 * `IntermediateField.fixedField_fixingSubgroup`: the correspondence over an intermediate field
   with Galois extension above it, without a Galois assumption on the original base
@@ -77,6 +87,13 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `IntermediateField.finiteDimensional_fixedField` and `IntermediateField.isGalois_fixedField`:
   Artin's theorem on the fixed field of a finite subgroup, with no hypothesis on `M / K`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
+* `IntermediateField.fixedField_le_iff_fixingSubgroup_le_of_isClosed` and
+  `IntermediateField.finiteDimensional_fixedField_of_isOpen`: the infinite Galois correspondence
+  for a closed subgroup, and finiteness of the field fixed by an open one
+* `IntermediateField.fixingSubgroup_fixedField_of_isOpen`,
+  `IntermediateField.finrank_fixedField_of_isOpen` and
+  `IntermediateField.finrank_fixedField_stabilizer_of_isOpen`: an open subgroup is the fixing
+  subgroup of its fixed field, whose degree is the index, or the orbit size for a stabilizer
 * `IntermediateField.card_fixingSubgroup_le`
 * `IntermediateField.fixingSubgroup_adjoin_simple`, with
   `IntermediateField.mem_fixedField_stabilizer`,
@@ -90,15 +107,22 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
   fixing `E ∩ F` fixes `F`, for `E` finite normal over a smaller base, `F ≤ L(E)` and `Ω / F`
   Galois
 * `FixedPoints.isCyclic_algEquiv`
+* `Algebra.IsAlgebraic.of_fixedPoints_le_perfectClosure`: a field is algebraic over `K` when the
+  fixed field of a finite group acting on it is purely inseparable over `K`
 * `AlgEquiv.toFixedFieldAlgEquiv`, with `AlgEquiv.zpowers_toFixedFieldAlgEquiv_eq_top` and
   `AlgEquiv.card_algEquiv_fixedField_zpowers`
 * `AlgEquiv.fixedField_zpowers_mul_comm` and `AlgEquiv.restrictScalars_mem_zpowers`: the
   automorphisms over a finite cyclic fixed field commute and restrict to powers of its generator
 * `TauCeti.natCard_algEquiv_dvd_finrank`: the automorphism group of a finite extension has order
   dividing the degree, since that order is the degree over the field fixed by all automorphisms
+* `IntermediateField.fixedField_stabilizer_smul`: translating a point along an
+  `M ≃ₐ[K] M`-action maps its stabilizer's fixed field by the translating automorphism
 * `TauCeti.fixedFieldStabilizerSmulEquiv` and `TauCeti.apply_fixedField_stabilizer_out`, with
   `TauCeti.finrank_fixedField_stabilizer_smul` and `TauCeti.finrank_fixedField_stabilizer_out`:
   translating a point conjugates its stabilizer, giving isomorphic fixed fields across an orbit
+* `TauCeti.apply_fixedField_stabilizer_smul` and
+  `TauCeti.apply_fixedField_stabilizer_out_of_injective`: every `K`-algebra isomorphism invariant
+  of intermediate fields is constant along orbits and along equivariant injections
 -/
 
 public section
@@ -115,24 +139,6 @@ theorem mem_fixedField_zpowers_iff (σ : M ≃ₐ[K] M) (x : M) :
     x ∈ fixedField (Subgroup.zpowers σ) ↔ σ x = x := by
   rw [mem_fixedField_iff, Subgroup.forall_mem_zpowers]
   exact (MulAction.mem_fixedBy_zpowers_iff_mem_fixedBy (g := σ) (a := x))
-
-/-- The degree of a cyclic fixed field times the order of its generator is the total degree. When
-`σ` has infinite order, `M / K` is infinite-dimensional and both sides are `0`. -/
-theorem finrank_fixedField_zpowers_mul_orderOf (σ : M ≃ₐ[K] M) :
-    Module.finrank K (fixedField (Subgroup.zpowers σ)) * orderOf σ = Module.finrank K M := by
-  by_cases hfin : Finite (Subgroup.zpowers σ)
-  · have := Fintype.ofFinite (Subgroup.zpowers σ)
-    have h : Module.finrank (fixedField (Subgroup.zpowers σ)) M = orderOf σ := by
-      rw [← Nat.card_zpowers, Nat.card_eq_fintype_card]
-      exact FixedPoints.finrank_eq_card (Subgroup.zpowers σ) M
-    rw [← h, Module.finrank_mul_finrank]
-  · have hσ : orderOf σ = 0 := by
-      rw [orderOf_eq_zero_iff, ← finite_zpowers]
-      exact hfin
-    rw [hσ, mul_zero]
-    by_contra hne
-    have : FiniteDimensional K M := Module.finite_of_finrank_pos (Nat.pos_of_ne_zero (Ne.symm hne))
-    exact hfin inferInstance
 
 /-- The Galois connection between fixing subgroups and fixed intermediate fields. -/
 theorem fixingSubgroup_fixedField_gc :
@@ -187,6 +193,51 @@ Mathlib's `IsGalois.of_fixed_field` on the fixed field of the Galois corresponde
 instance isGalois_fixedField (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
     IsGalois (fixedField H) M :=
   IsGalois.of_fixed_field M H
+
+/-- **The fixed field of a closed subgroup lies in `E` exactly when the fixers of `E` lie in the
+subgroup**, for a Galois extension `M / K` of any degree. Mathlib's
+`IsGalois.fixedField_le_iff_fixingSubgroup_le` is the finite-dimensional case, in which every
+subgroup is closed for the Krull topology. -/
+theorem fixedField_le_iff_fixingSubgroup_le_of_isClosed [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsClosed (H : Set (M ≃ₐ[K] M)))
+    {E : IntermediateField K M} :
+    fixedField H ≤ E ↔ E.fixingSubgroup ≤ H :=
+  ⟨fun h ↦ (fixingSubgroup_antitone h).trans
+      (InfiniteGalois.fixingSubgroup_fixedField ⟨H, hH⟩).le,
+    fun h ↦ (fixedField_le h).trans (InfiniteGalois.fixedField_fixingSubgroup E).le⟩
+
+/-- **An open subgroup is recovered from its fixed field**, for a Galois extension `M / K` of any
+degree: an open subgroup is closed for the Krull topology, and Mathlib's
+`InfiniteGalois.fixingSubgroup_fixedField` recovers closed subgroups. -/
+theorem fixingSubgroup_fixedField_of_isOpen [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsOpen (H : Set (M ≃ₐ[K] M))) :
+    (fixedField H).fixingSubgroup = H :=
+  InfiniteGalois.fixingSubgroup_fixedField ⟨H, Subgroup.isClosed_of_isOpen H hH⟩
+
+/-- **The fixed field of an open subgroup is finite** over the base, for a Galois extension
+`M / K` of any degree: the open subgroup is the fixing subgroup of its fixed field, and Mathlib's
+`InfiniteGalois.isOpen_iff_finite` identifies the intermediate fields with open fixers. -/
+theorem finiteDimensional_fixedField_of_isOpen [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsOpen (H : Set (M ≃ₐ[K] M))) :
+    FiniteDimensional K (fixedField H) := by
+  rw [← InfiniteGalois.isOpen_iff_finite, fixingSubgroup_fixedField_of_isOpen hH]
+  exact hH
+
+/-- **The degree of the fixed field of an open subgroup is its index**, for a Galois extension
+`M / K` of any degree. -/
+theorem finrank_fixedField_of_isOpen [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsOpen (H : Set (M ≃ₐ[K] M))) :
+    Module.finrank K (fixedField H) = H.index := by
+  rw [finrank_eq_fixingSubgroup_index, fixingSubgroup_fixedField_of_isOpen hH]
+
+/-- **The degree of the field fixed by an open point stabilizer is the size of the orbit**, for
+an action of the automorphisms of a Galois extension `M / K` of any degree. -/
+theorem finrank_fixedField_stabilizer_of_isOpen [IsGalois K M] {X : Type*}
+    [MulAction (M ≃ₐ[K] M) X] {x : X}
+    (hx : IsOpen (MulAction.stabilizer (M ≃ₐ[K] M) x : Set (M ≃ₐ[K] M))) :
+    Module.finrank K (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) =
+      Nat.card (MulAction.orbit (M ≃ₐ[K] M) x) := by
+  rw [finrank_fixedField_of_isOpen hx, MulAction.index_stabilizer, Nat.card_coe_set_eq]
 
 end IntermediateField
 
@@ -301,6 +352,24 @@ theorem fixingSubgroup_isClosed_of_isAlgebraic (E : IntermediateField K M)
     adjoin.finiteDimensional
       (isAlgebraic_iff.mp (Algebra.IsAlgebraic.isAlgebraic (R := K) x)).isIntegral
   exact fixingSubgroup_isClosed _
+
+/-- **A subgroup and its closure have the same fixed field** for the Krull topology: over an
+algebraic `M / K` the fixing subgroup of `fixedField H` is closed and contains `H`, hence contains
+its closure. -/
+theorem fixedField_topologicalClosure [Algebra.IsAlgebraic K M] (H : Subgroup (M ≃ₐ[K] M)) :
+    fixedField H.topologicalClosure = fixedField H :=
+  le_antisymm (fixedField_antitone H.le_topologicalClosure)
+    ((le_fixedField_iff_le_fixingSubgroup _ _).2 (H.topologicalClosure_minimal
+      ((le_fixedField_iff_le_fixingSubgroup _ _).1 le_rfl)
+      (fixingSubgroup_isClosed_of_isAlgebraic _)))
+
+/-- **The automorphisms fixing the fixed field of `H` form the closure of `H`.** For a Galois
+extension `M / K`, possibly infinite, this is the Galois correspondence applied to the closed
+subgroup `H.topologicalClosure`, which has the same fixed field as `H`. -/
+theorem fixingSubgroup_fixedField_eq_topologicalClosure [IsGalois K M]
+    (H : Subgroup (M ≃ₐ[K] M)) : (fixedField H).fixingSubgroup = H.topologicalClosure := by
+  rw [← fixedField_topologicalClosure]
+  exact InfiniteGalois.fixingSubgroup_fixedField ⟨_, H.isClosed_topologicalClosure⟩
 
 /-- **A fixing subgroup sees only the separable closure.** For an intermediate field `E` algebraic
 over `K` a `K`-automorphism of `M` fixing `E ⊓ separableClosure K M` pointwise already fixes `E`
@@ -517,6 +586,42 @@ theorem finrank_fixedField_eq_card (H : Subgroup (M ≃ₐ[K] M)) :
 
 end Subgroup
 
+namespace IntermediateField
+
+variable {K M : Type*} [Field K] [Field M] [Algebra K M]
+
+/-- By Artin's theorem, `M` has degree `orderOf σ` over the field fixed by an automorphism `σ`.
+When `σ` has infinite order both sides are `0`. -/
+theorem finrank_fixedField_zpowers_eq_orderOf (σ : M ≃ₐ[K] M) :
+    Module.finrank (fixedField (Subgroup.zpowers σ)) M = orderOf σ :=
+  (Subgroup.finrank_fixedField_eq_card _).trans (Nat.card_zpowers σ)
+
+/-- Over the field fixed by a nontrivial automorphism `σ` of finite order, `M` has degree
+`orderOf σ > 1`. -/
+theorem one_lt_finrank_fixedField_zpowers {σ : M ≃ₐ[K] M} (hσ : IsOfFinOrder σ) (h1 : σ ≠ 1) :
+    1 < Module.finrank (fixedField (Subgroup.zpowers σ)) M := by
+  have hne : orderOf σ ≠ 1 := mt orderOf_eq_one_iff.1 h1
+  have := hσ.orderOf_pos
+  rw [finrank_fixedField_zpowers_eq_orderOf]
+  omega
+
+/-- The degree of a cyclic fixed field times the order of its generator is the total degree. When
+`σ` has infinite order, `M / K` is infinite-dimensional and both sides are `0`. -/
+theorem finrank_fixedField_zpowers_mul_orderOf (σ : M ≃ₐ[K] M) :
+    Module.finrank K (fixedField (Subgroup.zpowers σ)) * orderOf σ = Module.finrank K M := by
+  rw [← finrank_fixedField_zpowers_eq_orderOf σ, Module.finrank_mul_finrank]
+
+/-- Translating a point along an action of `M ≃ₐ[K] M` maps the fixed field of its stabilizer by
+the translating automorphism. -/
+theorem fixedField_stabilizer_smul {X : Type*} [MulAction (M ≃ₐ[K] M) X]
+    (σ : M ≃ₐ[K] M) (x : X) :
+    fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x)) =
+      (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)).map σ.toAlgHom := by
+  rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
+    Subgroup.fixedField_map_conj]
+
+end IntermediateField
+
 namespace FixedPoints
 
 /-- **The fixed subfield of a finite cyclic group action has cyclic Galois group.** For a finite
@@ -531,6 +636,22 @@ theorem isCyclic_algEquiv (G F : Type*) [Group G] [Field F] [MulSemiringAction G
   isCyclic_of_surjective _ (toAlgAut_surjective G F)
 
 end FixedPoints
+
+namespace Algebra.IsAlgebraic
+
+/-- If the fixed field of a finite group acting on `L` by automorphisms fixing `K` is purely
+inseparable over `K`, then `L` is algebraic over `K`: it is integral over the fixed field, hence
+over `perfectClosure K L`. -/
+theorem of_fixedPoints_le_perfectClosure {K L G : Type*} [Field K] [Field L] [Algebra K L]
+    [Group G] [Finite G] [MulSemiringAction G L] [SMulCommClass G K L]
+    (hG : FixedPoints.intermediateField (F := K) G ≤ perfectClosure K L) :
+    Algebra.IsAlgebraic K L :=
+  have : Algebra.IsInvariant (perfectClosure K L) L G :=
+    ⟨fun b hb ↦ ⟨⟨b, hG ((FixedPoints.mem_intermediateField_iff (F := K)).mpr hb)⟩, rfl⟩⟩
+  have := Algebra.IsInvariant.isIntegral (perfectClosure K L) L G
+  .trans K (perfectClosure K L) L
+
+end Algebra.IsAlgebraic
 
 namespace AlgEquiv
 
@@ -679,9 +800,7 @@ noncomputable def fixedFieldStabilizerSmulEquiv (K : Type*) [Field K] {M X : Typ
     [Field M] [Algebra K M] [MulAction (M ≃ₐ[K] M) X] (σ : M ≃ₐ[K] M) (x : X) :
     IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x)) ≃ₐ[K]
       IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x) :=
-  (IntermediateField.equivOfEq (by
-      rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
-        Subgroup.fixedField_map_conj])).trans
+  (IntermediateField.equivOfEq (IntermediateField.fixedField_stabilizer_smul σ x)).trans
     ((IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)).equivMap σ.toAlgHom).symm
 
 /-- The inverse of `fixedFieldStabilizerSmulEquiv K σ x` acts on elements of `M` as `σ`. -/
@@ -716,6 +835,32 @@ theorem apply_fixedField_stabilizer_out (K : Type*) [Field K] {M X α : Type*}
       f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) := by
   obtain ⟨σ, rfl⟩ := MulAction.exists_smul_out_eq hx
   exact hf (fixedFieldStabilizerSmulEquiv K σ ω.out).symm
+
+/-- Any `K`-algebra-isomorphism invariant of intermediate fields takes the same value on the fixed
+fields of the stabilizers of `σ • x` and `x`. -/
+theorem apply_fixedField_stabilizer_smul (K : Type*) [Field K] {M X α : Type*}
+    [Field M] [Algebra K M] [MulAction (M ≃ₐ[K] M) X]
+    {f : IntermediateField K M → α}
+    (hf : ∀ {L₁ L₂ : IntermediateField K M}, (L₁ ≃ₐ[K] L₂) → f L₁ = f L₂)
+    (σ : M ≃ₐ[K] M) (x : X) :
+    f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x))) =
+      f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) :=
+  hf (fixedFieldStabilizerSmulEquiv K σ x)
+
+/-- Along an equivariant injection `g : X → Y`, any `K`-algebra-isomorphism invariant of
+intermediate fields takes the same value at the orbit representative of `g x` as at `x`. -/
+theorem apply_fixedField_stabilizer_out_of_injective (K : Type*) [Field K] {M X Y α : Type*}
+    [Field M] [Algebra K M] [MulAction (M ≃ₐ[K] M) X] [MulAction (M ≃ₐ[K] M) Y]
+    {f : IntermediateField K M → α}
+    (hf : ∀ {L₁ L₂ : IntermediateField K M}, (L₁ ≃ₐ[K] L₂) → f L₁ = f L₂)
+    (g : X → Y) (hg : Function.Injective g)
+    (he : ∀ (σ : M ≃ₐ[K] M) (x : X), g (σ • x) = σ • g x)
+    {ω : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) Y} {x : X}
+    (hx : (Quotient.mk'' (g x) : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) Y) = ω) :
+    f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) ω.out)) =
+      f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) := by
+  rw [apply_fixedField_stabilizer_out K hf hx,
+    TauCeti.MulAction.stabilizer_eq_of_injective g hg (he · x)]
 
 /-- Translating a point does not change the degree of its stabilizer's fixed field. -/
 @[simp]

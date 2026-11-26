@@ -85,6 +85,8 @@ likewise for `(det E)^*` and `det E ⊗ (det F)^*`.
 * `TauCeti.isComplexPositive_iff`: complex positivity is computed by any complex basis.
 * `TauCeti.isComplexPositive_iff_of_orientation_eq`: complex positivity is
   `TauCeti.complexOrientation`, computed by any real basis in that orientation.
+* `TauCeti.isComplexPositive_ιMulti_of_subsingleton`: the empty exterior product of a zero complex
+  vector space is complex positive.
 * `TauCeti.IsComplexPositive.exists_pos_smul_eq`, `TauCeti.IsComplexPositive.not_neg`,
   `TauCeti.isComplexPositive_or_isComplexPositive_neg`: complex positivity is an orientation of
   the line `det E`; similarly for `(det E)^*` and `det E ⊗ (det F)^*`.
@@ -251,6 +253,14 @@ theorem isComplexPositive_ιMulti_complexToRealFamily (b : Basis (Fin n) ℂ E)
     IsComplexPositive (exteriorPower.ιMulti ℝ _ (complexToRealFamily ⇑b ∘ Fin.cast h)) :=
   ⟨n, b, 1, one_pos, by simp⟩
 
+omit [IsScalarTower ℝ ℂ E] in
+/-- The determinant line of the zero complex vector space is oriented by its generator, the empty
+exterior product, which is complex positive. -/
+theorem isComplexPositive_ιMulti_of_subsingleton [Subsingleton E]
+    (v : Fin (finrank ℝ E) → E) : IsComplexPositive (exteriorPower.ιMulti ℝ _ v) := by
+  have h : finrank ℝ E = 2 * 0 := finrank_zero_of_subsingleton
+  convert isComplexPositive_ιMulti_complexToRealFamily (Basis.empty E : Basis (Fin 0) ℂ E) h
+
 /-- The exterior product of the image under a complex-linear map `f` of the real family underlying
 a family `v` is complex positive in `det F` when `f ∘ v` is a complex basis `b` of `F`. -/
 theorem isComplexPositive_ιMulti_comp_complexToRealFamily (f : E →ₗ[ℂ] F) {v : Fin n → E}
@@ -372,6 +382,14 @@ complex positive `x ∈ det E` and a complex positive functional `φ` on `det F`
 def IsComplexPositiveTMulDual (t : detLine ℝ E ⊗[ℝ] Dual ℝ (detLine ℝ F)) : Prop :=
   ∃ (x : detLine ℝ E) (φ : Dual ℝ (detLine ℝ F)), IsComplexPositive x ∧
     IsComplexPositiveDual φ ∧ t = x ⊗ₜ φ
+
+omit [IsScalarTower ℝ ℂ E] [IsScalarTower ℝ ℂ F] in
+/-- An element of `det E ⊗ (det F)^*` is complex positive exactly when it is `x ⊗ φ` for a complex
+positive `x` and a complex positive functional `φ`. -/
+theorem isComplexPositiveTMulDual_iff :
+    IsComplexPositiveTMulDual t ↔ ∃ (x : detLine ℝ E) (φ : Dual ℝ (detLine ℝ F)),
+      IsComplexPositive x ∧ IsComplexPositiveDual φ ∧ t = x ⊗ₜ φ :=
+  Iff.rfl
 
 omit [IsScalarTower ℝ ℂ E] [IsScalarTower ℝ ℂ F] in
 /-- The tensor product of a complex positive element and a complex positive functional is complex
@@ -624,7 +642,7 @@ theorem isComplexPositive_detLineShortExactEquiv_tmul
   have hgC : Function.Surjective g := hg
   have : FiniteDimensional ℂ U := Module.Finite.of_restrictScalars_finite ℝ ℂ U
   have : FiniteDimensional ℂ W := Module.Finite.of_restrictScalars_finite ℝ ℂ W
-  have : FiniteDimensional ℂ V := finiteDimensional_of_exact hfgC
+  have : FiniteDimensional ℂ V := hfgC.moduleFinite
   -- Lift a basis of `W` to `V`; with the image of a basis of `U` it is a basis of `V`.
   obtain ⟨v, bV, hv, hbV⟩ := Basis.exists_coe_eq_append_lift hfC hfgC hgC (finBasis ℂ U)
     (finBasis ℂ W)
@@ -673,7 +691,7 @@ theorem isComplexPositiveTMulDual_detLineFourTermEquiv
   have : FiniteDimensional ℂ A := Module.Finite.of_restrictScalars_finite ℝ ℂ A
   have : FiniteDimensional ℂ C := Module.Finite.of_restrictScalars_finite ℝ ℂ C
   have : FiniteDimensional ℂ D := Module.Finite.of_surjective h hhC
-  have : FiniteDimensional ℂ B := finiteDimensional_of_exact hfgC
+  have : FiniteDimensional ℂ B := hfgC.moduleFinite
   have : FiniteDimensional ℝ D := Module.Finite.trans ℂ D
   -- Complex bases of `A`, of `range g` and of `D`, lifts of the last two to `B` and `C`, and the
   -- complex bases of `B` and of `C` they give, adapted to the exact sequence.
@@ -868,8 +886,8 @@ theorem exists_isComplexPositiveTMulDual_detLineSixTermEquiv_congr_eq_tmul
   have : FiniteDimensional ℂ A₁ := Module.Finite.of_restrictScalars_finite ℝ ℂ A₁
   have : FiniteDimensional ℂ A₃ := Module.Finite.of_restrictScalars_finite ℝ ℂ A₃
   have : FiniteDimensional ℂ A₅ := Module.Finite.of_restrictScalars_finite ℝ ℂ A₅
-  have : FiniteDimensional ℂ A₂ := finiteDimensional_of_exact h₁₂
-  have : FiniteDimensional ℂ A₄ := finiteDimensional_of_exact h₃₄
+  have : FiniteDimensional ℂ A₂ := h₁₂.moduleFinite
+  have : FiniteDimensional ℂ A₄ := h₃₄.moduleFinite
   have : FiniteDimensional ℂ A₆ := Module.Finite.of_surjective f₅ hf₅
   -- Complex bases of `A₁`, of the ranges of `f₂`, `f₃`, `f₄` and of `A₆`, lifts `v`, `w`, `x`,
   -- `y` of the last four, and the complex bases of `A₂`, …, `A₅` they give.

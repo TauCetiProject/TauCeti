@@ -45,6 +45,8 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
 ## Main results
 
 * `TauCeti.Huber.isBounded_closedBall_zero`: closed balls about zero are bounded.
+* `TauCeti.Huber.isPowerBounded_map_mul_of_norm_le`: along a bounded monoid homomorphism `φ`, if
+  `‖u‖ * c ≤ 1` and `‖b‖ ≤ c`, then `φ u * b` is power-bounded.
 * `TauCeti.Huber.isPowerBounded_iff_norm_le_one`: in a normed division ring an element is
   power-bounded exactly when its norm is at most one.
 * `TauCeti.Huber.IsUniform.of_normedDivisionRing`: normed division rings are uniform.
@@ -79,6 +81,8 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   ultrametric norm is a Tate ring; for instance `ℚ_[p]`.
 * `TauCeti.Huber.IsTateRing.of_normedAlgebra`: an ultrametric seminormed algebra over a
   nontrivially normed field is Tate, without requiring its norm at one to equal one.
+* `TauCeti.Huber.exists_subring_ball_subset_forall_norm_le`: in such an algebra, finitely many
+  power-bounded elements lie in a subring containing a ball about zero and bounded in norm.
 
 ## References
 
@@ -121,6 +125,35 @@ theorem IsPowerBounded.of_norm_le_one {R : Type*} [SeminormedRing R] {x : R}
   | succ n =>
     exact (norm_pow_le' x (Nat.succ_pos n)).trans
       ((pow_le_one₀ (norm_nonneg x) hx).trans (le_max_left 1 ‖(1 : R)‖))
+
+/-- If `φ` is bounded by `C`, `‖u‖ * c ≤ 1`, and `‖b‖ ≤ c`, then `φ u * b` is power-bounded: its
+positive powers have norm at most `max C 0`. -/
+theorem isPowerBounded_map_mul_of_norm_le {R S F : Type*} [SeminormedRing R]
+    [SeminormedCommRing S] [FunLike F R S] [MonoidHomClass F R S] {φ : F} {C c : ℝ}
+    {u : R} {b : S} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖) (hu : ‖u‖ * c ≤ 1) (hb : ‖b‖ ≤ c) :
+    IsPowerBounded (φ u * b) := by
+  refine isPowerBounded_iff.mpr
+    ((isBounded_closedBall_zero (R := S) (max ‖(1 : S)‖ (max C 0))).subset ?_)
+  rintro _ ⟨n, rfl⟩
+  rw [mem_closedBall_zero_iff]
+  rcases n with _ | m
+  · simp only [pow_zero]
+    exact le_max_left _ _
+  · refine le_trans ?_ (le_max_right _ _)
+    have hc0 : 0 ≤ c := (norm_nonneg b).trans hb
+    have hφu : ‖φ (u ^ (m + 1))‖ ≤ max C 0 * ‖u‖ ^ (m + 1) :=
+      (hφ _).trans <| (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg _)).trans <|
+        mul_le_mul_of_nonneg_left (norm_pow_le' u m.succ_pos) (le_max_right C 0)
+    have hbm : ‖b ^ (m + 1)‖ ≤ c ^ (m + 1) :=
+      (norm_pow_le' b m.succ_pos).trans (pow_le_pow_left₀ (norm_nonneg b) hb _)
+    calc ‖(φ u * b) ^ (m + 1)‖ = ‖φ (u ^ (m + 1)) * b ^ (m + 1)‖ := by rw [mul_pow, map_pow]
+      _ ≤ ‖φ (u ^ (m + 1))‖ * ‖b ^ (m + 1)‖ := norm_mul_le _ _
+      _ ≤ (max C 0 * ‖u‖ ^ (m + 1)) * c ^ (m + 1) :=
+          mul_le_mul hφu hbm (norm_nonneg _) (mul_nonneg (le_max_right C 0) (by positivity))
+      _ = max C 0 * (‖u‖ * c) ^ (m + 1) := by rw [mul_assoc, ← mul_pow]
+      _ ≤ max C 0 * 1 := mul_le_mul_of_nonneg_left
+          (pow_le_one₀ (mul_nonneg (norm_nonneg u) hc0) hu) (le_max_right C 0)
+      _ = max C 0 := mul_one _
 
 /-- **In a seminormed ring a unit of norm less than one is a pseudouniformiser**: its powers tend
 to zero. -/
@@ -399,5 +432,22 @@ theorem IsTateRing.of_normedAlgebra (K : Type*) [NontriviallyNormedField K]
   have hϖ := IsPseudoUniformizer.of_norm_lt_one
     (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)) hϖ1
   exact IsTateRing.of_isOpen_isBounded A₀ hopen hb (hϖ.map (continuous_algebraMap K A))
+
+/-- **Finitely many power-bounded elements lie in a norm-bounded open subring.** In an ultrametric
+seminormed algebra over a nontrivially normed field, a finite set of power-bounded elements is
+contained in a subring that contains a ball about zero and whose elements are bounded in norm:
+a ring of definition containing the set (`PairOfDefinition.adjoin`). -/
+theorem exists_subring_ball_subset_forall_norm_le (K : Type*) [NontriviallyNormedField K]
+    {A : Type*} [SeminormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] {T : Finset A}
+    (hT : ∀ t ∈ T, IsPowerBounded t) :
+    ∃ (A₀ : Subring A) (r N : ℝ), 0 < r ∧ (T : Set A) ⊆ A₀ ∧
+      Metric.ball (0 : A) r ⊆ A₀ ∧ ∀ x ∈ A₀, ‖x‖ ≤ N := by
+  have := IsTateRing.of_normedAlgebra K A
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
+  let Q := P.adjoin T hT
+  obtain ⟨N, hN⟩ := hϖ.isBounded_iff_forall_norm_le.mp Q.isBounded_ringOfDefinition
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp Q.isOpen_ringOfDefinition 0 (zero_mem _)
+  exact ⟨Q.ringOfDefinition, r, N, hr, fun t ht ↦ P.mem_adjoin_of_mem T hT ht, hball, hN⟩
 
 end TauCeti.Huber

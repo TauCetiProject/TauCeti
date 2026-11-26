@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import Mathlib.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
 # Restriction of first-order Sobolev functions
@@ -28,9 +29,20 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
   `W^{1,p}(U)` for `U ⊆ Ω`.
 * `TauCeti.W1p.value_restrictL` and `TauCeti.W1p.gradient_restrictL`: restriction commutes with
   the value and weak-gradient projections; their `_ae` variants identify representatives.
-* `TauCeti.W1p.value_restrictL_ofTestFunctionₗ_ae`: a restricted test function has its original
-  value almost everywhere on the smaller open set.
+* `TauCeti.W1p.value_restrictL_add_const_ae`: the value of a restriction shifted by a constant.
+* `TauCeti.W1p.value_restrictL_ofTestFunctionₗ_ae` and
+  `TauCeti.W1p.gradient_restrictL_ofTestFunctionₗ_ae`: a restricted test function has its original
+  value and gradient almost everywhere on the smaller open set, and
+  `TauCeti.W1p.restrictL_ofTestFunctionₗ_eq_of_eqOn`: it is the jet of any test function on the
+  smaller set that agrees with it there.
+* `TauCeti.W1p.norm_restrictL_eq_of_value_ae_eq_zero_of_isClosed`: restriction preserves the norm
+  of a function vanishing off a closed set `K` with `Ω ∩ K ⊆ U`.
 * `TauCeti.W1p.restrictL_self` and `TauCeti.W1p.restrictL_restrictL`: restriction is functorial.
+* `TauCeti.W1p.norm_gradient_restrictL_le`: restriction does not increase the `Lᵖ` norm of the
+  weak gradient.
+* `TauCeti.W1p.setIntegral_norm_gradient_rpow_eq_norm_gradient_restrictL_rpow` and
+  `TauCeti.W1p.setIntegral_norm_value_rpow_eq_norm_value_restrictL_rpow`: powers of restricted `Lᵖ`
+  norms as integrals over the smaller open set, for finite `p`.
 * `TauCeti.W1p.setIntegral_norm_gradient_sub_sq_eq`: the `L²` distance on the smaller set between
   the weak gradients of a function and of a function defined only there.
 * `TauCeti.W1p.continuous_setAverage_value`: the mean of the value component over a fixed
@@ -38,7 +50,10 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
 
 ## References
 
-L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.2.
+* L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.2.
+* The restricted norm identities generalize the square identities adapted from Otis Chodosh's
+  formalization in
+  [`ForTauCeti/Analysis/PDE/Caccioppoli/Norm.lean`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/fe6fa284d9cc53f70c80ba9c9be619cb13ab1b89/ForTauCeti/Analysis/PDE/Caccioppoli/Norm.lean).
 -/
 
 public section
@@ -198,6 +213,24 @@ theorem W1p.value_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
     (by simpa only [one_smul] using
       Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) (W1p.value u)
 
+/-- Restricting `u` to `U` and adding the constant `c` gives the value `u + c` almost everywhere
+on `U`. -/
+theorem W1p.value_restrictL_add_const_ae [IsFiniteMeasure (mu.restrict (U : Set E))]
+    (hU : U ≤ Omega) (u : W1p mu Omega p) (c : ℝ) :
+    ∀ᵐ x ∂mu.restrict U, W1p.value (W1p.restrictL hU u + W1p.const c) x = W1p.value u x + c := by
+  filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU u) c, W1p.value_restrictL_ae hU u]
+    with x h1 h2
+  rw [h1, h2]
+
+/-- If `u ≥ 0` almost everywhere on `U`, then restricting `u` to `U` and adding the constant `c`
+gives a function bounded below by `c` almost everywhere on `U`. -/
+theorem W1p.le_value_restrictL_add_const_ae [IsFiniteMeasure (mu.restrict (U : Set E))]
+    (hU : U ≤ Omega) {u : W1p mu Omega p} (hu : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value u x)
+    (c : ℝ) : ∀ᵐ x ∂mu.restrict U, c ≤ W1p.value (W1p.restrictL hU u + W1p.const c) x := by
+  filter_upwards [W1p.value_restrictL_add_const_ae hU u c, hu] with x h1 h2
+  rw [h1]
+  linarith
+
 /-- Restricting a test function from `Omega` to `U` preserves its value almost everywhere on
 `U`. -/
 theorem W1p.value_restrictL_ofTestFunctionₗ_ae (hU : U ≤ Omega) (φ : 𝓓(Omega, ℝ)) :
@@ -211,6 +244,18 @@ with the value of `u` restricts to `u` on `U`. -/
 theorem W1p.restrictL_eq_of_value_ae_eq (hU : U ≤ Omega) {u : W1p mu U p} {w : W1p mu Omega p}
     (hvalw : W1p.value w =ᵐ[mu.restrict U] W1p.value u) : W1p.restrictL hU w = u :=
   W1p.ext_value (Lp.ext ((W1p.value_restrictL_ae hU w).trans hvalw))
+
+/-- A test function supported in `Omega` restricts on the smaller open set `U` to any test function
+supported in `U` that agrees with it on `U`. -/
+theorem W1p.restrictL_ofTestFunctionₗ_eq_of_eqOn (hU : U ≤ Omega) {φ : 𝓓(Omega, ℝ)}
+    {ψ : 𝓓(U, ℝ)} (h : EqOn φ ψ U) :
+    W1p.restrictL hU (W1p.ofTestFunctionₗ mu Omega p φ) = W1p.ofTestFunctionₗ mu U p ψ := by
+  refine W1p.restrictL_eq_of_value_ae_eq hU ?_
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
+      (W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := p) φ),
+    W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := p) ψ,
+    ae_restrict_mem U.isOpen.measurableSet] with x hφx hψx hx
+  rw [hφx, hψx, h hx]
 
 /-- An extension operator, a right inverse of restriction to the smaller open set `U`, keeps the
 value representative on `U`. -/
@@ -231,6 +276,23 @@ theorem W1p.gradient_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :
     (by simpa only [one_smul] using
       Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)) (W1p.gradient u)
 
+/-- Restricting a test function from `Omega` to `U` preserves its gradient almost everywhere on
+`U`. -/
+theorem W1p.gradient_restrictL_ofTestFunctionₗ_ae (hU : U ≤ Omega) (φ : 𝓓(Omega, ℝ)) :
+    W1p.gradient (W1p.restrictL hU (W1p.ofTestFunctionₗ mu Omega p φ)) =ᵐ[mu.restrict U]
+      _root_.gradient (φ : E → ℝ) := by
+  refine (W1p.gradient_restrictL_ae hU _).trans
+    (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU) ?_)
+  rw [W1p.gradient_ofTestFunctionₗ]
+  exact gradientTestFunctionLp_apply_ae p φ
+
+/-- Restriction does not increase the `Lᵖ` norm of the weak gradient. -/
+theorem W1p.norm_gradient_restrictL_le (hU : U ≤ Omega) (u : W1p mu Omega p) :
+    ‖W1p.gradient (W1p.restrictL hU u)‖ ≤ ‖W1p.gradient u‖ := by
+  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (W1p.gradient_restrictL_ae hU u)]
+  exact ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) (eLpNorm_mono_measure _
+    (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU)))
+
 /-- Restriction does not increase the Sobolev norm. -/
 theorem W1p.norm_restrictL_le (hU : U ≤ Omega) (u : W1p mu Omega p) :
     ‖W1p.restrictL hU u‖ ≤ ‖u‖ :=
@@ -241,6 +303,24 @@ theorem W1p.norm_restrictL_le_one (hU : U ≤ Omega) :
     ‖W1p.restrictL (mu := mu) (p := p) hU‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by
     simpa only [one_mul] using W1p.norm_restrictL_le hU u
+
+/-- Restriction to `U` preserves the norm of a Sobolev function vanishing almost everywhere on `Ω`
+off a closed set `K` with `Ω ∩ K ⊆ U`: its weak gradient vanishes off `K` as well, so the whole
+value-gradient jet is supported in `U`. -/
+theorem W1p.norm_restrictL_eq_of_value_ae_eq_zero_of_isClosed (hU : U ≤ Omega) {K : Set E}
+    (hK : IsClosed K) (hKU : (Omega : Set E) ∩ K ⊆ U) {u : W1p mu Omega p}
+    (hu : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → W1p.value u x = 0) :
+    ‖W1p.restrictL hU u‖ = ‖u‖ := by
+  have hJ : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ (U : Set E) →
+      (u : Sobolev1JetLp mu Omega p) x = 0 := by
+    filter_upwards [hu, W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed hK hu,
+      W1p.value_apply_ae u, W1p.gradient_apply_ae u,
+      ae_restrict_mem Omega.isOpen.measurableSet] with x hv hg hv' hg' hxΩ hxU
+    have hxK : x ∉ K := fun hxK ↦ hxU (hKU ⟨hxΩ, hxK⟩)
+    exact (WithLp.ext_iff _).2 (Prod.ext (hv'.symm.trans (hv hxK)) (hg'.symm.trans (hg hxK)))
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe u, W1p.coe_restrictL]
+  exact Lp.norm_eq_norm_of_ae_eq_restrict (SetLike.coe_subset_coe.2 hU)
+    U.isOpen.measurableSet.nullMeasurableSet (Sobolev1JetLp.coeFn_restrictL hU _) hJ
 
 /-- Restricting a Sobolev function to its original domain does nothing. -/
 @[simp]
@@ -261,6 +341,30 @@ theorem W1p.restrictL_restrictL (hU : U ≤ Omega) (hV : V ≤ U) (u : W1p mu Om
       (MeasureTheory.ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hV)))
   exact ((W1p.value_restrictL_ae hV (W1p.restrictL hU u)).trans hsecond).trans
     (W1p.value_restrictL_ae (hV.trans hU) u).symm
+
+/-- For finite `p`, the integral over a smaller open set of the `p`-th power of the pointwise
+weak-gradient norm is the `p`-th power of the gradient norm of the Sobolev restriction. -/
+theorem W1p.setIntegral_norm_gradient_rpow_eq_norm_gradient_restrictL_rpow (hU : U ≤ Omega)
+    (hp : p ≠ ∞) (w : W1p mu Omega p) :
+    ∫ x in U, ‖W1p.gradient w x‖ ^ p.toReal ∂mu =
+      ‖W1p.gradient (W1p.restrictL hU w)‖ ^ p.toReal := by
+  rw [← Lp.integral_norm_rpow_eq_norm_rpow
+    (ne_of_gt (zero_lt_one.trans_le (Fact.out : 1 ≤ p))) hp]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.gradient_restrictL_ae hU w] with x hx
+  rw [hx]
+
+/-- For finite `p`, the integral over a smaller open set of the `p`-th power of the pointwise
+Sobolev-value norm is the `p`-th power of the value norm of the Sobolev restriction. -/
+theorem W1p.setIntegral_norm_value_rpow_eq_norm_value_restrictL_rpow (hU : U ≤ Omega)
+    (hp : p ≠ ∞) (w : W1p mu Omega p) :
+    ∫ x in U, ‖W1p.value w x‖ ^ p.toReal ∂mu =
+      ‖W1p.value (W1p.restrictL hU w)‖ ^ p.toReal := by
+  rw [← Lp.integral_norm_rpow_eq_norm_rpow
+    (ne_of_gt (zero_lt_one.trans_le (Fact.out : 1 ≤ p))) hp]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.value_restrictL_ae hU w] with x hx
+  rw [hx]
 
 /-- The squared `L²(U)` distance between the weak gradients of `u ∈ W^{1,2}(Ω)` and
 `w ∈ W^{1,2}(U)` is the squared norm of the weak gradient of the difference of the restriction of

@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -46,6 +46,9 @@ the spectrum of a local ring is free, on as many generators as its rank.
 * `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_pullback_fromSpec_iff`: the pullback of a
   quasi-coherent module `M` along an affine chart `Spec Γ(X, U) ⟶ X` is finite locally free if
   and only if `Γ(M, U)` is finitely generated and projective over `Γ(X, U)`;
+* `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_of_finite_projective_sections`: a
+  quasi-coherent module whose sections over each member of a chosen affine open cover are finitely
+  generated and projective is finite locally free;
 * `AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_iff_forall_isAffineOpen`: a quasi-coherent
   module on `X` is finite locally free if and only if its sections on every affine open are
   finitely generated and projective;
@@ -58,6 +61,8 @@ the spectrum of a local ring is free, on as many generators as its rank.
   finite locally free sheaf on `Spec R` is the rank at stalks of its module of global sections;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.isoFreeOfBasis`: a finite locally free sheaf on
   `Spec R` whose global sections have a basis indexed by `I` is the free sheaf on `I`;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.tildePiIsoFree`: the sheaf `(R^d)~` on
+  `Spec R` is the free sheaf on `d` generators;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.isoFreeOfIsLocalRing`: over a local ring, a
   finite locally free sheaf of rank `n` on `Spec R` is free on `n` generators.
 
@@ -135,6 +140,20 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_pullback_fro
   exact he.trans ⟨fun ⟨_, _⟩ ↦ ⟨Module.Finite.equiv eΓ.symm, Module.Projective.of_equiv eΓ.symm⟩,
     fun ⟨_, _⟩ ↦ ⟨Module.Finite.equiv eΓ, Module.Projective.of_equiv eΓ⟩⟩
 
+/-- A quasi-coherent `𝒪_X`-module is finite locally free if its sections over each member of an
+affine open cover `U` of `X`, indexed by an arbitrary sort, form a finitely generated projective
+module over the corresponding coordinate ring. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_of_finite_projective_sections
+    {X : Scheme.{u}} (M : X.Modules) [M.IsQuasicoherent] {ι : Sort*} (U : ι → X.Opens)
+    (hU : ∀ i, IsAffineOpen (U i)) (hcov : ⨆ i, U i = ⊤)
+    (hM : ∀ i, Module.Finite Γ(X, U i) Γ(M, U i) ∧ Module.Projective Γ(X, U i) Γ(M, U i)) :
+    Scheme.Modules.isFiniteLocallyFree X M :=
+  (Scheme.Modules.isFiniteLocallyFree_iff_forall_pullback
+    (Scheme.AffineOpenCover.ofIsOpenCover (fun i : PLift ι ↦ U i.down)
+      (by simpa only [TopologicalSpace.IsOpenCover, iSup_plift_down] using hcov)
+      fun i ↦ hU i.down).openCover M).mpr fun i ↦
+    (Scheme.Modules.isFiniteLocallyFree_pullback_fromSpec_iff M (hU i.down)).mpr (hM i.down)
+
 /-- A quasi-coherent `𝒪_X`-module is finite locally free if and only if, on every affine open `U`
 of `X`, its sections `Γ(M, U)` form a finitely generated projective `Γ(X, U)`-module. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_iff_forall_isAffineOpen
@@ -145,10 +164,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_iff_forall_i
   refine ⟨fun ⟨_, _⟩ U hU ↦ (Scheme.Modules.isFiniteLocallyFree_pullback_fromSpec_iff M hU).mp
     ⟨Scheme.Modules.isLocallyFree_pullback hU.fromSpec M,
       Scheme.Modules.isFinitePresentation_pullback hU.fromSpec M⟩, fun h ↦ ?_⟩
-  exact (Scheme.Modules.isFiniteLocallyFree_iff_forall_pullback
-    (Scheme.AffineOpenCover.ofIsOpenCover (fun U : X.affineOpens ↦ U.val)
-      (iSup_affineOpens_eq_top X) fun U ↦ U.property).openCover M).mpr fun U ↦
-    (Scheme.Modules.isFiniteLocallyFree_pullback_fromSpec_iff M U.property).mpr (h U.val U.property)
+  exact M.isFiniteLocallyFree_of_finite_projective_sections (fun U : X.affineOpens ↦ U.val)
+    (fun U ↦ U.property) (iSup_affineOpens_eq_top X) fun U ↦ h U.val U.property
 
 namespace FiniteLocallyFreeSheaf
 
@@ -243,6 +260,24 @@ lemma isoFreeOfBasis_hom (E : FiniteLocallyFreeSheaf (Spec R)) {I : Type u} [Fin
     (isoFreeOfBasis E b).hom = (finiteProjectiveEquiv R).counitIso.inv.app E ≫
       ObjectProperty.homMk ((tilde.functor R).map b.repr.toModuleIso.hom ≫
         (tildeFinsupp I).hom ≫ eqToHom (free_obj (Spec R) I).symm) :=
+  (rfl)
+
+variable (R) in
+/-- The sheaf `(R^d)~` on `Spec R` is the free sheaf on a universe lift of `Fin d`, the
+underlying sheaf of `FixedRank.free (Spec R) d`. -/
+def tildePiIsoFree (d : ℕ) :
+    tilde (.of R (Fin d → R)) ≅ (free (Spec R) (ULift.{u} (Fin d))).obj :=
+  (tilde.functor R).mapIso (LinearEquiv.funCongrLeft R R Equiv.ulift ≪≫ₗ
+    (Finsupp.linearEquivFunOnFinite R R _).symm).toModuleIso ≪≫ tildeFinsupp _ ≪≫
+    eqToIso (free_obj (Spec R) _).symm
+
+variable (R) in
+/-- `tildePiIsoFree` is the sheafification of `R^d ≃ (ULift (Fin d) →₀ R)` followed by
+`tildeFinsupp`. -/
+lemma tildePiIsoFree_hom (d : ℕ) :
+    (tildePiIsoFree R d).hom = (tilde.functor R).map (LinearEquiv.funCongrLeft R R Equiv.ulift ≪≫ₗ
+      (Finsupp.linearEquivFunOnFinite R R _).symm).toModuleIso.hom ≫ (tildeFinsupp _).hom ≫
+        eqToHom (free_obj (Spec R) _).symm :=
   (rfl)
 
 /-- The dimension of a free module of global sections of a finite locally free sheaf on `Spec R`

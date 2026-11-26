@@ -9,7 +9,6 @@ public import TauCeti.GroupTheory.Coxeter.Restriction
 public import TauCeti.GroupTheory.Perm.Coxeter
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.DynkinType
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Length
-public import TauCeti.LinearAlgebra.RootSystem.LongestElement
 
 /-!
 # The Weyl group of type `Aₙ` is the symmetric group
@@ -34,8 +33,7 @@ The marking turns combinatorics of the Weyl group into combinatorics of permutat
 of a Weyl group element, which is its number of inversions among the positive roots, is the
 number of inversions of the corresponding permutation, and a simple root is sent to a positive
 root exactly when the permutation keeps the two letters of the corresponding adjacent
-transposition in order. Counting the inversions of the order-reversing permutation then gives
-`n (n + 1) / 2` positive roots and `n (n + 1)` roots in all.
+transposition in order.
 
 ## Main definitions
 
@@ -50,11 +48,12 @@ transposition in order. Counting the inversions of the order-reversing permutati
   group element is the number of inversions of its permutation.
 * `RootPairing.isPos_weylGroupToPerm_iff_typeAWeylGroupEquiv`: the image of a simple root is
   positive exactly when the permutation preserves the order of the two corresponding letters.
+* `RootPairing.bruhatLE_typeAWeylGroupEquiv_iff`,
+  `RootPairing.bruhatLE_typeAWeylGroupEquiv_symm_iff`: the marked isomorphism preserves and
+  reflects the Bruhat order.
 * `RootPairing.nonempty_weylGroup_mulEquiv_perm_of_typeA`: **the Weyl group of a root pairing with
   a base of Cartan type `Aₙ` is isomorphic to the symmetric group on `n + 1` letters.**
 * `RootPairing.card_weylGroup_of_hasCartanType_A`: its order is `(n + 1)!`.
-* `RootPairing.ncard_posRoots_of_hasCartanType_A` and `RootPairing.natCard_eq_of_hasCartanType_A`:
-  there are `n (n + 1) / 2` positive roots and `n (n + 1)` roots.
 
 ## References
 
@@ -179,6 +178,24 @@ theorem isPos_weylGroupToPerm_iff_typeAWeylGroupEquiv (w : P.weylGroup) (i : b.s
   have hs' : BraidGroup.strandSucc (n := n + 1) (e i) = (e i).succ := Fin.ext (by simp)
   rw [hs, hs', le_iff_lt_or_eq, or_iff_left hne.symm]
 
+/-- **The marked isomorphism identifies the Bruhat order on the Weyl group with the Bruhat order
+on permutations.** -/
+@[simp]
+theorem bruhatLE_typeAWeylGroupEquiv_iff {u w : P.weylGroup} :
+    (permCoxeterSystem (n + 1)).BruhatLE
+      (P.typeAWeylGroupEquiv b e he u) (P.typeAWeylGroupEquiv b e he w) ↔
+      (weylCoxeterSystem P b).BruhatLE u w := by
+  rw [coe_typeAWeylGroupEquiv, CoxeterSystem.bruhatLE_parabolicHom_iff]
+
+/-- The inverse of the marked isomorphism preserves and reflects the Bruhat order. -/
+@[simp]
+theorem bruhatLE_typeAWeylGroupEquiv_symm_iff {u w : Equiv.Perm (Fin (n + 1))} :
+    (weylCoxeterSystem P b).BruhatLE
+      ((P.typeAWeylGroupEquiv b e he).symm u) ((P.typeAWeylGroupEquiv b e he).symm w) ↔
+      (permCoxeterSystem (n + 1)).BruhatLE u w := by
+  rw [← P.bruhatLE_typeAWeylGroupEquiv_iff b e he, MulEquiv.apply_symm_apply,
+    MulEquiv.apply_symm_apply]
+
 /-- **The Weyl group of type `Aₙ` is the symmetric group on `n + 1` letters**, for a finite
 reduced crystallographic root pairing over a commutative domain of characteristic zero with a base
 of Cartan type `Aₙ`. The pairing need not span. An explicit isomorphism, marked by any labelling
@@ -193,40 +210,5 @@ theorem card_weylGroup_of_hasCartanType_A (h : HasCartanType P b (.A n)) :
     Nat.card P.weylGroup = (n + 1).factorial := by
   obtain ⟨e⟩ := P.nonempty_weylGroup_mulEquiv_perm_of_typeA b h
   rw [Nat.card_congr e.toEquiv, Nat.card_perm, Nat.card_fin]
-
-include he in
-/-- The number of positive roots of a base labelled as `Aₙ` is the number of pairs of letters
-in `Fin (n + 1)`. -/
-private theorem ncard_posRoots_eq_choose_two : (posRoots P b).ncard = (n + 1).choose 2 := by
-  set φ := P.typeAWeylGroupEquiv b e he
-  have : Finite P.weylGroup := Finite.of_equiv _ φ.symm.toEquiv
-  have hpairs : #{p : Fin (n + 1) × Fin (n + 1) | p.1 < p.2} = (n + 1).choose 2 := by
-    rw [Fintype.card_product_filter_lt, Fintype.card_fin]
-  rw [← hpairs]
-  refine le_antisymm ?_ ?_
-  · obtain ⟨w₀, hw₀⟩ := exists_inversions_eq_posRoots_of_finite_weylGroup P b
-    rw [← hw₀, P.ncard_inversions_eq_card_typeAWeylGroupEquiv b e he]
-    exact card_le_card fun p ↦ by simp +contextual
-  · obtain ⟨w, hw⟩ := φ.surjective Fin.revPerm
-    calc #{p : Fin (n + 1) × Fin (n + 1) | p.1 < p.2}
-        = #{p : Fin (n + 1) × Fin (n + 1) | p.1 < p.2 ∧ φ w p.2 < φ w p.1} := by
-          simp_rw [hw, Fin.revPerm_apply, Fin.rev_lt_rev, and_self]
-      _ = (inversions P b w).ncard := (P.ncard_inversions_eq_card_typeAWeylGroupEquiv b e he w).symm
-      _ ≤ (posRoots P b).ncard := ncard_inversions_le P b w
-
-/-- A base of Cartan type `Aₙ` has `n (n + 1) / 2` positive roots. -/
-theorem ncard_posRoots_of_hasCartanType_A (h : HasCartanType P b (.A n)) :
-    (posRoots P b).ncard = n * (n + 1) / 2 := by
-  obtain ⟨e, he⟩ := exists_cartanMatrix_eq_A h
-  rw [P.ncard_posRoots_eq_choose_two b e he, Nat.choose_two_right, Nat.add_sub_cancel,
-    Nat.mul_comm]
-
-/-- A root pairing with a base of Cartan type `Aₙ` has `n (n + 1)` roots. -/
-theorem natCard_eq_of_hasCartanType_A (h : HasCartanType P b (.A n)) :
-    Nat.card ι = n * (n + 1) := by
-  obtain ⟨e, he⟩ := exists_cartanMatrix_eq_A h
-  rw [← two_mul_ncard_posRoots P b, P.ncard_posRoots_eq_choose_two b e he, Nat.choose_two_right,
-    Nat.add_sub_cancel, Nat.mul_comm (n + 1),
-    Nat.mul_div_cancel' (Nat.even_mul_succ_self n).two_dvd]
 
 end RootPairing

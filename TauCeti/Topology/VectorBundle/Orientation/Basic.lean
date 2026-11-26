@@ -51,6 +51,8 @@ preconnected base these are all of its orientations
   map of bases.
 * `TauCeti.VectorBundleOrientation.reindex`: an orientation reindexed along an equivalence of
   index types.
+* `TauCeti.VectorBundleOrientation.positive`: the positive orientation of a bundle oriented by an
+  empty index type, such as a bundle of rank zero.
 
 ## Main results
 
@@ -58,10 +60,17 @@ preconnected base these are all of its orientations
   constant when read in any trivialization of the atlas.
 * `TauCeti.VectorBundleOrientation.mapOrientation_eq_of_isPreconnected`: on a preconnected part of
   the base set of such a trivialization, it reads as a single orientation of the model fibre.
+* `TauCeti.VectorBundleOrientation.isEmpty_of_det_coordChangeL_pos_of_neg`: a bundle with two
+  such trivializations over preconnected sets, whose coordinate change has positive determinant at
+  one common point and negative determinant at another, is not orientable.
 * `TauCeti.VectorBundleOrientation.eq_or_eq_neg`: over a preconnected base, two orientations of
   a bundle are equal or opposite.
 * `TauCeti.VectorBundleOrientation.eq_trivial`: over a preconnected base, every orientation of a
   trivial bundle is constant.
+* `TauCeti.VectorBundleOrientation.isClopen_setOf_eq_positiveOrientation`: an orientation indexed
+  by an empty type is positive or negative at every point
+  (`TauCeti.VectorBundleOrientation.eq_positiveOrientation_or_eq_neg`), and positive on a clopen
+  set.
 
 ## References
 
@@ -116,6 +125,20 @@ theorem mapOrientation_neg (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b :
     e.mapOrientation ι hb (-o) = -e.mapOrientation ι hb o :=
   Module.Ray.map_neg _ o
 
+/-- Transporting an orientation of the model fibre back to the fibre commutes with negation. -/
+@[simp]
+theorem mapOrientation_symm_neg (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}
+    (hb : b ∈ e.baseSet) (o : Orientation ℝ F ι) :
+    (e.mapOrientation ι hb).symm (-o) = -(e.mapOrientation ι hb).symm o := by
+  rw [Equiv.symm_apply_eq, mapOrientation_neg, Equiv.apply_symm_apply]
+
+/-- A trivialization reading `o` as `-ω` reads `-o` as `ω`. -/
+theorem mapOrientation_symm_eq_neg_of_eq_neg (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}
+    (hb : b ∈ e.baseSet) {o : Orientation ℝ (E b) ι} {ω : Orientation ℝ F ι}
+    (h : e.mapOrientation ι hb o = -ω) :
+    (e.mapOrientation ι hb).symm ω = -o := by
+  rw [← neg_neg ω, ← h, mapOrientation_symm_neg, Equiv.symm_apply_apply]
+
 /-- Reading a fibre orientation in a trivialization commutes with reindexing its index type. -/
 @[simp]
 theorem mapOrientation_reindex {ι' : Type*} (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}
@@ -155,6 +178,19 @@ theorem mapOrientation_eq_orientation_iff [Fintype ι] [DecidableEq ι]
       o = (β.map (e.linearEquivAt ℝ b hb).symm).orientation := by
   rw [mapOrientation_apply, Basis.orientation_map, ← Orientation.map_symm]
   exact (Equiv.eq_symm_apply _).symm
+
+/-- A linear trivialization carries the orientation of the one-vector basis `(v)` of a fibre of a
+line bundle to the orientation of the one-vector basis `(e v)` of the model fibre. -/
+theorem mapOrientation_orientation_basisSingleton [Unique ι] [Fintype ι] [DecidableEq ι]
+    (e : Trivialization F (π F E')) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet)
+    (hE : finrank ℝ (E' b) = 1) (hF : finrank ℝ F = 1) {v : E' b} (hv : v ≠ 0)
+    (hev : (e ⟨b, v⟩).2 ≠ 0) :
+    e.mapOrientation ι hb (FiniteDimensional.basisSingleton ι hE v hv).orientation =
+      (FiniteDimensional.basisSingleton ι hF (e ⟨b, v⟩).2 hev).orientation := by
+  rw [mapOrientation_apply, ← Basis.orientation_map]
+  congr 1
+  exact Basis.eq_of_apply_eq fun i ↦ by
+    simp only [Basis.map_apply, FiniteDimensional.basisSingleton_apply, linearEquivAt_apply]
 
 end AddCommGroup
 
@@ -300,6 +336,18 @@ theorem trivial_apply (o : Orientation ℝ F ι) (b : B) : trivial B o b = o :=
 theorem neg_trivial (o : Orientation ℝ F ι) : -trivial B o = trivial B (-o) :=
   ext fun _ ↦ (rfl)
 
+variable (B) in
+/-- The trivialization of the trivial bundle `B × F` reads every orientation of a fibre as the same
+orientation of `F`. -/
+@[simp]
+theorem _root_.Bundle.Trivial.mapOrientation_trivialization {b : B}
+    (hb : b ∈ (Bundle.Trivial.trivialization B F).baseSet) (o : Orientation ℝ F ι) :
+    (Bundle.Trivial.trivialization B F).mapOrientation ι hb o = o := by
+  have h : (Bundle.Trivial.trivialization B F).linearEquivAt ℝ b hb = LinearEquiv.refl ℝ F := by
+    ext v
+    simp [Trivialization.linearEquivAt_apply]
+  rw [Trivialization.mapOrientation_apply, h, Orientation.map_refl, Equiv.refl_apply]
+
 section Pullback
 
 variable {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
@@ -401,6 +449,59 @@ theorem isOpen_setOf_eq (o o' : VectorBundleOrientation F E ι) :
         (FiberBundle.mem_baseSet_trivializationAt' b)) hb
       _ = _ := (hx' hxs).symm
 
+section Positive
+
+variable [IsEmpty ι]
+
+variable (F E ι) in
+/-- **The positive orientation** of a bundle oriented by an empty index type: every fibre carries
+its positive orientation `positiveOrientation`, the orientation of its empty basis. For a bundle of
+rank zero this is the canonical orientation. -/
+def positive : VectorBundleOrientation F E ι where
+  toFun _ := positiveOrientation
+  eventually_mapOrientation_eq' _ := Filter.Eventually.of_forall fun _ _ ↦ by
+    rw [Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply,
+      Orientation.map_positiveOrientation_of_isEmpty,
+      Orientation.map_positiveOrientation_of_isEmpty]
+
+variable (F E ι) in
+@[simp]
+theorem positive_apply (b : B) : positive F E ι b = positiveOrientation :=
+  (rfl)
+
+/-- The pullback of the positive orientation is the positive orientation of the pullback bundle. -/
+@[simp]
+theorem pullback_positive {B' : Type*} [TopologicalSpace B'] (f : C(B', B)) :
+    (positive F E ι).pullback f = positive F ((⇑f) *ᵖ E) ι :=
+  ext fun _ ↦ (rfl)
+
+/-- At every point, an orientation indexed by an empty type is the positive orientation of the
+fibre or its opposite. -/
+theorem eq_positiveOrientation_or_eq_neg (o : VectorBundleOrientation F E ι) (b : B) :
+    o b = positiveOrientation ∨ o b = -positiveOrientation := by
+  -- Read the orientation in a trivialization, where the model fibre is an additive group.
+  have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
+  have hpos := Orientation.map_positiveOrientation_of_isEmpty (R := ℝ) (ι := ι)
+    ((trivializationAt F E b).linearEquivAt ℝ b hb)
+  refine (Orientation.eq_or_eq_neg_of_isEmpty
+    ((trivializationAt F E b).mapOrientation ι hb (o b))).imp (fun h ↦ ?_) fun h ↦ ?_ <;>
+    refine ((trivializationAt F E b).mapOrientation ι hb).injective ?_
+  · rw [h, Trivialization.mapOrientation_apply, hpos]
+  · rw [h, Trivialization.mapOrientation_neg, Trivialization.mapOrientation_apply, hpos]
+
+/-- An orientation indexed by an empty type is positive on a clopen set of the base, and negative,
+`-positiveOrientation`, on its complement. -/
+theorem isClopen_setOf_eq_positiveOrientation (o : VectorBundleOrientation F E ι) :
+    IsClopen {b | o b = positiveOrientation} := by
+  refine ⟨?_, o.isOpen_setOf_eq (positive F E ι)⟩
+  have h : {b | o b = positiveOrientation}ᶜ = {b | o b = (-positive F E ι) b} := by
+    ext b
+    rcases o.eq_positiveOrientation_or_eq_neg b with hb | hb <;>
+      simp [hb, Module.Ray.ne_neg_self, (Module.Ray.ne_neg_self _).symm]
+  exact isOpen_compl_iff.1 (h ▸ o.isOpen_setOf_eq _)
+
+end Positive
+
 section Fintype
 
 variable [Fintype ι]
@@ -427,6 +528,28 @@ theorem mapOrientation_eq_of_isPreconnected (hι : Fintype.card ι = finrank ℝ
       ((continuous_subtypeVal.tendsto z).eventually
         (o.eventually_mapOrientation_eq hι e (hse z.property))).mono fun w hw ↦ hw (hse w.property)
   exact hlc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
+
+/-- **A criterion for non-orientability.** If two trivializations `e` and `e'` of the atlas are
+defined over preconnected sets `s` and `s'` that both contain points `x` and `y`, and the
+coordinate change from `e` to `e'` has positive determinant at `x` but negative determinant at
+`y`, then the bundle has no orientation: each chart reads an orientation as a single orientation
+of the model fibre, and these two readings would have to agree at `x` and be opposite at `y`. -/
+theorem isEmpty_of_det_coordChangeL_pos_of_neg [FiniteDimensional ℝ F]
+    (hι : Fintype.card ι = finrank ℝ F) (e e' : Trivialization F (π F E))
+    [MemTrivializationAtlas e] [MemTrivializationAtlas e'] {s s' : Set B} (hs : IsPreconnected s)
+    (hs' : IsPreconnected s') (hse : s ⊆ e.baseSet) (hse' : s' ⊆ e'.baseSet) {x y : B}
+    (hx : x ∈ s) (hx' : x ∈ s') (hy : y ∈ s) (hy' : y ∈ s')
+    (hpos : 0 < LinearMap.det ((e.coordChangeL ℝ e' x).toLinearEquiv : F →ₗ[ℝ] F))
+    (hneg : LinearMap.det ((e.coordChangeL ℝ e' y).toLinearEquiv : F →ₗ[ℝ] F) < 0) :
+    IsEmpty (VectorBundleOrientation F E ι) := by
+  refine ⟨fun o ↦ ?_⟩
+  have h := o.mapOrientation_eq_of_isPreconnected hι e hs hse hx hy
+  have h' := o.mapOrientation_eq_of_isPreconnected hι e' hs' hse' hx' hy'
+  rw [Trivialization.mapOrientation_eq_map_coordChangeL e e' (hse hx) (hse' hx'),
+    Trivialization.mapOrientation_eq_map_coordChangeL e e' (hse hy) (hse' hy'),
+    (Orientation.map_eq_iff_det_pos _ _ hι).2 hpos,
+    (Orientation.map_eq_neg_iff_det_neg _ _ hι).2 hneg, h] at h'
+  exact Module.Ray.ne_neg_self _ h'
 
 /-- An orientation of the bundle from fibre orientations that are locally constant near each
 point `b` when read in some trivialization `e b` of the atlas whose base set contains `b`. -/

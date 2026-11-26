@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Analysis.Matrix.Spectrum
+import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
 # Euclidean operator norms and the largest Gram eigenvalue
@@ -18,7 +20,15 @@ for this eigenvalue attains the operator norm, including when `A = 0`.
 
 The source must be nonempty for a largest eigenvalue or a unit attaining vector to exist.
 For an empty source the operator norm is zero by subsingleton elimination, and
-`spectrum.of_subsingleton` gives the empty Gram spectrum.
+`spectrum.of_subsingleton` gives the empty Gram spectrum. Conversely, a positive operator norm
+forces a nonempty source.
+
+For a Hermitian matrix, each ordered eigenvalue is bounded in absolute value by the operator
+norm, and the `2 * k`-th power of the operator norm is bounded by the real trace of the
+`2 * k`-th matrix power, provided the matrix is nonempty when `k = 0`. This is the trace bound
+behind moment estimates for the operator norm of random matrices. For a positive-semidefinite
+matrix, every power of the operator norm, that is of the largest eigenvalue, is bounded by the
+real trace of the same matrix power, again provided the matrix is nonempty for the zeroth power.
 
 All matrix norms here use `Matrix.Norms.L2Operator`, hence agree with the norms of the
 native maps on `EuclideanSpace`. The proof uses Mathlib's
@@ -33,6 +43,14 @@ open scoped Matrix.Norms.L2Operator InnerProductSpace ComplexOrder
 namespace Matrix
 
 variable {𝕜 m n : Type*} [RCLike 𝕜] [Fintype m] [Fintype n] [DecidableEq n]
+
+/-- A matrix with positive Euclidean operator norm has a nonempty source index type: for an
+empty source the matrix is zero. -/
+theorem nonempty_of_l2_opNorm_pos {A : Matrix m n 𝕜} (h : 0 < ‖A‖) : Nonempty n := by
+  by_contra hn
+  rw [not_nonempty_iff] at hn
+  rw [Subsingleton.elim A 0, norm_zero] at h
+  exact lt_irrefl _ h
 
 /-- The Euclidean operator norm of a Hermitian matrix is the sup norm of its real
 eigenvalue list. This includes the empty index type. -/
@@ -66,6 +84,24 @@ theorem PosSemidef.l2_opNorm_eq_eigenvalues₀_zero [Nonempty n] {B : Matrix n n
     exact hB.isHermitian.eigenvalues₀_antitone (Fin.zero_le (e.symm i))
   · simpa only [he, Real.norm_of_nonneg hnonneg] using
       norm_le_pi_norm hB.isHermitian.eigenvalues (e ⟨0, Fintype.card_pos⟩)
+
+/-- Every power of the Euclidean operator norm of a positive-semidefinite matrix, that is of its
+largest eigenvalue, is at most the real trace of the same power of the matrix. The carrier must be
+nonempty when `k = 0`: for the empty matrix and `k = 0` the left side is `1` and the trace is `0`.
+-/
+theorem PosSemidef.l2_opNorm_pow_le_re_trace_pow {B : Matrix n n 𝕜}
+    (hB : B.PosSemidef) (k : ℕ) (hn : k = 0 → Nonempty n) :
+    ‖B‖ ^ k ≤ RCLike.re (B ^ k).trace := by
+  rcases isEmpty_or_nonempty n with hne | hne
+  · have hk : k ≠ 0 := fun hk ↦ (hn hk).elim isEmptyElim
+    simp [Subsingleton.elim B 0, zero_pow hk]
+  obtain ⟨j, hj⟩ := Pi.exists_norm_apply_eq_norm hB.isHermitian.eigenvalues
+  rw [hB.isHermitian.l2_opNorm_eq_norm_eigenvalues, ← hj,
+    Real.norm_of_nonneg (hB.eigenvalues_nonneg j), hB.isHermitian.trace_pow_eq_sum_eigenvalues_pow,
+    map_sum]
+  simp_rw [← RCLike.ofReal_pow, RCLike.ofReal_re]
+  exact Finset.single_le_sum (fun i _ ↦ pow_nonneg (hB.eigenvalues_nonneg i) _)
+    (Finset.mem_univ j)
 
 /-- The square of the Euclidean operator norm of a rectangular matrix is the largest
 eigenvalue of its source Gram matrix, enumerated in decreasing order. -/
@@ -118,5 +154,27 @@ theorem exists_unit_eigenvector_conjTranspose_mul_self [Nonempty n]
       simpa using hinner
     exact_mod_cast hcast
   exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq
+
+/-- The absolute value of each ordered Hermitian eigenvalue is bounded by the Euclidean
+operator norm. -/
+theorem IsHermitian.norm_eigenvalues₀_le_l2_opNorm {A : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (j : Fin (Fintype.card n)) : ‖hA.eigenvalues₀ j‖ ≤ ‖A‖ := by
+  rw [hA.l2_opNorm_eq_norm_eigenvalues]
+  simpa only [hA.eigenvalues_apply_equivOfCardEq] using
+    norm_le_pi_norm hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) j)
+
+/-- For a Hermitian matrix, the `2*k`-th power of the Euclidean operator norm is bounded by the
+real trace of its `2*k`-th power. The dimension must be nonempty only for `k = 0`, where the
+power of the norm is `1` and the trace is the dimension. -/
+theorem IsHermitian.l2_opNorm_pow_two_mul_le_re_trace_pow_two_mul {A : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (k : ℕ) (hn : k = 0 → Nonempty n) :
+    ‖A‖ ^ (2 * k) ≤ RCLike.re (A ^ (2 * k)).trace := by
+  rw [hA.l2_opNorm_eq_norm_eigenvalues, hA.trace_pow_eq_sum_eigenvalues_pow]
+  simp only [map_sum, ← RCLike.ofReal_pow, RCLike.ofReal_re]
+  rcases eq_or_ne k 0 with rfl | hk
+  · have := hn rfl
+    simpa using (Nat.one_le_cast.mpr Fintype.card_pos : (1 : ℝ) ≤ Fintype.card n)
+  · simpa only [Real.norm_eq_abs, pow_abs_two_mul] using
+      Pi.norm_pow_le_sum_norm_pow hA.eigenvalues (mul_ne_zero two_ne_zero hk)
 
 end Matrix

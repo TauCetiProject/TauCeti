@@ -48,6 +48,8 @@ boundary point it flows out of.
   `(0, ∞) × S` bijectively onto the complement of `W`.
 * `TauCeti.IsLiouvilleCompletion.cylindricalEndPartialDiffeomorph`: the Liouville flow-out of the
   boundary, as a diffeomorphism from `(0, ∞) × S` onto the complement of `W`.
+* `TauCeti.IsLiouvilleCompletion.coe_cylindricalEndPartialDiffeomorph_symm`: its inverse is the
+  inverse of the flow-out on `(0, ∞) × S`.
 * `TauCeti.IsLiouvilleCompletion.cylindricalEndPartialDiffeomorph_symm_apply_fst`: its inverse
   reads off the logarithm of the radial coordinate.
 
@@ -77,6 +79,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 /-! ### Injectivity and image of the flow-out -/
 
+omit [FiniteDimensional ℝ E] in
 /-- **The Liouville trajectories through an injectively parametrized boundary are disjoint.** If
 the Liouville field of a Liouville domain is complete and `ι : S → M` is an injective map into
 the boundary, then `(t, s) ↦ ψₜ (ι s)` is injective on `ℝ × S`. -/
@@ -190,6 +193,13 @@ theorem coe_cylindricalEndPartialDiffeomorph :
     ⇑(h.cylindricalEndPartialDiffeomorph hZ hι himm hιinj hιW hdim) =
       fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2) :=
   IsLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn ..
+
+/-- The inverse of `cylindricalEndPartialDiffeomorph` is the inverse of the Liouville flow-out of
+the boundary on `(0, ∞) × S`: it sends `ψₜ (ι s)`, `t > 0`, to `(t, s)`. -/
+theorem coe_cylindricalEndPartialDiffeomorph_symm :
+    ⇑(h.cylindricalEndPartialDiffeomorph hZ hι himm hιinj hιW hdim).symm =
+      invFunOn (fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) (Ioi 0 ×ˢ univ) :=
+  funext fun _ ↦ IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_symm_apply ..
 
 /-- The source of `cylindricalEndPartialDiffeomorph` is `(0, ∞) × S`. -/
 @[simp]

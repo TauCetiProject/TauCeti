@@ -63,9 +63,7 @@ private theorem HasWeakFDerivOn.exists_contDiffOn_one_ae_eq_ball
   have hr4 : 0 < r / 4 := by positivity
   let phi : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking hr4
   have hphi : Tendsto (fun n => (phi n).rOut) atTop (𝓝 0) := ContDiffBump.tendsto_rOut_shrinking hr4
-  have hsmall (n : ℕ) : (phi n).rOut ≤ r / 4 := by
-    rw [ContDiffBump.rOut_shrinking]
-    exact div_le_self hr4.le (by linarith [Nat.cast_nonneg (α := ℝ) n])
+  have hsmall (n : ℕ) : (phi n).rOut ≤ r / 4 := ContDiffBump.rOut_shrinking_le hr4 n
   have hK (n : ℕ) : (phi n).rOut ≤ 2 * (phi n).rIn :=
     (ContDiffBump.rOut_shrinking_eq_two_mul_rIn hr4 n).le
   let f := fun n => (ball x r).indicator u ⋆[

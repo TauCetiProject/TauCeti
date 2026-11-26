@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import Mathlib.NumberTheory.NumberField.Units.Regulator
 public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Character
 public import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 import Mathlib.Analysis.Real.Pi.Bounds
@@ -20,7 +21,8 @@ import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.Units.Elimination.GoldenRatio
 import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 import TauCeti.NumberTheory.NumberField.Units.Torsion
-import TauCeti.NumberTheory.LSeries.ZetaMul
+import TauCeti.NumberTheory.LSeries.Zeta.Mul
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.LSeries.Quadratic.Character
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
@@ -68,6 +70,10 @@ ratio bound holds uniformly for every quadratic field `K`.
   the Dirichlet convolution `ζ * χ_D` (Mathlib's `DirichletCharacter.zetaMul`).
 * `TauCeti.NumberField.dedekindZetaCoeff_eq_sum_divisors`: the number of ideals of norm `n ≠ 0`
   is `∑_{d ∣ n} χ_D(d)`.
+* `TauCeti.NumberField.dedekindZetaCoeff_le_card_divisors`: there are at most as many ideals of
+  norm `n ≠ 0` as `n` has divisors.
+* `TauCeti.NumberField.two_mul_card_idealsLE_le`: there are at most `B (B + 1) / 2` nonzero
+  ideals of norm at most `x`, where `B = ⌊x⌋₊`.
 * `TauCeti.NumberField.dedekindZeta_eq_riemannZeta_mul_LFunction`: `ζ_K(s) = ζ(s) L(s, χ_D)`
   on `Re s > 1`.
 * `TauCeti.NumberField.dedekindZeta_residue_eq_LFunction_one`: the residue of `ζ_K` at `1` is
@@ -236,6 +242,36 @@ theorem dedekindZetaCoeff_eq_sum_divisors {n : ℕ} (hn : n ≠ 0) :
   refine Finset.sum_congr rfl fun d hd ↦ ?_
   simp [toArithmeticFunction, Nat.ne_of_gt (Nat.pos_of_mem_divisors hd)]
 
+/-- **A quadratic field has at most as many integral ideals of norm `n` as `n` has divisors**, for
+`n ≠ 0`. -/
+theorem dedekindZetaCoeff_le_card_divisors {n : ℕ} (hn : n ≠ 0) :
+    dedekindZetaCoeff K n ≤ n.divisors.card := by
+  have h : (dedekindZetaCoeff K n : ℤ) ≤ n.divisors.card := by
+    rw [dedekindZetaCoeff_eq_sum_divisors hK hn]
+    calc _ ≤ ∑ _ ∈ n.divisors, (1 : ℤ) :=
+          Finset.sum_le_sum fun d _ ↦ fundamentalDiscriminantChar_le_one _ _
+      _ = n.divisors.card := by simp
+  exact_mod_cast h
+
+/-- **Counting ideals of bounded norm in a quadratic field.** A quadratic field `K` has at most
+`B (B + 1) / 2` nonzero integral ideals of norm at most `x`, where `B = ⌊x⌋₊`. -/
+theorem two_mul_card_idealsLE_le (x : ℝ) : 2 * (idealsLE K x).card ≤ ⌊x⌋₊ * (⌊x⌋₊ + 1) := by
+  classical
+  have hsum : (idealsLE K x).card = ∑ n ∈ Finset.range (⌊x⌋₊ + 1), (normFiber K n).card := by
+    have h := idealSummatory_eq_sum_range_normFiber K (fun _ ↦ 1) x
+    rw [idealSummatory_apply] at h
+    simpa only [Finset.card_eq_sum_ones] using h
+  -- There are at most `n` ideals of norm `n`, so at most `∑_{n ≤ ⌊x⌋} n` in all.
+  have hfib (n : ℕ) : (normFiber K n).card ≤ n := by
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp [normFiber_zero]
+    · rw [card_normFiber_eq_dedekindZetaCoeff K hn]
+      exact (dedekindZetaCoeff_le_card_divisors hK hn).trans (Nat.card_divisors_le_self n)
+  have hle := Finset.sum_le_sum fun n (_ : n ∈ Finset.range (⌊x⌋₊ + 1)) ↦ hfib n
+  have hgauss := Finset.sum_range_id_mul_two (⌊x⌋₊ + 1)
+  simp only [Nat.add_sub_cancel] at hgauss
+  nlinarith
+
 /-- **The Dedekind zeta function of a quadratic field factors as `ζ(s) L(s, χ_D)`** on the
 half-plane `Re s > 1`, where `χ_D` is the complex quadratic character of the discriminant `D`
 of `K`. -/
@@ -257,10 +293,7 @@ theorem dedekindZeta_residue_eq_LFunction_one :
     (fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
       (Int.castRingHom ℂ)
   -- As `s → 1⁺`, `(s - 1) ζ(s) → 1` and `L(s, χ) → L(1, χ)`, while `(s - 1) ζ_K(s) → ρ`.
-  have hζ : Tendsto (fun s : ℝ ↦ ((s : ℂ) - 1) * riemannZeta s) (𝓝[>] 1) (𝓝 1) :=
-    riemannZeta_residue_one.comp <| tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      ((Complex.continuous_ofReal.tendsto' 1 1 Complex.ofReal_one).mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun s hs ↦ by simpa using (Set.mem_Ioi.mp hs).ne')
+  have hζ := TauCeti.tendsto_sub_one_mul_riemannZeta_nhdsGT
   have hL : Tendsto (fun s : ℝ ↦ χ.LFunction s) (𝓝[>] 1) (𝓝 (χ.LFunction 1)) :=
     (((DirichletCharacter.differentiable_LFunction (χ := χ)
       (ringHomComp_fundamentalDiscriminantChar_discr_ne_one hK)).continuous.comp
@@ -305,7 +338,7 @@ theorem classNumber_eq_card_units_mul_LFunction_one :
     rw [NumberField.Units.torsionOrder, Units.torsion_eq_top_of_isTotallyComplex hK,
       Subgroup.card_top]
   have hD : ((√|(discr K : ℝ)| : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr
-    (Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K)))).ne'
+    (sqrt_abs_cast_discr_pos K).ne'
   have hw0 : (NumberField.Units.torsionOrder K : ℂ) ≠ 0 :=
     Nat.cast_ne_zero.mpr (NumberField.Units.torsionOrder_pos K).ne'
   rw [← dedekindZeta_residue_eq_LFunction_one hK, dedekindZeta_residue_def,
@@ -322,8 +355,7 @@ theorem LFunction_one_eq_two_mul_pi_mul_classNumber_div :
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
         (Int.castRingHom ℂ)) 1 =
       ((2 * π * classNumber K / (Nat.card (𝓞 K)ˣ * √|(discr K : ℝ)|) : ℝ) : ℂ) := by
-  have hD : (√|(discr K : ℝ)| : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr
-    (Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K)))).ne'
+  have hD : (√|(discr K : ℝ)| : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (sqrt_abs_cast_discr_pos K).ne'
   have hw : (Nat.card (𝓞 K)ˣ : ℂ) ≠ 0 := by
     rw [Units.card_units_of_isTotallyComplex_of_discr hK]
     split_ifs <;> norm_num
@@ -338,8 +370,7 @@ theorem sqrt_mul_LFunction_one_re_div_le_classNumber :
     √|(discr K : ℝ)| * (DirichletCharacter.LFunction
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
         (Int.castRingHom ℂ)) 1).re / π ≤ classNumber K := by
-  have hD : 0 < √|(discr K : ℝ)| :=
-    Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K)))
+  have hD : 0 < √|(discr K : ℝ)| := sqrt_abs_cast_discr_pos K
   have hw : (2 : ℝ) ≤ Nat.card (𝓞 K)ˣ := by
     rw [Units.card_units_of_isTotallyComplex_of_discr hK]
     split_ifs <;> norm_num
@@ -358,7 +389,7 @@ theorem pi_div_three_mul_sqrt_le_LFunction_one_re :
     π / (3 * √|(discr K : ℝ)|) ≤ (DirichletCharacter.LFunction
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
         (Int.castRingHom ℂ)) 1).re := by
-  have hD : 0 < √|(discr K : ℝ)| := Real.sqrt_pos.mpr (abs_cast_discr_pos K)
+  have hD : 0 < √|(discr K : ℝ)| := sqrt_abs_cast_discr_pos K
   have hw_pos : (0 : ℝ) < Nat.card (𝓞 K)ˣ := by
     rw [Units.card_units_of_isTotallyComplex_of_discr hK]; split_ifs <;> norm_num
   have hw_le : (Nat.card (𝓞 K)ˣ : ℝ) ≤ 6 := by
@@ -455,7 +486,7 @@ theorem classNumber_mul_regulator_eq_LFunction_one :
   have hw : NumberField.Units.torsionOrder K = 2 :=
     Units.torsionOrder_eq_two_of_isReal (IsTotallyReal.isReal v)
   have hD : ((√|(discr K : ℝ)| : ℝ) : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (abs_cast_discr_pos K)).ne'
+    Complex.ofReal_ne_zero.mpr (sqrt_abs_cast_discr_pos K).ne'
   rw [← dedekindZeta_residue_eq_LFunction_one hK, dedekindZeta_residue_def,
     hr, IsTotallyReal.nrComplexPlaces_eq_zero, hw]
   push_cast
@@ -469,7 +500,7 @@ theorem LFunction_one_eq_two_mul_classNumber_mul_regulator_div :
         (Int.castRingHom ℂ)) 1 =
       ((2 * classNumber K * NumberField.Units.regulator K / √|(discr K : ℝ)| : ℝ) : ℂ) := by
   have hD : (√|(discr K : ℝ)| : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (abs_cast_discr_pos K)).ne'
+    Complex.ofReal_ne_zero.mpr (sqrt_abs_cast_discr_pos K).ne'
   push_cast
   rw [mul_assoc (2 : ℂ), classNumber_mul_regulator_eq_LFunction_one hK]
   field_simp
@@ -484,11 +515,7 @@ theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re :
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
         (Int.castRingHom ℂ)) 1).re := by
   rcases lt_trichotomy (discr K) 0 with hd | hd | hd
-  · have hc : nrComplexPlaces K = 1 := nrComplexPlaces_eq_one_of_discr_lt_zero hd (by omega)
-    have hr : nrRealPlaces K = 0 := by
-      have := card_add_two_mul_card_eq_rank K
-      omega
-    have : IsTotallyComplex K := nrRealPlaces_eq_zero_iff.mp hr
+  · have : IsTotallyComplex K := IsTotallyComplex.of_discr_lt_zero hd hK
     have hD : 0 ≤ √|(discr K : ℝ)| := Real.sqrt_nonneg _
     have hφπ : 2 * Real.log Real.goldenRatio ≤ π / 3 := by
       linarith [TauCeti.log_goldenRatio_lt_one_half, Real.pi_gt_three]
@@ -497,7 +524,7 @@ theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re :
     exact mul_le_mul_of_nonneg_right hφπ (inv_nonneg.mpr hD)
   · exact absurd hd (discr_ne_zero K)
   · have : IsTotallyReal K := IsTotallyReal.of_zero_lt_discr hd (by omega)
-    have hD : 0 < √|(discr K : ℝ)| := Real.sqrt_pos.mpr (abs_cast_discr_pos K)
+    have hD : 0 < √|(discr K : ℝ)| := sqrt_abs_cast_discr_pos K
     have hh : (1 : ℝ) ≤ classNumber K := Nat.one_le_cast.mpr (classNumber_pos K)
     have hreg : Real.log Real.goldenRatio ≤ NumberField.Units.regulator K :=
       Units.log_goldenRatio_le_regulator hK

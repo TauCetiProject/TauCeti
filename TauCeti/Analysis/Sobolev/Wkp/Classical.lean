@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
+import TauCeti.MeasureTheory.Measure.Restrict
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -21,7 +22,8 @@ representatives satisfy the integrability hypotheses of classical higher-order c
 Conversely, a function that is `Cᵏ` on the domain and whose classical derivatives through order
 `k` lie in `Lᵖ` represents an element of `W^{k,p}` (`TauCeti.Wkp.exists_value_ae_eq_of_contDiffOn`),
 whose norm is at most the sum of the `Lᵖ` seminorms of these derivatives
-(`TauCeti.Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn`). On a domain in `ℝⁿ`, the weak
+(`TauCeti.Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn`); on the whole space the two
+combine into `TauCeti.Wkp.exists_value_ae_eq_and_norm_le`. On a domain in `ℝⁿ`, the weak
 Hessian of a `W^{2,p}` function with a `C²` representative `f` has entries `∂ᵢ∂ⱼf` almost
 everywhere (`TauCeti.Wkp.iteratedGradient_one_single_apply_ae_eq_of_contDiffOn`). Consequently,
 for `u ∈ W^{2,p}(U)` and a function `w` that is `C²` near the closure of a bounded open `Ω ⊆ U`,
@@ -320,6 +322,20 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
           (by rw [← iteratedGradientChain_succ]; exact hD.coeFn_toLp.symm)
       exact ⟨mk k u _ hweak, by rw [value_mk]; exact hu⟩
 
+/-- **`Cᵏ` functions on the whole space with `Lᵖ` derivatives are Sobolev functions.** If `f` is
+`Cᵏ` on `E` and its classical derivatives of orders `0` through `k` lie in `Lᵖ`, then `f` represents
+an element of `W^{k,p}(E)` whose norm is at most the sum of the `Lᵖ` seminorms of these
+derivatives. -/
+theorem Wkp.exists_value_ae_eq_and_norm_le {k : ℕ} {f : E → ℝ} (hf : ContDiff ℝ k f)
+    (hmem : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p mu) :
+    ∃ u : Wkp mu ⊤ p k, (value k u : E → ℝ) =ᵐ[mu] f ∧
+      ‖u‖ ≤ ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i f) p mu := by
+  have hres : mu.restrict ((⊤ : Opens E) : Set E) = mu := Measure.restrict_coe_opens_top mu
+  obtain ⟨u, hu⟩ := exists_value_ae_eq_of_contDiffOn (mu := mu) (Omega := ⊤) k hf.contDiffOn
+    (by simpa only [hres] using hmem)
+  refine ⟨u, by simpa only [hres] using hu, ?_⟩
+  simpa only [hres] using norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k u hf.contDiffOn hu
+
 /-- **A `Cᵏ` function is a Sobolev function on compactly contained subdomains.** If `f` is `Cᵏ` on
 an open set `U` and `Ω` lies in a compact subset `K` of `U`, then `f` represents an element of
 `W^{k,p}(Ω)`: its derivatives through order `k` are continuous on `K`, hence bounded on `Ω`. -/
@@ -371,12 +387,12 @@ theorem Wkp.exists_value_ae_eq_sub_of_contDiffOn {U : Opens (EuclideanSpace ℝ 
   obtain ⟨V, hV⟩ := exists_value_ae_eq_of_contDiffOn_of_isCompact (mu := mu) (p := p)
     (Omega := Omega) 2 hW hw hΩ.isCompact_closure subset_closure hΩW
   refine ⟨V - restrictL hΩU 2 u, ?_, ?_⟩
-  · rw [← valueL_apply, map_sub, valueL_apply, valueL_apply]
+  · rw [value_sub]
     filter_upwards [Lp.coeFn_sub (value 2 V) (value 2 (restrictL hΩU 2 u)), hV,
       value_restrictL_ae hΩU 2 u, ae_restrict_of_ae_restrict_of_subset hΩU hū]
       with y h1 h2 h3 h4
     rw [h1, Pi.sub_apply, h2, h3, h4]
-  · rw [← iteratedGradientL_apply, map_sub, iteratedGradientL_apply, iteratedGradientL_apply]
+  · rw [iteratedGradient_sub]
     filter_upwards [Lp.coeFn_sub (iteratedGradient 1 V)
         (iteratedGradient 1 (restrictL hΩU 2 u)),
       iteratedGradient_one_single_apply_ae_eq_of_contDiffOn V (hw.mono (subset_closure.trans hΩW))

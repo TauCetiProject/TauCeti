@@ -9,6 +9,7 @@ public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.FieldTheory.Finite.Basic
+import TauCeti.Data.ZMod.OrderOf
 public import Mathlib.Data.Nat.Totient
 public import Mathlib.Data.ZMod.Units
 public import TauCeti.Data.Nat.GCD
@@ -30,9 +31,13 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `TauCeti.EisensteinSeries.nonempty_gammaSet_iff_coprime_val`.
 * `IsCoprime.exists_int_lifts` — a *pair* of coprime residues mod `d` lifts to a coprime pair
   of integers. Ported from the AINTLIB `LeanModularForms` project
-  (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); its consumer is the
+  (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); its consumers are the
   strong approximation theorem `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective` in
-  `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Basic.lean`.
+  `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Basic.lean`,
+  `TauCeti.gamma1CuspLabel_surjective` in
+  `TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/Gamma1.lean`, and
+  `TauCeti.EisensteinSeries.nonempty_gammaSet_intCast_iff` in
+  `TauCeti/NumberTheory/ModularForms/EisensteinSeries/GammaSet.lean`.
 * `ZMod.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left` — a lowered unit homomorphism
   stays lowered after restricting to a multiple of its modulus.
 * `ZMod.exists_unitOfCoprime_eq` — every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural
@@ -56,8 +61,15 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   proves it through a product of primes of `l` (`primeProductCoprime` and two supports), which is
   not ported.
 * `ZMod.unitOfCoprime_mul` — `ZMod.unitOfCoprime` is multiplicative in its numerator.
+* `ZMod.val_mul_unitOfCoprime` — the least nonnegative representative of `c b` is `b c₀ mod d`
+  for a unit `c` and the class of `b`. Its consumer is the positive smoothing of the Stickelberger
+  element in `TauCeti/NumberTheory/Cyclotomic/Stickelberger/Smoothing.lean`.
 * `ZMod.unitsMap_unitOfCoprime` — `ZMod.unitsMap` sends the class of `a` modulo `n` to the
   class of `a` modulo a divisor of `n`.
+* `ZMod.unitOfCoprime_mem_ker_unitsMap_iff` — the class of `a` prime to `n` lies in the kernel
+  of `ZMod.unitsMap` to a divisor `m` of `n` exactly when `a ≡ 1 (mod m)`. Its consumer is the
+  group form of the Jacobi symbol on the class of `1` in
+  `TauCeti/NumberTheory/LegendreSymbol/JacobiSymbol/ClassOfOne.lean`.
 * `ZMod.eq_comp_unitsMap_of_comp_unitsMap_eq` — a unit homomorphism that agrees with a lowered
   one after restriction along `ZMod.unitsMap` is itself that lowered one, read at the smaller
   modulus. Its consumers are the descent arguments of
@@ -76,7 +88,8 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   equal. Its consumer is the cyclotomic normalization of the local Artin map in
   `TauCeti/NumberTheory/ClassFieldTheory/Local/ExplicitCyclotomicSymbol/ArtinMap.lean`.
 * `ZMod.orderOf_unitOfCoprime_pow_sub_one` — for `q > 1` and `N > 0`, the class of `q`
-  in `(ZMod (q ^ N - 1))ˣ` has exact order `N`; the coprimality it needs is
+  in `(ZMod (q ^ N - 1))ˣ` has exact order `N`, by `TauCeti.ZMod.orderOf_natCast_pow_sub_one`;
+  the coprimality it needs is
   `Nat.coprime_pow_sub_one` from `TauCeti/Data/Nat/GCD.lean`. Its consumers are the cyclotomic
   input to global class field theory in
   `TauCeti/NumberTheory/ClassFieldTheory/Global/Cyclotomic/Input.lean` and the cyclotomic
@@ -85,6 +98,9 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 * `ZMod.unitOfIsCoprime_div_eq_iff` — two quotients `a / b` and `a' / b'` of integer
   units modulo `n` agree exactly when `n ∣ a b' - a' b`. Its consumer is the cusp label of
   `Γ₀(N)` in `TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/Count.lean`.
+* `ZMod.mul_val_inv_modEq_one` — for `m` coprime to `n`, `(m⁻¹ : ZMod n).val` is an inverse of
+  `m` modulo `n`, as a `Nat.ModEq`. Its consumer is the distribution relation for `1 - ζ` in
+  `TauCeti/NumberTheory/Cyclotomic/DistributionRelation.lean`.
 -/
 
 public section
@@ -95,7 +111,7 @@ variable {d : ℕ}
 what consumers of `Nat.Coprime` want; `ZMod.isUnit_intCast_iff_isCoprime` states the same
 equivalence with `IsCoprime` over `ℤ` on the right, in the opposite argument order. -/
 theorem Int.isUnit_intCast_iff_gcd_eq_one {a : ℤ} :
-    IsUnit ((a : ℤ) : ZMod d) ↔ Int.gcd a d = 1 :=
+    IsUnit (a : ZMod d) ↔ Int.gcd a d = 1 :=
   (ZMod.isUnit_intCast_iff_isCoprime _ _).trans
     (isCoprime_comm.trans Int.isCoprime_iff_gcd_eq_one)
 
@@ -115,6 +131,13 @@ theorem ZMod.natAbs_cast (x : ZMod d) : (ZMod.cast x : ℤ).natAbs = x.val := by
     -- `Int.natAbs`
     rfl
   · rw [ZMod.cast_eq_val, Int.natAbs_natCast]
+
+/-- For `m` coprime to `n`, `(m⁻¹ : ZMod n).val` is an inverse of `m` modulo `n`: the
+`Nat.ModEq` form of Mathlib's `ZMod.mul_val_inv`. -/
+theorem ZMod.mul_val_inv_modEq_one {m n : ℕ} (h : m.Coprime n) :
+    m * ((m : ZMod n)⁻¹).val ≡ 1 [MOD n] := by
+  rw [← ZMod.natCast_eq_natCast_iff, Nat.cast_mul, Nat.cast_one]
+  exact ZMod.mul_val_inv h
 
 private lemma isCoprime_emod {a₁ c₁ : ℤ}
     (hac : IsCoprime (a₁ : ZMod d) (c₁ : ZMod d)) :
@@ -252,6 +275,12 @@ theorem ZMod.unitOfCoprime_mul {m n : ℕ} (hm : Nat.Coprime m d) (hn : Nat.Copr
       = ZMod.unitOfCoprime m hm * ZMod.unitOfCoprime n hn :=
   Units.ext (by push_cast [ZMod.coe_unitOfCoprime]; ring)
 
+/-- **The representative of a unit times `ZMod.unitOfCoprime b`.** The least nonnegative
+representative of `c b` is `b c₀ mod d`, where `c₀` is that of `c`. -/
+theorem ZMod.val_mul_unitOfCoprime {b : ℕ} (hb : b.Coprime d) (c : (ZMod d)ˣ) :
+    ((c * ZMod.unitOfCoprime b hb : (ZMod d)ˣ) : ZMod d).val = b * (c : ZMod d).val % d := by
+  simp [mul_comm, ZMod.coe_unitOfCoprime, ZMod.val_mul, ZMod.val_natCast]
+
 /-- **Reducing `ZMod.unitOfCoprime` to a divisor of the modulus.** The class of `a` modulo `n`
 reduces to the class of `a` modulo `m` for `m ∣ n`. -/
 @[simp]
@@ -260,6 +289,14 @@ theorem ZMod.unitsMap_unitOfCoprime {m n : ℕ} (hmn : m ∣ n) {a : ℕ} (ha : 
       ZMod.unitOfCoprime a (ha.coprime_dvd_right hmn) :=
   Units.ext (by rw [ZMod.unitsMap_val, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime,
     ZMod.cast_natCast hmn])
+
+/-- For `m ∣ n`, the class of a natural number `a` prime to `n` lies in the kernel of the reduction
+`ZMod.unitsMap : (ZMod n)ˣ →* (ZMod m)ˣ` exactly when `a ≡ 1 (mod m)`. -/
+theorem ZMod.unitOfCoprime_mem_ker_unitsMap_iff {m n : ℕ} (hmn : m ∣ n) {a : ℕ}
+    (ha : Nat.Coprime a n) :
+    ZMod.unitOfCoprime a ha ∈ (ZMod.unitsMap hmn).ker ↔ a ≡ 1 [MOD m] := by
+  rw [MonoidHom.mem_ker, ZMod.unitsMap_unitOfCoprime, Units.ext_iff, ZMod.coe_unitOfCoprime,
+    Units.val_one, ← Nat.cast_one, ZMod.natCast_eq_natCast_iff]
 
 /-- **A unit with an integer lift `c`, `c n ≡ 1` modulo a divisor `Q`, reduces to `n⁻¹`.** If the
 unit `u` of `ZMod N` is the class of an integer `c` with `c n = 1 + Q t`, where `Q ∣ N` and `n` is
@@ -317,43 +354,7 @@ theorem unitOfIsCoprime_div_eq_iff {n : ℕ} {a b a' b' : ℤ} (ha : IsCoprime a
 cyclotomic modulus in Milne's global existence argument. -/
 theorem orderOf_unitOfCoprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N ≠ 0) :
     orderOf (ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hq) hN)) = N := by
-  let _ : NeZero (q ^ N - 1) := ⟨by
-    have : 1 < q ^ N := one_lt_pow₀ hq hN
-    omega⟩
-  let m := q ^ N - 1
-  let u := ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hq) hN)
-  have hpow : 1 ≤ q ^ N := Nat.one_le_iff_ne_zero.mpr
-    (pow_ne_zero N (Nat.ne_zero_of_lt hq))
-  have huN : u ^ N = 1 := by
-    apply Units.ext
-    rw [Units.val_pow_eq_pow_val, ZMod.coe_unitOfCoprime, Units.val_one, ← Nat.cast_pow]
-    simpa only [Nat.cast_one] using
-      (ZMod.natCast_eq_natCast_iff (q ^ N) 1 m).2 (Nat.ModEq.symm <|
-        (Nat.modEq_iff_dvd' hpow).2 dvd_rfl)
-  have hdvd : orderOf u ∣ N := orderOf_dvd_of_pow_eq_one huN
-  apply Nat.dvd_antisymm hdvd
-  by_contra hnot
-  have hdle : orderOf u ≤ N := Nat.le_of_dvd (Nat.pos_of_ne_zero hN) hdvd
-  have hdlt : orderOf u < N := lt_of_le_of_ne hdle fun h ↦ hnot (h.symm ▸ dvd_rfl)
-  have hu := pow_orderOf_eq_one u
-  have hmod : q ^ orderOf u ≡ 1 [MOD m] := by
-    have hu' := congrArg Units.val hu
-    rw [Units.val_pow_eq_pow_val, ZMod.coe_unitOfCoprime, Units.val_one] at hu'
-    apply (ZMod.natCast_eq_natCast_iff (q ^ orderOf u) 1 m).1
-    rw [Nat.cast_pow]
-    simpa only [Nat.cast_one] using hu'
-  have hqpow : 1 ≤ q ^ orderOf u := Nat.one_le_iff_ne_zero.mpr
-    (pow_ne_zero _ (Nat.ne_zero_of_lt hq))
-  have hm_dvd : m ∣ q ^ orderOf u - 1 :=
-    (Nat.modEq_iff_dvd' hqpow).1 hmod.symm
-  have hsmall : q ^ orderOf u - 1 < m := by
-    dsimp [m]
-    have := Nat.pow_lt_pow_right hq hdlt
-    omega
-  exact (Nat.not_dvd_of_pos_of_lt (by
-    have hdpos := orderOf_pos u
-    have : 1 < q ^ orderOf u := one_lt_pow₀ hq hdpos.ne'
-    omega) hsmall) hm_dvd
+  rw [← orderOf_units, ZMod.coe_unitOfCoprime, TauCeti.ZMod.orderOf_natCast_pow_sub_one hq]
 
 end ZMod
 

@@ -53,6 +53,9 @@ These constructions underlie the standard representation of the symmetric group.
 * `TauCeti.ofMulActionEquivProdAugmentation`: the explicit splitting as trivial plus augmentation.
 * `TauCeti.augmentationProjectionOfIsUnit`: the equivariant projection onto the augmentation
   subrepresentation along the invariant line.
+* `TauCeti.augmentationLinearCombination`: the combinations `∑ₓ cₓ • s x` of a family `s`, with
+  coefficients summing to zero; `TauCeti.range_augmentationLinearCombination` shows that they are
+  all combinations of `s` when `s` sums to zero and `|X|` is a unit.
 * `TauCeti.dualRestrict_augmentationSubrepresentation_eq_zero_iff`: the linear forms vanishing on
   the augmentation subrepresentation are the multiples of the coefficient sum.
 * `TauCeti.finrank_augmentationSubrepresentation`: the dimension is `|X| - 1`.
@@ -343,19 +346,13 @@ theorem ofMulAction_permutationSum (g : G) :
 
 /-- The **invariant line** of `k[X]`: the line spanned by the sum of the standard basis, as a
 subrepresentation. -/
-noncomputable def invariantLine : Subrepresentation (Representation.ofMulAction k G X) where
-  toSubmodule := Submodule.span k {permutationSum k X}
-  apply_mem_toSubmodule g v hv := by
-    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hv
-    rw [map_smul, ofMulAction_permutationSum]
-    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)
+noncomputable def invariantLine : Subrepresentation (Representation.ofMulAction k G X) :=
+  Subrepresentation.spanSingleton (permutationSum k X) fun g => ⟨1, by simp⟩
 
 @[simp]
 theorem toSubmodule_invariantLine :
     (invariantLine k G X).toSubmodule = Submodule.span k {permutationSum k X} :=
-  -- `(rfl)`, not `rfl`: the body of `invariantLine` is not `@[expose]`d, so this must not be
-  -- inferred `@[defeq]`.
-  (rfl)
+  Subrepresentation.toSubmodule_spanSingleton _ _
 
 /-- The group acts trivially on the invariant line. -/
 @[simp]
@@ -378,7 +375,7 @@ basis. -/
 @[simp]
 theorem mem_invariantLine_iff {v : MonoidAlgebra k X} :
     v ∈ invariantLine k G X ↔ ∃ c : k, c • permutationSum k X = v :=
-  Submodule.mem_span_singleton
+  Subrepresentation.mem_spanSingleton
 
 end InvariantLine
 
@@ -526,6 +523,7 @@ theorem isCompl_invariantLine_augmentationSubrepresentation
         ?_, by abel⟩
       rw [LinearMap.mem_ker, map_sub, map_smul, sumCoords_basis_permutationSum, smul_eq_mul,
         Ring.inverse_mul_cancel_right _ _ h, sub_self]
+  rw [← toSubmodule_invariantLine k G X, ← toSubmodule_augmentationSubrepresentation k G X] at hsub
   exact Subrepresentation.isCompl_toSubmodule.mp hsub
 
 /-- The invariant line complements the augmentation subrepresentation exactly when the index
@@ -678,6 +676,52 @@ theorem isIntertwiningMap_augmentationProjectionOfIsUnit (h : IsUnit (Fintype.ca
 end Splitting
 
 end RingScalars
+
+/-! ### Linear combinations with coefficients summing to zero -/
+
+section LinearCombination
+
+variable (k : Type*) [CommSemiring k] (G : Type*) {X M : Type*} [Monoid G] [MulAction G X]
+  [AddCommMonoid M] [Module k M]
+
+/-- The linear combinations `c ↦ ∑ₓ cₓ • s x` of a family `s : X → M`, on the augmentation
+subrepresentation of `k[X]`: the linear extension of `s` along the standard basis, restricted to
+the vectors whose coefficients sum to zero. -/
+noncomputable def augmentationLinearCombination (s : X → M) :
+    (augmentationSubrepresentation k G X).toSubmodule →ₗ[k] M :=
+  (MonoidAlgebra.basis X k).constr k s ∘ₗ (augmentationSubrepresentation k G X).toSubmodule.subtype
+
+variable {k G}
+
+/-- The linear combination of `s` with the coefficients of `v`. -/
+theorem augmentationLinearCombination_apply [Fintype X] (s : X → M)
+    (v : (augmentationSubrepresentation k G X).toSubmodule) :
+    augmentationLinearCombination k G s v = ∑ x, (v : MonoidAlgebra k X).coeff x • s x := by
+  simp [augmentationLinearCombination, Module.Basis.constr_apply_fintype]
+
+end LinearCombination
+
+/-- **The combinations of a family summing to zero, with coefficients summing to zero**, are all of
+its combinations, when `|X|` is a unit: `s y` is the image of `δ_y - |X|⁻¹ ∑ₓ δₓ`. The hypothesis
+`∑ₓ s x = 0` cannot be dropped: a constant nonzero family has only the zero combination. -/
+theorem range_augmentationLinearCombination {k G X M : Type*} [CommRing k] [Monoid G]
+    [MulAction G X] [Fintype X] [AddCommGroup M] [Module k M] (h : IsUnit (Fintype.card X : k))
+    {s : X → M} (hs : ∑ x, s x = 0) :
+    LinearMap.range (augmentationLinearCombination k G s) = Submodule.span k (Set.range s) := by
+  classical
+  refine le_antisymm ?_ (Submodule.span_le.2 ?_)
+  · rintro _ ⟨v, rfl⟩
+    rw [augmentationLinearCombination_apply]
+    exact Submodule.sum_mem _ fun x _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨x, rfl⟩)
+  rintro _ ⟨y, rfl⟩
+  let v := MonoidAlgebra.single y 1 - (↑h.unit⁻¹ : k) • permutationSum k X
+  have hv : v ∈ augmentationSubrepresentation k G X := by
+    rw [mem_augmentationSubrepresentation_iff, map_sub, map_smul, sumCoords_basis_permutationSum,
+      smul_eq_mul, h.val_inv_mul]
+    simp
+  refine ⟨⟨v, hv⟩, ?_⟩
+  simp [v, augmentationLinearCombination_apply, sub_smul, Finset.sum_sub_distrib,
+    MonoidAlgebra.coeff_single, Finsupp.single_apply, ite_smul, ← Finset.smul_sum, hs]
 
 section Field
 

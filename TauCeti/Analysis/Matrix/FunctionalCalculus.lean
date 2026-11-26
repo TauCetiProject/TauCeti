@@ -14,7 +14,9 @@ public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 import Mathlib.LinearAlgebra.Lagrange
 import Mathlib.Topology.MetricSpace.ThickenedIndicator
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
 import TauCeti.Analysis.Matrix.L2OpNorm
+import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.Topology.Instances.Matrix
 
@@ -70,12 +72,14 @@ with a measurable random matrix `ω ↦ A ω` gives measurability of `ω ↦ cfc
   eigenvector of `A` with eigenvalue `μ`;
 * `Matrix.IsHermitian.toEuclideanLin_cfc` — the Euclidean operator of `cfc f A` is the symmetric
   functional calculus `LinearMap.IsSymmetric.cfc f` of `A.toEuclideanLin`;
+* `Matrix.IsHermitian.sum_smul_cfc_indicator`: the spectral decomposition
+  `A = ∑ c, c • cfc ({c}.indicator 1) A` over the eigenvalues `c` of `A`;
 * `Matrix.IsHermitian.toEuclideanLin_cfc_indicator` — the Euclidean operator of
   `cfc (Ω.indicator 1) A` is the orthogonal projection onto the point-spectral subspace
   `Module.End.pointSpectralSubspace A.toEuclideanLin Ω`;
-* `Matrix.IsHermitian.trace_cfc`, `Matrix.IsHermitian.trace_cfc_mul_cfc` and
-  `Matrix.IsHermitian.re_trace_cfc_mul_cfc` — the traces of `cfc f A` and of `cfc f A * cfc g B`
-  in terms of eigenvalues and eigenvector overlaps;
+* `Matrix.IsHermitian.trace_cfc`, `Matrix.IsHermitian.trace_cfc_eq_sum_eigenvalues₀`,
+  `Matrix.IsHermitian.trace_cfc_mul_cfc` and `Matrix.IsHermitian.re_trace_cfc_mul_cfc` — the
+  traces of `cfc f A` and of `cfc f A * cfc g B` in terms of eigenvalues and eigenvector overlaps;
 * `TauCeti.continuousOn_matrix_cfc` — for continuous `f`, `A ↦ cfc f A` is continuous on the
   Hermitian matrices;
 * `TauCeti.tendsto_matrix_cfc_fun` — pointwise convergence of functions gives convergence of
@@ -105,16 +109,14 @@ variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {A : Matrix 
 /-- Multiplying the functional calculus by its Hermitian matrix on the left multiplies the
 scalar function by the identity. -/
 theorem IsHermitian.mul_cfc (hA : A.IsHermitian) (f : ℝ → ℝ) :
-    A * cfc f A = cfc (fun x ↦ x * f x) A := by
-  rw [_root_.cfc_mul _ _ _ (A.finite_real_spectrum.continuousOn _)
-    (A.finite_real_spectrum.continuousOn _), cfc_id' ℝ A hA.isSelfAdjoint]
+    A * cfc f A = cfc (fun x ↦ x * f x) A :=
+  (TauCeti.cfc_id_mul f A (A.finite_real_spectrum.continuousOn _) hA.isSelfAdjoint).symm
 
 /-- Multiplying the functional calculus by its Hermitian matrix on the right multiplies the
 scalar function by the identity. -/
 theorem IsHermitian.cfc_mul (hA : A.IsHermitian) (f : ℝ → ℝ) :
-    cfc f A * A = cfc (fun x ↦ f x * x) A := by
-  rw [_root_.cfc_mul _ _ _ (A.finite_real_spectrum.continuousOn _)
-    (A.finite_real_spectrum.continuousOn _), cfc_id' ℝ A hA.isSelfAdjoint]
+    cfc f A * A = cfc (fun x ↦ f x * x) A :=
+  (TauCeti.cfc_mul_id f A (A.finite_real_spectrum.continuousOn _) hA.isSelfAdjoint).symm
 
 /-- **The functional calculus preserves intertwiners.** If a rectangular matrix `V` intertwines
 the Hermitian matrices `A` and `B`, that is `A * V = V * B`, then `cfc f A * V = V * cfc f B` for
@@ -249,6 +251,13 @@ theorem IsHermitian.trace_cfc (hA : A.IsHermitian) (f : ℝ → ℝ) :
     Unitary.coe_star_mul_self, one_mul, trace_diagonal]
   rfl
 
+/-- The trace of `cfc f A` is the sum of the values of `f` at the sorted eigenvalues
+`hA.eigenvalues₀`, which are those of the Euclidean operator `A.toEuclideanLin`. -/
+theorem IsHermitian.trace_cfc_eq_sum_eigenvalues₀ (hA : A.IsHermitian) (f : ℝ → ℝ) :
+    (cfc f A).trace = ∑ i, (f (hA.eigenvalues₀ i) : 𝕜) := by
+  rw [hA.trace_cfc]
+  exact hA.sum_comp_eigenvalues fun x ↦ (f x : 𝕜)
+
 /-- The entries of `U⋆ V`, for the eigenvector unitaries `U` of `A` and `V` of `B`, are the inner
 products of the eigenvectors of `A` with those of `B`. -/
 theorem IsHermitian.star_eigenvectorUnitary_mul_eigenvectorUnitary_apply {B : Matrix n n 𝕜}
@@ -296,6 +305,24 @@ theorem IsHermitian.re_trace_cfc_mul_cfc {B : Matrix n n 𝕜} (hA : A.IsHermiti
     RCLike.re (cfc f A * cfc g B).trace = ∑ i, ∑ j, f (hA.eigenvalues i) *
       g (hB.eigenvalues j) * ‖⟪hA.eigenvectorBasis i, hB.eigenvectorBasis j⟫_𝕜‖ ^ 2 := by
   simp only [hA.trace_cfc_mul_cfc hB, map_sum, RCLike.ofReal_re]
+
+
+/-- **Spectral decomposition.** The spectral projections `cfc ({c}.indicator 1) A` of a Hermitian
+matrix `A`, weighted by the eigenvalues `c`, sum to `A`. -/
+theorem IsHermitian.sum_smul_cfc_indicator (hA : A.IsHermitian) :
+    ∑ c ∈ Finset.univ.image hA.eigenvalues, c • cfc (Set.indicator {c} (1 : ℝ → ℝ)) A = A := by
+  have hspec := hA.spectrum_real_eq_range_eigenvalues
+  have hc (f : ℝ → ℝ) : ContinuousOn f (spectrum ℝ A) :=
+    (hspec ▸ Set.finite_range hA.eigenvalues).continuousOn f
+  calc ∑ c ∈ Finset.univ.image hA.eigenvalues, c • cfc (Set.indicator {c} (1 : ℝ → ℝ)) A
+      = cfc (∑ c ∈ Finset.univ.image hA.eigenvalues,
+          fun x ↦ c * Set.indicator {c} (1 : ℝ → ℝ) x) A := by
+        rw [cfc_sum _ _ _ fun c _ ↦ hc _]
+        exact Finset.sum_congr rfl fun c _ ↦ (cfc_const_mul c _ A (hc _)).symm
+    _ = cfc (fun x : ℝ ↦ x) A := cfc_congr fun x hx ↦ by
+        obtain ⟨i, rfl⟩ := hspec ▸ hx
+        simp [Set.indicator_apply]
+    _ = A := cfc_id' ℝ A hA.isSelfAdjoint
 
 end Matrix
 

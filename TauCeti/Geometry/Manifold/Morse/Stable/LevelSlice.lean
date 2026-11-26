@@ -9,6 +9,7 @@ public import TauCeti.Dynamics.Flow.LevelCrossing
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Logic.Relation
 
 /-!
 # Level slices of transverse trajectories of an adapted pseudo-gradient
@@ -42,6 +43,16 @@ vector space.
 * `TauCeti.IsAdaptedPseudoGradient.mem_Ioo_of_apply_flow_ne`: the points of a trajectory from `a`
   to a critical point `b`, possibly equal to `a`, whose value is not `f a` have values strictly
   between `f b` and `f a`.
+* `TauCeti.IsAdaptedPseudoGradient.FlowsTo`: a trajectory runs from one point to another.
+* `TauCeti.IsAdaptedPseudoGradient.apply_lt_apply_of_reflTransGen` and
+  `TauCeti.IsAdaptedPseudoGradient.eq_of_reflTransGen_of_reflTransGen`: `f` strictly decreases
+  along chains of trajectories, which therefore form a partial order.
+* `TauCeti.IsAdaptedPseudoGradient.eq_or_mfderiv_eq_zero_of_reflTransGen` and
+  `TauCeti.IsAdaptedPseudoGradient.finite_setOf_reflTransGen`: the points reached from `p` by
+  chains of trajectories are `p` and finitely many critical points.
+* `IsMorseSmale.manifoldMorseIndex_lt_of_reflTransGen` (in the namespace
+  `TauCeti.IsAdaptedPseudoGradient`): the Morse index strictly decreases along chains of
+  trajectories.
 * `TauCeti.IsAdaptedPseudoGradient.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet`: a
   trajectory from `a` to `b` crosses each value strictly between `f b` and `f a` exactly once.
 * `TauCeti.IsAdaptedPseudoGradient.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet`
@@ -77,6 +88,28 @@ vector space.
 * `IsMorseSmale.exists_unstableSet_inter_stableSet_level_isManifold` (in the namespace
   `TauCeti.IsAdaptedPseudoGradient`): under the Morse–Smale condition, the slice is a smooth
   manifold of dimension `ind a - ind b - 1`.
+* `TauCeti.IsAdaptedPseudoGradient.levelPoint`: the point of an orbit on a level, at the crossing
+  time `Flow.levelCrossingTime`, and the point itself when the orbit misses the level
+  (`TauCeti.IsAdaptedPseudoGradient.levelPoint_of_forall_ne`). Along a trajectory between
+  distinct critical points it is the unique point of the orbit on the level
+  (`TauCeti.IsAdaptedPseudoGradient.levelPoint_eq`), it lies on the trajectory
+  (`TauCeti.IsAdaptedPseudoGradient.mapsTo_levelPoint`), it is a bijection from the middle slice
+  onto the slice on the level
+  (`TauCeti.IsAdaptedPseudoGradient.bijOn_levelPoint_midpoint`) and determines the trajectory
+  (`TauCeti.IsAdaptedPseudoGradient.eq_of_levelPoint_eq_of_mem_midpoint`). At a point `w` of a
+  trajectory crossing the level, the level point of `w` is the limit of the level points along
+  points tending to `w` whose orbits eventually meet the level
+  (`TauCeti.IsAdaptedPseudoGradient.tendsto_levelPoint`).
+* `TauCeti.IsAdaptedPseudoGradient.upperLevelPoint` and
+  `TauCeti.IsAdaptedPseudoGradient.lowerLevelPoint`: the point `x` itself on one side of the
+  level `c` and its level point on the other. For `x` in `W^u(p)` with `c < f p`, resp. in
+  `W^s(r)` with `f r < c`, they are the points of the orbit of `x` on the levels `max (f x) c`,
+  resp. `min (f x) c`, and depend continuously on `x` there
+  (`TauCeti.IsAdaptedPseudoGradient.continuousOn_upperLevelPoint`,
+  `TauCeti.IsAdaptedPseudoGradient.continuousOn_lowerLevelPoint`); they are exchanged by
+  reversing the pseudo-gradient
+  (`TauCeti.IsAdaptedPseudoGradient.upperLevelPoint_eq_lowerLevelPoint_neg`,
+  `TauCeti.IsAdaptedPseudoGradient.lowerLevelPoint_eq_upperLevelPoint_neg`).
 
 ## References
 
@@ -174,6 +207,75 @@ theorem mem_Ioo_of_apply_flow_ne (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.s
     exact (hne rfl).elim
   · exact hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hab
       (hX.flow.isInvariant_unstableSet_inter_stableSet a b t hy)
+
+/-- **A trajectory runs from `a` to `b`**: the unstable manifold `W^u(a)` meets the stable manifold
+`W^s(b)`. Its reflexive and transitive closure `Relation.ReflTransGen hX.FlowsTo` relates `a` to `b`
+when `b = a` or a finite chain of trajectories, broken at critical points, runs from `a` to `b`. -/
+def FlowsTo (a b : M) : Prop :=
+  (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty
+
+omit hX in
+/-- A trajectory runs from `a` to `b` exactly when `W^u(a) ∩ W^s(b)` is nonempty. -/
+theorem flowsTo_iff {hX : IsAdaptedPseudoGradient f X} {a b : M} :
+    hX.FlowsTo a b ↔ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty :=
+  Iff.rfl
+
+omit hX in
+/-- **Points below `p` are critical.** A point reached from `p` by a chain of trajectories is `p`
+itself or a critical point of `f`, the forward limit of the last trajectory. -/
+theorem eq_or_mfderiv_eq_zero_of_reflTransGen {hX : IsAdaptedPseudoGradient f X} {p q : M}
+    (hpq : Relation.ReflTransGen hX.FlowsTo p q) :
+    q = p ∨ mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 := by
+  rcases hpq.cases_tail with rfl | ⟨b, -, hbq⟩
+  · exact Or.inl rfl
+  · obtain ⟨y, -, hy⟩ := flowsTo_iff.1 hbq
+    exact Or.inr (hX.mfderiv_eq_zero_of_mem_stableSet hy)
+
+omit hX in
+/-- **Finitely many points lie below `p`.** For a Morse function on a compact manifold, the points
+reached from `p` by chains of trajectories form a finite set: besides `p` they are critical points
+of `f`. -/
+theorem finite_setOf_reflTransGen {hX : IsAdaptedPseudoGradient f X} (hf : IsMorse 𝓘(ℝ, E) f)
+    (p : M) :
+    {q | Relation.ReflTransGen hX.FlowsTo p q}.Finite := by
+  refine (hf.finite_criticalPoints.insert p).subset fun q hq ↦ ?_
+  rcases eq_or_mfderiv_eq_zero_of_reflTransGen hq with rfl | hq
+  · exact mem_insert _ _
+  · exact mem_insert_of_mem _ (mem_criticalPoints_iff_mfderiv_eq_zero.2 hq)
+
+omit hX in
+/-- **The function strictly decreases along chains of trajectories.** If a chain of trajectories
+runs from `p` to a different point `q`, then `f q < f p`. -/
+theorem apply_lt_apply_of_reflTransGen {hX : IsAdaptedPseudoGradient f X} {p q : M}
+    (hpq : Relation.ReflTransGen hX.FlowsTo p q) (hqp : q ≠ p) :
+    f q < f p :=
+  -- A trajectory from `b` to `c ≠ b` lies strictly between their critical values.
+  hpq.lt_of_forall_ne (fun _ _ hbc hbc' ↦
+    let ⟨_, hy⟩ := flowsTo_iff.1 hbc
+    have hy := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hbc' hy
+    hy.1.trans hy.2) hqp
+
+omit hX in
+/-- **Chains of trajectories form a partial order.** If chains of trajectories run from `p` to `q`
+and from `q` to `p`, then `p = q`. -/
+theorem eq_of_reflTransGen_of_reflTransGen {hX : IsAdaptedPseudoGradient f X} {p q : M}
+    (hpq : Relation.ReflTransGen hX.FlowsTo p q)
+    (hqp : Relation.ReflTransGen hX.FlowsTo q p) :
+    p = q := by
+  by_contra hne
+  exact (apply_lt_apply_of_reflTransGen hpq (Ne.symm hne)).asymm
+    (apply_lt_apply_of_reflTransGen hqp hne)
+
+omit hX in
+/-- **The Morse index strictly decreases along chains of trajectories.** Under the Morse–Smale
+condition, if a chain of trajectories runs from `p` to a different point `q`, then
+`ind q < ind p`. -/
+theorem IsMorseSmale.manifoldMorseIndex_lt_of_reflTransGen {hX : IsAdaptedPseudoGradient f X}
+    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
+    (hpq : Relation.ReflTransGen hX.FlowsTo p q) (hqp : q ≠ p) :
+    manifoldMorseIndex 𝓘(ℝ, E) f q < manifoldMorseIndex 𝓘(ℝ, E) f p :=
+  hpq.lt_of_forall_ne (fun _ _ hbc hbc' ↦ h.manifoldMorseIndex_lt hf hbc'
+    (flowsTo_iff.1 hbc)) hqp
 
 /-- **A trajectory crosses each intermediate level exactly once.** Along a trajectory from a
 critical point `a` to a different critical point `b`, the function `f` strictly decreases from
@@ -394,8 +496,8 @@ private theorem level_slice (hf : IsMorse 𝓘(ℝ, E) f) (hab : a ≠ b)
       Submodule.span ℝ
           (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) ⊓
         (mvfderiv 𝓘(ℝ, E) f y).ker := by
-  obtain ⟨q, hyq, hq, hs⟩ := hX.exists_unstableSet_inter_stableSet_chart hf hy htr
-  rw [← hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr] at hs
+  obtain ⟨q, hyq, hq, hs⟩ := hX.exists_unstableSet_inter_stableSet_chart hX hf hy htr
+  rw [← hX.span_mtangentConeAt_unstableSet_inter_stableSet hX hf hy htr] at hs
   -- The level `{f = c}` is a regular level set near `y`, since `df_y (X y) < 0`.
   have hlevel : {x | f x = c} = f ⁻¹' {c} := by
     ext
@@ -434,7 +536,7 @@ theorem exists_unstableSet_inter_stableSet_level_chart (hf : IsMorse 𝓘(ℝ, E
           (mvfderiv 𝓘(ℝ, E) f y).ker : Submodule ℝ E) : Set E)
         (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) := by
   obtain ⟨⟨q, hyq, hq, hs⟩, -⟩ := hX.level_slice hf hab hy htr hyc
-  rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr] at hs
+  rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hX hf hy htr] at hs
   exact ⟨q, hyq, hq, hs⟩
 
 /-- **The tangent space of a transverse level slice.** If the unstable manifold of a critical point
@@ -452,7 +554,7 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet_level (hf : IsMorse 𝓘
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) ⊓
         (mvfderiv 𝓘(ℝ, E) f y).ker := by
   rw [(hX.level_slice hf hab hy htr hyc).2,
-    hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr]
+    hX.span_mtangentConeAt_unstableSet_inter_stableSet hX hf hy htr]
 
 /-- **The level slice has dimension the index difference minus one.** If the unstable manifold of a
 critical point `a` and the stable manifold of a different critical point `b` meet transversally at
@@ -482,7 +584,7 @@ theorem finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifo
       (hX.surjective_fderiv_comp_chartAt_symm hab hy), finrank_top,
     Module.finrank_self] at hker
   have hW :=
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf hy htr
+    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hX hf hy htr
   omega
 
 /-- **Index-difference-one level slices are discrete.** If the Morse indices of critical points `a`
@@ -549,6 +651,246 @@ theorem IsMorseSmale.exists_unstableSet_inter_stableSet_level_isManifold
     hyc] at hdim
   exact ⟨q, _, hyq, fun z hz ↦ contMDiffAt_of_mem_maximalAtlas hq hz,
     fun z hz ↦ contMDiffAt_symm_of_mem_maximalAtlas hq hz, isSliceChart_iff.1 hs, by omega⟩
+
+/-! ### Points of an orbit on a level -/
+
+section LevelPoint
+
+/-- The orbit of a point of `W^u(p)` below the level `c < f p` meets that level. -/
+theorem exists_flow_eq_of_mem_unstableSet (hf : IsMorse 𝓘(ℝ, E) f) {p x : M}
+    (hx : x ∈ hX.flow.unstableSet p) {c : ℝ} (hcp : c < f p) (hxc : f x < c) :
+    ∃ t, f (hX.flow t x) = c := by
+  obtain ⟨a, hpa, hxa⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet hf hx
+    (ne_of_apply_ne f (hxc.trans hcp).ne)
+  exact (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpa hxa
+    ((hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa hxa).1.trans hxc) hcp).exists
+
+/-- The orbit of a point of `W^s(r)` above the level `c > f r` meets that level. -/
+theorem exists_flow_eq_of_mem_stableSet (hf : IsMorse 𝓘(ℝ, E) f) {r x : M}
+    (hx : x ∈ hX.flow.stableSet r) {c : ℝ} (hrc : f r < c) (hcx : c < f x) :
+    ∃ t, f (hX.flow t x) = c := by
+  obtain ⟨b, hbr, hxb⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_stableSet hf hx
+    (ne_of_apply_ne f (hrc.trans hcx).ne')
+  exact (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hbr hxb hrc
+    (hcx.trans (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hbr hxb).2)).exists
+
+/-- The point of the orbit of `x` on the level `c`, at the crossing time
+`Flow.levelCrossingTime`, when the orbit meets that level, and `x` otherwise. -/
+noncomputable def levelPoint (c : ℝ) (x : M) : M :=
+  hX.flow (Flow.levelCrossingTime hX.flow f c x) x
+
+/-- The level point is the point of the orbit at the crossing time. -/
+theorem levelPoint_def (c : ℝ) (x : M) :
+    hX.levelPoint c x = hX.flow (Flow.levelCrossingTime hX.flow f c x) x :=
+  (rfl)
+
+/-- When the orbit of `x` meets the level `c`, its level point lies on that level. -/
+theorem apply_levelPoint {c : ℝ} {x : M} (h : ∃ t, f (hX.flow t x) = c) :
+    f (hX.levelPoint c x) = c :=
+  Flow.apply_flow_levelCrossingTime h
+
+/-- When the orbit of `x` never meets the level `c`, its level point is `x` itself. -/
+theorem levelPoint_of_forall_ne {c : ℝ} {x : M} (h : ∀ t, f (hX.flow t x) ≠ c) :
+    hX.levelPoint c x = x := by
+  rw [levelPoint_def, Flow.levelCrossingTime_of_forall_ne h, Flow.map_zero_apply]
+
+/-- Along a trajectory between distinct critical points, the level point is the unique point of
+the orbit on the level. -/
+theorem levelPoint_eq {a b x : M} (hab : a ≠ b)
+    (hx : x ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {t c : ℝ}
+    (ht : f (hX.flow t x) = c) : hX.levelPoint c x = hX.flow t x :=
+  congrArg (hX.flow · x) ((Flow.eq_levelCrossingTime_iff
+    (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hx) ⟨t, ht⟩).2 ht).symm
+
+/-- On a trajectory between distinct critical points crossing the level `c`, the level point lies
+on the trajectory and on the level. -/
+theorem mapsTo_levelPoint {a b : M} (hab : a ≠ b) {c : ℝ} (hbc : f b < c) (hca : c < f a) :
+    MapsTo (hX.levelPoint c) (hX.flow.unstableSet a ∩ hX.flow.stableSet b)
+      (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {z | f z = c}) := fun z hz ↦ by
+  obtain ⟨s, hs, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hab hz hbc hca
+  rw [hX.levelPoint_eq hab hz hs]
+  exact ⟨hX.flow.isInvariant_unstableSet_inter_stableSet a b s hz, hs⟩
+
+/-- **The level point is a bijection between slices.** Let `a ≠ b` be critical points and
+`f b < c < f a`. The level point is a bijection from the middle slice
+`W^u(a) ∩ W^s(b) ∩ {f = (f a + f b) / 2}` onto the slice `W^u(a) ∩ W^s(b) ∩ {f = c}`. -/
+theorem bijOn_levelPoint_midpoint {a b : M} (hab : a ≠ b) {c : ℝ} (hbc : f b < c)
+    (hca : c < f a) :
+    BijOn (hX.levelPoint c)
+      ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = (f a + f b) / 2})
+      ((hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = c}) :=
+  (hX.bijOn_flow_levelCrossingTime_midpoint hab hbc hca).congr fun z _ ↦
+    (hX.levelPoint_def c z).symm
+
+/-- **A level point determines its trajectory.** Points of the middle slices of trajectories from
+`a` to `b` and from `a'` to `b'`, all crossing the level `c`, with a common level point on `c`
+coincide, and so do their ends. -/
+theorem eq_of_levelPoint_eq_of_mem_midpoint {a b a' b' z z' : M} {c : ℝ} (hab : a ≠ b)
+    (hbc : f b < c) (hca : c < f a) (ha'b' : a' ≠ b') (hb'c : f b' < c) (hca' : c < f a')
+    (hz : z ∈ (hX.flow.unstableSet a ∩ hX.flow.stableSet b) ∩ {z | f z = (f a + f b) / 2})
+    (hz' : z' ∈ (hX.flow.unstableSet a' ∩ hX.flow.stableSet b') ∩
+      {z | f z = (f a' + f b') / 2})
+    (h : hX.levelPoint c z = hX.levelPoint c z') : a = a' ∧ b = b' ∧ z = z' := by
+  obtain ⟨hw, -⟩ := hX.mapsTo_levelPoint hab hbc hca hz.1
+  obtain ⟨hw', -⟩ := hX.mapsTo_levelPoint ha'b' hb'c hca' hz'.1
+  rw [← h] at hw'
+  obtain rfl : a = a' := by
+    by_contra hne
+    exact (Flow.disjoint_unstableSet hne).notMem_of_mem_left hw.1 hw'.1
+  obtain rfl : b = b' := by
+    by_contra hne
+    exact (Flow.disjoint_stableSet hne).notMem_of_mem_left hw.2 hw'.2
+  exact ⟨rfl, rfl, (hX.bijOn_levelPoint_midpoint hab hbc hca).injOn hz hz' h⟩
+
+/-- Moving a point of a trajectory between distinct critical points along its orbit does not move
+its level point, when the orbit crosses the level. -/
+theorem levelPoint_flow {a b x : M} (hab : a ≠ b)
+    (hx : x ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {c : ℝ}
+    (hex : ∃ t, f (hX.flow t x) = c) (t : ℝ) :
+    hX.levelPoint c (hX.flow t x) = hX.levelPoint c x := by
+  obtain ⟨s, hs⟩ := hex
+  exact (Flow.flow_levelCrossingTime_flow
+    (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hx) hs t).trans
+      (hX.levelPoint_eq hab hx hs).symm
+
+/-- **Level points converge.** If points `u i` whose orbits meet the level `c` converge to a point
+`w` of a trajectory from `a` to `b` crossing that level, then their level points converge to that
+of `w`. -/
+theorem tendsto_levelPoint {a b w : M}
+    (hw : w ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {c : ℝ} (hbc : f b < c)
+    (hca : c < f a) {ι : Type*} {l : Filter ι} {u : ι → M} (hu : Tendsto u l (𝓝 w))
+    (hex : ∀ᶠ i in l, ∃ t, f (hX.flow t (u i)) = c) :
+    Tendsto (fun i ↦ hX.levelPoint c (u i)) l (𝓝 (hX.levelPoint c w)) := by
+  have hab : a ≠ b := by rintro rfl; exact (hbc.trans hca).false
+  set T := {i | ∃ t, f (hX.flow t (u i)) = c}
+  rw [← tendsto_comap'_iff (i := ((↑) : T → ι)) (by rwa [Subtype.range_coe])]
+  obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto hw hbc hca (hu.comp tendsto_comap)
+    (s := fun i : T ↦ Flow.levelCrossingTime hX.flow f c (u i))
+    fun i ↦ Flow.apply_flow_levelCrossingTime i.property
+  rw [hX.levelPoint_eq hab hw hσ]
+  exact hlim
+
+/-- **Reversing the pseudo-gradient.** On a trajectory between distinct critical points crossing
+the level `c` of `f`, the level point for `-X` on the level `-c` of `-f` is the level point for
+`X` on the level `c`. -/
+theorem levelPoint_neg (hf : IsMorse 𝓘(ℝ, E) f) {a b x : M} (hab : a ≠ b)
+    (hx : x ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {c : ℝ}
+    (hex : ∃ t, f (hX.flow t x) = c) :
+    (hX.neg hf).levelPoint (-c) x = hX.levelPoint c x := by
+  obtain ⟨t, ht⟩ := hex
+  have hx' : x ∈ (hX.neg hf).flow.unstableSet b ∩ (hX.neg hf).flow.stableSet a := by
+    rw [← hX.stableSet_eq_unstableSet_neg hf, ← hX.unstableSet_eq_stableSet_neg hf]
+    exact ⟨hx.2, hx.1⟩
+  have hneg (s : ℝ) : (hX.neg hf).flow s x = hX.flow (-s) x := by
+    rw [hX.neg_flow hf, Flow.reverse_apply]
+  rw [hX.levelPoint_eq hab hx ht, (hX.neg hf).levelPoint_eq hab.symm hx' (t := -t)
+    (by rw [hneg, neg_neg, Pi.neg_apply, ht]), hneg, neg_neg]
+
+/-- The upper level point of `x` at `c`: the point `x` itself when `c ≤ f x`, and otherwise the
+level point `levelPoint c x`. It lies on the level `max (f x) c` when the orbit of `x` meets the
+level `c` (as on `W^u(p)` for `c < f p`), and is `x` otherwise. -/
+noncomputable def upperLevelPoint (c : ℝ) (x : M) : M :=
+  if c ≤ f x then x else hX.levelPoint c x
+
+/-- The lower level point of `x` at `c`: the point `x` itself when `f x ≤ c`, and otherwise the
+level point `levelPoint c x`. It lies on the level `min (f x) c` when the orbit of `x` meets the
+level `c` (as on `W^s(r)` for `f r < c`), and is `x` otherwise. -/
+noncomputable def lowerLevelPoint (c : ℝ) (x : M) : M :=
+  if f x ≤ c then x else hX.levelPoint c x
+
+/-- At or above the level, the upper level point is the point itself. -/
+theorem upperLevelPoint_of_le {c : ℝ} {x : M} (h : c ≤ f x) : hX.upperLevelPoint c x = x :=
+  ite_eq_left h
+
+/-- Below the level, the upper level point is the level point. -/
+theorem upperLevelPoint_of_lt {c : ℝ} {x : M} (h : f x < c) :
+    hX.upperLevelPoint c x = hX.levelPoint c x :=
+  ite_eq_right h.not_ge
+
+/-- At or below the level, the lower level point is the point itself. -/
+theorem lowerLevelPoint_of_le {c : ℝ} {x : M} (h : f x ≤ c) : hX.lowerLevelPoint c x = x :=
+  ite_eq_left h
+
+/-- Above the level, the lower level point is the level point. -/
+theorem lowerLevelPoint_of_lt {c : ℝ} {x : M} (h : c < f x) :
+    hX.lowerLevelPoint c x = hX.levelPoint c x :=
+  ite_eq_right h.not_ge
+
+/-- On `W^u(p)`, for `c < f p`, the upper level point on the level `c` is the lower level point
+for `-X` on the level `-c` of `-f`. -/
+theorem upperLevelPoint_eq_lowerLevelPoint_neg (hf : IsMorse 𝓘(ℝ, E) f) {p x : M}
+    (hx : x ∈ hX.flow.unstableSet p) {c : ℝ} (hcp : c < f p) :
+    hX.upperLevelPoint c x = (hX.neg hf).lowerLevelPoint (-c) x := by
+  rcases le_or_gt c (f x) with hcx | hxc
+  · rw [hX.upperLevelPoint_of_le hcx, (hX.neg hf).lowerLevelPoint_of_le (neg_le_neg hcx)]
+  · obtain ⟨a, hpa, hxa⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet hf hx
+      (ne_of_apply_ne f (hxc.trans hcp).ne)
+    rw [hX.upperLevelPoint_of_lt hxc, (hX.neg hf).lowerLevelPoint_of_lt (neg_lt_neg hxc),
+      hX.levelPoint_neg hf hpa hxa (hX.exists_flow_eq_of_mem_unstableSet hf hx hcp hxc)]
+
+/-- On `W^s(r)`, for `f r < c`, the lower level point on the level `c` is the upper level point
+for `-X` on the level `-c` of `-f`. -/
+theorem lowerLevelPoint_eq_upperLevelPoint_neg (hf : IsMorse 𝓘(ℝ, E) f) {r x : M}
+    (hx : x ∈ hX.flow.stableSet r) {c : ℝ} (hrc : f r < c) :
+    hX.lowerLevelPoint c x = (hX.neg hf).upperLevelPoint (-c) x := by
+  rcases le_or_gt (f x) c with hxc | hcx
+  · rw [hX.lowerLevelPoint_of_le hxc, (hX.neg hf).upperLevelPoint_of_le (neg_le_neg hxc)]
+  · obtain ⟨b, hbr, hxb⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_stableSet hf hx
+      (ne_of_apply_ne f (hrc.trans hcx).ne')
+    rw [hX.lowerLevelPoint_of_lt hcx, (hX.neg hf).upperLevelPoint_of_lt (neg_lt_neg hcx),
+      hX.levelPoint_neg hf hbr hxb (hX.exists_flow_eq_of_mem_stableSet hf hx hrc hcx)]
+
+/-- **The upper level point is continuous on an unstable manifold.** For `c < f p`, the point of
+the orbit of `x` on the level `max (f x) c` depends continuously on the point `x` of `W^u(p)`. -/
+theorem continuousOn_upperLevelPoint (hf : IsMorse 𝓘(ℝ, E) f) {p : M} {c : ℝ}
+    (hcp : c < f p) : ContinuousOn (hX.upperLevelPoint c) (hX.flow.unstableSet p) := by
+  intro y hy
+  have hcont : Continuous f := hX.mdifferentiable.continuous
+  have hsplit : hX.flow.unstableSet p =
+      (hX.flow.unstableSet p ∩ {x | c ≤ f x}) ∪ (hX.flow.unstableSet p ∩ {x | f x < c}) := by
+    rw [← inter_union_distrib_left, ← ofPred_or]
+    simp only [le_or_gt, ofPred_true, inter_univ]
+  rw [hsplit]
+  refine ContinuousWithinAt.union ?_ ?_
+  · -- Above the level, the upper level point is the point itself.
+    by_cases hyc : c ≤ f y
+    · exact continuousWithinAt_id.congr (fun x hx ↦ hX.upperLevelPoint_of_le hx.2)
+        (hX.upperLevelPoint_of_le hyc)
+    · exact continuousWithinAt_of_notMem_closure fun hcl ↦ hyc
+        (closure_minimal inter_subset_right (isClosed_le continuous_const hcont) hcl)
+  · -- Below the level, it is the level point, which converges along the trajectory through `y`.
+    by_cases hcl : y ∈ closure (hX.flow.unstableSet p ∩ {x | f x < c})
+    · have hcy : f y ≤ c :=
+        closure_lt_subset_le hcont continuous_const (closure_mono inter_subset_right hcl)
+      obtain ⟨a, hpa, hya⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet hf hy
+        (ne_of_apply_ne f (hcy.trans_lt hcp).ne)
+      have hfy := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpa hya
+      have hlim := hX.tendsto_levelPoint hya (hfy.1.trans_le hcy) hcp (u := id)
+        (l := 𝓝[hX.flow.unstableSet p ∩ {x | f x < c}] y) nhdsWithin_le_nhds
+        (eventually_nhdsWithin_of_forall fun x hx ↦
+          hX.exists_flow_eq_of_mem_unstableSet hf hx.1 hcp hx.2)
+      have hy' : hX.upperLevelPoint c y = hX.levelPoint c y := by
+        rcases hcy.lt_or_eq with hcy | hcy
+        · exact hX.upperLevelPoint_of_lt hcy
+        · rw [hX.upperLevelPoint_of_le hcy.ge,
+            hX.levelPoint_eq hpa hya (t := 0) (by rw [Flow.map_zero_apply, hcy]),
+            Flow.map_zero_apply]
+      rw [ContinuousWithinAt, hy']
+      exact hlim.congr' (eventually_nhdsWithin_of_forall fun x hx ↦
+        (hX.upperLevelPoint_of_lt hx.2).symm)
+    · exact continuousWithinAt_of_notMem_closure hcl
+
+/-- **The lower level point is continuous on a stable manifold.** For `f r < c`, the point of
+the orbit of `x` on the level `min (f x) c` depends continuously on the point `x` of `W^s(r)`. -/
+theorem continuousOn_lowerLevelPoint (hf : IsMorse 𝓘(ℝ, E) f) {r : M} {c : ℝ}
+    (hrc : f r < c) : ContinuousOn (hX.lowerLevelPoint c) (hX.flow.stableSet r) := by
+  -- Reversing the pseudo-gradient, it is an upper level point on an unstable manifold.
+  rw [hX.stableSet_eq_unstableSet_neg hf]
+  refine ((hX.neg hf).continuousOn_upperLevelPoint hf.neg (neg_lt_neg hrc)).congr fun x hx ↦ ?_
+  rw [← hX.stableSet_eq_unstableSet_neg hf] at hx
+  exact hX.lowerLevelPoint_eq_upperLevelPoint_neg hf hx hrc
+
+end LevelPoint
 
 end IsAdaptedPseudoGradient
 

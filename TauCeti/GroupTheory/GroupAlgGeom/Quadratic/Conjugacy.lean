@@ -57,6 +57,9 @@ statements are in one variable, as in the sources.
   radical is the normal closure of the equation.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.Rad_toWord_orientableCoeff_zero_one`: the same for the
   standard quadratic equation of type (2) with genus `0` and one coefficient.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.centralizerEquation`,
+  `TauCeti.GroupAlgGeom.Quadratic.Standard.mem_V_centralizerEquation`: the standard quadratic
+  equation `x⁻¹ c x c⁻¹ = 1`, whose solutions are the elements commuting with `c`.
 
 ## References
 
@@ -207,6 +210,32 @@ theorem Rad_toWord_orientableCoeff_zero_one [Subsingleton X] (hBP : IsBP G) (hG 
       normalClosure ((fun h => ⁅inr (FreeGroup.of (z 0)) * inl b⁻¹, inl h⁆) ''
         (centralizer {c 0} : Set G)) := by
   rw [toWord_orientableCoeff_zero_one, Rad_conjugacy_eq_normalClosure hBP hG (hc 0) hb]
+
+end Standard
+
+/-! ### The equation `x⁻¹ c x c⁻¹ = 1` -/
+
+namespace Standard
+
+variable {c : G} (x : X) (hc : c ≠ 1)
+
+/-- The standard quadratic equation `x⁻¹ c x c⁻¹ = 1` in the variable `x`, for `c ≠ 1`: the
+conjugacy equation with `d = c⁻¹`, whose solutions are the elements commuting with `c`. -/
+def centralizerEquation : Standard G X :=
+  .orientableCoeff 0 1 one_pos Fin.elim0 Fin.elim0 (fun _ ↦ x)
+    (Function.injective_of_subsingleton _) (fun _ ↦ c) (fun _ ↦ hc) c⁻¹ (inv_ne_one.2 hc)
+
+/-- The word of `x⁻¹ c x c⁻¹ = 1`. -/
+theorem toWord_centralizerEquation : (centralizerEquation x hc).toWord =
+    (inr (FreeGroup.of x))⁻¹ * inl c * inr (FreeGroup.of x) * inl c⁻¹ :=
+  toWord_orientableCoeff_zero_one
+
+variable {x hc} in
+/-- The solutions of `x⁻¹ c x c⁻¹ = 1` are the points whose value at `x` commutes with `c`. -/
+theorem mem_V_centralizerEquation {ι : G →* H} {v : X → H} :
+    v ∈ V ι {(centralizerEquation x hc).toWord} ↔ Commute (v x) (ι c) := by
+  rw [toWord_centralizerEquation, mem_V_conjugacy_iff (b := 1) (by simp)]
+  simp [mem_centralizer_singleton_iff, commute_iff_eq]
 
 end Standard
 
