@@ -120,6 +120,15 @@ theorem map_id_apply (a : HomotopyGroup N X x) :
     rw [map_mk, GenLoop.map_id]
     rfl
 
+/-- Any quantity depending on a base point and a homotopy class at that point takes the same value
+on a class as on its image under `HomotopyGroup.map` of the identity, which only renames the base
+point along an equality of points. -/
+theorem apply_map_id {α : Sort*} {x' : X} (f : ∀ x', HomotopyGroup N X x' → α)
+    (h : ContinuousMap.id X x = x') (a : HomotopyGroup N X x) :
+    f x' (map (ContinuousMap.id X) h a) = f x a := by
+  obtain rfl : x = x' := (ContinuousMap.id_apply x).symm.trans h
+  exact congrArg (f x) (map_id_apply a)
+
 /-- Composition law: the map induced by a composite continuous map is the composite of the
 induced maps on homotopy classes. -/
 @[simp]

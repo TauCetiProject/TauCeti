@@ -281,14 +281,8 @@ agree and `lineClass n` is `⟦lineSquare n⟧` carried along `HomotopyGroup.map
 theorem apply_lineClass {α : Sort*}
     (f : ∀ y, HomotopyGroup (Fin 2) (ComplexProjectiveSpace (n + 1)) y → α) :
     f _ (lineClass n) = f (affineParam 1 0) ⟦lineSquare n⟧ := by
-  have key : ∀ y (h : ContinuousMap.id _ (affineParam 1 0) = y),
-      f y (HomotopyGroup.map (ContinuousMap.id _) h ⟦lineSquare n⟧) =
-        f (affineParam 1 0) ⟦lineSquare n⟧ := by
-    intro y h
-    obtain rfl : affineParam 1 0 = y := (ContinuousMap.id_apply _).symm.trans h
-    exact congrArg (f _) (HomotopyGroup.map_id_apply _)
   rw [lineClass_def]
-  exact key _ _
+  exact HomotopyGroup.apply_map_id f _ _
 
 /-- The coordinate line carried to `[e₁]`, with its cube reindexed along `finSuccEquiv 1` so that
 the homotopy parameter of the boundary map comes first. -/

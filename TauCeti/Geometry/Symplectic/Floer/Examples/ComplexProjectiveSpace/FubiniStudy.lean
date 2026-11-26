@@ -113,7 +113,7 @@ local notation "c₁_FS" =>
       (ComplexProjectiveSpace.isSymplectic_fubiniStudyForm (n := n + 1)))
 
 /-- The Hurewicz class in `H₂(CPⁿ⁺¹; ℤ)` of the coordinate line. -/
-local notation "lineClass" =>
+local notation "lineH₂" =>
   hurewiczIntHom (ComplexProjectiveSpace (n + 1)) (ComplexProjectiveSpace.affineParam 1 0) 1
     (Additive.ofMul (⟦ComplexProjectiveSpace.lineSquare n⟧ :
       π_ 2 (ComplexProjectiveSpace (n + 1)) (ComplexProjectiveSpace.affineParam 1 0)))
@@ -127,13 +127,13 @@ namespace ComplexProjectiveSpace
 
 /-- **A line has Fubini–Study area `1`** on `H₂(CPⁿ⁺¹; ℤ)`. -/
 theorem homologySphereIntegralHom_fubiniStudyForm_hurewiczIntHom_lineSquare :
-    ω_FS lineClass = 1 := by
+    ω_FS lineH₂ = 1 := by
   rw [homologySphereIntegralHom_hurewiczIntHom, sphereIntegralHom_apply]
   exact sphereIntegral_fubiniStudyForm_lineSquare
 
 /-- **A line of `CPⁿ⁺¹` has first Chern number `n + 2`** on `H₂(CPⁿ⁺¹; ℤ)`. -/
 theorem homologyFirstChernHom_fubiniStudyForm_hurewiczIntHom_lineSquare :
-    c₁_FS lineClass = n + 2 := by
+    c₁_FS lineH₂ = n + 2 := by
   rw [SmoothTwoForm.IsNondegenerate.homologyFirstChernHom_hurewiczIntHom,
     firstChernHom_fubiniStudyForm_apply_mk_lineSquare]
 
@@ -228,7 +228,7 @@ theorem area_injective_projectiveSpace_fubiniStudyForm :
 `CPⁿ⁺¹` is sent to the generator `ℓ`. Not a simp lemma: simp already rewrites its left-hand side
 by `SphericalPeriodGroup.ofSingularHomology_hurewiczIntHom`. -/
 theorem ofSingularHomology_hurewiczIntHom_lineSquare :
-    ofSingularHomology ω_FS c₁_FS (sphericalClasses_eq_top_of_simplyConnectedSpace _) lineClass =
+    ofSingularHomology ω_FS c₁_FS (sphericalClasses_eq_top_of_simplyConnectedSpace _) lineH₂ =
       ℓ := by
   rw [ofSingularHomology_hurewiczIntHom, projectiveSpaceGenerator_eq_ofHomotopyGroup_lineSquare]
 
@@ -288,7 +288,7 @@ theorem toLaurentSeries_coefficientComparison_lineSquare_single {R : Type*}
         (coefficientComparison
           (ofSingularHomology ω_FS c₁_FS (sphericalClasses_eq_top_of_simplyConnectedSpace _))
           (area_ofSingularHomology (sphericalClasses_eq_top_of_simplyConnectedSpace _))
-          (single (k • lineClass) r)) =
+          (single (k • lineH₂) r)) =
       HahnSeries.single k r := by
   rw [coefficientComparison_single, map_zsmul, ofSingularHomology_hurewiczIntHom_lineSquare]
   exact toLaurentSeries_single_neg_zsmul_projectiveSpaceGenerator_fubiniStudyForm k r
