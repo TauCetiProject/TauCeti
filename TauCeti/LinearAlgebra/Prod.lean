@@ -232,6 +232,74 @@ theorem exists_prodCongr_eq_iff {g : (M₁ × M₂) ≃ₗ[R] M₁ × M₂} :
   refine ⟨ofBijective _ hb₁, ofBijective _ hb₂, ?_⟩
   ext x <;> simp [hg x]
 
+/-- A product `e₁.prodCongr e₂` of automorphisms maps `M₁ × 0` onto itself. -/
+theorem map_range_inl_prodCongr (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) :
+    (LinearMap.range (LinearMap.inl R M₁ M₂)).map (e₁.prodCongr e₂ : (M₁ × M₂) →ₗ[R] M₁ × M₂) =
+      LinearMap.range (LinearMap.inl R M₁ M₂) := by
+  rw [← LinearMap.range_comp, show (e₁.prodCongr e₂ : (M₁ × M₂) →ₗ[R] M₁ × M₂) ∘ₗ
+    LinearMap.inl R M₁ M₂ = LinearMap.inl R M₁ M₂ ∘ₗ (e₁ : M₁ →ₗ[R] M₁) by ext <;> simp]
+  exact range_comp e₁ _
+
+/-- A product `e₁.prodCongr e₂` of automorphisms maps `0 × M₂` onto itself. -/
+theorem map_range_inr_prodCongr (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) :
+    (LinearMap.range (LinearMap.inr R M₁ M₂)).map (e₁.prodCongr e₂ : (M₁ × M₂) →ₗ[R] M₁ × M₂) =
+      LinearMap.range (LinearMap.inr R M₁ M₂) := by
+  rw [← LinearMap.range_comp, show (e₁.prodCongr e₂ : (M₁ × M₂) →ₗ[R] M₁ × M₂) ∘ₗ
+    LinearMap.inr R M₁ M₂ = LinearMap.inr R M₁ M₂ ∘ₗ (e₂ : M₂ →ₗ[R] M₂) by ext <;> simp]
+  exact range_comp e₂ _
+
+/-- A linear automorphism of `M₁ × M₂` is block lower triangular,
+`e₁.skewProd e₂ f : (x, y) ↦ (e₁ x, e₂ y + f x)` for automorphisms `e₁`, `e₂` of the factors,
+exactly when it maps `0 × M₂` onto `0 × M₂`. -/
+theorem exists_skewProd_eq_iff {M₂ : Type*} [AddCommGroup M₂] [Module R M₂]
+    {g : (M₁ × M₂) ≃ₗ[R] M₁ × M₂} :
+    (∃ (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) (f : M₁ →ₗ[R] M₂), e₁.skewProd e₂ f = g) ↔
+      (LinearMap.range (LinearMap.inr R M₁ M₂)).map (g : (M₁ × M₂) →ₗ[R] M₁ × M₂) =
+        LinearMap.range (LinearMap.inr R M₁ M₂) := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨e₁, e₂, f, rfl⟩
+    ext ⟨x, y⟩
+    simp only [Submodule.mem_map, LinearMap.mem_range, LinearMap.inr_apply, coe_coe,
+      skewProd_apply, map_zero, add_zero, exists_exists_eq_and, Prod.mk.injEq]
+    exact ⟨fun ⟨_, hx, _⟩ ↦ ⟨y, hx, rfl⟩, fun ⟨_, hx, hy⟩ ↦
+      ⟨e₂.symm y, hx, by simp [← hy]⟩⟩
+  have hmem (y : M₂) : g (0, y) ∈ LinearMap.range (LinearMap.inr R M₁ M₂) :=
+    h ▸ Submodule.mem_map_of_mem ⟨y, rfl⟩
+  have h₁ (y : M₂) : (g (0, y)).1 = 0 := by
+    obtain ⟨z, hz⟩ := hmem y
+    rw [← hz, LinearMap.inr_apply]
+  have h₂ (y : M₂) : ∃ z, g (0, z) = (0, y) := by
+    have : ((0, y) : M₁ × M₂) ∈ (LinearMap.range (LinearMap.inr R M₁ M₂)).map
+        (g : (M₁ × M₂) →ₗ[R] M₁ × M₂) := h.symm ▸ ⟨y, rfl⟩
+    obtain ⟨_, ⟨z, rfl⟩, hz⟩ := this
+    exact ⟨z, hz⟩
+  -- The automorphism `g` is `(x, y) ↦ (a x, d y + c x)` for its three blocks.
+  have hg (x : M₁ × M₂) : g x = ((g (x.1, 0)).1, (g (0, x.2)).2 + (g (x.1, 0)).2) := by
+    conv_lhs => rw [← Prod.fst_add_snd x, map_add]
+    ext <;> simp [h₁, add_comm]
+  have hb₂ : Function.Bijective
+      (LinearMap.snd R M₁ M₂ ∘ₗ g.toLinearMap ∘ₗ LinearMap.inr R M₁ M₂) := by
+    refine ⟨fun a b hab ↦ ?_, fun y ↦ ?_⟩
+    · have : g (0, a) = g (0, b) := Prod.ext (by rw [h₁, h₁]) hab
+      simpa using g.injective this
+    · obtain ⟨z, hz⟩ := h₂ y
+      exact ⟨z, by simp [hz]⟩
+  have hb₁ : Function.Bijective
+      (LinearMap.fst R M₁ M₂ ∘ₗ g.toLinearMap ∘ₗ LinearMap.inl R M₁ M₂) := by
+    refine ⟨fun a b hab ↦ ?_, fun x ↦ ⟨(g.symm (x, 0)).1, ?_⟩⟩
+    · -- `g (a, 0) - g (b, 0)` lies on `0 × M₂`, which is the image of `0 × M₂`.
+      obtain ⟨z, hz⟩ := h₂ ((g (a, 0)).2 - (g (b, 0)).2)
+      have : g (a, 0) = g (b, z) := by
+        rw [show ((b, z) : M₁ × M₂) = (b, 0) + (0, z) by simp, map_add, hz]
+        ext
+        · simpa using hab
+        · simp
+      simpa using congrArg Prod.fst (g.injective this)
+    · simpa using (congrArg Prod.fst (hg (g.symm (x, 0)))).symm
+  refine ⟨ofBijective _ hb₁, ofBijective _ hb₂,
+    LinearMap.snd R M₁ M₂ ∘ₗ g.toLinearMap ∘ₗ LinearMap.inl R M₁ M₂, ?_⟩
+  ext x <;> simp [hg x, skewProd_apply]
+
 end Semiring
 
 section CommRing
