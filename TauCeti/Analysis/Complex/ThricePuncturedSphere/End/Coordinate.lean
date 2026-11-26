@@ -206,6 +206,18 @@ theorem one_sub_norm_sub_endCenter_le {q r : Puncture} (hq : q ≠ inf) (hr : r 
 theorem endSign_eq_one {q : Puncture} (hq : q ≠ inf) : q.endSign = 1 := by
   cases q <;> simp_all
 
+/-- Two distinct inputs `q` and `r` of a pair of pants are `0` and `1`, in some order. -/
+theorem eq_zero_and_eq_one_or_eq_one_and_eq_zero {q r : Puncture} (hq : q ≠ inf)
+    (hrq : r ≠ q) (hr : r ≠ inf) : q = zero ∧ r = one ∨ q = one ∧ r = zero := by
+  revert q r
+  decide
+
+/-- An end `p ≠ q` of a pair of pants with distinct inputs `q` and `r` is `r` or the output. -/
+theorem eq_or_eq_inf_of_ne {p q r : Puncture} (hq : q ≠ inf) (hrq : r ≠ q)
+    (hr : r ≠ inf) (hp : p ≠ q) : p = r ∨ p = inf := by
+  revert p q r
+  decide
+
 /-- The end centers are the two finite punctures, so they lie outside the punctured sphere. -/
 theorem endCenter_eq_zero_or_eq_one (q : Puncture) : q.endCenter = 0 ∨ q.endCenter = 1 := by
   cases q <;> simp
@@ -219,6 +231,14 @@ theorem ne_endCenter {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (q : Puncture) : w ≠
 theorem cylindricalEndLift_eq (q : Puncture) (z : ℂ) :
     q.cylindricalEndLift z = q.endCenter + q.endScale * Complex.exp (-(2 * (π : ℂ)) * z) := by
   cases q <;> simp <;> ring
+
+/-- Every end lift is the end lift at `0` scaled by twice the scale of the end and centred at the
+center of the end, `φ_q(z) = c_q + 2 b_q φ₀(z)`. So for an input `q ≠ ∞` the end `q` is the input
+end of center `c_q` and scale `2 b_q` of a sphere with moving input ends. -/
+theorem cylindricalEndLift_eq_add_mul_cylindricalEndLift_zero (q : Puncture) (z : ℂ) :
+    q.cylindricalEndLift z = q.endCenter + 2 * q.endScale * zero.cylindricalEndLift z := by
+  rw [cylindricalEndLift_eq, cylindricalEndLift_zero]
+  ring
 
 /-- In polar form, the end lift traverses the circle of radius `‖b_q‖ exp (-2πs)` about the
 center `c_q` of the end clockwise, starting at the argument of the scale `b_q`. -/
