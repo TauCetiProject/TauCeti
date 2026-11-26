@@ -210,20 +210,12 @@ theorem exists_coefficientDifferential_eq_and_fibrationComparison_subtypeVal_add
   let g : C(MoorePathFrom B a, MooreReplacement (ContinuousMap.subtypeVal {a})) :=
     (homeomorphPathsFromSingleton a).symm
   have hgf : g.comp f = .id _ := (homeomorphPathsFromSingleton a).symm_comp_toContinuousMap
-  let φ := cubicalChainModuleMap R
+  have hφ := M.cocycle.coefficientDifferential_mapRange_cubicalChainModuleLinearMap
     (e : C(Fiber (ContinuousMap.subtypeVal {a}) b, MoorePathBetween B a b))
     (Fiber.homeomorphPathsBetween_op_smul (a := a) (b := b))
-  let ψ := cubicalChainModuleMap R
+  have hψ := M.cocycle.coefficientDifferential_mapRange_cubicalChainModuleLinearMap
     (e.symm : C(MoorePathBetween B a b, Fiber (ContinuousMap.subtypeVal {a}) b))
     (Fiber.homeomorphPathsBetween_symm_op_smul (a := a) (b := b))
-  have hφl : φ.toLinearMap.restrictScalars R = cubicalChainModuleLinearMap R (e : C(_, _)) :=
-    LinearMap.ext fun x ↦ cubicalChainModuleMap_apply _ _ x
-  have hψl : ψ.toLinearMap.restrictScalars R = cubicalChainModuleLinearMap R (e.symm : C(_, _)) :=
-    LinearMap.ext fun x ↦ cubicalChainModuleMap_apply _ _ x
-  have hφ := M.cocycle.coefficientDifferential_mapRange _ _ φ
-  have hψ := M.cocycle.coefficientDifferential_mapRange _ _ ψ
-  rw [hφl] at hφ
-  rw [hψl] at hψ
   obtain ⟨u₁, w₁, hu₁, hw₁⟩ :=
     M.exists_coefficientDifferential_eq_and_basepointChangeComparison_add_eq hab
       (Finsupp.mapRange.linearMap (cubicalChainModuleLinearMap R (e : C(_, _))) u)

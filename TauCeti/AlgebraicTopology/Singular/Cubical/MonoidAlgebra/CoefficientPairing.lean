@@ -28,7 +28,10 @@ differential `D (σ e_x) = ∂σ e_x + (-1)^{|σ|} ∑_y (σ · m_{x,y}) e_y`. P
 
 commutes with the differentials (`TauCeti.coefficientPairing_coefficientDifferential`): the
 boundary is a derivation for the pairing, the pairing is balanced over the chains of `G`, and the
-cocycle equation turns the twisting part of `D` into the boundary of `c_x`.
+cocycle equation turns the twisting part of `D` into the boundary of `c_x`. Pushing the
+coefficients forward along an equivariant map of right `G`-spaces also commutes with the twisted
+differentials
+(`TauCeti.RowFiniteTwistingCocycle.coefficientDifferential_mapRange_cubicalChainModuleLinearMap`).
 
 Concatenating paths gives the instances of interest: the change of basepoint of a Brown model
 (`TauCeti.BrownModel.basepointChangeComparison`), and its comparison with the total space of a
@@ -142,6 +145,24 @@ theorem coefficientPairing_coefficientDifferential
       congr 2
       refine Finsupp.sum_congr fun y _ ↦ ?_
       rw [coefficientPairing_single, cubicalChainPairing_op_smul_left _ hf]
+
+/-- **Pushing the coefficients forward** along a `G`-equivariant map `h : X → X'` commutes with
+the twisted differentials, with coefficients in `C_*(X; R)` and in `C_*(X'; R)`. -/
+theorem RowFiniteTwistingCocycle.coefficientDifferential_mapRange_cubicalChainModuleLinearMap
+    (m : RowFiniteTwistingCocycle (R := R) (A := normalizedCubicalChainAlgebra G R)
+      (cubicalChainGrading G R) (cubicalChainDifferential G R) P ind)
+    {X' : Type uX} [TopologicalSpace X'] [MulAction Gᵐᵒᵖ X'] [ContinuousSMul Gᵐᵒᵖ X']
+    (h : C(X, X')) (hh : ∀ (g : G) (x : X), h (op g • x) = op g • h x)
+    (u : P →₀ cubicalChainModule X G R) :
+    m.coefficientDifferential (cubicalChainModule_isDGRightModule X' G R)
+        (Finsupp.mapRange.linearMap (cubicalChainModuleLinearMap R h) u) =
+      Finsupp.mapRange.linearMap (cubicalChainModuleLinearMap R h)
+        (m.coefficientDifferential (cubicalChainModule_isDGRightModule X G R) u) := by
+  have hl : (cubicalChainModuleMap R h hh).toLinearMap.restrictScalars R =
+      cubicalChainModuleLinearMap R h :=
+    LinearMap.ext (cubicalChainModuleMap_apply h hh)
+  rw [← hl]
+  exact m.coefficientDifferential_mapRange _ _ _ u
 
 end CoefficientPairing
 
