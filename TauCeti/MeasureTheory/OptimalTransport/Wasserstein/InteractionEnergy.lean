@@ -72,6 +72,8 @@ is the inequality that makes `ξ` a Wasserstein subgradient of the interaction e
 
 * `TauCeti.interactionEnergy_of_integrable`: for an integrable kernel, the interaction energy is
   half the Bochner integral of the kernel.
+* `TauCeti.interactionEnergy_eq_integral_prod`: for an integrable kernel, the interaction energy
+  as an integral over two independent copies of a measure carried to the law.
 * `TauCeti.interactionEnergy_map`: the interaction energy of a pushforward measure.
 * `TauCeti.interactionEnergy_map_add_right`: the interaction energy of a difference kernel is
   invariant under translation.
@@ -88,8 +90,6 @@ is the inequality that makes `ξ` a Wasserstein subgradient of the interaction e
   measurable.
 * `TauCeti.memLp_interactionGradient`: the interaction gradient at a law with finite second moment
   is square integrable.
-* `TauCeti.interactionEnergy_eq_integral_prod`: for a kernel of linear gradient growth, the
-  interaction energy as an integral over two independent copies of a measure carried to the law.
 * `StrongConvexOn.interactionEnergy_add_le`: the first-order inequality of the interaction energy
   along a coupling.
 
@@ -135,6 +135,16 @@ against the product measure. -/
 theorem interactionEnergy_of_integrable (h : Integrable W (μ.prod μ)) :
     interactionEnergy W μ = ((∫ z, W z ∂μ.prod μ) / 2 : ℝ) := by
   rw [interactionEnergy, potentialEnergy_of_integrable (h.div_const 2), integral_div]
+
+/-- For an integrable kernel, the interaction energy of `μ` as half the integral of the kernel over
+two independent copies of a measure `γ` carried to `μ` by a measure-preserving map `f`. -/
+theorem interactionEnergy_eq_integral_prod (h : Integrable W (μ.prod μ))
+    {α : Type*} [MeasurableSpace α] {γ : Measure α} [SFinite γ] {f : α → X}
+    (hf : MeasurePreserving f γ μ) :
+    interactionEnergy W μ = ((∫ p, W (f p.1, f p.2) ∂γ.prod γ) / 2 : ℝ) := by
+  have hmp := hf.prod hf
+  rw [interactionEnergy_of_integrable h, ← hmp.map_eq,
+    integral_map hmp.measurable.aemeasurable (hmp.map_eq ▸ h.aestronglyMeasurable), Prod.map_def]
 
 /-- The interaction energy is monotone in the kernel. -/
 theorem interactionEnergy_mono (h : W ≤ᵐ[μ.prod μ] W') :
@@ -465,13 +475,8 @@ omit [BorelSpace E] [SecondCountableTopology E] in
 `x ↦ ∫ ∇w (x - y) dμ(y)`, since the gradient of an even function is odd. -/
 theorem interactionGradient_of_even (hw : ∀ z, w (-z) = w z) (μ : Measure E) (x : E) :
     interactionGradient w μ x = ∫ y, gradient w (x - y) ∂μ := by
-  have hodd (z : E) : gradient w (-z) = -gradient w z := by
-    have h := gradient_comp_linearIsometryEquiv_right (LinearIsometryEquiv.neg ℝ (E := E)) w (-z)
-    have hw' : w ∘ LinearIsometryEquiv.neg ℝ (E := E) = w := funext fun z ↦ hw z
-    rw [hw'] at h
-    simpa using h
   have h (y : E) : gradient w (x - y) - gradient w (y - x) = (2 : ℝ) • gradient w (x - y) := by
-    rw [← neg_sub x y, hodd, sub_neg_eq_add, two_smul]
+    rw [← neg_sub x y, gradient_neg_of_even hw, sub_neg_eq_add, two_smul]
   simp_rw [interactionGradient_def, h, integral_smul, smul_smul]
   norm_num
 
@@ -543,24 +548,6 @@ private theorem add_inner_sub_inner_add_le (hw : StrongConvexOn univ m w)
     abel
   rwa [h₁, inner_sub_right, h₂] at this
 
-/-- The interaction energy of a measure `ρ` with finite second moment, for a kernel whose gradient
-grows at most linearly, as an integral over two independent copies of a measure `γ` carried to `ρ`
-by a measure-preserving map `f`. -/
-theorem interactionEnergy_eq_integral_prod (hwd : Differentiable ℝ w)
-    (hw' : ∀ x, ‖gradient w x‖ ≤ C * (1 + ‖x‖)) {α : Type*} [MeasurableSpace α] {γ : Measure α}
-    [SFinite γ] {ρ : Measure E} [IsFiniteMeasure ρ] (hρ : HasFiniteMoment 2 ρ) {f : α → E}
-    (hf : MeasurePreserving f γ ρ) :
-    interactionEnergy (fun z ↦ w (z.1 - z.2)) ρ =
-      ((∫ p, w (f p.1 - f p.2) ∂γ.prod γ) / 2 : ℝ) := by
-  have hmp := hf.prod hf
-  have hint : Integrable (fun z : E × E ↦ w (z.1 - z.2)) (ρ.prod ρ) :=
-    integrable_comp_of_norm_gradient_le hwd hw'
-      ((hρ.memLp_id.comp_fst ρ).sub (hρ.memLp_id.comp_snd ρ))
-  rw [interactionEnergy_of_integrable hint, ← hmp.map_eq,
-    integral_map (f := fun z : E × E ↦ w (z.1 - z.2)) hmp.measurable.aemeasurable
-      (hwd.continuous.comp (continuous_fst.sub continuous_snd)).aestronglyMeasurable,
-    Prod.map_def]
-
 /-- The linear term of the first-order inequality, integrated over two independent copies of a
 finite coupling `γ` of `μ` and `ν`, is twice the pairing of the interaction gradient at `μ` with
 the displacement. The proof exchanges the two copies and applies Fubini's theorem. -/
@@ -610,9 +597,13 @@ theorem _root_.StrongConvexOn.interactionEnergy_add_le (hw : StrongConvexOn univ
       interactionEnergy (fun z ↦ w (z.1 - z.2)) ν := by
   have : IsFiniteMeasure μ := by rw [← hγ.fst_eq]; infer_instance
   have : IsFiniteMeasure ν := by rw [← hγ.snd_eq]; infer_instance
-  rw [interactionEnergy_eq_integral_prod hwd hw' hμ hγ.measurePreserving_fst,
-    interactionEnergy_eq_integral_prod hwd hw' hν hγ.measurePreserving_snd, ← EReal.coe_add,
-    EReal.coe_le_coe_iff]
+  rw [interactionEnergy_eq_integral_prod (W := fun z ↦ w (z.1 - z.2))
+      (integrable_comp_of_norm_gradient_le hwd hw'
+        ((hμ.memLp_id.comp_fst μ).sub (hμ.memLp_id.comp_snd μ))) hγ.measurePreserving_fst,
+    interactionEnergy_eq_integral_prod (W := fun z ↦ w (z.1 - z.2))
+      (integrable_comp_of_norm_gradient_le hwd hw'
+        ((hν.memLp_id.comp_fst ν).sub (hν.memLp_id.comp_snd ν))) hγ.measurePreserving_snd,
+    ← EReal.coe_add, EReal.coe_le_coe_iff]
   -- Integrability over `γ ⊗ γ` of every term of the first-order condition.
   set P := γ.prod γ
   have hx : MemLp (fun z : E × E ↦ z.1) 2 γ :=
