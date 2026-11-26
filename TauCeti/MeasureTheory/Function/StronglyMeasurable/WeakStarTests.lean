@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.ScalarTests
 public import TauCeti.Analysis.LocallyConvex.WeakDual.Separating
-import Mathlib.MeasureTheory.MeasurableSpace.CountablyGenerated
 import Mathlib.Analysis.RCLike.Lemmas
 
 /-!
@@ -32,42 +31,6 @@ weak-star double-annihilator theorem.
 public section
 
 open MeasureTheory Set
-
-namespace TauCeti
-
-variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [MeasurableSpace 𝕜]
-  [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-
-/-- Any family of continuous functionals generating the norm-Borel σ-algebra separates points.
-This implication does not require a complete or separable target. -/
-theorem separating_of_evalMeasurableSpace_eq_borel {T : Set (StrongDual 𝕜 X)}
-    (hT : evalMeasurableSpace T = borel X) :
-    ∀ x : X, (∀ y ∈ T, y x = 0) → x = 0 := by
-  intro x hx
-  borelize X
-  let f : Bool → X := fun b ↦ if b then x else 0
-  have hf : Measurable[⊥, evalMeasurableSpace T] f := by
-    apply measurable_evalMeasurableSpace_iff.2
-    intro y hy
-    have heq : (fun b ↦ y (f b)) = fun _ ↦ 0 := by
-      funext b
-      cases b <;> simp [f, hx y hy]
-    rw [heq]
-    exact measurable_const
-  rw [hT] at hf
-  obtain ⟨c, hc⟩ := eq_const_of_measurable_bot hf
-  have ht := congrFun hc true
-  have hf := congrFun hc false
-  simpa [f] using ht.trans hf.symm
-
-/-- On a separable Banach space, scalar evaluations from an arbitrary family generate the
-norm-Borel σ-algebra exactly when the family separates points. -/
-theorem evalMeasurableSpace_eq_borel_iff_separating [SecondCountableTopology 𝕜] [BorelSpace 𝕜]
-    [CompleteSpace X] [TopologicalSpace.SeparableSpace X] {T : Set (StrongDual 𝕜 X)} :
-    evalMeasurableSpace T = borel X ↔ ∀ x : X, (∀ y ∈ T, y x = 0) → x = 0 :=
-  ⟨separating_of_evalMeasurableSpace_eq_borel, evalMeasurableSpace_eq_borel_of_separating⟩
-
-end TauCeti
 
 namespace Submodule
 

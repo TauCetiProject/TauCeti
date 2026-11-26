@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.LocallyConvex.WeakDual.Annihilator
+public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 
 /-!
 # Weak-star density and separation of points
 
-A linear subspace of the continuous dual of a normed space is weak-star dense exactly when
-its members separate points of the original space. This connects weak-star approximation of
-functionals with scalar tests of vector-valued functions. The space need not be complete or
-separable. The closure calculation uses the weak-star double-annihilator theorem
+For a topological module with separating continuous dual, a linear subspace of the dual is
+weak-star dense exactly when its members separate points of the original space. This connects
+weak-star approximation of functionals with scalar tests of vector-valued functions. The space
+need not be complete or separable. The closure calculation uses the weak-star double-annihilator
+theorem
 `Submodule.map_orthogonalBilin_flip_orthogonalBilin_eq_topologicalClosure`.
 
 ## References
@@ -27,7 +29,8 @@ open Set
 
 namespace Submodule
 
-variable {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+variable {𝕜 X : Type*} [RCLike 𝕜] [AddCommGroup X] [Module 𝕜 X] [TopologicalSpace X]
+  [SeparatingDual 𝕜 X]
 
 /-- A linear family of continuous functionals is weak-star dense exactly when its common kernel
 is zero. No completeness or separability assumption is needed. -/
@@ -39,10 +42,11 @@ theorem dense_toWeakDual_iff (Y : Submodule 𝕜 (StrongDual 𝕜 X)) :
     have hzero : ∀ y : WeakDual 𝕜 X, y x = 0 := by
       intro y
       exact (isClosed_eq (WeakDual.eval_continuous x) continuous_const).closure_subset_iff.2
-        (by rintro _ ⟨z, hz, rfl⟩; exact hx z hz) (hY y)
-    obtain ⟨y, -, hy⟩ := exists_dual_vector'' 𝕜 x
-    have hxnorm : (‖x‖ : 𝕜) = 0 := hy.symm.trans (hzero (StrongDual.toWeakDual y))
-    exact norm_eq_zero.1 (by exact_mod_cast hxnorm)
+        (by
+          rintro _ ⟨z, hz, rfl⟩
+          simpa only [Set.mem_ofPred_eq, StrongDual.toWeakDual_apply] using hx z hz) (hY y)
+    exact SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜) fun y ↦ by
+      simpa only [StrongDual.toWeakDual_apply] using hzero (StrongDual.toWeakDual y)
   · intro hY
     have hker : Y.orthogonalBilin (topDualPairing 𝕜 X) = ⊥ := by
       apply eq_bot_iff.2
