@@ -24,7 +24,8 @@ is integrable near `0` in the plane. This file proves:
   torus `(0, 2π]²`;
 * `TauCeti.IsLiquidWeights.integrableOn_lozengeKernel_integrand`: so is the integrand
   `e^{i(d₁θ + d₂φ)} / P_w(θ, φ)` of the kernel `G_w(d)`, which is therefore a genuine Lebesgue
-  integral.
+  integral; for any weights, the integrand is integrable on the torus whenever `1 / P_w` is
+  (`TauCeti.integrableOn_lozengeKernel_integrand_of_integrableOn`).
 
 ## References
 
@@ -60,16 +61,27 @@ theorem IsLiquidWeights.integrableOn_inv_lozengeCharFun (hw : IsLiquidWeights w�
       (isCompact_Icc (a := 0) (b := 2 * Real.pi)))).mono_set ?_
   exact prod_mono Ioc_subset_Icc_self Ioc_subset_Icc_self
 
+/-- **The kernel integrand is integrable** whenever `1 / P_w` is: for `d ∈ ℤ²`, the integrand
+`e^{i(d₁θ + d₂φ)} / P_w(θ, φ)` of `G_w(d)` is then integrable on the torus `(0, 2π]²`. -/
+theorem integrableOn_lozengeKernel_integrand_of_integrableOn
+    (hP : IntegrableOn (fun p : ℝ × ℝ => (lozengeCharFun w₁ w₂ w₃ p.1 p.2)⁻¹)
+      (Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi)))
+    (d : ℤ × ℤ) :
+    IntegrableOn (fun p : ℝ × ℝ =>
+        exp ((d.1 * p.1 + d.2 * p.2 : ℝ) * I) / lozengeCharFun w₁ w₂ w₃ p.1 p.2)
+      (Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi)) := by
+  simp_rw [div_eq_mul_inv]
+  refine hP.bdd_mul (c := 1) (by fun_prop) ?_
+  exact Filter.Eventually.of_forall fun p => by
+    rw [norm_exp_ofReal_mul_I]
+
 /-- **The kernel integrand is integrable.** For liquid weights and `d ∈ ℤ²`, the integrand
 `e^{i(d₁θ + d₂φ)} / P_w(θ, φ)` of `G_w(d)` is integrable on the torus `(0, 2π]²`. -/
 theorem IsLiquidWeights.integrableOn_lozengeKernel_integrand (hw : IsLiquidWeights w₁ w₂ w₃)
     (d : ℤ × ℤ) :
     IntegrableOn (fun p : ℝ × ℝ =>
         exp ((d.1 * p.1 + d.2 * p.2 : ℝ) * I) / lozengeCharFun w₁ w₂ w₃ p.1 p.2)
-      (Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi)) := by
-  simp_rw [div_eq_mul_inv]
-  refine hw.integrableOn_inv_lozengeCharFun.bdd_mul (c := 1) (by fun_prop) ?_
-  exact Filter.Eventually.of_forall fun p => by
-    rw [norm_exp_ofReal_mul_I]
+      (Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi)) :=
+  integrableOn_lozengeKernel_integrand_of_integrableOn hw.integrableOn_inv_lozengeCharFun d
 
 end TauCeti

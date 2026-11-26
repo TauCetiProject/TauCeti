@@ -114,7 +114,7 @@ private def grad (Φ : E → F) (p : (F →L[ℝ] ℝ) × E) : E :=
 /-- The vector field `∇ψ / ‖∇ψ‖²` along which the phase `ψ` has derivative one, with `‖∇ψ‖²`
 replaced by a smooth function bounded below by `δ` and equal to it where `‖∇ψ‖² ≥ 2 δ`. -/
 private def field (Φ : E → F) (δ : ℝ) (p : (F →L[ℝ] ℝ) × E) : E :=
-  (smoothLowerClamp δ (‖grad Φ p‖ ^ 2))⁻¹ • grad Φ p
+  (smoothLowerTruncation δ (2 * δ) (‖grad Φ p‖ ^ 2))⁻¹ • grad Φ p
 
 private theorem norm_grad (Φ : E → F) (p : (F →L[ℝ] ℝ) × E) : ‖grad Φ p‖ = ‖dphase Φ p‖ := by
   simp [grad]
@@ -126,15 +126,15 @@ private theorem contDiff_field {Φ : E → F} (hΦ : ContDiff ℝ ∞ Φ) {δ : 
     ContDiff ℝ ∞ (field Φ δ) := by
   have hg := contDiff_grad hΦ
   refine ContDiff.smul ?_ hg
-  exact ((contDiff_smoothLowerClamp δ).comp (hg.norm_sq ℝ)).inv fun p ↦
-    (hδ.trans_le (le_smoothLowerClamp hδ _)).ne'
+  exact ((contDiff_smoothLowerTruncation δ (2 * δ)).comp (hg.norm_sq ℝ)).inv fun p ↦
+    (hδ.trans_le (le_smoothLowerTruncation (by linarith) _)).ne'
 
 /-- Where `‖∇ψ‖² ≥ 2 δ`, the phase has derivative one along the vector field. -/
 private theorem dphase_field {Φ : E → F} {δ : ℝ} (hδ : 0 < δ) {p : (F →L[ℝ] ℝ) × E}
     (hp : 2 * δ ≤ ‖dphase Φ p‖ ^ 2) : dphase Φ p (field Φ δ p) = 1 := by
   have hpos : 0 < ‖dphase Φ p‖ ^ 2 := by linarith
-  rw [field, norm_grad, smoothLowerClamp_of_two_mul_le hδ hp, map_smul, smul_eq_mul, grad,
-    ← InnerProductSpace.toDual_symm_apply, real_inner_self_eq_norm_sq, ← grad, norm_grad]
+  rw [field, norm_grad, smoothLowerTruncation_of_right_le (by linarith) hp, map_smul, smul_eq_mul,
+    grad, ← InnerProductSpace.toDual_symm_apply, real_inner_self_eq_norm_sq, ← grad, norm_grad]
   exact inv_mul_cancel₀ hpos.ne'
 
 /-- The orthonormal basis of `E` used to write the divergence. -/

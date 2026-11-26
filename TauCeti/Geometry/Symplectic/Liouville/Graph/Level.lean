@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Geometry.Contact.Flat
 import TauCeti.Geometry.Manifold.Flow.Complete
 import TauCeti.Geometry.Manifold.RegularValue
+import TauCeti.Geometry.Symplectic.Hamiltonian.Reeb.Liouville
 
 /-!
 # The Liouville graph as a level set
@@ -116,6 +117,19 @@ theorem liouvilleGraphFunction_def [Nonempty S] (x : M) :
       f (invFunOn (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) (Ioi 0 ×ˢ univ) x).2 :=
   (rfl)
 
+variable (Z W ι f) in
+/-- The defining function of the Liouville graph is the radial coordinate divided by a value of
+`f`. -/
+theorem exists_liouvilleGraphFunction_eq_div [Nonempty S] (x : M) :
+    ∃ s, liouvilleGraphFunction Z W ι f x = liouvilleRadialCoordinate Z W x / f s :=
+  ⟨_, liouvilleGraphFunction_def x⟩
+
+/-- The defining function of the Liouville graph of a positive function is positive. -/
+theorem liouvilleGraphFunction_pos [Nonempty S] (hf : ∀ s, 0 < f s) (x : M) :
+    0 < liouvilleGraphFunction Z W ι f x := by
+  rw [liouvilleGraphFunction_def]
+  exact div_pos (liouvilleRadialCoordinate_pos Z W x) (hf _)
+
 namespace IsLiouvilleCompletion
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I (⊤ : ℕ∞) M] [T2Space M]
@@ -160,9 +174,8 @@ theorem liouvilleGraphFunction_eq_one_iff [Nonempty S] (h : IsLiouvilleCompletio
     liouvilleGraphFunction Z W ι f x = 1 ↔ x ∈ range (liouvilleGraph Z ι f) := by
   have hιW' : ∀ s, ι s ∈ frontier W := range_subset_iff.1 hιW.le
   refine ⟨fun hx ↦ ?_, ?_⟩
-  · have hxW : x ∈ Wᶜ := fun hxW ↦ (h.liouvilleGraphFunction_lt_one_of_mem hZ hf hxW).ne hx
-    rw [← (h.bijOn_flowOf_comp hZ hinj hιW).image_eq] at hxW
-    obtain ⟨⟨t, s⟩, ⟨ht, -⟩, rfl⟩ := hxW
+  · have hxW : x ∉ W := fun hxW ↦ (h.liouvilleGraphFunction_lt_one_of_mem hZ hf hxW).ne hx
+    obtain ⟨t, ht, s, rfl⟩ := h.exists_flowOf_eq_of_notMem hZ hιW.ge hxW
     have hfs : 0 < f s := one_pos.trans (hf s)
     rw [h.liouvilleGraphFunction_flowOf hZ hιW' hinj ht, div_eq_one_iff_eq hfs.ne'] at hx
     exact ⟨s, by rw [liouvilleGraph_apply, ← hx, Real.log_exp]⟩
@@ -178,9 +191,7 @@ theorem liouvilleGraphFunction_flowOf_eq_exp_mul [Nonempty S] (h : IsLiouvilleCo
     liouvilleGraphFunction Z W ι f (flowOf Z τ x) =
       Real.exp τ * liouvilleGraphFunction Z W ι f x := by
   have hιW' : ∀ s, ι s ∈ frontier W := range_subset_iff.1 hιW.le
-  have hxW : x ∈ Wᶜ := hx
-  rw [← (h.bijOn_flowOf_comp hZ hinj hιW).image_eq] at hxW
-  obtain ⟨⟨t, s⟩, ⟨ht, -⟩, rfl⟩ := hxW
+  obtain ⟨t, ht, s, rfl⟩ := h.exists_flowOf_eq_of_notMem hZ hιW.ge hx
   rw [h.flowOf_flowOf hZ] at hτ ⊢
   have hτt : 0 < τ + t :=
     not_le.1 fun hle ↦ hτ ((h.flowOf_mem_iff_of_mem_frontier hZ (hιW' s)).2 hle)
@@ -237,11 +248,9 @@ theorem mvfderiv_liouvilleGraphFunction_apply [Nonempty S] (h : IsLiouvilleCompl
     ((h.isCompleteVectorField hZ).mem_flowDomain 0 x) hF
   rw [flowOf_zero Z] at hcurve
   -- Along the trajectory `x = ψ_t(ι s)`, the flow stays outside `W` for times `τ > -t`.
-  have hxW : x ∈ Wᶜ := hx
-  rw [← (h.bijOn_flowOf_comp hZ hinj hιW).image_eq] at hxW
-  obtain ⟨⟨t, s⟩, ⟨ht, -⟩, hts⟩ := hxW
+  obtain ⟨t, ht, s, hts⟩ := h.exists_flowOf_eq_of_notMem hZ hιW.ge hx
   have heq : (F ∘ fun τ ↦ flowOf Z τ x) =ᶠ[𝓝 0] fun τ ↦ Real.exp τ * F x := by
-    filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 (mem_Ioi.1 ht))] with τ hτ
+    filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 ht)] with τ hτ
     refine h.liouvilleGraphFunction_flowOf_eq_exp_mul hZ hinj hιW hx ?_
     rw [← hts, h.flowOf_flowOf hZ,
       h.flowOf_mem_iff_of_mem_frontier hZ (range_subset_iff.1 hιW.le s), not_le]
@@ -259,11 +268,8 @@ theorem apply_hamiltonianVectorField_liouvilleGraphFunction [Nonempty S]
     (hf : ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f) (hf₀ : ∀ s, f s ≠ 0) (hx : x ∉ W) :
     α.val x ![ω.hamiltonianVectorField (liouvilleGraphFunction Z W ι f) x] =
       -liouvilleGraphFunction Z W ι f x := by
-  have hα : α.val x ![ω.hamiltonianVectorField (liouvilleGraphFunction Z W ι f) x] =
-      SmoothBundleForm.eval₂ ω x (Z x)
-        (ω.hamiltonianVectorField (liouvilleGraphFunction Z W ι f) x) := by
-    rw [← hZ, RoughForm.interior_apply, SmoothBundleForm.eval₂_apply]
-  rw [hα, SmoothBundleForm.eval₂_swap, h.isNondegenerate.eval₂_hamiltonianVectorField,
+  rw [h.isNondegenerate.apply_hamiltonianVectorField_of_interior_eq (z := Z x)
+      (fun v ↦ by rw [← hZ, RoughForm.interior_apply]),
     h.mvfderiv_liouvilleGraphFunction_apply hZ hι hιs hinj hιW hdim hf hf₀ hx]
 
 /-- **The Liouville graph is a level of its defining function, infinitesimally.** Let `ι` be a
@@ -318,21 +324,12 @@ theorem mfderiv_liouvilleGraph_reebVectorField [Nonempty S] (h : IsLiouvilleComp
   have hα₀ := h.isContactForm_mpullback_liouvilleGraph hZ hι hιW' hιs hdim hf hf₀
   have hx : liouvilleGraph Z ι f s ∉ W := h.liouvilleGraph_notMem hZ
     ((h.isCompleteVectorField hZ).mem_flowDomain _ _) (hιW' s).2 (hf1 s)
-  -- Apply the energy-hypersurface identity to `θ = -α`, for which `θ(X_F) = F = 1`.
-  have hθ : (-α).val (liouvilleGraph Z ι f s)
-      ![ω.hamiltonianVectorField (liouvilleGraphFunction Z W ι f) (liouvilleGraph Z ι f s)] =
-        1 := by
-    rw [Submodule.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply,
-      h.apply_hamiltonianVectorField_liouvilleGraphFunction hZ hι hιs hinj hιW hdim hf hf₀ hx,
-      neg_neg, h.liouvilleGraphFunction_liouvilleGraph hZ hιW' hinj (hf1 s)]
-  have key := h.isNondegenerate.mfderiv_reebVectorField_mpullback
-    (h.contMDiff_liouvilleGraph hZ hι hf hf₀)
-    (by rw [map_neg, SmoothForm.isContactForm_neg_iff]; exact hα₀)
-    (K := liouvilleGraphFunction Z W ι f) (s := s)
-    (by rw [Submodule.coe_neg, mextDeriv_neg, h.mextDeriv_eq, Pi.neg_apply])
-    (h.range_mfderiv_liouvilleGraph hZ hι hιs hinj hιW hdim hf hf1 s)
-  rw [hθ, inv_one, one_smul, map_neg, hα₀.reebVectorField_neg, map_neg] at key
-  exact neg_eq_iff_eq_neg.1 key
+  -- The Reeb field is `-(dF(Z))⁻¹ • X_F`, and `dF(Z) = F = 1` on the graph.
+  rw [h.isNondegenerate.mfderiv_reebVectorField_mpullback_of_interior_eq _ hα₀
+      (by rw [h.mextDeriv_eq]) (z := Z _) (fun v ↦ by rw [← hZ, RoughForm.interior_apply])
+      (h.range_mfderiv_liouvilleGraph hZ hι hιs hinj hιW hdim hf hf1 s),
+    h.mvfderiv_liouvilleGraphFunction_apply hZ hι hιs hinj hιW hdim hf hf₀ hx,
+    h.liouvilleGraphFunction_liouvilleGraph hZ hιW' hinj (hf1 s), inv_one, neg_smul, one_smul]
 
 /-- **The Liouville graph carries reversed Reeb orbits to orbits of its defining function.** Let
 `ι` be a smooth injective immersion onto the frontier of the Liouville domain, from a manifold of

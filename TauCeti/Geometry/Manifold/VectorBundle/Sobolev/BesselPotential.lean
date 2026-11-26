@@ -16,6 +16,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Normed.Operator.Banach
 
 /-!
@@ -155,21 +156,10 @@ variable [FiniteDimensional ℝ E] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
 /-- The chart localization of bundle tests by a cutoff `ψ` supported in the support of the `i`-th
 cutoff, as a continuous linear map into the test functions supported in `A.chartSupport i`. -/
 private def localizationCLM (i : ι) (ψ : C^∞⟮I, M; ℝ⟯) (hψ : tsupport ψ ⊆ tsupport (A.cutoff i)) :
-    BundleTest I F V →L[ℝ] 𝓓_{A.chartSupport i}(E, F) where
-  toLinearMap := (A.chartData i).trivialization.chartLocalization (A.chartData i).chart
-      (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ (A.chartSupport i)
-      (A.chartSupport_subset_target i)
-      ((A.mapsTo_chartSupport i).mono_left hψ) ∘ₗ
-    (compactlySupported I F ∞ V).subtype ∘ₗ (BundleTest.ofCompactlySupported I F V).symm.toLinearMap
-  cont := by
-    let e := fun x : M ↦ trivializationAt F V x
-    let U := fun x : M ↦ (⟨_, (trivializationAt F V x).open_baseSet⟩ : Opens M)
-    let := frameTopology (I := I) (n := ∞) e U fun _ ↦ subset_rfl
-    exact ((A.chartData i).trivialization.continuous_chartLocalization (A.chartData i).chart
-      (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ (A.chartSupport i)
-      (A.chartSupport_subset_target i) ((A.mapsTo_chartSupport i).mono_left hψ) e U
-      (fun _ ↦ subset_rfl) fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩).comp
-      (continuous_val_compactlySupportedTopology (I := I) (n := ∞) e U fun _ ↦ subset_rfl)
+    BundleTest I F V →L[ℝ] 𝓓_{A.chartSupport i}(E, F) :=
+  (A.chartData i).trivialization.chartLocalizationCLM (A.chartData i).chart
+    (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ (A.chartSupport i)
+    (A.chartSupport_subset_target i) ((A.mapsTo_chartSupport i).mono_left hψ)
 
 omit [FiniteDimensional ℝ F] in
 private theorem localizationCLM_apply_of_mem (i : ι) (ψ : C^∞⟮I, M; ℝ⟯)
@@ -178,14 +168,17 @@ private theorem localizationCLM_apply_of_mem (i : ι) (ψ : C^∞⟮I, M; ℝ⟯
     A.localizationCLM i ψ hψ s y = ψ ((A.chartData i).chart.symm y) •
       ((A.chartData i).trivialization
         ⟨(A.chartData i).chart.symm y, s ((A.chartData i).chart.symm y)⟩).2 :=
-  (A.chartData i).trivialization.chartLocalization_apply_of_mem _ _ _ _ _ _ _ _ hy
+by
+  rw [localizationCLM, Bundle.Trivialization.chartLocalizationCLM_apply]
+  exact (A.chartData i).trivialization.chartLocalization_apply_of_mem _ _ _ _ _ _ _ _ hy
 
 omit [FiniteDimensional ℝ F] in
 private theorem localizationCLM_apply_of_notMem (i : ι) (ψ : C^∞⟮I, M; ℝ⟯)
     (hψ : tsupport ψ ⊆ tsupport (A.cutoff i)) (s : BundleTest I F V) {y : E}
     (hy : y ∉ (A.chartData i).chart.target) :
-    A.localizationCLM i ψ hψ s y = 0 :=
-  (A.chartData i).trivialization.chartLocalization_apply_of_notMem _ _ _ _ _ _ _ _ hy
+    A.localizationCLM i ψ hψ s y = 0 := by
+  rw [localizationCLM, Bundle.Trivialization.chartLocalizationCLM_apply]
+  exact (A.chartData i).trivialization.chartLocalization_apply_of_notMem _ _ _ _ _ _ _ _ hy
 
 /-- The `j`-th coordinate functional of the fixed basis `Module.finBasis ℝ F` of the model fibre
 (chosen non-constructively), with complex values. -/
@@ -301,7 +294,8 @@ private theorem chartTestCLM_localizationCLM (i : ι) (ψ : C^∞⟮I, M; ℝ⟯
       (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset
       (TestFunction.ofSupportedIn (A.chartSupport_subset_target i) (A.localizationCLM i ψ hψ s)) x =
       ψ x • s x := by
-  rw [Bundle.Trivialization.coe_chartTestCLM]
+  rw [Bundle.Trivialization.coe_chartTestCLM, localizationCLM,
+    Bundle.Trivialization.chartLocalizationCLM_apply]
   refine (congr($((A.chartData i).trivialization.chartTestSection_chartLocalization
     (A.chartData i).chart (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ
     (A.chartSupport i) (A.chartSupport_subset_target i) ((A.mapsTo_chartSupport i).mono_left hψ)
@@ -712,8 +706,9 @@ theorem inclusion_inclusion {t : ℝ} (h₁ : r ≤ s) (h₂ : t ≤ r) (u : A.s
 
 /-- The inclusion `H^s ⊆ H^r` does not increase the norm. -/
 theorem norm_inclusion_apply_le (h : r ≤ s) (u : A.sobolevSpace s) : ‖A.inclusion h u‖ ≤ ‖u‖ := by
-  rw [← Submodule.norm_coe, ← Submodule.norm_coe u, PiLp.norm_eq_of_L2, PiLp.norm_eq_of_L2]
-  gcongr with k
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe u]
+  refine PiLp.norm_mono fun k ↦ ?_
+  rw [inclusion_apply]
   exact BesselPotentialSpace.norm_inclusion_apply_le h _
 
 theorem norm_inclusion_le (h : r ≤ s) : ‖A.inclusion h‖ ≤ 1 :=

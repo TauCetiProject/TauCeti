@@ -315,13 +315,8 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau {R : Type
   by_cases hν : (ofPartition ν).colLen 0 ≤ N
   · -- The `λ`-Yamanouchi tableaux with `λ + c(T) = ν` have entries below `ℓ(ν) ≤ N`.
     congr 1
-    rw [natCard_lrTableau_eq_natCard_isYamanouchi, ← Fintype.card_subtype,
-      ← Nat.card_eq_fintype_card]
-    exact Nat.card_congr <| Equiv.subtypeSubtypeEquivSubtype
-      (q := fun T : SemistandardYoungTableau μ =>
-        T.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + T.content i = (ofPartition ν).rowLen i)
-      fun hT i c hc =>
-        (SemistandardYoungTableau.apply_lt_colLen_zero_of_rowLen_add_content_eq hT.2 hc).trans_le hν
+    rw [← Fintype.card_subtype]
+    exact card_boundedYamanouchi_eq_natCard_lrTableau hν
   · rw [diagramSchurPoly_eq_zero_of_lt_colLen (Nat.lt_of_not_le hν), smul_zero, smul_zero]
 
 end TauCeti

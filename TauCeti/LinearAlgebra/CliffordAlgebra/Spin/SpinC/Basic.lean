@@ -88,6 +88,8 @@ Taubes's identification `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` at the l
 * `CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`,
   `CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`: charge conjugation is twisting by the
   inverse determinant, and the conjugate of `x` twisted by `z` is `x` twisted by `(det x)⁻¹ z⁻¹`.
+* `CliffordAlgebra.spinCGroup.chargeConj_mulCircle`: charge conjugation of a product with the
+  central circle, `chargeConj (mulCircle (a, w)) = mulCircle (chargeConj a, w⁻¹)`.
 * `CliffordAlgebra.spinCGroup.chargeConj_eq_self_iff`: the fixed points of charge conjugation are
   the elements with trivial determinant character.
 * `QuadraticMap.Isometry.spinCGroupMap_injective`: the induced map is injective when the induced
@@ -358,6 +360,16 @@ theorem toSpecialOrthogonal_comp_mulCircle :
       (toSpecialOrthogonal Q hQ).comp (MonoidHom.fst _ _) :=
   MonoidHom.ext (toSpecialOrthogonal_mulCircle Q hQ)
 
+/-- Multiplication by the central circle lifts the first projection along the rotation
+homomorphism into the general linear group: `π ∘ μ = π ∘ fst` for `π : Spinᶜ(Q) → SO(Q) ⊆ GL(M)`.
+This is the compatibility that makes the twist of a `Spinᶜ` structure a `Spinᶜ` structure. -/
+theorem subtype_comp_toSpecialOrthogonal_comp_mulCircle :
+    ((specialOrthogonalGroup Q).subtype.comp (toSpecialOrthogonal Q hQ)).comp
+        (mulCircle Q hQ) =
+      ((specialOrthogonalGroup Q).subtype.comp (toSpecialOrthogonal Q hQ)).comp
+        (MonoidHom.fst _ _) := by
+  rw [MonoidHom.comp_assoc, toSpecialOrthogonal_comp_mulCircle, MonoidHom.comp_assoc]
+
 /-- **The kernel of the rotation homomorphism `Spinᶜ(Q) → SO(Q)` is the central circle**
 `{[1, z]}`, for a finite-dimensional nondegenerate quadratic form. -/
 theorem mem_ker_toSpecialOrthogonal_iff [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate)
@@ -561,6 +573,15 @@ theorem toSpecialOrthogonal_comp_chargeConj :
       toSpecialOrthogonal Q hQ :=
   MonoidHom.ext (toSpecialOrthogonal_chargeConj Q hQ)
 
+/-- **Charge conjugation covers the identity rotation**, into the general linear group:
+`π ∘ chargeConj = π` for `π : Spinᶜ(Q) → SO(Q) ⊆ GL(M)`. This is the compatibility that makes the
+charge conjugate of a `Spinᶜ` structure a `Spinᶜ` structure. -/
+theorem subtype_comp_toSpecialOrthogonal_comp_chargeConj :
+    ((specialOrthogonalGroup Q).subtype.comp (toSpecialOrthogonal Q hQ)).comp
+        (chargeConj Q hQ : spinCGroup Q hQ →* spinCGroup Q hQ) =
+      (specialOrthogonalGroup Q).subtype.comp (toSpecialOrthogonal Q hQ) := by
+  rw [MonoidHom.comp_assoc, toSpecialOrthogonal_comp_chargeConj]
+
 /-- **Charge conjugation is twisting by the inverse determinant**:
 `chargeConj x = x [1, (det x)⁻¹]`. Since `[s, z⁻¹] = [s, z] [1, (z²)⁻¹]`, the conjugate of a
 `Spinᶜ` structure `s` with determinant line `L` is `s` twisted by the line `L⁻¹`. -/
@@ -578,6 +599,15 @@ structure of an almost Hermitian four-manifold, `L = K⁻¹` and this is the iso
 theorem chargeConj_mul_ofCircle (x : spinCGroup Q hQ) (z : Circle) :
     chargeConj Q hQ (x * ofCircle Q hQ z) = x * ofCircle Q hQ ((det Q hQ x)⁻¹ * z⁻¹) := by
   rw [map_mul, chargeConj_ofCircle, chargeConj_eq_mul_ofCircle_inv_det, map_mul, mul_assoc]
+
+/-- **Charge conjugation of a product with the central circle**:
+`chargeConj (mulCircle (a, w)) = mulCircle (chargeConj a, w⁻¹)`, since charge conjugation
+inverts the central circle. This is the compatibility of charge conjugation with twisting a
+`Spinᶜ` structure by a principal `U(1)`-bundle: the conjugate of a twist by `L` is a twist of the
+conjugate by the inverse of `L`. -/
+theorem chargeConj_mulCircle (a : spinCGroup Q hQ) (w : Circle) :
+    chargeConj Q hQ (mulCircle Q hQ (a, w)) = mulCircle Q hQ (chargeConj Q hQ a, w⁻¹) := by
+  rw [mulCircle_apply, mulCircle_apply, map_mul, chargeConj_ofCircle]
 
 /-- An element is fixed by charge conjugation exactly when its determinant character is trivial. -/
 theorem chargeConj_eq_self_iff {x : spinCGroup Q hQ} :

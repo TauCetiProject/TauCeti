@@ -22,6 +22,10 @@ Mathlib's `image_closure_of_isCompact` identifies the image of a compact closure
 of the image; consequently a map into a Hausdorff space that is continuous on the closure of a
 relatively compact set sends it to a relatively compact set (`IsCompact.closure_image`).
 
+Mathlib's `ContinuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE` upgrades agreement on a punctured
+neighbourhood of a non-isolated point to agreement on a neighbourhood; evaluating at the point gives
+`ContinuousAt.eq_of_eventuallyEq_nhdsNE`.
+
 ## Main results
 
 * `TauCeti.isClosed_forall_eq`: `{ x : X | ∀ i, f i x = g i x }` is closed for continuous maps
@@ -32,6 +36,8 @@ relatively compact set sends it to a relatively compact set (`IsCompact.closure_
   as `y → b`, then `g b = f a` for maps into a Hausdorff space continuous at `a` and `b`.
 * `IsCompact.closure_image`: a map into a Hausdorff space, continuous on the closure of `s`, sends
   a set `s` with compact closure to a set with compact closure.
+* `ContinuousAt.eq_of_eventuallyEq_nhdsNE`: two maps into a Hausdorff space continuous at a
+  non-isolated point `x` that agree on a punctured neighbourhood of `x` agree at `x`.
 -/
 
 public section
@@ -81,3 +87,10 @@ theorem IsCompact.closure_image {X Y : Type*} [TopologicalSpace X] [TopologicalS
     (hf : ContinuousOn f (closure s)) : IsCompact (closure (f '' s)) := by
   rw [← image_closure_of_isCompact hs hf]
   exact hs.image_of_continuousOn hf
+
+/-- Two maps into a Hausdorff space continuous at a non-isolated point `x` that agree on a punctured
+neighbourhood of `x` agree at `x`. -/
+theorem ContinuousAt.eq_of_eventuallyEq_nhdsNE {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [T2Space Y] {f g : X → Y} {x : X} [(𝓝[≠] x).NeBot]
+    (hf : ContinuousAt f x) (hg : ContinuousAt g x) (h : f =ᶠ[𝓝[≠] x] g) : f x = g x :=
+  ((hf.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hg).1 h).self_of_nhds
