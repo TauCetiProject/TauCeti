@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import Mathlib.Analysis.Normed.Module.Normalize
+import TauCeti.Geometry.Manifold.Riemannian.Orientation.Preserving
 import TauCeti.Geometry.Manifold.Riemannian.Orientation.Rotation
 
 /-!

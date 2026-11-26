@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
+import TauCeti.Geometry.Manifold.Riemannian.Orientation.Preserving
 
 /-!
 # Regularity of the right-angle rotation on an oriented Riemannian surface
@@ -57,15 +58,6 @@ theorem rightAngleRotation_tangentSpace_congr
       (o.orientationAt q).rightAngleRotation w) := by
   subst hp hv
   rfl
-
-/-- On an oriented Riemannian surface, the volume form evaluated on a pair `![v₀, v₁]` is the
-area form `ω(v₀, v₁)` of the oriented tangent plane. -/
-theorem riemannianVolumeForm_eq_areaForm (o : Manifold.Orientation I M (Fin 2)) {x : M}
-    (v₀ v₁ : TangentSpace I x) :
-    riemannianVolumeForm o x ![v₀, v₁] =
-      (letI := o.fact_finrank_tangentSpace x; (o.orientationAt x).areaForm v₀ v₁) := by
-  let := o.fact_finrank_tangentSpace x
-  rw [riemannianVolumeForm_apply, (o.orientationAt x).areaForm_to_volumeForm]
 
 /-- A pair of unit tangent vectors `(v₀, v₁)` satisfies `v₁ = J v₀` exactly when it has
 oriented area one, `vol(v₀, v₁) = 1`. -/
