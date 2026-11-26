@@ -117,9 +117,4 @@ theorem Functor.mapAut_eq_autMulEquivOfIso_app {G H : C ⥤ D} (α : G ≅ H) (y
     H.mapAut y b = Aut.autMulEquivOfIso (α.app y) (G.mapAut y b) :=
   Aut.ext (Iso.ext (by simp))
 
-/-- The action of a composite functor on automorphisms is the composite of the actions. -/
-theorem Functor.mapAut_comp {E : Type*} [Category* E] (G : C ⥤ D) (H : D ⥤ E) (y : C)
-    (b : Aut y) : (G ⋙ H).mapAut y b = H.mapAut (G.obj y) (G.mapAut y b) :=
-  Aut.ext (Iso.ext (by simp))
-
 end CategoryTheory
