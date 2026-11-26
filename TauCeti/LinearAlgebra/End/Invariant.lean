@@ -183,14 +183,11 @@ section Shear
 
 variable {R V W : Type*} [Ring R] [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W]
 
-/-- The shear `(v, w) ↦ (v + s w, w)` of `V × W`, with inverse the shear by `-s`. -/
-def shear (s : W →ₗ[R] V) : (V × W) ≃ₗ[R] (V × W) where
-  toFun p := (p.1 + s p.2, p.2)
-  invFun p := (p.1 - s p.2, p.2)
-  map_add' p q := by simp [add_add_add_comm]
-  map_smul' c p := by simp
-  left_inv p := by simp
-  right_inv p := by simp
+/-- The shear `(v, w) ↦ (v + s w, w)` of `V × W`, with inverse the shear by `-s`. It is Mathlib's
+`LinearEquiv.skewProd` of the identities and `s`, with the factors swapped. -/
+def shear (s : W →ₗ[R] V) : (V × W) ≃ₗ[R] (V × W) :=
+  LinearEquiv.prodComm R V W ≪≫ₗ (LinearEquiv.refl R W).skewProd (LinearEquiv.refl R V) s ≪≫ₗ
+    LinearEquiv.prodComm R W V
 
 /-- The shear by `s` sends `(v, w)` to `(v + s w, w)`. -/
 @[simp]

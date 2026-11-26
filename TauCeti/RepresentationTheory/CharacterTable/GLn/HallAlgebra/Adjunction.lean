@@ -145,21 +145,18 @@ variable {U Z : Submodule k V} (hUZ : IsCompl U Z)
 private noncomputable def blockUnit (a : (Module.End k U)ˣ) (b : (Module.End k Z)ˣ)
     (x : Z →ₗ[k] U) : (Module.End k V)ˣ :=
   LinearMap.GeneralLinearGroup.ofLinearEquiv
-    ((U.prodEquivOfIsCompl Z hUZ).symm ≪≫ₗ
-      { blockTriangularEnd (a : Module.End k U) (b : Module.End k Z) x with
-        invFun := blockTriangularEnd (↑a⁻¹ : Module.End k U) (↑b⁻¹ : Module.End k Z)
-          (-((↑a⁻¹ : Module.End k U) ∘ₗ x ∘ₗ (↑b⁻¹ : Module.End k Z)))
-        left_inv p := by ext <;> simp
-        right_inv p := by ext <;> simp } ≪≫ₗ
-      U.prodEquivOfIsCompl Z hUZ)
+    ((U.prodEquivOfIsCompl Z hUZ).symm ≪≫ₗ LinearEquiv.prodComm k U Z ≪≫ₗ
+      (LinearMap.GeneralLinearGroup.toLinearEquiv b).skewProd
+        (LinearMap.GeneralLinearGroup.toLinearEquiv a) x ≪≫ₗ
+      LinearEquiv.prodComm k Z U ≪≫ₗ U.prodEquivOfIsCompl Z hUZ)
 
 omit [Fintype k] [DecidableEq k] [Module.Finite k V] in
 private theorem blockUnit_apply (a : (Module.End k U)ˣ) (b : (Module.End k Z)ˣ)
     (x : Z →ₗ[k] U) (v : V) :
     (blockUnit hUZ a b x : Module.End k V) v = U.prodEquivOfIsCompl Z hUZ
       (blockTriangularEnd (a : Module.End k U) (b : Module.End k Z) x
-        ((U.prodEquivOfIsCompl Z hUZ).symm v)) :=
-  rfl
+        ((U.prodEquivOfIsCompl Z hUZ).symm v)) := by
+  simp [blockUnit]
 
 omit [Fintype k] [DecidableEq k] in
 private theorem blockUnit_mem_stabilizer (a : (Module.End k U)ˣ) (b : (Module.End k Z)ˣ)
