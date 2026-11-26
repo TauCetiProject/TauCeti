@@ -72,8 +72,10 @@ private theorem exists_eq_of_trace_eq_zero_of_det_eq_zero {Y : Matrix (Fin 2) (F
     linear_combination mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet
   have hpos : 0 < Y 0 1 - Y 1 0 := by
     by_contra! hle
-    exact hne
-      (eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet (by linarith) (by linarith))
+    have h01 : Y 0 1 = 0 := by linarith
+    have h10 : Y 1 0 = 0 := by linarith
+    have hdiag : Y.IsDiag := by simp [IsDiag, Pairwise, Fin.forall_fin_two, h01, h10]
+    exact hne (eq_zero_of_isDiag_of_trace_eq_zero_of_det_eq_zero_fin_two hdiag htr hdet)
   -- Solve `a² = Y₀₁`, `c² = -Y₁₀`, `a c = -Y₀₀`, then complete `(a, c)` to an element of
   -- `SL(2, ℝ)`.
   have habs : √(Y 0 1) * √(-Y 1 0) = |Y 0 0| := by

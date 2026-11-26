@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Basic.Sign.Defs
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
+public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
@@ -68,8 +69,8 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   determinant-one matrix `A`.
 * `Matrix.mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two`: `Y₀₁ Y₁₀ = -Y₀₀²` for a `2 × 2`
   matrix of trace zero and determinant zero.
-* `Matrix.eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two`: such a matrix with vanishing
-  off-diagonal entries is zero.
+* `Matrix.eq_zero_of_isDiag_of_trace_eq_zero_of_det_eq_zero_fin_two`: such a matrix that is
+  diagonal is zero.
 * `Matrix.setOf_trace_eq_zero_det_eq_zero_ne_zero_eq_union`,
   `Matrix.disjoint_setOf_trace_eq_zero_det_eq_zero_ne_zero`: over a linearly ordered commutative
   ring, the punctured nilpotent cone `{Y | tr Y = 0, det Y = 0, Y ≠ 0}` is the disjoint union of
@@ -223,11 +224,12 @@ theorem mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two {Y : Matrix (Fin 2
   rw [det_fin_two] at hdet
   linear_combination Y 0 0 * htr - hdet
 
-/-- A `2 × 2` matrix of trace zero and determinant zero whose off-diagonal entries vanish is
-zero. -/
-theorem eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two [NoZeroDivisors R]
-    {Y : Matrix (Fin 2) (Fin 2) R} (htr : Y.trace = 0) (hdet : Y.det = 0)
-    (h01 : Y 0 1 = 0) (h10 : Y 1 0 = 0) : Y = 0 := by
+/-- A diagonal `2 × 2` matrix of trace zero and determinant zero is zero. -/
+theorem eq_zero_of_isDiag_of_trace_eq_zero_of_det_eq_zero_fin_two [NoZeroDivisors R]
+    {Y : Matrix (Fin 2) (Fin 2) R} (hdiag : Y.IsDiag) (htr : Y.trace = 0) (hdet : Y.det = 0) :
+    Y = 0 := by
+  have h01 : Y 0 1 = 0 := hdiag (by decide)
+  have h10 : Y 1 0 = 0 := hdiag (by decide)
   have h00 : Y 0 0 = 0 := by
     have h := mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet
     rw [h01, zero_mul, eq_comm, neg_eq_zero] at h
@@ -281,8 +283,9 @@ theorem disjoint_setOf_trace_eq_zero_det_eq_zero_ne_zero :
       {Y | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ Y 0 1 ≤ 0 ∧ 0 ≤ Y 1 0} := by
   rw [Set.disjoint_left]
   rintro Y ⟨htr, hdet, hne, hy, hz⟩ ⟨-, -, -, hy', hz'⟩
-  exact hne (eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet (le_antisymm hy' hy)
-    (le_antisymm hz hz'))
+  have hdiag : Y.IsDiag := by
+    simp [IsDiag, Pairwise, Fin.forall_fin_two, le_antisymm hy' hy, le_antisymm hz hz']
+  exact hne (eq_zero_of_isDiag_of_trace_eq_zero_of_det_eq_zero_fin_two hdiag htr hdet)
 
 /-- If a `2 × 2` matrix of determinant one has trace greater than `2`, then so does every nonzero
 power of it: the traces of the powers increase strictly. -/
