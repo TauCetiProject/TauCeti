@@ -69,7 +69,7 @@ namespace TauCeti
 variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
   [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
-  [VectorBundle ℝ F E] {ι : Type w} [Fintype ι] {R : Type w} [CommRing R]
+  [VectorBundle ℝ F E] {ι : Type} [Fintype ι] {R : Type w} [CommRing R]
   (hι : Fintype.card ι = finrank ℝ F)
 
 variable (F E R) in

@@ -67,8 +67,6 @@ namespace Bundle.Pullback
 
 section Riemannian
 
-attribute [local instance] normedFiberBundle normedVectorBundle
-
 variable {B B' F K : Type*} [TopologicalSpace B] [TopologicalSpace B']
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)]

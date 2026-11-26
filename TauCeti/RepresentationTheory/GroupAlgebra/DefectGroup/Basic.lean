@@ -45,6 +45,8 @@ conjugate of `P`, since by the Mackey formula the other summands of `Tr_P^G(a)` 
 
 * `TauCeti.IsDefectGroup.conj`: defect groups of a `g`-fixed element are permuted by `g`.
 * `TauCeti.exists_isDefectGroup`: every nonzero element of `R[G]` has a defect group.
+* `TauCeti.IsPrimitiveIdempotent.exists_isDefectGroup`: so does every primitive idempotent of
+  `R[G]^G`.
 * `TauCeti.exists_minimal_mem_relTraceIdeal`: every `x ∈ R[G]^G` has a subgroup `P` minimal
   with `x ∈ Tr_P^G(R[G]^P)`.
 * `TauCeti.isPGroup_of_minimal_mem_relTraceIdeal`: in characteristic `p`, a subgroup `P` minimal
@@ -141,6 +143,12 @@ theorem exists_isDefectGroup (p : ℕ) {e : MonoidAlgebra R G} (he : e ≠ 0) :
       fun _ => le_sSup⟩)
     ⊥ ⟨IsPGroup.of_bot, mt brauerProjection_bot_eq_zero_iff.1 he⟩
   exact ⟨P, hP⟩
+
+/-- A primitive idempotent of `R[G]^G` has a defect group: it is nonzero. -/
+theorem IsPrimitiveIdempotent.exists_isDefectGroup (p : ℕ)
+    {e : conjInvariants R (⊤ : Subgroup G)} (he : IsPrimitiveIdempotent e) :
+    ∃ D, IsDefectGroup R p (e : MonoidAlgebra R G) D :=
+  TauCeti.exists_isDefectGroup p fun h => he.ne_zero (Subtype.ext h)
 
 end DefectGroup
 

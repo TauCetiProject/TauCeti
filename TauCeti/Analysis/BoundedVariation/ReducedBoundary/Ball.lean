@@ -65,19 +65,6 @@ open scoped ENNReal Topology RealInnerProductSpace
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {c x : E} {r : ℝ}
 
-/-- The indicator of a ball is locally integrable. -/
-private theorem locallyIntegrableOn_indicator_ball :
-    LocallyIntegrableOn ((ball c r).indicator (1 : E → ℝ)) (⊤ : Opens E) μ :=
-  locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1
-
-/-- A ball has finite perimeter in the whole space. -/
-private theorem forall_exists_totalVariationOn_indicator_ball_ne_top :
-    ∀ K, IsCompact K → K ⊆ (⊤ : Opens E) → ∃ U : Opens E, K ⊆ (U : Set E) ∧
-      totalVariationOn μ U ((ball c r).indicator 1) ≠ ∞ := fun K _ _ => by
-  refine ⟨⊤, by simp, ?_⟩
-  rw [← perimeter_def, perimeter_ball_eq_ofReal_div_mul]
-  exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_ball_lt_top.ne
-
 /-- The perimeter measure of a ball is concentrated on the sphere. -/
 private theorem ae_mem_sphere (hr : 0 < r) :
     ∀ᵐ y : (⊤ : Opens E) ∂variationMeasure μ ⊤ ((ball c r).indicator 1),
@@ -89,8 +76,9 @@ private theorem ae_mem_sphere (hr : 0 < r) :
 private theorem variationMeasure_ball_univ :
     variationMeasure μ ⊤ ((ball c r).indicator 1) univ =
       ENNReal.ofReal (finrank ℝ E / r) * μ (ball c r) := by
-  rw [variationMeasure_univ locallyIntegrableOn_indicator_ball
-    forall_exists_totalVariationOn_indicator_ball_ne_top, ← perimeter_def,
+  rw [variationMeasure_univ (u := (ball c r).indicator 1)
+    (locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1)
+    forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top, ← perimeter_def,
     perimeter_ball_eq_ofReal_div_mul]
 
 /-- The perimeter measure of a ball is finite. -/
@@ -132,8 +120,9 @@ private theorem exists_integral_inner_outerNormal_ball_eq (hr : 0 < r) :
   · simp only [φ]
     rw [θ.one_of_mem_closedBall (sphere_subset_closedBall hy), mul_one]
   rw [← integral_trace_fderiv_mul_indicator_eq_integral_inner_outerNormal
-    locallyIntegrableOn_indicator_ball forall_exists_totalVariationOn_indicator_ball_ne_top hφd
-    θ.hasCompactSupport.mul_left.smul_right (by simp), measureReal_def,
+    (locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1)
+    forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top
+    hφd θ.hasCompactSupport.mul_left.smul_right (by simp), measureReal_def,
     variationMeasure_ball_univ, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity),
     ← measureReal_def]
   have hind (y : E) : LinearMap.trace ℝ E (fderiv ℝ φ y : E →ₗ[ℝ] E) *
@@ -188,10 +177,11 @@ private theorem variationMeasure_closedBall_ne_zero (hr : 0 < r) (hx : x ∈ sph
     (hρ : 0 < ρ) :
     variationMeasure μ ⊤ ((ball c r).indicator 1) (((↑) : (⊤ : Opens E) → E) ⁻¹'
       closedBall x ρ) ≠ 0 := by
-  have hu := locallyIntegrableOn_indicator_ball (μ := μ) (c := c) (r := r)
+  have hu : LocallyIntegrableOn ((ball c r).indicator (1 : E → ℝ)) (⊤ : Opens E) μ :=
+    locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1
   refine fun h0 => ?_
   have hP := (perimeter_ball_le_variationMeasure_closedBall (x := x) (r := ρ) hu
-    forall_exists_totalVariationOn_indicator_ball_ne_top (by simp)).trans_eq h0
+    forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top (by simp)).trans_eq h0
   -- By the Poincaré inequality the indicator is almost everywhere constant on `ball x ρ`.
   have hae := ae_eq_setAverage_of_totalVariationOn_eq_zero (Ω := ⟨ball x ρ, isOpen_ball⟩)
     (S := ball x ρ) (μ := μ) (convex_ball x ρ) (hu.mono_set (subset_univ _)) subset_rfl
@@ -242,8 +232,9 @@ private theorem tendsto_setAverage_polarDensity_ball (hr : 0 < r) (hx : x ∈ sp
     ((ae_restrict_iff' hSm).2 (hpol.mono fun y hy hyS => ?_))
     (Measure.integrableOn_of_bounded (M := 1) (measure_ne_top V _)
       measurable_polarDensity.aestronglyMeasurable
-      (ae_restrict_of_ae ((ae_norm_polarDensity_eq_one locallyIntegrableOn_indicator_ball
-        forall_exists_totalVariationOn_indicator_ball_ne_top).mono fun y hy => hy.le)))
+      (ae_restrict_of_ae ((ae_norm_polarDensity_eq_one (u := (ball c r).indicator 1)
+        (locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1)
+        forall_isCompact_exists_totalVariationOn_indicator_ball_ne_top).mono fun y hy => hy.le)))
   · exact (mem_closedBall.1 hmem).trans_lt (half_lt_self hε)
   · rw [hy, mem_closedBall, dist_neg_neg, dist_smul₀, dist_sub_right,
       Real.norm_of_nonneg (inv_nonneg.2 hr.le)]

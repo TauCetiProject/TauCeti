@@ -25,7 +25,7 @@ is solved by Duhamel's formula (`TauCeti.waveDuhamelSolution`)
 
 Let `(q, r)` be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 < q < ∞`, and let
 `(q₁, r₁)` be wave-admissible with `2 ≤ q₁ ≤ ∞`, with Hölder conjugates `p₁` and `r₁'`, where
-`q₁ = 2` only at the endpoint `1 + (n - 1) / r₁ = (n - 1) / 2` in dimension `n ≥ 4`. Put
+`q₁ = 2` only in dimension `n ≥ 4`. Put
 `γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. This file proves the
 **Strichartz estimate for the forced wave equation** on every time interval `[0, T]`, with data in
 homogeneous Besov spaces and forcing in the dyadic `ℓ¹` class along the second pair:
@@ -36,7 +36,8 @@ homogeneous Besov spaces and forcing in the dyadic `ℓ¹` class along the secon
 for every forcing `G` integrable on `[0, T]`, with `C` independent of `T`, `f`, `g` and `G`
 (`ContDiffBump.exists_eLpNorm_eLpNorm_waveDuhamelSolution_le_tsum`). The same estimate holds at
 the pairs `(∞, r)`, `2 ≤ r ≤ ∞`, with `γ = n / 2 - n / r`, when the forcing pair also has
-`r₁ ≥ 2`, which is automatic in dimension `n ≥ 2`
+`r₁ ≥ 2`, which is automatic in dimension `n ≥ 2`, and `q₁ = 2` only at the endpoint
+`1 + (n - 1) / r₁ = (n - 1) / 2`
 (`ContDiffBump.exists_eLpNorm_top_eLpNorm_waveDuhamelSolution_le_tsum`); at `(∞, ∞)` it bounds the
 solution uniformly on `[0, T] × E`. Since a strong solution of the forced equation on `[0, T]` is
 given by Duhamel's formula (`TauCeti.IsWaveSolutionOn.eq_waveDuhamelSolution`), both estimates
@@ -180,7 +181,7 @@ variable {q : ℝ≥0} {r : ℝ≥0∞}
 of dimension `n`, let `Pⱼ` be the `L²` Fourier multiplier with the Littlewood–Paley cutoff `ψⱼ`
 built from `φ` as symbol, let `(q, r)` be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`,
 with `2 < q < ∞`, and let `(q₁, r₁)` be wave-admissible with `2 ≤ q₁ ≤ ∞`, with Hölder conjugates
-`p₁` and `r₁'`, where `q₁ = 2` only if `1 + (n - 1) / r₁ = (n - 1) / 2` in dimension `n ≥ 4`. Put
+`p₁` and `r₁'`, where `q₁ = 2` only in dimension `n ≥ 4`. Put
 `γ = n / 2 - n / r - 1 / q` and `γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that for every
 `T`, all data `f, g ∈ L²(E)` and every forcing `G : ℝ → L²(E)` integrable on `[0, T]`, the
 solution `u(t) = cos(tD) f + D⁻¹ sin(tD) g + ∫₀ᵗ D⁻¹ sin((t - s)D) G(s) ds` of `∂ₜ²u - Δu = G`
@@ -194,8 +195,7 @@ theorem exists_eLpNorm_eLpNorm_waveDuhamelSolution_le_tsum (hq : 2 < q)
     {p₁ q₁ r₁ r₁' : ℝ≥0∞} [p₁.HolderConjugate q₁] [r₁'.HolderConjugate r₁] (hq₁ : 2 ≤ q₁)
     (hqr₁ : 2 * (q₁⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2)
-    (hq₁2 : q₁ = 2 → 3 < Module.finrank ℝ E ∧
-      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    (hq₁2 : q₁ = 2 → 3 < Module.finrank ℝ E) :
     ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
       (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
       ∀ (f g : Lp ℂ 2 (volume : Measure E)) (G : ℝ → Lp ℂ 2 (volume : Measure E)) (T : ℝ),
@@ -241,8 +241,7 @@ theorem exists_eLpNorm_eLpNorm_le_tsum_of_isWaveSolutionOn_Icc (hq : 2 < q)
     {p₁ q₁ r₁ r₁' : ℝ≥0∞} [p₁.HolderConjugate q₁] [r₁'.HolderConjugate r₁] (hq₁ : 2 ≤ q₁)
     (hqr₁ : 2 * (q₁⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal ≤
       ((Module.finrank ℝ E : ℝ) - 1) / 2)
-    (hq₁2 : q₁ = 2 → 3 < Module.finrank ℝ E ∧
-      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    (hq₁2 : q₁ = 2 → 3 < Module.finrank ℝ E) :
     ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
       (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
       ∀ (T : ℝ) (u u' u'' G : ℝ → Lp ℂ 2 (volume : Measure E)),
