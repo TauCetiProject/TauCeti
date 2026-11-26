@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.SpecialLinear
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.RepresentationTheory.Stabilizer
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.NilpotentOrbitFinTwo
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
 # Coadjoint orbits of the real special linear group

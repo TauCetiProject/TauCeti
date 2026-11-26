@@ -70,6 +70,10 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
   matrix of trace zero and determinant zero.
 * `Matrix.eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two`: such a matrix with vanishing
   off-diagonal entries is zero.
+* `Matrix.setOf_trace_eq_zero_det_eq_zero_ne_zero_eq_union`,
+  `Matrix.disjoint_setOf_trace_eq_zero_det_eq_zero_ne_zero`: over a linearly ordered commutative
+  ring, the punctured nilpotent cone `{Y | tr Y = 0, det Y = 0, Y ≠ 0}` is the disjoint union of
+  the half with `Y₀₁ ≥ 0 ≥ Y₁₀` and the half with `Y₀₁ ≤ 0 ≤ Y₁₀`.
 * `Matrix.trace_ne_zero_or_sub_ne_zero_of_det_eq_one_fin_two`: a determinant-one matrix is not
   both traceless and symmetric.
 * `Matrix.abs_trace_pow_le_two`: the powers of a determinant-one matrix of trace at most `2` in
@@ -249,6 +253,36 @@ theorem trace_ne_zero_or_sub_ne_zero_of_det_eq_one_fin_two {A : Matrix (Fin 2) (
   rw [det_fin_two] at hdet
   rw [show A 1 1 = -A 0 0 by linarith [h.1], show A 1 0 = A 0 1 by linarith [h.2]] at hdet
   nlinarith [sq_nonneg (A 0 0), sq_nonneg (A 0 1)]
+
+/-- Over a linearly ordered commutative ring, the punctured nilpotent cone of `2 × 2` matrices is
+the union of the half with `Y₀₁ ≥ 0 ≥ Y₁₀` and the half with `Y₀₁ ≤ 0 ≤ Y₁₀`. -/
+theorem setOf_trace_eq_zero_det_eq_zero_ne_zero_eq_union :
+    {Y : Matrix (Fin 2) (Fin 2) R | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0} =
+      {Y | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ 0 ≤ Y 0 1 ∧ Y 1 0 ≤ 0} ∪
+        {Y | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ Y 0 1 ≤ 0 ∧ 0 ≤ Y 1 0} := by
+  ext Y
+  simp only [Set.mem_ofPred_eq, Set.mem_union]
+  constructor
+  · rintro ⟨htr, hdet, hne⟩
+    -- The off-diagonal entries have product `-Y₀₀² ≤ 0`, so they have opposite signs.
+    have hle : Y 0 1 * Y 1 0 ≤ 0 := by
+      rw [mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet]
+      exact neg_nonpos.mpr (sq_nonneg _)
+    rcases mul_nonpos_iff.mp hle with ⟨h, h'⟩ | ⟨h, h'⟩
+    · exact .inl ⟨htr, hdet, hne, h, h'⟩
+    · exact .inr ⟨htr, hdet, hne, h, h'⟩
+  · rintro (⟨htr, hdet, hne, -⟩ | ⟨htr, hdet, hne, -⟩) <;> exact ⟨htr, hdet, hne⟩
+
+/-- Over a linearly ordered commutative ring, the half of the punctured nilpotent cone of `2 × 2`
+matrices with `Y₀₁ ≥ 0 ≥ Y₁₀` and the half with `Y₀₁ ≤ 0 ≤ Y₁₀` are disjoint. -/
+theorem disjoint_setOf_trace_eq_zero_det_eq_zero_ne_zero :
+    Disjoint
+      {Y : Matrix (Fin 2) (Fin 2) R | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ 0 ≤ Y 0 1 ∧ Y 1 0 ≤ 0}
+      {Y | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ Y 0 1 ≤ 0 ∧ 0 ≤ Y 1 0} := by
+  rw [Set.disjoint_left]
+  rintro Y ⟨htr, hdet, hne, hy, hz⟩ ⟨-, -, -, hy', hz'⟩
+  exact hne (eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet (le_antisymm hy' hy)
+    (le_antisymm hz hz'))
 
 /-- If a `2 × 2` matrix of determinant one has trace greater than `2`, then so does every nonzero
 power of it: the traces of the powers increase strictly. -/
