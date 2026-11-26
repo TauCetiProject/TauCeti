@@ -114,7 +114,7 @@ theorem image_lieExp_ker_lieMap (f : G →ₜ* G') :
   have hcont : Continuous (lieExp (I := I) (G := G)) := by
     have h := continuous_toMul.comp (continuous_lieExpAddMonoidHom (I := I) (G := G))
     rwa [coe_lieExpAddMonoidHom] at h
-  have hK : IsClosed (f.ker : Set G) := isClosed_singleton.preimage f.continuous
+  have hK : IsClosed (f.ker : Set G) := f.isClosed_ker
   -- The kernel is a commutative Lie group by the closed-subgroup theorem.
   let d := EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
   let _ := d.chartedSpace
