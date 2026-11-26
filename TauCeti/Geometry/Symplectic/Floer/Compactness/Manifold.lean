@@ -723,11 +723,8 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
         ∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (ψ n) y) atTop (𝓝 (v y)) := by
   have hφK : IsCompact (φ '' K) := hK.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hKφ)
   -- In the chart, `J'_p` is tamed by `ω₀` over `C × D × φ(K)`.
-  have hJ't : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ φ '' K, ω₀.Tames (J' p z y) := by
-    rintro p hp z hz _ ⟨x, hx, rfl⟩
-    exact tames_of_isComplexLinearMap_mvfderiv hω
-      (φ.bijective_mvfderiv (by simp) (hKφ hx)).surjective (hφ x hx) (hJJ' p hp z hz x hx)
-      (hJt p hp z hz x hx)
+  have hJ't : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ φ '' K, ω₀.Tames (J' p z y) := fun p hp z hz _ ↦
+    hω.tames_of_mem_image φ hφ (hJJ' p hp z hz) hKφ (hJt p hp z hz)
   obtain ⟨δ, hδ, hconv⟩ := ω₀.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     (Ks := fun p z y ↦ Ks p z (φ.symm y)) (Kt := fun p z y ↦ Kt p z (φ.symm y)) hW hKs hKt hJ' hC
     hD hφK hCDKW hJ't
@@ -858,22 +855,6 @@ private theorem floerEnergyDensity_comp_and_isComplexLinearMap_iff (hω : ω.IsN
     hω.isComplexLinearMap_perturbedFDeriv_comp_iff hu hφx hsurj hφ (hK₁ Ks) (hK₁ Kt) (hK₂ hKs)
       (hK₂ hKt) hJJ'⟩
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
-/-- If `φ` pulls `ω₀` back to `ω` on `C` and `J'` is the family `J` read in the chart, then `J'` is
-tamed by `ω₀` over `D × φ(C)` wherever `J` is tamed by `ω` over `D × C`. -/
-private theorem tames_of_mem_image (hω : ω.IsNondegenerate)
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {D : Set (ℝ × ℝ)} {C : Set M}
-    (hφ : ∀ x ∈ C, ∀ v w : TangentSpace I x,
-      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
-    (hJJ' : ∀ z ∈ D, ∀ x ∈ C,
-      IsComplexLinearMap (J z x) (J' z (φ x)) (mvfderiv I φ x).toLinearMap)
-    (hCφ : C ⊆ φ.source) (hJt : ∀ z ∈ D, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (J z x)) :
-    ∀ z ∈ D, ∀ y ∈ φ '' C, ω₀.Tames (J' z y) := by
-  rintro z hz _ ⟨x, hx, rfl⟩
-  exact tames_of_isComplexLinearMap_mvfderiv hω
-    (φ.bijective_mvfderiv (by simp) (hCφ hx)).surjective (hφ x hx) (hJJ' z hz x hx)
-    (hJt z hz x hx)
-
 /-- **The energy of the bubbling points in a symplectic chart.** Under the hypotheses of
 `IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`, a further
 subsequence `ψ` attaches to every bubbling point `z ∈ Z` a mass `m z ≥ δ`: for every small `ε > 0`
@@ -919,7 +900,8 @@ theorem exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off
             (𝓝 (m z + ∫ y in ball z ε \ {z}, ω.floerEnergyDensity Ks Kt v y))) ∧
         (∫ z in Ω \ ↑Z, ω.floerEnergyDensity Ks Kt v z) + ∑ z ∈ Z, m z ≤ A := by
   have hφC : IsCompact (φ '' C) := hC.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hCφ)
-  have hJ't := tames_of_mem_image hω φ hφ hJJ' hCφ hJt
+  have hJ't : ∀ z ∈ D, ∀ y ∈ φ '' C, ω₀.Tames (J' z y) := fun z hz _ ↦
+    hω.tames_of_mem_image φ hφ (hJJ' z hz) hCφ (hJt z hz)
   obtain ⟨δ, hδ, hconv⟩ :=
     ω₀.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset
       (Ks := fun z y ↦ Ks z (φ.symm y)) (Kt := fun z y ↦ Kt z (φ.symm y)) hW hKs hKt hJ' hD hφC

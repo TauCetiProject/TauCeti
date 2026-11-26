@@ -120,17 +120,6 @@ private theorem floerEnergyDensity_comp_and_isComplexLinearMap (hω : ω.IsNonde
     fun hJJ' hfl ↦ (hω.isComplexLinearMap_perturbedFDeriv_comp_iff hum hφx hsurj (hφ _ huz)
       EventuallyEq.rfl (hHH' z.2 _ huz) (differentiableAt_const _) hH'z hJJ').2 hfl⟩
 
-omit [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ V] in
-/-- The coordinate map `φ ∘ u` of a `Cⁿ` map `u` with values in `B ⊆ φ.source` on the
-half-cylinder is `Cⁿ` there. -/
-private theorem contDiffOn_comp (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {n : ℕ}
-    (hBφ : B ⊆ φ.source) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u (Ioi a ×ˢ univ))
-    (huB : ∀ s, a < s → ∀ t, u (s, t) ∈ B) :
-    ContDiffOn ℝ n (φ ∘ u) (Ioi a ×ˢ univ) :=
-  contMDiffOn_iff_contDiffOn.1 <|
-    (φ.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).comp hu
-      fun z hz ↦ hBφ (huB z.1 hz.1 z.2)
-
 omit [FiniteDimensional ℝ E] in
 /-- The energy of `u` over a measurable subset of the half-cylinder `s > a` is the energy of its
 coordinate map. -/
@@ -205,7 +194,8 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp (hω : 
       huB hz
   obtain ⟨κ, hκ, C, hdecay⟩ :=
     TauCeti.SymplecticForm.exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
-      (ω := ω₀) (u := φ ∘ u) (J := J') hH' hH'per (contDiffOn_comp φ hBφ hu huB)
+      (ω := ω₀) (u := φ ∘ u) (J := J') hH' hH'per
+      (φ.contDiffOn_comp_of_contMDiffOn hu fun z hz ↦ hBφ (huB z.1 hz.1 z.2))
     (fun s hs t ↦ congrArg φ (hper s hs t)) hc hJc hJM
     (fun z hz ↦ (hchart z hz.1).2 (hJJ' z hz) (hfloer z hz))
     (setLIntegral_floerEnergyDensity_comp_ne_top hω φ (by simp) hφ hHH' hH'1 hBφ hu huB hE)
@@ -247,7 +237,8 @@ theorem exists_pos_eventually_norm_sub_le_exp (hω : ω.IsNondegenerate)
     ∃ κ > 0, ∃ C, ∀ᶠ s in atTop, ∀ t, ‖φ (u (s, t)) - x t‖ ≤ C * Real.exp (-(κ * s)) := by
   have hH'1 : ContDiff ℝ 1 (uncurry H') := hH'.of_le (by norm_num)
   exact TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_le_exp
-    (ω := ω₀) (u := φ ∘ u) (J := J') hH' hH'per (contDiffOn_comp φ hBφ hu huB)
+    (ω := ω₀) (u := φ ∘ u) (J := J') hH' hH'per
+    (φ.contDiffOn_comp_of_contMDiffOn hu fun z hz ↦ hBφ (huB z.1 hz.1 z.2))
     (fun s hs t ↦ congrArg φ (hper s hs t)) hc hJc hJM
     (fun z hz ↦ (floerEnergyDensity_comp_and_isComplexLinearMap (n := 2) hω φ (by simp) hφ hHH'
       hH'1 hBφ hu huB hz.1).2 (hJJ' z hz) (hfloer z hz))
@@ -307,14 +298,13 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_smulRight_le_exp
             C * Real.exp (-(κ * s)) := by
   have hH'1 : ContDiff ℝ 1 (uncurry H') := hH'.of_le (by norm_num)
   -- In the chart, `J'` is tamed by `ω₀` over `ℝ × φ(B)`.
-  have hJ't : ∀ t, ∀ y ∈ φ '' B, ω₀.Tames (J' t y) := by
-    rintro t _ ⟨y, hy, rfl⟩
-    exact hω.tames_of_isComplexLinearMap_mvfderiv
-      (φ.bijective_mvfderiv (by simp) (hBφ hy)).surjective (hφ y hy) (hJJ' t y hy) (hJt t y hy)
+  have hJ't : ∀ t, ∀ y ∈ φ '' B, ω₀.Tames (J' t y) := fun t _ ↦
+    hω.tames_of_mem_image φ hφ (hJJ' t) hBφ (hJt t)
   exact TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_add_norm_fderiv_sub_smulRight_le_exp
     (ω := ω₀) (u := φ ∘ u) hH' hH'per hW hJ' hJ'per
     (hB.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hBφ)) hBW hJ't
-    (contDiffOn_comp φ hBφ hu huB) (fun s hs t ↦ congrArg φ (hper s hs t))
+    (φ.contDiffOn_comp_of_contMDiffOn hu fun z hz ↦ hBφ (huB z.1 hz.1 z.2))
+    (fun s hs t ↦ congrArg φ (hper s hs t))
     (fun s hs t ↦ ⟨u (s, t), huB s hs t, rfl⟩)
     (fun z hz ↦ (floerEnergyDensity_comp_and_isComplexLinearMap (n := 3) hω φ (by simp) hφ hHH'
       hH'1 hBφ hu huB hz.1).2 (hJJ' z.2 _ (huB z.1 hz.1 z.2)) (hfloer z hz))

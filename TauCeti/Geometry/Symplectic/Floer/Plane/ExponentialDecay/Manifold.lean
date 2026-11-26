@@ -31,7 +31,8 @@ its whole source. The Hamiltonian is read in the chart through a period-one `C³
 on `V`, whose suspended Hamiltonian vector field is globally Lipschitz, with `H t = H' t ∘ φ` near
 every point of `B`, and the structures through structures `J'_t` on `V` with
 `dφ ∘ J_t = J'_t ∘ dφ`. The perturbation of the plane is `H` times a one-form on the domain, so it
-is read in the chart as the perturbation of the plane given by `H'`. By
+is read in the chart as the perturbation of the plane given by `H'`
+(`TauCeti.Floer.PSSPlane.perturbation_eventuallyEq_comp`). By
 `TauCeti.Geometry.Symplectic.Floer.Chart`, the coordinate map `φ ∘ u` is then a solution of the
 Floer equation of the plane in `(V, ω₀)` for `H'` and the cylindrical structure `J'_t`, with the
 energy density of `u`, and `J'_t` is tamed by `ω₀` where `J_t` is tamed by `ω`. The vector-space
@@ -87,18 +88,6 @@ section NormedSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω₀ : SymplecticForm V} {H' : ℝ → V → ℝ}
-
-omit [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [FiniteDimensional ℝ V] in
-/-- Where `H t` agrees near `y` with `H' t ∘ φ` for every `t`, the perturbation of a PSS plane given
-by `H`, evaluated on a tangent vector `v` of the domain, agrees near `y` with the perturbation given
-by `H'` composed with `φ`. -/
-private theorem perturbation_eventuallyEq_comp (p : PSSPlane) {φ : M → V} {y : M}
-    (hHH' : ∀ t, H t =ᶠ[𝓝 y] H' t ∘ φ) (w v : ℂ) :
-    (fun x ↦ p.perturbation H w x v) =ᶠ[𝓝 y] (fun x ↦ p.perturbation H' w x v) ∘ φ :=
-  (hHH' (p.endCoord w).im).mono fun x hx ↦ by
-    simp only [comp_apply, perturbation_def] at hx ⊢
-    rw [hx]
 
 /-- At a point `z` of an open set `U` of the domain on which `u` is `Cⁿ`, `n ≠ 0`, with values in
 `B ⊆ φ.source`, the coordinate map `φ ∘ u` has the energy density of `u` for the perturbations of
@@ -216,13 +205,11 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePertur
     floerEnergyDensity_comp_and_isComplexLinearMap_perturbation (n := 3) hω p φ hφ hHH' hH'1
       hH'per hBφ (by simp) hU hu huB hz
   -- In the chart, `J'` is tamed by `ω₀` over `ℝ × φ(B)`.
-  have hJ't : ∀ t, ∀ x ∈ φ '' B, ω₀.Tames (J' t x) := by
-    rintro t _ ⟨y, hy, rfl⟩
-    exact hω.tames_of_isComplexLinearMap_mvfderiv
-      (φ.bijective_mvfderiv (by simp) (hBφ hy)).surjective (hφ y hy) (hJJ' t y hy) (hJt t y hy)
+  have hJ't : ∀ t, ∀ x ∈ φ '' B, ω₀.Tames (J' t x) := fun t _ ↦
+    hω.tames_of_mem_image φ hφ (hJJ' t) hBφ (hJt t)
   -- The coordinate map is `C³` on the end, with the energy of `u` there.
-  have hu' : ContDiffOn ℝ 3 (φ ∘ u) U := contMDiffOn_iff_contDiffOn.1 <|
-    (φ.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).comp hu fun z hz ↦ hBφ (huB z hz)
+  have hu' : ContDiffOn ℝ 3 (φ ∘ u) U :=
+    φ.contDiffOn_comp_of_contMDiffOn hu fun z hz ↦ hBφ (huB z hz)
   have hE' : ∫⁻ z in U, ENNReal.ofReal (ω₀.floerEnergyDensity
       (fun z x ↦ p.perturbation H' (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H' (Complex.equivRealProdCLM.symm z) x Complex.I)
