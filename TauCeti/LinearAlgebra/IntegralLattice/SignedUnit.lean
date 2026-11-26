@@ -176,24 +176,15 @@ def signedUnitBasisVector (r s : ℕ) (k : Fin r ⊕ Fin s) : signedUnitLattice 
 @[simp] theorem coe_signedUnitBasisVector (r s : ℕ) (k : Fin r ⊕ Fin s) :
     (signedUnitBasisVector r s k : Fin r ⊕ Fin s → ℚ) = Pi.single k 1 := (rfl)
 
-private theorem sum_pi_single_sq {α σ : Type*} [Fintype α] [DecidableEq σ] (f : α → σ)
-    (hf : Function.Injective f) (i : α) :
-    (∑ i' : α, (Pi.single (M := fun _ ↦ ℚ) (f i) 1 (f i')) ^ 2) = 1 := by
-  rw [Finset.sum_eq_single i (fun i' _ h ↦ by simp [Pi.single_eq_of_ne (hf.ne h)]) (by simp)]; simp
-
 /-- Each positive-index standard basis vector of `signedUnitLattice r s` has integral norm `1`. -/
 @[simp] theorem integralNorm_signedUnitBasisVector_inl (r s : ℕ) (i : Fin r) :
     (signedUnitLattice r s).integralNorm (signedUnitBasisVector r s (.inl i)) = 1 :=
-  Int.cast_injective (α := ℚ) (by
-    rw [integralNorm_cast, signedUnitLattice_norm_apply, coe_signedUnitBasisVector,
-      sum_pi_single_sq Sum.inl Sum.inl_injective i, Finset.sum_eq_zero fun j _ ↦ by simp]; norm_num)
+  Int.cast_injective (α := ℚ) (by simp [integralNorm_cast, Pi.single_apply])
 
 /-- Each negative-index standard basis vector of `signedUnitLattice r s` has integral norm `-1`. -/
 @[simp] theorem integralNorm_signedUnitBasisVector_inr (r s : ℕ) (j : Fin s) :
     (signedUnitLattice r s).integralNorm (signedUnitBasisVector r s (.inr j)) = -1 :=
-  Int.cast_injective (α := ℚ) (by
-    rw [integralNorm_cast, signedUnitLattice_norm_apply, coe_signedUnitBasisVector,
-      Finset.sum_eq_zero fun i _ ↦ by simp, sum_pi_single_sq Sum.inr Sum.inr_injective j]; norm_num)
+  Int.cast_injective (α := ℚ) (by simp [integralNorm_cast, Pi.single_apply])
 
 /-- Every standard basis vector of `signedUnitLattice r s` has odd integral norm. -/
 theorem odd_integralNorm_signedUnitBasisVector (r s : ℕ) (k : Fin r ⊕ Fin s) :

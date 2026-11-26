@@ -116,21 +116,13 @@ theorem nonempty_isometry_signedUnitLattice_one_one_of_isUnimodular_of_signature
     omega
   have hYrank : Module.finrank ℤ Y = 1 := by
     rw [Y.finrank_carrier, ← Y.signature_sum_eq_finrank, hsp.1, hsp.2.1, hsp.2.2]
-  let b : Basis (Fin 1) ℤ Y := Module.finBasisOfFinrankEq ℤ Y hYrank
-  have hb0 : Y.integralForm (b 0) (b 0) = -1 := by
-    have hYdet : Y.determinant = -1 := by
-      rw [Y.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, hsp.2.2,
-        Y.isUnimodular_iff_discriminant_eq_one.mp hYu]
-      norm_num
-    rwa [Y.determinant_eq_gramDet b, gramDet_def, Matrix.det_unique, gramMatrix_apply] at hYdet
-  let G1 : Matrix (Fin 1) (Fin 1) ℤ := Matrix.of fun _ _ ↦ -1
-  have hG1 : G1.IsSymm := by ext; rfl
-  let eY : Isometry (rankOne (-1)) Y :=
-    (Isometry.ofEq (ofGramMatrix_singleton_eq_rankOne (-1) rfl hG1).symm).trans
-      (Isometry.ofGramMatrixEq (ofGramMatrix.basis (Basis.singleton (Fin 1) ℚ) G1 hG1) b (by
-        rw [gramMatrix_ofGramMatrix]
-        ext i j; fin_cases i; fin_cases j
-        simpa [G1, gramMatrix_apply] using hb0.symm))
+  have hYdet : Y.determinant = -1 := by
+    rw [Y.determinant_eq_neg_one_pow_sigNeg_mul_discriminant, hsp.2.2,
+      Y.isUnimodular_iff_discriminant_eq_one.mp hYu]
+    norm_num
+  obtain ⟨eY⟩ := nonempty_isometry_of_finrank_le_one (L := rankOne (-1)) (M := Y)
+    (by rw [finrank_rankOne, hYrank]) (by rw [finrank_rankOne])
+    (by rw [rankOne_determinant, hYdet])
   exact ⟨rankOneOrthogonalSumIsometrySignedUnitLattice.symm.trans
     (((Isometry.refl (rankOne 1)).orthogonalSum eY).trans e)⟩
 
