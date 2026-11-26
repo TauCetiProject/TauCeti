@@ -79,25 +79,14 @@ theorem apply_I_of_hasWeakFDerivOn [FiniteDimensional ℝ V] {p q : ℝ≥0∞}
     (hη : HasWeakFDerivOn volume Ω η Dη) :
     IsWeakCRSolution q Ω J DJ (fun z => S z + DJ z I) (fun z => Dξ z I)
       (fun z => Dη z I - DS z I (ξ z)) := by
-  have hloc := Ω.isOpen.isLocallyClosed
-  have hDξI : MemLpLoc q Ω (fun z => Dξ z I) := hDξ.clm_comp (apply ℝ V I)
   have heq := (hc.isWeakCRSolution_iff_ae hpq hp hq hξ h.memLpLoc hDξ h.locallyIntegrableOn).1 h
-  -- The case `e = i` of the differentiated equation, with `(∂_t J) ∂_t ξ` on the right side.
-  have hT := hc.isWeakCRSolution_partial hpq hp hq hξ h.memLpLoc hDξ heq
-    (hS.hasWeakLineDerivOn I) (hDS.clm_comp (apply ℝ (V →L[ℝ] V) I)) (hη.hasWeakLineDerivOn I)
-  refine isWeakCRSolution_iff.2 ⟨hDξI, (hη.hasWeakLineDerivOn I).locallyIntegrableOn_deriv.sub
-    ((hDS.clm_comp (apply ℝ (V →L[ℝ] V) I)).locallyIntegrableOn_clm_apply h.memLpLoc hpq hloc),
-    fun φ => ⟨(hc.add_zeroth (hc.memLpLoc_deriv_apply I)).integrable_inner_crFormalAdjoint hpq
-      hDξI φ, ?_⟩⟩
-  -- Move `(∂_t J) ∂_t ξ` from the right side into the zeroth-order coefficient.
-  have hDJ := φ.integrable_inner
-    ((hc.memLpLoc_deriv_apply I).locallyIntegrableOn_clm_apply hDξI hpq hloc)
-  simp only [inner_crFormalAdjoint_add_zeroth]
-  rw [integral_add (hT.integrable_inner_crFormalAdjoint φ) hDJ, hT.integral_inner_crFormalAdjoint φ,
-    ← integral_add (φ.integrable_inner hT.locallyIntegrableOn) hDJ]
-  refine integral_congr_ae (.of_forall fun z => ?_)
-  simp only [inner_sub_right]
-  ring
+  -- The case `e = i` of the differentiated equation, with `(∂_t J) ∂_t ξ` moved into the
+  -- zeroth-order coefficient.
+  have hT := (hc.isWeakCRSolution_partial hpq hp hq hξ h.memLpLoc hDξ heq
+    (hS.hasWeakLineDerivOn I) (hDS.clm_comp (apply ℝ (V →L[ℝ] V) I))
+    (hη.hasWeakLineDerivOn I)).add_zeroth (hc.memLpLoc_deriv_apply I) hpq
+  exact (isWeakCRSolution_congr_ae .rfl .rfl .rfl .rfl
+    (.of_forall fun z => by abel)).1 hT
 
 /-- **Interior `W^{k+1,q}` regularity** (McDuff–Salamon, Proposition B.4.9). Let `p > 2`, let
 `J ∈ W^{1,p}_loc` with `J² = -1` and `S ∈ Lᵖ_loc`, and let `ξ ∈ L^q_loc` be a weak solution of

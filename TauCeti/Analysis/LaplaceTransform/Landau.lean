@@ -139,31 +139,6 @@ private theorem eventually_hasLaplace_of_mem_ball
   filter_upwards [isOpen_ball.mem_nhds hz,
     (isOpen_lt continuous_const Complex.continuous_re).mem_nhds hza] with w hw hw' using hF w hw hw'
 
-/-- Let `F₁` be the Laplace transform of `f` near a real point `b`. For real `t`, the function
-`u ↦ (t * u) ^ n / n ! * (exp (-b * u) * f u)` is integrable on `(0, ∞)`, and its integral is the
-`n`-th term of the Taylor expansion of `F₁` about `b`, evaluated at `b - t`. -/
-private theorem integrable_and_taylor_term_eq {b : ℝ}
-    (hF : ∀ᶠ w in 𝓝 (b : ℂ), HasLaplace (fun u ↦ (f u : ℂ)) w (F₁ w)) (t : ℝ) (n : ℕ) :
-    Integrable (fun u ↦ (t * u) ^ n / (n ! : ℝ) * (Real.exp (-b * u) * f u))
-        (volume.restrict (Ioi 0)) ∧
-      (n ! : ℂ)⁻¹ • (-(t : ℂ)) ^ n • iteratedDeriv n F₁ b =
-        ((∫ u in Ioi 0, (t * u) ^ n / (n ! : ℝ) * (Real.exp (-b * u) * f u) : ℝ) : ℂ) := by
-  have hL := (hasLaplace_pow_div_factorial_smul_iteratedDeriv hF n).const_smul ((t : ℂ) ^ n)
-  have key : ∀ u : ℝ, Complex.exp (-(b : ℂ) * u) • ((t : ℂ) ^ n • ((u : ℂ) ^ n / n !) • (f u : ℂ)) =
-      (((t * u) ^ n / (n ! : ℝ) * (Real.exp (-b * u) * f u) : ℝ) : ℂ) := fun u ↦ by
-    simp only [smul_eq_mul]
-    push_cast
-    ring
-  have hc := hL.integrable.congr (.of_forall key)
-  refine ⟨hc.re.congr (.of_forall fun u ↦ by
-    simp only [RCLike.re_to_complex, Complex.ofReal_re]), ?_⟩
-  have hI : ∫ u : ℝ in Ioi 0,
-      Complex.exp (-(b : ℂ) * u) • ((t : ℂ) ^ n • ((u : ℂ) ^ n / n !) • (f u : ℂ)) =
-        (t : ℂ) ^ n • ((-1) ^ n / n ! : ℂ) • iteratedDeriv n F₁ b := hL.integral_eq
-  rw [← integral_complex_ofReal, ← integral_congr_ae (.of_forall key), hI]
-  simp only [smul_eq_mul, neg_pow (t : ℂ)]
-  ring
-
 /-- **Landau's theorem about a real point.** Let `f` be nonnegative at almost every `u > u₀` and
 let `F₁` be its Laplace transform near the real point `b`. If `F₁` is holomorphic on `ball b ρ`,
 then the Laplace transform of `f` converges on the half-plane `b - ρ < re s`. -/
@@ -184,14 +159,14 @@ private theorem integrableOn_cexp_neg_mul_smul_ofReal_of_eventually_hasLaplace {
   have hσb : (σ : ℂ) - b = -((b - σ : ℝ) : ℂ) := by
     push_cast
     ring
-  simp_rw [hσb, fun n ↦ (integrable_and_taylor_term_eq hF (b - σ) n).2,
+  simp_rw [hσb, fun n ↦ (integrable_and_taylor_term_eq_integral hF (b - σ) n).2,
     Complex.summable_ofReal] at hsum
   -- Those functions are nonnegative right of `u₀`, and their sum is `exp (-σ * u) * f u`.
   have hf' : ∀ᵐ u ∂volume.restrict (Ioi (0 : ℝ)), u₀ < u → 0 ≤ Real.exp (-b * u) * f u :=
     (ae_restrict_of_ae ((ae_restrict_iff' measurableSet_Ioi).1 hf)).mono
       fun u hu h ↦ mul_nonneg (Real.exp_nonneg _) (hu h)
   have hint := integrable_exp_mul_of_summable_integral hf'
-    (fun n ↦ (integrable_and_taylor_term_eq hF (b - σ) n).1) hsum
+    (fun n ↦ (integrable_and_taylor_term_eq_integral hF (b - σ) n).1) hsum
   have hexp : ∀ u : ℝ, Real.exp ((b - σ) * u) * (Real.exp (-b * u) * f u) =
       Real.exp (-σ * u) * f u := fun u ↦ by
     rw [← mul_assoc, ← Real.exp_add]
