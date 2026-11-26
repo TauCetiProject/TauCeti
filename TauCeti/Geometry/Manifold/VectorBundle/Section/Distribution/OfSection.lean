@@ -21,7 +21,7 @@ measure (`TauCeti.integralDensity`). This file shows that, for locally integrabl
 is a distributional section `TauCeti.BundleDistribution.ofSection I G u`. This is the bundle
 analogue of Mathlib's `Distribution.ofFun`, and follows its convention: the functional is zero when
 `u` is not locally integrable, and `TauCeti.BundleDistribution.ofSection_apply` /
-`TauCeti.BundleDistribution.ofSection_of_not_locallyIntegrableSection` correspond to
+`TauCeti.BundleDistribution.ofSection_eq_zero_of_not_locallyIntegrableSection` correspond to
 `Distribution.ofFun_apply` / `Distribution.ofFun_eq_zero`.
 
 A section is **locally integrable** (`TauCeti.LocallyIntegrableSection`) when its local
@@ -225,7 +225,7 @@ omit [ContMDiffVectorBundle ∞ G W I] [MeasurableSpace E] [BorelSpace E] [T2Spa
 include hct hcα in
 /-- The target of a restriction of the preferred chart at `α` lies where the readings at `α` are
 defined. -/
-private theorem target_subset :
+private theorem target_subset_inter_preimage_baseSet :
     c.target ⊆ (extChartAt I α).target ∩
       (extChartAt I α).symm ⁻¹' (trivializationAt G W α).baseSet := by
   intro y hy
@@ -247,7 +247,7 @@ private theorem inChartAt_chartTestCLM (ψ : 𝓓(⟨c.target, c.open_target⟩,
       ψ y (FirstJetBundle.localRep I G u α y) := by
   by_cases hy : y ∈ c.target
   · have hx := c.map_target hy
-    have hyt := target_subset c hct hcα hy
+    have hyt := target_subset_inter_preimage_baseSet c hct hcα hy
     rw [RoughDensity.inChartAt_pairing _ _ _ hyt.1 hyt.2, ← symm_eq_extChartAt_symm c hct hcα hy,
       Bundle.Trivialization.chartTestCLM_apply_of_mem _ _ _ _ _ hx, c.right_inv hy,
       Trivialization.symmL_apply _ (hct hx), Trivialization.apply_mk_symm _ (hct hx),
@@ -278,26 +278,17 @@ omit [MeasurableSpace E] [BorelSpace E] in
 include hct in
 /-- The density paired with a test extended through a chart has compact support in the chart
 source. -/
-private theorem tsupport_chartTestCLM_pairing (ψ : 𝓓(⟨c.target, c.open_target⟩, G →L[ℝ] ℝ)) :
+private theorem isCompact_tsupport_pairing_chartTestCLM_and_subset_source
+    (ψ : 𝓓(⟨c.target, c.open_target⟩, G →L[ℝ] ℝ)) :
     IsCompact (_root_.tsupport (α := Density E (Module.finrank ℝ E)) fun x ↦
-        (𝒯 α
-          |>.chartTestCLM c hc hct ψ) x (u x)) ∧
+        ((𝒯 α).chartTestCLM c hc hct ψ) x (u x)) ∧
       _root_.tsupport (α := Density E (Module.finrank ℝ E)) (fun x ↦
-        (𝒯 α
-          |>.chartTestCLM c hc hct ψ) x (u x)) ⊆ c.source := by
-  have hsub := tsupport_pairing_subset
-    ((𝒯 α).chartTestCLM
-      c hc hct ψ) u
-  -- The bundle test is the extended section, so their closed supports agree.
-  have hts := (𝒯 α
-    ).tsupport_chartTestSection (n := ⊤) c hc hct ψ
-  rw [ContMDiffSection.tsupport_def] at hts
-  rw [Bundle.Trivialization.coe_chartTestCLM, hts] at hsub
-  rw [Bundle.Trivialization.coe_chartTestCLM]
-  refine ⟨?_, hsub.trans ?_⟩
-  · exact (ψ.hasCompactSupport.isCompact.image_of_continuousOn
-      (c.continuousOn_symm.mono ψ.tsupport_subset)).of_isClosed_subset (isClosed_tsupport _) hsub
-  · exact image_subset_iff.2 fun _ hy ↦ c.map_target (ψ.tsupport_subset hy)
+        ((𝒯 α).chartTestCLM c hc hct ψ) x (u x)) ⊆ c.source := by
+  have hsub := tsupport_pairing_subset ((𝒯 α).chartTestCLM c hc hct ψ) u
+  refine ⟨(BundleTest.isCompact_tsupport _).of_isClosed_subset (isClosed_tsupport _) hsub,
+    hsub.trans ?_⟩
+  rw [Bundle.Trivialization.coe_chartTestCLM, ← ContMDiffSection.tsupport_def]
+  exact (𝒯 α).tsupport_chartTestSection_subset_source c hc hct ψ
 
 include hcα in
 /-- The density paired from a section with locally integrable reading and a test extended through a
@@ -309,7 +300,7 @@ private theorem integrableDensity_chartTestCLM
     IntegrableDensity fun x ↦
       (𝒯 α
         |>.chartTestCLM c hc hct ψ) x (u x) := by
-  obtain ⟨hK, hs⟩ := tsupport_chartTestCLM_pairing c hc hct ψ (u := u)
+  obtain ⟨hK, hs⟩ := isCompact_tsupport_pairing_chartTestCLM_and_subset_source c hc hct ψ (u := u)
   rw [RoughDensity.integrableDensity_iff_of_tsupport_subset_chart (Module.finBasis ℝ E) α hK
     (hs.trans fun x hx ↦ (source_subset_of_subset_baseSet c hct hx).1)]
   have h := ψ.integrable_bilin (ContinuousLinearMap.id ℝ (G →L[ℝ] ℝ)) hu
@@ -330,7 +321,7 @@ theorem integralDensity_chartTestCLM
         |>.chartTestCLM c hc hct ψ) x (u x)) =
       TestFunction.integralAgainstBilinCLM (ContinuousLinearMap.id ℝ (G →L[ℝ] ℝ))
         (Module.finBasis ℝ E).addHaar (FirstJetBundle.localRep I G u α) ψ := by
-  obtain ⟨-, hs⟩ := tsupport_chartTestCLM_pairing c hc hct ψ (u := u)
+  obtain ⟨-, hs⟩ := isCompact_tsupport_pairing_chartTestCLM_and_subset_source c hc hct ψ (u := u)
   rw [integralDensity_eq_integral_inChartAt (integrableDensity_chartTestCLM c hc hct hcα hu ψ)
       (Module.finBasis ℝ E) α fun x hx ↦ by
         rw [extChartAt_source]
@@ -422,13 +413,15 @@ private theorem integrableDensity_and_integralDensity_eq_sum (hu : LocallyIntegr
     rw [BundleTest.sum_apply, sum_apply, Finset.sum_apply]
   have hi (α : M) (_ : α ∈ A.meeting K hK) := integrableDensity_chartTestCLM (A.chart α)
     (A.contMDiffOn_chart α) (hA α) (hAα α)
-    ((hu.locallyIntegrableOn α).mono_set (target_subset (A.chart α) (hA α) (hAα α)))
+    ((hu.locallyIntegrableOn α).mono_set
+      (target_subset_inter_preimage_baseSet (A.chart α) (hA α) (hAα α)))
     (cutoffTestCLM A hA α φ)
   rw [hd]
   refine ⟨IntegrableDensity.sum (Module.finBasis ℝ E) _ _ hi, ?_⟩
   rw [integralDensity_sum _ _ hi]
   exact Finset.sum_congr rfl fun α _ ↦ integralDensity_chartTestCLM _ _ _ (hAα α)
-    ((hu.locallyIntegrableOn α).mono_set (target_subset (A.chart α) (hA α) (hAα α))) _
+    ((hu.locallyIntegrableOn α).mono_set
+      (target_subset_inter_preimage_baseSet (A.chart α) (hA α) (hAα α))) _
 
 /-- The density paired from a locally integrable section and a dual-density test is integrable. -/
 theorem LocallyIntegrableSection.integrableDensity (hu : LocallyIntegrableSection I G u)
@@ -495,7 +488,7 @@ def BundleDistribution.ofSection (u : (x : M) → W x) : BundleDistribution I M 
   if hu : LocallyIntegrableSection I G u then ofSectionCLM hu else 0
 
 /-- For a locally integrable section, `BundleDistribution.ofSection` is the pairing. -/
-private theorem ofSection_eq (hu : LocallyIntegrableSection I G u) :
+private theorem ofSection_eq_ofSectionCLM (hu : LocallyIntegrableSection I G u) :
     BundleDistribution.ofSection I G u = ofSectionCLM hu :=
   dite_eq_left hu
 
@@ -504,12 +497,12 @@ density. -/
 theorem BundleDistribution.ofSection_apply (hu : LocallyIntegrableSection I G u)
     (φ : DualDensityTest I M G W) :
     BundleDistribution.ofSection I G u φ = integralDensity fun x ↦ φ x (u x) := by
-  rw [ofSection_eq hu]
+  rw [ofSection_eq_ofSectionCLM hu]
   -- `ofSectionCLM hu` applies the linear functional `ofSectionₗ hu`.
   rfl
 
 /-- The distributional section of a section that is not locally integrable is zero. -/
-theorem BundleDistribution.ofSection_of_not_locallyIntegrableSection
+theorem BundleDistribution.ofSection_eq_zero_of_not_locallyIntegrableSection
     (hu : ¬LocallyIntegrableSection I G u) : BundleDistribution.ofSection I G u = 0 := by
   exact dite_eq_right hu
 
@@ -525,7 +518,7 @@ theorem chartDistributionCLM_ofSection_apply_apply (hu : LocallyIntegrableSectio
     (𝒯 α).chartDistributionCLM
         c hc hct (BundleDistribution.ofSection I G u) φ v =
       ∫ y, φ y * v (FirstJetBundle.localRep I G u α y) ∂(Module.finBasis ℝ E).addHaar := by
-  have hloc := (hu.locallyIntegrableOn α).mono_set (target_subset c hct hcα)
+  have hloc := (hu.locallyIntegrableOn α).mono_set (target_subset_inter_preimage_baseSet c hct hcα)
   rw [Bundle.Trivialization.chartDistributionCLM_apply_apply, BundleDistribution.ofSection_apply hu,
     integralDensity_chartTestCLM c hc hct hcα hloc,
     TestFunction.integralAgainstBilinCLM_eq_integral hloc]
@@ -569,8 +562,8 @@ theorem BundleDistribution.ofSection_smul (u : (x : M) → W x) (a : ℝ) :
   · rcases eq_or_ne a 0 with rfl | ha
     · simp only [zero_smul]
       exact BundleDistribution.ofSection_zero
-    · rw [BundleDistribution.ofSection_of_not_locallyIntegrableSection hu, smul_zero]
-      refine BundleDistribution.ofSection_of_not_locallyIntegrableSection fun h ↦ hu ?_
+    · rw [BundleDistribution.ofSection_eq_zero_of_not_locallyIntegrableSection hu, smul_zero]
+      refine BundleDistribution.ofSection_eq_zero_of_not_locallyIntegrableSection fun h ↦ hu ?_
       simpa [smul_smul, inv_mul_cancel₀ ha] using h.smul a⁻¹
 
 end Global
