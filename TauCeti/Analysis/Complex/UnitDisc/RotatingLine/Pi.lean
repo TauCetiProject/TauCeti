@@ -161,14 +161,7 @@ theorem exists_mem_rotatingLinePiSubspace_augmentedConjWirtingerDerivL_eq (hk : 
   have hu (i : ι) : compLeftL
       ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).restrictScalars ℝ) u = v i := by
     ext z
-    have heval := map_sum (BoundedContinuousFunction.evalCLM ℝ z ∘L
-      toBoundedContinuousFunctionCLM (k := 1) (α := α) (Ω := unitBallOpens ℂ) (F := ι → ℂ))
-      (fun j ↦ compLeftL ((ContinuousLinearMap.single ℂ (fun _ : ι ↦ ℂ) j).restrictScalars ℝ)
-        (v j)) Finset.univ
-    simp only [ContinuousLinearMap.comp_apply, BoundedContinuousFunction.evalCLM_apply,
-      toBoundedContinuousFunctionCLM_apply, coe_toBoundedContinuousFunction] at heval
-    rw [compLeftL_apply, heval]
-    simp [Pi.single_apply]
+    simp [u, Pi.single_apply]
   exact ⟨u, mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem.2 fun i ↦ hu i ▸ hv i,
     augmentedConjWirtingerDerivL_pi_eq_iff.2 fun i ↦ by rw [hu i, hLv i]⟩
 

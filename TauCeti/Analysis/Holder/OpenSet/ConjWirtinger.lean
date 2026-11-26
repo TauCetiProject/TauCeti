@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
-public import TauCeti.Analysis.Holder.OpenSet.CompLeft
+public import TauCeti.Analysis.Holder.OpenSet.Comp.Left
 
 /-!
 # The Cauchy–Riemann operator on the Hölder space `C^{1,α}(Ω)`

@@ -551,6 +551,15 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) : ⇑(c • f) = c �
     Pi.smul_apply]
   simp
 
+/-- The value of a finite sum at a point is the sum of the values. -/
+@[simp]
+theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → CkHolderSpaceOn k α Ω F) (x : Ω) :
+    (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => simp [Finset.sum_insert hi, ih]
+
 /-- The derivative field of order zero has the norm of the underlying function at each point. -/
 theorem norm_iteratedFDeriv_zero (f : CkHolderSpaceOn k α Ω F) (x : Ω) :
     ‖f.iteratedFDeriv 0 x‖ = ‖f x‖ := by
