@@ -142,8 +142,9 @@ variable {ℏ : ℝ}
 `(0, ∞)`. -/
 theorem mem_domain_halfLineMomentum_iff {u : L²₊} :
     u ∈ (halfLineMomentum ℏ).domain ↔
-      ∃ φ : 𝓓(Ω₊, ℂ), TestFunction.ambientToLp ℂ 2 (volume.restrict (Ioi (0 : ℝ))) φ = u :=
-  LinearMap.mem_domain_domainOperator_iff _ _ _
+      ∃ φ : 𝓓(Ω₊, ℂ), TestFunction.ambientToLp ℂ 2 (volume.restrict (Ioi (0 : ℝ))) φ = u := by
+  simp only [halfLineMomentum, LinearMap.mem_domain_domainOperator_iff,
+    ContinuousLinearMap.coe_coe]
 
 /-- The class of a test function on `(0, ∞)` lies in the domain of the half-line momentum. -/
 @[simp]
@@ -151,19 +152,23 @@ theorem ambientToLp_mem_domain_halfLineMomentum (φ : 𝓓(Ω₊, ℂ)) :
     TestFunction.ambientToLp ℂ 2 (volume.restrict (Ioi (0 : ℝ))) φ ∈ (halfLineMomentum ℏ).domain :=
   mem_domain_halfLineMomentum_iff.2 ⟨φ, rfl⟩
 
+/-- The half-line momentum sends the class of a test function `φ`, viewed through the linear
+map `ι₊`, to the class of `momentumTest ℏ φ`. -/
+private theorem halfLineMomentum_ambientToLp (φ : 𝓓(Ω₊, ℂ)) :
+    halfLineMomentum ℏ ⟨ι₊ φ, ambientToLp_mem_domain_halfLineMomentum φ⟩ =
+      ι₊ (momentumTest ℏ φ) := by
+  -- This lemma is where the definition of `halfLineMomentum` as a `LinearMap.domainOperator` is
+  -- unfolded; the rest of the file uses it and `mem_domain_halfLineMomentum_iff` instead.
+  exact (LinearMap.domainOperator_apply_mk ι₊ (ι₊ ∘ₗ momentumTest ℏ)
+    TestFunction.ambientToLp_restrict_injective φ _).trans (LinearMap.comp_apply _ _ φ)
+
 /-- The half-line momentum sends the class of a test function `φ` to the class of `iℏ φ'`. -/
 @[simp]
 theorem halfLineMomentum_apply (φ : 𝓓(Ω₊, ℂ)) :
     halfLineMomentum ℏ ⟨_, ambientToLp_mem_domain_halfLineMomentum φ⟩ =
-      TestFunction.ambientToLp ℂ 2 (volume.restrict (Ioi (0 : ℝ))) ((I * ℏ) • ∂_{(1 : ℝ)} φ) :=
-  LinearMap.domainOperator_apply_mk ι₊ (ι₊ ∘ₗ momentumTest ℏ)
-    TestFunction.ambientToLp_restrict_injective φ _
-
-/-- `halfLineMomentum_apply`, stated through the linear map `ι₊` and `momentumTest`. -/
-private theorem halfLineMomentum_ambientToLp (φ : 𝓓(Ω₊, ℂ)) :
-    halfLineMomentum ℏ ⟨ι₊ φ, ambientToLp_mem_domain_halfLineMomentum φ⟩ =
-      ι₊ (momentumTest ℏ φ) :=
-  halfLineMomentum_apply φ
+      TestFunction.ambientToLp ℂ 2 (volume.restrict (Ioi (0 : ℝ))) ((I * ℏ) • ∂_{(1 : ℝ)} φ) := by
+  simpa only [ContinuousLinearMap.coe_coe, momentumTest_apply] using
+    halfLineMomentum_ambientToLp (ℏ := ℏ) φ
 
 /-- A representative of the half-line momentum of the class of a test function `φ` is
 `q ↦ iℏ φ'(q)`. -/
@@ -361,8 +366,9 @@ theorem mem_ker_subScalar_neg_I_adjoint_halfLineMomentum_iff (hℏ : 0 < ℏ) {u
     have hcond : ∀ x : (halfLineMomentum ℏ).domain,
         ⟪(-I) • u, (x : L²₊)⟫_ℂ = ⟪u, halfLineMomentum ℏ x⟫_ℂ := by
       rintro ⟨_, hφ⟩
-      obtain ⟨φ, rfl⟩ : ∃ φ, ι₊ φ = _ := mem_domain_halfLineMomentum_iff.mp hφ
-      rw [halfLineMomentum_ambientToLp, ← inner_conj_symm,
+      obtain ⟨φ, rfl⟩ := mem_domain_halfLineMomentum_iff.mp hφ
+      rw [halfLineMomentum_apply, Submodule.coe_mk, ← momentumTest_apply,
+        ← ContinuousLinearMap.coe_coe, ← inner_conj_symm,
         ← inner_ambientToLp_Ioi_momentumTest_of_ae_eq hℏ.ne' hv, inner_conj_symm]
     have hdom : u ∈ (halfLineMomentum ℏ)†.domain :=
       LinearPMap.mem_adjoint_domain_of_exists u ⟨_, hcond⟩

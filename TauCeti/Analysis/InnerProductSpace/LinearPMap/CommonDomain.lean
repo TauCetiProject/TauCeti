@@ -20,7 +20,7 @@ that `LinearMap.domainOperator ι A hι` of the underlying linear maps is the un
 self-adjointness of that operator into conditions on the pair `(ι, A)`.
 
 * It is symmetric exactly when `⟪A x, ι y⟫ = ⟪ι x, A y⟫` for all `x, y : D`
-  (`ContinuousLinearMap.isFormalAdjoint_domainOperator_iff`), the symmetry hypothesis of the
+  (`LinearMap.isFormalAdjoint_domainOperator_iff`), the symmetry hypothesis of the
   common-domain trajectory operators `TauCeti.WeakDerivStep.domainTrajectoryOperator`.
 * On a Hilbert space, a symmetric pair for which `c • ι - A` is surjective at one real `c`, for
   instance a pair with `A` invertible, gives a self-adjoint operator
@@ -77,22 +77,14 @@ section Topological
 
 variable [AddCommGroup D] [Module 𝕜 D] [TopologicalSpace D] {ι A : D →L[𝕜] H} {hι : Injective ι}
 
-/-- `LinearMap.domainOperator ι A hι` is symmetric exactly when `⟪A x, ι y⟫ = ⟪ι x, A y⟫` for all
-`x y : D`. -/
-theorem isFormalAdjoint_domainOperator_iff :
-    (ι.toLinearMap.domainOperator A.toLinearMap hι).IsFormalAdjoint
-        (ι.toLinearMap.domainOperator A.toLinearMap hι) ↔
-      ∀ x y, ⟪A x, ι y⟫ = ⟪ι x, A y⟫ :=
-  LinearMap.isFormalAdjoint_domainOperator_iff
-
 /-- **Self-adjointness on a common domain.** On a Hilbert space `H`, if `⟪A x, ι y⟫ = ⟪ι x, A y⟫`
 for all `x y : D` and the shift `c • ι - A` is surjective at a real scalar `c`, then
 `LinearMap.domainOperator ι A hι` is self-adjoint. -/
 theorem isSelfAdjoint_domainOperator [CompleteSpace H] (hsymm : ∀ x y, ⟪A x, ι y⟫ = ⟪ι x, A y⟫)
     {c : 𝕜} (hc : RCLike.im c = 0) (hsurj : Surjective (c • ι - A)) :
     IsSelfAdjoint (ι.toLinearMap.domainOperator A.toLinearMap hι) := by
-  refine (isFormalAdjoint_domainOperator_iff.2 hsymm).isSelfAdjoint_of_surjective_smul_sub hc
-    fun z ↦ ?_
+  refine (LinearMap.isFormalAdjoint_domainOperator_iff.2 hsymm).isSelfAdjoint_of_surjective_smul_sub
+    hc fun z ↦ ?_
   obtain ⟨x, rfl⟩ := hsurj z
   exact ⟨⟨ι x, LinearMap.apply_mem_domain_domainOperator _ _ hι x⟩,
     smul_sub_domainOperator_apply rfl⟩
