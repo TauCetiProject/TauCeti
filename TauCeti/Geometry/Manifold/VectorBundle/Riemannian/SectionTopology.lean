@@ -64,6 +64,13 @@ sections of the symmetric bilinear bundle, in the specified smooth frames. -/
 def frameTopology : TopologicalSpace (ContMDiffRiemannianMetric IB n F V) :=
   .induced toSymmetricSection (ContMDiffSection.frameTopology (I := IB) (n := n) e U hU)
 
+/-- `frameTopology` is induced from `ContMDiffSection.frameTopology` along
+`toSymmetricSection`. -/
+theorem frameTopology_eq_induced_toSymmetricSection :
+    frameTopology IB n e U hU =
+      .induced toSymmetricSection (ContMDiffSection.frameTopology (I := IB) (n := n) e U hU) :=
+  (rfl)
+
 /-- The section representation is an embedding for the section-space topology on metrics. -/
 theorem isEmbedding_toSymmetricSection_frameTopology :
     let _ := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU

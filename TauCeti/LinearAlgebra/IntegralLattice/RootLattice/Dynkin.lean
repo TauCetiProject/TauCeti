@@ -229,11 +229,8 @@ vectors by the Cartan integers, is the root lattice of `t`. -/
 theorem eq_rootLattice {L : IntegralLattice (Fin t.rank → ℚ)}
     (hcarrier : ∀ x, x ∈ L.carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i)
     (hform : ∀ i j, L.form (Pi.single i 1) (Pi.single j 1) = ((t.cartanMatrix i j : ℤ) : ℚ)) :
-    L = t.rootLattice ht := by
-  refine IntegralLattice.ext (Submodule.ext fun x ↦
-    (hcarrier x).trans (t.mem_rootLattice_carrier_iff ht x).symm) ?_
-  refine LinearMap.BilinForm.ext_basis (Pi.basisFun ℚ (Fin t.rank)) fun i j ↦ ?_
-  rw [Pi.basisFun_apply, Pi.basisFun_apply, hform, rootLattice_form_single_single]
+    L = t.rootLattice ht :=
+  eq_ofGramMatrix_basisFun _ _ hcarrier hform
 
 /-- The root lattice of type `Aₙ` is the simple-root lattice `typeARootLattice n`. -/
 theorem rootLattice_A (n : ℕ) (ht : (A n).IsSimplyLaced) :
@@ -304,23 +301,23 @@ theorem rootLatticeIsometryCheckerboard_symm_apply (n : ℕ) (hn : 4 ≤ n)
   let : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
   set e := rootLatticeIsometryCheckerboard n hn ht
   have hexp (x : Fin n → ℚ) :
-      e x = ∑ i : Fin n, x i • typeDSimpleRootBasis ℚ n hn i := by
+      e x = ∑ i : Fin n, x i • typeDSimpleRootBasis ℚ n (by omega) i := by
     have hx : x = ∑ i : Fin n, x i • Pi.single i 1 := by
       ext j
       simp [Finset.sum_apply, Pi.single_apply]
     refine (congrArg e hx).trans ((map_sum e (fun i : Fin n ↦ x i • Pi.single i (1 : ℚ))
       Finset.univ).trans ?_)
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have hcb : checkerboardSimpleRoot n hn i = typeDSimpleRootBasis ℚ n hn i := by
+    have hcb : checkerboardSimpleRoot n hn i = typeDSimpleRootBasis ℚ n (by omega) i := by
       ext j
       rw [checkerboardSimpleRoot_apply, typeDSimpleRootBasis_apply]
     exact (map_smul e (x i) (Pi.single i (1 : ℚ))).trans
       (congrArg (x i • ·) ((rootLatticeIsometryCheckerboard_single n hn ht i).trans hcb))
-  have hrepr : e ((typeDSimpleRootBasis ℚ n hn).repr y) = y :=
-    (hexp _).trans ((typeDSimpleRootBasis ℚ n hn).sum_repr y)
-  have hsymm : e.symm y = (typeDSimpleRootBasis ℚ n hn).repr y :=
+  have hrepr : e ((typeDSimpleRootBasis ℚ n (by omega)).repr y) = y :=
+    (hexp _).trans ((typeDSimpleRootBasis ℚ n (by omega)).sum_repr y)
+  have hsymm : e.symm y = (typeDSimpleRootBasis ℚ n (by omega)).repr y :=
     (congrArg e.symm hrepr.symm).trans (e.symm_apply_apply _)
-  rw [congrFun hsymm k, typeDSimpleRootBasis_repr_apply ℚ hn y k, invOf_eq_inv]
+  rw [congrFun hsymm k, typeDSimpleRootBasis_repr_apply ℚ (by omega) y k, invOf_eq_inv]
   split_ifs <;> ring
 
 end TauCeti.DynkinType

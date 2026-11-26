@@ -19,12 +19,14 @@ involving sums of principal roots. The file also records the values `√i = e^{�
 for real `r ≥ 0` and the identification of the real square root of `x ≥ 0` with the complex
 half-power `x ^ (1 / 2)`, records that the real square root of a nonnegative real, cast to `ℂ`,
 squares back to it, and packages the principal square root of a nonzero complex number as a unit,
-`Complex.sqrtUnit`.
+`Complex.sqrtUnit`. A complex unit of absolute value one has a square root of absolute value one,
+`Complex.exists_sq_eq_and_star_mul_self_eq_one`.
 
 The real square root of a positive real, cast to `ℂ`, is nonzero, and that of a nonnegative
 real `x` squares to `x` (`Complex.sq_ofReal_sqrt`), so its inverse squares to `x⁻¹`
 (`Complex.inv_ofReal_sqrt_mul_self`). Together with `1 + i ≠ 0` (`Complex.one_add_I_ne_zero`),
-these at `x = 2` are the arithmetic facts behind `e^{π i / 4} = (1 + i) / √2`.
+these at `x = 2` are the arithmetic facts behind `e^{π i / 4} = (1 + i) / √2`. It also follows
+that `i√x` squares to `-x` (`Complex.I_mul_ofReal_sqrt_sq`).
 -/
 
 public section
@@ -134,6 +136,15 @@ theorem val_sqrtUnit {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) = sqrt z :=
 theorem sqrtUnit_mul_self {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) * sqrtUnit hz = z := by
   rw [← _root_.sq, val_sqrtUnit, sq_sqrt]
 
+/-- A complex unit of absolute value one is `s ^ 2` for a unit `s` of absolute value one, that is,
+with `conj s * s = 1`. -/
+theorem exists_sq_eq_and_star_mul_self_eq_one {z : ℂˣ} (hz : normSq z = 1) :
+    ∃ s : ℂˣ, s ^ 2 = z ∧ star s * s = 1 := by
+  refine ⟨sqrtUnit z.ne_zero, Units.ext (by simp), Units.ext ?_⟩
+  simp only [Units.val_mul, Units.coe_star, val_sqrtUnit, Units.val_one, star_def]
+  rw [← normSq_eq_conj_mul_self, ofReal_eq_one,
+    ← pow_eq_one_iff_of_nonneg (normSq_nonneg _) two_ne_zero, ← map_pow, sq_sqrt, hz]
+
 /-- The real square root of a positive real, cast to `ℂ`, is nonzero. -/
 theorem ofReal_sqrt_ne_zero {x : ℝ} (hx : 0 < x) : (√x : ℂ) ≠ 0 := by
   exact_mod_cast (Real.sqrt_pos.mpr hx).ne'
@@ -147,6 +158,11 @@ theorem sq_ofReal_sqrt {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ) ^ 2 = x := by
 `x⁻¹`. -/
 theorem inv_ofReal_sqrt_mul_self {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ)⁻¹ * (√x : ℂ)⁻¹ = (x : ℂ)⁻¹ := by
   rw [← mul_inv, mul_self_ofReal_sqrt hx]
+
+/-- For a nonnegative real `x`, `i√x` is a square root of `-x`: `(i√x) ^ 2 = -x`. -/
+theorem I_mul_ofReal_sqrt_sq {x : ℝ} (hx : 0 ≤ x) : (I * √x) ^ 2 = -x := by
+  rw [mul_pow, I_sq, sq_ofReal_sqrt hx]
+  ring
 
 /-- The complex number `1 + i` is nonzero. -/
 theorem one_add_I_ne_zero : 1 + I ≠ 0 := fun h ↦ by

@@ -31,6 +31,8 @@ Fréchet derivative `fderiv ℝ f` as Jacobian and `μ` on `t` in place of `μ` 
 (`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`). If moreover `f` is injective
 and its derivative is invertible on `s`, then almost-everywhere properties on `t` pull back along
 `f` to almost-everywhere properties on `s` (`MeasureTheory.ae_restrict_comp_of_differentiableOn`).
+They also pull back whenever `f` has a differentiable left inverse on `t`
+(`MeasureTheory.ae_restrict_comp_of_leftInvOn`).
 Conversely, if `f` is `μ`-almost everywhere measurable and admits a differentiable left inverse `g`
 with `|det Dg| ≤ J` everywhere, then `μ.map f ≤ J • μ`
 (`MeasureTheory.map_addHaar_le_smul_of_leftInverse`). More locally, without differentiability of
@@ -251,6 +253,22 @@ theorem ae_restrict_comp_of_differentiableOn {P : E → Prop} (hs : IsOpen s)
   refine (withDensity_absolutelyContinuous' hdens ?_).ae_le (ae_of_ae_map hfm himage)
   filter_upwards [self_mem_ae_restrict hs.measurableSet] with x hx
   simpa using hdet x hx
+
+/-- **Null sets pull back along a map with a differentiable left inverse.** If `f` maps a
+measurable set `s` into a measurable set `t`, and `g` is differentiable on `t` with `g (f x) = x`
+on `s`, then a property holding `μ`-almost everywhere on `t` holds at `f x` for `μ`-almost every
+`x ∈ s`: the exceptional points of `s` lie in the image under `g` of a null subset of `t`, and a
+differentiable map carries null sets to null sets. -/
+theorem ae_restrict_comp_of_leftInvOn {P : E → Prop} {g : E → E} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hg : DifferentiableOn ℝ g t) (hmaps : MapsTo f s t)
+    (hinv : ∀ x ∈ s, g (f x) = x) (h : ∀ᵐ y ∂μ.restrict t, P y) :
+    ∀ᵐ x ∂μ.restrict s, P (f x) := by
+  rw [ae_iff, Measure.restrict_apply' ht] at h
+  rw [ae_iff, Measure.restrict_apply' hs]
+  refine measure_mono_null ?_
+    (addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero μ (hg.mono inter_subset_right) h)
+  rintro x ⟨hP, hx⟩
+  exact ⟨f x, ⟨hP, hmaps hx⟩, hinv x hx⟩
 
 /-! ### Jacobian bounds on compact sets and `Lᵖ` bounds for precomposition -/
 

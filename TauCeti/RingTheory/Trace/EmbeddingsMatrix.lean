@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.RingTheory.Trace.Basic
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
@@ -29,11 +30,16 @@ For a number field `K` and `Ω = ℂ` this says that `ℚ`-linearly independent 
 `α₁, …, αₙ ∈ K` have `ℂ`-linearly independent vectors of conjugates `(σ(αᵢ))_σ`, the input to the
 general position of conjugate linear forms in the theory of norm form equations.
 
+Over any commutative ring, the embeddings matrix of a family factors through its coordinate
+matrix in a basis and the embeddings matrix of that basis.
+
 ## Main results
 
 * `Algebra.linearIndependent_embeddingsMatrix_row`: if `α` is linearly independent over `F`, the
   rows of `Algebra.embeddingsMatrix F Ω α` are linearly independent over `Ω`.
 * `Algebra.linearIndependent_embeddingsMatrix_row_iff`: the converse also holds.
+* `Module.Basis.embeddingsMatrix_eq_transpose_mul`: the embeddings matrix of `y` is the transposed
+  coordinate matrix of `y` in a basis `b` times the embeddings matrix of `b`.
 
 ## References
 
@@ -86,3 +92,22 @@ theorem linearIndependent_embeddingsMatrix_row_iff [FiniteDimensional F K]
   exact (h.restrict_scalars' F).of_comp (LinearMap.pi fun σ : K →ₐ[F] Ω ↦ σ.toLinearMap)
 
 end Algebra
+
+namespace Module.Basis
+
+open Matrix
+
+variable {ι κ : Type*}
+
+/-- The matrix of the values `σ (y a)` of a family `y` under the `A`-algebra maps `σ : B →ₐ[A] C`
+is the transpose of its coordinate matrix in a basis `b`, mapped to `C`, times the matrix of the
+values `σ (b i)`. -/
+theorem embeddingsMatrix_eq_transpose_mul [Fintype ι] {A B : Type*} (C : Type*) [CommRing A]
+    [CommRing B] [Algebra A B] [CommRing C] [Algebra A C] (b : Basis ι A B) (y : κ → B) :
+    Algebra.embeddingsMatrix A C y =
+      ((b.toMatrix y).map (algebraMap A C))ᵀ * Algebra.embeddingsMatrix A C b := by
+  ext a σ
+  conv_lhs => rw [Algebra.embeddingsMatrix_apply, ← b.sum_repr (y a)]
+  simp [Matrix.mul_apply, toMatrix_apply, Algebra.smul_def]
+
+end Module.Basis

@@ -9,6 +9,7 @@ public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Logic.Equiv.Fin.Basic
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Block-diagonal embeddings of unitary, special unitary and special orthogonal groups
@@ -157,11 +158,7 @@ theorem mem_range_fromBlocksOne_iff {A : unitaryGroup (Fin (r + m)) α} :
     ext p
     refine Fin.addCases (fun j ↦ ?_) (fun k ↦ ?_) p
     · simp [Pi.single_apply, eq_comm]
-    · have hk : natAdd r k ≠ castAdd m i := fun h ↦ by
-        have := congrArg Fin.val h
-        simp only [val_natAdd, val_castAdd] at this
-        omega
-      simp [hk]
+    · simp
   -- The first `r` columns are standard basis vectors.
   have hcol : ∀ (p : Fin (r + m)) (i : Fin r),
       A.val p (castAdd m i) = (Pi.single (castAdd m i) 1 : Fin (r + m) → α) p :=
@@ -179,16 +176,8 @@ theorem mem_range_fromBlocksOne_iff {A : unitaryGroup (Fin (r + m)) α} :
     refine Fin.addCases (fun i ↦ ?_) (fun k ↦ ?_) p <;>
       refine Fin.addCases (fun j ↦ ?_) (fun l ↦ ?_) q
     · simpa [Pi.single_apply, Matrix.one_apply, eq_comm] using hcol (castAdd m i) j
-    · have hl : castAdd m i ≠ natAdd r l := fun h ↦ by
-        have := congrArg Fin.val h
-        simp only [val_natAdd, val_castAdd] at this
-        omega
-      simpa [Matrix.one_apply, hl] using hrow i (natAdd r l)
-    · have hk : natAdd r k ≠ castAdd m j := fun h ↦ by
-        have := congrArg Fin.val h
-        simp only [val_natAdd, val_castAdd] at this
-        omega
-      simpa [Pi.single_apply, hk] using hcol (natAdd r k) j
+    · simpa [Matrix.one_apply] using hrow i (natAdd r l)
+    · simpa [Pi.single_apply] using hcol (natAdd r k) j
     · simp only [reindex_apply, submatrix_apply, finSumFinEquiv_symm_apply_natAdd]
       rfl
   have hB : B ∈ unitaryGroup (Fin m) α :=
