@@ -15,7 +15,8 @@ For a homomorphism `f : F → G`, rescaling both formal groups by `s` gives the
 homomorphism with coefficients `s ^ (n - 1) * fₙ`. Its linear coefficient is unchanged,
 and it satisfies `s fˢ(T) = f(s T)`. This construction works over any commutative ring,
 even when `s` is a zero divisor: prove the homomorphism equation with an indeterminate
-scale and specialize it.
+scale and specialize it. Since rescaling commutes with composition and preserves identities,
+rescaling an isomorphism gives an isomorphism (`TauCeti.FormalGroupIso.rescale`).
 
 Rescaling allows homomorphisms to be studied on small formal neighbourhoods without
 inverting the scale in the coefficient ring. In particular, it retains the linear
@@ -197,6 +198,58 @@ theorem rescale_comp (g : FormalGroupHom G H) (f : FormalGroupHom F G) (s : R) :
         congrArg₂ PowerSeries.subst (hscaled f) (hscaled g)
 
 end TauCeti.FormalGroupHom
+
+namespace TauCeti.FormalGroupIso
+
+variable {R : Type*} [CommRing R] {F G H : FormalGroup R}
+
+/-- Rescale a formal group isomorphism together with its source and target. -/
+def rescale (e : FormalGroupIso F G) (s : R) :
+    FormalGroupIso (F.rescale s) (G.rescale s) :=
+  .ofSubstEqX (e.toHom.rescale s) (e.invHom.rescale s)
+    (by
+      rw [← FormalGroupHom.comp_toPowerSeries, ← FormalGroupHom.rescale_comp,
+        e.toHom_comp_invHom, FormalGroupHom.rescale_id, FormalGroupHom.id_toPowerSeries])
+    (by
+      rw [← FormalGroupHom.comp_toPowerSeries, ← FormalGroupHom.rescale_comp,
+        e.invHom_comp_toHom, FormalGroupHom.rescale_id, FormalGroupHom.id_toPowerSeries])
+
+@[simp]
+theorem rescale_toHom (e : FormalGroupIso F G) (s : R) :
+    (e.rescale s).toHom = e.toHom.rescale s :=
+  ofSubstEqX_toHom _ _ _ _
+
+@[simp]
+theorem rescale_invHom (e : FormalGroupIso F G) (s : R) :
+    (e.rescale s).invHom = e.invHom.rescale s :=
+  ofSubstEqX_invHom _ _ _ _
+
+/-- Rescaling sends the identity isomorphism to the identity isomorphism. -/
+@[simp]
+theorem rescale_refl (F : FormalGroup R) (s : R) :
+    (refl F).rescale s = refl (F.rescale s) := by
+  ext : 1
+  simp
+
+/-- Rescaling commutes with reversing an isomorphism. -/
+@[simp]
+theorem rescale_symm (e : FormalGroupIso F G) (s : R) :
+    e.symm.rescale s = (e.rescale s).symm := by
+  ext : 1
+  simp
+
+/-- Rescaling commutes with composition of isomorphisms. -/
+@[simp]
+theorem rescale_trans (e : FormalGroupIso F G) (e' : FormalGroupIso G H) (s : R) :
+    (e.trans e').rescale s = (e.rescale s).trans (e'.rescale s) := by
+  ext : 1
+  simp
+
+/-- The rescaling of a strict isomorphism is strict. -/
+instance (e : FormalGroupIso F G) [e.IsStrict] (s : R) : (e.rescale s).IsStrict where
+  coeff_one := by simp [IsStrict.coeff_one (f := e)]
+
+end TauCeti.FormalGroupIso
 
 namespace FormalGroup
 

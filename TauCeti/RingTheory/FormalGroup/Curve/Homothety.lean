@@ -20,12 +20,15 @@ satisfies `[r] ∘ V_n = V_n ∘ [r^n]` and `f_n ∘ [r] = [r^n] ∘ f_n`.
 ## Main definitions and results
 
 * `FormalGroup.homothetyCurve`: Cartier's homothety operator `[r] : γ(T) ↦ γ(r T)` on `F.Curve`.
-* `FormalGroup.homothetyCurve_homothetyCurve`, `FormalGroup.map_homothetyCurve`,
-  `TauCeti.FormalGroupHom.mapCurve_homothetyCurve`: multiplicativity and naturality of `[r]`.
+* `FormalGroup.homothetyCurve_homothetyCurve`, `FormalGroup.homothetyCurve_injective`,
+  `FormalGroup.map_homothetyCurve`, `TauCeti.FormalGroupHom.mapCurve_homothetyCurve`:
+  multiplicativity, injectivity under left-regular scalars, and naturality of `[r]`.
 * `FormalGroup.monomialCurve_eq_verschiebungCurve_homothetyCurve`: expression of a monomial
   curve using Verschiebung and homothety.
-* `FormalGroup.homothetyCurve_verschiebungCurve`, `FormalGroup.frobeniusCurve_homothetyCurve`:
-  Cartier's commutation relations `[r] ∘ V_n = V_n ∘ [r^n]` and `f_n ∘ [r] = [r^n] ∘ f_n`.
+* `FormalGroup.homothetyCurve_verschiebungCurve`, `FormalGroup.frobeniusCurve_homothetyCurve`,
+  `FormalGroup.subst_homothetyCurve_log`: Cartier's commutation relations
+  `[r] ∘ V_n = V_n ∘ [r^n]` and `f_n ∘ [r] = [r^n] ∘ f_n`, and action of `[r]` on the formal
+  logarithm over `ℚ`-algebras.
 
 ## References
 
@@ -149,5 +152,27 @@ theorem frobeniusCurve_homothetyCurve (F : FormalGroup R) [F.IsComm] (r : R) {n 
   have hπX : πP Polynomial.X = r := Polynomial.eval₂_X _ _
   simpa only [F₁.map_frobeniusCurve, F₁.map_homothetyCurve, map_pow, hπX] using
     congrArg (Curve.map πP) h₁
+
+/-- Cartier's homothety operator `[r]` on curves is injective whenever `r` is left-regular. -/
+theorem homothetyCurve_injective (F : FormalGroup R) {r : R} (hr : IsLeftRegular r) :
+    Function.Injective (F.homothetyCurve r) := by
+  intro γ δ h
+  apply Curve.ext
+  ext k
+  rcases eq_or_ne k 0 with rfl | _
+  · rw [γ.coeff_zero_toPowerSeries, δ.coeff_zero_toPowerSeries]
+  · have hk := congrArg (fun c : F.Curve ↦ PowerSeries.coeff k c.toPowerSeries) h
+    simp only [toPowerSeries_homothetyCurve, PowerSeries.coeff_rescale] at hk
+    exact (hr.pow k) hk
+
+/-- Over a `ℚ`-algebra, Cartier's homothety operator `[r]` rescales the formal logarithm of a
+curve: `log_F(γ(r T)) = (log_F(γ))(r T)`. -/
+theorem subst_homothetyCurve_log [Algebra ℚ R] (F : FormalGroup R) (r : R) (γ : F.Curve) :
+    PowerSeries.subst (F.homothetyCurve r γ).toPowerSeries F.log =
+      PowerSeries.rescale r (PowerSeries.subst γ.toPowerSeries F.log) := by
+  have h := congrArg Curve.toPowerSeries (F.logHom.mapCurve_homothetyCurve r γ)
+  rwa [FormalGroupHom.toPowerSeries_mapCurve, logHom_toPowerSeries,
+    toPowerSeries_homothetyCurve 𝔾ₐ, FormalGroupHom.toPowerSeries_mapCurve,
+    logHom_toPowerSeries] at h
 
 end FormalGroup
