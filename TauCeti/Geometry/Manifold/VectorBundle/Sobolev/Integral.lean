@@ -19,7 +19,7 @@ bundle atlas `A` (so `M` is compact), and let `ν` be a positive continuous dens
 *continuous covector field* is a family `L x : V x →L[ℝ] ℝ` that is continuous in the
 trivializations of `V`: `x ↦ L x ∘L e.symmL ℝ x` is continuous on the base set of every preferred
 trivialization `e`. The pairing `x ↦ ⟪η x, ·⟫` with a continuous section `η` of a bundle with a
-continuous fibre metric is an example.
+continuous fibre metric is an example (`TauCeti.continuousOn_innerSL_comp_symmL`).
 
 Every element `w` of the Sobolev space `W^{k,p}(V)` (`TauCeti.SobolevSection A μ p k`), for
 `1 ≤ p ≤ ∞`, consists of the chart data of a section `s` of `V`
@@ -32,7 +32,8 @@ does not depend on the choice of `s` and is a continuous linear functional on `W
 (`TauCeti.SobolevSection.integralL`, `TauCeti.SobolevSection.integralL_apply`). This is the
 `L²` pairing of sections of McDuff–Salamon, Appendix C.1, extended from smooth sections to Sobolev
 sections: for a continuous section `η` of a bundle with a fibre metric, the functional for
-`L x = ⟪η x, ·⟫` is `w ↦ ∫ ⟪η, s⟫ dν`.
+`L x = ⟪η x, ·⟫` is `w ↦ ∫ ⟪η, s⟫ dν`. On `Cᵏ` sections `σ` it is `∫ L x (σ x) dν`
+(`TauCeti.SobolevSection.integralL_ofContMDiffSection`).
 
 ## The argument
 
@@ -61,6 +62,9 @@ times the norm of `w`.
 * `TauCeti.SobolevSection.integrable_apply`: `x ↦ L x (s x)` is `ν`-integrable.
 * `TauCeti.SobolevSection.integralL_apply`: the value of the functional at `w` is
   `∫ L x (s x) dν` for every section `s` with the chart data of `w`.
+* `TauCeti.SobolevSection.integralL_ofContMDiffSection`: its value on a `Cᵏ` section.
+* `TauCeti.continuousOn_innerSL_comp_symmL`: pairing with a continuous section is a continuous
+  covector field.
 
 ## References
 
@@ -161,8 +165,7 @@ private theorem aestronglyMeasurable_apply {w : SobolevSection A μ p k} {s : �
     (Lp.aestronglyMeasurable (A.sectionChartData.chartValueL μ p k i w))
     (hc.aestronglyMeasurable hmeas)).congr ?_
   filter_upwards [hs i, ae_restrict_mem hmeas] with y hy hyi
-  rw [hy, apply_eq_comp_symmL_apply_coord hyi]
-  rfl
+  rw [hy, apply_eq_comp_symmL_apply_coord hyi, ContinuousLinearMap.apply_apply]
 
 omit hν [MeasurableSpace M] [BorelSpace M] in
 /-- In chart `i`, the integral over the chart image of the reading of `x ↦ |L x (s x)|` is at most a

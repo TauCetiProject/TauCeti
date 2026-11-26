@@ -149,8 +149,7 @@ private theorem exists_setLIntegral_dom_le [FiniteDimensional ℝ E]
   refine setLIntegral_mono' hmeas fun y hy ↦ ?_
   rw [Pi.mul_apply]
   gcongr
-  · exact (le_abs_self _).trans ((Real.norm_eq_abs _).symm.le.trans
-      (hK y (A.image_subset_chart_image_closure_dom i hy)))
+  · exact (Real.le_norm_self _).trans (hK y (A.image_subset_chart_image_closure_dom i hy))
   -- The inverses of a chart and of its partial equivalence agree by definition.
   · exact le_rfl
 
