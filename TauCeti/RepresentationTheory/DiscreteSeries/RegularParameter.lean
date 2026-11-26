@@ -24,10 +24,12 @@ A highest weight of the compact unitary group `U(n)` is given by column multipli
 power of the determinant: `κ h` columns of height `h` for `0 < h < n`, and the `e`-th power of the
 determinant. Its entry at the position `p` (counted from `0`) is
 `μ p = e + ∑_{p < h < n} κ h` (`TauCeti.columnHighestWeight`), a weakly decreasing sequence of
-integers, and twice its Harish-Chandra parameter `μ + ρ` has the entries
-`2 μ p + n - 1 - 2 p` (`TauCeti.doubledHCParameter`), a strictly decreasing sequence of integers of
-the parity of `n - 1`. A vector `l : ι → ℤ`, with `card ι = n`, is the doubled parameter of
-`(κ, e)` (`TauCeti.IsDoubledHCParameter`) if it lists these entries in some order.
+integers (`TauCeti.columnHighestWeight_antitone`), and twice its Harish-Chandra parameter `μ + ρ`
+has the entries `2 μ p + n - 1 - 2 p` (`TauCeti.doubledHCParameter`), a strictly decreasing
+sequence of integers (`TauCeti.doubledHCParameter_strictAnti`) of the parity of `n - 1`. A vector
+`l : ι → ℤ`, with `card ι = n`, is the doubled parameter of `(κ, e)`
+(`TauCeti.IsDoubledHCParameter`) if it lists these entries in some order; the entries at the
+positions `p < n` themselves form one (`TauCeti.isDoubledHCParameter_doubledHCParameter`).
 
 The doubled Harish-Chandra parameters of the discrete series of a unitary group `U(p, q)` with a
 gap, the regular parameters, have distinct entries of the parity of `n - 1`. This file shows that
@@ -47,7 +49,8 @@ the box bound is summed over the places (`TauCeti.sum_boxesBelow_le`).
 
 * `TauCeti.columnHighestWeight`, `TauCeti.doubledHCParameter`: the highest weight and its doubled
   Harish-Chandra parameter.
-* `TauCeti.IsDoubledHCParameter`: `l` lists the doubled parameter of `(κ, e)`.
+* `TauCeti.IsDoubledHCParameter`: `l` lists the doubled parameter of `(κ, e)`, and
+  `TauCeti.isDoubledHCParameter_doubledHCParameter`: the doubled parameter listed by position.
 * `TauCeti.boxesBelow`: the number of boxes in the columns of height below `n`.
 * `TauCeti.exists_isDoubledHCParameter_of_le`, `TauCeti.exists_isDoubledHCParameter`: every vector
   with distinct entries of the parity of `n - 1` is a doubled parameter.
@@ -135,6 +138,20 @@ theorem doubledHCParameter_sub_doubledHCParameter_sub_one {n p : ℕ} (hp : p < 
   rw [doubledHCParameter_sub_one (by omega), doubledHCParameter_eq]
   omega
 
+/-- The highest weight `columnHighestWeight n κ e` is weakly decreasing in the position. -/
+theorem columnHighestWeight_antitone (n : ℕ) (κ : ℕ → ℕ) (e : ℤ) :
+    Antitone (columnHighestWeight n κ e) := fun p q hpq ↦ by
+  rw [columnHighestWeight_def, columnHighestWeight_def]
+  exact add_le_add_right (sum_le_sum_of_subset_of_nonneg (Ioo_subset_Ioo_left hpq)
+    fun _ _ _ ↦ Nat.cast_nonneg _) e
+
+/-- The doubled parameter `doubledHCParameter n κ e` is strictly decreasing in the position. -/
+theorem doubledHCParameter_strictAnti (n : ℕ) (κ : ℕ → ℕ) (e : ℤ) :
+    StrictAnti (doubledHCParameter n κ e) := fun p q hpq ↦ by
+  have h_weight := columnHighestWeight_antitone n κ e hpq.le
+  rw [doubledHCParameter_def, doubledHCParameter_def]
+  omega
+
 /-- The doubled parameter sees only the columns of height below `n`. -/
 theorem doubledHCParameter_congr {n : ℕ} {κ κ' : ℕ → ℕ} (h : ∀ k < n, κ k = κ' k) (e : ℤ)
     (p : ℕ) : doubledHCParameter n κ e p = doubledHCParameter n κ' e p := by
@@ -153,6 +170,13 @@ theorem boxesBelow_eq_sum_sum_Ioo (n : ℕ) (κ : ℕ → ℕ) :
       rw [Ioo_add_one_right_eq_Ioc, sum_Ioo_add_eq_sum_Ioc (mem_range.mp hp)]
     rw [boxesBelow_def, sum_range_succ, ← boxesBelow_def, ih, sum_range_succ]
     simp [sum_congr rfl h_row, sum_add_distrib]
+
+/-- The entries of the doubled parameter of `(κ, e)` at the positions `p < n`, listed by position,
+form a doubled parameter of `(κ, e)`. -/
+theorem isDoubledHCParameter_doubledHCParameter (n : ℕ) (κ : ℕ → ℕ) (e : ℤ) :
+    IsDoubledHCParameter κ e fun p : Fin n ↦ doubledHCParameter n κ e p :=
+  isDoubledHCParameter_iff.mpr ⟨(doubledHCParameter_strictAnti n κ e).injective.comp
+    Fin.val_injective, fun p ↦ ⟨p, by simp, by rw [Fintype.card_fin]⟩⟩
 
 namespace IsDoubledHCParameter
 
