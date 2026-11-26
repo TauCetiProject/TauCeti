@@ -9,6 +9,7 @@ public import TauCeti.InformationTheory.ConditionalLabelEntropy
 public import TauCeti.InformationTheory.PartitionEntropy
 import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 import Mathlib.MeasureTheory.Integral.Lebesgue.Map
+import TauCeti.MeasureTheory.Measure.Real
 
 /-!
 # Conditional entropy of standard-Borel labels on countable labels
@@ -42,16 +43,6 @@ namespace TauCeti
 
 variable {X ι κ : Type*} {mX : MeasurableSpace X} {μ : Measure X}
 
-/-- Almost every point lies in an atom of positive mass of a countable measurable label. -/
-theorem ae_measure_preimage_singleton_ne_zero [Countable κ] {b : X → κ} :
-    ∀ᵐ x ∂μ, μ (b ⁻¹' {b x}) ≠ 0 := by
-  rw [ae_iff]
-  refine measure_mono_null (t := ⋃ j ∈ {j | μ (b ⁻¹' {j}) = 0}, b ⁻¹' {j}) ?_
-    ((measure_biUnion_null_iff (Set.to_countable _)).2 fun j hj ↦ hj)
-  intro x hx
-  simp only [ne_eq, not_not, Set.mem_ofPred_eq] at hx
-  exact Set.mem_biUnion (x := b x) hx rfl
-
 variable [IsFiniteMeasure μ] [MeasurableSpace ι] [StandardBorelSpace ι] [Nonempty ι] [Countable κ]
   [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
@@ -63,7 +54,8 @@ theorem condDistrib_apply_singleton_ae_eq {a : X → ι} {b : X → κ} (ha : Me
     (hb : Measurable b) :
     ∀ᵐ x ∂μ, condDistrib a b μ (b x) {a x} =
       (μ (b ⁻¹' {b x}))⁻¹ * μ (a ⁻¹' {a x} ∩ b ⁻¹' {b x}) := by
-  filter_upwards [ae_measure_preimage_singleton_ne_zero (μ := μ) (b := b)] with x hx
+  filter_upwards [ae_measureReal_preimage_ne_zero (μ := μ) (b := b)] with x hx
+  replace hx : μ (b ⁻¹' {b x}) ≠ 0 := fun h ↦ hx (by simp [Measure.real, h])
   have hmap : μ.map b {b x} = μ (b ⁻¹' {b x}) := Measure.map_apply hb (measurableSet_singleton _)
   rw [condDistrib_apply_of_ne_zero hb ha (b x) (hmap ▸ hx), hmap,
     Measure.map_apply (hb.prodMk ha) ((measurableSet_singleton _).prod (measurableSet_singleton _)),
