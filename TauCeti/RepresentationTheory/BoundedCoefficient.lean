@@ -17,10 +17,11 @@ for a linear map `ℓ` to a normed module, is bounded and nonzero, then `‖θ�
 norm of `a`. The reason is that the
 coefficient `f(g) = ℓ(ρ(g) x)` satisfies `θ f(g) = Σ_{g'} a_{g'} f(g g')`, so that
 `‖θ‖ ‖f(g)‖ ≤ (Σ_{g'} ‖a_{g'}‖) sup ‖f‖` for every `g`, and taking the supremum over `g` gives the
-bound. For a linear form `ℓ` the hypothesis is that the matrix coefficient `g ↦ ℓ(ρ(g) x)` is
-bounded. For `ℓ = id` the coefficient is the orbit map `g ↦ ρ(g) x` itself, and the hypothesis is
-that the carrier is normed and the orbit of `x` is bounded, which holds for instance when `ρ` acts
-by isometries.
+bound. If `𝕜` has a multiplicative norm (`[NormedRing 𝕜] [NormMulClass 𝕜]`, for example a normed
+field), one can take `E = 𝕜` and `ℓ` a linear form. The boundedness hypothesis then concerns the
+matrix coefficient `g ↦ ℓ(ρ(g) x)`. For `ℓ = id` the coefficient is the orbit map `g ↦ ρ(g) x`
+itself. This case requires a normed carrier and a bounded orbit of `x`, which holds for instance
+when `ρ` acts by isometries.
 
 For a compact open subgroup `K` of a locally profinite group `G` and a function `h` on `G/K` with
 finite support, the action `Σ_{c ∈ G/K} h(c) ρ(c) x` of `h` on a `K`-fixed vector `x` is the action
@@ -58,7 +59,8 @@ variable [Monoid G]
 
 /-- Let `x` be an eigenvector of `a = Σ_g a_g g` in a representation `ρ`, with eigenvalue `θ`.
 If some linear map `ℓ` to a normed module has `ℓ x ≠ 0` and the coefficient `g ↦ ℓ (ρ g x)` is
-bounded, then `‖θ‖ ≤ Σ_g ‖a_g‖`. A linear form `ℓ : Module.Dual 𝕜 V` is the case `E = 𝕜`. -/
+bounded, then `‖θ‖ ≤ Σ_g ‖a_g‖`. When `𝕜` has a multiplicative norm
+(`[NormedRing 𝕜] [NormMulClass 𝕜]`), a linear form `ℓ : Module.Dual 𝕜 V` is the case `E = 𝕜`. -/
 theorem norm_le_sum_norm_of_bddAbove_coeff [SeminormedCommRing 𝕜] {V : Type*} [AddCommMonoid V]
     [Module 𝕜 V] [NormedAddCommGroup E] [Module 𝕜 E] [NormSMulClass 𝕜 E]
     (ρ : Representation 𝕜 G V) {a : 𝕜[G]} {x : V} {θ : 𝕜} (hθ : ρ.asAlgebraHom a x = θ • x)
