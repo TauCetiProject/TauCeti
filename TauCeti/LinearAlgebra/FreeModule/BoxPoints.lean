@@ -12,10 +12,10 @@ public import Mathlib.Data.Set.Card
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
 public import Mathlib.LinearAlgebra.Dimension.Localization
-public import Mathlib.LinearAlgebra.Dimension.RankNullity
+public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.FreeModule.PID
-public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.PrincipalIdealDomain
+public import TauCeti.Algebra.Order.Group.Pointwise.Interval
 public import TauCeti.Combinatorics.Additive.ImageCard
 
 /-!
@@ -51,8 +51,6 @@ most `2R + 1` points, and `#S ≤ (2R + 1) · #g(S)`.
   `TauCeti.ncard_le_mul_ncard_image_of_prod_zpow_eq_one`: the same two counts for
   `s ↦ α₁ ^ s₁ ⋯ αₘ ^ sₘ`, when `α₁, …, αₘ` generate a subgroup of rank at least `m - 1` of a
   commutative group.
-* `TauCeti.abs_apply_le_of_mem_nsmul`: the `k`-fold sumset of a set in the box `‖s‖∞ ≤ R` lies
-  in the box `‖s‖∞ ≤ kR`.
 * `TauCeti.ncard_nsmul_le_mul_ncard_image_of_prod_zpow_eq_one`: the second count for the
   `k`-fold sumset `k • A` of a set `A` in the box `‖s‖∞ ≤ R`, the form in which it applies
   to the columns `((S - S) ∩ V)[m + 1]` of Waldschmidt's rank argument.
@@ -107,8 +105,8 @@ has rank at most one. -/
 theorem ncard_setOf_apply_eq_zero_abs_le_le (φ : (Fin m → ℤ) →ₗ[ℤ] M)
     (hφ : m ≤ finrank ℤ (range φ) + 1) (R : ℕ) :
     {s : Fin m → ℤ | φ s = 0 ∧ ∀ i, |s i| ≤ R}.ncard ≤ 2 * R + 1 := by
-  have h := (ker φ).finrank_quotient_add_finrank
-  rw [φ.quotKerEquivRange.finrank_eq, finrank_fin_fun] at h
+  have h := φ.finrank_range_add_finrank_ker
+  rw [finrank_fin_fun] at h
   exact Submodule.ncard_setOf_mem_abs_le_le_of_finrank_le_one (H := ker φ) (by omega) R
 
 /-- Let `φ` be a `ℤ`-linear map out of `ℤ^m` whose image has rank at least `m - 1`, and let `g` be
@@ -169,21 +167,6 @@ theorem ncard_le_mul_ncard_image_of_prod_zpow_eq_one {C : Type*} [AddZeroClass C
       rw [Fintype.linearCombination_apply]
       simp only [← ofMul_zpow, ← ofMul_prod, hg s hs, ofMul_one]) hR
 
-/-- If every point of `A ⊆ ℤ^m` has coordinates of absolute value at most `R`, then every point
-of the `k`-fold sumset `k • A` has coordinates of absolute value at most `k R`. -/
-theorem abs_apply_le_of_mem_nsmul {A : Set (Fin m → ℤ)} {R : ℤ} (hA : ∀ a ∈ A, ∀ i, |a i| ≤ R)
-    (k : ℕ) {s : Fin m → ℤ} (hs : s ∈ k • A) (i : Fin m) : |s i| ≤ k * R := by
-  induction k generalizing s with
-  | zero =>
-    obtain rfl : s = 0 := by simpa using hs
-    simp
-  | succ k ih =>
-    rw [succ_nsmul] at hs
-    obtain ⟨t, ht, a, ha, rfl⟩ := hs
-    calc |(t + a) i| ≤ |t i| + |a i| := abs_add_le _ _
-      _ ≤ k * R + R := add_le_add (ih ht) (hA a ha i)
-      _ = (k + 1 : ℕ) * R := by push_cast; ring
-
 /-- Let `α₁, …, αₘ` generate a subgroup of rank at least `m - 1` of a commutative group, and let
 `g` be an additive homomorphism vanishing only on exponent vectors `s` with
 `α₁ ^ s₁ ⋯ αₘ ^ sₘ = 1`. If every point of a set `A ⊆ ℤ^m` has coordinates of absolute
@@ -195,10 +178,16 @@ theorem ncard_nsmul_le_mul_ncard_image_of_prod_zpow_eq_one {C : Type*} [AddZeroC
     (g : (Fin m → ℤ) →+ C) (hg : ∀ s, g s = 0 → ∏ j, α j ^ s j = 1)
     {A : Set (Fin m → ℤ)} {R : ℕ} (hR : ∀ a ∈ A, ∀ i, |a i| ≤ R) (k : ℕ) :
     (k • A).ncard ≤ (g '' (k • A)).ncard * (2 * (2 * k * R) + 1) := by
+  have hA : A ⊆ Icc (fun _ ↦ -(R : ℤ)) (fun _ ↦ (R : ℤ)) := fun a ha ↦
+    ⟨fun i ↦ (abs_le.mp (hR a ha i)).1, fun i ↦ (abs_le.mp (hR a ha i)).2⟩
+  have hbox {s : Fin m → ℤ} (hs : s ∈ k • A) (i : Fin m) : |s i| ≤ k * R := by
+    have h := nsmul_Icc_subset (fun _ : Fin m ↦ -(R : ℤ)) (fun _ ↦ (R : ℤ)) k
+      (nsmul_subset_nsmul_left hA hs)
+    exact abs_le.mpr (by simpa [nsmul_eq_mul] using And.intro (h.1 i) (h.2 i))
   refine ncard_le_mul_ncard_image_of_prod_zpow_eq_one α hα g hg fun s hs t ht i ↦ ?_
   calc |s i - t i| ≤ |s i| + |t i| := abs_sub _ _
     _ ≤ k * R + k * R :=
-        add_le_add (abs_apply_le_of_mem_nsmul hR k hs i) (abs_apply_le_of_mem_nsmul hR k ht i)
+        add_le_add (hbox hs i) (hbox ht i)
     _ = ((2 * k * R : ℕ) : ℤ) := by push_cast; ring
 
 end TauCeti

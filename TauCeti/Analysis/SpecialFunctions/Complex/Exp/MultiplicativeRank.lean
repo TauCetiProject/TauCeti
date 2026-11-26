@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.LinearAlgebra.Dimension.Localization
-import Mathlib.LinearAlgebra.Dimension.RankNullity
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # The multiplicative rank of exponentials of `ℚ`-linearly independent numbers
@@ -66,8 +66,8 @@ theorem le_finrank_span_ofMul_add_one_of_coe_eq_exp {m : ℕ} {l : Fin m → ℂ
   have hle := LinearMap.finrank_le_finrank_of_injective hinj
   have hspan : finrank ℤ (span ℤ {2 * Real.pi * Complex.I}) ≤ 1 :=
     (finrank_span_le_card _).trans (by simp)
-  have h := (ker φ).finrank_quotient_add_finrank
-  rw [φ.quotKerEquivRange.finrank_eq, finrank_fin_fun, Fintype.range_linearCombination] at h
+  have h := φ.finrank_range_add_finrank_ker
+  rw [finrank_fin_fun, Fintype.range_linearCombination] at h
   omega
 
 end LinearIndependent
