@@ -13,10 +13,10 @@ public import TauCeti.Geometry.Toric.Algebraic.Fan.Divisor.Weights
 
 Let `D = ∑ a_ρ D_ρ` be an invariant divisor with integer coefficients on the toric variety of a
 fan. Its *graded cone* consists of the pairs `(u, j)` of a character `u` and a degree `j` with
-`u v_ρ + j a_ρ ≥ 0` for the primitive generator `v_ρ` of every ray `ρ`. The pairs of degree `j`
-are the character weights of the divisor `j D`, so the monomials of the graded cone index the
-sections of all the powers of `O(D)` at once, and adding pairs multiplies sections and adds
-degrees. This is the cone underlying the homogeneous coordinate algebra of `O(D)`: Scholze
+`u v_ρ + j a_ρ ≥ 0` for the primitive generator `v_ρ` of every ray `ρ`. Over `ℤ`, the pairs of
+degree `j` are the character weights of the divisor `j D`, so the monomials of the graded cone
+index the sections of all the powers of `O(D)` at once, and adding pairs multiplies sections and
+adds degrees. This is the cone underlying the homogeneous coordinate algebra of `O(D)`: Scholze
 completes the monoid algebra of its points with coordinates in `ℤ[1/p]` to obtain a perfectoid
 graded algebra, through which sections over a perfectoid field are approximated from its tilt.
 
@@ -26,7 +26,7 @@ definition covers both the real cone in `M_ℝ × ℝ` (for `R = ℝ`, with `M_�
 points over `R` are the points over `S` with coordinates in `R` whenever `R → S` preserves and
 reflects nonnegativity. Over any `R` the graded cone is a pointed cone: it is closed under addition,
 and under multiplication by nonnegative scalars, in particular under division by `p` when `p` is
-invertible in `R`.
+invertible with `0 ≤ p⁻¹` (e.g. `p > 0` in a linearly ordered `R` such as `ℤ[1/p]`).
 
 Adding the divisor of a character `χ ^ m` shears the graded cone by the transvection
 `(u, j) ↦ (u - j m, j)`, which preserves degrees. When the fan is complete, the only point of
@@ -71,8 +71,8 @@ variable (Phi) (R : Type*) [CommRing R] [PartialOrder R] [IsOrderedRing R]
 
 /-- The graded cone of the invariant divisor with integer ray coefficients `a`, with coordinates in
 an ordered commutative ring `R`: the pairs `(u, j)` of a character `u : N →+ R` and a degree
-`j : R` with `u v_ρ + j a_ρ ≥ 0` for the primitive generator `v_ρ` of every ray `ρ`. Its points of
-degree `j` are the character weights of `j D`. -/
+`j : R` with `u v_ρ + j a_ρ ≥ 0` for the primitive generator `v_ρ` of every ray `ρ`. Over `ℤ`, its
+points of degree `j` are the character weights of `j D` (`mk_mem_gradedDivisorCone_int_iff`). -/
 def gradedDivisorCone (a : Phi.Ray → ℤ) : PointedCone R ((N →+ R) × R) where
   carrier := {x | ∀ rho, 0 ≤ x.1 rho.primitiveGenerator + x.2 * a rho}
   add_mem' {x y} hx hy rho := by
@@ -103,6 +103,7 @@ theorem mk_comp_mem_gradedDivisorCone_iff {S : Type*} [CommRing S] [PartialOrder
     {u : N →+ R} {j : R} :
     (f.toAddMonoidHom.comp u, f j) ∈ Phi.gradedDivisorCone S a ↔
       (u, j) ∈ Phi.gradedDivisorCone R a := by
+  simp only [mem_gradedDivisorCone]
   refine forall_congr' fun rho ↦ Iff.trans ?_ (hf _)
   simp
 
@@ -113,11 +114,10 @@ theorem mem_gradedDivisorCone_add_characterDivisor {a : Phi.Ray → ℤ} {m : N 
     x ∈ Phi.gradedDivisorCone R (a + Phi.characterDivisor m) ↔
       LinearMap.transvection (LinearMap.snd R (N →+ R) R) ((Int.castAddHom R).comp m, 0) x ∈
         Phi.gradedDivisorCone R a := by
-  simp only [mem_gradedDivisorCone, LinearMap.transvection.apply, LinearMap.snd_apply,
-    Prod.fst_add, Prod.snd_add, Prod.smul_mk, smul_eq_mul, mul_zero, add_zero,
-    AddMonoidHom.add_apply, AddMonoidHom.smul_apply, AddMonoidHom.coe_comp, Function.comp_apply,
-    Int.coe_castAddHom, Pi.add_apply, characterDivisor_apply, Int.cast_add]
-  exact forall_congr' fun _ ↦ iff_of_eq (congrArg (0 ≤ ·) (by ring))
+  simp only [mem_gradedDivisorCone]
+  refine forall_congr' fun _ ↦ iff_of_eq ?_
+  simp [LinearMap.transvection.apply, characterDivisor_apply]
+  ring_nf
 
 /-- Adding the divisor of the character `χ ^ m` pulls the graded cone back along the
 degree-preserving transvection `(u, j) ↦ (u + j m, j)`. -/
@@ -135,13 +135,13 @@ theorem map_transvection_gradedDivisorCone (a : Phi.Ray → ℤ) (m : N →+ ℤ
     (Phi.gradedDivisorCone R a).map
         (LinearMap.transvection (LinearMap.snd R (N →+ R) R) (-(Int.castAddHom R).comp m, 0)) =
       Phi.gradedDivisorCone R (a + Phi.characterDivisor m) := by
-  ext x
-  rw [PointedCone.mem_map, mem_gradedDivisorCone_add_characterDivisor]
-  refine ⟨?_, fun hx ↦ ⟨_, hx, ?_⟩⟩
-  · rintro ⟨y, hy, rfl⟩
-    convert hy using 1
-    simp [LinearMap.transvection.apply, Prod.ext_iff]
-  · simp [LinearMap.transvection.apply, Prod.ext_iff]
+  have h : LinearMap.snd R (N →+ R) R (-(Int.castAddHom R).comp m, 0) = 0 := rfl
+  rw [gradedDivisorCone_add_characterDivisor]
+  refine SetLike.coe_injective ?_
+  rw [PointedCone.coe_map, PointedCone.coe_comap, ← LinearEquiv.transvection.coe_toLinearMap h,
+    LinearEquiv.coe_coe, LinearEquiv.image_eq_preimage_symm,
+    LinearEquiv.transvection.symm_eq h (by simp), ← LinearEquiv.coe_coe,
+    LinearEquiv.transvection.coe_toLinearMap, Prod.neg_mk, neg_neg, neg_zero]
 
 end OrderedRing
 
@@ -155,7 +155,8 @@ variable {R : Type*} [CommRing R] [LinearOrder R] [IsOrderedRing R]
 -/
 theorem IsComplete.mk_zero_mem_gradedDivisorCone_iff (hPhi : Phi.IsComplete)
     {a : Phi.Ray → ℤ} {u : N →+ R} : (u, 0) ∈ Phi.gradedDivisorCone R a ↔ u = 0 := by
-  refine ⟨fun hu ↦ hPhi.eq_zero_of_forall_ray_nonneg fun rho ↦ by simpa using hu rho, ?_⟩
+  refine ⟨fun hu ↦ hPhi.eq_zero_of_forall_ray_nonneg fun rho ↦ by
+    simpa using mem_gradedDivisorCone.1 hu rho, ?_⟩
   rintro rfl
   exact (Phi.gradedDivisorCone R a).zero_mem
 
@@ -163,8 +164,8 @@ theorem IsComplete.mk_zero_mem_gradedDivisorCone_iff (hPhi : Phi.IsComplete)
 only with the trivial character. -/
 theorem IsComplete.mem_gradedDivisorCone_zero_iff (hPhi : Phi.IsComplete) {x : (N →+ R) × R} :
     x ∈ Phi.gradedDivisorCone R 0 ↔ x.1 = 0 := by
-  refine ⟨fun hx ↦ hPhi.eq_zero_of_forall_ray_nonneg fun rho ↦ by simpa using hx rho, ?_⟩
-  intro hx rho
+  refine ⟨fun hx ↦ hPhi.eq_zero_of_forall_ray_nonneg fun rho ↦ by
+    simpa using mem_gradedDivisorCone.1 hx rho, fun hx ↦ mem_gradedDivisorCone.2 fun rho ↦ ?_⟩
   simp [hx]
 
 end Complete
