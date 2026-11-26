@@ -127,12 +127,28 @@ private theorem isOpen_setOf_forall_pos_snd [Finite ι] :
 private def phasePlane (i : ι) : (ι → ℝ) × (ι → ℝ) →L[ℝ] ℝ × ℝ :=
   (ContinuousLinearMap.proj i).prodMap (ContinuousLinearMap.proj i)
 
+omit [Fintype ι] in
+@[simp]
+private theorem phasePlane_apply (i : ι) (z : (ι → ℝ) × (ι → ℝ)) :
+    phasePlane i z = (z.1 i, z.2 i) :=
+  (rfl)
+
 /-- The point of `V × V` with prescribed phase planes, as a continuous linear map. -/
 private def ofPhasePlanes : (ι → ℝ × ℝ) →L[ℝ] 𝕍 × 𝕍 :=
   LinearMap.toContinuousLinearMap
     { toFun f := (WithLp.toLp 2 fun i ↦ (f i).1, WithLp.toLp 2 fun i ↦ (f i).2)
       map_add' f g := by ext i <;> simp
       map_smul' a f := by ext i <;> simp }
+
+@[simp]
+private theorem ofPhasePlanes_apply_fst (f : ι → ℝ × ℝ) (i : ι) :
+    (ofPhasePlanes f).1 i = (f i).1 :=
+  (rfl)
+
+@[simp]
+private theorem ofPhasePlanes_apply_snd (f : ι → ℝ × ℝ) (i : ι) :
+    (ofPhasePlanes f).2 i = (f i).2 :=
+  (rfl)
 
 /-- **The derivative of the product parametrization.** At positive actions it acts on each phase
 plane by the derivative of the parametrization of that oscillator. -/
@@ -177,7 +193,7 @@ theorem stdSymplecticForm_fderiv_oscillatorProductActionAngle (hm : ∀ i, 0 < m
   simp only [stdSymplecticForm_apply, PiLp.inner_apply, RCLike.inner_apply, conj_trivial,
     ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simpa [ofPhasePlanes, phasePlane, Prod.map, mul_comm] using h j
+  simpa [mul_comm] using h j
 
 /-- On the model spaces, the manifold derivative of the product parametrization is its derivative.
 -/
@@ -260,6 +276,22 @@ theorem oscillatorActionAngleChart_oscillatorProductActionAngle (hm : ∀ i, 0 <
   funext i
   exact oscillatorAction_oscillatorActionAngle (hm i) (hν i) (hy i).le
 
+/-- The base point of the chart of `x` is the point of the torus given by the angles of the phase
+planes of `x`. -/
+@[simp]
+theorem proj_oscillatorActionAngleChart (x : 𝕍 × 𝕍) :
+    (oscillatorActionAngleChart m ν x).proj =
+      fun i ↦ ((oscillatorAngle (m i) (ν i) (x.1 i, x.2 i)).toReal : AddCircle (2 * π)) :=
+  CotangentBundle.proj_actionAngleCover _ _
+
+omit [Fintype ι] in
+/-- Where every energy is positive, every action is positive. -/
+private theorem oscillatorAction_pos_of_oscillatorEnergies_pos (hν : ∀ i, 0 < ν i) {x : 𝕍 × 𝕍}
+    (hx : ∀ i, 0 < oscillatorEnergies m ν x i) (i : ι) :
+    0 < oscillatorAction (m i) (ν i) (x.1 i, x.2 i) := by
+  rw [oscillatorAction_apply, ← oscillatorEnergies_apply]
+  exact div_pos (hx i) (hν i)
+
 variable [DecidableEq ι]
 
 /-- The actions of the chart of `x` are the actions `Iᵢ = Eᵢ / νᵢ` of the phase planes of `x`. -/
@@ -290,8 +322,10 @@ theorem injective_oscillatorActionAngleChart (hm : ∀ i, 0 < m i) (hν : ∀ i,
   -- The angles of `y` are lifts of the angles of `x`, and the actions agree.
   have hθ (i : ι) : ((oscillatorAngle (m i) (ν i) (y.1 i, y.2 i)).toReal : Real.Angle) =
       oscillatorAngle (m i) (ν i) (x.1 i, x.2 i) := by
-    rw [congrFun hk i, Pi.add_apply, Real.Angle.coe_add, ← zsmul_eq_mul, Real.Angle.coe_zsmul,
-      Real.Angle.coe_two_pi, zsmul_zero, add_zero, Real.Angle.coe_toReal]
+    refine (Real.Angle.angle_eq_iff_two_pi_dvd_sub.2 ⟨k i, ?_⟩).trans (Real.Angle.coe_toReal _)
+    have h := congrFun hk i
+    simp only [Pi.add_apply] at h
+    linarith
   calc x = _ := (oscillatorProductActionAngle_eq_self hm hν hθ).symm
     _ = _ := by rw [hI]
     _ = y := oscillatorProductActionAngle_eq_self hm hν fun i ↦ Real.Angle.coe_toReal _
@@ -305,10 +339,7 @@ theorem image_oscillatorActionAngleChart (hm : ∀ i, 0 < m i) (hν : ∀ i, 0 <
   constructor
   · rintro ⟨x, hx, rfl⟩ i
     simp only [torusActions_oscillatorActionAngleChart]
-    have h := hx i
-    rw [oscillatorEnergies_apply] at h
-    rw [oscillatorAction_apply]
-    exact div_pos h (hν i)
+    exact oscillatorAction_pos_of_oscillatorEnergies_pos hν hx i
   · intro hz
     obtain ⟨y, rfl⟩ := CotangentBundle.surjective_actionAngleCover (2 * π) z
     rw [mem_ofPred_eq, CotangentBundle.torusActions_actionAngleCover] at hz
@@ -325,13 +356,8 @@ private theorem exists_oscillatorProductActionAngle_eq (hm : ∀ i, 0 < m i) (h�
     {x : 𝕍 × 𝕍} (hx : ∀ i, 0 < oscillatorEnergies m ν x i) :
     ∃ y : (ι → ℝ) × (ι → ℝ), (∀ i, 0 < y.2 i) ∧ oscillatorProductActionAngle m ν y = x ∧
       CotangentBundle.actionAngleCover (2 * π) y = oscillatorActionAngleChart m ν x :=
-  ⟨_, fun i ↦ by
-    dsimp only
-    have h := hx i
-    rw [oscillatorEnergies_apply] at h
-    rw [oscillatorAction_apply]
-    exact div_pos h (hν i),
-    oscillatorProductActionAngle_eq_self hm hν fun i ↦ Real.Angle.coe_toReal _, rfl⟩
+  ⟨_, oscillatorAction_pos_of_oscillatorEnergies_pos hν hx,
+    oscillatorProductActionAngle_eq_self hm hν fun _ ↦ Real.Angle.coe_toReal _, rfl⟩
 
 omit [DecidableEq ι] in
 /-- Near positive actions, the chart composed with the parametrization is the action–angle covering
