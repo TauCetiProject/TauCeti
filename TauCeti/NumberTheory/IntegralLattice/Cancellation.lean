@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.Hyperbolic
-public import TauCeti.NumberTheory.IntegralLattice.EvenUnimodularGenus
+public import TauCeti.NumberTheory.IntegralLattice.EvenUnimodular.Genus
 import TauCeti.LinearAlgebra.IntegralLattice.Neighbor.Two
 import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.D8Plus.Isometry
 

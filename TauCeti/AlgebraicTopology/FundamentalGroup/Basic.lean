@@ -51,6 +51,13 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
   induced-map range contained in any target subgroup.
 * `TauCeti.FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton`: the same triviality for the
   basepoint-transported induced map `FundamentalGroup.mapOfEq`.
+* `TauCeti.FundamentalGroup.mapOfEq_range_eq_of_subsingleton`: two such transported induced maps
+  into the same `π₁(X, x)` have the same range.
+* `TauCeti.FundamentalGroup.mapOfEq_comp_eq_of_mapOfEq_eq`: maps inducing the same homomorphism
+  on fundamental groups still do after precomposition with any pointed map.
+* `TauCeti.FundamentalGroup.mk_map_comp_eq_of_mapOfEq_eq`: two maps inducing the same
+  homomorphism on fundamental groups agree, in the fundamental groupoid of the target, on the
+  class of every path `α₀ · p · α₁⁻¹` through the basepoint.
 * `TauCeti.subsingleton_fundamentalGroup_iff`: the fundamental group at a basepoint is trivial
   exactly when every loop there is nullhomotopic.
 * `Path.homotopic_refl_of_forall_mem_of_subsingleton`: a loop lying in a set whose fundamental
@@ -260,6 +267,70 @@ theorem FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton
   have : Subsingleton ((_root_.FundamentalGroup.mapOfEq f h).range) :=
     (Set.subsingleton_coe _).mpr ((_root_.FundamentalGroup.mapOfEq f h).subsingleton_coe_range)
   exact Subgroup.eq_bot_of_subsingleton _
+
+/-- Two maps into `X` from spaces whose fundamental groups are subsingletons, transported to a
+common basepoint `x`, have the same (trivial) range in `π₁(X, x)`. For instance two simply
+connected covers of `X` recover the same subgroup. -/
+theorem FundamentalGroup.mapOfEq_range_eq_of_subsingleton
+    [Subsingleton (_root_.FundamentalGroup A a₀)] [Subsingleton (_root_.FundamentalGroup E e₀)]
+    (f : C(A, X)) (g : C(E, X)) {x : X} (hf : f a₀ = x) (hg : g e₀ = x) :
+    (_root_.FundamentalGroup.mapOfEq f hf).range =
+      (_root_.FundamentalGroup.mapOfEq g hg).range := by
+  rw [FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton,
+    FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton]
+
+/-- Two maps `f g : X → Y` inducing the same homomorphism on `π₁(X, x₀)` still do after
+precomposition with any map `e : A → X` sending `a₀` to `x₀`. -/
+theorem FundamentalGroup.mapOfEq_comp_eq_of_mapOfEq_eq {Y : Type*} [TopologicalSpace Y]
+    {f g : C(X, Y)} {a₀ : A} {x₀ : X} {y₀ : Y} (e : C(A, X)) (he : e a₀ = x₀) (hf : f x₀ = y₀)
+    (hg : g x₀ = y₀)
+    (hfg : _root_.FundamentalGroup.mapOfEq f hf = _root_.FundamentalGroup.mapOfEq g hg) :
+    _root_.FundamentalGroup.mapOfEq (f.comp e) (x := a₀) (by simp [he, hf]) =
+      _root_.FundamentalGroup.mapOfEq (g.comp e) (y := y₀) (by simp [he, hg]) := by
+  ext p
+  rw [← _root_.FundamentalGroup.mapOfEq_comp f e he hf,
+    ← _root_.FundamentalGroup.mapOfEq_comp g e he hg, hfg]
+
+/-- Two maps `f` and `g` with `g x₀ = f x₀` inducing the same homomorphism on `π₁(X, x₀)` agree,
+up to the identification of `g x₀` with `f x₀`, on the class of every path `α₀ · p · α₁⁻¹`. -/
+theorem FundamentalGroup.mk_map_comp_eq_of_mapOfEq_eq {Y : Type*} [TopologicalSpace Y]
+    {f g : C(X, Y)} {x₀ a b : X} (hg : g x₀ = f x₀)
+    (hfg : _root_.FundamentalGroup.mapOfEq f rfl = _root_.FundamentalGroup.mapOfEq g hg)
+    (α₀ : Path x₀ a) (p : Path a b) (α₁ : Path x₀ b) :
+    (Path.Homotopic.Quotient.mk (α₀.map f.continuous) : FundamentalGroupoid.mk (f x₀) ⟶ _) ≫
+      (Path.Homotopic.Quotient.mk (p.map f.continuous) : FundamentalGroupoid.mk (f a) ⟶ _) ≫
+      inv (Path.Homotopic.Quotient.mk (α₁.map f.continuous) : FundamentalGroupoid.mk (f x₀) ⟶ _) =
+    eqToHom congr(FundamentalGroupoid.mk $(hg.symm)) ≫
+      ((Path.Homotopic.Quotient.mk (α₀.map g.continuous) : FundamentalGroupoid.mk (g x₀) ⟶ _) ≫
+      (Path.Homotopic.Quotient.mk (p.map g.continuous) : FundamentalGroupoid.mk (g a) ⟶ _) ≫
+      inv (Path.Homotopic.Quotient.mk (α₁.map g.continuous) :
+        FundamentalGroupoid.mk (g x₀) ⟶ _)) ≫
+      eqToHom congr(FundamentalGroupoid.mk $hg) := by
+  -- The loop `α₀ · p · α₁⁻¹` at `x₀`, and its images under `f` and `g`.
+  let L : FundamentalGroupoid.mk x₀ ⟶ FundamentalGroupoid.mk x₀ :=
+    (Path.Homotopic.Quotient.mk α₀ : FundamentalGroupoid.mk x₀ ⟶ _) ≫
+      (Path.Homotopic.Quotient.mk p : FundamentalGroupoid.mk a ⟶ _) ≫
+      inv (Path.Homotopic.Quotient.mk α₁ : FundamentalGroupoid.mk x₀ ⟶ _)
+  have hmap (k : C(X, Y)) :
+      FundamentalGroupoid.fromPath (x₀ := k x₀) (Path.Homotopic.Quotient.map L k) =
+        (Path.Homotopic.Quotient.mk (α₀.map k.continuous) : FundamentalGroupoid.mk (k x₀) ⟶ _) ≫
+        (Path.Homotopic.Quotient.mk (p.map k.continuous) : FundamentalGroupoid.mk (k a) ⟶ _) ≫
+        inv (Path.Homotopic.Quotient.mk (α₁.map k.continuous) :
+          FundamentalGroupoid.mk (k x₀) ⟶ _) := by
+    -- `Path.Homotopic.Quotient.map L k` is the image of `L` under the functor `map k`, whose
+    -- source and target objects `mk (k x₀)` are those of `(map k).obj (mk x₀)` by definition.
+    change (FundamentalGroupoid.map k).map L = _
+    simp only [L, Functor.map_comp, Functor.map_inv]
+    simp only [FundamentalGroupoid.map_map, ← Path.Homotopic.Quotient.mk_map]
+    -- Both sides now agree as morphisms; only their implicit objects `(map k).obj (mk v)` and
+    -- `mk (k v)` differ, and these are equal by definition.
+    rfl
+  have h := congrArg CategoryTheory.End.asHom <|
+    DFunLike.congr_fun hfg (_root_.FundamentalGroup.fromArrow L)
+  simp only [_root_.FundamentalGroup.mapOfEq_apply] at h
+  rw [Path.Homotopic.Quotient.cast_rfl_rfl, ← FundamentalGroupoid.conj_eqToHom] at h
+  rw [← hmap f, ← hmap g]
+  exact h
 
 /-- A simply connected domain has induced fundamental-group range contained in any target
 subgroup. -/

@@ -66,8 +66,7 @@ theorem map_tautologicalPoint_oneSubFrobeniusIsogeny {Ω : Type*} [Field Ω] [De
         Point.map (_root_.FiniteField.frobeniusAlgHom F Ω) (Point.map σ (genericPoint W)) := by
   let _ := Fintype.ofFinite F
   rw [tautologicalPoint_oneSubFrobeniusIsogeny, map_sub, tautologicalPoint_eq_map_genericPoint,
-    fieldPullback_frobeniusIsogeny, Point.map_map, Point.map_map,
-    AlgHom.frobeniusAlgHom_comm]
+    fieldPullback_frobeniusIsogeny, Point.map_map_frobeniusAlgHom]
 
 /-- **Two homomorphisms that agree on the pulled-back field move the generic point to points whose
 difference is `q`-power fixed.** Their images of the tautological point of `1 − π_q` agree, and that

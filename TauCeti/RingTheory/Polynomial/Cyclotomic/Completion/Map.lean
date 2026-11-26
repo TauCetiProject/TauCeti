@@ -72,6 +72,8 @@ namespace TauCeti
 
 namespace CycloCompletion
 
+open PolyFamilyLimit
+
 section Restrict
 
 variable {R : Type*} [CommRing R]
@@ -80,11 +82,12 @@ variable {R : Type*} [CommRing R]
 quotient coordinates outside `cycloIndex R T`. -/
 noncomputable def restrict (R : Type*) [CommRing R] {S T : Set ℕ} (hTS : T ⊆ S) :
     CycloCompletion R S →ₐ[R] CycloCompletion R T :=
-  liftCompatAlgHom
-    (fun f ↦ proj (Submonoid.inclusion (cycloIndex_mono hTS) f))
-    (fun f g h ↦ algHomOfDvd_comp_proj
-      (f := Submonoid.inclusion (cycloIndex_mono hTS) f)
-      (g := Submonoid.inclusion (cycloIndex_mono hTS) g) h)
+  liftCompatAlgHom (g := fun f : cycloIndex R T ↦ (f : R[X]))
+    (fun f ↦ proj (g := fun f : cycloIndex R S ↦ (f : R[X]))
+      (Submonoid.inclusion (cycloIndex_mono hTS) f))
+    (fun f f' h ↦ algHomOfDvd_comp_proj (g := fun f : cycloIndex R S ↦ (f : R[X]))
+      (i := Submonoid.inclusion (cycloIndex_mono hTS) f)
+      (j := Submonoid.inclusion (cycloIndex_mono hTS) f') h)
 
 @[simp]
 theorem proj_restrict {S T : Set ℕ} (hTS : T ⊆ S) (f : cycloIndex R T)
@@ -196,9 +199,10 @@ theorem proj_map (φ : R →+* R') {S : Set ℕ} {f : cycloIndex R S} {f' : cycl
   let _ : TopologicalSpace (AdjoinRoot (f' : R'[X])) := ⊥
   have : DiscreteTopology (AdjoinRoot (f' : R'[X])) := discreteTopology_bot _
   let lhs : CycloCompletion R S →+* AdjoinRoot (f' : R'[X]) :=
-    (proj f' : CycloCompletion R' S →+* _).comp (map φ S)
+    ((proj f' : CycloCompletion R' S →ₐ[R'] _) : CycloCompletion R' S →+* _).comp (map φ S)
   let rhs : CycloCompletion R S →+* AdjoinRoot (f' : R'[X]) :=
-    (AdjoinRoot.map φ (f : R[X]) (f' : R'[X]) h).comp (proj f : CycloCompletion R S →+* _)
+    (AdjoinRoot.map φ (f : R[X]) (f' : R'[X]) h).comp
+      ((proj f : CycloCompletion R S →ₐ[R] _) : CycloCompletion R S →+* _)
   have hlhs : Continuous lhs := (continuous_proj f').comp (continuous_map φ S)
   have hrhs : Continuous rhs :=
     ((isLocallyConstant_proj f).comp (AdjoinRoot.map φ (f : R[X]) (f' : R'[X]) h)).continuous

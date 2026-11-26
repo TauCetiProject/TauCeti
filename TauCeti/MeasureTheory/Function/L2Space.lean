@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Algebra.Order.Ring.PosPart.Sq
 import TauCeti.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -42,13 +43,16 @@ More generally, the L² pairing of an L² function with the class of any square-
 function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`), also
 in the other order for an L² function given by an almost-everywhere representative
 (`MeasureTheory.L2.toLp_inner_of_ae_eq`). The zero class pairs to zero with every function
-(`MeasureTheory.Lp.integral_inner_coeFn_zero_left`).
+(`MeasureTheory.Lp.integral_inner_coeFn_zero_left`), and composition with a measure-preserving map
+preserves the L² inner product (`MeasureTheory.Lp.inner_compMeasurePreserving`).
 An L² function orthogonal to every L² function vanishing outside a measurable set vanishes
 almost everywhere on that set (`MeasureTheory.L2.ae_restrict_eq_zero_of_forall_inner_eq_zero`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
 product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
-`TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`.
+`TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`. A weak equation
+`∫ ⟪y, p⟫ = ∫ ⟪g, η⟫` whose left side differs pointwise from `⟪y, p₀⟫` by `⟪w, η⟫` becomes
+`∫ ⟪y, p₀⟫ = ∫ ⟪g - w, η⟫` (`TauCeti.integral_inner_eq_integral_inner_sub_of_inner_eq_add`).
 The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
 `integral_inner` with the integrand in the left slot, the pairing `∫ ⟪f, g⟫` is conjugate
 symmetric (`integral_inner_conj_symm`), and the integral of the Hilbert space
@@ -308,6 +312,14 @@ theorem Lp.integral_inner_coeFn_zero_left {p : ℝ≥0∞} (g : α → E) :
   rw [integral_congr_ae ((Lp.coeFn_zero E p μ).mono fun x hx ↦ by
     rw [hx, Pi.zero_apply, inner_zero_left]), integral_zero]
 
+/-- Composition with a measure-preserving map preserves the `L²` inner product. -/
+@[simp]
+theorem Lp.inner_compMeasurePreserving {β : Type*} [MeasurableSpace β] {ν : Measure β}
+    {f : α → β} (hf : MeasurePreserving f μ ν) (u v : Lp E 2 ν) :
+    ⟪Lp.compMeasurePreserving f hf u, Lp.compMeasurePreserving f hf v⟫_𝕜 = ⟪u, v⟫_𝕜 := by
+  simpa only [Lp.compMeasurePreservingₗᵢ_apply] using
+    (Lp.compMeasurePreservingₗᵢ 𝕜 f hf).inner_map_map u v
+
 /-- An L² function orthogonal to every L² function vanishing outside a measurable set `A`
 vanishes almost everywhere on `A`: it is orthogonal to its own restriction to `A`. -/
 theorem L2.ae_restrict_eq_zero_of_forall_inner_eq_zero {A : Set α} (hA : MeasurableSet A)
@@ -402,6 +414,25 @@ theorem integral_sq_sum_of_pairwise_integral_mul_eq_zero
     integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero
       (fun i hi j hj ↦ (hX i hi).integrable_inner (hX j hj))
       (by simpa only [Real.inner_apply] using horth)
+
+/-- **Moving a term of a weak equation to the right-hand side.** If the pairings of `y` with `p`
+and with `p₀` differ pointwise by `⟪w, η⟫`, then `∫ ⟪y, p⟫ = ∫ ⟪g, η⟫` gives
+`∫ ⟪y, p₀⟫ = ∫ ⟪g - w, η⟫`, as soon as `⟪y, p₀⟫`, `⟪g, η⟫` and `⟪w, η⟫` are integrable. In a weak
+formulation `p` and `p₀` are the formal adjoints of two operators applied to a test function `η`,
+and `w` is the difference of the operators applied to the weak solution `y`. -/
+theorem integral_inner_eq_integral_inner_sub_of_inner_eq_add
+    {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {y p p₀ g w η : α → E}
+    (hp : ∀ x, ⟪y x, p x⟫_𝕜 = ⟪y x, p₀ x⟫_𝕜 + ⟪w x, η x⟫_𝕜)
+    (hp₀ : Integrable (fun x ↦ ⟪y x, p₀ x⟫_𝕜) μ) (hg : Integrable (fun x ↦ ⟪g x, η x⟫_𝕜) μ)
+    (hw : Integrable (fun x ↦ ⟪w x, η x⟫_𝕜) μ)
+    (hweak : ∫ x, ⟪y x, p x⟫_𝕜 ∂μ = ∫ x, ⟪g x, η x⟫_𝕜 ∂μ) :
+    ∫ x, ⟪y x, p₀ x⟫_𝕜 ∂μ = ∫ x, ⟪g x - w x, η x⟫_𝕜 ∂μ := by
+  simp_rw [inner_sub_left]
+  rw [integral_sub hg hw, ← hweak]
+  simp_rw [hp]
+  rw [integral_add hp₀ hw]
+  ring
 
 end TauCeti
 

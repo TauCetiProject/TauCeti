@@ -30,6 +30,8 @@ scalar recurrence. The native dimension-one result supplies the initial value.
 * `TauCeti.singularHomologyCubeBoundaryPairIso_hom_cubeBoundaryPairCycle`: the literal coefficient.
 * `TauCeti.singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle`: the equivalent class
   formula, with the native selected generator.
+* `TauCeti.singularCubicalHomologyIso_inv_eq_neg_one_pow_smul_of_isCubicalRepresentative_upCube`:
+  the same formula for any class represented by the identity cube, in every dimension.
 
 ## References
 
@@ -879,5 +881,60 @@ theorem singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle
     (singularHomologyCubeBoundaryPairIso (ModuleCat.of k k) (n + 1)).hom).1 inferInstance
   rw [map_smul, ModuleCat.hom_inv_apply, smul_eq_mul, mul_one]
   exact singularHomologyCubeBoundaryPairIso_hom_cubeBoundaryPairCycle k n
+
+/-- **The identity cube is a signed generator**, in every dimension: read in relative singular
+homology, the class of the identity cube of `(Iⁿ, ∂Iⁿ)` is `(-1) ^ (n choose 2)` times the
+generator `TauCeti.singularHomologyCubeBoundaryPairIso`. In dimension `0` both are the class of the
+point. -/
+theorem singularCubicalHomologyIso_inv_eq_neg_one_pow_smul_of_isCubicalRepresentative_upCube
+    (k : Type u) [Ring k] {n : ℕ} {κ : ((cubeBoundaryPair.{u} n).cubicalChainComplex k).homology n}
+    (hκ : (cubeBoundaryPair.{u} n).IsCubicalRepresentative k
+      (NormalizedCubicalChain.ofCube _ k (upCube.{u} n)) κ) :
+    (TopPair.singularCubicalHomologyIso k (cubeBoundaryPair.{u} n) n).inv κ =
+      (-1 : k) ^ n.choose 2 • (singularHomologyCubeBoundaryPairIso (ModuleCat.of k k) n).inv 1 := by
+  cases n with
+  | zero =>
+    let P := cubeBoundaryPair.{u} 0
+    let pt : P.fst := ULift.up fun i ↦ i.elim0
+    -- `κ` is the relative class of the absolute class of the point.
+    have hκ' : HomologicalComplex.homologyMap
+        (cokernel.π ((normalizedCubicalChainComplex k).map P.map)) 0
+          (((normalizedCubicalChainComplex k).obj P.fst).homologyπ 0
+            (cubicalCycleOfPoint k pt)) = κ := by
+      refine P.homologyMap_homologyπ_eq_of_isCubicalRepresentative k _ hκ ?_
+      rw [iCycles_cubicalCycleOfPoint, LinearEquiv.apply_symm_apply]
+      have hpt : SingularCube.point pt = upCube.{u} 0 :=
+        ContinuousMap.ext fun _ ↦ ULift.ext (funext fun i ↦ i.elim0)
+      rw [hpt, sub_self]
+      exact zero_mem _
+    -- The generator of `H₀(I⁰, ∂I⁰)` is the class of the point.
+    have hg : (singularHomologyCubeBoundaryPairIso (ModuleCat.of k k) 0).inv =
+        singularHomology₀Section (ModuleCat.of k k) pt ≫
+          P.singularHomologyπ (ModuleCat.of k k) 0 := by
+      rw [singularHomologyCubeBoundaryPairIso_inv, singularHomologyDiskBoundaryPairIso_zero_inv]
+      exact TopPair.singularHomology₀Section_singularHomologyMap _ _ (diskBoundaryPairToCube.{u} 0)
+        (diskCenter 0) pt (ULift.ext (funext fun i ↦ i.elim0))
+    have hM := ConcreteCategory.congr_hom
+      (TopPair.homologyMap_π_comp_singularCubicalHomologyIso_inv k P 0)
+      (((normalizedCubicalChainComplex k).obj P.fst).homologyπ 0 (cubicalCycleOfPoint k pt))
+    rw [Nat.choose_zero_succ, pow_zero, one_smul, hg, ← hκ']
+    refine (ConcreteCategory.comp_apply _ _ _).symm.trans (hM.trans ?_)
+    -- The point class lies in the simplicial presentation of the singular homology of the point,
+    -- the comparison in its chain complex presentation; these agree by definition, so the composite
+    -- is split by terms rather than by rewriting.
+    exact (ConcreteCategory.comp_apply _ _ _).trans
+      ((congrArg (⇑(ConcreteCategory.hom (P.singularHomologyπ (ModuleCat.of k k) 0)))
+        (singularCubicalHomologyIso_inv_homologyπ_cubicalCycleOfPoint pt)).trans
+          (ConcreteCategory.comp_apply _ _ _).symm)
+  | succ m =>
+    have hκ' : κ = ((cubeBoundaryPair.{u} (m + 1)).cubicalChainComplex k).homologyπ (m + 1)
+        (cubeBoundaryPairCycle k m) :=
+      hκ.unique ((TopPair.isCubicalRepresentative_iff _ _).2 ⟨_, by
+        have h := TopPair.cubicalChainOfCube_def k (P := cubeBoundaryPair.{u} (m + 1))
+          (upCube.{u} (m + 1))
+        rw [normalizedCubicalChainComplexXEquiv_symm_apply] at h
+        rw [iCycles_cubeBoundaryPairCycle, h], rfl⟩)
+    rw [hκ', singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle,
+      Nat.choose_two_right, Nat.add_sub_cancel, Nat.mul_comm (m + 1) m]
 
 end TauCeti

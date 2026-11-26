@@ -11,6 +11,7 @@ import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.RingTheory.MatrixPolynomialAlgebra
+import TauCeti.LinearAlgebra.Matrix.Determinant.Pencil
 
 /-!
 # Linear independence survives generic perturbations
@@ -55,10 +56,7 @@ theorem eventually_cofinite_add_smul {x : ι → V} (hx : LinearIndependent K x)
   let B : Matrix ι ι K := Matrix.of fun i j ↦ φ i (y j)
   let P : K[X] := (1 + (X : K[X]) • B.map C).det
   have hP (c : K) : P.eval c = (1 + c • B).det := by
-    rw [← coe_evalRingHom, RingHom.map_det]
-    congr 1
-    ext i j
-    by_cases hij : i = j <;> simp [hij] <;> ring
+    simpa [P, add_comm] using eval_det_X_add_C B 1 c
   have hP0 : P ≠ 0 := fun h ↦ by
     have h0 := hP 0
     rw [h, eval_zero, zero_smul, add_zero, Matrix.det_one] at h0

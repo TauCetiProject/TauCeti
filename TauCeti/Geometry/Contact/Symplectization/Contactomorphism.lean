@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Symplectization.Annihilator
+public import TauCeti.Geometry.Contact.Symplectization.Trivialization
 public import TauCeti.Geometry.Manifold.Diffeomorph.Annihilator
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
@@ -37,10 +38,24 @@ lift of `h`. This file proves that it is the lift of `h` to the symplectizations
 
 No coorientation enters: the statements hold equally for contactomorphisms reversing a chosen
 coorientation, which exchange the two halves of the punctured line over each point, and for
-contact structures that are not the kernel of any global one-form. For a contact form `α` and a
-contactomorphism with `h^* α' = f α`, `f > 0`, the trivialized form of this lift is
-`(t, x) ↦ (t - log f(x), h x)` on `ℝ × M`
-(`TauCeti.SmoothForm.mpullback_symplectizationLift_symplectization`).
+contact structures that are not the kernel of any global one-form.
+
+In the trivializations `κ_α : (t, x) ↦ eᵗ α_x` of the annihilator lines by one-forms `α` and `α'`
+with kernels `ξ` and `ξ'` (`TauCeti.SmoothForm.symplectizationToAnnihilator`), the lift of a
+diffeomorphism `h` with `h^* α' = f α`, written `Φ`, is explicit. Where `f > 0` it is the lift
+`(t, x) ↦ (t - log f(x), h x)` of `TauCeti.symplectizationLift`:
+
+`Φ (κ_α (t, x)) = κ_α' (t - log f(x), h x)`
+
+(`Diffeomorph.annihilatorLift_symplectizationToAnnihilator`), so on the positive halves `Φ` is the
+lift of the cooriented symplectizations, which pulls `eᵗ α'` back to `eᵗ α`
+(`TauCeti.SmoothForm.mpullback_symplectizationLift_symplectization`). Where `f < 0` the lift
+reverses the coorientation and lands in the other half,
+
+`Φ (κ_α (t, x)) = κ_(-α') (t - log(-f(x)), h x)`
+
+(`Diffeomorph.annihilatorLift_symplectizationToAnnihilator_of_neg`). These identities only use
+that `ξ` and `ξ'` are smooth hyperplane fields.
 
 The preservation of `θ` is the naturality of the Liouville form under cotangent lifts
 (`Diffeomorph.mpullback_cotangent_liouvilleForm`), pulled back along the inclusions of the
@@ -251,5 +266,68 @@ theorem eq_annihilatorLift_of_mpullback_annihilatorLiouvilleForm
     h.apply_eq_annihilatorLift_of_annihilatorLiouvilleForm hhξ hξ hξ'
       ((hΨ z).mdifferentiableAt (by simp)) (Filter.Eventually.of_forall hproj) fun v ↦ by
         rw [← SmoothForm.mpullback_apply_one Ψ hΨ, hθ]
+
+/-! ### The lift in contact-form trivializations -/
+
+section Trivialization
+
+variable {k k' : ℕ} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
+  {D' : Π y : N, Submodule ℝ (TangentSpace J y)}
+  (hDD' : ∀ x v, v ∈ D x ↔ mfderiv I J h x v ∈ D' (h x)) (hD : IsContMDiffDistribution I ∞ k D)
+  (hD' : IsContMDiffDistribution J ∞ k' D') (hk : k + 1 = finrank ℝ E) (hk' : k' + 1 = finrank ℝ F)
+  {α : SmoothForm I M ℝ 1} {α' : SmoothForm J N ℝ 1} (hα : α.kerDistribution = D)
+  (hα' : α'.kerDistribution = D') {f : M → ℝ}
+  (hf : ∀ x, (SmoothForm.mpullback h h.contMDiff α').val x = f x • α.val x)
+
+omit [Nonempty M] [Nonempty N] in
+include hf in
+/-- **The lift of a contactomorphism in contact-form trivializations.** If `h` pulls `α'` back to
+`f α`, then at a point where `f` is positive the lift of `h` to the annihilator lines sends the
+covector `κ_α (t, x) = eᵗ α_x` to `κ_α' (t - log f(x), h x)`: in the trivializations by `α` and
+`α'` it is the lift `TauCeti.symplectizationLift` of the cooriented symplectizations. -/
+theorem annihilatorLift_symplectizationToAnnihilator {p : ℝ × M} (hp : 0 < f p.2) :
+    letI := hD.annihilatorFiberBundle hk
+    letI := hD'.annihilatorFiberBundle hk'
+    h.annihilatorLift hDD' hD hD' hk hk' (α.symplectizationToAnnihilator hα p) =
+      α'.symplectizationToAnnihilator hα' (symplectizationLift h f p) :=
+  letI := hD.annihilatorFiberBundle hk
+  letI := hD'.annihilatorFiberBundle hk'
+  annihilatorInclusion_injective J D' (Fin 1 → ℝ) <| by
+    rw [coe_annihilatorLift, annihilatorInclusion_annihilatorMap,
+      SmoothForm.annihilatorInclusion_symplectizationToAnnihilator,
+      SmoothForm.annihilatorInclusion_symplectizationToAnnihilator]
+    exact cotangent_symplectizationToCotangent hf hp
+
+omit [Nonempty M] [Nonempty N] in
+include hf in
+/-- **The lift of a coorientation-reversing contactomorphism in contact-form trivializations.** If
+`h` pulls `α'` back to `f α`, then at a point where `f` is negative the lift of `h` to the
+annihilator lines sends the covector `κ_α (t, x) = eᵗ α_x` to `κ_(-α') (t - log(-f(x)), h x)`,
+in the other half of the annihilator line of `ξ'`. -/
+theorem annihilatorLift_symplectizationToAnnihilator_of_neg {p : ℝ × M} (hp : f p.2 < 0) :
+    letI := hD.annihilatorFiberBundle hk
+    letI := hD'.annihilatorFiberBundle hk'
+    h.annihilatorLift hDD' hD hD' hk hk' (α.symplectizationToAnnihilator hα p) =
+      (-α').symplectizationToAnnihilator (SmoothForm.kerDistribution_neg.trans hα')
+        (symplectizationLift h (-f) p) :=
+  annihilatorLift_symplectizationToAnnihilator h hDD' hD hD' hk hk' hα
+    (SmoothForm.kerDistribution_neg.trans hα')
+    (fun x ↦ SmoothForm.mpullback_neg_apply_eq_neg_smul (hf x)) (neg_pos.2 hp)
+
+omit [Nonempty M] [Nonempty N] in
+include hf in
+/-- **The lift of a coorientation-preserving contactomorphism is the lift of the cooriented
+symplectizations.** If `h` pulls `α'` back to `f α` for an everywhere positive `f`, then the lift
+of `h` to the annihilator lines restricts, through the trivializations `κ_α` and `κ_α'`, to the
+map `(t, x) ↦ (t - log f(x), h x)` of `TauCeti.symplectizationLift`. -/
+theorem annihilatorLift_comp_symplectizationToAnnihilator (hf₀ : ∀ x, 0 < f x) :
+    letI := hD.annihilatorFiberBundle hk
+    letI := hD'.annihilatorFiberBundle hk'
+    h.annihilatorLift hDD' hD hD' hk hk' ∘ α.symplectizationToAnnihilator hα =
+      α'.symplectizationToAnnihilator hα' ∘ symplectizationLift h f :=
+  funext fun p ↦
+    annihilatorLift_symplectizationToAnnihilator h hDD' hD hD' hk hk' hα hα' hf (hf₀ p.2)
+
+end Trivialization
 
 end Diffeomorph

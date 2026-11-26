@@ -200,6 +200,14 @@ theorem integrationCochain_zero :
   ext c
   simp [integrationCochain_apply (I := I)]
 
+/-- The integration cochain of the negative of a form is the negative cochain. -/
+@[simp]
+theorem integrationCochain_neg (φ : RoughForm I M F p) :
+    integrationCochain (R := R) (-φ) = -integrationCochain φ := by
+  apply ModuleCat.hom_ext
+  ext c
+  simp [integrationCochain_apply (I := I), chainIntegral_eq_sum]
+
 /-- The integration cochain is homogeneous in the form. -/
 @[simp]
 theorem integrationCochain_smul [SMulCommClass R ℝ F] (a : ℝ) (φ : RoughForm I M F p) :
@@ -216,6 +224,11 @@ theorem integrationCochain_add [IsManifold I 1 M] {φ ψ : RoughForm I M F p}
   ext c
   simp [integrationCochain_apply (I := I), chainIntegral_add_form _ hφ hψ]
 
+/-- Integration takes the sum of two smooth forms to the sum of their cochains. -/
+theorem SmoothForm.integrationCochain_add [IsManifold I 1 M] (φ ψ : SmoothForm I M F p) :
+    integrationCochain (R := R) (φ + ψ).val = integrationCochain φ.val + integrationCochain ψ.val :=
+  TauCeti.integrationCochain_add (φ.isSmoothForm.of_le (by simp)) (ψ.isSmoothForm.of_le (by simp))
+
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} {N : Type} [TopologicalSpace N] [ChartedSpace H' N]
 
@@ -228,8 +241,19 @@ theorem integrationCochain_naturality {f : M → N} (hf : ContMDiff I J ∞ f)
   apply ModuleCat.hom_ext
   ext c
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, integrationCochain_apply (I := I),
-    integrationCochain_apply (I := J),
-    SSet.chainsLinearEquivFinsupp_chainComplexMap_f, chainIntegral_mapDomain hf]
+    integrationCochain_apply (I := J), SSet.chainsLinearEquivFinsupp_chainComplexMap_f,
+    chainIntegral_mapDomain hf]
+
+/-- Element form of `TauCeti.integrationCochain_naturality`: integrating over the pushforward of a
+chain is integrating the pulled-back form. -/
+theorem integrationCochain_chainComplexMap_apply {f : M → N} (hf : ContMDiff I J ∞ f)
+    (ψ : RoughForm J N F p)
+    (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).X p) :
+    (integrationCochain ψ).hom
+        (((SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of R R)).f p).hom
+          c) =
+      (integrationCochain (mpullback I J f ψ)).hom c := by
+  rw [← integrationCochain_naturality hf, ModuleCat.hom_comp, LinearMap.comp_apply]
 
 end Cochain
 
