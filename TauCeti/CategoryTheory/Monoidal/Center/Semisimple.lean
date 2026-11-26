@@ -264,27 +264,35 @@ theorem finite_simpleClasses_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
   finite_simpleClasses_of_normGlobalDim_ne_zero k
     (normGlobalDim_pivotalIsoApp_ne_zero k hdim)
 
+omit [Simple (𝟙_ C)] in
+private theorem dim_induction_obj_f (X : C) (d : C → (𝟙_ C ⟶ 𝟙_ C))
+    (hd_biprod : d (⨁ inductionSummand X) = ∑ T, d (inductionSummand X T))
+    (hd_tensor : ∀ A B : C, d (A ⊗ B) = d A ≫ d B)
+    (hd_dual : ∀ T : SimpleClasses C, d T.repr ≫ d T.reprᘁ = leftDim T.repr ≫ rightDim T.repr) :
+    d ((induction k C).obj X).1 = globalDim C ≫ d X := by
+  rw [induction_obj, inductionCenterObj_fst, hd_biprod,
+    globalDim_eq_sum_leftDim_comp_rightDim, Preadditive.sum_comp]
+  refine Finset.sum_congr rfl fun T _ ↦ ?_
+  calc d (inductionSummand X T)
+      = d T.repr ≫ (d X ≫ d T.reprᘁ) := by rw [inductionSummand, hd_tensor, hd_tensor]
+    _ = (d T.repr ≫ d T.reprᘁ) ≫ d X := by rw [scalar_comm (d X) (d T.reprᘁ), Category.assoc]
+    _ = (leftDim T.repr ≫ rightDim T.repr) ≫ d X := by rw [hd_dual]
+
 /-- In a pivotal fusion category `C` over an algebraically closed field `k`, the left dimension of
 `(induction k C).obj X`, read in `C`, is `globalDim C ≫ leftDim X`. -/
 theorem leftDim_induction_obj_f (X : C) :
-    (leftDim ((induction k C).obj X)).f = globalDim C ≫ leftDim X := by
-  refine (leftDim_f ((induction k C).obj X)).trans ?_
-  rw [induction_obj, inductionCenterObj_fst, leftDim_biproduct,
-    globalDim_eq_sum_leftDim_comp_rightDim, Preadditive.sum_comp]
-  refine Finset.sum_congr rfl fun T _ ↦ ?_
-  rw [inductionSummand, leftDim_tensor_eq_comp_of_simple k, leftDim_tensor_eq_comp_of_simple k,
-    leftDim_rightDual, scalar_comm (leftDim X), Category.assoc]
+    (leftDim ((induction k C).obj X)).f = globalDim C ≫ leftDim X :=
+  (leftDim_f ((induction k C).obj X)).trans <|
+    dim_induction_obj_f k X leftDim leftDim_biproduct
+      (leftDim_tensor_eq_comp_of_simple k) fun T ↦ by rw [leftDim_rightDual]
 
 /-- In a pivotal fusion category `C` over an algebraically closed field `k`, the right dimension of
 `(induction k C).obj X`, read in `C`, is `globalDim C ≫ rightDim X`. -/
 theorem rightDim_induction_obj_f (X : C) :
-    (rightDim ((induction k C).obj X)).f = globalDim C ≫ rightDim X := by
-  refine (rightDim_f ((induction k C).obj X)).trans ?_
-  rw [induction_obj, inductionCenterObj_fst, rightDim_biproduct,
-    globalDim_eq_sum_leftDim_comp_rightDim, Preadditive.sum_comp]
-  refine Finset.sum_congr rfl fun T _ ↦ ?_
-  rw [inductionSummand, rightDim_tensor_eq_comp_of_simple k, rightDim_tensor_eq_comp_of_simple k,
-    rightDim_rightDual, scalar_comm (rightDim X), ← Category.assoc, scalar_comm (rightDim T.repr)]
+    (rightDim ((induction k C).obj X)).f = globalDim C ≫ rightDim X :=
+  (rightDim_f ((induction k C).obj X)).trans <|
+    dim_induction_obj_f k X rightDim rightDim_biproduct
+      (rightDim_tensor_eq_comp_of_simple k) fun T ↦ by rw [rightDim_rightDual, scalar_comm]
 
 private theorem sum_simpleMultiplicities_mul_leftDimChar_eq
     [IsFiniteSemisimpleCategory (Center C)] [Fintype (SimpleClasses (Center C))]

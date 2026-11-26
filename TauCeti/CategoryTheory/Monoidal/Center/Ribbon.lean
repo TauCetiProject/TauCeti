@@ -128,8 +128,7 @@ theorem ribbonCategory_of_sphericalCategory_of_charZero [CharZero k] [Finite (Si
     RibbonCategory (Center C) := by
   classical
   let _ := Fintype.ofFinite (SimpleClasses C)
-  have := isFiniteSemisimpleCategory_of_globalDim_ne_zero k (TauCeti.globalDim_ne_zero k C)
-  exact ribbonCategory_of_sphericalCategory (hfin := inferInstance) k
+  exact ribbonCategory_of_sphericalCategory_of_globalDim_ne_zero k (TauCeti.globalDim_ne_zero k C)
 
 end Fusion
 
