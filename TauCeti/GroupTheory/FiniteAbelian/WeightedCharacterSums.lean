@@ -58,7 +58,7 @@ keep the Fourier coefficient of the prescribed profile at the constant weight `z
 indices, subtract the norms of their constant weights. Every index pays its weight variation
 `D`; only the selected indices pay the fibre-count discrepancy. The factors `c` allow phases
 such as character values at a translating element. -/
-theorem card_mul_le_sum_re_weighted_characters_of_fibre_counts
+theorem card_mul_le_sum_re_weighted_characters_of_fiber_counts
     {α Q ι : Type*} [Group Q] [Fintype Q]
     (S : Finset α) (p : α → Q) (ν : Q → ℝ) (I K : Finset ι) (hKI : K ⊆ I)
     (χ : ι → Q →* ℂ) (c z : ι → ℂ) (f : ι → α → ℂ) (D : ι → ℝ) (η : ℝ)
