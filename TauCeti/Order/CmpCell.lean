@@ -9,6 +9,9 @@ public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Set.Insert
 public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Order.Monotone.Basic
+public import Mathlib.Order.Hom.Set
+public import TauCeti.Order.Compare
+public import TauCeti.Order.Sum.Order
 
 /-!
 # Cells of comparison patterns
@@ -32,6 +35,12 @@ singletons of the entries, and empty sets.
   `TauCeti.cmpCell_snoc_elim0_of_lt`: the cells of a single point `x` are `Set.Iio x`, `{x}` and
   `Set.Ioi x`.
 * `StrictMono.mem_cmpCell_comp`: cells pull back along strictly monotone maps.
+* `TauCeti.cmpCell_snoc_snoc_of_ne`: off the cell of the new point, a cell of an extended tuple is
+  a whole cell of the original tuple or empty.
+* `TauCeti.cmpCellSnocOrderIso`: inside a cell of `a`, the cells of a point `p` are the cells of
+  `snoc a p`.
+* `TauCeti.cmpCellInlOrderIso`, `TauCeti.cmpCellInrOrderIso`: the cells of a point of `A ⊕ₗ B`
+  are ordered sums of a cell of that point in its summand and the other summand or `∅`.
 -/
 
 public section
@@ -105,5 +114,112 @@ theorem cmpCell_snoc_elim0_of_lt {x : M} {τ : Fin 1 → Ordering} (h : τ (last
 /-- Every point lies in the cell of its own comparison pattern. -/
 theorem mem_cmpCell_cmp (a : Fin n → M) (x : M) : x ∈ cmpCell a (fun i => cmp (a i) x) :=
   fun _ => rfl
+
+/-- Off the cell of `x`, a cell of `snoc a x` is a whole cell of `a` or empty, according to a rule
+that only depends on the comparison patterns. -/
+theorem cmpCell_snoc_snoc_of_ne {a : Fin n → M} {x : M} {σ₀ σ : Fin n → Ordering}
+    {o : Ordering} {i : Fin n} (hx : x ∈ cmpCell a σ₀) (hi : σ i ≠ σ₀ i) :
+    cmpCell (snoc a x) (snoc σ o) = if cmpOfNe (σ₀ i) (σ i) = o then cmpCell a σ else ∅ := by
+  have hcmp {z : M} (hz : z ∈ cmpCell a σ) : cmp x z = cmpOfNe (σ₀ i) (σ i) := by
+    rw [cmp_eq_cmpOfNe (by rwa [hz i, hx i]), hz i, hx i]
+  ext z
+  rw [mem_cmpCell_snoc, init_snoc, snoc_last]
+  split_ifs with h
+  · exact ⟨And.left, fun hz => ⟨hz, (hcmp hz).trans h⟩⟩
+  · exact iff_of_false (fun hz => h ((hcmp hz.1).symm.trans hz.2)) id
+
+/-- Inside the cell `cmpCell a σ`, the cells of a point `p` are the cells of `snoc a p`. -/
+def cmpCellSnocOrderIso (a : Fin n → M) (σ : Fin n → Ordering) (p : cmpCell a σ)
+    (τ : Fin 1 → Ordering) :
+    cmpCell (snoc (Fin.elim0 : Fin 0 → cmpCell a σ) p) τ ≃o
+      cmpCell (snoc a (p : M)) (snoc σ (τ (last 0))) where
+  toFun z := ⟨z.val.val, mem_cmpCell_snoc.2 ⟨by rw [init_snoc]; exact z.val.property, by
+    rw [snoc_last]
+    exact mem_cmpCell_snoc_elim0.1
+      ((Subtype.strictMono_coe _).mem_cmpCell_snoc_elim0.2 z.property)⟩⟩
+  invFun z := ⟨⟨z.val, by simpa using (mem_cmpCell_snoc.1 z.property).1⟩,
+    (Subtype.strictMono_coe _).mem_cmpCell_snoc_elim0.1 <|
+      mem_cmpCell_snoc_elim0.2 (by simpa using (mem_cmpCell_snoc.1 z.property).2)⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_rel_iff' := Iff.rfl
+
+/-- `cmpCellSnocOrderIso` does not change the underlying point. -/
+@[simp]
+theorem coe_cmpCellSnocOrderIso_apply (a : Fin n → M) (σ : Fin n → Ordering) (p : cmpCell a σ)
+    (τ : Fin 1 → Ordering) (z : cmpCell (snoc (Fin.elim0 : Fin 0 → cmpCell a σ) p) τ) :
+    (cmpCellSnocOrderIso a σ p τ z : M) = z.val.val :=
+  (rfl)
+
+/-- The inverse of `cmpCellSnocOrderIso` does not change the underlying point. -/
+@[simp]
+theorem coe_coe_cmpCellSnocOrderIso_symm_apply (a : Fin n → M) (σ : Fin n → Ordering)
+    (p : cmpCell a σ) (τ : Fin 1 → Ordering) (z : cmpCell (snoc a (p : M)) (snoc σ (τ (last 0)))) :
+    ((cmpCellSnocOrderIso a σ p τ).symm z : M) = z.val :=
+  (rfl)
+
+section SumLex
+
+variable {A : Type*} {B : Type*} [LinearOrder A] [LinearOrder B]
+
+/-- The cells of a point of the left summand of `A ⊕ₗ B`: a cell of the point in `A`, followed by
+all of `B` or by nothing. -/
+def cmpCellInlOrderIso (a : A) (τ : Fin 1 → Ordering) :
+    cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inl a))) τ ≃o
+      cmpCell (snoc (Fin.elim0 : Fin 0 → A) a) τ ⊕ₗ {_b : B | Ordering.lt = τ (last 0)} :=
+  let s := cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inl a))) τ
+  OrderIso.subtypeSumLex.trans <| OrderIso.sumLexCongr
+    (Set.orderIsoOfEq {x | toLex (Sum.inl x) ∈ s} _ <| Set.ext fun _ =>
+      Sum.Lex.inl_strictMono.mem_cmpCell_snoc_elim0 (x := a))
+    (Set.orderIsoOfEq {y | toLex (Sum.inr y) ∈ s} _ <| Set.ext fun y => by
+      simp only [s, Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, (Sum.Lex.inl_lt_inr a y).cmp_eq_lt])
+
+/-- The cells of a point of the right summand of `A ⊕ₗ B`: all of `A` or nothing, followed by a
+cell of the point in `B`. -/
+def cmpCellInrOrderIso (b : B) (τ : Fin 1 → Ordering) :
+    cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inr b))) τ ≃o
+      {_a : A | Ordering.gt = τ (last 0)} ⊕ₗ cmpCell (snoc (Fin.elim0 : Fin 0 → B) b) τ :=
+  let s := cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inr b))) τ
+  OrderIso.subtypeSumLex.trans <| OrderIso.sumLexCongr
+    (Set.orderIsoOfEq {x | toLex (Sum.inl x) ∈ s} _ <| Set.ext fun x => by
+      simp only [s, Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, (Sum.Lex.inl_lt_inr x b).cmp_eq_gt])
+    (Set.orderIsoOfEq {y | toLex (Sum.inr y) ∈ s} _ <| Set.ext fun _ =>
+      Sum.Lex.inr_strictMono.mem_cmpCell_snoc_elim0 (x := b))
+
+/-- `cmpCellInlOrderIso` sends a point of the left summand to the same point of `A`. -/
+@[simp]
+theorem cmpCellInlOrderIso_apply_inl (a x : A) (τ : Fin 1 → Ordering)
+    (h : toLex (Sum.inl x) ∈ cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inl a))) τ) :
+    cmpCellInlOrderIso a τ ⟨toLex (Sum.inl x), h⟩ =
+      toLex (Sum.inl ⟨x, Sum.Lex.inl_strictMono.mem_cmpCell_snoc_elim0.1 h⟩) :=
+  by rw [cmpCellInlOrderIso, OrderIso.trans_apply, OrderIso.subtypeSumLex_apply_inl]; rfl
+
+/-- `cmpCellInlOrderIso` sends a point of the right summand to the same point of `B`. -/
+@[simp]
+theorem cmpCellInlOrderIso_apply_inr (a : A) (y : B) (τ : Fin 1 → Ordering)
+    (h : toLex (Sum.inr y) ∈ cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inl a))) τ) :
+    cmpCellInlOrderIso a τ ⟨toLex (Sum.inr y), h⟩ =
+      toLex (Sum.inr ⟨y, by
+        rwa [mem_cmpCell_snoc_elim0, (Sum.Lex.inl_lt_inr a y).cmp_eq_lt] at h⟩) :=
+  by rw [cmpCellInlOrderIso, OrderIso.trans_apply, OrderIso.subtypeSumLex_apply_inr]; rfl
+
+/-- `cmpCellInrOrderIso` sends a point of the left summand to the same point of `A`. -/
+@[simp]
+theorem cmpCellInrOrderIso_apply_inl (b : B) (x : A) (τ : Fin 1 → Ordering)
+    (h : toLex (Sum.inl x) ∈ cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inr b))) τ) :
+    cmpCellInrOrderIso b τ ⟨toLex (Sum.inl x), h⟩ =
+      toLex (Sum.inl ⟨x, by
+        rwa [mem_cmpCell_snoc_elim0, (Sum.Lex.inl_lt_inr x b).cmp_eq_gt] at h⟩) :=
+  by rw [cmpCellInrOrderIso, OrderIso.trans_apply, OrderIso.subtypeSumLex_apply_inl]; rfl
+
+/-- `cmpCellInrOrderIso` sends a point of the right summand to the same point of `B`. -/
+@[simp]
+theorem cmpCellInrOrderIso_apply_inr (b y : B) (τ : Fin 1 → Ordering)
+    (h : toLex (Sum.inr y) ∈ cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inr b))) τ) :
+    cmpCellInrOrderIso b τ ⟨toLex (Sum.inr y), h⟩ =
+      toLex (Sum.inr ⟨y, Sum.Lex.inr_strictMono.mem_cmpCell_snoc_elim0.1 h⟩) :=
+  by rw [cmpCellInrOrderIso, OrderIso.trans_apply, OrderIso.subtypeSumLex_apply_inr]; rfl
+
+end SumLex
 
 end TauCeti

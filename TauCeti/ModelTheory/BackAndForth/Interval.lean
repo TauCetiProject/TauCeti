@@ -7,7 +7,6 @@ module
 
 public import TauCeti.ModelTheory.BackAndForth.LinearOrder
 public import TauCeti.Order.CmpCell
-public import TauCeti.Order.Sum.Order
 public import Mathlib.Order.Hom.Set
 
 /-!
@@ -55,51 +54,6 @@ attribute [local instance] orderStructure
 section IntervalLemma
 
 variable {M : Type w} {N : Type w'} [LinearOrder M] [LinearOrder N] {n : ℕ}
-
-/-- The comparison of `x` with `z` when `x` and `z` compare with a third point `w` as `s₀` and
-`s`, with `s ≠ s₀`. -/
-private def cmpOfNe : Ordering → Ordering → Ordering
-  | .lt, .eq | .lt, .gt | .eq, .gt => .gt
-  | .eq, .lt | .gt, .lt | .gt, .eq => .lt
-  | _, _ => .eq
-
-/-- If `x` and `z` compare differently with `w`, their own comparison is determined by these two
-comparisons. -/
-private theorem cmp_eq_cmpOfNe {w x z : M} (h : cmp w z ≠ cmp w x) :
-    cmp x z = cmpOfNe (cmp w x) (cmp w z) := by
-  cases hwx : cmp w x <;> cases hwz : cmp w z <;>
-    simp_all only [ne_eq, not_true_eq_false, reduceCtorEq, not_false_eq_true, cmp_eq_lt_iff,
-      cmp_eq_eq_iff, cmp_eq_gt_iff, cmpOfNe] <;>
-    first | exact hwz.trans hwx | exact hwx.trans hwz
-
-/-- Off the cell of `x`, a cell of `snoc a x` is a whole cell of `a` or empty, according to a rule
-that only depends on the comparison patterns. -/
-private theorem cmpCell_snoc_snoc_of_ne {a : Fin n → M} {x : M} {σ₀ σ : Fin n → Ordering}
-    {o : Ordering} {i : Fin n} (hx : x ∈ cmpCell a σ₀) (hi : σ i ≠ σ₀ i) :
-    cmpCell (snoc a x) (snoc σ o) = if cmpOfNe (σ₀ i) (σ i) = o then cmpCell a σ else ∅ := by
-  have hcmp {z : M} (hz : z ∈ cmpCell a σ) : cmp x z = cmpOfNe (σ₀ i) (σ i) := by
-    rw [cmp_eq_cmpOfNe (by rwa [hz i, hx i]), hz i, hx i]
-  ext z
-  rw [mem_cmpCell_snoc, init_snoc, snoc_last]
-  split_ifs with h
-  · exact ⟨And.left, fun hz => ⟨hz, (hcmp hz).trans h⟩⟩
-  · exact iff_of_false (fun hz => h ((hcmp hz.1).symm.trans hz.2)) id
-
-/-- Inside the cell `cmpCell a σ`, the cells of a point `p` are the cells of `snoc a p`. -/
-private def cmpCellSnocOrderIso (a : Fin n → M) (σ : Fin n → Ordering) (p : cmpCell a σ)
-    (τ : Fin 1 → Ordering) :
-    cmpCell (snoc (Fin.elim0 : Fin 0 → cmpCell a σ) p) τ ≃o
-      cmpCell (snoc a (p : M)) (snoc σ (τ (last 0))) where
-  toFun z := ⟨z.val.val, mem_cmpCell_snoc.2 ⟨by rw [init_snoc]; exact z.val.property, by
-    rw [snoc_last]
-    exact mem_cmpCell_snoc_elim0.1
-      ((Subtype.strictMono_coe _).mem_cmpCell_snoc_elim0.2 z.property)⟩⟩
-  invFun z := ⟨⟨z.val, by simpa using (mem_cmpCell_snoc.1 z.property).1⟩,
-    (Subtype.strictMono_coe _).mem_cmpCell_snoc_elim0.1 <|
-      mem_cmpCell_snoc_elim0.2 (by simpa using (mem_cmpCell_snoc.1 z.property).2)⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_rel_iff' := Iff.rfl
 
 /-- The interval lemma at the level `γ`, for linear orders in the universes `u₁` and `u₂`. -/
 private def IntervalLemma (γ : Ordinal.{o}) : Prop :=
@@ -216,28 +170,6 @@ private theorem bfEquiv_setOf_const {A' : Type u₂} [LinearOrder A'] {γ : Ordi
   · have : IsEmpty {_x : A | p} := ⟨fun x => hp x.property⟩
     have : IsEmpty {_x : A' | p} := ⟨fun x => hp x.property⟩
     exact BFEquiv.of_isEmpty γ
-
-/-- The cells of a point of the left summand. -/
-private def cmpCellInlOrderIso (a : A) (τ : Fin 1 → Ordering) :
-    cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inl a))) τ ≃o
-      cmpCell (snoc (Fin.elim0 : Fin 0 → A) a) τ ⊕ₗ {_b : B | Ordering.lt = τ (last 0)} :=
-  let s := cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inl a))) τ
-  OrderIso.subtypeSumLex.trans <| OrderIso.sumLexCongr
-    (Set.orderIsoOfEq {x | toLex (Sum.inl x) ∈ s} _ <| Set.ext fun _ =>
-      Sum.Lex.inl_strictMono.mem_cmpCell_snoc_elim0 (x := a))
-    (Set.orderIsoOfEq {y | toLex (Sum.inr y) ∈ s} _ <| Set.ext fun y => by
-      simp only [s, Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, (Sum.Lex.inl_lt_inr a y).cmp_eq_lt])
-
-/-- The cells of a point of the right summand. -/
-private def cmpCellInrOrderIso (b : B) (τ : Fin 1 → Ordering) :
-    cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inr b))) τ ≃o
-      {_a : A | Ordering.gt = τ (last 0)} ⊕ₗ cmpCell (snoc (Fin.elim0 : Fin 0 → B) b) τ :=
-  let s := cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inr b))) τ
-  OrderIso.subtypeSumLex.trans <| OrderIso.sumLexCongr
-    (Set.orderIsoOfEq {x | toLex (Sum.inl x) ∈ s} _ <| Set.ext fun x => by
-      simp only [s, Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, (Sum.Lex.inl_lt_inr x b).cmp_eq_gt])
-    (Set.orderIsoOfEq {y | toLex (Sum.inr y) ∈ s} _ <| Set.ext fun _ =>
-      Sum.Lex.inr_strictMono.mem_cmpCell_snoc_elim0 (x := b))
 
 /-- Back-and-forth equivalence of ordered sums at the level `γ`, for linear orders in the given
 universes. -/
