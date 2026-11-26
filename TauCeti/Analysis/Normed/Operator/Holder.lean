@@ -314,26 +314,8 @@ on `s`, gives a Hölder function on `s`, with constant `Mf Kv + Mv Kf`. -/
 theorem clm_apply [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {α Kf Kv Mf Mv : ℝ≥0}
     {f : X → F →L[𝕜] G} {v : X → F} {s : Set X} (hf : HolderOnWith Kf α f s)
     (hv : HolderOnWith Kv α v s) (hfnorm : ∀ x ∈ s, ‖f x‖ ≤ Mf) (hvnorm : ∀ x ∈ s, ‖v x‖ ≤ Mv) :
-    HolderOnWith (Mf * Kv + Mv * Kf) α (fun x ↦ f x (v x)) s := by
-  intro x hx y hy
-  have hle : ‖f x (v x) - f y (v y)‖ ≤ ‖f x‖ * ‖v x - v y‖ + ‖f x - f y‖ * ‖v y‖ := by
-    have hsplit : f x (v x) - f y (v y) = f x (v x - v y) + (f x - f y) (v y) := by
-      simp only [map_sub, sub_apply]
-      abel
-    rw [hsplit]
-    exact (norm_add_le _ _).trans (add_le_add ((f x).le_opNorm _) ((f x - f y).le_opNorm _))
-  calc
-    edist (f x (v x)) (f y (v y)) ≤ ‖f x‖₊ * edist (v x) (v y) + edist (f x) (f y) * ‖v y‖₊ := by
-      simp only [edist_nndist, nnDist_eq_nnNorm]
-      exact_mod_cast hle
-    _ ≤ Mf * (Kv * edist x y ^ (α : ℝ)) + Kf * edist x y ^ (α : ℝ) * Mv := by
-      gcongr
-      · exact_mod_cast hfnorm x hx
-      · exact hv.edist_le hx hy
-      · exact hf.edist_le hx hy
-      · exact_mod_cast hvnorm y hy
-    _ = _ := by
-      push_cast
-      ring
+    HolderOnWith (Mf * Kv + Mv * Kf) α (fun x ↦ f x (v x)) s :=
+  ((ContinuousLinearMap.id 𝕜 (F →L[𝕜] G)).holderOnWith_comp₂ hf hv hfnorm hvnorm).mono_const
+    (mul_le_of_le_one_left zero_le ContinuousLinearMap.norm_id_le)
 
 end HolderOnWith
