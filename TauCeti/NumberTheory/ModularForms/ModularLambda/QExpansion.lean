@@ -11,12 +11,11 @@ public import Mathlib.NumberTheory.ModularForms.QExpansion
 import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 public import Mathlib.Combinatorics.Enumerative.Pentagonal.PowerSeries
 public import Mathlib.RingTheory.PowerSeries.Expand
-import Mathlib.Combinatorics.Enumerative.Pentagonal.EulerFunction
 public import Mathlib.RingTheory.PowerSeries.Inverse
-import TauCeti.RingTheory.PowerSeries.HasFPowerSeriesOnBall
 import TauCeti.Analysis.Analytic.PowerSubstitution
 import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 import TauCeti.Analysis.SpecialFunctions.QPochhammer
+import TauCeti.Combinatorics.Enumerative.Pentagonal.EulerFunction
 import TauCeti.RingTheory.MvPowerSeries.Inverse
 
 /-!
@@ -42,24 +41,12 @@ open scoped UpperHalfPlane
 
 namespace TauCeti.ModularForm
 
-private def eulerSeries (k : ℕ) (hk : k ≠ 0) : ℤ⟦X⟧ :=
-  (pentagonalSeries ℤ).expand k hk
-
-private theorem eulerSeries_constantCoeff (k : ℕ) (hk : k ≠ 0) :
-    constantCoeff (eulerSeries k hk) = 1 := by
-  rw [eulerSeries, constantCoeff_expand]
-  rw [← coeff_zero_eq_constantCoeff_apply,
-    ← show pentagonal 0 = 0 by norm_num [pentagonal_def], coeff_pentagonalSeries_pentagonal]
-  norm_num
-
 /-- The strict integral coordinate underlying the normalized modular lambda function. -/
 def modularLambdaCoordinate : FormalCoordinate ℤ where
-  toPowerSeries := X * (eulerSeries 1 one_ne_zero * eulerSeries 4 (by decide) ^ 2 *
-    (eulerSeries 2 two_ne_zero).invOfUnit 1 ^ 3) ^ 8
+  toPowerSeries := X * (pentagonalSeries ℤ * ((pentagonalSeries ℤ).expand 4 (by decide)) ^ 2 *
+    ((pentagonalSeries ℤ).expand 2 two_ne_zero).invOfUnit 1 ^ 3) ^ 8
   constantCoeff_toPowerSeries := by simp
-  isUnit_coeff_one := by
-    have h (k : ℕ) (hk : k ≠ 0) := eulerSeries_constantCoeff k hk
-    simp [h, constantCoeff_invOfUnit]
+  isUnit_coeff_one := by simp [constantCoeff_invOfUnit]
 
 /-- The normalized series is the integral Euler quotient, expressed using the inverse of its
 unit denominator. -/
@@ -67,25 +54,22 @@ theorem modularLambdaCoordinate_toPowerSeries :
     modularLambdaCoordinate.toPowerSeries = X *
       ((pentagonalSeries ℤ) * ((pentagonalSeries ℤ).expand 4 (by decide)) ^ 2 *
         ((pentagonalSeries ℤ).expand 2 two_ne_zero).invOfUnit 1 ^ 3) ^ 8 := by
-  simp [modularLambdaCoordinate, eulerSeries]
+  rw [modularLambdaCoordinate]
 
 /-- The normalized modular lambda series has linear coefficient one. -/
 @[simp]
 theorem modularLambdaCoordinate_coeff_one :
     coeff 1 modularLambdaCoordinate.toPowerSeries = 1 := by
-  have h (k : ℕ) (hk : k ≠ 0) := eulerSeries_constantCoeff k hk
-  simp [modularLambdaCoordinate, h,
-    constantCoeff_invOfUnit]
+  simp [modularLambdaCoordinate_toPowerSeries, constantCoeff_invOfUnit]
 
-/-- The normalized modular lambda series begins `X - 8 X²`. -/
+/-- The quadratic coefficient of the normalized modular lambda series is `-8`. -/
 @[simp]
 theorem modularLambdaCoordinate_coeff_two :
     coeff 2 modularLambdaCoordinate.toPowerSeries = -8 := by
   let E := pentagonalSeries ℤ
   let E₂ := E.expand 2 two_ne_zero
   let E₄ := E.expand 4 (by decide)
-  have h₀ : constantCoeff E = 1 := by
-    simpa [E, eulerSeries] using eulerSeries_constantCoeff 1 one_ne_zero
+  have h₀ : constantCoeff E = 1 := constantCoeff_pentagonalSeries ℤ
   have h₁ : coeff 1 E = -1 := by
     have h := coeff_pentagonalSeries_pentagonal ℤ 1
     rw [show pentagonal 1 = 1 by norm_num [pentagonal_def]] at h
@@ -101,43 +85,6 @@ theorem modularLambdaCoordinate_coeff_two :
     modularLambdaCoordinate_toPowerSeries
   rw [hmain, coeff_succ_X_mul]
   norm_num [coeff_one_pow, coeff_one_mul, h₀, h₁, hi, h₄, E₄, constantCoeff_invOfUnit]
-
-private theorem eulerSeries_analyticAt_taylorSeries (k : ℕ) (hk : k ≠ 0) :
-    AnalyticAt ℂ (fun q : ℂ ↦ eulerFunction (q ^ k)) 0 ∧
-      taylorSeries (fun q : ℂ ↦ eulerFunction (q ^ k)) 0 =
-        (eulerSeries k hk).map (Int.castRingHom ℂ) := by
-  have hcoeff (n : ℕ) : ‖(pentagonalSeries ℂ).coeff n‖ ≤ 1 := by
-    by_cases hn : n ∈ Set.range pentagonal
-    · obtain ⟨j, rfl⟩ := hn
-      simp [Int.coe_negOnePow]
-    · simp [coeff_pentagonalSeries_eq_zero _ hn]
-  have hs : HasFPowerSeriesOnBall (eulerFunction : ℂ → ℂ)
-      (.ofScalars ℂ fun n ↦ (pentagonalSeries ℂ).coeff n) 0 1 := by
-    have hrad := PowerSeries.le_radius_of_bound (f := pentagonalSeries ℂ) 1 (r := 1)
-      (fun n ↦ by simpa using hcoeff n)
-    refine ⟨?_, by norm_num, ?_⟩
-    · simpa [PowerSeries.radius_eq_radius_ofScalars ℂ] using hrad
-    · intro q hq
-      have hqn : ‖q‖ < 1 := by
-        simpa only [← ENNReal.coe_one, Metric.eball_coe, NNReal.coe_one,
-          Metric.mem_ball, dist_zero_right] using hq
-      simpa [smul_eq_mul, mul_comm] using hasSum_eulerFunction_pentagonalSeries hqn
-  have he := hs.hasFPowerSeriesAt
-  refine ⟨he.analyticAt.comp_of_eq (by fun_prop) (zero_pow hk), ?_⟩
-  have ht : taylorSeries (eulerFunction : ℂ → ℂ) 0 = pentagonalSeries ℂ := by
-    ext n
-    simpa using he.coeff_taylorSeries n
-  have hm : (pentagonalSeries ℤ).map (Int.castRingHom ℂ) = pentagonalSeries ℂ := by
-    ext n
-    by_cases hn : n ∈ Set.range pentagonal
-    · obtain ⟨j, rfl⟩ := hn
-      simp [Int.coe_negOnePow]
-    · simp [coeff_pentagonalSeries_eq_zero _ hn]
-  rw [taylorSeries_comp_pow he.analyticAt k hk, ht, eulerSeries, map_expand, hm]
-
-private theorem eulerFunction_zero : eulerFunction (0 : ℂ) = 1 := by
-  rw [eulerFunction_eq_tprod (by simp)]
-  simp
 
 private theorem modularLambda_div_sixteen_eq_euler {τ : ℂ} (hτ : 0 < τ.im) :
     modularLambda τ / 16 = cexp (Real.pi * I * τ) *
@@ -162,23 +109,15 @@ private theorem modularLambda_div_sixteen_eq_euler {τ : ℂ} (hτ : 0 < τ.im) 
   rw [(eq_div_iff hne).2 hodd.symm, heven']
   ring
 
-private theorem map_eulerSeries_inv (k : ℕ) (hk : k ≠ 0) :
-    ((eulerSeries k hk).invOfUnit 1).map (Int.castRingHom ℂ) =
-      ((eulerSeries k hk).map (Int.castRingHom ℂ))⁻¹ := by
-  rw [map_invOfUnit_ringHom, map_one]
-  exact invOfUnit_eq' _ _ (by simp [eulerSeries_constantCoeff k hk])
-
 private def normalizedLambdaEuler (q : ℂ) : ℂ :=
   q * (eulerFunction q * eulerFunction (q ^ 4) ^ 2 *
     (eulerFunction (q ^ 2))⁻¹ ^ 3) ^ 8
 
 private theorem analyticAt_normalizedLambdaEuler : AnalyticAt ℂ normalizedLambdaEuler 0 := by
-  have h₁ : AnalyticAt ℂ (eulerFunction : ℂ → ℂ) 0 := by
-    simpa using (eulerSeries_analyticAt_taylorSeries 1 one_ne_zero).1
-  have h₂ := (eulerSeries_analyticAt_taylorSeries 2 two_ne_zero).1
-  have h₄ := (eulerSeries_analyticAt_taylorSeries 4 (by decide)).1
-  exact analyticAt_id.mul (((h₁.mul (h₄.pow 2)).mul
-    ((h₂.inv (by simp [eulerFunction_zero])).pow 3)).pow 8)
+  have h (k : ℕ) (hk : k ≠ 0) : AnalyticAt ℂ (fun q : ℂ ↦ eulerFunction (q ^ k)) 0 :=
+    analyticAt_eulerFunction_zero.comp_of_eq (by fun_prop) (zero_pow hk)
+  exact analyticAt_id.mul (((analyticAt_eulerFunction_zero.mul ((h 4 (by decide)).pow 2)).mul
+    (((h 2 two_ne_zero).inv (by simp)).pow 3)).pow 8)
 
 private theorem cuspFunction_modularLambda_div_sixteen_eventuallyEq :
     UpperHalfPlane.cuspFunction 2 (fun τ : ℍ ↦ modularLambda τ / 16) =ᶠ[𝓝 0]
@@ -217,30 +156,18 @@ private theorem qExpansion_modularLambda_div_sixteen_eq_taylor :
     analyticAt_cuspFunction_modularLambda_div_sixteen).coeff_taylorSeries]
   simp
 
-private theorem taylorSeries_euler_inv_two :
-    taylorSeries ((fun q : ℂ ↦ eulerFunction (q ^ 2))⁻¹) 0 =
-      ((eulerSeries 2 two_ne_zero).map (Int.castRingHom ℂ))⁻¹ := by
-  let f : ℂ → ℂ := fun q ↦ eulerFunction (q ^ 2)
-  have hf : AnalyticAt ℂ f 0 := (eulerSeries_analyticAt_taylorSeries 2 two_ne_zero).1
-  have hf0 : f 0 ≠ 0 := by simp [f, eulerFunction_zero]
-  rw [← (eulerSeries_analyticAt_taylorSeries 2 two_ne_zero).2]
-  -- Match both Taylor series with the same local function before applying the inverse criterion.
-  change taylorSeries f⁻¹ 0 = (taylorSeries f 0)⁻¹
-  apply (PowerSeries.eq_inv_iff_mul_eq_one (by simpa using hf0)).mpr
-  rw [← taylorSeries_mul (hf.inv hf0) hf]
-  rw [← map_one (C : ℂ →+* ℂ⟦X⟧), ← taylorSeries_const (a := (0 : ℂ)) (1 : ℂ)]
-  apply taylorSeries_congr
-  filter_upwards [hf.continuousAt.eventually_ne hf0] with q hq
-  exact inv_mul_cancel₀ hq
-
 /-- The integral formal coordinate is the width-two `q`-expansion of `λ / 16`. -/
 theorem modularLambdaCoordinate_map_eq_qExpansion :
     modularLambdaCoordinate.toPowerSeries.map (Int.castRingHom ℂ) =
       UpperHalfPlane.qExpansion 2 (fun τ : ℍ ↦ modularLambda τ / 16) := by
   let E (k : ℕ) : ℂ → ℂ := fun q ↦ eulerFunction (q ^ k)
   have hE (k : ℕ) (hk : k ≠ 0) : AnalyticAt ℂ (E k) 0 :=
-    (eulerSeries_analyticAt_taylorSeries k hk).1
-  have hE0 : E 2 0 ≠ 0 := by simp [E, eulerFunction_zero]
+    analyticAt_eulerFunction_zero.comp_of_eq (by fun_prop) (zero_pow hk)
+  have hTaylor (k : ℕ) (hk : k ≠ 0) :
+      taylorSeries (E k) 0 = (pentagonalSeries ℂ).expand k hk := by
+    change taylorSeries (fun q : ℂ ↦ eulerFunction (q ^ k)) 0 = _
+    rw [taylorSeries_comp_pow analyticAt_eulerFunction_zero k hk, taylorSeries_eulerFunction]
+  have hE0 : E 2 0 ≠ 0 := by simp [E]
   have hA := (hE 1 one_ne_zero).mul ((hE 4 (by decide)).pow 2)
   have hB := ((hE 2 two_ne_zero).inv hE0).pow 3
   have hF := hA.mul hB
@@ -254,11 +181,11 @@ theorem modularLambdaCoordinate_map_eq_qExpansion :
   rw [taylorSeries_mul hId (hF.pow 8), taylorSeries_pow hF, taylorSeries_mul hA hB,
     taylorSeries_mul (hE 1 one_ne_zero) ((hE 4 (by decide)).pow 2),
     taylorSeries_pow (hE 4 (by decide)), taylorSeries_pow ((hE 2 two_ne_zero).inv hE0)]
-  have hid : taylorSeries (fun q : ℂ ↦ q) 0 = X := by
-    simpa using (taylorSeries_sub_const (𝕜 := ℂ) (a := 0))
-  rw [hid]
-  simp only [E, modularLambdaCoordinate, map_mul, map_pow, map_X, map_eulerSeries_inv]
-  rw [(eulerSeries_analyticAt_taylorSeries 1 one_ne_zero).2,
-    (eulerSeries_analyticAt_taylorSeries 4 (by decide)).2, taylorSeries_euler_inv_two]
+  rw [taylorSeries_id, taylorSeries_inv (hE 2 two_ne_zero) hE0,
+    hTaylor 1 one_ne_zero, hTaylor 4 (by decide), hTaylor 2 two_ne_zero,
+    modularLambdaCoordinate_toPowerSeries]
+  simp only [map_mul, map_pow, map_X, map_invOfUnit_ringHom, map_one, map_expand,
+    map_pentagonalSeries, expand_one_apply]
+  rw [invOfUnit_eq' _ _ (by simp)]
 
 end TauCeti.ModularForm
