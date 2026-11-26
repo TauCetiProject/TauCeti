@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Extension.Pullback
 public import TauCeti.Topology.VectorBundle.SpinStructure.Spinor
 
 /-!
@@ -23,6 +24,11 @@ the determinant line (`TauCeti.SpinStructure.determinantLineSection_ne_zero`), a
 (`TauCeti.SpinStructure.continuous_determinantLineSection`). Scaling it identifies every fibre
 with `ℂ` (`TauCeti.SpinStructure.determinantLineEquiv`).
 
+The construction is natural: an equivalence of Spin structures induces an equivalence of their
+`Spinᶜ` structures (`TauCeti.OrthonormalFrameLift.Equiv.toSpinC`), and for a continuous map
+`g : Y → X` the `Spinᶜ` structure of the pullback `g^* s` is equivalent to the pullback of
+`s.toSpinC` (`TauCeti.SpinStructure.toSpinCPullbackEquiv`).
+
 ## Main definitions
 
 * `TauCeti.SpinStructure.toSpinC`: the `Spinᶜ` structure induced by a Spin structure.
@@ -30,6 +36,9 @@ with `ℂ` (`TauCeti.SpinStructure.determinantLineEquiv`).
   line.
 * `TauCeti.SpinStructure.determinantLineEquiv`: the identification `ℂ ≃ L_x`,
   `c ↦ c • determinantLineSection x`.
+* `TauCeti.OrthonormalFrameLift.Equiv.toSpinC`: the equivalence `s.toSpinC ≃ t.toSpinC` induced by
+  an equivalence `s ≃ t` of Spin structures.
+* `TauCeti.SpinStructure.toSpinCPullbackEquiv`: `(g^* s).toSpinC ≃ g^* s.toSpinC`.
 
 ## References
 
@@ -160,6 +169,69 @@ theorem continuous_determinantLineSection :
     (E := s.P)).continuous_iff.2 ?_
   exact (s.continuous_inlSpinC.totalSpaceMk_associatedBundleMk continuous_const).congr
     fun ⟨x, p⟩ ↦ by rw [Function.comp_apply, determinantLineSection_eq s p]
+
+end SpinStructure
+
+/-! ### Naturality -/
+
+namespace OrthonormalFrameLift
+
+open SpinStructure
+
+/-- **Equivalences of Spin structures induce equivalences of their `Spinᶜ` structures**:
+`[p, h] ↦ [φ p, h]` (`TauCeti.OrthonormalFrameLift.Equiv.extend`). -/
+noncomputable def Equiv.toSpinC {s t : SpinStructure F E n} (φ : s.Equiv t) :
+    s.toSpinC.Equiv t.toSpinC :=
+  φ.extend _ (spinCGroup.continuous_ofSpin _ hQn) comp_ofSpin
+    spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
+
+@[simp]
+theorem Equiv.toSpinC_toEquiv_inlSpinC {s t : SpinStructure F E n} (φ : s.Equiv t) (x : X)
+    (p : s.P x) : φ.toSpinC.toEquiv x (s.inlSpinC p) = t.inlSpinC (φ.toEquiv x p) :=
+  φ.extend_toEquiv_inl _ _ _ _ _ x p
+
+@[simp]
+theorem Equiv.toSpinC_refl (s : SpinStructure F E n) :
+    (Equiv.refl s).toSpinC = Equiv.refl s.toSpinC :=
+  Equiv.extend_refl _ _ _ _ _ s
+
+@[simp]
+theorem Equiv.toSpinC_symm {s t : SpinStructure F E n} (φ : s.Equiv t) :
+    φ.symm.toSpinC = φ.toSpinC.symm :=
+  φ.extend_symm _ _ _ _ _
+
+@[simp]
+theorem Equiv.toSpinC_trans {s t u : SpinStructure F E n} (φ : s.Equiv t) (ψ : t.Equiv u) :
+    (φ.trans ψ).toSpinC = φ.toSpinC.trans ψ.toSpinC :=
+  φ.extend_trans _ _ _ _ _ ψ
+
+end OrthonormalFrameLift
+
+namespace SpinStructure
+
+variable (s : SpinStructure F E n)
+
+section Pullback
+
+variable {Y : Type*} [TopologicalSpace Y] {K : Type*} [FunLike K Y X] [ContinuousMapClass K Y X]
+
+attribute [local instance] Bundle.Pullback.normedFiberBundle Bundle.Pullback.normedVectorBundle
+
+/-- **The `Spinᶜ` structure of a Spin structure commutes with pullback**: for a continuous map
+`g : Y → X`, `(g^* s).toSpinC ≃ g^* s.toSpinC`. Over `y`, both principal bundles are
+`P_{g y} ×_{Spin(n)} Spinᶜ(n)`, and the equivalence is `[p, h] ↦ [p, h]`
+(`TauCeti.OrthonormalFrameLift.extendPullbackEquiv`). -/
+noncomputable def toSpinCPullbackEquiv (g : K) :
+    (toSpinC (s.pullback g)).Equiv (s.toSpinC.pullback g) :=
+  s.extendPullbackEquiv _ (spinCGroup.continuous_ofSpin _ hQn) comp_ofSpin
+    spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply g
+
+/-- The equivalence `(g^* s).toSpinC ≃ g^* s.toSpinC` sends `[p, 1]` to `[p, 1]`. -/
+theorem toSpinCPullbackEquiv_toEquiv_inlSpinC (g : K) (y : Y) (p : s.P (g y)) :
+    (s.toSpinCPullbackEquiv g).toEquiv y (inlSpinC (s.pullback g) p) = s.inlSpinC p :=
+  s.extendPullbackEquiv_toEquiv_inl _ _ _ _ _ g y p
+
+end Pullback
 
 end SpinStructure
 
