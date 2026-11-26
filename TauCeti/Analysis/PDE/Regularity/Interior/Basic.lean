@@ -110,8 +110,8 @@ to `3 r / 2` has `N ≲ 1 / r` and `L ≲ 1 / r²`
 * `TauCeti.PDE.divMatrixGradient_eq_sum_fderiv_fderiv_apply`: the classical Hessian contraction.
 * `TauCeti.PDE.contDiff_divMatrixGradient`: `div(a ∇ψ)` is `Cᵏ` when `a` is `Cᵏ⁺¹` and `ψ` is
   `Cᵏ⁺²`.
-* `ContDiffOn.integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient`:
-  integration by parts against the conormal gradient of a `C²` function.
+* `TauCeti.PDE.integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient`:
+  integration by parts for continuously differentiable conormal components.
 
 ## References
 
@@ -261,51 +261,57 @@ theorem continuous_divMatrixGradient {ψ : EuclideanSpace ℝ ι → ℝ}
   (contDiff_divMatrixGradient (a := fun _ => A) (k := 0) (fun _ _ => contDiff_const)
     (hψ.of_le (by simp))).continuous
 
-/-- Integration by parts for the constant-matrix conormal gradient of a `C²` function.
+/-- Integration by parts when the conormal components are continuously differentiable.
 The test function is compactly supported in the open domain, so no boundary term occurs. -/
-theorem _root_.ContDiffOn.integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient
-    {g : EuclideanSpace ℝ ι → ℝ} (hg : ContDiffOn ℝ 2 g Omega) (φ : 𝓓(Omega, ℝ)) :
-    ∫ x, matrixBilinearForm A (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (∇ g x) ∂mu =
-      -∫ x, φ x * divMatrixGradient (fun _ => A) g x ∂mu := by
+theorem integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient
+    (hq : ∀ i, ContDiffOn ℝ 1
+      (fun x ↦ matrixBilinearForm (a x) (EuclideanSpace.basisFun ι ℝ i) (∇ g x)) Omega)
+    (φ : 𝓓(Omega, ℝ)) :
+    ∫ x, matrixBilinearForm (a x) (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (∇ g x) ∂mu =
+      -∫ x, φ x * divMatrixGradient a g x ∂mu := by
   let b := EuclideanSpace.basisFun ι ℝ
-  let q : ι → EuclideanSpace ℝ ι → ℝ := fun i y => matrixBilinearForm A (b i) (∇ g y)
-  have hg1 : ContDiffOn ℝ 1 (∇ g) Omega :=
-    (toDual ℝ (EuclideanSpace ℝ ι)).symm.contDiff.comp_contDiffOn
-      (hg.fderiv_of_isOpen Omega.isOpen (by norm_num))
-  have hq : ∀ i, ContDiffOn ℝ 1 (q i) Omega := fun i =>
-    (matrixBilinearForm A (b i)).contDiff.comp_contDiffOn hg1
-  have hqd : ∀ i, LocallyIntegrableOn (fun x => lineDeriv ℝ (q i) x (b i)) Omega mu :=
-    fun i => (((hq i).continuousOn_fderiv_of_isOpen Omega.isOpen le_rfl).clm_apply
+  let q : ι → EuclideanSpace ℝ ι → ℝ := fun i y ↦ matrixBilinearForm (a y) (b i) (∇ g y)
+  have hqd : ∀ i, LocallyIntegrableOn (fun x ↦ lineDeriv ℝ (q i) x (b i)) Omega mu :=
+    fun i ↦ (((hq i).continuousOn_fderiv_of_isOpen Omega.isOpen le_rfl).clm_apply
       continuousOn_const).congr (fun x hx =>
         ((hq i).differentiableOn one_ne_zero |>.differentiableAt
           (Omega.isOpen.mem_nhds hx)).lineDeriv_eq_fderiv)
       |>.locallyIntegrableOn Omega.isOpen.measurableSet
   have hqweak : ∀ i, HasWeakLineDerivOn mu Omega (q i)
-      (fun x => lineDeriv ℝ (q i) x (b i)) (b i) := fun i =>
+      (fun x ↦ lineDeriv ℝ (q i) x (b i)) (b i) := fun i =>
     hasWeakLineDerivOn_of_hasLineDerivAt
       ((hq i).continuousOn.locallyIntegrableOn Omega.isOpen.measurableSet) (hqd i)
-      (fun x hx => ((hq i).differentiableOn one_ne_zero |>.differentiableAt
+      (fun x hx ↦ ((hq i).differentiableOn one_ne_zero |>.differentiableAt
         (Omega.isOpen.mem_nhds hx)).lineDifferentiableAt.hasLineDerivAt)
-  -- Expand the test gradient in the standard basis and integrate each conormal component.
   calc
-    ∫ x, matrixBilinearForm A (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (∇ g x) ∂mu
+    ∫ x, matrixBilinearForm (a x) (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (∇ g x) ∂mu
       = ∑ i, ∫ x, lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x (b i) * q i x ∂mu := by
       have hint : ∀ i, Integrable
-          (fun x => lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x (b i) * q i x) mu := fun i => by
+          (fun x ↦ lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x (b i) * q i x) mu := fun i ↦ by
         simpa only [smul_eq_mul] using
           integrable_lineDeriv_smul_of_locallyIntegrableOn (hqweak i).locallyIntegrableOn φ (b i)
-      rw [← integral_finsetSum _ (fun i _ => hint i)]
-      refine integral_congr_ae (ae_of_all _ fun x => ?_)
+      rw [← integral_finsetSum _ (fun i _ ↦ hint i)]
+      refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
       have hφd : ∀ v, lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x v =
           fderiv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x v := fun v =>
         (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv
       simpa only [hφd, ← inner_gradient_left] using
-        (sum_inner_mul_matrixBilinearForm (A := A) (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (∇ g x)).symm
-    _ = -∫ x, φ x * divMatrixGradient (fun _ => A) g x ∂mu := by
+        (sum_inner_mul_matrixBilinearForm (A := a x)
+          (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (∇ g x)).symm
+    _ = -∫ x, φ x * divMatrixGradient a g x ∂mu := by
       simp_rw [← smul_eq_mul, (hqweak _).integral_lineDeriv_smul_eq_neg_integral_smul φ]
       rw [Finset.sum_neg_distrib, ← integral_finsetSum _
-        (fun i _ => φ.integrable_smul (hqd i))]
+        (fun i _ ↦ φ.integrable_smul (hqd i))]
       simp only [Finset.mul_sum, divMatrixGradient, b, q, smul_eq_mul]
+
+/-- Every constant-matrix conormal component of a `C²` function is `C¹` on the open domain. -/
+theorem _root_.ContDiffOn.matrixBilinearForm_gradient
+    {g : EuclideanSpace ℝ ι → ℝ} (hg : ContDiffOn ℝ 2 g Omega) (η : EuclideanSpace ℝ ι) :
+    ContDiffOn ℝ 1 (fun y ↦ matrixBilinearForm A η (∇ g y)) Omega := by
+  have hg₁ : ContDiffOn ℝ 1 (∇ g) Omega :=
+    (toDual ℝ (EuclideanSpace ℝ ι)).symm.contDiff.comp_contDiffOn
+      (hg.fderiv_of_isOpen Omega.isOpen (by norm_num))
+  exact (matrixBilinearForm A η).contDiff.comp_contDiffOn hg₁
 
 end ClassicalOperator
 
