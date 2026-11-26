@@ -135,7 +135,7 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_fun_fderiv_orthogonalRightInverse
                 (sobolevGaugeFixedOperator (a p))) p v f) p₀ w) z) i : ℂ)) ∧
           ‖u‖ ≤ K * (M₂ + Mv * Mw) * ‖g‖ := by
   obtain ⟨K₀, hK₀, hK₀b⟩ :=
-    exists_forall_exists_inclusionLp_ae_eq_orthogonalRightInverse m R₀ B hc k
+    exists_forall_norm_exp_mul_smul_orthogonalRightInverse_le_of_forall_mem_norm_le m R₀ B hc k
   obtain ⟨K₁, hK₁, hK₁b⟩ :=
     exists_forall_norm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_forall_mem_norm_le
       m R₀ B hc k
@@ -225,7 +225,7 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjectio
           ‖u‖ ≤ K * (M₂ + Mv * Mw) * (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
             sobolevFieldValues e z) 2 volume).toReal := by
   obtain ⟨K₀, hK₀, hK₀b⟩ :=
-    exists_forall_exists_inclusionLp_ae_eq_orthogonalKerProjection m R₀ B hc k
+    exists_forall_norm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀ B hc k
   obtain ⟨K₁, hK₁, hK₁b⟩ :=
     exists_forall_norm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_forall_mem_norm_le
       m R₀ B hc k

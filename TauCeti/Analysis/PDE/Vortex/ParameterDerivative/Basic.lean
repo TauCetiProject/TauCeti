@@ -1000,8 +1000,8 @@ radius `R₀` and whose coordinates have derivatives bounded by `B` through orde
 class `a`, and let `Q` be the right inverse of `L_a` with values `L²`-orthogonal to its kernel. If
 the coordinates of `exp(c ρ) f` are given by `g : Fin 4 → H^k(ℂ)`, then those of `exp(c ρ) Q f`
 are given by some `u : Fin 4 → H^(k+1)(ℂ)` with `‖u‖ ≤ K ‖g‖`. -/
-theorem exists_forall_exists_inclusionLp_ae_eq_orthogonalRightInverse (m : ℕ) (R₀ B : ℝ)
-    {c : ℝ} (hc : |c| < 1 / 2) (k : ℕ) :
+theorem exists_forall_norm_exp_mul_smul_orthogonalRightInverse_le_of_forall_mem_norm_le
+    (m : ℕ) (R₀ B : ℝ) {c : ℝ} (hc : |c| < 1 / 2) (k : ℕ) :
     ∃ K ≥ 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
       (∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ B) →
       (∀ z, equation x z = 0) →
@@ -1043,8 +1043,8 @@ radius `R₀` and whose coordinates have bounded derivatives of every order, bou
 order `k`, with `L∞` class `a`, and let `π` be the projection onto the kernel of `L_a` along its
 `L²`-orthogonal complement. If `exp(c ρ) e` is square integrable, then the coordinates of
 `exp(c ρ) π e` are given by some `u : Fin 4 → H^(k+1)(ℂ)` with `‖u‖ ≤ K ‖exp(c ρ) e‖₂`. -/
-theorem exists_forall_exists_inclusionLp_ae_eq_orthogonalKerProjection (m : ℕ) (R₀ B : ℝ)
-    {c : ℝ} (hc : |c| < 1 / 2) (k : ℕ) :
+theorem exists_forall_norm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le
+    (m : ℕ) (R₀ B : ℝ) {c : ℝ} (hc : |c| < 1 / 2) (k : ℕ) :
     ∃ K ≥ 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
       (∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) →
       (∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ B) →
@@ -1196,7 +1196,7 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_fora
                 (sobolevGaugeFixedOperator (a p))) p₀ v f) z) i : ℂ)) ∧
           ‖u‖ ≤ K * M * ‖w‖ := by
   obtain ⟨K₀, hK₀, hK₀b⟩ :=
-    exists_forall_exists_inclusionLp_ae_eq_orthogonalRightInverse m R₀ B hc k
+    exists_forall_norm_exp_mul_smul_orthogonalRightInverse_le_of_forall_mem_norm_le m R₀ B hc k
   obtain ⟨K₂, hK₂⟩ :=
     exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_forall_mem_norm_le m R₀
       hc
@@ -1270,7 +1270,7 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_for
           ‖u‖ ≤ K * M * (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
             sobolevFieldValues e z) 2 volume).toReal := by
   obtain ⟨K₀, hK₀, hK₀b⟩ :=
-    exists_forall_exists_inclusionLp_ae_eq_orthogonalKerProjection m R₀ B hc k
+    exists_forall_norm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀ B hc k
   obtain ⟨K₂, hK₂⟩ :=
     exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀
       hc
