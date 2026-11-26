@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.AffineScheme
+public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import Mathlib.RingTheory.Ideal.Over
 
 /-!
@@ -31,13 +31,6 @@ namespace AlgebraicGeometry
 
 variable {X Y : Scheme.{u}}
 
-/-- On an affine open `U`, the prime of `Γ(X, U)` of a point `fromSpec q` is `q`. -/
-@[simp]
-theorem IsAffineOpen.primeIdealOf_fromSpec {U : X.Opens} (hU : IsAffineOpen U)
-    (q : PrimeSpectrum Γ(X, U)) (hq : hU.fromSpec q ∈ U) :
-    hU.primeIdealOf ⟨hU.fromSpec q, hq⟩ = q :=
-  hU.fromSpec.isOpenEmbedding.injective (hU.fromSpec_primeIdealOf ⟨_, hq⟩)
-
 variable {V : Y.Opens} (hV : IsAffineOpen V) (f : X ⟶ Y) {U : X.Opens} (hU : IsAffineOpen U)
   (hUV : f ⁻¹ᵁ V = U) {y : Y} (hy : y ∈ V)
 
@@ -50,9 +43,6 @@ noncomputable def IsAffineOpen.preimageSingletonEquivPrimesOver :
   have hmem (x : X) (hx : f x = y) : x ∈ U := by
     rw [← hUV, Scheme.Hom.mem_preimage, hx]
     exact hy
-  have hran (q : PrimeSpectrum Γ(X, U)) : hU.fromSpec q ∈ U := by
-    rw [← SetLike.mem_coe, ← hU.range_fromSpec]
-    exact ⟨q, rfl⟩
   -- The prime of `x ∈ U` contracts to the prime of `f x`.
   have hcomap (x : X) (hx : x ∈ U) : (hU.primeIdealOf ⟨x, hx⟩).asIdeal.under Γ(Y, V) =
       (hV.primeIdealOf ⟨f x, hUV.ge hx⟩).asIdeal :=
@@ -64,8 +54,8 @@ noncomputable def IsAffineOpen.preimageSingletonEquivPrimesOver :
         exact x.property.symm⟩⟩
     invFun q :=
       ⟨hU.fromSpec ⟨q.val, q.property.1⟩, by
-        have h := hcomap (hU.fromSpec ⟨q.val, q.property.1⟩) (hran _)
-        rw [hU.primeIdealOf_fromSpec _ (hran _)] at h
+        have h := hcomap (hU.fromSpec ⟨q.val, q.property.1⟩) (hU.fromSpec_mem _)
+        rw [hU.primeIdealOf_fromSpec _ (hU.fromSpec_mem _)] at h
         have := q.property.2
         rw [← Ideal.over_def q.val (hV.primeIdealOf ⟨y, hy⟩).asIdeal] at h
         have h' := congr(hV.fromSpec $(PrimeSpectrum.ext h))
@@ -73,7 +63,7 @@ noncomputable def IsAffineOpen.preimageSingletonEquivPrimesOver :
         exact h'.symm⟩
     left_inv x := Subtype.ext <| hU.fromSpec_primeIdealOf ⟨x, _⟩
     right_inv q := Subtype.ext <|
-      congr($(hU.primeIdealOf_fromSpec ⟨q.val, q.property.1⟩ (hran _)).asIdeal) }
+      congr($(hU.primeIdealOf_fromSpec ⟨q.val, q.property.1⟩ (hU.fromSpec_mem _)).asIdeal) }
 
 /-- The fibre-to-prime correspondence sends a point to its prime on the source affine open. -/
 @[simp]

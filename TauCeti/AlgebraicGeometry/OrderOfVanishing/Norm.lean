@@ -126,9 +126,7 @@ private theorem ord_norm_eq_finsum_of_isAffineOpen_of_ne_zero
     functionField_isFractionRing_of_isAffineOpen X _ hU
   -- The points of the fibre, indexed by the primes of `B₀` over `p`.
   let x (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) : X := hU.fromSpec ⟨q.val, q.property.1⟩
-  have hxU (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) : x q ∈ f ⁻¹ᵁ V := by
-    rw [← SetLike.mem_coe, ← hU.range_fromSpec]
-    exact ⟨_, rfl⟩
+  have hxU (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) : x q ∈ f ⁻¹ᵁ V := hU.fromSpec_mem _
   let e := hV.preimageSingletonEquivPrimesOver f hU rfl hy
   have hex (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) : (e.symm q).val = x q :=
     hV.coe_preimageSingletonEquivPrimesOver_symm_apply f hU rfl hy q
