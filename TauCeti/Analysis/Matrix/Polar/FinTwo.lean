@@ -128,8 +128,7 @@ theorem coe_polarRetraction_fin_two (g : SpecialLinearGroup (Fin 2) 𝕜) :
       simp only [mul_sub, add_mul, hCH, mul_smul_comm, mul_one, one_mul]
       module
     rw [hsqrt, smul_mul_smul, h, smul_smul]
-    field_simp
-    rw [Real.sq_sqrt ht2.le, div_self ht2.ne', one_smul]
+    simp [← mul_inv, ht2.le, ht2.ne']
   calc (polarRetraction (Fin 2) 𝕜 g : Matrix (Fin 2) (Fin 2) 𝕜)
       = (polarRetraction (Fin 2) 𝕜 g : Matrix (Fin 2) (Fin 2) 𝕜) * (CFC.sqrt H *
           ((√(t + 2))⁻¹ • ((t + 1) • (1 : Matrix (Fin 2) (Fin 2) 𝕜) - H))) := by
@@ -176,9 +175,7 @@ private theorem det_segmentFactor (g : SpecialLinearGroup (Fin 2) 𝕜) (s : I) 
 
 private theorem segmentFactor_zero (g : SpecialLinearGroup (Fin 2) 𝕜) :
     segmentFactor g 0 = CFC.sqrt (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g) := by
-  have h : (CFC.sqrt (star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g)).det = 1 := by
-    rw [det_sqrt_star_mul, det_coe, norm_one, RCLike.ofReal_one]
-  simp [segmentFactor, h]
+  simp [segmentFactor, det_sqrt_star_mul_self]
 
 private theorem segmentFactor_one (g : SpecialLinearGroup (Fin 2) 𝕜) : segmentFactor g 1 = 1 := by
   simp [segmentFactor]
@@ -218,18 +215,13 @@ segment factor. -/
 private theorem segmentFactor_toSL_mul (k : specialUnitaryGroup (Fin 2) 𝕜)
     (g : SpecialLinearGroup (Fin 2) 𝕜) (s : ℝ) :
     segmentFactor (toSL k * g) s = segmentFactor g s := by
-  have h : star ((toSL k * g : SpecialLinearGroup (Fin 2) 𝕜) : Matrix (Fin 2) (Fin 2) 𝕜) *
-      (toSL k * g : SpecialLinearGroup (Fin 2) 𝕜) = star (g : Matrix (Fin 2) (Fin 2) 𝕜) * g := by
-    rw [coe_mul, coe_toSL, star_mul, mul_assoc, ← mul_assoc (star (k : Matrix (Fin 2) (Fin 2) 𝕜)),
-      Unitary.star_mul_self_of_mem (specialUnitaryGroup_le_unitaryGroup k.property), one_mul]
-  simp only [segmentFactor, h]
+  simp only [segmentFactor, star_mul_self_toSL_mul]
 
 /-- The positive factor of a special unitary matrix is `1`, hence so is its segment factor. -/
 private theorem segmentFactor_toSL (k : specialUnitaryGroup (Fin 2) 𝕜) (s : ℝ) :
     segmentFactor (toSL k) s = 1 := by
-  have h : star ((toSL k : SpecialLinearGroup (Fin 2) 𝕜) : Matrix (Fin 2) (Fin 2) 𝕜) * toSL k =
-      1 := by
-    rw [coe_toSL, Unitary.star_mul_self_of_mem (specialUnitaryGroup_le_unitaryGroup k.property)]
+  have h := star_mul_self_toSL_mul k 1
+  rw [mul_one, coe_one, star_one, mul_one] at h
   simp only [segmentFactor, h, CFC.sqrt_one, ← add_smul, sub_add_cancel, one_smul, det_one,
     RCLike.one_re, Real.sqrt_one, inv_one]
 

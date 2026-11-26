@@ -140,6 +140,20 @@ theorem det_star_mul_self (g : SpecialLinearGroup n 𝕜) :
     (star (g : Matrix n n 𝕜) * g).det = 1 := by
   rw [det_mul, star_eq_conjTranspose, det_conjTranspose, det_coe, star_one, one_mul]
 
+/-- The positive factor `√(gᴴ g)` of `g ∈ SL(n, 𝕜)` has determinant one. -/
+theorem det_sqrt_star_mul_self (g : SpecialLinearGroup n 𝕜) :
+    (CFC.sqrt (star (g : Matrix n n 𝕜) * g)).det = 1 := by
+  rw [det_sqrt_star_mul, det_coe, norm_one, RCLike.ofReal_one]
+
+/-- Left multiplication by a special unitary matrix `k` fixes `gᴴ g`:
+`(k g)ᴴ (k g) = gᴴ g`. -/
+theorem star_mul_self_toSL_mul (k : specialUnitaryGroup n 𝕜) (g : SpecialLinearGroup n 𝕜) :
+    star ((toSL k * g : SpecialLinearGroup n 𝕜) : Matrix n n 𝕜) *
+        (toSL k * g : SpecialLinearGroup n 𝕜) =
+      star (g : Matrix n n 𝕜) * g := by
+  rw [coe_mul, coe_toSL, star_mul, mul_assoc, ← mul_assoc (star (k : Matrix n n 𝕜)),
+    Unitary.star_mul_self_of_mem (specialUnitaryGroup_le_unitaryGroup k.property), one_mul]
+
 variable (n 𝕜) in
 /-- **`SL(n, 𝕜)` deformation retracts onto `SU(n)`**, for `𝕜 = ℝ` or `ℂ`. The polar deformation
 `P * U ↦ P ^ (1 - t) * U` runs from the identity to the polar retraction followed by the inclusion
