@@ -111,7 +111,7 @@ theorem stageAction_stageMap_stageMap (hρ : ∀ i, ρ i (e i) (m i) = m i) {S T
 variable (m) in
 /-- The action of an element `x` of the stage `S` on the restricted tensor product: on the stage
 `T` it acts at the stage `S ∪ T`. -/
-def stageEndAux (hρ : ∀ i, ρ i (e i) (m i) = m i) (S : Finset ι) (x : ⨂[R] i : S, A i) :
+private def stageEndAux (hρ : ∀ i, ρ i (e i) (m i) = m i) (S : Finset ι) (x : ⨂[R] i : S, A i) :
     RestrictedTensor R M m →ₗ[R] RestrictedTensor R M m :=
   lift (fun T ↦ ofFinite R M m (S ∪ T) ∘ₗ
       stageAction ρ (S ∪ T) (stageMap R e Finset.subset_union_left x) ∘ₗ
@@ -123,7 +123,7 @@ def stageEndAux (hρ : ∀ i, ρ i (e i) (m i) = m i) (S : Finset ι) (x : ⨂[R
 
 /-- The action of `x` from the stage `S` on an element of the stage `T` is computed at any common
 stage `U ⊇ S ∪ T`. -/
-theorem stageEndAux_ofFinite (hρ : ∀ i, ρ i (e i) (m i) = m i) {S T U : Finset ι}
+private theorem stageEndAux_ofFinite (hρ : ∀ i, ρ i (e i) (m i) = m i) {S T U : Finset ι}
     (hS : S ⊆ U) (hT : T ⊆ U) (x : ⨂[R] i : S, A i) (y : ⨂[R] i : T, M i) :
     stageEndAux m hρ S x (ofFinite R M m T y) =
       ofFinite R M m U (stageAction ρ U (stageMap R e hS x) (stageMap R m hT y)) := by
@@ -145,12 +145,19 @@ def stageEnd (he : ∀ i, IsIdempotentElem (e i)) (hρ : ∀ i, ρ i (e i) (m i)
   map_add' x x' := hom_ext fun T ↦ LinearMap.ext fun y ↦ by
     simp [stageEndAux_ofFinite hρ Finset.subset_union_left Finset.subset_union_right]
   map_mul' x x' := hom_ext fun T ↦ LinearMap.ext fun y ↦ by
-    change stageEndAux m hρ S (x * x') (ofFinite R M m T y) =
-      stageEndAux m hρ S x (stageEndAux m hρ S x' (ofFinite R M m T y))
-    rw [stageEndAux_ofFinite hρ Finset.subset_union_left Finset.subset_union_right x',
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, mul_apply_eq_comp,
+      stageEndAux_ofFinite hρ Finset.subset_union_left Finset.subset_union_right x',
       stageEndAux_ofFinite hρ Finset.subset_union_left (subset_refl _) x,
       stageEndAux_ofFinite hρ Finset.subset_union_left Finset.subset_union_right, stageMap_self,
       stageMap_mul he, stageAction_mul, mul_apply_eq_comp]
+
+/-- The action of `x` from the stage `S` on an element of the stage `T` is computed at any common
+stage `U ⊇ S ∪ T`. -/
+theorem stageEnd_ofFinite (he : ∀ i, IsIdempotentElem (e i)) (hρ : ∀ i, ρ i (e i) (m i) = m i)
+    {S T U : Finset ι} (hS : S ⊆ U) (hT : T ⊆ U) (x : ⨂[R] i : S, A i) (y : ⨂[R] i : T, M i) :
+    stageEnd m he hρ S x (ofFinite R M m T y) =
+      ofFinite R M m U (stageAction ρ U (stageMap R e hS x) (stageMap R m hT y)) :=
+  stageEndAux_ofFinite hρ hS hT x y
 
 end RestrictedTensor
 
@@ -166,11 +173,10 @@ stage `T` factorwise at the stage `S ∪ T`. -/
 def action (he : ∀ i, IsIdempotentElem (e i)) (hρ : ∀ i, ρ i (e i) (m i) = m i) :
     RestrictedTensorAlgebra R A e he →ₙₐ[R] Module.End R (RestrictedTensor R M m) :=
   lift he (stageEnd m he hρ) fun S T h x ↦ RestrictedTensor.hom_ext fun V ↦ LinearMap.ext fun y ↦ by
-    change stageEndAux m hρ T (stageMap R e h x) (RestrictedTensor.ofFinite R M m V y) =
-      stageEndAux m hρ S x (RestrictedTensor.ofFinite R M m V y)
-    rw [stageEndAux_ofFinite hρ (Finset.subset_union_left (s₂ := V))
+    rw [LinearMap.comp_apply, LinearMap.comp_apply,
+      stageEnd_ofFinite he hρ (Finset.subset_union_left (s₂ := V))
         (Finset.subset_union_right (s₁ := T)),
-      stageEndAux_ofFinite hρ (h.trans Finset.subset_union_left)
+      stageEnd_ofFinite he hρ (h.trans Finset.subset_union_left)
         (Finset.subset_union_right (s₁ := T)), stageMap_stageMap]
 
 variable {ρ} {he : ∀ i, IsIdempotentElem (e i)}
@@ -182,8 +188,7 @@ theorem action_ofFinite_ofFinite (hρ : ∀ i, ρ i (e i) (m i) = m i) {S T U : 
     action ρ m he hρ (ofFinite he S x) (RestrictedTensor.ofFinite R M m T y) =
       RestrictedTensor.ofFinite R M m U
         (stageAction ρ U (stageMap R e hS x) (stageMap R m hT y)) := by
-  rw [action, lift_ofFinite]
-  exact stageEndAux_ofFinite hρ hS hT x y
+  rw [action, lift_ofFinite, stageEnd_ofFinite he hρ hS hT]
 
 /-- **Restricted pure tensors act factorwise**: `(⨂ a i) • (⨂ v i) = ⨂ ρ i (a i) (v i)`. -/
 @[simp]
