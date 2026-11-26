@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 public import TauCeti.Analysis.Sobolev.Semiclassical.Basic
-import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
-import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Calculus.CoordinateDeriv.LpNorm
 
 /-!
 # Raising semiclassical estimates by commutators
@@ -18,7 +17,7 @@ On `ℝⁿ` the semiclassical Sobolev norms `‖u‖_{k,h} = h^(-n/2) ∑_{i ≤
 derivatives `h ∂ⱼ`:
 
 * `h ∂ⱼ` lowers the order by one with norm at most one, `‖h ∂ⱼ u‖_{k,h} ≤ ‖u‖_{k+1,h}`
-  (`TauCeti.semiclassicalSobolevNorm_smul_coordinateDeriv_le`);
+  (`TauCeti.semiclassicalSobolevNorm_const_smul_coordinateDeriv_le`);
 * conversely the order `k + 1` is controlled by the order `0` and the order `k` of the
   `h ∂ⱼ u`, `‖u‖_{k+1,h} ≤ ‖u‖_{0,h} + ∑ⱼ ‖h ∂ⱼ u‖_{k,h}`
   (`TauCeti.semiclassicalSobolevNorm_succ_le_add_sum`).
@@ -52,8 +51,8 @@ none at a lower one.
 
 ## Main results
 
-* `TauCeti.semiclassicalSobolevNorm_smul_coordinateDeriv_le`: `h ∂ⱼ` is a contraction from order
-  `k + 1` to order `k`.
+* `TauCeti.semiclassicalSobolevNorm_const_smul_coordinateDeriv_le`: `h ∂ⱼ` is a contraction from
+  order `k + 1` to order `k`.
 * `TauCeti.semiclassicalSobolevNorm_succ_le_add_sum`: the order `k + 1` from the order `0` and the
   order `k` of the semiclassical partial derivatives, through
   `TauCeti.lpNorm_iteratedFDeriv_succ_le_sum_coordinateDeriv`.
@@ -83,61 +82,22 @@ variable {n : ℕ} {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-! ### The semiclassical partial derivatives -/
 
-/-- A derivative of order `i` of a partial derivative of a `C^(i+1)` function `f` is square
-integrable if the derivative of order `i + 1` of `f` is. -/
-theorem memLp_iteratedFDeriv_coordinateDeriv {i : ℕ} {f : CoordinateSpace n → F}
-    (hf : ContDiff ℝ (i + 1) f) (hfm : MemLp (iteratedFDeriv ℝ (i + 1) f) 2) (j : Fin n) :
-    MemLp (iteratedFDeriv ℝ i (coordinateDeriv [j] f)) 2 :=
-  hfm.of_le_mul (c := 1) ((hf.coordinateDeriv_of_le [j] (by simp)).continuous_iteratedFDeriv
-      le_rfl).aestronglyMeasurable
-    (.of_forall fun x ↦ by
-      rw [one_mul]
-      exact norm_iteratedFDeriv_coordinateDeriv_singleton_le hf j x)
-
 /-- **`h ∂ⱼ` lowers the order by one.** For `f` of class `C^(k+1)` whose derivatives of orders
 `1, …, k + 1` are square integrable, and `h ≥ 0`, `‖h ∂ⱼ f‖_{k,h} ≤ ‖f‖_{k+1,h}`. -/
-theorem semiclassicalSobolevNorm_smul_coordinateDeriv_le {k : ℕ} {f : CoordinateSpace n → F}
+theorem semiclassicalSobolevNorm_const_smul_coordinateDeriv_le {k : ℕ} {f : CoordinateSpace n → F}
     (hf : ContDiff ℝ (k + 1) f) (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ (i + 1) f) 2) {h : ℝ}
     (hh : 0 ≤ h) (j : Fin n) :
     semiclassicalSobolevNorm k h (h • coordinateDeriv [j] f) ≤
       semiclassicalSobolevNorm (k + 1) h f := by
-  rw [semiclassicalSobolevNorm_const_smul, abs_of_nonneg hh, semiclassicalSobolevNorm_def,
-    semiclassicalSobolevNorm_def, Finset.sum_range_succ' _ (k + 1), mul_left_comm, Finset.mul_sum]
-  refine mul_le_mul_of_nonneg_left (le_add_of_le_of_nonneg (Finset.sum_le_sum fun i hi ↦ ?_)
-    (mul_nonneg (pow_nonneg hh 0) lpNorm_nonneg)) (Real.rpow_nonneg hh _)
+  rw [semiclassicalSobolevNorm_const_smul, abs_of_nonneg hh, semiclassicalSobolevNorm_succ_eq,
+    semiclassicalSobolevNorm_def k, mul_left_comm, Finset.mul_sum]
+  refine le_add_of_nonneg_of_le (semiclassicalSobolevNorm_nonneg 0 hh f)
+    (mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun i hi ↦ ?_) (Real.rpow_nonneg hh _))
   have hi : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-  have hfi : ContDiff ℝ (i + 1) f := hf.of_le (by exact_mod_cast Nat.succ_le_succ hi)
   rw [pow_succ', mul_assoc]
-  refine mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left ?_ (pow_nonneg hh i)) hh
-  simpa using lpNorm_le_mul_lpNorm_of_ae_le_mul (c := 1)
-    (memLp_iteratedFDeriv_coordinateDeriv hfi (hfm i hi) j).aestronglyMeasurable (hfm i hi)
-    (.of_forall fun x ↦ by
-      rw [one_mul]
-      exact norm_iteratedFDeriv_coordinateDeriv_singleton_le hfi j x)
-
-/-- The `L²` norm of the derivative of order `i + 1` of a `C^(i+1)` function is at most the sum of
-the `L²` norms of the derivatives of order `i` of its partial derivatives,
-`‖D^(i+1) f‖₂ ≤ ∑ⱼ ‖D^i (∂ⱼ f)‖₂`. -/
-theorem lpNorm_iteratedFDeriv_succ_le_sum_coordinateDeriv {i : ℕ} {f : CoordinateSpace n → F}
-    (hf : ContDiff ℝ (i + 1) f) :
-    lpNorm (iteratedFDeriv ℝ (i + 1) f) 2 volume ≤
-      ∑ j, lpNorm (iteratedFDeriv ℝ i (coordinateDeriv [j] f)) 2 volume := by
-  by_cases hm : MemLp (iteratedFDeriv ℝ (i + 1) f) 2
-  · have hmj (j : Fin n) := memLp_iteratedFDeriv_coordinateDeriv hf hm j
-    have hsum : (fun x ↦ ∑ j, ‖iteratedFDeriv ℝ i (coordinateDeriv [j] f) x‖) =
-        ∑ j, fun x ↦ ‖iteratedFDeriv ℝ i (coordinateDeriv [j] f) x‖ := by
-      ext x
-      simp
-    calc lpNorm (iteratedFDeriv ℝ (i + 1) f) 2 volume
-        ≤ lpNorm (fun x ↦ ∑ j, ‖iteratedFDeriv ℝ i (coordinateDeriv [j] f) x‖) 2 volume :=
-          lpNorm_mono_real (memLp_finsetSum _ fun j _ ↦ (hmj j).norm)
-            (norm_iteratedFDeriv_succ_le_sum_coordinateDeriv hf)
-      _ ≤ ∑ j, lpNorm (fun x ↦ ‖iteratedFDeriv ℝ i (coordinateDeriv [j] f) x‖) 2 volume :=
-          hsum ▸ lpNorm_sum_le (fun j _ ↦ (hmj j).norm) one_le_two
-      _ = ∑ j, lpNorm (iteratedFDeriv ℝ i (coordinateDeriv [j] f)) 2 volume := by
-          simp only [lpNorm_norm (hmj _).aestronglyMeasurable]
-  · rw [lpNorm_of_not_memLp hm]
-    exact Finset.sum_nonneg fun _ _ ↦ lpNorm_nonneg
+  exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left
+    (lpNorm_iteratedFDeriv_coordinateDeriv_le (hf.of_le (by exact_mod_cast Nat.succ_le_succ hi))
+      (hfm i hi) j) (pow_nonneg hh i)) hh
 
 /-- **The order `k + 1` from the semiclassical partial derivatives.** For `f` of class `C^(k+1)`
 and `h ≥ 0`, `‖f‖_{k+1,h} ≤ ‖f‖_{0,h} + ∑ⱼ ‖h ∂ⱼ f‖_{k,h}`. No integrability is assumed: a
@@ -148,30 +108,22 @@ theorem semiclassicalSobolevNorm_succ_le_add_sum {k : ℕ} {f : CoordinateSpace 
       semiclassicalSobolevNorm 0 h f +
         ∑ j, semiclassicalSobolevNorm k h (h • coordinateDeriv [j] f) := by
   simp only [semiclassicalSobolevNorm_const_smul, abs_of_nonneg hh]
-  simp only [semiclassicalSobolevNorm_def]
-  rw [Finset.sum_range_succ' _ (k + 1), mul_add, add_comm, zero_add, Finset.sum_range_one]
-  refine add_le_add le_rfl ?_
-  calc h ^ (-(Module.finrank ℝ (CoordinateSpace n) : ℝ) / 2) *
-        ∑ i ∈ Finset.range (k + 1), h ^ (i + 1) * lpNorm (iteratedFDeriv ℝ (i + 1) f) 2 volume
-      ≤ h ^ (-(Module.finrank ℝ (CoordinateSpace n) : ℝ) / 2) *
-        ∑ i ∈ Finset.range (k + 1), h ^ (i + 1) *
-          ∑ j, lpNorm (iteratedFDeriv ℝ i (coordinateDeriv [j] f)) 2 volume := by
-        refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun i hi ↦ ?_) (Real.rpow_nonneg hh _)
-        refine mul_le_mul_of_nonneg_left
-          (lpNorm_iteratedFDeriv_succ_le_sum_coordinateDeriv (hf.of_le ?_))
-          (pow_nonneg hh _)
-        exact_mod_cast Nat.succ_le_succ (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))
-    _ = _ := by
-        simp only [Finset.mul_sum]
-        rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
-        ring
+  rw [semiclassicalSobolevNorm_succ_eq]
+  simp only [semiclassicalSobolevNorm_def k]
+  refine add_le_add le_rfl ((mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun i hi ↦
+    mul_le_mul_of_nonneg_left (lpNorm_iteratedFDeriv_succ_le_sum_coordinateDeriv (hf.of_le ?_))
+      (pow_nonneg hh _)) (Real.rpow_nonneg hh _)).trans_eq ?_)
+  · exact_mod_cast Nat.succ_le_succ (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))
+  · simp only [Finset.mul_sum]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
+    ring
 
 /-! ### The commutator induction -/
 
 /-- A semiclassical partial derivative of a smooth field with all derivatives in `L²` is again
 such a field. -/
-private theorem contDiff_smul_coordinateDeriv_and_memLp {u : CoordinateSpace n → F}
+private theorem contDiff_const_smul_coordinateDeriv_and_memLp {u : CoordinateSpace n → F}
     (hu : ContDiff ℝ ∞ u) (hum : ∀ i, MemLp (iteratedFDeriv ℝ i u) 2) (h : ℝ) (j : Fin n) :
     ContDiff ℝ ∞ (h • coordinateDeriv [j] u) ∧
       ∀ i, MemLp (iteratedFDeriv ℝ i (h • coordinateDeriv [j] u)) 2 := by
@@ -200,8 +152,8 @@ variable {L : (CoordinateSpace n → F) → CoordinateSpace n → G} {h : ℝ} {
 
 /-- One semiclassical partial derivative through the induction hypothesis: if the estimate holds
 at level `k`, then `‖h ∂ⱼ u‖_{k+1,h} ≤ C_k (1 + B_k C_k + C₀) (‖L u‖_{k+1,h} + ‖u‖_{0,h})`. -/
-private theorem semiclassicalSobolevNorm_smul_coordinateDeriv_le_mul (hh : 0 ≤ h)
-    (hB : ∀ k, 0 ≤ B k) (hC₀ : 0 ≤ C 0) (hCk : ∀ k, 0 ≤ C k)
+private theorem semiclassicalSobolevNorm_const_smul_coordinateDeriv_le_mul (hh : 0 ≤ h)
+    (hB : ∀ k, 0 ≤ B k) (hCk : ∀ k, 0 ≤ C k)
     (hL : ∀ u : CoordinateSpace n → F, ContDiff ℝ ∞ u → (∀ i, MemLp (iteratedFDeriv ℝ i u) 2) →
       ContDiff ℝ ∞ (L u) ∧ ∀ i, MemLp (iteratedFDeriv ℝ i (L u)) 2)
     (hbase : ∀ u : CoordinateSpace n → F, ContDiff ℝ ∞ u →
@@ -225,8 +177,8 @@ private theorem semiclassicalSobolevNorm_smul_coordinateDeriv_le_mul (hh : 0 ≤
       semiclassicalSobolevNorm 0 h u ≤ X :=
     add_le_add_left (semiclassicalSobolevNorm_le_semiclassicalSobolevNorm_of_le hl hh _) _
   obtain ⟨hLu, hLum⟩ := hL u hu hum
-  obtain ⟨hv, hvm⟩ := contDiff_smul_coordinateDeriv_and_memLp hu hum h j
-  have hw := contDiff_smul_coordinateDeriv_and_memLp hLu hLum h j
+  obtain ⟨hv, hvm⟩ := contDiff_const_smul_coordinateDeriv_and_memLp hu hum h j
+  have hw := contDiff_const_smul_coordinateDeriv_and_memLp hLu hLum h j
   -- Move `h ∂ⱼ` through `L`, at the price of the commutator.
   have hcomm' : semiclassicalSobolevNorm k h (L (h • coordinateDeriv [j] u)) ≤
       X + B k * (C k * X) := by
@@ -240,15 +192,15 @@ private theorem semiclassicalSobolevNorm_smul_coordinateDeriv_le_mul (hh : 0 ≤
           semiclassicalSobolevNorm_add_le (hw.1.of_le (by exact_mod_cast le_top))
             (((hL _ hv hvm).1.sub hw.1).of_le (by exact_mod_cast le_top)) (fun i _ ↦ hw.2 i) hh
       _ ≤ X + B k * (C k * X) := by
-          refine add_le_add ((semiclassicalSobolevNorm_smul_coordinateDeriv_le
+          refine add_le_add ((semiclassicalSobolevNorm_const_smul_coordinateDeriv_le
             (hLu.of_le (by exact_mod_cast le_top)) (fun i _ ↦ hLum _) hh j).trans hX₁)
             ((hcomm k j u hu hum).trans (mul_le_mul_of_nonneg_left ?_ (hB k)))
           exact (ih u hu hum).trans (mul_le_mul_of_nonneg_left (hmono k k.le_succ) (hCk k))
   -- The lower-order term is controlled by the estimate at level zero.
   have hlow : semiclassicalSobolevNorm 0 h (h • coordinateDeriv [j] u) ≤ C 0 * X :=
-    (semiclassicalSobolevNorm_smul_coordinateDeriv_le (hu.of_le (by exact_mod_cast le_top))
+    (semiclassicalSobolevNorm_const_smul_coordinateDeriv_le (hu.of_le (by exact_mod_cast le_top))
       (fun i _ ↦ hum _) hh j).trans ((hbase u hu hum).trans
-        (mul_le_mul_of_nonneg_left (hmono 0 (Nat.zero_le _)) hC₀))
+        (mul_le_mul_of_nonneg_left (hmono 0 (Nat.zero_le _)) (hCk 0)))
   calc semiclassicalSobolevNorm (k + 1) h (h • coordinateDeriv [j] u)
       ≤ C k * (semiclassicalSobolevNorm k h (L (h • coordinateDeriv [j] u)) +
           semiclassicalSobolevNorm 0 h (h • coordinateDeriv [j] u)) := ih _ hv hvm
@@ -295,8 +247,9 @@ theorem semiclassicalSobolevNorm_succ_le_mul_add_of_commutator_le (hh : 0 ≤ h)
           semiclassicalSobolevNorm_succ_le_add_sum (hu.of_le (by exact_mod_cast le_top)) hh
       _ ≤ X + ∑ _j : Fin n, C k * (1 + B k * C k + C 0) * X :=
           add_le_add (le_add_of_nonneg_left (semiclassicalSobolevNorm_nonneg _ hh _))
-            (Finset.sum_le_sum fun j _ ↦ semiclassicalSobolevNorm_smul_coordinateDeriv_le_mul hh
-              hB hC₀ hCk hL hbase hcomm (fun _ hv hvm ↦ ih hv hvm) hu hum j)
+            (Finset.sum_le_sum fun j _ ↦
+              semiclassicalSobolevNorm_const_smul_coordinateDeriv_le_mul hh hB hCk hL hbase hcomm
+                (fun _ hv hvm ↦ ih hv hvm) hu hum j)
       _ = (1 + n * C k * (1 + B k * C k + C 0)) * X := by
           rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
           ring

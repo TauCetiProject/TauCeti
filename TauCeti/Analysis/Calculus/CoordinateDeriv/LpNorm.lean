@@ -1,0 +1,92 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import TauCeti.Analysis.Calculus.CoordinateDeriv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
+
+/-!
+# `L²` norms of derivatives of partial derivatives
+
+On `ℝⁿ` the derivatives of order `i` of the first partial derivatives `∂ⱼ f` and the derivative of
+order `i + 1` of `f` control each other in `L²`:
+
+* `‖Dⁱ (∂ⱼ f)‖₂ ≤ ‖D^(i+1) f‖₂` (`TauCeti.lpNorm_iteratedFDeriv_coordinateDeriv_le`), and in
+  particular `Dⁱ (∂ⱼ f) ∈ L²` when `D^(i+1) f ∈ L²`
+  (`TauCeti.memLp_iteratedFDeriv_coordinateDeriv`);
+* `‖D^(i+1) f‖₂ ≤ ∑ⱼ ‖Dⁱ (∂ⱼ f)‖₂`
+  (`TauCeti.lpNorm_iteratedFDeriv_succ_le_sum_coordinateDeriv`).
+
+They are the `L²` forms of the pointwise bounds `ContDiff.norm_iteratedFDeriv_fderiv_apply_le`
+(in the direction of a standard basis vector) and
+`TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`.
+-/
+
+public section
+
+open MeasureTheory
+
+namespace TauCeti
+
+variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The pointwise bound `‖Dⁱ (∂ⱼ f) x‖ ≤ ‖D^(i+1) f x‖`, in the form taken by the `L²`
+comparison lemmas. -/
+private theorem norm_iteratedFDeriv_coordinateDeriv_le_one_mul {i : ℕ}
+    {f : CoordinateSpace n → F} (hf : ContDiff ℝ (i + 1) f) (j : Fin n) (x : CoordinateSpace n) :
+    ‖iteratedFDeriv ℝ i (coordinateDeriv [j] f) x‖ ≤ 1 * ‖iteratedFDeriv ℝ (i + 1) f x‖ := by
+  rw [funext (coordinateDeriv_singleton j f)]
+  simpa using hf.norm_iteratedFDeriv_fderiv_apply_le (i := i)
+    (by simp [minSmoothness_of_isRCLikeNormedField]) (EuclideanSpace.single j 1) x
+
+/-- A derivative of order `i` of a partial derivative of a `C^(i+1)` function `f` is square
+integrable if the derivative of order `i + 1` of `f` is. -/
+theorem memLp_iteratedFDeriv_coordinateDeriv {i : ℕ} {f : CoordinateSpace n → F}
+    (hf : ContDiff ℝ (i + 1) f) (hfm : MemLp (iteratedFDeriv ℝ (i + 1) f) 2) (j : Fin n) :
+    MemLp (iteratedFDeriv ℝ i (coordinateDeriv [j] f)) 2 :=
+  hfm.of_le_mul ((hf.coordinateDeriv_of_le [j] (by simp)).continuous_iteratedFDeriv
+      le_rfl).aestronglyMeasurable
+    (.of_forall (norm_iteratedFDeriv_coordinateDeriv_le_one_mul hf j))
+
+/-- The `L²` norm of a derivative of order `i` of a partial derivative of a `C^(i+1)` function `f`
+is at most that of the derivative of order `i + 1` of `f`, `‖Dⁱ (∂ⱼ f)‖₂ ≤ ‖D^(i+1) f‖₂`, when the
+latter is square integrable. -/
+theorem lpNorm_iteratedFDeriv_coordinateDeriv_le {i : ℕ} {f : CoordinateSpace n → F}
+    (hf : ContDiff ℝ (i + 1) f) (hfm : MemLp (iteratedFDeriv ℝ (i + 1) f) 2) (j : Fin n) :
+    lpNorm (iteratedFDeriv ℝ i (coordinateDeriv [j] f)) 2 volume ≤
+      lpNorm (iteratedFDeriv ℝ (i + 1) f) 2 volume :=
+  (lpNorm_le_mul_lpNorm_of_ae_le_mul
+    (memLp_iteratedFDeriv_coordinateDeriv hf hfm j).aestronglyMeasurable hfm
+    (.of_forall (norm_iteratedFDeriv_coordinateDeriv_le_one_mul hf j))).trans_eq (one_mul _)
+
+/-- The `L²` norm of the derivative of order `i + 1` of a `C^(i+1)` function is at most the sum of
+the `L²` norms of the derivatives of order `i` of its partial derivatives,
+`‖D^(i+1) f‖₂ ≤ ∑ⱼ ‖D^i (∂ⱼ f)‖₂`. -/
+theorem lpNorm_iteratedFDeriv_succ_le_sum_coordinateDeriv {i : ℕ} {f : CoordinateSpace n → F}
+    (hf : ContDiff ℝ (i + 1) f) :
+    lpNorm (iteratedFDeriv ℝ (i + 1) f) 2 volume ≤
+      ∑ j, lpNorm (iteratedFDeriv ℝ i (coordinateDeriv [j] f)) 2 volume := by
+  by_cases hm : MemLp (iteratedFDeriv ℝ (i + 1) f) 2
+  · have hmj (j : Fin n) := memLp_iteratedFDeriv_coordinateDeriv hf hm j
+    have hsum : (fun x ↦ ∑ j, ‖iteratedFDeriv ℝ i (coordinateDeriv [j] f) x‖) =
+        ∑ j, fun x ↦ ‖iteratedFDeriv ℝ i (coordinateDeriv [j] f) x‖ := by
+      ext x
+      simp
+    calc lpNorm (iteratedFDeriv ℝ (i + 1) f) 2 volume
+        ≤ lpNorm (fun x ↦ ∑ j, ‖iteratedFDeriv ℝ i (coordinateDeriv [j] f) x‖) 2 volume :=
+          lpNorm_mono_real (memLp_finsetSum _ fun j _ ↦ (hmj j).norm)
+            (norm_iteratedFDeriv_succ_le_sum_coordinateDeriv hf)
+      _ ≤ ∑ j, lpNorm (fun x ↦ ‖iteratedFDeriv ℝ i (coordinateDeriv [j] f) x‖) 2 volume :=
+          hsum ▸ lpNorm_sum_le (fun j _ ↦ (hmj j).norm) one_le_two
+      _ = ∑ j, lpNorm (iteratedFDeriv ℝ i (coordinateDeriv [j] f)) 2 volume := by
+          simp only [lpNorm_norm (hmj _).aestronglyMeasurable]
+  · rw [lpNorm_of_not_memLp hm]
+    exact Finset.sum_nonneg fun _ _ ↦ lpNorm_nonneg
+
+end TauCeti

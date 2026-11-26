@@ -204,6 +204,16 @@ theorem semiclassicalSobolevNorm_le_semiclassicalSobolevNorm_of_le {k l : ℕ} (
     (Finset.range_mono (Nat.succ_le_succ hkl)) fun i _ _ ↦
       mul_nonneg (pow_nonneg hh i) lpNorm_nonneg) (Real.rpow_nonneg hh _)
 
+/-- **Splitting off the order zero.** The semiclassical norm of order `k + 1` is the norm of order
+`0` plus the weighted `L²` norms of the derivatives of orders `1, …, k + 1`,
+`‖f‖_{k+1,h} = ‖f‖_{0,h} + h^(-n/2) ∑_{i ≤ k} h^(i+1) ‖D^(i+1) f‖₂`. -/
+theorem semiclassicalSobolevNorm_succ_eq (k : ℕ) (h : ℝ) (f : E → F) :
+    semiclassicalSobolevNorm (k + 1) h f =
+      semiclassicalSobolevNorm 0 h f + h ^ (-(finrank ℝ E : ℝ) / 2) *
+        ∑ i ∈ Finset.range (k + 1), h ^ (i + 1) * lpNorm (iteratedFDeriv ℝ (i + 1) f) 2 volume := by
+  rw [semiclassicalSobolevNorm_def, semiclassicalSobolevNorm_def, Finset.sum_range_succ' _ (k + 1),
+    mul_add, add_comm, zero_add, Finset.sum_range_one]
+
 /-- **The triangle inequality for finite sums.** For functions `fⱼ` of class `Cᵏ`, with
 `Dⁱ fⱼ ∈ L²` for `i ≤ k`, and `h ≥ 0`, `‖∑ⱼ fⱼ‖_{k,h} ≤ ∑ⱼ ‖fⱼ‖_{k,h}`. -/
 theorem semiclassicalSobolevNorm_sum_le {ι : Type*} (s : Finset ι) {k : ℕ} {f : ι → E → F}
