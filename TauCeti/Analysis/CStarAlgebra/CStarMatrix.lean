@@ -80,6 +80,8 @@ embeddings into block-diagonal matrices.
   projection) and `CStarMatrix.norm_matrixUnit`: `‖e_ij‖ = 1`.
 * `CStarMatrix.compStarAlgEquiv`: `Matrix.comp` as a star algebra isomorphism
   `M_m(M_n(A)) ≃ M_{m × n}(A)`.
+* `CStarMatrix.piStarAlgEquiv`: a matrix over a product is the family of its components,
+  `M_m(Π B_i) ≃ Π M_m(B_i)`, as a star algebra isomorphism.
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
   in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le` and
   `CStarMatrix.norm_map_toSpanSingleton_le`: `‖[xᵢⱼ • a]‖ ≤ ‖x‖ ‖a‖` for a scalar matrix `x`.
@@ -172,6 +174,39 @@ theorem compStarAlgEquiv_map {B : Type*} [AddCommMonoid B] [Mul B] [Star B] [SMu
   (rfl)
 
 end Comp
+
+section Pi
+
+variable (R m : Type*) {ι : Type*} (B : ι → Type*) [Fintype m] [∀ i, AddCommMonoid (B i)]
+  [∀ i, Mul (B i)] [∀ i, Star (B i)] [∀ i, SMul R (B i)]
+
+/-- A matrix over a product is the family of its components: `M_m(Π B_i) ≃ Π M_m(B_i)`, as a
+star algebra isomorphism of C⋆-matrices (`Matrix.piRingEquiv` with the star structure). -/
+def piStarAlgEquiv : CStarMatrix m m (∀ i, B i) ≃⋆ₐ[R] ∀ i, CStarMatrix m m (B i) where
+  toFun M i := M.map (· i)
+  invFun f := ofMatrix (Matrix.of fun j l i ↦ f i j l)
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_mul' := (Matrix.piRingEquiv (n := m) (β := B)).map_mul
+  map_smul' _ _ := rfl
+  map_star' M := by
+    ext i j l
+    simp [CStarMatrix.star_apply]
+
+variable {R m B}
+
+@[simp]
+theorem piStarAlgEquiv_apply (M : CStarMatrix m m (∀ i, B i)) (i : ι) (j l : m) :
+    piStarAlgEquiv R m B M i j l = M j l i :=
+  (rfl)
+
+@[simp]
+theorem piStarAlgEquiv_symm_apply (f : ∀ i, CStarMatrix m m (B i)) (j l : m) (i : ι) :
+    (piStarAlgEquiv R m B).symm f j l i = f i j l :=
+  (rfl)
+
+end Pi
 
 section Diagonal
 

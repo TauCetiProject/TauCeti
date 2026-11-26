@@ -10,8 +10,8 @@ public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Pi
 /-!
 # Check: finite direct sums of matrix algebras are nuclear
 
-The CStarAlgebras roadmap's first C6.1 Check: `M_1(ℂ) ⊕ M_2(ℂ) ⊕ M_3(ℂ)` is nuclear, through its
-block-diagonal embedding in `M_6(ℂ)` and the compression back to the diagonal blocks.
+`M_1(ℂ) ⊕ M_2(ℂ) ⊕ M_3(ℂ)` is nuclear, through its block-diagonal embedding in `M_6(ℂ)` and the
+compression back to the diagonal blocks.
 -/
 
 public section
