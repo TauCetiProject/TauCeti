@@ -10,7 +10,6 @@ import Mathlib.Algebra.Field.ZMod
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.Card
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.ZMod
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Card
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.SignedQuotient
 
 /-!
 # Explicit fixed-level checks for principal modular quotients and obstructions
@@ -44,13 +43,12 @@ theorem card_fin_two_zmod_eight :
     Nat.card SL(2, ZMod 8) = 384 ∧
       Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 8)) = 192 ∧
       Nat.card PSL(2, ZMod 8) = 96 := by
+  have hq : Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 8)) = 192 :=
+    (GammaProjective_index_eq_card 8).symm.trans GammaProjective_index_eight
   have hsl : Nat.card SL(2, ZMod 8) = 384 := by
-    rw [show (8 : ℕ) = 2 ^ 3 by norm_num, Matrix.natCard_SL_zmod_pow three_ne_zero,
-      TauCeti.natCard_SL_fin_two_zmod, Fintype.card_fin]
-    norm_num
-  have hq : Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 8)) = 192 := by
-    have h := TauCeti.Matrix.SignedQuotient.two_mul_card_fin_two_zmod (N := 8) (by omega)
-    rw [hsl] at h; omega
+    have h := two_mul_GammaProjective_index (N := 8) (by omega)
+    rw [GammaProjective_index_eight] at h
+    exact h.symm
   refine ⟨hsl, hq, ?_⟩
   have h := Matrix.ProjectiveSpecialLinearGroup.card_mul_card_rootsOfUnity 2 two_pos (ZMod 8)
   have h4 : Nat.card (rootsOfUnity 2 (ZMod 8)) = 4 := by
@@ -65,14 +63,12 @@ theorem card_fin_two_zmod_twelve :
     Nat.card SL(2, ZMod 12) = 1152 ∧
       Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 12)) = 576 ∧
       Nat.card PSL(2, ZMod 12) = 288 := by
+  have hq : Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 12)) = 576 :=
+    (GammaProjective_index_eq_card 12).symm.trans GammaProjective_index_twelve
   have hsl : Nat.card SL(2, ZMod 12) = 1152 := by
-    rw [show (12 : ℕ) = 2 ^ 2 * 3 by norm_num, Matrix.natCard_SL_zmod_mul (by norm_num),
-      Matrix.natCard_SL_zmod_pow two_ne_zero, TauCeti.natCard_SL_fin_two_zmod,
-      TauCeti.natCard_SL_fin_two_zmod, Fintype.card_fin]
-    norm_num
-  have hq : Nat.card (TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod 12)) = 576 := by
-    have h := TauCeti.Matrix.SignedQuotient.two_mul_card_fin_two_zmod (N := 12) (by omega)
-    rw [hsl] at h; omega
+    have h := two_mul_GammaProjective_index (N := 12) (by omega)
+    rw [GammaProjective_index_twelve] at h
+    exact h.symm
   refine ⟨hsl, hq, ?_⟩
   have h := Matrix.ProjectiveSpecialLinearGroup.card_mul_card_rootsOfUnity 2 two_pos (ZMod 12)
   have h4 : Nat.card (rootsOfUnity 2 (ZMod 12)) = 4 := by

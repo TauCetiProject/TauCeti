@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Wohlfahrt
 public import Mathlib.NumberTheory.Chebyshev
 import TauCeti.GroupTheory.Perm.Partition
 import TauCeti.NumberTheory.LcmUpto
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective.Principal
 
 /-!
 # The general level of a subgroup of the modular group
@@ -279,22 +280,18 @@ theorem isCongruenceSubgroup_liftSL_iff_Gamma_le_of_dvd {M : ℕ} [NeZero M]
 level, lies in the normal core of `Γ'`. -/
 theorem map_Gamma_generalLevel_le_normalCore
     (h : IsCongruenceSubgroup Γ'.liftSL) :
-    (Gamma (generalLevel Γ' e)).map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) ≤
-      Γ'.normalCore := by
-  have : ((Gamma (generalLevel Γ' e)).map
-      (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).Normal :=
-    (Gamma_normal _).map _ (QuotientGroup.mk'_surjective _)
-  rw [Subgroup.normal_le_normalCore]
-  exact (Subgroup.map_mono ((isCongruenceSubgroup_liftSL_iff Γ' e).mp h)).trans_eq
-    (Subgroup.map_liftSL Γ')
+    CongruenceSubgroup.GammaProjective (generalLevel Γ' e) ≤ Γ'.normalCore :=
+  Subgroup.normal_le_normalCore.mpr
+    (CongruenceSubgroup.GammaProjective_le_iff.mpr ((isCongruenceSubgroup_liftSL_iff Γ' e).mp h))
 
 /-- **The order obstruction**: if `±Γ'` is a congruence subgroup, the index `n` of `Γ'` divides
 the index in `PSL(2, ℤ)` of the image of `Γ(N)`, for `N` the general level of `Γ'`. -/
 theorem dvd_index_map_Gamma_generalLevel (h : IsCongruenceSubgroup Γ'.liftSL) :
-    n ∣ ((Gamma (generalLevel Γ' e)).map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index := by
-  have := Subgroup.index_dvd_of_le
-    ((map_Gamma_generalLevel_le_normalCore Γ' e h).trans Γ'.normalCore_le)
-  rwa [Subgroup.index_eq_card, Nat.card_eq_of_equiv_fin e] at this
+    n ∣ (CongruenceSubgroup.GammaProjective (generalLevel Γ' e)).index := by
+  have := CongruenceSubgroup.index_dvd_of_Gamma_le_liftSL
+    ((isCongruenceSubgroup_liftSL_iff Γ' e).mp h)
+  rwa [← CongruenceSubgroup.GammaProjective_index_eq_card, Subgroup.index_eq_card,
+    Nat.card_eq_of_equiv_fin e] at this
 
 /-- **The order obstruction, group-theoretic form**: if `±Γ'` is a congruence subgroup, the order
 of the monodromy group of `Γ'` divides the index in `PSL(2, ℤ)` of the image of `Γ(N)`, for `N` the
@@ -302,16 +299,17 @@ general level of `Γ'`. -/
 theorem natCard_monodromyGroup_dvd_index_map_Gamma_generalLevel
     (h : IsCongruenceSubgroup Γ'.liftSL) :
     Nat.card (modularTriple Γ' e).monodromyGroup ∣
-      ((Gamma (generalLevel Γ' e)).map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index := by
-  rw [natCard_monodromyGroup_modularTriple]
-  exact Subgroup.index_dvd_of_le (map_Gamma_generalLevel_le_normalCore Γ' e h)
+      (CongruenceSubgroup.GammaProjective (generalLevel Γ' e)).index := by
+  rw [natCard_monodromyGroup_modularTriple, Subgroup.index_eq_card,
+    CongruenceSubgroup.GammaProjective_index_eq_card]
+  exact CongruenceSubgroup.card_quotient_normalCore_dvd_of_Gamma_le_liftSL
+    ((isCongruenceSubgroup_liftSL_iff Γ' e).mp h)
 
 /-- **Noncongruence from the order obstruction**: if the index `n` of `Γ'` does not divide the
 index in `PSL(2, ℤ)` of the image of `Γ(N)`, for `N` the general level of `Γ'`, then `±Γ'` is not
 a congruence subgroup. -/
 theorem not_isCongruenceSubgroup_liftSL_of_not_dvd
-    (h : ¬ n ∣ ((Gamma (generalLevel Γ' e)).map
-      (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index) :
+    (h : ¬ n ∣ (CongruenceSubgroup.GammaProjective (generalLevel Γ' e)).index) :
     ¬ IsCongruenceSubgroup Γ'.liftSL :=
   mt (dvd_index_map_Gamma_generalLevel Γ' e) h
 
