@@ -63,23 +63,6 @@ private theorem exists_common_lowerBound [Finite ι] : ∃ γ : ℝ, ∀ i, (q i
   exact ⟨M, fun i ↦ (q i).isLowerBound_iff.2 fun u ↦
     (mul_le_mul_of_nonneg_right (hM i) (sq_nonneg _)).trans ((q i).isLowerBound_iff.1 (hγ i) u)⟩
 
-/-- A factor of a complete `L^2` product is complete: the `i`-th coordinate is a left inverse of
-the isometric embedding `PiLp.single 2 i`. -/
-private theorem completeSpace_of_completeSpace_piLp {E : ι → Type*}
-    [Finite ι] [∀ i, NormedAddCommGroup (E i)] [CompleteSpace (PiLp 2 E)] (i : ι) :
-    CompleteSpace (E i) where
-  complete {f} hf := by
-    classical
-    have := Fintype.ofFinite ι
-    have hs : Isometry (PiLp.single 2 i : E i → PiLp 2 E) :=
-      Isometry.of_dist_eq (PiLp.dist_single_same 2 E i)
-    obtain ⟨x, hx⟩ := CompleteSpace.complete (hf.map hs.uniformContinuous)
-    refine ⟨x i, ?_⟩
-    have := (((PiLp.continuous_apply 2 E i).tendsto x).mono_left hx).comp
-      (Filter.tendsto_map (f := PiLp.single 2 i))
-    simp only [Function.comp_def, PiLp.single_eq_same] at this
-    exact Filter.tendsto_id'.1 this
-
 variable [Fintype ι]
 
 /-- The form of the orthogonal sum, `u, v ↦ ∑ i, q i (u i) (v i)`, on the vectors of `PiLp 2 H`
@@ -248,11 +231,8 @@ theorem isClosed_pi_iff : (pi q).IsClosed ↔ ∀ i, (q i).IsClosed := by
   obtain ⟨α, hα, hαi⟩ := exists_isAdmissibleShift_pi q
   let e := piFormSpaceEquiv q hα hαi
   rw [(pi q).isClosed_iff_completeSpace hα,
-    completeSpace_congr (e := e.toEquiv) e.isometry.isUniformEmbedding]
-  refine ⟨fun _ i ↦ ((q i).isClosed_iff_completeSpace (hαi i)).2
-    (completeSpace_of_completeSpace_piLp (E := fun i ↦ (q i).FormSpace α (hαi i)) i), fun hq ↦ ?_⟩
-  have := fun i ↦ ((q i).isClosed_iff_completeSpace (hαi i)).1 (hq i)
-  infer_instance
+    completeSpace_congr (e := e.toEquiv) e.isometry.isUniformEmbedding, PiLp.completeSpace_iff]
+  exact forall_congr' fun i ↦ ((q i).isClosed_iff_completeSpace (hαi i)).symm
 
 /-- **The orthogonal sum of closed forms is closed.** -/
 theorem isClosed_pi (hq : ∀ i, (q i).IsClosed) : (pi q).IsClosed :=

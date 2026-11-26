@@ -24,6 +24,8 @@ operators, acting on the Hilbert direct sum `PiLp 2 E`. It is the family version
   with its coordinate projections `Submodule.piLpProj`. It is the domain of the direct sum.
 * `Submodule.piLpEquiv p s`: `Submodule.piLp p s` is the product of the `s i`.
 * `Submodule.dense_piLp_iff`: `Submodule.piLp p s` is dense if and only if every `s i` is.
+* `PiLp.completeSpace_iff`: for a finite index type, `PiLp p E` is complete if and only if every
+  factor `E i` is.
 * `LinearPMap.piLpMap p f`: the direct sum of the family `f` on `PiLp p E`.
 * `LinearPMap.mem_piLpMap_domain`: `x` lies in the domain exactly when each coordinate `x i` lies
   in the domain of `f i`.
@@ -126,6 +128,27 @@ theorem dense_piLp_iff :
   exact (Function.surjective_eval i).denseRange.dense_image (continuous_apply i) h
 
 end Submodule
+
+namespace PiLp
+
+variable [Fact (1 ≤ p)] [Finite ι] [∀ i, NormedAddCommGroup (E i)]
+
+/-- Each factor of a complete finite `L^p` product is complete. -/
+theorem completeSpace_of_completeSpace [CompleteSpace (PiLp p E)] (i : ι) :
+    CompleteSpace (E i) := by
+  classical
+  have := Fintype.ofFinite ι
+  have hs : Isometry (single p i : E i → PiLp p E) := .of_dist_eq (dist_single_same p E i)
+  -- The `i`-th coordinate is a continuous left inverse of `single p i`, so its range is closed.
+  exact hs.isUniformInducing.completeSpace
+    (Function.LeftInverse.isClosed_range (f := fun x : PiLp p E ↦ x i)
+      (fun _ ↦ single_eq_same p i _) (PiLp.continuous_apply p E i) hs.continuous).isComplete
+
+/-- A finite `L^p` product is complete if and only if every factor is complete. -/
+theorem completeSpace_iff : CompleteSpace (PiLp p E) ↔ ∀ i, CompleteSpace (E i) :=
+  ⟨fun _ ↦ completeSpace_of_completeSpace p, fun _ ↦ inferInstance⟩
+
+end PiLp
 
 namespace LinearPMap
 
