@@ -341,7 +341,7 @@ private theorem sum_recouplingCoeff_mul_eq_sixJ_mul (hq : IsGenericQuantumParame
         recouplingCoeff hq ε δ (ζ * θ) i₁ p₂ r₂ r₃ * recouplingCoeff hq (ε * δ) ζ θ i₂ i₃ r₁ p₂) =
       sixJ hq ε δ (ζ * θ) a b y e u x * sixJ hq (ε * δ) ζ θ u c d e w y := by
   subst hu hw he hy hx
-  by_cases huy : IsClebschGordanChannel (a + b - 2 * (i₁ : ℕ)) (c + d - 2 * (r₁ : ℕ))
+  by_cases huy : SU2.IsTriad (a + b - 2 * (i₁ : ℕ)) (c + d - 2 * (r₁ : ℕ))
       (a + b - 2 * (i₁ : ℕ) + c - 2 * (i₂ : ℕ) + d - 2 * (i₃ : ℕ))
   · rw [Finset.sum_eq_single huy.index]
     · have he_uy := huy.sub_two_mul_index
@@ -384,12 +384,12 @@ private theorem sum_sum_recouplingCoeff_eq_sixJ_mul (hq : IsGenericQuantumParame
         sixJ hq ε δ ζ a b c w u (b + c - 2 * (q₁ : ℕ)) := by
   subst hu hw he hy hx
   -- Step 1 (sum over `q₂`): only `q₂ = haz.index` matches weight `w`; otherwise both sides vanish.
-  by_cases haz : IsClebschGordanChannel a (b + c - 2 * (q₁ : ℕ))
+  by_cases haz : SU2.IsTriad a (b + c - 2 * (q₁ : ℕ))
       (a + b - 2 * (i₁ : ℕ) + c - 2 * (i₂ : ℕ))
   · rw [Finset.sum_eq_single haz.index]
     · rw [dite_eq_left haz.sub_two_mul_index.symm]
       -- Step 2 (sum over `p₁`): only `p₁ = hzd.index` couples `b + c - 2q₁` with `d` to weight `x`.
-      by_cases hzd : IsClebschGordanChannel (b + c - 2 * (q₁ : ℕ)) d
+      by_cases hzd : SU2.IsTriad (b + c - 2 * (q₁ : ℕ)) d
           (b + (c + d - 2 * (r₁ : ℕ)) - 2 * (r₂ : ℕ))
       · rw [Finset.sum_eq_single hzd.index]
         · -- Step 3 (sum over `p₂`): `(p₂ : ℕ) = (r₃ : ℕ)` selects `p₂₀ = r₃.cast _`.
@@ -414,7 +414,7 @@ private theorem sum_sum_recouplingCoeff_eq_sixJ_mul (hq : IsGenericQuantumParame
     · simp
   · rw [sixJ_eq_zero_of_not hq ε δ ζ (fun h => haz h.2.2), mul_zero]
     exact Finset.sum_eq_zero fun q₂ _ => dite_eq_right fun heq =>
-      haz (isClebschGordanChannel_def.mpr ⟨q₂, heq.symm⟩)
+      haz (SU2.isTriad_def.mpr ⟨q₂, heq.symm⟩)
 
 /-- **The Biedenharn–Elliott pentagon identity** for the `α₀ = 1` change-of-decomposition
 (`F`-matrix) entries `sixJ` of `clebschGordanInclusion` across all signed ladder modules
@@ -424,9 +424,9 @@ theorem sixJ_pentagon (hq : IsGenericQuantumParameter q) (ε δ ζ θ : ℤˣ) (
       ∑ z ∈ Finset.range (b + c + 1), sixJ hq δ ζ θ b c d x z y *
         sixJ hq ε (δ * ζ) θ a z d e w x * sixJ hq ε δ ζ a b c w u z := by
   -- Split on whether all six external binary couplings are admissible; otherwise both sides vanish.
-  by_cases hadm : IsClebschGordanChannel a b u ∧ IsClebschGordanChannel u c w ∧
-      IsClebschGordanChannel w d e ∧ IsClebschGordanChannel c d y ∧
-      IsClebschGordanChannel b y x ∧ IsClebschGordanChannel a x e
+  by_cases hadm : SU2.IsTriad a b u ∧ SU2.IsTriad u c w ∧
+      SU2.IsTriad w d e ∧ SU2.IsTriad c d y ∧
+      SU2.IsTriad b y x ∧ SU2.IsTriad a x e
   · rcases hadm with ⟨hab, huc, hwd, hcd, hby, hax⟩
     let i₂ := huc.index.cast (congrArg (min · c + 1) hab.sub_two_mul_index.symm)
     let r₂ := hby.index.cast (congrArg (min b · + 1) hcd.sub_two_mul_index.symm)
@@ -443,22 +443,22 @@ theorem sixJ_pentagon (hq : IsGenericQuantumParameter q) (ε δ ζ θ : ℤˣ) (
     rw [← sum_recouplingCoeff_mul_eq_sixJ_mul hq ε δ ζ θ hab.sub_two_mul_index hw he
         hcd.sub_two_mul_index hx he',
       recouplingCoeff_pentagon hq ε δ ζ θ hab.index i₂ i₃ hcd.index r₂ r₃,
-      ← sum_fin_channel_eq_sum_range b c _ fun z hbc => by
+      ← SU2.sum_fin_sub_two_mul_eq_sum_range b c _ fun z hbc => by
         rw [sixJ_eq_zero_of_not hq δ ζ θ (fun h => hbc h.1.1), zero_mul, zero_mul]]
     exact Finset.sum_congr rfl fun q₁ _ => sum_sum_recouplingCoeff_eq_sixJ_mul hq ε δ ζ θ
       hab.sub_two_mul_index hw he hcd.sub_two_mul_index hx he' q₁
   · -- Inadmissible case: at least one of the six boundary couplings fails, killing both sides.
     trans 0
-    · by_cases h1 : (IsClebschGordanChannel a b u ∧ IsClebschGordanChannel u y e) ∧
-          (IsClebschGordanChannel b y x ∧ IsClebschGordanChannel a x e)
+    · by_cases h1 : (SU2.IsTriad a b u ∧ SU2.IsTriad u y e) ∧
+          (SU2.IsTriad b y x ∧ SU2.IsTriad a x e)
       · rw [sixJ_eq_zero_of_not hq (ε * δ) ζ θ (fun h2 => hadm ⟨h1.1.1, h2.1.1, h2.1.2,
           h2.2.1, h1.2.1, h1.2.2⟩), mul_zero]
       · rw [sixJ_eq_zero_of_not hq ε δ (ζ * θ) h1, zero_mul]
     · symm; refine Finset.sum_eq_zero fun z _ => ?_
-      by_cases h1 : (IsClebschGordanChannel b c z ∧ IsClebschGordanChannel z d x) ∧
-          (IsClebschGordanChannel c d y ∧ IsClebschGordanChannel b y x)
-      · by_cases h2 : (IsClebschGordanChannel a z w ∧ IsClebschGordanChannel w d e) ∧
-            (IsClebschGordanChannel z d x ∧ IsClebschGordanChannel a x e)
+      by_cases h1 : (SU2.IsTriad b c z ∧ SU2.IsTriad z d x) ∧
+          (SU2.IsTriad c d y ∧ SU2.IsTriad b y x)
+      · by_cases h2 : (SU2.IsTriad a z w ∧ SU2.IsTriad w d e) ∧
+            (SU2.IsTriad z d x ∧ SU2.IsTriad a x e)
         · rw [sixJ_eq_zero_of_not hq ε δ ζ (fun h3 => hadm ⟨h3.1.1, h3.1.2, h2.1.2,
             h1.2.1, h1.2.2, h2.2.2⟩), mul_zero]
         · rw [sixJ_eq_zero_of_not hq ε (δ * ζ) θ h2, mul_zero, zero_mul]
