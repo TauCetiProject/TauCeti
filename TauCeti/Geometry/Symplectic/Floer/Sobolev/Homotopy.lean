@@ -116,7 +116,8 @@ private theorem tendstoUniformlyOn_sliceDefect_homotopy (ω : SymplecticForm V)
 the common orbits `x±`. -/
 private theorem isFredholm_and_index_eq_of_homotopy_model (ω : SymplecticForm V)
     {J₀ : AlmostComplexStructure V} (hJ₀ : ω.Compatible J₀) {Hm Hp : ℝ → ℝ → V → ℝ}
-    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u)
+    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) {μ₀ μ₁ : ℝ} (hμ₀ : μ₀ ∈ Icc (0 : ℝ) 1)
+    (hμ₁ : μ₁ ∈ Icc (0 : ℝ) 1)
     (hHm : ContDiff ℝ 2 fun p : ℝ × ℝ × V ↦ Hm p.1 p.2.1 p.2.2)
     (hHp : ContDiff ℝ 2 fun p : ℝ × ℝ × V ↦ Hp p.1 p.2.1 p.2.2)
     {Km : ℝ → ℝ≥0}
@@ -127,7 +128,7 @@ private theorem isFredholm_and_index_eq_of_homotopy_model (ω : SymplecticForm V
       IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow (Hm μ) (hXm μ hμ) 0 1) (xm 0))
     (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
     (hδm : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm 0 t)) u (s, t)) 0 atBot
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm μ₀ t)) u (s, t)) 0 atBot
         (Icc 0 1))
     {Kp : ℝ → ℝ≥0}
     (hXp : ∀ μ ∈ Icc (0 : ℝ) 1, LipschitzWith (Kp μ) (ω.timeDependentHamiltonianSuspension (Hp μ)))
@@ -137,9 +138,8 @@ private theorem isFredholm_and_index_eq_of_homotopy_model (ω : SymplecticForm V
       IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow (Hp μ) (hXp μ hμ) 0 1) (xp 0))
     (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
     (hδp : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp 0 t)) u (s, t)) 0 atTop
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp μ₀ t)) u (s, t)) 0 atTop
         (Icc 0 1))
-    {μ₀ μ₁ : ℝ} (hμ₀ : μ₀ ∈ Icc (0 : ℝ) 1) (hμ₁ : μ₁ ∈ Icc (0 : ℝ) 1)
     (h : (ω.floerSobolevOperator (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
       (Floer.continuationHomotopy (Hm μ₀) (Hp μ₀)) u).IsFredholm) :
     (ω.floerSobolevOperator (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
@@ -151,12 +151,10 @@ private theorem isFredholm_and_index_eq_of_homotopy_model (ω : SymplecticForm V
   isFredholm_floerSobolevOperator_and_index_eq_of_family ω
     (J := fun _ _ ↦ J₀) (Ks := fun _ _ ↦ 0)
     (Kt := fun p ↦ Floer.continuationHomotopy (Hm p.1) (Hp p.1) p.2)
-    (Jm := fun _ _ _ ↦ J₀) (Jp := fun _ _ _ ↦ J₀) isPreconnected_Icc
+    (Jm := fun _ _ _ ↦ J₀) (Jp := fun _ _ _ ↦ J₀) isPreconnected_Icc hμ₀ hμ₁
     (fun μ _ ↦ isCylindricalNearEnds_continuationHomotopy_const hJ₀ hHm hHp μ u) contDiff_const
     contDiff_const (Floer.contDiff_uncurry_continuationHomotopy_family hHm hHp) (fun _ _ ↦ hJ₀) hu
-    hXm hxm hndm
-    huxm (fun _ hμ ↦ tendstoUniformlyOn_sliceDefect_homotopy ω hHm hxm huxm hδm hμ) hXp hxp hndp
-    huxp (fun _ hμ ↦ tendstoUniformlyOn_sliceDefect_homotopy ω hHp hxp huxp hδp hμ) hμ₀ hμ₁ h
+    hXm hxm hndm huxm hδm hXp hxp hndp huxp hδp h
 
 /-- The Fredholm property and the index pass from the data `(J, K_s, K_t)` along `u`, with end
 Hamiltonians `H±_0`, to the data `(J', K'_s, K'_t)` along `u'`, with end Hamiltonians `H±_1`,
@@ -226,11 +224,12 @@ private theorem isFredholm_iff_and_index_eq_of_homotopy (ω : SymplecticForm V)
     contDiff_const
   have hKsD : ContDiff ℝ 2 (uncurry fun (_ : ℝ × ℝ) (_ : V) ↦ (0 : ℝ)) := contDiff_const
   have hJ₀c : ∀ (_ : ℝ × ℝ) (_ : V), ω.Compatible J₀ := fun _ _ ↦ hJc 0 0
-  have hfam {μ₀ μ₁ : ℝ} (hμ₀ : μ₀ ∈ Icc (0 : ℝ) 1) (hμ₁ : μ₁ ∈ Icc (0 : ℝ) 1) :=
-    isFredholm_and_index_eq_of_homotopy_model ω (hJc 0 0) hu hHm hHp hXm hxm hndm huxm hδm hXp
-      hxp hndp huxp hδp hμ₀ hμ₁
   have hδm₁ := tendstoUniformlyOn_sliceDefect_homotopy ω hHm hxm huxm hδm h₁
   have hδp₁ := tendstoUniformlyOn_sliceDefect_homotopy ω hHp hxp huxp hδp h₁
+  have hfam₀₁ := isFredholm_and_index_eq_of_homotopy_model ω (hJc 0 0) hu h₀ h₁ hHm hHp hXm hxm
+    hndm huxm hδm hXp hxp hndp huxp hδp
+  have hfam₁₀ := isFredholm_and_index_eq_of_homotopy_model ω (hJc 0 0) hu h₁ h₀ hHm hHp hXm hxm
+    hndm huxm hδm₁ hXp hxp hndp huxp hδp₁
   -- At `μ = 0`: the given data along `u` and the model data along `u`.
   have hdata₀ := ω.isFredholm_floerSobolevOperator_iff_of_cylindrical_data hcyl (hcylD 0 u) hJ hKs
     hKt hJ₀ hKsD (hKtD 0) hJc hJ₀c hu (hXm 0 h₀) (hxm 0 h₀) (hndm 0 h₀) huxm hδm (hXp 0 h₀)
@@ -252,9 +251,9 @@ private theorem isFredholm_iff_and_index_eq_of_homotopy (ω : SymplecticForm V)
   have hidx₁' := ω.index_floerSobolevOperator_eq_of_cylindrical_data (hcylD 1 u') hcyl' hJ₀ hKsD
     (hKtD 1) hJ' hKs' hKt' hJ₀c hJ'c hu' (hXm 1 h₁) (hxm 1 h₁) (hndm 1 h₁) hu'xm hδ'm
     (hXp 1 h₁) (hxp 1 h₁) (hndp 1 h₁) hu'xp hδ'p
-  refine ⟨hdata₀.trans (Iff.trans ⟨fun h ↦ (hfam h₀ h₁ h).1, fun h ↦ (hfam h₁ h₀ h).1⟩
+  refine ⟨hdata₀.trans (Iff.trans ⟨fun h ↦ (hfam₀₁ h).1, fun h ↦ (hfam₁₀ h).1⟩
     (hmap₁.trans hdata₁)), fun h ↦ ?_⟩
-  have hF₁ := hfam h₀ h₁ (hdata₀.1 h)
+  have hF₁ := hfam₀₁ (hdata₀.1 h)
   rw [hidx₁' (hmap₁.1 hF₁.1), hidx₁ hF₁.1, hF₁.2, hidx₀ h]
 
 /-- **The Fredholm property of the linearized Floer operator is invariant under homotopies of the

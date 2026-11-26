@@ -714,13 +714,16 @@ target point (with `C²` Hamiltonians), compatible with `ω`, and, for `μ` in a
 `P`, cylindrical near the ends with a common radius and end Hamiltonians `H±_μ` whose suspended
 vector fields are globally Lipschitz; the end data may depend on `μ`. Let `u` be a `C¹` map whose
 loops converge uniformly to loops `x₋` at `-∞` and `x₊` at `+∞` which, for every `μ ∈ P`, are
-nondegenerate orbits of `H±_μ`, the slice defects `∂t u - X_{H±_μ,t}(u)` tending uniformly to zero
-at the corresponding end. If the operator `D_u` of the data at `μ₀ ∈ P` is Fredholm, then so is
-the operator of the data at every `μ₁ ∈ P`, with the same index. -/
+nondegenerate orbits of `H±_μ`, and fix `μ₀ ∈ P` such that the slice defects
+`∂t u - X_{H±_{μ₀},t}(u)` tend uniformly to zero at the corresponding end; the slice defects for
+every `H±_μ`, `μ ∈ P`, then do as well, since the vector fields `X_{H±_μ}` agree along `x±`. If the
+operator `D_u` of the data at `μ₀` is Fredholm, then so is the operator of the data at every
+`μ₁ ∈ P`, with the same index. -/
 theorem isFredholm_floerSobolevOperator_and_index_eq_of_family (ω : SymplecticForm V)
     {J : ℝ × (ℝ × ℝ) → V → AlmostComplexStructure V} {Ks Kt : ℝ × (ℝ × ℝ) → V → ℝ}
     {Hm Hp : ℝ → ℝ → V → ℝ} {Jm Jp : ℝ → ℝ → V → AlmostComplexStructure V} {R : ℝ}
-    {u : ℝ × ℝ → V} {P : Set ℝ} (hP : IsPreconnected P)
+    {u : ℝ × ℝ → V} {P : Set ℝ} (hP : IsPreconnected P) {μ₀ μ₁ : ℝ} (hμ₀ : μ₀ ∈ P)
+    (hμ₁ : μ₁ ∈ P)
     (hcyl : ∀ μ ∈ P, Floer.IsCylindricalNearEnds (fun w ↦ J (μ, w)) (fun w ↦ Ks (μ, w))
       (fun w ↦ Kt (μ, w)) (Jm μ) (Jp μ) (Hm μ) (Hp μ) R u)
     (hJ : ContDiff ℝ 1 fun p : (ℝ × (ℝ × ℝ)) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
@@ -732,8 +735,8 @@ theorem isFredholm_floerSobolevOperator_and_index_eq_of_family (ω : SymplecticF
     (hndm : ∀ μ (hμ : μ ∈ P),
       IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow (Hm μ) (hXm μ hμ) 0 1) (xm 0))
     (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
-    (hδm : ∀ μ ∈ P, TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm μ t)) u (s, t)) 0 atBot
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm μ₀ t)) u (s, t)) 0 atBot
         (Icc 0 1))
     {Kp : ℝ → ℝ≥0}
     (hXp : ∀ μ ∈ P, LipschitzWith (Kp μ) (ω.timeDependentHamiltonianSuspension (Hp μ)))
@@ -741,10 +744,9 @@ theorem isFredholm_floerSobolevOperator_and_index_eq_of_family (ω : SymplecticF
     (hndp : ∀ μ (hμ : μ ∈ P),
       IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow (Hp μ) (hXp μ hμ) 0 1) (xp 0))
     (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
-    (hδp : ∀ μ ∈ P, TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp μ t)) u (s, t)) 0 atTop
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp μ₀ t)) u (s, t)) 0 atTop
         (Icc 0 1))
-    {μ₀ μ₁ : ℝ} (hμ₀ : μ₀ ∈ P) (hμ₁ : μ₁ ∈ P)
     (h : (ω.floerSobolevOperator (fun w y ↦ (J (μ₀, w) y).toLinearMap.toContinuousLinearMap)
       (fun w ↦ Ks (μ₀, w)) (fun w ↦ Kt (μ₀, w)) u).IsFredholm) :
     (ω.floerSobolevOperator (fun w y ↦ (J (μ₁, w) y).toLinearMap.toContinuousLinearMap)
@@ -768,24 +770,34 @@ theorem isFredholm_floerSobolevOperator_and_index_eq_of_family (ω : SymplecticF
       (fun t ↦ (hcyl μ hμ).hamiltonianT_eq_of_le (_, t) hR)
       (contDiff_comp_prodMap_prodMk_right hJ μ) (contDiff_comp_prodMap_prodMk_right hKt μ)
       fun z ↦ hJc (μ, z))
+  -- The slice defects tend to zero for every parameter, since the vector fields `X_{H±_μ}` all
+  -- agree along the orbits `x±`.
+  have hXmc (μ : ℝ) (hμ : μ ∈ P) :=
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (hend μ hμ).1.2.1).continuous
+  have hXpc (μ : ℝ) (hμ : μ ∈ P) :=
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (hend μ hμ).2.2.1).continuous
+  have hδm' (μ : ℝ) (hμ : μ ∈ P) := tendstoUniformlyOn_sliceDefect_of_apply_eq (hXmc μ₀ hμ₀)
+    (hXmc μ hμ) (continuous_iff_continuousAt.2 fun t ↦ (hxm μ₀ hμ₀ t).continuousAt)
+    (fun t ↦ (hxm μ hμ t).unique (hxm μ₀ hμ₀ t)) huxm hδm
+  have hδp' (μ : ℝ) (hμ : μ ∈ P) := tendstoUniformlyOn_sliceDefect_of_apply_eq (hXpc μ₀ hμ₀)
+    (hXpc μ hμ) (continuous_iff_continuousAt.2 fun t ↦ (hxp μ₀ hμ₀ t).continuousAt)
+    (fun t ↦ (hxp μ hμ t).unique (hxp μ₀ hμ₀ t)) huxp hδp
   set M : ℝ → ℝ × ℝ → V × V × V →L[ℝ] V := fun μ ↦ ω.floerJetCoeff
     (fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap) (fun w ↦ Ks (μ, w))
     (fun w ↦ Kt (μ, w)) u
   have hM (μ : ℝ) (hμ : μ ∈ P) : MemLp (M μ) ∞ stripMeasure :=
     ω.memLp_floerJetCoeff_of_cylindrical (hcyl μ hμ) hu (hend μ hμ).1.2.1 (hend μ hμ).1.1 huxm
-      (hδm μ hμ) (hend μ hμ).2.2.1 (hend μ hμ).2.1 huxp (hδp μ hμ)
+      (hδm' μ hμ) (hend μ hμ).2.2.1 (hend μ hμ).2.1 huxp (hδp' μ hμ)
   have hest (μ : ℝ) (hμ : μ ∈ P) : ∃ C T, HasSemiFredholmEstimate (M μ) C T :=
     ω.exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical (hcyl μ hμ) hu
       (fun z ↦ hJc (μ, z) _) (hXm μ hμ) (hend μ hμ).1.2.1 (hxm μ hμ) (hndm μ hμ) (hend μ hμ).1.1
-      (fun t ↦ (hend μ hμ).1.2.2 t _) huxm (hδm μ hμ) (hXp μ hμ) (hend μ hμ).2.2.1 (hxp μ hμ)
-      (hndp μ hμ) (hend μ hμ).2.1 (fun t ↦ (hend μ hμ).2.2.2 t _) huxp (hδp μ hμ)
+      (fun t ↦ (hend μ hμ).1.2.2 t _) huxm (hδm' μ hμ) (hXp μ hμ) (hend μ hμ).2.2.1 (hxp μ hμ)
+      (hndp μ hμ) (hend μ hμ).2.1 (fun t ↦ (hend μ hμ).2.2.2 t _) huxp (hδp' μ hμ)
   -- `u` and its derivative in `t` are bounded on the strip.
   obtain ⟨B, hB⟩ := exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (hend μ₀ hμ₀).1.2.1).continuous
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (hend μ₀ hμ₀).2.2.1).continuous hu
+    (hXmc μ₀ hμ₀) (hXpc μ₀ hμ₀) hu
     (continuous_iff_continuousAt.2 fun t ↦ (hxm μ₀ hμ₀ t).continuousAt)
-    (continuous_iff_continuousAt.2 fun t ↦ (hxp μ₀ hμ₀ t).continuousAt) huxm (hδm μ₀ hμ₀) huxp
-    (hδp μ₀ hμ₀)
+    (continuous_iff_continuousAt.2 fun t ↦ (hxp μ₀ hμ₀ t).continuousAt) huxm hδm huxp hδp
   have hcont (μ : ℝ) (hμ : μ ∈ P) :
       Tendsto (fun ν ↦ eLpNorm (M ν - M μ) ∞ stripMeasure) (𝓝[P] μ) (𝓝 0) :=
     tendsto_eLpNorm_floerJetCoeff_family ω hcyl hJ hKs hKt hu hB hμ
@@ -838,11 +850,12 @@ private theorem isFredholm_and_index_eq_of_cylindrical_data (ω : SymplecticForm
     (Kt := pathHamiltonian Kt Kt') (Hm := fun _ ↦ Hm) (Hp := fun _ ↦ Hp)
     (Jm := fun μ t ↦ pathAlmostComplex h₀ hJt hJ't (μ, (-max R R', t)))
     (Jp := fun μ t ↦ pathAlmostComplex h₀ hJt hJ't (μ, (max R R', t))) isPreconnected_univ
+    (mem_univ 0) (mem_univ 1)
     (fun μ _ ↦ isCylindricalNearEnds_path h₀ hcyl hcyl' hJt hJ't hJ hJ' hKs hKs' hKt hKt' μ)
     (contDiff_pathAlmostComplex h₀ hJt hJ't hJ hJ') (contDiff_pathHamiltonian hKs hKs')
     (contDiff_pathHamiltonian hKt hKt') (fun p y ↦ compatible_pathAlmostComplex h₀ hJc hJ'c p y)
-    hu (fun _ _ ↦ hXm) (fun _ _ ↦ hxm) (fun _ _ ↦ hndm) huxm (fun _ _ ↦ hδm) (fun _ _ ↦ hXp)
-    (fun _ _ ↦ hxp) (fun _ _ ↦ hndp) huxp (fun _ _ ↦ hδp) (mem_univ 0) (mem_univ 1)
+    hu (fun _ _ ↦ hXm) (fun _ _ ↦ hxm) (fun _ _ ↦ hndm) huxm hδm (fun _ _ ↦ hXp)
+    (fun _ _ ↦ hxp) (fun _ _ ↦ hndp) huxp hδp
     (by simpa [pathAlmostComplex_zero, pathHamiltonian.eq_unfold] using h)
   simpa [pathAlmostComplex_zero, pathAlmostComplex_one, pathHamiltonian.eq_unfold] using key
 
