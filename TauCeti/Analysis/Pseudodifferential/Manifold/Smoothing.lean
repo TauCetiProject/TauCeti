@@ -129,11 +129,11 @@ theorem mem_smoothingPseudodifferentialOperators_iff_isSmoothing (m : ℝ) :
     -- same coefficient.
     obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1
       (mem_smoothingPseudodifferentialOperators_iff.1 hP m)).2 e he φ ψ
-    refine ⟨a.toSymbol, Symbol.isSmoothing_iff.2 fun m' ↦ ?_, ha⟩
+    refine ⟨a.toSymbol,
+      Symbol.isSmoothing_iff_forall_exists_quantizeSchwartzValue_eq.2 fun m' ↦ ?_, ha⟩
     obtain ⟨b, hb⟩ := (mem_classicalPseudodifferentialOperators_iff.1
       (mem_smoothingPseudodifferentialOperators_iff.1 hP m')).2 e he φ ψ
-    exact ⟨b.toSymbol, Symbol.coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u _ ↦
-      funext fun x ↦ (hb u x).trans (ha u x).symm⟩
+    exact ⟨b.toSymbol, fun u _ ↦ funext fun x ↦ (hb u x).trans (ha u x).symm⟩
   · refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
     obtain ⟨r, hr, hop⟩ := h e he φ ψ
     obtain ⟨b, hb⟩ := Symbol.isSmoothing_iff.1 hr m'
