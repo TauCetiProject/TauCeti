@@ -259,7 +259,7 @@ theorem isIsotropic_constructionBLattice_iff_of_natCard_eq_two
     rintro rfl
     simp at hH
   have hzm (y : constructionBLattice.DiscriminantGroup) :=
-    AddSubgroup.zmultiples_eq_zmultiples_iff_of_two_nsmul_eq_zero hg
+    AddSubgroup.zmultiples_eq_zmultiples_iff_of_two_nsmul_eq_zero (g := g)
       (two_nsmul_discriminantGroup_constructionBLattice y)
   refine ((FiniteQuadraticModule.isIsotropic_zmultiples_iff _ _).trans
     ((FiniteQuadraticModule.isIsotropicElem_def _ _).trans
