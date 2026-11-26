@@ -137,8 +137,8 @@ theorem exists_strong_deformation_retraction_of_lojasiewicz
     (hfix : ∀ p ∈ C, ∀ t, φ t p = p) :
     ∃ r : C(↥(⋃ p ∈ C, φ.stableSet p), C),
       (∀ p, r (ContinuousMap.inclusion (subset_biUnion_stableSet hfix) p) = p) ∧
-      Nonempty ((ContinuousMap.id _).HomotopyRel
-        ((ContinuousMap.inclusion (subset_biUnion_stableSet hfix)).comp r) {x | (x : E) ∈ C}) :=
+      (ContinuousMap.id _).HomotopicRel
+        ((ContinuousMap.inclusion (subset_biUnion_stableSet hfix)).comp r) {x | (x : E) ∈ C} :=
   exists_strong_deformation_retraction_biUnion_stableSet hf.continuous
     (fun x ↦ hφ.orbit_antitone x fun _ ↦ hf _) hC hCb hU (tendsto_lengthBound hθ)
     (forall_dist_apply_le hφ hf hc hθ hL) hfix

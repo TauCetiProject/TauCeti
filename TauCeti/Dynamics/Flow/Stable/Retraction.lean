@@ -308,8 +308,8 @@ theorem exists_strong_deformation_retraction_biUnion_stableSet
     (hfix : ∀ p ∈ C, ∀ t, φ t p = p) :
     ∃ r : C(↥(⋃ p ∈ C, φ.stableSet p), C),
       (∀ p, r (ContinuousMap.inclusion (subset_biUnion_stableSet hfix) p) = p) ∧
-      Nonempty ((ContinuousMap.id _).HomotopyRel
-        ((ContinuousMap.inclusion (subset_biUnion_stableSet hfix)).comp r) {x | (x : α) ∈ C}) := by
+      (ContinuousMap.id _).HomotopicRel
+        ((ContinuousMap.inclusion (subset_biUnion_stableSet hfix)).comp r) {x | (x : α) ∈ C} := by
   set S := ⋃ p ∈ C, φ.stableSet p
   have hcont := continuousOn_retractionMap hg hanti hC hCb hU hΨ hlen
   -- The deformation keeps the stable set inside itself.
