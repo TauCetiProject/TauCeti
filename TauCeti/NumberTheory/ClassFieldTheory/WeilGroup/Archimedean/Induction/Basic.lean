@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Star.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
+import TauCeti.Topology.Algebra.Group.Units
 
 /-!
 # Two-dimensional inductions of characters of `W_ℂ` to `W_ℝ`
@@ -82,14 +83,12 @@ theorem coe_induceCharacterDiag (z : WeilGroupComplex) :
 /-- The diagonal part of the induction of a continuous character is continuous. -/
 theorem continuous_induceCharacterDiag (hχ : Continuous χ) :
     Continuous (induceCharacterDiag χ) := by
-  have hval : Continuous fun z ↦ (induceCharacterDiag χ z : Matrix (Fin 2) (Fin 2) ℂ) := by
-    simp only [coe_induceCharacterDiag]
-    refine Continuous.matrix_diagonal (continuous_pi fun i ↦ ?_)
-    fin_cases i
-    · exact Units.continuous_val.comp hχ
-    · exact Units.continuous_val.comp (hχ.comp continuous_star)
-  refine Units.continuous_iff.mpr ⟨hval, ?_⟩
-  simpa only [Function.comp_def, map_inv] using hval.comp continuous_inv
+  refine (MonoidHom.continuous_iff_continuous_val _).2 ?_
+  simp only [coe_induceCharacterDiag]
+  refine Continuous.matrix_diagonal (continuous_pi fun i ↦ ?_)
+  fin_cases i
+  · exact Units.continuous_val.comp hχ
+  · exact Units.continuous_val.comp (hχ.comp continuous_star)
 
 /-- The image `[[0, χ (-1)], [1, 0]]` of `j` in the induction of `χ`. -/
 def induceCharacterJ : GL (Fin 2) ℂ :=
