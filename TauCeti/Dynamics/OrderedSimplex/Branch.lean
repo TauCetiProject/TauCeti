@@ -627,8 +627,7 @@ theorem hasFDerivAt_branchWeight (a : ℕ × Fin d) (s : ℂ) {x : Fin d → ℝ
       (-s • Complex.ofRealCLM.comp (fderiv ℝ (branchDelay a) x)) x :=
     (Complex.ofRealCLM.hasFDerivAt.comp x hdelay).const_smul (-s)
   refine harg.cexp.congr_fderiv ?_
-  rw [smul_smul, mul_comm]
-  rfl
+  rw [smul_smul, mul_comm, branchWeight_def]
 
 /-- The complex-parameter derivative of `s ↦ branchWeight a s x`, expressed using `branchWeight`
 and `branchDelay`. -/
@@ -756,16 +755,10 @@ theorem unaccelBranchMap_apply (j : Fin (d + 1)) (x : Fin d → ℝ) (i : Fin d)
 theorem unaccelBranchMap_castSucc (j : Fin d) (x : Fin d → ℝ) :
     unaccelBranchMap j.castSucc x = branchMap (0, j) x := by
   ext i
-  simp [unaccelBranchMap_apply, branchMap_apply, branchDenom_def]
+  simp only [unaccelBranchMap_apply, branchMap_apply, simplexPoint_castSucc, branchDenom_def,
+    Nat.cast_zero, zero_add, one_mul]
+  congr 1
   ring
-
-/-- At `Fin.last d`, `unaccelBranchMap (Fin.last d)` divides chart coordinates by `1 + ∑ k, x k`. -/
-@[simp]
-theorem unaccelBranchMap_last (x : Fin d → ℝ) :
-    unaccelBranchMap (Fin.last d) x = fun i => x i / (1 + ∑ k, x k) := by
-  ext i
-  simp [unaccelBranchMap_apply]
-  ring_nf
 
 /-- The last coordinate of the image of an unaccelerated branch is
 `1 / (2 - simplexPoint x j)`. -/
@@ -845,8 +838,11 @@ theorem unaccelBranchMapCoordFDeriv_def (j : Fin (d + 1)) (x : Fin d → ℝ) (i
 @[simp]
 theorem unaccelBranchMapCoordFDeriv_castSucc (j : Fin d) (x : Fin d → ℝ) (i : Fin d) :
     unaccelBranchMapCoordFDeriv j.castSucc x i = branchMapCoordFDeriv (0, j) x i := by
-  simp [unaccelBranchMapCoordFDeriv_def, branchMapCoordFDeriv_def, branchDenom_def]
-  ring_nf
+  have hden : 2 - simplexPoint x j.castSucc = branchDenom (0, j) x := by
+    simp only [simplexPoint_castSucc, branchDenom_def, Nat.cast_zero, zero_add, one_mul]
+    ring
+  simp only [unaccelBranchMapCoordFDeriv_def, branchMapCoordFDeriv_def, hden,
+    unaccelBranchMap_castSucc, simplexPointCoordFDeriv_castSucc, Nat.cast_zero, zero_add, one_mul]
 
 /-- Coordinatewise Fréchet derivative of `unaccelBranchMap j` at a point where
 `2 - simplexPoint x j ≠ 0`. -/
@@ -867,13 +863,6 @@ theorem hasFDerivAt_unaccelBranchMap (j : Fin (d + 1)) {x : Fin d → ℝ}
     HasFDerivAt (unaccelBranchMap j)
       (ContinuousLinearMap.pi (unaccelBranchMapCoordFDeriv j x)) x :=
   hasFDerivAt_pi.2 (hasFDerivAt_unaccelBranchMap_apply j hx)
-
-/-- Projective normalisation intertwines `linearMove (Fin.last d)` on `orderedCone d` with
-dividing chart coordinates by `1 + ∑ k, w k`. -/
-theorem simplexChart_linearMove_last {y : Fin (d + 2) → ℝ} (hy : y ∈ orderedCone d) :
-    simplexChart (linearMove (Fin.last d) y) =
-      fun i => simplexChart y i / (1 + ∑ k, simplexChart y k) := by
-  rw [simplexChart_linearMove (Fin.last d) hy, unaccelBranchMap_last]
 
 /-- `γ_{n-1}` replaces the last two coordinates `(p, q)` by `(q, ∑ u + q)`, where `u` collects
 the first `d` coordinates. -/
@@ -1076,10 +1065,21 @@ theorem lastMoveMap_apply (x : Fin d → ℝ) (i : Fin d) :
     lastMoveMap x i = x i / (1 + ∑ k, x k) :=
   (rfl)
 
-/-- `unaccelBranchMap (Fin.last d)` coincides with `lastMoveMap`. -/
-theorem unaccelBranchMap_last_eq_lastMoveMap (x : Fin d → ℝ) :
-    unaccelBranchMap (Fin.last d) x = lastMoveMap x :=
-  unaccelBranchMap_last x
+/-- At `Fin.last d`, `unaccelBranchMap (Fin.last d)` coincides with `lastMoveMap`. -/
+@[simp]
+theorem unaccelBranchMap_last (x : Fin d → ℝ) :
+    unaccelBranchMap (Fin.last d) x = lastMoveMap x := by
+  ext i
+  simp only [unaccelBranchMap_apply, Fin.succAbove_last, simplexPoint_castSucc, simplexPoint_last,
+    lastMoveMap_apply]
+  congr 1
+  ring
+
+/-- Projective normalisation intertwines `linearMove (Fin.last d)` on `orderedCone d` with
+`lastMoveMap`. -/
+theorem simplexChart_linearMove_last {y : Fin (d + 2) → ℝ} (hy : y ∈ orderedCone d) :
+    simplexChart (linearMove (Fin.last d) y) = lastMoveMap (simplexChart y) := by
+  rw [simplexChart_linearMove (Fin.last d) hy, unaccelBranchMap_last]
 
 /-- The chart coordinates of `lastMoveMap x` sum to `∑ xᵢ / (1 + ∑ xᵢ)`. -/
 theorem sum_lastMoveMap (x : Fin d → ℝ) :
