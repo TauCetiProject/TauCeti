@@ -22,14 +22,15 @@ isomorphism is Galois-equivariant
 
 ## Main definitions
 
-* `TauCeti.PadicTateTwist.quotientEquivRootsOfUnity n`: `ℤ_p(1) / ker (proj n) ≃+ μ_{p^n}(K)`.
+* `TauCeti.PadicTateTwist.quotientEquivRootsOfUnity n`: `ℤ_p(1) / p^n ℤ_p(1) ≃+ μ_{p^n}(K)`.
 
 ## Main results
 
 * `TauCeti.PadicTateTwist.proj_eq_zero_iff`, `TauCeti.PadicTateTwist.ker_proj`: the kernel of
   `proj n` is `p^n ℤ_p(1)`.
 * `TauCeti.PadicTateTwist.proj_surjective`: `proj n` is surjective.
-* `TauCeti.PadicTateTwist.natCard_quotient_ker_proj`: `ℤ_p(1) / p^n` has `p^n` elements.
+* `TauCeti.PadicTateTwist.natCard_quotient_range_nsmulAddMonoidHom`: `ℤ_p(1) / p^n` has `p^n`
+  elements.
 * `TauCeti.PadicTateTwist.proj_galoisRepresentation`: `proj n` is Galois-equivariant.
 * `TauCeti.PadicTateTwist.quotientEquivRootsOfUnity_galoisRepresentation`: so is the quotient
   isomorphism.
@@ -74,22 +75,27 @@ theorem proj_surjective [NeZero p] [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (n :
       fun k ↦ by simpa using natCard_tateModuleLevel (K := K) k) n
 
 /-- **`ℤ_p(1) / p^n ≅ μ_{p^n}`**: the projection to `μ_{p^n}` induces an isomorphism from the
-quotient by its kernel, which is `p^n ℤ_p(1)` (`ker_proj`). -/
+quotient by `p^n ℤ_p(1)`, which is its kernel (`ker_proj`). -/
 def quotientEquivRootsOfUnity [NeZero p] [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (n : ℕ) :
-    PadicTateTwist p K ⧸ (proj (p := p) (K := K) n).ker ≃+ Additive (rootsOfUnity (p ^ n) K) :=
-  QuotientAddGroup.quotientKerEquivOfSurjective _ (proj_surjective n)
+    PadicTateTwist p K ⧸
+        (nsmulAddMonoidHom (p ^ n) : PadicTateTwist p K →+ PadicTateTwist p K).range ≃+
+      Additive (rootsOfUnity (p ^ n) K) :=
+  (QuotientAddGroup.quotientAddEquivOfEq (ker_proj n).symm).trans
+    (QuotientAddGroup.quotientKerEquivOfSurjective _ (proj_surjective n))
 
 @[simp]
 theorem quotientEquivRootsOfUnity_mk [NeZero p] [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (n : ℕ)
     (x : PadicTateTwist p K) :
-    quotientEquivRootsOfUnity n (x : PadicTateTwist p K ⧸ (proj (p := p) (K := K) n).ker) =
+    quotientEquivRootsOfUnity n (x : PadicTateTwist p K ⧸
+        (nsmulAddMonoidHom (p ^ n) : PadicTateTwist p K →+ PadicTateTwist p K).range) =
       proj n x :=
   (rfl)
 
-/-- **`ℤ_p(1) / p^n` has `p^n` elements** when `K` has enough `p`-power roots of unity; the
-kernel of `proj n` is `p^n ℤ_p(1)` by `ker_proj`. -/
-theorem natCard_quotient_ker_proj [NeZero p] [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (n : ℕ) :
-    Nat.card (PadicTateTwist p K ⧸ (proj (p := p) (K := K) n).ker) = p ^ n :=
+/-- **`ℤ_p(1) / p^n` has `p^n` elements** when `K` has enough `p`-power roots of unity. -/
+theorem natCard_quotient_range_nsmulAddMonoidHom [NeZero p]
+    [∀ n, HasEnoughRootsOfUnity K (p ^ n)] (n : ℕ) :
+    Nat.card (PadicTateTwist p K ⧸
+        (nsmulAddMonoidHom (p ^ n) : PadicTateTwist p K →+ PadicTateTwist p K).range) = p ^ n :=
   (Nat.card_congr ((quotientEquivRootsOfUnity n).trans
     (levelAddEquivRootsOfUnity n).symm).toEquiv).trans (natCard_tateModuleLevel n)
 
@@ -111,11 +117,9 @@ theorem proj_galoisRepresentation (σ : L ≃ₐ[F] L) (x : PadicTateTwist p L) 
 /-- **`ℤ_p(1) / p^n ≅ μ_{p^n}` is Galois-equivariant.** -/
 theorem quotientEquivRootsOfUnity_galoisRepresentation
     [∀ n, HasEnoughRootsOfUnity L (p ^ n)] (σ : L ≃ₐ[F] L) (x : PadicTateTwist p L) (n : ℕ) :
-    quotientEquivRootsOfUnity n
-        ((galoisRepresentation (F := F) σ x : PadicTateTwist p L) :
-          PadicTateTwist p L ⧸ (proj (p := p) (K := L) n).ker) =
+    quotientEquivRootsOfUnity n (QuotientAddGroup.mk (galoisRepresentation (F := F) σ x)) =
       Additive.ofMul (restrictRootsOfUnity σ (p ^ n)
-        (quotientEquivRootsOfUnity n (x : PadicTateTwist p L ⧸ (proj n).ker)).toMul) := by
+        (quotientEquivRootsOfUnity n (QuotientAddGroup.mk x)).toMul) := by
   rw [quotientEquivRootsOfUnity_mk, quotientEquivRootsOfUnity_mk]
   exact proj_galoisRepresentation σ x n
 
