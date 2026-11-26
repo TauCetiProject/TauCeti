@@ -284,6 +284,14 @@ unchanged, over every nontrivially normed field. -/
 theorem isSurjective_kolmogorov : IsSurjective (kolmogorov (𝕜 := 𝕜)) where
   comp_of_isQuotient T _ hQ n := T.kolmogorovNumber_comp_of_isQuotient hQ n
 
+/-- Kolmogorov numbers form an additive family over every nontrivially normed field. -/
+theorem additive_kolmogorov : Additive (kolmogorov (𝕜 := 𝕜)) :=
+  fun S T m n ↦ S.kolmogorovNumber_add_index_le T m n
+
+/-- Kolmogorov numbers form a multiplicative family over every nontrivially normed field. -/
+theorem multiplicative_kolmogorov : Multiplicative (kolmogorov (𝕜 := 𝕜)) :=
+  fun S T m n ↦ S.kolmogorovNumber_comp_add_le_mul T m n
+
 /-- Over a complete scalar field, Kolmogorov numbers are a strict s-number sequence.
 The normed spaces themselves need not be complete. -/
 theorem isStrictSNumberSequence_kolmogorov [CompleteSpace 𝕜] :

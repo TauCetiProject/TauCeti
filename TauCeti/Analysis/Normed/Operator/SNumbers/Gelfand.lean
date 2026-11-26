@@ -47,8 +47,11 @@ admissible subspaces adds codimensions, and for a composite `S T` the subspace a
 * `ContinuousLinearMap.gelfandNumber_comp_add_le_mul`: multiplicativity,
   `c_{m+n}(S T) ≤ cₘ(S) cₙ(T)`.
 * `ContinuousLinearMap.gelfandNumber_id`: `cₙ(id_E) = 1` when `n` is below the rank of `E`.
-* `TauCeti.SNumbers.isStrictSNumberSequence_gelfand`: the Gelfand numbers form a strict
-  s-number sequence.
+* `TauCeti.SNumbers.isStrictSNumberSequence_gelfand`,
+  `TauCeti.SNumbers.isSNumberSequence_gelfand`: the Gelfand numbers form a strict s-number
+  sequence.
+* `TauCeti.SNumbers.additive_gelfand`, `TauCeti.SNumbers.multiplicative_gelfand`: Gelfand
+  numbers form an additive and multiplicative s-number family.
 * `LinearIsometry.gelfandNumber_toContinuousLinearMap_comp`,
   `TauCeti.SNumbers.isInjective_gelfand`: the Gelfand numbers are injective, unchanged under
   postcomposition with a linear isometry.
@@ -280,8 +283,20 @@ theorem isStrictSNumberSequence_gelfand : IsStrictSNumberSequence (gelfand (𝕜
     simp
   normalize_of_lt_rank n hn := ContinuousLinearMap.gelfandNumber_id hn
 
+/-- Gelfand numbers satisfy Pietsch's s-number axioms over every nontrivially normed field. -/
+theorem isSNumberSequence_gelfand : IsSNumberSequence (gelfand (𝕜 := 𝕜)) :=
+  isStrictSNumberSequence_gelfand.toIsSNumberSequence
+
 /-- Gelfand numbers form an injective family. -/
 theorem isInjective_gelfand : IsInjective (gelfand (𝕜 := 𝕜)) where
   linearIsometry_comp J T n := J.gelfandNumber_toContinuousLinearMap_comp T n
+
+/-- Gelfand numbers form an additive s-number family. -/
+theorem additive_gelfand : Additive (gelfand (𝕜 := 𝕜)) :=
+  fun S T m n ↦ S.gelfandNumber_add_index_le T m n
+
+/-- Gelfand numbers form a multiplicative s-number family. -/
+theorem multiplicative_gelfand : Multiplicative (gelfand (𝕜 := 𝕜)) :=
+  fun S T m n ↦ S.gelfandNumber_comp_add_le_mul T m n
 
 end TauCeti.SNumbers
