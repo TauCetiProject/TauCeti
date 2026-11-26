@@ -24,7 +24,9 @@ The line `ℂ` with `Spinᶜ(n)` acting smoothly through the determinant charact
 `Spinᶜ(n)`-bundle.
 
 The construction uses the native Spin charts pulled back from the embedded Clifford units
-and `Subgroup.instLieGroupDiscreteQuotient` for the central finite quotient.
+and `Subgroup.instLieGroupDiscreteQuotient` for the central finite quotient, and packages the
+defining cover and canonical Spin inclusion as `ContMDiffMonoidMorphism`s (`realMkSmoothHom`,
+`realOfSpinSmoothHom`).
 
 ## References
 
@@ -78,6 +80,42 @@ theorem contMDiff_realChargeConj :
   apply (contMDiff_iff_contMDiff_comp_mk n hQ _).mpr
   simpa only [Function.comp_def, MulEquiv.coe_toEquiv, chargeConj_mk] using
     (isLocalDiffeomorph_realMk n hQ).contMDiff.comp (contMDiff_fst.prodMk contMDiff_snd.inv)
+
+/-- The defining central quotient map `Spin(n) × U(1) → Spinᶜ(n)` as a smooth homomorphism. -/
+def realMkSmoothHom :
+    ContMDiffMonoidMorphism (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1))
+      (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1)) ∞
+      (spinGroup (realCliffordForm n 0) × Circle) (spinCGroup (realCliffordForm n 0) hQ) where
+  toMonoidHom := mk (realCliffordForm n 0) hQ
+  contMDiff_toFun := (isLocalDiffeomorph_realMk n hQ).contMDiff
+
+@[simp]
+theorem realMkSmoothHom_apply (p : spinGroup (realCliffordForm n 0) × Circle) :
+    realMkSmoothHom n hQ p = mk (realCliffordForm n 0) hQ p :=
+  (rfl)
+
+/-- The smooth quotient homomorphism `realMkSmoothHom` is a smooth local diffeomorphism. -/
+theorem isLocalDiffeomorph_realMkSmoothHom :
+    IsLocalDiffeomorph (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1))
+      (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1)) ∞ (realMkSmoothHom n hQ) :=
+  isLocalDiffeomorph_realMk n hQ
+
+/-- The canonical inclusion `Spin(n) → Spinᶜ(n)` as a smooth homomorphism. -/
+def realOfSpinSmoothHom :
+    ContMDiffMonoidMorphism 𝓘(ℝ, realSpinLieModel n) (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1)) ∞
+      (spinGroup (realCliffordForm n 0)) (spinCGroup (realCliffordForm n 0) hQ) :=
+  (realMkSmoothHom n hQ).comp ContMDiffMonoidMorphism.inl
+
+@[simp]
+theorem realMkSmoothHom_comp_inl :
+    (realMkSmoothHom n hQ).comp ContMDiffMonoidMorphism.inl = realOfSpinSmoothHom n hQ :=
+  (rfl)
+
+@[simp]
+theorem realOfSpinSmoothHom_apply (s : spinGroup (realCliffordForm n 0)) :
+    realOfSpinSmoothHom n hQ s = ofSpin (realCliffordForm n 0) hQ s := by
+  simp only [realOfSpinSmoothHom, ContMDiffMonoidMorphism.coe_comp, Function.comp_apply,
+    ContMDiffMonoidMorphism.coe_inl, realMkSmoothHom_apply, ofSpin_apply]
 
 /-! ### The determinant representation -/
 

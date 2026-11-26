@@ -43,7 +43,7 @@ Lie-group exponential.
   differential at the identity, read through the canonical equivalences.
 * `leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap`: the differential formula
   in the model vector space.
-* `lieMap_id`, `lieMap_comp`: the identity and composition laws.
+* `lieMap_id`, `lieMap_comp`, `lieMap_lieMap_of_comp_eq`: the identity and composition laws.
 * `lieMap_one`: the Lie map of the trivial homomorphism is zero.
 * `map_lieExp`: naturality with respect to the Lie-group exponential.
 * `continuous_lieMap`: the Lie map is continuous.
@@ -291,6 +291,20 @@ theorem lieMap_comp
     rw [← hφD, ← hψD]
   rw [LieHom.comp_apply]
   exact hleft.trans (hchain'.trans hright)
+
+/-- Pointwise functoriality of `lieMap` along a composite identity `ψ.comp φ = χ`. -/
+theorem lieMap_lieMap_of_comp_eq
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {G'' : Type*} [TopologicalSpace G''] [ChartedSpace H'' G''] [Group G'']
+    [LieGroup I'' ∞ G''] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    [FiniteDimensional ℝ E'']
+    {φ : ContMDiffMonoidMorphism I I' ∞ G G'}
+    {ψ : ContMDiffMonoidMorphism I' I'' ∞ G' G''}
+    {χ : ContMDiffMonoidMorphism I I'' ∞ G G''}
+    (h : ψ.comp φ = χ) (D : LeftInvariantDerivation I G) :
+    lieMap ψ (lieMap φ D) = lieMap χ D := by
+  rw [← h, lieMap_comp, LieHom.comp_apply]
 
 private theorem monoidHom_mulInvariantExp
     [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']

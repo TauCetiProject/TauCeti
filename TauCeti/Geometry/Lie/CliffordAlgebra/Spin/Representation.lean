@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.AlgebraHom
-public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Differential
+public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.LocalDiffeomorph
 
 /-!
 # Differentiating Clifford actions of compact real Spin
@@ -120,33 +120,18 @@ theorem unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinSmoothHom_eq_bivectorExte
   let Q := QuadraticMap.weightedSumSquares ℝ (1 : Fin n → ℝ)
   let _ := bivectorLieRing Q
   let _ := bivectorLieAlgebra Q
-  let x := realCliffordSpinLieEquivQuadratic n X
-  let z := (bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)).symm x
-  have hx : (realCliffordSpinLieEquivQuadratic n).symm x = X :=
-    (realCliffordSpinLieEquivQuadratic n).symm_apply_apply X
-  have hzx : bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0) z = x :=
-    (bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)).apply_symm_apply x
-  have hz : realCliffordSpecialOrthogonalLieEquivSo n
-      (realCliffordSpinToSpecialOrthogonalRangeLieMap n X) = bivectorEquivSo n ℝ z := by
-    calc
-      _ = realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x := by
-        exact (congrArg (fun Y ↦ realCliffordSpecialOrthogonalLieEquivSo n
-          (realCliffordSpinToSpecialOrthogonalRangeLieMap n Y)) hx).symm.trans
-            (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply n x).symm
-      _ = bivectorEquivSo n ℝ z := by
-        exact (congrArg (realCliffordSpinToSpecialOrthogonalCoordinateLieHom n) hzx).symm.trans
-          (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_bivectorEquivSo n z)
-  have hinv : (bivectorEquivSo n ℝ).symm
-      (realCliffordSpecialOrthogonalLieEquivSo n
-        (realCliffordSpinToSpecialOrthogonalRangeLieMap n X)) = z :=
-    (congrArg (bivectorEquivSo n ℝ).symm hz).trans
-      ((bivectorEquivSo n ℝ).symm_apply_apply z)
+  -- Congruence avoids costly `isDefEq` unfolding across the Spin/SO Lie-subalgebra models.
   calc
-    _ = f (x : CliffordAlgebra (realCliffordForm n 0)) :=
+    TauCeti.Lie.unitsLieAlgebraLieEquiv (lieMap f.realCliffordSpinSmoothHom X)
+      = f (realCliffordSpinLieEquivQuadratic n X) :=
       unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinSmoothHom f X
-    _ = f (bivectorExterior (realCliffordForm n 0) z) := by
-      exact congrArg f ((congrArg Subtype.val hzx).symm.trans
-        (coe_bivectorExteriorEquivQuadraticLieSubalgebra_apply _ z))
-    _ = _ := congrArg (fun w ↦ f (bivectorExterior (realCliffordForm n 0) w)) hinv.symm
+    _ = f (bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)
+          ((bivectorEquivSo n ℝ).symm
+            (realCliffordSpecialOrthogonalLieEquivSo n
+              (realCliffordSpinToSpecialOrthogonalRangeLieMap n X)))) :=
+      congrArg (fun y : quadraticLieSubalgebra (realCliffordForm n 0) ↦ f y)
+        (realCliffordSpinLieEquivQuadratic_eq_bivectorExterior n X)
+    _ = _ :=
+      congrArg f (coe_bivectorExteriorEquivQuadraticLieSubalgebra_apply (realCliffordForm n 0) _)
 
 end AlgHom

@@ -30,6 +30,8 @@ exponential.
 * `groupLieAlgebra_units_ad_apply`: the tangent Lie bracket on algebra units is the associative
   commutator.
 * `unitsLieAlgebraLieEquiv`: the canonical units identification as a Lie equivalence.
+* `unitsLieAlgebraEquiv_lie`: the canonical units identification sends the Lie bracket to the
+  associative commutator.
 * `unitsLieAlgebraEquiv_ad`: the units identification transports the abstract adjoint operator to
   the bounded commutator operator.
 -/
@@ -219,6 +221,15 @@ theorem unitsLieAlgebraLieEquiv_symm_apply (x : R) :
 theorem unitsLieAlgebraLieEquiv_toLinearEquiv :
     (unitsLieAlgebraLieEquiv (R := R)).toLinearEquiv = unitsLieAlgebraEquiv := by
   rfl
+
+/-- The canonical identification of the Lie algebra of `Rˣ` with `R` sends the Lie bracket of
+left-invariant derivations to the associative commutator. -/
+theorem unitsLieAlgebraEquiv_lie (X Y : LeftInvariantDerivation 𝓘(ℝ, R) Rˣ) :
+    unitsLieAlgebraEquiv ⁅X, Y⁆ =
+      unitsLieAlgebraEquiv X * unitsLieAlgebraEquiv Y -
+        unitsLieAlgebraEquiv Y * unitsLieAlgebraEquiv X := by
+  simpa only [unitsLieAlgebraLieEquiv_apply, LieRing.of_associative_ring_bracket] using
+    (unitsLieAlgebraLieEquiv (R := R)).map_lie X Y
 
 local instance finiteDimensionalLeftInvariantDerivationAdjointUnits :
     FiniteDimensional ℝ (LeftInvariantDerivation 𝓘(ℝ, R) Rˣ) :=

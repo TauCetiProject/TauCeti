@@ -30,12 +30,19 @@ this equivalence to smooth homomorphisms out of `Spin(3)`.
 
 ## Main definitions
 
-* `TauCeti.CliffordAlgebra.realSpinContMDiffMonoidMorphismUnitsRange`: the isomorphism of compact
-  `Spin(n)` with its range in the Clifford units, as a smooth homomorphism.
+* `TauCeti.CliffordAlgebra.realSpinContMDiffMonoidMorphismUnitsRange` and
+  `TauCeti.CliffordAlgebra.realSpinLieEquivUnitsRange`: the smooth homomorphism and Lie-algebra
+  equivalence identifying compact `Spin(n)` with its range in the Clifford units.
+* `TauCeti.CliffordAlgebra.realSpinToSpecialOrthogonalSmoothRange` and
+  `TauCeti.CliffordAlgebra.realSpinToSpecialOrthogonalRangeLieEquiv`: the smooth projection onto
+  the embedded `SO(n)` carrier and its Lie-algebra equivalence.
 * `TauCeti.CliffordAlgebra.realSpinLieEquivSo`: the Lie algebra of compact `Spin(n)` is `so(n)`.
 
 ## Main results
 
+* `TauCeti.CliffordAlgebra.isLocalDiffeomorph_realSpinToSpecialOrthogonalSmoothRange`: the smooth
+  projection from native compact `Spin(n)` to the embedded `SO(n)` carrier is a local
+  diffeomorphism.
 * `TauCeti.CliffordAlgebra.realSpinLieEquivSo_apply`: it is the differential of the projection
   `Spin(n) → SO(n)`.
 
@@ -57,6 +64,13 @@ open _root_.CliffordAlgebra TauCeti.Lie
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance] Matrix.linftyOpTopologicalSpace
+
+/-- The model space of the embedded compact special-orthogonal carrier in matrix units. -/
+abbrev realSpecialOrthogonalLieModel (n : ℕ) :=
+  LieSubalgebra.toSubmodule (TauCeti.Lie.lieSubalgebraOfSubgroup
+    (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℝ))
+    (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+      (realCliffordForm n 0 : QuadraticForm ℝ (Fin n → ℝ)))))
 
 /-- The isomorphism `TauCeti.CliffordAlgebra.realCliffordSpinContinuousMulEquivUnitsRange` of
 compact `Spin(n)` with its range in the Clifford units, as a smooth homomorphism: it is the
@@ -86,16 +100,90 @@ theorem isLocalDiffeomorph_realSpinContMDiffMonoidMorphismUnitsRange (n : ℕ) :
   funext s
   exact (realSpinDiffeomorphUnitsRange_apply n s).symm
 
+/-- The Lie-algebra equivalence between native compact Spin and its embedded units range. -/
+def realSpinLieEquivUnitsRange (n : ℕ) :
+    LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0)) ≃ₗ⁅ℝ⁆
+      LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n)
+        (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) :=
+  lieEquivOfIsLocalDiffeomorphAt (realSpinContMDiffMonoidMorphismUnitsRange n)
+    (isLocalDiffeomorph_realSpinContMDiffMonoidMorphismUnitsRange n 1)
+
+/-- The Lie equivalence to the embedded units range acts by the Lie map of the comparison. -/
+@[simp]
+theorem realSpinLieEquivUnitsRange_apply (n : ℕ)
+    (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0))) :
+    realSpinLieEquivUnitsRange n X = lieMap (realSpinContMDiffMonoidMorphismUnitsRange n) X :=
+  lieEquivOfIsLocalDiffeomorphAt_apply _ _ X
+
+/-- The smooth projection from native compact Spin to the embedded special-orthogonal carrier. -/
+def realSpinToSpecialOrthogonalSmoothRange (n : ℕ) :
+    ContMDiffMonoidMorphism 𝓘(ℝ, realSpinLieModel n) 𝓘(ℝ, realSpecialOrthogonalLieModel n) ∞
+      (spinGroup (realCliffordForm n 0))
+      (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+        (realCliffordForm n 0 : QuadraticForm ℝ (Fin n → ℝ)))) :=
+  (realCliffordSpinToSpecialOrthogonalSmoothRange n).comp
+    (realSpinContMDiffMonoidMorphismUnitsRange n)
+
+/-- The smooth projection from native Spin sends `s` to `spinToSpecialOrthogonal` embedded in the
+matrix units range. -/
+@[simp]
+theorem realSpinToSpecialOrthogonalSmoothRange_apply (n : ℕ)
+    (s : spinGroup (realCliffordForm n 0)) :
+    realSpinToSpecialOrthogonalSmoothRange n s =
+      realCliffordSpecialOrthogonalContinuousMulEquivRange n
+        (spinToSpecialOrthogonal (realCliffordForm n 0) s) := by
+  simp only [realSpinToSpecialOrthogonalSmoothRange, ContMDiffMonoidMorphism.coe_comp,
+    Function.comp_apply, coe_realSpinContMDiffMonoidMorphismUnitsRange,
+    realCliffordSpinToSpecialOrthogonalSmoothRange_apply,
+    realCliffordSpinContinuousMulEquivUnitsRange_apply,
+    realCliffordSpinToSpecialOrthogonalRange_apply_toUnits,
+    realCliffordSpecialOrthogonalContinuousMulEquivRange_apply]
+
+/-- The Lie-algebra equivalence from native compact Spin to the embedded special-orthogonal
+carrier, given by the differential of the smooth Spin projection. -/
+def realSpinToSpecialOrthogonalRangeLieEquiv (n : ℕ) :
+    LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0)) ≃ₗ⁅ℝ⁆
+      LeftInvariantDerivation 𝓘(ℝ, realSpecialOrthogonalLieModel n)
+        (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+          (realCliffordForm n 0 : QuadraticForm ℝ (Fin n → ℝ)))) :=
+  (realSpinLieEquivUnitsRange n).trans (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n)
+
+/-- The native Spin projection Lie equivalence acts by `lieMap` of the smooth projection. -/
+@[simp]
+theorem realSpinToSpecialOrthogonalRangeLieEquiv_apply (n : ℕ)
+    (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0))) :
+    realSpinToSpecialOrthogonalRangeLieEquiv n X =
+      lieMap (realSpinToSpecialOrthogonalSmoothRange n) X := by
+  simp [realSpinToSpecialOrthogonalRangeLieEquiv, realSpinToSpecialOrthogonalSmoothRange,
+    realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap]
+
+/-- Pushing forward the native Spin inverse lift to the units range recovers the units-range
+inverse lift. -/
+theorem realSpinLieEquivUnitsRange_realSpinToSpecialOrthogonalRangeLieEquiv_symm (n : ℕ)
+    (Ω : LeftInvariantDerivation 𝓘(ℝ, realSpecialOrthogonalLieModel n)
+      (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+        (realCliffordForm n 0 : QuadraticForm ℝ (Fin n → ℝ))))) :
+    realSpinLieEquivUnitsRange n ((realSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω) =
+      (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω := by
+  simp [realSpinToSpecialOrthogonalRangeLieEquiv]
+
+/-- The smooth projection from native compact Spin to the embedded special-orthogonal carrier is a
+local diffeomorphism in every dimension. -/
+theorem isLocalDiffeomorph_realSpinToSpecialOrthogonalSmoothRange (n : ℕ) :
+    IsLocalDiffeomorph 𝓘(ℝ, realSpinLieModel n) 𝓘(ℝ, realSpecialOrthogonalLieModel n) ∞
+      (realSpinToSpecialOrthogonalSmoothRange n) := by
+  rw [realSpinToSpecialOrthogonalSmoothRange, ContMDiffMonoidMorphism.coe_comp]
+  exact fun s ↦ IsLocalDiffeomorphAt.comp
+    (hf := isLocalDiffeomorph_realSpinContMDiffMonoidMorphismUnitsRange n s)
+    (hg := isLocalDiffeomorph_realCliffordSpinToSpecialOrthogonalSmoothRange n _)
+
 /-- **The Lie algebra of compact `Spin(n)` is `so(n)`.** The differential of the projection
 `Spin(n) → SO(n)`, in skew-symmetric-matrix coordinates
 (`TauCeti.CliffordAlgebra.realSpinLieEquivSo_apply`). -/
 def realSpinLieEquivSo (n : ℕ) :
     LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0)) ≃ₗ⁅ℝ⁆
       LieAlgebra.Orthogonal.so (Fin n) ℝ :=
-  ((lieEquivOfIsLocalDiffeomorphAt (realSpinContMDiffMonoidMorphismUnitsRange n)
-      (isLocalDiffeomorph_realSpinContMDiffMonoidMorphismUnitsRange n 1)).trans
-    (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n)).trans
-    (realCliffordSpecialOrthogonalLieEquivSo n)
+  (realSpinToSpecialOrthogonalRangeLieEquiv n).trans (realCliffordSpecialOrthogonalLieEquivSo n)
 
 /-- `TauCeti.CliffordAlgebra.realSpinLieEquivSo` is the Lie map of the projection of compact
 `Spin(n)` onto the range of `SO(n)` in the matrix units, read in skew-symmetric-matrix
@@ -105,6 +193,6 @@ theorem realSpinLieEquivSo_apply (n : ℕ)
     realSpinLieEquivSo n X = realCliffordSpecialOrthogonalLieEquivSo n
       (lieMap ((realCliffordSpinToSpecialOrthogonalSmoothRange n).comp
         (realSpinContMDiffMonoidMorphismUnitsRange n)) X) := by
-  simp [realSpinLieEquivSo, lieMap_comp, realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap]
+  simp [realSpinLieEquivSo, realSpinToSpecialOrthogonalSmoothRange]
 
 end TauCeti.CliffordAlgebra
