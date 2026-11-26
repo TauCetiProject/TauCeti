@@ -9,8 +9,8 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Schwartz
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Normed.Operator.Compact.Pi
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
@@ -126,11 +126,9 @@ theorem exists_isCompactOperator_toBesselPotentialSpaceCLM_cutoffPushforwardSchw
       ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
         K (SchwartzMap.toBesselPotentialSpaceCLM s 2 (e.cutoffPushforwardSchwartz he ψ u)) =
           SchwartzMap.toBesselPotentialSpaceCLM t 2 (e.cutoffPushforwardSchwartz he ψ u) := by
-  -- `K` multiplies by `χ`, equal to `1` near the support of `ψ`, and includes `H^s` into `H^t`.
-  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one
-    (Ω := ⟨e.target, e.open_target⟩) (n := ⊤) ψ.hasCompactSupport.isCompact ψ.tsupport_subset
-  set φ : 𝓢(CoordinateSpace n, ℂ) :=
-    SchwartzMap.postcompCLM Complex.ofRealCLM (TestFunction.toSchwartzMapCLM ℝ χ)
+  -- `K` multiplies by `φ`, equal to `1` near the support of `ψ`, and includes `H^s` into `H^t`.
+  obtain ⟨φ, -, -, hφ⟩ :=
+    ψ.hasCompactSupport.isCompact.exists_schwartzMap_cutoff isOpen_univ (subset_univ _)
   refine ⟨BesselPotentialSpace.inclusion h.le ∘L BesselPotentialSpace.smulLeftCLM s φ,
     BesselPotentialSpace.isCompactOperator_inclusion_comp_smulLeftCLM φ h, fun u ↦ ?_⟩
   have hφu : SchwartzMap.smulLeftCLM ℂ (φ : CoordinateSpace n → ℂ)
@@ -139,7 +137,7 @@ theorem exists_isCompactOperator_toBesselPotentialSpaceCLM_cutoffPushforwardSchw
     rw [SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth, cutoffPushforwardSchwartz_apply]
     by_cases hy : ψ y = 0
     · simp [hy]
-    · simp [φ, hχ.self_of_nhdsSet y (subset_tsupport _ hy)]
+    · simp [hφ.self_of_nhdsSet y (subset_tsupport _ hy)]
   rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.smulLeftCLM_toBesselPotentialSpaceCLM,
     hφu, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM]
 
