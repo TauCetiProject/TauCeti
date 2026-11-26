@@ -46,9 +46,11 @@ two families differ by the fibrewise linear coordinate change. This gives a fibr
 of the total space, `TauCeti.bundleMorseCoord g`, defined in the trivialization at each base point.
 It can be computed in any linear trivialization (`Bundle.Trivialization.bundleMorseCoord_eq`), so
 it does not depend on the trivialization. It vanishes on the zero section
-(`TauCeti.bundleMorseCoord_zeroSection`) and is the candidate for patching the local normal forms
-near the zero section; its smoothness, and that it is a change of coordinates near the zero
-section, are not proved here.
+(`TauCeti.bundleMorseCoord_zeroSection`). On a smooth vector bundle over a manifold it patches the
+local normal forms: near the whole zero section, `v ↦ ⟨v.proj, bundleMorseCoord g v⟩` is a partial
+diffeomorphism in which `g` is in fibrewise normal form
+(`TauCeti.exists_parametric_morse_partialDiffeomorph`, in
+`TauCeti.Geometry.Manifold.Morse.Bott.VectorBundle`).
 
 ## Main declarations
 
@@ -438,8 +440,9 @@ variable (F) in
 a vector `v` over `b`, the canonical parametric Morse coordinate of `g` read in the trivialization
 at `b`, transported back to the fibre over `b`. This is a fibre-preserving map of the total space.
 It agrees with the canonical coordinate read in any linear trivialization
-(`Bundle.Trivialization.bundleMorseCoord_eq`), so it does not depend on the trivialization. Its
-smoothness, and that it is a change of coordinates near the zero section, are not proved here. -/
+(`Bundle.Trivialization.bundleMorseCoord_eq`), so it does not depend on the trivialization. On a
+smooth vector bundle over a manifold it is a change of coordinates near the zero section
+(`TauCeti.exists_parametric_morse_partialDiffeomorph`). -/
 noncomputable def bundleMorseCoord (g : TotalSpace F V → ℝ) (v : TotalSpace F V) : V v.proj :=
   (trivializationAt F V v.proj).symm v.proj
     (parametricMorseCoord (fun z ↦ g ⟨z.1, (trivializationAt F V v.proj).symm z.1 z.2⟩)
