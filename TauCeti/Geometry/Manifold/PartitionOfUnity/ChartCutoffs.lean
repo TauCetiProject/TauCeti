@@ -91,7 +91,7 @@ theorem chartSupport_subset_target (A : ChartCutoffs I P n ι) (i : ι) :
   exact image_subset_iff.2 fun _ hz ↦ (A.chart i).map_source (A.tsupport_subset i hz)
 
 /-- Each chart maps the support of its cutoff into its compact set. -/
-theorem mapsTo (A : ChartCutoffs I P n ι) (i : ι) :
+theorem mapsTo_chartSupport (A : ChartCutoffs I P n ι) (i : ι) :
     MapsTo (A.chart i) (tsupport (A.cutoff i)) (A.chartSupport i) := by
   rw [coe_chartSupport]
   exact mapsTo_image _ _

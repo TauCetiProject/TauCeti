@@ -56,13 +56,13 @@ def localize (i : ι) :
     BundleTest I F V →L[ℝ] 𝓓(⟨(A.chart i).target, (A.chart i).open_target⟩, F) :=
   TestFunction.ofSupportedInCLM ℝ (A.chartSupport_subset_target i) ∘L
     (t i).chartLocalizationCLM (A.chart i) (A.contMDiffOn_chart_symm i) (ht i) (A.cutoff i)
-      (A.chartSupport i) (A.chartSupport_subset_target i) (A.mapsTo i)
+      (A.chartSupport i) (A.chartSupport_subset_target i) (A.mapsTo_chartSupport i)
 
 /-- The localization of `Φ` is the chart localization of the underlying section of `Φ`. -/
 theorem localize_apply (i : ι) (Φ : BundleTest I F V) :
     A.localize t ht i Φ = TestFunction.ofSupportedIn (A.chartSupport_subset_target i)
       ((t i).chartLocalization (A.chart i) (A.contMDiffOn_chart_symm i) (ht i) (A.cutoff i)
-        (A.chartSupport i) (A.chartSupport_subset_target i) (A.mapsTo i)
+        (A.chartSupport i) (A.chartSupport_subset_target i) (A.mapsTo_chartSupport i)
         ((BundleTest.ofCompactlySupported I F V).symm Φ).val) := by
   rw [localize, ContinuousLinearMap.comp_apply, Bundle.Trivialization.chartLocalizationCLM_apply,
     TestFunction.coe_ofSupportedInCLM]

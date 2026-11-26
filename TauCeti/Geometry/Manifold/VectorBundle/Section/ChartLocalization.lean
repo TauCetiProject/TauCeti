@@ -281,7 +281,8 @@ theorem sum_chartTestSection_chartLocalization (A : ChartCutoffs I M n ι)
     ∑ i ∈ A.meeting K hK, ((t i).chartTestSection (A.chart i) (A.contMDiffOn_chart i) (ht i)
       (TestFunction.ofSupportedIn (A.chartSupport_subset_target i)
         ((t i).chartLocalization (A.chart i) (A.contMDiffOn_chart_symm i) (ht i) (A.cutoff i)
-          (A.chartSupport i) (A.chartSupport_subset_target i) (A.mapsTo i) s))).val = s := by
+          (A.chartSupport i) (A.chartSupport_subset_target i) (A.mapsTo_chartSupport i)
+            s))).val = s := by
   simp only [Bundle.Trivialization.chartTestSection_chartLocalization _ _ _ _ _ _ _ _
     (A.contMDiffOn_chart _) (A.tsupport_subset _), ← Finset.sum_smul]
   ext y
@@ -426,8 +427,8 @@ private theorem ofSupportedIn_eq_sum (A : TauCeti.ChartCutoffs I M n M)
       (trivializationAt F V x).chartTestSection (A.chart x) (A.contMDiffOn_chart x) (hA x)
         (TestFunction.ofSupportedIn (A.chartSupport_subset_target x)
           ((trivializationAt F V x).chartLocalization (A.chart x) (A.contMDiffOn_chart_symm x)
-            (hA x) (A.cutoff x) (A.chartSupport x) (A.chartSupport_subset_target x) (A.mapsTo x)
-            σ)) :=
+            (hA x) (A.cutoff x) (A.chartSupport x) (A.chartSupport_subset_target x)
+            (A.mapsTo_chartSupport x) σ)) :=
   Subtype.ext <| by
     rw [ofSupportedIn_apply, Submodule.coe_sum]
     exact (A.sum_chartTestSection_chartLocalization _ hA K.isCompact _
@@ -483,11 +484,13 @@ theorem compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSectio
   refine ⟨A.meeting K K.isCompact, fun x ↦
     (TestFunction.ofSupportedInCLM ℝ (A.chartSupport_subset_target x)).toLinearMap ∘ₗ
     (trivializationAt F V x).chartLocalization (A.chart x) (A.contMDiffOn_chart_symm x) (hA x)
-      (A.cutoff x) (A.chartSupport x) (A.chartSupport_subset_target x) (A.mapsTo x) ∘ₗ
+      (A.cutoff x) (A.chartSupport x) (A.chartSupport_subset_target x)
+      (A.mapsTo_chartSupport x) ∘ₗ
     (supportedIn I F n V K).subtype, fun x _ ↦ ?_, LinearMap.ext fun σ ↦ ?_⟩
   · exact (TestFunction.ofSupportedInCLM ℝ (A.chartSupport_subset_target x)).continuous.comp
       ((continuous_chartLocalization _ _ (A.contMDiffOn_chart_symm x) _ _ _
-        (A.chartSupport_subset_target x) (A.mapsTo x) e U hU hcover).comp continuous_subtypeVal)
+        (A.chartSupport_subset_target x) (A.mapsTo_chartSupport x) e U hU hcover).comp
+          continuous_subtypeVal)
   · simp [p, ofSupportedIn_eq_sum A hA K σ]
 
 variable {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
