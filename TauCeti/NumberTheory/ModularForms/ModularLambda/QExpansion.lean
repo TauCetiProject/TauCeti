@@ -112,13 +112,9 @@ private def normalizedLambdaEuler : ℂ → ℂ :=
   (fun q ↦ q) * (eulerFunction * (fun q : ℂ ↦ eulerFunction (q ^ 4)) ^ 2 *
     (fun q : ℂ ↦ eulerFunction (q ^ 2))⁻¹ ^ 3) ^ 8
 
-private theorem analyticAt_eulerFunction_comp_pow (k : ℕ) (hk : k ≠ 0) :
-    AnalyticAt ℂ (fun q : ℂ ↦ eulerFunction (q ^ k)) 0 :=
-  analyticAt_eulerFunction_zero.comp_of_eq (by fun_prop) (zero_pow hk)
-
 private theorem analyticAt_normalizedLambdaEuler : AnalyticAt ℂ normalizedLambdaEuler 0 := by
-  have h₂ := analyticAt_eulerFunction_comp_pow 2 two_ne_zero
-  have h₄ := analyticAt_eulerFunction_comp_pow 4 (by decide)
+  have h₂ := analyticAt_eulerFunction_comp_pow (𝕜 := ℂ) 2 two_ne_zero
+  have h₄ := analyticAt_eulerFunction_comp_pow (𝕜 := ℂ) 4 (by decide)
   exact analyticAt_id.mul (((analyticAt_eulerFunction_zero.mul (h₄.pow 2)).mul
     ((h₂.inv (by simp)).pow 3)).pow 8)
 
@@ -145,8 +141,8 @@ theorem modularLambdaCoordinate_map_eq_qExpansion :
     modularLambdaCoordinate.toPowerSeries.map (Int.castRingHom ℂ) =
       UpperHalfPlane.qExpansion 2 (fun τ : ℍ ↦ modularLambda τ / 16) := by
   have hE : AnalyticAt ℂ (eulerFunction : ℂ → ℂ) 0 := analyticAt_eulerFunction_zero
-  have h₂ := analyticAt_eulerFunction_comp_pow 2 two_ne_zero
-  have h₄ := analyticAt_eulerFunction_comp_pow 4 (by decide)
+  have h₂ := analyticAt_eulerFunction_comp_pow (𝕜 := ℂ) 2 two_ne_zero
+  have h₄ := analyticAt_eulerFunction_comp_pow (𝕜 := ℂ) 4 (by decide)
   have hne : eulerFunction ((0 : ℂ) ^ 2) ≠ 0 := by simp
   have hId : AnalyticAt ℂ (fun q : ℂ ↦ q) 0 := analyticAt_id
   have hInv := h₂.inv hne

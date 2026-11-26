@@ -53,6 +53,11 @@ theorem hasFPowerSeriesOnBall_eulerFunction : HasFPowerSeriesOnBall (eulerFuncti
 theorem analyticAt_eulerFunction_zero : AnalyticAt 𝕜 (eulerFunction : 𝕜 → 𝕜) 0 :=
   hasFPowerSeriesOnBall_eulerFunction.analyticAt
 
+/-- The Euler function composed with a positive integer power is analytic at zero. -/
+theorem analyticAt_eulerFunction_comp_pow (k : ℕ) (hk : k ≠ 0) :
+    AnalyticAt 𝕜 (fun q : 𝕜 ↦ eulerFunction (q ^ k)) 0 :=
+  analyticAt_eulerFunction_zero.comp_of_eq (by fun_prop) (zero_pow hk)
+
 /-- The Taylor series of the Euler function at zero is the pentagonal series. -/
 @[simp]
 theorem taylorSeries_eulerFunction :
