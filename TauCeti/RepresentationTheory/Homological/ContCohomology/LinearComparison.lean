@@ -43,6 +43,13 @@ these comparisons are `k`-linear too.
 
 * `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology_smul` and
   `explicitH2AddEquivContinuousCohomology_smul`: the additive comparisons commute with the scalars.
+## References
+
+The design of defining the cohomology once and supplying the `R`-module structures by instances
+follows David Loeffler's advice; see the references in
+`TauCeti.RepresentationTheory.Homological.ContCohomology.ScalarAction`. The additive comparisons
+made linear here are those of the existing Tau Ceti file
+`TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison`.
 -/
 
 public section

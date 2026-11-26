@@ -45,6 +45,13 @@ every abelian group carries: the two agree only propositionally, by Mathlib's `i
 or `AddCommGroup.uniqueIntModule`. The instances therefore have low priority, so that
 `Module ℤ (H1 G M)` and `ℤ`-scalar multiplication keep resolving to the structure of the abelian
 group.
+## References
+
+The design, in which the cohomology is defined once for abelian groups and the `R`-module
+structure is supplied by instances where it exists, follows David Loeffler's advice in
+[#Riemann-Hypothesis > Library design discrepancies between RH/Mathlib/TauCeti](https://leanprover.zulipchat.com/#narrow/channel/658556-Riemann-Hypothesis/topic/Library.20design.20discrepancies.20between.20RH.2FMathlib.2FTauCeti/near/643780293).
+It builds on the explicit groups of the existing Tau Ceti file
+`TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree`.
 -/
 
 public section

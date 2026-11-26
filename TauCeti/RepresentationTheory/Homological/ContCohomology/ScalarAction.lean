@@ -25,7 +25,7 @@ For a discrete `X : TopRep R G` over a commutative ring `R`, the cohomology
 `TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntEquiv` identifies it additively with the
 cohomology of the carrier `X.V` as a discrete `ℤ`-module. That identification is `R`-linear for the
 instance of this file (`TauCeti.ContCohomology.ofDiscreteModuleRestrictScalarsIntLinearEquiv`), so
-the two `R`-module structures are the same structure on the same group.
+this identification carries one `R`-module structure to the other.
 
 ## Main definitions
 
@@ -55,6 +55,15 @@ At `R = ℤ` the instance differs from the `ℤ`-module structure of the `TopMod
 `continuousCohomology n (ofDiscreteModule ℤ G M)`: the two agree only propositionally, by
 Mathlib's `int_smul_eq_zsmul` or `AddCommGroup.uniqueIntModule`. The instance therefore has low
 priority, so that `ℤ`-scalar multiplication keeps resolving to the structure of the object.
+## References
+
+The design, in which the cohomology is defined once for abelian groups and the `R`-module
+structure is supplied by instances where it exists, follows David Loeffler's advice in
+[#Riemann-Hypothesis > Library design discrepancies between RH/Mathlib/TauCeti](https://leanprover.zulipchat.com/#narrow/channel/658556-Riemann-Hypothesis/topic/Library.20design.20discrepancies.20between.20RH.2FMathlib.2FTauCeti/near/643780293).
+It builds on the existing Tau Ceti files
+`TauCeti.RepresentationTheory.Homological.ContCohomology.Additive` (additivity of coefficient maps)
+and `TauCeti.RepresentationTheory.Homological.ContCohomology.RestrictScalars` (the additive
+identification `ofDiscreteModuleRestrictScalarsIntEquiv`).
 -/
 
 public section
