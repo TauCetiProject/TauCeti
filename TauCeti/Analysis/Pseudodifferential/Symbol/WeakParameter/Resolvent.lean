@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Symbol.WeakParameter.Basic
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.IteratedDeriv.Indicator
@@ -18,7 +18,7 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
-# The normalized resolvent of a parameter-elliptic symbol
+# The normalized resolvent and the resolvent of a parameter-elliptic symbol
 
 Let `p` be a symbol of order `d` with values in the endomorphisms of `V`, the symbol of an operator
 `A` whose resolvent `(A - λ)⁻¹` is to be approximated. In the reciprocal parameter `r = 1 / λ` of
@@ -48,6 +48,16 @@ like `(⟨ξ⟩ ^ d + ‖λ‖)⁻¹`.
   has frequency order `d j`.
 * `TauCeti.WeakParameterSymbol.coefficient_normalizedResolvent_inv`: at the spectral parameter
   `λ = r⁻¹` it is `-λ (p(x, ξ) - λ)⁻¹`.
+* `TauCeti.WeakParameterSymbol.resolvent`: the resolvent symbol `(λ - p(x, ξ))⁻¹`, that is
+  `r (1 - r p(x, ξ))⁻¹`, extended by zero outside `R`. It is a weakly parameter-dependent symbol of
+  frequency order `-d` and anisotropy `d`: one factor `r` turns the normalized resolvent, of size
+  `(1 + ‖r‖ ⟨ξ⟩ ^ d)⁻¹`, into a symbol of size `⟨ξ⟩ ^ (-d)`. Its `(j + 1)`-th parameter derivative
+  is `(j + 1)! p(x, ξ) ^ j ((1 - r p(x, ξ))⁻¹) ^ (j + 2)`
+  (`TauCeti.WeakParameterSymbol.iteratedDeriv_succ_coefficient_resolvent`), and it inverts
+  `1 - r p(x, ξ)` up to the factor `r` (`TauCeti.WeakParameterSymbol.coefficient_resolvent_comp`,
+  `TauCeti.WeakParameterSymbol.comp_coefficient_resolvent`). Composing with it lowers the frequency
+  order by `d` while absorbing a factor `r`, which is how the correction terms of the parametrix of
+  `1 - r p` are built (`TauCeti.WeakParameterSymbol.leftNormalizedResolventTerms`).
 * `TauCeti.Symbol.isParameterElliptic_of_coefficient_eq_smul`: an elliptic scalar symbol
   `w(x, ξ) • id` with `w ≥ 0` is parameter-elliptic on every sector `Re r ≤ c ‖r‖` with `c < 1`.
 * `TauCeti.Symbol.isParameterElliptic_besselPotential`: in particular the Bessel weight
@@ -65,7 +75,8 @@ parameter-ellipticity its inverse at `(0, 0)` has size `1 / s`, so the derivativ
 have size `1 / s ≤ 1` there (`TauCeti.exists_norm_iteratedFDeriv_clm_inverse_le`), with constants
 independent of `r`, `x` and `ξ`. Undoing the dilation gives the symbol estimates of order `0`, and
 the Leibniz rule those of the parameter derivatives `j! p ^ j ((1 - r p)⁻¹) ^ (j + 1)`, of order
-`d j`.
+`d j`. For the resolvent, the bound `1 / s` on the derivatives of the dilated inverse is kept:
+`‖r‖ / s ≤ ⟨ξ⟩ ^ (-d)` gives the estimates of order `-d`.
 
 ## References
 
@@ -201,15 +212,15 @@ private theorem norm_iteratedFDeriv_one_sub_smul_le {E : Type*} [NormedAddCommGr
   nlinarith [norm_nonneg r, mul_nonneg (norm_nonneg r) hT]
 
 /-- **Dilated estimates for the inverse.** With `t = ⟨ξ⟩`, the derivatives of order at most `k`
-at `(0, 0)` of `(y, v) ↦ (1 - r p(x + y, ξ + t v))⁻¹` are bounded uniformly for `x ∈ K`, all `ξ`
-and `r ∈ R`: by parameter-ellipticity the inverse at `(0, 0)` is of size `1 / s` for the size
-`s = 1 + ‖r‖ ⟨ξ⟩ ^ d` of the derivatives of `1 - r p` there. -/
+at `(0, 0)` of `(y, v) ↦ (1 - r p(x + y, ξ + t v))⁻¹` are bounded by `c / (1 + ‖r‖ ⟨ξ⟩ ^ d)`,
+uniformly for `x ∈ K`, all `ξ` and `r ∈ R`: by parameter-ellipticity the inverse at `(0, 0)` is of
+size `1 / s` for the size `s = 1 + ‖r‖ ⟨ξ⟩ ^ d` of the derivatives of `1 - r p` there. -/
 private theorem exists_norm_iteratedFDeriv_dilate_inverse_le (hp : p.IsParameterElliptic R)
     {K : Set (CoordinateSpace n)} (hK : IsCompact K) (k : ℕ) :
     ∃ c, 0 ≤ c ∧ ∀ x ∈ K, ∀ ξ, ∀ r ∈ R, ∀ i ≤ k,
       ‖iteratedFDeriv ℝ i (fun q : CoordinateSpace n × CoordinateSpace n =>
           (1 - r • p.coefficient (x + q.1, ξ + (1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2) • q.2)).inverse) 0‖ ≤
-        c := by
+        c / (1 + ‖r‖ * (1 + ‖ξ‖ ^ 2) ^ (d / 2)) := by
   obtain ⟨S, hS0, hS⟩ := exists_norm_iteratedFDeriv_dilate_le p hK k
   obtain ⟨B, hB⟩ := hp K hK
   obtain ⟨c, hc⟩ := exists_norm_iteratedFDeriv_clm_inverse_le
@@ -217,7 +228,6 @@ private theorem exists_norm_iteratedFDeriv_dilate_inverse_le (hp : p.IsParameter
   refine ⟨|c|, abs_nonneg c, fun x hx ξ r hr i hi => ?_⟩
   set T : ℝ := (1 + ‖ξ‖ ^ 2) ^ (d / 2)
   set s : ℝ := 1 + ‖r‖ * T
-  have hs : 1 ≤ s := le_add_of_nonneg_right (by positivity)
   set t : ℝ := (1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2)
   set P : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] V :=
     fun q => p.coefficient (x + q.1, ξ + t • q.2)
@@ -229,61 +239,112 @@ private theorem exists_norm_iteratedFDeriv_dilate_inverse_le (hp : p.IsParameter
   have h := hc (fun q => 1 - r • P q) univ 0 s (by positivity) isOpen_univ (mem_univ _)
     (contDiff_const.sub (hP.const_smul r)).contDiffOn (fun q _ => hp.isInvertible hr _)
     (norm_iteratedFDeriv_one_sub_smul_le hP hS0 (by positivity) (hS x hx ξ) r) hFinvb i hi
-  exact h.trans ((div_le_div_of_nonneg_right (le_abs_self c) (by positivity)).trans
-    (div_le_self (abs_nonneg c) hs))
+  exact h.trans (div_le_div_of_nonneg_right (le_abs_self c) (by positivity))
 
-/-- **Symbol estimates for the parameter derivatives, uniformly in the parameter.** For a
+/-- For `r ∈ R`, the inverse `(x, ξ) ↦ (1 - r p(x, ξ))⁻¹` of a parameter-elliptic symbol is
+smooth. -/
+private theorem contDiff_inverse_one_sub_smul (hp : p.IsParameterElliptic R) {r : ℂ} (hr : r ∈ R) :
+    ContDiff ℝ ∞ fun q => (1 - r • p.coefficient q).inverse :=
+  (contDiff_const.sub (p.contDiff_coefficient.const_smul r)).clm_inverse
+    fun q => hp.isInvertible hr q
+
+/-- **Symbol estimates for products of powers, uniformly in the parameter.** For a
 parameter-elliptic symbol `p` of order `d`, the functions
-`(x, ξ) ↦ p(x, ξ) ^ j ((1 - r p(x, ξ))⁻¹) ^ (j + 1)` satisfy the symbol estimates of order `d j`
-on every compact set of positions, uniformly in `r ∈ R`. -/
+`(x, ξ) ↦ p(x, ξ) ^ i ((1 - r p(x, ξ))⁻¹) ^ l` satisfy the symbol estimates of order `d i` on every
+compact set of positions, uniformly in `r ∈ R`. -/
 private theorem exists_norm_mixedDeriv_pow_mul_inverse_pow_le (hp : p.IsParameterElliptic R)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (j : ℕ) (α β : List (Fin n)) :
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (i l : ℕ) (α β : List (Fin n)) :
     ∃ M, 0 ≤ M ∧ ∀ x ∈ K, ∀ ξ, ∀ r ∈ R,
-      ‖mixedDeriv α β (fun q => p.coefficient q ^ j * (1 - r • p.coefficient q).inverse ^ (j + 1))
-          x ξ‖ ≤ M * (1 + ‖ξ‖ ^ 2) ^ ((d * j - β.length) / 2) := by
+      ‖mixedDeriv α β (fun q => p.coefficient q ^ i * (1 - r • p.coefficient q).inverse ^ l)
+          x ξ‖ ≤ M * (1 + ‖ξ‖ ^ 2) ^ ((d * i - β.length) / 2) := by
   set k := α.length + β.length
   obtain ⟨S, hS0, hS⟩ := exists_norm_iteratedFDeriv_dilate_le p hK k
   obtain ⟨c, hc0, hc⟩ := exists_norm_iteratedFDeriv_dilate_inverse_le hp hK k
-  set M := (2 : ℝ) ^ k * (2 ^ k * S) ^ j * (2 ^ k * c) ^ (j + 1)
+  set M := (2 : ℝ) ^ k * (2 ^ k * S) ^ i * (2 ^ k * c) ^ l
   refine ⟨M, by positivity, fun x hx ξ r hr => ?_⟩
   set u : ℝ := 1 + ‖ξ‖ ^ 2
   have hu : 0 < u := by positivity
   set t : ℝ := u ^ ((1 : ℝ) / 2)
   have ht : 0 < t := Real.rpow_pos_of_pos hu _
   set g : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] V :=
-    fun q => p.coefficient q ^ j * (1 - r • p.coefficient q).inverse ^ (j + 1)
-  have hinv : ContDiff ℝ ∞ fun q => (1 - r • p.coefficient q).inverse :=
-    (contDiff_const.sub (p.contDiff_coefficient.const_smul r)).clm_inverse
-      fun q => hp.isInvertible hr q
-  have hg : ContDiff ℝ ∞ g := (p.contDiff_coefficient.pow j).mul (hinv.pow (j + 1))
+    fun q => p.coefficient q ^ i * (1 - r • p.coefficient q).inverse ^ l
+  have hinv := contDiff_inverse_one_sub_smul hp hr
+  have hg : ContDiff ℝ ∞ g := (p.contDiff_coefficient.pow i).mul (hinv.pow l)
   -- The dilation of `g` is a product of the dilations of `p` and of the inverse, whose derivatives
-  -- at `0` are of size `⟨ξ⟩ ^ d` and `1`; by the Leibniz rule its derivatives are of size
-  -- `⟨ξ⟩ ^ (d j)`.
+  -- at `0` are of size `⟨ξ⟩ ^ d` and at most `c`; by the Leibniz rule its derivatives are of size
+  -- `⟨ξ⟩ ^ (d i)`.
   have hD := contDiff_dilate x ξ t
   have hP := (p.contDiff_coefficient.comp hD).of_le (m := k) (by exact_mod_cast le_top)
   have hG := (hinv.comp hD).of_le (m := k) (by exact_mod_cast le_top)
-  have hprod := (hP.pow j).norm_iteratedFDeriv_mul_le_two_pow (hG.pow (j + 1))
-    (hP.norm_iteratedFDeriv_pow_le_two_pow ContinuousLinearMap.norm_one_le (hS x hx ξ) j)
-    (hG.norm_iteratedFDeriv_pow_le_two_pow ContinuousLinearMap.norm_one_le (hc x hx ξ r hr)
-      (j + 1)) k le_rfl
+  have hc' : ∀ i' ≤ k, ‖iteratedFDeriv ℝ i' ((fun q => (1 - r • p.coefficient q).inverse) ∘
+      fun q : CoordinateSpace n × CoordinateSpace n => (x + q.1, ξ + t • q.2)) 0‖ ≤ c :=
+    fun i' hi' => (hc x hx ξ r hr i' hi').trans
+      (div_le_self hc0 (le_add_of_nonneg_right (by positivity)))
+  have hprod := (hP.pow i).norm_iteratedFDeriv_mul_le_two_pow (hG.pow l)
+    (hP.norm_iteratedFDeriv_pow_le_two_pow ContinuousLinearMap.norm_one_le (hS x hx ξ) i)
+    (hG.norm_iteratedFDeriv_pow_le_two_pow ContinuousLinearMap.norm_one_le hc' l) k le_rfl
   -- Undo the dilation: each frequency derivative costs a factor `t = ⟨ξ⟩`.
-  have hkey : t ^ β.length * ‖mixedDeriv α β g x ξ‖ ≤ M * (u ^ (d / 2)) ^ j := by
-    have h1 := norm_mixedDeriv_le α β ((hg.comp hD).of_le (by exact_mod_cast le_top)) 0 0
-    simp only [Function.comp_def] at h1
-    rw [mixedDeriv_comp_add_smul (hg.of_le (by exact_mod_cast le_top)), norm_smul,
-      Real.norm_eq_abs, abs_pow, abs_of_pos ht, Prod.mk_zero_zero] at h1
-    refine h1.trans (hprod.trans_eq ?_)
-    simp only [M]
-    ring
-  have hTj : (u ^ (d / 2)) ^ j = u ^ ((d * j - β.length) / 2) * t ^ β.length := by
+  have hkey : t ^ β.length * ‖mixedDeriv α β g x ξ‖ ≤ M * (u ^ (d / 2)) ^ i :=
+    (pow_mul_norm_mixedDeriv_le_norm_iteratedFDeriv_comp_add_smul
+      (hg.of_le (by exact_mod_cast le_top)) x ξ ht.le).trans
+      (hprod.trans_eq (by simp only [M]; ring))
+  have hTi : (u ^ (d / 2)) ^ i = u ^ ((d * i - β.length) / 2) * t ^ β.length := by
     simp only [t]
-    rw [← Real.rpow_natCast (u ^ (d / 2)) j, ← Real.rpow_mul hu.le,
+    rw [← Real.rpow_natCast (u ^ (d / 2)) i, ← Real.rpow_mul hu.le,
       ← Real.rpow_natCast (u ^ ((1 : ℝ) / 2)) β.length, ← Real.rpow_mul hu.le,
       ← Real.rpow_add hu]
     congr 1
     ring
-  rw [hTj] at hkey
+  rw [hTi] at hkey
   exact le_of_mul_le_mul_left (hkey.trans_eq (by ring)) (pow_pos ht _)
+
+/-- **Symbol estimates of order `-d` for `r (1 - r p)⁻¹`, uniformly in the parameter.** For a
+parameter-elliptic symbol `p` of order `d`, the function `(x, ξ) ↦ r (1 - r p(x, ξ))⁻¹` satisfies
+the symbol estimates of order `-d` on every compact set of positions, uniformly in `r ∈ R`: the
+derivatives of the dilated inverse are of size `1 / (1 + ‖r‖ ⟨ξ⟩ ^ d)`, and
+`‖r‖ / (1 + ‖r‖ ⟨ξ⟩ ^ d) ≤ ⟨ξ⟩ ^ (-d)`. -/
+private theorem exists_norm_mixedDeriv_smul_inverse_le (hp : p.IsParameterElliptic R)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ M, 0 ≤ M ∧ ∀ x ∈ K, ∀ ξ, ∀ r ∈ R,
+      ‖mixedDeriv α β (fun q => r • (1 - r • p.coefficient q).inverse) x ξ‖ ≤
+        M * (1 + ‖ξ‖ ^ 2) ^ ((-d - β.length) / 2) := by
+  obtain ⟨c, hc0, hc⟩ := exists_norm_iteratedFDeriv_dilate_inverse_le hp hK (α.length + β.length)
+  refine ⟨c, hc0, fun x hx ξ r hr => ?_⟩
+  set u : ℝ := 1 + ‖ξ‖ ^ 2
+  have hu : 0 < u := by positivity
+  set t : ℝ := u ^ ((1 : ℝ) / 2)
+  have ht : 0 < t := Real.rpow_pos_of_pos hu _
+  set T : ℝ := u ^ (d / 2)
+  have hT : 0 < T := Real.rpow_pos_of_pos hu _
+  have hinv := contDiff_inverse_one_sub_smul hp hr
+  set D := ‖mixedDeriv α β (fun q => (1 - r • p.coefficient q).inverse) x ξ‖
+  have hD : t ^ β.length * D ≤ c / (1 + ‖r‖ * T) :=
+    (pow_mul_norm_mixedDeriv_le_norm_iteratedFDeriv_comp_add_smul
+      (hinv.of_le (by exact_mod_cast le_top)) x ξ ht.le).trans
+      (hc x hx ξ r hr _ le_rfl)
+  -- `‖r‖ / (1 + ‖r‖ T) ≤ 1 / T`
+  have hrD : T * (‖r‖ * (t ^ β.length * D)) ≤ c := by
+    have h1 : ‖r‖ * (t ^ β.length * D) ≤ ‖r‖ * (c / (1 + ‖r‖ * T)) :=
+      mul_le_mul_of_nonneg_left hD (norm_nonneg r)
+    have h2 : T * (‖r‖ * (c / (1 + ‖r‖ * T))) ≤ c := by
+      rw [mul_div_assoc', mul_div_assoc', div_le_iff₀ (by positivity)]
+      nlinarith [norm_nonneg r]
+    exact (mul_le_mul_of_nonneg_left h1 hT.le).trans h2
+  have hexp : u ^ ((-d - β.length) / 2) * (T * t ^ β.length) = 1 := by
+    simp only [T, t]
+    rw [← Real.rpow_natCast (u ^ ((1 : ℝ) / 2)) β.length, ← Real.rpow_mul hu.le,
+      ← Real.rpow_add hu, ← Real.rpow_add hu]
+    convert Real.rpow_zero u using 2
+    ring
+  have hsmul : (fun q => r • (1 - r • p.coefficient q).inverse) =
+      r • fun q => (1 - r • p.coefficient q).inverse := rfl
+  rw [hsmul, mixedDeriv_const_smul, norm_smul]
+  calc ‖r‖ * D = u ^ ((-d - β.length) / 2) * (T * t ^ β.length) * (‖r‖ * D) := by
+        rw [hexp, one_mul]
+    _ = u ^ ((-d - β.length) / 2) * (T * (‖r‖ * (t ^ β.length * D))) := by ring
+    _ ≤ c * u ^ ((-d - β.length) / 2) := by
+        rw [mul_comm c]
+        exact mul_le_mul_of_nonneg_left hrD (by positivity)
 
 end Estimates
 
@@ -323,11 +384,10 @@ def normalizedResolvent (p : Symbol n V V d) (hp : p.IsParameterElliptic R) :
   coefficient_of_notMem q r hr := indicator_of_notMem hr _
   contDiff_iteratedDeriv j r hr := by
     simp only [iteratedDeriv_indicator_inverse_one_sub_smul _ j hr (hp.isInvertible hr _)]
-    exact ((p.contDiff_coefficient.pow j).mul (((contDiff_const.sub
-      (p.contDiff_coefficient.const_smul r)).clm_inverse fun q => hp.isInvertible hr q).pow
-        (j + 1))).const_smul _
+    exact ((p.contDiff_coefficient.pow j).mul
+      ((contDiff_inverse_one_sub_smul hp hr).pow (j + 1))).const_smul _
   exists_bound K hK j α β := by
-    obtain ⟨M, hM0, hM⟩ := exists_norm_mixedDeriv_pow_mul_inverse_pow_le hp hK j α β
+    obtain ⟨M, hM0, hM⟩ := exists_norm_mixedDeriv_pow_mul_inverse_pow_le hp hK j (j + 1) α β
     refine ⟨j ! * M, by positivity, fun x hx ξ r hr => ?_⟩
     simp only [iteratedDeriv_indicator_inverse_one_sub_smul _ j hr (hp.isInvertible hr _)]
     have hsmul : (fun q : CoordinateSpace n × CoordinateSpace n =>
@@ -378,6 +438,117 @@ theorem coefficient_normalizedResolvent_inv (q : CoordinateSpace n × Coordinate
   have h : 1 - μ⁻¹ • p.coefficient q = (-μ⁻¹) • (p.coefficient q - μ • 1) := by
     simp [smul_sub, smul_smul, hμ0, neg_add_eq_sub]
   rw [coefficient_normalizedResolvent q hμ, h, ContinuousLinearMap.inverse_smul, inv_neg, inv_inv]
+
+/-! ### The resolvent -/
+
+/-- The `(j + 1)`-th parameter derivative of `r ↦ r (1 - r P)⁻¹` on `R`, extended by zero outside
+`R`, is `(j + 1)! P ^ j ((1 - r P)⁻¹) ^ (j + 2)` at a parameter `r ∈ R` where `1 - r P` is
+invertible. -/
+private theorem iteratedDeriv_succ_indicator_smul_inverse_one_sub_smul (P : V →L[ℂ] V) (j : ℕ)
+    {r : ℂ} (hr : r ∈ R) (hP : (1 - r • P).IsInvertible) :
+    iteratedDeriv (j + 1) ((R : Set ℂ).indicator fun s => s • (1 - s • P).inverse) r =
+      ((j + 1)! : ℂ) • (P ^ j * (1 - r • P).inverse ^ (j + 2)) := by
+  rw [iteratedDeriv_indicator_of_mem R.isOpen hr, ← ContinuousLinearMap.ringInverse_eq_inverse]
+  exact iteratedDeriv_succ_smul_ringInverse_one_sub_smul P j
+    (ContinuousLinearMap.isInvertible_iff_isUnit.1 hP)
+
+/-- The **resolvent** `(λ - p(x, ξ))⁻¹ = r (1 - r p(x, ξ))⁻¹` of a parameter-elliptic symbol `p` of
+order `d` (`TauCeti.Symbol.IsParameterElliptic`), written in the reciprocal spectral parameter
+`r = 1 / λ` on an open set `R` and extended by zero outside `R`; at `r = 0`, that is `λ = ∞`, it is
+`0`. At the spectral parameter `λ` it is `(λ - p(x, ξ))⁻¹`
+(`TauCeti.WeakParameterSymbol.coefficient_resolvent_inv`), and it is `r` times the normalized
+resolvent (`TauCeti.WeakParameterSymbol.coefficient_resolvent_eq_smul`). It is a weakly
+parameter-dependent symbol of frequency order `-d` and anisotropy `d`: its `(j + 1)`-th derivative
+in `r` is `(j + 1)! p(x, ξ) ^ j ((1 - r p(x, ξ))⁻¹) ^ (j + 2)`
+(`TauCeti.WeakParameterSymbol.iteratedDeriv_succ_coefficient_resolvent`), of order `d j`, uniformly
+in `r ∈ R`. -/
+def resolvent (p : Symbol n V V d) (hp : p.IsParameterElliptic R) :
+    WeakParameterSymbol n R V V d (-d) where
+  coefficient q := (R : Set ℂ).indicator fun r => r • (1 - r • p.coefficient q).inverse
+  contDiffOn_coefficient q := by
+    refine ContDiffOn.congr (f := fun r => r • (1 - r • p.coefficient q).inverse) ?_
+      fun _ hr => indicator_of_mem hr _
+    exact contDiffOn_id.smul ((contDiffOn_const.sub
+      (contDiffOn_id.smul contDiffOn_const)).clm_inverse fun r hr => hp.isInvertible hr q)
+  coefficient_of_notMem q r hr := indicator_of_notMem hr _
+  contDiff_iteratedDeriv j r hr := by
+    have hinv := contDiff_inverse_one_sub_smul hp hr
+    rcases j with _ | j
+    · simp only [iteratedDeriv_zero, indicator_of_mem hr]
+      exact hinv.const_smul r
+    · simp only [iteratedDeriv_succ_indicator_smul_inverse_one_sub_smul _ j hr
+        (hp.isInvertible hr _)]
+      exact ((p.contDiff_coefficient.pow j).mul (hinv.pow (j + 2))).const_smul _
+  exists_bound K hK j α β := by
+    rcases j with _ | j
+    · obtain ⟨M, hM0, hM⟩ := exists_norm_mixedDeriv_smul_inverse_le hp hK α β
+      refine ⟨M, hM0, fun x hx ξ r hr => ?_⟩
+      simp only [iteratedDeriv_zero, indicator_of_mem hr, Nat.cast_zero, mul_zero, add_zero]
+      exact (hM x hx ξ r hr).trans_eq (by ring_nf)
+    · obtain ⟨M, hM0, hM⟩ := exists_norm_mixedDeriv_pow_mul_inverse_pow_le hp hK j (j + 2) α β
+      refine ⟨(j + 1)! * M, by positivity, fun x hx ξ r hr => ?_⟩
+      simp only [iteratedDeriv_succ_indicator_smul_inverse_one_sub_smul _ j hr
+        (hp.isInvertible hr _)]
+      have hsmul : (fun q : CoordinateSpace n × CoordinateSpace n =>
+          ((j + 1)! : ℂ) • (p.coefficient q ^ j * (1 - r • p.coefficient q).inverse ^ (j + 2))) =
+          ((j + 1)! : ℂ) • fun q =>
+            p.coefficient q ^ j * (1 - r • p.coefficient q).inverse ^ (j + 2) :=
+        rfl
+      rw [hsmul, mixedDeriv_const_smul, norm_smul, Complex.norm_natCast, mul_assoc]
+      gcongr
+      refine (hM x hx ξ r hr).trans_eq ?_
+      push_cast
+      ring_nf
+
+@[simp]
+theorem coefficient_resolvent (q : CoordinateSpace n × CoordinateSpace n) {r : ℂ} (hr : r ∈ R) :
+    (resolvent p hp).coefficient q r = r • (1 - r • p.coefficient q).inverse :=
+  indicator_of_mem (s := (R : Set ℂ)) hr fun r => r • (1 - r • p.coefficient q).inverse
+
+/-- The resolvent is `r` times the normalized resolvent, at every reciprocal parameter `r`. -/
+theorem coefficient_resolvent_eq_smul (q : CoordinateSpace n × CoordinateSpace n) (r : ℂ) :
+    (resolvent p hp).coefficient q r = r • (normalizedResolvent p hp).coefficient q r := by
+  by_cases hr : r ∈ R
+  · rw [coefficient_resolvent q hr, coefficient_normalizedResolvent q hr]
+  · rw [(resolvent p hp).coefficient_of_notMem q r hr,
+      (normalizedResolvent p hp).coefficient_of_notMem q r hr, smul_zero]
+
+/-- The resolvent is a left inverse of `1 - r p(x, ξ)` up to the factor `r`:
+`r (1 - r p)⁻¹ (1 - r p) = r` for `r ∈ R`. -/
+theorem coefficient_resolvent_comp (q : CoordinateSpace n × CoordinateSpace n) {r : ℂ}
+    (hr : r ∈ R) :
+    (resolvent p hp).coefficient q r ∘L (1 - r • p.coefficient q) =
+      r • ContinuousLinearMap.id ℂ V := by
+  rw [coefficient_resolvent_eq_smul, ContinuousLinearMap.smul_comp,
+    coefficient_normalizedResolvent_comp q hr]
+
+/-- The resolvent is a right inverse of `1 - r p(x, ξ)` up to the factor `r`:
+`(1 - r p) r (1 - r p)⁻¹ = r` for `r ∈ R`. -/
+theorem comp_coefficient_resolvent (q : CoordinateSpace n × CoordinateSpace n) {r : ℂ}
+    (hr : r ∈ R) :
+    (1 - r • p.coefficient q) ∘L (resolvent p hp).coefficient q r =
+      r • ContinuousLinearMap.id ℂ V := by
+  rw [coefficient_resolvent_eq_smul, ContinuousLinearMap.comp_smul,
+    comp_coefficient_normalizedResolvent q hr]
+
+/-- The parameter derivatives of the resolvent:
+`∂_r^(j + 1) (r (1 - r p(x, ξ))⁻¹) = (j + 1)! p(x, ξ) ^ j ((1 - r p(x, ξ))⁻¹) ^ (j + 2)`. -/
+theorem iteratedDeriv_succ_coefficient_resolvent (j : ℕ)
+    (q : CoordinateSpace n × CoordinateSpace n) {r : ℂ} (hr : r ∈ R) :
+    iteratedDeriv (j + 1) ((resolvent p hp).coefficient q) r =
+      ((j + 1)! : ℂ) • (p.coefficient q ^ j * (1 - r • p.coefficient q).inverse ^ (j + 2)) :=
+  iteratedDeriv_succ_indicator_smul_inverse_one_sub_smul _ j hr (hp.isInvertible hr q)
+
+/-- At the spectral parameter `λ ≠ 0` with `λ⁻¹ ∈ R`, the resolvent symbol is
+`(λ - p(x, ξ))⁻¹`. -/
+theorem coefficient_resolvent_inv (q : CoordinateSpace n × CoordinateSpace n) {μ : ℂ}
+    (hμ : μ⁻¹ ∈ R) (hμ0 : μ ≠ 0) :
+    (resolvent p hp).coefficient q μ⁻¹ = (μ • 1 - p.coefficient q).inverse := by
+  have h : (p.coefficient q - μ • 1).inverse = -(μ • 1 - p.coefficient q).inverse := by
+    rw [← neg_sub, ← neg_one_smul ℂ (μ • 1 - _), ContinuousLinearMap.inverse_smul]
+    simp
+  rw [coefficient_resolvent_eq_smul, coefficient_normalizedResolvent_inv q hμ hμ0, h]
+  simp [smul_neg, smul_smul, hμ0]
 
 end WeakParameterSymbol
 

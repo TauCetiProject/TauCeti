@@ -61,11 +61,12 @@ hypothesis here, rather than boundedness as in the Dirichlet case
 * `TauCeti.PDE.exists_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_iff_of_garding` and
   `TauCeti.PDE.existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_of_garding`:
   the same with a Dirichlet datum `g ∈ H¹(Ω)` on `Γ`.
-* `exists_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_iff` and
+* `exists_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_iff`,
+  `finiteDimensional_ker_energyFormH1LVanishingOn` and
   `existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq`, in the namespace
-  `TauCeti.PDE.UniformlyEllipticOn`: the two statements for uniformly elliptic operators with
-  bounded measurable coefficients, and their versions
-  `..._of_isLipschitzDomainWith` on an isometric copy of a bounded Lipschitz domain.
+  `TauCeti.PDE.UniformlyEllipticOn`: the statements for uniformly elliptic operators with
+  bounded measurable coefficients, and the versions `..._of_isLipschitzDomainWith` of the first
+  and last on an isometric copy of a bounded Lipschitz domain.
 
 ## References
 
@@ -106,33 +107,6 @@ private theorem sub_mem_w1pVanishingOnSubmodule_of_sub_mem {g u u₀ : W1p mu Om
   rw [← sub_sub_sub_cancel_right u u₀ g, ← ClosedSubmodule.mem_toSubmodule_iff]
   exact sub_mem ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu)
     ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu₀)
-
-/-- **Reduction to a problem in `H¹_Γ(Ω)`.** The mixed problem `B(u, ·) = ℓ` on `H¹_Γ(Ω)` with
-Dirichlet datum `g` has a solution exactly when `B(w, ·) = ℓ - B(g, ·)` has a solution
-`w ∈ H¹_Γ(Ω)`; the two are related by `u = g + w`. -/
-private theorem exists_sub_mem_iff_exists_forall_energyFormH1LVanishingOn_eq
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    (g : W1p mu Omega 2) (ℓ : StrongDual ℝ (W1pVanishingOn mu Omega 2 Γ)) :
-    (∃ u : W1p mu Omega 2, u - g ∈ w1pVanishingOnSubmodule mu Omega 2 Γ ∧
-        ∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c u v = ℓ v) ↔
-      ∃ w : W1pVanishingOn mu Omega 2 Γ, ∀ v, energyFormH1LVanishingOn hcoeff Γ w v =
-        (ℓ - (energyFormH1L hcoeff g).comp (W1pVanishingOn mu Omega 2 Γ).subtypeL) v := by
-  have hsol (u : W1p mu Omega 2) (v : W1pVanishingOn mu Omega 2 Γ) :
-      energyFormH1 a b c u v = ℓ v ↔ energyFormH1 a b c (u - g) v =
-        (ℓ - (energyFormH1L hcoeff g).comp (W1pVanishingOn mu Omega 2 Γ).subtypeL) v := by
-    rw [energyFormH1_sub_left hcoeff, sub_apply,
-      ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, energyFormH1L_apply, sub_left_inj]
-  constructor
-  · rintro ⟨u, hu, hu'⟩
-    exact ⟨⟨u - g, hu⟩, fun v => by
-      rw [energyFormH1LVanishingOn_apply]
-      exact (hsol u v).1 (hu' v)⟩
-  · rintro ⟨w, hw⟩
-    refine ⟨g + w, ?_, fun v => (hsol _ v).2 ?_⟩
-    · rw [add_sub_cancel_left]
-      exact (ClosedSubmodule.mem_toSubmodule_iff _ _).1 w.property
-    · rw [add_sub_cancel_left, ← energyFormH1LVanishingOn_apply hcoeff]
-      exact hw v
 
 open scoped Pointwise in
 /-- **The solution set of the mixed problem is a translate of the kernel.** Let `u₀ ∈ H¹(Ω)` solve
@@ -261,9 +235,12 @@ theorem exists_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_iff_of_gar
         (∀ v : W1pVanishingOn mu Omega 2 Γ,
           energyFormH1 a b c (v : W1p mu Omega 2) (w : W1p mu Omega 2) = 0) →
         ℓ w = energyFormH1 a b c g (w : W1p mu Omega 2) := by
-  rw [exists_sub_mem_iff_exists_forall_energyFormH1LVanishingOn_eq hcoeff]
-  simpa [sub_eq_zero] using exists_forall_energyFormH1LVanishingOn_eq_iff_of_garding hJ hcoeff
-    hC₀ hgarding (ℓ - (energyFormH1L hcoeff g).comp (W1pVanishingOn mu Omega 2 Γ).subtypeL)
+  rw [exists_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_iff_exists_w1pVanishingOn
+    hcoeff]
+  simpa only [energyFormH1LVanishingOn_apply, sub_apply, ContinuousLinearMap.comp_apply,
+    Submodule.subtypeL_apply, energyFormH1L_apply, sub_eq_zero] using
+    exists_forall_energyFormH1LVanishingOn_eq_iff_of_garding hJ hcoeff hC₀ hgarding
+      (ℓ - (energyFormH1L hcoeff g).comp (W1pVanishingOn mu Omega 2 Γ).subtypeL)
 
 include hcoeff in
 /-- **Uniqueness implies existence for the mixed problem, with a Dirichlet datum.** Under
@@ -276,17 +253,14 @@ theorem existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_of_g
         energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) = 0) → u = 0)
     (g : W1p mu Omega 2) (ℓ : StrongDual ℝ (W1pVanishingOn mu Omega 2 Γ)) :
     ∃! u : W1p mu Omega 2, u - g ∈ w1pVanishingOnSubmodule mu Omega 2 Γ ∧
-      ∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c u v = ℓ v := by
-  obtain ⟨w, hw, -⟩ := existsUnique_forall_energyFormH1LVanishingOn_eq_of_garding hJ hcoeff hC₀
-    hgarding (fun u hu => hker u fun v => by simpa using hu v)
-    (ℓ - (energyFormH1L hcoeff g).comp (W1pVanishingOn mu Omega 2 Γ).subtypeL)
-  obtain ⟨u₀, hu₀g, hu₀⟩ := (exists_sub_mem_iff_exists_forall_energyFormH1LVanishingOn_eq
-    hcoeff g ℓ).2 ⟨w, hw⟩
-  refine ⟨u₀, ⟨hu₀g, hu₀⟩, fun u ⟨hug, hu⟩ => ?_⟩
-  -- Two solutions differ by a solution of the homogeneous problem, which vanishes.
-  have h0 := hker ⟨u - u₀, sub_mem_w1pVanishingOnSubmodule_of_sub_mem hug hu₀g⟩ fun v => by
-    rw [Submodule.coe_mk, energyFormH1_sub_left hcoeff, hu v, hu₀ v, sub_self]
-  exact sub_eq_zero.1 (congrArg Subtype.val h0)
+      ∀ v : W1pVanishingOn mu Omega 2 Γ, energyFormH1 a b c u v = ℓ v :=
+  (existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_iff_existsUnique
+    hcoeff g ℓ).2 <| by
+    simpa only [energyFormH1LVanishingOn_apply, sub_apply, ContinuousLinearMap.comp_apply,
+      Submodule.subtypeL_apply, energyFormH1L_apply] using
+      existsUnique_forall_energyFormH1LVanishingOn_eq_of_garding hJ hcoeff hC₀ hgarding
+        (fun u hu => hker u fun v => by simpa only [energyFormH1LVanishingOn_apply] using hu v)
+        (ℓ - (energyFormH1L hcoeff g).comp (W1pVanishingOn mu Omega 2 Γ).subtypeL)
 
 end Garding
 
@@ -340,6 +314,23 @@ theorem exists_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_iff
     (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound)
     (half_pos h.pos) (h.garding_w1pVanishingOn ha hb hc hb_bound hc_bound) g ℓ
+
+/-- For a uniformly elliptic operator with bounded measurable coefficients and a compact value
+map `H¹_Γ(Ω) → L²(Ω)`, the weak solutions in `H¹_Γ(Ω)` of the homogeneous mixed problem form a
+finite-dimensional space. -/
+theorem finiteDimensional_ker_energyFormH1LVanishingOn
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hJ : IsCompactOperator ((W1p.valueL (mu := mu) (Omega := Omega) (p := 2)).comp
+      (W1pVanishingOn mu Omega 2 Γ).subtypeL)) :
+    FiniteDimensional ℝ (energyFormH1LVanishingOn hcoeff Γ).ker :=
+  finiteDimensional_ker_energyFormH1LVanishingOn_of_garding hJ hcoeff (half_pos h.pos)
+    (h.garding_w1pVanishingOn ha hb hc hb_bound hc_bound)
 
 /-- **Uniqueness implies existence for the mixed problem of a uniformly elliptic operator.** Let
 the value map `H¹_Γ(Ω) → L²(Ω)` be compact, as it is when `Ω` has the Rellich property. Let `a`

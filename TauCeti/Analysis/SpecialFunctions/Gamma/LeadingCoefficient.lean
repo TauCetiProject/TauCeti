@@ -168,8 +168,7 @@ theorem analyticOrderAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow_one_sub (r₁ r₂
       fun_meromorphicOrderAt_inv, fun_meromorphicOrderAt_inv, hRo, hCo]
     split_ifs <;> simp
   have ha : AnalyticAt ℂ (fun s : ℂ ↦ (Gammaℝ s)⁻¹ ^ r₁ * (Gammaℂ s)⁻¹ ^ r₂) (1 - n) :=
-    ((differentiable_Gammaℝ_inv.analyticAt _).pow r₁).mul
-      ((differentiable_Gammaℂ_inv.analyticAt _).pow r₂)
+    analyticAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow r₁ r₂ (1 - n)
   rw [ha.meromorphicOrderAt_eq] at hm
   exact ENat.map_natCast_injective (hm.trans (ENat.map_natCast _ _).symm)
 

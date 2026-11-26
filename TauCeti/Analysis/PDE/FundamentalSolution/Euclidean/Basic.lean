@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Analysis.InnerProductSpace.NormPow
-public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+public import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
@@ -113,6 +113,11 @@ theorem newtonianKernel_sub_comm (n : ℕ) (x a : EuclideanSpace ℝ (Fin n)) :
     newtonianKernel n (x - a) = newtonianKernel n (a - x) := by
   simp [newtonianKernel, norm_sub_rev]
 
+/-- The Newtonian kernel is radial: its values at two points of the same norm agree. -/
+theorem newtonianKernel_eq_of_norm_eq (n : ℕ) {x y : EuclideanSpace ℝ (Fin n)}
+    (h : ‖x‖ = ‖y‖) : newtonianKernel n x = newtonianKernel n y := by
+  rw [newtonianKernel_def, newtonianKernel_def, h]
+
 /-- Real dilation scales the Newtonian kernel with radial homogeneity `2 - n`. -/
 theorem newtonianKernel_smul (n : ℕ) (r : ℝ)
     (x : EuclideanSpace ℝ (Fin n)) :
@@ -120,13 +125,6 @@ theorem newtonianKernel_smul (n : ℕ) (r : ℝ)
   rw [newtonianKernel_def, newtonianKernel_def, norm_smul,
     Real.mul_rpow (norm_nonneg r) (norm_nonneg x)]
   ring
-
-/-- The Euclidean unit ball has positive real volume in every dimension. -/
-theorem volume_real_unitBall_pos (n : ℕ) :
-    0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) := by
-  exact ENNReal.toReal_pos
-    (measure_ball_pos volume (0 : EuclideanSpace ℝ (Fin n)) zero_lt_one).ne'
-    measure_ball_ne_top
 
 /-- Away from its pole, and outside dimension two, the Newtonian kernel does not vanish. -/
 theorem newtonianKernel_ne_zero (n : ℕ) (hn : n ≠ 2) {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :
@@ -444,7 +442,7 @@ theorem harmonicOnNhd_newtonianKernel_sub (n : ℕ)
 theorem newtonianKernel_one (x : EuclideanSpace ℝ (Fin 1)) :
     newtonianKernel 1 x = -‖x‖ / 2 := by
   have hvol : volume.real (ball (0 : EuclideanSpace ℝ (Fin 1)) 1) = 2 := by
-    rw [Measure.real_def, InnerProductSpace.volume_ball_of_dim_odd (k := 0) (by simp)]
+    rw [Measure.real_def, EuclideanSpace.volume_ball_fin_one]
     norm_num
   rw [newtonianKernel_def, hvol]
   norm_num

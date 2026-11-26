@@ -38,6 +38,9 @@ for set and probability integrals.
 * `TauCeti.integral_norm_pow_add_two_le`: under a probability measure, a function bounded by `K`
   in norm with `∫ ‖Y‖ ^ 2 ≤ v` has `∫ ‖Y‖ ^ (m + 2) ≤ K ^ m * min v (K ^ 2)`: the factor
   `‖Y‖ ^ m` acts as a multiplier bounded by `K ^ m`. No measurability of `Y` is assumed.
+* `TauCeti.integral_norm_smul_sq_le`: a scalar factor of norm at most one almost everywhere does
+  not increase the squared `L²` norm, `∫ ‖f • ξ‖² ≤ ∫ ‖ξ‖²`. Applied to a restricted measure, this
+  bounds the squared `L²` norm of a cut-off function `χ ξ` on a set by that of `ξ`.
 
 ## Differences of integrals
 
@@ -104,6 +107,8 @@ for set and probability integrals.
 
 ## Set and probability integrals
 
+* `TauCeti.integral_norm_sq_le_of_ae_bound`: on a finite measure space, an a.e. norm bound
+  `C` bounds the second moment by `C²` times the total mass, without a measurability assumption.
 * `TauCeti.setIntegral_Icc_update_add_setIntegral_Icc_update` splits a Bochner set integral over
   `Set.Icc a b` in `ι → ℝ` along a coordinate cut `t ∈ Set.Icc (a k) (b k)`.
 * `nonpos_nonneg_of_mem_Icc_of_integral_eq_zero`: a mean zero random variable with values in
@@ -285,6 +290,17 @@ end Multiset
 
 namespace TauCeti
 
+/-- On a finite measure space, an a.e. norm bound bounds the second moment by the squared
+bound times the total mass. No measurability assumption is needed for this upper bound. -/
+theorem integral_norm_sq_le_of_ae_bound {Ω E : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} [IsFiniteMeasure μ] [SeminormedAddGroup E] {f : Ω → E} {C : ℝ}
+    (hb : ∀ᵐ ω ∂μ, ‖f ω‖ ≤ C) : ∫ ω, ‖f ω‖ ^ 2 ∂μ ≤ C ^ 2 * μ.real Set.univ := by
+  calc
+    _ ≤ ‖∫ ω, ‖f ω‖ ^ 2 ∂μ‖ := Real.le_norm_self _
+    _ ≤ _ := norm_integral_le_of_norm_le_const (hb.mono fun ω hω ↦ by
+      rw [Real.norm_of_nonneg (sq_nonneg _)]
+      exact pow_le_pow_left₀ (norm_nonneg _) hω 2)
+
 /-- A family bounded in norm almost everywhere by a common real function, with uniformly bounded
 `L¹` deviations from given centers, has uniformly bounded centers under any nonzero measure.
 Only the norms of the deviations need to be integrable, and no measurability or integrability of
@@ -378,6 +394,16 @@ theorem integral_norm_pow_add_two_le {Ω E : Type*} [MeasurableSpace Ω] {μ : M
             (sq_nonneg _))
     _ = K ^ m * ∫ ω, ‖Y ω‖ ^ 2 ∂μ := integral_const_mul _ _
     _ ≤ _ := mul_le_mul_of_nonneg_left (le_min hv hK2) (pow_nonneg hK₀ m)
+
+/-- A scalar factor of norm at most one almost everywhere does not increase the squared `L²`
+norm: `∫ ‖f • ξ‖² ≤ ∫ ‖ξ‖²` whenever `‖ξ‖²` is integrable. -/
+theorem integral_norm_smul_sq_le {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : α → 𝕜} {ξ : α → E}
+    (hf : ∀ᵐ x ∂μ, ‖f x‖ ≤ 1) (hξ : Integrable (fun x ↦ ‖ξ x‖ ^ 2) μ) :
+    ∫ x, ‖f x • ξ x‖ ^ 2 ∂μ ≤ ∫ x, ‖ξ x‖ ^ 2 ∂μ :=
+  integral_mono_of_nonneg (.of_forall fun _ ↦ sq_nonneg _) hξ (hf.mono fun x hx ↦ by
+    simp only [norm_smul, mul_pow]
+    exact mul_le_of_le_one_left (sq_nonneg _) (pow_le_one₀ (norm_nonneg _) hx))
 
 namespace MeasureTheory
 

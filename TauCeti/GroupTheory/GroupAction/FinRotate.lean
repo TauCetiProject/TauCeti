@@ -7,7 +7,12 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Jordan
 public import Mathlib.GroupTheory.Perm.Fin
+public import Mathlib.Algebra.Group.Action.Pointwise.Finset
+public import Mathlib.Data.Nat.Prime.Defs
+import Mathlib.GroupTheory.SpecificGroups.Cyclic
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 import TauCeti.GroupTheory.Perm.MultipleTransitivity
+import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!
@@ -17,13 +22,17 @@ A permutation subgroup containing cyclic rotation acts transitively on the finit
 This gives a transitivity criterion for groups specified by generators, including the empty
 and singleton ordinals. Conversely, a permutation generating a transitive group is conjugate to
 cyclic rotation (`TauCeti.isPretransitive_zpowers_iff_isConj_finRotate`).
+
+For prime `l`, rotation acts freely on the nonempty proper subsets of `Fin l`, so
+`j ↦ finRotate l ^ j • S` enumerates the orbit of such a subset `S` exactly once
+(`TauCeti.finRotateOrbitEquiv`).
 -/
 
 public section
 
 namespace TauCeti
 
-open Equiv Equiv.Perm MulAction
+open Equiv Equiv.Perm _root_.MulAction
 
 /-- A permutation subgroup containing cyclic rotation acts transitively. -/
 theorem isPretransitive_of_finRotate_mem {n : ℕ}
@@ -56,5 +65,36 @@ theorem isPretransitive_zpowers_iff_isConj_finRotate {n : ℕ} {σ : Perm (Fin n
     rw [← MulAut.conj_apply, ← MulEquiv.coe_toMonoidHom, ← MonoidHom.map_zpowers,
       conj_eq_permCongrHom, isPretransitive_map_permCongrHom_iff]
     exact isPretransitive_of_finRotate_mem (Subgroup.mem_zpowers _)
+
+section Orbit
+
+open scoped Pointwise
+
+/-- **Rotation enumerates the orbit of a nonempty proper subset.** For prime `l` and a nonempty
+finset `S ≠ univ` of `Fin l`, `j ↦ finRotate l ^ j • S` is a bijection from `Fin l` onto the orbit
+of `S` under the powers of `finRotate l` (`TauCeti.finRotateOrbitEquiv_apply`). -/
+noncomputable def finRotateOrbitEquiv {l : ℕ} (hl : l.Prime) {S : Finset (Fin l)}
+    (hne : S.Nonempty) (hS : S ≠ Finset.univ) :
+    Fin l ≃ orbit (Subgroup.zpowers (finRotate l)) S :=
+  have hord : orderOf (finRotate l) = l := orderOf_finRotate hl.ne_zero
+  have := isPretransitive_of_finRotate_mem (Subgroup.mem_zpowers (finRotate l))
+  -- The powers of `finRotate l` form a group of prime order, which acts freely on `S`.
+  have hbot : stabilizer (Subgroup.zpowers (finRotate l)) S = ⊥ :=
+    stabilizer_finset_eq_bot_of_prime_card_of_isPretransitive
+      (by rwa [Nat.card_zpowers, hord]) hne hS
+  (finCongr hord.symm).trans <|
+    (finEquivZPowers (orderOf_pos_iff.mp (hord.symm ▸ hl.pos))).trans <|
+      QuotientGroup.quotientBot.symm.toEquiv.trans <|
+        (Subgroup.quotientEquivOfEq hbot.symm).trans (orbitEquivQuotientStabilizer _ S).symm
+
+@[simp]
+theorem finRotateOrbitEquiv_apply {l : ℕ} (hl : l.Prime) {S : Finset (Fin l)}
+    (hne : S.Nonempty) (hS : S ≠ Finset.univ) (j : Fin l) :
+    (finRotateOrbitEquiv hl hne hS j : Finset (Fin l)) = (finRotate l ^ (j : ℕ)) • S := by
+  rw [finRotateOrbitEquiv, Equiv.trans_apply, Equiv.trans_apply, Equiv.trans_apply,
+    Equiv.trans_apply, finEquivZPowers_apply]
+  exact (orbitEquivQuotientStabilizer_symm_apply _ S _).symm
+
+end Orbit
 
 end TauCeti

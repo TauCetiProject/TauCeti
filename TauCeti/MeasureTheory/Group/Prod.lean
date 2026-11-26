@@ -12,7 +12,11 @@ import TauCeti.MeasureTheory.Constructions.Baire.Haar
 import TauCeti.MeasureTheory.Group.ModularCharacter
 
 /-!
-# Product strong measurability on σ-compact locally compact Hausdorff groups
+# Product measures on groups: skew translations and strong measurability
+
+On a product `G × H` of right invariant s-finite measures, a skew translation
+`(x, y) ↦ (x * a, y * g x)` with measurable `g` preserves the product measure, since it translates
+the base and each fibre.
 
 On a locally compact Hausdorff group `G` that is not assumed second countable, `borel (G × G)` can
 be strictly larger than the product σ-algebra `borel G × borel G`, so `G` need not satisfy
@@ -35,6 +39,9 @@ product measures without `MeasurableMul₂ G`.
 * `MeasureTheory.AEStronglyMeasurable.comp_continuous_prod_of_sigmaCompact`: product
   `AEStronglyMeasurable` for `f ∘ Φ` along continuous slicewise quasi-measure-preserving maps into a
   σ-compact locally compact Hausdorff group.
+* `TauCeti.measurePreserving_skew_mul_right`: for right invariant s-finite measures,
+  `(x, y) ↦ (x * a, y * g x)` preserves the product measure for measurable `g`; its additive form
+  is `TauCeti.measurePreserving_skew_add_right`.
 * `MeasureTheory.AEStronglyMeasurable.comp_inv_mul_prod`,
   `MeasureTheory.AEStronglyMeasurable.comp_inv_mul_swap_prod`,
   `MeasureTheory.AEStronglyMeasurable.comp_mul_prod`, and
@@ -119,3 +126,24 @@ theorem AEStronglyMeasurable.comp_mul_swap_prod {ν : Measure G} {f : G → β}
     (.of_forall fun x => Measure.quasiMeasurePreserving_mul_right_of_regular μ x)
 
 end MeasureTheory
+
+open MeasureTheory
+
+namespace TauCeti
+
+/-- On a product of right invariant s-finite measures, the skew translation
+`(x, y) ↦ (x * a, y * g x)` preserves the product measure for every measurable `g`: it translates
+the base and each fibre. -/
+@[to_additive /-- On a product of right invariant s-finite measures, the skew translation
+`(x, y) ↦ (x + a, y + g x)` preserves the product measure for every measurable `g`: it translates
+the base and each fibre. -/]
+theorem measurePreserving_skew_mul_right {G H : Type*} [MeasurableSpace G] [Mul G]
+    [MeasurableMul G] [MeasurableSpace H] [Mul H] [MeasurableMul₂ H] (μ : Measure G)
+    (ν : Measure H) [SFinite μ] [SFinite ν] [μ.IsMulRightInvariant] [ν.IsMulRightInvariant]
+    (a : G) {g : G → H} (hg : Measurable g) :
+    MeasurePreserving (fun p : G × H ↦ (p.1 * a, p.2 * g p.1)) (μ.prod ν) (μ.prod ν) :=
+  (measurePreserving_mul_right μ a).skew_product (g := fun x y ↦ y * g x)
+    (measurable_snd.mul (hg.comp measurable_fst))
+    (Filter.Eventually.of_forall fun x ↦ (measurePreserving_mul_right ν (g x)).map_eq)
+
+end TauCeti

@@ -14,7 +14,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 public import TauCeti.Algebra.BigOperators.Finset.Fiber
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Analysis.Asymptotics.Lemmas
@@ -87,6 +87,10 @@ Borel measurable structure on the scalar field.
   (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
 * `EuclideanSpace.finCastLEEquiv`: the first `m` coordinates of `𝕜ⁿ`, indexed by `Fin m`, as the
   first factor of the splitting along `j < m`.
+* `OrthonormalBasis.singleton_repr_symm`: the inverse coordinate equivalence of
+  `OrthonormalBasis.singleton` evaluates at `default`.
+* `EuclideanSpace.finrank_subtype_val_lt` and `EuclideanSpace.finrank_subtype_not_val_lt`: the two
+  factors of the splitting of `𝕜ⁿ` along `j < m` have dimensions `m` and `n - m`.
 * `TauCeti.euclideanLinearEquivHom 𝕜 ι`: a unitary transformation of `EuclideanSpace 𝕜 ι` as a
   linear automorphism of `ι → 𝕜`.
 * `LinearEquiv.toEuclideanIsometry`: a linear automorphism of `ι → 𝕜` preserving the Euclidean
@@ -104,6 +108,16 @@ public section
 noncomputable section
 
 open scoped BigOperators
+
+/-- The inverse coordinate equivalence of `OrthonormalBasis.singleton` reads the unique coordinate
+of `EuclideanSpace 𝕜 ι`. -/
+@[simp]
+theorem OrthonormalBasis.singleton_repr_symm {ι 𝕜 : Type*} [Unique ι] [RCLike 𝕜]
+    (v : EuclideanSpace 𝕜 ι) :
+    (OrthonormalBasis.singleton ι 𝕜).repr.symm v = v default := by
+  have h := OrthonormalBasis.singleton_repr (ι := ι) (𝕜 := 𝕜)
+    ((OrthonormalBasis.singleton ι 𝕜).repr.symm v) default
+  rwa [(OrthonormalBasis.singleton ι 𝕜).repr.apply_symm_apply, eq_comm] at h
 
 namespace EuclideanSpace
 
@@ -309,6 +323,14 @@ omit [Fintype ι] in
 theorem surjective_proj (i : ι) : Function.Surjective (EuclideanSpace.proj (𝕜 := 𝕜) i) := by
   classical
   exact fun r ↦ ⟨EuclideanSpace.single i r, by simp⟩
+
+/-- The coordinates of the standard basis of Euclidean space are the identity: the inverse of its
+coordinate map fixes every vector. -/
+@[simp]
+theorem basisFun_repr_symm_apply (x : EuclideanSpace 𝕜 ι) : (basisFun ι 𝕜).repr.symm x = x := by
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext i
+  exact (basisFun_repr ι 𝕜 x i).symm
 
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
@@ -633,6 +655,20 @@ theorem adjoint_piLpExtendByZero_castLEEmb_apply (hm : m ≤ n) (x : EuclideanSp
     ← finCastLEEquiv_symm_fst_sumComplEquivProd, LinearIsometryEquiv.inner_map_eq_flip,
     LinearIsometryEquiv.symm_symm, inner_fst_sumComplEquivProd,
     sumComplEquivProd_symm_finCastLEEquiv]
+
+variable (𝕜) in
+/-- The first factor of the splitting of `𝕜ⁿ` along `j < m`, for `m ≤ n`, has dimension `m`. -/
+theorem finrank_subtype_val_lt (hm : m ≤ n) :
+    Module.finrank 𝕜 (EuclideanSpace 𝕜 {j : Fin n // j.val < m}) = m :=
+  (finCastLEEquiv 𝕜 hm).toLinearEquiv.finrank_eq.symm.trans finrank_euclideanSpace_fin
+
+variable (𝕜) in
+/-- The second factor of the splitting of `𝕜ⁿ` along `j < m`, for `m ≤ n`, has dimension
+`n - m`. -/
+theorem finrank_subtype_not_val_lt (hm : m ≤ n) :
+    Module.finrank 𝕜 (EuclideanSpace 𝕜 {j : Fin n // ¬ j.val < m}) = n - m := by
+  rw [finrank_euclideanSpace, Fintype.card_subtype_compl, Fintype.card_fin,
+    ← finrank_euclideanSpace (𝕜 := 𝕜), finrank_subtype_val_lt 𝕜 hm]
 
 end finCastLE
 

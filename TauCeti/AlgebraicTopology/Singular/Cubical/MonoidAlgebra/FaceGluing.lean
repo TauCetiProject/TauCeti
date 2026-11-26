@@ -63,6 +63,15 @@ The same argument applies to continuation chain systems
 `(-1) ^ (ind x - indQ w - 1)` on the second kind; the twisting chain systems of the two ends are
 fixed and represent their own classes.
 
+It applies as well to parametrized chain systems
+(`TauCeti.ParametrizedChainSystem.exists_isRepresenting_of_faces`), which join two continuation
+chain systems. The boundary of a space `H x y` of trajectories of a one-parameter family of
+homotopies has, besides the faces `M x z × H z y` and `H x w × M' w y`, the two ends `N₀ x y` and
+`N₁ x y`, the spaces of continuation trajectories of the homotopies at the two ends of the family.
+The parametrized sum is the sum of their face chains, with the sign `-1` on the end `N₀ x y` and
+the signs `(-1) ^ (ind x - ind z)` and `(-1) ^ (ind x - indQ w)` on the two kinds of faces; the
+twisting and continuation chain systems are fixed and represent their own classes.
+
 ## Main results
 
 * `TauCeti.isRepresentingCycle_of_forall_isCubicalRepresentative`: a cycle of `A` which, modulo
@@ -76,6 +85,8 @@ fixed and represent their own classes.
   product of the classes of the two factors.
 * `TauCeti.ContinuationChainSystem.exists_isRepresenting_of_faces`: the same for continuation
   chain systems between two representing twisting chain systems.
+* `TauCeti.ParametrizedChainSystem.exists_isRepresenting_of_faces`: the same for parametrized
+  chain systems between two representing continuation chain systems.
 
 ## References
 
@@ -84,7 +95,8 @@ fixed and represent their own classes.
   spaces.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Morse homology with differential graded
   coefficients*, Progress in Mathematics 360, Birkhäuser, 2025, Chapter 5, the twisting
-  cocycle, and Chapter 6, the continuation morphisms between twisting cocycles.
+  cocycle, and Chapter 6, the continuation morphisms between twisting cocycles and the homotopies
+  between them.
 -/
 
 public section
@@ -377,7 +389,7 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces
   -- The face chains: the signed cross products of the representatives, carried to `A x y`.
   let c (z : T) : NormalizedCubicalChain (A x y) k (ind x - ind y - 2).toNat :=
     (ind x - ind z.val).negOnePow •
-      map k (g z) _ (cast k (hpq z) (crossProduct _ _ k _ _ (a z) (b z)))
+      NormalizedCubicalChain.map k (g z) _ (cast k (hpq z) (crossProduct _ _ k _ _ (a z) (b z)))
   -- The twisting sum is the sum of the face chains, pushed forward from the boundary.
   have hsum := twistingChainSum_eq_sum_face hs (fun z ↦ hιA x z.val y z.prop.1 z.prop.2) a ha b
     hb hpq
@@ -627,5 +639,375 @@ theorem ContinuationChainSystem.exists_isRepresenting_of_faces (hS : S.IsReprese
         (hface' x w.val y w.prop.1 w.prop.2 a ha)
 
 end Continuation
+
+section Parametrized
+
+variable {Q : Type*} [Fintype Q] {indQ : Q → ℤ} {M' : Q → Q → TopCat.{u}}
+  {N₀ N₁ H : P → Q → TopCat.{u}} {ι' : ∀ x y z, C(M' x y × M' y z, M' x z)}
+  {κ₀ : ∀ x y z, C(M x y × N₀ y z, N₀ x z)} {κ₀' : ∀ x y z, C(N₀ x y × M' y z, N₀ x z)}
+  {κ₁ : ∀ x y z, C(M x y × N₁ y z, N₁ x z)} {κ₁' : ∀ x y z, C(N₁ x y × M' y z, N₁ x z)}
+  {κH : ∀ x y z, C(M x y × H y z, H x z)} {κH' : ∀ x y z, C(H x y × M' y z, H x z)}
+  {j₀ : ∀ x y, C(N₀ x y, H x y)} {j₁ : ∀ x y, C(N₁ x y, H x y)}
+  {S : TwistingChainSystem ind ι k} {S' : TwistingChainSystem indQ ι' k}
+  {T₀ : ContinuationChainSystem κ₀ κ₀' S S'} {T₁ : ContinuationChainSystem κ₁ κ₁' S S'}
+  {A' : ∀ x y, Set (M' x y)} {B₀ : ∀ x y, Set (N₀ x y)} {B₁ : ∀ x y, Set (N₁ x y)}
+  {C : ∀ x y, Set (H x y)}
+  {μ' : ∀ x y, ((TopPair.ofSubset (A' x y)).cubicalChainComplex k).homology
+    (indQ x - indQ y - 1).toNat}
+  {ν₀ : ∀ x y, ((TopPair.ofSubset (B₀ x y)).cubicalChainComplex k).homology (ind x - indQ y).toNat}
+  {ν₁ : ∀ x y, ((TopPair.ofSubset (B₁ x y)).cubicalChainComplex k).homology (ind x - indQ y).toNat}
+  {θ : ∀ x y, ((TopPair.ofSubset (C x y)).cubicalChainComplex k).homology
+    (ind x - indQ y + 1).toNat}
+
+/-- An end chain represents the local class prescribed on its face: if `a` represents the class
+`μ₁` of the pair `(X₁, A₁)` and the map `g` carries `A₁` off the point `z`, then the push-forward
+of `a` along `g` represents the image of `μ₁` in the local homology at `z`. -/
+private theorem isCubicalRepresentative_map {X₁ : TopCat.{u}} {A₁ : Set X₁} {Z : Type u}
+    [TopologicalSpace Z] {n : ℕ} {a : NormalizedCubicalChain X₁ k n}
+    {μ₁ : ((TopPair.ofSubset A₁).cubicalChainComplex k).homology n}
+    (ha : (TopPair.ofSubset A₁).IsCubicalRepresentative k a μ₁) (g : C(X₁, Z)) {z : Z}
+    (hg : Set.MapsTo (TopCat.ofHom (X := X₁) g) A₁ ({z}ᶜ : Set Z)) :
+    (TopPair.ofSubset (X := TopCat.of Z) {z}ᶜ).IsCubicalRepresentative k (map k g n a)
+      ((HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
+        (TopPair.ofSubsetMap _ hg)) n).hom μ₁) := by
+  obtain ⟨r, hr, hcl⟩ :=
+    (TopPair.isCubicalRepresentative_iff _ _).1 (ha.map (TopPair.ofSubsetMap _ hg))
+  rw [TopPair.ofSubsetMap_fst] at hr
+  exact (TopPair.isCubicalRepresentative_iff _ _).2 ⟨r, hr, hcl⟩
+
+/-- The push-forward along `f` of the homogeneous chain `a` is its push-forward through any
+subspace `B` containing the image of `f`. -/
+private theorem cubicalChainSumMap_lof_eq_subtypeVal {X₁ Z : Type*} [TopologicalSpace X₁]
+    [TopologicalSpace Z] (f : C(X₁, Z)) (B : Set Z) (hf : ∀ p, f p ∈ B) {n : ℕ}
+    (a : NormalizedCubicalChain X₁ k n) :
+    cubicalChainSumMap k f (cubicalChainLof _ k _ a) = cubicalChainLof Z k n
+      (map k (ContinuousMap.subtypeVal B) n (map k (f.codRestrict B hf) n a)) := by
+  rw [cubicalChainSumMap_lof, ← LinearMap.comp_apply (map k (ContinuousMap.subtypeVal B) n),
+    ← map_comp, ContinuousMap.subtypeVal_comp_codRestrict]
+
+/-- The parametrized sum of `(x, y)` of chains `h`, with representatives `e₀` of `ν₀ x y` and `e₁`
+of `ν₁ x y` on the two ends, `a z` of `s x z` and `b z` of `h z y` on the left faces, and `a' w` of
+`h x w` and `b' w` of `s' w y` on the right faces, is the push-forward from the boundary `C x y` of
+the sum over the faces of the end chains, with the sign `-1` on the end `j₀`, and of the signed
+cross products `a z × b z` and `a' w × b' w`, carried to `C x y` by the face maps. -/
+private theorem parametrizedChainSum_eq_sum_face
+    {h : ∀ x y, normalizedCubicalChainAlgebra (H x y) k}
+    (hh : ∀ x y, h x y ∈ cubicalChainGrading (H x y) k (indQ y - ind x - 1)) {x : P} {y : Q}
+    (hj₀C : ∀ p, j₀ x y p ∈ C x y) (hj₁C : ∀ p, j₁ x y p ∈ C x y)
+    (hκHC : ∀ z : {z // indQ y ≤ ind z + 1 ∧ ind z < ind x}, ∀ p, κH x z.val y p ∈ C x y)
+    (hκH'C : ∀ w : {w // indQ y < indQ w ∧ indQ w ≤ ind x + 1}, ∀ p, κH' x w.val y p ∈ C x y)
+    {n : ℕ} (e₀ : NormalizedCubicalChain (N₀ x y) k n)
+    (he₀ : cubicalChainLof _ k _ e₀ = T₀.chain x y) (e₁ : NormalizedCubicalChain (N₁ x y) k n)
+    (he₁ : cubicalChainLof _ k _ e₁ = T₁.chain x y)
+    (a : ∀ z : {z // indQ y ≤ ind z + 1 ∧ ind z < ind x},
+      NormalizedCubicalChain (M x z.val) k (ind x - ind z.val - 1).toNat)
+    (ha : ∀ z, cubicalChainLof _ k _ (a z) = S.chain x z.val)
+    (b : ∀ z : {z // indQ y ≤ ind z + 1 ∧ ind z < ind x},
+      NormalizedCubicalChain (H z.val y) k (ind z.val - indQ y + 1).toNat)
+    (hb : ∀ z, cubicalChainLof _ k _ (b z) = h z.val y)
+    (a' : ∀ w : {w // indQ y < indQ w ∧ indQ w ≤ ind x + 1},
+      NormalizedCubicalChain (H x w.val) k (ind x - indQ w.val + 1).toNat)
+    (ha' : ∀ w, cubicalChainLof _ k _ (a' w) = h x w.val)
+    (b' : ∀ w : {w // indQ y < indQ w ∧ indQ w ≤ ind x + 1},
+      NormalizedCubicalChain (M' w.val y) k (indQ w.val - indQ y - 1).toNat)
+    (hb' : ∀ w, cubicalChainLof _ k _ (b' w) = S'.chain w.val y)
+    (hpq : ∀ z : {z // indQ y ≤ ind z + 1 ∧ ind z < ind x},
+      (ind x - ind z.val - 1).toNat + (ind z.val - indQ y + 1).toNat = n)
+    (hpq' : ∀ w : {w // indQ y < indQ w ∧ indQ w ≤ ind x + 1},
+      (ind x - indQ w.val + 1).toNat + (indQ w.val - indQ y - 1).toNat = n) :
+    parametrizedChainSum ind indQ κH κH' j₀ j₁ k S.chain S'.chain T₀.chain T₁.chain h x y =
+      cubicalChainLof (H x y) k n (map k (ContinuousMap.subtypeVal (C x y)) n
+        (map k ((j₁ x y).codRestrict (C x y) hj₁C) n e₁ -
+            map k ((j₀ x y).codRestrict (C x y) hj₀C) n e₀ +
+          ∑ z, (ind x - ind z.val).negOnePow •
+            map k ((κH x z.val y).codRestrict (C x y) (hκHC z)) n
+              (cast k (hpq z) (crossProduct _ _ k _ _ (a z) (b z))) +
+          ∑ w, (ind x - indQ w.val).negOnePow •
+            map k ((κH' x w.val y).codRestrict (C x y) (hκH'C w)) n
+              (cast k (hpq' w) (crossProduct _ _ k _ _ (a' w) (b' w))))) := by
+  rw [parametrizedChainSum_eq_sum_subtype S.mem_graded S'.mem_graded hh, ← he₀, ← he₁,
+    cubicalChainSumMap_lof_eq_subtypeVal _ _ hj₀C, cubicalChainSumMap_lof_eq_subtypeVal _ _ hj₁C]
+  simp only [map_add, map_sub, map_sum, map_zsmul_unit]
+  refine congrArg₂ (· + ·) (congrArg₂ (· + ·) rfl (Finset.sum_congr rfl fun z _ ↦ ?_))
+    (Finset.sum_congr rfl fun w _ ↦ ?_)
+  · rw [← ha z, ← hb z, cubicalChainSumPairing_lof_lof_eq_subtypeVal _ _ (hκHC z) (hpq z)]
+  · rw [← ha' w, ← hb' w, cubicalChainSumPairing_lof_lof_eq_subtypeVal _ _ (hκH'C w) (hpq' w)]
+
+/-- **Representing parametrized chain systems from a face-by-face condition.** Let `S` and `S'`
+be twisting chain systems representing classes `μ x y` of `H_{ind x - ind y - 1}(M x y, A x y)` and
+`μ' x y` of `H_{indQ x - indQ y - 1}(M' x y, A' x y)`, let `T₀` and `T₁` be continuation chain
+systems from `S` to `S'` representing classes `ν₀ x y` of `H_{ind x - indQ y}(N₀ x y, B₀ x y)` and
+`ν₁ x y` of `H_{ind x - indQ y}(N₁ x y, B₁ x y)`, and let `θ x y` be classes of
+`H_{ind x - indQ y + 1}(H x y, C x y)`. Suppose that:
+
+* each boundary `C x y` is a compact Hausdorff space charted on a finite-dimensional real normed
+  space `E x y`, of dimension `ind x - indQ y` whenever `indQ y ≤ ind x`, so that `C x y` is then a
+  closed topological manifold of that dimension;
+* the composition maps `κH x z y : M x z × H z y → H x y` and `κH' x w y : H x w × M' w y → H x y`
+  are associative, the inclusions `j₀ x y : N₀ x y → H x y` and `j₁ x y : N₁ x y → H x y` of the two
+  ends are compatible with the composition maps, and for `indQ y ≤ ind x` the ends, the left faces
+  with `indQ y ≤ ind z + 1` and `ind z < ind x`, and the right faces with `indQ y < indQ w` and
+  `indQ w ≤ ind x + 1` land in `C x y`;
+* the sets `V₀ x y`, `V₁ x y`, `U x z y` and `U' x w y`, the interiors of the two ends and of the
+  left and right faces, are together dense in `C x y`, each face misses the interior of every
+  other face, and each face map carries the boundary of its source (`B₀ x y`, `B₁ x y`,
+  `A x z × H z y ∪ M x z × C z y` or `C x w × M' w y ∪ H x w × A' w y`) off the interior of its
+  face;
+* at each point `a` of the interior of a face, the image of the class of the face in the local
+  homology `H(C x y, C x y ∖ {a})` is a signed image of the boundary `∂ θ x y ∈ H(C x y)`: with
+  the sign `-1` for `ν₀ x y` on the end `j₀`, `+1` for `ν₁ x y` on the end `j₁`,
+  `(-1) ^ (ind x - ind z)` for the cross product of `μ x z` and `θ z y` on a left face, and
+  `(-1) ^ (ind x - indQ w)` for the cross product of `θ x w` and `μ' w y` on a right face.
+
+Then some parametrized chain system between `T₀` and `T₁` represents the classes `θ`. For the
+fundamental classes rel boundary of the compactified spaces of trajectories of a one-parameter
+family of homotopies, the last condition compares the boundary orientation of each face with its
+product orientation; no condition is imposed at the corners (BDHO, Chapter 6, the homotopies
+between continuation morphisms). -/
+theorem ParametrizedChainSystem.exists_isRepresenting_of_faces (hS : S.IsRepresenting A μ)
+    (hS' : S'.IsRepresenting A' μ') (hT₀ : T₀.IsRepresenting B₀ ν₀)
+    (hT₁ : T₁.IsRepresenting B₁ ν₁)
+    {E : P → Q → Type u} [∀ x y, NormedAddCommGroup (E x y)] [∀ x y, NormedSpace ℝ (E x y)]
+    [∀ x y, FiniteDimensional ℝ (E x y)] [∀ x y, T2Space (C x y)] [∀ x y, CompactSpace (C x y)]
+    [∀ x y, ChartedSpace (E x y) (C x y)]
+    (hE : ∀ x y, indQ y ≤ ind x → Module.finrank ℝ (E x y) = (ind x - indQ y).toNat)
+    (hκH : ∀ x w z y (a : M x w) (b : M w z) (c : H z y),
+      κH x z y (ι x w z (a, b), c) = κH x w y (a, κH w z y (b, c)))
+    (hκHκH' : ∀ x w z y (a : M x w) (b : H w z) (c : M' z y),
+      κH' x z y (κH x w z (a, b), c) = κH x w y (a, κH' w z y (b, c)))
+    (hκH' : ∀ x w z y (a : H x w) (b : M' w z) (c : M' z y),
+      κH' x z y (κH' x w z (a, b), c) = κH' x w y (a, ι' w z y (b, c)))
+    (hj₀κ : ∀ x z y (u : M x z) (v : N₀ z y), j₀ x y (κ₀ x z y (u, v)) = κH x z y (u, j₀ z y v))
+    (hj₀κ' : ∀ x z y (u : N₀ x z) (v : M' z y),
+      j₀ x y (κ₀' x z y (u, v)) = κH' x z y (j₀ x z u, v))
+    (hj₁κ : ∀ x z y (u : M x z) (v : N₁ z y), j₁ x y (κ₁ x z y (u, v)) = κH x z y (u, j₁ z y v))
+    (hj₁κ' : ∀ x z y (u : N₁ x z) (v : M' z y),
+      j₁ x y (κ₁' x z y (u, v)) = κH' x z y (j₁ x z u, v))
+    (hj₀C : ∀ x y, indQ y ≤ ind x → ∀ p, j₀ x y p ∈ C x y)
+    (hj₁C : ∀ x y, indQ y ≤ ind x → ∀ p, j₁ x y p ∈ C x y)
+    (hκHC : ∀ x z y, indQ y ≤ ind z + 1 → ind z < ind x → ∀ p, κH x z y p ∈ C x y)
+    (hκH'C : ∀ x w y, indQ y < indQ w → indQ w ≤ ind x + 1 → ∀ p, κH' x w y p ∈ C x y)
+    (V₀ V₁ : ∀ x y, Set (H x y)) (U : ∀ x, P → ∀ y, Set (H x y))
+    (U' : ∀ x, Q → ∀ y, Set (H x y))
+    (hU : ∀ x y, indQ y ≤ ind x → Dense {a : C x y |
+      (a : H x y) ∈ V₀ x y ∨ (a : H x y) ∈ V₁ x y ∨
+        (∃ z, indQ y ≤ ind z + 1 ∧ ind z < ind x ∧ (a : H x y) ∈ U x z y) ∨
+          ∃ w, indQ y < indQ w ∧ indQ w ≤ ind x + 1 ∧ (a : H x y) ∈ U' x w y})
+    (hV₀j₁ : ∀ x y, indQ y ≤ ind x → Disjoint (Set.range (j₁ x y)) (V₀ x y))
+    (hV₀κH : ∀ x z y, indQ y ≤ ind z + 1 → ind z < ind x →
+      Disjoint (Set.range (κH x z y)) (V₀ x y))
+    (hV₀κH' : ∀ x w y, indQ y < indQ w → indQ w ≤ ind x + 1 →
+      Disjoint (Set.range (κH' x w y)) (V₀ x y))
+    (hV₁j₀ : ∀ x y, indQ y ≤ ind x → Disjoint (Set.range (j₀ x y)) (V₁ x y))
+    (hV₁κH : ∀ x z y, indQ y ≤ ind z + 1 → ind z < ind x →
+      Disjoint (Set.range (κH x z y)) (V₁ x y))
+    (hV₁κH' : ∀ x w y, indQ y < indQ w → indQ w ≤ ind x + 1 →
+      Disjoint (Set.range (κH' x w y)) (V₁ x y))
+    (hUj₀ : ∀ x z y, indQ y ≤ ind x → Disjoint (Set.range (j₀ x y)) (U x z y))
+    (hUj₁ : ∀ x z y, indQ y ≤ ind x → Disjoint (Set.range (j₁ x y)) (U x z y))
+    (hUκH : ∀ x z z' y, indQ y ≤ ind z' + 1 → ind z' < ind x → z' ≠ z →
+      Disjoint (Set.range (κH x z' y)) (U x z y))
+    (hUκH' : ∀ x z w y, indQ y < indQ w → indQ w ≤ ind x + 1 →
+      Disjoint (Set.range (κH' x w y)) (U x z y))
+    (hU'j₀ : ∀ x w y, indQ y ≤ ind x → Disjoint (Set.range (j₀ x y)) (U' x w y))
+    (hU'j₁ : ∀ x w y, indQ y ≤ ind x → Disjoint (Set.range (j₁ x y)) (U' x w y))
+    (hU'κH : ∀ x w z y, indQ y ≤ ind z + 1 → ind z < ind x →
+      Disjoint (Set.range (κH x z y)) (U' x w y))
+    (hU'κH' : ∀ x w w' y, indQ y < indQ w' → indQ w' ≤ ind x + 1 → w' ≠ w →
+      Disjoint (Set.range (κH' x w' y)) (U' x w y))
+    (hV₀B : ∀ x y (hxy : indQ y ≤ ind x),
+      Set.MapsTo (TopCat.ofHom (X := N₀ x y) ((j₀ x y).codRestrict (C x y) (hj₀C x y hxy)))
+        (B₀ x y) (Subtype.val ⁻¹' V₀ x y)ᶜ)
+    (hV₁B : ∀ x y (hxy : indQ y ≤ ind x),
+      Set.MapsTo (TopCat.ofHom (X := N₁ x y) ((j₁ x y).codRestrict (C x y) (hj₁C x y hxy)))
+        (B₁ x y) (Subtype.val ⁻¹' V₁ x y)ᶜ)
+    (hUC : ∀ x z y (hyz : indQ y ≤ ind z + 1) (hzx : ind z < ind x),
+      Set.MapsTo (TopCat.ofHom
+          (X := ↑((TopPair.ofSubset (A x z)).fst ⊗ (TopPair.ofSubset (C z y)).fst))
+          ((κH x z y).codRestrict (C x y) (hκHC x z y hyz hzx)))
+        ((TopPair.ofSubset (A x z)).prodSubspace (TopPair.ofSubset (C z y)))
+        (Subtype.val ⁻¹' U x z y)ᶜ)
+    (hU'C : ∀ x w y (hyw : indQ y < indQ w) (hwx : indQ w ≤ ind x + 1),
+      Set.MapsTo (TopCat.ofHom
+          (X := ↑((TopPair.ofSubset (C x w)).fst ⊗ (TopPair.ofSubset (A' w y)).fst))
+          ((κH' x w y).codRestrict (C x y) (hκH'C x w y hyw hwx)))
+        ((TopPair.ofSubset (C x w)).prodSubspace (TopPair.ofSubset (A' w y)))
+        (Subtype.val ⁻¹' U' x w y)ᶜ)
+    (hface₀ : ∀ x y (hxy : indQ y ≤ ind x) (a : C x y) (ha : (a : H x y) ∈ V₀ x y),
+      (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
+          (TopPair.ofSubsetMap _ ((hV₀B x y hxy).mono_right
+            (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 ha)))))
+          (ind x - indQ y).toNat).hom (ν₀ x y) =
+        -(HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
+          (TopPair.ofSubset ({a}ᶜ : Set (C x y))).map)) (ind x - indQ y).toNat).hom
+          (((TopPair.ofSubset (C x y)).cubicalHomologyδ k (ind x - indQ y + 1).toNat
+            (ind x - indQ y).toNat (by omega)).hom (θ x y)))
+    (hface₁ : ∀ x y (hxy : indQ y ≤ ind x) (a : C x y) (ha : (a : H x y) ∈ V₁ x y),
+      (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
+          (TopPair.ofSubsetMap _ ((hV₁B x y hxy).mono_right
+            (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 ha)))))
+          (ind x - indQ y).toNat).hom (ν₁ x y) =
+        (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
+          (TopPair.ofSubset ({a}ᶜ : Set (C x y))).map)) (ind x - indQ y).toNat).hom
+          (((TopPair.ofSubset (C x y)).cubicalHomologyδ k (ind x - indQ y + 1).toNat
+            (ind x - indQ y).toNat (by omega)).hom (θ x y)))
+    (hface : ∀ x z y (hyz : indQ y ≤ ind z + 1) (hzx : ind z < ind x) (a : C x y)
+      (ha : (a : H x y) ∈ U x z y),
+      (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
+          (TopPair.ofSubsetMap _ ((hUC x z y hyz hzx).mono_right
+            (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 ha)))))
+          (ind x - indQ y).toNat).hom
+        ((HomologicalComplex.homologyMap
+          ((TopPair.ofSubset (A x z)).cubicalChainComplexProdComparison k
+            (TopPair.ofSubset (C z y))) (ind x - indQ y).toNat).hom
+          ((GradedObject.Monoidal.ιTensorObj _ _ _ _ _ (by omega) ≫
+            cubicalHomologyKunnethPair k _ _ _).hom (μ x z ⊗ₜ θ z y))) =
+        (ind x - ind z).negOnePow •
+          (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
+            (TopPair.ofSubset ({a}ᶜ : Set (C x y))).map)) (ind x - indQ y).toNat).hom
+            (((TopPair.ofSubset (C x y)).cubicalHomologyδ k (ind x - indQ y + 1).toNat
+            (ind x - indQ y).toNat (by omega)).hom (θ x y)))
+    (hface' : ∀ x w y (hyw : indQ y < indQ w) (hwx : indQ w ≤ ind x + 1) (a : C x y)
+      (ha : (a : H x y) ∈ U' x w y),
+      (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
+          (TopPair.ofSubsetMap _ ((hU'C x w y hyw hwx).mono_right
+            (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 ha)))))
+          (ind x - indQ y).toNat).hom
+        ((HomologicalComplex.homologyMap
+          ((TopPair.ofSubset (C x w)).cubicalChainComplexProdComparison k
+            (TopPair.ofSubset (A' w y))) (ind x - indQ y).toNat).hom
+          ((GradedObject.Monoidal.ιTensorObj _ _ _ _ _ (by omega) ≫
+            cubicalHomologyKunnethPair k _ _ _).hom (θ x w ⊗ₜ μ' w y))) =
+        (ind x - indQ w).negOnePow •
+          (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
+            (TopPair.ofSubset ({a}ᶜ : Set (C x y))).map)) (ind x - indQ y).toNat).hom
+            (((TopPair.ofSubset (C x y)).cubicalHomologyδ k (ind x - indQ y + 1).toNat
+            (ind x - indQ y).toNat (by omega)).hom (θ x y))) :
+    ∃ η : ParametrizedChainSystem κH κH' j₀ j₁ T₀ T₁, η.IsRepresenting C θ := by
+  refine ParametrizedChainSystem.exists_isRepresenting κH κH' j₀ j₁ T₀ T₁
+    fun h x y m hm hh hd ↦ ?_
+  obtain rfl : m = (ind x - indQ y).toNat := by omega
+  have hxy : indQ y ≤ ind x := by omega
+  -- Besides the two ends, the left faces of `C x y` are indexed by the `z ∈ P` with
+  -- `indQ y ≤ ind z + 1` and `ind z < ind x`, the right faces by the `w ∈ Q` with
+  -- `indQ y < indQ w ≤ ind x + 1`.
+  let T := {z : P // indQ y ≤ ind z + 1 ∧ ind z < ind x}
+  let T' := {w : Q // indQ y < indQ w ∧ indQ w ≤ ind x + 1}
+  have hpq (z : T) : (ind x - ind z.val - 1).toNat + (ind z.val - indQ y + 1).toNat =
+      (ind x - indQ y).toNat := by omega
+  have hpq' (w : T') : (ind x - indQ w.val + 1).toNat + (indQ w.val - indQ y - 1).toNat =
+      (ind x - indQ y).toNat := by omega
+  -- Relative cycles representing the classes of the two ends and of the two factors of each face.
+  obtain ⟨e₀, he₀, hre₀⟩ :=
+    (isRepresentingChain_iff _ _).1 ((T₀.isRepresenting_iff ν₀).1 hT₀ x y hxy)
+  obtain ⟨e₁, he₁, hre₁⟩ :=
+    (isRepresentingChain_iff _ _).1 ((T₁.isRepresenting_iff ν₁).1 hT₁ x y hxy)
+  choose a ha hra using fun z : T ↦
+    (isRepresentingChain_iff _ _).1 ((S.isRepresenting_iff μ).1 hS x z.val z.prop.2)
+  choose b hb hrb using fun z : T ↦
+    (isRepresentingChain_iff _ _).1 ((hd z.val y (by omega)).2 z.prop.1)
+  choose a' ha' hra' using fun w : T' ↦
+    (isRepresentingChain_iff _ _).1 ((hd x w.val (by omega)).2 w.prop.2)
+  choose b' hb' hrb' using fun w : T' ↦
+    (isRepresentingChain_iff _ _).1 ((S'.isRepresenting_iff μ').1 hS' w.val y w.prop.1)
+  -- The face maps into `C x y`.
+  let g₀ : C(N₀ x y, C x y) := (j₀ x y).codRestrict (C x y) (hj₀C x y hxy)
+  let g₁ : C(N₁ x y, C x y) := (j₁ x y).codRestrict (C x y) (hj₁C x y hxy)
+  let g (z : T) : C(M x z.val × H z.val y, C x y) :=
+    (κH x z.val y).codRestrict (C x y) (hκHC x z.val y z.prop.1 z.prop.2)
+  let g' (w : T') : C(H x w.val × M' w.val y, C x y) :=
+    (κH' x w.val y).codRestrict (C x y) (hκH'C x w.val y w.prop.1 w.prop.2)
+  have hg₀ : Set.range g₀ ⊆ Subtype.val ⁻¹' Set.range (j₀ x y) :=
+    Set.range_subset_iff.2 fun p ↦ ⟨p, (ContinuousMap.coe_codRestrict_apply _ _ _ _).symm⟩
+  have hg₁ : Set.range g₁ ⊆ Subtype.val ⁻¹' Set.range (j₁ x y) :=
+    Set.range_subset_iff.2 fun p ↦ ⟨p, (ContinuousMap.coe_codRestrict_apply _ _ _ _).symm⟩
+  have hgκ (z : T) : Set.range (g z) ⊆ Subtype.val ⁻¹' Set.range (κH x z.val y) :=
+    Set.range_subset_iff.2 fun p ↦ ⟨p, (ContinuousMap.coe_codRestrict_apply _ _ _ _).symm⟩
+  have hgκ' (w : T') : Set.range (g' w) ⊆ Subtype.val ⁻¹' Set.range (κH' x w.val y) :=
+    Set.range_subset_iff.2 fun p ↦ ⟨p, (ContinuousMap.coe_codRestrict_apply _ _ _ _).symm⟩
+  -- The face chains: the end chains, with the sign `-1` on the end `j₀`, and the signed cross
+  -- products of the representatives, carried to `C x y`.
+  let c : Bool ⊕ (T ⊕ T') → NormalizedCubicalChain (C x y) k (ind x - indQ y).toNat :=
+    Sum.elim (fun i ↦ cond i (map k g₁ _ e₁) ((-1 : ℤ) • map k g₀ _ e₀))
+      (Sum.elim
+        (fun z ↦ (ind x - ind z.val).negOnePow •
+          map k (g z) _ (cast k (hpq z) (crossProduct _ _ k _ _ (a z) (b z))))
+        fun w ↦ (ind x - indQ w.val).negOnePow •
+          map k (g' w) _ (cast k (hpq' w) (crossProduct _ _ k _ _ (a' w) (b' w))))
+  -- The parametrized sum is the sum of the face chains, pushed forward from the boundary.
+  have hsum : parametrizedChainSum ind indQ κH κH' j₀ j₁ k S.chain S'.chain T₀.chain T₁.chain h
+      x y =
+        cubicalChainLof (H x y) k _ (map k (ContinuousMap.subtypeVal (C x y)) _ (∑ i, c i)) := by
+    rw [parametrizedChainSum_eq_sum_face hh (hj₀C x y hxy) (hj₁C x y hxy)
+      (fun z ↦ hκHC x z.val y z.prop.1 z.prop.2) (fun w ↦ hκH'C x w.val y w.prop.1 w.prop.2) e₀
+      he₀ e₁ he₁ a ha b hb a' ha' b' hb' hpq hpq', Fintype.sum_sum_type, Fintype.sum_bool,
+      Fintype.sum_sum_type]
+    simp only [c, Sum.elim_inl, Sum.elim_inr, Bool.cond_true, Bool.cond_false, neg_one_zsmul,
+      sub_eq_add_neg, add_assoc]
+    -- The two sides differ only by the local definitions of the face maps.
+    rfl
+  rw [hsum]
+  refine isRepresentingCycle_map_sum (hE x y hxy) c ?_
+    (F := Sum.elim (fun i ↦ cond i (Set.range g₁) (Set.range g₀))
+      (Sum.elim (fun z ↦ (Set.range (g z) : Set (C x y))) fun w ↦ Set.range (g' w)))
+    (U := Sum.elim (fun i ↦ cond i (Subtype.val ⁻¹' V₁ x y) (Subtype.val ⁻¹' V₀ x y))
+      (Sum.elim (fun z ↦ (Subtype.val ⁻¹' U x z.val y : Set (C x y)))
+        fun w ↦ Subtype.val ⁻¹' U' x w.val y)) (fun i ↦ ?_) (fun i i' hi ↦ ?_)
+    (Dense.mono ?_ (hU x y hxy)) (fun i a ha ↦ ?_)
+  · -- The sum of the face chains, pushed forward to `H x y`, is the parametrized sum, a cycle.
+    rw [← hsum]
+    exact cubicalChainDifferential_parametrizedChainSum j₀ j₁ T₀ T₁ hh (hκH x · · y)
+      (hκHκH' x · · y) (hκH' x · · y) (hj₀κ x · y) (hj₀κ' x · y) (hj₁κ x · y) (hj₁κ' x · y)
+      (fun z _ _ ↦ (hd z y (by omega)).1) fun w _ _ ↦ (hd x w (by omega)).1
+  · rcases i with (_ | _) | z | w
+    · exact zsmul_mem (map_mem_supportedIn_range k g₀ _) _
+    · exact map_mem_supportedIn_range k g₁ _
+    · simp only [c, Sum.elim_inr, Sum.elim_inl, Units.smul_def]
+      exact zsmul_mem (map_mem_supportedIn_range k (g z) _) _
+    · simp only [c, Sum.elim_inr, Units.smul_def]
+      exact zsmul_mem (map_mem_supportedIn_range k (g' w) _) _
+  · -- The face of `i'` misses the interior of the face of `i`.
+    rcases i with (_ | _) | z | w <;> rcases i' with (_ | _) | z' | w'
+    · exact absurd rfl hi
+    · exact ((hV₀j₁ x y hxy).preimage _).mono_left hg₁
+    · exact ((hV₀κH x z'.val y z'.prop.1 z'.prop.2).preimage _).mono_left (hgκ z')
+    · exact ((hV₀κH' x w'.val y w'.prop.1 w'.prop.2).preimage _).mono_left (hgκ' w')
+    · exact ((hV₁j₀ x y hxy).preimage _).mono_left hg₀
+    · exact absurd rfl hi
+    · exact ((hV₁κH x z'.val y z'.prop.1 z'.prop.2).preimage _).mono_left (hgκ z')
+    · exact ((hV₁κH' x w'.val y w'.prop.1 w'.prop.2).preimage _).mono_left (hgκ' w')
+    · exact ((hUj₀ x z.val y hxy).preimage _).mono_left hg₀
+    · exact ((hUj₁ x z.val y hxy).preimage _).mono_left hg₁
+    · exact ((hUκH x z.val z'.val y z'.prop.1 z'.prop.2 fun h ↦ hi (congrArg (Sum.inr ∘ Sum.inl)
+        (Subtype.ext h))).preimage _).mono_left (hgκ z')
+    · exact ((hUκH' x z.val w'.val y w'.prop.1 w'.prop.2).preimage _).mono_left (hgκ' w')
+    · exact ((hU'j₀ x w.val y hxy).preimage _).mono_left hg₀
+    · exact ((hU'j₁ x w.val y hxy).preimage _).mono_left hg₁
+    · exact ((hU'κH x w.val z'.val y z'.prop.1 z'.prop.2).preimage _).mono_left (hgκ z')
+    · exact ((hU'κH' x w.val w'.val y w'.prop.1 w'.prop.2 fun h ↦ hi
+        (congrArg (Sum.inr ∘ Sum.inr) (Subtype.ext h))).preimage _).mono_left (hgκ' w')
+  · rintro a (ha | ha | ⟨z, hyz, hzx, ha⟩ | ⟨w, hyw, hwx, ha⟩)
+    · exact Set.mem_iUnion.2 ⟨Sum.inl false, ha⟩
+    · exact Set.mem_iUnion.2 ⟨Sum.inl true, ha⟩
+    · exact Set.mem_iUnion.2 ⟨Sum.inr (Sum.inl ⟨z, hyz, hzx⟩), ha⟩
+    · exact Set.mem_iUnion.2 ⟨Sum.inr (Sum.inr ⟨w, hyw, hwx⟩), ha⟩
+  · rcases i with (_ | _) | z | w
+    · -- On the end `j₀` the sign of the face chain cancels the sign of the face condition. The
+      -- helper types the pair of `{a}ᶜ` through `TopCat.of`, which unfolds to the pair in
+      -- `hface₀`.
+      have h := (isCubicalRepresentative_map hre₀ g₀ ((hV₀B x y hxy).mono_right
+        (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 ha)))).zsmul (-1)
+      rwa [hface₀ x y hxy a ha, neg_one_zsmul, neg_neg] at h
+    · have h := isCubicalRepresentative_map hre₁ g₁ ((hV₁B x y hxy).mono_right
+        (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 ha)))
+      rwa [hface₁ x y hxy a ha] at h
+    · -- On a face, the sign of the face chain cancels the sign of the face condition. As on the
+      -- ends, the helper's pair of `{a}ᶜ` unfolds to the pair in `hface`.
+      exact isCubicalRepresentative_zsmul_map_crossProduct (hpq z) (hra z) (hrb z) (g z) _ _
+        (hface x z.val y z.prop.1 z.prop.2 a ha)
+    · exact isCubicalRepresentative_zsmul_map_crossProduct (hpq' w) (hra' w) (hrb' w) (g' w) _ _
+        (hface' x w.val y w.prop.1 w.prop.2 a ha)
+
+end Parametrized
 
 end TauCeti

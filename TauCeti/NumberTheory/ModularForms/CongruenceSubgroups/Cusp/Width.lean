@@ -86,6 +86,17 @@ theorem natCast_dvd_cuspWidthGamma0_mul_sq (N : ℕ) (γ : SL(2, ℤ)) :
     (Nat.gcd_dvd_right N ((γ 1 0).natAbs ^ 2))
   rwa [Nat.div_mul_cancel (Nat.gcd_dvd_left _ _)] at h
 
+/-- For a divisor `δ` of the level, the width `w` of the cusp `γ ∞ = a / c` of `Γ₀(N)` times
+`gcd(δ, c)²` is a multiple of `δ`. So `w gcd(δ, c)² / δ` is an integer, and `e(gcd(δ, c)² τ / δ)`
+is an integral power of the local parameter `e(τ / w)` of the cusp. -/
+theorem dvd_cuspWidthGamma0_mul_gcd_sq {N δ : ℕ} (hδ : δ ∣ N) (γ : SL(2, ℤ)) :
+    δ ∣ cuspWidthGamma0 N γ * Nat.gcd δ (γ 1 0).natAbs ^ 2 := by
+  have h₁ : δ ∣ cuspWidthGamma0 N γ * (γ 1 0).natAbs ^ 2 :=
+    hδ.trans (by simpa [Int.natAbs_mul, Int.natAbs_pow] using
+      Int.natAbs_dvd_natAbs.mpr (natCast_dvd_cuspWidthGamma0_mul_sq N γ))
+  have h₂ : δ ∣ cuspWidthGamma0 N γ * δ ^ 2 := (dvd_pow_self δ two_ne_zero).mul_left _
+  simpa [Nat.gcd_mul_left, Nat.pow_gcd_pow, Nat.gcd_comm] using Nat.dvd_gcd h₁ h₂
+
 /-- At level `0` every cusp has width `0`. -/
 @[simp]
 theorem cuspWidthGamma0_zero (γ : SL(2, ℤ)) : cuspWidthGamma0 0 γ = 0 := by

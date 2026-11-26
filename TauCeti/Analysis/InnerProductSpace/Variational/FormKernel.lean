@@ -9,7 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair
 public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace
 public import TauCeti.Analysis.InnerProductSpace.Variational.EnergySpace
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
-import TauCeti.Analysis.Variational.QuadraticEnergy
+import TauCeti.Analysis.RCLike.SesquilinearForm
 
 /-!
 # The kernel-orthogonal Poincaré connector of a compact form pair
@@ -28,6 +28,17 @@ is coercive on the kernel-orthogonal part: there is `δ > 0` with `δ ‖j u‖�
 the constrained sphere of `(j N)ᗮ`. This gives the solvability of the weak equation
 `a(u, v) = ℓ(v)` for all `v`: it has a solution if and only if `ℓ` vanishes on `N`, and solutions
 are unique modulo `N` (`TauCeti.CompactFormPair.exists_forall_form_apply_eq_iff`).
+
+The minimum `q(u₀)` of a nonnegative energy on the constrained sphere of `(j N)ᗮ` is the
+**spectral gap** above the kernel: it is the least positive variational eigenvalue
+(`TauCeti.CompactFormPair.isLeast_setOf_formEigenspace_ne_bot_of_isMinOn`), the minimizers are
+eigenvectors (`TauCeti.CompactFormPair.mem_formEigenspace_of_isMinOn`), and the eigenvectors of
+`q(u₀)` are exactly the `u` with `j u ⊥ j N` and `q(u) = q(u₀) ‖j u‖²`
+(`TauCeti.CompactFormPair.mem_formEigenspace_iff_of_isMinOn`). A minimizer satisfies the
+Euler–Lagrange equation `a(u₀, v) = q(u₀) ⟪j u₀, j v⟫` for the kernel-orthogonal `v`
+(`TauCeti.CompactFormPair.form_apply_eq_mul_inner_of_isMinOn`), and for `v ∈ N` both sides vanish.
+For the Neumann Laplacian on a connected domain, `N` consists of the constants and the gap is the
+second Neumann eigenvalue.
 
 ## Main results
 
@@ -49,6 +60,12 @@ are unique modulo `N` (`TauCeti.CompactFormPair.exists_forall_form_apply_eq_iff`
 * `TauCeti.CompactFormPair.exists_forall_form_apply_eq_iff` and
   `sub_mem_formKernel_of_forall_form_apply_eq`: the annihilator criterion for the weak equation and
   uniqueness modulo `N`.
+* `TauCeti.CompactFormPair.isLeast_setOf_formEigenspace_ne_bot_of_isMinOn`,
+  `mem_formEigenspace_of_isMinOn` and `mem_formEigenspace_iff_of_isMinOn`: the least positive
+  variational eigenvalue is the minimum of the energy on the constrained sphere of `(j N)ᗮ`, and its
+  eigenvectors are the Rayleigh minimizers there.
+* `TauCeti.CompactFormPair.unitConstraint_orthogonal_nonempty`: that sphere is nonempty when `V` is
+  infinite dimensional.
 
 ## References
 
@@ -93,9 +110,10 @@ theorem energy_eq_zero_of_mem_formKernel (hn : n ∈ P.formKernel) : P.energy n 
 /-- For a nonnegative energy the form kernel is the zero set of the energy. -/
 theorem mem_formKernel_iff_energy_eq_zero (hq : ∀ w, 0 ≤ P.energy w) :
     u ∈ P.formKernel ↔ P.energy u = 0 := by
-  rw [formKernel, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, energy_def,
-    ContinuousLinearMap.re_apply_self_eq_zero_iff P.hermitian
-      (fun w ↦ by simpa only [energy_def] using hq w)]
+  rw [mem_formKernel, energy_def]
+  simpa using P.form.toLinearMap₁₂.forall_apply_eq_zero_iff_re_apply_self_eq_zero
+    (fun x y ↦ by simpa using P.hermitian x y)
+    (fun w ↦ by simpa [energy_def] using hq w)
 
 /-- The form kernel is the variational eigenspace at `λ = 0`. -/
 @[simp]
@@ -282,6 +300,97 @@ theorem exists_forall_form_apply_eq_iff [CompleteSpace V] (hq : ∀ w, 0 ≤ P.e
     Submodule.mem_sup.1 (P.isCompl_formKernel.sup_eq_top.ge (Submodule.mem_top (x := v)))
   rw [map_add, map_add, form_apply_eq_zero_of_mem_formKernel hn, hℓ n hn, zero_add, zero_add]
   exact hu' ⟨w, hw⟩
+
+/-! ### The spectral gap above the form kernel -/
+
+variable {P} {u₀ : V} {lam : ℝ}
+
+/-- An eigenvector of a nonzero variational eigenvalue is kernel-orthogonal: `j u ⊥ j N`. -/
+theorem inclusion_mem_orthogonal_of_mem_formEigenspace (hlam : lam ≠ 0)
+    (hu : u ∈ P.formEigenspace lam) : P.inclusion u ∈ P.formKernelImageᗮ := by
+  rw [Submodule.mem_orthogonal]
+  intro x hx
+  obtain ⟨n, hn, rfl⟩ := mem_formKernelImage.1 hx
+  exact inner_inclusion_eq_zero_of_mem_formEigenspace hlam.symm (P.formEigenspace_zero ▸ hn) hu
+
+/-- **A minimizer on the constrained sphere of `(j N)ᗮ` is an eigenvector.** A minimizer `u₀` of
+the energy on the constrained sphere of `(j N)ᗮ` satisfies `a(u₀, v) = q(u₀) ⟪j u₀, j v⟫` for every
+`v`, not only for the kernel-orthogonal ones: both sides vanish on the form kernel. -/
+theorem mem_formEigenspace_of_isMinOn (hu₀ : u₀ ∈ P.unitConstraint P.formKernelImageᗮ)
+    (hmin : IsMinOn P.energy (P.unitConstraint P.formKernelImageᗮ) u₀) :
+    u₀ ∈ P.formEigenspace (P.energy u₀) := by
+  refine mem_formEigenspace.2 fun v ↦ ?_
+  obtain ⟨n, hn, k, hk, rfl⟩ :=
+    Submodule.mem_sup.1 (P.isCompl_formKernel.sup_eq_top.ge (Submodule.mem_top (x := v)))
+  have h2 : inner 𝕜 (P.inclusion u₀) (P.inclusion n) = 0 :=
+    Submodule.inner_left_of_mem_orthogonal (inclusion_mem_formKernelImage hn)
+      (mem_unitConstraint.1 hu₀).1
+  simp [inner_add_right, form_apply_eq_zero_of_mem_formKernel hn, h2,
+    form_apply_eq_mul_inner_of_isMinOn hu₀ hmin (mem_kernelOrthogonal.1 hk)]
+
+/-- A minimizer `u₀` of the energy on the constrained sphere of `(j N)ᗮ` lies below every nonzero
+variational eigenvalue. -/
+theorem le_of_formEigenspace_ne_bot_of_isMinOn
+    (hmin : IsMinOn P.energy (P.unitConstraint P.formKernelImageᗮ) u₀) (hlam : lam ≠ 0)
+    (hne : P.formEigenspace lam ≠ ⊥) : P.energy u₀ ≤ lam := by
+  obtain ⟨u, hu, h1⟩ := exists_mem_formEigenspace_norm_inclusion_eq_one hne
+  have h := hmin (mem_unitConstraint.2 ⟨inclusion_mem_orthogonal_of_mem_formEigenspace hlam hu, h1⟩)
+  simpa [energy_eq_of_mem_formEigenspace hu, h1] using h
+
+/-- **The least positive eigenvalue.** For a nonnegative energy, the minimum `q(u₀)` of the energy
+on the constrained sphere of `(j N)ᗮ` is the least positive variational eigenvalue. Together with
+`TauCeti.CompactFormPair.isLeast_rayleigh_of_isMinOn`, it is the least Rayleigh quotient
+`q(u) / ‖j u‖²` over the `u` with `j u ⊥ j N` and `j u ≠ 0`. -/
+theorem isLeast_setOf_formEigenspace_ne_bot_of_isMinOn (hq : ∀ w, 0 ≤ P.energy w)
+    (hu₀ : u₀ ∈ P.unitConstraint P.formKernelImageᗮ)
+    (hmin : IsMinOn P.energy (P.unitConstraint P.formKernelImageᗮ) u₀) :
+    IsLeast {lam | 0 < lam ∧ P.formEigenspace lam ≠ ⊥} (P.energy u₀) := by
+  refine ⟨⟨energy_pos_of_mem_unitConstraint_orthogonal hq hu₀, fun h ↦ ?_⟩,
+    fun lam hlam ↦ le_of_formEigenspace_ne_bot_of_isMinOn hmin hlam.1.ne' hlam.2⟩
+  have h0 : u₀ = 0 := (Submodule.eq_bot_iff _).1 h u₀ (mem_formEigenspace_of_isMinOn hu₀ hmin)
+  simpa [h0] using (mem_unitConstraint.1 hu₀).2
+
+/-- **The eigenvectors of the least positive eigenvalue are the Rayleigh minimizers.** For a
+nonnegative energy and a minimizer `u₀` of the energy on the constrained sphere of `(j N)ᗮ`, a
+vector `u` is an eigenvector of `q(u₀)` exactly when `j u ⊥ j N` and `q(u) = q(u₀) ‖j u‖²`, that
+is, when `u = 0` or `u` attains the least Rayleigh quotient over the kernel-orthogonal part. -/
+theorem mem_formEigenspace_iff_of_isMinOn (hq : ∀ w, 0 ≤ P.energy w)
+    (hu₀ : u₀ ∈ P.unitConstraint P.formKernelImageᗮ)
+    (hmin : IsMinOn P.energy (P.unitConstraint P.formKernelImageᗮ) u₀) :
+    u ∈ P.formEigenspace (P.energy u₀) ↔
+      P.inclusion u ∈ P.formKernelImageᗮ ∧ P.energy u = P.energy u₀ * ‖P.inclusion u‖ ^ 2 := by
+  have hpos := energy_pos_of_mem_unitConstraint_orthogonal hq hu₀
+  refine ⟨fun hu ↦ ⟨inclusion_mem_orthogonal_of_mem_formEigenspace hpos.ne' hu,
+    energy_eq_of_mem_formEigenspace hu⟩, fun ⟨hW, hE⟩ ↦ ?_⟩
+  by_cases hu0 : P.inclusion u = 0
+  · rw [P.injective (hu0.trans (map_zero _).symm)]
+    exact zero_mem _
+  -- The normalization `w = ‖j u‖⁻¹ u` lies on the sphere and has energy `q(u₀)`, so it is a
+  -- minimizer, hence an eigenvector, and so is `u = ‖j u‖ w`.
+  set w := ((‖P.inclusion u‖⁻¹ : ℝ) : 𝕜) • u
+  have hw := inv_norm_smul_mem_unitConstraint hW hu0
+  have hEw : P.energy w = P.energy u₀ := by
+    have hn : ‖P.inclusion u‖ ≠ 0 := norm_ne_zero_iff.2 hu0
+    rw [energy_smul, RCLike.norm_ofReal, abs_inv, abs_norm, hE, inv_pow]
+    field_simp
+  have hminw : IsMinOn P.energy (P.unitConstraint P.formKernelImageᗮ) w :=
+    fun x hx ↦ hEw ▸ hmin hx
+  have hmem := Submodule.smul_mem _ (‖P.inclusion u‖ : 𝕜)
+    (hEw ▸ mem_formEigenspace_of_isMinOn hw hminw)
+  rwa [smul_smul, ← RCLike.ofReal_mul, mul_inv_cancel₀ (norm_ne_zero_iff.2 hu0),
+    RCLike.ofReal_one, one_smul] at hmem
+
+/-- If the form domain `V` is infinite dimensional, the constrained sphere of `(j N)ᗮ` is nonempty:
+otherwise the kernel-orthogonal part would be zero and `V = N` finite dimensional. -/
+theorem unitConstraint_orthogonal_nonempty (hV : ¬FiniteDimensional 𝕜 V) :
+    (P.unitConstraint P.formKernelImageᗮ).Nonempty := by
+  rw [unitConstraint_nonempty_iff]
+  by_contra! h
+  have hbot : P.kernelOrthogonal = ⊥ := (Submodule.eq_bot_iff _).2 fun u hu ↦
+    P.injective ((h u (mem_kernelOrthogonal.1 hu)).trans (map_zero _).symm)
+  have htop : P.formKernel = ⊤ := eq_top_of_isCompl_bot (hbot ▸ P.isCompl_formKernel)
+  have : FiniteDimensional 𝕜 (⊤ : Submodule 𝕜 V) := htop ▸ inferInstance
+  exact hV (Module.Finite.equiv (Submodule.topEquiv (R := 𝕜) (M := V)))
 
 end CompactFormPair
 

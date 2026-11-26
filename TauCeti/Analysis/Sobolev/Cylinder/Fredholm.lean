@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Sobolev.Cylinder
 # Fredholm property of first-order operators on the cylinder along families
 
 Let `D ξ = M (ξ, ∂s ξ, ∂t ξ)` be a first-order operator on the cylinder `ℝ × S¹` with an essentially
-bounded coefficient field `M`, realized as `TauCeti.jetOperator stripMeasure M` on the Sobolev
+bounded coefficient field `M`, realized as `TauCeti.jetOperator 2 stripMeasure M` on the Sobolev
 space `W^{1,2}(ℝ × S¹, V)` with values in `L²(ℝ × S¹, W)`. Peetre's argument turns the
 semi-Fredholm estimate (`TauCeti.CylinderSobolev.HasSemiFredholmEstimate`) into finite-dimensional
 kernel and closed range, but not into a finite-dimensional cokernel. This file shows that the
@@ -62,10 +62,10 @@ theorem isFredholm_and_index_eq_of_hasSemiFredholmEstimate [FiniteDimensional �
     (hM : ∀ x ∈ s, MemLp (M x) ∞ stripMeasure)
     (hcont : ∀ x ∈ s, Tendsto (fun y ↦ eLpNorm (M y - M x) ∞ stripMeasure) (𝓝[s] x) (𝓝 0))
     (hest : ∀ x ∈ s, ∃ C T, HasSemiFredholmEstimate (M x) C T) {x₀ x : X} (hx₀ : x₀ ∈ s)
-    (hx : x ∈ s) (h₀ : ((jetOperator stripMeasure (M x₀)).comp (H1 V).subtypeL).IsFredholm) :
-    ((jetOperator stripMeasure (M x)).comp (H1 V).subtypeL).IsFredholm ∧
-      ((jetOperator stripMeasure (M x)).comp (H1 V).subtypeL).index =
-        ((jetOperator stripMeasure (M x₀)).comp (H1 V).subtypeL).index :=
+    (hx : x ∈ s) (h₀ : ((jetOperator 2 stripMeasure (M x₀)).comp (H1 V).subtypeL).IsFredholm) :
+    ((jetOperator 2 stripMeasure (M x)).comp (H1 V).subtypeL).IsFredholm ∧
+      ((jetOperator 2 stripMeasure (M x)).comp (H1 V).subtypeL).index =
+        ((jetOperator 2 stripMeasure (M x₀)).comp (H1 V).subtypeL).index :=
   isFredholm_and_index_eq_of_isPreconnected hs hM hcont
     (fun z hz ↦ (hest z hz).elim fun _ ⟨_, h⟩ ↦
       finiteDimensional_ker_jetOperator_comp_subtypeL (hM z hz) h)

@@ -11,6 +11,8 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.ODE.ExistUnique
 import TauCeti.Analysis.Normed.Algebra.Basic
 import TauCeti.Geometry.Lie.Exponential.Trotter
+import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
+import TauCeti.Analysis.Normed.Operator.InvariantSubmodule
 
 /-!
 # The adjoint action on the Lie-group exponential
@@ -47,9 +49,13 @@ the exponential of their sum is the product of their exponentials.
   left-invariant derivations, two derivations that bracket to zero generate one-parameter
   subgroups fixing each other under `Ad`, hence commuting, and the exponential of their sum is
   the product of their exponentials.
+* `TauCeti.Lie.Ad_lieExp_smul_apply_eq_self_iff`: the one-parameter subgroup of `X` fixes `Y`
+  under `Ad` exactly when `⁅X, Y⁆ = 0`.
 * `LeftInvariantDerivation.Ad_lieExp`: **the adjoint-exponential formula
   `Ad (lieExp X) = exp (ad X)`** as an identity of bounded operators on left-invariant
   derivations, and `LeftInvariantDerivation.Ad_lieExp_apply` its pointwise form.
+* `TauCeti.Lie.Ad_lieExp_mem_of_forall_lie_mem`: `Ad (lieExp X)` preserves every subspace that
+  `ad X` preserves.
 
 ## References
 
@@ -261,6 +267,16 @@ theorem Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero {X Y : LeftInvariantDerivati
   refine tangentAd_mulInvariantExp_smul_apply_eq_self_of_lie_eq_zero ?_ s
   rw [← LieEquiv.map_lie, h, map_zero]
 
+/-- **The one-parameter subgroup of `X` fixes `Y` under `Ad` exactly when `⁅X, Y⁆ = 0`.** -/
+theorem Ad_lieExp_smul_apply_eq_self_iff {X Y : LeftInvariantDerivation I G} :
+    (∀ s : ℝ, Ad (I := I) (lieExp (I := I) (s • X)) Y = Y) ↔ ⁅X, Y⁆ = 0 := by
+  refine ⟨fun h ↦ ?_, Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero⟩
+  -- The curve `s ↦ Ad (lieExp (s • X)) Y` has derivative `⁅X, Y⁆` at `0`; here it is constant.
+  have hderiv := hasDerivAt_Ad_lieExp_smul_apply_zero (I := I) X Y
+  rw [show (fun s : ℝ ↦ Ad (I := I) (lieExp (I := I) (s • X)) Y) = fun _ ↦ Y from funext h]
+    at hderiv
+  exact hderiv.unique (hasDerivAt_const 0 Y)
+
 /-- If `⁅X, Y⁆ = 0`, then `Ad (lieExp X) Y = Y`. -/
 theorem Ad_lieExp_apply_eq_self_of_lie_eq_zero {X Y : LeftInvariantDerivation I G}
     (h : ⁅X, Y⁆ = 0) : Ad (I := I) (lieExp (I := I) X) Y = Y := by
@@ -358,5 +374,26 @@ theorem _root_.LeftInvariantDerivation.Ad_lieExp_apply (X Y : LeftInvariantDeriv
       NormedSpace.exp (LinearMap.toContinuousLinearMap
         (LieAlgebra.ad ℝ (LeftInvariantDerivation I G) X)) Y :=
   DFunLike.congr_fun X.Ad_lieExp Y
+
+/-- **The adjoint action of an exponential preserves an `ad`-invariant subspace**: if `ad X`
+preserves `S`, then so does `Ad (lieExp X) = exp (ad X)`. -/
+theorem Ad_lieExp_mem_of_forall_lie_mem [T2Space G]
+    {S : Submodule ℝ (LeftInvariantDerivation I G)} {X : LeftInvariantDerivation I G}
+    (hX : ∀ Y ∈ S, ⁅X, Y⁆ ∈ S) {Y : LeftInvariantDerivation I G} (hY : Y ∈ S) :
+    Ad (I := I) (lieExp X) Y ∈ S := by
+  have _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  have _ : CompleteSpace (LeftInvariantDerivation I G) := FiniteDimensional.completeSpace ℝ _
+  let A := LinearMap.toContinuousLinearMap (LieAlgebra.ad ℝ (LeftInvariantDerivation I G) X)
+  have hA : S ∈ Module.End.invtSubmodule A.toLinearMap :=
+    (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun Z hZ => by
+      simpa only [A, ContinuousLinearMap.coe_coe, LinearMap.coe_toContinuousLinearMap',
+        LieAlgebra.ad_apply] using hX Z hZ
+  have h := (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).1
+    ((A.forall_exp_smul_mem_invtSubmodule_iff S.isClosed_of_finiteDimensional).mpr hA 1) Y hY
+  have hAd := LeftInvariantDerivation.Ad_lieExp_apply X Y
+  dsimp only at hAd
+  rw [hAd]
+  simpa only [one_smul, ContinuousLinearMap.coe_coe] using h
 
 end TauCeti.Lie

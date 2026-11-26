@@ -196,32 +196,33 @@ theorem IsContactDistribution.exists_isContactFormAt [IsManifold I (n + 1) M]
       (zero_lt_one.trans_le hn).ne') ?_).2 ⟨(hαD y hy).1, hD.bijective_distributionLeviForm y⟩
   exact eventually_of_mem (hU.mem_nhds hy) fun z hz ↦ (hαD z hz).2
 
+/-- **A smooth one-form defining a contact structure near a point is a contact form there.** If
+the kernel of a smooth one-form `α` is the `C^n` contact structure `D` near `x`, with `1 ≤ n`, then
+`α` is a contact form at `x`. -/
+theorem IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq
+    (hD : IsContactDistribution I n D) (hn : 1 ≤ n) {α : SmoothForm I M ℝ 1} {x : M}
+    (hαD : ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y) : IsContactFormAt α.val x := by
+  obtain ⟨V, hV, hxV, X, hX⟩ := isContMDiffDistribution_iff.1 hD.isContMDiffDistribution x
+  refine (RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
+    (hV.mem_nhds hxV) (α.mdifferentiableAt x)
+    (hαD.mono fun y hy ↦ (SmoothForm.kerDistribution_eq_ker α y).symm.trans hy)).2
+    ⟨?_, hD.bijective_distributionLeviForm x⟩
+  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD.self_of_nhds]
+  exact hD.ne_top x
+
 /-- **A contact structure is defined near each point by a global contact form there.** Every point
 `x` has an open neighbourhood `W` and a smooth one-form `α` on all of `M` such that, at every point
-of `W`, the kernel of `α` is the contact hyperplane and `α` is a contact form. The form is a local
-defining form cut off by a smooth bump function. -/
+of `W`, the kernel of `α` is the contact hyperplane and `α` is a contact form. -/
 theorem IsContactDistribution.exists_smoothForm_ker_eq_isContactFormAt [IsManifold I ∞ M]
     [T2Space M] (hD : IsContactDistribution I ∞ D) (x : M) :
     ∃ W : Set M, IsOpen W ∧ x ∈ W ∧ ∃ α : SmoothForm I M ℝ 1,
       ∀ y ∈ W, RoughForm.ker α.val y = D y ∧ IsContactFormAt α.val y := by
-  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  obtain ⟨U, hU, hxU, α, hα, hαξ⟩ := hD.exists_isContactFormAt (by simp) x
-  obtain ⟨f, -, hfU⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.1
-    (hU.mem_nhds hxU)
-  obtain ⟨V, hVf, hV, hxV⟩ := mem_nhds_iff.1 f.eventuallyEq_one
-  have hψ : IsSmoothForm I ∞ (fun y ↦ f y • α y : RoughForm I M ℝ 1) := by
-    rw [isSmoothForm_def]
-    exact f.contMDiff.contMDiffOn.smul_section_of_tsupport hU hfU hα
-  refine ⟨V ∩ U, hV.inter hU, ⟨hxV, hxU⟩, ⟨_, hψ.mem_smoothBundleForms⟩, fun y hy ↦ ?_⟩
-  -- On the open set `V`, where `f = 1`, the cut-off form is the local defining form.
-  have hev : ∀ᶠ z in 𝓝 y, f z • α z = α z := by
-    filter_upwards [hV.mem_nhds hy.1] with z hz
-    rw [show f z = 1 from hVf hz, one_smul]
-  have hval : f y • α y = α y := hev.self_of_nhds
-  refine ⟨?_, (isContactFormAt_congr hval fun v _ w _ ↦ ?_).2 (hαξ y hy.2).2⟩
-  · ext v
-    simp only [RoughForm.mem_ker, hval, ← (hαξ y hy.2).1]
-  · exact congrArg (fun A ↦ A ![v, w]) (mextDeriv_congr_of_eventuallyEq hev)
+  obtain ⟨W, hW, hxW, α, hα, hαD⟩ := hD.isContMDiffDistribution.exists_isSmoothForm_ker_eq
+    (hD.isContMDiffDistribution.finrank_eq x ▸ hD.finrank_add_one x) x
+  refine ⟨W, hW, hxW, ⟨α, hα.mem_smoothBundleForms⟩, fun y hy ↦ ⟨(hαD y hy).2, ?_⟩⟩
+  exact hD.isContactFormAt_of_eventually_kerDistribution_eq (by simp)
+    (eventually_of_mem (hW.mem_nhds hy) fun z hz ↦
+      (SmoothForm.kerDistribution_eq_ker _ z).trans (hαD z hz).2)
 
 /-- **Contact structures are the hyperplane fields locally defined by contact forms.** A `C^n`
 distribution `D` of rank `dim E - 1`, with `1 ≤ n`, is a contact structure exactly when near every
@@ -245,20 +246,6 @@ theorem isContactDistribution_iff_forall_exists_isContactFormAt [IsManifold I (n
     obtain ⟨V, hV, hxV, X, hX⟩ := isContMDiffDistribution_iff.1 hD x
     exact ((RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
       (hV.mem_nhds hxV) hαd hαD).1 hα).2
-
-/-- **A smooth one-form defining a contact structure near a point is a contact form there.** If
-the kernel of a smooth one-form `α` is the `C^n` contact structure `D` near `x`, with `1 ≤ n`, then
-`α` is a contact form at `x`. -/
-theorem IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq
-    (hD : IsContactDistribution I n D) (hn : 1 ≤ n) {α : SmoothForm I M ℝ 1} {x : M}
-    (hαD : ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y) : IsContactFormAt α.val x := by
-  obtain ⟨V, hV, hxV, X, hX⟩ := isContMDiffDistribution_iff.1 hD.isContMDiffDistribution x
-  refine (RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
-    (hV.mem_nhds hxV) (α.mdifferentiableAt x)
-    (hαD.mono fun y hy ↦ (SmoothForm.kerDistribution_eq_ker α y).symm.trans hy)).2
-    ⟨?_, hD.bijective_distributionLeviForm x⟩
-  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD.self_of_nhds]
-  exact hD.ne_top x
 
 /-! ### Kernels of contact forms -/
 

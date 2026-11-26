@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Subpath
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Category.TopPair.Quotient
+public import TauCeti.Topology.Homotopy.Quotient
 
 /-!
 # The reduced suspension
@@ -30,6 +31,10 @@ image of the collapsed locus. Write `[x, s]` for the image of `(x, s)`
   reduced suspension (`TauCeti.ReducedSuspension.lift`), uniquely
   (`TauCeti.ReducedSuspension.continuousMap_ext`). In particular a based map `f : X → Y` induces
   the based map `Σf : [x, s] ↦ [f x, s]` (`TauCeti.ReducedSuspension.map`), functorially.
+* A homotopy `F` of based maps relative to the basepoint suspends to the homotopy
+  `(t, [x, s]) ↦ [F (t, x), s]` relative to the basepoint
+  (`ContinuousMap.HomotopyRel.reducedSuspensionMap`), so pointed-homotopic maps have
+  pointed-homotopic suspensions (`ContinuousMap.HomotopicRel.reducedSuspensionMap`).
 * The identity is a homeomorphism onto the pointed quotient of the pair
   (`TauCeti.ReducedSuspension.homeomorphOrdinaryPairQuotient`), through which the results on
   pointed quotients of pairs apply to the reduced suspension.
@@ -88,6 +93,17 @@ omit [TopologicalSpace X] in
 theorem mem_reducedSuspensionLocus {p : X × I} :
     p ∈ reducedSuspensionLocus X x₀ ↔ p.1 = x₀ ∨ p.2 = 0 ∨ p.2 = 1 :=
   Iff.rfl
+
+omit [TopologicalSpace X] in
+/-- A map `f` sending `x₀` to `y₀`, applied to the first coordinate, carries the collapsed locus of
+the cylinder on `X` into the collapsed locus of the cylinder on `Y`. -/
+theorem map_fst_mem_reducedSuspensionLocus {Y : Type v} {y₀ : Y} {f : X → Y} (hf : f x₀ = y₀)
+    {p : X × I} (hp : p ∈ reducedSuspensionLocus X x₀) :
+    (f p.1, p.2) ∈ reducedSuspensionLocus Y y₀ := by
+  rcases hp with h | h | h
+  · exact Or.inl ((congrArg f h).trans hf)
+  · exact Or.inr (Or.inl h)
+  · exact Or.inr (Or.inr h)
 
 namespace ReducedSuspension
 
@@ -223,11 +239,8 @@ variable {Y : Type v} [TopologicalSpace Y] {y₀ : Y} {Z : Type w} [TopologicalS
 
 /-- The based map `Σf : ΣX → ΣY`, `[x, s] ↦ [f x, s]`, induced by a based map `f : X → Y`. -/
 def map (f : C(X, Y)) (hf : f x₀ = y₀) : C(ReducedSuspension X x₀, ReducedSuspension Y y₀) :=
-  lift (mk.comp (f.prodMap (.id I))) basepoint fun p hp ↦ mk_eq_basepoint <| by
-    rcases hp with h | h | h
-    · exact Or.inl ((congrArg f h).trans hf)
-    · exact Or.inr (Or.inl h)
-    · exact Or.inr (Or.inr h)
+  lift (mk.comp (f.prodMap (.id I))) basepoint fun _ hp ↦
+    mk_eq_basepoint (map_fst_mem_reducedSuspensionLocus hf hp)
 
 @[simp]
 theorem map_mk (f : C(X, Y)) (hf : f x₀ = y₀) (p : X × I) :
@@ -291,3 +304,53 @@ instance : PathConnectedSpace (ReducedSuspension X x₀) := by
 end ReducedSuspension
 
 end TauCeti
+
+namespace ContinuousMap
+
+open TauCeti TauCeti.ReducedSuspension
+
+variable {X : Type u} [TopologicalSpace X] {x₀ : X} {Y : Type v} [TopologicalSpace Y] {y₀ : Y}
+  {f₀ f₁ : C(X, Y)}
+
+/-- **The suspension of a pointed homotopy.** A homotopy `F` between based maps `f₀ f₁ : X → Y`
+relative to the basepoint `x₀` suspends to the homotopy `(t, [x, s]) ↦ [F (t, x), s]` between
+`Σf₀` and `Σf₁`, relative to the basepoint of `ΣX`. -/
+def HomotopyRel.reducedSuspensionMap (F : f₀.HomotopyRel f₁ {x₀}) (h₀ : f₀ x₀ = y₀)
+    (h₁ : f₁ x₀ = y₀) :
+    (map f₀ h₀).HomotopyRel (map f₁ h₁) {(basepoint : ReducedSuspension X x₀)} where
+  -- The homotopy `(t, (x, s)) ↦ [F (t, x), s]` of the cylinder is constant on the fibres of the
+  -- projection to `ΣX`, so it descends along that quotient map.
+  toHomotopy := isQuotientMap_mk.liftHomotopy (f₀ := (map f₀ h₀).comp ReducedSuspension.mk)
+    (f₁ := (map f₁ h₁).comp ReducedSuspension.mk)
+    { toFun q := ReducedSuspension.mk (F (q.1, q.2.1), q.2.2)
+      map_zero_left p := by simp
+      map_one_left p := by simp }
+    (fun t p q hpq ↦ by
+      obtain rfl | ⟨hp, hq⟩ := mk_eq_mk_iff.1 hpq
+      · rfl
+      · -- Both points are collapsed, and so are their images under `F` at time `t`.
+        have hFt : F (t, x₀) = y₀ := (F.eq_fst t rfl).trans h₀
+        exact (mk_eq_basepoint (map_fst_mem_reducedSuspensionLocus (f := F.curry t) hFt hp)).trans
+          (mk_eq_basepoint (map_fst_mem_reducedSuspensionLocus (f := F.curry t) hFt hq)).symm)
+    (fun _ ↦ rfl) (fun _ ↦ rfl)
+  prop' t z hz := by
+    -- The basepoint of `ΣX` is `[x₀, 0]`, where the descended homotopy is `[F (t, x₀), 0]`.
+    rw [Set.mem_singleton_iff.1 hz, map_basepoint, ← mk_basepoint (x₀ := x₀) 0]
+    exact (Topology.IsQuotientMap.liftHomotopy_apply _ _ _ _ _ t (x₀, 0)).trans (mk_zero _)
+
+@[simp]
+theorem HomotopyRel.reducedSuspensionMap_apply_mk (F : f₀.HomotopyRel f₁ {x₀}) (h₀ : f₀ x₀ = y₀)
+    (h₁ : f₁ x₀ = y₀) (t : I) (p : X × I) :
+    F.reducedSuspensionMap h₀ h₁ (t, ReducedSuspension.mk p) =
+      ReducedSuspension.mk (F (t, p.1), p.2) := by
+  rw [← HomotopyWith.coe_toHomotopy (F.reducedSuspensionMap h₀ h₁)]
+  exact Topology.IsQuotientMap.liftHomotopy_apply _ _ _ _ _ t p
+
+/-- **Pointed-homotopic maps have pointed-homotopic suspensions.** If the based maps
+`f₀ f₁ : X → Y` are homotopic relative to the basepoint, then so are `Σf₀` and `Σf₁`. -/
+theorem HomotopicRel.reducedSuspensionMap (h : f₀.HomotopicRel f₁ {x₀}) (h₀ : f₀ x₀ = y₀)
+    (h₁ : f₁ x₀ = y₀) :
+    (map f₀ h₀).HomotopicRel (map f₁ h₁) {(basepoint : ReducedSuspension X x₀)} :=
+  h.map fun F ↦ F.reducedSuspensionMap h₀ h₁
+
+end ContinuousMap
