@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # Logarithmic bounds for weighted tail integrals
@@ -24,8 +23,9 @@ public section
 
 open Filter MeasureTheory Set
 
-namespace Real
+namespace TauCeti
 
+open Real in
 /-- The logarithmic power majorant is integrable above any cutoff strictly greater than one. -/
 theorem integrableOn_Ioi_inv_mul_log_rpow {x b : ℝ} (hx : 1 < x) (hb : b < -1) :
     IntegrableOn (fun t : ℝ ↦ t⁻¹ * log t ^ b) (Ioi x) := by
@@ -34,6 +34,7 @@ theorem integrableOn_Ioi_inv_mul_log_rpow {x b : ℝ} (hx : 1 < x) (hb : b < -1)
   exact h.mp (by simpa [smul_eq_mul, ← mul_assoc, (exp_pos _).ne'] using
     integrableOn_Ioi_rpow_of_lt hb (log_pos hx))
 
+open Real in
 /-- The exact integral of a logarithmic power against `dt/t` above `x > 1`. -/
 theorem integral_Ioi_inv_mul_log_rpow {x b : ℝ} (hx : 1 < x) (hb : b < -1) :
     ∫ t in Ioi x, t⁻¹ * log t ^ b = -log x ^ (b + 1) / (b + 1) := by
@@ -41,10 +42,6 @@ theorem integral_Ioi_inv_mul_log_rpow {x b : ℝ} (hx : 1 < x) (hb : b < -1) :
   rw [exp_log (zero_lt_one.trans hx)] at h
   simpa [smul_eq_mul, ← mul_assoc, (exp_pos _).ne',
     integral_Ioi_rpow_of_lt hb (log_pos hx)] using h.symm
-
-end Real
-
-namespace TauCeti
 
 /-- The scalar majorant after applying the `t⁻²` weight to a summatory error. -/
 private theorem norm_inv_sq_smul_le_log_majorant {E : Type*}
@@ -67,7 +64,7 @@ theorem integrableOn_Ioi_inv_sq_smul_of_log_rpow {E : Type*}
     (hx : 1 < x) (hb : 0 < b) (hf : AEStronglyMeasurable f (volume.restrict (Ioi x)))
     (h : ∀ t ∈ Ioi x, ‖f t‖ ≤ C * t * (Real.log t) ^ (-b - 1)) :
     IntegrableOn (fun t ↦ (t ^ 2)⁻¹ • f t) (Ioi x) := by
-  have hg := (Real.integrableOn_Ioi_inv_mul_log_rpow hx (b := -b - 1) (by linarith)).const_mul C
+  have hg := (integrableOn_Ioi_inv_mul_log_rpow hx (b := -b - 1) (by linarith)).const_mul C
   refine hg.mono' ((by fun_prop : Measurable (fun t : ℝ ↦ (t ^ 2)⁻¹)).aestronglyMeasurable.smul hf)
     (ae_restrict_of_forall_mem measurableSet_Ioi fun t ht ↦ ?_)
   exact norm_inv_sq_smul_le_log_majorant (h t ht)
@@ -82,11 +79,11 @@ theorem norm_integral_Ioi_inv_sq_smul_le_of_log_rpow {E : Type*}
   have hb' : -b - 1 < -1 := by linarith
   calc
     _ ≤ ∫ t in Ioi x, C * (t⁻¹ * (Real.log t) ^ (-b - 1)) := by
-      have hg := (Real.integrableOn_Ioi_inv_mul_log_rpow hx hb').const_mul C
+      have hg := (integrableOn_Ioi_inv_mul_log_rpow hx hb').const_mul C
       exact norm_integral_le_of_norm_le hg (ae_restrict_of_forall_mem measurableSet_Ioi
         fun t ht ↦ norm_inv_sq_smul_le_log_majorant (h t ht))
     _ = _ := by
-      rw [integral_const_mul, Real.integral_Ioi_inv_mul_log_rpow hx hb', sub_add_cancel]
+      rw [integral_const_mul, integral_Ioi_inv_mul_log_rpow hx hb', sub_add_cancel]
       ring
 
 /-- A saving of `n + 2` logarithmic powers for the summatory error gives a saving of `n`
