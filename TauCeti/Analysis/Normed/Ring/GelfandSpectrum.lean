@@ -159,7 +159,7 @@ variable {A : Type*} [SeminormedCommRing A]
 
 private theorem normRingSeminorm_ne_zero_of_norm_one_ne_zero (h1 : ‖(1 : A)‖ ≠ 0) :
     normRingSeminorm A ≠ 0 :=
-  RingSeminorm.ne_zero_iff.2 ⟨1, by rwa [normRingSeminorm_apply]⟩
+  RingSeminorm.ne_zero_iff.2 ⟨1, h1⟩
 
 /-- Over a commutative seminormed ring, every `x : Spectrum A` is bounded above by the spectral
 seminorm `smoothingFun (normRingSeminorm A)`. -/
@@ -167,8 +167,7 @@ theorem apply_le_smoothingFun (x : Spectrum A) (a : A) :
     x a ≤ smoothingFun (normRingSeminorm A) a := by
   rw [← coe_toMulRingSeminorm]
   exact x.toMulRingSeminorm.le_smoothingFun_of_le_mul (μ := normRingSeminorm A) (C := 1)
-    (fun b ↦ by simpa only [coe_toMulRingSeminorm, normRingSeminorm_apply, one_mul] using
-      x.apply_le_norm b) a
+    (fun b ↦ (x.apply_le_norm b).trans_eq (one_mul _).symm) a
 
 /-- If the ambient seminorm on a commutative ring is not identically zero, then for every `a : A`
 there exists a point `x : Spectrum A` attaining `smoothingFun (normRingSeminorm A) a`. -/
@@ -179,10 +178,8 @@ theorem exists_apply_eq_smoothingFun_of_norm_ne_zero (h : normRingSeminorm A ≠
   obtain ⟨α₀, hα₀, hα₀a⟩ :=
     RingSeminorm.exists_mulRingSeminorm_le_and_apply_eq
       (normRingSeminorm A).isPowMul_smoothing hsm a
-  refine ⟨⟨α₀, fun b ↦ ?_⟩, ?_⟩
-  · rw [← normRingSeminorm_apply]
-    exact (hα₀ b).trans ((normRingSeminorm A).smoothing_le_self b)
-  · rw [coe_mk, hα₀a, (normRingSeminorm A).smoothing_apply a]
+  refine ⟨⟨α₀, fun b ↦ (hα₀ b).trans ((normRingSeminorm A).smoothing_le_self b)⟩, ?_⟩
+  rw [coe_mk, hα₀a, (normRingSeminorm A).smoothing_apply a]
 
 /-- Over a commutative seminormed ring, `Spectrum A` is nonempty if and only if
 `‖(1 : A)‖ ≠ 0`. -/
@@ -223,13 +220,9 @@ theorem smoothingFun_eq_sSup (a : A) :
   simp only [Set.mem_ofPred_eq, Set.mem_range]
   refine ⟨?_, ?_⟩
   · rintro ⟨α₀, hα₀, rfl⟩
-    refine ⟨⟨α₀, fun b ↦ ?_⟩, rfl⟩
-    rw [← normRingSeminorm_apply]
-    exact hα₀ b
+    exact ⟨⟨α₀, hα₀⟩, rfl⟩
   · rintro ⟨x, rfl⟩
-    refine ⟨x.toMulRingSeminorm, fun b ↦ ?_, rfl⟩
-    rw [coe_toMulRingSeminorm, normRingSeminorm_apply]
-    exact x.apply_le_norm b
+    exact ⟨x.toMulRingSeminorm, x.apply_le_norm, rfl⟩
 
 end SeminormedCommRing
 

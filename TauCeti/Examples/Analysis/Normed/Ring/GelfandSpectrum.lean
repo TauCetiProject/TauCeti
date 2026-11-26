@@ -11,6 +11,8 @@ public import TauCeti.Analysis.Normed.Ring.DualNumber
 public import TauCeti.Analysis.Normed.Ring.GelfandSpectrum
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
+import TauCeti.Algebra.TrivSqZeroExt.Basic
+
 /-!
 # Concrete Berkovich spectra and checks for Berkovich's spectral formula
 
@@ -113,16 +115,6 @@ private theorem eps_checks_of_sq_zero_of_norm_one {A : Type*} [SeminormedCommRin
 
 section TrivSqZeroExt
 
-private theorem sub_inlHom_fstHom_isNilpotent (R M : Type*) [Ring R]
-    [AddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M]
-    (y : TrivSqZeroExt R M) :
-    IsNilpotent (y - (TrivSqZeroExt.inlHom R M) ((TrivSqZeroExt.fstHom ℕ R M).toRingHom y)) := by
-  refine ⟨2, ?_⟩
-  have hy : y - TrivSqZeroExt.inl y.fst = TrivSqZeroExt.inr y.snd := by
-    ext <;> simp
-  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply,
-    TrivSqZeroExt.inlHom_apply, hy, sq, TrivSqZeroExt.inr_mul_inr]
-
 private noncomputable def trivSqZeroExtHomeomorph (R M : Type*) [SeminormedRing R]
     [SeminormedAddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M] [IsBoundedSMul R M]
     [IsBoundedSMul Rᵐᵒᵖ M] [SMulCommClass R Rᵐᵒᵖ M] :
@@ -133,7 +125,7 @@ private noncomputable def trivSqZeroExtHomeomorph (R M : Type*) [SeminormedRing 
     (TrivSqZeroExt.fstHom ℕ R M).toRingHom
     (TrivSqZeroExt.isBounded_fstHom ℕ R M)
     (fun r ↦ by simp)
-    (sub_inlHom_fstHom_isNilpotent R M)
+    (fun y ↦ by simpa using TrivSqZeroExt.isNilpotent_sub_inl_fst y)
 
 /-- Over a normed division ring `K`, the Berkovich spectrum of `DualNumber K` has a unique
 point. -/
@@ -201,11 +193,10 @@ private theorem maxDualNumber_sub_inl_fst_isNilpotent (K : Type*) [NormedCommRin
     [IsUltrametricDist K] (y : MaxDualNumber K) :
     IsNilpotent (y - maxDualNumberInlHom K (maxDualNumberFstHom K y)) := by
   rw [maxDualNumberFstHom_apply, maxDualNumberInlHom_apply]
-  have hnil := (sub_inlHom_fstHom_isNilpotent K K (MaxDualNumber.ofDualNumber.symm y)).map
-    MaxDualNumber.ofDualNumber.toRingHom
+  have hnil := (TrivSqZeroExt.isNilpotent_sub_inl_fst
+    (MaxDualNumber.ofDualNumber.symm y)).map MaxDualNumber.ofDualNumber.toRingHom
   simpa only [map_sub, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, TrivSqZeroExt.fstHom_apply,
-    RingEquiv.apply_symm_apply, TrivSqZeroExt.inlHom_apply] using hnil
+    RingEquiv.apply_symm_apply] using hnil
 
 private noncomputable def maxDualNumberHomeomorph (K : Type*) [NormedCommRing K]
     [IsUltrametricDist K] :

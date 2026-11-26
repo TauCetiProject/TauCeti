@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Unbundled.SmoothingSeminorm
 
 import Mathlib.Analysis.Normed.Unbundled.SeminormFromBounded
+import TauCeti.Analysis.Normed.Unbundled.RingSeminorm
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
@@ -64,12 +65,6 @@ public section
 
 open Filter Topology
 
-/-- Evaluating `normRingSeminorm R` gives the ambient norm. -/
-@[simp]
-theorem normRingSeminorm_apply {R : Type*} [NonUnitalSeminormedRing R] (x : R) :
-    normRingSeminorm R x = ‖x‖ :=
-  (rfl)
-
 variable {R S : Type*} [CommRing R] [CommRing S]
 
 /-- Core multiplicative-constant absorption lemma for `smoothingFun`, parameterized by a convergence
@@ -121,33 +116,6 @@ private theorem exists_pow_le_const_mul_pow (μ : RingSeminorm R) (hμ1 : μ 1 �
         _ ≤ a ^ k := pow_le_pow_left₀ (by positivity) hlt k
     exact hpow.trans (le_mul_of_one_le_left (pow_nonneg ha0.le k)
       (le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ ↦ by positivity)))
-
-/-- Binomial power bound: geometric upper bounds on `μ (x ^ k)` and `μ (y ^ k)` yield a
-geometric upper bound on `μ ((x + y) ^ n)`. -/
-private theorem pow_add_le_of_forall_pow_le (μ : RingSeminorm R) {x y : R} {Cx Cy a b : ℝ}
-    (hCx : ∀ k, μ (x ^ k) ≤ Cx * a ^ k) (hCy : ∀ k, μ (y ^ k) ≤ Cy * b ^ k) (n : ℕ) :
-    μ ((x + y) ^ n) ≤ Cx * Cy * (a + b) ^ n := by
-  calc μ ((x + y) ^ n)
-      = μ (∑ k ∈ Finset.range (n + 1), x ^ k * y ^ (n - k) * n.choose k) := by rw [add_pow]
-    _ ≤ ∑ k ∈ Finset.range (n + 1), μ (x ^ k * y ^ (n - k) * n.choose k) :=
-        Finset.map_sum_le_sum μ (Finset.range (n + 1)) _
-    _ ≤ ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) * (μ (x ^ k) * μ (y ^ (n - k))) := by
-        gcongr with k
-        have hchoose : μ (x ^ k * y ^ (n - k) * n.choose k) ≤
-            (n.choose k : ℝ) * μ (x ^ k * y ^ (n - k)) := by
-          simpa only [Finset.sum_const, Finset.card_range, ← nsmul_eq_mul', nsmul_eq_mul] using
-            Finset.map_sum_le_sum μ (Finset.range (n.choose k)) (fun _ ↦ x ^ k * y ^ (n - k))
-        exact hchoose.trans
-          (mul_le_mul_of_nonneg_left (map_mul_le_mul μ _ _) (Nat.cast_nonneg _))
-    _ ≤ ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) * ((Cx * a ^ k) * (Cy * b ^ (n - k))) :=
-        Finset.sum_le_sum fun k _ ↦ mul_le_mul_of_nonneg_left
-          (mul_le_mul (hCx k) (hCy (n - k)) (apply_nonneg μ _) ((apply_nonneg μ _).trans (hCx k)))
-          (Nat.cast_nonneg _)
-    _ = Cx * Cy * ∑ k ∈ Finset.range (n + 1), a ^ k * b ^ (n - k) * n.choose k := by
-        rw [Finset.mul_sum]
-        refine Finset.sum_congr rfl fun k _ ↦ ?_
-        ring
-    _ = Cx * Cy * (a + b) ^ n := by rw [← add_pow]
 
 private theorem smoothingFun_add_le_of_map_one_le_one (μ : RingSeminorm R) (hμ1 : μ 1 ≤ 1)
     (x y : R) :
