@@ -21,12 +21,14 @@ the real additive valuation
 
 which is the form in which valuations enter the Newton polygon and other additive constructions.
 It reverses the order of `v` (`Valuation.realAddVal_le_realAddVal_iff`), so its multiplicative
-form is equivalent to `v` (`Valuation.isEquiv_toValuation_realAddVal`), and it recovers the norm as
-`Valuation.norm v x = Real.exp (-realAddVal v x)` (`Valuation.realAddVal_eq_coe_iff`). On a normed
-ring whose norm is `Valuation.norm v` it is the base-`e` valuation `AddValuation.ofNorm` of the
-norm (`Valuation.realAddVal_eq_ofNorm`); this applies to the normed field `Valued.toNormedField`
-that a rank-one valued field carries (`Valued.realAddVal_eq_ofNorm`) and to the valuation
-`NormedField.valuation` of an ultrametric normed field (`NormedField.realAddVal_valuation`).
+form is equivalent to `v` (`Valuation.isEquiv_toValuation_realAddVal`), and it recovers the norm
+from its finite values: for `t : ℝ`, `realAddVal v x = t ↔ Valuation.norm v x = Real.exp (-t)`
+(`Valuation.realAddVal_eq_coe_iff`), while `realAddVal v x = ⊤` exactly when `v x = 0`
+(`Valuation.realAddVal_eq_top_iff`). On a normed ring whose norm is `Valuation.norm v` it is the
+base-`e` valuation `AddValuation.ofNorm` of the norm (`Valuation.realAddVal_eq_ofNorm`); this
+applies to the normed field `Valued.toNormedField` that a rank-one valued field carries
+(`Valued.realAddVal_eq_ofNorm`) and to the valuation `NormedField.valuation` of an ultrametric
+normed field (`NormedField.realAddVal_valuation`).
 
 The embedding into `ℝ≥0` is part of the rank-one structure, and it fixes the scale of
 `Valuation.realAddVal`: the real additive valuations inducing the same order as `v` are exactly the
@@ -42,7 +44,8 @@ positive real multiples of `Valuation.realAddVal v`
 
 * `Valuation.realAddVal_eq_top_iff`, `Valuation.realAddVal_of_ne_zero` and
   `Valuation.untop₀_realAddVal`: the values of `Valuation.realAddVal`.
-* `Valuation.realAddVal_eq_coe_iff`: norm recovery, `realAddVal v x = t ↔ v.norm x = exp (-t)`.
+* `Valuation.realAddVal_eq_coe_iff`: norm recovery from finite values, `realAddVal v x = t ↔
+  v.norm x = exp (-t)` for `t : ℝ`.
 * `Valuation.realAddVal_le_realAddVal_iff` and `Valuation.isEquiv_toValuation_realAddVal`:
   `Valuation.realAddVal v` induces the order of `v`.
 * `Valuation.realAddVal_eq_ofNorm`, `Valued.realAddVal_eq_ofNorm` and

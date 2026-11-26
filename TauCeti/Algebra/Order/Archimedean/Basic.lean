@@ -25,6 +25,10 @@ Finally, it chooses a dyadic scale `2ᵏ` comparable to a given length: for `ρ,
 an integer `k` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`. Covering arguments with dyadic cubes use it to fit
 a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with `n = √d`.
 
+In an Archimedean linearly ordered commutative ring, a quotient `a / b` is determined by how the
+integer multiples of `a` and `b` compare, which identifies two quotients from such comparisons
+without dividing.
+
 Beyond ordered semifields, in an Archimedean linearly ordered additive group the integer
 multiples `k • ℓ` of a nonzero element `ℓ` are unbounded above, whatever the sign of `ℓ`. For maps
 of the strip `ℝ × Y` commuting with the translation by a period `ℓ`, it gives a multiple of the
@@ -40,6 +44,8 @@ lines, and that the inverse of a positive twist lift twists negatively.
   with `1 / (N + 1) ≤ δ` and `2 * n / N ≤ δ`.
 * `TauCeti.exists_four_mul_two_zpow_mul_le_and_lt`: for `ρ, n > 0` there is `k : ℤ` with
   `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`.
+* `TauCeti.mul_eq_mul_of_forall_intCast_mul_le_iff`: if `p * a ≤ q * b ↔ p * c ≤ q * d` for all
+  integers `p` and `q`, then `c * b = d * a`.
 * `TauCeti.exists_lt_zsmul`: in an Archimedean linearly ordered additive group, the integer
   multiples of a nonzero element are unbounded above.
 -/
@@ -98,6 +104,48 @@ theorem exists_four_mul_two_zpow_mul_le_and_lt {ρ n : L} (hρ : 0 < ρ) (hn : 0
   exact ⟨k, by linarith, by linarith⟩
 
 end Field
+
+/-- In an Archimedean linearly ordered commutative ring, if the integer multiples of `a` and `b`
+compare like those of `c` and `d`, then `a / b = c / d`, written without division:
+`c * b = d * a`. -/
+theorem mul_eq_mul_of_forall_intCast_mul_le_iff {L : Type*} [CommRing L] [LinearOrder L]
+    [IsStrictOrderedRing L] [Archimedean L] {a b c d : L}
+    (h : ∀ p q : ℤ, p * a ≤ q * b ↔ p * c ≤ q * d) : c * b = d * a := by
+  -- Comparing with `p = 0` shows that `b` and `d` have the same sign.
+  have h₀ : ∀ q : ℤ, 0 ≤ q * b ↔ 0 ≤ q * d := fun q ↦ by
+    simpa only [Int.cast_zero, zero_mul] using h 0 q
+  wlog hb : 0 < b generalizing b d
+  · rcases (not_lt.1 hb).lt_or_eq with hb | rfl
+    · have := this (b := -b) (d := -d) (fun p q ↦ by simpa using h p (-q))
+        (fun q ↦ by simpa using h₀ (-q)) (neg_pos.2 hb)
+      linarith
+    · have h₁ := h₀ 1
+      have h₂ := h₀ (-1)
+      simp only [Int.cast_one, Int.cast_neg, one_mul, neg_one_mul, mul_zero,
+        le_refl, true_iff, neg_nonneg] at h₁ h₂
+      rw [le_antisymm h₂ h₁, zero_mul, mul_zero]
+  have hd : 0 < d := by
+    have h₂ := h₀ (-1)
+    simp only [Int.cast_neg, Int.cast_one, neg_one_mul, neg_nonneg] at h₂
+    exact lt_of_not_ge fun hd ↦ hb.not_ge (h₂.2 hd)
+  -- If `a / b` and `c / d` differed, some integer quotient `q / p` would separate them.
+  have key : ∀ {a b c d : L}, 0 < b → 0 < d → (∀ p q : ℤ, p * a ≤ q * b ↔ p * c ≤ q * d) →
+      ¬ c * b < d * a := by
+    intro a b c d hb hd h hlt
+    have hbd : 0 < b * d := mul_pos hb hd
+    obtain ⟨n, hn⟩ := exists_lt_nsmul (sub_pos.2 hlt) (b * d)
+    obtain ⟨k, hk₁, hk₂⟩ := (existsUnique_zsmul_near_of_pos hbd (n * c * b)).exists
+    rw [nsmul_eq_mul] at hn
+    rw [zsmul_eq_mul] at hk₁ hk₂
+    have hq₁ : ((k + 1 : ℤ) : L) * b * d < (n : ℤ) * a * d := by push_cast at hk₂ ⊢; nlinarith
+    have hq₂ : (n : ℤ) * c * b < ((k + 1 : ℤ) : L) * d * b := by push_cast at hk₂ ⊢; nlinarith
+    have h₁ : ((k + 1 : ℤ) : L) * b < (n : ℤ) * a := lt_of_mul_lt_mul_right hq₁ hd.le
+    have h₂ : ((n : ℤ) : L) * c < ((k + 1 : ℤ) : L) * d := lt_of_mul_lt_mul_right hq₂ hb.le
+    exact h₁.not_ge ((h n (k + 1)).2 h₂.le)
+  rcases lt_trichotomy (c * b) (d * a) with hlt | heq | hgt
+  · exact (key hb hd h hlt).elim
+  · exact heq
+  · exact (key hd hb (fun p q ↦ (h p q).symm) (by linarith)).elim
 
 /-- In an Archimedean linearly ordered additive group, some integer multiple of a nonzero element
 `ℓ` exceeds any given `r`, whatever the sign of `ℓ`. -/

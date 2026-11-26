@@ -21,7 +21,8 @@ formulas, have at least the valuation of `x`. For an additive valuation which is
 the whole ring, such as the valuation of a discrete valuation ring, units have valuation zero and
 valuations increase along divisibility. It also records that an additive valuation taking integer
 values on nonzero elements, such as a discrete valuation normalised at a uniformiser, is infinite
-only at zero.
+only at zero. Finally, it unfolds the equivalence of two additive valuations as the agreement of
+the orders they induce on the ring.
 
 ## Main results
 
@@ -35,6 +36,8 @@ only at zero.
   valuation.
 * `AddValuation.eq_zero_of_eq_top_of_forall_ne_zero`: an additive valuation taking integer
   values on nonzero elements is infinite only at zero.
+* `AddValuation.isEquiv_iff_val_le_val`: equivalence of additive valuations unfolded as the
+  agreement of their orders, in the orientation of the value monoids.
 -/
 
 public section
@@ -102,5 +105,13 @@ theorem eq_zero_of_eq_top_of_forall_ne_zero
   exact WithTop.coe_ne_top (hn.symm.trans hx)
 
 end Ring
+
+/-- Two additive valuations are equivalent exactly when they order the elements of the ring in the
+same way, read in their value monoids. -/
+theorem isEquiv_iff_val_le_val {R Γ'₀ : Type*} [Ring R] [LinearOrderedAddCommMonoidWithTop Γ'₀]
+    {v : AddValuation R Γ₀} {w : AddValuation R Γ'₀} :
+    v.IsEquiv w ↔ ∀ {x y : R}, v x ≤ v y ↔ w x ≤ w y :=
+  -- `AddValuation.IsEquiv` is `Valuation.IsEquiv` in the order dual of the value monoids.
+  ⟨fun h x y ↦ h y x, fun h _ _ ↦ h⟩
 
 end AddValuation
