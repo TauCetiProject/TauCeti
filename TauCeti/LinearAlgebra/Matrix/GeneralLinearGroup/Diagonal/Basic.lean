@@ -417,6 +417,10 @@ theorem det_diagGL (t : ι → kˣ) :
   apply Units.ext
   simp [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_diagonal]
 
+/-- The determinant of `diag(1, d)` is `d`. -/
+theorem det_diagGL_one_left (d : kˣ) : Matrix.GeneralLinearGroup.det (diagGL ![1, d]) = d := by
+  simp [Fin.prod_univ_two]
+
 /-- Mapping the entries of `diagGL t` along a ring homomorphism gives the diagonal matrix of the
 mapped units. -/
 @[simp]
