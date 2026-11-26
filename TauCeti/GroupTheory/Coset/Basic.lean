@@ -460,3 +460,25 @@ theorem out_congr_eq_mul {G : Type*} [Group G] {K : Subgroup G} (φ : G ≃ G)
   rw [hq, hq']
 
 end QuotientGroup
+
+namespace Subgroup
+
+/-- If a group automorphism `τ : G ≃* G` sends every `g⁻¹` into the double coset `K * g * K`,
+then `τ` preserves `K`. -/
+theorem map_mem_iff_of_inv_mem_doubleCoset {G : Type*} [Group G] {K : Subgroup G} {τ : G ≃* G}
+    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (g : G) :
+    τ g ∈ K ↔ g ∈ K := by
+  constructor
+  · intro h
+    obtain ⟨a, ha, b, hb, hg⟩ := hτg g
+    have hτinv : τ g⁻¹ ∈ K := by simpa [map_inv] using K.inv_mem h
+    have heq : g = a⁻¹ * τ g⁻¹ * b⁻¹ := by simp [hg, mul_assoc]
+    rw [heq]
+    exact K.mul_mem (K.mul_mem (K.inv_mem ha) hτinv) (K.inv_mem hb)
+  · intro h
+    obtain ⟨a, ha, b, hb, hg⟩ := hτg g⁻¹
+    rw [inv_inv] at hg
+    rw [hg]
+    exact K.mul_mem (K.mul_mem ha (K.inv_mem h)) hb
+
+end Subgroup

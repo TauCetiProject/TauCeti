@@ -52,20 +52,12 @@ namespace HeckeRing.GLn
 
 variable (R K : Type*) [CommRing R] [Field K] [Algebra R K] (n : ℕ)
 
-/-- Transposition preserves `GL_n(R)`: the transpose of the image of `k` is the image of the
-transpose of `k`. -/
-theorem transposeMulEquiv_mem_integralGL {g : GL (Fin n) K} (hg : g ∈ integralGL R K (Fin n)) :
-    (GeneralLinearGroup.transposeMulEquiv (Fin n) g).unop ∈ integralGL R K (Fin n) := by
-  rw [GeneralLinearGroup.unop_transposeMulEquiv_eq_inverseTranspose_inv,
-    inverseTranspose_mem_integralGL_iff]
-  exact Subgroup.inv_mem _ hg
-
 /-- Transposition as an anti-involution of the Hecke datum `(GL_n(K), GL_n(R))`. -/
 noncomputable def transposeAntiInvolutionIntegralGL :
     HeckeAntiInvolution (⊤ : Submonoid (GL (Fin n) K)) (integralGL R K (Fin n)) :=
   HeckeAntiInvolution.ofAmbient (GeneralLinearGroup.transposeMulEquiv (R := K) (Fin n)).toMonoidHom
     GeneralLinearGroup.transposeMulEquiv_transposeMulEquiv
-    (fun _ hg ↦ transposeMulEquiv_mem_integralGL R K n hg) (fun _ _ ↦ Submonoid.mem_top _)
+    (fun _ hg ↦ transposeMulEquiv_mem_integralGL hg) (fun _ _ ↦ Submonoid.mem_top _)
 
 /-- The anti-involution acts as transposition. -/
 @[simp]

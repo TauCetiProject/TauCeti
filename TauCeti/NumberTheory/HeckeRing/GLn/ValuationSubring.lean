@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Cartan.ValuationSubring
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 public import TauCeti.NumberTheory.HeckeRing.GLn.FractionRing
 public import TauCeti.RepresentationTheory.HeckeAlgebra.GelfandTrick
 
@@ -20,6 +19,8 @@ inverse transpose (`Matrix.GeneralLinearGroup.inverseTranspose`), we establish:
 
 * `ValuationSubring.exists_inverseTranspose_inv_eq`: every `g : GL n F` satisfies
   `inverseTranspose g⁻¹ = inverseTranspose k * g * k` for some `k ∈ integralGL O F n`.
+* `Subgroup.IsHeckeFunction.dual_integralGL`: the dual `g ↦ σ (f g⁻¹)` of a Hecke function for
+  `integralGL O F n` is again a Hecke function.
 * `Subgroup.IsHeckeFunction.heckeOp_adjoint_integralGL`: adjointness of spherical Hecke operators
   for `(GL n F, integralGL O F n)`.
 * `Subgroup.IsHeckeFunction.heckeOp_comm_integralGL`: commutativity of spherical Hecke operators
@@ -55,11 +56,8 @@ theorem exists_inverseTranspose_inv_eq {n : Type u} [Fintype n] [DecidableEq n] 
   set l : GL n F := GeneralLinearGroup.map (algebraMap O F) l₀
   have hk : k ∈ integralGL O F n := ⟨k₀, rfl⟩
   have hl : l ∈ integralGL O F n := ⟨l₀, rfl⟩
-  have hk_tr : (transposeMulEquiv n k).unop ∈ integralGL O F n := by
-    rw [unop_transposeMulEquiv_eq_inverseTranspose_inv, inverseTranspose_mem_integralGL_iff]
-    exact Subgroup.inv_mem _ hk
   refine ⟨l⁻¹ * (transposeMulEquiv n k).unop,
-    Subgroup.mul_mem _ (Subgroup.inv_mem _ hl) hk_tr, Units.ext ?_⟩
+    Subgroup.mul_mem _ (Subgroup.inv_mem _ hl) (transposeMulEquiv_mem_integralGL hk), Units.ext ?_⟩
   simp only [map_mul, unop_transposeMulEquiv_eq_inverseTranspose_inv,
     inverseTranspose_inverseTranspose, Units.val_mul, coe_inverseTranspose, inv_inv, h_smith,
     transpose_mul, diagonal_transpose, Matrix.mul_assoc]
@@ -71,11 +69,25 @@ theorem exists_inverseTranspose_inv_eq {n : Type u} [Fintype n] [DecidableEq n] 
       _ = diagonal d * k.valᵀ := by simp
   rw [hcancel]
 
+private theorem exists_doubleCoset_inverseTranspose {n : Type u} [Fintype n] [DecidableEq n]
+    {F : Type*} [Field F] (O : ValuationSubring F) (g : GL n F) :
+    ∃ a ∈ integralGL O F n, ∃ b ∈ integralGL O F n, inverseTranspose g⁻¹ = a * g * b := by
+  obtain ⟨k, hk, h⟩ := O.exists_inverseTranspose_inv_eq g
+  exact ⟨inverseTranspose k, inverseTranspose_mem_integralGL_iff.2 hk, k, hk, h⟩
+
 end ValuationSubring
 
 section GLnValuation
 
 variable {n : Type u} [Fintype n] [DecidableEq n]
+
+/-- The dual `g ↦ σ (f g⁻¹)` of a Hecke function for `(GL n F, integralGL O F n)` is again a
+Hecke function. -/
+theorem Subgroup.IsHeckeFunction.dual_integralGL {A F : Type*} [CommSemiring A] [Field F]
+    (O : ValuationSubring F) {f : GL n F → A} (hf : (integralGL O F n).IsHeckeFunction f)
+    (σ : A →+* A) :
+    (integralGL O F n).IsHeckeFunction (fun g ↦ σ (f g⁻¹)) :=
+  hf.dual σ inverseTranspose O.exists_doubleCoset_inverseTranspose
 
 /-- **Gelfand's trick (adjointness) for `GL_n(F)` over a valuation subring `O`.** -/
 theorem Subgroup.IsHeckeFunction.heckeOp_adjoint_integralGL {A W W' Z F : Type*} [CommSemiring A]
@@ -87,14 +99,9 @@ theorem Subgroup.IsHeckeFunction.heckeOp_adjoint_integralGL {A W W' Z F : Type*}
     (hv : ∀ k ∈ integralGL O F n, π k v = v)
     (hv' : ∀ k ∈ integralGL O F n, π' k v' = v')
     (hB : ∀ (g : GL n F) (x : W) (y : W'), B (π g x) (π' g y) = B x y) :
-    (integralGL O F n).IsHeckeFunction (fun g ↦ σ (f g⁻¹)) ∧
-      B (π.heckeOp (integralGL O F n) f v) v' =
-        B v (π'.heckeOp (integralGL O F n) (fun g ↦ σ (f g⁻¹)) v') :=
-  hf.heckeOp_adjoint inverseTranspose
-    (fun g ↦ by
-      obtain ⟨k, hk, h⟩ := O.exists_inverseTranspose_inv_eq g
-      exact ⟨inverseTranspose k, inverseTranspose_mem_integralGL_iff.2 hk, k, hk, h⟩)
-    B hv hv' hB
+    B (π.heckeOp (integralGL O F n) f v) v' =
+      B v (π'.heckeOp (integralGL O F n) (fun g ↦ σ (f g⁻¹)) v') :=
+  hf.heckeOp_adjoint inverseTranspose O.exists_doubleCoset_inverseTranspose B hv hv' hB
 
 /-- **Gelfand's trick (commutativity) for `GL_n(F)` over a valuation subring `O`.** -/
 theorem Subgroup.IsHeckeFunction.heckeOp_comm_integralGL {A W F : Type*} [CommSemiring A]
@@ -105,10 +112,7 @@ theorem Subgroup.IsHeckeFunction.heckeOp_comm_integralGL {A W F : Type*} [CommSe
     (hv : ∀ k ∈ integralGL O F n, π k v = v) :
     π.heckeOp (integralGL O F n) f (π.heckeOp (integralGL O F n) f' v) =
       π.heckeOp (integralGL O F n) f' (π.heckeOp (integralGL O F n) f v) :=
-  hf.heckeOp_comm hf' hv inverseTranspose
-    (fun g ↦ by
-      obtain ⟨k, hk, h⟩ := O.exists_inverseTranspose_inv_eq g
-      exact ⟨inverseTranspose k, inverseTranspose_mem_integralGL_iff.2 hk, k, hk, h⟩)
+  hf.heckeOp_comm hf' hv inverseTranspose O.exists_doubleCoset_inverseTranspose
 
 end GLnValuation
 

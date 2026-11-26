@@ -7,10 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
-import Mathlib.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Block
-import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-import Mathlib.LinearAlgebra.Matrix.Permutation
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 
 /-!
 # Cartan diagonalization for `GL_n` over a valuation subring
@@ -125,21 +123,13 @@ theorem exists_mul_diagonal_mul {n : Type u} [Fintype n] [DecidableEq n] {F : Ty
     have : Nonempty n := Fintype.card_pos_iff.1 (by omega)
     obtain ⟨p⟩ := ‹Nonempty n›
     obtain ⟨⟨i₀, j₀⟩, hij₀⟩ := O.exists_pivot_dvd y
-    let a : GL n O :=
-      GeneralLinearGroup.mk'' ((Equiv.swap p i₀).permMatrix O) (by
-        rw [Matrix.det_permutation]; exact (Units.isUnit _).map (Int.castRingHom O))
-    let b : GL n O :=
-      GeneralLinearGroup.mk'' ((Equiv.swap p j₀).permMatrix O) (by
-        rw [Matrix.det_permutation]; exact (Units.isUnit _).map (Int.castRingHom O))
+    let a : GL n O := TauCeti.permutationGL (Equiv.swap p i₀)
+    let b : GL n O := TauCeti.permutationGL (Equiv.swap p j₀)
     set M : Matrix n n F :=
       (GeneralLinearGroup.map (algebraMap O F) a).val * y *
         (GeneralLinearGroup.map (algebraMap O F) b).val with hM
     have hM_entry (i j : n) : M i j = y (Equiv.swap p i₀ i) (Equiv.swap p j₀ j) := by
-      have ha : (GeneralLinearGroup.map (algebraMap O F) a).val = (Equiv.swap p i₀).permMatrix F :=
-        by ext r c; simp [a, GeneralLinearGroup.map, Equiv.Perm.permMatrix, apply_ite]
-      have hb : (GeneralLinearGroup.map (algebraMap O F) b).val = (Equiv.swap p j₀).permMatrix F :=
-        by ext r c; simp [b, GeneralLinearGroup.map, Equiv.Perm.permMatrix, apply_ite]
-      simp [hM, ha, hb, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, Matrix.mul_apply,
+      simp [hM, a, b, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, Matrix.mul_apply,
         Equiv.swap_apply_eq_iff]
     have hpivot (i j : n) : ∃ w : O, algebraMap O F w * M p p = M i j := by
       simpa only [hM_entry, Equiv.swap_apply_left] using hij₀ (Equiv.swap p i₀ i, Equiv.swap p j₀ j)
