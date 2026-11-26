@@ -8,12 +8,16 @@ module
 public import Mathlib.Analysis.Asymptotics.ExpGrowth
 
 /-!
-# Exponential growth of products with an exactly growing factor
+# Exponential growth: products with an exactly growing factor, and growth along `k * n`
 
 Mathlib's `ExpGrowth.expGrowthSup_mul_le` and `ExpGrowth.le_expGrowthSup_mul'` bound the upper
 exponential growth of a product `u * v` above by `expGrowthSup u + expGrowthSup v` and below by
 `expGrowthInf u + expGrowthSup v`. When `u` has an exact, finite exponential growth rate `a`, the
 two bounds agree, so multiplying by `u` shifts the upper exponential growth by `a`.
+
+Along the times `k * n`, the upper exponential growth is at most `k` times the original one, with
+equality when `exp (c * n) * u n` is monotone for some real `c`. This extends Mathlib's
+`Monotone.expGrowthSup_comp_mul`, the case `c = 0`.
 
 ## Main results
 

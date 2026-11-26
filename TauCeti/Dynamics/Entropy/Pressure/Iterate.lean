@@ -21,15 +21,15 @@ potential `birkhoffSum T φ k` is `k` times the pressure of `T` with `φ`:
 continuous map of a compact space and a continuous potential), and `≤` holds for every map and
 every potential.
 
-Two identities reduce this to a statement about growth rates. Being `dynEntourage T U k`-close for
-`n` steps of `T^[k]` is being `U`-close for `k * n` steps of `T` (`TauCeti.dynEntourage_iterate`),
-and the Birkhoff sums of `birkhoffSum T φ k` along `T^[k]` are the Birkhoff sums of `φ` along `T`
-at time `k * n` (`TauCeti.birkhoffSum_iterate_birkhoffSum`). So the pressure sums of the iterate
-at `dynEntourage T U k` are the pressure sums of `T` at the times `k * n`
-(`TauCeti.pressureNetSum_iterate`). The upper growth rate along the times `k * n` is at most `k`
-times the upper growth rate (`ExpGrowth.expGrowthSup_comp_mul_le`). When `0 ≤ φ + c`, the sums
-weighted by `exp (c * n)` are monotone in time (`TauCeti.pressureNetSum_monotone_time`), and then
-equality holds (`ExpGrowth.expGrowthSup_comp_mul_of_monotone_exp_mul`).
+Two identities reduce this to a statement about growth rates. The dynamical nets of `T^[k]` at
+`dynEntourage T U k` for `n` steps are those of `T` at `U` for `k * n` steps
+(`TauCeti.isDynNetIn_iterate`), and the Birkhoff sums of `birkhoffSum T φ k` along `T^[k]` are
+the Birkhoff sums of `φ` along `T` at time `k * n` (`TauCeti.birkhoffSum_iterate_birkhoffSum`).
+So the pressure sums of the iterate at `dynEntourage T U k` are the pressure sums of `T` at the
+times `k * n` (`TauCeti.pressureNetSum_iterate`). The upper growth rate along the times `k * n` is
+at most `k` times the upper growth rate (`ExpGrowth.expGrowthSup_comp_mul_le`). When `0 ≤ φ + c`,
+the sums weighted by `exp (c * n)` are monotone in time (`TauCeti.pressureNetSum_monotone_time`),
+and then equality holds (`ExpGrowth.expGrowthSup_comp_mul_of_monotone_exp_mul`).
 
 ## Main results
 
@@ -66,8 +66,7 @@ variable {X : Type*} {T : X → X} {φ : X → ℝ} {k : ℕ}
 theorem pressureNetSum_iterate (T : X → X) (φ : X → ℝ) (U : SetRel X X) (k n : ℕ) :
     pressureNetSum (T^[k]) (birkhoffSum T φ k) (dynEntourage T U k) n =
       pressureNetSum T φ U (k * n) := by
-  simp only [pressureNetSum_def, IsDynNetIn, dynEntourage_iterate,
-    birkhoffSum_iterate_birkhoffSum]
+  simp only [pressureNetSum_def, isDynNetIn_iterate, birkhoffSum_iterate_birkhoffSum]
 
 /-- The pressure of `T^[k]` with the potential `birkhoffSum T φ k` at the entourage
 `dynEntourage T U k` is at most `k` times the pressure of `T` with `φ` at `U`. -/
