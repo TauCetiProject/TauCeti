@@ -14,13 +14,16 @@ public import TauCeti.RingTheory.Idempotents.Primitive.AlgHom
 # Blocks with a central character stay blocks under scalar extension
 
 Let `k ⊆ k'` be fields, `G` a finite group and `e_B` a block idempotent of `k[G]` with a central
-character, a `k`-algebra homomorphism `λ_B : Z(k[G]) → k` with `λ_B(e_B) = 1`; every block has one
-when `k` splits `G`. Then the image of `e_B` in `k'[G]` is again a block idempotent.
+character, a `k`-algebra homomorphism `λ_B : Z(k[G]) → k` with `λ_B(e_B) = 1`. Then the image of
+`e_B` in `k'[G]` is again a block idempotent.
 
 The local ring `Z(k[G]) e_B` is Artinian with residue field `k` through `λ_B`, so its maximal
 ideal consists of nilpotent elements, and the class sums span both centres; primitivity then
-survives the map (`TauCeti.IsPrimitiveIdempotent.isPrimitiveIdempotent_map_of_span_eq_top`). So
-the blocks of `k[G]` stay blocks of `k'[G]` when `k` splits `G`.
+survives the map (`TauCeti.IsPrimitiveIdempotent.isPrimitiveIdempotent_map_of_span_eq_top`).
+
+Every block has a central character when `k` is algebraically closed, so then the blocks of `k[G]`
+stay blocks of `k'[G]`. The same holds when `k` only splits `G`, once central characters are known
+to exist over a splitting field; neither splitting fields nor that existence are formalized here.
 
 Without the central character this fails: along `𝔽₂ ⊆ 𝔽₄` the block `r + r²` of `𝔽₂[C₃]`, which
 has none, splits into two blocks of `𝔽₄[C₃]`
