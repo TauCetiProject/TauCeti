@@ -201,6 +201,7 @@ theorem gaugeLp_inv_gaugeLp (u : C(ℂ, Circle)) (f : Lp (EuclideanSpace ℝ (Fi
 
 /-- **A constant gauge acts on `L²` by its gauge frame.** The `L²` gauge action of the constant
 gauge `c` is postcomposition with `gaugeFrame c`, the change of line frame by `c`. -/
+@[simp]
 theorem gaugeLp_const (c : Circle) :
     gaugeLp μ (ContinuousMap.const ℂ c) = (gaugeFrame c).compLpₗᵢ 2 μ := by
   ext1 f
