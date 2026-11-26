@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Balakrishnan
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.BoundedSupport
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Differential
+import TauCeti.Analysis.Complex.Sector.Bounds
 
 /-!
 # Seeley's cut-off symbol of a Laplace-type operator minus a spectral parameter
@@ -36,8 +37,9 @@ has the following properties.
 
 * It is elliptic with parameter on every open set of spectral parameters in a half plane
   `Re z ≤ r₀` with `r₀ ≤ min (1 / 8) (μ / 4)`
-  (`TauCeti.ParameterSymbol.isElliptic_sub_spectralParameter_add_originCutoff`). Such a half plane
-  contains a neighbourhood of the closed negative real axis.
+  (`TauCeti.ParameterSymbol.isElliptic_sub_spectralParameter_add_originCutoff`). For
+  `0 < r₀ ≤ min (1 / 8) (μ / 4)` such a half plane contains a neighbourhood of the closed negative
+  real axis.
 * It is quasi-homogeneous of degree `2` above the radius `2`, since `ψ` vanishes there (the
   theorem `isQuasiHomogeneousAbove_sub_spectralParameter_add_originCutoff` in the namespace
   `TauCeti.ParameterSymbol.IsQuasiHomogeneous`). Along the negative real axis it is
@@ -164,33 +166,6 @@ theorem isQuasiHomogeneousAbove_originCutoff (μ : ℝ) :
 
 /-! ### Parameter-ellipticity of the corrected leading symbol -/
 
-/-- **The half plane estimate.** For a real `Q ≥ 0` and a spectral parameter in the half plane
-`Re z ≤ r₀`, the modulus of `Q - z` is at least `(Q + ‖z‖) / 4`, provided `Q ≥ 4 r₀` or
-`‖z‖ ≥ 8 r₀`. -/
-private theorem add_norm_div_four_le_norm_ofReal_sub {Q r₀ : ℝ} {z : ℂ} (hQ : 0 ≤ Q)
-    (hz : z.re ≤ r₀) (h : 4 * r₀ ≤ Q ∨ 8 * r₀ ≤ ‖z‖) :
-    (Q + ‖z‖) / 4 ≤ ‖(Q : ℂ) - z‖ := by
-  rcases le_or_gt (4 * r₀) Q with hQ4 | hQ4
-  · -- Then `Re (Q - z) ≥ Q / 2 + |Re z|`, and `‖Q - z‖ ≥ |Im z|`.
-    have hre := Complex.re_le_norm ((Q : ℂ) - z)
-    have him := Complex.abs_im_le_norm ((Q : ℂ) - z)
-    rw [Complex.sub_re, Complex.ofReal_re] at hre
-    rw [Complex.sub_im, Complex.ofReal_im, zero_sub, abs_neg] at him
-    have hz' := Complex.norm_le_abs_re_add_abs_im z
-    have : Q / 2 + |z.re| ≤ Q - z.re := by
-      rcases le_or_gt z.re 0 with h0 | h0
-      · rw [abs_of_nonpos h0]
-        linarith
-      · rw [abs_of_pos h0]
-        linarith
-    linarith [norm_nonneg z]
-  · -- Then `‖z‖ ≥ 8 r₀ > 2 Q`.
-    have h8 : 8 * r₀ ≤ ‖z‖ := h.resolve_left (not_le.2 hQ4)
-    have : ‖z‖ - Q ≤ ‖(Q : ℂ) - z‖ := by
-      have := norm_sub_norm_le z (Q : ℂ)
-      rwa [norm_sub_rev, Complex.norm_real, Real.norm_of_nonneg hQ] at this
-    linarith
-
 /-- The pointwise estimate behind
 `TauCeti.ParameterSymbol.isElliptic_sub_spectralParameter_add_originCutoff`: for
 `q ≥ μ ‖ξ‖²`, a cutoff value `0 ≤ s` equal to `1` where `‖ξ‖ ≤ 1` and `‖z‖ ≤ 1`, and `z` in the
@@ -219,7 +194,7 @@ private theorem mul_parameterWeight_sq_le_norm_ofReal_add_sub {q s μ r₀ : ℝ
     rcases hcase with h | h
     · linarith [norm_nonneg z]
     · linarith [min_le_left 1 μ]
-  have hlow := add_norm_div_four_le_norm_ofReal_sub (Q := q + s) (by linarith) hz
+  have hlow := Complex.add_norm_div_four_le_norm_ofReal_sub (Q := q + s) (by linarith) hz
     (hcase.imp (fun h => h.2) fun h => by linarith)
   have hw := parameterWeight_sq_le_mul_add_norm hμ hδ (q := q + s) (by linarith) hδQ
   calc (12 * (1 + μ⁻¹ + δ⁻¹))⁻¹ * parameterWeight ξ z ^ 2
@@ -370,17 +345,12 @@ theorem coefficient_balakrishnanIntegral_inverse_sub_spectralParameter_add_origi
     (ha : ∀ z ∈ Λ, a.coefficient ((x, ξ), z) = (q : ℂ) • ContinuousLinearMap.id ℂ V) :
     (((a - spectralParameter V + originCutoff V).inverse h).balakrishnanIntegral hΛ hσ
       hm).coefficient (x, ξ) = (q ^ (-σ) : ℝ) • ContinuousLinearMap.id ℂ V := by
-  obtain ⟨r, hr⟩ : ∃ r : NNReal, (r : ℝ) = q := ⟨⟨_, hq.le⟩, rfl⟩
-  have hr0 : 0 < r := by rwa [← NNReal.coe_pos, hr]
-  have hmap (r : NNReal) : algebraMap NNReal (V →L[ℂ] V) r = (r : ℝ) • (1 : V →L[ℂ] V) := by
-    rw [Algebra.algebraMap_eq_smul_one, NNReal.smul_def]
-  rw [coefficient_balakrishnanIntegral_inverse hΛ hσ (by linarith) hm h (A := algebraMap NNReal _ r)
-    (isStrictlyPositive_algebraMap hr0) fun t ht ↦ ?_, CFC.rpow_algebraMap, hmap, NNReal.coe_rpow,
-    hr]
-  · rfl
+  rw [← ContinuousLinearMap.one_def]
+  refine coefficient_balakrishnanIntegral_inverse_of_smul_one hΛ hσ (by linarith) hm h hq
+    fun t ht ↦ ?_
   have hmem : -(t : ℂ) ∈ Λ := by simpa using hΛ (-t) (by linarith)
   rw [coefficient_sub_spectralParameter_add_originCutoff_of_two_le_norm x hξ hmem,
-    ha _ hmem, hmap, hr, ← sub_smul, ← add_smul, ← Complex.coe_smul]
+    ha _ hmem, ← ContinuousLinearMap.one_def, ← sub_smul, ← Complex.coe_smul]
   congr 1
   push_cast
   ring
