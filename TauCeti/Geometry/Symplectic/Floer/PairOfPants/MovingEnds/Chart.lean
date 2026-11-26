@@ -29,9 +29,8 @@ In the namespace `TauCeti.Floer`:
 
 public section
 
-open Set Function Filter Real TauCeti.ThricePuncturedSphere
+open Set Function Real TauCeti.ThricePuncturedSphere
   TauCeti.ThricePuncturedSphere.Puncture
-open scoped Topology
 open TauCeti.Complex (realChart realChart_apply)
 
 namespace TauCeti.Floer
@@ -67,29 +66,23 @@ theorem subset_preimage_puncturedSphereTruncation_union (ha : ∀ i, a i ≠ 0) 
   simp only [mem_puncturedSphereTruncation, not_and_or, not_forall, not_le] at hzT
   rcases hzT with ⟨i, hi⟩ | hout
   · refine Or.inl (mem_iUnion.2 ⟨i, ?_⟩)
-    have hd : 0 < ‖w - c i‖ := norm_pos_iff.2 (sub_ne_zero.2 (hz i))
-    have hlim : Tendsto (fun s : ℝ ↦ ‖a i‖ * Real.exp (-(2 * π * s)) / 2) atTop (𝓝 0) := by
-      simpa using ((Real.tendsto_exp_neg_atTop_nhds_zero.comp
-        (tendsto_id.const_mul_atTop Real.two_pi_pos)).const_mul ‖a i‖).div_const 2
-    obtain ⟨R, hR⟩ := (hlim.eventually (gt_mem_nhds hd)).exists
-    obtain ⟨z₀, -, -, hz₀⟩ := exists_add_mul_cylindricalEndLift_eq (r := T) (ha i) hR.le hi.le
-    -- The longitudinal coordinate of `z₀` exceeds `T`, since its distance to `c i` is smaller.
-    have hgt : T < z₀.re := by
-      by_contra hle
-      have hdist := norm_add_mul_cylindricalEndLift_sub (c i) (a i) z₀
-      rw [hz₀] at hdist
-      have : Real.exp (-(2 * π * T)) ≤ Real.exp (-(2 * π * z₀.re)) :=
-        Real.exp_le_exp.2 (by nlinarith [pi_pos])
-      nlinarith [norm_nonneg (a i)]
+    set ζ := Complex.equivRealProdCLM (zero.endCoord ((w - c i) / a i))
+    -- The longitudinal coordinate of `ζ` exceeds `T`, since `w` lies in the disc about `c i`.
+    have hgt : T < ζ.1 := by
+      refine lt_of_not_ge fun hle ↦ hi.not_ge ?_
+      have hv : (w - c i) / a i ≠ zero.endCenter := by
+        rw [endCenter_zero]
+        exact div_ne_zero (sub_ne_zero.2 (hz i)) (ha i)
+      have h := (re_endCoord_le_iff (by decide) hv).1 hle
+      rw [endCenter_zero, sub_zero, norm_div, le_div_iff₀ (norm_pos_iff.2 (ha i))] at h
+      linarith
     -- Move the angular coordinate into `[0, 1)` by an integer shift.
     have hper : Periodic (fun t ↦ realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z)
-        (z₀.re, t)) 1 := realChart_add_mul_cylindricalEndLift_add_one (c i) (a i) z₀.re
-    have h := hper.sub_int_mul_eq (x := z₀.im) ⌊z₀.im⌋
+        (ζ.1, t)) 1 := realChart_add_mul_cylindricalEndLift_add_one (c i) (a i) ζ.1
+    have h := hper.sub_int_mul_eq (x := ζ.2) ⌊ζ.2⌋
     rw [mul_one, ← Int.fract] at h
-    refine ⟨(z₀.re, Int.fract z₀.im), ⟨hgt, Int.fract_nonneg _, Int.fract_lt_one _⟩, h.trans ?_⟩
-    rw [realChart_apply, show Complex.equivRealProdCLM.symm (z₀.re, z₀.im) = z₀ from
-      Complex.ext (by simp) (by simp), hz₀]
-    simp [w]
+    exact ⟨(ζ.1, Int.fract ζ.2), ⟨hgt, Int.fract_nonneg _, Int.fract_lt_one _⟩,
+      h.trans (realChart_add_mul_cylindricalEndLift_endCoord (ha i) (hz i))⟩
   · refine Or.inr ⟨endBandCoord inf z, ⟨?_, (endBandCoord_mem inf z).2⟩,
       positiveEndChart_endBandCoord inf ?_⟩
     · have hw0 : w ≠ 0 := norm_pos_iff.1 (lt_of_le_of_lt (by positivity) hout)

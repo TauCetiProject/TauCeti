@@ -316,12 +316,7 @@ private theorem exists_movingEndChart_eq (ha : ∀ i, a i ≠ 0) {e : Option ι}
     exact ⟨endBandCoord inf z, by simp [movingEndCoord, endBandCoord_apply],
       positiveEndChart_endBandCoord inf h0⟩
   | some i =>
-    set v := (Complex.equivRealProdCLM.symm z - c i) / a i
-    have hv : v ≠ zero.endCenter := sub_div_ne_endCenter_zero ha (hz i)
-    refine ⟨Complex.equivRealProdCLM (zero.endCoord v), by simp [movingEndCoord, v], ?_⟩
-    simp only [movingEndChart, TauCeti.Complex.realChart_apply,
-      ContinuousLinearEquiv.symm_apply_apply, zero.cylindricalEndLift_endCoord hv, v,
-      mul_div_cancel₀ _ (ha i), add_sub_cancel, ContinuousLinearEquiv.apply_symm_apply]
+    exact ⟨_, by simp [movingEndCoord], realChart_add_mul_cylindricalEndLift_endCoord (ha i) (hz i)⟩
 
 /-! ### Cutoffs on a sphere with moving input ends -/
 
