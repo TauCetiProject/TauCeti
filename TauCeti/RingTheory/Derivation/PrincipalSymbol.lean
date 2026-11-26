@@ -46,6 +46,8 @@ at `x`, a symmetric multilinear map `T_x*M × ⋯ × T_x*M → Hom(E_x, F_x)`.
 * `TauCeti.commutatorSymbol_update_mul`: the Leibniz rule in each slot.
 * `TauCeti.commutatorSymbol_add_algebraMap`: adding scalars to the entries does not change the
   commutator symbol.
+* `TauCeti.commutatorSymbol_apply_sub_apply_prod_smul_mem_smul_top`: modulo an ideal `I`, the
+  iterated commutator `[⋯[D, a₁], …, aₘ] x` with all `aᵢ ∈ I` is `D ((a₁ ⋯ aₘ) • x)`.
 * `AlgEquiv.commutatorSymbol_conjDifferentialOperators`: the commutator symbol is natural under
   conjugation by algebra isomorphisms.
 * `TauCeti.commutatorSymbol_apply_of_intertwining`: more generally, the commutator symbols of two
@@ -424,6 +426,27 @@ theorem commutatorSymbol_apply_sub_mem_smul_top {m : ℕ} (D : differentialOpera
   · simp [hj, hj.ne]
   · simp
   · simp [hj.not_gt, hj.ne, hj.ne']
+
+/-- **Iterated commutators with entries in `I`, modulo `I`.** If `a₁, …, aₘ ∈ I`, then the iterated
+commutator `[⋯[D, a₁], …, aₘ] x` agrees with `D ((a₁ ⋯ aₘ) • x)` modulo `I • N`: each commutator
+`[D, a] y = D (a • y) - a • D y` differs from `D (a • y)` by a multiple of `a`. For the vanishing
+ideal of a point of a manifold, the value of `[⋯[D, f₁], …, fₘ] s` at the point is therefore that of
+`D (f₁ ⋯ fₘ • s)` whenever every `fᵢ` vanishes there. -/
+theorem commutatorSymbol_apply_sub_apply_prod_smul_mem_smul_top {m : ℕ}
+    (D : differentialOperators R A M N m) {a : Fin m → A} (ha : ∀ i, a i ∈ I) (x : M) :
+    commutatorSymbol R A M N m D a x - (D : M →ₗ[R] N) ((∏ i, a i) • x) ∈
+      I • (⊤ : Submodule A N) := by
+  induction m generalizing x with
+  | zero => simp
+  | succ m ih =>
+    have h := ih ⟨smulCommutator R (a 0) D, smulCommutator_mem_differentialOperators D.property _⟩
+      (a := Fin.tail a) (fun i ↦ ha i.succ) x
+    have h0 : a 0 • (D : M →ₗ[R] N) ((∏ i, Fin.tail a i) • x) ∈ I • (⊤ : Submodule A N) :=
+      Submodule.smul_mem_smul (ha 0) Submodule.mem_top
+    rw [smulCommutator_apply_apply] at h
+    rw [commutatorSymbol_succ_apply, Fin.prod_univ_succ, mul_smul]
+    convert sub_mem h h0 using 1
+    abel
 
 variable (I) in
 /-- A representative in `I` of a cotangent class. -/

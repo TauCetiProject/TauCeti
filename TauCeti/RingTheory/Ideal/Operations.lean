@@ -41,6 +41,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.pow_card_mul_prod_induction`: a property of pairs of an ideal and an element, stable
   under multiplication, passes from the factors of a finite product to the product with any
   cofactor, at the power `J ^ card ι`.
+* `Ideal.pow_smul_eq_span_prod_smul`: `I ^ n • N` is spanned by the vectors `(a₁ ⋯ aₙ) • y` with
+  `aᵢ ∈ I` and `y ∈ N`.
 * `Ideal.smul_top_eq_top_of_isIdempotentElem`: an idempotent ideal `I` satisfies `I • ⊤ = ⊤` as a
   module over `R`.
 * `Ideal.span_range_fin_two_eq_top_iff`: a pair generates the unit ideal exactly when its entries
@@ -311,6 +313,42 @@ theorem pow_card_mul_prod_induction [Fintype ι] {J : Ideal S} (P : Ideal S → 
     exact hmul ih (hf i)
 
 end Prod
+
+section PowSMul
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- **Generators of `I ^ n • N`.** The submodule `I ^ n • N` is spanned by the vectors
+`(a₁ ⋯ aₙ) • y` with `a₁, …, aₙ ∈ I` and `y ∈ N`. -/
+theorem pow_smul_eq_span_prod_smul (I : Ideal R) (n : ℕ) (N : Submodule R M) :
+    I ^ n • N =
+      Submodule.span R {y | ∃ a : Fin n → R, (∀ i, a i ∈ I) ∧ ∃ z ∈ N, (∏ i, a i) • z = y} := by
+  refine le_antisymm ?_ (Submodule.span_le.2 ?_)
+  · induction n with
+    | zero =>
+      rw [pow_zero, one_eq_top, Submodule.top_smul]
+      exact fun z hz ↦ Submodule.subset_span ⟨Fin.elim0, fun i ↦ i.elim0, z, hz, by simp⟩
+    | succ n ih =>
+      rw [pow_succ', Submodule.mul_smul]
+      refine Submodule.smul_le.2 fun a ha t ht ↦ ?_
+      replace ht := ih ht
+      -- Multiplying a generator by `a ∈ I` gives a generator with one more factor.
+      induction ht using Submodule.span_induction with
+      | mem t hgen =>
+        obtain ⟨b, hb, z, hz, rfl⟩ := hgen
+        refine Submodule.subset_span ⟨Fin.cons a b, fun i ↦ ?_, z, hz, ?_⟩
+        · cases i using Fin.cases with
+          | zero => simpa using ha
+          | succ i => simpa using hb i
+        · rw [Fin.prod_cons, mul_smul]
+      | zero => simp
+      | add t u _ _ ht hu => rw [smul_add]; exact add_mem ht hu
+      | smul c t _ ht => rw [smul_comm]; exact Submodule.smul_mem _ c ht
+  · rintro _ ⟨a, ha, z, hz, rfl⟩
+    refine Submodule.smul_mem_smul ?_ hz
+    simpa using prod_mem_prod (s := Finset.univ) (I := fun _ ↦ I) fun i _ ↦ ha i
+
+end PowSMul
 
 end Ideal
 
