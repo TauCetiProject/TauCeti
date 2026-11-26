@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Measure.WithDensity
+public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -30,6 +32,12 @@ these chart pushforwards, and two estimates for measures on the model seen throu
   points.
 * `TauCeti.exists_isOpen_setLIntegral_image_extChartAt_lt_top`: a function continuous on the chart
   target has finite integral over the chart image of a small open neighbourhood of `x`.
+* `OpenPartialHomeomorph.integral_eq_setIntegral_target_smul`: for a measure that reads in a chart
+  `e` as `w(y) dν(y)`, a function supported in the chart source is integrated in coordinates,
+  `∫ F dμ = ∫_{e.target} w(y) F(e⁻¹ y) dν(y)`.
+* `OpenPartialHomeomorph.integrable_of_support_subset_symm_image`: for such a measure, a function
+  continuous on the chart source and supported in the preimage of a compact subset of the chart
+  target is integrable.
 -/
 
 public section
@@ -153,5 +161,77 @@ theorem map_withDensity_restrict_extChartAt_source {x : M} {ν : Measure E}
   have hgy : g y = ENNReal.ofReal (h y) := piecewise_eq_of_mem _ _ _ hy
   rw [Pi.mul_apply, hgy, mul_comm, ENNReal.ofReal_mul (hh y hy)]
 
-
 end TauCeti
+
+/-! ### Integrals read in a chart -/
+
+namespace OpenPartialHomeomorph
+
+variable {M E G : Type*} [TopologicalSpace M] [MeasurableSpace M] [OpensMeasurableSpace M]
+  [TopologicalSpace E] [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup G]
+  [NormedSpace ℝ G] {e : OpenPartialHomeomorph M E} {μ : Measure M} {ν : Measure E} {w : E → ℝ}
+
+/-- **Integrals in a chart.** Let `μ` read in the chart `e` as the measure `w(y) dν(y)` on the
+chart target, with `w` continuous and nonnegative there. A function `F` continuous on the chart
+source and vanishing off it has integral `∫ F dμ = ∫_{e.target} w(y) F(e⁻¹ y) dν(y)`. -/
+theorem integral_eq_setIntegral_target_smul [SecondCountableTopology E]
+    (hμ : (μ.restrict e.source).map e =
+      (ν.restrict e.target).withDensity fun y ↦ ENNReal.ofReal (w y))
+    (hw : ContinuousOn w e.target) (hw0 : ∀ y ∈ e.target, 0 ≤ w y) {F : M → G}
+    (hF : ContinuousOn F e.source) (hF0 : ∀ x ∉ e.source, F x = 0) :
+    ∫ x, F x ∂μ = ∫ y in e.target, w y • F (e.symm y) ∂ν := by
+  have hsrc : MeasurableSet e.source := e.open_source.measurableSet
+  have htgt : MeasurableSet e.target := e.open_target.measurableSet
+  have he : AEMeasurable e (μ.restrict e.source) := e.continuousOn.aemeasurable hsrc
+  have hG : AEStronglyMeasurable (F ∘ e.symm) (ν.restrict e.target) :=
+    (hF.comp e.continuousOn_symm e.mapsTo_symm).aestronglyMeasurable htgt
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hF0,
+    integral_congr_ae (g := fun x ↦ (F ∘ e.symm) (e x)) ((ae_restrict_mem hsrc).mono fun x hx ↦ by
+      simp [e.left_inv hx]),
+    ← integral_map he (hμ ▸ hG.mono_ac (withDensity_absolutelyContinuous _ _)), hμ,
+    integral_withDensity_eq_integral_toReal_smul₀ (f := fun y ↦ ENNReal.ofReal (w y))
+      ((ENNReal.continuous_ofReal.comp_continuousOn hw).aemeasurable htgt)
+      (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
+  refine setIntegral_congr_fun htgt fun y hy ↦ ?_
+  simp [ENNReal.toReal_ofReal (hw0 y hy)]
+
+/-- A function continuous on the chart source and supported in the preimage `e⁻¹(K)` of a compact
+subset `K` of the chart target is integrable for `μ`, when `μ` reads in the chart as a measure
+finite on compact sets with a continuous density. -/
+theorem integrable_of_support_subset_symm_image [T2Space E] [IsFiniteMeasureOnCompacts ν]
+    (hμ : (μ.restrict e.source).map e =
+      (ν.restrict e.target).withDensity fun y ↦ ENNReal.ofReal (w y))
+    (hw : ContinuousOn w e.target) {F : M → G} (hF : ContinuousOn F e.source) {K : Set E}
+    (hK : IsCompact K) (hKt : K ⊆ e.target) (hFK : Function.support F ⊆ e.symm '' K) :
+    Integrable F μ := by
+  have hsrc : MeasurableSet e.source := e.open_source.measurableSet
+  have htgt : MeasurableSet e.target := e.open_target.measurableSet
+  have hKs : e.symm '' K ⊆ e.source := (image_mono hKt).trans e.symm_image_target_eq_source.le
+  have hG : ContinuousOn (F ∘ e.symm) e.target := hF.comp e.continuousOn_symm e.mapsTo_symm
+  have hwG : ContinuousOn (fun y ↦ (ENNReal.ofReal (w y)).toReal • (F ∘ e.symm) y) e.target := by
+    simp only [ENNReal.toReal_ofReal']
+    exact ((continuous_id.max continuous_const).comp_continuousOn hw).smul hG
+  -- Read in the chart, the weighted function is continuous on the target and supported in `K`.
+  have hint : Integrable (F ∘ e.symm) ((ν.restrict e.target).withDensity
+      fun y ↦ ENNReal.ofReal (w y)) := by
+    rw [integrable_withDensity_iff_integrable_smul₀' (f := fun y ↦ ENNReal.ofReal (w y))
+      ((ENNReal.continuous_ofReal.comp_continuousOn hw).aemeasurable htgt)
+      (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
+    refine IntegrableOn.integrable_of_ae_notMem_eq_zero (s := K) ?_ ?_
+    · rw [IntegrableOn, Measure.restrict_restrict_of_subset hKt]
+      exact (hwG.mono hKt).integrableOn_compact hK
+    filter_upwards [ae_restrict_mem htgt] with y hy hyK
+    -- At a point of the target outside `K`, `F ∘ e⁻¹` vanishes.
+    have : F (e.symm y) = 0 := by
+      by_contra h
+      obtain ⟨x, hxK, hxy⟩ := hFK h
+      exact hyK (e.symm.injOn (by simpa using hKt hxK) (by simpa using hy) hxy ▸ hxK)
+    simp [this]
+  have hmap : Integrable (F ∘ e.symm) ((μ.restrict e.source).map e) := by rwa [hμ]
+  rw [← integrableOn_iff_integrable_of_support_subset (hFK.trans hKs), IntegrableOn]
+  refine ((integrable_map_measure hmap.aestronglyMeasurable
+    (e.continuousOn.aemeasurable hsrc)).1 hmap).congr ?_
+  filter_upwards [ae_restrict_mem hsrc] with x hx
+  simp [e.left_inv hx]
+
+end OpenPartialHomeomorph
