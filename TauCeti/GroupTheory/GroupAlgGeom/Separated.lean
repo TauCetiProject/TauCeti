@@ -291,13 +291,13 @@ private def CoordGroup.gHomEquivQuotient (S : Set (GX G X)) :
 `G`-homomorphism `G_{R(S)} → K` from the coordinate group of `S` over `H`. -/
 def CoordGroup.evalGHomOfIsSeparatedBy {S : Set (GX G X)} (h : IsSeparatedBy κ ι) (p : X → K)
     (hp : p ∈ V κ S) : GHom (CoordGroup.coeff ι S) κ :=
-  (gHomEquivQuotient S).symm (GX.quotientEvalGHom p ((h.V_Rad S).ge hp))
+  evalGHomOfMemVRad p ((h.V_Rad S).ge hp)
 
 @[simp]
 theorem CoordGroup.evalGHomOfIsSeparatedBy_mk {S : Set (GX G X)} (h : IsSeparatedBy κ ι)
     {p : X → K} (hp : p ∈ V κ S) (w : GX G X) :
     evalGHomOfIsSeparatedBy h p hp (w : CoordGroup ι S) = eval κ p w :=
-  GX.quotientEvalGHom_mk _ w
+  evalGHomOfMemVRad_mk _ w
 
 /-- Evaluation at a solution `p` in a group separated by `H` sends each coordinate of the generic
 point to that of `p`. -/
@@ -333,7 +333,8 @@ theorem CoordGroup.homEquivOfIsSeparatedBy_apply_coe (h : IsSeparatedBy κ ι) {
 @[simp]
 theorem CoordGroup.homEquivOfIsSeparatedBy_symm_apply (h : IsSeparatedBy κ ι) {S : Set (GX G X)}
     (p : V κ S) : (homEquivOfIsSeparatedBy h S).symm p = evalGHomOfIsSeparatedBy h p p.property :=
-  congrArg (gHomEquivQuotient S).symm (GX.quotientHomEquiv_symm_apply _)
+  (congrArg (gHomEquivQuotient S).symm (GX.quotientHomEquiv_symm_apply _)).trans <|
+    gHom_ext fun _ => (GX.quotientEvalGHom_mk _ _).trans (evalGHomOfIsSeparatedBy_mk h _ _).symm
 
 /-- Evaluating an equation at the solution attached to a `G`-homomorphism `φ : G_{R(S)} → K` gives
 the image under `φ` of its class. -/

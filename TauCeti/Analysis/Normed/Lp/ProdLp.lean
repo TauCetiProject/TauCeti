@@ -46,7 +46,8 @@ of a block sum of endomorphisms is the union of their spectra, it is compact whe
 are, and its operator norm is the larger of the two operator norms. The
 projections onto the factors and the inclusions of the factors are contractions, and fixing one
 coordinate embeds the other factor isometrically into `WithLp p (α × β)`, and as a closed subset
-when the fixed coordinate's factor is `T1`. A kernel on
+when the fixed coordinate's factor is `T1`. The diagonal `{(x, x)}` of
+`WithLp p (M × M)` is a submodule, isomorphic to `M` through `x ↦ (x, x)`. A kernel on
 `WithLp p (X × Y)` consisting of the pairs whose components lie in the ranges of two injective
 linear maps is identified with the product of their sources.
 
@@ -92,6 +93,8 @@ linear maps is identified with the product of their sources.
   embeds the other factor isometrically into `WithLp p (α × β)`.
 * `WithLp.isClosedEmbedding_toLp_prodMk_left`, `WithLp.isClosedEmbedding_toLp_prodMk_right` — the
   slice inclusions `y ↦ (a, y)` and `t ↦ (t, y)` into `WithLp p (X × Y)` are closed embeddings.
+* `WithLp.diagonal`, `WithLp.diagonalEquiv` — the diagonal of `WithLp p (M × M)` and its
+  isomorphism `x ↦ (x, x)` with `M`.
 -/
 
 public section
@@ -676,5 +679,51 @@ theorem isClosedEmbedding_toLp_prodMk_right [T1Space Y] (p : ℝ≥0∞) (y : Y)
     (.of_isEmbedding_isClosedMap (isEmbedding_prodMkLeft y) (isClosedMap_prodMk_right y))
 
 end Embedding
+
+/-! ### The diagonal -/
+
+section Diagonal
+
+variable (p : ℝ≥0∞) (R M : Type*) [Semiring R] [AddCommGroup M] [Module R M]
+
+/-- The diagonal `{(x, x)}` of `WithLp p (M × M)`, as a submodule. -/
+def diagonal : Submodule R (WithLp p (M × M)) where
+  carrier := {x | x.fst = x.snd}
+  add_mem' hx hy := by simp_all
+  zero_mem' := by simp
+  smul_mem' c x hx := by simp_all
+
+variable {p R M} in
+@[simp]
+theorem mem_diagonal_iff {x : WithLp p (M × M)} : x ∈ diagonal p R M ↔ x.fst = x.snd :=
+  Iff.rfl
+
+variable [TopologicalSpace M]
+
+/-- The diagonal map `x ↦ (x, x)`, as an isomorphism of `M` onto the diagonal of
+`WithLp p (M × M)`. -/
+def diagonalEquiv : M ≃L[R] diagonal p R M where
+  toFun x := ⟨toLp p (x, x), rfl⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun x := (x : WithLp p (M × M)).fst
+  left_inv _ := rfl
+  right_inv x := Subtype.ext (WithLp.ofLp_injective p (Prod.ext rfl x.property))
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+variable {p R M}
+
+@[simp]
+theorem coe_diagonalEquiv_apply (x : M) :
+    (diagonalEquiv p R M x : WithLp p (M × M)) = toLp p (x, x) :=
+  (rfl)
+
+@[simp]
+theorem diagonalEquiv_symm_apply (x : diagonal p R M) :
+    (diagonalEquiv p R M).symm x = (x : WithLp p (M × M)).fst :=
+  (rfl)
+
+end Diagonal
 
 end WithLp

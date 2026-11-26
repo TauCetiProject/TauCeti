@@ -104,6 +104,8 @@ transported along the transpose of an injective linear map, such as the inclusio
 * `TauCeti.exists_finset_subset_biUnion_interior_and_isOpen_cone`: finitely many of given
   neighbourhoods of the points of a compact set cover it, and the corresponding open cones
   intersect in an open cone.
+* `IsClosed.zero_mem_of_smul_mem`: a nonempty closed set closed under multiplication by positive
+  reals contains `0`.
 * `TauCeti.forall_smul_mem_neg`, `TauCeti.forall_smul_mem_compl`, `TauCeti.forall_smul_mem_add`,
   `TauCeti.forall_smul_mem_insert_zero`: the negative and the complement of a set closed under
   multiplication by positive reals, the sum of two such sets, and such a set with `0` adjoined, are
@@ -405,6 +407,20 @@ theorem exists_cone_mul_add_le_norm_apply_sub {X : Type*} [NormedAddCommGroup X]
     linarith
 
 end IsOpen
+
+namespace IsClosed
+
+/-- A closed set closed under multiplication by positive reals contains `0` as soon as it is
+nonempty. -/
+theorem zero_mem_of_smul_mem {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [ContinuousSMul ℝ E] {V : Set E} (hV : IsClosed V)
+    (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {ξ : E} (hξ : ξ ∈ V) : (0 : E) ∈ V := by
+  have h : Filter.Tendsto (fun n : ℕ ↦ (1 / ((n : ℝ) + 1)) • ξ) Filter.atTop (nhds 0) := by
+    have h0 := (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).smul_const ξ
+    rwa [zero_smul] at h0
+  exact hV.mem_of_tendsto h (Filter.Eventually.of_forall fun n ↦ hVcone _ (by positivity) ξ hξ)
+
+end IsClosed
 
 namespace TauCeti
 

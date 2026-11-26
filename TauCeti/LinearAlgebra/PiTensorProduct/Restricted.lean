@@ -47,6 +47,8 @@ product (`TauCeti.RestrictedTensor.finiteEquiv`).
   but finitely many places.
 * `TauCeti.RestrictedTensor.map`: the map induced by factorwise linear maps preserving the
   references.
+* `TauCeti.RestrictedTensor.congr`: the equivalence induced by factorwise linear equivalences
+  preserving the references.
 * `TauCeti.RestrictedTensor.univStageEquiv`: for a finite index type, the restricted tensor
   product is the tensor product over the full stage `Finset.univ`.
 * `TauCeti.RestrictedTensor.finiteEquiv`: for a finite index type, the restricted tensor product
@@ -65,6 +67,8 @@ product (`TauCeti.RestrictedTensor.finiteEquiv`).
   `TauCeti.RestrictedTensor.tprod_coord_zero`: pure tensors are multilinear in the entries.
 * `TauCeti.RestrictedTensor.map_id`, `TauCeti.RestrictedTensor.map_comp`: the induced maps are
   functorial.
+* `TauCeti.RestrictedTensor.congr_symm`, `TauCeti.RestrictedTensor.congr_refl`,
+  `TauCeti.RestrictedTensor.congr_trans`: the induced equivalences are functorial.
 * `TauCeti.RestrictedTensor.finiteEquiv_apply_ofFinite`,
   `TauCeti.RestrictedTensor.finiteEquiv_symm_apply`: the identification for a finite index type,
   on finite stages and in the inverse direction.
@@ -415,6 +419,69 @@ theorem map_map {W'' : ι → Type*} [∀ i, AddCommMonoid (W'' i)] [∀ i, Modu
     map g hg (map f hf x) =
       map (fun i ↦ g i ∘ₗ f i) (fun i ↦ by rw [LinearMap.comp_apply, hf, hg]) x := by
   rw [map_comp, LinearMap.comp_apply]
+
+/-- Linear equivalences `e i : W i ≃ W' i` sending the references to the references induce a
+linear equivalence of restricted tensor products, `⨂ₜ g ↦ ⨂ₜ (e i (g i))`. -/
+def congr (e : ∀ i, W i ≃ₗ[R] W' i) (he : ∀ i, e i (w i) = w' i) :
+    RestrictedTensor R W w ≃ₗ[R] RestrictedTensor R W' w' :=
+  LinearEquiv.ofLinearMap (map (fun i ↦ (e i : W i →ₗ[R] W' i)) he)
+    (map (fun i ↦ ((e i).symm : W' i →ₗ[R] W i)) fun i ↦ by
+      rw [LinearEquiv.coe_coe, ← he, LinearEquiv.symm_apply_apply])
+    (by rw [← map_comp, ← map_id w']; congr 1; ext i x; simp)
+    (by rw [← map_comp, ← map_id w]; congr 1; ext i x; simp)
+
+/-- The underlying linear map of `congr e he` is the map induced by the `e i`. -/
+theorem toLinearMap_congr (e : ∀ i, W i ≃ₗ[R] W' i) (he : ∀ i, e i (w i) = w' i) :
+    (congr e he : RestrictedTensor R W w →ₗ[R] RestrictedTensor R W' w') =
+      map (fun i ↦ (e i : W i →ₗ[R] W' i)) he := by
+  rw [RestrictedTensor.congr, LinearEquiv.toLinearMap_ofLinearMap]
+
+/-- The induced equivalence on a finite stage is the tensor map of the factors. -/
+@[simp]
+theorem congr_ofFinite (e : ∀ i, W i ≃ₗ[R] W' i) (he : ∀ i, e i (w i) = w' i) (S : Finset ι)
+    (x : ⨂[R] i : S, W i) :
+    congr e he (ofFinite R W w S x) =
+      ofFinite R W' w' S (PiTensorProduct.map (fun i : S ↦ (e i : W i →ₗ[R] W' i)) x) := by
+  rw [← LinearEquiv.coe_coe, toLinearMap_congr, map_ofFinite]
+
+/-- The induced equivalence on pure tensors. -/
+@[simp]
+theorem congr_tprod (e : ∀ i, W i ≃ₗ[R] W' i) (he : ∀ i, e i (w i) = w' i) (g : ∀ i, W i)
+    (hg : {i | g i ≠ w i}.Finite) :
+    congr e he (tprod R w g hg) = tprod R w' (fun i ↦ e i (g i))
+      (hg.subset fun i hi h ↦ hi (by rw [h, he])) := by
+  rw [← LinearEquiv.coe_coe, toLinearMap_congr, map_tprod]
+  simp only [LinearEquiv.coe_coe]
+
+/-- The inverse of the equivalence induced by the `e i` is induced by their inverses. -/
+@[simp]
+theorem congr_symm (e : ∀ i, W i ≃ₗ[R] W' i) (he : ∀ i, e i (w i) = w' i) :
+    (congr e he).symm =
+      congr (fun i ↦ (e i).symm) fun i ↦ by rw [← he, LinearEquiv.symm_apply_apply] := by
+  refine LinearEquiv.toLinearMap_injective ?_
+  rw [toLinearMap_congr, RestrictedTensor.congr, LinearEquiv.symm_ofLinearMap,
+    LinearEquiv.toLinearMap_ofLinearMap]
+
+variable (w) in
+/-- The identity equivalences of the factors induce the identity. -/
+@[simp]
+theorem congr_refl :
+    congr (w := w) (fun i ↦ LinearEquiv.refl R (W i)) (fun _ ↦ rfl) = LinearEquiv.refl R _ :=
+  LinearEquiv.toLinearMap_injective <| by
+    simp only [toLinearMap_congr, LinearEquiv.refl_toLinearMap]
+    exact map_id w
+
+/-- The equivalence induced by composites of factorwise equivalences is the composite of the
+induced equivalences. -/
+@[simp]
+theorem congr_trans {W'' : ι → Type*} [∀ i, AddCommMonoid (W'' i)] [∀ i, Module R (W'' i)]
+    {w'' : ∀ i, W'' i} (e : ∀ i, W i ≃ₗ[R] W' i) (he : ∀ i, e i (w i) = w' i)
+    (e' : ∀ i, W' i ≃ₗ[R] W'' i) (he' : ∀ i, e' i (w' i) = w'' i) :
+    (congr e he).trans (congr e' he') =
+      congr (fun i ↦ (e i).trans (e' i)) fun i ↦ by rw [LinearEquiv.trans_apply, he, he'] :=
+  LinearEquiv.toLinearMap_injective <| by
+    simp only [LinearEquiv.coe_trans, toLinearMap_congr]
+    exact (map_comp _ he' _ he).symm
 
 end map
 

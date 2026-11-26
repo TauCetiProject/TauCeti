@@ -28,7 +28,8 @@ inclusion of the second lattice in the first, `diag(1, ℓ)` in these bases, bec
 after extending scalars to `ℚ_ℓ`, so both are lattices of the same `ℚ_ℓ`-representation. Their
 raw reductions are not isomorphic: the first is a non-trivial unipotent representation of `ℤ` on
 `𝔽_ℓ²`, the second is trivial. So the raw reduction depends on the lattice, and no
-semisimplification is applied.
+semisimplification is applied. In particular the two lattices are not isomorphic over `ℤ_ℓ`
+(`isEmpty_iso_unipotent`).
 
 For a field `K` in which `ℓ` is invertible, any integral model of the line `ℚ_ℓ(1)` of the
 `ℓ`-adic cyclotomic character of `G_K` reduces to the mod `ℓ` cyclotomic character: `g` acts on
@@ -168,6 +169,14 @@ theorem isEmpty_iso_reduction {a : ℤ_[ℓ]} (ha : IsUnit a) :
     IsEmpty (Iso (unipotent ℓ a).reduction (unipotent ℓ (ℓ * a)).reduction) := by
   refine ⟨fun e ↦ reduction_unipotent_ne_one ℓ ha (LinearMap.ext fun x ↦ EquivLike.injective e ?_)⟩
   rw [e.isIntertwining, reduction_unipotent_ell_mul_eq_one, one_apply_eq_self, one_apply_eq_self]
+
+/-- **The two lattices are not isomorphic over `ℤ_ℓ`**, although they become isomorphic over `ℚ_ℓ`
+(`nonempty_iso_baseChange_unipotent`): an isomorphism would reduce to an isomorphism of the raw
+reductions, which `isEmpty_iso_reduction` excludes. So isomorphism over `ℤ_ℓ` is not conjugacy
+over the fraction field. -/
+theorem isEmpty_iso_unipotent {a : ℤ_[ℓ]} (ha : IsUnit a) :
+    IsEmpty (Iso (unipotent ℓ a) (unipotent ℓ (ℓ * a))) :=
+  ⟨fun e ↦ (isEmpty_iso_reduction ℓ ha).false (e.baseChange (ResidueField ℤ_[ℓ]))⟩
 
 /-! ### Models of `ℚ_ℓ(1)` -/
 

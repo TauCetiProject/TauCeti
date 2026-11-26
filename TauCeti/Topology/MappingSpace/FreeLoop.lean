@@ -12,6 +12,7 @@ public import TauCeti.Topology.CompactOpen
 public import TauCeti.Topology.ContinuousMap.Precomp
 public import TauCeti.Topology.MappingSpace.Evaluation
 public import Mathlib.Topology.Homotopy.Basic
+public import Mathlib.Topology.Homotopy.HomotopyGroup
 import TauCeti.Topology.Homotopy.Homotopic.With
 import TauCeti.Topology.PathComponent
 
@@ -46,6 +47,8 @@ such paths in `𝓛₀Q` (`TauCeti.constLoopPathHomeomorph`).
 * `TauCeti.ClosedUnitPath`, `TauCeti.circleMapHomeomorphClosedUnitPath`:
   `C(Circle, Q) ≃ₜ {p : C(I, Q) // p 0 = p 1}`.
 * `TauCeti.unitAddCircleMapHomeomorphClosedUnitPath`: the same for maps from `UnitAddCircle`.
+* `GenLoop.exists_unitAddCircle_apply_eq`: a generalized loop of dimension one is traced by a map
+  from `UnitAddCircle`.
 * `TauCeti.basedMapCircleOneHomeomorphPath`: `BasedMap Circle Q 1 x ≃ₜ Path x x`.
 * `Path.continuous_toCircle`: reading loops as circle maps is continuous.
 * `Path.joined_toCircle_iff_homotopicWith`: two loops are joined in `C(Circle, Q)` exactly when
@@ -65,7 +68,7 @@ public section
 
 noncomputable section
 
-open scoped unitInterval
+open scoped unitInterval Topology.Homotopy
 
 namespace TauCeti
 
@@ -261,6 +264,15 @@ theorem unitAddCircleMapHomeomorphClosedUnitPath_apply (γ : C(UnitAddCircle, Q)
 theorem unitAddCircleMapHomeomorphClosedUnitPath_symm_apply (p : ClosedUnitPath Q) (t : I) :
     unitAddCircleMapHomeomorphClosedUnitPath.symm p ((t : ℝ) : UnitAddCircle) = p.val t := by
   rw [← unitAddCircleMapHomeomorphClosedUnitPath_apply, Homeomorph.apply_symm_apply]
+
+/-- A generalized loop of dimension one is traced by a map from the circle `ℝ / ℤ`. -/
+theorem _root_.GenLoop.exists_unitAddCircle_apply_eq {x : Q} (p : Ω^ (Fin 1) Q x) :
+    ∃ ℓ : C(UnitAddCircle, Q), ∀ t : I, ℓ (t : ℝ) = p (fun _ ↦ t) :=
+  ⟨unitAddCircleMapHomeomorphClosedUnitPath.symm
+      ⟨⟨fun t ↦ p (fun _ ↦ t), by fun_prop⟩,
+        (GenLoop.boundary p _ ⟨0, Or.inl rfl⟩).trans
+          (GenLoop.boundary p _ ⟨0, Or.inr rfl⟩).symm⟩,
+    fun t ↦ unitAddCircleMapHomeomorphClosedUnitPath_symm_apply _ t⟩
 
 /-- Restricting `circleMapHomeomorphClosedUnitPath` to the fibre of evaluation at `1 ∈ Circle` over
 `x` gives the homeomorphism `BasedMap Circle Q 1 x ≃ₜ Path x x`. -/

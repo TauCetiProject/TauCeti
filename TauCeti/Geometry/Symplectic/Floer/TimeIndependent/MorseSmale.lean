@@ -102,8 +102,8 @@ theorem finrank_ker_floerSobolevOperator_negativeGradientFlow
   have hmem := hH'.memLp_top_hessianOperator_comp hγ.continuous
     (Flow.mem_unstableSet.1 hyu) (Flow.mem_stableSet.1 hys)
     (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))
-  rw [finrank_ker_floerSobolevOperator_eq_finrank_ker_trajectoryOperator hg hH hγ.continuous ha haγ
-    (hmem.coeFn_toLp.trans (.of_forall fun s ↦
+  rw [finrank_ker_floerSobolevOperator_eq_finrank_ker_trajectoryOperator (H := fun _ ↦ H) hg
+    (hH.comp contDiff_snd) hγ.continuous ha haγ (hmem.coeFn_toLp.trans (.of_forall fun s ↦
       (neg_comp_fderiv_hamiltonianVectorField_eq_hessianOperator_neg hg H _).symm))]
   exact finrank_ker_trajectoryOperator_hessianOperator_negativeGradientFlow hp.neg hq.neg hH' hf hyu
     hys hmem.coeFn_toLp
@@ -131,7 +131,8 @@ private theorem surjective_floerSobolevOperator_iff_surjective_trajectoryOperato
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)) ↔
       Function.Surjective (WeakDerivStep.trajectoryOperator (p := 2) A) :=
-  surjective_floerSobolevOperator_iff_surjective_trajectoryOperator hω hH hγ ha haγ
+  surjective_floerSobolevOperator_iff_surjective_trajectoryOperator (H := fun _ ↦ H) hω
+    (hH.comp contDiff_snd) hγ ha haγ
     (hA.trans (.of_forall fun s ↦
       (neg_comp_fderiv_hamiltonianVectorField_eq_hessianOperator_neg
         (ω.apply_ofComplexModule_eq_inner hω) H (γ s)).symm))

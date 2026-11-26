@@ -168,8 +168,8 @@ theorem index_floerSobolevOperator_cappedCylinderComponent_eq_continuationHomoto
     (contDiff_uncurry_continuationHomotopy (hHbs inf) (hHbs zero)) hJ
     (contDiff_uncurry_cappedCylinderComponent hHb hHbs hL 1)
     (contDiff_uncurry_cappedCylinderComponent hHb hHbs hL Complex.I)
-    (compatible_continuationAlmostComplex h₀ hJmc hJpc) hJc hu hXm hxm hndm huxm hδm hXp hxp hndp
-    huxp hδp
+    (fun _ _ ↦ compatible_continuationAlmostComplex h₀ (hJmc _ _) (hJpc _ _)) hJc hu hXm hxm hndm
+    huxm hδm hXp hxp hndp huxp hδp
     (isFredholm_floerSobolevOperator_continuationHomotopy ω hω h₀ hJm' hJp' hJmc hJpc hXm
       hHinf (hHb inf) hXp hHzero (hHb zero) hxm hxmper hndm hxp hxpper hndp hu huxm hδm
       huxp hδp)

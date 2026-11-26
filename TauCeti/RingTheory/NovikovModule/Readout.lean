@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.NovikovModule.Leibniz
 public import TauCeti.RingTheory.NovikovModule.Tensor.Basic
-import TauCeti.Algebra.BigOperators.Finprod
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -62,13 +61,21 @@ identity consumed by
 `TauCeti.NovikovModule.kernelProduct_sub_negOnePow_smul_kernelProduct_of_tensorDifferential`
 (`NovikovModule.sub_negOnePow_mul_eq_kernelComp_add_kernelComp_of_functionalBoundary`).
 
+For associativity, the source is the triple tensor product `(C₁ ⊗ C₂) ⊗ C₃` with its Koszul
+differential. A degree `-1` functional whose boundary is the readout of the composite kernel of
+`(a ⋆ b) ⋆' c` minus the readout of that of `a ⋆''' (b ⋆'' c)` gives the associativity kernel
+identity consumed by
+`TauCeti.NovikovModule.kernelProduct_kernelProduct_sub_kernelProduct_kernelProduct_of_mem_gradeBy`
+(`NovikovModule.finsum_sub_finsum_eq_kernelComp_add_kernelComp_of_functionalBoundary`).
+
 The functional identities themselves are hypotheses: they are the boundary theorems for oriented
 one-dimensional moduli spaces, which are not constructed here.
 
 ## Main definitions
 
+* `TauCeti.NovikovModule.signTwist`: the twist of a functional by the signs `(-1)^(e(q, p₀))`.
 * `TauCeti.NovikovModule.kernelReadout`: the graded identification of functional and operator
-  kernels.
+  kernels, a sign twist.
 * `TauCeti.NovikovModule.functionalBoundary`: a functional kernel composed with the Koszul total
   differential of `X ⊗ C₀^∨`.
 
@@ -80,6 +87,8 @@ one-dimensional moduli spaces, which are not constructed here.
   Leibniz rule from a closed product functional.
 * `TauCeti.NovikovModule.sub_negOnePow_mul_eq_kernelComp_add_kernelComp_of_functionalBoundary`:
   the commutativity homotopy identity from an exchange functional.
+* `TauCeti.NovikovModule.finsum_sub_finsum_eq_kernelComp_add_kernelComp_of_functionalBoundary`:
+  the associativity homotopy identity from a functional of the four-punctured sphere family.
 
 ## References
 
@@ -101,63 +110,90 @@ namespace NovikovModule
 
 variable {R S S₀ : Type*} [CommRing R]
 
+section SignTwist
+
+variable (e : S → S₀ → ℤ)
+
+/-- The **sign twist** of a functional `ψ` on `X ⊗ C₀^∨` by exponents `e`: the functional
+`(-1)^(e(q, p₀)) ψ(q, p₀)`. The operator readout (`TauCeti.NovikovModule.kernelReadout`) and the
+regradings of functionals from the raw to the cochain grading
+(`TauCeti.NovikovModule.regradeProductFunctional`,
+`TauCeti.NovikovModule.regradeTripleFunctional`) are sign twists. -/
+def signTwist (ψ : S → S₀ → R) (q : S) (p₀ : S₀) : R :=
+  negOnePowCast R (e q p₀) * ψ q p₀
+
+/-- A value of a sign twist. -/
+theorem signTwist_apply (ψ : S → S₀ → R) (q : S) (p₀ : S₀) :
+    signTwist e ψ q p₀ = negOnePowCast R (e q p₀) * ψ q p₀ :=
+  (rfl)
+
+/-- A sign twist is an involution. -/
+@[simp]
+theorem signTwist_signTwist (ψ : S → S₀ → R) : signTwist e (signTwist e ψ) = ψ := by
+  funext q p₀
+  rw [signTwist_apply, signTwist_apply, ← mul_assoc, negOnePowCast_mul_self, one_mul]
+
+/-- A sign twist is injective. -/
+theorem signTwist_injective : Injective (signTwist (R := R) e) :=
+  LeftInverse.injective (g := signTwist e) (signTwist_signTwist e)
+
+/-- Two functionals have equal sign twists exactly when they are equal. -/
+@[simp]
+theorem signTwist_inj {ψ ψ' : S → S₀ → R} : signTwist e ψ = signTwist e ψ' ↔ ψ = ψ' :=
+  (signTwist_injective e).eq_iff
+
+/-- The sign twist of the zero functional is zero. -/
+@[simp]
+theorem signTwist_zero : signTwist (R := R) e 0 = 0 := by
+  funext q p₀
+  simp [signTwist_apply]
+
+/-- A sign twist is additive. -/
+@[simp]
+theorem signTwist_add (ψ ψ' : S → S₀ → R) :
+    signTwist e (ψ + ψ') = signTwist e ψ + signTwist e ψ' := by
+  funext q p₀
+  simp [signTwist_apply, mul_add]
+
+/-- A sign twist commutes with negation. -/
+@[simp]
+theorem signTwist_neg (ψ : S → S₀ → R) : signTwist e (-ψ) = -signTwist e ψ := by
+  funext q p₀
+  simp [signTwist_apply]
+
+/-- A sign twist commutes with subtraction. -/
+@[simp]
+theorem signTwist_sub (ψ ψ' : S → S₀ → R) :
+    signTwist e (ψ - ψ') = signTwist e ψ - signTwist e ψ' := by
+  funext q p₀
+  simp [signTwist_apply, mul_sub]
+
+/-- A sign twist commutes with scalar multiplication. -/
+@[simp]
+theorem signTwist_smul (c : R) (ψ : S → S₀ → R) : signTwist e (c • ψ) = c • signTwist e ψ := by
+  funext q p₀
+  simp only [signTwist_apply, Pi.smul_apply, smul_eq_mul]
+  ring
+
+end SignTwist
+
 section Readout
 
 /-- The **operator readout** of a functional kernel `φ` on `X ⊗ C₀^∨`, for the degree function
 `d₀` on the output generators: the operator kernel `(-1)^(d₀ q) φ(x, q)`. This is a
 coefficientwise sign involution, with the sign of the graded bidual map
 `p ↦ (f ↦ (-1)^(|p| |f|) f(p))`; when `C₀` is free of finite rank in each degree it induces the
-identification `Hom(X ⊗ C₀^∨, R) ≅ Hom(X, C₀)`. The same formula converts operator kernels to
-functionals (`NovikovModule.kernelReadout_kernelReadout`). -/
-def kernelReadout (d₀ : S₀ → ℤ) (φ : S → S₀ → R) (x : S) (q : S₀) : R :=
-  negOnePowCast R (d₀ q) * φ x q
+identification `Hom(X ⊗ C₀^∨, R) ≅ Hom(X, C₀)`. It is the sign twist by `d₀ q`, so the API of
+`TauCeti.NovikovModule.signTwist` (involution, injectivity, linearity) applies to it; in
+particular the same formula converts operator kernels to functionals
+(`NovikovModule.signTwist_signTwist`). -/
+abbrev kernelReadout (d₀ : S₀ → ℤ) (φ : S → S₀ → R) : S → S₀ → R :=
+  signTwist (fun _ q => d₀ q) φ
 
 /-- A coefficient of the readout of a functional kernel. -/
 theorem kernelReadout_apply (d₀ : S₀ → ℤ) (φ : S → S₀ → R) (x : S) (q : S₀) :
     kernelReadout d₀ φ x q = negOnePowCast R (d₀ q) * φ x q :=
   (rfl)
-
-/-- The readout is an involution: reading out twice returns the original kernel. -/
-@[simp]
-theorem kernelReadout_kernelReadout (d₀ : S₀ → ℤ) (φ : S → S₀ → R) :
-    kernelReadout d₀ (kernelReadout d₀ φ) = φ := by
-  funext x q
-  rw [kernelReadout_apply, kernelReadout_apply, ← mul_assoc, negOnePowCast_mul_self, one_mul]
-
-/-- The readout of the zero kernel is zero. -/
-@[simp]
-theorem kernelReadout_zero (d₀ : S₀ → ℤ) : kernelReadout (R := R) (S := S) d₀ 0 = 0 := by
-  funext x q
-  simp [kernelReadout_apply]
-
-/-- The readout is additive. -/
-@[simp]
-theorem kernelReadout_add (d₀ : S₀ → ℤ) (φ ψ : S → S₀ → R) :
-    kernelReadout d₀ (φ + ψ) = kernelReadout d₀ φ + kernelReadout d₀ ψ := by
-  funext x q
-  simp [kernelReadout_apply, mul_add]
-
-/-- The readout commutes with negation. -/
-@[simp]
-theorem kernelReadout_neg (d₀ : S₀ → ℤ) (φ : S → S₀ → R) :
-    kernelReadout d₀ (-φ) = -kernelReadout d₀ φ := by
-  funext x q
-  simp [kernelReadout_apply]
-
-/-- The readout commutes with subtraction. -/
-@[simp]
-theorem kernelReadout_sub (d₀ : S₀ → ℤ) (φ ψ : S → S₀ → R) :
-    kernelReadout d₀ (φ - ψ) = kernelReadout d₀ φ - kernelReadout d₀ ψ := by
-  funext x q
-  simp [kernelReadout_apply, mul_sub]
-
-/-- The readout commutes with scalar multiplication. -/
-@[simp]
-theorem kernelReadout_smul (d₀ : S₀ → ℤ) (c : R) (φ : S → S₀ → R) :
-    kernelReadout d₀ (c • φ) = c • kernelReadout d₀ φ := by
-  funext x q
-  simp only [kernelReadout_apply, Pi.smul_apply, smul_eq_mul]
-  ring
 
 /-- The readout commutes with multiplication by a pointwise factor `c(x, q)`. -/
 theorem kernelReadout_mul_left (d₀ : S₀ → ℤ) (c φ : S → S₀ → R) :
@@ -165,17 +201,6 @@ theorem kernelReadout_mul_left (d₀ : S₀ → ℤ) (c φ : S → S₀ → R) :
   funext x q
   simp only [kernelReadout_apply, Pi.mul_apply]
   ring
-
-/-- The readout is injective. -/
-theorem kernelReadout_injective (d₀ : S₀ → ℤ) :
-    Injective (kernelReadout (R := R) (S := S) d₀) :=
-  LeftInverse.injective (g := kernelReadout d₀) (kernelReadout_kernelReadout d₀)
-
-/-- Two kernels have equal readouts exactly when they are equal. -/
-@[simp]
-theorem kernelReadout_inj {d₀ : S₀ → ℤ} {φ ψ : S → S₀ → R} :
-    kernelReadout d₀ φ = kernelReadout d₀ ψ ↔ φ = ψ :=
-  (kernelReadout_injective d₀).eq_iff
 
 /-- Two kernels have equal readouts at a pair of generators exactly when they agree there. -/
 @[simp]
@@ -217,13 +242,13 @@ theorem functionalBoundary_kernelReadout {t : S → S₀ → R}
   -- The input breakings carry the sign of the fixed output `q`.
   have h₁ : kernelComp δ (kernelReadout d₀ t) x q =
       negOnePowCast R (d₀ q) * kernelComp δ t x q := by
-    exact kernelComp_eq_mul_kernelComp (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self _))
+    exact kernelComp_eq_mul_kernelComp (isLeftRegular_negOnePowCast _)
       fun x' => by rw [kernelReadout_apply]; ring
   -- At the output breakings, `t` is supported in degree `d x + j`.
   have h₂ : kernelComp (kernelReadout d₀ t) δ₀ x q =
       negOnePowCast R (d x + j) * kernelComp t δ₀ x q := by
     refine kernelComp_eq_mul_kernelComp
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self _)) fun p => ?_
+      (isLeftRegular_negOnePowCast _) fun p => ?_
     by_cases hp : t x p = 0
     · simp [kernelReadout_apply, hp]
     · rw [kernelReadout_apply, ht x p hp, mul_assoc]
@@ -348,10 +373,52 @@ theorem sub_negOnePow_mul_eq_kernelComp_add_kernelComp_of_functionalBoundary
     (s := (fun q => n q.1 q.2) -
       (fun q _ => ((d₁ q.1 * d₂ q.2).negOnePow : R)) * fun q => n' q.2 q.1)
     hk q p₀).1 ?_).symm
-  rw [hψ, kernelReadout_sub, kernelReadout_mul_left]
+  rw [hψ]
+  simp only [signTwist_sub, kernelReadout_mul_left]
   rfl
 
 end Product
+
+section Associativity
+
+variable {S₁ S₂ S₃ S₁₂ S₂₃ : Type*} [DecidableEq S₁] [DecidableEq S₂] [DecidableEq S₃]
+  {d₁ : S₁ → ℤ} {d₂ : S₂ → ℤ} {d₃ : S₃ → ℤ} {d₀ : S₀ → ℤ}
+  {δ₁ : S₁ → S₁ → R} {δ₂ : S₂ → S₂ → R} {δ₃ : S₃ → S₃ → R} {δ₀ : S₀ → S₀ → R}
+
+/-- **The associativity homotopy from a functional of the four-punctured sphere family.** Let
+`n`, `n'` be the product kernels of `(a ⋆ b) ⋆' c` and `m`, `m'` those of `a ⋆''' (b ⋆'' c)`, and
+let `k` be a kernel of degree `-1` out of `C₁ ⊗ C₂ ⊗ C₃`. If the boundary of the readout of `k`,
+for the Koszul tensor differential `δ⊗` of `(C₁ ⊗ C₂) ⊗ C₃`, is the readout of the composite
+kernel `∑ₜ n(p₁, p₂, t) n'(t, p₃, ·)` minus the readout of `∑ᵤ m(p₂, p₃, u) m'(p₁, u, ·)`, then
+`k` is a kernel homotopy
+
+`∑ₜ n(p₁, p₂, t) n'(t, p₃, p₀) - ∑ᵤ m(p₂, p₃, u) m'(p₁, u, p₀) =
+  ∑ k(q, p) δ₀(p, p₀) + ∑ δ⊗(q, q') k(q', p₀)`
+
+at `q = ((p₁, p₂), p₃)`, as consumed by
+`TauCeti.NovikovModule.kernelProduct_kernelProduct_sub_kernelProduct_kernelProduct_of_mem_gradeBy`.
+For the pair-of-pants product the hypothesis is the count of the boundary of the one-dimensional
+moduli spaces of the associativity family, whose two parameter ends are the two broken
+compositions. -/
+theorem finsum_sub_finsum_eq_kernelComp_add_kernelComp_of_functionalBoundary
+    {n : S₁ → S₂ → S₁₂ → R} {n' : S₁₂ → S₃ → S₀ → R} {m : S₂ → S₃ → S₂₃ → R}
+    {m' : S₁ → S₂₃ → S₀ → R} {k : (S₁ × S₂) × S₃ → S₀ → R}
+    (hk : ∀ q p₀, k q p₀ ≠ 0 → d₀ p₀ = d₁ q.1.1 + d₂ q.1.2 + d₃ q.2 - 1)
+    {q : (S₁ × S₂) × S₃} {p₀ : S₀}
+    (hψ : functionalBoundary (fun q : (S₁ × S₂) × S₃ => d₁ q.1.1 + d₂ q.1.2 + d₃ q.2) d₀
+      (tensorDifferential (fun q : S₁ × S₂ => d₁ q.1 + d₂ q.2) (tensorDifferential d₁ δ₁ δ₂) δ₃)
+      δ₀ (kernelReadout d₀ k) q p₀ =
+        kernelReadout d₀ (fun q p₀ => ∑ᶠ t, n q.1.1 q.1.2 t * n' t q.2 p₀) q p₀ -
+          kernelReadout d₀ (fun q p₀ => ∑ᶠ u, m q.1.2 q.2 u * m' q.1.1 u p₀) q p₀) :
+    ∑ᶠ t, n q.1.1 q.1.2 t * n' t q.2 p₀ - ∑ᶠ u, m q.1.2 q.2 u * m' q.1.1 u p₀ =
+      kernelComp k δ₀ q p₀ +
+        kernelComp (tensorDifferential (fun q : S₁ × S₂ => d₁ q.1 + d₂ q.2)
+          (tensorDifferential d₁ δ₁ δ₂) δ₃) k q p₀ :=
+  ((functionalBoundary_kernelReadout_eq_kernelReadout_iff
+    (s := fun q p₀ => ∑ᶠ t, n q.1.1 q.1.2 t * n' t q.2 p₀ - ∑ᶠ u, m q.1.2 q.2 u * m' q.1.1 u p₀)
+    hk q p₀).1 (by rw [hψ]; simp only [kernelReadout_apply, mul_sub])).symm
+
+end Associativity
 
 end NovikovModule
 

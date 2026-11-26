@@ -37,7 +37,7 @@ noncomputable section
 
 namespace TauCeti
 
-open CategoryTheory DirectSum Polynomial
+open CategoryTheory _root_.DirectSum Polynomial
 
 universe u
 
