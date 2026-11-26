@@ -274,8 +274,39 @@ private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le {c : ℝ} {q 
       ring
 
 /-- **The kernel component.** Let `π` be the projection onto the kernel of `T` along its
-`L²`-orthogonal complement and `Q` a right inverse of `T`, and let `y`, `A` be such that the
-pairings of `y` with the kernel are bounded by `|⟪y, k⟫| ≤ |⟪Q (Z(b, k)), A⟫|`. If the weight
+`L²`-orthogonal complement, and let `y`, `eᵢ`, `Aᵢ` be such that the pairings of `y` with the
+kernel are bounded by sums of pairings, `|⟪y, k⟫| ≤ ∑ i ∈ s, |⟪eᵢ k, Aᵢ⟫|`. If the weight costs at
+most `kc` on the kernel at the rate `c`, and at most `qᵢ` on `eᵢ k` at the rate `-c` relative to
+`‖k‖₂`, then
+
+`‖exp(c ρ) y‖₂ ≤ kc ∑ i ∈ s, qᵢ ‖exp(c ρ) Aᵢ‖₂ + ‖exp(c ρ) (y - π y)‖₂`. -/
+private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le_sum_abs_inner {c : ℝ}
+    {kc : ℝ≥0} {ι : Type*} {s : Finset ι} {q : ι → ℝ≥0}
+    {T : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤}
+    {π : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}
+    (hπ : IsOrthogonalKerProjection sobolevFieldValues T π)
+    (hkc : ∀ k ∈ T.ker, eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
+      sobolevFieldValues k z) 2 μ⊤ ≤ kc * eLpNorm (sobolevFieldValues k) 2 μ⊤)
+    {e : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) → ι → Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤}
+    (he : ∀ k ∈ T.ker, ∀ i ∈ s, eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • e k i z) 2 μ⊤ ≤
+      q i * eLpNorm (sobolevFieldValues k) 2 μ⊤)
+    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) {A : ι → Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤}
+    (hpair : ∀ k ∈ T.ker, |⟪sobolevFieldValues y, sobolevFieldValues k⟫| ≤
+      ∑ i ∈ s, |⟪e k i, A i⟫|) :
+    eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues y z) 2 μ⊤ ≤
+      kc * ∑ i ∈ s, q i * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • A i z) 2 μ⊤ +
+      eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (y - π y) z) 2 μ⊤ := by
+  have hp := hπ.mem_ker y
+  -- `‖π y‖₂² = ⟪y, π y⟫`, since `y - π y` is orthogonal to the kernel.
+  have hinner : ‖sobolevFieldValues (π y)‖ ^ 2 ≤ ∑ i ∈ s, |⟪e (π y) i, A i⟫| :=
+    hπ.real_inner_apply_eq_norm_sq y ▸ (le_abs_self _).trans (hpair _ hp)
+  refine (le_of_eq_of_le ?_ (Lp.eLpNorm_smul_add_le one_le_two _ _ _)).trans (add_le_add_left
+    (TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_sum_abs_inner (hkc _ hp) (he _ hp) hinner) _)
+  rw [← map_add, add_sub_cancel]
+
+/-- **The kernel component for one pairing.** Let `π` be the projection onto the kernel of `T`
+along its `L²`-orthogonal complement and `Q` a right inverse of `T`, and let `y`, `A` be such that
+the pairings of `y` with the kernel are bounded by `|⟪y, k⟫| ≤ |⟪Q (Z(b, k)), A⟫|`. If the weight
 costs at most `kc`, `kn` on the kernel at the rates `c`, `-c`, and at most `qn` on `Q` at the rate
 `-c`, then the kernel component of `y` costs at most `kc qn ‖Z‖ ‖b‖∞ kn ‖exp(c ρ) A‖₂`:
 
@@ -301,21 +332,14 @@ private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le {c : 
       (kc * (qn * ‖gaugeFixedZerothOrder‖₊ * ‖b‖₊ * kn) : ℝ≥0) *
         eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • A z) 2 μ⊤ +
       eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (y - π y) z) 2 μ⊤ := by
-  have hp := hπ.mem_ker y
-  -- `‖π y‖₂² = ⟪y, π y⟫`, since `y - π y` is orthogonal to the kernel.
-  have hinner : ‖sobolevFieldValues (π y)‖ ^ 2 ≤
-      |⟪sobolevFieldValues (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b
-        (sobolevFieldValues (π y)))), A⟫| := by
-    exact hπ.real_inner_apply_eq_norm_sq y ▸ (le_abs_self _).trans (hpair _ hp)
-  -- The weight `exp(-c ρ)` costs at most `qn ‖Z‖ ‖b‖∞ kn` on `Q (Z(b, π y))`, relative to `‖π y‖₂`.
-  have hqe : eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
-      (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b (sobolevFieldValues (π y)))) z) 2 μ⊤ ≤
-        (qn * ‖gaugeFixedZerothOrder‖₊ * ‖b‖₊ * kn : ℝ≥0) *
-          eLpNorm (sobolevFieldValues (π y)) 2 μ⊤ :=
-    eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hQn b (hkn _ hp)
-  refine (le_of_eq_of_le ?_ (Lp.eLpNorm_smul_add_le one_le_two _ _ _)).trans (add_le_add_left
-    (TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner (hkc _ hp) hqe hinner) _)
-  rw [← map_add, add_sub_cancel]
+  -- The weight `exp(-c ρ)` costs at most `qn ‖Z‖ ‖b‖∞ kn` on `Q (Z(b, k))`, relative to `‖k‖₂`.
+  simpa [mul_assoc] using eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le_sum_abs_inner
+    (s := Finset.univ) (q := fun _ : Unit ↦ qn * ‖gaugeFixedZerothOrder‖₊ * ‖b‖₊ * kn)
+    (e := fun k _ ↦ sobolevFieldValues
+      (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b (sobolevFieldValues k))))
+    (A := fun _ ↦ A) hπ hkc
+    (fun k hk _ _ ↦ eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hQn b (hkn k hk)) y
+    (fun k hk ↦ by simpa using hpair k hk)
 
 /-- The weighted estimates for the kernel of the realization and for its orthogonal right inverse,
 at the rates `c` and `-c`, with constants common to a window of divisors, in the volume restricted
@@ -677,30 +701,23 @@ private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_sub_and_abs_inner_
         (qc * Z * (‖b₀‖₊ * r₀ + ‖b₁‖₊ * r₁ + ‖b₂‖₊ * r₂) : ℝ≥0) * N := by
     rw [hsplit, map_neg, Lp.eLpNorm_smul_neg]
     exact eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_add_add_le hQc b₀ b₁ b₂ hg₀ hg₁ hg₂
-  -- The kernel component `u = π y`: `‖u‖₂² = ⟪y, u⟫` is bounded by the three pairings.
-  have hu := hπ.mem_ker y
-  set u := π y
-  set e₀ := sobolevFieldValues (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₀
-    (sobolevFieldValues u) + gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₁ (sobolevFieldValues (P₁ u)) +
-    gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₂ (sobolevFieldValues (P₂ u))))
-  have hinner : ‖sobolevFieldValues u‖ ^ 2 ≤ ∑ i : Fin 3,
-      |⟪![e₀, sobolevFieldValues (P₁ u), sobolevFieldValues (P₂ u)] i, ![A₀, A₁, A₂] i⟫| := by
-    rw [Fin.sum_univ_three]
-    exact hπ.real_inner_apply_eq_norm_sq y ▸ (le_abs_self _).trans (hpair u hu)
-  have he₀ : eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • e₀ z) 2 μ⊤ ≤
-      (qn * Z * (‖b₀‖₊ * kn + ‖b₁‖₊ * p₁ + ‖b₂‖₊ * p₂) : ℝ≥0) *
-        eLpNorm (sobolevFieldValues u) 2 μ⊤ :=
-    eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_add_add_le hQn b₀ b₁ b₂ (hkn u hu)
-      (hP₁ u hu) (hP₂ u hu)
-  have hker := TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_sum_abs_inner (s := Finset.univ)
-    (q := ![qn * Z * (‖b₀‖₊ * kn + ‖b₁‖₊ * p₁ + ‖b₂‖₊ * p₂), p₁, p₂]) (hkc u hu)
-    (fun i _ ↦ by fin_cases i; exacts [he₀, hP₁ u hu, hP₂ u hu]) hinner
+  -- The kernel component is bounded by the three pairings.
+  have hker := eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le_sum_abs_inner
+    (s := Finset.univ) (q := ![qn * Z * (‖b₀‖₊ * kn + ‖b₁‖₊ * p₁ + ‖b₂‖₊ * p₂), p₁, p₂])
+    (e := fun k ↦ ![sobolevFieldValues (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₀
+      (sobolevFieldValues k) +
+      gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₁ (sobolevFieldValues (P₁ k)) +
+      gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₂ (sobolevFieldValues (P₂ k)))),
+      sobolevFieldValues (P₁ k), sobolevFieldValues (P₂ k)])
+    (A := ![A₀, A₁, A₂]) hπ hkc
+    (fun k hk i _ ↦ by
+      fin_cases i
+      exacts [eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_add_add_le hQn b₀ b₁ b₂ (hkn k hk)
+        (hP₁ k hk) (hP₂ k hk), hP₁ k hk, hP₂ k hk])
+    y fun k hk ↦ by rw [Fin.sum_univ_three]; exact hpair k hk
   simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons] at hker
-  -- `y = u + (y - u)`.
-  refine (le_of_eq_of_le ?_ (Lp.eLpNorm_smul_add_le one_le_two _ _ _)).trans
-    (add_le_add hker hperp) |>.trans ?_
-  · rw [← map_add, add_sub_cancel]
+  refine hker.trans ?_
   calc _ ≤ (kc : ℝ≥0∞) * ((qn * Z * (‖b₀‖₊ * kn + ‖b₁‖₊ * p₁ + ‖b₂‖₊ * p₂) : ℝ≥0) * (s₀ * N) +
         p₁ * (s₁ * N) + p₂ * (s₂ * N)) +
         (qc * Z * (‖b₀‖₊ * r₀ + ‖b₁‖₊ * r₁ + ‖b₂‖₊ * r₂) : ℝ≥0) * N := by gcongr
