@@ -352,8 +352,8 @@ theorem quotientDiffeomorph_refl (h : ∀ x v, v ∈ D x ↔
   refine Diffeomorph.ext fun ⟨x, a⟩ ↦ ?_
   induction a using Submodule.Quotient.induction_on with
   | H v =>
-    rw [quotientDiffeomorph_mk, Diffeomorph.coe_refl, Diffeomorph.coe_refl, mfderiv_id]
-    rfl
+    rw [quotientDiffeomorph_mk, Diffeomorph.coe_refl, Diffeomorph.coe_refl, mfderiv_id,
+      ContinuousLinearMap.id_apply, id_eq, id_eq]
 
 /-- **Functoriality.** The bundle isomorphism induced by a composite of diffeomorphisms is the
 composite of the induced bundle isomorphisms. -/
@@ -387,8 +387,8 @@ theorem quotientDiffeomorph_trans {E'' : Type*} [NormedAddCommGroup E''] [Normed
   | H v =>
     rw [Diffeomorph.coe_trans, Function.comp_apply, quotientDiffeomorph_mk, quotientDiffeomorph_mk,
       quotientDiffeomorph_mk, Diffeomorph.coe_trans,
-      mfderiv_comp_apply x (Ψ.mdifferentiable (by simp) (Φ x)) (Φ.mdifferentiable (by simp) x)]
-    rfl
+      mfderiv_comp_apply x (Ψ.mdifferentiable (by simp) (Φ x)) (Φ.mdifferentiable (by simp) x),
+      Function.comp_apply]
 
 end Map
 
