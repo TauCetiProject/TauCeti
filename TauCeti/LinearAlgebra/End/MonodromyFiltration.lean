@@ -51,8 +51,8 @@ pieces themselves, `TauCeti.GradedPiece F a`, appear for the induced maps and pr
   case of the kernel-image filtration of a nilpotent endomorphism of a finite-dimensional space.
 * `Module.End.gradedPieceMap` and `Module.End.primitivePart`: the map `gr_a → gr_{a - 2}` induced
   by `N` and its kernel `P_a`, the primitive part in the lower convention.
-* `Module.End.IsMonodromyFiltration.gradedPiece_map_pow_bijective`: `N ^ r` induces a bijection
-  `gr_{c + r} → gr_{c - r}`.
+* `Module.End.IsMonodromyFiltration.gradedPiece_mapOfLE_pow_bijective`: `N ^ r` induces a
+  bijection `gr_{c + r} → gr_{c - r}`.
 * `Module.End.IsMonodromyFiltration.primitivePart_eq_bot_of_lt` and
   `Module.End.IsMonodromyFiltration.gradedPieceKerEquiv`: `P_a = 0` for `a > c`, and
   `gr_a (ker N) ≅ P_a` for the filtration induced on `ker N`, a consequence of strictness.
@@ -305,6 +305,36 @@ theorem unique (hF : N.IsMonodromyFiltration c F) (hG : N.IsMonodromyFiltration 
     · exact (key (B - n) n (by omega)).2
     · exact ((hB _).2 (by omega)).1.trans ((hB _).2 (by omega)).2.symm
 
+/-- `N` sends `F a` into `F b` whenever `a - 2 ≤ b`. -/
+private theorem apply_mem (hF : N.IsMonodromyFiltration c F) {a b : ℤ} (hb : a - 2 ≤ b) {x : V}
+    (hx : x ∈ F a) : N x ∈ F b :=
+  hF.monotone hb (hF.map_le a (mem_map_of_mem hx))
+
+/-- `N ^ k` sends `F a` into `F b` whenever `a - 2 k ≤ b`. -/
+private theorem pow_apply_mem (hF : N.IsMonodromyFiltration c F) (k : ℕ) {a b : ℤ}
+    (hb : a - 2 * k ≤ b) {x : V} (hx : x ∈ F a) : (N ^ k) x ∈ F b :=
+  hF.monotone hb (map_pow_le_of_forall_map_le N hF.map_le k a (mem_map_of_mem hx))
+
+/-- `F (a - 1)` lies in `F a` and is sent by `N` into `F (a - 3)`. -/
+private theorem le_inf_comap (hF : N.IsMonodromyFiltration c F) (a : ℤ) :
+    F (a - 1) ≤ F a ⊓ (F (a - 3)).comap N :=
+  le_inf (hF.monotone (by omega)) fun _ hx => hF.apply_mem (by omega) hx
+
+/-- Above the centre of a monodromy filtration, `N` is injective on graded pieces: an element of
+`F a`, `c < a`, which `N` sends into `F (a - 3)` already lies in `F (a - 1)`. -/
+theorem inf_comap_eq_of_lt (hF : N.IsMonodromyFiltration c F) {a : ℤ} (ha : c < a) :
+    F a ⊓ (F (a - 3)).comap N = F (a - 1) := by
+  refine le_antisymm ?_ (hF.le_inf_comap a)
+  obtain ⟨k, rfl⟩ : ∃ k : ℕ, a = c + (k + 1 : ℕ) := ⟨(a - c - 1).toNat, by omega⟩
+  intro x hx
+  obtain ⟨hx, hNx⟩ := mem_inf.1 hx
+  -- `N ^ (k + 1) x = N ^ k (N x)` lies in `F (c - k - 2)`, so injectivity of
+  -- `N ^ (k + 1) : gr_{c + k + 1} → gr_{c - k - 1}` applies.
+  rw [← hF.inf_comap_pow]
+  refine mem_inf.2 ⟨hx, ?_⟩
+  rw [mem_comap, pow_succ, _root_.mul_apply_eq_comp]
+  exact hF.pow_apply_mem k (by omega) hNx
+
 end IsMonodromyFiltration
 
 /-- The step `r - 1` of the monodromy filtration is contained in the set of vectors of the step
@@ -453,11 +483,16 @@ monodromy filtration these are the classes at the bottom of the `N`-strings. -/
 noncomputable def primitivePart (a : ℤ) : Submodule R (GradedPiece F a) :=
   LinearMap.ker (N.gradedPieceMap hF a)
 
+/-- An element of `gr_a` is primitive exactly when `N` sends it to zero in `gr_{a - 2}`. -/
+theorem mem_primitivePart_iff {a : ℤ} {z : GradedPiece F a} :
+    z ∈ N.primitivePart hF a ↔ N.gradedPieceMap hF a z = 0 :=
+  LinearMap.mem_ker
+
 /-- The class of `x ∈ F a` is primitive exactly when `N x ∈ F (a - 3)`. -/
 @[simp]
 theorem mk_mem_primitivePart_iff {a : ℤ} (x : F a) :
     Submodule.Quotient.mk x ∈ N.primitivePart hF a ↔ N x ∈ F (a - 3) := by
-  rw [primitivePart, LinearMap.mem_ker, gradedPieceMap_mk, GradedPiece.mk_eq_zero_iff,
+  rw [mem_primitivePart_iff, gradedPieceMap_mk, GradedPiece.mk_eq_zero_iff,
     show a - 2 - 1 = a - 3 by ring]
 
 end gradedPieceMap
@@ -465,36 +500,6 @@ end gradedPieceMap
 namespace IsMonodromyFiltration
 
 variable {N} {c : ℤ}
-
-/-- `N` sends `F a` into `F b` whenever `a - 2 ≤ b`. -/
-private theorem apply_mem (hF : N.IsMonodromyFiltration c F) {a b : ℤ} (hb : a - 2 ≤ b) {x : V}
-    (hx : x ∈ F a) : N x ∈ F b :=
-  hF.monotone hb (hF.map_le a (mem_map_of_mem hx))
-
-/-- `N ^ k` sends `F a` into `F b` whenever `a - 2 k ≤ b`. -/
-private theorem pow_apply_mem (hF : N.IsMonodromyFiltration c F) (k : ℕ) {a b : ℤ}
-    (hb : a - 2 * k ≤ b) {x : V} (hx : x ∈ F a) : (N ^ k) x ∈ F b :=
-  hF.monotone hb (map_pow_le_of_forall_map_le N hF.map_le k a (mem_map_of_mem hx))
-
-/-- `F (a - 1)` lies in `F a` and is sent by `N` into `F (a - 3)`. -/
-private theorem le_inf_comap (hF : N.IsMonodromyFiltration c F) (a : ℤ) :
-    F (a - 1) ≤ F a ⊓ (F (a - 3)).comap N :=
-  le_inf (hF.monotone (by omega)) fun _ hx => hF.apply_mem (by omega) hx
-
-/-- Above the centre of a monodromy filtration, `N` is injective on graded pieces: an element of
-`F a`, `c < a`, which `N` sends into `F (a - 3)` already lies in `F (a - 1)`. -/
-theorem inf_comap_eq_of_lt (hF : N.IsMonodromyFiltration c F) {a : ℤ} (ha : c < a) :
-    F a ⊓ (F (a - 3)).comap N = F (a - 1) := by
-  refine le_antisymm ?_ (hF.le_inf_comap a)
-  obtain ⟨k, rfl⟩ : ∃ k : ℕ, a = c + (k + 1 : ℕ) := ⟨(a - c - 1).toNat, by omega⟩
-  intro x hx
-  obtain ⟨hx, hNx⟩ := mem_inf.1 hx
-  -- `N ^ (k + 1) x = N ^ k (N x)` lies in `F (c - k - 2)`, so injectivity of
-  -- `N ^ (k + 1) : gr_{c + k + 1} → gr_{c - k - 1}` applies.
-  rw [← hF.inf_comap_pow]
-  refine mem_inf.2 ⟨hx, ?_⟩
-  rw [mem_comap, pow_succ, _root_.mul_apply_eq_comp]
-  exact hF.pow_apply_mem k (by omega) hNx
 
 /-- Pushing the image `N ^ (k + 1) z` of `z ∈ F (c + k)` down the filtration: if it lies in
 `F (c - k - 3 - t)`, then `z` is congruent modulo `F (c + k - 1)` to an element killed by
@@ -592,7 +597,7 @@ theorem primitivePart_eq_bot_of_lt (hF : N.IsMonodromyFiltration c F) {a : ℤ} 
 
 /-- For a monodromy filtration centred at `c`, the map `gr_{c + r} → gr_{c - r}` induced by
 `N ^ r` is bijective. -/
-theorem gradedPiece_map_pow_bijective (hF : N.IsMonodromyFiltration c F) (r : ℕ)
+theorem gradedPiece_mapOfLE_pow_bijective (hF : N.IsMonodromyFiltration c F) (r : ℕ)
     (h : F (c + r) ≤ (F (c - r)).comap (N ^ r))
     (h' : F (c + r - 1) ≤ (F (c - r - 1)).comap (N ^ r)) :
     Function.Bijective (GradedPiece.mapOfLE (N ^ r) h h') := by
@@ -602,8 +607,8 @@ theorem gradedPiece_map_pow_bijective (hF : N.IsMonodromyFiltration c F) (r : �
 
 /-- The map `gr_a (ker N) → gr_a` induced by the inclusion of the filtration `ker N ⊓ F` into
 `F` has image the primitive part `P_a`. -/
-private theorem range_gradedPiece_map_id_eq_primitivePart (hF : N.IsMonodromyFiltration c F)
-    (a : ℤ) :
+private theorem range_gradedPiece_mapOfLE_id_eq_primitivePart
+    (hF : N.IsMonodromyFiltration c F) (a : ℤ) :
     LinearMap.range (GradedPiece.mapOfLE (F := fun b => LinearMap.ker N ⊓ F b) LinearMap.id
       (p := a) (q := a) (inf_le_right.trans_eq (comap_id _).symm)
       (inf_le_right.trans_eq (comap_id _).symm)) = N.primitivePart hF.map_le a := by
@@ -633,7 +638,7 @@ noncomputable def gradedPieceKerEquiv (hF : N.IsMonodromyFiltration c F) (a : �
   (LinearEquiv.ofInjective _ ((GradedPiece.mapOfLE_injective_iff _ _ _).2 fun _ hx => by
     rw [comap_id] at hx
     exact mem_inf.2 ⟨(mem_inf.1 (mem_inf.1 hx).1).1, (mem_inf.1 hx).2⟩)).trans
-    (LinearEquiv.ofEq _ _ (hF.range_gradedPiece_map_id_eq_primitivePart a))
+    (LinearEquiv.ofEq _ _ (hF.range_gradedPiece_mapOfLE_id_eq_primitivePart a))
 
 /-- The isomorphism `gr_a (ker N) ≅ P_a` sends the class of `x` to its class in `gr_a`. -/
 @[simp]
