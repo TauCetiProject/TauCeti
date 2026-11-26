@@ -9,12 +9,12 @@ public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 import Mathlib.Algebra.Order.Star.Real
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.PDE.Ellipticity.PosDef
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.Analysis.PDE.Regularity.Semilinear
 import TauCeti.Analysis.PDE.Regularity.Smooth
+import TauCeti.Analysis.Sobolev.Wkp.ClosedGraph
 import TauCeti.Geometry.Manifold.ContMDiff.LocalRepresentative
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
@@ -1085,6 +1085,15 @@ private theorem ChartPDEData.exists_contDiffOn_ae_eq_of_dirichletForm_add_eq {p 
   exact ⟨g, hg, (d.hTv w).symm.trans hug⟩
 
 omit [I.Boundaryless] [T2Space M] in
+/-- On an open set `U` inside the coordinate domain of the chart data `d`, the value of the
+restricted chart reading `T w` is the reading `w ∘ ψ` of `w` in coordinates. -/
+private theorem ChartPDEData.value_restrictL_T_ae {p : M} (d : ChartPDEData (I := I) p)
+    {U : Opens (EuclideanSpace ℝ (Fin (finrank ℝ E)))} (hUΩ : U ≤ d.Ω) (w : SobolevH1 I M) :
+    W1p.value (W1p.restrictL hUΩ (d.T w)) =ᵐ[volume.restrict (U : Set _)]
+      fun y ↦ toLp w (chartInvMap (I := I) p y) :=
+  (W1p.value_restrictL_ae hUΩ (d.T w)).trans (ae_restrict_of_ae_restrict_of_subset hUΩ (d.hTv w))
+
+omit [I.Boundaryless] [T2Space M] in
 /-- **`H²` in a chart for `Δ⁺ + V`.** If `w ∈ H¹(M)` weakly solves `Δ⁺w + V w = f` with continuous
 `V` and `f ∈ L²(M)`, then on every open set `U` whose closure is compact and contained in the
 coordinate domain of the chart data `d`, the reading of `w` in coordinates is the value of an
@@ -1113,25 +1122,29 @@ private theorem ChartPDEData.exists_wkp_ae_eq_of_dirichletForm_add_eq {p : M}
       exact integral_congr_ae (hF.coeFn_toLp.mono fun y hy ↦ by simp only [hy]))
     hU hUΩ
   have hUΩ' : U ≤ d.Ω := SetLike.coe_subset_coe.mp (subset_closure.trans hUΩ)
+  -- With `k = 0`, `u` lies in `Wkp volume U 2 (0 + 2)`, which is `Wkp volume U 2 2` because the
+  -- literal `0 + 2` reduces to `2` definitionally.
   have hu' : Wkp.value 2 u = W1p.value (W1p.restrictL hUΩ' (d.T w)) := hu
-  refine ⟨u, ?_⟩
-  rw [hu']
-  exact (W1p.value_restrictL_ae hUΩ' (d.T w)).trans
-    (ae_restrict_of_ae_restrict_of_subset hUΩ' (d.hTv w))
+  exact ⟨u, hu' ▸ d.value_restrictL_T_ae hUΩ' w⟩
 
 omit [I.Boundaryless] [T2Space M] in
 /-- A ball around the chart point whose closure is compact and contained in the coordinate domain
-of the chart data `d`. -/
+of the chart data `d`; in particular the ball lies in that domain and is mapped into the chart
+target. -/
 private theorem ChartPDEData.exists_ball {p : M} (d : ChartPDEData (I := I) p) :
     ∃ U : Opens (EuclideanSpace ℝ (Fin (finrank ℝ E))), coordEquiv E (extChartAt I p p) ∈ U ∧
       IsCompact (closure (U : Set (EuclideanSpace ℝ (Fin (finrank ℝ E))))) ∧
-      closure (U : Set (EuclideanSpace ℝ (Fin (finrank ℝ E)))) ⊆ d.Ω := by
+      closure (U : Set (EuclideanSpace ℝ (Fin (finrank ℝ E)))) ⊆ d.Ω ∧ U ≤ d.Ω ∧
+      MapsTo (coordEquiv E).symm U (extChartAt I p).target := by
   obtain ⟨r, hr, hrΩ⟩ := nhds_basis_closedBall.mem_iff.1 (d.Ω.isOpen.mem_nhds d.hpΩ)
   have hUK : closure (ball (coordEquiv E (extChartAt I p p)) r) ⊆
       closedBall (coordEquiv E (extChartAt I p p)) r :=
     closure_ball_subset_closedBall
+  have hUΩ : closure (ball (coordEquiv E (extChartAt I p p)) r) ⊆ d.Ω := hUK.trans hrΩ
   exact ⟨⟨ball _ r, isOpen_ball⟩, mem_ball_self hr,
-    (isCompact_closedBall _ r).of_isClosed_subset isClosed_closure hUK, hUK.trans hrΩ⟩
+    (isCompact_closedBall _ r).of_isClosed_subset isClosed_closure hUK, hUΩ,
+    SetLike.coe_subset_coe.mp (subset_closure.trans hUΩ),
+    d.hΩt.mono_left (subset_closure.trans hUΩ)⟩
 
 /-- **Interior `H²` regularity on a closed manifold.** Let `M` be a closed smooth Riemannian
 manifold, `V` a continuous potential and `f ∈ L²(M)`. If `w ∈ H¹(M)` solves
@@ -1151,9 +1164,9 @@ theorem exists_wkp_ae_eq_of_dirichletForm_add_eq {V f : M → ℝ} (hV : Continu
       ∃ u : Wkp volume Ω 2 2, (Wkp.value 2 u : _ → ℝ) =ᵐ[volume.restrict (Ω : Set _)]
         fun y ↦ toLp w ((extChartAt I p).symm (L.symm y)) := by
   obtain ⟨d⟩ := nonempty_chartPDEData (I := I) p
-  obtain ⟨U, hpU, hUc, hUΩ⟩ := d.exists_ball
+  obtain ⟨U, hpU, hUc, hUΩ, -, hUt⟩ := d.exists_ball
   obtain ⟨u, hu⟩ := d.exists_wkp_ae_eq_of_dirichletForm_add_eq hV hf hw hUc hUΩ
-  exact ⟨coordEquiv E, U, hpU, d.hΩt.mono_left (subset_closure.trans hUΩ), u, hu⟩
+  exact ⟨coordEquiv E, U, hpU, hUt, u, hu⟩
 
 omit [I.Boundaryless] [T2Space M] in
 /-- The pairs `(w, f) ∈ H¹(M) × L²(M)` such that `w` weakly solves `Δ⁺w + V w = f` form a closed
@@ -1210,41 +1223,24 @@ theorem exists_norm_wkp_le_of_dirichletForm_add_eq {V : M → ℝ} (hV : Continu
         ∃ u : Wkp volume Ω 2 2, (Wkp.value 2 u : _ → ℝ) =ᵐ[volume.restrict (Ω : Set _)]
           (fun y ↦ toLp w ((extChartAt I p).symm (L.symm y))) ∧ ‖u‖ ≤ C * (‖f‖ + ‖w‖) := by
   obtain ⟨d⟩ := nonempty_chartPDEData (I := I) p
-  obtain ⟨U, hpU, hUc, hUΩ⟩ := d.exists_ball
-  have hUΩ' : U ≤ d.Ω := SetLike.coe_subset_coe.mp (subset_closure.trans hUΩ)
+  obtain ⟨U, hpU, hUc, hUΩ, hUΩ', hUt⟩ := d.exists_ball
   obtain ⟨S, hS, hmem⟩ := exists_isClosed_and_mem_iff_dirichletForm_add_eq (I := I) hV
   have : CompleteSpace S := hS.completeSpace_coe
   -- The chart reading on `U` factors through `W^{2,2}(U)` by interior regularity, so by the closed
   -- graph theorem the factorization is bounded.
-  let LU := Lp ℝ 2 (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (finrank ℝ E)))))
-  let F : S →L[ℝ] LU := W1p.valueL.comp ((W1p.restrictL hUΩ').comp
+  let F : S →L[ℝ] Lp ℝ 2 (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (finrank ℝ E))))) :=
+    W1p.valueL.comp ((W1p.restrictL hUΩ').comp
       (d.T.comp ((ContinuousLinearMap.fst ℝ _ _).comp S.subtypeL)))
-  -- The value of any `W^{2,2}(U)` element agreeing with the chart reading of `w` is `F (w, f)`.
-  have hvalue {w : SobolevH1 I M} {g : Lp ℝ 2 (riemannianVolume I M)} (hq : (w, g) ∈ S)
-      {u : Wkp volume U 2 2} (hu : (Wkp.value 2 u : _ → ℝ) =ᵐ[volume.restrict (U : Set _)]
-        fun y ↦ toLp w (chartInvMap (I := I) p y)) :
-      Wkp.valueL 2 u = F ⟨(w, g), hq⟩ := by
-    rw [Wkp.valueL_apply]
-    simp only [F, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
-      Submodule.subtypeL_apply, W1p.valueL_apply]
-    exact Lp.ext (hu.trans ((W1p.value_restrictL_ae hUΩ' (d.T w)).trans
-      (ae_restrict_of_ae_restrict_of_subset hUΩ' (d.hTv w))).symm)
-  have hrange : LinearMap.range (F : S →ₗ[ℝ] LU) ≤
-      LinearMap.range (Wkp.valueL (mu := volume) (Omega := U) (p := 2) 2 :
-        Wkp volume U 2 2 →ₗ[ℝ] LU) := by
-    rintro _ ⟨⟨⟨w, g⟩, hq⟩, rfl⟩
-    obtain ⟨u, hu⟩ := d.exists_wkp_ae_eq_of_dirichletForm_add_eq hV (Lp.memLp g)
-      ((hmem _).1 hq) hUc hUΩ
-    exact ⟨u, hvalue hq hu⟩
-  have hinj : Function.Injective (Wkp.valueL (mu := volume) (Omega := U) (p := 2) 2) :=
-    fun u u' h ↦ Wkp.ext 2 (by rwa [Wkp.valueL_apply, Wkp.valueL_apply] at h)
-  obtain ⟨C, hC0, hC⟩ := ContinuousLinearMap.exists_norm_le_of_range_le_range F
-    (Wkp.valueL 2) hinj hrange
-  refine ⟨coordEquiv E, U, hpU, d.hΩt.mono_left (subset_closure.trans hUΩ), C, hC0,
-    fun f w hw ↦ ?_⟩
-  obtain ⟨u, hu⟩ := d.exists_wkp_ae_eq_of_dirichletForm_add_eq hV (Lp.memLp f) hw hUc hUΩ
-  refine ⟨u, hu, (hC ⟨(w, f), (hmem _).2 hw⟩ u (hvalue ((hmem _).2 hw) hu)).trans
-    (mul_le_mul_of_nonneg_left ?_ hC0)⟩
+  have hF (q : S) : (F q : _ → ℝ) =ᵐ[volume.restrict (U : Set _)]
+      fun y ↦ toLp q.val.1 (chartInvMap (I := I) p y) := by
+    simpa [F] using d.value_restrictL_T_ae hUΩ' q.val.1
+  obtain ⟨C, hC⟩ := Wkp.exists_norm_le_of_forall_exists_value_ae_eq (k := 2) F fun q ↦
+    (d.exists_wkp_ae_eq_of_dirichletForm_add_eq hV (Lp.memLp q.val.2) ((hmem _).1 q.property) hUc
+      hUΩ).elim fun u hu ↦ ⟨u, hu.trans (hF q).symm⟩
+  refine ⟨coordEquiv E, U, hpU, hUt, max C 0, le_max_right _ _, fun f w hw ↦ ?_⟩
+  obtain ⟨u, hu, hCu⟩ := hC ⟨(w, f), (hmem _).2 hw⟩
+  refine ⟨u, hu.trans (hF _), hCu.trans ((mul_le_mul_of_nonneg_right (le_max_left _ _)
+    (norm_nonneg _)).trans (mul_le_mul_of_nonneg_left ?_ (le_max_right _ _)))⟩
   rw [← Submodule.norm_coe, Prod.norm_def]
   exact max_le (le_add_of_nonneg_left (norm_nonneg f)) (le_add_of_nonneg_right (norm_nonneg w))
 
