@@ -51,6 +51,8 @@ splitting, stated on the Matsumoto group of an ordered field, is
   positive entry.
 * `TauCeti.MilnorK.positiveEntryEquiv R hn`: the splitting
   `degree R n ≃ₗ[ℤ] ZMod 2 × positiveEntrySpan R n`, for `n ≠ 0`.
+* `TauCeti.MilnorK.ModTwo R`: the Milnor K-ring modulo two `K_*ᴹ(R) / 2`, of characteristic two,
+  with quotient map `TauCeti.MilnorK.ModTwo.mk`.
 * `TauCeti.MilnorK.modTwoEquiv R hsq`: the ring isomorphism `K_*ᴹ(R) / 2 ≃+* (ZMod 2)[X]` when
   every positive unit is a square.
 
@@ -214,14 +216,29 @@ theorem ofUnit_neg_one_pow_notMem_positiveEntrySpan (n m : ℕ) :
   simpa using sign_eq_zero_of_mem_positiveEntrySpan n h
 
 omit [IsStrictOrderedRing R] in
-/-- Left multiplication by a degree-one class maps `Dₙ` into `Dₙ₊₁`. -/
-private theorem ofUnit_mul_mem_positiveEntrySpan (a : Rˣ) {n : ℕ} {x : MilnorK R}
-    (hx : x ∈ positiveEntrySpan R n) : ofUnit a * x ∈ positiveEntrySpan R (n + 1) := by
-  refine positiveEntrySpan_le_iff
-    (p := (positiveEntrySpan R (n + 1)).comap (AddMonoidHom.mulLeft (ofUnit a)).toIntLinearMap)
-    |>.2 (fun l hl ⟨b, hb, hpos⟩ ↦ ?_) hx
-  have := symbol_mem_positiveEntrySpan (l := a :: l) ⟨b, List.mem_cons_of_mem a hb, hpos⟩
-  simpa [hl] using this
+/-- Left multiplication by `K_iᴹ(R)` maps `Dⱼ` into `D_{i+j}`. -/
+theorem mul_mem_positiveEntrySpan_left {i j : ℕ} {x y : MilnorK R} (hx : x ∈ degree R i)
+    (hy : y ∈ positiveEntrySpan R j) : x * y ∈ positiveEntrySpan R (i + j) := by
+  refine (?_ : degree R i * positiveEntrySpan R j ≤ _) (Submodule.mul_mem_mul hx hy)
+  rw [degree_eq_span, positiveEntrySpan_def, Submodule.span_mul_span, Submodule.span_le]
+  rintro _ ⟨_, ⟨l₁, hl₁, rfl⟩, _, ⟨l₂, ⟨hl₂, a, ha, hpos⟩, rfl⟩, rfl⟩
+  dsimp only
+  rw [← symbol_append]
+  exact Submodule.subset_span
+    ⟨l₁ ++ l₂, ⟨by rw [List.length_append, hl₁, hl₂], a, List.mem_append_right l₁ ha, hpos⟩, rfl⟩
+
+omit [IsStrictOrderedRing R] in
+/-- Right multiplication by `K_jᴹ(R)` maps `Dᵢ` into `D_{i+j}`. -/
+theorem mul_mem_positiveEntrySpan_right {i j : ℕ} {x y : MilnorK R}
+    (hx : x ∈ positiveEntrySpan R i) (hy : y ∈ degree R j) :
+    x * y ∈ positiveEntrySpan R (i + j) := by
+  refine (?_ : positiveEntrySpan R i * degree R j ≤ _) (Submodule.mul_mem_mul hx hy)
+  rw [degree_eq_span, positiveEntrySpan_def, Submodule.span_mul_span, Submodule.span_le]
+  rintro _ ⟨_, ⟨l₁, ⟨hl₁, a, ha, hpos⟩, rfl⟩, _, ⟨l₂, hl₂, rfl⟩, rfl⟩
+  dsimp only
+  rw [← symbol_append]
+  exact Submodule.subset_span
+    ⟨l₁ ++ l₂, ⟨by rw [List.length_append, hl₁, hl₂], a, List.mem_append_left l₂ ha, hpos⟩, rfl⟩
 
 /-- Every symbol is congruent modulo the positive-entry span to `{-1, …, -1}` if all its entries
 are negative, and to `0` otherwise. -/
@@ -236,15 +253,18 @@ theorem symbol_sub_mem_positiveEntrySpan (l : List Rˣ) :
       have hpos : 0 < ((-a : Rˣ) : R) := by simpa using ha
       have hsplit : symbol (a :: l) = ofUnit (-1) * symbol l + symbol ((-a) :: l) := by
         rw [symbol_cons, symbol_cons, ← add_mul, ofUnit_neg_one_add_ofUnit_neg]
-      have h₁ := ofUnit_mul_mem_positiveEntrySpan (-1) ih
+      have h₁ := mul_mem_positiveEntrySpan_left (ofUnit_mem_degree_one (-1)) ih
       have h₂ := symbol_mem_positiveEntrySpan (l := (-a) :: l) ⟨-a, List.mem_cons_self, hpos⟩
+      rw [Nat.add_comm 1] at h₁
       rw [List.length_cons] at h₂ ⊢
       convert add_mem h₁ h₂ using 1
       rw [hsplit]
       by_cases hl : ∀ b ∈ l, (b : R) < 0
-      · simp [ha, pow_succ', mul_sub]
+      · rw [ite_eq_left (List.forall_mem_cons (p := fun b : Rˣ ↦ (b : R) < 0) |>.2 ⟨ha, hl⟩),
+          ite_eq_left hl, pow_succ', mul_sub]
         abel
-      · simp [ha, hl]
+      · rw [ite_eq_right fun h ↦ hl (List.forall_mem_cons.1 h).2, ite_eq_right hl, sub_zero,
+          sub_zero]
     · simpa [ha.not_gt] using
         symbol_mem_positiveEntrySpan (l := a :: l) ⟨a, List.mem_cons_self, ha⟩
 
@@ -368,50 +388,70 @@ theorem positiveEntryEquiv_inclusion {n : ℕ} (hn : n ≠ 0) (d : positiveEntry
 /-! ### The Milnor K-ring modulo two -/
 
 omit [LinearOrder R] [IsStrictOrderedRing R] in
+variable (R) in
+/-- The **Milnor K-ring modulo two** `K_*ᴹ(R) / 2`: the quotient of the Milnor K-ring by the
+relation identifying `2` with `0`. -/
+abbrev ModTwo : Type _ :=
+  RingQuot fun x y : MilnorK R ↦ x = 2 ∧ y = 0
+
+omit [LinearOrder R] [IsStrictOrderedRing R] in
+/-- The quotient map `K_*ᴹ(R) →+* K_*ᴹ(R) / 2`. -/
+def ModTwo.mk : MilnorK R →+* ModTwo R :=
+  RingQuot.mkRingHom _
+
+omit [LinearOrder R] [IsStrictOrderedRing R] in
+theorem ModTwo.mk_surjective : Function.Surjective (ModTwo.mk (R := R)) :=
+  RingQuot.mkRingHom_surjective _
+
+omit [LinearOrder R] [IsStrictOrderedRing R] in
 /-- `2 = 0` in the Milnor K-ring modulo two. -/
-private theorem two_eq_zero_modTwo :
-    (2 : RingQuot fun x y : MilnorK R ↦ x = 2 ∧ y = 0) = 0 := by
-  rw [← map_ofNat (RingQuot.mkRingHom _) 2, ← map_zero (RingQuot.mkRingHom _)]
+theorem ModTwo.two_eq_zero : (2 : ModTwo R) = 0 := by
+  rw [← map_ofNat (ModTwo.mk (R := R)) 2, ← map_zero (ModTwo.mk (R := R))]
   exact RingQuot.mkRingHom_rel ⟨rfl, rfl⟩
 
+omit [LinearOrder R] [IsStrictOrderedRing R] in
+/-- Ring homomorphisms out of the Milnor K-ring modulo two agreeing on the classes of degree-one
+symbols are equal. -/
+theorem ModTwo.ringHom_ext {A : Type*} [Ring A] {f g : ModTwo R →+* A}
+    (h : ∀ a : Rˣ, f (ModTwo.mk (ofUnit a)) = g (ModTwo.mk (ofUnit a))) : f = g :=
+  RingQuot.ringQuot_ext _ _ (MilnorK.ringHom_ext h)
+
+omit [LinearOrder R] [IsStrictOrderedRing R] in
+/-- The Milnor K-ring modulo two has characteristic two: `2 = 0`, and `1 ≠ 0` since the ring
+homomorphism `K_*ᴹ(R) →+* ZMod 2` killing every degree-one class descends to it. -/
+instance ModTwo.instCharP : CharP (ModTwo R) 2 :=
+  CharTwo.of_one_ne_zero_of_two_eq_zero (fun h ↦ by
+    let f : ModTwo R →+* ZMod 2 := RingQuot.lift ⟨MilnorK.lift 0 fun _ _ _ ↦ zero_mul _, by
+      rintro _ _ ⟨rfl, rfl⟩
+      rw [map_ofNat, map_zero]
+      exact CharTwo.two_eq_zero⟩
+    simpa using congrArg f h) ModTwo.two_eq_zero
+
 /-- The sign polynomial, descended to the Milnor K-ring modulo two. -/
-private def modTwoToPolynomial :
-    (RingQuot fun x y : MilnorK R ↦ x = 2 ∧ y = 0) →+* (ZMod 2)[X] :=
+private def modTwoToPolynomial : ModTwo R →+* (ZMod 2)[X] :=
   RingQuot.lift ⟨signPolynomial R, by
     rintro _ _ ⟨rfl, rfl⟩
     rw [map_ofNat, map_zero]
     exact CharTwo.two_eq_zero⟩
 
-private theorem modTwoToPolynomial_mkRingHom (x : MilnorK R) :
-    modTwoToPolynomial (RingQuot.mkRingHom _ x) = signPolynomial R x :=
+private theorem modTwoToPolynomial_mk (x : MilnorK R) :
+    modTwoToPolynomial (ModTwo.mk x) = signPolynomial R x :=
   RingQuot.lift_mkRingHom_apply _ _ x
 
-/-- The Milnor K-ring modulo two of a linearly ordered commutative ring has characteristic two. -/
-private theorem charP_modTwo : CharP (RingQuot fun x y : MilnorK R ↦ x = 2 ∧ y = 0) 2 := by
-  refine ⟨fun k ↦ ⟨fun hk ↦ ?_, ?_⟩⟩
-  · have := congrArg (modTwoToPolynomial (R := R)) hk
-    rwa [map_natCast, map_zero, CharP.cast_eq_zero_iff (ZMod 2)[X] 2] at this
-  · rintro ⟨c, rfl⟩
-    rw [Nat.cast_mul, Nat.cast_ofNat, two_eq_zero_modTwo, zero_mul]
-
 /-- The ring homomorphism `(ZMod 2)[X] →+* K_*ᴹ(R) / 2` sending `X` to the class of `{-1}`. -/
-private def polynomialToModTwo :
-    (ZMod 2)[X] →+* (RingQuot fun x y : MilnorK R ↦ x = 2 ∧ y = 0) :=
-  haveI := charP_modTwo (R := R)
-  eval₂RingHom' (ZMod.castHom (dvd_refl 2) _) (RingQuot.mkRingHom _ (ofUnit (-1))) fun a ↦ by
+private def polynomialToModTwo : (ZMod 2)[X] →+* ModTwo R :=
+  eval₂RingHom' (ZMod.castHom (dvd_refl 2) _) (ModTwo.mk (ofUnit (-1))) fun a ↦ by
     rw [ZMod.castHom_apply, ZMod.cast_eq_val]
     exact Nat.cast_commute _ _
 
 /-- If every positive unit is a square, then modulo two the class of `{a}` is the class of
 `{-1}` when `a < 0` and is zero when `a > 0`. -/
-private theorem mkRingHom_ofUnit (hsq : ∀ a : Rˣ, 0 < (a : R) → IsSquare a) (a : Rˣ) :
-    RingQuot.mkRingHom (fun x y : MilnorK R ↦ x = 2 ∧ y = 0) (ofUnit a) =
-      if (a : R) < 0 then RingQuot.mkRingHom _ (ofUnit (-1)) else 0 := by
+private theorem ModTwo.mk_ofUnit (hsq : ∀ a : Rˣ, 0 < (a : R) → IsSquare a) (a : Rˣ) :
+    ModTwo.mk (ofUnit a) = if (a : R) < 0 then ModTwo.mk (ofUnit (-1)) else 0 := by
   -- A positive unit is the square of a unit, so its class is twice another class.
-  have hpos (b : Rˣ) (hb : 0 < (b : R)) :
-      RingQuot.mkRingHom (fun x y : MilnorK R ↦ x = 2 ∧ y = 0) (ofUnit b) = 0 := by
+  have hpos (b : Rˣ) (hb : 0 < (b : R)) : ModTwo.mk (ofUnit b) = 0 := by
     obtain ⟨c, rfl⟩ := hsq b hb
-    rw [ofUnit_mul, ← two_mul, map_mul, map_ofNat, two_eq_zero_modTwo, zero_mul]
+    rw [ofUnit_mul, ← two_mul, map_mul, map_ofNat, ModTwo.two_eq_zero, zero_mul]
   split_ifs with ha
   · have hneg : 0 < ((-a : Rˣ) : R) := by simpa using ha
     rw [← ofUnit_neg_one_add_ofUnit_neg a, map_add, hpos _ hneg, add_zero]
@@ -420,38 +460,35 @@ private theorem mkRingHom_ofUnit (hsq : ∀ a : Rˣ, 0 < (a : R) → IsSquare a)
 private theorem modTwoToPolynomial_comp_polynomialToModTwo :
     (modTwoToPolynomial (R := R)).comp polynomialToModTwo = RingHom.id (ZMod 2)[X] := by
   refine ringHom_ext' (RingHom.ext_zmod _ _) ?_
-  simp [polynomialToModTwo, modTwoToPolynomial_mkRingHom]
+  simp [polynomialToModTwo, modTwoToPolynomial_mk]
 
 private theorem polynomialToModTwo_comp_modTwoToPolynomial
     (hsq : ∀ a : Rˣ, 0 < (a : R) → IsSquare a) :
     (polynomialToModTwo (R := R)).comp modTwoToPolynomial = RingHom.id _ := by
-  refine RingQuot.ringQuot_ext _ _ (ringHom_ext fun a ↦ ?_)
-  simp only [RingHom.comp_apply, RingHom.id_apply, modTwoToPolynomial_mkRingHom,
-    signPolynomial_ofUnit]
-  rw [mkRingHom_ofUnit hsq]
+  refine ModTwo.ringHom_ext fun a ↦ ?_
+  simp only [RingHom.comp_apply, RingHom.id_apply, modTwoToPolynomial_mk, signPolynomial_ofUnit]
+  rw [ModTwo.mk_ofUnit hsq]
   split_ifs <;> simp [polynomialToModTwo]
 
 variable (R) in
 /-- **The Milnor K-ring modulo two of a linearly ordered commutative ring in which every positive
 unit is the square of a unit**, such as `ℤ` or a real closed field, is the polynomial ring
 `(ZMod 2)[X]`: the sign polynomial induces a ring isomorphism `K_*ᴹ(R) / 2 ≃+* (ZMod 2)[X]`
-sending the class of `{-1}` to `X`. Here `K_*ᴹ(R) / 2` is the quotient of `MilnorK R` by the
-relation identifying `2` with `0`. -/
-def modTwoEquiv (hsq : ∀ a : Rˣ, 0 < (a : R) → IsSquare a) :
-    (RingQuot fun x y : MilnorK R ↦ x = 2 ∧ y = 0) ≃+* (ZMod 2)[X] :=
+sending the class of `{-1}` to `X`. -/
+def modTwoEquiv (hsq : ∀ a : Rˣ, 0 < (a : R) → IsSquare a) : ModTwo R ≃+* (ZMod 2)[X] :=
   RingEquiv.ofRingHom modTwoToPolynomial polynomialToModTwo
     modTwoToPolynomial_comp_polynomialToModTwo
     (polynomialToModTwo_comp_modTwoToPolynomial hsq)
 
 @[simp]
-theorem modTwoEquiv_mkRingHom (hsq : ∀ a : Rˣ, 0 < (a : R) → IsSquare a) (x : MilnorK R) :
-    modTwoEquiv R hsq (RingQuot.mkRingHom _ x) = signPolynomial R x :=
-  modTwoToPolynomial_mkRingHom x
+theorem modTwoEquiv_mk (hsq : ∀ a : Rˣ, 0 < (a : R) → IsSquare a) (x : MilnorK R) :
+    modTwoEquiv R hsq (ModTwo.mk x) = signPolynomial R x :=
+  modTwoToPolynomial_mk x
 
 @[simp]
 theorem modTwoEquiv_symm_X (hsq : ∀ a : Rˣ, 0 < (a : R) → IsSquare a) :
-    (modTwoEquiv R hsq).symm X = RingQuot.mkRingHom _ (ofUnit (-1)) := by
-  rw [RingEquiv.symm_apply_eq, modTwoEquiv_mkRingHom, signPolynomial_ofUnit]
+    (modTwoEquiv R hsq).symm X = ModTwo.mk (ofUnit (-1)) := by
+  rw [RingEquiv.symm_apply_eq, modTwoEquiv_mk, signPolynomial_ofUnit]
   simp
 
 /-! ### Divisibility over a real closed field -/
@@ -473,7 +510,7 @@ private theorem exists_mem_positiveEntrySpan_nsmul_eq_symbol {m : ℕ}
   refine ⟨symbol (l₁ ++ Units.mk0 r hr.ne' :: l₂), ?_, ?_⟩
   · simpa using symbol_mem_positiveEntrySpan (l := l₁ ++ Units.mk0 r hr.ne' :: l₂)
       ⟨Units.mk0 r hr.ne', by simp, hr⟩
-  · simp [symbol_append, -nsmul_eq_mul]
+  · exact (symbol_append_cons_pow l₁ l₂ _ m).symm
 
 /-- **The positive-entry span is divisible** over a real closed field such as `ℝ`: multiplication
 by every `m ≠ 0` is surjective on it. -/

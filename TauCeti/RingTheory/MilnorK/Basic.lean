@@ -56,7 +56,8 @@ the Milnor ring is not an exterior algebra. The grade involution `σ`, which is 
 * `TauCeti.MilnorK.ofUnit_mul_ofUnit_of_add_eq_one`: the Steinberg relation `{a} {b} = 0` for
   `a + b = 1`, and `TauCeti.MilnorK.symbol_append_cons_cons_of_add_eq_one` for two neighbouring
   entries of any symbol.
-* `TauCeti.MilnorK.symbol_append_cons_mul`: symbols are additive in every entry.
+* `TauCeti.MilnorK.symbol_append_cons_mul`, `TauCeti.MilnorK.symbol_append_cons_pow`: symbols
+  are additive in every entry.
 * `TauCeti.MilnorK.ringHom_ext`: ring homomorphisms out of `MilnorK R` agreeing on degree-one
   classes are equal.
 * `TauCeti.MilnorK.lift_mem_of_mem_degree`: `lift` sends `degree R n` into the `n`-th piece of a
@@ -246,6 +247,11 @@ theorem symbol_replicate (n : ℕ) (a : Rˣ) : symbol (List.replicate n a) = ofU
 theorem symbol_append_cons_mul (l₁ l₂ : List Rˣ) (a b : Rˣ) :
     symbol (l₁ ++ (a * b) :: l₂) = symbol (l₁ ++ a :: l₂) + symbol (l₁ ++ b :: l₂) := by
   simp [add_mul, mul_add]
+
+/-- Milnor symbols turn an `m`-th power in any entry into an `m`-th multiple. -/
+theorem symbol_append_cons_pow (l₁ l₂ : List Rˣ) (a : Rˣ) (m : ℕ) :
+    symbol (l₁ ++ a ^ m :: l₂) = m • symbol (l₁ ++ a :: l₂) := by
+  simp only [symbol_append, symbol_cons, ofUnit_pow, smul_mul_assoc, mul_smul_comm]
 
 /-- A Milnor symbol with an entry equal to `1` vanishes. -/
 theorem symbol_append_cons_one (l₁ l₂ : List Rˣ) : symbol (l₁ ++ 1 :: l₂) = 0 := by
