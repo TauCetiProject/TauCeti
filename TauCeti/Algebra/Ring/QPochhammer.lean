@@ -12,7 +12,7 @@ public import Mathlib.Data.Nat.Factorial.BigOperators
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# q-factorials and finite q-Pochhammer products
+# q-factorials and q-Pochhammer products
 
 For a parameter `q` in a commutative semiring, the q-integer `[n]_q = ∑_{i < n} q ^ i` is
 Mathlib's finite geometric sum; `mul_neg_geom_sum` gives `(1 - q) [n]_q = 1 - q ^ n` and
@@ -27,6 +27,12 @@ with coefficient ring `R[q]` and `q = X` it gives polynomial identities. In part
 `(q; q)_N = ∏_{i = 1}^{N} (1 - q ^ i)` is the factorial polynomial whose multiples define the
 cyclotomic (Habiro) completion of `R[q]`.
 
+For a unit `q` the product also extends to integer indices, by
+`(a; q)_{-n} = 1 / ((1 - a q⁻¹) ⋯ (1 - a q⁻ⁿ)) = 1 / (a q⁻ⁿ; q)_n`. This is defined only on an
+explicit domain, the indices for which every such factor is a unit, so the inverse of a non-unit
+is never given a junk value. The integer-indexed products are the coefficients of bilateral basic
+hypergeometric series and of the regular quotients `(a; q)_j / (b; q)_j` at negative `j`.
+
 These are the asymmetric (Gaussian) conventions of basic hypergeometric series. The q-integers
 here are not the symmetric quantum integers `TauCeti.qInt` (at a loop parameter) or
 `TauCeti.quantumInteger`, and `TauCeti.qFactorial` is not built from them; see
@@ -37,6 +43,10 @@ factorial.
 
 * `TauCeti.qFactorial q n`: the q-factorial `[n]_q! = ∏_{i < n} ∑_{j ≤ i} q ^ j`.
 * `TauCeti.qPochhammer x q n`: the finite q-Pochhammer product `(x; q)_n`.
+* `TauCeti.qPochhammerIntDomain a q`: for a unit `q`, the integers `j` at which `(a; q)_j` is
+  defined, namely those for which `1 - a q ^ i` is a unit whenever `j ≤ i < 0`.
+* `TauCeti.qPochhammerInt a q j hj`: the integer-indexed q-Pochhammer product `(a; q)_j` for
+  `j` in that domain.
 
 ## Main results
 
@@ -53,6 +63,11 @@ factorial.
 * `TauCeti.qPochhammer_inv`, `TauCeti.qPochhammer_inv_self`: for units `x` and `q`,
   `(x⁻¹; q⁻¹)_n = (-1) ^ n x⁻ⁿ q^{-n(n-1)/2} (x; q)_n`, and in particular
   `(q⁻¹; q⁻¹)_n = (-1) ^ n q^{-n(n+1)/2} (q; q)_n`.
+* `TauCeti.qPochhammerInt_natCast`: on natural indices `(a; q)_j` is the finite product.
+* `TauCeti.qPochhammerInt_neg_natCast_mul_qPochhammer`: `(a; q)_{-n} (a q⁻ⁿ; q)_n = 1`.
+* `TauCeti.qPochhammerInt_add`: concatenation `(a; q)_{i + j} = (a; q)_i (a q ^ i; q)_j` for all
+  integers `i`, `j` with the three products defined.
+* `TauCeti.map_qPochhammerInt`: ring homomorphisms preserve the integer-indexed product.
 
 ## References
 
@@ -157,6 +172,12 @@ theorem qPochhammer_succ' (x q : R) (n : ℕ) :
 theorem qPochhammer_zero_left (q : R) (n : ℕ) : qPochhammer 0 q n = 1 := by
   simp [qPochhammer_def]
 
+/-- With `x = 1`, the first factor of every nonempty q-Pochhammer product vanishes. -/
+@[simp]
+theorem qPochhammer_one_left (q : R) (n : ℕ) : qPochhammer 1 q (n + 1) = 0 := by
+  rw [qPochhammer_succ']
+  simp
+
 /-- At `q = 1` the q-Pochhammer product is a power: `(x; 1)_n = (1 - x) ^ n`. -/
 @[simp]
 theorem qPochhammer_base_one (x : R) (n : ℕ) : qPochhammer x 1 n = (1 - x) ^ n := by
@@ -220,6 +241,206 @@ theorem qPochhammer_inv_self (q : Rˣ) (n : ℕ) :
 
 end CommRing
 
+/-! ### Integer-indexed q-Pochhammer products
+
+For a unit `q`, the finite product extends to negative indices by
+`(a; q)_{-n} = 1 / ((1 - a q⁻¹) (1 - a q⁻²) ⋯ (1 - a q⁻ⁿ))`, the reciprocal of
+`(a q⁻ⁿ; q)_n`. This is defined only when every displayed factor is a unit; the domain is kept
+explicit, so no inverse of a non-unit is ever assigned a value. -/
+
+section Int
+
+variable {R S : Type*} [CommRing R] [CommRing S]
+
+/-- The domain of the integer-indexed q-Pochhammer product `(a; q)_j` for a unit `q`: the
+integers `j` such that every factor `1 - a q ^ i` with `j ≤ i < 0` is a unit. Every `j ≥ 0` lies
+in it. -/
+def qPochhammerIntDomain (a : R) (q : Rˣ) : Set ℤ :=
+  {j | ∀ i : ℤ, j ≤ i → i < 0 → IsUnit (1 - a * ↑(q ^ i))}
+
+/-- Membership in the domain of `(a; q)_j`, unfolded. -/
+theorem mem_qPochhammerIntDomain {a : R} {q : Rˣ} {j : ℤ} :
+    j ∈ qPochhammerIntDomain a q ↔ ∀ i : ℤ, j ≤ i → i < 0 → IsUnit (1 - a * ↑(q ^ i)) :=
+  Iff.rfl
+
+/-- Every nonnegative index lies in the domain of the integer-indexed q-Pochhammer product. -/
+@[simp]
+theorem mem_qPochhammerIntDomain_of_nonneg {a : R} {q : Rˣ} {j : ℤ} (hj : 0 ≤ j) :
+    j ∈ qPochhammerIntDomain a q :=
+  fun _ hi hi₀ ↦ absurd (hj.trans hi) hi₀.not_ge
+
+/-- Every natural index lies in the domain of the integer-indexed q-Pochhammer product. -/
+theorem natCast_mem_qPochhammerIntDomain (a : R) (q : Rˣ) (n : ℕ) :
+    (n : ℤ) ∈ qPochhammerIntDomain a q :=
+  mem_qPochhammerIntDomain_of_nonneg n.cast_nonneg
+
+/-- The domain of the integer-indexed q-Pochhammer product is closed upwards. -/
+theorem mem_qPochhammerIntDomain_of_le {a : R} {q : Rˣ} {j k : ℤ} (hjk : j ≤ k)
+    (hj : j ∈ qPochhammerIntDomain a q) : k ∈ qPochhammerIntDomain a q :=
+  fun i hi hi₀ ↦ hj i (hjk.trans hi) hi₀
+
+/-- `(↑(q ^ j) : R) * ↑q ^ m = ↑(q ^ (j + m))` for a unit `q`. -/
+private theorem val_zpow_mul_pow (q : Rˣ) (j : ℤ) (m : ℕ) :
+    (↑(q ^ j) : R) * ↑q ^ m = ↑(q ^ (j + m)) := by
+  rw [zpow_add, zpow_natCast, Units.val_mul, Units.val_pow_eq_pow_val]
+
+/-- An index `j` lies in the domain of `(a; q)_j` exactly when `(a q ^ j; q)_{-j}` is a unit,
+where `-j` is truncated at zero; for `j = -n` this is the denominator `(a q⁻ⁿ; q)_n`. -/
+theorem mem_qPochhammerIntDomain_iff_isUnit {a : R} {q : Rˣ} {j : ℤ} :
+    j ∈ qPochhammerIntDomain a q ↔ IsUnit (qPochhammer (a * ↑(q ^ j)) q (-j).toNat) := by
+  simp only [mem_qPochhammerIntDomain, qPochhammer_def, IsUnit.prod_iff, mem_range, mul_assoc,
+    val_zpow_mul_pow]
+  refine ⟨fun h m hm ↦ h _ (by omega) (by omega), fun h i hji hi ↦ ?_⟩
+  have := h (i - j).toNat (by omega)
+  rwa [Int.toNat_of_nonneg (by omega), add_sub_cancel] at this
+
+/-- `-n` lies in the domain of `(a; q)_{-n}` exactly when `(a q⁻ⁿ; q)_n` is a unit. -/
+theorem neg_natCast_mem_qPochhammerIntDomain_iff {a : R} {q : Rˣ} {n : ℕ} :
+    -(n : ℤ) ∈ qPochhammerIntDomain a q ↔ IsUnit (qPochhammer (a * ↑(q ^ (-(n : ℤ)))) q n) := by
+  rw [mem_qPochhammerIntDomain_iff_isUnit, neg_neg, Int.toNat_natCast]
+
+/-- The **integer-indexed q-Pochhammer product** `(a; q)_j` for a unit `q` and an index `j` in
+its domain. For `j ≥ 0` it is the finite product `(a; q)_j`; for `j = -n < 0` it is
+`1 / ((1 - a q⁻¹) ⋯ (1 - a q⁻ⁿ)) = 1 / (a q⁻ⁿ; q)_n`, the inverse of a unit. -/
+noncomputable def qPochhammerInt (a : R) (q : Rˣ) (j : ℤ) (hj : j ∈ qPochhammerIntDomain a q) :
+    R :=
+  if 0 ≤ j then qPochhammer a q j.toNat
+  else ↑(mem_qPochhammerIntDomain_iff_isUnit.mp hj).unit⁻¹
+
+variable {a : R} {q : Rˣ}
+
+/-- For a nonnegative index the integer-indexed product is the finite product. -/
+theorem qPochhammerInt_of_nonneg {j : ℤ} (hj₀ : 0 ≤ j) (hj : j ∈ qPochhammerIntDomain a q) :
+    qPochhammerInt a q j hj = qPochhammer a q j.toNat :=
+  ite_eq_left hj₀
+
+/-- On natural indices the integer-indexed product agrees with the finite product. -/
+@[simp]
+theorem qPochhammerInt_natCast (n : ℕ) (hn : (n : ℤ) ∈ qPochhammerIntDomain a q) :
+    qPochhammerInt a q n hn = qPochhammer a q n := by
+  rw [qPochhammerInt_of_nonneg n.cast_nonneg, Int.toNat_natCast]
+
+/-- `(a; q)_0 = 1`, for every `a`. -/
+theorem qPochhammerInt_zero (h : (0 : ℤ) ∈ qPochhammerIntDomain a q) :
+    qPochhammerInt a q 0 h = 1 :=
+  qPochhammerInt_natCast 0 h
+
+/-- `(a; q)_1 = 1 - a`. -/
+theorem qPochhammerInt_one (h : (1 : ℤ) ∈ qPochhammerIntDomain a q) :
+    qPochhammerInt a q 1 h = 1 - a := by
+  simpa using qPochhammerInt_natCast 1 h
+
+/-- At a numeral index the integer-indexed product is the finite product. -/
+@[simp]
+theorem qPochhammerInt_ofNat (n : ℕ)
+    (h : (ofNat(n) : ℤ) ∈ qPochhammerIntDomain a q) :
+    qPochhammerInt a q ofNat(n) h = qPochhammer a q ofNat(n) :=
+  qPochhammerInt_natCast n h
+
+/-- For `j ≤ 0`, `(a; q)_j (a q ^ j; q)_{-j} = 1`: a nonpositive-index product is the inverse of
+the finite product `(a q ^ j; q)_{-j}`. -/
+theorem qPochhammerInt_mul_qPochhammer_of_nonpos {j : ℤ} (hj₀ : j ≤ 0)
+    (hj : j ∈ qPochhammerIntDomain a q) :
+    qPochhammerInt a q j hj * qPochhammer (a * ↑(q ^ j)) q (-j).toNat = 1 := by
+  rcases hj₀.lt_or_eq with hj₀ | rfl
+  · rw [qPochhammerInt, ite_eq_right hj₀.not_ge, IsUnit.val_inv_mul]
+  · simp
+
+/-- `(a; q)_{-n} (a q⁻ⁿ; q)_n = 1`. -/
+theorem qPochhammerInt_neg_natCast_mul_qPochhammer (n : ℕ)
+    (hn : -(n : ℤ) ∈ qPochhammerIntDomain a q) :
+    qPochhammerInt a q (-n) hn * qPochhammer (a * ↑(q ^ (-(n : ℤ)))) q n = 1 := by
+  simpa using qPochhammerInt_mul_qPochhammer_of_nonpos (by omega) hn
+
+/-- The value of the integer-indexed product at a negative index:
+`(a; q)_{-n} = Ring.inverse ((a q⁻ⁿ; q)_n)`, the inverse of a unit on the domain. -/
+theorem qPochhammerInt_neg_natCast (n : ℕ) (hn : -(n : ℤ) ∈ qPochhammerIntDomain a q) :
+    qPochhammerInt a q (-n) hn = Ring.inverse (qPochhammer (a * ↑(q ^ (-(n : ℤ)))) q n) := by
+  rw [← one_mul (Ring.inverse _),
+    Ring.eq_mul_inverse_iff_mul_eq _ _ _ (neg_natCast_mem_qPochhammerIntDomain_iff.mp hn)]
+  exact qPochhammerInt_neg_natCast_mul_qPochhammer n hn
+
+/-- `(a; q)_j (a q ^ j; q)_N = (a; q)_{j + N}` when `j + N ≥ 0`. -/
+private theorem qPochhammerInt_mul_qPochhammer_of_nonneg {j : ℤ}
+    (hj : j ∈ qPochhammerIntDomain a q) (N : ℕ) (hjN : 0 ≤ j + N) :
+    qPochhammerInt a q j hj * qPochhammer (a * ↑(q ^ j)) q N = qPochhammer a q (j + N).toNat := by
+  rcases le_or_gt 0 j with hj₀ | hj₀
+  · obtain ⟨m, rfl⟩ := Int.eq_ofNat_of_zero_le hj₀
+    rw [qPochhammerInt_natCast, zpow_natCast, Units.val_pow_eq_pow_val, ← qPochhammer_add,
+      ← Nat.cast_add, Int.toNat_natCast]
+  · obtain ⟨n, rfl⟩ := Int.exists_eq_neg_ofNat hj₀.le
+    obtain ⟨k, rfl⟩ : ∃ k, N = n + k := ⟨N - n, by omega⟩
+    have hshift : a * ↑(q ^ (-(n : ℤ))) * ↑q ^ n = a := by
+      rw [mul_assoc, val_zpow_mul_pow, neg_add_cancel, zpow_zero, Units.val_one, mul_one]
+    rw [qPochhammer_add, ← mul_assoc, qPochhammerInt_neg_natCast_mul_qPochhammer, one_mul, hshift,
+      show (-(n : ℤ) + ↑(n + k)).toNat = k by omega]
+
+/-- **Concatenation with a natural second index**: `(a; q)_{i + N} = (a; q)_i (a q ^ i; q)_N`
+for every integer `i` and natural `N` with both products defined. -/
+theorem qPochhammerInt_add_natCast {i : ℤ} (N : ℕ) (hi : i ∈ qPochhammerIntDomain a q)
+    (hiN : i + N ∈ qPochhammerIntDomain a q) :
+    qPochhammerInt a q (i + N) hiN = qPochhammerInt a q i hi * qPochhammer (a * ↑(q ^ i)) q N := by
+  rcases le_or_gt 0 (i + N) with h₀ | h₀
+  · rw [qPochhammerInt_of_nonneg h₀, qPochhammerInt_mul_qPochhammer_of_nonneg hi N h₀]
+  · -- Both sides are left inverses of the unit `(a q ^ (i + N); q)_{-(i + N)}`.
+    refine (mem_qPochhammerIntDomain_iff_isUnit.mp hiN).mul_left_inj.mp ?_
+    have hshift : a * ↑(q ^ i) * ↑q ^ N = a * ↑(q ^ (i + N)) := by
+      rw [mul_assoc, val_zpow_mul_pow]
+    have hlen : N + (-(i + N)).toNat = (-i).toNat := by omega
+    rw [qPochhammerInt_mul_qPochhammer_of_nonpos h₀.le, mul_assoc, ← hshift, ← qPochhammer_add,
+      hlen, qPochhammerInt_mul_qPochhammer_of_nonpos (by omega)]
+
+/-- The recursion `(a; q)_{j + 1} = (a; q)_j (1 - a q ^ j)`, for every integer `j` with both
+products defined. -/
+theorem qPochhammerInt_add_one {j : ℤ} (hj : j ∈ qPochhammerIntDomain a q)
+    (hj₁ : j + 1 ∈ qPochhammerIntDomain a q) :
+    qPochhammerInt a q (j + 1) hj₁ = qPochhammerInt a q j hj * (1 - a * ↑(q ^ j)) := by
+  simpa using qPochhammerInt_add_natCast 1 hj (by simpa using hj₁)
+
+/-- **Concatenation of integer-indexed q-Pochhammer products**:
+`(a; q)_{i + j} = (a; q)_i (a q ^ i; q)_j` for all integers `i` and `j` such that the three
+products are defined. -/
+theorem qPochhammerInt_add {i j : ℤ} (hi : i ∈ qPochhammerIntDomain a q)
+    (hj : j ∈ qPochhammerIntDomain (a * ↑(q ^ i)) q) (hij : i + j ∈ qPochhammerIntDomain a q) :
+    qPochhammerInt a q (i + j) hij =
+      qPochhammerInt a q i hi * qPochhammerInt (a * ↑(q ^ i)) q j hj := by
+  rcases le_or_gt 0 j with hj₀ | hj₀
+  · obtain ⟨N, rfl⟩ := Int.eq_ofNat_of_zero_le hj₀
+    rw [qPochhammerInt_natCast, qPochhammerInt_add_natCast N hi hij]
+  · -- Both sides are left inverses of the unit `(a q ^ (i + j); q)_{-j}`.
+    refine (mem_qPochhammerIntDomain_iff_isUnit.mp hj).mul_left_inj.mp ?_
+    have hi' : i + j + ((-j).toNat : ℤ) ∈ qPochhammerIntDomain a q := by
+      rwa [show i + j + ((-j).toNat : ℤ) = i by omega]
+    have hshift : a * ↑(q ^ i) * ↑(q ^ j) = a * ↑(q ^ (i + j)) := by
+      rw [mul_assoc, ← Units.val_mul, ← zpow_add]
+    rw [mul_assoc (qPochhammerInt a q i hi), qPochhammerInt_mul_qPochhammer_of_nonpos hj₀.le,
+      mul_one, hshift, ← qPochhammerInt_add_natCast _ hij hi']
+    congr 1
+    omega
+
+/-- A ring homomorphism `f` maps the domain of `(a; q)_j` into that of `(f a; f q)_j`. -/
+theorem map_mem_qPochhammerIntDomain {F : Type*} [FunLike F R S] [RingHomClass F R S] (f : F)
+    {j : ℤ} (h : j ∈ qPochhammerIntDomain a q) :
+    j ∈ qPochhammerIntDomain (f a) (Units.map (f : R →* S) q) := fun i hi hi₀ ↦ by
+  simpa [← map_zpow] using (h i hi hi₀).map f
+
+/-- The integer-indexed q-Pochhammer product commutes with ring homomorphisms, which carry the
+unit `q` to the unit `f q`. -/
+@[simp]
+theorem map_qPochhammerInt {F : Type*} [FunLike F R S] [RingHomClass F R S] (f : F) {j : ℤ}
+    (h : j ∈ qPochhammerIntDomain a q) :
+    f (qPochhammerInt a q j h) =
+      qPochhammerInt (f a) (Units.map (f : R →* S) q) j (map_mem_qPochhammerIntDomain f h) := by
+  rcases le_or_gt 0 j with hj₀ | hj₀
+  · simp [qPochhammerInt_of_nonneg hj₀]
+  · -- Both sides are left inverses of the unit `(f a (f q) ^ j; f q)_{-j}`.
+    have h' := map_mem_qPochhammerIntDomain f h
+    refine (mem_qPochhammerIntDomain_iff_isUnit.mp h').mul_left_inj.mp ?_
+    rw [qPochhammerInt_mul_qPochhammer_of_nonpos hj₀.le]
+    simpa [← map_zpow] using congr_arg f (qPochhammerInt_mul_qPochhammer_of_nonpos hj₀.le h)
+
+end Int
+
 /-! ### Polynomial coefficients
 
 With coefficient ring `R[X]` these give the coefficient-change and evaluation behaviour of the
@@ -281,5 +502,29 @@ example : qPochhammer (2 : ℤ) 3 3 = -85 := by
 /-- `x = 1` makes every positive product vanish: `(1; q)_n = 0` for `n > 0`. -/
 example {R : Type*} [CommRing R] (q : R) {n : ℕ} (hn : 0 < n) : qPochhammer 1 q n = 0 :=
   qPochhammer_eq_zero_of_mul_pow_eq_one hn (by simp)
+
+/-- `(3; 2)_{-1} = 1 / (1 - 3 / 2) = -2` over `ℚ`. -/
+example (h : (-1 : ℤ) ∈ qPochhammerIntDomain (3 : ℚ) (Units.mk0 2 two_ne_zero)) :
+    qPochhammerInt (3 : ℚ) (Units.mk0 2 two_ne_zero) (-1) h = -2 := by
+  have := qPochhammerInt_neg_natCast 1 (by simpa using h)
+  norm_num at this
+  exact this
+
+/-- The index `-1` does lie in the domain of `(3; 2)_j` over `ℚ`. -/
+example : (-1 : ℤ) ∈ qPochhammerIntDomain (3 : ℚ) (Units.mk0 2 two_ne_zero) := by
+  intro i hi hi₀
+  obtain rfl : i = -1 := by omega
+  norm_num
+
+/-- `(a; q)_0 = 1` even for `a = 1`, although `(1; q)_n = 0` for every `n > 0`. -/
+example {R : Type*} [CommRing R] (q : Rˣ) :
+    qPochhammerInt (1 : R) q 0 (natCast_mem_qPochhammerIntDomain 1 q 0) = 1 :=
+  qPochhammerInt_zero _
+
+/-- Over `ℚ` the index `-1` is outside the domain of `(2; 2)_j`, since the factor `1 - 2 / 2`
+vanishes: no value is assigned to the inverse of zero. -/
+example : (-1 : ℤ) ∉ qPochhammerIntDomain (2 : ℚ) (Units.mk0 2 two_ne_zero) := fun h ↦ by
+  have := h (-1) le_rfl (by norm_num)
+  norm_num at this
 
 end TauCeti

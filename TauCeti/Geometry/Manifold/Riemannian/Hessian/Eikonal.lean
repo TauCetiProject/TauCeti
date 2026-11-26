@@ -44,7 +44,7 @@ theorem hessian_mgradient_eq_zero_of_eventually_norm_sq_eq_const {f : M → ℝ}
       fun _ ↦ c := by simpa only [real_inner_self_eq_norm_sq] using hc
   have hcov := isMetricCompatible_leviCivitaConnection I (M := M)
   have hm := hcov.inner_apply_self_eq_zero_of_eventuallyEq_const hG heq v
-  rw [hessian_symm x hf, hessian_def]
+  rw [hessian_symm x hf, I.hessian_eq_inner_leviCivitaConnection_mgradient]
   exact hm
 
 end TauCeti.Manifold

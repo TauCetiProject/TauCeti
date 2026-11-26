@@ -53,8 +53,13 @@ representative.
 * `TauCeti.MeasureTheory.ae_eq_preciseRepresentative_of_hasBesicovitchCovering`: for any locally
   finite measure on a space with the Besicovitch covering property, a locally integrable function
   agrees almost everywhere with its precise representative.
+* `TauCeti.MeasureTheory.ae_eq_restrict_inter_preciseRepresentative_restrict`: the same on
+  `s ∩ t`, `s` open, for the precise representative with respect to the restriction to `t`.
 * `TauCeti.MeasureTheory.preciseRepresentative_eq_of_continuousAt`: the precise representative at
-  `x` of a function equal almost everywhere near `x` to a function `g` continuous at `x` is `g x`.
+  `x` of a function equal almost everywhere near `x` to a function `g` continuous at `x` is `g x`;
+  `TauCeti.MeasureTheory.preciseRepresentative_eq_of_continuousAt_of_measure_closedBall_ne_zero`
+  asks only that the closed balls around `x` have positive measure, as at a boundary point of an
+  open set `Ω` for the restricted measure `μ.restrict Ω`.
 * `TauCeti.MeasureTheory.tendsto_setAverage_closedBall_preciseRepresentative`: the averages
   converge at points where the essential oscillation vanishes.
 * `TauCeti.MeasureTheory.tendsto_setAverage_closedBall_preciseRepresentative_of_rpow`: the
@@ -183,13 +188,32 @@ theorem ae_eq_preciseRepresentative_of_hasBesicovitchCovering {Y : Type*} [Metri
   filter_upwards [Besicovitch.ae_tendsto_average_closedBall ν hf] with x hx
   exact (preciseRepresentative_eq_of_tendsto hx).symm
 
-section Oscillation
+/-- **Lebesgue differentiation for the precise representative of a restricted measure.** On a
+space with the Besicovitch covering property, a function locally integrable for the restriction
+of a locally finite measure `ν` to `s ∩ t`, with `s` open, agrees almost everywhere on `s ∩ t`
+with its precise representative for `ν.restrict t`. -/
+theorem ae_eq_restrict_inter_preciseRepresentative_restrict {Y : Type*} [MetricSpace Y]
+    [MeasurableSpace Y] [BorelSpace Y] [SecondCountableTopology Y] [HasBesicovitchCovering Y]
+    {ν : Measure Y} [IsLocallyFiniteMeasure ν] [CompleteSpace E] {f : Y → E} {s t : Set Y}
+    (hs : IsOpen s) (hf : LocallyIntegrable f (ν.restrict (s ∩ t))) :
+    f =ᵐ[ν.restrict (s ∩ t)] preciseRepresentative (ν.restrict t) f := by
+  filter_upwards [ae_eq_preciseRepresentative_of_hasBesicovitchCovering hf,
+    ae_restrict_of_ae_restrict_of_subset inter_subset_left (ae_restrict_mem hs.measurableSet)]
+    with x hx hxs
+  rw [hx, ← Measure.restrict_restrict hs.measurableSet,
+    preciseRepresentative_restrict_of_mem_nhds (hs.mem_nhds hxs)]
 
-variable [CompleteSpace E] [μ.IsOpenPosMeasure]
+section PositiveBalls
 
-/-- If `f` takes values almost everywhere on `ball x r` in a closed convex set `S`, then so do its
-averages over the closed balls around `x` of small radius. -/
-theorem eventually_setAverage_closedBall_mem {S : Set E} (hSc : Convex ℝ S) (hS : IsClosed S)
+variable [CompleteSpace E]
+
+/-- If `f` takes values almost everywhere on `ball x r` in a closed convex set `S`, and the closed
+balls around `x` have positive measure, then the averages of `f` over the closed balls around `x`
+of small radius lie in `S`. The positivity holds at every point for a measure positive on open
+sets, and at the points of the closure of an open set `Ω` for the restriction `μ.restrict Ω` of
+such a measure when `Ω` is not too thin there. -/
+theorem eventually_setAverage_closedBall_mem_of_measure_closedBall_ne_zero
+    (hμ : ∀ ε > 0, μ (closedBall x ε) ≠ 0) {S : Set E} (hSc : Convex ℝ S) (hS : IsClosed S)
     {r : ℝ} (hr : 0 < r) (hf : IntegrableAtFilter f (𝓝 x) μ)
     (hfS : ∀ᵐ y ∂μ.restrict (ball x r), f y ∈ S) :
     ∀ᶠ ε in 𝓝[>] (0 : ℝ), ⨍ y in closedBall x ε, f y ∂μ ∈ S := by
@@ -217,7 +241,41 @@ theorem eventually_setAverage_closedBall_mem {S : Set E} (hSc : Convex ℝ S) (h
     rw [lintegral_const, Measure.restrict_apply_univ, hfin,
       ENNReal.mul_top (ENNReal.ofReal_pos.2 hd).ne'] at h1
     exact hint'.2.ne (top_le_iff.1 h1)
-  · exact hSc.set_average_mem hS (measure_closedBall_pos μ x hε.1).ne' hfin hfS' hint'
+  · exact hSc.set_average_mem hS (hμ ε hε.1) hfin hfS' hint'
+
+/-- **The precise representative reproduces continuous representatives, at a point whose closed
+balls have positive measure.** If `f` agrees almost everywhere near `x` with a function `g` which
+is continuous at `x`, and every closed ball around `x` has positive measure, then the precise
+representative of `f` at `x` is `g x`. -/
+theorem preciseRepresentative_eq_of_continuousAt_of_measure_closedBall_ne_zero
+    [OpensMeasurableSpace X] (hμ : ∀ ε > 0, μ (closedBall x ε) ≠ 0) {V : Set X}
+    (hV : V ∈ 𝓝 x) (hf : IntegrableAtFilter f (𝓝 x) μ) (h : f =ᵐ[μ.restrict V] g)
+    (hg : ContinuousAt g x) : preciseRepresentative μ f x = g x := by
+  refine preciseRepresentative_eq_of_tendsto (Metric.tendsto_nhds.2 fun ε hε => ?_)
+  obtain ⟨δ, hδ, hsub⟩ := nhds_basis_ball.mem_iff.1
+    (inter_mem hV (hg.preimage_mem_nhds (closedBall_mem_nhds (g x) (half_pos hε))))
+  have hfg : ∀ᵐ y ∂μ.restrict (ball x δ), f y ∈ closedBall (g x) (ε / 2) := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset (fun _ hy => (hsub hy).1) h,
+      self_mem_ae_restrict measurableSet_ball] with y hy hyδ
+    exact hy ▸ (hsub hyδ).2
+  filter_upwards [eventually_setAverage_closedBall_mem_of_measure_closedBall_ne_zero hμ
+    (convex_closedBall _ _) isClosed_closedBall hδ hf hfg] with r hr
+  exact (mem_closedBall.1 hr).trans_lt (half_lt_self hε)
+
+end PositiveBalls
+
+section Oscillation
+
+variable [CompleteSpace E] [μ.IsOpenPosMeasure]
+
+/-- If `f` takes values almost everywhere on `ball x r` in a closed convex set `S`, then so do its
+averages over the closed balls around `x` of small radius. -/
+theorem eventually_setAverage_closedBall_mem {S : Set E} (hSc : Convex ℝ S) (hS : IsClosed S)
+    {r : ℝ} (hr : 0 < r) (hf : IntegrableAtFilter f (𝓝 x) μ)
+    (hfS : ∀ᵐ y ∂μ.restrict (ball x r), f y ∈ S) :
+    ∀ᶠ ε in 𝓝[>] (0 : ℝ), ⨍ y in closedBall x ε, f y ∂μ ∈ S :=
+  eventually_setAverage_closedBall_mem_of_measure_closedBall_ne_zero
+    (fun _ hε => (measure_closedBall_pos μ x hε).ne') hSc hS hr hf hfS
 
 /-- If `f` takes values almost everywhere on `ball x r` in a closed convex set `S`, and the
 averages of `f` over the closed balls around `x` converge, then the precise representative of `f`
@@ -235,17 +293,9 @@ everywhere near `x` with a function `g` which is continuous at `x`, then the pre
 representative of `f` at `x` is `g x`. -/
 theorem preciseRepresentative_eq_of_continuousAt [OpensMeasurableSpace X] {V : Set X}
     (hV : V ∈ 𝓝 x) (hf : IntegrableAtFilter f (𝓝 x) μ) (h : f =ᵐ[μ.restrict V] g)
-    (hg : ContinuousAt g x) : preciseRepresentative μ f x = g x := by
-  refine preciseRepresentative_eq_of_tendsto (Metric.tendsto_nhds.2 fun ε hε => ?_)
-  obtain ⟨δ, hδ, hsub⟩ := nhds_basis_ball.mem_iff.1
-    (inter_mem hV (hg.preimage_mem_nhds (closedBall_mem_nhds (g x) (half_pos hε))))
-  have hfg : ∀ᵐ y ∂μ.restrict (ball x δ), f y ∈ closedBall (g x) (ε / 2) := by
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset (fun _ hy => (hsub hy).1) h,
-      self_mem_ae_restrict measurableSet_ball] with y hy hyδ
-    exact hy ▸ (hsub hyδ).2
-  filter_upwards [eventually_setAverage_closedBall_mem (convex_closedBall _ _) isClosed_closedBall
-    hδ hf hfg] with r hr
-  exact (mem_closedBall.1 hr).trans_lt (half_lt_self hε)
+    (hg : ContinuousAt g x) : preciseRepresentative μ f x = g x :=
+  preciseRepresentative_eq_of_continuousAt_of_measure_closedBall_ne_zero
+    (fun _ hε => (measure_closedBall_pos μ x hε).ne') hV hf h hg
 
 /-- The precise representative of a function agrees on an open set `U` with any function `g`
 continuous on `U` which equals it almost everywhere on `U`. -/

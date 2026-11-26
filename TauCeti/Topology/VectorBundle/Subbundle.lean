@@ -64,6 +64,8 @@ instance; install it with `letI := TauCeti.subbundleTopology F V`.
 
 * `TauCeti.isEmbedding_totalSpace_subbundle`: the total space of `V` is a subspace of the total
   space of `E`.
+* `TauCeti.continuous_norm_subbundle`: the fibre norm of a normed bundle stays continuous on the
+  total space of a family of subspaces of its fibres.
 * `TauCeti.isInducing_totalSpaceMk_subbundle`: each fibre `V x` carries the topology induced from
   the total space of `V`.
 * `TauCeti.IsSubbundleFrameOn.continuousOn_coordChangeL`: the coordinate changes between the
@@ -172,6 +174,42 @@ theorem coe_subbundleTotalSpaceHomeomorph_symm_apply {F' : Type*} (V : Π x, Sub
       ⟨x.val.proj, ⟨x.val.snd, hA' x.val x.property⟩⟩ :=
   (rfl)
 
+omit [TopologicalSpace B] in
+/-- The total spaces of a family `V` of subspaces of the fibres of `E` for two model-fibre
+parameters `F₁` and `F₂`, both with the topology of a subspace of the total space of `E`, are
+homeomorphic by the identity on vectors. This relabels the model fibre, for instance to move it to
+another universe. -/
+def subbundleTotalSpaceModelHomeomorph (F₁ F₂ : Type*) (V : Π x, Submodule 𝕜 (E x)) :
+    letI := subbundleTopology F (F' := F₁) V
+    letI := subbundleTopology F (F' := F₂) V
+    TotalSpace F₁ (fun x ↦ V x) ≃ₜ TotalSpace F₂ (fun x ↦ V x) :=
+  letI := subbundleTopology F (F' := F₁) V
+  letI := subbundleTopology F (F' := F₂) V
+  { toFun v := ⟨v.proj, v.snd⟩
+    invFun v := ⟨v.proj, v.snd⟩
+    left_inv _ := rfl
+    right_inv _ := rfl
+    continuous_toFun := continuous_induced_rng.2 continuous_induced_dom
+    continuous_invFun := continuous_induced_rng.2 continuous_induced_dom }
+
+omit [TopologicalSpace B] in
+@[simp]
+theorem subbundleTotalSpaceModelHomeomorph_apply (F₁ F₂ : Type*) (V : Π x, Submodule 𝕜 (E x))
+    (v : TotalSpace F₁ fun x ↦ V x) :
+    letI := subbundleTopology F (F' := F₁) V
+    letI := subbundleTopology F (F' := F₂) V
+    subbundleTotalSpaceModelHomeomorph F F₁ F₂ V v = ⟨v.proj, v.snd⟩ :=
+  (rfl)
+
+omit [TopologicalSpace B] in
+@[simp]
+theorem subbundleTotalSpaceModelHomeomorph_symm (F₁ F₂ : Type*) (V : Π x, Submodule 𝕜 (E x)) :
+    letI := subbundleTopology F (F' := F₁) V
+    letI := subbundleTopology F (F' := F₂) V
+    (subbundleTotalSpaceModelHomeomorph F F₁ F₂ V).symm =
+      subbundleTotalSpaceModelHomeomorph F F₂ F₁ V :=
+  (rfl)
+
 variable [TopologicalSpace F] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
 
 /-- The projection of the total space of a family of subspaces of the fibres of `E` is
@@ -216,6 +254,15 @@ theorem mono (hX : IsSubbundleFrameOn F V X U) (hU : U' ⊆ U) : IsSubbundleFram
   continuousOn i := (hX.continuousOn i).mono hU
   linearIndependent hx := hX.linearIndependent (hU hx)
   span_eq hx := hX.span_eq (hU hx)
+
+/-- A local frame of `V` on `U` reindexed along an equivalence is a local frame of `V` on `U`. -/
+theorem comp_equiv {ι' : Type*} (hX : IsSubbundleFrameOn F V X U) (e : ι' ≃ ι) :
+    IsSubbundleFrameOn F V (X ∘ e) U where
+  continuousOn i := hX.continuousOn (e i)
+  linearIndependent hx := (hX.linearIndependent hx).comp e e.injective
+  span_eq {x} hx := by
+    rw [← hX.span_eq hx]
+    exact congrArg (Submodule.span 𝕜) (e.surjective.range_comp fun i ↦ X i x)
 
 /-- Every member of a local frame of `V` on `U` takes values in `V` on `U`. -/
 theorem apply_mem (hX : IsSubbundleFrameOn F V X U) (i : ι) {x : B} (hx : x ∈ U) : X i x ∈ V x :=
@@ -303,9 +350,34 @@ theorem HasLocalSubbundleFrames.finrank_eq [StrongRankCondition 𝕜] [Fintype �
   obtain ⟨U, -, hx, X, hX⟩ := hV x
   exact hX.finrank_eq hx
 
+variable {F} in
+/-- Local frames indexed by `ι` give local frames indexed by any type equivalent to `ι`, such as
+`ULift ι` in a larger universe. -/
+theorem HasLocalSubbundleFrames.of_equiv {ι' : Type*} {V : Π x, Submodule 𝕜 (E x)}
+    (hV : HasLocalSubbundleFrames F ι V) (e : ι ≃ ι') : HasLocalSubbundleFrames F ι' V := by
+  intro x
+  obtain ⟨U, hU, hx, X, hX⟩ := hV x
+  exact ⟨U, hU, hx, X ∘ e.symm, hX.comp_equiv e.symm⟩
+
 end Frame
 
 end Semiring
+
+section Norm
+
+omit [TopologicalSpace B] in
+variable {F} in
+/-- On a family `S` of subspaces of the fibres of a normed bundle `E`, with the subspace topology
+of the total space of `E` (`TauCeti.subbundleTopology`), the fibre norm is continuous whenever it
+is continuous on the total space of `E`, for any model fibre `P`. -/
+theorem continuous_norm_subbundle [∀ b, SeminormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
+    (hE : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) (P : Type*) (S : ∀ b, Submodule ℝ (E b)) :
+    letI := subbundleTopology F (F' := P) S
+    Continuous fun v : TotalSpace P (fun b ↦ S b) ↦ ‖v.snd‖ :=
+  letI := subbundleTopology F (F' := P) S
+  hE.comp (isEmbedding_totalSpace_subbundle F P S).continuous
+
+end Norm
 
 section Normed
 
@@ -343,6 +415,38 @@ theorem trivOperator_apply {y₀ y : B} (hy : y ∈ (trivializationAt F E y₀).
   have h := (trivializationAt F E y₀).continuousLinearMapAt_apply_of_mem (R := 𝕜) hy
   simp only [trivOperator, FunLike.coe_sum, Finset.sum_apply,
     ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.proj_apply, ← h, map_sum, map_smul]
+
+/-- Over the base set of the trivialization at `y₀`, the operator `trivOperator 𝕜 F X y₀ y` sends
+coefficients to the image of the linear combination of the vectors `X i y` under the fibrewise
+linear equivalence of that trivialization. -/
+theorem trivOperator_apply_eq_linearCombination {y₀ y : B}
+    (hy : y ∈ (trivializationAt F E y₀).baseSet) (c : ι → 𝕜) :
+    trivOperator 𝕜 F X y₀ y c = (trivializationAt F E y₀).continuousLinearEquivAt 𝕜 y hy
+      (Fintype.linearCombination 𝕜 (X · y) c) := by
+  rw [trivOperator_apply hy, Fintype.linearCombination_apply,
+    Trivialization.continuousLinearEquivAt_apply]
+
+/-- Over the base set of the trivialization at `y₀`, the vectors `X i y` form a basis of `E y`
+exactly when the family `X` read in that trivialization is bijective on coefficients. -/
+theorem linearIndependent_and_span_eq_top_iff_bijective_trivOperator {y₀ y : B}
+    (hy : y ∈ (trivializationAt F E y₀).baseSet) :
+    LinearIndependent 𝕜 (X · y) ∧ Submodule.span 𝕜 (range (X · y)) = ⊤ ↔
+      Bijective (trivOperator 𝕜 F X y₀ y) := by
+  have h : (trivOperator 𝕜 F X y₀ y : (ι → 𝕜) → F) =
+      (trivializationAt F E y₀).continuousLinearEquivAt 𝕜 y hy ∘
+        Fintype.linearCombination 𝕜 (X · y) :=
+    funext (trivOperator_apply_eq_linearCombination hy)
+  rw [h, EquivLike.comp_bijective, linearIndependent_iff_injective_fintypeLinearCombination,
+    ← Fintype.range_linearCombination, LinearMap.range_eq_top, Bijective]
+
+/-- If as many vectors as the dimension of `F` are injective on coefficients when read in the
+trivialization at `y₀`, then they form a basis of the fibre over any point `y` of its base set. -/
+theorem linearIndependent_and_span_eq_top_of_injective_trivOperator [FiniteDimensional 𝕜 F]
+    {y₀ y : B} (hy : y ∈ (trivializationAt F E y₀).baseSet)
+    (hrank : finrank 𝕜 (ι → 𝕜) = finrank 𝕜 F) (hinj : Injective (trivOperator 𝕜 F X y₀ y)) :
+    LinearIndependent 𝕜 (X · y) ∧ Submodule.span 𝕜 (range (X · y)) = ⊤ :=
+  (linearIndependent_and_span_eq_top_iff_bijective_trivOperator hy).mpr
+    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).mp hinj⟩
 
 /-- A functional `c` on the model fibre that kills the frame read in the trivialization at `y₀`
 vanishes on `V y` once pulled back through that trivialization. -/

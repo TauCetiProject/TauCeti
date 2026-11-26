@@ -17,7 +17,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Fourier.FourierCharDeriv
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 
 /-!
 # Kohn–Nirenberg quantization on Schwartz functions
@@ -92,6 +92,8 @@ frequency derivative of its Fourier transform.
   of the position multiplies its quantization by `ψ`, `Op(ψ a) u = ψ Op(a) u`.
 * `TauCeti.Symbol.quantizeSchwartzValue_comp_comp`: quantizing `L ∘ a(x, ξ) ∘ K` for constant
   maps `L` and `K` of the fibres gives `L ∘ Op(a) (K ∘ u)`.
+* `TauCeti.Symbol.quantizeSchwartzValue_map_singleEntryMap`: a scalar symbol placed into
+  `V →L[ℂ] W` by `w ∘ a(x, ξ) ∘ K` quantizes to `Op(a) (K ∘ u) • w`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
   `TauCeti.fderiv_quantizeSchwartzValue_apply`: `Op(a) u` is differentiable for a `C¹`
   coefficient whose values and position derivatives have growth bounds locally uniform in `x`,
@@ -470,10 +472,10 @@ private lemma norm_integrandFDeriv_le {x : E} {C C' : ℝ}
         ≤ ‖fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x‖ * ‖h‖ * ‖f ζ‖ := by gcongr; exact le_opNorm _ _
       _ ≤ C' * w ^ (m / 2) * ‖h‖ * ‖f ζ‖ := by gcongr; exact hC' _
       _ = C' * w ^ (m / 2) * ‖f ζ‖ * ‖h‖ := by ring
-  have hw₁ := one_add_norm_sq_rpow_mul_norm_le ((2 * π) • ζ) m
+  have hw₁ := Real.one_add_sq_rpow_mul_abs_le ‖(2 * π) • ζ‖ m
   have hw₂ : w ^ (m / 2) ≤ w ^ ((m + 1) / 2) :=
     Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖(2 * π) • ζ‖]) (by linarith)
-  rw [← hw] at hw₁
+  rw [abs_norm, ← hw] at hw₁
   calc _ ≤ C * (w ^ (m / 2) * ‖(2 * π) • ζ‖) * ‖f ζ‖ * ‖h‖ + C' * w ^ (m / 2) * ‖f ζ‖ * ‖h‖ :=
         add_le_add h₁ h₂
     _ ≤ C * w ^ ((m + 1) / 2) * ‖f ζ‖ * ‖h‖ + C' * w ^ ((m + 1) / 2) * ‖f ζ‖ * ‖h‖ := by
@@ -1042,6 +1044,16 @@ theorem quantizeSchwartzValue_comp_comp [CompleteSpace V] [CompleteSpace W] {V' 
       (a.continuous_coefficient_slice x).aestronglyMeasurable hC (𝓕 (u.postcompCLM K)))]
   simp only [ContinuousLinearMap.comp_apply, SchwartzMap.fourier_postcompCLM_apply,
     Circle.smul_def, map_smul]
+
+/-- Quantizing a scalar symbol placed into `V →L[ℂ] W` by `TauCeti.Symbol.singleEntryMap K w` on
+`u` gives the quantization of the scalar symbol on `K ∘ u`, times `w`. -/
+theorem quantizeSchwartzValue_map_singleEntryMap [CompleteSpace V] [CompleteSpace W]
+    (a : Symbol n ℂ ℂ m) (K : V →L[ℂ] ℂ) (w : W) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    quantizeSchwartzValue (a.map (singleEntryMap K w)).coefficient u x =
+      quantizeSchwartzValue a.coefficient (u.postcompCLM K) x • w := by
+  rw [coefficient_map_eq_comp_comp _ K (singleEntryMap_apply K w),
+    quantizeSchwartzValue_comp_comp, ContinuousLinearMap.toSpanSingleton_apply]
 
 open scoped ContDiff in
 /-- **Multiplication by a smooth function of the position.** The quantization of the symbol

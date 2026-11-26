@@ -63,9 +63,20 @@ original Hom field along that map is `Cⁿ` there, provided the map is `Cⁿ` at
 `Bundle.Pullback.contMDiff_hom_section_iff`). This dictionary requires neither finite rank nor a
 smooth bundle structure on the fibres.
 
+For a field of fibrewise linear maps `A x : V (f x) → W (g x)` along two different maps, a `Cⁿ`
+induced map `p ↦ (g p.proj, A p.proj p.snd)` from the total space of `f *ᵖ V` to that of `W`
+gives `Cⁿ` coordinates `inCoordinates F V G W (f x₀) (f x) (g x₀) (g x) (A x)`, when the model
+fibre of `V` is finite-dimensional (`Bundle.Pullback.contMDiffAt_inCoordinates_of_contMDiffAt`).
+For tangent bundles these are the tangent coordinates `inTangentCoordinates` in which prescribed
+ambient differentials along an embedding are stated.
+
 The pullback of a `C^n` vector bundle along a `C^n` map `f`, given as an element of any
 `ContinuousMapClass` rather than as a bundled `C^n` map, is a `C^n` vector bundle
-(`Bundle.Pullback.contMDiffVectorBundle`).
+(`Bundle.Pullback.contMDiffVectorBundle`). In particular this makes the pullback along the
+underlying continuous map `(g : C(B', B))` of a bundled `C^n` map `g` a `C^n` vector bundle
+(`ContMDiffVectorBundle.pullbackContinuousMap`), and the restriction of a `C^n` vector bundle to
+an open subset, its pullback along the inclusion, a `C^n` vector bundle
+(`Bundle.Pullback.contMDiffVectorBundle_opens`).
 
 ## References
 
@@ -307,6 +318,54 @@ theorem Bundle.Pullback.contMDiff_hom_section_iff (f : K) (hf : ContMDiff IX IB 
 
 end HomSection
 
+section HomAlongMaps
+
+variable {𝕜 B C X F G K L EB HB EC HC EX HX : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
+  [NormedAddCommGroup EC] [NormedSpace 𝕜 EC] [TopologicalSpace HC]
+  {IC : ModelWithCorners 𝕜 EC HC} [TopologicalSpace C] [ChartedSpace HC C]
+  [NormedAddCommGroup EX] [NormedSpace 𝕜 EX] [TopologicalSpace HX]
+  {IX : ModelWithCorners 𝕜 EX HX} [TopologicalSpace X] [ChartedSpace HX X]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {V : B → Type*} {W : C → Type*}
+  [∀ b, AddCommGroup (V b)] [∀ b, Module 𝕜 (V b)] [∀ b, TopologicalSpace (V b)]
+  [∀ c, AddCommGroup (W c)] [∀ c, Module 𝕜 (W c)] [∀ c, TopologicalSpace (W c)]
+  [∀ c, IsTopologicalAddGroup (W c)] [∀ c, ContinuousSMul 𝕜 (W c)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle 𝕜 G W]
+  [FunLike K X B] [ContinuousMapClass K X B] [FunLike L X C] [ContinuousMapClass L X C]
+  {n : WithTop ℕ∞}
+
+/-- A field of fibrewise linear maps `A x : V (f x) → W (g x)` along two maps `f` and `g` whose
+induced map `p ↦ (g p.proj, A p.proj p.snd)` from the total space of the pullback `f *ᵖ V` to
+that of `W` is `Cⁿ`, and whose second base map `g` is `Cⁿ` at `x₀`, has `Cⁿ` coordinates
+`inCoordinates F V G W (f x₀) (f x) (g x₀) (g x) (A x)` at `x₀`. For tangent bundles these are the
+tangent coordinates `inTangentCoordinates` of `A`. -/
+theorem Bundle.Pullback.contMDiffAt_inCoordinates_of_contMDiffAt (f : K) (g : L) {x₀ : X}
+    (hg : ContMDiffAt IX IC n g x₀) (A : ∀ x, V (f x) →L[𝕜] W (g x))
+    (hA : ∀ v : V (f x₀), ContMDiffAt (IX.prod 𝓘(𝕜, F)) (IC.prod 𝓘(𝕜, G)) n
+      (fun p : TotalSpace F ((f : X → B) *ᵖ V) ↦ TotalSpace.mk' G (g p.proj) (A p.proj p.snd))
+      ⟨x₀, v⟩) :
+    ContMDiffAt IX 𝓘(𝕜, F →L[𝕜] G) n
+      (fun x ↦ ContinuousLinearMap.inCoordinates F V G W (f x₀) (f x) (g x₀) (g x) (A x)) x₀ := by
+  -- Read `A` as a Hom section between the pullbacks `f *ᵖ V` and `g *ᵖ W` over `X`.
+  let ϕ : ∀ x, ((f : X → B) *ᵖ V) x →L[𝕜] ((g : X → C) *ᵖ W) x := A
+  have hsec := (TauCeti.contMDiffAt_hom_bundle_iff ϕ x₀).2 fun v ↦
+    (Bundle.Pullback.contMDiffAt_iff g hg).2 ⟨contMDiffAt_proj _, hA v⟩
+  rw [contMDiffAt_hom_bundle] at hsec
+  refine hsec.2.congr_of_eventuallyEq ?_
+  filter_upwards [(map_continuous f).continuousAt.preimage_mem_nhds
+      ((trivializationAt F V (f x₀)).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt F V (f x₀))),
+    (map_continuous g).continuousAt.preimage_mem_nhds
+      ((trivializationAt G W (g x₀)).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt G W (g x₀)))] with y hyV hyW
+  exact (ContinuousLinearMap.inCoordinates_pullback_of_mem f g x₀ y (A y) hyV hyW).symm
+
+end HomAlongMaps
+
 section ContMDiffVectorBundle
 
 variable {𝕜 B B' F K EB HB EB' HB' : Type*} [NontriviallyNormedField 𝕜]
@@ -325,6 +384,21 @@ supplied as a hypothesis. -/
 theorem Bundle.Pullback.contMDiffVectorBundle [ContMDiffVectorBundle n F E IB] {f : K}
     (hf : ContMDiff IB' IB n f) : ContMDiffVectorBundle n F ((f : B' → B) *ᵖ E) IB' :=
   ContMDiffVectorBundle.pullback F E IB' (⟨f, hf⟩ : C^n⟮IB', B'; IB, B⟯)
+
+/-- The pullback of a `C^n` vector bundle along a `C^n` map `g`, taken along its underlying
+continuous map `(g : C(B', B))`, is a `C^n` vector bundle. Mathlib's instance
+`ContMDiffVectorBundle.pullback` does not apply here, since its base map is `g` itself rather than
+its coercion through `C(B', B)`. -/
+instance ContMDiffVectorBundle.pullbackContinuousMap [ContMDiffVectorBundle n F E IB]
+    (g : C^n⟮IB', B'; IB, B⟯) : ContMDiffVectorBundle n F ((g : C(B', B)) *ᵖ E) IB' :=
+  Bundle.Pullback.contMDiffVectorBundle (f := (g : C(B', B))) g.contMDiff
+
+/-- The restriction of a `C^n` vector bundle to an open subset, its pullback along the inclusion,
+is a `C^n` vector bundle. -/
+instance Bundle.Pullback.contMDiffVectorBundle_opens [ContMDiffVectorBundle n F E IB]
+    (U : TopologicalSpace.Opens B) :
+    ContMDiffVectorBundle n F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, B)) *ᵖ E) IB :=
+  Bundle.Pullback.contMDiffVectorBundle contMDiff_subtypeVal
 
 end ContMDiffVectorBundle
 

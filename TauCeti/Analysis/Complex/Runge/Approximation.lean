@@ -11,12 +11,11 @@ public import TauCeti.Analysis.Complex.Runge.Hull
 public import TauCeti.Analysis.Complex.Runge.Operator
 public import TauCeti.Analysis.Normed.Module.Exhaustion
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
-import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.Analysis.Complex.SummableUniformlyOn
-import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.Complex.PowerSeries.Approximation
+import TauCeti.Analysis.Complex.Runge.SimpleFraction
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.Normed.Module.FilledIn
 
@@ -117,18 +116,8 @@ theorem IsRungeCompactPair.exists_differentiableOn_norm_sub_lt {W : Type*} [Norm
   obtain ⟨N, ζ, w, g, -, hg_diff, hbound⟩ := hop (ε / 2 / B) (by positivity)
   refine ⟨fun z => ∑ j : Fin N, (w j * g j z) • f (ζ j), ?_, fun z hz => ?_⟩
   · exact DifferentiableOn.fun_sum fun j _ => ((hg_diff j).const_mul (w j)).smul_const (f (ζ j))
-  -- The scalar estimate for `φ ∘ f`, for every continuous linear functional `φ`, bounds the norm.
-  refine (NormedSpace.norm_le_dual_bound ℂ _ (by positivity) fun φ => ?_).trans_lt
+  exact (norm_sub_sum_smul_le_of_scalar hbound hf hB1.le hLB hz).trans_lt
     ((div_mul_cancel₀ _ hB1.ne').trans_lt (half_lt_self hε))
-  have hφ := hbound (fun z => φ (f z)) (φ.differentiable.comp_differentiableOn hf)
-    (‖φ‖ * B) (by positivity) (fun z hz => (φ.le_opNorm _).trans (by gcongr; exact hLB z hz)) z hz
-  calc ‖φ (f z - ∑ j : Fin N, (w j * g j z) • f (ζ j))‖
-      = ‖φ (f z) - ∑ j : Fin N, w j * φ (f (ζ j)) * g j z‖ := by
-        simp only [map_sub, map_sum, map_smul, smul_eq_mul]
-        congr 2
-        exact Finset.sum_congr rfl fun j _ => by ring
-    _ ≤ ε / 2 / B * (‖φ‖ * B) := hφ
-    _ = ε / 2 / B * B * ‖φ‖ := by ring
 
 /-- A series of functions holomorphic on an open set `Y ⊆ Ω`, whose `k`-th term is bounded by
 `u k` on the stage `filledExhaustion Ω k` for a summable `u`, has a holomorphic sum on `Y`: each
@@ -163,38 +152,10 @@ theorem isRungeCompactPair_iff_approximation {Ω K : Set ℂ}
           ∀ z ∈ K, ‖f z - g z‖ < ε := by
   refine ⟨fun hRunge U hU hKU f hf ε hε =>
     hRunge.exists_differentiableOn_norm_sub_lt hU hKU hf hε, fun happrox => ?_⟩
-  refine isRungeCompactPair_iff.mpr ⟨hΩ, hK, hKΩ, isFilledIn_iff.mpr fun x hx ⟨hCc, hCΩ⟩ => ?_⟩
-  set C : Set ℂ := connectedComponentIn (Ω \ K) x
-  have hKU : K ⊆ {x}ᶜ := fun w hw hwx => hx.2 (hwx ▸ hw)
-  have hf_diff : DifferentiableOn ℂ (fun z : ℂ => (z - x)⁻¹) {x}ᶜ :=
-    (differentiableOn_id.sub_const x).inv fun _ hz => sub_ne_zero.mpr hz
-  obtain ⟨M, hM⟩ := hK.bddAbove_image (continuous_id.sub continuous_const).norm.continuousOn
-  set B : ℝ := max M 1
-  have hB1 : 0 < B := zero_lt_one.trans_le (le_max_right _ _)
-  have hKB : ∀ w ∈ K, ‖w - x‖ ≤ B := fun w hw =>
-    (hM ⟨w, hw, rfl⟩).trans (le_max_left _ _)
-  obtain ⟨g, hg_diff, hg_lt⟩ :=
-    happrox {x}ᶜ isOpen_ne hKU (fun z => (z - x)⁻¹) hf_diff (1 / 2 / B) (by positivity)
-  let h : ℂ → ℂ := fun z => 1 - (z - x) * g z
-  have hh_diff : DifferentiableOn ℂ h (closure C) :=
-    ((differentiableOn_id.sub_const x).mul (hg_diff.mono hCΩ)).const_sub 1
-  have hh_cl : DiffContOnCl ℂ h C :=
-    ⟨hh_diff.mono subset_closure, hh_diff.continuousOn⟩
-  have hh_fr : ∀ w ∈ frontier C, ‖h w‖ ≤ (1 / 2 : ℝ) := fun w hw => by
-    have hwK : w ∈ K := frontier_connectedComponentIn_sdiff_subset (hΩ.sdiff hK.isClosed) hCΩ hw
-    have hwx : w - x ≠ 0 := sub_ne_zero.mpr fun heq => hx.2 (heq ▸ hwK)
-    have hfactor : h w = (w - x) * ((w - x)⁻¹ - g w) := by
-      simp only [h]
-      rw [mul_sub, mul_inv_cancel₀ hwx]
-    rw [hfactor, norm_mul]
-    exact (mul_le_mul (hKB w hwK) (hg_lt w hwK).le (norm_nonneg _) hB1.le).trans_eq
-      (mul_div_cancel₀ _ hB1.ne')
-  have hhx : ‖h x‖ ≤ (1 / 2 : ℝ) :=
-    Complex.norm_le_of_forall_mem_frontier_norm_le (hCc.isBounded.subset subset_closure) hh_cl
-      hh_fr (subset_closure (mem_connectedComponentIn hx))
-  have hhx1 : h x = 1 := by simp [h]
-  rw [hhx1, norm_one] at hhx
-  linarith
+  refine isRungeCompactPair_iff.mpr ⟨hΩ, hK, hKΩ,
+    isFilledIn_of_forall_exists_differentiableOn_norm_inv_sub_lt hΩ fun a ha ↦
+      happrox {a}ᶜ isOpen_compl_singleton (fun z hz hza ↦ ha.2 (hza ▸ hz)) _
+        ((differentiableOn_id.sub_const a).inv fun _ hz ↦ sub_ne_zero.2 hz)⟩
 
 /-- For an open set `Ω ⊆ ℂ` and a compact subset `K ⊆ Ω`, `holomorphicHull Ω K` coincides with
 `TauCeti.fillIn K Ω`, the union of `K` and all connected components of `Ω \ K` whose closures are
