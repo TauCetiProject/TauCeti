@@ -115,7 +115,9 @@ theorem trace_lsmul_mul_eq_zero_of_mem_jacobson {x : A} (hx : x ∈ Ring.jacobso
     refine ⟨m, ?_⟩
     simpa only [map_mul] using
       Ideal.pow_eq_zero_of_mem hm le_rfl ((Ring.jacobson B).mul_mem_left (f y) hfx)
-  exact (isNilpotent_trace_of_isNilpotent (hyx.map B.val)).eq_zero
+  have hφ := hyx.map B.val
+  rw [← AlgHom.comp_apply, AlgHom.val_comp_rangeRestrict] at hφ
+  exact (isNilpotent_trace_of_isNilpotent hφ).eq_zero
 
 /-- **The trace-form criterion for semisimplicity, for any module.** Let `M` be an `A`-module on
 which `K` acts compatibly. If the trace form `(x, y) ↦ tr_M(x y)` of `M` is nondegenerate on the
@@ -139,11 +141,16 @@ theorem isSemisimpleRing_of_forall_trace_lsmul_mul_eq_zero_imp_eq_zero
 
 end Module
 
+/-- Left multiplication `L_a` is the action of `a` on `A` regarded as a module over itself. -/
+private theorem lmul_eq_lsmul (a : A) : lmul K A a = Algebra.lsmul K K A a := by
+  ext z
+  rw [coe_lmul_eq_mul, LinearMap.mul_apply', Algebra.lsmul_apply, smul_eq_mul]
+
 /-- **An element of the Jacobson radical lies in the kernel of the regular trace form**: if `x` is
 in the Jacobson radical of `A`, then `tr(L_{yx}) = 0` for every `y`. -/
 theorem regularTraceForm_eq_zero_of_mem_jacobson {x : A}
     (hx : x ∈ Ring.jacobson A) (y : A) : regularTraceForm K A y x = 0 := by
-  rw [regularTraceForm_apply]
+  rw [regularTraceForm_apply, lmul_eq_lsmul]
   exact trace_lsmul_mul_eq_zero_of_mem_jacobson A hx y
 
 /-- **An algebra whose regular trace form is nondegenerate is semisimple.** This holds over every
@@ -152,7 +159,7 @@ field, and is the case `M = A` of
 theorem isSemisimpleRing_of_nondegenerate_regularTraceForm
     (h : (regularTraceForm K A).Nondegenerate) : IsSemisimpleRing A :=
   isSemisimpleRing_of_forall_trace_lsmul_mul_eq_zero_imp_eq_zero (K := K) A fun x hx =>
-    h.2 x fun y => by rw [regularTraceForm_apply]; exact hx y
+    h.2 x fun y => by rw [regularTraceForm_apply, lmul_eq_lsmul]; exact hx y
 
 variable [FiniteDimensional K A]
 
