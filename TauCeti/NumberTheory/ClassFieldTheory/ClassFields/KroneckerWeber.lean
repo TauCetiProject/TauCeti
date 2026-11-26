@@ -176,7 +176,8 @@ end Level
 /-- **The Kronecker–Weber theorem**: every finite abelian extension of `ℚ` embeds in a cyclotomic
 field `ℚ(ζ_n)`. -/
 theorem kroneckerWeber (E : Type) [Field E] [NumberField E] [IsAbelianGalois ℚ E] :
-    ∃ n : ℕ, n ≠ 0 ∧ Nonempty (E →ₐ[ℚ] CyclotomicField n ℚ) :=
-  ⟨_, NeZero.ne _, (nonempty_algHom_cyclotomicField_iff E _).mpr dvd_rfl⟩
+    ∃ n : ℕ, n ≠ 0 ∧ Nonempty (E →ₐ[ℚ] CyclotomicField n ℚ) := by
+  have hf := NeZero.ne (Ideal.absNorm (abelianConductor ℚ E).finitePart)
+  exact ⟨_, hf, (nonempty_algHom_cyclotomicField_iff E _).mpr dvd_rfl⟩
 
 end TauCeti.ClassFieldTheory

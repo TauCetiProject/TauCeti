@@ -72,7 +72,8 @@ finite part of its conductor: it is the least `n ≠ 0` such that `E` embeds in 
 theorem isLeast_absNorm_abelianConductor_finitePart :
     IsLeast {n : ℕ | n ≠ 0 ∧ Nonempty (E →ₐ[ℚ] CyclotomicField n ℚ)}
       (Ideal.absNorm (abelianConductor ℚ E).finitePart) := by
-  refine ⟨⟨NeZero.ne _, (nonempty_algHom_cyclotomicField_iff E _).mpr dvd_rfl⟩, fun n ⟨hn, hE⟩ ↦ ?_⟩
+  have hf := NeZero.ne (Ideal.absNorm (abelianConductor ℚ E).finitePart)
+  refine ⟨⟨hf, (nonempty_algHom_cyclotomicField_iff E _).mpr dvd_rfl⟩, fun n ⟨hn, hE⟩ ↦ ?_⟩
   have : NeZero n := ⟨hn⟩
   exact Nat.le_of_dvd (Nat.pos_of_ne_zero hn) ((nonempty_algHom_cyclotomicField_iff E n).mp hE)
 

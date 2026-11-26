@@ -7,20 +7,16 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
+import TauCeti.NumberTheory.LFunctions.Hecke.ChangeModulus
 
 /-!
 # Trivial Hecke L-functions and the continued Dedekind zeta function
 
-At the trivial modulus `Modulus.one K`, the presented Hecke L-function
-`TauCeti.LFunctions.heckeLFunctionC (1 : RayClassCharacter (Modulus.one K))` equals the continued
-Dedekind zeta function `TauCeti.LFunctions.dedekindZetaC K`. At any modulus `𝔪`, the trivial
-character differs from `dedekindZetaC K` by the finite Euler correction at `𝔪.support` as
-punctured germs everywhere.
+At any modulus `𝔪`, the trivial character differs from `TauCeti.LFunctions.dedekindZetaC K` by the
+finite Euler correction at `𝔪.support` as punctured germs everywhere.
 
 ## Main results
 
-* `TauCeti.LFunctions.heckeLFunctionC_one_modulus_one`: the trivial character at `Modulus.one K`
-  has continued Hecke L-function equal to `dedekindZetaC K`.
 * `TauCeti.LFunctions.heckeLFunctionC_one_eventuallyEq`: punctured-germ comparison at an
   arbitrary modulus `𝔪`.
 
@@ -40,15 +36,6 @@ namespace TauCeti.LFunctions
 open GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
-
-/-- **At the trivial modulus `Modulus.one K`, the presented Hecke L-function of the trivial
-character is `dedekindZetaC K`.** -/
-@[simp]
-theorem heckeLFunctionC_one_modulus_one :
-    heckeLFunctionC (1 : RayClassCharacter (Modulus.one K)) = dedekindZetaC K := by
-  rw [heckeLFunctionC_def, RayClassCharacter.toUnitaryIdealWeight_one,
-    UnitaryIdealWeight.toIdealArithmeticFunction_one, dedekindZetaC_def]
-  exact meromorphicContinuation_congr fun s _ ↦ (dedekindZeta_eq_LSeries_normCoeff_one K s).symm
 
 /-- **As punctured germs everywhere, the presented Hecke L-function of the trivial character of `𝔪`
 is `dedekindZetaC K` times the finite Euler correction at the primes dividing `𝔪`.** -/

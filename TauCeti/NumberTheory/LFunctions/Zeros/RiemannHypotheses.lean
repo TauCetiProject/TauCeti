@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
-public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
+public import TauCeti.NumberTheory.LFunctions.Hecke.ChangeModulus
 public import TauCeti.NumberTheory.LFunctions.Zeros.CriticalLine
-import TauCeti.NumberTheory.LFunctions.Hecke.DedekindZeta
 
 /-!
 # The extended and generalized Riemann hypotheses over a number field
@@ -61,7 +59,6 @@ namespace TauCeti
 open Set Complex
 open scoped NumberField
 open GlobalNumberFields
-open RayClassCharacter
 
 /-- The **extended Riemann hypothesis** for the number field `K`: every zero of the continued
 Dedekind zeta function `TauCeti.LFunctions.dedekindZetaC K` in the open critical strip
