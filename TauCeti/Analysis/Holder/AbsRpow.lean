@@ -126,10 +126,8 @@ theorem exists_ckHolderSpace_eq_abs_rpow_comp_succ (k : ℕ) {α β : ℝ≥0} (
     (fun i hi ↦ ⟨‖g‖, g.norm_iteratedFDeriv_apply_le (by omega)⟩) ?_, fun x hx ↦ by
       rw [CkHolderSpace.coe_ofContDiff]
       exact hg x hx⟩
-  exact ⟨_, holderOnWith_univ.mp (g.contDiff.contDiffOn.holderOnWith_iteratedFDeriv_of_lt
-    isOpen_univ convex_univ (M := ‖g‖₊) (L := ‖g‖₊) (Nat.lt_succ_self k) hα1
-    (fun x _ ↦ g.norm_iteratedFDeriv_apply_le k.le_succ x)
-    (fun x _ ↦ g.norm_iteratedFDeriv_apply_le le_rfl x))⟩
+  exact ⟨_, g.contDiff.holderWith_iteratedFDeriv_of_le (N := ‖g‖₊) le_rfl hα1
+    fun i hi x ↦ g.norm_iteratedFDeriv_apply_le hi x⟩
 
 /-- For `0 < β < α` and a nonzero continuous linear functional `ℓ`, no element of `C_b^{k,α}(E)`
 equals `|ℓ x|^(k + β)` wherever `|ℓ x| < 1`: restricted to a line on which `ℓ` is a coordinate, it
