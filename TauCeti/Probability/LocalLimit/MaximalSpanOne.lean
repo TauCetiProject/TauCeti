@@ -172,11 +172,11 @@ theorem hasMaximalSpanOne_bernoulliMeasure_iff {x y : ℤ} {p : I} :
   · intro hμ
     have hp₀ : 0 < (p : ℝ) := by
       refine lt_of_le_of_ne (nonneg p) fun hp ↦ ?_
-      have : p = 0 := Subtype.ext hp.symm
+      have : p = 0 := Set.Icc.coe_eq_zero.1 hp.symm
       simp [this] at hμ
     have hp₁ : (p : ℝ) < 1 := by
       refine lt_of_le_of_ne (le_one p) fun hp ↦ ?_
-      have : p = 1 := Subtype.ext hp
+      have : p = 1 := Set.Icc.coe_eq_one.1 hp
       simp [this] at hμ
     refine ⟨?_, hp₀, hp₁⟩
     by_contra hxy
