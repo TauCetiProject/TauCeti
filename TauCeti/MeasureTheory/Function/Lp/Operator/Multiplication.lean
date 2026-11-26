@@ -99,12 +99,81 @@ theorem coeFn_mulStrong [Fact (1 ≤ p)] (hp : p ≠ ∞) (F : X → E →L[𝕜
 the field. -/
 theorem norm_mulStrong_le [Fact (1 ≤ p)] (hp : p ≠ ∞) (F : X → E →L[𝕜] E')
     (hF : ∀ v, Continuous fun x ↦ F x v) {C : ℝ} (hC : ∀ x, ‖F x‖ ≤ C) :
-    ‖mulStrong μ hp F hF hC‖ ≤ max C 0 :=
-  (mulStrong μ hp F hF hC).opNorm_le_bound (le_max_right _ _) fun f ↦
-    Lp.norm_le_mul_norm_of_ae_le_mul <| by
-      filter_upwards [coeFn_mulStrong μ hp F hF hC f] with x hx
-      rw [hx]
-      exact (F x).le_of_opNorm_le ((hC x).trans (le_max_left _ _)) _
+    ‖mulStrong μ hp F hF hC‖ ≤ max C 0 := by
+  unfold mulStrong
+  exact LinearMap.mkContinuous_norm_le _ (le_max_right C 0) _
+
+section Algebra
+
+variable [Fact (1 ≤ p)] (hp : p ≠ ∞)
+
+/-- The zero operator field acts as zero on `Lᵖ`. -/
+@[simp]
+theorem mulStrong_zero (h₀ : ∀ v, Continuous fun x ↦ (0 : X → E →L[𝕜] E') x v)
+    {C : ℝ} (hC : ∀ x, ‖(0 : X → E →L[𝕜] E') x‖ ≤ C) :
+    mulStrong μ hp (0 : X → E →L[𝕜] E') h₀ hC = 0 := by
+  ext1 f
+  refine Lp.ext ?_
+  rw [_root_.zero_apply]
+  filter_upwards [coeFn_mulStrong μ hp (0 : X → E →L[𝕜] E') h₀ hC f,
+    Lp.coeFn_zero E' p μ] with x h₁ h₂
+  rw [h₁, h₂]
+  simp
+
+/-- The constant identity field acts as the identity on `Lᵖ`. -/
+@[simp]
+theorem mulStrong_one (h₁ : ∀ v, Continuous fun x ↦ (1 : X → E →L[𝕜] E) x v)
+    {C : ℝ} (hC : ∀ x, ‖(1 : X → E →L[𝕜] E) x‖ ≤ C) :
+    mulStrong μ hp (1 : X → E →L[𝕜] E) h₁ hC = 1 := by
+  ext1 f
+  refine Lp.ext ?_
+  simpa using coeFn_mulStrong μ hp (1 : X → E →L[𝕜] E) h₁ hC f
+
+/-- The sum of two operator fields acts as the sum of their multiplication operators. -/
+theorem mulStrong_add (F G : X → E →L[𝕜] E')
+    (hF : ∀ v, Continuous fun x ↦ F x v) (hG : ∀ v, Continuous fun x ↦ G x v)
+    (hFG : ∀ v, Continuous fun x ↦ (F + G) x v) {C D B : ℝ}
+    (hC : ∀ x, ‖F x‖ ≤ C) (hD : ∀ x, ‖G x‖ ≤ D) (hB : ∀ x, ‖(F + G) x‖ ≤ B) :
+    mulStrong μ hp (F + G) hFG hB = mulStrong μ hp F hF hC + mulStrong μ hp G hG hD := by
+  ext1 f
+  refine Lp.ext ?_
+  rw [_root_.add_apply]
+  filter_upwards [coeFn_mulStrong μ hp _ hFG hB f, coeFn_mulStrong μ hp F hF hC f,
+    coeFn_mulStrong μ hp G hG hD f, Lp.coeFn_add (mulStrong μ hp F hF hC f)
+      (mulStrong μ hp G hG hD f)] with x h₁ h₂ h₃ h₄
+  rw [h₁, h₄]
+  simp [h₂, h₃]
+
+/-- Scaling an operator field scales its multiplication operator by the same scalar. -/
+theorem mulStrong_smul (c : 𝕜) (F : X → E →L[𝕜] E')
+    (hF : ∀ v, Continuous fun x ↦ F x v) (hcF : ∀ v, Continuous fun x ↦ (c • F) x v)
+    {C B : ℝ} (hC : ∀ x, ‖F x‖ ≤ C) (hB : ∀ x, ‖(c • F) x‖ ≤ B) :
+    mulStrong μ hp (c • F) hcF hB = c • mulStrong μ hp F hF hC := by
+  ext1 f
+  refine Lp.ext ?_
+  rw [_root_.smul_apply]
+  filter_upwards [coeFn_mulStrong μ hp _ hcF hB f, coeFn_mulStrong μ hp F hF hC f,
+    Lp.coeFn_smul c (mulStrong μ hp F hF hC f)] with x h₁ h₂ h₃
+  simp [h₁, h₂, h₃]
+
+/-- Pointwise composition of operator fields acts by composing the multiplication operators
+in the same order. -/
+theorem mulStrong_comp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+    (F : X → E' →L[𝕜] E'') (G : X → E →L[𝕜] E')
+    (hF : ∀ v, Continuous fun x ↦ F x v) (hG : ∀ v, Continuous fun x ↦ G x v)
+    (hFG : ∀ v, Continuous fun x ↦ (F x).comp (G x) v) {C D B : ℝ}
+    (hC : ∀ x, ‖F x‖ ≤ C) (hD : ∀ x, ‖G x‖ ≤ D) (hB : ∀ x, ‖(F x).comp (G x)‖ ≤ B) :
+    mulStrong μ hp (fun x ↦ (F x).comp (G x)) hFG hB =
+      (mulStrong μ hp F hF hC).comp (mulStrong μ hp G hG hD) := by
+  ext1 f
+  refine Lp.ext ?_
+  rw [ContinuousLinearMap.comp_apply]
+  filter_upwards [coeFn_mulStrong μ hp _ hFG hB f,
+    coeFn_mulStrong μ hp F hF hC (mulStrong μ hp G hG hD f),
+    coeFn_mulStrong μ hp G hG hD f] with x h₁ h₂ h₃
+  simp [h₁, h₂, h₃]
+
+end Algebra
 
 /-- Pointwise multiplication by a uniformly bounded family acts strongly continuously on
 `Lᵖ` when the symbol is jointly continuous after evaluation at each fixed vector. The parameter
@@ -265,45 +334,34 @@ theorem norm_mulLp_le (F : X →ᵇ (E →L[𝕜] E')) : ‖F.mulLp μ p hp‖ �
 
 @[simp]
 theorem mulLp_zero : (0 : X →ᵇ (E →L[𝕜] E')).mulLp μ p hp = 0 := by
-  ext1 f
-  rw [mulLp_eq_iff, _root_.zero_apply]
-  filter_upwards [Lp.coeFn_zero E' p μ] with x hx
-  rw [hx]
-  simp
+  unfold mulLp
+  exact Lp.mulStrong_zero μ hp _ _
 
 @[simp]
 theorem mulLp_add (F G : X →ᵇ (E →L[𝕜] E')) :
     (F + G).mulLp μ p hp = F.mulLp μ p hp + G.mulLp μ p hp := by
-  ext1 f
-  rw [mulLp_eq_iff, _root_.add_apply]
-  filter_upwards [Lp.coeFn_add (F.mulLp μ p hp f) (G.mulLp μ p hp f), F.coeFn_mulLp hp f,
-    G.coeFn_mulLp hp f] with x hx hF hG
-  rw [hx]
-  simp [hF, hG]
+  unfold mulLp
+  exact Lp.mulStrong_add μ hp F G _ _ _ _ _ _
 
 @[simp]
 theorem mulLp_smul (c : 𝕜) (F : X →ᵇ (E →L[𝕜] E')) :
     (c • F).mulLp μ p hp = c • F.mulLp μ p hp := by
-  ext1 f
-  rw [mulLp_eq_iff, _root_.smul_apply]
-  filter_upwards [Lp.coeFn_smul c (F.mulLp μ p hp f), F.coeFn_mulLp hp f] with x hx hF
-  simp [hx, hF]
+  unfold mulLp
+  exact Lp.mulStrong_smul μ hp c F _ _ _ _
 
 /-- Multiplication by the constant identity function is the identity operator. -/
 @[simp]
 theorem mulLp_one : (1 : X →ᵇ (E →L[𝕜] E)).mulLp μ p hp = 1 := by
-  ext1 f
-  rw [mulLp_eq_iff]
-  simp
+  unfold mulLp
+  exact Lp.mulStrong_one μ hp _ _
 
 /-- Multiplication operators compose by pointwise composition of their symbols. -/
 @[simp]
 theorem mulLp_mul (F G : X →ᵇ (E →L[𝕜] E)) :
     (F * G).mulLp μ p hp = F.mulLp μ p hp * G.mulLp μ p hp := by
-  ext1 f
-  rw [mulLp_eq_iff, mul_apply_eq_comp]
-  filter_upwards [F.coeFn_mulLp hp (G.mulLp μ p hp f), G.coeFn_mulLp hp f] with x hF hG
-  simp [hF, hG]
+  unfold mulLp
+  rw [ContinuousLinearMap.mul_def]
+  exact Lp.mulStrong_comp μ hp F G _ _ _ _ _ _
 
 end Lp
 
