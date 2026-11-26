@@ -77,7 +77,7 @@ theorem ball_half_norm_sub_subset {E : Type*} [NormedAddCommGroup E] {z z₀ : E
   · rw [mem_ball, dist_eq_norm]
     linarith
   · rintro rfl
-    simp at h₂
+    rw [sub_self, norm_zero] at h₂
     linarith
   · rw [mem_ball, dist_eq_norm]
     linarith

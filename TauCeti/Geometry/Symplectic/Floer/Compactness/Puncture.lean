@@ -425,6 +425,46 @@ private theorem IsNondegenerate.tendsto_mul_norm_fderiv_comp_of_tendsto
         rw [mul_div_assoc, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (ht z)]
         ring
 
+/-- The common step of the two decay theorems: if `ρ` is integrable on `U` and the disc of radius
+`t z / 2` about `z` eventually lies in `U` and in a set `S z` whose energy `∫_{S z} |ρ|` over `U`
+tends to `0`, then `(t z)² ρ(z) → 0`. -/
+private theorem IsNondegenerate.tendsto_sq_mul_floerEnergyDensity_of_tendsto_setIntegral_norm
+    (hω : ω.IsNondegenerate) (J₀ : SmoothAlmostComplexStructure I M)
+    (hJ₀ : ∀ x, (hω.symplecticFormAt x).Tames (J₀.almostComplexStructureAt x)) {e : M → F}
+    (he : ∀ x, MDifferentiableAt I 𝓘(ℝ, F) e x) (he_inj : Injective e) {c : ℝ} (hc : 0 < c)
+    (hJc : ∀ x v, c * ‖mvfderiv I e x v‖ ^ 2 ≤
+      hω.symplecticFormAt x v (J₀.almostComplexStructureAt x v))
+    {u : ℝ × ℝ → M} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u U)
+    (hhol : ∀ y ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J₀.almostComplexStructureAt (u y))
+      (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun _ _ ↦ 0) u y).toLinearMap)
+    (hint : IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u) U)
+    {l : Filter (ℝ × ℝ)} {t : ℝ × ℝ → ℝ} {S : ℝ × ℝ → Set (ℝ × ℝ)} (ht : ∀ᶠ z in l, 0 < t z)
+    (hsubU : ∀ᶠ z in l, ball z (t z / 2) ⊆ U) (hsubS : ∀ᶠ z in l, ball z (t z / 2) ⊆ S z)
+    (hE : Tendsto (fun z ↦ ∫ y in S z,
+      ‖ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u y‖ ∂volume.restrict U) l (𝓝 0)) :
+    Tendsto (fun z ↦ t z ^ 2 * ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z) l
+      (𝓝 0) := by
+  set ρ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u
+  have h := hω.tendsto_sq_mul_floerEnergyDensity_of_tendsto_setIntegral J₀ hJ₀ he he_inj hc hJc
+    hU hu hhol (p := fun z ↦ z) (s := fun z ↦ t z / 2) (ht.mono fun _ ↦ half_pos) hsubU
+    (hsubU.mono fun _ hz ↦ hint.mono_set hz) ?_
+  · -- `(t z)² ρ(z) = 4 (t z / 2)² ρ(z)`.
+    have h4 := h.const_mul 4
+    rw [mul_zero] at h4
+    exact h4.congr fun z ↦ by ring
+  refine squeeze_zero' (hsubU.mono fun z hz ↦ setIntegral_nonneg measurableSet_ball fun y hy ↦
+    floerEnergyDensity_nonneg hω (hJ₀ _) (hhol y (hz hy))) ?_ hE
+  filter_upwards [hsubU, hsubS] with z hzU hzS
+  calc ∫ y in ball z (t z / 2), ρ y
+      ≤ ∫ y in ball z (t z / 2), ‖ρ y‖ :=
+        (le_abs_self _).trans (abs_integral_le_integral_abs (f := ρ))
+    _ = ∫ y in ball z (t z / 2), ‖ρ y‖ ∂volume.restrict U := by
+        rw [Measure.restrict_restrict measurableSet_ball, inter_eq_left.2 hzU]
+    _ ≤ ∫ y in S z, ‖ρ y‖ ∂volume.restrict U :=
+        setIntegral_mono_set hint.norm.integrableOn
+          (Eventually.of_forall fun _ ↦ norm_nonneg _) (Eventually.of_forall hzS)
+
 /-- **Decay of the energy density at a finite-energy puncture.** Let `ω` be a nondegenerate
 two-form on a compact boundaryless manifold `M` taming a smooth almost complex structure `J₀`,
 uniformly tame with respect to an injective differentiable map `e : M → F` with constant `c > 0`.
@@ -444,44 +484,28 @@ theorem IsNondegenerate.tendsto_norm_sub_sq_mul_floerEnergyDensity_nhdsNE
     (hint : IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u) (ball z₀ R)) :
     Tendsto (fun z ↦ ‖z - z₀‖ ^ 2 * ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z)
       (𝓝[≠] z₀) (𝓝 0) := by
-  set ρ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u
   set U := ball z₀ R \ {z₀}
-  have hU : IsOpen U := isOpen_ball.sdiff isClosed_singleton
   have hev : ∀ᶠ z in 𝓝[≠] z₀, z ∈ ball z₀ (R / 2) \ {z₀} :=
     sdiff_mem_nhdsWithin_compl (ball_mem_nhds z₀ (half_pos hR)) _
   -- The energy of the disc of radius `t` about `z₀` tends to `0` with `t`. Lebesgue measure on
-  -- `ℝ × ℝ` is an additive Haar measure, so it vanishes on points.
+  -- `ℝ × ℝ` is an additive Haar measure, so it vanishes on points, and removing the puncture
+  -- does not change the restricted measure.
   have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
+  have hUR : volume.restrict U = volume.restrict (ball z₀ R) :=
+    Measure.restrict_congr_set (sdiff_null_ae_eq_self (measure_singleton z₀))
   have hε := MeasureTheory.IntegrableOn.tendsto_setIntegral_ball_nhds_zero hint.norm z₀
-  have hρ0 {y : ℝ × ℝ} (hy : y ∈ U) : 0 ≤ ρ y := floerEnergyDensity_nonneg hω (hJ₀ _) (hhol y hy)
-  -- The disc of radius `|z - z₀| / 2` about `z` lies in `U`.
-  have h := hω.tendsto_sq_mul_floerEnergyDensity_of_tendsto_setIntegral J₀ hJ₀ he he_inj hc hJc
-    hU hu hhol (p := fun z ↦ z) (s := fun z ↦ ‖z - z₀‖ / 2)
-    (hev.mono fun z hz ↦ half_pos (norm_pos_iff.2 (sub_ne_zero.2 hz.2)))
-    (hev.mono fun z hz ↦ (ball_half_norm_sub_subset hz).trans inter_subset_left)
-    (hev.mono fun z hz ↦ hint.mono_set
-      ((ball_half_norm_sub_subset hz).trans (inter_subset_left.trans sdiff_subset))) ?_
-  · have h4 := h.const_mul 4
-    rw [mul_zero] at h4
-    exact h4.congr fun z ↦ by ring
-  -- The energies of the discs tend to `0`: the disc about `z` lies in the disc of radius
-  -- `2 |z - z₀|` about `z₀`.
   have htend : Tendsto (fun z ↦ 2 * ‖z - z₀‖) (𝓝[≠] z₀) (𝓝 0) := by
     have h0 : Continuous fun z : ℝ × ℝ ↦ 2 * ‖z - z₀‖ := by fun_prop
     simpa using (h0.tendsto z₀).mono_left nhdsWithin_le_nhds
-  refine squeeze_zero' (hev.mono fun z hz ↦ setIntegral_nonneg measurableSet_ball fun y hy ↦
-    hρ0 (ball_half_norm_sub_subset hz hy).1) (hev.mono fun z hz ↦ ?_) (by simpa using hε.comp htend)
-  have hsub := ball_half_norm_sub_subset hz
-  calc ∫ y in ball z (‖z - z₀‖ / 2), ρ y
-      ≤ ∫ y in ball z (‖z - z₀‖ / 2), ‖ρ y‖ :=
-        (le_abs_self _).trans (abs_integral_le_integral_abs (f := ρ))
-    _ = ∫ y in ball z (‖z - z₀‖ / 2), ‖ρ y‖ ∂volume.restrict (ball z₀ R) := by
-        rw [Measure.restrict_restrict measurableSet_ball,
-          inter_eq_left.2 (hsub.trans (inter_subset_left.trans sdiff_subset))]
-    _ ≤ ∫ y in ball z₀ (2 * ‖z - z₀‖), ‖ρ y‖ ∂volume.restrict (ball z₀ R) :=
-        setIntegral_mono_set hint.norm.integrableOn
-          (Eventually.of_forall fun _ ↦ norm_nonneg _)
-          (Eventually.of_forall fun y hy ↦ (hsub hy).2)
+  -- The disc of radius `|z - z₀| / 2` about `z` lies in `U` and in the disc of radius
+  -- `2 |z - z₀|` about `z₀`.
+  refine hω.tendsto_sq_mul_floerEnergyDensity_of_tendsto_setIntegral_norm J₀ hJ₀ he he_inj hc hJc
+    (isOpen_ball.sdiff isClosed_singleton) hu hhol (hint.mono_set sdiff_subset)
+    (hev.mono fun z hz ↦ norm_pos_iff.2 (sub_ne_zero.2 hz.2))
+    (hev.mono fun z hz ↦ (ball_half_norm_sub_subset hz).trans inter_subset_left)
+    (hev.mono fun z hz ↦ (ball_half_norm_sub_subset hz).trans inter_subset_right) ?_
+  rw [hUR]
+  exact hε.comp htend
 
 /-- **Decay of the derivative at a finite-energy puncture.** Under the hypotheses of
 `IsNondegenerate.tendsto_norm_sub_sq_mul_floerEnergyDensity_nhdsNE`,
@@ -530,39 +554,22 @@ theorem IsNondegenerate.tendsto_norm_sq_mul_floerEnergyDensity_cocompact
       (closedBall 0 T)ᶜ) :
     Tendsto (fun z ↦ ‖z‖ ^ 2 * ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z)
       (cocompact (ℝ × ℝ)) (𝓝 0) := by
-  set ρ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u
-  set U := (closedBall (0 : ℝ × ℝ) T)ᶜ
   have hev : ∀ᶠ z in cocompact (ℝ × ℝ), 2 * max T 0 < ‖z‖ :=
     tendsto_norm_cocompact_atTop.eventually_gt_atTop _
   -- The energy outside the ball of radius `t` about `0` tends to `0` as `t → ∞`.
-  have hε := tendsto_setIntegral_compl_ball (μ := volume.restrict U) hint.norm (0 : ℝ × ℝ)
-  have hρ0 {y : ℝ × ℝ} (hy : y ∈ U) : 0 ≤ ρ y := floerEnergyDensity_nonneg hω (hJ₀ _) (hhol y hy)
-  -- The disc of radius `|z| / 2` about `z` lies in `U`.
-  have h := hω.tendsto_sq_mul_floerEnergyDensity_of_tendsto_setIntegral J₀ hJ₀ he he_inj hc hJc
-    isClosed_closedBall.isOpen_compl hu hhol (p := fun z ↦ z) (s := fun z ↦ ‖z‖ / 2)
-    (hev.mono fun z hz ↦ half_pos ((mul_nonneg zero_le_two (le_max_right T 0)).trans_lt hz))
-    (hev.mono fun z hz ↦ (ball_half_norm_subset hz).trans inter_subset_right)
-    (hev.mono fun z hz ↦ hint.mono_set ((ball_half_norm_subset hz).trans inter_subset_right)) ?_
-  · have h4 := h.const_mul 4
-    rw [mul_zero] at h4
-    exact h4.congr fun z ↦ by ring
-  -- The energies of the discs tend to `0`: the disc about `z` lies outside the ball of radius
-  -- `|z| / 2` about `0`.
+  have hε := tendsto_setIntegral_compl_ball (μ := volume.restrict (closedBall 0 T)ᶜ) hint.norm
+    (0 : ℝ × ℝ)
   have htend : Tendsto (fun z : ℝ × ℝ ↦ ‖z‖ / 2) (cocompact (ℝ × ℝ)) atTop :=
     tendsto_norm_cocompact_atTop.atTop_div_const two_pos
-  refine squeeze_zero' (hev.mono fun z hz ↦ setIntegral_nonneg measurableSet_ball fun y hy ↦
-    hρ0 (ball_half_norm_subset hz hy).2) (hev.mono fun z hz ↦ ?_) (hε.comp htend)
-  have hsub := ball_half_norm_subset hz
-  calc ∫ y in ball z (‖z‖ / 2), ρ y
-      ≤ ∫ y in ball z (‖z‖ / 2), ‖ρ y‖ :=
-        (le_abs_self _).trans (abs_integral_le_integral_abs (f := ρ))
-    _ = ∫ y in ball z (‖z‖ / 2), ‖ρ y‖ ∂volume.restrict U := by
-        rw [Measure.restrict_restrict measurableSet_ball,
-          inter_eq_left.2 (hsub.trans inter_subset_right)]
-    _ ≤ ∫ y in (ball (0 : ℝ × ℝ) (‖z‖ / 2))ᶜ, ‖ρ y‖ ∂volume.restrict U :=
-        setIntegral_mono_set hint.norm.integrableOn
-          (Eventually.of_forall fun _ ↦ norm_nonneg _)
-          (Eventually.of_forall fun y hy ↦ compl_subset_compl.2 ball_subset_closedBall (hsub hy).1)
+  -- The disc of radius `|z| / 2` about `z` lies outside the closed disc of radius `T` and outside
+  -- the disc of radius `|z| / 2` about `0`.
+  exact hω.tendsto_sq_mul_floerEnergyDensity_of_tendsto_setIntegral_norm J₀ hJ₀ he he_inj hc hJc
+    isClosed_closedBall.isOpen_compl hu hhol hint
+    (hev.mono fun z hz ↦ (mul_nonneg zero_le_two (le_max_right T 0)).trans_lt hz)
+    (hev.mono fun z hz ↦ (ball_half_norm_subset hz).trans inter_subset_right)
+    (hev.mono fun z hz ↦ (ball_half_norm_subset hz).trans
+      (inter_subset_left.trans (compl_subset_compl.2 ball_subset_closedBall)))
+    (hε.comp htend)
 
 /-- **Decay of the derivative at infinity.** Under the hypotheses of
 `IsNondegenerate.tendsto_norm_sq_mul_floerEnergyDensity_cocompact`, `|z| ‖d (e ∘ u)(z)‖ → 0` as
