@@ -396,6 +396,11 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {m : ℝ} {ι : Type*} {s : Finset ι}
 
+/-- Left multiplication by `a` in an `R`-algebra, as `Algebra.lsmul`, is `LinearMap.mulLeft R a`. -/
+private theorem lsmul_eq_mulLeft {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    (a : A) : Algebra.lsmul R R A a = LinearMap.mulLeft R a :=
+  LinearMap.ext fun x ↦ smul_eq_mul a x
+
 /-- **Commutators with multiplication operators lose one order.** If `P` is a classical
 pseudodifferential operator of order `m` and `g` a complex-valued smooth function on `M`, the
 commutator `u ↦ P (g u) - g P u` (`TauCeti.smulCommutator`) is a classical pseudodifferential
@@ -405,11 +410,7 @@ theorem smulCommutator_mem_classicalPseudodifferentialOperators
     (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     smulCommutator ℂ g P ∈ classicalPseudodifferentialOperators (m - 1) := by
   have h : smulCommutator ℂ g P = -⁅LinearMap.mulLeft ℂ g, P⁆ := by
-    -- Multiplication by `g` as `Algebra.lsmul` is `LinearMap.mulLeft`.
-    have hg : Algebra.lsmul ℂ ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ g =
-        LinearMap.mulLeft ℂ g :=
-      LinearMap.ext fun u ↦ by simp
-    rw [smulCommutator_eq_lie, hg, Ring.lie_def, Ring.lie_def, neg_sub]
+    rw [smulCommutator_eq_lie, lsmul_eq_mulLeft, Ring.lie_def, Ring.lie_def, neg_sub]
   rw [h]
   exact neg_mem (lie_mulLeft_mem_classicalPseudodifferentialOperators hP g)
 
@@ -430,8 +431,9 @@ theorem sum_mulLeft_comp_comp_mulLeft_sub_mem_classicalPseudodifferentialOperato
           (smulCommutator_mem_classicalPseudodifferentialOperators hP (g i)) (g i)
   -- `gᵢ P gᵢ` is `gᵢ • P ∘ₗ Algebra.lsmul ℂ ℂ _ gᵢ`.
   have hcomp : ∑ i ∈ s, LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g i) =
-      ∑ i ∈ s, g i • P ∘ₗ Algebra.lsmul ℂ ℂ _ (g i) :=
-    Finset.sum_congr rfl fun i _ ↦ LinearMap.ext fun u ↦ by simp [smul_eq_mul]
+      ∑ i ∈ s, g i • P ∘ₗ Algebra.lsmul ℂ ℂ _ (g i) := by
+    simp only [← lsmul_eq_mulLeft, Algebra.lsmul_eq_smul_one, LinearMap.smul_comp,
+      Module.End.one_eq_id, LinearMap.id_comp]
   rw [hcomp, ← neg_mem_iff, neg_sub, sub_sum_smul_comp_lsmul_eq hg]
   exact Submodule.smul_mem _ _ hmem
 

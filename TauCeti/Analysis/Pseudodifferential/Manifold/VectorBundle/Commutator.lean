@@ -129,11 +129,10 @@ theorem sum_smul_comp_smul_sub_mem_sectionClassicalPseudodifferentialOperators
       simpa [sub_sub, one_add_one_eq_two] using
         smulCommutator_mem_sectionClassicalPseudodifferentialOperators
           (smulCommutator_mem_sectionClassicalPseudodifferentialOperators hP (g i)) (g i)
-  -- Multiplication by `gᵢ` on sections is `Algebra.lsmul ℂ ℂ _ gᵢ` by definition
-  -- (`Algebra.lsmul_eq_smul_one`).
+  -- Multiplication by `gᵢ` on sections is `Algebra.lsmul ℂ ℂ _ gᵢ`.
   have hcomp : ∑ i ∈ s, g i • (P ∘ₗ (g i • LinearMap.id)) =
-      ∑ i ∈ s, g i • P ∘ₗ Algebra.lsmul ℂ ℂ _ (g i) :=
-    Finset.sum_congr rfl fun i _ ↦ rfl
+      ∑ i ∈ s, g i • P ∘ₗ Algebra.lsmul ℂ ℂ _ (g i) := by
+    simp only [Algebra.lsmul_eq_smul_one, Module.End.one_eq_id]
   rw [hcomp, ← neg_mem_iff, neg_sub, sub_sum_smul_comp_lsmul_eq hg]
   exact Submodule.smul_mem _ _ hmem
 
