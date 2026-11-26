@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.Length
 import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 import TauCeti.LinearAlgebra.Pi.Orthogonal
 import TauCeti.RingTheory.DiscreteValuationRing.Length
-import TauCeti.RingTheory.Length.LinearMap
+import TauCeti.RingTheory.DiscreteValuationRing.MatlisDual
 
 /-!
 # Maximal minors and kernel lengths over discrete valuation rings
@@ -24,15 +24,17 @@ of `A` and of `a • 1`.
 
 The proof has two steps:
 1. The kernel of `A` on `(O ⧸ Ideal.span {a}) ^ k` is the orthogonal of `A.rowLattice a`, hence
-   isomorphic via `Submodule.orthogonalPiEquiv` to the module of `O`-linear maps from
-   `(k → O) ⧸ A.rowLattice a` to `O ⧸ Ideal.span {a}`. Over a principal ideal domain, any finitely
-   generated module annihilated by `a ≠ 0` has the same length as its module of linear maps into
-   `O ⧸ Ideal.span {a}` (`TauCeti.length_linearMap_quotient_span`).
-2. The quotient `(k → O) ⧸ A.rowLattice a` has length equal to the least valuation of a maximal
-   minor of `A.fromRows (a • 1)` (for any `a : O`, including `a = 0`): every choice of `k` rows
-   spans a sublattice whose colength is the valuation of the corresponding minor
-   (`Matrix.length_quotient_span_range_eq_addVal_det`), while if `A.rowLattice a` has finite
-   colength it is spanned by the rows of a square matrix
+   isomorphic via `Submodule.orthogonalPiEquiv` to
+   `Hom_O((k → O) ⧸ A.rowLattice a, O ⧸ Ideal.span {a})`. Since `(k → O) ⧸ A.rowLattice a` is
+   annihilated by `a ≠ 0`, `IsDiscreteValuationRing.quotientEquivTorsionBySet` identifies this Hom
+   module with `Hom_O((k → O) ⧸ A.rowLattice a, K/O)`, whose length equals the colength of
+   `A.rowLattice a` by Matlis duality (`length_linearMap_fractionRing_quotient`).
+2. For any matrix `M : Matrix ι k O` with `Nonempty (k → ι)`, the quotient
+   `(k → O) ⧸ Submodule.span O (Set.range M.row)` has length equal to the least valuation of a
+   maximal minor `(M.submatrix f id).det` (`Matrix.isLeast_length_quotient_span_range_row`): every
+   choice of `k` rows spans a sublattice whose colength is the valuation of the corresponding minor
+   (`Matrix.length_quotient_span_range_eq_addVal_det`), while if the quotient has finite length it
+   is spanned by the rows of a square matrix
    (`IsDiscreteValuationRing.exists_matrix_span_range_row_eq`) whose determinant is divisible by
    any common divisor of those minors (`Matrix.dvd_det_of_forall_row_mem_span`).
 
@@ -41,8 +43,10 @@ The proof has two steps:
 * `Matrix.maximalMinors`: the set of `card k`-by-`card k` minors of `A.fromRows (a • 1)`.
 * `Matrix.matrixKernel`: the kernel of `A` acting on `k → B`.
 * `Matrix.rowLattice`: the submodule of `k → O` spanned by the rows of `A` and `a • 1`.
-* `Matrix.isLeast_length_quotient_rowLattice`: the length of `(k → O) ⧸ A.rowLattice a` is the
-  least valuation of a maximal minor in `A.maximalMinors a`.
+* `Matrix.isLeast_length_quotient_span_range_row`: for any `M : Matrix ι k O` with
+  `Nonempty (k → ι)`, the length of `(k → O) ⧸ span O (Set.range M.row)` is the least valuation
+  of a maximal minor `(M.submatrix f id).det`.
+* `Matrix.isLeast_length_quotient_rowLattice`: specialization to `M = A.fromRows (a • 1)`.
 * `Matrix.isLeast_length_matrixKernel`: for a ring homomorphism `ev : Λ →+* O` into a discrete
   valuation ring with `ev a ≠ 0`, the length of `(A.map ev).matrixKernel (O ⧸ Ideal.span {ev a})`
   is the least `addVal O (ev P)` for `P ∈ A.maximalMinors a`.
@@ -167,34 +171,42 @@ end CommRing
 
 section DVR
 
-variable {Λ O r k : Type*} [CommRing Λ] [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
+variable {Λ O r ι k : Type*} [CommRing Λ] [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
   [Fintype k] [DecidableEq k]
 
-/-- Over a discrete valuation ring `O`, the quotient of `k → O` by `A.rowLattice a` has length
-equal to the least valuation of a maximal minor in `A.maximalMinors a`. -/
-theorem isLeast_length_quotient_rowLattice (A : Matrix r k O) (a : O) :
-    IsLeast (addVal O '' A.maximalMinors a) (length O ((k → O) ⧸ A.rowLattice a)) := by
-  let M : Matrix (r ⊕ k) k O := A.fromRows (a • 1)
-  let v (f : k → r ⊕ k) : ℕ∞ := addVal O (M.submatrix f id).det
-  have h_lower (f : k → r ⊕ k) : length O ((k → O) ⧸ A.rowLattice a) ≤ v f := by
-    have h_le : span O (Set.range (M.submatrix f id).row) ≤ A.rowLattice a :=
+/-- Over a discrete valuation ring `O`, for any matrix `M : Matrix ι k O` with `Nonempty (k → ι)`,
+the quotient `(k → O) ⧸ span O (Set.range M.row)` has length equal to the least additive valuation
+of a maximal minor `(M.submatrix f id).det`. -/
+theorem isLeast_length_quotient_span_range_row [Nonempty (k → ι)] (M : Matrix ι k O) :
+    IsLeast (addVal O '' Set.range fun f : k → ι ↦ (M.submatrix f id).det)
+      (length O ((k → O) ⧸ span O (Set.range M.row))) := by
+  let v (f : k → ι) : ℕ∞ := addVal O (M.submatrix f id).det
+  have h_lower (f : k → ι) : length O ((k → O) ⧸ span O (Set.range M.row)) ≤ v f := by
+    have h_le : span O (Set.range (M.submatrix f id).row) ≤ span O (Set.range M.row) :=
       span_mono (Set.range_comp_subset_range f M.row)
     simpa only [length_quotient_span_range_eq_addVal_det] using
       length_le_of_surjective _ (factor_surjective h_le)
   refine ⟨?_, Set.forall_mem_image.2 (Set.forall_mem_range.2 h_lower)⟩
-  rcases eq_or_ne (length O ((k → O) ⧸ A.rowLattice a)) ⊤ with h_top | h_fin
-  · exact ⟨(M.submatrix .inr id).det, ⟨.inr, rfl⟩,
-      (top_le_iff.1 (h_top ▸ h_lower .inr)).trans h_top.symm⟩
+  rcases eq_or_ne (length O ((k → O) ⧸ span O (Set.range M.row))) ⊤ with h_top | h_fin
+  · let f₁ : k → ι := Classical.arbitrary (k → ι)
+    exact ⟨(M.submatrix f₁ id).det, ⟨f₁, rfl⟩,
+      (top_le_iff.1 (h_top ▸ h_lower f₁)).trans h_top.symm⟩
   · obtain ⟨N, hN⟩ := IsDiscreteValuationRing.exists_matrix_span_range_row_eq _ h_fin
-    have : Nonempty (k → r ⊕ k) := ⟨.inr⟩
-    let f₀ : k → r ⊕ k := Function.argmin v
+    let f₀ : k → ι := Function.argmin v
     have h_dvd : (M.submatrix f₀ id).det ∣ N.det :=
       dvd_det_of_forall_row_mem_span
         (fun f ↦ addVal_le_iff_dvd.1 (Function.argmin_le v f))
         fun i ↦ hN.le (subset_span ⟨i, rfl⟩)
-    have h_upper : v f₀ ≤ length O ((k → O) ⧸ A.rowLattice a) :=
+    have h_upper : v f₀ ≤ length O ((k → O) ⧸ span O (Set.range M.row)) :=
       (addVal_le_iff_dvd.2 h_dvd).trans_eq (by rw [← hN, length_quotient_span_range_eq_addVal_det])
     exact ⟨(M.submatrix f₀ id).det, ⟨f₀, rfl⟩, h_upper.antisymm (h_lower f₀)⟩
+
+/-- Over a discrete valuation ring `O`, the quotient of `k → O` by `A.rowLattice a` has length
+equal to the least valuation of a maximal minor in `A.maximalMinors a`. -/
+theorem isLeast_length_quotient_rowLattice (A : Matrix r k O) (a : O) :
+    IsLeast (addVal O '' A.maximalMinors a) (length O ((k → O) ⧸ A.rowLattice a)) :=
+  have : Nonempty (k → r ⊕ k) := ⟨.inr⟩
+  isLeast_length_quotient_span_range_row (A.fromRows (a • 1))
 
 /-- For a matrix `A` over a commutative ring `Λ` with columns indexed by a finite type `k`, and a
 ring homomorphism `ev : Λ →+* O` into a discrete valuation ring with `ev a ≠ 0`, the length of
@@ -203,10 +215,25 @@ over `A.maximalMinors a`. -/
 theorem isLeast_length_matrixKernel (A : Matrix r k Λ) (a : Λ) (ev : Λ →+* O) (ha : ev a ≠ 0) :
     IsLeast ((fun P : Λ ↦ addVal O (ev P)) '' A.maximalMinors a)
       (length O ((A.map ev).matrixKernel (O ⧸ Ideal.span {ev a}))) := by
-  have h_kill (x : (k → O) ⧸ (A.map ev).rowLattice (ev a)) : ev a • x = 0 := by
+  let Q := (k → O) ⧸ (A.map ev).rowLattice (ev a)
+  let K := FractionRing O
+  let KO := K ⧸ LinearMap.range (Algebra.linearMap O K)
+  have h_kill (x : Q) : ev a • x = 0 := by
     obtain ⟨v, rfl⟩ := mkQ_surjective _ x
-    simpa [← Quotient.mk_smul] using (A.map ev).smul_mem_rowLattice (ev a) v
-  rw [length_matrixKernel_eq_length_linearMap, TauCeti.length_linearMap_quotient_span ha h_kill,
+    rw [← map_smul, mkQ_apply, Submodule.Quotient.mk_eq_zero]
+    exact (A.map ev).smul_mem_rowLattice (ev a) v
+  let e₁ := IsDiscreteValuationRing.quotientEquivTorsionBySet (K := K) ha
+  let eHom : (Q →ₗ[O] O ⧸ Ideal.span {ev a}) ≃ₗ[O] (Q →ₗ[O] KO) :=
+    { toFun := fun φ ↦ (Submodule.subtype _).comp (e₁.toLinearMap.comp φ)
+      map_add' := fun _ _ ↦ by ext; simp
+      map_smul' := fun _ _ ↦ by ext; simp
+      invFun := fun ψ ↦ e₁.symm.toLinearMap.comp (ψ.codRestrict _ fun x ↦ by
+        rw [Submodule.torsionBySet_span_singleton_eq, Submodule.mem_torsionBy_iff, ← map_smul,
+          h_kill, map_zero])
+      left_inv := fun φ ↦ LinearMap.ext fun x ↦ e₁.symm_apply_apply (φ x)
+      right_inv := fun ψ ↦ by ext x; simp }
+  rw [length_matrixKernel_eq_length_linearMap, eHom.length_eq,
+    IsDiscreteValuationRing.length_linearMap_fractionRing_quotient (K := K),
     ← Set.image_image (addVal O) ev, image_maximalMinors]
   exact (A.map ev).isLeast_length_quotient_rowLattice (ev a)
 
