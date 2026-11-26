@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Basic
-public import Mathlib.Analysis.Normed.MulAction
-public import Mathlib.Order.ConditionallyCompleteLattice.Indexed
+public import TauCeti.Analysis.Normed.Group.Finsupp
 public import TauCeti.RepresentationTheory.AsAlgebraHom
 
 /-!
@@ -19,9 +17,10 @@ for a linear map `ℓ` to a normed module, is bounded and nonzero, then `‖θ�
 norm of `a`. The reason is that the
 coefficient `f(g) = ℓ(ρ(g) x)` satisfies `θ f(g) = Σ_{g'} a_{g'} f(g g')`, so that
 `‖θ‖ ‖f(g)‖ ≤ (Σ_{g'} ‖a_{g'}‖) sup ‖f‖` for every `g`, and taking the supremum over `g` gives the
-bound. A linear form `ℓ` gives a bounded matrix coefficient, and `ℓ = id` gives the orbit map
-`g ↦ ρ(g) x` itself when the carrier is normed and the orbit of `x` is bounded, for instance when
-`ρ` acts by isometries.
+bound. For a linear form `ℓ` the hypothesis is that the matrix coefficient `g ↦ ℓ(ρ(g) x)` is
+bounded. For `ℓ = id` the coefficient is the orbit map `g ↦ ρ(g) x` itself, and the hypothesis is
+that the carrier is normed and the orbit of `x` is bounded, which holds for instance when `ρ` acts
+by isometries.
 
 For a compact open subgroup `K` of a locally profinite group `G` and a function `h` on `G/K` with
 finite support, the action `Σ_{c ∈ G/K} h(c) ρ(c) x` of `h` on a `K`-fixed vector `x` is the action
@@ -32,8 +31,6 @@ cosets, and its `ℓ¹` norm is `Σ_c |h(c)|`. The results below therefore give 
 
 ## Main results
 
-* `Finsupp.norm_le_sum_norm_of_bddAbove`: a bounded, nonzero eigenfunction of right convolution
-  by a finitely supported `h` has eigenvalue of norm at most `Σ_g ‖h g‖`.
 * `Representation.norm_le_sum_norm_of_bddAbove_coeff`: the bound for an eigenvector with a bounded
   nonzero coefficient `g ↦ ℓ (ρ g x)`, for `ℓ` a linear map to a normed module.
 * `Representation.norm_le_sum_norm_of_bddAbove_norm`: the case `ℓ = id`, an eigenvector with a
@@ -55,30 +52,6 @@ open MonoidAlgebra
 
 variable {𝕜 G E : Type*}
 
-namespace Finsupp
-
-/-- Let `f` be a bounded, not identically zero function on a magma `G` with values in a normed
-group, and `h : G →₀ 𝕜` such that `Σ_{g'} h(g') f(g g') = θ f(g)` for every `g`. Then the
-eigenvalue `θ` has norm at most the `ℓ¹` norm `Σ_g ‖h g‖` of `h`. -/
-theorem norm_le_sum_norm_of_bddAbove [SeminormedRing 𝕜] [Mul G] [NormedAddCommGroup E]
-    [Module 𝕜 E] [NormSMulClass 𝕜 E] {f : G → E} (hf : BddAbove (Set.range fun g ↦ ‖f g‖))
-    (hf₀ : f ≠ 0) (h : G →₀ 𝕜) {θ : 𝕜}
-    (hθ : ∀ g, (h.sum fun g' c ↦ c • f (g * g')) = θ • f g) :
-    ‖θ‖ ≤ h.sum fun _ c ↦ ‖c‖ := by
-  obtain ⟨g₀, hg₀⟩ := Function.ne_iff.1 hf₀
-  have hM : 0 < ⨆ g, ‖f g‖ := (norm_pos_iff.2 hg₀).trans_le (le_ciSup hf g₀)
-  have key (g : G) : ‖θ‖ * ‖f g‖ ≤ (h.sum fun _ c ↦ ‖c‖) * ⨆ g, ‖f g‖ := by
-    rw [← norm_smul, ← hθ g, Finsupp.sum, Finsupp.sum, Finset.sum_mul]
-    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun g' _ ↦ ?_)
-    rw [norm_smul]
-    exact mul_le_mul_of_nonneg_left (le_ciSup hf _) (norm_nonneg _)
-  have : Nonempty G := ⟨g₀⟩
-  refine le_of_mul_le_mul_right ?_ hM
-  rw [Real.mul_iSup_of_nonneg (norm_nonneg θ)]
-  exact ciSup_le key
-
-end Finsupp
-
 namespace Representation
 
 variable [Monoid G]
@@ -91,7 +64,7 @@ theorem norm_le_sum_norm_of_bddAbove_coeff [SeminormedCommRing 𝕜] {V : Type*}
     (ρ : Representation 𝕜 G V) {a : 𝕜[G]} {x : V} {θ : 𝕜} (hθ : ρ.asAlgebraHom a x = θ • x)
     (ℓ : V →ₗ[𝕜] E) (hℓ : ℓ x ≠ 0) (hbdd : BddAbove (Set.range fun g ↦ ‖ℓ (ρ g x)‖)) :
     ‖θ‖ ≤ a.coeff.sum fun _ c ↦ ‖c‖ := by
-  refine a.coeff.norm_le_sum_norm_of_bddAbove hbdd
+  refine a.coeff.norm_le_sum_norm_of_sum_smul_mul_eq_smul hbdd
     (Function.ne_iff.2 ⟨1, by simpa using hℓ⟩) fun g ↦ ?_
   rw [← map_smul, ← map_smul, ← hθ, ρ.apply_asAlgebraHom_apply, map_finsuppSum]
   simp only [map_smul]
