@@ -271,6 +271,13 @@ section Holder
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {U : α → ℝ}
 
+/-- `g ∈ Lʳ` for a real exponent `0 < r` once `‖g‖ ^ r` is integrable. -/
+private theorem memLp_ofReal_of_integrable_norm_rpow {F : Type*} [NormedAddCommGroup F] {r : ℝ}
+    (hr : 0 < r) {g : α → F} (hg : AEStronglyMeasurable g μ)
+    (hint : Integrable (fun x => ‖g x‖ ^ r) μ) : MemLp g (ENNReal.ofReal r) μ :=
+  (integrable_norm_rpow_iff hg (ENNReal.ofReal_pos.2 hr).ne' ENNReal.ofReal_ne_top).1
+    (by rwa [ENNReal.toReal_ofReal hr.le])
+
 /-- Hölder's inequality with the exponents `p` and `p / (p - 1)`, followed by
 `|φ(t)|^{p/(p-1)} ≤ t φ(t)`: `∫ |g| |φ(U)| ≤ ‖g‖_p (∫ U φ(U))^{(p-1)/p}`. -/
 private theorem integral_abs_mul_abs_lpProfile_le (hp : 2 ≤ p) (hk : 0 ≤ k)
@@ -289,11 +296,9 @@ private theorem integral_abs_mul_abs_lpProfile_le (hp : 2 ≤ p) (hk : 0 ≤ k)
       (Eventually.of_forall fun x => ?_)
     rw [Real.norm_of_nonneg (Real.rpow_nonneg (abs_nonneg _) _)]
     exact abs_lpProfile_rpow_le hp hk _
-  have hmem : MemLp (fun x => |lpProfile p k (U x)|) (ENNReal.ofReal (p / (p - 1))) μ := by
-    refine (integrable_norm_rpow_iff hmeas (ENNReal.ofReal_pos.2 (by positivity)).ne'
-      ENNReal.ofReal_ne_top).1 ?_
-    simpa only [Real.norm_eq_abs, abs_abs,
-      ENNReal.toReal_ofReal (by positivity : 0 ≤ p / (p - 1))] using hint
+  have hmem : MemLp (fun x => |lpProfile p k (U x)|) (ENNReal.ofReal (p / (p - 1))) μ :=
+    memLp_ofReal_of_integrable_norm_rpow (by positivity) hmeas
+      (by simpa only [Real.norm_eq_abs, abs_abs] using hint)
   calc _ ≤ _ := integral_mul_le_Lp_mul_Lq_of_nonneg hconj
         (Eventually.of_forall fun x => abs_nonneg (g x))
         (Eventually.of_forall fun x => abs_nonneg (lpProfile p k (U x))) hg.abs hmem
@@ -340,12 +345,10 @@ private theorem integral_norm_sq_rpow_rpow_eq {F : Type*} [NormedAddCommGroup F]
   have hint : ∫ x, (‖G x‖ ^ 2) ^ (p / 2) ∂μ = ∫ x, ‖G x‖ ^ p ∂μ :=
     integral_congr_ae (Eventually.of_forall fun x => by
       beta_reduce
-      rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
-      norm_num
-      ring_nf)
+      rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _), Nat.cast_ofNat,
+        mul_div_cancel₀ p two_ne_zero])
   rw [hint, ← Real.rpow_natCast, ← Real.rpow_mul (integral_nonneg fun x => Real.rpow_nonneg
-    (norm_nonneg _) _), one_div_div]
-  norm_num [div_eq_inv_mul]
+    (norm_nonneg _) _), Nat.cast_ofNat, one_div_div, inv_mul_eq_div]
 
 /-- Hölder's inequality with the exponents `p / 2` and `p / (p - 2)`, followed by
 `φ'(t)^{p/(p-2)} ≤ (p - 1)^{p/(p-2)} t φ(t)`:
@@ -370,14 +373,10 @@ private theorem integral_lpProfileDeriv_mul_sq_le (hp : 2 ≤ p) (hk : 0 ≤ k)
     (Real.holderConjugate_iff_eq_conjExponent (by linarith)).2 (by field_simp)
   have hmeas : AEStronglyMeasurable (fun x => lpProfileDeriv p k (U x)) μ :=
     (continuous_lpProfileDeriv hp).comp_aestronglyMeasurable hU
-  have hdmem : MemLp (fun x => lpProfileDeriv p k (U x)) (ENNReal.ofReal (p / (p - 2))) μ := by
-    refine (integrable_norm_rpow_iff hmeas
-      (by simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]; exact div_pos hp0 (by linarith))
-      ENNReal.ofReal_ne_top).1 ?_
-    refine (integrable_lpProfileDeriv_rpow hp2 hk hU hUφ).congr
-      (Eventually.of_forall fun x => ?_)
-    simp only [Real.norm_of_nonneg (lpProfileDeriv_nonneg hp hk _),
-      ENNReal.toReal_ofReal (div_pos hp0 (by linarith : (0 : ℝ) < p - 2)).le]
+  have hdmem : MemLp (fun x => lpProfileDeriv p k (U x)) (ENNReal.ofReal (p / (p - 2))) μ :=
+    memLp_ofReal_of_integrable_norm_rpow (div_pos hp0 (by linarith)) hmeas
+      (by simpa only [Real.norm_of_nonneg (lpProfileDeriv_nonneg hp hk _)] using
+        integrable_lpProfileDeriv_rpow hp2 hk hU hUφ)
   calc ∫ x, lpProfileDeriv p k (U x) * ‖G x‖ ^ 2 ∂μ
       = ∫ x, ‖G x‖ ^ 2 * lpProfileDeriv p k (U x) ∂μ := by simp only [mul_comm]
     _ ≤ _ := integral_mul_le_Lp_mul_Lq_of_nonneg hconj
@@ -416,8 +415,7 @@ private theorem eLpNorm_min_abs_le (hp : 2 ≤ p) (hk : 0 ≤ k) (hU : AEStrongl
           Real.norm_of_nonneg (le_min (abs_nonneg _) hk)]
         exact min_rpow_le_mul_lpProfile hp hk _)
   have hmem : MemLp (fun x => min |U x| k) (ENNReal.ofReal p) μ :=
-    (integrable_norm_rpow_iff hmeas (ENNReal.ofReal_pos.2 hp0).ne' ENNReal.ofReal_ne_top).1
-      (by simpa only [ENNReal.toReal_ofReal hp0.le] using hint)
+    memLp_ofReal_of_integrable_norm_rpow hp0 hmeas hint
   rw [hmem.eLpNorm_eq_integral_rpow_norm (ENNReal.ofReal_pos.2 hp0).ne' ENNReal.ofReal_ne_top,
     ENNReal.toReal_ofReal hp0.le]
   refine ENNReal.ofReal_le_ofReal (le_trans (Real.rpow_le_rpow (integral_nonneg fun x =>
