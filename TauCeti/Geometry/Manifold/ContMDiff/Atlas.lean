@@ -54,11 +54,16 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
   and `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`,
   `OpenPartialHomeomorph.contMDiffAt_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
+* `OpenPartialHomeomorph.mem_extend_target`,
+  `OpenPartialHomeomorph.extend_symm_apply_of_mem_source`,
+  `OpenPartialHomeomorph.extend_target_mem_nhds` and
+  `OpenPartialHomeomorph.contMDiffAt_extend_symm`: an extended chart `e.extend I` at the model
+  coordinate `I (e x)` of a point of its source, stated without unfolding `e.extend I x`.
 -/
 
 public section
 
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -206,6 +211,40 @@ theorem contMDiffAt_extendTrans_symm (c : OpenPartialHomeomorph M H)
     (hv : v ∈ (c.extendTrans I Ψ).target) : ContMDiffAt 𝓘(𝕜, F) I n (c.extendTrans I Ψ).symm v :=
   (c.contMDiffOn_extendTrans_symm hc hΨ).contMDiffAt
     ((c.extendTrans I Ψ).open_target.mem_nhds hv)
+
+end OpenPartialHomeomorph
+
+namespace OpenPartialHomeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] {e : OpenPartialHomeomorph M H} {x : M}
+
+/-- The model coordinate `I (e x)` of a point of the source of `e` lies in the target of the
+extended chart. -/
+theorem mem_extend_target (hx : x ∈ e.source) : I (e x) ∈ (e.extend I).target := by
+  rw [e.extend_target']
+  exact Set.mem_image_of_mem I (e.map_source hx)
+
+/-- The inverse of the extended chart sends the model coordinate `I (e x)` of a point of the
+source of `e` back to that point. -/
+theorem extend_symm_apply_of_mem_source (hx : x ∈ e.source) :
+    (e.extend I).symm (I (e x)) = x := by
+  rw [e.extend_coe_symm, Function.comp_apply, I.left_inv, e.left_inv hx]
+
+/-- For a boundaryless model, the target of the extended chart is a neighbourhood of the model
+coordinate `I (e x)` of any point of the source of `e`. -/
+theorem extend_target_mem_nhds [I.Boundaryless] (hx : x ∈ e.source) :
+    (e.extend I).target ∈ 𝓝 (I (e x)) :=
+  e.isOpen_extend_target.mem_nhds (e.mem_extend_target hx)
+
+/-- For a boundaryless model, the inverse of an extended chart of the maximal `C^n` atlas is
+`C^n` at the model coordinate `I (e x)` of any point of the source of `e`. -/
+theorem contMDiffAt_extend_symm [ChartedSpace H M] [I.Boundaryless] {n : ℕ∞ω}
+    (he : e ∈ IsManifold.maximalAtlas I n M) (hx : x ∈ e.source) :
+    ContMDiffAt 𝓘(𝕜, E) I n (e.extend I).symm (I (e x)) :=
+  (contMDiffOn_extend_symm he).contMDiffAt
+    (e.extend_target' (I := I) ▸ e.extend_target_mem_nhds hx)
 
 end OpenPartialHomeomorph
 

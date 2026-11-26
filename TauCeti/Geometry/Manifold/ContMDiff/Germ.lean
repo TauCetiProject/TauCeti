@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import TauCeti.Analysis.Analytic.Complexification.Germ
 public import TauCeti.Analysis.Analytic.Germ
 public import TauCeti.Geometry.Manifold.ContMDiff.Analytic
+public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Order.Filter.Germ
 
 /-!
@@ -42,8 +43,12 @@ holomorphic germs commuting with complex conjugation, and the complexifications 
 correspond under pullback along a holomorphic extension of the change of coordinates. This is the
 local compatibility needed to glue chartwise complexifications of a real-analytic manifold.
 
-The model is boundaryless so that the transition domains are neighborhoods in the full
-normed model space. No finite-dimensionality or countability assumption is needed.
+The germ ring of the manifold, its pullback and `ModelWithCorners.analyticGerms.equivOfInverse`
+need no assumption on the model. The chart material (`analyticGermsEquiv`,
+`analyticGermsChartEquiv` and its consequences) assumes a boundaryless model, so that the
+transition domains are neighborhoods in the full normed model space. Complexification assumes a
+finite-coordinate model `ι → ℝ` with `[Fintype ι]`; otherwise no finite-dimensionality or
+countability assumption is needed.
 The construction uses `TauCeti.analyticGerms.pullback` and its local-inverse equivalence;
 complexification compatibility comes from `TauCeti.analyticGerms.complexify_pullback`.
 For complex manifolds, `TauCeti.holomorphicStructureSheaf` describes holomorphic germs as
@@ -379,24 +384,6 @@ section Chart
 
 variable [I.Boundaryless] [CompleteSpace 𝕜] {e e' : OpenPartialHomeomorph M H}
 
-/- The germ rings of the model are based at `I (e x)`, as for `analyticGermsEquiv`; the extended
-chart `e.extend I` is not unfolded here, so these three facts restate its inverse identities and
-the smoothness of its inverse at that point. -/
-omit [ChartedSpace H M] [I.Boundaryless] [CompleteSpace 𝕜] in
-private theorem mem_extend_target (hx : x ∈ e.source) : I (e x) ∈ (e.extend I).target := by
-  rw [e.extend_target']
-  exact Set.mem_image_of_mem I (e.map_source hx)
-
-omit [ChartedSpace H M] [I.Boundaryless] [CompleteSpace 𝕜] in
-private theorem extend_symm_apply (hx : x ∈ e.source) : (e.extend I).symm (I (e x)) = x := by
-  rw [e.extend_coe_symm, Function.comp_apply, I.left_inv, e.left_inv hx]
-
-omit [CompleteSpace 𝕜] in
-private theorem contMDiffAt_extend_symm (he : e ∈ maximalAtlas I ω M) (hx : x ∈ e.source) :
-    ContMDiffAt 𝓘(𝕜, E) I ω (e.extend I).symm (I (e x)) :=
-  (contMDiffOn_extend_symm he).contMDiffAt
-    (e.extend_target' (I := I) ▸ (e.isOpen_extend_target (I := I)).mem_nhds (mem_extend_target hx))
-
 variable (I) in
 /-- For a chart `e` of the maximal `C^ω` atlas at `x`, taking chart representatives identifies the
 analytic germs of `M` at `x` with the analytic germs of the model at the coordinate of `x`: it is
@@ -404,15 +391,28 @@ pullback along the inverse of the extended chart, whose inverse is pullback alon
 chart. -/
 def analyticGermsChartEquiv (he : e ∈ maximalAtlas I ω M) (hx : x ∈ e.source) :
     I.analyticGerms x ≃+* TauCeti.analyticGerms 𝕜 (I (e x)) :=
-  have htarget : (e.extend I).target ∈ 𝓝 (I (e x)) :=
-    (e.isOpen_extend_target (I := I)).mem_nhds (mem_extend_target hx)
   have hleft : e.extend I ∘ (e.extend I).symm =ᶠ[𝓝 (I (e x))] id :=
-    eventually_of_mem htarget fun _ hz ↦ (e.extend I).right_inv hz
+    eventually_of_mem (e.extend_target_mem_nhds hx) fun _ hz ↦ (e.extend I).right_inv hz
   have hright : (e.extend I).symm ∘ e.extend I =ᶠ[𝓝 x] id :=
     eventually_of_mem (e.extend_source_mem_nhds hx) fun _ hz ↦ (e.extend I).left_inv hz
-  (analyticGerms.equivOfInverse (e.extend I).symm (e.extend I) (contMDiffAt_extend_symm he hx)
-    (e.contMDiffAt_extend he hx) (extend_symm_apply hx) hleft hright).trans
+  (analyticGerms.equivOfInverse (e.extend I).symm (e.extend I) (e.contMDiffAt_extend_symm he hx)
+    (e.contMDiffAt_extend he hx) (e.extend_symm_apply_of_mem_source hx) hleft hright).trans
     (RingEquiv.subringCongr (analyticGerms_modelWithCornersSelf (I (e x))))
+
+/-- The chart representative of an analytic germ of `M` is its pullback along the inverse of the
+extended chart. -/
+@[simp]
+theorem coe_analyticGermsChartEquiv (he : e ∈ maximalAtlas I ω M) (hx : x ∈ e.source)
+    (φ : I.analyticGerms x) :
+    ((I.analyticGermsChartEquiv he hx φ : TauCeti.analyticGerms 𝕜 (I (e x))) :
+        Germ (𝓝 (I (e x))) 𝕜) =
+      (φ : Germ (𝓝 x) 𝕜).compTendsto (e.extend I).symm
+        ((e.continuousAt_extend_symm' (e.mem_extend_target hx)).tendsto.mono_right
+          (congrArg 𝓝 (e.extend_symm_apply_of_mem_source hx)).le) := by
+  unfold analyticGermsChartEquiv
+  rw [RingEquiv.trans_apply, RingEquiv.coe_subringCongr_apply]
+  exact (congrArg Subtype.val (analyticGerms.equivOfInverse_apply _ _ _ _ _ _ _ φ)).trans
+    (analyticGerms.coe_pullback _ _ _ φ)
 
 /-- The chart representative of the germ of a `C^ω` function is the germ of its coordinate
 expression. -/
@@ -422,10 +422,8 @@ theorem analyticGermsChartEquiv_ofContMDiffAt (he : e ∈ maximalAtlas I ω M) (
     I.analyticGermsChartEquiv he hx (analyticGerms.ofContMDiffAt f hf) =
       TauCeti.analyticGerms.ofAnalyticAt (f ∘ (e.extend I).symm)
         (hf.analyticAt_comp_extend_symm he hx) := by
-  refine Subtype.ext ?_
-  rw [TauCeti.analyticGerms.coe_ofAnalyticAt]
-  exact (analyticGerms.coe_pullback (e.extend I).symm (contMDiffAt_extend_symm he hx)
-    (extend_symm_apply hx) _).trans (coe_compTendsto _ _)
+  rw [Subtype.ext_iff, coe_analyticGermsChartEquiv, analyticGerms.coe_ofContMDiffAt,
+    coe_compTendsto, TauCeti.analyticGerms.coe_ofAnalyticAt]
 
 /-- The germ on `M` corresponding to an analytic germ of the model is the germ of its composition
 with the extended chart. -/
@@ -438,7 +436,7 @@ theorem analyticGermsChartEquiv_symm_ofAnalyticAt (he : e ∈ maximalAtlas I ω 
           (congrFun e.extend_coe x)) := by
   rw [RingEquiv.symm_apply_eq, analyticGermsChartEquiv_ofContMDiffAt]
   refine TauCeti.analyticGerms.ofAnalyticAt_congr (eventually_of_mem
-    ((e.isOpen_extend_target (I := I)).mem_nhds (mem_extend_target hx)) fun z hz ↦ ?_)
+    (e.extend_target_mem_nhds hx) fun z hz ↦ ?_)
   exact (congrArg f ((e.extend I).right_inv hz)).symm
 
 /-- Chart representatives in two charts correspond under the chart transport
@@ -464,18 +462,18 @@ theorem analyticGermsChartEquiv_pullback [I'.Boundaryless] {e' : OpenPartialHome
       TauCeti.analyticGerms.pullback (e'.extend I' ∘ g ∘ (e.extend I).symm)
         (by simpa only [e.extend_coe, Function.comp_apply] using
           hg.analyticAt_extend_comp_extend_symm he he' hx (hgx ▸ hy))
-        (by rw [Function.comp_apply, Function.comp_apply, extend_symm_apply hx, hgx,
-          e'.extend_coe, Function.comp_apply])
+        (by rw [Function.comp_apply, Function.comp_apply, e.extend_symm_apply_of_mem_source hx,
+          hgx, e'.extend_coe, Function.comp_apply])
         (I'.analyticGermsChartEquiv he' hy φ) := by
   obtain ⟨f, hf, rfl⟩ := analyticGerms.exists_ofContMDiffAt φ
   rw [analyticGerms.pullback_ofContMDiffAt, analyticGermsChartEquiv_ofContMDiffAt,
     analyticGermsChartEquiv_ofContMDiffAt, TauCeti.analyticGerms.pullback_ofAnalyticAt]
   apply TauCeti.analyticGerms.ofAnalyticAt_congr
   have hcont : ContinuousAt (g ∘ (e.extend I).symm) (I (e x)) :=
-    hg.continuousAt.comp_of_eq (e.continuousAt_extend_symm' (mem_extend_target hx))
-      (extend_symm_apply hx)
+    hg.continuousAt.comp_of_eq (e.continuousAt_extend_symm' (e.mem_extend_target hx))
+      (e.extend_symm_apply_of_mem_source hx)
   have hmem : e'.source ∈ 𝓝 ((g ∘ (e.extend I).symm) (I (e x))) := by
-    rw [Function.comp_apply, extend_symm_apply hx, hgx]
+    rw [Function.comp_apply, e.extend_symm_apply_of_mem_source hx, hgx]
     exact e'.open_source.mem_nhds hy
   filter_upwards [hcont.preimage_mem_nhds hmem] with w hw
   exact congrArg f (e'.extend_left_inv hw).symm
