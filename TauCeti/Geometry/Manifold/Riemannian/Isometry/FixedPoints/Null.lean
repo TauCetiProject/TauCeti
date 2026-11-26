@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.GroupAction.FixedTangentSubspace
 public import TauCeti.Geometry.Manifold.Measure.Differentiable
 public import TauCeti.Geometry.Manifold.Riemannian.Invariant
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints
+import TauCeti.GroupTheory.GroupAction.FixedPoints
 
 /-!
 # Fixed sets of isometries are null or have interior
@@ -121,12 +122,7 @@ theorem isNullSet_fixedBy_iff_of_compactSpace (g : G) :
     -- The fixed set of `g` is that of the subgroup it generates, which acts by isometries.
     have : ContMDiffConstSMul I ∞ (Subgroup.zpowers g) M :=
       ⟨fun k ↦ ContMDiffSMul.contMDiff_const_smul (I := IG) (k : G)⟩
-    have hfix : fixedPoints (Subgroup.zpowers g) M = fixedBy M g := by
-      ext x
-      simp only [mem_fixedPoints, Subtype.forall, Subgroup.mem_zpowers_iff, forall_exists_index,
-        forall_apply_eq_imp_iff, Subgroup.mk_smul]
-      exact mem_fixedBy_zpowers_iff_mem_fixedBy
-    rw [← hfix]
+    rw [← fixedPoints_zpowers]
     exact isNullSet_fixedPoints_iff fun k ↦ hG k
 
 end Compact
