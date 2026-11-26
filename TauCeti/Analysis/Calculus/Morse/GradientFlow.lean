@@ -255,6 +255,23 @@ theorem strictAnti_comp_neg_gradient
       (by_contra fun h ↦ hcrit t (gradient_eq_zero_of_not_differentiableAt h)))
     fun t ↦ neg_lt_zero.mpr (sq_pos_of_ne_zero (norm_ne_zero_iff.mpr (hcrit t)))
 
+/-- **Strict decrease at a regular point.** If `γ s₀` is not a critical point of `f`, then along
+the global negative gradient trajectory `γ` the value of `f` is larger than `f (γ s₀)` at all times
+just before `s₀`, and smaller at all times just after. -/
+theorem eventually_nhdsLT_lt_and_eventually_nhdsGT_lt_comp_neg_gradient
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {s₀ : ℝ} (hf : DifferentiableAt ℝ f (γ s₀))
+    (hcrit : ∇ f (γ s₀) ≠ 0) :
+    (∀ᶠ t in 𝓝[<] s₀, f (γ s₀) < f (γ t)) ∧ ∀ᶠ t in 𝓝[>] s₀, f (γ t) < f (γ s₀) := by
+  -- `-(f ∘ γ)` has positive derivative at `s₀`.
+  have hd := (hasDerivAt_comp_neg_gradient hγ hf).neg
+  have hpos : 0 < -(-‖∇ f (γ s₀)‖ ^ 2) := by
+    rw [neg_neg]; exact pow_pos (norm_pos_iff.2 hcrit) 2
+  refine ⟨?_, ?_⟩
+  · filter_upwards [hd.hasDerivWithinAt.eventually_nhdsLT_lt_of_pos hpos] with t ht
+    simpa only [Pi.neg_apply, Function.comp_apply, neg_lt_neg_iff] using ht
+  · filter_upwards [hd.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos hpos] with t ht
+    simpa only [Pi.neg_apply, Function.comp_apply, neg_lt_neg_iff] using ht
+
 /-- **Near a regular point, a trajectory passes only at nearby times.** If `γ s₀` is not a
 critical point of `f`, then for every `δ > 0` there is a ball around `γ s₀` that the global
 negative gradient trajectory `γ` meets only at times within `δ` of `s₀`. The value of `f`
@@ -265,15 +282,10 @@ theorem exists_pos_forall_dist_lt_mem_Ioo
     {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) {δ : ℝ} (hδ : 0 < δ) :
     ∃ r > 0, ∀ s, dist (γ s) (γ s₀) < r → s ∈ Ioo (s₀ - δ) (s₀ + δ) := by
   have hanti := antitone_comp_neg_gradient hγ hf
-  -- `-(f ∘ γ)` has positive derivative at `s₀`, so `f ∘ γ` drops strictly on both sides of `s₀`.
-  have hd := (hasDerivAt_comp_neg_gradient hγ (hf s₀)).neg
-  have hpos : 0 < -(-‖∇ f (γ s₀)‖ ^ 2) := by
-    rw [neg_neg]; exact pow_pos (norm_pos_iff.2 hcrit) 2
-  obtain ⟨t₁, ht₁, ht₁I⟩ := ((hd.hasDerivWithinAt.eventually_nhdsLT_lt_of_pos hpos).and
-    (Ioo_mem_nhdsLT (by linarith : s₀ - δ < s₀))).exists
-  obtain ⟨t₂, ht₂, ht₂I⟩ := ((hd.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos hpos).and
-    (Ioo_mem_nhdsGT (by linarith : s₀ < s₀ + δ))).exists
-  simp only [Pi.neg_apply, Function.comp_apply, neg_lt_neg_iff] at ht₁ ht₂
+  obtain ⟨hlt, hgt⟩ :=
+    eventually_nhdsLT_lt_and_eventually_nhdsGT_lt_comp_neg_gradient hγ (hf s₀) hcrit
+  obtain ⟨t₁, ht₁, ht₁I⟩ := (hlt.and (Ioo_mem_nhdsLT (by linarith : s₀ - δ < s₀))).exists
+  obtain ⟨t₂, ht₂, ht₂I⟩ := (hgt.and (Ioo_mem_nhdsGT (by linarith : s₀ < s₀ + δ))).exists
   -- Points close to `γ s₀` have values of `f` strictly between those at `t₁` and `t₂`.
   set ε := min (f (γ t₁) - f (γ s₀)) (f (γ s₀) - f (γ t₂))
   have hε0 : 0 < ε := lt_min (by linarith) (by linarith)
@@ -307,13 +319,10 @@ theorem mem_Ioo_comp_neg_gradient (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f 
     (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {p q : E} (hfp : ContinuousAt f p)
     (hfq : ContinuousAt f q) (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q))
     {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) : f (γ s₀) ∈ Ioo (f q) (f p) := by
-  -- `-(f ∘ γ)` has positive derivative at `s₀`, so `f ∘ γ` drops strictly on both sides of `s₀`.
-  have hd := (hasDerivAt_comp_neg_gradient hγ (hf s₀)).neg
-  have hpos : 0 < -(-‖∇ f (γ s₀)‖ ^ 2) := by
-    rw [neg_neg]; exact pow_pos (norm_pos_iff.2 hcrit) 2
-  obtain ⟨t₁, ht₁⟩ := (hd.hasDerivWithinAt.eventually_nhdsLT_lt_of_pos hpos).exists
-  obtain ⟨t₂, ht₂⟩ := (hd.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos hpos).exists
-  simp only [Pi.neg_apply, Function.comp_apply, neg_lt_neg_iff] at ht₁ ht₂
+  obtain ⟨hlt, hgt⟩ :=
+    eventually_nhdsLT_lt_and_eventually_nhdsGT_lt_comp_neg_gradient hγ (hf s₀) hcrit
+  obtain ⟨t₁, ht₁⟩ := hlt.exists
+  obtain ⟨t₂, ht₂⟩ := hgt.exists
   exact ⟨(hγ.mem_Icc_comp_neg_gradient hf hfp hfq hbot htop t₂).1.trans_lt ht₂,
     ht₁.trans_le (hγ.mem_Icc_comp_neg_gradient hf hfp hfq hbot htop t₁).2⟩
 

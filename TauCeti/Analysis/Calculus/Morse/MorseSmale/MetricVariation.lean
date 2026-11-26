@@ -45,8 +45,9 @@ neighbourhood of one point `γ s₀` of the trajectory that is not a critical po
 * for every continuous shift `c` and weight `w`, a path orthogonal to the range of
   `ξ ↦ ξ' + (Hess f(γ) - c) ξ` and to the metric variations of weight `w` vanishes
   (`TauCeti.eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_forall_inner_eq_zero`), so the
-  range and the variations span `L²(ℝ, E)` whenever the operator is Fredholm
-  (`TauCeti.range_trajectoryOperator_sup_metricVariations_eq_top_of_isFredholm`);
+  range and the variations span `L²(ℝ, E)` whenever the range is closed of finite codimension, as
+  for a Fredholm operator
+  (`TauCeti.range_trajectoryOperator_sup_metricVariations_eq_top_of_isClosed_of_coFG`);
 * along a trajectory between nondegenerate critical points, without weights
   (`TauCeti.range_trajectoryOperator_sup_metricVariations_eq_top`), and finitely many variations
   already suffice
@@ -81,9 +82,10 @@ bump function `ψ` at `γ s₀`. Since `f` strictly decreases along `γ` near th
 `γ s₀`, and decreases along all of `γ`, a small enough bump meets the trajectory only at times
 close to `s₀`, where `⟪B ∇f(γ s), exp (w s) • u(s)⟫ > 0`. So the variation `H = ψ B` pairs
 positively with `v`
-(`TauCeti.eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_forall_inner_eq_zero`). A Fredholm
-range is closed with finite codimension, so the sum of the range and the variations is closed, and
-its orthogonal complement is zero.
+(`TauCeti.eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_forall_inner_eq_zero`). When the
+range is closed with finite codimension, as a Fredholm range is, the sum of the range and the
+variations is closed, and its orthogonal complement is zero
+(`TauCeti.range_trajectoryOperator_sup_metricVariations_eq_top_of_isClosed_of_coFG`).
 
 ## Main definitions
 
@@ -127,6 +129,19 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {f : E → ℝ} {γ : ℝ → E}
 
+/-- The smooth compactly supported fields of symmetric operators supported in `U`, those whose
+paths make up the metric variations. -/
+private def symmetricFields (U : Set E) : Submodule ℝ (E → E →L[ℝ] E) where
+  carrier := {H | ContDiff ℝ ∞ H ∧ HasCompactSupport H ∧ tsupport H ⊆ U ∧
+    ∀ x, IsSelfAdjoint (H x)}
+  add_mem' := fun ⟨hH₁, hc₁, hU₁, hsa₁⟩ ⟨hH₂, hc₂, hU₂, hsa₂⟩ ↦ ⟨hH₁.add hH₂, hc₁.add hc₂,
+    (tsupport_add _ _).trans (union_subset hU₁ hU₂), fun x ↦ (hsa₁ x).add (hsa₂ x)⟩
+  zero_mem' := ⟨contDiff_const, HasCompactSupport.zero, by simp, fun _ ↦ .zero _⟩
+  smul_mem' a H := fun ⟨hH, hc, hU, hsa⟩ ↦ by
+    have hsupp : tsupport (fun x ↦ a • H x) ⊆ tsupport H := tsupport_smul_subset_right (fun _ ↦ a) H
+    exact ⟨hH.const_smul a, hc.mono' ((subset_tsupport _).trans hsupp), hsupp.trans hU,
+      fun x ↦ (IsSelfAdjoint.all a).smul (hsa x)⟩
+
 variable (f γ) in
 /-- The **metric variations** along `γ` localized in `U`, with weight `w`: the subspace of
 `L²(ℝ, E)` of the classes of the paths `s ↦ exp (w s) • H (γ s) (∇f (γ s))`, for smooth compactly
@@ -143,17 +158,19 @@ def metricVariations (w : ℝ → ℝ) (U : Set E) :
       fun s ↦ Real.exp (w s) • H (γ s) (∇ f (γ s))}
   add_mem' := by
     rintro g₁ g₂ ⟨H₁, hH₁, hc₁, hU₁, hsa₁, hg₁⟩ ⟨H₂, hH₂, hc₂, hU₂, hsa₂, hg₂⟩
-    refine ⟨H₁ + H₂, hH₁.add hH₂, hc₁.add hc₂, (tsupport_add _ _).trans (union_subset hU₁ hU₂),
-      fun x ↦ (hsa₁ x).add (hsa₂ x), ?_⟩
+    obtain ⟨hH, hc, hU, hsa⟩ : H₁ + H₂ ∈ symmetricFields U :=
+      add_mem (s := symmetricFields U) ⟨hH₁, hc₁, hU₁, hsa₁⟩ ⟨hH₂, hc₂, hU₂, hsa₂⟩
+    refine ⟨H₁ + H₂, hH, hc, hU, hsa, ?_⟩
     filter_upwards [Lp.coeFn_add g₁ g₂, hg₁, hg₂] with s hs h₁ h₂
     simp only [hs, Pi.add_apply, h₁, h₂, add_apply, smul_add]
-  zero_mem' := ⟨0, contDiff_const, HasCompactSupport.zero, by simp, fun _ ↦ .zero _,
-    (Lp.coeFn_zero _ _ _).trans (.of_forall fun s ↦ by simp)⟩
+  zero_mem' := by
+    obtain ⟨hH, hc, hU, hsa⟩ := (symmetricFields U).zero_mem
+    exact ⟨0, hH, hc, hU, hsa, (Lp.coeFn_zero _ _ _).trans (.of_forall fun s ↦ by simp)⟩
   smul_mem' := by
     rintro a g ⟨H, hH, hc, hU, hsa, hg⟩
-    have hsupp : tsupport (fun x ↦ a • H x) ⊆ tsupport H := tsupport_smul_subset_right (fun _ ↦ a) H
-    refine ⟨fun x ↦ a • H x, hH.const_smul a, hc.mono' ((subset_tsupport _).trans hsupp),
-      hsupp.trans hU, fun x ↦ (IsSelfAdjoint.all a).smul (hsa x), ?_⟩
+    obtain ⟨hH', hc', hU', hsa'⟩ : a • H ∈ symmetricFields U :=
+      (symmetricFields U).smul_mem a ⟨hH, hc, hU, hsa⟩
+    refine ⟨a • H, hH', hc', hU', hsa', ?_⟩
     filter_upwards [Lp.coeFn_smul a g, hg] with s hs h
     simp only [hs, Pi.smul_apply, h, smul_apply, smul_comm a]
 
@@ -264,26 +281,29 @@ theorem eq_zero_of_mem_orthogonal_range_trajectoryOperator_of_forall_inner_eq_ze
 
 /-! ### Surjectivity of the universal linearization -/
 
-/-- **Localized metric variations make a Fredholm linearized operator onto.** Let `f` be `C²`, `γ`
-a negative gradient trajectory, and `U` a neighbourhood of a point `γ s₀` of the trajectory which
-is not a critical point of `f`. For continuous `c` and `w`, if the operator
-`ξ ↦ ξ' + (Hess f(γ) - c) ξ` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is Fredholm, then its range and
-the metric variations of weight `w` localized in `U` together span `L²(ℝ, E)`. -/
-theorem range_trajectoryOperator_sup_metricVariations_eq_top_of_isFredholm
+/-- **Localized metric variations make a linearized operator with closed range of finite
+codimension onto.** Let `f` be `C²`, `γ` a negative gradient trajectory, and `U` a neighbourhood
+of a point `γ s₀` of the trajectory which is not a critical point of `f`. For continuous `c` and
+`w`, if the operator `ξ ↦ ξ' + (Hess f(γ) - c) ξ` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` has closed
+range of finite codimension, as a Fredholm operator does, then its range and the metric variations
+of weight `w` localized in `U` together span `L²(ℝ, E)`. -/
+theorem range_trajectoryOperator_sup_metricVariations_eq_top_of_isClosed_of_coFG
     (hf : ContDiff ℝ 2 f) (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {c w : ℝ → ℝ}
     (hc : Continuous c) (hw : Continuous w)
     {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
       fun s ↦ hessianOperator f (γ s) - c s • ContinuousLinearMap.id ℝ E)
     {U : Set E} {s₀ : ℝ} (hU : U ∈ 𝓝 (γ s₀)) (hcrit : ∇ f (γ s₀) ≠ 0)
-    (hD : (WeakDerivStep.trajectoryOperator (p := 2) AL).IsFredholm) :
+    (hDc : IsClosed ((WeakDerivStep.trajectoryOperator (p := 2) AL).range :
+      Set (Lp E 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)))))
+    (hDf : (WeakDerivStep.trajectoryOperator (p := 2) AL).range.CoFG) :
     (WeakDerivStep.trajectoryOperator (p := 2) AL).range ⊔ metricVariations f γ w U = ⊤ := by
-  have := hD.finite_coker
+  have := hDf
   -- The sum contains the closed range, of finite codimension, so it is closed.
   have hK : IsClosed (((WeakDerivStep.trajectoryOperator (p := 2) AL).range ⊔
       metricVariations f γ w U : Submodule ℝ _) : Set
         (Lp E 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)))) :=
-    Submodule.isClosed_mono_of_finiteDimensional_quotient hD.isClosed_range le_sup_left
+    Submodule.isClosed_mono_of_finiteDimensional_quotient hDc le_sup_left
   have := hK.completeSpace_coe
   rw [← Submodule.orthogonal_eq_bot_iff, eq_bot_iff]
   intro v hv
@@ -307,10 +327,11 @@ theorem range_trajectoryOperator_sup_metricVariations_eq_top
     (hAL : AL =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
       fun s ↦ hessianOperator f (γ s))
     {U : Set E} {s₀ : ℝ} (hU : U ∈ 𝓝 (γ s₀)) (hcrit : ∇ f (γ s₀) ≠ 0) :
-    (WeakDerivStep.trajectoryOperator (p := 2) AL).range ⊔ metricVariations f γ 0 U = ⊤ :=
-  range_trajectoryOperator_sup_metricVariations_eq_top_of_isFredholm hf hγ
+    (WeakDerivStep.trajectoryOperator (p := 2) AL).range ⊔ metricVariations f γ 0 U = ⊤ := by
+  have hD := hγ.isFredholm_trajectoryOperator_hessianOperator hf hp hq hbot htop hAL
+  exact range_trajectoryOperator_sup_metricVariations_eq_top_of_isClosed_of_coFG hf hγ
     (c := fun _ ↦ 0) continuous_const continuous_const (hAL.trans (.of_forall fun s ↦ by simp))
-    hU hcrit (hγ.isFredholm_trajectoryOperator_hessianOperator hf hp hq hbot htop hAL)
+    hU hcrit hD.isClosed_range hD.finite_coker
 
 /-- **Finitely many localized metric variations make the linearized operator onto.** Under the
 hypotheses of `TauCeti.range_trajectoryOperator_sup_metricVariations_eq_top`, finitely many
@@ -359,11 +380,12 @@ theorem range_trajectoryOperator_sub_smul_id_sup_metricVariations_eq_top
     {U : Set E} {s₀ : ℝ} (hU : U ∈ 𝓝 (γ s₀)) (hcrit : ∇ f (γ s₀) ≠ 0) :
     (WeakDerivStep.trajectoryOperator (p := 2) AL).range ⊔ metricVariations f γ w U = ⊤ := by
   have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
-  exact range_trajectoryOperator_sup_metricVariations_eq_top_of_isFredholm hf hγ hc hw hAL hU hcrit
-    (WeakDerivStep.isFredholm_trajectoryOperator_sub_smul_id (hH.comp hγ.continuous)
-      hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
-      hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
-      ((hH.tendsto p).comp hbot) ((hH.tendsto q).comp htop) hc hcbot hctop hδminus hδplus AL hAL)
+  have hD := WeakDerivStep.isFredholm_trajectoryOperator_sub_smul_id (hH.comp hγ.continuous)
+    hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
+    hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
+    ((hH.tendsto p).comp hbot) ((hH.tendsto q).comp htop) hc hcbot hctop hδminus hδplus AL hAL
+  exact range_trajectoryOperator_sup_metricVariations_eq_top_of_isClosed_of_coFG hf hγ hc hw hAL
+    hU hcrit hD.isClosed_range hD.finite_coker
 
 /-- **Localized metric variations make the linearized operator with free endpoint variables
 onto.** Under the hypotheses of
@@ -426,15 +448,9 @@ theorem exists_forall_sub_ae_eq_of_forall_range_sup_metricVariations_eq_top {ι 
   choose x hx using hy
   choose H hHs hHc hHU hHsa hHz using hz
   -- The sum of the fields is supported in the union of the windows.
-  have hsum : ContDiff ℝ ∞ (∑ i, H i) ∧ HasCompactSupport (∑ i, H i) ∧
-      tsupport (∑ i, H i) ⊆ ⋃ j, U j ∧ ∀ y, IsSelfAdjoint ((∑ i, H i) y) := by
-    refine Finset.sum_induction _ (fun G ↦ ContDiff ℝ ∞ G ∧ HasCompactSupport G ∧
-      tsupport G ⊆ ⋃ j, U j ∧ ∀ y, IsSelfAdjoint (G y)) (fun G G' hG hG' ↦ ⟨hG.1.add hG'.1,
-        hG.2.1.add hG'.2.1, (tsupport_add _ _).trans (union_subset hG.2.2.1 hG'.2.2.1),
-        fun y ↦ (hG.2.2.2 y).add (hG'.2.2.2 y)⟩) ⟨contDiff_const, HasCompactSupport.zero,
-        by simp, fun _ ↦ .zero _⟩ fun i _ ↦ ⟨hHs i, hHc i, (hHU i).trans (subset_iUnion _ i),
-        hHsa i⟩
-  refine ⟨x, ∑ i, H i, hsum.1, hsum.2.1, hsum.2.2.1, hsum.2.2.2, fun j ↦ ?_⟩
+  obtain ⟨hsHs, hsHc, hsHU, hsHsa⟩ : ∑ i, H i ∈ symmetricFields (⋃ j, U j) :=
+    Submodule.sum_mem _ fun i _ ↦ ⟨hHs i, hHc i, (hHU i).trans (subset_iUnion _ i), hHsa i⟩
+  refine ⟨x, ∑ i, H i, hsHs, hsHc, hsHU, hsHsa, fun j ↦ ?_⟩
   -- Along `γ j` only the field `H j` is seen, since `γ j` avoids the other windows.
   have hγj (s : ℝ) : (∑ i, H i) (γ j s) = H j (γ j s) := by
     rw [Finset.sum_apply, Finset.sum_eq_single j (fun i _ hij ↦ image_eq_zero_of_notMem_tsupport
@@ -453,9 +469,9 @@ operators of `TauCeti.range_trajectoryOperator_sup_metricVariations_eq_top`,
 `TauCeti.range_trajectoryOperator_sub_smul_id_sup_metricVariations_eq_top` and
 `TauCeti.range_coprod_endTailL_sup_metricVariations_eq_top`. Then for all neighbourhoods `U j` of
 `γ j (s₀ j)` and every family `g` of paths in `L²(ℝ, E)` there are `x j` and one smooth compactly
-supported field `H` of symmetric operators supported in the union of the `U j` with
-`g j - T j (x j) = exp (w j) • H (γ j) (∇f (γ j))` for every `j`. The variations are localized in
-the windows `U j ∩ f⁻¹ (f (q j), f (p j))`, which the other trajectories avoid. -/
+supported field `H` of symmetric operators supported in the union of the windows
+`U j ∩ f⁻¹ (f (q j), f (p j))`, which the other trajectories avoid, with
+`g j - T j (x j) = exp (w j) • H (γ j) (∇f (γ j))` for every `j`. -/
 theorem exists_forall_sub_ae_eq_of_forall_mem_nhds_range_sup_metricVariations_eq_top {ι : Type*}
     [Finite ι] (hf : Differentiable ℝ f) {γ : ι → ℝ → E}
     (hγ : ∀ j, IsIntegralCurve (γ j) (fun _ x ↦ -∇ f x)) {p q : ι → E}
@@ -469,28 +485,23 @@ theorem exists_forall_sub_ae_eq_of_forall_mem_nhds_range_sup_metricVariations_eq
     {U : ι → Set E} (hU : ∀ j, U j ∈ 𝓝 (γ j (s₀ j)))
     (g : ι → Lp E 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))) :
     ∃ x : ∀ j, X j, ∃ H : E → E →L[ℝ] E, ContDiff ℝ ∞ H ∧ HasCompactSupport H ∧
-      tsupport H ⊆ ⋃ j, U j ∧ (∀ y, IsSelfAdjoint (H y)) ∧
+      tsupport H ⊆ ⋃ j, U j ∩ f ⁻¹' Ioo (f (q j)) (f (p j)) ∧ (∀ y, IsSelfAdjoint (H y)) ∧
       ∀ j, g j - T j (x j) =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
         fun s ↦ Real.exp (w j s) • H (γ j s) (∇ f (γ j s)) := by
   have hdiff (j : ι) (t : ℝ) : DifferentiableAt ℝ f (γ j t) := hf _
+  have hfc (x : E) : ContinuousAt f x := hf.continuous.continuousAt
   have hW (j : ι) : U j ∩ f ⁻¹' Ioo (f (q j)) (f (p j)) ∈ 𝓝 (γ j (s₀ j)) :=
-    inter_mem (hU j) (hf.continuous.continuousAt.preimage_mem_nhds (Ioo_mem_nhds
-      ((hγ j).mem_Ioo_comp_neg_gradient (hdiff j) hf.continuous.continuousAt
-        hf.continuous.continuousAt (hbot j) (htop j) (hcrit j)).1
-      ((hγ j).mem_Ioo_comp_neg_gradient (hdiff j) hf.continuous.continuousAt
-        hf.continuous.continuousAt (hbot j) (htop j) (hcrit j)).2))
+    inter_mem (hU j) ((hfc _).preimage_mem_nhds (isOpen_Ioo.mem_nhds
+      ((hγ j).mem_Ioo_comp_neg_gradient (hdiff j) (hfc _) (hfc _) (hbot j) (htop j) (hcrit j))))
   -- The values of `f` along `γ j` lie in `[f (q j), f (p j)]`, which misses the levels of the
   -- other windows.
   have hdisj (i j : ι) (hij : i ≠ j) (s : ℝ) : γ j s ∉ U i ∩ f ⁻¹' Ioo (f (q i)) (f (p i)) := by
     rintro ⟨-, h₁, h₂⟩
-    have hs := (hγ j).mem_Icc_comp_neg_gradient (hdiff j) hf.continuous.continuousAt
-      hf.continuous.continuousAt (hbot j) (htop j) s
+    have hs := (hγ j).mem_Icc_comp_neg_gradient (hdiff j) (hfc _) (hfc _) (hbot j) (htop j) s
     rcases hlevel i j hij with h | h
     · exact (h₁.trans_le (hs.2.trans h)).false
     · exact (h₂.trans_le (h.trans hs.1)).false
-  obtain ⟨x, H, hHs, hHc, hHU, hHsa, hg⟩ :=
-    exists_forall_sub_ae_eq_of_forall_range_sup_metricVariations_eq_top T
-      (fun j ↦ hT j _ (hW j)) hdisj g
-  exact ⟨x, H, hHs, hHc, hHU.trans (iUnion_mono fun j ↦ inter_subset_left), hHsa, hg⟩
+  exact exists_forall_sub_ae_eq_of_forall_range_sup_metricVariations_eq_top T
+    (fun j ↦ hT j _ (hW j)) hdisj g
 
 end TauCeti
