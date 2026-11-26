@@ -456,6 +456,14 @@ theorem transition_ofBaseSet (i i' : Fin A.n) :
   funext y
   rfl
 
+/-- The charts of `A.ofBaseSet h`, taken back as an atlas of the original bundle, are `A`. -/
+@[simp]
+theorem ofBaseSet_ofBaseSet
+    (h' : ∀ i, closure ((A.ofBaseSet h).dom i) ⊆
+      (trivializationAt F V ((A.ofBaseSet h).center i)).baseSet) :
+    (A.ofBaseSet h).ofBaseSet h' = A :=
+  (rfl)
+
 end OfBaseSet
 
 /-- The finite bundle atlas with the centers of `A` and larger chart domains `U j`, open with
@@ -898,7 +906,7 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [To
   [ChartedSpace E M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
   [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
-  {k : ℕ} [IsManifold 𝓘(ℝ, E) k M] [ContMDiffVectorBundle k F V 𝓘(ℝ, E)]
+  {k : WithTop ℕ∞} [IsManifold 𝓘(ℝ, E) k M] [ContMDiffVectorBundle k F V 𝓘(ℝ, E)]
 
 namespace FiniteBundleAtlas
 

@@ -1111,6 +1111,15 @@ is read off from the function of any chart containing the point. -/
 theorem sectionChartData_image (i : Fin A.n) : A.sectionChartData.image i = A.image i :=
   rfl
 
+/-- The chart images of the section chart data of the atlas `A'.ofBaseSet h` of `V`, built on the
+charts of an atlas `A'` of a second fibre bundle, are those of `A'`. -/
+theorem sectionChartData_image_ofBaseSet {F' : Type*} [TopologicalSpace F'] {V' : M → Type*}
+    [TopologicalSpace (TotalSpace F' V')] [∀ x, TopologicalSpace (V' x)] [FiberBundle F' V']
+    (A' : FiniteBundleAtlas E M F' V')
+    (h : ∀ i, closure (A'.dom i) ⊆ (trivializationAt F V (A'.center i)).baseSet) (i : Fin A'.n) :
+    ((A'.ofBaseSet h).sectionChartData.image i : Set E) = A'.image i :=
+  congrArg SetLike.coe (image_ofBaseSet (A := A') (h := h) i)
+
 @[simp]
 theorem sectionChartData_overlap (i i' : Fin A.n) :
     A.sectionChartData.overlap i i' = A.overlap i i' :=
@@ -1184,6 +1193,16 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
 theorem sectionChartData_image_tangentHom (i : Fin A.n) :
     (A.tangentHom.sectionChartData.image i : Set E) = A.image i :=
   congrArg SetLike.coe ((A.tangentHom.sectionChartData_image i).trans (image_tangentHom A i))
+
+/-- The chart images of the section chart data of `V`-valued one-forms on the atlas `A'.ofBaseSet h`
+of `V`, built on the charts of an atlas `A'` of a second fibre bundle, are those of `A'`. -/
+theorem sectionChartData_image_tangentHom_ofBaseSet {F' : Type*} [TopologicalSpace F']
+    {V' : M → Type*} [TopologicalSpace (TotalSpace F' V')] [∀ x, TopologicalSpace (V' x)]
+    [FiberBundle F' V'] (A' : FiniteBundleAtlas E M F' V')
+    (h : ∀ i, closure (A'.dom i) ⊆ (trivializationAt F V (A'.center i)).baseSet) (i : Fin A'.n) :
+    ((A'.ofBaseSet h).tangentHom.sectionChartData.image i : Set E) = A'.image i :=
+  ((A'.ofBaseSet h).sectionChartData_image_tangentHom i).trans
+    (congrArg SetLike.coe (image_ofBaseSet (A := A') (h := h) i))
 
 /-- The chart overlaps of the section chart data of `V`-valued one-forms are those of `A`. -/
 theorem sectionChartData_overlap_tangentHom (i i' : Fin A.n) :
