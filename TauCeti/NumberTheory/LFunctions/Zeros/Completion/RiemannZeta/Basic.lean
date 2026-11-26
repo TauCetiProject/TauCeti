@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Basic
 
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.LFunctions.Zeros.Divisor
-import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # The entire completion of the Riemann zeta function
@@ -27,9 +26,7 @@ The identity `riemannZetaData_entireCompletion` connects this explicit formula t
 pole-clearing construction `riemannZetaData.entireCompletion`. Combining nonvanishing of
 `riemannZeta` on `1 ≤ Re s` (`riemannZeta_ne_zero_of_one_le_re`) with the functional equation
 confines all zeros of `zetaEntireCompletion` to the open critical strip `0 < Re ρ < 1`
-(`re_mem_Ioo_of_zetaEntireCompletion_eq_zero`), identifies its zeros with the open-strip zeros of
-`riemannZeta` (`zetaEntireCompletion_eq_zero_iff`), and shows that it vanishes nowhere on `ℝ`
-(`zetaEntireCompletion_ofReal_ne_zero`).
+(`re_mem_Ioo_of_zetaEntireCompletion_eq_zero`).
 
 ## References
 
@@ -40,7 +37,6 @@ confines all zeros of `zetaEntireCompletion` to the open critical strip `0 < Re 
 public section
 
 open Complex ComplexConjugate Polynomial
-open scoped ComplexOrder
 
 namespace TauCeti.LFunctions
 
@@ -170,35 +166,5 @@ theorem re_mem_Ioo_of_zetaEntireCompletion_eq_zero {ρ : ℂ}
     (by simpa only [riemannZetaData_entireCompletion] using
       fun _ ↦ zetaEntireCompletion_ne_zero_of_one_le_re)
     (by simpa only [riemannZetaData_entireCompletion] using hρ)
-
-/-- Every analytic order of `zetaEntireCompletion` is finite. -/
-theorem analyticOrderAt_zetaEntireCompletion_ne_top (s : ℂ) :
-    analyticOrderAt zetaEntireCompletion s ≠ ⊤ := by
-  have ha : AnalyticOnNhd ℂ zetaEntireCompletion Set.univ :=
-    fun z _ ↦ differentiable_zetaEntireCompletion.analyticAt z
-  refine ha.analyticOrderAt_ne_top_of_isPreconnected isPreconnected_univ
-    (x := 0) (Set.mem_univ 0) (Set.mem_univ s) ?_
-  rw [(ha 0 (Set.mem_univ 0)).analyticOrderAt_eq_zero.mpr (by simp)]
-  simp
-
-/-- The zeros of `zetaEntireCompletion` in `ℂ` are precisely the zeros of `riemannZeta` in the
-open critical strip `0 < Re s < 1`. -/
-theorem zetaEntireCompletion_eq_zero_iff {s : ℂ} :
-    zetaEntireCompletion s = 0 ↔ riemannZeta s = 0 ∧ s.re ∈ Set.Ioo 0 1 := by
-  have ha := differentiable_zetaEntireCompletion.analyticAt s
-  have hmer : MeromorphicOn zetaEntireCompletion Set.univ :=
-    fun z _ ↦ (differentiable_zetaEntireCompletion.analyticAt z).meromorphicAt
-  have htop : meromorphicOrderAt zetaEntireCompletion s ≠ ⊤ := by
-    rw [ha.meromorphicOrderAt_eq]
-    simpa using analyticOrderAt_zetaEntireCompletion_ne_top s
-  rw [← hmer.zero_lt_divisor_iff_of_analyticAt ha (Set.mem_univ s) htop,
-    zero_lt_divisor_zetaEntireCompletion_iff, zero_lt_divisor_completedRiemannZeta_iff_mem_Ioo]
-
-/-- `zetaEntireCompletion` vanishes nowhere on the real axis. -/
-theorem zetaEntireCompletion_ofReal_ne_zero (σ : ℝ) : zetaEntireCompletion σ ≠ 0 := by
-  intro h
-  obtain ⟨hζ, h0, h1⟩ := zetaEntireCompletion_eq_zero_iff.mp h
-  simp only [ofReal_re] at h0 h1
-  exact (TauCeti.riemannZeta_lt_zero h0 h1).ne hζ
 
 end TauCeti.LFunctions

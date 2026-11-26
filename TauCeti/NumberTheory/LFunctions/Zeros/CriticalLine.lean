@@ -38,6 +38,8 @@ listing them as exceptions.
 * `TauCeti.HasZerosInRects.allOnCriticalLine`: a certificate whose rectangles have all their
   zeros on the critical line places every zero of the certified rectangle there.
 * `TauCeti.LFunctions.allOnCriticalLine_of_zeroCount_eq_one`: the symmetry criterion.
+* `TauCeti.LFunctions.allOnCriticalLine_Icc_reProdIm_Icc_iff`: the predicate on the box
+  `Icc 0 1 ×ℂ Icc (-H) H`, for a function whose zeros are the open-strip points of a predicate.
 * `TauCeti.LFunctions.allOnCriticalLine_completedRiemannZeta_iff`,
   `TauCeti.LFunctions.allOnCriticalLine_zetaEntireCompletion_iff`: the Riemann hypothesis.
 * `TauCeti.LFunctions.allOnCriticalLine_completedLFunction_iff`,
@@ -67,6 +69,18 @@ theorem allOnCriticalLine_iff :
 theorem AllOnCriticalLine.mono (h : AllOnCriticalLine f U S) (hRS : R ⊆ S) :
     AllOnCriticalLine f U R :=
   fun ρ hρ ↦ h ρ (hRS hρ)
+
+/-- **Bounded-height form.** If the zeros of `f` (the points of positive divisor on `univ`) are
+exactly the points of the open strip `0 < re ρ < 1` satisfying `Z`, then `f` has all its zeros in
+the box `Icc 0 1 ×ℂ Icc (-H) H` on the critical line if and only if every `ρ` satisfying `Z` in the
+open strip with `|im ρ| ≤ H` has `re ρ = 1/2`. -/
+theorem allOnCriticalLine_Icc_reProdIm_Icc_iff {Z : ℂ → Prop}
+    (hf : ∀ ρ, 0 < MeromorphicOn.divisor f univ ρ ↔ Z ρ ∧ ρ.re ∈ Ioo 0 1) {H : ℝ} :
+    AllOnCriticalLine f univ (Icc 0 1 ×ℂ Icc (-H) H) ↔
+      ∀ ρ : ℂ, Z ρ → 0 < ρ.re → ρ.re < 1 → |ρ.im| ≤ H → ρ.re = 1 / 2 := by
+  simp only [allOnCriticalLine_iff, mem_reProdIm, mem_Icc, ← abs_le, hf, mem_Ioo]
+  exact ⟨fun h ρ h0 hre0 hre1 him ↦ h ρ ⟨⟨hre0.le, hre1.le⟩, him⟩ ⟨h0, hre0, hre1⟩,
+    fun h ρ ⟨_, him⟩ ⟨h0, hre0, hre1⟩ ↦ h ρ h0 hre0 hre1 him⟩
 
 /-- **The symmetry criterion.** If a region `R` and the divisor of `f` on it are invariant under
 the reflection `s ↦ 1 - conj s` in the critical line, and `R` contains exactly one zero of `f`
@@ -147,11 +161,8 @@ that every zero of `(dirichletData χ hχ).entireCompletion` lies on the critica
 theorem allOnCriticalLine_dirichletData_entireCompletion_iff {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) :
     AllOnCriticalLine (dirichletData χ hχ).entireCompletion univ univ ↔ DirichletGRH χ := by
-  rw [allOnCriticalLine_iff, χ.dirichletGRH_iff_mem_Ioo]
-  exact forall_congr' fun s ↦ ⟨fun h h0 hre ↦ h (mem_univ s)
-    ((zero_lt_divisor_dirichletData_entireCompletion_iff χ hχ).2 ⟨h0, hre⟩),
-    fun h _ hpos ↦
-      let ⟨h0, hre⟩ := (zero_lt_divisor_dirichletData_entireCompletion_iff χ hχ).1 hpos
-      h h0 hre⟩
+  rw [← allOnCriticalLine_completedLFunction_iff hχ]
+  simp only [allOnCriticalLine_iff, zero_lt_divisor_dirichletData_entireCompletion_iff,
+    hχ.zero_lt_divisor_completedLFunction_iff]
 
 end TauCeti.LFunctions

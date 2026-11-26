@@ -92,22 +92,13 @@ theorem plattHeight_pos (q : ℕ) : 0 < plattHeight q :=
 theorem plattHeight_nonneg (q : ℕ) : 0 ≤ plattHeight q :=
   (plattHeight_pos q).le
 
-/-- Within even moduli, `plattHeight` is antitone on positive integers. -/
-theorem plattHeight_anti_of_even {q₁ q₂ : ℕ} (hq₁ : 0 < q₁) (hle : q₁ ≤ q₂)
-    (he₁ : Even q₁) (he₂ : Even q₂) : plattHeight q₂ ≤ plattHeight q₁ := by
+/-- Within moduli of the same parity, `plattHeight` is antitone on positive integers. -/
+theorem plattHeight_le_plattHeight {q₁ q₂ : ℕ} (hq₁ : 0 < q₁) (hle : q₁ ≤ q₂)
+    (hpar : Even q₁ ↔ Even q₂) : plattHeight q₂ ≤ plattHeight q₁ := by
   have hpos : (0 : ℝ) < q₁ := Nat.cast_pos.mpr hq₁
   have hcast : (q₁ : ℝ) ≤ q₂ := Nat.cast_le.mpr hle
-  rw [plattHeight_of_even he₁, plattHeight_of_even he₂]
-  exact max_le_max (div_le_div_of_nonneg_left (by positivity) hpos hcast)
-    (add_le_add_left (div_le_div_of_nonneg_left (by positivity) hpos hcast) 200)
-
-/-- Within odd moduli, `plattHeight` is antitone on positive integers. -/
-theorem plattHeight_anti_of_odd {q₁ q₂ : ℕ} (hq₁ : 0 < q₁) (hle : q₁ ≤ q₂)
-    (ho₁ : Odd q₁) (ho₂ : Odd q₂) : plattHeight q₂ ≤ plattHeight q₁ := by
-  have hpos : (0 : ℝ) < q₁ := Nat.cast_pos.mpr hq₁
-  have hcast : (q₁ : ℝ) ≤ q₂ := Nat.cast_le.mpr hle
-  rw [plattHeight_of_odd ho₁, plattHeight_of_odd ho₂]
-  exact max_le_max (div_le_div_of_nonneg_left (by positivity) hpos hcast)
+  simp only [plattHeight_def, hpar]
+  split_ifs <;> exact max_le_max (div_le_div_of_nonneg_left (by positivity) hpos hcast)
     (add_le_add_left (div_le_div_of_nonneg_left (by positivity) hpos hcast) 200)
 
 @[simp]
@@ -125,19 +116,24 @@ theorem plattHeight_four_hundred_thousand : plattHeight 400000 = 387.5 := by
   rw [plattHeight_of_even (by decide)]
   norm_num
 
+/-- If `c * q ≤ 10 ^ 8` for a positive modulus `q`, then `c ≤ plattHeight q`. -/
+theorem le_plattHeight_of_mul_le {q : ℕ} {c : ℝ} (hq : 0 < q) (h : c * q ≤ 10 ^ 8) :
+    c ≤ plattHeight q :=
+  ((le_div_iff₀ (Nat.cast_pos.mpr hq)).2 h).trans (div_le_plattHeight q)
+
 /-- For `0 < q ≤ 10 000`, `10 000 ≤ plattHeight q`. -/
 theorem ten_thousand_le_plattHeight {q : ℕ} (hq₀ : 0 < q) (hq : q ≤ 10000) :
-    10000 ≤ plattHeight q := by
-  have hpos : (0 : ℝ) < q := by exact_mod_cast hq₀
-  have hle : (q : ℝ) ≤ 10000 := by exact_mod_cast hq
-  exact le_trans (by rw [le_div_iff₀ hpos]; nlinarith) (div_le_plattHeight q)
+    10000 ≤ plattHeight q :=
+  le_plattHeight_of_mul_le hq₀ (by
+    have : (q : ℝ) ≤ 10000 := by exact_mod_cast hq
+    linarith)
 
 /-- For `0 < q ≤ 40 000`, `2500 ≤ plattHeight q`. -/
 theorem two_thousand_five_hundred_le_plattHeight {q : ℕ} (hq₀ : 0 < q) (hq : q ≤ 40000) :
-    2500 ≤ plattHeight q := by
-  have hpos : (0 : ℝ) < q := by exact_mod_cast hq₀
-  have hle : (q : ℝ) ≤ 40000 := by exact_mod_cast hq
-  exact le_trans (by rw [le_div_iff₀ hpos]; nlinarith) (div_le_plattHeight q)
+    2500 ≤ plattHeight q :=
+  le_plattHeight_of_mul_le hq₀ (by
+    have : (q : ℝ) ≤ 40000 := by exact_mod_cast hq
+    linarith)
 
 /-! ### Platt's records and bounded-height corollaries -/
 
@@ -181,14 +177,14 @@ theorem PlattRecord.dirichletGRHUpTo_div (hP : PlattRecord) {q : ℕ} [NeZero q]
   (hP q hq₂ hq).mono (div_le_plattHeight q)
 
 /-- Given `PlattRecord`, `DirichletGRHUpTo q 10000` holds for every `2 ≤ q ≤ 10 000`. -/
-theorem PlattRecord.dirichletGRHUpTo_ten_thousand_of_le (hP : PlattRecord) {q : ℕ} [NeZero q]
-    (hq₂ : 2 ≤ q) (hq : q ≤ 10000) : DirichletGRHUpTo q 10000 :=
+theorem PlattRecord.dirichletGRHUpTo_ten_thousand_of_le_ten_thousand (hP : PlattRecord) {q : ℕ}
+    [NeZero q] (hq₂ : 2 ≤ q) (hq : q ≤ 10000) : DirichletGRHUpTo q 10000 :=
   (hP q hq₂ (by omega)).mono (ten_thousand_le_plattHeight (by omega) hq)
 
 /-- Given `PlattRecord`, `DirichletGRHUpTo q 10000` holds for `2 ≤ q ≤ 13`. -/
-theorem PlattRecord.dirichletGRHUpTo_ten_thousand (hP : PlattRecord) {q : ℕ} [NeZero q]
-    (hq₂ : 2 ≤ q) (hq : q ≤ 13) : DirichletGRHUpTo q 10000 :=
-  hP.dirichletGRHUpTo_ten_thousand_of_le hq₂ (by omega)
+theorem PlattRecord.dirichletGRHUpTo_ten_thousand_of_le_thirteen (hP : PlattRecord) {q : ℕ}
+    [NeZero q] (hq₂ : 2 ≤ q) (hq : q ≤ 13) : DirichletGRHUpTo q 10000 :=
+  hP.dirichletGRHUpTo_ten_thousand_of_le_ten_thousand hq₂ (by omega)
 
 /-- Given `PlattRecord`, `DirichletGRHUpTo q 2500` holds for every `2 ≤ q ≤ 40 000`. -/
 theorem PlattRecord.dirichletGRHUpTo_two_thousand_five_hundred (hP : PlattRecord) {q : ℕ}
@@ -198,7 +194,7 @@ theorem PlattRecord.dirichletGRHUpTo_two_thousand_five_hundred (hP : PlattRecord
 /-- Given `PlattRecord`, `DirichletGRHUpTo 8 10000` holds. -/
 theorem PlattRecord.dirichletGRHUpTo_eight_ten_thousand (hP : PlattRecord) :
     DirichletGRHUpTo 8 10000 :=
-  hP.dirichletGRHUpTo_ten_thousand (by decide) (by decide)
+  hP.dirichletGRHUpTo_ten_thousand_of_le_thirteen (by decide) (by decide)
 
 /-! ### Exclusion of real zeros in `(0, 1)` -/
 

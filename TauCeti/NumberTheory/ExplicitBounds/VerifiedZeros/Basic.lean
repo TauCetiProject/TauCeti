@@ -90,10 +90,6 @@ theorem RiemannHypothesisUpTo.mono {H H' : ℝ} (h : RiemannHypothesisUpTo H') (
     RiemannHypothesisUpTo H :=
   fun ρ h0 hre0 hre1 him ↦ h ρ h0 hre0 hre1 (him.trans hle)
 
-/-- `RiemannHypothesisUpTo H` holds vacuously for `H < 0`. -/
-theorem riemannHypothesisUpTo_of_neg {H : ℝ} (hH : H < 0) : RiemannHypothesisUpTo H :=
-  fun ρ _ _ _ him ↦ absurd ((abs_nonneg ρ.im).trans him) hH.not_ge
-
 /-- **The generalized Riemann hypothesis modulo `q` up to height `H`.** For every primitive
 Dirichlet character `χ` modulo `q`, every zero `ρ` of `χ.LFunction` in the open critical strip
 `0 < Re ρ < 1` with `|Im ρ| ≤ H` lies on the critical line `Re ρ = 1 / 2`. -/
@@ -178,21 +174,26 @@ theorem riemannHypothesisUpTo_of_nonpos {H : ℝ} (hH : H ≤ 0) : RiemannHypoth
   riemannHypothesisUpTo_zero.mono hH
 
 /-- Because `riemannZeta` commutes with complex conjugation and has no real zeros in `(0, 1)`,
+every zero `ρ` of `riemannZeta` in the open critical strip has a companion zero (`ρ` or `conj ρ`)
+with the same real part in the upper half-plane, of ordinate `|Im ρ|`. -/
+theorem exists_riemannZeta_eq_zero_im_eq_abs {ρ : ℂ} (h0 : riemannZeta ρ = 0) (hre0 : 0 < ρ.re)
+    (hre1 : ρ.re < 1) :
+    ∃ ρ' : ℂ, riemannZeta ρ' = 0 ∧ ρ'.re = ρ.re ∧ 0 < ρ'.im ∧ ρ'.im = |ρ.im| := by
+  rcases lt_or_gt_of_ne (abs_pos.mp (zetaZeroFreeUpTo_zero ρ h0 hre0 hre1)) with hneg | hpos
+  · exact ⟨conj ρ, by rw [riemannZeta_conj, h0, map_zero], conj_re ρ,
+      by simpa using neg_pos.mpr hneg, by rw [conj_im, abs_of_neg hneg]⟩
+  · exact ⟨ρ, h0, rfl, hpos, (abs_of_pos hpos).symm⟩
+
+/-- Because `riemannZeta` commutes with complex conjugation and has no real zeros in `(0, 1)`,
 `RiemannHypothesisUpTo H` depends only on zeros in the upper half-plane `0 < Im ρ ≤ H`. -/
 theorem riemannHypothesisUpTo_iff_pos_im {H : ℝ} :
     RiemannHypothesisUpTo H ↔
       ∀ ρ : ℂ, riemannZeta ρ = 0 → 0 < ρ.re → ρ.re < 1 → 0 < ρ.im → ρ.im ≤ H → ρ.re = 1 / 2 := by
   refine ⟨fun h ρ h0 hre0 hre1 him0 himH ↦
     h ρ h0 hre0 hre1 ((abs_of_pos him0).trans_le himH), fun h ρ h0 hre0 hre1 him ↦ ?_⟩
-  have hne : ρ.im ≠ 0 := abs_pos.mp (zetaZeroFreeUpTo_zero ρ h0 hre0 hre1)
-  rcases lt_or_gt_of_ne hne with hneg | hpos
-  · have hconj0 : riemannZeta (conj ρ) = 0 := by rw [riemannZeta_conj, h0, map_zero]
-    have him' : (conj ρ).im ≤ H := by
-      rw [conj_im]
-      exact (abs_of_neg hneg ▸ him : -ρ.im ≤ H)
-    simpa using h (conj ρ) hconj0 (by simpa using hre0) (by simpa using hre1)
-      (by simpa using neg_pos.mpr hneg) him'
-  · exact h ρ h0 hre0 hre1 hpos ((le_abs_self ρ.im).trans him)
+  obtain ⟨ρ', h0', hre, hpos, him'⟩ := exists_riemannZeta_eq_zero_im_eq_abs h0 hre0 hre1
+  rw [← hre] at hre0 hre1 ⊢
+  exact h ρ' h0' hre0 hre1 hpos (him' ▸ him)
 
 /-- **First-ordinate record for `riemannZeta`.** Every zero of `riemannZeta` in the upper
 half-plane `0 < Im s` has ordinate at least `14.134725`. -/
@@ -217,13 +218,8 @@ theorem zetaFirstOrdinateRecord_iff_mem_Ioo :
 theorem ZetaFirstOrdinateRecord.zetaZeroFreeUpTo (h : ZetaFirstOrdinateRecord) {H : ℝ}
     (hH : H < 14.134725) : ZetaZeroFreeUpTo H := by
   intro ρ h0 hre0 hre1
-  have hne : ρ.im ≠ 0 := abs_pos.mp (zetaZeroFreeUpTo_zero ρ h0 hre0 hre1)
-  rcases lt_or_gt_of_ne hne with hneg | hpos
-  · have hconj0 : riemannZeta (conj ρ) = 0 := by rw [riemannZeta_conj, h0, map_zero]
-    have hle := h (conj ρ) hconj0 (by simpa using neg_pos.mpr hneg)
-    rw [conj_im, ← abs_of_neg hneg] at hle
-    exact hH.trans_le hle
-  · exact hH.trans_le ((h ρ h0 hpos).trans_eq (abs_of_pos hpos).symm)
+  obtain ⟨ρ', h0', -, hpos, him⟩ := exists_riemannZeta_eq_zero_im_eq_abs h0 hre0 hre1
+  exact hH.trans_le (him ▸ h ρ' h0' hpos)
 
 /-- `ZetaFirstOrdinateRecord` yields the standard low-lying zero-free height `ZetaZeroFreeUpTo 14`.
 -/
@@ -366,11 +362,9 @@ theorem forall_LFunction_modTwo_re_eq_half_iff {H : ℝ} :
 `completedRiemannZeta` on the closed critical-strip box `Icc 0 1 ×ℂ Icc (-H) H`. -/
 theorem riemannHypothesisUpTo_iff_allOnCriticalLine {H : ℝ} :
     RiemannHypothesisUpTo H ↔
-      AllOnCriticalLine completedRiemannZeta univ (Icc 0 1 ×ℂ Icc (-H) H) := by
-  simp only [riemannHypothesisUpTo_def, allOnCriticalLine_iff, mem_reProdIm, mem_Icc,
-    ← abs_le, zero_lt_divisor_completedRiemannZeta_iff_mem_Ioo, mem_Ioo]
-  exact ⟨fun h ρ ⟨_, him⟩ ⟨h0, hre0, hre1⟩ ↦ h ρ h0 hre0 hre1 him,
-    fun h ρ h0 hre0 hre1 him ↦ h ρ ⟨⟨hre0.le, hre1.le⟩, him⟩ ⟨h0, hre0, hre1⟩⟩
+      AllOnCriticalLine completedRiemannZeta univ (Icc 0 1 ×ℂ Icc (-H) H) :=
+  (allOnCriticalLine_Icc_reProdIm_Icc_iff
+    fun _ ↦ zero_lt_divisor_completedRiemannZeta_iff_mem_Ioo).symm
 
 /-- For every `H : ℝ`, `RiemannHypothesisUpTo H` is equivalent to `AllOnCriticalLine` for
 `zetaEntireCompletion` on `Icc 0 1 ×ℂ Icc (-H) H`. -/
@@ -385,12 +379,9 @@ theorem riemannHypothesisUpTo_iff_allOnCriticalLine_zetaEntireCompletion {H : �
 theorem dirichletGRHUpTo_iff_allOnCriticalLine {q : ℕ} [NeZero q] {H : ℝ} :
     DirichletGRHUpTo q H ↔
       ∀ χ : DirichletCharacter ℂ q, χ.IsPrimitive →
-        AllOnCriticalLine χ.completedLFunction univ (Icc 0 1 ×ℂ Icc (-H) H) := by
-  refine forall_congr' fun χ ↦ imp_congr_right fun hχ ↦ ?_
-  simp only [allOnCriticalLine_iff, mem_reProdIm, mem_Icc, ← abs_le,
-    hχ.zero_lt_divisor_completedLFunction_iff, mem_Ioo]
-  exact ⟨fun h ρ ⟨_, him⟩ ⟨h0, hre0, hre1⟩ ↦ h ρ h0 hre0 hre1 him,
-    fun h ρ h0 hre0 hre1 him ↦ h ρ ⟨⟨hre0.le, hre1.le⟩, him⟩ ⟨h0, hre0, hre1⟩⟩
+        AllOnCriticalLine χ.completedLFunction univ (Icc 0 1 ×ℂ Icc (-H) H) :=
+  forall_congr' fun _ ↦ imp_congr_right fun hχ ↦
+    (allOnCriticalLine_Icc_reProdIm_Icc_iff fun _ ↦ hχ.zero_lt_divisor_completedLFunction_iff).symm
 
 /-- For every `H : ℝ`, `DirichletGRHUpTo q H` is equivalent to `AllOnCriticalLine` for
 `(dirichletData χ hχ).entireCompletion` on `Icc 0 1 ×ℂ Icc (-H) H` for every primitive character `χ`
@@ -399,11 +390,10 @@ theorem dirichletGRHUpTo_iff_allOnCriticalLine_entireCompletion {q : ℕ} [NeZer
     DirichletGRHUpTo q H ↔
       ∀ (χ : DirichletCharacter ℂ q) (hχ : χ.IsPrimitive),
         AllOnCriticalLine (dirichletData χ hχ).entireCompletion univ (Icc 0 1 ×ℂ Icc (-H) H) := by
+  rw [dirichletGRHUpTo_iff_allOnCriticalLine]
   refine forall_congr' fun χ ↦ forall_congr' fun hχ ↦ ?_
-  simp only [allOnCriticalLine_iff, mem_reProdIm, mem_Icc, ← abs_le,
-    zero_lt_divisor_dirichletData_entireCompletion_iff χ hχ, mem_Ioo]
-  exact ⟨fun h ρ ⟨_, him⟩ ⟨h0, hre0, hre1⟩ ↦ h ρ h0 hre0 hre1 him,
-    fun h ρ h0 hre0 hre1 him ↦ h ρ ⟨⟨hre0.le, hre1.le⟩, him⟩ ⟨h0, hre0, hre1⟩⟩
+  simp only [allOnCriticalLine_iff, zero_lt_divisor_dirichletData_entireCompletion_iff χ hχ,
+    hχ.zero_lt_divisor_completedLFunction_iff]
 
 /-- **Certificate bridge for `zetaEntireCompletion`.** A `HasZerosInRects` certificate of
 `zetaEntireCompletion` on a rectangle covering `Ioo 0 1 ×ℂ Ioc 0 H` whose subrectangles satisfy
