@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.UniqueProds.Basic
 public import Mathlib.GroupTheory.Torsion
+public import Mathlib.RingTheory.KrullDimension.Zero
 public import Mathlib.RingTheory.Spectrum.Prime.RingHom
 public import TauCeti.RingTheory.Norm.FractionRing
 public import TauCeti.RingTheory.NovikovSeries.Functoriality
@@ -17,7 +18,6 @@ import Mathlib.GroupTheory.FiniteAbelian.Basic
 import Mathlib.GroupTheory.Schreier
 import Mathlib.RingTheory.FiniteType
 import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
-import Mathlib.RingTheory.KrullDimension.Zero
 import Mathlib.RingTheory.Noetherian.Nilpotent
 import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 import TauCeti.GroupTheory.FiniteAbelian.IntegralDual
@@ -67,6 +67,8 @@ norm of the idempotent `(1 + g) / 2` is `0`, although its component in the first
 
 * `TauCeti.NovikovSeries.eq_of_mem_minimalPrimes_of_comap_eq`: minimal primes of `Nov(R, H, N)`
   are determined by their intersections with the group ring of the torsion subgroup.
+* `TauCeti.NovikovSeries.primeSpectrum_ext_of_comap_torsion_eq`: so are the primes of a
+  zero-dimensional total ring of fractions of `Nov(R, H, N)`.
 * `TauCeti.NovikovSeries.comap_algebraMap_bijective_of_torsion_le`: for `K` of finite index
   containing the torsion, contraction is a bijection between the primes of the two total rings
   of fractions.
@@ -262,6 +264,22 @@ theorem eq_of_mem_minimalPrimes_of_comap_eq {P Q : Ideal (NovikovSeries R H N)}
     rw [hcomp, ← Ideal.comap_comap, h, Ideal.comap_comap]
   rw [eq_splitKer_comap e hP, eq_splitKer_comap e hQ, h']
 
+/-- **Primes of the total ring of fractions are detected by the torsion.** Two primes of a
+zero-dimensional total ring of fractions of `Nov(R, H, N)` whose preimages in the group ring of the
+torsion subgroup of `H` agree are equal: both contract to minimal primes of `Nov(R, H, N)`. -/
+theorem primeSpectrum_ext_of_comap_torsion_eq {Q : Type*} [CommRing Q]
+    [Algebra (NovikovSeries R H N) Q] [IsFractionRing (NovikovSeries R H N) Q]
+    [Ring.KrullDimLE 0 Q] {m₁ m₂ : PrimeSpectrum Q}
+    (h : (m₁.asIdeal.comap (algebraMap (NovikovSeries R H N) Q)).comap (ofAddMonoidAlgebra.comp
+        (AddMonoidAlgebra.mapDomainRingHom R (AddCommGroup.torsion H).subtype)) =
+      (m₂.asIdeal.comap (algebraMap (NovikovSeries R H N) Q)).comap (ofAddMonoidAlgebra.comp
+        (AddMonoidAlgebra.mapDomainRingHom R (AddCommGroup.torsion H).subtype))) : m₁ = m₂ := by
+  have hmin (m : PrimeSpectrum Q) :=
+    IsLocalization.comap_mem_minimalPrimes_of_krullDimLE_zero
+      (M := (NovikovSeries R H N)⁰) le_rfl Q m.asIdeal
+  exact PrimeSpectrum.ext <| (IsLocalization.orderEmbedding (NovikovSeries R H N)⁰ Q).injective
+    (eq_of_mem_minimalPrimes_of_comap_eq (hmin m₁) (hmin m₂) h)
+
 end MinimalPrimes
 
 section TotalQuotient
@@ -300,16 +318,11 @@ private theorem comap_algebraMap_injective_of_torsion_le (hK : AddCommGroup.tors
     rw [hιK]
     refine RingHom.ext fun x => ?_
     simp only [RingHom.comp_apply, ← IsScalarTower.algebraMap_apply]
-  -- Both primes contract to minimal primes meeting the torsion group ring in the same ideal.
-  have hmin (m : PrimeSpectrum QB) :=
-    IsLocalization.comap_mem_minimalPrimes_of_krullDimLE_zero
-      (M := (NovikovSeries R H N)⁰) le_rfl QB m.asIdeal
+  -- Both primes meet the torsion group ring in the same ideal.
   have hcomap (m : PrimeSpectrum QB) : (m.asIdeal.comap (algebraMap _ QB)).comap ι =
       ((PrimeSpectrum.comap (algebraMap QA QB) m).asIdeal).comap ((algebraMap _ QA).comp ιK) := by
     rw [PrimeSpectrum.comap_asIdeal, Ideal.comap_comap, Ideal.comap_comap, hι]
-  have := eq_of_mem_minimalPrimes_of_comap_eq (hmin m₁) (hmin m₂) (by rw [hcomap, hcomap, h])
-  exact PrimeSpectrum.ext <|
-    (IsLocalization.orderEmbedding (NovikovSeries R H N)⁰ QB).injective this
+  exact primeSpectrum_ext_of_comap_torsion_eq (by rw [hcomap, hcomap, h])
 
 omit [IsDomain R] [IsNoetherianRing R] [AddGroup.FG H] in
 include R N K in
