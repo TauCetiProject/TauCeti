@@ -37,25 +37,9 @@ universe u v w
 
 namespace TauCeti
 
-/-- A w-local map is a spectral map carrying closed points to closed points. -/
-structure IsWLocalMap {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
-    (f : X → Y) : Prop extends IsSpectralMap f where
-  /-- Closed points are preserved. -/
-  map_closedPoints : MapsTo f (closedPoints X) (closedPoints Y)
-
-/-- The identity is w-local. -/
-theorem isWLocalMap_id {X : Type u} [TopologicalSpace X] : IsWLocalMap (id : X → X) :=
-  ⟨isSpectralMap_id, fun _ hx ↦ hx⟩
-
-/-- Composites of w-local maps are w-local. -/
-theorem IsWLocalMap.comp {X : Type u} {Y : Type v} {Z : Type w}
-    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z] {f : X → Y} {g : Y → Z}
-    (hg : IsWLocalMap g) (hf : IsWLocalMap f) : IsWLocalMap (g ∘ f) :=
-  ⟨hg.toIsSpectralMap.comp hf.toIsSpectralMap, hg.map_closedPoints.comp hf.map_closedPoints⟩
-
 /-- The specialization-pair model of w-localization. The first coordinate has the
 constructible topology, and the second retains the original topology. -/
--- Exposing the carrier permits subtype constructions and computation of endpoint projections.
+-- The module compiler requires this for the subtype carrier and endpoint projections.
 @[expose]
 def WLocalization (X : Type u) [TopologicalSpace X] :=
   {q : WithConstructibleTopology X × X // q.2 ⤳ WithTopology.ofTopology q.1}
@@ -68,6 +52,9 @@ variable {X : Type u} {Y : Type v} {Z : Type w}
 instance : TopologicalSpace (WLocalization X) :=
   inferInstanceAs (TopologicalSpace {q : WithConstructibleTopology X × X |
     q.2 ⤳ WithTopology.ofTopology q.1})
+
+local instance [SpectralSpace X] : SpectralSpace (WithConstructibleTopology X) :=
+  spectralSpace_of_zeroDimensionalSpace _
 
 /-- The counit sends a pair to its generalizing endpoint. -/
 def toBase (q : WLocalization X) : X := q.val.2
@@ -96,6 +83,11 @@ theorem componentLabel_ofSpecializes (x : WithConstructibleTopology X) (y : X)
 theorem toBase_ofSpecializes (x : WithConstructibleTopology X) (y : X)
     (h : y ⤳ WithTopology.ofTopology x) : toBase (ofSpecializes x y h) = y := (rfl)
 
+/-- Reconstructing a pair from its endpoints gives the original pair. -/
+@[simp]
+theorem ofSpecializes_componentLabel_toBase (q : WLocalization X) :
+    ofSpecializes (componentLabel q) (toBase q) q.specializes_label = q := (rfl)
+
 /-- The diagonal pair labelled by a constructible point. -/
 def diagonal (x : WithConstructibleTopology X) : WLocalization X :=
   ⟨(x, WithTopology.ofTopology x), specializes_rfl⟩
@@ -120,6 +112,22 @@ theorem continuous_componentLabel : Continuous (componentLabel : WLocalization X
 theorem continuous_toBase : Continuous (toBase : WLocalization X → X) :=
   continuous_snd.comp continuous_subtypeVal
 
+/-- A map into w-localization is continuous exactly when both endpoint maps are continuous. -/
+theorem continuous_iff {f : Y → WLocalization X} :
+    Continuous f ↔ Continuous (componentLabel ∘ f) ∧ Continuous (toBase ∘ f) := by
+  constructor
+  · intro hf
+    exact ⟨continuous_componentLabel.comp hf, continuous_toBase.comp hf⟩
+  · rintro ⟨h₁, h₂⟩
+    exact (h₁.prodMk h₂).subtype_mk _
+
+/-- Continuous endpoint maps satisfying specialization give a continuous family of pairs. -/
+theorem continuous_ofSpecializes {x : Y → WithConstructibleTopology X} {y : Y → X}
+    (hx : Continuous x) (hy : Continuous y)
+    (h : ∀ z, y z ⤳ WithTopology.ofTopology (x z)) :
+    Continuous (fun z ↦ ofSpecializes (x z) (y z) (h z)) :=
+  continuous_iff.2 ⟨hx, hy⟩
+
 /-- The counit is surjective, including when the base is empty. -/
 theorem surjective_toBase : Surjective (toBase : WLocalization X → X) :=
   fun x ↦ ⟨diagonal (WithTopology.toTopology _ x), rfl⟩
@@ -135,19 +143,14 @@ variable [SpectralSpace X]
 private theorem isProConstructible_pairs :
     IsProConstructible {q : WithConstructibleTopology X × X |
       q.2 ⤳ WithTopology.ofTopology q.1} := by
-  let : SpectralSpace (WithConstructibleTopology X) := spectralSpace_of_zeroDimensionalSpace _
   have heq : {q : WithConstructibleTopology X × X |
       q.2 ⤳ WithTopology.ofTopology q.1} =
       ⋂ U : {U : Set X // IsOpen U ∧ IsCompact U},
         ((Prod.fst ⁻¹' (WithTopology.ofTopology ⁻¹' U.val))ᶜ ∪ Prod.snd ⁻¹' U.val) := by
     ext q
     simp only [mem_ofPred_eq, mem_iInter, mem_union, mem_compl_iff, mem_preimage]
-    rw [PrespectralSpace.isTopologicalBasis.nhds_hasBasis.specializes_iff]
-    constructor
-    · intro h U
-      exact not_or_of_imp (fun hx ↦ h U.val ⟨U.property, hx⟩)
-    · intro h U hU
-      exact (h ⟨U, hU.1⟩).resolve_left (not_not_intro hU.2)
+    rw [← not_iff_not, PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact]
+    simp
   rw [heq]
   refine IsProConstructible.iInter fun U ↦ ?_
   have hU := U.property.2.isClopen_preimage_ofTopology_of_isOpen U.property.1
@@ -158,18 +161,15 @@ private theorem isProConstructible_pairs :
 
 /-- W-localization is spectral. -/
 instance : SpectralSpace (WLocalization X) := by
-  let : SpectralSpace (WithConstructibleTopology X) := spectralSpace_of_zeroDimensionalSpace _
   exact isProConstructible_pairs.spectralSpace
 
 /-- The counit is spectral. -/
 theorem isSpectralMap_toBase : IsSpectralMap (toBase : WLocalization X → X) := by
-  let : SpectralSpace (WithConstructibleTopology X) := spectralSpace_of_zeroDimensionalSpace _
   exact isProConstructible_pairs.isSpectralMap_snd
 
 /-- The component label is spectral. -/
 theorem isSpectralMap_componentLabel :
     IsSpectralMap (componentLabel : WLocalization X → _) := by
-  let : SpectralSpace (WithConstructibleTopology X) := spectralSpace_of_zeroDimensionalSpace _
   exact isProConstructible_pairs.isSpectralMap_fst
 
 end Spectral
@@ -181,7 +181,7 @@ variable [PrespectralSpace X] [T0Space X]
 omit [T0Space X] in
 /-- The diagonal is continuous from the constructible topology to w-localization. -/
 theorem continuous_diagonal : Continuous (diagonal : WithConstructibleTopology X → _) :=
-  (continuous_id.prodMk (continuous_ofTopology_withConstructibleTopology X)).subtype_mk _
+  continuous_iff.2 ⟨continuous_id, continuous_ofTopology_withConstructibleTopology X⟩
 
 /-- Specializations keep the label fixed and specialize the generalizing endpoint. -/
 @[simp]
@@ -255,9 +255,9 @@ theorem isWLocal : IsWLocalSpace (WLocalization X) := by
         exact not_or_of_imp (fun hy ↦ h ▸ hy)
       · intro h
         have hs : WithTopology.ofTopology (componentLabel q) ⤳ toBase q := by
-          rw [PrespectralSpace.isTopologicalBasis.nhds_hasBasis.specializes_iff]
-          intro U ⟨hU, hx⟩
-          exact (h ⟨U, hU⟩).resolve_left (not_not_intro hx)
+          rw [← not_not (a := WithTopology.ofTopology (componentLabel q) ⤳ toBase q),
+            PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact]
+          simpa [Subtype.forall, or_iff_not_imp_left] using h
         exact q.specializes_label.antisymm hs |>.eq
     rw [heq]
     exact isClosed_iInter fun U ↦
@@ -272,11 +272,12 @@ def componentFibre (x : WithConstructibleTopology X) :
     {q : WLocalization X // componentLabel q = x} ≃ₜ {y : X // y ⤳ WithTopology.ofTopology x} where
   toFun q := ⟨toBase q.val, q.val.specializes_label.trans
     (specializes_of_eq (congrArg WithTopology.ofTopology q.property))⟩
-  invFun y := ⟨⟨(x, y.val), y.property⟩, rfl⟩
+  invFun y := ⟨ofSpecializes x y.val y.property, rfl⟩
   left_inv q := Subtype.ext (ext q.property.symm rfl)
   right_inv _ := rfl
   continuous_toFun := (continuous_toBase.comp continuous_subtypeVal).subtype_mk _
-  continuous_invFun := ((continuous_const.prodMk continuous_subtypeVal).subtype_mk _).subtype_mk _
+  continuous_invFun :=
+    (continuous_ofSpecializes continuous_const continuous_subtypeVal _).subtype_mk _
 
 /-- The fibre comparison keeps the generalizing endpoint. -/
 @[simp]
@@ -284,28 +285,45 @@ theorem componentFibre_apply (x : WithConstructibleTopology X)
     (q : {q : WLocalization X // componentLabel q = x}) :
     (componentFibre x q).val = toBase q.val := (rfl)
 
+/-- The inverse fibre comparison constructs the pair with the specified label and endpoint. -/
+@[simp]
+theorem componentFibre_symm_apply (x : WithConstructibleTopology X)
+    (y : {y : X // y ⤳ WithTopology.ofTopology x}) :
+    ((componentFibre x).symm y).val = ofSpecializes x y.val y.property := (rfl)
+
+private theorem bijective_componentLabel_connectedComponentsLift
+    [PrespectralSpace X] [T0Space X] :
+    Bijective (continuous_componentLabel (X := X)).connectedComponentsLift := by
+  constructor
+  · intro a b hab
+    obtain ⟨q, rfl⟩ := ConnectedComponents.surjective_coe a
+    obtain ⟨r, rfl⟩ := ConnectedComponents.surjective_coe b
+    exact ConnectedComponents.coe_eq_coe'.2 (mem_connectedComponent_iff.2 hab)
+  · intro x
+    exact ⟨ConnectedComponents.mk (diagonal x), rfl⟩
+
 section Components
 
 variable [SpectralSpace X]
 
 /-- The connected components of w-localization are the constructible points of the base. -/
-noncomputable def pi0 : ConnectedComponents (WLocalization X) ≃ₜ WithConstructibleTopology X := by
-  let f := (continuous_componentLabel (X := X)).connectedComponentsLift
-  have hc : Continuous f := continuous_componentLabel.connectedComponentsLift_continuous
-  have hb : Bijective f := by
-    constructor
-    · intro a b hab
-      obtain ⟨q, rfl⟩ := ConnectedComponents.surjective_coe a
-      obtain ⟨r, rfl⟩ := ConnectedComponents.surjective_coe b
-      exact ConnectedComponents.coe_eq_coe'.2 (mem_connectedComponent_iff.2 hab)
-    · intro x
-      exact ⟨ConnectedComponents.mk (diagonal x), rfl⟩
-  exact ((isHomeomorph_iff_continuous_bijective).2 ⟨hc, hb⟩).homeomorph f
+noncomputable def pi0 : ConnectedComponents (WLocalization X) ≃ₜ WithConstructibleTopology X :=
+  ((isHomeomorph_iff_continuous_bijective).2
+    ⟨continuous_componentLabel.connectedComponentsLift_continuous,
+      bijective_componentLabel_connectedComponentsLift⟩).homeomorph
+    (continuous_componentLabel (X := X)).connectedComponentsLift
 
 /-- The component comparison sends each pair to its specialization endpoint. -/
 @[simp]
 theorem pi0_mk (q : WLocalization X) : pi0 (ConnectedComponents.mk q) = componentLabel q := by
-  simp [pi0, IsHomeomorph.homeomorph]
+  simp [pi0]
+
+/-- The inverse component comparison is represented by the diagonal pair with that label. -/
+@[simp]
+theorem pi0_symm_apply (x : WithConstructibleTopology X) :
+    pi0.symm x = ConnectedComponents.mk (diagonal x) := by
+  apply pi0.injective
+  simp
 
 /-- Maps into w-localization are spectral exactly when both endpoint maps are spectral. -/
 theorem isSpectralMap_iff {f : Y → WLocalization X} :
@@ -314,13 +332,12 @@ theorem isSpectralMap_iff {f : Y → WLocalization X} :
   · intro hf
     exact ⟨isSpectralMap_componentLabel.comp hf, isSpectralMap_toBase.comp hf⟩
   · rintro ⟨h₁, h₂⟩
-    let : SpectralSpace (WithConstructibleTopology X) := spectralSpace_of_zeroDimensionalSpace _
     have hb := isTopologicalBasis_subtype
       ((PrespectralSpace.isTopologicalBasis (X := WithConstructibleTopology X)).prod
         (PrespectralSpace.isTopologicalBasis (X := X)))
       (fun q : WithConstructibleTopology X × X ↦ q.2 ⤳ WithTopology.ofTopology q.1)
     refine isSpectralMap_of_isTopologicalBasis hb
-      ((h₁.continuous.prodMk h₂.continuous).subtype_mk _) ?_
+      (continuous_iff.2 ⟨h₁.continuous, h₂.continuous⟩) ?_
     rintro _ ⟨_, ⟨U, hU, V, hV, rfl⟩, rfl⟩
     exact (h₂.isCompact_preimage_of_isOpen hV.1 hV.2).inter_left
       (hU.2.isClosed.preimage h₁.continuous)
@@ -357,8 +374,8 @@ theorem map_comp {f : X → Y} {g : Y → Z} (hf : Continuous f) (hg : Continuou
 
 /-- A spectral map induces a continuous map of w-localizations. -/
 theorem continuous_map {f : X → Y} (hf : IsSpectralMap f) : Continuous (map f hf.continuous) :=
-  ((hf.continuous_withConstructibleTopology.comp continuous_componentLabel).prodMk
-    (hf.continuous.comp continuous_toBase)).subtype_mk _
+  continuous_iff.2 ⟨hf.continuous_withConstructibleTopology.comp continuous_componentLabel,
+    hf.continuous.comp continuous_toBase⟩
 
 /-- A spectral map induces a spectral map of w-localizations. -/
 theorem isSpectralMap_map [SpectralSpace X] [SpectralSpace Y] {f : X → Y}

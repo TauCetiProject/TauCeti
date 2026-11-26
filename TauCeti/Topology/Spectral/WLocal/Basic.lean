@@ -47,6 +47,10 @@ Topologically, two conditions govern these covers:
 * `TauCeti.IsWLocalSpace.closedPointsHomeomorphConnectedComponents`: the canonical homeomorphism
   from `closedPoints X` to `ConnectedComponents X` for a w-local space.
 
+* `TauCeti.IsWLocalSpace.closedPoint`: the spectral retraction onto `closedPoints X` sending
+  each point to the closed point of its connected component.
+* `TauCeti.IsWLocalMap`: spectral maps preserving closed points.
+
 ## Main results
 
 * `TauCeti.openCoversSplit_iff_isLocallyConstant`, `TauCeti.openCoversSplit_iff_iUnion`,
@@ -71,6 +75,14 @@ Topologically, two conditions govern these covers:
 * `TauCeti.IsWLocalSpace.isHomeomorph_connectedComponentsMk`: in a w-local space, `closedPoints X`
   maps homeomorphically onto `ConnectedComponents X`.
 
+* `TauCeti.IsWLocalSpace.specializes_closedPoint`: every point specializes to its selected
+  closed point.
+* `TauCeti.IsWLocalSpace.continuous_closedPoint`,
+  `TauCeti.IsWLocalSpace.isSpectralMap_closedPoint`: the closed-point retraction is continuous
+  and spectral.
+* `TauCeti.isWLocalMap_id`, `TauCeti.IsWLocalMap.comp`: w-local maps contain identities and
+  are closed under composition.
+
 ## References
 
 * P. Scholze, *Étale cohomology of diamonds*, arXiv:1709.07343, §7, Definition 7.1, Lemma 7.2, and
@@ -83,7 +95,7 @@ public section
 
 open Function Set Topology TopologicalSpace
 
-universe u v
+universe u v w
 
 namespace TauCeti
 
@@ -468,5 +480,21 @@ theorem IsWLocalSpace.specializes_closedPoint {X : Type u} [TopologicalSpace X]
     ((connectedComponent_eq hcomp) ▸ hX.closedPointsHomeomorphConnectedComponents_symm_mk_mem x)
     (hX.closedPoint x).property hyc
   exact heq.symm ▸ hxy
+
+/-- A w-local map is a spectral map carrying closed points to closed points. -/
+structure IsWLocalMap {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
+    (f : X → Y) : Prop extends IsSpectralMap f where
+  /-- Closed points are preserved. -/
+  map_closedPoints : MapsTo f (closedPoints X) (closedPoints Y)
+
+/-- The identity is w-local. -/
+theorem isWLocalMap_id {X : Type u} [TopologicalSpace X] : IsWLocalMap (id : X → X) :=
+  ⟨isSpectralMap_id, fun _ hx ↦ hx⟩
+
+/-- Composites of w-local maps are w-local. -/
+theorem IsWLocalMap.comp {X : Type u} {Y : Type v} {Z : Type w}
+    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z] {f : X → Y} {g : Y → Z}
+    (hg : IsWLocalMap g) (hf : IsWLocalMap f) : IsWLocalMap (g ∘ f) :=
+  ⟨hg.toIsSpectralMap.comp hf.toIsSpectralMap, hg.map_closedPoints.comp hf.map_closedPoints⟩
 
 end TauCeti
