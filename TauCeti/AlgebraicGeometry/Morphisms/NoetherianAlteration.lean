@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Alteration
-public import TauCeti.AlgebraicGeometry.Morphisms.MaximallyDominating
+public import TauCeti.AlgebraicGeometry.Morphisms.MaximallyDominating.Basic
 
 import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
 import TauCeti.AlgebraicGeometry.Fibers.Finite
