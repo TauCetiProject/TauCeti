@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Liouville.Plane
 public import TauCeti.Geometry.Symplectic.Manifold.Plane
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
@@ -33,8 +34,8 @@ they need.
   (`cubicHomeomorph`), so that `(1 + g²) g' = 1` (`hasDerivAt_cubicHomeomorph_symm`). The
   diffeomorphism `φ(x, y) = (x, g y)` (`cubicReparamSnd`) pulls `(1 + y²) dx ∧ dy` back to
   `dx ∧ dy` (`mpullback_cubicReparamSnd_oneAddSqAreaForm`), fixes `Q` pointwise
-  (`cubicReparamSnd_apply_zero`) and has differential the identity along `Q`
-  (`mfderiv_cubicReparamSnd_zero`). This is the conclusion of the relative Moser theorem with
+  (`cubicReparamSnd_mk_zero`) and has differential the identity along `Q`
+  (`mfderiv_cubicReparamSnd_mk_zero`). This is the conclusion of the relative Moser theorem with
   prescribed first jet,
   `TauCeti.SmoothTwoForm.exists_diffeomorph_fix_embedding_eventually_mpullback_eq`, made explicit
   along the noncompact axis `Q`.
@@ -42,7 +43,7 @@ they need.
   restrict to zero on `Q` (`mpullback_inclX_two_smul_constSmooth`), but differ at every point
   (`two_smul_constSmooth_val_ne`). The diffeomorphism `(x, y) ↦ (x, y / 2)` (`halfScaleSnd`) pulls
   `2 dx ∧ dy` back to `dx ∧ dy` (`mpullback_halfScaleSnd_two_smul_constSmooth`) and fixes `Q`
-  (`halfScaleSnd_apply_zero`), with differential `diag(1, 1 / 2)` (`mfderiv_halfScaleSnd_apply`).
+  (`halfScaleSnd_mk_zero`), with differential `diag(1, 1 / 2)` (`mfderiv_halfScaleSnd_apply`).
   Every smooth map pulling `2 dx ∧ dy` back to `dx ∧ dy` at a point has Jacobian determinant `1 / 2`
   there (`det_fderiv_eq_of_mpullback_two_smul_constSmooth`), so none has differential the identity
   (`fderiv_ne_id_of_mpullback_two_smul_constSmooth`). When two forms agree only after restriction
@@ -110,16 +111,6 @@ theorem realPlaneXDy_mk_zero_ne_zero {x : ℝ} (hx : x ≠ 0) : Prod.realPlaneXD
   simp [hx] at this
 
 /-! ### Forms agreeing along the `x`-axis: `(1 + y²) dx ∧ dy` and `dx ∧ dy` -/
-
-/-- On normed spaces, the manifold derivative of a map with Fréchet derivative `f'` at `p` applies
-`f'` to a tangent vector, read through the model-space tangent identifications. -/
-private theorem mfderiv_apply_of_hasFDerivAt {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} {f' : E →L[ℝ] F}
-    {p : E} (h : HasFDerivAt f f' p) (v : TangentSpace 𝓘(ℝ, E) p) :
-    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) f p v =
-      (NormedSpace.fromTangentSpace (f p)).symm (f' (NormedSpace.fromTangentSpace p v)) := by
-  rw [mfderiv_eq_fderiv, h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe]
 
 /-- The smooth function `(x, y) ↦ 1 + y²` on the plane. -/
 private def oneAddSq : C^∞⟮𝓘(ℝ, ℝ × ℝ), ℝ × ℝ; ℝ⟯ :=
@@ -204,7 +195,7 @@ theorem cubicHomeomorph_symm_zero : cubicHomeomorph.symm 0 = 0 :=
   cubicHomeomorph.symm_apply_eq.2 (by simp)
 
 /-- `φ(x, y) = (x, g y)` fixes the `x`-axis pointwise. -/
-theorem cubicReparamSnd_apply_zero (x : ℝ) : cubicReparamSnd (x, 0) = (x, 0) := by
+theorem cubicReparamSnd_mk_zero (x : ℝ) : cubicReparamSnd (x, 0) = (x, 0) := by
   simp
 
 /-- The differential of `φ(x, y) = (x, g y)` at `(x, y)` is `v ↦ (v₁, v₂ / (1 + g(y)²))`. -/
@@ -218,13 +209,13 @@ theorem mfderiv_cubicReparamSnd_apply (p : ℝ × ℝ) (v : TangentSpace 𝓘(�
       hasFDerivAt_snd)
   have hc : ⇑cubicReparamSnd = fun p : ℝ × ℝ ↦ (p.1, cubicHomeomorph.symm p.2) :=
     funext cubicReparamSnd_apply
-  rw [hc, mfderiv_apply_of_hasFDerivAt h, NormedSpace.fromTangentSpace_symm_apply]
+  rw [hc, h.mfderiv_apply, NormedSpace.fromTangentSpace_symm_apply]
   simp only [ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_fst',
     smul_apply, ContinuousLinearMap.coe_snd', smul_eq_mul]
   rw [NormedSpace.fromTangentSpace_apply]
 
 /-- **`φ` has differential the identity along the `x`-axis.** -/
-theorem mfderiv_cubicReparamSnd_zero (x : ℝ) :
+theorem mfderiv_cubicReparamSnd_mk_zero (x : ℝ) :
     mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) cubicReparamSnd (x, 0) =
       ContinuousLinearMap.id ℝ (TangentSpace 𝓘(ℝ, ℝ × ℝ) (x, 0)) := by
   ext v
@@ -260,7 +251,7 @@ theorem mpullback_inclX_constSmooth :
     have hd : HasFDerivAt inclX ((ContinuousLinearMap.id ℝ ℝ).prod 0) x :=
       (hasFDerivAt_id x).prodMk (hasFDerivAt_const 0 x)
     have h (u : TangentSpace 𝓘(ℝ) x) : (mfderiv 𝓘(ℝ) 𝓘(ℝ, ℝ × ℝ) inclX x u).2 = 0 := by
-      rw [mfderiv_apply_of_hasFDerivAt hd, NormedSpace.fromTangentSpace_symm_apply]
+      rw [hd.mfderiv_apply, NormedSpace.fromTangentSpace_symm_apply]
       simp only [ContinuousLinearMap.prod_apply, zero_apply]
     rw [SmoothForm.eval₂_mpullback, eval₂_constSmooth_stdSymplecticForm, h, h]
     simp
@@ -307,7 +298,7 @@ theorem halfScaleSnd_apply (p : ℝ × ℝ) : halfScaleSnd p = (p.1, p.2 / 2) :=
   (rfl)
 
 /-- `(x, y) ↦ (x, y / 2)` fixes the `x`-axis pointwise. -/
-theorem halfScaleSnd_apply_zero (x : ℝ) : halfScaleSnd (x, 0) = (x, 0) := by
+theorem halfScaleSnd_mk_zero (x : ℝ) : halfScaleSnd (x, 0) = (x, 0) := by
   simp
 
 /-- The differential of `(x, y) ↦ (x, y / 2)` is `v ↦ (v₁, v₂ / 2)` at every point. -/
@@ -318,7 +309,7 @@ theorem mfderiv_halfScaleSnd_apply (p : ℝ × ℝ) (v : TangentSpace 𝓘(ℝ, 
     hasFDerivAt_fst.prodMk ((hasFDerivAt_snd.mul_const (2⁻¹ : ℝ)).congr_of_eventuallyEq
       (Filter.Eventually.of_forall fun q ↦ div_eq_mul_inv q.2 2))
   have hc : ⇑halfScaleSnd = fun p : ℝ × ℝ ↦ (p.1, p.2 / 2) := funext halfScaleSnd_apply
-  rw [hc, mfderiv_apply_of_hasFDerivAt h, NormedSpace.fromTangentSpace_symm_apply]
+  rw [hc, h.mfderiv_apply, NormedSpace.fromTangentSpace_symm_apply]
   simp only [ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_fst',
     smul_apply, ContinuousLinearMap.coe_snd', smul_eq_mul, div_eq_inv_mul]
   rw [NormedSpace.fromTangentSpace_apply]
