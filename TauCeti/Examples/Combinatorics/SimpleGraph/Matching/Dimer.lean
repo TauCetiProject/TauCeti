@@ -194,6 +194,14 @@ instance : (nnGraph ℤ).LocallyFinite := fun v =>
   ((toFinite {v - 1, v + 1}).subset fun w hw => by
     rcases (nnGraph_adj.1 hw).2 with rfl | rfl <;> simp).fintype
 
+/-- The edges of the line are countable. -/
+instance instCountableEdgeSetNNGraphInt : Countable (nnGraph ℤ).edgeSet :=
+  Function.Surjective.countable (f := edge) fun e => exists_edge_eq e
+
+/-- The line has infinitely many edges. -/
+instance instInfiniteEdgeSetNNGraphInt : Infinite (nnGraph ℤ).edgeSet :=
+  Infinite.of_injective edge (edge_injective (by decide))
+
 /-- Translation by `2` as an automorphism of the line. -/
 def shiftTwo : nnGraph ℤ ≃g nnGraph ℤ where
   toEquiv := Equiv.addRight 2
@@ -209,7 +217,7 @@ instance instMulActionMultiplicativeIntEdgeSetNNGraph :
   MulAction.compHom _ (zpowersHom _ shiftTwo)
 
 /-- The subshift of dimer configurations of the line, for `2ℤ` acting by translations. -/
-def dimerSubshiftInt : Subshift (Multiplicative ℤ) (nnGraph ℤ).edgeSet Bool :=
+@[expose] def dimerSubshiftInt : Subshift (Multiplicative ℤ) (nnGraph ℤ).edgeSet Bool :=
   (nnGraph ℤ).dimerSubshift (Multiplicative ℤ)
     (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo))
 
@@ -389,5 +397,28 @@ theorem setOf_isDimerConfiguration_zmod_six :
   · have hpar : ∀ a : ZMod 6, decide ((a + 1).val % 2 = 1) = !decide (a.val % 2 = 1) := by
       decide
     rintro (rfl | rfl) a <;> simp only [hexConfig_edge, hpar] <;> simp
+
+/-- Both matchings of the hexagon are dimer configurations. -/
+theorem isDimerConfiguration_hexConfig (b : Bool) :
+    (nnGraph (ZMod 6)).IsDimerConfiguration (hexConfig b) :=
+  (Set.ext_iff.1 setOf_isDimerConfiguration_zmod_six _).2 (by cases b <;> simp)
+
+/-- The hexagon is locally finite. -/
+instance instLocallyFiniteNNGraphZModSix : (nnGraph (ZMod 6)).LocallyFinite :=
+  fun _ => Fintype.ofFinite _
+
+/-- The edges of the hexagon are finite. -/
+instance instFintypeEdgeSetNNGraphZModSix : Fintype (nnGraph (ZMod 6)).edgeSet :=
+  Fintype.ofFinite _
+
+/-- The edge `{a, a + 1}` of the hexagon, as a bijection from `ZMod 6`. -/
+theorem edge_bijective_zmod_six : Bijective (edge (R := ZMod 6)) :=
+  ⟨edge_injective two_ne_zero_zmod_six, fun e => exists_edge_eq e⟩
+
+/-- A product over the six edges of the hexagon is the product over `a : ZMod 6` of the value at
+the edge `{a, a + 1}`. -/
+theorem prod_edgeSet_zmod_six {M : Type*} [CommMonoid M] (f : (nnGraph (ZMod 6)).edgeSet → M) :
+    ∏ e, f e = ∏ a : ZMod 6, f (edge a) :=
+  (Fintype.prod_bijective _ edge_bijective_zmod_six _ _ fun _ => rfl).symm
 
 end TauCeti.Examples.DimerConfiguration
