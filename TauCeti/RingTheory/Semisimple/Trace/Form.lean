@@ -113,8 +113,8 @@ theorem trace_lsmul_mul_eq_zero_of_mem_jacobson {x : A} (hx : x ∈ Ring.jacobso
   have hfx : f x ∈ Ring.jacobson B := _root_.Ring.le_comap_jacobson f.toRingHom hx
   have hyx : IsNilpotent (f (y * x)) := by
     refine ⟨m, ?_⟩
-    have hpow := Ideal.pow_mem_pow ((Ring.jacobson B).smul_mem (f y) hfx) m
-    rwa [hm, Ideal.zero_eq_bot, Ideal.mem_bot, smul_eq_mul, ← map_mul] at hpow
+    simpa only [map_mul] using
+      Ideal.pow_eq_zero_of_mem hm le_rfl ((Ring.jacobson B).mul_mem_left (f y) hfx)
   exact (isNilpotent_trace_of_isNilpotent (hyx.map B.val)).eq_zero
 
 /-- **The trace-form criterion for semisimplicity, for any module.** Let `M` be an `A`-module on
