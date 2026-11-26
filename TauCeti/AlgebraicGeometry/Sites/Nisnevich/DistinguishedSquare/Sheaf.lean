@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Sites.Nisnevich.DistinguishedSquare
 public import Mathlib.CategoryTheory.Limits.Types.Pullbacks
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Diagonal
+import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 
 /-!
 # Nisnevich sheaves on elementary distinguished squares
@@ -73,10 +74,9 @@ theorem isNisnevichCovering_diagonal : IsNisnevichCovering Q.diagonalArrows := b
     obtain ⟨w', hw', -⟩ := AlgebraicGeometry.Scheme.Pullback.exists_preimage_pullback w u hu.symm
     exact ⟨false, w', hw'⟩
   · refine ⟨true, ?_⟩
-    have hz : (Limits.pullback.fst Q.p Q.p ≫ Q.p) w ∈ Set.range I.subschemeι := by
-      rw [AlgebraicGeometry.Scheme.IdealSheafData.range_subschemeι,
-        AlgebraicGeometry.Scheme.IdealSheafData.coe_support_vanishingIdeal]
-      simpa using hw
+    have hz : (Limits.pullback.fst Q.p Q.p ≫ Q.p) w ∈ Set.range I.subschemeι :=
+      (AlgebraicGeometry.Scheme.IdealSheafData.mem_range_subschemeι_vanishingIdeal_compl_iff _
+        _).2 (by simpa using hw)
     obtain ⟨z, hz⟩ := hz
     obtain ⟨w', hw', -⟩ := AlgebraicGeometry.Scheme.Pullback.exists_preimage_pullback w z hz.symm
     have hd := Limits.pullback.fst_eq_comp_diagonal_of_isIso_snd Q.p I.subschemeι

@@ -32,6 +32,8 @@ discrete valuation ring.
   is integral.
 * `Scheme.IdealSheafData.subschemeι_genericPoint_vanishingIdeal_closure_singleton`: the generic
   point of the reduced closure of `η` maps to `η`.
+* `Scheme.IdealSheafData.mem_range_subschemeι_vanishingIdeal_compl_iff`: the reduced closed
+  complement of an open `U` consists of the points outside `U`.
 * `Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset`: a morphism from a reduced scheme
   with image in `Z` kills the vanishing ideal of `Z`, so it factors through the reduced induced
   closed subscheme.
@@ -97,6 +99,13 @@ theorem subschemeι_genericPoint_vanishingIdeal_closure_singleton (η : X) :
   rw [Set.image_univ, range_subschemeι, coe_support_vanishingIdeal, Closeds.coe_mk,
     closure_closure] at h
   exact h.eq isGenericPoint_closure
+
+/-- A point lies in the reduced closed complement of an open `U` if and only if it lies outside
+`U`. -/
+theorem mem_range_subschemeι_vanishingIdeal_compl_iff (U : X.Opens) (x : X) :
+    x ∈ Set.range (vanishingIdeal U.compl).subschemeι ↔ x ∉ U := by
+  rw [range_subschemeι, coe_support_vanishingIdeal]
+  simp
 
 /-- A morphism `f` from a reduced scheme whose image lies in a closed subset `Z` kills the
 vanishing ideal of `Z`, so it factors through the reduced induced closed subscheme on `Z`
