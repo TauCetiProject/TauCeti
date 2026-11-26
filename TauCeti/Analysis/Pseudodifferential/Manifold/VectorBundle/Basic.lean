@@ -242,6 +242,16 @@ theorem sectionEntry_apply
       χ x • ℓ (t'.continuousLinearMapAt ℂ x (P (f • t.cutoffFrameSection ψ hψ v) x)) :=
   by simp [sectionEntry]
 
+/-- An entry of `P` is the frame coefficient of `P` applied to the multiples of a cut-off frame
+section. -/
+theorem sectionEntry_apply_eq_cutoffFrameCoeff
+    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯)
+    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    sectionEntry t ψ hψ v t' χ hχ ℓ P f =
+      t'.cutoffFrameCoeff χ hχ ℓ (P (f • t.cutoffFrameSection ψ hψ v)) := by
+  ext y
+  simp
+
 /-- The entries of a properly supported operator are properly supported. -/
 theorem IsSectionProperlySupported.sectionEntry
     {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}

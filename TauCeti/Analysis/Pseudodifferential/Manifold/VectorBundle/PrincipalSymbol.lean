@@ -212,20 +212,6 @@ private theorem repr_sectionClassicalPrincipalSymbol
 
 /-! ### Changes of frames -/
 
-omit [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
-  [T2Space M] in
-/-- An entry of `P` is the frame coefficient of `P` applied to the multiples of a cut-off frame
-section. -/
-private theorem sectionEntry_apply_eq (t : Trivialization V (π V E)) [MemTrivializationAtlas t]
-    (ψ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hψ : tsupport ψ ⊆ t.baseSet) (v : V)
-    (t' : Trivialization W (π W F)) [MemTrivializationAtlas t']
-    (χ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hχ : tsupport χ ⊆ t'.baseSet) (ℓ : W →L[ℂ] ℂ)
-    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    sectionEntry t ψ hψ v t' χ hχ ℓ P f =
-      t'.cutoffFrameCoeff χ hχ ℓ (P (f • t.cutoffFrameSection ψ hψ v)) := by
-  ext y
-  simp
-
 omit [FiniteDimensional ℂ V] in
 /-- **Changing the output frame.** The principal symbol of an entry of `P` with output frame
 `(t', χ, ℓ)` is a combination of the principal symbols of the entries with the same input and the
@@ -256,7 +242,7 @@ private theorem classicalPrincipalSymbol_sectionEntry_eq_sum_output
         ((finBasis ℂ W).coord j).toContinuousLinearMap P) f y := by
     filter_upwards [frameCutoff_eventually_eq_one (V := V) (W := W) n E F x,
       (trivializationAt W F x).open_baseSet.mem_nhds hx] with y hρy hy f
-    simp only [sectionEntry_apply_eq, LinearMap.sum_apply, LinearMap.comp_apply,
+    simp only [sectionEntry_apply_eq_cutoffFrameCoeff, LinearMap.sum_apply, LinearMap.comp_apply,
       LinearMap.mulLeft_apply, ContMDiffMap.coe_sum, Finset.sum_apply, ContMDiffMap.coe_mul,
       Pi.mul_apply, g]
     exact t'.cutoffFrameCoeff_apply_eq_sum χ hχ ℓ _ _ hρ (finBasis ℂ W) hy hρy _
@@ -311,7 +297,7 @@ private theorem classicalPrincipalSymbol_sectionEntry_eq_sum_input
         sectionEntry t ψ hψ v t' χ hχ ℓ P ∘ₗ LinearMap.mulLeft ℂ (1 - θc) := by
     refine LinearMap.ext fun f ↦ ?_
     simp only [LinearMap.add_apply, LinearMap.sum_apply, LinearMap.comp_apply,
-      LinearMap.mulLeft_apply, sectionEntry_apply_eq]
+      LinearMap.mulLeft_apply, sectionEntry_apply_eq_cutoffFrameCoeff]
     rw [hs f, map_add, map_sum, map_add, map_sum]
   have hE (i : Fin (finrank ℂ V)) := hmem _ _ hρ (finBasis ℂ V i) t' χ hχ ℓ
   have hE₀ := hmem t ψ hψ v t' χ hχ ℓ
