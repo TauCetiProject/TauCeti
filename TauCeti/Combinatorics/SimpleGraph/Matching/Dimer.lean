@@ -53,9 +53,7 @@ the restrictions to `F` of its members are exactly those configurations `η`
 `ω₂` that agree on the edges outside `F` sharing a vertex with an edge of `F`, the restrictions to
 `F` of their completion sets coincide (`SimpleGraph.image_restrict_dimerCompletionSet_eq`).
 For any `ω`, the gluing of `η` to `ω` is a dimer configuration exactly when `η` is such a
-restriction (`SimpleGraph.isDimerConfiguration_updateFinset_iff`), and in a locally finite graph
-only finitely many edges share a vertex with an edge of `F`
-(`SimpleGraph.finite_setOf_exists_mem_and_mem`).
+restriction (`SimpleGraph.isDimerConfiguration_updateFinset_iff`).
 
 ## References
 
@@ -400,22 +398,6 @@ theorem isDimerConfiguration_updateFinset_iff [DecidableEq G.edgeSet] {F : Finse
   · rintro ⟨ω', hω', rfl⟩
     rw [updateFinset_restrict_of_eqOn_compl hω'.2]
     exact hω'.1
-
-variable (G) in
-/-- For a locally finite graph, only finitely many edges share a vertex with an edge of a finite
-set `F`. -/
-theorem finite_setOf_exists_mem_and_mem [G.LocallyFinite] (F : Finset G.edgeSet) :
-    {e : G.edgeSet | ∃ f ∈ F, ∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (f : Sym2 V)}.Finite := by
-  classical
-  have hv (v : V) : {e : G.edgeSet | v ∈ (e : Sym2 V)}.Finite :=
-    Finite.of_finite_image (f := fun e => (e : Sym2 V))
-      ((G.incidenceSet v).toFinite.subset fun _ ⟨e, he, hee⟩ => hee ▸ ⟨e.property, he⟩)
-      Subtype.val_injective.injOn
-  refine ((F.finite_toSet.biUnion fun f _ => (f : Sym2 V).toFinset.finite_toSet.biUnion
-    fun v _ => hv v)).subset ?_
-  rintro e ⟨f, hf, v, hve, hvf⟩
-  simp only [mem_iUnion]
-  exact ⟨f, hf, v, by simpa using hvf, hve⟩
 
 /-- For two dimer configurations that agree on the edges outside `F` sharing a vertex with an edge
 of `F`, the restrictions to `F` of their completion sets coincide. -/

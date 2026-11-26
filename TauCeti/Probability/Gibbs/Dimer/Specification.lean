@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Gibbs.Dimer.Basic
 public import TauCeti.Probability.Gibbs.Closed
+import TauCeti.Combinatorics.SimpleGraph.Finite
 import TauCeti.MeasureTheory.Constructions.Cylinder.Events
 import Mathlib.Topology.LocallyConstant.Basic
 
