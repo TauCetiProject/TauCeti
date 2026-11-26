@@ -130,16 +130,16 @@ element of the Lie algebra `C^∞(M, 𝔸)` of the gauge group. Its inverse is `
 def gaugeExp (ξ : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ where
   val := ⟨fun x ↦ exp (ξ x), (contDiff_exp ℝ).comp_contMDiff ξ.contMDiff⟩
   inv := ⟨fun x ↦ exp (-ξ x), (contDiff_exp ℝ).comp_contMDiff ξ.contMDiff.neg⟩
+  -- The anonymous constructors elaborate at the underlying subtype, so `ContMDiffMap.coe_mul`
+  -- does not match the product; `change` unfolds it to the pointwise product by definition.
   val_inv := ContMDiffMap.ext fun x ↦ by
-    let +nondep : NormedAlgebra ℚ 𝔸 := .restrictScalars ℚ ℝ 𝔸
-    let := invertibleExp (ξ x)
     change exp (ξ x) * exp (-ξ x) = 1
-    rw [← invOf_exp, mul_invOf_self]
+    simpa only [add_neg_cancel, zero_smul, exp_zero, one_smul, neg_smul] using
+      (exp_add_smul (ξ x) (1 : ℝ) (-1)).symm
   inv_val := ContMDiffMap.ext fun x ↦ by
-    let +nondep : NormedAlgebra ℚ 𝔸 := .restrictScalars ℚ ℝ 𝔸
-    let := invertibleExp (ξ x)
     change exp (-ξ x) * exp (ξ x) = 1
-    rw [← invOf_exp, invOf_mul_self]
+    simpa only [neg_add_cancel, zero_smul, exp_zero, one_smul, neg_smul] using
+      (exp_add_smul (ξ x) (-1 : ℝ) 1).symm
 
 /-- The values of `exp ξ` are the exponentials of the values of `ξ`. -/
 @[simp]
@@ -235,10 +235,10 @@ theorem mrightMaurerCartan_val (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) 
     (mrightMaurerCartan g).val x v =
       mvfderiv I (g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x (v 0) *
         ((g⁻¹ : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x := by
-  rw [mrightMaurerCartan, SmoothForm.wedgeWith_apply_zero_right, mextDerivₗ_apply,
+  simp only [mrightMaurerCartan, SmoothForm.wedgeWith_apply_zero_right, mextDerivₗ_apply,
     SmoothForm.coe_ofFunction, mextDeriv_ofFunction,
-    ContinuousAlternatingMap.ofSubsingleton_apply_apply, SmoothForm.coe_ofFunction,
-    RoughForm.ofFunction_apply, ContinuousLinearMap.mul_apply']
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply, RoughForm.ofFunction_apply,
+    ContinuousLinearMap.mul_apply']
 
 /-- The Maurer–Cartan form of the identity gauge transformation vanishes. -/
 @[simp]
@@ -272,9 +272,10 @@ theorem mextDerivₗ_mrightMaurerCartan (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), �
       (ContinuousLinearMap.mul ℝ 𝔸 - (ContinuousLinearMap.mul ℝ 𝔸).flip)
       (mrightMaurerCartan g) (mrightMaurerCartan g) :=
   SmoothBundleForm.ext_eval₂ fun x v w ↦ by
-    rw [SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply,
-      mrightMaurerCartan, SmoothForm.coe_wedgeWith, SmoothForm.mextDeriv_wedgeWith_apply_one_zero,
-      mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv, ← mrightMaurerCartan]
+    rw [SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
+    conv_lhs => rw [mrightMaurerCartan, SmoothForm.coe_wedgeWith,
+      SmoothForm.mextDeriv_wedgeWith_apply_one_zero, mextDerivₗ_apply,
+      SmoothForm.mextDeriv_mextDeriv]
     simp only [Submodule.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
       SmoothForm.wedgeWith_apply_one_one, sub_apply, ContinuousLinearMap.mul_apply',
       ContinuousLinearMap.flip_apply, mrightMaurerCartan_val, SmoothForm.coe_ofFunction,
@@ -324,8 +325,8 @@ theorem mgaugeAction_val (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) (A : S
           ((g⁻¹ : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x -
         mvfderiv I (g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x (v 0) *
           ((g⁻¹ : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x := by
-  rw [mgaugeAction_def, Submodule.coe_sub, Pi.sub_apply, ContinuousAlternatingMap.sub_apply,
-    gaugeConj_val, mrightMaurerCartan_val]
+  simp only [mgaugeAction_def, Submodule.coe_sub, Pi.sub_apply,
+    ContinuousAlternatingMap.sub_apply, gaugeConj_val, mrightMaurerCartan_val]
 
 /-- The identity gauge transformation acts trivially. -/
 @[simp]
