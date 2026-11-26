@@ -9,8 +9,7 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Exponential
 public import TauCeti.Analysis.Contour.Residue.Basic
 import TauCeti.Analysis.Complex.Taylor.CauchyEstimate
-import TauCeti.Analysis.Complex.Taylor.CoeffSimplePole
-import TauCeti.Analysis.Contour.Residue.RegularPart
+import TauCeti.Analysis.Complex.Taylor.Laurent
 import TauCeti.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.SpecificLimits.Window
 
@@ -53,13 +52,14 @@ theorem le_norm_sub_of_window_taylor_bound_of_simple_pole {F : ℂ → ℂ} {z w
   obtain ⟨r, hdr, hrw⟩ := exists_between hdw
   obtain ⟨M, hM⟩ := hw.exists_norm_iteratedDeriv_div_factorial_le (hd₀.trans hdr) hrw
   have hm : MeromorphicAt F ρ := meromorphicAt_of_meromorphicOrderAt_ne_zero (by simp [hp])
-  obtain ⟨h, hh, heq⟩ := hm.exists_analyticAt_eventuallyEq_inv_smul_residue_add hp.ge
-  simp only [smul_eq_mul, inv_mul_eq_div] at heq
   have hc : 0 < ‖Contour.residue F ρ‖ := by
     rw [Contour.residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one hp, norm_pos_iff]
     exact hm.meromorphicTrailingCoeffAt_ne_zero (by simp [hp])
   refine le_of_window_exp_div_pow_bound (half_pos (half_pos hc)) hd₀ ?_ hupper
-  have hlower := Complex.eventually_le_norm_iteratedDeriv_div_factorial_of_simple_pole hz hh heq hdz
+  have hlower := Complex.eventually_le_norm_iteratedDeriv_div_factorial_of_pole (m := 0) hz
+    (by simpa using hp) hdz
+  rw [← Contour.residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one hp] at hlower
+  simp only [add_zero] at hlower
   filter_upwards [hlower, eventually_div_pow_le_div_pow M (half_pos (half_pos hc)) hd₀ hdr]
     with k hk hsmall
   have hbase : - (M / r ^ k) ≤ ((-1) ^ k * (iteratedDeriv k F w / (k ! : ℂ))).re := by
@@ -85,11 +85,17 @@ theorem residue_re_nonpos_of_window_taylor_bound {F : ℂ → ℂ}
   have hnegative : meromorphicOrderAt F (β : ℂ) < 0 := by
     by_contra! hnonneg
     simp [Contour.residue_eq_zero_of_meromorphicOrderAt_nonneg hnonneg] at hc
-  have hm := meromorphicAt_of_meromorphicOrderAt_ne_zero hnegative.ne
-  obtain ⟨h, hh, heq⟩ := hm.exists_analyticAt_eventuallyEq_inv_smul_residue_add hp
-  simp only [smul_eq_mul, inv_mul_eq_div] at heq
-  exact hdR.not_ge (le_of_window_exp_div_pow_bound (half_pos hc) (sub_pos.2 hβ)
-    (Complex.eventually_le_re_neg_one_pow_mul_iteratedDeriv_div_factorial_of_simple_pole
-      hF hh heq hc hβ hdr) hupper)
+  have hord : meromorphicOrderAt F (β : ℂ) = -1 := by
+    obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.1 hnegative.ne_top
+    rw [← hn] at hp hnegative ⊢
+    have h₁ : (-1 : ℤ) ≤ n := WithTop.coe_le_coe.mp hp
+    have h₂ : n < 0 := WithTop.coe_lt_coe.mp hnegative
+    obtain rfl : n = -1 := by omega
+    rfl
+  rw [Contour.residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one hord] at hc
+  have hlower := Complex.eventually_le_re_neg_one_pow_mul_iteratedDeriv_div_factorial_of_pole
+    (m := 0) hF (by simpa using hord) hc hβ hdr
+  simp only [add_zero] at hlower
+  exact hdR.not_ge (le_of_window_exp_div_pow_bound (half_pos hc) (sub_pos.2 hβ) hlower hupper)
 
 end DifferentiableOn

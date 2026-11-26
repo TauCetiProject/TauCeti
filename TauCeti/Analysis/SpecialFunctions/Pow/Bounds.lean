@@ -130,6 +130,8 @@ for `log x`, the shifted logarithm is dominated by the power of `x` itself, so a
 * `Real.abs_rpow_sub_one_div_one_sub_le_of_le_one`, `Real.rpow_sub_one_div_one_sub_le`, and
   `Real.abs_rpow_sub_one_div_one_sub_le`: difference-quotient bounds on
   `(w ^ (a - 1) - 1) / (1 - w)` for `w ∈ (0, 1)`.
+* `TauCeti.rpow_neg_one_add_div_le`: `(1 + u / q) ^ (-q) ≤ (1 + u / p) ^ (-p)` for `0 ≤ u` and
+  `0 < p ≤ q`.
 -/
 
 public section
@@ -549,6 +551,24 @@ theorem le_rpow_mul_rpow_mul_of_forall_pos {A M₀ M₁ θ C : ℝ} (hθ : θ �
   have hlim := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0))
   simp only [add_zero] at hlim
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hle)
+
+/-- For `u ≥ 0` and `0 < p ≤ q`, the decreasing Bernoulli comparison
+`(1 + u / q) ^ (-q) ≤ (1 + u / p) ^ (-p)`. -/
+theorem rpow_neg_one_add_div_le {u p q : ℝ} (hu : 0 ≤ u) (hp : 0 < p) (hpq : p ≤ q) :
+    (1 + u / q) ^ (-q) ≤ (1 + u / p) ^ (-p) := by
+  have hq : 0 < q := hp.trans_le hpq
+  have hqp : 1 ≤ q / p := (one_le_div hp).mpr hpq
+  have hber : 1 + u / p ≤ (1 + u / q) ^ (q / p) := by
+    have h := one_add_mul_self_le_rpow_one_add (div_nonneg hu hq.le |>.trans' (by linarith)) hqp
+    refine le_trans (le_of_eq ?_) h
+    field_simp
+  have hpow : (1 + u / p) ^ p ≤ (1 + u / q) ^ q := by
+    calc (1 + u / p) ^ p ≤ ((1 + u / q) ^ (q / p)) ^ p :=
+          Real.rpow_le_rpow (by positivity) hber hp.le
+      _ = (1 + u / q) ^ q := by
+          rw [← Real.rpow_mul (by positivity), div_mul_cancel₀ q hp.ne']
+  rw [Real.rpow_neg (by positivity), Real.rpow_neg (by positivity)]
+  exact inv_anti₀ (Real.rpow_pos_of_pos (by positivity) p) hpow
 
 end TauCeti
 
