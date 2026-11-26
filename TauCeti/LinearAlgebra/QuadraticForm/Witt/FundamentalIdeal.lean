@@ -88,7 +88,7 @@ theorem mem_fundamentalIdeal_iff_exists_evenRank {x : WittRing K} :
 /-- The Witt class `2 = ⟨1, 1⟩ = ⟨⟨-1⟩⟩` belongs to the fundamental ideal `I(K)`. -/
 theorem two_mem_fundamentalIdeal : (2 : WittRing K) ∈ fundamentalIdeal K := by
   rw [mem_fundamentalIdeal_iff, map_ofNat]
-  rfl
+  decide
 
 /-- Every power `(2 : WittRing K) ^ n` belongs to `I(K)^n`. -/
 theorem two_pow_mem_fundamentalIdeal_pow (n : ℕ) :

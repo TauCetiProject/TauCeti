@@ -45,7 +45,8 @@ the Witt ring with `ℤ` by signature.
   fields are isometric to the negative unit line.
 * `TauCeti.RegularFormClass.eq_sigPos_nsmul_add_sigNeg_nsmul`: normal-form decomposition into
   positive and negative unit lines over ordered real closed fields.
-* `TauCeti.RegularFormClass.discr_eq_sigNeg_nsmul`: the determinant-sign formula for the
+* `TauCeti.RegularFormClass.discr_eq_sigNeg_nsmul` and
+  `QuadraticForm.discr_formClass_eq_sigNeg_nsmul`: the determinant-sign formula for the
   discriminant over ordered real closed fields.
 
 ## References
@@ -331,6 +332,17 @@ noncomputable def signatureHom : RegularFormClass K →+* ℤ where
 @[simp]
 theorem signatureHom_apply (x : RegularFormClass K) : signatureHom x = signature x := (rfl)
 
+/-- The sum of `n` unit squares has signature `n`. -/
+@[simp]
+theorem signature_natCast (n : ℕ) : signature (n : RegularFormClass K) = n :=
+  map_natCast signatureHom n
+
+/-- The sum of `n` unit squares has signature `n`, for a numeral `n ≥ 2`. -/
+@[simp]
+theorem signature_ofNat (n : ℕ) [n.AtLeastTwo] :
+    signature (ofNat(n) : RegularFormClass K) = ofNat(n) :=
+  map_ofNat signatureHom n
+
 -- Not `@[simp]`: `nsmul_eq_mul` rewrites the left-hand side in the semiring
 -- `RegularFormClass K`, so this declaration would fail `simpNF`.
 /-- The signature of the orthogonal sum of `n` copies of a class is `n` times its signature. -/
@@ -383,6 +395,24 @@ theorem discr_eq_sigNeg_nsmul (x : RegularFormClass K) :
     discr_nsmul, discr_mk, Fin.prod_univ_one]
 
 end RegularFormClass
+
+end TauCeti
+
+namespace QuadraticForm
+
+variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [Invertible (2 : K)]
+  [IsRealClosed K] [AddCommGroup M] [Module K M] [FiniteDimensional K M]
+
+/-- **The determinant-sign formula.** Over an ordered real closed field, the discriminant of a
+regular quadratic form is `sigNeg Q • [-1]`. -/
+theorem discr_formClass_eq_sigNeg_nsmul (Q : _root_.QuadraticForm K M) (hQ : Q.Nondegenerate) :
+    TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ) =
+      _root_.sigNeg Q • TauCeti.squareClass (-1 : Kˣ) := by
+  rw [TauCeti.RegularFormClass.discr_eq_sigNeg_nsmul, sigNeg_formClass]
+
+end QuadraticForm
+
+namespace TauCeti
 
 /-- **Worked example.** Over `ℚ` the binary forms `⟨1, 1⟩` and `⟨-1, -1⟩` have the same rank and
 the same discriminant, the square class of `(-1) · (-1) = 1`, but they are not isometric: the

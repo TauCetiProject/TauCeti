@@ -22,7 +22,7 @@ invariant is trivial precisely when `C(q, 2) = q(q - 1)/2` is even.
 
 Unlike over non-archimedean local fields, `(rank, discr, hasseInvariant)` is **not** a complete
 system of invariants over an ordered real closed field (or more generally any semireal field; see
-`TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_neg_one` in
+`TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_mk_rankOne_neg_one` in
 `TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.Basic`): `⟨1, 1, 1, 1⟩` (`q = 0`) and
 `⟨-1, -1, -1, -1⟩` (`q = 4`, `C(4, 2) = 6`) both have rank `4`, trivial discriminant, and trivial
 Hasse invariant, while their signatures `4` and `-4` distinguish them.

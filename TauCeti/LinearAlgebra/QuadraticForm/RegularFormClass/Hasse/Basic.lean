@@ -70,9 +70,9 @@ invariant (`[(-1, -1)]^C(4, 2) = 1`), yet are not isometric because `-1` is not 
 * `TauCeti.RegularFormClass.hasseInvariant_hyperbolicClass`: the hyperbolic plane has trivial
   Hasse invariant.
 * `TauCeti.RegularFormClass.hasseInvariant_sq`: the invariant is `2`-torsion.
-* `TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_neg_one`: over any semireal field,
-  `⟨1, 1, 1, 1⟩` and `⟨-1, -1, -1, -1⟩` witness that rank, discriminant, and Hasse invariant do
-  not classify regular forms.
+* `TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_mk_rankOne_neg_one`: over any semireal
+  field, `4 • 1 = ⟨1, 1, 1, 1⟩` and `4 • ⟨-1⟩ = ⟨-1, -1, -1, -1⟩` are not isometric, witnessing
+  that rank, discriminant, and Hasse invariant do not classify regular forms.
 
 ## References
 
@@ -334,10 +334,8 @@ theorem hasseInvariant_nsmul_mk_rankOne (n : ℕ) (a : Kˣ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [succ_nsmul, hasseInvariant_add, ih, hasseInvariant_mk_rankOne, mul_one,
-      discr_nsmul, discr_mk, Fin.prod_univ_one, quaternionClassOnSquareClasses_nsmul_left,
-      quaternionClassOnSquareClasses_squareClass, quaternionClass_self, ← pow_add,
-      Nat.choose_succ_succ, Nat.choose_one_right, add_comm]
+    rw [succ_nsmul, hasseInvariant_add, ih]
+    simp [discr_mk, quaternionClass_self, Nat.choose_succ_succ, pow_add, mul_comm]
 
 /-! ### Non-classification over semireal fields -/
 
@@ -346,11 +344,26 @@ section Semireal
 variable [IsSemireal K]
 
 /-- **Rank, discriminant, and Hasse invariant do not classify regular forms over a semireal
-field**: `⟨1, 1, 1, 1⟩` and `⟨-1, -1, -1, -1⟩` both have rank `4`, discriminant `0`, and Hasse
-invariant `1` (`[(-1, -1)]` occurs `C(4, 2) = 6` times), yet they are not isometric because `-1`
-is not a sum of squares in `K`. In particular this holds over every ordered field, such as `ℚ`
-and `ℝ`. -/
-theorem four_nsmul_one_ne_four_nsmul_neg_one :
+field**: `4 • 1 = ⟨1, 1, 1, 1⟩` and `4 • ⟨-1⟩ = ⟨-1, -1, -1, -1⟩` are not isometric because `-1`
+is not a sum of squares in `K`, although both have rank `4`, trivial discriminant, and trivial
+Hasse invariant (`[(-1, -1)]` occurs `C(4, 2) = 6` times). In particular this holds over every
+ordered field, such as `ℚ` and `ℝ`. -/
+theorem four_nsmul_one_ne_four_nsmul_mk_rankOne_neg_one :
+    (4 : ℕ) • (1 : RegularFormClass K) ≠
+      4 • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => (-1 : Kˣ)⟩ := by
+  intro h
+  rw [← mk_rankOne_one, ← mk_const, ← mk_const, mk_eq_mk_iff] at h
+  obtain ⟨e⟩ := h
+  have hneg : presentedForm (⟨4, fun _ => (1 : Kˣ)⟩ : RegularFormPresentation K)
+      (e.symm (Pi.single 0 1)) = -1 := by
+    rw [e.symm.map_app, presentedForm_apply]
+    simp [Pi.single_apply]
+  exact IsSemireal.not_isSumSq_neg_one K (by rw [← hneg, presentedForm_apply]; simp)
+
+/-- **Worked example.** Over any semireal field `K`, `4 • 1 = ⟨1, 1, 1, 1⟩` and
+`4 • ⟨-1⟩ = ⟨-1, -1, -1, -1⟩` share rank `4`, discriminant `0`, and Hasse invariant `1`, yet are
+not isometric. -/
+example :
     let posFour : RegularFormClass K := 4 • 1
     let negFour : RegularFormClass K :=
       4 • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => (-1 : Kˣ)⟩
@@ -361,19 +374,12 @@ theorem four_nsmul_one_ne_four_nsmul_neg_one :
   dsimp only
   refine ⟨by rw [rank_nsmul, rank_one, mul_one], by rw [rank_nsmul, rank_mk, mul_one],
     by rw [discr_nsmul, discr_one, smul_zero], ?_,
-    by rw [nsmul_one, hasseInvariant_natCast], ?_, ?_⟩
-  · rw [discr_nsmul, discr_mk, Fin.prod_univ_one, ← squareClass_pow, squareClass_eq_zero_iff]
-    exact (by decide : Even 4).isSquare_pow _
+    by rw [nsmul_one, hasseInvariant_natCast], ?_,
+    four_nsmul_one_ne_four_nsmul_mk_rankOne_neg_one⟩
+  · rw [nsmul_eq_mul, mul_comm, discr_mk_rankOne_mul_of_even (-1) (by rw [rank_natCast]; decide),
+      discr_natCast]
   · rw [hasseInvariant_nsmul_mk_rankOne,
       (quaternionClass_neg_one_neg_one_pow_eq_one_iff (Nat.choose 4 2)).mpr (by decide)]
-  · intro h
-    rw [← mk_rankOne_one, ← mk_const, ← mk_const, mk_eq_mk_iff] at h
-    obtain ⟨e⟩ := h
-    have hneg : presentedForm (⟨4, fun _ => (1 : Kˣ)⟩ : RegularFormPresentation K)
-        (e.symm (Pi.single 0 1)) = -1 := by
-      rw [e.symm.map_app, presentedForm_apply]
-      simp [Pi.single_apply]
-    exact IsSemireal.not_isSumSq_neg_one K (by rw [← hneg, presentedForm_apply]; simp)
 
 end Semireal
 

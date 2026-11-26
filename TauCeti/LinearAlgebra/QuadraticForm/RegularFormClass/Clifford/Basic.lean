@@ -119,7 +119,7 @@ remaining non-isometric.
 * `TauCeti.RegularFormClass.cliffordInvariant_four_nsmul_mk_rankOne`: any four-fold multiple
   `4 • ⟨a⟩ = ⟨a, a, a, a⟩` has Clifford invariant `[(-1, -1)]`, so `⟨1, 1, 1, 1⟩` and
   `⟨-1, -1, -1, -1⟩` also share their Clifford invariant (cf.
-  `TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_neg_one`).
+  `TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_mk_rankOne_neg_one`).
 
 ## References
 
@@ -783,8 +783,9 @@ it by `⟨a⟩` preserves its Clifford invariant `[(-1, -1)]^C(5, 4) = [(-1, -1)
 
 In particular, `4 • 1 = ⟨1, 1, 1, 1⟩` (`a = 1`, via `mk_rankOne_one`) and
 `4 • ⟨-1⟩ = ⟨-1, -1, -1, -1⟩` (`a = -1`) share their Clifford invariant `[(-1, -1)]`; combined with
-`TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_neg_one`, this shows that over any semireal
-field, `(rank, discr, hasseInvariant, cliffordInvariant)` does not classify regular forms. -/
+`TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_mk_rankOne_neg_one`, this shows that over
+any semireal field, `(rank, discr, hasseInvariant, cliffordInvariant)` does not classify regular
+forms. -/
 theorem cliffordInvariant_four_nsmul_mk_rankOne (a : Kˣ) :
     cliffordInvariant (4 • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) =
       BrauerGroup.quaternionClass (-1 : Kˣ) (-1) := by

@@ -88,6 +88,12 @@ theorem cliffordInvariant_zero : cliffordInvariant (0 : WittRing K) = 1 := by
   rw [← map_zero (wittClass (K := K)), cliffordInvariant_wittClass,
     RegularFormClass.cliffordInvariant_zero]
 
+/-- The unit Witt class `⟨1⟩` has trivial Clifford invariant. -/
+@[simp]
+theorem cliffordInvariant_one : cliffordInvariant (1 : WittRing K) = 1 := by
+  rw [← map_one (wittClass (K := K)), cliffordInvariant_wittClass,
+    RegularFormClass.cliffordInvariant_one]
+
 /-- The Clifford invariant of a Witt class is `2`-torsion. -/
 @[simp]
 theorem cliffordInvariant_sq (x : WittRing K) : cliffordInvariant x ^ 2 = 1 := by
@@ -147,11 +153,20 @@ theorem cliffordInvariant_eq_one_of_mem_fundamentalIdeal_cube {x : WittRing K}
 
 /-- The Clifford invariant of the natural-number multiple `(n : WittRing K)` of `⟨1⟩` is
 `[(-1, -1)]^C(n + 1, 4)`. -/
+@[simp]
 theorem cliffordInvariant_natCast (n : ℕ) :
     cliffordInvariant (n : WittRing K) =
       BrauerGroup.quaternionClass (-1 : Kˣ) (-1) ^ (n + 1).choose 4 := by
   rw [← map_natCast wittClass, cliffordInvariant_wittClass,
     RegularFormClass.cliffordInvariant_natCast]
+
+/-- The Clifford invariant of the numeral `(ofNat(n) : WittRing K)` (`n ≥ 2`) is
+`[(-1, -1)]^C(n + 1, 4)`. -/
+@[simp]
+theorem cliffordInvariant_ofNat (n : ℕ) [n.AtLeastTwo] :
+    cliffordInvariant (ofNat(n) : WittRing K) =
+      BrauerGroup.quaternionClass (-1 : Kˣ) (-1) ^ ((ofNat(n) : ℕ) + 1).choose 4 :=
+  cliffordInvariant_natCast n
 
 /-- **Eightfold periodicity along integer multiples of `⟨1⟩`**: adding `8k` copies of `⟨1⟩` in the
 Witt ring does not change the Clifford invariant, because `8 ∈ I(K)³`. -/
@@ -187,15 +202,9 @@ variable [IsSemireal K]
 theorem cliffordInvariant_two_add_one_ne :
     cliffordInvariant ((2 : WittRing K) + 1) ≠
       cliffordInvariant (2 : WittRing K) * cliffordInvariant (1 : WittRing K) := by
-  have h3 : ((2 : WittRing K) + 1) = ((3 : ℕ) : WittRing K) := by norm_num
-  have h2 : (2 : WittRing K) = ((2 : ℕ) : WittRing K) := by norm_num
-  have h1 : (1 : WittRing K) = ((1 : ℕ) : WittRing K) := by norm_num
-  rw [h3, cliffordInvariant_natCast, h2, cliffordInvariant_natCast, h1, cliffordInvariant_natCast,
-    (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_self_iff (Nat.choose 4 4)).mpr (by decide),
-    (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_one_iff (Nat.choose 3 4)).mpr (by decide),
-    (BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_one_iff (Nat.choose 2 4)).mpr (by decide),
-    mul_one]
-  exact BrauerGroup.quaternionClass_neg_one_neg_one_ne_one
+  have h3 : (2 : WittRing K) + 1 = 3 := by norm_num
+  rw [h3]
+  simp [BrauerGroup.quaternionClass_neg_one_neg_one_ne_one]
 
 /-- The Clifford invariant is not a homomorphism from the additive group of `W(K)` to
 `BrauerGroup K` over any semireal field. -/

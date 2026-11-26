@@ -33,8 +33,8 @@ The formula also illustrates how additivity behaves over `ℝ` when only one sum
 semireal failure of additivity `c(2 + 1) ≠ c(2) · c(1)`, see
 `TauCeti.LinearAlgebra.QuadraticForm.Witt.Clifford`; for why `(rank, discr, hasseInvariant,
 cliffordInvariant)` does not classify regular forms over any semireal field (`⟨1, 1, 1, 1⟩` vs.
-`⟨-1, -1, -1, -1⟩`), see `TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_neg_one` and
-`TauCeti.RegularFormClass.cliffordInvariant_four_nsmul_mk_rankOne`.
+`⟨-1, -1, -1, -1⟩`), see `TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_mk_rankOne_neg_one`
+and `TauCeti.RegularFormClass.cliffordInvariant_four_nsmul_mk_rankOne`.
 
 ## Main results
 
@@ -197,18 +197,14 @@ example :
       WittRing.cliffordInvariant (3 : WittRing ℝ) = H ∧
       WittRing.cliffordInvariant ((4 : WittRing ℝ) + 3) = 1 := by
   have hnot3 : (3 : WittRing ℝ) ∉ fundamentalIdeal ℝ ^ 2 := by
-    rw [mem_fundamentalIdeal_pow_iff_dvd_signature]
-    have hsig3 : WittRing.signature (3 : WittRing ℝ) = 3 := by
-      simpa using map_ofNat WittRing.signature 3
-    rw [hsig3]
-    norm_num
+    norm_num [mem_fundamentalIdeal_pow_iff_dvd_signature]
   have h4 : WittRing.cliffordInvariant (4 : WittRing ℝ) = BrauerGroup.mk (CSA.of ℝ ℍ[ℝ]) := by
     rw [← BrauerGroup.quaternionClass_neg_one_neg_one_real,
-      WittRing.cliffordInvariant_eq_neg_one_neg_one_iff_signature, map_ofNat]
+      WittRing.cliffordInvariant_eq_neg_one_neg_one_iff_signature]
     norm_num
   have h3 : WittRing.cliffordInvariant (3 : WittRing ℝ) = BrauerGroup.mk (CSA.of ℝ ℍ[ℝ]) := by
     rw [← BrauerGroup.quaternionClass_neg_one_neg_one_real,
-      WittRing.cliffordInvariant_eq_neg_one_neg_one_iff_signature, map_ofNat]
+      WittRing.cliffordInvariant_eq_neg_one_neg_one_iff_signature]
     norm_num
   have h7 : WittRing.cliffordInvariant ((4 : WittRing ℝ) + 3) = 1 := by
     rw [WittRing.cliffordInvariant_add_of_mem_fundamentalIdeal_sq four_mem_fundamentalIdeal_sq,

@@ -58,9 +58,7 @@ open BrauerGroup
 `n ≡ 0, 1, 2, 7 (mod 8)`.** -/
 theorem cliffordInvariant_natCast_eq_one_iff_real (n : ℕ) :
     cliffordInvariant (n : RegularFormClass ℝ) = 1 ↔ n % 8 ∈ ({0, 1, 2, 7} : Finset ℕ) := by
-  have hsig : signature (n : RegularFormClass ℝ) = n := by
-    rw [← signatureHom_apply, map_natCast]
-  rw [cliffordInvariant_eq_one_iff_signature, hsig]
+  rw [cliffordInvariant_eq_one_iff_signature, signature_natCast]
   simp only [Finset.mem_insert, Finset.mem_singleton]
   omega
 
@@ -69,9 +67,7 @@ theorem cliffordInvariant_natCast_eq_one_iff_real (n : ℕ) :
 theorem cliffordInvariant_natCast_eq_quaternionClass_iff_real (n : ℕ) :
     cliffordInvariant (n : RegularFormClass ℝ) = quaternionClass (-1) (-1) ↔
       n % 8 ∈ ({3, 4, 5, 6} : Finset ℕ) := by
-  have hsig : signature (n : RegularFormClass ℝ) = n := by
-    rw [← signatureHom_apply, map_natCast]
-  rw [cliffordInvariant_eq_neg_one_neg_one_iff_signature, hsig]
+  rw [cliffordInvariant_eq_neg_one_neg_one_iff_signature, signature_natCast]
   simp only [Finset.mem_insert, Finset.mem_singleton]
   omega
 

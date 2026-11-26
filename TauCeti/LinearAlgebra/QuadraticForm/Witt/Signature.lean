@@ -93,6 +93,12 @@ theorem WittRing.signature_wittClass (x : RegularFormClass K) :
     signature (wittClass x) = RegularFormClass.signature x := by
   rw [wittClass_apply, signature_mk, WittGrothendieckRing.signature_toWittGrothendieck]
 
+/-- The signature of a numeral `(ofNat(n) : WittRing K)` (`n ≥ 2`) is `n`. -/
+@[simp]
+theorem WittRing.signature_ofNat (n : ℕ) [n.AtLeastTwo] :
+    signature (ofNat(n) : WittRing K) = ofNat(n) :=
+  map_ofNat signature n
+
 /-- Over any ordered field, the dimension modulo two of a Witt class equals its integer signature
 modulo two, since `p + q` and `p - q` have the same parity. -/
 theorem WittRing.dimMod2_eq_intCast_signature (x : WittRing K) :
@@ -100,9 +106,8 @@ theorem WittRing.dimMod2_eq_intCast_signature (x : WittRing K) :
   obtain ⟨q, rfl⟩ := wittClass_surjective x
   rw [dimMod2_wittClass, signature_wittClass, ← RegularFormClass.sigPos_add_sigNeg_eq_rank,
     RegularFormClass.signature_eq_sigPos_sub_sigNeg]
-  have htwo : (2 : ZMod 2) * (q.sigNeg : ZMod 2) = 0 := zero_mul _
   push_cast
-  linear_combination htwo
+  exact (CharTwo.sub_eq_add (q.sigPos : ZMod 2) (q.sigNeg : ZMod 2)).symm
 
 /-- Over any ordered field, a Witt class lies in the fundamental ideal if and only if its integer
 signature is even. -/
