@@ -19,12 +19,15 @@ proves the structure results that follow the existence and uniqueness of `F`
 * **Strictness.** For a nilpotent endomorphism of a finite-dimensional vector space, each power
   `N ^ k` is strict, in the sense of `LinearMap.IsStrict`, from `F` shifted by `2 k` to `F`:
   `N ^ k (F (a + 2 k)) = range (N ^ k) ⊓ F a`. A vector of `F a` that is a value of `N ^ k` is
-  already the value of a vector of `F (a + 2 k)`.
+  already the value of a vector of `F (a + 2 k)`. The case `k = 1` holds over any ring:
+  `Module.End.IsMonodromyFiltration.isStrict`.
 * **Primitive parts.** In Deligne's lower convention the primitive part in degree `i` is the
   kernel of the map `gr_i → gr_{i - 2}` induced by `N`; its preimage in `F i` is
-  `F i ⊓ N⁻¹ (F (i - 3))`. It is zero for `i > c`, since `N ^ k` is injective on `gr_i` as soon
-  as `c + k ≤ i`. By strictness, every primitive class is represented by a vector of `ker N`,
-  so that `gr_i (ker N)` is identified with the primitive part in degree `i`.
+  `F i ⊓ N⁻¹ (F (i - 3))`. It is zero for `i > c`
+  (`Module.End.IsMonodromyFiltration.inf_comap_of_lt`), and more generally `N ^ k` is injective
+  on `gr_i` as soon as `c + k ≤ i`. If `N ^ k` is strict, every class of `gr_i` killed by
+  `N ^ k` is represented by a vector of `ker N ^ k`; for `k = 1` this is
+  `Module.End.IsMonodromyFiltration.ker_inf_sup`.
 * **Primitive decomposition**, in recursive form. For `r ≥ 0` the graded piece `gr_{c + r}` is
   the direct sum of the kernel of `N ^ (r + 1) : gr_{c + r} → gr_{c - r - 2}`, which is the
   preimage of the primitive part in degree `c - r` under the isomorphism
@@ -44,15 +47,13 @@ strict. Strictness itself is proved, for vector spaces, with a Jordan-chain basi
 * `Module.End.JordanChainBasis.isStrict_pow_monodromyFiltration` and
   `Module.End.isStrict_pow_monodromyFiltration`: strictness of the powers of `N` for the
   kernel-image filtration.
-* `Module.End.IsMonodromyFiltration.isStrict_pow` and
-  `Module.End.IsMonodromyFiltration.isStrict`: strictness for a monodromy filtration, centred
-  anywhere, of an endomorphism of a finite-dimensional vector space, which is then nilpotent.
-* `Module.End.IsMonodromyFiltration.inf_comap_pow_of_le` and
-  `Module.End.IsMonodromyFiltration.inf_comap_of_lt`: `N ^ k` is injective on `gr_i` for
-  `c + k ≤ i`, so the primitive parts vanish above the centre.
-* `Module.End.IsMonodromyFiltration.ker_pow_inf_sup` and
-  `Module.End.IsMonodromyFiltration.ker_inf_sup`: the primitive part in degree `i` is the image
-  of `ker N ⊓ F i`.
+* `Module.End.IsMonodromyFiltration.isStrict_pow`: strictness of the powers of `N` for a
+  monodromy filtration, centred anywhere, of an endomorphism of a finite-dimensional vector space,
+  which is then nilpotent.
+* `Module.End.IsMonodromyFiltration.inf_comap_pow_of_le`: `N ^ k` is injective on `gr_i` for
+  `c + k ≤ i`.
+* `Module.End.IsMonodromyFiltration.ker_pow_inf_sup`: if `N ^ k` is strict, the kernel of
+  `N ^ k : gr_i → gr_{i - 2 k}` is the image of `ker N ^ k ⊓ F i`.
 * `Module.End.IsMonodromyFiltration.inf_comap_pow_sup_map`,
   `Module.End.IsMonodromyFiltration.inf_comap_pow_inf_map_sup` and
   `Module.End.IsMonodromyFiltration.map_sup_of_lt`: the recursive primitive decomposition.
@@ -146,13 +147,6 @@ theorem inf_comap_pow_of_le (hF : N.IsMonodromyFiltration c F) {k : ℕ} {i : �
   rw [show r = (r - k) + k by omega, pow_add, _root_.mul_apply_eq_comp]
   exact hF.le_comap_pow (k := r - k) (by omega) hNx
 
-/-- Above the centre `c`, the endomorphism `N` induces an injective map `gr_i → gr_{i - 2}`: the
-primitive part `ker (N : gr_i → gr_{i - 2})` vanishes for `i > c`. -/
-theorem inf_comap_of_lt (hF : N.IsMonodromyFiltration c F) {i : ℤ} (h : c < i) :
-    F i ⊓ (F (i - 3)).comap N = F (i - 1) := by
-  simpa [show i - 2 - 1 = i - 3 by ring] using
-    hF.inf_comap_pow_of_le (k := 1) (i := i) (by omega)
-
 /-- Below the centre `c`, the graded piece `gr_i` is the image of `gr_{i + 2}` under `N`. -/
 theorem map_sup_of_lt (hF : N.IsMonodromyFiltration c F) {i : ℤ} (h : i < c) :
     (F (i + 2)).map N ⊔ F (i - 1) = F i := by
@@ -219,7 +213,8 @@ theorem inf_comap_pow_inf_map_sup (hF : N.IsMonodromyFiltration c F) (r : ℕ) :
 into `F (i - 2 k - 1)` are, modulo `F (i - 1)`, the vectors of `F i` killed by `N ^ k`. So the
 kernel of `N ^ k : gr_i → gr_{i - 2 k}` is the image of `gr_i (ker N ^ k)`, for the filtration
 induced on `ker N ^ k`. Strictness holds for a nilpotent endomorphism of a finite-dimensional
-vector space by `isStrict_pow`. -/
+vector space by `isStrict_pow`, and for `k = 1` over any ring by `isStrict`, which gives
+`ker_inf_sup`. -/
 theorem ker_pow_inf_sup (hF : N.IsMonodromyFiltration c F) {k : ℕ}
     (hs : LinearMap.IsStrict (N ^ k) (fun a => F (a + 2 * k)) F) (i : ℤ) :
     LinearMap.ker (N ^ k) ⊓ F i ⊔ F (i - 1) = F i ⊓ (F (i - 2 * k - 1)).comap (N ^ k) := by
@@ -235,15 +230,6 @@ theorem ker_pow_inf_sup (hF : N.IsMonodromyFiltration c F) {k : ℕ}
   refine mem_sup.2 ⟨x - y, ⟨?_, sub_mem hx (hF.monotone (by omega) hy)⟩, y, hy,
     sub_add_cancel _ _⟩
   rw [SetLike.mem_coe, LinearMap.mem_ker, map_sub, hxy, sub_self]
-
-/-- If `N` is strict from `F` shifted by `2` to `F`, the primitive part
-`ker (N : gr_i → gr_{i - 2})` is the image of `gr_i (ker N)`: modulo `F (i - 1)`, the vectors of
-`F i` sent by `N` into `F (i - 3)` are those killed by `N`. Strictness holds for a nilpotent
-endomorphism of a finite-dimensional vector space by `isStrict`. -/
-theorem ker_inf_sup (hF : N.IsMonodromyFiltration c F)
-    (hs : LinearMap.IsStrict N (fun a => F (a + 2)) F) (i : ℤ) :
-    LinearMap.ker N ⊓ F i ⊔ F (i - 1) = F i ⊓ (F (i - 3)).comap N := by
-  simpa [show i - 2 - 1 = i - 3 by ring] using hF.ker_pow_inf_sup (k := 1) (by simpa using hs) i
 
 end Ring
 
@@ -263,12 +249,6 @@ theorem isStrict_pow (hF : N.IsMonodromyFiltration c F) (k : ℕ) :
   dsimp only
   rw [show a + 2 * k - c = a - c + 2 * k by ring]
   exact LinearMap.isStrict_iff.1 (isStrict_pow_monodromyFiltration hN k) (a - c)
-
-/-- A monodromy filtration of an endomorphism of a finite-dimensional vector space is strict for
-`N`: `N (F (a + 2)) = range N ⊓ F a`. -/
-theorem isStrict (hF : N.IsMonodromyFiltration c F) :
-    LinearMap.IsStrict N (fun a => F (a + 2)) F := by
-  simpa using hF.isStrict_pow 1
 
 end FiniteDimensional
 
