@@ -63,17 +63,6 @@ theorem lineDeriv_of_notMem_tsupport {E : Type*} [AddCommGroup E] [Module 𝕜 E
       (Continuous.tendsto' (by fun_prop) 0 x (by simp))
   rw [lineDeriv, hzero.deriv_eq, deriv_const]
 
-/-- **A map that is affine along a line has the slope of that line as its derivative there.** If
-`g` is differentiable at `w` and `g (w + s • d) = g w + s • y` for every scalar `s` near `0`, then
-the derivative of `g` at `w` sends `d` to `y`. -/
-theorem _root_.DifferentiableAt.fderiv_apply_eq_of_add_smul {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace 𝕜 G] {g : F → G} {w d : F} {y : G} (hg : DifferentiableAt 𝕜 g w)
-    (h : ∀ᶠ s in 𝓝 (0 : 𝕜), g (w + s • d) = g w + s • y) : fderiv 𝕜 g w d = y := by
-  refine (hg.hasFDerivAt.hasLineDerivAt d).unique ?_
-  rw [HasLineDerivAt]
-  refine HasDerivAt.congr_of_eventuallyEq ?_ h
-  simpa using ((hasDerivAt_id (0 : 𝕜)).smul_const y).const_add (g w)
-
 /-- If `f (x + t • v) = g (c + t)` for every scalar `t` near `0` and `g` has derivative `g'` at `c`,
 then `f` has derivative `g'` at `x` in the direction `v`. -/
 theorem _root_.HasDerivAt.hasLineDerivAt_of_add_smul {E : Type*} [AddCommGroup E] [Module 𝕜 E]
@@ -90,6 +79,15 @@ theorem _root_.DifferentiableAt.fderiv_apply_eq_of_hasDerivAt_add_smul {E : Type
     (hf : DifferentiableAt 𝕜 f x) (hg : HasDerivAt g g' c)
     (h : ∀ᶠ t in 𝓝 (0 : 𝕜), f (x + t • v) = g (c + t)) : fderiv 𝕜 f x v = g' :=
   (hf.hasFDerivAt.hasLineDerivAt v).unique (hg.hasLineDerivAt_of_add_smul h)
+
+/-- **A map that is affine along a line has the slope of that line as its derivative there.** If
+`g` is differentiable at `w` and `g (w + s • d) = g w + s • y` for every scalar `s` near `0`, then
+the derivative of `g` at `w` sends `d` to `y`. -/
+theorem _root_.DifferentiableAt.fderiv_apply_eq_of_add_smul {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {g : F → G} {w d : F} {y : G} (hg : DifferentiableAt 𝕜 g w)
+    (h : ∀ᶠ s in 𝓝 (0 : 𝕜), g (w + s • d) = g w + s • y) : fderiv 𝕜 g w d = y :=
+  hg.fderiv_apply_eq_of_hasDerivAt_add_smul (g := fun s ↦ g w + s • y) (c := 0)
+    (by simpa using ((hasDerivAt_id (0 : 𝕜)).smul_const y).const_add (g w)) (by simpa using h)
 
 /-- The function `y ↦ ∫ₐᵇ g (y - t h) dt` of a continuous `g` has directional derivative
 `g (y - a h) - g (y - b h)` in the direction `h`. -/
