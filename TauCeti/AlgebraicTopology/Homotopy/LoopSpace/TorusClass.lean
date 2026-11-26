@@ -95,6 +95,8 @@ rotation loop has zero torus class
 * `TauCeti.MooreFreeLoopSpace.range_torusClassHom_const`: at a constant free Moore loop, the torus
   classes are the Hurewicz classes of `π₂(Q, x)`.
 * `TauCeti.cubicalFreeLoopTorusClassHom_map`: the torus class is natural in the space.
+* `TauCeti.freeLoopTorusClassHom_eq_zero_of_forall_apply_eq_mul`: the loop of rotations of a circle
+  map has zero torus class.
 * `TauCeti.MooreFreeLoopSpace.torusClassHom_fundamentalGroupHom_rotationLoop`: the loop rotating a
   free Moore loop once around itself has zero torus class.
 
@@ -782,31 +784,40 @@ private theorem circleRotationGenLoop_apply (t : Fin 1 → I) (z : Circle) :
     circleRotationGenLoop t z = z * unitToCircle (t 0) :=
   (rfl)
 
-/-- **The rotation loop has zero torus class**: rotating a free loop `γ` once around itself sweeps
-out the torus `(s, t) ↦ γ(s + t)`, which factors through the circle, and the circle has no second
-homology. -/
-theorem torusClassHom_fundamentalGroupHom_rotationLoop (γ : MooreFreeLoopSpace Q) :
-    γ.torusClassHom (Additive.ofMul (MooreLoopSpace.fundamentalGroupHom γ γ.rotationLoop)) = 0 := by
-  -- Reparametrized to circle maps, the rotation loop of `γ` is the image of the rotation of the
-  -- circle under postcomposition with `γ`.
-  have hΛ : (genLoopEquivOfUnique (Fin 1)).symm
-      (γ.rotationLoop.toPath.map toCircleMap.continuous) =
-        GenLoop.map ⟨fun g ↦ (toCircleMap γ).comp g, ContinuousMap.continuous_postcomp _⟩
-          (ContinuousMap.comp_id _) circleRotationGenLoop := by
-    ext t : 2
-    simp [GenLoop.map_apply, circleRotationGenLoop_apply, toCircleMap_rotate]
+/-- **The loop of rotations of a circle map has zero torus class**: if a loop `Λ` of free loops at
+`f : S¹ → Q` is `t ↦ (z ↦ f (z exp (2πit)))`, then the torus it sweeps out factors through the
+circle, which has no second homology, so its torus class is `0`. -/
+theorem _root_.TauCeti.freeLoopTorusClassHom_eq_zero_of_forall_apply_eq_mul {f : C(Circle, Q)}
+    (Λ : Ω^ (Fin 1) C(Circle, Q) f) (hΛ : ∀ t z, Λ t z = f (z * unitToCircle (t 0))) :
+    freeLoopTorusClassHom Q f
+      (Additive.ofMul (⟦Λ⟧ : HomotopyGroup (Fin 1) C(Circle, Q) f)) = 0 := by
+  -- `Λ` is the image of the rotation of the circle under postcomposition with `f`.
+  have hΛ' : Λ = GenLoop.map ⟨fun g ↦ f.comp g, ContinuousMap.continuous_postcomp _⟩
+      (ContinuousMap.comp_id _) circleRotationGenLoop := by
+    ext t z
+    simp [GenLoop.map_apply, circleRotationGenLoop_apply, hΛ]
   -- The circle has no second homology, so the torus class of the rotation of the circle vanishes.
   have h₂ : CategoryTheory.Limits.IsZero
       (((normalizedCubicalChainComplex ℤ).obj (TopCat.of Circle)).homology 2) :=
     (isZero_singularHomology_circle_of_two_le (ModuleCat.of ℤ ℤ) le_rfl).of_iso
       (singularCubicalHomologyIso ℤ (TopCat.of Circle) 2).symm
-  have h := cubicalFreeLoopTorusClassHom_map ℤ (toCircleMap γ) (ContinuousMap.comp_id _)
+  have h := cubicalFreeLoopTorusClassHom_map ℤ f (ContinuousMap.comp_id _)
     (⟦circleRotationGenLoop⟧ : HomotopyGroup (Fin 1) C(Circle, Circle) _)
-  rw [HomotopyGroup.map_mk, ← hΛ,
+  rw [HomotopyGroup.map_mk, ← hΛ',
     (ModuleCat.isZero_iff_subsingleton.1 h₂).elim (cubicalFreeLoopTorusClassHom _ _ _ _) 0,
     map_zero] at h
-  rw [torusClassHom_fundamentalGroupHom, neg_eq_zero, freeLoopTorusClassHom_apply, h]
+  rw [freeLoopTorusClassHom_apply, h]
   exact map_zero _
+
+/-- **The rotation loop has zero torus class**: rotating a free loop `γ` once around itself sweeps
+out the torus `(s, t) ↦ γ(s + t)`, which factors through the circle, and the circle has no second
+homology. -/
+theorem torusClassHom_fundamentalGroupHom_rotationLoop (γ : MooreFreeLoopSpace Q) :
+    γ.torusClassHom (Additive.ofMul (MooreLoopSpace.fundamentalGroupHom γ γ.rotationLoop)) = 0 := by
+  -- Reparametrized to circle maps, the rotation loop of `γ` is the rotation of `toCircleMap γ`.
+  rw [torusClassHom_fundamentalGroupHom, neg_eq_zero]
+  exact freeLoopTorusClassHom_eq_zero_of_forall_apply_eq_mul _ fun t z ↦ by
+    simp [toCircleMap_rotate]
 
 end MooreFreeLoopSpace
 
