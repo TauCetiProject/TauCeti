@@ -16,9 +16,9 @@ import TauCeti.Combinatorics.Additive.NoRelation
 
 Choose the side length in Behrend's digit construction to obtain many exponents avoiding
 weighted means modulo a prescribed order. The estimate controls the loss of cardinality when
-these exponents are used to select points in a cyclic orbit. For `1 ≤ L` and `W ≤ o`, the box
-with side `H` and base `L * H` fits below `o` if `H^n ≤ o / W`; the inequality
-`o / W < (2H)^n` bounds the rounding loss.
+these exponents are used to select points in a cyclic orbit. For `1 ≤ L`, `L^n ≤ W`, and
+`W ≤ o`, the box with side `H` and base `L * H` fits below `o` if `H^n ≤ o / W`;
+the inequality `o / W < (2H)^n` bounds the rounding loss.
 
 The size estimate follows the parameter choice in `New.Parameters.exists_isSparse`,
 `grh/src/New/Reduction/Data/Existence.lean` in lsernau/grh-lean (`72fead1`), rounding the side
