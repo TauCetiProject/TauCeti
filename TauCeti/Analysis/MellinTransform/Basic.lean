@@ -27,11 +27,14 @@ Mellin integrals.
 The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing there have the same
 transform, with the same convergence. Kernels that are extended by zero off `(0, ∞)` are compared
 with their unextended forms this way. A finite sum of kernels with absolutely convergent
-Mellin transforms at a common parameter can be transformed term by term.
+Mellin transforms at a common parameter can be transformed term by term. A real-power
+substitution rescales the parameter, and multiplying the kernel by a complex power shifts it.
 
 ## Main results
 
 * `HasMellin.finsetSum`: finite sums preserve absolute convergence and transform term by term.
+* `HasMellin.comp_rpow`, `HasMellin.cpow_smul`: power substitutions and power weights transport
+  both convergence and the value of the transform.
 * `TauCeti.hasMellin_congr`: functions agreeing on `(0, ∞)` have the same Mellin transform.
 * `TauCeti.mellinConvergent_indicator_Ioi_iff`: convergence of the Mellin transform of an
   upper-tail indicator is integrability of the upper Mellin integrand.
@@ -99,6 +102,20 @@ theorem HasMellin.finsetSum {E ι : Type*} [NormedAddCommGroup E] [NormedSpace �
   · simpa only [MellinConvergent, IntegrableOn, Finset.smul_sum] using integrable_finsetSum t hi
   · simp only [mellin, Finset.smul_sum, integral_finsetSum t hi]
     exact Finset.sum_congr rfl fun i hit ↦ (h i hit).2
+
+/-- Substituting `t ^ a` for `t` with `a ≠ 0` transports an absolutely convergent Mellin
+transform at `s / a` to one at `s`, with its value scaled by `|a|⁻¹`. -/
+theorem HasMellin.comp_rpow {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℝ → E} {s : ℂ} {a : ℝ} {m : E} (h : HasMellin f (s / a) m) (ha : a ≠ 0) :
+    HasMellin (fun t ↦ f (t ^ a)) s (|a|⁻¹ • m) :=
+  ⟨(MellinConvergent.comp_rpow ha).mpr h.1, (mellin_comp_rpow f s a).trans (congrArg _ h.2)⟩
+
+/-- Weighting a kernel by `t ^ a` shifts its absolutely convergent Mellin transform from
+`s + a` to `s`, without changing its value. -/
+theorem HasMellin.cpow_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℝ → E} {s a : ℂ} {m : E} (h : HasMellin f (s + a) m) :
+    HasMellin (fun t ↦ (t : ℂ) ^ a • f t) s m :=
+  ⟨MellinConvergent.cpow_smul.mpr h.1, (mellin_cpow_smul f s a).trans h.2⟩
 
 namespace TauCeti
 

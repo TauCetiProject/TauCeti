@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.MellinTransform.Basic
 
 /-!
@@ -87,36 +88,35 @@ theorem hasMellin_gaussianTheta_residue_sum {N : ℕ} [NeZero N] (χ : Dirichlet
       ∑ a : ZMod N, χ a * ((if j = 0 then evenKernel else oddKernel)
         (ZMod.toAddCircle a) ((N * u) ^ 2) : ℂ)) s (χ.completedLFunction s / 2) := by
   have hN : (0 : ℝ) < N := by exact_mod_cast NeZero.pos N
-  have hNc : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  have hNs : (N : ℂ) ^ s ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr (NeZero.ne N)))
   let F (x : ℝ) := ∑ a : ZMod N, χ a * ((if j = 0 then evenKernel else oddKernel)
     (ZMod.toAddCircle a) x : ℂ)
   have hcore : HasMellin F ((s + j) / 2) (2 * (N : ℂ) ^ s * χ.completedLFunction s) := by
     have hcancel (z : ℂ) : (N : ℂ) ^ s * ((N : ℂ) ^ (-s) * z) = z := by
-      rw [cpow_neg, ← mul_assoc, mul_inv_cancel₀ (cpow_ne_zero_iff.mpr (Or.inl hNc)), one_mul]
+      rw [cpow_neg, ← mul_assoc, mul_inv_cancel₀ hNs, one_mul]
     rcases hj with ⟨rfl, hp⟩ | ⟨rfl, hp⟩
-    · simpa [F, DirichletCharacter.completedLFunction, ZMod.completedLFunction_def_even hp.to_fun,
-        hcancel, mul_left_comm (χ _) 2, ← mul_sum, mul_assoc] using hasMellin_even_hurwitz_sum hχ s
-    · simpa [F, DirichletCharacter.completedLFunction, ZMod.completedLFunction_def_odd hp.to_fun,
-        hcancel, mul_left_comm (χ _) 2, ← mul_sum, mul_assoc] using hasMellin_odd_hurwitz_sum χ s
-  have hsquare : MellinConvergent (fun u : ℝ ↦ F (u ^ (2 : ℝ))) (s + j) :=
-    (MellinConvergent.comp_rpow (by norm_num : (2 : ℝ) ≠ 0)).mpr (by simpa using hcore.1)
-  have hscaled := ((MellinConvergent.comp_mul_left (s := s + j) hN).mpr hsquare)
-  let G (u : ℝ) := (u : ℂ) ^ (j : ℂ) • F (((N : ℝ) * u) ^ (2 : ℝ))
-  have hg : MellinConvergent G s := MellinConvergent.cpow_smul.mpr hscaled
-  have hm := hasMellin_const_smul hg ((N : ℂ) ^ j / 2)
-  have hval : ((N : ℂ) ^ j / 2) • mellin G s = χ.completedLFunction s / 2 := by
-    have hdilation := mellin_comp_mul_left (fun u ↦ F (u ^ (2 : ℝ))) (s + j) hN
-    rw [mellin_cpow_smul, hdilation, mellin_comp_rpow]
-    norm_num only [abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2), ofReal_ofNat]
-    rw [hcore.2]
-    simp only [ofReal_natCast, smul_eq_mul, real_smul, ofReal_div, ofReal_one, ofReal_ofNat,
-      neg_add, cpow_add _ _ hNc, cpow_neg, cpow_natCast]
-    have hp : (N : ℂ) ^ s ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hNc)
-    field_simp [hp, hNc]
-  rw [hval] at hm
+    · rw [mul_assoc, completedLFunction, ZMod.completedLFunction_def_even hp.to_fun, hcancel,
+        mul_sum]
+      simpa only [F, Nat.cast_zero, add_zero, ite_true,
+        mul_left_comm (χ _) 2] using hasMellin_even_hurwitz_sum hχ s
+    · rw [mul_assoc, completedLFunction, ZMod.completedLFunction_def_odd hp.to_fun, hcancel,
+        mul_sum]
+      simpa only [F, Nat.cast_one, ite_eq_right Nat.one_ne_zero, mul_left_comm (χ _) 2] using
+        hasMellin_odd_hurwitz_sum χ s
+  have hsquare : HasMellin (fun u : ℝ ↦ F (u ^ (2 : ℝ))) (s + j)
+      ((N : ℂ) ^ s * χ.completedLFunction s) := by
+    have h := HasMellin.comp_rpow (a := 2) (s := s + j)
+      (by simpa only [ofReal_ofNat] using hcore) (by norm_num)
+    simpa [real_smul, mul_assoc] using h
+  -- Apply the power weight before dilation so the dilation factor only involves `s`.
+  have hd := (hsquare.cpow_smul (s := s) (a := (j : ℂ))).comp_mul_right hN
+  have hvalue := hd.2
+  simp only [ofReal_natCast, smul_eq_mul, cpow_neg, inv_mul_cancel_left₀ hNs] at hvalue
+  have hm := hasMellin_const_smul hd.1 (1 / 2 : ℂ)
+  simp only [smul_eq_mul, one_div, inv_mul_eq_div] at hm
+  rw [hvalue] at hm
   refine (TauCeti.hasMellin_congr (fun u _ ↦ ?_)).mp hm
-  simp only [G, F, Real.rpow_two, smul_eq_mul, cpow_natCast, ofReal_pow, ofReal_mul,
-    ofReal_natCast, mul_pow]
+  simp only [F, mul_comm u (N : ℝ), Real.rpow_two, cpow_natCast, ofReal_pow]
   ring
 
 end DirichletCharacter
