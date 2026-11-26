@@ -189,7 +189,7 @@ theorem continuous_canonicalSpinor :
     fun y _ ↦ ?_).continuousAt (t.open_baseSet.mem_nhds (mem_baseSet_trivializationAt _ _ x₀))
   rw [canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu (t.symm y 1)]
 
-include hQ hJV in
+include hJV in
 /-- **The frame comparison of Kähler forms**: the vector frame `κ_p : E x ≃ V` of the point
 `[p, 1]` of the canonical `Spinᶜ` structure carries the Kähler two-vector of `J x` to that of the
 model complex structure `JV`, for every unitary frame `p` over `x`. -/
@@ -202,9 +202,7 @@ theorem map_vectorFrame_canonicalSpinCStructureInl_kahlerForm {x : X} [FiniteDim
   set κ := (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).vectorFrame b
     (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p)
   have hκ : ∀ w, κ w = b.repr.symm (p.val.frame.symm w) := fun w ↦ by
-    rw [SpinCStructure.vectorFrame_apply (hQ := hQ),
-      OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply_eq_repr_symm, WithLp.toLp_ofLp,
-      frameAt_canonicalSpinCStructureInl]
+    rw [SpinCStructure.vectorFrame_apply_eq_repr_symm, frameAt_canonicalSpinCStructureInl]
   refine AlmostComplexStructure.map_kahlerForm_of_isComplexLinearMap
     (fun v w ↦ by rw [hJx, hJx, LinearIsometryEquiv.inner_map_map])
     ((isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ ?_)
@@ -224,7 +222,7 @@ theorem cliffordRestriction_kahlerForm_canonicalSpinor (x : X) [FiniteDimensiona
   have p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x := Classical.arbitrary _
   rw [canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu p,
     SpinCStructure.cliffordRestriction_mk,
-    map_vectorFrame_canonicalSpinCStructureInl_kahlerForm hJ hJ₂ hJ₀ hF e h₀ h₂ hQ b hJV p hJx,
+    map_vectorFrame_canonicalSpinCStructureInl_kahlerForm hJ hJ₂ hJ₀ hF e h₀ h₂ b hJV p hJx,
     (cliffordProjection_apply_eq_self_iff o ρ).1 hu, _root_.map_smul,
     LinearIsometryEquiv.symm_apply_apply,
     AssociatedBundle.mk_smul_scalar]
@@ -245,7 +243,7 @@ theorem quadraticTwoForm_canonicalSpinor (hω : o.hodgeStar hkl JV.kahlerForm = 
     SpinCStructure.quadraticTwoForm_mk,
     coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self o hQ hkl hω hrank hρ hu,
     LinearIsometryEquiv.norm_map, _root_.map_smul,
-    ← map_vectorFrame_canonicalSpinCStructureInl_kahlerForm hJ hJ₂ hJ₀ hF e h₀ h₂ hQ b hJV p hJx,
+    ← map_vectorFrame_canonicalSpinCStructureInl_kahlerForm hJ hJ₂ hJ₀ hF e h₀ h₂ b hJV p hJx,
     ← LinearMap.comp_apply,
     ← exteriorPower.map_comp]
   simp
