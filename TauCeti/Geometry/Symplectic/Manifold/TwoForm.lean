@@ -289,6 +289,19 @@ variable {E H Z E' H' Q : Type*}
   [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q]
   {p : Z → Q} {σ : SmoothTwoForm I Z} {η : SmoothTwoForm J Q}
 
+/-- If the derivative of `p` at `z` is surjective, `η` is nondegenerate at `p z` exactly when the
+null space of the pullback `p^* η` at `z` is the kernel of the derivative of `p` at `z`. -/
+theorem nondegenerate_bilinFormAt_iff_ker_bilinFormAt_mpullback (hp : ContMDiff I J ∞ p) {z : Z}
+    (hdp : Surjective (mfderiv I J p z)) :
+    (η.bilinFormAt (p z)).Nondegenerate ↔
+      LinearMap.ker ((SmoothForm.mpullback p hp η).bilinFormAt z) = (mfderiv I J p z).ker := by
+  rw [ker_bilinFormAt_mpullback hp η hdp]
+  refine ((SmoothForm.isAlt_bilinFormAt η (p z)).isRefl.nondegenerate_iff_separatingLeft.trans
+    LinearMap.separatingLeft_iff_ker_eq_bot).trans ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [h]
+    exact Submodule.comap_bot _
+  · exact Submodule.comap_injective_of_surjective hdp (h.trans (Submodule.comap_bot _).symm)
+
 /-- For a surjective `p` with surjective derivatives, `η` is nondegenerate exactly when, at every
 point `z`, the null space of the pullback `p^* η` is the kernel of the derivative of `p`. -/
 theorem isNondegenerate_iff_forall_ker_bilinFormAt_mpullback (hp : ContMDiff I J ∞ p)
