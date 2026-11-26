@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # Spreading families of linear maps
@@ -20,14 +20,12 @@ arguments, where the family consists of the translates of one map by a finite gr
 
 ## Main definitions and results
 
-* `LinearMap.IsSpread B η`: the family `B` spreads with error `η`.
-* `LinearMap.finrank_sup_range_add_finrank_comap`: adding the image of `A` to `F` adds
-  `dim V - dim A⁻¹(F)` dimensions.
-* `LinearMap.IsSpread.exists_card_mul_finrank_le_and_le_finrank_biSup_range`: if `B` spreads with
+* `TauCeti.IsSpread B η`: the family `B` spreads with error `η`.
+* `TauCeti.IsSpread.exists_card_mul_finrank_le_and_le_finrank_biSup_range`: if `B` spreads with
   error `3ε/2`, where `0 < ε < 1/16`, then the images of a set `t` of maps with
   `#t dim V ≤ (5/2) (1 + log (1 / (16 ε))) dim W` together span at least `(1 - 16 ε) dim W`
   dimensions.
-* `LinearMap.finrank_biSup_range_le`: restricting finitely many maps to a subspace `U` loses at
+* `TauCeti.finrank_biSup_range_le`: restricting finitely many maps to a subspace `U` loses at
   most `dim V - dim U` dimensions of the span of their images per map.
 
 ## References
@@ -45,33 +43,10 @@ stated for complex vector spaces; here they hold over any division ring.
 
 public section
 
-open Module Finset Submodule
+open Module Finset Submodule LinearMap
 
-namespace Submodule
+namespace TauCeti
 
-variable {K V ι : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
-
-/-- The span of finitely many finite-dimensional subspaces is finite-dimensional. -/
-private theorem finiteDimensional_biSup (M : ι → Submodule K V) [∀ i, FiniteDimensional K (M i)]
-    (t : Finset ι) : FiniteDimensional K ↥(⨆ i ∈ t, M i) := by
-  rw [← Finset.sup_eq_iSup]
-  infer_instance
-
-/-- The span of finitely many finite-dimensional subspaces has dimension at most the sum of their
-dimensions. -/
-theorem finrank_biSup_le_sum (M : ι → Submodule K V) [∀ i, FiniteDimensional K (M i)]
-    (t : Finset ι) : finrank K ↥(⨆ i ∈ t, M i) ≤ ∑ i ∈ t, finrank K (M i) := by
-  classical
-  induction t using Finset.induction_on with
-  | empty => rw [← Finset.sup_eq_iSup, Finset.sup_empty, finrank_bot, sum_empty]
-  | insert s t hs ih =>
-    rw [Finset.iSup_insert, sum_insert hs]
-    have := finiteDimensional_biSup M t
-    exact (finrank_add_le_finrank_add_finrank _ _).trans (Nat.add_le_add_left ih _)
-
-end Submodule
-
-namespace LinearMap
 
 variable {K V W Θ : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
   [AddCommGroup W] [Module K W]
@@ -92,18 +67,6 @@ theorem isSpread_iff {B : Θ → V →ₗ[K] W} {η : ℝ} :
 theorem IsSpread.mono {B : Θ → V →ₗ[K] W} {η η' : ℝ} (hB : IsSpread B η) (h : η ≤ η') :
     IsSpread B η' := fun F ↦ (hB F).imp fun _ hs ↦ hs.trans (by gcongr)
 
-/-- **Adding the image of a map.** Adding `range A` to `F` adds `dim V - dim A⁻¹(F)` dimensions:
-`dim (F + A V) + dim A⁻¹(F) = dim F + dim V`. -/
-theorem finrank_sup_range_add_finrank_comap [FiniteDimensional K V] [FiniteDimensional K W]
-    (A : V →ₗ[K] W) (F : Submodule K W) :
-    finrank K ↥(F ⊔ range A) + finrank K (F.comap A) = finrank K F + finrank K V := by
-  have h_comap : finrank K ↥(F ⊓ range A) + finrank K (ker A) = finrank K (F.comap A) := by
-    rw [← (A.domRestrict (F.comap A)).finrank_range_add_finrank_ker, range_domRestrict,
-      map_comap_eq, inf_comm, ker_domRestrict,
-      (comapSubtypeEquivOfLe (ker_le_comap A : ker A ≤ F.comap A)).finrank_eq]
-  have h_sup := finrank_sup_add_finrank_inf_eq F (range A)
-  linarith [A.finrank_range_add_finrank_ker]
-
 variable {B : Θ → V →ₗ[K] W} {ε : ℝ}
 
 /-- One step of the greedy choice. If the maps `B s` spread with error `3ε/2` and `F` misses more
@@ -122,7 +85,7 @@ theorem IsSpread.exists_codim_sup_range_le [FiniteDimensional K V] [FiniteDimens
   have hα_le : α ≤ 1 := (div_le_one hW').2 (by exact_mod_cast F.finrank_le)
   have h_share : 16 * ε < 1 - α := lt_of_mul_lt_mul_right (by linarith) hW'.le
   have h_added : (finrank K ↥(F ⊔ range (B s)) : ℝ) + finrank K (F.comap (B s)) =
-      finrank K F + finrank K V := by exact_mod_cast finrank_sup_range_add_finrank_comap (B s) F
+      finrank K F + finrank K V := by exact_mod_cast (B s).finrank_sup_range_add_finrank_comap F
   -- The image adds at least `(1/2 - 3/32) (1 - α) dim V ≥ (2/5) (1 - α) dim V` dimensions.
   have h_gain : ((1 + α) / 2 + 3 / 2 * ε) * finrank K V ≤ (1 - 2 / 5 * (1 - α)) * finrank K V := by
     gcongr
@@ -145,6 +108,8 @@ theorem IsSpread.exists_card_le_and_codim_le_max [FiniteDimensional K V] [Finite
   have hW' : (0 : ℝ) < finrank K W := by exact_mod_cast hW
   set rate : ℝ := 2 * finrank K V / (5 * finrank K W)
   let codim (t : Finset Θ) : ℝ := finrank K W - finrank K ↥(⨆ s ∈ t, range (B s))
+  -- Restate the goal through `codim` (the `let` unfolds definitionally), so that the induction
+  -- hypothesis and each step speak about the one quantity `codim t`.
   change ∃ t : Finset Θ, #t ≤ l ∧ codim t ≤ max (16 * ε) (Real.exp (-(l * rate))) * finrank K W
   induction l with
   | zero =>
@@ -240,13 +205,6 @@ theorem IsSpread.exists_card_mul_finrank_le_and_le_finrank_biSup_range
   have := Module.finite_of_finrank_pos hW
   exact h_spread.exists_card_mul_finrank_le_and_le_finrank_biSup_range_of_pos hV hW hε hε_lt
 
-/-- The images of a subspace `C` under the maps `B s`, `s ∈ t`, span at most `#t dim C`
-dimensions. -/
-theorem finrank_biSup_map_le [FiniteDimensional K V] (B : Θ → V →ₗ[K] W) (t : Finset Θ)
-    (C : Submodule K V) : finrank K ↥(⨆ s ∈ t, C.map (B s)) ≤ #t * finrank K C :=
-  (Submodule.finrank_biSup_le_sum _ t).trans <| by
-    simpa using Finset.sum_le_sum fun s (_ : s ∈ t) ↦ finrank_map_le (B s) C
-
 /-- **Restricting a few maps to a subspace.** Restricting the maps `B s`, `s ∈ t`, to a subspace
 `U` lowers the dimension of the span of their images by at most `#t (dim V - dim U)`. -/
 theorem finrank_biSup_range_le [FiniteDimensional K V] (B : Θ → V →ₗ[K] W) (t : Finset Θ)
@@ -258,14 +216,8 @@ theorem finrank_biSup_range_le [FiniteDimensional K V] (B : Θ → V →ₗ[K] W
     rw [← finrank_add_eq_of_isCompl hC, Nat.add_sub_cancel_left]
   have h_split : ⨆ s ∈ t, range (B s) = (⨆ s ∈ t, U.map (B s)) ⊔ ⨆ s ∈ t, C.map (B s) := by
     simp only [← iSup_sup_eq, ← Submodule.map_sup, hC.sup_eq_top, Submodule.map_top]
-  have : FiniteDimensional K ↥(⨆ s ∈ t, U.map (B s)) := by
-    rw [← Finset.sup_eq_iSup]
-    infer_instance
-  have : FiniteDimensional K ↥(⨆ s ∈ t, C.map (B s)) := by
-    rw [← Finset.sup_eq_iSup]
-    infer_instance
   rw [h_dim, h_split]
   exact (finrank_add_le_finrank_add_finrank _ _).trans
-    (Nat.add_le_add_left (finrank_biSup_map_le B t C) _)
+    (Nat.add_le_add_left (Submodule.finrank_biSup_map_le B t C) _)
 
-end LinearMap
+end TauCeti

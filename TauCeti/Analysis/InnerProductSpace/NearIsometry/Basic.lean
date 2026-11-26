@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.FrobeniusTrace
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius.Trace
 
 /-!
 # Near isometries in mean square
@@ -76,10 +76,10 @@ theorem IsNearIsometry.linearIsometry_comp {G : Type*} [NormedAddCommGroup G]
   rw [comp_assoc, frobenius_linearIsometry_comp]
   exact hA U
 
-/-- A near isometry `A` with error `ε < 1` out of a nonzero space is not zero: the case `U = S`
-reads `(1 - ε) dim S ≤ ‖A‖²`. -/
+/-- A near isometry `A` with error `ε < 1` out of a nonzero space is not zero. -/
 theorem IsNearIsometry.ne_zero [Nontrivial S] {A : S →ₗ[𝕜] T} {ε : ℝ} (hA : A.IsNearIsometry ε)
     (hε : ε < 1) : A ≠ 0 := by
+  -- The case `U = S` reads `(1 - ε) dim S ≤ ‖A‖²`.
   rintro rfl
   have h_top := hA ⊤
   simp at h_top
@@ -88,26 +88,14 @@ theorem IsNearIsometry.ne_zero [Nontrivial S] {A : S →ₗ[𝕜] T} {ε : ℝ} 
 
 variable [FiniteDimensional 𝕜 T]
 
-/-- The squared Frobenius seminorm of `A pr_U` is the real part of `tr (pr_U (A† A))`. -/
-private theorem sq_frobenius_comp_starProjection (A : S →ₗ[𝕜] T) (U : Submodule 𝕜 S) :
-    ((UnitarilyInvariantSeminorm.frobenius 𝕜 S T (A ∘ₗ (U.starProjection : S →ₗ[𝕜] S)) ^ 2 : ℝ) :
-      𝕜) =
-      trace 𝕜 S ((U.starProjection : S →ₗ[𝕜] S).adjoint ∘ₗ (A.adjoint ∘ₗ A)) := by
-  set p : S →ₗ[𝕜] S := (U.starProjection : S →ₗ[𝕜] S)
-  have hp : p.adjoint = p := U.isSymmetricProjection_starProjection.isSymmetric.adjoint_eq
-  have hpp : p ∘ₗ p = p := LinearMap.ext fun x ↦
-    Submodule.starProjection_eq_self_iff.2 (U.starProjection_apply_mem x)
-  rw [sq_frobenius_eq_trace, adjoint_comp, hp, comp_assoc, trace_comp_comm', comp_assoc,
-    comp_assoc, hpp, ← comp_assoc, trace_comp_comm']
-
 /-- **Near isometries from a small defect.** If `‖A† A - 1‖² ≤ ε² dim S` with `ε ≥ 0`, then `A` is a
-near isometry with error `ε`: on each subspace `U`, `‖A pr_U‖² - dim U` is the Hilbert–Schmidt
-inner product of `pr_U` with `A† A - 1`, and Cauchy–Schwarz bounds it by
-`√(dim U) · ε √(dim S) ≤ ε dim S`. -/
+near isometry with error `ε`. -/
 theorem isNearIsometry_of_sq_frobenius_le {A : S →ₗ[𝕜] T} {ε : ℝ} (hε : 0 ≤ ε)
     (h : UnitarilyInvariantSeminorm.frobenius 𝕜 S S (A.adjoint ∘ₗ A - 1) ^ 2 ≤
       ε ^ 2 * finrank 𝕜 S) :
     A.IsNearIsometry ε := by
+  -- On each subspace `U`, `‖A pr_U‖² - dim U` is the Hilbert–Schmidt inner product of `pr_U` with
+  -- `A† A - 1`, and Cauchy–Schwarz bounds it by `√(dim U) · ε √(dim S) ≤ ε dim S`.
   intro U
   set p : S →ₗ[𝕜] S := (U.starProjection : S →ₗ[𝕜] S)
   have h_diff : UnitarilyInvariantSeminorm.frobenius 𝕜 S T (A ∘ₗ p) ^ 2 - finrank 𝕜 U =
@@ -165,10 +153,10 @@ theorem sq_frobenius_one_sub_mul_comp_le {p : T →ₗ[𝕜] T} (hp : p.IsSymmet
   have h_ker : (1 - p) * (1 - p * q) = 1 - p := by
     simp [mul_sub, ← mul_assoc, hp.isIdempotentElem.one_sub_mul_self]
   have h_split : ‖(1 - p * q) y‖ ^ 2 = ‖p ((1 - q) y)‖ ^ 2 + ‖(1 - p) y‖ ^ 2 := by
-    rw [norm_sq_eq_norm_sq_add_norm_sq_of_isSymmetricProjection hp, ← mul_apply_eq_comp,
+    rw [hp.norm_sq_eq_add_norm_sq, ← mul_apply_eq_comp,
       ← mul_apply_eq_comp (1 - p), h_range, h_ker, mul_apply_eq_comp]
   have h_contract : ‖p ((1 - q) y)‖ ^ 2 ≤ ‖(1 - q) y‖ ^ 2 := by
-    linarith [norm_sq_eq_norm_sq_add_norm_sq_of_isSymmetricProjection hp ((1 - q) y),
+    linarith [hp.norm_sq_eq_add_norm_sq ((1 - q) y),
       sq_nonneg ‖(1 - p) ((1 - q) y)‖]
   linarith
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Analysis.InnerProductSpace.NearIsometry.Basic
+public import TauCeti.Algebra.Module.LinearMap.BigOperators
 public import TauCeti.LinearAlgebra.Spreading
 
 /-!
@@ -17,7 +18,7 @@ Let a finite group `Γ` act unitarily on a finite-dimensional inner product spac
 `B : S → T` be linear. Suppose that `pr₀ B` is a near isometry with error `ε` and that the second
 moment of the operators `B† ρ(s) B` is nearly as small as Cauchy–Schwarz allows:
 `dim T₀ · ∑_s ‖B† ρ(s) B‖² ≤ #Γ (1 + ε) (dim S)²`. Then the translates `pr₀ ρ(s) B : S → T₀`
-spread with error `3ε/2` (`LinearMap.IsSpread`): for every subspace `F ⊆ T₀` of share `α`, the
+spread with error `3ε/2` (`TauCeti.IsSpread`): for every subspace `F ⊆ T₀` of share `α`, the
 preimage of `F` under one of them has dimension at most `((1 + α) / 2 + 3ε/2) dim S`.
 
 Here `‖·‖` is the Frobenius (Hilbert–Schmidt) seminorm. The proof: `s ↦ ‖pr_F ρ(s) B‖²` is the
@@ -28,11 +29,11 @@ isometry turns that bound into a bound for the dimension.
 
 ## Main results
 
-* `LinearMap.sum_trace_adjoint_comp_translate`: the Gram identity
+* `TauCeti.sum_trace_adjoint_comp_eq_card_mul_sum_sq_frobenius`: the Gram identity
   `∑_{s,t} tr ((ρ(s) B B† ρ(s)⁻¹)† ρ(t) B B† ρ(t)⁻¹) = #Γ ∑_s ‖B† ρ(s) B‖²`.
-* `LinearMap.sq_sum_sq_frobenius_starProjection_comp_le`: Cauchy–Schwarz,
+* `TauCeti.sq_sum_sq_frobenius_starProjection_comp_le`: Cauchy–Schwarz,
   `(∑_s ‖pr_F ρ(s) B‖²)² ≤ dim F · #Γ ∑_s ‖B† ρ(s) B‖²`.
-* `LinearMap.isSpread_of_sum_sq_frobenius_le`: the translates `pr₀ ρ(s) B` spread with error
+* `TauCeti.isSpread_of_sum_sq_frobenius_le`: the translates `pr₀ ρ(s) B` spread with error
   `3ε/2`.
 
 ## References
@@ -53,7 +54,7 @@ open Module LinearMap TauCeti TauCeti.UnitarilyInvariantSeminorm Finset
 
 open scoped InnerProductSpace
 
-namespace LinearMap
+namespace TauCeti
 
 variable {𝕜 S T Γ : Type*} [RCLike 𝕜]
   [NormedAddCommGroup S] [InnerProductSpace 𝕜 S] [FiniteDimensional 𝕜 S]
@@ -72,7 +73,8 @@ theorem adjoint_representation_eq_inv (hρ : ∀ s x, ‖ρ s x‖ = ‖x‖) (s
 /-- **Gram entries of the translates.** For a norm-preserving representation `ρ`, the
 Hilbert–Schmidt inner product of `ρ(s) B B† ρ(s)⁻¹` and `ρ(t) B B† ρ(t)⁻¹` is the squared
 Frobenius seminorm of `B† ρ(s⁻¹ t) B`. -/
-theorem trace_adjoint_comp_translate (hρ : ∀ s x, ‖ρ s x‖ = ‖x‖) (B : S →ₗ[𝕜] T) (s t : Γ) :
+theorem trace_adjoint_comp_eq_sq_frobenius_adjoint_comp_comp (hρ : ∀ s x, ‖ρ s x‖ = ‖x‖)
+    (B : S →ₗ[𝕜] T) (s t : Γ) :
     trace 𝕜 T (((ρ s ∘ₗ B) ∘ₗ (ρ s ∘ₗ B).adjoint).adjoint ∘ₗ ((ρ t ∘ₗ B) ∘ₗ (ρ t ∘ₗ B).adjoint)) =
       ((UnitarilyInvariantSeminorm.frobenius 𝕜 S S (B.adjoint ∘ₗ ρ (s⁻¹ * t) ∘ₗ B) ^ 2 : ℝ) :
         𝕜) := by
@@ -88,48 +90,24 @@ theorem trace_adjoint_comp_translate (hρ : ∀ s x, ‖ρ s x‖ = ‖x‖) (B 
     _ = trace 𝕜 S ((X.adjoint ∘ₗ Y).adjoint ∘ₗ X.adjoint ∘ₗ Y) := by
         simp only [adjoint_comp, adjoint_adjoint, comp_assoc]
 
-omit [FiniteDimensional 𝕜 S] [FiniteDimensional 𝕜 T] in
-/-- Composition on the right distributes over a finite sum of linear maps. -/
-private theorem sum_comp {ι V : Type*} [AddCommGroup V] [Module 𝕜 V] (s : Finset ι)
-    (f : ι → T →ₗ[𝕜] V) (g : S →ₗ[𝕜] T) : (∑ i ∈ s, f i) ∘ₗ g = ∑ i ∈ s, f i ∘ₗ g :=
-  LinearMap.ext fun x ↦ by simp [LinearMap.sum_apply]
-
-omit [FiniteDimensional 𝕜 S] [FiniteDimensional 𝕜 T] in
-/-- Composition on the left distributes over a finite sum of linear maps. -/
-private theorem comp_sum {ι V : Type*} [AddCommGroup V] [Module 𝕜 V] (s : Finset ι)
-    (f : ι → S →ₗ[𝕜] T) (g : T →ₗ[𝕜] V) : g ∘ₗ (∑ i ∈ s, f i) = ∑ i ∈ s, g ∘ₗ f i :=
-  LinearMap.ext fun x ↦ by simp [LinearMap.sum_apply]
-
 /-- **The Gram identity.** Summed over all pairs, the Hilbert–Schmidt inner products of the
 translates `ρ(s) B B† ρ(s)⁻¹` give `#Γ` times the second moment `∑_s ‖B† ρ(s) B‖²`. -/
-theorem sum_trace_adjoint_comp_translate [Fintype Γ] (hρ : ∀ s x, ‖ρ s x‖ = ‖x‖)
-    (B : S →ₗ[𝕜] T) :
+theorem sum_trace_adjoint_comp_eq_card_mul_sum_sq_frobenius [Fintype Γ]
+    (hρ : ∀ s x, ‖ρ s x‖ = ‖x‖) (B : S →ₗ[𝕜] T) :
     trace 𝕜 T ((∑ s : Γ, (ρ s ∘ₗ B) ∘ₗ (ρ s ∘ₗ B).adjoint).adjoint ∘ₗ
         ∑ t : Γ, (ρ t ∘ₗ B) ∘ₗ (ρ t ∘ₗ B).adjoint) =
       ((Fintype.card Γ * ∑ s : Γ,
         UnitarilyInvariantSeminorm.frobenius 𝕜 S S (B.adjoint ∘ₗ ρ s ∘ₗ B) ^ 2 : ℝ) : 𝕜) := by
-  simp_rw [map_sum, sum_comp, comp_sum, map_sum, trace_adjoint_comp_translate hρ]
+  simp_rw [map_sum, LinearMap.sum_comp, LinearMap.comp_sum, map_sum,
+    trace_adjoint_comp_eq_sq_frobenius_adjoint_comp_comp hρ]
   -- For each `s`, the map `t ↦ s⁻¹ * t` is a bijection of `Γ`.
   have h_row (s : Γ) : ∑ t : Γ, ((UnitarilyInvariantSeminorm.frobenius 𝕜 S S
       (B.adjoint ∘ₗ ρ (s⁻¹ * t) ∘ₗ B) ^ 2 : ℝ) : 𝕜) = ∑ u : Γ,
         ((UnitarilyInvariantSeminorm.frobenius 𝕜 S S (B.adjoint ∘ₗ ρ u ∘ₗ B) ^ 2 : ℝ) : 𝕜) :=
     (Group.mulLeft_bijective s⁻¹).sum_comp fun u ↦
       ((UnitarilyInvariantSeminorm.frobenius 𝕜 S S (B.adjoint ∘ₗ ρ u ∘ₗ B) ^ 2 : ℝ) : 𝕜)
-  rw [Fintype.sum_congr _ _ h_row, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-  push_cast
-  rfl
-
-/-- The squared Frobenius seminorm of `pr_F Y` is the Hilbert–Schmidt inner product of `pr_F`
-with `Y Y†`. -/
-private theorem sq_frobenius_starProjection_comp (F : Submodule 𝕜 T) (Y : S →ₗ[𝕜] T) :
-    ((UnitarilyInvariantSeminorm.frobenius 𝕜 S T ((F.starProjection : T →ₗ[𝕜] T) ∘ₗ Y) ^ 2 :
-      ℝ) : 𝕜) = trace 𝕜 T ((F.starProjection : T →ₗ[𝕜] T).adjoint ∘ₗ (Y ∘ₗ Y.adjoint)) := by
-  set p : T →ₗ[𝕜] T := (F.starProjection : T →ₗ[𝕜] T)
-  have hp : p.adjoint = p := F.isSymmetricProjection_starProjection.isSymmetric.adjoint_eq
-  have hpp : p ∘ₗ p = p := LinearMap.ext fun x ↦
-    Submodule.starProjection_eq_self_iff.2 (F.starProjection_apply_mem x)
-  rw [sq_frobenius_eq_trace, adjoint_comp, hp, comp_assoc, ← comp_assoc Y p p, hpp,
-    trace_comp_comm', comp_assoc]
+  rw [Fintype.sum_congr _ _ h_row, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+    RCLike.ofReal_mul, RCLike.ofReal_natCast, RCLike.ofReal_sum]
 
 /-- **Cauchy–Schwarz for the translates.** For a finite group acting by norm-preserving
 operators and a subspace `F` of the target, `(∑_s ‖pr_F ρ(s) B‖²)² ≤ dim F · #Γ ∑_s ‖B† ρ(s) B‖²`.
@@ -145,10 +123,10 @@ theorem sq_sum_sq_frobenius_starProjection_comp_le [Fintype Γ] (hρ : ∀ s x, 
   have h_norm : UnitarilyInvariantSeminorm.frobenius 𝕜 T T X ^ 2 = Fintype.card Γ * ∑ s : Γ,
       UnitarilyInvariantSeminorm.frobenius 𝕜 S S (B.adjoint ∘ₗ ρ s ∘ₗ B) ^ 2 :=
     RCLike.ofReal_injective (K := 𝕜) <| by
-      rw [sq_frobenius_eq_trace, sum_trace_adjoint_comp_translate hρ]
+      rw [sq_frobenius_eq_trace, sum_trace_adjoint_comp_eq_card_mul_sum_sq_frobenius hρ]
   have h_inner : ∑ s : Γ, UnitarilyInvariantSeminorm.frobenius 𝕜 S T (p ∘ₗ ρ s ∘ₗ B) ^ 2 =
       RCLike.re (trace 𝕜 T (p.adjoint ∘ₗ X)) := by
-    rw [comp_sum, map_sum, map_sum]
+    rw [LinearMap.comp_sum, map_sum, map_sum]
     refine Fintype.sum_congr _ _ fun s ↦ ?_
     rw [← sq_frobenius_starProjection_comp, RCLike.ofReal_re]
   have h_cs := re_trace_adjoint_comp_le p X
@@ -201,8 +179,7 @@ private theorem norm_orthogonalProjectionOnto_apply_eq (hρ : ∀ s x, ‖ρ s x
   have h_eq : F.starProjection (ρ s (B x)) = T₀.starProjection (ρ s (B x)) := by
     rw [← Submodule.starProjection_comp_starProjection_of_le hF, ContinuousLinearMap.comp_apply,
       Submodule.starProjection_eq_self_iff.2 h_mem]
-  rw [h_eq, h_comm, hρ, Submodule.starProjection_apply]
-  rfl
+  rw [h_eq, h_comm, hρ, Submodule.starProjection_apply, Submodule.norm_coe]
 
 /-- **One translate from a second moment.** Let a finite group `Γ` act on `T` by norm-preserving
 operators `ρ s`, let `T₀ ⊆ T` be a subspace whose orthogonal projection `pr₀` commutes with every
@@ -251,4 +228,4 @@ theorem isSpread_of_sum_sq_frobenius_le [Fintype Γ] (hρ : ∀ s x, ‖ρ s x�
   have h_goal : (finrank 𝕜 W' : ℝ) ≤ ((1 + α) / 2 + 3 / 2 * ε) * finrank 𝕜 S := by linarith
   exact h_goal
 
-end LinearMap
+end TauCeti

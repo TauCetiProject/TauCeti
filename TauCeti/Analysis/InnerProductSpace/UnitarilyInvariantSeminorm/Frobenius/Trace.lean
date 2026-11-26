@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+public import TauCeti.Analysis.InnerProductSpace.Symmetric.Projection
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius.Basic
 
 /-!
 # The Frobenius seminorm through traces
@@ -27,6 +29,9 @@ arguments with linear maps.
   `‖A x‖ ≤ ‖B x‖` gives `‖A‖_F ≤ ‖B‖_F`.
 * `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_starProjection`: the orthogonal projection onto
   `U` has `‖pr_U‖_F² = dim U`.
+* `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_comp_starProjection` and
+  `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_starProjection_comp`: `‖A pr_U‖_F²` and
+  `‖pr_U Y‖_F²` as the Hilbert–Schmidt inner products `tr (pr_U† (A† A))` and `tr (pr_U† (Y Y†))`.
 * `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_eq_sq_frobenius_add_sq_frobenius`: an
   orthogonal projection `p` splits `‖A‖_F² = ‖p A‖_F² + ‖(1 - p) A‖_F²`.
 
@@ -99,15 +104,32 @@ omit [FiniteDimensional 𝕜 F] in
 /-- The squared Frobenius seminorm of the orthogonal projection onto `U` is `dim U`. -/
 theorem sq_frobenius_starProjection (U : Submodule 𝕜 E) :
     frobenius 𝕜 E E (U.starProjection : E →ₗ[𝕜] E) ^ 2 = finrank 𝕜 U := by
-  set p : E →ₗ[𝕜] E := (U.starProjection : E →ₗ[𝕜] E)
-  have h_proj : IsProj U p :=
+  have hU := U.isSymmetricProjection_starProjection
+  have h_proj : IsProj U (U.starProjection : E →ₗ[𝕜] E) :=
     ⟨U.starProjection_apply_mem, fun _ ↦ Submodule.starProjection_eq_self_iff.2⟩
-  have h_adj : p.adjoint ∘ₗ p = p := by
-    rw [(U.isSymmetricProjection_starProjection).isSymmetric.adjoint_eq]
-    exact LinearMap.ext fun x ↦ Submodule.starProjection_eq_self_iff.2
-      (U.starProjection_apply_mem x)
   apply RCLike.ofReal_injective (K := 𝕜)
-  rw [sq_frobenius_eq_trace, h_adj, h_proj.trace, RCLike.ofReal_natCast]
+  rw [sq_frobenius_eq_trace, hU.isSymmetric.adjoint_eq, U.starProjection_toLinearMap_comp_self,
+    h_proj.trace, RCLike.ofReal_natCast]
+
+/-- The squared Frobenius seminorm of `A pr_U` is the Hilbert–Schmidt inner product of `pr_U` with
+`A† A`: `‖A pr_U‖_F² = tr (pr_U† (A† A))`. -/
+theorem sq_frobenius_comp_starProjection (A : E →ₗ[𝕜] F) (U : Submodule 𝕜 E) :
+    ((frobenius 𝕜 E F (A ∘ₗ (U.starProjection : E →ₗ[𝕜] E)) ^ 2 : ℝ) : 𝕜) =
+      trace 𝕜 E ((U.starProjection : E →ₗ[𝕜] E).adjoint ∘ₗ (A.adjoint ∘ₗ A)) := by
+  have hU := U.isSymmetricProjection_starProjection
+  rw [sq_frobenius_eq_trace, adjoint_comp, hU.isSymmetric.adjoint_eq, comp_assoc,
+    trace_comp_comm', comp_assoc, comp_assoc, U.starProjection_toLinearMap_comp_self,
+    ← comp_assoc, trace_comp_comm']
+
+/-- The squared Frobenius seminorm of `pr_U Y` is the Hilbert–Schmidt inner product of `pr_U` with
+`Y Y†`: `‖pr_U Y‖_F² = tr (pr_U† (Y Y†))`. -/
+theorem sq_frobenius_starProjection_comp (U : Submodule 𝕜 F) (Y : E →ₗ[𝕜] F) :
+    ((frobenius 𝕜 E F ((U.starProjection : F →ₗ[𝕜] F) ∘ₗ Y) ^ 2 : ℝ) : 𝕜) =
+      trace 𝕜 F ((U.starProjection : F →ₗ[𝕜] F).adjoint ∘ₗ (Y ∘ₗ Y.adjoint)) := by
+  have hU := U.isSymmetricProjection_starProjection
+  rw [sq_frobenius_eq_trace, adjoint_comp, hU.isSymmetric.adjoint_eq, comp_assoc,
+    ← comp_assoc Y, U.starProjection_toLinearMap_comp_self, trace_comp_comm',
+    comp_assoc]
 
 omit [FiniteDimensional 𝕜 F] in
 /-- Restricting to a subspace does not increase the Frobenius seminorm:
@@ -119,16 +141,6 @@ theorem frobenius_comp_starProjection_le [FiniteDimensional 𝕜 F] (A : E →�
     (U.isSymmetricProjection_starProjection).isSymmetric.adjoint_eq]
   exact frobenius_le_frobenius_of_norm_le fun x ↦ U.norm_starProjection_apply_le (A.adjoint x)
 
-omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] in
-/-- An orthogonal projection `p` splits the squared norm orthogonally:
-`‖y‖² = ‖p y‖² + ‖(1 - p) y‖²`. -/
-theorem norm_sq_eq_norm_sq_add_norm_sq_of_isSymmetricProjection {p : F →ₗ[𝕜] F}
-    (hp : p.IsSymmetricProjection) (y : F) : ‖y‖ ^ 2 = ‖p y‖ ^ 2 + ‖(1 - p) y‖ ^ 2 := by
-  have h_orth : ⟪p y, (1 - p) y⟫_𝕜 = 0 := by
-    rw [hp.isSymmetric, ← mul_apply_eq_comp, hp.isIdempotentElem.mul_one_sub_self,
-      LinearMap.zero_apply, inner_zero_right]
-  simpa [sq] using norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero _ _ h_orth
-
 omit [FiniteDimensional 𝕜 F] in
 /-- **Pythagoras for the Frobenius seminorm.** An orthogonal projection `p` of the target splits
 `‖A‖_F² = ‖p A‖_F² + ‖(1 - p) A‖_F²`. -/
@@ -136,7 +148,6 @@ theorem sq_frobenius_eq_sq_frobenius_add_sq_frobenius {p : F →ₗ[𝕜] F}
     (hp : p.IsSymmetricProjection) (A : E →ₗ[𝕜] F) :
     frobenius 𝕜 E F A ^ 2 = frobenius 𝕜 E F (p ∘ₗ A) ^ 2 + frobenius 𝕜 E F ((1 - p) ∘ₗ A) ^ 2 := by
   simp only [sq_frobenius_apply (stdOrthonormalBasis 𝕜 E), ← Finset.sum_add_distrib, comp_apply]
-  exact Finset.sum_congr rfl fun i _ ↦
-    norm_sq_eq_norm_sq_add_norm_sq_of_isSymmetricProjection hp _
+  exact Finset.sum_congr rfl fun i _ ↦ hp.norm_sq_eq_add_norm_sq _
 
 end TauCeti.UnitarilyInvariantSeminorm
