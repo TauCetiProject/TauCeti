@@ -10,7 +10,6 @@ public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import TauCeti.Topology.VectorBundle.ContinuousMultilinearMap
 public import TauCeti.Geometry.Manifold.ContMDiff.ContinuousMultilinearMap
 public import TauCeti.Geometry.Manifold.MFDeriv.ContinuousMultilinearMap
-import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 
 /-!
 # The smooth vector bundle of continuous multilinear maps

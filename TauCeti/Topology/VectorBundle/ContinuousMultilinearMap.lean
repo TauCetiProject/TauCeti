@@ -47,11 +47,11 @@ structure makes each of its trivializations a homeomorphism onto the normed mode
 
 The construction follows the topological vector bundle of continuous alternating maps of
 Yury Kudryashov, Heather Macbeth and Floris van Doorn in Mathlib
-(`Mathlib.Topology.VectorBundle.ContinuousAlternatingMap`), itself modelled on Floris van Doorn's
-bundle of continuous linear maps (`Mathlib.Topology.VectorBundle.Hom`). As there, the
-definitions are exposed: the formulas for the trivializations, their inverses and coordinate
-changes hold by definition, and the topology and smooth structure of the bundle are read off the
-vector prebundle.
+(`Mathlib.Topology.VectorBundle.ContinuousAlternatingMap`), itself modelled on Heather Macbeth
+and Floris van Doorn's bundle of continuous linear maps (`Mathlib.Topology.VectorBundle.Hom`). As
+there, the definitions are exposed: the formulas for the trivializations, their inverses and
+coordinate changes hold by definition, and the topology and smooth structure of the bundle are
+read off the vector prebundle.
 -/
 
 @[expose] public section
