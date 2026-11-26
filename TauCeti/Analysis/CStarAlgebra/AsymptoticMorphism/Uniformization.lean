@@ -24,9 +24,8 @@ asymptotic contractivity and compact-uniform algebra defect bounds (Blackadar, �
 
 ## Main definitions and results
 
-* `TauCeti.AsymptoticAlgebra.mkCLM` and
-  `TauCeti.AsymptoticAlgebra.exists_continuous_nonlinearRightInverse_mkCLM`: the quotient map
-  `(Set.Ici (1 : ℝ) →ᵇ B) →L[ℂ] AsymptoticAlgebra B` and its continuous Bartle–Graves section.
+* `TauCeti.AsymptoticAlgebra.exists_continuous_nonlinearRightInverse_mkCLM`: the quotient map
+  `(Set.Ici (1 : ℝ) →ᵇ B) →L[ℂ] AsymptoticAlgebra B` admits a continuous Bartle–Graves section.
 * `TauCeti.AsymptoticMorphism.exists_equiv_continuous_toBounded`: replacement of `φ` by an
   asymptotically equivalent `ψ` with continuous `ψ.toBounded` and `‖ψ t a‖ ≤ C * ‖a‖`.
 * `TauCeti.AsymptoticMorphism.eventually_compact_norm_lt_add`,
@@ -55,19 +54,6 @@ namespace TauCeti
 namespace AsymptoticAlgebra
 
 variable (B : Type*) [NonUnitalCStarAlgebra B]
-
-/-- The canonical quotient projection `(Set.Ici (1 : ℝ) →ᵇ B) →L[ℂ] AsymptoticAlgebra B` as a
-contractive continuous `ℂ`-linear map. -/
-noncomputable def mkCLM : (Ici (1 : ℝ) →ᵇ B) →L[ℂ] AsymptoticAlgebra B :=
-  LinearMap.mkContinuous { toFun := mk, map_add' := map_add mk, map_smul' := map_smul mk } 1
-    fun f ↦ by
-      simpa only [one_mul, LinearMap.coe_mk, AddHom.coe_mk, mk_apply] using
-        TwoSidedIdeal.Quotient.norm_mk_le (BoundedContinuousFunction.tendstoZeroIdeal B atTop) f
-
-@[simp]
-theorem mkCLM_apply (f : Ici (1 : ℝ) →ᵇ B) : mkCLM B f = mk f := (rfl)
-
-theorem mkCLM_surjective : Function.Surjective (mkCLM B) := mk_surjective
 
 /-- The quotient map `mkCLM B : (Set.Ici (1 : ℝ) →ᵇ B) →L[ℂ] AsymptoticAlgebra B` admits a
 continuous, positively `ℝ`-homogeneous, linearly norm-bounded right inverse by the Bartle–Graves

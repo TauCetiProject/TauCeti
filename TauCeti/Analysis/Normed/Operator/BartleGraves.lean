@@ -12,6 +12,7 @@ import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Topology.EMetricSpace.Paracompact
 import Mathlib.Topology.Semicontinuity.Hemicontinuity
 import Mathlib.Topology.Semicontinuity.Michael
+import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 
 /-!
 # The Bartle–Graves continuous selection theorem
@@ -30,7 +31,7 @@ open-mapping constant. Via Michael's selection theorem
 `y ↦ q ⁻¹' {y} ∩ closedBall 0 R` (`R > C`) to the unit sphere `Metric.sphere (0 : F) 1`, proves
 lower hemicontinuity by shrinking any fibre point slightly toward a `C`-bounded preimage and
 correcting the residual error on nearby fibres, selects a continuous section `σ` on the unit
-sphere, and extends radially by `s(y) = ‖y‖ • σ(‖y‖⁻¹ • y)` (`s(0) = 0`).
+sphere, and extends radially via `TauCeti.sphereCone` (`s(y) = ‖y‖ • σ(‖y‖⁻¹ • y)`, `s(0) = 0`).
 
 ## Main results
 
@@ -117,69 +118,6 @@ theorem lowerHemicontinuous_sphere_preimage_inter_closedBall (q : E →L[ℝ] F)
     rw [mem_ball, dist_eq_norm, hsub]
     linarith [norm_add_le (x₂ - x₀) z, min_le_left (ε / 2) (R - ‖x₂‖)]
 
-/-- Radial projection `y ↦ ‖y‖⁻¹ • y` of a nonzero vector onto the unit sphere. -/
-private noncomputable def unitProj {y : F} (hy : y ≠ 0) : sphere (0 : F) 1 :=
-  ⟨‖y‖⁻¹ • y, by
-    rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
-      inv_mul_cancel₀ (norm_ne_zero_iff.mpr hy)]⟩
-
-/-- Radial extension `s(y) = ‖y‖ • σ(‖y‖⁻¹ • y)` (`s(0) = 0`) of a continuous map `σ` on the unit
-sphere of `F`. -/
-private noncomputable def radialExtend (σ : sphere (0 : F) 1 → E) (y : F) : E :=
-  open Classical in if hy : y = 0 then 0 else ‖y‖ • σ (unitProj hy)
-
-private theorem radialExtend_zero (σ : sphere (0 : F) 1 → E) : radialExtend σ (0 : F) = 0 := by
-  simp [radialExtend]
-
-private theorem radialExtend_of_ne_zero (σ : sphere (0 : F) 1 → E) {y : F} (hy : y ≠ 0) :
-    radialExtend σ y = ‖y‖ • σ (unitProj hy) := by simp [radialExtend, hy]
-
-private theorem norm_radialExtend_le {σ : sphere (0 : F) 1 → E} {R : ℝ}
-    (hσ : ∀ u : sphere (0 : F) 1, ‖σ u‖ ≤ R) (y : F) : ‖radialExtend σ y‖ ≤ R * ‖y‖ := by
-  by_cases hy : y = 0
-  · simp [hy, radialExtend_zero]
-  · rw [radialExtend_of_ne_zero σ hy, norm_smul, norm_norm, mul_comm]
-    exact mul_le_mul_of_nonneg_right (hσ _) (norm_nonneg y)
-
-private theorem radialExtend_smul (σ : sphere (0 : F) 1 → E) {c : ℝ} (hc : 0 ≤ c) (y : F) :
-    radialExtend σ (c • y) = c • radialExtend σ y := by
-  rcases eq_or_lt_of_le hc with rfl | hc_pos
-  · simp [radialExtend_zero]
-  by_cases hy : y = 0
-  · simp [hy, radialExtend_zero]
-  have hcy : c • y ≠ 0 := smul_ne_zero hc_pos.ne' hy
-  have hnorm : ‖c • y‖ = c * ‖y‖ := by rw [norm_smul, Real.norm_of_nonneg hc_pos.le]
-  have hunit : unitProj hcy = unitProj hy := Subtype.ext <| by
-    dsimp only [unitProj]
-    rw [hnorm, mul_inv_rev, smul_smul, mul_assoc, inv_mul_cancel₀ hc_pos.ne', mul_one]
-  rw [radialExtend_of_ne_zero σ hcy, radialExtend_of_ne_zero σ hy, hunit, hnorm, mul_smul]
-
-private theorem continuous_radialExtend {σ : sphere (0 : F) 1 → E} {R : ℝ} (hR : 0 ≤ R)
-    (hσ_cont : Continuous σ) (hσ_bound : ∀ u : sphere (0 : F) 1, ‖σ u‖ ≤ R) :
-    Continuous (radialExtend σ) := by
-  rw [continuous_iff_continuousAt]
-  intro y₀
-  by_cases hy₀ : y₀ = 0
-  · subst hy₀
-    refine Metric.continuousAt_iff.mpr fun ε hε ↦ ⟨ε / (R + 1), div_pos hε (by positivity),
-      fun y hy ↦ ?_⟩
-    rw [radialExtend_zero, dist_zero_right]
-    rw [dist_zero_right] at hy
-    calc ‖radialExtend σ y‖ ≤ R * ‖y‖ := norm_radialExtend_le hσ_bound y
-      _ ≤ (R + 1) * ‖y‖ := by gcongr; linarith
-      _ < (R + 1) * (ε / (R + 1)) := by gcongr
-      _ = ε := mul_div_cancel₀ ε (by positivity)
-  · let U : Set F := {y : F | y ≠ 0}
-    have hprojU : Continuous (fun y : U ↦ unitProj y.property) :=
-      Continuous.subtype_mk
-        (((continuous_subtypeVal.norm.inv₀ fun y ↦ norm_ne_zero_iff.mpr y.property).smul
-          continuous_subtypeVal)) _
-    have hcontOn : ContinuousOn (radialExtend σ) U :=
-      continuousOn_iff_continuous_domRestrict.mpr <|
-        (continuous_subtypeVal.norm.smul (hσ_cont.comp hprojU)).congr
-          fun y ↦ (radialExtend_of_ne_zero σ y.property).symm
-    exact hcontOn.continuousAt (isOpen_ne.mem_nhds hy₀)
-
 /-- **Bartle–Graves theorem with explicit norm bound.** If `E` is a real Banach space and
 `q : E →L[ℝ] F` admits preimages of norm at most `C * ‖y‖` (`C > 0`), then for every `R > C` there
 exists a continuous, positively homogeneous `s : q.NonlinearRightInverse` with `(s.nnNorm : ℝ) = R`.
@@ -203,16 +141,15 @@ theorem exists_continuous_nonlinearRightInverse_of_bound [CompleteSpace E] (q : 
   have hσ_bound : ∀ u : sphere (0 : F) 1, ‖σ u‖ ≤ R := fun u ↦ by
     simpa [mem_closedBall, dist_zero_right] using (hσ_mem u).2
   refine ⟨{
-    toFun := radialExtend σ
+    toFun := TauCeti.sphereCone σ
     nnNorm := ⟨R, hR.le⟩
-    bound' := norm_radialExtend_le hσ_bound
+    bound' := TauCeti.norm_sphereCone_le hσ_bound
     right_inv' := fun y ↦ by
-      by_cases hy : y = 0
-      · simp [hy, radialExtend_zero]
-      · rw [radialExtend_of_ne_zero σ hy, map_smul, (hσ_mem _).1, unitProj,
-          smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr hy), one_smul] },
-    rfl, continuous_radialExtend hR.le hσ_cont hσ_bound,
-    fun {c} hc y ↦ radialExtend_smul σ hc y⟩
+      rcases TauCeti.eq_zero_or_exists_eq_smul_coe_sphere y with rfl | ⟨r, hr, u, rfl⟩
+      · simp
+      · rw [TauCeti.sphereCone_smul_coe hr.le, map_smul, (hσ_mem u).1] },
+    rfl, TauCeti.continuous_sphereCone hσ_cont hσ_bound,
+    fun {_} hc y ↦ TauCeti.sphereCone_smul hc y⟩
 
 /-- **The Bartle–Graves continuous selection theorem (real Banach spaces).** Every surjective
 continuous linear map `q : E →L[ℝ] F` between real Banach spaces admits a continuous, positively

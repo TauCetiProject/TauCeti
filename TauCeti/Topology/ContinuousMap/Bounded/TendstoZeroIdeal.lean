@@ -17,31 +17,24 @@ For a topological space `α`, a filter `l : Filter α`, and a possibly nonunital
 the bounded continuous functions `f : α →ᵇ R` tending to `0` along `l` form a closed two-sided
 ideal `BoundedContinuousFunction.tendstoZeroIdeal R l` of `α →ᵇ R`.
 
-When `α = Set.Ici a` (`a : ℝ`) and `l = atTop`, two additional analytical facts hold:
-* Any continuous map `f : Set.Ici a → E` into a seminormed group that is eventually bounded along
-  `atTop` is globally bounded on `Set.Ici a` (being continuous on compact initial intervals
-  `[a, T]`), packaged as `BoundedContinuousFunction.ofEventuallyBoundedIci`.
-* If `R` is also a normed `ℝ`-vector space, the quotient seminorm on
-  `(Set.Ici a →ᵇ R) ⧸ tendstoZeroIdeal R atTop` is given by the asymptotic upper limit
-  `‖mk (tendstoZeroIdeal R atTop) f‖ = limsup (fun t ↦ ‖f t‖) atTop`. Specializing `a = 1` and `R`
-  to a C⋆-algebra `B` yields the asymptotic C⋆-algebra `C_b([1, ∞), B) / C₀([1, ∞), B)` and its
-  asymptotic seminorm formula (Blackadar, *K-Theory for Operator Algebras*, §25.1).
+When `α = Set.Ici a` (`a : ℝ`), `l = atTop`, and `R` is also a normed `ℝ`-vector space, the
+quotient seminorm on `(Set.Ici a →ᵇ R) ⧸ tendstoZeroIdeal R atTop` is given by the asymptotic upper
+limit `‖mk (tendstoZeroIdeal R atTop) f‖ = limsup (fun t ↦ ‖f t‖) atTop`. Specializing `a = 1` and
+`R` to a C⋆-algebra `B` yields the asymptotic C⋆-algebra `C_b([1, ∞), B) / C₀([1, ∞), B)` and its
+asymptotic seminorm formula (Blackadar, *K-Theory for Operator Algebras*, §25.1).
 
 ## Main definitions and results
 
 * `BoundedContinuousFunction.tendstoZeroIdeal`: the closed two-sided ideal
   `{f : α →ᵇ R | Tendsto f l (𝓝 0)}` of `α →ᵇ R`.
 * `BoundedContinuousFunction.isClosed_tendstoZeroIdeal`: `tendstoZeroIdeal R l` is norm-closed.
-* `BoundedContinuousFunction.exists_norm_le_of_eventually_Ici` and
-  `BoundedContinuousFunction.ofEventuallyBoundedIci`: promote a continuous, eventually bounded
-  function on `Set.Ici a` to `Set.Ici a →ᵇ E`.
 * `BoundedContinuousFunction.norm_mk_tendstoZeroIdeal_Ici_eq_limsup`: the quotient norm modulo
   `tendstoZeroIdeal R atTop` on `Set.Ici a →ᵇ R` equals `limsup (fun t ↦ ‖f t‖) atTop`.
 
 ## References
 
 * Bruce Blackadar, *K-Theory for Operator Algebras*, 2nd ed., MSRI Publications **5**, Cambridge
-  University Press, 1998, §II.8.1 and §25.1.
+  University Press, 1998, §25.1.
 -/
 
 public section
@@ -115,39 +108,6 @@ end GeneralIdeal
 section Ici
 
 variable {a : ℝ}
-
-/-- A continuous map `f : Set.Ici a → E` into a seminormed group that is eventually bounded along
-`atTop` is globally bounded on `Set.Ici a`. -/
-theorem exists_norm_le_of_eventually_Ici {E : Type*} [SeminormedAddCommGroup E]
-    {f : Ici a → E} (hf_cont : Continuous f) (hf_bdd : ∃ C, ∀ᶠ t in atTop, ‖f t‖ ≤ C) :
-    ∃ M, ∀ t : Ici a, ‖f t‖ ≤ M := by
-  obtain ⟨C, hC⟩ := hf_bdd
-  obtain ⟨T, hT⟩ := eventually_atTop.mp hC
-  have hincl : Continuous (fun s : Icc a (T : ℝ) ↦ (⟨s.val, s.property.1⟩ : Ici a)) :=
-    Continuous.subtype_mk continuous_subtypeVal _
-  obtain ⟨M₁, hM₁⟩ := (isCompact_range (hf_cont.norm.comp hincl)).bddAbove
-  refine ⟨max M₁ C, fun t ↦ (le_total t T).elim (fun htT ↦ ?_) fun hTt ↦ ?_⟩
-  · exact (hM₁ ⟨⟨(t : ℝ), t.property, htT⟩, rfl⟩).trans (le_max_left M₁ C)
-  · exact (hT t hTt).trans (le_max_right M₁ C)
-
-/-- Package a continuous map `f : Set.Ici a → E` that is eventually bounded along `atTop` as a
-bounded continuous function `Set.Ici a →ᵇ E`. -/
-noncomputable def ofEventuallyBoundedIci {E : Type*} [SeminormedAddCommGroup E]
-    (f : Ici a → E) (hf_cont : Continuous f) (hf_bdd : ∃ C, ∀ᶠ t in atTop, ‖f t‖ ≤ C) :
-    Ici a →ᵇ E :=
-  ofNormedAddCommGroup f hf_cont
-    (Classical.choose (exists_norm_le_of_eventually_Ici hf_cont hf_bdd))
-    (Classical.choose_spec (exists_norm_le_of_eventually_Ici hf_cont hf_bdd))
-
-@[simp]
-theorem ofEventuallyBoundedIci_apply {E : Type*} [SeminormedAddCommGroup E]
-    (f : Ici a → E) (hf_cont : Continuous f) (hf_bdd : ∃ C, ∀ᶠ t in atTop, ‖f t‖ ≤ C)
-    (t : Ici a) : ofEventuallyBoundedIci f hf_cont hf_bdd t = f t := (rfl)
-
-@[simp]
-theorem coe_ofEventuallyBoundedIci {E : Type*} [SeminormedAddCommGroup E]
-    (f : Ici a → E) (hf_cont : Continuous f) (hf_bdd : ∃ C, ∀ᶠ t in atTop, ‖f t‖ ≤ C) :
-    ⇑(ofEventuallyBoundedIci f hf_cont hf_bdd) = f := (rfl)
 
 /-- Piecewise-linear cutoff on `Set.Ici a` equal to `1` on `[a, T]` and `0` on `[T + 1, ∞)`. -/
 private def cutoffIci (T t : Ici a) : ℝ := max 0 (min 1 ((T : ℝ) + 1 - (t : ℝ)))

@@ -76,6 +76,11 @@ quotient by pinning at `0`.
 `BoundedContinuousFunction.compactSlice` views a compactly supported continuous function
 on space-time as a bounded continuous spatial function at a fixed time.
 
+`BoundedContinuousFunction.exists_norm_le_of_eventually_Ici` and
+`BoundedContinuousFunction.ofEventuallyBoundedIci` package a continuous map `f : Set.Ici a → E`
+that is eventually bounded along `atTop` on a linearly ordered space with compact closed intervals
+as `Set.Ici a →ᵇ E`.
+
 `BoundedContinuousFunction.eventually_forall_compact_norm_lt_add` and
 `BoundedContinuousFunction.eventually_forall_compact_norm_lt` upgrade pointwise eventual norm
 estimates along a filter `l` to compact-uniform eventual norm estimates for a family
@@ -542,6 +547,50 @@ noncomputable def compactSlice (f : V × ℝ → F) (hf : Continuous f)
 theorem compactSlice_apply (f : V × ℝ → F) (hf : Continuous f)
     (hc : HasCompactSupport f) (t : ℝ) (x : V) :
     compactSlice f hf hc t x = f (x, t) := (rfl)
+
+section EventuallyBoundedIci
+
+open Filter Set Topology
+
+/-- A continuous map `f : Set.Ici a → E` into a seminormed group on a linearly ordered space with
+compact closed intervals that is eventually bounded along `atTop` is globally bounded on
+`Set.Ici a`. -/
+theorem exists_norm_le_of_eventually_Ici {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [CompactIccSpace α] [SeminormedAddCommGroup E] {a : α} {f : Ici a → E}
+    (hf_cont : Continuous f) (hf_bdd : ∃ C, ∀ᶠ t in atTop, ‖f t‖ ≤ C) :
+    ∃ M, ∀ t : Ici a, ‖f t‖ ≤ M := by
+  obtain ⟨C, hC⟩ := hf_bdd
+  obtain ⟨T, hT⟩ := eventually_atTop.mp hC
+  have hincl : Continuous (fun s : Icc a (T : α) ↦ (⟨s.val, s.property.1⟩ : Ici a)) :=
+    Continuous.subtype_mk continuous_subtypeVal _
+  obtain ⟨M₁, hM₁⟩ := (isCompact_range (hf_cont.norm.comp hincl)).bddAbove
+  refine ⟨max M₁ C, fun t ↦ (le_total t T).elim (fun htT ↦ ?_) fun hTt ↦ ?_⟩
+  · exact (hM₁ ⟨⟨(t : α), t.property, htT⟩, rfl⟩).trans (le_max_left M₁ C)
+  · exact (hT t hTt).trans (le_max_right M₁ C)
+
+/-- Package a continuous map `f : Set.Ici a → E` that is eventually bounded along `atTop` as a
+bounded continuous function `Set.Ici a →ᵇ E`. -/
+noncomputable def ofEventuallyBoundedIci {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [CompactIccSpace α] [SeminormedAddCommGroup E] {a : α}
+    (f : Ici a → E) (hf_cont : Continuous f) (hf_bdd : ∃ C, ∀ᶠ t in atTop, ‖f t‖ ≤ C) :
+    Ici a →ᵇ E :=
+  ofNormedAddCommGroup f hf_cont
+    (Classical.choose (exists_norm_le_of_eventually_Ici hf_cont hf_bdd))
+    (Classical.choose_spec (exists_norm_le_of_eventually_Ici hf_cont hf_bdd))
+
+@[simp]
+theorem ofEventuallyBoundedIci_apply {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [CompactIccSpace α] [SeminormedAddCommGroup E] {a : α}
+    (f : Ici a → E) (hf_cont : Continuous f) (hf_bdd : ∃ C, ∀ᶠ t in atTop, ‖f t‖ ≤ C)
+    (t : Ici a) : ofEventuallyBoundedIci f hf_cont hf_bdd t = f t := (rfl)
+
+@[simp]
+theorem coe_ofEventuallyBoundedIci {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [CompactIccSpace α] [SeminormedAddCommGroup E] {a : α}
+    (f : Ici a → E) (hf_cont : Continuous f) (hf_bdd : ∃ C, ∀ᶠ t in atTop, ‖f t‖ ≤ C) :
+    ⇑(ofEventuallyBoundedIci f hf_cont hf_bdd) = f := (rfl)
+
+end EventuallyBoundedIci
 
 section CompactUniform
 

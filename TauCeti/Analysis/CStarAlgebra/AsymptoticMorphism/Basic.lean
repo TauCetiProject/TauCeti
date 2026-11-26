@@ -11,6 +11,7 @@ public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Topology.ContinuousMap.Bounded.TendstoZeroIdeal
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
 # Asymptotic morphisms of C⋆-algebras
@@ -29,8 +30,9 @@ equivalence classes of asymptotic morphisms with `A →⋆ₙₐ[ℂ] Asymptotic
 
 ## Main definitions and results
 
-* `TauCeti.AsymptoticAlgebra` and `TauCeti.AsymptoticMorphism`: the asymptotic C⋆-algebra
-  `C_b([1, ∞), B) ⧸ C₀([1, ∞), B)` and bundled asymptotic morphisms `A → B`.
+* `TauCeti.AsymptoticAlgebra`, `TauCeti.AsymptoticAlgebra.mk`, `TauCeti.AsymptoticAlgebra.mkCLM`,
+  and `TauCeti.AsymptoticMorphism`: the asymptotic C⋆-algebra `C_b([1, ∞), B) ⧸ C₀([1, ∞), B)`,
+  its quotient `⋆`-homomorphism and continuous linear map, and bundled asymptotic morphisms.
 * `TauCeti.AsymptoticMorphism.unitization`: lift to `Unitization ℂ A → Unitization ℂ B`.
 * `TauCeti.AsymptoticMorphism.exists_eventually_norm_le`, `TauCeti.AsymptoticMorphism.toBounded`,
   `TauCeti.AsymptoticMorphism.toAsymptoticHom`, and `TauCeti.AsymptoticMorphism.limsup_norm_le`:
@@ -78,6 +80,21 @@ theorem mk_apply (f : Ici (1 : ℝ) →ᵇ B) :
 theorem mk_surjective : Function.Surjective (mk (B := B)) :=
   TwoSidedIdeal.Quotient.mkStarAlgHom_surjective
     (BoundedContinuousFunction.tendstoZeroIdeal B atTop)
+
+variable (B) in
+/-- The canonical quotient projection `(Set.Ici (1 : ℝ) →ᵇ B) →L[ℂ] AsymptoticAlgebra B` as a
+contractive continuous `ℂ`-linear map. -/
+noncomputable def mkCLM : (Ici (1 : ℝ) →ᵇ B) →L[ℂ] AsymptoticAlgebra B :=
+  LinearMap.mkContinuous { toFun := mk, map_add' := map_add mk, map_smul' := map_smul mk } 1
+    fun f ↦ by
+      simpa only [one_mul, LinearMap.coe_mk, AddHom.coe_mk, mk_apply] using
+        TwoSidedIdeal.Quotient.norm_mk_le (BoundedContinuousFunction.tendstoZeroIdeal B atTop) f
+
+@[simp]
+theorem mkCLM_apply (f : Ici (1 : ℝ) →ᵇ B) : mkCLM B f = mk f := (rfl)
+
+variable (B) in
+theorem mkCLM_surjective : Function.Surjective (mkCLM B) := mk_surjective
 
 @[simp]
 theorem mk_eq_zero_iff {f : Ici (1 : ℝ) →ᵇ B} : mk f = 0 ↔ Tendsto f atTop (𝓝 0) := by

@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.AsymptoticMorphism.Basic
-import Mathlib.Topology.CompactOpen
-import Mathlib.Topology.Path
+import TauCeti.Topology.ContinuousMap.Bounded.Normed
 import TauCeti.Topology.ContinuousMap.Star
 
 /-!
@@ -90,45 +89,6 @@ theorem Homotopic.symm {φ ψ : AsymptoticMorphism A B} (h : φ.Homotopic ψ) : 
   exact ⟨H.postcompStarAlgHom (ContinuousMap.compNonUnitalStarAlgHom' ℂ B rev),
     by rw [← h1]; ext; simp [rev], by rw [← h0]; ext; simp [rev]⟩
 
-/-- Closed nonunital `⋆`-subalgebra of pairs `(f, g) ∈ C(I, B) × C(I, B)` matching at `f 1 = g 0`.
--/
-private def pathConcatSubalgebra (B : Type*) [NonUnitalCStarAlgebra B] :
-    NonUnitalStarSubalgebra ℂ (C(unitInterval, B) × C(unitInterval, B)) where
-  carrier := {p | p.1 1 = p.2 0}
-  mul_mem' {_ _} hp hq := by rw [mem_ofPred_eq] at hp hq ⊢; simp [hp, hq]
-  add_mem' {_ _} hp hq := by rw [mem_ofPred_eq] at hp hq ⊢; simp [hp, hq]
-  zero_mem' := rfl
-  smul_mem' _ {_} hp := by rw [mem_ofPred_eq] at hp ⊢; simp [hp]
-  star_mem' {_} hp := by rw [mem_ofPred_eq] at hp ⊢; simp [hp]
-
-private instance isClosed_pathConcatSubalgebra (B : Type*) [NonUnitalCStarAlgebra B] :
-    IsClosed (pathConcatSubalgebra B : Set (C(unitInterval, B) × C(unitInterval, B))) :=
-  isClosed_eq ((continuous_eval_const (1 : unitInterval)).comp continuous_fst)
-    ((continuous_eval_const (0 : unitInterval)).comp continuous_snd)
-
-/-- Path concatenation at `s = 1 / 2` as a nonunital `⋆`-homomorphism out of
-`pathConcatSubalgebra B`. Because `pathConcatSubalgebra B` is a closed `⋆`-subalgebra of a
-C⋆-algebra, it is a C⋆-algebra and this `⋆`-homomorphism is automatically continuous and
-contractive. -/
-private noncomputable def pathConcatStarAlgHom (B : Type*) [NonUnitalCStarAlgebra B] :
-    pathConcatSubalgebra B →⋆ₙₐ[ℂ] C(unitInterval, B) where
-  toFun p := ((Path.mk p.val.1 rfl rfl).trans (Path.mk p.val.2 p.property.symm rfl)).toContinuousMap
-  map_smul' _ _ := by
-    ext; simp only [ContinuousMap.smul_apply, ContinuousMap.toFun_eq_coe, Path.coe_toContinuousMap,
-      Path.trans_apply]; split_ifs <;> rfl
-  map_zero' := by
-    ext; simp only [ContinuousMap.zero_apply, ContinuousMap.toFun_eq_coe, Path.coe_toContinuousMap,
-      Path.trans_apply]; split_ifs <;> rfl
-  map_add' _ _ := by
-    ext; simp only [ContinuousMap.add_apply, ContinuousMap.toFun_eq_coe, Path.coe_toContinuousMap,
-      Path.trans_apply]; split_ifs <;> rfl
-  map_mul' _ _ := by
-    ext; simp only [ContinuousMap.mul_apply, ContinuousMap.toFun_eq_coe, Path.coe_toContinuousMap,
-      Path.trans_apply]; split_ifs <;> rfl
-  map_star' _ := by
-    ext; simp only [ContinuousMap.star_apply, ContinuousMap.toFun_eq_coe, Path.coe_toContinuousMap,
-      Path.trans_apply]; split_ifs <;> rfl
-
 @[trans]
 theorem Homotopic.trans {φ ψ χ : AsymptoticMorphism A B}
     (h₁ : φ.Homotopic ψ) (h₂ : ψ.Homotopic χ) : φ.Homotopic χ := by
@@ -136,8 +96,8 @@ theorem Homotopic.trans {φ ψ χ : AsymptoticMorphism A B}
   have hmatch (t a) : H₁ t a 1 = H₂ t a 0 := by
     simpa [evalAt_apply] using (AsymptoticMorphism.ext_iff.mp h₁1 t a).trans
       (AsymptoticMorphism.ext_iff.mp h₂0 t a).symm
-  let P : AsymptoticMorphism A (pathConcatSubalgebra B) :=
-    { toFun := fun t a ↦ ⟨(H₁ t a, H₂ t a), hmatch t a⟩
+  let P : AsymptoticMorphism A (ContinuousMap.pathConcatSubalgebra ℂ B) :=
+    { toFun := fun t a ↦ ⟨(H₁ t a, H₂ t a), ContinuousMap.mem_pathConcatSubalgebra.mpr (hmatch t a)⟩
       continuous_apply' := fun a ↦
         Continuous.subtype_mk ((H₁.continuous_apply a).prodMk (H₂.continuous_apply a)) _
       map_add_tendsto' := fun a b ↦
@@ -148,9 +108,9 @@ theorem Homotopic.trans {φ ψ χ : AsymptoticMorphism A B}
         tendsto_subtype_rng.mpr ((H₁.map_mul_tendsto a b).prodMk_nhds (H₂.map_mul_tendsto a b))
       map_star_tendsto' := fun a ↦
         tendsto_subtype_rng.mpr ((H₁.map_star_tendsto a).prodMk_nhds (H₂.map_star_tendsto a)) }
-  exact ⟨P.postcompStarAlgHom (pathConcatStarAlgHom B),
-    by rw [← h₁0]; ext; simp [P, pathConcatStarAlgHom],
-    by rw [← h₂1]; ext; simp [P, pathConcatStarAlgHom]⟩
+  exact ⟨P.postcompStarAlgHom (ContinuousMap.pathConcatNonUnitalStarAlgHom ℂ B),
+    by rw [← h₁0]; ext; simp [P],
+    by rw [← h₂1]; ext; simp [P]⟩
 
 /-- The setoid of homotopy on `AsymptoticMorphism A B`. -/
 def homotopySetoid (A B : Type*) [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] :

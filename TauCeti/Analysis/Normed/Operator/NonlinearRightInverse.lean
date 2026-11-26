@@ -8,44 +8,16 @@ module
 public import Mathlib.Analysis.Normed.Operator.Banach
 
 /-!
-# Packaging and composition of bounded nonlinear right inverses
-
-A continuous semilinear right inverse `r` of a split surjection `q` packages as a
-`ContinuousLinearMap.NonlinearRightInverse` whose underlying function is `r` itself and whose norm
-bound is `‖r‖₊` (`ContinuousLinearMap.toNonlinearRightInverse`).
+# Composition of bounded nonlinear right inverses
 
 Right inverses of two continuous linear maps compose in the reverse order of the original
-maps, and their norm-bound constants multiply (`ContinuousLinearMap.NonlinearRightInverse.comp`).
-No linearity, continuity, or completeness assumption on the right inverses is needed beyond the
-native `NonlinearRightInverse` data.
+maps. Their norm-bound constants multiply. No linearity, continuity, or completeness assumption
+on the right inverses is needed beyond the native `NonlinearRightInverse` data.
 -/
 
 public section
 
 open scoped NNReal
-
-namespace ContinuousLinearMap
-
-variable {𝕜₁ 𝕜₂ : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
-  {σ : 𝕜₁ →+* 𝕜₂} {σ' : 𝕜₂ →+* 𝕜₁} [RingHomIsometric σ']
-  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜₁ E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜₂ F]
-
-/-- A continuous semilinear right inverse `r` of `q` (for a split surjection) defines a
-`NonlinearRightInverse` whose underlying map is `r` itself, hence continuous and semilinear. -/
-noncomputable def toNonlinearRightInverse (q : E →SL[σ] F) (r : F →SL[σ'] E)
-    (hqr : Function.RightInverse r q) : q.NonlinearRightInverse :=
-  { toFun := r, nnNorm := ‖r‖₊, bound' := r.le_opNorm, right_inv' := hqr }
-
-@[simp]
-theorem coe_toNonlinearRightInverse (q : E →SL[σ] F) (r : F →SL[σ'] E)
-    (hqr : Function.RightInverse r q) : ⇑(q.toNonlinearRightInverse r hqr) = r := (rfl)
-
-@[simp]
-theorem toNonlinearRightInverse_nnNorm (q : E →SL[σ] F) (r : F →SL[σ'] E)
-    (hqr : Function.RightInverse r q) : (q.toNonlinearRightInverse r hqr).nnNorm = ‖r‖₊ := (rfl)
-
-end ContinuousLinearMap
 
 namespace ContinuousLinearMap.NonlinearRightInverse
 
