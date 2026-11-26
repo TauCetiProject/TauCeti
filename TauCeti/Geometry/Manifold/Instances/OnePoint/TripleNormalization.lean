@@ -40,8 +40,8 @@ coordinates `P`, `Q`, `R` of three distinct points, is the class of the matrix w
 `det(Q, P) R` and `det(R, Q) P`: it sends `[1 : 0]` to `[R]`, `[0 : 1]` to `[P]`, and, by the
 three-term identity `det(Q, P) R + det(R, Q) P = det(R, P) Q`, `[1 : 1]` to `[Q]`. Its
 determinant `det(Q, P) det(R, Q) det(R, P)` does not vanish, where `det(v, w)` is the determinant
-of the matrix with rows `v` and `w` (`Projectivization.mk_eq_mk_iff_det_eq_zero`). Near a parameter
-`x₀`, the points have `C^n` homogeneous coordinates
+of the matrix with rows `v` and `w` (`OnePoint.eq_iff_det_eq_zero`). Near a parameter `x₀`,
+the points have `C^n` homogeneous coordinates
 (`OnePoint.exists_contMDiffAt_eventually_equivProjectivization_eq_mk`), and the determinant has a
 square root that is analytic in it (`TauCeti.exists_analyticAt_pow_eq`).
 Dividing by it gives a family of matrices of determinant one, `C^n` at `x₀`, hence a `C^n` family
@@ -93,25 +93,6 @@ private theorem tripleMatrix_mulVec_one_one (P Q R : Fin 2 → ℂ) :
     tripleMatrix P Q R *ᵥ ![1, 1] = (of ![R, P]).det • Q := by
   ext i; fin_cases i <;> simp [tripleMatrix, det_fin_two] <;> ring
 
-/-- If a matrix `A` of `SL(2, ℂ)` sends the homogeneous coordinates `v` of a point `x` to a multiple
-of `w`, then its class in `PSL(2, ℂ)` moves `x` to the point with homogeneous coordinates `w`. -/
-private theorem equivProjectivization_smul_eq (A : SL(2, ℂ)) {v w : Fin 2 → ℂ} (hv : v ≠ 0)
-    (hw : w ≠ 0) {x : OnePoint ℂ} (hx : equivProjectivization ℂ x = .mk ℂ v hv) {a : ℂ}
-    (hA : (A : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ v = a • w) :
-    equivProjectivization ℂ ((A : PSL(2, ℂ)) • x) = .mk ℂ w hw := by
-  rw [pslMk_smul, equivProjectivization_smul, hx, Projectivization.smul_mk,
-    Projectivization.mk_eq_mk_iff']
-  -- The action of `SL(2, ℂ)` on vectors is multiplication by the underlying matrix.
-  exact ⟨a, hA.symm⟩
-
-/-- Homogeneous coordinates of two distinct points of the Riemann sphere have nonzero
-determinant. -/
-private theorem det_of_ne_zero {x y : OnePoint ℂ} (hxy : x ≠ y) {v w : Fin 2 → ℂ} {hv : v ≠ 0}
-    {hw : w ≠ 0} (hx : equivProjectivization ℂ x = .mk ℂ v hv)
-    (hy : equivProjectivization ℂ y = .mk ℂ w hw) : (of ![v, w]).det ≠ 0 := fun h ↦
-  hxy ((equivProjectivization ℂ).injective
-    (hx.trans (((Projectivization.mk_eq_mk_iff_det_eq_zero hv hw).2 h).trans hy.symm)))
-
 /-- For homogeneous coordinates `P`, `Q`, `R` of an ordered triple `q` of distinct points, the
 class of any matrix of `SL(2, ℂ)` proportional to the matrix with columns `det(Q, P) R` and
 `det(R, Q) P` is the Möbius transformation carrying `0`, `1`, `∞` to `q`. -/
@@ -123,15 +104,15 @@ private theorem pslHomeomorphDistinctTriples_symm_eq_of_coe_eq_smul
     (hA : (A : Matrix (Fin 2) (Fin 2) ℂ) = a • tripleMatrix P Q R) :
     (pslHomeomorphDistinctTriples (zeroOneInftyTriple ℂ)).symm q = A := by
   have h₀ : (A : PSL(2, ℂ)) • ((0 : ℂ) : OnePoint ℂ) = q.val 0 :=
-    (equivProjectivization ℂ).injective ((equivProjectivization_smul_eq A _ hP
+    (equivProjectivization ℂ).injective ((equivProjectivization_pslMk_smul_eq_mk A _ hP
       (equivProjectivization_apply_coe ℂ 0) (a := a * (of ![R, Q]).det)
       (by rw [hA, smul_mulVec, tripleMatrix_mulVec_zero_one, smul_smul])).trans hPq.symm)
   have h₁ : (A : PSL(2, ℂ)) • ((1 : ℂ) : OnePoint ℂ) = q.val 1 :=
-    (equivProjectivization ℂ).injective ((equivProjectivization_smul_eq A _ hQ
+    (equivProjectivization ℂ).injective ((equivProjectivization_pslMk_smul_eq_mk A _ hQ
       (equivProjectivization_apply_coe ℂ 1) (a := a * (of ![R, P]).det)
       (by rw [hA, smul_mulVec, tripleMatrix_mulVec_one_one, smul_smul])).trans hQq.symm)
   have h₂ : (A : PSL(2, ℂ)) • (∞ : OnePoint ℂ) = q.val 2 :=
-    (equivProjectivization ℂ).injective ((equivProjectivization_smul_eq A _ hR
+    (equivProjectivization ℂ).injective ((equivProjectivization_pslMk_smul_eq_mk A _ hR
       (equivProjectivization_apply_infinity ℂ) (a := a * (of ![Q, P]).det)
       (by rw [hA, smul_mulVec, tripleMatrix_mulVec_one_zero, smul_smul])).trans hRq.symm)
   rw [pslHomeomorphDistinctTriples_symm_eq_iff, coe_zeroOneInftyTriple]
@@ -193,9 +174,9 @@ theorem contMDiffAt_pslHomeomorphDistinctTriples_symm {p : M → Fin 3 → OnePo
   obtain ⟨_, hRx₀⟩ := hRev.self_of_nhds
   have hd₀ : d x₀ ≠ 0 := by
     simp only [d, det_tripleMatrix]
-    exact mul_ne_zero (mul_ne_zero (det_of_ne_zero ((hp x₀).ne (by decide)) hQx₀ hPx₀)
-      (det_of_ne_zero ((hp x₀).ne (by decide)) hRx₀ hQx₀))
-      (det_of_ne_zero ((hp x₀).ne (by decide)) hRx₀ hPx₀)
+    exact mul_ne_zero (mul_ne_zero (mt (eq_iff_det_eq_zero hQx₀ hPx₀).2 ((hp x₀).ne (by decide)))
+      (mt (eq_iff_det_eq_zero hRx₀ hQx₀).2 ((hp x₀).ne (by decide))))
+      (mt (eq_iff_det_eq_zero hRx₀ hPx₀).2 ((hp x₀).ne (by decide)))
   -- A square root `c` of `d` near `x₀`, analytic in `d`, and the normalized matrix `B`.
   obtain ⟨root, hroot, -, hroot_sq⟩ :=
     TauCeti.exists_analyticAt_pow_eq two_ne_zero hd₀ (Complex.cpow_nat_inv_pow (d x₀) two_ne_zero)
