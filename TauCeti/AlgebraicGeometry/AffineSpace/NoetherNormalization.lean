@@ -79,7 +79,8 @@ theorem exists_linear_normalization_of_finite {k A : Type u} [Field k] [Infinite
   have hπ : homOfAlgebra k x ≫
       linearMap (Spec (.of k)) (C.map (Scheme.ΓSpecIso (.of k)).inv) =
       homOfAlgebra k (y ∘ ULift.down) :=
-    homOfAlgebra_linearMap x C
+    (homOfAlgebra_linearMap x C).trans <|
+      congrArg (homOfAlgebra k) <| funext fun i ↦ by simp [C, y]
   have hy_ind' : AlgebraicIndependent k (y ∘ ULift.down : ULift.{u} (Fin d) → A) :=
     (algebraicIndependent_equiv Equiv.ulift).mpr hy_ind
   have hy_fin' : (MvPolynomial.aeval (R := k) (y ∘ ULift.down : ULift.{u} (Fin d) → A)).Finite :=
