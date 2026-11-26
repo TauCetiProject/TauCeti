@@ -55,8 +55,9 @@ finite-dimensional and semisimple.
   finite-dimensional `ℚ`-algebra is positive for the reduced trace `Trd_{B/ℚ}` exactly when it is
   positive for the regular trace `Tr_{B/ℚ}(L_x)`.
 * `TauCeti.PositiveInvolution.trace_mulLeft_mul_star_pos`: `Tr_{B/ℚ}(L_{x x*}) > 0` for `x ≠ 0`;
-  `TauCeti.PositiveInvolution.ofTracePos` is the converse constructor, with involution
-  `TauCeti.PositiveInvolution.toStarRing_ofTracePos`.
+  `TauCeti.PositiveInvolution.ofTracePos` is the converse constructor, and
+  `TauCeti.PositiveInvolution.toStarRing_ofTracePos` says its involution is the given `StarRing`
+  structure.
 
 ## Implementation notes
 
