@@ -48,31 +48,13 @@ theorem _root_.ContDiffAt.laplacian_comp_prodMk_eq_sum {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ E) {f : P × E → F} {p : P} {z : E}
     (hf : ContDiffAt ℝ 2 f (p, z)) :
     Δ (fun y ↦ f (p, y)) z = ∑ i, fderiv ℝ (fderiv ℝ f) (p, z) (0, b i) (0, b i) := by
-  have hmk : ContDiff ℝ 2 (fun y : E ↦ (p, y)) := contDiff_prodMk_right p
-  have hg : ContDiffAt ℝ 2 (fun y ↦ f (p, y)) z := hf.comp z hmk.contDiffAt
-  have hD2 : DifferentiableAt ℝ (fderiv ℝ f) (p, z) :=
-    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  -- Near `z`, the derivative of `y ↦ f (p, y)` is that of `f` along `inr`.
-  have hnear : ∀ᶠ y in 𝓝 z, ∀ v : E,
-      fderiv ℝ (fun y ↦ f (p, y)) y v = fderiv ℝ f (p, y) (0, v) := by
-    filter_upwards [hmk.continuous.continuousAt.eventually (hf.eventually (by simp))] with y hy v
-    have hd : HasFDerivAt (fun y ↦ f (p, y))
-        ((fderiv ℝ f (p, y)).comp (ContinuousLinearMap.inr ℝ P E)) y :=
-      (hy.differentiableAt (by norm_num)).hasFDerivAt.comp y (hasFDerivAt_prodMk_right p y)
-    simp [hd.fderiv]
-  rw [laplacian_eq_sum_fderiv_fderiv_apply b
-    ((hg.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num))]
+  have hg : ContDiffAt ℝ 2 (fun y ↦ f (p, y)) z := hf.comp z (contDiff_prodMk_right p).contDiffAt
+  have hD : DifferentiableAt ℝ (fderiv ℝ (fun y ↦ f (p, y))) z :=
+    (hg.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  rw [laplacian_eq_sum_fderiv_fderiv_apply b hD]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hi : (fun y ↦ fderiv ℝ (fun y ↦ f (p, y)) y (b i)) =ᶠ[𝓝 z]
-      fun y ↦ fderiv ℝ f (p, y) (0, b i) := hnear.mono fun y hy ↦ hy (b i)
-  rw [hi.fderiv_eq]
-  have hcomp : HasFDerivAt (fun y ↦ fderiv ℝ f (p, y) (0, b i))
-      ((fderiv ℝ (fun w ↦ fderiv ℝ f w (0, b i)) (p, z)).comp
-        (ContinuousLinearMap.inr ℝ P E)) z :=
-    (hD2.clm_apply (differentiableAt_const _)).hasFDerivAt.comp z (hasFDerivAt_prodMk_right p z)
-  rw [hcomp.fderiv, ContinuousLinearMap.comp_apply,
-    fderiv_clm_apply hD2 (differentiableAt_const _)]
-  simp
+  rw [fderiv_clm_apply hD (differentiableAt_const _)]
+  simpa using fderiv_fderiv_slice_right_apply hf (b i) (b i)
 
 /-- **The Laplacian in the second variable commutes with the joint derivative.** For
 `f : P × E → F` of class `C³` at `(p, z)`, the Laplacian in `z` of `Df` is the joint derivative of

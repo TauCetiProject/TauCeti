@@ -10,7 +10,9 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Polynomial
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.InnerProductSpace.Laplacian.DerivativeDecay
+import TauCeti.Analysis.Normed.Group.Prod
 import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
@@ -379,12 +381,8 @@ private theorem exists_gaugeTransform_inv_sub_vacuumField_eq_add (hm : 0 < m) (r
     have hq : DifferentiableAt ℝ (fun q ↦ Real.log (normSqFamily q)) (q.1, q.2) := by
       rw [Prod.mk.eta]
       exact hsmooth.differentiableAt (by simp)
-    have hd : HasFDerivAt (fun y ↦ Real.log (normSqFamily (q.1, y)))
-        ((fderiv ℝ (fun q ↦ Real.log (normSqFamily q)) (q.1, q.2)).comp
-          (ContinuousLinearMap.inr ℝ (Fin m → ℂ) ℂ)) q.2 :=
-      hq.hasFDerivAt.comp q.2 (hasFDerivAt_prodMk_right q.1 q.2)
     intro v
-    simp [hd.fderiv]
+    simp [fderiv_slice_right hq]
   have h := gaugeTransform_inv_apply_sub_vacuumField_eq (u := windingPhase m)
     (ℓ := fun y ↦ Real.log (normSqFamily (q.1, y)))
     (((contDiff_piLp 2).1 hx 2).differentiable (by simp) q.2)
@@ -479,14 +477,12 @@ theorem
   have hC₀ : 0 ≤ C :=
     (mul_nonneg_iff_of_pos_right (Real.exp_pos _)).1 ((norm_nonneg _).trans (hD 0 (Nat.zero_le _)))
   -- Near `(a, z)` the field is the end field of `ℓ`.
-  have hU : IsOpen {q : (Fin m → ℂ) × ℂ | ‖q.1‖ < r₀ + 1 ∧ R₁ < ‖q.2‖} :=
-    (isOpen_lt (continuous_norm.comp continuous_fst) continuous_const).inter
-      (isOpen_lt continuous_const (continuous_norm.comp continuous_snd))
   have hloc : (fun q : (Fin m → ℂ) × ℂ ↦ gaugeTransform (windingPhase m)⁻¹
       (gaugeTransform (polynomialGauge q.1) (polynomialVortex (monicOfCoeff q.1))) q.2 -
         vacuumField q.2) =ᶠ[𝓝 (a, z)] fun q ↦ L₁ (fderiv ℝ (fun q ↦ Real.log (normSqFamily q)) q) +
           L₂ (Real.exp (Real.log (normSqFamily q) / 2) - 1) := by
-    filter_upwards [hU.mem_nhds ⟨ha₁, hzR₁⟩] with q hq
+    filter_upwards [(isOpen_setOf_norm_fst_lt_and_lt_norm_snd (r₀ + 1) R₁).mem_nhds ⟨ha₁, hzR₁⟩]
+      with q hq
     rw [← normalizedVortex_def]
     exact hend q hq.1 hq.2
   have hℓ₀ : Real.log (normSqFamily (a, z)) ≤ 0 := by

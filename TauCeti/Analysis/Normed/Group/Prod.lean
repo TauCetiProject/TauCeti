@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Group.Constructions
 public import Mathlib.Analysis.Normed.Group.Real
 
+import Mathlib.Analysis.Normed.Group.Continuity
 import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Topology.Order.OrderClosed
 
 /-!
 # Weighted lower bounds for the product norm
@@ -21,6 +23,8 @@ may be negative, allowing the estimate to apply to quadratic forms with a signed
 squares of the coordinates.
 `TauCeti.exists_setOf_norm_fst_sq_add_norm_snd_sq_lt_subset` shows that the round balls
 `‖z.1‖² + ‖z.2‖² < r²` form a basis of neighbourhoods of the origin.
+`TauCeti.isOpen_setOf_norm_fst_lt_and_lt_norm_snd` shows that the regions `‖z.1‖ < r`,
+`R < ‖z.2‖` are open.
 -/
 
 public section
@@ -60,5 +64,11 @@ theorem exists_setOf_norm_fst_sq_add_norm_snd_sq_lt_subset {E F : Type*} [Semino
   have h2 : ‖z.2‖ < r := lt_of_pow_lt_pow_left₀ 2 hr.le (by nlinarith [sq_nonneg ‖z.1‖, hz.out])
   rw [Metric.mem_ball, dist_zero_right, Prod.norm_def]
   exact max_lt h1 h2
+
+/-- The region `‖z.1‖ < r`, `R < ‖z.2‖` of a product of seminormed groups is open. -/
+theorem isOpen_setOf_norm_fst_lt_and_lt_norm_snd {E F : Type*} [SeminormedAddGroup E]
+    [SeminormedAddGroup F] (r R : ℝ) : IsOpen {z : E × F | ‖z.1‖ < r ∧ R < ‖z.2‖} :=
+  (isOpen_lt (continuous_norm.comp continuous_fst) continuous_const).inter
+    (isOpen_lt continuous_const (continuous_norm.comp continuous_snd))
 
 end TauCeti

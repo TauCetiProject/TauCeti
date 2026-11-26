@@ -274,8 +274,6 @@ theorem le_mul_exp_add_div_mul_exp_of_mul_sub_le_laplacian {u V : E → ℝ} {R 
     rw [Pi.sub_def]
     simpa only [sub_zero] using hlim.sub hexp
 
-/-! ### Decay into a ball -/
-
 /-- **Forced exterior comparison for vector-valued functions.** Let `D : E → G` be `C²` outside
 the open ball of radius `R > 0` and tend to zero at infinity, with `‖Δ D - V • D‖ ≤ B exp (-c ‖x‖)`
 outside the closed ball for a potential `V ≥ a²` and rates `0 < c < a`. If `‖D‖ ≤ M` on the
@@ -318,6 +316,8 @@ theorem norm_le_mul_exp_add_div_mul_exp_of_norm_laplacian_sub_smul_le {G : Type*
       linarith
     rw [map_sub, map_smul, smul_eq_mul] at hlow
     linarith
+
+/-! ### Decay into a ball -/
 
 /-- The inner function `t ↦ √(t + a²)` of the barrier profile has derivative `1 / (2 √(t + a²))`. -/
 private theorem hasDerivAt_sqrt_add {a t : ℝ} (ht : 0 < t + a ^ 2) :
