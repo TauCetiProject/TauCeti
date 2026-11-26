@@ -122,6 +122,16 @@ theorem le_partitionEntropyRate_iff {T : X → X} {a : X → ι} {c : ℝ≥0∞
   have := h (n + 1) n.succ_pos
   rwa [Nat.cast_succ] at this
 
+/-- A label whose length-`n` itineraries have entropy `n * c` for every positive `n` has entropy
+rate `c`. -/
+theorem partitionEntropyRate_eq_of_countablePartitionEntropy_eq_mul {T : X → X} {a : X → ι}
+    {c : ℝ≥0∞}
+    (h : ∀ n, 0 < n → countablePartitionEntropy μ (iteratedPartitionLabel T a n) = n * c) :
+    partitionEntropyRate μ T a = c := by
+  rw [partitionEntropyRate_def]
+  refine (iInf_congr fun n ↦ ?_).trans iInf_const
+  simp [h (n + 1) n.succ_pos, mul_comm _ c, ENNReal.mul_div_cancel_right]
+
 /-- The Kolmogorov–Sinai entropy of `T` with respect to `μ`: the supremum of the entropy rates of
 the measurable labels `a : X → ℕ` of finite entropy. -/
 noncomputable def measureEntropy (μ : Measure X) (T : X → X) : ℝ≥0∞ :=
