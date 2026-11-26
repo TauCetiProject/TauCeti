@@ -36,8 +36,8 @@ in `TauCeti.RepresentationTheory.Irreducible.ConjugatePow`.
 
 ## Main results
 
-* `Module.End.HasEigenvector.pow_apply_of_mul_eq_mul_pow`: `F ^ j v` is an eigenvector of `T`
-  with eigenvalue `μ ^ q ^ j`.
+* `Module.End.HasEigenvector.hasEigenvector_pow_apply_of_mul_eq_mul_pow`: `F ^ j v` is an
+  eigenvector of `T` with eigenvalue `μ ^ q ^ j`.
 * `Module.End.linearIndependent_pow_mul_pow_of_mul_eq_mul_pow`: the `F ^ a * T ^ b`,
   `a, b < d`, are linearly independent.
 * `Module.End.span_range_pow_mul_pow_eq_top_of_mul_eq_mul_pow`: for `d = dim V` they span
@@ -68,8 +68,9 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {T F : End R M
 /-- **Iterates of `F` move along the `q`-power orbit of eigenvalues.** If `T * F = F * T ^ q`
 with `F` injective and `v` is an eigenvector of `T` with eigenvalue `μ`, then `F ^ j v` is an
 eigenvector of `T` with eigenvalue `μ ^ q ^ j`. -/
-theorem HasEigenvector.pow_apply_of_mul_eq_mul_pow (hTF : T * F = F * T ^ q)
-    (hF : Injective F) {μ : R} {v : M} (hv : T.HasEigenvector μ v) (j : ℕ) :
+theorem HasEigenvector.hasEigenvector_pow_apply_of_mul_eq_mul_pow
+    (hTF : T * F = F * T ^ q) (hF : Injective F) {μ : R} {v : M} (hv : T.HasEigenvector μ v)
+    (j : ℕ) :
     T.HasEigenvector (μ ^ q ^ j) ((F ^ j) v) := by
   have h := (SemiconjBy.pow_left_pow_pow (M := End R M) hTF.symm j).eq
   refine hasEigenvector_iff.mpr ⟨mem_eigenspace_iff.mpr ?_, ?_⟩
@@ -90,7 +91,7 @@ theorem linearIndependent_pow_mul_pow_of_mul_eq_mul_pow [IsDomain R] [IsTorsionF
     (hdist : Injective fun i : Fin d ↦ μ ^ q ^ (i : ℕ)) :
     LinearIndependent R fun p : Fin d × Fin d ↦ F ^ (p.1 : ℕ) * T ^ (p.2 : ℕ) := by
   obtain ⟨v, hv⟩ := hμ.exists_hasEigenvector
-  have heig (l : ℕ) := hv.pow_apply_of_mul_eq_mul_pow hTF hF l
+  have heig (l : ℕ) := hv.hasEigenvector_pow_apply_of_mul_eq_mul_pow hTF hF l
   have hind : LinearIndependent R fun a : Fin d ↦ (F ^ (a : ℕ)) v :=
     eigenvectors_linearIndependent' T _ hdist _ fun a ↦ heig a
   rw [Fintype.linearIndependent_iff]

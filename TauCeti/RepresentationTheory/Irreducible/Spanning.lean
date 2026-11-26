@@ -38,7 +38,7 @@ open Module Submodule
 
 namespace MonoidHom
 
-variable {R n : Type*} [CommRing R] [Fintype n] [DecidableEq n]
+variable {R n : Type*} [CommSemiring R] [Fintype n] [DecidableEq n]
 
 /-- **A spanning image has absolutely irreducible reductions.** If the image of a monoid
 homomorphism `u : M →* M_n(R)` spans `M_n(R)`, then for every ring homomorphism `f : R →+* k` to a
