@@ -81,6 +81,27 @@ theorem envelopeTwistAction_tmul (p : ℤ) (a : A) (b : Bᵐᵒᵖ) (m : N) :
     N.envelopeTwistAction p (a ⊗ₜ[R] b) m = InternalGrading.koszulTwistAlgEquiv 𝒜 p a • b • m :=
   (rfl)
 
+/-- In parameter zero the action is untwisted: `a ⊗ b` acts by `m ↦ a m b`. -/
+theorem envelopeTwistAction_zero_tmul (a : A) (b : Bᵐᵒᵖ) (m : N) :
+    N.envelopeTwistAction 0 (a ⊗ₜ[R] b) m = a • b • m := by
+  rw [envelopeTwistAction_tmul, InternalGrading.koszulTwistAlgEquiv_zero, AlgEquiv.coe_refl,
+    id_eq]
+
+/-- The twist does not affect the right action: `1 ⊗ b` acts by `m ↦ m b`. -/
+theorem envelopeTwistAction_one_tmul (p : ℤ) (b : Bᵐᵒᵖ) (m : N) :
+    N.envelopeTwistAction p (1 ⊗ₜ[R] b) m = b • m := by
+  rw [envelopeTwistAction_tmul, map_one, one_smul]
+
+/-- `a ⊗ 1` acts by the left action of the Koszul twist of `a`. -/
+theorem envelopeTwistAction_tmul_one (p : ℤ) (a : A) (m : N) :
+    N.envelopeTwistAction p (a ⊗ₜ[R] 1) m = InternalGrading.koszulTwistAlgEquiv 𝒜 p a • m := by
+  rw [envelopeTwistAction_tmul, one_smul]
+
+/-- The unit of `A ⊗ Bᵐᵒᵖ` acts trivially. -/
+@[simp]
+theorem envelopeTwistAction_one (p : ℤ) (m : N) : N.envelopeTwistAction p 1 m = m := by
+  rw [Algebra.TensorProduct.one_def, envelopeTwistAction_one_tmul, one_smul]
+
 /-- The twisted action is an action of `A ⊗ Bᵐᵒᵖ`. -/
 theorem envelopeTwistAction_mul (p : ℤ) (u v : A ⊗[R] Bᵐᵒᵖ) (m : N) :
     N.envelopeTwistAction p (u * v) m =
@@ -156,8 +177,7 @@ theorem map_envelopeTwistAction {p : ℤ}
   induction u using TensorProduct.inductionOn with
   | add u u' hu hu' => simp [hu, hu']
   | tmul a b =>
-    rw [envelopeTwistAction_tmul, envelopeTwistAction_tmul,
-      InternalGrading.koszulTwistAlgEquiv_zero, AlgEquiv.coe_refl, id_eq,
+    rw [envelopeTwistAction_zero_tmul, envelopeTwistAction_tmul,
       map_smul_left_eq_koszulTwistAlgEquiv_smul, map_smul]
 
 /-- **Cochains from twisted-equivariant maps.** A linear map which raises degrees by `p` and
@@ -170,12 +190,13 @@ def ofEnvelopeTwist {p : ℤ} (g : M →ₗ[R] N) (hg : LinearMap.IsHomogeneous 
   ⟨⟨{ toFun := g
       map_add' := g.map_add
       map_smul' := fun b x ↦ by
-        simpa only [envelopeTwistAction_tmul, map_one, one_smul, RingHom.id_apply] using
+        simpa only [envelopeTwistAction_one_tmul, one_smul, RingHom.id_apply] using
           hgu (1 ⊗ₜ[R] b) x },
     dgRightModuleCochains.mem_iff.2 hg⟩, mem_iff.2 fun {r a} ha x ↦ by
-      simpa only [envelopeTwistAction_tmul, InternalGrading.koszulTwistAlgEquiv_zero,
-        AlgEquiv.coe_refl, id_eq, one_smul, InternalGrading.koszulTwistAlgEquiv_apply_of_mem 𝒜 p ha,
-        smul_assoc, LinearMap.coe_mk, AddHom.coe_mk] using hgu (a ⊗ₜ[R] 1) x⟩
+      have h := hgu (a ⊗ₜ[R] 1) x
+      rw [envelopeTwistAction_zero_tmul, one_smul, envelopeTwistAction_tmul_one,
+        InternalGrading.koszulTwistAlgEquiv_apply_of_mem 𝒜 p ha, smul_assoc] at h
+      simpa only [LinearMap.coe_mk, AddHom.coe_mk] using h⟩
 
 @[simp]
 theorem ofEnvelopeTwist_apply {p : ℤ} (g : M →ₗ[R] N)

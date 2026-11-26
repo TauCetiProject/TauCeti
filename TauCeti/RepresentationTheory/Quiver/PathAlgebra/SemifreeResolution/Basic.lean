@@ -213,8 +213,8 @@ theorem arrowTensorBimoduleDifferential_smul_arrowTensorDerivation_ofArrow
         TensorProduct.map σ LinearMap.id u • arrowTensorDerivation k Q (d (ofArrow b)) := by
   have hb : (ε j ⊗ₜ[k] op (ε i) : 𝒜ᵉ) • arrowTensorDerivation k Q (ofArrow b) =
       arrowTensorDerivation k Q (ofArrow b) := by
-    rw [← arrowTensorDerivation_vertexIdempotent_mul_mul, vertexIdempotent_mul_ofArrow_self,
-      ofArrow_mul_vertexIdempotent_self]
+    simpa only [arrowTensorIdempotent_def] using
+      arrowTensorIdempotent_smul_arrowTensorDerivation (k := k) (b := ⟨i, j, b⟩)
   have hdb : (ε j ⊗ₜ[k] op (ε i) : 𝒜ᵉ) • arrowTensorDerivation k Q (d (ofArrow b)) =
       arrowTensorDerivation k Q (d (ofArrow b)) := by
     rw [← arrowTensorDerivation_vertexIdempotent_mul_mul,

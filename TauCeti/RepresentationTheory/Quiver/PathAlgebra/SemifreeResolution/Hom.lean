@@ -75,8 +75,8 @@ open scoped TensorProduct
 namespace TauCeti.PathAlgebra
 
 open TauCeti.Algebra.TensorProduct
-open DGBimoduleCat (envelopeTwistAction_tmul envelopeTwistAction_mul mem_envelopeCorner_iff
-  envelopeTwistAction_zero_eq_smul)
+open DGBimoduleCat (envelopeTwistAction_one_tmul envelopeTwistAction_mul mem_envelopeCorner_iff
+  envelopeTwistAction_tmul_one envelopeTwistAction_zero_eq_smul)
 
 universe u v w
 
@@ -274,9 +274,8 @@ private theorem arrowTensorTwistMap_smul (p : ℤ) (m : (Σ i j : Q, i ⟶ j) �
   induction z using DirectSum.induction_on with
   | zero => simp
   | of b x =>
-    rw [← DirectSum.lof_eq_of ℰ, ← map_smul, DirectSum.lof_eq_of, arrowTensorTwistMap_of,
-      DirectSum.lof_eq_of, arrowTensorTwistMap_of, Submodule.coe_smul, smul_eq_mul,
-      envelopeTwistAction_mul]
+    rw [← DirectSum.of_smul, arrowTensorTwistMap_of, arrowTensorTwistMap_of, Submodule.coe_smul,
+      smul_eq_mul, envelopeTwistAction_mul]
   | add z z' hz hz' => rw [smul_add, map_add, map_add, hz, hz', map_add]
 
 private theorem arrowTensorTwistMap_arrowTensorDerivation (p : ℤ)
@@ -292,7 +291,7 @@ private theorem arrowTensorTwistMap_arrowTensorDerivation_of_mem {p : ℤ}
       N.envelopeCorner (arrowTensorIdempotent k Q b) (wt b.2.2 + p)) (b : Σ i j : Q, i ⟶ j) :
     arrowTensorTwistMap N p (fun b ↦ m b) (arrowTensorDerivation k Q (ofArrow b.2.2)) = m b := by
   rw [arrowTensorTwistMap_arrowTensorDerivation, envelopeTwistAction_arrowTensorIdempotent,
-    ← envelopeTwistAction_arrowTensorIdempotent 0, (mem_envelopeCorner_iff.1 (m b).property).2]
+    (mem_envelopeCorner_arrowTensorIdempotent_iff.1 (m b).property).2]
 
 end ArrowGenerators
 
@@ -413,11 +412,11 @@ theorem arrowTensor_cochain_apply_mem_envelopeCorner {p : ℤ}
     (b : Σ i j : Q, i ⟶ j) :
     f.val.val (arrowTensorDerivation k Q (ofArrow b.2.2)) ∈
       N.envelopeCorner (arrowTensorIdempotent k Q b) (wt b.2.2 + p) := by
-  refine mem_envelopeCorner_iff.2 ⟨dgBimoduleCochains.map_mem f
+  refine mem_envelopeCorner_arrowTensorIdempotent_iff.2 ⟨dgBimoduleCochains.map_mem f
     ((mem_arrowTensorDGBimodule_grading_iff hd hdε).2
       (arrowTensorDerivation_ofArrow_mem k Q wt b.2.2)), ?_⟩
-  rw [envelopeTwistAction_arrowTensorIdempotent, ← envelopeTwistAction_arrowTensorIdempotent p,
-    ← arrowTensor_cochain_apply_smul hdε, arrowTensorIdempotent_smul_arrowTensorDerivation]
+  rw [← envelopeTwistAction_arrowTensorIdempotent p, ← arrowTensor_cochain_apply_smul hdε,
+    arrowTensorIdempotent_smul_arrowTensorDerivation]
 
 /-- **Cochains out of the arrow term are families of corner elements.** Evaluation at the
 universal derivatives `∂b` of the arrows identifies the degree-`p` cochains from
@@ -465,8 +464,7 @@ theorem arrowTensor_cochain_apply_arrowTensorDerivation_mul {p : ℤ}
           f.val.val (arrowTensorDerivation k Q y) +
         op y • f.val.val (arrowTensorDerivation k Q x) := by
   rw [arrowTensorDerivation_mul, map_add, arrowTensor_cochain_apply_smul hdε,
-    arrowTensor_cochain_apply_smul hdε, envelopeTwistAction_tmul, envelopeTwistAction_tmul,
-    map_one, one_smul, one_smul]
+    arrowTensor_cochain_apply_smul hdε, envelopeTwistAction_tmul_one, envelopeTwistAction_one_tmul]
 
 /-- **The differential of cochains out of the arrow term.** At an arrow `b`, the differential of
 a degree-`p` cochain `f` is `d (f(∂b)) - (-1)^p f(∂(d b))`, the second term coming from the twist of
@@ -510,7 +508,7 @@ theorem vertexTensor_cochain_apply_arrowTensorDifferential_arrowTensorDerivation
       rw [Submodule.coe_smul, coe_spanSingletonGenerator, smul_eq_mul,
         coe_arrowTensorDifferential_arrowTensorDerivation])
   rw [h, vertexTensor_cochain_apply_smul hdε, map_sub, LinearMap.sub_apply,
-    envelopeTwistAction_tmul, envelopeTwistAction_tmul, map_one, one_smul, one_smul]
+    envelopeTwistAction_tmul_one, envelopeTwistAction_one_tmul]
 
 end Boundary
 
