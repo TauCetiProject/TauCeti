@@ -28,10 +28,12 @@ gives the identity (`TauCeti.jetOperator_id`), the operators of two coefficient 
 that of the pointwise composite (`TauCeti.jetOperator_comp_jetOperator`), and applying an
 essentially bounded field of maps after a first-order operator is the first-order operator of the
 composite field (`TauCeti.jetOperator_comp_eq_operatorMultiplication_comp`). It depends
-Lipschitz-continuously on `M` in `L^∞` (`TauCeti.norm_jetOperator_sub_le`), hence continuously
-along families of coefficient fields continuous in `L^∞` (`TauCeti.continuousOn_jetOperator`), and
-a bounded right inverse of the operator of `M` on a space of jets survives every change of `M` that
-is small in `L^∞` compared with its norm
+Lipschitz-continuously on `M` in `L^∞` (`TauCeti.norm_jetOperator_sub_le`): a measurable change
+of `M` bounded by `B` almost everywhere moves the operator by at most `B`, even when `M` is not
+essentially bounded (`TauCeti.norm_jetOperator_sub_le_of_ae_norm_sub_le`). Hence it depends
+continuously along families of coefficient fields continuous in `L^∞`
+(`TauCeti.continuousOn_jetOperator`), and a bounded right inverse of the operator of `M` on a space
+of jets survives every change of `M` that is small in `L^∞` compared with its norm
 (`TauCeti.exists_rightInverse_jetOperator_comp_subtypeL_of_norm_sub_le`).
 
 The operators `∂s + A ∂t + C` with `A, C : V →L[ℝ] V`, such as the linearized Floer operators,
@@ -185,6 +187,24 @@ theorem norm_jetOperator_sub_le {μ : Measure (ℝ × ℝ)} {M M' : ℝ × ℝ �
   rw [jetOperator_of_memLp hM, jetOperator_of_memLp hM', ← map_sub, ← MemLp.toLp_sub,
     ← Lp.norm_toLp _ (hM.sub hM')]
   exact Lp.norm_operatorMultiplication_le _
+
+/-- If two coefficient fields differ by a measurable field bounded by `B` almost everywhere, their
+first-order operators differ by at most `B` in operator norm. Neither field needs to be essentially
+bounded: if one is not, neither is the other, and both operators vanish. -/
+theorem norm_jetOperator_sub_le_of_ae_norm_sub_le {μ : Measure (ℝ × ℝ)}
+    {M M' : ℝ × ℝ → V × V × V →L[ℝ] W} (hD : AEStronglyMeasurable (M - M') μ) {B : ℝ}
+    (hB₀ : 0 ≤ B) (hB : ∀ᵐ z ∂μ, ‖M z - M' z‖ ≤ B) :
+    ‖jetOperator p μ M - jetOperator p μ M'‖ ≤ B := by
+  have hDm : MemLp (M - M') ∞ μ := memLp_top_of_bound hD B hB
+  by_cases hM' : MemLp M' ∞ μ
+  · have hM : MemLp M ∞ μ := by simpa only [add_sub_cancel] using hM'.add hDm
+    refine (norm_jetOperator_sub_le hM hM').trans (ENNReal.toReal_le_of_le_ofReal hB₀ ?_)
+    rw [eLpNorm_exponent_top hD]
+    exact eLpNormEssSup_le_of_ae_bound hB
+  · -- Otherwise neither coefficient field is essentially bounded, and both operators vanish.
+    have hM : ¬ MemLp M ∞ μ := fun h ↦ hM' (by simpa only [sub_sub_cancel] using h.sub hDm)
+    rw [jetOperator_of_not_memLp hM, jetOperator_of_not_memLp hM', sub_zero, norm_zero]
+    exact hB₀
 
 /-- **Right inverses survive small changes of the coefficient field.** Let `S` be a subspace of the
 `Lᵖ` jets, such as a Sobolev space, and suppose that the first-order operator of an essentially
