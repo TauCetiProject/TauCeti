@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.ScatteringDiagram.Path.Crossing.Events
 public import TauCeti.Data.Finset.NoncommProd
+public import TauCeti.LinearAlgebra.AffineSpace.AffineMap
 public import Mathlib.Combinatorics.Quiver.Path.Weight
 import TauCeti.Data.Finset.Sort
 
@@ -43,26 +44,6 @@ public section
 noncomputable section
 
 open Set
-
-namespace TauCeti
-
-/-- Coplanar commutation pulls back along an affine map `f : P →ᵃ[k] Q` and a reindexing
-`r : ι → ι'` matching wall sets (`W' (r i) = f '' W i`) and labels (`label' (r i) = label i`). -/
-theorem commute_of_affineSpan_eq_of_image {k V₁ V₂ P Q ι ι' G : Type*} [Ring k]
-    [AddCommGroup V₁] [Module k V₁] [AddTorsor V₁ P]
-    [AddCommGroup V₂] [Module k V₂] [AddTorsor V₂ Q] [Mul G]
-    {W : ι → Set P} {W' : ι' → Set Q} {label : ι → G} {label' : ι' → G}
-    {f : P →ᵃ[k] Q} {r : ι → ι'} (hW : ∀ i, W' (r i) = f '' W i)
-    (hlabel : ∀ i, label' (r i) = label i)
-    (hcomm' : ∀ i' j', affineSpan k (W' i') = affineSpan k (W' j') →
-      Commute (label' i') (label' j'))
-    (i j : ι) (hij : affineSpan k (W i) = affineSpan k (W j)) :
-    Commute (label i) (label j) := by
-  rw [← hlabel i, ← hlabel j]
-  refine hcomm' (r i) (r j) ?_
-  rw [hW i, hW j, ← AffineSubspace.map_span f, ← AffineSubspace.map_span f, hij]
-
-end TauCeti
 
 namespace TauCeti.WallComplement
 

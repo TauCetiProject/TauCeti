@@ -57,23 +57,6 @@ variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ 
 abbrev WallComplement (C : FinitePolyhedralComplex h) : Type _ :=
   TauCeti.WallComplement (fun P : C.walls => (P : Set V))
 
-/-- A segment whose crossing set through `C` is a singleton `{(P, t)}` has ordered crossing list
-`[(P, t)]`. -/
-theorem orderedCrossings_of_crossings_eq_singleton (C : FinitePolyhedralComplex h)
-    {x y : C.WallComplement} (e : x ⟶ y) {P : C.walls} {t : ℝ}
-    (hcr : TauCeti.WallComplement.crossings x y = {(P, t)}) :
-    C.orderedCrossings e = [(P, t)] :=
-  (C.orderedCrossings_eq_iff e [(P, t)]).mpr
-    ⟨List.pairwise_singleton _ _, fun a => by simp [hcr]⟩
-
-/-- A segment whose crossing set through `C` is a singleton `{(P, t)}` has segment crossing word
-`C.crossingLetter ν x y P`. -/
-theorem segmentCrossingWord_of_crossings_eq_singleton (C : FinitePolyhedralComplex h)
-    (ν : C.walls → V →ₗ[ℝ] ℝ) {x y : C.WallComplement} (e : x ⟶ y) {P : C.walls} {t : ℝ}
-    (hcr : TauCeti.WallComplement.crossings x y = {(P, t)}) :
-    C.segmentCrossingWord ν e = C.crossingLetter ν x y P := by
-  simp [C.segmentCrossingWord_def, C.orderedCrossings_of_crossings_eq_singleton e hcr]
-
 /-! ### Wall coorientations -/
 
 /-- A family of wall coorientations on `C` assigns to each wall `w ∈ C.walls` a nonzero real linear

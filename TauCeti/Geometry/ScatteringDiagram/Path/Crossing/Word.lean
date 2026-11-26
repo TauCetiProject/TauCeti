@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex, Claude Code
+Authors: Codex, Claude Code, Antigravity (Gemini 4 Carbon)
 -/
 module
 
@@ -135,6 +135,14 @@ theorem orderedCrossings_eq_iff (e : x ⟶ y) (l : List (C.walls × ℝ)) :
     exact (C.pairwise_orderedCrossings e).eq_of_mem_iff hpair
       fun a => (C.mem_orderedCrossings e a).trans (hmem a).symm
 
+/-- A segment whose crossing set through `C` is a singleton `{(P, t)}` has ordered crossing list
+`[(P, t)]`. -/
+theorem orderedCrossings_of_crossings_eq_singleton (e : x ⟶ y) {P : C.walls} {t : ℝ}
+    (hcr : crossings x y = {(P, t)}) :
+    C.orderedCrossings e = [(P, t)] :=
+  (C.orderedCrossings_eq_iff e [(P, t)]).mpr
+    ⟨List.pairwise_singleton _ _, fun a => by simp [hcr]⟩
+
 /-- The distinct crossing times of a segment through a complex are the times of its ordered
 crossings. -/
 theorem orderedCrossingTimes_eq_map_snd (e : x ⟶ y) :
@@ -257,6 +265,13 @@ theorem segmentCrossingWord_eq_one_of_crossings_eq_empty (ν : C.walls → V →
   have hl : C.orderedCrossings e = [] :=
     List.eq_nil_iff_forall_not_mem.mpr fun a => by simp [he]
   simp [segmentCrossingWord_def, hl]
+
+/-- A segment whose crossing set through `C` is a singleton `{(P, t)}` has segment crossing word
+`C.crossingLetter ν x y P`. -/
+theorem segmentCrossingWord_of_crossings_eq_singleton (ν : C.walls → V →ₗ[ℝ] ℝ) (e : x ⟶ y)
+    {P : C.walls} {t : ℝ} (hcr : crossings x y = {(P, t)}) :
+    C.segmentCrossingWord ν e = C.crossingLetter ν x y P := by
+  simp [C.segmentCrossingWord_def, C.orderedCrossings_of_crossings_eq_singleton e hcr]
 
 /-- A stationary segment has trivial crossing word. -/
 @[simp]
