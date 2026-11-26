@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Dirichlet.Existence
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
-import TauCeti.Analysis.Normed.Operator.MethodOfContinuity
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
 
 /-!
@@ -27,10 +26,7 @@ and that its solutions satisfy
 
 with a constant `C` depending only on `E`, `p`, `λ` and `Λ`: not on the centre, the radius or the
 matrix `A` within the class
-(`TauCeti.exists_norm_iteratedGradient_le_of_traceCLM_comp_iteratedGradient_eq_of_ball`). On a
-fixed bounded domain with `C²` boundary the `W^{2,p}` a priori estimate holds with one constant for
-the whole class of matrices
-(`TauCeti.exists_norm_le_of_traceCLM_comp_iteratedGradient_eq_of_norm_le`).
+(`TauCeti.exists_norm_iteratedGradient_le_of_traceCLM_comp_iteratedGradient_eq_of_ball`).
 
 This uniformity is what estimates obtained by freezing measurable coefficients on balls need: on
 each ball the frozen matrix is an average of the coefficients, so it varies with the ball, and the
@@ -47,11 +43,9 @@ constant-coefficient equation, controls `D²w` in `Lᵖ` with this constant, for
   theorem of Gilbarg–Trudinger, Theorem 9.15 (in the `TauCeti` namespace,
   `existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_iteratedGradient_add_mul_eq`)
   applies.
-* **Uniformity in `A`.** On the unit ball, Gilbarg–Trudinger's Lemma 9.17
-  (`TauCeti.exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq`) bounds `‖u‖_{W^{2,p}}` by
-  `C_A ‖tr (A ∘ D²u)‖` for each `A`. The operator `u ↦ tr (A ∘ D²u)` depends linearly, hence
-  continuously, on `A`, and the class of `A` is compact, so a perturbation argument over a finite
-  cover (`IsCompact.exists_forall_norm_le_mul_norm_apply`) makes the constant uniform.
+* **Uniformity in `A`.** On the unit ball, Gilbarg–Trudinger's Lemma 9.17 for constant
+  coefficients holds with one constant for the whole class of matrices
+  (`TauCeti.exists_norm_le_of_traceCLM_comp_iteratedGradient_eq_of_norm_le`).
 * **Uniformity in the ball.** The homothety `Φ y = R y + x₀` maps the unit ball onto `B(x₀, R)`.
   For `v = u ∘ Φ`, `D²v = R² D²u ∘ Φ` and `tr (A ∘ D²v) = R² f ∘ Φ`, and composition with `Φ` and
   with its inverse scales `Lᵖ` norms by reciprocal powers `R^(∓n/p)` of the Jacobian. These factors
@@ -78,120 +72,6 @@ open Wkp
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- The constant-coefficient operator `u ↦ tr (A ∘ D²u)` from `W^{2,p}(Ω)` to `Lᵖ(Ω)`. -/
-private def hessianTraceL (Omega : Opens (WithLp 2 (ℝ × E)))
-    (A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :
-    Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2 →L[ℝ]
-      Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega) :=
-  ((traceCLM ℝ (WithLp 2 (ℝ × E))).comp (ContinuousLinearMap.compL ℝ (WithLp 2 (ℝ × E))
-    (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) A)).compLpL p _ ∘L iteratedGradientL 1
-
-private theorem hessianTraceL_ae (Omega : Opens (WithLp 2 (ℝ × E)))
-    (A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))
-    (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2) :
-    ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict Omega,
-      hessianTraceL Omega A u x = traceCLM ℝ (WithLp 2 (ℝ × E)) (A ∘L iteratedGradient 1 u x) := by
-  filter_upwards [ContinuousLinearMap.coeFn_compLpL (p := p) ((traceCLM ℝ (WithLp 2 (ℝ × E))).comp
-    (ContinuousLinearMap.compL ℝ (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) A))
-    (iteratedGradient 1 u)] with x hx
-  rw [hessianTraceL, ContinuousLinearMap.comp_apply, iteratedGradientL_apply, hx,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply]
-
-/-- The operator `u ↦ tr (A ∘ D²u)` depends continuously on `A`, since it is linear in `A` and the
-coefficient matrices form a finite-dimensional space. -/
-private theorem continuous_hessianTraceL (Omega : Opens (WithLp 2 (ℝ × E))) :
-    Continuous fun A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E) =>
-      (hessianTraceL (p := p) Omega A) := by
-  let T : (WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) →ₗ[ℝ]
-      (Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2 →L[ℝ]
-        Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega)) :=
-    { toFun := fun A => hessianTraceL Omega A
-      map_add' := fun A B => by
-        simp only [hessianTraceL, map_add, ContinuousLinearMap.comp_add,
-          ContinuousLinearMap.add_compLpL, ContinuousLinearMap.add_comp]
-      map_smul' := fun c A => by
-        simp only [hessianTraceL, map_smul, ContinuousLinearMap.comp_smul,
-          ContinuousLinearMap.smul_compLpL, ContinuousLinearMap.smul_comp, RingHom.id_apply] }
-  exact T.continuous_of_finiteDimensional
-
-private theorem exists_norm_le_mul_norm_hessianTraceL (hp : 1 < p) (hp_top : p ≠ ⊤)
-    {Omega : Opens (WithLp 2 (ℝ × E))}
-    (hΩ : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
-    (hbdry : ∀ x ∈ frontier (Omega : Set (WithLp 2 (ℝ × E))),
-      ∃ (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (φ : E → ℝ) (h₀ r₀ : ℝ),
-        e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ φ 0 = 0 ∧ ContDiff ℝ 2 φ ∧
-          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ φ z.snd < z.fst))
-    {lam : ℝ} (hlam : 0 < lam) (Λ : ℝ) :
-    ∃ C : ℝ, ∀ A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E),
-      (∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A ξ, ξ⟫_ℝ) → ‖A‖ ≤ Λ →
-        ∀ u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2,
-          firstOrder 1 u ∈ w1p0Submodule volume Omega p →
-            ‖u‖ ≤ C * ‖hessianTraceL Omega A u‖ := by
-  -- The class of coefficient matrices is compact.
-  set K : Set (WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) :=
-    {A | ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A ξ, ξ⟫_ℝ} ∩ closedBall 0 Λ
-  have hK : IsCompact K := by
-    -- The norm of the operator space reaches `ProperSpace` through two instance paths.
-    have : ProperSpace (WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) := by
-      simpa +instances using
-        FiniteDimensional.proper ℝ (WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))
-    refine (isCompact_closedBall 0 Λ).inter_left ?_
-    simp only [ofPred_forall]
-    exact isClosed_iInter fun ξ => isClosed_le continuous_const
-      ((continuous_id.clm_apply continuous_const).inner continuous_const)
-  -- The Banach space `M = W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` and the family `A ↦ tr (A ∘ D²·)` on it.
-  set M : Submodule ℝ (Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2) :=
-    (w1p0Submodule volume Omega p).toSubmodule.comap (firstOrderL 1).toLinearMap
-  have hM : ∀ u, u ∈ M ↔ firstOrder 1 u ∈ w1p0Submodule volume Omega p := fun u => by
-    rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, firstOrderL_apply,
-      ClosedSubmodule.mem_toSubmodule_iff]
-  have hLc : Continuous fun A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E) =>
-      (hessianTraceL (p := p) Omega A).comp M.subtypeL :=
-    (continuous_hessianTraceL Omega).clm_comp continuous_const
-  -- Lemma 9.17 for each `A` in the class, made uniform by compactness.
-  obtain ⟨C, hC⟩ := hK.exists_forall_norm_le_mul_norm_apply hLc.continuousOn fun A hA => by
-    obtain ⟨hA1, -⟩ := hA
-    obtain ⟨C, hC⟩ := exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq hp hp_top hΩ
-      hbdry (A := fun _ => A) (fun _ _ => continuousWithinAt_const)
-      (fun _ _ => ⟨lam, hlam, hA1⟩) (c := 0) (γ := 0) aestronglyMeasurable_const
-      (ae_of_all _ fun _ => by simp) (ae_of_all _ fun _ => le_rfl)
-    refine ⟨C, fun u => ?_⟩
-    simpa using hC u _ ((hM u).1 u.property)
-      ((hessianTraceL_ae Omega A (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2)).mono
-        fun x hx => by simp only [Pi.zero_apply, zero_mul, add_zero, hx])
-  exact ⟨C, fun A hA hAΛ u hu => by
-    -- `mem_closedBall_zero_iff` does not unify with the operator norm here; `dist` does.
-    have hAK : A ∈ K := ⟨hA, mem_closedBall.2 ((dist_zero_right A).le.trans hAΛ)⟩
-    simpa using hC A hAK ⟨u, (hM u).2 hu⟩⟩
-
-/-- **The a priori estimate, uniformly in the coefficients** (Gilbarg–Trudinger, Lemma 9.17, for
-constant coefficients). Let `Ω ⊆ ℝ × E` be a bounded open set with `C²` boundary, `1 < p < ∞` and
-`0 < λ`. There is one constant `C` such that for every constant matrix `A` with
-`λ ‖ξ‖² ≤ ⟪A ξ, ξ⟫` and `‖A‖ ≤ Λ`, every `u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` with `tr (A ∘ D²u) = f`
-almost everywhere on `Ω` satisfies `‖u‖_{W^{2,p}(Ω)} ≤ C ‖f‖_{Lᵖ(Ω)}`. -/
-theorem exists_norm_le_of_traceCLM_comp_iteratedGradient_eq_of_norm_le (hp : 1 < p)
-    (hp_top : p ≠ ⊤) {Omega : Opens (WithLp 2 (ℝ × E))}
-    (hΩ : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
-    (hbdry : ∀ x ∈ frontier (Omega : Set (WithLp 2 (ℝ × E))),
-      ∃ (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (φ : E → ℝ) (h₀ r₀ : ℝ),
-        e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ φ 0 = 0 ∧ ContDiff ℝ 2 φ ∧
-          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ φ z.snd < z.fst))
-    {lam : ℝ} (hlam : 0 < lam) (Λ : ℝ) :
-    ∃ C : ℝ, ∀ A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E),
-      (∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A ξ, ξ⟫_ℝ) → ‖A‖ ≤ Λ →
-        ∀ (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2)
-          (f : Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega)),
-          firstOrder 1 u ∈ w1p0Submodule volume Omega p →
-          (∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict Omega,
-            traceCLM ℝ (WithLp 2 (ℝ × E)) (A ∘L iteratedGradient 1 u x) = f x) →
-          ‖u‖ ≤ C * ‖f‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_le_mul_norm_hessianTraceL hp hp_top hΩ hbdry hlam Λ
-  refine ⟨C, fun A hA hAΛ u f hu hf => ?_⟩
-  have hT : hessianTraceL Omega A u = f := Lp.ext <| by
-    filter_upwards [hessianTraceL_ae Omega A u, hf] with x h1 h2
-    rw [h1, h2]
-  exact hT ▸ hC A hA hAΛ u hu
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The `C²` boundary charts of a ball, in the form taken by the Dirichlet theory. -/
@@ -220,6 +100,18 @@ private theorem homothety_factors_mul_eq (n : ℕ) {R : ℝ} (hR : 0 < R) (s C t
   calc _ = (|R⁻¹ ^ 2| * |R ^ 2|) * ((R⁻¹ ^ n)⁻¹ ^ s * (R ^ n)⁻¹ ^ s) * (C * t) := by ring
     _ = C * t := by rw [hR2, hcancel, one_mul, one_mul]
 
+/-- `tr (A ∘ D²v)` is an element of `Lᵖ(Ω)` for `v ∈ W^{2,p}(Ω)`. -/
+private theorem exists_ae_traceCLM_comp_iteratedGradient_eq (Omega : Opens (WithLp 2 (ℝ × E)))
+    (A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))
+    (v : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2) :
+    ∃ g : Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega),
+      ∀ᵐ y ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict Omega,
+        traceCLM ℝ (WithLp 2 (ℝ × E)) (A ∘L iteratedGradient 1 v y) = g y := by
+  set T := (traceCLM ℝ (WithLp 2 (ℝ × E))).comp
+    (ContinuousLinearMap.compL ℝ (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) (WithLp 2 (ℝ × E)) A)
+  exact ⟨T.compLpL p _ (iteratedGradient 1 v),
+    (T.coeFn_compLpL (iteratedGradient 1 v)).mono fun y hy => hy.symm⟩
+
 /-- **Rescaling from the unit ball.** A Hessian estimate `‖D²v‖ ≤ C ‖tr (A ∘ D²v)‖`, `C ≥ 0`, on
 `W^{2,p} ∩ W^{1,p}_0` of the unit ball gives the same estimate on every ball of positive radius:
 for `v = u ∘ Φ`, `Φ y = R y + x₀`, both sides acquire the factor `R²` and reciprocal powers of the
@@ -227,9 +119,12 @@ Jacobian of `Φ`. -/
 private theorem norm_iteratedGradient_le_of_eq_ball (hp_top : p ≠ ⊤)
     {A : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)} {C : ℝ} (hC0 : 0 ≤ C)
     {B : Opens (WithLp 2 (ℝ × E))} (hB : (B : Set (WithLp 2 (ℝ × E))) = ball 0 1)
-    (hC : ∀ v : Wkp (volume : Measure (WithLp 2 (ℝ × E))) B p 2,
+    (hC : ∀ (v : Wkp (volume : Measure (WithLp 2 (ℝ × E))) B p 2)
+      (g : Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict B)),
       firstOrder 1 v ∈ w1p0Submodule volume B p →
-        ‖iteratedGradient 1 v‖ ≤ C * ‖hessianTraceL B A v‖)
+      (∀ᵐ y ∂(volume : Measure (WithLp 2 (ℝ × E))).restrict B,
+        traceCLM ℝ (WithLp 2 (ℝ × E)) (A ∘L iteratedGradient 1 v y) = g y) →
+        ‖iteratedGradient 1 v‖ ≤ C * ‖g‖)
     {x₀ : WithLp 2 (ℝ × E)} {R : ℝ} (hR : 0 < R) {Omega : Opens (WithLp 2 (ℝ × E))}
     (hΩ : (Omega : Set (WithLp 2 (ℝ × E))) = ball x₀ R)
     {u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2}
@@ -274,18 +169,19 @@ private theorem norm_iteratedGradient_le_of_eq_ball (hp_top : p ≠ ⊤)
     exact hΨ.lpNorm_le_of_ae_le_mul_comp Omega.isOpen.measurableSet subset_rfl hΨ.mapsTo
       (abs_nonneg _) (Lp.aestronglyMeasurable _) (Lp.memLp _)
       (h.mono fun y hy => by rw [hy, norm_smul, Real.norm_eq_abs])
-  have hTv : ‖hessianTraceL B A v‖ ≤ |R ^ 2| *
+  obtain ⟨g, hg⟩ := exists_ae_traceCLM_comp_iteratedGradient_eq B A v
+  have hTv : ‖g‖ ≤ |R ^ 2| *
       ((R ^ finrank ℝ (WithLp 2 (ℝ × E)))⁻¹ ^ (1 / p).toReal * ‖f‖) := by
     rw [Lp.norm_def, toReal_eLpNorm, Lp.norm_def, toReal_eLpNorm]
     refine hΦ.lpNorm_le_of_ae_le_mul_comp B.isOpen.measurableSet subset_rfl hΦ.mapsTo
       (abs_nonneg _) (Lp.aestronglyMeasurable _) (Lp.memLp _) ?_
-    filter_upwards [hessianTraceL_ae B A v, iteratedGradient_compL_smul_add_const_ae hp_top hΦ u,
+    filter_upwards [hg, iteratedGradient_compL_smul_add_const_ae hp_top hΦ u,
       hΦ.ae_comp hf] with y h1 h2 h3
-    rw [h1, h2, ContinuousLinearMap.comp_smul, map_smul, h3, norm_smul, Real.norm_eq_abs]
+    rw [← h1, h2, ContinuousLinearMap.comp_smul, map_smul, h3, norm_smul, Real.norm_eq_abs]
   refine (hDu.trans ?_).trans_eq (homothety_factors_mul_eq (finrank ℝ (WithLp 2 (ℝ × E))) hR
     (1 / p).toReal C ‖f‖)
   gcongr
-  exact (hC v hv0).trans (mul_le_mul_of_nonneg_left hTv hC0)
+  exact (hC v g hv0 hg).trans (mul_le_mul_of_nonneg_left hTv hC0)
 
 /-- **The a priori estimate for constant coefficients on balls, with a universal constant.** Let
 `1 < p < ∞` and `0 < λ`. There is a constant `C`, depending only on `E`, `p`, `λ` and `Λ`, such
@@ -306,7 +202,8 @@ theorem exists_norm_iteratedGradient_le_of_traceCLM_comp_iteratedGradient_eq_of_
             ‖iteratedGradient 1 u‖ ≤ C * ‖f‖ := by
   -- The uniform estimate on the unit ball, with a nonnegative constant.
   set B : Opens (WithLp 2 (ℝ × E)) := ⟨ball 0 1, isOpen_ball⟩
-  obtain ⟨C₀, hC₀⟩ := exists_norm_le_mul_norm_hessianTraceL (p := p) hp hp_top (Omega := B)
+  obtain ⟨C₀, hC₀⟩ := exists_norm_le_of_traceCLM_comp_iteratedGradient_eq_of_norm_le (p := p) hp
+    hp_top (Omega := B)
     isBounded_ball (forall_frontier_exists_contDiff_graph_of_eq_ball 0 one_pos rfl) hlam Λ
   refine ⟨max C₀ 0, fun A hA hAΛ x₀ R Omega hΩ u f hu hf => ?_⟩
   rcases le_or_gt R 0 with hR | hR
@@ -318,7 +215,7 @@ theorem exists_norm_iteratedGradient_le_of_traceCLM_comp_iteratedGradient_eq_of_
     rw [h0, norm_zero]
     exact mul_nonneg (le_max_right _ _) (norm_nonneg _)
   exact norm_iteratedGradient_le_of_eq_ball hp_top (le_max_right C₀ 0) rfl
-    (fun v hv => (norm_iteratedGradient_le 1 v).trans ((hC₀ A hA hAΛ v hv).trans
+    (fun v g hv hg => (norm_iteratedGradient_le 1 v).trans ((hC₀ A hA hAΛ v g hv hg).trans
       (mul_le_mul_of_nonneg_right (le_max_left C₀ 0) (norm_nonneg _)))) hR hΩ hu hf
 
 /-- **The Dirichlet problem for constant coefficients on a ball.** Let `1 < p < ∞` and let `A` be a
