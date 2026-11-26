@@ -29,10 +29,9 @@ half-space `{x | ⟪x, ‖ν‖⁻¹ • ν⟫ < c / ‖ν‖}` of a unit vector
 (`TauCeti.setOf_inner_lt_eq_smul_inv_norm`). Moving by `c ν` along a unit normal `ν` raises the
 height `⟪·, ν⟫` by `c` (`TauCeti.real_inner_add_smul_self_of_norm_eq_one`), and translating
 `{x | ⟪x, ν⟫ < s}` by any `v` gives `{x | ⟪x, ν⟫ < s + ⟪v, ν⟫}` (`TauCeti.vadd_setOf_inner_lt`).
-A set `Ω` agreeing with the half-space `{x | c < ⟪x, ν⟫}` on a ball
-agrees with it on every smaller concentric ball (`TauCeti.inter_ball_eq_setOf_lt_inner_inter_ball`),
-and, for `ν ≠ 0`, every point of the hyperplane `{x | ⟪x, ν⟫ = c}` in that ball is a limit of
-points outside `closure Ω` (`TauCeti.mem_closure_compl_closure_of_inter_ball_eq`).
+If a set `Ω` agrees with the half-space `{x | c < ⟪x, ν⟫}` on a ball and `ν ≠ 0`, every point
+of the hyperplane `{x | ⟪x, ν⟫ = c}` in that ball is a limit of points outside `closure Ω`
+(`TauCeti.mem_closure_compl_closure_of_inter_ball_eq`).
 In rigid coordinates `e : F ≃ᵃⁱ ℝ × E`, the normal coordinate `(e x).fst` is `⟪x, ν⟫` plus a
 constant, so the region where it is positive is a half-space.
 -/
@@ -172,23 +171,6 @@ theorem setOf_inner_lt_eq_smul_inv_norm {E : Type*} [NormedAddCommGroup E]
   ext x
   simp only [Set.mem_ofPred_eq, real_inner_smul_right, lt_div_iff₀ hn]
   field_simp
-
-/-- A set agreeing with the half-space `{c₀ < ⟪x, ν⟫}` on `ball y₀ r` agrees with it on every
-smaller ball: `Ω ∩ ball y₀ ρ = {c₀ < ⟪x, ν⟫} ∩ ball y₀ ρ` for `ρ ≤ r`. -/
-theorem inter_ball_eq_setOf_lt_inner_inter_ball {E : Type*} [SeminormedAddCommGroup E]
-    [InnerProductSpace ℝ E] {H Ω : Set E} {ν : E} {c₀ : ℝ} (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
-    {y₀ : E} {r ρ : ℝ} (hΩ : Ω ∩ Metric.ball y₀ r = H ∩ Metric.ball y₀ r) (hρ : ρ ≤ r) :
-    Ω ∩ Metric.ball y₀ ρ = {x | c₀ < ⟪x, ν⟫_ℝ} ∩ Metric.ball y₀ ρ := by
-  ext x
-  constructor
-  · rintro ⟨hxΩ, hxb⟩
-    have h1 : x ∈ Ω ∩ Metric.ball y₀ r := ⟨hxΩ, Metric.ball_subset_ball hρ hxb⟩
-    rw [hΩ] at h1
-    exact ⟨(hH x).1 h1.1, hxb⟩
-  · rintro ⟨hx, hxb⟩
-    have h1 : x ∈ H ∩ Metric.ball y₀ r := ⟨(hH x).2 hx, Metric.ball_subset_ball hρ hxb⟩
-    rw [← hΩ] at h1
-    exact ⟨h1.1, hxb⟩
 
 open Filter Topology in
 /-- A point `z` of the hyperplane `⟪z, ν⟫ = c₀` inside `ball y₀ r` is a limit of points outside

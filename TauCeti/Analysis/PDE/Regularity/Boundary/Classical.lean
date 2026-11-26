@@ -96,7 +96,8 @@ theorem tendsto_nhdsWithin_zero_of_inter_ball_eq {H Ω : Opens E} {ν : E} {c₀
     Tendsto g (𝓝[(Ω : Set E) ∩ ball y₀ ρ] z) (𝓝 0) := by
   -- For `ν = 0` the half-ball is empty.
   rcases eq_or_ne ν 0 with rfl | hν
-  · rw [inter_ball_eq_setOf_lt_inner_inter_ball hH hΩ hρr.le]
+  · rw [inter_eq_inter_mono_right hΩ (ball_subset_ball hρr.le),
+      show (H : Set E) = {x | c₀ < ⟪x, 0⟫_ℝ} from Set.ext hH]
     simp [← hzν]
   have hρ : 0 < ρ := pos_of_mem_ball hz
   -- A cutoff equal to one on `B(y₀, ρ)` localizes `u` to an element `v` of `H¹₀(Ω)`, equal to `g`
@@ -164,9 +165,9 @@ private theorem exists_contDiffOn_two_ae_eq_and_holderOnWith_fderiv_fderiv_of_in
       ∃ K : ℝ≥0, HolderOnWith K α (fderiv ℝ (fderiv ℝ g)) ((Ω : Set E) ∩ ball y₀ (r / 16)) := by
   set S : Opens E := Ω ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩
   have hSH : (S : Set E) ⊆ closedBall y₀ (r / 16) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ} := fun x hx => by
-    have hx' : x ∈ (Ω : Set E) ∩ ball y₀ (r / 16) := hx
-    rw [inter_ball_eq_setOf_lt_inner_inter_ball hH hΩ (by linarith)] at hx'
-    exact ⟨ball_subset_closedBall hx'.2, (le_of_lt hx'.1 : c₀ ≤ ⟪x, ν⟫_ℝ)⟩
+    have hx' : x ∈ (H : Set E) ∩ ball y₀ (r / 16) :=
+      (inter_eq_inter_mono_right hΩ (ball_subset_ball (by linarith))).subset hx
+    exact ⟨ball_subset_closedBall hx'.2, ((hH x).1 hx'.1).le⟩
   -- The derivatives along the standard basis have weak gradients with Hölder representatives.
   let b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
   have hsecond := fun i => exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq
@@ -233,7 +234,8 @@ theorem exists_contDiffOn_two_ae_eq_and_holderOnWith_of_inter_ball_eq
     exists_contDiffOn_two_ae_eq_and_holderOnWith_fderiv_fderiv_of_inter_ball_eq hα hα1 hν hH hy₀
       hr hΩ ha hell hda hf hfH hu hu0
   have hconv : Convex ℝ ((Ω : Set E) ∩ ball y₀ (r / 16)) := by
-    rw [inter_ball_eq_setOf_lt_inner_inter_ball hH hΩ (by linarith)]
+    rw [inter_eq_inter_mono_right hΩ (ball_subset_ball (by linarith)),
+      show (H : Set E) = {x | c₀ < ⟪x, ν⟫_ℝ} from Set.ext hH]
     exact (convex_halfSpace_gt ⟨fun x y => inner_add_left x y ν, fun c x => by
       rw [real_inner_smul_left, smul_eq_mul]⟩ c₀).inter (convex_ball y₀ (r / 16))
   set S := (Ω : Set E) ∩ ball y₀ (r / 16)
