@@ -12,6 +12,7 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
 import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Tactic.Group
 import Mathlib.Tactic.Abel
+import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
 # The tame relation for cocycles of a first-order deformation
@@ -84,9 +85,8 @@ theorem IsCocycle₁.apply_pow_of_smul_eq (hu : ∀ g h, u (g * h) = u g + u h)
     rw [pow_zero, map_one_of_isCocycle₁ hω, Nat.choose_zero_succ]
     simp
   | succ n ih =>
-    have hun : u (γ ^ n) = n • u γ :=
-      map_pow (MonoidHom.mk' (fun g => Multiplicative.ofAdd (u g)) hu) γ n
-    rw [pow_succ, hω, ih, hact (γ ^ n), hun, Nat.choose_succ_succ', Nat.choose_one_right]
+    rw [pow_succ, hω, ih, hact (γ ^ n), TauCeti.map_pow_eq_nsmul_of_map_mul_eq_add hu,
+      Nat.choose_succ_succ', Nat.choose_one_right]
     simp only [nsmul_eq_mul, Nat.cast_add, Nat.cast_one, add_smul, one_smul, mul_smul]
     abel
 
@@ -106,9 +106,7 @@ theorem IsCocycle₁.smul_apply_eq_smul_apply_of_conj_eq_pow
     rw [hchoose, Nat.cast_mul, hm, zero_mul]
   -- `u` and `ω` take the same values at `γ ^ (2 * m + 1)` as at `γ`.
   have hupow : u (γ ^ (2 * m + 1)) = u γ := by
-    have h' : u (γ ^ (2 * m + 1)) = (2 * m + 1) • u γ :=
-      map_pow (MonoidHom.mk' (fun g => Multiplicative.ofAdd (u g)) hu) γ (2 * m + 1)
-    rw [h', nsmul_eq_mul, hN, one_mul]
+    rw [TauCeti.map_pow_eq_nsmul_of_map_mul_eq_add hu, nsmul_eq_mul, hN, one_mul]
   have hωpow : ω (γ ^ (2 * m + 1)) = ω γ := by
     rw [hω.apply_pow_of_smul_eq hu hact, hN, hC, one_smul, zero_smul, add_zero]
   -- Expand both sides of `φ * γ = γ ^ (2 * m + 1) * φ` by the cocycle identity.
