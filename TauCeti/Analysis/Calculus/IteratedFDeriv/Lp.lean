@@ -18,6 +18,7 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
 # Iterated derivative seminorms: linear changes of variables and the Euclidean Hessian
@@ -233,14 +234,8 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
 `‖D(Dⁿ f)‖_p = ‖Dⁿ⁺¹ f‖_p`, since the two differ by a linear isometry equivalence. -/
 theorem lpNorm_fderiv_iteratedFDeriv (f : E → F) (n : ℕ) (p : ENNReal) (μ : Measure E) :
     lpNorm (fderiv 𝕜 (iteratedFDeriv 𝕜 n f)) p μ = lpNorm (iteratedFDeriv 𝕜 (n + 1) f) p μ := by
-  rw [iteratedFDeriv_succ_eq_comp_left]
-  set L := (continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (n + 1) ↦ E) F).symm
-  set g := fderiv 𝕜 (iteratedFDeriv 𝕜 n f)
-  by_cases hm : AEStronglyMeasurable g μ
-  · rw [← toReal_eLpNorm, ← toReal_eLpNorm, eLpNorm_congr_norm_ae (g := L ∘ g) hm
-      (L.continuous.comp_aestronglyMeasurable hm) (.of_forall fun x ↦ (L.norm_map _).symm)]
-  · rw [lpNorm_of_not_aestronglyMeasurable hm, lpNorm_of_not_aestronglyMeasurable (f := L ∘ g)
-      fun hL ↦ hm ((L.isometry.isEmbedding.aestronglyMeasurable_comp_iff (f := g)).1 hL)]
+  rw [iteratedFDeriv_succ_eq_comp_left, ← toReal_eLpNorm, ← toReal_eLpNorm, Function.comp_def]
+  exact congrArg ENNReal.toReal (LinearIsometryEquiv.eLpNorm_comp _ _ p μ).symm
 
 end TauCeti
 
