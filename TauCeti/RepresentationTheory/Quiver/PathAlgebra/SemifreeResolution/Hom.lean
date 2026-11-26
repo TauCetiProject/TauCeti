@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Homology.DG.Bimodule.EnvelopeAction
 public import TauCeti.Algebra.Homology.DG.Bimodule.Hom.Complex
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.SemifreeResolution.DGBimodule
-import TauCeti.RepresentationTheory.Quiver.PathAlgebra.SemifreeResolution.Grading
 
 /-!
 # Cochains out of the small resolution of a DG path algebra
@@ -76,7 +75,8 @@ open scoped TensorProduct
 namespace TauCeti.PathAlgebra
 
 open TauCeti.Algebra.TensorProduct
-open DGBimoduleCat (envelopeTwistAction_tmul envelopeTwistAction_mul mem_envelopeCorner_iff)
+open DGBimoduleCat (envelopeTwistAction_tmul envelopeTwistAction_mul mem_envelopeCorner_iff
+  envelopeTwistAction_zero_eq_smul)
 
 universe u v w
 
@@ -133,6 +133,14 @@ section Vertex
 
 variable [Fintype Q] (hdε : ∀ i, d (vertexIdempotent k i) = 0) (N : DGBimoduleCat hd hd)
 
+/-- On the vertex term, the untwisted action is the action of the enveloping algebra. -/
+private theorem vertexTensorDGBimodule_envelopeTwistAction_zero (u : ℰ)
+    (z : vertexTensorBimodule k Q) :
+    (vertexTensorDGBimodule hd hdε).envelopeTwistAction 0 u z = u • z :=
+  envelopeTwistAction_zero_eq_smul (N := vertexTensorDGBimodule hd hdε)
+    (instE := (inferInstance : Module ℰ ↥(vertexTensorBimodule k Q)))
+    (smul_moduleLeft_smul_moduleRight (k := k) (M := ↥(vertexTensorBimodule k Q))) u z
+
 include hdε in
 /-- A cochain out of the vertex term intertwines the enveloping action with the twisted one. -/
 theorem vertexTensor_cochain_apply_smul {p : ℤ}
@@ -140,12 +148,8 @@ theorem vertexTensor_cochain_apply_smul {p : ℤ}
       (ℳ := (vertexTensorDGBimodule hd hdε).grading) (𝒩 := N.grading) p)
     (u : ℰ) (z : vertexTensorBimodule k Q) :
     f.val.val (u • z) = N.envelopeTwistAction p u (f.val.val z) := by
-  induction u using TensorProduct.inductionOn with
-  | add u u' hu hu' => simp [add_smul, hu, hu']
-  | tmul a b =>
-    rw [← smul_moduleLeft_smul_moduleRight (k := k) (M := ↥(vertexTensorBimodule k Q)) a b z,
-      dgBimoduleCochains.map_smul_left_eq_koszulTwistAlgEquiv_smul, map_smul,
-      envelopeTwistAction_tmul]
+  have h := dgBimoduleCochains.map_envelopeTwistAction f u z
+  rwa [vertexTensorDGBimodule_envelopeTwistAction_zero] at h
 
 /-- The twisted action on a fixed element, as a map out of the vertex term. -/
 private noncomputable def vertexTensorTwistMap (p : ℤ) (m : N) :
@@ -162,36 +166,27 @@ private theorem vertexTensorTwistMap_smul (p : ℤ) (m : N) (u : ℰ)
   simp [vertexTensorTwistMap, envelopeTwistAction_mul]
 
 /-- The cochain out of the vertex term with value `m` at the generator `∑ᵥ eᵥ ⊗ eᵥ`. -/
-noncomputable def vertexTensorCochainOfCorner {p : ℤ}
+private noncomputable def vertexTensorCochainOfCorner {p : ℤ}
     (m : N.envelopeCorner (vertexTensorIdempotent k Q) p) :
     dgBimoduleCochains (B := 𝒫) (𝒜 := gradeBy k wt)
-      (ℳ := (vertexTensorDGBimodule hd hdε).grading) (𝒩 := N.grading) p := by
-  refine ⟨⟨{ toFun := vertexTensorTwistMap N p m
-             map_add' := (vertexTensorTwistMap N p m).map_add
-             map_smul' := fun b z ↦ ?_ }, ?_⟩, ?_⟩
-  · rw [vertexTensorDGBimodule_smul_right]
-    exact (vertexTensorTwistMap_smul N p m _ z).trans (by simp)
-  · rw [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def]
-    intro q z hz
-    rw [mem_vertexTensorDGBimodule_grading_iff, mem_vertexTensorGrading_piece_iff] at hz
-    rw [LinearMap.restrictScalars_apply, LinearMap.coe_mk, AddHom.coe_mk,
-      vertexTensorTwistMap_apply]
-    exact envelopeTwistAction_mem_tensorProduct p hz (mem_envelopeCorner_iff.1 m.property).1
-  · rw [dgBimoduleCochains.mem_iff]
-    intro r a ha z
-    rw [vertexTensorDGBimodule_smul_left]
-    refine (vertexTensorTwistMap_smul N p m _ z).trans ?_
-    rw [envelopeTwistAction_tmul, one_smul,
-      InternalGrading.koszulTwistAlgEquiv_apply_of_mem _ p ha, smul_assoc]
-    -- The right-hand side is the map under construction, applied to `z`.
-    rfl
+      (ℳ := (vertexTensorDGBimodule hd hdε).grading) (𝒩 := N.grading) p :=
+  dgBimoduleCochains.ofEnvelopeTwist (M := vertexTensorDGBimodule hd hdε)
+    (vertexTensorTwistMap N p m)
+    (LinearMap.isHomogeneous_def.2 fun q z hz ↦ by
+      rw [mem_vertexTensorDGBimodule_grading_iff, mem_vertexTensorGrading_piece_iff] at hz
+      rw [vertexTensorTwistMap_apply]
+      exact envelopeTwistAction_mem_tensorProduct p hz (mem_envelopeCorner_iff.1 m.property).1)
+    fun u z ↦ by
+      rw [vertexTensorDGBimodule_envelopeTwistAction_zero]
+      exact vertexTensorTwistMap_smul N p m u z
 
-@[simp]
-theorem vertexTensorCochainOfCorner_apply {p : ℤ}
+private theorem vertexTensorCochainOfCorner_apply {p : ℤ}
     (m : N.envelopeCorner (vertexTensorIdempotent k Q) p)
     (z : vertexTensorBimodule k Q) :
     (vertexTensorCochainOfCorner hdε N m).val.val z =
-      N.envelopeTwistAction p (z : ℰ) m := (rfl)
+      N.envelopeTwistAction p (z : ℰ) m := by
+  rw [vertexTensorCochainOfCorner, dgBimoduleCochains.ofEnvelopeTwist_apply,
+    vertexTensorTwistMap_apply]
 
 /-- **Cochains out of the vertex term are elements of the vertex corner.** Evaluation at the
 generator `∑ᵥ eᵥ ⊗ eᵥ` identifies the degree-`p` cochains from `kQ ⊗_{kQ₀} kQ` to `N` with
@@ -237,7 +232,8 @@ theorem vertexTensorCochainsEquiv_symm_apply {p : ℤ}
     (m : N.envelopeCorner (vertexTensorIdempotent k Q) p)
     (z : vertexTensorBimodule k Q) :
     ((vertexTensorCochainsEquiv hdε N p).symm m).val.val z =
-      N.envelopeTwistAction p (z : ℰ) m := (rfl)
+      N.envelopeTwistAction p (z : ℰ) m :=
+  vertexTensorCochainOfCorner_apply hdε N m z
 
 /-- **The differential of cochains out of the vertex term is the differential of `N`** on the
 vertex corner. -/
@@ -305,6 +301,14 @@ section Arrow
 variable [Fintype Q] [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
   (hdε : ∀ i, d (vertexIdempotent k i) = 0) (N : DGBimoduleCat hd hd)
 
+/-- On the arrow term, the untwisted action is the action of the enveloping algebra. -/
+private theorem arrowTensorDGBimodule_envelopeTwistAction_zero (u : ℰ)
+    (z : arrowTensorBimodule k Q) :
+    (arrowTensorDGBimodule hd hdε).envelopeTwistAction 0 u z = u • z :=
+  envelopeTwistAction_zero_eq_smul (N := arrowTensorDGBimodule hd hdε)
+    (instE := (inferInstance : Module ℰ (arrowTensorBimodule k Q)))
+    (smul_moduleLeft_smul_moduleRight (k := k) (M := (arrowTensorBimodule k Q))) u z
+
 include hdε in
 /-- A cochain out of the arrow term intertwines the enveloping action with the twisted one. -/
 theorem arrowTensor_cochain_apply_smul {p : ℤ}
@@ -312,12 +316,8 @@ theorem arrowTensor_cochain_apply_smul {p : ℤ}
       (ℳ := (arrowTensorDGBimodule hd hdε).grading) (𝒩 := N.grading) p)
     (u : ℰ) (z : arrowTensorBimodule k Q) :
     f.val.val (u • z) = N.envelopeTwistAction p u (f.val.val z) := by
-  induction u using TensorProduct.inductionOn with
-  | add u u' hu hu' => simp [add_smul, hu, hu']
-  | tmul a b =>
-    rw [← smul_moduleLeft_smul_moduleRight (k := k) (M := arrowTensorBimodule k Q) a b z,
-      dgBimoduleCochains.map_smul_left_eq_koszulTwistAlgEquiv_smul, map_smul,
-      envelopeTwistAction_tmul]
+  have h := dgBimoduleCochains.map_envelopeTwistAction f u z
+  rwa [arrowTensorDGBimodule_envelopeTwistAction_zero] at h
 
 include hdε in
 /-- **Cochains out of the arrow term are determined by their values on the universal derivatives
@@ -377,40 +377,32 @@ private theorem arrowTensor_map_mem_of_smul {p : ℤ} (g : arrowTensorBimodule k
 include hdε in
 /-- The cochain out of the arrow term with value `m b` at the universal derivative of each
 arrow `b`. -/
-noncomputable def arrowTensorCochainOfCorner {p : ℤ}
+private noncomputable def arrowTensorCochainOfCorner {p : ℤ}
     (m : ∀ b : Σ i j : Q, i ⟶ j,
       N.envelopeCorner (arrowTensorIdempotent k Q b) (wt b.2.2 + p)) :
     dgBimoduleCochains (B := 𝒫) (𝒜 := gradeBy k wt)
-      (ℳ := (arrowTensorDGBimodule hd hdε).grading) (𝒩 := N.grading) p := by
-  have hgen := arrowTensorTwistMap_arrowTensorDerivation_of_mem N m
-  refine ⟨⟨{ toFun := arrowTensorTwistMap N p fun b ↦ m b
-             map_add' := (arrowTensorTwistMap N p fun b ↦ m b).map_add
-             map_smul' := fun b z ↦ ?_ }, ?_⟩, ?_⟩
-  · rw [arrowTensorDGBimodule_smul_right]
-    exact (arrowTensorTwistMap_smul N p _ _ z).trans (by simp)
-  · rw [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def]
-    intro q z hz
-    rw [mem_arrowTensorDGBimodule_grading_iff] at hz
-    exact arrowTensor_map_mem_of_smul N _ (arrowTensorTwistMap_smul N p _)
-      (fun b ↦ by rw [hgen]; exact (mem_envelopeCorner_iff.1 (m b).property).1) hz
-  · rw [dgBimoduleCochains.mem_iff]
-    intro r a ha z
-    rw [arrowTensorDGBimodule_smul_left]
-    refine (arrowTensorTwistMap_smul N p _ _ z).trans ?_
-    rw [envelopeTwistAction_tmul, one_smul,
-      InternalGrading.koszulTwistAlgEquiv_apply_of_mem _ p ha, smul_assoc]
-    -- The right-hand side is the map under construction, applied to `z`.
-    rfl
+      (ℳ := (arrowTensorDGBimodule hd hdε).grading) (𝒩 := N.grading) p :=
+  dgBimoduleCochains.ofEnvelopeTwist (M := arrowTensorDGBimodule hd hdε)
+    (arrowTensorTwistMap N p fun b ↦ m b)
+    (LinearMap.isHomogeneous_def.2 fun _ _ hz ↦
+      arrowTensor_map_mem_of_smul N _ (arrowTensorTwistMap_smul N p _)
+        (fun b ↦ by
+          rw [arrowTensorTwistMap_arrowTensorDerivation_of_mem N m]
+          exact (mem_envelopeCorner_iff.1 (m b).property).1)
+        ((mem_arrowTensorDGBimodule_grading_iff hd hdε).1 hz))
+    fun u z ↦ by
+      rw [arrowTensorDGBimodule_envelopeTwistAction_zero]
+      exact arrowTensorTwistMap_smul N p _ u z
 
 /-- The cochain built from a family `m` takes the value `m b` at the universal derivative of each
-arrow `b`. This is not a `simp` lemma, since `TauCeti.PathAlgebra.ofArrow_eq_ofPath` rewrites its
-left-hand side. -/
-theorem arrowTensorCochainOfCorner_apply_arrowTensorDerivation {p : ℤ}
+arrow `b`. -/
+private theorem arrowTensorCochainOfCorner_apply_arrowTensorDerivation {p : ℤ}
     (m : ∀ b : Σ i j : Q, i ⟶ j,
       N.envelopeCorner (arrowTensorIdempotent k Q b) (wt b.2.2 + p)) (b : Σ i j : Q, i ⟶ j) :
     (arrowTensorCochainOfCorner hdε N m).val.val (arrowTensorDerivation k Q (ofArrow b.2.2)) =
-      m b :=
-  arrowTensorTwistMap_arrowTensorDerivation_of_mem N m b
+      m b := by
+  rw [arrowTensorCochainOfCorner, dgBimoduleCochains.ofEnvelopeTwist_apply]
+  exact arrowTensorTwistMap_arrowTensorDerivation_of_mem N m b
 
 include hdε in
 /-- The value of a cochain at the universal derivative of an arrow `b` lies in the corner

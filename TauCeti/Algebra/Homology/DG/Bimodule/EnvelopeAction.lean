@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Bimodule.Category
+public import TauCeti.Algebra.Homology.DG.Bimodule.Hom.Complex
 public import TauCeti.Algebra.Module.GradedModule.KoszulTwist.Algebra
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 public import Mathlib.RingTheory.TensorProduct.Maps
@@ -19,7 +20,8 @@ with the left action of an element `a` of degree `r` only up to the Koszul sign 
 `f` intertwines the action of `A ⊗ Bᵐᵒᵖ` on its source with the **twisted action**
 `DGBimoduleCat.envelopeTwistAction`, in which `a ⊗ b` acts by `m ↦ (-1)^(p r) a m b`, through the
 Koszul automorphism `TauCeti.InternalGrading.koszulTwistAlgEquiv` of `A`. In parameter zero this
-is the untwisted action.
+is the untwisted action. Conversely, a linear map of degree `p` with this intertwining property is
+a cochain (`TauCeti.dgBimoduleCochains.ofEnvelopeTwist`).
 
 A bimodule cochain out of a cyclic bimodule `(A ⊗ Bᵐᵒᵖ) e`, for an idempotent `e` of degree zero,
 is determined by its value at `e`, which lies in the **corner** `DGBimoduleCat.envelopeCorner`
@@ -31,12 +33,16 @@ of elements fixed by `e`. For a path algebra and `e = eⱼ ⊗ eᵢ` this is `e�
   Koszul automorphism of parameter `p` on `A`.
 * `TauCeti.DGBimoduleCat.envelopeCorner`: the elements of a given degree fixed by the action of an
   element of `A ⊗ Bᵐᵒᵖ`.
+* `TauCeti.dgBimoduleCochains.ofEnvelopeTwist`: the cochain given by a homogeneous linear map
+  which intertwines the action of `A ⊗ Bᵐᵒᵖ` with the twisted action.
 
 ## Main results
 
 * `TauCeti.DGBimoduleCat.envelopeTwistAction_mul`: the twisted action is an action.
 * `TauCeti.DGBimoduleCat.envelopeTwistAction_mem`: it adds degrees, for the tensor-product
   grading of `A ⊗ Bᵐᵒᵖ`.
+* `TauCeti.dgBimoduleCochains.map_envelopeTwistAction`: a degree-`p` cochain intertwines the
+  action of `A ⊗ Bᵐᵒᵖ` with the twisted action of parameter `p`.
 
 ## References
 
@@ -49,7 +55,7 @@ public section
 open MulOpposite
 open scoped TensorProduct
 
-namespace TauCeti.DGBimoduleCat
+namespace TauCeti
 
 variable {R : Type*} {A : Type*} {B : Type*}
   [CommRing R] [Ring A] [Ring B] [Algebra R A] [Algebra R B]
@@ -57,7 +63,10 @@ variable {R : Type*} {A : Type*} {B : Type*}
   [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
   {dA : A →ₗ[R] A} {dB : B →ₗ[R] B}
   {hA : IsDGAlgebra 𝒜 dA} {hB : IsDGAlgebra ℬ dB}
-  (N : DGBimoduleCat hA hB)
+
+namespace DGBimoduleCat
+
+variable (N : DGBimoduleCat hA hB)
 
 /-- The action of the enveloping algebra `A ⊗ Bᵐᵒᵖ` on a DG bimodule `N`, twisted by the Koszul
 automorphism of parameter `p` on the left factor: on homogeneous `a` of degree `r`, the pure tensor
@@ -118,4 +127,64 @@ theorem mem_envelopeCorner_iff {e : A ⊗[R] Bᵐᵒᵖ} {q : ℤ} {m : N} :
     m ∈ N.envelopeCorner e q ↔ m ∈ N.grading q ∧ N.envelopeTwistAction 0 e m = m := by
   rw [envelopeCorner, Submodule.mem_inf, LinearMap.mem_eqLocus, LinearMap.id_apply]
 
-end TauCeti.DGBimoduleCat
+variable {N} in
+/-- When the actions of `A` and `Bᵐᵒᵖ` on `N` are restricted from an action of `A ⊗ Bᵐᵒᵖ`, the
+untwisted action is that action. The action of `A ⊗ Bᵐᵒᵖ` is a named argument, since it is
+usually defined on a type which is only definitionally the carrier of `N`. -/
+theorem envelopeTwistAction_zero_eq_smul [instE : Module (A ⊗[R] Bᵐᵒᵖ) N]
+    (h : ∀ (a : A) (b : Bᵐᵒᵖ) (m : N), a • b • m = (a ⊗ₜ[R] b) • m) (u : A ⊗[R] Bᵐᵒᵖ) (m : N) :
+    N.envelopeTwistAction 0 u m = u • m := by
+  induction u using TensorProduct.inductionOn with
+  | add u u' hu hu' => simp [add_smul, hu, hu']
+  | tmul a b => simp [h]
+
+end DGBimoduleCat
+
+namespace dgBimoduleCochains
+
+open DGBimoduleCat
+
+variable {M N : DGBimoduleCat hA hB}
+
+/-- **Cochains intertwine the twisted actions.** A degree-`p` cochain intertwines the action of
+`A ⊗ Bᵐᵒᵖ` on its source with the action on its target twisted by the Koszul automorphism of
+parameter `p`. -/
+theorem map_envelopeTwistAction {p : ℤ}
+    (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := M.grading) (𝒩 := N.grading) p)
+    (u : A ⊗[R] Bᵐᵒᵖ) (x : M) :
+    f.val.val (M.envelopeTwistAction 0 u x) = N.envelopeTwistAction p u (f.val.val x) := by
+  induction u using TensorProduct.inductionOn with
+  | add u u' hu hu' => simp [hu, hu']
+  | tmul a b =>
+    rw [envelopeTwistAction_tmul, envelopeTwistAction_tmul,
+      InternalGrading.koszulTwistAlgEquiv_zero, AlgEquiv.coe_refl, id_eq,
+      map_smul_left_eq_koszulTwistAlgEquiv_smul, map_smul]
+
+/-- **Cochains from twisted-equivariant maps.** A linear map which raises degrees by `p` and
+intertwines the action of `A ⊗ Bᵐᵒᵖ` on `M` with the action on `N` twisted by the Koszul
+automorphism of parameter `p` is a degree-`p` bimodule cochain. -/
+def ofEnvelopeTwist {p : ℤ} (g : M →ₗ[R] N) (hg : LinearMap.IsHomogeneous g M.grading N.grading p)
+    (hgu : ∀ (u : A ⊗[R] Bᵐᵒᵖ) (x : M),
+      g (M.envelopeTwistAction 0 u x) = N.envelopeTwistAction p u (g x)) :
+    dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := M.grading) (𝒩 := N.grading) p :=
+  ⟨⟨{ toFun := g
+      map_add' := g.map_add
+      map_smul' := fun b x ↦ by
+        simpa only [envelopeTwistAction_tmul, map_one, one_smul, RingHom.id_apply] using
+          hgu (1 ⊗ₜ[R] b) x },
+    dgRightModuleCochains.mem_iff.2 hg⟩, mem_iff.2 fun {r a} ha x ↦ by
+      simpa only [envelopeTwistAction_tmul, InternalGrading.koszulTwistAlgEquiv_zero,
+        AlgEquiv.coe_refl, id_eq, one_smul, InternalGrading.koszulTwistAlgEquiv_apply_of_mem 𝒜 p ha,
+        smul_assoc, LinearMap.coe_mk, AddHom.coe_mk] using hgu (a ⊗ₜ[R] 1) x⟩
+
+@[simp]
+theorem ofEnvelopeTwist_apply {p : ℤ} (g : M →ₗ[R] N)
+    (hg : LinearMap.IsHomogeneous g M.grading N.grading p)
+    (hgu : ∀ (u : A ⊗[R] Bᵐᵒᵖ) (x : M),
+      g (M.envelopeTwistAction 0 u x) = N.envelopeTwistAction p u (g x)) (x : M) :
+    (ofEnvelopeTwist g hg hgu).val.val x = g x :=
+  (rfl)
+
+end dgBimoduleCochains
+
+end TauCeti
