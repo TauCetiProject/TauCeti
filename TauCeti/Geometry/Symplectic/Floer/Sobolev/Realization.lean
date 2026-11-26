@@ -167,14 +167,15 @@ theorem floerJetCoeff_jet (ω : SymplecticForm V) (J : ℝ × ℝ → V → V �
     stdComplexLineImag_eq]
 
 /-- **The coefficients of the linearized operator for a constant almost complex structure.** For a
-constant `J`, the perturbation `K = H dt` of an autonomous Hamiltonian and any map `u`, the
-coefficient field of the linearized Floer operator on jets is that of `∂s + J ∂t - J dX_H(u)`. -/
+constant `J`, the perturbation `K = H dt` of Hamiltonians `H_z` depending on the domain point and
+any map `u`, the coefficient field of the linearized Floer operator on jets at `z` is that of
+`∂s + J ∂t - J dX_{H_z}(u)`. -/
 theorem floerJetCoeff_const_eq (ω : SymplecticForm V) (J : AlmostComplexStructure V)
-    (H : V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H) u z =
+    (H : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) H u z =
       firstOrderJetCoeff J.toLinearMap.toContinuousLinearMap
         (-(J.toLinearMap.toContinuousLinearMap.comp
-          (fderiv ℝ (ω.hamiltonianVectorField H) (u z)))) := by
+          (fderiv ℝ (ω.hamiltonianVectorField (H z)) (u z)))) := by
   rw [floerJetCoeff_def]
   congr 1
   ext v
