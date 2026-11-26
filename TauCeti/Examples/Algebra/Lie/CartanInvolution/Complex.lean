@@ -54,15 +54,18 @@ theorem slFinTwoNegConjTranspose_smul (c : ℂ) (X : SpecialLinear.sl (Fin 2) �
     slFinTwoNegConjTranspose (c • X) = (starRingEnd ℂ) c • slFinTwoNegConjTranspose X :=
   Subtype.ext (by simp [conjTranspose_smul])
 
+/-- `tr(X X*) > 0` for nonzero `X` in `𝔰𝔩₂(ℂ)`. -/
+theorem slFinTwo_trace_mul_conjTranspose_self_pos {X : SpecialLinear.sl (Fin 2) ℂ} (hX : X ≠ 0) :
+    0 < ((X : Matrix (Fin 2) (Fin 2) ℂ) * (X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ).trace :=
+  (posSemidef_self_mul_conjTranspose _).trace_nonneg.lt_of_ne
+    (Ne.symm (trace_mul_conjTranspose_self_eq_zero_iff.not.2 fun h ↦ hX (Subtype.ext h)))
+
 /-- `X ↦ -X*` is a Cartan involution of `𝔰𝔩₂(ℂ)` viewed as a real Lie algebra. -/
 theorem isCartanInvolution_slFinTwoNegConjTranspose :
     slFinTwoNegConjTranspose.IsCartanInvolution := by
   refine LieEquiv.isCartanInvolution_of_re_killingForm_neg
     (fun X ↦ Subtype.ext (by simp)) fun X hX ↦ ?_
-  have hX' : (X : Matrix (Fin 2) (Fin 2) ℂ) ≠ 0 := fun h ↦ hX (Subtype.ext h)
-  have hpos : 0 < ((X : Matrix (Fin 2) (Fin 2) ℂ) * (X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ).trace :=
-    (posSemidef_self_mul_conjTranspose _).trace_nonneg.lt_of_ne
-      (Ne.symm (trace_mul_conjTranspose_self_eq_zero_iff.not.2 hX'))
+  have hpos := slFinTwo_trace_mul_conjTranspose_self_pos hX
   rw [killingForm_slFinTwo_apply, coe_slFinTwoNegConjTranspose_apply, mul_neg, trace_neg,
     show (4 : ℂ) = ((4 : ℝ) : ℂ) by norm_num, re_ofReal_mul, neg_re]
   linarith [(pos_iff.1 hpos).1]

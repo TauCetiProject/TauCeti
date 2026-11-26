@@ -8,11 +8,12 @@ module
 public import TauCeti.Algebra.Lie.CompactRealForm.CartanInvolution
 public import TauCeti.Algebra.Lie.RestrictScalars
 public import TauCeti.Algebra.Lie.Sl2.Basic
-public import TauCeti.Algebra.Lie.CartanInvolution.Matrix
+public import TauCeti.Algebra.Lie.Matrix.NegConjTranspose
+public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 public import Mathlib.Algebra.Lie.Classical
 public import TauCeti.Algebra.Lie.SpecialLinear.ConjTranspose
+public import TauCeti.Examples.Algebra.Lie.CartanInvolution.Complex
 import Mathlib.Analysis.Complex.Basic
-import Mathlib.LinearAlgebra.Matrix.PosDef
 import TauCeti.Algebra.Lie.Sl2.Killing
 
 /-!
@@ -44,17 +45,18 @@ namespace TauCeti
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- The compact conjugation `X ↦ -X*` of `𝔰𝔩₂(ℂ)`, a conjugate-linear map. -/
+/-- The compact conjugation `X ↦ -X*` of `𝔰𝔩₂(ℂ)`: `slFinTwoNegConjTranspose` as a
+conjugate-linear map. -/
 noncomputable def slFinTwoCompactConj : sl (Fin 2) ℂ →ₛₗ[starRingEnd ℂ] sl (Fin 2) ℂ where
-  toFun X := ⟨-(X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ, neg_mem (conjTranspose_mem_sl X.property)⟩
-  map_add' X Y := Subtype.ext (by simp [add_comm])
-  map_smul' c X := Subtype.ext (by simp [conjTranspose_smul])
+  toFun := slFinTwoNegConjTranspose
+  map_add' := map_add _
+  map_smul' := slFinTwoNegConjTranspose_smul
 
 /-- `slFinTwoCompactConj` sends `X` to `-X*`. -/
 @[simp]
 theorem coe_slFinTwoCompactConj_apply (X : sl (Fin 2) ℂ) :
     (slFinTwoCompactConj X : Matrix (Fin 2) (Fin 2) ℂ) = -(X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ :=
-  (rfl)
+  coe_slFinTwoNegConjTranspose_apply X
 
 /-- The entrywise conjugation of `𝔰𝔩₂(ℂ)`, `X ↦ X*ᵀ`, a conjugate-linear map. -/
 noncomputable def slFinTwoEntrywiseConj : sl (Fin 2) ℂ →ₛₗ[starRingEnd ℂ] sl (Fin 2) ℂ where
@@ -76,26 +78,13 @@ theorem slFinTwoEntrywiseConj_apply_apply (X : sl (Fin 2) ℂ) (i j : Fin 2) :
 
 /-- `X ↦ -X*` is a conjugation of `𝔰𝔩₂(ℂ)`. -/
 theorem isLieConjugation_slFinTwoCompactConj : IsLieConjugation slFinTwoCompactConj where
-  map_lie X Y := Subtype.ext (by simp [Ring.lie_def, conjTranspose_mul])
+  map_lie := slFinTwoNegConjTranspose.map_lie
   involutive X := Subtype.ext (by simp)
 
 /-- The entrywise conjugation is a conjugation of `𝔰𝔩₂(ℂ)`. -/
 theorem isLieConjugation_slFinTwoEntrywiseConj : IsLieConjugation slFinTwoEntrywiseConj where
   map_lie X Y := Subtype.ext (by simp [Ring.lie_def, conjTranspose_mul, transpose_mul])
   involutive X := Subtype.ext (by ext i j; simp)
-
-/-- **`X ↦ -X*` is a compact conjugation of `𝔰𝔩₂(ℂ)`**:
-`H_τ(X, X) = -B(X, -X*) = 4 tr(X X*) > 0` for `X ≠ 0`. -/
-theorem isCompactConjugation_slFinTwoCompactConj : IsCompactConjugation slFinTwoCompactConj where
-  toIsLieConjugation := isLieConjugation_slFinTwoCompactConj
-  pos X hX := by
-    have hX' : (X : Matrix (Fin 2) (Fin 2) ℂ) ≠ 0 := fun h ↦ hX (Subtype.ext h)
-    have hpos : 0 < ((X : Matrix (Fin 2) (Fin 2) ℂ) * (X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ).trace :=
-      (posSemidef_self_mul_conjTranspose _).trace_nonneg.lt_of_ne
-        (Ne.symm (trace_mul_conjTranspose_self_eq_zero_iff.not.2 hX'))
-    rw [LinearMap.killingHermitianForm_def, killingForm_slFinTwo_apply,
-      coe_slFinTwoCompactConj_apply, mul_neg, trace_neg, mul_neg, neg_neg]
-    exact mul_pos (by norm_num) hpos
 
 /-- The Hermitian Killing form of `X ↦ -X*` is `H_τ(X, X) = 4 tr(X X*)`. -/
 theorem killingHermitianForm_slFinTwoCompactConj_apply_self (X : sl (Fin 2) ℂ) :
@@ -104,42 +93,52 @@ theorem killingHermitianForm_slFinTwoCompactConj_apply_self (X : sl (Fin 2) ℂ)
   rw [LinearMap.killingHermitianForm_def, killingForm_slFinTwo_apply,
     coe_slFinTwoCompactConj_apply, mul_neg, trace_neg, mul_neg, neg_neg]
 
+/-- **`X ↦ -X*` is a compact conjugation of `𝔰𝔩₂(ℂ)`**:
+`H_τ(X, X) = -B(X, -X*) = 4 tr(X X*) > 0` for `X ≠ 0`. -/
+theorem isCompactConjugation_slFinTwoCompactConj : IsCompactConjugation slFinTwoCompactConj where
+  toIsLieConjugation := isLieConjugation_slFinTwoCompactConj
+  pos X hX := by
+    rw [killingHermitianForm_slFinTwoCompactConj_apply_self]
+    exact mul_pos (by norm_num) (slFinTwo_trace_mul_conjTranspose_self_pos hX)
+
 /-- `τ h = -h`. -/
-theorem slFinTwoCompactConj_h :
+theorem slFinTwoCompactConj_slFinTwoBasis_two :
     slFinTwoCompactConj (slFinTwoBasis ℂ 2) = -slFinTwoBasis ℂ 2 := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [slFinTwoBasis_two]
 
 /-- `τ e = -f`. -/
-theorem slFinTwoCompactConj_e :
+theorem slFinTwoCompactConj_slFinTwoBasis_zero :
     slFinTwoCompactConj (slFinTwoBasis ℂ 0) = -slFinTwoBasis ℂ 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [slFinTwoBasis_zero, slFinTwoBasis_one]
 
 /-- `τ f = -e`. -/
-theorem slFinTwoCompactConj_f :
+theorem slFinTwoCompactConj_slFinTwoBasis_one :
     slFinTwoCompactConj (slFinTwoBasis ℂ 1) = -slFinTwoBasis ℂ 0 := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [slFinTwoBasis_zero, slFinTwoBasis_one]
 
 /-- `H_τ(e, e) = -B(e, τ e) = B(e, f) = 4`. -/
 example : slFinTwoCompactConj.killingHermitianForm (slFinTwoBasis ℂ 0) (slFinTwoBasis ℂ 0) = 4 := by
-  rw [LinearMap.killingHermitianForm_def, slFinTwoCompactConj_e, map_neg, neg_neg,
+  rw [LinearMap.killingHermitianForm_def, slFinTwoCompactConj_slFinTwoBasis_zero, map_neg, neg_neg,
     killingForm_slFinTwoBasis]
-  rfl
+  simp
 
 /-- `H_τ(h, h) = -B(h, τ h) = B(h, h) = 8`. -/
 example : slFinTwoCompactConj.killingHermitianForm (slFinTwoBasis ℂ 2) (slFinTwoBasis ℂ 2) = 8 := by
-  rw [LinearMap.killingHermitianForm_def, slFinTwoCompactConj_h, map_neg, neg_neg,
+  rw [LinearMap.killingHermitianForm_def, slFinTwoCompactConj_slFinTwoBasis_two, map_neg, neg_neg,
     killingForm_slFinTwoBasis]
-  rfl
+  simp
 
 /-- **The compact real form is `𝔰𝔲(2)`**: the skew-Hermitian trace-zero matrices. -/
 theorem mem_realForm_slFinTwoCompactConj_iff {X : sl (Fin 2) ℂ} :
     X ∈ isLieConjugation_slFinTwoCompactConj.realForm ↔
       (X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ = -(X : Matrix (Fin 2) (Fin 2) ℂ) := by
-  rw [IsLieConjugation.mem_realForm, ← Subtype.coe_inj, coe_slFinTwoCompactConj_apply,
-    neg_eq_iff_eq_neg]
+  rw [IsLieConjugation.mem_realForm, ← mem_fixedSubalgebra_slFinTwoNegConjTranspose_iff,
+    LieHom.mem_fixedSubalgebra, LieEquiv.coe_toLieHom]
+  -- `τ` is `slFinTwoNegConjTranspose` as a conjugate-linear map, so the two sides agree.
+  exact Iff.rfl
 
 /-- `i h`, `e - f` and `i (e + f)` lie in the compact real form `𝔰𝔲(2)`. -/
 example :
@@ -147,8 +146,9 @@ example :
       slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1 ∈ isLieConjugation_slFinTwoCompactConj.realForm ∧
       I • (slFinTwoBasis ℂ 0 + slFinTwoBasis ℂ 1) ∈
         isLieConjugation_slFinTwoCompactConj.realForm := by
-  simp only [IsLieConjugation.mem_realForm, map_smulₛₗ, map_sub, map_add, slFinTwoCompactConj_h,
-    slFinTwoCompactConj_e, slFinTwoCompactConj_f, conj_I]
+  simp only [IsLieConjugation.mem_realForm, map_smulₛₗ, map_sub, map_add,
+    slFinTwoCompactConj_slFinTwoBasis_two, slFinTwoCompactConj_slFinTwoBasis_zero,
+    slFinTwoCompactConj_slFinTwoBasis_one, conj_I]
   refine ⟨?_, ?_, ?_⟩ <;> module
 
 /-- The entrywise conjugation commutes with `X ↦ -X*`. -/
@@ -203,20 +203,21 @@ theorem mem_cartanP_restrictRealForm_slFinTwo_iff
   rw [LieEquiv.mem_cartanP, ← Subtype.coe_inj, ← Subtype.coe_inj,
     coe_restrictRealForm_slFinTwo_apply, NegMemClass.coe_neg, NegMemClass.coe_neg, neg_inj]
 
-/-- **`-B(X, θ X) = 4 tr(X Xᵀ)`** for the real Killing form of `Fix σ`, which is the restriction of
-the Killing form of `𝔰𝔩₂(ℂ)`. -/
-theorem killingForm_restrictRealForm_slFinTwo_apply_self
+/-- **`B_θ(X, X) = -B(X, θ X) = 4 tr(X Xᵀ)`** for the twisted Killing form of `θ` on `Fix σ`,
+whose Killing form is the restriction of the Killing form of `𝔰𝔩₂(ℂ)`. -/
+theorem twistedKillingForm_restrictRealForm_slFinTwo_apply_self
     (X : isLieConjugation_slFinTwoEntrywiseConj.realForm) :
-    (-killingForm ℝ _ X (θ X) : ℂ) =
+    ((θ).twistedKillingForm X X : ℂ) =
       4 * (((X : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) *
         ((X : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ)ᵀ).trace := by
-  rw [IsLieConjugation.killingForm_realForm, killingForm_slFinTwo_apply,
-    coe_restrictRealForm_slFinTwo_apply, mul_neg, trace_neg, mul_neg, neg_neg]
+  rw [LieEquiv.twistedKillingForm_apply, ofReal_neg, IsLieConjugation.killingForm_realForm,
+    killingForm_slFinTwo_apply, coe_restrictRealForm_slFinTwo_apply, mul_neg, trace_neg, mul_neg,
+    neg_neg]
 
-/-- The inclusion of `𝔰𝔩₂(ℝ)` into the real form `Fix σ` of `𝔰𝔩₂(ℂ)`, a morphism of real Lie
-algebras. -/
-noncomputable def slFinTwoRealToRealForm :
-    sl (Fin 2) ℝ →ₗ⁅ℝ⁆ isLieConjugation_slFinTwoEntrywiseConj.realForm where
+/-- **`Fix σ` is `𝔰𝔩₂(ℝ)`**: the real form of the entrywise conjugation of `𝔰𝔩₂(ℂ)` is isomorphic to
+`𝔰𝔩₂(ℝ)`, by viewing real matrices as complex, with inverse taking real parts of entries. -/
+noncomputable def slFinTwoRealFormEquiv :
+    sl (Fin 2) ℝ ≃ₗ⁅ℝ⁆ isLieConjugation_slFinTwoEntrywiseConj.realForm where
   toFun Y := ⟨⟨Complex.ofRealHom.mapMatrix (Y : Matrix (Fin 2) (Fin 2) ℝ), by
     rw [mem_sl_iff, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace, mem_sl_iff.mp Y.property,
       map_zero]⟩,
@@ -227,37 +228,28 @@ noncomputable def slFinTwoRealToRealForm :
   map_add' X Y := by ext i j; simp
   map_smul' r X := by ext i j; simp
   map_lie' {X Y} := by ext i j; simp [Ring.lie_def, Matrix.mul_apply]
-
-/-- `slFinTwoRealToRealForm` views a real matrix as a complex matrix. -/
-@[simp]
-theorem coe_slFinTwoRealToRealForm_apply (Y : sl (Fin 2) ℝ) :
-    ((slFinTwoRealToRealForm Y : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) =
-      (Y : Matrix (Fin 2) (Fin 2) ℝ).map (↑) :=
-  (rfl)
-
-/-- **`Fix σ` is `𝔰𝔩₂(ℝ)`**: the real form of the entrywise conjugation of `𝔰𝔩₂(ℂ)` is isomorphic to
-`𝔰𝔩₂(ℝ)`, by viewing real matrices as complex. -/
-noncomputable def slFinTwoRealFormEquiv :
-    sl (Fin 2) ℝ ≃ₗ⁅ℝ⁆ isLieConjugation_slFinTwoEntrywiseConj.realForm :=
-  LieEquiv.ofBijective slFinTwoRealToRealForm
-    ⟨fun X Y h ↦ by
-      ext i j
-      simpa using congrArg (fun Z : isLieConjugation_slFinTwoEntrywiseConj.realForm ↦
-        ((Z : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) i j) h,
-    fun X ↦ by
-      have hX := mem_realForm_slFinTwoEntrywiseConj_iff.mp X.property
-      refine ⟨⟨((X : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ).map Complex.re, ?_⟩, ?_⟩
-      · change (((X : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ).map Complex.reAddGroupHom).trace = 0
-        rw [← AddMonoidHom.map_trace Complex.reAddGroupHom,
-          mem_sl_iff.mp (X : sl (Fin 2) ℂ).property, map_zero]
-      · ext i j
-        simpa [eq_comm] using (Complex.conj_eq_iff_re.mp (hX i j))⟩
+  invFun X := ⟨((X : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ).map Complex.re, by
+    have h := congrArg Complex.re (mem_sl_iff.mp (X : sl (Fin 2) ℂ).property)
+    rw [trace_fin_two, add_re, zero_re] at h
+    rwa [mem_sl_iff, trace_fin_two, map_apply, map_apply]⟩
+  left_inv Y := by ext i j; simp
+  right_inv X := by
+    ext i j
+    simpa [eq_comm] using
+      Complex.conj_eq_iff_re.mp (mem_realForm_slFinTwoEntrywiseConj_iff.mp X.property i j)
 
 /-- `slFinTwoRealFormEquiv` views a real matrix as a complex matrix. -/
 @[simp]
 theorem coe_slFinTwoRealFormEquiv_apply (Y : sl (Fin 2) ℝ) :
     ((slFinTwoRealFormEquiv Y : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) =
       (Y : Matrix (Fin 2) (Fin 2) ℝ).map (↑) :=
+  (rfl)
+
+/-- `slFinTwoRealFormEquiv.symm` takes the real parts of the entries. -/
+@[simp]
+theorem coe_slFinTwoRealFormEquiv_symm_apply (X : isLieConjugation_slFinTwoEntrywiseConj.realForm) :
+    ((slFinTwoRealFormEquiv.symm X : sl (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ) =
+      ((X : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ).map Complex.re :=
   (rfl)
 
 /-- **Under `Fix σ ≃ 𝔰𝔩₂(ℝ)`, `θ = στ` is the Cartan involution `X ↦ -Xᵀ` of `𝔰𝔩₂(ℝ)`.** -/
@@ -273,57 +265,71 @@ theorem restrictRealForm_slFinTwoRealFormEquiv (Y : sl (Fin 2) ℝ) :
 
 /-- The complex-linear Chevalley involution `X ↦ -Xᵀ` of `𝔰𝔩₂(ℂ)`: `h ↦ -h`, `e ↦ -f`, `f ↦ -e`,
 with no conjugation of scalars. -/
-noncomputable def slFinTwoChevalleyInvolution : sl (Fin 2) ℂ ≃ₗ⁅ℂ⁆ sl (Fin 2) ℂ where
-  toFun X := ⟨-(X : Matrix (Fin 2) (Fin 2) ℂ)ᵀ, neg_transpose_mem_sl X.property⟩
-  invFun X := ⟨-(X : Matrix (Fin 2) (Fin 2) ℂ)ᵀ, neg_transpose_mem_sl X.property⟩
-  map_add' X Y := Subtype.ext (by simp [add_comm])
-  map_smul' c X := Subtype.ext (by simp)
-  map_lie' {X Y} := Subtype.ext (by simp [Ring.lie_def, transpose_mul])
-  left_inv X := Subtype.ext (by simp)
-  right_inv X := Subtype.ext (by simp)
+def slFinTwoChevalleyInvolution : sl (Fin 2) ℂ ≃ₗ⁅ℂ⁆ sl (Fin 2) ℂ :=
+  (negTransposeLieEquiv (Fin 2) ℂ).ofSubalgebras (sl (Fin 2) ℂ) (sl (Fin 2) ℂ) (by
+    ext X
+    constructor
+    · rintro ⟨Y, hY, rfl⟩
+      -- Subalgebra images use the underlying Lie homomorphism. Expose its function
+      -- so the public evaluation lemma for negative transpose applies.
+      change negTransposeLieEquiv (Fin 2) ℂ Y ∈ sl (Fin 2) ℂ
+      rw [negTransposeLieEquiv_apply]
+      exact neg_transpose_mem_sl hY
+    · intro hX
+      exact ⟨-Xᵀ, neg_transpose_mem_sl hX, by simp⟩)
 
 /-- `slFinTwoChevalleyInvolution` sends `X` to `-Xᵀ`. -/
 @[simp]
 theorem coe_slFinTwoChevalleyInvolution_apply (X : sl (Fin 2) ℂ) :
     (slFinTwoChevalleyInvolution X : Matrix (Fin 2) (Fin 2) ℂ) =
-      -(X : Matrix (Fin 2) (Fin 2) ℂ)ᵀ :=
-  (rfl)
+      -(X : Matrix (Fin 2) (Fin 2) ℂ)ᵀ := by
+  simp [slFinTwoChevalleyInvolution]
 
-/-- The Chevalley involution sends `h ↦ -h`, `e ↦ -f` and `f ↦ -e`. -/
-theorem slFinTwoChevalleyInvolution_basis :
-    slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 2) = -slFinTwoBasis ℂ 2 ∧
-      slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 0) = -slFinTwoBasis ℂ 1 ∧
-      slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 1) = -slFinTwoBasis ℂ 0 := by
-  refine ⟨?_, ?_, ?_⟩ <;> ext i j <;> fin_cases i <;> fin_cases j <;>
-    simp [slFinTwoBasis_zero, slFinTwoBasis_one, slFinTwoBasis_two]
+/-- The Chevalley involution sends `h ↦ -h`. -/
+theorem slFinTwoChevalleyInvolution_slFinTwoBasis_two :
+    slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 2) = -slFinTwoBasis ℂ 2 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [slFinTwoBasis_two]
+
+/-- The Chevalley involution sends `e ↦ -f`. -/
+theorem slFinTwoChevalleyInvolution_slFinTwoBasis_zero :
+    slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 0) = -slFinTwoBasis ℂ 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [slFinTwoBasis_zero, slFinTwoBasis_one]
+
+/-- The Chevalley involution sends `f ↦ -e`. -/
+theorem slFinTwoChevalleyInvolution_slFinTwoBasis_one :
+    slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 1) = -slFinTwoBasis ℂ 0 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [slFinTwoBasis_zero, slFinTwoBasis_one]
 
 /-- **The fixed set of the complex-linear Chevalley involution is not a real form**: it contains
 both `e - f` and `i (e - f)`, so it meets its image under multiplication by `i`. -/
-theorem sub_mem_fixedSubalgebra_slFinTwoChevalleyInvolution :
+example :
     slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1 ∈ slFinTwoChevalleyInvolution.toLieHom.fixedSubalgebra ∧
       I • (slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1) ∈
         slFinTwoChevalleyInvolution.toLieHom.fixedSubalgebra ∧
       slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1 ≠ 0 := by
-  obtain ⟨-, he, hf⟩ := slFinTwoChevalleyInvolution_basis
   have hfix : slFinTwoBasis ℂ 0 - slFinTwoBasis ℂ 1 ∈
       slFinTwoChevalleyInvolution.toLieHom.fixedSubalgebra := by
-    rw [LieHom.mem_fixedSubalgebra, LieEquiv.coe_toLieHom, map_sub, he, hf]
+    rw [LieHom.mem_fixedSubalgebra, LieEquiv.coe_toLieHom, map_sub,
+      slFinTwoChevalleyInvolution_slFinTwoBasis_zero, slFinTwoChevalleyInvolution_slFinTwoBasis_one]
     abel
   refine ⟨hfix, LieSubalgebra.smul_mem _ I hfix, sub_ne_zero.mpr ?_⟩
   exact (slFinTwoBasis ℂ).injective.ne (by decide)
 
 /-- **`-B(x, ω x)` is not positive for the complex-linear Chevalley involution `ω`**: it is `8` at
 `h` but `-8` at `i h`, since `x ↦ -B(x, ω x)` is quadratic rather than Hermitian. -/
-theorem killingForm_slFinTwoChevalleyInvolution_h :
+example :
     -killingForm ℂ (sl (Fin 2) ℂ) (slFinTwoBasis ℂ 2)
         (slFinTwoChevalleyInvolution (slFinTwoBasis ℂ 2)) = 8 ∧
       -killingForm ℂ (sl (Fin 2) ℂ) (I • slFinTwoBasis ℂ 2)
         (slFinTwoChevalleyInvolution (I • slFinTwoBasis ℂ 2)) = -8 := by
-  obtain ⟨hh, -, -⟩ := slFinTwoChevalleyInvolution_basis
   have h8 : killingForm ℂ (sl (Fin 2) ℂ) (slFinTwoBasis ℂ 2) (slFinTwoBasis ℂ 2) = 8 := by
     rw [killingForm_slFinTwoBasis]
-    rfl
-  simp only [map_smul, hh, map_neg, LinearMap.smul_apply, smul_neg, neg_neg, h8, smul_eq_mul]
+    simp
+  simp only [map_smul, slFinTwoChevalleyInvolution_slFinTwoBasis_two, map_neg, LinearMap.smul_apply,
+    smul_neg, neg_neg, h8, smul_eq_mul]
   refine ⟨trivial, ?_⟩
   rw [← mul_assoc, I_mul_I]
   ring
