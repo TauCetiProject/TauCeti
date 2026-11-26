@@ -105,6 +105,10 @@ instance : ChartedSpace (WithLp 2 (E × ℝ)) (UpperHalfSpace E) :=
 instance : T3Space (UpperHalfSpace E) :=
   inferInstanceAs (T3Space (upperHalfSpaceOpens E))
 
+/-- The upper half-space over a second-countable space is second countable. -/
+instance [SecondCountableTopology E] : SecondCountableTopology (UpperHalfSpace E) :=
+  inferInstanceAs (SecondCountableTopology (upperHalfSpaceOpens E))
+
 variable {E}
 
 /-- The point of `E × ℝ` represented by a point of the upper half-space. -/
@@ -207,10 +211,6 @@ instance : IsManifold 𝓘(ℝ, WithLp 2 (E × ℝ)) ω (UpperHalfSpace E) :=
   inferInstanceAs (IsManifold 𝓘(ℝ, WithLp 2 (E × ℝ)) ω (upperHalfSpaceOpens E))
 
 variable {E}
-
-/-- The upper half-space over a finite-dimensional space is second countable. -/
-instance [FiniteDimensional ℝ E] : SecondCountableTopology (UpperHalfSpace E) :=
-  inferInstanceAs (SecondCountableTopology (upperHalfSpaceOpens E))
 
 /-- The inclusion of the upper half-space into `E × ℝ` is analytic. -/
 theorem contMDiff_coe :

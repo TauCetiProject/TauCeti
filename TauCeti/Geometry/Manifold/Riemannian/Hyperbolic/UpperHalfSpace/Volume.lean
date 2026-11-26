@@ -21,7 +21,11 @@ dimension `n = dim E + 1`, has density `t⁻ⁿ` against Lebesgue measure of `E 
 
 The hyperbolic metric is the Euclidean metric divided by `t²`, so in the inclusion chart its Gram
 matrix is `t⁻²` times the Euclidean Gram matrix, and the square root of its determinant is `t⁻ⁿ`
-times the Euclidean one.
+times the Euclidean one. This chart computation and the proof of
+`TauCeti.UpperHalfSpace.map_coe_riemannianVolume` generalize the proof of
+`UpperHalfPlane.riemannianVolume_eq_volume` (in
+`TauCeti/Analysis/Complex/UpperHalfPlane/Riemannian/Basic.lean`) from the upper half-plane `ℍ`
+to a finite-dimensional inner product space `E`.
 
 ## Main results
 
