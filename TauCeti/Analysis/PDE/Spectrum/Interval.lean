@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.PDE.ClassicalSolution
 public import TauCeti.Analysis.PDE.Spectrum.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 
 /-!
 # The Dirichlet spectrum of `-Δ` on an interval
@@ -56,6 +57,9 @@ sine mode, and it vanishes by completeness of the sine system
   eigenvalue is `(π / (b - a))²`.
 * `TauCeti.PDE.isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain`: the sharp Poincaré
   inequality on `H¹₀(a, b)`, with constant `(π / (b - a))²`.
+* `TauCeti.W1p.norm_value_le_div_pi_mul_norm_gradient_of_mem_w1p0Submodule`: the same inequality,
+  `‖u‖_{L²} ≤ (b - a) / π ‖u'‖_{L²}`, for the Sobolev classes on the interval `(a, b)` of the real
+  line, transported along the isometry `x ↦ x 0` of the Euclidean line onto `ℝ`.
 
 ## References
 
@@ -484,5 +488,36 @@ theorem isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain (hab : a < b
     (nonempty_intervalDomain_iff.2 hab)
 
 end PDE
+
+open MeasureTheory Set TopologicalSpace
+open scoped Real
+
+variable {a b : ℝ}
+
+/-- **The sharp Poincaré inequality on `H¹₀(a, b)` of the real line.** A class of
+`W^{1,2}_0(a, b)`, for the interval `(a, b)` of `ℝ`, satisfies
+`‖u‖_{L²(a,b)} ≤ (b - a) / π ‖u'‖_{L²(a,b)}`: the isometry `x ↦ x 0` carries it to a class of
+`H¹₀` of `TauCeti.PDE.intervalDomain a b` with the same norms, to which
+`TauCeti.PDE.isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain` applies. -/
+theorem W1p.norm_value_le_div_pi_mul_norm_gradient_of_mem_w1p0Submodule (hab : a < b)
+    {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2}
+    (hu : u ∈ w1p0Submodule volume ⟨Ioo a b, isOpen_Ioo⟩ 2) :
+    ‖W1p.value u‖ ≤ (b - a) / π * ‖W1p.gradient u‖ := by
+  set g := PDE.lineEquiv.symm.toAffineIsometryEquiv
+  have hUV : (PDE.intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) =
+      g ⁻¹' ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ) := by
+    ext x
+    simp [g, PDE.lineEquiv_symm_apply]
+  set v := W1p.compAffineIsometryEquivL g hUV u
+  have hv : v ∈ w1p0Submodule volume (PDE.intervalDomain a b) 2 :=
+    (W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff g hUV).2 hu
+  have h := (PDE.isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain hab).1 ⟨v, hv⟩
+  rw [PDE.energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq] at h
+  simp only [v, W1p.norm_value_compAffineIsometryEquivL, W1p.norm_gradient_compAffineIsometryEquivL]
+    at h
+  rw [← mul_pow, pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero] at h
+  calc ‖W1p.value u‖ = (b - a) / π * (π / (b - a) * ‖W1p.value u‖) := by
+        field_simp [(sub_pos.2 hab).ne']
+    _ ≤ (b - a) / π * ‖W1p.gradient u‖ := by gcongr
 
 end TauCeti

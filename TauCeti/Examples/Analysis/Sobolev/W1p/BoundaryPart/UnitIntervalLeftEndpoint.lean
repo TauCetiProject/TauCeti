@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.OneEndpoint
+public import TauCeti.Analysis.Sobolev.W1p.Interval.SharpPoincare
 
 /-!
 # Sobolev functions on `(0, 1)` vanishing at `0`
@@ -19,16 +20,19 @@ On `Ω = (0, 1)` with the boundary part `Γ = {0}`:
 * for `1 ≤ p ≤ ∞`, every `u ∈ W^{1,p}_Γ(0, 1)` satisfies `|u(x)| ≤ x^{1 - 1/p} ‖u'‖_{Lᵖ}` on
   `[0, 1]` (`TauCeti.Examples.UnitIntervalLeftEndpoint.abs_intervalRepresentativeL_le`), and
   hence the Poincaré–Friedrichs inequality `‖u‖_{Lᵖ} ≤ ‖u'‖_{Lᵖ}` with constant `1`
-  (`TauCeti.Examples.UnitIntervalLeftEndpoint.norm_value_le_norm_gradient`).
+  (`TauCeti.Examples.UnitIntervalLeftEndpoint.norm_value_le_norm_gradient`);
+* for `p = 2` the optimal Poincaré–Friedrichs constant is `2 / π`, attained by `sin (π x / 2)`
+  (`TauCeti.Examples.UnitIntervalLeftEndpoint.isLeast_norm_value_le_mul_norm_gradient`).
 
 These are the instances `a = 0`, `b = 1` of the trace characterization of `W^{1,p}_{{a}}(a, b)`
 and of the Poincaré–Friedrichs inequality on an interval in
-`TauCeti.Analysis.Sobolev.W1p.Interval.OneEndpoint`.
+`TauCeti.Analysis.Sobolev.W1p.Interval.OneEndpoint`, and of its sharp form for `p = 2` in
+`TauCeti.Analysis.Sobolev.W1p.Interval.SharpPoincare`.
 -/
 
 public section
 
-open MeasureTheory Set TopologicalSpace
+open MeasureTheory Set TopologicalSpace Real
 open scoped ENNReal
 
 namespace TauCeti.Examples.UnitIntervalLeftEndpoint
@@ -63,5 +67,16 @@ theorem norm_value_le_norm_gradient {u : W1p volume ⟨Ioo (0 : ℝ) 1, isOpen_I
     ‖W1p.value u‖ ≤ ‖W1p.gradient u‖ := by
   simpa using W1p.norm_value_le_mul_norm_gradient_of_intervalTraceL_fst_eq_zero zero_lt_one
     (W1p.intervalTraceL_fst_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton zero_lt_one hu)
+
+/-- **The Poincaré–Friedrichs constant of `(0, 1)` with `Γ = {0}` is `2 / π` for `p = 2`**: it is
+the least `C` with `‖u‖_{L²} ≤ C ‖u'‖_{L²}` for every `u ∈ W^{1,2}_{{0}}(0, 1)`. -/
+theorem isLeast_norm_value_le_mul_norm_gradient :
+    IsLeast {C : ℝ | ∀ u ∈ w1pVanishingOnSubmodule volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ 2 {0},
+      ‖W1p.value u‖ ≤ C * ‖W1p.gradient u‖} (2 / π) := by
+  have h := W1p.isLeast_norm_value_le_mul_norm_gradient_of_intervalTraceL_fst_eq_zero
+    (a := 0) (b := 1) zero_lt_one
+  rw [sub_zero, mul_one] at h
+  simpa only [W1p.mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_fst_eq_zero (p := 2)
+    ENNReal.ofNat_ne_top zero_lt_one] using h
 
 end TauCeti.Examples.UnitIntervalLeftEndpoint
