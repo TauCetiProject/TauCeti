@@ -253,6 +253,17 @@ theorem coe_kerSobolevLEquivComap_apply (hp : 1 < p)
       SobolevSection.ofContMDiffSection A volume p 1 t := by
   simp [kerSobolevLEquivComap, Submodule.coe_equivMapOfInjective_apply, LinearEquiv.coe_ofEq_apply]
 
+/-- The inverse of `kerSobolevLEquivComap` sends the Sobolev section of a `C¹` section `s` in the
+kernel back to `s`. -/
+@[simp]
+theorem kerSobolevLEquivComap_symm_ofContMDiffSection (hp : 1 < p)
+    {s : Cₛ^((1 : ℕ) : WithTop ℕ∞)⟮𝓘(ℝ, ℂ); F, V⟯}
+    (hs : SobolevSection.ofContMDiffSection A volume p 1 s ∈
+      (hD.sobolevL A hDs volume p).ker) :
+    (kerSobolevLEquivComap A hD hDs hp).symm ⟨_, hs⟩ = ⟨s, hs⟩ :=
+  (kerSobolevLEquivComap A hD hDs hp).symm_apply_eq.2
+    (Subtype.ext (coe_kerSobolevLEquivComap_apply A hD hDs hp ⟨s, hs⟩).symm)
+
 variable {p' : ℝ≥0∞} [Fact (1 ≤ p')]
 
 /-- **The kernel does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (iii), for
@@ -279,10 +290,7 @@ theorem kerSobolevLEquiv_apply_ofContMDiffSection (hp : 1 < p) (hp' : 1 < p')
       (hD.sobolevL A hDs volume p).ker) :
     (kerSobolevLEquiv A hD hDs hp hp' ⟨_, hs⟩ : SobolevSection A volume p' 1) =
       SobolevSection.ofContMDiffSection A volume p' 1 s := by
-  have h : (kerSobolevLEquivComap A hD hDs hp).symm ⟨_, hs⟩ = ⟨s, hs⟩ :=
-    (kerSobolevLEquivComap A hD hDs hp).symm_apply_eq.2
-      (Subtype.ext (coe_kerSobolevLEquivComap_apply A hD hDs hp ⟨s, hs⟩).symm)
-  simp [kerSobolevLEquiv, h]
+  simp [kerSobolevLEquiv]
 
 /-- **The dimension of the kernel does not depend on the exponent.** -/
 theorem finrank_ker_sobolevL_eq (hp : 1 < p) (hp' : 1 < p') :
