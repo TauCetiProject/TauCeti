@@ -20,9 +20,10 @@ the density `M.dens s : Y → ℝ≥0` of its emission law with respect to `M.re
 The **joint density** `M.jointDensity x y n` of a state path `x : ℕ → S` and an observation
 sequence `y : ℕ → Y` up to time `n` is
 `init (x 0) * dens (x 0) (y 0) * ∏ t < n, trans (x t) (x (t + 1)) * dens (x (t + 1)) (y (t + 1))`:
-the observation at each time is weighted by the state at that same time. Its sum over the state
-paths is the likelihood of the observations up to time `n`, and its maximum over the state paths
-is the value of a most probable state path.
+the observation at each time is weighted by the state at that same time. It only depends on the
+states `x 0, …, x n` (`jointDensity_congr`). Summed over these finitely many states, that is over
+the state sequences `Fin (n + 1) → S`, it gives the likelihood of the observations up to time `n`;
+its maximum over the same state sequences is the value of a most probable state sequence.
 
 ## Main definitions
 
@@ -113,6 +114,11 @@ theorem ofPMF_trans : (ofPMF init trans emit).trans = trans := (rfl)
 @[simp]
 theorem ofPMF_ref : (ofPMF init trans emit).ref = Measure.count := (rfl)
 
+/-- The emission density of `ofPMF init trans emit` in the state `s` at `y` is the mass
+`emit s y`, truncated to `ℝ≥0`. -/
+theorem ofPMF_dens (s : S) (y : Y) : (ofPMF init trans emit).dens s y = (emit s y).toNNReal :=
+  (rfl)
+
 /-- The emission densities of `ofPMF init trans emit` are the emission mass functions. -/
 @[simp]
 theorem coe_ofPMF_dens (s : S) (y : Y) : ((ofPMF init trans emit).dens s y : ℝ≥0∞) = emit s y :=
@@ -163,6 +169,12 @@ theorem ofMeasure_trans : (ofMeasure init trans ref emit hemit).trans = trans :=
 @[simp]
 theorem ofMeasure_ref : (ofMeasure init trans ref emit hemit).ref = ref := (rfl)
 
+/-- The emission density of `ofMeasure init trans ref emit hemit` in the state `s` at `y` is the
+Radon–Nikodym derivative `(emit s).rnDeriv ref y`, truncated to `ℝ≥0`. -/
+theorem ofMeasure_dens (s : S) (y : Y) :
+    (ofMeasure init trans ref emit hemit).dens s y = ((emit s).rnDeriv ref y).toNNReal :=
+  (rfl)
+
 /-- The emission densities of `ofMeasure init trans ref emit hemit` are the Radon–Nikodym
 derivatives of the emission laws, almost everywhere with respect to the reference measure. -/
 theorem coe_ofMeasure_dens_ae_eq (s : S) :
@@ -191,6 +203,12 @@ It only depends on `x` and `y` at times `≤ n` (`jointDensity_congr`). -/
 def jointDensity (x : ℕ → S) (y : ℕ → Y) (n : ℕ) : ℝ≥0∞ :=
   M.init (x 0) * M.dens (x 0) (y 0) *
     ∏ t ∈ range n, (M.trans (x t) (x (t + 1)) * M.dens (x (t + 1)) (y (t + 1)))
+
+/-- The defining formula of the joint density as a product over the time steps `t < n`. -/
+theorem jointDensity_def (x : ℕ → S) (y : ℕ → Y) (n : ℕ) :
+    M.jointDensity x y n = M.init (x 0) * M.dens (x 0) (y 0) *
+      ∏ t ∈ range n, (M.trans (x t) (x (t + 1)) * M.dens (x (t + 1)) (y (t + 1))) :=
+  (rfl)
 
 /-- The joint density at horizon `0` weighs the observation at time `0` by the state at
 time `0`. -/
