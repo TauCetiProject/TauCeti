@@ -34,7 +34,7 @@ This is the real form of the weight decomposition of the complexified adjoint ac
 each plane `E_k ⊗ ℂ` is the sum of the weight lines of `±i α_k`. For the Lie algebra of a maximal
 torus of a compact Lie group, the centralizer `𝔷(t)` is `t` itself, which gives the root-plane
 decomposition `𝔤 = t ⊕ ⨁ E_k` (`TauCeti.Lie.IsMaximalTorus.exists_isInternal_isRootPlane`, in
-`TauCeti.Geometry.Lie.Subgroup.Torus.RootPlane`). The formulas of
+`TauCeti.Geometry.Lie.Subgroup.Torus.Root.Plane`). The formulas of
 `TauCeti.Algebra.Lie.Coadjoint.RootPlane` for the Kirillov–Kostant–Souriau form and the height
 Hessians of coadjoint orbits through `t` take such planes as input.
 
