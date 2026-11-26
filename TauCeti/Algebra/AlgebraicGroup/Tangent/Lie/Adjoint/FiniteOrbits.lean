@@ -11,6 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.NilpotentCone
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.WeightedDiagram
 import Mathlib.Algebra.Lie.CartanExists
 import Mathlib.LinearAlgebra.RootSystem.BaseExists
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.GradeTwoOrbit
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Exponential
 
@@ -162,10 +163,9 @@ theorem exists_finite_subset_isNilpotent_ad_ncard_le
     obtain ⟨g₂, hg₂, -, hg₂e, -⟩ :=
       t₁.exists_mem_quotientPointsSubgroup_identityComponent_basePointsRepresentation_eq t₀
     have hg₂₀ : g₂ ∈ CommHopfAlgCat.quotientPointsSubgroup H.obj
-        (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k) := by
-      rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at hg₂ ⊢
-      exact fun x hx => hg₂ x
-        ((centralizerHopfIdeal H (h : 𝔤)).identityComponentHopfIdeal_le_identityComponent hx)
+        (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k) :=
+      CommHopfAlgCat.quotientPointsSubgroup_le_of_le H.obj
+        (centralizerHopfIdeal H (h : 𝔤)).identityComponentHopfIdeal_le_identityComponent _ hg₂
     refine ⟨rep ⟨h, hh⟩, Set.mem_range_self (⟨h, hh⟩ : b.dominantNeutralElements),
       g₂ * g₁, Subgroup.mul_mem _ hg₂₀ hg₁, ?_⟩
     rw [map_mul, mul_apply_eq_comp, hg₂e]
@@ -235,6 +235,19 @@ private theorem finite_and_ncard_image_setOf_isNilpotent_ad {α : Type*}
   rw [heq]
   exact ⟨hfin.insert (orb 0), (Set.ncard_insert_le _ _).trans (by omega)⟩
 
+/-- Reindexing along right multiplication by `⟨g, hg⟩ : Γ` shows that acting by `g ∈ Γ` preserves
+the `Γ`-orbit `{ρ γ e | γ ∈ Γ}`. -/
+private theorem range_subgroup_apply_apply_eq {R G M : Type*} [Semiring R] [Group G]
+    [AddCommMonoid M] [Module R M] (ρ : Representation R G M) {Γ : Subgroup G} {g : G}
+    (hg : g ∈ Γ) (e : M) :
+    (Set.range fun γ : Γ => ρ γ.val (ρ g e)) = Set.range fun γ : Γ => ρ γ.val e := by
+  have hcomp :
+      (fun γ : Γ => ρ γ.val (ρ g e)) =
+        (fun γ : Γ => ρ γ.val e) ∘ Equiv.mulRight (⟨g, hg⟩ : Γ) := by
+    ext γ
+    simp
+  rw [hcomp, EquivLike.range_comp]
+
 /-- **Bound on nonzero nilpotent `Γ`-orbits in `Lie(G)`.** For any Cartan subalgebra `𝔥 ≤ 𝔤` and
 any subgroup `Γ ≤ G(k)` containing `G°(k)`, there are at most `3 ^ finrank k 𝔥 - 1` nonzero
 nilpotent `Γ`-orbits in `𝔤`. -/
@@ -249,12 +262,9 @@ theorem ncard_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e) ∧
           e ≠ 0}).ncard ≤
-      3 ^ Module.finrank k 𝔥 - 1 := by
-  let 𝔤 := Module.Dual k (Bialgebra.CotangentSpace k H)
-  let _ : MulAction Γ 𝔤 := MulAction.compHom 𝔤
-    ((Representation.asGroupHom (Comodule.basePointsRepresentation 𝔤)).comp Γ.subtype)
-  exact (finite_and_ncard_image_le_of_forall_eq (H := H) 𝔥
-    fun g hg e => MulAction.orbit_smul (⟨g, hΓ hg⟩ : Γ) e).right
+      3 ^ Module.finrank k 𝔥 - 1 :=
+  (finite_and_ncard_image_le_of_forall_eq (H := H) 𝔥
+    fun _ hg e => range_subgroup_apply_apply_eq _ (hΓ hg) e).right
 
 /-- **Finiteness of nonzero nilpotent `Γ`-orbits in `Lie(G)`.** -/
 theorem finite_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_ad_ne_zero
@@ -267,12 +277,10 @@ theorem finite_image_range_subgroup_basePointsRepresentation_setOf_isNilpotent_a
       {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
         IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e) ∧
           e ≠ 0}).Finite := by
-  let 𝔤 := Module.Dual k (Bialgebra.CotangentSpace k H)
-  let _ : MulAction Γ 𝔤 := MulAction.compHom 𝔤
-    ((Representation.asGroupHom (Comodule.basePointsRepresentation 𝔤)).comp Γ.subtype)
-  obtain ⟨x, _⟩ := LieAlgebra.exists_isCartanSubalgebra_engel k 𝔤
+  obtain ⟨x, _⟩ := LieAlgebra.exists_isCartanSubalgebra_engel k
+    (Module.Dual k (Bialgebra.CotangentSpace k H))
   exact (finite_and_ncard_image_le_of_forall_eq (H := H) (LieSubalgebra.engel k x)
-    fun g hg e => MulAction.orbit_smul (⟨g, hΓ hg⟩ : Γ) e).left
+    fun _ hg e => range_subgroup_apply_apply_eq _ (hΓ hg) e).left
 
 /-- **Finiteness of nilpotent `Γ`-orbits in `Lie(G)`.** Over an algebraically closed field of
 characteristic zero, if `𝔤 = Lie(G)` is Killing and `G°(k) ≤ Γ ≤ G(k)`, there are only finitely

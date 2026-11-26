@@ -14,12 +14,11 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.BasePoints
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Differential
-public import TauCeti.Algebra.Lie.AdjointAction.ExpAdSubgroup
+public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
 import Mathlib.Algebra.Module.Rat
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.LieAlgebra
 import TauCeti.Algebra.AlgebraicGroup.Representation.Tangent
 import TauCeti.Algebra.Group.Subgroup.Closure
-import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
 import TauCeti.RepresentationTheory.Lie.AdNilpotent
 import TauCeti.RingTheory.Nilpotent.Log
 
@@ -60,10 +59,7 @@ Over an algebraically closed field when `G` is of finite type, `expAdPoint hx` l
 component `G°(k)` and in `C_G(y)°(k)` whenever `⁅x, y⁆ = 0`, so the entire inner automorphism group
 `Int(𝔤)` is realized by products of unipotent rational points of `G°`
 (`TauCeti.intLieAlgebra_le_map_asGroupHom_closure_identityComponentHopfIdeal_isUnipotentPoint`,
-`TauCeti.intLieAlgebra_le_map_quotientPointsSubgroup_identityComponent`), and Kostant's subgroup
-`expAdSubgroup k e` is realized inside `C_G(e)°(k)`
-(`TauCeti.map_expAdSubgroup_le_map_quotientPointsSubgroup_centralizer_identityComponent`), lifting
-Kostant's conjugacy of `sl₂` triples sharing `e` to `C_G(e)°(k)`.
+`TauCeti.intLieAlgebra_le_map_quotientPointsSubgroup_identityComponent`).
 
 ## Main declarations
 
@@ -92,8 +88,6 @@ Kostant's conjugacy of `sl₂` triples sharing `e` to `C_G(e)°(k)`.
   `TauCeti.intLieAlgebra_le_map_quotientPointsSubgroup_identityComponent`: over an algebraically
   closed field of characteristic zero, `Int(𝔤)` is realized inside `Ad(G°(k))` by products of
   unipotent `k`-points of `G°`.
-* `IsSl2Triple.exists_mem_quotientPointsSubgroup_centralizer_identityComponent_eq`: Kostant's
-  conjugacy of `sl₂` triples sharing `e` by a rational point of `C_G(e)°`.
 
 ## References
 
@@ -177,9 +171,8 @@ theorem asGroupHom_basePointsRepresentation_expPoint [Algebra ℚ H]
           (Derivation.cotangentDualLieEquiv (R := R) (H := H) x) hd)) =
       LinearMap.GeneralLinearGroup.ofLinearEquiv
         (expAd x hx.exists_pow_apply_eq_zero).toLinearEquiv := by
-  refine Units.ext <| LinearMap.ext fun y => ?_
-  simpa [Representation.asGroupHom_apply] using
-    DFunLike.congr_fun (basePointsAdjointLieEquiv_expPoint (R := R) (H := H) hx hd) y
+  rw [Derivation.asGroupHom_basePointsRepresentation_adjointComodule,
+    basePointsAdjointLieEquiv_expPoint (R := R) (H := H) hx hd]
 
 end General
 
@@ -310,11 +303,10 @@ theorem basePointsAdjointLieEquiv_expAdPoint [LieAlgebra ℚ 𝔤]
     {x : 𝔤} (hx : IsNilpotent (LieAlgebra.ad k 𝔤 x)) :
     Derivation.basePointsAdjointLieEquiv (R := k) (H := H) (expAdPoint hx) =
       expAd (K := k) x hx.exists_pow_apply_eq_zero := by
-  refine LieEquiv.ext fun y ↦ ?_
-  rw [Derivation.basePointsAdjointLieEquiv_apply, basePointsRepresentation_expAdPoint hx,
-    expAd_apply (K := k) x hx y]
-  congr!
-  exact Subsingleton.elim _ _
+  let _ : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
+  rw [expAdPoint_def]
+  exact basePointsAdjointLieEquiv_expPoint hx
+    (exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero hx)
 
 /-- **As a linear automorphism unit, `expAdPoint hx` acts on `𝔤` by `expAd x`.** -/
 theorem toHomUnits_basePointsRepresentation_expAdPoint [LieAlgebra ℚ 𝔤]
@@ -322,11 +314,10 @@ theorem toHomUnits_basePointsRepresentation_expAdPoint [LieAlgebra ℚ 𝔤]
     (Comodule.basePointsRepresentation (R := k) (H := H) 𝔤).toHomUnits (expAdPoint hx) =
       LinearMap.GeneralLinearGroup.ofLinearEquiv
         (expAd (K := k) x hx.exists_pow_apply_eq_zero).toLinearEquiv := by
-  refine Units.ext ?_
-  rw [MonoidHom.coe_toHomUnits, basePointsRepresentation_expAdPoint hx,
-    coe_ofLinearEquiv_expAd x hx]
-  congr!
-  exact Subsingleton.elim _ _
+  let _ : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
+  simpa only [Representation.asGroupHom, expAdPoint_def] using
+    asGroupHom_basePointsRepresentation_expPoint hx
+      (exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero hx)
 
 /-- **Realization of `Int(Lie(G))` by unipotent rational points.** For an affine group `G = Spec H`
 over a field `k` of characteristic zero with finite-dimensional Killing Lie algebra `𝔤`, the inner
@@ -338,7 +329,8 @@ theorem intLieAlgebra_le_map_asGroupHom_closure_isUnipotentPoint [LieAlgebra ℚ
         (Representation.asGroupHom (Comodule.basePointsRepresentation 𝔤)) :=
   intLieAlgebra_le_iff.mpr fun _ hx ↦
     ⟨expAdPoint hx, Subgroup.subset_closure (isUnipotentPoint_expAdPoint hx),
-      toHomUnits_basePointsRepresentation_expAdPoint hx⟩
+      by simpa only [Representation.asGroupHom] using
+        toHomUnits_basePointsRepresentation_expAdPoint hx⟩
 
 /-- Every inner automorphism in `Int(Lie(G))` is the adjoint action of a product of unipotent
 `k`-points of `G`. -/
@@ -351,9 +343,8 @@ theorem exists_mem_closure_isUnipotentPoint_ofLinearEquiv_basePointsAdjointLieEq
           (Derivation.basePointsAdjointLieEquiv (R := k) (H := H) g).toLinearEquiv = φ ∧
         ∀ y, Comodule.basePointsRepresentation 𝔤 g y = φ • y := by
   obtain ⟨g, hg, rfl⟩ := intLieAlgebra_le_map_asGroupHom_closure_isUnipotentPoint hφ
-  refine ⟨g, hg, ?_, fun _ => rfl⟩
-  refine Units.ext <| LinearMap.ext fun y => ?_
-  simp [Representation.asGroupHom_apply]
+  exact ⟨g, hg, (Derivation.asGroupHom_basePointsRepresentation_adjointComodule g).symm,
+    fun _ => rfl⟩
 
 /-- **Every inner automorphism in `Int(𝔤)` is the adjoint action of a `k`-point of `G`.** -/
 theorem intLieAlgebra_le_range_basePointsRepresentation [LieAlgebra ℚ 𝔤] :
@@ -410,7 +401,8 @@ theorem intLieAlgebra_le_map_asGroupHom_closure_identityComponentHopfIdeal_isUni
   intLieAlgebra_le_iff.mpr fun _ hx ↦
     ⟨expAdPoint hx,
       Subgroup.subset_closure ⟨expAdPoint_mem_identityComponent hx, isUnipotentPoint_expAdPoint hx⟩,
-      toHomUnits_basePointsRepresentation_expAdPoint hx⟩
+      by simpa only [Representation.asGroupHom] using
+        toHomUnits_basePointsRepresentation_expAdPoint hx⟩
 
 /-- Over an algebraically closed field of characteristic zero, every inner automorphism
 `φ ∈ Int(Lie(G))` is realized by a rational point of the identity component `G°` lying in the
@@ -430,11 +422,10 @@ theorem exists_mem_identityComponentHopfIdeal_ofLinearEquiv_basePointsAdjointLie
         ∀ y, Comodule.basePointsRepresentation 𝔤 g y = φ • y := by
   obtain ⟨g, hg, rfl⟩ :=
     intLieAlgebra_le_map_asGroupHom_closure_identityComponentHopfIdeal_isUnipotentPoint hφ
-  refine ⟨g, hg, (CommHopfAlgCat.quotientPointsSubgroup H.obj
+  exact ⟨g, hg, (CommHopfAlgCat.quotientPointsSubgroup H.obj
       (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H))
-      (CommAlgCat.of k k)).closure_sep_le _ hg, ?_, fun _ => rfl⟩
-  refine Units.ext <| LinearMap.ext fun y => ?_
-  simp [Representation.asGroupHom_apply]
+      (CommAlgCat.of k k)).closure_sep_le _ hg,
+    (Derivation.asGroupHom_basePointsRepresentation_adjointComodule g).symm, fun _ => rfl⟩
 
 /-- **Every inner automorphism in `Int(𝔤)` is the adjoint action of a point in `G°(k)`.** -/
 theorem intLieAlgebra_le_map_quotientPointsSubgroup_identityComponent [LieAlgebra ℚ 𝔤] :
@@ -447,60 +438,6 @@ theorem intLieAlgebra_le_map_quotientPointsSubgroup_identityComponent [LieAlgebr
     ⟨expAdPoint hx, expAdPoint_mem_identityComponent hx,
       toHomUnits_basePointsRepresentation_expAdPoint hx⟩
 
-/-- **Kostant's subgroup `expAdSubgroup k e` is realized by rational points of `C_G(e)°`.** -/
-theorem map_expAdSubgroup_le_map_quotientPointsSubgroup_centralizer_identityComponent
-    [LieAlgebra ℚ 𝔤] (e : 𝔤) :
-    (expAdSubgroup k e).map
-        (LinearMap.GeneralLinearGroup.generalLinearEquiv k 𝔤).symm.toMonoidHom ≤
-      (CommHopfAlgCat.quotientPointsSubgroup H.obj
-        (centralizerHopfIdeal H.obj e).identityComponent
-        (CommAlgCat.of k k)).map
-          (Comodule.basePointsRepresentation (R := k) (H := H.obj) 𝔤).toHomUnits := by
-  rw [Subgroup.map_le_iff_le_comap, expAdSubgroup_le_iff]
-  intro y hy hye
-  have hcomm : ⁅y, e⁆ = 0 := by
-    rw [← lie_skew, ← LieAlgebra.ad_apply (R := k), LinearMap.mem_ker.mp hye.left, neg_zero]
-  exact ⟨expAdPoint hy, expAdPoint_mem_centralizer_identityComponent hy hcomm,
-    toHomUnits_basePointsRepresentation_expAdPoint hy⟩
-
 end IsAlgClosed
 
 end TauCeti
-
-namespace IsSl2Triple
-
-open TauCeti
-
-universe u
-
-attribute [local instance] Derivation.adjointComodule
-
-/-- **Kostant's conjugacy theorem at fixed nilpositive element, in `C_G(e)°(k)`.** Over an
-algebraically closed field `k` of characteristic zero, if `G = Spec H` is of finite type with
-Killing Lie algebra `𝔤`, any two `sl₂` triples `(h, e, f)` and `(h', e, f')` in `𝔤` sharing `e` are
-conjugate by a rational point of the connected centralizer `C_G(e)°`. -/
-theorem exists_mem_quotientPointsSubgroup_centralizer_identityComponent_eq
-    {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
-    {H : FiniteTypeCommHopfAlgCat.{u, u} k}
-    [LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H))]
-    {h f h' f' e : Module.Dual k (Bialgebra.CotangentSpace k H)}
-    (t : IsSl2Triple h e f) (t' : IsSl2Triple h' e f') :
-    ∃ g ∈ CommHopfAlgCat.quotientPointsSubgroup H.obj
-        (centralizerHopfIdeal H.obj e).identityComponent (CommAlgCat.of k k),
-      Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g e = e ∧
-        Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g h = h' ∧
-        Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g f =
-          f' := by
-  let _ := ratLieAlgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))
-  obtain ⟨φ, hφ, hφe, hφh, hφf⟩ := t.exists_lieEquiv_apply_eq (K := k) t'
-  obtain ⟨g, hg, hgu⟩ :=
-    map_expAdSubgroup_le_map_quotientPointsSubgroup_centralizer_identityComponent (H := H) e
-      ⟨φ.toLinearEquiv, hφ, rfl⟩
-  have hact (z : Module.Dual k (Bialgebra.CotangentSpace k H)) :
-      Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g z =
-        φ z := by
-    have := LinearMap.congr_fun (congrArg Units.val hgu) z
-    rwa [MonoidHom.coe_toHomUnits] at this
-  exact ⟨g, hg, (hact e).trans hφe, (hact h).trans hφh, (hact f).trans hφf⟩
-
-end IsSl2Triple

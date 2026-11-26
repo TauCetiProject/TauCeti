@@ -246,10 +246,11 @@ private theorem exists_mem_closure_sep_isUnipotentPoint_basePointsRepresentation
     TauCeti.ratLieAlgebra k _
   obtain ⟨φ, hφ, hφe, hφh, hφf⟩ := t.exists_lieEquiv_apply_eq (K := k) t'
   obtain ⟨g, hg, hgeq⟩ := hΓ hφ
+  rw [MonoidHom.comp_apply, Derivation.asGroupHom_basePointsRepresentation_adjointComodule] at hgeq
   have happ (z : Module.Dual k (Bialgebra.CotangentSpace k H)) :
       Comodule.basePointsRepresentation (Module.Dual k (Bialgebra.CotangentSpace k H)) g z =
         φ z := by
-    simpa [Representation.asGroupHom_apply] using DFunLike.congr_fun hgeq z
+    simpa using DFunLike.congr_fun hgeq z
   exact ⟨g, hg, (happ h).trans hφh, (happ e).trans hφe, (happ f).trans hφf⟩
 
 /-- Weakening `exists_mem_closure_sep_isUnipotentPoint_basePointsRepresentation_eq` from the
