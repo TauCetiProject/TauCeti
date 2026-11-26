@@ -15,9 +15,9 @@ Taubes reconstructs a pseudoholomorphic curve from a positive cohomology assignm
 closed set `Z` in an almost complex manifold `(Y, J)` (`TauCeti.PositiveCohomologyAssignment`).
 Near a point of `Z` he foliates a neighbourhood by discs `σ_w`, indexed by a transverse parameter
 `w`, and reads the curve off the intersection points of `Z` with the leaves, weighted by their
-local charges. This file proves that these weighted intersections move continuously with `w`: the
-analogue, for positive cohomology assignments, of Hurwitz's theorem on the zeros of a convergent
-sequence of holomorphic functions.
+local charges. This file proves the local statements, near each intersection point, behind the
+continuity of these weighted intersections in `w`: the analogue, for positive cohomology
+assignments, of Hurwitz's theorem on the zeros of a convergent sequence of holomorphic functions.
 
 The family is a continuous map `u : P × 𝔻 → Y`, with leaves `σ_w = u (w, ·)`
 (`ContinuousMap.curry`), and the hypothesis is that near a parameter `w₀` the leaves meet `Z` only
@@ -49,10 +49,12 @@ as `w` tends to `w₀`:
   the local charge of `σ_{w₀}` at `z₀`
   (`TauCeti.PositiveCohomologyAssignment.eventually_card_le_localCharge`).
 
-Applied at each point of a finite `σ_{w₀}⁻¹(Z)`, these statements say that the intersection
-points of `σ_w` with `Z`, weighted by their local charges, converge to those of `σ_{w₀}` as `w`
-tends to `w₀`. This is how the leaves of a foliation assemble into the branches of the
-reconstructed curve.
+These are statements about one point of `σ_{w₀}⁻¹(Z)` at a time. Applying them at each point of a
+finite `σ_{w₀}⁻¹(Z)`, `TauCeti.Geometry.Symplectic.Manifold.ChargeDivisor` proves that the
+intersection points of `σ_w` with `Z`, weighted by their local charges, converge to those of
+`σ_{w₀}` as `w` tends to `w₀` (`TauCeti.PositiveCohomologyAssignment.tendsto_chargeSum`,
+`TauCeti.PositiveCohomologyAssignment.tendsto_esymm_chargeMultiset`). This is how the leaves of a
+foliation assemble into the branches of the reconstructed curve.
 
 ## Main results
 

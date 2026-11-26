@@ -34,6 +34,8 @@ for every finite index type. In sizes `0` and `1` both groups are trivial.
 * `TauCeti.specialAlgebraicK1_eq_bot_of_finite_maximalSpectrum` and
   `TauCeti.elementarySubgroup_eq_ker_det_of_finite_maximalSpectrum`: the same for commutative
   semilocal rings, in particular for commutative local rings.
+* `TauCeti.AlgebraicK1.map_algebraMap_injective`: for a commutative semilocal ring `R` and an
+  `R`-algebra `B` with injective structure map, `K₁(R) → K₁(B)` is injective.
 
 ## References
 
@@ -96,6 +98,15 @@ theorem specialAlgebraicK1_eq_bot_of_finite_maximalSpectrum [Finite (MaximalSpec
     specialAlgebraicK1 R = ⊥ :=
   specialAlgebraicK1_eq_bot_of_hasStableRangeLE_one
     (hasStableRangeLE_one_of_finite_maximalSpectrum R)
+
+/-- For a commutative semilocal ring `R`, such as a local ring, and an `R`-algebra `B` with
+injective structure map, the map `K₁(R) → K₁(B)` is injective. For a discrete valuation ring `O`
+with fraction field `L` this is exactness of `1 → K₁(O) → K₁(L)`. -/
+theorem AlgebraicK1.map_algebraMap_injective [Finite (MaximalSpectrum R)] {B : Type*}
+    [CommRing B] [Algebra R B] [FaithfulSMul R B] :
+    Function.Injective (AlgebraicK1.map (algebraMap R B)) :=
+  AlgebraicK1.map_injective_of_specialAlgebraicK1_eq_bot
+    specialAlgebraicK1_eq_bot_of_finite_maximalSpectrum (FaithfulSMul.algebraMap_injective R B)
 
 /-- Over a commutative ring with finitely many maximal ideals, in particular a commutative local
 ring, an invertible matrix is a product of elementary matrices exactly when its determinant is

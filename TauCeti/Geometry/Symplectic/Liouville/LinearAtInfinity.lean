@@ -116,6 +116,11 @@ theorem one_le_liouvilleRadialCoordinate (Z : (x : M) → TangentSpace I x) (W :
   rw [liouvilleRadialCoordinate, Real.one_le_exp_iff]
   exact Real.sInf_nonneg fun _ ht ↦ ht.1
 
+/-- The radial coordinate is positive. -/
+theorem liouvilleRadialCoordinate_pos (Z : (x : M) → TangentSpace I x) (W : Set M) (x : M) :
+    0 < liouvilleRadialCoordinate Z W x :=
+  Real.exp_pos _
+
 /-- A function `F` on a completion of the Liouville domain `W` with Liouville field `Z` is
 **linear at infinity** with slope `a` when `F = a r + b` outside a compact set, for a constant `b`,
 where `r` is the radial coordinate `TauCeti.liouvilleRadialCoordinate Z W`. -/
@@ -171,7 +176,7 @@ private theorem sInf_le_iff (h : IsLiouvilleCompletion ω α W)
   -- The set is closed upwards, since the backward flow preserves `W`.
   have hup : ∀ ⦃s t⦄, s ∈ S → s ≤ t → t ∈ S := fun s t hs hst ↦ by
     refine ⟨hs.1.trans hst, ?_⟩
-    have := h.flowOf_neg_mem hZ hs.2 (sub_nonneg.2 hst)
+    have := h.flowOf_neg_mem hZ (h.isCompleteVectorField hZ) hs.2 (sub_nonneg.2 hst)
     rwa [h.flowOf_flowOf hZ, show -(t - s) + -s = -t by ring] at this
   -- It is nonempty: if the flow carries `x` into `W` at a positive time, then `x` already lies
   -- in the interior of `W`.
@@ -225,7 +230,7 @@ theorem liouvilleRadialCoordinate_lt_exp_iff (h : IsLiouvilleCompletion ω α W)
     have hτT : Real.log (liouvilleRadialCoordinate Z W x) < T := by
       rwa [← hlog, Real.exp_lt_exp] at hlt
     have hmem := (h.liouvilleRadialCoordinate_le_exp_iff hZ (Real.log_nonneg h1)).1 hlog.ge
-    have := h.flowOf_neg_mem_interior hZ hmem (sub_pos.2 hτT)
+    have := h.flowOf_neg_mem_interior hZ (h.isCompleteVectorField hZ) hmem (sub_pos.2 hτT)
     rwa [h.flowOf_flowOf hZ, show ∀ τ, -(T - τ) + -τ = -T from fun τ ↦ by ring] at this
   · -- Times slightly smaller than `T` also flow `x` into the interior of `W`.
     intro hint

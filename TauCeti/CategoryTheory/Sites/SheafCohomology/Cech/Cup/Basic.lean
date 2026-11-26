@@ -65,7 +65,10 @@ presheaves act on factors and restrictions by restriction maps and by components
 `TauCeti.CategoryTheory.cechFace_cechComplexFunctor_map`); the comparison along a functor acts
 by the restrictions along the product comparison maps
 (`TauCeti.CategoryTheory.cechComponent_cechComplexCompIso_hom`,
-`TauCeti.CategoryTheory.cechFace_cechComplexCompIso_hom`).
+`TauCeti.CategoryTheory.cechFace_cechComplexCompIso_hom`). For a terminal object `T`, the
+augmentation `F(T) → Č⁰(U, F)` restricts a section to every factor
+(`TauCeti.CategoryTheory.cechComponent_cechAugmentation_f_zero`,
+`TauCeti.CategoryTheory.cechFace_cechAugmentation_f_zero`).
 
 ## References
 
@@ -262,6 +265,26 @@ theorem cechFace_cechComplexFunctor_map {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F �
     ← AlgCat.comp_apply, α.naturality]
   -- the products `∏ᶜ fun j ↦ U ((k ∘ σ) j)` and `∏ᶜ fun x ↦ U (k (σ x))` are the same object
   rfl
+
+/-- The factors of the augmentation `F(T) → Č⁰(U, F)` for a terminal object `T`: the factor indexed
+by `a` of the augmentation of a section `s` over `T` is the restriction of `s`. -/
+theorem cechComponent_cechAugmentation_f_zero {T : C} (hT : IsTerminal T) (a : Fin 1 → ι)
+    (s : F.obj (op T)) :
+    cechComponent a
+        (((cechAugmentation U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f 0).hom s) =
+      (F.map (hT.from (∏ᶜ fun j ↦ U (a j))).op).hom s :=
+  congrArg (fun f ↦ ModuleCat.Hom.hom f s)
+    (cechAugmentation_f_zero_comp_π U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) a)
+
+/-- The restrictions of the augmentation `F(T) → Č⁰(U, F)` for a terminal object `T`: every
+restriction of the augmentation of a section `s` over `T` is the restriction of `s`. -/
+theorem cechFace_cechAugmentation_f_zero {T : C} (hT : IsTerminal T) {n : ℕ}
+    (k : Fin (n + 1) → ι) (σ : Fin 1 → Fin (n + 1)) (s : F.obj (op T)) :
+    cechFace k σ
+        (((cechAugmentation U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f 0).hom s) =
+      (F.map (hT.from (∏ᶜ fun j ↦ U (k j))).op).hom s := by
+  rw [cechFace_apply, cechComponent_cechAugmentation_f_zero, ← AlgCat.comp_apply, ← F.map_comp,
+    ← op_comp, hT.hom_ext (_ ≫ _) (hT.from _)]
 
 end Maps
 
@@ -478,7 +501,6 @@ variable {D : Type*} [Category D] [HasFiniteProducts D] (G : C ⥤ D) {Q : Dᵒ�
 `G` preserving the products of members: the factor indexed by `k` is the image of the factor of
 the same index under `Q` applied to the comparison map
 `G(U (k 0) × ⋯ × U (k m)) ⟶ G (U (k 0)) × ⋯ × G (U (k m))`. -/
-@[simp]
 theorem cechComponent_cechComplexCompIso_hom {m : ℕ} (k : Fin (m + 1) → ι)
     (c : (cechAlgebraComplex (fun i ↦ G.obj (U i)) Q).X m) :
     cechComponent (F := G.op ⋙ Q) k
@@ -490,7 +512,6 @@ theorem cechComponent_cechComplexCompIso_hom {m : ℕ} (k : Fin (m + 1) → ι)
 
 /-- The restrictions of the comparison `Č(G ∘ U, Q) ≅ Č(U, G.op ⋙ Q)` are the images of the
 restrictions under `Q` applied to the comparison maps of products. -/
-@[simp]
 theorem cechFace_cechComplexCompIso_hom {m l : ℕ} (k : Fin (l + 1) → ι)
     (σ : Fin (m + 1) → Fin (l + 1)) (c : (cechAlgebraComplex (fun i ↦ G.obj (U i)) Q).X m) :
     cechFace (F := G.op ⋙ Q) k σ

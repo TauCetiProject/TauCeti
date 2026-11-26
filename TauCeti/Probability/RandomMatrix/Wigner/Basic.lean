@@ -31,6 +31,9 @@ This file defines `TauCeti.wignerMatrix` and proves the structural facts consume
 and resolvent methods:
 
 * the entry formulas and `wignerMatrix_isHermitian`;
+* the finite-coordinate constructor is Hermitian (`wignerMatrixOfCoordinates_isHermitian`)
+  and its Frobenius distance is controlled by the coordinate differences
+  (`norm_wignerMatrixOfCoordinates_sub_sq`, `lipschitzWith_wignerMatrixOfCoordinates`);
 * the Hermitian trace-square identity `Matrix.IsHermitian.trace_mul_self_eq_sum_norm_sq`;
 * the matrix depends only on the entries in its corner (`wignerMatrix_congr`,
   `wignerMatrix_ite_lt`), and the top-left `m × m` corner of `Hₙ` is `√(m/n) Hₘ`
@@ -53,8 +56,10 @@ and resolvent methods:
   `iIndepFun_wignerMatrix_offDiag_column`);
 * entries at the same unordered position have the same norm
   (`norm_wignerMatrix_apply_eq_of_mk_eq`);
-* centred corner entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ`
-  corner entries give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), bounded corner entries of
+* centred upper corner entries give centred off-diagonal matrix entries
+  (`integral_wignerMatrix_apply_eq_zero_of_ne`), centred corner entries give centred matrix entries
+  (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ` corner entries give `Lᵖ` matrix entries
+  (`memLp_wignerMatrix_apply`), bounded corner entries of
   second absolute moment at most `σ ^ 2` give matrix entries whose higher absolute moments are
   controlled by the entry bound and `σ ^ 2 / n` (`integral_norm_wignerMatrix_apply_pow_add_two_le`),
   and a product of `k` matrix entries is integrable when the corner entries lie in `Lᵏ`
@@ -116,6 +121,31 @@ abbrev WignerCoordinateType {n : ℕ} : WignerCoordinateIndex n → Type
 /-- Measurable-space instance for each coordinate type. -/
 instance wignerCoordinateMeasurableSpace {n : ℕ} (k : WignerCoordinateIndex n) :
     MeasurableSpace (WignerCoordinateType k) := by
+  cases k <;> infer_instance
+
+/-- Wigner coordinates carry the usual norm on their real or complex values. -/
+instance wignerCoordinateNormedAddCommGroup {n : ℕ} (k : WignerCoordinateIndex n) :
+    NormedAddCommGroup (WignerCoordinateType k) := by
+  cases k <;> infer_instance
+
+/-- Wigner coordinates are real inner product spaces, including the complex coordinates. -/
+instance wignerCoordinateInnerProductSpace {n : ℕ} (k : WignerCoordinateIndex n) :
+    InnerProductSpace ℝ (WignerCoordinateType k) := by
+  cases k <;> infer_instance
+
+/-- Every Wigner coordinate space is finite-dimensional over the reals. -/
+instance wignerCoordinateFiniteDimensional {n : ℕ} (k : WignerCoordinateIndex n) :
+    FiniteDimensional ℝ (WignerCoordinateType k) := by
+  cases k <;> infer_instance
+
+/-- The norm topology on each Wigner coordinate space is second countable. -/
+instance wignerCoordinateSecondCountableTopology {n : ℕ} (k : WignerCoordinateIndex n) :
+    SecondCountableTopology (WignerCoordinateType k) := by
+  cases k <;> infer_instance
+
+/-- Each Wigner coordinate has its Borel σ-algebra. -/
+instance wignerCoordinateBorelSpace {n : ℕ} (k : WignerCoordinateIndex n) :
+    BorelSpace (WignerCoordinateType k) := by
   cases k <;> infer_instance
 
 /-- The family of coordinate laws for a finite Wigner matrix. -/
@@ -186,6 +216,17 @@ theorem wignerMatrix_eq_wignerMatrixOfCoordinates {Ω : Type*}
       wignerMatrixOfCoordinates (wignerCoordinates ξ η n ω) := by
   ext i j
   simp [wignerMatrix, wignerMatrixOfCoordinates, wignerCoordinates]
+
+private theorem exists_wignerCoordinates_eq {n : ℕ}
+    (x : (k : WignerCoordinateIndex n) → WignerCoordinateType k) :
+    ∃ (ξ : StrictUpper → Unit → ℂ) (η : ℕ → Unit → ℝ),
+      wignerCoordinates ξ η n () = x := by
+  refine ⟨Function.extend FinStrictUpper.toStrictUpper (fun u _ ↦ x (.inl u)) 0,
+    Function.extend Fin.val (fun i _ ↦ x (.inr i)) 0, ?_⟩
+  funext k
+  cases k with
+  | inl u => rw [wignerCoordinates_inl, FinStrictUpper.toStrictUpper_injective.extend_apply]
+  | inr i => rw [wignerCoordinates_inr, Fin.val_injective.extend_apply]
 
 /-- The map from a finite vector of Wigner coordinates to its matrix is measurable. -/
 theorem measurable_wignerMatrixOfCoordinates {n : ℕ} :
@@ -335,6 +376,14 @@ theorem wignerMatrix_isHermitian (n : ℕ) : (wignerMatrix ξ η n ω).IsHermiti
   · rw [wignerMatrix_apply_of_lt ξ η ω h, wignerMatrix_apply_of_gt ξ η ω h]
     simp [Complex.conj_ofReal]
 
+/-- A matrix constructed from finite Wigner coordinates is Hermitian. -/
+theorem wignerMatrixOfCoordinates_isHermitian {n : ℕ}
+    (x : (k : WignerCoordinateIndex n) → WignerCoordinateType k) :
+    (wignerMatrixOfCoordinates x).IsHermitian := by
+  obtain ⟨ξ, η, rfl⟩ := exists_wignerCoordinates_eq x
+  rw [← wignerMatrix_eq_wignerMatrixOfCoordinates]
+  exact wignerMatrix_isHermitian ξ η () n
+
 variable {ξ η}
 
 /-- Entries of a Wigner matrix at the same unordered position have the same norm. -/
@@ -426,6 +475,40 @@ theorem norm_wignerMatrix_sub_sq_eq_sum_finStrictUpper
   simp only [sub_self, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow,
     Finset.sum_const_zero, zero_add]
   ring
+
+/-- The squared Frobenius distance of two normalized Wigner matrices counts the squared
+diagonal errors once and the squared strictly upper errors twice, with an overall factor
+`1/n`. -/
+theorem norm_wignerMatrixOfCoordinates_sub_sq {n : ℕ}
+    (x y : (k : WignerCoordinateIndex n) → WignerCoordinateType k) :
+    ‖wignerMatrixOfCoordinates x - wignerMatrixOfCoordinates y‖ ^ 2 =
+      (n : ℝ)⁻¹ * ((∑ i : Fin n, (x (.inr i) - y (.inr i)) ^ 2) +
+        2 * ∑ u : FinStrictUpper n, ‖x (.inl u) - y (.inl u)‖ ^ 2) := by
+  obtain ⟨ξ, η, rfl⟩ := exists_wignerCoordinates_eq x
+  obtain ⟨ξ', η', rfl⟩ := exists_wignerCoordinates_eq y
+  rw [← wignerMatrix_eq_wignerMatrixOfCoordinates, ← wignerMatrix_eq_wignerMatrixOfCoordinates,
+    wignerMatrix_sub, Matrix.frobenius_norm_sq_eq_sum_norm_sq, sum_norm_wignerMatrix_apply_sq]
+  simp only [wignerCoordinates_inl, wignerCoordinates_inr]
+
+/-- With the Frobenius norm, the normalized Wigner constructor is `√2 / √n`-Lipschitz on
+the unscaled Hilbert coordinates. -/
+theorem lipschitzWith_wignerMatrixOfCoordinates {n : ℕ} :
+    LipschitzWith (NNReal.sqrt 2 / NNReal.sqrt n)
+      (fun x : PiLp 2 (@WignerCoordinateType n) ↦ wignerMatrixOfCoordinates x.ofLp) := by
+  refine lipschitzWith_iff_norm_sub_le.mpr fun x y ↦ le_of_sq_le_sq ?_ (by positivity)
+  push_cast
+  have hn : 0 ≤ (n : ℝ) := Nat.cast_nonneg n
+  rw [norm_wignerMatrixOfCoordinates_sub_sq, mul_pow, div_pow,
+    Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sq_sqrt hn,
+    PiLp.norm_sq_eq_of_L2, Fintype.sum_sum_type]
+  simp only [PiLp.sub_apply, Real.norm_eq_abs, sq_abs]
+  let diagSq := ∑ i : Fin n, (x (.inr i) - y (.inr i)) ^ 2
+  let upperSq := ∑ i : FinStrictUpper n, ‖x (.inl i) - y (.inl i)‖ ^ 2
+  have hdiag : 0 ≤ diagSq := Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+  calc
+    _ ≤ (n : ℝ)⁻¹ * (2 * (upperSq + diagSq)) :=
+      mul_le_mul_of_nonneg_left (by linarith only [hdiag]) (inv_nonneg.2 hn)
+    _ = _ := by rw [div_eq_mul_inv]; ring
 
 end Frobenius
 
@@ -751,18 +834,27 @@ theorem integral_norm_wignerMatrix_apply_pow_le {k n : ℕ} {B : ℝ}
   · simp only [norm_wignerMatrix_apply_of_ne _ _ _ h, mul_pow, integral_const_mul]
     exact mul_le_mul_of_nonneg_left (hξ _ (max_lt i.isLt j.isLt)) (by positivity)
 
+/-- If the upper corner entries of size `n` are centred, every off-diagonal entry of the `n × n`
+Wigner matrix has expectation zero. -/
+theorem integral_wignerMatrix_apply_eq_zero_of_ne {n : ℕ}
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
+    {i j : Fin n} (hne : i ≠ j) :
+    ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 := by
+  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hne) with h | h
+  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ ⟨(i.val, j.val), h⟩ j.isLt]
+  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj,
+      hξ ⟨(j.val, i.val), h⟩ i.isLt]
+
 /-- If the corner entries of size `n` are centred, every entry of the `n × n` Wigner matrix has
 expectation zero. -/
 theorem integral_wignerMatrix_apply_eq_zero {n : ℕ}
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
     (hη : ∀ i < n, ∫ ω, η i ω ∂P = 0) (i j : Fin n) :
     ∫ ω, wignerMatrix ξ η n ω i j ∂P = 0 := by
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp [wignerMatrix_apply_of_lt _ _ _ h, integral_const_mul, hξ ⟨(i.val, j.val), h⟩ j.isLt]
-  · obtain rfl := Fin.ext h
+  by_cases hne : i = j
+  · subst hne
     simp [integral_const_mul, integral_complex_ofReal, hη _ i.isLt]
-  · simp [wignerMatrix_apply_of_gt _ _ _ h, integral_const_mul, integral_conj,
-      hξ ⟨(j.val, i.val), h⟩ i.isLt]
+  · exact integral_wignerMatrix_apply_eq_zero_of_ne hξ hne
 
 /-- If the corner entries of size `n` lie in `Lᵖ`, so does every entry of the `n × n` Wigner
 matrix. -/

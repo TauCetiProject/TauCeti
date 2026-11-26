@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+public import TauCeti.MeasureTheory.Function.Lp.ContinuousFunctions
 public import TauCeti.MeasureTheory.Function.Lp.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -41,6 +42,11 @@ not increase the norm (`norm_multiplicationOperator_linftyOfContinuousOn_apply_l
 multiplications by two functions summing to one on `s` add up to the identity
 (`multiplicationOperator_linftyOfContinuousOn_add_eq_one`). Multiplication by `a` commutes
 with composition by a continuous linear map (`ContinuousLinearMap.compLpL_multiplicationOperator`).
+
+On a compact space with a finite measure `μ`, a continuous function `f` acts on `L²(μ; E)` by the
+multiplication operator of its class in `L∞(μ)`; this is the multiplication representation
+`TauCeti.continuousMapMultiplication μ : C(X, 𝕜) →⋆ₐ[𝕜] (L²(μ; E) →L[𝕜] L²(μ; E))`, acting
+pointwise almost everywhere (`TauCeti.coeFn_continuousMapMultiplication`).
 -/
 
 public section
@@ -358,3 +364,53 @@ theorem norm_multiplicationOperator [SigmaFinite μ] [Nontrivial E] (a : Lp 𝕜
 end ExactNorm
 
 end MeasureTheory.Lp
+
+namespace TauCeti
+
+open MeasureTheory
+
+section ContinuousMap
+
+variable {X 𝕜 E : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X] [BorelSpace X]
+  (μ : Measure X) [IsFiniteMeasure μ] [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E]
+
+/-- The **multiplication representation** of `C(X, 𝕜)` on `L²(X, μ; E)`: a continuous function `f`
+acts by pointwise multiplication. -/
+def continuousMapMultiplication : C(X, 𝕜) →⋆ₐ[𝕜] (Lp E 2 μ →L[𝕜] Lp E 2 μ) where
+  toFun f := Lp.multiplicationOperator (ContinuousMap.toLp (E := 𝕜) ∞ μ 𝕜 f)
+  map_one' := by
+    rw [ContinuousMap.toLp_one, Lp.multiplicationOperator_const, one_smul,
+      ContinuousLinearMap.one_def]
+  map_mul' f g := by
+    rw [ContinuousMap.toLp_mul, ← Lp.multiplicationOperator_comp_multiplicationOperator,
+      ContinuousLinearMap.mul_def]
+  map_zero' := by simp
+  map_add' f g := by simp
+  commutes' c := by
+    have hc : algebraMap 𝕜 C(X, 𝕜) c = ContinuousMap.const X c := by
+      ext x
+      simp
+    rw [hc, ContinuousMap.toLp_const, Lp.multiplicationOperator_const,
+      Algebra.algebraMap_eq_smul_one, ContinuousLinearMap.one_def]
+  map_star' f := by
+    rw [ContinuousMap.toLp_star, ← Lp.adjoint_multiplicationOperator,
+      ContinuousLinearMap.star_eq_adjoint]
+
+/-- The multiplication representation acts by the multiplication operator of the bounded class
+of `f`. -/
+theorem continuousMapMultiplication_apply (f : C(X, 𝕜)) :
+    continuousMapMultiplication (E := E) μ f =
+      Lp.multiplicationOperator (ContinuousMap.toLp (E := 𝕜) ∞ μ 𝕜 f) :=
+  (rfl)
+
+/-- The multiplication representation acts by pointwise multiplication, almost everywhere. -/
+theorem coeFn_continuousMapMultiplication (f : C(X, 𝕜)) (g : Lp E 2 μ) :
+    ⇑(continuousMapMultiplication μ f g) =ᵐ[μ] fun x ↦ f x • g x := by
+  filter_upwards [Lp.multiplicationOperator_ae (ContinuousMap.toLp (E := 𝕜) ∞ μ 𝕜 f) g,
+    ContinuousMap.coeFn_toLp (p := ∞) (𝕜 := 𝕜) μ f] with x h hf
+  rw [continuousMapMultiplication_apply, h, hf]
+
+end ContinuousMap
+
+end TauCeti
