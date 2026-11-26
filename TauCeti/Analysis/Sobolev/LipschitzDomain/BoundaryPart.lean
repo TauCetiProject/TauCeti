@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables
+import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.Localization
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
@@ -16,7 +17,7 @@ import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 Let `Ω ⊆ ℝ × E` be a bounded Lipschitz domain, `σ` normalized `dim E`-dimensional Euclidean
 Hausdorff measure on `frontier Ω`, `T : W^{1,p}(Ω) → Lᵖ(frontier Ω, σ)` the trace operator
-(`TauCeti.W1p.frontierTrace`), `1 ≤ p < ∞`, and `Γ` a set. This file proves three facts about the
+(`TauCeti.W1p.frontierTrace`), `1 ≤ p < ∞`, and `Γ` a set. This file proves four facts about the
 space `W^{1,p}_Γ(Ω)` of Sobolev functions vanishing on `Γ` (`TauCeti.w1pVanishingOnSubmodule`).
 
 * With no boundary part, nothing is imposed: `W^{1,p}_∅(Ω) = W^{1,p}(Ω)`, because restrictions of
@@ -24,6 +25,14 @@ space `W^{1,p}_Γ(Ω)` of Sobolev functions vanishing on `Γ` (`TauCeti.w1pVanis
 * Every `u ∈ W^{1,p}_Γ(Ω)` has trace zero `σ`-almost everywhere on `Γ`. The generators vanish on
   `closure Γ` and are continuous up to the boundary, so their traces vanish there, and the trace is
   continuous. No regularity of `Γ` is used.
+* Conversely, for `Γ` missing `Ω`, a function whose trace vanishes on `Γ` lies in `W^{1,p}_Γ(Ω)` as
+  soon as it does so near each point of `closure Γ ∩ closure (frontier Ω \ Γ)`, the relative
+  boundary of `Γ` in the frontier, where the Dirichlet and Neumann parts meet. Membership in
+  `W^{1,p}_Γ(Ω)` is local (`TauCeti.mem_w1pVanishingOnSubmodule_of_forall_mem_closure`); away from
+  `closure Γ` a cutoff product lies in `W^{1,p}_Γ(Ω)` by density, and near a point around which
+  the frontier lies in `Γ` it has zero trace, so it lies in `W^{1,p}_0(Ω)`. In particular the trace
+  characterization `W^{1,p}_Γ(Ω) = {u | T u = 0 on Γ}` holds when `closure Γ` and
+  `closure (frontier Ω \ Γ)` are disjoint.
 * **Poincaré–Friedrichs**: if `Ω` is moreover connected and `Γ` charges the frontier,
   `σ(Γ) > 0`, there is a constant `C` with `‖u‖_{Lᵖ(Ω)} ≤ C ‖∇u‖_{Lᵖ(Ω)}` for every
   `u ∈ W^{1,p}_Γ(Ω)`. The argument is Peetre's compact-error estimate, in the form
@@ -43,6 +52,10 @@ first, the function equal to `0` on the first ball and `1` on the second is a co
 * `TauCeti.w1pVanishingOnSubmodule_empty_of_isLipschitzDomainWith`: `W^{1,p}_∅(Ω) = W^{1,p}(Ω)`.
 * `TauCeti.W1p.frontierTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`: functions in
   `W^{1,p}_Γ(Ω)` have zero trace on `Γ`.
+* `TauCeti.W1p.mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero_of_forall_mem_closure_inter`:
+  the converse reduced to neighbourhoods of the relative boundary of `Γ`, and
+  `TauCeti.W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_disjoint_closure`: the
+  trace characterization when that relative boundary is empty.
 * `TauCeti.W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule`: the
   Poincaré–Friedrichs inequality on `W^{1,p}_Γ(Ω)`, and its form
   `W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_affineIsometryEquiv`
@@ -62,7 +75,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Module Set TopologicalSpace
-open scoped ENNReal NNReal Distributions
+open scoped ENNReal NNReal Distributions Gradient ContDiff Topology
 
 namespace TauCeti
 
@@ -191,5 +204,111 @@ theorem
   refine ⟨C, hC, fun u hu => ?_⟩
   have h := hPF _ (W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule e.symm hΩU hu)
   rwa [W1p.norm_value_compAffineIsometryEquivL, W1p.norm_gradient_compAffineIsometryEquivL] at h
+
+/-! ### The trace characterization away from the relative boundary of `Γ`
+
+The trace characterization `W^{1,p}_Γ(Ω) = {u | T u = 0 on Γ}` is local. Away from `closure Γ`,
+a cutoff product `ψ u` vanishes near `Γ` and lies in `W^{1,p}_Γ(Ω)` outright. Near a point of `Γ`
+around which the frontier lies in `Γ`, the trace of `ψ u` is `ψ T u`, which vanishes on the whole
+frontier, so `ψ u ∈ W^{1,p}_0(Ω)`. The only points where more is needed are those of
+`closure Γ ∩ closure (frontier Ω \ Γ)`, the relative boundary of `Γ` in the frontier, where the
+Dirichlet and Neumann parts meet. -/
+
+/-- **Cutoffs supported away from `closure Γ`.** On a bounded Lipschitz domain and for `p < ∞`,
+if the support of `ψ` misses `closure Γ`, then `ψ u ∈ W^{1,p}_Γ(Ω)` for every `u ∈ W^{1,p}(Ω)`. -/
+theorem W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_of_disjoint (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
+    {ψ : WithLp 2 (ℝ × E) → ℝ} {M : ℝ} (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (hψΓ : Disjoint (tsupport ψ) (closure Γ)) (u : W1p volume Ω p) :
+    W1p.contDiffSMul ψ hψ hM hψM hgM u ∈ w1pVanishingOnSubmodule volume Ω p Γ := by
+  have hu : u ∈ w1pVanishingOnSubmodule volume Ω p ∅ := by
+    rw [w1pVanishingOnSubmodule_empty_of_isLipschitzDomainWith hp hΩ hb]
+    exact ClosedSubmodule.mem_top
+  simpa only [empty_union] using
+    W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_union hψ hM hψM hgM hψΓ hu
+
+/-- **Cutoffs supported where the frontier lies in `Γ`.** On a bounded Lipschitz domain and for
+`p < ∞`, let `Γ` miss `Ω` and let the trace of `u` vanish almost everywhere on `Γ`. If every
+frontier point in the support of `ψ` lies in `Γ`, then `ψ u ∈ W^{1,p}_0(Ω) ⊆ W^{1,p}_Γ(Ω)`. -/
+theorem W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
+    (hΓΩ : Disjoint Γ (Ω : Set (WithLp 2 (ℝ × E))))
+    {ψ : WithLp 2 (ℝ × E) → ℝ} {M : ℝ} (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (hψΓ : frontier (Ω : Set (WithLp 2 (ℝ × E))) ∩ tsupport ψ ⊆ Γ) {u : W1p volume Ω p}
+    (hu : W1p.frontierTrace hp hΩ hb u =ᵐ[((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+      (frontier (Ω : Set (WithLp 2 (ℝ × E))))).restrict Γ] 0) :
+    W1p.contDiffSMul ψ hψ hM hψM hgM u ∈ w1pVanishingOnSubmodule volume Ω p Γ := by
+  refine w1p0Submodule_le_w1pVanishingOnSubmodule hΓΩ ?_
+  rw [W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero hp hΩ hb, Lp.eq_zero_iff_ae_eq_zero]
+  -- The trace of `u` vanishes at almost every frontier point of the support of `ψ`.
+  have hS : MeasurableSet (frontier (Ω : Set (WithLp 2 (ℝ × E))) ∩ tsupport ψ) :=
+    isClosed_frontier.measurableSet.inter (isClosed_tsupport ψ).measurableSet
+  have hu' : ∀ᵐ x ∂(μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
+      x ∈ frontier (Ω : Set (WithLp 2 (ℝ × E))) ∩ tsupport ψ →
+        W1p.frontierTrace hp hΩ hb u x = 0 := by
+    rw [Measure.restrict_restrict' isClosed_frontier.measurableSet] at hu
+    exact (ae_restrict_iff' hS).1
+      (ae_restrict_of_ae_restrict_of_subset (subset_inter hψΓ inter_subset_left) hu)
+  -- So the trace `ψ T u` of `ψ u` vanishes almost everywhere on the frontier.
+  filter_upwards [W1p.frontierTrace_contDiffSMul_ae hp hΩ hb hψ hM hψM hgM u,
+    ae_restrict_of_ae hu', ae_restrict_mem isClosed_frontier.measurableSet] with x hx hux hxF
+  rw [hx, Pi.zero_apply]
+  by_cases hxψ : x ∈ tsupport ψ
+  · rw [hux ⟨hxF, hxψ⟩, mul_zero]
+  · rw [image_eq_zero_of_notMem_tsupport hxψ, zero_mul]
+
+/-- **Reduction of the trace characterization to the relative boundary of `Γ`.** On a bounded
+Lipschitz domain and for `p < ∞`, let `Γ` miss `Ω` and let the trace of `u ∈ W^{1,p}(Ω)` vanish
+almost everywhere on `Γ`. Suppose that every point of `closure Γ ∩ closure (frontier Ω \ Γ)` has
+a neighbourhood `U` such that `ψ u ∈ W^{1,p}_Γ(Ω)` for every smooth `ψ` bounded together with its
+gradient on `Ω` and supported in `U`. Then `u ∈ W^{1,p}_Γ(Ω)`. -/
+theorem W1p.mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero_of_forall_mem_closure_inter
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
+    (hΓΩ : Disjoint Γ (Ω : Set (WithLp 2 (ℝ × E)))) {u : W1p volume Ω p}
+    (hu : W1p.frontierTrace hp hΩ hb u =ᵐ[((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+      (frontier (Ω : Set (WithLp 2 (ℝ × E))))).restrict Γ] 0)
+    (hloc : ∀ x ∈ closure Γ ∩ closure (frontier (Ω : Set (WithLp 2 (ℝ × E))) \ Γ), ∃ U ∈ 𝓝 x,
+      ∀ (ψ : WithLp 2 (ℝ × E) → ℝ) (hψ : ContDiff ℝ ∞ ψ) {M : ℝ} (hM : 0 ≤ M)
+        (hψM : ∀ y ∈ Ω, |ψ y| ≤ M) (hgM : ∀ y ∈ Ω, ‖∇ ψ y‖ ≤ M), tsupport ψ ⊆ U →
+          W1p.contDiffSMul ψ hψ hM hψM hgM u ∈ w1pVanishingOnSubmodule volume Ω p Γ) :
+    u ∈ w1pVanishingOnSubmodule volume Ω p Γ := by
+  refine mem_w1pVanishingOnSubmodule_of_forall_mem_closure hb fun x _ => ?_
+  by_cases hxΓ : x ∈ closure Γ
+  · by_cases hxF : x ∈ closure (frontier (Ω : Set (WithLp 2 (ℝ × E))) \ Γ)
+    · exact hloc x ⟨hxΓ, hxF⟩
+    -- Near `x` every frontier point lies in `Γ`.
+    refine ⟨(closure (frontier (Ω : Set (WithLp 2 (ℝ × E))) \ Γ))ᶜ,
+      isClosed_closure.isOpen_compl.mem_nhds hxF, fun ψ hψ M hM hψM hgM hψU => ?_⟩
+    refine W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero hp hΩ hb hΓΩ
+      hψ hM hψM hgM (fun y hy => ?_) hu
+    by_contra hyΓ
+    exact hψU hy.2 (subset_closure ⟨hy.1, hyΓ⟩)
+  -- Near `x` there is no point of `closure Γ`.
+  exact ⟨(closure Γ)ᶜ, isClosed_closure.isOpen_compl.mem_nhds hxΓ,
+    fun ψ hψ M hM hψM hgM hψU => W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_of_disjoint hp hΩ
+      hb hψ hM hψM hgM (subset_compl_iff_disjoint_right.1 hψU) u⟩
+
+/-- **The trace characterization for a boundary part that is closed and open in the frontier.**
+On a bounded Lipschitz domain and for `p < ∞`, let `Γ` miss `Ω`, and let `closure Γ` be disjoint
+from `closure (frontier Ω \ Γ)`, as happens when `Γ` is closed and open in the frontier, such as
+one of the two boundary spheres of an annulus. Then `u ∈ W^{1,p}(Ω)` lies in `W^{1,p}_Γ(Ω)`
+exactly when its trace vanishes almost everywhere on `Γ`. -/
+theorem W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_disjoint_closure
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
+    (hΓΩ : Disjoint Γ (Ω : Set (WithLp 2 (ℝ × E))))
+    (hΓ : Disjoint (closure Γ) (closure (frontier (Ω : Set (WithLp 2 (ℝ × E))) \ Γ)))
+    (u : W1p volume Ω p) :
+    u ∈ w1pVanishingOnSubmodule volume Ω p Γ ↔
+      W1p.frontierTrace hp hΩ hb u =ᵐ[((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+        (frontier (Ω : Set (WithLp 2 (ℝ × E))))).restrict Γ] 0 :=
+  ⟨W1p.frontierTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule hp hΩ hb, fun hu =>
+    W1p.mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero_of_forall_mem_closure_inter hp hΩ
+      hb hΓΩ hu fun x hx => absurd hx (disjoint_iff_inter_eq_empty.1 hΓ ▸ notMem_empty x)⟩
 
 end TauCeti
