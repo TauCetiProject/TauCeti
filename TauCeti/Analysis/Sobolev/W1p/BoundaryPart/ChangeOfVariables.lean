@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
+import TauCeti.Analysis.Calculus.FDeriv.Smul
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -46,6 +47,13 @@ matching part of the flat boundary. At `p = ∞` the transport fails for such sh
 on the line `y = 0` with the shear creates a jump of the gradient across that line, which no
 `W^{1,∞}`-limit of smooth functions has.
 
+Dilating by `r ≠ 0` multiplies the `Lᵖ` norm of a function by `|r| ^ (n / p)` and that of its
+gradient by `|r| ^ (n / p - 1)`, where `n` is the dimension. Since dilation is a bijection from
+`W^{1,p}_Γ(V)` onto `W^{1,p}_{r • Γ}(r • V)`, a Poincaré–Friedrichs inequality
+`‖u‖_p ≤ C ‖∇u‖_p` holds on `W^{1,p}_Γ(V)` exactly when the inequality with constant `|r| C` holds
+on `W^{1,p}_{r • Γ}(r • V)`: the Poincaré–Friedrichs constant scales linearly under dilation
+(`TauCeti.W1p.forall_norm_value_le_abs_mul_mul_norm_gradient_iff`).
+
 ## Main results
 
 * `TauCeti.W1p.compL_mem_w1pVanishingOnSubmodule`: for `p < ∞`, precomposition with a smooth
@@ -64,6 +72,8 @@ on the line `y = 0` with the shear creates a jump of the gradient across that li
   `TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_iff` for homeomorphisms.
 * `TauCeti.W1p.compMeasurePreservingL_graphFlattening_mem_w1pVanishingOnSubmodule_iff`: for
   `p < ∞`, invariance of `W^{1,p}_Γ` under the shears flattening Lipschitz graphs.
+* `TauCeti.W1p.forall_norm_value_le_abs_mul_mul_norm_gradient_iff`: the Poincaré–Friedrichs
+  constant of the dilated pair `(r • V, r • Γ)` is `|r|` times that of `(V, Γ)`, for `p < ∞`.
 -/
 
 public section
@@ -71,7 +81,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Set TopologicalSpace
-open scoped Distributions ENNReal Topology ContDiff
+open scoped Distributions ENNReal Pointwise Topology ContDiff
 
 namespace TauCeti
 
@@ -333,5 +343,86 @@ theorem W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff (g : F ≃�
     show ⇑g ∘ ⇑g.symm = id from funext g.apply_symm_apply, preimage_id] at h
 
 end AffineIsometry
+
+/-! ### Dilations and the Poincaré–Friedrichs constant -/
+
+section Dilation
+
+variable {r : ℝ}
+
+/-- Every `u ∈ W^{1,p}_{r • Γ}(r • V)` is the dilate `v (r⁻¹ • ·)` of `v = u (r • ·)`, which lies
+in `W^{1,p}_Γ(V)`; dilation multiplies the norms of the value and of the gradient by `|r| ^ (n / p)`
+and `|r| ^ (n / p - 1)`. -/
+private theorem exists_mem_w1pVanishingOnSubmodule_norm_value_eq_and_norm_gradient_eq
+    (hp : p ≠ ⊤) (hr : r ≠ 0) (hUV : (U : Set E) = r • (V : Set E)) {u : W1p mu U p}
+    (hu : u ∈ w1pVanishingOnSubmodule mu U p (r • Γ)) :
+    ∃ v ∈ w1pVanishingOnSubmodule mu V p Γ,
+      ‖W1p.value u‖ = |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal) * ‖W1p.value v‖ ∧
+        ‖W1p.gradient u‖ =
+          |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal - 1) * ‖W1p.gradient v‖ := by
+  have hr' : r⁻¹ ≠ 0 := inv_ne_zero hr
+  -- The hypotheses of `W1p.compL` for the dilation `x ↦ a • x`, used at `a = r⁻¹` and `a = r`.
+  have hd (a : ℝ) {s : Set E} : DifferentiableOn ℝ (fun x : E => a • x) s :=
+    differentiableOn_id.const_smul a
+  have hinj {a : ℝ} (ha : a ≠ 0) {s : Set E} : InjOn (fun x : E => a • x) s :=
+    (smul_right_injective E ha).injOn
+  have hnorm (a : ℝ) (x : E) := (norm_fderiv_const_smul_id a x).le
+  have hdet (a : ℝ) (x : E) :
+      |a| ^ Module.finrank ℝ E ≤ |(fderiv ℝ (fun x : E => a • x) x).det| := by
+    simp [det_fderiv_const_smul_id]
+  -- `Φ = r⁻¹ • ·` maps `U = r • V` into `V`, and `Ψ = r • ·` maps `V` into `U` and inverts it.
+  have hΦmaps : MapsTo (fun x : E => r⁻¹ • x) U V := fun x hx =>
+    (mem_smul_set_iff_inv_smul_mem₀ hr _ x).1 (hUV ▸ hx)
+  have hΨmaps : MapsTo (fun x : E => r • x) V U := fun y hy => hUV ▸ smul_mem_smul_set hy
+  -- `u` is the dilate of `v = u (r • ·)`, which lies in `W^{1,p}_Γ(V)`.
+  obtain ⟨v, rfl⟩ : ∃ v, W1p.compL _ hp (hd r⁻¹) (hinj hr') hΦmaps (fun x _ => hnorm r⁻¹ x)
+      (by positivity) (fun x _ => hdet r⁻¹ x) v = u :=
+    ⟨_, W1p.compL_compL_of_leftInvOn _ hp (hd r⁻¹) (hinj hr') hΦmaps _ _ _ (hd r) (hinj hr) hΨmaps
+      (fun y _ => hnorm r y) (by positivity) (fun y _ => hdet r y) (fun x _ => smul_inv_smul₀ hr x)
+      u⟩
+  refine ⟨v, ?_, W1p.norm_value_compL_inv_smul hp _ _ _ _ _ _ hr hUV v,
+    W1p.norm_gradient_compL_inv_smul hp _ _ _ _ _ _ hr hUV v⟩
+  rw [← preimage_smul_inv₀ hr] at hu
+  exact (W1p.compL_mem_w1pVanishingOnSubmodule_iff _ hp _ _ hΦmaps _ _ _ (contDiff_const_smul r⁻¹)
+    (Homeomorph.smulOfNeZero r⁻¹ hr').isProperMap (contDiff_const_smul r)
+    (Homeomorph.smulOfNeZero r hr).isProperMap hΨmaps (fun y _ => hnorm r y) (by positivity)
+    (fun y _ => hdet r y) (fun y => inv_smul_smul₀ hr y)).1 hu
+
+/-- One direction of `TauCeti.W1p.forall_norm_value_le_abs_mul_mul_norm_gradient_iff`: a
+Poincaré–Friedrichs inequality on `W^{1,p}_Γ(V)` with constant `C` gives one on
+`W^{1,p}_{r • Γ}(r • V)` with constant `|r| * C`. -/
+private theorem forall_norm_value_le_abs_mul_mul_norm_gradient_of_forall (hp : p ≠ ⊤)
+    (hr : r ≠ 0) (hUV : (U : Set E) = r • (V : Set E)) {C : ℝ}
+    (h : ∀ v ∈ w1pVanishingOnSubmodule mu V p Γ, ‖W1p.value v‖ ≤ C * ‖W1p.gradient v‖) :
+    ∀ u ∈ w1pVanishingOnSubmodule mu U p (r • Γ),
+      ‖W1p.value u‖ ≤ |r| * C * ‖W1p.gradient u‖ := by
+  intro u hu
+  obtain ⟨v, hv, hval, hgrad⟩ :=
+    exists_mem_w1pVanishingOnSubmodule_norm_value_eq_and_norm_gradient_eq hp hr hUV hu
+  rw [hval, hgrad, Real.rpow_sub_one (abs_ne_zero.2 hr)]
+  calc |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal) * ‖W1p.value v‖
+      ≤ |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal) * (C * ‖W1p.gradient v‖) :=
+        mul_le_mul_of_nonneg_left (h v hv) (by positivity)
+    _ = |r| * C * (|r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal) / |r| * ‖W1p.gradient v‖) := by
+        field_simp
+
+/-- **The Poincaré–Friedrichs constant scales linearly under dilation.** Let `r ≠ 0`, let
+`U = r • V`, and let `1 ≤ p < ∞`. The inequality `‖u‖_{Lᵖ(U)} ≤ |r| C ‖∇u‖_{Lᵖ(U)}` holds for every
+`u ∈ W^{1,p}_{r • Γ}(U)` exactly when `‖v‖_{Lᵖ(V)} ≤ C ‖∇v‖_{Lᵖ(V)}` holds for every
+`v ∈ W^{1,p}_Γ(V)`. So the admissible constants of the dilated pair `(r • V, r • Γ)` are those of
+`(V, Γ)` multiplied by `|r|`, and so is the optimal constant. No regularity of `V` or `Γ` is
+used. -/
+theorem W1p.forall_norm_value_le_abs_mul_mul_norm_gradient_iff (hp : p ≠ ⊤) (hr : r ≠ 0)
+    (hUV : (U : Set E) = r • (V : Set E)) (C : ℝ) :
+    (∀ u ∈ w1pVanishingOnSubmodule mu U p (r • Γ),
+        ‖W1p.value u‖ ≤ |r| * C * ‖W1p.gradient u‖) ↔
+      ∀ v ∈ w1pVanishingOnSubmodule mu V p Γ, ‖W1p.value v‖ ≤ C * ‖W1p.gradient v‖ := by
+  refine ⟨fun h => ?_, forall_norm_value_le_abs_mul_mul_norm_gradient_of_forall hp hr hUV⟩
+  have hVU : (V : Set E) = r⁻¹ • (U : Set E) := by rw [hUV, inv_smul_smul₀ hr]
+  have h' := forall_norm_value_le_abs_mul_mul_norm_gradient_of_forall hp (inv_ne_zero hr) hVU h
+  rw [inv_smul_smul₀ hr] at h'
+  simpa [abs_inv, ← mul_assoc, hr] using h'
+
+end Dilation
 
 end TauCeti
