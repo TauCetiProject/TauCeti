@@ -19,7 +19,7 @@ constraint `C = C₂`. Both sets are convex, but the sum rule
 * `C₁ ∩ C₂ = {0}` (`disc₁_inter_disc₂`), so `E + ι_C` is the indicator of `{0}`, whose
   subdifferential at `0` is the whole dual (`subdifferential_add_eq_univ`);
 * `∂E(0) = N_{C₁}(0)` is the ray `{(t, 0) | t ≥ 0}`
-  (`mem_subdifferential_constraintIndicator_disc₁`) and `N_C(0)` is the ray `{(t, 0) | t ≤ 0}`
+  (`mem_subdifferential_constraintIndicator_disc₁_iff`) and `N_C(0)` is the ray `{(t, 0) | t ≤ 0}`
   (`mem_normalCone_disc₂_iff`), where a functional is written through its values on the standard
   basis;
 * their sum is the line `ℝ × {0}`: the functionals vanishing on `(0, 1)`
@@ -112,8 +112,7 @@ private theorem mem_normalCone_disc_iff {c : ℝ} (hc : c ^ 2 = 1)
       have : (2 * c - c) ^ 2 + 0 ^ 2 ≤ 1 := by nlinarith
       simpa using this)
     rw [hf] at h₁
-    simp only [Fin.isValue, PiLp.single_eq_same, ne_eq, one_ne_zero, not_false_eq_true,
-      PiLp.single_eq_of_ne, zero_mul, add_zero] at h₁
+    replace h₁ : 2 * c * a ≤ 0 := by simpa using h₁
     refine ⟨?_, by nlinarith⟩
     -- The points `(c t², t)`, `t² ≤ 1`, lie in the disc and force `b = 0`.
     refine eq_zero_of_forall_sq_le_one (k := c * a) fun t ht ↦ ?_
@@ -125,8 +124,7 @@ private theorem mem_normalCone_disc_iff {c : ℝ} (hc : c ^ 2 = 1)
         nlinarith [mul_nonneg (sq_nonneg t) (sub_nonneg.2 ht)]
       simpa using this)
     rw [hf] at h₂
-    simp only [Fin.isValue, PiLp.add_apply, PiLp.single_eq_same, ne_eq, zero_ne_one,
-      not_false_eq_true, PiLp.single_eq_of_ne, add_zero, one_ne_zero, zero_add] at h₂
+    replace h₂ : c * t ^ 2 * a + t * b ≤ 0 := by simpa using h₂
     linarith
   · rintro ⟨hb, hca⟩ v hv
     rw [apply_eq, hb, mul_zero, add_zero]
@@ -163,7 +161,7 @@ theorem zero_mem_disc₂ : (0 : EuclideanSpace ℝ (Fin 2)) ∈ disc₂ := by
   norm_num
 
 /-- `∂ι_{C₁}(0)` is the ray `{(t, 0) | t ≥ 0}`. -/
-theorem mem_subdifferential_constraintIndicator_disc₁
+theorem mem_subdifferential_constraintIndicator_disc₁_iff
     {f : StrongDual ℝ (EuclideanSpace ℝ (Fin 2))} :
     f ∈ subdifferential (topDualPairing ℝ _).flip (constraintIndicator disc₁) 0 ↔
       f (EuclideanSpace.single 1 1) = 0 ∧ 0 ≤ f (EuclideanSpace.single 0 1) := by
@@ -200,14 +198,14 @@ theorem mem_subdifferential_add_normalCone_iff {f : StrongDual ℝ (EuclideanSpa
       f (EuclideanSpace.single 1 1) = 0 := by
   constructor
   · rintro ⟨g, hg, n, hn, rfl⟩
-    rw [mem_subdifferential_constraintIndicator_disc₁] at hg
+    rw [mem_subdifferential_constraintIndicator_disc₁_iff] at hg
     rw [SetLike.mem_coe, mem_normalCone_disc₂_iff] at hn
     simp [hg.1, hn.1]
   · intro hf
     rcases le_total 0 (f (EuclideanSpace.single 0 1)) with ha | ha
-    · exact ⟨f, mem_subdifferential_constraintIndicator_disc₁.2 ⟨hf, ha⟩, 0, zero_mem _,
+    · exact ⟨f, mem_subdifferential_constraintIndicator_disc₁_iff.2 ⟨hf, ha⟩, 0, zero_mem _,
         add_zero f⟩
-    · refine ⟨0, mem_subdifferential_constraintIndicator_disc₁.2 (by simp), f, ?_, zero_add f⟩
+    · refine ⟨0, mem_subdifferential_constraintIndicator_disc₁_iff.2 (by simp), f, ?_, zero_add f⟩
       exact mem_normalCone_disc₂_iff.2 ⟨hf, ha⟩
 
 /-- **The sum rule fails**: `∂E(0) + N_C(0) ≠ ∂(E + ι_C)(0)`, witnessed by the second coordinate

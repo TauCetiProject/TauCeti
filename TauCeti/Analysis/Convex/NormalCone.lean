@@ -99,6 +99,7 @@ theorem coe_add_constraintIndicator (E : X → ℝ) (C : Set X) [DecidablePred (
   by_cases hv : v ∈ C <;> simp [hv]
 
 /-- The sum of two indicators is the indicator of the intersection: `ι_C + ι_D = ι_{C ∩ D}`. -/
+@[simp]
 theorem constraintIndicator_add_constraintIndicator (C D : Set X) (v : X) :
     constraintIndicator C v + constraintIndicator D v = constraintIndicator (C ∩ D) v := by
   by_cases hC : v ∈ C <;> by_cases hD : v ∈ D <;> simp [hC, hD]
@@ -330,11 +331,7 @@ theorem subdifferential_add_constraintIndicator_eq {E : V → ℝ} (hE : ConvexO
 /-- **Minima with a linear term.** For a convex set `C` and a convex real energy `E` continuous at
 some point of `C`, a point `u ∈ C` minimizes `E - η` on `C` exactly when `η ∈ ∂E(u) + N_C(u)`.
 Equivalently, the variational inequality `η (v - u) ≤ E v - E u` for all `v ∈ C` splits as a
-subgradient of `E` plus a normal vector of `C`.
-
-The proof subtracts `η` from `E`, applies the sum rule
-`TauCeti.subdifferential_add_constraintIndicator_eq` at the constrained minimum of `E - η`, and
-restores `η`. -/
+subgradient of `E` plus a normal vector of `C`. -/
 theorem isMinOn_sub_iff_mem_subdifferential_add_normalCone {E : V → ℝ} (hE : ConvexOn ℝ univ E)
     {C : Set V} (hC : Convex ℝ C) {x₀ : V} (hx₀ : x₀ ∈ C) (hEx₀ : ContinuousAt E x₀) {u : V}
     (hu : u ∈ C) (η : StrongDual ℝ V) :
@@ -349,14 +346,14 @@ theorem isMinOn_sub_iff_mem_subdifferential_add_normalCone {E : V → ℝ} (hE :
   rw [subdifferential_add_constraintIndicator_eq hE' hC hx₀ hEx₀' hu] at h0
   obtain ⟨g, hg, n, hn, hgn⟩ := h0
   -- Restore `η`: `g + η ∈ ∂E(u)` and `η = (g + η) + n`.
-  refine ⟨g + η, ?_, n, hn, by
+  have hfun : (fun v ↦ ((E v - η v : ℝ) : EReal)) =
+      fun v ↦ (E v : EReal) + (((topDualPairing ℝ V).flip v (-η) + 0 : ℝ) : EReal) := by
+    funext v
+    simp [sub_eq_add_neg, EReal.coe_add]
+  rw [hfun, mem_subdifferential_add_affine_iff, sub_neg_eq_add] at hg
+  refine ⟨g + η, hg, n, hn, by
     simp only at hgn ⊢
     rw [add_right_comm, hgn, zero_add]⟩
-  rw [mem_subdifferential_coe_iff] at hg ⊢
-  intro v
-  have := hg v
-  simp only [LinearMap.flip_apply, topDualPairing_apply, add_apply] at this ⊢
-  linarith [map_sub η v u]
 
 /-- **First-order condition at a constrained minimum.** For a convex set `C` and a convex real
 energy `E` continuous at some point of `C`, every minimizer `u ∈ C` of `E` on `C` satisfies
