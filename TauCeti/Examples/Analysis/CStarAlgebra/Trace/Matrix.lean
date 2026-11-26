@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Trace.Matrix
+public import TauCeti.Examples.Analysis.CStarAlgebra.Matrix.Order
 public import TauCeti.Examples.Analysis.CStarAlgebra.TracePairing.Basic
 
 /-!
@@ -19,9 +20,9 @@ nonzero entry `aa⋆ + bb⋆` (`TauCeti.TraceExamples.topRow_mul_star_topRow`).
 For `B = ℂ` and `τ = id` (`TauCeti.TraceExamples.complexTrace`, `z ↦ Re z` on `ℂ₊`), `τ_n` is the
 matrix trace on `M_n(ℂ)₊` (`TauCeti.TraceExamples.matrixTrace_complexTrace_of_nonneg`):
 
-* the projection `[[1/2, 1/2], [1/2, 1/2]]` (`TauCeti.TraceExamples.halfProjection`) has
-  `τ₂ = 1` although neither diagonal entry is `1`
-  (`TauCeti.TraceExamples.matrixTrace_halfProjection`);
+* the projection `[[1/2, 1/2], [1/2, 1/2]]` (`TauCeti.MatrixOrderExample.averagingProjection`)
+  has `τ₂ = 1` although neither diagonal entry is `1`
+  (`TauCeti.TraceExamples.matrixTrace_averagingProjection`);
 * `x = [[1, 1], [1, 1]] ≥ 0` (`TauCeti.TraceExamples.allOnes_nonneg`) has `τ₂(x) = 2`
   (`TauCeti.TraceExamples.matrixTrace_allOnes`), while the sum of all its entries is `4`
   (`TauCeti.TraceExamples.sum_sum_allOnes`); the unitary `U = 2^{-1/2} [[1, 1], [-1, 1]]`
@@ -84,24 +85,13 @@ theorem matrixTrace_complexTrace_of_nonneg {n : Type*} [Fintype n] {x : CStarMat
   exact (ENNReal.ofReal_sum_of_nonneg fun i _ ↦
     (Complex.nonneg_iff.1 (CStarMatrix.diag_nonneg_of_nonneg hx i)).1).symm
 
-/-- The projection `[[1/2, 1/2], [1/2, 1/2]]` of `M₂(ℂ)`. -/
-noncomputable def halfProjection : CStarMatrix (Fin 2) (Fin 2) ℂ :=
-  CStarMatrix.ofMatrix !![1 / 2, 1 / 2; 1 / 2, 1 / 2]
-
-/-- `[[1/2, 1/2], [1/2, 1/2]]` is a projection. -/
-theorem isStarProjection_halfProjection : IsStarProjection halfProjection := by
-  refine ⟨?_, ?_⟩
-  · ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [halfProjection, CStarMatrix.mul_apply, Fin.sum_univ_two] <;> norm_num
-  · ext i j
-    fin_cases i <;> fin_cases j <;> simp [halfProjection, CStarMatrix.star_apply]
-
-/-- The amplified trace of `[[1/2, 1/2], [1/2, 1/2]]` is `1`, although neither diagonal entry
-is `1`. -/
-theorem matrixTrace_halfProjection : matrixTrace complexTrace (Fin 2) halfProjection = 1 := by
-  rw [matrixTrace_complexTrace_of_nonneg isStarProjection_halfProjection.nonneg]
-  norm_num [halfProjection, Matrix.trace_fin_two]
+/-- The amplified trace of the projection `[[1/2, 1/2], [1/2, 1/2]]` is `1`, although neither
+diagonal entry is `1`. -/
+theorem matrixTrace_averagingProjection :
+    matrixTrace complexTrace (Fin 2) MatrixOrderExample.averagingProjection = 1 := by
+  rw [matrixTrace_complexTrace_of_nonneg
+    MatrixOrderExample.isStarProjection_averagingProjection.nonneg]
+  norm_num [Matrix.trace_fin_two]
 
 /-- The matrix `[[1, 1], [1, 1]]` of `M₂(ℂ)`. -/
 def allOnes : CStarMatrix (Fin 2) (Fin 2) ℂ :=
