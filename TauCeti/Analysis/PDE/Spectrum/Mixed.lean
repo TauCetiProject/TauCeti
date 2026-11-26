@@ -329,9 +329,15 @@ private theorem exists_hilbertBasis_mixedEigenvalue_properties :
         ∃ k, mixedEigenvalue mu Omega Γ a b c k = kappa' := by
   have hH : ¬ FiniteDimensional ℝ (Lp ℝ 2 (mu.restrict Omega)) :=
     L2.not_finiteDimensional_restrict_of_isOpen mu Omega.isOpen hOmega
+  have hdense : DenseRange ((W1p.valueL (mu := mu) (Omega := Omega) (p := 2)).comp
+      (W1pVanishingOn mu Omega 2 Γ).subtypeL) := by
+    convert W1pVanishingOn.denseRange_valueL_two hΓ using 2
+    ext u : 1
+    simp only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, W1p.valueL_apply,
+      W1pVanishingOn.valueL_apply]
   obtain ⟨basis, kappa, u, hmono, htendsto, hvalue, heq, hiff⟩ :=
     exists_hilbertBasis_nat_monotone_of_garding (Q := energyFormH1LVanishingOn hcoeff Γ) hJ
-      (W1pVanishingOn.denseRange_valueL_two hΓ) hH (fun u v ↦ by simpa using hsymm u v) hC₀
+      hdense hH (fun u v ↦ by simpa using hsymm u v) hC₀
       (fun w ↦ by simpa using hgarding w)
   simp only [energyFormH1LVanishingOn_apply, ContinuousLinearMap.comp_apply,
     Submodule.subtypeL_apply, W1p.valueL_apply] at hvalue heq hiff
