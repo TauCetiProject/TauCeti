@@ -12,9 +12,8 @@ public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Complex
 /-!
 # Checks: `𝔰𝔩_n(ℝ)` is split and `𝔰𝔩_n(ℂ)` viewed as real is not
 
-Checks for RealSemisimpleLieGroups §1.4, through the criterion
-`LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff`: a maximal abelian subspace `𝔞` of `𝔭` is a
-Cartan subalgebra exactly when `𝔪 = 0`.
+Checks of the criterion `LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff`: a maximal abelian
+subspace `𝔞` of `𝔭` is a Cartan subalgebra exactly when `𝔪 = 0`.
 
 * On `𝔰𝔩_{r+1}(ℝ)` with `θ X = -Xᵀ`, the trace-zero diagonal matrices have `𝔪 = 0`, so they form
   a Cartan subalgebra: `𝔰𝔩_n(ℝ)` is split.
@@ -32,7 +31,7 @@ namespace TauCeti.Examples.RestrictedRootSplit
 
 /-- `𝔰𝔩_{r+1}(ℝ)` is split: its trace-zero diagonal matrices, maximal abelian in `𝔭` for
 `θ X = -Xᵀ`, form a Cartan subalgebra, since `𝔪 = 0`. -/
-theorem isCartanSubalgebra_specialLinearDiagonalCartan (r : ℕ) :
+example (r : ℕ) :
     (specialLinearDiagonalCartan r ℝ).IsCartanSubalgebra :=
   (LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff
     (isCartanInvolution_specialLinearNegTranspose r)
@@ -43,14 +42,6 @@ theorem isCartanSubalgebra_specialLinearDiagonalCartan (r : ℕ) :
 
 variable (n : Type*) [Fintype n] [DecidableEq n]
 
-/-- The real trace-zero diagonal matrices in `𝔰𝔩_n(ℂ)` viewed as real, as a Lie subalgebra (it
-is abelian). -/
-def slComplexRealDiagonalSubalgebra : LieSubalgebra ℝ (slComplexReal n) :=
-  { slComplexRealDiagonal n with
-    lie_mem' := fun hX hY => by
-      rw [(isMaximalAbelianInP_slComplexRealDiagonal (n := n)).lie_eq_zero hX hY]
-      exact (slComplexRealDiagonal n).zero_mem }
-
 /-- `𝔰𝔩_n(ℂ)` viewed as real is not split: for `i ≠ j`, its real trace-zero diagonal matrices,
 maximal abelian in `𝔭` for `θ X = -Xᴴ`, are not a Cartan subalgebra, since `𝔪 = i𝔞` contains
 `i (E_ii - E_jj) ≠ 0`. -/
@@ -58,7 +49,9 @@ theorem not_isCartanSubalgebra_slComplexRealDiagonalSubalgebra {i j : n} (hij : 
     ¬(slComplexRealDiagonalSubalgebra n).IsCartanSubalgebra := by
   rw [LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff
     (isCartanInvolution_slComplexNegConjTranspose (n := n))
-    (isMaximalAbelianInP_slComplexRealDiagonal (n := n))]
+    (by rw [slComplexRealDiagonalSubalgebra_toSubmodule]
+        exact isMaximalAbelianInP_slComplexRealDiagonal)]
+  rw [slComplexRealDiagonalSubalgebra_toSubmodule]
   intro h
   set H := slComplexRealDiagonalSingleSubSingle n i j
   let X : slComplexReal n := ⟨Complex.I • (((H : slComplexReal n)) : Matrix n n ℂ),

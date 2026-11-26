@@ -25,8 +25,8 @@ subalgebra is a Cartan subalgebra exactly when it is its own zero root space
 because `𝔤_0 = 𝔪 + 𝔞` (`LieEquiv.IsMaximalAbelianInP.restrictedRootSpace_zero_eq_sup`) and
 `𝔞 ∩ 𝔨 ⊆ 𝔭 ∩ 𝔨 = 0`.
 
-This is the characterization of the split case in the first sentence of RealSemisimpleLieGroups
-§1.4, apart from the comparison of real and complex ranks.
+This is the characterization of split real forms, apart from the comparison of real and complex
+ranks.
 
 ## Main results
 
@@ -47,24 +47,29 @@ open LieAlgebra LieModule Module
 
 namespace LieEquiv.IsMaximalAbelianInP
 
-variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
-  [LieAlgebra K L] {θ : L ≃ₗ⁅K⁆ L}
+section CommRing
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {θ : L ≃ₗ⁅R⁆ L}
 
 /-- **`𝔤_0 = 𝔞` exactly when `𝔪 = 0`**: the centralizer of a maximal abelian subspace `𝔞` of
 `𝔭` is `𝔞` itself exactly when `𝔪 = 𝔤_0 ∩ 𝔨` vanishes. -/
-theorem restrictedRootSpace_zero_eq_iff (hθ : θ.IsCartanInvolution) {𝔞 : Submodule K L}
-    (h𝔞 : θ.IsMaximalAbelianInP 𝔞) :
+theorem restrictedRootSpace_zero_eq_iff (h2 : IsUnit (2 : R)) (hθ : Function.Involutive θ)
+    {𝔞 : Submodule R L} (h𝔞 : θ.IsMaximalAbelianInP 𝔞) :
     𝔞.restrictedRootSpace 0 = 𝔞 ↔
       𝔞.restrictedRootSpace 0 ⊓ θ.toLieHom.fixedSubalgebra.toSubmodule = ⊥ := by
-  have h2 : IsUnit (2 : K) := IsUnit.mk0 _ two_ne_zero
   constructor
   · intro h
     rw [h, eq_bot_iff]
     refine le_trans (inf_le_inf_right _ h𝔞.le_cartanP) ?_
     rw [inf_comm]
-    exact (θ.isCompl_fixedSubalgebra_cartanP h2 hθ.involutive).disjoint.le_bot
+    exact (θ.isCompl_fixedSubalgebra_cartanP h2 hθ).disjoint.le_bot
   · intro h
-    rw [h𝔞.restrictedRootSpace_zero_eq_sup h2 hθ.involutive, h, bot_sup_eq]
+    rw [h𝔞.restrictedRootSpace_zero_eq_sup h2 hθ, h, bot_sup_eq]
+
+end CommRing
+
+variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRing L]
+  [LieAlgebra K L] {θ : L ≃ₗ⁅K⁆ L}
 
 /-- **A maximal abelian subspace `𝔞` of `𝔭` is a Cartan subalgebra exactly when it is its own
 centralizer `𝔤_0`.** Here `𝔞` is given as a Lie subalgebra `𝔥` with underlying subspace `𝔞`. -/
@@ -74,8 +79,9 @@ theorem isCartanSubalgebra_iff_restrictedRootSpace_zero_eq (hθ : θ.IsCartanInv
   have : FiniteDimensional K L := hθ.finiteDimensional
   have : IsLieAbelian 𝔥 := isLieAbelian_of_le_cartanP (IsUnit.mk0 _ two_ne_zero) h𝔥.le_cartanP
   have h0 := hθ.toSubmodule_genWeightSpace_eq_restrictedRootSpace h𝔥.le_cartanP 0
-  rw [← zeroRootSubalgebra_eq_iff_is_cartan, ← LieSubalgebra.toSubmodule_inj, ← h0]
-  rfl
+  simp only [LinearMap.zero_apply, ← Pi.zero_def] at h0
+  rw [← zeroRootSubalgebra_eq_iff_is_cartan, ← LieSubalgebra.toSubmodule_inj,
+    coe_zeroRootSubalgebra, ← h0]
 
 /-- **A maximal abelian subspace `𝔞` of `𝔭` is a Cartan subalgebra exactly when `𝔪 = 0`**, where
 `𝔪 = 𝔤_0 ∩ 𝔨` is the centralizer of `𝔞` in `𝔨`. -/
@@ -84,6 +90,6 @@ theorem isCartanSubalgebra_iff (hθ : θ.IsCartanInvolution) {𝔥 : LieSubalgeb
     𝔥.IsCartanSubalgebra ↔
       𝔥.toSubmodule.restrictedRootSpace 0 ⊓ θ.toLieHom.fixedSubalgebra.toSubmodule = ⊥ := by
   rw [isCartanSubalgebra_iff_restrictedRootSpace_zero_eq hθ h𝔥,
-    restrictedRootSpace_zero_eq_iff hθ h𝔥]
+    restrictedRootSpace_zero_eq_iff (IsUnit.mk0 _ two_ne_zero) hθ.involutive h𝔥]
 
 end LieEquiv.IsMaximalAbelianInP
