@@ -6,13 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Spectrum.Prime.RingHom
-public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Componentwise
 public import TauCeti.RingTheory.Localization.Defs
 public import TauCeti.RingTheory.NovikovSeries.TotalQuotient
 import Mathlib.Algebra.Ring.Hom.InjSurj
 import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 import TauCeti.Algebra.MonoidAlgebra.Localization
-import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
 import TauCeti.RingTheory.KrullDimension.Zero
 import TauCeti.RingTheory.Norm.NonZeroDivisors
 import TauCeti.RingTheory.NovikovSeries.MinimalPrimes
@@ -58,8 +56,9 @@ complex over `Nov(S, H, N)` whose differentials have the images under `P_ρ` of 
 (`HomologicalComplex.componentwiseReidemeisterTorsion_eq_of_toMatrix_eq`). So the integral torsion
 is a unit, or zero, exactly when the rational one is. Component by component, the integral torsion
 lies in the preimage of a prime of the rational total ring of fractions exactly when the rational
-torsion lies in that prime (`TauCeti.NovikovSeries.componentwiseReidemeisterTorsion_mem_comap_iff`,
-and `TauCeti.NovikovSeries.componentwiseParityTorsion_mem_comap_iff` for two-periodic complexes).
+torsion lies in that prime, by `HomologicalComplex.map_componentwiseReidemeisterTorsion` (or
+`HomologicalComplex.map_componentwiseParityTorsion` for two-periodic complexes) together with
+`IsLocalization.map_comp` and `Ideal.mem_comap`.
 
 When `S` is moreover Noetherian and a localization of `R`, as `ℚ` is of `ℤ`, the components
 correspond one to one: two primes of the rational total ring of fractions with the same preimage are
@@ -68,7 +67,7 @@ is a bijection between the primes of the two total rings of fractions
 (`TauCeti.NovikovSeries.comap_map_mapRingHom_bijective_of_isLocalization`). The primes of each
 contract to minimal primes of its Novikov ring, and these are determined by their intersection with
 the group ring of the torsion subgroup `T` of `H`
-(`TauCeti.NovikovSeries.eq_of_mem_minimalPrimes_of_comap_eq`). Two primes of `S[T]` with the same
+(`TauCeti.NovikovSeries.primeSpectrum_ext_of_comap_torsion_eq`). Two primes of `S[T]` with the same
 preimage in `R[T]` are equal, since every element of `S[T]` lands in the image of `R[T]` after
 multiplication by a denominator from `R`, which is a unit of `S`. So, for reduced total rings of
 fractions, the zero components of the integral torsion are exactly those of the rational torsion,
@@ -89,10 +88,6 @@ characters of order `4` are conjugate over `ℚ` and give the single component `
   ring of fractions is the preimage of one of the target.
 * `TauCeti.NovikovSeries.isUnit_map_mapRingHom_iff`: the induced map of total rings of fractions
   reflects units.
-* `TauCeti.NovikovSeries.componentwiseReidemeisterTorsion_mem_comap_iff`,
-  `TauCeti.NovikovSeries.componentwiseParityTorsion_mem_comap_iff`: the componentwise torsion over
-  the source vanishes on the preimage of a component exactly when the torsion read in the target
-  vanishes on that component.
 * `TauCeti.NovikovSeries.comap_map_mapRingHom_bijective_of_isLocalization`: when `S` is a
   localization of `R`, such as `ℚ` of `ℤ`, the field components of the two total rings of fractions
   correspond one to one.
@@ -183,47 +178,6 @@ theorem isUnit_map_mapRingHom_iff {x : Q} :
   have := isArtinianRing_of_isFractionRing R N Q
   exact isUnit_map_iff_of_injective_of_krullDimLE_zero (map_mapRingHom_injective Q Q' hρ)
 
-section Torsion
-
-variable [IsArtinianRing Q] [IsReduced Q] [IsArtinianRing Q'] [IsReduced Q']
-
-/-- **Componentwise torsion under a change of coefficients.** The componentwise torsion of a based
-complex `C` over `Nov(R, H, N)` lies in the preimage of a prime `m` of the total ring of fractions
-of `Nov(S, H, N)` exactly when the componentwise torsion of `C` along
-`Nov(R, H, N) → Nov(S, H, N) → Q(Nov(S, H, N))` lies in `m`. -/
-theorem componentwiseReidemeisterTorsion_mem_comap_iff
-    {C : ChainComplex (ModuleCat (NovikovSeries R H N)) ℤ} {n : ℤ → ℕ}
-    (c : ∀ i, Module.Basis (Fin (n i)) (NovikovSeries R H N) (C.X i)) (m : PrimeSpectrum Q') :
-    C.componentwiseReidemeisterTorsion c (algebraMap _ Q) ∈ (PrimeSpectrum.comap
-        (IsLocalization.map Q'
-          (mapRingHom (N := N) (N' := N) ρ (AddMonoidHom.id H) exists_period_rescale_id)
-          (nonZeroDivisors_le_comap_mapRingHom hρ) : Q →+* Q') m).asIdeal ↔
-      C.componentwiseReidemeisterTorsion c ((algebraMap _ Q').comp
-        (mapRingHom (N := N) (N' := N) ρ (AddMonoidHom.id H) exists_period_rescale_id)) ∈
-        m.asIdeal := by
-  rw [PrimeSpectrum.comap_asIdeal, Ideal.mem_comap,
-    HomologicalComplex.map_componentwiseReidemeisterTorsion, IsLocalization.map_comp]
-
-/-- **Componentwise torsion of two-periodic complexes under a change of coefficients.** The
-componentwise torsion of a based two-periodic complex `C` over `Nov(R, H, N)` lies in the preimage
-of a prime `m` of the total ring of fractions of `Nov(S, H, N)` exactly when the componentwise
-torsion of `C` along `Nov(R, H, N) → Nov(S, H, N) → Q(Nov(S, H, N))` lies in `m`. -/
-theorem componentwiseParityTorsion_mem_comap_iff
-    {C : HomologicalComplex (ModuleCat (NovikovSeries R H N)) (ComplexShape.up (ZMod 2))}
-    {n : ZMod 2 → ℕ} (c : ∀ i, Module.Basis (Fin (n i)) (NovikovSeries R H N) (C.X i))
-    (m : PrimeSpectrum Q') :
-    C.componentwiseParityTorsion c (algebraMap _ Q) ∈ (PrimeSpectrum.comap
-        (IsLocalization.map Q'
-          (mapRingHom (N := N) (N' := N) ρ (AddMonoidHom.id H) exists_period_rescale_id)
-          (nonZeroDivisors_le_comap_mapRingHom hρ) : Q →+* Q') m).asIdeal ↔
-      C.componentwiseParityTorsion c ((algebraMap _ Q').comp
-        (mapRingHom (N := N) (N' := N) ρ (AddMonoidHom.id H) exists_period_rescale_id)) ∈
-        m.asIdeal := by
-  rw [PrimeSpectrum.comap_asIdeal, Ideal.mem_comap,
-    HomologicalComplex.map_componentwiseParityTorsion, IsLocalization.map_comp]
-
-end Torsion
-
 end TotalQuotient
 
 /-! ### Localizations: the field components correspond one to one -/
@@ -284,13 +238,9 @@ theorem comap_map_mapRingHom_injective_of_isLocalization :
   have hp : (p m₁).comap (algebraMap (AddMonoidAlgebra R (AddCommGroup.torsion H)) _) =
       (p m₂).comap (algebraMap (AddMonoidAlgebra R (AddCommGroup.torsion H)) _) := by
     rw [hcomap, hcomap, h]
-  have hT : p m₁ = p m₂ := (IsLocalization.orderEmbedding (Algebra.algebraMapSubmonoid _ M)
-    (AddMonoidAlgebra S (AddCommGroup.torsion H))).injective hp
-  have hmin (m : PrimeSpectrum Q') :=
-    IsLocalization.comap_mem_minimalPrimes_of_krullDimLE_zero
-      (M := (NovikovSeries S H N)⁰) le_rfl Q' m.asIdeal
-  exact PrimeSpectrum.ext <| (IsLocalization.orderEmbedding (NovikovSeries S H N)⁰ Q').injective
-    (eq_of_mem_minimalPrimes_of_comap_eq (hmin m₁) (hmin m₂) hT)
+  exact primeSpectrum_ext_of_comap_torsion_eq <|
+    (IsLocalization.orderEmbedding (Algebra.algebraMapSubmonoid _ M)
+      (AddMonoidAlgebra S (AddCommGroup.torsion H))).injective hp
 
 include M in
 /-- **Component compatibility.** If a Noetherian domain `S` is a localization of `R` with injective
