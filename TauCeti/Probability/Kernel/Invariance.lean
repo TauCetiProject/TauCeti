@@ -37,6 +37,8 @@ row-vector and symmetric-matrix forms are in `TauCeti.Probability.Kernel.Matrix.
   multiples, and binary sums.
 * `ProbabilityTheory.Kernel.invariant_iff_singleton`: invariance as a balance equation at
   each state.
+* `ProbabilityTheory.Kernel.isReversible_iff_on_disjoint`: detailed balance can be checked on
+  disjoint measurable sets.
 * `ProbabilityTheory.Kernel.isReversible_iff_singleton`: detailed balance as equality of the
   two directed fluxes between each pair of states.
 * `ProbabilityTheory.Kernel.invariant_ofPMF_toMeasure_iff` and
@@ -79,6 +81,32 @@ theorem Invariant.add {κ : Kernel α α} {μ ν : Measure α}
     (hμ : κ.Invariant μ) (hν : κ.Invariant ν) :
     κ.Invariant (μ + ν) := by
   rw [Invariant, Measure.comp_add, hμ.def, hν.def]
+
+/-- A kernel is reversible if and only if it satisfies detailed balance between disjoint
+measurable sets. This criterion applies to any reference measure. -/
+theorem isReversible_iff_on_disjoint {κ : Kernel α α} {π : Measure α} :
+    κ.IsReversible π ↔ ∀ ⦃A B : Set α⦄, MeasurableSet A → MeasurableSet B → Disjoint A B →
+      ∫⁻ x in A, κ x B ∂π = ∫⁻ x in B, κ x A ∂π := by
+  refine ⟨fun h _ _ hA hB _ ↦ h hA hB, fun h A B hA hB ↦ ?_⟩
+  -- Split both the source and destination into the common part and their differences.
+  have split {S T : Set α} (hS : MeasurableSet S) (hT : MeasurableSet T) :
+      ∫⁻ x in S, κ x T ∂π =
+        ((∫⁻ x in S ∩ T, κ x (T ∩ S) ∂π) + (∫⁻ x in S ∩ T, κ x (T \ S) ∂π)) +
+        ((∫⁻ x in S \ T, κ x (T ∩ S) ∂π) + (∫⁻ x in S \ T, κ x (T \ S) ∂π)) := by
+    rw [← lintegral_inter_add_sdiff _ S hT]
+    have splitTarget (x : α) : κ x T = κ x (T ∩ S) + κ x (T \ S) :=
+      (measure_inter_add_sdiff T hS).symm
+    simp_rw [splitTarget, lintegral_add_left (κ.measurable_coe (hT.inter hS))]
+  have hAB : Disjoint (A \ B) (B \ A) :=
+    Set.disjoint_sdiff_left.mono_right Set.sdiff_subset
+  have hAI : Disjoint (A \ B) (A ∩ B) :=
+    Set.disjoint_sdiff_left.mono_right Set.inter_subset_right
+  have hIB : Disjoint (A ∩ B) (B \ A) :=
+    Set.disjoint_sdiff_right.mono_left Set.inter_subset_left
+  rw [split hA hB, split hB hA, Set.inter_comm B A,
+    h (hA.inter hB) (hB.diff hA) hIB, h (hA.diff hB) (hA.inter hB) hAI,
+    h (hA.diff hB) (hB.diff hA) hAB]
+  ac_rfl
 
 end Basic
 
