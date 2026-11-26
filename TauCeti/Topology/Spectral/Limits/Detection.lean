@@ -115,9 +115,8 @@ theorem exists_preimage_eq_of_isLimit {i : J} {s t : Set (F.obj i)}
   · rw [hab]
     simpa only [F.map_comp, coe_comp, preimage_comp] using preimage_mono (f := F.map b) hg
 
-/-- Equality of pullbacks of constructible subsets in a spectral limit is detected after a
-transition map: their symmetric difference is a constructible, hence pro-constructible, subset
-missing the limit. -/
+/-- Equality of pullbacks of constructible subsets to a cofiltered spectral limit already holds
+after some transition map. -/
 theorem exists_preimage_eq_of_isConstructible {i : J} {s t : Set (F.obj i)}
     (hs : IsConstructible s) (ht : IsConstructible t) (h : c.π.app i ⁻¹' s = c.π.app i ⁻¹' t) :
     ∃ (j : J) (f : j ⟶ i), F.map f ⁻¹' s = F.map f ⁻¹' t := by

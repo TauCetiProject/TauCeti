@@ -156,8 +156,7 @@ theorem Topology.IsConstructible.isClopen_constructibleTopology [CompactSpace X]
 
 /-- On a compact, quasi-sober, quasi-separated prespectral space (for instance a spectral space)
 the subsets that are clopen for the constructible topology are exactly the constructible subsets.
-A clopen subset is compact for the compact constructible topology, hence a finite union of basic
-constructible subsets. -/
+-/
 theorem TauCeti.isClopen_constructibleTopology_iff_isConstructible [CompactSpace X]
     [QuasiSober X] [PrespectralSpace X] [QuasiSeparatedSpace X] {s : Set X} :
     IsClopen[constructibleTopology X] s ↔ IsConstructible s := by
