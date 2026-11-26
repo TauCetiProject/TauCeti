@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.WithDensity
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -25,6 +27,9 @@ these chart pushforwards, and two estimates for measures on the model seen throu
   agree on the chart source.
 * `TauCeti.map_withDensity_restrict_extChartAt_source`: reweighting by a continuous function read
   in the chart multiplies a chart density by that function.
+* `TauCeti.integral_eq_setIntegral_smul_extChartAt_symm`: the integral of a function supported in
+  a chart source is the integral over the chart target of the function read in the chart, weighted
+  by the chart density.
 * `TauCeti.measure_image_extChartAt_inter_source_pos`: the chart image of the part of an open set
   in the chart source has positive measure when that part is nonempty, even at boundary or corner
   points.
@@ -153,5 +158,34 @@ theorem map_withDensity_restrict_extChartAt_source {x : M} {ν : Measure E}
   have hgy : g y = ENNReal.ofReal (h y) := piecewise_eq_of_mem _ _ _ hy
   rw [Pi.mul_apply, hgy, mul_comm, ENNReal.ofReal_mul (hh y hy)]
 
+
+/-- **Integrals read in a chart.** In a chart where `μ` has a nonnegative continuous density `w`,
+the `μ`-integral of a function `F` continuous on the chart source and vanishing off it is the
+integral of `w · (F ∘ e⁻¹)` over the chart target. -/
+theorem integral_eq_setIntegral_smul_extChartAt_symm {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [SecondCountableTopology G] {x : M} {ν : Measure E} {w : E → ℝ}
+    (hwc : ContinuousOn w (extChartAt I x).target) (hw0 : ∀ y ∈ (extChartAt I x).target, 0 ≤ w y)
+    (hw : (μ.restrict (extChartAt I x).source).map (extChartAt I x) =
+      (ν.restrict (extChartAt I x).target).withDensity fun y ↦ ENNReal.ofReal (w y))
+    {F : M → G} (hF : ContinuousOn F (extChartAt I x).source)
+    (hF0 : ∀ z ∉ (extChartAt I x).source, F z = 0) :
+    ∫ z, F z ∂μ = ∫ y in (extChartAt I x).target, w y • F ((extChartAt I x).symm y) ∂ν := by
+  let e := extChartAt I x
+  have hsrc : MeasurableSet e.source := (isOpen_extChartAt_source x).measurableSet
+  have htgt : MeasurableSet e.target := measurableSet_extChartAt_target x
+  have hae : AEMeasurable e (μ.restrict e.source) := (continuousOn_extChartAt x).aemeasurable hsrc
+  -- `F ∘ e⁻¹` is continuous on the target, where the chart pushforward of `μ` lives.
+  have hFe : AEStronglyMeasurable (fun y ↦ F (e.symm y)) ((μ.restrict e.source).map e) := by
+    rw [hw]
+    exact ((hF.comp (continuousOn_extChartAt_symm x) fun y hy ↦
+      e.map_target hy).aestronglyMeasurable htgt).mono_ac (withDensity_absolutelyContinuous _ _)
+  have hFF : EqOn F (fun z ↦ F (e.symm (e z))) e.source := fun z hz ↦ by
+    simp only [e.left_inv hz]
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hF0, setIntegral_congr_fun hsrc hFF,
+    ← integral_map hae hFe, hw, integral_withDensity_eq_integral_toReal_smul₀
+      (f := fun y ↦ ENNReal.ofReal (w y))
+      ((ENNReal.continuous_ofReal.comp_continuousOn hwc).aemeasurable htgt)
+      (.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
+  exact setIntegral_congr_fun htgt fun y hy ↦ by rw [ENNReal.toReal_ofReal (hw0 y hy)]
 
 end TauCeti
