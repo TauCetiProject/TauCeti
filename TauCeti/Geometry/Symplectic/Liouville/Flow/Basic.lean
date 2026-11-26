@@ -17,14 +17,13 @@ with `L_Z σ = σ`, is determined by `ι_Z σ = -θ` when `σ` is nondegenerate.
 which also preserves the primitive `θ` must therefore preserve `Z`, and so commute with its flow.
 
 This file proves the statement for an arbitrary one-form `α` in place of `-θ`, for a vector field
-`Z` with `ι_Z σ = α`: if a diffeomorphism `ψ : M → M₂` satisfies `ψ^*σ₂ = σ` and `ψ^*α₂ = α` with
-`σ₂` nondegenerate, then `dψ (Z x) = Z₂ (ψ x)` whenever `ι_{Z₂} σ₂ = α₂`
-(`Diffeomorph.mfderiv_apply_eq_of_interior_eq`). Indeed both vectors pair under `σ₂` with
-`dψ v` to `α v`, and the differential of `ψ` is onto. Neither closedness of the forms nor finite
-dimensionality is needed, and a local diffeomorphism in place of `ψ` suffices
-(`IsLocalDiffeomorph.mfderiv_apply_eq_of_interior_eq`). With `α = -θ` this is the naturality of
-Liouville vector fields; with `α = df` it is the naturality of Hamiltonian vector fields under
-symplectomorphisms preserving the Hamiltonian.
+`Z` with `ι_Z σ = α`: if a local diffeomorphism `f : M → M₂` satisfies `f^*σ₂ = σ` and
+`f^*α₂ = α` with `σ₂` nondegenerate, then `df (Z x) = Z₂ (f x)` whenever `ι_{Z₂} σ₂ = α₂`
+(`IsLocalDiffeomorph.mfderiv_apply_eq_of_interior_eq`). Indeed both vectors pair under `σ₂` with
+`df v` to `α v`, and the differential of `f` is onto. Neither closedness of the forms nor finite
+dimensionality is needed. For a diffeomorphism `ψ`, apply it to `ψ.isLocalDiffeomorph`. With
+`α = -θ` this is the naturality of Liouville vector fields; with `α = df` it is the naturality of
+Hamiltonian vector fields under symplectomorphisms preserving the Hamiltonian.
 
 By naturality of flows, `ψ` then conjugates the maximal flows of `Z` and `Z₂`, which for
 `M₂ = M` says that `ψ` commutes with the local flow of `Z`
@@ -32,9 +31,9 @@ By naturality of flows, `ψ` then conjugates the maximal flows of `Z` and `Z₂`
 
 ## Main results
 
-* `Diffeomorph.mfderiv_apply_eq_of_interior_eq`: a symplectomorphism preserving the one-forms
-  carries the vector field dual to one to the vector field dual to the other.
-* `IsLocalDiffeomorph.mfderiv_apply_eq_of_interior_eq`: the same for a local diffeomorphism.
+* `IsLocalDiffeomorph.mfderiv_apply_eq_of_interior_eq`: a local diffeomorphism preserving the
+  two-forms and the one-forms carries the vector field dual to one to the vector field dual to the
+  other.
 * `Diffeomorph.apply_flowOf_of_interior_eq`: such a symplectomorphism conjugates their maximal
   flows; in particular symplectomorphisms preserving a primitive commute with the local Liouville
   flow.
@@ -90,17 +89,6 @@ theorem _root_.IsLocalDiffeomorph.mfderiv_apply_eq_of_interior_eq {f : M → M�
   rw [← SmoothForm.bilinFormAt_apply, map_sub, LinearMap.sub_apply, SmoothForm.bilinFormAt_apply,
     SmoothForm.bilinFormAt_apply, h₁, h₂, sub_self]
 
-/-- **Naturality of the vector field dual to a one-form.** Let `ψ : M → M₂` be a diffeomorphism
-with `ψ^*σ₂ = σ` and `ψ^*α₂ = α`, where `σ₂` is nondegenerate. If `ι_Z σ = α` and
-`ι_{Z₂} σ₂ = α₂`, then `dψ_x (Z x) = Z₂ (ψ x)` for every `x`. For `α = -θ` with `σ = -dθ`, this
-says that a symplectomorphism preserving the primitives carries the Liouville field of `θ` to that
-of `θ₂`. -/
-theorem mfderiv_apply_eq_of_interior_eq (ψ : M ≃ₘ⟮I, I₂⟯ M₂) (hσ₂ : σ₂.IsNondegenerate)
-    (hσ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) (hα : mpullback I I₂ ψ α₂ = α)
-    (hZ : RoughForm.interior Z σ.val = α) (hZ₂ : RoughForm.interior Z₂ σ₂.val = α₂) (x : M) :
-    mfderiv I I₂ ψ x (Z x) = Z₂ (ψ x) :=
-  ψ.isLocalDiffeomorph.mfderiv_apply_eq_of_interior_eq hσ₂ hσ hα hZ hZ₂ x
-
 variable [T2Space M₂] [BoundarylessManifold I₂ M₂]
 
 /-- **Symplectomorphisms preserving a primitive commute with the Liouville flow.** Let `ψ : M → M₂`
@@ -113,6 +101,7 @@ theorem apply_flowOf_of_interior_eq (ψ : M ≃ₘ⟮I, I₂⟯ M₂) (hσ₂ : 
     (hZ : RoughForm.interior Z σ.val = α) (hZ₂ : RoughForm.interior Z₂ σ₂.val = α₂)
     (hZ₂' : CMDiff 1 (fun y ↦ (⟨y, Z₂ y⟩ : TangentBundle I₂ M₂))) (t : ℝ) (x : M) :
     ψ (flowOf Z t x) = flowOf Z₂ t (ψ x) :=
-  ψ.apply_flowOf (by simp) hZ₂' (ψ.mfderiv_apply_eq_of_interior_eq hσ₂ hσ hα hZ hZ₂) t x
+  ψ.apply_flowOf (by simp) hZ₂'
+    (ψ.isLocalDiffeomorph.mfderiv_apply_eq_of_interior_eq hσ₂ hσ hα hZ hZ₂) t x
 
 end Diffeomorph

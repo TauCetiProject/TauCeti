@@ -141,16 +141,8 @@ private theorem continuous_extend_glueInr [CompactSpace S]
     have h : (Prod.fst ⁻¹' Ici c : Set (ℝ × S)) =
         Icc c 0 ×ˢ univ ∪ Φ.toOpenPartialHomeomorph.sourceᶜ := by
       ext y
-      simp only [toOpenPartialHomeomorph_source, hsource, mem_preimage, mem_Ici, mem_union,
-        mem_prod, mem_Icc, mem_univ, and_true, mem_compl_iff, mem_Iio, not_lt]
-      constructor
-      · intro h
-        by_cases hy : y.1 ≤ 0
-        · exact Or.inl ⟨h, hy⟩
-        · exact Or.inr (le_of_not_ge hy)
-      · rintro (h | h)
-        · exact h.1
-        · exact hc.trans h
+      simp only [toOpenPartialHomeomorph_source, hsource]
+      grind
     rw [h, image_union, ← compl_range_glueInl]
     exact ((isCompact_Icc.prod isCompact_univ).image
       Φ.toOpenPartialHomeomorph.glueInr.continuous).isClosed.union
@@ -270,6 +262,11 @@ theorem mfderiv_glueInr_apply_prodVectorField
   · rw [mextDerivₗ_apply]
     exact SmoothForm.interior_mextDeriv_symplectization β
 
+/-- The constant vector field `1` on `ℝ`, read through the canonical identification of each
+tangent space of `ℝ` with `ℝ`, is the constant function `1`. -/
+private theorem constVectorField_one_eq : constVectorField (1 : ℝ) = fun _ ↦ (1 : ℝ) :=
+  funext fun z ↦ by rw [constVectorField_apply, NormedSpace.fromTangentSpace_symm_apply]
+
 /-- **The integral curves of the Liouville field on the end** are the lines `τ ↦ (t + τ, s)` of
 the cylinder, read in the glued manifold. -/
 theorem isMIntegralCurve_glueInr
@@ -280,12 +277,10 @@ theorem isMIntegralCurve_glueInr
         (Φ.glueForm hl hr α β.symplectization hαβ).val)
     (y : ℝ × S) :
     IsMIntegralCurve (fun τ ↦ Φ.toOpenPartialHomeomorph.glueInr (y.1 + τ, y.2)) Z := by
-  have hconst : constVectorField (1 : ℝ) = fun _ ↦ (1 : ℝ) :=
-    funext fun z ↦ by rw [constVectorField_apply, NormedSpace.fromTangentSpace_symm_apply]
   have hline : IsMIntegralCurve (fun τ : ℝ ↦ ((y.1 + τ, y.2) : ℝ × S))
       (prodVectorField (constVectorField (1 : ℝ)) (0 : (s : S) → TangentSpace J s)) := by
     refine isMIntegralCurve_prodVectorField_iff.2 ⟨?_, isMIntegralCurve_const rfl⟩
-    rw [hconst]
+    rw [constVectorField_one_eq]
     simpa only [smul_eq_mul, mul_one] using isMIntegralCurve_translation (1 : ℝ) y.1
   rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hline ⊢
   exact hline.map_of_mfderiv_eq (fun _ _ ↦ (hr _).mdifferentiableAt (by simp))
@@ -340,7 +335,10 @@ private theorem contMDiffAt_extend_glueInr_and_mvfderiv
       (prodVectorField (constVectorField (1 : ℝ)) (0 : (s : S) → TangentSpace J s) y))
     (mfderiv_fst (x := y) : mfderiv (𝓘(ℝ).prod J) 𝓘(ℝ) Prod.fst y = _)
   rw [h₁]
-  exact (prodVectorField_fst _ _ y).trans (constVectorField_apply 1 y.1)
+  -- The tangent space of `ℝ × S` is a product only up to unfolding `TangentSpace`, so
+  -- `ContinuousLinearMap.coe_fst'` does not rewrite here; the projection `fst v = v.1` holds by
+  -- unfolding, and `prodVectorField_fst` computes `v.1`.
+  exact (prodVectorField_fst _ _ y).trans (congrFun constVectorField_one_eq y.1)
 
 variable [T2Space Φ.toOpenPartialHomeomorph.glueData.toGlueData.glued] [J.Boundaryless]
 

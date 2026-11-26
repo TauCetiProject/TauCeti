@@ -140,7 +140,8 @@ theorem _root_.Diffeomorph.mfderiv_apply_vectorBundleEulerField_of_mpullback_lio
   have hliouville : mpullback _ _ ψ (-(liouvilleForm J N).val) = -(liouvilleForm I M).val := by
     rw [← NegMemClass.coe_neg, ← SmoothForm.coe_mpullback ψ ψ.contMDiff, map_neg, hψ,
       NegMemClass.coe_neg]
-  exact ψ.mfderiv_apply_eq_of_interior_eq isSymplectic_symplecticForm.isNondegenerate hω hliouville
+  exact ψ.isLocalDiffeomorph.mfderiv_apply_eq_of_interior_eq
+    isSymplectic_symplecticForm.isNondegenerate hω hliouville
     symplecticForm_interior_vectorBundleEulerField symplecticForm_interior_vectorBundleEulerField z
 
 variable [T2Space N] [J.Boundaryless]
