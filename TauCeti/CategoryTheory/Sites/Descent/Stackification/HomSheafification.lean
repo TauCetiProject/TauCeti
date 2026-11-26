@@ -31,7 +31,8 @@ category obtained by transporting the enrichment along it (Mathlib's `TransportE
 
 The comparison functor `toFiber J F U` from the fibre of `F` is the identity on objects and sends
 a morphism to its image in the sheafification. For a prestack it is an equivalence
-(`toFiberEquivalence`).
+(`toFiberEquivalence`). These fibres form a pseudofunctor, the Hom-sheafification of `F`, in
+`TauCeti.CategoryTheory.Sites.Descent.Stackification.Prestackification`.
 
 ## Main declarations
 
@@ -42,6 +43,10 @@ a morphism to its image in the sheafification. For a prestack it is an equivalen
 * `TauCeti.Stack.Prestackification.Fiber`: the fibre over `U` of the Hom-sheafification of `F`.
 * `TauCeti.Stack.Prestackification.Fiber.homMk`: the morphism given by a local morphism, and
   `Fiber.homMk_comp`, `Fiber.homMk_id`, which compute composition and identities.
+* `TauCeti.Stack.Prestackification.Fiber.homEquiv_comp_toFiber_map` and
+  `Fiber.homEquiv_toFiber_map_comp`: composing with the image of a morphism of `F` is induced by
+  composing local morphisms with its pullbacks (`Pseudofunctor.presheafHomPostcomp`,
+  `Pseudofunctor.presheafHomPrecomp`).
 * `TauCeti.Stack.Prestackification.toFiber`: the comparison functor from the fibre of `F`, and
   `toFiberEquivalence`, the equivalence it gives for a prestack.
 
@@ -278,6 +283,73 @@ lemma toFiber_obj (M : F.obj (.mk (op U))) : (toFiber J F U).obj M = Fiber.mk M 
 @[simp]
 lemma toFiber_map {M N : F.obj (.mk (op U))} (φ : M ⟶ N) :
     (toFiber J F U).map φ = Fiber.homMk (F.presheafHomObjHomEquiv φ) := (rfl)
+
+/-- The image under `sheafifySections J U` of a morphism `toUnit P ≫ y` that factors through the
+terminal presheaf is constant, with value the image of the global section given by `y`. -/
+lemma sheafifySections_map_toUnit_comp {P Q : (Over U)ᵒᵖ ⥤ Type v'}
+    (y : 𝟙_ ((Over U)ᵒᵖ ⥤ Type v') ⟶ Q) (a : (sheafifySections J U).obj P) :
+    (sheafifySections J U).map (CartesianMonoidalCategory.toUnit P ≫ y) a =
+      (toSheafifySections J U).app Q (y.app (op (Over.mk (𝟙 U))) PUnit.unit) := by
+  let _ : ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))).Monoidal := .ofChosenFiniteProducts _
+  have hε : ε (sheafifySections J U) PUnit.unit =
+      (toSheafifySections J U).app (𝟙_ ((Over U)ᵒᵖ ⥤ Type v')) PUnit.unit :=
+    (ConcreteCategory.congr_hom (NatTrans.IsMonoidal.unit (τ := toSheafifySections J U))
+      PUnit.unit).symm
+  rw [Functor.map_comp, ConcreteCategory.comp_apply, ← Functor.Monoidal.toUnit_ε]
+  refine (congrArg ((sheafifySections J U).map y) hε).trans ?_
+  exact (ConcreteCategory.congr_hom ((toSheafifySections J U).naturality y) _).symm
+
+/-- Composing with the image under `toFiber` of a morphism `ψ` of `F` is induced by
+postcomposition of local morphisms with the pullbacks of `ψ`. -/
+lemma Fiber.homEquiv_comp_toFiber_map {M : Fiber J F U} {N P : F.obj (.mk (op U))}
+    (x : M ⟶ Fiber.mk N) (ψ : N ⟶ P) :
+    Fiber.homEquiv M (Fiber.mk P) (x ≫ (toFiber J F U).map ψ) =
+      (sheafifySections J U).map (presheafHomPostcomp ψ) (Fiber.homEquiv M (Fiber.mk N) x) := by
+  -- the global section `T ↦ T.hom^* ψ` of `F.presheafHom N P`
+  let y : 𝟙_ ((Over U)ᵒᵖ ⥤ Type v') ⟶ F.presheafHom N P :=
+    { app T := TypeCat.ofHom fun _ ↦ (F.map T.unop.hom.op.toLoc).toFunctor.map ψ
+      naturality T T' g := by
+        ext
+        exact (pullHom_map ψ _ _ _ (Over.w g.unop)).symm }
+  have hpost : presheafHomPostcomp ψ = CartesianMonoidalCategory.lift (𝟙 _)
+      (CartesianMonoidalCategory.toUnit _ ≫ y) ≫ presheafHomComp M.obj N P := by
+    ext T a
+    exact (presheafHomPostcomp_app_apply ψ T a).trans
+      (presheafHomComp_app_apply M.obj N P T ((CartesianMonoidalCategory.lift (𝟙 _)
+        (CartesianMonoidalCategory.toUnit _ ≫ y)).app T a)).symm
+  rw [hpost, Functor.map_comp, ← Functor.Monoidal.lift_μ_assoc]
+  refine (Fiber.homEquiv_comp x ((toFiber J F U).map ψ)).trans ?_
+  exact congrArg (μ (sheafifySections J U) _ _ ≫
+    (sheafifySections J U).map (presheafHomComp M.obj N P))
+      (Prod.ext (ConcreteCategory.congr_hom ((sheafifySections J U).map_id _) _).symm
+        ((Fiber.homEquiv_homMk _).trans ((sheafifySections_map_toUnit_comp y _).trans
+          (congrArg _ (presheafHomObjHomEquiv_eq_map F ψ).symm)).symm))
+
+/-- Composing on the left with the image under `toFiber` of a morphism `φ` of `F` is induced by
+precomposition of local morphisms with the pullbacks of `φ`. -/
+lemma Fiber.homEquiv_toFiber_map_comp {M M' : F.obj (.mk (op U))} {N : Fiber J F U}
+    (φ : M' ⟶ M) (x : Fiber.mk M ⟶ N) :
+    Fiber.homEquiv (Fiber.mk M') N ((toFiber J F U).map φ ≫ x) =
+      (sheafifySections J U).map (presheafHomPrecomp φ) (Fiber.homEquiv (Fiber.mk M) N x) := by
+  -- the global section `T ↦ T.hom^* φ` of `F.presheafHom M' M`
+  let y : 𝟙_ ((Over U)ᵒᵖ ⥤ Type v') ⟶ F.presheafHom M' M :=
+    { app T := TypeCat.ofHom fun _ ↦ (F.map T.unop.hom.op.toLoc).toFunctor.map φ
+      naturality T T' g := by
+        ext
+        exact (pullHom_map φ _ _ _ (Over.w g.unop)).symm }
+  have hpre : presheafHomPrecomp φ = CartesianMonoidalCategory.lift
+      (CartesianMonoidalCategory.toUnit _ ≫ y) (𝟙 _) ≫ presheafHomComp M' M N.obj := by
+    ext T a
+    exact (presheafHomPrecomp_app_apply φ T a).trans
+      (presheafHomComp_app_apply M' M N.obj T ((CartesianMonoidalCategory.lift
+        (CartesianMonoidalCategory.toUnit _ ≫ y) (𝟙 _)).app T a)).symm
+  rw [hpre, Functor.map_comp, ← Functor.Monoidal.lift_μ_assoc]
+  refine (Fiber.homEquiv_comp ((toFiber J F U).map φ) x).trans ?_
+  exact congrArg (μ (sheafifySections J U) _ _ ≫
+    (sheafifySections J U).map (presheafHomComp M' M N.obj))
+      (Prod.ext ((Fiber.homEquiv_homMk _).trans ((sheafifySections_map_toUnit_comp y _).trans
+          (congrArg _ (presheafHomObjHomEquiv_eq_map F φ).symm)).symm)
+        (ConcreteCategory.congr_hom ((sheafifySections J U).map_id _) _).symm)
 
 instance essSurj_toFiber : (toFiber J F U).EssSurj where
   mem_essImage M := ⟨M.obj, ⟨Iso.refl _⟩⟩
