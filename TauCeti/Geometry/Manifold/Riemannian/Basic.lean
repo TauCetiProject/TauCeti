@@ -57,6 +57,8 @@ differentiability criterion for maps whose tangent maps preserve inner products.
   `TauCeti.Manifold.inner_mfderiv_eq_inner_mvfderiv`: the canonical identification of a tangent
   space of a real inner-product space with the model space preserves inner products, and rewrites
   inner products of `mfderiv` into `mvfderiv`.
+* `Bundle.ContinuousRiemannianMetric.continuous_inner_const_vector`: on a real normed space, pairing
+  two constant coordinate vectors under a continuous Riemannian metric is continuous.
 -/
 
 public section
@@ -389,3 +391,25 @@ theorem inner_mfderiv_eq_inner_mvfderiv
   simp [inner_tangentSpace_vectorSpace, mvfderiv]
 
 end TauCeti.Manifold
+
+namespace Bundle.ContinuousRiemannianMetric
+
+/-- On a real normed space `F`, pairing two constant coordinate vectors under a continuous
+Riemannian metric gives a continuous real-valued function. -/
+theorem continuous_inner_const_vector {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (g : ContinuousRiemannianMetric F (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)) (v w : F) :
+    Continuous fun x : F ↦
+      g.inner x ((NormedSpace.fromTangentSpace x).symm v)
+        ((NormedSpace.fromTangentSpace x).symm w) := by
+  let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) := ⟨g.toRiemannianMetric⟩
+  let _ : IsContinuousRiemannianBundle F (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
+    Bundle.instIsContinuousRiemannianBundle g
+  have hv : CMDiff ∞ (T% fun x : F ↦ ((NormedSpace.fromTangentSpace x).symm v :
+      TangentSpace 𝓘(ℝ, F) x)) :=
+    (contMDiff_vectorSpace_iff_contDiff (n := ∞)).2 contDiff_const
+  have hw : CMDiff ∞ (T% fun x : F ↦ ((NormedSpace.fromTangentSpace x).symm w :
+      TangentSpace 𝓘(ℝ, F) x)) :=
+    (contMDiff_vectorSpace_iff_contDiff (n := ∞)).2 contDiff_const
+  exact hv.continuous.inner_bundle hw.continuous
+
+end Bundle.ContinuousRiemannianMetric

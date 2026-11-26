@@ -32,8 +32,9 @@ its Riemannian metric; the space `V` itself keeps its Euclidean metric.
 
 ## Main results
 
-* `TauCeti.IsStandardCapProfile.edist_norm_le_riemannianEDist`: the norm is `1`-Lipschitz for the
-  cap distance.
+* `TauCeti.IsStandardCapProfile.edist_norm_le_riemannianEDist`,
+  `TauCeti.IsStandardCapProfile.riemannianEDist_toWithMetric_le`: the norm is `1`-Lipschitz for the
+  cap distance, and `toWithMetric` is `1`-Lipschitz from the Euclidean distance.
 * `TauCeti.IsStandardCapProfile.riemannianEDist_zero_left`: the cap distance from the tip is the
   norm.
 * `TauCeti.IsStandardCapProfile.completeSpace_withMetric`: the standard cap is complete for its
@@ -136,6 +137,21 @@ theorem edist_norm_le_riemannianEDist (x y : V) :
     _ ≤ _ := by
         gcongr
         exact hf.edist_sqrt_le_riemannianEDist hδ x y
+
+/-- **The map `toWithMetric` is `1`-Lipschitz**: because `g_x(v, v) ≤ ‖v‖²` everywhere, the
+Riemannian distance on the standard cap is at most the Euclidean distance on `V`. -/
+theorem riemannianEDist_toWithMetric_le (x y : V) :
+    riemannianEDist 𝓘(ℝ, V) (toWithMetric (hf.metric V) x)
+      (toWithMetric (hf.metric V) y) ≤ edist x y := by
+  rw [IsRiemannianManifold.out (I := 𝓘(ℝ, V)) x y,
+    ← one_mul (riemannianEDist 𝓘(ℝ, V) x y), ← ENNReal.coe_one]
+  refine TauCeti.Manifold.riemannianEDist_le_mul (C := (1 : NNReal))
+    contMDiff_toWithMetric one_ne_zero (fun z v ↦ ?_) x y
+  rw [NNReal.coe_one, one_mul]
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_
+  rw [← real_inner_self_eq_norm_sq, inner_def, ofWithMetric_toWithMetric,
+    mfderiv_ofWithMetric_mfderiv_toWithMetric, norm_tangentSpace_vectorSpace]
+  exact hf.metric_inner_self_le z v
 
 /-- **The cap distance from the tip is the norm**: the ray `t ↦ t x`, `0 ≤ t ≤ 1`, from the tip
 to `x` has cap length `‖x‖`, and by `edist_norm_le_riemannianEDist` no curve is shorter. -/

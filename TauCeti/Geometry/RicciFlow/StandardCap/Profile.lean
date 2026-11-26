@@ -11,8 +11,8 @@ public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Convex.Deriv
+import Mathlib.Analysis.Convex.Slope
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -33,11 +33,12 @@ conditions placed on `f`:
   curvature one.
 
 From these conditions we derive the remaining normalizations of the profile on `[0, ∞)`: `f(0) = 0`
-and `f'(0) = 1`, `0 ≤ f' ≤ 1`, `f'' ≤ 0`, monotonicity, positivity away from the tip and the upper
-bound `f ≤ √2`. The radial and tangential sectional curvatures of `dr² + f(r)² g_(S²)` are
-`-f'' / f` and `(1 - f'²) / f²`, which these inequalities make nonnegative; this is the source of
-the nonnegative curvature of the standard cap. Finally, the class of standard cap profiles is
-nonempty (`TauCeti.exists_isStandardCapProfile`), so the standard cap can be chosen.
+and `f'(0) = 1`, `0 ≤ f' ≤ 1`, `f'' ≤ 0`, monotonicity, positivity away from the tip, the upper
+bound `f ≤ √2`, and the secant bounds `0 < f(r) / r ≤ 1`. The radial and tangential sectional
+curvatures of `dr² + f(r)² g_(S²)` are `-f'' / f` and `(1 - f'²) / f²`, which these inequalities
+make nonnegative; this is the source of the nonnegative curvature of the standard cap. Finally, the
+class of standard cap profiles is nonempty (`TauCeti.exists_isStandardCapProfile`), so the
+standard cap can be chosen.
 
 ## Main definitions
 
@@ -55,8 +56,13 @@ nonempty (`TauCeti.exists_isStandardCapProfile`), so the standard cap can be cho
   `TauCeti.IsStandardCapProfile.deriv_deriv_nonpos`: `0 ≤ f' ≤ 1` and `f'' ≤ 0` on `[0, ∞)`.
 * `TauCeti.IsStandardCapProfile.apply_pos`, `TauCeti.IsStandardCapProfile.apply_le_sqrt_two`:
   `0 < f(r) ≤ √2` for `r > 0`.
-* `TauCeti.IsStandardCapProfile.dslope_zero_pos`: the ratio `f(r) / r`, read as `1` at the tip, is
-  positive on `[0, ∞)`.
+* `TauCeti.IsStandardCapProfile.dslope_zero_pos`,
+  `TauCeti.IsStandardCapProfile.dslope_zero_le_one`,
+  `TauCeti.IsStandardCapProfile.apply_le_self`,
+  `TauCeti.IsStandardCapProfile.antitoneOn_div_self`,
+  `TauCeti.IsStandardCapProfile.div_self_pos`, `TauCeti.IsStandardCapProfile.div_self_le_one`:
+  positivity and unit upper bound of `dslope f 0`, secant bounds `0 < f(r) / r ≤ 1`, and
+  antitonicity of `r ↦ f(r) / r` on `(0, ∞)`.
 * `TauCeti.exists_isStandardCapProfile`: standard cap profiles exist.
 
 ## Implementation notes
@@ -210,18 +216,70 @@ theorem apply_le_sqrt_two {r : ℝ} (hr : 0 ≤ r) : f r ≤ √2 := by
         hf.monotoneOn (mem_Ici.2 hr) (mem_Ici.2 (hr.trans (le_max_left r R))) (le_max_left r R)
     _ = √2 := hR _ (le_max_right r R)
 
+/-- Because `f(0) = 0` and `f' ≤ 1` on `[0, ∞)`, a standard cap profile satisfies `f(r) ≤ r` for
+`r ≥ 0`. -/
+theorem apply_le_self {r : ℝ} (hr : 0 ≤ r) : f r ≤ r := by
+  simpa [hf.apply_zero] using
+    (convex_Ici (0 : ℝ)).image_sub_le_mul_sub_of_deriv_le hf.contDiff.continuous.continuousOn
+      hf.differentiable.differentiableOn (fun s hs ↦ hf.deriv_le_one (interior_subset hs))
+      0 (mem_Ici.2 le_rfl) r (mem_Ici.2 hr) hr
+
+/-- Concavity of `f` on `[0, ∞)` and `f(0) = 0` make the secant ratio `r ↦ f(r) / r` antitone on
+`(0, ∞)`. -/
+theorem antitoneOn_div_self : AntitoneOn (fun r ↦ f r / r) (Ioi 0) := fun a ha b hb hab ↦ by
+  have hsec := hf.concaveOn.neg.secant_mono (a := 0) (x := a) (y := b) (mem_Ici.2 le_rfl)
+    (mem_Ici.2 ha.le) (mem_Ici.2 hb.le) ha.ne' hb.ne' hab
+  simp only [Pi.neg_apply, hf.apply_zero, neg_zero, sub_zero, neg_div] at hsec
+  linarith
+
+private theorem div_self_neg (r : ℝ) : f (-r) / -r = f r / r := by
+  rw [hf.odd r, neg_div_neg_eq]
+
+/-- Away from `0`, the secant ratio `f(r) / r` is positive. -/
+theorem div_self_pos {r : ℝ} (hr : r ≠ 0) : 0 < f r / r := by
+  rcases lt_or_gt_of_ne hr with hlt | hgt
+  · rw [← hf.div_self_neg]
+    exact div_pos (hf.apply_pos (neg_pos.2 hlt)) (neg_pos.2 hlt)
+  · exact div_pos (hf.apply_pos hgt) hgt
+
+/-- Everywhere on `ℝ`, the secant ratio `f(r) / r` is at most one. -/
+theorem div_self_le_one (r : ℝ) : f r / r ≤ 1 := by
+  rcases lt_trichotomy r 0 with hlt | rfl | hgt
+  · rw [← hf.div_self_neg]
+    exact (div_le_one (neg_pos.2 hlt)).2 (hf.apply_le_self (neg_pos.2 hlt).le)
+  · simp
+  · exact (div_le_one hgt).2 (hf.apply_le_self hgt.le)
+
+/-- Everywhere on `ℝ`, the squared secant ratio `(f(r) / r)²` is at most one. -/
+theorem sq_div_self_le_one (r : ℝ) : (f r / r) ^ 2 ≤ 1 := by
+  rcases eq_or_ne r 0 with rfl | hr
+  · simp
+  · nlinarith [hf.div_self_pos hr, hf.div_self_le_one r]
+
 /-- Away from the tip, the difference quotient `dslope f 0 r` of a standard cap profile is
 `f(r) / r`. -/
 theorem dslope_zero_of_ne_zero {r : ℝ} (hr : r ≠ 0) : dslope f 0 r = f r / r := by
   rw [dslope_of_ne _ hr, slope_def_field, hf.apply_zero, sub_zero, sub_zero]
 
-/-- The ratio `f(r) / r`, read as `f'(0) = 1` at the tip, is positive for `r ≥ 0`. -/
-theorem dslope_zero_pos {r : ℝ} (hr : 0 ≤ r) : 0 < dslope f 0 r := by
-  rcases hr.eq_or_lt with rfl | hr
+/-- The ratio `f(r) / r`, read as `f'(0) = 1` at the tip, is positive everywhere on `ℝ`. -/
+theorem dslope_zero_pos (r : ℝ) : 0 < dslope f 0 r := by
+  rcases eq_or_ne r 0 with rfl | hr
   · rw [dslope_same, hf.deriv_zero]
     exact one_pos
-  · rw [hf.dslope_zero_of_ne_zero hr.ne']
-    exact div_pos (hf.apply_pos hr) hr
+  · rw [hf.dslope_zero_of_ne_zero hr]
+    exact hf.div_self_pos hr
+
+/-- The difference quotient `dslope f 0 r` (equal to `f(r) / r` away from `0` and `1` at `0`) is at
+most one everywhere on `ℝ`. -/
+theorem dslope_zero_le_one (r : ℝ) : dslope f 0 r ≤ 1 := by
+  rcases eq_or_ne r 0 with rfl | hr
+  · simp [dslope_same, hf.deriv_zero]
+  · rw [hf.dslope_zero_of_ne_zero hr]
+    exact hf.div_self_le_one r
+
+/-- The squared difference quotient `(dslope f 0 r)²` is at most one everywhere on `ℝ`. -/
+theorem sq_dslope_zero_le_one (r : ℝ) : dslope f 0 r ^ 2 ≤ 1 := by
+  nlinarith [hf.dslope_zero_pos r, hf.dslope_zero_le_one r]
 
 end IsStandardCapProfile
 

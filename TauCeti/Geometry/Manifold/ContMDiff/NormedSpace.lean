@@ -10,7 +10,11 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 import Mathlib.Analysis.Normed.Operator.Prod
 
 /-!
-# Smoothness of continuous-linear-map coproducts on manifolds
+# Normed-space open-submanifold regularity and continuous-linear-map coproducts on manifolds
+
+Restricting a map `f : E → F` between normed spaces to an open submanifold `U : Opens E` is `C^n`
+at a point `x : U` (or globally on `U`) in the manifold sense if and only if `f` is `ContDiffAt` at
+`x` (or `ContDiffOn` on `U`).
 
 Two families of continuous linear maps `g : M → F₁ →L[𝕜] F₃` and `f : M → F₂ →L[𝕜] F₃` on a
 manifold combine into the family `x ↦ (g x).coprod (f x)` on `F₁ × F₂` by composing `(g, f)` with
@@ -19,12 +23,15 @@ regularity is preserved at a point within a set, at a point, on a set, and globa
 
 ## Main results
 
+* `TauCeti.contMDiffAt_subtype_iff_contDiffAt`, `TauCeti.contMDiff_subtype_iff_contDiffOn`:
+  manifold `C^n` regularity of `fun y : U ↦ f y` on `U : Opens E` is equivalent to `ContDiffAt` and
+  `ContDiffOn`.
 * `ContMDiffWithinAt.clm_coprod`, `ContMDiffAt.clm_coprod`, `ContMDiffOn.clm_coprod`,
   `ContMDiff.clm_coprod`: `C^n` regularity of `x ↦ (g x).coprod (f x)`.
 
 ## Formal sources
 
-These lemmas parallel `ContMDiffWithinAt.clm_prodMap` in
+The coproduct lemmas parallel `ContMDiffWithinAt.clm_prodMap` in
 `Mathlib.Geometry.Manifold.ContMDiff.NormedSpace`, by Sébastien Gouëzel and Floris van Doorn,
 replacing `ContinuousLinearMap.prodMapL` by `ContinuousLinearMap.coprodEquivL`.
 -/
@@ -32,6 +39,32 @@ replacing `ContinuousLinearMap.prodMapL` by `ContinuousLinearMap.coprodEquivL`.
 public section
 
 open scoped ContDiff Manifold
+
+namespace TauCeti
+
+section Opens
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {n : ℕ∞ω}
+
+/-- Restricting a map `f : E → F` between normed spaces to an open submanifold `U : Opens E` is
+`C^n` at `x : U` if and only if `f` is `C^n` at `x` in `E`. -/
+theorem contMDiffAt_subtype_iff_contDiffAt {U : TopologicalSpace.Opens E} {f : E → F} {x : U} :
+    ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, F) n (fun y : U ↦ f y) x ↔ ContDiffAt 𝕜 n f x :=
+  contMDiffAt_subtype_iff.trans contMDiffAt_iff_contDiffAt
+
+/-- Restricting a map `f : E → F` between normed spaces to an open submanifold `U : Opens E` is
+`C^n` on `U` if and only if `f` is `C^n` on `U` as a subset of `E`. -/
+theorem contMDiff_subtype_iff_contDiffOn {U : TopologicalSpace.Opens E} {f : E → F} :
+    ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) n (fun y : U ↦ f y) ↔ ContDiffOn 𝕜 n f U :=
+  ⟨fun h x hx ↦ (contMDiffAt_subtype_iff_contDiffAt.1 (h ⟨x, hx⟩)).contDiffWithinAt,
+   fun h x ↦ contMDiffAt_subtype_iff_contDiffAt.2 (h.contDiffAt (U.isOpen.mem_nhds x.property))⟩
+
+end Opens
+
+end TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]

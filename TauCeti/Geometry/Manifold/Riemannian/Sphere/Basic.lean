@@ -44,6 +44,11 @@ Thurston's eight model geometries.
   `sphereTangentEquiv` is `C^m` on the tangent bundle.
 * `TauCeti.edist_le_riemannianEDist_sphere`: the chordal distance in `E` is at most the round
   distance.
+* `TauCeti.tendsto_abs_nhdsGT_zero_of_inner_mfderiv_eq_mul_sphereRoundMetric`,
+  `TauCeti.apply_zero_of_inner_mfderiv_eq_mul_sphereRoundMetric`: if a continuous Riemannian metric
+  on `E` (`dim E ≥ 2`) restricts on concentric spheres of small positive radius `r` to
+  `f(r)² g_(Sⁿ)` for a function `f : ℝ → ℝ`, then `|f(r)| → 0` as `r → 0⁺`, so `f(0) = 0` when `f`
+  is right-continuous at `0` (`ContinuousWithinAt f (Ici 0) 0`).
 
 ## References
 
@@ -53,8 +58,8 @@ Thurston's eight model geometries.
 
 public section
 
-open Bundle Metric Module
-open scoped ContDiff Manifold
+open Bundle Filter Metric Module Set
+open scoped ContDiff Manifold Topology
 
 noncomputable section
 
@@ -182,5 +187,81 @@ theorem edist_le_riemannianEDist_sphere (x y : sphere (0 : E) 1) :
     (contMDiff_coe_sphere (E := E) (n := n)) one_ne_zero (fun p v ↦ ?_) x y
   · simpa [Subtype.edist_eq] using h
   rw [ENNReal.coe_one, one_mul, ← ofReal_norm, ← ofReal_norm, ← norm_tangentSpace_sphere]
+
+/-- Let `E` be a real inner product space of dimension `n + 1` with `0 < n` (`dim E ≥ 2`), and let
+`g` be a continuous Riemannian metric on `E`. If on concentric spheres `u ↦ r • u` of small positive
+radius `r`, `g` restricts to `f(r)² g_(Sⁿ)`, then `|f(r)| → 0` as `r → 0⁺`. The hypothesis `0 < n`
+cannot be dropped: when `n = 0` (`E = ℝ`), `S⁰` is discrete (`T_u S⁰ = 0`) and `f = 1` describes the
+flat metric `dx²` across `0`. -/
+theorem tendsto_abs_nhdsGT_zero_of_inner_mfderiv_eq_mul_sphereRoundMetric (hn : 0 < n)
+    (g : ContinuousRiemannianMetric E (fun x : E ↦ TangentSpace 𝓘(ℝ, E) x)) {f : ℝ → ℝ}
+    (hpull : ∀ᶠ r in 𝓝[>] (0 : ℝ), ∀ (u : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) u),
+      g.inner (r • (u : E))
+        (mfderiv (𝓡 n) 𝓘(ℝ, E) (fun q : sphere (0 : E) 1 ↦ r • (q : E)) u v)
+        (mfderiv (𝓡 n) 𝓘(ℝ, E) (fun q : sphere (0 : E) 1 ↦ r • (q : E)) u v) =
+        f r ^ 2 * (sphereRoundMetric (E := E)).inner u v v) :
+    Tendsto (fun r ↦ |f r|) (𝓝[>] 0) (𝓝 0) := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (M := E) (by
+    rw [Fact.out (p := finrank ℝ E = n + 1)]; omega)
+  obtain ⟨u⟩ : Nonempty (sphere (0 : E) 1) :=
+    Set.Nonempty.to_subtype (NormedSpace.sphere_nonempty.2 zero_le_one)
+  have hfin : 0 < finrank ℝ (TangentSpace (𝓡 n) u) := by
+    rw [(tangentSpaceCastModel (𝓡 n) u).toLinearEquiv.finrank_eq, finrank_euclideanSpace_fin]
+    exact hn
+  have : Nontrivial (TangentSpace (𝓡 n) u) := Module.nontrivial_of_finrank_pos hfin
+  obtain ⟨v, hv⟩ := exists_ne (0 : TangentSpace (𝓡 n) u)
+  have hpos : 0 < (sphereRoundMetric (E := E)).inner u v v :=
+    (sphereRoundMetric (E := E)).pos u v hv
+  set w : E := mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u v
+  have heq : (fun r : ℝ ↦ f r ^ 2) =ᶠ[𝓝[>] (0 : ℝ)] fun r : ℝ ↦
+      r ^ 2 * g.inner (r • (u : E)) ((NormedSpace.fromTangentSpace (r • (u : E))).symm w)
+        ((NormedSpace.fromTangentSpace (r • (u : E))).symm w) /
+        (sphereRoundMetric (E := E)).inner u v v := by
+    filter_upwards [hpull] with r hr
+    have hdf : mfderiv (𝓡 n) 𝓘(ℝ, E) (fun q : sphere (0 : E) 1 ↦ r • (q : E)) u v =
+        r • (NormedSpace.fromTangentSpace (r • (u : E))).symm w := by
+      apply (NormedSpace.fromTangentSpace (r • (u : E))).injective
+      rw [NormedSpace.fromTangentSpace_apply, ← mvfderiv_apply_eq_mfderiv_apply,
+        mvfderiv_const_smul ((contMDiff_coe_sphere (E := E) (n := n) (m := 1) u).mdifferentiableAt
+          one_ne_zero) r,
+        _root_.smul_apply, map_smul, ContinuousLinearEquiv.apply_symm_apply]
+    have hpull_r := hr u v
+    rw [hdf, map_smul, map_smul, _root_.smul_apply, smul_eq_mul, smul_eq_mul,
+      ← mul_assoc, ← sq] at hpull_r
+    exact (eq_div_iff hpos.ne').2 hpull_r.symm
+  have hcont_g : Continuous fun r : ℝ ↦
+      g.inner (r • (u : E)) ((NormedSpace.fromTangentSpace (r • (u : E))).symm w)
+        ((NormedSpace.fromTangentSpace (r • (u : E))).symm w) :=
+    (g.continuous_inner_const_vector w w).comp (continuous_id.smul continuous_const)
+  have hlim : Tendsto (fun r : ℝ ↦
+      r ^ 2 * g.inner (r • (u : E)) ((NormedSpace.fromTangentSpace (r • (u : E))).symm w)
+        ((NormedSpace.fromTangentSpace (r • (u : E))).symm w) /
+        (sphereRoundMetric (E := E)).inner u v v) (𝓝[>] 0) (𝓝 0) := by
+    simpa using ((((continuous_pow 2).mul hcont_g).div_const _).continuousAt (x := 0)).tendsto
+      |>.mono_left nhdsWithin_le_nhds
+  have hsq : Tendsto (fun r : ℝ ↦ f r ^ 2) (𝓝[>] 0) (𝓝 0) := hlim.congr' heq.symm
+  simpa only [Real.sqrt_zero] using
+    (Real.continuous_sqrt.continuousAt.tendsto.comp hsq).congr fun r ↦ Real.sqrt_sq_eq_abs (f r)
+
+/-- If `f : ℝ → ℝ` is right-continuous at `0` (`ContinuousWithinAt f (Ici 0) 0`) and a continuous
+Riemannian metric `g` on `E` (`dim E = n + 1`, `0 < n`) restricts on concentric spheres
+`u ↦ r • u` of small positive radius `r` to `f(r)² g_(Sⁿ)`, then `f 0 = 0`; in particular
+`¬ 0 < f 0`. -/
+theorem apply_zero_of_inner_mfderiv_eq_mul_sphereRoundMetric (hn : 0 < n)
+    (g : ContinuousRiemannianMetric E (fun x : E ↦ TangentSpace 𝓘(ℝ, E) x)) {f : ℝ → ℝ}
+    (hf : ContinuousWithinAt f (Ici 0) 0)
+    (hpull : ∀ᶠ r in 𝓝[>] (0 : ℝ), ∀ (u : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) u),
+      g.inner (r • (u : E))
+        (mfderiv (𝓡 n) 𝓘(ℝ, E) (fun q : sphere (0 : E) 1 ↦ r • (q : E)) u v)
+        (mfderiv (𝓡 n) 𝓘(ℝ, E) (fun q : sphere (0 : E) 1 ↦ r • (q : E)) u v) =
+        f r ^ 2 * (sphereRoundMetric (E := E)).inner u v v) :
+    f 0 = 0 := by
+  have : (𝓝[>] (0 : ℝ)).NeBot := nhdsGT_neBot (0 : ℝ)
+  have h1 : Tendsto (fun r ↦ |f r|) (𝓝[>] 0) (𝓝 |f 0|) :=
+    (continuous_abs.continuousAt.tendsto.comp hf).mono_left
+      (nhdsWithin_mono 0 Ioi_subset_Ici_self)
+  exact abs_eq_zero.1 (tendsto_nhds_unique h1
+    (tendsto_abs_nhdsGT_zero_of_inner_mfderiv_eq_mul_sphereRoundMetric hn g hpull))
 
 end TauCeti

@@ -41,6 +41,9 @@ charts of the sphere directly.
 * `TauCeti.puncturedSpace V`: the punctured space `V ∖ {0}`, as an open subset of `V`.
 * `TauCeti.sphereProdRealDiffeomorph`: polar coordinates, the diffeomorphism
   `Sⁿ × ℝ ≃ V ∖ {0}`, `(u, t) ↦ exp t • u`.
+* `TauCeti.radialSphereDiffeomorph`: linear-radius polar coordinates, the diffeomorphism
+  `(0, ∞) × Sⁿ ≃ V ∖ {0}`, `(r, u) ↦ r • u`, the smooth swapped-factor counterpart of Mathlib's
+  `homeomorphUnitSphereProd`.
 
 ## Main results
 
@@ -49,6 +52,8 @@ charts of the sphere directly.
   the cylinder into `V`.
 * `TauCeti.mvfderiv_smul_coe_sphere_apply`: the differential of `(u, t) ↦ f(t) u` sends `(v, a)`
   at `(u, t)` to `f(t) v + a f'(t) u`.
+* `TauCeti.mvfderiv_radial_smul_coe_sphere_apply`: the differential of `(r, u) ↦ r • u` on
+  `U × Sⁿ` sends `(a, w)` at `(r, u)` to `a • u + r • w`.
 * `TauCeti.inner_mvfderiv_smul_coe_sphere`: the map `(u, t) ↦ f(t) u` pulls the inner product of
   `V` back to `f(t)² g_(Sⁿ) + f'(t)² dt²`.
 * `TauCeti.mvfderiv_exp_smul_coe_sphere_apply`: the differential of polar coordinates sends
@@ -260,5 +265,95 @@ attribute [local instance] finrank_real_complex_fact' in
 /-- **The cylinder `S¹ × ℝ` is orientable**, the case of the unit circle of `ℂ`. -/
 instance orientable_circle_prod_real : Orientable ((𝓡 1).prod 𝓘(ℝ)) (Circle × ℝ) :=
   inferInstanceAs (Orientable ((𝓡 1).prod 𝓘(ℝ)) (sphere (0 : ℂ) 1 × ℝ))
+
+variable (V) in
+/-- **Linear-radius polar coordinates** `(r, u) ↦ r • u` as a smooth diffeomorphism from
+`(0, ∞) × Sⁿ` onto the punctured space `V ∖ {0}`, with inverse `x ↦ (‖x‖, ‖x‖⁻¹ • x)`. This is the
+smooth swapped-factor counterpart of `TauCeti.sphereProdRealDiffeomorph` and Mathlib's
+`homeomorphUnitSphereProd`, with linear rather than logarithmic radius. -/
+def radialSphereDiffeomorph :
+    ((⟨Ioi (0 : ℝ), isOpen_Ioi⟩ : Opens ℝ) × sphere (0 : V) 1) ≃ₘ⟮𝓘(ℝ).prod (𝓡 n), 𝓘(ℝ, V)⟯
+      puncturedSpace V where
+  toFun p := ⟨(p.1 : ℝ) • (p.2 : V),
+    mem_puncturedSpace.2 (smul_ne_zero p.1.property.ne' (ne_zero_of_mem_unit_sphere p.2))⟩
+  invFun x := (⟨‖(x : V)‖, norm_pos_iff.2 (mem_puncturedSpace.1 x.property)⟩,
+    ⟨‖(x : V)‖⁻¹ • (x : V), by
+      simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 (mem_puncturedSpace.1 x.property))]⟩)
+  left_inv p := by
+    rcases p with ⟨r, u⟩
+    have hr : 0 < (r : ℝ) := r.property
+    have hu : ‖(u : V)‖ = 1 := norm_eq_of_mem_sphere u
+    exact Prod.ext (Subtype.ext (by simp [norm_smul, hu, abs_of_pos hr]))
+      (Subtype.ext (by simp [norm_smul, hu, abs_of_pos hr, smul_smul, inv_mul_cancel₀ hr.ne']))
+  right_inv x := Subtype.ext <| by
+    simp [smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 (mem_puncturedSpace.1 x.property))]
+  contMDiff_toFun :=
+    (ContMDiff.subtypeVal_comp_iff (puncturedSpace V) _).1 <|
+      (contMDiff_subtypeVal.comp contMDiff_fst).smul (contMDiff_coe_sphere.comp contMDiff_snd)
+  contMDiff_invFun := by
+    refine ContMDiff.prodMk ?_ ?_
+    · refine (ContMDiff.subtypeVal_comp_iff (⟨Ioi (0 : ℝ), isOpen_Ioi⟩ : Opens ℝ) _).1 fun x ↦ ?_
+      exact (contMDiffAt_subtype_iff (f := fun y : V ↦ ‖y‖)).2
+        (contDiffAt_norm ℝ (mem_puncturedSpace.1 x.property)).contMDiffAt
+    · have heq : (fun x : puncturedSpace V ↦
+          (⟨‖(x : V)‖⁻¹ • (x : V), by
+            simp [norm_smul,
+              inv_mul_cancel₀ (norm_ne_zero_iff.2 (mem_puncturedSpace.1 x.property))]⟩ :
+            sphere (0 : V) 1)) =
+          Prod.fst ∘ (sphereProdRealDiffeomorph (n := n) (V := V)).symm :=
+        funext fun x ↦ Subtype.ext (coe_sphereProdRealDiffeomorph_symm_apply_fst x).symm
+      rw [heq]
+      exact contMDiff_fst.comp (sphereProdRealDiffeomorph (n := n) (V := V)).symm.contMDiff
+
+@[simp]
+theorem coe_radialSphereDiffeomorph_apply
+    (p : (⟨Ioi (0 : ℝ), isOpen_Ioi⟩ : Opens ℝ) × sphere (0 : V) 1) :
+    (radialSphereDiffeomorph (n := n) V p : V) = (p.1 : ℝ) • (p.2 : V) :=
+  (rfl)
+
+@[simp]
+theorem radialSphereDiffeomorph_symm_apply_fst (x : puncturedSpace V) :
+    ((radialSphereDiffeomorph (n := n) V).symm x).1 =
+      ⟨‖(x : V)‖, norm_pos_iff.2 (mem_puncturedSpace.1 x.property)⟩ :=
+  (rfl)
+
+@[simp]
+theorem coe_radialSphereDiffeomorph_symm_apply_snd (x : puncturedSpace V) :
+    (((radialSphereDiffeomorph (n := n) V).symm x).2 : V) = ‖(x : V)‖⁻¹ • (x : V) :=
+  (rfl)
+
+/-- The differential of `(r, u) ↦ r • u` on `U × Sⁿ` sends `(a, w)` at `(r, u)` to
+`a • u + r • w`. -/
+theorem mvfderiv_radial_smul_coe_sphere_apply {U : Opens ℝ}
+    (p : U × sphere (0 : V) 1) (v : TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :
+    mvfderiv (𝓘(ℝ).prod (𝓡 n))
+        (fun q : U × sphere (0 : V) 1 ↦ (q.1 : ℝ) • (q.2 : V)) p v =
+      (tangentSpaceCastModel 𝓘(ℝ) p.1 (Manifold.tangentSpaceProdEquiv p v).1) • (p.2 : V) +
+        (p.1 : ℝ) • mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.2
+          (Manifold.tangentSpaceProdEquiv p v).2 := by
+  have hd₁ : MDifferentiableAt (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ)
+      (fun q : U × sphere (0 : V) 1 ↦ (q.1 : ℝ)) p :=
+    (contMDiff_subtypeVal.mdifferentiable one_ne_zero p.1).comp p mdifferentiableAt_fst
+  have hd₂ : MDifferentiableAt (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, V)
+      (fun q : U × sphere (0 : V) 1 ↦ (q.2 : V)) p :=
+    ((contMDiff_coe_sphere (E := V) (n := n) (m := 1) p.2).mdifferentiableAt one_ne_zero).comp p
+      mdifferentiableAt_snd
+  have hsub : mvfderiv 𝓘(ℝ) Subtype.val p.1 (Manifold.tangentSpaceProdEquiv p v).1 =
+      tangentSpaceCastModel 𝓘(ℝ) p.1 (Manifold.tangentSpaceProdEquiv p v).1 := by
+    rw [Manifold.mvfderiv_subtype_val_apply]
+    -- `NormedSpace.fromTangentSpace` on `ℝ` and `tangentSpaceCastModel 𝓘(ℝ)` are both the identity
+    -- equivalence on `ℝ`, and `tangentSpaceOpenEquiv` acts as the identity on model coordinates.
+    rfl
+  have h₁ : mvfderiv (𝓘(ℝ).prod (𝓡 n)) (fun q : U × sphere (0 : V) 1 ↦ (q.1 : ℝ)) p v =
+      tangentSpaceCastModel 𝓘(ℝ) p.1 (Manifold.tangentSpaceProdEquiv p v).1 := by
+    rw [← hsub, Manifold.tangentSpaceProdEquiv_apply]
+    exact mvfderiv_comp_fst_apply Subtype.val p v
+  have h₂ : mvfderiv (𝓘(ℝ).prod (𝓡 n)) (fun q : U × sphere (0 : V) 1 ↦ (q.2 : V)) p v =
+      mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.2 (Manifold.tangentSpaceProdEquiv p v).2 := by
+    rw [Manifold.tangentSpaceProdEquiv_apply]
+    exact mvfderiv_comp_snd_apply _ p v
+  rw [mvfderiv_fun_smul hd₁ hd₂]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, h₁, h₂]
+  exact add_comm _ _
 
 end TauCeti

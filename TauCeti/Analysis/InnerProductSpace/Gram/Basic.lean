@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
 /-!
-# The Gram matrix as the matrix of the inner product
+# Basic properties of Gram matrices and their determinants
 
 The matrix of the inner product `innerₛₗ 𝕜` in a basis `b`, as computed by Mathlib's
 `LinearMap.toMatrix₂`, is the Gram matrix `Matrix.gram 𝕜 b` of `b`, with entries `⟪b i, b j⟫`
@@ -17,11 +17,17 @@ The matrix of the inner product `innerₛₗ 𝕜` in a basis `b`, as computed b
 space. Over `ℝ` it reads `LinearMap.BilinForm.toMatrix b (innerₗ E) = Matrix.gram ℝ b`
 (`LinearMap.BilinForm.toMatrix_innerₗ`), which is the form in which Gram matrices enter the
 bilinear-form API, for instance through dual bases.
+
+In a finite-dimensional real or complex semi-inner-product space `E`, any family of vectors indexed
+by a finite type of cardinality strictly greater than `finrank 𝕜 E` is linearly dependent, so its
+Gram determinant vanishes (`Matrix.det_gram_eq_zero_of_finrank_lt`).
 -/
 
 public section
 
 open scoped InnerProductSpace
+
+section Basis
 
 variable {𝕜 E ι : Type*} [Fintype ι] [DecidableEq ι]
 
@@ -36,3 +42,19 @@ theorem Module.Basis.toMatrix₂_innerₛₗ [RCLike 𝕜] [SeminormedAddCommGro
 theorem LinearMap.BilinForm.toMatrix_innerₗ [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
     (b : Module.Basis ι ℝ E) : toMatrix b (innerₗ E) = Matrix.gram ℝ b :=
   b.toMatrix₂_innerₛₗ
+
+end Basis
+
+namespace Matrix
+
+/-- In a finite-dimensional semi-inner-product space of dimension smaller than the cardinality of
+the index type, every Gram determinant vanishes. `Module.Finite 𝕜 E` is required because
+`Module.finrank` defaults to `0` in infinite dimension. -/
+theorem det_gram_eq_zero_of_finrank_lt {𝕜 E n : Type*} [RCLike 𝕜]
+    [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E] [Module.Finite 𝕜 E]
+    [Fintype n] [DecidableEq n] (h : Module.finrank 𝕜 E < Fintype.card n) (v : n → E) :
+    (gram 𝕜 v).det = 0 := by
+  by_contra h0
+  exact h.not_ge (linearIndependent_of_det_gram_ne_zero h0).fintype_card_le_finrank
+
+end Matrix
