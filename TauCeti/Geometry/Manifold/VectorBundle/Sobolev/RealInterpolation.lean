@@ -337,16 +337,23 @@ private theorem exists_kMethodENorm_sumReconstruction_le [DecidableEq ι] (θ : 
   · exact (P₀.le_opNorm _).trans (by rw [Pi.norm_single]; gcongr; linarith)
   · exact (P₁.le_opNorm _).trans (by rw [Pi.norm_single]; gcongr; linarith)
 
+/-- The sum over `k` of the reconstructions from the slots `k` of a tuple `w` of elements of the
+Euclidean sum space is the tuple of localizations of the functional reconstructed from `w`. -/
+private theorem sumSpaceEmbed_sum_sumReconstruction [DecidableEq ι]
+    (w : ι × Fin (Module.finrank ℝ F) → (𝓗).SumSpace) :
+    (A.besselPotentialCouple s₀ s₁ p).sumSpaceEmbed (∑ k, A.sumReconstruction hp hp_top k (w k)) =
+      fun l ↦ A.localization l.1 l.2 (A.reconstruction fun k ↦ (𝓗).sumSpaceEmbed (w k)) := by
+  ext1 l
+  simp only [map_sum, sumSpaceEmbed_sumReconstruction, Finset.sum_apply, singleReconstruction_apply]
+  rw [← map_sum, ← map_sum, Finset.univ_sum_single]
+
 /-- An element of the sum space of `A` is the sum of the reconstructions of its localizations. -/
 private theorem sum_sumReconstruction_sumLocalization [DecidableEq ι]
     (u : (A.besselPotentialCouple s₀ s₁ p).SumSpace) :
     ∑ k, A.sumReconstruction hp hp_top k (A.sumLocalization k u) = u :=
   (A.besselPotentialCouple s₀ s₁ p).sumSpace_ext <| by
-    ext1 l
-    simp only [map_sum, sumSpaceEmbed_sumReconstruction, sumSpaceEmbed_sumLocalization,
-      Finset.sum_apply, singleReconstruction_apply]
-    rw [← map_sum, ← map_sum, Finset.univ_sum_single,
-      localization_reconstruction_sumSpaceEmbed_besselPotentialCouple]
+    simp only [sumSpaceEmbed_sum_sumReconstruction, sumSpaceEmbed_sumLocalization]
+    exact funext (A.localization_reconstruction_sumSpaceEmbed_besselPotentialCouple u)
 
 end Morphisms
 
@@ -455,11 +462,8 @@ private theorem kMethodToBesovSpace_surjective (hp : 1 < p) (hp_top : p ≠ (∞
       (BesovSpace.memBesov_toDistr (v.val k))
   set u := ∑ k, A.sumReconstruction hp hp_top k (w k) with hu_def
   have hu : (A.besselPotentialCouple s₀ s₁ p).sumSpaceEmbed u = fun k ↦ (v.val k).toDistr := by
-    ext1 l
-    simp only [hu_def, map_sum, sumSpaceEmbed_sumReconstruction, hw, Finset.sum_apply,
-      singleReconstruction_apply]
-    rw [← map_sum, ← map_sum, Finset.univ_sum_single]
-    exact (A.mem_besovSpace φ).1 v.property l
+    simp only [hu_def, sumSpaceEmbed_sum_sumReconstruction, hw]
+    exact funext ((A.mem_besovSpace φ).1 v.property)
   have hmem : u ∈ (A.besselPotentialCouple s₀ s₁ p).kMethod θ q :=
     (A.mem_kMethod_besselPotentialCouple_iff φ hp hp_top hs hθ Fact.out).2 <| by
       rw [hu, ← besovToDistribution_apply]
@@ -493,6 +497,21 @@ theorem toDistr_besselPotentialCoupleKMethodEquiv_apply (hp : 1 < p) (hp_top : p
         (CompatibleCouple.KMethodSpace.toSumₗ u) k := by
   rw [besselPotentialCoupleKMethodEquiv, ContinuousLinearEquiv.coeFn_ofBijective]
   exact A.toDistr_kMethodToBesovSpace_apply φ hs hθ u k
+
+/-- The element of `(H^{s₀,p}, H^{s₁,p})_{θ,q}` corresponding to `v ∈ B^{s_θ}_{p,q}` under
+`besselPotentialCoupleKMethodEquiv` has the components of `v` in the tuples of tempered
+distributions. -/
+@[simp]
+theorem sumSpaceEmbed_toSumₗ_besselPotentialCoupleKMethodEquiv_symm_apply (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
+    (v : A.besovSpace φ ((1 - θ) * s₀ + θ * s₁) p q) :
+    (A.besselPotentialCouple s₀ s₁ p).sumSpaceEmbed
+        (CompatibleCouple.KMethodSpace.toSumₗ
+          ((A.besselPotentialCoupleKMethodEquiv φ hp hp_top hs hθ).symm v)) =
+      fun k ↦ (v.val k).toDistr := by
+  ext1 k
+  rw [← A.toDistr_besselPotentialCoupleKMethodEquiv_apply φ hp hp_top hs hθ,
+    ContinuousLinearEquiv.apply_symm_apply]
 
 /-- The isomorphism `besselPotentialCoupleKMethodEquiv` does not change the represented
 functional. -/
