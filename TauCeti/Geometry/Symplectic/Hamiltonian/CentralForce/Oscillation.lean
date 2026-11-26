@@ -18,10 +18,10 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 A particle of mass `m > 0` with angular momentum `ℓ` in a central potential `U` moves radially
 according to the reduced Hamiltonian `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)`, with effective potential
 `U_ℓ(r) = ℓ² / (2 m r²) + U(r)` (`TauCeti.effectivePotential`), and Hamilton's equations
-`r' = p_r / m`, `p_r' = -U_ℓ'(r)`. Let `U` be differentiable on the half-line `r > 0`, and let
-`0 < r₁ < r₂` be *simple turning points* of energy `E`: `U_ℓ(r₁) = U_ℓ(r₂) = E`, `U_ℓ < E` on
-`(r₁, r₂)`, and `U_ℓ'(rᵢ) ≠ 0`. This file shows that every motion of energy `E` defined for all
-times and starting in the potential well `[r₁, r₂]` is periodic, with period the radial period
+`r' = p_r / m`, `p_r' = -U_ℓ'(r)`. Let `0 < r₁ < r₂` be *simple turning points* of energy `E`:
+`U_ℓ(r₁) = U_ℓ(r₂) = E`, `U_ℓ < E` on `(r₁, r₂)`, and `U_ℓ'(rᵢ) ≠ 0`, for a potential `U`
+differentiable near the potential well `[r₁, r₂]`. This file shows that every motion of energy `E`
+defined for all times and starting in the well is periodic, with period the radial period
 
 `T = 2 ∫_{r₁}^{r₂} m dr / |p_r| = 2 ∫_{r₁}^{r₂} dr / √((2 / m) (E - U_ℓ(r)))`
 
@@ -44,7 +44,7 @@ times and starting in the potential well `[r₁, r₂]` is periodic, with period
   falling stretch to `r₁` the remaining time is the same function of `r`. So the time since the last
   passage through `r₁` determines the state `(r, p_r)`, and the motion is `T`-periodic
   (`TauCeti.periodic_of_forall_hasDerivAt_effectivePotential`). The potential need only be
-  differentiable: no Lipschitz condition on `U'` is assumed.
+  differentiable near the well: no Lipschitz condition on `U'` is assumed.
 * **Precession.** If the polar angle satisfies `θ' = ℓ / (m r²)`, it advances by twice the apsidal
   angle `TauCeti.apsidalAngle` during every radial period, starting at any time
   (`TauCeti.sub_eq_two_mul_apsidalAngle_of_forall_hasDerivAt_effectivePotential`).
@@ -71,16 +71,18 @@ private theorem reducedHamiltonian_eq {r : ℝ} (hr : 0 ≤ r) (p : ℝ) :
       p ^ 2 / (2 * m) + effectivePotential m ℓ U r := by
   rw [centralForceHamiltonian_effectivePotential_apply hr, effectivePotential_apply, add_assoc]
 
-/-- For `U` differentiable on the half-line, the effective potential is differentiable there. -/
-private theorem hasDerivAt_deriv_effectivePotential (hU : DifferentiableOn ℝ U (Ioi 0)) {r : ℝ}
-    (hr : 0 < r) :
+/-- For `U` differentiable near `[r₁, r₂]` with `r₁ > 0`, the effective potential is
+differentiable on `[r₁, r₂]`. -/
+private theorem hasDerivAt_deriv_effectivePotential (hr₁ : 0 < r₁)
+    (hU : ∀ᶠ r in 𝓝ˢ (Icc r₁ r₂), DifferentiableAt ℝ U r) {r : ℝ} (hr : r ∈ Icc r₁ r₂) :
     HasDerivAt (effectivePotential m ℓ U) (deriv (effectivePotential m ℓ U) r) r :=
-  (hasDerivAt_effectivePotential (hU.differentiableAt (Ioi_mem_nhds hr)).hasDerivAt
-    hr.ne').differentiableAt.hasDerivAt
+  (hasDerivAt_effectivePotential (hU.self_of_nhdsSet r hr).hasDerivAt
+    (hr₁.trans_le hr.1).ne').differentiableAt.hasDerivAt
 
 section Well
 
-variable (hm : 0 < m) (hr₁ : 0 < r₁) (h₁₂ : r₁ < r₂) (hU : DifferentiableOn ℝ U (Ioi 0))
+variable (hm : 0 < m) (hr₁ : 0 < r₁) (h₁₂ : r₁ < r₂)
+  (hU : ∀ᶠ r in 𝓝ˢ (Icc r₁ r₂), DifferentiableAt ℝ U r)
   (hE₁ : effectivePotential m ℓ U r₁ = E) (hE₂ : effectivePotential m ℓ U r₂ = E)
   (hlt : ∀ r ∈ Ioo r₁ r₂, effectivePotential m ℓ U r < E)
   (hd₁ : deriv (effectivePotential m ℓ U) r₁ ≠ 0) (hd₂ : deriv (effectivePotential m ℓ U) r₂ ≠ 0)
@@ -90,8 +92,9 @@ include hr₁ h₁₂ hU hE₂ hlt hd₂ in
 private theorem deriv_effectivePotential_pos : 0 < deriv (effectivePotential m ℓ U) r₂ := by
   refine lt_of_le_of_ne (not_lt.1 fun hneg ↦ ?_) hd₂.symm
   -- Otherwise `U_ℓ` would exceed `U_ℓ(r₂) = E` just to the left of `r₂`.
-  have h := ((hasDerivAt_deriv_effectivePotential hU (hr₁.trans h₁₂)).neg.hasDerivWithinAt
-    (s := Iio r₂)).eventually_nhdsLT_lt_of_pos (neg_pos.2 hneg)
+  have h := ((hasDerivAt_deriv_effectivePotential hr₁ hU
+    (right_mem_Icc.2 h₁₂.le)).neg.hasDerivWithinAt (s := Iio r₂)).eventually_nhdsLT_lt_of_pos
+    (neg_pos.2 hneg)
   obtain ⟨r, hr, hr'⟩ := (h.and (Ioo_mem_nhdsLT h₁₂)).exists
   simp only [Pi.neg_apply, neg_lt_neg_iff] at hr
   linarith [hlt r hr']
@@ -101,30 +104,40 @@ include hr₁ h₁₂ hU hE₁ hlt hd₁ in
 private theorem deriv_effectivePotential_neg : deriv (effectivePotential m ℓ U) r₁ < 0 := by
   refine lt_of_le_of_ne (not_lt.1 fun hpos ↦ ?_) hd₁
   -- Otherwise `U_ℓ` would exceed `U_ℓ(r₁) = E` just to the right of `r₁`.
-  have h := ((hasDerivAt_deriv_effectivePotential hU hr₁).hasDerivWithinAt
+  have h := ((hasDerivAt_deriv_effectivePotential hr₁ hU (left_mem_Icc.2 h₁₂.le)).hasDerivWithinAt
     (s := Ioi r₁)).eventually_nhdsGT_lt_of_pos hpos
   obtain ⟨r, hr, hr'⟩ := (h.and (Ioo_mem_nhdsGT h₁₂)).exists
   linarith [hlt r hr']
 
 include hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ in
-/-- **The well is isolated.** There are radii `0 ≤ a < r₁` and `b > r₂` such that the effective
-potential exceeds `E` on `(a, r₁)` and on `(r₂, b)`. -/
+/-- **The well is isolated.** There are radii `0 ≤ a < r₁` and `b > r₂` such that `U` is
+differentiable on `(a, b)` and the effective potential exceeds `E` on `(a, r₁)` and on `(r₂, b)`. -/
 private theorem exists_lt_effectivePotential :
-    ∃ a b, 0 ≤ a ∧ a < r₁ ∧ r₂ < b ∧ (∀ r ∈ Ioo a r₁, E < effectivePotential m ℓ U r) ∧
+    ∃ a b, 0 ≤ a ∧ a < r₁ ∧ r₂ < b ∧ (∀ r ∈ Ioo a b, DifferentiableAt ℝ U r) ∧
+      (∀ r ∈ Ioo a r₁, E < effectivePotential m ℓ U r) ∧
       ∀ r ∈ Ioo r₂ b, E < effectivePotential m ℓ U r := by
-  have h₁ := ((hasDerivAt_deriv_effectivePotential hU hr₁).neg.hasDerivWithinAt
-    (s := Iio r₁)).eventually_nhdsLT_lt_of_pos
-    (neg_pos.2 (deriv_effectivePotential_neg hr₁ h₁₂ hU hE₁ hlt hd₁))
-  have h₂ := ((hasDerivAt_deriv_effectivePotential hU (hr₁.trans h₁₂)).hasDerivWithinAt
-    (s := Ioi r₂)).eventually_nhdsGT_lt_of_pos
-    (deriv_effectivePotential_pos hr₁ h₁₂ hU hE₂ hlt hd₂)
+  have h₁ := (((hasDerivAt_deriv_effectivePotential hr₁ hU
+    (left_mem_Icc.2 h₁₂.le)).neg.hasDerivWithinAt (s := Iio r₁)).eventually_nhdsLT_lt_of_pos
+    (neg_pos.2 (deriv_effectivePotential_neg hr₁ h₁₂ hU hE₁ hlt hd₁))).and
+    (hU.filter_mono (nhdsWithin_le_nhds.trans (nhds_le_nhdsSet (left_mem_Icc.2 h₁₂.le))))
+  have h₂ := (((hasDerivAt_deriv_effectivePotential hr₁ hU
+    (right_mem_Icc.2 h₁₂.le)).hasDerivWithinAt (s := Ioi r₂)).eventually_nhdsGT_lt_of_pos
+    (deriv_effectivePotential_pos hr₁ h₁₂ hU hE₂ hlt hd₂)).and
+    (hU.filter_mono (nhdsWithin_le_nhds.trans (nhds_le_nhdsSet (right_mem_Icc.2 h₁₂.le))))
   obtain ⟨a, ha, has⟩ := mem_nhdsLT_iff_exists_Ioo_subset.1 h₁
   obtain ⟨b, hb, hbs⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 h₂
-  refine ⟨max a 0, b, le_max_right _ _, max_lt ha hr₁, hb, fun r hr ↦ ?_, fun r hr ↦ ?_⟩
+  refine ⟨max a 0, b, le_max_right _ _, max_lt ha hr₁, hb, fun r hr ↦ ?_, fun r hr ↦ ?_,
+    fun r hr ↦ ?_⟩
+  · -- `U` is differentiable on `(a, r₁)`, on `[r₁, r₂]` and on `(r₂, b)`.
+    rcases lt_or_ge r r₁ with h | h
+    · exact (has ⟨(le_max_left _ _).trans_lt hr.1, h⟩).2
+    rcases le_or_gt r r₂ with h' | h'
+    · exact hU.self_of_nhdsSet r ⟨h, h'⟩
+    · exact (hbs ⟨h', hr.2⟩).2
   · have h : -effectivePotential m ℓ U r < -effectivePotential m ℓ U r₁ :=
-      has ⟨(le_max_left _ _).trans_lt hr.1, hr.2⟩
+      (has ⟨(le_max_left _ _).trans_lt hr.1, hr.2⟩).1
     linarith
-  · have h : effectivePotential m ℓ U r₂ < effectivePotential m ℓ U r := hbs hr
+  · have h : effectivePotential m ℓ U r₂ < effectivePotential m ℓ U r := (hbs hr).1
     linarith
 
 include hm hr₁ h₁₂ hU hlt hd₁ hd₂ in
@@ -132,16 +145,21 @@ include hm hr₁ h₁₂ hU hlt hd₁ hd₂ in
 private theorem intervalIntegrable_div_absRadialMomentum_well :
     IntervalIntegrable (fun r ↦ m / absRadialMomentum m U ℓ E r) volume r₁ r₂ :=
   intervalIntegrable_div_absRadialMomentum hm hr₁ h₁₂
-    (hU.continuousOn.mono fun _ hr ↦ hr₁.trans_le hr.1) hlt
-    (fun _ ↦ ⟨_, hd₁, (hasDerivAt_deriv_effectivePotential hU hr₁).hasDerivWithinAt⟩)
-    (fun _ ↦ ⟨_, hd₂, (hasDerivAt_deriv_effectivePotential hU (hr₁.trans h₁₂)).hasDerivWithinAt⟩)
+    (fun r hr ↦ (hU.self_of_nhdsSet r hr).continuousAt.continuousWithinAt) hlt
+    (fun _ ↦ ⟨_, hd₁, (hasDerivAt_deriv_effectivePotential hr₁ hU
+      (left_mem_Icc.2 h₁₂.le)).hasDerivWithinAt⟩)
+    (fun _ ↦ ⟨_, hd₂, (hasDerivAt_deriv_effectivePotential hr₁ hU
+      (right_mem_Icc.2 h₁₂.le)).hasDerivWithinAt⟩)
 
 include hm hr₁ h₁₂ hU hlt hd₁ hd₂ in
 /-- The radial period of the well is positive. -/
 private theorem radialPeriod_pos_well : 0 < radialPeriod m U ℓ E r₁ r₂ :=
-  radialPeriod_pos hm hr₁ h₁₂ (hU.continuousOn.mono fun _ hr ↦ hr₁.trans_le hr.1) hlt
-    (fun _ ↦ ⟨_, hd₁, (hasDerivAt_deriv_effectivePotential hU hr₁).hasDerivWithinAt⟩)
-    (fun _ ↦ ⟨_, hd₂, (hasDerivAt_deriv_effectivePotential hU (hr₁.trans h₁₂)).hasDerivWithinAt⟩)
+  radialPeriod_pos hm hr₁ h₁₂
+    (fun r hr ↦ (hU.self_of_nhdsSet r hr).continuousAt.continuousWithinAt) hlt
+    (fun _ ↦ ⟨_, hd₁, (hasDerivAt_deriv_effectivePotential hr₁ hU
+      (left_mem_Icc.2 h₁₂.le)).hasDerivWithinAt⟩)
+    (fun _ ↦ ⟨_, hd₂, (hasDerivAt_deriv_effectivePotential hr₁ hU
+      (right_mem_Icc.2 h₁₂.le)).hasDerivWithinAt⟩)
 
 include hm hr₁ h₁₂ hU hlt hd₁ hd₂ in
 /-- **The time to reach a radius.** The quadrature `ρ ↦ ∫_{r₁}^{ρ} m dr / |p_r|` is strictly
@@ -157,14 +175,14 @@ private theorem strictMonoOn_integral_div_absRadialMomentum :
 variable {γ : ℝ → ℝ × ℝ} {t₀ : ℝ}
 
 /-- The hypotheses shared by the lemmas on motions in the well: `0 < r₁ < r₂` are simple turning
-points of energy `E` for a potential `U` differentiable on the half-line, with `U_ℓ < E` in
+points of energy `E` for a potential `U` differentiable near `[r₁, r₂]`, with `U_ℓ < E` in
 between, and `γ` is an integral curve of the reduced Hamiltonian vector field defined at all times,
 with energy `E` and radius in `[r₁, r₂]` at the time `t₀`. -/
 private structure WellMotion (m ℓ E r₁ r₂ : ℝ) (U : ℝ → ℝ) (γ : ℝ → ℝ × ℝ) (t₀ : ℝ) : Prop where
   hm : 0 < m
   hr₁ : 0 < r₁
   h₁₂ : r₁ < r₂
-  hU : DifferentiableOn ℝ U (Ioi 0)
+  hU : ∀ᶠ r in 𝓝ˢ (Icc r₁ r₂), DifferentiableAt ℝ U r
   hE₁ : effectivePotential m ℓ U r₁ = E
   hE₂ : effectivePotential m ℓ U r₂ = E
   hlt : ∀ r ∈ Ioo r₁ r₂, effectivePotential m ℓ U r < E
@@ -181,7 +199,7 @@ private theorem WellMotion.eventually_mem_Icc_and_eq (hM : WellMotion m ℓ E r�
     (hEt : centralForceHamiltonian m (effectivePotential m ℓ U) (γ t) = E) :
     ∀ᶠ s in 𝓝 t, (γ s).1 ∈ Icc r₁ r₂ ∧
       centralForceHamiltonian m (effectivePotential m ℓ U) (γ s) = E := by
-  obtain ⟨a, b, ha0, har, hrb, hla, hlb⟩ :=
+  obtain ⟨a, b, ha0, har, hrb, hdiff, hla, hlb⟩ :=
     exists_lt_effectivePotential hM.hr₁ hM.h₁₂ hM.hU hM.hE₁ hM.hE₂ hM.hlt hM.hd₁ hM.hd₂
   -- For times near `t` the radius stays in `(a, b)`, where `U` is differentiable.
   have hnear : ∀ᶠ s in 𝓝 t, (γ s).1 ∈ Ioo a b :=
@@ -195,7 +213,7 @@ private theorem WellMotion.eventually_mem_Icc_and_eq (hM : WellMotion m ℓ E r�
   have hpos (w : ℝ) (hw : w ∈ Icc (min t s) (max t s)) : 0 < (γ w).1 :=
     ha0.trans_lt (hsub (hIcc hw)).1
   have hcons := centralForceHamiltonian_effectivePotential_eq_of_hasDerivAt
-    (fun w _ ↦ hM.hγ w) hpos fun w hw ↦ hM.hU.differentiableAt (Ioi_mem_nhds (hpos w hw))
+    (fun w _ ↦ hM.hγ w) hpos fun w hw ↦ hdiff _ (hsub (hIcc hw))
   have hEs : centralForceHamiltonian m (effectivePotential m ℓ U) (γ s) = E := by
     rw [hcons s ⟨min_le_right _ _, le_max_right _ _⟩, ← hcons t ⟨min_le_left _ _, le_max_left _ _⟩,
       hEt]
@@ -228,7 +246,7 @@ private theorem WellMotion.mem_Icc_and_eq (hM : WellMotion m ℓ E r₁ r₂ U �
       have hHc : ContinuousAt (centralForceHamiltonian m (effectivePotential m ℓ U)) (γ s) := by
         rw [← Prod.mk.eta (p := γ s)]
         exact (differentiableAt_centralForceHamiltonian_effectivePotential hpos
-          (hM.hU.differentiableAt (Ioi_mem_nhds hpos)) _).continuousAt
+          (hM.hU.self_of_nhdsSet _ hs₁) _).continuousAt
       filter_upwards [(hHc.comp (hM.hγ s).continuousAt).eventually_ne hs₂] with w hw hwS
       exact hw hwS.2
     · filter_upwards [(hM.hγ s).continuousAt.fst.eventually
@@ -245,18 +263,23 @@ private theorem WellMotion.fst_mem_Icc (hM : WellMotion m ℓ E r₁ r₂ U γ t
 private theorem WellMotion.fst_pos (hM : WellMotion m ℓ E r₁ r₂ U γ t₀) (t : ℝ) : 0 < (γ t).1 :=
   hM.hr₁.trans_le (hM.fst_mem_Icc t).1
 
+/-- Along the motion, the potential is differentiable at the radius. -/
+private theorem WellMotion.differentiableAt (hM : WellMotion m ℓ E r₁ r₂ U γ t₀) (t : ℝ) :
+    DifferentiableAt ℝ U (γ t).1 :=
+  hM.hU.self_of_nhdsSet _ (hM.fst_mem_Icc t)
+
 /-- Along the motion, the radius moves with velocity `m⁻¹ p_r`. -/
 private theorem WellMotion.hasDerivAt_radius (hM : WellMotion m ℓ E r₁ r₂ U γ t₀) (t : ℝ) :
     HasDerivAt (fun s ↦ (γ s).1) (m⁻¹ * (γ t).2) t := by
   have hpos := hM.fst_pos t
   exact (hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField_effectivePotential (hM.hγ t) hpos
-    (hM.hU.differentiableAt (Ioi_mem_nhds hpos))).congr_deriv (div_eq_inv_mul _ _)
+    (hM.differentiableAt t)).congr_deriv (div_eq_inv_mul _ _)
 
 /-- Along the motion, the radial momentum moves with velocity `-U_ℓ'(r)`. -/
 private theorem WellMotion.hasDerivAt_momentum (hM : WellMotion m ℓ E r₁ r₂ U γ t₀) (t : ℝ) :
     HasDerivAt (fun s ↦ (γ s).2) (-deriv (effectivePotential m ℓ U) (γ t).1) t := by
   have hpos := hM.fst_pos t
-  have hUd := hM.hU.differentiableAt (Ioi_mem_nhds hpos)
+  have hUd := hM.differentiableAt t
   refine (hasDerivAt_snd_of_hasDerivAt_hamiltonianVectorField_effectivePotential (hM.hγ t) hpos
     hUd).congr_deriv ?_
   rw [(hasDerivAt_effectivePotential (m := m) (ℓ := ℓ) hUd.hasDerivAt hpos.ne').deriv]
@@ -307,7 +330,7 @@ private theorem WellMotion.sub_eq_integral_of_pos (hM : WellMotion m ℓ E r₁ 
   have hmem := hM.mem_Icc_and_eq
   have hmono := strictMonoOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hM.hm) hM.hasDerivAt_radius hp
   exact sub_eq_integral_div_absRadialMomentum hM.hm hst (fun u _ ↦ hM.hγ u)
-    (fun u _ ↦ hM.fst_pos u) (fun u _ ↦ hM.hU.differentiableAt (Ioi_mem_nhds (hM.fst_pos u)))
+    (fun u _ ↦ hM.fst_pos u) (fun u _ ↦ hM.differentiableAt u)
     (hmem s).2 (fun r hr ↦ hM.hlt r ⟨(hmem s).1.1.trans_lt hr.1, hr.2.trans_le (hmem t).1.2⟩)
     (Or.inl ⟨rfl, rfl⟩) fun u hu ↦ ⟨hmono ⟨le_rfl, hst⟩ (Ioo_subset_Icc_self hu) hu.1,
       hmono (Ioo_subset_Icc_self hu) ⟨hst, le_rfl⟩ hu.2⟩
@@ -320,7 +343,7 @@ private theorem WellMotion.sub_eq_integral_of_neg (hM : WellMotion m ℓ E r₁ 
   have hmem := hM.mem_Icc_and_eq
   have hanti := strictAntiOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hM.hm) hM.hasDerivAt_radius hp
   exact sub_eq_integral_div_absRadialMomentum hM.hm hst (fun u _ ↦ hM.hγ u)
-    (fun u _ ↦ hM.fst_pos u) (fun u _ ↦ hM.hU.differentiableAt (Ioi_mem_nhds (hM.fst_pos u)))
+    (fun u _ ↦ hM.fst_pos u) (fun u _ ↦ hM.differentiableAt u)
     (hmem s).2 (fun r hr ↦ hM.hlt r ⟨(hmem t).1.1.trans_lt hr.1, hr.2.trans_le (hmem s).1.2⟩)
     (Or.inr ⟨rfl, rfl⟩) fun u hu ↦ ⟨hanti (Ioo_subset_Icc_self hu) ⟨hst, le_rfl⟩ hu.2,
       hanti ⟨le_rfl, hst⟩ (Ioo_subset_Icc_self hu) hu.1⟩
@@ -397,7 +420,7 @@ private theorem WellMotion.exists_oscillation (hM : WellMotion m ℓ E r₁ r₂
   obtain ⟨t₃, h₂₃, h₃, hneg⟩ := hM.exists_inner h₂
   have hmem (u : ℝ) := hM.fst_mem_Ioo hpos hneg (u := u)
   have hT := sub_eq_radialPeriod hM.hm h₁₂'.le h₂₃.le (fun u _ ↦ hM.hγ u)
-    (fun u _ ↦ hM.fst_pos u) (fun u _ ↦ hM.hU.differentiableAt (Ioi_mem_nhds (hM.fst_pos u)))
+    (fun u _ ↦ hM.fst_pos u) (fun u _ ↦ hM.differentiableAt u)
     (hM.mem_Icc_and_eq t₁).2 hM.hlt (Or.inl ⟨h₁, h₂⟩)
     (h₃.trans h₁.symm) (fun u hu ↦ hmem u (Or.inl hu)) fun u hu ↦ hmem u (Or.inr hu)
   obtain rfl : t₃ = t₁ + radialPeriod m U ℓ E r₁ r₂ := by linarith
@@ -524,7 +547,7 @@ private theorem WellMotion.sub_eq_two_mul_apsidalAngle (hM : WellMotion m ℓ E 
   have hmem (u : ℝ) := hM.fst_mem_Ioo hpos hneg (u := u)
   rw [hconst t s]
   exact _root_.TauCeti.sub_eq_two_mul_apsidalAngle hM.hm hs₂.le h₂T.le (fun u _ ↦ hM.hγ u)
-    (fun u _ ↦ hM.fst_pos u) (fun u _ ↦ hM.hU.differentiableAt (Ioi_mem_nhds (hM.fst_pos u)))
+    (fun u _ ↦ hM.fst_pos u) (fun u _ ↦ hM.differentiableAt u)
     (hM.mem_Icc_and_eq s).2 hM.hlt (Or.inl ⟨hs, h₂⟩) (hT.trans hs.symm)
     (fun u hu ↦ hmem u (Or.inl hu)) (fun u hu ↦ hmem u (Or.inr hu)) fun u _ ↦ hθ u
 
@@ -536,7 +559,7 @@ variable (hγ : ∀ t, HasDerivAt γ ((stdSymplecticForm (V := ℝ)).hamiltonian
 include hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₂ hγ h₀ hE
 
 /-- **Confinement to the potential well.** Let `0 < r₁ < r₂` be simple turning points of energy
-`E` for a potential `U` differentiable on the half-line, with `U_ℓ < E` in between. A radial motion
+`E` for a potential `U` differentiable near `[r₁, r₂]`, with `U_ℓ < E` in between. A radial motion
 of energy `E` defined at all times and with radius in `[r₁, r₂]` at one time has radius in
 `[r₁, r₂]` at all times. -/
 theorem mem_Icc_of_forall_hasDerivAt_effectivePotential (t : ℝ) : (γ t).1 ∈ Icc r₁ r₂ :=
@@ -561,7 +584,7 @@ theorem exists_mem_Ioo_fst_eq_of_forall_hasDerivAt_effectivePotential {t₁ : �
   WellMotion.exists_oscillation ⟨hm, hr₁, h₁₂, hU, hE₁, hE₂, hlt, hd₁, hd₂, hγ, h₀, hE⟩ h₁
 
 /-- **The radial motion in a potential well is periodic.** Let `0 < r₁ < r₂` be simple turning
-points of energy `E` for a potential `U` differentiable on the half-line: `U_ℓ(r₁) = U_ℓ(r₂) = E`,
+points of energy `E` for a potential `U` differentiable near `[r₁, r₂]`: `U_ℓ(r₁) = U_ℓ(r₂) = E`,
 `U_ℓ'(rᵢ) ≠ 0` and `U_ℓ < E` in between. Then every integral curve of the reduced Hamiltonian vector
 field defined at all times, with energy `E` and radius in `[r₁, r₂]` at one time, is periodic, with
 period the radial period `T = 2 ∫_{r₁}^{r₂} m dr / |p_r|`. -/
