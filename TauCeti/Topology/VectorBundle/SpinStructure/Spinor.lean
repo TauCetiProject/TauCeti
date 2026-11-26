@@ -90,7 +90,7 @@ half-spinors being the square of the twisting circle.
 * `Orientation.HalfSpinModel.smul_cliffordMul`: model Clifford multiplication is equivariant.
 * `TauCeti.SpinCStructure.DeterminantModel.conj_chargeConj_smul`:
   `conj (det (χ g) w) = det g (conj w)`.
-* `Orientation.HalfSpinModel.conjEquiv_smul`, `Orientation.HalfSpinModel.conjEquiv_cliffordMul`:
+* `Orientation.HalfSpinModel.conjEquiv_smul`, `Orientation.HalfSpinModel.cliffordMul_conjEquiv`:
   `j (g • ψ) = χ(g) • j ψ` and `c(v) (j ψ) = j (c(v) ψ)` on the model half-spinors.
 * `TauCeti.SpinCStructure.finrank_determinantLine`: `L` is a line bundle.
 * `TauCeti.SpinCStructure.mk_ofCircle_smul_determinantLine`,
@@ -299,29 +299,16 @@ variable (hρ)
 /-- **Charge conjugation of the model half-spinors**: a conjugate-linear isometric equivalence
 `j : W ≃ W'` of Hermitian Clifford modules commuting with Clifford multiplication,
 `j (c(v) w) = c(v) (j w)`, restricts to a conjugate-linear isometric equivalence `S^ε ≃ S'^ε'` of
-the model half-spinors, for `ε' = conj ε`; for the half-spinors `ε = ε' = ±1`. For the quaternionic
-structure of the spinors this is `ψ ↦ j ψ`. It intertwines the action of `g ∈ Spinᶜ(4)` with that
-of its charge conjugate (`Orientation.HalfSpinModel.conjEquiv_smul`), and Clifford multiplication
-on both sides (`Orientation.HalfSpinModel.conjEquiv_cliffordMul`). -/
+the model half-spinors, for `ε' = conj ε`; for the half-spinors `ε = ε' = ±1`. It is the
+restriction `CliffordAlgebra.eigenspaceChiralityConjEquiv` of `j` to the eigenspaces of the
+chirality element. For the quaternionic structure of the spinors this is `ψ ↦ j ψ`. It intertwines
+the action of `g ∈ Spinᶜ(4)` with that of its charge conjugate
+(`Orientation.HalfSpinModel.conjEquiv_smul`), and Clifford multiplication on both sides
+(`Orientation.HalfSpinModel.cliffordMul_conjEquiv`). -/
 def conjEquiv (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
     (hε : starRingEnd ℂ ε = ε') :
-    HalfSpinModel o hQ b ρ hρ ε ≃ₗᵢ⋆[ℂ] HalfSpinModel o hQ b ρ' hρ' ε' where
-  toFun ψ := toEigenspace.symm
-    ⟨j (toEigenspace ψ), hε ▸ map_mem_eigenspace_chirality (fun r ↦ Complex.conj_ofReal r)
-      (U := j.toLinearEquiv.toLinearMap) hj (toEigenspace ψ).property⟩
-  invFun ψ := toEigenspace.symm
-    ⟨j.symm (toEigenspace ψ), (by rw [← hε, Complex.conj_conj] : starRingEnd ℂ ε' = ε) ▸
-      map_mem_eigenspace_chirality (fun r ↦ Complex.conj_ofReal r)
-        (U := j.symm.toLinearEquiv.toLinearMap) (fun v w ↦ by simp [j.symm_apply_eq, hj])
-        (toEigenspace ψ).property⟩
-  map_add' ψ φ := toEigenspace.injective (Subtype.ext (by simp))
-  map_smul' c ψ := toEigenspace.injective (Subtype.ext (by simp [map_smulₛₗ]))
-  left_inv ψ := toEigenspace.injective (Subtype.ext (by simp))
-  right_inv ψ := toEigenspace.injective (Subtype.ext (by simp))
-  norm_map' ψ := by
-    rw [← toEigenspace.norm_map, ← toEigenspace.norm_map ψ, ← Submodule.norm_coe,
-      ← Submodule.norm_coe]
-    exact j.norm_map _
+    HalfSpinModel o hQ b ρ hρ ε ≃ₗᵢ⋆[ℂ] HalfSpinModel o hQ b ρ' hρ' ε' :=
+  (toEigenspace.trans (eigenspaceChiralityConjEquiv o ρ ρ' j hj hε)).trans toEigenspace.symm
 
 /-- `conjEquiv hρ hρ' j hj hε` is `j` on the underlying vectors of the Clifford modules. -/
 @[simp]
@@ -329,7 +316,7 @@ theorem coe_toEigenspace_conjEquiv (j : W ≃ₗᵢ⋆[ℂ] W')
     (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w)) (hε : starRingEnd ℂ ε = ε')
     (ψ : HalfSpinModel o hQ b ρ hρ ε) :
     (toEigenspace (conjEquiv hρ hρ' j hj hε ψ) : W') = j (toEigenspace ψ) :=
-  (rfl)
+  coe_eigenspaceChiralityConjEquiv_apply o ρ ρ' j hj hε (toEigenspace ψ)
 
 /-- The inverse of `conjEquiv hρ hρ' j hj hε` is `j⁻¹` on the underlying vectors of the Clifford
 modules. -/
@@ -338,12 +325,11 @@ theorem coe_toEigenspace_conjEquiv_symm (j : W ≃ₗᵢ⋆[ℂ] W')
     (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w)) (hε : starRingEnd ℂ ε = ε')
     (ψ : HalfSpinModel o hQ b ρ' hρ' ε') :
     (toEigenspace ((conjEquiv hρ hρ' j hj hε).symm ψ) : W) = j.symm (toEigenspace ψ) :=
-  (rfl)
+  coe_eigenspaceChiralityConjEquiv_symm_apply o ρ ρ' j hj hε (toEigenspace ψ)
 
 /-- **Charge conjugation of the model half-spinors intertwines charge conjugation of `Spinᶜ(4)`**:
-`j (g • ψ) = χ(g) • j ψ`, where `χ [s, z] = [s, z⁻¹]` (`CliffordAlgebra.spinCGroup.chargeConj`).
-At `g = [s, z]` both sides are `z⁻¹ ρ'(s) (j ψ)`, since `j` commutes with the Spin action and
-conjugates the circle factor. -/
+`j (g • ψ) = χ(g) • j ψ`, where `χ [s, z] = [s, z⁻¹]` (`CliffordAlgebra.spinCGroup.chargeConj`);
+in particular `j (z ρ(s) ψ) = z⁻¹ ρ'(s) (j ψ)`. -/
 theorem conjEquiv_smul (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
     (hε : starRingEnd ℂ ε = ε') (g : SpinC) (ψ : HalfSpinModel o hQ b ρ hρ ε) :
     conjEquiv hρ hρ' j hj hε (g • ψ) =
@@ -360,7 +346,7 @@ theorem conjEquiv_smul (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v
 
 /-- **Charge conjugation of the model half-spinors commutes with Clifford multiplication**:
 `c(v) (j ψ) = j (c(v) ψ)` for `c(v) : S^ε → S^{-ε}` and `c(v) : S'^ε' → S'^{-ε'}`. -/
-theorem conjEquiv_cliffordMul (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+theorem cliffordMul_conjEquiv (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
     (hε : starRingEnd ℂ ε = ε') {δ δ' : ℂ} (hδ : δ = -ε) (hδ' : δ' = -ε') (v : V)
     (ψ : HalfSpinModel o hQ b ρ hρ ε) :
     cliffordMul hδ' v (conjEquiv hρ hρ' j hj hε ψ) =

@@ -471,7 +471,7 @@ theorem cliffordMul_halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E 4) {
   obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
   rw [halfSpinorBundleChargeConjEquiv_mk, cliffordMul_mk, halfSpinorBundleChargeConjEquiv_mk]
   refine (s.chargeConj.cliffordMul_mk hδ' (Extend.inl χ₄ hχ₄ p) v _).trans ?_
-  rw [vectorFrame_chargeConj_inl, Orientation.HalfSpinModel.conjEquiv_cliffordMul]
+  rw [vectorFrame_chargeConj_inl, Orientation.HalfSpinModel.cliffordMul_conjEquiv]
 
 end SpinCStructure
 

@@ -35,6 +35,8 @@ of `s` to that of `s.chargeConj`.
 
 * `Orientation.HalfSpinModel.toPositiveHalfSpinors_conjEquiv`: on the model positive half-spinors,
   charge conjugation is the restriction of `j` to the positive half-spinors.
+* `Orientation.HalfSpinModel.toPositiveHalfSpinors_symm_positiveHalfSpinorsConjEquiv`: the same
+  identity read through the inverse of `toPositiveHalfSpinors`.
 * `TauCeti.SpinCStructure.cliffordRestriction_halfSpinorBundleChargeConjEquiv`:
   `C_x(α) (j ψ) = -j (C_x(α) ψ)`.
 * `TauCeti.SpinCStructure.quadraticTwoForm_halfSpinorBundleChargeConjEquiv`: `q_x(j ψ) = -q_x(ψ)`.
@@ -80,9 +82,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 /-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
 local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 
-/-- The dimension of `V`, in the form taken by the Hodge star of two-forms. -/
-local notation "hkl" => (Eq.symm (Fact.out : finrank ℝ V = 4) : 2 + 2 = finrank ℝ V)
-
 namespace Orientation.HalfSpinModel
 
 /-- On the model positive half-spinors, charge conjugation
@@ -93,6 +92,14 @@ theorem toPositiveHalfSpinors_conjEquiv (ψ : o.HalfSpinModel hQ b ρ hρ 1) :
     toPositiveHalfSpinors o hQ b ρ' hρ' (conjEquiv hρ hρ' j hj (map_one _) ψ) =
       positiveHalfSpinorsConjEquiv o ρ ρ' j hj (toPositiveHalfSpinors o hQ b ρ hρ ψ) :=
   Subtype.ext (by simp)
+
+/-- On the model positive half-spinors, the inverse of `toPositiveHalfSpinors` carries the
+restriction of `j` to the positive half-spinors to charge conjugation
+`Orientation.HalfSpinModel.conjEquiv`. -/
+theorem toPositiveHalfSpinors_symm_positiveHalfSpinorsConjEquiv (φ : positiveHalfSpinors o ρ) :
+    (toPositiveHalfSpinors o hQ b ρ' hρ').symm (positiveHalfSpinorsConjEquiv o ρ ρ' j hj φ) =
+      conjEquiv hρ hρ' j hj (map_one _) ((toPositiveHalfSpinors o hQ b ρ hρ).symm φ) :=
+  (toPositiveHalfSpinors o hQ b ρ' hρ').injective (by simp)
 
 end Orientation.HalfSpinModel
 
@@ -115,17 +122,9 @@ theorem cliffordRestriction_halfSpinorBundleChargeConjEquiv (s : SpinCStructure 
     halfSpinorBundleChargeConjEquiv_mk]
   refine (s.chargeConj.cliffordRestriction_mk (Extend.inl χ hχ p) α _).trans ?_
   rw [vectorFrame_chargeConj_inl, Orientation.HalfSpinModel.toPositiveHalfSpinors_conjEquiv,
-    SeibergWitten.cliffordRestriction_positiveHalfSpinorsConjEquiv]
-  generalize SeibergWitten.cliffordRestriction o ρ _ _ = φ
-  have h : (toPositiveHalfSpinors o hQ b ρ' hρ').symm
-        (-positiveHalfSpinorsConjEquiv o ρ ρ' j hj φ) =
-      -conjEquiv hρ hρ' j hj (map_one _)
-        ((toPositiveHalfSpinors o hQ b ρ hρ).symm φ) :=
-    (toPositiveHalfSpinors o hQ b ρ' hρ').injective (by simp)
-  rw [h]
-  simpa only [neg_one_smul] using
-    AssociatedBundle.mk_smul_scalar (P := s.chargeConj.P) (G := SpinC) (Extend.inl χ hχ p)
-      (-1 : ℂ) (conjEquiv hρ hρ' j hj (map_one _) ((toPositiveHalfSpinors o hQ b ρ hρ).symm φ))
+    SeibergWitten.cliffordRestriction_positiveHalfSpinorsConjEquiv, map_neg,
+    toPositiveHalfSpinors_symm_positiveHalfSpinorsConjEquiv (hρ := hρ)]
+  exact AssociatedBundle.mk_neg (P := s.chargeConj.P) _ _
 
 /-- **Charge conjugation of spinors reverses the quadratic two-form**: `q_x(j ψ) = -q_x(ψ)` on the
 positive half-spinors. Since charge conjugation of connections negates the curvature, this turns
