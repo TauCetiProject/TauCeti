@@ -44,9 +44,9 @@ hypotheses of the general theorems are needed.
   (`TauCeti.not_exists_ckHolderSpaceOn_eq_inv`).
 * **The exponent of a derivative.** On the line, for `0 < β ≤ 1` and a compactly supported `C⁴`
   cutoff `χ`, the function `χ(x) |x|^{3+β}` lies in `C_b^{3,β}`
-  (`TauCeti.exists_ckHolderSpace_coe_eq_mul_abs_rpow`): its third derivative is a multiple of
-  `sign(x) |x|^β` near `0`. For `α > β` no element of `C_b^{3,α}` agrees with `|x|^{3+β}` near `0`
-  (`TauCeti.not_exists_ckHolderSpace_coe_eq_of_eventuallyEq_abs_rpow`).
+  (`TauCeti.exists_ckHolderSpace_coe_eq_mul_abs_rpow`): the third derivative of `|x|^{3+β}`
+  is a multiple of `sign(x) |x|^β`. For `α > β` no element of `C_b^{3,α}` agrees with
+  `|x|^{3+β}` near `0` (`TauCeti.not_exists_ckHolderSpace_coe_eq_of_eventuallyEq_abs_rpow`).
 * **The dimension in Campanato's exponent.** For `n = 1` and `p = 2`, Campanato's
   characterization `𝓛^{p,n + p α} = C^{0,α}` predicts that `|x|^α` lies in `𝓛^{2,1+2α}((-1, 1))`
   (`TauCeti.campanatoSeminormPow_abs_rpow_Ioo_ne_top`) and not in `𝓛^{2,2+2α}((-1, 1))`
@@ -322,8 +322,7 @@ theorem not_exists_ckHolderSpace_coe_eq_of_eventuallyEq_abs_rpow {β α : ℝ≥
   obtain ⟨C, hC⟩ := G.memHolder_iteratedFDeriv
   have hβ' : (0 : ℝ) < β := NNReal.coe_pos.2 hβ
   have hαβ : (0 : ℝ) < α - β := sub_pos.2 (NNReal.coe_lt_coe.2 hβα)
-  have hc : (0 : ℝ) < (3 + β) * (3 + β - 1) * (3 + β - 2) :=
-    mul_pos (mul_pos (by linarith) (by linarith)) (by linarith)
+  have hc : (0 : ℝ) < (3 + β) * (2 + β) * (1 + β) := by positivity
   have hD := hg.iteratedFDeriv ℝ 3
   obtain ⟨t, ⟨hCt, ht⟩, htD⟩ := (((eventually_mul_rpow_lt_nhdsGT_zero hαβ C hc).and
     eventually_mem_nhdsWithin).and (hD.filter_mono nhdsWithin_le_nhds)).exists
@@ -331,11 +330,10 @@ theorem not_exists_ckHolderSpace_coe_eq_of_eventuallyEq_abs_rpow {β α : ℝ≥
   -- The Hölder bound of the third derivative between `t` and `0` reads
   -- `(3 + β)(2 + β)(1 + β) t ^ β ≤ C t ^ α`.
   have h1 := hC.dist_le t 0
-  rw [htD, hD.self_of_nhds, iteratedFDeriv_eq_equiv_comp, Function.comp_apply,
-    Function.comp_apply, LinearIsometryEquiv.dist_map,
-    iteratedDeriv_three_abs_rpow (by linarith)] at h1
+  rw [htD, hD.self_of_nhds, iteratedFDeriv_three_abs_rpow_three_add hβ',
+    LinearIsometryEquiv.dist_map] at h1
   simp only [Real.dist_eq, sub_zero, mul_zero, abs_of_pos ht,
-    show (3 : ℝ) + β - 4 = β - 1 by ring, ← Real.rpow_eq_rpow_sub_one_mul ht.le hβ'.ne',
+    ← Real.rpow_eq_rpow_sub_one_mul ht.le hβ'.ne',
     abs_of_pos (mul_pos hc (Real.rpow_pos_of_pos ht (β : ℝ)))] at h1
   have hsplit : t ^ (α : ℝ) = t ^ ((α : ℝ) - β) * t ^ (β : ℝ) := by
     rw [← Real.rpow_add ht, sub_add_cancel]
