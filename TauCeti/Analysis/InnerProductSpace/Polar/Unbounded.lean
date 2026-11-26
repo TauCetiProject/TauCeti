@@ -46,7 +46,8 @@ For a closed densely defined operator `T`:
 
 ## Main definitions and results
 
-* `LinearPMap.polarFactor`: the polar partial isometry `E →L[𝕜] F` of a partial linear map.
+* `LinearPMap.polarFactor`: the bounded factor `E →L[𝕜] F` of a partial linear map; a partial
+  isometry when `T` is closed and densely defined.
 * `LinearPMap.IsClosed.polarFactor_compPMap_modulus`: right polar decomposition `v |T| = T`.
 * `LinearPMap.IsClosed.isPartialIsometry_polarFactor`, `LinearPMap.IsClosed.ker_polarFactor`,
   `LinearPMap.IsClosed.range_polarFactor`,
