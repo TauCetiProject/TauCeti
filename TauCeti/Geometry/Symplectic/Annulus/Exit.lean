@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.DerivativeTest
+import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
 # The exit set of the block of the cyclic action
@@ -348,12 +349,6 @@ private theorem hasDerivAt_edge {t : ℝ} (ht : HasDerivAt γ (fun i ↦
   simp only [add_sub_cancel_right] at h2
   exact (hasDerivAt_pi.1 ht k).prodMk h2
 
-/-- A linear map on `ℝ × ℝ` is determined by its values on the coordinate vectors. -/
-private theorem apply_mk_eq_smul_add_smul (L : ℝ × ℝ →L[ℝ] ℝ × ℝ →L[ℝ] ℝ) (u w : ℝ) :
-    L (u, w) = u • L (1, 0) + w • L (0, 1) := by
-  rw [show ((u, w) : ℝ × ℝ) = u • (1, 0) + w • (0, 1) by ext <;> simp]
-  simp only [map_add, map_smul]
-
 omit [NeZero N] in
 /-- Along a trajectory, the second partial derivative `∂_w S_k` at the edge `(γ_k, γ_(k+1))`
 moves with velocity `d²S_k(edge velocity, w)`. -/
@@ -386,7 +381,7 @@ private theorem hasDerivAt_stripGeneratingSource_snd {t : ℝ} {k : ZMod N}
   refine (hasDerivAt_fderiv_apply ht hd (1, 0)).neg.congr_deriv ?_
   simp only [momentumVelocity, edgeVelocity, stripGeneratingSource_snd,
     stripGeneratingTarget_snd]
-  rw [apply_mk_eq_smul_add_smul]
+  rw [(fderiv ℝ (fderiv ℝ (S k)) _).apply_mk_eq_smul_add_smul]
   simp only [add_apply, smul_apply, smul_eq_mul]
   ring_nf
 
@@ -448,7 +443,7 @@ private theorem exists_faceData
   · intro k hk
     simp only [momentumVelocity, edgeVelocity, stripGeneratingSource_snd,
       stripGeneratingTarget_snd] at *
-    rw [hBface k (hk ▸ hc), apply_mk_eq_smul_add_smul]
+    rw [hBface k (hk ▸ hc), (fderiv ℝ (fderiv ℝ (S k)) _).apply_mk_eq_smul_add_smul]
     simp only [add_apply, smul_apply, smul_eq_mul]
     ring_nf
 
