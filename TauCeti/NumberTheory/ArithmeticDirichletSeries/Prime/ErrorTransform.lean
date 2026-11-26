@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 public import TauCeti.Analysis.LaplaceTransform.Basic
+public import TauCeti.Analysis.Meromorphic.ZeroFree
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Psi
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 import TauCeti.Analysis.Contour.Residue.LogDeriv
@@ -175,21 +176,24 @@ private theorem tendsto_sub_mul_primePsiErrorTransform {ρ : ℂ} (h₀ : ρ ≠
 
 /-- At a nonzero point `ρ` where `ζ_K` vanishes with multiplicity `m`, the error transform
 has a simple pole with residue `-m/ρ`. The latter is the trailing coefficient at a simple pole. -/
-theorem primePsiErrorTransform_simplePole {ρ : ℂ} (h₀ : ρ ≠ 0) {m : ℤ}
-    (hm : meromorphicOrderAt (dedekindZetaC K) ρ = m) (hm₀ : 0 < m) :
+theorem primePsiErrorTransform_simplePole {ρ : ℂ} (h₀ : ρ ≠ 0)
+    (hz : 0 < meromorphicOrderAt (dedekindZetaC K) ρ) :
     meromorphicOrderAt (primePsiErrorTransform K) ρ = -1 ∧
-      meromorphicTrailingCoeffAt (primePsiErrorTransform K) ρ = -(m : ℂ) / ρ := by
+      meromorphicTrailingCoeffAt (primePsiErrorTransform K) ρ =
+        -((meromorphicOrderAt (dedekindZetaC K) ρ).untop₀ : ℂ) / ρ := by
   have h₁ : ρ ≠ 1 := by
     rintro rfl
-    have h : ((-1 : ℤ) : WithTop ℤ) = m := (meromorphicOrderAt_dedekindZetaC_one K).symm.trans hm
-    have hm' : (-1 : ℤ) = m := WithTop.coe_injective h
-    omega
-  have ht := tendsto_sub_mul_primePsiErrorTransform K h₀ h₁ hm
+    rw [meromorphicOrderAt_dedekindZetaC_one] at hz
+    exact absurd hz (by decide)
+  obtain ⟨m, hm⟩ := WithTop.ne_top_iff_exists.mp (meromorphicOrderAt_dedekindZetaC_ne_top K ρ)
+  have hm₀ : 0 < m := by exact_mod_cast (hm ▸ hz)
+  have ht := tendsto_sub_mul_primePsiErrorTransform K h₀ h₁ hm.symm
   have hf := (meromorphicNFOn_primePsiErrorTransform K (mem_univ ρ)).meromorphicAt
   have hord := hf.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
     (div_ne_zero (neg_ne_zero.mpr (Int.cast_ne_zero.mpr hm₀.ne')) h₀) ht
   refine ⟨hord, ?_⟩
-  rw [← Contour.residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one hord]
+  rw [← Contour.residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one hord, ← hm,
+    WithTop.untop₀_coe]
   exact Contour.residue_eq_of_tendsto_sub_mul hf ht
 
 /-- Except at `0`, the poles of the prime ideal error transform are exactly the zeros of the
@@ -206,11 +210,32 @@ theorem meromorphicOrderAt_primePsiErrorTransform_neg_iff {ρ : ℂ} (h₀ : ρ 
     have he := analyticAt_primePsiErrorExpression K h₀ hne
     exact (not_lt.mpr he.meromorphicOrderAt_nonneg)
       ((meromorphicOrderAt_congr (primePsiErrorTransform_eventuallyEq K ρ)) ▸ hp)
-  · have hfinite := (meromorphicOn_univ.mpr (meromorphic_dedekindZetaC K))
-      |>.meromorphicOrderAt_ne_top_of_isPreconnected isPreconnected_univ (mem_univ (1 : ℂ))
-        (mem_univ ρ) (by simp [meromorphicOrderAt_dedekindZetaC_one])
-    obtain ⟨m, hm⟩ := WithTop.ne_top_iff_exists.mp hfinite
-    rw [(primePsiErrorTransform_simplePole K h₀ hm.symm (by exact_mod_cast (hm ▸ hz))).1]
+  · rw [(primePsiErrorTransform_simplePole K h₀ hz).1]
     exact WithTop.coe_lt_coe.mpr (neg_one_lt_zero : (-1 : ℤ) < 0)
+
+/-- On a right half-plane not containing the origin, zero-freeness of `ζ_K` is equivalent
+to absence of poles of the prime ideal error transform. -/
+theorem zeroFreeRightOf_dedekindZetaC_iff_primePsiErrorTransform {θ : ℝ} (hθ : 0 ≤ θ) :
+    ZeroFreeRightOf θ (dedekindZetaC K) ↔
+      ∀ s : ℂ, θ < s.re → 0 ≤ meromorphicOrderAt (primePsiErrorTransform K) s := by
+  rw [zeroFreeRightOf_iff]
+  refine forall₂_congr fun s hs ↦ ?_
+  have h₀ : s ≠ 0 := fun he ↦ by simpa [he] using hθ.trans_lt hs
+  have he := meromorphicOrderAt_primePsiErrorTransform_neg_iff K h₀
+  simpa only [not_lt] using he.not.symm
+
+/-- The residue at a positive real pole of the prime ideal error transform has negative real
+part. -/
+theorem re_meromorphicTrailingCoeffAt_primePsiErrorTransform_neg {β : ℝ} (hβ : 0 < β)
+    (hp : meromorphicOrderAt (primePsiErrorTransform K) (β : ℂ) < 0) :
+    (meromorphicTrailingCoeffAt (primePsiErrorTransform K) (β : ℂ)).re < 0 := by
+  have h₀ := Complex.ofReal_ne_zero.mpr hβ.ne'
+  have hz := (meromorphicOrderAt_primePsiErrorTransform_neg_iff K h₀).mp hp
+  obtain ⟨m, hm⟩ := WithTop.ne_top_iff_exists.mp (meromorphicOrderAt_dedekindZetaC_ne_top K β)
+  have hm₀ : 0 < m := by exact_mod_cast (hm ▸ hz)
+  rw [(primePsiErrorTransform_simplePole K h₀ hz).2, ← hm, WithTop.untop₀_coe]
+  have hcast : -(m : ℂ) / (β : ℂ) = ((-(m : ℝ) / β : ℝ) : ℂ) := by push_cast; rfl
+  rw [hcast, Complex.ofReal_re]
+  exact div_neg_of_neg_of_pos (neg_neg_of_pos (Int.cast_pos.mpr hm₀)) hβ
 
 end TauCeti

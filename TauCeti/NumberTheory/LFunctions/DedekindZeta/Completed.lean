@@ -467,6 +467,13 @@ theorem meromorphicOrderAt_dedekindZetaC_one :
   (meromorphic_dedekindZetaC K 1).meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
     (ofReal_ne_zero.mpr (dedekindZeta_residue_pos K).ne') (tendsto_sub_one_mul_dedekindZetaC K)
 
+/-- The meromorphic order of `ζ_K` is finite at every point. -/
+theorem meromorphicOrderAt_dedekindZetaC_ne_top (s : ℂ) :
+    meromorphicOrderAt (dedekindZetaC K) s ≠ ⊤ :=
+  (meromorphic_dedekindZetaC K).meromorphicOn.meromorphicOrderAt_ne_top_of_isPreconnected
+    isPreconnected_univ (mem_univ (1 : ℂ)) (mem_univ s) (by
+      simp [meromorphicOrderAt_dedekindZetaC_one])
+
 /-- `ζ_K` is analytic at `s` if and only if `s ≠ 1`. -/
 @[simp]
 theorem analyticAt_dedekindZetaC_iff {s : ℂ} : AnalyticAt ℂ (dedekindZetaC K) s ↔ s ≠ 1 := by

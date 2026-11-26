@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.NumberTheory.PrimeCounting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Psi
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
@@ -17,9 +19,9 @@ The nonzero primes of `𝓞 ℚ` correspond to the rational primes through their
 identifying the norm of `v` with its generator). This file transports a prime summatory function
 over `ℚ` whose weight depends only on the norm to the corresponding sum over Mathlib's
 `Nat.primesLE`, so that results stated for the primes of a number field specialize to the
-classical sums over rational primes. In particular the number-field prime count
-`TauCeti.primeCount ℚ Set.univ` is the classical prime counting function. Both cutoffs are
-inclusive: at `x = 2` both counts are `1`.
+classical sums over rational primes. The number-field prime count `TauCeti.primeCount ℚ Set.univ`
+is the classical prime counting function, and `TauCeti.primePsi ℚ Set.univ` is Mathlib's Chebyshev
+function `ψ`. These use inclusive cutoffs.
 
 ## Main results
 
@@ -78,5 +80,27 @@ theorem primeCount_rat_univ (x : ℝ) :
   rw [primeCount_eq_card, Finset.filter_true_of_mem fun _ _ ↦ Set.mem_univ _,
     ← Nat.primesLE_card_eq_primeCounting, ← image_absNorm_primesLE_rat,
     Finset.card_image_of_injective _ Rat.HeightOneSpectrum.absNorm_asIdeal_injective]
+
+open ArithmeticFunction in
+/-- The norm coefficients of the ideal von Mangoldt function over `ℚ` are the classical
+von Mangoldt coefficients. -/
+@[simp] theorem primeVonMangoldtCoeff_rat_univ (n : ℕ) :
+    primeVonMangoldtCoeff ℚ Set.univ n = Λ n := by
+  by_cases hn : IsPrimePow n
+  · obtain ⟨p, k, hp, hk, rfl⟩ := (isPrimePow_nat_iff n).mp hn
+    obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
+    rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hv
+    rw [← hv, primeVonMangoldtCoeff_rat_natGenerator_pow Set.univ v hk, hv,
+      vonMangoldt_apply_pow hk.ne', vonMangoldt_apply_prime hp]
+    simp
+  · rw [primeVonMangoldtCoeff_eq_zero_of_not_isPrimePow Set.univ hn,
+      vonMangoldt_eq_zero_iff.mpr hn]
+
+/-- The sum of the von Mangoldt weights of all prime ideal powers over `ℚ` is Mathlib's
+Chebyshev function `ψ`. -/
+@[simp] theorem primePsi_rat_univ (x : ℝ) : primePsi ℚ Set.univ x = Chebyshev.psi x := by
+  rw [primePsi_eq_sum_Icc, Chebyshev.psi]
+  rw [← Finset.Icc_succ_left_eq_Ioc 0]
+  exact Finset.sum_congr rfl fun n _ ↦ primeVonMangoldtCoeff_rat_univ n
 
 end TauCeti
