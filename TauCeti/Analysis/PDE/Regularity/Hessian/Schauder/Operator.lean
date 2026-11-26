@@ -37,6 +37,11 @@ second derivatives to be Hölder on `Ω`; on a bounded Lipschitz domain the firs
 values are then Hölder too (`TauCeti.CkHolderSpaceOn.inclusionSuccLOfIsLipschitzDomain`), so that
 `∂ᵢu` and `u` are multiplied by Hölder coefficients within `C^{0,α}(Ω)`. Across a slit this fails.
 
+The construction and its API (an `_apply` lemma through `EuclideanSpace.single`, affinity in the
+coefficients, the norm bound in their norms, the maximum-principle bound and uniqueness) follow the
+parabolic operator `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL` in
+`TauCeti/Analysis/PDE/Parabolic/Holder/Operator.lean`.
+
 ## Main declarations
 
 * `TauCeti.CkHolderSpaceOn.nonDivergenceOperatorL`: the operator `L` with coefficients `a`, `b`,
@@ -51,7 +56,8 @@ values are then Hölder too (`TauCeti.CkHolderSpaceOn.inclusionSuccLOfIsLipschit
   Lipschitz continuous in them in operator norm.
 * `TauCeti.CkHolderSpaceOn.abs_apply_le_mul_norm_nonDivergenceOperatorL` and
   `TauCeti.CkHolderSpaceOn.injOn_nonDivergenceOperatorL`: for elliptic `a` and `c ≤ 0`, the maximum
-  principle bounds `sup |u|` by a multiple of `sup |L u|` on the elements vanishing on `∂Ω`
+  principle bounds `sup |u|` by a multiple of the `C^{0,α}(Ω)` norm of `L u` on the elements
+  vanishing on `∂Ω`
   (`TauCeti.CkHolderSpaceOn.vanishingOnFrontierSubmodule`), so `L` is injective there.
 
 ## References
@@ -134,8 +140,8 @@ theorem nonDivergenceOperatorL_apply (u : CkHolderSpaceOn 2 α Ω ℝ)
     ContinuousMultilinearMap.apply_apply, ContinuousLinearEquiv.coe_coe,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv, zeroEquivHolderSpace_apply,
     inclusionSuccLOfIsLipschitzDomain_apply, ← hg, ← h1, ← h2, iteratedFDeriv_two_apply,
-    iteratedFDeriv_one_apply]
-  rfl
+    iteratedFDeriv_one_apply, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one]
 
 /-- With the identity matrix as principal coefficient and no lower-order terms, the operator is the
 Laplacian. -/
@@ -176,28 +182,6 @@ theorem nonDivergenceOperatorL_sub_nonDivergenceOperatorL :
     Finset.sum_sub_distrib]
   ring
 
-omit [DecidableEq ι] in
-/-- Multiplication by a coefficient `f` has operator norm at most `‖f‖` on the bounded Hölder
-functions. -/
-private theorem norm_mul_compHolder₂_le (f : HolderSpace α Ω ℝ) :
-    ‖(ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (α := α) (X := Ω) f‖ ≤ ‖f‖ :=
-  ((ContinuousLinearMap.mul ℝ ℝ).compHolder₂.le_opNorm f).trans
-    (mul_le_of_le_one_left (norm_nonneg f) ((ContinuousLinearMap.norm_compHolder₂_le _).trans
-      (ContinuousLinearMap.opNorm_mul_le ℝ ℝ)))
-
-omit [DecidableEq ι] in
-/-- Evaluating a field of multilinear maps on vectors of norm at most one has operator norm at
-most one on the bounded Hölder functions. -/
-private theorem norm_compLeftL_apply_le_one {m : ℕ} {v : Fin m → EuclideanSpace ℝ ι}
-    (hv : ∀ i, ‖v i‖ ≤ 1) :
-    ‖HolderSpace.compLeftL (α := α) (X := Ω)
-      (ContinuousMultilinearMap.apply ℝ (fun _ : Fin m ↦ EuclideanSpace ℝ ι) ℝ v)‖ ≤ 1 := by
-  refine (HolderSpace.norm_compLeftL_le _).trans
-    (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ ?_)
-  rw [one_mul, ContinuousMultilinearMap.apply_apply]
-  exact (f.le_opNorm v).trans (mul_le_of_le_one_right (norm_nonneg f)
-    (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ hv i))
-
 private theorem norm_secondOrderL_le (a : ι → ι → HolderSpace α Ω ℝ) :
     ‖secondOrderL a‖ ≤ ∑ i, ∑ j, ‖a i j‖ := by
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (norm_sum_le _ _).trans
@@ -206,8 +190,8 @@ private theorem norm_secondOrderL_le (a : ι → ι → HolderSpace α Ω ℝ) :
           (by gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _)
     _ ≤ ‖a i j‖ * (1 * 1) := by
         gcongr
-        · exact norm_mul_compHolder₂_le _
-        · exact norm_compLeftL_apply_le_one (Fin.forall_fin_two.2 ⟨by simp, by simp⟩)
+        · exact ContinuousLinearMap.norm_mul_compHolder₂_le _
+        · exact HolderSpace.norm_compLeftL_apply_le_one (Fin.forall_fin_two.2 ⟨by simp, by simp⟩)
         · exact norm_iteratedFDerivHolderL_le_one
     _ = ‖a i j‖ := by ring
 
@@ -221,8 +205,8 @@ private theorem norm_firstOrderL_le (b : ι → HolderSpace α Ω ℝ) :
               gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _)
     _ ≤ ‖b i‖ * (1 * (1 * ‖inclusionSuccLOfIsLipschitzDomain (k := 1) (F := ℝ) hΩ hb hα‖)) := by
         gcongr
-        · exact norm_mul_compHolder₂_le _
-        · exact norm_compLeftL_apply_le_one (Fin.forall_fin_one.2 (by simp))
+        · exact ContinuousLinearMap.norm_mul_compHolder₂_le _
+        · exact HolderSpace.norm_compLeftL_apply_le_one (Fin.forall_fin_one.2 (by simp))
         · exact norm_iteratedFDerivHolderL_le_one
     _ = _ := by ring
 
@@ -237,7 +221,7 @@ private theorem norm_zerothOrderL_le (c : HolderSpace α Ω ℝ) :
     _ ≤ ‖c‖ * (1 * (‖inclusionSuccLOfIsLipschitzDomain (k := 0) (F := ℝ) hΩ hb hα‖ *
           ‖inclusionSuccLOfIsLipschitzDomain (k := 1) (F := ℝ) hΩ hb hα‖)) := by
         gcongr
-        · exact norm_mul_compHolder₂_le _
+        · exact ContinuousLinearMap.norm_mul_compHolder₂_le _
         · exact LinearIsometry.norm_toContinuousLinearMap_le zeroEquivHolderSpace.toLinearIsometry
     _ = _ := by ring
 
@@ -268,8 +252,8 @@ theorem exists_norm_nonDivergenceOperatorL_le :
 
 /-- **The a priori bound by the maximum principle.** Let `a` be uniformly elliptic with constant
 `λ > 0` on `Ω` and let `c ≤ 0` on `Ω`. Every `u ∈ C^{2,α}(Ω)` vanishing on the frontier of `Ω`
-satisfies `|u| ≤ D sup_Ω |L u|` on `Ω`, with `D = (exp ((β / λ + 1) diam Ω) - 1) / λ` and
-`β = ∑ᵢ ‖bⁱ‖`. -/
+satisfies `|u| ≤ D ‖L u‖` on `Ω`, where `‖L u‖` is the `C^{0,α}(Ω)` norm (which dominates
+`sup_Ω |L u|`), `D = (exp ((β / λ + 1) diam Ω) - 1) / λ` and `β = ∑ᵢ ‖bⁱ‖`. -/
 theorem abs_apply_le_mul_norm_nonDivergenceOperatorL [Nonempty ι] {lam : ℝ} (hlam : 0 < lam)
     (ha : ∀ (x : Ω) (ξ : EuclideanSpace ℝ ι),
       lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j x).toQuadraticForm' ξ)

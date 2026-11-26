@@ -64,15 +64,13 @@ def vanishingOnFrontierSubmodule : Submodule ℝ (CkHolderSpaceOn k α Ω F) whe
     rw [add_zero] at h
     refine h.congr' ?_
     filter_upwards [self_mem_nhdsWithin] with y hy
-    rw [← Subtype.coe_mk y hy, extend_apply, extend_apply, extend_apply, coe_add]
-    rfl
+    rw [← Subtype.coe_mk y hy, extend_apply, extend_apply, extend_apply, coe_add, Pi.add_apply]
   smul_mem' c f hf x hx := by
     have h := (hf x hx).const_smul c
     rw [smul_zero] at h
     refine h.congr' ?_
     filter_upwards [self_mem_nhdsWithin] with y hy
-    rw [← Subtype.coe_mk y hy, extend_apply, extend_apply, coe_smul]
-    rfl
+    rw [← Subtype.coe_mk y hy, extend_apply, extend_apply, coe_smul, Pi.smul_apply]
 
 theorem mem_vanishingOnFrontierSubmodule_iff {f : CkHolderSpaceOn k α Ω F} :
     f ∈ vanishingOnFrontierSubmodule k α Ω F ↔
