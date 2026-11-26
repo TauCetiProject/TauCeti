@@ -325,12 +325,11 @@ theorem addContentEquiv_symm_map_apply
       ((addContentEquiv X).symm ν).comp (BoundedContinuousFunction.compContinuousPositiveLinearMap
         ℝ ℝ ⟨r, continuous_of_discreteTopology⟩) := by
     refine (addContentEquiv Y).symm_apply_eq.2 (Subtype.ext ?_)
-    rw [coe_addContentEquiv_apply, toLinearMap_comp,
-      BoundedContinuousFunction.compContinuousPositiveLinearMap_toLinearMap,
-      LinearMap.toAddContent_comp_compContinuousCLM, ← coe_addContentEquiv_apply,
-      Equiv.apply_symm_apply, AddContent.coe_mapNonneg]
-  rw [hm]
-  rfl
+    -- The content of `(addContentEquiv X).symm ν` is `ν`; the remaining steps are `simp` lemmas.
+    have hν := congrArg Subtype.val ((addContentEquiv X).apply_symm_apply ν)
+    rw [coe_addContentEquiv_apply] at hν
+    simp [hν]
+  simp [hm]
 
 variable {Γ : Type*} [Group Γ] [MulAction Γ X]
 
