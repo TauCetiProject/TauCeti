@@ -73,20 +73,16 @@ namespace TauCeti
 
 /-! ### The index of `Γ₀(lcm(N, 4))` -/
 
-/-- `[SL(2, ℤ) : Γ₀(4)] = 2 · 3 = 6`. -/
-private theorem index_Gamma0_four : (Gamma0 4).index = 6 := by
-  simpa using Gamma0_prime_power_index 2 Nat.prime_two 2 (by norm_num)
-
 /-- For `N ≠ 0` the level `lcm(N, 4)` is a nonzero multiple of `4`, so its `Γ₀` index is a
-nonzero multiple of `[SL(2, ℤ) : Γ₀(4)] = 6`. -/
-private theorem six_le_index_Gamma0_lcm_four {N : ℕ} (hN : N ≠ 0) :
-    6 ≤ (Gamma0 (N.lcm 4)).index := by
-  have hL : N.lcm 4 ≠ 0 := Nat.lcm_ne_zero hN (by norm_num)
-  have : NeZero (N.lcm 4) := ⟨hL⟩
-  have hdvd : (Gamma0 4).index ∣ (Gamma0 (N.lcm 4)).index :=
-    Subgroup.index_dvd_of_le (Gamma0_le_Gamma0_of_dvd (Nat.dvd_lcm_right N 4))
-  rw [index_Gamma0_four] at hdvd
-  exact Nat.le_of_dvd (Nat.pos_of_ne_zero Subgroup.FiniteIndex.index_ne_zero) hdvd
+nonzero multiple of `[SL(2, ℤ) : Γ₀(4)] = 6`; hence `μ(lcm(N, 4)) / 6 ≥ 1`. -/
+private theorem one_le_index_Gamma0_lcm_four_div_six {N : ℕ} (hN : N ≠ 0) :
+    1 ≤ ((Gamma0 (N.lcm 4)).index : ℝ) / 6 := by
+  have : NeZero (N.lcm 4) := ⟨Nat.lcm_ne_zero hN (by norm_num)⟩
+  have hdvd := Gamma0_index_dvd_of_dvd (Nat.dvd_lcm_right N 4)
+  rw [Gamma0_four_index] at hdvd
+  have h6 : 6 ≤ (Gamma0 (N.lcm 4)).index :=
+    Nat.le_of_dvd (Nat.pos_of_ne_zero Subgroup.FiniteIndex.index_ne_zero) hdvd
+  exact (one_le_div₀ (by norm_num)).mpr (by exact_mod_cast h6)
 
 /-! ### The rationality threshold `F♯` -/
 
@@ -144,33 +140,31 @@ theorem sharpG_of_four_dvd {N : ℕ} (hN : N ≠ 0) (h4 : 4 ∣ N) :
 /-- At a positive level `G♯(N) ≥ (1 + 1) ^ 2 = 4`, since `μ(lcm(N, 4)) ≥ μ(4) = 6`. -/
 theorem four_le_sharpG {N : ℕ} (hN : N ≠ 0) : 4 ≤ sharpG N := by
   rw [sharpG_of_ne_zero hN]
-  have h6 : (6 : ℝ) ≤ (Gamma0 (N.lcm 4)).index := by
-    exact_mod_cast six_le_index_Gamma0_lcm_four hN
   have h1 : 1 ≤ √(((Gamma0 (N.lcm 4)).index : ℝ) / 6) :=
-    Real.one_le_sqrt.mpr ((one_le_div₀ (by norm_num)).mpr h6)
+    Real.one_le_sqrt.mpr (one_le_index_Gamma0_lcm_four_div_six hN)
   nlinarith
 
 @[simp]
 theorem sharpG_one : sharpG 1 = 4 := by
-  rw [sharpG_of_ne_zero one_ne_zero, Nat.lcm_one_left, index_Gamma0_four]
+  rw [sharpG_of_ne_zero one_ne_zero, Nat.lcm_one_left, Gamma0_four_index]
   norm_num
 
 @[simp]
 theorem sharpG_four : sharpG 4 = 4 := by
-  rw [sharpG_of_four_dvd (by norm_num) dvd_rfl, index_Gamma0_four]
+  rw [sharpG_of_four_dvd (by norm_num) dvd_rfl, Gamma0_four_index]
   norm_num
 
 /-- `G♯(11) = 13 + 4√3`: the index is `μ(44) = μ(4) μ(11) = 72`. -/
 theorem sharpG_eleven : sharpG 11 = 13 + 4 * √3 := by
   have h44 : (Gamma0 (Nat.lcm 11 4)).index = 72 := by
     rw [show Nat.lcm 11 4 = 4 * 11 by norm_num, Gamma0_index_mul_of_coprime (by norm_num),
-      index_Gamma0_four, Gamma0_prime_index 11 (by norm_num)]
+      Gamma0_four_index, Gamma0_prime_index 11 (by norm_num)]
   have h12 : √12 = 2 * √3 := by
     rw [show (12 : ℝ) = 2 ^ 2 * 3 by norm_num, Real.sqrt_mul (by norm_num),
       Real.sqrt_sq (by norm_num)]
-  rw [sharpG_of_ne_zero (by norm_num), h44]
-  norm_num [h12]
-  nlinarith [Real.sq_sqrt (show (0 : ℝ) ≤ 3 by norm_num)]
+  rw [sharpG_of_ne_zero (by norm_num), h44, show ((72 : ℕ) : ℝ) / 6 = 12 by norm_num, h12]
+  -- `(2√3 + 1)² - (13 + 4√3) = 4 ((√3)² - 3)`
+  linear_combination 4 * Real.sq_sqrt (show (0 : ℝ) ≤ 3 by norm_num)
 
 /-! ### The full-two-torsion threshold `H♯` -/
 
@@ -219,10 +213,11 @@ theorem sharpF_le_index_div_six_add_one_pow (N : ℕ) [NeZero N] :
   by_cases h : (Gamma0 N).index < 6
   · rw [sharpF_eq_one_of_newDimension_eq_zero (newDimension_eq_zero_of_index_lt_six h),
       newDimension_eq_zero_of_index_lt_six h, mul_zero, pow_zero]
-  · have h6 : (6 : ℝ) ≤ (Gamma0 N).index := by exact_mod_cast not_lt.mp h
+  · have h1 : 1 ≤ ((Gamma0 N).index : ℝ) / 6 :=
+      (one_le_div₀ (by norm_num)).mpr (by exact_mod_cast not_lt.mp h)
     rw [sharpF_of_neZero]
     gcongr
-    exact Real.sqrt_le_self_iff.mpr (Or.inr ((one_le_div₀ (by norm_num)).mpr h6))
+    exact Real.sqrt_le_self_iff.mpr (Or.inr h1)
 
 /-- **`G♯` lies below Bennett and Siksek's majorant**:
 `G♯(N) ≤ (μ(lcm(N, 4)) / 6 + 1) ^ 2`. This holds at every level, since `μ(lcm(N, 4)) ≥ 6` for
@@ -232,11 +227,9 @@ theorem sharpG_le_index_lcm_four_div_six_add_one_sq (N : ℕ) :
   rcases eq_or_ne N 0 with rfl | hN
   · rw [sharpG_zero]
     positivity
-  have h6 : (6 : ℝ) ≤ (Gamma0 (N.lcm 4)).index := by
-    exact_mod_cast six_le_index_Gamma0_lcm_four hN
   rw [sharpG_of_ne_zero hN]
   gcongr
-  exact Real.sqrt_le_self_iff.mpr (Or.inr ((one_le_div₀ (by norm_num)).mpr h6))
+  exact Real.sqrt_le_self_iff.mpr (Or.inr (one_le_index_Gamma0_lcm_four_div_six hN))
 
 /-- **`H♯` lies below Bennett and Siksek's majorant** `H = max(F, G)`. -/
 theorem sharpH_le_max (N : ℕ) [NeZero N] :
