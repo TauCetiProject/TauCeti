@@ -15,11 +15,6 @@ An adapted process with almost-surely continuous paths admits countable-range lo
 bounding its full native stopped stages, without any moment assumption on its initial value.
 The initial-value cutoff is essential: stopping a process does not change its initial value,
 whereas native localization multiplies by the indicator that the stopping time is positive.
-The cutoff generalizes the original construction from
-`ProbabilityTheory.Locally.exists_isLocalizingSequence_bounded_martingale`
-(`TauCeti/Probability/Martingale/Local/Bounded.lean`), using
-`MeasureTheory.StronglyAdapted.exists_isLocalizingSequence_countable_range_level` and
-`ProbabilityTheory.IsLocalizingSequence.piecewise_bot`.
 
 Countable ranges allow optional sampling on the original raw filtration. No completeness,
 right continuity, or martingale hypothesis is imposed. Applying this construction to a process
@@ -29,6 +24,11 @@ and its reciprocal gives simultaneous bounds needed in equivalent-measure locali
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
   Springer, 1991, Chapter 1, §5.
+* Formalization: the initial-value cutoff originally appeared in the proof of
+  `ProbabilityTheory.Locally.exists_isLocalizingSequence_bounded_martingale`
+  (`TauCeti/Probability/Martingale/Local/Bounded.lean`). The underlying localization results are
+  `MeasureTheory.StronglyAdapted.exists_isLocalizingSequence_countable_range_level` and
+  `ProbabilityTheory.IsLocalizingSequence.piecewise_bot`.
 -/
 
 public section
