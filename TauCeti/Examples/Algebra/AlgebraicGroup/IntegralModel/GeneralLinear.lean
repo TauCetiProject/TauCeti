@@ -48,11 +48,9 @@ theorem notMem_integralPoints_generalLinear_one {O K : Type u} [CommRing O] [Com
     at hM
   have h00 : algebraMap O K ((M : Matrix (Fin 1) (Fin 1) O) 0 0) = algebraMap O K ϖ := by
     simpa [hg] using congrArg (fun A : GL (Fin 1) K ↦ (A : Matrix (Fin 1) (Fin 1) K) 0 0) hM
-  have hinv : (M : Matrix (Fin 1) (Fin 1) O) * (M⁻¹ : GL (Fin 1) O) = 1 := by
-    rw [← Units.val_mul, mul_inv_cancel, Units.val_one]
-  have h1 := congrFun (congrFun hinv 0) 0
-  rw [Matrix.mul_apply, Fin.sum_univ_one, Matrix.one_apply_eq, hinj h00] at h1
-  exact hϖ (IsUnit.of_mul_eq_one _ h1)
+  apply hϖ
+  rw [← hinj h00, ← Matrix.det_fin_one (M : Matrix (Fin 1) (Fin 1) O)]
+  exact Matrix.isUnits_det_units M
 
 /-- The `ℚ`-point of `GL₁` with matrix `(2)` has an integral entry but is not an integral point
 of `GL_{1,ℤ}`: its inverse `1/2` is not integral. -/
