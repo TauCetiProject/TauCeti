@@ -100,6 +100,9 @@ normality of it is equivalent to freeness of the action of the image.
 * `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientCongr`: the orbit-space equivalence
   `TauCeti.MulAction.orbitRelQuotientCongr` induced by an equivariant equivalence preserves the
   stabiliser orders.
+* `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientSMulEquiv`: so does its instance
+  `TauCeti.MulAction.orbitRelQuotientSMulEquiv`, translation between the orbits of conjugate
+  subgroups.
 * `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientSumEquiv_symm`: the splitting
   `TauCeti.MulAction.orbitRelQuotientSumEquiv` of the orbit space of an action on `α ⊕ β`
   preserves the stabiliser orders.
@@ -377,6 +380,16 @@ theorem cardStabilizerOnOrbit_orbitRelQuotientCongr (φ : G ≃* H) (e : α ≃ 
     cardStabilizerOnOrbit_mk] using card_stabilizer_congr φ a (he · a) fun _ h ↦ e.injective h
 
 end Congr
+
+open scoped Pointwise in
+/-- `MulAction.orbitRelQuotientSMulEquiv g hHK` preserves the stabiliser orders of the orbits. -/
+@[simp]
+theorem cardStabilizerOnOrbit_orbitRelQuotientSMulEquiv (g : G) {H K : Subgroup G}
+    (hHK : ConjAct.toConjAct g • H = K) (q : MulAction.orbitRel.Quotient H α) :
+    cardStabilizerOnOrbit (MulAction.orbitRelQuotientSMulEquiv g hHK q) =
+      cardStabilizerOnOrbit q := by
+  rw [MulAction.orbitRelQuotientSMulEquiv_eq_orbitRelQuotientCongr]
+  exact cardStabilizerOnOrbit_orbitRelQuotientCongr _ _ _ q
 
 section Sum
 

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 
 /-!
 # Pullback Riemannian metrics
@@ -48,6 +49,10 @@ the metric that a manifold with a geometric structure receives through its chart
 * `Bundle.ContMDiffRiemannianMetric.pullback_id`,
   `Bundle.ContMDiffRiemannianMetric.pullback_comp_inner`, and
   `Bundle.ContMDiffRiemannianMetric.pullback_comp`: the functoriality laws for pullback metrics.
+* `Bundle.ContMDiffRiemannianMetric.contMDiffAt_uncurry_bilinearForm_pullback` and
+  `Bundle.ContMDiffRiemannianMetric.contMDiffAt_uncurry_pullback`: the bilinear forms induced by
+  a family of maps jointly `C^(n+1)` at a point are jointly `C^n` there, and so are the metrics
+  induced by a jointly `C^(n+1)` family of immersions.
 * `Bundle.ContMDiffRiemannianMetric.pullback_rescale`: pulling back commutes with conformal
   rescaling, `f^* (h g) = (h ∘ f) f^* g`.
 * `Bundle.ContMDiffRiemannianMetric.conformalClass_pullback`: along a map with a `C^n` left
@@ -231,6 +236,27 @@ theorem contMDiffAt_pullback
           ((g.inner (f x)).comp (mfderiv I J f x)))) x₀ :=
   contMDiffAt_bilinearForm_pullback (g.contMDiff (f x₀)) hf
 
+/-- **Joint regularity of pulled-back bilinear forms.** For a `C^n` Riemannian metric `g` and a
+family of maps `Φ_t`, parametrised by a manifold and jointly `C^(n+1)` at `(t₀, x₀)`, the bilinear
+forms `(v, w) ↦ g_{Φ_t x}(dΦ_t v, dΦ_t w)` are `C^n` jointly in `(t, x)` at `(t₀, x₀)`. -/
+theorem contMDiffAt_uncurry_bilinearForm_pullback
+    {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
+    {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace HP P] [IsManifold IP 1 P]
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : P → M → N}
+    {p₀ : P × M} (hΦ : ContMDiffAt (IP.prod I) J (n + 1) (Function.uncurry Φ) p₀) :
+    ContMDiffAt (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
+      (fun p : P × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
+        ((ContinuousLinearMap.precomp ℝ (mfderiv I J (Φ p.1) p.2)).comp
+          ((g.inner (Φ p.1 p.2)).comp (mfderiv I J (Φ p.1) p.2)))) p₀ := by
+  have hb := (g.contMDiff (Φ p₀.1 p₀.2)).comp p₀ (hΦ.of_le le_self_add)
+  have hL := hΦ.mfderiv_right le_rfl
+  exact contMDiffAt_totalSpace_iff.2 ⟨contMDiffAt_snd,
+    contMDiffAt_trivializationAt_bilinearForm_pullback (g := Prod.snd)
+      (f := fun p ↦ Φ p.1 p.2) (b := fun p ↦ g.inner (Φ p.1 p.2))
+      (L := fun p ↦ mfderiv I J (Φ p.1) p.2) continuousAt_snd hb hL⟩
+
 variable [FiniteDimensional ℝ E]
 
 /-- Pull back a smooth Riemannian metric along a smooth immersion. At `x`, the inner product is
@@ -322,6 +348,33 @@ theorem pullback_congr
   subst h
   rfl
 
+/-- Pulling back along maps that agree near `x` gives the same inner product at `x`, whatever the
+regularity and injectivity proofs supplied. This is the local form of `pullback_congr`. -/
+theorem pullback_inner_congr_of_eventuallyEq
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {f₁ f₂ : M → N}
+    {x : M} (h : f₁ =ᶠ[𝓝 x] f₂) (hf₁ : ContMDiff I J (n + 1) f₁)
+    (hinj₁ : ∀ x, Function.Injective (mfderiv I J f₁ x)) (hf₂ : ContMDiff I J (n + 1) f₂)
+    (hinj₂ : ∀ x, Function.Injective (mfderiv I J f₂ x)) :
+    (g.pullback f₁ hf₁ hinj₁).inner x = (g.pullback f₂ hf₂ hinj₂).inner x := by
+  ext v w
+  rw [pullback_inner, pullback_inner, h.mfderiv_eq, h.eq_of_nhds]
+  -- `EventuallyEq.mfderiv_eq` inserts `tangentSpaceCast`, which is the identity by definition.
+  rfl
+
+/-- The induced metrics of a family of immersions agree with `F_{t₀}^* g` outside `K` for `t` near
+`t₀` when `F_t = F_{t₀}` outside a closed set `K` for `t` near `t₀`. -/
+theorem eventually_forall_notMem_pullback_inner_eq
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : ℝ → M → N}
+    (hΦ : ContMDiff (𝓘(ℝ).prod I) J (n + 1) (Function.uncurry Φ))
+    (hinj : ∀ t x, Function.Injective (mfderiv I J (Φ t) x)) {t₀ : ℝ} {K : Set M}
+    (hK : IsClosed K) (hΦK : ∀ᶠ t in 𝓝 t₀, ∀ x ∉ K, Φ t x = Φ t₀ x) :
+    ∀ᶠ t in 𝓝 t₀, ∀ x ∉ K, (g.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t)).inner x =
+      (g.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀)).inner x := by
+  filter_upwards [hΦK] with t ht x hx
+  refine g.pullback_inner_congr_of_eventuallyEq ?_ _ _ _ _
+  filter_upwards [hK.isOpen_compl.mem_nhds hx] with y hy
+  exact ht y hy
+
 /-- Pulling a Riemannian metric back along the identity leaves it unchanged. -/
 @[simp]
 theorem pullback_id
@@ -333,6 +386,25 @@ theorem pullback_id
   intro x v w
   rw [pullback_inner]
   simp only [mfderiv_id, ContinuousLinearMap.id_apply, id_eq]
+
+/-- **Joint regularity of induced metrics.** The metrics `F_t^* g` induced by a jointly
+`C^(n+1)` family of immersions `F_t`, parametrised by a manifold, from a `C^n` metric `g` have
+inner products that are `C^n` jointly in `(t, x)`. -/
+theorem contMDiffAt_uncurry_pullback
+    {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
+    {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace HP P] [IsManifold IP 1 P]
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : P → M → N}
+    (hΦ : ContMDiff (IP.prod I) J (n + 1) (Function.uncurry Φ))
+    (hinj : ∀ t x, Function.Injective (mfderiv I J (Φ t) x)) (p₀ : P × M) :
+    ContMDiffAt (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
+      (fun p : P × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
+        ((g.pullback (Φ p.1) (hΦ.curry_right (x := p.1)) (hinj p.1)).inner p.2)) p₀ :=
+  -- The inner product of `pullback` is by definition the bilinear form of
+  -- `contMDiffAt_uncurry_bilinearForm_pullback`. Global smoothness and injectivity are needed
+  -- only to construct the metrics `F_t^* g`.
+  g.contMDiffAt_uncurry_bilinearForm_pullback hΦ.contMDiffAt
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}

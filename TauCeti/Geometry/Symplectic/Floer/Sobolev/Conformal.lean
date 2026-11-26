@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Conformal
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 
 /-!
 # The linearized Floer operator on the Sobolev space of a conformal metric
@@ -34,11 +35,15 @@ realizes `D_u` when `M` is essentially bounded on `U` (and is `0` by convention 
 first two terms are bounded where `J` is, so the condition is that `C(z)` grows at most like
 `√ρ(z)` (`norm_floerConformalJetCoeff_le`): on a cylindrical end of `U`, where `ρ` is the conformal
 factor of the metric `ds² + dt²`, this says that the zeroth-order part of `D_u` in the end
-coordinates is bounded. The realization is
+coordinates is bounded
+(`norm_floerConformalJetCoeff_le_of_norm_floerJetCoeff_comp_le`). The realization is
 `TauCeti.SymplecticForm.floerConformalSobolevOperator`, which agrees with `D_u` on test sections
 (`TauCeti.SymplecticForm.floerConformalSobolevOperator_toLp_jet_ae_eq`), so that its norm on the jet
 of a test section `ξ` is the `L²` norm of `D_u ξ`
-(`TauCeti.SymplecticForm.norm_floerConformalSobolevOperator_sq`).
+(`TauCeti.SymplecticForm.norm_floerConformalSobolevOperator_sq`). An estimate of the weighted
+energy of test sections by `∫ ‖D_u ξ‖²` and an `L²` norm on a compact set then gives the estimate
+of Peetre's argument
+(`exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_integral_le`).
 
 The `L²` norm of `D_u ξ` for the Lebesgue measure of the coordinates is the `L²` norm of the
 `(0, 1)`-form `(dξ + …)^(0,1)` for the conformal metric, since the conformal factors of a
@@ -90,6 +95,15 @@ theorem floerConformalJetCoeff_apply (ω : SymplecticForm V) (ρ : ℝ × ℝ �
       v.2.1 + J z (u z) v.2.2 + (√(ρ z))⁻¹ • ω.floerLinearizationCoeff J Ks Kt u z v.1 :=
   firstOrderJetCoeff_apply _ _ v
 
+/-- The coefficient field on conformal jets at `z` depends on the Floer data `J`, `Ks`, `Kt` only
+through their values at `z`, as functions of the target point. -/
+theorem floerConformalJetCoeff_congr_data (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ)
+    {J J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks Ks' Kt Kt' : ℝ × ℝ → V → ℝ} (u : ℝ × ℝ → V)
+    {z : ℝ × ℝ} (hJ : J z = J' z) (hKs : Ks z = Ks' z) (hKt : Kt z = Kt' z) :
+    ω.floerConformalJetCoeff ρ J Ks Kt u z = ω.floerConformalJetCoeff ρ J' Ks' Kt' u z := by
+  rw [floerConformalJetCoeff_def, floerConformalJetCoeff_def,
+    ω.floerLinearizationCoeff_congr_data u hJ hKs hKt, hJ]
+
 /-- At a point where the weight is positive, the coefficient field applied to the jet
 `(√ρ ξ, ∂s ξ, ∂t ξ)` of a section `ξ` is the linearized Floer operator `D_u ξ`. -/
 @[simp]
@@ -109,6 +123,43 @@ theorem norm_floerConformalJetCoeff_le (ω : SymplecticForm V) (ρ : ℝ × ℝ 
       1 + ‖J z (u z)‖ + (√(ρ z))⁻¹ * ‖ω.floerLinearizationCoeff J Ks Kt u z‖ := by
   refine (norm_firstOrderJetCoeff_le _ _).trans_eq ?_
   rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_nonneg (Real.sqrt_nonneg _)]
+
+/-- **The coefficient field on conformal jets on an end.** Let `φ` be a chart of an end with
+`J(φ ζ, ·) = J_e(ζ, ·)`, let `C` be the zeroth-order part of `D_u` and let `C_e` be the
+zeroth-order part for end data `K'`, with the structures `J ∘ φ`, along `u ∘ φ`. If `B` bounds the
+coefficient field on jets of the end data, with the structures `J_e`, along `u ∘ φ` at `ζ`, and if
+`r ‖C(φ ζ)‖ ≤ (1 + ‖J(φ ζ, u (φ ζ))‖) ‖C_e(ζ)‖` and `ρ(φ ζ)^(-1/2) ≤ κ r` with `κ ≥ 0`, then the
+coefficient field on conformal jets is at most `1 + B + κ (1 + B) B` at `φ ζ`. -/
+theorem norm_floerConformalJetCoeff_le_of_norm_floerJetCoeff_comp_le (ω : SymplecticForm V)
+    {ρ : ℝ × ℝ → ℝ} {J Je : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {φ : ℝ × ℝ → ℝ × ℝ} {ζ : ℝ × ℝ} {B κ r : ℝ} (hJ : J (φ ζ) = Je ζ)
+    (hB : ‖ω.floerJetCoeff Je Ks' Kt' (u ∘ φ) ζ‖ ≤ B)
+    (hC : r * ‖ω.floerLinearizationCoeff J Ks Kt u (φ ζ)‖ ≤
+      (1 + ‖J (φ ζ) (u (φ ζ))‖) * ‖ω.floerLinearizationCoeff (J ∘ φ) Ks' Kt' (u ∘ φ) ζ‖)
+    (hρ : (√(ρ (φ ζ)))⁻¹ ≤ κ * r) (hκ : 0 ≤ κ) :
+    ‖ω.floerConformalJetCoeff ρ J Ks Kt u (φ ζ)‖ ≤ 1 + B + κ * ((1 + B) * B) := by
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans hB
+  rw [floerJetCoeff_def] at hB
+  -- The leading coefficient `J(φ ζ, u (φ ζ)) = J_e(ζ, u (φ ζ))` and the end coefficient `C_e(ζ)`
+  -- are components of the coefficient field on jets of the end data.
+  have hJb : ‖J (φ ζ) (u (φ ζ))‖ ≤ B := by
+    rw [hJ]
+    exact (norm_le_norm_firstOrderJetCoeff_left _ _).trans hB
+  have hCe : ‖ω.floerLinearizationCoeff (J ∘ φ) Ks' Kt' (u ∘ φ) ζ‖ ≤ B := by
+    have heq : ω.floerLinearizationCoeff (J ∘ φ) Ks' Kt' (u ∘ φ) ζ =
+        ω.floerLinearizationCoeff Je Ks' Kt' (u ∘ φ) ζ := by
+      ext v
+      simp only [floerLinearizationCoeff_apply, Function.comp_apply, hJ]
+    rw [heq]
+    exact (norm_le_norm_firstOrderJetCoeff_right _ _).trans hB
+  refine (ω.norm_floerConformalJetCoeff_le _ _ _ _ _ _).trans ?_
+  calc _ ≤ 1 + B + κ * (r * ‖ω.floerLinearizationCoeff J Ks Kt u (φ ζ)‖) := by
+        rw [← mul_assoc]
+        gcongr
+    _ ≤ 1 + B + κ * ((1 + B) * B) := by
+        have h1 : 1 + ‖J (φ ζ) (u (φ ζ))‖ ≤ 1 + B := by linarith
+        gcongr 1 + B + κ * ?_
+        exact hC.trans (mul_le_mul h1 hCe (norm_nonneg _) (by linarith))
 
 /-- The coefficient field on conformal jets is continuous on `U` when the weight is a conformal
 weight on `U`, the data are `C¹` (and the Hamiltonians `C²`) along the graph of `u` over `U`, and
@@ -197,5 +248,59 @@ theorem norm_floerConformalSobolevOperator_sq (ω : SymplecticForm V) (hρ : IsW
   exact setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by
     rw [ω.floerLinearization_of_notMem_tsupport J Ks Kt u
       fun h ↦ hz ((mem_testSection_iff.1 hξ).2.2 h), norm_zero, zero_pow two_ne_zero]
+
+
+/-- **Peetre's estimate from an energy estimate.** Let the coefficient field of the linearized
+Floer operator `D_u` on the conformal jets of `ρ` be essentially bounded on `U`, let `K ⊆ U` be
+compact, and suppose that every test section `ξ` on `U` has weighted energy
+
+`∫_U (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²) ≤ C (∫ ‖D_u ξ‖² + ∫_K ‖ξ‖²)`.
+
+Then there is `A` such that the jet `x ∈ W^{1,2}_0(U, V)` of every test section `ξ` satisfies
+`‖x‖ ≤ A (‖D_u x‖ + ‖√ρ ξ‖_{L²(K)})`, the estimate consumed by Peetre's argument
+`TauCeti.ConformalSobolev.finiteDimensional_ker_of_estimate`. -/
+theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_integral_le
+    (ω : SymplecticForm V) (hρ : IsWeight U ρ) {J : ℝ × ℝ → V → V →L[ℝ] V}
+    {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hM : MemLp (ω.floerConformalJetCoeff ρ J Ks Kt u) ∞ (volume.restrict U))
+    {K : Set (ℝ × ℝ)} (hK : IsCompact K) (hKU : K ⊆ U) {C : ℝ}
+    (hest : ∀ ⦃ξ : ℝ × ℝ → V⦄, ξ ∈ testSection V U →
+      ∫ z in U, (ρ z * ‖ξ z‖ ^ 2 + ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2) ≤
+        C * ((∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) + ∫ z in K, ‖ξ z‖ ^ 2)) :
+    ∃ A, ∀ x : H1 V U ρ, (x : Lp (V × V × V) 2 (volume.restrict U)) ∈ jetSubmodule V U ρ →
+      ‖x‖ ≤ A * (‖ω.floerConformalSobolevOperator U ρ J Ks Kt u x‖ +
+        ‖restrictWeightedValue V U K x‖) := by
+  -- On `K` the `L²` norm of a section is controlled by its weighted value.
+  obtain ⟨B, hB⟩ :=
+    exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq (V := V) hρ hK hKU
+  set k := max C 0 * (1 + |B|)
+  refine ⟨√k, fun x hx ↦ ?_⟩
+  obtain ⟨ξ, hξ, hxξ⟩ := mem_jetSubmodule_iff.1 hx
+  set D := ω.floerConformalSobolevOperator U ρ J Ks Kt u
+  set R := restrictWeightedValue V U K
+  have hY : ∫ z in K, ‖ξ z‖ ^ 2 ≤ |B| * ‖R x‖ ^ 2 :=
+    (hB (mem_testSection_iff.1 hξ).1.continuous.continuousOn hxξ).trans
+      (by gcongr; exact le_abs_self B)
+  -- Assemble: `‖x‖² ≤ k (‖D x‖ + ‖R x‖)²`.
+  have hx2 : ‖x‖ ^ 2 ≤ k * (‖D x‖ + ‖R x‖) ^ 2 := by
+    have h₁ : C * ((∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) + ∫ z in K, ‖ξ z‖ ^ 2) ≤
+        max C 0 * (‖D x‖ ^ 2 + |B| * ‖R x‖ ^ 2) := by
+      rw [← norm_floerConformalSobolevOperator_sq ω hρ hM hξ hxξ]
+      exact mul_le_mul (le_max_left C 0) (by linarith)
+        (add_nonneg (sq_nonneg _) (setIntegral_nonneg hK.measurableSet fun _ _ ↦ sq_nonneg _))
+        (le_max_right C 0)
+    have h₂ : ‖D x‖ ^ 2 + |B| * ‖R x‖ ^ 2 ≤ (1 + |B|) * (‖D x‖ + ‖R x‖) ^ 2 := by
+      nlinarith [norm_nonneg (D x), norm_nonneg (R x), abs_nonneg B,
+        mul_nonneg (norm_nonneg (D x)) (norm_nonneg (R x)),
+        mul_nonneg (abs_nonneg B) (mul_nonneg (norm_nonneg (D x)) (norm_nonneg (R x))),
+        mul_nonneg (abs_nonneg B) (sq_nonneg ‖D x‖)]
+    calc ‖x‖ ^ 2 ≤ max C 0 * (‖D x‖ ^ 2 + |B| * ‖R x‖ ^ 2) :=
+          (sq_norm_le_integral hρ hξ hxξ).trans ((hest hξ).trans h₁)
+      _ ≤ max C 0 * ((1 + |B|) * (‖D x‖ + ‖R x‖) ^ 2) := by gcongr
+      _ = k * (‖D x‖ + ‖R x‖) ^ 2 := by ring
+  calc ‖x‖ = √(‖x‖ ^ 2) := (Real.sqrt_sq (norm_nonneg _)).symm
+    _ ≤ √(k * (‖D x‖ + ‖R x‖) ^ 2) := Real.sqrt_le_sqrt hx2
+    _ = √k * (‖D x‖ + ‖R x‖) := by
+      rw [Real.sqrt_mul (by positivity), Real.sqrt_sq (by positivity)]
 
 end TauCeti.SymplecticForm

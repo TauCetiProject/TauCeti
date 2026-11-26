@@ -27,7 +27,7 @@ as group objects in fppf sheaves, the quotient projection becoming the conjugati
 
 The conjugation homomorphism is not surjective on points: an automorphism of `Mₙ(A)` need not be
 inner. It is, however, inner Zariski-locally on `Spec A`
-(`AlgEquiv.exists_span_eq_top_forall_map_eq_innerAut`), so every point of `PGLₙ` lifts to `GLₙ`
+(`AlgHom.exists_span_eq_top_forall_map_eq_innerAut`), so every point of `PGLₙ` lifts to `GLₙ`
 after the faithfully flat, finitely presented extension `A → ∏ A[1/c]` given by a finite Zariski
 cover. This is the hypothesis of the fppf first isomorphism theorem
 `TauCeti.CommHopfAlgCat.isIso_kernelFppfQuotientHom_of_exists_lift`. Over a field the kernel is
@@ -75,7 +75,7 @@ theorem exists_span_eq_top_forall_mapPoints_mem_range (A : CommAlgCat.{u} R)
           (CommAlgCat.ofHom (IsScalarTower.toAlgHom R A (Localization.Away c))) q ∈
         Set.range ((CommHopfAlgCat.Hom.mapPointsFunctor (conjugationMap n R)).app
           (CommAlgCat.of R (Localization.Away c))) := by
-  obtain ⟨s, hs, h⟩ := (pointsMulEquiv n R A q).exists_span_eq_top_forall_map_eq_innerAut
+  obtain ⟨s, hs, h⟩ := (pointsMulEquiv n R A q).toAlgHom.exists_span_eq_top_forall_map_eq_innerAut
   refine ⟨s, hs, fun c hc => ?_⟩
   let ψ := CommAlgCat.ofHom (IsScalarTower.toAlgHom R A (Localization.Away c))
   obtain ⟨g, hg⟩ := h c hc (algebraMap A (Localization.Away c))
