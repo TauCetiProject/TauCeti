@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.SchurComplement
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Quantitative bounds for block operators and their Schur complements
@@ -29,6 +30,12 @@ equivalent, with explicit constants depending only on `‖A⁻¹‖`, `‖B‖` 
   `(a + ‖Q‖) (1 + a b) (1 + a c)` (`ContinuousLinearEquiv.exists_rightInverse_coprod_prod_coprod`).
   Conversely a right inverse `R` of `M` yields the right inverse `z ↦ (R (0, z)).2` of `S`, of norm
   at most `‖R‖` (`ContinuousLinearEquiv.exists_rightInverse_schurComplement`).
+
+* **Variation.** Two Schur complements differ by at most
+  `‖D - D'‖ + ‖C - C'‖ a b + ‖C'‖ a' ‖A - A'‖ a b + ‖C'‖ a' ‖B - B'‖`, with `a' = ‖A'⁻¹‖`
+  (`ContinuousLinearEquiv.norm_schurComplement_sub_schurComplement_le`). This bounds the variation
+  of the Schur complement of a family of block operators by the variation of its blocks, as long
+  as the inverses of the upper left blocks stay bounded.
 
 In an adiabatic or Lyapunov–Schmidt reduction, where `A` is a uniformly invertible fast block and
 `S` the slow operator, these transfer uniform estimates for the slow operator to the full
@@ -140,5 +147,32 @@ theorem exists_rightInverse_schurComplement {R : F₁ × F₂ →L[𝕜] E₁ ×
   · calc ‖(R (0, v)).2‖ ≤ ‖R (0, v)‖ := norm_snd_le _
       _ ≤ ‖R‖ * ‖((0, v) : F₁ × F₂)‖ := R.le_opNorm _
       _ = ‖R‖ * ‖v‖ := by simp
+
+/-- **Variation of the Schur complement.** For block operators `(A B; C D)` and `(A' B'; C' D')`
+with invertible upper left blocks, the Schur complements `S` and `S'` satisfy
+
+`‖S - S'‖ ≤
+  ‖D - D'‖ + ‖C - C'‖ ‖A⁻¹‖ ‖B‖ + ‖C'‖ ‖A'⁻¹‖ ‖A - A'‖ ‖A⁻¹‖ ‖B‖ + ‖C'‖ ‖A'⁻¹‖ ‖B - B'‖`. -/
+theorem norm_schurComplement_sub_schurComplement_le (A' : E₁ ≃L[𝕜] F₁) (B' : E₂ →L[𝕜] F₁)
+    (C' : E₁ →L[𝕜] F₂) (D' : E₂ →L[𝕜] F₂) :
+    ‖A.schurComplement B C D - A'.schurComplement B' C' D'‖ ≤
+      ‖D - D'‖ + ‖C - C'‖ * ‖(A.symm : F₁ →L[𝕜] E₁)‖ * ‖B‖ +
+        ‖C'‖ * ‖(A'.symm : F₁ →L[𝕜] E₁)‖ * ‖(A : E₁ →L[𝕜] F₁) - (A' : E₁ →L[𝕜] F₁)‖ *
+          ‖(A.symm : F₁ →L[𝕜] E₁)‖ * ‖B‖ +
+        ‖C'‖ * ‖(A'.symm : F₁ →L[𝕜] E₁)‖ * ‖B - B'‖ := by
+  set a := (A.symm : F₁ →L[𝕜] E₁)
+  set a' := (A'.symm : F₁ →L[𝕜] E₁)
+  have h₂ : ‖(C - C') ∘L a ∘L B‖ ≤ ‖C - C'‖ * ‖a‖ * ‖B‖ := opNorm_comp_comp_le _ _ _
+  have h₃ : ‖C' ∘L a' ∘L ((A : E₁ →L[𝕜] F₁) - (A' : E₁ →L[𝕜] F₁)) ∘L a ∘L B‖ ≤
+      ‖C'‖ * ‖a'‖ * ‖(A : E₁ →L[𝕜] F₁) - (A' : E₁ →L[𝕜] F₁)‖ * ‖a‖ * ‖B‖ := by
+    rw [mul_assoc (‖C'‖ * ‖a'‖), mul_assoc (‖C'‖ * ‖a'‖)]
+    exact (opNorm_comp_comp_le _ _ _).trans (by gcongr; exact opNorm_comp_comp_le _ _ _)
+  have h₄ : ‖C' ∘L a' ∘L (B - B')‖ ≤ ‖C'‖ * ‖a'‖ * ‖B - B'‖ := opNorm_comp_comp_le _ _ _
+  rw [schurComplement_sub_schurComplement]
+  refine (norm_sub_le _ _).trans ?_
+  gcongr
+  refine (norm_add_le _ _).trans ?_
+  gcongr
+  exact (norm_sub_le _ _).trans (by gcongr)
 
 end ContinuousLinearEquiv

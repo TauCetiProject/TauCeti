@@ -281,7 +281,7 @@ theorem forall_frontier_chart_of_le {E : Type*} [NormedAddCommGroup E] [InnerPro
   have : FiniteDimensional ℝ E := Module.Finite.of_surjective
     ((LinearMap.snd ℝ ℝ E).comp (WithLp.linearEquiv 2 ℝ (ℝ × E)).toLinearMap)
     fun y => ⟨WithLp.toLp 2 (0, y), by simp⟩
-  obtain ⟨γ', K, hγ', heq, hK⟩ := hγ.exists_eqOn_ball_holderWith_fderiv hγK hβα hβ1 0 hr₀
+  obtain ⟨γ', K, -, hγ', heq, hK, -⟩ := hγ.exists_eqOn_ball_holderWith_fderiv hγK hβα hβ1 0 hr₀
   refine ⟨e, γ', h₀, r₀, K, hex, hh₀, hr₀, by rw [heq (mem_ball_self hr₀), hγ0], hγ', hK,
     fun z hz => ?_⟩
   rw [hgraph z hz, heq (mem_ball_zero_iff.2 (mem_normalCylinder.1 hz).2.2)]

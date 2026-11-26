@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Sobolev.Cylinder.Frame
 import TauCeti.Analysis.Sobolev.Circle.LinearODE.DeterminantLine
 import TauCeti.Geometry.Symplectic.AlmostComplex.Frame
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
@@ -69,6 +70,11 @@ In the namespace `TauCeti.SymplecticForm`:
 * `range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt`,
   `isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt`: the case of the identity frame, a
   unitary trivialization with `ω = Im ⟪·, ·⟫` and `J = i`.
+* `isInvertible_stationarySobolevOperator_of_compatible`: in a unitary trivialization, the
+  stationary cylinder operator `∂s + J_t (∂t - S_t)` over a nondegenerate orbit is invertible for
+  every `C²` loop of compatible structures, which need not be the structures of a Floer datum
+  along the orbit. On a punctured surface it serves both as the model of an end and as an
+  invertible operator with a prescribed constant principal part.
 
 ## References
 
@@ -132,7 +138,8 @@ private theorem exists_loop_eq_trivializedCoeff
   have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
   have hH₂ : ContDiff ℝ 2 (Function.uncurry H) := hH.of_le (by norm_num)
   have hΦd : Differentiable ℝ Φ := hΦ.differentiable (by norm_num)
-  obtain ⟨S, hS, hS₁⟩ := ω.exists_loop_eq_fderiv_hamiltonianVectorField hH hHp hx hxp
+  obtain ⟨S, hS, hS₁⟩ := ω.exists_loop_eq_fderiv_hamiltonianVectorField hH hHp
+    (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le (by norm_num)) hx) hxp
   have hSv : (fun t : ℝ ↦ S t) = fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
     funext hS
   have hSvp : Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 := fun t ↦ by
@@ -191,10 +198,9 @@ theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame
   -- `D_u (Φ ζ) = Φ (D_F ζ)` for every test section `ζ` of `F`.
   have hgen (ζ : testSection F) :
       mult (DF ⟨jetLp 2 (testSection F) ζ, jetLp_mem_jetClosure ζ⟩) ∈ Set.range D := by
-    obtain ⟨hζ, hζp, R, hR⟩ := mem_testSection_iff.1 ζ.property
-    have hξ : (fun w : ℝ × ℝ ↦ Φ w.2 ((ζ : ℝ × ℝ → F) w)) ∈ testSection V :=
-      mem_testSection_iff.2 ⟨(hΦ.comp contDiff_snd).clm_apply hζ,
-        fun s t ↦ by simp only [hΦp t, hζp s t], R, fun s t hs ↦ by simp only [hR s t hs, map_zero]⟩
+    have hζ := (mem_testSection_iff.1 ζ.property).1
+    have hξ := frame_mem_testSection (Φ := fun w : ℝ × ℝ ↦ Φ w.2)
+      (hΦ.comp contDiff_snd) (fun _ t ↦ hΦp t) ζ.property
     refine ⟨⟨jetLp 2 (testSection V) ⟨_, hξ⟩, jetLp_mem_jetClosure _⟩, Lp.ext ?_⟩
     filter_upwards [Floer.stationarySobolevOperator_jetLp_ae_eq hJc hSc ⟨_, hξ⟩, hmult _,
       Floer.stationarySobolevOperator_jetLp_ae_eq continuous_const hS'₁.continuous ζ]
@@ -326,5 +332,36 @@ theorem isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_compatibl
     (fun t v ↦ by simp [(hJx t).apply_unitaryFrame hg, hΦ]) hnd
 
 end CompatibleLoop
+
+section CompatibleLoopUnitary
+
+/-! ### The stationary operator for a loop of compatible structures in a unitary trivialization -/
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+
+/-- In a unitary trivialization, the stationary cylinder operator `∂s + J_t (∂t - S_t)` at a
+nondegenerate one-periodic orbit, `S_t = dX_{H_t}(x(t))`, is invertible on `W^{1,2}` for every
+`C²` one-periodic loop `J_t` of `ω`-compatible structures. -/
+theorem isInvertible_stationarySobolevOperator_of_compatible (ω : SymplecticForm F)
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {H : ℝ → F → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 3 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → F}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    {J₁ : ℝ → AlmostComplexStructure F} (hJ₁ : ∀ t, ω.Compatible (J₁ t))
+    (hJ₁₂ : ContDiff ℝ 2 fun t ↦ (J₁ t).toLinearMap.toContinuousLinearMap)
+    (hJ₁p : Periodic J₁ 1) :
+    (Floer.stationarySobolevOperator J₁
+      fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)).IsInvertible := by
+  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  have h := ω.isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_compatible hX hH hHp
+    hx hxp (J := fun t _ ↦ J₁ t) (ω.apply_ofComplexModule_eq_inner hω)
+    (Φ := ContinuousLinearEquiv.refl ℝ F)
+    (fun v ↦ by simp [AlmostComplexStructure.ofComplexModule_apply]) (fun v w ↦ by simp [hω])
+    hJ₁ hJ₁₂ hJ₁p hnd
+  rwa [floerSobolevOperator_def, floerJetCoeff_eq_stationaryJetCoeff ω (fun t _ ↦ J₁ t) H hx,
+    ← Floer.stationarySobolevOperator_def] at h
+
+end CompatibleLoopUnitary
 
 end TauCeti.SymplecticForm

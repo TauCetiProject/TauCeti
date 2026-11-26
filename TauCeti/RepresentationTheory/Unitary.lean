@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.RepresentationTheory.Basic
 
@@ -26,6 +27,8 @@ real-valued linear characters.
 
 ## Main statements
 
+* `Representation.adjoint_eq_inv`: on a finite-dimensional space, the adjoint of `σ g` is `σ g⁻¹`
+  when every `σ g` preserves norms.
 * `Representation.isSymmetric_asAlgebraHom`: a conjugate-symmetric group-algebra element acts by a
   symmetric operator in a unitary representation.
 * `Representation.isSymmetricProjection_asAlgebraHom`: a conjugate-symmetric idempotent acts by a
@@ -71,6 +74,24 @@ theorem isSymmetricProjection_asAlgebraHom (hσ : ∀ g v w, ⟪σ g v, σ g w�
   ⟨he.map σ.asAlgebraHom, σ.isSymmetric_asAlgebraHom hσ ha⟩
 
 end Unitary
+
+/-! ### Adjoints in a norm-preserving representation -/
+
+section Adjoint
+
+variable {𝕜 G W : Type*} [RCLike 𝕜] [Group G]
+  [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [FiniteDimensional 𝕜 W]
+  (σ : Representation 𝕜 G W)
+
+/-- **The adjoint of `σ g` is `σ g⁻¹`** in a norm-preserving representation on a
+finite-dimensional inner product space. -/
+theorem adjoint_eq_inv (hσ : ∀ g v, ‖σ g v‖ = ‖v‖) (g : G) : (σ g).adjoint = σ g⁻¹ := by
+  refine ((LinearMap.eq_adjoint_iff _ _).2 fun v w ↦ ?_).symm
+  let U : W →ₗᵢ[𝕜] W := ⟨σ g, hσ g⟩
+  rw [← U.inner_map_map]
+  simp [U, ← mul_apply_eq_comp, ← map_mul]
+
+end Adjoint
 
 end Representation
 

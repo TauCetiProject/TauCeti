@@ -803,10 +803,7 @@ private theorem coeff_ofPowerSeries_mul_eq_configurationCount_insert {c : ι} {t
       configurationCount r cls w (insert c t) A := by
   classical
   have hγ := hpos c (Set.mem_insert c t)
-  have hinj : Function.Injective fun k : ℕ ↦ k • cls c := fun k k' h ↦ by
-    have h' := congrArg N h
-    simp only [map_nsmul, nsmul_eq_mul] at h'
-    exact_mod_cast mul_right_cancel₀ hγ.ne' h'
+  have hinj := N.nsmul_left_injective_of_map_ne_zero hγ.ne'
   have hfin (u : Set ι) (hu : u ⊆ insert c t) (B : H) :=
     finite_compatibleConfigurations (r := r) (A := B) (fun d hd ↦ hpos d (hu hd))
       (((htfin.insert c).subset hu).subset fun d hd ↦ hd.1)

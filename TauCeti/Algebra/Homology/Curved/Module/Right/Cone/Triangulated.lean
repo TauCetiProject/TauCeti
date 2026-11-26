@@ -121,6 +121,38 @@ theorem coneTriangle_distinguished {M N : CurvedDGRightModuleCat.{u, u, u} h}
   rw [coneTriangle_rotate]
   exact Triangle.isoNegThird _ _ _
 
+/-- A closed morphism belongs to `P.trW` in the curved homotopy category if and only if its
+mapping cone satisfies `P`. -/
+theorem trW_dgClosedToHomotopy_map_iff
+    (P : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)))
+    [P.IsClosedUnderIsomorphisms]
+    {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    P.trW ((dgClosedToHomotopy R).map f) ↔ P (DGHomotopyCategory.of R (cone f)) :=
+  P.trW_iff_of_distinguished _ (coneTriangle_distinguished f)
+
+/-- If `P` is a triangulated subcategory of the curved homotopy category, then the mapping cone
+of a composition of closed morphisms belongs to `P` whenever the mapping cones of both factors
+belong to `P`. -/
+theorem cone_comp_mem_of_isTriangulated
+    (P : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)))
+    [P.IsClosedUnderIsomorphisms] [P.IsTriangulated]
+    {L M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) L ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)
+    (g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N)
+    (hf : P (DGHomotopyCategory.of R (cone f)))
+    (hg : P (DGHomotopyCategory.of R (cone g))) :
+    P (DGHomotopyCategory.of R (cone (f ≫ g))) := by
+  have hcomp : P.trW ((dgClosedToHomotopy R).map (f ≫ g)) := by
+    rw [Functor.map_comp]
+    exact MorphismProperty.comp_mem _ _ _
+      ((trW_dgClosedToHomotopy_map_iff P f).2 hf)
+      ((trW_dgClosedToHomotopy_map_iff P g).2 hg)
+  exact (trW_dgClosedToHomotopy_map_iff P (f ≫ g)).1 hcomp
+
 /-- Distinguished triangles are precisely those isomorphic to the concrete mapping-cone
 triangles of closed maps, with the negative cone projection as third arrow. -/
 theorem mem_distTriang_iff_nonempty_iso_coneTriangle
