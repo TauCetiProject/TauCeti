@@ -16,7 +16,7 @@ public import TauCeti.AlgebraicTopology.Singular.EquivariantChains
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Representation
 public import TauCeti.RepresentationTheory.Pi.External
 public import TauCeti.Topology.Category.TopPair.Action
-public import TauCeti.Topology.ImplicitAtlas.DeformationSpace
+public import TauCeti.Topology.ImplicitAtlas.DeformationSpace.Basic
 import TauCeti.Algebra.BigOperators.Finset.SDiff
 
 /-!
