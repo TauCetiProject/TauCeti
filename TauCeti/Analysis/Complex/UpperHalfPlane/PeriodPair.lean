@@ -1213,7 +1213,13 @@ theorem Homothetic.leftOrder_lattice_eq {L L' : PeriodPair} (h : L.Homothetic L'
 
 section Multipliers
 
-/-! ### Multipliers are algebraic integers of degree at most two -/
+/-! ### Multipliers are algebraic integers of degree at most two
+
+This follows J. H. Silverman, *The Arithmetic of Elliptic Curves*, 2nd ed., Graduate Texts in
+Mathematics 106, Springer, 2009, §VI.5: write `α ω₁ = a ω₁ + b ω₂` and
+`α ω₂ = e ω₁ + f ω₂` with integers `a, b, e, f`; then `α` is a root of the characteristic
+polynomial of this integer matrix, whose determinant is `|α|²`, and a real multiplier is an
+integer. -/
 
 open ComplexConjugate
 
