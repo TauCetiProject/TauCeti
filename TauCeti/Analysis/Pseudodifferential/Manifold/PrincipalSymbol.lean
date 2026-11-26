@@ -60,6 +60,9 @@ depends on the cutoffs only through their values at the point.
   of order `m` vanishes exactly when it has order `m - 1`; so two operators with the same principal
   symbol differ by an operator of order `m - 1`
   (`TauCeti.sub_mem_classicalPseudodifferentialOperators_of_classicalPrincipalSymbol_eq`).
+* `TauCeti.classicalPrincipalSymbol_eq_of_eventually_apply_eq`: the principal symbol at `x` only
+  depends on the operator near `x`; so the principal symbol of a locally finite sum of operators is
+  the sum of their principal symbols (`TauCeti.classicalPrincipalSymbol_locallyFiniteSum`).
 * `TauCeti.homogeneousCotangentSymbols m`: the smooth positively homogeneous functions of degree
   `m` on the cotangent bundle, read in charts. Every principal symbol lies there
   (`TauCeti.classicalPrincipalSymbol_mem_homogeneousCotangentSymbols`), and
@@ -585,6 +588,85 @@ theorem classicalPrincipalSymbol_sum {ι : Type*} (s : Finset ι)
       classicalPrincipalSymbol_add (hP i (Finset.mem_insert_self i s))
         (Submodule.sum_mem _ fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)),
       ih fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)]
+
+/-! ### Locality -/
+
+/-- **Locality of the principal symbol.** Two classical pseudodifferential operators of order `m`
+whose outputs agree near `x`, for every input, have the same principal symbol at `x`. -/
+theorem classicalPrincipalSymbol_eq_of_eventually_apply_eq
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hQ : Q ∈ classicalPseudodifferentialOperators m) {x : M}
+    (h : ∀ᶠ y in 𝓝 x, ∀ f, P f y = Q f y)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m P x ξ = classicalPrincipalSymbol m Q x ξ := by
+  -- Read both operators in the preferred chart `e` at `x`, through a cutoff `φ` equal to `1` at
+  -- `e x` and supported in the chart image of a neighbourhood `t` where the outputs agree.
+  set e := chartAt (CoordinateSpace n) x
+  have he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
+    IsManifold.chart_mem_maximalAtlas x
+  have hx : x ∈ e.source := mem_chart_source _ x
+  obtain ⟨t, ht, htO, hxt⟩ := eventually_nhds_iff.1 h
+  have hW : IsOpen (e.target ∩ e.symm ⁻¹' t) :=
+    e.continuousOn_symm.isOpen_inter_preimage e.open_target htO
+  obtain ⟨φ, hφt, hφx⟩ := TestFunction.exists_tsupport_subset_apply_eq
+    (Ω := ⟨e.target, e.open_target⟩) (n := ⊤)
+    (hW.mem_nhds ⟨e.map_source hx, by rwa [mem_preimage, e.left_inv hx]⟩) (fun z hz ↦ hz.1)
+    (1 : ℝ)
+  obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hP).2 e he φ φ
+  -- The compressions of `P` and `Q` by `φ` agree, so `a` is a chart symbol of `Q` too.
+  have ha' (u : 𝓢(CoordinateSpace n, ℂ)) (z : CoordinateSpace n) :
+      quantizeSchwartzValue a.toSymbol.coefficient u z =
+        e.complexChartCompression he φ φ Q (ContMDiffMap.ofContDiff u (u.smooth ⊤)) z := by
+    rw [ha, OpenPartialHomeomorph.complexChartCompression_apply,
+      OpenPartialHomeomorph.complexChartCompression_apply]
+    by_cases hz : φ z = 0
+    · simp [hz]
+    · rw [ht _ (hφt (subset_tsupport _ hz)).2]
+  have h₁ := coefficient_principal_apply_eq_classicalPrincipalSymbol hP he φ φ ha hx ξ
+  have h₂ := coefficient_principal_apply_eq_classicalPrincipalSymbol hQ he φ φ ha' hx ξ
+  rw [hφx] at h₁ h₂
+  simpa using h₁.symm.trans h₂
+
+section LocallyFiniteSum
+
+variable {ι : Type*}
+  {P : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+    C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+  {hP : ∀ f, LocallyFinite fun i ↦ Function.support (P i f)} {S : ι → Set M}
+
+/-- **The principal symbol of a locally finite sum.** Let `Pᵢ` be classical pseudodifferential
+operators of order `m` whose outputs are supported in the sets `Sᵢ` of a locally finite family. If
+their locally finite sum `f ↦ ∑ᵢ Pᵢ f` is a classical pseudodifferential operator of order `m`, as
+`TauCeti.locallyFiniteSum_mem_classicalPseudodifferentialOperators` provides, its principal symbol
+is the (locally finite) sum of the principal symbols of the `Pᵢ`. -/
+theorem classicalPrincipalSymbol_locallyFiniteSum (hS : LocallyFinite S)
+    (hsupp : ∀ i f, tsupport (P i f) ⊆ S i)
+    (hPm : ∀ i, P i ∈ classicalPseudodifferentialOperators m)
+    (hF : ContMDiffMap.locallyFiniteSum P hP ∈ classicalPseudodifferentialOperators m) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (ContMDiffMap.locallyFiniteSum P hP) x ξ =
+      ∑ᶠ i, classicalPrincipalSymbol m (P i) x ξ := by
+  classical
+  -- On a neighbourhood `t` of `x`, only the finitely many `Pᵢ` with `Sᵢ` meeting `t` act.
+  obtain ⟨t, ht, hfin⟩ := hS x
+  have hzero (i : ι) (hi : i ∉ hfin.toFinset) (f) {y : M} (hy : y ∈ t) : P i f y = 0 :=
+    image_eq_zero_of_notMem_tsupport fun h ↦ hi (hfin.mem_toFinset.2 ⟨y, hsupp i f h, hy⟩)
+  have hsum : classicalPrincipalSymbol m (ContMDiffMap.locallyFiniteSum P hP) x ξ =
+      classicalPrincipalSymbol m (∑ i ∈ hfin.toFinset, P i) x ξ :=
+    classicalPrincipalSymbol_eq_of_eventually_apply_eq hF (Submodule.sum_mem _ fun i _ ↦ hPm i)
+      (Filter.mem_of_superset ht fun y hy f ↦ by
+        rw [ContMDiffMap.locallyFiniteSum_apply, LinearMap.coe_sum, Finset.sum_apply,
+          ContMDiffMap.coe_sum, Finset.sum_apply]
+        exact finsum_eq_sum_of_support_subset _ fun i hi ↦
+          by_contra fun h ↦ hi (hzero i h f hy)) ξ
+  -- The other `Pᵢ` vanish near `x`, so their principal symbols vanish at `x`.
+  rw [hsum, classicalPrincipalSymbol_sum _ fun i _ ↦ hPm i]
+  refine (finsum_eq_sum_of_support_subset _ fun i hi ↦ by_contra fun h ↦ hi ?_).symm
+  rw [classicalPrincipalSymbol_eq_of_eventually_apply_eq (hPm i) (zero_mem _)
+    (Filter.mem_of_superset ht fun y hy f ↦ by simp [hzero i h f hy]),
+    classicalPrincipalSymbol_zero]
+
+end LocallyFiniteSum
 
 /-! ### The principal symbol map -/
 
