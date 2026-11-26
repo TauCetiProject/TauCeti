@@ -46,16 +46,16 @@ theorem clebschGordan_spin_zero {d i : ℕ} (h : i ≤ d) :
     clebschGordan d d 0 i (d - i) 0 = (-1) ^ (d - i) / Real.sqrt (d + 1) := by
   rw [clebschGordan_eq_sqrt_mul_clebschGordanTerm (isTriad_iff.2 ⟨by omega, by omega, by omega,
       ⟨d, by omega⟩⟩) h (Nat.sub_le d i) le_rfl (by omega) (z₀ := d - i) (by omega)
-      fun z _ _ ↦ by rw [clebschGordanTerm_def, ite_eq_right (by omega)],
+      fun z _ _ ↦ clebschGordanTerm_eq_zero (by omega),
     clebschGordanPrefactor_eq (a := d) (b := 0) (c := 0) (s := d) (by omega) (by omega) (by omega)
       (by omega),
     clebschGordanTerm_eq (a := i) (b := 0) (c := 0) (e := 0) (f := 0) (by omega) (by omega)
       (by omega) (by omega) (by omega) (by omega)]
   simp only [Nat.sub_self, Nat.sub_sub_self h, zero_add, Nat.factorial_zero, mul_one, one_mul]
-  rw [← Real.sqrt_sq (by positivity : (0 : ℝ) ≤ ((d - i).factorial * i.factorial : ℕ)),
-    mul_div_left_comm, ← Real.sqrt_div' _ (by positivity), div_eq_mul_inv _ (Real.sqrt _),
-    ← Real.sqrt_inv, Nat.factorial_succ]
-  congr 2
+  rw [mul_div_left_comm, div_eq_mul_inv _ (Real.sqrt _), ← Real.sqrt_inv]
+  congr 1
+  rw [eq_comm, Real.sqrt_eq_iff_eq_sq (by positivity) (by positivity), div_pow,
+    Real.sq_sqrt (by positivity), Nat.factorial_succ]
   push_cast
   field_simp
 
@@ -70,16 +70,14 @@ theorem clebschGordan_stretched {d₁ d₂ i₁ i₂ : ℕ} (h₁ : i₁ ≤ d�
           (d₂ - i₂).factorial : ℕ) : ℝ)) := by
   rw [clebschGordan_eq_sqrt_mul_clebschGordanTerm (isTriad_add d₁ d₂) h₁ h₂ (by omega)
       (by omega) (z₀ := 0) (by omega)
-      fun z _ _ ↦ by rw [clebschGordanTerm_def, ite_eq_right (by omega)],
+      fun z _ _ ↦ clebschGordanTerm_eq_zero (by omega),
     clebschGordanPrefactor_eq (a := 0) (b := d₁) (c := d₂) (s := d₁ + d₂) (by omega) (by omega)
       (by omega) (by omega),
     clebschGordanTerm_eq (a := 0) (b := d₁ - i₁) (c := i₂) (e := i₁) (f := d₂ - i₂) (by omega)
       (by omega) (by omega) (by omega) (by omega) (by omega)]
   simp only [Nat.factorial_zero, pow_zero, mul_one, one_mul]
-  rw [← Real.sqrt_sq (by positivity : (0 : ℝ) ≤ ((d₁ - i₁).factorial * i₂.factorial *
-      i₁.factorial * (d₂ - i₂).factorial : ℕ)), mul_one_div, ← Real.sqrt_div' _ (by positivity),
-    Nat.factorial_succ (d₁ + d₂)]
-  congr 1
+  rw [mul_one_div, eq_comm, Real.sqrt_eq_iff_eq_sq (by positivity) (by positivity), div_pow,
+    Real.sq_sqrt (by positivity), Nat.factorial_succ (d₁ + d₂)]
   push_cast
   field_simp
 
@@ -105,7 +103,7 @@ theorem clebschGordan_pos {d₁ d₂ d : ℕ} (h : IsTriad d₁ d₂ d) :
     0 < clebschGordan d₁ d₂ d d₁ ((d + d₂ - d₁) / 2) d := by
   obtain ⟨h₁, h₂, h₃, r, hr⟩ := isTriad_iff.1 h
   rw [clebschGordan_eq_sqrt_mul_clebschGordanTerm h le_rfl (by omega) le_rfl (by omega) (z₀ := 0)
-      (by omega) fun z _ _ ↦ by rw [clebschGordanTerm_def, ite_eq_right (by omega)],
+      (by omega) fun z _ _ ↦ clebschGordanTerm_eq_zero (by omega),
     clebschGordanTerm_def, ite_eq_left (by omega), pow_zero]
   exact mul_pos (Real.sqrt_pos.2 (clebschGordanPrefactor_pos _ _ _ _ _ _)) (by positivity)
 

@@ -147,6 +147,15 @@ theorem clebschGordanTerm_eq {d₁ d₂ d i₁ i₂ z a b c e f : ℕ}
   subst ha hb hc he hf
   exact ite_eq_left h
 
+/-- The summand of Racah's formula vanishes at an index `z` where one of the arguments
+`z + i₁ - L`, `z + (d₂ - i₂) - L`, `d₁ - i₁ - z` or `i₂ - z` of its factorials would be negative,
+`L = (d₁ + d₂ - d) / 2`. -/
+theorem clebschGordanTerm_eq_zero {d₁ d₂ d i₁ i₂ z : ℕ}
+    (h : ¬((d₁ + d₂ - d) / 2 ≤ z + i₁ ∧ (d₁ + d₂ - d) / 2 ≤ z + (d₂ - i₂) ∧ z ≤ d₁ - i₁ ∧
+      z ≤ i₂)) :
+    clebschGordanTerm d₁ d₂ d i₁ i₂ z = 0 :=
+  ite_eq_right h
+
 /-- The factor under the square root in Racah's formula, with the arguments
 `a = (d₁ + d₂ - d) / 2`, `b = (d₁ + d - d₂) / 2`, `c = (d₂ + d - d₁) / 2` and
 `s = (d₁ + d₂ + d) / 2` of its factorials evaluated. -/
