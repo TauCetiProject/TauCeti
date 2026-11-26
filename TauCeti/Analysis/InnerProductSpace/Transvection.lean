@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Linear
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.LinearAlgebra.Transvection.Basic
 
@@ -26,7 +27,10 @@ and inverse `x ↦ x - ⟪ν, x⟫ s`.
   `TauCeti.transvectionL_neg_comp_transvectionL` and `TauCeti.transvectionEquivL`: for
   `⟪ν, s⟫ = 0` its inverse is the transvection along `-s`, and it is a continuous linear
   equivalence.
+* `TauCeti.injective_transvectionL`: for `⟪ν, s⟫ = 0` it is injective.
 * `TauCeti.det_transvectionL`: its determinant is `1 + ⟪ν, s⟫`.
+* `TauCeti.abs_det_fderiv_transvectionL`: for `⟪ν, s⟫ = 0` its derivative has determinant of
+  absolute value one, as the change of variables formula uses it.
 * `TauCeti.adjoint_transvectionL`: its adjoint is the transvection with `ν` and `s` exchanged.
 * `TauCeti.norm_transvectionL_le`: its operator norm is at most `1 + ‖ν‖ ‖s‖`.
 -/
@@ -111,12 +115,24 @@ theorem transvectionEquivL_symm_apply {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) (x : 
   rw [transvectionEquivL, ContinuousLinearEquiv.symm_ofContinuousLinearMap,
     ContinuousLinearEquiv.coe_ofContinuousLinearMap]
 
+/-- For `⟪ν, s⟫ = 0`, the transvection `x ↦ x + ⟪ν, x⟫ s` is injective. -/
+theorem injective_transvectionL {ν s : E} (h : ⟪ν, s⟫_ℝ = 0) :
+    Function.Injective (transvectionL ν s) := fun x y hxy => by
+  rw [← transvectionEquivL_apply h x, ← transvectionEquivL_apply h y] at hxy
+  exact (transvectionEquivL h).injective hxy
+
 /-- The transvection `x ↦ x + ⟪ν, x⟫ s` has determinant `1 + ⟪ν, s⟫`. -/
 @[simp]
 theorem det_transvectionL [FiniteDimensional ℝ E] (ν s : E) :
     (transvectionL ν s).det = 1 + ⟪ν, s⟫_ℝ := by
   rw [ContinuousLinearMap.det, coe_transvectionL, LinearMap.transvection.det,
     innerₛₗ_apply_apply]
+
+/-- For `⟪ν, s⟫ = 0`, the derivative of the transvection `x ↦ x + ⟪ν, x⟫ s`, which is the
+transvection itself, has determinant of absolute value one. -/
+theorem abs_det_fderiv_transvectionL [FiniteDimensional ℝ E] {ν s : E} (h : ⟪ν, s⟫_ℝ = 0)
+    (x : E) : |(fderiv ℝ (transvectionL ν s) x).det| = 1 := by
+  rw [ContinuousLinearMap.fderiv, det_transvectionL, h, add_zero, abs_one]
 
 /-- The adjoint of the transvection `x ↦ x + ⟪ν, x⟫ s` is `x ↦ x + ⟪s, x⟫ ν`. -/
 theorem adjoint_transvectionL [CompleteSpace E] (ν s : E) :
