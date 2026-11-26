@@ -38,12 +38,12 @@ for the frozen matrices `A`. This file proves the a priori estimate
 
 `‖∇u‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ}`, `2 < p < ∞`,
 
-for every such `u` whose gradient lies in `Lᵖ` and is integrable, with `C` and the threshold `δ`
-depending only on `n`, `p`, `λ` and `Λ`
+for every such `u` whose gradient lies in `Lᵖ`, with `C` and the threshold `δ` depending only on
+`n`, `p`, `λ` and `Λ`
 (`TauCeti.PDE.exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le`). Only the
-mean oscillation of `a` is controlled, not its modulus of continuity. The integrability of `∇u` is
-the a priori integrability that the Fefferman–Stein inequality requires; it holds for instance when
-`∇u ∈ Lᵖ` vanishes outside a bounded set, as for a cutoff of a local solution.
+mean oscillation of `a` is controlled, not its modulus of continuity. The membership `∇u ∈ Lᵖ` is
+the a priori integrability that the Fefferman–Stein inequality requires; no further integrability
+of `∇u`, such as `∇u ∈ L¹`, is needed.
 
 ## The argument
 
@@ -233,8 +233,8 @@ following property. Let `a` be a measurable coefficient matrix on `ℝ^{n+1}` bo
 that on every ball `B` some constant matrix `A`, uniformly elliptic with constants `λ, Λ`, has mean
 deviation `⨍_B ‖a - A‖ ≤ δ` from `a`; both norms are operator norms of the attached bilinear
 forms. Let `u ∈ H¹(ℝ^{n+1})` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly, that is
-`∫ ⟨a ∇u, ∇φ⟩ = ∫ ⟨G, ∇φ⟩` for every test function `φ`, with `G ∈ Lᵖ`, and let `∇u` be integrable
-and in `Lᵖ`. Then
+`∫ ⟨a ∇u, ∇φ⟩ = ∫ ⟨G, ∇φ⟩` for every test function `φ`, with `G ∈ Lᵖ`, and let `∇u` lie in `Lᵖ`.
+Then
 
 `‖∇u‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ}`.
 
@@ -253,8 +253,6 @@ theorem exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le {p
           (∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ),
             energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume ⊤ 2 φ) =
               ∫ x, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) →
-          Integrable
-            (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) →
           MemLp (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
             p volume →
           MemLp G p volume →
@@ -263,8 +261,8 @@ theorem exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le {p
   obtain ⟨C, δ, hδ, h⟩ := exists_eLpNorm_le_of_forall_setAverage_norm_sub_sq_le (n := n)
     (E := EuclideanSpace ℝ (Fin (n + 1))) (F := EuclideanSpace ℝ (Fin (n + 1))) hp hp_top
     (decayConst n lam Lam) (forcingConst n lam Lam) (forcingConst n lam Lam) (2 * Lam)
-  refine ⟨C, δ, hδ, fun {a} ha hbd hosc u G hu hint hgp hGp =>
-    h hint hgp hGp fun q q' hq hqp c ρ κ hρ hκ => ?_⟩
+  refine ⟨C, δ, hδ, fun {a} ha hbd hosc u G hu hgp hGp =>
+    h hgp hGp fun q q' hq hqp c ρ κ hρ hκ => ?_⟩
   -- Freeze the coefficients on `B_{κρ}` and apply the mean oscillation estimate on one ball.
   obtain ⟨A, hA, hδA⟩ := hosc c (κ * ρ) (mul_pos (zero_lt_one.trans_le hκ) hρ)
   exact (setAverage_norm_gradient_sub_sq_le ha hbd hu hp.le hgp hGp hq hqp hρ hκ hA hδA).trans_eq
@@ -346,8 +344,8 @@ theorem exists_eqOn_ball_and_forall_setAverage_le {lam Lam δ r₀ R : ℝ}
 and `Λ`, with the following property. Let `a` be a measurable coefficient matrix on `ℝ^{n+1}`
 bounded by `Λ`, such that on every ball `B` of radius at most `r₀` some constant matrix `A`,
 uniformly elliptic with constants `λ, Λ`, has mean deviation `⨍_B ‖a - A‖ ≤ δ` from `a`. Let
-`u ∈ H¹(ℝ^{n+1})` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly, with `G ∈ Lᵖ`, and let `∇u` be integrable,
-in `Lᵖ`, and zero almost everywhere outside a ball of radius `r₀ / 4`. Then
+`u ∈ H¹(ℝ^{n+1})` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly, with `G ∈ Lᵖ`, and let `∇u` lie in `Lᵖ` and
+vanish almost everywhere outside a ball of radius `r₀ / 4`. Then
 
 `‖∇u‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ}`.
 
@@ -370,8 +368,6 @@ theorem exists_eLpNorm_gradient_le_of_setAverage_le_of_gradient_eq_zero
           (∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ),
             energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume ⊤ 2 φ) =
               ∫ x, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) →
-          Integrable
-            (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) →
           MemLp (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
             p volume →
           MemLp G p volume →
@@ -381,7 +377,7 @@ theorem exists_eLpNorm_gradient_le_of_setAverage_le_of_gradient_eq_zero
     exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le (n := n) hp hp_top
       lam Lam
   refine ⟨C, δ / (4 * 8 ^ (n + 1)), by positivity,
-    fun {a r₀} ha hbd hosc x₀ u G hsupp hu hint hgp hGp => ?_⟩
+    fun {a r₀} ha hbd hosc x₀ u G hsupp hu hgp hGp => ?_⟩
   rcases le_or_gt r₀ 0 with hr₀ | hr₀
   · -- The ball is empty, so `∇u = 0` almost everywhere.
     have h0 : (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
@@ -392,7 +388,7 @@ theorem exists_eLpNorm_gradient_le_of_setAverage_le_of_gradient_eq_zero
   obtain ⟨b, hb, hbbd, hba, hbosc⟩ :=
     exists_eqOn_ball_and_forall_setAverage_le ha hbd hosc x₀ (R := r₀ / 4) (by positivity)
       (by linarith)
-  refine hC hb hbbd (fun c r hr => ?_) u G (fun φ => ?_) hint hgp hGp
+  refine hC hb hbbd (fun c r hr => ?_) u G (fun φ => ?_) hgp hGp
   · obtain ⟨A, hA, hAδ⟩ := hbosc c r hr
     exact ⟨A, hA, hAδ.trans_eq (by field_simp)⟩
   · rw [← hu φ]
@@ -1006,14 +1002,11 @@ theorem exists_eLpNorm_gradient_ball_le_of_setAverage_le (hn : n ≠ 0) {p q : �
   -- The whole-space estimate for the cutoff `ζ (u - m)`.
   obtain ⟨v, -, hv⟩ := W1p.exists_top_value_gradient_ae_eq_mul_sub_const (by norm_num) u hζ
     hζc (hζB.trans hball) m
-  have hvg1 := memLp_cutoff_gradient u measurableSet_ball le_rfl hζ.continuous hζle
-    (by positivity) hgζk hζ0 hgζ0 m (hgp.mono_exponent hp1) (hvum.mono_exponent hp1)
   have hvgp := memLp_cutoff_gradient u measurableSet_ball hp1 hζ.continuous hζle (by positivity)
     hgζk hζ0 hgζ0 m hgp hvum
   have hWv := hW ha hbd hosc x₀ v _ (ae_gradient_eq_zero_of_cutoff u hv hRr₀ hζ0 hgζ0)
     (energyFormH1_eq_integral_inner_of_cutoff ha hbd hLam u hball (hGp.integrable hp1) hu hζ hζc
       hζB m hv (hHp.locallyIntegrable hp1) hHh)
-    ((memLp_one_iff_integrable.1 hvg1).congr (hv.mono fun x hx => hx.symm))
     (hvgp.ae_eq (hv.mono fun x hx => hx.symm)) (hG₁p.add hHp)
   -- On `B(x₀, R/2)` the cutoff is one, so the gradient there is `∇u`.
   refine ((eLpNorm_gradient_le_of_ae_eq_cutoff u measurableSet_ball hv hζ1 p).trans
