@@ -152,19 +152,11 @@ theorem hasWilliamsonTypeAt_iff_of_fderiv_eq_zero (h0 : fderiv ℝ F x = 0) :
   have hker : (fderiv ℝ F x).ker = ⊤ := by
     rw [h0]
     exact LinearMap.ker_zero
-  -- Every functional vanishes on the image of `dF_x = 0`.
-  have hspan : Submodule.span ℝ (Set.range fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (fderiv ℝ F x) = 0} ↦
-      hessianQuadraticForm (ℓ.val ∘ F) x) =
-      Submodule.span ℝ (Set.range fun ℓ : G →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ F) x) := by
-    congr 1
-    ext Q
-    exact ⟨fun ⟨ℓ, hℓ⟩ ↦ ⟨ℓ.val, hℓ⟩,
-      fun ⟨ℓ, hℓ⟩ ↦ ⟨⟨ℓ, by rw [h0, ContinuousLinearMap.comp_zero]⟩, hℓ⟩⟩
   have key (hx : ω.IsNondegeneratePoint F x) :=
     (hasWilliamsonType_reduction_iff_of_eq_top (kₑ := kₑ) (kₕ := kₕ) (k_f := k_f) hker _
       fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (fderiv ℝ F x) = 0} ↦
         hx.polar_hessianQuadraticForm_eq_zero ℓ.val ℓ.property).trans
-      (hasWilliamsonType_iff_of_span_eq hspan)
+      (hasWilliamsonType_iff_of_span_eq (span_range_hessianQuadraticForm_of_fderiv_eq_zero h0))
   have hnd := isNondegeneratePoint_iff_isNondegenerateRankZeroPoint (ω := ω) h0
   exact ⟨fun ⟨hx, ht⟩ ↦ ⟨hnd.1 hx, (key hx).1 ht⟩,
     fun ⟨hx, ht⟩ ↦ ⟨hnd.2 hx, (key (hnd.2 hx)).2 ht⟩⟩
@@ -176,63 +168,35 @@ theorem HasWilliamsonTypeAt.two_mul_add_add_eq_finrank_of_fderiv_eq_zero
     2 * (kₑ + kₕ + 2 * k_f) = finrank ℝ E :=
   ((hasWilliamsonTypeAt_iff_of_fderiv_eq_zero h0).1 h).2.two_mul_add_add_eq_finrank
 
-/-- Unbundled form of `HasWilliamsonTypeAt`, with the derivative `dF_x` replaced by any `T` equal
-to it and its kernel by any `U` equal to that. -/
-private theorem hasWilliamsonTypeAt_iff_of_ker_eq {T : E →L[ℝ] G} (hT : fderiv ℝ F x = T)
-    {U : Submodule ℝ E} (hU : T.ker = U) :
+/-- Unbundled form of `HasWilliamsonTypeAt`, with the kernel of `dF_x` replaced by any `U` equal
+to it. -/
+private theorem hasWilliamsonTypeAt_iff_of_ker_eq {U : Submodule ℝ E}
+    (hU : (fderiv ℝ F x).ker = U) :
     ω.HasWilliamsonTypeAt F x kₑ kₕ k_f ↔ ω.IsNondegeneratePoint F x ∧
-      ∃ hQ : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U,
+      ∃ hQ : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp (fderiv ℝ F x) = 0 → ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U,
           QuadraticMap.polar (hessianQuadraticForm (ℓ ∘ F) x) w u = 0,
         (ω.reduction U).HasWilliamsonType
-          (fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ↦
+          (fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (fderiv ℝ F x) = 0} ↦
             ω.reducedQuadraticForm U _ (hQ ℓ.val ℓ.property)) kₑ kₕ k_f := by
-  subst hT hU
+  subst hU
   exact ⟨fun ⟨h, ht⟩ ↦ ⟨h, h.polar_hessianQuadraticForm_eq_zero, ht⟩, fun ⟨h, _, ht⟩ ↦ ⟨h, ht⟩⟩
 
 /-- **Invariance of the Williamson type under reparametrization of the values.** Composing `F` with
 a `C²` map `g` whose differential `Dg` at `F x` has a continuous linear left inverse does not change
 the Williamson type of a point: the kernel of the differential, and hence the transversal space, is
-the same, and the transversal Hessians of `g ∘ F` are those of `F`, reindexed along
-`ℓ' ↦ ℓ' ∘ Dg`. -/
+the same, and the transversal Hessians of `g ∘ F` span the same space as those of `F`
+(`TauCeti.SymplecticForm.span_range_reducedQuadraticForm_hessianQuadraticForm_comp_eq`). -/
 theorem hasWilliamsonTypeAt_comp_iff {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℝ G']
     {g : G → G'} (hg : ContDiffAt ℝ 2 g (F x)) (hD : (fderiv ℝ g (F x)).HasLeftInverse)
     (hF : ContDiffAt ℝ 2 F x) :
     ω.HasWilliamsonTypeAt (g ∘ F) x kₑ kₕ k_f ↔ ω.HasWilliamsonTypeAt F x kₑ kₕ k_f := by
-  set T := fderiv ℝ F x
-  set D := fderiv ℝ g (F x)
-  have hgF : fderiv ℝ (g ∘ F) x = D.comp T :=
-    fderiv_comp x (hg.differentiableAt two_ne_zero) (hF.differentiableAt two_ne_zero)
-  have hker : (D.comp T).ker = T.ker :=
-    LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot.2 hD.injective)
-  -- On `ker dF_x` the Hessian of `ℓ' ∘ g ∘ F` is the Hessian of `(ℓ' ∘ Dg) ∘ F`.
-  have hH (ℓ' : G' →L[ℝ] ℝ) {u : E} (hu : u ∈ T.ker) :
-      hessianQuadraticForm (ℓ' ∘ g ∘ F) x u = hessianQuadraticForm (ℓ'.comp D ∘ F) x u :=
-    ℓ'.hessianQuadraticForm_comp_comp_apply_of_fderiv_apply_eq_zero hg hF hu
-  have hpolar (ℓ' : G' →L[ℝ] ℝ) {w u : E} (hw : w ∈ T.ker) (hu : u ∈ T.ker) :
-      QuadraticMap.polar (hessianQuadraticForm (ℓ' ∘ g ∘ F) x) w u =
-        QuadraticMap.polar (hessianQuadraticForm (ℓ'.comp D ∘ F) x) w u := by
-    simp only [QuadraticMap.polar, hH ℓ' (add_mem hw hu), hH ℓ' hw, hH ℓ' hu]
-  -- Every functional `ℓ` on `G` is `(ℓ ∘ P) ∘ Dg` for a continuous linear left inverse `P` of
-  -- `Dg`, so `ℓ' ↦ ℓ' ∘ Dg` maps the critical functionals of `g ∘ F` onto those of `F`.
-  have hfac (ℓ : G →L[ℝ] ℝ) : (ℓ.comp hD.leftInverse).comp D = ℓ :=
-    ContinuousLinearMap.ext fun v ↦ by simp [hD.leftInverse_leftInverse v]
-  let f : {ℓ' : G' →L[ℝ] ℝ // ℓ'.comp (D.comp T) = 0} → {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} :=
-    fun ℓ' ↦ ⟨ℓ'.val.comp D, by rw [ContinuousLinearMap.comp_assoc]; exact ℓ'.property⟩
-  have hf : Function.Surjective f := fun ℓ ↦
-    ⟨⟨ℓ.val.comp hD.leftInverse, by rw [← ContinuousLinearMap.comp_assoc, hfac, ℓ.property]⟩,
-      Subtype.ext (hfac ℓ.val)⟩
-  rw [hasWilliamsonTypeAt_iff_of_ker_eq hgF hker, hasWilliamsonTypeAt_iff_of_ker_eq rfl rfl]
-  refine and_congr (isNondegeneratePoint_comp_iff hg hD hF) ((Equiv.ofIff
-    ⟨fun hQ₁ ℓ hℓ w hw u hu ↦ ?_, fun hQ₂ ℓ' hℓ' w hw u hu ↦ ?_⟩).exists_congr fun _ ↦ ?_)
-  · rw [← hfac ℓ, ← hpolar _ hw.1 hu]
-    exact hQ₁ _ (by rwa [← ContinuousLinearMap.comp_assoc, hfac]) w hw u hu
-  · rw [hpolar ℓ' hw.1 hu]
-    exact hQ₂ _ (f ⟨ℓ', hℓ'⟩).property w hw u hu
-  -- The transversal Hessians of `g ∘ F` are those of `F`, reindexed along `f`.
-  · refine hasWilliamsonType_iff_of_span_eq (congrArg _ ?_)
-    rw [← hf.range_comp]
-    exact congrArg Set.range
-      (funext fun ℓ' ↦ reducedQuadraticForm_congr _ _ _ _ fun _ hu ↦ hH ℓ'.val hu)
+  rw [hasWilliamsonTypeAt_iff_of_ker_eq (ker_fderiv_comp_of_injective
+      (hg.differentiableAt two_ne_zero) hD.injective (hF.differentiableAt two_ne_zero)),
+    hasWilliamsonTypeAt_iff_of_ker_eq rfl]
+  exact and_congr (isNondegeneratePoint_comp_iff hg hD hF)
+    ((Equiv.ofIff (forall_polar_hessianQuadraticForm_comp_eq_zero_iff hg hD hF)).exists_congr
+      fun hQ' ↦ hasWilliamsonType_iff_of_span_eq
+        (span_range_reducedQuadraticForm_hessianQuadraticForm_comp_eq hg hD hF hQ' _))
 
 /-- **Invariance of the Williamson type under linear changes of the values.** Composing `F` with a
 continuous linear equivalence `A : G ≃ G'` does not change the Williamson type of a point. Unlike

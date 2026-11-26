@@ -175,10 +175,9 @@ private theorem HasWilliamsonType.comp {ω' : SymplecticForm W} {e : V ≃ₗ[�
     { toFun := fun R ↦ R.comp (e : V →ₗ[ℝ] W)
       map_add' := fun _ _ ↦ by ext; simp
       map_smul' := fun _ _ ↦ by ext; simp }
-  have hc : (fun i ↦ (Q i).comp (e : V →ₗ[ℝ] W)) = c ∘ Q := rfl
-  rw [hc, ← hblocks, show (fun k ↦ (williamsonBlocks b u k).comp (e : V →ₗ[ℝ] W)) =
-    c ∘ williamsonBlocks b u from rfl, Set.range_comp, Set.range_comp, ← Submodule.map_span,
-    ← Submodule.map_span, hspan]
+  -- The coercion of `c` is its `toFun` field by definition.
+  have hc (R : QuadraticForm ℝ W) : R.comp (e : V →ₗ[ℝ] W) = c R := rfl
+  simp only [← hblocks, hc, Set.range_comp', ← Submodule.map_span, hspan]
 
 /-- **Invariance of the Williamson type under linear symplectomorphisms.** If `e : V ≃ W` carries
 `ω` to `ω'`, a family `Q` of quadratic forms on `W` has Williamson type `(kₑ, kₕ, k_f)` for `ω'`
