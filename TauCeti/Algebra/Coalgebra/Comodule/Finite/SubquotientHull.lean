@@ -166,15 +166,9 @@ private theorem isSumOfUnits_of_coact_eq_tmul_one
         · subst hjj
           simp
         · simp [hjj] }
-  -- Evaluation at a vector is additive in the morphism.
-  let ev (x : X) : (X ⟶ X) →+ X :=
-    { toFun f := f x
-      map_zero' := FGComoduleCat.zero_apply x
-      map_add' f g := FGComoduleCat.add_apply f g x }
   have htotal : ∑ j, c.π j ≫ c.ι j = 𝟙 c.pt := by
     refine ConcreteCategory.hom_ext _ _ fun x ↦ ?_
-    calc (∑ j, c.π j ≫ c.ι j) x = ∑ j, (c.π j ≫ c.ι j) x := map_sum (ev x) _ _
-      _ = x := by simp [c, hπ, hι]
+    simp [c, hπ, hι]
   exact .mk (biproduct.uniqueUpToIso _ (isBilimitOfTotal c htotal))
 
 /-- **Sums of units are the comodules with scalar coefficients.** A finite comodule is a sum of
