@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Deriv
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
-import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.NumberTheory.LSeries.Landau
 
 /-!
