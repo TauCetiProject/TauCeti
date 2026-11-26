@@ -53,10 +53,10 @@ theorem not_unipotent_specialLinear {n : ℕ} (hn : 2 ≤ n) :
   have hfix := basePointsRepresentation_eq_of_coact_eq_tmul_one (R := k)
     (H := SpecialLinear.coordinateHopfAlgebra k n) (Pi.single j 1 : Fin n → k)
     (mem_fixedSubcomodule.mp (htop ▸ Subcomodule.mem_top _)) g
-  rw [SpecialLinear.basePointsRepresentation_eq_mulVec, MulEquiv.apply_symm_apply] at hfix
-  have ht : t • (Pi.single j 1 : Fin n → k) = Pi.single j 1 := hfix
-  rw [Matrix.SpecialLinearGroup.transvection_smul_single_snd] at ht
-  simpa [hij] using congrFun ht i
+  rw [SpecialLinear.basePointsRepresentation_eq_mulVec, MulEquiv.apply_symm_apply,
+    ← Matrix.smul_eq_mulVec, ← Matrix.SpecialLinearGroup.smul_def,
+    Matrix.SpecialLinearGroup.transvection_smul_single_snd] at hfix
+  simpa [hij] using congrFun hfix i
 
 /-- For the point `diag(2, 1/2)` of `SL₂(ℚ)`, the matrix `diag(2, 1/2) - 1` is invertible. -/
 theorem isUnit_diag_two_half_sub_one :
