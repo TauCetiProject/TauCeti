@@ -283,9 +283,8 @@ theorem periodic_of_isComplexLinearMap_perturbedMFDeriv_of_eqOn
     rw [hz] at hF'
     exact ω.isComplexLinearMap_perturbedMFDeriv_comp_add_right rfl (by simp) hF'
   have hXs (α : M) : ContDiffOn ℝ 1 (ω.hamiltonianVectorFieldInChartAt α
-      fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ)) (univ ×ˢ (extChartAt I α).target) := by
-    rw [hamiltonianVectorFieldInChartAt_zero]
-    exact contDiff_zero_fun.contDiffOn
+      fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ)) (univ ×ˢ (extChartAt I α).target) :=
+    contDiffOn_hamiltonianVectorFieldInChartAt_zero ω α
   intro z
   exact (eqOn_of_isComplexLinearMap_perturbedMFDeriv_of_eqOn isOpen_univ isPreconnected_univ hJ
     hXs hH hu.contMDiffOn (hu.comp (contDiff_id.add contDiff_const).contMDiff).contMDiffOn
