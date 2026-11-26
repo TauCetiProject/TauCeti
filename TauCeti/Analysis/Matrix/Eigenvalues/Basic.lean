@@ -48,6 +48,10 @@ list of a real diagonal matrix is its diagonal sorted decreasingly
 (`Matrix.IsHermitian.eigenvalues₀_diagonal_eq_comp_sortDesc`). An orthonormal eigenbasis can be
 ordered as the sorted eigenvalues
 (`Matrix.IsHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul`).
+On the real vector space `selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)` of Hermitian matrices, the
+sorted eigenvalues of a real combination `a • A + b • B` are those of the same combination of the
+Euclidean operators (`Matrix.eigenvalues₀_smul_add_smul`), so operator statements on
+`LinearMap.IsSymmetric.eigenvalues` transfer to matrices.
 
 All statements use Mathlib's decreasing enumeration `Matrix.IsHermitian.eigenvalues₀`,
 including multiplicities. For positive-semidefinite matrices its nonzero entries form an
@@ -96,6 +100,21 @@ theorem IsHermitian.eigenvalues₀_congr (h : A = B) (hA : A.IsHermitian) (hB : 
     hA.eigenvalues₀ = hB.eigenvalues₀ := by
   subst h
   rfl
+
+/-- The sorted eigenvalues of a real combination `a • A + b • B` of Hermitian matrices are those
+of the same combination of their Euclidean operators. This transfers the operator statements on
+`LinearMap.IsSymmetric.eigenvalues` to the real vector space of Hermitian matrices. -/
+theorem eigenvalues₀_smul_add_smul (A B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) (a b : ℝ) :
+    (a • A + b • B).property.isHermitian.eigenvalues₀ =
+      (((isSymmetric_toEuclideanLin_iff.mpr A.property.isHermitian).smul
+        (RCLike.conj_ofReal a)).add
+        ((isSymmetric_toEuclideanLin_iff.mpr B.property.isHermitian).smul
+          (RCLike.conj_ofReal b))).eigenvalues finrank_euclideanSpace := by
+  rw [IsHermitian.eigenvalues₀]
+  refine LinearMap.IsSymmetric.eigenvalues_congr ?_ _ _ _
+  rw [Submodule.coe_add, Submodule.coe_smul, Submodule.coe_smul,
+    RCLike.real_smul_eq_coe_smul (K := 𝕜) a, RCLike.real_smul_eq_coe_smul (K := 𝕜) b, map_add,
+    map_smul, map_smul]
 
 /-- **The characteristic polynomial determines the sorted eigenvalues**: two Hermitian matrices
 have the same decreasing eigenvalue list exactly when they have the same characteristic

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -40,6 +41,8 @@ depends on the cutoffs only through their values at the point.
 
 * `TauCeti.classicalPrincipalSymbol m P x ξ`: the principal symbol of order `m` of `P` at a
   covector `ξ ∈ T*ₓM`, a complex number.
+* `TauCeti.hasCompactSpatialSupport_of_eq_complexChartCompression`: the symbol of a chart
+  compression by `φ` and `ψ` has compact spatial support, as its outputs vanish off `tsupport φ`.
 * `TauCeti.coefficient_principal_eq_classicalPrincipalSymbol`: the principal symbol of the symbol
   of every chart compression of `P` is read from `σ_m(P)`, at the covector `⟪η, ·⟫ ∘ de_x`.
 * `TauCeti.coefficient_principal_apply_eq_classicalPrincipalSymbol`: the same statement read at a
@@ -57,16 +60,26 @@ depends on the cutoffs only through their values at the point.
   of order `m` vanishes exactly when it has order `m - 1`; so two operators with the same principal
   symbol differ by an operator of order `m - 1`
   (`TauCeti.sub_mem_classicalPseudodifferentialOperators_of_classicalPrincipalSymbol_eq`).
+* `TauCeti.classicalPrincipalSymbol_eq_of_eventually_apply_eq`: the principal symbol at `x` only
+  depends on the operator near `x`; so the principal symbol of a locally finite sum of operators is
+  the sum of their principal symbols (`TauCeti.classicalPrincipalSymbol_locallyFiniteSum`).
 * `TauCeti.homogeneousCotangentSymbols m`: the smooth positively homogeneous functions of degree
   `m` on the cotangent bundle, read in charts. Every principal symbol lies there
   (`TauCeti.classicalPrincipalSymbol_mem_homogeneousCotangentSymbols`), and
   `TauCeti.classicalPrincipalSymbolLinearMap` is the principal symbol as a linear map from the
   operators of order `m` to it, with kernel the operators of order `m - 1`
   (`TauCeti.ker_classicalPrincipalSymbolLinearMap`).
+* `TauCeti.mul_inv_mem_homogeneousCotangentSymbols`, `TauCeti.inv_mem_homogeneousCotangentSymbols`:
+  the inverse of a smooth homogeneous function of degree `m` on the cotangent bundle, where it
+  vanishes at no nonzero covector, is smooth and homogeneous of degree `-m`; outside that set it
+  may be cut off by a smooth function of the base point.
 * `TauCeti.classicalPrincipalSymbol_complexifyLinearMap`: the principal symbol of the
   complexification of a differential operator `D` of order at most `m` is `i ^ m` times its
   geometric principal symbol (`TauCeti.smoothPrincipalSymbol`) at nonzero covectors, the
   angular-frequency convention `σ(∂ⱼ) = i ξⱼ`.
+* `TauCeti.classicalPrincipalSymbol_conj`: naturality under diffeomorphisms. Transporting `P`
+  along a diffeomorphism `Φ : N → M` pulls its principal symbol back by the cotangent map,
+  `σ_m(Φ^* P)(y, η ∘ dΦ_y) = σ_m(P)(Φ y, η)`.
 
 ## References
 
@@ -123,6 +136,23 @@ private theorem IsChartSymbol.eq {e : OpenPartialHomeomorph M (CoordinateSpace n
     (ha : IsChartSymbol P he φ ψ a) (hb : IsChartSymbol P he φ ψ b) : a = b :=
   ClassicalSymbol.ext <| Symbol.ext <| Symbol.coefficient_eq_of_forall_quantizeSchwartzValue_eq
     fun u _ ↦ funext fun x ↦ (ha u x).trans (hb u x).symm
+
+/-- The symbol of a chart compression by `φ` and `ψ` vanishes at positions outside the support of
+`φ`, since every output of the compression does. -/
+theorem hasCompactSpatialSupport_of_eq_complexChartCompression
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {b : ClassicalSymbol n ℂ ℂ m}
+    (hb : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
+      quantizeSchwartzValue b.toSymbol.coefficient u y =
+        e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y) :
+    b.toSymbol.HasCompactSpatialSupport := by
+  refine Symbol.hasCompactSpatialSupport_iff_exists_tsupport_quantizeSchwartzValue_subset.2
+    ⟨tsupport φ, φ.hasCompactSupport.isCompact, fun u _ ↦ ?_⟩
+  rw [show quantizeSchwartzValue b.toSymbol.coefficient u = fun y ↦ φ y •
+      P (e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))) (e.symm y) from
+    funext fun y ↦ by rw [hb, OpenPartialHomeomorph.complexChartCompression_apply]]
+  exact tsupport_smul_subset_left _ _
 
 /-! ### Changes of chart -/
 
@@ -276,6 +306,52 @@ theorem mem_homogeneousCotangentSymbols_iff
           s (e.symm p.1) ((innerSL ℝ p.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm p.1))))
           (e.target ×ˢ {η | η ≠ 0}) :=
   Iff.rfl
+
+omit [T2Space M] in
+/-- **The cut-off inverse of a homogeneous symbol.** Let `s` be a smooth positively homogeneous
+function of degree `m` on the cotangent bundle and `σ` a smooth real function on `M` such that `s`
+vanishes at no nonzero covector over the support of `σ`. Then `(x, ξ) ↦ σ(x) s(x, ξ)⁻¹` is a smooth
+positively homogeneous function of degree `-m`. Off the support of `σ` the inverse of `s` need not
+be smooth, but there it is multiplied by `0`. -/
+theorem mul_inv_mem_homogeneousCotangentSymbols
+    {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ}
+    (hs : s ∈ homogeneousCotangentSymbols n M m) {σ : M → ℝ}
+    (hσ : ContMDiff 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ) ∞ σ)
+    (hs0 : ∀ x ∈ tsupport σ, ∀ ξ, ξ ≠ 0 → s x ξ ≠ 0) :
+    (fun x ξ ↦ (σ x : ℂ) * (s x ξ)⁻¹) ∈ homogeneousCotangentSymbols n M (-m) := by
+  obtain ⟨h0, hhom, hsmooth⟩ := mem_homogeneousCotangentSymbols_iff.1 hs
+  refine mem_homogeneousCotangentSymbols_iff.2 ⟨fun x ↦ by simp [h0 x], fun x ξ t ht ↦ ?_,
+    fun e he p hp ↦ ?_⟩
+  · rw [hhom x ξ t ht, mul_inv, Real.rpow_neg ht.le, Complex.ofReal_inv, mul_left_comm]
+  by_cases hpσ : e.symm p.1 ∈ tsupport σ
+  · -- Over the support of `σ`, the symbol `s` does not vanish at the nonzero covector of `p`.
+    have hξ := (innerSL_comp_mvfderiv_eq_zero_iff
+      (IsManifold.maximalAtlas_subset_of_le (by simp) he) (e.map_target hp.1)).not.2 hp.2
+    have hσe : ContDiffOn ℝ ∞ (σ ∘ e.symm) e.target :=
+      contMDiffOn_iff_contDiffOn.1 (hσ.comp_contMDiffOn (contMDiffOn_symm_of_mem_maximalAtlas he))
+    exact (Complex.ofRealCLM.contDiff.contDiffAt.comp_contDiffWithinAt p
+      ((hσe.comp contDiffOn_fst mapsTo_fst_prod) p hp)).mul
+      ((hsmooth e he p hp).fun_inv (hs0 _ hpσ _ hξ))
+  · -- Off the support of `σ`, the function vanishes near `p`.
+    have hc : ∀ᶠ q in 𝓝 p, σ (e.symm (q : CoordinateSpace n × CoordinateSpace n).1) = 0 := by
+      filter_upwards [((e.continuousAt_symm hp.1).comp continuousAt_fst).preimage_mem_nhds
+        ((isClosed_tsupport σ).isOpen_compl.mem_nhds hpσ)] with q hq
+      exact image_eq_zero_of_notMem_tsupport hq
+    exact (contDiffWithinAt_const (c := (0 : ℂ))).congr_of_eventuallyEq
+      (eventually_nhdsWithin_of_eventually_nhds (hc.mono fun q hq ↦ by simp [hq]))
+      (by simp [image_eq_zero_of_notMem_tsupport hpσ])
+
+omit [T2Space M] in
+/-- **The inverse of a nonvanishing homogeneous symbol.** If `s` is a smooth positively
+homogeneous function of degree `m` on the cotangent bundle that vanishes at no nonzero covector,
+then its pointwise inverse `(x, ξ) ↦ s(x, ξ)⁻¹`, which is `0` at the zero covector, is a smooth
+positively homogeneous function of degree `-m`. -/
+theorem inv_mem_homogeneousCotangentSymbols
+    {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ}
+    (hs : s ∈ homogeneousCotangentSymbols n M m) (hs0 : ∀ x ξ, ξ ≠ 0 → s x ξ ≠ 0) :
+    (fun x ξ ↦ (s x ξ)⁻¹) ∈ homogeneousCotangentSymbols n M (-m) := by
+  simpa using mul_inv_mem_homogeneousCotangentSymbols hs (σ := fun _ ↦ 1) contMDiff_const
+    fun x _ ↦ hs0 x
 
 /-! ### The principal symbol on the cotangent bundle -/
 
@@ -563,6 +639,85 @@ theorem classicalPrincipalSymbol_sum {ι : Type*} (s : Finset ι)
         (Submodule.sum_mem _ fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)),
       ih fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)]
 
+/-! ### Locality -/
+
+/-- **Locality of the principal symbol.** Two classical pseudodifferential operators of order `m`
+whose outputs agree near `x`, for every input, have the same principal symbol at `x`. -/
+theorem classicalPrincipalSymbol_eq_of_eventually_apply_eq
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hQ : Q ∈ classicalPseudodifferentialOperators m) {x : M}
+    (h : ∀ᶠ y in 𝓝 x, ∀ f, P f y = Q f y)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m P x ξ = classicalPrincipalSymbol m Q x ξ := by
+  -- Read both operators in the preferred chart `e` at `x`, through a cutoff `φ` equal to `1` at
+  -- `e x` and supported in the chart image of a neighbourhood `t` where the outputs agree.
+  set e := chartAt (CoordinateSpace n) x
+  have he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
+    IsManifold.chart_mem_maximalAtlas x
+  have hx : x ∈ e.source := mem_chart_source _ x
+  obtain ⟨t, ht, htO, hxt⟩ := eventually_nhds_iff.1 h
+  have hW : IsOpen (e.target ∩ e.symm ⁻¹' t) :=
+    e.continuousOn_symm.isOpen_inter_preimage e.open_target htO
+  obtain ⟨φ, hφt, hφx⟩ := TestFunction.exists_tsupport_subset_apply_eq
+    (Ω := ⟨e.target, e.open_target⟩) (n := ⊤)
+    (hW.mem_nhds ⟨e.map_source hx, by rwa [mem_preimage, e.left_inv hx]⟩) (fun z hz ↦ hz.1)
+    (1 : ℝ)
+  obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hP).2 e he φ φ
+  -- The compressions of `P` and `Q` by `φ` agree, so `a` is a chart symbol of `Q` too.
+  have ha' (u : 𝓢(CoordinateSpace n, ℂ)) (z : CoordinateSpace n) :
+      quantizeSchwartzValue a.toSymbol.coefficient u z =
+        e.complexChartCompression he φ φ Q (ContMDiffMap.ofContDiff u (u.smooth ⊤)) z := by
+    rw [ha, OpenPartialHomeomorph.complexChartCompression_apply,
+      OpenPartialHomeomorph.complexChartCompression_apply]
+    by_cases hz : φ z = 0
+    · simp [hz]
+    · rw [ht _ (hφt (subset_tsupport _ hz)).2]
+  have h₁ := coefficient_principal_apply_eq_classicalPrincipalSymbol hP he φ φ ha hx ξ
+  have h₂ := coefficient_principal_apply_eq_classicalPrincipalSymbol hQ he φ φ ha' hx ξ
+  rw [hφx] at h₁ h₂
+  simpa using h₁.symm.trans h₂
+
+section LocallyFiniteSum
+
+variable {ι : Type*}
+  {P : ι → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+    C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+  {hP : ∀ f, LocallyFinite fun i ↦ Function.support (P i f)} {S : ι → Set M}
+
+/-- **The principal symbol of a locally finite sum.** Let `Pᵢ` be classical pseudodifferential
+operators of order `m` whose outputs are supported in the sets `Sᵢ` of a locally finite family. If
+their locally finite sum `f ↦ ∑ᵢ Pᵢ f` is a classical pseudodifferential operator of order `m`, as
+`TauCeti.locallyFiniteSum_mem_classicalPseudodifferentialOperators` provides, its principal symbol
+is the (locally finite) sum of the principal symbols of the `Pᵢ`. -/
+theorem classicalPrincipalSymbol_locallyFiniteSum (hS : LocallyFinite S)
+    (hsupp : ∀ i f, tsupport (P i f) ⊆ S i)
+    (hPm : ∀ i, P i ∈ classicalPseudodifferentialOperators m)
+    (hF : ContMDiffMap.locallyFiniteSum P hP ∈ classicalPseudodifferentialOperators m) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (ContMDiffMap.locallyFiniteSum P hP) x ξ =
+      ∑ᶠ i, classicalPrincipalSymbol m (P i) x ξ := by
+  classical
+  -- On a neighbourhood `t` of `x`, only the finitely many `Pᵢ` with `Sᵢ` meeting `t` act.
+  obtain ⟨t, ht, hfin⟩ := hS x
+  have hzero (i : ι) (hi : i ∉ hfin.toFinset) (f) {y : M} (hy : y ∈ t) : P i f y = 0 :=
+    image_eq_zero_of_notMem_tsupport fun h ↦ hi (hfin.mem_toFinset.2 ⟨y, hsupp i f h, hy⟩)
+  have hsum : classicalPrincipalSymbol m (ContMDiffMap.locallyFiniteSum P hP) x ξ =
+      classicalPrincipalSymbol m (∑ i ∈ hfin.toFinset, P i) x ξ :=
+    classicalPrincipalSymbol_eq_of_eventually_apply_eq hF (Submodule.sum_mem _ fun i _ ↦ hPm i)
+      (Filter.mem_of_superset ht fun y hy f ↦ by
+        rw [ContMDiffMap.locallyFiniteSum_apply, LinearMap.coe_sum, Finset.sum_apply,
+          ContMDiffMap.coe_sum, Finset.sum_apply]
+        exact finsum_eq_sum_of_support_subset _ fun i hi ↦
+          by_contra fun h ↦ hi (hzero i h f hy)) ξ
+  -- The other `Pᵢ` vanish near `x`, so their principal symbols vanish at `x`.
+  rw [hsum, classicalPrincipalSymbol_sum _ fun i _ ↦ hPm i]
+  refine (finsum_eq_sum_of_support_subset _ fun i hi ↦ by_contra fun h ↦ hi ?_).symm
+  rw [classicalPrincipalSymbol_eq_of_eventually_apply_eq (hPm i) (zero_mem _)
+    (Filter.mem_of_superset ht fun y hy f ↦ by simp [hzero i h f hy]),
+    classicalPrincipalSymbol_zero]
+
+end LocallyFiniteSum
+
 /-! ### The principal symbol map -/
 
 /-- **The principal symbol is smooth.** The principal symbol of order `m` of every operator is a
@@ -653,14 +808,13 @@ theorem classicalPrincipalSymbol_complexifyLinearMap {m : ℕ}
   have hx : x ∈ e.source := mem_chart_source _ x
   set χ := (exists_cutoff_chartAt (n := n) x).choose
   have hχ : χ (e x) = 1 := (exists_cutoff_chartAt (n := n) x).choose_spec.self_of_nhds
-  -- The chart frequency `η` of `ξ`, which is nonzero since `⟪η, ·⟫ ∘ de_x = ξ`.
+  -- The chart frequency `η` of `ξ`, which is nonzero, with `⟪η, ·⟫ ∘ de_x = ξ`.
   set η := (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
     (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse)
   have hηξ := innerSL_toDual_symm_comp_inverse_mvfderiv
     (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx ξ
-  have hη : η ≠ 0 := fun h ↦ hξ <| by
-    rw [← hηξ]
-    simp [η, h]
+  have hη : η ≠ 0 := toDual_symm_comp_inverse_mvfderiv_ne_zero
+    (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx hξ
   -- Compare the two descriptions of the principal symbol of the polynomial symbol of `D` in `e`.
   have h₁ := coefficient_principal_eq_classicalPrincipalSymbol
     (complexifyLinearMap_mem_classicalPseudodifferentialOperators hD) he χ χ
@@ -678,5 +832,81 @@ theorem classicalPrincipalSymbol_complexifyLinearMap {m : ℕ}
   rw [h₁, hηξ, hχ] at h₂
   have h := congrArg (fun L : ℂ →L[ℂ] ℂ ↦ L 1) h₂
   simpa [hχ] using h
+
+/-! ### Invariance under diffeomorphisms -/
+
+section Diffeomorph
+
+variable {N : Type*} [TopologicalSpace N] [ChartedSpace (CoordinateSpace n) N] [T2Space N]
+  [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ N]
+
+/-- **Naturality of the principal symbol under diffeomorphisms.** Transport an operator `P` on `M`
+to `N` along a diffeomorphism `Φ : N → M`, by conjugation `f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` with the
+pullback. Its principal symbol of order `m` at `y` on the pullback `η ∘ dΦ_y` of a covector `η` at
+`Φ y` is the principal symbol of `P` at `Φ y` on `η`:
+
+`σ_m(Φ^* P)(y, η ∘ dΦ_y) = σ_m(P)(Φ y, η)`.
+
+So the principal symbol transforms as a function on the cotangent bundle. When `P` is not a
+classical pseudodifferential operator of order `m`, neither is its transport, and both sides
+are `0`. -/
+theorem classicalPrincipalSymbol_conj
+    (Φ : N ≃ₘ⟮𝓘(ℝ, CoordinateSpace n), 𝓘(ℝ, CoordinateSpace n)⟯ M)
+    (P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (y : N)
+    (η : TangentSpace 𝓘(ℝ, CoordinateSpace n) (Φ y) →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (Φ.compRightComplexAlgEquiv.toLinearEquiv.conj P) y
+        (η.comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) Φ y)) =
+      classicalPrincipalSymbol m P (Φ y) η := by
+  by_cases hP : P ∈ classicalPseudodifferentialOperators m
+  swap
+  · rw [classicalPrincipalSymbol_of_notMem hP, classicalPrincipalSymbol_of_notMem
+      ((conj_mem_classicalPseudodifferentialOperators_iff Φ).not.2 hP)]
+  have hQ := conj_mem_classicalPseudodifferentialOperators Φ hP
+  -- The preferred chart `e` at `y`, its cutoff `χ`, and the chart `e' = e ∘ Φ⁻¹` of `M` at `Φ y`.
+  set e := chartAt (CoordinateSpace n) y
+  have he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ N :=
+    IsManifold.chart_mem_maximalAtlas y
+  have hy : y ∈ e.source := mem_chart_source _ y
+  set e' := Φ.symm.toHomeomorph.transOpenPartialHomeomorph e
+  have he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
+    Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl he
+  have hy' : Φ y ∈ e'.source := by simpa [e'] using hy
+  have he'y : e' (Φ y) = e y := by simp [e']
+  set χ := (exists_cutoff_chartAt (n := n) y).choose
+  have hχ : χ (e y) = 1 := (exists_cutoff_chartAt (n := n) y).choose_spec.self_of_nhds
+  -- The chart symbol of the transport of `P` in `e` is also the chart symbol of `P` in `e'`.
+  have ha := isChartSymbol_chartSymbol hQ he χ χ
+  have ha' : IsChartSymbol P he' χ χ (chartSymbol hQ he χ χ) := fun u x ↦ (ha u x).trans
+    (DFunLike.congr_fun (LinearMap.congr_fun (e.complexChartCompression_conj he Φ χ χ P) _) x)
+  -- The chart frequency `ζ` of `η ∘ dΦ_y` in `e` is also the chart frequency of `η` in `e'`.
+  set ζ := (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
+    ((η.comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) Φ y)).comp
+      (mvfderiv 𝓘(ℝ, CoordinateSpace n) e y).inverse)
+  have hζ := innerSL_toDual_symm_comp_inverse_mvfderiv
+    (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy
+    (η.comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) Φ y))
+  -- `d(e')_{Φ y} = de_y ∘ dΦ⁻¹_{Φ y}`, compared on vectors since the tangent spaces at
+  -- `Φ⁻¹ (Φ y)` and at `y` agree only up to `Φ.symm_apply_apply`.
+  have hζ' : (innerSL ℝ ζ).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e' (Φ y)) = η := by
+    ext v
+    rw [ContinuousLinearMap.comp_apply, show ⇑e' = e ∘ Φ.symm by simp [e'],
+      mvfderiv_comp_apply_of_eq _ (mdifferentiableAt_of_mem_maximalAtlas
+        (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy)
+        ((Φ.symm.mdifferentiable (by simp)) _) (Φ.symm_apply_apply y)]
+    exact (DFunLike.congr_fun hζ _).trans
+      (congrArg η (Φ.mfderiv_apply_mfderiv_symm_apply (by simp) y v))
+  -- Read the principal symbol of this chart symbol at `(e y, ζ)` in both charts.
+  have h₁ := coefficient_principal_eq_classicalPrincipalSymbol hQ he χ χ ha hy ζ
+  have h₂ := coefficient_principal_eq_classicalPrincipalSymbol hP he' χ χ ha' hy' ζ
+  -- In `h₂` the cutoff `χ` is read as a test function on the target of `e'`.
+  have hχ' : DFunLike.coe (F := 𝓓(⟨e'.target, e'.open_target⟩, ℝ)) χ (e' (Φ y)) = 1 := by
+    rw [he'y]
+    exact hχ
+  rw [hχ', he'y, h₁, hζ, hζ', hχ] at h₂
+  have h := congrArg (fun L : ℂ →L[ℂ] ℂ ↦ L 1) h₂
+  simpa using h
+
+end Diffeomorph
 
 end TauCeti

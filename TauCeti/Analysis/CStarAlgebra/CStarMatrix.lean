@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Star.Unitization
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
+public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.RingTheory.SimpleRing.Matrix
-import Mathlib.Algebra.Order.Star.Unitization
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.CStarAlgebra.Hom
-import Mathlib.Analysis.CStarAlgebra.Unitization
 import Mathlib.Data.Matrix.Composition
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Tactic.LinearCombination
@@ -44,7 +44,8 @@ equal to the supremum norm of its diagonal and expose linear trace duality on `C
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
 sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
 the transpose as a linear map, the star algebra isomorphism `M_m(M_n(A)) ≃ M_{m × n}(A)`, the
-diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_n(ℂ)`.
+diagonal embedding `b ↦ diag(b, …, b)`, the matrix units `eᵢⱼ` of `M_n(ℂ)` and the corner
+embeddings into block-diagonal matrices.
 
 ## Main declarations
 
@@ -63,6 +64,8 @@ diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_
   algebraic operations.
 * `Matrix.GeneralLinearGroup.toCStarMatrixUnits`: invertible matrices over a unital C⋆-algebra
   `A` as the invertible elements of `CStarMatrix n n A`, an isomorphism of topological groups.
+* `Matrix.toCStarMatrixUnitary`: unitary matrices over a unital C⋆-algebra `A` as the unitaries
+  of `CStarMatrix n n A`, a homeomorphism.
 * `CStarMatrix.isStarProjection_ofMatrix_symm_iff`, `CStarMatrix.isStarProjection_ofMatrix_iff`:
   a C⋆-matrix is a star projection exactly when the underlying matrix is; companions
   `CStarMatrix.isSelfAdjoint_ofMatrix_iff` and `CStarMatrix.ofMatrix_mem_unitary_iff` do the same
@@ -85,6 +88,11 @@ diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
   in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le` and
   `CStarMatrix.norm_map_toSpanSingleton_le`: `‖[xᵢⱼ • a]‖ ≤ ‖x‖ ‖a‖` for a scalar matrix `x`.
+* `CStarMatrix.blockDiagonalSingle`: the corner embedding of `M_{n i}(B)` as the `i`-th diagonal
+  block of `M_{Σ i, n i}(B)`, with `CStarMatrix.sum_blockDiagonalSingle`: a block-diagonal matrix
+  is the sum of its corner embeddings.
+* `CStarMatrix.blockDiagonalNonUnitalStarAlgHom`: the block-diagonal embedding
+  `Π i, M_{n i}(B) → M_{Σ i, n i}(B)`, `x ↦ diag(x_i)`, an injective star homomorphism.
 * `CStarMatrix.map_zero_linearMap`, `CStarMatrix.map_add_linearMap`,
   `CStarMatrix.map_smul_linearMap`: applying `0`, `f + g` or `c • f` to every entry.
 * `CStarMatrix.entryLinearMap`, `CStarMatrix.traceLinearMap`,
@@ -98,7 +106,9 @@ diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_
 * `CStarMatrix.sum_star_mul_mul_eq_dotProduct_mulVec`: rewriting a quadratic form as a
   dot product with `mulVec`.
 * `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity, with
-  `CStarMatrix.ofMatrix_smul_nonneg` (`[pᵢⱼ b]` is positive for positive `[pᵢⱼ]` and `b`).
+  `CStarMatrix.ofMatrix_smul_nonneg` (`[pᵢⱼ b]` is positive for positive `[pᵢⱼ]` and `b`) and
+  `CStarMatrix.star_left_conjugate_unitization_nonneg` (compressing a positive matrix over `A⁺¹`
+  by `e ∈ A` gives a positive matrix over `A`).
 * `CStarMatrix.diag_nonneg_of_nonneg`: the diagonal entries of a positive matrix are positive.
 * `CStarMatrix.submatrix_nonneg` and `CStarMatrix.extend_nonneg`: reindexing a positive matrix
   along any map of indices, or extending it by zero along an injective one, gives a positive
@@ -120,7 +130,8 @@ diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_
   `b = z* z`; no unit is needed.
 * `CStarMatrix.norm_ofMatrix_diagonal`: a diagonal matrix `diag(d₁, …, dₙ)` over a C⋆-algebra has
   norm `maxᵢ ‖dᵢ‖`, the sup norm of `d`; `CStarMatrix.norm_ofMatrix_diagonal_fin_two` is the
-  `2 × 2` case `‖diag(a, b)‖ = max ‖a‖ ‖b‖`.
+  `2 × 2` case `‖diag(a, b)‖ = max ‖a‖ ‖b‖`, and `CStarMatrix.norm_ofMatrix_blockDiagonal'` the
+  block-diagonal case `‖diag(x_i)‖ = maxᵢ ‖x_i‖`.
 
 ## References
 
@@ -269,6 +280,16 @@ lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix n n A) :
 @[simp]
 lemma ofMatrix_symm_smul {m : Type*} [SMul R A] (r : R) (M : CStarMatrix m n A) :
     ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
+
+/-- Reading the entrywise nonunital star-algebra homomorphism as an ordinary matrix applies
+its underlying star-ring homomorphism to each entry. -/
+@[simp↓]
+lemma ofMatrix_symm_mapₙₐ {B : Type*} [Fintype n] [Semiring R]
+    [NonUnitalNonAssocSemiring A] [Module R A] [Star A]
+    [NonUnitalNonAssocSemiring B] [Module R B] [Star B]
+    (f : A →⋆ₙₐ[R] B) (M : CStarMatrix n n A) :
+    ofMatrix.symm (mapₙₐ f M) = (ofMatrix.symm M).map (NonUnitalStarRingHom.ofClass f) :=
+  (rfl)
 
 /-- Rectangular matrix multiplication is associative. -/
 lemma mul_assoc_rectangular {m k l : Type*} [Fintype n] [Fintype k] [NonUnitalSemiring A]
@@ -518,6 +539,134 @@ theorem norm_sum_trace_star_mul_star {ι : Type*} [Fintype ι] [Fintype n] [Norm
   simp_rw [trace_star_mul_star, ← star_sum, norm_star]
 
 end Algebraic
+
+section BlockDiagonal
+
+variable {ι : Type*} [DecidableEq ι] {n : ι → Type*} [∀ i, Fintype (n i)]
+
+section NonUnital
+
+variable {R B : Type*} [Monoid R] [NonUnitalNonAssocSemiring B] [StarAddMonoid B]
+  [DistribMulAction R B]
+
+variable (R B) in
+/-- The corner embedding `x ↦ diag(0, …, x, …, 0)` of `CStarMatrix (n i) (n i) B` as the `i`-th
+diagonal block of `CStarMatrix (Σ i, n i) (Σ i, n i) B`, as a non-unital star algebra
+homomorphism. -/
+def blockDiagonalSingle [Fintype ι] (i : ι) :
+    CStarMatrix (n i) (n i) B →⋆ₙₐ[R] CStarMatrix (Σ i, n i) (Σ i, n i) B where
+  toFun x := ofMatrix (Matrix.blockDiagonal' (Pi.single i (ofMatrix.symm x)))
+  map_smul' c x := ofMatrix.symm.injective <| by
+    simp [Pi.single_smul, Matrix.blockDiagonal'_smul]
+  map_zero' := ofMatrix.symm.injective <| by simp
+  map_add' x y := ofMatrix.symm.injective <| by simp [Pi.single_add, Matrix.blockDiagonal'_add]
+  map_mul' x y := ofMatrix.symm.injective <| by
+    simp only [Equiv.symm_apply_apply, ofMatrix_symm_mul, ← Matrix.blockDiagonal'_mul]
+    exact congrArg _ (Pi.single_mul i _ _)
+  map_star' x := ofMatrix.symm.injective <| by
+    simp only [Equiv.symm_apply_apply, ofMatrix_symm_star, Matrix.blockDiagonal'_conjTranspose]
+    congr 1
+    ext j : 1
+    by_cases h : j = i
+    · subst h; simp
+    · simp [h]
+
+/-- The corner embedding places `x` as the block `i` of a block-diagonal matrix. -/
+theorem blockDiagonalSingle_apply [Fintype ι] (i : ι) (x : CStarMatrix (n i) (n i) B) :
+    blockDiagonalSingle R B i x =
+      ofMatrix (Matrix.blockDiagonal' (Pi.single i (ofMatrix.symm x))) :=
+  (rfl)
+
+/-- The block `i` of the corner embedding at `i` is `x`. -/
+@[simp]
+theorem blockDiagonalSingle_apply_same [Fintype ι] (i : ι) (x : CStarMatrix (n i) (n i) B)
+    (j k : n i) : blockDiagonalSingle R B i x ⟨i, j⟩ ⟨i, k⟩ = x j k := by
+  simp [blockDiagonalSingle_apply, ofMatrix_apply, Matrix.blockDiagonal'_apply_eq]
+
+/-- The corner embedding at `i` vanishes on the diagonal blocks `j ≠ i`. -/
+@[simp]
+theorem blockDiagonalSingle_apply_diag_of_ne [Fintype ι] {i j : ι} (h : j ≠ i)
+    (x : CStarMatrix (n i) (n i) B) (p q : n j) :
+    blockDiagonalSingle R B i x ⟨j, p⟩ ⟨j, q⟩ = 0 := by
+  simp [blockDiagonalSingle_apply, ofMatrix_apply, Matrix.blockDiagonal'_apply_eq, h]
+
+/-- The corner embedding vanishes off the diagonal blocks. -/
+theorem blockDiagonalSingle_apply_ne [Fintype ι] (i : ι) (x : CStarMatrix (n i) (n i) B)
+    {j j' : ι} (p : n j) (q : n j') (h : j ≠ j') :
+    blockDiagonalSingle R B i x ⟨j, p⟩ ⟨j', q⟩ = 0 := by
+  rw [blockDiagonalSingle_apply, ofMatrix_apply, Matrix.blockDiagonal'_apply_ne _ p q h]
+
+/-- Corner embeddings at distinct blocks are orthogonal. -/
+theorem blockDiagonalSingle_mul_of_ne [Fintype ι] {i j : ι} (h : i ≠ j)
+    (x : CStarMatrix (n i) (n i) B) (y : CStarMatrix (n j) (n j) B) :
+    blockDiagonalSingle R B i x * blockDiagonalSingle R B j y = 0 := by
+  apply ofMatrix.symm.injective
+  rw [blockDiagonalSingle_apply, blockDiagonalSingle_apply, ofMatrix_symm_mul, ofMatrix_symm_zero,
+    Equiv.symm_apply_apply, Equiv.symm_apply_apply, ← Matrix.blockDiagonal'_mul,
+    ← Matrix.blockDiagonal'_zero]
+  congr 1
+  funext k
+  by_cases hk : k = i
+  · subst hk; simp [h]
+  · simp [hk]
+
+/-- A block-diagonal matrix is the sum of its corner embeddings. -/
+theorem sum_blockDiagonalSingle [Fintype ι] (x : ∀ i, CStarMatrix (n i) (n i) B) :
+    ∑ i, blockDiagonalSingle R B i (x i) =
+      ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i)) := by
+  rw [← Finset.univ_sum_single fun i => ofMatrix.symm (x i)]
+  -- `ofMatrix` is the identity equivalence, so this is additivity of `Matrix.blockDiagonal'`.
+  exact (map_sum (Matrix.blockDiagonal'AddMonoidHom n n B) _ _).symm
+
+variable (R B) in
+/-- The **block-diagonal embedding** `x ↦ diag(x_i)` of `Π i, CStarMatrix (n i) (n i) B` into
+`CStarMatrix (Σ i, n i) (Σ i, n i) B`, as a non-unital star algebra homomorphism: the
+C⋆-matrix form of `Matrix.blockDiagonal'RingHom`. -/
+def blockDiagonalNonUnitalStarAlgHom [Fintype ι] :
+    (Π i, CStarMatrix (n i) (n i) B) →⋆ₙₐ[R] CStarMatrix (Σ i, n i) (Σ i, n i) B where
+  toFun x := ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))
+  -- each law is the corresponding law of `Matrix.blockDiagonal'`, applied blockwise
+  map_smul' c x := ofMatrix.symm.injective <| by
+    simp only [Pi.smul_apply, ofMatrix_symm_smul, Equiv.symm_apply_apply, MonoidHom.id_apply,
+      ← Pi.smul_def, Matrix.blockDiagonal'_smul]
+  map_zero' := ofMatrix.symm.injective <| by
+    simp only [Pi.zero_apply, ofMatrix_symm_zero, Equiv.symm_apply_apply, ← Pi.zero_def,
+      Matrix.blockDiagonal'_zero]
+  map_add' x y := ofMatrix.symm.injective <| by
+    simp only [Pi.add_apply, ofMatrix_symm_add, Equiv.symm_apply_apply, ← Pi.add_def,
+      Matrix.blockDiagonal'_add]
+  map_mul' x y := ofMatrix.symm.injective <| by
+    simp only [Pi.mul_apply, ofMatrix_symm_mul, Equiv.symm_apply_apply, ← Pi.mul_def]
+    -- `exact`, not `simp`: the blockwise products come from the rectangular `Matrix` product
+    exact Matrix.blockDiagonal'_mul _ _
+  map_star' x := ofMatrix.symm.injective <| by
+    simp only [Pi.star_apply, ofMatrix_symm_star, Equiv.symm_apply_apply,
+      Matrix.blockDiagonal'_conjTranspose]
+
+/-- The block-diagonal embedding sends `x` to the block-diagonal matrix with blocks `x i`. -/
+@[simp]
+theorem blockDiagonalNonUnitalStarAlgHom_apply [Fintype ι] (x : Π i, CStarMatrix (n i) (n i) B) :
+    blockDiagonalNonUnitalStarAlgHom R B x =
+      ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i)) :=
+  (rfl)
+
+/-- The block-diagonal embedding is injective. -/
+theorem blockDiagonalNonUnitalStarAlgHom_injective [Fintype ι] :
+    Function.Injective (blockDiagonalNonUnitalStarAlgHom R B (n := n)) := fun _ _ h =>
+  funext fun i => ofMatrix.symm.injective <|
+    congrFun (Matrix.blockDiagonal'_injective (ofMatrix.injective h)) i
+
+end NonUnital
+
+/-- The identity matrix is the sum of the corner embeddings of the identity matrices. -/
+theorem sum_blockDiagonalSingle_one [Fintype ι] [∀ i, DecidableEq (n i)] (R : Type*)
+    {B : Type*} [Monoid R] [NonAssocSemiring B] [StarAddMonoid B] [DistribMulAction R B] :
+    ∑ i, blockDiagonalSingle R B i (1 : CStarMatrix (n i) (n i) B) = 1 := by
+  apply ofMatrix.symm.injective
+  simp only [sum_blockDiagonalSingle, Equiv.symm_apply_apply, ofMatrix_symm_one]
+  rw [← Pi.one_def, Matrix.blockDiagonal'_one]
+
+end BlockDiagonal
 
 /-- Square matrices over a simple ring form a simple ring: their two-sided ideals are the matrices
 over the two-sided ideals of the coefficient ring. -/
@@ -777,6 +926,21 @@ theorem ofMatrix_smul_nonneg {P : CStarMatrix n n ℂ} (hP : 0 ≤ P) {b : A} (h
   rw [h]
   exact Finset.sum_nonneg fun k _ => star_left_conjugate_nonneg hb _
 
+open scoped ComplexOrder in
+/-- Compressing a positive matrix `[λᵢⱼ + aᵢⱼ]` over the unitization `A⁺¹` by `e ∈ A` gives the
+positive matrix `[e⋆ aᵢⱼ e + λᵢⱼ e⋆ e]` over `A`: it is the conjugate `diag(e)⋆ M diag(e)`, whose
+entries lie in `A`. -/
+theorem star_left_conjugate_unitization_nonneg {M : CStarMatrix n n (Unitization ℂ A)}
+    (hM : 0 ≤ M) (e : A) : 0 ≤ ofMatrix
+      (Matrix.of fun i j => star e * (M i j).snd * e + (M i j).fst • (star e * e)) := by
+  refine nonneg_iff_forall_sum_nonneg.mpr fun z => ?_
+  have h := nonneg_iff_forall_sum_nonneg.mp hM fun i => ((e * z i : A) : Unitization ℂ A)
+  rw [← Unitization.inr_nonneg_iff ℂ]
+  convert h using 1
+  simp only [← Unitization.inrNonUnitalStarAlgHom_apply ℂ, map_sum]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  ext <;> simp [mul_assoc, mul_add, add_mul, smul_mul_assoc, mul_smul_comm, add_comm]
+
 /-- The `1 × 1` C⋆-matrix associated to `a` has norm `‖a‖`. -/
 @[simp]
 theorem norm_toOneByOne {ι : Type*} [Unique ι] (a : A) : ‖toOneByOne ι ℂ A a‖ = ‖a‖ :=
@@ -991,6 +1155,14 @@ theorem norm_ofMatrix_diagonal_fin_two (a b : A) :
     (max_le (norm_le_pi_norm ![a, b] 0) (norm_le_pi_norm ![a, b] 1))
   fin_cases i <;> simp
 
+/-- A block-diagonal matrix over a C⋆-algebra has norm the largest norm of its diagonal blocks:
+`‖diag(x_i)‖ = maxᵢ ‖x_i‖`, the sup norm of `x`, since the block-diagonal embedding is an injective
+star homomorphism of C⋆-algebras. -/
+theorem norm_ofMatrix_blockDiagonal' {ι : Type*} [Fintype ι] [DecidableEq ι] {n : ι → Type*}
+    [∀ i, Fintype (n i)] (x : Π i, CStarMatrix (n i) (n i) A) :
+    ‖ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (x i))‖ = ‖x‖ :=
+  NonUnitalStarAlgHom.norm_map _ (blockDiagonalNonUnitalStarAlgHom_injective (R := ℂ) (B := A)) x
+
 end DiagonalNorm
 
 end CStarMatrix
@@ -1019,3 +1191,33 @@ theorem coe_toCStarMatrixUnits_symm (u : (CStarMatrix n n A)ˣ) :
   (rfl)
 
 end Matrix.GeneralLinearGroup
+
+namespace Matrix
+
+variable {n A : Type*} [Fintype n] [DecidableEq n] [CStarAlgebra A]
+
+/-- Unitary matrices over a unital C⋆-algebra `A` are the unitaries of the C⋆-algebra
+`CStarMatrix n n A`, as a homeomorphism. -/
+noncomputable def toCStarMatrixUnitary : unitary (Matrix n n A) ≃ₜ unitary (CStarMatrix n n A) where
+  toFun w := ⟨CStarMatrix.ofMatrix w, CStarMatrix.ofMatrix_mem_unitary_iff.2 w.prop⟩
+  invFun w := ⟨CStarMatrix.ofMatrix.symm w, CStarMatrix.ofMatrix_symm_mem_unitary_iff.2 w.prop⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := (CStarMatrix.ofMatrixL.continuous.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun :=
+    (CStarMatrix.ofMatrixL.symm.continuous.comp continuous_subtypeVal).subtype_mk _
+
+/-- The C⋆-matrix underlying the image of a unitary matrix is the matrix itself. -/
+@[simp]
+theorem coe_toCStarMatrixUnitary (w : unitary (Matrix n n A)) :
+    (toCStarMatrixUnitary w : CStarMatrix n n A) = CStarMatrix.ofMatrix (w : Matrix n n A) :=
+  (rfl)
+
+/-- The matrix underlying the preimage of a unitary C⋆-matrix is the C⋆-matrix itself. -/
+@[simp]
+theorem coe_toCStarMatrixUnitary_symm (w : unitary (CStarMatrix n n A)) :
+    (toCStarMatrixUnitary.symm w : Matrix n n A) =
+      CStarMatrix.ofMatrix.symm (w : CStarMatrix n n A) :=
+  (rfl)
+
+end Matrix

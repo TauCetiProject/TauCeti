@@ -20,27 +20,34 @@ irreducible characters of `G ⧸ N` onto the irreducible characters of `G` lying
 that `θ` occurs in the restriction of `ψ` to `N`. These form the set
 `TauCeti.irreducibleCharactersOver`.
 
-The proof is character-theoretic. Its key input is that the restriction of `χ` to every coset of
-`N` has the same norm: `∑ n ∈ N, χ (g n) χ (g n)⁻¹ = |N|` for every `g`
+The proof is character-theoretic. Its key input is that, over an algebraically closed field of
+characteristic zero, `χ` has the same unnormalized self-pairing on every coset of `N`:
+`∑ n ∈ N, χ(g n) χ((g n)⁻¹) = |N|` for every `g`
 (`Representation.sum_character_mul_mul_character_mul_inv_eq_card`). Indeed, writing `χ` as the
 character of `ρ` on `V`, the left side is the trace of `σ g ∘ S` on `End V`, where `σ` is the
 conjugation action of `G` and `S = ∑ n ∈ N, σ n`. Every value of `S` commutes with `N`, hence is a
 scalar since `ρ` restricts irreducibly to `N`, hence is fixed by `σ g`; so the trace is that of
-`S`, which is `|N|` times the norm of `θ`. Consequently multiplication by `χ` preserves the
+`S`, which is the unnormalized self-pairing `∑ n ∈ N, θ(n) θ(n⁻¹) = |N|` of `θ`.
+Consequently multiplication by `χ` preserves the
 character pairing of functions inflated from `G ⧸ N`, up to the normalisation
 (`Representation.sum_mul_comp_mk_mul_mul_comp_mk_inv`), which gives irreducibility and
 injectivity; the column orthogonality of `G ⧸ N` gives surjectivity.
 
 ## Main results
 
-* `Representation.sum_character_mul_mul_character_mul_inv_eq_card`: a character restricting
-  irreducibly to `N` has norm `|N|` on every coset of `N`.
+* `Representation.sum_character_mul_mul_character_mul_inv_eq_card`: over an algebraically closed
+  field of characteristic zero, a character restricting irreducibly to `N` has unnormalized
+  self-pairing `|N|` on every coset of `N`.
 * `Representation.sum_mul_comp_mk_mul_mul_comp_mk_inv`: multiplication by such a character is an
   isometry on functions inflated from `G ⧸ N`.
 * `TauCeti.gallagher_bijOn`: **Gallagher's correspondence** `Irr(G ⧸ N) ≃ Irr(G | θ)`,
   `β ↦ χ · (β ∘ π)`.
 * `TauCeti.gallagher_bijOn_bot`: the case `N = 1` for a linear character `χ`, a permutation of
   the irreducible characters of `G` read through `G ⧸ ⊥`.
+* `TauCeti.irreducibleCharactersOver_eq_setOf_restrict_eq_of_isMulCommutative` and
+  `TauCeti.card_irreducibleCharacter_extensions_of_isMulCommutative`: for an abelian quotient, the
+  characters over `θ` are exactly the irreducible extensions of `θ`, and there are `|G : N|` of
+  them.
 
 ## References
 
@@ -65,19 +72,19 @@ variable {V : Type*} [AddCommGroup V] [Module k V]
 
 variable [IsAlgClosed k] [CharZero k]
 
-/-- **A character restricting irreducibly to `N` has norm `|N|` on every coset of `N`**: if the
-restriction to `N` of the character of `ρ` is an irreducible character of `N`, then
-`∑ n ∈ N, χ (g n) χ (g n)⁻¹ = |N|` for every `g ∈ G`. The space `V` need not be assumed
+/-- **A character restricting irreducibly to `N` has unnormalized self-pairing `|N|` on every
+coset of `N`**: over an algebraically closed field of characteristic zero, if the restriction to
+`N` of the character of `ρ` is an irreducible character of `N`, then
+`∑ n ∈ N, χ(g n) χ((g n)⁻¹) = |N|` for every `g ∈ G`. The space `V` need not be assumed
 finite-dimensional. -/
 theorem _root_.Representation.sum_character_mul_mul_character_mul_inv_eq_card
     (ρ : Representation k G V) (N : Subgroup G) [Fintype N]
     (hθ : (fun n : N => ρ.character n) ∈ irreducibleCharacters k N) (g : G) :
     ∑ n : N, ρ.character (g * n) * ρ.character (g * n)⁻¹ = Nat.card N := by
-  -- Otherwise the character vanishes, and its restriction is not irreducible.
-  have : FiniteDimensional k V := by
-    by_contra hV
-    refine apply_one_ne_zero_of_mem_irreducibleCharacters hθ ?_
-    simp [ρ.character_eq_zero_of_not_finite hV]
+  -- The character is nonzero at `1`, as its restriction to `N` is irreducible.
+  have h1 : ρ.character (1 : G) ≠ 0 := by
+    simpa only [Subgroup.coe_one] using apply_one_ne_zero_of_mem_irreducibleCharacters hθ
+  have : FiniteDimensional k V := ρ.finiteDimensional_of_character_ne_zero h1
   have hN : (Nat.card N : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   let : Invertible (Nat.card N : k) := invertibleOfNonzero hN
   let ρN : Representation k N V := ρ.comp N.subtype
@@ -86,24 +93,27 @@ theorem _root_.Representation.sum_character_mul_mul_character_mul_inv_eq_card
   -- The norm of `θ` is `1`, so the `N`-equivariant endomorphisms of `V` form a line.
   have hfin : finrank k (Representation.IntertwiningMap ρN ρN) = 1 := by
     have h := Representation.card_inv_mul_sum_char_mul_char_eq_finrank ρN ρN
-    have hρN (n : N) : ρN.character n = ρ.character n := rfl
-    simp only [hρN, Subgroup.coe_inv, hnorm, inv_mul_cancel₀ hN] at h
+    simp only [ρN, Representation.character_comp, Function.comp_apply, Subgroup.subtype_apply,
+      Subgroup.coe_inv, hnorm, inv_mul_cancel₀ hN] at h
     exact_mod_cast h.symm
   -- The left side is the trace of `σ g ∘ S` for the conjugation action `σ` of `G` on `End V` and
-  -- `S = ∑ n ∈ N, σ n`, whose values are scalars, hence fixed by `σ g`.
-  let σ := Representation.linHom ρ ρ
-  have hterm (x : G) : ρ.character x * ρ.character x⁻¹ = σ.character x := by
-    rw [Representation.char_linHom, mul_comm]
+  -- `S = ∑ n ∈ N, σ n` (`Representation.sum_character_mul_mul_character_mul_inv_eq_trace`). The
+  -- values of `S` are scalars, hence fixed by `σ g`, so the trace is that of `S`: the case `g = 1`.
+  have hS : Representation.linHom ρ ρ g * Representation.norm ((Representation.linHom ρ ρ).comp
+      N.subtype) = Representation.norm ((Representation.linHom ρ ρ).comp N.subtype) := by
+    rw [Representation.norm]
+    simpa only [MonoidHom.comp_apply, Subgroup.subtype_apply] using
+      ρ.linHom_mul_sum_linHom_eq N hfin g
+  have htr (x : G) := ρ.sum_character_mul_mul_character_mul_inv_eq_trace ρ N.subtype x
+  simp only [Subgroup.subtype_apply] at htr
   calc ∑ n : N, ρ.character (g * n) * ρ.character (g * n)⁻¹
-      = ∑ n : N, LinearMap.trace k _ (σ g * σ n) := by
-        refine Finset.sum_congr rfl fun n _ => ?_
-        rw [hterm, Representation.character, map_mul]
-    _ = LinearMap.trace k _ (∑ n : N, σ n) := by
-        rw [← map_sum, ← Finset.mul_sum, ρ.linHom_mul_sum_linHom_eq N hfin g]
+      = LinearMap.trace k _
+          (Representation.linHom ρ ρ 1 *
+            Representation.norm ((Representation.linHom ρ ρ).comp N.subtype)) := by
+        rw [htr, hS, map_one, one_mul]
     _ = Nat.card N := by
-        rw [← hnorm, map_sum]
-        refine Finset.sum_congr rfl fun n _ => ?_
-        rw [hterm, Representation.character]
+        rw [← htr]
+        simpa only [one_mul] using hnorm
 
 /-- **Multiplication by a character restricting irreducibly to a normal subgroup `N` is an
 isometry on functions inflated from `G ⧸ N`**: if `χ` is the character of `ρ` and its restriction
@@ -277,6 +287,34 @@ theorem gallagher_bijOn_bot (hχ : χ ∈ irreducibleCharacters k G) (h1 : χ 1 
   have h := gallagher_bijOn hχ hθ fun n => by
     rw [Subgroup.mem_bot.mp n.property, h1]
   rwa [irreducibleCharactersOver_bot one_ne_zero] at h
+
+/-- If an irreducible character extends across an abelian quotient, an irreducible character lies
+above it if and only if it restricts to it: the inflated characters of the quotient are linear. -/
+theorem irreducibleCharactersOver_eq_setOf_restrict_eq_of_isMulCommutative
+    [IsMulCommutative (G ⧸ N)] {θ : N → k} (hχ : χ ∈ irreducibleCharacters k G)
+    (hθ : θ ∈ irreducibleCharacters k N) (hres : ∀ n : N, χ n = θ n) :
+    irreducibleCharactersOver k N θ =
+      {ψ | ψ ∈ irreducibleCharacters k G ∧ ∀ n : N, ψ n = θ n} := by
+  ext ψ
+  refine ⟨fun hψ => ⟨irreducibleCharactersOver_subset θ hψ, fun n => ?_⟩,
+    fun ⟨hψ, hψres⟩ => mem_irreducibleCharactersOver_of_restrict_eq hψ hθ hψres⟩
+  obtain ⟨β, hβ, rfl⟩ := (gallagher_bijOn hχ hθ hres).surjOn hψ
+  simp [(QuotientGroup.eq_one_iff (n : G)).mpr n.property, hres,
+    apply_one_eq_one_of_mem_irreducibleCharacters_of_isMulCommutative hβ]
+
+open scoped IsMulCommutative in
+/-- The number of irreducible extensions of an extendible irreducible character across an abelian
+quotient is the index of the subgroup. -/
+theorem card_irreducibleCharacter_extensions_of_isMulCommutative [IsMulCommutative (G ⧸ N)]
+    {θ : N → k} (hχ : χ ∈ irreducibleCharacters k G) (hθ : θ ∈ irreducibleCharacters k N)
+    (hres : ∀ n : N, χ n = θ n) :
+    Nat.card {ψ : G → k | ψ ∈ irreducibleCharacters k G ∧ ∀ n : N, ψ n = θ n} = N.index := by
+  let : Invertible (Nat.card (G ⧸ N) : k) :=
+    invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  rw [← irreducibleCharactersOver_eq_setOf_restrict_eq_of_isMulCommutative hχ hθ hres,
+    ← Nat.card_congr ((gallagher_bijOn hχ hθ hres).equiv _),
+    card_irreducibleCharacters, N.index_eq_card]
+  exact Nat.card_congr ConjClasses.mkEquiv.symm
 
 end Gallagher
 

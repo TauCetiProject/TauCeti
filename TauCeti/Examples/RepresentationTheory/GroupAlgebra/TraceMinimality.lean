@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block
+public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block.Basic
 
 /-!
 # Trace minimality on `𝔽₂[S₃]`

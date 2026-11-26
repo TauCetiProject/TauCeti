@@ -14,6 +14,7 @@ public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.TensorProduct.Finite
+public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.LinearAlgebra.Dual.Divisibility
@@ -56,6 +57,8 @@ relations, for instance the rationalisation of a module over an integral group r
 
 ## Main results
 
+* `IsBaseChange.quotient_iff`: scalar change to `R ⧸ I` is equivalent to surjectivity with
+  kernel `I • M`.
 * `TensorProduct.quotientScalarEquiv`: compare tensor products over `R / I` and `R` when
   both factors carry the quotient action, with pure-tensor and naturality laws.
 * `TensorProduct.quotient_tensor_bijective` and `TensorProduct.quotient_map_tensor_bijective`:
@@ -648,3 +651,35 @@ theorem quotientScalarEquiv_rTensor (f : M →ₗ[R ⧸ I] M') (t : M ⊗[R ⧸ 
 end QuotientScalars
 
 end TensorProduct
+
+namespace IsBaseChange
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] (I : Ideal R)
+  [Module (R ⧸ I) N] [IsScalarTower R (R ⧸ I) N] (f : M →ₗ[R] N)
+
+/-- A map exhibits scalar change to a quotient ring exactly when it is surjective and its
+kernel is `I • ⊤`, the submodule of `I`-multiples in the source module. -/
+theorem quotient_iff :
+    IsBaseChange (R ⧸ I) f ↔ Function.Surjective f ∧ LinearMap.ker f = I • ⊤ := by
+  constructor
+  · intro h
+    have he : (h.equiv.restrictScalars R).toLinearMap.comp
+        (TensorProduct.mk R (R ⧸ I) M 1) = f := by
+      ext x
+      simp
+    rw [← he]
+    exact ⟨h.equiv.surjective.comp
+        (TensorProduct.mk_surjective R M (R ⧸ I) Ideal.Quotient.mk_surjective), by
+      rw [LinearEquiv.ker_comp, LinearMap.ker_tensorProductMk]⟩
+  · rintro ⟨hs, hk⟩
+    let e : (M ⧸ (I • ⊤ : Submodule R M)) ≃ₗ[R] N :=
+      (Submodule.quotEquivOfEq _ _ hk.symm).trans (f.quotKerEquivOfSurjective hs)
+    let t : (R ⧸ I) ⊗[R] M ≃ₗ[R] N := (TensorProduct.quotTensorEquivQuotSMul M I).trans e
+    let ts : (R ⧸ I) ⊗[R] M ≃ₗ[R ⧸ I] N :=
+      t.extendScalarsOfSurjective Ideal.Quotient.mk_surjective
+    apply IsBaseChange.of_equiv ts
+    intro x
+    simp [ts, t, e]
+
+end IsBaseChange

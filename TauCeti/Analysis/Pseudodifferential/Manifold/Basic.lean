@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Symbol.ChartCompression
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 public import TauCeti.Geometry.Manifold.ContMDiffMap.LocallyFiniteSum
+public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Basic
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
 
@@ -47,8 +48,11 @@ values on compactly supported functions, and hence by its chart compressions.
 ## Main results
 
 * `TauCeti.IsProperlySupported P`: the operator `P` is properly supported. The identity, sums,
-  scalar multiples, products with smooth functions on either side and local operators
-  (`TauCeti.IsProperlySupported.of_local`) are properly supported.
+  scalar multiples, compositions (`TauCeti.IsProperlySupported.comp`), products with smooth
+  functions on either side and local operators (`TauCeti.IsProperlySupported.of_local`) are
+  properly supported. A local operator takes the same value at `x` on functions that agree near
+  `x` (`TauCeti.apply_eq_of_eventuallyEq_of_local`) and does not enlarge supports
+  (`TauCeti.apply_eq_zero_of_notMem_tsupport_of_local`).
 * `TauCeti.isProperlySupported_locallyFiniteSum`: the locally finite sum
   `ContMDiffMap.locallyFiniteSum P hP` of operators `f ↦ ∑ᵢ Pᵢ f` is properly supported when the
   outputs of `Pᵢ` lie in compact sets `Sᵢ` forming a locally finite family and each `Pᵢ` only sees
@@ -62,6 +66,14 @@ values on compactly supported functions, and hence by its chart compressions.
   `ContMDiffMap.locallyFiniteSum P hP = ∑ᵢ Pᵢ` of classical pseudodifferential operators of
   order `m` is one, provided each `Pᵢ` has outputs supported in a compact set `Sᵢ` and only sees its
   input near `Sᵢ`, with `(Sᵢ)` locally finite. Near a compact set only finitely many `Pᵢ` matter.
+* `TauCeti.conj_mem_classicalPseudodifferentialOperators_iff`: invariance under diffeomorphisms.
+  For a diffeomorphism `Φ : N → M`, the transport `f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` of `P` to `N` is a
+  classical pseudodifferential operator of order `m` exactly when `P` is one; proper support is
+  transported by `TauCeti.IsProperlySupported.conj`. Since the class is defined through every
+  chart of the maximal atlas, the chart compressions of the transport are chart compressions of `P`
+  (`OpenPartialHomeomorph.complexChartCompression_conj`).
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_dim_eq_zero`: on a manifold modelled on `ℝ⁰`,
+  every properly supported operator has every order.
 * `TauCeti.id_mem_classicalPseudodifferentialOperators` and
   `TauCeti.mulLeft_mem_classicalPseudodifferentialOperators`: the identity and multiplication by a
   smooth function have order `0`.
@@ -174,6 +186,40 @@ theorem IsProperlySupported.comp_mulLeft (hP : IsProperlySupported P)
     exact tsupport_mul_subset_right.trans hf
   · simp [hy]
 
+/-- **Composition.** The composition of two properly supported operators is properly
+supported. -/
+theorem IsProperlySupported.comp (hP : IsProperlySupported P) (hQ : IsProperlySupported Q) :
+    IsProperlySupported (P ∘ₗ Q) := by
+  have := ChartedSpace.locallyCompactSpace (CoordinateSpace n) M
+  intro K hK
+  obtain ⟨K₁, hK₁, hQ₁, -⟩ := hQ K hK
+  obtain ⟨K₂, hK₂, hP₁, -⟩ := hP K₁ hK₁
+  obtain ⟨K₃, hK₃, -, hP₂⟩ := hP K hK
+  obtain ⟨L, hL, hK₃L⟩ := exists_compact_superset hK₃
+  obtain ⟨K₄, hK₄, -, hQ₂⟩ := hQ L hL
+  refine ⟨K₂ ∪ K₄, hK₂.union hK₄, fun f hf ↦ (hP₁ _ (hQ₁ f hf)).trans subset_union_left,
+    fun f hf ↦ hP₂ (Q f) ?_⟩
+  have hQf := hQ₂ f (hf.filter_mono (nhdsSet_mono subset_union_right))
+  exact Filter.mem_of_superset (isOpen_interior.mem_nhdsSet.2 hK₃L) fun y hy ↦
+    hQf y (interior_subset hy)
+
+/-- A local operator, one such that `P f` vanishes at every point near which `f` vanishes, takes
+the same value at `x` on two functions that agree near `x`. -/
+theorem apply_eq_of_eventuallyEq_of_local
+    (hP : ∀ f x, (∀ᶠ y in 𝓝 x, f y = 0) → P f x = 0)
+    {f g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {x : M} (hfg : (f : M → ℂ) =ᶠ[𝓝 x] g) :
+    P f x = P g x := by
+  rw [← sub_eq_zero, ← Pi.sub_apply, ← ContMDiffMap.coe_sub, ← map_sub]
+  exact hP _ x (hfg.mono fun y hy ↦ by simp [hy])
+
+/-- A local operator, one such that `P f` vanishes at every point near which `f` vanishes, does
+not enlarge supports. -/
+theorem apply_eq_zero_of_notMem_tsupport_of_local
+    (hP : ∀ f x, (∀ᶠ y in 𝓝 x, f y = 0) → P f x = 0)
+    {f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {x : M} (hx : x ∉ tsupport f) :
+    P f x = 0 :=
+  hP f x (notMem_tsupport_iff_eventuallyEq.1 hx)
+
 /-- A **local** operator, one such that `P f` vanishes at every point near which `f` vanishes, is
 properly supported, with `K' = K`. -/
 theorem IsProperlySupported.of_local
@@ -182,7 +228,36 @@ theorem IsProperlySupported.of_local
     fun f hf x hx ↦ hP f x (hf.filter_mono (nhds_le_nhdsSet hx))⟩
   refine (closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport f)).trans hf
   by_contra h
-  exact hx (hP f x (notMem_tsupport_iff_eventuallyEq.1 h))
+  exact hx (apply_eq_zero_of_notMem_tsupport_of_local hP h)
+
+/-- **Proper support under a diffeomorphism.** Transporting a properly supported operator `P` on
+`M` to `N` along a diffeomorphism `Φ : N → M`, by conjugation `f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` with the
+pullback, gives a properly supported operator. -/
+theorem IsProperlySupported.conj (hP : IsProperlySupported P) {N : Type*} [TopologicalSpace N]
+    [ChartedSpace (CoordinateSpace n) N]
+    (Φ : N ≃ₘ⟮𝓘(ℝ, CoordinateSpace n), 𝓘(ℝ, CoordinateSpace n)⟯ M) :
+    IsProperlySupported (Φ.compRightComplexAlgEquiv.toLinearEquiv.conj P) := by
+  have hconj (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), N; 𝓘(ℝ, ℂ), ℂ⟯) :
+      ⇑(Φ.compRightComplexAlgEquiv.toLinearEquiv.conj P f) =
+        P (Φ.symm.compRightComplexAlgEquiv f) ∘ Φ.toHomeomorph := by
+    ext x
+    simp
+  have hsymm (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), N; 𝓘(ℝ, ℂ), ℂ⟯) :
+      ⇑(Φ.symm.compRightComplexAlgEquiv f) = f ∘ Φ.symm.toHomeomorph := by
+    rw [Diffeomorph.coe_compRightComplexAlgEquiv_apply, Diffeomorph.coe_toHomeomorph]
+  intro K hK
+  obtain ⟨K', hK', hP₁, hP₂⟩ := hP (Φ '' K) (hK.image Φ.continuous)
+  refine ⟨Φ.symm '' K', hK'.image Φ.symm.continuous, fun f hf ↦ ?_, fun f hf x hx ↦ ?_⟩
+  · have hf' : tsupport (Φ.symm.compRightComplexAlgEquiv f) ⊆ Φ '' K := by
+      rw [hsymm, tsupport_comp_eq_preimage]
+      exact fun z hz ↦ ⟨Φ.symm z, hf hz, Φ.apply_symm_apply z⟩
+    rw [hconj, tsupport_comp_eq_preimage]
+    exact fun x hx ↦ ⟨Φ x, hP₁ _ hf' hx, Φ.symm_apply_apply x⟩
+  · have hf' : ∀ᶠ y in 𝓝ˢ K', Φ.symm.compRightComplexAlgEquiv f y = 0 :=
+      ((Φ.symm.continuous.tendsto_nhdsSet (mapsTo_image _ _)).eventually hf).mono fun y hy ↦ by
+        rwa [Diffeomorph.compRightComplexAlgEquiv_apply]
+    rw [hconj, Function.comp_apply, Diffeomorph.coe_toHomeomorph]
+    exact hP₂ _ hf' (Φ x) (mem_image_of_mem Φ hx)
 
 /-! #### Locally finite sums -/
 
@@ -283,6 +358,27 @@ theorem classicalPseudodifferentialOperators_le {m m' : ℝ} (k : ℕ) (hk : m' 
     ⟨ClassicalSymbol.inclusion k hk a, fun u x ↦ by
       rw [ClassicalSymbol.toSymbol_inclusion, Symbol.coefficient_inclusion, ha]⟩⟩
 
+/-- **Dimension zero.** On a manifold modelled on `ℝ⁰`, every properly supported operator is a
+classical pseudodifferential operator of every order: each chart compression is multiplication by
+a constant, and on `ℝ⁰` a constant symbol is classical of every order. -/
+theorem mem_classicalPseudodifferentialOperators_of_dim_eq_zero (hn : n = 0)
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : IsProperlySupported P) (m : ℝ) : P ∈ classicalPseudodifferentialOperators m := by
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
+  set A := e.complexChartCompression he φ ψ P
+  obtain ⟨b, hb⟩ := Symbol.isSmoothing_iff.1
+    (Symbol.isSmoothing_of_dim_eq_zero hn (Symbol.const (A 1 0 • ContinuousLinearMap.id ℂ ℂ))) m
+  refine ⟨ClassicalSymbol.ofIsSmoothing b (Symbol.isSmoothing_of_dim_eq_zero hn b), fun u x ↦ ?_⟩
+  subst hn
+  -- On `ℝ⁰` the input is the constant `u x`, so the compression multiplies it by `A 1 0`.
+  have hu : ContMDiffMap.ofContDiff u (u.smooth ⊤) = u x • 1 := by
+    ext y
+    simp [Subsingleton.elim y x]
+  rw [ClassicalSymbol.toSymbol_ofIsSmoothing, hb, Symbol.quantizeSchwartzValue_const, hu,
+    map_smul, ContMDiffMap.complex_smul_apply, Subsingleton.elim x 0]
+  simp [mul_comm]
+
 /-! ### Locally finite sums of pseudodifferential operators -/
 
 section LocallyFiniteSum
@@ -317,6 +413,46 @@ theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators (hS : LocallyF
   rw [ContMDiffMap.locallyFiniteSum_apply_eq_sum hS hsupp hK _ ⟨x, subset_tsupport _ hx, rfl⟩]
 
 end LocallyFiniteSum
+
+/-! ### Invariance under diffeomorphisms -/
+
+section Diffeomorph
+
+variable {N : Type*} [TopologicalSpace N] [ChartedSpace (CoordinateSpace n) N] [T2Space N]
+
+/-- **Invariance under diffeomorphisms.** Transporting a classical pseudodifferential operator `P`
+of order `m` on `M` to `N` along a diffeomorphism `Φ : N → M`, by conjugation
+`f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` with the pullback, gives a classical pseudodifferential operator of order
+`m` on `N`. Its chart compression in a chart `e` of `N` is the chart compression of `P` in the
+chart `e ∘ Φ⁻¹` of `M` (`OpenPartialHomeomorph.complexChartCompression_conj`). -/
+theorem conj_mem_classicalPseudodifferentialOperators [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
+    (Φ : N ≃ₘ⟮𝓘(ℝ, CoordinateSpace n), 𝓘(ℝ, CoordinateSpace n)⟯ M) {m : ℝ}
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : P ∈ classicalPseudodifferentialOperators m) :
+    Φ.compRightComplexAlgEquiv.toLinearEquiv.conj P ∈ classicalPseudodifferentialOperators m := by
+  rw [mem_classicalPseudodifferentialOperators_iff] at hP ⊢
+  refine ⟨hP.1.conj Φ, fun e he φ ψ ↦ ?_⟩
+  obtain ⟨a, ha⟩ := hP.2 _ (Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl he) φ ψ
+  exact ⟨a, fun u x ↦ (ha u x).trans
+    (DFunLike.congr_fun (LinearMap.congr_fun (e.complexChartCompression_conj he Φ φ ψ P) _) x).symm⟩
+
+/-- **Invariance under diffeomorphisms.** For a diffeomorphism `Φ : N → M`, an operator `P` on `M`
+is a classical pseudodifferential operator of order `m` if and only if its transport
+`f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` to `N` is one. -/
+theorem conj_mem_classicalPseudodifferentialOperators_iff
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ N]
+    (Φ : N ≃ₘ⟮𝓘(ℝ, CoordinateSpace n), 𝓘(ℝ, CoordinateSpace n)⟯ M) {m : ℝ}
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} :
+    Φ.compRightComplexAlgEquiv.toLinearEquiv.conj P ∈ classicalPseudodifferentialOperators m ↔
+      P ∈ classicalPseudodifferentialOperators m := by
+  refine ⟨fun h ↦ ?_, conj_mem_classicalPseudodifferentialOperators Φ⟩
+  have h' := conj_mem_classicalPseudodifferentialOperators Φ.symm h
+  rwa [← Diffeomorph.compRightComplexAlgEquiv_symm, AlgEquiv.toLinearEquiv_symm,
+    LinearEquiv.conj_symm_conj] at h'
+
+end Diffeomorph
 
 /-! ### Multiplication operators -/
 
@@ -476,6 +612,20 @@ theorem ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexC
   push_cast
   ring
 
+/-- **The complexification of a differential operator is local.** If `D` is a differential
+operator on the real-valued smooth functions on `M`, in Grothendieck's sense, and the
+complex-valued smooth function `f` vanishes near `x`, then the complexification of `D` sends `f`
+to a function vanishing at `x`. -/
+theorem complexifyLinearMap_apply_eq_zero_of_mem_differentialOperators
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℕ}
+    {D : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ m)
+    {f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {x : M} (hf : ∀ᶠ y in 𝓝 x, f y = 0) :
+    ContMDiffMap.complexifyLinearMap D f x = 0 :=
+  ContMDiffMap.complexifyLinearMap_apply_eq_zero (fun g hg ↦ by
+    simpa using differentialOperators_apply_eq_of_eventuallyEq hD (g := 0) hg) hf
+
 /-- **Differential operators are classical pseudodifferential operators.** The complexification of
 a differential operator `D` of order at most `m` on the real-valued smooth functions on `M`, in
 Grothendieck's sense of iterated commutators with multiplication operators, is a classical
@@ -492,16 +642,10 @@ theorem complexifyLinearMap_mem_classicalPseudodifferentialOperators
     ContMDiffMap.complexifyLinearMap D ∈
       classicalPseudodifferentialOperators (n := n) (M := M) m := by
   -- Like `D`, its complexification is local, so it is properly supported.
-  have hloc (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M)
-      (hf : ∀ᶠ y in 𝓝 x, f y = 0) : ContMDiffMap.complexifyLinearMap D f x = 0 := by
-    have hD₀ (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hg : ∀ᶠ y in 𝓝 x, g y = 0) :
-        D g x = 0 := by
-      simpa using differentialOperators_apply_eq_of_eventuallyEq hD (g := 0) hg
-    simp [ContMDiffMap.complex_smul_apply, ContMDiffMap.ofReal_apply,
-      hD₀ (ContMDiffMap.re f) (hf.mono fun y hy ↦ by simp [ContMDiffMap.re_apply, hy]),
-      hD₀ (ContMDiffMap.im f) (hf.mono fun y hy ↦ by simp [ContMDiffMap.im_apply, hy])]
   exact mem_classicalPseudodifferentialOperators_iff.2
-    ⟨IsProperlySupported.of_local hloc, fun e he φ ψ ↦ ⟨_,
+    ⟨IsProperlySupported.of_local fun _ _ ↦
+      complexifyLinearMap_apply_eq_zero_of_mem_differentialOperators hD,
+      fun e he φ ψ ↦ ⟨_,
       ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexChartCompression he φ
         ψ ⟨D, hD⟩⟩⟩
 

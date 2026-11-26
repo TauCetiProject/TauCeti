@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.LinearAlgebra.TensorProduct.Hom
+public import TauCeti.Algebra.Module.Generator.Projective
 import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
@@ -25,7 +26,10 @@ map of `S ⊗[R] A` over `S`
 (`TauCeti.Brauer.mulLeftRight_comp_mulLeftRightBaseChangeEquiv`). Hence if the defining map of `A`
 is bijective, so is that of `S ⊗[R] A`
 (`TauCeti.Brauer.mulLeftRight_baseChange_bijective`), and `S ⊗[R] A` is Azumaya over `S` as soon
-as it is faithful over `S` (`TauCeti.Brauer.isAzumaya_baseChange_of_faithfulSMul`).
+as it is faithful over `S` (`TauCeti.Brauer.isAzumaya_baseChange_of_faithfulSMul`). Over a
+commutative ring `R` faithfulness of a finite projective module survives base change
+(`TauCeti.Module.faithfulSMul_baseChange`), so the base change of an Azumaya algebra is Azumaya
+(`TauCeti.Brauer.isAzumaya_baseChange`).
 
 ## Main results
 
@@ -34,6 +38,8 @@ as it is faithful over `S` (`TauCeti.Brauer.isAzumaya_baseChange_of_faithfulSMul
 * `TauCeti.Brauer.mulLeftRight_baseChange_bijective`: its bijectivity is stable under base change.
 * `TauCeti.Brauer.isAzumaya_baseChange_of_faithfulSMul`: the base change of an Azumaya algebra is
   Azumaya when it is faithful.
+* `TauCeti.Brauer.isAzumaya_baseChange`: over a commutative ring, the base change of an Azumaya
+  algebra is Azumaya.
 -/
 
 public section
@@ -105,5 +111,13 @@ theorem isAzumaya_baseChange_of_faithfulSMul (h : Function.Bijective (AlgHom.mul
   toProjective := inferInstance
   toFinite := inferInstance
   bij := mulLeftRight_baseChange_bijective R A S h
+
+/-- **Base change of an Azumaya algebra.** Over a commutative ring `R`, if `A` is Azumaya over `R`
+then `S ⊗[R] A` is Azumaya over every commutative `R`-algebra `S`: faithfulness of the finite
+projective `R`-module `A` survives base change (`TauCeti.Module.faithfulSMul_baseChange`), and so
+does bijectivity of the defining map (`isAzumaya_baseChange_of_faithfulSMul`). -/
+instance isAzumaya_baseChange (R : Type u) (A : Type v) (S : Type w) [CommRing R] [Ring A]
+    [Algebra R A] [CommSemiring S] [Algebra R S] [IsAzumaya R A] : IsAzumaya S (S ⊗[R] A) :=
+  isAzumaya_baseChange_of_faithfulSMul R A S IsAzumaya.bij
 
 end TauCeti.Brauer
