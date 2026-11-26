@@ -59,8 +59,8 @@ belongs to the grading API independently of any spin representation.
   with every vector intertwines Clifford multiplication with the grade involution.
 * `CliffordAlgebra.involute_eq_self_iff` and `CliffordAlgebra.involute_eq_neg_iff`: with `2`
   invertible, the even and odd parts are the `±1`-eigenspaces of the grade involution.
-* `CliffordAlgebra.mem_evenOdd_of_mul_eq_algebraMap` and `CliffordAlgebra.coe_inv_mem_evenOdd`:
-  an inverse of a homogeneous element is homogeneous of the same parity.
+* `CliffordAlgebra.mem_evenOdd_of_mul_eq_algebraMap`: an inverse up to a scalar of a homogeneous
+  element is homogeneous of the same parity.
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
   homogeneous of degree given by the cardinality of its index set, and
   `Module.Basis.exteriorAlgebra_mem_evenOdd_iff` says that this is the only degree it has.
@@ -181,12 +181,6 @@ theorem mem_evenOdd_of_mul_eq_algebraMap {i : ZMod 2} {a b : CliffordAlgebra Q} 
     (hba : b * a = algebraMap R _ f) : b ∈ evenOdd Q i :=
   TauCeti.GradedAlgebra.mem_of_mul_eq_algebraMap (evenOdd Q)
     ((by decide : ∀ j : ZMod 2, j + j = 0) i) ha hb hab hba
-
-/-- **The inverse of a homogeneous unit is homogeneous** of the same parity. -/
-theorem coe_inv_mem_evenOdd {i : ZMod 2} {x : (CliffordAlgebra Q)ˣ}
-    (hx : (x : CliffordAlgebra Q) ∈ evenOdd Q i) :
-    ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q i :=
-  mem_evenOdd_of_mul_eq_algebraMap hx (one_smul R _) (by simp) (by simp)
 
 end CliffordAlgebra
 

@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
 
 /-!
 # Clifford groups, general spin groups and their norms over a commutative ring
@@ -197,7 +198,7 @@ theorem mem_evenUnits_iff {x : (CliffordAlgebra Q)ˣ} :
     Subalgebra.mem_toSubsemiring, and_iff_left_iff_imp]
   intro hx
   rw [← Subalgebra.mem_toSubmodule, even_toSubmodule] at hx ⊢
-  exact coe_inv_mem_evenOdd hx
+  simpa only [neg_zero] using x.val_inv_mem_graded (𝒜 := evenOdd Q) hx
 
 variable (Q) in
 /-- Even units are locally homogeneous. -/
@@ -478,7 +479,8 @@ theorem ι_cliffordGroupToOrthogonal_apply (hι : Function.Injective (ι Q))
     (hinj : Function.Injective (algebraMap R (CliffordAlgebra Q))) (x : cliffordGroup Q) (m : M) :
     ι Q ((cliffordGroupToOrthogonal Q hι hinj x : M ≃ₗ[R] M) m) =
       involute ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * ι Q m *
-        (((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
-  ι_vectorNormalizerAction_apply hι _ m
+        (((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
+  simp only [cliffordGroupToOrthogonal, MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
+    ι_vectorNormalizerAction_apply, Subgroup.coe_inclusion]
 
 end CliffordAlgebra

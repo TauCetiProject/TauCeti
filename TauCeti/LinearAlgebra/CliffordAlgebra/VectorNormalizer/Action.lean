@@ -63,7 +63,9 @@ private theorem ι_twistedVectorMap (hι : Function.Injective (ι Q)) (x : vecto
     ι Q (twistedVectorMap hι x m) =
       involute ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * ι Q m *
         (((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
-  LinearMap.codRestrictOfInjective_comp_apply _ _ _ _ m
+  (LinearMap.codRestrictOfInjective_comp_apply _ _ _ _ m).trans <| by
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.mulLeft_apply,
+      LinearMap.mulRight_apply]
 
 private noncomputable def twistedEndHom (hι : Function.Injective (ι Q)) :
     vectorNormalizer Q →* Module.End R M where
