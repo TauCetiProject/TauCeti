@@ -166,22 +166,17 @@ private abbrev liftSubmodule :
 
 variable {p r' I}
 
-private theorem mem_liftSubmodule {Φ : Lp (Lp ℂ r' (volume : Measure E)) p (volume.restrict I)} :
-    Φ ∈ liftSubmodule E p r' I ↔ ∃ F : ℝ → Lp ℂ 2 (volume : Measure E), IntegrableOn F I ∧
-      ∀ᵐ s ∂volume.restrict I, (Φ s : E → ℂ) =ᵐ[volume] F s :=
-  Lp.mem_integrableRepSubmodule_iff
-
 /-- A chosen integrable `L²`-valued representative of a forcing in `liftSubmodule`. -/
 private def lift (Φ : liftSubmodule E p r' I) : ℝ → Lp ℂ 2 (volume : Measure E) :=
-  (mem_liftSubmodule.1 Φ.property).choose
+  (Lp.mem_integrableRepSubmodule_iff.1 Φ.property).choose
 
 private theorem integrableOn_lift (Φ : liftSubmodule E p r' I) : IntegrableOn (lift Φ) I :=
-  (mem_liftSubmodule.1 Φ.property).choose_spec.1
+  (Lp.mem_integrableRepSubmodule_iff.1 Φ.property).choose_spec.1
 
 private theorem ae_eq_lift (Φ : liftSubmodule E p r' I) :
     ∀ᵐ s ∂volume.restrict I, ((Φ : Lp (Lp ℂ r' (volume : Measure E)) p
       (volume.restrict I)) s : E → ℂ) =ᵐ[volume] lift Φ s :=
-  (mem_liftSubmodule.1 Φ.property).choose_spec.2
+  (Lp.mem_integrableRepSubmodule_iff.1 Φ.property).choose_spec.2
 
 variable (p r' I) in
 /-- The retarded integral of a forcing in `liftSubmodule`, computed from its `L²`-valued
@@ -253,7 +248,8 @@ private theorem exists_norm_retardedOnLift_le (hq₁ : 2 ≤ q₁)
     hq₁ hn₁ hpq₁ hqr₁
   refine ⟨C, fun {I} hI Φ ↦ (BoundedContinuousFunction.norm_le (by positivity)).2 fun t ↦ ?_⟩
   rw [Submodule.subtype_apply]
-  obtain ⟨F, hF, hΦF⟩ := mem_liftSubmodule.1 Φ.property
+  obtain ⟨F, hF : IntegrableOn F I volume, hΦF⟩ :=
+    Lp.mem_integrableRepSubmodule_iff.1 Φ.property
   have h := hC F ((measurableSet_Iio (a := t)).inter hI)
     (hF.mono_set inter_subset_right).aestronglyMeasurable
     (IntegrableOn.mono_set (integrable_phasePropagator_apply laplacianSymbol
@@ -285,7 +281,7 @@ theorem schrodingerRetardedL_apply_of_ae_eq (hq₁ : 2 ≤ q₁)
     (hΦF : ∀ᵐ s ∂volume.restrict I, (Φ s : E → ℂ) =ᵐ[volume] F s) (t : ℝ) :
     schrodingerRetardedL (p₁ : ℝ≥0∞) r₁' I Φ t =
       ∫ s in Iio t, schrodingerPropagator ℂ (t - s) (I.indicator F s) := by
-  have hmem : Φ ∈ liftSubmodule E p₁ r₁' I := mem_liftSubmodule.2 ⟨F, hF, hΦF⟩
+  have hmem : Φ ∈ liftSubmodule E p₁ r₁' I := Lp.mem_integrableRepSubmodule_iff.2 ⟨F, hF, hΦF⟩
   obtain ⟨C, hC⟩ := exists_norm_retardedOnLift_le (r₁' := r₁') hq₁ hn₁ hpq₁ hqr₁
   have h := LinearMap.extendOfNorm_eq (f := retardedOnLift (p₁ : ℝ≥0∞) r₁' I)
     (e := (liftSubmodule E p₁ r₁' I).subtype)
@@ -319,7 +315,8 @@ theorem eq_schrodingerRetardedL (hq₁ : 2 ≤ q₁)
     (hC hI) V
     ?_).symm
   ext1 Φ
-  obtain ⟨F, hF, hΦF⟩ := mem_liftSubmodule.1 Φ.property
+  obtain ⟨F, hF : IntegrableOn F I volume, hΦF⟩ :=
+    Lp.mem_integrableRepSubmodule_iff.1 Φ.property
   ext1 t
   rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, Submodule.subtype_apply,
     hV _ F hF hΦF, retardedOnLift_apply_of_ae_eq hF hΦF, setIntegral_Iio_restrict_eq_indicator hI]
@@ -342,7 +339,7 @@ private theorem enorm_integral_inner_schrodingerRetardedL_le (hq₁ : 2 ≤ q₁
     (hG : Integrable G) :
     ‖∫ t, ⟪schrodingerRetardedL (p₁ : ℝ≥0∞) r₁' I Φ t, G t⟫_ℂ‖ₑ ≤
       C * ‖Φ‖ₑ * eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
-  obtain ⟨F, hF, hΦF⟩ := mem_liftSubmodule.1 hΦ
+  obtain ⟨F, hF : IntegrableOn F I volume, hΦF⟩ := Lp.mem_integrableRepSubmodule_iff.1 hΦ
   have hFI : Integrable (I.indicator F) := hF.integrable_indicator hI
   have hW (t : ℝ) : ⟪schrodingerRetardedL (p₁ : ℝ≥0∞) r₁' I Φ t, G t⟫_ℂ =
       ∫ s in Iio t, ⟪schrodingerPropagator ℂ (t - s) (I.indicator F s), G t⟫_ℂ := by
