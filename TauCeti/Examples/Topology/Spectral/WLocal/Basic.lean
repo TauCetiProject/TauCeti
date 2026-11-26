@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Spectral.WLocal
+public import TauCeti.Topology.Spectral.WLocal.Basic
 import TauCeti.Topology.Compactification.OnePoint.Basic
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Order.Sierpinski
@@ -17,8 +17,8 @@ import Mathlib.Topology.UnitInterval
 # Worked examples and counterexamples for split open covers and w-local spaces
 
 This file tests the definitions and theorems of `TauCeti.Topology.ConnectedComponents`,
-`TauCeti.Topology.Spectral.ConnectedComponents`, and `TauCeti.Topology.Spectral.WLocal` across basic
-examples and boundary counterexamples:
+`TauCeti.Topology.Spectral.ConnectedComponents`, and
+`TauCeti.Topology.Spectral.WLocal.Basic` across basic examples and boundary counterexamples:
 
 * Empty and profinite spaces (`Empty`, `Bool`, the Cantor space `ℕ → Bool`) are w-local and have
   split open covers.

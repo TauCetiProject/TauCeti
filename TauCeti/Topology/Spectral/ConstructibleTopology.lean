@@ -111,6 +111,19 @@ theorem IsSpectralMap.continuous_withConstructibleTopology {f : X → Y} (hf : I
     @Continuous.comp _ X Y _ (constructibleTopology X) (constructibleTopology Y) _ _
       hf.continuous_constructibleTopology (WithTopology.continuous_ofTopology _)
 
+/-- A spectral map from a Hausdorff space is continuous into the constructible topology
+of its target: compact open inverse images are both open and closed. -/
+theorem IsSpectralMap.continuous_toConstructibleTopology [T2Space X] {f : X → Y}
+    (hf : IsSpectralMap f) :
+    Continuous (WithTopology.toTopology (constructibleTopology Y) ∘ f) := by
+  refine @Continuous.comp X Y _ _ (constructibleTopology Y) _ _ _
+    (WithTopology.continuous_toTopology _) ?_
+  refine continuous_generateFrom_iff.2 ?_
+  rintro U (⟨ho, _⟩ | ⟨hc, hcc⟩)
+  · exact ho.preimage hf.continuous
+  · have hpre := hf.isCompact_preimage_of_isOpen hc.isOpen_compl hcc
+    simpa only [preimage_compl, compl_compl] using hpre.isClosed.isOpen_compl
+
 /-- Every generic point of the closure of a subset lies in its closure for the constructible
 topology. -/
 theorem IsGenericPoint.mem_closure_constructibleTopology {s : Set X} {η : X}

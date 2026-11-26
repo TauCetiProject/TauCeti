@@ -432,4 +432,41 @@ theorem IsWLocalSpace.closedPointsHomeomorphConnectedComponents_symm_mk_mem {X :
       connectedComponent x :=
   ConnectedComponents.coe_eq_coe'.1 (hX.mk_closedPointsHomeomorphConnectedComponents_symm _)
 
+/-- The unique closed point of the connected component containing `x`. -/
+noncomputable def IsWLocalSpace.closedPoint {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) (x : X) : closedPoints X :=
+  hX.closedPointsHomeomorphConnectedComponents.symm (ConnectedComponents.mk x)
+
+/-- Choosing the closed point of a component is continuous on a w-local space. -/
+theorem IsWLocalSpace.continuous_closedPoint {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) : Continuous hX.closedPoint :=
+  hX.closedPointsHomeomorphConnectedComponents.symm.continuous.comp
+    ConnectedComponents.continuous_coe
+
+/-- Choosing the closed point is spectral when the source is w-local. -/
+theorem IsWLocalSpace.isSpectralMap_closedPoint {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) : IsSpectralMap hX.closedPoint := by
+  have := hX.spectralSpace
+  exact hX.closedPointsHomeomorphConnectedComponents.symm.isProperMap.isSpectralMap.comp
+    ConnectedComponents.isSpectralMap_coe
+
+/-- Choosing the closed point fixes every closed point. -/
+@[simp]
+theorem IsWLocalSpace.closedPoint_coe {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) (x : closedPoints X) : hX.closedPoint x = x :=
+  hX.closedPointsHomeomorphConnectedComponents_symm_mk x
+
+/-- Every point of a w-local space specializes to the selected closed point. -/
+theorem IsWLocalSpace.specializes_closedPoint {X : Type u} [TopologicalSpace X]
+    (hX : IsWLocalSpace X) (x : X) : x ⤳ (hX.closedPoint x : X) := by
+  have := hX.spectralSpace
+  obtain ⟨y, hy, hyc⟩ := (isClosed_closure (s := ({x} : Set X))).exists_closed_singleton
+    ⟨x, subset_closure (mem_singleton x)⟩
+  have hxy := specializes_iff_mem_closure.2 hy
+  have hcomp := hxy.mem_closed isClosed_connectedComponent mem_connectedComponent
+  have heq := hX.openCoversSplit.eq_of_mem_connectedComponent
+    ((connectedComponent_eq hcomp) ▸ hX.closedPointsHomeomorphConnectedComponents_symm_mk_mem x)
+    (hX.closedPoint x).property hyc
+  exact heq.symm ▸ hxy
+
 end TauCeti
