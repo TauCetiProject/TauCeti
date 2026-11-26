@@ -43,6 +43,7 @@ lozenges may stick out of `R` by one face. A plane tiling is a tiling of `Set.un
 * `TauCeti.isTiling_vadd_iff`, `TauCeti.isTiling_rot_iff`, `TauCeti.isFreeTiling_vadd_iff`,
   `TauCeti.isFreeTiling_rot_iff`: translations and `ρ` map tilings and free tilings to those of the
   image region.
+* `TauCeti.IsTiling.image_rot`: `ρ` maps plane tilings to plane tilings.
 * `TauCeti.isTiling_iff_placedTile`: tilings are the families of placed tiles of
   `lozengeProtoset` lying in `R`, pairwise disjoint and covering `R`.
 
@@ -307,6 +308,11 @@ private theorem image_iff (φ : Equiv.Perm TriFace) (ψ : Equiv.Perm TriEdge)
     IsTiling (TriFace.rot '' R) (TriEdge.rot '' M) ↔ IsTiling R M := by
   rw [isTiling_iff_subset_interiorEdges, isTiling_iff_subset_interiorEdges]
   exact image_iff _ _ (fun _ _ => TriEdge.rot_mem_edges_rot) interiorEdges (interiorEdges_rot R)
+
+/-- `ρ` maps plane tilings to plane tilings. -/
+theorem IsTiling.image_rot (h : IsTiling Set.univ M) : IsTiling Set.univ (TriEdge.rot '' M) := by
+  have := (isTiling_rot_iff (R := Set.univ) (M := M)).2 h
+  rwa [Set.image_univ_of_surjective TriFace.rot.surjective] at this
 
 /-- Translations map free tilings of `R` to free tilings of the translated region. -/
 @[simp] theorem isFreeTiling_vadd_iff (w : ℤ × ℤ) :

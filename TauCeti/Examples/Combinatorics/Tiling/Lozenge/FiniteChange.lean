@@ -66,7 +66,7 @@ example {M M' : Set TriEdge} {v : ℤ × ℤ} (hM : IsTiling Set.univ M) (hf : I
 
 /-! ### Tilings differing on infinitely many edges -/
 
-/-- An infinite family of edges: the edges `((x, 0), k)` for `x ∈ ℤ`. -/
+/-- A set containing every edge `((x, 0), k)`, `x ∈ ℤ`, is infinite. -/
 theorem infinite_of_forall_mem {s : Set TriEdge} {k : Fin 3} (h : ∀ x : ℤ, ⟨(x, 0), k⟩ ∈ s) :
     s.Infinite :=
   Set.infinite_of_injective_forall_mem (f := fun x : ℤ => (⟨(x, 0), k⟩ : TriEdge))
