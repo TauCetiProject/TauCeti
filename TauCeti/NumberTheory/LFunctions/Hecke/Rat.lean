@@ -62,13 +62,7 @@ form of the corresponding Dirichlet L-function.** -/
 theorem heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat {𝔪 : Modulus ℚ}
     (χ : RayClassCharacter 𝔪) :
     heckeLFunctionC χ =
-      toMeromorphicNFOn
-        (@DirichletCharacter.LFunction (Ideal.absNorm 𝔪.finitePart)
-          ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
-          χ.toDirichletCharacter)
-        Set.univ := by
-  have : NeZero (Ideal.absNorm 𝔪.finitePart) :=
-    ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
+      toMeromorphicNFOn (DirichletCharacter.LFunction χ.toDirichletCharacter) Set.univ := by
   rw [heckeLFunctionC_def, LSeries_rayClassCharacter_rat_eq χ]
   exact meromorphicContinuation_eq_toMeromorphicNFOn
     χ.toDirichletCharacter.meromorphic_LFunction
@@ -80,8 +74,6 @@ theorem heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat {𝔪 : Modulus ℚ}
 character `χ ≠ 1`, `heckeLFunctionC χ` is entire. -/
 theorem differentiable_heckeLFunctionC_rat {𝔪 : Modulus ℚ} {χ : RayClassCharacter 𝔪}
     (hχ : χ ≠ 1) : Differentiable ℂ (heckeLFunctionC χ) := by
-  have : NeZero (Ideal.absNorm 𝔪.finitePart) :=
-    ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
   have hψ : χ.toDirichletCharacter ≠ 1 :=
     RayClassCharacter.toDirichletCharacter_eq_one_iff.not.mpr hχ
   have hLdiff : Differentiable ℂ (DirichletCharacter.LFunction χ.toDirichletCharacter) :=
@@ -97,8 +89,6 @@ theorem heckeLFunctionC_eq_LSeries_rat {𝔪 : Modulus ℚ} (χ : RayClassCharac
     {s : ℂ} (hs : 1 < s.re) :
     heckeLFunctionC χ s =
       LSeries (normCoeff ℚ χ.toUnitaryIdealWeight.toIdealArithmeticFunction) s := by
-  have : NeZero (Ideal.absNorm 𝔪.finitePart) :=
-    ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
   rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat χ,
     toMeromorphicNFOn_apply_of_analyticAt χ.toDirichletCharacter.meromorphic_LFunction
       (χ.toDirichletCharacter.analyticAt_LFunction (.inl fun h ↦ by simp [h] at hs)),
@@ -110,8 +100,6 @@ class character `χ`, and any `s` with `1 ≤ s.re` such that `χ ≠ 1 ∨ s �
 `heckeLFunctionC χ s ≠ 0`. -/
 theorem heckeLFunctionC_ne_zero_of_one_le_re_rat {𝔪 : Modulus ℚ} {χ : RayClassCharacter 𝔪}
     {s : ℂ} (h : χ ≠ 1 ∨ s ≠ 1) (hs : 1 ≤ s.re) : heckeLFunctionC χ s ≠ 0 := by
-  have : NeZero (Ideal.absNorm 𝔪.finitePart) :=
-    ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
   have hψs : χ.toDirichletCharacter ≠ 1 ∨ s ≠ 1 :=
     h.imp_left RayClassCharacter.toDirichletCharacter_eq_one_iff.not.mpr
   rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat χ,

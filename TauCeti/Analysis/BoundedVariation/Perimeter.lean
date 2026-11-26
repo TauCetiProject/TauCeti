@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Lebesgue.Indicator
 
 /-!
 # The perimeter of a set in an open set
@@ -45,6 +46,8 @@ the semicontinuity half of the direct method for perimeter problems.
   `TauCeti.perimeter_of_subsingleton`.
 * `TauCeti.perimeter_eq_zero_of_disjoint_frontier` and
   `TauCeti.perimeter_eq_of_frontier_inter_subset`: the perimeter is carried by the frontier.
+* `TauCeti.perimeter_diff_le_of_frontier_inter_subset`: cutting out an open neighborhood `G` of
+  the frontier in `V` gives `P(s \ G; V) ≤ P(G; V)`.
 * `TauCeti.perimeter_union_of_disjoint_closure`: additivity for sets with disjoint closures.
 * `TauCeti.perimeter_le_liminf`: lower semicontinuity of the perimeter.
 
@@ -200,6 +203,54 @@ theorem perimeter_eq_of_frontier_inter_subset (hs : NullMeasurableSet s (μ.rest
   simp only [← perimeter_def, ← hΩ, hW, add_zero] at this
   exact this
 
+/-- **Cutting out a neighborhood of the frontier.** If an open set `G` contains the frontier of
+`s` inside an open set `V`, then `P(s \ G; V) ≤ P(G; V)`: inside `V` the set `s \ G` is empty on
+`G` and on the exterior of `s`, and agrees with `Gᶜ` on the interior of `s`. No measurability of
+`s` is needed. -/
+theorem perimeter_diff_le_of_frontier_inter_subset {V : Opens E} {G : Set E} (hG : IsOpen G)
+    (h : frontier s ∩ V ⊆ G) :
+    perimeter μ V (s \ G) ≤ perimeter μ V G := by
+  -- Inside `V`, `s \ G` agrees with the open set `interior s \ G`.
+  have hint : (s \ G) ∩ V = (interior s \ G) ∩ V := by
+    ext y
+    refine ⟨fun ⟨⟨hys, hyG⟩, hyV⟩ => ⟨⟨by_contra fun hy => hyG (h ⟨⟨subset_closure hys, hy⟩, hyV⟩),
+      hyG⟩, hyV⟩, fun ⟨⟨hys, hyG⟩, hyV⟩ => ⟨⟨interior_subset hys, hyG⟩, hyV⟩⟩
+  rw [perimeter_congr_of_inter_eq hint]
+  have hli (U : Set E) : LocallyIntegrableOn ((interior s \ G).indicator (1 : E → ℝ)) U μ :=
+    ((locallyIntegrable_const 1).indicator
+      (isOpen_interior.measurableSet.diff hG.measurableSet)).locallyIntegrableOn U
+  let W₁ : Opens E := V ⊓ ⟨G, hG⟩
+  let W₂ : Opens E := V ⊓ ⟨interior s, isOpen_interior⟩
+  let W₃ : Opens E := V ⊓ ⟨(closure s)ᶜ, isClosed_closure.isOpen_compl⟩
+  have hV : V ≤ W₁ ⊔ W₂ ⊔ W₃ := fun y hy => by
+    by_cases h₂ : y ∈ interior s
+    · exact Or.inl (Or.inr ⟨hy, h₂⟩)
+    by_cases h₃ : y ∈ closure s
+    · exact Or.inl (Or.inl ⟨hy, h ⟨⟨h₃, h₂⟩, hy⟩⟩)
+    · exact Or.inr ⟨hy, h₃⟩
+  have h₁ : perimeter μ W₁ (interior s \ G) = 0 := by
+    rw [perimeter_congr_of_inter_eq (t := ∅) (by ext y; simp [W₁]; tauto), perimeter_empty]
+  have h₃ : perimeter μ W₃ (interior s \ G) = 0 := by
+    rw [perimeter_congr_of_inter_eq (t := ∅) ?_, perimeter_empty]
+    ext y
+    simp only [mem_inter_iff, Set.mem_sdiff, SetLike.mem_coe, mem_empty_iff_false, false_and,
+      iff_false]
+    exact fun ⟨⟨hys, _⟩, hy⟩ => hy.2 (subset_closure (interior_subset hys))
+  have h₂ : perimeter μ W₂ (interior s \ G) ≤ perimeter μ V G := by
+    rw [perimeter_congr_of_inter_eq (t := Gᶜ) ?_, perimeter_compl]
+    · exact perimeter_mono inf_le_left
+    ext y
+    simp only [mem_inter_iff, Set.mem_sdiff, mem_compl_iff, SetLike.mem_coe]
+    exact ⟨fun h => ⟨h.1.2, h.2⟩, fun h => ⟨⟨h.2.2, h.1⟩, h.2⟩⟩
+  calc perimeter μ V (interior s \ G) ≤ perimeter μ (W₁ ⊔ W₂ ⊔ W₃) (interior s \ G) :=
+        perimeter_mono hV
+    _ ≤ perimeter μ W₁ (interior s \ G) + perimeter μ W₂ (interior s \ G) +
+        perimeter μ W₃ (interior s \ G) := by
+      simp only [perimeter_def]
+      exact (totalVariationOn_sup_le (hli _)).trans
+        (add_le_add (totalVariationOn_sup_le (hli _)) le_rfl)
+    _ ≤ perimeter μ V G := by rw [h₁, h₃, zero_add, add_zero]; exact h₂
+
 /-- **Additivity for sets with disjoint closures.** Against an additive Haar measure, sets `s` and
 `t` that are null-measurable on `Ω` and have disjoint closures satisfy
 `P(s ∪ t; Ω) = P(s; Ω) + P(t; Ω)`. Disjointness of `s` and `t` alone does not suffice: in `ℝ`, the
@@ -266,12 +317,7 @@ theorem perimeter_le_liminf [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ]
     locallyIntegrableOn_indicator_const (ht.mono Measure.restrict_le_self) 1
   refine totalVariationOn_le_liminf (hs.mono fun i hi => hli hi) (hli hs₀) fun K hK hKΩ => ?_
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (h K hK hKΩ)
-    (fun _ => zero_le) fun i => ?_
-  have hpt : ∀ x, ‖(s i).indicator (1 : E → ℝ) x - s₀.indicator 1 x‖ₑ =
-      (s i ∆ s₀).indicator 1 x := fun x => by
-    by_cases h₁ : x ∈ s i <;> by_cases h₂ : x ∈ s₀ <;> simp [mem_symmDiff, h₁, h₂]
-  simp_rw [hpt]
-  exact (lintegral_indicator_one_le _).trans
-    (Measure.restrict_apply' hK.isClosed.measurableSet).le
+    (fun _ => zero_le) fun _ =>
+      μ.setLIntegral_enorm_indicator_one_sub_le _ _ hK.isClosed.nullMeasurableSet
 
 end TauCeti

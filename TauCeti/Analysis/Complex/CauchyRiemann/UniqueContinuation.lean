@@ -362,6 +362,20 @@ theorem exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt
   rw [h0, Nat.cast_zero] at hm
   exact (hσ.analyticOrderAt_ne_zero.2 hσ₀) hm.symm
 
+/-- **Positive orders through a change of frame.** On an open preconnected `Ω`, let `η` take
+values in a real normed space `W`, and let `e : W ≃L[ℝ] V` be such that `e ∘ η` is continuous on
+`Ω` and factors at each of its zeros in `Ω`. If `η` is not identically zero on `Ω`, then each zero
+`z₀ ∈ Ω` of `η` has a finite positive order `m`: `‖η z‖` is comparable to `‖z - z₀‖ ^ m`. -/
+theorem exists_isTheta_pow_of_continuousLinearEquiv_of_hasSimilarityFactorizationAt
+    {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] (e : W ≃L[ℝ] V) {η : ℂ → W}
+    (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω) (hη : ContinuousOn (fun z ↦ e (η z)) Ω)
+    (hfac : ∀ z ∈ Ω, e (η z) = 0 → HasSimilarityFactorizationAt (fun z ↦ e (η z)) z)
+    (hne : ∃ z ∈ Ω, η z ≠ 0) (hz₀ : z₀ ∈ Ω) (hη₀ : η z₀ = 0) :
+    ∃ m : ℕ, 0 < m ∧ η =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ m := by
+  obtain ⟨m, hm, hθ, -⟩ := exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt hΩ hΩc hη
+    hfac (by simpa using hne) hz₀ (by simp [hη₀])
+  exact ⟨m, hm, IsTheta.trans ⟨e.isBigO_comp_rev _ _, e.isBigO_comp _ _⟩ hθ⟩
+
 end Global
 
 /-- **Example.** For `v ≠ 0` and any family `Φ` continuous and invertible at `0`, the function

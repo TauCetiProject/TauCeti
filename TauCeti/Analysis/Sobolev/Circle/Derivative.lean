@@ -38,6 +38,8 @@ order is what governs the differentiability of reparametrizations of boundary ma
   controlled by the `H^s` norms of a function and of its derivative.
 * `TauCeti.CircleSobolev.derivative_eq_zero_iff`: the kernel of the derivative consists of the
   constant functions.
+* `TauCeti.CircleSobolev.exists_inclusion_eq_and_derivative_eq_of_le`: for `s ≤ t + 1`, an
+  element of `H^s` whose formal derivative lies in `H^t` lies in `H^(t + 1)`.
 * `TauCeti.CircleSobolev.bijective_derivative_add_inclusion`: `ζ ↦ ζ' + ζ` is a bijection
   `H^(s + 1) → H^s`, since it multiplies the `n`-th Fourier coefficient by the nonvanishing factor
   `1 + 2πin/T`; `TauCeti.CircleSobolev.derivativeAddInclusionEquiv` is the resulting continuous
@@ -159,31 +161,53 @@ theorem derivative_eq_zero_iff (h : s + 1 ≤ t) (a : CircleSobolev t E) :
   · rw [ha, derivative_single]
     simp
 
-/-- Conversely, an element of `H^s` whose formal derivative lies in `H^s` lies in `H^(s + 1)`: if
-the sequence `2πin/T • a.coeff n` is the coefficient sequence of some `b ∈ H^s`, then `a` comes from
-an element of `H^(s + 1)` whose derivative is `b`. -/
-theorem exists_inclusion_eq_and_derivative_eq (a b : CircleSobolev s E)
-    (hb : ∀ n, b.coeff n = (2 * π * I * n / T : ℂ) • a.coeff n) :
-    ∃ c : CircleSobolev (s + 1) E, inclusion (by linarith) c = a ∧ derivative T le_rfl c = b := by
-  have _ : 0 < 2 * π / T := div_pos (by positivity) hT.out
-  -- `(1 + |n|) ^ (s + 1) ‖a_n‖ = (1 + |n|) ^ s ‖a_n‖ + (1 + |n|) ^ s |n| ‖a_n‖`, and the last
-  -- term is `T / 2π` times `(1 + |n|) ^ s ‖b_n‖`.
-  have hle (n : ℤ) : weight (s + 1) n * ‖a.coeff n‖ ≤
-      weight s n * ‖a.coeff n‖ + (2 * π / T)⁻¹ * (weight s n * ‖b.coeff n‖) := by
+/-- **Regularity from the derivative.** For `s ≤ t + 1`, an element of `H^s` whose formal
+derivative lies in `H^t` lies in `H^(t + 1)`: if `2πin/T • a.coeff n` is the coefficient sequence
+of some `b ∈ H^t`, then `a` comes from an element of `H^(t + 1)` whose derivative is `b`. -/
+theorem exists_inclusion_eq_and_derivative_eq_of_le (hst : s ≤ t + 1) (a : CircleSobolev s E)
+    (b : CircleSobolev t E) (hb : ∀ n, b.coeff n = (2 * π * I * n / T : ℂ) • a.coeff n) :
+    ∃ c : CircleSobolev (t + 1) E, inclusion hst c = a ∧ derivative T le_rfl c = b := by
+  have hc : 0 < 2 * π / T := div_pos (by positivity) hT.out
+  -- Away from the constant mode `1 + |n| ≤ 2 |n|`, so `(1 + |n|) ^ (t + 1) ‖a_n‖` is at most
+  -- `2 (T / 2π)` times `(1 + |n|) ^ t ‖b_n‖`.
+  have hle (n : ℤ) : weight (t + 1) n * ‖a.coeff n‖ ≤
+      2 * (2 * π / T)⁻¹ * (weight t n * ‖b.coeff n‖) + if n = 0 then ‖a.coeff 0‖ else 0 := by
+    have h0 : 0 ≤ 2 * (2 * π / T)⁻¹ * (weight t n * ‖b.coeff n‖) :=
+      mul_nonneg (by positivity) (mul_nonneg (weight_nonneg t n) (norm_nonneg _))
+    rcases eq_or_ne n 0 with rfl | hn
+    · simpa using h0
+    have h1 : (1 : ℝ) ≤ |(n : ℝ)| := by
+      rw [← Int.cast_abs, ← Int.cast_one, Int.cast_le]
+      exact Int.one_le_abs hn
+    simp only [hn, ↓reduceIte, add_zero]
     rw [hb, norm_smul, norm_two_pi_I_mul_intCast_div hT.out, weight_add_one]
-    refine le_of_eq ?_
-    field_simp [hT.out.ne']
-  have hsum : Summable fun n ↦ (weight (s + 1) n * ‖a.coeff n‖) ^ 2 := by
+    have hw := mul_nonneg (weight_nonneg t n) (norm_nonneg (a.coeff n))
+    calc weight t n * (1 + |(n : ℝ)|) * ‖a.coeff n‖
+        ≤ weight t n * (2 * |(n : ℝ)|) * ‖a.coeff n‖ := by nlinarith
+      _ = 2 * (2 * π / T)⁻¹ * (weight t n * (2 * π / T * |(n : ℝ)| * ‖a.coeff n‖)) := by
+        field_simp [hT.out.ne']
+  have hfin : Summable fun n : ℤ ↦ (if n = 0 then ‖a.coeff 0‖ else 0) ^ 2 :=
+    summable_of_ne_finset_zero (s := {0}) fun n hn ↦ by simp_all
+  have hsum : Summable fun n ↦ (weight (t + 1) n * ‖a.coeff n‖) ^ 2 := by
     refine Summable.of_nonneg_of_le (fun n ↦ sq_nonneg _) (fun n ↦ ?_)
-      (((hasSum_sq_weight_mul_norm_coeff a).summable.mul_left 2).add
-        ((hasSum_sq_weight_mul_norm_coeff b).summable.mul_left (2 * ((2 * π / T)⁻¹) ^ 2)))
-    have h0 : 0 ≤ weight (s + 1) n * ‖a.coeff n‖ :=
+      (((hasSum_sq_weight_mul_norm_coeff b).summable.mul_left (2 * (2 * (2 * π / T)⁻¹) ^ 2)).add
+        (hfin.mul_left 2))
+    have h0 : 0 ≤ weight (t + 1) n * ‖a.coeff n‖ :=
       mul_nonneg (weight_nonneg _ n) (norm_nonneg _)
-    nlinarith [hle n, sq_nonneg (weight s n * ‖a.coeff n‖ -
-      (2 * π / T)⁻¹ * (weight s n * ‖b.coeff n‖))]
+    nlinarith [hle n, sq_nonneg (2 * (2 * π / T)⁻¹ * (weight t n * ‖b.coeff n‖) -
+      if n = 0 then ‖a.coeff 0‖ else 0)]
   refine ⟨⟨a.coeff, (memℓp_weight_smul_iff _).2 hsum⟩, CircleSobolev.ext (by simp),
     CircleSobolev.ext (funext fun n ↦ ?_)⟩
   rw [coeff_derivative, hb]
+
+/-- The case `t = s` of `exists_inclusion_eq_and_derivative_eq_of_le`: an element of `H^s` whose
+formal derivative lies in `H^s` lies in `H^(s + 1)`. If the sequence `2πin/T • a.coeff n` is the
+coefficient sequence of some `b ∈ H^s`, then `a` comes from an element of `H^(s + 1)` whose
+derivative is `b`. -/
+theorem exists_inclusion_eq_and_derivative_eq (a b : CircleSobolev s E)
+    (hb : ∀ n, b.coeff n = (2 * π * I * n / T : ℂ) • a.coeff n) :
+    ∃ c : CircleSobolev (s + 1) E, inclusion (by linarith) c = a ∧ derivative T le_rfl c = b :=
+  exists_inclusion_eq_and_derivative_eq_of_le T (by linarith) a b hb
 
 omit hT in
 /-- The Fourier multiplier `1 + 2πin/T` of `ζ ↦ ζ' + ζ` does not vanish: its real part is `1`. -/

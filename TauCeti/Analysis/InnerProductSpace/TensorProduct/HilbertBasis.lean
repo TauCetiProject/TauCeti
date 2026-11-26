@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Diagonal
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Spectral.Diagonal
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Completion
+public import TauCeti.Order.Northcott.Prod
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+import TauCeti.Order.Northcott.Comparison
 
 /-!
 # Hilbert bases of completed tensor products and tensor sums of operators
@@ -53,6 +55,15 @@ zero, while both kernels are trivial. Applied to `D_P² ⊗ 1 + 1 ⊗ D_Q²`, wh
 the graded product operator, this is the dimension count behind the product formula for the index
 of two elliptic operators.
 
+The tensor sum of two operators with compact resolvent and real eigenvalues bounded below has
+compact resolvent (`LinearPMap.HasCompactResolvent.hasCompactResolvent_diagonalPMap_tensorProduct`).
+A diagonal operator has compact resolvent exactly when only finitely many of its coefficients lie in
+each bounded set (`HilbertBasis.hasCompactResolvent_diagonalPMap_iff`); for real families `λ` and
+`μ` bounded below this means that `λ i` and `μ j` tend to `+∞`, and then only finitely many pairs
+have `λ i + μ j ≤ R` (`Northcott.prod_add`). The lower bounds are needed: for `λ n = n` and
+`μ n = -n` on `ℓ²(ℕ)` the tensor sum has the eigenvalue `0` with infinite multiplicity, although
+both diagonal operators with coefficients `λ` and `μ` have compact resolvent.
+
 ## Main definitions
 
 * `HilbertBasis.tensorProduct b c`: the Hilbert basis `(i, j) ↦ b i ⊗ₜ c j` of the completed tensor
@@ -73,6 +84,9 @@ of two elliptic operators.
 * `HilbertBasis.ker_diagonalPMap_tensorProduct` and
   `HilbertBasis.finrank_ker_diagonalPMap_tensorProduct`: the kernel of a tensor sum with
   nonnegative coefficients and its dimension.
+* `HilbertBasis.hasCompactResolvent_diagonalPMap_tensorProduct` and
+  `LinearPMap.HasCompactResolvent.hasCompactResolvent_diagonalPMap_tensorProduct`: compact
+  resolvent of a tensor sum.
 
 ## References
 
@@ -261,5 +275,47 @@ theorem finrank_ker_diagonalPMap_tensorProduct (hlam : ∀ i, 0 ≤ lam i) (hmu 
       Module.finrank 𝕜 (b.diagonalPMap lam).ker * Module.finrank 𝕜 (c.diagonalPMap mu).ker := by
   rw [finrank_ker_diagonalPMap, finrank_ker_diagonalPMap, finrank_ker_diagonalPMap,
     setOf_add_eq_zero hlam hmu, Nat.card_congr (Equiv.Set.prod _ _), Nat.card_prod]
+
+/-! ### Compact resolvent of a tensor sum -/
+
+/-- **Compact resolvent of a tensor sum of diagonal operators.** If the real families `λ` and `μ`
+have only finitely many members below every bound, then so has the family of sums `λ i + μ j`, and
+the diagonal operator with these coefficients in the product basis has compact resolvent. -/
+theorem hasCompactResolvent_diagonalPMap_tensorProduct {lam : ι → ℝ} {mu : κ → ℝ}
+    [Northcott lam] [Northcott mu] :
+    ((b.tensorProduct c).diagonalPMap fun p ↦ (lam p.1 : 𝕜) + mu p.2).HasCompactResolvent := by
+  rw [hasCompactResolvent_diagonalPMap_iff]
+  have := Northcott.prod_add lam mu
+  exact Northcott.of_le_add (h := fun p : ι × κ ↦ lam p.1 + mu p.2) 0 fun p ↦ by
+    rw [add_zero, ← RCLike.ofReal_add, RCLike.norm_ofReal]
+    exact le_abs_self _
+
+variable {b c} in
+/-- **Compact resolvent of the tensor sum of two operators.** Let `A` and `B` have compact
+resolvent and Hilbert bases `b` and `c` of eigenvectors whose real eigenvalues `λ i` and `μ j` are
+bounded below, for instance self-adjoint operators with compact resolvent that are bounded below.
+Then the tensor sum `A ⊗ 1 + 1 ⊗ B`, the diagonal operator with coefficients `λ i + μ j` in the
+product basis, has compact resolvent. By `LinearPMap.IsFormalAdjoint.eq_diagonalPMap_tensorProduct`
+this applies to every closed symmetric operator acting on pure tensors by the Leibniz rule.
+
+The lower bounds are needed: for `λ n = n` and `μ n = -n` the eigenvalue `0` of the tensor sum has
+infinite multiplicity. -/
+theorem _root_.LinearPMap.HasCompactResolvent.hasCompactResolvent_diagonalPMap_tensorProduct
+    {A : E →ₗ.[𝕜] E} {B : F →ₗ.[𝕜] F} (hA : A.HasCompactResolvent) (hB : B.HasCompactResolvent)
+    {lam : ι → ℝ} {mu : κ → ℝ}
+    (hAb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i)
+    (hBc : ∀ j, ∃ hj : c j ∈ B.domain, B ⟨c j, hj⟩ = (mu j : 𝕜) • c j) {a a' : ℝ}
+    (hlam : ∀ i, a ≤ lam i) (hmu : ∀ j, a' ≤ mu j) :
+    ((b.tensorProduct c).diagonalPMap fun p ↦ (lam p.1 : 𝕜) + mu p.2).HasCompactResolvent := by
+  -- The eigenvalue norms are Northcott, and with a lower bound so are the eigenvalues.
+  have hNA := hA.northcott_norm_of_orthonormal b.orthonormal hAb
+  have hNB := hB.northcott_norm_of_orthonormal c.orthonormal hBc
+  -- For `a ≤ x` we have `|x| ≤ x + 2 |a|`.
+  have key (a x : ℝ) (hax : a ≤ x) : ‖(x : 𝕜)‖ ≤ x + 2 * |a| := by
+    rw [RCLike.norm_ofReal, abs_le]
+    constructor <;> linarith [neg_abs_le a, le_abs_self a]
+  have : Northcott lam := Northcott.of_le_add (2 * |a|) fun i ↦ key a _ (hlam i)
+  have : Northcott mu := Northcott.of_le_add (2 * |a'|) fun j ↦ key a' _ (hmu j)
+  exact HilbertBasis.hasCompactResolvent_diagonalPMap_tensorProduct b c
 
 end HilbertBasis

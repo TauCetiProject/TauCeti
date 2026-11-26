@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
 import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Complex.ContinuousLog.Basic
-import TauCeti.Analysis.Complex.SectorBounds
+import TauCeti.Analysis.Complex.Sector.Bounds
 import TauCeti.Analysis.Complex.SlitPlane
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Convex.Contractible

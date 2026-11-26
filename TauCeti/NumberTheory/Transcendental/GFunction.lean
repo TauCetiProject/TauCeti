@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Transcendental.EFunction.Basic
 import Mathlib.NumberTheory.Chebyshev
+import TauCeti.Analysis.Analytic.OfScalars
 
 /-!
 # Siegel's G-functions
@@ -149,17 +150,9 @@ theorem radius_pos {a : ℕ → ℂ} (ha : IsGFunction a) :
 theorem hasFPowerSeriesOnBall {a : ℕ → ℂ} (ha : IsGFunction a) :
     HasFPowerSeriesOnBall (fun z ↦ ∑' n, a n * z ^ n)
       (FormalMultilinearSeries.ofScalars ℂ a) 0 (PowerSeries.mk a).radius := by
-  set p := FormalMultilinearSeries.ofScalars ℂ a
-  have hrad : p.radius = (PowerSeries.mk a).radius := by
-    simpa [p] using (PowerSeries.radius_eq_radius_ofScalars ℂ (PowerSeries.mk a)).symm
-  have hp := p.hasFPowerSeriesOnBall (hrad ▸ ha.radius_pos)
-  rw [hrad] at hp
-  have hsum : p.sum = fun z ↦ ∑' n, a n * z ^ n := by
-    ext z
-    rw [FormalMultilinearSeries.sum]
-    refine tsum_congr fun n ↦ ?_
-    simp [p, mul_comm]
-  rwa [hsum] at hp
+  have hrad : (FormalMultilinearSeries.ofScalars ℂ a).radius = (PowerSeries.mk a).radius := by
+    simpa using (PowerSeries.radius_eq_radius_ofScalars ℂ (PowerSeries.mk a)).symm
+  exact hasFPowerSeriesOnBall_tsum_mul_pow a ha.radius_pos hrad.ge
 
 /-- Every G-function has a finite positive radius `r : ℝ≥0` on which `∑ aₙ zⁿ` is its convergent
 power series around `0`. -/

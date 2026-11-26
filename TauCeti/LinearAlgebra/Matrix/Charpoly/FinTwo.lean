@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 
 /-!
-# The homogeneous characteristic form of a `2 × 2` matrix
+# The characteristic polynomial of a `2 × 2` matrix
 
 Mathlib's `Matrix.charpoly_fin_two` records the characteristic polynomial of a `2 × 2` matrix as
 `X ^ 2 - C M.trace * X + C M.det`. This file records the *homogeneous* two-variable form of the
@@ -20,13 +22,21 @@ same fact, evaluated directly as a determinant rather than through `Polynomial`:
 The two are close. Applying `charpoly_fin_two` to `r • M`, evaluating at `s` with
 `Matrix.eval_charpoly`, and simplifying the resulting `Matrix.trace_smul` and `Matrix.det_smul`
 does prove the identity below — in about twice the lines, and only over a `[Nontrivial R]`, which
-`charpoly_fin_two` requires and the statement here does not. What this file adds is therefore the
-*name* and the `Polynomial`-free form: an equation between two ring elements over any `CommRing`,
-which is the shape a caller with matrix data in hand wants to rewrite with.
+`charpoly_fin_two` requires and the statement here does not. For this identity, what the file
+adds is therefore the *name* and the `Polynomial`-free form: an equation between two ring elements
+over any `CommRing`, which is the shape a caller with matrix data in hand wants to rewrite with.
 
 Read as a binary quadratic form in `(r, s)`, the right-hand side has leading coefficient `M.det`,
 middle coefficient `-M.trace` and constant coefficient `1`, so its discriminant is
 `M.trace ^ 2 - 4 * M.det` — which is Mathlib's `Matrix.discr` by `Matrix.discr_fin_two`.
+
+Conversely, the characteristic polynomial itself is determined by the trace and determinant, which
+its coefficients recover over any commutative ring. This file states that as an equivalence between
+equal characteristic polynomials and equal (trace, determinant), with no `[Nontrivial R]`.
+
+The same coefficient reading gives integrality of the trace: if the characteristic polynomial of
+`M` over an `A`-algebra comes from `P` over a local ring `A`, and `P` reduces to `(X - u) (X - v)`
+over the residue field, then the trace of `M` comes from `A` and has residue `u + v`.
 
 ## Main results
 
@@ -37,6 +47,11 @@ middle coefficient `-M.trace` and constant coefficient `1`, so its discriminant 
 * `Matrix.det_one_sub_fin_two`, `Matrix.det_one_add_fin_two`: the values
   `det (1 ∓ M) = 1 ∓ trace M + det M` of the pencil at `r = s = ∓1`, which govern the eigenvalues
   `± 1` of `M`.
+* `Matrix.charpoly_eq_charpoly_iff_fin_two`: two `2 × 2` matrices have the same characteristic
+  polynomial exactly when they have the same trace and determinant, over any commutative ring.
+* `TauCeti.exists_algebraMap_eq_trace_fin_two`: a `2 × 2` matrix whose characteristic
+  polynomial comes from `P` over a local ring, with reduction `(X - u) (X - v)`, has integral
+  trace with residue `u + v`.
 
 ## Provenance
 
@@ -47,7 +62,8 @@ Ported from the AINTLIB `HasseWeil` project (Apache-2.0), revision `513e83879e2f
 
 The source's `det_smul_sub_smul_one_fin_two_of`, which rewrites the identity under hypotheses
 `M.det = q` and `M.trace = t`, is deliberately not ported: it is a one-line consequence better
-written at its call sites than carried as API.
+written at its call sites than carried as API. `TauCeti.exists_algebraMap_eq_trace_fin_two` is
+not from that source.
 -/
 
 public section
@@ -113,4 +129,42 @@ theorem det_one_add_fin_two {R : Type*} [CommRing R] (M : Matrix (Fin 2) (Fin 2)
   rw [h]
   ring
 
+/-- Two `2 × 2` matrices have the same characteristic polynomial exactly when they have the same
+trace and the same determinant. -/
+theorem charpoly_eq_charpoly_iff_fin_two {R : Type*} [CommRing R]
+    (M N : Matrix (Fin 2) (Fin 2) R) :
+    M.charpoly = N.charpoly ↔ M.trace = N.trace ∧ M.det = N.det := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨htr, hdet⟩ ↦ ?_⟩
+  · rw [trace_eq_neg_charpoly_coeff, trace_eq_neg_charpoly_coeff, h]
+  · rw [det_eq_sign_charpoly_coeff, det_eq_sign_charpoly_coeff, h]
+  · nontriviality R
+    rw [charpoly_fin_two, charpoly_fin_two, htr, hdet]
+
 end Matrix
+
+namespace TauCeti
+
+open Polynomial IsLocalRing Matrix
+
+variable {A K : Type*} [CommRing A] [IsLocalRing A] [CommRing K] [Algebra A K]
+
+/-- The trace of a `2 × 2` matrix whose characteristic polynomial comes from `P` over `A` is
+integral, and its residue is the sum of the residual roots of `P`. -/
+theorem exists_algebraMap_eq_trace_fin_two {M : Matrix (Fin 2) (Fin 2) K} {P : A[X]}
+    {u v : ResidueField A} (hP : P.map (algebraMap A K) = M.charpoly)
+    (hPr : P.map (residue A) = (X - C u) * (X - C v)) :
+    ∃ t : A, algebraMap A K t = M.trace ∧ residue A t = u + v := by
+  rw [show (X - C u) * (X - C v) = X ^ 2 - C (u + v) * X + C (u * v) by
+    simp only [C_add, C_mul]; ring] at hPr
+  refine ⟨-P.coeff 1, ?_, ?_⟩
+  · nontriviality K
+    have h := congrArg (fun p => p.coeff 1) hP
+    simp only [coeff_map, charpoly_fin_two] at h
+    rw [map_neg, h]
+    simp [coeff_C]
+  · have h := congrArg (fun p => p.coeff 1) hPr
+    simp only [coeff_map] at h
+    rw [map_neg, h]
+    simp [coeff_C]
+
+end TauCeti

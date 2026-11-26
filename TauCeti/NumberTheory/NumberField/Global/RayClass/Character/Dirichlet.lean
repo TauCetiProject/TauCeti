@@ -355,16 +355,9 @@ theorem normCoeff_rayClassCharacter_rat_eq {𝔪 : Modulus ℚ} (χ : RayClassCh
     {k : ℕ} (hk : k ≠ 0) :
     normCoeff ℚ χ.toUnitaryIdealWeight.toIdealArithmeticFunction k =
       χ.toDirichletCharacter k := by
-  let I : Ideal (𝓞 ℚ) := Ideal.span {(k : 𝓞 ℚ)}
-  have hI_ne : I ≠ 0 := mt (fun h ↦ Ideal.span_singleton_eq_bot.mp h) (by exact_mod_cast hk)
-  let I₀ : (Ideal (𝓞 ℚ))⁰ := ⟨I, mem_nonZeroDivisors_of_ne_zero hI_ne⟩
-  have hnorm : Ideal.absNorm I = k := by
-    simp only [I, Ideal.absNorm_span_natCast, NumberField.RingOfIntegers.rank,
-      Module.finrank_self, pow_one]
-  have hI₀ : (I₀ : Ideal (𝓞 ℚ)) = I := rfl
-  rw [normCoeff_eq_sum_normFiber, ← hnorm, normFiber_rat_absNorm I₀, Finset.sum_singleton,
-    UnitaryIdealWeight.toIdealArithmeticFunction_apply, RayClassCharacter.val_toUnitaryIdealWeight,
-    hnorm, hI₀]
+  rw [UnitaryIdealWeight.normCoeff_toIdealArithmeticFunction_of_finrank_eq_one
+      (Module.finrank_self ℚ),
+    RayClassCharacter.val_toUnitaryIdealWeight]
   exact (χ.toDirichletCharacter_apply_natCast hk).symm
 
 /-- **Over `ℚ`, the norm-regrouped `L`-series of a ray class character equals the `L`-series of its

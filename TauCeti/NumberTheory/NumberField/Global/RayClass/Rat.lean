@@ -115,26 +115,32 @@ theorem asIdeal_mem_integralIdealsPrimeTo_ratModulus_iff {v : HeightOneSpectrum 
     (Modulus.isCoprimeTo_iff.trans Ideal.isPrimeTo_iff.symm).trans <|
       Ideal.isPrimeTo_asIdeal_iff.trans mem_ratModulus_support_iff.not
 
-/-- Coprimality of the principal ideals `(k)` and `(n)` in `𝓞 ℚ` is equivalent to `k` being a
-unit modulo `n`. -/
-private theorem isCoprime_span_natCast_iff_isUnit {n : ℕ} (hn : n ≠ 0) (k : ℕ) :
-    IsCoprime (Ideal.span {(k : 𝓞 ℚ)}) (Ideal.span {(n : 𝓞 ℚ)}) ↔ IsUnit (k : ZMod n) := by
-  have : NeZero n := ⟨hn⟩
-  rw [Ideal.isCoprime_span_singleton_iff, NumberField.RingOfIntegers.isCoprime_natCast,
-    ZMod.isUnit_iff_coprime]
+variable {n hn} in
+/-- A nonzero ideal of `𝓞 ℚ` is coprime to `ratModulus n hn` exactly when its absolute norm is
+coprime to `n`. -/
+theorem isCoprimeTo_ratModulus_iff {J : Ideal (𝓞 ℚ)} (hJ : J ≠ ⊥) :
+    (ratModulus n hn).IsCoprimeTo J ↔ (Ideal.absNorm J).Coprime n := by
+  rw [Modulus.isCoprimeTo_iff_sup_eq_top, and_iff_right hJ, ← Ideal.isCoprime_iff_sup_eq,
+    ratModulus_finitePart]
+  conv_lhs => rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self J]
+  rw [Ideal.isCoprime_span_singleton_iff, ← Nat.isCoprime_iff_coprime]
+  constructor
+  · intro hc
+    simpa only [map_natCast] using hc.map Rat.ringOfIntegersEquiv.toRingHom
+  · intro hc
+    simpa only [map_natCast, map_intCast] using hc.map Rat.ringOfIntegersEquiv.symm.toRingHom
 
 variable {n hn} in
 /-- For `k ≠ 0`, `Ideal.span {(k : 𝓞 ℚ)}` is prime to `(ratModulus n hn).support` if and only if
 `k` is a unit modulo `n`. -/
 theorem isPrimeTo_span_natCast_ratModulus_iff_isUnit {k : ℕ} (hk : k ≠ 0) :
     (Ideal.span {(k : 𝓞 ℚ)}).IsPrimeTo (ratModulus n hn).support ↔ IsUnit (k : ZMod n) := by
-  have hI_ne : Ideal.span {(k : 𝓞 ℚ)} ≠ ⊥ :=
-    mt (fun h ↦ Ideal.span_singleton_eq_bot.mp h) (by exact_mod_cast hk)
-  rw [Ideal.isPrimeTo_iff]
-  simp only [Finset.mem_coe]
-  rw [← Modulus.isCoprimeTo_iff, Modulus.isCoprimeTo_iff_sup_eq_top, ratModulus_finitePart,
-    ← Ideal.isCoprime_iff_sup_eq, isCoprime_span_natCast_iff_isUnit hn k]
-  simp [hI_ne]
+  have : NeZero n := ⟨hn⟩
+  have hI_ne : Ideal.span {(k : 𝓞 ℚ)} ≠ ⊥ := by
+    simpa [Ideal.span_singleton_eq_bot] using hk
+  rw [← (Modulus.isCoprimeTo_iff.trans Ideal.isPrimeTo_iff.symm),
+    isCoprimeTo_ratModulus_iff hI_ne, Ideal.absNorm_span_natCast,
+    NumberField.RingOfIntegers.rank, Module.finrank_self, pow_one, ZMod.isUnit_iff_coprime]
 
 /-- **Reduction modulo the finite part of `ratModulus n hn` is reduction modulo `n`**, transported
 along `Rat.ringOfIntegersEquiv : 𝓞 ℚ ≃+* ℤ`. -/

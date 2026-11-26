@@ -20,6 +20,10 @@ recover the unframed tangent adjoint operator and its jointly smooth evaluation 
 
 * `TauCeti.Lie.contMDiff_adjointContinuousLinearMap`: the adjoint operator depends smoothly on the
   group element.
+* `TauCeti.Lie.continuous_adjointContinuousLinearMap_apply`: the adjoint action on a fixed Lie
+  algebra element is continuous in the group element.
+* `TauCeti.Lie.continuous_repr_adjoint`: for a finite-dimensional Lie algebra, the coordinates of
+  `Ad_g X` in a basis are continuous in `g`.
 * `TauCeti.Lie.contMDiff_tangentAd_apply`: the bundled tangent adjoint action is jointly smooth.
 * `TauCeti.Lie.contMDiff_tangentAd_apply_const`: the bundled tangent adjoint action on a fixed model
   vector is smooth in the group element.
@@ -115,6 +119,21 @@ theorem contMDiff_adjointContinuousLinearMap :
   dsimp only [Amodel, Bmodel, A, B, e]
   exact cancel_inCoordinates_at (I := I) (M := G) (x := 1)
     (ϕ := mfderiv I I (f x) 1)
+
+omit [CompleteSpace E] in
+/-- The adjoint action on a fixed Lie algebra element is continuous in the group element. -/
+theorem continuous_adjointContinuousLinearMap_apply (X : GroupLieAlgebra I G) :
+    Continuous fun g : G ↦ adjointContinuousLinearMap (I := I) g X :=
+  (contMDiff_adjointContinuousLinearMap (I := I) (G := G)).continuous.clm_apply continuous_const
+
+omit [CompleteSpace E] in
+/-- For a finite-dimensional Lie algebra, the coordinates of `Ad_g X` in a basis are continuous in
+`g`. -/
+theorem continuous_repr_adjoint [FiniteDimensional ℝ E] {ι : Type*}
+    (b : Module.Basis ι ℝ (GroupLieAlgebra I G)) (X : GroupLieAlgebra I G) (i : ι) :
+    Continuous fun g : G ↦ b.repr (adjointContinuousLinearMap (I := I) g X) i :=
+  (LinearMap.continuous_of_finiteDimensional (b.coord i)).comp
+    (continuous_adjointContinuousLinearMap_apply X)
 
 /-- The bundled tangent adjoint action is jointly smooth in the group element and model vector. -/
 theorem contMDiff_tangentAd_apply :
