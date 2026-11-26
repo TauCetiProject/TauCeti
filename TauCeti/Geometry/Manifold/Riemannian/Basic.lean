@@ -9,7 +9,6 @@ public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 public import Mathlib.Analysis.Normed.Module.Normalize
 import TauCeti.Geometry.Manifold.VectorField.Regularity
-import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Basic Riemannian bundle constructions
@@ -202,20 +201,6 @@ theorem ofIsContMDiffRiemannianBundle_inner_real {n : ℕ∞ω} (s : ℝ) (a b :
   -- The tangent metric of the real line is induced by its usual scalar inner product.
   change @Inner.inner ℝ ℝ _ a b = @Mul.mul ℝ _ a b
   exact Real.inner_apply _ _
-
-
-/-- On a manifold modelled on a finite-dimensional space, the inner product of a Riemannian metric
-at each point is invertible as a map from the tangent space to its dual: positive definiteness
-makes it injective. -/
-theorem isInvertible_inner {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
-    [ChartedSpace H M] [IsManifold I 1 M] {n : ℕ∞ω}
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (x : M) :
-    (g.inner x).IsInvertible := by
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  refine ContinuousLinearMap.isInvertible_of_separatingLeft fun v hv ↦ ?_
-  by_contra hne
-  exact (g.pos x v hne).ne' (hv v)
 
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

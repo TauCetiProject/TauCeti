@@ -9,8 +9,9 @@ public import TauCeti.Geometry.Symplectic.Manifold.PrescribedDerivative
 public import TauCeti.Geometry.Symplectic.Lagrangian.Presymplectic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Symplectic.Normal
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
-import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
+import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Representative
 import TauCeti.Geometry.Manifold.TubularNeighborhood.PrescribedDifferential
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
@@ -133,7 +134,7 @@ private theorem tangentialPart_mfderiv
   have h : (g.inner (i q) (mfderiv I J i q u)).comp (mfderiv I J i q) =
       (inducedMetric g i).inner q u :=
     ContinuousLinearMap.ext fun w ↦ (ContMDiffRiemannianMetric.pullback_inner _ _ _ _ q u w).symm
-  rw [h, ((inducedMetric g i).isInvertible_inner q).inverse_apply_self]
+  rw [h, (ContinuousLinearMap.isInvertible_of_pos ((inducedMetric g i).pos q)).inverse_apply_self]
 
 variable (θ : SmoothTwoForm J M) (σ : SmoothTwoForm K N)
   (gM : ContMDiffRiemannianMetric J ∞ V (fun x : M ↦ TangentSpace J x))
@@ -158,14 +159,14 @@ private theorem coisotropicExtension_apply (q : Q) (v : TangentSpace J (i q)) :
           ((θ.flat (i q) (v - mfderiv I J i q (tangentialPart gM i q v))).comp
             (mfderiv I J i q))))) := by
   rw [coisotropicExtension, add_apply, ← tangentPairing_apply]
-  rfl
+  simp only [ContinuousLinearMap.comp_apply, sub_apply, ContinuousLinearMap.id_apply]
 
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ F] in
 /-- The ambient extension extends `dj_q ∘ di_q⁻¹`. -/
 private theorem coisotropicExtension_mfderiv (q : Q) (u : TangentSpace I q) :
     coisotropicExtension θ σ gM gN i j q (mfderiv I J i q u) = mfderiv I K j q u := by
-  rw [coisotropicExtension_apply, tangentialPart_mfderiv, sub_self, map_zero,
-    ContinuousLinearMap.zero_comp, map_zero, map_zero, map_zero, map_zero, add_zero]
+  simp only [coisotropicExtension_apply, tangentialPart_mfderiv, sub_self, map_zero,
+    ContinuousLinearMap.zero_comp, add_zero]
 
 omit [FiniteDimensional ℝ V] in
 /-- The ambient extension carries the pairings of `θ` with the tangent image of `i` to those of
@@ -183,11 +184,12 @@ private theorem eval₂_coisotropicExtension_mfderiv {σ : SmoothTwoForm K N}
   -- `g_N(dj_q x, dj_q w)` is the induced metric on `x` and `w`.
   rw [← ContMDiffRiemannianMetric.pullback_inner gN j (j.contMDiff.of_le (by simp))
     (fun q ↦ j.isImmersion.mfderiv_injective (by simp) q),
-    ((inducedMetric gN j).isInvertible_inner q).self_apply_inverse, ContinuousLinearMap.comp_apply,
-    flat_apply, SmoothBundleForm.eval₂_sub_left, add_sub_cancel]
+    (ContinuousLinearMap.isInvertible_of_pos ((inducedMetric gN j).pos q)).self_apply_inverse,
+    ContinuousLinearMap.comp_apply, flat_apply, SmoothBundleForm.eval₂_sub_left, add_sub_cancel]
 
 variable {θ σ} {hθ : θ.IsNondegenerate}
 
+omit [FiniteDimensional ℝ V] in
 /-- **The ambient extension is invertible** when `i` is coisotropic and the ambient manifolds
 have the same dimension. -/
 private theorem isInvertible_coisotropicExtension (hσ : σ.IsNondegenerate)
@@ -209,12 +211,7 @@ private theorem isInvertible_coisotropicExtension (hσ : σ.IsNondegenerate)
       exact hv
     rw [(injective_iff_map_eq_zero _).1 (j.isImmersion.mfderiv_injective (by simp) q) u h0,
       map_zero]
-  -- The tangent spaces are the model spaces, which carry the normed structure.
-  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
-  have : CompleteSpace F := FiniteDimensional.completeSpace ℝ F
-  exact (ContinuousLinearMap.isInvertible_iff_bijective (E := V) (F := F) (f := A)).2
-    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := A.toLinearMap)
-      hdim).1 hinj⟩
+  exact (ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq hdim).2 hinj
 
 omit [FiniteDimensional ℝ V] in
 /-- **The path from `θ` to `A^* σ` is nondegenerate along `i(Q)`.** For every `s`, a vector `v`
@@ -256,7 +253,7 @@ private theorem contMDiff_coisotropicExtension (hσ : σ.IsNondegenerate) :
       (fun p : TotalSpace V ((i : Q → M) *ᵖ (TangentSpace J)) ↦
         (⟨p.proj, tangentialPart gM i p.proj p.snd⟩ : TangentBundle I Q)) :=
     i.contMDiff_inverse_comp_mfderiv (m := ∞) (by simp) (inducedMetric gM i).contMDiff
-      (inducedMetric gM i).isInvertible_inner gM.contMDiff
+      (fun q ↦ ContinuousLinearMap.isInvertible_of_pos ((inducedMetric gM i).pos q)) gM.contMDiff
   -- The normal part `v - di_q (P v)`, as a vector of the pulled-back bundle.
   let c (q : Q) (v : TangentSpace J (i q)) : TangentSpace J (i q) :=
     v - mfderiv I J i q (tangentialPart gM i q v)
@@ -265,10 +262,12 @@ private theorem contMDiff_coisotropicExtension (hσ : σ.IsNondegenerate) :
         (⟨p.proj, c p.proj p.snd⟩ : TotalSpace V ((i : Q → M) *ᵖ (TangentSpace J)))) :=
     (Bundle.Pullback.contMDiff_iff i i.contMDiff).2 ⟨hbase,
       i.contMDiff_of_eq_sub_mfderiv_inverse (m := ∞) (by simp) (inducedMetric gM i).contMDiff
-        (inducedMetric gM i).isInvertible_inner gM.contMDiff _ fun _ _ ↦ rfl⟩
+        (fun q ↦ ContinuousLinearMap.isInvertible_of_pos ((inducedMetric gM i).pos q)) gM.contMDiff
+        _ fun _ _ ↦ rfl⟩
   -- The vector `x` of `Q` with `g_N(dj_q x, dj_q ·) = θ(v - di_q (P v), di_q ·)`.
   have hx := (i.contMDiff_inverse_comp_mfderiv (m := ∞) (by simp) (inducedMetric gN j).contMDiff
-    (inducedMetric gN j).isInvertible_inner (contMDiff_flat θ)).comp hc
+    (fun q ↦ ContinuousLinearMap.isInvertible_of_pos ((inducedMetric gN j).pos q))
+    (contMDiff_flat θ)).comp hc
   -- Push `x` forward by `dj`, take its `g_N`-dual and invert `σ♭`.
   have hη := (gN.contMDiff.comp hjb).clm_bundle_apply (F₂ := F →L[ℝ] ℝ)
     (E₂ := fun y : N ↦ TangentSpace K y →L[ℝ] ℝ)

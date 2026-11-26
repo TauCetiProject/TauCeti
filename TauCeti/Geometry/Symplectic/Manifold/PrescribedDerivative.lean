@@ -169,8 +169,7 @@ private theorem exists_diffeomorph_source_eventually_mpullback_eq (f : SmoothEmb
         let w' : TangentSpace I (⟨f q, hsrc q⟩ : U) := w
         have h := hv w'
         rw [SmoothForm.bilinFormAt_apply, SmoothBundleForm.eval₂_add, SmoothForm.eval₂_smul,
-          sub_eq_add_neg, SmoothBundleForm.eval₂_add, SmoothBundleForm.eval₂_neg,
-          ← sub_eq_add_neg, smul_eq_mul, hθU, hσU] at h
+          SmoothBundleForm.eval₂_sub, smul_eq_mul, hθU, hσU] at h
         exact h
   rw [hfU] at hΘf hΘ hΘ1
   refine ⟨Θ, hΘf, fun q hq ↦ hΘ1 q (SmoothBundleForm.apply_eq_of_eval₂_eq fun v w ↦ ?_), hΘ⟩
