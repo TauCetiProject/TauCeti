@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
@@ -32,6 +33,10 @@ Every iterated derivative of `sin` is `±sin` or `±cos`. Hence it is bounded by
 (`TauCeti.lipschitzWith_iteratedDeriv_sin`), changes sign under the shift by `π`
 (`TauCeti.iteratedDeriv_sin_add_pi`) and attains the absolute value `1`
 (`TauCeti.exists_abs_iteratedDeriv_sin_eq_one`).
+
+Away from `f x = ±1`, the chain rule for `Real.arccos` gives the derivative
+`-(1 / √(1 - f x ^ 2)) * f'` of `y ↦ arccos (f y)` (`HasDerivAt.arccos`), the counterpart of
+Mathlib's `HasDerivAt.arctan`.
 -/
 
 public section
@@ -112,3 +117,10 @@ theorem exists_abs_iteratedDeriv_sin_eq_one (n : ℕ) : ∃ x, |iteratedDeriv n 
   · exact ⟨0, by simp⟩
 
 end TauCeti
+
+/-- **The chain rule for `Real.arccos`.** If `f` has derivative `f'` at `x` and `f x ≠ ±1`, then
+`y ↦ arccos (f y)` has derivative `-(1 / √(1 - f x ^ 2)) * f'` at `x`. The `Real.arccos`
+counterpart of Mathlib's `HasDerivAt.arctan`. -/
+theorem HasDerivAt.arccos {f : ℝ → ℝ} {f' x : ℝ} (hf : HasDerivAt f f' x) (h₁ : f x ≠ -1)
+    (h₂ : f x ≠ 1) : HasDerivAt (fun y ↦ Real.arccos (f y)) (-(1 / √(1 - f x ^ 2)) * f') x :=
+  (Real.hasDerivAt_arccos h₁ h₂).comp x hf
