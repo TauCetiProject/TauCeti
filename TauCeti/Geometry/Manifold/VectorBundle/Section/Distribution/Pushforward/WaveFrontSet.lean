@@ -136,7 +136,7 @@ private theorem isMicrolocallySmoothAt_cutoffPushforwardCLM_of_chart {c : OpenPa
       (by simp)
   rw [OpenPartialHomeomorph.adjoint_fderiv_toDual_symm_comp_mfderiv_symm hx (hf hx) hcx
     (f.contMDiff.mdifferentiableAt (by simp)) hc'x hc'sx η]
-  exact ⟨fun h0 ↦ hne ((toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).1 h0),
+  exact ⟨fun h0 ↦ hne ((c.toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).1 h0),
     (isMicrolocallySmoothAt_iff T hc hcs hct hx _).1 hT v⟩
 
 omit [T2Space X] [T2Space Y] [FiniteDimensional ℝ G] in

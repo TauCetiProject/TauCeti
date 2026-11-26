@@ -72,6 +72,9 @@ open set.
   `df_x` read in a chart `e` is the gradient of `f ∘ e⁻¹` at `e x`.
 * `TauCeti.adjoint_ringInverse_fderiv_comp_symm_eq_one`: the inverse adjoint of the derivative of
   the transition from a chart to itself is the identity on the chart target.
+* `OpenPartialHomeomorph.toDual_symm_comp_mfderiv_symm_eq_zero_iff`: in an open partial
+  homeomorphism `c` into a real Hilbert space, smooth with smooth inverse, a covector at a point of
+  the source is read as zero exactly when it is zero.
 * `OpenPartialHomeomorph.adjoint_fderiv_toDual_symm_comp_mfderiv_symm`: for a map `f` read in
   open partial homeomorphisms `c`, `c'` into real Hilbert spaces, the transpose of the derivative of
   `c' ∘ f ∘ c⁻¹` pulls a covector `η` read in `c'` back to `η ∘ df` read in `c`.
@@ -510,6 +513,23 @@ variable {H H' M N : Type*} [TopologicalSpace H] [TopologicalSpace H']
   {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℝ W] [CompleteSpace W]
   {IV : ModelWithCorners ℝ V H} {IW : ModelWithCorners ℝ W H'}
+
+/-- In an open partial homeomorphism `c` into a real Hilbert space, smooth on its source with
+smooth inverse on its target, a covector `ξ` at `x ∈ c.source` is read as the zero vector of `V`
+exactly when it is zero. -/
+theorem toDual_symm_comp_mfderiv_symm_eq_zero_iff (c : OpenPartialHomeomorph M V)
+    (hc : ContMDiffOn IV 𝓘(ℝ, V) ∞ c c.source) (hcs : ContMDiffOn 𝓘(ℝ, V) IV ∞ c.symm c.target)
+    {x : M} (hx : x ∈ c.source) {ξ : TangentSpace IV x →L[ℝ] ℝ} :
+    (toDual ℝ V).symm (ξ ∘L mfderiv 𝓘(ℝ, V) IV c.symm (c x)) = 0 ↔ ξ = 0 := by
+  have hcx : MDifferentiableAt IV 𝓘(ℝ, V) c x :=
+    (hc.mdifferentiableOn (by simp) x hx).mdifferentiableAt (c.open_source.mem_nhds hx)
+  have hcsx : MDifferentiableAt 𝓘(ℝ, V) IV c.symm (c x) :=
+    (hcs.mdifferentiableOn (by simp) _ (c.map_source hx)).mdifferentiableAt
+      (c.open_target.mem_nhds (c.map_source hx))
+  refine (toDual ℝ V).symm.map_eq_zero_iff.trans ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_,
+    fun h ↦ by subst h; exact ContinuousLinearMap.zero_comp _⟩
+  rw [← c.mfderiv_symm_apply_mfderiv_apply hx hcx hcsx v]
+  exact congr($h (mfderiv IV 𝓘(ℝ, V) c x v))
 
 /-- **Covectors along a map, read in charts.** For a map `f : M → N`, open partial homeomorphisms
 `c` at `x` and `c'` at `f x` into real Hilbert spaces, and a covector `η` at `f x`, the transpose of
