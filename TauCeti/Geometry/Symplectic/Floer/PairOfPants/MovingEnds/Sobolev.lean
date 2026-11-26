@@ -275,7 +275,7 @@ theorem lintegral_image_realChart_add_mul_cylindricalEndLift_le (ha : ∀ i, a i
 `φ'_∞`, the weighted energy `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` of `ξ` over the image is at most
 `20π² (4 |ι| + 1)` times the `W^{1,2}` energy of `ξ ∘ φ'_∞` over the band. -/
 theorem lintegral_image_positiveEndChart_inf_le
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {P : Set ℝ} (hP : MeasurableSet P)
+    (hc : ∀ i, ‖c i‖ ≤ 2 * Real.exp (2 * π)) {P : Set ℝ} (hP : MeasurableSet P)
     (hP2 : ∀ s ∈ P, 2 ≤ s) {ξ : ℝ × ℝ → V}
     (hξ : ∀ ζ ∈ P ×ˢ Ico (0 : ℝ) 1, DifferentiableAt ℝ ξ (positiveEndChart inf ζ)) :
     ∫⁻ w in positiveEndChart inf '' (P ×ˢ Ico 0 1),
@@ -310,7 +310,7 @@ theorem lintegral_image_positiveEndChart_inf_le
         have hρ : movingEndsWeight c w ≤ K * cylindricalWeight w :=
           movingEndsWeight_le_mul_cylindricalWeight
             (by rw [← norm_pos_iff, hnorm]; positivity)
-            fun i ↦ by rw [hnorm]; linarith [hout i, norm_nonneg (a i)]
+            fun i ↦ by rw [hnorm]; linarith [hc i]
         nlinarith [mul_le_mul_of_nonneg_right hρ (sq_nonneg ‖ξ w‖),
           sq_nonneg ‖fderiv ℝ ξ w (1, 0)‖, sq_nonneg ‖fderiv ℝ ξ w (0, 1)‖]
     _ ≤ ENNReal.ofReal K * (ENNReal.ofReal (20 * π ^ 2) * ∫⁻ ζ in P ×ˢ Ico 0 1,
@@ -373,7 +373,8 @@ private theorem lintegral_ends_le_of_movingEnds (ha : ∀ i, a i ≠ 0)
     gcongr
     exact setLIntegral_Ioi_prod_Ico_le (integrableOn_sobolevDensity_comp_realChart_of_movingEnds ha
       hξ hξc hξU i T) fun ζ ↦ sobolevDensity_nonneg _ ζ
-  · refine (lintegral_image_positiveEndChart_inf_le hout measurableSet_Ioi
+  · refine (lintegral_image_positiveEndChart_inf_le
+      (fun i ↦ by linarith [hout i, norm_nonneg (a i)]) measurableSet_Ioi
       (fun s hs ↦ by linarith [mem_Ioi.1 hs]) fun ζ _ ↦ hd _).trans ?_
     rw [ENNReal.ofReal_mul (p := (4 * Fintype.card ι + 1) * (20 * π ^ 2)) (by positivity)]
     gcongr
@@ -566,7 +567,8 @@ private theorem norm_floerConformalJetCoeff_positiveEndChart_inf_le (ω : Symple
   have hw1 : 1 ≤ ‖w‖ := by
     rw [hnorm]
     nlinarith [Real.one_le_exp (by nlinarith [pi_pos] : 0 ≤ 2 * π * ζ.1)]
-  have hne : ∀ j, w ≠ c j := equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith)
+  have hne : ∀ j, w ≠ c j := equivRealProdCLM_symm_positiveEndChart_inf_ne
+    (fun i ↦ by linarith [hout i, norm_nonneg (a i)]) (by linarith)
   have hpb (v : ℝ × ℝ) := perturbationPullback_positiveEndChart_inf_puncturedSpherePerturbation
     (H := H) hHout hout hζ v
   refine ω.norm_floerConformalJetCoeff_le_of_perturbationPullback (r := 2 * π * ‖w‖)

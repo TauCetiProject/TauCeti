@@ -21,8 +21,8 @@ output end. This file records how these charts sit relative to the centers and t
 
 In the namespace `TauCeti.Floer`:
 
-* `equivRealProdCLM_symm_positiveEndChart_inf_ne`: if the discs `‖w - c i‖ < ‖a i‖ / 2` lie in the
-  disc `‖w‖ ≤ 2 exp (2π)`, then beyond `s = 1` the output end misses every center.
+* `equivRealProdCLM_symm_positiveEndChart_inf_ne`: if the centers lie in the disc
+  `‖w‖ ≤ 2 exp (2π)`, then beyond `s = 1` the output end misses every center.
 * `subset_preimage_puncturedSphereTruncation_union`: the sphere is covered by `Σ_T` and the images
   of the bands `(T, ∞) × [0, 1)` of its ends.
 -/
@@ -38,17 +38,17 @@ namespace TauCeti.Floer
 
 variable {ι : Type*} {c a : ι → ℂ}
 
-/-- If the discs `‖w - c i‖ < ‖a i‖ / 2` lie in the disc `‖w‖ ≤ 2 exp (2π)`, then beyond `s = 1`
-the output end, in the positive end chart `φ'_∞`, misses every center. -/
+/-- If the centers lie in the disc `‖w‖ ≤ 2 exp (2π)`, then beyond `s = 1` the output end, in the
+positive end chart `φ'_∞`, misses every center. -/
 theorem equivRealProdCLM_symm_positiveEndChart_inf_ne
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {ζ : ℝ × ℝ} (hζ : 1 < ζ.1) (j : ι) :
+    (hc : ∀ i, ‖c i‖ ≤ 2 * Real.exp (2 * π)) {ζ : ℝ × ℝ} (hζ : 1 < ζ.1) (j : ι) :
     Complex.equivRealProdCLM.symm (positiveEndChart inf ζ) ≠ c j := by
   intro h
   have h₁ := norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
   rw [Prod.mk.eta, h] at h₁
   have : Real.exp (2 * π) < Real.exp (2 * π * ζ.1) :=
     Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
-  linarith [hout j, norm_nonneg (a j)]
+  linarith [hc j]
 
 /-- Every point of the sphere with moving input ends, in real coordinates, lies in the truncation
 `Σ_T`, or in the image of the band `(T, ∞) × [0, 1)` under the chart

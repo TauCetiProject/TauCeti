@@ -294,7 +294,8 @@ theorem
     norm_equivRealProdCLM_symm_positiveEndChart_inf hξc hξR
     fun z _ ↦ (hlim.eventually_gt_atTop _).exists
   exact hest hξ hb (ω.integrable_norm_floerLinearization_sq_puncturedSpherePerturbation hH hHs
-    hHout hHouts ha (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith))
+    hHout hHouts ha (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne
+      (fun i ↦ by linarith [hout i, norm_nonneg (a i)]) (by linarith))
     hJ hu hξ hξc (hξR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))
 
 end TauCeti.SymplecticForm

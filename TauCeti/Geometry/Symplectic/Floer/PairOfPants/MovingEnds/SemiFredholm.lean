@@ -883,11 +883,12 @@ exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization
       ω hH hHs hHout hHouts ha hsep hout i (hX i) (hx i) (hnd i) (hJe i) (hJex i) (hJeq i)
       (fun ζ hζ ↦ hJ _ (hin i ζ (by linarith))) (fun ζ hζ ↦ hu _ (hin i ζ (by linarith)))
       (hF i) (hux i) (hδ i)
+  have hcout (i : ι) : ‖c i‖ ≤ 2 * Real.exp (2 * π) := by linarith [hout i, norm_nonneg (a i)]
   obtain ⟨Cout, Rout, -, hendOut⟩ :=
     exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_movingEnds
       ω hH hHs hHout hHouts ha hout hXout hxout hndout hJout hJoutx hJoutq
-      (fun ζ hζ ↦ hJ _ (equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith)))
-      (fun ζ hζ ↦ hu _ (equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith))) hFout
+      (fun ζ hζ ↦ hJ _ (equivRealProdCLM_symm_positiveEndChart_inf_ne hcout (by linarith)))
+      (fun ζ hζ ↦ hu _ (equivRealProdCLM_symm_positiveEndChart_inf_ne hcout (by linarith))) hFout
       huxout hδout
   exact
     exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearization_add_of_movingEnds_of_ends
