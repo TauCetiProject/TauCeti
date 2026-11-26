@@ -142,6 +142,25 @@ theorem _root_.LipschitzWith.comp_memLittleHolder [PseudoMetricSpace Y] {Z : Typ
     _ = K / (K + 1) * (ε * dist x y ^ (α : ℝ)) := by ring
     _ ≤ ε * dist x y ^ (α : ℝ) := mul_le_of_le_one_left (by positivity) hK
 
+/-- Precomposition with a Lipschitz map preserves little Hölder continuity. -/
+theorem MemLittleHolder.comp_lipschitzWith [PseudoMetricSpace Y] {W : Type*}
+    [PseudoMetricSpace W] {K α : ℝ≥0} {f : X → Y} (hf : MemLittleHolder α f) {e : W → X}
+    (he : LipschitzWith K e) : MemLittleHolder α (f ∘ e) := by
+  intro ε hε
+  obtain ⟨δ, hδ, h⟩ := hf (ε / (K + 1) ^ (α : ℝ)) (by positivity)
+  refine ⟨δ / (K + 1), by positivity, fun x y hxy ↦ ?_⟩
+  -- `e` moves points by at most `(K + 1)` times their distance.
+  have hexy : dist (e x) (e y) ≤ (K + 1) * dist x y :=
+    (he.dist_le_mul x y).trans (by gcongr; linarith)
+  have hδ' : dist (e x) (e y) < δ :=
+    hexy.trans_lt (by rwa [lt_div_iff₀' (by positivity)] at hxy)
+  calc dist (f (e x)) (f (e y)) ≤ ε / (K + 1) ^ (α : ℝ) * dist (e x) (e y) ^ (α : ℝ) :=
+        h _ _ hδ'
+    _ ≤ ε / (K + 1) ^ (α : ℝ) * ((K + 1) * dist x y) ^ (α : ℝ) := by gcongr
+    _ = ε * dist x y ^ (α : ℝ) := by
+      rw [Real.mul_rpow (by positivity) dist_nonneg]
+      field_simp
+
 /-- Constant functions are little Hölder. -/
 theorem memLittleHolder_const [PseudoMetricSpace Y] {α : ℝ≥0} (c : Y) :
     MemLittleHolder α (fun _ : X ↦ c) :=
