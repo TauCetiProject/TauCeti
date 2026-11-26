@@ -60,8 +60,8 @@ charts gives the full estimate.
 ## Main results
 
 * `TauCeti.norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le` and
-  `TauCeti.norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_le_sum`: the `H^s` norm
-  of the reading of a section compared with those of its cut-off frame coefficients.
+  `TauCeti.norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_le_sum`: the
+  `H^{s,p}` norm of the reading of a section compared with those of its cut-off frame coefficients.
 * `TauCeti.exists_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_apply_smul_le`:
   the estimate between two charts.
 * `TauCeti.exists_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_apply_le_sum`: the
@@ -84,7 +84,7 @@ public section
 noncomputable section
 
 open Bundle Set TauCeti
-open scoped ContDiff Distributions Manifold SchwartzMap
+open scoped ContDiff Distributions ENNReal Manifold SchwartzMap
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
   [T2Space M]
@@ -116,36 +116,37 @@ variable {e : OpenPartialHomeomorph M (CoordinateSpace n)}
 include hρψ in
 /-- **A frame coefficient is bounded by the section.** The reading `ψ · (g ∘ e⁻¹)` of the cut-off
 frame coefficient `g = ρ ℓ(t u)` of a section `u`, for a cutoff `ρ` equal to `1` on `e⁻¹(supp ψ)`,
-is bounded in `H^s` by `‖ℓ‖` times the reading `ψ · t(u ∘ e⁻¹)` of `u`. -/
+is bounded in `H^{s,p}` by `‖ℓ‖` times the reading `ψ · t(u ∘ e⁻¹)` of `u`. -/
 theorem norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le (s : ℝ)
-    (ℓ : V →L[ℂ] ℂ) (u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
-    ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (ℓ : V →L[ℂ] ℂ) (u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    ‖SchwartzMap.toBesselPotentialSpaceCLM s p
         (e.cutoffPushforwardSchwartz he ψ (t.cutoffFrameCoeff ρ hρ ℓ u))‖ ≤
-      ‖ℓ‖ * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
+      ‖ℓ‖ * ‖SchwartzMap.toBesselPotentialSpaceCLM s p
         (e.sectionCutoffPushforwardSchwartz he t ψ hψ u)‖ := by
   rw [← postcompCLM_sectionCutoffPushforwardSchwartz he t ψ hψ hρ hρψ,
     SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM]
-  exact (BesselPotentialSpace.postcomp _ s 2 ℓ).le_of_opNorm_le
+  exact (BesselPotentialSpace.postcomp _ s p ℓ).le_of_opNorm_le
     (BesselPotentialSpace.norm_postcomp_le ℓ) _
 
 include hρψ in
 /-- **A section is bounded by its frame coefficients.** For a basis `(cⱼ)` of `V` with coordinate
-functionals `cⱼ*`, the reading `ψ · t(u ∘ e⁻¹)` of a section `u` is bounded in `H^s` by the
+functionals `cⱼ*`, the reading `ψ · t(u ∘ e⁻¹)` of a section `u` is bounded in `H^{s,p}` by the
 readings of its cut-off frame coefficients `ρ cⱼ*(t u)`, for a cutoff `ρ` equal to `1` on
 `e⁻¹(supp ψ)`. -/
 theorem norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_le_sum (s : ℝ)
-    {κ : Type*} [Fintype κ] (c : Module.Basis κ ℂ V) (u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
-    ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 (e.sectionCutoffPushforwardSchwartz he t ψ hψ u)‖ ≤
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] {κ : Type*} [Fintype κ] (c : Module.Basis κ ℂ V)
+    (u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    ‖SchwartzMap.toBesselPotentialSpaceCLM s p (e.sectionCutoffPushforwardSchwartz he t ψ hψ u)‖ ≤
       ∑ j, ‖ContinuousLinearMap.toSpanSingleton ℂ (c j)‖ *
-        ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
+        ‖SchwartzMap.toBesselPotentialSpaceCLM s p
           (e.cutoffPushforwardSchwartz he ψ
             (t.cutoffFrameCoeff ρ hρ (c.coord j).toContinuousLinearMap u))‖ := by
   rw [← BesselPotentialSpace.sum_postcomp_toSpanSingleton_coord c
-    (SchwartzMap.toBesselPotentialSpaceCLM s 2 _)]
+    (SchwartzMap.toBesselPotentialSpaceCLM s p _)]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
   rw [← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
     postcompCLM_sectionCutoffPushforwardSchwartz he t ψ hψ hρ hρψ]
-  exact (BesselPotentialSpace.postcomp _ s 2 _).le_of_opNorm_le
+  exact (BesselPotentialSpace.postcomp _ s p _).le_of_opNorm_le
     (BesselPotentialSpace.norm_postcomp_le _) _
 
 end Reading
