@@ -30,9 +30,9 @@ handles identity and composite transport cells. The file also evaluates the natu
 of a composite strong transformation on objects, with the Cat endpoints made explicit, and
 packages the components of a naturality isomorphism at an object
 (`Pseudofunctor.StrongTrans.naturalityObjIso`), with their naturality and their composition
-law along a composite (`Pseudofunctor.StrongTrans.naturalityObjIso_hom_comp'`,
-`Pseudofunctor.StrongTrans.naturalityObjIso_inv_comp'`), and the naturality square of a
-modification on objects (`Pseudofunctor.StrongTrans.app_comp_naturalityObjIso_hom`). It also
+law along a composite (`Pseudofunctor.StrongTrans.naturalityObjIso_hom_comp'`), and the naturality
+square of a modification on objects
+(`Pseudofunctor.StrongTrans.app_comp_naturalityObjIso_hom`). It also
 shows stability of essential images under the target functors
 (`Pseudofunctor.StrongTrans.map_obj_mem_essImage`), conjugates pullbacks of morphisms by the
 naturality isomorphisms of a strong transformation,
@@ -235,18 +235,6 @@ lemma naturalityObjIso_hom_comp' {B : Type u₁} [Bicategory.{w₁, v₁} B]
   rw [mapComp'_eq_mapComp, mapComp'_eq_mapComp, naturalityObjIso_hom,
     naturality_comp_hom_app]
   simp
-
-/-- The inverse of the naturality isomorphism of a strong transformation `η : F ⟶ G` into `Cat`
-along a composite `f ≫ g = fg`, on an object `X`: the inverse of `naturalityObjIso_hom_comp'`. -/
-lemma naturalityObjIso_inv_comp' {B : Type u₁} [Bicategory.{w₁, v₁} B]
-    {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b c : B} (f : a ⟶ b) (g : b ⟶ c)
-    (fg : a ⟶ c) (h : f ≫ g = fg) (X : F.obj a) :
-    (η.naturalityObjIso fg X).inv =
-      (G.mapComp' f g fg h).hom.toNatTrans.app ((η.app a).toFunctor.obj X) ≫
-        (G.map g).toFunctor.map (η.naturalityObjIso f X).inv ≫
-          (η.naturalityObjIso g ((F.map f).toFunctor.obj X)).inv ≫
-            (η.app c).toFunctor.map ((F.mapComp' f g fg h).inv.toNatTrans.app X) :=
-  η.naturality_comp'_inv_app f g fg h X
 
 /-- Naturality of the components of the naturality isomorphism of a strong transformation into
 `Cat`. -/

@@ -107,8 +107,11 @@ variable [G.IsStack J]
 
 /-- The extension along the unit of the stackification of a strong transformation `ψ : F ⟶ G`
 into a stack: the stackification of `ψ`, followed by the inverse of the unit of the stack `G`. -/
+-- Expose the composite to state the dependent component formula for its restriction isomorphism.
+@[expose]
 def stackificationLift (ψ : F ⟶ G) : stackification.{w} J F ⟶ G :=
-  stackificationMap.{w} J ψ ≫ (stackificationOfIsStack.{w, v', u'} J G).inv
+  stackificationMap.{w} J ψ ≫
+    (toStackification.{w, v', u'} J G).equivalenceOfIsEquivalence.inv
 
 /-- The components of `stackificationLift ψ` map descent data along `ψ` and then back to `G`
 through the inverse of the equivalence `Stackification.Obj.toObjFunctor`. -/
@@ -117,7 +120,7 @@ lemma stackificationLift_app_toFunctor (ψ : F ⟶ G) (a : LocallyDiscrete Cᵒ�
     ((stackificationLift.{w, v', u'} J ψ).app a).toFunctor =
       mapFunctor.{w} J ψ a.as.unop ⋙ (toObjFunctor.{w} J G a.as.unop).inv := by
   simp only [stackificationLift, StrongTrans.comp_app, Cat.Hom.comp_toFunctor,
-    stackificationOfIsStack_def, equivalenceOfIsEquivalence_inv_app,
+    equivalenceOfIsEquivalence_inv_app,
     stackificationMap_app_toFunctor, Functor.toCatHom_toFunctor, toStackification_app_toFunctor]
   -- The inverse functors agree definitionally after identifying the unit components.
   rfl
@@ -125,13 +128,28 @@ lemma stackificationLift_app_toFunctor (ψ : F ⟶ G) (a : LocallyDiscrete Cᵒ�
 /-- The extension `stackificationLift ψ` restricts to `ψ` along the unit of the stackification,
 up to an invertible modification. -/
 def toStackificationCompStackificationLiftIso (ψ : F ⟶ G) :
-    toStackification.{w, v', u'} J F ≫ stackificationLift.{w, v', u'} J ψ ≅ ψ := by
-  unfold stackificationLift
-  rw [stackificationOfIsStack_def]
-  exact (α_ _ _ _).symm ≪≫
+    toStackification.{w, v', u'} J F ≫ stackificationLift.{w, v', u'} J ψ ≅ ψ :=
+  (α_ _ _ _).symm ≪≫
     whiskerRightIso (toStackificationCompStackificationMapIso.{w, v', u'} J ψ) _ ≪≫
     α_ _ _ _ ≪≫
     whiskerLeftIso ψ (toStackification.{w, v', u'} J G).equivalenceOfIsEquivalence.unit.symm ≪≫ ρ_ ψ
+
+/-- On objects, the restriction isomorphism maps the naturality isomorphism of the unit
+through the inverse equivalence, then applies the inverse component unit. -/
+@[simp]
+lemma toStackificationCompStackificationLiftIso_hom_as_app_toNatTrans_app (ψ : F ⟶ G)
+    (a : LocallyDiscrete Cᵒᵖ) (M : F.obj a) :
+    ((toStackificationCompStackificationLiftIso.{w, v', u'} J ψ).hom.as.app a).toNatTrans.app M =
+      ((toStackification.{w, v', u'} J G).equivalenceOfIsEquivalence.inv.app a).toFunctor.map
+          (((toStackificationCompStackificationMapIso.{w, v', u'} J ψ).hom.as.app a).toNatTrans.app
+            M) ≫
+        ((toStackification.{w, v', u'} J G).equivalenceOfIsEquivalence.unit.inv.as.app
+          a).toNatTrans.app ((ψ.app a).toFunctor.obj M) := by
+  -- The Cat associators and unitor have identity components. Apply cancellation by
+  -- unification, since the composite component functors agree only definitionally.
+  have cancel {X Y Z : G.obj a} (f : X ⟶ Y) (g : Y ⟶ Z) :
+      𝟙 X ≫ f ≫ 𝟙 Y ≫ g ≫ 𝟙 Z = f ≫ g := by simp
+  exact cancel _ _
 
 variable (G) in
 /-- Precomposition with the unit of the stackification is essentially surjective on strong

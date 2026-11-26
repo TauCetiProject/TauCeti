@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Descent.IsPrestack
+public import TauCeti.CategoryTheory.Sites.Descent.StrongTrans
 
 /-!
 # Precomposition with a locally essentially surjective strong transformation
