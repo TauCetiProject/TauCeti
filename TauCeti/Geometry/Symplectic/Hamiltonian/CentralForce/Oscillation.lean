@@ -328,7 +328,8 @@ private theorem WellMotion.sub_eq_integral_of_pos (hM : WellMotion m ℓ E r₁ 
     {s t : ℝ} (hst : s ≤ t) (hp : ∀ u ∈ Ioo s t, 0 < (γ u).2) :
     t - s = ∫ r in (γ s).1..(γ t).1, m / absRadialMomentum m U ℓ E r := by
   have hmem := hM.mem_Icc_and_eq
-  have hmono := strictMonoOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hM.hm) hM.hasDerivAt_radius hp
+  have hmono := strictMonoOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hM.hm)
+    (fun u _ ↦ hM.hasDerivAt_radius u) hp
   exact sub_eq_integral_div_absRadialMomentum hM.hm hst (fun u _ ↦ hM.hγ u)
     (fun u _ ↦ hM.fst_pos u) (fun u _ ↦ hM.differentiableAt u)
     (hmem s).2 (fun r hr ↦ hM.hlt r ⟨(hmem s).1.1.trans_lt hr.1, hr.2.trans_le (hmem t).1.2⟩)
@@ -341,7 +342,8 @@ private theorem WellMotion.sub_eq_integral_of_neg (hM : WellMotion m ℓ E r₁ 
     {s t : ℝ} (hst : s ≤ t) (hp : ∀ u ∈ Ioo s t, (γ u).2 < 0) :
     t - s = ∫ r in (γ t).1..(γ s).1, m / absRadialMomentum m U ℓ E r := by
   have hmem := hM.mem_Icc_and_eq
-  have hanti := strictAntiOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hM.hm) hM.hasDerivAt_radius hp
+  have hanti := strictAntiOn_Icc_of_forall_hasDerivAt_mul (inv_pos.2 hM.hm)
+    (fun u _ ↦ hM.hasDerivAt_radius u) hp
   exact sub_eq_integral_div_absRadialMomentum hM.hm hst (fun u _ ↦ hM.hγ u)
     (fun u _ ↦ hM.fst_pos u) (fun u _ ↦ hM.differentiableAt u)
     (hmem s).2 (fun r hr ↦ hM.hlt r ⟨(hmem t).1.1.trans_lt hr.1, hr.2.trans_le (hmem s).1.2⟩)

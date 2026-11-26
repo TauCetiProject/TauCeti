@@ -51,24 +51,24 @@ variable {x p : ℝ → ℝ} {c a b L : ℝ}
 
 /-- While `p` is positive on `(s, t)`, a position `x` with velocity `c p`, `c > 0`, increases
 strictly on `[s, t]`. -/
-theorem strictMonoOn_Icc_of_forall_hasDerivAt_mul (hc : 0 < c)
-    (hx : ∀ t, HasDerivAt x (c * p t) t) {s t : ℝ} (hp : ∀ u ∈ Ioo s t, 0 < p u) :
+theorem strictMonoOn_Icc_of_forall_hasDerivAt_mul (hc : 0 < c) {s t : ℝ}
+    (hx : ∀ u ∈ Icc s t, HasDerivAt x (c * p u) u) (hp : ∀ u ∈ Ioo s t, 0 < p u) :
     StrictMonoOn x (Icc s t) :=
   strictMonoOn_of_deriv_pos (convex_Icc s t)
-    (fun u _ ↦ (hx u).continuousAt.continuousWithinAt) fun u hu ↦ by
+    (fun u hu ↦ (hx u hu).continuousAt.continuousWithinAt) fun u hu ↦ by
       rw [interior_Icc] at hu
-      rw [(hx u).deriv]
+      rw [(hx u (Ioo_subset_Icc_self hu)).deriv]
       exact mul_pos hc (hp u hu)
 
 /-- While `p` is negative on `(s, t)`, a position `x` with velocity `c p`, `c > 0`, decreases
 strictly on `[s, t]`. -/
-theorem strictAntiOn_Icc_of_forall_hasDerivAt_mul (hc : 0 < c)
-    (hx : ∀ t, HasDerivAt x (c * p t) t) {s t : ℝ} (hp : ∀ u ∈ Ioo s t, p u < 0) :
+theorem strictAntiOn_Icc_of_forall_hasDerivAt_mul (hc : 0 < c) {s t : ℝ}
+    (hx : ∀ u ∈ Icc s t, HasDerivAt x (c * p u) u) (hp : ∀ u ∈ Ioo s t, p u < 0) :
     StrictAntiOn x (Icc s t) :=
   strictAntiOn_of_deriv_neg (convex_Icc s t)
-    (fun u _ ↦ (hx u).continuousAt.continuousWithinAt) fun u hu ↦ by
+    (fun u hu ↦ (hx u hu).continuousAt.continuousWithinAt) fun u hu ↦ by
       rw [interior_Icc] at hu
-      rw [(hx u).deriv]
+      rw [(hx u (Ioo_subset_Icc_self hu)).deriv]
       exact mul_neg_of_pos_of_neg hc (hp u hu)
 
 section Oscillation
@@ -103,12 +103,14 @@ theorem sub_le_integral_of_forall_hasDerivAt_mul {g : ℝ → ℝ} (hg : Interva
   rcases (hne _ hmid).lt_or_gt with hneg | hpos
   · have hp' (u : ℝ) (hu : u ∈ Ioo s t) : p u < 0 :=
       sign_eq_neg_one_iff.1 ((hsign hu hmid).trans (sign_eq_neg_one_iff.2 hneg))
-    have hlt := strictAntiOn_Icc_of_forall_hasDerivAt_mul hc hx hp' ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst'
+    have hlt := strictAntiOn_Icc_of_forall_hasDerivAt_mul hc (fun u _ ↦ hx u) hp'
+      ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst'
     rw [hfall s t hst hp']
     exact intervalIntegral.integral_mono_interval (hmem t).1 hlt.le (hmem s).2 hnn hg
   · have hp' (u : ℝ) (hu : u ∈ Ioo s t) : 0 < p u :=
       sign_eq_one_iff.1 ((hsign hu hmid).trans (sign_eq_one_iff.2 hpos))
-    have hlt := strictMonoOn_Icc_of_forall_hasDerivAt_mul hc hx hp' ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst'
+    have hlt := strictMonoOn_Icc_of_forall_hasDerivAt_mul hc (fun u _ ↦ hx u) hp'
+      ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst'
     rw [hrise s t hst hp']
     exact intervalIntegral.integral_mono_interval (hmem s).1 hlt.le (hmem t).2 hnn hg
 
@@ -161,8 +163,8 @@ theorem exists_gt_eq_and_forall_pos_of_forall_hasDerivAt_mul {t₁ : ℝ} (h₁ 
     simpa [hp₁] using hpd.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos hd)
   simp only [one_mul] at hpos
   refine ⟨t₂, h₁₂, (eq_or_eq_of_eq_zero hmem hne hp₂).resolve_left fun h₂ ↦ ?_, hpos⟩
-  have := strictMonoOn_Icc_of_forall_hasDerivAt_mul hc hx hpos ⟨le_rfl, h₁₂.le⟩ ⟨h₁₂.le, le_rfl⟩
-    h₁₂
+  have := strictMonoOn_Icc_of_forall_hasDerivAt_mul hc (fun u _ ↦ hx u) hpos ⟨le_rfl, h₁₂.le⟩
+    ⟨h₁₂.le, le_rfl⟩ h₁₂
   simp only [h₁, h₂, lt_self_iff_false] at this
 
 include hc hx hp hmem hne hb hL in
@@ -178,8 +180,8 @@ theorem exists_gt_eq_and_forall_neg_of_forall_hasDerivAt_mul {t₂ : ℝ} (h₂ 
     simpa [hp₂] using hpd.neg.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos (neg_pos.2 hd))
   simp only [neg_one_mul, neg_pos] at hneg
   refine ⟨t₃, h₂₃, (eq_or_eq_of_eq_zero hmem hne hp₃).resolve_right fun h₃ ↦ ?_, hneg⟩
-  have := strictAntiOn_Icc_of_forall_hasDerivAt_mul hc hx hneg ⟨le_rfl, h₂₃.le⟩ ⟨h₂₃.le, le_rfl⟩
-    h₂₃
+  have := strictAntiOn_Icc_of_forall_hasDerivAt_mul hc (fun u _ ↦ hx u) hneg ⟨le_rfl, h₂₃.le⟩
+    ⟨h₂₃.le, le_rfl⟩ h₂₃
   simp only [h₂, h₃, lt_self_iff_false] at this
 
 include hc hx hp hmem hne hb hL in
