@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Manifold.DifferentialForm.MappingTorus
+public import TauCeti.LinearAlgebra.Projection
 
 /-!
 # The suspension vector field of a smooth mapping torus
@@ -212,7 +213,8 @@ theorem isCompl_span_timeVectorField_ker_mfderiv_proj (y : SmoothMappingTorus φ
     IsCompl (ℝ ∙ timeVectorField φ y)
       (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y).ker := by
   -- The differential of the projection, read as a real linear form: tangent vectors of the
-  -- circle are real numbers.
+  -- circle are real numbers. Its kernel is `ker dp`, and `f T = dp(T) = 1`, so this is the
+  -- general formula for the projection onto the kernel of a linear form.
   let f : TangentSpace (𝓘(ℝ).prod I) y →L[ℝ] ℝ := mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y
   have hT : f (timeVectorField φ y) = 1 := mfderiv_proj_timeVectorField φ y
   suffices h : IsCompl (ℝ ∙ timeVectorField φ y) f.ker from h
@@ -232,26 +234,13 @@ theorem projection_ker_mfderiv_proj_apply (y : SmoothMappingTorus φ)
     (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y).ker.projection (ℝ ∙ timeVectorField φ y)
         (isCompl_span_timeVectorField_ker_mfderiv_proj φ y).symm w =
       w - (timeForm φ).val y ![w] • timeVectorField φ y := by
-  set c : ℝ := (timeForm φ).val y ![w]
   -- The differential of the projection, read as a real linear form: tangent vectors of the
-  -- circle are real numbers.
+  -- circle are real numbers. Its kernel is `ker dp`, and `f T = dp(T) = 1`, so this is the
+  -- general formula for the projection onto the kernel of a linear form.
   let f : TangentSpace (𝓘(ℝ).prod I) y →L[ℝ] ℝ := mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y
-  have hc : f w = c := (timeForm_apply φ y ![w]).symm
-  have hT : f (timeVectorField φ y) = 1 := mfderiv_proj_timeVectorField φ y
-  -- `w - dt(w) T` is vertical, since `dp(T) = 1`, and `dt(w) T` lies on the line of `T`.
-  have hv : w - c • timeVectorField φ y ∈ (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y).ker := by
-    suffices h : w - c • timeVectorField φ y ∈ f.ker from h
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, map_smul, hT, hc, smul_eq_mul,
-      mul_one, sub_self]
-  have hu : c • timeVectorField φ y ∈ ℝ ∙ timeVectorField φ y :=
-    Submodule.smul_mem _ c (Submodule.mem_span_singleton_self _)
-  set P := (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y).ker.projectionOnto (ℝ ∙ timeVectorField φ y)
-    (isCompl_span_timeVectorField_ker_mfderiv_proj φ y).symm
-  have hP₁ : P (w - c • timeVectorField φ y) = ⟨_, hv⟩ :=
-    Submodule.projectionOnto_apply_left _ ⟨_, hv⟩
-  have hP₂ : P (c • timeVectorField φ y) = 0 := Submodule.projectionOnto_apply_right _ ⟨_, hu⟩
-  rw [← Submodule.coe_projectionOnto_apply, ← sub_add_cancel w (c • timeVectorField φ y), map_add,
-    hP₁, hP₂, add_zero, sub_add_cancel]
+  rw [timeForm_apply]
+  exact Submodule.projection_ker_span_singleton_apply (f := f.toLinearMap)
+    (mfderiv_proj_timeVectorField φ y) _ w
 
 /-! ### Maps of mapping tori -/
 
