@@ -10,8 +10,6 @@ public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
-import Mathlib.CategoryTheory.Monoidal.Closed.Braided
-import Mathlib.Data.Fintype.Card
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
 import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
@@ -46,9 +44,8 @@ As consequences:
 * For any invertible sheaf `K`, the twists `K ⊗ M` are globally generated for `n ≥ n₀`
   (`LineBundleClass.IsAmple.exists_isGloballyGenerated_tensorProduct`).
 * Tensoring a surjection `𝒪_X^k ↠ F ⊗ M` with an inverse `K` (`M ⊗ K ≅ 𝒪_X`) gives an epimorphism
-  from a finite direct sum `K^⊕k ↠ F`
-  (`AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_generatingSections_tensor`,
-  specialized to ample twists in `LineBundleClass.IsAmple.exists_epi_biproduct`).
+  from a finite direct sum `K^⊕k ↠ F` (`LineBundleClass.IsAmple.exists_epi_biproduct`, via
+  `AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_generatingSections_tensor`).
 
 ## References
 
@@ -59,40 +56,12 @@ As consequences:
 
 public section
 
-open CategoryTheory Limits MonoidalCategory AlgebraicGeometry Opposite
+open CategoryTheory Limits MonoidalCategory AlgebraicGeometry
 open TopologicalSpace TauCeti
 
 universe u
 
 noncomputable section
-
-namespace AlgebraicGeometry.Scheme.Modules
-
-variable {X : Scheme.{u}}
-
-/-- From finite generating sections of `F ⊗ M` and a right inverse `K` (`M ⊗ K ≅ 𝒪_X`),
-tensoring with `K` produces an epimorphism from a finite direct sum of copies of `K` onto `F`. -/
-theorem exists_epi_biproduct_of_generatingSections_tensor
-    (F M K : X.Modules) (σ : (F ⊗ M).GeneratingSections) [σ.IsFiniteType]
-    (e : M ⊗ K ≅ 𝟙_ X.Modules) :
-    ∃ (k : ℕ) (π : (⨁ fun _ : Fin k ↦ K) ⟶ F), Epi π := by
-  have : Finite σ.I := _root_.SheafOfModules.GeneratingSections.IsFiniteType.finite (σ := σ)
-  have : Fintype σ.I := Fintype.ofFinite σ.I
-  let I : Type u := σ.I
-  let k := Fintype.card I
-  let eqv : I ≃ Fin k := Fintype.equivFin I
-  let freeI : X.Modules := _root_.SheafOfModules.free I
-  let sumIso : (⨁ fun _ : Fin k ↦ K : X.Modules) ≅ freeI ⊗ K :=
-    biproduct.whiskerEquiv (f := fun _ : Fin k ↦ K) (g := fun _ : I ↦ K)
-      eqv.symm (fun _ ↦ Iso.refl _) ≪≫ (freeTensorIsoBiproduct I K).symm
-  let cancelIso : (F ⊗ M) ⊗ K ≅ F :=
-    α_ F M K ≪≫ whiskerLeftIso F e ≪≫ ρ_ F
-  let π₀ : freeI ⟶ F ⊗ M := σ.π
-  have : Epi π₀ := σ.epi
-  have : Epi (π₀ ▷ K) := (tensorRight K).map_epi π₀
-  exact ⟨k, sumIso.hom ≫ (π₀ ▷ K) ≫ cancelIso.hom, inferInstance⟩
-
-end AlgebraicGeometry.Scheme.Modules
 
 namespace TauCeti.AlgebraicGeometry.LineBundleClass
 
@@ -230,7 +199,7 @@ theorem IsAmple.exists_epi_biproduct
     obtain ⟨e⟩ := mk_eq_one_iff.mp h1
     exact ⟨(InvertibleSheaf.tensorProductObjIso M K).symm ≪≫ e⟩
   obtain ⟨e⟩ := hMK
-  exact exists_epi_biproduct_of_generatingSections_tensor F M.obj K.obj σ e
+  exact exists_epi_biproduct_of_generatingSections_tensor σ e
 
 end TauCeti.AlgebraicGeometry.LineBundleClass
 

@@ -44,7 +44,11 @@ product of `𝒪ₓ`-modules is `M ⊗ N`.
   braided monoidal, additive functor `X.Modules ⥤ ModuleCat Γ(X, U)`;
 * `AlgebraicGeometry.Scheme.Modules.sectionsFunctorPreservesLimitsOfSize`: it preserves limits;
 * `AlgebraicGeometry.Scheme.Modules.freeTensorIsoBiproduct`: tensoring a finite free module
-  `𝒪ₓ^{⊕I}` with `L` identifies with the `I`-indexed biproduct of copies of `L`.
+  `𝒪ₓ^{⊕I}` with `L` identifies with the `I`-indexed biproduct of copies of `L`;
+* `AlgebraicGeometry.Scheme.Modules.exists_epi_free_tensor_of_generatingSections_tensor` and
+  `AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_generatingSections_tensor`:
+  generating sections of `F ⊗ M` and a right inverse `M ⊗ K ≅ 𝒪ₓ` yield an epimorphism
+  `𝒪ₓ^{⊕σ.I} ⊗ K ↠ F` (and, when `σ` is finite, from a finite biproduct of copies of `K`).
 
 -/
 
@@ -262,5 +266,37 @@ theorem ιFree_whiskerRight_freeTensorIsoBiproduct_hom (i : I) :
   exact (Iso.inv_comp_eq (λ_ L)).mp ((Category.assoc _ _ _).symm.trans h.symm)
 
 end FreeTensor
+
+noncomputable section GeneratingSectionsTensor
+
+variable {X : Scheme.{v}} {F M K : X.Modules}
+
+/-- From generating sections `σ` of `F ⊗ M` and a right inverse `K` (`M ⊗ K ≅ 𝒪ₓ`),
+tensoring `σ.π` with `K` produces an epimorphism `𝒪ₓ^{⊕σ.I} ⊗ K ↠ F`. -/
+theorem exists_epi_free_tensor_of_generatingSections_tensor
+    (σ : (F ⊗ M).GeneratingSections) (e : M ⊗ K ≅ 𝟙_ X.Modules) :
+    ∃ π : (_root_.SheafOfModules.free σ.I : X.Modules) ⊗ K ⟶ F, Epi π := by
+  let freeI : X.Modules := _root_.SheafOfModules.free σ.I
+  let π₀ : freeI ⟶ F ⊗ M := σ.π
+  have : @Epi X.Modules _ _ _ π₀ := ⟨σ.epi.left_cancellation⟩
+  have hπK : Epi (π₀ ▷ K) := (tensorRight K).map_epi π₀
+  let cancelIso : (F ⊗ M) ⊗ K ≅ F := α_ F M K ≪≫ whiskerLeftIso F e ≪≫ ρ_ F
+  exact ⟨(π₀ ▷ K) ≫ cancelIso.hom, epi_comp' hπK (IsIso.epi_of_iso cancelIso.hom)⟩
+
+/-- From finite generating sections of `F ⊗ M` and a right inverse `K` (`M ⊗ K ≅ 𝒪ₓ`),
+tensoring with `K` produces an epimorphism from a finite direct sum of copies of `K` onto `F`. -/
+theorem exists_epi_biproduct_of_generatingSections_tensor
+    (σ : (F ⊗ M).GeneratingSections) [σ.IsFiniteType] (e : M ⊗ K ≅ 𝟙_ X.Modules) :
+    ∃ (k : ℕ) (π : (⨁ fun _ : Fin k ↦ K) ⟶ F), Epi π := by
+  have : Finite σ.I := _root_.SheafOfModules.GeneratingSections.IsFiniteType.finite (σ := σ)
+  obtain ⟨k, ⟨eqv⟩⟩ := Finite.exists_equiv_fin σ.I
+  obtain ⟨π₀, hπ₀⟩ := exists_epi_free_tensor_of_generatingSections_tensor σ e
+  let sumIso : (⨁ fun _ : Fin k ↦ K : X.Modules) ≅
+      (_root_.SheafOfModules.free σ.I : X.Modules) ⊗ K :=
+    biproduct.whiskerEquiv (f := fun _ : Fin k ↦ K) (g := fun _ : σ.I ↦ K)
+      eqv.symm (fun _ ↦ Iso.refl _) ≪≫ (freeTensorIsoBiproduct σ.I K).symm
+  exact ⟨k, sumIso.hom ≫ π₀, epi_comp' (IsIso.epi_of_iso sumIso.hom) hπ₀⟩
+
+end GeneratingSectionsTensor
 
 end AlgebraicGeometry.Scheme.Modules

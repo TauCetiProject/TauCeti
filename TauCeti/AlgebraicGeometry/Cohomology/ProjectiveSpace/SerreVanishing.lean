@@ -22,7 +22,6 @@ import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.HigherCohomology
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
-import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.GlobalGeneration
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
