@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 
 /-!
 # Determinants of endomorphisms of `R × R` and of `K × V`
@@ -14,6 +15,11 @@ An endomorphism `A` of `R × R` is determined by the images `A (1, 0)` and `A (0
 standard basis vectors, and its determinant is the `2 × 2` determinant of these two columns. This
 is `Matrix.det_fin_two` read through the basis `Module.Basis.finTwoProd R`. It is the Jacobian
 determinant in the change of variables formula for maps of the plane `ℝ × ℝ`.
+
+In the same way an alternating bilinear map `f` on `R × R`, with values in any module, is the
+determinant of its two arguments times its value on the standard basis vectors:
+`f (v, w) = (v₁ w₂ - v₂ w₁) f ((1, 0), (0, 1))`. For `f` the integrand of a two-form at a point of
+the plane, this is how the form is evaluated on the partial derivatives of a map of the plane.
 
 Consequently `A` multiplies the wedge product of two linear forms `κ` and `α` on `R × R` by its
 determinant: `κ (A e₁) α (A e₂) - κ (A e₂) α (A e₁) = det A (κ e₁ α e₂ - κ e₂ α e₁)`. This is the
@@ -28,6 +34,8 @@ identity on the quotient `V`, so its determinant is `(B (1, 0)).1`.
 * `Module.Basis.coe_finTwoProd`: the vectors of the basis `Module.Basis.finTwoProd R`.
 * `Module.Basis.det_finTwoProd_apply`: the determinant of two vectors of `R × R` with respect to
   the basis `Module.Basis.finTwoProd R`.
+* `AlternatingMap.apply_finTwoProd`: an alternating map of two vectors of `R × R` is their
+  determinant times its value on the standard basis vectors.
 * `LinearMap.det_finTwoProd`: the determinant of an endomorphism of `R × R`.
 * `LinearMap.det_mul_wedge_finTwoProd`: an endomorphism of `R × R` multiplies the wedge product
   of two linear forms by its determinant.
@@ -53,6 +61,29 @@ theorem det_finTwoProd_apply {R : Type*} [CommRing R] (v w : R × R) :
   simp [Module.Basis.det_apply, Matrix.det_fin_two, Module.Basis.toMatrix_apply, mul_comm]
 
 end Module.Basis
+
+namespace AlternatingMap
+
+/-- An alternating map `f` of two vectors `v` and `w` of `R × R`, with values in any module, is
+their `2 × 2` determinant `v₁ w₂ - v₂ w₁` times its value on the standard basis vectors `(1, 0)`
+and `(0, 1)`. -/
+theorem apply_finTwoProd {R N : Type*} [CommRing R] [AddCommGroup N] [Module R N]
+    (f : (R × R) [⋀^Fin 2]→ₗ[R] N) (v w : R × R) :
+    f ![v, w] = (v.1 * w.2 - v.2 * w.1) • f ![(1, 0), (0, 1)] := by
+  set B := f.toMultilinearMap.toBilinMap
+  have hB (x y : R × R) : f ![x, y] = B x y := (MultilinearMap.toBilinMap_apply _ x y).symm
+  have halt := f.isAlt_toBilinMap
+  have he (x : R × R) : x.1 • ((1, 0) : R × R) + x.2 • ((0, 1) : R × R) = x := by
+    ext <;> simp
+  have h₁ : B (1, 0) (1, 0) = 0 := halt.self_eq_zero _
+  have h₂ : B (0, 1) (0, 1) = 0 := halt.self_eq_zero _
+  have h₃ : B (0, 1) (1, 0) = -B (1, 0) (0, 1) := (halt.neg _ _).symm
+  rw [hB, hB]
+  conv_lhs => rw [← he v, ← he w]
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, h₁, h₂, h₃]
+  module
+
+end AlternatingMap
 
 namespace LinearMap
 
