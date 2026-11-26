@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.RootLattice
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.RealModel
+public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Nebentypus
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Basic
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.GeneralLevel
 import TauCeti.NumberTheory.Divisors
@@ -17,8 +18,8 @@ import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 # The theta series of D₄
 
 The root lattice `D₄ = IntegralLattice.checkerboardLattice 4` has rank `4`, level `2`, and square
-signed discriminant `4 = 2²`. Its quadratic theta character is therefore trivial, so
-`ZLattice.thetaFormGamma0` bundles the theta series of its real model as a weight-two modular form
+signed discriminant `4 = 2²`. Its nebentypus is therefore trivial, so `ZLattice.thetaFormGamma0`
+bundles the theta series of its real model as a weight-two modular form
 `thetaFormRealModelCheckerboardLatticeFour` on `Γ₀(2)`.
 
 By the Sturm bound on `Γ₀(2)` (weight two and index three, so `⌊6 / 12⌋ = 0` and only the constant
@@ -34,12 +35,15 @@ lattice and the convergent `q`-series expansion of `Θ_{D₄}`.
 
 ## Main statements
 
+* `TauCeti.IntegralLattice.nebentypus_realModel_checkerboardLattice_four`: the nebentypus of the
+  real model of `D₄` is trivial.
 * `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardLattice_four_slash_of_mem_Gamma0`:
   `Θ_{D₄} ∣[2] A = Θ_{D₄}` for every `A ∈ Γ₀(2)`.
 * `TauCeti.IntegralLattice.thetaFormRealModelCheckerboardLatticeFour_eq_neg_correctedE2`,
-  `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardLattice_four`: equality of `Θ_{D₄}`
-  with `-EisensteinSeries.correctedE2 2` (`2 E₂(2τ) - E₂(τ)`), as modular forms in `M₂(Γ₀(2))` and
-  as functions on `ℍ`.
+  `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardLattice_four`,
+  `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardLattice_four_apply`: equality of
+  `Θ_{D₄}` with `-EisensteinSeries.correctedE2 2` (`2 E₂(2τ) - E₂(τ)`), as modular forms in
+  `M₂(Γ₀(2))`, as functions on `ℍ`, and pointwise at `τ ∈ ℍ`.
 * `TauCeti.IntegralLattice.representationNumber_checkerboardLattice_four_two_mul`,
   `TauCeti.IntegralLattice.representationNumber_checkerboardLattice_four_two`:
   `r_{D₄}(2m) = 24 ∑_{d ∣ m, d odd} d` for `m ≠ 0`, and `r_{D₄}(2) = 24`.
@@ -59,6 +63,15 @@ open scoped MatrixGroups ArithmeticFunction.sigma
 
 namespace TauCeti.IntegralLattice
 
+/-- The nebentypus of the real model of `D₄` is trivial, since its signed discriminant `4` is a
+square. -/
+@[simp]
+theorem nebentypus_realModel_checkerboardLattice_four (R : Type*) [CommRing R] [NeZero (2 : R)] :
+    ((isEven_realModel_iff _ (isPosDef_checkerboardLattice 4)).mpr
+      (isEven_checkerboardLattice 4)).nebentypus R ⟨2, by simp [finrank_carrier]⟩ = 1 :=
+  (ZLattice.IsEven.nebentypus_eq_one_iff_isSquare _ _).mpr
+    ⟨2, by rw [signedDiscr_realModel_checkerboardLattice_four]; norm_num⟩
+
 /-- **Modularity of `Θ_{D₄}` on `Γ₀(2)`**: the theta series of the real model of `D₄`, bundled as a
 weight-two modular form on `Γ₀(2)` via `ZLattice.thetaFormGamma0` from the lattice invariants
 `level D₄ = 2` and `signedDiscr D₄ = 4 = 2²`. -/
@@ -67,8 +80,7 @@ noncomputable def thetaFormRealModelCheckerboardLatticeFour :
   (ZLattice.thetaFormGamma0
     ((isEven_realModel_iff _ (isPosDef_checkerboardLattice 4)).mpr (isEven_checkerboardLattice 4))
     (k := 2) (by simp [finrank_carrier])
-    (ZLattice.IsEven.thetaCharacter_eq_one_of_isSquare _ _
-      ⟨2, by rw [signedDiscr_realModel_checkerboardLattice_four]; norm_num⟩)).mcast rfl
+    (nebentypus_realModel_checkerboardLattice_four ℂ)).mcast rfl
     (by rw [level_realModel_checkerboardLattice_four])
 
 /-- The underlying function of the bundled `D₄` theta form is the lattice theta series. -/
@@ -119,7 +131,16 @@ theorem thetaSeries_realModel_checkerboardLattice_four :
   rw [← coe_thetaFormRealModelCheckerboardLatticeFour,
     thetaFormRealModelCheckerboardLatticeFour_eq_neg_correctedE2]
 
-/-- For `m ≠ 0`, the number of vectors of norm `2m` in D₄ is `24` times the sum of the
+/-- Pointwise on the upper half-plane, `Θ_{D₄}(τ) = 2 E₂(2τ) - E₂(τ)`. -/
+theorem thetaSeries_realModel_checkerboardLattice_four_apply (τ : ℍ) :
+    ZLattice.thetaSeries ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4)) τ =
+      2 * _root_.EisensteinSeries.E2 (scaleGL 2 • τ) - _root_.EisensteinSeries.E2 τ := by
+  rw [thetaSeries_realModel_checkerboardLattice_four, FunLike.coe_neg, Pi.neg_apply,
+    EisensteinSeries.correctedE2_apply]
+  push_cast
+  ring
+
+/-- For `m ≠ 0`, the number of vectors of norm `2m` in `D₄` is `24` times the sum of the
 odd divisors of `m`. -/
 theorem representationNumber_checkerboardLattice_four_two_mul {m : ℕ} (hm : m ≠ 0) :
     (checkerboardLattice 4).representationNumber (2 * m) =
@@ -149,7 +170,7 @@ theorem representationNumber_checkerboardLattice_four_two_mul {m : ℕ} (hm : m 
   push_cast at hs ⊢
   linear_combination -hc + 24 * hs
 
-/-- D₄ has `24` vectors of norm `2` (its minimal vectors). -/
+/-- `D₄` has `24` vectors of norm `2` (its minimal vectors). -/
 theorem representationNumber_checkerboardLattice_four_two :
     (checkerboardLattice 4).representationNumber 2 = 24 := by
   have h := representationNumber_checkerboardLattice_four_two_mul (m := 1) one_ne_zero

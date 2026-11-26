@@ -80,12 +80,16 @@ theorem entryHomEquiv_dgComp (X Y W : 𝒮) (i j l : V)
   simp only [entryHomEquiv_apply, DGShiftClosure.dgHomEquiv_dgComp, DGFullSubcategory.dgComp_eq,
     map_zsmul_unit, dgHomCongr_dgComp k hX hY hW]
 
-private def diagonalHomEquiv (X : 𝒮) (i : V) (hX : X.obj.obj = D i) :
+/-- Unpack homogeneous degree-two endomorphisms of a shifted vertex summand `X` into degree-two
+endomorphisms of its underlying vertex projective `D i`. -/
+def diagonalHomEquiv (X : 𝒮) (i : V) (hX : X.obj.obj = D i) :
     DGHom k 2 X X ≃ₗ[k] DGHom k 2 (D i) (D i) :=
   (entryHomEquiv k G X X i i hX hX 2).trans
     ((dgHomComplex k (D i) (D i)).XIsoOfEq (by omega)).toLinearEquiv
 
-private theorem diagonalHomEquiv_comp (X Y : 𝒮) (i j : V)
+/-- `diagonalHomEquiv` sends a degree-two composite `dgComp k f g h` to the signed composite of its
+`entryHomEquiv` factors. -/
+theorem diagonalHomEquiv_comp (X Y : 𝒮) (i j : V)
     (hX : X.obj.obj = D i) (hY : Y.obj.obj = D j) {p q : ℤ}
     (f : DGHom k p X Y) (g : DGHom k q Y X) (h : p + q = 2) :
     diagonalHomEquiv k G X i hX (dgComp k f g h) =
@@ -99,14 +103,19 @@ private theorem diagonalHomEquiv_comp (X Y : 𝒮) (i j : V)
     (n := 2 + (X.shift - X.shift)) (n' := 2) rfl (by omega)
     (entryHomEquiv k G X Y i j hX hY p f) (entryHomEquiv k G Y X j i hY hX q g) (by omega)).symm
 
-private def vertexTrace (a : k) (i : V) : DGHom k 2 (D i) (D i) →ₗ[k] k :=
+/-- The weighted degree-two trace on endomorphisms of the vertex projective `D i`. -/
+def vertexTrace (a : k) (i : V) : DGHom k 2 (D i) (D i) →ₗ[k] k :=
   a • (zigzagAlgebraTrace k G).comp ((Submodule.subtype _).comp (E i i 2).toLinearMap)
 
-private theorem vertexTrace_apply (a : k) (i : V) (f : DGHom k 2 (D i) (D i)) :
+/-- `vertexTrace` multiplies `zigzagAlgebraTrace` of the corner representative by the weight `a`. -/
+@[simp]
+theorem vertexTrace_apply (a : k) (i : V) (f : DGHom k 2 (D i) (D i)) :
     vertexTrace k G a i f = a * zigzagAlgebraTrace k G (E i i 2 f : Z) := by
   simp [vertexTrace]
 
-private theorem vertexTrace_comp (c : V → k) (i j : V)
+/-- Complementary-degree compositions between vertex projectives satisfy weighted graded cyclicity
+under `vertexTrace`. -/
+theorem vertexTrace_comp (c : V → k) (i j : V)
     (hc : G.Adj i j → c j = -c i) (d : ℤ)
     (f : DGHom k d (D i) (D j)) (g : DGHom k (2 - d) (D j) (D i)) :
     vertexTrace k G (c i) i (dgComp k f g (by omega)) =
@@ -116,11 +125,22 @@ private theorem vertexTrace_comp (c : V → k) (i j : V)
     coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_comp]
   exact zigzagAlgebraTrace_weighted_mul_flip k G c i j hc d (E i j d f) (E j i (2 - d) g)
 
-private def shiftedVertexTrace (a : k) (X : 𝒮) (i : V) (hX : X.obj.obj = D i) :
+/-- The shift-signed weighted degree-two trace on endomorphisms of a shifted vertex summand `X`. -/
+def shiftedVertexTrace (a : k) (X : 𝒮) (i : V) (hX : X.obj.obj = D i) :
     DGHom k 2 X X →ₗ[k] k :=
   X.shift.negOnePow • (vertexTrace k G a i).comp (diagonalHomEquiv k G X i hX).toLinearMap
 
-private theorem shiftedVertexTrace_comp (c : V → k) (X Y : 𝒮) (i j : V)
+/-- `shiftedVertexTrace` applies `vertexTrace` after `diagonalHomEquiv`, signed by `X.shift`. -/
+@[simp]
+theorem shiftedVertexTrace_apply (a : k) (X : 𝒮) (i : V) (hX : X.obj.obj = D i)
+    (f : DGHom k 2 X X) :
+    shiftedVertexTrace k G a X i hX f =
+      X.shift.negOnePow • vertexTrace k G a i (diagonalHomEquiv k G X i hX f) :=
+  (rfl)
+
+/-- Complementary-degree compositions between shifted vertex summands satisfy weighted graded
+cyclicity under `shiftedVertexTrace`. -/
+theorem shiftedVertexTrace_comp (c : V → k) (X Y : 𝒮) (i j : V)
     (hX : X.obj.obj = D i) (hY : Y.obj.obj = D j)
     (hc : G.Adj i j → c j = -c i) (p : ℤ)
     (f : DGHom k p X Y) (g : DGHom k (2 - p) Y X) :
@@ -154,7 +174,7 @@ private theorem shiftedVertexTrace_comp (c : V → k) (X Y : 𝒮) (i j : V)
   simp only [smul_smul]
   congr 1
   simp only [Int.negOnePow_mul_two_sub, ← Int.negOnePow_add]
-  apply (Int.negOnePow_eq_iff _ _).2
+  apply (Int.negOnePow_eq_iff _ _).mpr
   -- The two actual composition exponents differ by 2 * (X.shift - Y.shift).
   -- This evenness witness retains their common factor before cancelling it after raw cyclicity.
   refine ⟨X.shift - Y.shift, ?_⟩
@@ -211,6 +231,15 @@ def trace (c : V → k) (X : ZigzagProjectiveTwistedClosure k G)
     (v : X.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i)) :
     DGHom k 2 X X →ₗ[k] k :=
   (matrixTrace k G c X.obj v hv).comp (DGTwistedObject.dgHomEquiv k X X 2).toLinearMap
+
+/-- `trace` is the sum of `shiftedVertexTrace` over the diagonal entries of `X`. -/
+theorem trace_eq_sum_shiftedVertexTrace (c : V → k) (X : ZigzagProjectiveTwistedClosure k G)
+    (v : X.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
+    (f : DGHom k 2 X X) :
+    trace k G c X v hv f = ∑ i, shiftedVertexTrace k G (c (v i)) (X.obj.X i) (v i) (hv i)
+      (DGAdditiveClosure.dgHomEquiv k X.obj X.obj 2
+        (DGTwistedObject.dgHomEquiv k X X 2 f) i i) :=
+  (rfl)
 
 /-- Each diagonal corner contributes its vertex coefficient times its formal-shift sign. -/
 theorem trace_apply (c : V → k) (X : ZigzagProjectiveTwistedClosure k G)

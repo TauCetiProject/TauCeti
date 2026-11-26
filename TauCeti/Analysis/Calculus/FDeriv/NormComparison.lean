@@ -26,7 +26,13 @@ map, without assuming differentiability of the outer map.
 
 * `HasFDerivAt.norm_apply_le_mul_norm_apply`: a norm comparison of increments passes to the
   derivative.
+* `HasFDerivAt.norm_apply_eq_of_eventually_norm_sub_eq`,
+  `DifferentiableAt.norm_fderiv_apply_eq_of_eventually_norm_sub_eq`: local norm preservation of
+  increments passes to the derivative.
 * `LipschitzWith.norm_fderiv_comp_le`: postcomposition by a Lipschitz map.
+* `HasFDerivAt.eventually_norm_sub_sub_apply_lt`: conversely, a continuous linear map `M` within
+  `r` of the derivative approximates the increments of `φ` near `x` to within `r` times their
+  length.
 * `DifferentiableAt.injective_fderiv_finTail`: if a differentiable parametrization of a set
   whose heights are bounded by `A` times the distances of base points has injective derivative, so
   does its projection to the base.
@@ -64,6 +70,42 @@ theorem HasFDerivAt.norm_apply_le_mul_norm_apply {φ : E → F} {φ' : E →L[�
   simp only [zero_add, zero_smul, add_zero, Function.comp_apply, map_smul, norm_smul]
   rw [mul_left_comm]
   exact mul_le_mul_of_nonneg_left hs (norm_nonneg _)
+
+/-- If a continuous linear map `M` is within `r` of the derivative `φ'` of `φ` at `x` in operator
+norm, then near `x`, but not at `x`, it approximates the increments of `φ` to within `r` times
+their length. -/
+theorem HasFDerivAt.eventually_norm_sub_sub_apply_lt {φ : E → F} {φ' : E →L[𝕜] F} {x : E}
+    (hφ : HasFDerivAt φ φ' x) {M : E →L[𝕜] F} {r : ℝ} (h : ‖φ' - M‖ < r) :
+    ∀ᶠ y in 𝓝[≠] x, ‖φ y - φ x - M (y - x)‖ < r * ‖y - x‖ := by
+  have hε : 0 < (r - ‖φ' - M‖) / 2 := half_pos (sub_pos.2 h)
+  filter_upwards [nhdsWithin_le_nhds (hφ.isLittleO.def hε), self_mem_nhdsWithin] with y hy hyx
+  have hy₀ : 0 < ‖y - x‖ := norm_pos_iff.2 (sub_ne_zero.2 hyx)
+  calc ‖φ y - φ x - M (y - x)‖ = ‖(φ y - φ x - φ' (y - x)) + (φ' - M) (y - x)‖ := by
+        rw [sub_apply]; abel_nf
+    _ ≤ (r - ‖φ' - M‖) / 2 * ‖y - x‖ + ‖φ' - M‖ * ‖y - x‖ :=
+        norm_add_le_of_le hy ((φ' - M).le_opNorm _)
+    _ < r * ‖y - x‖ := by nlinarith
+
+/-- If the increments of `φ` from `x` preserve norms near `x`, so does its derivative `φ'` at
+`x`. -/
+theorem HasFDerivAt.norm_apply_eq_of_eventually_norm_sub_eq {φ : E → F} {φ' : E →L[𝕜] F} {x : E}
+    (hφ : HasFDerivAt φ φ' x) (h : ∀ᶠ y in 𝓝 x, ‖φ y - φ x‖ = ‖y - x‖) (k : E) :
+    ‖φ' k‖ = ‖k‖ := by
+  have hpair := hφ.prodMk (hasFDerivAt_id x)
+  refine le_antisymm ?_ ?_
+  · simpa using hpair.norm_apply_le_mul_norm_apply
+      (L := ContinuousLinearMap.fst 𝕜 F E) (M := ContinuousLinearMap.snd 𝕜 F E)
+      (A := 1) (h.mono fun y hy ↦ by simp [hy]) k
+  · simpa using hpair.norm_apply_le_mul_norm_apply
+      (L := ContinuousLinearMap.snd 𝕜 F E) (M := ContinuousLinearMap.fst 𝕜 F E)
+      (A := 1) (h.mono fun y hy ↦ by simp [hy]) k
+
+/-- If `φ` is differentiable at `x` and its increments from `x` preserve norms near `x`, its
+Fréchet derivative at `x` preserves norms. -/
+theorem DifferentiableAt.norm_fderiv_apply_eq_of_eventually_norm_sub_eq {φ : E → F} {x : E}
+    (hφ : DifferentiableAt 𝕜 φ x) (h : ∀ᶠ y in 𝓝 x, ‖φ y - φ x‖ = ‖y - x‖) (k : E) :
+    ‖fderiv 𝕜 φ x k‖ = ‖k‖ :=
+  hφ.hasFDerivAt.norm_apply_eq_of_eventually_norm_sub_eq h k
 
 /-- Postcomposition by a `C`-Lipschitz map multiplies the norm of the derivative by at most `C`.
 The outer map need not be differentiable, even at the value of the inner map. -/

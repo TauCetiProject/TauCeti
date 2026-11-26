@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.InducedOrientation
 public import TauCeti.Geometry.Manifold.Instances.Icc
+public import TauCeti.Geometry.Manifold.Instances.Icc.Boundary
 
 /-!
 # The increasing orientation of a closed interval
@@ -133,21 +134,13 @@ theorem exists_interval_tangent_bases {a b : ℝ} [Fact (a < b)] (x : Icc a b) :
   · by_cases hx : (x : ℝ) < b <;>
       simp [C, Module.Basis.unitsSMul_apply, B, e, Module.Basis.map_apply, hx]
 
-/-- The interval charted structure, with its model dimension written as a successor so that
-zero-dimensional boundary constructions infer the canonical interval charts. -/
-@[reducible] local instance intervalSuccessorChartedSpace :
-    ChartedSpace (EuclideanHalfSpace (0 + 1)) (Icc a b) :=
-  instIccChartedSpace a b
-
-local instance : IsManifold (𝓡∂ (0 + 1)) 1 (Icc a b) := instIsManifoldIcc a b
-
 /-- The canonical zero-dimensional charted structure on the two interval endpoints. -/
 @[reducible] local instance intervalBoundaryChartedSpace :
     ChartedSpace (EuclideanSpace ℝ (Fin 0))
     ((𝓡∂ (0 + 1)).boundary (Icc a b)) := boundaryChartedSpace (n := 0)
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1
-    ((𝓡∂ (0 + 1)).boundary (Icc a b)) := isManifold_boundary (n := 0) (Icc a b) one_ne_zero
+    ((𝓡∂ (0 + 1)).boundary (Icc a b)) := isManifold_boundary (n := 0) (Icc a b)
 
 /-- The left endpoint of an increasing closed interval has negative boundary orientation. -/
 theorem orientationAt_boundaryOrientation_interval_left :

@@ -47,7 +47,7 @@ theorem mem_carrier_of_mem_intermediateCarrierOfDiscriminantSubgroup_of_norm_lt
     (H : AddSubgroup L.DiscriminantGroup) {r : ℚ}
     (hbound : ∀ x : L.dualCarrier, (Submodule.Quotient.mk x : L.DiscriminantGroup) ∈ H →
       (Submodule.Quotient.mk x : L.DiscriminantGroup) ≠ 0 → r ≤ L.norm x)
-    {x : V} (hx : x ∈ (L.intermediateCarrierOfDiscriminantSubgroup H).1)
+    {x : V} (hx : x ∈ (L.intermediateCarrierOfDiscriminantSubgroup H).val)
     (hnorm : L.norm x < r) : x ∈ L.carrier := by
   obtain ⟨hxdual, hxH⟩ :=
     (L.mem_intermediateCarrierOfDiscriminantSubgroup_iff H x).mp hx
@@ -74,15 +74,15 @@ theorem image_vectorsOfNorm_ofIsotropicSubgroup_eq (hL : L.IsEven)
   · rintro ⟨y, hy, rfl⟩
     have hynorm : L.norm y = n := by
       simpa only [mem_vectorsOfNorm, norm_apply, ofIsotropicSubgroup_form] using hy
-    have hymem : (y : V) ∈ (L.intermediateCarrierOfDiscriminantSubgroup H).1 := by
-      simpa only [ofIsotropicSubgroup_carrier] using y.2
+    have hymem : (y : V) ∈ (L.intermediateCarrierOfDiscriminantSubgroup H).val := by
+      simpa only [ofIsotropicSubgroup_carrier] using y.property
     have hyL := L.mem_carrier_of_mem_intermediateCarrierOfDiscriminantSubgroup_of_norm_lt
       H hbound hymem (hynorm.trans_lt hn)
     exact ⟨⟨y, hyL⟩, mem_vectorsOfNorm.mpr hynorm, rfl⟩
   · rintro ⟨y, hy, rfl⟩
     have hymem : (y : V) ∈ (L.ofIsotropicSubgroup hL H hH).carrier := by
       rw [ofIsotropicSubgroup_carrier]
-      exact (L.intermediateCarrierOfDiscriminantSubgroup H).2.1 y.2
+      exact (L.intermediateCarrierOfDiscriminantSubgroup H).property.1 y.property
     refine ⟨⟨y, hymem⟩, ?_, rfl⟩
     simpa only [mem_vectorsOfNorm, norm_apply, ofIsotropicSubgroup_form] using hy
 

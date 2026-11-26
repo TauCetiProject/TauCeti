@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Norm
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Connected.PathConnected
@@ -27,7 +29,13 @@ surjection onto the general linear group.
 
 Its realification, the subgroup of `GL (n ⊕ n) ℝ` of invertible real matrices commuting with
 `J` (`Matrix.GeneralLinearGroup.mem_range_realify_iff`), is then path connected as well, being
-the image of `GL n ℂ` under the continuous realification map.
+the image of `GL n ℂ` under the continuous realification map. So is the group of invertible
+continuous linear endomorphisms `(F →L[ℂ] F)ˣ` of a finite-dimensional complex normed space `F`,
+which a basis of `F` identifies with `GL n ℂ`. Hence every automorphism of `F` is joined to the
+identity by a path of automorphisms continuous in the operator norm
+(`ContinuousLinearEquiv.exists_continuous_path_refl`), and such paths can be chosen continuously
+along a continuous family of automorphisms
+(`ContinuousLinearEquiv.exists_continuous_path_refl_family`).
 
 ## References
 
@@ -53,7 +61,7 @@ instance instPathConnectedSpaceMatrixGeneralLinearGroup : PathConnectedSpace (GL
     isPathConnected_iff_pathConnectedSpace.mp
       (convex_setOfPred_posDef.isPathConnected ⟨1, PosDef.one⟩)
   let f : {P : Matrix n n ℂ | P.PosDef} × unitaryGroup n ℂ → GL n ℂ :=
-    fun PU => PU.1.2.isUnit.unit * Unitary.toUnits PU.2
+    fun PU => PU.1.property.isUnit.unit * Unitary.toUnits PU.2
   have hf : Function.Surjective f := by
     intro A
     obtain ⟨⟨P, U⟩, ⟨hP, hPU⟩, _⟩ := A.existsUnique_posDef_mul_unitary
@@ -63,7 +71,7 @@ instance instPathConnectedSpaceMatrixGeneralLinearGroup : PathConnectedSpace (GL
   apply Units.isOpenEmbedding_val.isEmbedding.isInducing.continuous_iff.mpr
   simpa only [f, Function.comp_def, Units.val_mul, IsUnit.unit_spec,
     Unitary.val_toUnits_apply] using
-    continuous_subtype_val.fst'.matrix_mul continuous_subtype_val.snd'
+    continuous_subtypeVal.fst'.matrix_mul continuous_subtypeVal.snd'
 
 /-- The realified complex general linear group, the subgroup of `GL (n ⊕ n) ℝ` of invertible real
 matrices commuting with `J`, is path connected. -/
@@ -73,4 +81,56 @@ instance instPathConnectedSpaceRangeRealify :
     rw [MonoidHom.coe_range]
     exact isPathConnected_range (GeneralLinearGroup.isClosedEmbedding_realify n ℂ).continuous
 
+/-- The group of invertible continuous linear endomorphisms of a finite-dimensional complex
+normed space is path connected, including in dimension zero: a basis identifies it with the
+complex general linear group. -/
+instance instPathConnectedSpaceUnitsContinuousLinearMap (F : Type*) [NormedAddCommGroup F]
+    [NormedSpace ℂ F] [FiniteDimensional ℂ F] : PathConnectedSpace (F →L[ℂ] F)ˣ := by
+  -- Matrices act on `F` through a basis, as a continuous algebra equivalence.
+  let e := (Matrix.toLinAlgEquiv (Module.finBasis ℂ F)).trans (Module.End.toContinuousLinearMap F)
+  exact (Units.mapEquiv e.toMulEquiv).surjective.pathConnectedSpace
+    (e.toLinearMap.continuous_of_finiteDimensional.units_map _)
+
 end TauCeti
+
+namespace ContinuousLinearEquiv
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
+
+open scoped unitInterval
+
+/-- **Paths of automorphisms.** Every automorphism `g` of a finite-dimensional complex normed space
+`F` is joined to the identity by a path of automorphisms, continuous in the operator norm. -/
+theorem exists_continuous_path_refl (g : F ≃L[ℂ] F) :
+    ∃ P : I → F ≃L[ℂ] F, Continuous (fun t ↦ (P t : F →L[ℂ] F)) ∧
+      P 0 = ContinuousLinearEquiv.refl ℂ F ∧ P 1 = g := by
+  let U := ContinuousLinearEquiv.unitsEquiv ℂ F
+  let γ := PathConnectedSpace.somePath (1 : (F →L[ℂ] F)ˣ) (U.symm g)
+  refine ⟨fun t ↦ U (γ t), Units.continuous_val.comp γ.continuous, ?_, ?_⟩
+  · simp only [γ.source, map_one]
+    -- The unit `1` of the automorphism group is the identity `refl` by definition.
+    rfl
+  · simp only [γ.target, MulEquiv.apply_symm_apply]
+
+/-- **Families of paths of automorphisms.** For a family `K r` of automorphisms of a
+finite-dimensional complex normed space `F`, continuous in `r ∈ I` in the operator norm, there are
+paths `Q r` of automorphisms from the identity to `K r`, continuous jointly in `r` and in the time
+of the path: a fixed path from the identity to `K 0`, followed by the change of `K` between `0`
+and `r`. -/
+theorem exists_continuous_path_refl_family {K : I → F ≃L[ℂ] F}
+    (hK : Continuous fun r ↦ (K r : F →L[ℂ] F)) :
+    ∃ Q : I → I → F ≃L[ℂ] F, Continuous (fun q : I × I ↦ (Q q.1 q.2 : F →L[ℂ] F)) ∧
+      (∀ r, Q r 0 = ContinuousLinearEquiv.refl ℂ F) ∧ ∀ r, Q r 1 = K r := by
+  obtain ⟨P, hPc, hP0, hP1⟩ := exists_continuous_path_refl (K 0)
+  refine ⟨fun r t ↦ (P t).trans ((K 0).symm.trans (K (r * t))), ?_, fun r ↦ ?_, fun r ↦ ?_⟩
+  · refine (((hK.comp (by fun_prop : Continuous fun q : I × I ↦ q.1 * q.2)).clm_comp
+      (continuous_const (y := ((K 0).symm : F →L[ℂ] F)))).clm_comp
+        (hPc.comp continuous_snd)).congr fun q ↦ ?_
+    ext v
+    simp
+  · ext v
+    simp [hP0]
+  · ext v
+    simp [hP1]
+
+end ContinuousLinearEquiv

@@ -74,6 +74,30 @@ lemma mapValue_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
   rw [WithConv.ofConv_toConv, AlgHom.comp_apply]
   rw [hg h hh, map_zero]
 
+/-- Post-composition by an injective algebra homomorphism reflects the ambient-point subgroup cut
+out by a Hopf ideal, including when the source and target value algebras lie in different
+universes. -/
+lemma mapValue_mem_quotientPointsSubgroup_iff (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) {A : Type w} {B : Type w'}
+    [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+    {χ : A →ₐ[R] B} (hχ : Function.Injective χ)
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R A)) :
+    AlgHom.mapValue χ g ∈ quotientPointsSubgroup H I (CommAlgCat.of R B) ↔
+      g ∈ quotientPointsSubgroup H I (CommAlgCat.of R A) := by
+  rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
+  refine forall₂_congr fun h _ ↦ ?_
+  rw [AlgHom.mapValue_apply, WithConv.ofConv_toConv, AlgHom.comp_apply, map_eq_zero_iff χ hχ]
+
+/-- Along an injective algebra homomorphism, the ambient-point subgroup cut out by a Hopf ideal is
+the preimage of the corresponding subgroup under post-composition. -/
+lemma comap_mapValue_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) {A : Type w} {B : Type w'}
+    [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+    {χ : A →ₐ[R] B} (hχ : Function.Injective χ) :
+    (quotientPointsSubgroup H I (CommAlgCat.of R B)).comap (AlgHom.mapValue χ) =
+      quotientPointsSubgroup H I (CommAlgCat.of R A) :=
+  Subgroup.ext (mapValue_mem_quotientPointsSubgroup_iff H I hχ)
+
 /-- Post-composition preserves the ambient-point subgroup cut out by a Hopf ideal. -/
 lemma mapPoints_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}
@@ -207,18 +231,18 @@ private lemma liftQuotientPointHom_apply (H : _root_.CommHopfAlgCat.{v} R)
     liftQuotientPointHom H I A g =
       liftQuotientPoint H I A g ((mem_quotientPointsSubgroup_iff H I A g).mp g.property) := by
   apply quotientPointsHom_injective H I A
-  have hg : g.1 ∈ (quotientPointsHom H I A).hom.range := by
+  have hg : g.val ∈ (quotientPointsHom H I A).hom.range := by
     have hgp := g.property
     -- `g.property` is stated through the `Subtype` predicate of the subgroup coercion; `change`
     -- puts it back in the `∈ quotientPointsSubgroup …` form the membership lemmas expect.
-    change g.1 ∈ quotientPointsSubgroup H I A at hgp
+    change g.val ∈ quotientPointsSubgroup H I A at hgp
     exact hgp
   -- `liftQuotientPointHom` is the `toMonoidHom` of the inverse equivalence returned by
   -- `MonoidHom.ofInjective`; this coercion exposes the underlying inverse application so the
   -- standard `apply_ofInjective_symm` lemma can rewrite it.
   change (quotientPointsHom H I A).hom
       (((MonoidHom.ofInjective (f := (quotientPointsHom H I A).hom)
-        (quotientPointsHom_injective H I A)).symm) ⟨g.1, hg⟩) =
+        (quotientPointsHom_injective H I A)).symm) ⟨g.val, hg⟩) =
     (quotientPointsHom H I A).hom
       (liftQuotientPoint H I A g
         ((mem_quotientPointsSubgroup_iff H I A g).mp g.property))
@@ -312,7 +336,7 @@ include hS in
 under change of value algebra. -/
 theorem le_comap_mapValue_of_forall_mem_iff {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     S A ≤ (S B).comap (AlgHom.mapValue (R := R) (H := H) φ.hom) := fun g hg ↦
-  (hS B _).1 (mapQuotientPointsSubgroup H I φ ⟨g, (hS A g).2 hg⟩).2
+  (hS B _).1 (mapQuotientPointsSubgroup H I φ ⟨g, (hS A g).2 hg⟩).property
 
 /-- Pointwise identification of a Hopf-ideal cut-out with a subgroup family having the same
 membership predicate. -/
@@ -368,7 +392,7 @@ theorem quotientPointsHom_quotientPointsSubgroupRepresentingIso_inv_app_apply
           (Y := HopfAlgebra.pointsFunctor (R := R) (H := quotient H I) |>.obj A)
           ((quotientPointsSubgroupRepresentingIso
             H I S hS).inv.app A) g) =
-      g.1 := by
+      g.val := by
   let f :=
     CategoryTheory.ConcreteCategory.hom
       (X := GrpCat.of (S A))
@@ -385,7 +409,7 @@ theorem quotientPointsHom_quotientPointsSubgroupRepresentingIso_inv_app_apply
               HopfAlgebra.points (R := R) (H := H) A) :=
       (coe_quotientPointsSubgroupRepresentingIso_hom_app_apply
         H I S hS A f).symm
-    _ = g.1 := by
+    _ = g.val := by
       have hinv := CategoryTheory.Iso.inv_hom_id_apply
         ((quotientPointsSubgroupRepresentingIso
           H I S hS).app A)

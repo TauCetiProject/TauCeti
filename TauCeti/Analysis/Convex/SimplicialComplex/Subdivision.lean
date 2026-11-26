@@ -59,6 +59,8 @@ dimension these common cells are smaller. So this need not be assumed.
 
 ## Main results
 
+* `Geometry.SimplicialComplex.simplexwise_affine_of_convexHull_subset`: affineness on each simplex
+  passes to complexes whose simplices lie in the original simplices.
 * `Geometry.SimplicialComplex.exists_extension_of_intrinsicFrontier_subset_space`: a complex `L`
   extends over a family of compact convex cells attached to `L` along subcomplexes covering their
   intrinsic frontiers, by coning each cell to a prescribed point.
@@ -110,6 +112,17 @@ theorem IsSubdivision.trans (h' : K''.IsSubdivision K') (h : K'.IsSubdivision K)
   obtain ⟨t, ht, hst⟩ := h'.exists_convexHull_subset hs
   obtain ⟨u, hu, htu⟩ := h.exists_convexHull_subset ht
   exact ⟨u, hu, hst.trans htu⟩
+
+/-- A map affine on each face of `K` is affine on each face of a complex whose simplices lie in
+simplices of `K`. -/
+theorem simplexwise_affine_of_convexHull_subset {F : Type*} [AddCommGroup F] [Module 𝕜 F]
+    {f : E → F}
+    (h : ∀ ⦃s⦄, s ∈ K'.faces → ∃ t ∈ K.faces,
+      convexHull 𝕜 (s : Set E) ⊆ convexHull 𝕜 (t : Set E))
+    (haff : ∀ s ∈ K.faces, ∃ g : E →ᵃ[𝕜] F, EqOn f g (convexHull 𝕜 (s : Set E))) :
+    ∀ s ∈ K'.faces, ∃ g : E →ᵃ[𝕜] F, EqOn f g (convexHull 𝕜 (s : Set E)) := fun s hs => by
+  obtain ⟨t, ht, hst⟩ := h hs
+  exact (haff t ht).imp fun _ hg => hg.mono hst
 
 /-- **A complex whose faces lie in finitely many convex cells subdivides the covered complex.**
 Let finitely many convex cells `P p`, each inside a simplex `σ p` of `K`, cover `K`, and let a
@@ -271,7 +284,7 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
       rw [hKs, Set.disjoint_union_right, Set.disjoint_iUnion₂_right]
       exact ⟨hLi i, fun k hk => hB i k hi.ge hk⟩)
     (fun i j hij x ⟨hxi, hxj⟩ => by
-      have hij : i.1 ≠ j.1 := fun h => hij (Subtype.ext h)
+      have hij : i.val ≠ j.val := fun h => hij (Subtype.ext h)
       rw [hKs]
       rcases TauCeti.mem_intrinsicInterior_or_of_mem hPv hri hfr hxi with
         h | h | ⟨k, hk, -, hxk⟩
@@ -367,6 +380,7 @@ theorem exists_subdivision (P : ι → Set E) (hPc : ∀ i, IsCompact (P i))
     locallyFinite_convexHull_of_finite_restrict hPv hPlf (L := ⊥) ?_ (fun i => (hKP i).2)
       fun s hs => .inr ((hKf' s hs).imp fun _ => And.right)⟩
   intro x
-  exact ⟨univ, Filter.univ_mem, Set.finite_empty.subset fun σ _ => (Set.notMem_empty σ.1 σ.2).elim⟩
+  exact ⟨univ, Filter.univ_mem, Set.finite_empty.subset fun σ _ =>
+      (Set.notMem_empty σ.val σ.property).elim⟩
 
 end Geometry.SimplicialComplex

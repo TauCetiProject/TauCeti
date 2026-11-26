@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Rank
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
 
@@ -13,12 +14,17 @@ public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
 
 An element `x` of a Lie algebra `L` over a field `K` is **regular** when its centralizer
 `ker (ad x)` has the smallest dimension among the centralizers of all elements of `L`
-(`LieAlgebra.IsCentralizerRegular`). For a semisimple Lie algebra over an algebraically closed
-field of characteristic zero this minimal dimension is the rank, and the regular elements include
-both the regular semisimple elements and the regular nilpotent ones. If `L` is the Lie algebra of
-an affine algebraic group `G` over a field of characteristic zero, the centralizer `C_G(x)` is
-smooth with Lie algebra `ker (ad x)`, so these are also the elements whose group centralizer has
-minimal dimension.
+(`LieAlgebra.IsCentralizerRegular`). When the Killing form is nondegenerate and the field is
+infinite this minimal dimension is the rank `LieAlgebra.rank K L`
+(`LieAlgebra.isCentralizerRegular_iff_finrank_ker_ad_eq_rank`), and every element regular in
+Mathlib's sense is regular (`LieAlgebra.IsRegular.isCentralizerRegular`). Regular nilpotent
+elements need not exist under these conditions alone: `su(2)` over `ℝ` has a nondegenerate
+Killing form but no nonzero nilpotent elements. Over a field of characteristic zero, when a Cartan
+subalgebra splits `L` (for instance over an algebraically closed field), the nilpositive element
+of the principal `sl₂` triple is a regular nilpotent element
+(`IsSl2Triple.isCentralizerRegular_e`). If `L` is the Lie algebra of an affine algebraic group `G`
+over a field of characteristic zero, the centralizer `C_G(x)` is smooth with Lie algebra
+`ker (ad x)`, so these are also the elements whose group centralizer has minimal dimension.
 
 This notion differs from Mathlib's `LieAlgebra.IsRegular`, which is stated for `L` finite free
 over a commutative ring `R`. There the coefficients of the characteristic polynomial of `ad x` are
@@ -43,7 +49,11 @@ finite dimension regularity is the lower bound `rank (ad x₀) ≤ rank (ad x)` 
 element `x₀`. In the coordinates of a basis of a finite-dimensional `L` this bound is a
 Zariski-open condition, since it asks for a nonzero minor of the matrix of `ad x`, whose entries
 are linear in the coordinates of `x`. Over an infinite field the regular elements therefore form
-a nonempty Zariski-open and Zariski-dense subset of `L`. Regularity is preserved by Lie algebra
+a nonempty Zariski-open and Zariski-dense subset of `L`. The elements regular in Mathlib's sense
+are those at which a nonzero polynomial function, the coefficient of index `LieAlgebra.rank K L` of
+the characteristic polynomial of `ad x`, does not vanish. By density this polynomial cannot vanish
+at all regular elements, so some element is regular in both senses
+(`LieAlgebra.exists_isRegular_and_isCentralizerRegular`). Regularity is preserved by Lie algebra
 isomorphisms, hence by the adjoint action, and by nonzero scalars. In finite dimension the element
 `0` is regular only when `L` is abelian.
 
@@ -60,15 +70,17 @@ isomorphisms, hence by the adjoint action, and by nonzero scalars. In finite dim
   minimality of `finrank K (ker (ad x))`.
 * `LieAlgebra.isCentralizerRegular_iff_forall_finrank_range_le`: in finite dimension, an element is
   regular exactly when `ad x` has maximal rank.
-* `LieEquiv.isCentralizerRegular_apply_iff` and
-  `LieAlgebra.isCentralizerRegular_smul_iff`: invariance under Lie algebra isomorphisms and
-  nonzero scalars.
+* `LieEquiv.isCentralizerRegular_apply_iff`, `LieAlgebra.isCentralizerRegular_smul_iff` and
+  `LieAlgebra.isCentralizerRegular_neg_iff`: invariance under Lie algebra isomorphisms, nonzero
+  scalars and negation.
 * `LieAlgebra.isCentralizerRegular_zero_iff`: in finite dimension, `0` is regular exactly when `L`
   is abelian.
 * `Module.Basis.not_isCentralizerRegular_of_mem_zeroLocus_vanishingIdeal`: the nonregular
   elements form a Zariski-closed set.
 * `Module.Basis.vanishingIdeal_setOfPred_isCentralizerRegular_eq_bot`: over an infinite field
   the regular elements are Zariski dense.
+* `LieAlgebra.exists_isRegular_and_isCentralizerRegular`: over an infinite field some element is
+  regular both in Mathlib's sense and in the sense of this file.
 
 ## References
 
@@ -161,6 +173,13 @@ theorem isCentralizerRegular_smul_iff {c : K} (hc : c ≠ 0) {x : L} :
   simp only [isCentralizerRegular_iff]
   rw [_root_.map_smul, ker_smul _ _ hc]
 
+/-- Regularity is invariant under negation. -/
+@[simp]
+theorem isCentralizerRegular_neg_iff {x : L} :
+    IsCentralizerRegular K (-x) ↔ IsCentralizerRegular K x := by
+  simpa only [neg_one_smul] using isCentralizerRegular_smul_iff (K := K) (x := x)
+    (neg_ne_zero.mpr (one_ne_zero : (1 : K) ≠ 0))
+
 /-- **In finite dimension, `0` is regular exactly in an abelian Lie algebra.** In a
 finite-dimensional Lie algebra the centralizer of `0` is everything, so `0` is regular exactly
 when every centralizer is everything. -/
@@ -228,6 +247,28 @@ theorem vanishingIdeal_setOfPred_isCentralizerRegular_eq_bot [Infinite K] :
   exact (ad K L).toLinearMap.vanishingIdeal_setOfPred_le_finrank_range_eq_bot b le_rfl
 
 end Module.Basis
+
+namespace LieAlgebra
+
+variable (K : Type*) (L : Type*) [Field K] [Infinite K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L]
+
+/-- **Some element is regular in both senses.** Over an infinite field, some element of `L` is
+both `LieAlgebra.IsRegular` and `LieAlgebra.IsCentralizerRegular`. -/
+theorem exists_isRegular_and_isCentralizerRegular :
+    ∃ x : L, IsRegular K x ∧ IsCentralizerRegular K x := by
+  classical
+  let b := Module.finBasis K L
+  have hq := polyCharpoly_coeff_rank_ne_zero K L b
+  by_contra! h
+  refine hq (Ideal.mem_bot.mp ?_)
+  rw [← b.vanishingIdeal_setOfPred_isCentralizerRegular_eq_bot, mem_vanishingIdeal_iff]
+  rintro _ ⟨x, hx, rfl⟩
+  have hreg := mt (h x) (not_not.mpr hx)
+  rw [isRegular_iff_coeff_polyCharpoly_rank_ne_zero (b := b), not_not] at hreg
+  simpa [Module.Basis.equivFun_apply] using hreg
+
+end LieAlgebra
 
 /-! ### Invariance under Lie algebra isomorphisms -/
 

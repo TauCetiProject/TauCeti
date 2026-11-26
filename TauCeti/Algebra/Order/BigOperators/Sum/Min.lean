@@ -6,26 +6,43 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
+public import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.Algebra.Order.Group.Abs
 public import Mathlib.Algebra.Order.Sub.Basic
 public import Mathlib.Data.Finset.Lattice.Fold
 public import Mathlib.Data.Nat.Find
+import Mathlib.Logic.Equiv.Fintype
+import Mathlib.Tactic.Linarith
 
 /-!
-# Finite sums of truncations
+# Finite sums of pointwise minima and truncations
 
 In a canonically ordered additive monoid with ordered subtraction, a finite family `f` splits
 against a second family `g` into the part `min (f x) (g x)` matched by `g` and the excess
-`f x - g x` above `g`, so the sums of these two parts add up to the sum of `f`.
+`f x - g x` above `g`, so the sums of these two parts add up to the sum of `f`. In a linearly
+ordered additive commutative group, subtracting twice the matched sum `∑ x ∈ s, min (f x) (g x)`
+from `∑ x ∈ s, f x + ∑ x ∈ s, g x` gives the `L¹` distance `∑ x ∈ s, |f x - g x|`; in particular,
+when `f` and `g` have the same sum `S` over a linearly ordered field, `S - ∑ x ∈ s, min (f x) (g x)`
+equals `(∑ x ∈ s, |f x - g x|) / 2`.
 
 For a finite family `c` of natural numbers, the truncated sums `∑ l, min k (c l)` count the boxes
 in the first `k` columns of the Young diagram with rows `c l`. Their second differences count
 the members of the family in a range: for `p < q`, the combination of the truncated sums at
-`p + 1`, `q - 1`, `p` and `q` is the number of members strictly between `p` and `q`.
+`p + 1`, `q - 1`, `p` and `q` is the number of members strictly between `p` and `q`. In
+particular the truncated sums determine a finite family of positive natural numbers up to
+reindexing; this is the counting step in the uniqueness of elementary divisors.
 
 ## Main results
 
 * `Finset.sum_min_add_sum_tsub`: the matched part and the excess add up to the total.
+* `Finset.sum_add_sum_sub_two_nsmul_sum_min`: the sum of two families minus twice the sum of their
+  pointwise minima equals their `L¹` distance.
+* `Finset.sub_sum_min_eq_sum_abs_div_two`: for two families with common sum `S`, `S` minus the sum
+  of their pointwise minima is half their `L¹` distance.
+* `Finset.sum_min_add_one`: the first-difference identity for truncated sums.
 * `Finset.sum_min_add_sum_min_eq`: the second-difference identity for truncated sums.
+* `Fintype.exists_equiv_of_forall_sum_min_eq`: two finite families of positive natural numbers
+  with the same truncated sums agree up to a bijection of their index types.
 * `Finset.exists_ne_forall_sum_min_lt`: if the sum of a family `a` is at most that of a family
   `b` and, for some `k`, the column count of `b` is strictly smaller than that of `a`, then two
   distinct members `a j ≤ a i` of `a` keep the inequality strict for all `a j ≤ k ≤ a i`.
@@ -44,6 +61,13 @@ theorem sum_min_add_sum_tsub {M : Type*} [AddCommMonoid M] [LinearOrder M]
     [CanonicallyOrderedAdd M] [Sub M] [OrderedSub M] (s : Finset ι) (f g : ι → M) :
     ∑ x ∈ s, min (f x) (g x) + ∑ x ∈ s, (f x - g x) = ∑ x ∈ s, f x := by
   simp_rw [← sum_add_distrib, add_comm (min _ _), tsub_add_min]
+
+/-- Raising the truncation level of `∑ l, min k (c l)` by one adds the number of members of the
+family `c` exceeding `k`, the length of the `k`-th column of its Young diagram. -/
+theorem sum_min_add_one (u : Finset α) (c : α → ℕ) (k : ℕ) :
+    ∑ l ∈ u, min (k + 1) (c l) = ∑ l ∈ u, min k (c l) + #{l ∈ u | k < c l} := by
+  rw [card_filter, ← sum_add_distrib]
+  exact sum_congr rfl fun l _ => by split_ifs <;> omega
 
 /-- For `p < q`, the second differences of the truncated sums `∑ l, min k (c l)` at `p` and `q`
 count the members of the family `c` strictly between `p` and `q`. -/
@@ -112,4 +136,57 @@ theorem exists_ne_forall_sum_min_lt {s : Finset ι} {t : Finset κ} {a : ι → 
   · exact ⟨x, hx.1, y, hy.1, hxy, hyx, hint x y hx.2 hy.2⟩
   · exact ⟨y, hy.1, x, hx.1, hxy.symm, hxy', hint y x hy.2 hx.2⟩
 
+/-- In a linearly ordered additive commutative group, the sum of `f` and `g` minus twice the sum of
+their pointwise minima equals the `L¹` distance `∑ x ∈ s, |f x - g x|`. -/
+theorem sum_add_sum_sub_two_nsmul_sum_min {G : Type*} [AddCommGroup G] [LinearOrder G]
+    [IsOrderedAddMonoid G] (s : Finset ι) (f g : ι → G) :
+    ∑ x ∈ s, f x + ∑ x ∈ s, g x - 2 • ∑ x ∈ s, min (f x) (g x) = ∑ x ∈ s, |f x - g x| := by
+  rw [two_nsmul, ← sum_add_distrib, ← sum_add_distrib, ← sum_sub_distrib]
+  refine sum_congr rfl fun x _ ↦ ?_
+  rw [← min_add_max (f x) (g x), add_sub_add_left_eq_sub, max_sub_min_eq_abs']
+
+/-- For two functions on `s` with the same sum `S` in a linearly ordered field,
+`S - ∑ x ∈ s, min (f x) (g x)` is half the `L¹` distance `∑ x ∈ s, |f x - g x|`. -/
+theorem sub_sum_min_eq_sum_abs_div_two {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
+    [IsStrictOrderedRing 𝕜] {s : Finset ι} {f g : ι → 𝕜} {S : 𝕜}
+    (hf : ∑ x ∈ s, f x = S) (hg : ∑ x ∈ s, g x = S) :
+    S - ∑ x ∈ s, min (f x) (g x) = (∑ x ∈ s, |f x - g x|) / 2 := by
+  have h := sum_add_sum_sub_two_nsmul_sum_min s f g
+  rw [hf, hg, two_nsmul] at h
+  linarith
+
 end Finset
+
+namespace Fintype
+
+variable {ι κ : Type*} [Fintype ι] [Fintype κ]
+
+/-- **Truncated sums determine a family of positive naturals up to reindexing.** If two finite
+families `e` and `e'` of positive natural numbers have the same truncated sums
+`∑ min k (e i) = ∑ min k (e' j)` for every `k`, then they agree after a bijection of their index
+types. Positivity is needed: members equal to `0` contribute nothing to any truncated sum. -/
+theorem exists_equiv_of_forall_sum_min_eq {e : ι → ℕ} {e' : κ → ℕ} (he : ∀ i, 0 < e i)
+    (he' : ∀ j, 0 < e' j) (h : ∀ k, ∑ i, min k (e i) = ∑ j, min k (e' j)) :
+    ∃ σ : ι ≃ κ, ∀ i, e i = e' (σ i) := by
+  classical
+  have hcard (k : ℕ) : Fintype.card {i // e i = k} = Fintype.card {j // e' j = k} := by
+    cases k with
+    | zero =>
+      have : IsEmpty {i // e i = 0} := ⟨fun i ↦ (he i.val).ne' i.property⟩
+      have : IsEmpty {j // e' j = 0} := ⟨fun j ↦ (he' j.val).ne' j.property⟩
+      simp
+    | succ k =>
+      -- The multiplicity of `k + 1` is a second difference of `k ↦ ∑ i, min k (e i)`.
+      have hk (n : ℕ) : k < n ∧ n < k + 1 + 1 ↔ n = k + 1 := by omega
+      have h₁ := Finset.sum_min_add_sum_min_eq Finset.univ e (by omega : k < k + 1 + 1)
+      have h₂ := Finset.sum_min_add_sum_min_eq Finset.univ e' (by omega : k < k + 1 + 1)
+      simp only [hk, Nat.add_sub_cancel] at h₁ h₂
+      rw [Fintype.card_subtype, Fintype.card_subtype]
+      have := h k
+      have := h (k + 1)
+      have := h (k + 1 + 1)
+      omega
+  exact ⟨.ofFiberEquiv fun k ↦ Fintype.equivOfCardEq (hcard k),
+    fun i ↦ (Equiv.ofFiberEquiv_map _ i).symm⟩
+
+end Fintype

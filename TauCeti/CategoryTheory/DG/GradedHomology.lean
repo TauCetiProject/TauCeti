@@ -57,7 +57,7 @@ def dgHomologyClass {n : ℤ} {X Y : C} (f : DGHom R n X Y) (hf : dgDifferential
 /-- `TauCeti.dgHomologyClassLinearMap` evaluates a cocycle subtype to `TauCeti.dgHomologyClass`. -/
 @[simp] theorem dgHomologyClassLinearMap_apply (n : ℤ) (X Y : C)
     (f : LinearMap.ker (dgDifferential R (X := X) (Y := Y) n)) :
-    dgHomologyClassLinearMap R n X Y f = dgHomologyClass R f.1 f.2 := (rfl)
+    dgHomologyClassLinearMap R n X Y f = dgHomologyClass R f.val f.property := (rfl)
 
 /-- Equal closed degree-`n` morphisms represent the same cohomology class, regardless of the
 closedness proofs. -/
@@ -106,8 +106,8 @@ theorem exists_dgHomologyClass_eq {n : ℤ} {X Y : C} (c : (dgHomComplex R X Y).
       (dgGradedHomologyIso R n X Y).toLinearEquiv c := by
     induction (dgGradedHomologyIso R n X Y).toLinearEquiv c using Submodule.Quotient.induction_on
     with | H f => exact ⟨f, rfl⟩
-  have hf0 : dgDifferential R n f.1 = 0 := f.2
-  refine ⟨f.1, hf0, (dgGradedHomologyIso R n X Y).toLinearEquiv.injective ?_⟩
+  have hf0 : dgDifferential R n f.val = 0 := f.property
+  refine ⟨f.val, hf0, (dgGradedHomologyIso R n X Y).toLinearEquiv.injective ?_⟩
   rw [dgHomologyClass_toLinearEquiv, hf]
 
 /-- Two closed degree-`n` morphisms represent the same cohomology class iff their difference is a
@@ -139,7 +139,9 @@ theorem dgHomologyClass_eq_zero_iff {n : ℤ} {X Y : C} {f : DGHom R n X Y}
   exact ⟨castDeg R (by omega : m = m + 1 - 1) h, by
     simpa only [castDeg_self] using d_castDeg R (by omega : m = m + 1 - 1) rfl h⟩
 
-private theorem exists_iCycles_and_dgHomologyClass {n : ℤ} {X Y : C} (f : DGHom R n X Y)
+/-- Every closed degree-`n` morphism lifts to a cycle in `(dgHomComplex R X Y).cycles n` whose
+image under `HomologicalComplex.homologyπ` is `TauCeti.dgHomologyClass`. -/
+theorem exists_iCycles_and_dgHomologyClass {n : ℤ} {X Y : C} (f : DGHom R n X Y)
     (hf : dgDifferential R n f = 0) :
     ∃ x : (dgHomComplex R X Y).cycles n, ((dgHomComplex R X Y).iCycles n).hom x = f ∧
       dgHomologyClass R f hf = ((dgHomComplex R X Y).homologyπ n).hom x := by
@@ -162,7 +164,7 @@ theorem dgHomologyClass_eq_homologyπ {n : ℤ} {X Y : C} {f : DGHom R n X Y}
     (hx : ((dgHomComplex R X Y).iCycles n).hom x = f) :
     dgHomologyClass R f hf = ((dgHomComplex R X Y).homologyπ n).hom x := by
   obtain ⟨y, hy, hclass⟩ := exists_iCycles_and_dgHomologyClass R f hf
-  rw [hclass, (ModuleCat.mono_iff_injective ((dgHomComplex R X Y).iCycles n)).1 inferInstance
+  rw [hclass, (ModuleCat.mono_iff_injective ((dgHomComplex R X Y).iCycles n)).mp inferInstance
     (hy.trans hx.symm)]
 
 /-- Every cycle `x` of `dgHomComplex R X Y` has `dgDifferential` zero on `iCycles x`. -/
@@ -222,35 +224,38 @@ private def dgConcreteGradedComp (X Y Z : C) {p q n : ℤ} (h : p + q = n) :
   let SXZ := (dgHomComplex R X Z).sc' (n - 1) n (n + 1)
   (LinearMap.mk₂ R
     (fun f g ↦ Submodule.Quotient.mk (p := LinearMap.range SXZ.moduleCatToCycles)
-      ⟨dgComp R f.1 g.1 h, LinearMap.mem_ker.2 (dgDifferential_dgComp_eq_zero R
-        (LinearMap.mem_ker.1 f.2) (LinearMap.mem_ker.1 g.2) h)⟩)
+      ⟨dgComp R f.val g.val h, LinearMap.mem_ker.mpr (dgDifferential_dgComp_eq_zero R
+        (LinearMap.mem_ker.mp f.property) (LinearMap.mem_ker.mp g.property) h)⟩)
     (fun f f' g ↦ by
       rw [← Submodule.Quotient.mk_add]
-      exact congrArg _ (Subtype.ext (add_dgComp R f.1 f'.1 g.1 h)))
+      exact congrArg _ (Subtype.ext (add_dgComp R f.val f'.val g.val h)))
     (fun r f g ↦ by
       rw [← Submodule.Quotient.mk_smul]
-      exact congrArg _ (Subtype.ext (smul_dgComp R r f.1 g.1 h)))
+      exact congrArg _ (Subtype.ext (smul_dgComp R r f.val g.val h)))
     (fun f g g' ↦ by
       rw [← Submodule.Quotient.mk_add]
-      exact congrArg _ (Subtype.ext (dgComp_add R f.1 g.1 g'.1 h)))
+      exact congrArg _ (Subtype.ext (dgComp_add R f.val g.val g'.val h)))
     (fun r f g ↦ by
       rw [← Submodule.Quotient.mk_smul]
-      exact congrArg _ (Subtype.ext (dgComp_smul R r f.1 g.1 h)))).liftQ₂
+      exact congrArg _ (Subtype.ext (dgComp_smul R r f.val g.val h)))).liftQ₂
     (LinearMap.range SXY.moduleCatToCycles) (LinearMap.range SYZ.moduleCatToCycles)
     (by
-      rintro _ ⟨f₀, rfl⟩; ext g; have hg0 : dgDifferential R q g.1 = 0 := LinearMap.mem_ker.1 g.2
-      refine (Submodule.Quotient.mk_eq_zero _).mpr ⟨dgComp R f₀ g.1 (by omega), Subtype.ext ?_⟩
+      rintro _ ⟨f₀, rfl⟩; ext g
+      have hg0 : dgDifferential R q g.val = 0 := LinearMap.mem_ker.mp g.property
+      refine (Submodule.Quotient.mk_eq_zero _).mpr ⟨dgComp R f₀ g.val (by omega), Subtype.ext ?_⟩
       simp only [LinearMap.codRestrict_apply, SXZ, SXY, shortComplexFunctor'_obj_f]
       rw [dgHomComplex_d_dgComp R (by omega : p - 1 + 1 = p) rfl (by omega : n - 1 + 1 = n)
-        f₀ g.1 (by omega), hg0, dgComp_zero, smul_zero, add_zero])
+        f₀ g.val (by omega), hg0, dgComp_zero, smul_zero, add_zero])
     (by
-      rintro _ ⟨g₀, rfl⟩; ext f; have hf0 : dgDifferential R p f.1 = 0 := LinearMap.mem_ker.1 f.2
+      rintro _ ⟨g₀, rfl⟩; ext f
+      have hf0 : dgDifferential R p f.val = 0 := LinearMap.mem_ker.mp f.property
       refine (Submodule.Quotient.mk_eq_zero _).mpr
-        ⟨p.negOnePow • dgComp R f.1 g₀ (by omega), Subtype.ext ?_⟩
+        ⟨p.negOnePow • dgComp R f.val g₀ (by omega), Subtype.ext ?_⟩
       simp only [LinearMap.codRestrict_apply, SXZ, SYZ, shortComplexFunctor'_obj_f]
       rw [Units.smul_def, map_zsmul, ← Units.smul_def,
         dgHomComplex_d_dgComp R rfl (by omega : q - 1 + 1 = q) (by omega : n - 1 + 1 = n)
-          f.1 g₀ (by omega), hf0, zero_dgComp, zero_add, smul_smul, Int.units_mul_self, one_smul])
+          f.val g₀ (by omega), hf0, zero_dgComp, zero_add, smul_smul, Int.units_mul_self,
+          one_smul])
 
 /-- Bilinear graded composition on canonical cohomology of DG Hom complexes, in Mathlib's enriched
 factor order (`dgHomologyComp R X Y Z h [f] [g] = [dgComp R f g h]`). -/

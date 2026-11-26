@@ -10,7 +10,7 @@ public import TauCeti.Topology.Covering.Category
 public import TauCeti.Topology.Covering.Quotient
 import TauCeti.Topology.Covering.Clopen
 import TauCeti.Topology.Homotopy.Monodromy.Functoriality
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 import TauCeti.Topology.SeparatedMap
 
 /-!
@@ -71,7 +71,7 @@ theorem isCoveringMap_subgroupQuotientProj [LocallyPathConnectedSpace X]
     toIsQuotientMap :=
       ({ surjective := fun x => by
             have hx : (x : X) ∈ Set.range (proj : UniversalCover x₀ → X) := by
-              simpa only [range_proj] using x.2
+              simpa only [range_proj] using x.property
             obtain ⟨e, he⟩ := hx
             exact ⟨e, Subtype.ext (by simpa only [p] using he)⟩
          continuous := (continuous_proj x₀).codRestrict _

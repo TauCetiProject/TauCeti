@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.HigherCohomology
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
+import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.TwistingSheaf
 
 /-!
 # The top cohomology of `𝒪(m)` on projective space as a dual module
@@ -18,7 +19,9 @@ the free `R`-module on the Laurent monomials `xᵉ` of degree `m` all of whose e
 `m ≤ -n - 1`. Shifting every exponent by one and negating identifies them with the ordinary
 monomials of degree `j = -m - n - 1 ≥ 0`, which index the monomial basis of the forms `Symʲ M` of
 that degree. Hence for `n ≥ 1` and `m ≤ -n - 1` the module `Hⁿ(ℙⁿ_R, 𝒪(m))` is isomorphic to the
-dual of `Symʲ M` (Stacks, Lemma 30.8.1 (01XT)).
+dual of `Symʲ M` (Stacks, Lemma 30.8.1 (01XT)). In particular, over a nonzero ring the top
+cohomology `Hⁿ(ℙⁿ_R, 𝒪(m))` is nonzero for `m ≤ -n - 1`; for `n = 0` this is the computation of the
+global sections of `𝒪(m)` on `ℙ⁰_R`.
 
 ## Main declarations
 
@@ -28,6 +31,10 @@ dual of `Symʲ M` (Stacks, Lemma 30.8.1 (01XT)).
 * `Module.Basis.nonempty_linearEquiv_cohomology_top_twistingSheaf_dual`: for `n ≥ 1` and `j : ℕ`
   with `j = -m - n - 1`, the module `Hⁿ(ℙⁿ_R, 𝒪(m))` is isomorphic to `(Symʲ M)^∨`; no
   isomorphism is singled out.
+* `Module.Basis.nonempty_linearEquiv_cohomology_top_twistingSheaf_neg_card`: for `n ≥ 1`,
+  `Hⁿ(ℙⁿ_R, 𝒪(-n-1)) ≅ R`.
+* `Module.Basis.nontrivial_cohomology_top_twistingSheaf_of_le_neg_card`: for `n ≥ 0`, `R ≠ 0`
+  and `m ≤ -n - 1`, `Hⁿ(ℙⁿ_R, 𝒪(m)) ≠ 0`.
 
 ## References
 
@@ -45,26 +52,26 @@ namespace TauCeti.SymmetricAlgebra
 noncomputable def negativeExponentsEquivFinsuppDegree (κ : Type*) [Fintype κ] {m : ℤ} {j : ℕ}
     (hj : (j : ℤ) = -m - Fintype.card κ) :
     negativeExponents κ m ≃ {d : κ →₀ ℕ // d.degree = j} where
-  toFun e := ⟨Finsupp.equivFunOnFinite.symm fun i ↦ (-e.1 i - 1).toNat, by
-    obtain ⟨hsum, hneg⟩ := mem_negativeExponents.1 e.2
-    have he : ∀ i, ((-e.1 i - 1).toNat : ℤ) = -e.1 i - 1 := fun i ↦
+  toFun e := ⟨Finsupp.equivFunOnFinite.symm fun i ↦ (-e.val i - 1).toNat, by
+    obtain ⟨hsum, hneg⟩ := mem_negativeExponents.1 e.property
+    have he : ∀ i, ((-e.val i - 1).toNat : ℤ) = -e.val i - 1 := fun i ↦
       Int.toNat_of_nonneg (by have := hneg i; omega)
-    have hdeg : ((∑ i, (-e.1 i - 1).toNat : ℕ) : ℤ) = j := by
+    have hdeg : ((∑ i, (-e.val i - 1).toNat : ℕ) : ℤ) = j := by
       push_cast
       simp only [he, Finset.sum_sub_distrib, Finset.sum_neg_distrib, hsum, Finset.sum_const,
         Finset.card_univ, nsmul_eq_mul, mul_one, hj]
     rw [Finsupp.degree_eq_sum, Finsupp.coe_equivFunOnFinite_symm]
     exact_mod_cast hdeg⟩
-  invFun d := ⟨fun i ↦ -(d.1 i : ℤ) - 1, by
+  invFun d := ⟨fun i ↦ -(d.val i : ℤ) - 1, by
     refine mem_negativeExponents.2 ⟨?_, fun i ↦ by omega⟩
-    have hd : ((∑ i, d.1 i : ℕ) : ℤ) = j := by rw [← Finsupp.degree_eq_sum, d.2]
+    have hd : ((∑ i, d.val i : ℕ) : ℤ) = j := by rw [← Finsupp.degree_eq_sum, d.property]
     push_cast at hd
     simp only [Finset.sum_sub_distrib, Finset.sum_neg_distrib, hd, Finset.sum_const,
       Finset.card_univ, nsmul_eq_mul, mul_one, hj]
     ring⟩
   left_inv e := by
     ext i
-    have := (mem_negativeExponents.1 e.2).2 i
+    have := (mem_negativeExponents.1 e.property).2 i
     simp only [Finsupp.coe_equivFunOnFinite_symm]
     omega
   right_inv d := by
@@ -75,8 +82,8 @@ noncomputable def negativeExponentsEquivFinsuppDegree (κ : Type*) [Fintype κ] 
 @[simp]
 theorem natCast_coe_negativeExponentsEquivFinsuppDegree_apply_apply {κ : Type*} [Fintype κ]
     {m : ℤ} {j : ℕ} (hj : (j : ℤ) = -m - Fintype.card κ) (e : negativeExponents κ m) (i : κ) :
-    ((negativeExponentsEquivFinsuppDegree κ hj e : κ →₀ ℕ) i : ℤ) = -e.1 i - 1 := by
-  have := (mem_negativeExponents.1 e.2).2 i
+    ((negativeExponentsEquivFinsuppDegree κ hj e : κ →₀ ℕ) i : ℤ) = -e.val i - 1 := by
+  have := (mem_negativeExponents.1 e.property).2 i
   simp only [negativeExponentsEquivFinsuppDegree, Equiv.coe_fn_mk,
     Finsupp.coe_equivFunOnFinite_symm]
   omega
@@ -85,7 +92,7 @@ theorem natCast_coe_negativeExponentsEquivFinsuppDegree_apply_apply {κ : Type*}
 @[simp]
 theorem coe_negativeExponentsEquivFinsuppDegree_symm_apply_apply {κ : Type*} [Fintype κ] {m : ℤ}
     {j : ℕ} (hj : (j : ℤ) = -m - Fintype.card κ) (d : {d : κ →₀ ℕ // d.degree = j}) (i : κ) :
-    ((negativeExponentsEquivFinsuppDegree κ hj).symm d : κ → ℤ) i = -(d.1 i : ℤ) - 1 := by
+    ((negativeExponentsEquivFinsuppDegree κ hj).symm d : κ → ℤ) i = -(d.val i : ℤ) - 1 := by
   simp only [negativeExponentsEquivFinsuppDegree, Equiv.coe_fn_symm_mk]
 
 end TauCeti.SymmetricAlgebra
@@ -116,5 +123,43 @@ theorem nonempty_linearEquiv_cohomology_top_twistingSheaf_dual {κ : Type*} [Fin
   exact ⟨φ.trans ((Finsupp.domLCongr ((negativeExponentsEquivFinsuppDegree κ hj).trans
     (Sym.equivFinsuppDegree κ j).symm)).trans
       (b.symmetricAlgebraHomogeneous j).dualBasis.repr.symm)⟩
+
+/-- **The top cohomology of `𝒪(-(n + 2))` on projective space of dimension `n + 1` is free of
+rank one.** For a free `R`-module `M` with a basis indexed by `κ` of cardinality `n + 2`, so that
+`Proj (Sym M)` is projective space of dimension `n + 1` over `R`,
+`H^{n+1}(Proj (Sym M), 𝒪(-(n + 2)))` is isomorphic to `R`, over any commutative ring `R`: it is
+the dual of the forms of degree zero. No isomorphism is singled out. -/
+theorem nonempty_linearEquiv_cohomology_top_twistingSheaf_neg_card {κ : Type*} [Fintype κ]
+    (b : Module.Basis κ R M) {n : ℕ} (hn : Fintype.card κ = n + 2) :
+    Nonempty (Cohomology (Proj.twistingSheaf 𝒜 (-((n + 2 : ℕ) : ℤ))) (n + 1) ≃ₗ[R] R) := by
+  obtain ⟨φ⟩ := b.nonempty_linearEquiv_cohomology_top_twistingSheaf_dual
+    (-((n + 2 : ℕ) : ℤ)) (j := 0) hn (by rw [hn]; ring)
+  exact ⟨φ.trans ((TauCeti.SymmetricAlgebra.homogeneousSubmoduleZeroEquiv R M).dualMap.symm.trans
+    (LinearMap.ringLmapEquivSelf R R R))⟩
+
+/-- **The top cohomology of `𝒪(m)` on projective space of dimension `n` is nonzero for
+`m ≤ -(n + 1)`.** For a nonzero ring `R` and a free `R`-module `M` with a basis indexed by `κ` of
+cardinality `n + 1`, so that `Proj (Sym M)` is projective space of dimension `n` over `R`,
+`Hⁿ(Proj (Sym M), 𝒪(m))` is nontrivial when `m ≤ -(n + 1)`. For `n ≥ 1` it is the dual of the
+free module of forms of degree `-m - (n + 1)`, which has a monomial basis; for `n = 0` every
+twisting sheaf on `ℙ⁰_R` has a nonzero global section. -/
+theorem nontrivial_cohomology_top_twistingSheaf_of_le_neg_card [Nontrivial R] {κ : Type*}
+    [Fintype κ] (b : Module.Basis κ R M) {n : ℕ} (hn : Fintype.card κ = n + 1) {m : ℤ}
+    (hm : m ≤ -((n + 1 : ℕ) : ℤ)) :
+    Nontrivial (Cohomology (Proj.twistingSheaf 𝒜 m) n) := by
+  classical
+  cases n with
+  | zero =>
+    obtain ⟨_⟩ := Fintype.card_eq_one_iff_nonempty_unique.mp hn
+    exact TauCeti.SymmetricAlgebra.nontrivial_cohomology_zero_twistingSheaf_of_unique b m
+  | succ n =>
+    obtain ⟨j, hj⟩ : ∃ j : ℕ, (j : ℤ) = -m - Fintype.card κ :=
+      ⟨(-m - Fintype.card κ).toNat, Int.toNat_of_nonneg (by rw [hn]; omega)⟩
+    obtain ⟨φ⟩ := b.nonempty_linearEquiv_cohomology_top_twistingSheaf_dual m hn hj
+    obtain ⟨k⟩ : Nonempty κ := Fintype.card_pos_iff.mp (by omega)
+    let c := (b.symmetricAlgebraHomogeneous j).dualBasis
+    have : Nontrivial (Module.Dual R (𝒜 j)) :=
+      nontrivial_of_ne (c (Sym.replicate j k)) 0 (c.ne_zero _)
+    exact φ.toEquiv.nontrivial
 
 end Module.Basis

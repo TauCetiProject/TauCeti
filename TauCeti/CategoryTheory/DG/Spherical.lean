@@ -79,13 +79,6 @@ theorem not_hasFiniteTotalGradedHom_of_infinite {X Y : C}
     (h : {d : ℤ | Nontrivial ((dgHomComplex R X Y).homology d)}.Infinite) :
     ¬ HasFiniteTotalGradedHom R X Y := fun hfin ↦ h hfin.bdd_support
 
-/-- Nontrivial cohomology in all even degrees `2 * i` precludes `HasFiniteTotalGradedHom`. -/
-theorem not_hasFiniteTotalGradedHom_of_nontrivial_two_mul {X Y : C}
-    (h : ∀ i : ℕ, Nontrivial ((dgHomComplex R X Y).homology (2 * (i : ℤ)))) :
-    ¬ HasFiniteTotalGradedHom R X Y :=
-  not_hasFiniteTotalGradedHom_of_infinite R <|
-    Set.infinite_of_injective_forall_mem (fun _ _ (hab : 2 * (_ : ℤ) = 2 * _) ↦ by omega) h
-
 /-- The total graded `Hom` rank `∑ᶠ d : ℤ, Module.finrank R Hom^d(X, Y)`. -/
 def dgTotalHomFinrank (X Y : C) : ℕ := ∑ᶠ d : ℤ, Module.finrank R ((dgHomComplex R X Y).homology d)
 
@@ -138,11 +131,11 @@ structure IsSphericalObject (n : ℤ) (E : C) : Prop where
 theorem not_isSphericalObject_of_nonpos {n : ℤ} (hn : n ≤ 0) (E : C) :
     ¬ IsSphericalObject k n E := fun hE ↦ (not_lt_of_ge hn) hE.pos
 
-/-- An object violating finite total self-`Hom` in even degrees `2 * i` cannot be `n`-spherical. -/
-theorem not_isSphericalObject_of_nontrivial_two_mul (n : ℤ) {E : C}
-    (h : ∀ i : ℕ, Nontrivial ((dgHomComplex k E E).homology (2 * (i : ℤ)))) :
+/-- An object with infinitely many nontrivial self-cohomology degrees cannot be `n`-spherical. -/
+theorem not_isSphericalObject_of_infinite (n : ℤ) {E : C}
+    (h : {d : ℤ | Nontrivial ((dgHomComplex k E E).homology d)}.Infinite) :
     ¬ IsSphericalObject k n E :=
-  fun hE ↦ not_hasFiniteTotalGradedHom_of_nontrivial_two_mul k h (hE.hasFiniteTotalGradedHom_from E)
+  fun hE ↦ not_hasFiniteTotalGradedHom_of_infinite k h (hE.hasFiniteTotalGradedHom_from E)
 
 namespace IsSphericalObject
 
@@ -211,7 +204,7 @@ theorem isPerfPair_of_trace_ne_zero (hE : IsSphericalObject k n E)
 private theorem subsingleton_not_mem_pair (hE : IsSphericalObject k n E) {d : ℤ}
     (hd : d ∉ ({0, n} : Finset ℤ)) : Subsingleton ((dgHomComplex k E E).homology d) := by
   simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hd
-  exact hE.subsingleton_homology_of_ne hd.1 hd.2
+  exact hE.subsingleton_homology_of_ne hd.left hd.right
 
 /-- An `n`-spherical object has total graded endomorphism dimension `2`. -/
 theorem dgTotalHomFinrank_self (hE : IsSphericalObject k n E) : dgTotalHomFinrank k E E = 2 := by

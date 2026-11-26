@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import TauCeti.Analysis.PDE.HeatKernel.Basic
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Gaussian bounds for the heat kernel and its derivatives
@@ -42,6 +43,7 @@ The derivative bound comes from Mathlib's Faà di Bruno estimate
 * `TauCeti.exists_one_add_norm_pow_mul_norm_iteratedFDeriv_heatKernel_le` and
   `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le`: Gaussian bounds on all derivatives, with and
   without polynomial weights.
+* `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le_const`: every derivative is bounded.
 * `TauCeti.exists_integrable_norm_iteratedFDeriv_heatKernel_add_le`: integrable domination of the
   derivatives on translates of any bounded radius.
 * `TauCeti.integrable_iteratedFDeriv_heatKernel`: every derivative is integrable.
@@ -58,14 +60,12 @@ open scoped Nat
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- The normalizing constant of the heat kernel at time `t` is `2^(n/2)` times the one at time
-`2t`. -/
-private theorem rpow_heatKernel_const_eq {t : ℝ} (ht : 0 < t) :
-    (4 * π * t) ^ (-(finrank ℝ E : ℝ) / 2) =
-      2 ^ ((finrank ℝ E : ℝ) / 2) * (4 * π * (2 * t)) ^ (-(finrank ℝ E : ℝ) / 2) := by
-  rw [show 4 * π * (2 * t) = 2 * (4 * π * t) by ring,
-    mul_rpow (x := 2) (y := 4 * π * t) (by norm_num) (by positivity), ← mul_assoc,
-    ← rpow_add (by norm_num)]
+/-- The normalizing constant of the heat kernel in dimension `n` at time `t` is `2^(n/2)` times the
+one at time `2t`, for every real `t`. -/
+private theorem rpow_heatKernel_const_eq (n : ℕ) (t : ℝ) :
+    (4 * π * t) ^ (-(n : ℝ) / 2) = 2 ^ ((n : ℝ) / 2) * (4 * π * (2 * t)) ^ (-(n : ℝ) / 2) := by
+  rw [show 4 * π * (2 * t) = 2 * (4 * π * t) by ring, mul_rpow_of_nonneg_left two_pos.le,
+    ← mul_assoc, ← rpow_add two_pos]
   simp [neg_div]
 
 /-- **Comparison of heat kernels.** For `0 < s ≤ s'`, `K_s ≤ (s' / s)^(n/2) K_{s'}`. -/
@@ -86,11 +86,12 @@ theorem heatKernel_le_mul_heatKernel {s s' : ℝ} (hs : 0 < s) (hss' : s ≤ s')
     (by positivity)
 
 /-- The heat kernel at time `t` is the heat kernel at time `2t` times a Gaussian factor:
-`K_t(x) = 2^(n/2) exp(-‖x‖² / (8t)) K_{2t}(x)`. -/
-theorem heatKernel_eq_mul_heatKernel_two_mul {t : ℝ} (ht : 0 < t) (x : E) :
+`K_t(x) = 2^(n/2) exp(-‖x‖² / (8t)) K_{2t}(x)`. This holds for every real `t`; for `t ≤ 0` both
+sides are junk values, by Mathlib's conventions for real powers and division by zero. -/
+theorem heatKernel_eq_mul_heatKernel_two_mul {t : ℝ} (x : E) :
     heatKernel t x =
       2 ^ ((finrank ℝ E : ℝ) / 2) * exp (-‖x‖ ^ 2 / (8 * t)) * heatKernel (2 * t) x := by
-  rw [heatKernel_apply, heatKernel_apply, rpow_heatKernel_const_eq ht,
+  rw [heatKernel_apply, heatKernel_apply, rpow_heatKernel_const_eq (finrank ℝ E) t,
     show -‖x‖ ^ 2 / (4 * t) = -‖x‖ ^ 2 / (8 * t) + -‖x‖ ^ 2 / (4 * (2 * t)) by field_simp; ring,
     exp_add]
   ring
@@ -109,7 +110,7 @@ theorem heatKernel_add_le {t : ℝ} (ht : 0 < t) (z h : E) :
       field_simp
       ring
     exact sub_nonneg.1 (this ▸ div_nonneg (by linarith) (by positivity))
-  rw [heatKernel_apply, heatKernel_apply, rpow_heatKernel_const_eq ht]
+  rw [heatKernel_apply, heatKernel_apply, rpow_heatKernel_const_eq (finrank ℝ E) t]
   calc (2 : ℝ) ^ ((finrank ℝ E : ℝ) / 2) * (4 * π * (2 * t)) ^ (-(finrank ℝ E : ℝ) / 2) *
         exp (-‖z + h‖ ^ 2 / (4 * t))
       ≤ 2 ^ ((finrank ℝ E : ℝ) / 2) * (4 * π * (2 * t)) ^ (-(finrank ℝ E : ℝ) / 2) *
@@ -134,7 +135,7 @@ theorem exists_one_add_norm_pow_mul_heatKernel_le {t : ℝ} (ht : 0 < t) (m : �
       ring
     exact sub_nonneg.1 (this ▸ div_nonneg (sq_nonneg _) (by positivity))
   have hK := (heatKernel_pos (E := E) (by positivity : 0 < 2 * t) x).le
-  rw [heatKernel_eq_mul_heatKernel_two_mul ht]
+  rw [heatKernel_eq_mul_heatKernel_two_mul (t := t)]
   calc (1 + r) ^ m * (2 ^ ((finrank ℝ E : ℝ) / 2) * exp (-r ^ 2 / (8 * t)) * heatKernel (2 * t) x)
       = 2 ^ ((finrank ℝ E : ℝ) / 2) * ((1 + r) ^ m * exp (-r ^ 2 / (8 * t))) *
           heatKernel (2 * t) x := by ring
@@ -164,8 +165,8 @@ theorem exists_norm_rpow_mul_heatKernel_le {α : ℝ} (hα : 0 ≤ α) :
     calc ‖y‖ ^ α ≤ (1 + ‖y‖) ^ α := rpow_le_rpow hy (by linarith) hα
       _ ≤ (1 + ‖y‖) ^ (⌈α⌉₊ : ℝ) := rpow_le_rpow_of_exponent_le (by linarith) (Nat.le_ceil α)
       _ = (1 + ‖y‖) ^ ⌈α⌉₊ := rpow_natCast _ _
-  rw [heatKernel_eq_mul_heatKernel_one_smul ht, mul_comm 2 t,
-    heatKernel_mul_eq_mul_heatKernel_smul ht two_pos, hxα]
+  rw [heatKernel_eq_mul_heatKernel_one_smul ht.le, mul_comm 2 t,
+    heatKernel_mul_eq_mul_heatKernel_smul ht.le, hxα]
   calc t ^ (α / 2) * ‖y‖ ^ α * ((√t)⁻¹ ^ finrank ℝ E * heatKernel 1 y)
       = t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * (‖y‖ ^ α * heatKernel 1 y) := by ring
     _ ≤ t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * ((1 + ‖y‖) ^ ⌈α⌉₊ * heatKernel 1 y) := by
@@ -221,6 +222,14 @@ positive constant `C` with `‖D^k K_t(x)‖ ≤ C K_{2t}(x)` for all `x`. -/
 theorem exists_norm_iteratedFDeriv_heatKernel_le {t : ℝ} (ht : 0 < t) (k : ℕ) :
     ∃ C > 0, ∀ x : E, ‖iteratedFDeriv ℝ k (heatKernel t) x‖ ≤ C * heatKernel (2 * t) x := by
   simpa using exists_one_add_norm_pow_mul_norm_iteratedFDeriv_heatKernel_le (E := E) ht k 0
+
+/-- **Every derivative of the heat kernel is bounded.** For `t > 0` and every order `k` there is a
+constant `C` with `‖D^k K_t(x)‖ ≤ C` for all `x`. -/
+theorem exists_norm_iteratedFDeriv_heatKernel_le_const {t : ℝ} (ht : 0 < t) (k : ℕ) :
+    ∃ C, ∀ x : E, ‖iteratedFDeriv ℝ k (heatKernel t) x‖ ≤ C := by
+  obtain ⟨C, hC₀, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le (E := E) ht k
+  exact ⟨_, fun x ↦ (hC x).trans
+    (mul_le_mul_of_nonneg_left (heatKernel_le (by positivity) x) hC₀.le)⟩
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 

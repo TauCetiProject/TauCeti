@@ -295,24 +295,24 @@ theorem sym2_bridgeNeighbor {v : G.Vertex} (hv : G.valence v = 2)
     (hv' : H.valence (f.vertexEquiv v) = 2) :
     s(H.bridgeNeighbor hv' 0, H.bridgeNeighbor hv' 1) =
       s(f.vertexEquiv (G.bridgeNeighbor hv 0), f.vertexEquiv (G.bridgeNeighbor hv 1)) := by
-  obtain ⟨j₀, hj₀, hj₀'⟩ := f.exists_endpoint_edgeEquiv (G.halfEdgeOfValenceEqTwo hv 0).1.1
-    (G.halfEdgeOfValenceEqTwo hv 0).1.2
-  obtain ⟨j₁, hj₁, hj₁'⟩ := f.exists_endpoint_edgeEquiv (G.halfEdgeOfValenceEqTwo hv 1).1.1
-    (G.halfEdgeOfValenceEqTwo hv 1).1.2
-  rw [(G.halfEdgeOfValenceEqTwo hv 0).2] at hj₀
-  rw [(G.halfEdgeOfValenceEqTwo hv 1).2] at hj₁
+  obtain ⟨j₀, hj₀, hj₀'⟩ := f.exists_endpoint_edgeEquiv (G.halfEdgeOfValenceEqTwo hv 0).val.1
+    (G.halfEdgeOfValenceEqTwo hv 0).val.2
+  obtain ⟨j₁, hj₁, hj₁'⟩ := f.exists_endpoint_edgeEquiv (G.halfEdgeOfValenceEqTwo hv 1).val.1
+    (G.halfEdgeOfValenceEqTwo hv 1).val.2
+  rw [(G.halfEdgeOfValenceEqTwo hv 0).property] at hj₀
+  rw [(G.halfEdgeOfValenceEqTwo hv 1).property] at hj₁
   rw [← endpoint_halfEdgeOfValenceEqTwo_rev hv 0, ← endpoint_halfEdgeOfValenceEqTwo_rev hv 1]
-  by_cases he : (G.halfEdgeOfValenceEqTwo hv 0).1.1 = (G.halfEdgeOfValenceEqTwo hv 1).1.1
+  by_cases he : (G.halfEdgeOfValenceEqTwo hv 0).val.1 = (G.halfEdgeOfValenceEqTwo hv 1).val.1
   · -- A loop at `v`: its two branches are the two half-edges, and both neighbours are `v`.
-    have hi : (G.halfEdgeOfValenceEqTwo hv 1).1.2 = (G.halfEdgeOfValenceEqTwo hv 0).1.2.rev :=
+    have hi : (G.halfEdgeOfValenceEqTwo hv 1).val.2 = (G.halfEdgeOfValenceEqTwo hv 0).val.2.rev :=
       (Fin.fin_two_eq_or_eq_rev _ _).resolve_left fun h ↦
         halfEdgeOfValenceEqTwo_zero_ne_one hv (Prod.ext he h.symm)
-    have h₀ : G.endpoint (G.halfEdgeOfValenceEqTwo hv 0).1.1
-        (G.halfEdgeOfValenceEqTwo hv 0).1.2.rev = v := by
-      rw [he, ← hi, (G.halfEdgeOfValenceEqTwo hv 1).2]
-    have h₁ : G.endpoint (G.halfEdgeOfValenceEqTwo hv 1).1.1
-        (G.halfEdgeOfValenceEqTwo hv 1).1.2.rev = v := by
-      rw [← he, hi, Fin.rev_rev, (G.halfEdgeOfValenceEqTwo hv 0).2]
+    have h₀ : G.endpoint (G.halfEdgeOfValenceEqTwo hv 0).val.1
+        (G.halfEdgeOfValenceEqTwo hv 0).val.2.rev = v := by
+      rw [he, ← hi, (G.halfEdgeOfValenceEqTwo hv 1).property]
+    have h₁ : G.endpoint (G.halfEdgeOfValenceEqTwo hv 1).val.1
+        (G.halfEdgeOfValenceEqTwo hv 1).val.2.rev = v := by
+      rw [← he, hi, Fin.rev_rev, (G.halfEdgeOfValenceEqTwo hv 0).property]
     rw [H.sym2_bridgeNeighbor_eq hv' (h := (_, j₀)) (h' := (_, j₀.rev)) hj₀
       (hj₀'.trans (by rw [h₀])) (by simp [Fin.ext_iff, Fin.val_rev]; omega), hj₀', Fin.rev_rev,
       hj₀, h₀, h₁]
@@ -393,7 +393,7 @@ theorem contractBridge_edgeEquiv_none :
 @[simp]
 theorem contractBridge_edgeEquiv_some (e : {e // ∀ i, G.endpoint e i ≠ v}) :
     (f.contractBridge hv hloop hm hv' hloop' hm').edgeEquiv (some e) =
-      some ⟨f.edgeEquiv e, f.forall_endpoint_edgeEquiv_ne_iff.mpr e.2⟩ := by
+      some ⟨f.edgeEquiv e, f.forall_endpoint_edgeEquiv_ne_iff.mpr e.property⟩ := by
   rfl
 
 end contractBridge

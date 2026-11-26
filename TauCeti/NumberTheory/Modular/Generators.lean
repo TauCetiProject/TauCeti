@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Modular.Relations
 public import TauCeti.GroupTheory.TriangleGroup.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
+public import TauCeti.NumberTheory.Modular.Relations
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -81,6 +82,19 @@ theorem U_pow_three : U ^ 3 = 1 := by
 theorem S_mul_R_inv_mul_S_inv : S * R⁻¹ * S⁻¹ = -U := by
   decide
 
+/-- Coordinate reflection sends `R = S T` to `-U`. -/
+@[simp]
+theorem conjJ_R : SpecialLinearGroup.conjJ R = -U := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp
+
+/-- Conjugating `R⁻¹` by `S⁻¹` on the left and `S` on the right yields `conjJ R`. -/
+theorem S_inv_mul_R_inv_mul_S : S⁻¹ * (R⁻¹ * S) = SpecialLinearGroup.conjJ R := by
+  rw [conjJ_R]; decide
+
+/-- The square of `R` is the rotation `T⁻¹ S` fixing `ρ`, with no central sign. -/
+theorem R_sq : R ^ 2 = T⁻¹ * S := by
+  decide
+
 /-- Recovering the translation from `R`, with the inverse of `S`. -/
 theorem S_inv_mul_R : S⁻¹ * R = T := by
   simp [R]
@@ -101,6 +115,22 @@ theorem R_mul_U_inv : R * U⁻¹ = S * T ^ 2 * S⁻¹ := by
 theorem T_mul_S_mul_U : T * S * U = (-1 : SL(2, ℤ)) := by
   decide
 
+/-- The negative `-U = [[0, 1], [-1, 1]]` of `U` has order six: its cube is `-1`. -/
+@[simp]
+theorem neg_U_pow_three : (-U) ^ 3 = (-1 : SL(2, ℤ)) := by
+  rw [Odd.neg_pow (by decide), U_pow_three]
+
+/-- Recovering the translation from `-U` and `S`. -/
+theorem neg_U_inv_mul_S_inv : (-U)⁻¹ * S⁻¹ = T := by
+  decide
+
+/-- `-U` is the product `T (S T S⁻¹)` of the unipotent generators `[[1, 1], [0, 1]]` and
+`[[1, 0], [-1, 1]]`. -/
+theorem T_mul_S_mul_T_mul_S_inv : T * (S * T * S⁻¹) = -U := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Matrix.SpecialLinearGroup.coe_inv, Matrix.adjugate_fin_two,
+    Matrix.mul_apply, Fin.sum_univ_two]
+
 /-- The projective class of `R` has cube one. -/
 @[simp]
 theorem coe_R_pow_three : (R : PSL(2, ℤ)) ^ 3 = 1 := by
@@ -111,6 +141,10 @@ theorem coe_R_pow_three : (R : PSL(2, ℤ)) ^ 3 = 1 := by
 @[simp]
 theorem coe_U_pow_three : (U : PSL(2, ℤ)) ^ 3 = 1 := by
   rw [← QuotientGroup.mk_pow, U_pow_three, QuotientGroup.mk_one]
+
+/-- Projectively, the square of `R` is its inverse. -/
+theorem coe_R_sq : (R : PSL(2, ℤ)) ^ 2 = (R : PSL(2, ℤ))⁻¹ :=
+  eq_inv_of_mul_eq_one_left (by rw [← pow_succ, coe_R_pow_three])
 
 /-- The triangle relation in the convention with positive cusp translation. -/
 theorem coe_T_mul_coe_S_mul_coe_U : (T : PSL(2, ℤ)) * S * U = 1 := by

@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.Analysis.Distribution.Mass.Basic
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
@@ -34,13 +37,24 @@ evaluation on integrable forms (`Distribution.extendL1`).
 
 * `TestFunction.toLp`: the class in `Lᵖ(μ)` of the restriction of a test function to `Ω`.
 * `TestFunction.ambientToLp`: the class in `Lᵖ(ν)` of a test function, for a measure `ν` on the
-  ambient space.
+  ambient space, as a `𝕜`-linear map.
+* `TestFunction.inner_ambientToLp` and `TestFunction.inner_ambientToLp_left`: the `L²(ν)` inner
+  product with the class of a test function is the integral of the pointwise inner product.
+* `TestFunction.ambientToLp_restrict_injective`: a test function on `Ω` is determined by its class
+  in `Lᵖ(μ|_Ω)` when `μ` charges every nonempty open set.
 * `TestFunction.indicatorToLp`: the class in `Lᵖ(μ)` of `1_A φ`, for a measurable set `A ⊆ Ω`.
   It is zero for `A = ∅`, is `toLp` for `A = Ω` and is additive on disjoint sets
   (`TestFunction.indicatorToLp_empty`, `_univ`, `_union`).
 * `HasCompactSupport.exists_testFunction_eLpNorm_sub_le`: a continuous compactly supported
   function on `Ω` is an `Lᵖ(μ)` limit of test functions for `p < ∞`.
 * `TestFunction.denseRange_toLp`: test functions are dense in `Lᵖ(μ)` for `p < ∞`.
+* `TestFunction.integrable_bilin_of_memLp`: a continuous bilinear map applied to a test function
+  and an `Lᵖ` function is integrable.
+* `TestFunction.integrable_smul_of_memLp`: a test function times an `Lᵖ` function is integrable.
+* `TestFunction.integrable_laplacian_smul_of_memLp`: so is the Laplacian of a test function
+  times an `Lᵖ` function.
+* `MeasureTheory.Lp.eq_zero_of_forall_integral_testFunction_smul_eq_zero`: an `Lᵖ` function on a
+  finite-dimensional space whose pairings with all test functions vanish is zero.
 
 ## References
 
@@ -67,9 +81,9 @@ theorem HasCompactSupport.exists_testFunction_eLpNorm_sub_le [IsFiniteMeasureOnC
     ∃ φ : 𝓓^{n}(Ω, F), eLpNorm (g - fun x : Ω => φ x) p μ ≤ ε := by
   -- Mollify the extension of `g` by zero, inside a closed thickening `K'` of its support.
   set K : Set E := (↑) '' tsupport g
-  have hK : IsCompact K := hgc.isCompact.image continuous_subtype_val
+  have hK : IsCompact K := hgc.isCompact.image continuous_subtypeVal
   obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen
-    (image_subset_iff.2 fun x _ => x.2)
+    (image_subset_iff.2 fun x _ => x.property)
   set K' := cthickening δ K
   set M := μ ((↑) ⁻¹' K') ^ (1 / p.toReal)
   have hM : M ≠ ⊤ := ENNReal.rpow_ne_top_of_nonneg (by positivity)
@@ -77,14 +91,14 @@ theorem HasCompactSupport.exists_testFunction_eLpNorm_sub_le [IsFiniteMeasureOnC
       (by simpa using hδΩ)).measure_ne_top
   obtain ⟨η, hη, hηε⟩ := ENNReal.exists_nnreal_pos_mul_lt hM hε
   obtain ⟨φ, hφK', hφ⟩ := (hgc.continuous_extend_zero Ω.isOpen hg).exists_testFunction_dist_le hK
-    (hgc.tsupport_extend_zero_subset continuous_subtype_val) hδ hδΩ (NNReal.coe_pos.2 hη)
+    (hgc.tsupport_extend_zero_subset continuous_subtypeVal) hδ hδΩ (NNReal.coe_pos.2 hη)
   refine ⟨⟨φ, φ.contDiff.of_le (WithTop.coe_le_coe.2 le_top), φ.hasCompactSupport,
     φ.tsupport_subset⟩, ?_⟩
   -- The error is supported in `K'` and bounded by `η` there.
   simp only [TestFunction.coe_mk]
   refine (eLpNorm_sub_le_of_dist_bdd μ hp
-    (measurable_subtype_coe isClosed_cthickening.measurableSet).nullMeasurableSet η.coe_nonneg
-    (hg.sub (φ.continuous.comp continuous_subtype_val)).aestronglyMeasurable (fun x => ?_)
+    (measurable_subtypeVal isClosed_cthickening.measurableSet).nullMeasurableSet η.coe_nonneg
+    (hg.sub (φ.continuous.comp continuous_subtypeVal)).aestronglyMeasurable (fun x => ?_)
     (fun x hx => self_subset_cthickening K (mem_image_of_mem _ (subset_tsupport _ hx)))
     fun x hx => hφK' (subset_tsupport _ hx)).trans ?_
   · rw [dist_comm]
@@ -244,47 +258,91 @@ private theorem hasLocallyFiniteMass_memLp_ambientToLp :
     (fun x hx => hφK (subset_tsupport _ hx)) (norm_nonneg (φ : E →ᵇ F))
     (ae_of_all _ fun x => BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) x)
 
-variable (p ν) in
-/-- The class in `Lᵖ(ν)` of a test function on `Ω`, for a measure `ν` on the ambient space `E`
-that is finite on compact sets, as a continuous linear map for the test-function topology. Unlike
-`TestFunction.toLp`, the measure lives on `E`: a test function vanishes off `Ω`, so it needs no
-restriction. -/
-def ambientToLp : 𝓓^{n}(Ω, F) →L[ℝ] Lp F p ν :=
-  let L : 𝓓^{n}(Ω, F) →ₗ[ℝ] Lp F p ν :=
-    { toFun φ := (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ
-      map_add' φ ψ := by
-        rw [← MemLp.toLp_add]
-        exact MemLp.toLp_congr _ _ (.of_eq (by ext; simp))
-      map_smul' c φ := by
-        rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
-        exact MemLp.toLp_congr _ _ (.of_eq (by ext; simp)) }
-  ⟨L, Distribution.HasLocallyFiniteMass.continuous hasLocallyFiniteMass_memLp_ambientToLp⟩
+variable {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
 
-/-- `ambientToLp p ν φ` is the `Lᵖ(ν)` class of `φ`. -/
-theorem ambientToLp_apply (φ : 𝓓^{n}(Ω, F)) :
-    ambientToLp p ν φ = (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ :=
+/-- The class in `Lᵖ(ν)` of a test function on `Ω`, as a `𝕜`-linear map. -/
+private def ambientToLpLinear (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 F]
+    [SMulCommClass ℝ 𝕜 F] (p : ℝ≥0∞) (ν : Measure E) [IsFiniteMeasureOnCompacts ν] :
+    𝓓^{n}(Ω, F) →ₗ[𝕜] Lp F p ν where
+  toFun φ := (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ
+  map_add' φ ψ := by
+    rw [← MemLp.toLp_add]
+    exact MemLp.toLp_congr _ _ (.of_eq (by ext; simp))
+  map_smul' c φ := by
+    rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
+    exact MemLp.toLp_congr _ _ (.of_eq (by ext; simp))
+
+omit [Fact (1 ≤ p)] in
+/-- The underlying function of `ambientToLpLinear 𝕜 p ν` is `φ ↦ [φ]`, whatever the field `𝕜`. -/
+private theorem coe_ambientToLpLinear :
+    ⇑(ambientToLpLinear 𝕜 p ν : 𝓓^{n}(Ω, F) →ₗ[𝕜] Lp F p ν) =
+      fun φ => (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ :=
   (rfl)
 
-/-- A representative of `ambientToLp p ν φ` agrees almost everywhere with `φ`. -/
-theorem coeFn_ambientToLp (φ : 𝓓^{n}(Ω, F)) : ambientToLp p ν φ =ᵐ[ν] φ := by
+/-- The class in `Lᵖ(ν)` of a test function on `Ω`, for a measure `ν` on the ambient space `E`
+that is finite on compact sets, as a continuous `𝕜`-linear map for the test-function topology, for
+a normed field `𝕜` acting on `F` compatibly with the real scalars. Unlike `TestFunction.toLp`, the
+measure lives on `E`: a test function vanishes off `Ω`, so it needs no restriction. -/
+def ambientToLp (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+    (p : ℝ≥0∞) [Fact (1 ≤ p)] (ν : Measure E) [IsFiniteMeasureOnCompacts ν] :
+    𝓓^{n}(Ω, F) →L[𝕜] Lp F p ν :=
+  ⟨ambientToLpLinear 𝕜 p ν, by
+    -- Continuity only depends on the underlying function, which is that of the `ℝ`-linear map.
+    have h := hasLocallyFiniteMass_memLp_ambientToLp (n := n) (Ω := Ω) (F := F) (p := p) (ν := ν)
+    rw [← coe_ambientToLpLinear (𝕜 := ℝ)] at h
+    have hc := h.continuous
+    rw [coe_ambientToLpLinear, ← coe_ambientToLpLinear (𝕜 := 𝕜)] at hc
+    exact hc⟩
+
+/-- `ambientToLp 𝕜 p ν φ` is the `Lᵖ(ν)` class of `φ`. -/
+theorem ambientToLp_apply (φ : 𝓓^{n}(Ω, F)) :
+    ambientToLp 𝕜 p ν φ = (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ :=
+  (rfl)
+
+/-- A representative of `ambientToLp 𝕜 p ν φ` agrees almost everywhere with `φ`. -/
+theorem coeFn_ambientToLp (φ : 𝓓^{n}(Ω, F)) : ambientToLp 𝕜 p ν φ =ᵐ[ν] φ := by
   rw [ambientToLp_apply]
   exact MemLp.coeFn_toLp _
 
+/-- **A test function is determined by its class in `Lᵖ(μ|_Ω)`**, for a measure `μ` charging
+every nonempty open set. -/
+theorem ambientToLp_restrict_injective {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
+    [μ.IsOpenPosMeasure] :
+    Function.Injective (ambientToLp 𝕜 p (μ.restrict Ω) : 𝓓^{n}(Ω, F) → Lp F p (μ.restrict Ω)) := by
+  refine (injective_iff_map_eq_zero _).2 fun φ hφ ↦ TestFunction.ext fun x ↦ ?_
+  have hae : (φ : E → F) =ᵐ[μ.restrict Ω] 0 :=
+    (coeFn_ambientToLp φ).symm.trans (Lp.eq_zero_iff_ae_eq_zero.mp hφ)
+  by_cases hx : x ∈ (Ω : Set E)
+  · simpa using
+      Measure.eqOn_open_of_ae_eq hae Ω.isOpen φ.continuous.continuousOn continuousOn_const hx
+  · simpa using image_eq_zero_of_notMem_tsupport fun h ↦ hx (φ.tsupport_subset h)
+
 /-- The squared `L²(ν)` norm of the class of a test function is the integral of its squared
 pointwise norm. -/
-theorem norm_ambientToLp_sq (φ : 𝓓^{n}(Ω, F)) : ‖ambientToLp 2 ν φ‖ ^ 2 = ∫ x, ‖φ x‖ ^ 2 ∂ν := by
+theorem norm_ambientToLp_sq (φ : 𝓓^{n}(Ω, F)) :
+    ‖ambientToLp 𝕜 2 ν φ‖ ^ 2 = ∫ x, ‖φ x‖ ^ 2 ∂ν := by
   rw [ambientToLp_apply]
   exact MemLp.norm_toLp_sq _
 
 end Ambient
 
 /-- The `L²(ν)` inner product with the class of a test function is the integral of the pointwise
-inner product. -/
-theorem inner_ambientToLp {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
-    {ν : Measure E} [IsFiniteMeasureOnCompacts ν] (u : Lp G 2 ν) (φ : 𝓓^{n}(Ω, G)) :
-    ⟪u, ambientToLp 2 ν φ⟫_ℝ = ∫ x, ⟪u x, φ x⟫_ℝ ∂ν := by
+inner product, over an `RCLike` field `𝕜`. -/
+theorem inner_ambientToLp {𝕜 G : Type*} [RCLike 𝕜] [NormedAddCommGroup G]
+    [InnerProductSpace 𝕜 G] [NormedSpace ℝ G] [SMulCommClass ℝ 𝕜 G] {ν : Measure E}
+    [IsFiniteMeasureOnCompacts ν] (u : Lp G 2 ν) (φ : 𝓓^{n}(Ω, G)) :
+    ⟪u, ambientToLp 𝕜 2 ν φ⟫_𝕜 = ∫ x, ⟪u x, φ x⟫_𝕜 ∂ν := by
   rw [ambientToLp_apply]
   exact L2.inner_toLp u _
+
+/-- The `L²(ν)` inner product of the class of a test function with an `L²(ν)` function is the
+integral of the pointwise inner product, over an `RCLike` field `𝕜`. -/
+theorem inner_ambientToLp_left {𝕜 G : Type*} [RCLike 𝕜] [NormedAddCommGroup G]
+    [InnerProductSpace 𝕜 G] [NormedSpace ℝ G] [SMulCommClass ℝ 𝕜 G] {ν : Measure E}
+    [IsFiniteMeasureOnCompacts ν] (φ : 𝓓^{n}(Ω, G)) (u : Lp G 2 ν) :
+    ⟪ambientToLp 𝕜 2 ν φ, u⟫_𝕜 = ∫ x, ⟪φ x, u x⟫_𝕜 ∂ν := by
+  rw [← inner_conj_symm, inner_ambientToLp, ← integral_conj]
+  simp_rw [inner_conj_symm]
 
 /-- **Density of test functions in `Lᵖ`.** For `1 ≤ p < ∞` and a regular measure `μ` on an open
 set `Ω` of a finite-dimensional space, the classes of test functions are dense in `Lᵖ(μ; F)`. -/
@@ -301,5 +359,42 @@ theorem denseRange_toLp [FiniteDimensional ℝ E] [CompleteSpace F] [μ.Regular]
   rw [Metric.mem_closedEBall', ← Lp.toLp_coeFn f (Lp.memLp f), toLp_apply, Lp.edist_toLp_toLp,
     ← ENNReal.add_halves ε, ← sub_add_sub_cancel (⇑f) g]
   exact (eLpNorm_add_le Fact.out).trans (add_le_add hfg hφ)
+
+/-- A continuous bilinear map applied to a test function and an `Lᵖ` function, `1 ≤ p`, is
+integrable, for a measure that is finite on compact sets. -/
+theorem integrable_bilin_of_memLp {𝕜 F₁ F₂ F₃ : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂]
+    [NormedSpace 𝕜 F₂] [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃] (B : F₁ →L[𝕜] F₂ →L[𝕜] F₃)
+    {ν : Measure E} [IsFiniteMeasureOnCompacts ν] (φ : 𝓓^{n}(Ω, F₁)) {f : E → F₂}
+    (hf : MemLp f p ν) : Integrable (fun x ↦ B (φ x) (f x)) ν := by
+  have : (ENNReal.conjExponent p).HolderConjugate p :=
+    (ENNReal.HolderConjugate.conjExponent Fact.out).symm
+  exact memLp_one_iff_integrable.1 <|
+    B.memLp_of_bilin 1 (p := ENNReal.conjExponent p)
+      (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport) hf
+
+/-- A test function multiplied by an `Lᵖ` function, `1 ≤ p`, is integrable. -/
+theorem integrable_smul_of_memLp {ν : Measure E} [IsFiniteMeasureOnCompacts ν]
+    (φ : 𝓓^{n}(Ω, ℝ)) {f : E → F} (hf : MemLp f p ν) : Integrable (fun x ↦ φ x • f x) ν :=
+  φ.integrable_bilin_of_memLp (ContinuousLinearMap.lsmul ℝ ℝ) hf
+
+/-- **An `Lᵖ` function is determined by its pairings with test functions.** If `1 ≤ p` and
+`∫ φ • g = 0` for every test function `φ` on a finite-dimensional space, then `g = 0` in `Lᵖ`. -/
+theorem _root_.MeasureTheory.Lp.eq_zero_of_forall_integral_testFunction_smul_eq_zero
+    [FiniteDimensional ℝ E] [CompleteSpace F] {ν : Measure E} [IsLocallyFiniteMeasure ν]
+    {g : Lp F p ν}
+    (h : ∀ φ : 𝓓((⊤ : Opens E), ℝ), ∫ x, φ x • g x ∂ν = 0) : g = 0 := by
+  refine Lp.eq_zero_iff_ae_eq_zero.2 <| ae_eq_zero_of_integral_contDiff_smul_eq_zero
+    ((Lp.memLp g).locallyIntegrable Fact.out) fun ψ hψ hψc ↦ ?_
+  exact h ⟨ψ, hψ, hψc, by simp⟩
+
+open Laplacian in
+/-- The Laplacian of a test function multiplied by an `Lᵖ` function, `1 ≤ p`, is integrable. -/
+theorem integrable_laplacian_smul_of_memLp {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {Ω : Opens E} {ν : Measure E} [IsFiniteMeasureOnCompacts ν] (φ : 𝓓(Ω, ℝ)) {f : E → F}
+    (hf : MemLp f p ν) : Integrable (fun x ↦ Δ (φ : E → ℝ) x • f x) ν := by
+  simpa only [laplacianCLM_apply] using
+    (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ).integrable_smul_of_memLp hf
 
 end TestFunction

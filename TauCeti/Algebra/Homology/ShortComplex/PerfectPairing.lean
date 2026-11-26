@@ -47,8 +47,8 @@ private def concreteHomologyPairing (p₂ : S.X₂ →ₗ[R] T.X₂ →ₗ[R] R)
     S.moduleCatLeftHomologyData.H →ₗ[R] T.moduleCatLeftHomologyData.H →ₗ[R] R :=
   (p₂.compl₁₂ (LinearMap.ker S.g.hom).subtype (LinearMap.ker T.g.hom).subtype).liftQ₂
     (LinearMap.range S.moduleCatToCycles) (LinearMap.range T.moduleCatToCycles)
-    (by rintro _ ⟨x, rfl⟩; exact LinearMap.ext fun y ↦ hf x y.1 y.2)
-    (by rintro _ ⟨y, rfl⟩; exact LinearMap.ext fun x ↦ hg x.1 y x.2)
+    (by rintro _ ⟨x, rfl⟩; exact LinearMap.ext fun y ↦ hf x y.val y.property)
+    (by rintro _ ⟨y, rfl⟩; exact LinearMap.ext fun x ↦ hg x.val y x.property)
 
 /-- The bilinear pairing on homology induced by a middle-term pairing `p₂` whose left and right
 restrictions vanish against boundaries of the opposite short complex. -/
@@ -120,11 +120,12 @@ private theorem concreteHomologyPairing_bijective_left (hR : Module.Baer R R)
   refine ⟨?_, fun φ ↦ ?_⟩
   · rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]; intro q hq
     obtain ⟨c, rfl⟩ := Submodule.mkQ_surjective (LinearMap.range S.moduleCatToCycles) q
-    have hc : LinearMap.ker T.g.hom ≤ LinearMap.ker (p₂ c.1) := fun y hy ↦
+    have hc : LinearMap.ker T.g.hom ≤ LinearMap.ker (p₂ c.val) := fun y hy ↦
       DFunLike.congr_fun hq ((LinearMap.range T.moduleCatToCycles).mkQ ⟨y, hy⟩)
     obtain ⟨μ, hμ⟩ := hR.extension_property (LinearMap.range T.g.hom).subtype Subtype.val_injective
-      (((LinearMap.ker T.g.hom).liftQ (p₂ c.1) hc).comp T.g.hom.quotKerEquivRange.symm.toLinearMap)
-    have hμg (y : T.X₂) : μ (T.g.hom y) = p₂ c.1 y := by
+      (((LinearMap.ker T.g.hom).liftQ (p₂ c.val) hc).comp
+        T.g.hom.quotKerEquivRange.symm.toLinearMap)
+    have hμg (y : T.X₂) : μ (T.g.hom y) = p₂ c.val y := by
       have hqeq : T.g.hom.quotKerEquivRange.symm (T.g.hom.rangeRestrict y) =
           Submodule.Quotient.mk y := T.g.hom.quotKerEquivRange.symm_apply_eq.mpr rfl
       simpa only [LinearMap.comp_apply, Submodule.coe_subtype, LinearMap.rangeRestrict,

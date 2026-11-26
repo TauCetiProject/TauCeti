@@ -12,6 +12,8 @@ public import Mathlib.Algebra.Central.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.Noetherian.Basic
 
+import Mathlib.Algebra.Algebra.Subalgebra.Tower
+
 /-!
 # Transporting and decomposing the center of an algebra
 
@@ -23,6 +25,8 @@ central subalgebra provides. Transport of the center along an algebra equivalenc
 
 * `Subalgebra.map_center_val` identifies the center of a subalgebra with its intersection
   with its centralizer in the ambient algebra.
+* `TauCeti.bijective_algebraMap_center_of_bijective`: an algebra whose structure map is bijective
+  has the same property for its center.
 * `TauCeti.centerPiAlgEquiv` splits the center of a product of algebras as the product of the
   centers, upgrading Mathlib's `Subalgebra.center_pi` from an equality of subalgebras of
   `Π i, S i` to an algebra equivalence with `Π i, Subalgebra.center R (S i)`.
@@ -30,8 +34,10 @@ central subalgebra provides. Transport of the center along an algebra equivalenc
   `Subalgebra.center_prod`.
 * `TauCeti.centerAlgEquivOfIsCentral` identifies the center of a central algebra with its base
   semiring when the scalar action is faithful. Its dimension is therefore one
-  (`TauCeti.finrank_center_of_isCentral`). For a product of two such algebras the center is the
-  split algebra `K × K` (`TauCeti.centerProdAlgEquivOfIsCentral`).
+  (`TauCeti.finrank_center_of_isCentral`), and over any `k` below the base `Z` the center has
+  the dimension of `Z` (`TauCeti.finrank_center_eq_of_isCentral`). For a
+  product of two such algebras the center is the split algebra `K × K`
+  (`TauCeti.centerProdAlgEquivOfIsCentral`).
 * `TauCeti.isCentral_iff_surjective_algebraMap` records that a commutative algebra is central
   exactly when its structure map is surjective, the precise sense in which centrality is a strong
   condition on a field extension.
@@ -125,6 +131,12 @@ namespace TauCeti
 
 variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
 
+/-- If the structure map of an algebra is bijective, so is the structure map into its center. -/
+theorem bijective_algebraMap_center_of_bijective (h : Function.Bijective (algebraMap R A)) :
+    Function.Bijective (algebraMap R (Subalgebra.center R A)) :=
+  ⟨fun _ _ hab => h.1 (congrArg Subtype.val hab), fun z =>
+    (h.2 z).imp fun _ hc => Subtype.ext hc⟩
+
 section Pi
 
 variable {ι : Type*} {S : ι → Type*} [∀ i, Semiring (S i)] [∀ i, Algebra R (S i)]
@@ -135,8 +147,8 @@ def centerPiAlgEquiv :
   have mem_iff : ∀ x : Π i, S i,
       x ∈ Subalgebra.center R (Π i, S i) ↔ ∀ i, x i ∈ Subalgebra.center R (S i) := fun _ => by
     rw [Subalgebra.center_pi]; simp
-  { toFun := fun x i => ⟨x.1 i, (mem_iff _).mp x.2 i⟩
-    invFun := fun y => ⟨fun i => (y i).1, (mem_iff _).mpr fun i => (y i).2⟩
+  { toFun := fun x i => ⟨x.val i, (mem_iff _).mp x.property i⟩
+    invFun := fun y => ⟨fun i => (y i).val, (mem_iff _).mpr fun i => (y i).property⟩
     left_inv := fun _ => rfl
     right_inv := fun _ => rfl
     map_mul' := fun _ _ => rfl
@@ -269,5 +281,16 @@ theorem _root_.Algebra.IsCentral.of_algEquiv' (K : Type*) {D D' : Type*} [CommSe
     have ⟨k, hk⟩ := Algebra.IsCentral.out (K := K)
       ((MulEquivClass.apply_mem_center_iff e.symm).mpr hx)
     ⟨k, by simpa [Algebra.ofId] using congr(e $hk)⟩
+
+/-- A central algebra `B` over `Z` with faithful scalar action has centre `Z`: for any `k` below
+`Z`, the centre of `B` over `k` has the dimension of `Z` over `k`. -/
+theorem finrank_center_eq_of_isCentral (k : Type*) [CommSemiring k] {B : Type*} [Semiring B]
+    [Algebra k B] (Z : Type*) [CommSemiring Z] [Algebra k Z] [Algebra Z B] [IsScalarTower k Z B]
+    [FaithfulSMul Z B] [Algebra.IsCentral Z B] :
+    Module.finrank k (Subalgebra.center k B) = Module.finrank k Z :=
+  ((Subalgebra.equivOfEq _ _ (SetLike.ext fun _ ↦ by
+      simp only [Subalgebra.mem_restrictScalars, Subalgebra.mem_center_iff] :
+      Subalgebra.center k B = (Subalgebra.center Z B).restrictScalars k)).toLinearEquiv.trans
+    ((centerAlgEquivOfIsCentral Z B).toLinearEquiv.restrictScalars k)).finrank_eq
 
 end TauCeti

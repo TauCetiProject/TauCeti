@@ -5,26 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+public import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
 # Lebesgue time measure on a finite nonnegative horizon
 
 `TauCeti.Probability.timeMeasure T` is Lebesgue measure on `(0,T]` in nonnegative real
 time, obtained by pulling back real Lebesgue measure along the coercion to `ℝ`.
-The origin has zero mass. Interval masses and restriction to shorter horizons are
-recorded explicitly for time-product measures used in stochastic integration.
+The origin has zero mass. Interval masses, monotonicity in the horizon and restriction to
+shorter horizons are recorded explicitly for time-product measures used in stochastic
+integration. Integrals for time measure are interval integrals over `(0,T]`
+(`TauCeti.Probability.integral_timeMeasure`), and continuous functions lie in every `Lᵖ` space
+of a finite horizon (`Continuous.memLp_timeMeasure`).
 The isometry `timeMeasureExtendLp` extends finite-horizon `Lᵖ` functions by zero to
 longer horizons. Initial-interval indicator classes depend only on their endpoint
-clipped to the horizon; the extension lemmas describe their images.
+clipped to the horizon; the extension lemmas describe their images. The `L²` inner product of
+the extensions of two representatives of one function is the integral of its square up to the
+shorter horizon (`TauCeti.Probability.inner_timeMeasureExtendLp`).
 -/
 
 public section
 
 open MeasureTheory Set
-open scoped NNReal ENNReal
+open scoped NNReal ENNReal InnerProductSpace
 
 namespace TauCeti.Probability
 
@@ -50,6 +57,24 @@ theorem timeMeasure_Ioc (T s t : ℝ≥0) :
   simp [timeMeasure_apply T measurableSet_Ioc, Ioc_inter_Ioc,
     NNReal.image_coe_Ioc, Real.volume_Ioc]
 
+/-- An unordered time interval has the distance between its horizon-clipped endpoints. -/
+@[simp]
+theorem timeMeasure_uIoc (T s t : ℝ≥0) :
+    timeMeasure T (uIoc s t) =
+      ENNReal.ofReal |(min s T : ℝ≥0) - (min t T : ℝ≥0)| := by
+  wlog hst : s ≤ t generalizing s t
+  · simpa only [uIoc_comm, abs_sub_comm] using this t s (le_of_not_ge hst)
+  rw [uIoc_of_le hst, timeMeasure_Ioc,
+    abs_of_nonpos (sub_nonpos.mpr (by exact_mod_cast min_le_min_right T hst))]
+  by_cases hsT : s ≤ T
+  · rw [min_eq_left hsT]
+    congr 1
+    ring
+  · have htT : T ≤ t := (le_of_not_ge hsT).trans hst
+    simp only [min_eq_right (le_of_not_ge hsT), min_eq_right htT, sub_self,
+      neg_zero, ENNReal.ofReal_zero]
+    exact ENNReal.ofReal_eq_zero.mpr (sub_nonpos.mpr (by exact_mod_cast le_of_not_ge hsT))
+
 /-- An initial closed interval has its length clipped at the horizon; time zero is null. -/
 @[simp]
 theorem timeMeasure_Iic (T t : ℝ≥0) : timeMeasure T (Iic t) = (min t T : ℝ≥0) := by
@@ -64,6 +89,26 @@ theorem timeMeasure_univ (T : ℝ≥0) : timeMeasure T univ = T := by
       rw [timeMeasure_def, Measure.restrict_apply_univ, Measure.restrict_apply_self]
     _ = T := by simp
 
+/-- Integration against time measure is the interval integral over `(0,T]` of the function
+extended to real time by truncation at zero. -/
+theorem integral_timeMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (T : ℝ≥0)
+    (g : ℝ≥0 → E) : ∫ s, g s ∂timeMeasure T = ∫ r in (0 : ℝ)..T, g r.toNNReal := by
+  have he : MeasurableEmbedding ((↑) : ℝ≥0 → ℝ) :=
+    NNReal.isClosedEmbedding_coe.measurableEmbedding
+  have hmap : (timeMeasure T).map ((↑) : ℝ≥0 → ℝ) = volume.restrict (Ioc (0 : ℝ) T) := by
+    ext s hs
+    rw [he.map_apply, timeMeasure_apply T (he.measurable hs), Measure.restrict_apply hs]
+    congr 1
+    ext x
+    simp only [mem_image, mem_inter_iff, mem_preimage, mem_Ioc]
+    refine ⟨?_, fun hx ↦ ⟨x.toNNReal, ?_, Real.coe_toNNReal x hx.2.1.le⟩⟩
+    · rintro ⟨y, ⟨hy, hy0, hyT⟩, rfl⟩
+      exact ⟨hy, NNReal.coe_pos.2 hy0, NNReal.coe_le_coe.2 hyT⟩
+    · rw [Real.coe_toNNReal x hx.2.1.le]
+      exact ⟨hx.1, Real.toNNReal_pos.2 hx.2.1, Real.toNNReal_le_iff_le_coe.2 hx.2.2⟩
+  rw [intervalIntegral.integral_of_le T.coe_nonneg, ← hmap, he.integral_map]
+  simp
+
 /-- Finite time horizons have finite time mass. -/
 instance (T : ℝ≥0) : IsFiniteMeasure (timeMeasure T) :=
   ⟨by simp⟩
@@ -72,6 +117,14 @@ instance (T : ℝ≥0) : IsFiniteMeasure (timeMeasure T) :=
 theorem ae_mem_Ioc_timeMeasure (T : ℝ≥0) : ∀ᵐ t ∂timeMeasure T, t ∈ Ioc 0 T := by
   rw [timeMeasure_def]
   exact ae_restrict_mem measurableSet_Ioc
+
+/-- A continuous function on time lies in every `Lᵖ` space of a finite horizon. -/
+theorem _root_.Continuous.memLp_timeMeasure {E : Type*} [NormedAddCommGroup E] {f : ℝ≥0 → E}
+    (hf : Continuous f) (p : ℝ≥0∞) (T : ℝ≥0) : MemLp f p (timeMeasure T) := by
+  obtain ⟨C, hC⟩ := (isCompact_Icc (a := (0 : ℝ≥0)) (b := T)).exists_bound_of_continuousOn
+    hf.continuousOn
+  refine MemLp.of_bound hf.aestronglyMeasurable C ?_
+  filter_upwards [ae_mem_Ioc_timeMeasure T] with s hs using hC s ⟨bot_le, hs.2⟩
 
 /-- The horizon of length zero carries the zero measure. -/
 @[simp]
@@ -89,6 +142,16 @@ theorem timeMeasure_restrict (T S : ℝ≥0) :
     (timeMeasure T).restrict (Ioc 0 S) = timeMeasure (min S T) := by
   rw [timeMeasure_def, Measure.restrict_restrict measurableSet_Ioc, Ioc_inter_Ioc]
   simp [timeMeasure_def]
+
+/-- Restricting time measure to a shorter horizon gives that horizon's time measure. -/
+theorem timeMeasure_restrict_of_le {S T : ℝ≥0} (hST : S ≤ T) :
+    (timeMeasure T).restrict (Ioc 0 S) = timeMeasure S := by
+  rw [timeMeasure_restrict, min_eq_left hST]
+
+/-- Time measure on a shorter horizon is dominated by time measure on a longer one. -/
+theorem timeMeasure_mono {S T : ℝ≥0} (hST : S ≤ T) : timeMeasure S ≤ timeMeasure T := by
+  rw [← timeMeasure_restrict_of_le hST]
+  exact Measure.restrict_le_self
 
 /-- Initial-interval indicator classes only depend on the endpoint clipped to the horizon. -/
 theorem indicatorConstLp_Iic_min_timeMeasure {E : Type*} [NormedAddCommGroup E]
@@ -115,19 +178,20 @@ variable (𝕜) in
 noncomputable def timeMeasureExtendLp (hST : S ≤ T) :
     Lp E p (timeMeasure S) →ₗᵢ[𝕜] Lp E p (timeMeasure T) :=
   extendByZeroLpₗᵢ 𝕜 (Measure.comap ((↑) : ℝ≥0 → ℝ) volume)
-    measurableSet_Ioc (Ioc_subset_Ioc_right hST)
+    measurableSet_Ioc.nullMeasurableSet (Ioc_subset_Ioc_right hST)
 
 /-- The horizon extension agrees `timeMeasure T`-almost everywhere with `f` on
 `(0,S]`, extended by zero outside that interval. -/
 theorem coeFn_timeMeasureExtendLp (hST : S ≤ T) (f : Lp E p (timeMeasure S)) :
     ⇑(timeMeasureExtendLp 𝕜 hST f) =ᵐ[timeMeasure T] (Ioc 0 S).indicator ⇑f := by
-  exact coeFn_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc (Ioc_subset_Ioc_right hST) f
+  exact coeFn_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc.nullMeasurableSet
+    (Ioc_subset_Ioc_right hST) f
 
 /-- Extending to the same horizon is the identity. -/
 @[simp]
 theorem timeMeasureExtendLp_self (f : Lp E p (timeMeasure S)) :
     timeMeasureExtendLp 𝕜 le_rfl f = f :=
-  extendByZeroLpₗᵢ_self 𝕜 measurableSet_Ioc f
+  extendByZeroLpₗᵢ_self 𝕜 measurableSet_Ioc.nullMeasurableSet f
 
 /-- Two successive horizon extensions equal the direct extension. -/
 @[simp]
@@ -135,13 +199,14 @@ theorem timeMeasureExtendLp_timeMeasureExtendLp (hST : S ≤ T) (hTU : T ≤ U)
     (f : Lp E p (timeMeasure S)) :
     timeMeasureExtendLp 𝕜 hTU (timeMeasureExtendLp 𝕜 hST f) =
       timeMeasureExtendLp 𝕜 (hST.trans hTU) f :=
-  extendByZeroLpₗᵢ_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc measurableSet_Ioc
+  extendByZeroLpₗᵢ_extendByZeroLpₗᵢ 𝕜 measurableSet_Ioc.nullMeasurableSet
+    measurableSet_Ioc.nullMeasurableSet
     (Ioc_subset_Ioc_right hST) (Ioc_subset_Ioc_right hTU) f
 
 /-- The horizon extension restricts back to the original function almost everywhere. -/
 theorem coeFn_timeMeasureExtendLp_restrict (hST : S ≤ T) (f : Lp E p (timeMeasure S)) :
     ⇑(timeMeasureExtendLp 𝕜 hST f) =ᵐ[timeMeasure S] ⇑f :=
-  coeFn_extendByZeroLpₗᵢ_restrict 𝕜 measurableSet_Ioc (Ioc_subset_Ioc_right hST) f
+  coeFn_extendByZeroLpₗᵢ_restrict 𝕜 measurableSet_Ioc.nullMeasurableSet (Ioc_subset_Ioc_right hST) f
 
 /-- Any almost-everywhere representative can be used in the zero-extension formula. -/
 theorem coeFn_timeMeasureExtendLp_of_ae_eq (hST : S ≤ T)
@@ -185,5 +250,21 @@ theorem timeMeasureExtendLp_indicatorConstLp_Ioc (hST : S ≤ T) (s t : ℝ≥0)
   simp [min_comm]
 
 end ExtendLp
+
+/-- The inner product of the extensions of two square-integrable representatives of `k` to a
+common horizon is the integral of `k²` up to the smaller of their horizons. -/
+theorem inner_timeMeasureExtendLp {k : ℝ≥0 → ℝ} {S S' T : ℝ≥0} (hS : S ≤ T)
+    (hS' : S' ≤ T) {f : Lp ℝ 2 (timeMeasure S)} {f' : Lp ℝ 2 (timeMeasure S')}
+    (hf : f =ᵐ[timeMeasure S] k) (hf' : f' =ᵐ[timeMeasure S'] k) :
+    ⟪timeMeasureExtendLp ℝ hS f, timeMeasureExtendLp ℝ hS' f'⟫_ℝ =
+      ∫ s, k s ^ 2 ∂timeMeasure (min S S') := by
+  rw [L2.inner_def, ← timeMeasure_restrict_of_le (min_le_of_left_le hS),
+    ← integral_indicator measurableSet_Ioc]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_timeMeasureExtendLp_of_ae_eq (𝕜 := ℝ) hS hf,
+    coeFn_timeMeasureExtendLp_of_ae_eq (𝕜 := ℝ) hS' hf'] with s hs hs'
+  rw [hs, hs', RCLike.inner_apply, conj_trivial]
+  by_cases h : s ∈ Ioc 0 S <;> by_cases h' : s ∈ Ioc 0 S' <;>
+    simp_all [sq, mem_Ioc, le_min_iff, mul_comm]
 
 end TauCeti.Probability
