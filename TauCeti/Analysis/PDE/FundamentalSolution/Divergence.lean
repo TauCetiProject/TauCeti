@@ -565,6 +565,45 @@ private theorem enorm_convolution_divKernel_sub_le {v : E} (hv : ‖v‖ = 1) (h
   linear_combination c * K * B * hδ
 
 
+/-- **The field is `α`-Hölder.** Summing the estimates `enorm_convolution_divKernel_sub_le` of its
+components along an orthonormal basis, the field of a function whose mass on balls of radius `r` is
+at most `N r^(d - 1 + α)` moves by at most `d K N dist x x' ^ α`. -/
+private theorem dist_divField_le (hh : Integrable h μ) {N : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+    (hM : ∀ x r, 0 < r → ∫⁻ y in closedBall x r, ‖h y‖ₑ ∂μ ≤
+      (N : ℝ≥0∞) * ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) - 1 + α))) (x x' : E) :
+    dist (divField μ h x) (divField μ h x') ≤
+      (finrank ℝ E : ℝ) * divHolderConst μ α * N * dist x x' ^ α := by
+  have hK : 0 ≤ divHolderConst μ α := divHolderConst_nonneg μ hα hα1
+  set b := stdOrthonormalBasis ℝ E
+  -- Each component of the field is `α`-Hölder with constant `K N`, `K = divHolderConst μ α`.
+  have hcomp (i : Fin (finrank ℝ E)) {x x' : E} (hxx' : 0 < dist x x') :
+      ‖(divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x -
+          (divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x'‖ ≤
+        divHolderConst μ α * N * dist x x' ^ α := by
+    have h1 := enorm_convolution_divKernel_sub_le (b.orthonormal.1 i) hh ENNReal.coe_ne_top hα
+      hα1 hM hxx'
+    rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul N.coe_nonneg,
+      ENNReal.ofReal_le_ofReal_iff (by positivity)] at h1
+    linarith
+  rcases (dist_nonneg (x := x) (y := x')).eq_or_lt with h0 | hxx'
+  · rw [(dist_eq_zero.1 h0.symm), dist_self]
+    positivity
+  calc dist (divField μ h x) (divField μ h x')
+      = ‖∑ i, ((divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x -
+          (divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x') • b i‖ := by
+        rw [dist_eq_norm, divField_apply, divField_apply, ← Finset.sum_sub_distrib]
+        simp only [b, sub_smul]
+    _ ≤ ∑ i, ‖((divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x -
+          (divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x') • b i‖ :=
+        norm_sum_le _ _
+    _ ≤ ∑ _i : Fin (finrank ℝ E), divHolderConst μ α * N * dist x x' ^ α := by
+        refine Finset.sum_le_sum fun i _ => ?_
+        rw [norm_smul, b.orthonormal.1 i, mul_one]
+        exact hcomp i hxx'
+    _ = (finrank ℝ E : ℝ) * divHolderConst μ α * N * dist x x' ^ α := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        ring
+
 end Morrey
 
 /-- **Data in a Morrey space are minus divergences of Hölder fields.** Let `E` be a nontrivial
@@ -611,40 +650,9 @@ theorem exists_holderWith_and_integral_inner_gradient_eq_of_morreyNormPow_le
     exact (hgrowth 0 _ (by positivity)).trans_lt
       (ENNReal.mul_lt_top ENNReal.coe_lt_top ENNReal.ofReal_lt_top)
   refine ⟨divField μ h, ?_, fun φ hφ hφc => integral_inner_divField_gradient hhi hhc hφ hφc⟩
-  set b := stdOrthonormalBasis ℝ E
-  -- Each component of the field is `α`-Hölder with constant `K M`.
-  have hcomp (i : Fin (finrank ℝ E)) {x x' : E} (hxx' : 0 < dist x x') :
-      ‖(divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x -
-          (divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x'‖ ≤
-        K * M * dist x x' ^ (α : ℝ) := by
-    have h1 := enorm_convolution_divKernel_sub_le (b.orthonormal.1 i) hhi ENNReal.coe_ne_top hα'
-      hα1' hgrowth hxx'
-    rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul M.coe_nonneg,
-      ENNReal.ofReal_le_ofReal_iff (by positivity)] at h1
-    linarith
-  have hdist (x x' : E) : dist (divField μ h x) (divField μ h x') ≤
-      (finrank ℝ E : ℝ) * K * M * dist x x' ^ (α : ℝ) := by
-    rcases (dist_nonneg (x := x) (y := x')).eq_or_lt with h0 | hxx'
-    · rw [(dist_eq_zero.1 h0.symm), dist_self]
-      positivity
-    calc dist (divField μ h x) (divField μ h x')
-        = ‖∑ i, ((divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x -
-            (divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x') • b i‖ := by
-          rw [dist_eq_norm, divField_apply, divField_apply, ← Finset.sum_sub_distrib]
-          simp only [b, sub_smul]
-      _ ≤ ∑ i, ‖((divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x -
-            (divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x') • b i‖ :=
-          norm_sum_le _ _
-      _ ≤ ∑ _i : Fin (finrank ℝ E), K * M * dist x x' ^ (α : ℝ) := by
-          refine Finset.sum_le_sum fun i _ => ?_
-          rw [norm_smul, b.orthonormal.1 i, mul_one]
-          exact hcomp i hxx'
-      _ = (finrank ℝ E : ℝ) * K * M * dist x x' ^ (α : ℝ) := by
-          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-          ring
   refine holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ x' _ => ?_)
   rw [NNReal.coe_mul, Real.coe_toNNReal _ (by positivity)]
-  exact hdist x x'
+  exact dist_divField_le hhi hα' hα1' hgrowth x x'
 
 
 /-- **Compactly supported `L^q` data are minus divergences of `Lᵖ` fields.** Let `E` be a nontrivial
