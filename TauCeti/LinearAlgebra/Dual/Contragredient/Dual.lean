@@ -122,7 +122,7 @@ theorem ofDual_toDual (φ : ContragredientDual σ M) : ofDual (σ := σ) φ.toDu
 theorem ext {φ ψ : ContragredientDual σ M} (h : ∀ x, φ x = ψ x) : φ = ψ :=
   DFunLike.ext φ ψ h
 
-theorem map_smul_of_tower (φ : ContragredientDual σ M) (r : R) (x : M) :
+theorem map_smul_eq_mul (φ : ContragredientDual σ M) (r : R) (x : M) :
     φ (r • x) = r * φ x :=
   (φ.toDual.map_smul r x).trans (smul_eq_mul r (φ x))
 
@@ -191,7 +191,7 @@ theorem smul_apply (s : S) (φ : ContragredientDual σ M) (x : M) :
 
 theorem smul_apply_eq_mul (s : S) (φ : ContragredientDual σ M) (x : M) :
     (s • φ) x = σ s * φ x := by
-  rw [smul_apply, map_smul_of_tower]
+  rw [smul_apply, map_smul_eq_mul]
 
 /-- `toDual` and `ofDual` form a `σ`-semilinear equivalence between `ContragredientDual σ M` and
 `Module.Dual R M`. -/
@@ -289,6 +289,50 @@ protected theorem map_zero : map σ (0 : M →ₗ[R] N) = 0 := by
 protected theorem map_add (f g : M →ₗ[R] N) : map σ (f + g) = map σ f + map σ g := by
   ext φ x
   simp
+
+/-- `toDualLinearEquiv` intertwines `ContragredientDual.map` with `LinearMap.dualMap`. -/
+theorem toDualLinearEquiv_comp_map (f : M →ₗ[R] N) :
+    haveI := RingHomInvPair.of_ringEquiv σ
+    haveI := RingHomInvPair.of_ringEquiv_symm σ
+    (toDualLinearEquiv σ M).toLinearMap.comp (map σ f) =
+      f.dualMap.comp (toDualLinearEquiv σ N).toLinearMap := by
+  ext φ x
+  rfl
+
+/-- `ofDualOppositeLinearEquiv` intertwines `LinearMap.lcomp Rᵐᵒᵖ R` with
+`ContragredientDual.map`. -/
+theorem ofDualOppositeLinearEquiv_comp_lcomp (f : M →ₗ[R] N) :
+    let ρ : Rᵐᵒᵖ ≃+* S := (RingEquiv.toOpposite R).symm.trans σ.symm
+    haveI := RingHomInvPair.of_ringEquiv ρ
+    haveI := RingHomInvPair.of_ringEquiv_symm ρ
+    (ofDualOppositeLinearEquiv σ M).toLinearMap.comp (f.lcomp Rᵐᵒᵖ R) =
+      (map σ f).comp (ofDualOppositeLinearEquiv σ N).toLinearMap := by
+  ext φ x
+  rfl
+
+/-- `toDualLinearEquiv` transports the range of `ContragredientDual.map σ f` to the range of
+`f.dualMap`. -/
+theorem map_range_map (f : M →ₗ[R] N) :
+    haveI := RingHomInvPair.of_ringEquiv σ
+    haveI := RingHomInvPair.of_ringEquiv_symm σ
+    (LinearMap.range (map σ f)).map (toDualLinearEquiv σ M).toLinearMap =
+      LinearMap.range f.dualMap := by
+  have := RingHomInvPair.of_ringEquiv σ
+  have := RingHomInvPair.of_ringEquiv_symm σ
+  rw [← LinearMap.range_comp, toDualLinearEquiv_comp_map, LinearEquiv.range_comp]
+
+/-- `ofDualOppositeLinearEquiv` transports the range of `f.lcomp Rᵐᵒᵖ R` to the range of
+`ContragredientDual.map σ f`. -/
+theorem map_range_lcomp (f : M →ₗ[R] N) :
+    let ρ : Rᵐᵒᵖ ≃+* S := (RingEquiv.toOpposite R).symm.trans σ.symm
+    haveI := RingHomInvPair.of_ringEquiv ρ
+    haveI := RingHomInvPair.of_ringEquiv_symm ρ
+    (LinearMap.range (f.lcomp Rᵐᵒᵖ R)).map (ofDualOppositeLinearEquiv σ M).toLinearMap =
+      LinearMap.range (map σ f) := by
+  let ρ : Rᵐᵒᵖ ≃+* S := (RingEquiv.toOpposite R).symm.trans σ.symm
+  have := RingHomInvPair.of_ringEquiv ρ
+  have := RingHomInvPair.of_ringEquiv_symm ρ
+  rw [← LinearMap.range_comp, ofDualOppositeLinearEquiv_comp_lcomp, LinearEquiv.range_comp]
 
 /-- An `R`-linear equivalence `M ≃ₗ[R] N` induces an `S`-linear equivalence of contragredient
 duals in the contravariant direction. -/

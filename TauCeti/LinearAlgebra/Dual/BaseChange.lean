@@ -31,7 +31,7 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 * `AlgHom.baseChangeEvaluation_rTensor`: naturality of evaluation in the scalar algebra.
 * `Module.Dual.baseChangeEvaluation_one_tmul_baseChange`: naturality of evaluation
   with respect to a base-changed linear map.
-* `TauCeti.Module.Dual.baseChangeEvaluation_comp_baseChange_dualMap`: naturality of
+* `LinearMap.baseChangeEvaluation_comp_baseChange_dualMap`: naturality of
   `baseChangeEvaluation` with respect to dual maps.
 * `Module.Dual.baseChange_rTensor`: base change of a functional is compatible with a change of
   coefficients `A ⟶ B`.
@@ -132,7 +132,7 @@ theorem _root_.Module.Dual.baseChangeEvaluation_one_tmul_baseChange
 /-- Scalar-extended evaluation is natural with respect to dual maps: applying `baseChangeEvaluation`
 after the base change of `f.dualMap` agrees with applying `(f.baseChange A).dualMap` after
 `baseChangeEvaluation`. -/
-theorem baseChangeEvaluation_comp_baseChange_dualMap
+theorem _root_.LinearMap.baseChangeEvaluation_comp_baseChange_dualMap
     {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
     (baseChangeEvaluation (R := R) (M := M) (A := A)).comp (f.dualMap.baseChange A) =
       (f.baseChange A).dualMap.comp (baseChangeEvaluation (R := R) (M := N) (A := A)) := by

@@ -74,7 +74,7 @@ def baseChangeHom (f : P₁ →ₗ[R] P₀) :
     Submodule.mapQ _ _ (TauCeti.Module.Dual.baseChangeEvaluation (R := R) (A := A) (M := P₁))
       (by
         rw [← Submodule.map_le_iff_le_comap, ← LinearMap.range_comp,
-          TauCeti.Module.Dual.baseChangeEvaluation_comp_baseChange_dualMap]
+          f.baseChangeEvaluation_comp_baseChange_dualMap]
         exact LinearMap.range_comp_le_range _ _) ∘ₗ
     (f.dualMap.cokernelBaseChangeEquiv (S := A)).toLinearMap ∘ₗ
     ((cokernelDualMapEquiv f).baseChange R A _ _).toLinearMap
@@ -107,24 +107,30 @@ def baseChangeEquiv (f : P₁ →ₗ[R] P₀) :
         (TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := R) (A := A) (M := P₁))
         (by
           rw [← LinearMap.range_comp, TauCeti.Module.Dual.baseChangeEvaluationEquiv_toLinearMap,
-            TauCeti.Module.Dual.baseChangeEvaluation_comp_baseChange_dualMap,
+            f.baseChangeEvaluation_comp_baseChange_dualMap,
             ← TauCeti.Module.Dual.baseChangeEvaluationEquiv_toLinearMap,
             LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)])).trans
         (cokernelDualMapEquiv (f.baseChange A)).symm
-
-/-- The underlying linear map of `baseChangeEquiv` is `baseChangeHom`. -/
-@[simp]
-theorem baseChangeEquiv_toLinearMap (f : P₁ →ₗ[R] P₀) :
-    (baseChangeEquiv A f).toLinearMap = baseChangeHom A f := by
-  ext a
-  simp [baseChangeEquiv, baseChangeHom, Submodule.Quotient.equiv_apply]
 
 /-- `baseChangeEquiv` sends a pure tensor `a ⊗ [φ]` to `a • [φ_A]`. -/
 @[simp]
 theorem baseChangeEquiv_tmul_mk (f : P₁ →ₗ[R] P₀) (a : A) (φ : Module.Dual R P₁) :
     baseChangeEquiv A f (a ⊗ₜ[R] mk f φ) =
       a • mk (f.baseChange A) (Module.Dual.baseChange A φ) := by
-  rw [← LinearEquiv.coe_coe, baseChangeEquiv_toLinearMap, baseChangeHom_tmul_mk]
+  simp only [baseChangeEquiv, LinearEquiv.trans_apply, LinearEquiv.baseChange_tmul,
+    cokernelDualMapEquiv_mk, LinearMap.cokernelBaseChangeEquiv_tmul,
+    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe,
+    TauCeti.Module.Dual.baseChangeEvaluationEquiv_apply,
+    TauCeti.Module.Dual.baseChangeEvaluation_tmul_eq_smul,
+    Submodule.Quotient.mk_smul, map_smul, cokernelDualMapEquiv_symm_mk]
+
+/-- The underlying linear map of `baseChangeEquiv` is `baseChangeHom`. -/
+@[simp]
+theorem baseChangeEquiv_toLinearMap (f : P₁ →ₗ[R] P₀) :
+    (baseChangeEquiv A f).toLinearMap = baseChangeHom A f := by
+  refine TensorProduct.AlgebraTensorModule.ext fun a x ↦ ?_
+  obtain ⟨φ, rfl⟩ := mk_surjective f x
+  rw [LinearEquiv.coe_toLinearMap, baseChangeEquiv_tmul_mk, baseChangeHom_tmul_mk]
 
 /-- The inverse of `baseChangeEquiv` carries the class of a base-changed functional `φ_A` back to
 `1 ⊗ [φ]`. -/

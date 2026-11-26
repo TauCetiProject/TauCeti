@@ -75,7 +75,7 @@ Dasgupta–Kakde equation (171)).
 
 * `TauCeti.PresentationTranspose.det_quadraticPresentation_rel` and
   `TauCeti.PresentationTranspose.fittingIdeal_eq_of_quadraticPresentation`: for a quadratic
-  presentation `P` of a finite `R`-module `M`, the transposed relation determinant is
+  presentation `P` of an `R`-module `M`, the transposed relation determinant is
   `σ⁻¹(det P.rel)` and
   `Fitt₀_S(PresentationTranspose σ (Matrix.toLin' P.rel)) = σ⁻¹(Fitt₀_R(M))`.
 * `TauCeti.PresentationTranspose.fittingIdeal_toLin'_eq_minorsIdeal` and
@@ -124,22 +124,10 @@ private def arOppositeEquiv (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) :
   let ρ : Rᵐᵒᵖ ≃+* S := (RingEquiv.toOpposite R).symm.trans σ.symm
   haveI := RingHomInvPair.of_ringEquiv ρ
   haveI := RingHomInvPair.of_ringEquiv_symm ρ
-  let e₀ := ContragredientDual.ofDualOppositeLinearEquiv σ P₀
-  let e₁ := ContragredientDual.ofDualOppositeLinearEquiv σ P₁
-  have hcomp :
-      e₁.toLinearMap.comp (f.lcomp Rᵐᵒᵖ R) =
-        (ContragredientDual.map σ f).comp e₀.toLinearMap := by
-    ext ψ x
-    dsimp only [e₀, e₁]
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-      ContragredientDual.ofDualOppositeLinearEquiv_apply,
-      ContragredientDual.ofDualOppositeLinearEquiv_apply]
-    simp [LinearMap.lcomp_apply']
-  have he : (LinearMap.range (f.lcomp Rᵐᵒᵖ R)).map e₁.toLinearMap =
-      LinearMap.range (ContragredientDual.map σ f) := by
-    rw [← LinearMap.range_comp, hcomp, LinearEquiv.range_comp]
   (AuslanderReitenTranspose.quotientEquiv f
-    (LinearMap.range (ContragredientDual.map σ f)) e₁ he).symm
+    (LinearMap.range (ContragredientDual.map σ f))
+    (ContragredientDual.ofDualOppositeLinearEquiv σ P₁)
+    (ContragredientDual.map_range_lcomp f)).symm
 
 private theorem arOppositeEquiv_mk (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀)
     (φ : ContragredientDual σ P₁) :
@@ -273,17 +261,7 @@ def mulLeftEquiv (σ : S ≃+* R) (a : R) :
       ((LinearMap.ringLmapEquivSelf R R R).trans σ.toSemilinearEquiv.symm)
   have he : (LinearMap.range (ContragredientDual.map σ (LinearMap.mulLeft R a))).map
       eval₁.toLinearMap = Ideal.span {σ.symm a} := by
-    have hdual : (LinearMap.range (ContragredientDual.map σ (LinearMap.mulLeft R a))).map
-        (ContragredientDual.toDualLinearEquiv σ R).toLinearMap =
-        LinearMap.range (LinearMap.mulLeft R a).dualMap := by
-      have hcomp :
-          (ContragredientDual.toDualLinearEquiv σ R).toLinearMap.comp
-              (ContragredientDual.map σ (LinearMap.mulLeft R a)) =
-            (LinearMap.mulLeft R a).dualMap.comp
-              (ContragredientDual.toDualLinearEquiv σ R).toLinearMap := by
-        ext ψ
-        simp [LinearMap.dualMap_apply']
-      rw [← LinearMap.range_comp, hcomp, LinearEquiv.range_comp]
+    have hdual := ContragredientDual.map_range_map (σ := σ) (LinearMap.mulLeft R a)
     have hspan : (LinearMap.range (LinearMap.mulLeft R a).dualMap).map
         ((LinearMap.ringLmapEquivSelf R R R).trans σ.toSemilinearEquiv.symm).toLinearMap =
         Ideal.span {σ.symm a} := by
@@ -395,12 +373,12 @@ theorem quadraticPresentation_gen_apply (σ : S ≃+* R) (P : QuadraticPresentat
   exact congrArg v (Fin.ext (by simp [finCongr_apply]))
 
 /-- **Fitting ideal of a transposed quadratic presentation** (Dasgupta–Kakde, Lemma 6.1): for a
-quadratic presentation `P` of a finite `R`-module `M`,
+quadratic presentation `P` of an `R`-module `M`,
 `Fitt₀_S(PresentationTranspose σ (Matrix.toLin' P.rel)) = σ⁻¹(Fitt₀_R(M))`. -/
-theorem fittingIdeal_eq_of_quadraticPresentation (σ : S ≃+* R) (P : QuadraticPresentation R M)
-    [Module.Finite R M] :
+theorem fittingIdeal_eq_of_quadraticPresentation (σ : S ≃+* R) (P : QuadraticPresentation R M) :
     TauCeti.fittingIdeal S (PresentationTranspose σ (Matrix.toLin' P.rel)) 0 =
-      Ideal.map σ.symm (TauCeti.fittingIdeal R M 0) := by
+      Ideal.map σ.symm (letI := P.finite; TauCeti.fittingIdeal R M 0) := by
+  let := P.finite
   rw [(quadraticPresentation σ P).fittingIdeal_eq, P.fittingIdeal_eq,
     det_quadraticPresentation_rel, Ideal.map_span, Set.image_singleton]
 
@@ -436,7 +414,7 @@ theorem fittingIdeal_toLin'_eq_map_minorsIdeal (σ : S ≃+* R) {m t : ℕ}
     TauCeti.fittingIdeal S (PresentationTranspose σ (Matrix.toLin' A)) 0 =
       Ideal.map σ.symm ((LinearMap.range A.mulVecLin).minorsIdeal t) := by
   rw [fittingIdeal_toLin'_eq_minorsIdeal,
-    ← Matrix.minorsIdeal_range_transpose_mulVecLin A t,
+    ← Matrix.minorsIdeal_range_mulVecLin_transpose A t,
     Matrix.minorsIdeal_range_eq_span_det_submatrix,
     Matrix.minorsIdeal_range_eq_span_det_submatrix,
     Ideal.map_span, ← Set.range_comp]
@@ -450,9 +428,10 @@ theorem fittingIdeal_eq_of_free (σ : S ≃+* R) {t s : ℕ}
     [Module.Finite R P₀] [Module.Free R P₀] [Module.Finite R P₁] [Module.Free R P₁]
     (f : P₁ →ₗ[R] P₀) (π : P₀ →ₗ[R] M) (hπ : Function.Surjective π)
     (hf : LinearMap.range f = LinearMap.ker π)
-    (h₁ : Module.finrank R P₁ = t) (h₀ : Module.finrank R P₀ = t + s) [Module.Finite R M] :
+    (h₁ : Module.finrank R P₁ = t) (h₀ : Module.finrank R P₀ = t + s) :
     TauCeti.fittingIdeal S (PresentationTranspose σ f) 0 =
-      Ideal.map σ.symm (TauCeti.fittingIdeal R M s) := by
+      Ideal.map σ.symm (letI := Module.Finite.of_surjective π hπ; TauCeti.fittingIdeal R M s) := by
+  let := Module.Finite.of_surjective π hπ
   nontriviality S
   have : Nontrivial R := σ.symm.toEquiv.nontrivial
   let b₁ : Module.Basis (Fin t) R P₁ := Module.finBasisOfFinrankEq R P₁ h₁
@@ -480,10 +459,10 @@ theorem fittingIdeal_eq_of_projective (σ : S ≃+* R) {t s : ℕ}
     (f : P₁ →ₗ[R] P₀) (π : P₀ →ₗ[R] M) (hπ : Function.Surjective π)
     (hf : LinearMap.range f = LinearMap.ker π)
     (h₁ : ∀ 𝔭 : PrimeSpectrum R, Module.rankAtStalk P₁ 𝔭 = t)
-    (h₀ : ∀ 𝔭 : PrimeSpectrum R, Module.rankAtStalk P₀ 𝔭 = t + s)
-    [Module.Finite R M] :
+    (h₀ : ∀ 𝔭 : PrimeSpectrum R, Module.rankAtStalk P₀ 𝔭 = t + s) :
     TauCeti.fittingIdeal S (PresentationTranspose σ f) 0 =
-      Ideal.map σ.symm (TauCeti.fittingIdeal R M s) := by
+      Ideal.map σ.symm (letI := Module.Finite.of_surjective π hπ; TauCeti.fittingIdeal R M s) := by
+  let := Module.Finite.of_surjective π hπ
   have : Module.Finite R (AuslanderReitenTranspose f) := Module.Finite.trans Rᵐᵒᵖ _
   have := RingHomInvPair.of_ringEquiv σ
   have := RingHomInvPair.of_ringEquiv_symm σ

@@ -575,24 +575,13 @@ A `compFstEquiv`-style identification for `LinearMap.fst A A₁ C`: the transpos
 `Module.Dual A C`. -/
 def fstEquiv :
     AuslanderReitenTranspose (fst A A₁ C) ≃ₗ[Aᵐᵒᵖ] Module.Dual A C :=
-  LinearEquiv.ofLinearMap
-    (lift (fst A A₁ C) ((inr A A₁ C).lcomp Aᵐᵒᵖ A) fun φ => by ext; simp)
-    (mk (fst A A₁ C) ∘ₗ (snd A A₁ C).lcomp Aᵐᵒᵖ A)
-    (by
-      ext ψ x
-      simp [lcomp_apply'])
-    (by
-      ext φ
-      simp only [comp_apply, lift_mk, lcomp_apply', id_apply]
-      rw [mk_eq_mk_iff]
-      refine ⟨-(φ ∘ₗ inl A A₁ C), ?_⟩
-      ext <;> simp [sub_eq_add_neg, ← Prod.zero_eq_mk])
+  (compFstEquiv (LinearMap.id : A₁ →ₗ[A] A₁) C).trans LinearEquiv.uniqueProd
 
 /-- `fstEquiv` restricts a representative functional on `A₁ × C` to the second summand `C`. -/
 @[simp]
 theorem fstEquiv_mk (φ : Module.Dual A (A₁ × C)) :
-    fstEquiv A₁ C (mk (fst A A₁ C) φ) = φ ∘ₗ inr A A₁ C := by
-  simp [fstEquiv, LinearMap.lcomp_apply']
+    fstEquiv A₁ C (mk (fst A A₁ C) φ) = φ ∘ₗ inr A A₁ C :=
+  congrArg Prod.snd (compFstEquiv_mk (LinearMap.id : A₁ →ₗ[A] A₁) C φ)
 
 /-- The inverse of `fstEquiv` lifts a functional on `C` to `A₁ × C` via `snd`. -/
 @[simp]
