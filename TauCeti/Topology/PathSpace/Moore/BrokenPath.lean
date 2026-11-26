@@ -257,7 +257,7 @@ theorem map_brokenMoorePath {ρ' : Y × Y → C(I, Y)} {U' : Set (Y × Y)}
       brokenMoorePath_succ hρ' n (F ∘ q) ℓ h' (forall_tail_mem h'), MoorePath.map_trans]
     congr 1
     · rw [MoorePath.map_rescale, MoorePath.map_ofUnitPath, ← hF 0]
-      rfl
+      simp only [Function.comp_apply]
     · exact ih (Fin.tail q) (Fin.tail ℓ) (forall_tail_mem h)
         (fun i ↦ by simpa only [Fin.tail, Fin.succ_castSucc] using h' i.succ) fun i ↦ by
         simpa only [Fin.tail, Fin.succ_castSucc] using hF i.succ
@@ -288,7 +288,8 @@ theorem brokenMoorePath_segment_apply {n : ℕ} (v : Fin (n + 1) → ℝ) (ℓ :
         rw [MoorePath.rescale_apply, MoorePath.length_ofUnitPath, one_mul,
           MoorePath.ofUnitPath_apply, NNReal.coe_div, projIcc_of_mem _ ⟨by positivity, hle⟩]
         simp only [Fin.castSucc_zero, Fin.succ_zero_eq_one]
-        simp [AffineMap.lineMap_apply_module]
+        simp only [ContinuousMap.coe_mk, Path.segment_apply, AffineMap.lineMap_apply_module,
+          smul_eq_mul]
         field_simp
         rw [h1]
         ring
@@ -299,7 +300,7 @@ theorem brokenMoorePath_segment_apply {n : ℕ} (v : Fin (n + 1) → ℝ) (ℓ :
       have h1 : Fin.tail v 0 = v 0 + ℓ 0 := by simpa [Fin.tail] using hv 0
       rw [h1, NNReal.coe_sub ht'.le, NNReal.coe_add, add_assoc, ← min_add_add_left,
         add_sub_cancel]
-      rfl
+      simp only [Fin.tail]
 
 end Broken
 

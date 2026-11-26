@@ -323,8 +323,7 @@ theorem straightenArcs_comp {ρ' : Y × Y → C(I, Y)} (F : C(X, Y)) (hr : 0 < r
       F.comp (ρ (f (arcPoint r i 0), f (arcPoint r i a))))
     (t s : I) : straightenArcs ρ' r (F.comp f) t s = F (straightenArcs ρ r f t s) := by
   simp only [straightenArcs, arcSquare, ContinuousMap.comp_apply]
-  rw [hF _ (arcIndex_lt hr s)]
-  rfl
+  rw [hF _ (arcIndex_lt hr s), ContinuousMap.comp_apply]
 
 end Straighten
 

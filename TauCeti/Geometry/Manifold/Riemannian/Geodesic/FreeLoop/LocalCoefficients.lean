@@ -215,7 +215,8 @@ private theorem vertexTimeMap_arcPoint (i : Fin (m + 1)) (a : unitInterval) :
   rw [Fin.val_castSucc] at h₀
   rw [Fin.val_succ] at h₁
   rw [h₀, h₁, vertexTime_succ]
-  simp [AffineMap.lineMap_apply_module]
+  simp only [coe_nndist, ContinuousMap.coe_mk, Path.segment_apply, AffineMap.lineMap_apply_module,
+    smul_eq_mul]
   ring
 
 /-- **The arcs of the vertex time map are carried to radial geodesics.** Along the closed broken
@@ -253,7 +254,8 @@ private theorem geodesicInterpolation_extend_vertexTimeMap {i : ℕ} (hi : i < m
   have hu : (Path.segment ((P : ℝ≥0) : ℝ) ((P + d * unitInterval.toNNReal a : ℝ≥0) : ℝ) :
       C(unitInterval, ℝ)) u = ((P + d * unitInterval.toNNReal (u * a) : ℝ≥0) : ℝ) := by
     rw [← hval, ← hval, Set.Icc.coe_mul]
-    simp [AffineMap.lineMap_apply_module]
+    simp only [ContinuousMap.coe_mk, Path.segment_apply, AffineMap.lineMap_apply_module,
+      smul_eq_mul]
     ring
   rw [hu, MoorePath.extend_coe, cyclicDistanceCutBrokenGeodesic_apply]
 
@@ -761,6 +763,35 @@ private theorem sum_repeatCutoff_le (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) {
         Finset.sum_le_sum fun _ _ ↦ cutoff_le_of_forall_le_succ_of_lt hδ (by omega) _ _
     _ = _ := by rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
 
+/-- Evaluating the reversed pullback of a homotopy `F` along `g`, with its ends rewritten, at `z`
+and mapping it by `φ` traces the reverse of the evaluation of `F` at `g z` mapped by a map `ψ`
+agreeing with `φ`. It is stated over plain spaces so that `exact` matches it against the
+evaluations in the coherence below, whose spaces are objects of `TopCat`, which rewriting does
+not see through. -/
+private theorem coe_map_evalAt_cast_symm_compContinuousMap {X Y Z W : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [TopologicalSpace Z] [TopologicalSpace W] {f₀ f₁ : C(X, Y)}
+    (F : f₀.Homotopy f₁) (g : C(Z, X)) {k₀ k₁ : C(Z, Y)} (h₀ : f₁.comp g = k₀)
+    (h₁ : f₀.comp g = k₁) (z : Z) {φ ψ : Y → W} (hφ : Continuous φ) (hψ : Continuous ψ)
+    (hφψ : ∀ y, φ y = ψ y) :
+    ⇑((((F.compContinuousMap g).symm.cast h₀ h₁).evalAt z).map hφ) =
+      ⇑((F.evalAt (g z)).map hψ).symm := by
+  funext t
+  simp [hφψ]
+
+/-- Evaluating the reversed pullback of a homotopy `F` along `g`, with its ends rewritten, at a
+point `z` with `g z = x` traces the reverse of the evaluation of `F` at `x`, whatever the end
+points of the two paths are written as. Like the previous lemma, it is stated over plain spaces
+for the coherence below. -/
+private theorem coe_cast_evalAt_cast_symm_compContinuousMap {X Y Z : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [TopologicalSpace Z] {f₀ f₁ : C(X, Y)} (F : f₀.Homotopy f₁) (g : C(Z, X))
+    {k₀ k₁ : C(Z, Y)} (h₀ : f₁.comp g = k₀) (h₁ : f₀.comp g = k₁) {z : Z} {x : X} (hz : g z = x)
+    {a b a' b' : Y} (ha : a = k₀ z) (hb : b = k₁ z) (ha' : a' = f₀ x) (hb' : b' = f₁ x) :
+    ⇑((((F.compContinuousMap g).symm.cast h₀ h₁).evalAt z).cast ha hb) =
+      ⇑((F.evalAt x).cast ha' hb').symm := by
+  subst hz
+  funext t
+  simp
+
 include hr in
 /-- **The two homotopies of the approximation by broken geodesics are coherent.** For a compact
 family `K` of tuples of the distance cut `𝓛ʲM` and a compact family `K'` of free loops containing
@@ -845,27 +876,10 @@ private theorem cyclicDistanceCutCocone_coherent (hpos : 0 < δ 0 0) (hlt : ∀ 
         (ρ x)).map (cyclicDistanceCutBrokenGeodesic hr (hlt _)).continuous).symm) ?_ ?_
       (homotopic_map_evalAt_cyclicDistanceCutSampleBrokenGeodesicHomotopy hr hδ'' (ρ x)
         (hlt _) hδ''δ hm hγ).symm₂
-    -- The end points of these paths are objects of `TopCat`, equal to the free loop space only by
-    -- unfolding, so `rw` cannot reach under `Path.map`, `Path.cast` and `Path.symm`; their apply
-    -- lemmas are applied as terms instead.
-    · funext t
-      refine ((congrFun (Path.map_coe _ _) t).trans ?_).trans
-        ((Path.symm_apply _ t).trans (congrFun (Path.map_coe _ _) _)).symm
-      simp only [Function.comp_apply, ContinuousMap.Homotopy.evalAt_apply,
-        ContinuousMap.Homotopy.cast_apply, ContinuousMap.Homotopy.symm_apply,
-        ContinuousMap.Homotopy.compContinuousMap_apply, cyclicDistanceCutCocone_ι_app_hom]
-      exact congrArg _ (ContinuousMap.Homotopy.evalAt_apply ..).symm
-    · funext t
-      refine ((congrFun (Path.cast_coe _ _ _) t).trans ?_).trans
-        ((Path.symm_apply _ t).trans (congrFun (Path.cast_coe _ _ _) _)).symm
-      refine (ContinuousMap.Homotopy.evalAt_apply ..).trans <|
-        ((ContinuousMap.Homotopy.cast_apply ..).trans <|
-          (ContinuousMap.Homotopy.symm_apply ..).trans <|
-            (ContinuousMap.Homotopy.compContinuousMap_apply ..).trans ?_).trans
-          (ContinuousMap.Homotopy.evalAt_apply ..).symm
-      -- The loop `geoʲ x` with its short arcs is the broken geodesic of the repeated tuple.
-      exact congrArg (fun y ↦ sampleBrokenGeodesicLoopHomotopy hr (j + (N + 1))
-        (unitInterval.symm t, y)) (Subtype.ext (hgeo x).symm)
+    · exact coe_map_evalAt_cast_symm_compContinuousMap _ _ _ _ _ _ _
+        (DFunLike.congr_fun (cyclicDistanceCutCocone_ι_app_hom hr hlt hpos.le hδ _))
+    · -- The loop `geoʲ x` with its short arcs is the broken geodesic of the repeated tuple.
+      exact coe_cast_evalAt_cast_symm_compContinuousMap _ _ _ _ (Subtype.ext (hgeo x).symm) _ _ _ _
 
 /-- **The homology of the free loop space with local coefficients is the colimit of the homology
 of the distance cuts.** For cut-offs `δ n i < r` which grow from each stage to the next,
