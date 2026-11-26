@@ -110,6 +110,12 @@ noncomputable def RationalMap.toHom [IsReduced X] [Y.IsSeparated] (f : X ⤏ Y)
     (hf : f.domain = ⊤) : X ⟶ Y :=
   X.topIso.inv ≫ X.homOfLE (f.toPartialMap_domain.trans hf).ge ≫ f.toPartialMap.hom
 
+/-- Unfolding lemma for `RationalMap.toHom`. -/
+theorem RationalMap.toHom_def [IsReduced X] [Y.IsSeparated] (f : X ⤏ Y) (hf : f.domain = ⊤) :
+    f.toHom hf =
+      X.topIso.inv ≫ X.homOfLE (f.toPartialMap_domain.trans hf).ge ≫ f.toPartialMap.hom :=
+  (rfl)
+
 /-- On the spectrum of the stalk at a point, `RationalMap.toHom` is the representative of the
 rational map on its domain of definition. -/
 @[reassoc]
