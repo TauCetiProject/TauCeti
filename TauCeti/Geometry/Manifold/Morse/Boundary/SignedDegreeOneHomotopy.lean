@@ -307,7 +307,7 @@ theorem sourceBrokenDegreeOneSign_of_morseIndex_eq_add_one
 /-- The sign of a trajectory broken at the source vanishes unless the indices are those of such a
 trajectory. -/
 @[simp]
-theorem sourceBrokenDegreeOneSign_of_morseIndex_ne_add_one
+theorem sourceBrokenDegreeOneSign_eq_zero_of_morseIndex_ne_add_one
     {x : criticalPoints 𝓘(ℝ, E) f₀ × M × α}
     (h : manifoldMorseIndex 𝓘(ℝ, E) f₀ p ≠ manifoldMorseIndex 𝓘(ℝ, E) f₀ x.1 + 1) :
     hX₀.sourceBrokenDegreeOneSign 𝔬₀ σ p q x = 0 :=
@@ -327,7 +327,7 @@ theorem targetBrokenDegreeOneSign_of_morseIndex_eq_add_one
 /-- The sign of a trajectory broken at the target vanishes unless the indices are those of such a
 trajectory. -/
 @[simp]
-theorem targetBrokenDegreeOneSign_of_morseIndex_ne_add_one
+theorem targetBrokenDegreeOneSign_eq_zero_of_morseIndex_ne_add_one
     {x : criticalPoints 𝓘(ℝ, E) f₁ × α × M}
     (h : manifoldMorseIndex 𝓘(ℝ, E) f₁ x.1 ≠ manifoldMorseIndex 𝓘(ℝ, E) f₁ q + 1) :
     hX₁.targetBrokenDegreeOneSign 𝔬₁ σ p q x = 0 :=
