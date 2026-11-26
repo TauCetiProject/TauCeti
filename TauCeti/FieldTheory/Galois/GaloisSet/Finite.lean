@@ -104,7 +104,9 @@ theorem finite_galoisSet_iff :
       have := ρ.finiteDimensional_fixedField_stabilizer i
       have hσi := IntermediateField.fixingSubgroup_le (le_iSup (fun L : S ↦ L.val)
         ⟨_, Module.finrank_pos, ρ.finrank_fixedField_stabilizer_le i⟩) hσ
-      rw [ρ.fixingSubgroup_fixedField_stabilizer] at hσi
+      rw [ρ.fixingSubgroup_fixedField_stabilizer, MulAction.mem_stabilizer_iff,
+        GaloisSet.smul_def] at hσi
+      rw [Equiv.Perm.one_apply]
       exact hσi
     -- So a Galois set is determined by its values on representatives of the cosets of `H`.
     refine Finite.of_injective (fun ρ : GaloisSet K n ↦ fun c : Gal(SeparableClosure K/K) ⧸ H ↦
