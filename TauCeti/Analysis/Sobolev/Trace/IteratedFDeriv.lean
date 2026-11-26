@@ -11,6 +11,7 @@ import Mathlib.Analysis.MeanInequalitiesPow
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.InnerProductSpace.ProdL2
+import TauCeti.Analysis.Normed.Lp.ProdLp
 
 /-!
 # Flat `L²` traces of the derivatives of a compactly supported function
@@ -127,7 +128,7 @@ theorem lpNorm_iteratedFDeriv_hyperplane_le {i : ℕ} {u : WithLp 2 (ℝ × E) �
     hw.continuous.comp (by fun_prop)
   have hmem : MemLp (fun y : E ↦ ‖w (WithLp.toLp 2 (a, y))‖) 2 volume :=
     hwcont.norm.memLp_of_hasCompactSupport
-      (hwc.comp_isClosedEmbedding (isClosedEmbedding_toLp_prodMk_left 2 a)).norm
+      (hwc.comp_isClosedEmbedding (WithLp.isClosedEmbedding_toLp_prodMk_left 2 a)).norm
   refine (lpNorm_mono_real hmem hpt).trans ?_
   rw [lpNorm_norm hwcont.aestronglyMeasurable]
   exact (lpNorm_hyperplane_le hw hwc a).trans_eq (by rw [lpNorm_fderiv_iteratedFDeriv])
