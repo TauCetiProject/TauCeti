@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Pseudodifferential.Quantization
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Pseudodifferential.Symbol.HighFrequency
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre

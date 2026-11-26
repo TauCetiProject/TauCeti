@@ -53,6 +53,12 @@ of the Lefschetz zeta function of `f`; the unsigned counts play the same role fo
 zeta function. The last two statements say that these contributions through order `N` do not
 depend on the perturbation, among small nondegenerate ones.
 
+For perturbations of the form `g ∘ ψ` with `ψ` close to the identity in `C¹` (`TauCeti.IsNearId`),
+as they arise when localized perturbations are composed one after another, nondegeneracy and the
+avoidance of a closed set by the graph of an iterate hold for all `ψ` close enough to the identity
+(`TauCeti.eventually_forall_isNearId_isNondegenerateFixedPt_iterate_comp`,
+`TauCeti.eventually_forall_isNearId_iterate_comp_notMem`).
+
 ## Main results
 
 * `IsCompact.exists_pos_forall_isNondegenerateFixedPt_iterate`: nondegeneracy of the periodic
@@ -66,6 +72,9 @@ depend on the perturbation, among small nondegenerate ones.
   `IsCompact.exists_pos_forall_mem_Icc_ncard_fixedPoints_iterate_inter_eq`,
   `IsCompact.exists_pos_forall_mem_Icc_finsum_sign_det_iterate_eq`: nondegeneracy, number and
   signed count for all periods `1 ≤ k ≤ N` at once.
+* `TauCeti.eventually_forall_isNearId_isNondegenerateFixedPt_iterate_comp`,
+  `TauCeti.eventually_forall_isNearId_iterate_comp_notMem`: nondegeneracy and avoidance persist
+  for `g ∘ ψ` with `ψ` close enough to the identity in `C¹`.
 
 ## References
 
@@ -301,3 +310,54 @@ theorem exists_pos_forall_mem_Icc_ncard_fixedPoints_iterate_inter_eq (hK : IsCom
     (nhdsSet_iUnion_iterate_image_mono (Finset.mem_Icc.1 hk).2 hU)
 
 end IsCompact
+
+namespace TauCeti
+
+open Metric
+
+/-! ### Openness under composition with maps close to the identity -/
+
+/-- A compact neighbourhood of the first `l` points of the orbits of a compact set under a
+continuous map. -/
+theorem exists_isCompact_mem_nhdsSet_iUnion_iterate_image {X : Type*} [TopologicalSpace X]
+    [WeaklyLocallyCompactSpace X] {g : X → X} (hg : Continuous g) {C : Set X} (hC : IsCompact C)
+    (l : ℕ) : ∃ U, IsCompact U ∧ U ∈ 𝓝ˢ (⋃ j < l, g^[j] '' C) := by
+  obtain ⟨U, hU, hOU⟩ := exists_compact_superset <|
+    (finite_lt_nat l).isCompact_biUnion fun j _ ↦ hC.image (hg.iterate j)
+  exact ⟨U, hU, subset_interior_iff_mem_nhdsSet.1 hOU⟩
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **Avoidance is `C¹`-open.** If the `l`-th iterate of a `C¹` map `g` sends every point `y` of a
+compact set `C` to a point `z` with `(y, z)` off a closed set `T`, then so does the `l`-th iterate
+of `g ∘ ψ` for every `ψ` close enough to the identity in `C¹`. -/
+theorem eventually_forall_isNearId_iterate_comp_notMem {g : E → E} (hg : ContDiff ℝ 1 g)
+    {C : Set E} (hC : IsCompact C) (l : ℕ) {T : Set (E × E)} (hT : IsClosed T)
+    (h : ∀ y ∈ C, (y, g^[l] y) ∉ T) :
+    ∀ᶠ η in 𝓝[>] (0 : ℝ), ∀ ψ, IsNearId ℝ η ψ → ∀ y ∈ C, (y, (g ∘ ψ)^[l] y) ∉ T := by
+  -- The graph of `g^[l]` over `C` is compact and avoids `T`, hence so does a neighbourhood of it.
+  have hG : IsCompact ((fun y ↦ (y, g^[l] y)) '' C) :=
+    hC.image (continuous_id.prodMk (hg.continuous.iterate l))
+  obtain ⟨θ, hθ, hθT⟩ := hG.exists_cthickening_subset_open hT.isOpen_compl
+    (by rintro _ ⟨y, hy, rfl⟩; exact h y hy)
+  obtain ⟨U, hU, hUn⟩ := exists_isCompact_mem_nhdsSet_iUnion_iterate_image hg.continuous hC l
+  obtain ⟨δ, hδ, hit⟩ := hC.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le
+    (fun _ _ _ _ ↦ hg.contDiffAt) hθ hUn
+  refine eventually_forall_isNearId_comp (Q := fun g' ↦ ∀ y ∈ C, (y, g'^[l] y) ∉ T) hg hU
+    ⟨δ, hδ, fun g' hg' hg'₀ hg'₁ y hy ↦ hθT ?_⟩
+  refine mem_cthickening_of_dist_le _ (y, g^[l] y) θ _ (mem_image_of_mem _ hy) ?_
+  simpa [Prod.dist_eq, dist_eq_norm, hθ.le] using (hit g' hg' hg'₀ hg'₁ y hy).2.1
+
+/-- **Nondegeneracy is `C¹`-open under composition with maps close to the identity.** If the
+points of period `k` of a `C¹` map `g` in a compact set `L` are nondegenerate, so are those of
+`g ∘ ψ` for every `ψ` close enough to the identity in `C¹`. -/
+theorem eventually_forall_isNearId_isNondegenerateFixedPt_iterate_comp {g : E → E}
+    (hg : ContDiff ℝ 1 g) {L : Set E} (hL : IsCompact L) (k : ℕ)
+    (hnd : ∀ x ∈ L, IsFixedPt g^[k] x → IsNondegenerateFixedPt 𝓘(ℝ, E) g^[k] x) :
+    ∀ᶠ η in 𝓝[>] (0 : ℝ), ∀ ψ, IsNearId ℝ η ψ →
+      ∀ x ∈ L, IsFixedPt (g ∘ ψ)^[k] x → IsNondegenerateFixedPt 𝓘(ℝ, E) (g ∘ ψ)^[k] x := by
+  obtain ⟨U, hU, hUn⟩ := exists_isCompact_mem_nhdsSet_iUnion_iterate_image hg.continuous hL k
+  exact eventually_forall_isNearId_comp hg hU
+    (hL.exists_pos_forall_isNondegenerateFixedPt_iterate (fun _ _ _ _ ↦ hg.contDiffAt) hnd hUn)
+
+end TauCeti

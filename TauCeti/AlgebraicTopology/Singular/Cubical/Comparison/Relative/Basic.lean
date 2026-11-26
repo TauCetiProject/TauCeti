@@ -89,7 +89,9 @@ relative homotopy invariance of cubical homology is transported from the simplic
 * `TopPair.exists_isCubicalRepresentative_of_dim_zero`: every chain of dimension `0` represents a
   relative class.
 * `TopPair.IsCubicalRepresentative.sum`, `TopPair.IsCubicalRepresentative.neg`,
-  `TopPair.IsCubicalRepresentative.unique`: representatives are additive and determine their class.
+  `TopPair.IsCubicalRepresentative.smul`, `TopPair.IsCubicalRepresentative.zsmul`,
+  `TopPair.IsCubicalRepresentative.unique`:
+  representatives are linear and determine their class.
 * `TopPair.quasiIsoAt_cubicalChainComplexMap_iff`: a map of pairs induces a quasi-isomorphism of
   relative chains in a degree exactly when, on chains of the ambient spaces, every relative cycle
   of the target is the image of a relative cycle up to a boundary and the chains of the subspace,
@@ -370,6 +372,31 @@ theorem cubicalChainComplexMap_comp {P P' P'' : TopPair.{u}} (f : P ⟶ P') (g :
     cubicalChainComplexMap k (f ≫ g) = cubicalChainComplexMap k f ≫ cubicalChainComplexMap k g :=
   coequalizer.hom_ext (by simp)
 
+/-- Enlarging the subspace of `X` from `B` to `B'` sends the class of a chain of `X` relative to
+`B` to its class relative to `B'`. -/
+@[reassoc]
+theorem π_cubicalChainComplexMap_ofSubsetMap_id {X : TopCat.{u}} {B B' : Set X}
+    (h : Set.MapsTo (𝟙 X) B B') :
+    cokernel.π ((normalizedCubicalChainComplex k).map (ofSubset B).map) ≫
+        cubicalChainComplexMap k (ofSubsetMap (𝟙 X) h) =
+      cokernel.π ((normalizedCubicalChainComplex k).map (ofSubset B').map) := by
+  have hid : Hom.fst (ofSubsetMap (𝟙 X) h) = 𝟙 (ofSubset B).fst := ofSubsetMap_fst _ h
+  rw [π_cubicalChainComplexMap, hid]
+  exact ((normalizedCubicalChainComplex k).map_id _ =≫ _).trans (Category.id_comp _)
+
+variable {k} in
+/-- In relative cubical homology, two maps of pairs induced by continuous maps compose to the map
+induced by any continuous map equal to their composite. -/
+theorem homologyMap_cubicalChainComplexMap_ofSubsetMap_apply_of_comp_eq {X Y Z : TopCat.{u}}
+    {B : Set X} {B' : Set Y} {B'' : Set Z} {g : X ⟶ Y} {g' : Y ⟶ Z} {g'' : X ⟶ Z}
+    (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'') (h : Set.MapsTo g'' B B'')
+    (hg : g ≫ g' = g'') (n : ℕ) (v : ((ofSubset B).cubicalChainComplex k).homology n) :
+    (HomologicalComplex.homologyMap (cubicalChainComplexMap k (ofSubsetMap g' hB')) n).hom
+        ((HomologicalComplex.homologyMap (cubicalChainComplexMap k (ofSubsetMap g hB)) n).hom v) =
+      (HomologicalComplex.homologyMap (cubicalChainComplexMap k (ofSubsetMap g'' h)) n).hom v := by
+  rw [← ofSubsetMap_comp_ofSubsetMap_of_comp_eq hB hB' h hg, cubicalChainComplexMap_comp,
+    HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply]
+
 /-- An isomorphism of pairs induces an isomorphism of relative normalized cubical chains. -/
 instance isIso_cubicalChainComplexMap {P P' : TopPair.{u}} (f : P ⟶ P') [IsIso f] :
     IsIso (cubicalChainComplexMap k f) :=
@@ -526,6 +553,19 @@ theorem IsCubicalRepresentative.neg {c : ((normalizedCubicalChainComplex k).obj 
     P.IsCubicalRepresentative k (-c) (-μ) := by
   obtain ⟨r, hr, rfl⟩ := h
   exact ⟨-r, by rw [map_neg, map_neg, hr], map_neg _ _⟩
+
+/-- Representatives of relative classes are compatible with scalar multiplication. -/
+theorem IsCubicalRepresentative.smul {c : ((normalizedCubicalChainComplex k).obj P.fst).X n}
+    {μ : (P.cubicalChainComplex k).homology n} (h : P.IsCubicalRepresentative k c μ) (r : k) :
+    P.IsCubicalRepresentative k (r • c) (r • μ) := by
+  obtain ⟨z, hz, rfl⟩ := h
+  exact ⟨r • z, by rw [map_smul, map_smul, hz], map_smul _ _ _⟩
+
+/-- Representatives of relative classes are compatible with integer multiples. -/
+theorem IsCubicalRepresentative.zsmul {c : ((normalizedCubicalChainComplex k).obj P.fst).X n}
+    {μ : (P.cubicalChainComplex k).homology n} (h : P.IsCubicalRepresentative k c μ) (m : ℤ) :
+    P.IsCubicalRepresentative k (m • c) (m • μ) := by
+  simpa only [Int.cast_smul_eq_zsmul] using h.smul (m : k)
 
 /-- A chain represents at most one relative class. -/
 theorem IsCubicalRepresentative.unique {c : ((normalizedCubicalChainComplex k).obj P.fst).X n}
@@ -751,7 +791,7 @@ variable {P : TopPair.{u}}
 
 /-- The faces of a cube sending the boundary of the cube into the subspace take values in the
 subspace. -/
-private lemma face_mem_range_map {m : ℕ} {c : SingularCube P.fst (m + 1)}
+theorem face_mem_range_map {m : ℕ} {c : SingularCube P.fst (m + 1)}
     (hc : Set.MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map)) (i : Fin (m + 1))
     {t : unitInterval} (ht : t = 0 ∨ t = 1) (x : Fin m → unitInterval) :
     SingularCube.face i t c x ∈ Set.range P.map := by

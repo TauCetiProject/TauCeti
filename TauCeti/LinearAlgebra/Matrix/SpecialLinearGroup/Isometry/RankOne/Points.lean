@@ -71,6 +71,23 @@ theorem coe_point (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
         have := congrFun h 2
         simp at this) := (rfl)
 
+variable (K σ) in
+/-- The isotropic point `[0 : 0 : 1]`, the image of the point at infinity under the Weyl
+representative (`TauCeti.UnitaryRankOne.weyl_smul_infinity`). -/
+def origin : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).isotropicPoints σ :=
+  point K σ ⟨(0, 0), by simp⟩
+
+variable (K σ) in
+/-- The isotropic point `[0 : 0 : 1]` is the affine point with coordinates `(0, 0)`. -/
+theorem origin_eq_point : origin K σ = point K σ ⟨(0, 0), by simp⟩ :=
+  (rfl)
+
+variable (K σ) in
+/-- The homogeneous coordinates of the isotropic point `[0 : 0 : 1]`. -/
+theorem coe_origin :
+    (origin K σ : ℙ K (Fin 3 → K)) = Projectivization.mk K ![0, 0, 1] (by simp) := by
+  rw [origin_eq_point, coe_point]
+
 /-- The last standard affine chart recovers the two coordinates of an affine isotropic point. -/
 @[simp]
 theorem affineChart_point (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
@@ -110,6 +127,18 @@ theorem point_ne_infinity (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
 theorem infinity_ne_point (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
     infinity K σ ≠ point K σ c :=
   (point_ne_infinity c).symm
+
+variable (K σ) in
+/-- The isotropic point `[0 : 0 : 1]` is not the point at infinity. -/
+@[simp]
+theorem origin_ne_infinity : origin K σ ≠ infinity K σ :=
+  point_ne_infinity _
+
+variable (K σ) in
+/-- The point at infinity is not the isotropic point `[0 : 0 : 1]`. -/
+@[simp]
+theorem infinity_ne_origin : infinity K σ ≠ origin K σ :=
+  (origin_ne_infinity K σ).symm
 
 /-- An isotropic point lies outside the last standard affine chart exactly when it is the
 point at infinity. -/

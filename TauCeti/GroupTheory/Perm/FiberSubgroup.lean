@@ -42,7 +42,9 @@ The order of `fiberSubgroup f` is the product of the factorials of the fiber siz
 (`TauCeti.natCard_fiberSubgroup`).  Summing these orders over all colourings `α → ι`, each
 weighted by a function of its fiber sizes, therefore gives `(card α)!` times the sum of the weight
 over the fiber-size functions of total `card α` (`TauCeti.sum_natCard_fiberSubgroup_smul`), the
-orbit-stabilizer count that averages power sums over the symmetric group.
+orbit-stabilizer count that averages power sums over the symmetric group.  Since every function
+`ι → ℕ` of total `k` is the fiber-size function of a colouring of `Fin k`, there are at most
+`card ι ^ k` of them (`Finset.card_piAntidiag_univ_le`).
 
 Mathlib already studies these permutations, but through the domain action of `Equiv.Perm α` on
 `α → ι`: `DomMulAct.stabilizerMulEquiv` is the same isomorphism stated on
@@ -405,6 +407,17 @@ theorem exists_forall_card_filter_eq {d : ι → ℕ} (hd : ∑ i, d i = Fintype
   rw [← Fintype.card_subtype, Fintype.card_congr (e.subtypeEquiv fun a => Iff.rfl :
       {a // (e a).1 = i} ≃ {x : Σ i, Fin (d i) // x.1 = i}),
     Fintype.card_congr (Equiv.sigmaSubtype i), Fintype.card_fin]
+
+/-- There are at most `card ι ^ k` multi-indices `α : ι → ℕ` of total degree `k`: each is the
+fiber-size function of a colouring of `Fin k` by `ι` (`exists_forall_card_filter_eq`). -/
+theorem _root_.Finset.card_piAntidiag_univ_le (k : ℕ) :
+    #(piAntidiag (univ : Finset ι) k) ≤ Fintype.card ι ^ k := by
+  have h := card_le_card_of_surjOn (s := (univ : Finset (Fin k → ι)))
+    (fun g i ↦ #{j | g j = i}) fun α hα ↦ by
+      obtain ⟨g, hg⟩ := exists_forall_card_filter_eq (α := Fin k)
+        ((mem_piAntidiag.1 hα).1.trans (Fintype.card_fin k).symm)
+      exact ⟨g, mem_coe.2 (mem_univ g), funext hg⟩
+  simpa using h
 
 /-- **Summing the orders of the fiber subgroups over all colourings**, each colouring weighted by
 a function of its fiber sizes: the colourings with a given fiber-size function `d` form one orbit

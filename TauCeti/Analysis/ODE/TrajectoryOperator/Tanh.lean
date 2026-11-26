@@ -59,8 +59,11 @@ from `1` to `-1`, this is again `index (d/ds - B(s)) = -SF(B)`.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_neg_tanh_smul_id` and
   `TauCeti.WeakDerivStep.index_trajectoryOperator_neg_tanh_smul_id`: `D` is Fredholm of index
   `-dim E`.
-* `TauCeti.WeakDerivStep.mem_ker_trajectoryOperator_tanh_smul_id_iff`: the kernel of
-  `d/ds + tanh s` consists of the classes of `(cosh s)⁻¹ • x`.
+* `TauCeti.WeakDerivStep.mem_ker_trajectoryOperator_tanh_smul_id_iff` and
+  `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator_tanh_smul_id`: the kernel of
+  `d/ds + tanh s` consists of the classes of `(cosh s)⁻¹ • x`, and its `Module.finrank` equals
+  that of `F` on any real Banach space `F` (so it has dimension `dim F` when `F` is
+  finite-dimensional).
 * `TauCeti.WeakDerivStep.range_trajectoryOperator_tanh_smul_id`: `d/ds + tanh s` is onto.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_tanh_smul_id` and
   `TauCeti.WeakDerivStep.index_trajectoryOperator_tanh_smul_id`: `d/ds + tanh s` is Fredholm of
@@ -168,6 +171,18 @@ theorem mem_ker_trajectoryOperator_tanh_smul_id_iff
       (fun s ↦ (hasDerivAt_inv_cosh_smul x s).congr_deriv (by simp [smul_comm (Real.tanh s)]))
       (memLp_inv_cosh.smul (memLp_top_const x))
     rwa [show u = w from ext (Lp.ext (hx.trans hwx.symm))]
+
+/-- **The kernel of `d/ds + tanh s` has the `Module.finrank` of `F`.** For the `L∞` class `AL` of
+`s ↦ tanh(s) • id` on a real Banach space `F`, the kernel of `u ↦ u' + AL u` on `W^{1,2}(ℝ, F)` has
+`Module.finrank` equal to `Module.finrank ℝ F`, since every solution of `v' = -tanh(s) v` is square
+integrable. For finite-dimensional `F` this says the kernel has dimension `dim F`. -/
+theorem finrank_ker_trajectoryOperator_tanh_smul_id
+    {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ Real.tanh s • ContinuousLinearMap.id ℝ F) :
+    Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker = Module.finrank ℝ F := by
+  rw [finrank_ker_trajectoryOperator continuous_tanh_smul_id AL hAL,
+    squareIntegrableSolutions_tanh_smul_id, finrank_top]
 
 end Banach
 
@@ -282,9 +297,8 @@ theorem index_trajectoryOperator_neg_tanh_smul_id
   rw [index_trajectoryOperator_of_hasLyapunovForm hA
       hminus hplus hbot htop AL AL hAL hadj,
     finrank_ker_trajectoryOperator continuous_neg_tanh_smul_id AL hAL,
-    finrank_ker_trajectoryOperator continuous_tanh_smul_id (-AL) (neg_ae_eq_tanh_smul_id hAL),
-    squareIntegrableSolutions_neg_tanh_smul_id, squareIntegrableSolutions_tanh_smul_id,
-    finrank_bot, finrank_top]
+    finrank_ker_trajectoryOperator_tanh_smul_id (neg_ae_eq_tanh_smul_id hAL),
+    squareIntegrableSolutions_neg_tanh_smul_id, finrank_bot]
   simp
 
 /-- The class `AL` of `s ↦ tanh(s) • id` is that of the reversal `s ↦ A(-s)†` of the coefficient

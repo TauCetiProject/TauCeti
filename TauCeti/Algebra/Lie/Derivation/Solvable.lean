@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Lie.Abelian
 import TauCeti.Algebra.Lie.Killing.Perfect
 public import TauCeti.Algebra.Lie.NilpotentExtension
 public import TauCeti.Algebra.Lie.Quotient
@@ -124,7 +125,7 @@ variable [CharZero K]
 takes values in its nilradical. -/
 theorem _root_.LieDerivation.apply_mem_nilradical_of_isSolvable [IsSolvable L]
     (D : LieDerivation K L L) (x : L) : D x ∈ LieAlgebra.nilradical K L := by
-  have : IsLieAbelian K := isMulCommutative_iff_isLieAbelian.mp inferInstance
+  have := isLieAbelian_of_commRing K
   let E := L ⋊⁅D.lineHom⁆ K
   have : LieRing.IsNilpotent (derivedSeries K E 1) :=
     (LieIdeal.isNilpotent_iff_isNilpotent_ambient _).mpr
@@ -176,7 +177,7 @@ finite-dimensional Lie algebra over a field of characteristic zero, `D (radical 
 in `nilradical K L`. -/
 theorem _root_.LieDerivation.apply_mem_nilradical_of_mem_radical (D : LieDerivation K L L)
     {x : L} (hx : x ∈ radical K L) : D x ∈ LieAlgebra.nilradical K L := by
-  have : IsLieAbelian K := isMulCommutative_iff_isLieAbelian.mp inferInstance
+  have := isLieAbelian_of_commRing K
   let E := L ⋊⁅D.lineHom⁆ K
   let π := (radical K E).mkQ
   -- The quotient of `E` by its radical is perfect, by Cartan's criterion.

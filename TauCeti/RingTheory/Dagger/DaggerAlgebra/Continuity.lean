@@ -12,6 +12,7 @@ import TauCeti.RingTheory.Affinoid.Continuity
 import TauCeti.RingTheory.Affinoid.PowerBounded
 import TauCeti.RingTheory.Dagger.DaggerAlgebra.FaithfullyFlat
 import TauCeti.RingTheory.Dagger.QuotientCompletion
+import TauCeti.RingTheory.Dagger.Radius
 import TauCeti.RingTheory.Dagger.TateLift
 
 /-!
@@ -738,6 +739,27 @@ theorem continuous_completionLift (hC : IsAffinoidAlgebra K C) (χ : A →ₐ[K]
   have := (isAffinoidAlgebra_completion (K := K) (A := A)).isNoetherianRing
   IsAffinoidAlgebra.continuous_algHom (K := K) (A := C) (B := completion K A) hC
     (completionLift hC χ)
+
+/-- A homomorphism `W_k → A` into a dagger algebra, restricted to the series of `T_k(r)` for a
+radius `r > 1`, is continuous into the completion of `A`: it extends to the Tate algebra `T_k`,
+and maps between affinoid algebras are continuous. -/
+theorem continuous_toCompletion_comp_ofRestricted {k : ℕ}
+    (χ : washnitzerAlgebra (Fin k) K →ₐ[K] A) {r : ℝ} (hr : 1 < r) :
+    letI (_ : Fin k) : Fact (0 < r) := ⟨zero_lt_one.trans hr⟩
+    Continuous ((toCompletion K A).comp (χ.comp (washnitzerAlgebra.ofRestricted hr
+      fun _ : Fin k ↦ le_rfl))) := by
+  let (_ : Fin k) : Fact (0 < r) := ⟨zero_lt_one.trans hr⟩
+  have hA := isAffinoidAlgebra_completion (K := K) (A := A)
+  have := (isAffinoidAlgebra_tate (K := K) (σ := Fin k)).isNoetherianRing
+  convert (IsAffinoidAlgebra.continuous_algHom (K := K) (A := completion K A)
+      (B := IsRestricted.subring (R := K) (fun _ : Fin k ↦ (1 : ℝ))) hA
+      (washnitzerAlgebra.liftToTate hA ((toCompletion K A).comp χ))).comp
+    (TauCeti.MvPowerSeries.continuous_restrictedRadiusHom (R := K)
+      (fun _ ↦ zero_le_one) fun _ ↦ hr.le) using 1
+  funext f
+  rw [Function.comp_apply, ← TauCeti.MvPowerSeries.restrictedRadiusAlgHom_apply,
+    ← washnitzerAlgebra.toTate_ofRestricted hr fun _ ↦ le_rfl,
+    washnitzerAlgebra.liftToTate_toTate, AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply]
 
 end CompletionLift
 

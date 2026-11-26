@@ -25,6 +25,8 @@ It also gives a norm-ball version of the tube lemma for properties near a compac
   fiber.
 * `IsCompact.exists_pos_forall_norm_sub_le`: a function continuous at the points of the graph of a
   map over a compact set is uniformly continuous there, in the fibre direction.
+* `IsCompact.exists_forall_norm_le_of_eventually_eq_zero`: a function continuous on `K × X`, with
+  `K` compact, vanishing outside `K × L` for a compact `L ⊆ X`, is bounded on `K × X`.
 * `TauCeti.exists_nonneg_forall_notMem_norm_lt`: in a compact space covered by open sets `U` and
   `V`, the coordinates of the points of `U` outside `V` are bounded.
 * `TauCeti.not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop`: a family whose values at
@@ -73,6 +75,22 @@ theorem IsCompact.exists_pos_forall_norm_sub_le {M E G : Type*} [PseudoMetricSpa
   refine ⟨δ / 2, by positivity, fun p hp y hy ↦ ?_⟩
   rw [← dist_eq_norm]
   exact (h p hp y (by rw [dist_eq_norm]; linarith)).le
+
+/-- A function `Y` continuous on `K × X`, with `K` compact, and vanishing at `(t, x)` for `x`
+outside a compact subset of `X`, is bounded on `K × X`. -/
+theorem IsCompact.exists_forall_norm_le_of_eventually_eq_zero {K : Set P} (hK : IsCompact K)
+    {Y : P × X → H} (hY : ContinuousOn Y (K ×ˢ univ))
+    (hYc : ∀ᶠ p in comap Prod.snd (cocompact X), Y p = 0) :
+    ∃ C, ∀ t ∈ K, ∀ x, ‖Y (t, x)‖ ≤ C := by
+  obtain ⟨s, hs, hsY⟩ := mem_comap.1 hYc
+  obtain ⟨L, hL, hLs⟩ := mem_cocompact.1 hs
+  obtain ⟨C, hC⟩ := (hK.prod hL).exists_bound_of_continuousOn
+    (hY.mono (prod_mono subset_rfl (subset_univ L)))
+  refine ⟨max C 0, fun t ht x ↦ ?_⟩
+  by_cases hx : x ∈ L
+  · exact (hC (t, x) ⟨ht, hx⟩).trans (le_max_left _ _)
+  · rw [show Y (t, x) = 0 from hsY (hLs hx), norm_zero]
+    exact le_max_right _ _
 
 namespace TauCeti
 

@@ -40,7 +40,7 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
   `⋀ⁿ⁺¹ (M × R)` into `a ∈ ⋀ⁿ⁺¹ M` and `b ∈ ⋀ⁿ M`, with `e = (0, 1)`, together with the
   component identities `TauCeti.map_fst_koszulDifferential_snd_comp_wedgeLeft` and
   `TauCeti.map_fst_koszulDifferential_snd_comp_map_inl`. The pure exterior-power component
-  identities are in `TauCeti.LinearAlgebra.ExteriorPower.Prod`.
+  identities are in `TauCeti.LinearAlgebra.ExteriorPower.Prod.Basic`.
 * `TauCeti.koszulComplex.exactAt_succ_iff`: `Hₖ₊₁(K(φ)) = 0` exactly when the Koszul
   differentials out of and into `⋀ᵏ⁺¹ M` are exact.
 * `TauCeti.koszulComplex.map`: the chain map `K(φ) → K(ψ)` induced by a linear map `g` with
@@ -426,7 +426,8 @@ theorem range_le_annihilator_homology (n : ℕ) :
 @[simp]
 theorem primaryComponent_homology_eq_top (n : ℕ) :
     Ideal.primaryComponent ((koszulComplex φ).homology n) (LinearMap.range φ) = ⊤ :=
-  Ideal.primaryComponent_eq_top_of_le_annihilator _ (range_le_annihilator_homology φ n)
+  Ideal.primaryComponent_eq_top_of_le_annihilator _ (n := 1)
+    ((pow_one _).trans_le (range_le_annihilator_homology φ n))
 
 end Homotopy
 

@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
 public import TauCeti.RingTheory.Valuation.Discrete.Order.Basic
 import Mathlib.RingTheory.OrderOfVanishing.Noetherian
+import TauCeti.Algebra.GroupWithZero.Range
+import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 
 /-!
 # Order of vanishing in the valuation ring of a normalized discrete valuation
@@ -37,15 +39,16 @@ theorem ringOrd_valuationSubring_eq_toNat_ord {F : Type*} [Field F]
     (v : _root_.Valuation F ℤᵐ⁰) (hv : Function.Surjective v) {x : v.valuationSubring}
     (hx : (x : F) ≠ 0) :
     Ring.ord v.valuationSubring x = ((ord v (x : F)).toNat : ℕ∞) := by
-  let _ := nontrivial_valueGroup_of_surjective v hv
-  let _ := valuationSubring_isDiscreteValuationRing_of_surjective v hv
-  obtain ⟨t, ht⟩ := exists_isUniformizer_of_surjective v hv
-  have ht_ord : ord v t = 1 := (isUniformizer_iff_ord_eq_one_of_surjective v hv).1 ht
+  let _ := v.nontrivial_valueGroup_of_surjective hv
+  let _ := v.valuationSubring_isDiscreteValuationRing_of_surjective hv
+  obtain ⟨t, ht⟩ := hv (WithZero.exp (-1))
+  have ht_ord : ord v t = 1 := by simp [ord_def, ht]
   have ht0 : t ≠ 0 := fun h0 ↦ by rw [h0, ord_zero] at ht_ord; omega
   let π : v.valuationSubring := ⟨t, (mem_valuationSubring_iff_ord_nonneg v).2 (by omega)⟩
   have hπ : Irreducible π := by
     rw [IsDiscreteValuationRing.irreducible_iff_uniformizer]
-    exact ht.is_generator
+    exact ((isUniformizer_iff_ord_eq_one_of_valueGroup_eq_top v
+      (v.valueGroup_eq_top_of_surjective hv)).2 ht_ord).is_generator
   have hx0 : x ≠ 0 := fun h0 ↦ hx (congrArg Subtype.val h0)
   obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hx0 hπ
   rw [Ring.ord_eq_addVal, IsDiscreteValuationRing.addVal_def' u hπ n]

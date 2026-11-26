@@ -17,7 +17,7 @@ public import TauCeti.Topology.Algebra.GroupAction.Quotient
 public import TauCeti.Topology.Algebra.ProperAction.Basic
 import TauCeti.Geometry.Lie.FundamentalVectorField.OrbitMap
 import TauCeti.Geometry.Manifold.GroupAction.Orbit
-import TauCeti.Geometry.Manifold.GroupAction.SliceChart
+import TauCeti.Geometry.Manifold.GroupAction.Slice.Chart
 import TauCeti.Geometry.Manifold.GroupAction.TransverseSlice
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 import TauCeti.Geometry.Manifold.PullbackGroupoid
@@ -25,6 +25,7 @@ import TauCeti.Geometry.Manifold.Submersion.Basic
 import TauCeti.Geometry.Manifold.Submersion.Diffeomorph
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Submersion.Split
+import TauCeti.LinearAlgebra.LinearMap.Comp
 import TauCeti.Topology.Algebra.GroupAction.SliceChart
 
 /-!
@@ -101,6 +102,8 @@ nonempty `dim G ≤ dim M` (`TauCeti.finrank_le_of_properSMul_of_isCancelSMul`,
   near `(x, x)` lie in single orbits.
 * `ProperSMul.ker_mfderiv_quotientMk`, `ProperVAdd.ker_mfderiv_quotientMk`: the kernel of the
   differential of the orbit projection at `y` is the orbit tangent space `𝔤 · y`.
+* `ProperSMul.isLocalDiffeomorphAt_smul_section`: a smooth local section `s` of the orbit
+  projection is a transverse slice, so `(g, q) ↦ g • s q` is a local diffeomorphism.
 * `ProperSMul.contMDiffAt_orbitRelQuotientLift_iff`,
   `ProperSMul.contMDiff_orbitRelQuotientLift_iff`,
   `ProperSMul.existsUnique_contMDiff_comp_quotientMk_eq`,
@@ -589,6 +592,48 @@ theorem ker_mfderiv_quotientMk (y : M) :
     (Eventually.of_forall fun _ ↦ _root_.MulAction.orbitRel.Quotient.quotient_smul_eq)
     (Eventually.of_forall fun _ h ↦
       _root_.MulAction.mem_orbit_iff.1 (_root_.MulAction.orbitRel_apply.1 (Quotient.exact h)))
+
+/-- **Smooth local sections are slices.** Let `s` be a smooth section of the orbit projection over
+an open set `U` of `M ⧸ G`. Then the slice map `(g, q) ↦ g • s q` is a smooth local
+diffeomorphism at every point of `G × U`: the range of `ds` is a complement of the orbit tangent
+space `𝔤 · s q`, the kernel of the differential of the projection. -/
+theorem isLocalDiffeomorphAt_smul_section {U : Set (_root_.MulAction.orbitRel.Quotient G M)}
+    {s : _root_.MulAction.orbitRel.Quotient G M → M} (hU : IsOpen U)
+    (hs : letI := orbitRelQuotientChartedSpace I G I' M
+      ContMDiffOn 𝓘(ℝ, QuotientModelSpace E E') I' ∞ s U)
+    (hsec : ∀ q ∈ U, Quotient.mk _ (s q) = q) {q : _root_.MulAction.orbitRel.Quotient G M}
+    (hq : q ∈ U) (g : G) :
+    letI := orbitRelQuotientChartedSpace I G I' M
+    IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, QuotientModelSpace E E')) I' ∞
+      (fun p : G × _root_.MulAction.orbitRel.Quotient G M ↦ p.1 • s p.2) (g, q) := by
+  let _ := orbitRelQuotientChartedSpace I G I' M
+  set J := 𝓘(ℝ, QuotientModelSpace E E')
+  have hsd : MDifferentiableAt J I' s q :=
+    (hs.contMDiffAt (hU.mem_nhds hq)).mdifferentiableAt (by simp)
+  have hπd : MDifferentiableAt I' J (Quotient.mk (_root_.MulAction.orbitRel G M)) (s q) :=
+    (contMDiff_quotientMk (I := I) (G := G) (I' := I') (M := M) (s q)).mdifferentiableAt
+      (by simp)
+  -- The differential of the projection is a left inverse of that of the section.
+  have hcomp : (mfderiv I' J (Quotient.mk (_root_.MulAction.orbitRel G M)) (s q)).toLinearMap ∘ₗ
+      (mfderiv J I' s q).toLinearMap = LinearMap.id := by
+    have hev : Quotient.mk (_root_.MulAction.orbitRel G M) ∘ s =ᶠ[𝓝 q] id :=
+      eventually_of_mem (hU.mem_nhds hq) hsec
+    have h : mfderiv J J (Quotient.mk (_root_.MulAction.orbitRel G M) ∘ s) q = mfderiv J J id q :=
+      hev.mfderiv_eq
+    rw [mfderiv_id, mfderiv_comp q hπd hsd] at h
+    exact LinearMap.ext fun v ↦ DFunLike.congr_fun h v
+  have hbij : Bijective
+      ((mfderiv I' J (Quotient.mk (_root_.MulAction.orbitRel G M)) (s q)).toLinearMap ∘ₗ
+        (mfderiv J I' s q).toLinearMap) := by
+    rw [hcomp]
+    exact bijective_id
+  obtain ⟨hinj, hcompl, -⟩ := LinearMap.bijective_comp_iff.1 hbij
+  have hslice := (isLocalDiffeomorphAt_smul_slice_iff (I := I) (G := G) hs hU hq).2
+    ⟨isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot
+      (IsCancelSMul.stabilizer_eq_bot (s q)), hinj, by
+        rw [← ker_mfderiv_quotientMk (I := I) (G := G) (s q)]
+        exact hcompl.symm⟩
+  exact hslice.eventually_forall_smul_slice.self_of_nhds g
 
 /-- **The quotient manifold theorem for free proper Lie group actions (existential form).** Let a
 finite-dimensional real Lie group `G` act smoothly, freely and properly on a finite-dimensional

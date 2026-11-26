@@ -40,6 +40,15 @@ these identifications (`mapAutFiber_conjAut`): `mapAutFiber` intertwines conjuga
 conjugation by its image path. Consequently the homomorphism induced by `f` depends on the
 base point only up to conjugation by étale paths.
 
+A point of a geometric fibre is a lift of the geometric point (`fiberCompInclIso`), and the image
+under `pullbackCompFiberIso` of a lift to `X ×_S T` is its composite with the projection to `X`
+(`fiberCompInclIso_hom_app_pullbackCompFiberIso_hom_app_left`, in
+`TauCeti/AlgebraicGeometry/FiniteEtale/Fiber.lean`). Hence étale paths in `T` and in `S` that
+both act on lifts by precomposition with one morphism `Spec Ω' ⟶ Spec Ω` correspond under
+`mapFiberIso` (`mapFiberIso_eq_of_fiberCompInclIso_left`), and likewise for loops under
+`mapAutFiber` (`mapAutFiber_eq_of_fiberCompInclIso_left`); this is how the homomorphism induced by
+a morphism of spectra of fields is identified with restriction of Galois automorphisms.
+
 ## Main definitions
 
 * `TauCeti.FiniteEtaleScheme.mapFiberIso f hx hx' γ`: the image under `f : T ⟶ S` of an étale
@@ -53,7 +62,13 @@ base point only up to conjugation by étale paths.
   functoriality of the image of étale paths.
 * `TauCeti.FiniteEtaleScheme.mapAutFiber_id`, `TauCeti.FiniteEtaleScheme.mapAutFiber_comp`:
   functoriality of the induced homomorphisms of étale fundamental groups.
+* `TauCeti.FiniteEtaleScheme.mapAutFiber_eq_conjAut`: `mapAutFiber f h` is precomposition with
+  base change, conjugated by `pullbackCompFiberIso`.
 * `TauCeti.FiniteEtaleScheme.mapAutFiber_conjAut`: compatibility with change of base point.
+* `TauCeti.FiniteEtaleScheme.mapFiberIso_eq_of_fiberCompInclIso_left`,
+  `TauCeti.FiniteEtaleScheme.mapAutFiber_eq_of_fiberCompInclIso_left`: étale paths (and loops)
+  acting on lifts of geometric points by precomposition with the same morphism
+  `Spec Ω' ⟶ Spec Ω` correspond under `mapFiberIso` (and `mapAutFiber`).
 
 ## References
 
@@ -167,6 +182,16 @@ theorem mapFiberIso_comp (f : T ⟶ S) (g : S ⟶ U) {x : Spec (.of Ω) ⟶ T}
   -- The two sides differ only in writing `(pullback g ⋙ pullback f).obj X` (`Functor.comp_obj`).
   rfl
 
+/-- The image of a loop `σ` at `x` is `σ` precomposed with base change along `f`, conjugated by
+the identification of base change followed by the fibre at `x` with the fibre at `y`. -/
+private theorem mapFiberIso_asIso_eq_conjAut (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T}
+    {y : Spec (.of Ω) ⟶ S} (h : x ≫ f = y) (σ : Aut (fiber x)) :
+    mapFiberIso f h h σ.asIso = ((pullbackCompFiberIso f x ≪≫ eqToIso (congrArg fiber h)).conjAut
+      (((Functor.whiskeringLeft _ _ _).obj (pullback f)).mapAut (fiber x) σ)).asIso := by
+  rw [Iso.conjAut_apply, Functor.mapAut_apply_asIso]
+  ext X : 3
+  simp [mapFiberIso, -pullbackCompFiberIso_hom_app, -pullbackCompFiberIso_inv_app]
+
 /-- The continuous homomorphism of étale fundamental groups `π₁(T, x) →ₜ* π₁(S, y)` induced by
 `f : T ⟶ S`, where `h : x ≫ f = y`: a loop `σ` at `x` goes to its image `mapFiberIso f h h σ`,
 whose component at a finite étale `S`-scheme `X` is the component of `σ` at `X ×_S T`. -/
@@ -184,11 +209,8 @@ noncomputable def mapAutFiber (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T} {y : Spec 
     -- The map is conjugation by the identification of base change followed by the fibre at `x`
     -- with the fibre at `y`, after precomposition with base change along `f`.
     refine ((pullbackCompFiberIso f x ≪≫ eqToIso (congrArg fiber h)).continuous_conjAut.comp
-      (continuous_mapAut_whiskeringLeft (pullback f) (fiber x))).congr fun σ ↦ ?_
-    ext1
-    rw [Function.comp_apply, Iso.conjAut_apply, Functor.mapAut_apply_asIso]
-    ext X : 3
-    simp [mapFiberIso, -pullbackCompFiberIso_hom_app, -pullbackCompFiberIso_inv_app]
+      (continuous_mapAut_whiskeringLeft (pullback f) (fiber x))).congr
+        fun σ ↦ Aut.ext (mapFiberIso_asIso_eq_conjAut f h σ).symm
 
 /-- The loop `mapAutFiber f h σ` is the image of the loop `σ` under `f`. -/
 @[simp]
@@ -196,6 +218,15 @@ theorem mapAutFiber_apply_asIso (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T} {y : Spe
     (h : x ≫ f = y) (σ : Aut (fiber x)) :
     (mapAutFiber f h σ).asIso = mapFiberIso f h h σ.asIso :=
   (rfl)
+
+/-- The homomorphism of étale fundamental groups induced by `f : T ⟶ S` is precomposition with
+base change along `f`, conjugated by the identification of base change followed by the fibre at
+`x` with the fibre at `y`. -/
+theorem mapAutFiber_eq_conjAut (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T} {y : Spec (.of Ω) ⟶ S}
+    (h : x ≫ f = y) (σ : Aut (fiber x)) :
+    mapAutFiber f h σ = (pullbackCompFiberIso f x ≪≫ eqToIso (congrArg fiber h)).conjAut
+      (((Functor.whiskeringLeft _ _ _).obj (pullback f)).mapAut (fiber x) σ) :=
+  Aut.ext (mapFiberIso_asIso_eq_conjAut f h σ)
 
 /-- The identity of `S` induces the identity of `π₁(S, x)`. -/
 @[simp]
@@ -223,5 +254,54 @@ theorem mapAutFiber_conjAut (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T} {x' : Spec (
   ext1
   rw [mapAutFiber_apply_asIso, Iso.conjAut_apply, Iso.conjAut_apply, mapAutFiber_apply_asIso,
     mapFiberIso_trans f hx' hx hx', mapFiberIso_trans f hx hx hx', mapFiberIso_symm]
+
+/-- **Recognizing the image of an étale path by its action on lifts.** Let
+`φ : Spec Ω' ⟶ Spec Ω`. If an étale path `γ` from `x` to `x'` sends each lift of `x` to a finite
+étale `T`-scheme to its precomposition with `φ`, and an étale path `δ` from `y` to `y'` does the
+same on lifts of `y`, then `δ` is the image `mapFiberIso f hx hx' γ`. -/
+theorem mapFiberIso_eq_of_fiberCompInclIso_left (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T}
+    {x' : Spec (.of Ω') ⟶ T} {y : Spec (.of Ω) ⟶ S} {y' : Spec (.of Ω') ⟶ S} (hx : x ≫ f = y)
+    (hx' : x' ≫ f = y') (γ : fiber x ≅ fiber x') (δ : fiber y ≅ fiber y')
+    (φ : Spec (.of Ω') ⟶ Spec (.of Ω))
+    (hγ : ∀ (Z : FiniteEtaleScheme T) (z : (fiber x).obj Z),
+      ((fiberCompInclIso x').hom.app Z (γ.hom.app Z z)).left =
+        φ ≫ ((fiberCompInclIso x).hom.app Z z).left)
+    (hδ : ∀ (X : FiniteEtaleScheme S) (w : (fiber y).obj X),
+      ((fiberCompInclIso y').hom.app X (δ.hom.app X w)).left =
+        φ ≫ ((fiberCompInclIso y).hom.app X w).left) :
+    mapFiberIso f hx hx' γ = δ := by
+  subst hx hx'
+  ext X : 3
+  ext w
+  obtain ⟨z, rfl⟩ : ∃ z, (pullbackCompFiberIso f x).hom.app X z = w :=
+    ⟨_, FintypeCat.inv_hom_id_apply ((pullbackCompFiberIso f x).app X) w⟩
+  -- A point of the fibre is determined by the underlying morphism of schemes of its lift.
+  refine (ConcreteCategory.bijective_of_isIso ((fiberCompInclIso (x' ≫ f)).hom.app X)).1
+    (Over.OverMorphism.ext ?_)
+  rw [hδ, mapFiberIso_hom_app]
+  -- Evaluate the composite and cancel `pullbackCompFiberIso` against its inverse.
+  simp only [FintypeCat.comp_apply, ← Iso.app_hom, ← Iso.app_inv, FintypeCat.hom_inv_id_apply]
+  simp only [Iso.app_hom]
+  -- Both sides are lifts to `X ×_S T` composed with the projection to `X`; there `γ` acts by `φ`.
+  rw [fiberCompInclIso_hom_app_pullbackCompFiberIso_hom_app_left,
+    fiberCompInclIso_hom_app_pullbackCompFiberIso_hom_app_left, hγ]
+  exact Category.assoc _ _ _
+
+/-- **Recognizing the image of a loop by its action on lifts.** Let `φ` be an endomorphism of
+`Spec Ω`. If a loop `σ` at `x` acts on the lifts of `x` to every finite étale `T`-scheme by
+precomposition with `φ`, and a loop `τ` at `y` does the same on the lifts of `y`, then
+`mapAutFiber f h σ = τ`. -/
+theorem mapAutFiber_eq_of_fiberCompInclIso_left (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T}
+    {y : Spec (.of Ω) ⟶ S} (h : x ≫ f = y) (σ : Aut (fiber x)) (τ : Aut (fiber y))
+    (φ : Spec (.of Ω) ⟶ Spec (.of Ω))
+    (hσ : ∀ (Z : FiniteEtaleScheme T) (z : (fiber x).obj Z),
+      ((fiberCompInclIso x).hom.app Z (σ.asIso.hom.app Z z)).left =
+        φ ≫ ((fiberCompInclIso x).hom.app Z z).left)
+    (hτ : ∀ (X : FiniteEtaleScheme S) (w : (fiber y).obj X),
+      ((fiberCompInclIso y).hom.app X (τ.asIso.hom.app X w)).left =
+        φ ≫ ((fiberCompInclIso y).hom.app X w).left) :
+    mapAutFiber f h σ = τ := by
+  ext1
+  exact mapFiberIso_eq_of_fiberCompInclIso_left f h h σ.asIso τ.asIso φ hσ hτ
 
 end TauCeti.FiniteEtaleScheme
