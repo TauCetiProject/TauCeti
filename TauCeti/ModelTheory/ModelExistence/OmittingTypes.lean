@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.Infinitary.FiniteInstances
 public import TauCeti.ModelTheory.ModelExistence.Isolation
 public import TauCeti.ModelTheory.ModelExistence.ModelExistence
+import TauCeti.ModelTheory.Satisfiability
 
 /-!
 # Omitting types in countable fragments

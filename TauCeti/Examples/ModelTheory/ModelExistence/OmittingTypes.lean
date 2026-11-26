@@ -242,14 +242,10 @@ theorem isSatisfiable_insert_iInf_unnamedType_of_stdNat_model (T : ConstLang.The
   -- `StdNat` realizes the finite conjunction at a natural number exceeding all constants in `s`.
   choose idx hidx using fun ψ : s => mem_unnamedType_iff.1 (hs ψ.property)
   let N : ℕ := (Finset.univ.sup idx) + 1
-  have hM : StdNat ⊨ insert (BoundedFormula.iInf fun ψ : s => ψ.val).exs T := by
-    refine Theory.model_insert_iff.2 ⟨(Sentence.realize_exs _).2 ?_, inferInstance⟩
-    refine ⟨fun _ => ⟨N⟩, BoundedFormula.realize_iInf.2 fun ψ => ?_⟩
-    rw [← hidx ψ, realize_neConstFormula_iff, coe_con_stdNat]
-    intro h
-    exact Nat.ne_of_gt (Nat.lt_succ_of_le (Finset.le_sup (Finset.mem_univ ψ))) (StdNat.mk.inj h)
-  let := hM
-  exact Theory.Model.isSatisfiable StdNat
+  refine Theory.isSatisfiable_insert_iInf_exs_of_realize (a := fun _ => (⟨N⟩ : StdNat)) fun ψ => ?_
+  rw [← hidx ψ, realize_neConstFormula_iff, coe_con_stdNat]
+  intro h
+  exact Nat.ne_of_gt (Nat.lt_succ_of_le (Finset.le_sup (Finset.mem_univ ψ))) (StdNat.mk.inj h)
 
 /-- **Compactness realizes `unnamedType` over every theory of `StdNat`.** Every first-order theory
 `T` satisfied by `StdNat` has a nonempty model realizing `unnamedType`, containing an element
