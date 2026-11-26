@@ -81,13 +81,6 @@ theorem norm_det_eq_one {R : Type*} [CommRing R] [Norm R] [NormOneClass R]
     (g : SpecialLinearGroup n R) : ‖(g : Matrix n n R).det‖ = 1 := by
   rw [g.property, norm_one]
 
-/-- The embedding `SL(n, R) → GL(n, R)` commutes with negation, when `n` has even cardinality, so
-that `-g ∈ SL(n, R)`. -/
-@[simp]
-theorem toGL_neg {R : Type*} [CommRing R] [Fact (Even (Fintype.card n))]
-    (g : SpecialLinearGroup n R) : toGL (-g) = -toGL g :=
-  Units.ext <| by simp only [coe_GL_coe_matrix, coe_neg, Units.val_neg]
-
 variable (n 𝕜) in
 /-- **The polar retraction** `SL(n, 𝕜) → SU(n)`, for `𝕜 = ℝ` or `ℂ`: the unitary factor `U` of the
 polar decomposition `g = P * U`, which has determinant one. -/

@@ -67,6 +67,7 @@ proof is independent of the source's.
   along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg` and `Matrix.SpecialLinearGroup.mapGL_neg_one`:
   `mapGL S (-g) = -mapGL S g`, in particular `mapGL S (-1) = -1`.
+* `Matrix.SpecialLinearGroup.toGL_neg`: likewise `toGL (-g) = -toGL g`.
 * `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
   by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
@@ -382,6 +383,13 @@ lemma mapGL_neg_one {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [Co
     [Algebra R S] [Fact (Even (Fintype.card n))] :
     mapGL S (-1 : SpecialLinearGroup n R) = -1 := by
   rw [mapGL_neg, map_one]
+
+/-- The embedding `SL(n, R) → GL(n, R)` commutes with negation, when `n` has even cardinality, so
+that `-g ∈ SL(n, R)`. -/
+@[simp]
+theorem toGL_neg {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    [Fact (Even (Fintype.card n))] (g : SpecialLinearGroup n R) : toGL (-g) = -toGL g :=
+  Units.ext <| by simp only [coe_GL_coe_matrix, coe_neg, Units.val_neg]
 
 variable {R : Type*} [CommRing R]
 
