@@ -13,6 +13,7 @@ public import TauCeti.Topology.CategoryTheory.Comma
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Smooth object spaces of weak fiber products
@@ -24,12 +25,12 @@ is homeomorphic via `CategoryTheory.Comma.objectHomeomorph` to the fiber product
 `Prod.map L.obj R.obj : A × B → T × T` with `(left, right) : Quiver.Total T → T × T`.
 
 Under fiberwise transversality (`CategoryTheory.Comma.IsFiberwiseTransverse`), pulling
-`TauCeti.transverseFiberProductChartedSpace` back along `CategoryTheory.Comma.objectHomeomorph`
+`CategoryTheory.Comma.fiberProductChartedSpace` back along `CategoryTheory.Comma.objectHomeomorph`
 equips `Comma L R` with a `C^n` manifold structure (`chartedSpaceObjects`, `isManifold_objects`)
 whose coordinate map into `(A × B) × Quiver.Total T` is a `C^n` smooth embedding
-(`isSmoothEmbedding_objects`), with tangent space characterized directly in
-`TangentSpace IT (L.obj X.left)` and `TangentSpace IT (R.obj X.right)`
-(`mem_range_mfderiv_objects_iff`). When the source map of `T` and `R.obj` are submersions or local
+(`isSmoothEmbedding_objects`), with differential and tangent space characterized componentwise in
+`TangentSpace IT (L.obj X.left)` and `TangentSpace IT (R.obj X.right)` (`mfderiv_objects_apply`,
+`mem_range_mfderiv_objects_iff`). When the source map of `T` and `R.obj` are submersions or local
 diffeomorphisms, transversality holds automatically
 (`isFiberwiseTransverse_of_isSubmersion_source_rightObj`) and `Comma.left` inherits the submersion
 or local-diffeomorphism property (`isSubmersion_left`, `isLocalDiffeomorph_left`), with dual
@@ -91,17 +92,18 @@ theorem isFiberwiseTransverse_iff :
               mfderiv JT IT Quiver.Total.left ⟨_, _, X.hom⟩ w = u₁ ∧
             mfderiv IB IT R.obj X.right vB +
               mfderiv JT IT Quiver.Total.right ⟨_, _, X.hom⟩ w = u₂ :=
-  Iff.rfl
+  (Iff.rfl)
 
 /-- Surjective differentials of `Quiver.Total.left` on `T` and of `R.obj` guarantee fiberwise
 transversality of `Comma L R` for every functor `L : A ⥤ T`. -/
 theorem isFiberwiseTransverse_of_surjective_mfderiv_source_rightObj (L : A ⥤ T)
     (hsT_surj : ∀ c : Quiver.Total T, Surjective (mfderiv JT IT Quiver.Total.left c))
     (hR_surj : ∀ b : B, Surjective (mfderiv IB IT R.obj b)) :
-    IsFiberwiseTransverse IA IB IT JT L R := fun X u₁ u₂ ↦ by
-  obtain ⟨w, hw⟩ := hsT_surj ⟨_, _, X.hom⟩ u₁
-  obtain ⟨vB, hvB⟩ := hR_surj X.right (u₂ - mfderiv JT IT Quiver.Total.right ⟨_, _, X.hom⟩ w)
-  exact ⟨0, vB, w, by simp [hw], by simp [hvB]⟩
+    IsFiberwiseTransverse IA IB IT JT L R :=
+  isFiberwiseTransverse_iff.mpr fun X u₁ u₂ ↦ by
+    obtain ⟨w, hw⟩ := hsT_surj ⟨_, _, X.hom⟩ u₁
+    obtain ⟨vB, hvB⟩ := hR_surj X.right (u₂ - mfderiv JT IT Quiver.Total.right ⟨_, _, X.hom⟩ w)
+    exact ⟨0, vB, w, by simp [hw], by simp [hvB]⟩
 
 /-- When `Quiver.Total.left` on `T` and `R.obj` are `C^n` submersions (`n ≠ 0`), `Comma L R` is
 fiberwise transverse for every functor `L : A ⥤ T`. -/
@@ -117,10 +119,11 @@ transversality of `Comma L R` for every functor `R : B ⥤ T`. -/
 theorem isFiberwiseTransverse_of_surjective_mfderiv_target_leftObj (R : B ⥤ T)
     (htT_surj : ∀ c : Quiver.Total T, Surjective (mfderiv JT IT Quiver.Total.right c))
     (hL_surj : ∀ a : A, Surjective (mfderiv IA IT L.obj a)) :
-    IsFiberwiseTransverse IA IB IT JT L R := fun X u₁ u₂ ↦ by
-  obtain ⟨w, hw⟩ := htT_surj ⟨_, _, X.hom⟩ u₂
-  obtain ⟨vA, hvA⟩ := hL_surj X.left (u₁ - mfderiv JT IT Quiver.Total.left ⟨_, _, X.hom⟩ w)
-  exact ⟨vA, 0, w, by simp [hvA], by simp [hw]⟩
+    IsFiberwiseTransverse IA IB IT JT L R :=
+  isFiberwiseTransverse_iff.mpr fun X u₁ u₂ ↦ by
+    obtain ⟨w, hw⟩ := htT_surj ⟨_, _, X.hom⟩ u₂
+    obtain ⟨vA, hvA⟩ := hL_surj X.left (u₁ - mfderiv JT IT Quiver.Total.left ⟨_, _, X.hom⟩ w)
+    exact ⟨vA, 0, w, by simp [hvA], by simp [hw]⟩
 
 /-- When `Quiver.Total.right` on `T` and `L.obj` are `C^n` submersions (`n ≠ 0`), `Comma L R` is
 fiberwise transverse for every functor `R : B ⥤ T`. -/
@@ -130,29 +133,6 @@ theorem isFiberwiseTransverse_of_isSubmersion_target_leftObj (hn : n ≠ 0) (R :
     IsFiberwiseTransverse IA IB IT JT L R :=
   isFiberwiseTransverse_of_surjective_mfderiv_target_leftObj R
     (htT_sub.surjective_mfderiv hn) (hL_sub.surjective_mfderiv hn)
-
-omit [TopologicalSpace (Quiver.Total T)] [ChartedSpace HJT (Quiver.Total T)] in
-private theorem mfderiv_prodMap_obj_apply {a : A} {b : B}
-    (hLa : MDifferentiableAt IA IT L.obj a) (hRb : MDifferentiableAt IB IT R.obj b)
-    (v : TangentSpace (IA.prod IB) (a, b)) :
-    mfderiv (IA.prod IB) (IT.prod IT) (_root_.Prod.map L.obj R.obj) (a, b) v =
-      (mfderiv IA IT L.obj a v.1, mfderiv IB IT R.obj b v.2) := by
-  rw [mfderiv_prodMap hLa hRb]
-  -- `ContinuousLinearMap.prodMap` acts componentwise on the product tangent space by definition.
-  rfl
-
-omit [Category A] [Category B] [NormedAddCommGroup EA] [NormedSpace 𝕜 EA] [TopologicalSpace HA]
-  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
-  [TopologicalSpace A] [ChartedSpace HA A] [TopologicalSpace B] [ChartedSpace HB B] in
-private theorem mfderiv_left_right_apply {c : Quiver.Total T}
-    (hsc : MDifferentiableAt JT IT Quiver.Total.left c)
-    (htc : MDifferentiableAt JT IT Quiver.Total.right c)
-    (w : TangentSpace JT c) :
-    mfderiv JT (IT.prod IT) (fun d : Quiver.Total T ↦ (d.left, d.right)) c w =
-      (mfderiv JT IT Quiver.Total.left c w, mfderiv JT IT Quiver.Total.right c w) := by
-  rw [mfderiv_prodMk hsc htc]
-  -- `ContinuousLinearMap.prod` acts componentwise on the product tangent space by definition.
-  rfl
 
 /-- Fiberwise transversality on `Comma L R` implies transversality of `Prod.map L.obj R.obj` and
 `(left, right) : Quiver.Total T → T × T` along their fiber product. -/
@@ -172,14 +152,17 @@ theorem fiberProduct_transverse (hn : 1 ≤ n)
   rintro ⟨⟨a, b⟩, ⟨l, r, h⟩⟩ hp
   obtain ⟨rfl, rfl⟩ := _root_.Prod.mk.inj hp
   apply top_unique; rintro ⟨u₁, u₂⟩ -
-  obtain ⟨vA, vB, w, hu₁, hu₂⟩ := htrans ⟨a, b, h⟩ u₁ u₂
+  obtain ⟨vA, vB, w, hu₁, hu₂⟩ := isFiberwiseTransverse_iff.mp htrans ⟨a, b, h⟩ u₁ u₂
+  have hL_eq := TauCeti.Manifold.mfderiv_prodMap_apply (p := (a, b))
+    ((hL a).mdifferentiableAt hn0) ((hR b).mdifferentiableAt hn0) (vA, vB)
+  rw [TauCeti.Manifold.tangentSpaceProdEquiv_symm_apply,
+    TauCeti.Manifold.tangentSpaceProdEquiv_symm_apply] at hL_eq
   refine Submodule.mem_sup.mpr ⟨(mfderiv IA IT L.obj a vA, mfderiv IB IT R.obj b vB),
-    ⟨(vA, vB), mfderiv_prodMap_obj_apply ((hL a).mdifferentiableAt hn0)
-      ((hR b).mdifferentiableAt hn0) (vA, vB)⟩,
+    ⟨(vA, vB), hL_eq⟩,
     (mfderiv JT IT Quiver.Total.left ⟨L.obj a, R.obj b, h⟩ w,
       mfderiv JT IT Quiver.Total.right ⟨L.obj a, R.obj b, h⟩ w),
     ⟨w, congrArg (tangentSpaceCast (IT.prod IT) (L.obj a, R.obj b) (L.obj a, R.obj b))
-      (mfderiv_left_right_apply ((hsT ⟨L.obj a, R.obj b, h⟩).mdifferentiableAt hn0)
+      (((hsT ⟨L.obj a, R.obj b, h⟩).mdifferentiableAt hn0).mfderiv_prodMk_apply
         ((htT ⟨L.obj a, R.obj b, h⟩).mdifferentiableAt hn0) w)⟩,
     _root_.Prod.ext hu₁ hu₂⟩
 
@@ -213,23 +196,28 @@ local notation "KComma" =>
 
 include hn hL hR hsT htT htrans
 
-/-- The `C^n` charted-space structure on `Comma L R`, pulled back from the transverse fiber product
-of `Prod.map L.obj R.obj` and `(left, right) : Quiver.Total T → T × T` along
-`CategoryTheory.Comma.objectHomeomorph`. -/
+/-- The transverse fiber-product charted-space structure on
+`{p : (A × B) × Quiver.Total T // Prod.map L.obj R.obj p.1 = (p.2.left, p.2.right)}`. -/
+noncomputable abbrev fiberProductChartedSpace :
+    ChartedSpace (Fin (finrank ℝ (EA × EB) + finrank ℝ EJT - finrank ℝ (ET × ET)) → ℝ)
+      {p : (A × B) × Quiver.Total T // _root_.Prod.map L.obj R.obj p.1 = (p.2.left, p.2.right)} :=
+  TauCeti.transverseFiberProductChartedSpace hn (hL.prodMap hR) (hsT.prodMk htT)
+    (fiberProduct_transverse hn hL hR hsT htT htrans)
+
+/-- The `C^n` charted-space structure on `Comma L R`, pulled back from
+`CategoryTheory.Comma.fiberProductChartedSpace` along `CategoryTheory.Comma.objectHomeomorph`. -/
 @[instance_reducible]
 noncomputable def chartedSpaceObjects :
     ChartedSpace (Fin (finrank ℝ (EA × EB) + finrank ℝ EJT - finrank ℝ (ET × ET)) → ℝ)
       (Comma L R) :=
-  letI := TauCeti.transverseFiberProductChartedSpace hn (hL.prodMap hR) (hsT.prodMk htT)
-    (fiberProduct_transverse hn hL hR hsT htT htrans)
+  letI := fiberProductChartedSpace hn hL hR hsT htT htrans
   (objectHomeomorph L R).pullbackChartedSpace
 
 /-- With `chartedSpaceObjects`, `Comma L R` is a `C^n` manifold. -/
 theorem isManifold_objects :
     letI := chartedSpaceObjects hn hL hR hsT htT htrans
     IsManifold KComma n (Comma L R) :=
-  letI := TauCeti.transverseFiberProductChartedSpace hn (hL.prodMap hR) (hsT.prodMk htT)
-    (fiberProduct_transverse hn hL hR hsT htT htrans)
+  letI := fiberProductChartedSpace hn hL hR hsT htT htrans
   haveI := TauCeti.isManifold_transverseFiberProduct hn (hL.prodMap hR) (hsT.prodMk htT)
     (fiberProduct_transverse hn hL hR hsT htT htrans)
   (objectHomeomorph L R).pullback_isManifold KComma n
@@ -238,32 +226,26 @@ theorem isManifold_objects :
 and the transverse fiber product `(A × B) ×_{T × T} Quiver.Total T`. -/
 noncomputable def objectDiffeomorph :
     letI := chartedSpaceObjects hn hL hR hsT htT htrans
-    letI := TauCeti.transverseFiberProductChartedSpace hn (hL.prodMap hR) (hsT.prodMk htT)
-      (fiberProduct_transverse hn hL hR hsT htT htrans)
+    letI := fiberProductChartedSpace hn hL hR hsT htT htrans
     Comma L R ≃ₘ^n⟮KComma, KComma⟯
       {p : (A × B) × Quiver.Total T // _root_.Prod.map L.obj R.obj p.1 = (p.2.left, p.2.right)} :=
-  letI := TauCeti.transverseFiberProductChartedSpace hn (hL.prodMap hR) (hsT.prodMk htT)
-    (fiberProduct_transverse hn hL hR hsT htT htrans)
+  letI := fiberProductChartedSpace hn hL hR hsT htT htrans
   (objectHomeomorph L R).pullbackDiffeomorph KComma n
 
 @[simp]
 theorem coe_objectDiffeomorph :
     letI := chartedSpaceObjects hn hL hR hsT htT htrans
-    letI := TauCeti.transverseFiberProductChartedSpace hn (hL.prodMap hR) (hsT.prodMk htT)
-      (fiberProduct_transverse hn hL hR hsT htT htrans)
+    letI := fiberProductChartedSpace hn hL hR hsT htT htrans
     ⇑(objectDiffeomorph hn hL hR hsT htT htrans) = ⇑(objectEquiv L R) := by
-  let := TauCeti.transverseFiberProductChartedSpace hn (hL.prodMap hR) (hsT.prodMk htT)
-    (fiberProduct_transverse hn hL hR hsT htT htrans)
+  let := fiberProductChartedSpace hn hL hR hsT htT htrans
   simp [objectDiffeomorph, Homeomorph.coe_pullbackDiffeomorph]
 
 @[simp]
 theorem coe_objectDiffeomorph_symm :
     letI := chartedSpaceObjects hn hL hR hsT htT htrans
-    letI := TauCeti.transverseFiberProductChartedSpace hn (hL.prodMap hR) (hsT.prodMk htT)
-      (fiberProduct_transverse hn hL hR hsT htT htrans)
+    letI := fiberProductChartedSpace hn hL hR hsT htT htrans
     ⇑(objectDiffeomorph hn hL hR hsT htT htrans).symm = ⇑(objectEquiv L R).symm := by
-  let := TauCeti.transverseFiberProductChartedSpace hn (hL.prodMap hR) (hsT.prodMk htT)
-    (fiberProduct_transverse hn hL hR hsT htT htrans)
+  let := fiberProductChartedSpace hn hL hR hsT htT htrans
   simp [objectDiffeomorph, Homeomorph.coe_pullbackDiffeomorph_symm]
 
 /-- The coordinate inclusion `X ↦ ((X.left, X.right), ⟨_, _, X.hom⟩)` of `Comma L R` into
@@ -274,8 +256,7 @@ theorem isSmoothEmbedding_objects :
       (fun X : Comma L R ↦ ((X.left, X.right), (⟨_, _, X.hom⟩ : Quiver.Total T))) := by
   let := chartedSpaceObjects hn hL hR hsT htT htrans
   have := isManifold_objects hn hL hR hsT htT htrans
-  let := TauCeti.transverseFiberProductChartedSpace hn (hL.prodMap hR) (hsT.prodMk htT)
-    (fiberProduct_transverse hn hL hR hsT htT htrans)
+  let := fiberProductChartedSpace hn hL hR hsT htT htrans
   simpa only [Function.comp_def, coe_objectDiffeomorph, objectEquiv_apply_coe] using
     TauCeti.isSmoothEmbedding_comp_diffeomorph (objectDiffeomorph hn hL hR hsT htT htrans)
       (TauCeti.isSmoothEmbedding_coe_transverseFiberProduct hn (hL.prodMap hR) (hsT.prodMk htT)
@@ -319,6 +300,24 @@ theorem contMDiff_right :
   letI := chartedSpaceObjects hn hL hR hsT htT htrans
   ((contMDiff_objects_iff hn hL hR hsT htT htrans).mp contMDiff_id).2.2
 
+/-- The differential of the coordinate inclusion of `Comma L R` into `(A × B) × Quiver.Total T`
+acts componentwise by the differentials of `Comma.left`, `Comma.right`, and the structure arrow. -/
+theorem mfderiv_objects_apply (X : Comma L R) :
+    letI := chartedSpaceObjects hn hL hR hsT htT htrans
+    ∀ ξ : TangentSpace KComma X,
+      mfderiv KComma ((IA.prod IB).prod JT)
+          (fun Y : Comma L R ↦ ((Y.left, Y.right), (⟨_, _, Y.hom⟩ : Quiver.Total T))) X ξ =
+        ((mfderiv KComma IA Comma.left X ξ, mfderiv KComma IB Comma.right X ξ),
+          mfderiv KComma JT (fun Y : Comma L R ↦ (⟨_, _, Y.hom⟩ : Quiver.Total T)) X ξ) := by
+  let := chartedSpaceObjects hn hL hR hsT htT htrans
+  intro ξ
+  have hn0 := ENat.one_le_iff_ne_zero_withTop.1 hn
+  have hleft := ((contMDiff_left hn hL hR hsT htT htrans) X).mdifferentiableAt hn0
+  have hright := ((contMDiff_right hn hL hR hsT htT htrans) X).mdifferentiableAt hn0
+  have hhom := ((contMDiff_totalHom hn hL hR hsT htT htrans) X).mdifferentiableAt hn0
+  rw [(hleft.prodMk hright).mfderiv_prodMk_apply hhom ξ, hleft.mfderiv_prodMk_apply hright ξ]
+  rfl
+
 /-- A tangent triple `((vA, vB), w)` lies in the tangent image of `Comma L R` at `X` if and only if
 `dL(vA) = ds(w)` and `dR(vB) = dt(w)`. -/
 theorem mem_range_mfderiv_objects_iff (X : Comma L R)
@@ -332,8 +331,7 @@ theorem mem_range_mfderiv_objects_iff (X : Comma L R)
       mfderiv IB IT R.obj X.right v.1.2 =
         mfderiv JT IT Quiver.Total.right ⟨_, _, X.hom⟩ v.2 := by
   let := chartedSpaceObjects hn hL hR hsT htT htrans
-  let := TauCeti.transverseFiberProductChartedSpace hn (hL.prodMap hR) (hsT.prodMk htT)
-    (fiberProduct_transverse hn hL hR hsT htT htrans)
+  let := fiberProductChartedSpace hn hL hR hsT htT htrans
   have hn0 := ENat.one_le_iff_ne_zero_withTop.1 hn
   let e := objectDiffeomorph hn hL hR hsT htT htrans
   have hcomp : (fun Y : Comma L R ↦ ((Y.left, Y.right), (⟨_, _, Y.hom⟩ : Quiver.Total T))) =
@@ -347,9 +345,11 @@ theorem mem_range_mfderiv_objects_iff (X : Comma L R)
   rw [← hcomp, heX] at hrange
   rw [hrange, TauCeti.mem_range_mfderiv_coe_transverseFiberProduct_iff hn (hL.prodMap hR)
     (hsT.prodMk htT) (fiberProduct_transverse hn hL hR hsT htT htrans) pX v]
-  have hL_eq := mfderiv_prodMap_obj_apply ((hL X.left).mdifferentiableAt hn0)
-    ((hR X.right).mdifferentiableAt hn0) v.1
-  have hR_eq := mfderiv_left_right_apply ((hsT ⟨_, _, X.hom⟩).mdifferentiableAt hn0)
+  have hL_eq := TauCeti.Manifold.mfderiv_prodMap_apply (p := (X.left, X.right))
+    ((hL X.left).mdifferentiableAt hn0) ((hR X.right).mdifferentiableAt hn0) (v.1.1, v.1.2)
+  rw [TauCeti.Manifold.tangentSpaceProdEquiv_symm_apply,
+    TauCeti.Manifold.tangentSpaceProdEquiv_symm_apply] at hL_eq
+  have hR_eq := ((hsT ⟨_, _, X.hom⟩).mdifferentiableAt hn0).mfderiv_prodMk_apply
     ((htT ⟨_, _, X.hom⟩).mdifferentiableAt hn0) v.2
   exact ⟨fun h ↦ _root_.Prod.ext_iff.mp (hL_eq.symm.trans (h.trans hR_eq)),
     fun h ↦ hL_eq.trans ((_root_.Prod.ext_iff.mpr h).trans hR_eq.symm)⟩
@@ -368,6 +368,11 @@ theorem mfderiv_left_obj_eq (X : Comma L R) :
     (((contMDiff_left hn hL hR hsT htT htrans) X).mdifferentiableAt hn0)
   have h₂ := mfderiv_comp X ((hsT ⟨_, _, X.hom⟩).mdifferentiableAt hn0)
     (((contMDiff_totalHom hn hL hR hsT htT htrans) X).mdifferentiableAt hn0)
+  -- For `Y : Comma L R`, `(⟨L.obj Y.left, R.obj Y.right, Y.hom⟩ : Quiver.Total T).left` is
+  -- definitionally `L.obj Y.left`.
+  have hcomp : (L.obj ∘ Comma.left : Comma L R → T) =
+      Quiver.Total.left ∘ fun Y : Comma L R ↦ (⟨_, _, Y.hom⟩ : Quiver.Total T) := rfl
+  rw [hcomp] at h₁
   exact DFunLike.congr_fun (h₁.symm.trans h₂)
 
 /-- Along `Comma L R`, the differential of `R.obj ∘ Comma.right` equals the differential of
@@ -384,6 +389,11 @@ theorem mfderiv_right_obj_eq (X : Comma L R) :
     (((contMDiff_right hn hL hR hsT htT htrans) X).mdifferentiableAt hn0)
   have h₂ := mfderiv_comp X ((htT ⟨_, _, X.hom⟩).mdifferentiableAt hn0)
     (((contMDiff_totalHom hn hL hR hsT htT htrans) X).mdifferentiableAt hn0)
+  -- For `Y : Comma L R`, `(⟨L.obj Y.left, R.obj Y.right, Y.hom⟩ : Quiver.Total T).right` is
+  -- definitionally `R.obj Y.right`.
+  have hcomp : (R.obj ∘ Comma.right : Comma L R → T) =
+      Quiver.Total.right ∘ fun Y : Comma L R ↦ (⟨_, _, Y.hom⟩ : Quiver.Total T) := rfl
+  rw [hcomp] at h₁
   exact DFunLike.congr_fun (h₁.symm.trans h₂)
 
 /-- Every compatible tangent triple `(vA, vB, w)` at `X : Comma L R` arises as the differentials of
@@ -399,15 +409,12 @@ theorem exists_mfderiv_eq_of_comma (X : Comma L R)
       mfderiv KComma IB Comma.right X ξ = vB ∧
       mfderiv KComma JT (fun Y : Comma L R ↦ (⟨_, _, Y.hom⟩ : Quiver.Total T)) X ξ = w := by
   let := chartedSpaceObjects hn hL hR hsT htT htrans
-  have hΦ := ((isSmoothEmbedding_objects hn hL hR hsT htT htrans).contMDiff X).mdifferentiableAt
-    (ENat.one_le_iff_ne_zero_withTop.1 hn)
   obtain ⟨ξ, hξ⟩ := (mem_range_mfderiv_objects_iff hn hL hR hsT htT htrans X ((vA, vB), w)).2
     ⟨hLw, hRw⟩
-  exact ⟨ξ, (hΦ.fst.mfderiv_fst_apply ξ).trans
-      ((congrArg _root_.Prod.fst (hΦ.mfderiv_fst_apply ξ)).trans (congrArg (fun z ↦ z.1.1) hξ)),
-    (hΦ.fst.mfderiv_snd_apply ξ).trans
-      ((congrArg _root_.Prod.snd (hΦ.mfderiv_fst_apply ξ)).trans (congrArg (fun z ↦ z.1.2) hξ)),
-    (hΦ.mfderiv_snd_apply ξ).trans (congrArg _root_.Prod.snd hξ)⟩
+  simp only [ContinuousLinearMap.coe_coe] at hξ
+  have hξ' := (mfderiv_objects_apply hn hL hR hsT htT htrans X ξ).symm.trans hξ
+  exact ⟨ξ, congrArg (fun z ↦ z.1.1) hξ', congrArg (fun z ↦ z.1.2) hξ',
+    congrArg _root_.Prod.snd hξ'⟩
 
 /-- A tangent vector of `Comma L R` whose three coordinate differentials vanish is zero. -/
 theorem eq_zero_of_mfderiv_comma (X : Comma L R) :
@@ -421,13 +428,10 @@ theorem eq_zero_of_mfderiv_comma (X : Comma L R) :
   intro ξ h₁ h₂ h₃
   have hn0 := ENat.one_le_iff_ne_zero_withTop.1 hn
   have hi := isSmoothEmbedding_objects hn hL hR hsT htT htrans
-  have hΦ := (hi.contMDiff X).mdifferentiableAt hn0
   refine (injective_iff_map_eq_zero _).1 ((hi.isImmersion.isImmersionAt X).mfderiv_injective hn0)
-    ξ (_root_.Prod.ext (_root_.Prod.ext ?_ ?_) (by rwa [hΦ.mfderiv_snd_apply] at h₃))
-  · exact (congrArg _root_.Prod.fst (hΦ.mfderiv_fst_apply ξ)).symm.trans
-      ((hΦ.fst.mfderiv_fst_apply ξ).symm.trans h₁)
-  · exact (congrArg _root_.Prod.snd (hΦ.mfderiv_fst_apply ξ)).symm.trans
-      ((hΦ.fst.mfderiv_snd_apply ξ).symm.trans h₂)
+    ξ ?_
+  rw [mfderiv_objects_apply hn hL hR hsT htT htrans X ξ, h₁, h₂, h₃]
+  rfl
 
 /-- When `Quiver.Total.left` on `T` and `R.obj` have surjective differentials, the left projection
 `Comma.left : Comma L R → A` is a `C^n` submersion. -/

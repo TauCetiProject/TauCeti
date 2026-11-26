@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Etale.IneffectiveKernel
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Topology.CategoryTheory.Groupoid.Effective.Topology
 
+import TauCeti.Geometry.Manifold.Etale.Functor
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
@@ -208,13 +209,10 @@ variable [ChartedSpace H' (Quiver.Total C)]
 theorem isLocalDiffeomorph_mapTotal
     (hs : IsLocalDiffeomorph J I n (Quiver.Total.left : Quiver.Total C → C)) :
     letI := chartedSpaceArrows (H := H) hs.isLocalHomeomorph
-    IsLocalDiffeomorph J I n (toEffectiveQuotient C).toPrefunctor.mapTotal := by
-  let := chartedSpaceArrows (H := H) hs.isLocalHomeomorph
-  refine fun a ↦ IsLocalDiffeomorphAt.of_comp_left ?_
-    (isLocalDiffeomorph_source hs.isLocalHomeomorph _)
-    isQuotientMap_mapTotal.continuous.continuousAt
-  simpa only [Function.comp_def, Prefunctor.mapTotal_left, Functor.toPrefunctor_obj] using
-    (hs a).comp (hg := isLocalDiffeomorph_toEffectiveQuotient_obj a.left)
+    IsLocalDiffeomorph J I n (toEffectiveQuotient C).toPrefunctor.mapTotal :=
+  letI := chartedSpaceArrows (H := H) hs.isLocalHomeomorph
+  (toEffectiveQuotient C).isLocalDiffeomorph_mapTotal isQuotientMap_mapTotal.continuous hs
+    (isLocalDiffeomorph_source hs.isLocalHomeomorph) isLocalDiffeomorph_toEffectiveQuotient_obj
 
 /-- When the source of `C` is a `C^n` local diffeomorphism, the total-arrow quotient map to
 `EffectiveQuotient C` is `C^n`. -/

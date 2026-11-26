@@ -75,8 +75,9 @@ fields on a product manifold.
 * `MDifferentiableAt.mfderiv_uncurry_apply_zero_mk`: the differential of an uncurried family on
   a vertical vector `(0, v)` is the differential of the member of the family on `v`.
 
-* `MDifferentiableAt.mfderiv_fst_apply` and `MDifferentiableAt.mfderiv_snd_apply`: the
-  differential of a coordinate of a map into a product.
+* `MDifferentiableAt.mfderiv_fst_apply`, `MDifferentiableAt.mfderiv_snd_apply`, and
+  `MDifferentiableAt.mfderiv_prodMk_apply`: the differentials of coordinates of a map into a
+  product and of a map into a product given by its coordinates.
 * `MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct`: the derivative of a
   fibre-product condition `(f y).2 = (g y).1`.
 * `MDifferentiableAt.mfderiv_prodMk_fst_snd_comp_apply`: the differential of
@@ -613,6 +614,16 @@ theorem MDifferentiableAt.mfderiv_snd_apply (hf : MDifferentiableAt I (J.prod J'
   -- `ContinuousLinearMap.coe_snd'` cannot be rewritten here.
   exact h
 
+/-- The differential of `y ↦ (f y, g y)` sends a tangent vector `v` to the pair of differentials
+`(df v, dg v)`. -/
+theorem MDifferentiableAt.mfderiv_prodMk_apply {f : M → N} {g : M → N'}
+    (hf : MDifferentiableAt I J f x) (hg : MDifferentiableAt I J' g x) (v : TangentSpace I x) :
+    mfderiv I (J.prod J') (fun y ↦ (f y, g y)) x v =
+      (mfderiv I J f x v, mfderiv I J' g x v) := by
+  rw [mfderiv_prodMk hf hg]
+  -- `ContinuousLinearMap.prod` acts componentwise on the product tangent space by definition.
+  rfl
+
 /-- Differentiating a fibre-product condition: if the second coordinate of `f` agrees everywhere
 with the first coordinate of `g`, then so do the corresponding coordinates of their
 differentials. -/
@@ -644,10 +655,9 @@ theorem MDifferentiableAt.mfderiv_prodMk_fst_snd_comp_apply
         (mfderiv K' (J'.prod J'') ψ (b x) (mfderiv I K' b x v)).2) := by
   have hφa : MDifferentiableAt I (J.prod J') (φ ∘ a) x := hφ.comp x ha
   have hψb : MDifferentiableAt I (J'.prod J'') (ψ ∘ b) x := hψ.comp x hb
-  have hh := hφa.fst.prodMk hψb.snd
   rw [← mfderiv_comp_apply x hφ ha, ← mfderiv_comp_apply x hψ hb, ← hφa.mfderiv_fst_apply,
     ← hψb.mfderiv_snd_apply]
-  exact Prod.ext (hh.mfderiv_fst_apply v).symm (hh.mfderiv_snd_apply v).symm
+  exact hφa.fst.mfderiv_prodMk_apply hψb.snd v
 
 /-- Differentiating a fibre-product condition `(φ (a y)).2 = (ψ (b y)).1` along maps `a` and `b`:
 the matching coordinates of `dφ (da v)` and `dψ (db v)` agree. -/
