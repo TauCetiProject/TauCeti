@@ -48,7 +48,9 @@ Cut-off frames also change frames. Where a cutoff `ρ` equals `1` inside the bas
 trivialization `t₀`, a cut-off frame coefficient is a combination of the coefficients in `t₀`
 (`Bundle.Trivialization.cutoffFrameCoeff_apply_eq_sum`). For a cutoff `θ` supported where `ρ = 1`,
 every section `s` is `∑ᵢ θ ρ bᵢ*(t₀ s) ρ t₀⁻¹ bᵢ + (1 - θ) s`
-(`Bundle.Trivialization.smul_eq_sum_smul_cutoffFrameSection_add`).
+(`Bundle.Trivialization.smul_eq_sum_smul_cutoffFrameSection_add`). Hence an operator on sections
+linear over the complex-valued smooth functions is tensorial: `(P s)(x)` only depends on `s(x)`
+(`TauCeti.apply_eq_apply_of_map_smul`).
 
 In a chart `e` whose source lies in the base set of `t`, a Schwartz function `u` on the model space
 and a cutoff `ψ` with compact support in the chart target give the **chart cut-off section**
@@ -341,6 +343,38 @@ theorem _root_.IsCompact.exists_sum_sum_cutoffFrameCoeff_smul_cutoffFrameSection
   rw [ContMDiffSection.coe_sum, Finset.sum_apply, Finset.sum_congr rfl fun i _ ↦ hsum i,
     ← Finset.sum_smul, ← Complex.ofReal_sum, ← finsum_eq_sum_of_fintype, ρ.sum_eq_one hx,
     Complex.ofReal_one, one_smul]
+
+/-- **Operators linear over the smooth functions are tensorial.** If `P : Γ(F) → Γ(F')` is linear
+over the complex-valued smooth functions, that is, a bundle map acting on sections, then `(P h)(x)`
+only depends on `h(x)`. -/
+theorem _root_.TauCeti.apply_eq_apply_of_map_smul {W' : Type*} [NormedAddCommGroup W']
+    [NormedSpace ℂ W'] {F' : M → Type*} [TopologicalSpace (TotalSpace W' F')]
+    [∀ x, AddCommGroup (F' x)] [∀ x, Module ℝ (F' x)] [∀ x, Module ℂ (F' x)]
+    [∀ x, TopologicalSpace (F' x)] [FiberBundle W' F'] [VectorBundle ℝ W' F']
+    [VectorBundle ℂ W' F'] {P : Cₛ^∞⟮I; W, F⟯ →ₗ[ℂ] Cₛ^∞⟮I; W', F'⟯}
+    (hP : ∀ (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) h, P (f • h) = f • P h)
+    {h h' : Cₛ^∞⟮I; W, F⟯} {x : M} (hx : h x = h' x) :
+    P h x = P h' x := by
+  set t := trivializationAt W F x
+  have hxt := FiberBundle.mem_baseSet_trivializationAt W F x
+  -- A cutoff `ρ` equal to `1` near `x` and supported in the base set of `t`, and a cutoff `θ`
+  -- equal to `1` near `x` and supported where `ρ = 1`.
+  obtain ⟨ρ₀, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.1
+    (t.open_baseSet.mem_nhds hxt)
+  set ρ : C^∞⟮I, M; ℝ⟯ := ⟨ρ₀, ρ₀.contMDiff⟩
+  have hρ1 : ∀ᶠ y in 𝓝 x, ρ y = 1 := ρ₀.eventuallyEq_one
+  obtain ⟨θ₀, -, hθ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.1
+    (Filter.inter_mem hρ1 (t.open_baseSet.mem_nhds hxt))
+  set θ : C^∞⟮I, M; ℝ⟯ := ⟨θ₀, θ₀.contMDiff⟩
+  have hθx : θ x = 1 := θ₀.eventuallyEq_one.self_of_nhds
+  -- Near `x`, `h - h'` is a combination of frame sections whose coefficients vanish at `x`; the
+  -- rest is cut off by `1 - θ`, which vanishes at `x`.
+  have hsplit := t.smul_eq_sum_smul_cutoffFrameSection_add ρ hρ (Module.finBasis ℂ W) θ hθ
+    (h - h') 1
+  rw [one_smul] at hsplit
+  suffices P (h - h') x = 0 by simpa [sub_eq_zero] using this
+  rw [hsplit, map_add, map_sum]
+  simp [hP, hθx, hx]
 
 end Compact
 

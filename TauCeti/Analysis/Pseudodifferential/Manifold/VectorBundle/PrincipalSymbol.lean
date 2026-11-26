@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -54,6 +55,21 @@ bijective for every nonzero covector `ξ`. Ellipticity is unchanged by perturbat
 to have the same rank (`TauCeti.IsSectionClassicalEllipticAt.finrank_eq`). In dimension zero there
 are no nonzero covectors, every operator is elliptic and the ranks are unconstrained.
 
+For a complex-linear differential operator `P` of order at most `k`, in Grothendieck's sense for
+commutators `[P, g] = P ∘ g - g ∘ P` with multiplication by complex-valued smooth functions, the
+principal symbol is computed by iterated commutators: for a real smooth function `f` with
+`df_x ≠ 0` and every smooth section `s` of `E`,
+
+`σ_k(P)(x, df_x) (s x) = (i ^ k / k!) ([⋯[P, f], …, f] s)(x)`
+
+(`TauCeti.sectionClassicalPrincipalSymbol_mvfderiv_apply`). This is the angular-frequency
+convention, in which `∂ⱼ` has symbol `i ξⱼ`. The iterated commutator is linear over the smooth
+functions, so its value at `x` only depends on `s(x)` (`TauCeti.apply_eq_apply_of_map_smul`). For
+instance a smooth bundle map from `E` to `F`, acting on sections, has as principal symbol of order
+`0` its fibre map at every nonzero covector
+(`TauCeti.sectionClassicalPrincipalSymbol_apply_of_map_smul`), and the principal symbol of
+order `1` of a first-order operator is `σ₁(P)(x, df_x) (s x) = i (P (f s) - f P s)(x)`.
+
 ## Main definitions
 
 * `TauCeti.sectionClassicalPrincipalSymbol m P x ξ`: the principal symbol `E_x →ₗ[ℂ] F_x`.
@@ -79,6 +95,10 @@ are no nonzero covectors, every operator is elliptic and the ranks are unconstra
 * `TauCeti.isSectionClassicalEllipticAt_smul_iff`: ellipticity is unchanged by nonzero scalars.
 * `TauCeti.IsSectionClassicalEllipticAt.finrank_eq`: in positive dimension, ellipticity at a
   point forces `rank E = rank F`.
+* `TauCeti.sectionClassicalPrincipalSymbol_mvfderiv_apply`: the principal symbol of a differential
+  operator of order at most `k` at `df_x` is `i ^ k / k!` times its `k`-fold commutator with `f`.
+* `TauCeti.sectionClassicalPrincipalSymbol_apply_of_map_smul`: the principal symbol of order
+  `0` of a bundle map is its fibre map.
 
 ## References
 
@@ -653,5 +673,90 @@ theorem isSectionClassicalElliptic_id :
       Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) := fun x ξ hξ ↦ by
   rw [sectionClassicalPrincipalSymbol_id x hξ]
   exact Function.bijective_id
+
+/-! ### Differential operators -/
+
+/-- **The principal symbol of a differential operator between bundles.** Let
+`P : Γ(E) → Γ(F)` be a complex-linear differential operator of order at most `k`, in
+Grothendieck's sense for commutators with multiplication by complex-valued smooth functions. For a
+real smooth function `f` whose differential `df_x` at `x` is nonzero and a smooth section `s` of
+`E`,
+
+`σ_k(P)(x, df_x) (s x) = (i ^ k / k!) ([⋯[P, f], …, f] s)(x)`,
+
+with `k` commutators `[P, f] = P ∘ f - f ∘ P`. This is the angular-frequency convention
+`σ(∂ⱼ) = i ξⱼ`, and the bundle form of
+`TauCeti.classicalPrincipalSymbol_mvfderiv`. -/
+theorem sectionClassicalPrincipalSymbol_mvfderiv_apply {k : ℕ}
+    (hP : P ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ k)
+    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) {x : M}
+    (hf : mvfderiv 𝓘(ℝ, CoordinateSpace n) f x ≠ 0) (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    sectionClassicalPrincipalSymbol k P x (mvfderiv 𝓘(ℝ, CoordinateSpace n) f x) (s x) =
+      (Complex.I ^ k * (k.factorial : ℂ)⁻¹) •
+        (smulCommutator ℂ (ContMDiffMap.ofReal f) ^ k) P s x := by
+  have hmem := mem_sectionClassicalPseudodifferentialOperators_of_mem_differentialOperators hP
+  set g := ContMDiffMap.ofReal f
+  set R := (smulCommutator ℂ g ^ k) P
+  -- `R` has order `0`, so it is linear over the smooth functions.
+  have hR : ∀ (h : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, R (h • s) = h • R s :=
+    mem_differentialOperators_zero_iff.1
+      (smulCommutator_pow_mem_differentialOperators (m := 0) (by simpa using hP) g)
+  set t := trivializationAt V E x
+  set t' := trivializationAt W F x
+  have hx := FiberBundle.mem_baseSet_trivializationAt V E x
+  have hx' := FiberBundle.mem_baseSet_trivializationAt W F x
+  -- The preferred cutoff `ρ` at `x`, equal to `1` at `x` and supported in both base sets.
+  set ρ := frameCutoff (V := V) (W := W) n E F x
+  have hρt := tsupport_frameCutoff_subset_left (V := V) (W := W) n E F x
+  have hρt' := tsupport_frameCutoff_subset_right (V := V) (W := W) n E F x
+  have hρx : ρ x = 1 := frameCutoff_self (V := V) (W := W) n E F x
+  -- The input frame vector `v` reads `s x` in `t`, and the cut-off frame section `ρ t⁻¹ v` agrees
+  -- with `s` at `x`.
+  set v := (t ⟨x, s x⟩).2
+  have hv : t.symm x v = s x := t.symm_apply_apply_mk hx (s x)
+  have hsx : t.cutoffFrameSection ρ hρt v x = s x := by
+    rw [Trivialization.cutoffFrameSection_apply, hρx, one_smul, hv]
+  -- Both sides agree under every functional `ℓ` after reading them in `t'`.
+  refine (t'.symmL_continuousLinearMapAt (R := ℂ) hx' _).symm.trans
+    ((congrArg (t'.symmL ℂ x) ((SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2
+      fun ℓ ↦ ?_)).trans (t'.symmL_continuousLinearMapAt (R := ℂ) hx' _))
+  -- The commutators of the matrix entry of `P` are the matrix entries of the commutators of `P`,
+  -- since the entry sandwiches `P` between maps linear over the complex-valued functions.
+  have hentry (Q : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ]
+      Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
+      sectionEntry t ρ hρt v t' ρ hρt' ℓ Q = t'.cutoffFrameCoeff ρ hρt' ℓ ∘ₗ Q ∘ₗ
+        (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ρ hρt v)).restrictScalars ℂ := by
+    ext h y
+    simp
+  have hcomm : (smulCommutator ℂ g ^ k) (sectionEntry t ρ hρt v t' ρ hρt' ℓ P) =
+      sectionEntry t ρ hρt v t' ρ hρt' ℓ R := by
+    rw [hentry, hentry,
+      smulCommutator_pow_comp_comp (a := g) (fun h ↦ by simp [mul_smul]) fun h ↦ by
+        ext y; simp; ring]
+  have h₁ := classicalPrincipalSymbol_sectionEntry hmem t ρ hρt v t' ρ hρt' ℓ x
+    (mvfderiv 𝓘(ℝ, CoordinateSpace n) f x)
+  rw [classicalPrincipalSymbol_mvfderiv
+      (sectionEntry_mem_differentialOperators t ρ hρt v t' ρ hρt' ℓ hP) f hf, hcomm,
+    sectionEntry_apply, one_smul, apply_eq_apply_of_map_smul hR hsx, hρx, hv] at h₁
+  simpa using h₁.symm
+
+/-- **The principal symbol of a bundle map.** If `P : Γ(E) → Γ(F)` is linear over the
+complex-valued smooth functions, that is, a smooth bundle map from `E` to `F` acting on sections,
+then its principal symbol of order `0` at every nonzero covector `ξ ∈ T*ₓM` is its fibre map at
+`x`: `σ₀(P)(x, ξ) (s x) = (P s)(x)`. This generalizes
+`TauCeti.sectionClassicalPrincipalSymbol_id`. -/
+theorem sectionClassicalPrincipalSymbol_apply_of_map_smul
+    (hP : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s) {x : M}
+    {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ} (hξ : ξ ≠ 0)
+    (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    sectionClassicalPrincipalSymbol 0 P x ξ (s x) = P s x := by
+  -- `ξ` is the differential at `x` of a real smooth function `f`.
+  have hxI : (𝓘(ℝ, CoordinateSpace n)).IsInteriorPoint x := BoundarylessManifold.isInteriorPoint
+  have hf := mvfderiv_covectorLift hxI ξ
+  have h := sectionClassicalPrincipalSymbol_mvfderiv_apply (mem_differentialOperators_zero_iff.2 hP)
+    (covectorLift 𝓘(ℝ, CoordinateSpace n) hxI ξ) (hf ▸ hξ) s
+  rw [hf] at h
+  simpa using h
 
 end TauCeti

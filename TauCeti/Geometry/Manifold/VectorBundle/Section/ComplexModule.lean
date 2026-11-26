@@ -39,6 +39,10 @@ Grothendieck's sense for commutators with multiplication by elements of `A_ℂ`,
 vanishes near every point near which `s` vanishes
 (`TauCeti.complexDifferentialOperators_section_apply_eq_zero_of_eventuallyEq`). In particular an
 `A_ℂ`-linear operator is local (`TauCeti.apply_eq_zero_of_map_smul`).
+The real and imaginary parts `u ↦ Re (Q u)`, `u ↦ Im (Q u)` of a complex differential operator `Q`
+on the complex-valued functions are real differential operators of the same order
+(`ContMDiffMap.re_comp_restrictScalars_comp_ofReal_mem_differentialOperators`,
+`ContMDiffMap.im_comp_restrictScalars_comp_ofReal_mem_differentialOperators`).
 
 ## References
 
@@ -236,3 +240,42 @@ theorem apply_eq_zero_of_map_smul {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℂ] Cₛ^�
     (mem_differentialOperators_zero_iff.2 hP) hs
 
 end TauCeti
+
+namespace ContMDiffMap
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+
+open TauCeti
+
+/-- **Real parts of complex differential operators.** If `Q` is a complex differential operator
+of order at most `m` on the complex-valued `C^n` functions, in Grothendieck's sense for
+commutators with multiplication by complex-valued functions, then `u ↦ Re (Q u)` is a real
+differential operator of order at most `m` on the real-valued `C^n` functions. -/
+theorem re_comp_restrictScalars_comp_ofReal_mem_differentialOperators {m : ℕ}
+    {Q : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hQ : Q ∈ differentialOperators ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) :
+    re ∘ₗ Q.restrictScalars ℝ ∘ₗ ofReal.toLinearMap ∈
+      differentialOperators ℝ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯ m :=
+  -- The inclusion of real functions and the real part intertwine multiplication by a real
+  -- function `b` with multiplication by `b` as a complex function.
+  comp_comp_mem_differentialOperators
+    (fun b ↦ ⟨ofReal b, fun u ↦ map_mul ofReal b u, fun y ↦ by ext x; simp [re_apply]⟩)
+    (restrictScalars_mem_differentialOperators hQ)
+
+/-- **Imaginary parts of complex differential operators.** If `Q` is a complex differential
+operator of order at most `m` on the complex-valued `C^n` functions, in Grothendieck's sense for
+commutators with multiplication by complex-valued functions, then `u ↦ Im (Q u)` is a real
+differential operator of order at most `m` on the real-valued `C^n` functions. -/
+theorem im_comp_restrictScalars_comp_ofReal_mem_differentialOperators {m : ℕ}
+    {Q : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hQ : Q ∈ differentialOperators ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) :
+    im ∘ₗ Q.restrictScalars ℝ ∘ₗ ofReal.toLinearMap ∈
+      differentialOperators ℝ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯ m :=
+  comp_comp_mem_differentialOperators
+    (fun b ↦ ⟨ofReal b, fun u ↦ map_mul ofReal b u, fun y ↦ by ext x; simp [im_apply]⟩)
+    (restrictScalars_mem_differentialOperators hQ)
+
+end ContMDiffMap
