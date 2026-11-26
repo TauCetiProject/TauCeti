@@ -61,11 +61,10 @@ The proof is a finite version of Robinson's Baire argument.
 (`TauCeti.exists_forall_mem_Icc_isNondegenerateFixedPt_iterate_comp`): for an area-preserving `C¹`
 map `φ`, a compact set `K`, an open neighbourhood `U` of `K` and a cutoff `N`, for every `ε > 0`
 there is a compactly supported area-preserving map `ψ`, supported in `U`, with `φ ∘ ψ` within `ε`
-of `φ` in `C¹`, such that all points of period `k ≤ N` of `φ ∘ ψ` in `K` are nondegenerate. The
-invariant after the stage `n` is that every point
-of `K` of period at most `n` is a nondegenerate fixed point of every iterate `(φ ∘ ψ)^[k]`,
-`k ≤ N`, fixing it, so that the orbits of period at most `n` are nondegenerate in all their covers
-up to period `N`. It is `C¹`-open
+of `φ` in `C¹`, such that all points of period `1 ≤ k ≤ N` of `φ ∘ ψ` in `K` are nondegenerate. The
+invariant after the stage `n` is that every point of `K` of period at most `n` is a nondegenerate
+fixed point of every iterate `(φ ∘ ψ)^[k]`, `1 ≤ k ≤ N`, fixing it, so that the orbits of period
+at most `n` are nondegenerate in all their covers up to period `N`. It is `C¹`-open
 (`IsCompact.eventually_forall_isNondegenerateFixedPt_iterate_of_exists_isFixedPt`). The stage
 `n + 1` has two parts.
 
@@ -466,8 +465,8 @@ private theorem exists_twist {g : ℂ → ℂ} (hg : ContDiff ℝ 1 g)
   -- The points `S` of `F` of least period `n + 1`, and a point `p i` on each of their orbits.
   set S := {x ∈ F | ∀ j, 0 < j → j < n + 1 → ¬IsFixedPt g^[j] x}
   obtain ⟨ι, _, p, hpS, hcover, hdistinct⟩ :=
-    exists_orbit_representatives (S := S) n.succ_pos (hFfin.subset (sep_subset _ _))
-      fun x hx ↦ hx.1.1
+    exists_orbit_representatives (S := S) (hFfin.subset (sep_subset _ _))
+      fun x hx ↦ mk_mem_periodicPts n.succ_pos hx.1.1
   -- `δ`-small perturbations keep the earlier periods and create no new points of period `n + 1`.
   obtain ⟨δ, ⟨hδP, hδF⟩, hδ⟩ :=
     (((hK.eventually_forall_isNondegenerateFixedPt_iterate_of_exists_isFixedPt hg

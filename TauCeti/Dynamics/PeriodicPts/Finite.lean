@@ -22,8 +22,8 @@ suspension flow of a diffeomorphism with this property are finite in number belo
 
 ## Representatives of periodic orbits
 
-Finitely many periodic points of a common period `k > 0` lie on finitely many orbits, and a finite
-family of points `p i`, one on each orbit, represents them
+Finitely many periodic points lie on finitely many orbits, and a finite family of points `p i`,
+one on each orbit, represents them
 (`Function.exists_orbit_representatives`): this is the indexing needed to perturb a map at one
 point of each orbit.
 
@@ -75,21 +75,22 @@ theorem tendsto_cofinite_atTop_of_finite_ptsOfPeriod {α ι : Type*} {f : α →
     rw [Set.mem_preimage, mem_ptsOfPeriod, ← Set.mem_singleton_iff.mp (Set.mem_preimage.mp hi)]
     exact hxd i
 
-/-- **Representatives of finitely many periodic orbits.** Finitely many periodic points of a
-common period `k > 0` have a finite family of representatives of their orbits: points `p i` of the
-set such that every point of the set is an iterate of some `p i`, and no `p i'` is carried to a
-different `p i` by an iterate of `f`. -/
-theorem exists_orbit_representatives {α : Type u} {f : α → α} {k : ℕ} {S : Set α}
-    (hk : 0 < k) (hS : S.Finite) (hper : ∀ x ∈ S, IsPeriodicPt f k x) :
+/-- **Representatives of finitely many periodic orbits.** Finitely many periodic points have a
+finite family of representatives of their orbits: points `p i` of the set such that every point of
+the set is an iterate of some `p i`, and no `p i'` is carried to a different `p i` by an iterate
+of `f`. -/
+theorem exists_orbit_representatives {α : Type u} {f : α → α} {S : Set α}
+    (hS : S.Finite) (hper : S ⊆ periodicPts f) :
     ∃ (ι : Type u) (_ : Finite ι) (p : ι → α), (∀ i, p i ∈ S) ∧
       (∀ x ∈ S, ∃ i j, f^[j] (p i) = x) ∧ ∀ {i i' j}, f^[j] (p i') = p i → i' = i := by
   -- The classes of the relation of lying on a common orbit; it is symmetric by periodicity.
   have hsymm (x y : S) (h : ∃ j, f^[j] x.val = y.val) : ∃ j, f^[j] y.val = x.val := by
     obtain ⟨j, hj⟩ := h
-    refine ⟨(k - 1) * j, ?_⟩
-    rw [← hj, ← iterate_add_apply, show (k - 1) * j + j = k * j by
+    have hk := minimalPeriod_pos_of_mem_periodicPts (hper x.property)
+    refine ⟨(minimalPeriod f x - 1) * j, ?_⟩
+    rw [← hj, ← iterate_add_apply, show (minimalPeriod f x - 1) * j + j = minimalPeriod f x * j by
       rw [Nat.sub_one_mul, Nat.sub_add_cancel (Nat.le_mul_of_pos_left j hk)]]
-    exact ((hper _ x.property).mul_const j).eq
+    exact ((isPeriodicPt_minimalPeriod f x).mul_const j).eq
   let s : Setoid S := ⟨fun x y ↦ ∃ j, f^[j] x.val = y.val, ⟨fun _ ↦ ⟨0, rfl⟩,
     fun {x y} h ↦ hsymm x y h, fun ⟨i, hi⟩ ⟨j, hj⟩ ↦ ⟨j + i, by rw [iterate_add_apply, hi, hj]⟩⟩⟩
   have : Finite S := hS.to_subtype

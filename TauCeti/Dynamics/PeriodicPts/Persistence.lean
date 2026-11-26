@@ -61,7 +61,7 @@ points of period `k` in `K` are nondegenerate and remain periodic for `g`, then 
 points of period `k` in `K` (`IsCompact.eventually_forall_fixedPoints_iterate_inter_eq`): on a
 compact neighbourhood of `K` whose points of period `k` are interior, those of `g` correspond
 bijectively to those of `f`. If, for some `n ≤ N`, every point of `K` of period at most `n` is a
-nondegenerate fixed point of each `f^[k]`, `k ≤ N`, fixing it, the same holds for `g`
+nondegenerate fixed point of each `f^[k]`, `1 ≤ k ≤ N`, fixing it, the same holds for `g`
 (`IsCompact.eventually_forall_isNondegenerateFixedPt_iterate_of_exists_isFixedPt`): these orbits
 are finitely many, near them persistence applies, and away from them avoidance does. This is the
 invariant of the induction over the periods that makes all periodic points of period at most `N`
