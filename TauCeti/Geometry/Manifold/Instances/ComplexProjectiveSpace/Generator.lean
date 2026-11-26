@@ -285,8 +285,9 @@ theorem apply_lineClass {α : Sort*}
       f y (HomotopyGroup.map (ContinuousMap.id _) h ⟦lineSquare n⟧) =
         f (affineParam 1 0) ⟦lineSquare n⟧ := by
     intro y h
-    obtain rfl : affineParam 1 0 = y := h
+    obtain rfl : affineParam 1 0 = y := (ContinuousMap.id_apply _).symm.trans h
     exact congrArg (f _) (HomotopyGroup.map_id_apply _)
+  rw [lineClass_def]
   exact key _ _
 
 /-- The coordinate line carried to `[e₁]`, with its cube reindexed along `finSuccEquiv 1` so that
