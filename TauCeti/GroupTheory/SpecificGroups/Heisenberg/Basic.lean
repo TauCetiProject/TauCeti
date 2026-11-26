@@ -51,7 +51,9 @@ group.
 ## Main results
 
 * `TauCeti.HeisenbergGroup.commutatorElement_eq`: the commutator formula.
+* `TauCeti.HeisenbergGroup.center_eq_zAxis`: the centre is the `z`-axis.
 * `TauCeti.HeisenbergGroup.commutator_eq_zAxis`: the commutator subgroup is the `z`-axis.
+* The Heisenberg group is nilpotent (`Group.IsNilpotent` instance).
 * `TauCeti.HeisenbergGroup.pow_eq`: the power formula
   `(x, y, z) ^ n = (n • x, n • y, n • z + (n choose 2) • (x * y))`.
 * `TauCeti.HeisenbergGroup.pLowerCentralSeries_top_two_eq_bot`: over a ring of characteristic
@@ -171,6 +173,13 @@ theorem zAxis_le_center : zAxis ≤ center (HeisenbergGroup R) := by
   intro b
   ext <;> simp [hax, hay, add_comm]
 
+/-- **The centre of the Heisenberg group is the `z`-axis**: an element commuting with `(0, 1, 0)`
+and `(1, 0, 0)` has `x = 0` and `y = 0`. -/
+theorem center_eq_zAxis : center (HeisenbergGroup R) = zAxis := by
+  refine le_antisymm (fun a ha ↦ ⟨?_, ?_⟩) zAxis_le_center
+  · simpa using congrArg z (Subgroup.mem_center_iff.mp ha ⟨0, 1, 0⟩)
+  · simpa using (congrArg z (Subgroup.mem_center_iff.mp ha ⟨1, 0, 0⟩)).symm
+
 /-- Every commutator lies on the `z`-axis: the Heisenberg group is nilpotent of class at most
 two. -/
 theorem commutatorElement_mem_zAxis (a b : HeisenbergGroup R) : ⁅a, b⁆ ∈ zAxis := by
@@ -182,13 +191,6 @@ theorem commutatorElement_eq_one_of_mem_zAxis {a : HeisenbergGroup R} (ha : a �
     (b : HeisenbergGroup R) : ⁅a, b⁆ = 1 :=
   commutatorElement_eq_one_iff_mul_comm.mpr
     ((Subgroup.mem_center_iff.mp (zAxis_le_center ha) b).symm)
-
-/-- **The Heisenberg group is nilpotent**, of class at most two: every commutator lies on the
-central `z`-axis. -/
-instance : Group.IsNilpotent (HeisenbergGroup R) :=
-  ⟨⟨2, eq_top_iff.mpr fun a _ ↦ Subgroup.mem_upperCentralSeries_succ_iff.mpr fun b ↦ by
-    rw [Subgroup.upperCentralSeries_one]
-    exact zAxis_le_center (commutatorElement_mem_zAxis a b)⟩⟩
 
 /-- A ring homomorphism `f : R →+* S` induces the group homomorphism
 `HeisenbergGroup R →* HeisenbergGroup S` applying `f` to each coordinate. -/
@@ -283,6 +285,11 @@ theorem projXY_apply (a : HeisenbergGroup R) : projXY a = .ofAdd (a.x, a.y) :=
 theorem ker_projXY : (projXY : HeisenbergGroup R →* _).ker = zAxis := by
   ext a
   simp [MonoidHom.mem_ker, Prod.ext_iff]
+
+/-- **The Heisenberg group is nilpotent**: the kernel of the projection onto the abelian group
+`R × R` is the central `z`-axis. -/
+instance : Group.IsNilpotent (HeisenbergGroup R) :=
+  isNilpotent_of_ker_le_center projXY (ker_projXY.trans_le zAxis_le_center)
 
 /-- **The abelianization of the Heisenberg group** is the additive group `R × R`, through the
 projection `(x, y, z) ↦ (x, y)`. -/

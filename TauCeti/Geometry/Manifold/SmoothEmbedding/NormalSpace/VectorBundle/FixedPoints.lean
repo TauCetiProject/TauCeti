@@ -68,9 +68,9 @@ include hf in
 vector of the submanifold. -/
 theorem mfderiv_smul_eq_self_of_mem_tangentRange {k : K} {x : M}
     (hd : MDifferentiableAt J J (fun y : N ↦ k • y) (f x)) (hn : n ≠ 0)
-    {w : TangentSpace J (f x)} (hw : w ∈ f.tangentRange x hn) :
+    {w : TangentSpace J (f x)} (hw : w ∈ f.isImmersion.tangentRange x hn) :
     mfderiv J J (fun y : N ↦ k • y) (f x) w = w := by
-  obtain ⟨u, rfl⟩ := (f.mem_tangentRange_iff x hn w).1 hw
+  obtain ⟨u, rfl⟩ := (f.isImmersion.mem_tangentRange_iff x hn w).1 hw
   have hc := mfderiv_comp_apply x hd (f.contMDiff.mdifferentiableAt hn) u
   rw [show (fun y : N ↦ k • y) ∘ f = f from funext (hf k)] at hc
   exact hc.symm
@@ -81,7 +81,7 @@ differentiable maps, the tangent space of a submanifold of fixed points lies in 
 subspace. -/
 theorem tangentRange_le_fixedTangentSubspace (x : M) (hn : n ≠ 0)
     (hd : ∀ k : K, MDifferentiableAt J J (fun y : N ↦ k • y) (f x)) :
-    f.tangentRange x hn ≤ fixedTangentSubspace J K (f x) :=
+    f.isImmersion.tangentRange x hn ≤ fixedTangentSubspace J K (f x) :=
   fun _ hw ↦ mem_fixedTangentSubspace.2 fun k _ ↦
     f.mfderiv_smul_eq_self_of_mem_tangentRange hf (hd k) hn hw
 
@@ -90,7 +90,7 @@ include hf in
 the tangent space of the submanifold. -/
 theorem tangentRange_le_comap_tangentRepresentationOfMemFixedPoints (x : M) (hn : n ≠ 0)
     (hd : ∀ k : K, MDifferentiableAt J J (fun y : N ↦ k • y) (f x)) (k : K) :
-    f.tangentRange x hn ≤ (f.tangentRange x hn).comap
+    f.isImmersion.tangentRange x hn ≤ (f.isImmersion.tangentRange x hn).comap
       (tangentRepresentationOfMemFixedPoints (mem_fixedPoints.2 fun g ↦ hf g x) hd k) :=
   fun w hw ↦ by
     rw [Submodule.mem_comap, tangentRepresentationOfMemFixedPoints_apply,
@@ -103,18 +103,19 @@ quotient of the tangent representation of `K` at the fixed point `f x` by the ta
 submanifold, which it fixes. -/
 def fixedNormalRepresentation (x : M) (hn : n ≠ 0)
     (hd : ∀ k : K, MDifferentiableAt J J (fun y : N ↦ k • y) (f x)) :
-    Representation ℝ K (f.NormalSpace x hn) :=
+    Representation ℝ K (f.isImmersion.NormalSpace x hn) :=
   (tangentRepresentationOfMemFixedPoints (mem_fixedPoints.2 fun k ↦ hf k x) hd).quotient
-    (f.tangentRange x hn) (f.tangentRange_le_comap_tangentRepresentationOfMemFixedPoints hf x hn hd)
+    (f.isImmersion.tangentRange x hn)
+        (f.tangentRange_le_comap_tangentRepresentationOfMemFixedPoints hf x hn hd)
 
 /-- The normal representation acts on the class of `w` as the class of `d(k •)_(f x) w`. -/
 @[simp]
 theorem fixedNormalRepresentation_normalClass
     (x : M) (hn : n ≠ 0) (hd : ∀ k : K, MDifferentiableAt J J (fun y : N ↦ k • y) (f x))
     (k : K) (w : TangentSpace J (f x)) :
-    f.fixedNormalRepresentation hf x hn hd k (f.normalClass x hn w) =
-      f.normalClass x hn (mfderiv J J (fun y : N ↦ k • y) (f x) w) := by
-  rw [normalClass_def]
+    f.fixedNormalRepresentation hf x hn hd k (f.isImmersion.normalClass x hn w) =
+      f.isImmersion.normalClass x hn (mfderiv J J (fun y : N ↦ k • y) (f x) w) := by
+  rw [Manifold.IsImmersion.normalClass_def]
   -- The quotient representation acts on `mkQ w` by `Submodule.mapQ`, which is `mkQ` of the image.
   refine (LinearMap.congr_fun (Representation.quotient_apply _ _
     (f.tangentRange_le_comap_tangentRepresentationOfMemFixedPoints hf x hn hd) k) _).trans ?_
@@ -130,16 +131,16 @@ theorem fixedNormalRepresentation_eq_normalMap
       (f.normalMap f hn hn (u := _root_.id) (v := fun y : N ↦ k • y) (x := x)
         (EventuallyEq.of_eq (funext (hf k)))).toLinearMap := by
   ext ν
-  obtain ⟨w, rfl⟩ := f.normalClass_surjective x hn ν
+  obtain ⟨w, rfl⟩ := f.isImmersion.normalClass_surjective x hn ν
   simp only [fixedNormalRepresentation_normalClass, ContinuousLinearMap.coe_coe,
     normalMap_normalClass]
-  exact congrArg (f.normalClass x hn) (eq_of_heq (heq_tangentSpaceCast (hf k x) _)).symm
+  exact congrArg (f.isImmersion.normalClass x hn) (eq_of_heq (heq_tangentSpaceCast (hf k x) _)).symm
 
 /-- The action of `k` on the normal bundle, the bundle map induced by the square
 `(k • ·) ∘ f = f ∘ id`, acts on each fibre by the normal representation. -/
 theorem normalBundleMap_smul_apply (hn : n ≠ 0)
     (hd : ∀ (x : M) (k : K), MDifferentiableAt J J (fun y : N ↦ k • y) (f x)) (k : K)
-    {P : Type*} (p : TotalSpace P fun x ↦ f.NormalSpace x hn) :
+    {P : Type*} (p : TotalSpace P fun x ↦ f.isImmersion.NormalSpace x hn) :
     f.normalBundleMap (K := P) (K' := P) f hn hn (u := _root_.id) (v := fun y : N ↦ k • y)
         (funext (hf k)) p =
       ⟨p.proj, f.fixedNormalRepresentation hf p.proj hn (hd p.proj) k p.snd⟩ := by
@@ -159,10 +160,10 @@ theorem contMDiff_fixedNormalRepresentation [FiniteDimensional ℝ E] [FiniteDim
     haveI : IsManifold J 1 N := .of_le (n := r + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(ℝ, P)) (I.prod 𝓘(ℝ, P)) r
-      fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
+      fun p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ↦
         (⟨p.proj, f.fixedNormalRepresentation hf p.proj hn
           (fun g ↦ ContMDiffConstSMul.mdifferentiable_const_smul (n := r + 1) (by simp) g _)
-          k p.snd⟩ : TotalSpace P fun x ↦ f.NormalSpace x hn) := by
+          k p.snd⟩ : TotalSpace P fun x ↦ f.isImmersion.NormalSpace x hn) := by
   have : IsManifold I 1 M := .of_le (n := r + 1) le_add_self
   have : IsManifold J 1 N := .of_le (n := r + 1) le_add_self
   let := f.normalSpaceFiberBundle hn hdim
