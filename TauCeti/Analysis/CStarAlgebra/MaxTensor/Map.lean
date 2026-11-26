@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.MaxTensorNorm
+public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Norm
 
 /-!
 # Functoriality and flip invariance of the maximal C*-norm
@@ -36,8 +36,7 @@ The Hilbert spaces of commuting pairs range over the universe `max u v` for `A :
 ## References
 
 * B. Blackadar, *Operator Algebras: Theory of C*-Algebras and von Neumann Algebras*,
-  II.9.2.5–II.9.2.6 (functoriality of C*-tensor products, as cited by TauCetiRoadmap's
-  CStarAlgebras §5.1).
+  II.9.2.5–II.9.2.6 (functoriality of C*-tensor products).
 -/
 
 public section
