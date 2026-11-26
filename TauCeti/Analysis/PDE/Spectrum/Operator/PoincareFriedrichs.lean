@@ -26,8 +26,12 @@ Then the energy form `∫_Ω ∇u · ∇v` is coercive on `H¹_Γ(Ω)` with no s
 * every `κ` with `κ P² < 1`, in particular `κ = 0`, is a resolvent point of `-Δ_Γ`
   (`TauCeti.PDE.mem_resolventSet_mixedOperator_laplacian_of_poincare`), so `-Δ_Γ` is invertible;
   its inverse `-R(0)` is the solution operator of the mixed problem `-Δu = f`
-  (`TauCeti.PDE.resolvent_mixedOperator_laplacian_zero_of_poincare`), it is self-adjoint, and it is
-  compact when `Ω` has the Rellich property that the value map `H¹(Ω) → L²(Ω)` is compact;
+  (`TauCeti.PDE.resolvent_mixedOperator_laplacian_zero_of_poincare`). This inverse is self-adjoint
+  by `IsSelfAdjoint.isSelfAdjoint_resolvent` applied to
+  `TauCeti.PDE.isSelfAdjoint_mixedOperator_laplacian`, and it is compact when `Ω` has the Rellich
+  property that the value map `H¹(Ω) → L²(Ω)` is compact, by
+  `LinearPMap.HasCompactResolvent.isCompactOperator_resolvent` applied to
+  `TauCeti.PDE.hasCompactResolvent_mixedOperator_laplacian`;
 * on a nonempty `Ω`, `λ₁ = ‖R(0)‖⁻¹ = ‖(-Δ_Γ)⁻¹‖⁻¹` is positive, it is the greatest `C` with
   `C ‖u‖² ≤ ‖∇u‖²` on `H¹_Γ(Ω)`, and `√‖R(0)‖ = λ₁^{-1/2}` is the **optimal Poincaré–Friedrichs
   constant**, the least `P` for which the inequality holds
@@ -55,15 +59,15 @@ gradient, so no Poincaré–Friedrichs inequality holds and `0` is an eigenvalue
   `TauCeti.PDE.zero_mem_resolventSet_mixedOperator_laplacian_of_poincare` and
   `TauCeti.PDE.resolvent_mixedOperator_laplacian_zero_of_poincare`: the spectrum lies in
   `[P⁻², ∞)`, and the inverse of `-Δ_Γ` is the mixed solution operator.
-* `TauCeti.PDE.isSelfAdjoint_resolvent_mixedOperator_laplacian_zero_of_poincare` and
-  `TauCeti.PDE.isCompactOperator_resolvent_mixedOperator_laplacian_zero_of_poincare`: the inverse
-  is self-adjoint, and compact under the Rellich property.
 * `TauCeti.PDE.isGreatest_inv_norm_resolvent_mixedOperator_laplacian_zero_of_poincare`,
   `TauCeti.PDE.isLeast_sqrt_norm_resolvent_mixedOperator_laplacian_zero_of_poincare` and
   `TauCeti.PDE.isLeast_spectrum_mixedOperator_laplacian_of_poincare`: `λ₁ = ‖R(0)‖⁻¹` is the
   optimal Poincaré constant, the reciprocal square of the optimal Poincaré–Friedrichs constant and
   the least spectral value.
-* The same statements on Lipschitz domains, with the suffix `_of_isLipschitzDomainWith`.
+* `TauCeti.PDE.zero_mem_resolventSet_mixedOperator_laplacian_of_isLipschitzDomainWith` and
+  (in the namespace `TauCeti.PDE`)
+  `exists_isLeast_poincare_and_isLeast_spectrum_mixedOperator_laplacian_of_isLipschitzDomainWith`:
+  the invertibility and the first mixed eigenvalue on Lipschitz domains.
 
 ## References
 
@@ -197,28 +201,6 @@ theorem resolvent_mixedOperator_laplacian_zero_of_poincare (hΓ : Disjoint Γ Om
   have h := resolvent_mixedOperator_neg _ hΓ (isCoercive_mixedForm_laplacian_of_poincare hP)
   rwa [neg_zero] at h
 
-/-- **The inverse of the mixed Laplacian is self-adjoint** under a Poincaré–Friedrichs inequality
-on `H¹_Γ(Ω)`. -/
-theorem isSelfAdjoint_resolvent_mixedOperator_laplacian_zero_of_poincare (hΓ : Disjoint Γ Omega)
-    (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
-    IsSelfAdjoint ((mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
-      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).resolvent 0) := by
-  rw [resolvent_mixedOperator_laplacian_zero_of_poincare hΓ hP]
-  refine IsSelfAdjoint.neg (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2 ?_)
-  exact isSymmetric_mixedSolutionOperator _ _ fun u v ↦ energyFormH1_one_zero_zero_comm
-    (u : W1p mu Omega 2) v
-
-/-- **The inverse of the mixed Laplacian is compact** under a Poincaré–Friedrichs inequality on
-`H¹_Γ(Ω)`, when `Ω` has the Rellich property that the value map `H¹(Ω) → L²(Ω)` is compact. -/
-theorem isCompactOperator_resolvent_mixedOperator_laplacian_zero_of_poincare
-    (hΓ : Disjoint Γ Omega)
-    (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖)
-    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2))) :
-    IsCompactOperator ((mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
-      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).resolvent 0) := by
-  rw [resolvent_mixedOperator_laplacian_zero_of_poincare hΓ hP]
-  exact (isCompactOperator_mixedSolutionOperator _ _ hK).neg
-
 /-- The norm of the inverse of the mixed Laplacian is the norm of the mixed solution operator. -/
 private theorem norm_resolvent_mixedOperator_laplacian_zero_of_poincare (hΓ : Disjoint Γ Omega)
     (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
@@ -228,8 +210,9 @@ private theorem norm_resolvent_mixedOperator_laplacian_zero_of_poincare (hΓ : D
         (W1pVanishingOn.valueL (mu := mu) (Omega := Omega) (p := 2) (Γ := Γ))‖ := by
   rw [resolvent_mixedOperator_laplacian_zero_of_poincare hΓ hP, norm_neg, mixedSolutionOperator_def]
 
-/-- **The first mixed eigenvalue `λ₁ = ‖(-Δ_Γ)⁻¹‖⁻¹` is positive** on a nonempty open set, under a
-Poincaré–Friedrichs inequality on `H¹_Γ(Ω)`. -/
+/-- **`λ₁ = ‖(-Δ_Γ)⁻¹‖⁻¹` is positive** on a nonempty open set, under a Poincaré–Friedrichs
+inequality on `H¹_Γ(Ω)`. Under the Rellich property `λ₁` is the least point of the spectrum, the
+first mixed eigenvalue (`TauCeti.PDE.isLeast_spectrum_mixedOperator_laplacian_of_poincare`). -/
 theorem inv_norm_resolvent_mixedOperator_laplacian_zero_pos_of_poincare (hΓ : Disjoint Γ Omega)
     (hOmega : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty)
     (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
@@ -389,40 +372,6 @@ theorem zero_mem_resolventSet_mixedOperator_laplacian_of_isLipschitzDomainWith
       (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).resolventSet :=
   have ⟨⟨_, hP⟩, _⟩ := poincare_nonempty_rellich_of_isLipschitzDomainWith hV hVb e hVΩ hconn hΓ
   zero_mem_resolventSet_mixedOperator_laplacian_of_poincare hΓΩ hP
-
-/-- **The inverse of the mixed Laplacian on a Lipschitz domain is compact**: on a bounded connected
-Lipschitz domain, with a Dirichlet part `Γ ⊆ ℝⁿ \ Ω` meeting the frontier in a set of positive
-surface measure, the resolvent of `-Δ_Γ` at `0` is a compact operator. -/
-theorem isCompactOperator_resolvent_mixedOperator_laplacian_zero_of_isLipschitzDomainWith
-    (hV : (V : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
-    (hVb : Bornology.IsBounded (V : Set (WithLp 2 (ℝ × E))))
-    (e : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
-    (hVΩ : (V : Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' Omega)
-    (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι)))
-    (hΓ : (μHE[finrank ℝ E] : Measure (EuclideanSpace ℝ ι))
-      (Γ ∩ frontier (Omega : Set (EuclideanSpace ℝ ι))) ≠ 0)
-    (hΓΩ : Disjoint Γ Omega) :
-    IsCompactOperator ((mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := volume)
-      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).resolvent 0) :=
-  have ⟨⟨_, hP⟩, _, hK⟩ := poincare_nonempty_rellich_of_isLipschitzDomainWith hV hVb e hVΩ hconn hΓ
-  isCompactOperator_resolvent_mixedOperator_laplacian_zero_of_poincare hΓΩ hP hK
-
-/-- **The inverse of the mixed Laplacian on a Lipschitz domain is self-adjoint**: on a bounded
-connected Lipschitz domain, with a Dirichlet part `Γ ⊆ ℝⁿ \ Ω` meeting the frontier in a set of
-positive surface measure, the resolvent of `-Δ_Γ` at `0` is self-adjoint. -/
-theorem isSelfAdjoint_resolvent_mixedOperator_laplacian_zero_of_isLipschitzDomainWith
-    (hV : (V : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
-    (hVb : Bornology.IsBounded (V : Set (WithLp 2 (ℝ × E))))
-    (e : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
-    (hVΩ : (V : Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' Omega)
-    (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι)))
-    (hΓ : (μHE[finrank ℝ E] : Measure (EuclideanSpace ℝ ι))
-      (Γ ∩ frontier (Omega : Set (EuclideanSpace ℝ ι))) ≠ 0)
-    (hΓΩ : Disjoint Γ Omega) :
-    IsSelfAdjoint ((mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := volume)
-      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).resolvent 0) :=
-  have ⟨⟨_, hP⟩, _⟩ := poincare_nonempty_rellich_of_isLipschitzDomainWith hV hVb e hVΩ hconn hΓ
-  isSelfAdjoint_resolvent_mixedOperator_laplacian_zero_of_poincare hΓΩ hP
 
 /-- **The first mixed eigenvalue on a Lipschitz domain is positive and is the reciprocal square of
 the optimal Poincaré–Friedrichs constant.** On a bounded connected Lipschitz domain, with a
