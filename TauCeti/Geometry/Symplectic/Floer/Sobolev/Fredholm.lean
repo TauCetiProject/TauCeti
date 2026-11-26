@@ -57,9 +57,9 @@ when the asymptotic orbits are one-periodic and nondegenerate.
   (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_and_index_eq_of_family`). The slice
   defects need only tend to zero for the end Hamiltonians at one parameter: those for two
   Hamiltonians with a common orbit tend to zero together
-  (`TauCeti.SymplecticForm.tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt`).
-  This gives the homotopy invariance of the index in the end Hamiltonians, in
-  `TauCeti.Geometry.Symplectic.Floer.Sobolev.Homotopy`.
+  (`TauCeti.SymplecticForm.tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt`,
+  in `TauCeti.Geometry.Symplectic.Floer.EndLinearization`). This gives the homotopy invariance of
+  the index in the end Hamiltonians, in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Homotopy`.
 * **Equal ends.** In a unitary trivialization, where `V = F` is a finite-dimensional complex inner
   product space with `ω = Im ⟪·, ·⟫`, take the `s`-independent Floer data `(i, 0, H_t)` of a
   Hamiltonian `H`: complex structure `J = i`, `K_s = 0` and `K_t = H_t`. The linearized operator for
@@ -710,27 +710,6 @@ theorem index_floerSobolevOperator_eq_of_cylindrical (ω : SymplecticForm V)
         u).index :=
   (isFredholm_and_index_eq_of_cylindrical ω hcyl hJ hKs hKt hJc hu hu' hXm hxm hndm huxm hδm
     hu'xm hδ'm hXp hxp hndp huxp hδp hu'xp hδ'p h).2
-
-/-- If a loop `x` is an orbit of two time-dependent Hamiltonians `H` and `H'` with jointly `C¹`
-Hamiltonians, the loops of `u` converge uniformly to `x` and the slice defect
-`∂t u - X_{H_t}(u)` tends uniformly to zero, then so does the slice defect `∂t u - X_{H'_t}(u)`:
-the vector fields `X_H` and `X_{H'}` agree along `x`. -/
-theorem tendstoUniformlyOn_sliceDefect_hamiltonianVectorField_of_hasDerivAt
-    (ω : SymplecticForm V) {H H' : ℝ → V → ℝ} (hH : ContDiff ℝ 1 (uncurry H))
-    (hH' : ContDiff ℝ 1 (uncurry H')) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
-    (hx' : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H' t) (x t)) t) {u : ℝ × ℝ → V}
-    {l : Filter ℝ} (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
-    (hδ : TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 l (Icc 0 1)) :
-    TendstoUniformlyOn
-      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H' t)) u (s, t)) 0 l
-        (Icc 0 1) :=
-  tendstoUniformlyOn_sliceDefect_of_apply_eq
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH')).continuous
-    (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
-    (fun t ↦ (hx' t).unique (hx t)) hux hδ
 
 /-- **The Fredholm property and the index along a family of data.** Let `(J_μ, K_{s,μ}, K_{t,μ})`
 be a family of Floer data, `C¹` jointly in the parameter `μ`, the point of the cylinder and the
