@@ -180,6 +180,9 @@ private theorem associator_naturality_aux {P₁ P₂ P₃ Q₁ Q₂ Q₃ : Linea
 
 /-- The linear tensor product of two monoidal linear categories is monoidal. -/
 instance instMonoidalCategory : MonoidalCategory (LinearTensor k C D) :=
+  -- State the identity at the tensor unit so both unitor rewrites match it directly.
+  have tmul_id_tensorUnit : tmul (𝟙 (𝟙_ C)) (𝟙 (𝟙_ D)) = 𝟙 (𝟙_ (LinearTensor k C D)) :=
+    tmul_id_id _ _
   .ofTensorHom
     (id_tensorHom_id := fun P Q ↦ by
       rw [← tmul_id_id P.fst P.snd, ← tmul_id_id Q.fst Q.snd, tmul_tensorHom_tmul]
@@ -194,9 +197,7 @@ instance instMonoidalCategory : MonoidalCategory (LinearTensor k C D) :=
       induction f using hom_induction_on with
       | add _ _ h₁ h₂ => simp only [tensorHom_add, add_comp, comp_add, h₁, h₂]
       | tmul f g =>
-        have h : tmul (𝟙 (𝟙_ C)) (𝟙 (𝟙_ D)) = 𝟙 (𝟙_ (LinearTensor k C D)) :=
-          tmul_id_id _ _
-        rw [← h]
+        rw [← tmul_id_tensorUnit]
         simp only [leftUnitor_def, isoMk_hom, tmul_tensorHom_tmul, tmul_comp_tmul, id_tensorHom,
           leftUnitor_naturality])
     (rightUnitor_naturality := fun {P Q} f ↦ by
@@ -205,9 +206,7 @@ instance instMonoidalCategory : MonoidalCategory (LinearTensor k C D) :=
       induction f using hom_induction_on with
       | add _ _ h₁ h₂ => simp only [add_tensorHom, add_comp, comp_add, h₁, h₂]
       | tmul f g =>
-        have h : tmul (𝟙 (𝟙_ C)) (𝟙 (𝟙_ D)) = 𝟙 (𝟙_ (LinearTensor k C D)) :=
-          tmul_id_id _ _
-        rw [← h]
+        rw [← tmul_id_tensorUnit]
         simp only [rightUnitor_def, isoMk_hom, tmul_tensorHom_tmul, tmul_comp_tmul, tensorHom_id,
           rightUnitor_naturality])
     (pentagon := fun W X Y Z ↦ by
@@ -298,6 +297,8 @@ variable {k : Type w} [CommSemiring k]
 /-- The canonical functor from the ordinary product to the Deligne product is strong monoidal. -/
 noncomputable instance uncurryBifunctorMonoidal :
     (Functor.uncurry.obj (bifunctor k C D)).Monoidal :=
+  -- Uncurrying the Deligne bifunctor commutes definitionally with postcomposition by the
+  -- matrix embedding, so the monoidal structure is the one on this composite.
   inferInstanceAs
     ((Functor.uncurry.obj (LinearTensor.bifunctor k C D)) ⋙
       Mat_.embedding (LinearTensor k C D)).Monoidal

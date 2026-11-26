@@ -256,19 +256,16 @@ theorem rightDual_embedding_obj (X : C) [HasRightDual X] :
     ((embedding C).obj X)ᘁ = (embedding C).obj Xᘁ :=
   rfl
 
--- Compute the matrices before simplifying their dual objects.
--- After splitting the indices into `PUnit` constructors, `erw` unfolds the embedding and
--- singleton dual instance to match the family entry lemmas and the diagonal identity entry.
+-- Apply the entry formulas to the explicit singleton family so the diagonal identities simplify
+-- on its summand. The final match in `simpa using!` unfolds `embedding` to identify the families.
 /-- The evaluation of an embedded object against its right dual has the original evaluation as
 its only entry. -/
 @[simp↓]
 theorem evaluation_rightDual_embedding_obj (X : C) [HasRightDual X] :
     ε_ ((embedding C).obj X) (((embedding C).obj X)ᘁ) = fun _ _ ↦ ε_ X Xᘁ := by
   ext ⟨⟨⟩, ⟨⟩⟩ u
-  erw [evaluation_rightDual_apply, id_apply_self]
-  simp only [id_whiskerRight, Category.id_comp]
-  -- The unique summand of the embedding is definitionally the original object.
-  rfl
+  simpa only [id_apply_self, id_whiskerRight, Category.id_comp] using!
+    evaluation_rightDual_apply (⟨PUnit, fun _ ↦ X⟩ : Mat_ C) (PUnit.unit, PUnit.unit) u
 
 /-- The coevaluation of an embedded object with its right dual has the original coevaluation as
 its only entry. -/
@@ -276,11 +273,8 @@ its only entry. -/
 theorem coevaluation_rightDual_embedding_obj (X : C) [HasRightDual X] :
     η_ ((embedding C).obj X) (((embedding C).obj X)ᘁ) = fun _ _ ↦ η_ X Xᘁ := by
   ext u ⟨⟨⟩, ⟨⟩⟩
-  -- Matching `whiskerLeft_id` also unfolds the summand of the right dual family.
-  erw [coevaluation_rightDual_apply, id_apply_self, whiskerLeft_id]
-  simp only [Category.comp_id]
-  -- The unique summand of the embedding is definitionally the original object.
-  rfl
+  simpa only [id_apply_self, rightDual_X, whiskerLeft_id, Category.comp_id] using!
+    coevaluation_rightDual_apply (⟨PUnit, fun _ ↦ X⟩ : Mat_ C) u (PUnit.unit, PUnit.unit)
 
 /-- A one-term family has a left dual when its summand does. -/
 @[reducible]
@@ -294,17 +288,14 @@ theorem leftDual_embedding_obj (X : C) [HasLeftDual X] :
     (ᘁ((embedding C).obj X) : Mat_ C) = (embedding C).obj (ᘁX) :=
   rfl
 
--- As for the right dual, matching the family entry lemmas at the `PUnit` indices needs `erw`.
 /-- The evaluation of an embedded object against its left dual has the original evaluation as
 its only entry. -/
 @[simp↓]
 theorem evaluation_leftDual_embedding_obj (X : C) [HasLeftDual X] :
     ε_ (ᘁ((embedding C).obj X)) ((embedding C).obj X) = fun _ _ ↦ ε_ (ᘁX : C) X := by
   ext ⟨⟨⟩, ⟨⟩⟩ u
-  erw [evaluation_leftDual_apply, id_apply_self]
-  simp only [id_whiskerRight, Category.id_comp]
-  -- The unique summand of the embedding is definitionally the original object.
-  rfl
+  simpa only [id_apply_self, id_whiskerRight, Category.id_comp] using!
+    evaluation_leftDual_apply (⟨PUnit, fun _ ↦ X⟩ : Mat_ C) (PUnit.unit, PUnit.unit) u
 
 /-- The coevaluation of an embedded object with its left dual has the original coevaluation as
 its only entry. -/
@@ -312,10 +303,8 @@ its only entry. -/
 theorem coevaluation_leftDual_embedding_obj (X : C) [HasLeftDual X] :
     η_ (ᘁ((embedding C).obj X)) ((embedding C).obj X) = fun _ _ ↦ η_ (ᘁX : C) X := by
   ext u ⟨⟨⟩, ⟨⟩⟩
-  erw [coevaluation_leftDual_apply, id_apply_self]
-  simp only [whiskerLeft_id, Category.comp_id]
-  -- The unique summand of the embedding is definitionally the original object.
-  rfl
+  simpa only [id_apply_self, whiskerLeft_id, Category.comp_id] using!
+    coevaluation_leftDual_apply (⟨PUnit, fun _ ↦ X⟩ : Mat_ C) u (PUnit.unit, PUnit.unit)
 
 /-- The right adjoint mate of a matrix is the transpose of the matrix of right adjoint mates of
 its entries. -/
