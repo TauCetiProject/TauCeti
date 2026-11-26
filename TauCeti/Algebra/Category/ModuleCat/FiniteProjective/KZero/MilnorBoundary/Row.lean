@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.MilnorBoundary
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
-public import TauCeti.LinearAlgebra.TensorProduct.Balanced.SemilinearEquiv
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Extension
 public import TauCeti.RingTheory.MilnorSquare.RowPatch
 
 /-!
@@ -78,13 +78,29 @@ theorem milnorBoundaryLeft_mk (h : Function.Surjective π₁ ∨ Function.Surjec
     milnorBoundaryLeft π₁ π₂ h (Additive.ofMul (AlgebraicK1.mk Q n a)) =
       SplitK0.of.{max u₁ u₂} (rowPatchedFiniteProjective π₁ π₂ h a) -
         n • SplitK0.of.{max u₁ u₂} (finiteProjectiveModulesRegular (π₁.pullback π₂)) := by
-  rw [milnorBoundaryLeft_apply, AlgebraicK1.transposeOp_mk, ← map_inv, milnorBoundary_mk, map_sub,
-    map_nsmul, SplitK0.map_of, SplitK0.map_of,
-    SplitK0.of_extendScalars_obj_finiteProjectiveModulesRegular]
-  congr 1
+  simp only [milnorBoundaryLeft_apply, AlgebraicK1.transposeOp_mk, ← map_inv, milnorBoundary_mk,
+    map_sub, map_nsmul, SplitK0.map_of,
+    SplitK0.of_extendScalars_obj_finiteProjectiveModulesRegular, sub_left_inj]
   apply SplitK0.of_extendScalars_obj
   rw [patchedFiniteProjective_obj, rowPatchedFiniteProjective_obj]
-  exact (patchedSubgroupOpEquivRowPatch π₁ π₂ a).balancedExtension
+  let f := (π₁.pullbackOpOpEquiv π₂).toRingHom
+  let P := π₁.op.patchedSubgroup π₂.op (transposeOpEquiv a).unop⁻¹
+  let e : P ≃ₛₗ[f] π₁.rowPatch π₂ a := patchedSubgroupOpEquivRowPatch π₁ π₂ a
+  let ι := BalancedExtension.includeRight f P
+  have extended : BalancedExtension f P ≃ₗ[π₁.pullback π₂] π₁.rowPatch π₂ a :=
+    LinearEquiv.ofLinearMap (BalancedExtension.lift e.toLinearMap) (ι.comp e.symm.toLinearMap)
+      (LinearMap.ext fun x ↦ by
+        -- Evaluate the semilinear composites at a point to apply the lift formula.
+        change BalancedExtension.lift e.toLinearMap (ι (e.symm x)) = x
+        simpa only [ι, BalancedExtension.includeRight_apply, BalancedExtension.lift_tmul, one_smul,
+          LinearEquiv.coe_coe] using e.apply_symm_apply x)
+      (BalancedExtension.hom_ext fun x ↦ by
+        -- Hom extensionality tests the composite on the pure tensor `1 ⊗ x`.
+        change ι (e.symm (BalancedExtension.lift e.toLinearMap (BalancedExtension.tmul f 1 x))) =
+          BalancedExtension.tmul f 1 x
+        rw [BalancedExtension.lift_tmul, one_smul, LinearEquiv.coe_coe, e.symm_apply_apply]
+        exact BalancedExtension.includeRight_apply x)
+  exact extended
 
 /-- The left boundary vanishes on classes extended from the first endpoint. -/
 @[simp]

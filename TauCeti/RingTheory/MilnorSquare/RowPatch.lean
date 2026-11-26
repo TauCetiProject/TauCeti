@@ -263,37 +263,51 @@ theorem coe_rowPatchProdOneEquiv_apply (a : GL n Q)
       (Sum.elim x.val.1 (fun i ↦ (v i).val.1), Sum.elim x.val.2 (fun i ↦ (v i).val.2)) := by
   simp [rowPatchProdOneEquiv]
 
+/-- The inverse padding comparison restricts the patched part to the left indices. -/
+@[simp]
+theorem coe_rowPatchProdOneEquiv_symm_apply_fst {a : GL n Q}
+    (x : π₁.rowPatch π₂ (TauCeti.fromBlocksGL (a, (1 : GL m Q)))) :
+    ((rowPatchProdOneEquiv π₁ π₂ a m).symm x).1.val = (x.val.1 ∘ Sum.inl, x.val.2 ∘ Sum.inl) :=
+  (rfl)
+
+/-- The inverse padding comparison groups the right entries into fibre product coordinates. -/
+@[simp]
+theorem coe_rowPatchProdOneEquiv_symm_apply_snd {a : GL n Q}
+    (x : π₁.rowPatch π₂ (TauCeti.fromBlocksGL (a, (1 : GL m Q)))) (i : m) :
+    (((rowPatchProdOneEquiv π₁ π₂ a m).symm x).2 i : A₁ × A₂) =
+      (x.val.1 (Sum.inr i), x.val.2 (Sum.inr i)) :=
+  (rfl)
+
+/-- If `a π₁(X₁) = π₂(X₂) b` for rectangular matrices `X₁` and `X₂`, then right multiplication
+by these matrices sends the row patch for `a` into the row patch for `b`. -/
+theorem vecMul_mem_rowPatch {a : GL n Q} {b : GL m Q} {X₁ : Matrix n m A₁}
+    {X₂ : Matrix n m A₂} (h : (a : Matrix n n Q) * X₁.map π₁ = X₂.map π₂ * (b : Matrix m m Q))
+    {x : (n → A₁) × (n → A₂)} (hx : x ∈ π₁.rowPatch π₂ a) :
+    (x.1 ᵥ* X₁, x.2 ᵥ* X₂) ∈ π₁.rowPatch π₂ b := by
+  have h₁ : π₁ ∘ (x.1 ᵥ* X₁) = (π₁ ∘ x.1) ᵥ* X₁.map π₁ := funext (π₁.map_vecMul _ _)
+  have h₂ : π₂ ∘ (x.2 ᵥ* X₂) = (π₂ ∘ x.2) ᵥ* X₂.map π₂ := funext (π₂.map_vecMul _ _)
+  rw [mem_rowPatch] at hx ⊢
+  dsimp only
+  rw [h₁, h₂, hx, vecMul_vecMul, vecMul_vecMul, h]
+
 variable (π₁ π₂) in
 /-- Changes of the two free trivializations act on the rows by right multiplication. -/
 def rowPatchEquivOfMul {a b : GL n Q} (g₁ : GL n A₁) (g₂ : GL n A₂)
     (h : a * Units.map (π₁.mapMatrix (m := n)).toMonoidHom g₁ =
       Units.map (π₂.mapMatrix (m := n)).toMonoidHom g₂ * b) :
-    π₁.rowPatch π₂ a ≃ₗ[π₁.pullback π₂] π₁.rowPatch π₂ b := by
-  have mem_mul {a b : GL n Q} (g₁ : GL n A₁) (g₂ : GL n A₂)
-      (h : a * Units.map (π₁.mapMatrix (m := n)).toMonoidHom g₁ =
-        Units.map (π₂.mapMatrix (m := n)).toMonoidHom g₂ * b) (x : π₁.rowPatch π₂ a) :
-      (x.val.1 ᵥ* (g₁ : Matrix n n A₁), x.val.2 ᵥ* (g₂ : Matrix n n A₂)) ∈
-        π₁.rowPatch π₂ b := by
-    have hmat : (a : Matrix n n Q) * (g₁ : Matrix n n A₁).map π₁ =
-        (g₂ : Matrix n n A₂).map π₂ * (b : Matrix n n Q) :=
-      congrArg Units.val h
-    rw [mem_rowPatch]
-    dsimp only
-    have h₁ : π₁ ∘ (x.val.1 ᵥ* (g₁ : Matrix n n A₁)) =
-        (π₁ ∘ x.val.1) ᵥ* (g₁ : Matrix n n A₁).map π₁ := funext (π₁.map_vecMul _ _)
-    have h₂ : π₂ ∘ (x.val.2 ᵥ* (g₂ : Matrix n n A₂)) =
-        (π₂ ∘ x.val.2) ᵥ* (g₂ : Matrix n n A₂).map π₂ := funext (π₂.map_vecMul _ _)
-    rw [h₁, h₂, mem_rowPatch.mp x.property, vecMul_vecMul, vecMul_vecMul, hmat]
-  have hinv : b * Units.map (π₁.mapMatrix (m := n)).toMonoidHom g₁⁻¹ =
-      Units.map (π₂.mapMatrix (m := n)).toMonoidHom g₂⁻¹ * a := by
-    rw [map_inv, map_inv, mul_inv_eq_iff_eq_mul, mul_assoc, h, inv_mul_cancel_left]
-  refine
-    { toFun := fun x ↦ ⟨_, mem_mul g₁ g₂ h x⟩
-      invFun := fun x ↦ ⟨_, mem_mul g₁⁻¹ g₂⁻¹ hinv x⟩
-      left_inv := fun x ↦ Subtype.ext <| Prod.ext (by simp) (by simp)
-      right_inv := fun x ↦ Subtype.ext <| Prod.ext (by simp) (by simp)
-      map_add' := fun x y ↦ Subtype.ext <| Prod.ext (by simp [add_vecMul]) (by simp [add_vecMul])
-      map_smul' := fun d x ↦ Subtype.ext <| by simp [rowPatch.coe_smul, smul_vecMul] }
+    π₁.rowPatch π₂ a ≃ₗ[π₁.pullback π₂] π₁.rowPatch π₂ b where
+  toFun x := ⟨(x.val.1 ᵥ* ↑g₁, x.val.2 ᵥ* ↑g₂),
+    vecMul_mem_rowPatch (congrArg Units.val h) x.property⟩
+  invFun x :=
+    have hinv : b * Units.map (π₁.mapMatrix (m := n)).toMonoidHom g₁⁻¹ =
+        Units.map (π₂.mapMatrix (m := n)).toMonoidHom g₂⁻¹ * a := by
+      rw [map_inv, map_inv, mul_inv_eq_iff_eq_mul, mul_assoc, h, inv_mul_cancel_left]
+    ⟨(x.val.1 ᵥ* ↑g₁⁻¹, x.val.2 ᵥ* ↑g₂⁻¹),
+      vecMul_mem_rowPatch (congrArg Units.val hinv) x.property⟩
+  left_inv x := Subtype.ext <| Prod.ext (by simp) (by simp)
+  right_inv x := Subtype.ext <| Prod.ext (by simp) (by simp)
+  map_add' x y := Subtype.ext <| Prod.ext (by simp [add_vecMul]) (by simp [add_vecMul])
+  map_smul' d x := Subtype.ext <| by simp [rowPatch.coe_smul, smul_vecMul]
 
 /-- Changing either endpoint trivialization multiplies the corresponding coordinate on the right. -/
 @[simp]
@@ -302,6 +316,15 @@ theorem coe_rowPatchEquivOfMul_apply {a b : GL n Q} (g₁ : GL n A₁) (g₂ : G
       Units.map (π₂.mapMatrix (m := n)).toMonoidHom g₂ * b) (x : π₁.rowPatch π₂ a) :
     (rowPatchEquivOfMul π₁ π₂ g₁ g₂ h x).val =
       (x.val.1 ᵥ* (g₁ : Matrix n n A₁), x.val.2 ᵥ* (g₂ : Matrix n n A₂)) :=
+  (rfl)
+
+/-- The inverse change of trivializations multiplies each row by the inverse endpoint matrix. -/
+@[simp]
+theorem coe_rowPatchEquivOfMul_symm_apply {a b : GL n Q} (g₁ : GL n A₁) (g₂ : GL n A₂)
+    (h : a * Units.map (π₁.mapMatrix (m := n)).toMonoidHom g₁ =
+      Units.map (π₂.mapMatrix (m := n)).toMonoidHom g₂ * b) (x : π₁.rowPatch π₂ b) :
+    ((rowPatchEquivOfMul π₁ π₂ g₁ g₂ h).symm x).val =
+      (x.val.1 ᵥ* ↑g₁⁻¹, x.val.2 ᵥ* ↑g₂⁻¹) :=
   (rfl)
 
 end RingHom

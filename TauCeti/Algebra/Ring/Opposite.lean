@@ -10,10 +10,12 @@ public import Mathlib.Algebra.Ring.CompTypeclasses
 public import Mathlib.Algebra.Ring.Opposite
 
 /-!
-# Inverse pairs for the double-opposite ring equivalence
+# Opposite rings and ring homomorphisms
 
 The canonical equivalence `RingEquiv.opOp A` identifies a semiring with its double opposite.
 The inverse-pair instances here allow semilinear maps along this equivalence to invert and compose.
+The lemma `RingHom.surjective_op_iff` transfers surjectivity between a ring homomorphism and its
+opposite.
 -/
 
 public section

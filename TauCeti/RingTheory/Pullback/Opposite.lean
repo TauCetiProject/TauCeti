@@ -33,6 +33,19 @@ def pullbackOpEquiv : f.op.pullback g.op ≃+* (f.pullback g)ᵐᵒᵖ where
   map_mul' _ _ := rfl
   map_add' _ _ := rfl
 
+/-- The comparison returns both pullback coordinates to their original rings. -/
+@[simp]
+theorem coe_unop_pullbackOpEquiv_apply (x : f.op.pullback g.op) :
+    ((f.pullbackOpEquiv g x).unop : R × S) = (x.val.1.unop, x.val.2.unop) :=
+  (rfl)
+
+/-- The inverse comparison takes the opposite of each pullback coordinate. -/
+@[simp]
+theorem coe_pullbackOpEquiv_symm_apply (x : (f.pullback g)ᵐᵒᵖ) :
+    ((f.pullbackOpEquiv g).symm x : Rᵐᵒᵖ × Sᵐᵒᵖ) =
+      (MulOpposite.op x.unop.val.1, MulOpposite.op x.unop.val.2) :=
+  (rfl)
+
 /-- The opposite-ring comparison intertwines the first projections. -/
 @[simp]
 theorem op_pullbackFst_comp_pullbackOpEquiv :
