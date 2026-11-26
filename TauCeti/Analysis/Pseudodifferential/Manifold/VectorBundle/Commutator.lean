@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Commutator
-public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle
+public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
 
 /-!
 # Commutators of pseudodifferential operators between bundles with multiplication operators
