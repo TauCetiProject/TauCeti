@@ -71,6 +71,7 @@ which free generators, one for each `(m + 1)`-cell, are compared with the relati
 * `TauCeti.MoorePathPullback.cubicalHomologyCubeBoundaryEquiv τ h₀ h₁ k q`: the isomorphism
   `H_q(Ω_b X; k) ≃ₗ[k] H_{q+m+1}(f^*P_b X, f^*P_b X|_{∂Iᵐ⁺¹}; k)`.
 * `TauCeti.cellCubeMap C n j`: the disk of the `n`-cell `j`, read on the cube.
+* `TauCeti.cellCube C n j`: the characteristic map of the `n`-cell `j`, read on the cube.
 
 * `TauCeti.cellRadialPaths C n γ`: the radial paths to the points of the `n`-cells.
 * `TauCeti.cellSectionCube C n γ j`: the section cube of the `n`-cell `j` in the pullback over the
@@ -302,6 +303,23 @@ theorem isOpenEmbedding_cellCubeMap (n : ℕ) (j : cell C n) :
   IsOpenEmbedding.sigmaMk.comp (cubeHomeomorphClosedBall (Fin n)).isOpenEmbedding
 
 variable (C) in
+/-- The **characteristic cube** of an `n`-cell `j`: its characteristic map, read on the cube `Iⁿ`
+through `TauCeti.cubeHomeomorphClosedBall`. -/
+def cellCube (n : ℕ) (j : cell C n) : SingularCube B n :=
+  (sigmaCellMap C n).comp (cellCubeMap C n j)
+
+@[simp]
+theorem cellCube_apply (n : ℕ) (j : cell C n) (d : Fin n → I) :
+    cellCube C n j d = map n j (cubeHomeomorphClosedBall (Fin n) d) := by
+  rw [cellCube, ContinuousMap.comp_apply, cellCubeMap_apply, sigmaCellMap_apply]
+
+/-- The characteristic cube of a `0`-cell is the `0`-cube at the point of the cell. -/
+theorem cellCube_zero (j : cell C 0) : cellCube C 0 j = SingularCube.point (map 0 j 0) := by
+  rw [SingularCube.eq_point (cellCube C 0 j), cellCube_apply]
+  congr 2
+  exact Subsingleton.elim _ _
+
+variable (C) in
 /-- The characteristic map of the `n`-cell `j`, on the closed unit ball of the sup norm. -/
 private def cellDiskMap (n : ℕ) (j : cell C n) : C(closedBall (0 : Fin n → ℝ) 1, B) :=
   (sigmaCellMap C n).comp
@@ -314,7 +332,7 @@ private def cellRadialPath (n : ℕ) (j : cell C n) (γ : MoorePathBetween B b (
   MoorePathPullback.radialPaths
     ((convex_closedBall (0 : Fin n → ℝ) 1).starConvex (mem_closedBall_self zero_le_one))
     (mem_closedBall_self zero_le_one) (cellDiskMap C n j)
-    ⟨γ.toMoorePath, γ.source, γ.target.trans (by simp [cellDiskMap])⟩
+    (γ.cast rfl (by simp [cellDiskMap]))
 
 variable (C) in
 /-- **Radial paths to the points of the `n`-cells.** Given a Moore path `γ j` from `b` to the
@@ -355,8 +373,8 @@ theorem cellRadialPaths_apply_length_add {n : ℕ}
   have h := MoorePathPullback.radialPaths_apply_length_add
     ((convex_closedBall (0 : Fin n → ℝ) 1).starConvex (mem_closedBall_self zero_le_one))
     (mem_closedBall_self zero_le_one) (cellDiskMap C n j)
-    ⟨(γ j).toMoorePath, (γ j).source, (γ j).target.trans (by simp [cellDiskMap])⟩ v t
-  simp only [MoorePathBetween.toMoorePath_mk] at h
+    ((γ j).cast rfl (by simp [cellDiskMap])) v t
+  simp only [MoorePathBetween.toMoorePath_cast] at h
   exact h.trans (by simp [cellDiskMap, AffineMap.lineMap_apply_module])
 
 variable (b C) in

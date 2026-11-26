@@ -26,7 +26,9 @@ hyperplane the perimeter is the volume `ω_{n-1} r^(n-1)` of an `(n - 1)`-dimens
 same radius (`TauCeti.perimeter_ball_setOf_inner_lt`). This is the model computation behind
 De Giorgi's structure theorem: at a point of the reduced boundary, the blow-ups of a set of finite
 perimeter converge to a half-space, and the perimeter of that half-space in the unit ball fixes the
-density `|Dχ_E|(B_r(x)) / (ω_{n-1} r^(n-1)) → 1` of the perimeter measure.
+density `|Dχ_E|(B_r(x)) / (ω_{n-1} r^(n-1)) → 1` of the perimeter measure. Since every compact
+set lies in such a ball, a half-space has locally finite perimeter
+(`TauCeti.exists_totalVariationOn_indicator_setOf_inner_lt_ne_top`).
 
 Both bounds come from the divergence theorem on the half-space,
 `∫_H div φ = ∫_{⟪x, ν⟫ = c} ⟪φ, ν⟫ dHⁿ⁻¹`
@@ -156,5 +158,21 @@ theorem perimeter_ball_setOf_inner_lt (hν : ‖ν‖ = 1) (x : F) {r : ℝ} (hr
         volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) := by
   rw [perimeter_setOf_inner_lt hν, Opens.coe_mk,
     euclideanHausdorffMeasure_ball_inter_setOf_inner_eq hν x hr]
+
+/-- **A half-space has locally finite perimeter.** For a unit vector `ν`, every compact set `K`
+lies in an open set, a ball centred on the boundary hyperplane, in which the half-space
+`{x | ⟪x, ν⟫ < c}` has finite perimeter. -/
+theorem exists_totalVariationOn_indicator_setOf_inner_lt_ne_top (hν : ‖ν‖ = 1) (c : ℝ)
+    {K : Set F} (hK : IsCompact K) :
+    ∃ U : Opens F, K ⊆ (U : Set F) ∧
+      totalVariationOn volume U ({x | ⟪x, ν⟫ < c}.indicator 1) ≠ ∞ := by
+  obtain ⟨r, hr, hKr⟩ := hK.isBounded.subset_ball_lt 0 (c • ν)
+  refine ⟨⟨ball (c • ν) r, isOpen_ball⟩, hKr, ?_⟩
+  have hc : ⟪c • ν, ν⟫ = c := by
+    rw [real_inner_smul_left, real_inner_self_eq_norm_sq, hν, one_pow, mul_one]
+  have h := perimeter_ball_setOf_inner_lt hν (c • ν) hr
+  rw [hc] at h
+  rw [← perimeter_def, h]
+  exact ENNReal.mul_ne_top (ENNReal.pow_ne_top ENNReal.ofReal_ne_top) measure_ball_lt_top.ne
 
 end TauCeti

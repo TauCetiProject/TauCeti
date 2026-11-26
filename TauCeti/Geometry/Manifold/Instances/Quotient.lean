@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.Instances.Quotient
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Topology.Algebra.GroupAction.FreeLocus
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Quotient manifolds of free properly discontinuous actions
@@ -283,6 +283,9 @@ theorem isLocalDiffeomorph_quotientMk [IsManifold I n M] :
     |>.isLocalHomeomorph |>.isLocalDiffeomorph_chartedSpaceOfRightInverse
       Quotient.mk_surjective.hasRightInverse.choose_spec (quotientMk_deck (G := G) (M := M))
 
+end Quotient
+
+variable [ContMDiffConstSMul I n G M] [ChartedSpace H (MulAction.orbitRel.Quotient G M)] in
 /-- The derivative of the orbit projection at `g • x`, applied to the derivative of `g • ·` at
 `x`, is the derivative of the orbit projection at `x`: the orbit projection is invariant. -/
 @[to_additive mfderiv_addQuotientMk_vadd_apply /-- The derivative of the additive orbit projection
@@ -301,8 +304,6 @@ theorem mfderiv_quotientMk_smul_apply (hn : n ≠ 0) {g : G} {x : M}
     ((contMDiff_const_smul (I := I) (n := n) g).mdifferentiable hn x), hinv]
   -- The two sides differ only in how the tangent space at the orbit of `x` is written.
   rfl
-
-end Quotient
 
 section QuotientSelf
 

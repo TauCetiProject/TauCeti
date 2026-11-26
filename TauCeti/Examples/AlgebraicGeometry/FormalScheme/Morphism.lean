@@ -1,0 +1,130 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.FormalScheme.Morphism
+public import TauCeti.RingTheory.AdicRing.Padic
+
+/-!
+# Examples and counterexamples for morphisms into `Spf A`
+
+We exercise `TauCeti.FormalScheme.homSpfEquiv`, `TauCeti.FormalScheme.ContinuousOnAffines`,
+`TauCeti.FormalScheme.sectionsTopology`, and `IsAdic.continuous_iff_exists_pos_pow_map_le` across
+five regimes:
+1. Ordinary schemes (`ofScheme.obj X`) and discrete target rings `A`.
+2. Empty formal schemes (`IsEmpty X` and `ofSpf (ZMod 1)`).
+3. Non-exponent-1 ideals of definition (`I = (p)`, `J = (p)²` on `ℤ_[p]`) for
+   `IsAdic.continuous_iff_exists_pos_pow_map_le`.
+4. Subsingleton carrier with nondiscrete global `sectionsTopology` (`ofSpf ℤ_[p]`).
+5. Failure of `ContinuousOnAffines` and nonexistence of morphisms `Spec ℚ_[p] ⟶ Spf ℤ_[p]`.
+-/
+
+public section
+open CategoryTheory TopologicalSpace Opposite AlgebraicGeometry
+open TauCeti TauCeti.FormalScheme
+universe u
+noncomputable section
+namespace TauCeti.Examples.FormalScheme.Morphism
+/-! ### 1. Ordinary schemes and discrete target rings -/
+
+/-- Every affine open of an ordinary scheme `X` has discrete `sectionsTopology`. -/
+example (X : Scheme.{u}) (U : Opens X) (hU : IsAffineOpen U) :
+    (ofScheme.obj X).sectionsTopology U (isAffineOpen_ofScheme hU) = ⊥ :=
+  sectionsTopology_ofScheme hU
+
+/-- Every ring hom from a discrete ring `A` to `Γ(X, ⊤)` corresponds to a unique `X ⟶ ofSpf A`. -/
+example (X : FormalScheme.{u}) (A : Type u) [CommRing A] [TopologicalSpace A]
+    [DiscreteTopology A] (φ : A →+* X.presheaf.obj (op ⊤)) :
+    ∃! f : X ⟶ ofSpf A, sectionsHom f = φ :=
+  have hφ : ContinuousOnAffines X A φ := (continuousOnAffines_iff X A φ).mpr fun U hU ↦
+    let _ := X.sectionsTopology U hU; continuous_of_discreteTopology
+  ⟨homOfContinuousOnAffines φ hφ, sectionsHom_homOfContinuousOnAffines φ hφ, fun _ hf ↦
+    sectionsHom_injective (hf.trans (sectionsHom_homOfContinuousOnAffines φ hφ).symm)⟩
+
+/-! ### 2. Empty formal schemes -/
+
+/-- `ofSpf (ZMod 1)` is empty and admits a unique morphism into any `ofSpf A`. -/
+example (A : Type) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsAdicRing A]
+    [TopologicalSpace (ZMod 1)] [DiscreteTopology (ZMod 1)] :
+    Nonempty (Unique (ofSpf (ZMod 1) ⟶ ofSpf A)) :=
+  nonempty_unique_hom_of_isEmpty (ofSpf (ZMod 1))
+    ⟨fun x ↦ x.val.isPrime.ne_top (Subsingleton.elim _ _)⟩ A
+
+/-! ### 3–5. `p`-adic checks (`ℤ_[p]` and `ℚ_[p]`) -/
+
+section Padic
+variable (p : ℕ) [Fact p.Prime]
+
+/-- `sectionsHom` recovers the identity on `ofSpf ℤ_[p]`. -/
+example (a : ℤ_[p]) : (Spf.topSectionsIso ℤ_[p]).hom (sectionsHom (𝟙 (ofSpf ℤ_[p])) a) = a :=
+  sectionsHom_id ℤ_[p] ▸ ConcreteCategory.congr_hom (Spf.topSectionsIso ℤ_[p]).inv_hom_id a
+
+/-- With ideals `I = (p)` and `J = (p)²` on `ℤ_[p]`, `(I ^ n).map id ≤ J` holds for some `n > 0`
+(`IsAdic.continuous_iff_exists_pos_pow_map_le`), whereas `¬ I.map id ≤ J` since `p ∉ (p)²`. -/
+theorem padicInt_exists_pos_pow_map_le_and_not_map_le :
+    (∃ n > 0, (IsLocalRing.maximalIdeal ℤ_[p] ^ n).map
+          (Spf.homEquiv (𝟙 (Spf ℤ_[p])) : ℤ_[p] →+* ℤ_[p]) ≤
+        IsLocalRing.maximalIdeal ℤ_[p] ^ 2) ∧
+      ¬ (IsLocalRing.maximalIdeal ℤ_[p]).map (Spf.homEquiv (𝟙 (Spf ℤ_[p])) : ℤ_[p] →+* ℤ_[p]) ≤
+          IsLocalRing.maximalIdeal ℤ_[p] ^ 2 := by
+  let I := IsLocalRing.maximalIdeal ℤ_[p]
+  have hI : IsAdic I := _root_.PadicInt.isAdic_maximalIdeal
+  refine ⟨(hI.continuous_iff_exists_pos_pow_map_le
+    (is_ideal_adic_pow hI two_pos)).mp (Spf.homEquiv (𝟙 (Spf ℤ_[p]))).property, fun hle ↦ ?_⟩
+  rw [Spf.homEquiv_apply_coe, Spf.sectionsHom_id, Ideal.map_id] at hle
+  have hpI : (p : ℤ_[p]) ∈ I := by
+    simpa only [I, PadicInt.maximalIdeal_eq_span_p] using Ideal.mem_span_singleton_self (p : ℤ_[p])
+  have hpI2 : (p : ℤ_[p]) ∈ Ideal.span {(p : ℤ_[p]) ^ 2} := by
+    simpa only [I, PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow] using hle hpI
+  obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.mp hpI2
+  have hpc : (p : ℤ_[p]) * c = 1 :=
+    mul_left_cancel₀ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
+      (by linear_combination -hc)
+  exact (IsLocalRing.maximalIdeal.isMaximal ℤ_[p]).ne_top <| (Ideal.eq_top_iff_one _).mpr <|
+    hpc ▸ I.mul_mem_right c hpI
+
+/-- `ofSpf ℤ_[p]` has at most one point, yet its global `sectionsTopology` is nondiscrete. -/
+theorem subsingleton_and_not_discrete_sectionsTopology_padicInt :
+    Subsingleton (ofSpf ℤ_[p]) ∧
+      ¬ @DiscreteTopology _ ((ofSpf ℤ_[p]).sectionsTopology ⊤ (isAffineOpen_top_ofSpf ℤ_[p])) := by
+  have hmax (z : ofSpf ℤ_[p]) : z.val.asIdeal = IsLocalRing.maximalIdeal ℤ_[p] := le_antisymm
+    (IsLocalRing.le_maximalIdeal z.val.isPrime.ne_top)
+    ((Spf.mem_carrier_iff_le (_root_.PadicInt.isAdic_maximalIdeal (p := p))).mp z.property)
+  refine ⟨⟨fun _ _ ↦ Subtype.ext (PrimeSpectrum.ext ((hmax _).trans (hmax _).symm))⟩, fun h ↦ ?_⟩
+  let _ := (ofSpf ℤ_[p]).sectionsTopology ⊤ (isAffineOpen_top_ofSpf ℤ_[p])
+  have : DiscreteTopology ℤ_[p] :=
+    (isHomeomorph_topSectionsIso_sectionsTopology ℤ_[p]).homeomorph.discreteTopology_iff.mp h
+  have hnil : Filter.Tendsto (fun n : ℕ ↦ (p : ℤ_[p]) ^ n) Filter.atTop (nhds 0) :=
+    (Huber.PadicInt.isTopologicallyNilpotent_iff_dvd (c := (p : ℤ_[p]))).mpr dvd_rfl
+  rw [nhds_discrete, Filter.tendsto_pure] at hnil; obtain ⟨n, hn⟩ := hnil.exists
+  exact pow_ne_zero n (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) hn
+
+/-- No ring hom `ℤ_[p] →+* Γ(Spec ℚ_[p], ⊤)` satisfies `ContinuousOnAffines`, since `p ∈ (p)` maps
+to the unit `(p : ℚ_[p])`. -/
+theorem not_continuousOnAffines_spec_padic
+    (φ : ℤ_[p] →+* (ofScheme.obj (Spec (CommRingCat.of ℚ_[p]))).presheaf.obj (op ⊤)) :
+    ¬ ContinuousOnAffines (ofScheme.obj (Spec (CommRingCat.of ℚ_[p]))) ℤ_[p] φ := fun hφ ↦ by
+  let X := ofScheme.obj (Spec (CommRingCat.of ℚ_[p])); let x : X := ⟨⊥, inferInstance⟩
+  let toRes : ℚ_[p] →+* X.toLocallyRingedSpace.residueField x :=
+    ((Scheme.ΓSpecIso (CommRingCat.of ℚ_[p])).inv ≫ X.toLocallyRingedSpace.Γevaluation x).hom
+  have hzero := (continuousOnAffines_iff_residue
+    (_root_.PadicInt.isAdic_maximalIdeal (p := p)) φ).mp hφ (p : ℤ_[p])
+    (PadicInt.maximalIdeal_eq_span_p (p := p) ▸ Ideal.subset_span rfl) x
+  exact ((isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)).map
+    toRes).ne_zero ((map_natCast toRes p).trans (by rwa [map_natCast, map_natCast] at hzero))
+
+/-- The canonical inclusion `ℤ_[p] →+* Γ(Spec ℚ_[p], ⊤)` is not continuous on affine opens. -/
+example :
+    ¬ ContinuousOnAffines (ofScheme.obj (Spec (CommRingCat.of ℚ_[p]))) ℤ_[p]
+      ((Scheme.ΓSpecIso (CommRingCat.of ℚ_[p])).inv.hom.comp (algebraMap ℤ_[p] ℚ_[p])) :=
+  not_continuousOnAffines_spec_padic p _
+
+/-- There is no morphism of formal schemes `Spec ℚ_[p] ⟶ Spf ℤ_[p]`. -/
+theorem isEmpty_hom_spec_padic_to_ofSpf_padicInt :
+    IsEmpty (ofScheme.obj (Spec (CommRingCat.of ℚ_[p])) ⟶ ofSpf ℤ_[p]) :=
+  ⟨fun f ↦ not_continuousOnAffines_spec_padic p (sectionsHom f) (continuousOnAffines_sectionsHom f)⟩
+end Padic
+end TauCeti.Examples.FormalScheme.Morphism

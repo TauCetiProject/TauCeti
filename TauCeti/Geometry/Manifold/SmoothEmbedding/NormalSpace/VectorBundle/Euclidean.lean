@@ -47,7 +47,7 @@ variable {E V F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 using the fixed-model orthogonal normal coordinates. The quotient topology is preserved. -/
 def orthogonalNormalSpaceTrivialization (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E) (x₀ : M) :
-    Trivialization F (π F (fun x => f.NormalSpace x hn)) := by
+    Trivialization F (π F (fun x => f.isImmersion.NormalSpace x hn)) := by
   let e := normalBundleTrivialization
     (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
     (f.isImmersion.mfderiv_injective hn) hdim x₀
@@ -67,7 +67,7 @@ def orthogonalNormalSpaceTrivialization (f : SmoothEmbedding I 𝓘(ℝ, V) n M 
 @[simp] theorem orthogonalNormalSpaceTrivialization_apply
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E) (x₀ : M)
-    (p : TotalSpace F (fun x => f.NormalSpace x hn)) :
+    (p : TotalSpace F (fun x => f.isImmersion.NormalSpace x hn)) :
     f.orthogonalNormalSpaceTrivialization hn hdim x₀ p =
       normalBundleTrivialization
         (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
@@ -129,7 +129,7 @@ theorem orthogonalNormalSpaceTrivialization_coordChangeL
 @[instance_reducible]
 def orthogonalNormalSpaceFiberBundle (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E) :
-    FiberBundle F (fun x => f.NormalSpace x hn) where
+    FiberBundle F (fun x => f.isImmersion.NormalSpace x hn) where
   totalSpaceMk_isInducing' x := (f.isEmbedding_normalBundle_mk hn x).isInducing
   trivializationAtlas' := range (f.orthogonalNormalSpaceTrivialization hn hdim)
   trivializationAt' := f.orthogonalNormalSpaceTrivialization hn hdim
@@ -141,16 +141,16 @@ def orthogonalNormalSpaceFiberBundle (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) 
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E) (x : M) :
     letI := f.orthogonalNormalSpaceFiberBundle hn hdim
-    trivializationAt F (fun x => f.NormalSpace x hn) x =
+    trivializationAt F (fun x => f.isImmersion.NormalSpace x hn) x =
       f.orthogonalNormalSpaceTrivialization hn hdim x := (rfl)
 
 /-- The intrinsic atlas consists exactly of the transported orthogonal normal charts. -/
 @[simp] theorem mem_orthogonalNormalSpaceFiberBundle_trivializationAtlas_iff
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E)
-    (e : Trivialization F (π F (fun x => f.NormalSpace x hn))) :
+    (e : Trivialization F (π F (fun x => f.isImmersion.NormalSpace x hn))) :
     letI := f.orthogonalNormalSpaceFiberBundle hn hdim
-    e ∈ trivializationAtlas F (fun x => f.NormalSpace x hn) ↔
+    e ∈ trivializationAtlas F (fun x => f.isImmersion.NormalSpace x hn) ↔
       ∃ x, f.orthogonalNormalSpaceTrivialization hn hdim x = e := Iff.rfl
 
 /-- Intrinsic normal coordinates define a vector bundle: their transition operators are
@@ -158,7 +158,7 @@ those of the orthogonal normal vector bundle. -/
 theorem orthogonalNormalSpaceVectorBundle (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E) :
     letI := f.orthogonalNormalSpaceFiberBundle hn hdim
-    VectorBundle ℝ F (fun x => f.NormalSpace x hn) := by
+    VectorBundle ℝ F (fun x => f.isImmersion.NormalSpace x hn) := by
   let := f.orthogonalNormalSpaceFiberBundle hn hdim
   refine { trivialization_linear' := ?_, continuousOn_coordChange' := ?_ }
   · rintro e ⟨x, rfl⟩
@@ -182,7 +182,7 @@ theorem orthogonalNormalSpaceContMDiffVectorBundle {m : ℕ∞ω}
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.orthogonalNormalSpaceFiberBundle hn hdim
     letI := f.orthogonalNormalSpaceVectorBundle hn hdim
-    ContMDiffVectorBundle m F (fun x => f.NormalSpace x hn) I := by
+    ContMDiffVectorBundle m F (fun x => f.isImmersion.NormalSpace x hn) I := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let := f.orthogonalNormalSpaceFiberBundle hn hdim
   let := f.orthogonalNormalSpaceVectorBundle hn hdim

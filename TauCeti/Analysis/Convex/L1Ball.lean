@@ -15,7 +15,8 @@ import TauCeti.Analysis.Convex.Gauge.Basic
 The set `l1Ball ι` is the closed ℓ¹ unit ball on `ι → ℝ`, equipped with its usual supremum
 norm and product volume. It is a compact, symmetric, convex neighborhood of zero, its gauge
 is the sum of the absolute coordinates, and its volume is `2 ^ n / n!`, where `n` is the
-cardinality of `ι`. The statements include the empty index type.
+cardinality of `ι`. It is the cross-polytope, the convex hull of `0` and the vectors `±e_i`
+(`TauCeti.l1Ball_eq_convexHull`). The statements include the empty index type.
 
 These facts provide a convex body for lattice estimates in coordinate spaces, including
 the logarithmic space of a number field. The geometry uses Mathlib's `PiLp` closed ball;
@@ -90,6 +91,37 @@ theorem gauge_l1Ball (x : ι → ℝ) : gauge (l1Ball ι) x = ∑ i, |x i| := by
   -- The `PiLp 1` norm of `toLp 1 x` is the sum of the absolute coordinates of `x`.
   rw [hg, gauge_closedBall zero_le_one, div_one, PiLp.norm_eq_of_L1]
   simp
+
+/-- The ℓ¹ unit ball is the cross-polytope: the convex hull of `0` and of the vectors `±e_i` of
+the standard basis. The origin is needed only when `ι` is empty. -/
+theorem l1Ball_eq_convexHull [DecidableEq ι] :
+    l1Ball ι = convexHull ℝ (insert 0 (Set.range (fun i ↦ Pi.single i 1) ∪
+      Set.range (fun i ↦ -Pi.single i 1))) := by
+  refine subset_antisymm (fun x hx ↦ ?_) (convexHull_min ?_ (convex_l1Ball ι))
+  · -- `x` is the convex combination of the points `sign (x i) • e_i`, with weights `|x i|`,
+    -- and of `0`, with weight `1 - ∑ i, |x i|`
+    let v (i : ι) : ι → ℝ := if 0 ≤ x i then Pi.single i 1 else -Pi.single i 1
+    have hv (i : ι) : |x i| • v i = Pi.single i (x i) := by
+      ext j
+      by_cases hj : j = i
+      · subst hj
+        by_cases h : 0 ≤ x j <;> simp [v, h, abs_of_nonneg, abs_of_neg, not_le.1]
+      · by_cases h : 0 ≤ x i <;> simp [v, hj, h]
+    have hx' : x = ∑ o : Option ι, Option.elim o (1 - ∑ i, |x i|) (fun i ↦ |x i|) •
+        Option.elim o 0 v := by
+      simp [Fintype.sum_option, hv, Finset.univ_sum_single]
+    rw [hx']
+    refine (convex_convexHull ℝ _).sum_mem (fun o _ ↦ ?_) (by simp [Fintype.sum_option])
+      fun o _ ↦ subset_convexHull ℝ _ ?_
+    · cases o with
+      | none => exact sub_nonneg.2 hx
+      | some i => exact abs_nonneg _
+    · cases o with
+      | none => exact Set.mem_insert _ _
+      | some i =>
+        refine Set.mem_insert_of_mem _ ?_
+        by_cases h : 0 ≤ x i <;> simp [v, h]
+  · rintro _ (rfl | ⟨i, rfl⟩ | ⟨i, rfl⟩) <;> simp [Pi.single_apply, apply_ite]
 
 /-- The ℓ¹ unit ball has volume `2 ^ n / n!` in dimension `n`, also when `n = 0`. -/
 theorem volume_l1Ball :

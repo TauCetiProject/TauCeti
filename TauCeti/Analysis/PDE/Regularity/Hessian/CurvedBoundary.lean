@@ -99,32 +99,6 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDim
   [MeasurableSpace F] [BorelSpace F] {mu : Measure F} [mu.IsAddHaarMeasure] {p : ℝ≥0∞}
   [Fact (1 ≤ p)] {Omega U U' Ω' : Opens F} {Φ Ψ : F → F} {L L' c c' : ℝ}
 
-/-- **Zero boundary values along a straightening chart.** Let `Φ` be a change of variables of order
-two from `Ω'` into `Ω ∩ U`, with continuous left inverse `Ψ` mapping `Ω ∩ U` into `Ω'`, and let
-`Φ` be continuous on an open `U'` that it maps into `U`. If `χ u ∈ W₀^{1,p}(Ω)` for every smooth `χ`
-compactly supported in `U`, then `ψ (u ∘ Φ) ∈ W₀^{1,p}(Ω')` for every smooth `ψ` compactly
-supported in `U'`. -/
-private theorem exists_w1p0_value_ae_eq_mul_value_compL
-    (hΦ : IsChangeOfVariables 2 Ω' (Omega ⊓ U) Φ L c) (hp : p ≠ ⊤) (hΦc : ContinuousOn Φ U')
-    (hΦU' : MapsTo Φ U' U) (hΨc : ContinuousOn Ψ (Omega ⊓ U : Opens F))
-    (hΨmaps : MapsTo Ψ (Omega ⊓ U : Opens F) Ω') (hΨΦ : LeftInvOn Ψ Φ Ω') {u : Wkp mu Omega p 2}
-    (hu0 : ∀ χ : F → ℝ, ContDiff ℝ ∞ χ → HasCompactSupport χ → tsupport χ ⊆ U →
-      ∃ w : W1p0 mu Omega p,
-        W1p.value (w : W1p mu Omega p) =ᵐ[mu.restrict Omega] fun x => χ x * value 2 u x)
-    (ψ : F → ℝ) (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψs : tsupport ψ ⊆ U') :
-    ∃ w : W1p0 mu Ω' p, W1p.value (w : W1p mu Ω' p) =ᵐ[mu.restrict Ω']
-      fun x => ψ x * value 2 (compL hΦ (restrictL inf_le_left 2 u)) x := by
-  have hΦ1 : IsChangeOfVariables 1 Ω' (Omega ⊓ U) Φ L c := hΦ.mono one_le_two
-  obtain ⟨w, hw⟩ := hΦ1.exists_w1p0_value_ae_eq_mul_value_w1pCompL hp hΦc hΨc hΨmaps hΨΦ hΦU'
-    (u := lowerOrder 1 u) (fun χ hχ hχc hχs => by
-      simpa only [value_lowerOrder_one] using hu0 χ hχ hχc hχs) ψ hψ hψc hψs
-  refine ⟨w, hw.trans ?_⟩
-  filter_upwards [hΦ1.value_w1pCompL_ae hp (W1p.restrictL inf_le_left (lowerOrder 1 u)),
-    hΦ.ae_comp (W1p.value_restrictL_ae inf_le_left (lowerOrder 1 u)),
-    value_compL_ae hΦ (restrictL inf_le_left 2 u),
-    hΦ.ae_comp (value_restrictL_ae inf_le_left 2 u)] with x h1 h2 h3 h4
-  rw [h1, h2, h3, h4, value_lowerOrder_one]
-
 /-- **The equation along a straightening chart.** If `u` solves
 `tr (A ∘ D²u) + ⟪b, ∇u⟫ + c₀ u = f` on `Ω`, then `u ∘ Φ` solves the transformed equation of
 `TauCeti.PDE.ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq` on `Ω'`, for mutually
@@ -379,7 +353,7 @@ private theorem exists_lpNorm_iteratedGradient_le_of_norm_le (hp : 1 < p) (hp_to
     hΦ'.memLp_comp (normalHalfSpace (E := E) a ⊓ U').isOpen.measurableSet subset_rfl hΦΩ
       (Lp.memLp f)
   have hest := hC₀ _ (hfΦ.toLp _)
-    (exists_w1p0_value_ae_eq_mul_value_compL hΦ' hp_top hΦ.differentiableOn.continuousOn
+    (hΦ'.exists_w1p0_value_ae_eq_mul_value_compL hp_top hΦ.differentiableOn.continuousOn
       hΦ.mapsTo (hΨ.differentiableOn.continuousOn.mono fun y hy => hy.2) hΨ'.mapsTo
       (hΨΦ.mono fun x hx => hx.2) hu0)
     (by

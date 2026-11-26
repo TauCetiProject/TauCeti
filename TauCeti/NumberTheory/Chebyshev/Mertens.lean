@@ -61,6 +61,8 @@ constant `B'`. The constant `B` is the Meissel–Mertens constant `mertensConsta
   `Chebyshev.abs_sum_primesLE_log_div_sub_log_le`,
   `Chebyshev.abs_sum_primesLE_log_div_sub_log_natCast_le`,
   `Chebyshev.isBigO_sum_primesLE_log_div_sub_log`: Mertens' first theorem on `Nat.primesLE`.
+* `Chebyshev.sum_primesLE_inv_le`: the crude bound `∑_{p ≤ x} 1 / p ≤ (log x + log 4 + 4) / log 2`
+  for `x ≥ 1`.
 * `Chebyshev.sum_primesLE_log_div_sub_filter_lt_le`,
   `Chebyshev.abs_sum_primesLE_filter_lt_log_div_sub_log_le`,
   `Chebyshev.abs_sum_primesBelow_log_div_sub_log_le`,
@@ -199,6 +201,19 @@ theorem sum_vonMangoldt_div_sub_sum_primesLE_log_div_le (N : ℕ) :
 theorem sum_primesLE_log_div_le {x : ℝ} (hx : 1 ≤ x) :
     ∑ p ∈ Nat.primesLE ⌊x⌋₊, Real.log p / p ≤ Real.log x + (Real.log 4 + 4) :=
   (sum_primesLE_log_div_le_sum_vonMangoldt_div ⌊x⌋₊).trans (sum_vonMangoldt_div_le hx)
+
+/-- `∑_{p ≤ x} 1 / p ≤ (log x + log 4 + 4) / log 2` for `x ≥ 1`, a crude form of Mertens's first
+theorem. -/
+theorem sum_primesLE_inv_le {x : ℝ} (hx : 1 ≤ x) :
+    ∑ p ∈ Nat.primesLE ⌊x⌋₊, (p : ℝ)⁻¹ ≤ (Real.log x + (Real.log 4 + 4)) / Real.log 2 := by
+  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
+  rw [le_div_iff₀ hlog2, sum_mul]
+  refine le_trans (sum_le_sum fun p hp ↦ ?_) (Chebyshev.sum_primesLE_log_div_le hx)
+  have hp := (Nat.mem_primesLE.1 hp).2
+  have hp0 : (0 : ℝ) < p := by exact_mod_cast hp.pos
+  rw [inv_mul_eq_div]
+  exact div_le_div_of_nonneg_right
+    (Real.log_le_log two_pos (by exact_mod_cast hp.two_le)) hp0.le
 
 /-- Explicit lower bound in Mertens' first theorem: for `x ≥ 0`,
 `log x - (2 log 4 + 3 / 2) ≤ ∑_{p ≤ x} log p / p`. -/

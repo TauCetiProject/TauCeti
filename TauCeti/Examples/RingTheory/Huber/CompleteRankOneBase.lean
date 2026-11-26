@@ -48,22 +48,11 @@ theorem isCompleteRankOneBase_padicInt (p : ℕ) [Fact p.Prime] :
   isAdic := _root_.PadicInt.maximalIdeal_eq_span_p (p := p) ▸ _root_.PadicInt.isAdic_maximalIdeal
   isAdicComplete := _root_.PadicInt.maximalIdeal_eq_span_p (p := p) ▸ inferInstance
 
-private theorem integers_padicComplexInt (p : ℕ) [Fact p.Prime] :
-    (NormedField.valuation (K := ℂ_[p])).Integers 𝓞_ℂ_[p] where
-  hom_inj := Subtype.val_injective
-  map_le_one x := by
-    rw [NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnNorm]
-    exact (PadicComplex.valuation_coe p (x : ℂ_[p])) ▸ NNReal.coe_le_one.mpr x.property
-  exists_of_le_one {x} hx := by
-    rw [NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnNorm,
-      ← PadicComplex.valuation_coe p] at hx
-    exact ⟨⟨x, NNReal.coe_le_one.mp hx⟩, rfl⟩
-
 /-- The non-noetherian valuation ring `𝓞_ℂ_[p]` of `ℂ_p` forms a complete rank-one valuation base
 with pseudouniformiser `p`. -/
 theorem isCompleteRankOneBase_padicComplexInt (p : ℕ) [Fact p.Prime] :
     IsCompleteRankOneBase 𝓞_ℂ_[p] (p : 𝓞_ℂ_[p]) := by
-  have hv := integers_padicComplexInt p
+  have hv := PadicComplexInt.integers_normedFieldValuation p
   have hp0 : (p : 𝓞_ℂ_[p]) ≠ 0 := fun h ↦
     (Fact.out : p.Prime).ne_zero (by simpa using congrArg Subtype.val h)
   have hp1 : ‖algebraMap 𝓞_ℂ_[p] ℂ_[p] (p : 𝓞_ℂ_[p])‖ < 1 := by

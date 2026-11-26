@@ -30,6 +30,10 @@ change of coefficients `map f` acts on the constant coefficient.
 * `PowerSeries.instCharP`, `PowerSeries.instCharZero`: `R⟦X⟧` inherits characteristic from `R`.
 * `PowerSeries.constantCoeff_map`: a change of coefficients `map f` acts on the constant
   coefficient by `f`, as `MvPowerSeries.constantCoeff_map` does for multivariate power series.
+* `PowerSeries.coeff_mul_of_ne_zero`: for `k ≠ 0`, the `Xᵏ`-coefficient of `f * g` is
+  `f₀ * gₖ + fₖ * g₀ + Σ_{0 < i < k} fᵢ * g_{k - i}`.
+* `Polynomial.coeff_coe_eq_zero_of_degree_lt`: a polynomial of degree less than `s`, viewed as a
+  power series, has zero coefficients from `s` on.
 -/
 
 public section
@@ -93,4 +97,32 @@ theorem constantCoeff_map (f : R →+* S) (φ : R⟦X⟧) :
 
 end Map
 
+section Coeff
+
+variable {R : Type*} [Semiring R]
+
+/-- For `k ≠ 0`, the `Xᵏ`-coefficient of `f * g` splits into the two end terms `f₀ * gₖ` and
+`fₖ * g₀` and the terms `fᵢ * g_{k - i}` with `0 < i < k`. -/
+theorem coeff_mul_of_ne_zero (f g : R⟦X⟧) {k : ℕ} (hk : k ≠ 0) :
+    coeff k (f * g) = constantCoeff f * coeff k g + coeff k f * constantCoeff g +
+      ∑ i ∈ Finset.Ioo 0 k, coeff i f * coeff (k - i) g := by
+  rw [coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk, Finset.sum_range_succ,
+    Finset.sum_range_eq_add_Ico _ (Nat.pos_of_ne_zero hk), ← Finset.Ico_add_one_left_eq_Ioo]
+  simp [add_right_comm]
+
+end Coeff
+
 end PowerSeries
+
+namespace Polynomial
+
+variable {R : Type*} [Semiring R]
+
+/-- A polynomial of degree less than `s`, viewed as a power series, has zero coefficients from
+`s` on. -/
+theorem coeff_coe_eq_zero_of_degree_lt {s : ℕ} {p : Polynomial R} {m : ℕ} (hp : p.degree < s)
+    (hm : s ≤ m) : (p : PowerSeries R).coeff m = 0 := by
+  rw [coeff_coe]
+  exact coeff_eq_zero_of_degree_lt (hp.trans_le (by exact_mod_cast hm))
+
+end Polynomial
