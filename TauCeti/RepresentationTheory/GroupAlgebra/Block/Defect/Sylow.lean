@@ -61,20 +61,17 @@ namespace TauCeti
 open MonoidAlgebra
 open scoped Pointwise
 
-variable {k G : Type*} [Field k] [Group G] [Fintype G]
+variable {k G : Type*} [Group G] [Fintype G]
 
 /-- **Class sums are traces from centralizers.** The class sum of `x`, an element of
 `k[G]^G = Z(k[G])`, lies in `Tr_{C_G(x)}^G(k[G]^{C_G(x)})`: it is `Tr_{C_G(x)}^G(x)`. -/
-theorem classSumCenter_mem_relTraceIdeal_centralizer [DecidableEq G] (x : G) :
+theorem classSumCenter_mem_relTraceIdeal_centralizer [CommSemiring k] [DecidableEq G] (x : G) :
     (⟨classSumCenter (k := k) (ConjClasses.mk x),
         center_le_conjInvariants ⊤ (classSumCenter (ConjClasses.mk x)).property⟩ :
         conjInvariants k (⊤ : Subgroup G)) ∈
       relTraceIdeal k (le_top : Subgroup.centralizer {x} ≤ ⊤) := by
-  have hQ : ∀ Q Q' : Subgroup G, Q = Q' →
-      relTraceIdeal k (le_top : Q ≤ ⊤) = relTraceIdeal k (le_top : Q' ≤ ⊤) := by
-    rintro _ _ rfl
-    rfl
-  rw [← hQ _ _ (top_inf_eq (Subgroup.centralizer {x})), mem_relTraceIdeal_iff]
+  rw [← relTraceIdeal_congr le_top (top_inf_eq (Subgroup.centralizer {x})) le_top,
+    mem_relTraceIdeal_iff]
   refine ⟨⟨single x 1, single_mem_conjInvariants_inf_centralizer ⊤ x 1⟩, ?_⟩
   ext1
   ext h
@@ -89,7 +86,7 @@ theorem classSumCenter_mem_relTraceIdeal_centralizer [DecidableEq G] (x : G) :
   · exact absurd (hiff.2 h2) h1
   · rfl
 
-variable {p : ℕ} [Fact p.Prime] [CharP k p]
+variable [Field k] {p : ℕ} [Fact p.Prime] [CharP k p]
 
 /-- **A block is a trace from a Sylow subgroup of a centralizer.** Let `e_B` be a block idempotent
 of `k[G]`, `k` a field of characteristic `p`, and `φ : Z(k[G]) → k` a `k`-algebra homomorphism
@@ -123,8 +120,7 @@ theorem IsBlockIdempotent.mem_relTraceIdeal_of_apply_classSumCenter_ne_zero [Dec
     exact classSumCenter_mem_relTraceIdeal_centralizer x
   have hb' : (⟨b, center_le_conjInvariants ⊤ b.property⟩ : conjInvariants k (⊤ : Subgroup G)) =
       ι K * ι (z * b) := by
-    rw [← map_mul, ← mul_assoc, hz]
-    rfl
+    rw [← map_mul, ← mul_assoc, hz, Subalgebra.inclusion_mk]
   rw [hb']
   exact Ideal.mul_mem_right _ _ hK
 
