@@ -36,7 +36,7 @@ circular orbit is a nondegenerate point of `F` exactly when `r` is a nondegenera
 of the effective potential, `U_L''(r) ≠ 0`
 (`TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`). For `m > 0` the transversal
 Hessian of the critical function `H - Ω L` on the radial directions is positive definite exactly
-at a minimum, `U_L''(r) > 0`
+when `U_L''(r) > 0`, that is, at a nondegenerate minimum of the effective potential
 (`posDef_hessianQuadraticForm_comp_centralForceEnergyMomentum_comp_fderiv_polarCanonical_inl_iff`).
 By Williamson's theorem
 (`TauCeti.SymplecticForm.exists_isDarbouxBasis_eq_sum_smul_elliptic_of_posDef`), a positive
@@ -318,6 +318,23 @@ theorem hessianQuadraticForm_comp_centralForceEnergyMomentum_apply_fderiv_polarC
     ContinuousLinearMap.inl_apply, smul_eq_mul] at ha
   rw [← ha, hessianQuadraticForm_transversalModel hU hr.ne']
 
+/-- The transversal Hessian of `ℓ ∘ F` pulled back to the radial directions is `ℓ(e₀)` times the
+Hessian of the transversal model. -/
+private theorem hessianQuadraticForm_comp_centralForceEnergyMomentum_comp_fderiv_polarCanonical_inl
+    (hU : ContDiffAt ℝ 2 U r) (hr : 0 < r) {ℓ : (Fin 2 → ℝ) →L[ℝ] ℝ}
+    (hℓ : ℓ.comp (fderiv ℝ (centralForceEnergyMomentum b m U)
+      (polarCanonical (b 0) (b 1) ((r, 0), (θ, L)))) = 0) :
+    (hessianQuadraticForm (ℓ ∘ centralForceEnergyMomentum b m U)
+        (polarCanonical (b 0) (b 1) ((r, 0), (θ, L)))).comp
+        ((fderiv ℝ (polarCanonical (b 0) (b 1)) ((r, 0), (θ, L)) :
+          (ℝ × ℝ) × (ℝ × ℝ) →ₗ[ℝ] V × V) ∘ₗ LinearMap.inl ℝ (ℝ × ℝ) (ℝ × ℝ)) =
+      ℓ (Pi.single 0 1) • hessianQuadraticForm (transversalModel m L U r) 0 := by
+  ext a
+  rw [QuadraticMap.comp_apply, LinearMap.comp_apply, LinearMap.inl_apply,
+    ContinuousLinearMap.coe_coe,
+    hessianQuadraticForm_comp_centralForceEnergyMomentum_apply_fderiv_polarCanonical b hU hr hℓ,
+    smul_apply, smul_eq_mul, hessianQuadraticForm_transversalModel hU hr.ne']
+
 /-- **Positive definiteness of the transversal Hessian on the radial directions.** For a positive
 mass, at the point with polar coordinates `(r, 0, θ, L)`, `r > 0`, let `ℓ` be a functional with
 `ℓ ∘ dF = 0` and `ℓ(e₀) = 1`, such as the critical functional `h - Ω l` of a circular orbit
@@ -345,10 +362,8 @@ theorem
       ((fderiv ℝ (polarCanonical (b 0) (b 1)) ((r, 0), (θ, L)) :
         (ℝ × ℝ) × (ℝ × ℝ) →ₗ[ℝ] V × V) ∘ₗ LinearMap.inl ℝ (ℝ × ℝ) (ℝ × ℝ))) a =
       iteratedDeriv 2 (effectivePotential m L U) r * a.1 ^ 2 + a.2 ^ 2 / m := by
-    rw [QuadraticMap.comp_apply, LinearMap.comp_apply, LinearMap.inl_apply,
-      ContinuousLinearMap.coe_coe, ← Prod.mk.eta (p := a),
-      hessianQuadraticForm_comp_centralForceEnergyMomentum_apply_fderiv_polarCanonical b hU hr hℓ,
-      hℓ₀, one_mul]
+    rw [hessianQuadraticForm_comp_centralForceEnergyMomentum_comp_fderiv_polarCanonical_inl b hU hr
+      hℓ, hℓ₀, one_smul, hessianQuadraticForm_transversalModel hU hr.ne']
   refine ⟨fun h ↦ ?_, fun h a ha ↦ ?_⟩
   · have h₁ := h (1, 0) (by simp)
     rw [hQ] at h₁
@@ -520,11 +535,8 @@ theorem isNondegeneratePoint_centralForceEnergyMomentum_polarCanonical_iff (hm :
       (hessianQuadraticForm (ℓ.val ∘ F) (polarCanonical (b 0) (b 1) y)).comp j) =
       fun ℓ ↦ ℓ.val (Pi.single 0 1) • hessianQuadraticForm (transversalModel m L U r) 0 := by
     funext ℓ
-    ext a
-    rw [QuadraticMap.comp_apply, smul_apply, smul_eq_mul,
-      hessianQuadraticForm_transversalModel hU hr.ne', ← Prod.mk.eta (p := a)]
-    exact hessianQuadraticForm_comp_centralForceEnergyMomentum_apply_fderiv_polarCanonical b hU hr
-      ℓ.property (a.1, a.2)
+    exact hessianQuadraticForm_comp_centralForceEnergyMomentum_comp_fderiv_polarCanonical_inl b hU
+      hr ℓ.property
   rw [hfam, SymplecticForm.isNondegenerateQuadraticFamily_smul_iff
       (i := ⟨_, comp_fderiv_centralForceEnergyMomentum_eq_zero b hU hr hc⟩) (by simp),
     SymplecticForm.isNondegenerateQuadraticFamily_const_iff (by simp),
