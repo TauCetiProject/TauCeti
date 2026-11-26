@@ -101,13 +101,6 @@ theorem viterboTwist_def (γ : MooreFreeLoopSpace M) :
     viterboTwist R hd c γ = torusSign R c γ * viterboOrientationTwist R hd γ :=
   (rfl)
 
-/-- The monodromy of the Viterbo twist is the product of the monodromies of the torus sign and of
-the orientation part. -/
-theorem monodromy_viterboTwist (γ : MooreFreeLoopSpace M) :
-    (viterboTwist R hd c γ).monodromy =
-      (torusSign R c γ).monodromy * (viterboOrientationTwist R hd γ).monodromy :=
-  monodromy_mul _ _
-
 /-- For `c = 0` the Viterbo twist is its orientation part. -/
 @[simp]
 theorem viterboTwist_zero (γ : MooreFreeLoopSpace M) :
