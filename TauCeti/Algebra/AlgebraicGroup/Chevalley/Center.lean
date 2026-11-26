@@ -363,12 +363,7 @@ theorem mem_range_torusPoints_of_mem_borelSubgroup_of_commute_weylElement
     ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod,
       D.list_prod_map_weylElement_mem_weylSubgroup k l⟩
   have hn₀_proj : D.weylProjection k n₀ = w₀ := by
-    have hsub : n₀ =
-        ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) k 1).prod * D.torusPoints k 1,
-          mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup k l)
-            (D.torusPoints_mem_weylSubgroup k 1)⟩ :=
-      Subtype.ext (by simp [n₀])
-    rw [hsub, D.weylProjection_list_prod_mul_torusPoints k l 1, hl]
+    rw [D.weylProjection_list_prod k l, hl]
   have hcomm_n₀ : Commute (u * D.torusPoints k s) (n₀ : D.points k) :=
     Commute.list_prod_right _ _ fun x hx => by
       obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx
@@ -806,12 +801,29 @@ private noncomputable def scRootQuotientCharEquiv :
     left_inv := fun χ => by
       ext x
       induction x using Submodule.Quotient.induction_on
-      rfl
+      simp [e, eInv, Submodule.quotEquivOfEq_mk]
     right_inv := fun ψ => by
       ext x
       induction x using Submodule.Quotient.induction_on
-      rfl
+      simp [e, eInv, Submodule.quotEquivOfEq_mk]
     map_mul' := fun _ _ => by ext x; simp }
+
+@[simp]
+private theorem scRootQuotientCharEquiv_apply_mk
+    (χ : AddChar ((Fin t.rank → ℤ) ⧸ (t.simplyConnectedRootDatum ht).rootSpan ℤ) kˣ)
+    (μ : Fin t.rank → ℤ) :
+    scRootQuotientCharEquiv t ht k χ (Submodule.Quotient.mk μ) =
+      χ (Submodule.Quotient.mk μ) := by
+  simp [scRootQuotientCharEquiv, Submodule.quotEquivOfEq_mk]
+
+@[simp]
+private theorem scRootQuotientCharEquiv_symm_apply_mk
+    (ψ : AddChar ((Fin t.rank → ℤ) ⧸
+      Submodule.span ℤ (Set.range (t.scChevalleyDatum ht).coordinateRoot)) kˣ)
+    (μ : Fin t.rank → ℤ) :
+    (scRootQuotientCharEquiv t ht k).symm ψ (Submodule.Quotient.mk μ) =
+      ψ (Submodule.Quotient.mk μ) := by
+  simp [scRootQuotientCharEquiv, Submodule.quotEquivOfEq_mk]
 
 /-- Over any field, unit-valued characters of `P / Q` identify with the full centre of the simply
 connected elementary Chevalley group. -/
@@ -836,7 +848,7 @@ theorem coe_scChevalleyDatumCenterEquiv
     ChevalleyDatum.coe_centerElementarySubgroupEquivOfLe]
   congr 1
   ext i
-  simp [scRootQuotientCharEquiv]
+  simp only [quotientCharTorusPoint_apply, Submodule.mkQ_apply, scRootQuotientCharEquiv_apply_mk]
 
 /-- The inverse simply connected centre equivalence evaluates a weight class on the torus
 parameter of the given central element. -/
@@ -854,7 +866,8 @@ theorem scChevalleyDatumCenterEquiv_symm_apply_mk (s : Fin t.rank → kˣ)
             (t.scChevalleyDatum_weightLattice ht) ⟨s, rfl⟩⟩, hg⟩
         (Submodule.Quotient.mk μ) =
       torusCharacter s μ := by
-  simp only [scChevalleyDatumCenterEquiv, MulEquiv.symm_trans_apply, scRootQuotientCharEquiv]
+  simp only [scChevalleyDatumCenterEquiv, MulEquiv.symm_trans_apply,
+    scRootQuotientCharEquiv_symm_apply_mk]
   exact ChevalleyDatum.centerElementarySubgroupEquivOfLe_symm_apply_mk _ k _ s _ hg μ
 
 end Field
