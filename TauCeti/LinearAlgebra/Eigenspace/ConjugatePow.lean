@@ -31,7 +31,7 @@ This is the linear algebra behind a classical criterion for irreducibility of Ga
 representations: a tame inertia generator `τ` and a Frobenius element `φ` satisfy
 `φ τ φ⁻¹ = τ ^ q`, so `T = ρ τ` and `F = ρ φ⁻¹` satisfy `T * F = F * T ^ q`; if `ρ τ` has an
 eigenvalue whose `q`-power orbit has the maximal length `dim V`, the image of `ρ` spans the
-endomorphisms (Burnside), so `ρ` is absolutely irreducible. The group-theoretic statements are
+endomorphisms, so `ρ` is absolutely irreducible. The group-theoretic statements are
 in `TauCeti.RepresentationTheory.Irreducible.ConjugatePow`.
 
 ## Main results
@@ -74,7 +74,7 @@ theorem HasEigenvector.pow_apply_of_mul_eq_mul_pow (hTF : T * F = F * T ^ q)
   have h := (SemiconjBy.pow_left_pow_pow (M := End R M) hTF.symm j).eq
   refine hasEigenvector_iff.mpr ⟨mem_eigenspace_iff.mpr ?_, ?_⟩
   · rw [← mul_apply_eq_comp, ← h, mul_apply_eq_comp, hv.pow_apply, map_smul]
-  · exact (map_ne_zero_iff _ (FunLike.coe_pow_eq_iterate F j ▸ hF.iterate j)).mpr hv.2
+  · exact (map_ne_zero_iff _ (iterate_injective hF j)).mpr hv.2
 
 /-- **The monomials `F ^ a * T ^ b` are linearly independent.** Let `T * F = F * T ^ q` with `F`
 injective, and let `T` have an eigenvalue `μ` whose iterated powers `μ ^ q ^ i`, `i < d`, are
@@ -98,8 +98,7 @@ theorem linearIndependent_pow_mul_pow_of_mul_eq_mul_pow [IsDomain R] [IsTorsionF
   -- Evaluate the relation at `F ^ l v` and cancel the injective `F ^ l`.
   have hrel (l : Fin d) :
       ∑ a : Fin d, (∑ b : Fin d, c (a, b) * (μ ^ q ^ (l : ℕ)) ^ (b : ℕ)) • (F ^ (a : ℕ)) v = 0 := by
-    have hFl : Injective (F ^ (l : ℕ)) := FunLike.coe_pow_eq_iterate F l ▸ hF.iterate _
-    refine hFl ?_
+    refine iterate_injective hF l ?_
     have := LinearMap.congr_fun hc ((F ^ (l : ℕ)) v)
     simp only [LinearMap.sum_apply, LinearMap.smul_apply, mul_apply_eq_comp,
       (heig l).pow_apply, map_smul, Fintype.sum_prod_type, LinearMap.zero_apply] at this
@@ -145,8 +144,8 @@ theorem linearIndependent_pow_mul_pow_of_mul_eq_mul_pow (hAB : A * B = B * A ^ q
   have hTF : e A * e B = e B * e A ^ q := by rw [← map_mul, ← map_pow, ← map_mul, hAB]
   have hF : Injective (e B) := (End.isUnit_iff _).mp (hB.map e) |>.injective
   have hμ' : End.HasEigenvalue (e A) μ := by
-    rwa [End.hasEigenvalue_iff_isRoot_charpoly, show e A = toLin' A from rfl,
-      charpoly_toLin']
+    have heA : e A = toLin' A := LinearMap.ext fun v ↦ by simp [e, toLin'_apply]
+    rwa [End.hasEigenvalue_iff_isRoot_charpoly, heA, charpoly_toLin']
   refine LinearIndependent.of_comp e.toLinearMap ?_
   convert End.linearIndependent_pow_mul_pow_of_mul_eq_mul_pow hTF hF hμ' hdist using 1
   ext1 p

@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Matrix.Basis
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
-public import TauCeti.LinearAlgebra.Eigenspace.ConjugatePow
 
 /-!
 # Families of matrices spanning the matrix algebra
 
 A family `v : ι → Matrix n n R` **spans** the matrix algebra when the `R`-span of its range is
-everything. This file records three general consequences of spanning, and a criterion for it over
+everything. This file records two general consequences of spanning, and a criterion for it over
 a local ring.
 
 * A matrix commuting with a spanning family commutes with every matrix unit, so it is scalar.
@@ -23,26 +23,22 @@ a local ring.
   span `M_n(k)` over the residue field `k`, the family spans `M_n(R)`. This is Nakayama's lemma
   (`IsLocalRing.map_mkQ_eq_top`), applied to the finite module `M_n(R)`.
 
-Combined with `Matrix.span_range_pow_mul_pow_eq_top_of_mul_eq_mul_pow` over the residue field,
-the last point lifts the spanning criterion for a matrix conjugate to a power of itself to local
-rings: if `A * B = B * A ^ q` with `B` invertible, and the reduction of `A` has an eigenvalue `μ`
-whose powers `μ ^ q ^ i`, `i < n`, are pairwise distinct in the residue field, then the
-`B ^ a * A ^ b`, `a, b < n`, span `M_n(R)`.
+The kernel of the reduction `M_n(R) → M_n(k)` is `𝔪 • M_n(R)`, the matrices with all entries in
+the maximal ideal `𝔪`.
 
 ## Main results
 
 * `Matrix.mem_range_scalar_of_commute_of_span_eq_top`: a matrix commuting with a spanning family
   is scalar.
 * `Matrix.span_range_map_eq_top`: the image of a spanning family under a ring homomorphism spans.
+* `IsLocalRing.mem_maximalIdeal_smul_top_iff_map_residue_eq_zero`: a matrix over a local ring
+  lies in `𝔪 • M_n(R)` exactly when its reduction vanishes.
 * `IsLocalRing.span_range_eq_top_of_span_range_map_residue_eq_top`: over a local ring, a family
   whose reductions span the matrix algebra over the residue field spans.
-* `IsLocalRing.span_range_pow_mul_pow_eq_top_of_mul_eq_mul_pow`: the spanning criterion for a
-  matrix conjugate to a power of itself, over a local ring.
 
 ## Provenance
 
-Adapted from `New.Selmer.IsLatticeIn.span_range_eq_top_of_map_pow_eq_map_conj`,
-`New.Selmer.eq_bot_or_eq_top_of_span_eq_top` and the private
+Adapted from `New.Selmer.IsLatticeIn.span_range_eq_top_of_map_pow_eq_map_conj` and the private
 `Matrix.exists_eq_smul_one_of_commute_of_span_eq_top` in
 `src/Lib/GaloisRep/Pseudocharacter/Pseudorepresentations.lean` of grh-lean
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). There the
@@ -96,11 +92,16 @@ namespace IsLocalRing
 
 variable {R ι n : Type*} [CommRing R] [IsLocalRing R]
 
-/-- A matrix over a local ring whose reduction vanishes lies in `𝔪 • M_n(R)`: it is the sum of its
-entries, all in the maximal ideal `𝔪`, times the matrix units. -/
-private theorem mem_maximalIdeal_smul_top_of_map_residue_eq_zero [Finite n]
-    {x : Matrix n n R} (hx : x.map (residue R) = 0) :
-    x ∈ maximalIdeal R • (⊤ : Submodule R (Matrix n n R)) := by
+/-- A matrix over a local ring lies in `𝔪 • M_n(R)` exactly when its reduction vanishes, that is
+when all its entries lie in the maximal ideal `𝔪`. -/
+theorem mem_maximalIdeal_smul_top_iff_map_residue_eq_zero [Finite n] {x : Matrix n n R} :
+    x ∈ maximalIdeal R • (⊤ : Submodule R (Matrix n n R)) ↔ x.map (residue R) = 0 := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · refine smul_induction_on hx (fun r hr m _ ↦ ?_) fun y z hy hz ↦ ?_
+    · ext i j
+      simp [(residue_eq_zero_iff r).mpr hr]
+    · rw [Matrix.map_add _ (map_add _), hy, hz, add_zero]
+  -- Otherwise `x` is the sum of its entries, all in `𝔪`, times the matrix units.
   have := Fintype.ofFinite n
   classical
   rw [Matrix.matrix_eq_sum_single x]
@@ -125,29 +126,11 @@ theorem span_range_eq_top_of_span_range_map_residue_eq_top [Finite n] {v : ι �
   refine ⟨c.sum fun i a ↦ lift a • v i,
     sum_mem fun i _ ↦ smul_mem _ _ (subset_span ⟨i, rfl⟩), ?_⟩
   rw [mkQ_apply, Submodule.Quotient.eq]
-  refine mem_maximalIdeal_smul_top_of_map_residue_eq_zero ?_
+  refine mem_maximalIdeal_smul_top_iff_map_residue_eq_zero.mpr ?_
   ext i j
   have := congrFun₂ hc i j
   simp only [Finsupp.sum, Matrix.sum_apply, Matrix.smul_apply, Matrix.map_apply,
     smul_eq_mul] at this
   simp [Finsupp.sum, Matrix.sum_apply, map_sum, lift, surjInv_eq, this]
-
-/-- **A matrix conjugate to a power of itself, over a local ring.** Let `A * B = B * A ^ q` in
-`M_n(R)` with `B` invertible, and let the reduction of `A` have an eigenvalue `μ` in the residue
-field whose powers `μ ^ q ^ i`, `i < n`, are pairwise distinct. Then the matrices `B ^ a * A ^ b`,
-`a, b < n`, span `M_n(R)`: their reductions span over the residue field
-(`Matrix.span_range_pow_mul_pow_eq_top_of_mul_eq_mul_pow`), and Nakayama's lemma lifts this. -/
-theorem span_range_pow_mul_pow_eq_top_of_mul_eq_mul_pow [Fintype n] [DecidableEq n]
-    {A B : Matrix n n R} {q : ℕ} (hAB : A * B = B * A ^ q) (hB : IsUnit B) {μ : ResidueField R}
-    (hμ : (A.map (residue R)).charpoly.IsRoot μ)
-    (hdist : Injective fun i : Fin (Fintype.card n) ↦ μ ^ q ^ (i : ℕ)) :
-    span R (Set.range fun p : Fin (Fintype.card n) × Fin (Fintype.card n) ↦
-      B ^ (p.1 : ℕ) * A ^ (p.2 : ℕ)) = ⊤ := by
-  let f := (residue R).mapMatrix (m := n)
-  have hAB' : f A * f B = f B * f A ^ q := by rw [← map_mul, ← map_pow, ← map_mul, hAB]
-  refine span_range_eq_top_of_span_range_map_residue_eq_top ?_
-  convert Matrix.span_range_pow_mul_pow_eq_top_of_mul_eq_mul_pow hAB' (hB.map f) hμ hdist
-    using 3 with p
-  simp [f, ← RingHom.mapMatrix_apply]
 
 end IsLocalRing
