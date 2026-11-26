@@ -77,8 +77,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   exponential of `(c log n) s`.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
-* `TauCeti.exists_differentiableAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
-  extends to a `k`-th root function complex differentiable at that point.
+* `TauCeti.exists_analyticAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
+  extends to a `k`-th root function analytic at that point.
 * `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
   lowers or raises the exponent by one, including at the base `0`.
 * `TauCeti.hasDerivAt_sub_div_sub_cpow` -- the derivative of `w ↦ ((w - α) / (w - γ)) ^ a` where
@@ -282,13 +282,14 @@ theorem injOn_I_mul_cpow_inv {S : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hinj : 
   exact hinj hz hw (by rw [← hrecover z hz, ← hrecover w hw, hp])
 
 /-- **A local holomorphic branch of the `k`-th root.** Near a nonzero `z₀` with a chosen `k`-th
-root `c`, there is a `k`-th root function which is complex differentiable at `z₀` and takes the
-value `c` there, namely `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`. -/
-theorem exists_differentiableAt_pow_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠ 0) (hz₀ : z₀ ≠ 0)
+root `c`, there is a `k`-th root function which is analytic at `z₀` and takes the value `c` there,
+namely `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`. -/
+theorem exists_analyticAt_pow_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠ 0) (hz₀ : z₀ ≠ 0)
     (hc : c ^ k = z₀) :
-    ∃ f : ℂ → ℂ, DifferentiableAt ℂ f z₀ ∧ f z₀ = c ∧ ∀ z, f z ^ k = z := by
+    ∃ f : ℂ → ℂ, AnalyticAt ℂ f z₀ ∧ f z₀ = c ∧ ∀ z, f z ^ k = z := by
   refine ⟨fun z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ), ?_, by simp [div_self hz₀], fun z ↦ ?_⟩
-  · exact ((differentiableAt_id.div_const _).cpow_const (by simp [div_self hz₀])).const_mul c
+  · exact analyticAt_const.mul
+      ((analyticAt_id.div_const).cpow analyticAt_const (by simp [div_self hz₀]))
   · rw [mul_pow, cpow_nat_inv_pow _ hk, hc, mul_div_cancel₀ _ hz₀]
 
 /-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
