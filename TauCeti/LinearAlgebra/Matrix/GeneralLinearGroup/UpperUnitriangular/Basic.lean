@@ -198,6 +198,26 @@ theorem coe_inv_mul_coe (g : upperUnitriangularGroup m R) :
         ((g : GL m R) : Matrix m m R) = 1 := by
   rw [Subgroup.coe_inv, Units.inv_mul]
 
+/-- `g h - 1 = (g - 1) + (h - 1) + (g - 1) (h - 1)` for `g, h ∈ Uₙ(R)`. -/
+theorem coe_mul_sub_one (g h : upperUnitriangularGroup m R) :
+    (((g * h : upperUnitriangularGroup m R) : GL m R) : Matrix m m R) - 1 =
+      ((g : GL m R) : Matrix m m R) - 1 + (((h : GL m R) : Matrix m m R) - 1) +
+        (((g : GL m R) : Matrix m m R) - 1) * (((h : GL m R) : Matrix m m R) - 1) := by
+  rw [coe_mul, sub_one_mul, mul_sub_one]
+  abel
+
+/-- Conjugation by `g ∈ Uₙ(R)` carries `u (h - 1) v` to `(u g) (h - 1) (g⁻¹ v)`. -/
+theorem dotProduct_conj_sub_one_mulVec (g h : upperUnitriangularGroup m R) (u v : m → R) :
+    u ⬝ᵥ (((((g * h * g⁻¹ : upperUnitriangularGroup m R) : GL m R) : Matrix m m R) - 1) *ᵥ v) =
+      (u ᵥ* ((g : GL m R) : Matrix m m R)) ⬝ᵥ
+        ((((h : GL m R) : Matrix m m R) - 1) *ᵥ
+          ((((g⁻¹ : upperUnitriangularGroup m R) : GL m R) : Matrix m m R) *ᵥ v)) := by
+  have hconj : (((g * h * g⁻¹ : upperUnitriangularGroup m R) : GL m R) : Matrix m m R) - 1 =
+      ((g : GL m R) : Matrix m m R) * ((((h : GL m R) : Matrix m m R) - 1) *
+        (((g⁻¹ : upperUnitriangularGroup m R) : GL m R) : Matrix m m R)) := by
+    rw [coe_mul, coe_mul, sub_mul, one_mul, mul_sub, ← coe_mul_coe_inv g, ← Matrix.mul_assoc]
+  rw [hconj, ← mulVec_mulVec, ← mulVec_mulVec, dotProduct_mulVec]
+
 /-- An entry strictly above the diagonal of a product in `Uₙ(R)` is the sum of the two entries and
 of the products through the intermediate indices:
 `(g * h) i j = g i j + h i j + ∑_{i < k < j} g i k * h k j`. -/

@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Module.ZMod
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Center
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Transvection
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.TwoBoundary
-import Mathlib.Tactic.NoncommRing
 
 /-!
 # Boundary retractions of the two-boundary subgroups and their stabilizers
@@ -135,17 +134,6 @@ private theorem forall_dotProduct_eq_iff (hr : r < n) (hs : s < n) {u v u' v' : 
       isTwoBoundary_iff.1 (mem_twoBoundarySubgroup_iff.1 hQ) i j hij
     · rw [hcol j hj, hu, hu']
     · rw [hrow i hi, hcol (Fin.last n) (by simp only [Fin.val_last]; omega)]
-
-/-- `M N - 1 = (M - 1) + (N - 1) + (M - 1) (N - 1)` for `M, N ∈ Uₙ₊₁(R)`. -/
-private theorem coe_mul_sub_one (M N : upperUnitriangularGroup (Fin (n + 1)) R) :
-    (((M * N : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
-        Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1 =
-      ((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1 +
-        (((N : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) +
-        (((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) *
-          (((N : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) := by
-  rw [coe_mul]
-  noncomm_ring
 
 /-! ### The boundary retractions `ρ_(u,v)` -/
 
@@ -361,25 +349,6 @@ theorem twoBoundarySubgroup_le_twoBoundaryStabilizer (h : r + s < n) :
     (⟨M, hM⟩ : twoBoundarySubgroup (R := R) n r s) ⟨Q, hQ⟩)
   rw [Subgroup.coe_mul, Subgroup.coe_mul] at hc
   rw [hc, mul_inv_cancel_right]
-
-/-- Conjugation by `M` carries `u (Q - 1) v` to `(u M) (Q - 1) (M⁻¹ v)`. -/
-private theorem dotProduct_conj_sub_one_mulVec (M Q : upperUnitriangularGroup (Fin (n + 1)) R) :
-    u ⬝ᵥ (((((M * Q * M⁻¹ : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
-      Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) *ᵥ v) =
-      (u ᵥ* ((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)) ⬝ᵥ
-        ((((Q : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) *ᵥ
-          ((((M⁻¹ : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
-            Matrix (Fin (n + 1)) (Fin (n + 1)) R) *ᵥ v)) := by
-  set A := ((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-  set B := (((M⁻¹ : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
-    Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-  set X := ((Q : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-  have hAB : A * B = 1 := coe_mul_coe_inv M
-  have hconj : (((M * Q * M⁻¹ : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
-      Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1 = A * ((X - 1) * B) := by
-    rw [Subgroup.coe_mul, Subgroup.coe_mul, Units.val_mul, Units.val_mul, sub_mul, one_mul,
-      mul_sub, ← hAB, ← mul_assoc]
-  rw [hconj, ← mulVec_mulVec, ← mulVec_mulVec, dotProduct_mulVec]
 
 /-- **The stabilizer of a boundary retraction**, for `r, s < n` and a normalized pair
 `u 0 = v n = 1`: `M ∈ Uₙ₊₁(R)` stabilizes `ρ_(u,v)` exactly when the row `u (M - 1)` vanishes at the
