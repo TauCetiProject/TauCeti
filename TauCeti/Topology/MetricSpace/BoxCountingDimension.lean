@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Topology.MetricSpace.CoveringNumbers
 public import Mathlib.Topology.MetricSpace.HausdorffDimension
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Data.ENNReal.Inv
+import TauCeti.Topology.Algebra.Order.Field
 
 /-!
 # Upper and lower box-counting dimensions
@@ -78,27 +81,6 @@ noncomputable def lowerBoxDim (A : Set X) : ℝ≥0∞ :=
   ⨅ (d : ℝ≥0) (_ : ∃ᶠ ε : ℝ≥0 in 𝓝[>] 0,
     (coveringNumber ε A : ℝ≥0∞) ≤ (ε : ℝ≥0∞)⁻¹ ^ (d : ℝ)), (d : ℝ≥0∞)
 
-/-- As `ε → 0⁺`, `ε⁻¹ ^ d → ∞` for every positive exponent `d`. -/
-private theorem tendsto_inv_rpow_nhdsGT_zero {d : ℝ} (hd : 0 < d) :
-    Tendsto (fun ε : ℝ≥0 => (ε : ℝ≥0∞)⁻¹ ^ d) (𝓝[>] 0) (𝓝 ∞) := by
-  have h0 : Tendsto (fun ε : ℝ≥0 => (ε : ℝ≥0∞)) (𝓝[>] 0) (𝓝 0) :=
-    (ENNReal.continuous_coe.tendsto' 0 0 ENNReal.coe_zero).mono_left nhdsWithin_le_nhds
-  have hinv := (continuous_inv.tendsto (0 : ℝ≥0∞)).comp h0
-  rw [ENNReal.inv_zero] at hinv
-  have h := (ENNReal.continuous_rpow_const (y := d)).tendsto ∞ |>.comp hinv
-  rwa [ENNReal.top_rpow_of_pos hd] at h
-
-/-- A finite constant factor is absorbed by raising the exponent: for `d < d'`,
-`c * ε⁻¹ ^ d ≤ ε⁻¹ ^ d'` for all small `ε > 0`. -/
-private theorem eventually_mul_inv_rpow_le {c : ℝ≥0∞} (hc : c ≠ ∞) {d d' : ℝ} (hdd' : d < d') :
-    ∀ᶠ ε : ℝ≥0 in 𝓝[>] 0, c * (ε : ℝ≥0∞)⁻¹ ^ d ≤ (ε : ℝ≥0∞)⁻¹ ^ d' := by
-  filter_upwards [(tendsto_inv_rpow_nhdsGT_zero (sub_pos.2 hdd')).eventually_const_lt hc.lt_top,
-    self_mem_nhdsWithin] with ε hcε hε
-  have h0 : (ε : ℝ≥0∞)⁻¹ ≠ 0 := ENNReal.inv_ne_zero.2 ENNReal.coe_ne_top
-  have htop : (ε : ℝ≥0∞)⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 (ENNReal.coe_ne_zero.2 (ne_of_gt hε))
-  calc c * (ε : ℝ≥0∞)⁻¹ ^ d ≤ (ε : ℝ≥0∞)⁻¹ ^ (d' - d) * (ε : ℝ≥0∞)⁻¹ ^ d := by gcongr
-    _ = (ε : ℝ≥0∞)⁻¹ ^ d' := by rw [← ENNReal.rpow_add _ _ h0 htop, sub_add_cancel]
-
 /-- An exponent at which the covering numbers are eventually bounded bounds the upper box-counting
 dimension. -/
 theorem upperBoxDim_le_of_eventually {d : ℝ≥0}
@@ -119,7 +101,7 @@ theorem eventually_coveringNumber_le_of_upperBoxDim_lt {d : ℝ≥0} (h : upperB
     ∀ᶠ ε : ℝ≥0 in 𝓝[>] 0, (coveringNumber ε A : ℝ≥0∞) ≤ (ε : ℝ≥0∞)⁻¹ ^ (d : ℝ) := by
   simp only [upperBoxDim, iInf_lt_iff, exists_prop] at h
   obtain ⟨d₀, hd₀, hlt⟩ := h
-  filter_upwards [hd₀, eventually_mul_inv_rpow_le ENNReal.one_ne_top
+  filter_upwards [hd₀, ENNReal.eventually_mul_inv_rpow_le ENNReal.one_ne_top
     (NNReal.coe_lt_coe.2 (ENNReal.coe_lt_coe.1 hlt))] with ε h₁ h₂
   exact h₁.trans (by simpa using h₂)
 
@@ -130,16 +112,9 @@ theorem frequently_coveringNumber_le_of_lowerBoxDim_lt {d : ℝ≥0} (h : lowerB
   simp only [lowerBoxDim, iInf_lt_iff, exists_prop] at h
   obtain ⟨d₀, hd₀, hlt⟩ := h
   refine hd₀.mp ?_
-  filter_upwards [eventually_mul_inv_rpow_le ENNReal.one_ne_top
+  filter_upwards [ENNReal.eventually_mul_inv_rpow_le ENNReal.one_ne_top
     (NNReal.coe_lt_coe.2 (ENNReal.coe_lt_coe.1 hlt))] with ε h₂ h₁
   exact h₁.trans (by simpa using h₂)
-
-/-- A bound `D` on an `ℝ≥0∞`-valued quantity follows from the bounds at all real exponents
-`d > D`. -/
-private theorem le_of_forall_nnreal_gt {a D : ℝ≥0∞} (h : ∀ d : ℝ≥0, D < d → a ≤ d) : a ≤ D :=
-  le_of_forall_gt_imp_ge_of_dense fun b hb => by
-    obtain ⟨d, hDd, hdb⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hb
-    exact (h d hDd).trans hdb.le
 
 /-- The upper box-counting dimension of `A` is at most `D` exactly when, for every exponent
 `d > D`, the covering number of `A` at radius `ε` is at most `ε ^ (-d)` for all small `ε > 0`. -/
@@ -147,7 +122,7 @@ theorem upperBoxDim_le_iff {D : ℝ≥0∞} :
     upperBoxDim A ≤ D ↔ ∀ d : ℝ≥0, D < d →
       ∀ᶠ ε : ℝ≥0 in 𝓝[>] 0, (coveringNumber ε A : ℝ≥0∞) ≤ (ε : ℝ≥0∞)⁻¹ ^ (d : ℝ) :=
   ⟨fun h _ hd => eventually_coveringNumber_le_of_upperBoxDim_lt (h.trans_lt hd),
-    fun h => le_of_forall_nnreal_gt fun d hd => upperBoxDim_le_of_eventually (h d hd)⟩
+    fun h => ENNReal.le_of_forall_nnreal_gt fun d hd => upperBoxDim_le_of_eventually (h d hd)⟩
 
 /-- The lower box-counting dimension of `A` is at most `D` exactly when, for every exponent
 `d > D`, the covering number of `A` at radius `ε` is at most `ε ^ (-d)` for arbitrarily small
@@ -156,7 +131,7 @@ theorem lowerBoxDim_le_iff {D : ℝ≥0∞} :
     lowerBoxDim A ≤ D ↔ ∀ d : ℝ≥0, D < d →
       ∃ᶠ ε : ℝ≥0 in 𝓝[>] 0, (coveringNumber ε A : ℝ≥0∞) ≤ (ε : ℝ≥0∞)⁻¹ ^ (d : ℝ) :=
   ⟨fun h _ hd => frequently_coveringNumber_le_of_lowerBoxDim_lt (h.trans_lt hd),
-    fun h => le_of_forall_nnreal_gt fun d hd => lowerBoxDim_le_of_frequently (h d hd)⟩
+    fun h => ENNReal.le_of_forall_nnreal_gt fun d hd => lowerBoxDim_le_of_frequently (h d hd)⟩
 
 /-- The lower box-counting dimension is at most the upper one. -/
 theorem lowerBoxDim_le_upperBoxDim : lowerBoxDim A ≤ upperBoxDim A :=
@@ -166,9 +141,10 @@ theorem lowerBoxDim_le_upperBoxDim : lowerBoxDim A ≤ upperBoxDim A :=
 cardinality, so every positive exponent qualifies. The infimum is not attained when `A` consists
 of two points at positive distance, since then `N(ε, A) = 2 > ε ^ 0` for small `ε`. -/
 theorem _root_.Set.Finite.upperBoxDim_eq_zero (hA : A.Finite) : upperBoxDim A = 0 := by
-  refine le_antisymm (le_of_forall_nnreal_gt fun d hd => upperBoxDim_le_of_eventually ?_) bot_le
+  refine le_antisymm
+    (ENNReal.le_of_forall_nnreal_gt fun d hd => upperBoxDim_le_of_eventually ?_) bot_le
   have hcard : (A.encard : ℝ≥0∞) ≠ ∞ := ENat.toENNReal_ne_top.2 hA.encard_lt_top.ne
-  filter_upwards [eventually_mul_inv_rpow_le hcard (d := 0) (d' := d)
+  filter_upwards [ENNReal.eventually_mul_inv_rpow_le hcard (d := 0) (d' := d)
     (NNReal.coe_pos.2 (ENNReal.coe_pos.1 hd))] with ε hε
   calc (coveringNumber ε A : ℝ≥0∞) ≤ A.encard :=
         ENat.toENNReal_le.2 (coveringNumber_le_encard_self A)
@@ -194,6 +170,14 @@ theorem upperBoxDim_singleton (x : X) : upperBoxDim ({x} : Set X) = 0 :=
 theorem lowerBoxDim_singleton (x : X) : lowerBoxDim ({x} : Set X) = 0 :=
   (finite_singleton x).lowerBoxDim_eq_zero
 
+/-- A bound `N(ε, A) ≤ ε ^ (-d)` at a radius `ε > 0` forces the covering number to be finite. -/
+private theorem coveringNumber_ne_top_of_le_inv_rpow {ε d : ℝ≥0} (hε : 0 < ε)
+    (h : (coveringNumber ε A : ℝ≥0∞) ≤ (ε : ℝ≥0∞)⁻¹ ^ (d : ℝ)) : coveringNumber ε A ≠ ⊤ :=
+  fun hN => by
+    rw [hN, ENat.toENNReal_top, top_le_iff] at h
+    exact ENNReal.rpow_ne_top_of_nonneg d.coe_nonneg
+      (ENNReal.inv_ne_top.2 (ENNReal.coe_ne_zero.2 hε.ne')) h
+
 /-- A set that is not totally bounded has infinite lower box-counting dimension: its covering
 numbers are infinite at every small radius. -/
 theorem lowerBoxDim_eq_top_of_not_totallyBounded (hA : ¬TotallyBounded A) :
@@ -211,30 +195,14 @@ theorem lowerBoxDim_eq_top_of_not_totallyBounded (hA : ¬TotallyBounded A) :
   simp only [lowerBoxDim, iInf_eq_top, ENNReal.coe_ne_top, imp_false]
   intro d hd
   obtain ⟨ε, hle, hε⟩ := (hd.and_eventually (Ioo_mem_nhdsGT hε₀)).exists
-  have htop : coveringNumber ε A = ⊤ := top_unique (hN ▸ coveringNumber_anti hε.2.le)
-  rw [htop, ENat.toENNReal_top, top_le_iff] at hle
-  exact ENNReal.rpow_ne_top_of_nonneg d.coe_nonneg
-    (ENNReal.inv_ne_top.2 (ENNReal.coe_ne_zero.2 hε.1.ne')) hle
+  exact coveringNumber_ne_top_of_le_inv_rpow hε.1 hle
+    (top_unique (hN ▸ coveringNumber_anti hε.2.le))
 
 /-- A set that is not totally bounded has infinite upper box-counting dimension. -/
 theorem upperBoxDim_eq_top_of_not_totallyBounded (hA : ¬TotallyBounded A) :
     upperBoxDim A = ∞ :=
   top_unique ((lowerBoxDim_eq_top_of_not_totallyBounded hA).symm.trans_le
     lowerBoxDim_le_upperBoxDim)
-
-/-- Halving the radius is a self-map of the punctured right neighbourhood of `0`. -/
-private theorem tendsto_div_two_nhdsGT_zero :
-    Tendsto (fun ε : ℝ≥0 => ε / 2) (𝓝[>] 0) (𝓝[>] 0) :=
-  tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-    (by simpa using ((continuous_id.div_const (2 : ℝ≥0)).tendsto 0).mono_left nhdsWithin_le_nhds)
-    (eventually_nhdsWithin_of_forall fun _ hε => half_pos hε)
-
-/-- Doubling the radius is a self-map of the punctured right neighbourhood of `0`. -/
-private theorem tendsto_two_mul_nhdsGT_zero :
-    Tendsto (fun ε : ℝ≥0 => 2 * ε) (𝓝[>] 0) (𝓝[>] 0) :=
-  tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-    (by simpa using ((continuous_const_mul (2 : ℝ≥0)).tendsto 0).mono_left nhdsWithin_le_nhds)
-    (eventually_nhdsWithin_of_forall fun _ hε => mul_pos two_pos hε)
 
 /-- For `A ⊆ B` and `d₀ < d`, a bound `N(ε / 2, B) ≤ (ε / 2) ^ (-d₀)` gives
 `N(ε, A) ≤ ε ^ (-d)` for all small `ε > 0`. -/
@@ -244,24 +212,24 @@ private theorem eventually_coveringNumber_le_of_subset (hAB : A ⊆ B) {d₀ d :
         (coveringNumber ε A : ℝ≥0∞) ≤ (ε : ℝ≥0∞)⁻¹ ^ (d : ℝ) := by
   have h2 : (2 : ℝ≥0∞) ^ (d₀ : ℝ) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_nonneg d₀.coe_nonneg ENNReal.ofNat_ne_top
-  filter_upwards [eventually_mul_inv_rpow_le h2 (NNReal.coe_lt_coe.2 hd)] with ε hε hB
+  filter_upwards [ENNReal.eventually_mul_inv_rpow_le h2 (NNReal.coe_lt_coe.2 hd)] with ε hε hB
   calc (coveringNumber ε A : ℝ≥0∞) ≤ coveringNumber (ε / 2) B :=
         ENat.toENNReal_le.2 (coveringNumber_subset_le hAB)
     _ ≤ ((ε / 2 : ℝ≥0) : ℝ≥0∞)⁻¹ ^ (d₀ : ℝ) := hB
     _ = 2 ^ (d₀ : ℝ) * (ε : ℝ≥0∞)⁻¹ ^ (d₀ : ℝ) := by
-      rw [ENNReal.coe_div two_ne_zero, ENNReal.coe_ofNat, div_eq_mul_inv,
-        ENNReal.mul_inv (by simp) (by simp), inv_inv, mul_comm,
-        ENNReal.mul_rpow_of_nonneg _ _ d₀.coe_nonneg]
+      rw [← ENNReal.mul_rpow_of_nonneg _ _ d₀.coe_nonneg]
+      simp [ENNReal.coe_div, ENNReal.div_eq_inv_mul, ENNReal.mul_inv]
     _ ≤ (ε : ℝ≥0∞)⁻¹ ^ (d : ℝ) := hε
 
 /-- The upper box-counting dimension is monotone in the set. The covering number itself is not,
-because the centres of a cover must lie in the set; the proof compares `N(ε, A)` with
-`N(ε / 2, B)`. -/
+because the centres of a cover must lie in the set. -/
 @[gcongr]
 theorem upperBoxDim_mono (hAB : A ⊆ B) : upperBoxDim A ≤ upperBoxDim B := by
   refine upperBoxDim_le_iff.2 fun d hd => ?_
   obtain ⟨d₀, hBd₀, hd₀d⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hd
-  exact (tendsto_div_two_nhdsGT_zero.eventually
+  have h2 : Tendsto (fun ε : ℝ≥0 => ε / 2) (𝓝[>] 0) (𝓝[>] 0) :=
+    (tendsto_const_mul_nhdsGT_zero (inv_pos.2 two_pos)).congr fun ε => inv_mul_eq_div 2 ε
+  exact (h2.eventually
     (eventually_coveringNumber_le_of_upperBoxDim_lt hBd₀)).mp
     (eventually_coveringNumber_le_of_subset hAB (ENNReal.coe_lt_coe.1 hd₀d))
 
@@ -273,7 +241,7 @@ theorem lowerBoxDim_mono (hAB : A ⊆ B) : lowerBoxDim A ≤ lowerBoxDim B := by
   -- Substituting `ε = 2 ε'` turns the frequent bound for `B` at `ε'` into one at `ε / 2`.
   have hB : ∃ᶠ ε : ℝ≥0 in 𝓝[>] 0,
       (coveringNumber (ε / 2) B : ℝ≥0∞) ≤ ((ε / 2 : ℝ≥0) : ℝ≥0∞)⁻¹ ^ (d₀ : ℝ) :=
-    tendsto_two_mul_nhdsGT_zero.frequently (p := fun ε : ℝ≥0 =>
+    (tendsto_const_mul_nhdsGT_zero two_pos).frequently (p := fun ε : ℝ≥0 =>
       (coveringNumber (ε / 2) B : ℝ≥0∞) ≤ ((ε / 2 : ℝ≥0) : ℝ≥0∞)⁻¹ ^ (d₀ : ℝ))
       (by simpa using frequently_coveringNumber_le_of_lowerBoxDim_lt hBd₀)
   exact hB.mp (eventually_coveringNumber_le_of_subset hAB (ENNReal.coe_lt_coe.1 hd₀d))
@@ -283,14 +251,6 @@ end PseudoEMetricSpace
 section EMetricSpace
 
 variable {X : Type*} [EMetricSpace X]
-
-/-- A bound `N(ε, A) ≤ ε ^ (-d)` at a radius `ε > 0` forces the covering number to be finite. -/
-private theorem coveringNumber_ne_top_of_le_inv_rpow {A : Set X} {ε d : ℝ≥0} (hε : 0 < ε)
-    (h : (coveringNumber ε A : ℝ≥0∞) ≤ (ε : ℝ≥0∞)⁻¹ ^ (d : ℝ)) : coveringNumber ε A ≠ ⊤ :=
-  fun hN => by
-    rw [hN, ENat.toENNReal_top, top_le_iff] at h
-    exact ENNReal.rpow_ne_top_of_nonneg d.coe_nonneg
-      (ENNReal.inv_ne_top.2 (ENNReal.coe_ne_zero.2 hε.ne')) h
 
 /-- If `N(ε, A) ≤ ε ^ (-d)` at a radius `ε > 0`, then the closed balls of radius `ε` around the
 points of a minimal cover of `A` have `∑ (diam)^t ≤ 2 ^ t ε ^ (t - d)` for every `t ≥ 0`. -/
@@ -307,13 +267,12 @@ private theorem tsum_ediam_closedEBall_minimalCover_le {A : Set X} {ε d : ℝ�
           encard_minimalCover (coveringNumber_ne_top_of_le_inv_rpow hε h)]
     _ ≤ (ε : ℝ≥0∞)⁻¹ ^ (d : ℝ) * (2 * (ε : ℝ≥0∞)) ^ t := by gcongr
     _ = 2 ^ t * (ε : ℝ≥0∞) ^ (t - d) := by
-        rw [ENNReal.inv_rpow, ← ENNReal.rpow_neg, ENNReal.mul_rpow_of_nonneg _ _ ht,
-          mul_left_comm, ← ENNReal.rpow_add _ _ h0 ENNReal.coe_ne_top, neg_add_eq_sub]
+        rw [ENNReal.rpow_sub _ _ h0 ENNReal.coe_ne_top, ENNReal.mul_rpow_of_nonneg _ _ ht,
+          ENNReal.inv_rpow, div_eq_mul_inv]
+        ring
 
 /-- The covers behind the box-counting dimensions control the Hausdorff measure: if
-`N(ε, A) ≤ ε ^ (-d)` for arbitrarily small `ε > 0`, then `μH[t] A = 0` for every `t > d`. The
-`N(ε, A)` closed balls of radius `ε` around the points of a minimal cover have
-`∑ (diam)^t ≤ ε ^ (-d) (2 ε) ^ t = 2 ^ t ε ^ (t - d)`, which tends to `0` along those `ε`. -/
+`N(ε, A) ≤ ε ^ (-d)` for arbitrarily small `ε > 0`, then `μH[t] A = 0` for every `t > d`. -/
 theorem hausdorffMeasure_eq_zero_of_frequently_coveringNumber_le [MeasurableSpace X]
     [BorelSpace X] {A : Set X} {d : ℝ≥0} {t : ℝ}
     (h : ∃ᶠ ε : ℝ≥0 in 𝓝[>] 0, (coveringNumber ε A : ℝ≥0∞) ≤ (ε : ℝ≥0∞)⁻¹ ^ (d : ℝ))
@@ -322,7 +281,7 @@ theorem hausdorffMeasure_eq_zero_of_frequently_coveringNumber_le [MeasurableSpac
   -- `l`: the radii `ε → 0⁺` at which the covering number is bounded by `ε ^ (-d)`.
   set l := 𝓝[>] (0 : ℝ≥0) ⊓ 𝓟 {ε | (coveringNumber ε A : ℝ≥0∞) ≤ (ε : ℝ≥0∞)⁻¹ ^ (d : ℝ)}
   have : l.NeBot := frequently_iff_neBot.1 h
-  have hpos : ∀ᶠ ε in l, 0 < ε := inf_le_left (α := Filter ℝ≥0) self_mem_nhdsWithin
+  have hpos : ∀ᶠ ε in l, 0 < ε := mem_inf_of_left self_mem_nhdsWithin
   have hgood : ∀ᶠ ε in l, 0 < ε ∧ (coveringNumber ε A : ℝ≥0∞) ≤ (ε : ℝ≥0∞)⁻¹ ^ (d : ℝ) :=
     hpos.and (mem_inf_of_right (mem_principal_self _))
   have hcoe : Tendsto (fun ε : ℝ≥0 => (ε : ℝ≥0∞)) l (𝓝 0) :=
