@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PolynomialLaw.Determinant
-import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # `D(1 + r r') = D(1 + r' r)`
@@ -61,19 +60,12 @@ theorem map_one_add_mul_comm (r r' : R) : D (1 + r * r') = D (1 + r' * r) := by
       rw [charpoly_def, PolynomialLaw.toFun'_eq_toFun, ← smul_tmul, neg_one_smul,
         neg_tmul, sub_neg_eq_add]
     exact (hu ▸ D.charpoly_monic _).isRegular.left h
-  -- evaluate at `X = 0`
-  have heval (z : A[X] ⊗[A] R) (x : R)
-      (hz : LinearMap.rTensor R (aeval (0 : A)).toLinearMap z = 1 ⊗ₜ x) :
-      D x = aeval (0 : A) (F z) := by
-    rw [apply_eq_lid_toFun, ← hz, ← PolynomialLaw.isCompat_apply, TensorProduct.lid_eq_rid,
-      LinearMap.rid_rTensor_apply, ← AlgebraTensorModule.rid_eq_rid,
-      ← Algebra.TensorProduct.rid_toLinearEquiv, AlgEquiv.coe_toLinearEquiv,
-      AlgHom.toLinearMap_apply]
   have h1 : LinearMap.rTensor R (aeval (0 : A)).toLinearMap (1 + v * u) = 1 ⊗ₜ (1 + r' * r) := by
     simp [u, v, Algebra.TensorProduct.one_def, mul_add, tmul_add]
   have h2 : LinearMap.rTensor R (aeval (0 : A)).toLinearMap (1 + u * v) = 1 ⊗ₜ (1 + r * r') := by
     simp [u, v, Algebra.TensorProduct.one_def, add_mul, tmul_add]
-  rw [heval _ _ h2, heval _ _ h1, hcancel]
+  rw [D.apply_eq_rid_toFun_of_rTensor_eq _ h2, D.apply_eq_rid_toFun_of_rTensor_eq _ h1]
+  exact congrArg (aeval (0 : A)) hcancel.symm
 
 end Determinant
 
