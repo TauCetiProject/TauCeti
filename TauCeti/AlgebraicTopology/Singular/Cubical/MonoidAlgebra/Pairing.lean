@@ -586,10 +586,9 @@ theorem cubicalChainPoint_mul_cubicalChainSumMap {G : Type*} [Monoid G] [Topolog
   | zero => simp
   | add a a' ha ha' => rw [map_add, mul_add, ha, ha', map_add]
   | of n c =>
-    rw [← DirectSum.lof_eq_of R, cubicalChainSumMap_lof, cubicalChainSumMap_lof,
-      cubicalChainPoint_def, cubicalChainLof_mul, NormalizedCubicalChain.mul_def,
-      ← cubicalChainLof_cast G R (Nat.zero_add n), ← map_cast, crossProduct_point_left, map_map,
-      map_map]
+    simp only [← DirectSum.lof_eq_of R, cubicalChainSumMap_lof, cubicalChainPoint_def,
+      cubicalChainLof_mul, NormalizedCubicalChain.mul_def,
+      ← cubicalChainLof_cast G R (Nat.zero_add n), ← map_cast, crossProduct_point_left, map_map]
     congr 3
     exact ContinuousMap.ext fun u ↦ by simp [hq]
 
@@ -603,10 +602,9 @@ theorem cubicalChainSumMap_mul_cubicalChainPoint {G : Type*} [Monoid G] [Topolog
   | zero => simp
   | add a a' ha ha' => rw [map_add, add_mul, ha, ha', map_add]
   | of n c =>
-    rw [← DirectSum.lof_eq_of R, cubicalChainSumMap_lof, cubicalChainSumMap_lof,
-      cubicalChainPoint_def, cubicalChainLof_mul, NormalizedCubicalChain.mul_def,
-      ← cubicalChainLof_cast G R (Nat.add_zero n), ← map_cast, crossProduct_point_right, map_map,
-      map_map]
+    simp only [← DirectSum.lof_eq_of R, cubicalChainSumMap_lof, cubicalChainPoint_def,
+      cubicalChainLof_mul, NormalizedCubicalChain.mul_def,
+      ← cubicalChainLof_cast G R (Nat.add_zero n), ← map_cast, crossProduct_point_right, map_map]
     congr 3
     exact ContinuousMap.ext fun u ↦ by simp [hq]
 

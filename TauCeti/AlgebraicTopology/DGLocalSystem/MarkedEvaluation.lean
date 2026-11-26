@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.DGLocalSystem.MooreEvaluation
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.ContinuationChainSystem
 public import TauCeti.Topology.PathSpace.Moore.Track
 import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Prism
-import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Relative.Basic
 
 /-!
 # Changing the collapse map of a twisting cocycle over the Moore loops
@@ -310,13 +309,13 @@ private theorem cubicalChainDifferential_markedHomotopySum
     rw [cubicalChainSumMap_id, LinearMap.id_apply] at h₁ h₂
     rw [← h₁, ← h₂]
     exact congrArg (fun f ↦ cubicalChainSumPairing R f (S.chain x z) (S.chain z y))
-      (ContinuousMap.ext fun ⟨u, v⟩ ↦ Subtype.ext (Prod.ext rfl (add_zero _)))
+      (ContinuousMap.ext fun ⟨u, v⟩ ↦ Subtype.ext <| by simp)
   have hC (z : P) : cubicalChainSumMap R (markStart e x y)
       (cubicalChainSumPairing R (ι x z y) (S.chain x z) (S.chain z y)) =
         cubicalChainSumPairing R (markedRight hl x z y)
           (cubicalChainSumMap R (markStart e x z) (S.chain x z)) (S.chain z y) := by
     rw [cubicalChainSumMap_cubicalChainSumPairing_of_comp (f' := markedRight hl x z y)
-      (h := markStart e x z) (h' := ContinuousMap.id (M z y)) (fun u v ↦ rfl),
+      (h := markStart e x z) (h' := ContinuousMap.id (M z y)) (fun u v ↦ Subtype.ext <| by simp),
       cubicalChainSumMap_id, LinearMap.id_apply]
   have hσ (z : P) : (ind z - ind x + 1).negOnePow = -(ind x - ind z).negOnePow :=
     Int.negOnePow_eq_neg_of_odd_sub ⟨ind z - ind x, by ring⟩
@@ -362,18 +361,18 @@ private theorem cubicalChainSumMap_forgetMark_markedHomotopySum
   simp [continuationChainSum_def]
 
 /-- **Marked homotopies exist**: every twisting chain system for associative composition maps has
-a marked homotopy. Its chains are built by induction on the index difference. The right-hand side
-of the homotopy equation is a cycle (by the twisting equation and the associativity of the
-composition maps), and it is pushed to zero on `M x y` by forgetting the mark, provided the chains
-of smaller index difference are. The marked space retracts onto the points marked at the start
-by `((u, τ), t) ↦ (u, t τ)`, along which the mark is forgotten at every time; the prism of this
-homotopy (`TauCeti.exists_cubicalChainDifferential_eq_sub_of_homotopy`) is then a chain with that
-boundary, which is again pushed to zero when the mark is forgotten. No condition on the spaces
-`M x y` is needed. -/
+a marked homotopy, with no condition on the spaces `M x y`. -/
 theorem nonempty_markedHomotopy
     (hι : ∀ x w z y (a : M x w) (b : M w z) (c : M z y),
       ι x z y (ι x w z (a, b), c) = ι x w y (a, ι w z y (b, c))) :
     Nonempty (S.MarkedHomotopy hl) := by
+  -- The chains are built by induction on the index difference, together with the condition that
+  -- forgetting the mark pushes them to zero on `M x y`. The right-hand side of the homotopy
+  -- equation is then a cycle (by the twisting equation and the associativity of the composition
+  -- maps) which forgetting the mark pushes to zero. The marked space retracts onto the points
+  -- marked at the start by `((u, τ), t) ↦ (u, t τ)`, along which the mark is forgotten at every
+  -- time, so the prism of this homotopy is a chain with that boundary, again pushed to zero when
+  -- the mark is forgotten.
   refine (exists_forall_mem_cubicalChainGrading_of_forall_exists
     (deg := fun x y ↦ ind y - ind x)
     (fun η x y c ↦ cubicalChainDifferential (markedSpace e x y) R c =

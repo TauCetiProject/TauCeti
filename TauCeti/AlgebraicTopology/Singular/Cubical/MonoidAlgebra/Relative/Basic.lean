@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.DGAlgebra
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
-import TauCeti.Order.WellFounded.Basic
 
 /-!
 # Relative classes in the algebra of cubical chains
@@ -40,8 +39,6 @@ differential `b`.
 * `TauCeti.IsRepresentingChain.exists_cubicalChainDifferential_eq_sub_add`: when
   `Hₙ(X) → Hₙ(X, A)` is injective, a cycle `a - a' + b` with `a`, `a'` representing the same
   relative class and `b` a chain of `A` is a boundary.
-* `TauCeti.exists_forall_mem_cubicalChainGrading_of_forall_exists`: families of chains of
-  prescribed degrees are built one degree at a time, downwards from the largest.
 * `TauCeti.exists_forall_cubicalChainDifferential_eq_and_isRepresentingChain`: under the gluing
   condition, a family of chains with prescribed boundaries representing prescribed relative
   classes exists, when the prescribed boundary of each chain only depends on the chains of
@@ -264,48 +261,6 @@ theorem IsRepresentingChain.exists_cubicalChainDifferential_eq_sub_add {n : ℕ}
     c c' b hd r r' hcr hcr' hr'.symm hinj
   exact ⟨cubicalChainLof X k (n + 1) y, cubicalChainLof_mem X k y,
     (cubicalChainDifferential_lof_succ X k n y).trans (congrArg (cubicalChainLof X k n) hy)⟩
-
-/-! ### Families of chains built by recursion on the degree -/
-
-section Recursion
-
-variable {P Q : Type*} [Finite P] [Finite Q] {N : P → Q → Type*} [∀ x y, TopologicalSpace (N x y)]
-  {k : Type*} [CommRing k] {deg : P → Q → ℤ}
-
-/-- **Families of chains built one degree at a time.** Let `deg x y` be the cohomological degree
-of the chain of the pair `(x, y)`, and let `V s x y c` be a condition on the chain `c` of `(x, y)`
-which only depends on the chains of the family `s` at the pairs of larger degree. If it can be met
-at `(x, y)` as soon as it holds at all the pairs of larger degree, some family of chains of these
-degrees meets it everywhere. The chains are chosen downwards from the largest degree, by
-well-founded recursion on the finite set of pairs. -/
-theorem exists_forall_mem_cubicalChainGrading_of_forall_exists
-    (V : (∀ x y, normalizedCubicalChainAlgebra (N x y) k) → ∀ x y,
-      normalizedCubicalChainAlgebra (N x y) k → Prop)
-    (hV : ∀ (s s' : ∀ x y, normalizedCubicalChainAlgebra (N x y) k) x y c,
-      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
-      (∀ x y, s' x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
-      (∀ x' y', deg x y < deg x' y' → s x' y' = s' x' y') → V s x y c → V s' x y c)
-    (hex : ∀ (s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k) x y,
-      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
-      (∀ x' y', deg x y < deg x' y' → V s x' y' (s x' y')) →
-      ∃ c ∈ cubicalChainGrading (N x y) k (deg x y), V s x y c) :
-    ∃ s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k,
-      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) ∧ ∀ x y, V s x y (s x y) := by
-  -- Recursion along the relation `q` precedes `p` when `q` has the larger degree, which is
-  -- well-founded on the finite type of pairs; the chains are taken in the graded pieces.
-  let r : P × Q → P × Q → Prop := fun q p ↦ deg p.1 p.2 < deg q.1 q.2
-  have : IsTrans (P × Q) r := ⟨fun _ _ _ h₁ h₂ ↦ h₂.trans h₁⟩
-  have : Std.Irrefl r := ⟨fun _ ↦ lt_irrefl _⟩
-  obtain ⟨G, hG⟩ := (Finite.wellFounded_of_trans_of_irrefl r).exists_forall_of_forall_exists
-    (X := fun p ↦ cubicalChainGrading (N p.1 p.2) k (deg p.1 p.2))
-    (fun G p c ↦ V (fun x y ↦ G (x, y)) p.1 p.2 c)
-    (fun p _ G G' hGG' ↦ hV _ _ p.1 p.2 _ (fun x y ↦ (G (x, y)).property)
-      (fun x y ↦ (G' (x, y)).property) fun x' y' h ↦ congrArg Subtype.val (hGG' (x', y') h))
-    fun p G hG ↦ (hex _ p.1 p.2 (fun x y ↦ (G (x, y)).property) fun x' y' h ↦ hG (x', y') h).elim
-      fun c hc ↦ ⟨⟨c, hc.1⟩, hc.2⟩
-  exact ⟨fun x y ↦ G (x, y), fun x y ↦ (G (x, y)).property, fun x y ↦ hG (x, y)⟩
-
-end Recursion
 
 /-! ### Families of chains with prescribed boundaries -/
 
