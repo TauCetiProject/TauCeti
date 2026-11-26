@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus
 public import TauCeti.Analysis.Holder.Zygmund
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Fourier.Torus.Decay
 import TauCeti.Analysis.Fourier.Torus.Transference
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus.Continuous
 
@@ -231,22 +229,7 @@ theorem memBesov_iff_exists_mFourierCoeff_eq_and_contDiff_and_holderWith (k : �
     obtain ⟨f, hf, hfk, -, hfH⟩ := hC ⟨c, hc⟩
     exact ⟨f, hf, hfk, _, hfH⟩
   · rintro ⟨f, rfl, hf, H, hH⟩
-    -- The derivatives of the lift are those of the lift to `d → ℝ`, which are bounded.
-    let e : EuclideanSpace ℝ d →L[ℝ] (d → ℝ) := PiLp.continuousLinearEquiv 2 ℝ fun _ : d ↦ ℝ
-    have hf' : ContDiff ℝ k fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle) :=
-      hf.comp (PiLp.continuousLinearEquiv 2 ℝ fun _ : d ↦ ℝ).symm.contDiff
-    obtain ⟨M, hM⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists (𝕜 := ℝ) (N := k)
-      (f := fun x : EuclideanSpace ℝ d ↦ f fun i ↦ (x i : UnitAddCircle)) fun i hi ↦ by
-        obtain ⟨M, hM⟩ := exists_forall_norm_iteratedFDeriv_le f
-          (hf'.continuous_iteratedFDeriv (by exact_mod_cast hi))
-        refine ⟨M * ‖e‖ ^ i, fun x ↦ ?_⟩
-        have h := e.iteratedFDeriv_comp_right hf' x (i := i) (by exact_mod_cast hi)
-        rw [show (fun x : EuclideanSpace ℝ d ↦ f fun i ↦ (x i : UnitAddCircle)) =
-          (fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle)) ∘ e from rfl, h]
-        refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-        rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
-        gcongr
-        exact hM _
+    obtain ⟨M, hM⟩ := exists_forall_norm_iteratedFDeriv_euclidean_le f hf
     obtain ⟨C, -, hC⟩ := exists_coeff_eq_and_norm_le_of_contDiff_of_holderWith φ k α
     obtain ⟨u, hu, -⟩ := hC f hf hM hH
     exact hu ▸ u.memBesov_coeff

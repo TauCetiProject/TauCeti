@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 public import TauCeti.Analysis.Fourier.Torus.SchwartzMultiplier
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Analysis.Fourier.Torus.Decay
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
@@ -40,6 +42,8 @@ uses.
 * `TauCeti.UnitAddTorus.euclideanLift`: the lift of a continuous function on the torus to a bounded
   continuous function on `EuclideanSpace ℝ d`, with the same supremum norm
   (`TauCeti.UnitAddTorus.norm_euclideanLift`).
+* `TauCeti.UnitAddTorus.exists_forall_norm_iteratedFDeriv_euclidean_le`: if the lift of a function
+  on the torus to `EuclideanSpace ℝ d` is `C^k`, its derivatives through order `k` are bounded.
 * `TauCeti.UnitAddTorus.integral_fourierInv_mul_eq_tsum` and
   `TauCeti.UnitAddTorus.fourierMultiplierCLM_toLpTop_eq_toLpTop`: transference of Fourier
   multipliers with Schwartz symbols from `ℝᵈ` to the torus.
@@ -111,6 +115,47 @@ theorem norm_euclideanLift (f : C(UnitAddTorus d, E)) : ‖euclideanLift f‖ = 
   simpa [euclideanLift_apply] using (euclideanLift f).norm_coe_le_norm (WithLp.toLp 2 x)
 
 end Lift
+
+section IteratedFDeriv
+
+omit [Fintype d] in
+/-- The lift of `f` to `EuclideanSpace ℝ d` is its lift to `d → ℝ` composed with the identification
+`EuclideanSpace ℝ d ≃L[ℝ] (d → ℝ)`. -/
+theorem comp_euclidean_coe_eq_comp {X : Type*} (f : UnitAddTorus d → X) :
+    (fun x : EuclideanSpace ℝ d ↦ f fun i ↦ (x i : UnitAddCircle)) =
+      (fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle)) ∘
+        (PiLp.continuousLinearEquiv 2 ℝ (fun _ : d ↦ ℝ) : EuclideanSpace ℝ d →L[ℝ] (d → ℝ)) := by
+  funext x
+  simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe,
+    PiLp.continuousLinearEquiv_apply]
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- **The derivatives of a `C^k` lift are bounded.** If the lift `x ↦ f (x mod ℤᵈ)` of a function
+`f` on the torus to `EuclideanSpace ℝ d` is `C^k`, then its derivatives through order `k` are
+bounded, as for the lift to `d → ℝ` (`TauCeti.UnitAddTorus.exists_forall_norm_iteratedFDeriv_le`).
+-/
+theorem exists_forall_norm_iteratedFDeriv_euclidean_le (f : UnitAddTorus d → E) {k : ℕ}
+    (hf : ContDiff ℝ k fun x : EuclideanSpace ℝ d ↦ f fun i ↦ (x i : UnitAddCircle)) :
+    ∃ M, ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i
+      (fun x : EuclideanSpace ℝ d ↦ f fun i ↦ (x i : UnitAddCircle)) x‖ ≤ M := by
+  let e := PiLp.continuousLinearEquiv 2 ℝ fun _ : d ↦ ℝ
+  have hf' : ContDiff ℝ k fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle) := by
+    have h := hf.comp e.symm.contDiff
+    rwa [comp_euclidean_coe_eq_comp, Function.comp_assoc, ContinuousLinearEquiv.coe_coe,
+      e.self_comp_symm, Function.comp_id] at h
+  refine exists_forall_norm_iteratedFDeriv_le_of_forall_exists fun i hi ↦ ?_
+  obtain ⟨M, hM⟩ := exists_forall_norm_iteratedFDeriv_le f
+    (hf'.continuous_iteratedFDeriv (by exact_mod_cast hi))
+  refine ⟨M * ‖(e : EuclideanSpace ℝ d →L[ℝ] (d → ℝ))‖ ^ i, fun x ↦ ?_⟩
+  rw [comp_euclidean_coe_eq_comp, (e : EuclideanSpace ℝ d →L[ℝ] (d → ℝ)).iteratedFDeriv_comp_right
+    hf' x (by exact_mod_cast hi)]
+  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
+  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  gcongr
+  exact hM _
+
+end IteratedFDeriv
 
 /-! ### Transference -/
 
