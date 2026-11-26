@@ -126,6 +126,13 @@ homeomorphisms. -/
 theorem coe_plHomeomorphCongr (f : s.plHomeomorphSubgroup) :
     (s.plHomeomorphCongr e f : N ≃ₜ N) = Homeomorph.homeoCongr e f := (rfl)
 
+/-- The inverse isomorphism of PL homeomorphism groups acts by conjugation by the inverse
+homeomorphism. -/
+@[simp]
+theorem coe_plHomeomorphCongr_symm_apply (g : (s.map e).plHomeomorphSubgroup) :
+    ((s.plHomeomorphCongr e).symm g : M ≃ₜ M) = Homeomorph.homeoCongr e.symm g := by
+  simp [plHomeomorphCongr, MulEquiv.subgroupMap_symm_apply]
+
 end Transport
 
 end TauCeti.PLStructure
