@@ -50,6 +50,8 @@ form a proper ideal of `B`, hence are contained in a maximal ideal `m`. On the c
 * I. Kaplansky, *The Weierstrass theorem in fields with valuations*, Proc. Amer. Math. Soc. 1
   (1950), 356–357.
 * J. B. Prolla, *Approximation of Vector Valued Functions*, North-Holland (1977).
+* Adapted from the formalization by L. Alpöge and L. Sernau in
+  `Lib/GaloisRep/WeightCongruence.lean` (`New.stoneWeierstrass_ultrametric`).
 -/
 
 public section
@@ -87,11 +89,9 @@ theorem mem_multiplierSubalgebra {N : Submodule k C(X, k)} {u : C(X, k)} :
 
 end MultiplierSubalgebra
 
-section UltrametricStoneWeierstrass
-
-variable {X k : Type*} [TopologicalSpace X] [CompactSpace X] [NormedField k] [IsUltrametricDist k]
-
-private lemma norm_add_le_max_continuousMap (f g : C(X, k)) :
+/-- The supremum norm on `C(X, k)` is ultrametric whenever the norm on `k` is ultrametric. -/
+theorem norm_add_le_max {X k : Type*} [TopologicalSpace X] [CompactSpace X]
+    [SeminormedAddCommGroup k] [IsUltrametricDist k] (f g : C(X, k)) :
     ‖f + g‖ ≤ max ‖f‖ ‖g‖ := by
   rw [ContinuousMap.norm_le _ (le_max_of_le_left (norm_nonneg f))]
   intro x
@@ -99,6 +99,10 @@ private lemma norm_add_le_max_continuousMap (f g : C(X, k)) :
     ‖(f + g) x‖ = ‖f x + g x‖ := rfl
     _ ≤ max ‖f x‖ ‖g x‖ := IsUltrametricDist.norm_add_le_max (f x) (g x)
     _ ≤ max ‖f‖ ‖g‖ := max_le_max (norm_coe_le_norm f x) (norm_coe_le_norm g x)
+
+section UltrametricStoneWeierstrass
+
+variable {X k : Type*} [TopologicalSpace X] [CompactSpace X] [NormedField k] [IsUltrametricDist k]
 
 /-- The subring of multipliers of `N` with supremum norm at most `1`. -/
 private def boundedMultipliers (N : Submodule k C(X, k)) : Subring C(X, k) where
@@ -110,7 +114,7 @@ private def boundedMultipliers (N : Submodule k C(X, k)) : Subring C(X, k) where
     ⟨(multiplierSubalgebra N).one_mem, (ContinuousMap.norm_le _ zero_le_one).2 fun _ ↦ by simp⟩
   add_mem' {u v} hu hv :=
     ⟨(multiplierSubalgebra N).add_mem hu.1 hv.1,
-      (norm_add_le_max_continuousMap u v).trans (max_le hu.2 hv.2)⟩
+      (norm_add_le_max u v).trans (max_le hu.2 hv.2)⟩
   zero_mem' := ⟨(multiplierSubalgebra N).zero_mem, by simp⟩
   neg_mem' {u} hu := ⟨(multiplierSubalgebra N).neg_mem hu.1, by simpa using hu.2⟩
 
@@ -123,7 +127,7 @@ private lemma exists_maximal_ideal_of_far (N : Submodule k C(X, k)) (φ : C(X, k
     { N.toAddSubmonoid with smul_mem' := fun c _ hd ↦ c.property.1 _ hd }
   let ball : Submodule B C(X, k) :=
     { carrier := {f | ‖f‖ ≤ ε}
-      add_mem' := fun {f g} hf hg ↦ (norm_add_le_max_continuousMap f g).trans (max_le hf hg)
+      add_mem' := fun {f g} hf hg ↦ (norm_add_le_max f g).trans (max_le hf hg)
       zero_mem' := by simpa using hε.le
       smul_mem' := fun c f hf ↦ by
         change ‖(c : C(X, k)) * f‖ ≤ ε
