@@ -10,8 +10,10 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.VectorBundle.Basic
 public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.LinearAlgebra.Span.Defs
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
+import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
@@ -61,7 +63,10 @@ satisfy the identity and cocycle laws over the relevant base sets
 `Bundle.Trivialization.coordChangeL_coordChangeL_apply`), equal the identity outside the overlap
 (`Bundle.Trivialization.coordChangeL_of_notMem`), and send the coordinate of a point in
 the first trivialization to its coordinate in the second
-(`Bundle.Trivialization.coordChangeL_apply_snd`); the fibrewise inverse of the second, after the
+(`Bundle.Trivialization.coordChangeL_apply_snd`); in finite dimension over a complete nontrivially
+normed field, the coordinate change between any two linear trivializations is continuous on the
+overlap as a map into `F →L[𝕜] F` (`Bundle.Trivialization.continuousOn_coordChangeL`); the
+fibrewise inverse of the second, after the
 coordinate change from the first, is the fibrewise inverse of the first
 (`Bundle.Trivialization.symmL_coordChangeL`). Convergence in the total space of a vector bundle
 is convergence of base points and of fibre coordinates in any linear trivialization over the limit
@@ -262,6 +267,16 @@ end Linear
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {F : Type*} [NormedAddCommGroup F]
   [NormedSpace 𝕜 F] {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
   [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
+
+/-- In finite dimension over a complete nontrivially normed field, the coordinate change between
+any two linear trivializations is continuous on the overlap of their base sets as a map into
+`F →L[𝕜] F`. -/
+theorem continuousOn_coordChangeL [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    (e e' : Trivialization F (π F E)) [e.IsLinear 𝕜] [e'.IsLinear 𝕜] :
+    ContinuousOn (fun x ↦ (e.coordChangeL 𝕜 e' x : F →L[𝕜] F)) (e.baseSet ∩ e'.baseSet) :=
+  continuousOn_clm_apply.2 fun v ↦
+    ((e.continuousOn_coordChange e').comp (continuous_id.prodMk continuous_const).continuousOn
+      fun _ hx ↦ ⟨hx, Set.mem_univ _⟩).congr fun _ hx ↦ e.coordChangeL_apply' e' hx v
 
 section FiberBundle
 
