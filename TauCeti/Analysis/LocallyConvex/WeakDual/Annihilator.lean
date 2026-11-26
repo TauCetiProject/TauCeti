@@ -125,62 +125,83 @@ open OrderDual
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
+/-- The preannihilator of the annihilator of a closed subspace, the annihilator taken in the weak
+dual, is the subspace itself. -/
+theorem orthogonalBilin_comap_map_orthogonalBilin_flip (S : ClosedSubmodule 𝕜 E) :
+    ((((S : Submodule 𝕜 E).orthogonalBilin (topDualPairing 𝕜 E).flip).map
+      StrongDual.toWeakDual.toLinearMap).comap StrongDual.toWeakDual.toLinearMap).orthogonalBilin
+        (topDualPairing 𝕜 E) = S := by
+  rw [Submodule.comap_map_eq_of_injective StrongDual.toWeakDual.injective,
+    Submodule.orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure,
+    S.isClosed.submodule_topologicalClosure_eq]
+
+/-- The annihilator of the preannihilator of a weak-star closed subspace of the dual is the
+subspace itself. -/
+theorem map_orthogonalBilin_flip_orthogonalBilin_comap (G : ClosedSubmodule 𝕜 (WeakDual 𝕜 E)) :
+    Submodule.map StrongDual.toWeakDual.toLinearMap
+      ((((G : Submodule 𝕜 (WeakDual 𝕜 E)).comap
+        StrongDual.toWeakDual.toLinearMap).orthogonalBilin (topDualPairing 𝕜 E)).orthogonalBilin
+          (topDualPairing 𝕜 E).flip) = G := by
+  rw [Submodule.map_orthogonalBilin_flip_orthogonalBilin_eq_topologicalClosure,
+    Submodule.map_comap_eq_of_surjective StrongDual.toWeakDual.surjective,
+    G.isClosed.submodule_topologicalClosure_eq]
+
 variable (𝕜 E) in
 /-- **Annihilator duality.** Taking annihilators is an inclusion-reversing bijection between the
 norm-closed subspaces of `E` and the weak-star closed subspaces of its dual; the inverse takes
 preannihilators. This packages the two double-annihilator theorems
 `Submodule.orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure` and
 `Submodule.map_orthogonalBilin_flip_orthogonalBilin_eq_topologicalClosure`. -/
-@[expose]
 noncomputable def annihilatorOrderIso :
-    ClosedSubmodule 𝕜 E ≃o (ClosedSubmodule 𝕜 (WeakDual 𝕜 E))ᵒᵈ :=
-  have left_inv (S : ClosedSubmodule 𝕜 E) :
-      ((((S : Submodule 𝕜 E).orthogonalBilin (topDualPairing 𝕜 E).flip).map
-        StrongDual.toWeakDual.toLinearMap).comap StrongDual.toWeakDual.toLinearMap).orthogonalBilin
-          (topDualPairing 𝕜 E) = S := by
-    rw [Submodule.comap_map_eq_of_injective StrongDual.toWeakDual.injective,
-      Submodule.orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure,
-      S.isClosed.submodule_topologicalClosure_eq]
-  have right_inv (G : ClosedSubmodule 𝕜 (WeakDual 𝕜 E)) :
-      Submodule.map StrongDual.toWeakDual.toLinearMap
-        ((((G : Submodule 𝕜 (WeakDual 𝕜 E)).comap
-          StrongDual.toWeakDual.toLinearMap).orthogonalBilin (topDualPairing 𝕜 E)).orthogonalBilin
-            (topDualPairing 𝕜 E).flip) = G := by
-    rw [Submodule.map_orthogonalBilin_flip_orthogonalBilin_eq_topologicalClosure,
-      Submodule.map_comap_eq_of_surjective StrongDual.toWeakDual.surjective,
-      G.isClosed.submodule_topologicalClosure_eq]
-  { toFun S := toDual ⟨((S : Submodule 𝕜 E).orthogonalBilin (topDualPairing 𝕜 E).flip).map
-        StrongDual.toWeakDual.toLinearMap,
-        Submodule.isClosed_map_orthogonalBilin_topDualPairing_flip _⟩
-    invFun G := ⟨((ofDual G).toSubmodule.comap
-        StrongDual.toWeakDual.toLinearMap).orthogonalBilin (topDualPairing 𝕜 E),
-        Submodule.isClosed_orthogonalBilin_topDualPairing _⟩
-    left_inv S := toSubmodule_injective (left_inv S)
-    right_inv G := congrArg toDual (toSubmodule_injective (right_inv (ofDual G)))
-    map_rel_iff' := by
-      intro S T
-      change ((T : Submodule 𝕜 E).orthogonalBilin (topDualPairing 𝕜 E).flip).map
-          StrongDual.toWeakDual.toLinearMap ≤
-        ((S : Submodule 𝕜 E).orthogonalBilin (topDualPairing 𝕜 E).flip).map
-          StrongDual.toWeakDual.toLinearMap ↔ (S : Submodule 𝕜 E) ≤ T
-      refine ⟨fun h ↦ ?_, fun h ↦ Submodule.map_mono (Submodule.orthogonalBilin_le h)⟩
-      rw [← left_inv S, ← left_inv T]
-      exact Submodule.orthogonalBilin_le (Submodule.comap_mono h) }
+    ClosedSubmodule 𝕜 E ≃o (ClosedSubmodule 𝕜 (WeakDual 𝕜 E))ᵒᵈ where
+  toFun S := toDual ⟨((S : Submodule 𝕜 E).orthogonalBilin (topDualPairing 𝕜 E).flip).map
+      StrongDual.toWeakDual.toLinearMap,
+      Submodule.isClosed_map_orthogonalBilin_topDualPairing_flip _⟩
+  invFun G := ⟨((ofDual G).toSubmodule.comap
+      StrongDual.toWeakDual.toLinearMap).orthogonalBilin (topDualPairing 𝕜 E),
+      Submodule.isClosed_orthogonalBilin_topDualPairing _⟩
+  left_inv S := toSubmodule_injective (orthogonalBilin_comap_map_orthogonalBilin_flip S)
+  right_inv G := congrArg toDual
+    (toSubmodule_injective (map_orthogonalBilin_flip_orthogonalBilin_comap (ofDual G)))
+  map_rel_iff' {S T} := by
+    simp only [← toSubmodule_le_toSubmodule]
+    refine ⟨fun h ↦ ?_, fun h ↦ Submodule.map_mono (Submodule.orthogonalBilin_le h)⟩
+    rw [← orthogonalBilin_comap_map_orthogonalBilin_flip S,
+      ← orthogonalBilin_comap_map_orthogonalBilin_flip T]
+    exact Submodule.orthogonalBilin_le (Submodule.comap_mono h)
 
 /-- The annihilator of a closed subspace, as a subspace of the weak dual. -/
 @[simp]
-theorem coe_annihilatorOrderIso_apply (S : ClosedSubmodule 𝕜 E) :
+theorem toSubmodule_annihilatorOrderIso_apply (S : ClosedSubmodule 𝕜 E) :
     (ofDual (annihilatorOrderIso 𝕜 E S)).toSubmodule =
       ((S : Submodule 𝕜 E).orthogonalBilin (topDualPairing 𝕜 E).flip).map
         StrongDual.toWeakDual.toLinearMap :=
-  rfl
+  (rfl)
 
 /-- The preannihilator of a weak-star closed subspace of the dual. -/
 @[simp]
-theorem coe_annihilatorOrderIso_symm_apply (G : (ClosedSubmodule 𝕜 (WeakDual 𝕜 E))ᵒᵈ) :
+theorem toSubmodule_annihilatorOrderIso_symm_apply (G : (ClosedSubmodule 𝕜 (WeakDual 𝕜 E))ᵒᵈ) :
     ((annihilatorOrderIso 𝕜 E).symm G : Submodule 𝕜 E) =
       ((ofDual G).toSubmodule.comap
         StrongDual.toWeakDual.toLinearMap).orthogonalBilin (topDualPairing 𝕜 E) :=
-  rfl
+  (rfl)
+
+/-- A functional lies in the annihilator of a closed subspace exactly when it vanishes on it. -/
+@[simp]
+theorem mem_annihilatorOrderIso_iff {S : ClosedSubmodule 𝕜 E} {φ : WeakDual 𝕜 E} :
+    φ ∈ ofDual (annihilatorOrderIso 𝕜 E S) ↔ ∀ x ∈ S, φ x = 0 := by
+  rw [← mem_toSubmodule_iff, toSubmodule_annihilatorOrderIso_apply]
+  refine (Submodule.mem_map_equiv (e := StrongDual.toWeakDual (𝕜 := 𝕜) (E := E)) _).trans ?_
+  simp
+
+/-- A vector lies in the preannihilator of a weak-star closed subspace of the dual exactly when
+every functional of the subspace vanishes on it. -/
+@[simp]
+theorem mem_annihilatorOrderIso_symm_iff {G : (ClosedSubmodule 𝕜 (WeakDual 𝕜 E))ᵒᵈ} {x : E} :
+    x ∈ (annihilatorOrderIso 𝕜 E).symm G ↔ ∀ φ ∈ ofDual G, φ x = 0 := by
+  rw [← mem_toSubmodule_iff, toSubmodule_annihilatorOrderIso_symm_apply]
+  simp only [Submodule.mem_orthogonalBilin, Submodule.mem_comap, mem_toSubmodule_iff,
+    topDualPairing_apply]
+  exact ⟨fun h φ hφ ↦ h (StrongDual.toWeakDual.symm φ) (by simpa using hφ), fun h n hn ↦ h _ hn⟩
 
 end ClosedSubmodule
