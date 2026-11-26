@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.Algebra.Module.Submodule.Map
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Submodule intervals and quotients
@@ -328,15 +329,9 @@ theorem mem_span_range_smul_comp_iff {κ : Type*} (b : Basis ι R M) (e : κ ↪
   -- extend the coefficients by zero off the range of `e`, and use the full rescaled-basis criterion
   have hspan : Submodule.span R (Set.range fun i ↦ Function.extend e a 0 i • b i) =
       Submodule.span R (Set.range fun j ↦ a j • b (e j)) := by
-    refine le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_)
-    · rintro _ ⟨i, rfl⟩
-      by_cases hi : ∃ j, e j = i
-      · obtain ⟨j, rfl⟩ := hi
-        exact Submodule.subset_span ⟨j, by simp only [e.injective.extend_apply]⟩
-      · simp only [Function.extend_apply' _ _ _ hi, Pi.zero_apply, zero_smul]
-        exact zero_mem _
-    · rintro _ ⟨j, rfl⟩
-      exact Submodule.subset_span ⟨e j, by simp only [e.injective.extend_apply]⟩
+    rw [Submodule.span_range_eq_span_range_comp_of_eq_zero e fun i hi ↦ by
+      simp [Function.extend_apply' _ _ _ hi]]
+    simp only [Function.comp_def, e.injective.extend_apply]
   rw [← hspan, b.mem_span_range_smul_iff]
   refine ⟨fun h ↦ ⟨fun j ↦ ?_, fun i hi ↦ ?_⟩, fun ⟨hdvd, hoff⟩ i ↦ ?_⟩
   · simpa [e.injective.extend_apply] using h (e j)

@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import TauCeti.Algebra.Module.Submodule.Quotient
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Subquotients of a free module by rescaled basis vectors
@@ -242,16 +243,9 @@ theorem range_eq_span_range_smul_of_toMatrix_eq [Finite ι] (b' : Basis ι' R M'
     refine b.ext_elem fun i ↦ ?_
     rw [hrepr, map_zero, Finsupp.coe_zero, Pi.zero_apply]
     exact Finset.sum_eq_zero fun j _ ↦ ite_eq_right_iff.2 fun h ↦ absurd ⟨j, h.2⟩ hl
-  rw [LinearMap.range_eq_map, ← b'.span_eq, Submodule.map_span, ← Set.range_comp]
-  refine le_antisymm (span_le.2 ?_) (span_le.2 ?_)
-  · rintro _ ⟨l, rfl⟩
-    by_cases hl : l ∈ Set.range e'
-    · obtain ⟨j, rfl⟩ := hl
-      exact subset_span ⟨j, (hsel j).symm⟩
-    · rw [Function.comp_apply, hoff l hl]
-      exact zero_mem _
-  · rintro _ ⟨j, rfl⟩
-    exact subset_span ⟨e' j, hsel j⟩
+  rw [LinearMap.range_eq_map, ← b'.span_eq, Submodule.map_span, ← Set.range_comp,
+    span_range_eq_span_range_comp_of_eq_zero (w := f ∘ b') e' hoff]
+  simp only [Function.comp_def, hsel]
 
 /-- **The range of a map whose matrix is equivalent to a rectangular diagonal matrix.** If
 `L * A * Q` is the rectangular diagonal matrix with the entry `a j` in row `e j` and column `e' j`,
