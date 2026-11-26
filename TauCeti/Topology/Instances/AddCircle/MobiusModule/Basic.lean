@@ -133,9 +133,9 @@ theorem circleCoord_zero_sq_add_circleCoord_one_sq :
     circleCoord A 0 ^ 2 + circleCoord A 1 ^ 2 = 1 := by
   ext x
   induction x using QuotientAddGroup.induction_on with | H t => ?_
-  rw [ContinuousMap.add_apply, ContinuousMap.pow_apply, ContinuousMap.pow_apply,
-    circleCoord_zero_apply_mk, circleCoord_one_apply_mk, ← map_pow, ← map_pow, ← map_add,
-    cos_sq_add_sin_sq, map_one, ContinuousMap.one_apply]
+  simpa only [map_add, map_pow, map_one, ContinuousMap.add_apply, ContinuousMap.pow_apply,
+    ContinuousMap.one_apply, circleCoord_zero_apply_mk, circleCoord_one_apply_mk] using
+    congrArg (algebraMap ℝ A) (cos_sq_add_sin_sq (2 * π * t))
 
 variable (A) in
 /-- The reflection `ρ([t]) = [[cos 2πt, sin 2πt], [sin 2πt, −cos 2πt]]` over `C(ℝ / ℤ, A)`. At

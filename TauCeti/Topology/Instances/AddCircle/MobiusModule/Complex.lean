@@ -196,11 +196,14 @@ theorem vecMulVec_mobiusComplexFrame_star :
     vecMulVec mobiusComplexFrame (star mobiusComplexFrame) = mobiusProjection ℂ := by
   ext i j x
   induction x using QuotientAddGroup.induction_on with | H t => ?_
-  rw [vecMulVec_apply, Pi.star_apply, ContinuousMap.mul_apply, ContinuousMap.star_apply,
-    mobiusProjection_apply_mk, mobiusComplexFrame_apply_mk, mobiusComplexFrame_apply_mk,
-    star_mul', mul_mul_mul_comm, Complex.star_def, Complex.mul_conj',
-    Complex.norm_exp_ofReal_mul_I, Complex.conj_ofReal]
-  simp
+  have h : Complex.exp ((π * t : ℝ) * Complex.I) *
+      starRingEnd ℂ (Complex.exp ((π * t : ℝ) * Complex.I)) = 1 := by
+    rw [Complex.mul_conj', Complex.norm_exp_ofReal_mul_I]
+    simp
+  simp only [vecMulVec_apply, Pi.star_apply, ContinuousMap.mul_apply, ContinuousMap.star_apply,
+    mobiusProjection_apply_mk, mobiusComplexFrame_apply_mk, star_mul', Complex.star_def,
+    Complex.conj_ofReal, Complex.coe_algebraMap, Complex.ofReal_mul] at h ⊢
+  linear_combination (↑(![cos (π * t), sin (π * t)] i) * ↑(![cos (π * t), sin (π * t)] j) : ℂ) * h
 
 /-- The frame `s` is a unit vector at every point: `s* s = 1`. -/
 theorem star_mobiusComplexFrame_dotProduct_self :
