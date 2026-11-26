@@ -65,6 +65,13 @@ theorem tvToStationary_nonneg {κ : Kernel α α} {π : Measure α} {t : ℕ} :
 theorem tvBetweenStarts_nonneg {κ : Kernel α α} {t : ℕ} : 0 ≤ κ.tvBetweenStarts t :=
   Real.iSup_nonneg fun _ ↦ div_nonneg tvDist_nonneg (by norm_num)
 
+/-- On a subsingleton state space, the worst-case distance between starts is zero. -/
+@[simp] theorem tvBetweenStarts_of_subsingleton [Subsingleton α] (κ : Kernel α α) (t : ℕ) :
+    κ.tvBetweenStarts t = 0 := by
+  have h (z : α × α) : tvDist ((κ ^ t) z.1) ((κ ^ t) z.2) = 0 := by
+    rw [Subsingleton.elim z.2 z.1, tvDist_self]
+  simp [tvBetweenStarts_def, h]
+
 variable {κ : Kernel α α} {π : Measure α} {s t : ℕ}
 
 section RowBounds
@@ -116,14 +123,12 @@ variable [IsMarkovKernel κ]
 /-- The worst-case distance to a reference probability measure is at most one. -/
 theorem tvToStationary_le_one [IsProbabilityMeasure π] : κ.tvToStationary π t ≤ 1 := by
   rw [tvToStationary_def]
-  refine Real.iSup_le (fun x ↦ (div_le_iff₀ (by norm_num)).mpr ?_) zero_le_one
-  simpa [one_add_one_eq_two] using (tvDist_le_add (μ := (κ ^ t) x) (ν := π))
+  exact Real.iSup_le (fun _ ↦ tvDist_div_two_le_one) zero_le_one
 
 /-- The worst-case distance between starts is at most one. -/
 theorem tvBetweenStarts_le_one : κ.tvBetweenStarts t ≤ 1 := by
   rw [tvBetweenStarts_def]
-  refine Real.iSup_le (fun ⟨x, y⟩ ↦ (div_le_iff₀ (by norm_num)).mpr ?_) zero_le_one
-  simpa [one_add_one_eq_two] using (tvDist_le_add (μ := (κ ^ t) x) (ν := (κ ^ t) y))
+  exact Real.iSup_le (fun _ ↦ tvDist_div_two_le_one) zero_le_one
 
 end ProbabilityBounds
 
@@ -171,7 +176,7 @@ theorem tvDist_pow_comp_le_tvToStationary [IsFiniteKernel κ] (μ : Measure α)
     tvDist ((κ ^ t : Kernel α α) ∘ₘ μ) π / 2 ≤ κ.tvToStationary π t := by
   by_cases hπ : IsFiniteMeasure π
   · let := Fintype.ofFinite α
-    have h := tvDist_comp_le_sum (κ ^ t) (Kernel.const α π) μ
+    have h := μ.tvDist_comp_le_sum (κ ^ t) (Kernel.const α π)
     simp only [Measure.const_comp, measure_univ, one_smul, Kernel.const_apply] at h
     apply (div_le_iff₀ (by norm_num)).mpr
     calc
@@ -192,7 +197,7 @@ theorem tvDist_pow_comp_le_mul_tvBetweenStarts [IsFiniteKernel κ] (μ ν : Meas
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     tvDist ((κ ^ t : Kernel α α) ∘ₘ μ) ((κ ^ t : Kernel α α) ∘ₘ ν) / 2 ≤
       tvDist μ ν / 2 * κ.tvBetweenStarts t := by
-  have h := tvDist_comp_le_mul (κ ^ t) (μ := μ) (ν := ν) (by simp)
+  have h := μ.tvDist_comp_le_mul (κ ^ t) (ν := ν) (by simp)
     (c := κ.tvBetweenStarts t) fun x y ↦ by
       linarith [κ.tvDist_pow_apply_le_tvBetweenStarts (t := t) x y]
   linarith
@@ -203,9 +208,7 @@ theorem tvDist_pow_comp_le_tvBetweenStarts [IsFiniteKernel κ] (μ ν : Measure 
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     tvDist ((κ ^ t : Kernel α α) ∘ₘ μ) ((κ ^ t : Kernel α α) ∘ₘ ν) / 2 ≤ κ.tvBetweenStarts t := by
   refine (κ.tvDist_pow_comp_le_mul_tvBetweenStarts μ ν).trans ?_
-  apply mul_le_of_le_one_left tvBetweenStarts_nonneg
-  exact (div_le_iff₀ (by norm_num)).mpr (by
-    simpa [one_add_one_eq_two] using (tvDist_le_add (μ := μ) (ν := ν)))
+  exact mul_le_of_le_one_left tvBetweenStarts_nonneg tvDist_div_two_le_one
 
 /-- The worst-case distance to the reference measure is attained over all initial
 probability laws, including point masses. -/
@@ -273,7 +276,7 @@ theorem tvToStationary_add_le [IsProbabilityMeasure π] (hπ : κ.Invariant π) 
     tvBetweenStarts_nonneg)
 
 /-- The worst-case distance to any fixed measure is nonincreasing in time. -/
-theorem antitone_tvToStationary : Antitone (κ.tvToStationary π) := by
+theorem tvToStationary_antitone : Antitone (κ.tvToStationary π) := by
   intro s t hst
   obtain ⟨u, rfl⟩ := Nat.exists_eq_add_of_le hst
   rw [tvToStationary_def]
@@ -282,7 +285,7 @@ theorem antitone_tvToStationary : Antitone (κ.tvToStationary π) := by
   exact κ.tvDist_pow_comp_le_tvToStationary ((κ ^ u) x)
 
 /-- The worst-case distance between starts is nonincreasing in time. -/
-theorem antitone_tvBetweenStarts : Antitone κ.tvBetweenStarts := by
+theorem tvBetweenStarts_antitone : Antitone κ.tvBetweenStarts := by
   intro s t hst
   obtain ⟨u, rfl⟩ := Nat.exists_eq_add_of_le hst
   exact tvBetweenStarts_add_le.trans (mul_le_of_le_one_right tvBetweenStarts_nonneg

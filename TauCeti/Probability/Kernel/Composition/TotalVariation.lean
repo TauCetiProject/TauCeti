@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Kernel.Composition.MeasureComp
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Defs
 import Mathlib.Probability.Kernel.Composition.MapComap
+import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 import TauCeti.MeasureTheory.Measure.TotalVariation.Coupling
 
 /-!
@@ -26,17 +27,17 @@ the factor, using half of Mathlib's total variation distance for that factor.
 
 public section
 
-open MeasureTheory Set
+open ProbabilityTheory Set
 open scoped BigOperators
 
-namespace ProbabilityTheory.Kernel
+namespace MeasureTheory.Measure
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
 
 /-- On a finite discrete source, the real mass of a measurable event after applying a finite
 kernel is the sum of its masses under the rows, weighted by the initial singleton masses. -/
 theorem measureReal_comp_apply_eq_sum [Fintype α] [MeasurableSingletonClass α]
-    (κ : Kernel α β) [IsFiniteKernel κ] (μ : Measure α) [IsFiniteMeasure μ]
+    (μ : Measure α) [IsFiniteMeasure μ] (κ : Kernel α β) [IsFiniteKernel κ]
     {s : Set β} (hs : MeasurableSet s) :
     (κ ∘ₘ μ).real s = ∑ x, μ.real {x} * (κ x).real s := by
   rw [measureReal_def, Measure.bind_apply hs κ.aemeasurable, lintegral_fintype,
@@ -47,8 +48,8 @@ variable [MeasurableSingletonClass α]
 
 /-- The total variation distance of two mixtures with the same weights is at most the
 weighted sum of the total variation distances of their components. -/
-theorem tvDist_comp_le_sum [Fintype α] (κ η : Kernel α β) [IsFiniteKernel κ] [IsFiniteKernel η]
-    (μ : Measure α) [IsFiniteMeasure μ] :
+theorem tvDist_comp_le_sum [Fintype α] (μ : Measure α) [IsFiniteMeasure μ] (κ η : Kernel α β)
+    [IsFiniteKernel κ] [IsFiniteKernel η] :
     tvDist (κ ∘ₘ μ) (η ∘ₘ μ) ≤ ∑ x, μ.real {x} * tvDist (κ x) (η x) := by
   classical
   rw [tvDist_eq_iSup_finPartition_abs]
@@ -68,23 +69,14 @@ theorem tvDist_comp_le_sum [Fintype α] (κ η : Kernel α β) [IsFiniteKernel �
       rw [Finset.sum_comm]
       simp only [← Finset.mul_sum]
       apply Finset.sum_le_sum
-      intro x _
-      apply mul_le_mul_of_nonneg_left _ measureReal_nonneg
-      let partSum
-          (Q : Finpartition (⟨univ, MeasurableSet.univ⟩ : {s : Set β // MeasurableSet s})) :=
-        ∑ p ∈ Q.parts, ‖(κ x).real (p : Set β) - (η x).real (p : Set β)‖ₑ
-      have h := le_iSup partSum P
-      simp only [partSum] at h
-      rw [← etvDist_eq_iSup_finPartition_eNorm] at h
-      have hr := ENNReal.toReal_mono (etvDist_ne_top (κ x) (η x)) h
-      rw [ENNReal.toReal_sum (by simp)] at hr
-      simpa only [tvDist, toReal_eNorm, Real.norm_eq_abs] using hr
+      exact fun x _ ↦ mul_le_mul_of_nonneg_left
+        (sum_abs_measureReal_sub_le_tvDist P) measureReal_nonneg
 
 /-- On a finite discrete source, a finite kernel contracts the total variation distance between
 finite measures of equal mass by a factor `c` if the distance between every pair of rows is at
 most `2 * c`. -/
-theorem tvDist_comp_le_mul [Finite α] (κ : Kernel α β) [IsFiniteKernel κ]
-    {μ ν : Measure α} [IsFiniteMeasure μ] (hmass : μ univ = ν univ)
+theorem tvDist_comp_le_mul [Finite α] (μ : Measure α) (κ : Kernel α β) [IsFiniteKernel κ]
+    {ν : Measure α} [IsFiniteMeasure μ] (hmass : μ univ = ν univ)
     {c : ℝ} (h : ∀ x y, tvDist (κ x) (κ y) ≤ 2 * c) :
     tvDist (κ ∘ₘ μ) (κ ∘ₘ ν) ≤ c * tvDist μ ν := by
   classical
@@ -92,9 +84,9 @@ theorem tvDist_comp_le_mul [Finite α] (κ : Kernel α β) [IsFiniteKernel κ]
   obtain ⟨γ, hγ, hopt⟩ := TauCeti.isLeast_measureReal_ne_of_isCoupling hmass |>.1
   have : IsFiniteMeasure γ := hγ.isFiniteMeasure
   have hne : γ.real {z | z.1 ≠ z.2} = tvDist μ ν / 2 := hopt
-  have hmix := tvDist_comp_le_sum (κ.comap Prod.fst measurable_fst)
-    (κ.comap Prod.snd measurable_snd) γ
-  simp only [coe_comap, Function.comp_def] at hmix
+  have hmix := γ.tvDist_comp_le_sum (κ.comap Prod.fst measurable_fst)
+    (κ.comap Prod.snd measurable_snd)
+  simp only [Kernel.coe_comap, Function.comp_def] at hmix
   rw [← Measure.bind_map measurable_fst.aemeasurable κ.aemeasurable,
     ← Measure.bind_map measurable_snd.aemeasurable κ.aemeasurable] at hmix
   rw [← Measure.fst, ← Measure.snd, hγ.fst_eq, hγ.snd_eq] at hmix
@@ -115,4 +107,4 @@ theorem tvDist_comp_le_mul [Finite α] (κ : Kernel α β) [IsFiniteKernel κ]
       rw [hne]
       ring
 
-end ProbabilityTheory.Kernel
+end MeasureTheory.Measure

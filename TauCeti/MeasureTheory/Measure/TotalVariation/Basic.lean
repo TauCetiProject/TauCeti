@@ -34,6 +34,10 @@ estimates into total-variation estimates.
 
 * `MeasureTheory.abs_measureReal_sub_le_tvDist`: the real masses of a measurable event
   differ by at most `tvDist μ ν`;
+* `MeasureTheory.sum_abs_measureReal_sub_le_tvDist`: the sum of the absolute differences
+  over a finite measurable partition is at most `tvDist μ ν`;
+* `MeasureTheory.tvDist_div_two_le_one`: the normalized distance between probability measures
+  is at most one;
 * `MeasureTheory.etvDist_eq_posPart_univ_add_negPart_univ`: `etvDist μ ν` is the total mass of
   the positive part of the Jordan decomposition of `μ - ν` plus that of its negative part;
 * `MeasureTheory.iSup_measure_sub_eq_iSup_measurableSet`,
@@ -63,7 +67,15 @@ open scoped ENNReal
 
 namespace MeasureTheory
 
-variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
+
+/-- The total variation distance between probability measures, normalized by two, is at most one. -/
+theorem tvDist_div_two_le_one [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    tvDist μ ν / 2 ≤ 1 := by
+  apply (div_le_iff₀ (by norm_num)).mpr
+  simpa [one_add_one_eq_two] using (tvDist_le_add (μ := μ) (ν := ν))
+
+variable [IsFiniteMeasure μ] [IsFiniteMeasure ν]
 
 omit [IsFiniteMeasure μ] [IsFiniteMeasure ν] in
 /-- For arbitrary measures, the supremum of `μ A - ν A` over all sets equals its supremum over
@@ -97,6 +109,16 @@ theorem abs_measureReal_sub_le_tvDist {s : Set α} (hs : MeasurableSet s) :
   have hr := ENNReal.toReal_mono (etvDist_ne_top μ ν) h
   simpa only [_root_.sub_apply, Measure.toSignedMeasure_apply_measurable hs,
     toReal_eNorm, Real.norm_eq_abs, tvDist] using hr
+
+/-- Total variation bounds the sum of the absolute mass differences over a finite measurable
+partition of the whole space. -/
+theorem sum_abs_measureReal_sub_le_tvDist
+    (P : Finpartition (⟨univ, MeasurableSet.univ⟩ : Subtype (MeasurableSet (α := α)))) :
+    ∑ p ∈ P.parts, |μ.real p - ν.real p| ≤ tvDist μ ν := by
+  rw [← ENNReal.ofReal_le_ofReal_iff tvDist_nonneg, ofReal_tvDist,
+    ENNReal.ofReal_sum_of_nonneg (fun _ _ ↦ abs_nonneg _), etvDist_eq_iSup_finPartition_eNorm]
+  simp only [← Real.eNorm_eq_ofReal_abs]
+  exact le_iSup_of_le P le_rfl
 
 /-- The total variation distance between finite measures is the total mass of the positive part
 of the Jordan decomposition of `μ - ν` plus the total mass of its negative part. -/
