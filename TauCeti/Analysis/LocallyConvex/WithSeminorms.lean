@@ -28,7 +28,8 @@ analogues of `Summable.of_norm` and `norm_tsum_le_tsum_norm`.
 For an arbitrary family of seminorms, a sequence is Cauchy if and only if it is Cauchy for every
 seminorm of the family (`WithSeminorms.cauchySeq_iff`). For a countable family the uniformity is
 countably generated, so the space is complete if and only if every sequence that is Cauchy for
-each seminorm converges (`WithSeminorms.completeSpace_iff`).
+each seminorm converges (`WithSeminorms.completeSpace_iff`). Likewise, convergence is convergence
+to `0` of every seminorm of the difference (`WithSeminorms.tendsto_nhds_iff_tendsto_zero`).
 -/
 
 public section
@@ -75,6 +76,15 @@ theorem map_tsum_le {𝕜 E β : Type*} [SeminormedRing 𝕜] [AddCommGroup E] [
 end Seminorm
 
 namespace WithSeminorms
+
+/-- In a space whose topology is induced by a family of seminorms, `u` tends to `y₀` if and only
+if every seminorm of `u - y₀` tends to `0`. -/
+theorem tendsto_nhds_iff_tendsto_zero {𝕜 E ι F : Type*} [NormedField 𝕜] [AddCommGroup E]
+    [Module 𝕜 E] [TopologicalSpace E] {p : SeminormFamily 𝕜 E ι} (hp : WithSeminorms p)
+    {u : F → E} {f : Filter F} {y₀ : E} :
+    Tendsto u f (𝓝 y₀) ↔ ∀ i, Tendsto (fun x ↦ p i (u x - y₀)) f (𝓝 0) := by
+  simp only [hp.tendsto_nhds, Metric.tendsto_nhds, Real.dist_0_eq_abs,
+    abs_of_nonneg (apply_nonneg _ _)]
 
 variable {𝕜 E ι β : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
   [UniformSpace E] [IsUniformAddGroup E] {p : SeminormFamily 𝕜 E ι}
