@@ -189,6 +189,33 @@ theorem smulTopMap_comp [LinearMap.CompatibleSMul N P S R] [LinearMap.Compatible
 
 end Map
 
+section Equiv
+
+variable {M N R : Type*} [Semiring R]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+
+/-- An `R`-linear equivalence restricts to an `S`-linear equivalence on the pieces cut out by a
+scalar `e`. -/
+def _root_.LinearEquiv.smulTopCongr (f : M ≃ₗ[R] N) (S : Type*) [Semiring S]
+    [Module S M] [Module S N] [SMulCommClass R S M] [SMulCommClass R S N]
+    [LinearMap.CompatibleSMul M N S R] [LinearMap.CompatibleSMul N M S R] (e : R) :
+    ↥(e • (⊤ : Submodule S M)) ≃ₗ[S] ↥(e • (⊤ : Submodule S N)) :=
+  LinearEquiv.ofLinearMap (smulTopMap S e f.toLinearMap) (smulTopMap S e f.symm.toLinearMap)
+    (by ext x; simp) (by ext x; simp)
+
+variable {S : Type*} [Semiring S] [Module S M] [Module S N]
+  [SMulCommClass R S M] [SMulCommClass R S N]
+  [LinearMap.CompatibleSMul M N S R] [LinearMap.CompatibleSMul N M S R]
+
+/-- On the underlying modules, the restricted equivalence acts by the original equivalence. -/
+@[simp]
+theorem _root_.LinearEquiv.coe_smulTopCongr_apply (f : M ≃ₗ[R] N) (e : R)
+    (x : ↥(e • (⊤ : Submodule S M))) :
+    (f.smulTopCongr S e x : N) = f (x : M) :=
+  coe_smulTopMap_apply e f.toLinearMap x
+
+end Equiv
+
 section Orthogonal
 
 variable {S M R ι : Type*} [Semiring S] [Semiring R]
@@ -535,5 +562,31 @@ theorem isCompl_smul_top_one_sub_smul_top (he : IsIdempotentElem e) :
     (by ext i; fin_cases i <;> simp)
 
 end IsCompl
+
+section ProdEquiv
+
+variable {S M A : Type*} [Ring S] [Ring A] [AddCommGroup M] [Module S M] [Module A M]
+  [SMulCommClass A S M] {e : A}
+
+/-- An idempotent `e` and its complement `f` give product coordinates on `M` by projection onto
+the two summands `e • M` and `f • M`. -/
+noncomputable def smulTopProdEquiv (he : IsIdempotentElem e) {f : A} (hsum : e + f = 1) :
+    M ≃ₗ[S] ↥(e • (⊤ : Submodule S M)) × ↥(f • (⊤ : Submodule S M)) := by
+  have h : IsCompl (e • (⊤ : Submodule S M)) (f • (⊤ : Submodule S M)) := by
+    rw [eq_sub_of_add_eq' hsum]
+    exact he.isCompl_smul_top_one_sub_smul_top
+  exact ((e • (⊤ : Submodule S M)).prodEquivOfIsCompl _ h).symm
+
+/-- The product coordinates are obtained by multiplication by the two complementary scalars. -/
+@[simp]
+theorem smulTopProdEquiv_apply (he : IsIdempotentElem e) {f : A} (hsum : e + f = 1) (x : M) :
+    he.smulTopProdEquiv (S := S) hsum x =
+      (TauCeti.smulTopRetraction e x, TauCeti.smulTopRetraction f x) := by
+  unfold smulTopProdEquiv
+  apply (LinearEquiv.symm_apply_eq _).2
+  simp only [Submodule.coe_prodEquivOfIsCompl', TauCeti.coe_smulTopRetraction_apply, ← add_smul,
+    hsum, one_smul]
+
+end ProdEquiv
 
 end IsIdempotentElem

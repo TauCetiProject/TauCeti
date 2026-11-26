@@ -13,9 +13,9 @@ public import TauCeti.RingTheory.Idempotents.Module
 # Dual coordinates on a split Hermitian space
 
 For a signed Hermitian form over the exchange involution of `F × F`, the two idempotents
-`(1, 0)` and `(0, 1)` give totally isotropic summands. The first component of the form is
-a perfect pairing from the second summand to the dual of the first. Thus a vector has
-canonical coordinates in `A × Module.Dual F A`, where `A = (1, 0) • V`.
+`(1, 0)` and `(0, 1)` give totally isotropic summands. If `V` is finite-dimensional over
+the field `F`, the first component of the form gives a perfect pairing of the two summands.
+Thus a vector has canonical coordinates in `A × Module.Dual F A`, where `A = (1, 0) • V`.
 
 In these coordinates the signed Hermitian pairing of `(x, ℓ)` and `(y, k)` is
 `(ℓ y, ε • k x)`. A linear automorphism preserves the pairing precisely when it
@@ -34,10 +34,10 @@ open scoped Pointwise
 
 namespace TauCeti.SignedHermitianSpace
 
-variable {F V : Type*} [Field F] [AddCommGroup V] [Module (F × F) V]
-  [Module F V] [IsScalarTower F (F × F) V]
+section CommRing
 
-local notation "σ" => RingEquiv.toRingHom RingEquiv.prodComm
+variable {F V : Type*} [CommRing F] [AddCommGroup V] [Module (F × F) V]
+  [Module F V] [IsScalarTower F (F × F) V]
 
 variable (F V) in
 /-- The first idempotent summand of a module over the split algebra `F × F`. -/
@@ -57,13 +57,9 @@ theorem mem_splitSnd_iff {v : V} : v ∈ splitSnd F V ↔ ((0, 1) : F × F) • 
   IsIdempotentElem.mem_smul_top_iff_smul_eq_self (by
     ext <;> simp)
 
-variable {ε : ℤˣ} (H : SignedHermitianSpace (F × F) V σ ε)
-
-omit [Module F V] [IsScalarTower F (F × F) V] in
-private theorem fst_smul_add_snd_smul (v : V) :
-    ((1, 0) : F × F) • v + ((0, 1) : F × F) • v = v := by
-  have h : ((1, 0) : F × F) + (0, 1) = 1 := by ext <;> simp
-  rw [← add_smul, h, one_smul]
+variable {ε : ℤˣ}
+  (H : SignedHermitianSpace (F × F) V
+    ((RingEquiv.prodComm : F × F ≃+* F × F) : F × F →+* F × F) ε)
 
 omit [Module F V] [IsScalarTower F (F × F) V] in
 private theorem form_fst_smul_idempotents (v w : V) :
@@ -94,6 +90,13 @@ def splitPairing : splitSnd F V →ₗ[F] Dual F (splitFst F V) :=
 theorem splitPairing_apply (v : splitSnd F V) (w : splitFst F V) :
     H.splitPairing v w = (H.form v w).1 := (rfl)
 
+end CommRing
+
+variable {F V : Type*} [Field F] [AddCommGroup V] [Module (F × F) V]
+  [Module F V] [IsScalarTower F (F × F) V] {ε : ℤˣ}
+  (H : SignedHermitianSpace (F × F) V
+    ((RingEquiv.prodComm : F × F ≃+* F × F) : F × F →+* F × F) ε)
+
 /-- The cross pairing of the idempotent summands is perfect. -/
 theorem isPerfPair_splitPairing [Module.Finite F V] : H.splitPairing.IsPerfPair := by
   apply LinearMap.IsPerfPair.of_injective
@@ -103,9 +106,9 @@ theorem isPerfPair_splitPairing [Module.Finite F V] : H.splitPairing.IsPerfPair 
       rw [splitPairing_apply, coe_smulTopRetraction_apply, LinearMap.zero_apply] at hw
       rw [← H.form_fst_smul_idempotents v w, mem_splitSnd_iff.mp v.property]
       exact hw
-    · have hz : ((1, 0) : F × F) • (v : V) = 0 := by
-        conv_lhs => rw [← mem_splitSnd_iff.mp v.property, smul_smul]
-        rw [show ((1, 0) : F × F) * (0, 1) = 0 by ext <;> simp, zero_smul]
+    · have hz : ((1, 0) : F × F) • (v : V) = 0 :=
+        smul_eq_zero_of_mul_eq_zero_of_mem_smul_top
+          (S := F) (e := ((0, 1) : F × F)) (by ext <;> simp) v.property
       rw [H.form_snd_eq_smul_fst, ← H.form_fst_smul_idempotents w v, hz]
       simp
   · refine (injective_iff_map_eq_zero _).2 fun w hw ↦ Subtype.ext (H.separatingRight w fun v ↦ ?_)
@@ -115,50 +118,33 @@ theorem isPerfPair_splitPairing [Module.Finite F V] : H.splitPairing.IsPerfPair 
         LinearMap.zero_apply] at hv
       rw [← H.form_fst_smul_idempotents v w, mem_splitFst_iff.mp w.property]
       exact hv
-    · have hz : ((0, 1) : F × F) • (w : V) = 0 := by
-        conv_lhs => rw [← mem_splitFst_iff.mp w.property, smul_smul]
-        rw [show ((0, 1) : F × F) * (1, 0) = 0 by ext <;> simp, zero_smul]
+    · have hz : ((0, 1) : F × F) • (w : V) = 0 :=
+        smul_eq_zero_of_mul_eq_zero_of_mem_smul_top
+          (S := F) (e := ((1, 0) : F × F)) (by ext <;> simp) w.property
       rw [H.form_snd_eq_smul_fst, ← H.form_fst_smul_idempotents w v, hz, H.form.map_zero]
       simp
-
-private theorem isCompl_splitFst_splitSnd : IsCompl (splitFst F V) (splitSnd F V) := by
-  have h : IsIdempotentElem ((1, 0) : F × F) := by ext <;> simp
-  have h' : 1 - ((1, 0) : F × F) = (0, 1) := by ext <;> simp
-  simpa only [splitFst, splitSnd, ← h'] using h.isCompl_smul_top_one_sub_smul_top (S := F)
-
-private noncomputable def splitSummands : V ≃ₗ[F] splitFst F V × splitSnd F V :=
-  ((splitFst F V).prodEquivOfIsCompl (splitSnd F V) isCompl_splitFst_splitSnd).symm
-
-private theorem splitSummands_apply (v : V) :
-    splitSummands v =
-      (smulTopRetraction (S := F) ((1, 0) : F × F) v,
-        smulTopRetraction (S := F) ((0, 1) : F × F) v) := by
-  apply ((splitFst F V).prodEquivOfIsCompl (splitSnd F V)
-    isCompl_splitFst_splitSnd).symm_apply_eq.2
-  simpa only [Submodule.coe_prodEquivOfIsCompl', coe_smulTopRetraction_apply] using
-    (fst_smul_add_snd_smul v).symm
 
 /-- Canonical coordinates on a split signed Hermitian space. The first coordinate is in the
 first idempotent summand, and the second is a functional on that summand. -/
 noncomputable def splitCoordinates [Module.Finite F V] :
     V ≃ₗ[F] splitFst F V × Dual F (splitFst F V) :=
   letI := H.isPerfPair_splitPairing
-  splitSummands.trans ((LinearEquiv.refl F _).prodCongr H.splitPairing.toPerfPair)
+  have h : IsIdempotentElem ((1, 0) : F × F) := isIdempotentElem_iff.mpr (by ext <;> simp)
+  (h.smulTopProdEquiv (f := (0, 1)) (by ext <;> simp)).trans
+    ((LinearEquiv.refl F _).prodCongr H.splitPairing.toPerfPair)
 
 /-- The vector coordinate is the projection given by the first idempotent. -/
 @[simp]
 theorem splitCoordinates_fst [Module.Finite F V] (v : V) :
     ((H.splitCoordinates v).1 : V) = ((1, 0) : F × F) • v := by
-  rw [splitCoordinates, LinearEquiv.trans_apply, splitSummands_apply, LinearEquiv.prodCongr_apply]
-  simp
+  simp [splitCoordinates, LinearEquiv.prodCongr_apply]
 
 /-- The functional coordinate evaluates by pairing in the first component. -/
 @[simp]
 theorem splitCoordinates_snd_apply [Module.Finite F V] (v : V) (w : splitFst F V) :
     (H.splitCoordinates v).2 w = (H.form v w).1 := by
   rw [← H.form_fst_smul_idempotents v w, mem_splitFst_iff.mp w.property]
-  rw [splitCoordinates, LinearEquiv.trans_apply, splitSummands_apply, LinearEquiv.prodCongr_apply]
-  simp
+  simp [splitCoordinates, LinearEquiv.prodCongr_apply]
 
 /-- The matrix-free formula for the form in its dual coordinates. -/
 theorem form_eq_splitCoordinates [Module.Finite F V] (v w : V) :
@@ -171,6 +157,7 @@ theorem form_eq_splitCoordinates [Module.Finite F V] (v w : V) :
     simp
 
 /-- Split scalars act through the first projection on vectors and the second on functionals. -/
+@[simp]
 theorem splitCoordinates_smul [Module.Finite F V] (a : F × F) (v : V) :
     H.splitCoordinates (a • v) =
       (a.1 • (H.splitCoordinates v).1, a.2 • (H.splitCoordinates v).2) := by
@@ -202,15 +189,6 @@ theorem split_form_bijective [Module.Finite F V] : Function.Bijective H.form := 
     rw [← H.form_fst_smul_idempotents w a, mem_splitFst_iff.mp a.property]
     simpa [f₂, map_smul, smul_eq_mul, smul_smul, Int.units_mul_self] using (congrArg (ε • ·) h)
 
-private def restrictSplitFst (e : V ≃ₗ[F × F] V) : splitFst F V ≃ₗ[F] splitFst F V :=
-  LinearEquiv.ofLinearMap (smulTopMap F ((1, 0) : F × F) e.toLinearMap)
-    (smulTopMap F ((1, 0) : F × F) e.symm.toLinearMap)
-    (by ext x; simp) (by ext x; simp)
-
-private theorem coe_restrictSplitFst_apply (e : V ≃ₗ[F × F] V) (x : splitFst F V) :
-    (restrictSplitFst e x : V) = e x := by
-  exact coe_smulTopMap_apply ((1, 0) : F × F) e.toLinearMap x
-
 variable [Module.Finite F V]
 
 private noncomputable def splitIsometry (g : splitFst F V ≃ₗ[F] splitFst F V) :
@@ -219,7 +197,7 @@ private noncomputable def splitIsometry (g : splitFst F V ≃ₗ[F] splitFst F V
   { e.toAddEquiv with
     map_smul' a v := by
       apply H.splitCoordinates.injective
-      simp [e, splitCoordinates_smul, LinearEquiv.prodCongr_apply] }
+      simp [e, LinearEquiv.prodCongr_apply] }
 
 private theorem splitCoordinates_splitIsometry (g : splitFst F V ≃ₗ[F] splitFst F V) (v : V) :
     H.splitCoordinates (H.splitIsometry g v) =
@@ -233,23 +211,23 @@ private theorem splitIsometry_mem_isometryGroup (g : splitFst F V ≃ₗ[F] spli
   simp [H.splitCoordinates_splitIsometry, LinearEquiv.dualMap_apply]
 
 private theorem splitCoordinates_isometry (e : H.form.isometryGroup) (v : V) :
-    let g := restrictSplitFst (e : V ≃ₗ[F × F] V)
+    let g := (e : V ≃ₗ[F × F] V).smulTopCongr F (1, 0)
     H.splitCoordinates ((e : V ≃ₗ[F × F] V) v) =
       (g ((H.splitCoordinates v).1), g.symm.dualMap ((H.splitCoordinates v).2)) := by
   dsimp
   refine Prod.ext (Subtype.ext ?_) (LinearMap.ext fun w ↦ ?_)
-  · rw [splitCoordinates_fst, coe_restrictSplitFst_apply, splitCoordinates_fst, map_smul]
+  · rw [splitCoordinates_fst, LinearEquiv.coe_smulTopCongr_apply, splitCoordinates_fst, map_smul]
   · simp only [splitCoordinates_snd_apply, LinearEquiv.dualMap_apply]
     have he := H.form.isometryGroup_map_app e v
-      ((restrictSplitFst (e : V ≃ₗ[F × F] V)).symm w)
-    rw [← coe_restrictSplitFst_apply, LinearEquiv.apply_symm_apply] at he
+      (((e : V ≃ₗ[F × F] V).smulTopCongr F (1, 0)).symm w)
+    rw [← LinearEquiv.coe_smulTopCongr_apply, LinearEquiv.apply_symm_apply] at he
     exact congrArg Prod.fst he
 
 /-- The isometry group of a split signed Hermitian form is the general linear group of its first
 idempotent summand. The map restricts an isometry to that summand. -/
 noncomputable def splitIsometryGroupEquiv :
     H.form.isometryGroup ≃* (splitFst F V ≃ₗ[F] splitFst F V) where
-  toFun e := restrictSplitFst (e : V ≃ₗ[F × F] V)
+  toFun e := (e : V ≃ₗ[F × F] V).smulTopCongr F (1, 0)
   invFun g := ⟨H.splitIsometry g, H.splitIsometry_mem_isometryGroup g⟩
   left_inv e := by
     apply Subtype.ext
@@ -265,7 +243,7 @@ noncomputable def splitIsometryGroupEquiv :
     have hx' : (H.splitCoordinates (x : V)).1 = x :=
       Subtype.ext ((H.splitCoordinates_fst x).trans hx)
     apply Subtype.ext
-    rw [coe_restrictSplitFst_apply]
+    rw [LinearEquiv.coe_smulTopCongr_apply]
     have h := congrArg (fun z : splitFst F V × Dual F (splitFst F V) ↦ (z.1 : V))
       (H.splitCoordinates_splitIsometry g (x : V))
     simpa only [splitCoordinates_fst, hx', ← map_smul, hx] using h
@@ -273,17 +251,18 @@ noncomputable def splitIsometryGroupEquiv :
     apply LinearEquiv.ext
     intro x
     apply Subtype.ext
-    simp only [coe_restrictSplitFst_apply, mul_apply_eq_comp]
+    simp only [LinearEquiv.coe_smulTopCongr_apply, mul_apply_eq_comp]
     rfl
 
 /-- The general linear automorphism is the restriction of the isometry to the first summand. -/
 @[simp]
 theorem coe_splitIsometryGroupEquiv_apply (e : H.form.isometryGroup) (x : splitFst F V) :
     (H.splitIsometryGroupEquiv e x : V) = (e : V ≃ₗ[F × F] V) x := by
-  exact coe_restrictSplitFst_apply (e : V ≃ₗ[F × F] V) x
+  exact LinearEquiv.coe_smulTopCongr_apply (e : V ≃ₗ[F × F] V) (1, 0) x
 
 /-- In split coordinates, the inverse of the restriction isomorphism acts by `g` on vectors and
 by the dual of `g.symm` on functionals. -/
+@[simp]
 theorem splitCoordinates_splitIsometryGroupEquiv_symm_apply
     (g : splitFst F V ≃ₗ[F] splitFst F V) (v : V) :
     H.splitCoordinates ((H.splitIsometryGroupEquiv.symm g : V ≃ₗ[F × F] V) v) =
