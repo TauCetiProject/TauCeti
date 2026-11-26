@@ -236,13 +236,32 @@ trivialization it turns the right action into right multiplication
 noncomputable def fiberCoord (b₀ : B) (x : ManifoldTotalSpace G P) : G :=
   (trivializationAt G P b₀ ((ManifoldTotalSpace.homeomorph G P).symm x)).2
 
+omit [Group G] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
+/-- The fibre coordinate of a point transported from the original total space is the second
+component of the trivialization at `b₀`. -/
+@[simp]
+theorem fiberCoord_homeomorph (b₀ : B) (p : TotalSpace G P) :
+    fiberCoord P b₀ (ManifoldTotalSpace.homeomorph G P p) = (trivializationAt G P b₀ p).2 := by
+  rw [fiberCoord, Homeomorph.symm_apply_apply]
+
+omit [Group G] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
+/-- If the base point of `x` lies in the base set of the trivialization at `b₀`, so do the base
+points of all points near `x`. -/
+theorem eventually_mem_baseSet_trivializationAt {b₀ : B} {x : ManifoldTotalSpace G P}
+    (hx : ((ManifoldTotalSpace.homeomorph G P).symm x).proj ∈ (trivializationAt G P b₀).baseSet) :
+    ∀ᶠ y in 𝓝 x,
+      ((ManifoldTotalSpace.homeomorph G P).symm y).proj ∈ (trivializationAt G P b₀).baseSet :=
+  ((FiberBundle.continuous_proj G P).comp
+    (ManifoldTotalSpace.homeomorph G P).symm.continuous).continuousAt.preimage_mem_nhds
+    ((trivializationAt G P b₀).open_baseSet.mem_nhds hx)
+
 /-- Over the base set, the fibre coordinate of `x · g` is the fibre coordinate of `x` times `g`. -/
 theorem fiberCoord_op_smul {b₀ : B} {x : ManifoldTotalSpace G P}
     (hx : ((ManifoldTotalSpace.homeomorph G P).symm x).proj ∈ (trivializationAt G P b₀).baseSet)
     (g : G) : fiberCoord P b₀ (op g • x) = fiberCoord P b₀ x * g := by
   obtain ⟨⟨b, p⟩, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
-  simp only [Homeomorph.symm_apply_apply] at hx
-  simp only [fiberCoord, ManifoldTotalSpace.smul_homeomorph, Homeomorph.symm_apply_apply]
+  rw [Homeomorph.symm_apply_apply] at hx
+  rw [ManifoldTotalSpace.smul_homeomorph, fiberCoord_homeomorph, fiberCoord_homeomorph]
   exact (trivializationAt G P b₀).snd_apply_smul hx p g
 
 omit [Group G] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
@@ -256,9 +275,7 @@ theorem contMDiffAt_fiberCoord [ContMDiffFiberBundle n G P IB IG] {b₀ : B}
   (ManifoldTotalSpace.contMDiffOn_trivialization_snd_comp (trivializationAt G P b₀)
     (s := {y | ((ManifoldTotalSpace.homeomorph G P).symm y).proj ∈
       (trivializationAt G P b₀).baseSet})
-    contMDiffOn_id fun _ hy ↦ hy).contMDiffAt
-    ((ManifoldTotalSpace.contMDiff_proj n G P IB IG).continuous.continuousAt.preimage_mem_nhds
-      ((trivializationAt G P b₀).open_baseSet.mem_nhds hx))
+    contMDiffOn_id fun _ hy ↦ hy).contMDiffAt (eventually_mem_baseSet_trivializationAt hx)
 
 /-- Over the base set, the fibre coordinate intertwines the right action by `g` with right
 multiplication by `g`, also on tangent vectors. -/
@@ -272,15 +289,11 @@ theorem mfderiv_fiberCoord_mfderiv_op_smul [ContMDiffMul IG 1 G]
         (mfderiv (IB.prod IG) IG (fiberCoord P b₀) x v) := by
   have hx' : ((ManifoldTotalSpace.homeomorph G P).symm (op g • x)).proj ∈
       (trivializationAt G P b₀).baseSet := by
-    obtain ⟨⟨b, p⟩, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
-    simpa [ManifoldTotalSpace.smul_homeomorph] using hx
+    rwa [ManifoldTotalSpace.homeomorph_symm_smul]
   -- Near `x`, translating by `g` and then taking the fibre coordinate is right multiplication by
   -- `g` after the fibre coordinate.
   have heq : fiberCoord P b₀ ∘ (fun y ↦ op g • y) =ᶠ[𝓝 x] (· * g) ∘ fiberCoord P b₀ :=
-    Filter.eventually_of_mem
-      ((ManifoldTotalSpace.contMDiff_proj 1 G P IB IG).continuous.continuousAt.preimage_mem_nhds
-        ((trivializationAt G P b₀).open_baseSet.mem_nhds hx))
-      fun y hy ↦ fiberCoord_op_smul hy g
+    (eventually_mem_baseSet_trivializationAt hx).mono fun y hy ↦ fiberCoord_op_smul hy g
   have hcomp : HasMFDerivAt (IB.prod IG) IG (fiberCoord P b₀ ∘ fun y ↦ op g • y) x
       ((mfderiv IG IG (· * g) (fiberCoord P b₀ x)).comp
         (mfderiv (IB.prod IG) IG (fiberCoord P b₀) x)) :=

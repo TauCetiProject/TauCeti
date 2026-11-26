@@ -42,12 +42,12 @@ the glued form is `TauCeti.isSmoothForm_sum_finsupport_smul_mpullback`.
 
 A connection form splits every tangent vector `v` of the total space into the vertical vector
 `A(v)♯` and the horizontal vector `v - A(v)♯`, on which `A` vanishes
-(`TauCeti.PrincipalBundle.IsConnectionForm.apply_sub_rightFundamentalVectorField`), and the only
-vertical vector on which `A` vanishes is zero
+(`TauCeti.PrincipalBundle.IsConnectionForm.apply_sub_rightFundamentalVectorField_eq_zero`), and
+the only vertical vector on which `A` vanishes is zero
 (`TauCeti.PrincipalBundle.IsConnectionForm.apply_rightFundamentalVectorField_eq_zero_iff`). Two
 connection forms agree on vertical vectors
-(`TauCeti.PrincipalBundle.IsConnectionForm.sub_apply_rightFundamentalVectorField`), and their
-affine combinations are connection forms
+(`TauCeti.PrincipalBundle.IsConnectionForm.sub_apply_rightFundamentalVectorField_eq_zero`), and
+their affine combinations are connection forms
 (`TauCeti.PrincipalBundle.IsConnectionForm.smul_add_smul`).
 
 The Lie algebra `GroupLieAlgebra IG G` is the model space `EG` of `G`, which carries the norm, so
@@ -60,8 +60,8 @@ connection forms take values in `EG`, as the Maurer–Cartan form does.
 ## Main results
 
 * `TauCeti.PrincipalBundle.exists_isConnectionForm`: existence of connection forms.
-* `TauCeti.PrincipalBundle.IsConnectionForm.apply_sub_rightFundamentalVectorField`: the
-  horizontal part `v - A(v)♯` of a tangent vector.
+* `TauCeti.PrincipalBundle.IsConnectionForm.apply_sub_rightFundamentalVectorField_eq_zero`:
+  the horizontal part `v - A(v)♯` of a tangent vector.
 * `TauCeti.PrincipalBundle.IsConnectionForm.smul_add_smul`: affine combinations of connection
   forms.
 
@@ -123,7 +123,7 @@ theorem apply_rightFundamentalVectorField_eq_zero_iff (hA : IsConnectionForm A)
 /-- **The horizontal part of a tangent vector.** Subtracting from `v` the fundamental vector field
 of `A(v)`, its vertical part, leaves a horizontal vector, one on which the connection form
 vanishes. -/
-theorem apply_sub_rightFundamentalVectorField (hA : IsConnectionForm A)
+theorem apply_sub_rightFundamentalVectorField_eq_zero (hA : IsConnectionForm A)
     (x : ManifoldTotalSpace G P) (v : TangentSpace (IB.prod IG) x) :
     A.val x ![v - rightFundamentalVectorField (I := IG) (G := G) (IB.prod IG) (A.val x ![v]) x] =
       0 := by
@@ -132,7 +132,7 @@ theorem apply_sub_rightFundamentalVectorField (hA : IsConnectionForm A)
 
 /-- Two connection forms agree on vertical vectors: their difference vanishes on every fundamental
 vector field. -/
-theorem sub_apply_rightFundamentalVectorField (hA : IsConnectionForm A)
+theorem sub_apply_rightFundamentalVectorField_eq_zero (hA : IsConnectionForm A)
     (hA' : IsConnectionForm A') (x : ManifoldTotalSpace G P) (ξ : GroupLieAlgebra IG G) :
     (A - A').val x ![rightFundamentalVectorField (IB.prod IG) ξ x] = 0 := by
   rw [Submodule.coe_sub, Pi.sub_apply, ContinuousAlternatingMap.sub_apply,
@@ -175,7 +175,7 @@ omit [TopologicalSpace B] [TopologicalSpace G] [∀ b, TopologicalSpace (P b)] [
 /-- The right action preserves base points. -/
 private theorem proj_op_smul (g : G) (x : ManifoldTotalSpace G P) :
     proj G P (op g • x) = proj G P x := by
-  simp [proj]
+  rw [proj, ManifoldTotalSpace.homeomorph_symm_smul]
 
 /-- **Existence of connection forms.** A smooth principal bundle over a Hausdorff σ-compact
 finite-dimensional manifold has a connection form. -/
