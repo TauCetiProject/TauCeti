@@ -16,6 +16,16 @@ Hausdorff spaces, its inverse image is already empty after a transition map. No 
 is required. This is the compactness argument used to detect finite-stage relations in inverse
 limits, including spectral limits after passage to constructible topologies.
 
+## Main results
+
+* `TopCat.exists_preimage_eq_empty_of_isLimit`: a closed subset of a stage that misses the image
+  of the limit misses the image of a later stage.
+* `TopCat.exists_range_map_subset_of_isLimit`: an open subset of a stage that contains the image
+  of the limit contains the image of a later stage.
+* `TopCat.exists_comp_map_eq_of_isLimit`: two continuous maps from a stage to a discrete space
+  that agree on the limit agree after a transition map. This is the uniqueness half of
+  `Profinite.exists_locallyConstant`.
+
 ## References
 
 * The Stacks Project, Tag 0A2Y, Lemma 5.24.4.
@@ -77,5 +87,28 @@ theorem exists_preimage_eq_empty_of_isLimit {i : J} {s : Set (F.obj i)} (hs : Is
   have hm : y ∈ c.π.app i ⁻¹' s := hy
   rw [h] at hm
   exact hm
+
+/-- An open subset of a compact Hausdorff stage that contains the image of the limit already
+contains the image of a later stage. The transition maps need not be surjective. -/
+theorem exists_range_map_subset_of_isLimit {i : J} {U : Set (F.obj i)} (hU : IsOpen U)
+    (hU' : range (c.π.app i) ⊆ U) : ∃ (j : J) (f : j ⟶ i), range (F.map f) ⊆ U := by
+  obtain ⟨j, f, hf⟩ := exists_preimage_eq_empty_of_isLimit F c hc hU.isClosed_compl
+    (eq_empty_of_forall_notMem fun x hx ↦ hx (hU' ⟨x, rfl⟩))
+  refine ⟨j, f, range_subset_iff.mpr fun y ↦ ?_⟩
+  by_contra hy
+  exact (eq_empty_iff_forall_notMem.mp hf) y hy
+
+/-- Two continuous maps from a compact Hausdorff stage to a discrete space that agree on the limit
+already agree after a transition map. -/
+theorem exists_comp_map_eq_of_isLimit {A : Type*} [TopologicalSpace A] [DiscreteTopology A]
+    {i : J} {g g' : C(F.obj i, A)} (h : g.comp (c.π.app i).hom = g'.comp (c.π.app i).hom) :
+    ∃ (j : J) (f : j ⟶ i), g.comp (F.map f).hom = g'.comp (F.map f).hom := by
+  obtain ⟨j, f, hf⟩ := exists_preimage_eq_empty_of_isLimit F c hc
+    (s := {y | g y ≠ g' y})
+    ((isClosed_discrete {q : A × A | q.1 ≠ q.2}).preimage (g.continuous.prodMk g'.continuous))
+    (eq_empty_of_forall_notMem fun x hx ↦ hx (DFunLike.congr_fun h x))
+  refine ⟨j, f, ContinuousMap.ext fun y ↦ ?_⟩
+  by_contra hy
+  exact (eq_empty_iff_forall_notMem.mp hf) y hy
 
 end TopCat

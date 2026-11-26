@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 
@@ -78,20 +79,6 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
   {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M] [IsManifold I (⊤ : ℕ∞) M]
   {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {u : ℝ × ℝ → M}
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {e : M → F}
-
-/-- **Translations preserve the energy.** Translating the map and the perturbation data by `v`
-preserves the energy: the energy of the translate over `(· + v) ⁻¹' S` is the energy of the
-original over `S`. -/
-theorem lintegral_floerEnergyDensity_comp_add_right (ω : SmoothTwoForm I M)
-    (Ks Kt : ℝ × ℝ → M → ℝ) (u : ℝ × ℝ → M) (v : ℝ × ℝ) (S : Set (ℝ × ℝ)) :
-    ∫⁻ z in (· + v) ⁻¹' S, ENNReal.ofReal
-        (ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z) =
-      ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) := by
-  have hv : MeasurePreserving (· + v) volume volume :=
-    (measurePreserving_add_right volume v.1).prod (measurePreserving_add_right volume v.2)
-  simp only [floerEnergyDensity_comp_add_right]
-  exact hv.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight v)
-    (fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)) S
 
 omit [IsManifold I (⊤ : ℕ∞) M] in
 /-- A map differentiable on the part `‖w‖ > exp (2πa)` of the plane is differentiable at the image
@@ -186,7 +173,8 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_le (ω : SmoothT
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u z) :=
-  setLIntegral_ofReal_comp_realChart_positive_le fun _ hz ↦
+  positive.setLIntegral_ofReal_comp_realChart_cylindricalEndLift_le measurableSet_Ioi
+    (fun _ hz ↦ exp_lt_norm_realChart_positive hz.1) fun _ hz ↦
     floerEnergyDensity_comp_realChart_positive ω hH hHs (ha.trans hz.1.le)
       (mdifferentiableAt_realChart_positive hu hz.1)
 
@@ -207,9 +195,10 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_le_of_subset
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u z) :=
-  setLIntegral_ofReal_comp_realChart_positive_le_of_subset hs hst fun _ hz ↦
-    floerEnergyDensity_comp_realChart_positive ω hH hHs (ha.trans (hst hz).1.le)
-      (mdifferentiableAt_realChart_positive hu (hst hz).1)
+  (positive.setLIntegral_ofReal_comp_realChart_cylindricalEndLift_eq hs (fun _ hz ↦ (hst hz).2)
+    fun _ hz ↦ floerEnergyDensity_comp_realChart_positive ω hH hHs (ha.trans (hst hz).1.le)
+      (mdifferentiableAt_realChart_positive hu (hst hz).1)).trans_le <|
+    lintegral_mono_set <| image_subset_iff.2 fun _ hz ↦ exp_lt_norm_realChart_positive (hst hz).1
 
 /-- **The energy of a translated end of the positive plane in a manifold.** For `a ≥ 2`, if `u` is
 differentiable on the part `‖w‖ > exp (2πa)` of the positive plane, and the translate `s + (R, 0)`
@@ -273,7 +262,7 @@ private theorem exists_halfCylinder_comp_realChart_positive (ω : SmoothTwoForm 
       ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
         (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) z) ≠ ⊤ := by
   -- Shrink the end to a part `‖w‖ > exp (2πa)` with `a ≥ 2`, where the datum is cylindrical.
-  obtain ⟨a, ha, hsub⟩ := exists_two_le_exp_lt_norm_subset r
+  obtain ⟨a, ha, hsub⟩ := exists_le_exp_lt_norm_subset 2 r
   have hmem {z : ℝ × ℝ} (hz : a < z.1) :
       r < ‖Complex.equivRealProdCLM.symm (realChart positive.cylindricalEndLift z)‖ :=
     hsub (exp_lt_norm_realChart_positive hz)
@@ -281,14 +270,11 @@ private theorem exists_halfCylinder_comp_realChart_positive (ω : SmoothTwoForm 
   refine ⟨a, fun z hz ↦ hmem hz, (hu.mono hsub).comp
       (contDiff_realChart positive.contDiff_cylindricalEndLift).contMDiff.contMDiffOn
       fun z hz ↦ exp_lt_norm_realChart_positive hz.1,
-    fun s _ ↦ ?_, fun z hz ↦ ?_,
+    fun s _ ↦ periodic_comp_realChart_cylindricalEndLift _ u s, fun z hz ↦ ?_,
     ((ω.setLIntegral_floerEnergyDensity_comp_realChart_positive_le hH hHs ha hud).trans_lt
       ((lintegral_mono_set hsub).trans_lt hE.lt_top)).ne⟩
-  · simpa only [comp_apply, comp_def, realChart_positive_mk] using
-      (positive.periodic_cylindricalEndLift (positive.endSign * s)).comp
-        fun w ↦ u (Complex.equivRealProdCLM w)
-  · exact ω.isComplexLinearMap_perturbedMFDeriv_comp_realChart_positive hH hHs (ha.trans hz.1.le)
-      (mdifferentiableAt_realChart_positive hud hz.1) (hfloer _ (hmem hz.1))
+  exact ω.isComplexLinearMap_perturbedMFDeriv_comp_realChart_positive hH hHs (ha.trans hz.1.le)
+    (mdifferentiableAt_realChart_positive hud hz.1) (hfloer _ (hmem hz.1))
 
 namespace IsNondegenerate
 
@@ -337,7 +323,7 @@ private theorem exists_mem_periodicSolutions_tendstoUniformly_positive
       (fun z hz ↦ by
         simpa only [hamiltonianVectorField_const, Pi.zero_apply, sub_zero] using
           (ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ _ _ _).1 (hfloer' z hz)) hE'
-  simp only [comp_apply, realChart_positive_mk] at hconv hpt
+  simp only [comp_apply, TauCeti.Complex.realChart_mk, endSign_positive, one_mul] at hconv hpt ⊢
   exact ⟨x, hx, hxK, φ, hφ, hconv, hpt⟩
 
 /-- **Convergence of the end of the positive plane in a manifold to an isolated orbit.** This is
@@ -398,7 +384,7 @@ private theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_positive
       (ne_top_of_le_ne_top hE'
         (lintegral_mono_set (prod_mono (Ioi_subset_Ioi ha) subset_rfl)))
       (fun z hz ↦ hC z ((le_max_right a b).trans_lt hz.1) hz.2) hiso
-  simp only [comp_apply, realChart_positive_mk] at hconv hpt
+  simp only [comp_apply, TauCeti.Complex.realChart_mk, endSign_positive, one_mul] at hconv hpt ⊢
   exact ⟨x, hx, hxK, hconv, hpt⟩
 
 /-- **The asymptotic orbit at the end of a finite-energy PSS plane in a manifold.** Let `ω` be a
@@ -554,7 +540,8 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_pssPlanePerturbation
         e ∘ u ∘ realChart positive.cylindricalEndLift := by
       funext ⟨s, t⟩
       simpa only [comp_apply, Prod.mk_add_mk, add_zero, ← sub_eq_add_neg,
-        realChart_positive_mk] using congrArg (fun w ↦ e (u (Complex.equivRealProdCLM w)))
+        TauCeti.Complex.realChart_mk, endSign_positive, one_mul] using
+          congrArg (fun w ↦ e (u (Complex.equivRealProdCLM w)))
           ((positive.periodic_cylindricalEndLift (positive.endSign * s)).sub_eq t)
     have h : e ∘ u ∘ realChart positive.cylindricalEndLift =
         fun w ↦ (e ∘ u ∘ realChart negative.cylindricalEndLift) ((-1 : ℝ) • w) := by

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
-public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor.Basic
 
 import Mathlib.CategoryTheory.Adjunction.FullyFaithful
 import Mathlib.LinearAlgebra.TensorProduct.Projective
@@ -143,7 +143,7 @@ theorem projectiveDimension_tensorProduct_le_of_isZero_Tor (M : Type u) [AddComm
     [Module R M]
     (hTor : ∀ i, IsZero (((Tor (ModuleCat.{u} R) (i + 1)).obj (of R M)).obj (of R S))) :
     projectiveDimension (of S (S ⊗[R] M)) ≤ projectiveDimension (of R M) :=
-  projectiveDimension_le_of_hasProjectiveDimensionLT fun _ h ↦
+  projectiveDimension_le_projectiveDimension_iff.2 fun _ h ↦
     hasProjectiveDimensionLT_tensorProduct_of_isZero_Tor S M h fun i _ ↦ hTor i
 
 end TensorProduct
@@ -192,7 +192,7 @@ theorem projectiveDimension_le_restrictScalars (M : ModuleCat.{u} B)
     (hTor : ∀ i, IsZero (((Tor (ModuleCat.{u} A) (i + 1)).obj
       ((restrictScalars f).obj (of B B))).obj ((restrictScalars f).obj (of B B)))) :
     projectiveDimension M ≤ projectiveDimension ((restrictScalars f).obj M) :=
-  projectiveDimension_le_of_hasProjectiveDimensionLT fun _ h ↦
+  projectiveDimension_le_projectiveDimension_iff.2 fun _ h ↦
     hasProjectiveDimensionLT_of_restrictScalars f M h fun i _ ↦ hTor i
 
 end RestrictScalars

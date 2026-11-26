@@ -32,6 +32,14 @@ predicate be applied to inverse-coercive coefficients, with constants depending 
   weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ` solves the normalized equation with datum `λ⁻¹ F`.
 * `TauCeti.PDE.IsUniformlyEllipticAE.exists_uniformlyEllipticOn_energyFormH1_eq_add_divergence`:
   the same for `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, with both data divided by `λ`.
+
+The normalization transfers the drift-free diagonal lower bounds to inverse-coercive `a`, for a
+drift vanishing almost everywhere and almost everywhere bounds on the mass coefficient:
+
+* `TauCeti.PDE.IsUniformlyEllipticAE.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift`:
+  `λ/(P² + 1) ‖u‖²_{H¹} ≤ a(u, u)` when `c ≥ 0`, under a Poincaré inequality `‖u‖ ≤ P ‖∇u‖`;
+* `TauCeti.PDE.IsUniformlyEllipticAE.min_mul_norm_sq_le_energyFormH1_self_of_zero_drift`:
+  `min λ δ ‖u‖²_{H¹} ≤ a(u, u)` when `c ≥ δ`.
 -/
 
 public section
@@ -173,6 +181,79 @@ theorem exists_uniformlyEllipticOn_energyFormH1_eq_add_divergence
   refine ⟨a', h', ha', fun v => ?_⟩
   simp only [heq, hu v, Pi.smul_apply, smul_eq_mul, real_inner_smul_left, mul_assoc,
     integral_const_mul, mul_sub]
+
+/-! ### Diagonal lower bounds without drift -/
+
+variable {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+
+/-- The drift-free energy dominates the Dirichlet energy: `λ ‖∇u‖²_{L²} ≤ a(u, u)` for every
+`u ∈ H¹(Ω)`, under the hypotheses of the two bounds below. -/
+private theorem mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift
+    (h : IsUniformlyEllipticAE mu (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (hb : b =ᵐ[mu.restrict Omega] 0)
+    (hc_nonneg : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ c x) (u : W1p mu Omega 2) :
+    lam * ‖W1p.gradient u‖ ^ 2 ≤ energyFormH1 a b c u u := by
+  -- Normalize `a` to a pointwise uniformly elliptic field `a'` with constant `1` and
+  -- `a'(u, v) = λ⁻¹ a(u, v)`.
+  obtain ⟨a', ha', ha'm, ha'eq⟩ := h.exists_uniformlyEllipticOn_energyFormH1_eq
+    (ratio := Lam / lam) (by rw [div_mul_cancel₀ _ h.pos.ne']) ha
+  have hgrad := ha'.mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift (b := 0) (c := 0)
+    (gamma := 0) ha'm aestronglyMeasurable_const (fun _ _ => rfl) (fun _ _ => by simp)
+    (fun _ _ => le_rfl) u
+  rw [ha'eq, one_mul, ← energyFormH1_congr_ae .rfl hb .rfl u u] at hgrad
+  calc lam * ‖W1p.gradient u‖ ^ 2 ≤ lam * (lam⁻¹ * energyFormH1 a b 0 u u) :=
+        mul_le_mul_of_nonneg_left hgrad h.pos.le
+    _ = energyFormH1 a b 0 u u := mul_inv_cancel_left₀ h.pos.ne' _
+    _ ≤ energyFormH1 a b c u u :=
+        energyFormH1_le_energyFormH1_of_mass_nonneg_ae hcoeff hc hc_nonneg u
+
+/-- **An `H¹`-norm lower bound from a Poincaré inequality, for an inverse-coercive principal
+coefficient.** For a measurable inverse-coercive principal coefficient `a` with lower constant
+`λ`, a drift vanishing almost everywhere on `Ω` and an essentially bounded mass coefficient
+`c ≥ 0` almost everywhere on `Ω`, if `‖u‖_{L²} ≤ P ‖∇u‖_{L²}`, then
+
+`λ/(P² + 1) · ‖u‖²_{H¹} ≤ a(u, u)`. -/
+theorem div_mul_norm_sq_le_energyFormH1_self_of_zero_drift {P : ℝ}
+    (h : IsUniformlyEllipticAE mu (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (hb : b =ᵐ[mu.restrict Omega] 0)
+    (hc_nonneg : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ c x) {u : W1p mu Omega 2}
+    (hu : ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
+    lam / (P ^ 2 + 1) * ‖u‖ ^ 2 ≤ energyFormH1 a b c u u := by
+  have key := h.mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift ha hcoeff hc hb
+    hc_nonneg u
+  simpa using mul_norm_sq_le_of_gradient_sub_value_bound (P := P) (by simpa using h.pos.le)
+    (A := lam) (B := 0) (by simpa using key) hu
+
+/-- **An `H¹`-norm lower bound from a mass floor, for an inverse-coercive principal
+coefficient.** For a measurable inverse-coercive principal coefficient `a` with lower constant
+`λ`, a drift vanishing almost everywhere on `Ω` and an essentially bounded mass coefficient with
+`δ ≤ c` almost everywhere on `Ω`,
+
+`min λ δ · ‖u‖²_{H¹} ≤ a(u, u)`
+
+for every `u ∈ H¹(Ω)`: the ellipticity floor controls the gradient and the mass floor controls
+the value. For `δ > 0` this is coercivity on all of `H¹(Ω)`, with no Poincaré inequality and no
+boundary condition. -/
+theorem min_mul_norm_sq_le_energyFormH1_self_of_zero_drift {delta : ℝ}
+    (h : IsUniformlyEllipticAE mu (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (hb : b =ᵐ[mu.restrict Omega] 0)
+    (hc_lower : ∀ᵐ x ∂mu.restrict Omega, delta ≤ c x) (u : W1p mu Omega 2) :
+    min lam delta * ‖u‖ ^ 2 ≤ energyFormH1 a b c u u := by
+  -- Split off the mass floor: `a(u, u) = a_{c - δ}(u, u) + δ ‖u‖²_{L²}`, where the shifted mass
+  -- `c - δ` is nonnegative almost everywhere, so the shifted form dominates `λ ‖∇u‖²`.
+  have hgrad := h.mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift ha
+    (memLp_energyIntegrand_mass_sub_const hcoeff delta) (hc.sub (memLp_top_const delta)) hb
+    (hc_lower.mono fun x hx => sub_nonneg.2 hx) u
+  rw [energyFormH1_mass_sub_const hcoeff delta, real_inner_self_eq_norm_sq] at hgrad
+  rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
+  nlinarith [min_le_left lam delta, min_le_right lam delta, sq_nonneg ‖W1p.value u‖,
+    sq_nonneg ‖W1p.gradient u‖]
 
 end IsUniformlyEllipticAE
 

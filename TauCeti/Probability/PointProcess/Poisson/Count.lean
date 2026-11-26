@@ -48,12 +48,20 @@ namespace TauCeti.Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {M : Ω → Measure ℝ≥0} {Λ : Measure ℝ≥0} {r : ℝ≥0}
 
+/-- The natural-valued cumulative count path `μ ↦ (t ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊)` is
+measurable for the evaluation σ-algebra on measures over `ℝ≥0` and the product σ-algebra on
+paths. -/
+theorem measurable_nat_count_path :
+    Measurable fun (μ : Measure ℝ≥0) (t : ℝ≥0) ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊ :=
+  measurable_pi_iff.mpr fun _ ↦
+    (Measure.measurable_coe measurableSet_Ioc).ennreal_toNNReal.nat_floor
+
 namespace IsPoissonRandomMeasure
 
 /-- Each natural-valued cumulative count of a Poisson random measure is measurable. -/
 theorem measurable_nat_count (h : IsPoissonRandomMeasure P M Λ) (t : ℝ≥0) :
     Measurable (fun ω ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) :=
-  ((Measure.measurable_coe measurableSet_Ioc).comp h.measurable).ennreal_toNNReal.nat_floor
+  ((measurable_pi_apply t).comp measurable_nat_count_path).comp h.measurable
 
 /-- The natural-valued count on any right-closed temporal interval has Poisson law with
 parameter equal to the intensity of that interval. This includes empty intervals. -/

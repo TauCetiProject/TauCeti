@@ -70,6 +70,20 @@ lemma twistedChainComplexConstantIso_hom_pair_naturality (f : P ⟶ Q) :
       erw [Category.assoc]
       rfl
 
+/-- The inverse of the constant-system comparison on relative chains is natural in maps of pairs:
+the inverse form of `TopPair.twistedChainComplexConstantIso_hom_pair_naturality`. -/
+@[reassoc]
+lemma twistedChainComplexConstantIso_inv_pair_naturality (f : P ⟶ Q) :
+    singularChainComplexMap f M ≫ (Q.twistedChainComplexConstantIso M).inv =
+      (P.twistedChainComplexConstantIso M).inv ≫
+        P.twistedChainComplexCoefficientMap
+          (LocalCoefficientSystem.pullbackConstantIso (Hom.fst f).hom M).inv ≫
+        twistedChainComplexMap f ((LocalCoefficientSystem.constantFunctor Q.fst).obj M) := by
+  rw [Iso.comp_inv_eq, Category.assoc, Category.assoc,
+    twistedChainComplexConstantIso_hom_pair_naturality, ← Category.assoc
+      (twistedChainComplexCoefficientMap _ _), ← twistedChainComplexCoefficientMap_comp,
+    Iso.inv_hom_id, twistedChainComplexCoefficientMap_id, Category.id_comp, Iso.inv_hom_id_assoc]
+
 /-- The constant-system comparison on relative homology is natural in maps of pairs. -/
 @[reassoc]
 lemma twistedHomologyConstantIso_hom_pair_naturality (f : P ⟶ Q) (n : ℕ) :

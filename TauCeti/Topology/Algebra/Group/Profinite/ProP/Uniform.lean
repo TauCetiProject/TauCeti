@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Powerful
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentral.Powerful
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.CohomFp
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Rank
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Torsion
 
 /-!
@@ -26,7 +27,11 @@ The **dimension** of a uniform group `U` is its topological generator rank
 `TauCeti.topologicalGeneratorRankNat U`, the least number `d` of topological generators. In a
 powerful group the commutators are already `p`-th powers, so the closed power subgroup `Uᵖ` is the
 first term `λ_1 = Φ(U)` of the lower `p`-series; hence `[U : Uᵖ] = p ^ d`
-(`TauCeti.IsUniform.index_closedPowerSubgroup`) and `d = log_p [U : Uᵖ]`.
+(`TauCeti.IsUniform.index_closedPowerSubgroup`) and `d = log_p [U : Uᵖ]`. Torsion-freeness makes
+every `p`-power operator `π : gr_k(U) → gr_{k+1}(U)` bijective, so every successive index
+`[λ_k : λ_{k+1}]` of the lower `p`-series is `p ^ d` and `[U : U^{p^k}] = p ^ (d * k)`. Conversely
+a topologically finitely generated powerful pro-`p` group with constant successive indices is
+torsion-free, so the predicate agrees with the definition of uniformity by constant indices.
 
 For commutative groups the notion is classical: a commutative profinite group is uniform exactly
 when it is topologically isomorphic to `ℤ_p ^ d` for some `d`
@@ -44,8 +49,21 @@ By contrast `ℤ/p` is powerful but not uniform, since it has torsion.
   for a topologically finitely generated powerful pro-`p` group, `[G : Gᵖ] = p ^ d(G)`.
 * `TauCeti.IsUniform.topologicalGeneratorRankNat_eq_log_index`: the dimension is
   `log_p [G : Gᵖ]`.
+* `TauCeti.IsPowerful.relIndex_pLowerCentralSeries_le`: in a topologically finitely generated
+  powerful pro-`p` group every successive index `[λ_k : λ_{k+1}]` of the lower `p`-series is at
+  most `p ^ d(G)`.
 * `TauCeti.isUniform_congr`, `TauCeti.IsUniform.prod`: uniformity is invariant under topological
   group isomorphism and stable under binary products.
+* `TauCeti.IsUniform.to_pLowerCentralSeries`, `TauCeti.IsUniform.to_closedPowerSubgroup_pow`: the
+  terms `λ_k = G^{p^k}` of the lower `p`-series of a uniform group are uniform.
+* `TauCeti.IsUniform.gradedPow_bijective`: the `p`-power operator of a uniform group is bijective
+  in every degree.
+* `TauCeti.IsUniform.relIndex_pLowerCentralSeries`, `TauCeti.IsUniform.index_pLowerCentralSeries`,
+  `TauCeti.IsUniform.index_closedPowerSubgroup_pow`: `[λ_k : λ_{k+1}] = p ^ d` and
+  `[G : G^{p^k}] = [G : λ_k] = p ^ (d * k)`.
+* `TauCeti.IsProP.isUniform_iff_isPowerful_and_relIndex_eq`: a topologically finitely generated
+  pro-`p` group is uniform exactly when it is powerful with every `[λ_k : λ_{k+1}]` equal to
+  `[G : λ_1]`.
 * `TauCeti.isUniform_of_subsingleton`: the trivial group is uniform; its dimension is `0` by
   `TauCeti.topologicalGeneratorRankNat_of_subsingleton`.
 * `TauCeti.isUniform_multiplicative_pi_padicInt`, `TauCeti.isUniform_multiplicative_padicInt`:
@@ -61,8 +79,8 @@ By contrast `ℤ/p` is powerful but not uniform, since it has torsion.
 * J. D. Dixon, M. P. F. du Sautoy, A. Mann and D. Segal, *Analytic pro-`p` groups*, second
   edition, Chapter 4. Their Definition 4.1 asks instead for constant indices along the lower
   `p`-series; Theorem 4.5 shows that for finitely generated powerful pro-`p` groups this is
-  equivalent to torsion-freeness, the form used here. That equivalence is not proved in this
-  file.
+  equivalent to torsion-freeness, the form used here
+  (`TauCeti.IsProP.isUniform_iff_isPowerful_and_relIndex_eq`).
 * K. Ardakov and K. A. Brown, *Ring-theoretic properties of Iwasawa algebras: a survey*, §2.3.
 -/
 
@@ -119,6 +137,21 @@ theorem IsUniform.topologicalGeneratorRankNat_eq_log_index (hG : IsUniform p G) 
       Nat.log p (closedPowerSubgroup p G).index := by
   rw [hG.index_closedPowerSubgroup, Nat.log_pow hp.out.one_lt]
 
+/-- **The successive indices of the lower `p`-series of a powerful group are at most `p ^ d`**:
+for a topologically finitely generated powerful pro-`p` group, `[λ_k : λ_{k+1}] ≤ p ^ d` for every
+`k`, where `d` is the topological generator rank. At `k = 0` this is an equality, by
+`TauCeti.IsPowerful.index_closedPowerSubgroup` and
+`TauCeti.IsPowerful.closedPowerSubgroup_eq_pLowerCentralSeries_one`. -/
+theorem IsPowerful.relIndex_pLowerCentralSeries_le (hG : IsPowerful p G) (hP : IsProP p G)
+    (hfg : IsTopologicallyFinitelyGenerated G) (k : ℕ) :
+    (pLowerCentralSeries p G (k + 1)).relIndex (pLowerCentralSeries p G k) ≤
+      p ^ topologicalGeneratorRankNat G hfg := by
+  induction k with
+  | zero =>
+    rw [pLowerCentralSeries_zero, Subgroup.relIndex_top_right,
+      ← hG.closedPowerSubgroup_eq_pLowerCentralSeries_one, hG.index_closedPowerSubgroup hP hfg]
+  | succ k ih => exact (hG.relIndex_pLowerCentralSeries_succ_le hp.out hfg k).trans ih
+
 end Index
 
 section Closure
@@ -162,6 +195,98 @@ theorem isUniform_of_subsingleton [Subsingleton G] : IsUniform p G where
   isPowerful := (isPowerful_iff (p := p)).mpr fun g _ ↦ Subsingleton.elim g 1 ▸ one_mem _
 
 end Closure
+
+section PowerSubgroups
+
+variable [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- **The canonical power subgroups of a uniform group are uniform**: every term
+`λ_k = G^{p^k}` (`TauCeti.IsPowerful.pLowerCentralSeries_eq_closedPowerSubgroup`) of the lower
+`p`-series of a uniform group is uniform. It is open, hence topologically finitely generated, and
+powerful by `TauCeti.IsPowerful.to_pLowerCentralSeries`. -/
+theorem IsUniform.to_pLowerCentralSeries (hG : IsUniform p G) (k : ℕ) :
+    IsUniform p (pLowerCentralSeries p G k) where
+  isProP := hG.isProP.subgroup _
+  isTopologicallyFinitelyGenerated := hG.isTopologicallyFinitelyGenerated.of_openSubgroup
+    ⟨pLowerCentralSeries p G k, hG.isTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries
+      hp.out k⟩
+  isMulTorsionFree :=
+    have := hG.isMulTorsionFree
+    Function.Injective.isMulTorsionFree (pLowerCentralSeries p G k).subtype
+      (pLowerCentralSeries p G k).subtype_injective
+  isPowerful := hG.isPowerful.to_pLowerCentralSeries hp.out hG.isProP
+    hG.isTopologicallyFinitelyGenerated k
+
+/-- **The closed power subgroups `G^{p^n}` of a uniform group are uniform**: they are the terms of
+the lower `p`-series (`TauCeti.IsPowerful.pLowerCentralSeries_eq_closedPowerSubgroup`), which are
+uniform by `TauCeti.IsUniform.to_pLowerCentralSeries`. -/
+theorem IsUniform.to_closedPowerSubgroup_pow (hG : IsUniform p G) (n : ℕ) :
+    IsUniform p (closedPowerSubgroup (p ^ n) G) :=
+  hG.isPowerful.pLowerCentralSeries_eq_closedPowerSubgroup hp.out hG.isProP
+    hG.isTopologicallyFinitelyGenerated n ▸ hG.to_pLowerCentralSeries n
+
+/-! ### Constant indices along the lower `p`-series -/
+
+/-- **The `p`-power operator of a uniform group is bijective**: `π` maps `gr_k(G)` bijectively onto
+`gr_{k+1}(G)` in every degree. -/
+theorem IsUniform.gradedPow_bijective (hG : IsUniform p G) (k : ℕ) :
+    Function.Bijective (gradedPow p G k) :=
+  have := hG.isMulTorsionFree
+  ⟨hG.isPowerful.gradedPow_injective hp.out hG.isProP hG.isTopologicallyFinitelyGenerated k,
+    hG.isPowerful.gradedPow_surjective hp.out
+      (hG.isTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries hp.out _)⟩
+
+/-- **The successive indices of the lower `p`-series of a uniform group are all `p ^ d`**:
+`[λ_k : λ_{k+1}] = p ^ d` for every `k`, where `d` is the dimension. -/
+theorem IsUniform.relIndex_pLowerCentralSeries (hG : IsUniform p G) (k : ℕ) :
+    (pLowerCentralSeries p G (k + 1)).relIndex (pLowerCentralSeries p G k) =
+      p ^ topologicalGeneratorRankNat G hG.isTopologicallyFinitelyGenerated := by
+  induction k with
+  | zero =>
+    rw [pLowerCentralSeries_zero, Subgroup.relIndex_top_right,
+      ← hG.isPowerful.closedPowerSubgroup_eq_pLowerCentralSeries_one, hG.index_closedPowerSubgroup]
+  | succ k ih =>
+    rw [← ih, ← natCard_gradedPiece, ← natCard_gradedPiece]
+    exact (Nat.card_congr (Equiv.ofBijective _ (hG.gradedPow_bijective k))).symm
+
+/-- **The index of `λ_k` in a uniform group** is `p ^ (d * k)`, where `d` is the dimension. -/
+theorem IsUniform.index_pLowerCentralSeries (hG : IsUniform p G) (k : ℕ) :
+    (pLowerCentralSeries p G k).index =
+      p ^ (topologicalGeneratorRankNat G hG.isTopologicallyFinitelyGenerated * k) := by
+  induction k with
+  | zero => rw [pLowerCentralSeries_zero, Subgroup.index_top, mul_zero, pow_zero]
+  | succ k ih =>
+    rw [← Subgroup.relIndex_mul_index (pLowerCentralSeries_succ_le k),
+      hG.relIndex_pLowerCentralSeries, ih, ← pow_add, mul_add_one, add_comm]
+
+/-- **The index of `G^{p^k}` in a uniform group** is `p ^ (d * k)`, where `d` is the dimension:
+`G^{p^k}` is the term `λ_k` of the lower `p`-series. -/
+theorem IsUniform.index_closedPowerSubgroup_pow (hG : IsUniform p G) (k : ℕ) :
+    (closedPowerSubgroup (p ^ k) G).index =
+      p ^ (topologicalGeneratorRankNat G hG.isTopologicallyFinitelyGenerated * k) := by
+  rw [← hG.isPowerful.pLowerCentralSeries_eq_closedPowerSubgroup hp.out hG.isProP
+    hG.isTopologicallyFinitelyGenerated, hG.index_pLowerCentralSeries]
+
+/-- **Uniformity is powerfulness with constant indices along the lower `p`-series**: a
+topologically finitely generated pro-`p` group is uniform exactly when it is powerful and every
+successive index `[λ_k : λ_{k+1}]` equals `[G : λ_1]`. This is the definition of uniform groups
+used by Dixon–du Sautoy–Mann–Segal (Definition 4.1). -/
+theorem IsProP.isUniform_iff_isPowerful_and_relIndex_eq (hP : IsProP p G)
+    (hfg : IsTopologicallyFinitelyGenerated G) :
+    IsUniform p G ↔ IsPowerful p G ∧ ∀ k, (pLowerCentralSeries p G (k + 1)).relIndex
+      (pLowerCentralSeries p G k) = (pLowerCentralSeries p G 1).index := by
+  refine ⟨fun hG ↦ ⟨hG.isPowerful, fun k ↦ ?_⟩, fun ⟨hpow, hidx⟩ ↦ ⟨hP, hfg, ?_, hpow⟩⟩
+  · rw [hG.relIndex_pLowerCentralSeries,
+      ← hG.isPowerful.closedPowerSubgroup_eq_pLowerCentralSeries_one, hG.index_closedPowerSubgroup]
+  · -- Constant indices make the surjections `π` between the finite graded pieces bijective.
+    refine hP.isMulTorsionFree_of_gradedPow_injective hp.out fun k ↦ ?_
+    have := hfg.finite_gradedPiece hp.out k
+    refine ((hpow.gradedPow_surjective hp.out (hfg.isOpen_pLowerCentralSeries hp.out _))
+      |>.bijective_of_nat_card_le ?_).1
+    rw [natCard_gradedPiece, natCard_gradedPiece, hidx, hidx]
+
+end PowerSubgroups
 
 section PadicInt
 

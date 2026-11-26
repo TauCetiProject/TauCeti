@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Algebra.Module.LinearMap.Basic
 public import Mathlib.LinearAlgebra.BilinearMap
-public import TauCeti.Algebra.Group.AddChar
+public import TauCeti.Algebra.Group.AddChar.Basic
 
 /-!
-# The annihilator of an additive subgroup under a character pairing
+# The annihilator of an additive subgroup or submodule under a character pairing
 
 Let `R` be a commutative semiring, `V` and `W` additive groups which are `R`-modules,
 `L : V →ₗ[R] W →ₗ[R] R` a bilinear pairing and `ψ : AddChar R M` an additive character. For an
@@ -24,12 +25,15 @@ field, `ψ` a nontrivial additive character and `L` a nondegenerate pairing, the
 lattice is its dual lattice.
 
 The annihilator is in general not an `R`-submodule: for the real character `x ↦ exp (2πix)` and
-the multiplication pairing on `ℝ`, the annihilator of `ℤ` is `ℤ`. No topology, nontriviality or
+the multiplication pairing on `ℝ`, the annihilator of `ℤ` is `ℤ`. However, when `R` is an
+`S`-algebra and `U` is an `S`-submodule (for instance an `𝒪[K]`-lattice inside a vector space over
+a local field `K`), the annihilator is an `S`-submodule. No topology, nontriviality or
 nondegeneracy enters this file; the codomain `M` of the character is an arbitrary monoid.
 
 ## Main definitions
 
 * `AddSubgroup.characterAnnihilator`: the annihilator of `U` for the pairing `ψ ∘ L`.
+* `Submodule.characterAnnihilator`: the annihilator of an `S`-submodule, as an `S`-submodule.
 
 ## Main results
 
@@ -46,6 +50,12 @@ nondegeneracy enters this file; the codomain `M` of the character is an arbitrar
   `AddSubgroup.le_characterAnnihilator_characterAnnihilator_flip`: the annihilators for `L` and
   for the transposed pairing `L.flip` form a Galois connection, so each subgroup lies in its
   double annihilator.
+* `Submodule.mem_characterAnnihilator`, `Submodule.toAddSubgroup_characterAnnihilator`: the
+  membership criterion for the submodule version, whose underlying additive subgroup is
+  `AddSubgroup.characterAnnihilator`.
+* `Submodule.characterAnnihilator_anti`, `Submodule.le_characterAnnihilator_iff`,
+  `Submodule.le_characterAnnihilator_characterAnnihilator_flip`: antitonicity and the Galois
+  connection for the submodule version.
 -/
 
 public section
@@ -140,3 +150,56 @@ theorem le_characterAnnihilator_characterAnnihilator_flip (U : AddSubgroup V) (�
   le_characterAnnihilator_iff.mp le_rfl
 
 end AddSubgroup
+
+namespace Submodule
+
+variable {S : Type*} [CommRing S] [Algebra S R] [Module S V] [IsScalarTower S R V] [Module S W]
+  [IsScalarTower S R W]
+
+/-- The annihilator `{w | ψ (L u w) = 1 for all u ∈ U}` of an `S`-submodule `U` of `V` for the
+character pairing `(v, w) ↦ ψ (L v w)`, where `R` is an `S`-algebra, as an `S`-submodule of `W`.
+Its underlying additive subgroup is `AddSubgroup.characterAnnihilator`. -/
+def characterAnnihilator (U : Submodule S V) (ψ : AddChar R M) (L : V →ₗ[R] W →ₗ[R] R) :
+    Submodule S W where
+  toAddSubmonoid := (U.toAddSubgroup.characterAnnihilator ψ L).toAddSubmonoid
+  smul_mem' s w hw u hu := by
+    have h : L u (s • w) = L (s • u) w := by
+      rw [← algebraMap_smul R s w, ← algebraMap_smul R s u, map_smul, map_smul,
+        LinearMap.smul_apply]
+    exact h ▸ hw (s • u) (U.smul_mem s hu)
+
+variable {U : Submodule S V} {ψ : AddChar R M} {L : V →ₗ[R] W →ₗ[R] R} {w : W}
+
+@[simp]
+theorem mem_characterAnnihilator :
+    w ∈ U.characterAnnihilator ψ L ↔ ∀ u ∈ U, ψ (L u w) = 1 :=
+  Iff.rfl
+
+@[simp]
+theorem toAddSubgroup_characterAnnihilator :
+    (U.characterAnnihilator ψ L).toAddSubgroup = U.toAddSubgroup.characterAnnihilator ψ L :=
+  AddSubgroup.ext fun _ ↦ Iff.rfl
+
+theorem coe_characterAnnihilator :
+    (U.characterAnnihilator ψ L : Set W) = {w | ∀ u ∈ U, ψ (L u w) = 1} :=
+  Set.ext fun _ ↦ mem_characterAnnihilator
+
+/-- The annihilator is antitone: a larger submodule has a smaller annihilator. -/
+theorem characterAnnihilator_anti {U' : Submodule S V} (h : U ≤ U') :
+    U'.characterAnnihilator ψ L ≤ U.characterAnnihilator ψ L :=
+  fun _ hw u hu ↦ hw u (h hu)
+
+/-- A submodule `A` of `W` lies in the annihilator of `U` for `L` exactly when `U` lies in the
+annihilator of `A` for the transposed pairing `L.flip`. -/
+theorem le_characterAnnihilator_iff {A : Submodule S W} :
+    A ≤ U.characterAnnihilator ψ L ↔ U ≤ A.characterAnnihilator ψ L.flip :=
+  ⟨fun h _ hu _ ha ↦ h ha _ hu, fun h _ ha _ hu ↦ h hu _ ha⟩
+
+/-- Every submodule lies in its double annihilator, taken first for `L` and then for the
+transposed pairing `L.flip`. -/
+theorem le_characterAnnihilator_characterAnnihilator_flip (U : Submodule S V) (ψ : AddChar R M)
+    (L : V →ₗ[R] W →ₗ[R] R) :
+    U ≤ (U.characterAnnihilator ψ L).characterAnnihilator ψ L.flip :=
+  le_characterAnnihilator_iff.mp le_rfl
+
+end Submodule

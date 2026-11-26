@@ -13,6 +13,21 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 Mathlib's transpose equivalence identifies a general linear group with its opposite group.
 This file records that applying the equivalence twice recovers the original invertible matrix, and
 that transposition preserves the positive-determinant subgroup `Matrix.GLPos`.
+
+It also records how an invertible matrix `g` acts by congruence `X ↦ g X gᵀ` on square matrices:
+congruence by `g⁻¹` undoes it, so it is injective, and it intertwines conjugation by `g`, in that
+`(g N g⁻¹) (g C gᵀ) (g N g⁻¹)ᵀ = g (N C Nᵀ) gᵀ`. When `C B = 1`, `g` preserves `C` under
+congruence (`g C gᵀ = C`) exactly when its transpose preserves `B` (`gᵀ B g = B`).
+
+## Main results
+
+* `Matrix.GeneralLinearGroup.inv_congruence_congruence`: congruence by `g⁻¹` undoes congruence
+  by `g`.
+* `Matrix.GeneralLinearGroup.congruence_injective`: congruence by `g` is injective.
+* `Matrix.GeneralLinearGroup.conj_congruence_congruence`: congruence by a conjugate `g N g⁻¹` of
+  a congruate `g C gᵀ` is the congruate of `N C Nᵀ`.
+* `Matrix.GeneralLinearGroup.mul_mul_transpose_eq_iff_transpose_mul_mul_eq`: for `C B = 1`,
+  `g C gᵀ = C` exactly when `gᵀ B g = B`.
 -/
 
 public section
@@ -34,5 +49,61 @@ theorem transposeMulEquiv_mem_glpos [LinearOrder R] [IsStrictOrderedRing R]
     (transposeMulEquiv n g).unop ∈ GLPos n R := by
   rw [mem_glpos, val_det_apply] at hg ⊢
   rwa [coe_unop_transposeMulEquiv, Matrix.det_transpose]
+
+/-- The transpose of `g⁻¹` is a right inverse of the transpose of `g`. -/
+theorem coe_transpose_mul_coe_inv_transpose (g : GL n R) :
+    (g : Matrix n n R)ᵀ * ((g⁻¹ : GL n R) : Matrix n n R)ᵀ = 1 := by
+  rw [← Matrix.transpose_mul, ← Units.val_mul, inv_mul_cancel, Units.val_one, Matrix.transpose_one]
+
+/-- **Congruence by `g⁻¹` undoes congruence by `g`:** `g⁻¹ (g X gᵀ) (g⁻¹)ᵀ = X`. -/
+theorem inv_congruence_congruence (g : GL n R) (X : Matrix n n R) :
+    ((g⁻¹ : GL n R) : Matrix n n R) * ((g : Matrix n n R) * X * (g : Matrix n n R)ᵀ) *
+        ((g⁻¹ : GL n R) : Matrix n n R)ᵀ = X := by
+  simp only [Matrix.mul_assoc, Units.inv_mul_cancel_left, coe_transpose_mul_coe_inv_transpose,
+    Matrix.mul_one]
+
+/-- Congruence `X ↦ g X gᵀ` by an invertible matrix `g` is injective. -/
+theorem congruence_injective (g : GL n R) :
+    Function.Injective fun X : Matrix n n R => (g : Matrix n n R) * X * (g : Matrix n n R)ᵀ :=
+  Function.LeftInverse.injective (g := fun Y => ((g⁻¹ : GL n R) : Matrix n n R) * Y *
+    ((g⁻¹ : GL n R) : Matrix n n R)ᵀ) (inv_congruence_congruence g)
+
+/-- **Congruence intertwines conjugation.** Congruence by the conjugate `g N g⁻¹` of the congruate
+`g C gᵀ` is the congruate of `N C Nᵀ`: `(g N g⁻¹) (g C gᵀ) (g N g⁻¹)ᵀ = g (N C Nᵀ) gᵀ`. -/
+theorem conj_congruence_congruence (g N : GL n R) (C : Matrix n n R) :
+    ((g * N * g⁻¹ : GL n R) : Matrix n n R) * ((g : Matrix n n R) * C * (g : Matrix n n R)ᵀ) *
+        ((g * N * g⁻¹ : GL n R) : Matrix n n R)ᵀ =
+      (g : Matrix n n R) * ((N : Matrix n n R) * C * (N : Matrix n n R)ᵀ) *
+        (g : Matrix n n R)ᵀ := by
+  simp only [Units.val_mul, Matrix.transpose_mul, Matrix.mul_assoc, Units.inv_mul_cancel_left]
+  rw [← Matrix.mul_assoc (g : Matrix n n R)ᵀ, coe_transpose_mul_coe_inv_transpose,
+    Matrix.one_mul]
+
+/-- **Preserving a form versus preserving its inverse.** For `C B = 1`, an invertible matrix `g`
+satisfies `g C gᵀ = C` exactly when `gᵀ B g = B`. -/
+theorem mul_mul_transpose_eq_iff_transpose_mul_mul_eq {B C : Matrix n n R} (hCB : C * B = 1)
+    (g : GL n R) :
+    (g : Matrix n n R) * C * (g : Matrix n n R)ᵀ = C ↔
+      (g : Matrix n n R)ᵀ * B * (g : Matrix n n R) = B := by
+  -- The forward direction, for every invertible matrix and every pair with `C B = 1`.
+  have key (g : GL n R) {B C : Matrix n n R} (hCB : C * B = 1)
+      (h : (g : Matrix n n R) * C * (g : Matrix n n R)ᵀ = C) :
+      (g : Matrix n n R)ᵀ * B * (g : Matrix n n R) = B := by
+    set G := (g : Matrix n n R)
+    -- `(Gᵀ B G) C Gᵀ = Gᵀ B (G C Gᵀ) = Gᵀ B C = Gᵀ`, so `(Gᵀ B G) C = 1` as `Gᵀ` is invertible.
+    have h1 : Gᵀ * B * G * C * Gᵀ = Gᵀ := by
+      rw [Matrix.mul_assoc (Gᵀ * B * G), Matrix.mul_assoc (Gᵀ * B), ← Matrix.mul_assoc G, h,
+        Matrix.mul_assoc, mul_eq_one_comm.mp hCB, Matrix.mul_one]
+    have h2 : Gᵀ * B * G * C = 1 := by
+      calc Gᵀ * B * G * C = Gᵀ * B * G * C * (Gᵀ * ((g⁻¹ : GL n R) : Matrix n n R)ᵀ) := by
+            rw [coe_transpose_mul_coe_inv_transpose, Matrix.mul_one]
+        _ = 1 := by rw [← Matrix.mul_assoc, h1, coe_transpose_mul_coe_inv_transpose]
+    calc Gᵀ * B * G = Gᵀ * B * G * C * B := by rw [Matrix.mul_assoc _ C, hCB, Matrix.mul_one]
+      _ = B := by rw [h2, Matrix.one_mul]
+  -- The reverse direction is the forward one for `gᵀ`, with `B` and `C` exchanged.
+  refine ⟨key g hCB, fun h ↦ ?_⟩
+  have := key (transposeMulEquiv n g).unop (mul_eq_one_comm.mp hCB)
+    (by rwa [coe_unop_transposeMulEquiv, Matrix.transpose_transpose])
+  rwa [coe_unop_transposeMulEquiv, Matrix.transpose_transpose] at this
 
 end Matrix.GeneralLinearGroup

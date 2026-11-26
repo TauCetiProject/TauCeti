@@ -24,6 +24,9 @@ between the two sides of a weak equation.
   coefficients the energy form is that of its principal part plus the `L²` pairing of
   `⟪b, ∇u⟫ + c u` with `v`; `TauCeti.PDE.memLp_inner_gradient` and
   `TauCeti.PDE.memLp_lowerOrder`: `⟪b, ∇u⟫ ∈ L²(Ω)` and `⟪b, ∇u⟫ + c u ∈ L²(Ω)`.
+* `TauCeti.PDE.energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner`: with bounded lower-order
+  coefficients the energy form is that of the operator without drift plus the pairing
+  `∫_Ω ⟪b, ∇u⟫ v`.
 * `TauCeti.PDE.lowerOrderL`: the lower-order part `u ↦ ⟪b, ∇u⟫ + c u` as a bounded operator
   `H¹(Ω) → L²(Ω)`, and `TauCeti.PDE.energyFormH1_eq_principal_add_inner_lowerOrderL`: tested
   against `H¹₀(Ω)`, the energy form is that of its principal part plus the `L²` pairing of
@@ -59,7 +62,6 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
   {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
 
-open scoped InnerProductSpace in
 /-- A bounded drift paired with the gradient of an `H¹` function is square integrable. -/
 theorem memLp_inner_gradient {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     (hb : MemLp b ⊤ (mu.restrict Omega)) (u : W1p mu Omega 2) :
@@ -67,7 +69,6 @@ theorem memLp_inner_gradient {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ �
   MemLp.of_bilin (inner ℝ) 1 hb (Lp.memLp _) continuous_inner
     (.of_forall fun x => by simpa using nnNorm_inner_le_nnNorm (b x) (W1p.gradient u x))
 
-open scoped InnerProductSpace in
 /-- With bounded lower-order coefficients, `⟪b, ∇u⟫ + c u` is square integrable. -/
 theorem memLp_lowerOrder {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     {c : EuclideanSpace ℝ ι → ℝ} (hb : MemLp b ⊤ (mu.restrict Omega))
@@ -75,7 +76,6 @@ theorem memLp_lowerOrder {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     MemLp (fun x => ⟪b x, W1p.gradient u x⟫_ℝ + c x * W1p.value u x) 2 (mu.restrict Omega) :=
   (memLp_inner_gradient hb u).add (hc.fun_mul (Lp.memLp _))
 
-open scoped InnerProductSpace in
 /-- With bounded lower-order coefficients, the forcing `f - ⟪b, ∇u⟫ - c u` of the principal
 equation is square integrable. -/
 private theorem memLp_forcing_principal {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
@@ -86,7 +86,6 @@ private theorem memLp_forcing_principal {b : EuclideanSpace ℝ ι → Euclidean
   ((Lp.memLp f).sub (memLp_lowerOrder hb hc u)).ae_eq
     (.of_forall fun _ => sub_add_eq_sub_sub _ _ _)
 
-open scoped InnerProductSpace in
 /-- **Splitting off the lower-order terms.** With an essentially bounded principal energy density
 and bounded lower-order coefficients, the energy form of `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u` is that of
 its principal part plus the `L²` pairing of `⟪b, ∇u⟫ + c u` with `v`:
@@ -104,8 +103,7 @@ theorem energyFormH1_eq_principal_add_setIntegral {a : EuclideanSpace ℝ ι →
   have hv := Lp.memLp (W1p.value v)
   have hBv : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x)
       (mu.restrict Omega) := (memLp_inner_gradient hb u).integrable_mul hv
-  have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) :=
-    hc.fun_mul (Lp.memLp _)
+  have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) := hc.fun_mul (Lp.memLp _)
   have hCv : Integrable (fun x => (c x * W1p.value u x) * W1p.value v x) (mu.restrict Omega) :=
     hC.integrable_mul hv
   -- The drift and mass densities are integrable, so the energy form splits into its pieces.
@@ -132,7 +130,33 @@ theorem energyFormH1_eq_principal_add_setIntegral {a : EuclideanSpace ℝ ι →
     ← integral_add hBv hCv]
   simp only [add_mul]
 
-open scoped InnerProductSpace in
+/-- **Splitting off the drift.** With an essentially bounded principal energy density and bounded
+lower-order coefficients, the energy form of `-∂ᵢ(aⁱʲ ∂ⱼ·) + bⁱ ∂ᵢ + c` is that of
+`-∂ᵢ(aⁱʲ ∂ⱼ·) + c` plus the drift pairing:
+
+`a_{b,c}(u, v) = a_{0,c}(u, v) + ∫_Ω ⟪b, ∇u⟫ v`. -/
+theorem energyFormH1_eq_energyFormH1_zero_add_setIntegral_inner
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : EuclideanSpace ℝ ι → ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
+    (u v : W1p mu Omega 2) :
+    energyFormH1 a b c u v = energyFormH1 a 0 c u v +
+      ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x ∂mu := by
+  have hv := Lp.memLp (W1p.value v)
+  have hBv : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value v x) (mu.restrict Omega) :=
+    (memLp_inner_gradient hb u).integrable_mul hv
+  have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) := hc.fun_mul (Lp.memLp _)
+  have hCv : Integrable (fun x => c x * W1p.value u x * W1p.value v x) (mu.restrict Omega) :=
+    hC.integrable_mul hv
+  rw [energyFormH1_eq_principal_add_setIntegral ha hb hc,
+    energyFormH1_eq_principal_add_setIntegral ha MemLp.zero hc, add_assoc]
+  congr 1
+  rw [← integral_add (hCv.congr (ae_of_all _ fun x => by simp)) hBv]
+  refine integral_congr_ae (ae_of_all _ fun x => ?_)
+  simp only [Pi.zero_apply, inner_zero_left, zero_add]
+  ring
+
 /-- **Moving the lower-order terms to the right-hand side.** If `u ∈ H¹(Ω)` is a weak solution of
 `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = f` in `Ω`, with an essentially bounded principal energy density,
 bounded lower-order coefficients and `f ∈ L²(Ω)`, then `u` is a weak solution of the principal
@@ -166,7 +190,6 @@ theorem energyFormH1_principal_eq_setIntegral_sub {a : EuclideanSpace ℝ ι →
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
   ring
 
-open scoped InnerProductSpace in
 /-- **Moving the lower-order terms to the left-hand side.** If `u ∈ H¹(Ω)` is a weak solution of
 the principal equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f - ⟪b, ∇u⟫ - c u` in `Ω`, with an essentially bounded
 principal energy density, bounded lower-order coefficients and `f ∈ L²(Ω)`, then `u` is a weak
@@ -197,7 +220,6 @@ theorem energyFormH1_eq_setIntegral_of_principal_eq_sub {a : EuclideanSpace ℝ 
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
   ring
 
-open scoped InnerProductSpace in
 /-- **The size of the forcing of the principal equation.** For `f ∈ L²(Ω)`, `u ∈ H¹(Ω)` and
 essentially bounded `b, c`, the forcing `f - ⟪b, ∇u⟫ - c u` of the principal equation satisfies
 
@@ -221,7 +243,6 @@ theorem eLpNorm_sub_inner_gradient_sub_mul_value_le {b : EuclideanSpace ℝ ι �
   refine (eLpNorm_sub_le one_le_two).trans (add_le_add ((eLpNorm_sub_le one_le_two).trans
     (add_le_add le_rfl (h2.trans_eq (by rw [ENNReal.coe_one, one_mul])))) h3)
 
-open scoped InnerProductSpace in
 /-- A weak equation with an essentially bounded principal energy density and bounded
 lower-order coefficients admits an `L²` forcing `g` for its principal part alone, with
 

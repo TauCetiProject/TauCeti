@@ -6,15 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.InvariantForm.Positive
+public import TauCeti.Algebra.Lie.InvariantForm.RankOne
+public import TauCeti.Algebra.Lie.InvariantForm.RootPlane.Decomposition
 public import TauCeti.Geometry.Lie.Adjoint.InvariantForm
 
 /-!
-# The centre and derived algebra of a compact Lie group
+# The Lie algebra of a compact Lie group
 
 The Lie algebra of a compact finite-dimensional real smooth Lie group is the direct sum
 of its centre and derived ideal. The derived algebra is centreless and semisimple, and
 its Killing form is negative definite. On the whole Lie algebra the Killing form is
-nonpositive, with diagonal zero exactly on the centre. Connectedness is not required.
+nonpositive, with diagonal zero exactly on the centre. Unless it is abelian, the Lie algebra
+contains a copy of `so(3) ≅ 𝔰𝔲(2)`. The Lie algebra also has a root-plane decomposition, for a
+separating invariant form, over an abelian subspace containing a regular element. Connectedness is
+not required.
 
 ## Main results
 
@@ -23,6 +28,8 @@ nonpositive, with diagonal zero exactly on the centre. Connectedness is not requ
   derived ideal.
 * `TauCeti.Lie.isCompl_center_derivedSeries_one_of_compactSpace`: the centre and derived ideal
   complement one another.
+* `TauCeti.Lie.derivedSeries_one_eq_top_iff_center_eq_bot`: the Lie algebra is perfect exactly
+  when its centre is trivial.
 * `TauCeti.Lie.isSemisimple_derivedSeries_one_of_compactSpace`: the derived algebra is semisimple.
 * `TauCeti.Lie.hasCentralRadical_of_compactSpace`: the radical equals the centre.
 * `LeftInvariantDerivation.killingForm_self_nonpos`: the Killing form is nonpositive.
@@ -30,6 +37,11 @@ nonpositive, with diagonal zero exactly on the centre. Connectedness is not requ
   vanishes exactly on the centre.
 * `TauCeti.Lie.killingForm_derivedSeries_one_self_neg_of_compactSpace_of_ne_zero`:
   the derived algebra has negative-definite Killing form.
+* `TauCeti.Lie.exists_injective_lieHom_soThree_of_compactSpace`: a non-abelian Lie algebra of a
+  compact Lie group receives an injective homomorphism from `so(3) ≅ 𝔰𝔲(2)`.
+* `TauCeti.exists_isRootPlaneDecomposition_groupLieAlgebra`: the Lie algebra carries a
+  separating invariant form and a root-plane decomposition, with two-dimensional planes, over an
+  abelian subspace containing a regular element.
 
 ## References
 
@@ -83,6 +95,16 @@ theorem isCompl_center_derivedSeries_one_of_compactSpace :
     exists_posDef_orthogonal_derivedSeries_one_eq_center_of_compactSpace (I := I) (G := G)
   exact B.isCompl_center_derivedSeries_one_of_anisotropic hsymm.isRefl hpos.anisotropic hinv
 
+/-- The Lie algebra of a compact finite-dimensional real smooth Lie group is perfect exactly when
+its centre is trivial. -/
+theorem derivedSeries_one_eq_top_iff_center_eq_bot :
+    derivedSeries ℝ (LeftInvariantDerivation I G) 1 = ⊤ ↔
+      center ℝ (LeftInvariantDerivation I G) = ⊥ := by
+  have h := isCompl_center_derivedSeries_one_of_compactSpace (I := I) (G := G)
+  refine ⟨fun hd ↦ ?_, fun hc ↦ eq_top_of_bot_isCompl (hc ▸ h)⟩
+  have hinf := h.inf_eq_bot
+  rwa [hd, inf_top_eq] at hinf
+
 /-- The derived algebra of the Lie algebra of a compact finite-dimensional real smooth
 Lie group is semisimple. -/
 theorem isSemisimple_derivedSeries_one_of_compactSpace :
@@ -127,5 +149,40 @@ theorem killingForm_derivedSeries_one_self_neg_of_compactSpace_of_ne_zero
   obtain ⟨B, hinv, hsymm, hpos, _⟩ :=
     exists_posDef_orthogonal_derivedSeries_one_eq_center_of_compactSpace (I := I) (G := G)
   exact B.killingForm_derivedSeries_one_self_neg_of_posDef_of_ne_zero hsymm hpos hinv X hX
+
+/-- **A non-abelian Lie algebra of a compact Lie group contains `so(3) ≅ 𝔰𝔲(2)`.** If the Lie
+algebra of a compact finite-dimensional real smooth Lie group is not abelian, it receives an
+injective Lie algebra homomorphism from `so(3)`. -/
+theorem exists_injective_lieHom_soThree_of_compactSpace
+    (hG : ¬IsLieAbelian (LeftInvariantDerivation I G)) :
+    ∃ f : Orthogonal.so (Fin 3) ℝ →ₗ⁅ℝ⁆ LeftInvariantDerivation I G, Function.Injective f := by
+  obtain ⟨B, hinv, hsymm, hpos, _⟩ :=
+    exists_posDef_orthogonal_derivedSeries_one_eq_center_of_compactSpace (I := I) (G := G)
+  exact B.exists_injective_lieHom_soThree hsymm hpos hinv hG
+
+/-- **A root-plane decomposition of the Lie algebra of a compact Lie group.** The Lie algebra `𝔤`
+of a compact Lie group carries a separating invariant form `B` and a root-plane decomposition
+`𝔤 = t + Σ F_k` for `B`, with planes of dimension two, over an abelian subspace `t` containing a
+regular element, at which no root vanishes. -/
+theorem _root_.TauCeti.exists_isRootPlaneDecomposition_groupLieAlgebra :
+    ∃ (B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)) (t : Submodule ℝ (GroupLieAlgebra I G))
+      (r : ℕ) (α : Fin r → Module.Dual ℝ t) (F : Fin r → Submodule ℝ (GroupLieAlgebra I G))
+      (J : (k : Fin r) → Module.End ℝ (F k)),
+      IsRootPlaneDecomposition B t α F J ∧ (∀ k, Module.finrank ℝ (F k) = 2) ∧
+        B.lieInvariant (GroupLieAlgebra I G) ∧ B.SeparatingLeft ∧ ∃ X : t, ∀ k, α k X ≠ 0 := by
+  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := inferInstanceAs (FiniteDimensional ℝ E)
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  -- An `Ad`-invariant inner product, and a maximal abelian subspace for it.
+  obtain ⟨b, hsymm, hpos, hinv⟩ :=
+    exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant (I := I) (G := G)
+  have hB : b.toBilinForm.lieInvariant (GroupLieAlgebra I G) :=
+    lieInvariant_of_adjoint_invariant hinv
+  have hsep : b.toBilinForm.SeparatingLeft := fun x hx ↦ by
+    by_contra h
+    exact (hpos x h).ne' (hx x)
+  obtain ⟨t, r, α, F, J, hD, hF, hX⟩ :=
+    TauCeti.exists_isRootPlaneDecomposition (B := b.toBilinForm)
+      (LinearMap.BilinForm.isSymm_def.2 hsymm) hpos hB
+  exact ⟨b.toBilinForm, t, r, α, F, J, hD, hF, hB, hsep, hX⟩
 
 end TauCeti.Lie

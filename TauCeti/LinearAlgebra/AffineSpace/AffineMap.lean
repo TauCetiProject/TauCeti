@@ -5,15 +5,20 @@ Authors: The Tau Ceti contributors, Codex
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.LinearAlgebra.AffineSpace.AffineMap
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
+import Mathlib.Algebra.Module.LinearMap.Polynomial
+import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
+import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
 
 /-!
 # Affine maps and line maps
 
-Affine-map uniqueness, computations and affine-subspace avoidance for `AffineMap.lineMap`.
+Affine-map uniqueness, computations, polynomial representation, left inverses, and affine-subspace
+avoidance for `AffineMap.lineMap`.
 
 ## Main results
 
@@ -23,8 +28,12 @@ Affine-map uniqueness, computations and affine-subspace avoidance for `AffineMap
   `0`.
 * `AffineMap.apply_eq_add_mul_sub`: an affine function on the line is
   `s ↦ f 0 + s * (f 1 - f 0)`.
+* `AffineMap.exists_mvPolynomial_eval_eq`: every affine map out of a finite-dimensional
+  coordinate space `σ → R` is given coordinatewise by evaluation of polynomials.
 * `AffineMap.lineMap_vsub_lineMap_eq_vsub_add_smul_sub_smul`: the difference of points on two
   segments, at independent parameters, in terms of the endpoints.
+* `AffineMap.exists_leftInvOn_of_injOn`: over a division ring, an affine map injective on an
+  affine subspace has an affine left inverse there.
 
 The affine-subspace avoidance lemmas are adapted from `Mei/Geometry/Affine/Generic.lean`
 at commit `7f1e4c7714fb020473694755ad8748c8f15d0e7f` (Apache 2.0).
@@ -59,6 +68,18 @@ theorem apply_eq_add_mul_sub {k : Type*} [CommRing k] (f : k →ᵃ[k] k) (s : k
   rw [h]
   ring
 
+/-- Every affine map out of a finite-dimensional coordinate space `σ → R` is given coordinatewise
+by evaluation of polynomials. -/
+theorem exists_mvPolynomial_eval_eq {σ τ R : Type*} [CommRing R] [Finite σ]
+    (A : (σ → R) →ᵃ[R] (τ → R)) :
+    ∃ p : τ → MvPolynomial σ R, ∀ x, A x = fun i => MvPolynomial.eval x (p i) := by
+  classical
+  cases nonempty_fintype σ
+  refine ⟨fun i => (LinearMap.toMatrix' A.linear).toMvPolynomial i + MvPolynomial.C (A 0 i),
+    fun x => funext fun i => ?_⟩
+  simp [A.apply_eq_linear_add_apply_zero x, Matrix.toMvPolynomial_eval_eq_apply,
+    LinearMap.toMatrix'_mulVec]
+
 /-- The difference of a point at parameter `s` on the segment `p₀ p₁` and a point at parameter
 `t` on the segment `q₀ q₁`. Unlike `AffineMap.lineMap_vsub_lineMap`, the two parameters may
 differ. -/
@@ -67,6 +88,28 @@ theorem lineMap_vsub_lineMap_eq_vsub_add_smul_sub_smul {k V P : Type*} [Ring k] 
     lineMap p₀ p₁ s -ᵥ lineMap q₀ q₁ t = (p₀ -ᵥ q₀) + s • (p₁ -ᵥ p₀) - t • (q₁ -ᵥ q₀) := by
   rw [lineMap_apply, lineMap_apply, vadd_vsub_vadd_comm]
   abel
+
+/-- Over a division ring, an affine map which is injective on an affine subspace `S` has an affine
+left inverse on `S`. For a continuous affine left inverse on the affine span of a set where the
+original map is injective and has affinely independent image, with the original map's target a
+finite-dimensional normed space, see `AffineMap.exists_leftInvOn_affineSpan`. -/
+theorem exists_leftInvOn_of_injOn {k V₁ P₁ V₂ P₂ : Type*} [DivisionRing k] [AddCommGroup V₁]
+    [Module k V₁] [AddTorsor V₁ P₁] [AddCommGroup V₂] [Module k V₂] [AddTorsor V₂ P₂]
+    (f : P₁ →ᵃ[k] P₂) {S : AffineSubspace k P₁} (hf : Set.InjOn f S) :
+    ∃ g : P₂ →ᵃ[k] P₁, Set.LeftInvOn g f S := by
+  obtain hS | ⟨p₀, hp₀⟩ := (S : Set P₁).eq_empty_or_nonempty
+  · obtain ⟨p⟩ := ‹AddTorsor V₁ P₁›.nonempty
+    exact ⟨const k P₂ p, fun x hx => absurd (hS ▸ hx) (Set.notMem_empty x)⟩
+  have : Nonempty S := ⟨⟨p₀, hp₀⟩⟩
+  -- Use `LinearMap.exists_leftInverse_of_injective` on the direction, then translate back.
+  obtain ⟨g, hg⟩ := (f.linear.domRestrict S.direction).exists_leftInverse_of_injective
+    (LinearMap.ker_eq_bot.2 ((f.comp S.subtype).linear_injective_iff.2 hf.injective))
+  refine ⟨(AffineEquiv.vaddConst k p₀).toAffineMap.comp ((S.direction.subtype ∘ₗ g).toAffineMap.comp
+    (AffineEquiv.vaddConst k (f p₀)).symm.toAffineMap), fun x hx => ?_⟩
+  have key := LinearMap.congr_fun hg ⟨x -ᵥ p₀, S.vsub_mem_direction hx hp₀⟩
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.domRestrict_apply,
+    LinearMap.id_coe, id_eq] at key
+  simp [← linear_apply_vsub, key]
 
 end AffineMap
 

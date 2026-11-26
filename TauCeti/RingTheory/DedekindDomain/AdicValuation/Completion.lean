@@ -43,6 +43,8 @@ Everything here concerns one completion. The comparison of two completions along
   valuation bound `≤ exp (-n)`, identifying the ideal filtration with the valuation filtration.
   `IsDedekindDomain.HeightOneSpectrum.mem_asIdeal_pow_iff_valued_algebraMap_le` is the same
   statement for `v ^ n` and elements of `R`.
+* `IsDedekindDomain.HeightOneSpectrum.under_maximalIdeal_pow_adicCompletionIntegers`: so `𝔪 ^ n`
+  contracts to `v ^ n`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_ne_zero_mem_maximalIdeal_valued_lt`: the maximal
   ideal contains a nonzero element whose valuation is below two prescribed nonzero bounds.
 * `IsDedekindDomain.HeightOneSpectrum.isOpen_setOf_valued_le`: a closed valuation ball of `K_v`
@@ -53,16 +55,27 @@ Everything here concerns one completion. The comparison of two completions along
   (in the same namespace) record this for formal-group points with parameters in `𝔪`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_valued_sub_le`: every element of `𝒪_v` is
   congruent to an element of `R` modulo any power of the maximal ideal, so `R` is dense in `𝒪_v`;
+  `IsDedekindDomain.HeightOneSpectrum.exists_algebraMap_sub_mem_maximalIdeal_pow` states this as
+  membership in `𝔪 ^ n`, and
   `IsDedekindDomain.HeightOneSpectrum.exists_algebraMap_sub_mem_span_singleton` states the same
   approximation modulo any nonzero principal ideal of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.quotientMap_maximalIdeal_pow_bijective`: consequently the
+  maps `R ⧸ v ^ n → 𝒪_v ⧸ 𝔪 ^ n` are bijective.
 * `IsDedekindDomain.HeightOneSpectrum.denseRange_algebraMap_adicCompletionIntegers`: the
   corresponding density statement for the canonical map `R → 𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletionIntegers`: consequently the
   residue field of `v` is the residue field of `𝒪_v`;
   `residueFieldEquivAdicCompletionIntegers_apply_mk` describes that isomorphism on a quotient
-  representative.
+  representative, and `residue_algebraMap_adicCompletionIntegers_surjective` (in the same
+  namespace) states that `R` maps onto the residue field of `𝒪_v`;
+  `residue_algebraMap_adicCompletionIntegers_eq_iff` (in the same namespace) states that two
+  elements of `R` have the same reduction exactly when their difference lies in `v`.
+* `IsDedekindDomain.HeightOneSpectrum.charP_residueField_adicCompletionIntegers`: when `v`
+  contains the prime `p`, the residue field of `𝒪_v` has characteristic `p`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one`:
   an element of `K` of valuation one maps to a unit of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.exists_mem_adicCompletionIntegers_inv_notMem`: `K_v` has a
+  unit in `𝒪_v` whose inverse is not in `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersSubmodule`: `𝒪_v` as an
   `R`-submodule of `K_v`, whose quotient `K_v ⧸ 𝒪_v` is the module of principal parts at `v`.
 
@@ -218,6 +231,18 @@ theorem exists_unit_valued_eq_exp (n : ℤ) :
   obtain ⟨x, hx⟩ := v.valuedAdicCompletion_surjective K (exp n)
   exact ⟨Units.mk0 x fun h ↦ exp_ne_zero (hx.symm.trans (by rw [h, map_zero])), hx⟩
 
+variable (K) in
+/-- The completion `K_v` has a unit `x ∈ 𝒪_v` whose inverse is not in `𝒪_v`, for instance a unit
+of valuation `exp (-1)`. -/
+theorem exists_mem_adicCompletionIntegers_inv_notMem :
+    ∃ x : (v.adicCompletion K)ˣ, (x : v.adicCompletion K) ∈ v.adicCompletionIntegers K ∧
+      ((x⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) ∉ v.adicCompletionIntegers K := by
+  obtain ⟨x, hx⟩ := exists_unit_valued_eq_exp K v (-1)
+  refine ⟨x, ?_, ?_⟩
+  · rw [mem_adicCompletionIntegers, hx]
+    exact exp_le_one_iff.2 (by norm_num)
+  · simp [mem_adicCompletionIntegers, hx]
+
 /-- An irreducible element of the ring of integers of a completion has valuation `exp (-1)`. -/
 theorem valued_algebraMap_eq_exp_neg_one_of_irreducible {π : v.adicCompletionIntegers K}
     (hπ : Irreducible π) :
@@ -304,6 +329,23 @@ theorem mem_asIdeal_pow_iff_valued_algebraMap_le {r : R} {n : ℕ} :
     r ∈ v.asIdeal ^ n ↔ Valued.v (algebraMap R (v.adicCompletion K) r) ≤ exp (-(n : ℤ)) := by
   rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
     valuation_of_algebraMap, intValuation_le_pow_iff_mem]
+
+/-- An element of `R` lies outside `v` exactly when its image in `K_v` has valuation `1`. -/
+theorem notMem_asIdeal_iff_valued_algebraMap_eq_one {r : R} :
+    r ∉ v.asIdeal ↔ Valued.v (algebraMap R (v.adicCompletion K) r) = 1 := by
+  rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
+    valuation_of_algebraMap, intValuation_eq_one_iff]
+
+/-- The `n`-th power of the maximal ideal of `𝒪_v` contracts to `v ^ n`: the ideal filtrations of
+`R` at `v` and of `𝒪_v` are both the valuation filtration. -/
+@[simp]
+theorem under_maximalIdeal_pow_adicCompletionIntegers (n : ℕ) :
+    (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n).under R = v.asIdeal ^ n := by
+  ext r
+  rw [Ideal.under_def, Ideal.mem_comap, mem_maximalIdeal_pow_iff,
+    mem_asIdeal_pow_iff_valued_algebraMap_le (K := K),
+    IsScalarTower.algebraMap_apply R (v.adicCompletionIntegers K) (v.adicCompletion K),
+    ValuationSubring.algebraMap_apply]
 
 /-- The maximal ideal of the ring of integers of an adic completion contains a nonzero element
 whose valuation is below the valuations of `a` and `b`, and below `1`. -/
@@ -481,6 +523,18 @@ theorem exists_valued_sub_le (x : v.adicCompletionIntegers K) (n : ℕ) :
   rw [← sub_add_sub_cancel _ (y : v.adicCompletion K)]
   exact Valuation.map_add_le _ hxy hza
 
+/-- Every element of `𝒪_v` is congruent to the image of an element of `R` modulo any power
+`𝔪 ^ n` of the maximal ideal: `exists_valued_sub_le` stated as ideal membership in `𝒪_v`. -/
+theorem exists_algebraMap_sub_mem_maximalIdeal_pow (x : v.adicCompletionIntegers K) (n : ℕ) :
+    ∃ a : R, algebraMap R (v.adicCompletionIntegers K) a - x ∈
+      IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n := by
+  obtain ⟨a, ha⟩ := v.exists_valued_sub_le (K := K) x n
+  refine ⟨a, ?_⟩
+  rw [IsScalarTower.algebraMap_apply R (v.adicCompletionIntegers K) (v.adicCompletion K),
+    ValuationSubring.algebraMap_apply] at ha
+  rw [mem_maximalIdeal_pow_iff, AddSubgroupClass.coe_sub, Valuation.map_sub_swap]
+  exact ha
+
 /-- Every element of `𝒪_v` is congruent to the image of an element of `R` modulo any nonzero
 element of `𝒪_v`. -/
 theorem exists_algebraMap_sub_mem_span_singleton (x : v.adicCompletionIntegers K)
@@ -488,10 +542,20 @@ theorem exists_algebraMap_sub_mem_span_singleton (x : v.adicCompletionIntegers K
     ∃ a : R, algebraMap R (v.adicCompletionIntegers K) a - x ∈ Ideal.span {y} := by
   obtain ⟨n, hn⟩ := exists_maximalIdeal_pow_eq_of_principal _
     (IsPrincipalIdealRing.principal _) _ (Ideal.span_singleton_eq_bot.not.mpr hy)
-  obtain ⟨a, ha⟩ := v.exists_valued_sub_le (K := K) x n
-  refine ⟨a, ?_⟩
-  rw [hn, v.mem_maximalIdeal_pow_iff, AddSubgroupClass.coe_sub, Valuation.map_sub_swap]
-  exact ha
+  exact hn ▸ v.exists_algebraMap_sub_mem_maximalIdeal_pow x n
+
+/-- The map `R ⧸ v ^ n → 𝒪_v ⧸ 𝔪 ^ n` is bijective: injective by
+`under_maximalIdeal_pow_adicCompletionIntegers`, and surjective because `R` is dense in `𝒪_v`. -/
+theorem quotientMap_maximalIdeal_pow_bijective (n : ℕ) :
+    Function.Bijective (Ideal.quotientMap
+      (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n)
+      (algebraMap R (v.adicCompletionIntegers K))
+      (v.under_maximalIdeal_pow_adicCompletionIntegers (K := K) n).ge) := by
+  refine ⟨Ideal.quotientMap_injective'
+    (v.under_maximalIdeal_pow_adicCompletionIntegers (K := K) n).le, fun y ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
+  obtain ⟨a, ha⟩ := v.exists_algebraMap_sub_mem_maximalIdeal_pow (K := K) x n
+  exact ⟨Ideal.Quotient.mk _ a, Ideal.Quotient.eq.mpr ha⟩
 
 /-- **`R` is dense in the ring of integers of its completion at `v`.** Equivalently, every
 neighbourhood of an element of `𝒪_v` contains the image of an element of `R`. -/
@@ -506,15 +570,9 @@ theorem denseRange_algebraMap_adicCompletionIntegers :
     apply (continuous_const.sub continuous_id).continuousAt.preimage_mem_nhds
     simpa using hU
   obtain ⟨n, hn⟩ := v.exists_maximalIdeal_pow_subset_of_mem_nhds (K := K) hzero
-  obtain ⟨a, ha⟩ := v.exists_valued_sub_le (K := K) x n
+  obtain ⟨a, ha⟩ := v.exists_algebraMap_sub_mem_maximalIdeal_pow (K := K) x n
   refine ⟨⟨algebraMap R (v.adicCompletionIntegers K) a, ⟨a, rfl⟩⟩, ?_⟩
-  have hdiff : x - algebraMap R (v.adicCompletionIntegers K) a ∈
-      IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n := by
-    rw [v.mem_maximalIdeal_pow_iff (K := K)]
-    push_cast [IsScalarTower.algebraMap_apply R (v.adicCompletionIntegers K)
-      (v.adicCompletion K)]
-    exact ha
-  simpa only [Set.mem_preimage, sub_sub_cancel] using hn hdiff
+  simpa only [Set.mem_preimage, sub_sub_cancel] using hn (sub_mem_comm_iff.mp ha)
 
 /-- The residue field of `v` maps isomorphically onto the residue field of the ring of integers of
 the completion at `v`. -/
@@ -552,6 +610,39 @@ theorem residueFieldEquivAdicCompletionIntegers_apply_mk (a : R) :
     v.residueFieldEquivAdicCompletionIntegers (K := K) (Ideal.Quotient.mk v.asIdeal a) =
       Ideal.Quotient.mk (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K))
         (algebraMap R (v.adicCompletionIntegers K) a) := (rfl)
+
+/-- Every element of the residue field of the completion at `v` is the reduction of an element
+of `R`. -/
+theorem residue_algebraMap_adicCompletionIntegers_surjective :
+    Function.Surjective fun a : R ↦ IsLocalRing.residue (v.adicCompletionIntegers K)
+      (algebraMap R (v.adicCompletionIntegers K) a) := by
+  intro y
+  obtain ⟨x, hx⟩ := (v.residueFieldEquivAdicCompletionIntegers (K := K)).surjective y
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+  exact ⟨a, by
+    rw [← hx, residueFieldEquivAdicCompletionIntegers_apply_mk]
+    exact IsLocalRing.residue_def _⟩
+
+/-- The residue field of the completion at a height-one prime `v` containing the prime `p` has
+characteristic `p`. -/
+theorem charP_residueField_adicCompletionIntegers (p : ℕ) [Fact p.Prime]
+    (hp : (p : R) ∈ v.asIdeal) :
+    CharP (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) p := by
+  rw [CharP.charP_iff_prime_eq_zero Fact.out]
+  have : algebraMap R (v.adicCompletionIntegers K) p ∈ IsLocalRing.maximalIdeal _ := by
+    rw [← Ideal.mem_comap, ← Ideal.under_def, under_maximalIdeal_adicCompletionIntegers]
+    exact hp
+  simpa using (IsLocalRing.residue_eq_zero_iff _).2 this
+
+/-- Two elements of `R` have the same reduction in the residue field of the completion at `v`
+exactly when their difference lies in `v`. -/
+theorem residue_algebraMap_adicCompletionIntegers_eq_iff {x y : R} :
+    IsLocalRing.residue (v.adicCompletionIntegers K) (algebraMap R (v.adicCompletionIntegers K) x) =
+        IsLocalRing.residue (v.adicCompletionIntegers K)
+          (algebraMap R (v.adicCompletionIntegers K) y) ↔
+      x - y ∈ v.asIdeal := by
+  rw [← v.under_maximalIdeal_adicCompletionIntegers (K := K), Ideal.under_def, Ideal.mem_comap,
+    map_sub, ← IsLocalRing.residue_eq_zero_iff, map_sub, sub_eq_zero]
 
 end SingleCompletion
 

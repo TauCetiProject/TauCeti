@@ -48,13 +48,19 @@ of operator norm at most `‖B‖` (`ContinuousLinearMap.norm_compLeftContinuous
 `LinearIsometry.norm_compLeftContinuousBounded` says that postcomposition with a linear isometry
 preserves the norm.
 
+`BoundedContinuousFunction.ofContinuousOn` is the bounded continuous function on a set given by
+a function continuous and bounded on that set.
+
 `BoundedContinuousFunction.exists_finite_range_dist_lt` says that on a discrete space every bounded
-real function is a uniform limit of finite-valued bounded functions.
+function to a proper space is a uniform limit of finite-valued bounded functions.
 
 `BoundedContinuousFunction.norm_smul_apply_le` bounds `‖c • f x‖` by `‖c‖ * ‖f‖`.
 
 `BoundedContinuousFunction.norm_norm_smul_one_sub_le_of_nonneg` says that a nonnegative real
 bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`.
+
+`BoundedContinuousFunction.ringInverse_apply` says that the inverse of a unit of the algebra of
+bounded continuous functions with values in a normed division ring is computed pointwise.
 
 `BoundedContinuousFunction.dilate` is the dilation `n ↦ f (n / k)` of a bounded sequence, with
 natural-number division; dilations compose multiplicatively and commute with the pointwise
@@ -172,6 +178,29 @@ theorem continuousAt_of_forall_apply_eq (hG : UniformContinuousOn G s) (hδ : 0 
 
 end PseudoMetricSpace
 
+section OfContinuousOn
+
+variable {α β : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {s : Set α}
+
+/-- The bounded continuous function on a set `s` given by a function continuous on `s` with bounded
+image of `s`. -/
+noncomputable def ofContinuousOn (f : α → β) (hf : ContinuousOn f s)
+    (hb : Bornology.IsBounded (f '' s)) : s →ᵇ β :=
+  ⟨⟨s.domRestrict f, continuousOn_iff_continuous_domRestrict.mp hf⟩,
+    (Metric.isBounded_iff.1 hb).imp fun _ hC x y ↦
+      hC (Set.mem_image_of_mem f x.property) (Set.mem_image_of_mem f y.property)⟩
+
+@[simp]
+theorem coe_ofContinuousOn (f : α → β) (hf : ContinuousOn f s)
+    (hb : Bornology.IsBounded (f '' s)) : ⇑(ofContinuousOn f hf hb) = s.domRestrict f :=
+  (rfl)
+
+theorem ofContinuousOn_apply (f : α → β) (hf : ContinuousOn f s)
+    (hb : Bornology.IsBounded (f '' s)) (x : s) : ofContinuousOn f hf hb x = f x :=
+  (rfl)
+
+end OfContinuousOn
+
 end BoundedContinuousFunction
 
 namespace ContinuousLinearMap
@@ -285,25 +314,22 @@ theorem compContinuousₗᵢ_symm_apply (s : S) (a b : C(α, α)) (hab : ∀ x, 
       (f : α →ᵇ β).compContinuous b :=
   (rfl)
 
-/-- On a discrete space, every bounded real function is a uniform limit of finite-valued
-bounded functions: `δ * ⌊f / δ⌋` is within `δ` of `f`. -/
-theorem exists_finite_range_dist_lt {X : Type*} [TopologicalSpace X] [DiscreteTopology X]
-    (f : X →ᵇ ℝ) {ε : ℝ} (hε : 0 < ε) : ∃ g : X →ᵇ ℝ, (Set.range g).Finite ∧ dist f g < ε := by
-  set δ := ε / 2 with hδ_def
-  have hδ : 0 < δ := half_pos hε
-  have hrange : (Set.range fun x => δ * ⌊f x / δ⌋).Finite := by
-    refine ((Set.finite_Icc ⌊-‖f‖ / δ⌋ ⌊‖f‖ / δ⌋).image fun n : ℤ => δ * n).subset
-      (Set.range_subset_iff.2 fun x => Set.mem_image_of_mem _ ?_)
-    have hx := abs_le.1 (Real.norm_eq_abs (f x) ▸ f.norm_coe_le_norm x)
-    exact ⟨Int.floor_mono (div_le_div_of_nonneg_right hx.1 hδ.le),
-      Int.floor_mono (div_le_div_of_nonneg_right hx.2 hδ.le)⟩
-  refine ⟨mkOfDiscrete _ _ fun x y =>
+/-- On a discrete space, every bounded function to a proper space is a uniform limit of
+finite-valued bounded functions: send each point to a nearby point of a finite net of the
+(totally bounded) range. -/
+theorem exists_finite_range_dist_lt {X E : Type*} [TopologicalSpace X] [DiscreteTopology X]
+    [PseudoMetricSpace E] [ProperSpace E] (f : X →ᵇ E) {ε : ℝ} (hε : 0 < ε) :
+    ∃ g : X →ᵇ E, (Set.range g).Finite ∧ dist f g < ε := by
+  obtain ⟨t, -, ht, hft⟩ := Metric.finite_approx_of_totallyBounded
+    (f.isBounded_range.isCompact_closure.totallyBounded.subset subset_closure) (ε / 2)
+    (half_pos hε)
+  have (x : X) : ∃ y ∈ t, dist (f x) y < ε / 2 := by
+    simpa using hft (Set.mem_range_self x)
+  choose g hgt hg using this
+  have hrange : (Set.range g).Finite := ht.subset (Set.range_subset_iff.2 hgt)
+  exact ⟨mkOfDiscrete g _ fun x y =>
       dist_le_diam_of_mem hrange.isBounded (Set.mem_range_self x) (Set.mem_range_self y),
-    hrange, lt_of_le_of_lt ((f.dist_le hδ.le).2 fun x => ?_) (by linarith)⟩
-  have h : f x - δ * ⌊f x / δ⌋ = δ * Int.fract (f x / δ) := by
-    rw [Int.fract, mul_sub, mul_div_cancel₀ _ hδ.ne']
-  rw [mkOfDiscrete_apply, Real.dist_eq, h, abs_of_nonneg (mul_nonneg hδ.le (Int.fract_nonneg _))]
-  exact mul_le_of_le_one_right hδ.le (Int.fract_lt_one _).le
+    hrange, lt_of_le_of_lt ((f.dist_le (half_pos hε).le).2 fun x => (hg x).le) (by linarith)⟩
 
 /-- A nonnegative real bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`. -/
 theorem norm_norm_smul_one_sub_le_of_nonneg {X : Type*} [TopologicalSpace X] {f : X →ᵇ ℝ}
@@ -316,6 +342,13 @@ theorem norm_norm_smul_one_sub_le_of_nonneg {X : Type*} [TopologicalSpace X] {f 
       Real.norm_eq_abs]
     rw [abs_of_nonneg (by linarith)]
     linarith
+
+/-- The inverse of a unit of the algebra of bounded continuous functions with values in a normed
+division ring is computed pointwise. -/
+theorem ringInverse_apply {α 𝕜 : Type*} [TopologicalSpace α] [NormedDivisionRing 𝕜]
+    {F : α →ᵇ 𝕜} (hF : IsUnit F) (x : α) : Ring.inverse F x = (F x)⁻¹ := by
+  simpa using
+    hF.map_ringInverse ((Pi.evalMonoidHom (fun _ ↦ 𝕜) x).comp (FunLike.coeMonoidHom (α →ᵇ 𝕜) α 𝕜))
 
 section Dilate
 

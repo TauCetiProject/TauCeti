@@ -65,8 +65,9 @@ derivative of the transition across the box with a dilation of the transverse di
   `TauCeti.hasFDerivAt_flowOf_transverseDilationField`: along the axis, the time maps have
   derivative `w ↦ w + (exp (Ψ(s + t) - Ψ(s)) - 1) • (w - ℓ w • u)`.
 * `TauCeti.flowOf_eventuallyEq_transverseDilation_of_eqOn`,
-  `TauCeti.hasFDerivAt_flowOf_of_eqOn_transverseDilationField`: the same time map and derivative
-  for every `C¹` field agreeing with the dilation field near the axis segment.
+  `TauCeti.flowOf_smul_of_eqOn_transverseDilationField`,
+  `TauCeti.hasFDerivAt_flowOf_of_eqOn_transverseDilationField`: the same time map, axis trajectory
+  and derivative for every `C¹` field agreeing with the dilation field near the axis segment.
 * `TauCeti.exists_contDiff_hasFDerivAt_flowOf_add_smul`: a smooth step `Ψ` and a smooth field `Z`
   supported in a slab such that the fields `u + a • Z`, the dilation fields of `s ↦ a * Ψ s`,
   realize every transverse dilation `exp a`.
@@ -271,6 +272,23 @@ theorem hasFDerivAt_flowOf_transverseDilationField (hu : ℓ u = 1) (hΨ : ContD
 
 variable [CompleteSpace E] {W : E → E} {U : Set E}
 
+/-- A `C¹` field agreeing with the transverse dilation field of a `C²` profile on an open set
+containing the axis segment from `s • u` to `(s + t) • u` has, near `(t, s • u)`, the same flow as
+the transverse dilation field. -/
+private theorem eventually_flowOf_eq_transverseDilationField_of_eqOn (hu : ℓ u = 1)
+    (hΨ : ContDiff ℝ 2 Ψ)
+    (hW : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1
+      (fun z : E ↦ (⟨z, W z⟩ : TangentBundle 𝓘(ℝ, E) E)))
+    (hU : IsOpen U) (hWU : EqOn W (transverseDilationField u ℓ Ψ) U) {s t : ℝ}
+    (hsU : ∀ τ ∈ uIcc 0 t, (s + τ) • u ∈ U) :
+    ∀ᶠ y in 𝓝 (t, s • u), y ∈ flowDomain (I := 𝓘(ℝ, E)) W ∧
+      flowOf (I := 𝓘(ℝ, E)) W y.1 y.2 =
+        flowOf (I := 𝓘(ℝ, E)) (transverseDilationField u ℓ Ψ) y.1 y.2 :=
+  eventually_flowOf_eq_of_eqOn (contMDiff_transverseDilationField hΨ) hW hU hWU
+    ((isCompleteVectorField_transverseDilationField hu hΨ).mem_flowDomain t (s • u))
+    fun τ hτ ↦ by
+      simpa [flowOf_transverseDilationField hu hΨ, transverseDilation_smul hu] using hsU τ hτ
+
 /-- **Locality.** Let `W` be a `C¹` field agreeing with the transverse dilation field of a `C²`
 profile on an open set `U` containing the axis segment from `s • u` to `(s + t) • u`. Then near
 `s • u` the time-`t` map of `W` is the explicit map `transverseDilation u ℓ Ψ t`. -/
@@ -280,14 +298,24 @@ theorem flowOf_eventuallyEq_transverseDilation_of_eqOn (hu : ℓ u = 1) (hΨ : C
     (hU : IsOpen U) (hWU : EqOn W (transverseDilationField u ℓ Ψ) U) {s t : ℝ}
     (hsU : ∀ τ ∈ uIcc 0 t, (s + τ) • u ∈ U) :
     flowOf (I := 𝓘(ℝ, E)) W t =ᶠ[𝓝 (s • u)] transverseDilation u ℓ Ψ t := by
-  have hV := isCompleteVectorField_transverseDilationField hu hΨ
-  have h := eventually_flowOf_eq_of_eqOn (I := 𝓘(ℝ, E)) (v := transverseDilationField u ℓ Ψ)
-    (contMDiff_transverseDilationField hΨ) hW hU hWU (hV.mem_flowDomain t (s • u))
-    fun τ hτ ↦ by
-      simpa [flowOf_transverseDilationField hu hΨ, transverseDilation_smul hu] using hsU τ hτ
+  have h := eventually_flowOf_eq_transverseDilationField_of_eqOn hu hΨ hW hU hWU hsU
   filter_upwards [((continuous_const.prodMk continuous_id).tendsto (s • u)).eventually h]
     with z hz
   exact hz.2.trans (flowOf_transverseDilationField hu hΨ t z)
+
+/-- **The axis under locality.** A `C¹` field agreeing with the transverse dilation field of a
+`C²` profile on an open set containing the axis segment from `s • u` to `(s + t) • u` has its flow
+defined at `(t, s • u)`, and carries `s • u` to `(s + t) • u` at time `t`. -/
+theorem flowOf_smul_of_eqOn_transverseDilationField (hu : ℓ u = 1) (hΨ : ContDiff ℝ 2 Ψ)
+    (hW : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1
+      (fun z : E ↦ (⟨z, W z⟩ : TangentBundle 𝓘(ℝ, E) E)))
+    (hU : IsOpen U) (hWU : EqOn W (transverseDilationField u ℓ Ψ) U) {s t : ℝ}
+    (hsU : ∀ τ ∈ uIcc 0 t, (s + τ) • u ∈ U) :
+    (t, s • u) ∈ flowDomain (I := 𝓘(ℝ, E)) W ∧
+      flowOf (I := 𝓘(ℝ, E)) W t (s • u) = (s + t) • u := by
+  obtain ⟨hdom, heq⟩ :=
+    (eventually_flowOf_eq_transverseDilationField_of_eqOn hu hΨ hW hU hWU hsU).self_of_nhds
+  exact ⟨hdom, heq.trans (by rw [flowOf_transverseDilationField hu hΨ, transverseDilation_smul hu])⟩
 
 /-- **The derivative under locality.** A `C¹` field agreeing with the transverse dilation field of
 a `C²` profile on an open set containing the axis segment from `s • u` to `(s + t) • u` has a
@@ -322,7 +350,7 @@ theorem exists_contDiff_hasFDerivAt_flowOf_add_smul (hu : ℓ u = 1) {s₀ s₁ 
           flowOf (I := 𝓘(ℝ, E)) (fun z ↦ u + a • Z z) (s₁ - s₀) (s₀ • u) = s₁ • u ∧
           HasFDerivAt (flowOf (I := 𝓘(ℝ, E)) (fun z ↦ u + a • Z z) (s₁ - s₀))
             (1 + (Real.exp a - 1) • (1 - ℓ.smulRight u)) (s₀ • u) := by
-  obtain ⟨Ψ, hΨ, hΨ₀, hΨ₁, hΨ'⟩ := exists_contDiff_step h
+  obtain ⟨Ψ, hΨ, -, hΨ₀, hΨ₁, -, hΨ'⟩ := exists_contDiff_step h
   refine ⟨Ψ, hΨ, hΨ₀, hΨ₁, hΨ', fun z ↦ transverseDilationField u ℓ Ψ z - u,
     (contDiff_transverseDilationField (hΨ.of_le (by simp))).sub contDiff_const,
     fun z hz ↦ by simp [transverseDilationField_eq_of_deriv_eq_zero (hΨ' _ hz)],

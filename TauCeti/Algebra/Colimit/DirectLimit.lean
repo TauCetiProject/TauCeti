@@ -6,17 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.DirectLimit
-public import Mathlib.Algebra.Category.Ring.Colimits
-public import Mathlib.Algebra.Category.Ring.FilteredColimits
-public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 public import Mathlib.Data.Set.Finite.Lattice
 
 /-!
-# Directed colimits of monoids and algebras
+# Directed colimits of monoids, rings and algebras
 
 Basic API for Mathlib's generic `DirectLimit G f` of a directed system of monoids or groups `G i`
-with monoid homomorphisms as transition maps, and of a directed system of `A`-algebras with
-`A`-algebra transition maps.
+with monoid homomorphisms as transition maps, of a directed system of rings with ring
+homomorphisms as transition maps, and of a directed system of `A`-algebras with `A`-algebra
+transition maps.
 
 Mathlib equips `DirectLimit G f` with its monoid and group structures and bundles the canonical
 maps from the components as linear maps and ring homomorphisms. Here they are bundled as monoid
@@ -40,7 +38,11 @@ many elements at a time pass to direct limits.
   in the image of a single component.
 * `TauCeti.DirectLimit.Algebra.of_comp_f`: the canonical maps into a direct limit of algebras are
   compatible with the transition maps. This is the algebra version of
-  `Ring.DirectLimit.of_comp_f` in `TauCeti/Algebra/Colimit/Ring.lean`.
+  `TauCeti.Ring.DirectLimit.of_comp_f` in `TauCeti/Algebra/Colimit/Ring/Basic.lean`.
+* `TauCeti.DirectLimit.Ring.of_comp_f`: the same compatibility for Mathlib's generic direct limit
+  of rings, with canonical maps `DirectLimit.Ring.of`.
+* `TauCeti.DirectedSystem.ringHom_self`, `TauCeti.DirectedSystem.ringHom_comp`: the axioms of a
+  directed system of ring homomorphisms, stated as equalities of ring homomorphisms.
 -/
 
 public section
@@ -131,80 +133,31 @@ theorem of_comp_f {i j : ι} (hij : i ≤ j) : (of B f j).comp (f i j hij) = of 
 
 end DirectLimit.Algebra
 
+section Ring
+
+variable {ι : Type*} [Preorder ι] {G : ι → Type*} [∀ i, NonAssocSemiring (G i)]
+  {f : ∀ i j, i ≤ j → G i →+* G j} [DirectedSystem G (f · · ·)]
+
+variable (f) in
+/-- The transition map of a directed system of ring homomorphisms from a stage to itself is the
+identity. -/
+theorem DirectedSystem.ringHom_self (i : ι) : f i i le_rfl = RingHom.id (G i) :=
+  RingHom.ext fun x ↦ _root_.DirectedSystem.map_self' f x
+
+/-- The transition maps of a directed system of ring homomorphisms compose. -/
+theorem DirectedSystem.ringHom_comp {i j k : ι} (hij : i ≤ j) (hjk : j ≤ k) :
+    (f j k hjk).comp (f i j hij) = f i k (hij.trans hjk) :=
+  RingHom.ext fun x ↦ _root_.DirectedSystem.map_map' f hij hjk x
+
+variable [IsDirectedOrder ι] [Nonempty ι]
+
+open _root_.DirectLimit.Ring in
+/-- The canonical maps into a direct limit of rings are compatible with the transition maps. -/
+@[simp]
+theorem DirectLimit.Ring.of_comp_f {i j : ι} (hij : i ≤ j) :
+    (of G f j).comp (f i j hij) = of G f i :=
+  RingHom.ext fun _ ↦ of_f _ _
+
+end Ring
+
 end TauCeti
-
-open CategoryTheory CategoryTheory.Limits
-
-namespace CategoryTheory.Functor
-
-universe u
-
-/-- The direct limit of the tail above a chosen stage is its categorical ring colimit,
-as an algebra over that stage. -/
-theorem exists_directLimit_tail_algEquiv_colimit
-    {I : Type u} [Preorder I] [IsDirected I (· ≤ ·)]
-    (F : I ⥤ CommRingCat.{u}) (i₀ : I) :
-    let J := {i : I // i₀ ≤ i}
-    letI : Nonempty J := ⟨⟨i₀, le_rfl⟩⟩
-    letI : IsDirectedOrder J := ⟨fun i j ↦ by
-      obtain ⟨k, hik, hjk⟩ := exists_ge_ge i.val j.val
-      exact ⟨⟨k, i.property.trans hik⟩, hik, hjk⟩⟩
-    letI : ∀ j : J, Algebra (F.obj i₀) (F.obj j.val) :=
-      fun j ↦ (F.map (homOfLE j.property)).hom.toAlgebra
-    letI : Algebra (F.obj i₀) (colimit F : CommRingCat.{u}) :=
-      (colimit.ι F i₀).hom.toAlgebra
-    ∃ (f : ∀ i j : J, i ≤ j → F.obj i.val →ₐ[F.obj i₀] F.obj j.val)
-      (hf : DirectedSystem (fun j : J ↦ F.obj j.val) (f · · ·)),
-      letI := hf
-      Nonempty (DirectLimit (fun j : J ↦ F.obj j.val) f ≃ₐ[F.obj i₀]
-        (colimit F : CommRingCat.{u})) := by
-  classical
-  have : Nonempty I := ⟨i₀⟩
-  let S := F.obj i₀
-  let R := colimit F
-  let : Algebra S R := (colimit.ι F i₀).hom.toAlgebra
-  let J := {i : I // i₀ ≤ i}
-  let : Nonempty J := ⟨⟨i₀, le_rfl⟩⟩
-  let : IsDirectedOrder J := ⟨fun i j ↦ by
-    obtain ⟨k, hik, hjk⟩ := exists_ge_ge i.val j.val
-    exact ⟨⟨k, i.property.trans hik⟩, hik, hjk⟩⟩
-  let T : J → Type u := fun j ↦ F.obj j.val
-  let : ∀ j, CommRing (T j) := fun j ↦ inferInstance
-  let : ∀ j, Algebra S (T j) := fun j ↦ (F.map (homOfLE j.property)).hom.toAlgebra
-  let trans (i j : J) (h : i ≤ j) : T i →ₐ[S] T j :=
-    { (F.map (homOfLE h)).hom with
-      commutes' := fun a ↦ congrArg (fun f : F.obj i₀ ⟶ F.obj j.val ↦ f a)
-        (F.map_comp (homOfLE i.property) (homOfLE h)).symm }
-  let incl (j : J) : T j →ₐ[S] R :=
-    { (colimit.ι F j.val).hom with
-      commutes' := fun a ↦ congrArg (fun f : F.obj i₀ ⟶ colimit F ↦ f a)
-        (colimit.w F (homOfLE j.property)) }
-  have : DirectedSystem T (trans · · ·) :=
-    { map_self := fun i a ↦ by
-        -- Expose the functor map defining this DirectLimit transition.
-        change F.map (homOfLE (le_refl i.val)) a = a
-        simp
-      map_map := fun _ _ _ hij hjk a ↦ by
-        exact (ConcreteCategory.congr_hom
-          (F.map_comp (homOfLE hij) (homOfLE hjk)) a).symm }
-  let g : DirectLimit T trans →ₐ[S] R :=
-    DirectLimit.Algebra.lift T trans R incl fun i j h a ↦
-      ConcreteCategory.congr_hom (colimit.w F (homOfLE h)) a
-  refine ⟨trans, inferInstance, ⟨AlgEquiv.ofBijective g ⟨?_, ?_⟩⟩⟩
-  · intro x y hxy
-    obtain ⟨i, a, rfl⟩ := DirectLimit.exists_eq_mk _ x
-    obtain ⟨j, b, rfl⟩ := DirectLimit.exists_eq_mk _ y
-    -- Expose the defining lift on representatives for the colimit equality criterion.
-    change colimit.ι F i.val a = colimit.ι F j.val b at hxy
-    obtain ⟨k, u, v, he⟩ := Concrete.colimit_exists_of_rep_eq F a b hxy
-    exact Quotient.sound ⟨⟨k, i.property.trans (leOfHom u)⟩, leOfHom u, leOfHom v, he⟩
-  · intro r
-    obtain ⟨i, a, ha⟩ := Concrete.colimit_exists_rep F r
-    obtain ⟨j, h₀j, hij⟩ := exists_ge_ge i₀ i
-    refine ⟨DirectLimit.Algebra.of T trans ⟨j, h₀j⟩ (F.map (homOfLE hij) a), ?_⟩
-    -- Expose the lift on this representative for colimit naturality.
-    change colimit.ι F j (F.map (homOfLE hij) a) = r
-    exact (ConcreteCategory.congr_hom (colimit.w F (homOfLE hij)) a).trans ha
-
-
-end CategoryTheory.Functor

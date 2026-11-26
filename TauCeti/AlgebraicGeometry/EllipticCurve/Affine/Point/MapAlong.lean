@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
-public import TauCeti.Algebra.Module.Torsion.Snake
+public import TauCeti.Algebra.Module.Torsion.Map
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!

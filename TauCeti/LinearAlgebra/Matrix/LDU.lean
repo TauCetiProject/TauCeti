@@ -49,10 +49,14 @@ how membership in the big cell is read off a Bruhat normal form.
 * `Matrix.BlockUnitriangular.det_eq_one`, `Matrix.BlockUnitriangular.mul` and
   `Matrix.BlockUnitriangular.inv`: block unitriangular matrices have determinant one and are
   closed under products and inverses.
+* `Matrix.BlockUnitriangular.mul_apply_of_covBy`: one step above the diagonal blocks, a product
+  of block unitriangular matrices has the sum of the entries of its factors.
 * `Matrix.mul_eq_of_blockUnitriangular_toDual`: a block diagonal matrix multiplied on the left by
   a block lower unitriangular matrix is unchanged once the product is block upper triangular.
 * `Matrix.det_toSquareBlockProp_blockLDU`: the leading block minors of `L * D * U` are those of
   `D`.
+* `Matrix.det_submatrix_castLE_mul_mul`: for `Fin n`-indexed matrices, the leading principal
+  minors of `L * M * U` are those of `M` for lower unitriangular `L` and upper unitriangular `U`.
 * `Matrix.exists_blockUnitriangular_mul_blockTriangular`: block row reduction.
 * `Matrix.exists_blockLDU`: a block `LDU` factorization exists when the leading blocks on the
   strict initial segments have unit determinants.
@@ -153,6 +157,24 @@ theorem blockUnitriangular_transpose_iff :
 
 end Defs
 
+section Star
+
+variable [NonAssocSemiring R] [StarRing R] [LT α] {M : Matrix m m R} {b : m → α}
+
+/-- The conjugate transpose of a block unitriangular matrix is block unitriangular for the
+reversed ranking: conjugate transposition exchanges block upper and block lower unitriangular
+matrices. -/
+theorem BlockUnitriangular.conjTranspose (h : M.BlockUnitriangular b) :
+    Mᴴ.BlockUnitriangular (toDual ∘ b) := by
+  refine ⟨fun i j hij => ?_, fun i j hij => ?_⟩
+  · rw [conjTranspose_apply, h.blockTriangular (toDual_lt_toDual.mp hij), star_zero]
+  · rw [conjTranspose_apply, h.apply_of_eq (toDual_inj.mp hij).symm]
+    by_cases hji : j = i
+    · rw [hji, one_apply_eq, star_one]
+    · rw [one_apply_ne hji, one_apply_ne (Ne.symm hji), star_zero]
+
+end Star
+
 section Mul
 
 variable [Fintype m] [NonAssocSemiring R] [LinearOrder α] {A B : Matrix m m R} {b : m → α}
@@ -177,6 +199,22 @@ theorem BlockUnitriangular.mul_apply_of_eq (hA : A.BlockUnitriangular b)
 theorem BlockUnitriangular.mul (hA : A.BlockUnitriangular b) (hB : B.BlockUnitriangular b) :
     (A * B).BlockUnitriangular b :=
   ⟨hA.1.mul hB.1, fun _ _ hij => (hA.mul_apply_of_eq hB.1 hij).trans (hB.2 hij)⟩
+
+/-- One step above the diagonal blocks, the entries of a product of block unitriangular matrices
+are the sums of the entries of the factors: such an entry only meets the identity diagonal blocks
+of the two factors. -/
+theorem BlockUnitriangular.mul_apply_of_covBy (hA : A.BlockUnitriangular b)
+    (hB : B.BlockUnitriangular b) {i j : m} (hij : b i ⋖ b j) :
+    (A * B) i j = A i j + B i j := by
+  rw [Matrix.mul_apply, Fintype.sum_eq_add i j fun h => hij.ne (congrArg b h)]
+  · simp [hA.apply_of_eq rfl, hB.apply_of_eq rfl, add_comm]
+  · rintro k ⟨hki, hkj⟩
+    rcases lt_trichotomy (b k) (b i) with hk | hk | hk
+    · rw [hA.1 hk, zero_mul]
+    · rw [hA.2 hk.symm, one_apply_ne (Ne.symm hki), zero_mul]
+    · rcases (not_lt.mp (hij.2 hk)).lt_or_eq with hjk | hjk
+      · rw [hB.1 hjk, mul_zero]
+      · rw [hB.2 hjk.symm, one_apply_ne hkj, mul_zero]
 
 /-- A block diagonal matrix `D`, multiplied on the left by a block lower unitriangular matrix, is
 unchanged as soon as the product is block upper triangular. -/
@@ -355,6 +393,27 @@ theorem det_toSquareBlockProp_blockLDU {L D U : Matrix m m R}
     ((L * D * U).toSquareBlockProp p).det = (D.toSquareBlockProp p).det := by
   rw [hU.1.toSquareBlockProp_mul hp, hL.1.toSquareBlockProp_mul_of_toDual hp, det_mul, det_mul,
     (hL.toSquareBlockProp p).det_eq_one, (hU.toSquareBlockProp p).det_eq_one, one_mul, mul_one]
+
+/-- The leading principal submatrix of order `l` of a matrix indexed by `Fin n` is its square
+block on the indices below `l`, up to reindexing. -/
+theorem det_submatrix_castLE_eq_det_toSquareBlockProp {n l : ℕ} (M : Matrix (Fin n) (Fin n) R)
+    (h : l ≤ n) :
+    (M.submatrix (Fin.castLE h) (Fin.castLE h)).det =
+      (M.toSquareBlockProp fun j => (j : ℕ) < l).det := by
+  rw [← det_submatrix_equiv_self (Fin.castLEquiv h)]
+  refine congrArg det (ext fun i j => ?_)
+  simp [toSquareBlockProp_def]
+
+/-- **Leading principal minors of `L * M * U`.** For a lower unitriangular `L` and an upper
+unitriangular `U`, the leading principal minors of `L * M * U` are those of `M`. -/
+theorem det_submatrix_castLE_mul_mul {n l : ℕ} {L M U : Matrix (Fin n) (Fin n) R}
+    (hL : L.BlockUnitriangular toDual) (hU : U.BlockUnitriangular id) (h : l ≤ n) :
+    ((L * M * U).submatrix (Fin.castLE h) (Fin.castLE h)).det =
+      (M.submatrix (Fin.castLE h) (Fin.castLE h)).det := by
+  rw [det_submatrix_castLE_eq_det_toSquareBlockProp _ h,
+    det_submatrix_castLE_eq_det_toSquareBlockProp _ h]
+  exact det_toSquareBlockProp_blockLDU (b := id) hL hU fun i j hji hi =>
+    (Fin.le_iff_val_le_val.1 hji).trans_lt hi
 
 /-- **Block `LDU` factorization and leading block minors.** A square matrix has a block `LDU`
 factorization with invertible middle factor if and only if each of its leading block minors, the

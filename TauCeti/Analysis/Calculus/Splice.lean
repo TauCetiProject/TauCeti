@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.Analysis.Normed.Operator.Prod
-public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+public import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic
 public import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.Convex.Prod
 

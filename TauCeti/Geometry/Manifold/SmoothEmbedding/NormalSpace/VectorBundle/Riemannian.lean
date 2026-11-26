@@ -61,7 +61,7 @@ theorem contMDiff_normalRepresentative_normalClass
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
-        (⟨f p.proj, f.normalRepresentative p.proj hn (f.normalClass p.proj hn p.snd)⟩ :
+        (⟨f p.proj, f.normalRepresentative p.proj hn (f.isImmersion.normalClass p.proj hn p.snd)⟩ :
           TangentBundle J N)) := by
   have hlift : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (Pullback.lift (f : M → N)) :=
@@ -83,7 +83,7 @@ theorem contMDiff_normalRepresentative
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, V)) m
-      (fun p : TotalSpace P (fun x => f.NormalSpace x hn) =>
+      (fun p : TotalSpace P (fun x => f.isImmersion.NormalSpace x hn) =>
         (⟨f p.proj, f.normalRepresentative p.proj hn p.snd⟩ : TangentBundle J N)) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   exact f.contMDiff_normalBundle_of_contMDiff_normalClass hn hm hdim

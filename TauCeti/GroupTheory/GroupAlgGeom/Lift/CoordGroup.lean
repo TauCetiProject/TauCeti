@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
 public import TauCeti.GroupTheory.GroupAlgGeom.FreeVariables
 public import TauCeti.GroupTheory.GroupAlgGeom.Lift.Basic
 public import TauCeti.GroupTheory.GroupAlgGeom.Separated
@@ -25,6 +26,10 @@ inclusion of the variables `X` induces a `G`-homomorphism of coordinate groups
   retraction of `G_{R(S ∪ T)}` onto `G_{R(S)}`; these retractions correspond, by their values on
   the variables `Y`, to the solutions of `T` at the generic point of `S` ([IFT], Lemma 40 and
   Proposition 3).
+* Lifts compose: if `T(X, Y)` admits an `S`-lift `Y(X)` and `T'(X, Y, Z)` admits an
+  `(S ∪ T)`-lift `Z(X, Y)`, then `(Y(X), Z(X, Y(X)))` is an `S`-lift of `T ∪ T'`, where
+  `Z(X, Y(X))` is the image of `Z(X, Y)` under the left inverse of `coordGroupMap` determined by
+  `Y(X)`.
 
 ## Main definitions
 
@@ -48,6 +53,8 @@ inclusion of the variables `X` induces a `G`-homomorphism of coordinate groups
   homomorphisms.
 * `TauCeti.GroupAlgGeom.Lift.hasLift_iff_exists_gHom`: lifts as left inverses of `coordGroupMap`
   ([IFT], Proposition 3).
+* `TauCeti.GroupAlgGeom.Lift.sumElim_mem_V_image_jointSystem`,
+  `TauCeti.GroupAlgGeom.Lift.HasLift.trans`: composition of lifts.
 
 ## References
 
@@ -352,5 +359,56 @@ theorem hasLift_iff_exists_gHom : HasLift ι S T ↔
   rw [hasLift_iff]
   exact ⟨fun ⟨w, hw⟩ => ⟨_, ((retractionEquiv ι S T).symm ⟨w, hw⟩).property⟩,
     fun ⟨ρ, hρ⟩ => ⟨_, (retractionEquiv ι S T ⟨ρ, hρ⟩).property⟩⟩
+
+/-! ### Composition of lifts -/
+
+section Composition
+
+variable {Z : Type*} {T' : Set (GX G ((X ⊕ Y) ⊕ Z))}
+
+/-- The composite of two lifts: let `w = Y(X)` be an `S`-lift of `T(X, Y)` and `z = Z(X, Y)` an
+`(S ∪ T)`-lift of `T'(X, Y, Z)`, and let `ρ` be the left inverse of `coordGroupMap ι S T`, a
+retraction of `G_{R(S ∪ T)}` onto `G_{R(S)}`, determined by `w` ([IFT], Lemma 40); it substitutes
+`Y(X)` for `Y`. Then `(Y(X), Z(X, Y(X)))`, that is `Sum.elim w (ρ ∘ z)`, is an `S`-lift of
+`T ∪ T'`. Here `T ∪ T'` is `jointSystem T T'` with its variables renamed from `(X ⊔ Y) ⊔ Z` to
+`X ⊔ (Y ⊔ Z)` along `Equiv.sumAssoc`, so that `Y ⊔ Z` are the further variables of the lift. -/
+theorem sumElim_mem_V_image_jointSystem {w : Y → CoordGroup ι S}
+    (hw : Sum.elim (CoordGroup.genericPoint ι S) w ∈ V (CoordGroup.coeff ι S) T)
+    {z : Z → CoordGroup ι (jointSystem S T)}
+    (hz : Sum.elim (CoordGroup.genericPoint ι (jointSystem S T)) z ∈
+      V (CoordGroup.coeff ι (jointSystem S T)) T') :
+    Sum.elim (CoordGroup.genericPoint ι S)
+        (Sum.elim w (((retractionEquiv ι S T).symm ⟨w, hw⟩).val ∘ z)) ∈
+      V (CoordGroup.coeff ι S) (GX.renameEquiv G (Equiv.sumAssoc X Y Z) '' jointSystem T T') := by
+  set ρ := ((retractionEquiv ι S T).symm ⟨w, hw⟩).val
+  -- `ρ` carries the solution `z` of `T'` over the generic point of `S ∪ T` to one over `(μ, w)`.
+  have hμ : ρ ∘ CoordGroup.genericPoint ι (jointSystem S T) =
+      Sum.elim (CoordGroup.genericPoint ι S) w :=
+    funext (retractionEquiv_symm_apply_genericPoint _)
+  have hT' := ρ.comp_mem_V hz
+  rw [Sum.comp_elim, hμ] at hT'
+  -- The point is stated explicitly: inferring it from `hw` would be a higher-order unification
+  -- problem (`?v ∘ Sum.inl = (μ, w)`).
+  have hjoint : Sum.elim (Sum.elim (CoordGroup.genericPoint ι S) w) (ρ ∘ z) ∈
+      V (CoordGroup.coeff ι S) (jointSystem T T') := mem_V_jointSystem.2 ⟨hw, hT'⟩
+  -- Re-bracketing the point along `Equiv.sumAssoc` gives the point of `hjoint`.
+  have hassoc : Sum.elim (CoordGroup.genericPoint ι S) (Sum.elim w (ρ ∘ z)) ∘
+      Equiv.sumAssoc X Y Z = Sum.elim (Sum.elim (CoordGroup.genericPoint ι S) w) (ρ ∘ z) := by
+    ext ((_ | _) | _) <;> simp
+  simpa only [mem_V, Set.forall_mem_image, GX.eval_renameEquiv, hassoc] using hjoint
+
+/-- Lifts compose: if `T(X, Y)` admits an `S`-lift and `T'(X, Y, Z)` admits an `(S ∪ T)`-lift,
+then `T ∪ T'`, with its variables renamed as in `sumElim_mem_V_image_jointSystem`, admits an
+`S`-lift. By [IFT], §6, Proposition 3 (`hasLift_iff_exists_gHom`), the first hypothesis holds
+exactly when the canonical map `coordGroupMap ι S T : G_{R(S)} → G_{R(S ∪ T)}` has a left inverse
+`G`-homomorphism, that is a retraction of `G_{R(S ∪ T)}` onto `G_{R(S)}` splitting it, so no
+separate retraction hypothesis is needed. -/
+theorem HasLift.trans (h : HasLift ι S T) (h' : HasLift ι (jointSystem S T) T') :
+    HasLift ι S (GX.renameEquiv G (Equiv.sumAssoc X Y Z) '' jointSystem T T') := by
+  obtain ⟨w, hw⟩ := hasLift_iff.1 h
+  obtain ⟨z, hz⟩ := hasLift_iff.1 h'
+  exact hasLift_iff.2 ⟨_, sumElim_mem_V_image_jointSystem hw hz⟩
+
+end Composition
 
 end TauCeti.GroupAlgGeom.Lift

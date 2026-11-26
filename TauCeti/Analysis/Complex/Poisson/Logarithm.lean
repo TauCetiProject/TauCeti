@@ -7,9 +7,12 @@ module
 
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Complex.Poisson
+import TauCeti.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Complex.Herglotz
 import TauCeti.Analysis.Complex.Poisson.Basic
+import TauCeti.Analysis.Complex.Poisson.InverseSquare
+import TauCeti.MeasureTheory.Integral.Circle.Prod
 
 /-!
 # Herglotz representations of analytic logarithms and logarithmic derivatives
@@ -43,11 +46,19 @@ and `logDeriv g` on the open disc `ball c R` purely in terms of the boundary mod
   logarithmic derivative on `ball c R` as
   `logDeriv g z = circleAverage (fun w ↦ (2 * (w - c) / (w - z) ^ 2) • (Real.log ‖g w‖ : ℂ)) c R`,
   without requiring `g c = 1`.
+* `AnalyticOnNhd.circleIntegrable_norm_logDeriv`: `‖logDeriv g‖` is circle integrable over every
+  circle on which `g` is analytic and zero-free.
+* `AnalyticOnNhd.circleAverage_norm_logDeriv_le`: averaging the norm of the derivative Herglotz
+  integrand over a smaller circle `sphere c |r|`, `|r| < R`, Fubini's theorem
+  (`TauCeti.circleAverage_circleAverage_swap`) and the exact mean
+  `TauCeti.circleAverage_inv_norm_sub_sq_of_notMem_closedBall` of `‖z - w‖⁻²` give
+  `circleAverage ‖logDeriv g‖ c r ≤ 2 R / (R ^ 2 - r ^ 2) * circleAverage |log ‖g‖| c R`.
 
 ## References
 
 * F. Calegari, V. Dimitrov and Y. Tang, *The unbounded denominators conjecture*,
-  J. Amer. Math. Soc. **38** (2025), proof of Lemma 2.3.1 (pp. 640–641) and Lemma 6.1.7 (p. 680).
+  J. Amer. Math. Soc. **38** (2025), proof of Lemma 2.3.1 (pp. 640–641) and Lemma 6.1.7 and its
+  proof (pp. 680–681).
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., McGraw–Hill (1987), Chapter 11.
 -/
 
@@ -177,6 +188,68 @@ theorem logDeriv_eq_circleAverage_smul_log_norm (hg : AnalyticOnNhd ℂ g (close
   rw [← TauCeti.deriv_eq_logDeriv_of_eqOn_exp_comp isOpen_ball
     (hLa.differentiableOn.mono ball_subset_closedBall) (hLexp.mono ball_subset_closedBall) hz]
   exact (hderiv_rhs.congr_of_eventuallyEq heq_ball.symm).deriv
+
+/-- The norm of the logarithmic derivative of a function analytic and zero-free on a
+neighbourhood of the circle `sphere c |r|` is circle integrable over that circle. -/
+theorem circleIntegrable_norm_logDeriv {r : ℝ} (hg : AnalyticOnNhd ℂ g (sphere c |r|))
+    (hn : ∀ w ∈ sphere c |r|, g w ≠ 0) :
+    CircleIntegrable (fun w ↦ ‖logDeriv g w‖) c r :=
+  ContinuousOn.circleIntegrable' fun w hw ↦
+    ((hg w hw).logDeriv (hn w hw)).continuousAt.norm.continuousWithinAt
+
+/-- The circle mean of the norm of a logarithmic derivative is controlled by the boundary `L¹`
+norm of `log ‖g‖`: if `g` is analytic and zero-free on a neighbourhood of `closedBall c R` and
+`|r| < R`, then the mean of `‖logDeriv g‖` over `sphere c |r|` is at most `2 R / (R ^ 2 - r ^ 2)`
+times the mean of `|log ‖g‖|` over `sphere c R`. -/
+theorem circleAverage_norm_logDeriv_le {r : ℝ} (hg : AnalyticOnNhd ℂ g (closedBall c R))
+    (hn : ∀ w ∈ closedBall c R, g w ≠ 0) (hr : |r| < R) :
+    circleAverage (fun z ↦ ‖logDeriv g z‖) c r ≤
+      2 * R / (R ^ 2 - r ^ 2) * circleAverage (fun w ↦ |Real.log ‖g w‖|) c R := by
+  have hR : 0 < R := (abs_nonneg r).trans_lt hr
+  have hRabs : |R| = R := abs_of_pos hR
+  have hsub : sphere c |r| ⊆ closedBall c R :=
+    sphere_subset_closedBall.trans (closedBall_subset_closedBall hr.le)
+  -- Points of the outer circle lie outside the inner closed disc.
+  have hout : ∀ w ∈ sphere c R, w ∉ closedBall c |r| := fun w hw hw' ↦
+    sphere_disjoint_ball.ne_of_mem hw (closedBall_subset_ball hr hw') rfl
+  -- The kernel `K z w` bounds the norm of the integrand of the derivative Herglotz formula.
+  set K : ℂ → ℂ → ℝ := fun z w ↦ (2 * R * |Real.log ‖g w‖|) • (‖z - w‖ ^ 2)⁻¹ with hK_def
+  have hlog : ContinuousOn (fun w ↦ |Real.log ‖g w‖|) (sphere c R) :=
+    (continuous_norm.comp_continuousOn
+      (hg.continuousOn.mono sphere_subset_closedBall)).log
+        (fun w hw ↦ norm_ne_zero_iff.2 (hn w (sphere_subset_closedBall hw))) |>.abs
+  have hK : ContinuousOn (Function.uncurry K) (sphere c |r| ×ˢ sphere c |R|) := by
+    rw [hRabs]
+    refine (continuousOn_const.mul (hlog.comp continuousOn_snd
+      fun p (hp : p ∈ sphere c |r| ×ˢ sphere c R) ↦ hp.2)).smul
+      (((continuousOn_fst.sub continuousOn_snd).norm.pow 2).inv₀ fun p hp ↦ ?_)
+    refine pow_ne_zero 2 (norm_ne_zero_iff.2 (sub_ne_zero.2 fun h ↦ ?_))
+    exact hout p.2 hp.2 (h ▸ sphere_subset_closedBall hp.1)
+  have hKint := hK.integrableOn_uncurry_circleMap
+  calc circleAverage (fun z ↦ ‖logDeriv g z‖) c r
+      ≤ circleAverage (fun z ↦ circleAverage (K z) c R) c r := by
+        refine circleAverage_mono ((hg.mono hsub).circleIntegrable_norm_logDeriv
+          fun w hw ↦ hn w (hsub hw)) hKint.circleIntegrable_circleAverage
+          fun z hz ↦ ?_
+        rw [hg.logDeriv_eq_circleAverage_smul_log_norm hn (sphere_subset_ball hr hz)]
+        refine norm_circleAverage_le_circleAverage_norm.trans_eq
+          (circleAverage_congr_sphere fun w hw ↦ ?_)
+        rw [hRabs, mem_sphere_iff_norm] at hw
+        simp only [hK_def, smul_eq_mul, div_eq_mul_inv, Complex.norm_mul, Complex.norm_ofNat,
+          norm_inv, norm_pow, norm_real, norm_eq_abs, hw, norm_sub_rev z w]
+        ring
+    _ = circleAverage (fun w ↦ circleAverage (fun z ↦ K z w) c r) c R :=
+        TauCeti.circleAverage_circleAverage_swap hKint
+    _ = circleAverage (fun w ↦ (2 * R / (R ^ 2 - r ^ 2)) • |Real.log ‖g w‖|) c R := by
+        refine circleAverage_congr_sphere fun w hw ↦ ?_
+        rw [hRabs] at hw
+        simp only [hK_def]
+        rw [circleAverage_fun_smul,
+          TauCeti.circleAverage_inv_norm_sub_sq_of_notMem_closedBall (hout w hw),
+          mem_sphere_iff_norm.1 hw, smul_eq_mul, smul_eq_mul]
+        ring
+    _ = 2 * R / (R ^ 2 - r ^ 2) * circleAverage (fun w ↦ |Real.log ‖g w‖|) c R := by
+        rw [circleAverage_fun_smul, smul_eq_mul]
 
 end AnalyticOnNhd
 

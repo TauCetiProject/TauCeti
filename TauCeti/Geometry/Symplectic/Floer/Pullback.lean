@@ -55,6 +55,9 @@ domain.
   holomorphic map `f` evaluates the datum at `f w` on `f'(w) v`.
 * `TauCeti.Floer.perturbationPullback_one_sub`: the pullback of a datum `P` on `ℂ` along the
   exchange `w ↦ 1 - w` is `-P` at `1 - w`.
+* `TauCeti.Floer.exists_eq_mul_of_perturbationPullback`: if the pullback along a map with
+  nonzero complex-linear derivative is `h dt` at a point, then the components of the datum at the
+  image point are constant multiples of `h`.
 * `TauCeti.Floer.differentiableAt_domain_of_differentiableAt`,
   `TauCeti.Floer.differentiableAt_target_of_differentiableAt`: a datum on `ℂ` that is
   differentiable jointly in the domain and target points is differentiable in each of them, in
@@ -69,6 +72,8 @@ domain.
   `det dφ`.
 * `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_perturbationPullback`: holomorphic
   changes of coordinates preserve the Floer equation.
+* `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_one_sub`: in particular the
+  exchange `w ↦ 1 - w` preserves the Floer equation.
 * `TauCeti.SymplecticForm.integral_floerEnergyDensity_image`,
   `TauCeti.SymplecticForm.integral_hamiltonianCurvature_image` and
   `TauCeti.SymplecticForm.integral_abs_hamiltonianCurvature_image`: the integrated energy and
@@ -244,6 +249,35 @@ theorem perturbationPullback_one_sub (P : ℂ → X → ℂ →L[ℝ] ℝ) (v w 
     Prod.snd_neg, map_add, map_smul, smul_eq_mul]
   ring
 
+/-- **A perturbation whose pullback is cylindrical.** If the derivative of `ψ` at `ζ` is complex
+linear and nonzero, and the pullback of `(K_s, K_t)` along `ψ` at `ζ` is `(0, h)`, then the
+components of `K` at `ψ ζ` are constant multiples of `h`. -/
+theorem exists_eq_mul_of_perturbationPullback {ψ : ℝ × ℝ → ℝ × ℝ} {ζ : ℝ × ℝ}
+    (hψJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ ψ ζ : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (hψ₀ : fderiv ℝ ψ ζ ≠ 0) {Ks Kt : ℝ × ℝ → X → ℝ} {h : X → ℝ}
+    (hKs : perturbationPullback ψ Ks Kt stdComplexLineReal ζ = 0)
+    (hKt : perturbationPullback ψ Ks Kt stdComplexLineImag ζ = h) :
+    ∃ c₁ c₂ : ℝ, Ks (ψ ζ) = (fun y ↦ c₁ * h y) ∧ Kt (ψ ζ) = fun y ↦ c₂ * h y := by
+  set a := (fderiv ℝ ψ ζ stdComplexLineReal).1
+  set b := (fderiv ℝ ψ ζ stdComplexLineReal).2
+  -- The derivative of `ψ` is multiplication by `a + i b`, so it sends `(0, 1)` to `(-b, a)`.
+  have hI : fderiv ℝ ψ ζ stdComplexLineImag = (-b, a) := hψJ.apply_stdComplexLineImag_eq
+  have hd : a ^ 2 + b ^ 2 ≠ 0 := by
+    refine fun h₀ ↦ hψ₀ (ContinuousLinearMap.coe_injective ?_)
+    refine hψJ.eq_zero_iff_apply_stdComplexLineReal.2 (Prod.ext ?_ ?_) <;>
+      simp only [ContinuousLinearMap.coe_coe, Prod.fst_zero, Prod.snd_zero] <;>
+      nlinarith [sq_nonneg a, sq_nonneg b]
+  refine ⟨-b / (a ^ 2 + b ^ 2), a / (a ^ 2 + b ^ 2), funext fun y ↦ ?_, funext fun y ↦ ?_⟩
+  all_goals
+    have h₁ := congrFun hKs y
+    have h₂ := congrFun hKt y
+    simp only [perturbationPullback_apply, hI, Pi.zero_apply] at h₁ h₂
+    rw [← h₂]
+    field_simp
+  · linear_combination a * h₁
+  · linear_combination b * h₁
+
 section Differentiable
 
 variable [NormedAddCommGroup X] [NormedSpace ℝ X] {P : ℂ → X → ℂ →L[ℝ] ℝ} {w : ℝ × ℝ} {x : X}
@@ -392,6 +426,42 @@ theorem isComplexLinearMap_perturbedFDeriv_perturbationPullback (ω : Symplectic
         (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) w : ℝ × ℝ →ₗ[ℝ] V) := by
   rw [ω.perturbedFDeriv_perturbationPullback hφ hu hKs hKt, ContinuousLinearMap.toLinearMap_comp]
   exact h.comp hφJ
+
+/-- **The exchange `w ↦ 1 - w` preserves the Floer equation.** Let `σ(z) = (1, 0) - z` be the
+exchange in the real coordinates `ℝ × ℝ ≃ ℂ`, and let data `P` and `P'` on `ℂ` satisfy
+`P' w = -P (1 - w)`, so that `P'` is the pullback of `P` along `σ`
+(`TauCeti.Floer.perturbationPullback_one_sub`). If `P` is differentiable in the target point and
+`u` solves the Floer equation for `P` at `σ(w)` for an almost complex structure `J`, then `u ∘ σ`
+solves the Floer equation for `P'` at `w`. -/
+theorem isComplexLinearMap_perturbedFDeriv_comp_one_sub (ω : SymplecticForm V)
+    {P P' : ℂ → V → ℂ →L[ℝ] ℝ} (hP : ∀ w x, P' w x = -P (1 - w) x)
+    {J : AlmostComplexStructure V} (hu : DifferentiableAt ℝ u ((1, 0) - w))
+    (hK : ∀ v, DifferentiableAt ℝ
+      (fun x ↦ P (Complex.equivRealProdCLM.symm ((1, 0) - w)) x v) (u ((1, 0) - w)))
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x Complex.I) u ((1, 0) - w) :
+          ℝ × ℝ →ₗ[ℝ] V)) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv (fun z x ↦ P' (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ P' (Complex.equivRealProdCLM.symm z) x Complex.I)
+        (u ∘ fun z ↦ (1, 0) - z) w : ℝ × ℝ →ₗ[ℝ] V) := by
+  set e := Complex.equivRealProdCLM.symm
+  -- The datum `P'` is the pullback of `P` along `σ`.
+  have hpull (v : ℝ × ℝ) : (fun z x ↦ P' (e z) x (e v)) = Floer.perturbationPullback
+      (fun z ↦ (1, 0) - z) (fun z x ↦ P (e z) x 1) (fun z x ↦ P (e z) x Complex.I) v := by
+    funext z x
+    rw [Floer.perturbationPullback_one_sub, hP, neg_apply]
+  rw [← equivRealProdCLM_symm_stdComplexLineReal, ← equivRealProdCLM_symm_stdComplexLineImag,
+    hpull, hpull]
+  -- The exchange is holomorphic: its derivative is `-1`.
+  have hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ)
+      (fderiv ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
+    rw [fderiv_const_sub, fderiv_fun_id]
+    simp
+  exact ω.isComplexLinearMap_perturbedFDeriv_perturbationPullback
+    ((differentiableAt_const _).sub differentiableAt_id) hu (hK 1) (hK Complex.I) hφJ h
 
 end Pointwise
 

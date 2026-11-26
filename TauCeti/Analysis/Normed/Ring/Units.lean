@@ -8,11 +8,18 @@ module
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.RingTheory.Ideal.Nonunits
 public import Mathlib.RingTheory.Jacobson.Radical
+public import Mathlib.Topology.Algebra.IsOpenUnits
+public import Mathlib.Topology.Algebra.Group.Units
+public import Mathlib.Analysis.LocallyConvex.WithSeminorms
+public import TauCeti.Topology.Algebra.Group.Connected
+public import TauCeti.Topology.Algebra.IsOpenUnits
+import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Units and the Jacobson radical of normed rings
 
-In a normed ring with summable geometric series, `Ring.inverse` is continuous at every unit
+In a normed ring with summable geometric series, the units form an open subspace with continuous
+inversion (`NormedRing.instIsOpenUnits`), so `Ring.inverse` is continuous at every unit
 (`NormedRing.inverse_continuousAt`), but it jumps to `0` at the boundary of the open set of units.
 When the nonunits also form an open set, as in a complete discretely valued ring such as `ℤ_p`,
 there is no such boundary and `Ring.inverse` is continuous everywhere.
@@ -29,6 +36,14 @@ that perturb a unit infinitely often, such as Cohen–Hewitt factorization.
 The Jacobson radical is closed, as an intersection of maximal left ideals, using
 Mathlib's `Ring.jacobson_eq_sInf_isMaximal` and `Ideal.IsMaximal.isClosed`.
 See Dales, *Banach Algebras and Automatic Continuity*, §§1.3–1.5.
+
+When the ring is moreover a real normed space, its unit group is an open subset of a normed space,
+hence locally path connected (`Units.instLocallyPathConnectedSpace`), so the path component of `1`
+is the identity component `Subgroup.connectedComponentOfOne Rˣ`. Every `g` with `‖g - 1‖ < 1` is a
+unit and the segment from `1` to `g` stays in that ball, so these units form a connected
+neighbourhood of `1` (`TauCeti.isConnected_setOf_norm_sub_one_lt`), which therefore generates the
+identity component (`TauCeti.closure_setOf_norm_sub_one_lt_eq_connectedComponentOfOne`); see
+G. Horváth and T. Kania, *Twisting exponential spectra*, Lemma 2.1.
 -/
 
 public section
@@ -36,6 +51,11 @@ public section
 namespace NormedRing
 
 variable {R : Type*} [NormedRing R] [HasSummableGeomSeries R]
+
+/-- In a normed ring with summable geometric series, the units form an open subspace with
+continuous inversion. -/
+instance (priority := 100) instIsOpenUnits : IsOpenUnits R where
+  isOpenEmbedding_unitsVal := Units.isOpenEmbedding_val
 
 /-- If the nonunits of a normed ring with summable geometric series form an open set, then
 `Ring.inverse` is continuous: it is continuous at every unit, and locally zero at every nonunit. -/
@@ -134,3 +154,39 @@ theorem isClosed_jacobson (A : Type*) [NormedRing A] [HasSummableGeomSeries A] :
     exact Ideal.IsMaximal.isClosed
 
 end TauCeti.Ring
+
+namespace TauCeti
+
+variable {A : Type*} [NormedRing A]
+
+private theorem one_mem_setOf_norm_sub_one_lt : (1 : Aˣ) ∈ {u : Aˣ | ‖(u : A) - 1‖ < 1} := by
+  simp only [Set.mem_ofPred_eq, Units.val_one, sub_self, norm_zero, zero_lt_one]
+
+variable [HasSummableGeomSeries A] [NormedSpace ℝ A]
+
+/-- The units at distance less than one from `1` in a real normed algebra with summable geometric
+series form a connected set. -/
+theorem isConnected_setOf_norm_sub_one_lt : IsConnected {u : Aˣ | ‖(u : A) - 1‖ < 1} := by
+  refine ⟨⟨1, one_mem_setOf_norm_sub_one_lt⟩, ?_⟩
+  -- The coercion is an embedding which maps this set onto the convex unit ball about `1`.
+  have himage : (Units.val : Aˣ → A) '' {u | ‖(u : A) - 1‖ < 1} = Metric.ball 1 1 := by
+    ext a
+    refine ⟨fun ⟨u, hu, hua⟩ ↦ by simpa [← hua, dist_eq_norm] using hu, fun ha ↦ ?_⟩
+    rw [Metric.mem_ball, dist_eq_norm] at ha
+    refine ⟨Units.oneSub (1 - a) (by simpa [norm_sub_rev] using ha), ?_, by simp⟩
+    simpa using ha
+  rw [← Units.isOpenEmbedding_val.isEmbedding.isInducing.isPreconnected_image, himage]
+  exact (convex_ball 1 1).isPreconnected
+
+/-- **The unit ball about `1` generates the identity component of the unit group of a Banach
+algebra.** More generally this holds for a real normed algebra with summable geometric series. -/
+theorem closure_setOf_norm_sub_one_lt_eq_connectedComponentOfOne :
+    Subgroup.closure {u : Aˣ | ‖(u : A) - 1‖ < 1} = Subgroup.connectedComponentOfOne Aˣ := by
+  refine Subgroup.closure_eq_connectedComponentOfOne_of_mem_nhds_one_of_subset ?_
+    (isConnected_setOf_norm_sub_one_lt.isPreconnected.subset_connectedComponent
+      one_mem_setOf_norm_sub_one_lt)
+  have hopen : IsOpen {u : Aˣ | ‖(u : A) - 1‖ < 1} :=
+    isOpen_lt (Units.continuous_val.sub continuous_const).norm continuous_const
+  exact hopen.mem_nhds one_mem_setOf_norm_sub_one_lt
+
+end TauCeti
