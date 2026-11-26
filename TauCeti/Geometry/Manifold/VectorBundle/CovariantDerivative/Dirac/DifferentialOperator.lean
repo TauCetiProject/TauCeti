@@ -193,9 +193,8 @@ Clifford multiplication by the gradient of `f`: `[D, f] σ = D (f σ) - f D σ =
 theorem smulCommutator_smoothDiracOperator_apply (f : C^∞⟮I, M; ℝ⟯) (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
     smulCommutator ℝ f (cov.smoothDiracOperator hc) σ x =
       c x (TauCeti.Manifold.mgradient I f x) (σ x) := by
-  have hfun : ⇑(f • σ) = ⇑f • ⇑σ := funext fun y ↦ ContMDiffSection.smul_apply f σ y
   simp only [smulCommutator_apply_apply, ContMDiffSection.coe_sub, Pi.sub_apply,
-    smoothDiracOperator_apply, hfun, ContMDiffSection.smul_apply]
+    smoothDiracOperator_apply, ContMDiffSection.coe_smul_contMDiffMap, Pi.smul_apply']
   exact cov.diracOperator_smul_sub c (f.contMDiff.mdifferentiableAt (by simp))
     (σ.contMDiff.mdifferentiableAt (by simp))
 

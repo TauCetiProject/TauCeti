@@ -121,18 +121,19 @@ theorem exists_morseBott_partialDiffeomorph_normalBundle [SecondCountableTopolog
       Φ₀.source := by
     rw [← hΦ₀]
     exact hf.comp (Φ₀.contMDiffOn.of_le hk2) fun x hx ↦ hΦ₀O (Φ₀.map_source hx)
-  -- Step 2: the parametric Morse lemma puts `f ∘ Φ₀` in fibrewise normal form through a
-  -- fibre-preserving `Φ x = ⟨x.proj, ψ x⟩` which fixes the zero section.
+  -- Step 2: the parametric Morse lemma puts `f ∘ Φ₀` in fibrewise normal form through the
+  -- fibre-preserving `Φ x = ⟨x.proj, ψ x⟩`, `ψ` the canonical Morse coordinate, which fixes the
+  -- zero section.
   let := fun s ↦ i.normalSpaceNormedAddCommGroup s hn
   let := fun s ↦ i.normalSpaceNormedSpace s hn
-  obtain ⟨ψ, Φ, hΦzero, -, hΦ, -, hψ, hnf⟩ := exists_parametric_morse_partialDiffeomorph
+  obtain ⟨Φ, hΦzero, -, hΦ, -, hnf⟩ := exists_parametric_morse_partialDiffeomorph
     (IB := J) (F := P) (E := fun s ↦ i.isImmersion.NormalSpace s hn)
         (n := k) Φ₀.open_source hΦ₀zero hg
     (fun s ↦ h.toIsCriticalSubmanifold.fderiv_comp_normalExp_mk_zero (P := P) hn s)
     (fun s ↦ h.isInvertible_fderiv_fderiv_comp_normalExp_mk_zero (P := P) hn s) hk
   have hΦz (s : S) : Φ (zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s) =
       zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s := by
-    rw [hΦ, hψ]
+    rw [hΦ, bundleMorseCoord_zeroSection]
     rfl
   have hΦsz (s : S) : Φ.symm (zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s) =
       zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s := by
@@ -151,7 +152,8 @@ theorem exists_morseBott_partialDiffeomorph_normalBundle [SecondCountableTopolog
     simpa using inter_subset_left.trans hΦ₀O
   · rw [PartialDiffeomorph.trans_source] at hx
     -- Write `x = Φ y = ⟨y.proj, ψ y⟩` and apply the normal form of `f ∘ Φ₀` at `y`.
-    have hx' : x = ⟨(Φ.symm x).proj, ψ (Φ.symm x)⟩ := (Φ.right_inv hx.1).symm.trans (hΦ _)
+    have hx' : x = ⟨(Φ.symm x).proj, bundleMorseCoord P _ (Φ.symm x)⟩ :=
+      (Φ.right_inv hx.1).symm.trans (hΦ _)
     have hy : Φ.symm x ∈ Φ.source := Φ.map_target hx.1
     have key := hnf _ hy
     rw [PartialDiffeomorph.coe_trans, comp_apply]

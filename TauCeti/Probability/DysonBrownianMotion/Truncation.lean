@@ -8,11 +8,10 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import TauCeti.Probability.DysonBrownianMotion.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.ODE.Gronwall
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.ODE.Nonautonomous
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
 # Globally Lipschitz chamber truncations of Dyson Brownian motion
@@ -25,9 +24,9 @@ Dyson integral equation to the globally Lipschitz nonautonomous ODE
 
 This file constructs `truncatedDysonPath` and develops its finite-horizon integral-equation
 uniqueness, Grönwall stability in `(x, w)`, causal congruence in the driving path, global `ℓ²`
-contraction, consistency across cutoffs before chamber exit, localization of `IsDysonPath`, and
-deterministic and almost-sure construction of global Dyson trajectories from non-colliding chamber
-truncations.
+energy identity and contraction, consistency across cutoffs before chamber exit, localization of
+`IsDysonPath`, and deterministic and almost-sure construction of global Dyson trajectories from
+non-colliding chamber truncations.
 
 ## Main declarations
 
@@ -38,7 +37,9 @@ truncations.
   uniqueness.
 * `TauCeti.Probability.dist_truncatedDysonPath_le` and
   `TauCeti.Probability.truncatedDysonPath_eq_of_eqOn`: Grönwall stability and causal congruence.
-* `TauCeti.Probability.sum_truncatedDysonPath_sub_sq_le`: global `ℓ²` contraction.
+* `TauCeti.Probability.sum_truncatedDysonPath_sub_sq_eq` and
+  `TauCeti.Probability.sum_truncatedDysonPath_sub_sq_le`: global `ℓ²` energy identity and
+  contraction.
 * `TauCeti.Probability.truncatedDysonPath_eq_of_le_sub`,
   `TauCeti.Probability.IsDysonPath.eq_truncatedDysonPath_of_le_sub`, and
   `TauCeti.Probability.isDysonPath_of_forall_exists_truncatedDysonPath`: cutoff consistency and
@@ -169,18 +170,21 @@ theorem truncatedDysonPath_eq_integral (t : ℝ≥0) (i : Fin n) :
       simp only [shiftedTruncatedField, truncatedDysonPath, Real.coe_toNNReal s hs.1]
   rw [truncatedDysonPath, Pi.add_apply, hZ_i, ← hproj, hcongr]; ring
 
+private theorem intervalIntegrable_truncatedDysonDrift_truncatedDysonPath (t : ℝ≥0) (i : Fin n) :
+    IntervalIntegrable
+      (fun s : ℝ ↦ truncatedDysonDrift ε n (truncatedDysonPath hε n x w hw s.toNNReal) i)
+      volume 0 t :=
+  ((continuous_apply i).comp ((continuous_truncatedDysonDrift hε n).comp
+    ((continuous_truncatedDysonPath hε n x w hw).comp
+      continuous_real_toNNReal))).intervalIntegrable 0 t
+
 /-- Center-of-mass conservation for `truncatedDysonPath`. -/
 @[simp]
 theorem sum_truncatedDysonPath (t : ℝ≥0) :
     ∑ i : Fin n, truncatedDysonPath hε n x w hw t i = (∑ i : Fin n, x i) + ∑ i : Fin n, w t i := by
-  have hint (i : Fin n) : IntervalIntegrable
-      (fun s : ℝ ↦ truncatedDysonDrift ε n (truncatedDysonPath hε n x w hw s.toNNReal) i)
-      volume 0 t :=
-    ((continuous_apply i).comp ((continuous_truncatedDysonDrift hε n).comp
-      ((continuous_truncatedDysonPath hε n x w hw).comp
-        continuous_real_toNNReal))).intervalIntegrable 0 t
   simp_rw [truncatedDysonPath_eq_integral hε n x w hw t, Finset.sum_add_distrib]
-  rw [← intervalIntegral.integral_finsetSum fun i _ ↦ hint i]
+  rw [← intervalIntegral.integral_finsetSum fun i _ ↦
+    intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw t i]
   simp [sum_truncatedDysonDrift_eq_zero]
 
 end Basic
@@ -297,6 +301,40 @@ theorem truncatedDysonPath_eq_of_eqOn {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x : F
   rw [dist_self, add_zero, zero_mul] at h
   exact dist_le_zero.1 h
 
+private theorem truncatedDysonPath_eq_integral_of_mem_uIcc {ε : ℝ} (hε : 0 < ε) (n : ℕ)
+    (x : Fin n → ℝ) (w : ℝ≥0 → Fin n → ℝ) (hw : Continuous w) {s t : ℝ≥0} {r : ℝ}
+    (hr : r ∈ uIcc (s : ℝ) t) (i : Fin n) :
+    truncatedDysonPath hε n x w hw r.toNNReal i =
+      x i + w r.toNNReal i +
+        ∫ u in (0 : ℝ)..r,
+          truncatedDysonDrift ε n (truncatedDysonPath hε n x w hw u.toNNReal) i := by
+  simpa only [Real.coe_toNNReal r ((le_min s.coe_nonneg t.coe_nonneg).trans hr.1)] using
+    truncatedDysonPath_eq_integral hε n x w hw r.toNNReal i
+
+/-- **Global `ℓ²` energy identity for `truncatedDysonPath`.** For any initial configurations
+`x, y : Fin n → ℝ` and times `s, t : ℝ≥0`, the change in squared Euclidean distance between the
+`ε`-truncated trajectories from `x` and `y` equals twice the integrated truncated-drift difference
+pairing over `s..t`. -/
+theorem sum_truncatedDysonPath_sub_sq_eq {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x y : Fin n → ℝ)
+    (w : ℝ≥0 → Fin n → ℝ) (hw : Continuous w) (s t : ℝ≥0) :
+    (∑ i : Fin n,
+        (truncatedDysonPath hε n x w hw t i - truncatedDysonPath hε n y w hw t i) ^ 2) -
+      ∑ i : Fin n,
+        (truncatedDysonPath hε n x w hw s i - truncatedDysonPath hε n y w hw s i) ^ 2 =
+      2 * ∫ r in (s : ℝ)..t, ∑ i : Fin n,
+        (truncatedDysonDrift ε n (truncatedDysonPath hε n x w hw r.toNNReal) i -
+          truncatedDysonDrift ε n (truncatedDysonPath hε n y w hw r.toNNReal) i) *
+          (truncatedDysonPath hε n x w hw r.toNNReal i -
+            truncatedDysonPath hε n y w hw r.toNNReal i) := by
+  simpa only [Real.toNNReal_coe] using
+    TauCeti.intervalIntegral.sum_sub_sq_eq_of_eq_add_integral (Finset.univ : Finset (Fin n))
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw s i)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw t i)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n y w hw s i)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n y w hw t i)
+      (fun _ hr i _ ↦ truncatedDysonPath_eq_integral_of_mem_uIcc hε n x w hw hr i)
+      (fun _ hr i _ ↦ truncatedDysonPath_eq_integral_of_mem_uIcc hε n y w hw hr i)
+
 /-- **Global `ℓ²` contraction for `truncatedDysonPath`.** Holds for arbitrary initial configurations
 `x, y : Fin n → ℝ` without any chamber restriction. -/
 theorem sum_truncatedDysonPath_sub_sq_le {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x y : Fin n → ℝ)
@@ -305,38 +343,16 @@ theorem sum_truncatedDysonPath_sub_sq_le {ε : ℝ} (hε : 0 < ε) (n : ℕ) (x 
         (truncatedDysonPath hε n x w hw t i - truncatedDysonPath hε n y w hw t i) ^ 2 ≤
       ∑ i : Fin n,
         (truncatedDysonPath hε n x w hw s i - truncatedDysonPath hε n y w hw s i) ^ 2 := by
-  let Zx := shiftedTruncatedCurve hε n x w hw
-  let Zy := shiftedTruncatedCurve hε n y w hw
-  let φ : ℝ → ℝ := fun r ↦ ∑ i : Fin n, (Zx r i - Zy r i) ^ 2
-  have hφ_deriv (r : ℝ) : HasDerivAt φ
-      (2 * ∑ i : Fin n,
-        (shiftedTruncatedField ε n w r (Zx r) i - shiftedTruncatedField ε n w r (Zy r) i) *
-          (Zx r i - Zy r i)) r := by
-    have hcoord (i : Fin n) : HasDerivAt (fun u ↦ (Zx u i - Zy u i) ^ 2)
-        (2 * ((shiftedTruncatedField ε n w r (Zx r) i - shiftedTruncatedField ε n w r (Zy r) i) *
-          (Zx r i - Zy r i))) r := by
-      have hdiff : HasDerivAt (fun u ↦ Zx u i - Zy u i)
-          (shiftedTruncatedField ε n w r (Zx r) i - shiftedTruncatedField ε n w r (Zy r) i) r :=
-        (hasDerivAt_pi.1 (hasDerivAt_shiftedTruncatedCurve hε n x w hw r) i).sub
-          (hasDerivAt_pi.1 (hasDerivAt_shiftedTruncatedCurve hε n y w hw r) i)
-      simpa only [sq] using (hdiff.fun_mul hdiff).congr_deriv (by ring)
-    simpa only [φ, Finset.mul_sum] using HasDerivAt.fun_sum fun i _ ↦ hcoord i
-  have hφ_nonpos (r : ℝ) : 2 * ∑ i : Fin n,
-      (shiftedTruncatedField ε n w r (Zx r) i - shiftedTruncatedField ε n w r (Zy r) i) *
-        (Zx r i - Zy r i) ≤ 0 := by
-    refine mul_nonpos_of_nonneg_of_nonpos zero_le_two ?_
-    have hshift (i : Fin n) :
-        Zx r i - Zy r i = (Zx r + w r.toNNReal) i - (Zy r + w r.toNNReal) i := by
-      simp
-    simp_rw [shiftedTruncatedField, hshift]
-    exact sum_truncatedDysonDrift_sub_mul_sub_nonpos hε n _ _
-  have hanti : Antitone φ := antitone_of_deriv_nonpos (fun r ↦ (hφ_deriv r).differentiableAt)
-    (fun r ↦ (hφ_deriv r).deriv.symm ▸ hφ_nonpos r)
-  have hcancel (u : ℝ≥0) : (∑ i : Fin n,
-      (truncatedDysonPath hε n x w hw u i - truncatedDysonPath hε n y w hw u i) ^ 2) = φ u :=
-    Finset.sum_congr rfl fun i _ ↦ by dsimp only [truncatedDysonPath, Zx, Zy, φ, Pi.add_apply]; ring
-  rw [hcancel t, hcancel s]
-  exact hanti (NNReal.coe_le_coe.2 hst)
+  simpa only [Real.toNNReal_coe] using
+    TauCeti.intervalIntegral.sum_sub_sq_le_of_eq_add_integral (Finset.univ : Finset (Fin n))
+      (NNReal.coe_le_coe.2 hst)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw s i)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n x w hw t i)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n y w hw s i)
+      (fun i _ ↦ intervalIntegrable_truncatedDysonDrift_truncatedDysonPath hε n y w hw t i)
+      (fun _ hr i _ ↦ truncatedDysonPath_eq_integral_of_mem_uIcc hε n x w hw hr i)
+      (fun _ hr i _ ↦ truncatedDysonPath_eq_integral_of_mem_uIcc hε n y w hw hr i)
+      fun _ _ ↦ sum_truncatedDysonDrift_sub_mul_sub_nonpos hε n _ _
 
 /-- **Consistency of chamber truncations before exit.** If `truncatedDysonPath hε₁ n x w hw` stays
 inside `{z | ∀ i < j, max ε₁ ε₂ ≤ z i - z j}` on `(0, T)`, then the `ε₁`- and `ε₂`-truncated paths
