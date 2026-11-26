@@ -118,20 +118,6 @@ theorem ne_of_mem (c : G.EdgeColoring C) {e f : G.edgeSet} (hef : e ≠ f) {x : 
     (he : x ∈ (e : Sym2 V)) (hf : x ∈ (f : Sym2 V)) : c e ≠ c f :=
   c.valid (lineGraph_adj_iff_exists.2 ⟨hef, x, he, hf⟩)
 
-/-- Two edges `s(u, v)` and `s(u, w)` with `v ≠ w` receive distinct colours. -/
-theorem ne_of_adj_left (c : G.EdgeColoring C) {u v w : V} (hvw : v ≠ w)
-    (huv : G.Adj u v) (huw : G.Adj u w) :
-    c ⟨s(u, v), huv⟩ ≠ c ⟨s(u, w), huw⟩ :=
-  c.ne_of_mem (fun h ↦ hvw (Sym2.congr_right.1 (Subtype.mk.inj h)))
-    (Sym2.mem_mk_left u v) (Sym2.mem_mk_left u w)
-
-/-- Two edges `s(u, w)` and `s(v, w)` with `u ≠ v` receive distinct colours. -/
-theorem ne_of_adj_right (c : G.EdgeColoring C) {u v w : V} (huv : u ≠ v)
-    (huw : G.Adj u w) (hvw : G.Adj v w) :
-    c ⟨s(u, w), huw⟩ ≠ c ⟨s(v, w), hvw⟩ :=
-  c.ne_of_mem (fun h ↦ huv (Sym2.congr_left.1 (Subtype.mk.inj h)))
-    (Sym2.mem_mk_right u w) (Sym2.mem_mk_right v w)
-
 /-- A proper edge-colouring is injective on the edges incident with any vertex `x`. -/
 theorem injOn_incidenceSet (c : G.EdgeColoring C) (x : V) :
     InjOn c (Subtype.val ⁻¹' G.incidenceSet x) :=
