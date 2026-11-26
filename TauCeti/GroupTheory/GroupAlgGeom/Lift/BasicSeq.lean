@@ -219,6 +219,21 @@ theorem apply_inl_of_mem_basicWordSeq {γ : MulAut (GX G X)} (hγ : γ ∈ basic
   · exact basicX_inl inj i g
   · exact basicComm_inl inj i i' g
 
+/-- Every automorphism of the basic sequence fixes the variables other than the `xᵢ`, `yᵢ` and
+`zⱼ`. -/
+theorem apply_inr_of_of_mem_basicWordSeq_of_ne {γ : MulAut (GX G X)}
+    (hγ : γ ∈ basicWordSeq inj c) {v : X} (hv : ∀ a, Sum.elim (Sum.elim x y) z a ≠ v) :
+    γ (inr (.of v)) = inr (.of v) := by
+  obtain ⟨j, j', -, rfl⟩ | ⟨j, i, -, -, rfl⟩ | ⟨i, rfl⟩ | ⟨i, rfl⟩ | ⟨i, i', -, rfl⟩ :=
+    (mem_basicWordSeq_iff inj c).1 hγ
+  · exact basicCoeff_inr_of_of_ne inj c j j' (hv (.inr j)).symm (hv (.inr j')).symm
+  · exact basicLink_inr_of_of_ne inj c j i (hv (.inr j)).symm (hv (.inl (.inl i))).symm
+      (hv (.inl (.inr i))).symm
+  · exact basicY_inr_of_of_ne inj i (hv (.inl (.inr i))).symm
+  · exact basicX_inr_of_of_ne inj i (hv (.inl (.inl i))).symm
+  · exact basicComm_inr_of_of_ne inj i i' (hv (.inl (.inl i))).symm (hv (.inl (.inr i))).symm
+      (hv (.inl (.inl i'))).symm (hv (.inl (.inr i'))).symm
+
 end Seq
 
 /-! ### The products `φ_{j,p}` -/
