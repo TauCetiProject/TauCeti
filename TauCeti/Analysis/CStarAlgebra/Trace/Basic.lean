@@ -45,6 +45,7 @@ functional (`TauCeti.PositiveTracialFunctional`) defines a trace
 ## Main results
 
 * `TauCeti.IsTrace.map_zero`, `TauCeti.IsTrace.mono`: `τ(0) = 0` and monotonicity on `B₊`.
+* `TauCeti.IsTrace.map_sum_of_nonneg`: additivity on finite sums of positive elements.
 * `TauCeti.IsTrace.mem_finitePart_of_le`, `TauCeti.IsTrace.add_mem_finitePart`,
   `TauCeti.IsTrace.smul_mem_finitePart`: `𝔪_τ⁺` is a hereditary convex cone.
 * `TauCeti.IsTrace.zero_mem_sqIntegrable`, `TauCeti.IsTrace.add_mem_sqIntegrable`,
@@ -135,6 +136,18 @@ theorem map_zero (hτ : IsTrace τ) : τ 0 = 0 := by
 theorem mono (hτ : IsTrace τ) {x y : B} (hy : 0 ≤ y) (hyx : y ≤ x) : τ y ≤ τ x := by
   rw [← add_sub_cancel y x, hτ.map_add_of_nonneg hy (sub_nonneg.mpr hyx)]
   exact le_self_add
+
+/-- A trace is additive on finite sums of positive elements. -/
+theorem map_sum_of_nonneg (hτ : IsTrace τ) {ι : Type*} (s : Finset ι) {f : ι → B}
+    (hf : ∀ i ∈ s, 0 ≤ f i) : τ (∑ i ∈ s, f i) = ∑ i ∈ s, τ (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [hτ.map_zero]
+  | insert a s ha ih =>
+    rw [Finset.sum_insert ha, Finset.sum_insert ha,
+      hτ.map_add_of_nonneg (hf a (Finset.mem_insert_self a s))
+        (Finset.sum_nonneg fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)),
+      ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)]
 
 /-- The finite part is hereditary: `0 ≤ y ≤ x ∈ 𝔪_τ⁺` gives `y ∈ 𝔪_τ⁺`. -/
 theorem mem_finitePart_of_le (hτ : IsTrace τ) {x y : B} (hx : x ∈ finitePart τ) (hy : 0 ≤ y)

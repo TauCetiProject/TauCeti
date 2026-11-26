@@ -448,6 +448,22 @@ theorem isIso_residueFieldMap_fst (z : ↑(pullback f g))
   have hz : T.SpecTensorTo (SpecOfPoint z) = z := SpecTensorTo_SpecOfPoint z
   rwa [hz] at h
 
+/-- If `f` preserves the residue field at `pullback.fst f g z`, then its base change
+`pullback.snd f g` along `g` preserves the residue field at `z`: the mirror image of
+`isIso_residueFieldMap_fst`. -/
+theorem isIso_residueFieldMap_snd (z : ↑(pullback f g))
+    [IsIso (f.residueFieldMap (pullback.fst f g z))] :
+    IsIso ((pullback.snd f g).residueFieldMap z) := by
+  have : IsIso (f.residueFieldMap (pullback.snd g f ((pullbackSymmetry f g).hom z))) := by
+    rw [show pullback.snd g f ((pullbackSymmetry f g).hom z) = pullback.fst f g z by
+      rw [← Scheme.Hom.comp_apply, pullbackSymmetry_hom_comp_snd]]
+    infer_instance
+  have := isIso_residueFieldMap_fst (f := g) (g := f) ((pullbackSymmetry f g).hom z)
+  have h : IsIso (((pullbackSymmetry f g).hom ≫ pullback.fst g f).residueFieldMap z) := by
+    rw [Scheme.residueFieldMap_comp]
+    exact IsIso.comp_isIso' this inferInstance
+  rwa [pullbackSymmetry_hom_comp_fst] at h
+
 end Scheme.Pullback
 
 section FromSpecResidueField
