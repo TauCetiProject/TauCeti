@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Convex.Strong
 public import TauCeti.Analysis.MeanInequalities
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Esymm
 
-import Mathlib.Analysis.Calculus.LocalExtr.Basic
+import TauCeti.Analysis.Calculus.LocalExtr.Touching
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
 /-!
@@ -151,10 +151,10 @@ theorem fderiv_geomMean_apply : fderiv ℝ geomMean ![1, 4] ![4, 1] = 17 / 4 := 
   have h : (2⁻¹ - 1 : ℝ) = -2⁻¹ := by norm_num
   have hu : (Finset.univ.erase (0 : Fin 2)) = {1} := by decide
   have hv : (Finset.univ.erase (1 : Fin 2)) = {0} := by decide
-  simp [Fin.prod_univ_two, Fin.sum_univ_two, hu, hv, h, Real.rpow_neg, four_rpow_inv_two]
-  norm_num
+  norm_num [Fin.prod_univ_two, Fin.sum_univ_two, hu, hv, h, Real.rpow_neg, four_rpow_inv_two]
 
-/-- `σ₂^{1/2}` is positively homogeneous of degree one on the quadrant. -/
+/-- Near `t = 1`, `geomMean (t • λ) = t * geomMean λ` for `λ` in the quadrant: the homogeneity
+hypothesis of `ConcaveOn.le_apply_of_hasFDerivAt_of_homogeneous`. -/
 theorem eventually_geomMean_smul {lam : Fin 2 → ℝ} (hlam : lam ∈ quadrant) :
     ∀ᶠ t in 𝓝 (1 : ℝ), geomMean (t • lam) = t * geomMean lam := by
   filter_upwards [lt_mem_nhds one_pos] with t ht
@@ -185,27 +185,16 @@ theorem concaveOn_minFun : ConcaveOn ℝ quadrant minFun :=
 theorem minFun_smul {t : ℝ} (ht : 0 ≤ t) (μ : Fin 2 → ℝ) : minFun (t • μ) = t * minFun μ := by
   simp [minFun, mul_min_of_nonneg _ _ ht]
 
-/-- If `g ≤ φ` with equality at `λ`, and both are differentiable at `λ`, then their derivatives
-at `λ` agree: `g - φ` has a maximum at `λ`. -/
-private theorem fderiv_eq_of_le_of_eq {g φ : (Fin 2 → ℝ) → ℝ} {lam : Fin 2 → ℝ}
-    (hle : ∀ μ, g μ ≤ φ μ) (heq : g lam = φ lam) (hg : DifferentiableAt ℝ g lam)
-    (hφ : DifferentiableAt ℝ φ lam) : fderiv ℝ g lam = fderiv ℝ φ lam := by
-  have hmax : IsLocalMax (fun μ ↦ g μ - φ μ) lam :=
-    Eventually.of_forall fun μ ↦ by simp only [heq, sub_self, sub_nonpos]; exact hle μ
-  have := IsLocalMax.fderiv_eq_zero hmax
-  rw [fderiv_fun_sub hg hφ, sub_eq_zero] at this
-  exact this
-
 /-- **`min(x, y)` is not differentiable at `(1, 1)`**: its derivative there would have to be both
 coordinate projections, since `min(x, y) ≤ x`, `min(x, y) ≤ y` with equality at `(1, 1)`. -/
 theorem not_differentiableAt_minFun : ¬ DifferentiableAt ℝ minFun ![1, 1] := by
   intro h
-  have h0 := fderiv_eq_of_le_of_eq (φ := fun μ ↦ μ 0) (fun μ ↦ min_le_left _ _)
-    (by simp) h (differentiableAt_apply 0 _)
-  have h1 := fderiv_eq_of_le_of_eq (φ := fun μ ↦ μ 1) (fun μ ↦ min_le_right _ _)
-    (by simp) h (differentiableAt_apply 1 _)
+  have h0 := h.hasFDerivAt.eq_of_eventuallyLE (hasFDerivAt_apply 0 _)
+    (Eventually.of_forall fun μ ↦ min_le_left _ _) (by simp [minFun])
+  have h1 := h.hasFDerivAt.eq_of_eventuallyLE (hasFDerivAt_apply 1 _)
+    (Eventually.of_forall fun μ ↦ min_le_right _ _) (by simp [minFun])
   have := congrArg (fun L ↦ L (Pi.single 0 1)) (h0.symm.trans h1)
-  simp [fderiv_apply] at this
+  simp at this
 
 /-- **Without differentiability the tangent inequality fails**: at `λ = μ = (1, 1)` the total
 derivative of `min(x, y)` is `0` (Mathlib's value at a point of non-differentiability), and the
@@ -221,7 +210,8 @@ theorem hasFDerivAt_minFun :
       ![1, 2] := by
   refine (hasFDerivAt_apply 0 _).congr_of_eventuallyEq ?_
   have hc : Continuous fun μ : Fin 2 → ℝ ↦ μ 1 - μ 0 := by fun_prop
-  filter_upwards [hc.continuousAt.eventually (lt_mem_nhds (show (0 : ℝ) < 2 - 1 by norm_num))]
+  filter_upwards [hc.continuousAt.eventually (lt_mem_nhds
+    (show (0 : ℝ) < (fun μ : Fin 2 → ℝ ↦ μ 1 - μ 0) ![1, 2] by norm_num))]
     with μ hμ
   simp only [sub_pos] at hμ
   exact min_eq_left hμ.le
