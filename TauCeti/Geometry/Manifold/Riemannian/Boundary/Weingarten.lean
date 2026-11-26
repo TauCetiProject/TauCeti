@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Basic
 public import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
+import TauCeti.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Geometry.Manifold.MFDeriv.Slice
 
 /-!
@@ -43,6 +44,8 @@ curvatures `1` and `H = 1`.
   `TauCeti.boundaryInducedForm_boundaryPrincipalDirection`), in which `II_q` is diagonal
   (`TauCeti.boundarySecondFundamentalForm_boundaryPrincipalDirection`), so that
   `II_q(u, u) = ∑ᵢ κᵢ uᵢ²` (`TauCeti.boundarySecondFundamentalForm_self_eq_sum`).
+* `TauCeti.boundaryPrincipalCurvatures_eq_of_eigenbasis`: a decreasing family of eigenvalues of
+  `S_q` on any basis of `T_q∂M`, orthonormal or not, is the family of principal curvatures.
 * `TauCeti.boundaryMeanCurvature`: the mean curvature `H(q) = tr S_q / n`, with
   `TauCeti.sum_boundarySecondFundamentalForm_eq_mul_boundaryMeanCurvature`: `tr_h II = n H`, the
   sum of `II_q(e_i, e_i)` over every `h`-orthonormal basis `(e_i)`, and
@@ -229,6 +232,19 @@ theorem coe_boundaryPrincipalBasis (q : (𝓡∂ (n + 1)).boundary M) :
 theorem boundaryPrincipalCurvatures_antitone (q : (𝓡∂ (n + 1)).boundary M) :
     Antitone (boundaryPrincipalCurvatures q) :=
   LinearMap.IsSymmetric.eigenvalues_antitone _ _
+
+/-- **The principal curvatures are the decreasing eigenvalues on any eigenbasis.** If a basis
+`(bᵢ)` of the tangent space of the boundary at `q` satisfies `S_q bᵢ = μᵢ bᵢ` for a decreasing
+family `μ`, then `μ` is the family of principal curvatures at `q`. The basis need not be
+orthonormal, so this characterisation does not mention the induced metric. -/
+theorem boundaryPrincipalCurvatures_eq_of_eigenbasis (q : (𝓡∂ (n + 1)).boundary M)
+    (b : Module.Basis (Fin n) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q))
+    {μ : Fin n → ℝ} (hμ : Antitone μ) (hb : ∀ i, boundaryWeingarten q (b i) = μ i • b i) :
+    boundaryPrincipalCurvatures q = μ :=
+  (isSymmetric_boundaryWeingartenTangent q).eigenvalues_eq_of_eigenbasis _
+    (b.map (boundaryTangentEquiv q)) hμ fun i ↦ by
+      rw [Module.Basis.map_apply, boundaryWeingartenTangent_boundaryTangentEquiv, hb, map_smul,
+        RCLike.ofReal_real_eq_id, id]
 
 /-- The `i`-th principal direction is an eigenvector of the Weingarten map for the `i`-th
 principal curvature: `S_q eᵢ = κᵢ eᵢ`. -/
