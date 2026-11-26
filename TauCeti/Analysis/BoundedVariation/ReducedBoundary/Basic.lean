@@ -67,7 +67,9 @@ proves their basic properties.
   (`TauCeti.reducedBoundary_congr_ae`, `TauCeti.outerNormal_congr_ae`); in particular
   `∂*(s ∩ Ω) = ∂*s` (`TauCeti.reducedBoundary_inter_opens`). When `μ` is an additive
   Haar measure, the complement has the same reduced boundary with the opposite normal
-  (`TauCeti.reducedBoundary_compl`, `TauCeti.outerNormal_compl`).
+  (`TauCeti.reducedBoundary_compl`, `TauCeti.outerNormal_compl`), and the whole space has empty
+  reduced boundary (`TauCeti.reducedBoundary_univ`). The empty set has empty reduced boundary
+  against any measure (`TauCeti.reducedBoundary_empty`).
 * Both the reduced boundary and the outer normal are Borel measurable
   (`TauCeti.measurableSet_reducedBoundary`, `TauCeti.measurable_outerNormal`,
   `TauCeti.stronglyMeasurable_outerNormal`): for fixed `r > 0` the closed-ball average is strongly
@@ -504,6 +506,17 @@ theorem reducedBoundary_compl [μ.IsAddHaarMeasure] :
   refine and_congr_right fun _ => ⟨fun ⟨ν, h1, hν⟩ => ⟨-ν, by rwa [norm_neg], ?_⟩,
     fun ⟨ν, h1, hν⟩ => ⟨-ν, by rwa [norm_neg], hν.neg⟩⟩
   simpa using hν.neg
+
+/-- The empty set has empty reduced boundary: its perimeter in every ball is zero. -/
+@[simp]
+theorem reducedBoundary_empty : reducedBoundary μ Ω (∅ : Set E) = ∅ :=
+  eq_empty_of_forall_notMem fun _ hx => perimeter_ball_ne_zero hx one_pos perimeter_empty
+
+/-- The whole space has empty reduced boundary, against an additive Haar measure: its perimeter
+in every ball is zero. -/
+@[simp]
+theorem reducedBoundary_univ [μ.IsAddHaarMeasure] : reducedBoundary μ Ω (univ : Set E) = ∅ :=
+  eq_empty_of_forall_notMem fun _ hx => perimeter_ball_ne_zero hx one_pos perimeter_univ
 
 /-- **The complement has the opposite outer normal** at every point of the reduced boundary,
 against an additive Haar measure. -/
