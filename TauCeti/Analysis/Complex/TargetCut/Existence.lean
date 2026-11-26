@@ -163,20 +163,22 @@ private lemma exists_hasStrictFDerivAt_extChartAt_comp [FiniteDimensional ℝ E]
     (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) {z₀ : ℂ} (hz₀ : Injective (mfderiv 𝓘(ℝ, ℂ) I u z₀)) :
     ∃ ℓ : E →L[ℝ] ℂ, HasStrictFDerivAt (fun w ↦ ℓ (extChartAt I (u z₀) (u w)))
       ((ContinuousLinearEquiv.refl ℝ ℂ : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) z₀ := by
-  set A := fderiv ℝ (fun w ↦ extChartAt I (u z₀) (u w)) z₀
+  set A := fderiv ℝ (extChartAt I (u z₀) ∘ u) z₀
   -- The chart centred at `u z₀` has the identity as derivative there.
   have hA (v : ℂ) : A v = mfderiv 𝓘(ℝ, ℂ) I u z₀ v := by
-    have h := hu.continuous.continuousAt.fderiv_extChartAt_comp_apply
-      (mem_extChartAt_source (I := I) (u z₀)) v
-    rw [mfderiv_extChartAt_self] at h
-    exact h
+    rw [hu.continuous.continuousAt.fderiv_extChartAt_comp_apply
+      (mem_extChartAt_source (I := I) (u z₀)), mfderiv_extChartAt_self]
+    -- The identity of the tangent space at `u z₀` applied to `mfderiv u z₀ v`; it is not
+    -- rewritten by `ContinuousLinearMap.id_apply`, since its codomain is the tangent space of the
+    -- model at `extChartAt I (u z₀) (u z₀)`, identified with `E` only definitionally.
+    rfl
   have hinj : Injective A := fun a b hab ↦ hz₀ (by rwa [← hA, ← hA])
   obtain ⟨g, hg⟩ :=
     LinearMap.exists_leftInverse_of_injective (A : ℂ →ₗ[ℝ] E) (LinearMap.ker_eq_bot.2 hinj)
   obtain ⟨ℓ, hℓ⟩ : ∃ ℓ : E →L[ℝ] ℂ, ℓ.comp A = ContinuousLinearMap.id ℝ ℂ :=
     ⟨LinearMap.toContinuousLinearMap g,
       ContinuousLinearMap.ext fun w ↦ by simpa using LinearMap.congr_fun hg w⟩
-  have hcd : ContDiffAt ℝ 1 (fun w ↦ extChartAt I (u z₀) (u w)) z₀ :=
+  have hcd : ContDiffAt ℝ 1 (extChartAt I (u z₀) ∘ u) z₀ :=
     contMDiffAt_iff_contDiffAt.1
       ((contMDiffAt_extChartAt' (mem_chart_source H (u z₀))).comp z₀ hu.contMDiffAt)
   have hfd : HasFDerivAt (fun w ↦ ℓ (extChartAt I (u z₀) (u w))) (ℓ.comp A) z₀ :=
