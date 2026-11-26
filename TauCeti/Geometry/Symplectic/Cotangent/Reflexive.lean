@@ -60,7 +60,8 @@ The space `c₀ = C₀(ι, ℝ)` of families vanishing at infinity, over an infi
 is not reflexive (`ZeroAtInftyContinuousMap.not_surjective_inclusionInDoubleDual`), and gives the
 basic example: the canonical form on `c₀ × c₀*` is not strongly nondegenerate
 (`TauCeti.not_surjective_flat_strongDualCotangentSmoothForm_zeroAtInfty`), and its fields
-`(ω♭)⁻¹ df` all vanish (`TauCeti.hamiltonianVectorField_strongDualCotangentSmoothForm_zeroAtInfty`).
+`(ω♭)⁻¹ df` all vanish
+(`TauCeti.hamiltonianVectorField_strongDualCotangentSmoothForm_zeroAtInfty_eq_zero`).
 
 ## Main definitions
 
@@ -300,7 +301,7 @@ theorem not_surjective_flat_strongDualCotangentSmoothForm_zeroAtInfty
 /-- On `c₀ = C₀(ι, ℝ)`, over an infinite discrete index type, the field `(ω♭)⁻¹ df` is zero for
 every function `f`, although the coordinate `(q, α) ↦ q(i)` has the nonzero Hamiltonian vector
 field `(0, -evalᵢ)` (`TauCeti.isHamiltonianVectorField_strongDualCotangentSmoothForm`). -/
-theorem hamiltonianVectorField_strongDualCotangentSmoothForm_zeroAtInfty
+theorem hamiltonianVectorField_strongDualCotangentSmoothForm_zeroAtInfty_eq_zero
     (f : C₀(ι, ℝ) × StrongDual ℝ C₀(ι, ℝ) → ℝ) :
     (strongDualCotangentSmoothForm C₀(ι, ℝ)).hamiltonianVectorField f = 0 :=
   hamiltonianVectorField_strongDualCotangentSmoothForm_eq_zero
