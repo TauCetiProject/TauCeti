@@ -69,7 +69,8 @@ are no nonzero covectors, every operator is elliptic and the ranks are unconstra
   whose readings in one pair of frames are the principal symbols of these entries.
 * `TauCeti.sectionClassicalPrincipalSymbol_add`, `TauCeti.sectionClassicalPrincipalSymbol_smul`,
   `TauCeti.sectionClassicalPrincipalSymbol_zero`, `TauCeti.sectionClassicalPrincipalSymbol_neg`,
-  `TauCeti.sectionClassicalPrincipalSymbol_sub`: linearity in the operator.
+  `TauCeti.sectionClassicalPrincipalSymbol_sub`, `TauCeti.sectionClassicalPrincipalSymbol_sum`:
+  linearity in the operator.
 * `TauCeti.sectionClassicalPrincipalSymbol_eq_zero_iff`: the principal symbol of an operator of
   order `m` vanishes exactly when the operator has order `m - 1`.
 * `TauCeti.sectionClassicalPrincipalSymbol_zero_covector`,
@@ -457,6 +458,23 @@ theorem sectionClassicalPrincipalSymbol_sub
       sectionClassicalPrincipalSymbol m P x ξ - sectionClassicalPrincipalSymbol m Q x ξ := by
   rw [sub_eq_add_neg, sectionClassicalPrincipalSymbol_add hP (neg_mem hQ),
     sectionClassicalPrincipalSymbol_neg, ← sub_eq_add_neg]
+
+/-- The principal symbol of a finite sum of operators of order `m` between bundles is the sum of
+their principal symbols. -/
+theorem sectionClassicalPrincipalSymbol_sum {ι : Type*} (s : Finset ι)
+    {P : ι → Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
+    (hP : ∀ i ∈ s, P i ∈ sectionClassicalPseudodifferentialOperators m) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    sectionClassicalPrincipalSymbol m (∑ i ∈ s, P i) x ξ =
+      ∑ i ∈ s, sectionClassicalPrincipalSymbol m (P i) x ξ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      sectionClassicalPrincipalSymbol_add (hP i (Finset.mem_insert_self i s))
+        (Submodule.sum_mem _ fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)),
+      ih fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)]
 
 /-- **Operators of lower order.** A classical pseudodifferential operator between bundles of order
 `m - 1` has principal symbol `0` in order `m`. -/

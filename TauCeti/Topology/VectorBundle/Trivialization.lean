@@ -101,7 +101,9 @@ vector bundle with finite-dimensional model fibre are closed (`VectorBundle.isCl
 Reconstruction at equal base points agrees with the equality cast between fibres
 (`Bundle.Trivialization.symmL_continuousLinearMapAt_eq_cast`), and over the base set a fibre
 vector is the combination of the frame vectors `e⁻¹ bⱼ` with the coordinates of its reading in a
-basis `(bⱼ)` of the model fibre (`Bundle.Trivialization.sum_repr_smul_symmL`).
+basis `(bⱼ)` of the model fibre (`Bundle.Trivialization.sum_repr_smul_symmL`). Likewise a linear
+map between the fibres of two vector bundles is reassembled from its matrix entries in two
+trivializations (`Bundle.Trivialization.sum_sum_coord_smul_symm`).
 
 A vector bundle with model fibre `𝕜` is a line bundle. In a fibre `E b` a nonzero vector `v` is a
 basis, and `TauCeti.VectorBundle.lineCoord 𝕜 hv : E b ≃L[𝕜] 𝕜` is the coordinate along it, so that
@@ -358,6 +360,27 @@ theorem linearMap_ext {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
   rw [← e.symmL_continuousLinearMapAt (R := 𝕜) hb w, e.symmL_apply hb,
     ← e'.symmL_continuousLinearMapAt (R := 𝕜) hb' (A _),
     ← e'.symmL_continuousLinearMapAt (R := 𝕜) hb' (A' _), h]
+
+variable {𝕜} in
+/-- **A linear map in frames.** Over the common base set of linear trivializations `e` of `E` and
+`e'` of `E'`, a linear map `L : E_x → E'_x` is reassembled from its matrix entries
+`b'ⱼ*(e'ₓ (L (e⁻¹ₓ bₖ)))` in bases `(bₖ)` of `F` and `(b'ⱼ)` of `F'`. -/
+theorem sum_sum_coord_smul_symm {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    {E' : B → Type*} [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommMonoid (E' b)]
+    [∀ b, Module 𝕜 (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E']
+    (e' : Trivialization F' (π F' E')) [e'.IsLinear 𝕜] {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (b : Module.Basis ι 𝕜 F) (b' : Module.Basis κ 𝕜 F') {x : B} (hx : x ∈ e.baseSet)
+    (hx' : x ∈ e'.baseSet) (L : E x →ₗ[𝕜] E' x) (u : E x) :
+    ∑ j, ∑ k, (b'.coord j (e'.continuousLinearMapAt 𝕜 x (L (e.symm x (b k)))) *
+        b.coord k (e.continuousLinearMapAt 𝕜 x u)) • e'.symm x (b' j) = L u := by
+  conv_rhs => rw [← e.sum_repr_smul_symmL b hx u, map_sum]
+  simp only [map_smul]
+  conv_rhs => arg 2; ext k; rw [← e'.sum_repr_smul_symmL b' hx' (L (e.symmL 𝕜 x (b k))),
+    Finset.smul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [smul_smul, e.symmL_apply hx, e'.symmL_apply hx', Module.Basis.coord_apply,
+    Module.Basis.coord_apply, mul_comm]
 
 variable (e' : Trivialization F (π F E)) [e'.IsLinear 𝕜] {b : B}
 
