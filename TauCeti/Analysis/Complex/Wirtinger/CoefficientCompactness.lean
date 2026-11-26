@@ -57,10 +57,10 @@ If moreover the remainders tend to `0` in `L¹` on each compact subset of `U`, a
 zero remainder, in the sense of distributions: they are the elementary symmetric functions of the
 roots `R₀(z)` of `Wᵐ - c₁(z) W^(m-1) + ⋯ + (-1)ᵐ c_m(z)`, and
 `\bar∂ c_j + j ν c_j + μ ∑_{V ∈ R₀} \bar V e_{j-1}(R₀ ∖ V) = 0`
-(`TauCeti.hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn_esymm`). The zeroth-order term
-is a continuous function of the coefficients, because the roots of a monic polynomial depend
-continuously on its coefficients (`Sym.coeffHomeomorph`) and the term is a polynomial in the
-elementary symmetric functions of the roots and the sums `∑_{V ∈ R} Vᵏ \bar V`
+(`TauCeti.exists_esymm_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn`). The
+zeroth-order term is a continuous function of the coefficients, because the roots of a monic
+polynomial depend continuously on its coefficients (`Sym.continuous_ofEsymm`) and the term is a
+polynomial in the elementary symmetric functions of the roots and the sums `∑_{V ∈ R} Vᵏ \bar V`
 (`Multiset.sum_map_mul_esymm_erase`). So the zeroth-order terms converge locally uniformly along
 with the coefficients, and the weak equation passes to the limit
 (`TauCeti.HasWeakConjWirtingerDerivOn.of_tendsto_setLIntegral_enorm_sub`). This is the coefficient
@@ -74,8 +74,9 @@ assumed `C¹`, which the weak equation alone does not give.
   a subsequence of the coefficients, with Hölder continuous limits of exponent `1 - 2 / p`.
 * `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_esymm_of_eq`: the same for
   `p = 2 + 2 / m`, with Hölder exponent `1 / (m + 1)`.
-* `TauCeti.hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn_esymm`: when the remainders
-  tend to `0`, the limits solve the equation of the elementary symmetric functions weakly.
+* `TauCeti.exists_esymm_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn`: when the
+  remainders tend to `0`, the limits solve the equation of the elementary symmetric functions
+  weakly.
 
 ## References
 
@@ -227,39 +228,11 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_esymm_of_eq {m : ℕ} {p 
 
 /-! ### The limits solve the equation -/
 
-/-- The unordered `m`-tuple whose elementary symmetric functions `e₁, …, e_m` are
-`d 0, …, d (m - 1)`: the roots of `Wᵐ - d 0 W^(m-1) + d 1 W^(m-2) - ⋯`, read through the
-elementary symmetric chart. -/
-private noncomputable def tupleOfEsymm {m : ℕ} (d : Fin m → ℂ) : Sym ℂ m :=
-  (Sym.coeffHomeomorph ℂ m).symm fun i ↦ (-1) ^ (m - (i : ℕ)) * d (Fin.rev i)
-
-private theorem continuous_tupleOfEsymm {m : ℕ} : Continuous (tupleOfEsymm (m := m)) :=
-  (Sym.coeffHomeomorph ℂ m).symm.continuous.comp <| continuous_pi fun _ ↦
-    continuous_const.mul (continuous_apply _)
-
-private theorem esymm_tupleOfEsymm {m : ℕ} (d : Fin m → ℂ) (i : Fin m) :
-    ((tupleOfEsymm d : Sym ℂ m) : Multiset ℂ).esymm (i + 1) = d i := by
-  have h := congrFun ((Sym.coeffHomeomorph ℂ m).apply_symm_apply
-    fun i ↦ (-1) ^ (m - (i : ℕ)) * d (Fin.rev i)) (Fin.rev i)
-  rw [Sym.coeffHomeomorph_apply, Sym.coeffEquiv_apply, Fin.rev_rev, Fin.val_rev,
-    show m - (m - (i + 1)) = i + 1 by omega] at h
-  exact mul_left_cancel₀ (pow_ne_zero _ (by norm_num)) h
-
-private theorem coe_tupleOfEsymm {m : ℕ} {S : Multiset ℂ} (hS : Multiset.card S = m)
-    {d : Fin m → ℂ} (hd : ∀ i : Fin m, S.esymm (i + 1) = d i) :
-    ((tupleOfEsymm d : Sym ℂ m) : Multiset ℂ) = S := by
-  suffices h : tupleOfEsymm d = Sym.mk S hS by rw [h]; rfl
-  rw [tupleOfEsymm, Homeomorph.symm_apply_eq]
-  funext i
-  rw [Sym.coeffHomeomorph_apply, Sym.coeffEquiv_apply, ← hd, Fin.val_rev,
-    show m - (i + 1) + 1 = m - i by omega]
-  rfl
-
-private theorem esymm_tupleOfEsymm_of_mem {m j : ℕ} (hj : j ∈ Finset.Icc 1 m) (e : ℕ → ℂ) :
-    ((tupleOfEsymm (fun i : Fin m ↦ e (i + 1)) : Sym ℂ m) : Multiset ℂ).esymm j = e j := by
+private theorem esymm_ofEsymm_of_mem {m j : ℕ} (hj : j ∈ Finset.Icc 1 m) (e : ℕ → ℂ) :
+    ((Sym.ofEsymm (fun i : Fin m ↦ e (i + 1)) : Sym ℂ m) : Multiset ℂ).esymm j = e j := by
   obtain ⟨hj1, hjm⟩ := Finset.mem_Icc.1 hj
   obtain ⟨i, rfl⟩ : ∃ i : Fin m, (i : ℕ) + 1 = j := ⟨⟨j - 1, by omega⟩, by simp; omega⟩
-  exact esymm_tupleOfEsymm _ i
+  exact Sym.esymm_ofEsymm _ i
 
 /-- The zeroth-order term `∑_{V ∈ s} \bar V e_{j-1}(s ∖ V)` of the equation of the elementary
 symmetric functions is continuous on the symmetric power: by `Multiset.sum_map_mul_esymm_erase`
@@ -274,16 +247,16 @@ private theorem continuous_sum_map_conj_mul_esymm_erase (m j : ℕ) :
 
 /-- The zeroth-order term `(j e_j ν + ∑_{V ∈ R} \bar V e_{j-1}(R ∖ V) μ)(1)` of the equation of
 the `j`-th elementary symmetric function, as a function of the coefficients `e₁, …, e_m` of the
-tuple `R` (`tupleOfEsymm`) and of the forms `ν`, `μ`. -/
+tuple `R` (`Sym.ofEsymm`) and of the forms `ν`, `μ`. -/
 private noncomputable def esymmZerothOrder (m j : ℕ)
     (p : (Fin m → ℂ) × (ℂ →L⋆[ℂ] ℂ) × (ℂ →L⋆[ℂ] ℂ)) : ℂ :=
-  ((j * ((tupleOfEsymm p.1 : Sym ℂ m) : Multiset ℂ).esymm j) • p.2.1 +
-    (((tupleOfEsymm p.1 : Sym ℂ m) : Multiset ℂ).map fun w ↦
-      conj w * (((tupleOfEsymm p.1 : Sym ℂ m) : Multiset ℂ).erase w).esymm (j - 1)).sum • p.2.2) 1
+  ((j * ((Sym.ofEsymm p.1 : Sym ℂ m) : Multiset ℂ).esymm j) • p.2.1 +
+    (((Sym.ofEsymm p.1 : Sym ℂ m) : Multiset ℂ).map fun w ↦
+      conj w * (((Sym.ofEsymm p.1 : Sym ℂ m) : Multiset ℂ).erase w).esymm (j - 1)).sum • p.2.2) 1
 
 private theorem continuous_esymmZerothOrder (m j : ℕ) : Continuous (esymmZerothOrder m j) := by
-  have h₁ := (Sym.continuous_esymm (R := ℂ) (n := m) j).comp continuous_tupleOfEsymm
-  have h₂ := (continuous_sum_map_conj_mul_esymm_erase m j).comp continuous_tupleOfEsymm
+  have h₁ := (Sym.continuous_esymm (R := ℂ) (n := m) j).comp Sym.continuous_ofEsymm
+  have h₂ := (continuous_sum_map_conj_mul_esymm_erase m j).comp Sym.continuous_ofEsymm
   exact (continuous_eval_const 1).comp
     (((continuous_const.mul (h₁.comp continuous_fst)).smul (continuous_fst.comp continuous_snd)).add
       ((h₂.comp continuous_fst).smul (continuous_snd.comp continuous_snd)))
@@ -304,10 +277,10 @@ and they solve the equation with zero remainder in the sense of distributions on
 `\bar∂ c_j + j ν₀ c_j + μ₀ ∑_{V ∈ R₀} \bar V e_{j-1}(R₀ ∖ V) = 0`.
 
 The zeroth-order terms converge locally uniformly, by continuity of the roots of a monic polynomial
-in its coefficients (`Sym.coeffHomeomorph`), and the weak equation passes to the limit
+in its coefficients (`Sym.continuous_ofEsymm`), and the weak equation passes to the limit
 (`TauCeti.HasWeakConjWirtingerDerivOn.of_tendsto_setLIntegral_enorm_sub`). -/
-theorem hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn_esymm {m : ℕ} {U : Opens ℂ}
-    {b : ℕ → ℕ → ℂ → ℂ} {R : ℕ → ℂ → Multiset ℂ} {ν μ : ℕ → ℂ → ℂ →L⋆[ℂ] ℂ}
+theorem exists_esymm_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn {m : ℕ}
+    {U : Opens ℂ} {b : ℕ → ℕ → ℂ → ℂ} {R : ℕ → ℂ → Multiset ℂ} {ν μ : ℕ → ℂ → ℂ →L⋆[ℂ] ℂ}
     {c : ℕ → ℂ → ℂ} {ν₀ μ₀ : ℂ → ℂ →L⋆[ℂ] ℂ}
     (hb : ∀ n, ∀ j ∈ Finset.Icc 1 m, ContDiffOn ℝ 1 (b n j) U)
     (hcard : ∀ n, ∀ z ∈ U, Multiset.card (R n z) = m)
@@ -334,18 +307,21 @@ theorem hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn_esymm {m : ℕ}
     ((hν₀.continuousOn (Frequently.of_forall hν)).prodMk
       (hμ₀.continuousOn (Frequently.of_forall hμ)))
   -- Along the sequence, the tuple of `D n z` is `R n z`.
-  have hR (n : ℕ) (z : ℂ) (hz : z ∈ U) : ((tupleOfEsymm (D n z) : Sym ℂ m) : Multiset ℂ) = R n z :=
-    coe_tupleOfEsymm (hcard n z hz) fun i ↦ (hbR n _ (hmem i) z hz).symm
-  refine ⟨fun z ↦ tupleOfEsymm (D₀ z), fun z _ ↦ (tupleOfEsymm (D₀ z)).card_coe,
-    fun j hj z _ ↦ (esymm_tupleOfEsymm_of_mem hj (c · z)).symm, fun j hj ↦ ?_⟩
+  have hR (n : ℕ) (z : ℂ) (hz : z ∈ U) :
+      ((Sym.ofEsymm (D n z) : Sym ℂ m) : Multiset ℂ) = R n z := by
+    rw [← (Sym.eq_ofEsymm_iff (s := Sym.mk (R n z) (hcard n z hz))).2 fun i ↦
+      (hbR n _ (hmem i) z hz).symm]
+    rfl
+  refine ⟨fun z ↦ Sym.ofEsymm (D₀ z), fun z _ ↦ (Sym.ofEsymm (D₀ z)).card_coe,
+    fun j hj z _ ↦ (esymm_ofEsymm_of_mem hj (c · z)).symm, fun j hj ↦ ?_⟩
   -- The limiting zeroth-order term is that of the limiting coefficients and forms.
   have htarget : (fun z ↦ -((j * c j z) • ν₀ z +
-      (((tupleOfEsymm (D₀ z) : Sym ℂ m) : Multiset ℂ).map fun w ↦
-        conj w * (((tupleOfEsymm (D₀ z) : Sym ℂ m) : Multiset ℂ).erase w).esymm (j - 1)).sum •
+      (((Sym.ofEsymm (D₀ z) : Sym ℂ m) : Multiset ℂ).map fun w ↦
+        conj w * (((Sym.ofEsymm (D₀ z) : Sym ℂ m) : Multiset ℂ).erase w).esymm (j - 1)).sum •
           μ₀ z) 1) = fun z ↦ -esymmZerothOrder m j (D₀ z, ν₀ z, μ₀ z) := by
     funext z
-    have he : ((tupleOfEsymm (D₀ z) : Sym ℂ m) : Multiset ℂ).esymm j = c j z :=
-      esymm_tupleOfEsymm_of_mem hj (c · z)
+    have he : ((Sym.ofEsymm (D₀ z) : Sym ℂ m) : Multiset ℂ).esymm j = c j z :=
+      esymm_ofEsymm_of_mem hj (c · z)
     simp only [esymmZerothOrder, he]
   rw [htarget]
   refine hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn (hb · j hj) (hc j hj)

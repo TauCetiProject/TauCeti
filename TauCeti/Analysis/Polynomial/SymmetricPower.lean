@@ -49,6 +49,8 @@ Both halves are elementary, but neither is formal:
 * `Sym.isProperMap_coeffEquiv_comp_ofFn`: consequently the coefficient map
   `(Fin n → K) → (Fin n → K)` is proper.
 * `Sym.coeffHomeomorph`: the **elementary symmetric chart** `Sym K n ≃ₜ (Fin n → K)`.
+* `Sym.continuous_ofEsymm`: the unordered tuple with prescribed elementary symmetric functions
+  depends continuously on them.
 * `Sym.eventually_exists_ofFn_eq_coeffEquiv_symm`: its inverse read on ordered tuples,
   that nearby coefficient tuples come from ordered tuples close coordinate by coordinate; this is
   continuity of roots with multiplicity, stated for polynomials in
@@ -183,8 +185,7 @@ theorem continuous_esymm {R : Type*} [CommSemiring R] [TopologicalSpace R]
       fun f : Fin n → R => MvPolynomial.eval f (MvPolynomial.esymm (Fin n) R k) := by
     funext f
     rw [Function.comp_apply, coe_ofFn, ← Fin.univ_val_map,
-      ← MvPolynomial.aeval_esymm_eq_multiset_esymm (Fin n) R k f]
-    rfl
+      ← MvPolynomial.aeval_esymm_eq_multiset_esymm (Fin n) R k f, MvPolynomial.aeval_eq_eval]
   rw [h]
   exact MvPolynomial.continuous_eval _
 
@@ -272,6 +273,14 @@ theorem coeffHomeomorph_symm_apply (f : Fin n → K) :
   simp [coeffHomeomorph]
 
 variable {K n}
+
+/-- The unordered tuple with prescribed elementary symmetric functions depends continuously on
+them: the roots of a monic polynomial depend continuously on its coefficients. -/
+@[continuity, fun_prop]
+theorem continuous_ofEsymm : Continuous fun d : Fin n → K => ofEsymm d := by
+  simp only [ofEsymm, ← coeffHomeomorph_symm_apply]
+  exact (coeffHomeomorph K n).symm.continuous.comp <|
+    continuous_pi fun i => continuous_const.mul (continuous_apply i.rev)
 
 /-- **Continuity of roots on ordered tuples.** Every coefficient tuple close enough to that of the
 ordered tuple `a` is the coefficient tuple of an ordered tuple `b` with each `b i` close to `a i`.

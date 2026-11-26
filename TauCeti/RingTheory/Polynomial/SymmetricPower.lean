@@ -55,6 +55,9 @@ are separate later steps.
 * `Sym.coeffEquiv`: the resulting chart `Sym K n ≃ (Fin n → K)`, with
   `Sym.coeffEquiv_apply` naming its coordinates as the signed elementary symmetric
   functions and `Sym.coeffEquiv_symm_apply` describing the inverse as a root-taking map.
+* `Sym.ofEsymm`: the inverse chart in unsigned coordinates, the unordered tuple with prescribed
+  elementary symmetric functions (`Sym.esymm_ofEsymm`), which they determine
+  (`Sym.eq_ofEsymm_iff`).
 * `Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero`: membership in the basepoint
   divisor is characterized by an affine equation in the chart.
 * `Sym.coeffEquiv_one_apply` and `Sym.coeffEquiv_two_apply`: the chart in degrees
@@ -379,6 +382,32 @@ private theorem esymm_succ_eq_neg_one_pow_mul_coeffEquiv (s : Sym K n) (j : Fin 
     rw [← pow_add, ← Nat.two_mul, pow_mul]
     norm_num
   rw [← mul_assoc, hsign, one_mul]
+
+/-- The unordered `n`-tuple with prescribed elementary symmetric functions: its elementary
+symmetric functions `e₁, …, eₙ` are `d 0, …, d (n - 1)` (`Sym.esymm_ofEsymm`). It is the root
+multiset of `Xⁿ - d 0 X^(n-1) + d 1 X^(n-2) - ⋯ + (-1)ⁿ d (n - 1)`, read through the elementary
+symmetric chart. -/
+@[expose]
+noncomputable def ofEsymm (d : Fin n → K) : Sym K n :=
+  (coeffEquiv K n).symm fun i => (-1) ^ (n - (i : ℕ)) * d i.rev
+
+/-- The elementary symmetric functions of `Sym.ofEsymm d` are the prescribed ones. -/
+@[simp]
+theorem esymm_ofEsymm (d : Fin n → K) (i : Fin n) :
+    ((ofEsymm d : Sym K n) : Multiset K).esymm ((i : ℕ) + 1) = d i := by
+  rw [esymm_succ_eq_neg_one_pow_mul_coeffEquiv, ofEsymm, Equiv.apply_symm_apply, Fin.rev_rev,
+    Fin.val_rev, show n - (n - ((i : ℕ) + 1)) = (i : ℕ) + 1 by omega, ← mul_assoc, ← pow_add,
+    ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul]
+
+/-- An unordered tuple is determined by its elementary symmetric functions: `s` is
+`Sym.ofEsymm d` exactly when its elementary symmetric functions `e₁, …, eₙ` are
+`d 0, …, d (n - 1)`. -/
+theorem eq_ofEsymm_iff {s : Sym K n} {d : Fin n → K} :
+    s = ofEsymm d ↔ ∀ i : Fin n, (s : Multiset K).esymm ((i : ℕ) + 1) = d i := by
+  refine ⟨fun h => h ▸ esymm_ofEsymm d, fun h => ?_⟩
+  rw [ofEsymm, Equiv.eq_symm_apply]
+  funext i
+  rw [coeffEquiv_apply, ← h, Fin.val_rev, show n - ((i : ℕ) + 1) + 1 = n - (i : ℕ) by omega]
 
 end AlgClosed
 
