@@ -64,16 +64,14 @@ noncomputable def classifyingSpaceHomotopy (η : F ⟶ G) :
 /-- The homotopy induced by `η` moves the vertex `[c]` along the edge path of `η.app c`. -/
 @[simp]
 theorem classifyingSpaceHomotopy_apply_vertex (η : F ⟶ G) (t : I) (c : C) :
-    η.classifyingSpaceHomotopy (t, vertex c) = edge (η.app c) t :=
+    η.classifyingSpaceHomotopy (t, vertex c) = edge (η.app c) t := by
   -- Over the vertex `[c]` the triangulated cylinder traces the vertical edge `{c} × Δ[1]`, which
   -- the simplicial homotopy sends to the edge `η.app c`, whose path is `edge (η.app c)`.
-  ((SSet.Homotopy.toTop_apply _ t _).trans (congrArg (SSet.toTop.map η.nerveHomotopy.h)
-    ((congrArg (SSet.toTopCylinder _ ⟨·, t⟩) (SSet.toTopPoint_eq_toTopObjMk _ default)).trans
-      (SSet.toTopCylinder_toTopObjMk_verticalEdge _ _ t)))).trans
-    ((SSet.toTop_map_toTopObjMk _ _ _).trans
-      ((congrArg (SSet.toTopObjMk · _) (nerveHomotopy_h_app_verticalEdge η c)).trans
-        ((SSet.Edge.toTopPath_apply (nerve.edgeMk (η.app c)) t).symm.trans
-          (congrArg (· t) (edge_eq_toTopPath (η.app c)).symm))))
+  rw [classifyingSpaceHomotopy, SSet.Homotopy.toTop_apply, vertex,
+    SSet.toTopPoint_eq_toTopObjMk (X := nerve C) (nerveEquiv.symm c) default,
+    SSet.toTopCylinder_toTopObjMk_verticalEdge (X := nerve C) (nerveEquiv.symm c) default t,
+    SSet.toTop_map_toTopObjMk, nerveHomotopy_h_app_verticalEdge, edge_eq_toTopPath]
+  exact (SSet.Edge.toTopPath_apply _ t).symm
 
 end CategoryTheory.NatTrans
 
@@ -103,8 +101,9 @@ theorem classifyingSpaceMap_const (d : D) :
     have hx : (nerveMap ((Functor.const C).obj d)).app _ x =
         (nerve D).map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op (nerveEquiv.symm d) :=
       Functor.ext (fun _ ↦ rfl) (fun _ _ _ ↦ (by simp : 𝟙 d = 𝟙 d ≫ 𝟙 d ≫ 𝟙 d))
-    exact (SSet.toTop_map_toTopObjMk _ x w).trans ((congrArg (SSet.toTopObjMk · w) hx).trans
-      ((SSet.toTopObjMk_map _ _ w).trans (SSet.toTopPoint_eq_toTopObjMk _ _).symm))
+    rw [SSet.toTop_map_toTopObjMk, hx,
+      SSet.toTopObjMk_map (X := nerve D) _ (nerveEquiv.symm d) w]
+    exact (SSet.toTopPoint_eq_toTopObjMk _ _).symm
   rw [h, TopCat.hom_ofHom]
 
 end CategoryTheory.Functor
@@ -130,14 +129,14 @@ noncomputable def classifyingSpaceHomotopyEquiv (adj : L ⊣ R) :
 
 /-- The homotopy equivalence of an adjunction `L ⊣ R` is `BL`. -/
 @[simp]
-lemma classifyingSpaceHomotopyEquiv_toFun (adj : L ⊣ R) :
-    adj.classifyingSpaceHomotopyEquiv.toFun = L.classifyingSpaceMap.hom :=
+lemma classifyingSpaceHomotopyEquiv_apply (adj : L ⊣ R) (x : classifyingSpace C) :
+    adj.classifyingSpaceHomotopyEquiv x = L.classifyingSpaceMap.hom x :=
   (rfl)
 
 /-- The homotopy inverse of the homotopy equivalence of an adjunction `L ⊣ R` is `BR`. -/
 @[simp]
-lemma classifyingSpaceHomotopyEquiv_invFun (adj : L ⊣ R) :
-    adj.classifyingSpaceHomotopyEquiv.invFun = R.classifyingSpaceMap.hom :=
+lemma classifyingSpaceHomotopyEquiv_symm_apply (adj : L ⊣ R) (y : classifyingSpace D) :
+    adj.classifyingSpaceHomotopyEquiv.symm y = R.classifyingSpaceMap.hom y :=
   (rfl)
 
 end CategoryTheory.Adjunction
@@ -154,15 +153,15 @@ noncomputable def classifyingSpaceHomotopyEquiv (e : C ≌ D) :
 
 /-- The homotopy equivalence of an equivalence of categories `e` is `B(e.functor)`. -/
 @[simp]
-lemma classifyingSpaceHomotopyEquiv_toFun (e : C ≌ D) :
-    e.classifyingSpaceHomotopyEquiv.toFun = e.functor.classifyingSpaceMap.hom :=
+lemma classifyingSpaceHomotopyEquiv_apply (e : C ≌ D) (x : classifyingSpace C) :
+    e.classifyingSpaceHomotopyEquiv x = e.functor.classifyingSpaceMap.hom x :=
   (rfl)
 
 /-- The homotopy inverse of the homotopy equivalence of an equivalence of categories `e` is
 `B(e.inverse)`. -/
 @[simp]
-lemma classifyingSpaceHomotopyEquiv_invFun (e : C ≌ D) :
-    e.classifyingSpaceHomotopyEquiv.invFun = e.inverse.classifyingSpaceMap.hom :=
+lemma classifyingSpaceHomotopyEquiv_symm_apply (e : C ≌ D) (y : classifyingSpace D) :
+    e.classifyingSpaceHomotopyEquiv.symm y = e.inverse.classifyingSpaceMap.hom y :=
   (rfl)
 
 end CategoryTheory.Equivalence
