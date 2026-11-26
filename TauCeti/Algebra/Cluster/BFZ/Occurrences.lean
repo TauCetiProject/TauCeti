@@ -162,7 +162,10 @@ theorem isBfzExchangeable_bfzOccurrence_iff (w : List (Fin r × Bool)) (i : Fin 
     IsBfzExchangeable w (bfzOccurrence w i n) ↔
       r ≤ (bfzOccurrence w i n : ℕ) ∧
         (n : ℕ) + 1 < (bfzOccurrencePositions w i).card := by
-  rw [isBfzExchangeable_def, ne_eq, bfzSuccessor_bfzOccurrence_eq_top_iff]
+  rw [isBfzExchangeable_iff]
+  have ht := not_congr (bfzSuccessor_bfzOccurrence_eq_top_iff w i n)
+  simp only [bfzSuccessor_eq_top_iff, not_forall, not_not, exists_prop] at ht
+  rw [ht]
   have hn := n.isLt
   omega
 

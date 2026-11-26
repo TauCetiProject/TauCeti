@@ -170,11 +170,6 @@ theorem bfzSuccessor_eq_top_iff (w : List (Fin r × Bool)) (k : Fin (r + w.lengt
 def IsBfzExchangeable (w : List (Fin r × Bool)) (k : Fin (r + w.length)) : Prop :=
   r ≤ (k : ℕ) ∧ bfzSuccessor w k ≠ ⊤
 
-/-- The exchangeability condition expressed in terms of the stored position and its successor. -/
-theorem isBfzExchangeable_def (w : List (Fin r × Bool)) (k : Fin (r + w.length)) :
-    IsBfzExchangeable w k ↔ r ≤ (k : ℕ) ∧ bfzSuccessor w k ≠ ⊤ := by
-  rw [IsBfzExchangeable]
-
 /-- Decide exchangeability, in particular for filtering the finite set of mutable positions. -/
 instance (w : List (Fin r × Bool)) (k : Fin (r + w.length)) : Decidable (IsBfzExchangeable w k) :=
   inferInstanceAs (Decidable (r ≤ (k : ℕ) ∧ bfzSuccessor w k ≠ ⊤))
@@ -184,7 +179,7 @@ instance (w : List (Fin r × Bool)) (k : Fin (r + w.length)) : Decidable (IsBfzE
 theorem isBfzExchangeable_iff (w : List (Fin r × Bool)) (k : Fin (r + w.length)) :
     IsBfzExchangeable w k ↔ r ≤ (k : ℕ) ∧
       ∃ l, k < l ∧ (bfzLetter w l).1 = (bfzLetter w k).1 := by
-  simp [isBfzExchangeable_def, bfzSuccessor_eq_top_iff, not_forall]
+  simp [IsBfzExchangeable, bfzSuccessor_eq_top_iff, not_forall]
 
 /-- Negative prefix positions are always frozen. -/
 theorem not_isBfzExchangeable_castAdd (w : List (Fin r × Bool)) (k : Fin r) :
