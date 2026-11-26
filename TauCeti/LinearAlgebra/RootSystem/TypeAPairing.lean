@@ -101,18 +101,6 @@ theorem injective_of_pairing_eq_delta [CharZero R]
   split_ifs at hA
   norm_num at hA
 
-/-- Every root, or its negative, is a sum of consecutive differences. -/
-theorem root_mem_or_neg_mem_closure_of_pairing_eq_delta (v : Fin (r + 1) → M)
-    (hidx : ∀ μ, ∃ i j, ∃ hij : i ≠ j, μ = idx i j hij)
-    (hv : ∀ i j (hij : i ≠ j), P.root (idx i j hij) = v i - v j)
-    (hs : ∀ k, s k = idx k.castSucc k.succ Fin.castSucc_lt_succ.ne) (μ : ι) :
-    P.root μ ∈ AddSubmonoid.closure (P.root '' range s) ∨
-      -P.root μ ∈ AddSubmonoid.closure (P.root '' range s) := by
-  refine root_mem_or_neg_mem_closure_of_forall_exists_eq_sub v (fun k ↦ by rw [hs, hv])
-    (fun ν ↦ ?_) μ
-  obtain ⟨i, j, hij, rfl⟩ := hidx ν
-  exact ⟨i, j, hv i j hij⟩
-
 end Base
 
 end CommRing
@@ -134,11 +122,13 @@ variable [Finite ι] [Field R] [CharZero R] [Module R M] [Module R N] {P : RootP
 /-- **The base of consecutive differences** `e_k - e_{k+1}`, `k < r`, of a root system of rank `r`
 whose roots are the `e_i - e_j = v i - v j`, `i ≠ j`, with the pairings of type `A`. -/
 noncomputable def typeABase : P.Base :=
+  have hsp := root_mem_or_neg_mem_closure_of_forall_exists_eq_sub v (fun k ↦ by rw [hs, hv])
+    fun μ ↦ by
+      obtain ⟨i, j, hij, rfl⟩ := hidx μ
+      exact ⟨i, j, hv i j hij⟩
   Base.mk' P (range s)
     (linearIndepOn_root_range_of_root_mem_or_neg_mem_closure
-      (injective_of_pairing_eq_delta hpair hs)
-      (root_mem_or_neg_mem_closure_of_pairing_eq_delta v hidx hv hs) hrank)
-    (root_mem_or_neg_mem_closure_of_pairing_eq_delta v hidx hv hs)
+      (injective_of_pairing_eq_delta hpair hs) hsp hrank) hsp
 
 /-- The simple roots of `RootPairing.typeABase` are the consecutive differences. -/
 theorem typeABase_support :
