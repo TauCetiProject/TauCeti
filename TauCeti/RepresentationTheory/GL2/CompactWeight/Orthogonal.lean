@@ -94,13 +94,6 @@ theorem orthogonalRep_weightVector (g : orthogonalGroup (Fin 2) ℝ) (ℓ : ℤ)
       (orthogonalPhase g ^ (orthogonalSign g * ℓ)) • weightVector k μ (orthogonalSign g * ℓ) :=
   constr_weightVector _ ℓ
 
-/-- `ε ℓ` is `ℓ` or `-ℓ`. -/
-private theorem orthogonalSign_mul_eq (g : orthogonalGroup (Fin 2) ℝ) (ℓ : ℤ) :
-    orthogonalSign g * ℓ = ℓ ∨ orthogonalSign g * ℓ = -ℓ := by
-  rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup g.property with hg | hg
-  · simp [orthogonalSign_of_det_eq_one hg]
-  · simp [orthogonalSign_of_det_eq_neg_one hg]
-
 /-- **The reflection `A = diag(1, -1)` acts by `TauCeti.CompactWeightModule.reflection`**,
 `v_ℓ ↦ v_{-ℓ}`. -/
 theorem orthogonalRep_orthogonalDiagonalReflection :
@@ -132,13 +125,10 @@ theorem orthogonalRep_lie (g : orthogonalGroup (Fin 2) ℝ) (M : Matrix (Fin 2) 
     orthogonalRep k μ g ⁅M, v⁆ = ⁅orthogonalAd (Fin 2) g M, orthogonalRep k μ g v⁆ := by
   rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup g.property with hg | hg
   · exact orthogonalRep_lie_of_det_eq_one hg M v
-  have hAA : orthogonalDiagonalReflection ℝ (1 : Fin 2) * orthogonalDiagonalReflection ℝ 1 = 1 :=
-    Subtype.ext <| by
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp
   obtain ⟨r, hr, rfl⟩ : ∃ r : orthogonalGroup (Fin 2) ℝ, (r : Matrix (Fin 2) (Fin 2) ℝ).det = 1 ∧
       g = r * orthogonalDiagonalReflection ℝ 1 := by
-    refine ⟨g * orthogonalDiagonalReflection ℝ 1, ?_, by rw [mul_assoc, hAA, mul_one]⟩
+    refine ⟨g * orthogonalDiagonalReflection ℝ 1, ?_, by
+      rw [mul_assoc, orthogonalDiagonalReflection_mul_self, mul_one]⟩
     rw [Submonoid.coe_mul, det_mul, hg, det_orthogonalDiagonalReflection, neg_one_mul, neg_neg]
   simp only [map_mul, mul_apply_eq_comp, orthogonalRep_orthogonalDiagonalReflection,
     LinearEquiv.coe_coe, reflection_lie, orthogonalRep_lie_of_det_eq_one hr,
@@ -160,7 +150,7 @@ def gkModule : GKModule (orthogonalAd (Fin 2)) (CompactWeightModule k μ) where
         (W := Submodule.span ℂ {weightVector k μ ℓ, weightVector k μ (-ℓ)}) fun g ↦ ?_
       rw [orthogonalRep_weightVector]
       refine Submodule.smul_mem _ _ (Submodule.subset_span ?_)
-      rcases orthogonalSign_mul_eq g ℓ with h | h <;> simp [h]
+      rcases orthogonalSign_eq_one_or_neg_one g with h | h <;> simp [h]
     have htop : ⊤ ≤ (orthogonalRep k μ).gFiniteSubmodule := by
       rw [← (weightBasis k μ).span_eq, Submodule.span_le]
       rintro _ ⟨ℓ, rfl⟩
@@ -179,7 +169,8 @@ theorem equivFinsupp_orthogonalRep_mem_supported {S : Set ℤ} (hS : ∀ ℓ, -�
     equivFinsupp k μ (orthogonalRep k μ g v) ∈ Finsupp.supported ℂ ℂ S := by
   have hc : ∀ ℓ ∈ S, orthogonalSign g * ℓ ∉ S → orthogonalPhase g ^ (orthogonalSign g * ℓ) = 0 :=
     fun ℓ hℓ hℓ' ↦ by
-      rcases orthogonalSign_mul_eq g ℓ with h | h <;> rw [h] at hℓ'
+      rcases orthogonalSign_eq_one_or_neg_one g with h | h <;> simp only [h, one_mul,
+        neg_one_mul] at hℓ'
       · exact absurd hℓ hℓ'
       · exact absurd ((hS ℓ).2 hℓ) hℓ'
   have key := Finsupp.map_mem_supported_of_map_single_eq_smul_single ℂ

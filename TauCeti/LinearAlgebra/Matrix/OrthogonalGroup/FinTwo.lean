@@ -29,6 +29,8 @@ and the **sign** `ε(g) = det g = ±1` is an integer. The rotation `r_θ = exp(�
 
 ## Main results
 
+* `Matrix.apply_one_one_of_mem_orthogonalGroup_fin_two_of_det_eq_one` and its siblings: the
+  entry relations of rotations and reflections.
 * `Matrix.eq_of_mem_orthogonalGroup_fin_two_of_det_eq_one`,
   `Matrix.eq_of_mem_orthogonalGroup_fin_two_of_det_eq_neg_one`: the normal forms of rotations and
   reflections.
@@ -57,24 +59,48 @@ theorem mul_add_mul_of_mem_orthogonalGroup_fin_two (hA : A ∈ orthogonalGroup (
     A 0 0 * A 0 1 + A 1 0 * A 1 1 = 0 := by
   simpa [dotProduct, Fin.sum_univ_two] using col_dotProduct_col_of_mem_orthogonalGroup hA 0 1
 
-/-- An orthogonal `2 × 2` matrix of determinant `1` is a rotation `!![a, -b; b, a]`. -/
-theorem eq_of_mem_orthogonalGroup_fin_two_of_det_eq_one (hA : A ∈ orthogonalGroup (Fin 2) R)
-    (hdet : A.det = 1) : A = !![A 0 0, -A 1 0; A 1 0, A 0 0] := by
-  obtain ⟨h₁, h₂, -⟩ := mem_specialOrthogonalGroup_fin_two_iff.1
-    ((mem_specialOrthogonalGroup_iff).2 ⟨hA, hdet⟩)
-  exact (eta_fin_two A).trans (by rw [h₁, h₂])
+/-- The `(1, 1)` entry of an orthogonal `2 × 2` matrix of determinant `1` is its `(0, 0)` entry. -/
+theorem apply_one_one_of_mem_orthogonalGroup_fin_two_of_det_eq_one
+    (hA : A ∈ orthogonalGroup (Fin 2) R) (hdet : A.det = 1) : A 1 1 = A 0 0 :=
+  (mem_specialOrthogonalGroup_fin_two_iff.1 ((mem_specialOrthogonalGroup_iff).2 ⟨hA, hdet⟩)).1.symm
 
-/-- An orthogonal `2 × 2` matrix of determinant `-1` is a reflection `!![a, b; b, -a]`. -/
-theorem eq_of_mem_orthogonalGroup_fin_two_of_det_eq_neg_one (hA : A ∈ orthogonalGroup (Fin 2) R)
-    (hdet : A.det = -1) : A = !![A 0 0, A 1 0; A 1 0, -A 0 0] := by
+/-- The `(0, 1)` entry of an orthogonal `2 × 2` matrix of determinant `1` is minus its `(1, 0)`
+entry. -/
+theorem apply_zero_one_of_mem_orthogonalGroup_fin_two_of_det_eq_one
+    (hA : A ∈ orthogonalGroup (Fin 2) R) (hdet : A.det = 1) : A 0 1 = -A 1 0 :=
+  (mem_specialOrthogonalGroup_fin_two_iff.1 ((mem_specialOrthogonalGroup_iff).2 ⟨hA, hdet⟩)).2.1
+
+/-- The `(1, 1)` entry of an orthogonal `2 × 2` matrix of determinant `-1` is minus its `(0, 0)`
+entry. -/
+theorem apply_one_one_of_mem_orthogonalGroup_fin_two_of_det_eq_neg_one
+    (hA : A ∈ orthogonalGroup (Fin 2) R) (hdet : A.det = -1) : A 1 1 = -A 0 0 := by
   have h₀ := sq_add_sq_of_mem_orthogonalGroup_fin_two hA
   have h₁ := mul_add_mul_of_mem_orthogonalGroup_fin_two hA
   rw [det_fin_two] at hdet
-  have h₁₁ : A 1 1 = -A 0 0 := by
-    linear_combination A 1 0 * h₁ + A 0 0 * hdet - A 1 1 * h₀
-  have h₀₁ : A 0 1 = A 1 0 := by
-    linear_combination A 0 0 * h₁ - A 1 0 * hdet - A 0 1 * h₀
-  exact (eta_fin_two A).trans (by rw [h₀₁, h₁₁])
+  linear_combination A 1 0 * h₁ + A 0 0 * hdet - A 1 1 * h₀
+
+/-- The `(0, 1)` entry of an orthogonal `2 × 2` matrix of determinant `-1` is its `(1, 0)`
+entry. -/
+theorem apply_zero_one_of_mem_orthogonalGroup_fin_two_of_det_eq_neg_one
+    (hA : A ∈ orthogonalGroup (Fin 2) R) (hdet : A.det = -1) : A 0 1 = A 1 0 := by
+  have h₀ := sq_add_sq_of_mem_orthogonalGroup_fin_two hA
+  have h₁ := mul_add_mul_of_mem_orthogonalGroup_fin_two hA
+  rw [det_fin_two] at hdet
+  linear_combination A 0 0 * h₁ - A 1 0 * hdet - A 0 1 * h₀
+
+/-- An orthogonal `2 × 2` matrix of determinant `1` is a rotation `!![a, -b; b, a]`. -/
+theorem eq_of_mem_orthogonalGroup_fin_two_of_det_eq_one (hA : A ∈ orthogonalGroup (Fin 2) R)
+    (hdet : A.det = 1) : A = !![A 0 0, -A 1 0; A 1 0, A 0 0] :=
+  (eta_fin_two A).trans (by
+    rw [apply_one_one_of_mem_orthogonalGroup_fin_two_of_det_eq_one hA hdet,
+      apply_zero_one_of_mem_orthogonalGroup_fin_two_of_det_eq_one hA hdet])
+
+/-- An orthogonal `2 × 2` matrix of determinant `-1` is a reflection `!![a, b; b, -a]`. -/
+theorem eq_of_mem_orthogonalGroup_fin_two_of_det_eq_neg_one (hA : A ∈ orthogonalGroup (Fin 2) R)
+    (hdet : A.det = -1) : A = !![A 0 0, A 1 0; A 1 0, -A 0 0] :=
+  (eta_fin_two A).trans (by
+    rw [apply_one_one_of_mem_orthogonalGroup_fin_two_of_det_eq_neg_one hA hdet,
+      apply_zero_one_of_mem_orthogonalGroup_fin_two_of_det_eq_neg_one hA hdet])
 
 end Matrix
 
@@ -102,9 +128,10 @@ theorem orthogonalComplexMatrix_eq_of_det_eq_one {g : orthogonalGroup (Fin 2) �
     (orthogonalComplexMatrix g : Matrix (Fin 2) (Fin 2) ℂ) =
       !![((g : Matrix (Fin 2) (Fin 2) ℝ) 0 0 : ℂ), -((g : Matrix (Fin 2) (Fin 2) ℝ) 1 0 : ℂ);
         ((g : Matrix (Fin 2) (Fin 2) ℝ) 1 0 : ℂ), ((g : Matrix (Fin 2) (Fin 2) ℝ) 0 0 : ℂ)] := by
-  have hA := eq_of_mem_orthogonalGroup_fin_two_of_det_eq_one g.property hg
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [congrFun₂ hA 0 1, congrFun₂ hA 1 1]
+  fin_cases i <;> fin_cases j <;>
+    simp [apply_zero_one_of_mem_orthogonalGroup_fin_two_of_det_eq_one g.property hg,
+      apply_one_one_of_mem_orthogonalGroup_fin_two_of_det_eq_one g.property hg]
 
 /-- The phase of the identity is `1`. -/
 @[simp]
@@ -149,6 +176,12 @@ theorem orthogonalSign_of_det_eq_one {g : orthogonalGroup (Fin 2) ℝ}
 theorem orthogonalSign_of_det_eq_neg_one {g : orthogonalGroup (Fin 2) ℝ}
     (hg : (g : Matrix (Fin 2) (Fin 2) ℝ).det = -1) : orthogonalSign g = -1 := by
   norm_num [orthogonalSign, hg]
+
+/-- The sign is `1` or `-1`. -/
+theorem orthogonalSign_eq_one_or_neg_one (g : orthogonalGroup (Fin 2) ℝ) :
+    orthogonalSign g = 1 ∨ orthogonalSign g = -1 := by
+  unfold orthogonalSign
+  split_ifs <;> simp
 
 /-- The sign is the determinant. -/
 theorem orthogonalSign_eq_det (g : orthogonalGroup (Fin 2) ℝ) :
@@ -203,23 +236,17 @@ theorem orthogonalPhase_mul (g h : orthogonalGroup (Fin 2) ℝ) :
         (g : Matrix (Fin 2) (Fin 2) ℝ) i 1 * (h : Matrix (Fin 2) (Fin 2) ℝ) 1 0 := fun i ↦ by
     simp [Submonoid.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
   rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup g.property with hg | hg
-  · have hA := eq_of_mem_orthogonalGroup_fin_two_of_det_eq_one g.property hg
-    have h₁ : (g : Matrix (Fin 2) (Fin 2) ℝ) 1 1 = (g : Matrix (Fin 2) (Fin 2) ℝ) 0 0 := by
-      simpa using congrFun₂ hA 1 1
-    have h₂ : (g : Matrix (Fin 2) (Fin 2) ℝ) 0 1 = -(g : Matrix (Fin 2) (Fin 2) ℝ) 1 0 := by
-      simpa using congrFun₂ hA 0 1
-    rw [orthogonalSign_of_det_eq_one hg, zpow_one, orthogonalPhase_def, orthogonalPhase_def,
-      orthogonalPhase_def, hgh, hgh, h₁, h₂]
+  · rw [orthogonalSign_of_det_eq_one hg, zpow_one, orthogonalPhase_def, orthogonalPhase_def,
+      orthogonalPhase_def, hgh, hgh,
+      apply_one_one_of_mem_orthogonalGroup_fin_two_of_det_eq_one g.property hg,
+      apply_zero_one_of_mem_orthogonalGroup_fin_two_of_det_eq_one g.property hg]
     push_cast
     linear_combination -((g : Matrix (Fin 2) (Fin 2) ℝ) 1 0 * (h : Matrix (Fin 2) (Fin 2) ℝ) 1 0 :
       ℂ) * I_sq
-  · have hA := eq_of_mem_orthogonalGroup_fin_two_of_det_eq_neg_one g.property hg
-    have h₁ : (g : Matrix (Fin 2) (Fin 2) ℝ) 1 1 = -(g : Matrix (Fin 2) (Fin 2) ℝ) 0 0 := by
-      simpa using congrFun₂ hA 1 1
-    have h₂ : (g : Matrix (Fin 2) (Fin 2) ℝ) 0 1 = (g : Matrix (Fin 2) (Fin 2) ℝ) 1 0 := by
-      simpa using congrFun₂ hA 0 1
-    rw [orthogonalSign_of_det_eq_neg_one hg, _root_.zpow_neg_one, inv_orthogonalPhase,
-      orthogonalPhase_def, orthogonalPhase_def, hgh, hgh, h₁, h₂]
+  · rw [orthogonalSign_of_det_eq_neg_one hg, _root_.zpow_neg_one, inv_orthogonalPhase,
+      orthogonalPhase_def, orthogonalPhase_def, hgh, hgh,
+      apply_one_one_of_mem_orthogonalGroup_fin_two_of_det_eq_neg_one g.property hg,
+      apply_zero_one_of_mem_orthogonalGroup_fin_two_of_det_eq_neg_one g.property hg]
     push_cast
     linear_combination ((g : Matrix (Fin 2) (Fin 2) ℝ) 1 0 * (h : Matrix (Fin 2) (Fin 2) ℝ) 1 0 :
       ℂ) * I_sq
