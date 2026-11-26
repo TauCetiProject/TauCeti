@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.CycleWord
+import Mathlib.RingTheory.PowerSeries.Inverse
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.Fin.Tuple.Basic
 
@@ -313,5 +314,50 @@ theorem atomicTrace_cycleWord_generating_function :
       split_ifs <;> simp only [map_mul, map_sub, map_neg, map_one, map_pow] <;> ring
   rw [hseries, hD, hN]
   exact lastLetterSeries_prod pos q p Finset.univ fun _ _ b _ ↦ Finset.mem_univ b
+
+omit [LinearOrder ι] [Fintype ι] in
+/-- The linear generating-function factor `1 - c₁ * p a * X` at a positive letter `a` and
+`1 + c₂ * p a * X` at a negative letter `a`. -/
+noncomputable def cycleGeneratingFactor (c₁ c₂ : R) (a : ι) : Polynomial R :=
+  if pos a then 1 - Polynomial.C (c₁ * p a) * Polynomial.X
+  else 1 + Polynomial.C (c₂ * p a) * Polynomial.X
+
+omit [LinearOrder ι] [Fintype ι] in
+/-- Coercing `cycleGeneratingFactor` from `Polynomial R` to `PowerSeries R`. -/
+theorem coe_cycleGeneratingFactor (c₁ c₂ : R) (a : ι) :
+    (cycleGeneratingFactor pos p c₁ c₂ a : R⟦X⟧) =
+      if pos a then 1 - C (c₁ * p a) * X else 1 + C (c₂ * p a) * X := by
+  dsimp only [cycleGeneratingFactor]; split_ifs <;> simp
+
+omit [LinearOrder ι] [Fintype ι] in
+/-- Evaluating `cycleGeneratingFactor` at `x : R`. -/
+@[simp] theorem eval_cycleGeneratingFactor (c₁ c₂ : R) (a : ι) (x : R) :
+    (cycleGeneratingFactor pos p c₁ c₂ a).eval x =
+      if pos a then 1 - c₁ * p a * x else 1 + c₂ * p a * x := by
+  dsimp only [cycleGeneratingFactor]; split_ifs <;> simp [mul_assoc]
+
+omit [LinearOrder ι] [Fintype ι] in
+/-- The constant coefficient of `cycleGeneratingFactor` in `R⟦X⟧` is `1`. -/
+theorem constantCoeff_cycleGeneratingFactor (c₁ c₂ : R) (a : ι) :
+    constantCoeff (cycleGeneratingFactor pos p c₁ c₂ a : R⟦X⟧) = 1 := by
+  rw [coe_cycleGeneratingFactor]; simp [apply_ite]
+
+omit [LinearOrder ι] in
+/-- The finite product of `cycleGeneratingFactor` in `R⟦X⟧` is a unit. -/
+theorem isUnit_prod_cycleGeneratingFactor (c₁ c₂ : R) :
+    IsUnit (∏ a, (cycleGeneratingFactor pos p c₁ c₂ a : R⟦X⟧)) :=
+  isUnit_iff_constantCoeff.mpr <| by
+    rw [map_prod, Finset.prod_eq_one fun a _ ↦ constantCoeff_cycleGeneratingFactor pos p c₁ c₂ a]
+    exact isUnit_one
+
+/-- **The cycle-trace generating identity for atomic traces**, written in terms of
+`cycleGeneratingFactor`. -/
+theorem atomicTrace_cycleWord_generating_function_eq_prod :
+    PowerSeries.mk (fun m ↦
+        if m = 0 then 1 else ((q : R) ^ 2 - 1) * atomicTrace pos q p m (cycleWord q m)) *
+        ∏ a, (cycleGeneratingFactor pos p ((q : R) ^ 2) 1 a : R⟦X⟧) =
+      ∏ a, (cycleGeneratingFactor pos p 1 ((q : R) ^ 2) a : R⟦X⟧) := by
+  simpa only [coe_cycleGeneratingFactor, one_mul] using
+    atomicTrace_cycleWord_generating_function pos q p
 
 end TauCeti.TypeAHeckeAlgebra

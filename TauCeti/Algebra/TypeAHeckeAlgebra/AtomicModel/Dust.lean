@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.PowerSeries.Exp
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable.CycleWord
 public import TauCeti.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
-import TauCeti.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.RingTheory.PowerSeries.PiTopology
 
 /-!
@@ -71,14 +70,9 @@ theorem tendsto_countableAtomicTrace_add_dust_cycleWord_of_sq_eq_one {𝕜 : Typ
       (m + 1)).const_mul ((if b = true then (1 : 𝕜) else -1) ^ (m + 1) * γ ^ (m + 2))]
   · rw [countableAtomicTrace_cycleWord_of_sq_eq_one (dustPos pos b N) q hq,
       atomicTrace_cycleWord_of_sq_eq_one (fun _ : Fin N ↦ b = true) q hq]
-    exact (HasSum.sumLex ((TauCeti.summable_signed_pow_mul_pow pos hp m).of_norm.hasSum.congr_fun
+    exact (HasSum.sumLex ((summable_signed_pow_mul_pow pos hp m).of_norm.hasSum.congr_fun
       fun _ ↦ by simp) ((hasSum_fintype fun _ : Fin N ↦ (if b = true then (1 : 𝕜) else -1) ^ m *
         (γ / N) ^ (m + 1)).congr_fun fun _ ↦ by simp)).tsum_eq.symm
-
-private noncomputable def dustPfac {𝕜 α : Type*} [CommRing 𝕜] [Fintype α] (pos₀ : α → Prop)
-    [DecidablePred pos₀] (w₀ : α → 𝕜) (c₁ c₂ : 𝕜) : PowerSeries 𝕜 := ∏ a : α,
-  if pos₀ a then 1 - PowerSeries.C (c₁ * w₀ a) * PowerSeries.X
-  else 1 + PowerSeries.C (c₂ * w₀ a) * PowerSeries.X
 
 /-- Inclusion of `s ⊕ₗ Fin N` into `ι ⊕ₗ Fin N` for a finite background subset `s : Finset ι`. -/
 private def dustFinsetEmbed {ι : Type*} (s : Finset ι) (N : ℕ) : ↥s ⊕ₗ Fin N → ι ⊕ₗ Fin N :=
@@ -109,6 +103,83 @@ private theorem tendsto_dustFinsetImage {ι : Type*} [DecidableEq ι] (N : ℕ) 
            exact ⟨Sum.inrₗ k, Finset.mem_univ _,
              ofLex.injective (by simp [dustFinsetEmbed, ha'])⟩])⟩
 
+/-- Generating-series identity on a finite background `s : Finset ι` augmented with `N` dust
+letters of sign `b` and constant weight `w`. -/
+private theorem dustCycleSeries_finset_mul {𝕜 ι : Type*} [CommRing 𝕜] [LinearOrder ι]
+    [DecidableEq ι] (pos : ι → Prop) [DecidablePred pos] (b : Bool) (q : 𝕜ˣ) (p : ι → 𝕜)
+    (w : 𝕜) (N : ℕ) (s : Finset ι) :
+    PowerSeries.mk (fun k ↦ if k = 0 then 1 else ((q : 𝕜) ^ 2 - 1) *
+        atomicTrace (fun a : ↥(Finset.univ.image (dustFinsetEmbed s N)) ↦ dustPos pos b N a) q
+          (fun a ↦ Sum.elim p (fun _ ↦ w) (ofLex a.val)) k (cycleWord q k)) *
+        (1 + PowerSeries.C (if b then -((q : 𝕜) ^ 2 * w) else w) * PowerSeries.X) ^ N =
+      PowerSeries.mk (fun k ↦ if k = 0 then 1 else ((q : 𝕜) ^ 2 - 1) *
+          atomicTrace (fun a : ↥s ↦ pos a) q (fun a ↦ p a) k (cycleWord q k)) *
+        (1 + PowerSeries.C (if b then -w else (q : 𝕜) ^ 2 * w) * PowerSeries.X) ^ N := by
+  set Q : 𝕜 := (q : 𝕜) ^ 2
+  set pN : ι ⊕ₗ Fin N → 𝕜 := fun a ↦ Sum.elim p (fun _ ↦ w) (ofLex a)
+  let e := dustFinsetOrderIso s N
+  let FN_s : PowerSeries 𝕜 := PowerSeries.mk fun k ↦ if k = 0 then 1 else (Q - 1) *
+    atomicTrace (fun a : ↥(Finset.univ.image (dustFinsetEmbed s N)) ↦ dustPos pos b N a) q
+      (fun a ↦ pN a.val) k (cycleWord q k)
+  let FS_s : PowerSeries 𝕜 := PowerSeries.mk fun k ↦ if k = 0 then 1 else
+    (Q - 1) * atomicTrace (fun a : ↥s ↦ pos a.val) q (fun a ↦ p a.val) k (cycleWord q k)
+  let D_bg := ∏ a : ↥s, (cycleGeneratingFactor (fun a ↦ pos a.val) (fun a ↦ p a.val) Q 1 a :
+    PowerSeries 𝕜)
+  have hgenN := atomicTrace_cycleWord_generating_function_eq_prod
+    (fun a : ↥s ⊕ₗ Fin N ↦ dustPos pos b N (e a).val) q (fun a ↦ pN (e a).val)
+  have htr (k : ℕ) :
+      atomicTrace (fun a : ↥s ⊕ₗ Fin N ↦ dustPos pos b N (e a).val) q (fun a ↦ pN (e a).val) k
+          (cycleWord q k) =
+        atomicTrace (fun a : ↥(Finset.univ.image (dustFinsetEmbed s N)) ↦ dustPos pos b N a) q
+          (fun a ↦ pN a.val) k (cycleWord q k) :=
+    atomicTrace_orderIso q (fun a ↦ dustPos pos b N (e a).val) (fun a ↦ dustPos pos b N a.val)
+      (fun a ↦ pN (e a).val) (fun a ↦ pN a.val) e (fun _ ↦ Iff.rfl) (fun _ ↦ rfl) k (cycleWord q k)
+  simp_rw [htr] at hgenN
+  have hgenS := atomicTrace_cycleWord_generating_function_eq_prod (fun a : ↥s ↦ pos a.val) q
+    (fun a ↦ p a.val)
+  have hprod (c₁ c₂ v : 𝕜) (hv : v = if b then -(c₁ * w) else c₂ * w) :
+      ∏ a : ↥s ⊕ₗ Fin N, (cycleGeneratingFactor (fun a ↦ dustPos pos b N (e a).val)
+          (fun a ↦ pN (e a).val) c₁ c₂ a : PowerSeries 𝕜) =
+        (∏ a : ↥s, (cycleGeneratingFactor (fun a ↦ pos a.val)
+          (fun a ↦ p a.val) c₁ c₂ a : PowerSeries 𝕜)) *
+          (1 + PowerSeries.C v * PowerSeries.X) ^ N := by
+    have he_app (a) : (e a).val = dustFinsetEmbed s N a := rfl
+    rw [← Equiv.prod_comp (toLex (α := ↥s ⊕ Fin N)), Fintype.prod_sum_type]; congr 1
+    · exact Finset.prod_congr rfl fun i _ ↦ by
+        simp_rw [coe_cycleGeneratingFactor]
+        simp [dustPos, he_app, dustFinsetEmbed, Sum.inlₗ, pN]
+    · rw [show (1 + PowerSeries.C v * PowerSeries.X) ^ N =
+          ∏ _ : Fin N, (1 + PowerSeries.C v * PowerSeries.X) by simp]
+      exact Finset.prod_congr rfl fun k _ ↦ by
+        simp_rw [coe_cycleGeneratingFactor]
+        cases b <;> simp [dustPos, he_app, hv, dustFinsetEmbed, Sum.inrₗ, pN, sub_eq_add_neg]
+  refine (isUnit_prod_cycleGeneratingFactor (fun a : ↥s ↦ pos a.val) (fun a ↦ p a.val) Q
+    1).mul_right_injective ?_
+  calc D_bg * (FN_s * (1 + PowerSeries.C (if b then -(Q * w) else w) * PowerSeries.X) ^ N)
+      = FN_s * (D_bg * (1 + PowerSeries.C (if b then -(Q * w) else w) * PowerSeries.X) ^ N) := by
+        ring
+    _ = (∏ a : ↥s, (cycleGeneratingFactor (fun a ↦ pos a.val)
+          (fun a ↦ p a.val) 1 Q a : PowerSeries 𝕜)) *
+        (1 + PowerSeries.C (if b then -w else Q * w) * PowerSeries.X) ^ N := by
+      rw [← hprod Q 1 _ (by simp), ← hprod 1 Q _ (by simp)]; exact hgenN
+    _ = D_bg * (FS_s * (1 + PowerSeries.C (if b then -w else Q * w) * PowerSeries.X) ^ N) := by
+      rw [← hgenS]; ring
+
+/-- Coefficientwise convergence of `mk (fun k ↦ if k = 0 then 1 else c * tr_seq i k) * B` from
+convergence of `tr_seq i (j + 1) → tr (j + 1)`. -/
+private theorem tendsto_coeff_cycleSeries_mul {𝕜 α : Type*} [Semiring 𝕜] [TopologicalSpace 𝕜]
+    [ContinuousAdd 𝕜] [ContinuousMul 𝕜] {l : Filter α} (c : 𝕜) (tr_seq : α → ℕ → 𝕜)
+    (tr : ℕ → 𝕜) (htr : ∀ j, Tendsto (fun i ↦ tr_seq i (j + 1)) l (𝓝 (tr (j + 1))))
+    (B : PowerSeries 𝕜) (k : ℕ) :
+    Tendsto (fun i ↦ PowerSeries.coeff k
+        (PowerSeries.mk (fun k ↦ if k = 0 then 1 else c * tr_seq i k) * B))
+      l (𝓝 (PowerSeries.coeff k (PowerSeries.mk (fun k ↦ if k = 0 then 1 else c * tr k) * B))) := by
+  simp_rw [PowerSeries.coeff_mul]
+  refine tendsto_finsetSum _ fun ⟨j, _⟩ _ ↦ Tendsto.mul_const _ ?_
+  rcases j with _ | j
+  · simpa using tendsto_const_nhds
+  · simpa using (htr j).const_mul c
+
 /-- Generating-series identity for `countableAtomicTrace` of `(ι, pos, p)` augmented with `N`
 dust letters of sign `b` and weight `γ / N`. -/
 private theorem dustCycleSeries_mul {𝕜 ι : Type*} [RCLike 𝕜] [LinearOrder ι]
@@ -121,98 +192,29 @@ private theorem dustCycleSeries_mul {𝕜 ι : Type*} [RCLike 𝕜] [LinearOrder
       PowerSeries.mk (fun k ↦ if k = 0 then 1 else
           ((q : 𝕜) ^ 2 - 1) * countableAtomicTrace pos q p hp k (cycleWord q k)) *
         (1 + PowerSeries.C ((if b then -γ else (q : 𝕜) ^ 2 * γ) / N) * PowerSeries.X) ^ N := by
-  classical
-  set Q : 𝕜 := (q : 𝕜) ^ 2
+  let := Classical.decEq ι
   set pN : ι ⊕ₗ Fin N → 𝕜 := fun a ↦ Sum.elim p (fun _ ↦ γ / N) (ofLex a)
   set hpN : Summable fun a ↦ ‖pN a‖ := hp.sumLex (hasSum_fintype _).summable
-  set F : PowerSeries 𝕜 := PowerSeries.mk fun k ↦ if k = 0 then 1 else
-    (Q - 1) * countableAtomicTrace (dustPos pos b N) q pN hpN k (cycleWord q k)
-  set F_bg : PowerSeries 𝕜 := PowerSeries.mk fun k ↦
-    if k = 0 then 1 else (Q - 1) * countableAtomicTrace pos q p hp k (cycleWord q k)
-  set d : 𝕜 := if b then -(Q * γ) else γ
-  set u : 𝕜 := if b then -γ else Q * γ
-  set FN_s : Finset ι → PowerSeries 𝕜 := fun s ↦ PowerSeries.mk fun k ↦ if k = 0 then 1 else
-    (Q - 1) * atomicTrace (fun a : ↥(Finset.univ.image (dustFinsetEmbed s N)) ↦ dustPos pos b N a)
-      q (fun a ↦ pN a) k (cycleWord q k)
-  set FS_s : Finset ι → PowerSeries 𝕜 := fun s ↦ PowerSeries.mk fun k ↦ if k = 0 then 1 else
-    (Q - 1) * atomicTrace (fun a : ↥s ↦ pos a) q (fun a ↦ p a) k (cycleWord q k)
-  -- Establish the generating identity on each finite truncation `s ⊕ₗ Fin N`.
-  have hFinEq (s : Finset ι) :
-      FN_s s * (1 + PowerSeries.C (d / N) * PowerSeries.X) ^ N =
-        FS_s s * (1 + PowerSeries.C (u / N) * PowerSeries.X) ^ N := by
-    let e := dustFinsetOrderIso s N
-    let D_bg := dustPfac (fun a : ↥s ↦ pos a) (fun a ↦ p a) Q 1
-    have hgenN : FN_s s * dustPfac (fun a : ↥s ⊕ₗ Fin N ↦ dustPos pos b N (e a).val)
-        (fun a ↦ pN (e a).val) Q 1 = dustPfac (fun a : ↥s ⊕ₗ Fin N ↦
-        dustPos pos b N (e a).val) (fun a ↦ pN (e a).val) 1 Q := by
-      simp_rw [FN_s, ← atomicTrace_orderIso q _ _ _ _ e (fun _ ↦ Iff.rfl) (fun _ ↦ rfl)]
-      simpa only [Q, dustPfac, one_mul] using atomicTrace_cycleWord_generating_function
-        (fun a : ↥s ⊕ₗ Fin N ↦ dustPos pos b N (e a).val) q (fun a ↦ pN (e a).val)
-    have hgenS : FS_s s * D_bg = dustPfac (fun a : ↥s ↦ pos a) (fun a ↦ p a) 1 Q := by
-      simpa only [Q, FS_s, D_bg, dustPfac, one_mul] using
-        atomicTrace_cycleWord_generating_function (fun a : ↥s ↦ pos a) q (fun a ↦ p a)
-    -- Factor `dustPfac` on `s ⊕ₗ Fin N` into background and dust factors.
-    have hprod (c₁ c₂ v : 𝕜) (hv : v = if b then -(c₁ * γ) else c₂ * γ) :
-        dustPfac (fun a : ↥s ⊕ₗ Fin N ↦ dustPos pos b N (e a).val)
-            (fun a ↦ pN (e a).val) c₁ c₂ =
-          dustPfac (fun a : ↥s ↦ pos a) (fun a ↦ p a) c₁ c₂ *
-            (1 + PowerSeries.C (v / N) * PowerSeries.X) ^ N := by
-      have he_app (a) : (e a).val = dustFinsetEmbed s N a := rfl
-      dsimp only [dustPfac]
-      rw [← Equiv.prod_comp (toLex (α := ↥s ⊕ Fin N)), Fintype.prod_sum_type]; congr 1
-      rw [show (1 + PowerSeries.C (v / N) * PowerSeries.X) ^ N =
-          ∏ _ : Fin N, (1 + PowerSeries.C (v / N) * PowerSeries.X) by simp]
-      exact Finset.prod_congr rfl fun k _ ↦ by cases b <;>
-        simp [dustPos, he_app, hv, dustFinsetEmbed, Sum.inrₗ, pN, sub_eq_add_neg, neg_div,
-          mul_div_assoc]
-    refine (show IsUnit D_bg from PowerSeries.isUnit_iff_constantCoeff.mpr
-      (by simp [D_bg, dustPfac, map_prod, apply_ite])).mul_right_injective ?_
-    calc D_bg * (FN_s s * (1 + PowerSeries.C (d / N) * PowerSeries.X) ^ N)
-        = FN_s s * (D_bg * (1 + PowerSeries.C (d / N) * PowerSeries.X) ^ N) := by ring
-      _ = dustPfac (fun a : ↥s ↦ pos a) (fun a ↦ p a) 1 Q *
-          (1 + PowerSeries.C (u / N) * PowerSeries.X) ^ N := by
-        rw [← hprod Q 1 d (by simp [d]), ← hprod 1 Q u (by simp [u])]; exact hgenN
-      _ = D_bg * (FS_s s * (1 + PowerSeries.C (u / N) * PowerSeries.X) ^ N) := by
-        rw [← hgenS]; ring
-  -- Pass to the coefficientwise limit as `s → atTop` in `Finset ι`.
+  have hd : (if b then -((q : 𝕜) ^ 2 * (γ / N)) else γ / N) =
+      (if b then -((q : 𝕜) ^ 2 * γ) else γ) / N := by cases b <;> simp [neg_div, mul_div_assoc]
+  have hu : (if b then -(γ / N) else (q : 𝕜) ^ 2 * (γ / N)) =
+      (if b then -γ else (q : 𝕜) ^ 2 * γ) / N := by cases b <;> simp [neg_div, mul_div_assoc]
   ext k
-  have hLHS : Tendsto (fun s : Finset ι ↦
-      PowerSeries.coeff k (FN_s s * (1 + PowerSeries.C (d / N) * PowerSeries.X) ^ N))
-      atTop (𝓝 (PowerSeries.coeff k (F * (1 + PowerSeries.C (d / N) * PowerSeries.X) ^ N))) := by
-    simp_rw [PowerSeries.coeff_mul]
-    refine tendsto_finsetSum _ fun ⟨i, r⟩ _ ↦ Tendsto.mul_const _ ?_
-    rcases i with _ | j
-    · simp [F, FN_s]
-    · simpa [F, FN_s] using ((tendsto_atomicTrace_finset (dustPos pos b N) q pN hpN
-        (j + 1) (cycleWord q (j + 1))).comp (tendsto_dustFinsetImage N)).const_mul (Q - 1)
-  refine tendsto_nhds_unique (hLHS.congr fun s ↦ congrArg (PowerSeries.coeff k) (hFinEq s)) ?_
-  simp_rw [PowerSeries.coeff_mul]
-  refine tendsto_finsetSum _ fun ⟨i, r⟩ _ ↦ Tendsto.mul_const _ ?_
-  rcases i with _ | j
-  · simp [F_bg, FS_s]
-  · simpa [F_bg, FS_s] using
-      (tendsto_atomicTrace_finset pos q p hp (j + 1) (cycleWord q (j + 1))).const_mul (Q - 1)
-
-/-- Coefficient formula for `(1 + c₁ * X * ∑ f(k + 1) X^k) * exp (c₁ * c₂ * X)`
-in degree `m + 1`. -/
-private theorem coeff_succ_one_add_mul_rescale_exp {𝕜 : Type*} [Field 𝕜] [Algebra ℚ 𝕜]
-    (c₁ c₂ : 𝕜) (f : ℕ → 𝕜) (m : ℕ) :
-    PowerSeries.coeff (m + 1) (PowerSeries.mk (fun k ↦ if k = 0 then 1 else c₁ * f k) *
-        PowerSeries.rescale (c₁ * c₂) (PowerSeries.exp 𝕜)) =
-      c₁ * (PowerSeries.coeff m ((PowerSeries.mk fun k ↦ f (k + 1)) *
-          PowerSeries.rescale (c₁ * c₂) (PowerSeries.exp 𝕜)) +
-        c₁ ^ m * c₂ ^ (m + 1) / ((m + 1)! : 𝕜)) := by
-  let E := PowerSeries.rescale (c₁ * c₂) (PowerSeries.exp 𝕜)
-  rw [show PowerSeries.mk (fun k ↦ if k = 0 then 1 else c₁ * f k) * E =
-      E + PowerSeries.C c₁ * PowerSeries.X * ((PowerSeries.mk fun k ↦ f (k + 1)) * E) by
-    rw [show PowerSeries.mk (fun k ↦ if k = 0 then 1 else c₁ * f k) =
-        1 + PowerSeries.C c₁ * PowerSeries.X * PowerSeries.mk fun k ↦ f (k + 1) by
-      ext (_ | k) <;> [simp;
-        (rw [map_add, mul_assoc, PowerSeries.coeff_C_mul, PowerSeries.coeff_succ_X_mul]; simp)]]
-    ring]
-  rw [map_add, mul_assoc, PowerSeries.coeff_C_mul, PowerSeries.coeff_succ_X_mul,
-    PowerSeries.coeff_rescale, PowerSeries.coeff_exp, map_div₀, map_one, map_natCast,
-    mul_pow, pow_succ' c₁ m]; ring
+  have hLHS := tendsto_coeff_cycleSeries_mul ((q : 𝕜) ^ 2 - 1)
+    (fun (s : Finset ι) k ↦ atomicTrace
+      (fun a : ↥(Finset.univ.image (dustFinsetEmbed s N)) ↦ dustPos pos b N a)
+      q (fun a ↦ pN a.val) k (cycleWord q k))
+    (fun k ↦ countableAtomicTrace (dustPos pos b N) q pN hpN k (cycleWord q k))
+    (fun j ↦ (tendsto_atomicTrace_finset (dustPos pos b N) q pN hpN (j + 1)
+      (cycleWord q (j + 1))).comp (tendsto_dustFinsetImage N))
+    ((1 + PowerSeries.C ((if b then -((q : 𝕜) ^ 2 * γ) else γ) / N) * PowerSeries.X) ^ N) k
+  have hRHS := tendsto_coeff_cycleSeries_mul ((q : 𝕜) ^ 2 - 1)
+    (fun (s : Finset ι) k ↦ atomicTrace (fun a : ↥s ↦ pos a) q (fun a ↦ p a) k (cycleWord q k))
+    (fun k ↦ countableAtomicTrace pos q p hp k (cycleWord q k))
+    (fun j ↦ tendsto_atomicTrace_finset pos q p hp (j + 1) (cycleWord q (j + 1)))
+    ((1 + PowerSeries.C ((if b then -γ else (q : 𝕜) ^ 2 * γ) / N) * PowerSeries.X) ^ N) k
+  refine tendsto_nhds_unique (hLHS.congr fun s ↦ congrArg (PowerSeries.coeff k) ?_) hRHS
+  simpa only [hd, hu] using dustCycleSeries_finset_mul pos b q p (γ / N) N s
 
 /-- **Mixed atomic-and-dust cycle-trace coefficientwise limit:** augmenting `(ι, pos, p)` by `N`
 dust letters of sign `b` and weight `γ / N` converges in degree `m + 1` to the `(m + 1)`-th
@@ -261,7 +263,7 @@ theorem tendsto_countableAtomicTrace_add_dust_cycleWord {𝕜 : Type*} [RCLike �
     have hL_coeff : PowerSeries.coeff (m + 1) (F_bg * E) = (Q - 1) * (PowerSeries.coeff m
         ((PowerSeries.mk fun k ↦ countableAtomicTrace pos q p hp (k + 1) (cycleWord q (k + 1))) *
           E) + (Q - 1) ^ m * γ ^ (m + 1) / ((m + 1)! : 𝕜)) :=
-      coeff_succ_one_add_mul_rescale_exp (Q - 1) γ
+      PowerSeries.coeff_succ_one_add_mul_rescale_exp (Q - 1) γ
         (fun k ↦ countableAtomicTrace pos q p hp k (cycleWord q k)) m
     have hQ1 : Q - 1 ≠ 0 := sub_ne_zero.mpr hq
     simpa [F, Q, hQ1, hL_coeff, mul_inv_cancel_left₀ hQ1] using hcoeff.const_mul (Q - 1)⁻¹

@@ -32,24 +32,11 @@ product of geometric series.
   summable over `x : ι → β`.
 * `TauCeti.hasSum_prod_of_summable_norm`: the products sum to the product of the sums.
 * `TauCeti.prod_tsum_of_summable_norm`: the same statement for `tsum` in a complete ring.
-* `TauCeti.summable_signed_pow_mul_pow`: absolute summability of signed `(m + 1)`-th powers
-  `(if pos a then 1 else -1) ^ m * p a ^ (m + 1)` for an absolutely summable family `p`.
 -/
 
 public section
 
 namespace TauCeti
-
-/-- Absolute summability of the signed `(m + 1)`-th powers
-`(if pos a then 1 else -1) ^ m * p a ^ (m + 1)` for an absolutely summable family `p : ι → R`. -/
-theorem summable_signed_pow_mul_pow {R ι : Type*} [SeminormedRing R] (pos : ι → Prop)
-    [DecidablePred pos] {p : ι → R} (hp : Summable fun a ↦ ‖p a‖) (m : ℕ) :
-    Summable fun a ↦ ‖(if pos a then (1 : R) else -1) ^ m * p a ^ (m + 1)‖ := by
-  refine (hp.mul_left (‖(1 : R)‖ * (∑' b, ‖p b‖) ^ m)).of_nonneg_of_le
-    (fun _ ↦ norm_nonneg _) fun a ↦ (norm_mul_le _ _).trans ?_
-  rw [show ‖(if pos a then (1 : R) else -1) ^ m‖ = ‖(1 : R)‖ by split_ifs <;> simp, mul_assoc]
-  exact mul_le_mul_of_nonneg_left ((norm_pow_le' (p a) (Nat.succ_pos m)).trans
-    (by rw [pow_succ]; gcongr; exact hp.le_tsum a fun _ _ ↦ norm_nonneg _)) (norm_nonneg _)
 
 variable {R : Type*} [NormedCommRing R] {β : Type*}
 

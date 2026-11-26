@@ -33,29 +33,11 @@ theorem summable_norm_atomicTrace_cycleWord_mul_pow {K : Type*} [NormedField K] 
   summable_norm_mul_pow_succ_of_le (by positivity) (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) hx
     fun m ↦ by simpa only [norm_one, one_mul] using norm_atomicTrace_cycleWord_le pos q p m
 
-private noncomputable def cycleGenFactor {R ι : Type*} [CommRing R] (pos : ι → Prop)
-    [DecidablePred pos] (c₁ c₂ : R) (p : ι → R) (a : ι) : Polynomial R :=
-  if pos a then 1 - Polynomial.C (c₁ * p a) * Polynomial.X
-  else 1 + Polynomial.C (c₂ * p a) * Polynomial.X
-
-private theorem coe_cycleGenFactor {R ι : Type*} [CommRing R] (pos : ι → Prop)
-    [DecidablePred pos] (c₁ c₂ : R) (p : ι → R) (a : ι) :
-    (cycleGenFactor pos c₁ c₂ p a : PowerSeries R) =
-      if pos a then 1 - PowerSeries.C (c₁ * p a) * PowerSeries.X
-      else 1 + PowerSeries.C (c₂ * p a) * PowerSeries.X := by
-  dsimp only [cycleGenFactor]; split_ifs <;> simp
-
-private theorem eval_cycleGenFactor {R ι : Type*} [CommRing R] (pos : ι → Prop)
-    [DecidablePred pos] (c₁ c₂ : R) (p : ι → R) (a : ι) (x : R) :
-    (cycleGenFactor pos c₁ c₂ p a).eval x =
-      if pos a then 1 - c₁ * p a * x else 1 + c₂ * p a * x := by
-  dsimp only [cycleGenFactor]; split_ifs <;> simp [mul_assoc]
-
 private theorem eval_denom_ne_zero {K : Type*} [NormedField K] {ι : Type*} [Fintype ι]
     (pos : ι → Prop) [DecidablePred pos] (q : Kˣ) (p : ι → K) {x : K}
     (hx : max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖) * (∑ a, ‖p a‖) * ‖x‖ < 1) (a : ι) :
-    (cycleGenFactor pos ((q : K) ^ 2) 1 p a).eval x ≠ 0 := by
-  rw [eval_cycleGenFactor]
+    (cycleGeneratingFactor pos p ((q : K) ^ 2) 1 a).eval x ≠ 0 := by
+  rw [eval_cycleGeneratingFactor]
   set M : ℝ := max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖)
   have hpa : ‖p a‖ ≤ ∑ b, ‖p b‖ :=
     Finset.single_le_sum (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ a)
@@ -84,22 +66,22 @@ theorem atomicTrace_cycleWord_generating_eval {K : Type*} [NormedField K]
   have hsum := summable_norm_atomicTrace_cycleWord_mul_pow pos q p hx; refine ⟨hsum, ?_⟩
   let F : PowerSeries K := PowerSeries.mk fun m ↦
     if m = 0 then 1 else ((q : K) ^ 2 - 1) * atomicTrace pos q p m (cycleWord q m)
-  let P : Polynomial K := ∏ a, cycleGenFactor pos ((q : K) ^ 2) 1 p a
-  let Qp : Polynomial K := ∏ a, cycleGenFactor pos 1 ((q : K) ^ 2) p a
+  let P : Polynomial K := ∏ a, cycleGeneratingFactor pos p ((q : K) ^ 2) 1 a
+  let Qp : Polynomial K := ∏ a, cycleGeneratingFactor pos p 1 ((q : K) ^ 2) a
   have hF_sum : Summable fun m : ℕ ↦ ‖PowerSeries.coeff m F • x ^ m‖ :=
     (summable_nat_add_iff 1).mp <| (hsum.mul_left ‖(q : K) ^ 2 - 1‖).of_nonneg_of_le
       (fun _ ↦ norm_nonneg _) fun m ↦ by simp [F, smul_eq_mul, mul_assoc]
   have heval := PowerSeries.evalAt_mul_coe_of_summable_norm P hF_sum
   rw [show F * (P : PowerSeries K) = (Qp : PowerSeries K) by
       dsimp only [F, P, Qp]; simp only [← Polynomial.coeToPowerSeries.ringHom_apply, map_prod]
-      simp only [Polynomial.coeToPowerSeries.ringHom_apply, coe_cycleGenFactor, one_mul]
-      exact atomicTrace_cycleWord_generating_function pos q p,
+      exact atomicTrace_cycleWord_generating_function_eq_prod pos q p,
     PowerSeries.evalAt_coe, PowerSeries.evalAt_def, hF_sum.of_norm.tsum_eq_zero_add] at heval
   simp only [F, P, Qp, PowerSeries.coeff_mk, ↓reduceIte, smul_eq_mul, pow_zero, mul_one,
     Nat.succ_ne_zero, mul_assoc, hsum.of_norm.tsum_mul_left, Polynomial.coe_aeval_eq_eval,
     Polynomial.eval_prod] at heval
   rw [(eq_div_iff (Finset.prod_ne_zero_iff.mpr fun a _ ↦
     eval_denom_ne_zero pos q p hx a)).mpr heval.symm, ← Finset.prod_div_distrib]
-  exact Finset.prod_congr rfl fun a _ ↦ by simp only [eval_cycleGenFactor]; split_ifs <;> simp
+  exact Finset.prod_congr rfl fun a _ ↦ by
+    simp only [eval_cycleGeneratingFactor]; split_ifs <;> simp
 
 end TauCeti.TypeAHeckeAlgebra

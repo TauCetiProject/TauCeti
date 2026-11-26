@@ -11,7 +11,6 @@ import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable.Slice
 import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam
-import TauCeti.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
@@ -31,6 +30,17 @@ open scoped Topology
 
 namespace TauCeti.TypeAHeckeAlgebra
 
+/-- Absolute summability of the signed `(m + 1)`-th powers
+`(if pos a then 1 else -1) ^ m * p a ^ (m + 1)` for an absolutely summable family `p : ι → R`. -/
+theorem summable_signed_pow_mul_pow {R ι : Type*} [SeminormedRing R] (pos : ι → Prop)
+    [DecidablePred pos] {p : ι → R} (hp : Summable fun a ↦ ‖p a‖) (m : ℕ) :
+    Summable fun a ↦ ‖(if pos a then (1 : R) else -1) ^ m * p a ^ (m + 1)‖ := by
+  refine (hp.mul_left (‖(1 : R)‖ * (∑' b, ‖p b‖) ^ m)).of_nonneg_of_le
+    (fun _ ↦ norm_nonneg _) fun a ↦ (norm_mul_le _ _).trans ?_
+  rw [show ‖(if pos a then (1 : R) else -1) ^ m‖ = ‖(1 : R)‖ by split_ifs <;> simp, mul_assoc]
+  exact mul_le_mul_of_nonneg_left ((norm_pow_le' (p a) (Nat.succ_pos m)).trans
+    (by rw [pow_succ]; gcongr; exact hp.le_tsum a fun _ _ ↦ norm_nonneg _)) (norm_nonneg _)
+
 /-- **Cycle-word countable atomic trace at `Q = 1`** equals the signed `(m + 1)`-th power sum. -/
 theorem countableAtomicTrace_cycleWord_of_sq_eq_one {R : Type*} [NormedCommRing R] [CompleteSpace R]
     {ι : Type*} [LinearOrder ι] (pos : ι → Prop) [DecidablePred pos] (q : Rˣ)
@@ -39,9 +49,15 @@ theorem countableAtomicTrace_cycleWord_of_sq_eq_one {R : Type*} [NormedCommRing 
       ∑' a, (if pos a then (1 : R) else -1) ^ m * p a ^ (m + 1) := by
   refine tendsto_nhds_unique
     (tendsto_atomicTrace_finset pos q p hp (m + 1) (cycleWord q (m + 1))) <|
-    (TauCeti.summable_signed_pow_mul_pow pos hp m).of_norm.hasSum.congr fun s ↦ ?_
+    (summable_signed_pow_mul_pow pos hp m).of_norm.hasSum.congr fun s ↦ ?_
   rw [← Finset.sum_attach s (fun a ↦ (if pos a then (1 : R) else -1) ^ m * p a ^ (m + 1)),
     ← Finset.univ_eq_attach, ← atomicTrace_cycleWord_of_sq_eq_one (fun a : s ↦ pos a) q hq]
+
+private theorem sum_subtype_norm_le_tsum {E ι : Type*} [SeminormedAddCommGroup E] {p : ι → E}
+    (hp : Summable fun a ↦ ‖p a‖) (s : Finset ι) :
+    ∑ a : s, ‖p a‖ ≤ ∑' a, ‖p a‖ := by
+  rw [Finset.univ_eq_attach, s.sum_attach fun a ↦ ‖p a‖]
+  exact hp.sum_le_tsum s fun _ _ ↦ norm_nonneg _
 
 /-- Norm bound on the countable atomic trace of a cycle word `cycleWord (m + 1)`. -/
 theorem norm_countableAtomicTrace_cycleWord_le {R : Type*} [NormedCommRing R] [CompleteSpace R]
@@ -53,9 +69,7 @@ theorem norm_countableAtomicTrace_cycleWord_le {R : Type*} [NormedCommRing R] [C
   refine le_of_tendsto (tendsto_atomicTrace_finset pos q p hp (m + 1) (cycleWord q (m + 1))).norm
     (Eventually.of_forall fun s ↦
       (norm_atomicTrace_cycleWord_le (fun a : s ↦ pos a) q (fun a : s ↦ p a) m).trans ?_)
-  have hs : ∑ a : s, ‖p a‖ ≤ ∑' a, ‖p a‖ := by
-    rw [Finset.univ_eq_attach, s.sum_attach fun a ↦ ‖p a‖]
-    exact hp.sum_le_tsum s fun _ _ ↦ norm_nonneg _
+  have hs := sum_subtype_norm_le_tsum hp s
   gcongr; exact Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
 
 /-- Absolute summability of the countable cycle-trace generating series on the convergence disk. -/
@@ -85,9 +99,6 @@ theorem countableAtomicTrace_cycleWord_hasProd {K : Type*} [NormedField K]
   refine ⟨summable_norm_countableAtomicTrace_cycleWord_mul_pow pos q p hp hx, ?_⟩
   set M : ℝ := max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖); set S : ℝ := ∑' a, ‖p a‖
   have _ : 0 ≤ S := tsum_nonneg fun _ ↦ norm_nonneg _
-  have hs_le (s : Finset ι) : ∑ a : s, ‖p a‖ ≤ S := by
-    rw [Finset.univ_eq_attach, s.sum_attach fun a ↦ ‖p a‖]
-    exact hp.sum_le_tsum s fun _ _ ↦ norm_nonneg _
   refine (tendsto_const_nhds.add ((tendsto_tsum_of_dominated_convergence
     ((summable_geometric_of_lt_one (by positivity) hx).mul_left (S * ‖x‖))
     (fun m ↦ (tendsto_atomicTrace_finset pos q p hp (m + 1) (cycleWord q (m + 1))).mul_const _)
@@ -95,11 +106,12 @@ theorem countableAtomicTrace_cycleWord_hasProd {K : Type*} [NormedField K]
       (norm_atomicTrace_cycleWord_le _ q _ m).trans (by
         simp only [norm_one, one_mul]
         exact mul_le_mul_of_nonneg_left
-          (pow_le_pow_left₀ (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _) (hs_le s) _)
+          (pow_le_pow_left₀ (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
+            (sum_subtype_norm_le_tsum hp s) _)
           (by positivity)))).const_mul _)).congr fun s ↦ ?_
   rw [(atomicTrace_cycleWord_generating_eval (fun a : s ↦ pos a) q (fun a : s ↦ p a)
-      ((mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (hs_le s) (by positivity))
-        (norm_nonneg x)).trans_lt hx)).2,
+      ((mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (sum_subtype_norm_le_tsum hp s)
+        (by positivity)) (norm_nonneg x)).trans_lt hx)).2,
     Finset.univ_eq_attach, s.prod_attach (fun a ↦
       if pos a then (1 - p a * x) / (1 - (q : K) ^ 2 * p a * x)
       else (1 + (q : K) ^ 2 * p a * x) / (1 + p a * x))]

@@ -34,6 +34,8 @@ through quotients by constant-term-`1` series and the exponential limit
   `F i * B i = A i` when `B i` and `B₀` have constant coefficient `1`.
 * `PowerSeries.tendsto_coeff_one_add_div_pow`: coefficients of `(1 + C (c / N) * X) ^ N`
   converge to those of `rescale c (exp 𝕜)`.
+* `PowerSeries.coeff_succ_one_add_mul_rescale_exp`: `(m + 1)`-th coefficient formula for
+  `(1 + c₁ * X * ∑ f (k + 1) X ^ k) * rescale (c₁ * c₂) (exp 𝕜)`.
 -/
 
 public section
@@ -150,5 +152,23 @@ theorem tendsto_coeff_one_add_div_pow {𝕜 : Type*} [Field 𝕜] [Algebra ℚ �
   simpa only [mul_one, coeff_rescale, coeff_exp, map_div₀, map_one,
     map_natCast, mul_one_div] using
       (h1.const_mul (c ^ k / (k ! : 𝕜))).congr' (EventuallyEq.symm hcoeff)
+
+/-- Coefficient formula for `(1 + c₁ * X * ∑ f (k + 1) X ^ k) * rescale (c₁ * c₂) (exp 𝕜)`
+in degree `m + 1`. -/
+theorem coeff_succ_one_add_mul_rescale_exp {𝕜 : Type*} [Field 𝕜] [Algebra ℚ 𝕜]
+    (c₁ c₂ : 𝕜) (f : ℕ → 𝕜) (m : ℕ) :
+    coeff (m + 1) (mk (fun k ↦ if k = 0 then 1 else c₁ * f k) * rescale (c₁ * c₂) (exp 𝕜)) =
+      c₁ * (coeff m ((mk fun k ↦ f (k + 1)) * rescale (c₁ * c₂) (exp 𝕜)) +
+        c₁ ^ m * c₂ ^ (m + 1) / ((m + 1)! : 𝕜)) := by
+  let E := rescale (c₁ * c₂) (exp 𝕜)
+  rw [show mk (fun k ↦ if k = 0 then 1 else c₁ * f k) * E =
+      E + C c₁ * X * ((mk fun k ↦ f (k + 1)) * E) by
+    rw [show mk (fun k ↦ if k = 0 then 1 else c₁ * f k) =
+        1 + C c₁ * X * mk fun k ↦ f (k + 1) by
+      ext (_ | k) <;> [simp; (rw [map_add, mul_assoc, coeff_C_mul, coeff_succ_X_mul]; simp)]]
+    ring]
+  rw [map_add, mul_assoc, coeff_C_mul, coeff_succ_X_mul, coeff_rescale, coeff_exp, map_div₀,
+    map_one, map_natCast, mul_pow, pow_succ' c₁ m]
+  ring
 
 end PowerSeries

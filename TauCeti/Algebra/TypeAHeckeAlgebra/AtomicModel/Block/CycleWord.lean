@@ -46,18 +46,14 @@ theorem atomicTrace_eq_of_equiv {ι' : Type*} [LinearOrder ι'] [Finite ι'] (po
     atomicTrace pos q p n = atomicTrace pos' q p' n := by
   have := Fintype.ofFinite ι; have := Fintype.ofFinite ι'
   refine atomicTrace_eq_of_cycleWord pos q p pos' p' (fun m ↦ ?_) n
-  have hN := Fintype.prod_equiv e
-    (fun a ↦ if pos a then 1 - C (p a) * X else 1 + C ((q : R) ^ 2 * p a) * X)
-    (fun a ↦ if pos' a then 1 - C (p' a) * X else 1 + C ((q : R) ^ 2 * p' a) * X)
-    fun a ↦ by simp only [hpos, hp]
-  have hD := Fintype.prod_equiv e
-    (fun a ↦ if pos a then 1 - C ((q : R) ^ 2 * p a) * X else 1 + C (p a) * X)
-    (fun a ↦ if pos' a then 1 - C ((q : R) ^ 2 * p' a) * X else 1 + C (p' a) * X)
-    fun a ↦ by simp only [hpos, hp]
-  have hseries := (isUnit_iff_constantCoeff.2 (by simp [map_prod, apply_ite]) : IsUnit
-      (∏ a, if pos a then 1 - C ((q : R) ^ 2 * p a) * X else 1 + C (p a) * X)).mul_left_injective
-    ((atomicTrace_cycleWord_generating_function pos q p).trans (hN.trans
-      ((atomicTrace_cycleWord_generating_function pos' q p').symm.trans (congrArg _ hD.symm))))
+  have hcongr (c₁ c₂ : R) :
+      ∏ a, (cycleGeneratingFactor pos p c₁ c₂ a : PowerSeries R) =
+        ∏ a, (cycleGeneratingFactor pos' p' c₁ c₂ a : PowerSeries R) :=
+    Fintype.prod_equiv e _ _ fun a ↦ by simp only [coe_cycleGeneratingFactor, hpos, hp]
+  have hseries := (isUnit_prod_cycleGeneratingFactor pos p ((q : R) ^ 2) 1).mul_left_injective
+    ((atomicTrace_cycleWord_generating_function_eq_prod pos q p).trans ((hcongr 1 _).trans
+      ((atomicTrace_cycleWord_generating_function_eq_prod pos' q p').symm.trans
+        (congrArg _ (hcongr _ 1).symm))))
   rcases m with _ | m <;> [simp; exact hq (by simpa using congrArg (coeff (m + 1)) hseries)]
 
 end TauCeti.TypeAHeckeAlgebra
