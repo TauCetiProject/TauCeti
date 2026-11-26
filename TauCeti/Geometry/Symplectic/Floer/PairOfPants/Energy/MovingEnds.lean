@@ -451,9 +451,8 @@ private theorem integrableOn_hamiltonianCurvature_puncturedSpherePerturbation_in
     (U := {w | 1 / 2 < w.1}) (P := fun s ↦ smoothTransition (s - 1))
     (isOpen_lt continuous_const continuous_fst) (contDiff_realChart (by fun_prop)).contDiffOn
     (fun _ _ ↦ det_fderiv_realChart_nonneg (hasDerivAt_add_mul_cylindricalEndLift _ _ _))
-    (fun w (hw : 1 / 2 < w.1) j ↦ by
-      rw [equivRealProdCLM_symm_realChart]
-      exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simp; linarith) j)
+    (fun w (hw : 1 / 2 < w.1) ↦
+      equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne hsep (ha i) (by linarith))
     (fun _ (hw : 1 / 2 < _) ↦
       perturbationPullback_realChart_puncturedSpherePerturbation hH ha hsep hout i (by linarith))
     (smoothTransition.contDiff.comp (contDiff_id.sub contDiff_const)) (hHs i)
@@ -602,9 +601,9 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePertu
     (contDiff_realChart (by fun_prop)).contDiffOn
     (fun _ _ ↦ det_fderiv_realChart_nonneg (hasDerivAt_add_mul_cylindricalEndLift _ _ _))
     (fun _ hw ↦ hw.2)
-    (fun w hw j ↦ by
-      rw [equivRealProdCLM_symm_realChart]
-      exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simp; linarith [hw.1]) j)
+    (fun w hw ↦
+      equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne hsep (ha i)
+        (by linarith [hw.1]))
     (fun _ hw ↦
       perturbationPullback_realChart_puncturedSpherePerturbation hH ha hsep hout i
         (by linarith [hw.1]))

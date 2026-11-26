@@ -870,9 +870,8 @@ exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization
             ‖ξ z‖ ^ 2) := by
   -- Beyond `s = 0` an input end avoids every center.
   have hin (i : ι) (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) (j : ι) : Complex.equivRealProdCLM.symm
-      (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) ≠ c j := by
-    rw [equivRealProdCLM_symm_realChart]
-    exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simpa using hζ) j
+      (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) ≠ c j :=
+    equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne hsep (ha i) hζ j
   choose C R _ hend using fun i ↦
     exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization_of_movingEnds
       ω hH hHs hHout hHouts ha hsep hout i (hX i) (hx i) (hnd i) (hJe i) (hJex i) (hJeq i)
