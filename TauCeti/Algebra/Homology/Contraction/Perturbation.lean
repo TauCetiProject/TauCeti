@@ -367,6 +367,40 @@ theorem perturb_incl_add_homotopy_comp :
   simp only [LinearMap.sub_comp, LinearMap.comp_assoc, h]
   abel
 
+/-- Applying the perturbation to the perturbed inclusion recovers `X i`: `δ i' = X i`. -/
+theorem comp_perturb_incl :
+    δ ∘ₗ (c.perturb δ hδ hU).incl = c.perturbationSeries δ ∘ₗ c.incl := by
+  rw [perturb_incl, LinearMap.comp_sub, c.comp_homotopy_comp_perturbationSeries_assoc δ hU,
+    sub_sub_cancel]
+
+/-- The perturbed inclusion solves the recursive fixed-point equation `i' = i - h δ i'`. -/
+theorem perturb_incl_eq_sub :
+    (c.perturb δ hδ hU).incl = c.incl - c.homotopy ∘ₗ δ ∘ₗ (c.perturb δ hδ hU).incl := by
+  rw [comp_perturb_incl, perturb_incl]
+
+/-- The perturbed differential is `dN + p δ i'`, expressed through the perturbed inclusion. -/
+theorem perturbedDifferential_eq_add_proj_comp_perturb_incl :
+    c.perturbedDifferential δ = dN + c.proj ∘ₗ δ ∘ₗ (c.perturb δ hδ hU).incl := by
+  rw [comp_perturb_incl, perturbedDifferential_def]
+
+/-- Composing the perturbed projection with the perturbation recovers `p X`: `p' δ = p X`. -/
+theorem perturb_proj_comp :
+    (c.perturb δ hδ hU).proj ∘ₗ δ = c.proj ∘ₗ c.perturbationSeries δ := by
+  have h := congrArg (fun f ↦ c.proj ∘ₗ f) (c.perturbationSeries_comp_homotopy_comp δ hU)
+  simp only [LinearMap.comp_sub] at h
+  rw [perturb_proj, LinearMap.sub_comp, LinearMap.comp_assoc, LinearMap.comp_assoc, h,
+    sub_sub_cancel]
+
+/-- The perturbed projection solves the recursive fixed-point equation `p' = p - p' δ h`. -/
+theorem perturb_proj_eq_sub :
+    (c.perturb δ hδ hU).proj = c.proj - (c.perturb δ hδ hU).proj ∘ₗ δ ∘ₗ c.homotopy := by
+  rw [← LinearMap.comp_assoc, perturb_proj_comp, LinearMap.comp_assoc, perturb_proj]
+
+/-- The perturbed differential is `dN + p' δ i`, expressed through the perturbed projection. -/
+theorem perturbedDifferential_eq_add_perturb_proj_comp :
+    c.perturbedDifferential δ = dN + (c.perturb δ hδ hU).proj ∘ₗ δ ∘ₗ c.incl := by
+  rw [← LinearMap.comp_assoc, perturb_proj_comp, LinearMap.comp_assoc, perturbedDifferential_def]
+
 end Perturb
 
 /-! ### Maps intertwining the perturbation data -/

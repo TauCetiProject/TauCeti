@@ -541,6 +541,64 @@ theorem taylor_of_tprod_mem (𝒜 : AInfinityAlgebra R A) {n : ℕ} (hn : 0 < n)
   rw [Fin.sum_univ_eq_sum_range (fun i ↦ dA i)] at h
   exact (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree).map_mem h
 
+/-- The suspended arity-`n` operation `bₙ : (sA)⊗ⁿ ⟶ sA` of an `A∞` algebra, obtained by
+precomposing `𝒜.m n` with the Koszul twists `n - 1 - i` (`taylor_of_tprod`). -/
+noncomputable def suspendedM (𝒜 : AInfinityAlgebra R A) (n : ℕ) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A :=
+  (𝒜.m n).compLinearMap fun i ↦ 𝒜.grading.koszulTwist ((n : ℤ) - 1 - i)
+
+/-- The suspended arity-`n` operation is `𝒜.m n` precomposed with the Koszul twists `n - 1 - i`. -/
+theorem suspendedM_def (𝒜 : AInfinityAlgebra R A) (n : ℕ) :
+    𝒜.suspendedM n = (𝒜.m n).compLinearMap fun i ↦ 𝒜.grading.koszulTwist ((n : ℤ) - 1 - i) :=
+  (rfl)
+
+@[simp]
+theorem suspendedM_zero (𝒜 : AInfinityAlgebra R A) : 𝒜.suspendedM 0 = 0 := by
+  rw [suspendedM, 𝒜.m_zero, MultilinearMap.zero_compLinearMap]
+
+@[simp]
+theorem suspendedM_one (𝒜 : AInfinityAlgebra R A) : 𝒜.suspendedM 1 = 𝒜.m 1 := by
+  ext x
+  simp [suspendedM_def, Fin.fin_one_eq_zero, InternalGrading.koszulTwist_zero]
+
+/-- Evaluate the suspended arity-`n` operation through the Koszul-twisted unsuspended operation. -/
+theorem suspendedM_apply (𝒜 : AInfinityAlgebra R A) (n : ℕ) (x : Fin n → A) :
+    𝒜.suspendedM n x = 𝒜.m n fun i ↦ 𝒜.grading.koszulTwist ((n : ℤ) - 1 - i) (x i) :=
+  MultilinearMap.compLinearMap_apply ..
+
+/-- Reindexing inputs along `m = n` commutes with `suspendedM`. -/
+theorem suspendedM_congr (𝒜 : AInfinityAlgebra R A) {m n : ℕ} (hmn : m = n) (x : Fin n → A) :
+    𝒜.suspendedM m (fun i ↦ x (i.cast hmn)) = 𝒜.suspendedM n x := by
+  subst hmn; rfl
+
+/-- On a pure tensor word of positive length, the Taylor map evaluates `suspendedM`. -/
+theorem taylor_of_tprod_eq_suspendedM (𝒜 : AInfinityAlgebra R A) (n : {n : ℕ // 0 < n})
+    (x : Fin n.val → A) :
+    𝒜.taylor (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x)) = 𝒜.suspendedM n.val x :=
+  (𝒜.taylor_of_tprod n x).trans (𝒜.suspendedM_apply n.val x).symm
+
+/-- Precomposing `suspendedM n` with the Koszul twists `n - 1 - i` recovers `𝒜.m n`. -/
+theorem m_eq_compLinearMap_suspendedM (𝒜 : AInfinityAlgebra R A) (n : ℕ) :
+    𝒜.m n = (𝒜.suspendedM n).compLinearMap fun i ↦ 𝒜.grading.koszulTwist ((n : ℤ) - 1 - i) := by
+  ext x
+  simp only [suspendedM, MultilinearMap.compLinearMap_apply]
+  refine congrArg (𝒜.m n) (funext fun i ↦ ?_)
+  rw [← LinearMap.comp_apply (𝒜.grading.koszulTwist _), InternalGrading.koszulTwist_comp_self,
+    LinearMap.id_apply]
+
+/-- Every suspended operation `suspendedM n` has degree one for `𝒜.grading.shift 1`. -/
+theorem isHomogeneous_suspendedM (𝒜 : AInfinityAlgebra R A) (n : ℕ) :
+    MultilinearMap.IsHomogeneous (𝒜.suspendedM n)
+      (fun _ ↦ (𝒜.grading.shift 1).piece) (𝒜.grading.shift 1).piece 1 := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [suspendedM_zero]
+    exact MultilinearMap.isHomogeneous_zero ..
+  · rw [MultilinearMap.isHomogeneous_def]
+    intro d x hx
+    rw [← 𝒜.taylor_of_tprod_eq_suspendedM ⟨n, hn⟩ x]
+    exact (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree).map_mem
+      (ReducedTensorWords.mem_gradedPiece_of_tprod (𝒜.grading.shift 1) hn x d hx)
+
 /-- A vanishing operation has vanishing suspended Taylor component. -/
 theorem taylor_comp_of_eq_zero_of_m_eq_zero (𝒜 : AInfinityAlgebra R A)
     (n : {n : ℕ // 0 < n}) (hn : 𝒜.m n.val = 0) :

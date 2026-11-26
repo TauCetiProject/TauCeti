@@ -7,23 +7,57 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Strict
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.BarDifferential
+public import TauCeti.LinearAlgebra.TensorCoalgebra.BlockWord
 
 /-!
-# Strict morphisms preserve the bar differential split
+# Morphisms and the unary-higher bar differential split
 
-A strict morphism commutes separately with the unary and higher parts of the bar differential.
-Thus it respects the perturbation of the letterwise differential used in homological transfer.
-This separate compatibility is specific to strict morphisms; arbitrary higher morphisms need
-not preserve tensor length.
+A strict morphism commutes separately with the unary and higher parts of the bar differential, so
+it respects the perturbation of the letterwise differential used in homological transfer. For an
+arbitrary `A∞` morphism `f : ℬ ⟶ 𝒜`, evaluating `𝒜.higherTaylor ∘ f.barMap` on a pure tensor word
+of length `n` expands over all compositions of `n` into at least two blocks
+(`TauCeti.AInfinityAlgebra.higherTaylor_barMap_of_tprod`).
 -/
 
 public section
 
-namespace TauCeti.AInfinityStrictHom
+open scoped BigOperators
+
+namespace TauCeti
 
 open ReducedTensorWords
 
 universe uR uA uB
+
+namespace AInfinityAlgebra
+
+/-- Evaluating `𝒜.higherTaylor` after the bar map of any `A∞` morphism `f : ℬ ⟶ 𝒜` on a pure
+tensor word of positive length expands over all compositions of `n` into at least two blocks,
+applying `f.suspendedComponent` on each block and `𝒜.suspendedM` at the root. -/
+theorem higherTaylor_barMap_of_tprod {R : Type uR} {A : Type uA} {B : Type uB}
+    [CommRing R] [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
+    (𝒜 : AInfinityAlgebra R A) {ℬ : AInfinityAlgebra R B} (f : AInfinityHom ℬ 𝒜)
+    {n : ℕ} (hn : 0 < n) (x : Fin n → B) :
+    𝒜.higherTaylor (f.barMap (of R B ⟨n, hn⟩ (PiTensorProduct.tprod R x))) =
+      ∑ d : {d : Composition n // 2 ≤ d.length},
+        𝒜.suspendedM d.val.length
+          (fun i ↦ f.suspendedComponent (d.val.blocksFun i) (x ∘ d.val.embedding i)) := by
+  rw [f.barMap_eq_coalgHom, coalgHom_of_tprod_eq_sum_composition f.taylor hn x, map_sum]
+  refine Finset.sum_congr_set {d : Composition n | 2 ≤ d.length} _ _ (fun d hd ↦ ?_) fun d hd ↦ ?_
+  · have hsc (i : Fin d.length) :=
+      (f.suspendedComponent_apply (d.blocksFun i) (d.one_le_blocksFun i) (x ∘ d.embedding i)).symm
+    simp_rw [hsc]
+    exact 𝒜.higherTaylor_of_tprod_eq_suspendedM hd _
+  · have hpos := d.length_pos_of_pos hn
+    have hd1 : d.length = 1 := by simp only [Set.mem_ofPred_eq] at hd; omega
+    have hone {m : ℕ} (hm : 0 < m) (hm1 : m = 1) (z : Fin m → A) :
+        of R A ⟨m, hm⟩ (PiTensorProduct.tprod R z) = ofLetter R A (z ⟨0, hm⟩) := by
+      subst hm1; exact of_one_tprod R A z
+    rw [hone hpos hd1, 𝒜.higherTaylor_ofLetter]
+
+end AInfinityAlgebra
+
+namespace AInfinityStrictHom
 
 variable {R : Type uR} [CommRing R]
   {A : Type uA} {B : Type uB} [AddCommGroup A] [Module R A]
@@ -61,4 +95,6 @@ theorem higherBarDifferential_comp_barMap (f : AInfinityStrictHom 𝒜 ℬ) :
   intro x
   exact add_left_cancel (LinearMap.congr_fun h x)
 
-end TauCeti.AInfinityStrictHom
+end AInfinityStrictHom
+
+end TauCeti

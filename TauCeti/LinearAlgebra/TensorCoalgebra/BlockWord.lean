@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Enumerative.Composition
 public import TauCeti.LinearAlgebra.TensorCoalgebra.CoalgHom
 public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoderivation
 
@@ -24,7 +25,11 @@ products: the images of the blocks of a word under a coalgebra morphism
 family of letters `e a b`, one for each block, by summing over all ways of cutting a block into
 consecutive sub-blocks and replacing each sub-block `[c, c + d)` by the letter `e c d`.  The
 latter is `TauCeti.ReducedTensorWords.blockWord`; it is the unique block family with the letters
-`e a b` (`TauCeti.ReducedTensorWords.IsBlockFamily.eq_blockWord`).
+`e a b` (`TauCeti.ReducedTensorWords.IsBlockFamily.eq_blockWord`), and on a nonempty block of
+length `b` it equals the sum over `c : Composition b` of the pure tensor words of sub-block
+letters (`TauCeti.ReducedTensorWords.blockWord_eq_sum_composition`).  In particular,
+`TauCeti.ReducedTensorWords.coalgHom_of_tprod_eq_sum_composition` expands `coalgHom R f` on a
+pure tensor word of length `n` as the sum over `Composition n`.
 
 The main property of block families concerns graded coderivations `d`.  The co-Leibniz rule
 expresses the cuts of `d (V a b)` through the values of `d` on the proper sub-blocks.  If the
@@ -52,6 +57,9 @@ system of a higher Massey product is a cycle.
   a block family with these letters.
 * `TauCeti.ReducedTensorWords.IsBlockFamily.eq_blockWord`: a block family is determined by its
   letters.
+* `TauCeti.ReducedTensorWords.blockWord_eq_sum_composition` and
+  `TauCeti.ReducedTensorWords.coalgHom_of_tprod_eq_sum_composition`: explicit expansion of block
+  words and of `coalgHom R f` on pure tensor words as sums over integer compositions.
 * `TauCeti.ReducedTensorWords.blockWord_add_ofLetter`: away from its uncut term, a block word only
   depends on the letters of the proper sub-blocks.
 * `TauCeti.ReducedTensorWords.IsGradedCoderivation.apply_eq_zero_of_isBlockFamily` and
@@ -67,7 +75,7 @@ system of a higher Massey product is a cycle.
 
 public section
 
-open scoped TensorProduct
+open scoped BigOperators TensorProduct
 
 universe uR uM uN
 
@@ -252,6 +260,79 @@ theorem blockWord_add_ofLetter {e' : ℕ → ℕ → M} {a b : ℕ} (hb : 0 < b)
       blockWord_congr e fun c' k hk h₁ h₂ ↦ h c' k hk (by omega) (by omega) (by omega)]
   rw [blockWord_succ, blockWord_succ, hsum]
   abel
+
+/-- On a nonempty block `[a, a + b)`, the block word of `e` is the sum over all compositions `c`
+of `b` of the pure tensor word formed by the letters `e (a + c.sizeUpTo i) (c.blocksFun i)`. -/
+theorem blockWord_eq_sum_composition (a : ℕ) {b : ℕ} (hb : 0 < b) :
+    blockWord R e a b =
+      ∑ c : Composition b,
+        of R M ⟨c.length, c.length_pos_of_pos hb⟩
+          (PiTensorProduct.tprod R fun i ↦ e (a + c.sizeUpTo i) (c.blocksFun i)) := by
+  induction b using Nat.strong_induction_on generalizing a with
+  | _ b ih =>
+    rcases b with _ | b
+    · exact absurd hb (lt_irrefl 0)
+    let s := Composition.single (b + 1) (Nat.succ_pos b)
+    let term (c : Composition (b + 1)) : ReducedTensorWords R M :=
+      of R M ⟨c.length, c.length_pos_of_pos (Nat.succ_pos b)⟩
+        (PiTensorProduct.tprod R fun i ↦ e (a + c.sizeUpTo i) (c.blocksFun i))
+    have hsingle : ofLetter R M (e a (b + 1)) = term s := by
+      dsimp only [term, s]
+      rw [ofLetter_eq_of_tprod]
+      refine of_tprod_congr R M (Nat.one_pos) (Composition.single_length (Nat.succ_pos b)).symm
+        fun i ↦ ?_
+      rw [Composition.blocksFun_eq_getElem]
+      simp [Fin.fin_one_eq_zero i]
+    have hrest :
+        (∑ k ∈ Finset.range b, prepend R M (e a (k + 1)) (blockWord R e (a + k + 1) (b - k))) =
+          ∑ c : {c : Composition (b + 1) // c ≠ s}, term c.val := by
+      rw [← Fin.sum_univ_eq_sum_range
+        (fun k ↦ prepend R M (e a (k + 1)) (blockWord R e (a + k + 1) (b - k))),
+        ← (Composition.neSingleSuccEquiv b).sum_comp (fun c ↦ term c.val),
+        Fintype.sum_sigma]
+      refine Finset.sum_congr rfl fun k _ ↦ ?_
+      rw [ih (b - k.val) (by omega) (a + k.val + 1) (by omega), map_sum]
+      refine Finset.sum_congr rfl fun c' _ ↦ ?_
+      rw [prepend_of_tprod]
+      dsimp only [term]
+      rw [Composition.coe_neSingleSuccEquiv_apply]
+      refine of_tprod_congr R M _ (by simp [← Composition.blocks_length]) fun i ↦ ?_
+      induction i using Fin.cases with
+      | zero => simp [Composition.blocksFun_eq_getElem]
+      | succ j => simp [Composition.blocksFun_eq_getElem, add_assoc]
+    rw [blockWord_succ, hsingle, hrest, ← Fintype.sum_eq_add_sum_subtype_ne term s]
+
+/-- On any block of a pure tensor word, `coalgHom R f` evaluates to the block word of the
+letters assigned by `f` to every sub-block. -/
+theorem coalgHom_subword_eq_blockWord (f : ReducedTensorWords R M →ₗ[R] N) {n : ℕ} (x : Fin n → M)
+    (a b : ℕ) :
+    coalgHom R f (subword R x a b) = blockWord R (fun c k ↦ f (subword R x c k)) a b := by
+  rcases Nat.eq_zero_or_pos b with rfl | hb
+  · simp
+  · exact ((isBlockFamily_subword x).map (isCoalgHom_coalgHom f)).eq_blockWord _ hb
+      fun c k _ _ _ ↦ LinearMap.congr_fun (letter_comp_coalgHom f) (subword R x c k)
+
+/-- **Closed-form expansion of `coalgHom R f` on a pure tensor word**: it sums over all integer
+compositions `c` of `n` the pure tensor word formed by applying `f` to each block
+`x ∘ c.embedding i`. -/
+theorem coalgHom_of_tprod_eq_sum_composition (f : ReducedTensorWords R M →ₗ[R] N) {n : ℕ}
+    (hn : 0 < n) (x : Fin n → M) :
+    coalgHom R f (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R x)) =
+      ∑ c : Composition n,
+        of R N ⟨c.length, c.length_pos_of_pos hn⟩
+          (PiTensorProduct.tprod R fun i ↦
+            f (of R M ⟨c.blocksFun i, c.one_le_blocksFun i⟩
+              (PiTensorProduct.tprod R (x ∘ c.embedding i)))) := by
+  rw [of_tprod_eq_subword R hn x, coalgHom_subword_eq_blockWord f x 0 n,
+    blockWord_eq_sum_composition _ 0 hn]
+  refine Finset.sum_congr rfl fun c _ ↦ congrArg (of R N _) (congrArg (PiTensorProduct.tprod R)
+    (funext fun i ↦ congrArg f ?_))
+  have hle : 0 + c.sizeUpTo i + c.blocksFun i ≤ n := by
+    rw [zero_add, ← c.sizeUpTo_succ' i]
+    exact c.sizeUpTo_le (i.val + 1)
+  rw [subword_eq_of_tprod R x (c.one_le_blocksFun i) hle]
+  exact of_tprod_congr R M (c.one_le_blocksFun i) rfl fun j ↦
+    congrArg x (Fin.ext (by simp [Composition.coe_embedding]))
 
 end Semiring
 

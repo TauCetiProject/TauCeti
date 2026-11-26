@@ -380,6 +380,79 @@ theorem linearPart_transferInclusion :
     barMap_transferInclusion, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply,
     map_ofLetter, perturbationSeries_ofLetter, map_zero, sub_zero, letter_ofLetter]
 
+private theorem barMap_transferInclusion_eq_perturb_incl :
+    (𝒜.transferInclusion c hh hincl hproj).barMap =
+      ((𝒜.barTensorTrick c hh hincl hproj).perturb 𝒜.higherBarDifferential
+        𝒜.gradedCoderiv_differential_add_higherBarDifferential_comp_self
+        (𝒜.isUnit_one_add_higherBarDifferential_mul_barTensorTrick_homotopy
+          c hh hincl hproj)).incl := (rfl)
+
+/-- **Merkulov's fixed-point equation for `transferInclusion`**: its suspended Taylor map equals
+`c.incl` on single letters minus `c.homotopy ∘ 𝒜.higherTaylor` applied to its own bar map. -/
+theorem taylor_transferInclusion_eq_sub :
+    (𝒜.transferInclusion c hh hincl hproj).taylor =
+      c.incl ∘ₗ letter R H -
+        c.homotopy ∘ₗ 𝒜.higherTaylor ∘ₗ (𝒜.transferInclusion c hh hincl hproj).barMap := by
+  have hbar := 𝒜.barMap_transferInclusion_eq_perturb_incl c hh hincl hproj
+  calc (𝒜.transferInclusion c hh hincl hproj).taylor
+      _ = letter R A ∘ₗ ((𝒜.barTensorTrick c hh hincl hproj).perturb 𝒜.higherBarDifferential
+            𝒜.gradedCoderiv_differential_add_higherBarDifferential_comp_self
+            (𝒜.isUnit_one_add_higherBarDifferential_mul_barTensorTrick_homotopy
+              c hh hincl hproj)).incl := by
+          rw [AInfinityHom.taylor_def, hbar]
+      _ = letter R A ∘ₗ (ReducedTensorWords.map (R := R) c.incl -
+            c.reducedTensorWordsHomotopy (𝒜.grading.shift 1) ∘ₗ
+              𝒜.higherBarDifferential ∘ₗ (𝒜.transferInclusion c hh hincl hproj).barMap) := by
+          rw [LinearSpecialContraction.perturb_incl_eq_sub, barTensorTrick_incl,
+            barTensorTrick_homotopy, ← hbar]
+      _ = c.incl ∘ₗ letter R H -
+            c.homotopy ∘ₗ 𝒜.higherTaylor ∘ₗ (𝒜.transferInclusion c hh hincl hproj).barMap := by
+          rw [LinearMap.comp_sub, letter_comp_map, ← LinearMap.comp_assoc,
+            c.letter_comp_reducedTensorWordsHomotopy, LinearMap.comp_assoc,
+            ← LinearMap.comp_assoc _ 𝒜.higherBarDifferential (letter R A),
+            𝒜.letter_comp_higherBarDifferential]
+
+/-- **Merkulov's equation for the transferred Taylor map**: it equals `dH` on single letters plus
+`c.proj ∘ 𝒜.higherTaylor` applied to the bar map of `transferInclusion`. -/
+theorem taylor_transfer_eq_add :
+    (𝒜.transfer c hh hincl hproj).taylor =
+      dH ∘ₗ letter R H +
+        c.proj ∘ₗ 𝒜.higherTaylor ∘ₗ (𝒜.transferInclusion c hh hincl hproj).barMap := by
+  have hbar := 𝒜.barMap_transferInclusion_eq_perturb_incl c hh hincl hproj
+  calc (𝒜.transfer c hh hincl hproj).taylor
+      _ = letter R H ∘ₗ (gradedCoderiv (GH.shift 1) (dH ∘ₗ letter R H) 1 +
+            ReducedTensorWords.map (R := R) c.proj ∘ₗ 𝒜.higherBarDifferential ∘ₗ
+              (𝒜.transferInclusion c hh hincl hproj).barMap) := by
+          rw [transfer_taylor, transferBarDifferential_def,
+            (𝒜.barTensorTrick c hh hincl
+              hproj).perturbedDifferential_eq_add_proj_comp_perturb_incl
+              𝒜.higherBarDifferential
+              𝒜.gradedCoderiv_differential_add_higherBarDifferential_comp_self
+              (𝒜.isUnit_one_add_higherBarDifferential_mul_barTensorTrick_homotopy c hh hincl
+                hproj),
+            barTensorTrick_proj, ← hbar]
+      _ = dH ∘ₗ letter R H +
+            c.proj ∘ₗ 𝒜.higherTaylor ∘ₗ (𝒜.transferInclusion c hh hincl hproj).barMap := by
+          rw [LinearMap.comp_add, letter_comp_gradedCoderiv, ← LinearMap.comp_assoc,
+            letter_comp_map, LinearMap.comp_assoc,
+            ← LinearMap.comp_assoc _ 𝒜.higherBarDifferential (letter R A),
+            𝒜.letter_comp_higherBarDifferential]
+
+/-- The higher Taylor map of the transferred `A∞` structure is `c.proj ∘ 𝒜.higherTaylor` composed
+with the bar map of `transferInclusion`. -/
+theorem higherTaylor_transfer :
+    (𝒜.transfer c hh hincl hproj).higherTaylor =
+      c.proj ∘ₗ 𝒜.higherTaylor ∘ₗ (𝒜.transferInclusion c hh hincl hproj).barMap := by
+  apply linearMap_ext
+  rintro ⟨n, hn⟩ x
+  rcases eq_or_ne n 1 with rfl | hn1
+  · rw [of_one_tprod]
+    simp
+  · have hne1 : (⟨n, hn⟩ : {m : ℕ // 0 < m}) ≠ 1 := fun h ↦ hn1 (congrArg Subtype.val h)
+    rw [(𝒜.transfer c hh hincl hproj).higherTaylor_of ⟨n, hn⟩ (by dsimp; omega),
+      taylor_transfer_eq_add]
+    simp [letter_of_of_ne_one R H hne1]
+
 /-! ### Low arities -/
 
 /-- The letter component of the transferred bar differential: the letterwise differential of

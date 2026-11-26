@@ -65,6 +65,12 @@ theorem higherTaylor_comp_ofLetter (𝒜 : AInfinityAlgebra R A) :
   intro a
   simp [higherTaylor, LinearMap.comp_apply, ReducedTensorWords.letter_ofLetter]
 
+/-- The higher Taylor map vanishes on a single letter. -/
+@[simp]
+theorem higherTaylor_ofLetter (𝒜 : AInfinityAlgebra R A) (a : A) :
+    𝒜.higherTaylor (ReducedTensorWords.ofLetter R A a) = 0 :=
+  LinearMap.congr_fun 𝒜.higherTaylor_comp_ofLetter a
+
 /-- On a word of length at least two, the higher Taylor map is the original Taylor map. -/
 @[simp]
 theorem higherTaylor_of (𝒜 : AInfinityAlgebra R A)
@@ -76,6 +82,13 @@ theorem higherTaylor_of (𝒜 : AInfinityAlgebra R A)
     have h' : n.val = 1 := congrArg Subtype.val h
     omega
   simp [higherTaylor, ReducedTensorWords.letter_of_of_ne_one R A hne]
+
+/-- On a pure tensor word of length at least two, the higher Taylor map evaluates `suspendedM`. -/
+theorem higherTaylor_of_tprod_eq_suspendedM (𝒜 : AInfinityAlgebra R A) {n : ℕ} (hn : 2 ≤ n)
+    (x : Fin n → A) :
+    𝒜.higherTaylor (ReducedTensorWords.of R A ⟨n, by omega⟩ (PiTensorProduct.tprod R x)) =
+      𝒜.suspendedM n x := by
+  rw [𝒜.higherTaylor_of ⟨n, by omega⟩ (by dsimp; omega), 𝒜.taylor_of_tprod_eq_suspendedM]
 
 /-- The part of the bar differential that collapses blocks of at least two letters. -/
 noncomputable def higherBarDifferential (𝒜 : AInfinityAlgebra R A) :

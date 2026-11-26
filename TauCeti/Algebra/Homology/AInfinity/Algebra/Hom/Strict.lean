@@ -161,6 +161,23 @@ theorem map_m (f : AInfinityStrictHom AA BB) (n : ℕ) (x : Fin n → A) :
     f (AA.m n x) = BB.m n (fun i ↦ f (x i)) := by
   exact MultilinearMap.congr_fun (f.map_m_map n) x
 
+/-- A strict morphism commutes with the suspended arity-`n` operation, as a multilinear-map
+equality. -/
+theorem map_suspendedM_map (f : AInfinityStrictHom AA BB) (n : ℕ) :
+    f.toLinearMap.compMultilinearMap (AA.suspendedM n) =
+      (BB.suspendedM n).compLinearMap fun _ ↦ f.toLinearMap := by
+  ext x
+  simp only [LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply,
+    AInfinityAlgebra.suspendedM_apply, coe_toLinearMap, f.map_m]
+  exact congrArg (BB.m n) (funext fun i ↦
+    by simpa [mul_zero] using (f.isHomogeneous.koszulTwist_apply ((n : ℤ) - 1 - i) (x i)).symm)
+
+/-- A strict morphism commutes pointwise with the suspended arity-`n` operation. -/
+@[simp]
+theorem map_suspendedM (f : AInfinityStrictHom AA BB) (n : ℕ) (x : Fin n → A) :
+    f (AA.suspendedM n x) = BB.suspendedM n (fun i ↦ f (x i)) :=
+  MultilinearMap.congr_fun (f.map_suspendedM_map n) x
+
 /-- A strict morphism commutes with the unary differential. -/
 theorem map_m_one (f : AInfinityStrictHom AA BB) (a : A) :
     f (AA.m 1 ![a]) = BB.m 1 ![f a] := by

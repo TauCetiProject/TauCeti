@@ -29,6 +29,7 @@ It also concatenates two finite blocks with the second block read in reverse ord
 blocks of equal length, laid out as the bottom and the top row of a rectangle and read
 counterclockwise around it, exchanging the two blocks reverses the concatenated order, and
 reversing each block is reversing the concatenated order followed by a rotation by one block.
+It also records transitivity of `finCongr` (`TauCeti.finCongr_trans`).
 Finally, `TauCeti.apply_comp_finCycle` iterates a single-step rotation rule (`Fin.cons` to
 `Fin.snoc`) along `finCycle`, and `TauCeti.apply_comp_finCycle_of_anticyclic` specializes it to
 anticyclic functions.
@@ -39,6 +40,12 @@ superdiagonal pairs.
 public section
 
 namespace TauCeti
+
+/-- Composing two `finCongr` equivalences gives the `finCongr` of the composed equality. -/
+@[simp]
+theorem finCongr_trans {a b c : ℕ} (h₁ : a = b) (h₂ : b = c) :
+    (finCongr h₁).trans (finCongr h₂) = finCongr (h₁.trans h₂) := by
+  ext; simp
 
 /-- Omitting the last index embeds each preceding index by `Fin.castSucc`. -/
 @[simp]
