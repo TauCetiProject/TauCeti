@@ -537,10 +537,7 @@ theorem linearMap_toTrace (ω : PositiveTracialFunctional B) (z : domain ω.toTr
   have hψ : ∀ x (hx : x ∈ finitePart ω.toTrace),
       ψ ⟨x, finitePart_subset_domain hx⟩ = (ω.toTrace x).toReal := by
     intro x hx
-    have hω := map_nonneg ω (mem_finitePart.1 hx).1
-    simp only [ψ, LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
-      LinearMap.coe_ofClass, toTrace_apply, ENNReal.toReal_ofReal (Complex.nonneg_iff.mp hω).1]
-    exact Complex.eq_re_of_ofReal_le hω
+    exact ω.apply_eq_toReal_toTrace (mem_finitePart.1 hx).1
   simp [← ω.isTrace_toTrace.eq_linearMap hψ, ψ]
 
 end PositiveTracialFunctional

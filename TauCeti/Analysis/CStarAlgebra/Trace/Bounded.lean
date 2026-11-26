@@ -11,11 +11,11 @@ public import TauCeti.Analysis.CStarAlgebra.Trace.Domain
 # Bounded traces are positive tracial functionals
 
 A trace `τ` on a C⋆-algebra `B` (`TauCeti.IsTrace`) that is finite on `B₊` is the restriction to
-`B₊` of a positive tracial functional, and this functional is unique (TracesOnCStarAlgebras
-Tr1.1, "Bounded traces"). Since `τ` is finite on `B₊`, its domain `𝔪_τ` is all of `B`
-(`TauCeti.domain_eq_top_of_lt_top`), so the linear extension `TauCeti.IsTrace.linearMap` of `τ`
-is a linear functional on `B`. It is positive because it equals `τ` on `B₊`, and tracial by
-`TauCeti.IsTrace.linearMap_mul_comm`. Uniqueness holds because `B₊` spans `B`.
+`B₊` of a positive tracial functional, and this functional is unique. Since `τ` is finite on
+`B₊`, its domain `𝔪_τ` is all of `B` (`TauCeti.domain_eq_top_of_lt_top`), so the linear
+extension `TauCeti.IsTrace.linearMap` of `τ` is a linear functional on `B`. It is positive
+because it equals `τ` on `B₊`, and tracial by `TauCeti.IsTrace.linearMap_mul_comm`. Uniqueness
+holds because `B₊` spans `B`.
 
 Conversely, the trace `TauCeti.PositiveTracialFunctional.toTrace` of a positive tracial
 functional is finite everywhere, so the bounded traces are exactly the traces of positive tracial
@@ -56,14 +56,6 @@ variable {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing
 
 namespace PositiveTracialFunctional
 
-/-- On `B₊`, a positive tracial functional is the real number `Re ω(x)`, which its trace records:
-`ω(x) = (ω.toTrace x).toReal`. -/
-theorem apply_eq_toReal_toTrace (ω : PositiveTracialFunctional B) {x : B} (hx : 0 ≤ x) :
-    ω x = ((ω.toTrace x).toReal : ℂ) := by
-  have hω := map_nonneg ω hx
-  rw [toTrace_apply, ENNReal.toReal_ofReal (Complex.nonneg_iff.mp hω).1]
-  exact Complex.eq_re_of_ofReal_le hω
-
 /-- A positive tracial functional is determined by its trace on `B₊`. -/
 theorem ext_of_toTrace {ω ω' : PositiveTracialFunctional B}
     (h : ∀ x : B, 0 ≤ x → ω.toTrace x = ω'.toTrace x) : ω = ω' := by
@@ -89,6 +81,8 @@ noncomputable def toPositiveTracialFunctional (hτ : IsTrace τ)
   toPositiveLinearMap := PositiveLinearMap.mk₀
     (hτ.linearMap.comp (LinearMap.id.codRestrict (domain τ) (mem_domain_of_lt_top hfin)))
     fun x hx ↦ by
+      -- `LinearMap.codRestrict` sends `x` to `⟨x, _⟩` by definition; Mathlib's
+      -- `LinearMap.codRestrict_apply` only describes the coercion to `B`, so we unfold directly.
       change 0 ≤ hτ.linearMap ⟨x, mem_domain_of_lt_top hfin x⟩
       rw [hτ.linearMap_apply_of_mem_finitePart (mem_finitePart.2 ⟨hx, hfin x hx⟩)]
       exact Complex.zero_le_real.2 ENNReal.toReal_nonneg
@@ -115,8 +109,8 @@ theorem toTrace_toPositiveTracialFunctional_of_nonneg (hτ : IsTrace τ)
     hτ.toPositiveTracialFunctional_apply_of_nonneg hfin hx, Complex.ofReal_re,
     ENNReal.ofReal_toReal (hfin x hx).ne]
 
-/-- **Bounded traces** (TracesOnCStarAlgebras Tr1.1): a trace that is finite on `B₊` is the
-restriction to `B₊` of a positive tracial functional. -/
+/-- **Bounded traces**: a trace that is finite on `B₊` is the restriction to `B₊` of a positive
+tracial functional. -/
 theorem exists_positiveFunctional (hτ : IsTrace τ) (hfin : ∀ x : B, 0 ≤ x → τ x < ∞) :
     ∃ ω : PositiveTracialFunctional B, ∀ x : B, 0 ≤ x → ω.toTrace x = τ x :=
   ⟨hτ.toPositiveTracialFunctional hfin, fun _ ↦ hτ.toTrace_toPositiveTracialFunctional_of_nonneg
