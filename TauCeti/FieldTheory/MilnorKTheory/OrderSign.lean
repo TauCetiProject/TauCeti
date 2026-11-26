@@ -8,19 +8,20 @@ module
 public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Data.ZMod.Basic
+public import TauCeti.Algebra.Order.Ring.Units
+public import TauCeti.FieldTheory.MatsumotoGroup.OrderedField
 public import TauCeti.FieldTheory.MilnorKTheory.Grading
-import Mathlib.Algebra.Order.Ring.Units
-import TauCeti.GroupTheory.Index.Two
 
 /-!
 # Order-sign detector on Milnor K-theory
 
-On a linearly ordered ring `R`, sending negative units to `1 : ZMod 2` and positive units to `0`
-yields `orderSignHom : Additive Rˣ →+ ZMod 2` and the Steinberg pairing `orderSignPairing`. Over a
-linearly ordered commutative ring, this induces `SymbolGroup.orderSign`, the ring homomorphism
-`MilnorK.gradedOrderSignPoly`, `MilnorK.orderSignPoly : MilnorK R →+* Polynomial (ZMod 2)`, and
-`MilnorK.orderSignDegree R n`, showing `{-1, …, -1} ≠ 0` and nontriviality of `SymbolGroup R` and
-every `MilnorK.degree R n`.
+On a linearly ordered commutative ring `R`, the additive unit-sign homomorphism
+`Units.signAddHom R : Additive Rˣ →+ ZMod 2` induces the ring homomorphism
+`MilnorK.orderSignPoly : MilnorK R →+* Polynomial (ZMod 2)`, its graded form
+`MilnorK.gradedOrderSignPoly`, and the degree-`n` linear map `MilnorK.orderSignDegree R n`,
+agreeing with `MatsumotoGroup.sign R` in degree `2` (`MilnorK.orderSignDegree_two_eq`) and proving
+`{-1, …, -1} ≠ 0` and nontriviality of every `MilnorK.degree R n`
+(`MilnorK.nontrivial_degree_of_linearOrder`).
 
 ## References
 
@@ -30,142 +31,41 @@ every `MilnorK.degree R n`.
 
 public section
 
-namespace TauCeti
-
-section LinearOrder
-
-variable {R : Type*} [Ring R] [LinearOrder R]
-
-/-- The sign of a unit in a linearly ordered ring, valued in `ZMod 2`: `1` if the unit is
-negative and `0` otherwise. -/
-def orderSign (a : Rˣ) : ZMod 2 := if (a : R) < 0 then 1 else 0
-
-/-- Unfolding lemma for `TauCeti.orderSign`. -/
-theorem orderSign_def (a : Rˣ) : orderSign a = if (a : R) < 0 then 1 else 0 := by rfl
-theorem orderSign_of_neg {a : Rˣ} (ha : (a : R) < 0) : orderSign a = 1 := by
-  simp [orderSign_def, ha]
-theorem orderSign_of_nonneg {a : Rˣ} (ha : 0 ≤ (a : R)) : orderSign a = 0 := by
-  simp [orderSign_def, not_lt.mpr ha]
-theorem orderSign_of_pos {a : Rˣ} (ha : 0 < (a : R)) : orderSign a = 0 := orderSign_of_nonneg ha.le
-theorem orderSign_eq_one_iff {a : Rˣ} : orderSign a = 1 ↔ (a : R) < 0 := by
-  rw [orderSign_def]; split_ifs with h <;> simp [h]
-
-/-- The pairing `(a, b) ↦ orderSign a * orderSign b` on a linearly ordered ring. -/
-def orderSignPairing (a b : Rˣ) : ZMod 2 := orderSign a * orderSign b
-/-- Unfolding lemma for `TauCeti.orderSignPairing`. -/
-theorem orderSignPairing_def (a b : Rˣ) : orderSignPairing a b = orderSign a * orderSign b := by rfl
-theorem orderSignPairing_eq_ite (a b : Rˣ) :
-    orderSignPairing a b = if (a : R) < 0 ∧ (b : R) < 0 then 1 else 0 := by
-  rw [orderSignPairing_def, orderSign_def, orderSign_def]; split_ifs <;> simp_all
-
-end LinearOrder
-
-section OrderedRing
-
-variable {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
-
-@[simp] theorem orderSign_one : orderSign (1 : Rˣ) = 0 := orderSign_of_nonneg zero_le_one
-@[simp] theorem orderSign_neg_one : orderSign (-1 : Rˣ) = 1 := orderSign_of_neg (by simp)
-theorem orderSign_eq_zero_iff {a : Rˣ} : orderSign a = 0 ↔ 0 < (a : R) := by
-  rw [orderSign_def]; split_ifs with h
-  · exact ⟨fun h10 => absurd h10 one_ne_zero, fun ha => absurd (lt_trans ha h) (lt_irrefl _)⟩
-  · exact ⟨fun _ => lt_of_le_of_ne (not_lt.mp h) (Units.ne_zero a).symm, fun _ => rfl⟩
-
-variable (R) in
-/-- The additive homomorphism `Additive Rˣ →+ ZMod 2` recording the sign of a unit. -/
-noncomputable def orderSignHom : Additive Rˣ →+ ZMod 2 :=
-  MonoidHom.toAdditiveLeft ((Units.posSubgroup R).indexTwoCharacter (Units.index_posSubgroup R))
-
-@[simp] theorem orderSignHom_ofMul (a : Rˣ) :
-    orderSignHom R (Additive.ofMul a) = orderSign a := by
-  rw [orderSignHom, MonoidHom.coe_toAdditiveLeft, Function.comp_apply, Function.comp_apply,
-    toMul_ofMul]
-  rcases lt_or_gt_of_ne a.ne_zero with ha | ha
-  · have hmem : a ∉ Units.posSubgroup R := by simp [Units.mem_posSubgroup, ha.le]
-    rw [Subgroup.toAdd_indexTwoCharacter_of_notMem _ hmem, orderSign_of_neg ha]
-  · have hmem : a ∈ Units.posSubgroup R := (Units.mem_posSubgroup a).mpr ha
-    rw [Subgroup.toAdd_indexTwoCharacter_of_mem _ hmem, orderSign_of_pos ha]
-
-/-- Unfolding lemma for `TauCeti.orderSignHom`. -/
-theorem orderSignHom_apply (u : Additive Rˣ) :
-    orderSignHom R u = orderSign (Additive.toMul u) := by
-  obtain ⟨a, rfl⟩ := Additive.ofMul.surjective u
-  exact orderSignHom_ofMul a
-
-/-- `TauCeti.orderSign` converts multiplication of units into addition in `ZMod 2`. -/
-theorem orderSign_mul (a b : Rˣ) : orderSign (a * b) = orderSign a + orderSign b := by
-  simpa only [← ofMul_mul, orderSignHom_ofMul] using
-    (orderSignHom R).map_add (Additive.ofMul a) (Additive.ofMul b)
-
-@[simp] theorem orderSign_inv (a : Rˣ) : orderSign a⁻¹ = orderSign a := by
-  simpa only [← ofMul_inv, orderSignHom_ofMul, ZMod.neg_eq_self_mod_two] using
-    (orderSignHom R).map_neg (Additive.ofMul a)
-
-/-- The product of order signs is a Steinberg pairing on any linearly ordered ring: two negative
-elements cannot sum to `1 ≥ 0`. -/
-theorem isSteinbergPairing_orderSignPairing : IsSteinbergPairing (orderSignPairing (R := R)) where
-  map_mul_left _ _ _ := by simp only [orderSignPairing_def, orderSign_mul, add_mul]
-  map_mul_right _ _ _ := by simp only [orderSignPairing_def, orderSign_mul, mul_add]
-  steinberg a b hab := by
-    rw [orderSignPairing_eq_ite]; split_ifs with h
-    · exact absurd (hab ▸ add_neg h.left h.right) (not_lt_of_ge (zero_le_one (α := R)))
-    · rfl
-
-end OrderedRing
+namespace TauCeti.MilnorK
 
 section OrderedCommRing
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
-namespace SymbolGroup
-
-variable (R) in
-/-- The order-sign detector `SymbolGroup R →ₗ[ℤ] ZMod 2` on the degree-two symbol group of a
-linearly ordered commutative ring. -/
-noncomputable def orderSign : SymbolGroup R →ₗ[ℤ] ZMod 2 :=
-  SymbolGroup.lift (orderSignPairing (R := R)) isSteinbergPairing_orderSignPairing
-
-@[simp] theorem orderSign_symbol (a b : Rˣ) :
-    SymbolGroup.orderSign R (symbol a b) = TauCeti.orderSign a * TauCeti.orderSign b :=
-  SymbolGroup.lift_symbol _ _ a b
-
-/-- Over any linearly ordered commutative ring, the Steinberg symbol `{-1, -1}` is nonzero. -/
-theorem symbol_neg_one_neg_one_ne_zero : TauCeti.symbol (-1 : Rˣ) (-1 : Rˣ) ≠ 0 := fun h =>
-  one_ne_zero <| by
-    simpa only [orderSign_symbol, TauCeti.orderSign_neg_one, mul_one, map_zero] using
-      congrArg (SymbolGroup.orderSign R) h
-
-/-- The symbol group of any linearly ordered commutative ring is nontrivial. -/
-theorem nontrivial_of_linearOrder : Nontrivial (SymbolGroup R) :=
-  ⟨TauCeti.symbol (-1 : Rˣ) (-1 : Rˣ), 0, symbol_neg_one_neg_one_ne_zero⟩
-
-end SymbolGroup
-
-namespace MilnorK
-
 variable (R) in
 /-- The order-sign ring homomorphism `MilnorK R →+* Polynomial (ZMod 2)`, sending `ofUnit a` to
-`C (orderSign a) * X`. -/
+`C (Units.signAddHom R (Additive.ofMul a)) * X`. -/
 noncomputable def orderSignPoly : MilnorK R →+* Polynomial (ZMod 2) :=
   MilnorK.lift R
-    { toFun := fun u => Polynomial.C (orderSignHom R u) * Polynomial.X
+    { toFun := fun u => Polynomial.C (Units.signAddHom R u) * Polynomial.X
       map_zero' := by simp
       map_add' := fun _ _ => by simp [map_add, add_mul] }
     fun a b hab => by
-      have h0 : orderSign a * orderSign b = 0 :=
-        isSteinbergPairing_orderSignPairing.steinberg a b hab
-      calc Polynomial.C (orderSignHom R (Additive.ofMul a)) * Polynomial.X *
-          (Polynomial.C (orderSignHom R (Additive.ofMul b)) * Polynomial.X)
-        _ = Polynomial.C (orderSign a * orderSign b) * (Polynomial.X * Polynomial.X) := by
-          simp only [orderSignHom_ofMul, map_mul]; ring
+      have h0 : Units.signAddHom R (Additive.ofMul a) *
+          Units.signAddHom R (Additive.ofMul b) = 0 := by
+        rw [← MatsumotoGroup.signPairing_apply]
+        exact MatsumotoGroup.signPairing_of_add_eq_one hab
+      calc Polynomial.C (Units.signAddHom R (Additive.ofMul a)) * Polynomial.X *
+          (Polynomial.C (Units.signAddHom R (Additive.ofMul b)) * Polynomial.X)
+        _ = Polynomial.C (Units.signAddHom R (Additive.ofMul a) *
+            Units.signAddHom R (Additive.ofMul b)) * (Polynomial.X * Polynomial.X) := by
+          rw [map_mul]; ring
         _ = 0 := by rw [h0, map_zero, zero_mul]
 
 @[simp] theorem orderSignPoly_ofUnit (a : Rˣ) :
-    orderSignPoly R (ofUnit a) = Polynomial.C (orderSign a) * Polynomial.X :=
+    orderSignPoly R (ofUnit a) =
+      Polynomial.C (Units.signAddHom R (Additive.ofMul a)) * Polynomial.X :=
   (lift_ofUnit _ _ a).trans (by simp)
 
 @[simp] theorem orderSignPoly_symbol (l : List Rˣ) :
-    orderSignPoly R (symbol l) = Polynomial.C (l.map orderSign).prod * Polynomial.X ^ l.length := by
+    orderSignPoly R (symbol l) =
+      Polynomial.C (l.map fun a => Units.signAddHom R (Additive.ofMul a)).prod *
+        Polynomial.X ^ l.length := by
   induction l with
   | nil => simp
   | cons a l ih =>
@@ -174,7 +74,7 @@ noncomputable def orderSignPoly : MilnorK R →+* Polynomial (ZMod 2) :=
 
 theorem coeff_orderSignPoly_symbol (l : List Rˣ) (n : ℕ) :
     (orderSignPoly R (symbol l)).coeff n =
-      if l.length = n then (l.map orderSign).prod else 0 := by
+      if l.length = n then (l.map fun a => Units.signAddHom R (Additive.ofMul a)).prod else 0 := by
   rw [orderSignPoly_symbol, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow]
   by_cases h : l.length = n <;> simp [h, Ne.symm]
 
@@ -221,7 +121,8 @@ noncomputable def orderSignDegree (n : ℕ) : degree R n →ₗ[ℤ] ZMod 2 :=
 @[simp] theorem orderSignDegree_apply (n : ℕ) (x : degree R n) :
     orderSignDegree R n x = (orderSignPoly R x.val).coeff n := by rfl
 theorem orderSignDegree_symbol {n : ℕ} (l : List Rˣ) (hl : l.length = n) :
-    orderSignDegree R n ⟨symbol l, symbol_mem_degree_of_length hl⟩ = (l.map orderSign).prod := by
+    orderSignDegree R n ⟨symbol l, symbol_mem_degree_of_length hl⟩ =
+      (l.map fun a => Units.signAddHom R (Additive.ofMul a)).prod := by
   rw [orderSignDegree_apply, coeff_orderSignPoly_symbol, ite_eq_left hl]
 
 /-- `orderSignDegree R n` evaluates `{a₁, …, aₙ}` to `1` iff every entry is negative. -/
@@ -232,24 +133,24 @@ theorem orderSignDegree_symbol_eq_ite {n : ℕ} (l : List Rˣ) (hl : l.length = 
   induction l with
   | nil => simp
   | cons a l ih =>
-    rw [List.map_cons, List.prod_cons, ih]
-    by_cases ha : (a : R) < 0
-    · rw [orderSign_of_neg ha, one_mul]; simp [ha]
-    · rw [orderSign_of_nonneg (not_lt.mp ha), zero_mul]; simp [ha]
+    rw [List.map_cons, List.prod_cons, ih, Units.signAddHom_ofMul]
+    by_cases ha : (a : R) < 0 <;> simp [ha]
 
-/-- In degree `2`, `MilnorK.orderSignDegree` agrees with `SymbolGroup.orderSign`. -/
+/-- In degree `2`, `MilnorK.orderSignDegree` agrees with `MatsumotoGroup.sign`. -/
 theorem orderSignDegree_two_eq (x : degree R 2) :
-    orderSignDegree R 2 x = SymbolGroup.orderSign R (degreeTwoEquiv R x) :=
+    orderSignDegree R 2 x = MatsumotoGroup.sign R (degreeTwoEquiv R x) :=
   LinearMap.congr_fun (f := orderSignDegree R 2)
-    (g := (SymbolGroup.orderSign R).comp (degreeTwoEquiv R).toLinearMap)
+    (g := (MatsumotoGroup.sign R).toIntLinearMap.comp (degreeTwoEquiv R).toLinearMap)
     (degreeTwo_linearMap_ext fun a b => by
       have hpoly : orderSignPoly R (ofUnit a * ofUnit b) =
-          Polynomial.C (orderSign a * orderSign b) * Polynomial.X ^ 2 := by
+          Polynomial.C (Units.signAddHom R (Additive.ofMul a) *
+            Units.signAddHom R (Additive.ofMul b)) * Polynomial.X ^ 2 := by
         rw [map_mul, orderSignPoly_ofUnit, orderSignPoly_ofUnit, mul_mul_mul_comm,
           ← Polynomial.C_mul, ← sq]
-      dsimp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
+      dsimp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AddMonoidHom.coe_toIntLinearMap]
       rw [orderSignDegree_apply, hpoly, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow,
-        ite_eq_left rfl, mul_one, degreeTwoEquiv_ofUnit_mul, SymbolGroup.orderSign_symbol]) x
+        ite_eq_left rfl, mul_one, degreeTwoEquiv_ofUnit_mul,
+        MatsumotoGroup.sign_symbol_eq_signPairing, MatsumotoGroup.signPairing_apply]) x
 
 /-- Over any linearly ordered commutative ring, `{-1, …, -1}` of length `n` is nonzero. -/
 theorem symbol_neg_one_replicate_ne_zero (n : ℕ) : symbol (List.replicate n (-1 : Rˣ)) ≠ 0 := by
@@ -257,8 +158,10 @@ theorem symbol_neg_one_replicate_ne_zero (n : ℕ) : symbol (List.replicate n (-
   have hval := congrArg (orderSignDegree R n) (Subtype.ext h :
     (⟨symbol (List.replicate n (-1 : Rˣ)),
       symbol_mem_degree_of_length List.length_replicate⟩ : degree R n) = 0)
-  rw [orderSignDegree_symbol _ List.length_replicate, List.map_replicate, orderSign_neg_one,
-    List.prod_replicate, one_pow, map_zero] at hval
+  rw [orderSignDegree_symbol _ List.length_replicate, List.map_replicate, Units.signAddHom_ofMul]
+    at hval
+  have hneg : ((-1 : Rˣ) : R) < 0 := by simp
+  simp only [hneg, ↓reduceIte, List.prod_replicate, one_pow, map_zero] at hval
   exact one_ne_zero hval
 
 /-- Over any linearly ordered commutative ring, `ofUnit (-1) * ofUnit (-1) ≠ 0`. -/
@@ -271,8 +174,6 @@ theorem nontrivial_degree_of_linearOrder (n : ℕ) : Nontrivial (degree R n) :=
   ⟨⟨symbol (List.replicate n (-1 : Rˣ)), symbol_mem_degree_of_length List.length_replicate⟩,
     0, fun h => symbol_neg_one_replicate_ne_zero (R := R) n (congrArg Subtype.val h)⟩
 
-end MilnorK
-
 end OrderedCommRing
 
-end TauCeti
+end TauCeti.MilnorK

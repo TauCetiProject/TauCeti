@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Submodule
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
+public import TauCeti.FieldTheory.MatsumotoGroup.Basic
 public import TauCeti.FieldTheory.MilnorKTheory.Basic
 public import TauCeti.LinearAlgebra.TensorAlgebra.Projection
 import TauCeti.Algebra.Algebra.Operations
@@ -29,7 +30,7 @@ graded universal property `MilnorK.gradedLift`. Identifying each piece with
 `TensorPower ℤ n (Additive Rˣ) ⧸ milnorTensorRel R n` (`degreeEquivQuotient`, assembled into
 `equivDirectSumQuotient`, with quotient product `quotientMul` and functorial map `quotientMap`)
 yields canonical low-degree equivalences `degreeZeroEquiv` (`K₀ᴹ ≃ₗ[ℤ] ℤ`), `degreeOneEquiv`
-(`K₁ᴹ ≃ₗ[ℤ] Additive Rˣ`), and `degreeTwoEquiv` (`K₂ᴹ ≃ₗ[ℤ] SymbolGroup R`), all natural with
+(`K₁ᴹ ≃ₗ[ℤ] Additive Rˣ`), and `degreeTwoEquiv` (`K₂ᴹ ≃ₗ[ℤ] MatsumotoGroup R`), all natural with
 respect to `gradedMap`, `mapDegree`, and `quotientMap`.
 
 ## References
@@ -607,30 +608,32 @@ theorem ofUnitHom_injective (R : Type u) [CommSemiring R] : Function.Injective (
   fun _ _ h => by
     rw [ofUnitHom_apply, ofUnitHom_apply] at h; exact Additive.toMul.injective (ofUnit_injective h)
 
-/-- Auxiliary `ℤ`-linear map from `⨂[ℤ]^2 (Additive Rˣ)` to `SymbolGroup R`. -/
-private noncomputable def tensorPowerTwoToSymbolGroup (R : Type u) [CommSemiring R] :
-    TensorPower ℤ 2 (Additive Rˣ) →ₗ[ℤ] SymbolGroup R :=
-  (steinbergRelations R).mkQ ∘ₗ (TauCeti.TensorPower.twoEquiv ℤ (Additive Rˣ)).symm.toLinearMap
+/-- Auxiliary `ℤ`-linear map from `⨂[ℤ]^2 (Additive Rˣ)` to `MatsumotoGroup R`. -/
+private noncomputable def tensorPowerTwoToMatsumotoGroup (R : Type u) [CommSemiring R] :
+    TensorPower ℤ 2 (Additive Rˣ) →ₗ[ℤ] MatsumotoGroup R :=
+  (MatsumotoGroup.steinbergRelations R).mkQ ∘ₗ
+    (TauCeti.TensorPower.twoEquiv ℤ (Additive Rˣ)).symm.toLinearMap
 
-private theorem tensorPowerTwoToSymbolGroup_tprod (a b : Rˣ) :
-    tensorPowerTwoToSymbolGroup R
-      (PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b]) = TauCeti.symbol a b := by
-  rw [TauCeti.symbol_def]
-  exact congrArg (steinbergRelations R).mkQ
+private theorem tensorPowerTwoToMatsumotoGroup_tprod (a b : Rˣ) :
+    tensorPowerTwoToMatsumotoGroup R
+      (PiTensorProduct.tprod ℤ ![Additive.ofMul a, Additive.ofMul b]) =
+        MatsumotoGroup.symbol a b := by
+  rw [← MatsumotoGroup.mk_tmul]
+  exact congrArg (MatsumotoGroup.steinbergRelations R).mkQ
     ((TauCeti.TensorPower.twoEquiv ℤ (Additive Rˣ)).symm_apply_eq.mpr
       (TauCeti.TensorPower.twoEquiv_tmul ℤ (Additive Rˣ)
         (Additive.ofMul a) (Additive.ofMul b)).symm)
 
 private theorem milnorTensorRel_two_le_ker (R : Type u) [CommSemiring R] :
-    milnorTensorRel R 2 ≤ LinearMap.ker (tensorPowerTwoToSymbolGroup R) := by
+    milnorTensorRel R 2 ≤ LinearMap.ker (tensorPowerTwoToMatsumotoGroup R) := by
   rw [milnorTensorRel_two, Submodule.span_le]; rintro _ ⟨a, b, hab, rfl⟩
-  rw [SetLike.mem_coe, LinearMap.mem_ker, tensorPowerTwoToSymbolGroup_tprod]
-  exact TauCeti.symbol_eq_zero_of_add_eq_one hab
+  rw [SetLike.mem_coe, LinearMap.mem_ker, tensorPowerTwoToMatsumotoGroup_tprod]
+  exact MatsumotoGroup.symbol_of_add_eq_one hab
 
-/-- Auxiliary `ℤ`-linear map `SymbolGroup R →ₗ[ℤ] degree R 2` sending `{a, b}` to `a * b`. -/
-private noncomputable def symbolGroupToDegreeTwo (R : Type u) [CommSemiring R] :
-    SymbolGroup R →ₗ[ℤ] degree R 2 :=
-  SymbolGroup.lift (fun a b : Rˣ => ⟨ofUnit a * ofUnit b, ofUnit_mul_mem_degree_two a b⟩)
+/-- Auxiliary `ℤ`-linear map `MatsumotoGroup R →ₗ[ℤ] degree R 2` sending `{a, b}` to `a * b`. -/
+private noncomputable def matsumotoGroupToDegreeTwo (R : Type u) [CommSemiring R] :
+    MatsumotoGroup R →ₗ[ℤ] degree R 2 :=
+  MatsumotoGroup.liftLinear (fun a b : Rˣ => ⟨ofUnit a * ofUnit b, ofUnit_mul_mem_degree_two a b⟩)
     { map_mul_left := fun _ _ _ => Subtype.ext (by simp [ofUnit_mul, add_mul])
       map_mul_right := fun _ _ _ => Subtype.ext (by simp [ofUnit_mul, mul_add])
       steinberg := fun _ _ hab => Subtype.ext (ofUnit_mul_ofUnit_eq_zero hab) }
@@ -664,34 +667,37 @@ theorem degreeTwo_linearMap_ext {A : Type*} [AddCommMonoid A] [Module ℤ A]
     | [a, b], _ => by rw [degreeTwo_symbol_eq_ofUnit_mul]; exact h a b
 
 variable (R) in
-/-- **Degree-two identification**: `K₂ᴹ(R) ≃ₗ[ℤ] SymbolGroup R`, sending `ofUnit a * ofUnit b`
-to `TauCeti.symbol a b`. -/
-noncomputable def degreeTwoEquiv : degree R 2 ≃ₗ[ℤ] SymbolGroup R :=
+/-- **Degree-two identification**: `K₂ᴹ(R) ≃ₗ[ℤ] MatsumotoGroup R`, sending `ofUnit a * ofUnit b`
+to `MatsumotoGroup.symbol a b`. -/
+noncomputable def degreeTwoEquiv : degree R 2 ≃ₗ[ℤ] MatsumotoGroup R :=
   LinearEquiv.ofLinearMap
-    ((Submodule.liftQ (milnorTensorRel R 2) (tensorPowerTwoToSymbolGroup R)
+    ((Submodule.liftQ (milnorTensorRel R 2) (tensorPowerTwoToMatsumotoGroup R)
       (milnorTensorRel_two_le_ker R)).comp (degreeEquivQuotient R 2).toLinearMap)
-    (symbolGroupToDegreeTwo R)
-    (SymbolGroup.hom_ext fun a b => by
-      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, symbolGroupToDegreeTwo,
-        SymbolGroup.lift_symbol, degreeEquivQuotient_ofUnit_mul, Submodule.liftQ_apply,
-        tensorPowerTwoToSymbolGroup_tprod, LinearMap.id_apply])
+    (matsumotoGroupToDegreeTwo R)
+    (MatsumotoGroup.linearMap_ext fun a b => by
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, matsumotoGroupToDegreeTwo,
+        MatsumotoGroup.liftLinear_symbol, degreeEquivQuotient_ofUnit_mul, Submodule.liftQ_apply,
+        tensorPowerTwoToMatsumotoGroup_tprod, LinearMap.id_apply])
     (degreeTwo_linearMap_ext fun a b => by
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.id_apply,
-        degreeEquivQuotient_ofUnit_mul, Submodule.liftQ_apply, tensorPowerTwoToSymbolGroup_tprod]
-      exact Subtype.ext (by simp [symbolGroupToDegreeTwo]))
+        degreeEquivQuotient_ofUnit_mul, Submodule.liftQ_apply,
+        tensorPowerTwoToMatsumotoGroup_tprod]
+      exact Subtype.ext (by simp [matsumotoGroupToDegreeTwo]))
 
 @[simp] theorem degreeTwoEquiv_ofUnit_mul (a b : Rˣ) :
-    degreeTwoEquiv R ⟨ofUnit a * ofUnit b, ofUnit_mul_mem_degree_two a b⟩ = TauCeti.symbol a b := by
+    degreeTwoEquiv R ⟨ofUnit a * ofUnit b, ofUnit_mul_mem_degree_two a b⟩ =
+      MatsumotoGroup.symbol a b := by
   have hsymm : (⟨ofUnit a * ofUnit b, ofUnit_mul_mem_degree_two a b⟩ : degree R 2) =
-      (degreeTwoEquiv R).symm (TauCeti.symbol a b) :=
-    Subtype.ext (by simp [degreeTwoEquiv, symbolGroupToDegreeTwo])
+      (degreeTwoEquiv R).symm (MatsumotoGroup.symbol a b) :=
+    Subtype.ext (by simp [degreeTwoEquiv, matsumotoGroupToDegreeTwo])
   rw [hsymm, LinearEquiv.apply_symm_apply]
 theorem degreeTwoEquiv_symbol (a b : Rˣ) :
-    degreeTwoEquiv R ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ = TauCeti.symbol a b := by
+    degreeTwoEquiv R ⟨symbol [a, b], symbol_mem_degree_of_length rfl⟩ =
+      MatsumotoGroup.symbol a b := by
   rw [degreeTwo_symbol_eq_ofUnit_mul, degreeTwoEquiv_ofUnit_mul]
 @[simp] theorem degreeTwoEquiv_symm_symbol (a b : Rˣ) :
-    ((degreeTwoEquiv R).symm (TauCeti.symbol a b) : MilnorK R) = ofUnit a * ofUnit b := by
-  simp [degreeTwoEquiv, symbolGroupToDegreeTwo]
+    ((degreeTwoEquiv R).symm (MatsumotoGroup.symbol a b) : MilnorK R) = ofUnit a * ofUnit b := by
+  simp [degreeTwoEquiv, matsumotoGroupToDegreeTwo]
 
 /-! ### Graded functoriality -/
 
@@ -849,18 +855,18 @@ theorem degreeOneEquiv_mapDegree (f : R →+* S) (x : degree R 1) :
   obtain ⟨u, rfl⟩ := (degreeOneEquiv R).symm.surjective x
   simp
 
-/-- Naturality of `degreeTwoEquiv` with respect to `SymbolGroup.map`. -/
+/-- Naturality of `degreeTwoEquiv` with respect to `MatsumotoGroup.map`. -/
 theorem degreeTwoEquiv_mapDegree (f : R →+* S) (x : degree R 2) :
-    degreeTwoEquiv S (mapDegree f 2 x) = SymbolGroup.map f (degreeTwoEquiv R x) :=
+    degreeTwoEquiv S (mapDegree f 2 x) = MatsumotoGroup.map f (degreeTwoEquiv R x) :=
   LinearMap.congr_fun (f := (degreeTwoEquiv S).toLinearMap.comp (mapDegree f 2))
-    (g := (SymbolGroup.map f).comp (degreeTwoEquiv R).toLinearMap)
+    (g := (MatsumotoGroup.map f).comp (degreeTwoEquiv R).toLinearMap)
     (degreeTwo_linearMap_ext fun a b => by
       have hmap : mapDegree f 2 ⟨ofUnit a * ofUnit b, ofUnit_mul_mem_degree_two a b⟩ =
           ⟨ofUnit (Units.map f.toMonoidHom a) * ofUnit (Units.map f.toMonoidHom b),
             ofUnit_mul_mem_degree_two _ _⟩ :=
         Subtype.ext (by simp)
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hmap, degreeTwoEquiv_ofUnit_mul,
-        SymbolGroup.map_symbol]) x
+        MatsumotoGroup.map_symbol]) x
 
 end Map
 

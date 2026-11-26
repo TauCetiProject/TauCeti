@@ -9,7 +9,7 @@ public import TauCeti.Topology.Algebra.Group.Quotient.LocalSection
 public import TauCeti.Topology.Grassmannian.FrameQuotient
 public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 
 /-!
 # The unitary Stiefel fibration `U(m) → U(r + m) → V_r(𝕜^(r + m))`
@@ -108,6 +108,13 @@ theorem unitaryFrameMap_mul (A B : unitaryGroup (Fin (r + m)) 𝕜) :
 theorem unitaryFrameMap_one :
     unitaryFrameMap r m (1 : unitaryGroup (Fin (r + m)) 𝕜) = standard 𝕜 (Nat.le_add_right r m) :=
   unitaryMap_one _
+
+/-- The frame map is the orbit map `A ↦ A • e` of the standard frame `e` under
+`TauCeti.finiteOrthonormalFrame.unitaryMulAction`. -/
+theorem unitaryFrameMap_eq_smul_standard (A : unitaryGroup (Fin (r + m)) 𝕜) :
+    letI := unitaryMulAction 𝕜 r (r + m)
+    unitaryFrameMap r m A = A • standard 𝕜 (Nat.le_add_right r m) :=
+  (rfl)
 
 /-- The fibres of the frame map are the left cosets of the stabilizer of the standard frame. -/
 theorem unitaryFrameMap_eq_unitaryFrameMap_iff {A B : unitaryGroup (Fin (r + m)) 𝕜} :

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Action
 public import TauCeti.Geometry.Symplectic.Floer.Plane.CappedAction
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Compactness of PSS planes with bounded end action
@@ -49,9 +50,10 @@ plane. This file proves the resulting interior part of Gromov–Floer compactnes
 Both statements hold for the positive and for the negative plane. Since `ε a ≥ -B` for every
 solution, the bound `A + B` on the energy is nonnegative. Windows that move off to `∞` along the
 end, where Floer cylinders break off, are treated in
-`TauCeti.Geometry.Symplectic.Floer.Plane.Compactness.End`. Localizing the images of small discs
-into charts on a closed manifold, the bubbles at the points of `Z`, and the assembly of broken
-configurations are not treated here.
+`TauCeti.Geometry.Symplectic.Floer.Plane.Compactness.End`. In a closed manifold, with no
+condition on the images of the solutions, both are in
+`TauCeti.Geometry.Symplectic.Floer.Plane.Compactness.Closed`. The bubbles at the points of `Z`
+and the assembly of broken configurations are not treated here.
 
 ## References
 
@@ -136,9 +138,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pssPlanePe
       ((hu₂ k).of_le one_le_two).contDiffOn ((hK₃ 1).of_le (by norm_num)).contDiffOn
       ((hK₃ I).of_le (by norm_num)).contDiffOn)).continuousOn.integrableOn_compact hD).mono_set
       hΩD
-  exact hconv hΩ hΩD (fun k ↦ (hu k).contDiffOn) (fun k z _ ↦ hfl k z) huK hint fun k ↦ by
-    rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ (hf0 k)) (hint k).aestronglyMeasurable]
-    exact ENNReal.toReal_le_of_le_ofReal hE0 ((setLIntegral_le_lintegral _ _).trans (hlin k))
+  exact hconv hΩ hΩD (fun k ↦ (hu k).contDiffOn) (fun k z _ ↦ hfl k z) huK hint fun k ↦
+    (integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le (hint k).aestronglyMeasurable
+      (ae_of_all _ (hf0 k)) (subset_univ Ω) hE0 ((setLIntegral_univ _).trans_le (hlin k))).2
 
 end SymplecticForm
 
@@ -266,9 +268,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pssPlanePe
       (equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_closedBall _ _))
       (subset_univ _) (ω.integrableOn_hamiltonianCurvature_pssPlanePerturbation_closedBall hH
         hHs₁ (hu₁ k).continuous |r|)).mono_set (hΩD.trans hDR)
-  exact hconv hΩ hΩD (fun k ↦ (hu k).contMDiffOn) (fun k z _ ↦ hfl k z) huC hint fun k ↦ by
-    rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ (hf0 k)) (hint k).aestronglyMeasurable]
-    exact ENNReal.toReal_le_of_le_ofReal hE0 ((setLIntegral_le_lintegral _ _).trans (hlin k))
+  exact hconv hΩ hΩD (fun k ↦ (hu k).contMDiffOn) (fun k z _ ↦ hfl k z) huC hint fun k ↦
+    (integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le (hint k).aestronglyMeasurable
+      (ae_of_all _ (hf0 k)) (subset_univ Ω) hE0 ((setLIntegral_univ _).trans_le (hlin k))).2
 
 end SmoothTwoForm.IsNondegenerate
 
