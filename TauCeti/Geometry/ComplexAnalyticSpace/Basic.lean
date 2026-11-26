@@ -90,6 +90,7 @@ the universe lift (`toOver_left`). -/
       ((closedAnalyticSubspace J).uliftΓIso.{u}).inv))
 
 /-- The local model in universe `u` is the universe lift of the closed analytic subspace. -/
+@[simp]
 theorem toOver_left : (toOver.{u} J).left = (closedAnalyticSubspace J).ulift.{u} :=
   (rfl)
 
@@ -132,7 +133,12 @@ theorem not_isReduced_stalk_toOver_span_sq
     (hf : (holomorphicStructureSheaf I X).presheaf.germ ⊤ z.val (Opens.mem_top _) f ≠ 0) :
     ¬ IsReduced ((toOver.{u} (Ideal.span {f ^ 2})).left.presheaf.stalk (ULift.up z)) := by
   intro hred
-  let e := (toOverStalkEquiv.{u} (Ideal.span {f ^ 2}) z).trans (stalkEquiv _ z).symm
+  -- The local model is the universe lift by `rfl` (`toOver_left`), so the stalk ring isomorphism
+  -- of the universe lift applies to its stalks. The point `ULift.up z` depends on the space, so
+  -- `rw [toOver_left]` would produce an ill-typed motive.
+  let e : (toOver.{u} (Ideal.span {f ^ 2})).left.presheaf.stalk (ULift.up z) ≃+*
+      (closedAnalyticSubspace (Ideal.span {f ^ 2})).presheaf.stalk z :=
+    (closedAnalyticSubspace _).uliftStalkRingEquiv.{u} z
   exact not_isReduced_stalk_span_sq z hf (isReduced_of_injective e.symm.toRingHom e.symm.injective)
 
 /-- The unit ideal cuts out the empty local model. -/
