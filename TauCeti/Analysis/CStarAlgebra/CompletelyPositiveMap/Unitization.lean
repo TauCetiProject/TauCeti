@@ -13,7 +13,7 @@ public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Contraction
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 
 /-!
 # Unitization of completely positive contractions
