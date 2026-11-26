@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 
 /-!
-# Pointwise behaviour of infinite sums in `Lᵖ`
+# Infinite sums in `Lᵖ`: pointwise behaviour and absolutely convergent series in `L^r`
 
 If a family `u` in `Lᵖ` has sum `v` in the `Lᵖ` norm, then `‖v x‖ₑ ≤ ∑' i, ‖u i x‖ₑ` at almost
 every point. Unlike `MeasureTheory.Lp.hasSum_coeFn_tsum`, this needs neither a countable index
