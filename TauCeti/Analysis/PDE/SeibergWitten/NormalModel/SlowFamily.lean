@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Basic
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Tangent
 import Mathlib.Analysis.Complex.Conformal
-import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral.CompactSupport
 import TauCeti.Topology.Algebra.Support
 
@@ -29,23 +28,22 @@ and `pairedBaseCoupling D = D 1 + J (D i)` for the complex structure `J` of vari
 a kernel `K` of real dimension `2m`, so `L_x*` is injective with range orthogonal to `K`. The
 *slow* variable of the model is the `K`-component of `Ξ`, and the *slow* equation the
 `K`-component of `P`; the other components are governed by the invertible fast blocks. This file
-shows that the slow block of the frozen model is the Cauchy–Riemann operator `∂_s + J ∂_t` on the
-slow variable, decoupled from the fast variables, and that in the divisor coordinates of `K` it is
-`2 ∂bar`.
+computes the pairings of the paired row with `C¹` fields `κ` with `L_x κ = 0`, which only involve
+`Ξ`, and shows that in the divisor coordinates of `K` the paired row of
+a kernel-valued family is `2 ∂bar` of its coordinates.
 
-**The slow row only sees the slow variable.** For a continuous field `x`, compactly supported
+**Pairing the paired row with the kernel.** For a continuous field `x`, compactly supported
 `C¹` families `Ξ`, `Η` and a `C¹` field `κ` with `L_x κ = 0`, pairing the paired row with `κ` over
 the normal plane gives
 
 `∫ ⟪κ, P (w, ·)⟫ = ∂_s ∫ ⟪κ, Ξ (w, ·)⟫ - ∂_t ∫ ⟪J κ, Ξ (w, ·)⟫`
 
 (`TauCeti.SeibergWitten.integral_inner_gaugeFixedAdjoint_add_pairedBaseCoupling`). The paired
-family drops out, since `∫ ⟪κ, L_x* η⟫ = ∫ ⟪L_x κ, η⟫ = 0`, and `Ξ` enters only through its
-pairings with `K`, which is preserved by `J`
-(`TauCeti.Vortex.variationComplexStructure_comp_mem_gaugeFixedKernel`). As `J` is an isometry, the
-`K`-component of `P` is thus `∂_s k + J ∂_t k` for the `K`-component `k` of `Ξ`: the coupling
-between the slow and the fast blocks of the frozen model vanishes in both directions, and its
-Schur complement is the slow block itself.
+family drops out, since `∫ ⟪κ, L_x* η⟫ = ∫ ⟪L_x κ, η⟫ = 0`. Informally, as `J` preserves `K`
+(`TauCeti.Vortex.variationComplexStructure_comp_mem_gaugeFixedKernel`) and is an isometry, letting
+`κ` range over an orthonormal basis of `K` reads this identity as saying that the `K`-component of
+`P` is `∂_s k + J ∂_t k` for the `K`-component `k` of `Ξ`; this file does not define these
+components or the projection onto `K`.
 
 **Divisor coordinates.** At a smooth field with `∂bar_a α = 0`, `|α| → 1` at infinity and zero
 divisor `D ∈ Sym^m ℂ`, for instance a smooth framed degree-`m` vortex, the divisor variation
@@ -74,8 +72,9 @@ projections, which are not treated here.
 
 ## Main results
 
-* `TauCeti.SeibergWitten.integral_inner_gaugeFixedAdjoint_add_pairedBaseCoupling`: the kernel
-  component of the paired row is `∂_s + J ∂_t` of the kernel component of the normal family.
+* `TauCeti.SeibergWitten.integral_inner_gaugeFixedAdjoint_add_pairedBaseCoupling`: pairing the
+  paired row with a `C¹` field `κ` with `L_x κ = 0` gives `∂_s ⟨κ, Ξ⟩ - ∂_t ⟨J κ, Ξ⟩`; the paired
+  family drops out.
 * `TauCeti.SeibergWitten.pairedBaseCoupling_fderiv_gaugeFixedKernelEquivCoeff_symm`: on a
   kernel-valued family in divisor coordinates `c`, the paired row is `∂_s c + i ∂_t c`.
 * `flatDeformation_familyNormalModel_gaugeFixedKernelEquivCoeff_symm_eq_zero_iff_differentiable`:
@@ -104,46 +103,6 @@ section KernelComponent
 variable {x κ : ℂ → EuclideanSpace ℝ (Fin 4)} {Ξ Η : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)}
   {ν : Measure ℂ} [ν.IsAddHaarMeasure]
 
-/-- The pairing of a continuous field with a base derivative of a compactly supported `C¹`
-family is integrable over the normal plane. -/
-private theorem integrable_inner_fderiv_slice_apply (hΞ : ContDiff ℝ 1 Ξ)
-    (hΞc : HasCompactSupport Ξ) (hκ : Continuous κ) (w v : ℂ) :
-    Integrable (fun z ↦ ⟪κ z, fderiv ℝ (fun w' ↦ Ξ (w', z)) w v⟫) ν := by
-  have hcont : Continuous fun z ↦ fderiv ℝ (fun w' ↦ Ξ (w', z)) w v := by
-    have h : (fun z ↦ fderiv ℝ (fun w' ↦ Ξ (w', z)) w v) = fun z ↦ fderiv ℝ Ξ (w, z) (v, 0) :=
-      funext fun z ↦ by simp [fderiv_slice_left ((hΞ.differentiable one_ne_zero) (w, z))]
-    rw [h]
-    exact ((hΞ.continuous_fderiv one_ne_zero).comp (Continuous.prodMk_right w)).clm_apply
-      continuous_const
-  -- Off the projection of the support of `Ξ` the slice through `z` vanishes.
-  have hzero (z : ℂ) (hz : z ∉ Prod.snd '' tsupport Ξ) :
-      fderiv ℝ (fun w' ↦ Ξ (w', z)) w v = 0 := by
-    have h : (fun w' ↦ Ξ (w', z)) = fun _ ↦ 0 :=
-      funext fun w' ↦ image_eq_zero_of_notMem_tsupport fun h ↦ hz ⟨(w', z), h, rfl⟩
-    rw [h]
-    simp
-  exact (hκ.inner hcont).integrable_of_hasCompactSupport
-    (HasCompactSupport.intro (hΞc.isCompact.image continuous_snd) fun z hz ↦ by
-      rw [hzero z hz, inner_zero_right])
-
-/-- Differentiation along the base under the integral over the normal plane, for the pairing of a
-`C¹` field with a compactly supported `C¹` family. -/
-private theorem fderiv_integral_inner_slice_apply (hΞ : ContDiff ℝ 1 Ξ)
-    (hΞc : HasCompactSupport Ξ) (hκ : ContDiff ℝ 1 κ) (w v : ℂ) :
-    fderiv ℝ (fun w' ↦ ∫ z, ⟪κ z, Ξ (w', z)⟫ ∂ν) w v =
-      ∫ z, ⟪κ z, fderiv ℝ (fun w' ↦ Ξ (w', z)) w v⟫ ∂ν := by
-  have hΦ : ContDiff ℝ 1 fun p : ℂ × ℂ ↦ ⟪κ p.2, Ξ p⟫ := (hκ.comp contDiff_snd).inner ℝ hΞ
-  have hΦc : HasCompactSupport fun p : ℂ × ℂ ↦ ⟪κ p.2, Ξ p⟫ :=
-    hΞc.mono fun p hp h0 ↦ hp (by simp only [h0, inner_zero_right])
-  have h := fderiv_integral_apply_of_contDiff_of_hasCompactSupport (ν := ν) hΦ hΦc w v
-  simp only at h
-  rw [h]
-  refine integral_congr_ae (.of_forall fun z ↦ ?_)
-  have hΞz : DifferentiableAt ℝ (fun w' ↦ Ξ (w', z)) w :=
-    ((hΞ.differentiable one_ne_zero) (w, z)).comp w (hasFDerivAt_prodMk_left w z).differentiableAt
-  simp only [fderiv_inner_apply ℝ (differentiableAt_const (κ z)) hΞz, fderiv_const_apply,
-    zero_apply, inner_zero_left, add_zero]
-
 /-- The term `L_x* η` of the paired row is integrable against a `C¹` field `κ` and, when
 `L_x κ = 0`, integrates to zero against it, as `L_x*` is the formal adjoint of `L_x`. -/
 private theorem integrable_inner_gaugeFixedAdjoint_and_integral_eq_zero (hx : Continuous x)
@@ -159,7 +118,7 @@ private theorem integrable_inner_gaugeFixedAdjoint_and_integral_eq_zero (hx : Co
   rw [← Vortex.integral_inner_gaugeFixedOperator hκ hη (Or.inr hηc)]
   simp [hLκ]
 
-/-- **The slow row of the frozen normal model only sees the slow variable.** Let `x` be a
+/-- **The pairing of the paired row of the frozen normal model with the kernel.** Let `x` be a
 continuous plane field, `Ξ` and `Η` compactly supported `C¹` families of plane fields over the
 base, and `κ` a `C¹` field with `L_x κ = 0`. Pairing the paired row
 `P = L_x* Η (w, ·) + pairedBaseCoupling (D_w Ξ)` of the normal model with `κ` over the normal plane
@@ -168,8 +127,7 @@ gives
 `∫ ⟪κ, P (w, ·)⟫ = ∂_s ∫ ⟪κ, Ξ (w, ·)⟫ - ∂_t ∫ ⟪J κ, Ξ (w, ·)⟫`,
 
 with `w = s + i t` and `J` the complex structure of variations. The paired family `Η` does not
-contribute, and `Ξ` contributes only through its pairings with the kernel of `L_x`, which `J`
-preserves: the kernel component of `P` is `∂_s k + J ∂_t k` for the kernel component `k` of `Ξ`. -/
+contribute. -/
 theorem integral_inner_gaugeFixedAdjoint_add_pairedBaseCoupling (hx : Continuous x)
     (hΞ : ContDiff ℝ 1 Ξ) (hΞc : HasCompactSupport Ξ) (hΗ : ContDiff ℝ 1 Η)
     (hΗc : HasCompactSupport Η) (hκ : ContDiff ℝ 1 κ)
@@ -182,8 +140,10 @@ theorem integral_inner_gaugeFixedAdjoint_add_pairedBaseCoupling (hx : Continuous
     Vortex.variationComplexStructure.contDiff.comp hκ
   obtain ⟨hintL, hL⟩ := integrable_inner_gaugeFixedAdjoint_and_integral_eq_zero (ν := ν) hx
     (η := fun z' ↦ Η (w, z')) (hΗ.comp (contDiff_prodMk_right w)) (hΗc.comp_prodMk_right w) hκ hLκ
-  have hint₁ := integrable_inner_fderiv_slice_apply (ν := ν) hΞ hΞc hκ.continuous w 1
-  have hintI := integrable_inner_fderiv_slice_apply (ν := ν) hΞ hΞc hJκ.continuous w I
+  have hint₁ := integrable_inner_fderiv_apply_of_contDiff_of_hasCompactSupport (ν := ν) hΞ hΞc
+    hκ.continuous w 1
+  have hintI := integrable_inner_fderiv_apply_of_contDiff_of_hasCompactSupport (ν := ν) hΞ hΞc
+    hJκ.continuous w I
   -- `pairedBaseCoupling D = D 1 + J (D i)` and `⟪κ, J u⟫ = -⟪J κ, u⟫`.
   have hpt (z : ℂ) : ⟪κ z, Vortex.gaugeFixedAdjoint x (fun z' ↦ Η (w, z')) z +
       pairedBaseCoupling (fderiv ℝ (fun w' ↦ Ξ (w', z)) w)⟫ =
@@ -195,7 +155,8 @@ theorem integral_inner_gaugeFixedAdjoint_add_pairedBaseCoupling (hx : Continuous
     ring
   simp_rw [hpt]
   rw [integral_add hintL (hint₁.sub' hintI), integral_sub hint₁ hintI, hL, zero_add,
-    fderiv_integral_inner_slice_apply hΞ hΞc hκ, fderiv_integral_inner_slice_apply hΞ hΞc hJκ]
+    fderiv_integral_inner_apply_of_contDiff_of_hasCompactSupport hΞ hΞc hκ,
+    fderiv_integral_inner_apply_of_contDiff_of_hasCompactSupport hΞ hΞc hJκ]
 
 end KernelComponent
 
@@ -221,7 +182,7 @@ private theorem exists_hasFDerivAt_gaugeFixedKernelEquivCoeff_symm_apply {c : �
   set L₀ : (Fin m → ℂ) →ₗ[ℝ] EuclideanSpace ℝ (Fin 4) :=
     (LinearMap.proj z).comp ((Vortex.gaugeFixedKernel x).subtype.comp
       (Vortex.gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm.toLinearMap)
-  exact ⟨LinearMap.toContinuousLinearMap L₀, fun v ↦ rfl,
+  exact ⟨LinearMap.toContinuousLinearMap L₀, fun v ↦ by simp [L₀],
     (LinearMap.toContinuousLinearMap L₀).hasFDerivAt.comp w hc.hasFDerivAt⟩
 
 include hx hhol hlim hD in
@@ -283,6 +244,40 @@ variable [Fact (finrank ℝ V = 4)] (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasi
   {u₀ : positiveHalfSpinors o ρ} (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀)
 
 include hx hhol hlim hD hQ hkl he h₀ h₂ hρ hu₀ in
+/-- At a point `y` over the base point `w`, the three rows of the linearized flat limiting
+equations vanish on the normal model of the kernel-valued normal family `Ξ` with divisor
+coordinates `c`, and paired family zero, exactly when the kernel field with divisor coordinates
+`∂_s c + i ∂_t c` vanishes at the normal coordinate of `y`. -/
+private theorem flatDeformation_familyNormalModel_eq_zero_iff_of_baseCoord_eq
+    {c : ℂ → Fin m → ℂ} {w : ℂ} (hc : DifferentiableAt ℝ c w) (hu₀₁ : ‖u₀‖ = 1)
+    {Ξ : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hΞ : Ξ = fun p ↦ ((Vortex.gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm (c p.1) :
+      ℂ → EuclideanSpace ℝ (Fin 4)) p.2) {y : V} (hy : baseCoord e y = w) :
+    (flatDeformationGauge e (familyNormalModelConnection e Ξ 0) (normalModelSpinor e u₀ x 0)
+        (familyNormalModelSpinor e u₀ Ξ 0) y = 0 ∧
+      flatDeformationCurvature o ρ hkl (familyNormalModelConnection e Ξ 0)
+        (normalModelSpinor e u₀ x 0) (familyNormalModelSpinor e u₀ Ξ 0) y = 0 ∧
+      flatDeformationDirac e (normalModelConnection e x 0) (familyNormalModelConnection e Ξ 0)
+        (normalModelSpinor e u₀ x 0) (familyNormalModelSpinor e u₀ Ξ 0) y = 0) ↔
+      ((Vortex.gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm
+        (fderiv ℝ c w 1 + I • fderiv ℝ c w I) : ℂ → EuclideanSpace ℝ (Fin 4)) (normalCoord e y) =
+        0 := by
+  set E := Vortex.gaugeFixedKernelEquivCoeff hx hhol hlim hD
+  subst hΞ hy
+  have hL : Vortex.gaugeFixedOperator x
+      (fun z ↦ (E.symm (c (baseCoord e y)) : ℂ → EuclideanSpace ℝ (Fin 4)) z)
+      (normalCoord e y) = 0 :=
+    (Vortex.mem_gaugeFixedKernel.1 (E.symm (c (baseCoord e y))).property).2.2 _
+  have hA : Vortex.gaugeFixedAdjoint x (fun z ↦ (0 : ℂ × ℂ → EuclideanSpace ℝ (Fin 4))
+      (baseCoord e y, z)) (normalCoord e y) = 0 :=
+    Vortex.gaugeFixedAdjoint_eq_zero_of_notMem_tsupport (by simp)
+  rw [flatDeformation_familyNormalModel_eq_zero_iff hkl he hQ h₀ h₂ hρ hu₀ x (Η := 0) hu₀₁
+    (differentiableAt_gaugeFixedKernelEquivCoeff_symm hx hhol hlim hD hc _)
+    (differentiableAt_const 0), hL, hA,
+    pairedBaseCoupling_fderiv_gaugeFixedKernelEquivCoeff_symm hx hhol hlim hD hc]
+  simp [E]
+
+include hx hhol hlim hD hQ hkl he h₀ h₂ hρ hu₀ in
 /-- **The frozen normal model on a kernel-valued family is the Cauchy–Riemann operator.** At a
 smooth field `x` with `∂bar_a α = 0`, `|α|² → 1` at infinity and zero divisor `D ∈ Sym^m ℂ`, let
 `c` be a map from the base to the divisor coordinates `ℂ^m` of the kernel of `L_x`
@@ -315,37 +310,9 @@ theorem flatDeformation_familyNormalModel_gaugeFixedKernelEquivCoeff_symm_eq_zer
               ℂ → EuclideanSpace ℝ (Fin 4)) p.2) 0) y = 0) ↔
       fderiv ℝ c w I = I • fderiv ℝ c w 1 := by
   set E := Vortex.gaugeFixedKernelEquivCoeff hx hhol hlim hD
-  -- At a point over `w`, the rows vanish exactly when the kernel field with coordinates
-  -- `∂_s c + i ∂_t c` vanishes at its normal coordinate.
-  have hrow (y : V) (hy : baseCoord e y = w) :
-      (flatDeformationGauge e (familyNormalModelConnection e (fun p ↦
-            (E.symm (c p.1) : ℂ → EuclideanSpace ℝ (Fin 4)) p.2) 0) (normalModelSpinor e u₀ x 0)
-          (familyNormalModelSpinor e u₀ (fun p ↦
-            (E.symm (c p.1) : ℂ → EuclideanSpace ℝ (Fin 4)) p.2) 0) y = 0 ∧
-        flatDeformationCurvature o ρ hkl (familyNormalModelConnection e (fun p ↦
-            (E.symm (c p.1) : ℂ → EuclideanSpace ℝ (Fin 4)) p.2) 0) (normalModelSpinor e u₀ x 0)
-          (familyNormalModelSpinor e u₀ (fun p ↦
-            (E.symm (c p.1) : ℂ → EuclideanSpace ℝ (Fin 4)) p.2) 0) y = 0 ∧
-        flatDeformationDirac e (normalModelConnection e x 0)
-          (familyNormalModelConnection e (fun p ↦
-            (E.symm (c p.1) : ℂ → EuclideanSpace ℝ (Fin 4)) p.2) 0) (normalModelSpinor e u₀ x 0)
-          (familyNormalModelSpinor e u₀ (fun p ↦
-            (E.symm (c p.1) : ℂ → EuclideanSpace ℝ (Fin 4)) p.2) 0) y = 0) ↔
-        (E.symm (fderiv ℝ c w 1 + I • fderiv ℝ c w I) : ℂ → EuclideanSpace ℝ (Fin 4))
-          (normalCoord e y) = 0 := by
-    subst hy
-    have hL : Vortex.gaugeFixedOperator x
-        (fun z ↦ (E.symm (c (baseCoord e y)) : ℂ → EuclideanSpace ℝ (Fin 4)) z)
-        (normalCoord e y) = 0 :=
-      (Vortex.mem_gaugeFixedKernel.1 (E.symm (c (baseCoord e y))).property).2.2 _
-    have hA : Vortex.gaugeFixedAdjoint x (fun z ↦ (0 : ℂ × ℂ → EuclideanSpace ℝ (Fin 4))
-        (baseCoord e y, z)) (normalCoord e y) = 0 :=
-      Vortex.gaugeFixedAdjoint_eq_zero_of_notMem_tsupport (by simp)
-    rw [flatDeformation_familyNormalModel_eq_zero_iff hkl he hQ h₀ h₂ hρ hu₀ x (Η := 0) hu₀₁
-      (differentiableAt_gaugeFixedKernelEquivCoeff_symm hx hhol hlim hD hc _)
-      (differentiableAt_const 0), hL, hA,
-      pairedBaseCoupling_fderiv_gaugeFixedKernelEquivCoeff_symm hx hhol hlim hD hc]
-    simp [E]
+  have hrow (y : V) (hy : baseCoord e y = w) :=
+    flatDeformation_familyNormalModel_eq_zero_iff_of_baseCoord_eq hx hhol hlim hD hkl he hQ h₀ h₂
+      hρ hu₀ hc hu₀₁ rfl hy
   constructor
   · intro h
     have hzero : E.symm (fderiv ℝ c w 1 + I • fderiv ℝ c w I) = 0 := by
@@ -358,8 +325,8 @@ theorem flatDeformation_familyNormalModel_gaugeFixedKernelEquivCoeff_symm_eq_zer
     simp only [smul_add, smul_smul, I_mul_I, neg_one_smul, smul_zero] at hsum
     exact (add_neg_eq_zero.1 hsum).symm
   · intro h y hy
-    rw [hrow y hy, h, smul_smul, I_mul_I, neg_one_smul, add_neg_cancel, map_zero]
-    rfl
+    rw [hrow y hy, h, smul_smul, I_mul_I, neg_one_smul, add_neg_cancel, map_zero,
+      ZeroMemClass.coe_zero, Pi.zero_apply]
 
 include hx hhol hlim hD hQ hkl he h₀ h₂ hρ hu₀ in
 /-- **The kernel-valued solutions of the frozen normal model are holomorphic.** At a smooth field
