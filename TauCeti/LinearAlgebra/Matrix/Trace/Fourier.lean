@@ -11,13 +11,13 @@ public import TauCeti.Analysis.Fourier.FiniteAbelian.ModuleDual
 /-!
 # The Fourier transform on square matrices for the trace pairing
 
-For an additive character `ψ` of a finite commutative ring `R` with values in a commutative
+For an additive character `ψ` of a finite commutative semiring `R` with values in a commutative
 semiring `Λ`, `AddChar.traceFourier ψ f y = ∑ x, f x * ψ (Tr (y x))` is the unnormalized Fourier
 transform of a function `f` on `n × n` matrices over `R` for the trace pairing
-`(y, x) ↦ Tr (y x)`, `AddChar.traceFourier_apply`.
+`(y, x) ↦ Tr (y x)`, `AddChar.traceFourier_apply`. The transform is `Λ`-linear in `f`.
 
-When `ψ` is primitive and `Λ` is a domain the trace pairing is orthogonal: the sum of
-`ψ (Tr (y x))` over all `x` vanishes for every nonzero `y`,
+When `R` is a ring, `ψ` is primitive and `Λ` is a domain, the trace pairing is orthogonal:
+the sum of `ψ (Tr (y x))` over all `x` vanishes for every nonzero `y`,
 `AddChar.IsPrimitive.sum_trace_mul_eq_zero`. This is the orthogonality relation behind Fourier
 inversion on matrices.
 
@@ -37,11 +37,11 @@ namespace AddChar
 
 open Finset
 
-variable {R Λ n : Type*} [CommRing R] [Fintype R] [Fintype n] [DecidableEq n]
+variable {R Λ n : Type*} [Fintype R] [Fintype n] [DecidableEq n]
 
 section CommSemiring
 
-variable [CommSemiring Λ]
+variable [CommSemiring R] [CommSemiring Λ]
 
 /-- The unnormalized Fourier transform on square matrices for the trace pairing. -/
 noncomputable def traceFourier (ψ : AddChar R Λ) (f : Matrix n n R → Λ)
@@ -53,7 +53,30 @@ theorem traceFourier_apply (ψ : AddChar R Λ) (f : Matrix n n R → Λ) (y : Ma
     ψ.traceFourier f y = ∑ x, f x * ψ (y * x).trace := by
   simp [traceFourier, fourierTransform_apply]
 
+/-- The trace Fourier transform sends the zero function to zero. -/
+@[simp]
+theorem traceFourier_zero (ψ : AddChar R Λ) :
+    ψ.traceFourier (0 : Matrix n n R → Λ) = 0 := by
+  funext y
+  simp only [traceFourier, map_zero, Pi.zero_apply]
+
+/-- The trace Fourier transform preserves addition. -/
+@[simp]
+theorem traceFourier_add (ψ : AddChar R Λ) (f g : Matrix n n R → Λ) :
+    ψ.traceFourier (f + g) = ψ.traceFourier f + ψ.traceFourier g := by
+  funext y
+  simp only [traceFourier, map_add, Pi.add_apply]
+
+/-- The trace Fourier transform commutes with scalar multiplication. -/
+@[simp]
+theorem traceFourier_smul (ψ : AddChar R Λ) (c : Λ) (f : Matrix n n R → Λ) :
+    ψ.traceFourier (c • f) = c • ψ.traceFourier f := by
+  funext y
+  simp only [traceFourier, map_smul, Pi.smul_apply]
+
 end CommSemiring
+
+variable [CommRing R]
 
 /-- For a primitive additive character with values in a domain, the trace pairing is
 orthogonal: the sum of `ψ (Tr (y x))` over all square matrices `x` vanishes when `y ≠ 0`. -/
