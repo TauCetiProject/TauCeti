@@ -134,12 +134,9 @@ theorem prod_edgeSet [Fintype R] [Fintype (nnGraph R).edgeSet] (h2 : (2 : R) ≠
   (Fintype.prod_bijective _ (edge_bijective h2) _ _ fun _ => rfl).symm
 
 /-- The nearest-neighbour graph of an infinite ring has infinitely many edges. -/
-instance [Infinite R] : Infinite (nnGraph R).edgeSet := by
-  refine not_finite_iff_infinite.1 fun _ => infinite_univ (α := R) ?_
-  refine (finite_iUnion fun e : (nnGraph R).edgeSet => (?_ : {x | x ∈ (e : Sym2 R)}.Finite)).subset
-    fun a _ => mem_iUnion.2 ⟨edge a, Sym2.mem_mk_left a (a + 1)⟩
-  obtain ⟨b, rfl⟩ := exists_edge_eq e
-  exact (toFinite {b, b + 1}).subset fun x hx => by simpa [Sym2.mem_iff] using hx
+instance [Infinite R] : Infinite (nnGraph R).edgeSet :=
+  (infinite_edgeSet_iff_infinite_support.2 <| ((nnGraph R).support.eq_univ_of_forall fun a =>
+    ((nnGraph R).mem_support).2 ⟨_, nnGraph_adj_add_one a⟩) ▸ infinite_univ).to_subtype
 
 /-- When `2 ≠ 0`, the point chosen for the edge `{a, a + 1}` is `a`. -/
 theorem choose_exists_edge_eq (h2 : (2 : R) ≠ 0) (a : R) :
