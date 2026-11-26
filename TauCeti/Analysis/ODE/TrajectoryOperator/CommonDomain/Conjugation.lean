@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain
 public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Analysis.Sobolev.GraphStep.Map
-public import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
+public import TauCeti.MeasureTheory.Function.Lp.ContinuousLinearEquiv
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 /-!
@@ -19,15 +19,16 @@ essentially bounded family of operators `D →L[ℝ] H`, given as a class `AL` i
 `D_A u = (ι ∘ u)' + A(s) u(s)` from `Lᵖ(Ω, D) ∩ W^{1,p}(Ω, H)` to `Lᵖ(Ω, H)` is
 `TauCeti.WeakDerivStep.familyDomainTrajectoryOperator ι AL`.
 
-A change of trivialization consists of an isometry `U : H ≃ₗᵢ[ℝ] K` together with an isomorphism
-`V : D ≃L[ℝ] D'` of the domains which intertwines the embeddings, `ι' ∘ V = U ∘ ι`; the
-conjugated family is `s ↦ U ∘ A(s) ∘ V⁻¹`, of operators `D' → K`. Composing paths with `V` and
-`U` identifies the graph spaces (`TauCeti.WeakDerivStep.mapEquiv`) and the spaces `Lᵖ(Ω, H)` and
-`Lᵖ(Ω, K)`, and since the derivative commutes with the constant operator `U`,
+A change of trivialization consists of isomorphisms `U : H ≃L[ℝ] K` and `V : D ≃L[ℝ] D'` which
+intertwine the embeddings, `ι' ∘ V = U ∘ ι`; the conjugated family is `s ↦ U ∘ A(s) ∘ V⁻¹`, of
+operators `D' → K`. Composing paths with `V` and `U` identifies the graph spaces
+(`TauCeti.WeakDerivStep.mapEquiv`) and the spaces `Lᵖ(Ω, H)` and `Lᵖ(Ω, K)`
+(`ContinuousLinearEquiv.compLpL`), and since the derivative commutes with the constant operator
+`U`,
 
 `D_{U A V⁻¹} (V ∘ u) = U ∘ D_A u`
 
-(`TauCeti.WeakDerivStep.compLpₗᵢ_familyDomainTrajectoryOperator`). Hence the conjugated operator
+(`TauCeti.WeakDerivStep.compLpL_familyDomainTrajectoryOperator`). Hence the conjugated operator
 is Fredholm exactly when `D_A` is
 (`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator_comp_comp_symm_iff`), and then
 it has the same index (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_comp_comp_symm`).
@@ -60,23 +61,23 @@ variable {D D' H K : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAd
   [NormedSpace ℝ D'] [NormedAddCommGroup H] [NormedSpace ℝ H] [CompleteSpace H]
   [NormedAddCommGroup K] [NormedSpace ℝ K] [CompleteSpace K]
   {mu : Measure ℝ} [IsFiniteMeasureOnCompacts mu] {Omega : Opens ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-  {ι : D →L[ℝ] H} {ι' : D' →L[ℝ] K} (V : D ≃L[ℝ] D') (U : H ≃ₗᵢ[ℝ] K)
+  {ι : D →L[ℝ] H} {ι' : D' →L[ℝ] K} (V : D ≃L[ℝ] D') (U : H ≃L[ℝ] K)
   {AL : Lp (D →L[ℝ] H) ∞ (mu.restrict Omega)} {AL' : Lp (D' →L[ℝ] K) ∞ (mu.restrict Omega)}
 
-/-- **The trajectory operator of a conjugated family.** If `U : H ≃ₗᵢ[ℝ] K` and
+/-- **The trajectory operator of a conjugated family.** If `U : H ≃L[ℝ] K` and
 `V : D ≃L[ℝ] D'` intertwine the embeddings, `ι' ∘ V = U ∘ ι`, and `A'(s) = U ∘ A(s) ∘ V⁻¹` for
 almost every `s`, then `(ι' ∘ (V ∘ u))' + A' (V ∘ u) = U ∘ ((ι ∘ u)' + A u)`. -/
-theorem compLpₗᵢ_familyDomainTrajectoryOperator
+theorem compLpL_familyDomainTrajectoryOperator
     (hUV : ι'.comp (V : D →L[ℝ] D') = (U : H →L[ℝ] K).comp ι)
     (hAL : ∀ᵐ s ∂(mu.restrict Omega),
       AL' s = (U : H →L[ℝ] K).comp ((AL s).comp (V.symm : D' →L[ℝ] D)))
     (u : WeakDerivStep mu Omega p (ι.compLpL p (mu.restrict Omega))) :
-    U.compLpₗᵢ p (mu.restrict Omega) (familyDomainTrajectoryOperator ι AL u) =
-      familyDomainTrajectoryOperator ι' AL' (mapEquiv V U.toContinuousLinearEquiv hUV u) := by
+    U.compLpL p (mu.restrict Omega) (familyDomainTrajectoryOperator ι AL u) =
+      familyDomainTrajectoryOperator ι' AL' (mapEquiv V U hUV u) := by
   refine Lp.ext ?_
-  filter_upwards [U.coeFn_compLpₗᵢ (familyDomainTrajectoryOperator ι AL u),
+  filter_upwards [U.coeFn_compLpL (familyDomainTrajectoryOperator ι AL u),
     familyDomainTrajectoryOperator_apply_ae ι AL u,
-    familyDomainTrajectoryOperator_apply_ae ι' AL' (mapEquiv V U.toContinuousLinearEquiv hUV u),
+    familyDomainTrajectoryOperator_apply_ae ι' AL' (mapEquiv V U hUV u),
     (V : D →L[ℝ] D').coeFn_compLpL (prev _ u),
     (ContinuousLinearMap.compL ℝ ℝ H K (U : H →L[ℝ] K)).coeFn_compLpL (weakFDeriv _ u), hAL]
     with s h₁ h₂ h₃ hprev hderiv hA
@@ -85,19 +86,19 @@ theorem compLpₗᵢ_familyDomainTrajectoryOperator
 
 /-- The conjugation identity `U ∘ D_A = D_{U A V⁻¹} ∘ (u ↦ V ∘ u)` as an identity of continuous
 linear maps. -/
-private theorem compLpₗᵢ_comp_familyDomainTrajectoryOperator
+private theorem compLpL_comp_familyDomainTrajectoryOperator
     (hUV : ι'.comp (V : D →L[ℝ] D') = (U : H →L[ℝ] K).comp ι)
     (hAL : ∀ᵐ s ∂(mu.restrict Omega),
       AL' s = (U : H →L[ℝ] K).comp ((AL s).comp (V.symm : D' →L[ℝ] D))) :
-    ((U.compLpₗᵢ p (mu.restrict Omega)).toContinuousLinearEquiv : Lp H p (mu.restrict Omega) →L[ℝ]
+    (U.compLpL p (mu.restrict Omega) : Lp H p (mu.restrict Omega) →L[ℝ]
         Lp K p (mu.restrict Omega)).comp (familyDomainTrajectoryOperator ι AL) =
       (familyDomainTrajectoryOperator ι' AL').comp
-        (mapEquiv (mu := mu) (Omega := Omega) (p := p) V U.toContinuousLinearEquiv hUV :
+        (mapEquiv (mu := mu) (Omega := Omega) (p := p) V U hUV :
           WeakDerivStep mu Omega p (ι.compLpL p (mu.restrict Omega)) →L[ℝ]
             WeakDerivStep mu Omega p (ι'.compLpL p (mu.restrict Omega))) :=
-  ContinuousLinearMap.ext fun u ↦ compLpₗᵢ_familyDomainTrajectoryOperator V U hUV hAL u
+  ContinuousLinearMap.ext fun u ↦ compLpL_familyDomainTrajectoryOperator V U hUV hAL u
 
-/-- **Changes of trivialization preserve the Fredholm property.** If `U : H ≃ₗᵢ[ℝ] K` and
+/-- **Changes of trivialization preserve the Fredholm property.** If `U : H ≃L[ℝ] K` and
 `V : D ≃L[ℝ] D'` intertwine the embeddings, `ι' ∘ V = U ∘ ι`, and `A'(s) = U ∘ A(s) ∘ V⁻¹` for
 almost every `s`, then `u ↦ (ι' ∘ u)' + A' u` is Fredholm exactly when `u ↦ (ι ∘ u)' + A u` is. -/
 theorem isFredholm_familyDomainTrajectoryOperator_comp_comp_symm_iff
@@ -107,9 +108,9 @@ theorem isFredholm_familyDomainTrajectoryOperator_comp_comp_symm_iff
     (familyDomainTrajectoryOperator (p := p) ι' AL').IsFredholm ↔
       (familyDomainTrajectoryOperator (p := p) ι AL).IsFredholm :=
   (ContinuousLinearMap.isFredholm_iff_of_comp_eq _ _
-    (compLpₗᵢ_comp_familyDomainTrajectoryOperator V U hUV hAL)).symm
+    (compLpL_comp_familyDomainTrajectoryOperator V U hUV hAL)).symm
 
-/-- **Changes of trivialization preserve the index.** If `U : H ≃ₗᵢ[ℝ] K` and `V : D ≃L[ℝ] D'`
+/-- **Changes of trivialization preserve the index.** If `U : H ≃L[ℝ] K` and `V : D ≃L[ℝ] D'`
 intertwine the embeddings, `ι' ∘ V = U ∘ ι`, and `A'(s) = U ∘ A(s) ∘ V⁻¹` for almost every `s`,
 then `u ↦ (ι' ∘ u)' + A' u` and `u ↦ (ι ∘ u)' + A u` have the same index. -/
 theorem index_familyDomainTrajectoryOperator_comp_comp_symm
@@ -118,8 +119,8 @@ theorem index_familyDomainTrajectoryOperator_comp_comp_symm
       AL' s = (U : H →L[ℝ] K).comp ((AL s).comp (V.symm : D' →L[ℝ] D))) :
     (familyDomainTrajectoryOperator (p := p) ι' AL').index =
       (familyDomainTrajectoryOperator (p := p) ι AL).index := by
-  rw [← ContinuousLinearMap.index_comp_equiv _ (mapEquiv V U.toContinuousLinearEquiv hUV),
-    ← compLpₗᵢ_comp_familyDomainTrajectoryOperator V U hUV hAL,
+  rw [← ContinuousLinearMap.index_comp_equiv _ (mapEquiv V U hUV),
+    ← compLpL_comp_familyDomainTrajectoryOperator V U hUV hAL,
     ContinuousLinearMap.index_equiv_comp]
 
 end TauCeti.WeakDerivStep

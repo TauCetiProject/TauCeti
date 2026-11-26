@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import TauCeti.MeasureTheory.Function.Lp.ProdLp
 import TauCeti.MeasureTheory.Function.Lp.Basic
+import TauCeti.Topology.Algebra.Module.Equiv.Basic
 
 /-!
 # Maps and products of weak-derivative graph spaces
@@ -285,14 +286,6 @@ section Equiv
 variable {D D' : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddCommGroup D']
   [NormedSpace ℝ D'] {ι : D →L[ℝ] F} {ι' : D' →L[ℝ] F'} (V : D ≃L[ℝ] D') (U : F ≃L[ℝ] F')
 
-omit [CompleteSpace F] [CompleteSpace F'] in
-/-- The isomorphisms `V` and `U` intertwine the embeddings the other way round. -/
-private theorem comp_symm_eq_symm_comp (h : ι'.comp (V : D →L[ℝ] D') = (U : F →L[ℝ] F').comp ι) :
-    ι.comp (V.symm : D' →L[ℝ] D) = (U.symm : F' →L[ℝ] F).comp ι' := by
-  ext y
-  apply U.injective
-  simpa using (DFunLike.congr_fun h (V.symm y)).symm
-
 variable [FiniteDimensional ℝ E] [BorelSpace E]
 
 /-- **The graph spaces over intertwined embeddings are isomorphic.** If isomorphisms
@@ -307,7 +300,7 @@ def mapEquiv (h : ι'.comp (V : D →L[ℝ] D') = (U : F →L[ℝ] F').comp ι) 
     (mapL _ _ ((V : D →L[ℝ] D').compLpL p (mu.restrict Omega)) (U : F →L[ℝ] F')
       (ContinuousLinearMap.compLpL_comp_compLpL_eq h))
     (mapL _ _ ((V.symm : D' →L[ℝ] D).compLpL p (mu.restrict Omega)) (U.symm : F' →L[ℝ] F)
-      (ContinuousLinearMap.compLpL_comp_compLpL_eq (comp_symm_eq_symm_comp V U h)))
+      (ContinuousLinearMap.compLpL_comp_compLpL_eq ((V.comp_symm_eq_symm_comp_iff U).2 h)))
     (ContinuousLinearMap.ext fun w ↦ ext <| by simp)
     (ContinuousLinearMap.ext fun u ↦ ext <| by simp)
 
@@ -334,7 +327,8 @@ theorem weakFDeriv_mapEquiv (u : WeakDerivStep mu Omega p (ι.compLpL p (mu.rest
 theorem prev_mapEquiv_symm (w : WeakDerivStep mu Omega p (ι'.compLpL p (mu.restrict Omega))) :
     prev _ ((mapEquiv V U h).symm w) =
       (V.symm : D' →L[ℝ] D).compLpL p (mu.restrict Omega) (prev _ w) :=
-  prev_mapL _ _ _ _ (ContinuousLinearMap.compLpL_comp_compLpL_eq (comp_symm_eq_symm_comp V U h)) w
+  prev_mapL _ _ _ _
+    (ContinuousLinearMap.compLpL_comp_compLpL_eq ((V.comp_symm_eq_symm_comp_iff U).2 h)) w
 
 /-- The weak derivative of `(TauCeti.WeakDerivStep.mapEquiv V U h).symm w` is that of `w` followed
 by `U⁻¹`. -/
@@ -345,7 +339,7 @@ theorem weakFDeriv_mapEquiv_symm
       (ContinuousLinearMap.compL ℝ E F' F (U.symm : F' →L[ℝ] F)).compLpL p (mu.restrict Omega)
         (weakFDeriv _ w) :=
   weakFDeriv_mapL _ _ _ _
-    (ContinuousLinearMap.compLpL_comp_compLpL_eq (comp_symm_eq_symm_comp V U h)) w
+    (ContinuousLinearMap.compLpL_comp_compLpL_eq ((V.comp_symm_eq_symm_comp_iff U).2 h)) w
 
 end Equiv
 
