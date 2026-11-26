@@ -93,9 +93,10 @@ theorem sq_mul_integral_sq_le_integral_deriv_sq_of_hasDerivAt
   have hsq := (hf.continuousOn.pow 2).intervalIntegrable (μ := volume)
   have hmono := intervalIntegral.integral_mono_ae_restrict hab hF.intervalIntegrable_deriv
     (hdf.sub (hsq.const_mul (k ^ 2))) hle
-  rw [hF.integral_deriv_eq_sub, ← sq, ← sq, hcf, sub_self,
-    intervalIntegral.integral_sub hdf (hsq.const_mul _), intervalIntegral.integral_const_mul]
-    at hmono
+  -- The boundary term `c f²` vanishes by `hcf`.
+  have hbd : c b * (f b * f b) - c a * (f a * f a) = 0 := by linear_combination hcf
+  rw [hF.integral_deriv_eq_sub, hbd, intervalIntegral.integral_sub hdf (hsq.const_mul _),
+    intervalIntegral.integral_const_mul] at hmono
   simp only [Pi.pow_apply] at hmono
   linarith
 

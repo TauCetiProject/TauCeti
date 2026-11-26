@@ -62,6 +62,30 @@ namespace TauCeti.W1p
 
 variable {a b : ℝ}
 
+/-- If the value of `u ∈ H¹(a, b)` agrees almost everywhere on `(a, b)` with `g`, then its squared
+`L²` norm is the integral of `g²` over `(a, b)`. -/
+private theorem norm_value_sq_eq_intervalIntegral_of_ae_eq (hab : a < b)
+    {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2} {g : ℝ → ℝ}
+    (hg : value u =ᵐ[volume.restrict (Ioo a b)] g) :
+    ‖value u‖ ^ 2 = ∫ t in a..b, g t ^ 2 := by
+  rw [← integral_value_sq_eq_norm_value_sq, intervalIntegral.integral_of_le hab.le,
+    integral_Ioc_eq_integral_Ioo]
+  refine integral_congr_ae ?_
+  filter_upwards [hg] with t ht
+  rw [ht]
+
+/-- If the gradient of `u ∈ H¹(a, b)` agrees almost everywhere on `(a, b)` with `g`, then its
+squared `L²` norm is the integral of `g²` over `(a, b)`. -/
+private theorem norm_gradient_sq_eq_intervalIntegral_of_ae_eq (hab : a < b)
+    {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ 2} {g : ℝ → ℝ}
+    (hg : gradient u =ᵐ[volume.restrict (Ioo a b)] g) :
+    ‖gradient u‖ ^ 2 = ∫ t in a..b, g t ^ 2 := by
+  rw [← integral_norm_gradient_sq_eq_norm_gradient_sq, intervalIntegral.integral_of_le hab.le,
+    integral_Ioc_eq_integral_Ioo]
+  refine integral_congr_ae ?_
+  filter_upwards [hg] with t ht
+  rw [ht, Real.norm_eq_abs, sq_abs]
+
 /-- The squared `L²` norms of the value and of the gradient of `u ∈ H¹(a, b)` are the integrals of
 the squares of its continuous representative and of the derivative of that representative, and
 the latter is integrable. -/
@@ -82,17 +106,11 @@ private theorem norm_sq_eq_integral_intervalRepresentativeL (hab : a < b)
       =ᵐ[volume.restrict (Ioo a b)] fun t ↦ ‖gradient u t‖ ^ 2 := by
     filter_upwards [hderiv] with t ht
     rw [ht, Real.norm_eq_abs, sq_abs]
-  refine ⟨?_, ?_, ?_⟩
-  · rw [← integral_value_sq_eq_norm_value_sq, intervalIntegral.integral_of_le hab.le,
-      integral_Ioc_eq_integral_Ioo]
-    refine integral_congr_ae ?_
-    filter_upwards [value_ae_eq_intervalRepresentativeL hab u] with t ht
-    rw [ht]
-  · rw [← integral_norm_gradient_sq_eq_norm_gradient_sq, intervalIntegral.integral_of_le hab.le,
-      integral_Ioc_eq_integral_Ioo]
-    exact (integral_congr_ae hsq).symm
-  · refine (intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 ?_
-    exact ((Lp.memLp (gradient u)).norm.integrable_sq).congr hsq.symm
+  refine ⟨norm_value_sq_eq_intervalIntegral_of_ae_eq hab
+    (value_ae_eq_intervalRepresentativeL hab u),
+    norm_gradient_sq_eq_intervalIntegral_of_ae_eq hab hderiv.symm, ?_⟩
+  refine (intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 ?_
+  exact ((Lp.memLp (gradient u)).norm.integrable_sq).congr hsq.symm
 
 /-- **The sharp Poincaré–Friedrichs inequality on an interval, vanishing at `a`.** If the
 continuous representative of `u ∈ H¹(a, b)` vanishes at `a`, then
@@ -135,21 +153,12 @@ private theorem exists_intervalRepresentativeL_eq_of_contDiff (hab : a < b) {f :
   obtain ⟨u, hv, hg⟩ :=
     (hf.contDiffOn (s := uIcc a b)).absolutelyContinuousOnInterval.exists_w1p_value_gradient_ae_eq
       hdf
-  refine ⟨u, fun t ↦ ?_, ?_, ?_⟩
-  · have hrep := (intervalRepresentativeL_eq_iff hab u ⟨fun t ↦ f t, by fun_prop⟩).2 (by
-      filter_upwards [hv, ae_restrict_mem measurableSet_Ioo] with t ht hmem
-      rw [ht, ContinuousMap.coe_mk, projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)])
-    rw [hrep, ContinuousMap.coe_mk]
-  · rw [← integral_value_sq_eq_norm_value_sq, intervalIntegral.integral_of_le hab.le,
-      integral_Ioc_eq_integral_Ioo]
-    refine integral_congr_ae ?_
-    filter_upwards [hv] with t ht
-    rw [ht]
-  · rw [← integral_norm_gradient_sq_eq_norm_gradient_sq, intervalIntegral.integral_of_le hab.le,
-      integral_Ioc_eq_integral_Ioo]
-    refine integral_congr_ae ?_
-    filter_upwards [hg] with t ht
-    rw [ht, Real.norm_eq_abs, sq_abs]
+  refine ⟨u, fun t ↦ ?_, norm_value_sq_eq_intervalIntegral_of_ae_eq hab hv,
+    norm_gradient_sq_eq_intervalIntegral_of_ae_eq hab hg⟩
+  have hrep := (intervalRepresentativeL_eq_iff hab u ⟨fun t ↦ f t, by fun_prop⟩).2 (by
+    filter_upwards [hv, ae_restrict_mem measurableSet_Ioo] with t ht hmem
+    rw [ht, ContinuousMap.coe_mk, projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)])
+  rw [hrep, ContinuousMap.coe_mk]
 
 /-- The squares of `sin` and `cos` of `π (t - a) / (2 (b - a))` both integrate to `(b - a) / 2`
 over `(a, b)`. -/

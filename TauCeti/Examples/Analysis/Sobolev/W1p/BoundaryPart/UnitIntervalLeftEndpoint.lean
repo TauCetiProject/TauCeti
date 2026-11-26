@@ -83,7 +83,8 @@ reciprocal of the square of the optimal Poincaré–Friedrichs constant `2 / π`
 theorem isGreatest_mul_norm_value_sq_le_norm_gradient_sq :
     IsGreatest {C : ℝ | ∀ u ∈ w1pVanishingOnSubmodule volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ 2 {0},
       C * ‖W1p.value u‖ ^ 2 ≤ ‖W1p.gradient u‖ ^ 2} (π ^ 2 / 4) := by
-  have h := W1p.isGreatest_mul_norm_value_sq_le_norm_gradient_sq_singleton_left (zero_lt_one' ℝ)
-  rwa [sub_zero, mul_one, div_pow, show (2 : ℝ) ^ 2 = 4 by norm_num] at h
+  convert W1p.isGreatest_mul_norm_value_sq_le_norm_gradient_sq_singleton_left (zero_lt_one' ℝ)
+    using 1
+  ring
 
 end TauCeti.Examples.UnitIntervalLeftEndpoint
