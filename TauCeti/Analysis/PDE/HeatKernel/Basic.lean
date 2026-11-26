@@ -399,39 +399,36 @@ theorem heatKernel_convolution_cexp_inner {t : ℝ} (ht : 0 < t) (ξ x : E) :
   field_simp
   simp [mul_assoc, ← Complex.exp_add]
 
-/-- **The heat flow of a sine wave.** For `t > 0` and `ξ ∈ E`,
-`K_t ⋆ sin ⟪ξ, ·⟫ = exp (-t ‖ξ‖²) sin ⟪ξ, ·⟫`. -/
-theorem heatKernel_convolution_sin_inner {t : ℝ} (ht : 0 < t) (ξ x : E) :
-    (heatKernel t ⋆ fun y ↦ sin ⟪ξ, y⟫) x = exp (-(t * ‖ξ‖ ^ 2)) * sin ⟪ξ, x⟫ := by
+/-- **Real parts of the complex plane-wave identity.** If a real-linear functional `L` sends
+`exp (i a)` to `φ a` for every `a`, then `K_t ⋆ φ ⟪ξ, ·⟫ = exp (-t ‖ξ‖²) φ ⟪ξ, ·⟫`: apply `L` to
+`TauCeti.heatKernel_convolution_cexp_inner`. With `L = Im` and `L = Re` this gives the sine and
+cosine plane waves. -/
+private theorem heatKernel_convolution_comp_inner_of_clm {t : ℝ} (ht : 0 < t) (ξ x : E)
+    (L : ℂ →L[ℝ] ℝ) {φ : ℝ → ℝ} (hφ : ∀ a : ℝ, L (Complex.exp (a * Complex.I)) = φ a) :
+    (heatKernel t ⋆ fun y ↦ φ ⟪ξ, y⟫) x = exp (-(t * ‖ξ‖ ^ 2)) * φ ⟪ξ, x⟫ := by
   have hint : Integrable fun y ↦ heatKernel t y • Complex.exp (⟪ξ, x - y⟫ * Complex.I) :=
     (integrable_heatKernel ht).smul_of_top_left (memLp_top_of_bound
       (by fun_prop : Continuous fun y ↦ Complex.exp (⟪ξ, x - y⟫ * Complex.I)).aestronglyMeasurable
       1 (ae_of_all _ fun y ↦ by rw [Complex.norm_exp_ofReal_mul_I]))
-  -- The imaginary part of `r • exp (i a)` is `r sin a`.
-  have him (r a : ℝ) : (r • Complex.exp (a * Complex.I)).im = r * sin a := by
-    rw [Complex.real_smul, Complex.im_ofReal_mul, Complex.exp_ofReal_mul_I_im]
-  have h := congrArg Complex.im (heatKernel_convolution_cexp_inner ht ξ x)
-  rw [convolution_lsmul, ← RCLike.im_to_complex, ← integral_im hint] at h
-  simp only [RCLike.im_to_complex, him] at h
+  have h := congrArg L (heatKernel_convolution_cexp_inner ht ξ x)
+  rw [convolution_lsmul, ← L.integral_comp_comm hint] at h
+  simp only [map_smul, hφ, smul_eq_mul] at h
   rw [convolution_lsmul, ← h]
   simp only [smul_eq_mul]
+
+/-- **The heat flow of a sine wave.** For `t > 0` and `ξ ∈ E`,
+`K_t ⋆ sin ⟪ξ, ·⟫ = exp (-t ‖ξ‖²) sin ⟪ξ, ·⟫`. -/
+theorem heatKernel_convolution_sin_inner {t : ℝ} (ht : 0 < t) (ξ x : E) :
+    (heatKernel t ⋆ fun y ↦ sin ⟪ξ, y⟫) x = exp (-(t * ‖ξ‖ ^ 2)) * sin ⟪ξ, x⟫ :=
+  heatKernel_convolution_comp_inner_of_clm ht ξ x Complex.imCLM fun a ↦ by
+    rw [Complex.imCLM_apply, Complex.exp_ofReal_mul_I_im]
 
 /-- **The cosine plane waves are eigenfunctions of the heat flow.** For `t > 0` and `ξ ∈ E`,
 `K_t ⋆ cos ⟪ξ, ·⟫ = exp (-t ‖ξ‖²) cos ⟪ξ, ·⟫`. -/
 theorem heatKernel_convolution_cos_inner {t : ℝ} (ht : 0 < t) (ξ x : E) :
-    (heatKernel t ⋆ fun y ↦ cos ⟪ξ, y⟫) x = exp (-(t * ‖ξ‖ ^ 2)) * cos ⟪ξ, x⟫ := by
-  have hint : Integrable fun y ↦ heatKernel t y • Complex.exp (⟪ξ, x - y⟫ * Complex.I) :=
-    (integrable_heatKernel ht).smul_of_top_left (memLp_top_of_bound
-      (by fun_prop : Continuous fun y ↦ Complex.exp (⟪ξ, x - y⟫ * Complex.I)).aestronglyMeasurable
-      1 (ae_of_all _ fun y ↦ by rw [Complex.norm_exp_ofReal_mul_I]))
-  -- The real part of `r • exp (i a)` is `r cos a`.
-  have hre (r a : ℝ) : (r • Complex.exp (a * Complex.I)).re = r * cos a := by
-    rw [Complex.real_smul, Complex.re_ofReal_mul, Complex.exp_ofReal_mul_I_re]
-  have h := congrArg Complex.re (heatKernel_convolution_cexp_inner ht ξ x)
-  rw [convolution_lsmul, ← RCLike.re_to_complex, ← integral_re hint] at h
-  simp only [RCLike.re_to_complex, hre] at h
-  rw [convolution_lsmul, ← h]
-  simp only [smul_eq_mul]
+    (heatKernel t ⋆ fun y ↦ cos ⟪ξ, y⟫) x = exp (-(t * ‖ξ‖ ^ 2)) * cos ⟪ξ, x⟫ :=
+  heatKernel_convolution_comp_inner_of_clm ht ξ x Complex.reCLM fun a ↦ by
+    rw [Complex.reCLM_apply, Complex.exp_ofReal_mul_I_re]
 
 /-- **The heat kernel is the inverse Fourier transform of the heat symbol.** For `t > 0`,
 `𝓕⁻ (ξ ↦ exp(-4π² t ‖ξ‖²)) = K_t`. This is Fourier inversion applied to

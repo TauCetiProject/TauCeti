@@ -14,7 +14,7 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
-# The sine function in the bounded Hölder spaces `C_b^{k,α}(ℝ)`
+# Sine and cosine plane waves in the bounded Hölder spaces `C_b^{k,α}`
 
 The sine function is the basic calibrating element of the spaces `C_b^{k,α}(ℝ)` of bounded `C^k`
 maps with bounded derivatives and globally `α`-Hölder `k`-th derivative
@@ -48,13 +48,13 @@ heat flow is `exp (-t ‖ξ‖²) cos ⟪ξ, x⟫`.
 * `TauCeti.holderWith_iteratedFDeriv_sin`, `TauCeti.nnHolderNorm_iteratedFDeriv_sin_le`,
   `TauCeti.two_div_pi_rpow_le_nnHolderNorm_iteratedFDeriv_sin`: the Hölder bounds for `Dᵏ sin`.
 * `TauCeti.CkHolderSpace.exists_coe_eq_sin`: `sin ∈ C_b^{k,α}(ℝ)` for `α ≤ 1`.
-* `TauCeti.CkHolderSpace.exists_coe_eq_cos_inner`: `cos ⟪ξ, ·⟫ ∈ C_b^{k,α}(E)` for `α ≤ 1`.
 * `TauCeti.CkHolderSpace.norm_eq_of_coe_eq_sin`: its norm is `k + 1 + [Dᵏ sin]_α`.
 * `TauCeti.CkHolderSpace.norm_le_add_three_of_coe_eq_sin`,
   `TauCeti.CkHolderSpace.add_two_lt_norm_of_coe_eq_sin`: the norm is at most `k + 3`, and exceeds
   `k + 2` when `π^α < 2`.
 * `TauCeti.CkHolderSpace.norm_eq_norm_equivC1HolderSpace_add_one_of_coe_eq_sin`: at `k = 1` the
   sum norm of `sin` is its `C1HolderSpace` norm plus one.
+* `TauCeti.CkHolderSpace.exists_coe_eq_cos_inner`: `cos ⟪ξ, ·⟫ ∈ C_b^{k,α}(E)` for `α ≤ 1`.
 * `TauCeti.CkHolderSpace.not_exists_coe_eq_sq`: `x ↦ x²` is not in `C_b^{k,α}(ℝ)`.
 
 ## References

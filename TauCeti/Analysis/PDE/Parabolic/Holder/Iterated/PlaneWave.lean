@@ -18,16 +18,16 @@ For a vector `ξ` of a finite-dimensional real inner product space `E`, the plan
 `C_{par,b}^{k+α}(E × [a, b])` of every order `k`, for `0 ≤ a < b` and `α ≤ 1`, with every mixed
 derivative bounded by the corresponding power of the frequency,
 `‖D_t^r D_x^m u‖ ≤ ‖ξ‖ ^ (2 r + m)`
-(`TauCeti.ParabolicCkHolderSpace.exists_coe_eq_exp_mul_cos_inner`). On the line with `ξ = 1` this
-is `u = e^{-t} cos x`, every mixed derivative of which is bounded by `1`
+(`TauCeti.ParabolicCkHolderSpace.exists_coe_eq_exp_neg_mul_cos_inner`). On the line with `ξ = 1`
+this is `u = e^{-t} cos x`, every mixed derivative of which is bounded by `1`
 (`TauCeti.ParabolicCkHolderSpace.exists_coe_eq_exp_neg_mul_cos`). On `ℝⁿ` and for `0 < α < 1`,
 the plane wave is the solution of order `k + 2` of the Cauchy problem `∂ₜu - Δu = 0`,
 `u(·, 0) = cos ⟪ξ, ·⟫`
 (`TauCeti.ParabolicCkHolderSpace.heatInitialDataCLE_symm_apply_zero_of_coe_eq_cos_inner`).
 
-So smooth data with bounded derivatives of every order give a solution in every finite-order
-space, as the order-`k` theory predicts: the datum lies in `C_b^{k,α}(E)` for every `k`
-(`TauCeti.CkHolderSpace.exists_coe_eq_cos_inner`), and the solution of each order is the same
+So this smooth datum, with bounded derivatives of every order, gives a solution in every
+finite-order space, as the order-`k` theory predicts: the datum lies in `C_b^{k,α}(E)` for every
+`k` (`TauCeti.CkHolderSpace.exists_coe_eq_cos_inner`), and the solution of each order is the same
 function.
 
 ## The argument
@@ -86,11 +86,9 @@ theorem norm_mixedDerivL_heatCauchyPotentialL_le_of_coe_eq_cos_inner (hα : α �
   · rw [mixedDerivL_heatCauchyPotentialL g h, hg, iterate_laplacian_cos_inner]
     refine norm_heatCauchyPotential_le (fun y ↦ ?_) _ _
     -- `D^m Δ^r cos ⟪ξ, ·⟫ = (-‖ξ‖²)^r D^m cos ⟪ξ, ·⟫`, of norm at most `‖ξ‖^(2 r) ‖ξ‖^m`.
-    have hsmul : (fun y ↦ (-‖ξ‖ ^ 2) ^ r * cos ⟪ξ, y⟫) =
-        (-‖ξ‖ ^ 2) ^ r • fun y ↦ cos ⟪ξ, y⟫ := (rfl)
     have hcd : ContDiff ℝ m fun y : E ↦ cos ⟪ξ, y⟫ :=
       contDiff_cos.comp (contDiff_const.inner ℝ contDiff_id)
-    rw [hsmul, iteratedFDeriv_const_smul_apply hcd.contDiffAt, norm_smul, norm_pow, norm_neg,
+    rw [iteratedFDeriv_const_smul_apply hcd.contDiffAt, norm_smul, norm_pow, norm_neg,
       norm_pow, norm_norm, pow_add, ← pow_mul]
     gcongr
     exact norm_iteratedFDeriv_cos_inner_le ξ y m
@@ -101,7 +99,7 @@ theorem norm_mixedDerivL_heatCauchyPotentialL_le_of_coe_eq_cos_inner (hα : α �
 `α ≤ 1`, `0 ≤ a < b`, every order `k` and every `ξ ∈ E`, the map
 `u(x, t) = exp (-t ‖ξ‖²) cos ⟪ξ, x⟫` lies in `C_{par,b}^{k+α}(E × [a, b])`, and each of its
 mixed derivatives `D_t^r D_x^m u` is bounded by `‖ξ‖ ^ (2 r + m)`. -/
-theorem exists_coe_eq_exp_mul_cos_inner (hα : α ≤ 1) (hab : a < b) (ha : 0 ≤ a) (ξ : E) :
+theorem exists_coe_eq_exp_neg_mul_cos_inner (hα : α ≤ 1) (hab : a < b) (ha : 0 ≤ a) (ξ : E) :
     ∃ u : ParabolicCkHolderSpace k α E ℝ hab,
       (∀ p, u p = exp (-((p : ParabolicSpaceTime E).time * ‖ξ‖ ^ 2)) *
         cos ⟪ξ, (p : ParabolicSpaceTime E).space⟫) ∧
@@ -119,7 +117,7 @@ theorem exists_coe_eq_exp_neg_mul_cos (hα : α ≤ 1) (hab : a < b) (ha : 0 ≤
     ∃ u : ParabolicCkHolderSpace k α ℝ ℝ hab,
       (∀ p, u p = exp (-(p : ParabolicSpaceTime ℝ).time) * cos (p : ParabolicSpaceTime ℝ).space) ∧
       ∀ r m p, ‖mixedDerivL r m u p‖ ≤ 1 := by
-  obtain ⟨u, hu, hD⟩ := exists_coe_eq_exp_mul_cos_inner (k := k) hα hab ha (1 : ℝ)
+  obtain ⟨u, hu, hD⟩ := exists_coe_eq_exp_neg_mul_cos_inner (k := k) hα hab ha (1 : ℝ)
   exact ⟨u, fun p ↦ by simpa using hu p, fun r m p ↦ by simpa using hD r m p⟩
 
 end Potential
