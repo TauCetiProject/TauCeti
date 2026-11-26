@@ -10,6 +10,7 @@ public import TauCeti.Dynamics.Ergodic.MeasureEntropy.Congr
 public import TauCeti.Probability.Process.PathLaw.Shift
 public import Mathlib.Probability.ProductMeasure
 public import Mathlib.Dynamics.SymbolicDynamics.Basic
+import TauCeti.Dynamics.SymbolicDynamics.Shift
 import Mathlib.Probability.Independence.InfinitePi
 
 /-!
@@ -22,10 +23,7 @@ each have mass `2⁻¹ ^ n`, so it has entropy `n log 2`, and the coordinate lab
 two-sided shift `x ↦ (m ↦ x (1 + m))` on `ℤ → Bool`, whose itineraries read the coordinates
 `0, …, n - 1`; both reduce to the entropy of an injective block of i.i.d. fair bits.
 
-These are the fair Bernoulli shift Check of §4.0 of the ClassicalErgodicTheory roadmap
-(`H(ξⁿ) = n log 2` and rate `log 2` for the coordinate label) and the rate part of the two-sided
-fair Bernoulli shift Check of §4.2 of the GeometryOfNumbersAndQuadraticArithmetic roadmap. The
-equality `measureEntropy = log 2` needs the Kolmogorov-Sinai generator theorem. The rate `0` of
+The equality `measureEntropy = log 2` needs the Kolmogorov-Sinai generator theorem. The rate `0` of
 the identity on two equiprobable points is `measureEntropy_id` in
 `TauCeti.Examples.Dynamics.Ergodic.MeasureEntropy.Basic`.
 -/
@@ -44,10 +42,19 @@ noncomputable abbrev fairBernoulli : Measure (ℕ → Bool) :=
 /-- The coordinate label of the one-sided Bernoulli shift. -/
 def coordZero (x : ℕ → Bool) : Bool := x 0
 
+@[simp]
+theorem coordZero_apply (x : ℕ → Bool) : coordZero x = x 0 :=
+  (rfl)
+
+/-- The coordinate label is measurable. -/
+@[fun_prop]
+theorem measurable_coordZero : Measurable coordZero :=
+  measurable_pi_apply 0
+
 /-- The itinerary of the coordinate label under the shift reads the first coordinates. -/
 theorem iteratedPartitionLabel_shift_coordZero (n : ℕ) :
     iteratedPartitionLabel (shift Bool) coordZero n = fun x i ↦ x i :=
-  funext fun x ↦ funext fun i ↦ by simp [coordZero]
+  funext fun x ↦ funext fun i ↦ by simp
 
 /-- Every word of length `n` has mass `2⁻¹ ^ n` under `n` independent fair bits. -/
 theorem pi_fairBit_real_singleton {n : ℕ} (w : Fin n → Bool) :
@@ -64,8 +71,7 @@ theorem countablePartitionEntropy_pi_fairBit (n : ℕ) :
     Fintype.card_fun, Fintype.card_bool, Fintype.card_fin, nsmul_eq_mul]
   rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
-  rw [negMulLog, log_pow, inv_pow, log_inv, Nat.cast_pow, Nat.cast_ofNat]
-  field_simp
+  simp [negMulLog, log_pow, log_inv]
 
 /-- An injective block of `n` coordinates of i.i.d. fair bits has entropy `n log 2`. -/
 theorem countablePartitionEntropy_block_fairBit {ι : Type*} {n : ℕ} {k : Fin n → ι}
@@ -74,25 +80,14 @@ theorem countablePartitionEntropy_block_fairBit {ι : Type*} {n : ℕ} {k : Fin 
       ENNReal.ofReal (n * log 2) := by
   have hm : Measurable fun x : ι → Bool ↦ fun i : Fin n ↦ x (k i) :=
     measurable_pi_iff.mpr fun i ↦ measurable_pi_apply _
-  rw [← countablePartitionEntropy_pi_fairBit, ← Measure.infinitePi_eq_pi,
-    show (Measure.infinitePi fun _ : Fin n ↦ fairBit) =
-      (Measure.infinitePi fun _ : ι ↦ fairBit).map (fun x i ↦ x (k i)) from
-      (Measure.map_infinitePi_infinitePi_of_inj (Ω := fun _ : ι ↦ Bool)
-        (P := fun _ ↦ fairBit) hk).symm]
+  -- The block of coordinates `k` pushes the i.i.d. law forward to `n` i.i.d. fair bits.
+  have hmap : (Measure.infinitePi fun _ : Fin n ↦ fairBit) =
+      (Measure.infinitePi fun _ : ι ↦ fairBit).map (fun x i ↦ x (k i)) :=
+    (Measure.map_infinitePi_infinitePi_of_inj (Ω := fun _ : ι ↦ Bool)
+      (P := fun _ ↦ fairBit) hk).symm
+  rw [← countablePartitionEntropy_pi_fairBit, ← Measure.infinitePi_eq_pi, hmap]
   exact countablePartitionEntropy_comp_of_measurePreserving
     (hm.measurePreserving _) measurable_id
-
-/-- A label whose length-`n` itineraries have entropy `n log 2` for every `n` has entropy rate
-`log 2`. -/
-theorem partitionEntropyRate_eq_ofReal_log_two {X : Type*} [MeasurableSpace X] {μ : Measure X}
-    {T : X → X} {a : X → Bool}
-    (h : ∀ n, countablePartitionEntropy μ (iteratedPartitionLabel T a n) =
-      ENNReal.ofReal (n * log 2)) :
-    partitionEntropyRate μ T a = ENNReal.ofReal (log 2) := by
-  rw [partitionEntropyRate_def]
-  refine (iInf_congr fun n ↦ ?_).trans iInf_const
-  rw [h, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast, Nat.cast_succ,
-    mul_comm ((n : ℝ≥0∞) + 1), ENNReal.mul_div_cancel_right (by simp) (by simp)]
 
 /-- **Check.** For the fair Bernoulli shift the length-`n` itinerary of the coordinate label
 has entropy `n log 2`. -/
@@ -105,15 +100,15 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_fairBernoulli (n : ℕ)
 /-- **Check.** For the fair Bernoulli shift the coordinate label has entropy rate `log 2`. -/
 theorem partitionEntropyRate_fairBernoulli :
     partitionEntropyRate fairBernoulli (shift Bool) coordZero = ENNReal.ofReal (log 2) :=
-  partitionEntropyRate_eq_ofReal_log_two
-    countablePartitionEntropy_iteratedPartitionLabel_fairBernoulli
+  partitionEntropyRate_eq_of_countablePartitionEntropy_eq_mul fun n ↦ by
+    rw [countablePartitionEntropy_iteratedPartitionLabel_fairBernoulli,
+      ENNReal.ofReal_mul n.cast_nonneg, ENNReal.ofReal_natCast]
 
 /-- The fair Bernoulli shift has entropy at least `log 2`. -/
 theorem ofReal_log_two_le_measureEntropy_fairBernoulli :
     ENNReal.ofReal (log 2) ≤ measureEntropy fairBernoulli (shift Bool) :=
-  partitionEntropyRate_fairBernoulli ▸
-    partitionEntropyRate_le_measureEntropy_of_finite (shift Bool)
-      (show Measurable fun x : ℕ → Bool ↦ x 0 from measurable_pi_apply 0)
+  partitionEntropyRate_fairBernoulli.symm.le.trans
+    (partitionEntropyRate_le_measureEntropy_of_finite _ measurable_coordZero)
 
 /-! ### The two-sided fair Bernoulli shift -/
 
@@ -124,16 +119,22 @@ noncomputable abbrev fairBernoulliTwoSided : Measure (ℤ → Bool) :=
 /-- The coordinate label of the two-sided Bernoulli shift. -/
 def coordZeroTwoSided (x : ℤ → Bool) : Bool := x 0
 
-/-- Iterating the two-sided shift `x ↦ (m ↦ x (1 + m))` moves the coordinates by `k`. -/
-theorem iterate_shift_one_apply (k : ℕ) (x : ℤ → Bool) (m : ℤ) :
-    (SymbolicDynamics.FullShift.shift (1 : ℤ))^[k] x m = x (k + m) := by
-  induction k generalizing x with
-  | zero => simp
-  | succ k ih =>
-    rw [Function.iterate_succ_apply, ih, SymbolicDynamics.FullShift.shift_apply]
-    congr 1
-    push_cast
-    ring
+@[simp]
+theorem coordZeroTwoSided_apply (x : ℤ → Bool) : coordZeroTwoSided x = x 0 :=
+  (rfl)
+
+/-- The two-sided coordinate label is measurable. -/
+@[fun_prop]
+theorem measurable_coordZeroTwoSided : Measurable coordZeroTwoSided :=
+  measurable_pi_apply 0
+
+/-- The itinerary of the coordinate label under the two-sided shift reads the coordinates
+`0, …, n - 1`. -/
+theorem iteratedPartitionLabel_shift_one_coordZeroTwoSided (n : ℕ) :
+    iteratedPartitionLabel (SymbolicDynamics.FullShift.shift (1 : ℤ)) coordZeroTwoSided n =
+      fun x i ↦ x ((i : ℕ) : ℤ) :=
+  funext fun x ↦ funext fun i ↦ by
+    simp [SymbolicDynamics.FullShift.shift_iterate, SymbolicDynamics.FullShift.shift_apply]
 
 /-- **Check.** For the two-sided fair Bernoulli shift the length-`n` itinerary of the coordinate
 label has entropy `n log 2`. -/
@@ -141,27 +142,24 @@ theorem countablePartitionEntropy_iteratedPartitionLabel_fairBernoulliTwoSided (
     countablePartitionEntropy fairBernoulliTwoSided
         (iteratedPartitionLabel (SymbolicDynamics.FullShift.shift (1 : ℤ)) coordZeroTwoSided n) =
       ENNReal.ofReal (n * log 2) := by
-  have : iteratedPartitionLabel (SymbolicDynamics.FullShift.shift (1 : ℤ)) coordZeroTwoSided n =
-      fun x i ↦ x ((i : ℕ) : ℤ) :=
-    funext fun x ↦ funext fun i ↦ by simp [coordZeroTwoSided, iterate_shift_one_apply]
-  rw [this]
+  rw [iteratedPartitionLabel_shift_one_coordZeroTwoSided]
   exact countablePartitionEntropy_block_fairBit
     (Nat.cast_injective.comp Fin.val_injective : Function.Injective fun i : Fin n ↦ ((i : ℕ) : ℤ))
 
 /-- **Check.** For the two-sided fair Bernoulli shift the coordinate label has entropy rate
-`log 2`, so the shift has entropy at least `log 2`. -/
+`log 2`. -/
 theorem partitionEntropyRate_fairBernoulliTwoSided :
     partitionEntropyRate fairBernoulliTwoSided (SymbolicDynamics.FullShift.shift (1 : ℤ))
       coordZeroTwoSided = ENNReal.ofReal (log 2) :=
-  partitionEntropyRate_eq_ofReal_log_two
-    countablePartitionEntropy_iteratedPartitionLabel_fairBernoulliTwoSided
+  partitionEntropyRate_eq_of_countablePartitionEntropy_eq_mul fun n ↦ by
+    rw [countablePartitionEntropy_iteratedPartitionLabel_fairBernoulliTwoSided,
+      ENNReal.ofReal_mul n.cast_nonneg, ENNReal.ofReal_natCast]
 
 /-- The two-sided fair Bernoulli shift has entropy at least `log 2`. -/
 theorem ofReal_log_two_le_measureEntropy_fairBernoulliTwoSided :
     ENNReal.ofReal (log 2) ≤
       measureEntropy fairBernoulliTwoSided (SymbolicDynamics.FullShift.shift (1 : ℤ)) :=
-  partitionEntropyRate_fairBernoulliTwoSided ▸
-    partitionEntropyRate_le_measureEntropy_of_finite _
-      (show Measurable fun x : ℤ → Bool ↦ x 0 from measurable_pi_apply 0)
+  partitionEntropyRate_fairBernoulliTwoSided.symm.le.trans
+    (partitionEntropyRate_le_measureEntropy_of_finite _ measurable_coordZeroTwoSided)
 
 end TauCeti.MeasureEntropyExamples
