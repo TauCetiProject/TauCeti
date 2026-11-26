@@ -139,10 +139,12 @@ theorem ofReal_pi_mul_sq_le_contractibleHZCapacity [Nontrivial V]
         fun s _ ↦ not_hasContractibleClosedCharacteristicOfPeriodLE_norm_sub_sq hg p W s
           (by nlinarith [Real.pi_pos]) using 2
     · ring
-    · rw [mem_closedBall, dist_eq_norm]
+    · simp only [F, mem_ofPred_eq] at hy
+      rw [mem_closedBall, dist_eq_norm]
       exact Real.le_sqrt_of_sq_le hy
-    · rw [mem_ball, dist_eq_norm]
-      nlinarith [norm_nonneg (y - p), show ‖y - p‖ ^ 2 ≤ (1 + t) * r ^ 2 / 2 from hy]
+    · simp only [F, mem_ofPred_eq] at hy
+      rw [mem_ball, dist_eq_norm]
+      nlinarith [norm_nonneg (y - p)]
     · rw [mem_ball, dist_eq_norm, add_sub_cancel_left, he, Real.sqrt_lt' hr]
       linarith
     · simp only [F, add_sub_cancel_left, he, Real.sq_sqrt hm]
