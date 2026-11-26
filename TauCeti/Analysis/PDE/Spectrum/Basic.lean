@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Variational.Rayleigh
 public import TauCeti.Analysis.PDE.FredholmAlternative
+public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 
 /-!
 # The Dirichlet spectrum of a divergence-form elliptic operator
@@ -84,6 +85,10 @@ map.
   with a homogeneous weak equation for the mass coefficient `c - κ`.
 * `TauCeti.PDE.inner_value_eq_zero_of_energyFormH1_eq_of_ne`: for a symmetric form,
   eigenfunctions of distinct eigenvalues are orthogonal in `L²(Ω)`.
+* `TauCeti.PDE.inner_value_eq_zero_of_inner_gradient_eq_of_ne` and
+  `TauCeti.PDE.exists_ne_zero_forall_inner_gradient_eq_iff_of_complete`: for the weak mixed
+  problem `∫ ∇u · ∇v = κ ∫ u v` on `H¹_Γ(Ω)`, eigenfunctions of distinct eigenvalues are
+  orthogonal, so a family of eigenfunctions complete in `L²(Ω)` carries every eigenvalue.
 * `TauCeti.PDE.firstDirichletEigenvalue` and `TauCeti.PDE.isDirichletEigenvalue_first`: the least
   Dirichlet eigenvalue and its attainment on a nonempty bounded domain.
 * `TauCeti.PDE.pos_of_isDirichletEigenvalue` and `TauCeti.PDE.le_of_isDirichletEigenvalue`:
@@ -270,6 +275,73 @@ theorem inner_value_eq_zero_of_energyFormH1_eq_of_ne
   rw [real_inner_comm (W1p.value (u : W1p mu Omega 2)), ← sub_eq_zero, ← sub_mul,
     mul_eq_zero] at key
   exact key.resolve_left (sub_ne_zero.2 hne)
+
+/-- The integral of `f ∈ L²(Ω)` against a function `F` is the `L²(Ω)` pairing of `f` with any
+Sobolev function whose value is `F`. -/
+theorem setIntegral_mul_eq_inner_value_of_ae_eq {u : W1p mu Omega 2}
+    {F : EuclideanSpace ℝ ι → ℝ} (hu : W1p.value u =ᵐ[mu.restrict Omega] F)
+    (f : Lp ℝ 2 (mu.restrict Omega)) :
+    ∫ x in Omega, f x * F x ∂mu = ⟪f, W1p.value u⟫_ℝ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hu] with x hx
+  simp [hx, mul_comm]
+
+section VanishingOn
+
+attribute [local instance] W1pVanishingOn.instNormedAddCommGroup
+
+variable {Γ : Set (EuclideanSpace ℝ ι)}
+
+/-- **Weak mixed eigenfunctions of distinct eigenvalues are orthogonal.** Two solutions in
+`H¹_Γ(Ω)` of the weak eigenvalue identity `∫ ∇u · ∇v = κ ∫ u v`, for every `v ∈ H¹_Γ(Ω)`, with
+different `κ` are orthogonal in `L²(Ω)`, since the form `∫ ∇u · ∇v` is symmetric. -/
+theorem inner_value_eq_zero_of_inner_gradient_eq_of_ne {u w : W1pVanishingOn mu Omega 2 Γ}
+    {kappa kappa' : ℝ} (hne : kappa ≠ kappa')
+    (hu : ∀ v : W1pVanishingOn mu Omega 2 Γ,
+      ⟪W1p.gradient (u : W1p mu Omega 2), W1p.gradient (v : W1p mu Omega 2)⟫_ℝ =
+        kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ)
+    (hw : ∀ v : W1pVanishingOn mu Omega 2 Γ,
+      ⟪W1p.gradient (w : W1p mu Omega 2), W1p.gradient (v : W1p mu Omega 2)⟫_ℝ =
+        kappa' * ⟪W1p.value (w : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ) :
+    ⟪W1p.value (u : W1p mu Omega 2), W1p.value (w : W1p mu Omega 2)⟫_ℝ = 0 := by
+  have key := (hu w).symm.trans ((real_inner_comm _ _).trans (hw u))
+  rw [real_inner_comm (W1p.value (u : W1p mu Omega 2)), ← sub_eq_zero, ← sub_mul,
+    mul_eq_zero] at key
+  exact key.resolve_left (sub_ne_zero.2 hne)
+
+/-- **The weak mixed eigenvalues from a complete family of eigenfunctions.** Let `w k ∈ H¹_Γ(Ω)`
+be nonzero solutions of `∫ ∇(w k) · ∇v = κₖ ∫ (w k) v` for every `v ∈ H¹_Γ(Ω)`, with values
+`F k`, complete in `L²(Ω)`. Then the problem `∫ ∇u · ∇v = κ ∫ u v` for every `v ∈ H¹_Γ(Ω)` has a
+nonzero solution `u ∈ H¹_Γ(Ω)` exactly when `κ` is one of the `κₖ`: an eigenfunction for any other
+`κ` is orthogonal to the whole family, hence zero. -/
+theorem exists_ne_zero_forall_inner_gradient_eq_iff_of_complete {α : Type*} {kappas : α → ℝ}
+    (F : α → EuclideanSpace ℝ ι → ℝ) (w : α → W1pVanishingOn mu Omega 2 Γ)
+    (hwv : ∀ k, W1p.value (w k : W1p mu Omega 2) =ᵐ[mu.restrict Omega] F k)
+    (hw0 : ∀ k, W1p.value (w k : W1p mu Omega 2) ≠ 0)
+    (hw : ∀ k, ∀ v : W1pVanishingOn mu Omega 2 Γ,
+      ⟪W1p.gradient (w k : W1p mu Omega 2), W1p.gradient (v : W1p mu Omega 2)⟫_ℝ =
+        kappas k * ⟪W1p.value (w k : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ)
+    (hc : ∀ f : Lp ℝ 2 (mu.restrict Omega), (∀ k, ∫ x in Omega, f x * F k x ∂mu = 0) → f = 0)
+    {kappa : ℝ} :
+    (∃ u : W1pVanishingOn mu Omega 2 Γ, u ≠ 0 ∧ ∀ v : W1pVanishingOn mu Omega 2 Γ,
+      ⟪W1p.gradient (u : W1p mu Omega 2), W1p.gradient (v : W1p mu Omega 2)⟫_ℝ =
+        kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ) ↔
+      ∃ k, kappa = kappas k := by
+  constructor
+  · rintro ⟨u, hu0, hu⟩
+    by_contra hne
+    push Not at hne
+    refine hu0 (W1pVanishingOn.valueL_injective ?_)
+    rw [map_zero, W1pVanishingOn.valueL_apply]
+    refine hc _ fun k => ?_
+    rw [setIntegral_mul_eq_inner_value_of_ae_eq (hwv k)]
+    exact inner_value_eq_zero_of_inner_gradient_eq_of_ne (hne k) hu (hw k)
+  · rintro ⟨k, rfl⟩
+    refine ⟨w k, fun h => hw0 k ?_, hw k⟩
+    rw [← W1pVanishingOn.valueL_apply, h, map_zero]
+
+end VanishingOn
 
 /-- A domain with a Dirichlet eigenvalue is nonempty: on the empty domain the only element of
 `H¹₀(Ω)` is `0`. -/

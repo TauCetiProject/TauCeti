@@ -21,6 +21,9 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 The derivative of `t ↦ sin (c t)` is `c cos (c t)` (`TauCeti.deriv_sin_mul`). The first and
 second derivatives of `t ↦ cos (c t)` are `-c sin (c t)` and `-c² cos (c t)`
 (`TauCeti.deriv_cos_mul`, `TauCeti.deriv_deriv_cos_mul`).
+The shifted forms `t ↦ sin (c (t - u))` and `t ↦ cos (c (t - u))`, the separated modes of `-Δ` on
+an interval with left endpoint `u`, have derivatives `c cos (c (t - u))` and `-c sin (c (t - u))`
+(`TauCeti.hasDerivAt_sin_mul_sub`, `TauCeti.hasDerivAt_cos_mul_sub`).
 Where `cos t ≠ 0`, the first and second derivatives of `log (cos t)` are `-tan t` and
 `-(1 / cos t ^ 2)` (`TauCeti.deriv_log_cos`, `TauCeti.iteratedDeriv_two_log_cos`).
 
@@ -62,6 +65,18 @@ theorem deriv_sin_mul (c t : ℝ) : deriv (fun s ↦ sin (c * s)) t = c * cos (c
 /-- The derivative of `t ↦ cos (c t)` is `-c sin (c t)`. -/
 theorem deriv_cos_mul (c t : ℝ) : deriv (fun s ↦ cos (c * s)) t = -(c * sin (c * t)) := by
   rw [deriv_comp_mul_left (f := cos), Real.deriv_cos, smul_eq_mul, mul_neg]
+
+/-- The function `t ↦ sin (c (t - u))` has derivative `c cos (c (t - u))`. -/
+theorem hasDerivAt_sin_mul_sub (c u t : ℝ) :
+    HasDerivAt (fun s ↦ sin (c * (s - u))) (c * cos (c * (t - u))) t := by
+  convert (((hasDerivAt_id' t).sub_const u).const_mul c).sin using 1
+  ring
+
+/-- The function `t ↦ cos (c (t - u))` has derivative `-c sin (c (t - u))`. -/
+theorem hasDerivAt_cos_mul_sub (c u t : ℝ) :
+    HasDerivAt (fun s ↦ cos (c * (s - u))) (-c * sin (c * (t - u))) t := by
+  convert (((hasDerivAt_id' t).sub_const u).const_mul c).cos using 1
+  ring
 
 /-- The second derivative of `t ↦ cos (c t)` is `-c² cos (c t)`. -/
 theorem deriv_deriv_cos_mul (c t : ℝ) :

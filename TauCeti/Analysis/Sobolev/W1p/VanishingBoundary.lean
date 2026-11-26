@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Truncation
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Sobolev.W1p.Lipschitz
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Sobolev functions vanishing continuously on the boundary
@@ -29,6 +32,8 @@ measure `(u - k)⁺` is the positive part of `u - k`, and taking positive parts 
 * `TauCeti.W1p.mem_w1p0Submodule_of_continuousOn_closure`: a Sobolev function on a bounded
   domain that agrees with a function continuous on the closure and vanishing on the frontier
   lies in `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.exists_mem_w1p0Submodule_value_ae_eq_of_contDiff`: on a bounded domain, a `C¹`
+  function vanishing on the frontier is the value of an element of `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.posPart_add_mem_w1p0Submodule`: the positive part of `ψ + G`, for `ψ ∈ W^{1,p}_0(Ω)`
   and `G` continuous up to the boundary and nonpositive there, lies in `W^{1,p}_0(Ω)`.
 
@@ -146,6 +151,25 @@ theorem W1p.mem_w1p0Submodule_of_continuousOn_closure (hp : p ≠ ∞)
     (posPart_mem_w1p0Submodule_of_continuousOn_closure hp hb hg hg0 hu)
     (posPart_mem_w1p0Submodule_of_continuousOn_closure hp hb hg.neg
       (fun x hx => by simp [hg0 x hx]) hneg)
+
+/-- **A `C¹` function vanishing on the boundary gives an element of `W^{1,p}_0(Ω)`.** Let `Ω` be
+bounded and `1 ≤ p < ∞`. A `C¹` function `g` on the whole space that is zero on `frontier Ω` is,
+on `Ω`, the value of an element of `W^{1,p}_0(Ω)`: it is Lipschitz near every point, and it and
+its gradient are bounded on the compact closure of `Ω`. -/
+theorem W1p.exists_mem_w1p0Submodule_value_ae_eq_of_contDiff (hp : p ≠ ∞)
+    (hb : Bornology.IsBounded (Omega : Set E)) {g : E → ℝ} (hg : ContDiff ℝ 1 g)
+    (hg0 : ∀ x ∈ frontier (Omega : Set E), g x = 0) :
+    ∃ u : W1p mu Omega p, u ∈ w1p0Submodule mu Omega p ∧
+      W1p.value u =ᵐ[mu.restrict Omega] g := by
+  have hK := hb.isCompact_closure
+  have hO := Omega.isOpen.measurableSet
+  obtain ⟨u, hu, -⟩ := W1p.exists_value_gradient_ae_eq_of_locallyLipschitzOn (mu := mu)
+    hg.locallyLipschitz.locallyLipschitzOn
+    (hg.continuous.continuousOn.memLp_restrict_of_subset_isCompact hK hO subset_closure p)
+    ((hg.continuous_gradient one_ne_zero).continuousOn.memLp_restrict_of_subset_isCompact hK hO
+      subset_closure p)
+  exact ⟨u, W1p.mem_w1p0Submodule_of_continuousOn_closure hp hb hg.continuous.continuousOn hg0 hu,
+    hu⟩
 
 /-- **Positive parts below continuous boundary values.** Let `Ω` be bounded and `1 ≤ p < ∞`. If
 `ψ ∈ W^{1,p}_0(Ω)` and `G ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with a function `g`

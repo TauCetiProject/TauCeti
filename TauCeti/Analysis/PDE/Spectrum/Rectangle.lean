@@ -7,13 +7,15 @@ module
 
 public import TauCeti.Analysis.PDE.Spectrum.Box
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Fourier.SineCosineSeries
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 
 /-!
@@ -46,10 +48,12 @@ a quarter-wave sine (Dirichlet at `a₀`, Neumann at `b₀`) times a Neumann cos
 * The modes are complete in `L²(Ω)`: by Fubini, the coefficients of a function orthogonal to all
   of them are orthogonal to every cosine in `x₁` and vanish, and then its slices are orthogonal to
   every quarter-wave sine in `x₀` (`TauCeti.ae_eq_zero_of_forall_integral_mul_cos_eq_zero`,
-  `TauCeti.ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero`).
+  `TauCeti.ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero` and the slice step
+  `TauCeti.ae_eq_zero_prod_of_forall_integral_mul_eq_zero`).
 * As the form is symmetric, an eigenfunction for any other `κ` is orthogonal to every mode, hence
-  zero; and an eigenfunction for the least eigenvalue `(π / (2 (b₀ - a₀)))²`, which only the mode
-  `m = l = 0` attains, is a multiple of it.
+  zero (`TauCeti.PDE.exists_ne_zero_forall_inner_gradient_eq_iff_of_complete`); and an
+  eigenfunction for the least eigenvalue `(π / (2 (b₀ - a₀)))²`, which only the mode `m = l = 0`
+  attains, is a multiple of it.
 
 On the unit square with `Γ = {0} × (0, 1)` the least eigenvalue is `π² / 4`, attained only by
 `sin (π x₀ / 2)`, and the next one is `5 π² / 4 = (π / 2)² + π²`, from `sin (π x₀ / 2) cos (π x₁)`,
@@ -103,33 +107,6 @@ private theorem planeL_apply (p : ℝ × ℝ) : planeL p = WithLp.toLp 2 ![p.1, 
   ext i
   fin_cases i <;> simp [planeL]
 
-/-- An integral over the rectangle `boxDomain a b` of the plane is the iterated integral over
-its sides. -/
-private theorem setIntegral_boxDomain_eq_intervalIntegral (hab : ∀ i, a i ≤ b i)
-    {F : EuclideanSpace ℝ (Fin 2) → ℝ} (hF : Continuous F) :
-    ∫ x in boxDomain a b, F x =
-      ∫ s in a 0..b 0, ∫ t in a 1..b 1, F (WithLp.toLp 2 ![s, t]) := by
-  have hpre : euclideanPlaneEquivProd ⁻¹' (Ioo (a 0) (b 0) ×ˢ Ioo (a 1) (b 1)) =
-      (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2))) := by
-    ext x
-    simp [mem_boxDomain, Fin.forall_fin_two]
-  have hG : Continuous fun p : ℝ × ℝ => F (WithLp.toLp 2 ![p.1, p.2]) :=
-    (hF.comp planeL.continuous).congr fun p => by simp [planeL_apply]
-  have hFE : (fun x => F x) = fun x => F (WithLp.toLp 2
-      ![(euclideanPlaneEquivProd x).1, (euclideanPlaneEquivProd x).2]) := by
-    funext x
-    congr 1
-    ext i
-    fin_cases i <;> simp
-  rw [← hpre, hFE, measurePreserving_euclideanPlaneEquivProd.setIntegral_preimage_emb
-      euclideanPlaneEquivProd.measurableEmbedding (fun p => F (WithLp.toLp 2 ![p.1, p.2])),
-    Measure.volume_eq_prod, setIntegral_prod _
-      ((hG.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)).mono_set
-        (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self)),
-    intervalIntegral.integral_of_le (hab 0), integral_Ioc_eq_integral_Ioo]
-  refine setIntegral_congr_fun measurableSet_Ioo fun s _ => ?_
-  rw [intervalIntegral.integral_of_le (hab 1), integral_Ioc_eq_integral_Ioo]
-
 private theorem toLp_one_zero :
     (WithLp.toLp 2 ![(1 : ℝ), 0] : EuclideanSpace ℝ (Fin 2)) = EuclideanSpace.single 0 1 := by
   ext i
@@ -159,14 +136,10 @@ private theorem inner_gradient_mul_eq {s s' k k' : ℝ → ℝ} (hs : ∀ t, Has
     exact h0.mul h1
   simp only [PiLp.inner_apply, Fin.sum_univ_two, gradient_apply_eq_fderiv_apply_single,
     hG.fderiv, RCLike.inner_apply (𝕜 := ℝ), conj_trivial]
-  simp
+  simp only [add_apply, smul_apply, PiLp.proj_apply,
+    ne_eq, one_ne_zero, zero_ne_one, not_false_eq_true, PiLp.single_eq_of_ne, PiLp.single_eq_same,
+    smul_eq_mul, mul_zero, mul_one, zero_add, add_zero]
   ring
-
-/-- An interval integral vanishes when its integrand vanishes on the closed interval. -/
-private theorem intervalIntegral_eq_zero_of_forall_mem_Icc {u v : ℝ} (huv : u ≤ v) {F : ℝ → ℝ}
-    (hF : ∀ t ∈ Icc u v, F t = 0) : ∫ t in u..v, F t = 0 :=
-  intervalIntegral.integral_zero_ae (ae_of_all _ fun t ht =>
-    hF t (Ioc_subset_Icc_self (by rwa [uIoc_of_le huv] at ht)))
 
 /-- The divergence of the flux `φ ∇(s (x 0) k (x 1))` of a separated mode, read on `ℝ × ℝ`: for
 `s'' = -c s` and `k'' = -d k` it is `∇(s (x 0) k (x 1)) · ∇φ - (c + d) s (x 0) k (x 1) φ`. -/
@@ -188,8 +161,31 @@ private theorem fderiv_flux_add_fderiv_flux {s s' k k' : ℝ → ℝ} {c d : ℝ
     hφL.mul (((hs p.1).comp_hasFDerivAt p (hasFDerivAt_fst)).mul
       ((hk' p.2).comp_hasFDerivAt p (hasFDerivAt_snd)))
   rw [hfd.fderiv, hgd.fderiv]
-  simp [planeL_apply, toLp_one_zero, toLp_zero_one]
+  simp only [planeL_apply, Function.comp_apply, smul_add, add_apply,
+    smul_apply, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
+    ContinuousLinearMap.comp_apply, smul_eq_mul, mul_zero, mul_one, zero_add, add_zero,
+    toLp_one_zero, toLp_zero_one]
   ring
+
+/-- The two parts of Green's formula for a separated mode, the divergence of the flux
+`φ ∇(s (x 0) k (x 1))` in coordinates and the product `(c + d) s (x 0) k (x 1) φ`, are
+continuous. -/
+private theorem continuous_flux_divergence_and_continuous_mul {s s' k k' : ℝ → ℝ} (c d : ℝ)
+    (hs : ∀ t, HasDerivAt s (s' t) t) (hs' : Continuous s') (hk : ∀ t, HasDerivAt k (k' t) t)
+    (hk' : Continuous k') {φ : EuclideanSpace ℝ (Fin 2) → ℝ} (hφ : ContDiff ℝ 1 φ) :
+    (Continuous fun x : EuclideanSpace ℝ (Fin 2) =>
+      s' (x 0) * k (x 1) * fderiv ℝ φ x (EuclideanSpace.single 0 1) +
+        s (x 0) * k' (x 1) * fderiv ℝ φ x (EuclideanSpace.single 1 1) -
+        (c + d) * (s (x 0) * k (x 1) * φ x)) ∧
+      Continuous fun x : EuclideanSpace ℝ (Fin 2) => (c + d) * (s (x 0) * k (x 1) * φ x) := by
+  have hsc : Continuous s := continuous_iff_continuousAt.2 fun t => (hs t).continuousAt
+  have hkc : Continuous k := continuous_iff_continuousAt.2 fun t => (hk t).continuousAt
+  have (v : EuclideanSpace ℝ (Fin 2)) : Continuous fun x => fderiv ℝ φ x v :=
+    (hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have := hφ.continuous
+  have : Continuous fun x : EuclideanSpace ℝ (Fin 2) => x 0 := PiLp.continuous_apply 2 _ 0
+  have : Continuous fun x : EuclideanSpace ℝ (Fin 2) => x 1 := PiLp.continuous_apply 2 _ 1
+  exact ⟨by fun_prop, by fun_prop⟩
 
 /-- **The divergence theorem for the flux of a separated mode.** Let `s'' = -c s` and
 `k'' = -d k` on the line, and let `φ` be of class `C¹` on the plane. If the flux of the vector field
@@ -201,23 +197,24 @@ private theorem setIntegral_flux_divergence_eq_zero (hab : ∀ i, a i ≤ b i)
     (hs : ∀ t, HasDerivAt s (s' t) t) (hs' : ∀ t, HasDerivAt s' (-c * s t) t)
     (hk : ∀ t, HasDerivAt k (k' t) t) (hk' : ∀ t, HasDerivAt k' (-d * k t) t)
     {φ : EuclideanSpace ℝ (Fin 2) → ℝ} (hφ : ContDiff ℝ 1 φ)
-    (hleft : ∀ t ∈ Icc (a 1) (b 1), φ (WithLp.toLp 2 ![a 0, t]) * s' (a 0) = 0)
-    (hright : ∀ t ∈ Icc (a 1) (b 1), φ (WithLp.toLp 2 ![b 0, t]) * s' (b 0) = 0)
-    (hbot : ∀ t ∈ Icc (a 0) (b 0), φ (WithLp.toLp 2 ![t, a 1]) * k' (a 1) = 0)
-    (htop : ∀ t ∈ Icc (a 0) (b 0), φ (WithLp.toLp 2 ![t, b 1]) * k' (b 1) = 0) :
+    (hleft : ∀ t ∈ [[a 1, b 1]], φ (WithLp.toLp 2 ![a 0, t]) * s' (a 0) = 0)
+    (hright : ∀ t ∈ [[a 1, b 1]], φ (WithLp.toLp 2 ![b 0, t]) * s' (b 0) = 0)
+    (hbot : ∀ t ∈ [[a 0, b 0]], φ (WithLp.toLp 2 ![t, a 1]) * k' (a 1) = 0)
+    (htop : ∀ t ∈ [[a 0, b 0]], φ (WithLp.toLp 2 ![t, b 1]) * k' (b 1) = 0) :
     ∫ x in boxDomain a b, (s' (x 0) * k (x 1) * fderiv ℝ φ x (EuclideanSpace.single 0 1) +
       s (x 0) * k' (x 1) * fderiv ℝ φ x (EuclideanSpace.single 1 1) -
       (c + d) * (s (x 0) * k (x 1) * φ x)) = 0 := by
-  have hsc : Continuous s := continuous_iff_continuousAt.2 fun t => (hs t).continuousAt
-  have hs'c : Continuous s' := continuous_iff_continuousAt.2 fun t => (hs' t).continuousAt
-  have hkc : Continuous k := continuous_iff_continuousAt.2 fun t => (hk t).continuousAt
-  have hk'c : Continuous k' := continuous_iff_continuousAt.2 fun t => (hk' t).continuousAt
-  have (v : EuclideanSpace ℝ (Fin 2)) : Continuous fun x => fderiv ℝ φ x v :=
-    (hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have := hφ.continuous
-  have : Continuous fun x : EuclideanSpace ℝ (Fin 2) => x 0 := PiLp.continuous_apply 2 _ 0
-  have : Continuous fun x : EuclideanSpace ℝ (Fin 2) => x 1 := PiLp.continuous_apply 2 _ 1
-  rw [setIntegral_boxDomain_eq_intervalIntegral hab (by fun_prop)]
+  have hφd : Differentiable ℝ φ := hφ.differentiable one_ne_zero
+  have hsd : Differentiable ℝ s := fun t => (hs t).differentiableAt
+  have hs'd : Differentiable ℝ s' := fun t => (hs' t).differentiableAt
+  have hkd : Differentiable ℝ k := fun t => (hk t).differentiableAt
+  have hk'd : Differentiable ℝ k' := fun t => (hk' t).differentiableAt
+  have hsc := hsd.continuous
+  have hs'c := hs'd.continuous
+  have hkc := hkd.continuous
+  have hk'c := hk'd.continuous
+  rw [setIntegral_boxDomain_eq_intervalIntegral hab
+    (continuous_flux_divergence_and_continuous_mul c d hs hs'c hk hk'c hφ).1]
   -- The two components `φ s' k` and `φ s k'` of the flux, read on `ℝ × ℝ`.
   set f : ℝ × ℝ → ℝ := fun p => φ (planeL p) * (s' p.1 * k p.2) with hf_def
   set g : ℝ × ℝ → ℝ := fun p => φ (planeL p) * (s p.1 * k' p.2) with hg_def
@@ -226,13 +223,11 @@ private theorem setIntegral_flux_divergence_eq_zero (hab : ∀ i, a i ≤ b i)
         s p.1 * k' p.2 * fderiv ℝ φ (planeL p) (EuclideanSpace.single 1 1) -
         (c + d) * (s p.1 * k p.2 * φ (planeL p)) :=
     fderiv_flux_add_fderiv_flux hs hs' hk hk' hφ p
-  have hφd : Differentiable ℝ φ := hφ.differentiable one_ne_zero
-  have hsd : Differentiable ℝ s := fun t => (hs t).differentiableAt
-  have hs'd : Differentiable ℝ s' := fun t => (hs' t).differentiableAt
-  have hkd : Differentiable ℝ k := fun t => (hk t).differentiableAt
-  have hk'd : Differentiable ℝ k' := fun t => (hk' t).differentiableAt
   have := planeL.differentiable
   have hL := planeL.continuous
+  have (v : EuclideanSpace ℝ (Fin 2)) : Continuous fun x => fderiv ℝ φ x v :=
+    (hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have := hφ.continuous
   have hdivc : Continuous fun p : ℝ × ℝ =>
       s' p.1 * k p.2 * fderiv ℝ φ (planeL p) (EuclideanSpace.single 0 1) +
         s p.1 * k' p.2 * fderiv ℝ φ (planeL p) (EuclideanSpace.single 1 1) -
@@ -247,13 +242,13 @@ private theorem setIntegral_flux_divergence_eq_zero (hab : ∀ i, a i ≤ b i)
     (fun p _ => (by fun_prop : DifferentiableAt ℝ f p).hasFDerivAt)
     (fun p _ => (by fun_prop : DifferentiableAt ℝ g p).hasFDerivAt) hi
   -- Each boundary integral vanishes.
-  rw [intervalIntegral_eq_zero_of_forall_mem_Icc (F := fun t => g (t, b 1)) (hab 0) fun t ht => by
+  rw [intervalIntegral.integral_eq_zero_of_forall_mem_uIcc (F := fun t => g (t, b 1)) fun t ht => by
       simp only [hg_def, planeL_apply]; linear_combination s t * htop t ht,
-    intervalIntegral_eq_zero_of_forall_mem_Icc (F := fun t => g (t, a 1)) (hab 0) fun t ht => by
+    intervalIntegral.integral_eq_zero_of_forall_mem_uIcc (F := fun t => g (t, a 1)) fun t ht => by
       simp only [hg_def, planeL_apply]; linear_combination s t * hbot t ht,
-    intervalIntegral_eq_zero_of_forall_mem_Icc (F := fun t => f (b 0, t)) (hab 1) fun t ht => by
+    intervalIntegral.integral_eq_zero_of_forall_mem_uIcc (F := fun t => f (b 0, t)) fun t ht => by
       simp only [hf_def, planeL_apply]; linear_combination k t * hright t ht,
-    intervalIntegral_eq_zero_of_forall_mem_Icc (F := fun t => f (a 0, t)) (hab 1) fun t ht => by
+    intervalIntegral.integral_eq_zero_of_forall_mem_uIcc (F := fun t => f (a 0, t)) fun t ht => by
       simp only [hf_def, planeL_apply]; linear_combination k t * hleft t ht] at hgreen
   simp_rw [hdiv, planeL_apply] at hgreen
   simpa using hgreen
@@ -267,22 +262,16 @@ private theorem setIntegral_inner_gradient_mul_eq (hab : ∀ i, a i ≤ b i)
     (hs : ∀ t, HasDerivAt s (s' t) t) (hs' : ∀ t, HasDerivAt s' (-c * s t) t)
     (hk : ∀ t, HasDerivAt k (k' t) t) (hk' : ∀ t, HasDerivAt k' (-d * k t) t)
     {φ : EuclideanSpace ℝ (Fin 2) → ℝ} (hφ : ContDiff ℝ 1 φ)
-    (hleft : ∀ t ∈ Icc (a 1) (b 1), φ (WithLp.toLp 2 ![a 0, t]) * s' (a 0) = 0)
-    (hright : ∀ t ∈ Icc (a 1) (b 1), φ (WithLp.toLp 2 ![b 0, t]) * s' (b 0) = 0)
-    (hbot : ∀ t ∈ Icc (a 0) (b 0), φ (WithLp.toLp 2 ![t, a 1]) * k' (a 1) = 0)
-    (htop : ∀ t ∈ Icc (a 0) (b 0), φ (WithLp.toLp 2 ![t, b 1]) * k' (b 1) = 0) :
+    (hleft : ∀ t ∈ [[a 1, b 1]], φ (WithLp.toLp 2 ![a 0, t]) * s' (a 0) = 0)
+    (hright : ∀ t ∈ [[a 1, b 1]], φ (WithLp.toLp 2 ![b 0, t]) * s' (b 0) = 0)
+    (hbot : ∀ t ∈ [[a 0, b 0]], φ (WithLp.toLp 2 ![t, a 1]) * k' (a 1) = 0)
+    (htop : ∀ t ∈ [[a 0, b 0]], φ (WithLp.toLp 2 ![t, b 1]) * k' (b 1) = 0) :
     ∫ x in boxDomain a b,
         ⟪∇ (fun y : EuclideanSpace ℝ (Fin 2) => s (y 0) * k (y 1)) x, ∇ φ x⟫_ℝ =
       (c + d) * ∫ x in boxDomain a b, s (x 0) * k (x 1) * φ x := by
-  have hsc : Continuous s := continuous_iff_continuousAt.2 fun t => (hs t).continuousAt
-  have hs'c : Continuous s' := continuous_iff_continuousAt.2 fun t => (hs' t).continuousAt
-  have hkc : Continuous k := continuous_iff_continuousAt.2 fun t => (hk t).continuousAt
-  have hk'c : Continuous k' := continuous_iff_continuousAt.2 fun t => (hk' t).continuousAt
-  have (v : EuclideanSpace ℝ (Fin 2)) : Continuous fun x => fderiv ℝ φ x v :=
-    (hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have := hφ.continuous
-  have : Continuous fun x : EuclideanSpace ℝ (Fin 2) => x 0 := PiLp.continuous_apply 2 _ 0
-  have : Continuous fun x : EuclideanSpace ℝ (Fin 2) => x 1 := PiLp.continuous_apply 2 _ 1
+  have hc := continuous_flux_divergence_and_continuous_mul c d hs
+    (continuous_iff_continuousAt.2 fun t => (hs' t).continuousAt) hk
+    (continuous_iff_continuousAt.2 fun t => (hk' t).continuousAt) hφ
   have hint {F : EuclideanSpace ℝ (Fin 2) → ℝ} (hF : Continuous F) :
       IntegrableOn F (boxDomain a b) :=
     (hF.continuousOn.integrableOn_compact (isBounded_boxDomain a b).isCompact_closure).mono_set
@@ -293,46 +282,10 @@ private theorem setIntegral_inner_gradient_mul_eq (hab : ∀ i, a i ≤ b i)
         s (x 0) * k' (x 1) * fderiv ℝ φ x (EuclideanSpace.single 1 1) -
         (c + d) * (s (x 0) * k (x 1) * φ x)) + (c + d) * (s (x 0) * k (x 1) * φ x))
       (ae_of_all _ fun x => by simp only [inner_gradient_mul_eq hs hk φ]; ring),
-    integral_add (hint (by fun_prop)) (hint (by fun_prop)), integral_const_mul,
+    integral_add (hint hc.1) (hint hc.2), integral_const_mul,
     setIntegral_flux_divergence_eq_zero hab hs hs' hk hk' hφ hleft hright hbot htop, zero_add]
 
 /-! ### The separated modes with one Dirichlet side -/
-
-/-- A smooth function on the line equal to one on `[u, v]` and vanishing at `u - 1` and `v + 1`. -/
-private theorem exists_contDiff_eqOn_one {u v : ℝ} (huv : u < v) :
-    ∃ h : ℝ → ℝ, ContDiff ℝ ∞ h ∧ EqOn h 1 (Icc u v) ∧ h (u - 1) = 0 ∧ h (v + 1) = 0 := by
-  let χ : ContDiffBump ((u + v) / 2) :=
-    ⟨(v - u) / 2, (v - u) / 2 + 1, by linarith, by linarith⟩
-  have hin : χ.rIn = (v - u) / 2 := rfl
-  have hout : χ.rOut = (v - u) / 2 + 1 := rfl
-  refine ⟨χ, χ.contDiff, fun t ht => χ.one_of_mem_closedBall ?_, χ.zero_of_le_dist ?_,
-    χ.zero_of_le_dist ?_⟩
-  · rw [Metric.mem_closedBall, Real.dist_eq, abs_le, hin]
-    constructor <;> linarith [ht.1, ht.2]
-  · rw [Real.dist_eq, abs_of_nonpos (by linarith), hout]
-    exact le_of_eq (by ring)
-  · rw [Real.dist_eq, abs_of_nonneg (by linarith), hout]
-    exact le_of_eq (by ring)
-
-/-- A `C¹` function on the plane vanishing on the frontier of a rectangle is the value of an
-element of `H¹₀` of the rectangle. -/
-private theorem exists_mem_w1p0Submodule_value_ae_eq_of_contDiff {a b : Fin 2 → ℝ}
-    {W : EuclideanSpace ℝ (Fin 2) → ℝ} (hWc : ContDiff ℝ 1 W)
-    (hW0 : ∀ x ∈ frontier (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2))), W x = 0) :
-    ∃ U : W1p volume (boxDomain a b) 2, U ∈ w1p0Submodule volume (boxDomain a b) 2 ∧
-      W1p.value U =ᵐ[volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))] W := by
-  have hb : Bornology.IsBounded (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2))) :=
-    isBounded_boxDomain a b
-  have hmemLp {G : Type} [NormedAddCommGroup G] {F : EuclideanSpace ℝ (Fin 2) → G}
-      (hF : Continuous F) :
-      MemLp F 2 (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))) :=
-    hF.continuousOn.memLp_restrict_of_subset_isCompact hb.isCompact_closure
-      (boxDomain a b).isOpen.measurableSet subset_closure 2
-  obtain ⟨U, hUv, -⟩ := W1p.exists_value_gradient_ae_eq_of_locallyLipschitzOn
-    hWc.locallyLipschitz.locallyLipschitzOn (hmemLp hWc.continuous)
-    (hmemLp (hWc.continuous_gradient one_ne_zero))
-  exact ⟨U, W1p.mem_w1p0Submodule_of_continuousOn_closure (by simp) hb hWc.continuous.continuousOn
-    hW0 hUv, hUv⟩
 
 /-- **The separated modes lie in `H¹_Γ` of the rectangle.** With `Γ` the left side
 `{a₀} × (a₁, b₁)`, the function `sin (c (x₀ - a₀)) cos (d (x₁ - a₁))`, where
@@ -349,9 +302,9 @@ private theorem exists_mem_w1pVanishingOnSubmodule_value_ae_eq (hab : ∀ i, a i
           Real.cos (d * (x 1 - a 1)) := by
   set c : ℝ := (2 * m + 1) * π / (2 * (b 0 - a 0)) with hc
   have hba0 : 0 < b 0 - a 0 := sub_pos.2 (hab 0)
-  -- A cutoff in the second variable, equal to one on `[a₁, b₁]` and vanishing outside
-  -- `(a₁ - 1, b₁ + 1)`.
-  obtain ⟨χ, hχc, hχ1, hχa, hχb⟩ := exists_contDiff_eqOn_one (hab 1)
+  -- A cutoff in `x₁`, equal to one on `[a₁, b₁]` and supported in `(a₁ - 1, b₁ + 1)`.
+  obtain ⟨χ, hχc, -, hχ1, -, hχU⟩ := isCompact_Icc.exists_contDiff_cutoff isOpen_Ioo
+    (Icc_subset_Ioo (sub_one_lt (a 1)) (lt_add_one (b 1)))
   set a' : Fin 2 → ℝ := ![a 0, a 1 - 1] with ha'
   set b' : Fin 2 → ℝ := ![2 * b 0 - a 0, b 1 + 1] with hb'
   set W : EuclideanSpace ℝ (Fin 2) → ℝ :=
@@ -366,9 +319,7 @@ private theorem exists_mem_w1pVanishingOnSubmodule_value_ae_eq (hab : ∀ i, a i
     fin_cases i <;> simp [ha', hb'] at h ⊢ <;> constructor <;> linarith [h.1, h.2]
   have hΓ : Disjoint {x : EuclideanSpace ℝ (Fin 2) | x 0 = a 0 ∧ x 1 ∈ Ioo (a 1) (b 1)}
       (boxDomain a' b' : Set (EuclideanSpace ℝ (Fin 2))) :=
-    disjoint_left.2 fun x hx hx' => by
-      have := (mem_boxDomain.1 hx' 0).1
-      simp [ha', hx.1] at this
+    disjoint_left.2 fun x hx hx' => by simpa [ha', hx.1] using (mem_boxDomain.1 hx' 0).1
   have hW0 : ∀ x ∈ frontier (boxDomain a' b' : Set (EuclideanSpace ℝ (Fin 2))), W x = 0 := by
     intro x hx
     obtain ⟨i, hi⟩ := exists_eq_endpoint_of_mem_frontier_boxDomain hx
@@ -385,11 +336,11 @@ private theorem exists_mem_w1pVanishingOnSubmodule_value_ae_eq (hab : ∀ i, a i
     · -- On the horizontal sides the cutoff vanishes.
       have hχ : χ (x 1) = 0 := by
         rcases hi with hi | hi <;> simp only [ha', hb', Fin.mk_one, Fin.isValue,
-          Matrix.cons_val_one, Matrix.cons_val_fin_one] at hi <;> rw [hi]
-        exacts [hχa, hχb]
+          Matrix.cons_val_one, Matrix.cons_val_fin_one] at hi <;> rw [hi] <;>
+          exact image_eq_zero_of_notMem_tsupport fun h => by simpa using hχU h
       simp [hW, hχ]
-  obtain ⟨U, hU0, hUv⟩ := exists_mem_w1p0Submodule_value_ae_eq_of_contDiff
-    (hWc.of_le (by simp)) hW0
+  obtain ⟨U, hU0, hUv⟩ := W1p.exists_mem_w1p0Submodule_value_ae_eq_of_contDiff (mu := volume)
+    (p := 2) (by simp) (isBounded_boxDomain a' b') (hWc.of_le (by simp)) hW0
   refine ⟨W1p.restrictL hle U, W1p.restrictL_mem_w1pVanishingOnSubmodule hle hΓ hU0, ?_⟩
   filter_upwards [W1p.value_restrictL_ae hle U,
     ae_restrict_of_ae_restrict_of_subset hle hUv,
@@ -397,7 +348,7 @@ private theorem exists_mem_w1pVanishingOnSubmodule_value_ae_eq (hab : ∀ i, a i
   -- On the rectangle the cutoff is one.
   have hx1 := mem_boxDomain.1 hx 1
   simp only [h1, h2, hW]
-  rw [hχ1 (Ioo_subset_Icc_self hx1), Pi.one_apply, mul_one]
+  rw [show χ (x 1) = 1 from interior_subset (hχ1 (Ioo_subset_Icc_self hx1)), mul_one]
 
 /-- The closed left side `{a₀} × [a₁, b₁]` lies in the closure of the open left side. -/
 private theorem toLp_mem_closure_left (hab : ∀ i, a i < b i) {t : ℝ} (ht : t ∈ Icc (a 1) (b 1)) :
@@ -411,18 +362,6 @@ private theorem toLp_mem_closure_left (hab : ∀ i, a i < b i) {t : ℝ} (ht : t
     ⟨t, by rwa [closure_Ioo (hab 1).ne], rfl⟩)
   rintro _ ⟨s, hs, rfl⟩
   exact ⟨by simp, by simpa using hs⟩
-
-/-- `t ↦ sin (c (t - u))` has derivative `c cos (c (t - u))`. -/
-private theorem hasDerivAt_sin_mul_sub (c u t : ℝ) :
-    HasDerivAt (fun s => Real.sin (c * (s - u))) (c * Real.cos (c * (t - u))) t := by
-  convert (((hasDerivAt_id' t).sub_const u).const_mul c).sin using 1
-  ring
-
-/-- `t ↦ cos (c (t - u))` has derivative `-c sin (c (t - u))`. -/
-private theorem hasDerivAt_cos_mul_sub (c u t : ℝ) :
-    HasDerivAt (fun s => Real.cos (c * (s - u))) (-c * Real.sin (c * (t - u))) t := by
-  convert (((hasDerivAt_id' t).sub_const u).const_mul c).cos using 1
-  ring
 
 /-- A separated mode `sin (c (x₀ - a₀)) cos (d (x₁ - a₁))` with `c = (2m + 1) π / (2 (b₀ - a₀))`
 and `sin (d (b₁ - a₁)) = 0` satisfies the weak eigenvalue identity against every generator of
@@ -482,7 +421,7 @@ private theorem inner_gradient_restrictL_ofTestFunctionₗ_eq (hab : ∀ i, a i 
     (φ.contDiff.of_le (by exact_mod_cast le_top))
     (fun t ht => by
       rw [image_eq_zero_of_notMem_tsupport fun h => hφ.notMem_of_mem_left h
-        (toLp_mem_closure_left hab ht), zero_mul])
+        (toLp_mem_closure_left hab (uIcc_of_le (hab 1).le ▸ ht)), zero_mul])
     (fun t _ => by rw [hcb, mul_zero, mul_zero])
     (fun t _ => by simp)
     (fun t _ => by rw [hd, mul_zero, mul_zero])
@@ -528,48 +467,13 @@ theorem exists_value_ae_eq_sin_mul_cos_and_inner_gradient_eq (hab : ∀ i, a i <
 
 /-! ### Completeness of the separated modes -/
 
-/-- A system complete among the integrable functions on `(u, v]`, in the form of the
-one-dimensional completeness theorems, is complete for Lebesgue measure on `(u, v)`. -/
-private theorem ae_eq_zero_restrict_Ioo_of_complete {u v : ℝ} (huv : u ≤ v) {F : ℕ → ℝ → ℝ}
-    (hF : ∀ g : ℝ → ℝ, IntegrableOn g (Ioc u v) → (∀ k, ∫ t in u..v, g t * F k t = 0) →
-      g =ᵐ[volume.restrict (Ioc u v)] 0)
-    {g : ℝ → ℝ} (hg : Integrable g (volume.restrict (Ioo u v)))
-    (h0 : ∀ k, ∫ t, g t * F k t ∂volume.restrict (Ioo u v) = 0) :
-    g =ᵐ[volume.restrict (Ioo u v)] 0 := by
-  have hIoc : volume.restrict (Ioo u v) = volume.restrict (Ioc u v) :=
-    Measure.restrict_congr_set Ioo_ae_eq_Ioc
-  rw [hIoc] at hg h0 ⊢
-  exact hF g hg fun k => by rw [intervalIntegral.integral_of_le huv]; exact h0 k
-
-/-- Completeness of a system in the first variable of a product, with a parameter `y`: if the
-system `F` is complete on `(u, v)` and for every `k` the coefficient
-`y ↦ ∫ G (t, y) F k t dt` vanishes for almost every `y`, then `G` vanishes almost everywhere.
-For almost every `y` the slice `G (·, y)` is orthogonal to every `F k`, so it vanishes, and
-Tonelli concludes. -/
-private theorem ae_eq_zero_prod_of_complete {u v : ℝ} (huv : u ≤ v) {F : ℕ → ℝ → ℝ}
-    (hF : ∀ g : ℝ → ℝ, IntegrableOn g (Ioc u v) → (∀ k, ∫ t in u..v, g t * F k t = 0) →
-      g =ᵐ[volume.restrict (Ioc u v)] 0)
-    {ν : Measure ℝ} [SFinite ν] {G : ℝ × ℝ → ℝ}
-    (hG : Integrable G ((volume.restrict (Ioo u v)).prod ν))
-    (h : ∀ k, (fun y => ∫ t, G (t, y) * F k t ∂volume.restrict (Ioo u v)) =ᵐ[ν] 0) :
-    G =ᵐ[(volume.restrict (Ioo u v)).prod ν] 0 := by
-  have hslice : ∀ᵐ y ∂ν, (fun t => G (t, y)) =ᵐ[volume.restrict (Ioo u v)] 0 := by
-    filter_upwards [ae_all_iff.2 h, hG.prod_left_ae] with y hy hyi
-    exact ae_eq_zero_restrict_Ioo_of_complete huv hF hyi hy
-  have hlin : ∫⁻ z, ‖G z‖ₑ ∂(volume.restrict (Ioo u v)).prod ν = 0 := by
-    rw [lintegral_prod_symm _ hG.aestronglyMeasurable.eNorm]
-    refine lintegral_eq_zero_of_ae_eq_zero ?_
-    filter_upwards [hslice] with y hy
-    exact lintegral_eq_zero_of_ae_eq_zero (by filter_upwards [hy] with t ht; simp [ht])
-  filter_upwards [(lintegral_eq_zero_iff' hG.aestronglyMeasurable.eNorm).1 hlin] with z hz
-  simpa using hz
-
 /-- **The separated modes are complete in `L²` of the rectangle.** An element of `L²` of the
 rectangle `(a₀, b₀) × (a₁, b₁)` orthogonal to every mode
 `x ↦ sin ((2m + 1) π (x₀ - a₀) / (2 (b₀ - a₀))) cos (l π (x₁ - a₁) / (b₁ - a₁))`, `m, l ≥ 0`, is
 zero: its coefficients in the first variable are orthogonal to every cosine, so they vanish, and
-then its slices are orthogonal to every quarter-wave sine. -/
-theorem eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero (hab : ∀ i, a i < b i)
+then its slices are orthogonal to every quarter-wave sine. No relation between `a` and `b` is
+assumed: an empty side makes the rectangle empty. -/
+theorem eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero
     (f : Lp ℝ 2 (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))))
     (h : ∀ m l : ℕ, ∫ x in boxDomain a b, f x *
       (Real.sin ((2 * m + 1) * π * (x 0 - a 0) / (2 * (b 0 - a 0))) *
@@ -584,13 +488,10 @@ theorem eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero (hab : ∀ i, a i 
   have hfi : Integrable f (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))) :=
     (Lp.memLp f).integrable one_le_two
   -- Read `f` on `ℝ × ℝ`, with the product of the restricted Lebesgue measures.
-  have hpre : euclideanPlaneEquivProd ⁻¹' (Ioo (a 0) (b 0) ×ˢ Ioo (a 1) (b 1)) =
-      (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2))) := by
-    ext x
-    simp [mem_boxDomain, Fin.forall_fin_two]
   have hE : MeasurePreserving euclideanPlaneEquivProd
       (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))) (μ.prod ν) := by
-    rw [Measure.prod_restrict, ← Measure.volume_eq_prod, ← hpre]
+    rw [Measure.prod_restrict, ← Measure.volume_eq_prod,
+      ← preimage_euclideanPlaneEquivProd_Ioo_prod_Ioo]
     exact measurePreserving_euclideanPlaneEquivProd.restrict_preimage
       (measurableSet_Ioo.prod measurableSet_Ioo)
   have hE' := hE.symm euclideanPlaneEquivProd
@@ -605,7 +506,7 @@ theorem eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero (hab : ∀ i, a i 
     hG.mul_bdd (by fun_prop) (ae_of_all _ fun p => hbdd hS1 m p.1)
   -- The coefficients of `G` against the quarter-wave sines are orthogonal to every cosine.
   have hcoef (m : ℕ) : (fun y => ∫ t, G (t, y) * S m t ∂μ) =ᵐ[ν] 0 := by
-    refine ae_eq_zero_restrict_Ioo_of_complete (hab 1).le
+    refine ae_eq_zero_restrict_Ioo_of_forall_integral_mul_eq_zero
       (fun g hg h0 => ae_eq_zero_of_forall_integral_mul_cos_eq_zero hg h0)
       (hGS m).integral_prod_right fun l => ?_
     have hint : Integrable (fun p : ℝ × ℝ => G p * S m p.1 * C l p.2) (μ.prod ν) :=
@@ -614,7 +515,7 @@ theorem eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero (hab : ∀ i, a i 
     rw [← integral_prod_symm _ hint, ← h m l, ← hE'.integral_comp']
     refine integral_congr_ae (ae_of_all _ fun p => ?_)
     simp [G, S, C, mul_assoc]
-  have hG0 : G =ᵐ[μ.prod ν] 0 := ae_eq_zero_prod_of_complete (hab 0).le
+  have hG0 : G =ᵐ[μ.prod ν] 0 := ae_eq_zero_prod_of_forall_integral_mul_eq_zero
     (fun g hg h0 => ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero hg h0) hG hcoef
   refine Lp.ext ?_
   have hGE : G ∘ euclideanPlaneEquivProd = f := funext fun x => by
@@ -659,12 +560,12 @@ private theorem value_ne_zero_of_value_ae_eq_sin_mul_cos (hab : ∀ i, a i < b i
     fin_cases i
     · have : (b 0 - a 0) / (2 * (2 * m + 1)) < b 0 - a 0 :=
         div_lt_self hba0 (by linarith [(Nat.cast_nonneg m : (0 : ℝ) ≤ m)])
-      simp only [mem_Ioo]
-      constructor <;> simp <;> linarith [div_pos hba0 hm]
+      simp only [mem_Ioo, Fin.zero_eta, Matrix.cons_val_zero]
+      constructor <;> linarith [div_pos hba0 hm]
     · have : (b 1 - a 1) / (2 * (l + 1)) < b 1 - a 1 :=
         div_lt_self hba1 (by linarith [(Nat.cast_nonneg l : (0 : ℝ) ≤ l)])
-      simp only [mem_Ioo]
-      constructor <;> simp <;> linarith [div_pos hba1 hl]
+      simp only [mem_Ioo, Fin.mk_one, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+      constructor <;> linarith [div_pos hba1 hl]
   have h := hzero hx
   simp only [Pi.zero_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at h
   rw [show (2 * m + 1) * π * (a 0 + (b 0 - a 0) / (2 * (2 * m + 1)) - a 0) /
@@ -679,41 +580,6 @@ private theorem value_ne_zero_of_value_ae_eq_sin_mul_cos (hab : ∀ i, a i < b i
       rw [div_lt_iff₀ hl]
       linarith
     nlinarith [Real.pi_pos]
-
-/-- Weak mixed eigenfunctions of `-Δ` with different eigenvalues are orthogonal in `L²`, since the
-form `∫ ∇u · ∇v` is symmetric. -/
-private theorem inner_value_eq_zero_of_inner_gradient_eq_of_ne
-    {Γ : Set (EuclideanSpace ℝ (Fin 2))} {u w : W1pVanishingOn volume (boxDomain a b) 2 Γ}
-    {kappa kappa' : ℝ} (hne : kappa ≠ kappa')
-    (hu : ∀ v : W1pVanishingOn volume (boxDomain a b) 2 Γ,
-      ⟪W1p.gradient (u : W1p volume (boxDomain a b) 2),
-          W1p.gradient (v : W1p volume (boxDomain a b) 2)⟫_ℝ =
-        kappa * ⟪W1p.value (u : W1p volume (boxDomain a b) 2),
-          W1p.value (v : W1p volume (boxDomain a b) 2)⟫_ℝ)
-    (hw : ∀ v : W1pVanishingOn volume (boxDomain a b) 2 Γ,
-      ⟪W1p.gradient (w : W1p volume (boxDomain a b) 2),
-          W1p.gradient (v : W1p volume (boxDomain a b) 2)⟫_ℝ =
-        kappa' * ⟪W1p.value (w : W1p volume (boxDomain a b) 2),
-          W1p.value (v : W1p volume (boxDomain a b) 2)⟫_ℝ) :
-    ⟪W1p.value (u : W1p volume (boxDomain a b) 2),
-      W1p.value (w : W1p volume (boxDomain a b) 2)⟫_ℝ = 0 := by
-  have key := (hu w).symm.trans ((real_inner_comm _ _).trans (hw u))
-  rw [real_inner_comm (W1p.value (u : W1p volume (boxDomain a b) 2)), ← sub_eq_zero, ← sub_mul,
-    mul_eq_zero] at key
-  exact key.resolve_left (sub_ne_zero.2 hne)
-
-/-- The integral of `f` against a mode is its `L²` pairing with any element of `H¹_Γ` whose value
-is that mode. -/
-private theorem setIntegral_mul_eq_inner_value {Γ : Set (EuclideanSpace ℝ (Fin 2))}
-    {w : W1pVanishingOn volume (boxDomain a b) 2 Γ} {F : EuclideanSpace ℝ (Fin 2) → ℝ}
-    (hw : W1p.value (w : W1p volume (boxDomain a b) 2)
-      =ᵐ[volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))] F)
-    (f : Lp ℝ 2 (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2))))) :
-    ∫ x in boxDomain a b, f x * F x = ⟪f, W1p.value (w : W1p volume (boxDomain a b) 2)⟫_ℝ := by
-  rw [L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [hw] with x hx
-  simp [hx, mul_comm]
 
 /-- **The weak mixed eigenvalues of `-Δ` on a rectangle with one Dirichlet side.** On the
 rectangle `(a₀, b₀) × (a₁, b₁)` with the Dirichlet part `Γ = {a₀} × (a₁, b₁)`, the problem
@@ -735,18 +601,15 @@ theorem exists_ne_zero_forall_inner_gradient_eq_iff_boxDomain_left (hab : ∀ i,
             W1p.value (v : W1p volume (boxDomain a b) 2)⟫_ℝ) ↔
       ∃ m l : ℕ, kappa = ((2 * m + 1) * π / (2 * (b 0 - a 0))) ^ 2 + (l * π / (b 1 - a 1)) ^ 2 := by
   choose w hwv hw using exists_value_ae_eq_sin_mul_cos_and_inner_gradient_eq hab
-  constructor
-  · rintro ⟨u, hu0, hu⟩
-    by_contra hne
-    push Not at hne
-    refine hu0 (W1pVanishingOn.valueL_injective ?_)
-    rw [map_zero, W1pVanishingOn.valueL_apply]
-    refine eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero hab _ fun m l => ?_
-    rw [setIntegral_mul_eq_inner_value (hwv m l)]
-    exact inner_value_eq_zero_of_inner_gradient_eq_of_ne (hne m l) hu (hw m l)
-  · rintro ⟨m, l, rfl⟩
-    refine ⟨w m l, fun h => value_ne_zero_of_value_ae_eq_sin_mul_cos hab m l (hwv m l) ?_, hw m l⟩
-    rw [← W1pVanishingOn.valueL_apply, h, map_zero]
+  rw [exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
+    (fun (ml : ℕ × ℕ) (x : EuclideanSpace ℝ (Fin 2)) =>
+      Real.sin ((2 * ml.1 + 1) * π * (x 0 - a 0) / (2 * (b 0 - a 0))) *
+        Real.cos (ml.2 * π * (x 1 - a 1) / (b 1 - a 1)))
+    (fun ml => w ml.1 ml.2) (fun ml => hwv ml.1 ml.2)
+    (fun ml => value_ne_zero_of_value_ae_eq_sin_mul_cos hab ml.1 ml.2 (hwv ml.1 ml.2))
+    (fun ml => hw ml.1 ml.2)
+    (fun f hf => eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero f fun m l => hf (m, l)),
+    Prod.exists]
 
 /-- **The least mixed eigenvalue of the rectangle is simple.** With the Dirichlet part
 `Γ = {a₀} × (a₁, b₁)`, every weak mixed eigenfunction `u ∈ H¹_Γ` with the eigenvalue
@@ -798,8 +661,8 @@ theorem exists_value_ae_eq_mul_sin_of_forall_inner_gradient_eq_boxDomain_left
   set r := ⟪f, e⟫_ℝ / ⟪e, e⟫_ℝ
   refine ⟨r, ?_⟩
   have hfe : f - r • e = 0 := by
-    refine eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero hab _ fun m l => ?_
-    rw [setIntegral_mul_eq_inner_value (hwv m l), inner_sub_left, real_inner_smul_left]
+    refine eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero _ fun m l => ?_
+    rw [setIntegral_mul_eq_inner_value_of_ae_eq (hwv m l), inner_sub_left, real_inner_smul_left]
     by_cases hml : (m, l) = (0, 0)
     · obtain ⟨rfl, rfl⟩ := Prod.mk.inj hml
       rw [div_mul_cancel₀ _ (inner_self_ne_zero.2 he), sub_self]
@@ -873,7 +736,10 @@ theorem isLeast_inter_Ioi_exists_ne_zero_forall_inner_gradient_eq_unitSquare_lef
   -- Either `m ≥ 1`, or `m = 0` and then `l ≥ 1` since the eigenvalue exceeds `π² / 4`.
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · rcases Nat.eq_zero_or_pos l with rfl | hl
-    · exact absurd hlt (by ring_nf; exact lt_irrefl _)
+    · have h0 : ((2 * ((0 : ℕ) : ℝ) + 1) * π / 2) ^ 2 + (((0 : ℕ) : ℝ) * π) ^ 2 = π ^ 2 / 4 := by
+        push_cast
+        ring
+      exact absurd (h0 ▸ hlt) (lt_irrefl _)
     · have hl1 : (1 : ℝ) ≤ l := by exact_mod_cast hl
       push_cast
       nlinarith [mul_le_mul hl1 hl1 zero_le_one (by linarith), sq_nonneg π]

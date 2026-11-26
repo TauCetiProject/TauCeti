@@ -41,6 +41,8 @@ not belong to any particular application.
   everywhere on `Ι a b` eventually along `l` and `B i → 0`, then `∫ x in a..b, F i x ∂μ → 0`.
 * `TauCeti.intervalIntegral.eq_zero_of_tendsto_average_const`: a constant whose time averages
   `T⁻¹ ∫₀ᵀ c dt` tend to `0` vanishes.
+* `TauCeti.intervalIntegral.integral_eq_zero_of_forall_mem_uIcc`: an interval integral vanishes
+  when its integrand vanishes on `[[a, b]]`.
 * `TauCeti.intervalIntegral.integral_eq_zero_of_forall_lt`: for `b ≤ a` and a measure vanishing
   on singletons, the integral over `a..b` of a function vanishing on `(-∞, a)` is zero.
 * `TauCeti.intervalIntegral_sub_intervalAverage`: subtracting its average over `a..b` from a
@@ -393,6 +395,14 @@ theorem eq_zero_of_tendsto_average_const {c : ℝ}
   refine tendsto_nhds_unique (tendsto_const_nhds.congr' ?_) h
   filter_upwards [eventually_gt_atTop 0] with T hT
   rw [_root_.intervalIntegral.integral_const, sub_zero, smul_eq_mul, inv_mul_cancel_left₀ hT.ne']
+
+open scoped Interval in
+/-- An interval integral vanishes when its integrand vanishes on the closed interval `[[a, b]]`. -/
+theorem integral_eq_zero_of_forall_mem_uIcc {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {μ : Measure ℝ} {F : ℝ → E} {a b : ℝ} (hF : ∀ t ∈ [[a, b]], F t = 0) :
+    ∫ t in a..b, F t ∂μ = 0 :=
+  (_root_.intervalIntegral.integral_congr (g := fun _ ↦ 0) hF).trans
+    _root_.intervalIntegral.integral_zero
 
 /-- For `b ≤ a` and a measure vanishing on singletons, the integral over `a..b` of a function
 vanishing on `(-∞, a)` is zero. -/
