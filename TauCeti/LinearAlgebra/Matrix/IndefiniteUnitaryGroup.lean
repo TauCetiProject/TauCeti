@@ -94,8 +94,8 @@ The basic structure of these groups is recorded here.
   transposition.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.mem_range_fromBlocksHom_iff`: the image of
   `U(p) × U(q)` is the subgroup of elements with vanishing lower-left block.
-* `TauCeti.Matrix.indefiniteUnitaryGroup.mem_range_fromBlocksHom_iff_mem_unitaryGroup`: over an
-  integral domain of characteristic not `2`, the image of `U(p) × U(q)` is `U(p, q) ∩ U(p ⊕ q)`.
+* `TauCeti.Matrix.indefiniteUnitaryGroup.mem_range_fromBlocksHom_iff_mem_unitaryGroup`: when `2`
+  is left-regular in `R`, the image of `U(p) × U(q)` is `U(p, q) ∩ U(p ⊕ q)`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_range_scalarHom`: over a field of
   characteristic zero, the centre of `U(p, q)` is the group of unit scalars.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_comap_center`: over a field of

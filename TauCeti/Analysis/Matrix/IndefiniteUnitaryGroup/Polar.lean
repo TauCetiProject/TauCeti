@@ -22,7 +22,7 @@ Let `𝕜` be `ℝ` or `ℂ` (`[RCLike 𝕜]`). For any matrix `J : Matrix n n �
 only if `J * X + X * J = 0` (`Matrix.IsHermitian.star_exp_mul_mul_exp_eq_iff`). Consequently,
 `t ↦ exp (t • X)` remains in `unitaryGroupOf J` whenever `exp X` does.
 
-When `J` is a Hermitian involution (`J.IsHermitian` and `J * J = 1`), such as
+When `J` is an involution (`J * J = 1`), such as
 `J = diag(1, …, 1, -1, …, -1)` for `U(p, q)` or `O(p, q)`, the indefinite unitary group
 `Matrix.unitaryGroupOf J` is closed under conjugate transpose
 (`Matrix.star_mem_unitaryGroupOf_iff_of_mul_self_eq_one`), and `Subgroup.cartanHomeomorph` yields
@@ -52,7 +52,7 @@ unitary group is precisely the block-diagonal subgroup `U(p) × U(q)` (the range
 * B. C. Hall, *Lie Groups, Lie Algebras, and Representations*, 2nd ed., Springer, 2015, §2.5.
 * Adapted from `src/Lib/General/LinearAlgebra/PolarDecomposition.lean` in `grh-lean`
   (<https://github.com/lsernau/grh-lean>, Apache 2.0, Copyright 2026 Anthropic, PBC), generalized
-  from complex sign matrices to arbitrary Hermitian involutions over `ℝ` or `ℂ` (`[RCLike 𝕜]`).
+  from complex sign matrices to arbitrary involutions `J * J = 1` over `ℝ` or `ℂ` (`[RCLike 𝕜]`).
 -/
 
 public section

@@ -101,6 +101,8 @@ theorem IsHermitian.star_exp_mul_mul_exp_eq_iff (J : Matrix n n 𝕜) {X : Matri
   rw [hexp_star]
   constructor
   · intro h
+    -- Diagonalize `X = U diag(d) U⁻¹` with real eigenvalues `d`, so that
+    -- `exp X = U diag(exp d) U⁻¹`.
     let u : (Matrix n n 𝕜)ˣ := Unitary.toUnits hX.eigenvectorUnitary
     let d : n → 𝕜 := RCLike.ofReal ∘ hX.eigenvalues
     have hX_eq : X = u.val * diagonal d * u⁻¹.val := by
@@ -108,15 +110,16 @@ theorem IsHermitian.star_exp_mul_mul_exp_eq_iff (J : Matrix n n 𝕜) {X : Matri
         hX.spectral_theorem
     have hexp_eq :
         NormedSpace.exp X = u.val * diagonal (fun i ↦ NormedSpace.exp (d i)) * u⁻¹.val := by
-      have hpi : NormedSpace.exp d = fun i ↦ NormedSpace.exp (d i) :=
-        funext fun i ↦ NormedSpace.map_exp (Pi.evalRingHom _ i) (continuous_apply i) d
-      rw [hX_eq, Matrix.exp_units_conj u (diagonal d), Matrix.exp_diagonal, hpi]
+      rw [hX_eq, Matrix.exp_units_conj u (diagonal d), Matrix.exp_diagonal, Pi.exp_def]
+    -- In the eigenbasis, `J' = U⁻¹ J U` satisfies `diag(exp d) J' diag(exp d) = J'`.
     let J' : Matrix n n 𝕜 := u⁻¹.val * J * u.val
     have hJ' : diagonal (fun i ↦ NormedSpace.exp (d i)) * J' *
         diagonal (fun i ↦ NormedSpace.exp (d i)) = J' := by
       calc _ = u⁻¹.val * (NormedSpace.exp X * J * NormedSpace.exp X) * u.val := by
             simp [hexp_eq, J', Matrix.mul_assoc]
         _ = J' := by rw [h]
+    -- Compare entries: `exp (dᵢ + dⱼ) J'ᵢⱼ = J'ᵢⱼ`, and `exp (dᵢ + dⱼ) = 1` forces `dᵢ + dⱼ = 0`
+    -- because the eigenvalues are real. Hence `J'` anticommutes with `diag(d)`.
     have hanti' : J' * diagonal d + diagonal d * J' = 0 := by
       ext i j
       have hij : NormedSpace.exp (d i) * J' i j * NormedSpace.exp (d j) = J' i j := by
@@ -126,16 +129,16 @@ theorem IsHermitian.star_exp_mul_mul_exp_eq_iff (J : Matrix n n 𝕜) {X : Matri
         linear_combination hij
       rcases mul_eq_zero.1 hmul with h1 | h0
       · have hreal : Real.exp (hX.eigenvalues i + hX.eigenvalues j) = 1 := by
-          rw [Real.exp_eq_exp_ℝ]
           refine RCLike.ofReal_injective (K := 𝕜) ?_
-          have hmap := NormedSpace.map_exp (RCLike.ofRealAm (K := 𝕜)) RCLike.continuous_ofReal
-            (hX.eigenvalues i + hX.eigenvalues j)
-          exact (hmap.trans (by simpa [d, map_add] using sub_eq_zero.1 h1)).trans (map_one _).symm
-        have hsum : hX.eigenvalues i + hX.eigenvalues j = 0 := (Real.exp_eq_one_iff _).1 hreal
-        have hd : d i + d j = 0 := by simp [d, ← map_add, hsum]
+          rw [Real.exp_eq_exp_ℝ, ← RCLike.algebraMap_eq_ofReal, algebraMap_exp_comm,
+            RCLike.algebraMap_eq_ofReal, RCLike.ofReal_one]
+          simpa [d] using sub_eq_zero.1 h1
+        have hd : d i + d j = 0 := by
+          simp [d, ← map_add, (Real.exp_eq_one_iff _).1 hreal]
         simp only [Matrix.add_apply, Matrix.mul_diagonal, Matrix.diagonal_mul, Matrix.zero_apply]
         linear_combination J' i j * hd
       · simp [Matrix.mul_diagonal, Matrix.diagonal_mul, h0]
+    -- Undiagonalize.
     calc J * X + X * J = u.val * (J' * diagonal d + diagonal d * J') * u⁻¹.val := by
           simp [hX_eq, J', mul_add, add_mul, Matrix.mul_assoc]
       _ = 0 := by rw [hanti', Matrix.mul_zero, Matrix.zero_mul]
