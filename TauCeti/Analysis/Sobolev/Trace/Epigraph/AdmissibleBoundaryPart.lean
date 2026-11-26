@@ -89,11 +89,18 @@ private theorem mem_w1pVanishingOnSubmodule_iff_halfSpaceTrace_ae_eq_zero_preima
     exact MeasurePreserving.symm _ (by rwa [σ.toMeasurableEquiv_coe])
   let Φ : WithLp 2 (ℝ × E) ≃ₜ WithLp 2 (ℝ × E) := (WithLp.homeomorphProd 2 ℝ E).trans
     (((Homeomorph.refl ℝ).prodCongr σ.symm).trans (WithLp.homeomorphProd 2 ℝ E).symm)
-  have hΦ : ⇑Φ = WithLp.map 2 (Prod.map id σ.symm) := (rfl)
+  have hΦ : ⇑Φ = WithLp.map 2 (Prod.map id σ.symm) := by
+    ext x
+    simp [Φ, WithLp.homeomorphProd]
+  have hΦs : ⇑Φ.symm = WithLp.map 2 (Prod.map id σ) := by
+    ext x
+    simp [Φ, WithLp.homeomorphProd]
   have hΦl : LipschitzWith (max 1 K') Φ := by
     rw [hΦ]
     exact LipschitzWith.id.withLpProdMap hσ'
-  have hΦl' : LipschitzWith (max 1 K) Φ.symm := LipschitzWith.id.withLpProdMap hσ
+  have hΦl' : LipschitzWith (max 1 K) Φ.symm := by
+    rw [hΦs]
+    exact LipschitzWith.id.withLpProdMap hσ
   have hΦm : MeasurePreserving Φ := by
     rw [hΦ]
     exact (MeasurePreserving.id volume).withLpProdMap hσm'
@@ -140,7 +147,7 @@ private theorem mem_w1pVanishingOnSubmodule_iff_halfSpaceTrace_ae_eq_zero_setOf_
       exact (W1p.exists_seq_tendsto_restrictL_ofTestFunctionₗ_iff_halfSpaceTrace_ae_eq_zero hp a _
         hℓ u).1 ⟨φ, fun k => (hφ k).mono_right hsub, hlim⟩
     filter_upwards [ae_all_iff.2 hn] with y hy hyc
-    obtain ⟨n, hn⟩ := exists_nat_one_div_lt (sub_pos.2 (show ℓ y < c from hyc))
+    obtain ⟨n, hn⟩ := exists_nat_one_div_lt (sub_pos.2 (by simpa using hyc))
     exact hy n (by linarith)
   · -- The closure of the half-hyperplane lies in the closed set `{a} × {ℓ ≤ c}`.
     intro htr
@@ -156,11 +163,11 @@ private theorem mem_w1pVanishingOnSubmodule_iff_halfSpaceTrace_ae_eq_zero_setOf_
 
 /-- **The trace characterization on a half-space, for a boundary part over an admissible base
 region.** Let `1 ≤ p < ∞`, let `H = {x | a < x.fst}` in `ℝ × E`, and let `B ⊆ E` be an admissible
-base region whose interfaces are modelled on a finite-dimensional inner product space `E'`. A
+base region whose interfaces are modelled on an inner product space `E'`. A
 function `u ∈ W^{1,p}(H)` lies in `W^{1,p}_Γ(H)` for `Γ = {a} × B` if and only if its trace on
 `{a} × E` vanishes almost everywhere on `B`. -/
 theorem W1p.mem_w1pVanishingOnSubmodule_iff_halfSpaceTrace_ae_eq_zero_of_isAdmissibleBaseRegion
-    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E']
     [MeasurableSpace E'] [BorelSpace E'] (hp : p ≠ ∞) (a : ℝ) {B : Set E}
     (hB : B.IsAdmissibleBaseRegion E') (u : W1p volume (normalHalfSpace (E := E) a) p) :
     u ∈ w1pVanishingOnSubmodule volume (normalHalfSpace a) p {x | x.fst = a ∧ x.snd ∈ B} ↔
@@ -183,7 +190,11 @@ theorem W1p.mem_w1pVanishingOnSubmodule_iff_halfSpaceTrace_ae_eq_zero_of_isAdmis
       (disjoint_left.2 fun x (hx : x.fst = a ∧ x.snd ∈ (∅ : Set E)) _ => notMem_empty _ hx.2) ?_
     rw [w1p0Submodule_top_eq_top hp]
     exact ClosedSubmodule.mem_top
-  · -- The base shear `σ = f⁻¹ ∘ graphFlattening β ∘ f` carries `B` onto `{0 < (f y).fst}`.
+  · -- `E'` is finite-dimensional, being a quotient of `ℝ × E' ≃ E`.
+    have : FiniteDimensional ℝ (WithLp 2 (ℝ × E')) := f.toLinearEquiv.finiteDimensional
+    have : FiniteDimensional ℝ E' := Module.Finite.of_surjective (WithLp.sndL 2 ℝ ℝ E').toLinearMap
+      fun y => ⟨WithLp.toLp 2 (0, y), rfl⟩
+    -- The base shear `σ = f⁻¹ ∘ graphFlattening β ∘ f` carries `B` onto `{0 < (f y).fst}`.
     let σ : E ≃ₜ E := (f.toHomeomorph.trans (graphFlattening β hβ.continuous)).trans
       f.symm.toHomeomorph
     have hσ : LipschitzWith (1 + K) σ := by
@@ -213,12 +224,12 @@ theorem W1p.mem_w1pVanishingOnSubmodule_iff_halfSpaceTrace_ae_eq_zero_of_isAdmis
 
 /-- **The trace characterization above a Lipschitz graph, for a boundary part over an admissible
 base region.** Let `1 ≤ p < ∞`, let `φ` be Lipschitz, and let `B ⊆ E` be an admissible base region
-whose interfaces are modelled on a finite-dimensional inner product space `E'`. A function `u` in
+whose interfaces are modelled on an inner product space `E'`. A function `u` in
 `W^{1,p}` of the region `{φ y < t}` above the graph of `φ` lies in `W^{1,p}_Γ` for the part
 `Γ = {(φ y, y) | y ∈ B}` of the graph over `B` if and only if its trace on the graph
 (`TauCeti.W1p.normalEpigraphTrace`) vanishes almost everywhere on `B`. -/
 theorem W1p.mem_w1pVanishingOnSubmodule_iff_normalEpigraphTrace_ae_eq_zero_of_isAdmissibleBaseRegion
-    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E']
     [MeasurableSpace E'] [BorelSpace E'] (hp : p ≠ ∞) {φ : C(E, ℝ)} {K : ℝ≥0}
     (hφ : LipschitzWith K φ) {B : Set E} (hB : B.IsAdmissibleBaseRegion E')
     (u : W1p volume (normalEpigraph φ) p) :
