@@ -47,17 +47,6 @@ open Equiv Function
 
 namespace Equiv.Perm
 
-section CycleMin
-
-variable {α : Type*} [Fintype α] [LinearOrder α]
-
-/-- A cycle minimum in the cycle of `i` is the canonical representative of `i`. -/
-theorem cycleMin_eq_of_sameCycle_of_isCycleMin {σ : Perm α} {i j : α} (hij : σ.SameCycle i j)
-    (hj : σ.IsCycleMin j) : σ.cycleMin i = j :=
-  (cycleMin_eq_cycleMin_iff.mpr hij).trans (cycleMin_eq_self_iff.mpr hj)
-
-end CycleMin
-
 variable {R : Type*} [Monoid R] {n : ℕ}
 
 /-- The product `x_i x_{σ i} ⋯ x_{σ^(k-1) i}` of the entries of `x` along the cycle of `σ`
