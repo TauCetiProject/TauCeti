@@ -321,6 +321,28 @@ theorem exists_forall_norm_floerJetCoeff_le (ω : SymplecticForm V) {H : ℝ →
       (mul_le_mul hJb hdXb (norm_nonneg _) ((norm_nonneg (J' (s, t) (u (s, t)))).trans hJb)))
   exact (norm_firstOrderJetCoeff_le _ _).trans (add_le_add (add_le_add le_rfl hJb) hA_le)
 
+/-- If the loops of a map `v` converge uniformly on `[0, 1]` to a loop continuous on `[0, 1]` and
+its slice defects for a jointly `C²` Hamiltonian `H` tend uniformly to zero, then far out, over
+the band `t ∈ [0, 1]`, the coefficient field on jets of the cylindrical datum `H_t dt` along `v`,
+with a `C¹` family `J_t` of structures, is bounded. -/
+theorem exists_eventually_norm_floerJetCoeff_le (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ 2 (uncurry H)) {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    {v : ℝ × ℝ → V} {x : ℝ → V} (hx : ContinuousOn x (Icc 0 1))
+    (hvx : TendstoUniformlyOn (fun s t ↦ v (s, t)) x atTop (Icc 0 1))
+    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) v
+      (s, t)) 0 atTop (Icc 0 1)) :
+    ∃ B, ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖ω.floerJetCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun w ↦ H w.2) v (s, t)‖ ≤ B := by
+  -- Far out, `v` and its slice defect are bounded over the band, near their limits.
+  obtain ⟨Cu, hCu⟩ := isCompact_Icc.exists_eventually_forall_norm_le_of_tendstoUniformlyOn hx
+    (g := Prod.snd) continuous_snd hvx
+  obtain ⟨Cδ, hCδ⟩ := isCompact_Icc.exists_eventually_forall_norm_le_of_tendstoUniformlyOn
+    continuousOn_const (g := Prod.snd) continuous_snd hδ
+  obtain ⟨B, hB⟩ := ω.exists_forall_norm_floerJetCoeff_le hH hJ v Cu Cδ
+  exact ⟨B, (hCu.and hCδ).mono fun s hs t ht ↦ hB (s, t) ht (hs.1 t ht) (hs.2 t ht)⟩
+
 /-- **The coefficients of the linearized Floer operator are bounded for Floer data cylindrical
 near the ends.** Let the data `(J, K_s, K_t)` be `C¹` (with `C²` Hamiltonians) along the graph of a
 `C¹` map `u`, and equal to `(J₋_t, 0, H₋_t)` for `s ≤ -R` and to `(J₊_t, 0, H₊_t)` for `s ≥ R`,

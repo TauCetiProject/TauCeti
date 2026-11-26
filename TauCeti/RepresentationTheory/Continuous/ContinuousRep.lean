@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Topology.Algebra.Algebra
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import TauCeti.RepresentationTheory.BaseChange
@@ -15,6 +16,7 @@ public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Units
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.CompactOpen
 import TauCeti.RepresentationTheory.BaseChange.Charpoly
 
 /-!
@@ -831,6 +833,15 @@ theorem baseChange_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
     ρ.baseChange B g = (ρ g).baseChange B :=
   Representation.baseChange_apply ρ.toRepresentation g
 
+/-- If `g` acts on `M` by the scalar `c`, it acts on the base change `B ⊗[A] M` by the image of
+`c` in `B`. -/
+theorem baseChange_apply_of_forall_apply_eq_smul (ρ : ContinuousRep Γ A M) {g : Γ} {c : A}
+    (h : ∀ x, ρ g x = c • x) (y : B ⊗[A] M) : ρ.baseChange B g y = algebraMap A B c • y := by
+  rw [baseChange_apply]
+  induction y using TensorProduct.inductionOn with
+  | add y z hy hz => rw [map_add, hy, hz, smul_add]
+  | tmul b x => rw [LinearMap.baseChange_tmul, h, TensorProduct.tmul_smul, algebraMap_smul]
+
 section Iso
 
 variable {N : Type*} [AddCommMonoid N] [Module A N] [TopologicalSpace N] [IsModuleTopology A N]
@@ -977,6 +988,41 @@ omit [IsTopologicalSemiring B] in
 theorem coe_unitsMapCharacter_apply (χ : Γ →ₜ* Aˣ) (g : Γ) :
     (unitsMapCharacter B χ g : B) = algebraMap A B (χ g) :=
   ContinuousMonoidHom.coe_unitsMap_apply _ _
+
+omit [IsTopologicalSemiring B] in
+/-- Extending the coefficients of a character commutes with precomposition. -/
+theorem unitsMapCharacter_comp {Γ' : Type*} [Monoid Γ'] [TopologicalSpace Γ'] (χ : Γ →ₜ* Aˣ)
+    (f : Γ' →ₜ* Γ) : unitsMapCharacter B (χ.comp f) = (unitsMapCharacter B χ).comp f := by
+  ext g
+  simp
+
+omit [IsTopologicalSemiring B] in
+/-- **Extending coefficients in two steps** `A → B → C` is extending them along `A → C`. -/
+@[simp]
+theorem unitsMapCharacter_unitsMapCharacter (C : Type*) [CommRing C] [TopologicalSpace C]
+    [Algebra A C] [ContinuousSMul A C] [Algebra B C] [ContinuousSMul B C] [IsScalarTower A B C]
+    (χ : Γ →ₜ* Aˣ) : unitsMapCharacter C (unitsMapCharacter B χ) = unitsMapCharacter C χ := by
+  ext g
+  simp [← IsScalarTower.algebraMap_apply]
+
+omit [IsTopologicalSemiring B] in
+/-- Extending the coefficients of the trivial character gives the trivial character. -/
+@[simp]
+theorem unitsMapCharacter_one : unitsMapCharacter B (1 : Γ →ₜ* Aˣ) = 1 := by
+  ext g
+  simp
+
+/-- Extending the coefficients of a character commutes with products. -/
+@[simp]
+theorem unitsMapCharacter_mul [ContinuousMul A] (χ ψ : Γ →ₜ* Aˣ) :
+    unitsMapCharacter B (χ * ψ) = unitsMapCharacter B χ * unitsMapCharacter B ψ := by
+  simp only [unitsMapCharacter, ← ContinuousMonoidHom.compRight_apply, map_mul]
+
+/-- Extending the coefficients of a character commutes with integer powers. -/
+@[simp]
+theorem unitsMapCharacter_zpow [ContinuousMul A] (χ : Γ →ₜ* Aˣ) (n : ℤ) :
+    unitsMapCharacter B (χ ^ n) = unitsMapCharacter B χ ^ n := by
+  simp only [unitsMapCharacter, ← ContinuousMonoidHom.compRight_apply, map_zpow]
 
 variable [IsTopologicalSemiring A] [TopologicalSpace (B ⊗[A] A)] [IsModuleTopology B (B ⊗[A] A)]
 

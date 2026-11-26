@@ -42,12 +42,10 @@ base, shifted up by the index.
   `H₀(S¹; o(V)) ≅ ℤ/2` in degree `1`, where constant coefficients would give `ℤ`
   (`TauCeti.not_nonempty_moebiusThomPair_singularHomology_one_linearEquiv`).
 
-The base `B` is compact, since `g` embeds the disc bundle, which contains the zero section, as a
-closed subset of the compact set `{x ∈ W | s x + 2 t x ≤ 2ε}`
-(`TauCeti.compactSpace_of_isClosedEmbedding_gaugeDiscBundle`), so the twisted Thom isomorphism over
-a compact base applies (`nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`,
-in the namespace `TauCeti.VectorBundleOrientationCover`). That isomorphism needs the base, the
-fibres and the ring in `Type`. In an arbitrary universe the twisted identification is proved here
+The twisted identification follows from the twisted Thom isomorphism
+(`nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem`, in the namespace
+`TauCeti.VectorBundleOrientationCover`). That isomorphism needs the base, the fibres and the
+ring in `Type`. In an arbitrary universe the twisted identification is proved here
 for rings in which `2` is invertible, for instance `ℚ`
 (`nonempty_singularHomology_sublevelPair_iso_twistedHomology_signLocalSystem_of_invertible_two`),
 through the transfer form of the twisted Thom isomorphism
@@ -294,11 +292,9 @@ theorem nonempty_singularHomology_sublevelPair_iso_twistedHomology_signLocalSyst
         (VectorBundleOrientationCover.signLocalSystem F V K hι) p) := by
   obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_iso_thomPair hfs hW hs ht hs₀ ht₀ hf hdir φ
     hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS (ModuleCat.of K K) (finrank ℝ F + p)
-  -- The base is compact, so the twisted Thom isomorphism over a compact base computes the
-  -- homology of the Thom pair over every ring.
-  have := compactSpace_of_isClosedEmbedding_gaugeDiscBundle hε.le hK hρ hg hgD
+  -- The twisted Thom isomorphism computes the homology of the Thom pair over every ring.
   obtain ⟨e'⟩ := open VectorBundleOrientationCover in
-    nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace (F := F) (E := V) hι K p
+    nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem (F := F) (E := V) hι K p
   rw [Nat.add_comm] at e'
   exact ⟨e ≪≫ e'⟩
 
