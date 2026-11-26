@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Descent.BandCenterBanding
+public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Banding
 
 /-!
 # Checks for central sections from an abelian banding

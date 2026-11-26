@@ -80,14 +80,16 @@ noncomputable def coefficientCenter (U : C) :
   toFun a := (Aut.unitsEndEquivAut (𝟭 _)).symm
     (.of (NatIso.ofComponents (fun x ↦ (b.mulEquiv U x a).asIso)
       fun f ↦ b.naturality_mulEquiv_hom hF f a))
-  map_one' := Units.ext (CatCenter.ext _ _ fun x ↦ by
-    change (b.mulEquiv U x 1).asIso.hom = 𝟙 x
-    rw [map_one]
-    rfl)
-  map_mul' a a' := Units.ext (CatCenter.ext _ _ fun x ↦ by
-    change (b.mulEquiv U x (a * a')).asIso.hom = _
-    rw [Units.val_mul, CatCenter.mul_app, map_mul, Aut.mul_asIso, Iso.trans_hom]
-    exact b.naturality_mulEquiv_hom hF (b.mulEquiv U x a').asIso.hom a)
+  map_one' := by
+    rw [MulEquiv.symm_apply_eq, map_one]
+    refine Aut.ext (Iso.ext (NatTrans.ext (funext fun x ↦ ?_)))
+    simp only [NatIso.ofComponents_hom_app, map_one, Aut.one_asIso, Iso.refl_hom, NatTrans.id_app,
+      Functor.id_obj]
+  map_mul' a a' := by
+    rw [← map_mul, MulEquiv.apply_eq_iff_eq]
+    refine Aut.ext (Iso.ext (NatTrans.ext (funext fun x ↦ ?_)))
+    simp only [NatIso.ofComponents_hom_app, map_mul, Aut.mul_asIso, Iso.trans_hom,
+      NatTrans.comp_app]
 
 /-- The component of the central unit of `a` at `x` is the band automorphism `b(U, x)(a)`. -/
 @[simp]
@@ -119,8 +121,8 @@ noncomputable def centerFromBanding (U : C) :
   toFun a := IntrinsicBandSections.ofCompatible
     (fun V f ↦ b.coefficientCenter hF V (.ofAdd (A.obj.map f.op a.toAdd)))
     ((F.isPullbackCompatible_iff _).mpr fun V W f g x ↦ by
-      rw [map_coefficientCenter_app, op_comp, Functor.map_comp]
-      rfl)
+      rw [map_coefficientCenter_app, toAdd_ofAdd, op_comp, Functor.map_comp,
+        AddCommGrpCat.comp_apply])
   map_one' := IntrinsicBandSections.ext fun V f x ↦ by
     simp only [IntrinsicBandSections.val_ofCompatible, toAdd_one, map_zero, ofAdd_zero, map_one,
       IntrinsicBandSections.val_one]
@@ -154,8 +156,7 @@ theorem restrict_centerFromBanding {U V : C} (f : V ⟶ U) (a : Multiplicative (
       b.centerFromBanding hF V (.ofAdd (A.obj.map f.op a.toAdd)) :=
   IntrinsicBandSections.ext fun W g x ↦ by
     rw [IntrinsicBandSections.val_restrict, val_centerFromBanding, val_centerFromBanding,
-      toAdd_ofAdd, op_comp, Functor.map_comp]
-    rfl
+      toAdd_ofAdd, op_comp, Functor.map_comp, AddCommGrpCat.comp_apply]
 
 /-- **Characterization by evaluations.** A central section over `U` whose evaluation at every
 `f : V ⟶ U` and every `x` over `V` is `b(V, x)(a|_V)` is `c_b(U)(a)`. -/
