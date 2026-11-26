@@ -149,7 +149,7 @@ theorem memWkpLoc_succ_of_forall_integral_apply_floerLinearization_eq_zero {Ω :
   -- A test function `φ` on `Ω` gives the test map `φ ∘ e⁻¹` supported over `Ω`.
   set U : Opens (ℝ × ℝ) := ⟨e.symm ⁻¹' Ω, Ω.isOpen.preimage e.symm.continuous⟩
   have hmaps : MapsTo e Ω U := fun w hw ↦ by simpa [U] using hw
-  set ψ : 𝓓(U, V) := e.transportTestFunction hmaps φ
+  set ψ : 𝓓(U, V) := e.transportTestFunction ℝ hmaps φ
   have hψ : (ψ : ℝ × ℝ → V) = (φ : ℂ → V) ∘ e.symm := funext fun y ↦ by simp [ψ]
   have h := hηD ψ ψ.contDiff ψ.hasCompactSupport ψ.tsupport_subset
   rw [← volume_preserving_equiv_real_prod.integral_comp measurableEquivRealProd.measurableEmbedding,

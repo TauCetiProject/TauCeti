@@ -179,7 +179,7 @@ private theorem integral_smul_eq_zero_of_laplacian_eq_smul {c : ℝ} (hc : 0 < c
   have hvl : LocallyIntegrable v volume := hv.locallyIntegrable Fact.out
   -- Mollify with the reflected test function `ρ = φ(-·)`.
   let ρ : 𝓓((⊤ : Opens E), ℝ) :=
-    (ContinuousLinearEquiv.neg ℝ).transportTestFunction (fun _ _ ↦ Opens.mem_top _) φ
+    (ContinuousLinearEquiv.neg ℝ).transportTestFunction ℝ (fun _ _ ↦ Opens.mem_top _) φ
   have hρ_apply : (ρ : E → ℝ) = fun z ↦ φ (-z) := funext fun z ↦
     (ContinuousLinearEquiv.transportTestFunction_apply _ _ φ z).trans <| by
       rw [ContinuousLinearEquiv.symm_neg, ContinuousLinearEquiv.neg_apply]

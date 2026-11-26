@@ -787,7 +787,7 @@ theorem localFourier_compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) (hVO : M
     (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(V, ℂ)) (η : E) :
     (compCLMOfContinuousLinearEquiv e hVO T).localFourier φ η =
       (|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) *
-        T.localFourier (e.transportTestFunction hVO φ) (((e.symm : E →L[ℝ] E)†) η) := by
+        T.localFourier (e.transportTestFunction ℝ hVO φ) (((e.symm : E →L[ℝ] E)†) η) := by
   rw [localFourier, complexPairing_compCLMOfContinuousLinearEquiv]
   congr 1
   refine (localFourier_eq _ _ fun y => ?_).symm
@@ -803,7 +803,7 @@ theorem IsMicrolocallySmoothAt.compCLMOfContinuousLinearEquiv {T : 𝓓'(Ω, ℂ
   obtain ⟨φ, hφ, Γ, hΓ, hξ, hcone, hdecay⟩ := h
   set A : E →L[ℝ] E := (e.symm : E →L[ℝ] E)†
   -- The cutoff `φ ∘ e` and the cone `A⁻¹ Γ` carry the decay of `T` over to its pullback.
-  refine ⟨e.symm.transportTestFunction hOV φ, by simpa using hφ, A ⁻¹' Γ,
+  refine ⟨e.symm.transportTestFunction ℝ hOV φ, by simpa using hφ, A ⁻¹' Γ,
     hΓ.preimage A.continuous, hξ, fun t ht η hη => ?_, fun N => ?_⟩
   · simpa only [mem_preimage, map_smul] using hcone t ht (A η) hη
   obtain ⟨C, hC⟩ := hdecay N

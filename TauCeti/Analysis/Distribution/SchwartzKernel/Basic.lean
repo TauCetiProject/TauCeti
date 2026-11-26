@@ -473,23 +473,23 @@ theorem existsUnique_schwartzKernel_testFunction_of_continuous
   have hV₁ : MapsTo (e₁.prodCongr e₂) V V' := fun p hp ↦ by simpa [V'] using hp
   have hV₂ : MapsTo (e₁.symm.prodCongr e₂.symm) V' V := fun _ hp ↦ hp
   let B' : 𝓓(Ω', ℂ) →ₗ[ℂ] 𝓓(O', ℂ) →ₗ[ℂ] F :=
-    B.compl₁₂ (e₁.symm.transportTestFunctionComplex hΩ).toLinearMap
-      (e₂.symm.transportTestFunctionComplex hO).toLinearMap
+    B.compl₁₂ (e₁.symm.transportTestFunction ℂ hΩ).toLinearMap
+      (e₂.symm.transportTestFunction ℂ hO).toLinearMap
   obtain ⟨T', hT', hT'u⟩ := existsUnique_schwartzKernel_testFunction_pi B'
     (exists_bound_ofSupportedIn_of_continuous B'
-      (fun _ ↦ (h₁ _).comp (e₁.symm.transportTestFunctionComplex hΩ).continuous)
-      (fun _ ↦ (h₂ _).comp (e₂.symm.transportTestFunctionComplex hO).continuous)) hV'
-  refine ⟨T'.comp ((e₁.prodCongr e₂).transportTestFunctionComplex hV₁), fun φ ψ ↦ ?_,
+      (fun _ ↦ (h₁ _).comp (e₁.symm.transportTestFunction ℂ hΩ).continuous)
+      (fun _ ↦ (h₂ _).comp (e₂.symm.transportTestFunction ℂ hO).continuous)) hV'
+  refine ⟨T'.comp ((e₁.prodCongr e₂).transportTestFunction ℂ hV₁), fun φ ψ ↦ ?_,
     fun T hT ↦ ?_⟩
   · rw [ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.transportTestFunctionComplex_prodCongr_tensor e₁ e₂ hΩ' hO' hV₁ _
+      ContinuousLinearEquiv.transportTestFunction_prodCongr_tensor e₁ e₂ hΩ' hO' hV₁ _
         hV'.symm.subset, hT']
     exact congr_arg₂ (B · ·) (TestFunction.ext fun _ ↦ by simp) (TestFunction.ext fun _ ↦ by simp)
   · -- `T` read in the coordinates is a kernel of `B'`, hence is `T'`.
-    have hTT' : T.comp ((e₁.symm.prodCongr e₂.symm).transportTestFunctionComplex hV₂) = T' :=
+    have hTT' : T.comp ((e₁.symm.prodCongr e₂.symm).transportTestFunction ℂ hV₂) = T' :=
       hT'u _ fun φ ψ ↦ by
         rw [ContinuousLinearMap.comp_apply,
-          ContinuousLinearEquiv.transportTestFunctionComplex_prodCongr_tensor e₁.symm e₂.symm hΩ hO
+          ContinuousLinearEquiv.transportTestFunction_prodCongr_tensor e₁.symm e₂.symm hΩ hO
             hV₂ _ hV.symm.subset, hT]
         simp only [B', compl₁₂_apply, ContinuousLinearMap.coe_coe]
     ext Φ
