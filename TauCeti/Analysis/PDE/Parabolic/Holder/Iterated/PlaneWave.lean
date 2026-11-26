@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.HeatEquation
 import TauCeti.Analysis.Holder.Trigonometric
-import TauCeti.Analysis.InnerProductSpace.Laplacian.Trigonometric
+import TauCeti.Analysis.InnerProductSpace.Laplacian.PlaneWave
 
 /-!
 # The heat flow of a plane wave in the parabolic Hölder spaces of every order

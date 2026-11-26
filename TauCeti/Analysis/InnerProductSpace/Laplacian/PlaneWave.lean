@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+import Mathlib.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
@@ -22,8 +23,10 @@ differentiable at `⟪w, x⟫`. Its second derivative is `g''(⟪w, x⟫) ⟪w, 
 finite-dimensional space its Laplacian is `‖w‖² • g''(⟪w, x⟫)`, again for every `g`, with values
 in any real normed space. For `g = cos` and `g = sin` these are the Fourier modes
 `cos ⟪w, x⟫` and `sin ⟪w, x⟫`, satisfying `Δ f = -‖w‖² f`. The cosine mode is an
-eigenfunction of `-Δ` with eigenvalue `‖w‖²`; the sine mode is one when `w ≠ 0`. The hyperbolic
-mode `cosh ⟪w, x - x₀⟫` is an eigenfunction of `Δ` with eigenvalue `‖w‖²`.
+eigenfunction of `-Δ` with eigenvalue `‖w‖²`, so `Δ^[r]` multiplies it by `(-‖w‖²) ^ r`; the
+sine mode is one when `w ≠ 0`. Each derivative of the cosine mode brings out one factor `⟪w, ·⟫`
+and a derivative of `cos`, bounded by `1`, so its `m`-th derivative has norm at most `‖w‖ ^ m`.
+The hyperbolic mode `cosh ⟪w, x - x₀⟫` is an eigenfunction of `Δ` with eigenvalue `‖w‖²`.
 
 Adapted from Giada Franz's formalization in
 [`ForTauCeti/Analysis/Fourier/Torus/PlaneWave.lean`](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/master/ForTauCeti/Analysis/Fourier/Torus/PlaneWave.lean).
@@ -32,10 +35,12 @@ Adapted from Giada Franz's formalization in
 
 * `TauCeti.fderiv_comp_inner`: the derivative of a plane wave.
 * `TauCeti.iteratedFDeriv_two_comp_inner`: the second derivative of a plane wave.
+* `TauCeti.norm_iteratedFDeriv_cos_inner_le`: `‖D^m cos ⟪w, ·⟫‖ ≤ ‖w‖ ^ m`.
 * `TauCeti.laplacian_comp_inner`: the Laplacian of a plane wave `x ↦ g ⟪w, x⟫` is `‖w‖² • g''`;
   `TauCeti.laplacian_comp_inner_sub` is its shifted form `x ↦ g ⟪w, x - x₀⟫`.
 * `TauCeti.laplacian_cos_inner`, `TauCeti.laplacian_sin_inner`: the Laplacian identities for
   the Fourier modes, with the sine eigenfunction interpretation requiring `w ≠ 0`.
+* `TauCeti.iterate_laplacian_cos_inner`: `Δ^[r] cos ⟪w, ·⟫ = (-‖w‖²) ^ r cos ⟪w, ·⟫`.
 * `TauCeti.laplacian_cosh_inner_sub`: the shifted hyperbolic mode is an eigenfunction of `Δ`.
 -/
 
@@ -86,6 +91,24 @@ theorem iteratedFDeriv_two_comp_inner {g : ℝ → ℝ} (w x : F)
     Matrix.cons_val_one, smul_eq_mul]
   ring
 
+/-- The cosine mode `y ↦ cos ⟪w, y⟫` is `cos` composed with the linear form `⟪w, ·⟫`. -/
+private theorem cos_inner_eq_comp (w : F) :
+    (fun y ↦ Real.cos ⟪w, y⟫_ℝ) = Real.cos ∘ innerSL ℝ w :=
+  funext fun y ↦ by rw [Function.comp_apply, innerSL_apply_apply]
+
+/-- The `m`-th derivative of the cosine mode `y ↦ cos ⟪w, y⟫` has norm at most `‖w‖ ^ m`. -/
+theorem norm_iteratedFDeriv_cos_inner_le (w x : F) (m : ℕ) :
+    ‖iteratedFDeriv ℝ m (fun y ↦ Real.cos ⟪w, y⟫_ℝ) x‖ ≤ ‖w‖ ^ m := by
+  rw [cos_inner_eq_comp, (innerSL ℝ w).iteratedFDeriv_comp_right (Real.contDiff_cos (n := m)) x
+    le_rfl]
+  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
+  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, innerSL_apply_norm]
+  have hcos : ‖iteratedFDeriv ℝ m Real.cos (innerSL ℝ w x)‖ ≤ 1 := by
+    rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, Real.norm_eq_abs]
+    exact Real.abs_iteratedDeriv_cos_le_one m _
+  calc _ ≤ 1 * ‖w‖ ^ m := by gcongr
+    _ = ‖w‖ ^ m := one_mul _
+
 variable [FiniteDimensional ℝ F]
 
 /-- **The Laplacian of a plane wave.** For a vector `w` and a function `g : ℝ → G`, the function
@@ -123,6 +146,21 @@ theorem laplacian_comp_inner_sub (g : ℝ → G) (w x y : F) :
 theorem laplacian_cos_inner (w x : F) :
     Δ (fun y ↦ Real.cos ⟪w, y⟫_ℝ) x = -‖w‖ ^ 2 * Real.cos ⟪w, x⟫_ℝ := by
   simp [laplacian_comp_inner, Real.deriv_cos']
+
+/-- **The iterated Laplacians of the cosine mode.** For `w ∈ F` and `r : ℕ`,
+`Δ^[r] cos ⟪w, ·⟫ = (-‖w‖ ^ 2) ^ r cos ⟪w, ·⟫`. -/
+theorem iterate_laplacian_cos_inner (w : F) (r : ℕ) :
+    Δ^[r] (fun y ↦ Real.cos ⟪w, y⟫_ℝ) = fun y ↦ (-‖w‖ ^ 2) ^ r * Real.cos ⟪w, y⟫_ℝ := by
+  induction r with
+  | zero => simp
+  | succ r ih =>
+    rw [Function.iterate_succ_apply', ih]
+    funext x
+    have hsmul : (fun y ↦ (-‖w‖ ^ 2) ^ r * Real.cos ⟪w, y⟫_ℝ) =
+        (-‖w‖ ^ 2) ^ r • fun y ↦ Real.cos ⟪w, y⟫_ℝ := (rfl)
+    rw [hsmul, laplacian_smul _ (by rw [cos_inner_eq_comp]; fun_prop), smul_eq_mul,
+      laplacian_cos_inner]
+    ring
 
 /-- The sine mode satisfies `Δ (sin ⟪w, ·⟫) = -‖w‖² sin ⟪w, ·⟫`. When `w ≠ 0`, it is
 an eigenfunction of `-Δ` with eigenvalue `‖w‖²`. -/
