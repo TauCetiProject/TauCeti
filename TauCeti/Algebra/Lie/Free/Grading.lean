@@ -1,12 +1,13 @@
 /-
-Copyright (c) 2026 Mei contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
 public import Mathlib.Algebra.Lie.Loop
 public import TauCeti.Algebra.Lie.Presentation.Basic
+public import TauCeti.Algebra.PositiveDegrees.Grading
 
 /-!
 # Word-length grading of a free Lie algebra
@@ -194,5 +195,12 @@ theorem homogeneousSubmodule_one :
       omega
   · rintro ⟨s, rfl⟩
     exact ⟨FreeMagma.of s, rfl, word_of R s⟩
+
+/-- Word length equips `FreeLieAlgebra R S` with a positive grading over `PositiveDegrees.naturals`.
+-/
+instance instIsPositiveGradingNaturals :
+    IsPositiveGrading PositiveDegrees.naturals (homogeneousSubmodule R S) where
+  eq_bot _ hn := hn.elim (fun h => (h PositiveDegrees.mem_naturals_monoid).elim)
+    fun h => h ▸ homogeneousSubmodule_zero R S
 
 end TauCeti.FreeLieAlgebra

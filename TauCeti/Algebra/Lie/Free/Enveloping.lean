@@ -1,13 +1,15 @@
 /-
-Copyright (c) 2026 Mei contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
 public import TauCeti.Algebra.Lie.Free.LowerCentral
 public import TauCeti.Algebra.Lie.Presentation.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Cofinality
+
+import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Injective
 
 /-!
 # Augmentation powers and the lower central series of a free Lie algebra
@@ -42,6 +44,11 @@ Injectivity of `ι` holds whenever `F` is free as an `R`-module
 * `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_injective`: if `ι` is injective, so is the
   induced map `TauCeti.UniversalEnvelopingAlgebra.lowerCentralQuotientι` from
   `F ⧸ lowerCentralSeries c` to `U(F) ⧸ J ^ (c + 1)`.
+* `TauCeti.FreeLieAlgebra.naturals_degreeFiltration_eq_augmentation_pow`: the same filtration
+  identification written for `PositiveDegrees.naturals`.
+* `TauCeti.FreeLieAlgebra.comap_augmentation_pow_ι_of_ratAlgebra` and
+  `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_injective_of_ratAlgebra`: unconditional forms over
+  any commutative `ℚ`-algebra `R`.
 
 ## Attribution
 
@@ -107,5 +114,36 @@ theorem lowerCentralQuotientι_injective
     Function.Injective (UniversalEnvelopingAlgebra.lowerCentralQuotientι R F c) :=
   (UniversalEnvelopingAlgebra.lowerCentralQuotientι_injective_iff R F c).mpr
     (comap_augmentation_pow_ι R S hι c).le
+
+/-- For `PositiveDegrees.naturals`, the enveloping degree filtration on `U(FreeLieAlgebra R S)` is
+the filtration by powers of the augmentation ideal. -/
+theorem naturals_degreeFiltration_eq_augmentation_pow (k : ℕ) :
+    (UniversalEnvelopingAlgebra.degreeFiltration ℒ PositiveDegrees.naturals.degree
+      (fun n hn => PositiveDegrees.naturals.eq_bot_of_degree_nonpos ℒ n hn.le)).ideal k =
+      J ^ k := by
+  refine Ideal.ext fun a => ?_
+  rw [UniversalEnvelopingAlgebra.mem_degreeFiltration_ideal_iff, mem_augmentation_pow_iff]
+  simp
+
+section RatAlgebra
+
+variable [Algebra ℚ R]
+
+/-- Over a commutative `ℚ`-algebra `R`, the Lie elements sent into `J ^ (c + 1)` by `ι R`
+are precisely `LieModule.lowerCentralSeries R F F c`. -/
+theorem comap_augmentation_pow_ι_of_ratAlgebra (c : ℕ) :
+    ((J ^ (c + 1)).restrictScalars R).comap
+        (_root_.UniversalEnvelopingAlgebra.ι R : F →ₗ⁅R⁆ U).toLinearMap =
+      (LieModule.lowerCentralSeries R F F c).toSubmodule :=
+  comap_augmentation_pow_ι R S (UniversalEnvelopingAlgebra.ι_injective_of_ratAlgebra R F) c
+
+/-- Over a commutative `ℚ`-algebra `R`, the free nilpotent quotient of class at most `c`
+embeds into `U(F) ⧸ J ^ (c + 1)`. -/
+theorem lowerCentralQuotientι_injective_of_ratAlgebra (c : ℕ) :
+    Function.Injective (UniversalEnvelopingAlgebra.lowerCentralQuotientι R F c) :=
+  lowerCentralQuotientι_injective R S
+    (UniversalEnvelopingAlgebra.ι_injective_of_ratAlgebra R F) c
+
+end RatAlgebra
 
 end TauCeti.FreeLieAlgebra

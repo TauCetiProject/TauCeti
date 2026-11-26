@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.Algebra.DirectSum.Component
 
 /-!
 # Basic results on graded algebras
@@ -27,6 +28,8 @@ of degree `i` with `i + l = d`.
 
 * `TauCeti.GradedAlgebra.mul_le_grade_add`: the product of two homogeneous components is
   contained in the component indexed by the sum of their degrees.
+* `TauCeti.GradedAlgebra.proj_eq_homogeneousComponent`: Mathlib's `GradedAlgebra.proj` agrees with
+  `TauCeti.homogeneousComponent`.
 * `TauCeti.GradedAlgebra.coe_decompose_mul_zero_of_nonneg`: in nonnegative degrees, the degree-zero
   component is multiplicative.
 * `TauCeti.GradedAlgebra.eq_zero_of_isIdempotentElem_of_decompose_zero`: in nonnegative degrees,
@@ -201,6 +204,12 @@ section Proj
 
 variable {R A ι : Type*} [DecidableEq ι] [AddMonoid ι] [CommSemiring R] [Semiring A]
   [Algebra R A] (𝒜 : ι → Submodule R A) [_root_.GradedAlgebra 𝒜]
+
+/-- Mathlib's `GradedAlgebra.proj` agrees with the module-level `TauCeti.homogeneousComponent`. -/
+theorem proj_eq_homogeneousComponent (i : ι) :
+    _root_.GradedAlgebra.proj 𝒜 i = TauCeti.homogeneousComponent 𝒜 i :=
+  LinearMap.ext fun a ↦ by
+    rw [_root_.GradedAlgebra.proj_apply, TauCeti.homogeneousComponent_apply]
 
 /-- The degree-`i` projection of a graded algebra lands in the degree-`i` component. -/
 theorem proj_mem (i : ι) (a : A) : _root_.GradedAlgebra.proj 𝒜 i a ∈ 𝒜 i := by

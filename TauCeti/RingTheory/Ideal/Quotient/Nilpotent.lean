@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # Nilpotence in ring quotients
 
 For a positive power of a two-sided ideal, nilpotence in the quotient is equivalent to
 nilpotence modulo the original ideal. The zeroth-power quotient is the zero ring. In particular,
-the elements of the ideal are nilpotent modulo each of its powers. This allows a
+the elements of the ideal are nilpotent modulo each of its powers, and the image of `I` in
+`A ⧸ I ^ n` has vanishing `n`-th power (`Ideal.map_quotient_mk_pow_eq_bot`). This allows a
 representation kernel to be refined by taking powers without losing nilpotence of its operators.
 The ring need not be commutative.
 
@@ -61,5 +63,12 @@ theorem _root_.Ideal.Quotient.isNilpotent_mk_pow_of_mem {I : Ideal A} [I.IsTwoSi
   (Ideal.isNilpotent_quotient_pow_iff I n).mpr <| .inr <| by
     rw [Ideal.Quotient.eq_zero_iff_mem.mpr ha]
     exact .zero
+
+/-- In the quotient of a possibly noncommutative ring by `I ^ n`, the image of a two-sided ideal `I`
+has vanishing `n`-th power. -/
+@[simp]
+theorem _root_.Ideal.map_quotient_mk_pow_eq_bot (I : Ideal A) [I.IsTwoSided] (n : ℕ) :
+    (Ideal.map (Ideal.Quotient.mk (I ^ n)) I) ^ n = ⊥ := by
+  rw [← Ideal.map_pow_of_surjective _ Ideal.Quotient.mk_surjective, Ideal.map_quotient_self]
 
 end TauCeti

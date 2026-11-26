@@ -13,32 +13,33 @@ public import TauCeti.RingTheory.GradedAlgebra.TensorProduct
 /-!
 # The comultiplication of a graded enveloping algebra
 
-Let `L` be a Lie algebra graded by `ℕ`, and grade its enveloping algebra `U` by total Lie degree,
-with homogeneous projections `π n`. The comultiplication `Δ` of `U` is homogeneous: it sends the
-degree-`n` piece of `U` into the span of the tensors `a ⊗ b` with `a` and `b` homogeneous of
-degrees adding to `n`. Consequently the bihomogeneous component `(π i ⊗ π j) (Δ a)` depends only
-on the degree-`(i + j)` component of `a`, and the comultiplication of `π n a` is the sum of these
-bihomogeneous components over `i + j = n`.
+Let `L` be a Lie algebra graded by an additive commutative monoid `Γ`, and grade its enveloping
+algebra `U` by total Lie degree, with homogeneous projections `π n`. The comultiplication `Δ` of `U`
+is homogeneous: it sends the degree-`n` piece of `U` into the span of the tensors `a ⊗ b` with `a`
+and `b` homogeneous of degrees adding to `n`. Consequently `(π i ⊗ π j) (Δ a)` vanishes on elements
+of degree `n ≠ i + j`, depends only on the degree-`(i + j)` component of `a`, and when `Γ` has
+finite antidiagonals `Δ (π n a)` is the sum of these bihomogeneous components over `i + j = n`.
 
-This gives a componentwise criterion for primitivity: if `Δ a` agrees with `1 ⊗ a + a ⊗ 1` in all
-bidegrees `(i, j)` with `i + j = n`, then `π n a` is primitive. For the total-degree filtration
-`F` of `U`, the comultiplication carries `F k` into the total-degree filtration of `U ⊗ U`, and
-the bihomogeneous components in bidegrees of total degree below `k` vanish on that filtration
-term. Hence an element whose comultiplication agrees with `1 ⊗ a + a ⊗ 1` modulo filtration
-order `k` has primitive components in every degree below `k`. Over a rational algebra, where
-primitive elements are exactly the image of the Lie algebra, this is the truncated form of
-Friedrichs' criterion that identifies logarithms of group-like elements with Lie elements.
+For `Γ = ℕ`, this gives a componentwise criterion for primitivity: if `Δ a` agrees with
+`1 ⊗ a + a ⊗ 1` in all bidegrees `(i, j)` with `i + j = n`, then `π n a` is primitive. For the
+total-degree filtration `F` of `U`, the comultiplication carries `F k` into the total-degree
+filtration of `U ⊗ U`, and the bihomogeneous components in bidegrees of total degree below `k`
+vanish on that filtration term. Hence an element whose comultiplication agrees with `1 ⊗ a + a ⊗ 1`
+modulo filtration order `k` has primitive components in every degree below `k`. Over a rational
+algebra, where primitive elements are exactly the image of the Lie algebra, this is the truncated
+form of Friedrichs' criterion that identifies logarithms of group-like elements with Lie elements.
 
 ## Main results
 
 * `TauCeti.UniversalEnvelopingAlgebra.isHomogeneous_comul`: the comultiplication is homogeneous
   of degree `0` for the total-degree grading of `U ⊗ U`.
-* `TauCeti.UniversalEnvelopingAlgebra.map_proj_comul`: the bihomogeneous component
-  `(π i ⊗ π j) (Δ a)` equals `(π i ⊗ π j) (Δ (π (i + j) a))`.
+* `TauCeti.UniversalEnvelopingAlgebra.map_proj_comul_eq_zero_of_mem_ne` and
+  `TauCeti.UniversalEnvelopingAlgebra.map_proj_comul`: the bihomogeneous component
+  `(π i ⊗ π j) (Δ a)` vanishes off degree `i + j` and equals `(π i ⊗ π j) (Δ (π (i + j) a))`.
 * `TauCeti.UniversalEnvelopingAlgebra.comul_proj`: `Δ (π n a)` is the sum of the bihomogeneous
   components `(π i ⊗ π j) (Δ a)` over `i + j = n`.
 * `TauCeti.UniversalEnvelopingAlgebra.isPrimitiveElem_proj`: the componentwise primitivity
-  criterion.
+  criterion for `ℕ`-gradings.
 * `TauCeti.UniversalEnvelopingAlgebra.comul_mem_tensorProduct_ideal`: the comultiplication
   preserves total-degree filtration orders.
 * `TauCeti.UniversalEnvelopingAlgebra.map_proj_eq_zero_of_mem_tensorProduct_ideal`: bihomogeneous
@@ -60,8 +61,12 @@ namespace TauCeti.UniversalEnvelopingAlgebra
 
 open Finset
 
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-  (ℒ : ℕ → Submodule R L)
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+section Comul
+
+variable {Γ R L : Type*} [AddCommMonoid Γ] [DecidableEq Γ] [CommRing R] [LieRing L]
+  [LieAlgebra R L] (ℒ : Γ → Submodule R L) [GradedLieAlgebra ℒ]
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "𝒜" => homogeneousSubmodule ℒ
@@ -71,12 +76,6 @@ local notation "π" => _root_.GradedAlgebra.proj (homogeneousSubmodule ℒ)
 -- adding to `n`.
 local notation "𝒢" => InternalGrading.ofDecomposition (homogeneousSubmodule ℒ)
 local notation "𝒯" => InternalGrading.piece (InternalGrading.tensorProduct 𝒢 𝒢)
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-section Comul
-
-variable [GradedLieAlgebra ℒ]
 
 /-- The comultiplication is homogeneous of degree `0` for the total-degree grading of `U ⊗ U`:
 it sends the degree-`n` piece into the span of the tensors `a ⊗ b` with `a` and `b` homogeneous
@@ -108,9 +107,17 @@ theorem isHomogeneous_comul :
     · simpa only [zero_add] using SetLike.mul_mem_graded
         (InternalGrading.tmul_mem_tensorProduct_ofDecomposition 𝒜 𝒜 h1 hx) hl
 
+/-- On an enveloping element of homogeneous degree `n`, every bihomogeneous component of `Δ a` with
+`i + j ≠ n` vanishes. -/
+theorem map_proj_comul_eq_zero_of_mem_ne {n : Γ} {a : U} (ha : a ∈ 𝒜 n) {i j : Γ}
+    (hij : i + j ≠ n) :
+    TensorProduct.map (π i) (π j) (Coalgebra.comul (R := R) a) = 0 :=
+  TauCeti.GradedAlgebra.map_proj_eq_zero_of_mem_tensorProduct 𝒜 𝒜
+    (by simpa only [add_zero] using (isHomogeneous_comul ℒ).map_mem ha) hij
+
 /-- The bihomogeneous component `(π i ⊗ π j) (Δ a)` depends only on the component of `a` of
 degree `i + j`. -/
-theorem map_proj_comul (i j : ℕ) (a : U) :
+theorem map_proj_comul (i j : Γ) (a : U) :
     TensorProduct.map (π i) (π j) (Coalgebra.comul (R := R) a) =
       TensorProduct.map (π i) (π j) (Coalgebra.comul (R := R) (π (i + j) a)) := by
   classical
@@ -118,21 +125,35 @@ theorem map_proj_comul (i j : ℕ) (a : U) :
   rw [map_sum, map_sum, Finset.sum_eq_single (i + j)]
   · rw [_root_.GradedAlgebra.proj_apply]
   · intro m _ hm
-    exact TauCeti.GradedAlgebra.map_proj_eq_zero_of_mem_tensorProduct 𝒜 𝒜
-      ((isHomogeneous_comul ℒ).map_mem (DirectSum.decompose 𝒜 a m).property) (Ne.symm hm)
+    exact map_proj_comul_eq_zero_of_mem_ne ℒ (DirectSum.decompose 𝒜 a m).property (Ne.symm hm)
   · intro h
     rw [DFinsupp.notMem_support_iff.mp h]
     simp
 
 /-- The comultiplication of the degree-`n` component is the sum of the bihomogeneous components
 of the comultiplication in bidegrees `(i, j)` with `i + j = n`. -/
-theorem comul_proj (n : ℕ) (a : U) :
+theorem comul_proj [Finset.HasAntidiagonal Γ] (n : Γ) (a : U) :
     Coalgebra.comul (R := R) (π n a) =
       ∑ p ∈ antidiagonal n, TensorProduct.map (π p.1) (π p.2) (Coalgebra.comul (R := R) a) := by
-  conv_lhs => rw [← TauCeti.GradedAlgebra.sum_map_proj_of_mem_tensorProduct 𝒜 𝒜
-    ((isHomogeneous_comul ℒ).map_mem (TauCeti.GradedAlgebra.proj_mem 𝒜 n a))]
+  have hmem : Coalgebra.comul (R := R) (π n a) ∈ 𝒯 n := by
+    simpa only [add_zero] using
+      (isHomogeneous_comul ℒ).map_mem (TauCeti.GradedAlgebra.proj_mem 𝒜 n a)
+  conv_lhs => rw [← TauCeti.GradedAlgebra.sum_map_proj_of_mem_tensorProduct 𝒜 𝒜 hmem]
   refine Finset.sum_congr rfl fun p hp => ?_
   rw [map_proj_comul ℒ p.1 p.2 a, mem_antidiagonal.mp hp]
+
+end Comul
+
+section Nat
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  (ℒ : ℕ → Submodule R L) [GradedLieAlgebra ℒ]
+
+local notation "U" => _root_.UniversalEnvelopingAlgebra R L
+local notation "𝒜" => homogeneousSubmodule ℒ
+local notation "π" => _root_.GradedAlgebra.proj (homogeneousSubmodule ℒ)
+local notation "𝒢" => InternalGrading.ofDecomposition (homogeneousSubmodule ℒ)
+local notation "𝒯" => InternalGrading.piece (InternalGrading.tensorProduct 𝒢 𝒢)
 
 /-- **Componentwise primitivity.** If the comultiplication of `a` agrees with
 `1 ⊗ a + a ⊗ 1` in every bidegree `(i, j)` with `i + j = n`, then the degree-`n` component of `a`
@@ -157,11 +178,18 @@ theorem isPrimitiveElem_proj {a : U} {n : ℕ}
     · rw [mem_antidiagonal] at hp
       rw [h1 p.2 (fun h0 => hne (Prod.ext (by omega) h0)), TensorProduct.tmul_zero]
 
-end Comul
+end Nat
 
 section Filtration
 
-variable [GradedLieAlgebra ℒ]
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  (ℒ : ℕ → Submodule R L) [GradedLieAlgebra ℒ]
+
+local notation "U" => _root_.UniversalEnvelopingAlgebra R L
+local notation "𝒜" => homogeneousSubmodule ℒ
+local notation "π" => _root_.GradedAlgebra.proj (homogeneousSubmodule ℒ)
+local notation "𝒢" => InternalGrading.ofDecomposition (homogeneousSubmodule ℒ)
+local notation "𝒯" => InternalGrading.piece (InternalGrading.tensorProduct 𝒢 𝒢)
 
 local notation "𝓕" => degreeFiltration ℒ (Nat.castAddMonoidHom ℤ)
   (fun n hn => absurd hn (not_lt.mpr (Int.natCast_nonneg n)))

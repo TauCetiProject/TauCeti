@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 Mei contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
@@ -105,6 +105,28 @@ theorem homogeneousSubmodule_eq_bot_of_degree_neg (d : Γ →+ ℤ)
   rintro a ⟨l, hl, rfl⟩
   exact (Submodule.mem_bot R).mpr
     (word_eq_zero_of_degree_neg ℒ d hneg l (by simpa only [hl] using hn))
+
+private theorem word_eq_zero_of_notMem (M : AddSubmonoid Γ) (hM : ∀ m ∉ M, ℒ m = ⊥)
+    (l : List (Σ i, ℒ i)) (hl : (l.map Sigma.fst).sum ∉ M) :
+    (l.map (fun x => ι R (x.2 : L))).prod = 0 := by
+  induction l with
+  | nil => exact (hl M.zero_mem).elim
+  | cons a l ih =>
+    by_cases ha : a.1 ∈ M
+    · have hsum : (l.map Sigma.fst).sum ∉ M := fun hs =>
+        hl (by simpa only [List.map_cons, List.sum_cons] using M.add_mem ha hs)
+      simp only [List.map_cons, List.prod_cons, ih hsum, mul_zero]
+    · have ha0 : (a.2 : L) = 0 := by
+        simpa only [hM a.1 ha, Submodule.mem_bot] using a.2.property
+      simp only [List.map_cons, List.prod_cons, ha0, map_zero, zero_mul]
+
+/-- Every enveloping piece outside an additive submonoid `M` vanishes when all Lie pieces outside
+`M` vanish. -/
+theorem homogeneousSubmodule_eq_bot_of_notMem (M : AddSubmonoid Γ)
+    (hM : ∀ m ∉ M, ℒ m = ⊥) {n : Γ} (hn : n ∉ M) :
+    homogeneousSubmodule ℒ n = ⊥ := by
+  rw [eq_bot_iff, homogeneousSubmodule_le_iff]
+  exact fun l hl => (Submodule.mem_bot R).mpr (word_eq_zero_of_notMem ℒ M hM l (hl ▸ hn))
 
 /-- The homogeneous word spans are compatible with the algebra product. -/
 instance homogeneousSubmodule_gradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule ℒ) where

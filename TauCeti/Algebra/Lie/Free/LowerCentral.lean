@@ -1,12 +1,13 @@
 /-
-Copyright (c) 2026 Mei contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
 public import TauCeti.Algebra.DirectSum.DegreeTail
 public import TauCeti.Algebra.Lie.Free.Grading
+public import TauCeti.Algebra.Lie.Graded.Truncation
 public import TauCeti.Algebra.Lie.LowerCentralSeries
 
 /-!
@@ -121,5 +122,18 @@ theorem degreeTail_eq_lowerCentralSeries (c : ℕ) :
   refine iSup_congr fun n => iSup_congr_Prop ?_ fun _ => rfl
   simp only [Nat.coe_castAddMonoidHom]
   omega
+
+variable (S)
+
+/-- The word-length degree ideal at cutoff `c` is the `c`-th term of the lower central series. -/
+theorem naturals_degreeIdeal_eq_lowerCentralSeries (c : ℕ) :
+    PositiveDegrees.naturals.degreeIdeal (homogeneousSubmodule R S) c =
+      LieModule.lowerCentralSeries R F F c := by
+  apply LieSubmodule.toSubmodule_injective
+  rw [PositiveDegrees.degreeIdeal_toSubmodule, ← degreeTail_eq_lowerCentralSeries]
+  ext x
+  simp only [PositiveDegrees.mem_degreeSubmodule_iff, DirectSum.mem_degreeTail_iff,
+    PositiveDegrees.naturals_degree, Nat.coe_castAddMonoidHom]
+  exact ⟨fun h n hn => h n (by omega), fun h n hn => h n (by omega)⟩
 
 end TauCeti.FreeLieAlgebra
