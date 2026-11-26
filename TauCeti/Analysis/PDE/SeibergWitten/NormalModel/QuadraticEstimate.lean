@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Expansion
 public import TauCeti.Analysis.PDE.SeibergWitten.RescaledNorm
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Topology.Algebra.Module.Alternating.FiniteDimensional
 
 /-!
@@ -33,9 +34,11 @@ of Taubes's gluing construction (`TauCeti.Analysis.PDE.SeibergWitten.RescaledNor
 `‖N(x₁) - N(x₂)‖_F ≤ K h⁻² (‖x₁‖_E + ‖x₂‖_E) ‖x₁ - x₂‖_E`
 
 for all variations `x₁ = (b₁, ζ₁)` and `x₂ = (b₂, ζ₂)` of class `Cˢ` with square-integrable
-derivatives through order `s`. This is the quadratic Lipschitz bound on the nonlinear part that
-the contraction mapping argument of the gluing construction needs, with the constant
-`L_quad = 2 K h⁻² = 4 K r` explicit in `h`. The target norm through order `s` bounds the norm
+derivatives through order `s`. This is the flat-chart (normal-model) form of the quadratic
+Lipschitz bound on the nonlinear part that the contraction mapping argument of the gluing
+construction needs, with the constant `L_quad = 2 K h⁻² = 4 K r` explicit in `h`. The
+corresponding estimate for the gauge-fixed section on the bundles over the four-manifold is not
+proved here. The target norm through order `s` bounds the norm
 `F_(r,s-1)` of the gauge-fixed section, which stops at order `s - 1`.
 
 * **Dirac row.** The connection variation carries the weight `h` in `E`, and the Dirac row is
@@ -182,8 +185,8 @@ theorem exists_sqrt_rescaledTargetNormSq_smul_flatDirac_const_sub_le {s : ℕ} (
     simp only [hL, Pi.smul_apply, Pi.add_apply, Pi.sub_apply, map_sub, sub_apply]
     congr 1
     abel
-  have hdbm := memLp_iteratedFDeriv_sub hb₁ hb₂ hb₁m hb₂m
-  have hdζm := memLp_iteratedFDeriv_sub hζ₁ hζ₂ hζ₁m hζ₂m
+  have hdbm := hb₁.memLp_iteratedFDeriv_sub hb₂ hb₁m hb₂m
+  have hdζm := hζ₁.memLp_iteratedFDeriv_sub hζ₂ hζ₁m hζ₂m
   obtain ⟨h₁m, h₁⟩ := hB h hh (b₁ - b₂) ζ₁ (hb₁.sub hb₂) hζ₁ hdbm hζ₁m
   obtain ⟨-, h₂⟩ := hB h hh b₂ (ζ₁ - ζ₂) hb₂ (hζ₁.sub hζ₂) hb₂m hdζm
   have hadd := sqrt_rescaledTargetNormSq_add_le (s := s + 1)
@@ -311,7 +314,7 @@ theorem exists_sqrt_rescaledTargetNormSq_quadraticTwoForm_sub_le {s : ℕ} (hs :
       Submodule.coe_sub, smul_smul]
     norm_num
   obtain ⟨-, hq⟩ := hB h hh (ζ₁ - ζ₂) (ζ₁ + ζ₂) (hζ₁.sub hζ₂) (hζ₁.add hζ₂)
-    (memLp_iteratedFDeriv_sub hζ₁ hζ₂ hζ₁m hζ₂m) (memLp_iteratedFDeriv_add hζ₁ hζ₂ hζ₁m hζ₂m)
+    (hζ₁.memLp_iteratedFDeriv_sub hζ₂ hζ₁m hζ₂m) (hζ₁.memLp_iteratedFDeriv_add hζ₂ hζ₁m hζ₂m)
   rw [hdec]
   -- `‖ζ₁ + ζ₂‖_F ≤ ‖ζ₁‖_F + ‖ζ₂‖_F`.
   have hσ := sqrt_rescaledTargetNormSq_add_le (s := s + 1) (by simpa using hζ₁)

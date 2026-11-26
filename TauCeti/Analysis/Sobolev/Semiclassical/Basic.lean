@@ -101,8 +101,6 @@ the semiclassical and unscaled norms satisfy
 * `TauCeti.exists_semiclassicalSobolevNorm_bilinear_le`: the algebra estimate for continuous
   bilinear maps between finite-dimensional spaces, uniformly in `h`.
 * `TauCeti.semiclassicalSobolevNorm_clm_comp_le`: composition with a continuous linear map.
-* `TauCeti.memLp_iteratedFDeriv_add`, `TauCeti.memLp_iteratedFDeriv_sub`: the iterated
-  derivatives of sums and differences of `Cᵏ` functions stay in `Lᵖ`.
 * `TauCeti.mul_semiclassicalSobolevNorm_fderiv_le`: `h D` is bounded from order `k + 1` to
   order `k`.
 * `TauCeti.semiclassicalSobolevNorm_smul_le_of_le_left`: multipliers with semiclassical `Cᵏ`
@@ -320,28 +318,6 @@ theorem exists_semiclassicalSobolevNorm_mul_le {k : ℕ} (hk : finrank ℝ E < 2
     (semiclassicalSobolevNorm_nonneg k zero_le_one _))
     (semiclassicalSobolevNorm_nonneg k zero_le_one _))
   simpa only [semiclassicalSobolevNorm_one] using (hC _ _ hf' hg' hfm' hgm').2
-
-/-- The iterated derivatives of `f + g` through order `k` are in `Lᵖ` when those of the `Cᵏ`
-functions `f` and `g` are. -/
-theorem memLp_iteratedFDeriv_add {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup X] [NormedSpace 𝕜 X] [MeasurableSpace X] [NormedAddCommGroup Y]
-    [NormedSpace 𝕜 Y] {μ : Measure X} {p : ℝ≥0∞} {k : ℕ} {f g : X → Y} (hf : ContDiff 𝕜 k f)
-    (hg : ContDiff 𝕜 k g) (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv 𝕜 i f) p μ)
-    (hgm : ∀ i ≤ k, MemLp (iteratedFDeriv 𝕜 i g) p μ) :
-    ∀ i ≤ k, MemLp (iteratedFDeriv 𝕜 i (f + g)) p μ := fun i hi ↦ by
-  rw [iteratedFDeriv_add (hf.of_le (by exact_mod_cast hi)) (hg.of_le (by exact_mod_cast hi))]
-  exact (hfm i hi).add (hgm i hi)
-
-/-- The iterated derivatives of `f - g` through order `k` are in `Lᵖ` when those of the `Cᵏ`
-functions `f` and `g` are. -/
-theorem memLp_iteratedFDeriv_sub {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup X] [NormedSpace 𝕜 X] [MeasurableSpace X] [NormedAddCommGroup Y]
-    [NormedSpace 𝕜 Y] {μ : Measure X} {p : ℝ≥0∞} {k : ℕ} {f g : X → Y} (hf : ContDiff 𝕜 k f)
-    (hg : ContDiff 𝕜 k g) (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv 𝕜 i f) p μ)
-    (hgm : ∀ i ≤ k, MemLp (iteratedFDeriv 𝕜 i g) p μ) :
-    ∀ i ≤ k, MemLp (iteratedFDeriv 𝕜 i (f - g)) p μ := fun i hi ↦ by
-  rw [iteratedFDeriv_sub (hf.of_le (by exact_mod_cast hi)) (hg.of_le (by exact_mod_cast hi))]
-  exact (hfm i hi).sub (hgm i hi)
 
 /-- **Composition with a fixed continuous linear map.** For `f` of class `Cᵏ` with
 square-integrable derivatives through order `k`, a continuous linear map `L` and `h ≥ 0`, the

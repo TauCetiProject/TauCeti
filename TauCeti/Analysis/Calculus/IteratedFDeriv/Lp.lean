@@ -47,7 +47,10 @@ the `1/p`-th power of the measure of the ball times `(card ι)² B`
 
 The iterated derivatives of order at most `k` of a compactly supported `C^k` function are in every
 `Lᵖ`, also when evaluated on fixed directions (`ContDiff.memLp_iteratedFDeriv_of_hasCompactSupport`,
-`ContDiff.memLp_iteratedFDeriv_apply_of_hasCompactSupport`). For a continuous bilinear map `B`,
+`ContDiff.memLp_iteratedFDeriv_apply_of_hasCompactSupport`). The iterated derivatives of order
+at most `k` of `f + g` and `f - g` are in `Lᵖ` when those of the `Cᵏ` functions `f` and `g` are
+(`ContDiff.memLp_iteratedFDeriv_add`, `ContDiff.memLp_iteratedFDeriv_sub`). For a continuous
+bilinear map `B`,
 the Leibniz rule and Hölder's inequality bound the `Lᵖ` norm of `D^k (B (u, v))` by a binomial sum
 of products of `Lᵠ` norms of `D^i u` and `Lʳ` norms of `D^(k-i) v`
 (`ContinuousLinearMap.eLpNorm_iteratedFDeriv_le_of_bilinear`). The derivative of the `k`-th
@@ -222,6 +225,35 @@ theorem ContDiff.memLp_iteratedFDeriv_apply_of_hasCompactSupport (hn : n ≤ N)
   (hu.continuous_iteratedFDeriv_apply hn v).memLp_of_hasCompactSupport (hc.iteratedFDeriv_apply v)
 
 end CompactSupport
+
+section AddSub
+
+open MeasureTheory
+open scoped ENNReal
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [MeasurableSpace E] {μ : Measure E} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {p : ℝ≥0∞} {k : ℕ}
+  {f g : E → F}
+
+/-- The iterated derivatives of `f + g` through order `k` are in `Lᵖ` when those of the `Cᵏ`
+functions `f` and `g` are. -/
+theorem ContDiff.memLp_iteratedFDeriv_add (hf : ContDiff 𝕜 k f) (hg : ContDiff 𝕜 k g)
+    (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv 𝕜 i f) p μ)
+    (hgm : ∀ i ≤ k, MemLp (iteratedFDeriv 𝕜 i g) p μ) :
+    ∀ i ≤ k, MemLp (iteratedFDeriv 𝕜 i (f + g)) p μ := fun i hi ↦ by
+  rw [iteratedFDeriv_add (hf.of_le (by exact_mod_cast hi)) (hg.of_le (by exact_mod_cast hi))]
+  exact (hfm i hi).add (hgm i hi)
+
+/-- The iterated derivatives of `f - g` through order `k` are in `Lᵖ` when those of the `Cᵏ`
+functions `f` and `g` are. -/
+theorem ContDiff.memLp_iteratedFDeriv_sub (hf : ContDiff 𝕜 k f) (hg : ContDiff 𝕜 k g)
+    (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv 𝕜 i f) p μ)
+    (hgm : ∀ i ≤ k, MemLp (iteratedFDeriv 𝕜 i g) p μ) :
+    ∀ i ≤ k, MemLp (iteratedFDeriv 𝕜 i (f - g)) p μ := fun i hi ↦ by
+  rw [iteratedFDeriv_sub (hf.of_le (by exact_mod_cast hi)) (hg.of_le (by exact_mod_cast hi))]
+  exact (hfm i hi).sub (hgm i hi)
+
+end AddSub
 
 namespace TauCeti
 

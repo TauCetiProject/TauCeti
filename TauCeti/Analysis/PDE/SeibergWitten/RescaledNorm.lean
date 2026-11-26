@@ -496,8 +496,9 @@ through order `k`, the derivatives of `L (f, g)` through order `k` are square in
 `‖L (f, g)‖_(F_(r,k)) ≤ C ‖L‖ h^(-n/2) ‖f‖_(F_(r,k)) ‖g‖_(F_(r,k))`.
 
 The factor `h^(-n/2)` is the price of the missing volume normalization: the target norm is
-`h^(n/2)` times the semiclassical norm, which is an algebra norm uniformly in `h`
-(`TauCeti.exists_semiclassicalSobolevNorm_bilinear_le`). -/
+comparable to `h^(n/2)` times the semiclassical norm,
+`‖y‖_(F_(r,k))² ≤ hⁿ ‖y‖_{k,h}² ≤ (k + 1) ‖y‖_(F_(r,k))²`, and the semiclassical norm is an
+algebra norm uniformly in `h` (`TauCeti.exists_semiclassicalSobolevNorm_bilinear_le`). -/
 theorem exists_sqrt_rescaledTargetNormSq_bilinear_le {k : ℕ} (hk : finrank ℝ V < 2 * k)
     [FiniteDimensional ℝ B] [FiniteDimensional ℝ S] :
     ∃ C, 0 ≤ C ∧ ∀ h : ℝ, 0 < h → ∀ (L : B →L[ℝ] S →L[ℝ] T) (f : V → B) (g : V → S),
