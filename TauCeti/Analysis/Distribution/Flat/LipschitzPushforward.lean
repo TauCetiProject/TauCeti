@@ -321,7 +321,10 @@ support, then `f_# T` is the limit on each test form of the smooth pushforwards
 sequences exist when `f` is Lipschitz on a neighbourhood of the support, and `f_# T` is the smooth
 pushforward when `f` is smooth on `Ω`
 (`Distribution.lipschitzPushforward_eq_comp_cutoffPullbackCLM`). If `T` is not normal with compact
-support in `Ω`, or `f` has no such approximations, it is `0`. -/
+support in `Ω`, or `f` has no such approximations, it is `0`
+(`Distribution.lipschitzPushforward_of_not_isNormal`,
+`Distribution.lipschitzPushforward_of_not_isCompact_and_subset` and
+`Distribution.lipschitzPushforward_of_not_exists`). -/
 def lipschitzPushforward (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ) (f : E → E') :
     𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ :=
   if h : IsApproximable T f then Classical.choose h.exists_forall_tendsto else 0
@@ -340,6 +343,27 @@ theorem tendsto_lipschitzPushforward (hT : IsNormal T) {χ : 𝓓(Ω, ℝ)}
   have h : IsApproximable T f := ⟨hT, ⟨χ, hχ⟩, g, hg, hgf, L, hgL⟩
   rw [lipschitzPushforward, dite_eq_left h]
   exact Classical.choose_spec h.exists_forall_tendsto χ hχ g hg hgf L hgL ω
+
+/-- The pushforward is zero when `f` is not the uniform limit on the support of `T` of maps smooth
+on `Ω` whose derivatives are uniformly bounded on the support. -/
+theorem lipschitzPushforward_of_not_exists
+    (h : ¬∃ g : ℕ → E → E', (∀ j, ContDiffOn ℝ (⊤ : ℕ∞) (g j) Ω) ∧
+      TendstoUniformlyOn g f atTop (dsupport T) ∧
+      ∃ L : ℝ≥0, ∀ j, ∀ x ∈ dsupport T, ‖fderiv ℝ (g j) x‖ ≤ L) :
+    (lipschitzPushforward T f : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ) = 0 := by
+  rw [lipschitzPushforward, dite_eq_right fun hf ↦ h hf.2.2]
+
+/-- The pushforward of a current which is not normal is zero. -/
+theorem lipschitzPushforward_of_not_isNormal (hT : ¬IsNormal T) :
+    (lipschitzPushforward T f : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ) = 0 := by
+  rw [lipschitzPushforward, dite_eq_right fun hf ↦ hT hf.1]
+
+/-- The pushforward is zero unless `dsupport T` is a compact subset of `Ω`. -/
+theorem lipschitzPushforward_of_not_isCompact_and_subset
+    (h : ¬(IsCompact (dsupport T) ∧ dsupport T ⊆ Ω)) :
+    (lipschitzPushforward T f : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ) = 0 := by
+  rw [lipschitzPushforward, dite_eq_right fun ⟨_, ⟨_, hχ⟩, _⟩ ↦
+    h (isCompact_dsupport_and_subset_of_eventually_eq_one hχ)]
 
 /-- **Agreement with the smooth pushforward**: along a map smooth on `Ω`, the pushforward of a
 normal current with compact support in `Ω` is `T ∘ (χ f^*)`, for any `χ` equal to one near the
