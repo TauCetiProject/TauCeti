@@ -317,14 +317,10 @@ maps onto `PGL(2, K)`. -/
 theorem _root_.Matrix.GeneralLinearGroup.exists_psl_forall_smul_eq_smul [IsAlgClosed K]
     (g : GL (Fin 2) K) :
     ∃ h : PSL(2, K), ∀ c : OnePoint K, h • c = g • c := by
-  -- Every unit has a square root, so `PSL(2, K) → PGL(2, K)` is onto.
-  obtain ⟨h, hh'⟩ := toPGL_surj_of_roots (fun r : Kˣ ↦ by
-    obtain ⟨x, hx⟩ := IsAlgClosed.exists_pow_nat_eq (r : K) (by simp : 0 < Fintype.card (Fin 2))
-    have hx0 : x ≠ 0 := by
-      rintro rfl
-      exact r.ne_zero (by simpa using hx.symm)
-    exact ⟨Units.mk0 x hx0, Units.ext (by simpa using hx)⟩)
+  -- `PSL(2, K) → PGL(2, K)` is onto, being inverse to `isoPSLOfAlgClosedOfNonempty`.
+  obtain ⟨h, hs⟩ := (isoPSLOfAlgClosedOfNonempty (n := Fin 2) (F := K)).symm.surjective
     (Matrix.ProjGenLinGroup.mk g)
+  have hh' : toPGL h = Matrix.ProjGenLinGroup.mk g := hs
   exact ⟨h, fun c ↦ by rw [← toPGL_smul, hh', pglMk_smul]⟩
 
 /-- The translation `upperRightHom x` fixes `∞`. -/

@@ -34,8 +34,11 @@ For a target `Y × M`, the **horizontal leaves** `[y ↦ (y, t), w]`
 `y ↦ (g • y, t)` (`TauCeti.MarkedUnparametrizedMap.mk_mem_range_horizontalLeaf_iff`), and the
 evaluation map is a homeomorphism from the horizontal leaves onto `Y × M`, inverse to
 `horizontalLeaf` (`TauCeti.MarkedUnparametrizedMap.rangeHorizontalLeafHomeomorph`). For the
-Riemann sphere times a torus, with a product almost complex structure, the one-marked
-pseudoholomorphic spheres of the class `[S² × pt]` are exactly these leaves.
+Riemann sphere times a torus `T`, with a product structure `i × K` where `K` is an `ω_T`-tame
+almost complex structure on `T`, the one-marked pseudoholomorphic spheres of the class
+`[S² × pt]` are exactly these leaves
+(`TauCeti.degreeOneMarkedSphereModuli_prod_eq_range_horizontalLeaf` in
+`TauCeti.Geometry.Symplectic.Nonsqueezing.MarkedModuli`).
 
 The main example is the group `PSL(2, 𝕜)` of Möbius transformations acting on the projective line
 `OnePoint 𝕜`; for `𝕜 = ℂ` the two orbit spaces are the spaces of unparametrized and one-marked
@@ -293,6 +296,12 @@ variable (G) in
 slice `Y × {t}` of `Y × M`, marked at `w`. -/
 def horizontalLeaf (p : Y × M) : MarkedUnparametrizedMap G Y (Y × M) :=
   Quotient.mk _ (NonconstantMap.prodMkLeft p.2, p.1)
+
+/-- The horizontal leaf through `p` is the class of the horizontal slice through `p.2`, marked
+at `p.1`. -/
+theorem horizontalLeaf_def (p : Y × M) :
+    horizontalLeaf G p = Quotient.mk _ (NonconstantMap.prodMkLeft p.2, p.1) :=
+  (rfl)
 
 /-- The horizontal leaf through `p` evaluates to `p` at its marked point. -/
 @[simp]
