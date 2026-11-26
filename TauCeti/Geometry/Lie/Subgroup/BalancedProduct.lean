@@ -75,6 +75,8 @@ compared with reduction at zero of the shifted moment map on the product with th
 * `TauCeti.BalancedProduct.isManifold_rightTranslation`,
   `TauCeti.BalancedProduct.isSubmersion_quotientMk_rightTranslation`: `G ×_K Z` is a smooth
   manifold and the projection from `G × Z` is a smooth submersion.
+* `TauCeti.BalancedProduct.ker_mfderiv_quotientMk_rightTranslation`: the kernel of the
+  differential of the projection from `G × Z` is the orbit tangent space of `K`.
 * `TauCeti.BalancedProduct.contMDiff_iff_rightTranslation`: a map out of `G ×_K Z` is smooth
   exactly when its composite with the projection is.
 * `TauCeti.BalancedProduct.contMDiff_orbitProj_rightTranslation`: the projection onto `Z ⧸ K` is
@@ -93,6 +95,8 @@ compared with reduction at zero of the shifted moment map on the product with th
   `[g, z] ↦ (g • ι z, g K)` is smooth.
 * `TauCeti.BalancedProduct.contMDiff_iff_liftProjRightTranslation_comp`: a map into `G ×_K Z` is
   smooth exactly when its composite with `[g, z] ↦ (g • ι z, g K)` is, for a smooth embedding `ι`.
+* `Subgroup.RightTranslation.fundamentalVectorField_toRightTranslation`: the generators of right
+  translation by `K` are left-invariant vector fields.
 * `TauCeti.BalancedProduct.isManifold_orbitRelQuotient_rightTranslation`,
   `TauCeti.BalancedProduct.isSubmersion_quotientMk_orbitRelQuotient_rightTranslation`: the orbit
   space of `G` is a smooth manifold and the orbit projection is a smooth submersion.
@@ -141,6 +145,29 @@ instance [LieGroup I n G] [ContMDiffSMul IK I n K G] :
   contMDiff_smul := (contMDiff_toRightTranslation n).comp
     (((contMDiff_toRightTranslation_symm n).comp contMDiff_snd).mul
       ((K.contMDiff_subtypeVal_of_contMDiffSMul (I' := IK)).comp contMDiff_fst).inv)
+
+/-- **The generators of right translation.** The fundamental vector field of `ζ ∈ Lie(K)` for the
+action `h • g = g h⁻¹` of `K` on `G` is the left-invariant vector field of `-ζ`, where `ζ` is
+included in the Lie algebra of `G` by the differential of the inclusion `K → G`. -/
+theorem fundamentalVectorField_toRightTranslation [LieGroup I 1 G] [ContMDiffSMul IK I 1 K G]
+    (ζ : GroupLieAlgebra IK K) (g : G) :
+    fundamentalVectorField I ζ (K.toRightTranslation g) =
+      mulInvariantVectorField (-(K.subtype.groupLieAlgebraMap IK I ζ)) g := by
+  have hι : MDifferentiableAt IK I ((↑) : K → G) 1 :=
+    (K.contMDiff_subtypeVal_of_contMDiffSMul (I' := IK) (n := 1)).mdifferentiableAt one_ne_zero
+  have hinv : MDifferentiableAt I I (fun x : G ↦ x⁻¹) ((1 : K) : G) :=
+    (contMDiff_inv I 1).mdifferentiableAt one_ne_zero
+  have hmul : MDifferentiableAt I I (g * ·) ((1 : K) : G)⁻¹ :=
+    (contMDiff_mul_left (I := I) (n := 1)).mdifferentiableAt one_ne_zero
+  -- `K.RightTranslation` is `G` with its manifold structure, and the orbit map `k ↦ k • g = g k⁻¹`
+  -- is the composite of the inclusion, inversion and left multiplication by `g`; `change` passes
+  -- to this composite in `G`, which `rw` cannot do across the type synonym.
+  rw [fundamentalVectorField_apply]
+  change mfderiv IK I ((g * ·) ∘ (fun x : G ↦ x⁻¹) ∘ ((↑) : K → G)) 1 ζ = _
+  rw [mfderiv_comp_apply_of_eq 1 hmul (hinv.comp _ hι) rfl,
+    mfderiv_comp_apply_of_eq 1 hinv hι rfl, OneMemClass.coe_one,
+    GroupLieAlgebra.mfderiv_inv_one_apply, inv_one, mulInvariantVectorField,
+    MonoidHom.groupLieAlgebraMap_apply, Subgroup.coe_subtype]
 
 end Subgroup.RightTranslation
 
@@ -194,6 +221,18 @@ theorem isSubmersion_quotientMk_rightTranslation :
       (Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z))) := by
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
   exact isSubmersion_quotientMk (IK := 𝓘(ℝ, F)) (IP := I) (IZ := IZ)
+
+/-- **The vertical directions of the projection `G × Z → G ×_K Z`** are the orbit directions of
+the action `h • (g, z) = (g h⁻¹, h • z)` of `K`: the kernel of the differential at `x` is the orbit
+tangent space `𝔨 · x`. -/
+theorem ker_mfderiv_quotientMk_rightTranslation (x : K.RightTranslation × Z) :
+    letI := rightTranslationChartedSpace K Z I IZ F
+    (mfderiv (I.prod IZ) 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ))
+      (Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z))) x).ker =
+      (InfinitesimalAction.fundamental 𝓘(ℝ, F) K (I.prod IZ) (K.RightTranslation × Z)).orbitTangent
+        x := by
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  exact ker_mfderiv_quotientMk (IK := 𝓘(ℝ, F)) (IP := I) (IZ := IZ) x
 
 /-- Smoothness descends from `G × Z` to `G ×_K Z`: a map out of the balanced product is `C^m`,
 for `m ≤ ∞`, exactly when its composite with the projection is. -/
