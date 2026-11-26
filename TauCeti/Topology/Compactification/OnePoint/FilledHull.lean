@@ -101,11 +101,8 @@ theorem connectedComponentIn_compl_image_coe {K : Set E} (hK : IsClosed K) {x : 
   have hxS : (x : OnePoint E) ∈ (((↑) : E → OnePoint E) '' K)ᶜ :=
     fun ⟨_, hy, hyx⟩ ↦ hxK (OnePoint.coe_injective hyx ▸ hy)
   refine Subset.antisymm ?_
-    ((isPreconnected_connectedComponentIn.image _
-      OnePoint.continuous_coe.continuousOn).subset_connectedComponentIn
-      (mem_image_of_mem _ (mem_connectedComponentIn hxK))
-      (image_subset_iff.mpr fun y hy ⟨z, hz, hzy⟩ ↦
-        connectedComponentIn_subset _ _ hy (OnePoint.coe_injective hzy ▸ hz)))
+    ((OnePoint.continuous_coe.continuousOn.image_connectedComponentIn_subset hxK).trans
+      (connectedComponentIn_mono _ (image_compl_subset OnePoint.coe_injective)))
   have hU : IsOpen (((↑) : E → OnePoint E) '' connectedComponentIn Kᶜ x) :=
     OnePoint.isOpenEmbedding_coe.isOpenMap _ hK.isOpen_compl.connectedComponentIn
   refine isPreconnected_connectedComponentIn.subset_of_closure_inter_subset hU
