@@ -99,6 +99,18 @@ private theorem frobeniusErrorBracket_core_le {x ε N P m b a k : ℝ}
     have hone : 1 ≤ x ^ (1 / 2 + 13 * ε / 8) := one_le_rpow hx (by linarith)
     linarith
 
+/-- A lower bound `x ^ (-e) * N / c ≤ P` on a count is an upper bound `c * x ^ e` on the
+reciprocal density `N / P`. -/
+private theorem div_le_mul_rpow_of_rpow_neg_mul_div_le {x e c N P : ℝ}
+    (hx : 0 < x) (hc : 0 < c) (hP : 0 < P) (h : x ^ (-e) * N / c ≤ P) :
+    N / P ≤ c * x ^ e := by
+  rw [div_le_iff₀ hP]
+  calc
+    N = x ^ e * (x ^ (-e) * N) := by
+      rw [← mul_assoc, ← rpow_add hx, add_neg_cancel, rpow_zero, one_mul]
+    _ ≤ x ^ e * (P * c) := mul_le_mul_of_nonneg_left ((div_le_iff₀ hc).1 h) (by positivity)
+    _ = c * x ^ e * P := by ring
+
 /-- Absorb the costs of the normalized bracket into a single power of the scale. -/
 private theorem frobeniusErrorBracket_absorb {x C ε Y D B F R : ℝ}
     (hx : 1 ≤ x) (hε : 0 ≤ ε) (hC : 0 ≤ C) (hD₀ : 0 ≤ D) (hD : D ≤ x ^ ε)
@@ -126,11 +138,19 @@ private theorem frobeniusErrorBracket_absorb {x C ε Y D B F R : ℝ}
         (mul_le_mul_of_nonneg_right (by gcongr) (by positivity))
     _ ≤ _ := by linarith
 
-/-- A square-root bound from the error bracket for the averaged Frobenius inequality.
+/-- If `Y` satisfies the error bracket `h` of the averaged Frobenius inequality, then
+`Y ≤ x ^ (1/2 + (C + 3) ε)`: a square-root bound in the scale `x`, up to a loss of
+`x ^ ((C + 3) ε)`.
 
-`P` and `T` are the counts of tops and thick places (before translating), and `N` is the
-ambient group size. The bounds on their densities are `hP` and `hT`. The theorem only uses
-these sizes, so no group structure or integrality of the parameters is required. -/
+The bracket `h` bounds `Y - 4 x ^ (1/2 + ε)`, weighted by the main coefficient
+`P * m * b * (T / N) / 2`, by the costs on its right-hand side, with `x ^ (C * ε)` the power of
+the scale lost in those costs. Here `P` counts the tops, `T` counts the thick set and `N` is the
+ambient group size; `hP` and `hT` bound their densities from below. The chain length `m` lies
+near `x ^ (1/2)` (`hmlo`, `hmhi`), the auxiliary parameter `k` lies between `x * m` and
+`N ^ 2 * x ^ (1/2 - ε)` (`hklo`, `hkhi`), and the scale term `a` is at most `2 * x * b` for its
+positive normalizer `b` (`ha`). The largeness condition `hlarge` absorbs the numerical
+constants into `x ^ (3 ε / 8)`. The theorem only uses these sizes, so no group structure or
+integrality of the parameters is required. -/
 theorem le_rpow_of_frobenius_error_bracket {x C ε N P T m b a k Y : ℝ}
     (hx : 1 ≤ x) (hlarge : 26 ≤ x ^ (3 * ε / 8)) (hC : 0 ≤ C)
     (hN : 0 < N) (hb : 0 < b)
@@ -153,13 +173,11 @@ theorem le_rpow_of_frobenius_error_bracket {x C ε N P T m b a k Y : ℝ}
   have ht : 0 < T := (by positivity : 0 < x ^ (-ε) * N).trans_le hT
   have hm : 0 < m := (rpow_pos_of_pos hx' _).trans_le hmlo
   have hk : 0 < k := (mul_pos hx' hm).trans_le hklo
-  have hP' : N / P ≤ 2 * x ^ (ε / 8) := by
-    rw [neg_div, rpow_neg hx'.le, inv_mul_eq_div, div_div] at hP
-    have hh := (div_le_iff₀ (mul_pos (rpow_pos_of_pos hx' _) (by norm_num : 0 < (2 : ℝ)))).1 hP
-    exact (div_le_iff₀ hp).2 (by linarith)
+  have hP' : N / P ≤ 2 * x ^ (ε / 8) :=
+    div_le_mul_rpow_of_rpow_neg_mul_div_le hx' two_pos hp (by rwa [← neg_div])
   have hT' : N / T ≤ x ^ ε := by
-    rw [rpow_neg hx'.le, inv_mul_eq_div] at hT
-    exact (div_le_iff₀ ht).2 (by linarith [(div_le_iff₀ (rpow_pos_of_pos hx' ε)).1 hT])
+    simpa only [one_mul] using
+      div_le_mul_rpow_of_rpow_neg_mul_div_le hx' one_pos ht (by rwa [div_one])
   have hcore := frobeniusErrorBracket_core_le hx hb.le hmlo hmhi hklo hP' ha
   have hkw : k / N ^ 2 ≤ x ^ (1 / 2 - ε) :=
     (div_le_iff₀ (sq_pos_of_pos hN)).2 (by rwa [mul_comm])
