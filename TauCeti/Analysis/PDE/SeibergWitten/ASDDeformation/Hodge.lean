@@ -89,9 +89,8 @@ theorem asdDeformationFormalAdjoint_comp_asdDeformationOperator :
     neg_neg, map_smul,
     SmoothForm.codifferential_selfDualPart_of_mextDeriv_eq_zero o hclosed,
     smul_smul, SmoothForm.hodgeLaplacian_add_one_add_one (k := 0) (l := 2) o rfl rfl]
-  have hs : √2 * (√2 * (2⁻¹ : ℝ)) = 1 := by
-    nlinarith [Real.sq_sqrt zero_le_two]
-  rw [hs, one_smul, add_comm]
+  rw [← mul_assoc, Real.mul_self_sqrt zero_le_two, mul_inv_cancel₀ two_ne_zero,
+    one_smul, add_comm]
 
 /-- The square `δ₀ δ₀*` is the product Hodge Laplacian on scalar and self-dual forms.
 The order of these two factors agrees with the target of `δ₀`. -/
@@ -112,9 +111,7 @@ theorem asdDeformationOperator_comp_asdDeformationFormalAdjoint :
     rw [asdDeformationFormalAdjoint_apply]
     simp only [map_add, map_neg, map_smul, hdd, neg_zero, zero_add,
       SmoothForm.selfDualPart_mextDeriv_codifferential o p.2.property, smul_smul]
-    have hs : √2 * (√2 * (2⁻¹ : ℝ)) = 1 := by
-      nlinarith [Real.sq_sqrt zero_le_two]
-    rw [hs, one_smul]
+    rw [← mul_assoc, Real.mul_self_sqrt zero_le_two, mul_inv_cancel₀ two_ne_zero, one_smul]
 
 section ClosedManifold
 
