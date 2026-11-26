@@ -53,10 +53,10 @@ for a closed two-form that is nondegenerate at `x₀` alone
 nondegenerate on the whole source of the chart. Such forms arise as restrictions of a closed
 two-form to a slice, for example the restriction of `dα` to a hypersurface transverse to the Reeb
 field of a contact form `α`. Conversely, a two-form pulled back from a constant symplectic form by a
-chart is nondegenerate on the source of the chart, since the differential of the chart is bijective
-there (`TauCeti.SmoothTwoForm.nondegenerate_bilinFormAt_of_darbouxChart`). So for a closed
-two-form, a Darboux chart centred at an interior point `x₀` exists exactly when the form is
-nondegenerate at `x₀`
+chart into any normed space is nondegenerate on the source of the chart, since the differential of
+the chart is bijective there (`TauCeti.SmoothTwoForm.nondegenerate_bilinFormAt_of_darbouxChart`).
+So for a closed two-form, a Darboux chart centred at an interior point `x₀` exists exactly when the
+form is nondegenerate at `x₀`
 (`TauCeti.SmoothTwoForm.exists_darbouxChart_iff_nondegenerate_of_isInteriorPoint`).
 
 ## Main declarations
@@ -214,17 +214,18 @@ end Transport
 
 section Converse
 
-variable {E H M : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E F H M : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 
-/-- **A Darboux chart forces nondegeneracy.** If a `C^n` partial diffeomorphism `chart` into `E`,
-with `n ≠ 0`, pulls a symplectic form `form₀` on `E` back to `form` on its source, then `form` is
-nondegenerate at every point of the source. So a two-form that degenerates at `x` admits no
-Darboux chart around `x`. -/
+/-- **A Darboux chart forces nondegeneracy.** If a `C^n` partial diffeomorphism `chart` into a
+normed space `F`, with `n ≠ 0`, pulls a symplectic form `form₀` on `F` back to `form` on its
+source, then `form` is nondegenerate at every point of the source. So a two-form that degenerates
+at `x` admits no Darboux chart around `x`, whether into the model space or into any other normed
+space such as the standard Euclidean model. -/
 theorem nondegenerate_bilinFormAt_of_darbouxChart {form : SmoothTwoForm I M} {n : WithTop ℕ∞}
-    (hn : n ≠ 0) {chart : PartialDiffeomorph I 𝓘(ℝ, E) M E n} {form₀ : SymplecticForm E}
+    (hn : n ≠ 0) {chart : PartialDiffeomorph I 𝓘(ℝ, F) M F n} {form₀ : SymplecticForm F}
     (hchart : ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
       form.eval₂ x v w = form₀ (mvfderiv I chart x v) (mvfderiv I chart x w))
     {x : M} (hx : x ∈ chart.source) : (form.bilinFormAt x).Nondegenerate := by
