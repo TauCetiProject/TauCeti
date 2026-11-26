@@ -15,6 +15,7 @@ import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Shift
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Function.Floor
+import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
 # The pair of pants and its end charts in real coordinates
@@ -218,6 +219,18 @@ theorem mem_thricePuncturedSphereReal_of_two_le_norm {z : ℝ × ℝ}
 theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
+
+/-- The pair of pants `S = ℂ ∖ {0, 1}` is connected in real coordinates: it is the complement of
+two points in the plane. -/
+theorem isConnected_thricePuncturedSphereReal : IsConnected thricePuncturedSphereReal := by
+  have hS : thricePuncturedSphereReal =
+      ({Complex.equivRealProdCLM 0, Complex.equivRealProdCLM 1} : Set (ℝ × ℝ))ᶜ := by
+    ext z
+    simp [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_eq, Prod.mk_zero_zero]
+  rw [hS]
+  refine (Set.toFinite _).countable.isConnected_compl_of_one_lt_rank ?_
+  rw [rank_prod', Module.rank_self, one_add_one_eq_two]
+  exact Cardinal.one_lt_two
 
 /-- The signed longitudinal coordinate `±s` of the end `q` is continuous in real coordinates away
 from the center of the end. -/
