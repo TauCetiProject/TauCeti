@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.RestrictedRamification.Basic
+import TauCeti.NumberTheory.Cyclotomic.Tower
 import TauCeti.NumberTheory.NumberField.RestrictedRamification.Roots
 
 /-!
@@ -66,13 +67,8 @@ example {y : Ω} (hx : x ^ 2 = -1) (hy : y ^ 2 = 2) (L : IntermediateField ℚ �
   hL.trans (sup_le_maxUnramifiedOutside_two hx hy)
 
 /-- Every element of `ℚ(μ_{2^∞})` lies in a finite level `ℚ(μ_{2^n})`. -/
-example {z : Ω} (hz : z ∈ adjoin ℚ {x : Ω | ∃ n : ℕ, x ^ 2 ^ n = 1}) :
-    ∃ n : ℕ, z ∈ adjoin ℚ {x : Ω | x ^ 2 ^ n = 1} := by
-  classical
-  obtain ⟨T, hT, hzT⟩ := exists_finset_of_mem_adjoin hz
-  choose! m hm using fun t (ht : t ∈ T) ↦ hT ht
-  refine ⟨T.sup m, adjoin.mono ℚ _ _ (fun t ht ↦ ?_) hzT⟩
-  exact orderOf_dvd_iff_pow_eq_one.1
-    ((orderOf_dvd_iff_pow_eq_one.2 (hm t ht)).trans (pow_dvd_pow 2 (Finset.le_sup ht)))
+example {z : Ω} (hz : z ∈ cyclotomicTower 2 ℚ Ω) :
+    ∃ n : ℕ, z ∈ adjoin ℚ {x : Ω | x ^ 2 ^ n = 1} :=
+  mem_cyclotomicTower_iff.1 hz
 
 end TauCeti.Examples.RestrictedRamification
