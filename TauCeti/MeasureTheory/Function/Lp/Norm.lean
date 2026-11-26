@@ -255,26 +255,6 @@ namespace MeasureTheory
 open Filter
 open scoped ENNReal NNReal Topology
 
-/-- The norm of an `Lᵖ` function dominated pointwise by a two-term combination of two other
-`Lᵖ` functions obeys the same bound in norm. -/
-theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alpha]
-    [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedAddCommGroup H] {m : Measure alpha}
-    {q : ℝ≥0∞} [Fact (1 ≤ q)] {f : Lp F q m} {g : Lp G q m} {h : Lp H q m} {a b : ℝ}
-    (ha : 0 ≤ a) (hb : 0 ≤ b)
-    (hle : ∀ᵐ z ∂m, ‖f z‖ ≤ a * ‖g z‖ + b * ‖h z‖) :
-    ‖f‖ ≤ a * ‖g‖ + b * ‖h‖ := by
-  calc ‖f‖ ≤ ‖a • Lp.normLp g + b • Lp.normLp h‖ := by
-        refine Lp.norm_le_norm_of_ae_le ?_
-        filter_upwards [hle, Lp.coeFn_normLp g, Lp.coeFn_normLp h,
-          Lp.coeFn_add (a • Lp.normLp g) (b • Lp.normLp h),
-          Lp.coeFn_smul a (Lp.normLp g), Lp.coeFn_smul b (Lp.normLp h)]
-          with z hz hA hB hadd hsA hsB
-        simp only [hadd, Pi.add_apply, hsA, hsB, Pi.smul_apply, smul_eq_mul, hA, hB]
-        exact hz.trans (Real.le_norm_self _)
-    _ ≤ ‖a • Lp.normLp g‖ + ‖b • Lp.normLp h‖ := norm_add_le _ _
-    _ = a * ‖g‖ + b * ‖h‖ := by
-        simp only [norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb, Lp.norm_normLp]
-
 /-- The norm of an `Lᵖ` function dominated pointwise by a three-term combination of three other
 `Lᵖ` functions obeys the same bound in norm. -/
 theorem Lp.norm_le_add_add_of_ae_norm_le {alpha E F G H : Type*} [MeasurableSpace alpha]
@@ -298,6 +278,17 @@ theorem Lp.norm_le_add_add_of_ae_norm_le {alpha E F G H : Type*} [MeasurableSpac
     _ = a * ‖g‖ + b * ‖h‖ + c * ‖k‖ := by
         simp only [norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb,
           Real.norm_of_nonneg hc, Lp.norm_normLp]
+
+/-- The norm of an `Lᵖ` function dominated pointwise by a two-term combination of two other
+`Lᵖ` functions obeys the same bound in norm. -/
+theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedAddCommGroup H] {m : Measure alpha}
+    {q : ℝ≥0∞} [Fact (1 ≤ q)] {f : Lp F q m} {g : Lp G q m} {h : Lp H q m} {a b : ℝ}
+    (ha : 0 ≤ a) (hb : 0 ≤ b)
+    (hle : ∀ᵐ z ∂m, ‖f z‖ ≤ a * ‖g z‖ + b * ‖h z‖) :
+    ‖f‖ ≤ a * ‖g‖ + b * ‖h‖ := by
+  simpa using Lp.norm_le_add_add_of_ae_norm_le ha hb le_rfl (k := (0 : Lp ℝ q m))
+    (hle.mono fun z hz ↦ by simpa using hz)
 
 /-- The `Lᵖ` norm of a function depends only on its almost everywhere class. -/
 theorem lpNorm_congr_ae {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]

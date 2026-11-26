@@ -25,7 +25,9 @@ reference map `w`, `TauCeti.SymplecticForm.floerSection`, is therefore the quasi
 `(z, y)`, `w` is differentiable, `∂t w` and `J` are bounded, and `J` and `G` are Lipschitz in `y`
 uniformly in `z`, its value at a test section `ξ` is `F(w + ξ) - F(w)` almost everywhere on the
 strip (`TauCeti.SymplecticForm.floerSection_toW1p_ae`).
-It is strictly differentiable, with derivative the linearization
+If moreover `J` and `G` are differentiable in `y`, with bounded, jointly continuous derivatives
+`J'`, `G'` that are uniformly equicontinuous, it is strictly differentiable, with derivative the
+linearization
 `TauCeti.CylinderSobolev.quasilinearLinearization` of these coefficients
 (`TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection`).
 
@@ -57,7 +59,8 @@ sections, and has the same derivative.
 * `TauCeti.SymplecticForm.floerSection_zero`: it vanishes at the reference map.
 * `TauCeti.SymplecticForm.floerSection_toW1p_ae`: under bounds on the coefficients, on the jet of
   a test section `ξ` the Floer section is `F(w + ξ) - F(w)` almost everywhere.
-* `TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection`: the Floer section is strictly
+* `TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection`: for coefficients differentiable in `y`
+  with bounded, continuous, uniformly equicontinuous derivatives, the Floer section is strictly
   differentiable, with derivative the linearization of the Floer coefficients.
 
 ## References

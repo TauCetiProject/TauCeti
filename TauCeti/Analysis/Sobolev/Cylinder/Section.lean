@@ -90,7 +90,8 @@ The analogue for paths on the line, the trajectory section of a vector field, is
 * `TauCeti.CylinderSobolev.quasilinearSection_toW1p_ae`: its value on the jet of a test section.
 * `TauCeti.CylinderSobolev.quasilinearLinearization_apply_ae`: the pointwise formula of the
   linearization.
-* `TauCeti.CylinderSobolev.hasStrictFDerivAt_quasilinearSection`: the section is strictly
+* `TauCeti.CylinderSobolev.hasStrictFDerivAt_quasilinearSection`: for coefficients differentiable
+  in `y` with bounded, continuous, uniformly equicontinuous derivatives, the section is strictly
   differentiable, with derivative the linearization.
 
 ## References
@@ -381,10 +382,10 @@ linear map from `W^{1,p}(ℝ × S¹, V)` to `Lᵖ` sending `h` to the class of
 derivatives of `A`, `G` in the value. The value of `h` enters the term with `ξ₀_t`, which lies
 only in `Lᵖ`, through its continuous representative. When no continuous linear map with this
 pointwise expression exists, the linearization is `0`; under the bounds of
-`TauCeti.CylinderSobolev.quasilinearLinearization_apply_ae` one exists, and it is unique. It is the
-strict derivative of
-`TauCeti.CylinderSobolev.quasilinearSection` at `x₀`
-(`TauCeti.CylinderSobolev.hasStrictFDerivAt_quasilinearSection`). -/
+`TauCeti.CylinderSobolev.quasilinearLinearization_apply_ae` one exists, and it is unique. When
+`A'`, `G'` are the derivatives of `A`, `G` in the value and the continuity, bound and uniform
+equicontinuity hypotheses of `TauCeti.CylinderSobolev.hasStrictFDerivAt_quasilinearSection` hold,
+it is the strict derivative of `TauCeti.CylinderSobolev.quasilinearSection` at `x₀`. -/
 def quasilinearLinearization (A : ℝ × ℝ → V → V →L[ℝ] V)
     (A' : ℝ × ℝ → V → V →L[ℝ] V →L[ℝ] V) (G' : ℝ × ℝ → V → V →L[ℝ] V) (w b : ℝ × ℝ → V)
     (p : ℝ≥0∞) [Fact (1 ≤ p)] (x₀ : W1p V p) : W1p V p →L[ℝ] Lp V p stripMeasure :=
