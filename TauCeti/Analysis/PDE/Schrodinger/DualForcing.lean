@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import TauCeti.Analysis.PDE.Schrodinger.MixedNorm
-public import TauCeti.Analysis.PDE.Schrodinger.WeakSolution
 import TauCeti.Analysis.PDE.Schrodinger.EnergyPair
 import TauCeti.Analysis.PDE.Schrodinger.Endpoint
+import TauCeti.Analysis.PDE.Schrodinger.WeakSolution
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
@@ -70,8 +70,8 @@ continuous on `[0, T₀]` with values in `L²` that satisfies this identity for 
 there
 (`TauCeti.eqOn_schrodingerPropagator_sub_smul_schrodingerRetardedL_of_forall_inner_toLp_eq`), by
 the uniqueness of weak solutions of the free equation tested against Schwartz functions,
-`TauCeti.eqOn_zero_of_forall_inner_toLp_eq`. So the Cauchy problem with forcing in the dual
-Strichartz space is uniquely solvable in `C([0, T₀]; L²)`.
+`TauCeti.eqOn_zero_of_forall_inner_toLp_eq_I_mul_setIntegral_inner_toLp_laplacian`. So the Cauchy
+problem with forcing in the dual Strichartz space is uniquely solvable in `C([0, T₀]; L²)`.
 
 ## Main declarations
 
@@ -690,7 +690,8 @@ theorem eqOn_schrodingerPropagator_sub_smul_schrodingerRetardedL_of_forall_inner
   have hu : Continuous u := (continuous_phasePropagator_apply laplacianSymbol f).sub
     ((schrodingerRetardedL (p₁ : ℝ≥0∞) r₁' (Ioc 0 T) Φ).continuous.const_smul Complex.I)
   -- The difference `v - u` is a weak solution of the free equation with zero initial value.
-  have h0 := eqOn_zero_of_forall_inner_toLp_eq (hv.sub hu.continuousOn) fun φ t ht ↦ by
+  have h0 := eqOn_zero_of_forall_inner_toLp_eq_I_mul_setIntegral_inner_toLp_laplacian
+      (hv.sub hu.continuousOn) fun φ t ht ↦ by
     have hint (g : ℝ → Lp ℂ 2 (volume : Measure E)) (hg : ContinuousOn g (Icc 0 T₀)) :
         IntegrableOn (fun s ↦ ⟪(Δ φ).toLp 2, g s⟫_ℂ) (Ioc 0 t) :=
       ((continuous_const.inner continuous_id).comp_continuousOn

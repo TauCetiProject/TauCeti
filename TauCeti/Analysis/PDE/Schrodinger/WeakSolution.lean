@@ -33,9 +33,10 @@ solution in `C([0, ∞); L²)`: the Cauchy problem is uniquely solvable in the e
 
 Uniqueness needs only Schwartz test functions, and holds on every bounded interval: a function
 continuous on `[0, T]` with values in `L²` that solves the free equation with zero initial value
-against Schwartz functions vanishes there (`TauCeti.eqOn_zero_of_forall_inner_toLp_eq`). This is
-the form used for solutions whose forcing does not take values in `L²`, which can only be paired
-with Schwartz functions.
+against Schwartz functions vanishes there
+(`TauCeti.eqOn_zero_of_forall_inner_toLp_eq_I_mul_setIntegral_inner_toLp_laplacian`). This is the
+form used for solutions whose forcing does not take values in `L²`, which can only be paired with
+Schwartz functions.
 
 ## The argument
 
@@ -68,9 +69,9 @@ applies.
 * `TauCeti.inner_schrodingerDuhamel`: Duhamel's formula satisfies the weak formulation.
 * `TauCeti.inner_toLp_schrodingerDuhamel`: the weak formulation tested against Schwartz functions,
   the Schrödinger equation in the sense of distributions in space.
-* `TauCeti.eqOn_zero_of_forall_inner_toLp_eq`: on a bounded interval `[0, T]`, a continuous weak
-  solution of the free equation with zero initial value, tested against Schwartz functions only,
-  vanishes.
+* `TauCeti.eqOn_zero_of_forall_inner_toLp_eq_I_mul_setIntegral_inner_toLp_laplacian`: on a bounded
+  interval `[0, T]`, a continuous weak solution of the free equation with zero initial value,
+  tested against Schwartz functions only, vanishes.
 
 ## References
 
@@ -258,7 +259,8 @@ Schrödinger equation `i ∂ₜu + Δu = 0` with `u(0) = 0` weakly against Schwa
 Then `u = 0` on `[0, T]`. So a solution of the inhomogeneous equation on `[0, T]` that is
 continuous with values in `L²` is determined by its data and its forcing, through its weak
 formulation against Schwartz functions alone. -/
-theorem eqOn_zero_of_forall_inner_toLp_eq {T : ℝ} {u : ℝ → Lp F 2 (volume : Measure E)}
+theorem eqOn_zero_of_forall_inner_toLp_eq_I_mul_setIntegral_inner_toLp_laplacian {T : ℝ}
+    {u : ℝ → Lp F 2 (volume : Measure E)}
     (hu : ContinuousOn u (Icc 0 T))
     (h : ∀ φ : 𝓢(E, F), ∀ t ∈ Icc 0 T,
       ⟪φ.toLp 2, u t⟫_ℂ = I * ∫ s in Ioc 0 t, ⟪(Δ φ).toLp 2, u s⟫_ℂ) :
