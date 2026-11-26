@@ -244,6 +244,7 @@ noncomputable def leechLattice : IntegralLattice (Fin 24 → ℚ) :=
 
 /-- Gluing the Golay Construction B lattice along the Leech glue subgroup gives the Leech
 lattice, whatever proof of isotropy is supplied. -/
+@[simp]
 theorem ofIsotropicSubgroup_leechShiftSubgroup_eq_leechLattice
     (hH : (constructionBLattice.discriminantQuadraticModule
       isEven_constructionBLattice).IsIsotropic leechShiftSubgroup) :

@@ -58,6 +58,7 @@ theorem isIsotropic_zmultiples_constructionBVectorClass :
       discriminantQuadraticMap_constructionBVectorClass)
 
 /-- **Gluing Golay Construction B along the class of `2 e₀` gives Golay Construction A.** -/
+@[simp]
 theorem ofIsotropicSubgroup_zmultiples_constructionBVectorClass_eq_constructionALattice :
     constructionBLattice.ofIsotropicSubgroup isEven_constructionBLattice
         (AddSubgroup.zmultiples constructionBVectorClass)
