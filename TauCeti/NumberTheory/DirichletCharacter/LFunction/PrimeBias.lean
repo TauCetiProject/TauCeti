@@ -7,9 +7,8 @@ module
 
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.SplitPrimeSum
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Hadamard
-import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.NumberTheory.Chebyshev.Mertens
-import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.DerivBound
 import TauCeti.NumberTheory.PrimeFactors.Bounds
 
 /-!
@@ -68,12 +67,6 @@ open Finset
 
 namespace DirichletCharacter
 
-/-- `log N ≥ 1` for a nonprincipal character of level `N`, since then `N ≥ 3 > e`. -/
-private lemma one_le_log_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 1 ≤ Real.log N := by
-  rw [Real.le_log_iff_exp_le (by exact_mod_cast (NeZero.pos N))]
-  exact Real.exp_one_lt_three.le.trans (mod_cast χ.three_le_level_of_ne_one hχ)
-
 /-- **A real zero leaves few split primes.** There is an absolute constant `A > 0` such that for
 every primitive nonprincipal Dirichlet character `χ` of conductor `N`, every real zero `β > 0` of
 `L(s, χ)` and every `X ≥ e`,
@@ -89,7 +82,7 @@ theorem exists_sum_primesLE_filter_eq_one_log_div_le_of_LFunction_eq_zero :
   set L := Real.log X with hL_def
   have hL : 1 ≤ L := by simpa using Real.log_le_log (Real.exp_pos 1) hX
   have hL0 : 0 < L := one_pos.trans_le hL
-  have hN := one_le_log_level_of_ne_one hne
+  have hN := (one_lt_log_level_of_ne_one hne).le
   have hβ1 : β < 1 := by simpa using χ.re_lt_one_of_LFunction_eq_zero (.inr hne) hzero
   -- the zero side at Landau's point `σ = 1 + 1 / log X`
   have hσ : 1 + L⁻¹ ∈ Set.Icc (1 : ℝ) 2 :=
@@ -130,7 +123,7 @@ theorem exists_log_sub_le_sum_primesLE_filter_eq_neg_one_log_div_of_LFunction_eq
             Real.log p / p := by
   obtain ⟨A, hA, hsplit⟩ := exists_sum_primesLE_filter_eq_one_log_div_le_of_LFunction_eq_zero
   refine ⟨A + (Real.log 4 + 5), by positivity, fun N _ χ hχ hne hquad β hβ hzero X hX ↦ ?_⟩
-  have hN := one_le_log_level_of_ne_one hne
+  have hN := (one_lt_log_level_of_ne_one hne).le
   have hβ1 : β < 1 := by simpa using χ.re_lt_one_of_LFunction_eq_zero (.inr hne) hzero
   have hu : 0 ≤ (1 - β) * Real.log X ^ 2 := mul_nonneg (by linarith) (sq_nonneg _)
   have h1 := hsplit N χ hχ hne β hβ hzero X hX
