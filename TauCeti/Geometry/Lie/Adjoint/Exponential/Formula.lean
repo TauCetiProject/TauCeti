@@ -372,13 +372,15 @@ theorem Ad_lieExp_mem_of_forall_lie_mem [T2Space G]
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   have _ : CompleteSpace (LeftInvariantDerivation I G) := FiniteDimensional.completeSpace ℝ _
   let A := LinearMap.toContinuousLinearMap (LieAlgebra.ad ℝ (LeftInvariantDerivation I G) X)
-  have hA : S ∈ Module.End.invtSubmodule A.toLinearMap := fun Z hZ => by
-    simpa [A, LieAlgebra.ad_apply] using hX Z hZ
-  have h := (A.forall_exp_smul_mem_invtSubmodule_iff S.isClosed_of_finiteDimensional).mpr hA 1 hY
-  rw [one_smul] at h
+  have hA : S ∈ Module.End.invtSubmodule A.toLinearMap :=
+    (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun Z hZ => by
+      simpa only [A, ContinuousLinearMap.coe_coe, LinearMap.coe_toContinuousLinearMap',
+        LieAlgebra.ad_apply] using hX Z hZ
+  have h := (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).1
+    ((A.forall_exp_smul_mem_invtSubmodule_iff S.isClosed_of_finiteDimensional).mpr hA 1) Y hY
   have hAd := LeftInvariantDerivation.Ad_lieExp_apply X Y
   dsimp only at hAd
   rw [hAd]
-  exact h
+  simpa only [one_smul, ContinuousLinearMap.coe_coe] using h
 
 end TauCeti.Lie
