@@ -256,11 +256,7 @@ tend to `0` in `L¹` on each compact subset of `U`. Then `c₁, …, c_m` are th
 functions of multisets `R₀ z` of `m` points, the roots of `Wᵐ - c₁(z) W^(m-1) + ⋯ + (-1)ᵐ c_m(z)`,
 and they solve the equation with zero remainder in the sense of distributions on `U`:
 
-`\bar∂ c_j + j ν₀ c_j + μ₀ ∑_{V ∈ R₀} \bar V e_{j-1}(R₀ ∖ V) = 0`.
-
-The zeroth-order terms converge locally uniformly, by continuity of the roots of a monic polynomial
-in its coefficients (`Sym.continuous_ofEsymm`), and the weak equation passes to the limit
-(`TauCeti.HasWeakConjWirtingerDerivOn.of_tendsto_setLIntegral_enorm_sub`). -/
+`\bar∂ c_j + j ν₀ c_j + μ₀ ∑_{V ∈ R₀} \bar V e_{j-1}(R₀ ∖ V) = 0`. -/
 theorem exists_esymm_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn {m : ℕ}
     {U : Opens ℂ} {b : ℕ → ℕ → ℂ → ℂ} {R : ℕ → ℂ → Multiset ℂ} {ν μ : ℕ → ℂ → ℂ →L⋆[ℂ] ℂ}
     {c : ℕ → ℂ → ℂ} {ν₀ μ₀ : ℂ → ℂ →L⋆[ℂ] ℂ}

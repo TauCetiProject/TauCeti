@@ -242,10 +242,8 @@ theorem HasWeakConjWirtingerDerivOn.ae_eq {k : ℂ → F}
 
 /-- **Weak `\bar∂` equations pass to `L¹_loc` limits.** If `\bar∂ uᵢ = gᵢ` weakly on `Ω`, and on
 every compact subset of `Ω` the maps `uᵢ` and `gᵢ` converge in `L¹` to `w` and `w'`, locally
-integrable on `Ω`, then `\bar∂ w = w'` weakly on `Ω`. A test function and its derivatives are
-bounded and vanish off its compact support, so the integrals of the defining identity converge.
-The `L¹` distance is a lower Lebesgue integral, so that no integrability of the differences is
-needed. -/
+integrable on `Ω`, then `\bar∂ w = w'` weakly on `Ω`. The `L¹` distances are lower Lebesgue
+integrals, so the differences need not be integrable. -/
 theorem HasWeakConjWirtingerDerivOn.of_tendsto_setLIntegral_enorm_sub {ι : Type*}
     {l : Filter ι} [l.NeBot] {u g : ι → ℂ → F} {w w' : ℂ → F}
     (h : ∀ i, HasWeakConjWirtingerDerivOn μ Ω (u i) (g i))

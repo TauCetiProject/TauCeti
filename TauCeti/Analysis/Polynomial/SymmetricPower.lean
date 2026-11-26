@@ -193,9 +193,7 @@ theorem continuous_esymm {R : Type*} [CommSemiring R] [TopologicalSpace R]
   exact MvPolynomial.continuous_eval _
 
 /-- For a continuous weight `f`, the sum `∑_{w ∈ s} f(w) e_k(s ∖ w)` over the points of an
-unordered tuple `s` depends continuously on `s`: by `Multiset.sum_map_mul_esymm_erase` it is a
-polynomial in the elementary symmetric functions of `s` and the weighted power sums
-`∑_{w ∈ s} wⁱ f(w)`. -/
+unordered tuple `s` depends continuously on `s`. -/
 @[continuity, fun_prop]
 theorem continuous_sum_map_mul_esymm_erase {R : Type*} [CommRing R] [DecidableEq R]
     [TopologicalSpace R] [IsTopologicalRing R] {n : ℕ} {f : R → R} (hf : Continuous f) (k : ℕ) :
