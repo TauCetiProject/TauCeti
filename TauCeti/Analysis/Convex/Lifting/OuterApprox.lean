@@ -90,6 +90,9 @@ and heights may lie on the boundary of the domains. Only the full-space comparis
 * `TauCeti.ConvexLifting.fst_image_sharedOuterApproxOn_eq_directOuterApprox` and
   `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_eq_directOuterApprox`: the two inclusions
   combined into an equality.
+* `TauCeti.ConvexLifting.mem_sharedOuterApprox_sum_coord_iff`: with at least one anchor, for the
+  outer sum, membership in the shared approximation is membership in the shared support rows
+  together with the height condition `z.2 ∈ E`.
 * `TauCeti.ConvexLifting.sharedOuterApprox_univ_sum_coord_eq_sharedRows`,
   `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_univ_sum_coord`,
   `TauCeti.ConvexLifting.fst_image_sharedOuterApprox_univ_sum_coord_eq_forall` and

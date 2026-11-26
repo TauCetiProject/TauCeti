@@ -344,9 +344,9 @@ theorem directOuterApprox_sq_sum_one_neg_one_eq_fst_image_independentRows :
     componentRow_sq_one_neg_one]
 
 /-- Shared heights at the anchors `(1, 1)` and `(-1, -1)` with budget `1/2` enforce every mixed
-choice of anchors: the corner `(1, -1/2)`, which satisfies both same-anchor sums, violates the
+choice of anchors: the point `(1, -1/2)`, which satisfies both same-anchor sums, violates the
 choice of `(1, 1)` in the first coordinate and `(-1, -1)` in the second. -/
-theorem mem_directOuterApprox_and_not_mem_fst_image_sharedOuterApprox_sq_sum_one_neg_one :
+theorem mem_directOuterApprox_and_notMem_fst_image_sharedOuterApprox_sq_sum_one_neg_one :
     ![1, -1 / 2] ∈ directOuterApprox (Icc (-1) 1) (fun (x : Fin 2 → ℝ) j ↦ x j ^ 2)
         (fun y ↦ ∑ j, y j) ![1, -1] (fun i ↦ mul ℝ _ (2 * ![1, -1] i)) (fun _ ↦ ∑ j, proj j)
         (1 / 2) ∧
