@@ -33,7 +33,9 @@ This file develops the geometry of `orderedSimplex d` and `orderedCone d`:
   `x_i = 2 (i + 1) / ((d + 2)(d + 1))`, and uniqueness of within-derivatives;
 * `chartToSimplex`, `orderedSimplexLift`, `orderedConeProject`, and positive-ray equivalence;
 * identification of `Submodule.span ℝ (orderedCone d)` with the sum hyperplane and its basis
-  `e_j + e_{d+1}` (`orderedConeSpanBasis`).
+  `e_j + e_{d+1}` (`orderedConeSpanBasis`);
+* the open strictly increasing positive subcone `strictOrderedCone d` and membership of the lifted
+  interior point.
 
 ## References
 
@@ -555,5 +557,55 @@ def orderedConeSpanBasis (d : ℕ) :
 theorem coe_orderedConeSpanBasis_apply (d : ℕ) (j : Fin (d + 1)) :
     ((orderedConeSpanBasis d j : Submodule.span ℝ (orderedCone d)) : Fin (d + 2) → ℝ) =
       orderedConeBasisVec d j := by simp [orderedConeSpanBasis]
+
+/-! ### The open strictly increasing subcone -/
+
+/-- The open positive strictly increasing subcone of `orderedConeHyperplane d`: positive strictly
+increasing homogeneous tuples satisfying `y₀ + ⋯ + y_d = y_{d+1}`. -/
+def strictOrderedCone (d : ℕ) : Set (Fin (d + 2) → ℝ) :=
+  {y | (∀ i, 0 < y i) ∧ StrictMono y ∧ y ∈ orderedConeHyperplane d}
+
+/-- Membership in `strictOrderedCone d` unfolded. -/
+@[simp]
+theorem mem_strictOrderedCone_iff {d : ℕ} {y : Fin (d + 2) → ℝ} :
+    y ∈ strictOrderedCone d ↔
+      (∀ i, 0 < y i) ∧ StrictMono y ∧ y ∈ orderedConeHyperplane d := Iff.rfl
+
+/-- Every point of `strictOrderedCone d` belongs to `orderedCone d`. -/
+theorem strictOrderedCone_subset_orderedCone (d : ℕ) :
+    strictOrderedCone d ⊆ orderedCone d := fun y ⟨hypos, hystrict, hyhyp⟩ => by
+  rw [mem_orderedCone_iff]
+  refine ⟨fun h0 => ?_, fun i => (hypos i).le, hystrict.monotone,
+    mem_orderedConeHyperplane_iff.mp hyhyp⟩
+  linarith [hypos 0, show y 0 = 0 from congrFun h0 0]
+
+/-- For `1 ≤ d`, `orderedSimplexLift (orderedSimplexInteriorPoint d)` belongs to
+`strictOrderedCone d`. -/
+theorem orderedSimplexLift_interiorPoint_mem_strictOrderedCone {d : ℕ} (hd : 1 ≤ d) :
+    orderedSimplexLift (orderedSimplexInteriorPoint d) ∈ strictOrderedCone d := by
+  have hlast_lt : 1 - ∑ k : Fin d, orderedSimplexInteriorPoint d k < 1 := by
+    rw [one_sub_sum_orderedSimplexInteriorPoint, div_lt_iff₀ (by positivity)]
+    linarith [show (1 : ℝ) ≤ d from Nat.one_le_cast.mpr hd]
+  have hcs_pos : ∀ k : Fin (d + 1), 0 < chartToSimplex (orderedSimplexInteriorPoint d) k :=
+    Fin.lastCases (by
+        rw [chartToSimplex_last, one_sub_sum_orderedSimplexInteriorPoint]; positivity)
+      fun i => by simpa using orderedSimplexInteriorPoint_pos i
+  have hcs_mono : StrictMono (chartToSimplex (orderedSimplexInteriorPoint d)) := by
+    intro a b hab
+    induction a using Fin.lastCases with
+    | last => exact absurd hab (not_lt_of_ge (Fin.le_last b))
+    | cast i =>
+      induction b using Fin.lastCases with
+      | last => simpa using orderedSimplexInteriorPoint_lt_one_sub_sum i
+      | cast j =>
+        simpa using strictMono_orderedSimplexInteriorPoint d (Fin.castSucc_lt_castSucc_iff.mp hab)
+  refine ⟨Fin.lastCases (by simp) fun k => by simpa using hcs_pos k, fun a b hab => ?_,
+    mem_orderedConeHyperplane_iff.mpr (sum_castSucc_orderedSimplexLift _)⟩
+  induction a using Fin.lastCases with
+  | last => exact absurd hab (not_lt_of_ge (Fin.le_last b))
+  | cast a' =>
+    induction b using Fin.lastCases with
+    | last => simpa using (hcs_mono.monotone (Fin.le_last a')).trans_lt (by simpa using hlast_lt)
+    | cast b' => simpa using hcs_mono (Fin.castSucc_lt_castSucc_iff.mp hab)
 
 end TauCeti.MarkoffHurwitz

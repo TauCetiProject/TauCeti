@@ -280,12 +280,12 @@ def wordCount (d : ℕ) (x : Fin d → ℝ) (r : ℝ) : ℕ :=
 theorem wordCount_apply (d : ℕ) (x : Fin d → ℝ) (r : ℝ) :
     wordCount d x r = {u : List (ℕ × Fin d) | wordDelay u x ≤ r}.ncard := (rfl)
 
-/-- Scaling invariance of `wordCount` on `orderedCone d`: positive collinearity preserves the
-projected renewal count. -/
-theorem wordCount_orderedConeProject_smul (d : ℕ) {c : ℝ} (hc : 0 < c) (y : Fin (d + 2) → ℝ)
+/-- Scaling invariance of `wordCount` under `orderedConeProject`: nonzero scalar multiplication on
+`y` preserves the projected renewal count. -/
+theorem wordCount_orderedConeProject_smul (d : ℕ) {c : ℝ} (hc : c ≠ 0) (y : Fin (d + 2) → ℝ)
     (r : ℝ) :
     wordCount d (orderedConeProject (c • y)) r = wordCount d (orderedConeProject y) r := by
-  rw [orderedConeProject_smul hc.ne']
+  rw [orderedConeProject_smul hc]
 
 /-- For `r < 0` and `x ∈ orderedSimplex d`, `wordCount d x r = 0`. -/
 theorem wordCount_eq_zero_of_lt_zero {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
@@ -446,126 +446,6 @@ theorem wordCount_renewal {d : ℕ} {x : Fin d → ℝ} (hx : x ∈ orderedSimpl
 
 /-! ### Freeness of the accelerated Markoff–Hurwitz semigroup `Γ'` -/
 
-/-- The open positive strictly increasing subcone of `orderedConeHyperplane d`: positive strictly
-increasing homogeneous tuples satisfying `y₀ + ⋯ + y_d = y_{d+1}`. -/
-def strictOrderedCone (d : ℕ) : Set (Fin (d + 2) → ℝ) :=
-  {y | (∀ i, 0 < y i) ∧ StrictMono y ∧ y ∈ orderedConeHyperplane d}
-
-/-- Membership in `strictOrderedCone d` unfolded. -/
-@[simp]
-theorem mem_strictOrderedCone_iff {d : ℕ} {y : Fin (d + 2) → ℝ} :
-    y ∈ strictOrderedCone d ↔
-      (∀ i, 0 < y i) ∧ StrictMono y ∧ y ∈ orderedConeHyperplane d := Iff.rfl
-
-/-- Every point of `strictOrderedCone d` belongs to `orderedCone d`. -/
-theorem strictOrderedCone_subset_orderedCone (d : ℕ) :
-    strictOrderedCone d ⊆ orderedCone d := fun y ⟨hypos, hystrict, hyhyp⟩ => by
-  rw [mem_orderedCone_iff]
-  refine ⟨fun h0 => ?_, fun i => (hypos i).le, hystrict.monotone,
-    mem_orderedConeHyperplane_iff.mp hyhyp⟩
-  linarith [hypos 0, show y 0 = 0 from congrFun h0 0]
-
-/-- For `1 ≤ d`, `orderedSimplexLift (orderedSimplexInteriorPoint d)` belongs to
-`strictOrderedCone d`. -/
-theorem orderedSimplexLift_interiorPoint_mem_strictOrderedCone {d : ℕ} (hd : 1 ≤ d) :
-    orderedSimplexLift (orderedSimplexInteriorPoint d) ∈ strictOrderedCone d := by
-  have hlast_lt : 1 - ∑ k : Fin d, orderedSimplexInteriorPoint d k < 1 := by
-    rw [one_sub_sum_orderedSimplexInteriorPoint, div_lt_iff₀ (by positivity)]
-    linarith [show (1 : ℝ) ≤ d from Nat.one_le_cast.mpr hd]
-  have hcs_pos : ∀ k : Fin (d + 1), 0 < chartToSimplex (orderedSimplexInteriorPoint d) k :=
-    Fin.lastCases (by
-        rw [chartToSimplex_last, one_sub_sum_orderedSimplexInteriorPoint]; positivity)
-      fun i => by simpa using orderedSimplexInteriorPoint_pos i
-  have hcs_mono : StrictMono (chartToSimplex (orderedSimplexInteriorPoint d)) := by
-    intro a b hab
-    induction a using Fin.lastCases with
-    | last => exact absurd hab (not_lt_of_ge (Fin.le_last b))
-    | cast i =>
-      induction b using Fin.lastCases with
-      | last => simpa using orderedSimplexInteriorPoint_lt_one_sub_sum i
-      | cast j =>
-        simpa using strictMono_orderedSimplexInteriorPoint d (Fin.castSucc_lt_castSucc_iff.mp hab)
-  refine ⟨Fin.lastCases (by simp) fun k => by simpa using hcs_pos k, fun a b hab => ?_,
-    mem_orderedConeHyperplane_iff.mpr (sum_castSucc_orderedSimplexLift _)⟩
-  induction a using Fin.lastCases with
-  | last => exact absurd hab (not_lt_of_ge (Fin.le_last b))
-  | cast a' =>
-    induction b using Fin.lastCases with
-    | last => simpa using (hcs_mono.monotone (Fin.le_last a')).trans_lt (by simpa using hlast_lt)
-    | cast b' => simpa using hcs_mono (Fin.castSucc_lt_castSucc_iff.mp hab)
-
-/-- Every unaccelerated generator `hurwitzGen j` strictly increases `y_{d+1}` on
-`strictOrderedCone d`. -/
-theorem last_lt_hurwitzGen_last_of_mem_strictOrderedCone {d : ℕ} (j : Fin (d + 1))
-    {y : Fin (d + 2) → ℝ} (hy : y ∈ strictOrderedCone d) :
-    y (Fin.last (d + 1)) < hurwitzGen j y (Fin.last (d + 1)) := by
-  rw [hurwitzGen_last_of_mem_hyperplane j hy.2.2]
-  linarith [hy.2.1 (Fin.castSucc_lt_last j)]
-
-/-- For `1 ≤ d`, every unaccelerated generator `hurwitzGen j` maps `strictOrderedCone d` into
-itself. -/
-theorem hurwitzGen_mem_strictOrderedCone {d : ℕ} (hd : 1 ≤ d) (j : Fin (d + 1))
-    {y : Fin (d + 2) → ℝ} (hy : y ∈ strictOrderedCone d) :
-    hurwitzGen j y ∈ strictOrderedCone d := by
-  have hlast_gt := last_lt_hurwitzGen_last_of_mem_strictOrderedCone j hy
-  rcases hy with ⟨hypos, hystrict, _⟩
-  refine ⟨Fin.lastCases (lt_trans (hypos _) hlast_gt) fun k => by simp [hypos], fun a b hab => ?_,
-    hurwitzGen_mem_hyperplane j y⟩
-  induction a using Fin.lastCases with
-  | last => exact absurd hab (not_lt_of_ge (Fin.le_last b))
-  | cast k =>
-    induction b using Fin.lastCases with
-    | cast b' =>
-      simpa using hystrict ((Fin.strictMono_succAbove (Fin.castSucc j))
-        (Fin.castSucc_lt_castSucc_iff.mp hab))
-    | last =>
-      obtain ⟨m, hmk⟩ : ∃ m : Fin (d + 1), m ≠ k :=
-        if hk0 : k = 0 then ⟨Fin.last d, by rw [hk0, ne_eq, Fin.ext_iff]; simp; omega⟩
-        else ⟨0, Ne.symm hk0⟩
-      have hle := Finset.sum_le_sum_of_subset_of_nonneg
-        (f := fun r : Fin (d + 1) => y ((Fin.castSucc j).succAbove r))
-        (Finset.subset_univ ({k, m} : Finset (Fin (d + 1)))) fun r _ _ => (hypos _).le
-      rw [Finset.sum_pair hmk.symm] at hle
-      rw [hurwitzGen_castSucc, hurwitzGen_last]
-      linarith [hypos ((Fin.castSucc j).succAbove m)]
-
-/-- One-step unique recovery on `strictOrderedCone d`: if `hurwitzGen j₁ y₁ = hurwitzGen j₂ y₂`
-for `y₁, y₂ ∈ strictOrderedCone d`, then `j₁ = j₂` and `y₁ = y₂`
-(Gamburd–Magee–Ronan 2019, p. 756, footnote 5). -/
-theorem hurwitzGen_inj_on_strictOrderedCone {d : ℕ} {j₁ j₂ : Fin (d + 1)}
-    {y₁ y₂ : Fin (d + 2) → ℝ} (hy₁ : y₁ ∈ strictOrderedCone d) (hy₂ : y₂ ∈ strictOrderedCone d)
-    (heq : hurwitzGen j₁ y₁ = hurwitzGen j₂ y₂) : j₁ = j₂ ∧ y₁ = y₂ := by
-  have hlast : y₁ (Fin.last (d + 1)) = y₂ (Fin.last (d + 1)) := by
-    simpa using congrFun heq (Fin.castSucc (Fin.last d))
-  have hdel : y₁ (Fin.castSucc j₁) = y₂ (Fin.castSucc j₂) := by
-    have hlast_img := congrFun heq (Fin.last (d + 1))
-    rw [hurwitzGen_last_of_mem_hyperplane j₁ hy₁.2.2,
-      hurwitzGen_last_of_mem_hyperplane j₂ hy₂.2.2, hlast] at hlast_img
-    linarith
-  have hnotlt : ∀ {p q : Fin (d + 1)} {u v : Fin (d + 2) → ℝ},
-      u ∈ strictOrderedCone d → v ∈ strictOrderedCone d →
-      hurwitzGen p u = hurwitzGen q v → u (Fin.castSucc p) = v (Fin.castSucc q) → ¬ p < q := by
-    intro p q u v hu hv hpq hdel_uv hlt
-    have hp_ne : p ≠ Fin.last d := ne_of_lt (lt_of_lt_of_le hlt (Fin.le_last q))
-    let i : Fin d := p.castPred hp_ne
-    have hi : Fin.castSucc i = p := Fin.castSucc_castPred p hp_ne
-    have himg := congrFun hpq (Fin.castSucc (Fin.castSucc i))
-    rw [hurwitzGen_castSucc_castSucc, hurwitzGen_castSucc_castSucc,
-      Fin.succAbove_of_le_castSucc p i (le_of_eq hi.symm),
-      Fin.succAbove_of_castSucc_lt q i (hi.symm ▸ hlt), hi] at himg
-    linarith [hu.2.1 (Fin.castSucc_lt_castSucc_iff.mpr (hi ▸ Fin.castSucc_lt_succ)),
-      hv.2.1 (Fin.castSucc_lt_castSucc_iff.mpr hlt)]
-  obtain rfl : j₁ = j₂ := by
-    rcases lt_trichotomy j₁ j₂ with hlt | rfl | hgt
-    · exact absurd hlt (hnotlt hy₁ hy₂ heq hdel)
-    · rfl
-    · exact absurd hgt (hnotlt hy₂ hy₁ heq.symm hdel.symm)
-  refine ⟨rfl, funext fun m => ?_⟩
-  by_cases hm : m = Fin.castSucc j₁
-  · rwa [hm]
-  · obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq hm
-    simpa using congrFun heq (Fin.castSucc k)
-
 /-- Unaccelerated chronological word action on `Fin (d + 2) → ℝ` over `Fin (d + 1)`. -/
 def unaccelWordLinearMap {d : ℕ} :
     List (Fin (d + 1)) → ((Fin (d + 2) → ℝ) →ₗ[ℝ] (Fin (d + 2) → ℝ))
@@ -663,9 +543,8 @@ theorem unaccelWordLinearMap_expandWord {d : ℕ} (u : List (ℕ × Fin d)) :
   induction u with
   | nil => rfl
   | cons a u ih =>
-    change unaccelWordLinearMap ((Fin.castSucc a.2 :: List.replicate a.1 (Fin.last d)) ++
-      expandWord u) = _
-    rw [unaccelWordLinearMap_append, ih, unaccelWordLinearMap_cons, hrep, wordLinearMap_cons]
+    rw [expandWord_cons, ← List.cons_append, unaccelWordLinearMap_append, ih,
+      unaccelWordLinearMap_cons, hrep, wordLinearMap_cons]
     ext y m; simp [branchLinearMap_apply]
 
 /-- `expandWord` is injective: the maximal runs of `Fin.last d` uniquely delimit accelerated

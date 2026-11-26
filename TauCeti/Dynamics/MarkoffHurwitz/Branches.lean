@@ -37,7 +37,8 @@ whose projective action on `orderedSimplex d` has denominator
 
 This file establishes the algebraic and analytic API of the accelerated branches:
 * preservation of `orderedConeHyperplane d` and `orderedCone d` by `hurwitzGen` and
-  `branchLinearMap`, together with the homogeneous cocycle relation;
+  `branchLinearMap`, preservation and one-step unique recovery of `hurwitzGen` on
+  `strictOrderedCone d`, and the homogeneous cocycle relation;
 * invariance `MapsTo (branchMap a) (orderedSimplex d) (orderedSimplex d)` and smoothness
   `ContDiffOn ℝ n` of `branchMap a` and `branchDelay a` on `{x | 0 < branchDenom a x}`;
 * sharp enclosures `(A + 3) / 2 ≤ branchDenom a x ≤ A + 2` and
@@ -51,7 +52,8 @@ This file establishes the algebraic and analytic API of the accelerated branches
 ## References
 
 * A. Gamburd, M. Magee, and R. Ronan, *An asymptotic formula for integer points on
-  Markoff–Hurwitz varieties*, Annals of Mathematics 190 (2019), 751–809, Lemma 33, (4.3)–(4.7).
+  Markoff–Hurwitz varieties*, Annals of Mathematics 190 (2019), 751–809, p. 756 (footnote 5),
+  Lemma 33, and (4.3)–(4.7).
 -/
 
 public noncomputable section
@@ -132,6 +134,82 @@ theorem hurwitzGen_mem_orderedCone {d : ℕ} (j : Fin (d + 1)) {y : Fin (d + 2) 
     rw [hurwitzGen_castSucc, hurwitzGen_castSucc]
     exact hy.2.2.1 ((Fin.strictMono_succAbove (Fin.castSucc j)).monotone
       (Fin.castSucc_le_castSucc_iff.mp hab))
+
+/-- Every unaccelerated generator `hurwitzGen j` strictly increases `y_{d+1}` on
+`strictOrderedCone d`. -/
+theorem last_lt_hurwitzGen_last_of_mem_strictOrderedCone {d : ℕ} (j : Fin (d + 1))
+    {y : Fin (d + 2) → ℝ} (hy : y ∈ strictOrderedCone d) :
+    y (Fin.last (d + 1)) < hurwitzGen j y (Fin.last (d + 1)) := by
+  rw [mem_strictOrderedCone_iff] at hy
+  rw [hurwitzGen_last_of_mem_hyperplane j hy.2.2]
+  linarith [hy.2.1 (Fin.castSucc_lt_last j)]
+
+/-- For `1 ≤ d`, every unaccelerated generator `hurwitzGen j` maps `strictOrderedCone d` into
+itself. -/
+theorem hurwitzGen_mem_strictOrderedCone {d : ℕ} (hd : 1 ≤ d) (j : Fin (d + 1))
+    {y : Fin (d + 2) → ℝ} (hy : y ∈ strictOrderedCone d) :
+    hurwitzGen j y ∈ strictOrderedCone d := by
+  have hlast_gt := last_lt_hurwitzGen_last_of_mem_strictOrderedCone j hy
+  rw [mem_strictOrderedCone_iff] at hy ⊢
+  rcases hy with ⟨hypos, hystrict, _⟩
+  refine ⟨Fin.lastCases (lt_trans (hypos _) hlast_gt) fun k => by simp [hypos], fun a b hab => ?_,
+    hurwitzGen_mem_hyperplane j y⟩
+  induction a using Fin.lastCases with
+  | last => exact absurd hab (not_lt_of_ge (Fin.le_last b))
+  | cast k =>
+    induction b using Fin.lastCases with
+    | cast b' =>
+      simpa using hystrict ((Fin.strictMono_succAbove (Fin.castSucc j))
+        (Fin.castSucc_lt_castSucc_iff.mp hab))
+    | last =>
+      obtain ⟨m, hmk⟩ : ∃ m : Fin (d + 1), m ≠ k :=
+        if hk0 : k = 0 then ⟨Fin.last d, by rw [hk0, ne_eq, Fin.ext_iff]; simp; omega⟩
+        else ⟨0, Ne.symm hk0⟩
+      have hle := Finset.sum_le_sum_of_subset_of_nonneg
+        (f := fun r : Fin (d + 1) => y ((Fin.castSucc j).succAbove r))
+        (Finset.subset_univ ({k, m} : Finset (Fin (d + 1)))) fun r _ _ => (hypos _).le
+      rw [Finset.sum_pair hmk.symm] at hle
+      rw [hurwitzGen_castSucc, hurwitzGen_last]
+      linarith [hypos ((Fin.castSucc j).succAbove m)]
+
+/-- One-step unique recovery on `strictOrderedCone d`: if `hurwitzGen j₁ y₁ = hurwitzGen j₂ y₂`
+for `y₁, y₂ ∈ strictOrderedCone d`, then `j₁ = j₂` and `y₁ = y₂`
+(Gamburd–Magee–Ronan 2019, p. 756, footnote 5). -/
+theorem hurwitzGen_inj_on_strictOrderedCone {d : ℕ} {j₁ j₂ : Fin (d + 1)}
+    {y₁ y₂ : Fin (d + 2) → ℝ} (hy₁ : y₁ ∈ strictOrderedCone d) (hy₂ : y₂ ∈ strictOrderedCone d)
+    (heq : hurwitzGen j₁ y₁ = hurwitzGen j₂ y₂) : j₁ = j₂ ∧ y₁ = y₂ := by
+  have hlast : y₁ (Fin.last (d + 1)) = y₂ (Fin.last (d + 1)) := by
+    simpa using congrFun heq (Fin.castSucc (Fin.last d))
+  have hdel : y₁ (Fin.castSucc j₁) = y₂ (Fin.castSucc j₂) := by
+    have hlast_img := congrFun heq (Fin.last (d + 1))
+    rw [hurwitzGen_last_of_mem_hyperplane j₁ (mem_strictOrderedCone_iff.mp hy₁).2.2,
+      hurwitzGen_last_of_mem_hyperplane j₂ (mem_strictOrderedCone_iff.mp hy₂).2.2, hlast]
+      at hlast_img
+    linarith
+  have hnotlt : ∀ {p q : Fin (d + 1)} {u v : Fin (d + 2) → ℝ},
+      u ∈ strictOrderedCone d → v ∈ strictOrderedCone d →
+      hurwitzGen p u = hurwitzGen q v → u (Fin.castSucc p) = v (Fin.castSucc q) → ¬ p < q := by
+    intro p q u v hu hv hpq hdel_uv hlt
+    rw [mem_strictOrderedCone_iff] at hu hv
+    have hp_ne : p ≠ Fin.last d := ne_of_lt (lt_of_lt_of_le hlt (Fin.le_last q))
+    let i : Fin d := p.castPred hp_ne
+    have hi : Fin.castSucc i = p := Fin.castSucc_castPred p hp_ne
+    have himg := congrFun hpq (Fin.castSucc (Fin.castSucc i))
+    rw [hurwitzGen_castSucc_castSucc, hurwitzGen_castSucc_castSucc,
+      Fin.succAbove_of_le_castSucc p i (le_of_eq hi.symm),
+      Fin.succAbove_of_castSucc_lt q i (hi.symm ▸ hlt), hi] at himg
+    linarith [hu.2.1 (Fin.castSucc_lt_castSucc_iff.mpr (hi ▸ Fin.castSucc_lt_succ)),
+      hv.2.1 (Fin.castSucc_lt_castSucc_iff.mpr hlt)]
+  obtain rfl : j₁ = j₂ := by
+    rcases lt_trichotomy j₁ j₂ with hlt | rfl | hgt
+    · exact absurd hlt (hnotlt hy₁ hy₂ heq hdel)
+    · rfl
+    · exact absurd hgt (hnotlt hy₂ hy₁ heq.symm hdel.symm)
+  refine ⟨rfl, funext fun m => ?_⟩
+  by_cases hm : m = Fin.castSucc j₁
+  · rwa [hm]
+  · obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq hm
+    simpa using congrFun heq (Fin.castSucc k)
 
 /-- Iterating the top generator `hurwitzGen (Fin.last d)` `A` times on `orderedConeHyperplane d`
 fixes the first `d` coordinates and advances the last two by arithmetic progression with step
