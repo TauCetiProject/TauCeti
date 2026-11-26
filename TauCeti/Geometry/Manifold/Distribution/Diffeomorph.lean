@@ -256,12 +256,12 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 /-- **Pullbacks of subspaces compose.** If `D x` is the preimage of `D' (f x)` under `df_x` and
 `D' (f x)` is the preimage of `D'' (g (f x))` under `dg_(f x)`, then `D x` is the preimage of
 `D'' (g (f x))` under `d(g ∘ f)_x`. -/
-theorem eq_comap_mfderiv_comp (hf : IsLocalDiffeomorphAt I J n f x)
-    (hg : IsLocalDiffeomorphAt J K n g (f x)) (hn : n ≠ 0)
+theorem _root_.MDifferentiableAt.eq_comap_mfderiv_comp (hf : MDifferentiableAt I J f x)
+    (hg : MDifferentiableAt J K g (f x))
     (hD : D x = (D' (f x)).comap (mfderiv I J f x).toLinearMap)
     (hD' : D' (f x) = (D'' (g (f x))).comap (mfderiv J K g (f x)).toLinearMap) :
     D x = (D'' ((g ∘ f) x)).comap (mfderiv I K (g ∘ f) x).toLinearMap := by
-  rw [hD, hD', mfderiv_comp x (hg.mdifferentiableAt hn) (hf.mdifferentiableAt hn)]
+  rw [hD, hD', mfderiv_comp x hg hf]
   ext v
   simp only [Submodule.mem_comap, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply]
   rfl
@@ -277,7 +277,7 @@ theorem eventually_eq_comap_mfderiv_comp (hf : IsLocalDiffeomorphAt I J n f x)
   filter_upwards [hD, hf.eventually,
     hf.contMDiffAt.continuousAt.tendsto.eventually (hD'.and hg.eventually)]
     with z hDz hfz hgz
-  exact hfz.eq_comap_mfderiv_comp hgz.2 hn hDz hgz.1
+  exact (hfz.mdifferentiableAt hn).eq_comap_mfderiv_comp (hgz.2.mdifferentiableAt hn) hDz hgz.1
 
 /-- The restricted differential of a composite is the composite of the restricted
 differentials. -/
@@ -285,7 +285,8 @@ theorem mfderivRestrictEquiv_trans (hf : IsLocalDiffeomorphAt I J n f x)
     (hg : IsLocalDiffeomorphAt J K n g (f x)) (hn : n ≠ 0)
     (hD : D x = (D' (f x)).comap (mfderiv I J f x).toLinearMap)
     (hD' : D' (f x) = (D'' (g (f x))).comap (mfderiv J K g (f x)).toLinearMap) :
-    (hf.comp (hg := hg)).mfderivRestrictEquiv hn (hf.eq_comap_mfderiv_comp hg hn hD hD') =
+    (hf.comp (hg := hg)).mfderivRestrictEquiv hn
+      ((hf.mdifferentiableAt hn).eq_comap_mfderiv_comp (hg.mdifferentiableAt hn) hD hD') =
       (hf.mfderivRestrictEquiv hn hD).trans (hg.mfderivRestrictEquiv hn hD') := by
   ext u
   rw [coe_mfderivRestrictEquiv_apply, LinearEquiv.trans_apply, coe_mfderivRestrictEquiv_apply,
@@ -298,7 +299,8 @@ theorem mfderivQuotientEquiv_trans (hf : IsLocalDiffeomorphAt I J n f x)
     (hg : IsLocalDiffeomorphAt J K n g (f x)) (hn : n ≠ 0)
     (hD : D x = (D' (f x)).comap (mfderiv I J f x).toLinearMap)
     (hD' : D' (f x) = (D'' (g (f x))).comap (mfderiv J K g (f x)).toLinearMap) :
-    (hf.comp (hg := hg)).mfderivQuotientEquiv hn (hf.eq_comap_mfderiv_comp hg hn hD hD') =
+    (hf.comp (hg := hg)).mfderivQuotientEquiv hn
+      ((hf.mdifferentiableAt hn).eq_comap_mfderiv_comp (hg.mdifferentiableAt hn) hD hD') =
       (hf.mfderivQuotientEquiv hn hD).trans (hg.mfderivQuotientEquiv hn hD') := by
   ext a
   induction a using Submodule.Quotient.induction_on with

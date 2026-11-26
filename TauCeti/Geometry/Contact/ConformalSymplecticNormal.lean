@@ -63,6 +63,9 @@ forms, together with the contact line in which it takes values.
 * H. Geiges, *An Introduction to Contact Topology*, Cambridge Studies in Advanced Mathematics 109
   (2008), Section 2.5 (the conformal symplectic normal bundle and the isotropic neighbourhood
   theorem).
+* S. Courte and S. Guillermou, *Introduction to symplectic and contact geometry*, course notes,
+  Université Grenoble Alpes (2018), Proposition 3.5, p. 35 (the conformal symplectic normal bundle
+  with values in the contact line).
 -/
 
 public section
