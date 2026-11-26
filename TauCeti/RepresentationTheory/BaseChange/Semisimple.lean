@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.BaseChange
 -- Non-public: the semisimplicity of base change for modules over an algebra, and the action of
 -- `L ⊗[k] B` on `L ⊗[k] V`, are used only inside the proof.
 import TauCeti.Algebra.TensorProduct.Module
+import TauCeti.RepresentationTheory.Semisimple.Range
 import TauCeti.RingTheory.TensorProduct.MonoidAlgebra
 import TauCeti.RingTheory.Semisimple.BaseChange
 import TauCeti.RingTheory.SimpleModule.Basic
@@ -71,14 +72,9 @@ scalars to any field extension `L / k`. -/
 instance isSemisimpleRepresentation_baseChange [PerfectField k] [FiniteDimensional k V]
     (ρ : Representation k G V) [ρ.IsSemisimpleRepresentation] :
     (ρ.baseChange L).IsSemisimpleRepresentation := by
-  rw [isSemisimpleRepresentation_iff_isSemisimpleModule_asModule] at *
+  rw [isSemisimpleRepresentation_iff_isSemisimpleModule_asModule]
   set ψ := ρ.asAlgebraHom.rangeRestrict
-  -- `ρ.asModule` is a type synonym for `V`; its `range`- and `L ⊗[k] range`-module structures are
-  -- those of `V`, through which `asModule`'s own actions factor.
-  let : Module ρ.asAlgebraHom.range ρ.asModule := (inferInstance : Module ρ.asAlgebraHom.range V)
-  have : IsSemisimpleModule ρ.asAlgebraHom.range V :=
-    (RingHom.isSemisimpleModule_iff_of_surjective (M := ρ.asModule) ψ.toRingHom
-      (AlgHom.rangeRestrict_surjective _) fun _ _ ↦ rfl).mp ‹_›
+  have := ρ.isSemisimpleModule_range_asAlgebraHom
   let act := TauCeti.BialgebraModule.tensorPairAction k L V (A := L) (B := ρ.asAlgebraHom.range)
   let : Module (L ⊗[k] ρ.asAlgebraHom.range) (L ⊗[k] V) := Module.compHom _ act.toRingHom
   have hss := TauCeti.isSemisimpleModule_tensorProduct_of_perfectField (k := k)

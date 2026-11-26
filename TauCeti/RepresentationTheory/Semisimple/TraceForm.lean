@@ -7,10 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.Semisimple
--- Non-public: the image of the monoid algebra, semisimplicity along a surjection and the
--- nondegeneracy of the trace pairing on a semisimple subalgebra are used only inside the proof.
+-- Non-public: the image algebra and its semisimple module trace pairing are used only in proofs.
 import TauCeti.RepresentationTheory.AsAlgebraHom
-import TauCeti.RingTheory.SimpleModule.Basic
+import TauCeti.RepresentationTheory.Semisimple.Range
 import TauCeti.RingTheory.SimpleModule.Subalgebra
 
 /-!
@@ -50,13 +49,7 @@ theorem eq_zero_of_mem_span_of_forall_trace_mul_eq_zero [CharZero k] [FiniteDime
     (ρ : Representation k G V) [ρ.IsSemisimpleRepresentation] {f : Module.End k V}
     (hf : f ∈ Submodule.span k (Set.range ρ)) (h : ∀ g, LinearMap.trace k V (f * ρ g) = 0) :
     f = 0 := by
-  rw [isSemisimpleRepresentation_iff_isSemisimpleModule_asModule] at *
-  -- `ρ.asModule` is a type synonym for `V`; its `k[G]`-action factors through the image algebra.
-  let : Module ρ.asAlgebraHom.range ρ.asModule := (inferInstance : Module ρ.asAlgebraHom.range V)
-  have : IsSemisimpleModule ρ.asAlgebraHom.range V :=
-    (RingHom.isSemisimpleModule_iff_of_surjective (M := ρ.asModule)
-      ρ.asAlgebraHom.rangeRestrict.toRingHom (AlgHom.rangeRestrict_surjective _)
-      fun _ _ ↦ rfl).mp ‹_›
+  have := ρ.isSemisimpleModule_range_asAlgebraHom
   have hspan : ∀ b ∈ Submodule.span k (Set.range ρ), LinearMap.trace k V (f * b) = 0 := by
     intro b hb
     induction hb using Submodule.span_induction with
