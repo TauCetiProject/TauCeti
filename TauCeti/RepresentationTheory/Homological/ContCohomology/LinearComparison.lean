@@ -74,13 +74,9 @@ theorem explicitH1AddEquivContinuousCohomology_smul (r : R) (x : H1 G M) :
   have := SMulCommClass.symm G R M
   have hx : r • x = explicitCoeff1 G M (SMulCommClass.toDistribMulActionHom G M r)
       continuous_of_discreteTopology x := by
-    induction x using QuotientAddGroup.induction_on with
-    | H c =>
-      rw [explicitCoeff1_mk, H1.smul_mk]
-      refine congrArg _ (Subtype.ext (funext fun g ↦ ?_))
-      exact (cocyclesMap1_apply G M G M (ContinuousMonoidHom.id G)
-        (SMulCommClass.toDistribMulActionHom G M r) continuous_of_discreteTopology
-        (fun g m ↦ map_smul (SMulCommClass.toDistribMulActionHom G M r) g m) c g).symm
+    rw [H1.smul_def, explicitCoeff1_eq_explicitMap1]
+    exact DFunLike.congr_fun (explicitMap1_congr_of_eq G M G M _ _ _ _ rfl
+      (AddMonoidHom.ext fun _ ↦ rfl)) x
   rw [hx, ← explicitH1AddEquivContinuousCohomology_coeffMap,
     ofDiscreteModuleMap_toDistribMulActionHom,
     ContinuousCohomology.smul_def]
@@ -119,13 +115,9 @@ theorem explicitH2AddEquivContinuousCohomology_smul (r : R) (x : H2 G M) :
   have := SMulCommClass.symm G R M
   have hx : r • x = explicitCoeff2 G M (SMulCommClass.toDistribMulActionHom G M r)
       continuous_of_discreteTopology x := by
-    induction x using QuotientAddGroup.induction_on with
-    | H c =>
-      rw [explicitCoeff2_mk, H2.smul_mk]
-      refine congrArg _ (Subtype.ext (funext fun ⟨g, h⟩ ↦ ?_))
-      exact (cocyclesMap2_apply G M G M (ContinuousMonoidHom.id G)
-        (SMulCommClass.toDistribMulActionHom G M r) continuous_of_discreteTopology
-        (fun g m ↦ map_smul (SMulCommClass.toDistribMulActionHom G M r) g m) c g h).symm
+    rw [H2.smul_def, explicitCoeff2_eq_explicitMap2]
+    exact DFunLike.congr_fun (explicitMap2_congr_of_eq G M G M _ _ _ _ rfl
+      (AddMonoidHom.ext fun _ ↦ rfl)) x
   rw [hx, ← explicitH2AddEquivContinuousCohomology_coeffMap,
     ofDiscreteModuleMap_toDistribMulActionHom,
     ContinuousCohomology.smul_def]

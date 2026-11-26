@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.AddSubgroupQuotient
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
 
 /-!
 # Scalar actions on the explicit `H¹` and `H²`
@@ -22,29 +21,37 @@ so that the explicit groups, not a copy of them, carry the `R`-module structure.
 
 ## Main definitions
 
+* `TauCeti.ContCohomology.H1.smulRingHom` and `TauCeti.ContCohomology.H2.smulRingHom`: the
+  scalar `r` acting by the coefficient map `explicitMap1`/`explicitMap2` of `r • ·`, as a ring
+  homomorphism into the additive endomorphisms.
 * `TauCeti.ContCohomology.H1.instModule` and `TauCeti.ContCohomology.H2.instModule`: `H¹(G, M)`
   and `H²(G, M)` are `R`-modules.
 
 ## Main results
 
+* `TauCeti.ContCohomology.H1.smul_def` and `TauCeti.ContCohomology.H2.smul_def`: a scalar acts
+  as the coefficient map of `r • ·`.
 * `TauCeti.ContCohomology.H1.smul_mk` and `TauCeti.ContCohomology.H2.smul_mk`: a scalar acts on
   the class of a cocycle as on the cocycle.
 * `TauCeti.ContCohomology.smul_mem_Z1`, `smul_mem_B1`, `smul_mem_Z2`, `smul_mem_B2`: cocycles and
-  coboundaries are stable under the scalars.
+  coboundaries are stable under the scalars, the cases of `cochainsMap1_mem_Z1`,
+  `cochainsMap1_mem_B1`, `cochainsMap2_mem_Z2` and `cochainsMap2_mem_B2` for the identity of `G`
+  and the coefficient map `r • ·`.
 
 ## Implementation notes
 
-The module structure is built from explicit stability proofs by `AddSubgroup.quotientModule`, and
-the instances only supply those proofs. Two instances built this way for the same scalar action
-on `M` are therefore definitionally equal whatever proofs they were given. The `ZMod n`-module
-structures `TauCeti.instModuleH1` and `TauCeti.ContCohomology.instModuleZModH2` are
-`H1.instModule` and `H2.instModule` at `R = ZMod n`, so they agree with them by `rfl`.
+The scalar `r` acts through the existing functoriality `explicitMap1`/`explicitMap2` of
+`TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality`, applied to the
+identity of `G` and the equivariant coefficient map `r • ·`, and the module structure is
+`Module.compHom` of the resulting ring homomorphism. The instances in the case `R = ZMod n` are
+found through `TauCeti.ZMod.smulCommClass'` and `TauCeti.ZMod.continuousConstSMul`.
 
 At `R = ℤ` the instances differ from the `ℤ`-module structure `AddCommGroup.toIntModule` that
 every abelian group carries: the two agree only propositionally, by Mathlib's `int_smul_eq_zsmul`
 or `AddCommGroup.uniqueIntModule`. The instances therefore have low priority, so that
 `Module ℤ (H1 G M)` and `ℤ`-scalar multiplication keep resolving to the structure of the abelian
 group.
+
 ## References
 
 The design, in which the cohomology is defined once for abelian groups and the `R`-module
@@ -64,57 +71,49 @@ universe u v w
 
 section Stability
 
-variable {R : Type w} {G : Type u} {M : Type v} [AddCommGroup M] [DistribSMul R M]
+variable {R : Type w} {G : Type u} [Monoid G] {M : Type v} [AddCommGroup M] [DistribSMul R M]
 
-/-- `d⁰` commutes with the scalars when the action of `G` does. -/
-theorem d0_smul [DistribSMul G M] [SMulCommClass G R M] (r : R) (m : M) :
-    d0 G M (r • m) = r • d0 G M m := by
-  ext g
-  exact (map_d0_apply (DistribSMul.toAddMonoidHom M r) (fun g m ↦ (smul_comm g r m).symm) m g).symm
+/-- Pulling a `1`-cochain back along the identity of `G` and the coefficient map `r • ·` is
+multiplication by `r`. -/
+theorem cochainsMap1_smul [TopologicalSpace G] (r : R) (f : G → M) :
+    cochainsMap1 (ContinuousMonoidHom.id G : G →* G) (DistribSMul.toAddMonoidHom M r) f = r • f :=
+  funext fun g ↦ cochainsMap1_apply _ _ f g
 
-/-- `d¹` commutes with the scalars when the action of `G` does. -/
-theorem d1_smul [Mul G] [DistribSMul G M] [SMulCommClass G R M] (r : R) (f : G → M) :
-    d1 G M (r • f) = r • d1 G M f := by
-  ext ⟨g, h⟩
-  exact (map_d1_apply (DistribSMul.toAddMonoidHom M r) (fun g m ↦ (smul_comm g r m).symm)
-    f g h).symm
+/-- Pulling a `2`-cochain back along the identity of `G` and the coefficient map `r • ·` is
+multiplication by `r`. -/
+theorem cochainsMap2_smul [TopologicalSpace G] (r : R) (f : G × G → M) :
+    cochainsMap2 (ContinuousMonoidHom.id G : G →* G) (DistribSMul.toAddMonoidHom M r) f = r • f :=
+  funext fun ⟨g, h⟩ ↦ cochainsMap2_apply _ _ f g h
 
-/-- `d²` commutes with the scalars when the action of `G` does. -/
-theorem d2_smul [Mul G] [DistribSMul G M] [SMulCommClass G R M] (r : R) (f : G × G → M) :
-    d2 G M (r • f) = r • d2 G M f := by
-  ext ⟨g, h, j⟩
-  simp [d2_apply, smul_add, smul_sub, smul_comm g r]
+variable [DistribSMul G M] [SMulCommClass G R M]
 
 /-- The `1`-coboundaries are stable under the scalars. -/
-theorem smul_mem_B1 [DistribSMul G M] [SMulCommClass G R M] (r : R) {f : G → M}
-    (hf : f ∈ B1 G M) : r • f ∈ B1 G M := by
-  obtain ⟨m, hm⟩ := mem_B1_iff.1 hf
-  obtain rfl : d0 G M m = f := funext fun g ↦ (d0_apply m g).trans (hm g)
-  rw [← d0_smul]
-  exact d0_mem_B1 _
+theorem smul_mem_B1 (r : R) {f : G → M} (hf : f ∈ B1 G M) : r • f ∈ B1 G M := by
+  have h : cochainsMap1 (MonoidHom.id G) (DistribSMul.toAddMonoidHom M r) f = r • f :=
+    funext fun g ↦ cochainsMap1_apply _ _ f g
+  exact h ▸ cochainsMap1_mem_B1 (MonoidHom.id G) (DistribSMul.toAddMonoidHom M r)
+    (fun g m ↦ (smul_comm g r m).symm) hf
 
 variable [TopologicalSpace G] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [ContinuousConstSMul R M]
 
 /-- The continuous `1`-cocycles are stable under continuous scalars. -/
-theorem smul_mem_Z1 [Mul G] [DistribSMul G M] [SMulCommClass G R M] (r : R) {f : G → M}
-    (hf : f ∈ Z1 G M) : r • f ∈ Z1 G M := by
-  obtain ⟨hc, hd⟩ := mem_Z1_iff.1 hf
-  refine mem_Z1_iff.2 ⟨hc.const_smul r, d1_apply_eq_zero_iff.1 ?_⟩
-  rw [d1_smul, d1_apply_eq_zero_iff.2 hd, smul_zero]
+theorem smul_mem_Z1 (r : R) {f : G → M} (hf : f ∈ Z1 G M) : r • f ∈ Z1 G M :=
+  cochainsMap1_smul r f ▸ cochainsMap1_mem_Z1 G M G M (ContinuousMonoidHom.id G)
+    (DistribSMul.toAddMonoidHom M r)
+    (continuous_const_smul r) (fun g m ↦ (smul_comm g r m).symm) hf
 
 /-- The continuous `2`-cocycles are stable under continuous scalars. -/
-theorem smul_mem_Z2 [Mul G] [DistribSMul G M] [SMulCommClass G R M] (r : R) {f : G × G → M}
-    (hf : f ∈ Z2 G M) : r • f ∈ Z2 G M := by
-  obtain ⟨hc, hd⟩ := mem_Z2_iff.1 hf
-  refine mem_Z2_iff.2 ⟨hc.const_smul r, d2_apply_eq_zero_iff.1 ?_⟩
-  rw [d2_smul, d2_apply_eq_zero_iff.2 hd, smul_zero]
+theorem smul_mem_Z2 (r : R) {f : G × G → M} (hf : f ∈ Z2 G M) : r • f ∈ Z2 G M :=
+  cochainsMap2_smul r f ▸ cochainsMap2_mem_Z2 G M G M (ContinuousMonoidHom.id G)
+    (DistribSMul.toAddMonoidHom M r)
+    (continuous_const_smul r) (fun g m ↦ (smul_comm g r m).symm) hf
 
 /-- The `2`-coboundaries are stable under continuous scalars. -/
-theorem smul_mem_B2 [Mul G] [DistribSMul G M] [SMulCommClass G R M] (r : R) {f : G × G → M}
-    (hf : f ∈ B2 G M) : r • f ∈ B2 G M := by
-  obtain ⟨c, hc, rfl⟩ := mem_B2_iff.1 hf
-  exact mem_B2_iff.2 ⟨r • c, hc.const_smul r, d1_smul r c⟩
+theorem smul_mem_B2 (r : R) {f : G × G → M} (hf : f ∈ B2 G M) : r • f ∈ B2 G M :=
+  cochainsMap2_smul r f ▸ cochainsMap2_mem_B2 (ContinuousMonoidHom.id G)
+    (DistribSMul.toAddMonoidHom M r)
+    (continuous_const_smul r) (fun g m ↦ (smul_comm g r m).symm) hf
 
 end Stability
 
@@ -124,35 +123,111 @@ section Instances
 
 variable {R : Type w} [Semiring R] {G : Type u} [Monoid G] [TopologicalSpace G]
   {M : Type v} [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DistribMulAction G M] [ContinuousSMul G M]
+  [DistribMulAction G M] [ContinuousSMul G M] [SMulCommClass G R M] [ContinuousConstSMul R M]
+
+variable (R G M) in
+/-- The action of the scalars on `H¹(G, M)`: the scalar `r` acts by the coefficient map
+`explicitMap1` of the equivariant map `r • ·`, as a ring homomorphism into the additive
+endomorphisms. -/
+def H1.smulRingHom : R →+* AddMonoid.End (H1 G M) where
+  toFun r := explicitMap1 G M G M (ContinuousMonoidHom.id G) (DistribSMul.toAddMonoidHom M r)
+    (continuous_const_smul r) fun g m ↦ (smul_comm g r m).symm
+  map_one' := (explicitMap1_congr_of_eq G M G M _ _ _ (AddMonoidHom.id M) (hq := continuous_id)
+    (hψ := fun _ _ ↦ rfl) rfl (AddMonoidHom.ext (one_smul R))).trans (explicitMap1_id G M)
+  map_mul' r s := (explicitMap1_congr_of_eq G M G M _
+    ((ContinuousMonoidHom.id G).comp (ContinuousMonoidHom.id G)) _
+    ((DistribSMul.toAddMonoidHom M r).comp (DistribSMul.toAddMonoidHom M s))
+    (ContinuousMonoidHom.ext fun _ ↦ rfl) (AddMonoidHom.ext (mul_smul r s))).trans
+    (explicitMap1_comp G M G M _ _
+      (continuous_const_smul s) (fun g m ↦ (smul_comm g s m).symm) G M _ _
+      (continuous_const_smul r) (fun g m ↦ (smul_comm g r m).symm))
+  map_zero' := by
+    refine QuotientAddGroup.addMonoidHom_ext _ (AddMonoidHom.ext fun z ↦ ?_)
+    refine (explicitMap1_mk G M G M _ _ _ _ z).trans ?_
+    refine (congrArg _ (Subtype.ext (funext fun g ↦ ?_))).trans (QuotientAddGroup.mk_zero _)
+    exact (cocyclesMap1_apply G M G M _ _ _ _ z g).trans (zero_smul R _)
+  map_add' r s := by
+    refine QuotientAddGroup.addMonoidHom_ext _ (AddMonoidHom.ext fun z ↦ ?_)
+    refine (explicitMap1_mk G M G M _ _ _ _ z).trans (.trans ?_ (congrArg₂ (· + ·)
+      (explicitMap1_mk G M G M _ (DistribSMul.toAddMonoidHom M r) _ _ z).symm
+      (explicitMap1_mk G M G M _ (DistribSMul.toAddMonoidHom M s) _ _ z).symm))
+    refine (congrArg _ (Subtype.ext (funext fun g ↦ ?_))).trans (QuotientAddGroup.mk_add _ _ _)
+    exact (cocyclesMap1_apply G M G M _ _ _ _ z g).trans ((add_smul r s _).trans
+      (congrArg₂ (· + ·)
+        (cocyclesMap1_apply G M G M _ (DistribSMul.toAddMonoidHom M r) _ _ z g).symm
+        (cocyclesMap1_apply G M G M _ (DistribSMul.toAddMonoidHom M s) _ _ z g).symm))
 
 /-- **`H¹(G, M)` is an `R`-module** when `M` is one, with continuous scalars commuting with the
-action of `G`: `r` acts on the class of a cocycle `z` as the class of `r • z`. -/
-instance (priority := 100) H1.instModule [SMulCommClass G R M] [ContinuousConstSMul R M] :
-    Module R (H1 G M) :=
-  AddSubgroup.quotientModule (Z1 G M) (B1 G M) (fun r _ hz ↦ smul_mem_Z1 r hz)
-    (fun r _ hb ↦ smul_mem_B1 r hb)
+action of `G`: `r` acts by the coefficient map of `r • ·`. -/
+instance (priority := 100) H1.instModule : Module R (H1 G M) :=
+  Module.compHom _ (H1.smulRingHom R G M)
+
+/-- A scalar acts on `H¹(G, M)` as the coefficient map of `r • ·`. -/
+theorem H1.smul_def (r : R) (x : H1 G M) :
+    r • x = explicitMap1 G M G M (ContinuousMonoidHom.id G) (DistribSMul.toAddMonoidHom M r)
+      (continuous_const_smul r) (fun g m ↦ (smul_comm g r m).symm) x :=
+  (rfl)
 
 /-- A scalar acts on the class of a `1`-cocycle as on the cocycle. -/
 @[simp]
-theorem H1.smul_mk [SMulCommClass G R M] [ContinuousConstSMul R M] (r : R) (z : Z1 G M) :
+theorem H1.smul_mk (r : R) (z : Z1 G M) :
     r • (z : H1 G M) = ((⟨r • (z : G → M), smul_mem_Z1 r z.property⟩ : Z1 G M) : H1 G M) :=
-  AddSubgroup.quotientModule_smul_mk _ _ _ _ r z
+  (explicitMap1_mk G M G M _ _ _ _ z).trans
+    (congrArg _ (Subtype.ext ((coe_cocyclesMap1 G M G M _ _ _ _ z).trans
+      (cochainsMap1_smul r (z : G → M)))))
 
 variable [ContinuousMul G]
 
+variable (R G M) in
+/-- The action of the scalars on `H²(G, M)`: the scalar `r` acts by the coefficient map
+`explicitMap2` of the equivariant map `r • ·`, as a ring homomorphism into the additive
+endomorphisms. -/
+def H2.smulRingHom : R →+* AddMonoid.End (H2 G M) where
+  toFun r := explicitMap2 G M G M (ContinuousMonoidHom.id G) (DistribSMul.toAddMonoidHom M r)
+    (continuous_const_smul r) fun g m ↦ (smul_comm g r m).symm
+  map_one' := (explicitMap2_congr_of_eq G M G M _ _ _ (AddMonoidHom.id M) (hq := continuous_id)
+    (hψ := fun _ _ ↦ rfl) rfl (AddMonoidHom.ext (one_smul R))).trans (explicitMap2_id G M)
+  map_mul' r s := (explicitMap2_congr_of_eq G M G M _
+    ((ContinuousMonoidHom.id G).comp (ContinuousMonoidHom.id G)) _
+    ((DistribSMul.toAddMonoidHom M r).comp (DistribSMul.toAddMonoidHom M s))
+    (ContinuousMonoidHom.ext fun _ ↦ rfl) (AddMonoidHom.ext (mul_smul r s))).trans
+    (explicitMap2_comp G M G M _ _
+      (continuous_const_smul s) (fun g m ↦ (smul_comm g s m).symm) G M _ _
+      (continuous_const_smul r) (fun g m ↦ (smul_comm g r m).symm))
+  map_zero' := by
+    refine QuotientAddGroup.addMonoidHom_ext _ (AddMonoidHom.ext fun z ↦ ?_)
+    refine (explicitMap2_mk G M G M _ _ _ _ z).trans ?_
+    refine (congrArg _ (Subtype.ext (funext fun ⟨g, h⟩ ↦ ?_))).trans (QuotientAddGroup.mk_zero _)
+    exact (cocyclesMap2_apply G M G M _ _ _ _ z g h).trans (zero_smul R _)
+  map_add' r s := by
+    refine QuotientAddGroup.addMonoidHom_ext _ (AddMonoidHom.ext fun z ↦ ?_)
+    refine (explicitMap2_mk G M G M _ _ _ _ z).trans (.trans ?_ (congrArg₂ (· + ·)
+      (explicitMap2_mk G M G M _ (DistribSMul.toAddMonoidHom M r) _ _ z).symm
+      (explicitMap2_mk G M G M _ (DistribSMul.toAddMonoidHom M s) _ _ z).symm))
+    refine (congrArg _ (Subtype.ext (funext fun ⟨g, h⟩ ↦ ?_))).trans (QuotientAddGroup.mk_add _ _ _)
+    exact (cocyclesMap2_apply G M G M _ _ _ _ z g h).trans ((add_smul r s _).trans
+      (congrArg₂ (· + ·)
+        (cocyclesMap2_apply G M G M _ (DistribSMul.toAddMonoidHom M r) _ _ z g h).symm
+        (cocyclesMap2_apply G M G M _ (DistribSMul.toAddMonoidHom M s) _ _ z g h).symm))
+
 /-- **`H²(G, M)` is an `R`-module** when `M` is one, with continuous scalars commuting with the
-action of `G`: `r` acts on the class of a cocycle `z` as the class of `r • z`. -/
-instance (priority := 100) H2.instModule [SMulCommClass G R M] [ContinuousConstSMul R M] :
-    Module R (H2 G M) :=
-  AddSubgroup.quotientModule (Z2 G M) (B2 G M) (fun r _ hz ↦ smul_mem_Z2 r hz)
-    (fun r _ hb ↦ smul_mem_B2 r hb)
+action of `G`: `r` acts by the coefficient map of `r • ·`. -/
+instance (priority := 100) H2.instModule : Module R (H2 G M) :=
+  Module.compHom _ (H2.smulRingHom R G M)
+
+/-- A scalar acts on `H²(G, M)` as the coefficient map of `r • ·`. -/
+theorem H2.smul_def (r : R) (x : H2 G M) :
+    r • x = explicitMap2 G M G M (ContinuousMonoidHom.id G) (DistribSMul.toAddMonoidHom M r)
+      (continuous_const_smul r) (fun g m ↦ (smul_comm g r m).symm) x :=
+  (rfl)
 
 /-- A scalar acts on the class of a `2`-cocycle as on the cocycle. -/
 @[simp]
-theorem H2.smul_mk [SMulCommClass G R M] [ContinuousConstSMul R M] (r : R) (z : Z2 G M) :
+theorem H2.smul_mk (r : R) (z : Z2 G M) :
     r • (z : H2 G M) = ((⟨r • (z : G × G → M), smul_mem_Z2 r z.property⟩ : Z2 G M) : H2 G M) :=
-  AddSubgroup.quotientModule_smul_mk _ _ _ _ r z
+  (explicitMap2_mk G M G M _ _ _ _ z).trans
+    (congrArg _ (Subtype.ext ((coe_cocyclesMap2 G M G M _ _ _ _ z).trans
+      (cochainsMap2_smul r (z : G × G → M)))))
 
 end Instances
 
