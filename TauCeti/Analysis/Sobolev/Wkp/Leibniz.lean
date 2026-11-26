@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Zero
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Sobolev.Wkp.Exponent
 import TauCeti.Analysis.Sobolev.Wkp.Extension
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn

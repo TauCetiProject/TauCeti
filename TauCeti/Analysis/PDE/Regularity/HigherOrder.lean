@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 public import TauCeti.Analysis.PDE.EnergyForm.Restriction
-public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Normed.Operator.Banach

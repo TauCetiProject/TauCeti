@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
-public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar

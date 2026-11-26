@@ -11,7 +11,7 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Lp.Restriction

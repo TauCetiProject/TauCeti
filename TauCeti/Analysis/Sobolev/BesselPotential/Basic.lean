@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
 /-!
