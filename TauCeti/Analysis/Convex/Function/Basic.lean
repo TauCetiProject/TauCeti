@@ -11,10 +11,13 @@ import Mathlib.LinearAlgebra.AffineSpace.Slope
 import Mathlib.Tactic.Linarith
 
 /-!
-# Convex functions: affine pullback, level sets and increments
+# Convex functions: affine maps, affine pullback, level sets and increments
 
-An injective affine pullback preserves strict convexity. This algebraic fact is used to
-restrict a strictly convex function to a line before applying the strict tangent inequality.
+An affine map between modules is both convex and concave on any convex set (`AffineMap.convexOn`,
+`AffineMap.concaveOn`), complementing `LinearMap.convexOn` and `LinearMap.concaveOn`. Moreover, an
+injective affine pullback preserves strict convexity (`StrictConvexOn.comp_affineMap_of_injective`);
+this is used to restrict a strictly convex function to a line before applying the strict tangent
+inequality.
 
 A strictly convex function of one variable takes each value at most twice
 (`StrictConvexOn.eq_or_eq_of_apply_eq`), since its slopes on adjacent intervals strictly increase.
@@ -28,6 +31,18 @@ from the [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/bl
 public section
 
 open Set
+
+/-- An affine map is convex on any convex set. -/
+theorem AffineMap.convexOn {𝕜 E β : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddCommGroup E]
+    [AddCommGroup β] [PartialOrder β] [Module 𝕜 E] [Module 𝕜 β] (f : E →ᵃ[𝕜] β) {s : Set E}
+    (hs : Convex 𝕜 s) : ConvexOn 𝕜 s f :=
+  ⟨hs, fun _ _ _ _ _ _ _ _ hab => (Convex.combo_affine_apply hab).le⟩
+
+/-- An affine map is concave on any convex set. -/
+theorem AffineMap.concaveOn {𝕜 E β : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddCommGroup E]
+    [AddCommGroup β] [PartialOrder β] [Module 𝕜 E] [Module 𝕜 β] (f : E →ᵃ[𝕜] β) {s : Set E}
+    (hs : Convex 𝕜 s) : ConcaveOn 𝕜 s f :=
+  ⟨hs, fun _ _ _ _ _ _ _ _ hab => (Convex.combo_affine_apply hab).ge⟩
 
 /-- An injective affine change of variables preserves strict convexity on the preimage. -/
 theorem StrictConvexOn.comp_affineMap_of_injective
