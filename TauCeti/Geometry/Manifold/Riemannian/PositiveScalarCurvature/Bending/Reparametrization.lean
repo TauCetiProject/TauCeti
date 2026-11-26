@@ -39,8 +39,6 @@ curve in the product of a metric `dr² + g r` with `ℝ` has the induced metric 
   such a reparametrisation with speed equal to its radius.
 * `TauCeti.IsGromovLawsonBendingCurve.exists_orderIso_speed_eq_one`: every bending curve has
   such a reparametrisation with unit speed.
-* `TauCeti.IsGromovLawsonBendingCurve.radius_of_nonpos`: a unit speed bending curve has radius
-  `r u = r 0 - u` along its initial horizontal part.
 * `TauCeti.exists_isGromovLawsonBendingCurve_speed_eq_radius`: bending curves with speed equal to
   their radius exist for every codimension `q ≥ 3`, lower bound `R₀ > 0`, error constant `C` and
   tube radius `r₀ > 0`.
@@ -268,18 +266,6 @@ theorem exists_orderIso_speed_eq_one (hγ : IsGromovLawsonBendingCurve q R₀ C 
   convert hγ' using 1
   funext σ
   rw [Pi.one_apply, div_self (hγ.speed_pos _).ne']
-
-/-- On the initial horizontal part `u ≤ 0` of a bending curve with unit speed, the radius is
-`r u = r 0 - u`. -/
-theorem radius_of_nonpos (hγ : IsGromovLawsonBendingCurve q R₀ C r₀ r h θ 1) {u : ℝ}
-    (hu : u ≤ 0) : r u = r 0 - u := by
-  have hd (x : ℝ) (hx : x ≤ 0) : HasDerivAt (fun u ↦ r u + u) 0 x :=
-    ((hγ.hasDerivAt_radius x).add (hasDerivAt_id' x)).congr_deriv
-      (by simp [hγ.angle_of_nonpos hx])
-  have := constant_of_has_deriv_right_zero (f := fun u ↦ r u + u)
-    (fun x hx ↦ (hd x hx.2).continuousAt.continuousWithinAt)
-    (fun x hx ↦ (hd x hx.2.le).hasDerivWithinAt) 0 ⟨hu, le_rfl⟩
-  linarith
 
 end IsGromovLawsonBendingCurve
 

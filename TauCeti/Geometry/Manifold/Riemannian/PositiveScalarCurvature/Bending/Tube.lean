@@ -15,16 +15,17 @@ Near a sphere `S^k` of codimension `q = n - k` in a Riemannian `n`-manifold, wri
 `dr² + g r`, where `r` is the distance to the sphere and `g r` is the metric induced on the distance
 tube of radius `r`, read on a fixed manifold `M` of dimension `n - 1`. Here this is a metric `G` on
 `M × ℝ` which is the cylinder metric `g τ + dτ²` at every point `(y, τ)`. In a basis of the model
-space let `A` be the Gram matrix of `g s` at `y`, and `A'` its derivative in `s`; then
-`tr (A⁻¹ A') / 2` is the mean curvature of the tube `M × {s}`. The *tube estimates* are
+space let `A` be the Gram matrix of `g s` at `y`, and `A'` its derivative in `s`. We use the sign
+convention in which the round sphere of radius `s` has principal curvatures `-1 / s`; in it
+`-tr (A⁻¹ A') / 2` is the sum of the principal curvatures of the tube `M × {s}`.
+The *tube estimates* are
 `(q - 1) (q - 2) / s² - C / s - C ≤ Scal(g s)` and `tr (A⁻¹ A') ≤ 2 (q - 1) / s + C`
 for `0 < s < r₀`, with an error constant `C`. For the round tubes
 `g s = g_N + s² g_(S^(q - 1))` of a product of a metric `g_N` with the flat normal disc,
 `Scal(g s) = Scal(g_N) + (q - 1) (q - 2) / s²` and `tr (A⁻¹ A') = 2 (q - 1) / s`, so they hold
 with `C = 0` when `Scal(g_N) ≥ 0`. For a general metric they follow, through the Gauss equation,
 from the estimates that `q - 1` principal curvatures of the tube of radius `s` are `-1 / s + O(1)`
-and the others are `O(1)`, in the sign convention in which the round sphere of radius `s` has
-principal curvatures `-1 / s`.
+and the others are `O(1)`.
 
 A smooth metric `G` on all of `M × ℝ` cannot satisfy the tube estimates for every small `s > 0`
 when `q ≥ 3`: the scalar curvature of `g s` stays bounded as `s → 0`. So the results below only
