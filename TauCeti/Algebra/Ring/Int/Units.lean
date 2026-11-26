@@ -93,7 +93,7 @@ theorem exists_apply_eq_and_apply_eq {α : Type*} {f g : α → ℤ} {a₁ a₂ 
   · exact ⟨a₄, by simpa using h₄.1, by simpa using h₄.2⟩
 
 /-- `(u * v) * y > d` holds iff `|y| > d` and `u * v` agrees with the sign of `y`. -/
-theorem lt_sign_mul_iff {d : ℕ} {u v : ℤˣ} {y : ℤ} :
+theorem lt_units_mul_iff {d : ℕ} {u v : ℤˣ} {y : ℤ} :
     (d : ℤ) < (u * v : ℤˣ) * y ↔
       (d : ℤ) < |y| ∧ (0 < y → v = u) ∧ (y < 0 → v = -u) := by
   have heq : (u * v = 1 ↔ v = u) ∧ (u * v = -1 ↔ v = -u) := by

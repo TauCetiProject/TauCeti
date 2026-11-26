@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Group.Unbundled.Int
 public import Mathlib.Algebra.Ring.Parity
-public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Int.Order.Units
 import TauCeti.Algebra.Ring.Int.Units
 
@@ -156,7 +156,7 @@ theorem exists_matched_of_entries_eq {C R : Type*} [Fintype C] [Fintype R] {s : 
     have hnot : b r ∉ doubledBlock d :=
       heq ▸ Finset.disjoint_left.1 hdisjoint (Finset.mem_image_of_mem a (mem_univ c))
     have houtside : (d : ℤ) < |b r| := by grind [mem_doubledBlock, hparity r, lt_abs, abs_lt]
-    exact ⟨heq.symm, Int.lt_sign_mul_iff.2 ⟨houtside, fun h ↦ hpos c r heq (h.trans_eq heq.symm),
+    exact ⟨heq.symm, Int.lt_units_mul_iff.2 ⟨houtside, fun h ↦ hpos c r heq (h.trans_eq heq.symm),
       fun h ↦ hneg c r heq (heq.trans_lt h)⟩⟩
   refine ⟨fun r ↦ ?_, fun c ↦ ?_⟩
   · have hr := hentries.subset (Finset.mem_image_of_mem b (mem_univ r))
@@ -171,23 +171,37 @@ theorem exists_matched_of_entries_eq {C R : Type*} [Fintype C] [Fintype R] {s : 
 theorem entries_eq_of_exists_matched {C R : Type*} [Fintype C] [Fintype R] {s : C → ℤˣ}
     {t : R → ℤˣ} {a : C → ℤ} {b : R → ℤ} {d : ℕ} (hcard : card R = card C + d)
     (hb : b.Injective) (hparity : ∀ r : R, Even (b r + d - 1))
-    (hrows : ∀ r : R, (∃ c : C, b r = a c ∧ (d : ℤ) < (t r * s c : ℤˣ) * b r) ∨ |b r| < d)
-    (hcols : ∀ c : C, ∃ r : R, b r = a c ∧ (d : ℤ) < (t r * s c : ℤˣ) * b r) :
+    (hrows : ∀ r : R, (∃ c : C, b r = a c ∧ (d : ℤ) < (t r * s c : ℤˣ) * b r) ∨ |b r| < d) :
     univ.image b = univ.image a ∪ doubledBlock d ∧
       (∀ (c : C) (r : R), a c = b r → 0 < a c → s c = t r) ∧
       ∀ (c : C) (r : R), a c = b r → a c < 0 → s c = -t r := by
   have hsub : univ.image b ⊆ univ.image a ∪ doubledBlock d := fun x hx ↦ by
     obtain ⟨r, -, rfl⟩ := Finset.mem_image.1 hx; grind [mem_doubledBlock, hparity r, hrows r]
+  have hcard_b : (univ.image b).card = card C + d := by
+    rw [card_image_of_injective _ hb, card_univ, hcard]
   have hcount : (univ.image a ∪ doubledBlock d).card ≤ (univ.image b).card :=
     (card_union_le _ _).trans <| by
-      rw [card_image_of_injective _ hb, card_univ, hcard, card_doubledBlock]
-      exact Nat.add_le_add_right card_image_le d
+      rw [hcard_b, card_doubledBlock]; exact Nat.add_le_add_right card_image_le d
+  have hentries : univ.image b = univ.image a ∪ doubledBlock d :=
+    Finset.eq_of_subset_of_card_le hsub hcount
+  have ha : a.Injective := by
+    have hle : card C ≤ (univ.image a).card := by
+      have := card_union_le (univ.image a) (doubledBlock d)
+      rw [← hentries, hcard_b, card_doubledBlock] at this; omega
+    have hcard_a : (univ.image a).card = univ.card := le_antisymm card_image_le hle
+    exact fun c₁ c₂ hc ↦ Finset.card_image_iff.1 hcard_a (mem_univ c₁) (mem_univ c₂) hc
+  have hdisj : Disjoint (univ.image a) (doubledBlock d) := by
+    rw [← card_union_eq_card_add_card, ← hentries, hcard_b, card_image_of_injective _ ha,
+      card_univ, card_doubledBlock]
   have hsign (c : C) (r : R) (heq : a c = b r) :
       (0 < b r → s c = t r) ∧ (b r < 0 → s c = -t r) := by
-    obtain ⟨r', hr', hlt⟩ := hcols c; obtain rfl : r' = r := hb (hr'.trans heq)
-    exact (Int.lt_sign_mul_iff.1 hlt).2
-  exact ⟨Finset.eq_of_subset_of_card_le hsub hcount,
-    fun c r heq h ↦ (hsign c r heq).1 (h.trans_eq heq),
+    have hnot : ¬ |b r| < d := fun hlt ↦
+      Finset.disjoint_left.1 hdisj (heq ▸ Finset.mem_image_of_mem a (mem_univ c))
+        (mem_doubledBlock.2 ⟨hlt, hparity r⟩)
+    obtain ⟨c', hc', hlt⟩ := (hrows r).resolve_right hnot
+    obtain rfl : c' = c := ha (hc'.symm.trans heq.symm)
+    exact (Int.lt_units_mul_iff.1 hlt).2
+  exact ⟨hentries, fun c r heq h ↦ (hsign c r heq).1 (h.trans_eq heq),
     fun c r heq h ↦ (hsign c r heq).2 (heq.symm.trans_lt h)⟩
 
 /-- The block rule relating two signed integer parameters `l : ι₁ → ℤ` and `l' : ι₂ → ℤ` with
@@ -266,7 +280,7 @@ theorem IsMatching.exists_right_of_le (h : IsMatching s t γ γ' l l') (hle : ca
     (abs_nonneg _)).not_gt
 
 /-- The case `card ι₁ ≤ card ι₂` of `isBlockRule_iff_isMatching`. -/
-theorem isBlockRule_iff_isMatching_of_le (hle : card ι₁ ≤ card ι₂) :
+private theorem isBlockRule_iff_isMatching_of_le (hle : card ι₁ ≤ card ι₂) :
     IsBlockRule s t γ γ' l l' ↔ IsMatching s t γ γ' l l' := by
   obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le hle
   have hdiff : (card ι₂ : ℤ) - card ι₁ = d := by omega
@@ -280,7 +294,6 @@ theorem isBlockRule_iff_isMatching_of_le (hle : card ι₁ ≤ card ι₂) :
   · obtain ⟨hentries, hpos, hneg⟩ := entries_eq_of_exists_matched hd
       (shiftedEntry_injective h.injective_right) (even_shiftedEntry_add_sub_one h.parity_right hd)
       (fun r ↦ by simpa [hdiff] using h.right_matched r)
-      (fun c ↦ by simpa [hdiff] using h.exists_right_of_le hle c)
     exact ⟨h.injective_left, h.injective_right, h.parity_left, h.parity_right,
       fun _ ↦ by simpa [hd] using hentries, fun hge ↦ by
         have hzero : d = 0 := by omega
