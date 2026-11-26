@@ -93,12 +93,12 @@ private theorem pow_prime_eq_one_of_prod_eq_one (hζ : IsPrimitiveRoot ζ (p ^ h
   have hgi (i : ℕ) : (g ^ i) η = η ^ a ^ i := by
     induction i with
     | zero => simp
-    | succ i ih => rw [pow_succ', AlgEquiv.mul_apply, ih, map_pow, ← ha, ← pow_mul, pow_succ']
+    | succ i ih => simp [pow_succ', ih, ← ha, ← pow_mul]
   have hpj : p ^ j = p ^ (j - h) * p ^ h := by rw [← pow_add, Nat.sub_add_cancel hhj.le]
   have hmod : a * p ^ (j - h) ≡ p ^ (j - h) [MOD p ^ j] := by
-    have hfixη := hfix (η ^ p ^ (j - h)) (by rw [← pow_mul, ← hpj, hη.pow_eq_one]) 1
-    rwa [pow_one, map_pow, ← ha, ← pow_mul,
-      (hη.isOfFinOrder (pow_ne_zero _ hp.out.ne_zero)).pow_eq_pow_iff_modEq,
+    have hfixη : η ^ (a * p ^ (j - h)) = η ^ p ^ (j - h) := by
+      simpa [pow_mul, ha] using hfix (η ^ p ^ (j - h)) (by rw [← pow_mul, ← hpj, hη.pow_eq_one]) 1
+    rwa [(hη.isOfFinOrder (pow_ne_zero _ hp.out.ne_zero)).pow_eq_pow_iff_modEq,
       ← hη.eq_orderOf] at hfixη
   have ha1 : a ≡ 1 [MOD p ^ h] := by
     refine Nat.ModEq.mul_left_cancel' (c := p ^ (j - h)) (pow_ne_zero _ hp.out.ne_zero) ?_
@@ -156,8 +156,9 @@ theorem exists_pow_eq_of_adjoin_eq_top (hζ : IsPrimitiveRoot ζ (p ^ h)) (h2 : 
     induction n with
     | zero => simp [div_self hy0]
     | succ n ih =>
-      rw [prod_range_succ, ih, hη, map_div₀, ← AlgEquiv.mul_apply, ← pow_succ, mul_comm,
-        div_mul_div_cancel₀ ((map_ne_zero (g ^ n)).2 hy0)]
+      have hgy : (g ^ n) y ≠ 0 := (map_ne_zero (g ^ n)).2 hy0
+      rw [prod_range_succ, ih, pow_succ, AlgEquiv.mul_apply, hη, map_div₀]
+      field_simp
   have hηp := pow_prime_eq_one_of_prod_eq_one hζ h2 g hηE (by rw [hprod, hgp]; simp [div_self hy0])
   -- so `η` is a power of `ξ = g ω / ω`, and `y / ω ^ k` is fixed by `g`
   obtain ⟨k, -, hk⟩ := (hξ.map_of_injective (algebraMap K L).injective).eq_pow_of_pow_eq_one hηp
@@ -167,8 +168,8 @@ theorem exists_pow_eq_of_adjoin_eq_top (hζ : IsPrimitiveRoot ζ (p ^ h)) (h2 : 
       rw [MulAction.mem_stabilizer_iff, AlgEquiv.smul_def, map_div₀, map_pow, hgω, mul_pow, hk, hη]
       field_simp
     exact (IsGalois.mem_range_algebraMap_iff_fixed _).2 fun σ ↦ Subgroup.zpowers_le.2 hfix (hg σ)
-  refine ⟨z, (algebraMap K L).injective ?_⟩
-  rw [map_pow, hz, div_pow, ← pow_mul, mul_comm k, pow_mul, hωE, one_pow, div_one, hy]
+  have hωk : (ω ^ k) ^ p ^ E = 1 := by rw [pow_right_comm, hωE, one_pow]
+  exact ⟨z, (algebraMap K L).injective (by simp [hz, div_pow, hωk, hy])⟩
 
 /-- The bottom of the tower: if `p ^ e ≤ 2 p`, and `p` is odd or `i ∈ M`, then `[M(μ_{p ^ e}) : M]`
 is prime to `p`. -/

@@ -13,6 +13,7 @@ import Mathlib.NumberTheory.Padics.ProperSpace
 import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.Data.ZMod.Pow
 import TauCeti.GroupTheory.OrderOfElement.Basic
+import TauCeti.RingTheory.RootsOfUnity.PPower
 
 /-!
 # The `p`-adic Tate twist
@@ -175,21 +176,12 @@ some `N`, then the `p`-adic Tate twist over `K` is trivial. -/
 theorem subsingleton_of_not_exists_isPrimitiveRoot {N : ℕ}
     (h : ¬ ∃ ζ : K, IsPrimitiveRoot ζ (p ^ N)) : Subsingleton (PadicTateTwist p K) := by
   -- every `p`-power torsion unit is killed by `p ^ N`
-  have hkill : ∀ (m : ℕ) (ζ : Kˣ), ζ ^ p ^ m = 1 → ζ ^ p ^ N = 1 := by
-    intro m ζ hζ
-    obtain ⟨e, -, hord⟩ := (Nat.dvd_prime_pow Fact.out).mp (orderOf_dvd_of_pow_eq_one hζ)
-    by_contra hne
-    have hNe : N < e := by
-      by_contra hle
-      exact hne (orderOf_dvd_iff_pow_eq_one.mp (hord ▸ pow_dvd_pow p (not_lt.mp hle)))
-    have hprim : IsPrimitiveRoot ζ (p ^ e) := hord ▸ IsPrimitiveRoot.orderOf ζ
-    have hdvd : p ^ (e - N) ∣ p ^ e := pow_dvd_pow p (Nat.sub_le e N)
-    have h2 := hprim.pow_of_dvd (pow_ne_zero _ (Fact.out : p.Prime).ne_zero) hdvd
-    have : p ^ e / p ^ (e - N) = p ^ N := by
-      rw [Nat.div_eq_iff_eq_mul_left (pow_pos (Fact.out : p.Prime).pos _) hdvd, ← pow_add]
-      congr 1; omega
-    rw [this] at h2
-    exact h ⟨(ζ ^ p ^ (e - N) : Kˣ), IsPrimitiveRoot.coe_units_iff.mpr h2⟩
+  have hkill (m : ℕ) (ζ : Kˣ) (hζ : ζ ^ p ^ m = 1) : ζ ^ p ^ N = 1 := by
+    rcases N with _ | k
+    · exact (h ⟨1, by simp⟩).elim
+    have hk := pow_prime_pow_eq_one_of_forall_not_isPrimitiveRoot (M := Kˣ) Fact.out
+      (fun ζ hζ ↦ h ⟨ζ, IsPrimitiveRoot.coe_units_iff.mpr hζ⟩) hζ
+    simp [pow_succ, pow_mul, hk]
   have hzero : ∀ z : PadicTateTwist p K, z = 0 := fun z ↦
     TateModule.eq_zero_of_pow_nsmul_eq_zero (k := N) <| TateModule.ext fun n ↦ Subtype.ext <| by
       apply Additive.toMul.injective
