@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.MilnorK.SerreAlgebra
 public import TauCeti.RingTheory.Valuation.Discrete.TameSymbol
+import TauCeti.Algebra.Ring.Units
 
 /-!
 # Serre's map, residues and specializations of Milnor K-theory
@@ -96,7 +97,7 @@ private theorem serreUnit_mul_serreUnit (f g : Fˣ) :
     v.serreUnit t ht (.ofMul f) * v.serreUnit t ht (.ofMul g) =
       SerreAlgebra.C (ofUnit (v.unitPartResidue t ht f) * ofUnit (v.unitPartResidue t ht g)) +
         SerreAlgebra.C (ofUnit (v.tameSymbol f g)) * SerreAlgebra.X := by
-  rw [v.tameSymbol_eq_unitPart t ht, ← unitPartResidue_apply, ← unitPartResidue_apply]
+  rw [v.tameSymbol_eq_unitPart t ht]
   ext
   · simp [serreUnit_apply]
   · simp only [serreUnit_apply, SerreAlgebra.snd_mul, SerreAlgebra.snd_add, SerreAlgebra.fst_add,
@@ -106,19 +107,6 @@ private theorem serreUnit_mul_serreUnit (f g : Fˣ) :
       mul_smul_comm, smul_mul_assoc, smul_smul, mul_neg, neg_smul]
     rw [mul_comm (v.ord (g : F))]
     abel
-
-/-- If `r + s = 1` and `r` has positive order, then `s` has reduced unit part `1`. -/
-private theorem unitPartResidue_eq_one_of_add_eq_one {r s : Fˣ} (h : (r : F) + s = 1)
-    (hr : 0 < v.ord (r : F)) : v.unitPartResidue t ht s = 1 := by
-  have hs : (s : F) = 1 + -(r : F) := by rw [← h]; ring
-  have hs0 : v.ord (s : F) = 0 := by
-    rw [hs, v.ord_add_eq_min_of_ord_ne (by simp) (v.ne_zero_iff.2 (neg_ne_zero.2 r.ne_zero))
-      (by rw [ord_one, ord_neg]; omega), ord_one, ord_neg]
-    omega
-  rw [unitPartResidue_of_ord_eq_zero _ _ _ hs0]
-  exact v.unitGroupToResidueFieldUnits_eq_one_of_ord_sub_one_pos _ (by
-    rw [show (s : F) - 1 = -(r : F) by rw [hs]; ring, ord_neg]
-    exact hr)
 
 /-- The Steinberg relation for reduced unit parts: if `r + s = 1` then `{ū_r, ū_s} = 0` in
 `K_2ᴹ(k)`. -/
@@ -135,14 +123,10 @@ private theorem ofUnit_mul_ofUnit_unitPartResidue_of_add_eq_one {r s : Fˣ}
   -- For `ord_v r < 0` write `s = -r (1 - r⁻¹)`, where `1 - r⁻¹` has reduced unit part `1`.
   have neg {r s : Fˣ} (h : (r : F) + s = 1) (hr : v.ord (r : F) < 0) :
       ofUnit (v.unitPartResidue t ht r) * ofUnit (v.unitPartResidue t ht s) = 0 := by
-    have h' : ((r⁻¹ : Fˣ) : F) + ((-(s * r⁻¹) : Fˣ) : F) = 1 := by
-      have hr0 := r.ne_zero
-      simp only [Units.val_inv_eq_inv_val, Units.val_neg, Units.val_mul]
-      field_simp
-      linear_combination -h
     have hs : s = -r * -(s * r⁻¹) := by
       rw [neg_mul_neg, mul_left_comm, mul_inv_cancel, mul_one]
-    rw [hs, map_mul, unitPartResidue_neg, v.unitPartResidue_eq_one_of_add_eq_one t ht h'
+    rw [hs, map_mul, unitPartResidue_neg, v.unitPartResidue_eq_one_of_add_eq_one t ht
+      (Units.val_inv_add_val_neg_mul_inv_eq_one h)
       (by rw [Units.val_inv_eq_inv_val, ord_inv]; omega), mul_one, ofUnit_mul_ofUnit_neg_self]
   have h' : (s : F) + r = 1 := by rw [add_comm, h]
   rcases lt_trichotomy (v.ord (r : F)) 0 with hr | hr | hr

@@ -450,7 +450,7 @@ theorem surjOn_degree_of_symbol_mem_image {M : Type*} [AddCommGroup M] (φ : M �
     rintro _ ⟨l, hl, rfl⟩
     exact h l hl
   intro y hy
-  exact hle hy
+  simpa [Submodule.mem_map] using hle hy
 
 /-! ### Graded maps -/
 

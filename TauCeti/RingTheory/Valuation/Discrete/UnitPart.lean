@@ -152,6 +152,12 @@ theorem unitPartResidue_of_ord_eq_zero (t : Fˣ) (ht : v.ord (t : F) = 1) {f : F
       ⟨f, (v.mem_unitGroup_iff_ord_eq_zero f).2 hf⟩ :=
   v.unitPartResidue_coe t ht ⟨f, _⟩
 
+/-- If `r + s = 1` and `r` has positive order, then `s` has reduced unit part `1`. -/
+theorem unitPartResidue_eq_one_of_add_eq_one (t : Fˣ) (ht : v.ord (t : F) = 1) {r s : Fˣ}
+    (h : (r : F) + s = 1) (hr : 0 < v.ord (r : F)) : v.unitPartResidue t ht s = 1 := by
+  rw [unitPartResidue_of_ord_eq_zero _ _ _ (v.ord_eq_zero_of_add_eq_one_of_ord_pos h hr)]
+  exact v.unitGroupToResidueFieldUnits_eq_one_of_add_eq_one h hr
+
 /-- The parameter has trivial reduced unit part. -/
 @[simp]
 theorem unitPartResidue_self (t : Fˣ) (ht : v.ord (t : F) = 1) : v.unitPartResidue t ht t = 1 := by
