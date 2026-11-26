@@ -136,6 +136,16 @@ theorem pullbackSpecIsoOfAlgEquiv_inv_left (R B T C : Type u)
           (pullbackSymmetry (Spec.algebraMap R B) (Spec.algebraMap R T)).inv :=
   (rfl)
 
+/-- Compatibility of `Y'.left.isoSpec.symm` with `Spec.algebraMap T Γ(Y'.left, ⊤)` when the
+`T`-algebra structure on `Γ(Y'.left, ⊤)` is induced by `Y'.hom`. -/
+private theorem isoSpec_symm_hom_comp_eq_algebraMap {T : Type u} [CommRing T]
+    (Y' : Over (Spec (.of T))) [IsAffine Y'.left] [Algebra T Γ(Y'.left, ⊤)]
+    (hY' : algebraMap T Γ(Y'.left, ⊤) = ((Scheme.ΓSpecIso (.of T)).inv ≫ Y'.hom.appTop).hom) :
+    Y'.left.isoSpec.symm.hom ≫ Y'.hom = (Over.mk (Spec.algebraMap T Γ(Y'.left, ⊤))).hom := by
+  rw [Iso.symm_hom, ← cancel_epi Y'.left.isoSpec.hom, Iso.hom_inv_id_assoc,
+    Scheme.isoSpec_hom, Spec.algebraMap, hY', CommRingCat.ofHom_hom]
+  exact Y'.hom.toSpecΓ_SpecMap_ΓSpecIso_inv_comp_appTop.symm
+
 /-- When the global sections of an affine `Spec T`-scheme `Y'` form a pushout `T ⊗[R] B`, the
 base change `Spec B ×_{Spec R} Spec T` is isomorphic to `Y'` over `Spec T` via
 `pullbackSpecIsoOfAlgEquiv` followed by `Y'.left.isoSpec.symm`. -/
@@ -149,10 +159,7 @@ noncomputable def pullbackSpecIsoOfIsPushout (R B T : Type u)
     Over.mk (pullback.snd (Spec.algebraMap R B) (Spec.algebraMap R T)) ≅ Y' :=
   pullbackSpecIsoOfAlgEquiv R B T Γ(Y'.left, ⊤)
     (Algebra.IsPushout.equiv R T B Γ(Y'.left, ⊤)) ≪≫
-    Over.isoMk Y'.left.isoSpec.symm (by
-      rw [Iso.symm_hom, ← cancel_epi Y'.left.isoSpec.hom, Iso.hom_inv_id_assoc,
-        Scheme.isoSpec_hom, Spec.algebraMap, hY', CommRingCat.ofHom_hom]
-      exact Y'.hom.toSpecΓ_SpecMap_ΓSpecIso_inv_comp_appTop.symm)
+    Over.isoMk Y'.left.isoSpec.symm (by exact isoSpec_symm_hom_comp_eq_algebraMap Y' hY')
 
 /-- `pullbackSpecIsoOfIsPushout` factors as `pullbackSpecIsoOfAlgEquiv` of `Algebra.IsPushout.equiv`
 followed by `Y'.left.isoSpec.symm` over `Spec T`. -/
@@ -166,10 +173,7 @@ theorem pullbackSpecIsoOfIsPushout_def (R B T : Type u)
     pullbackSpecIsoOfIsPushout R B T Y' hY' =
       pullbackSpecIsoOfAlgEquiv R B T Γ(Y'.left, ⊤)
         (Algebra.IsPushout.equiv R T B Γ(Y'.left, ⊤)) ≪≫
-        Over.isoMk Y'.left.isoSpec.symm (by
-          rw [Iso.symm_hom, ← cancel_epi Y'.left.isoSpec.hom, Iso.hom_inv_id_assoc,
-            Scheme.isoSpec_hom, Spec.algebraMap, hY', CommRingCat.ofHom_hom]
-          exact Y'.hom.toSpecΓ_SpecMap_ΓSpecIso_inv_comp_appTop.symm) :=
+        Over.isoMk Y'.left.isoSpec.symm (by exact isoSpec_symm_hom_comp_eq_algebraMap Y' hY') :=
   (rfl)
 
 /-- The forward underlying map of `pullbackSpecIsoOfIsPushout` is the affine pullback comparison
@@ -204,21 +208,14 @@ theorem pullbackSpecIsoOfIsPushout_inv_left_fst (R B T : Type u)
     (pullbackSpecIsoOfIsPushout R B T Y' hY').inv.left ≫
         pullback.fst (Spec.algebraMap R B) (Spec.algebraMap R T) =
       Y'.left.toSpecΓ ≫ Spec.map (CommRingCat.ofHom (algebraMap B Γ(Y'.left, ⊤))) := by
-  have hval : (Algebra.IsPushout.equiv R T B Γ(Y'.left, ⊤)).toRingHom.comp
-      ↑(Algebra.TensorProduct.includeRight : B →ₐ[R] T ⊗[R] B) =
-      algebraMap B Γ(Y'.left, ⊤) := by
+  have hval :
+      (↑(Algebra.IsPushout.equiv R T B Γ(Y'.left, ⊤)) : T ⊗[R] B →+* Γ(Y'.left, ⊤)).comp
+        ↑(Algebra.TensorProduct.includeRight : B →ₐ[R] T ⊗[R] B) =
+        algebraMap B Γ(Y'.left, ⊤) := by
     ext b
     exact (Algebra.IsPushout.equiv_tmul R T B Γ(Y'.left, ⊤) 1 b).trans (by simp)
-  have hproj :
-      (pullbackSpecIsoOfAlgEquiv R B T Γ(Y'.left, ⊤)
-          (Algebra.IsPushout.equiv R T B Γ(Y'.left, ⊤))).inv.left ≫
-        pullback.fst (Spec.algebraMap R B) (Spec.algebraMap R T) =
-        Spec.map (CommRingCat.ofHom (algebraMap B Γ(Y'.left, ⊤))) := by
-    rw [pullbackSpecIsoOfAlgEquiv_inv_left, Category.assoc, Category.assoc,
-      pullbackSymmetry_inv_comp_fst, pullbackSpecIso_inv_snd, ← Spec.map_comp,
-      ← CommRingCat.ofHom_comp, hval]
-  simp only [pullbackSpecIsoOfIsPushout_def, Iso.trans_inv, Over.comp_left, Over.isoMk_inv_left,
-    Iso.symm_inv, Scheme.isoSpec_hom, Category.assoc, hproj]
+  simp [pullbackSpecIsoOfIsPushout_def, Scheme.isoSpec_hom, ← Spec.map_comp,
+    ← CommRingCat.ofHom_comp, hval]
 
 /-- The inverse of `pullbackSpecIsoOfIsPushout` followed by the second projection to `Spec T` is
 the structure morphism `Y'.hom`. -/

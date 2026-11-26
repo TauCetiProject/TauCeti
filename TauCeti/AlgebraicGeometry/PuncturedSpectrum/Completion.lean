@@ -178,10 +178,7 @@ private theorem bijective_localizedModuleMap_pullback_puncturedSpectrum
     obtain ⟨w, hw1, _⟩ := Scheme.Pullback.exists_preimage_pullback (f := Y'.hom) (g := U'.ι) y
       ⟨Y'.hom y, hyU'⟩ rfl
     refine ⟨e'.hom.left w, ?_⟩
-    dsimp only [j']
-    rw [Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply e'.hom.left e'.inv.left,
-      ← Over.comp_left, e'.hom_inv_id, Over.id_left]
-    simpa using hw1
+    simp [j', ← Scheme.Hom.comp_apply, ← Over.comp_left, hw1]
   exact j'.bijective_localizedModuleMap_of_basicOpen_le_opensRange g_alg hg s hrange
 
 /-- Packages `isPushout_appTop_pullback_puncturedSpectrum_of_flat` as an `A`-algebra homomorphism
