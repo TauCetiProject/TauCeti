@@ -288,6 +288,8 @@ theorem labelEntropy_add_sub_pair_eq_sum_klFun [IsZeroOrProbabilityMeasure μ] [
     rw [mul_klFun_div (mul_ne_zero hPa hQb), log_mul hPa hQb]
     ring
   rw [labelEntropy_pair, labelEntropy_def, labelEntropy_def]
+  -- `set` folds only syntactic occurrences, so it cannot abstract the masses under the sum
+  -- binders; restate the goal through the local definitions `p`, `P`, `Q`.
   change ∑ a, negMulLog (P a) + ∑ b, negMulLog (Q b) - ∑ a, ∑ b, negMulLog (p a b) =
     ∑ a, ∑ b, P a * Q b * klFun (p a b / (P a * Q b))
   simp only [← hcell, Finset.sum_add_distrib, Finset.sum_sub_distrib, e1, e2, e3, hrow, hPsum,
