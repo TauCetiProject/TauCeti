@@ -65,20 +65,16 @@ private theorem ball_subset_ball_and_forall_inner_pos {w : E} (hw : ‖w‖ = 1)
       ∀ y ∈ ball (x₀ + (r / 2) • w) (r / 2), 0 < ⟪w, y - x₀⟫ := by
   have hz : ‖(r / 2) • w‖ = r / 2 := by
     rw [norm_smul, hw, mul_one, Real.norm_of_nonneg (by positivity)]
-  refine ⟨fun y hy => ?_, fun y hy => ?_⟩
-  · rw [mem_ball, dist_eq_norm] at hy ⊢
-    calc ‖y - x₀‖ = ‖(y - (x₀ + (r / 2) • w)) + (r / 2) • w‖ := by congr 1; abel
-      _ ≤ ‖y - (x₀ + (r / 2) • w)‖ + ‖(r / 2) • w‖ := norm_add_le _ _
-      _ < r := by linarith
-  · rw [mem_ball, dist_eq_norm] at hy
-    have hsplit : y - x₀ = (y - (x₀ + (r / 2) • w)) + (r / 2) • w := by abel
-    have hinner : ⟪w, (r / 2) • w⟫ = r / 2 := by
-      rw [real_inner_smul_right, real_inner_self_eq_norm_sq, hw]
-      ring
-    have hle := abs_real_inner_le_norm w (y - (x₀ + (r / 2) • w))
-    rw [hw, one_mul] at hle
-    rw [hsplit, inner_add_right, hinner]
-    linarith [neg_abs_le ⟪w, y - (x₀ + (r / 2) • w)⟫]
+  refine ⟨ball_subset_ball' (by rw [dist_self_add_left, hz]; linarith), fun y hy => ?_⟩
+  rw [mem_ball, dist_eq_norm] at hy
+  have hsplit : y - x₀ = (y - (x₀ + (r / 2) • w)) + (r / 2) • w := by abel
+  have hinner : ⟪w, (r / 2) • w⟫ = r / 2 := by
+    rw [real_inner_smul_right, real_inner_self_eq_norm_sq, hw]
+    ring
+  have hle := abs_real_inner_le_norm w (y - (x₀ + (r / 2) • w))
+  rw [hw, one_mul] at hle
+  rw [hsplit, inner_add_right, hinner]
+  linarith [neg_abs_le ⟪w, y - (x₀ + (r / 2) • w)⟫]
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
   [μ.IsAddHaarMeasure]
