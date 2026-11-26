@@ -15,10 +15,10 @@ import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 /-!
 # The first Riesz explicit formula for nonprincipal Dirichlet characters
 
-For a primitive nonprincipal character, the smoothed prime remainder is equal to the
-sum over the zeros of the entire completion together with the negative gamma-pole and
-origin corrections. This gives a power bound for the remainder from a zero-free
-half-plane, with a constant independent of the half-plane threshold.
+For a primitive nonprincipal character and cutoffs `y ≥ 1`, the smoothed prime remainder is equal to
+the sum over the zeros of the entire completion together with the negative gamma-pole and origin
+corrections. If the L-function has no zeros in `Re s > σ`, the norm of the remainder is bounded by
+`C y ^ max σ (1 / 2)` for `y ≥ 1`, with `C` independent of `σ`.
 
 The prime-side normalization is that of Levent Alpöge's `Deduction.Gchi`. The formula
 uses `DirichletCharacter.rieszZeroSide`, with the completion and Hadamard expansion
