@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Products
 public import TauCeti.Geometry.Manifold.Morse.CWModel.Lacunary
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Perfect
 
@@ -20,8 +19,10 @@ fixed points, all of even Morse index (`TauCeti.SmoothTwoForm.IsMomentMap.isMors
 `TauCeti.SmoothTwoForm.IsMomentMap.even_manifoldMorseIndex`). By Milnor's CW model, `M` is
 therefore homotopy equivalent to a finite CW complex with one cell of even dimension for each fixed
 point, and since no two cells have dimensions differing by one, all cellular differentials vanish
-(`TauCeti.IsMorse.nonempty_singularHomology_iso_sigma_of_forall_ne_add_one`). This file reads off
-the singular homology of `M`, with arbitrary coefficients and in particular integrally:
+(`TauCeti.IsMorse.nonempty_singularHomology_iso_sigma_of_even`). This file reads off the singular
+homology of `M`, with arbitrary coefficients and in particular integrally, by specializing the
+integral consequences of the lacunary principle for Morse functions in
+`TauCeti/Geometry/Manifold/Morse/CWModel/Lacunary.lean` to `μ^ξ`:
 
 * for coefficients `R` in any abelian category with coproducts, `Hₙ(M; R)` is the coproduct of
   one copy of `R` for each fixed point at which `μ^ξ` has Morse index `n`
@@ -85,6 +86,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 include h hσ hσG
 
+/-- No two critical points of a moment map component have Morse indices differing by one: all of
+them are even. -/
+private theorem forall_manifoldMorseIndex_ne_add_one :
+    ∀ x ∈ criticalPoints I' (fun y ↦ μ y ξ), ∀ y ∈ criticalPoints I' (fun y ↦ μ y ξ),
+      manifoldMorseIndex I' (fun y ↦ μ y ξ) x ≠ manifoldMorseIndex I' (fun y ↦ μ y ξ) y + 1 :=
+  forall_manifoldMorseIndex_ne_add_one_of_even fun _ hp ↦ h.even_manifoldMorseIndex hσ hσG hp
+
 /-! ### Generic components -/
 
 /-- **The homology of a Hamiltonian manifold with isolated fixed points.** For a compact Lie
@@ -99,12 +107,8 @@ theorem nonempty_singularHomology_iso_sigma (hξ : Lie.closedOneParameterSubgrou
       ∐ fun _ : ↥{p ∈ MulAction.fixedPoints G M |
         manifoldMorseIndex I' (fun y ↦ μ y ξ) p = n} ↦ R) := by
   rw [← h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ]
-  -- All indices are even, so no two of them differ by one.
-  refine (h.isMorse_of_eq_top hσ hξ hiso).nonempty_singularHomology_iso_sigma_of_forall_ne_add_one
-    (fun x hx y hy hxy ↦ ?_) R n
-  have hx' := h.even_manifoldMorseIndex hσ hσG hx
-  rw [hxy, Nat.even_add_one] at hx'
-  exact hx' (h.even_manifoldMorseIndex hσ hσG hy)
+  exact (h.isMorse_of_eq_top hσ hξ hiso).nonempty_singularHomology_iso_sigma_of_even
+    (fun _ hp ↦ h.even_manifoldMorseIndex hσ hσG hp) R n
 
 /-- **Integral homology is free on the fixed points.** For a compact Lie group acting smoothly by
 symplectomorphisms of a compact manifold, with moment map `μ`, all of whose fixed points are
@@ -118,10 +122,10 @@ theorem nonempty_singularHomology_int_linearEquiv_finsupp
     Nonempty (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M) ≃ₗ[ℤ]
       (↥{p ∈ MulAction.fixedPoints G M | manifoldMorseIndex I' (fun y ↦ μ y ξ) p = n} →₀ ℤ)) := by
-  obtain ⟨e⟩ := h.nonempty_singularHomology_iso_sigma hσ hσG hξ hiso
-    (ModuleCat.of ℤ (ULift.{u} ℤ)) n
-  exact ⟨e.toLinearEquiv ≪≫ₗ ModuleCat.coprodLinearEquivFinsupp _ _ ≪≫ₗ
-    Finsupp.mapRange.linearEquiv ULift.moduleEquiv⟩
+  rw [← h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ]
+  exact (h.isMorse_of_eq_top hσ hξ hiso)
+    |>.nonempty_singularHomology_int_linearEquiv_finsupp_of_forall_ne_add_one
+    (h.forall_manifoldMorseIndex_ne_add_one hσ hσG) n
 
 /-- **The rank of integral homology counts fixed points.** For a compact Lie group acting smoothly
 by symplectomorphisms of a compact manifold, with moment map `μ`, all of whose fixed points are
@@ -133,14 +137,9 @@ theorem finrank_singularHomology_int (hξ : Lie.closedOneParameterSubgroup ξ = 
     finrank ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M)) =
       {p ∈ MulAction.fixedPoints G M | manifoldMorseIndex I' (fun y ↦ μ y ξ) p = n}.ncard := by
-  obtain ⟨e⟩ := h.nonempty_singularHomology_int_linearEquiv_finsupp hσ hσG hξ hiso n
-  -- The fixed points of index `n` are among the finitely many critical points of `μ^ξ`.
-  have hfin : {p ∈ MulAction.fixedPoints G M |
-      manifoldMorseIndex I' (fun y ↦ μ y ξ) p = n}.Finite := by
-    rw [← h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ]
-    exact (h.isMorse_of_eq_top hσ hξ hiso).finite_criticalPoints.subset (sep_subset _ _)
-  have := hfin.fintype
-  rw [e.finrank_eq, finrank_finsupp_self, ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
+  rw [← h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ]
+  exact (h.isMorse_of_eq_top hσ hξ hiso).finrank_singularHomology_int_of_forall_ne_add_one
+    (h.forall_manifoldMorseIndex_ne_add_one hσ hσG) n
 
 /-! ### Torus actions -/
 
@@ -156,15 +155,8 @@ theorem isZero_singularHomology_of_odd
     {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A) {n : ℕ}
     (hn : Odd n) : IsZero (((singularHomologyFunctor A n).obj R).obj (TopCat.of M)) := by
   obtain ⟨ξ, hξ⟩ := (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).nonempty
-  obtain ⟨e⟩ := h.nonempty_singularHomology_iso_sigma hσ hσG hξ hiso R n
-  -- No fixed point has odd index, so the coproduct is empty.
-  have : IsEmpty ↥{p ∈ MulAction.fixedPoints G M |
-      manifoldMorseIndex I' (fun y ↦ μ y ξ) p = n} := by
-    refine ⟨fun ⟨p, hp, hpn⟩ ↦ Nat.not_even_iff_odd.2 hn ?_⟩
-    rw [← hpn]
-    exact h.even_manifoldMorseIndex hσ hσG
-      ((h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ).symm ▸ hp)
-  exact (IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim) |>.of_iso e
+  exact (h.isMorse_of_eq_top hσ hξ hiso).isZero_singularHomology_of_odd
+    (fun _ hp ↦ h.even_manifoldMorseIndex hσ hσG hp) R hn
 
 /-- **Integral homology is free.** For a torus acting smoothly by symplectomorphisms of a compact
 manifold, with a moment map and isolated fixed points, the integral homology of the manifold is a
@@ -175,8 +167,8 @@ theorem free_singularHomology_int
     Module.Free ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
       (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M)) := by
   obtain ⟨ξ, hξ⟩ := (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).nonempty
-  obtain ⟨e⟩ := h.nonempty_singularHomology_int_linearEquiv_finsupp hσ hσG hξ hiso n
-  exact Module.Free.of_equiv e.symm
+  exact (h.isMorse_of_eq_top hσ hξ hiso).free_singularHomology_int_of_forall_ne_add_one
+    (h.forall_manifoldMorseIndex_ne_add_one hσ hσG) n
 
 /-- **Integral homology is finitely generated.** For a torus acting smoothly by symplectomorphisms
 of a compact manifold, with a moment map and isolated fixed points, the integral homology of the
@@ -187,10 +179,8 @@ theorem finite_singularHomology_int
     Module.Finite ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
       (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M)) := by
   obtain ⟨ξ, hξ⟩ := (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).nonempty
-  obtain ⟨e⟩ := h.nonempty_singularHomology_int_linearEquiv_finsupp hσ hσG hξ hiso n
-  have := ((h.finite_fixedPoints hσ hiso).subset
-    (sep_subset _ fun p ↦ manifoldMorseIndex I' (fun y ↦ μ y ξ) p = n)).to_subtype
-  exact Module.Finite.equiv e.symm
+  exact (h.isMorse_of_eq_top hσ hξ hiso).finite_singularHomology_int_of_forall_ne_add_one
+    (h.forall_manifoldMorseIndex_ne_add_one hσ hσG) n
 
 /-- **Integral ranks are Betti numbers.** For a torus acting smoothly by symplectomorphisms of a
 compact manifold, with a moment map and isolated fixed points, the rank of the integral homology in
