@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Algebraic.Defs
-public import Mathlib.RingTheory.Jacobson.Ideal
+public import Mathlib.RingTheory.Jacobson.Radical
 import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.Algebraic.Basic
@@ -125,9 +125,8 @@ closed under left multiplication, lies in the Jacobson radical exactly when its 
 theorem le_jacobson_iff_forall_isIdempotentElem_eq_zero_of_isAlgebraic (J : Submodule K B)
     (hJ : ∀ (b : B) {y : B}, y ∈ J → b * y ∈ J) (halg : ∀ y ∈ J, IsAlgebraic K y) :
     J ≤ (Ring.jacobson B).restrictScalars K ↔ ∀ e ∈ J, IsIdempotentElem e → e = 0 := by
-  refine ⟨fun h e he hidem ↦ hidem.eq_zero_of_mem_jacobson_bot ?_, fun h ↦ ?_⟩
-  · rw [Ideal.jacobson_bot]
-    exact (restrictScalars_mem K _ e).1 (h he)
+  refine ⟨fun h e he hidem ↦ hidem.eq_zero_of_mem_jacobson ((restrictScalars_mem K _ e).1 (h he)),
+    fun h ↦ ?_⟩
   · by_contra hrad
     obtain ⟨e, he, hidem, he0⟩ := J.exists_isIdempotentElem_ne_zero_mem_of_isAlgebraic hJ halg hrad
     exact he0 (h e he hidem)

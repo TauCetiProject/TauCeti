@@ -16,9 +16,12 @@ Enlarging either subgroup coarsens the double-coset relation.  This file package
 surjections, records their values on representatives, and proves their identity and composition
 laws.  It also transports a double-coset space along a group isomorphism, identifies the
 quotients by conjugate right subgroups by right translation, and carries a single double coset
-along a multiplicative map: `DoubleCoset.image_doubleCoset` computes the image, and
+along a multiplicative map: `DoubleCoset.image_doubleCoset` computes the image,
 `DoubleCoset.mem_doubleCoset_image_iff` transports membership along an injective multiplicative
-map.
+map, and `DoubleCoset.image_doubleCoset_subgroupOf` and `DoubleCoset.mem_doubleCoset_subgroupOf_iff`
+specialize these to double cosets of restricted subgroups `H.subgroupOf E` and `K.subgroupOf E`.
+`Subgroup.mem_doubleCoset_subgroupOf_iff` compares double cosets in a subgroup `P` with
+double cosets in the ambient group.
 
 These are the double-coset analogues of `Subgroup.quotientMapOfLE` and `QuotientGroup.congr` for
 ordinary coset spaces.
@@ -178,4 +181,44 @@ theorem mem_doubleCoset_image_iff {f : F} (hf : Function.Injective f) (a : α) (
     f x ∈ doubleCoset (f a) (f '' s) (f '' t) ↔ x ∈ doubleCoset a s t := by
   rw [← image_doubleCoset, hf.mem_set_image]
 
+/-- Pushing a double coset of restricted subgroups `H.subgroupOf E` and `K.subgroupOf E` forward
+along `Subtype.val : E → G` recovers the ambient double coset of `H ⊓ E` and `K ⊓ E`. -/
+theorem image_doubleCoset_subgroupOf {E H K : Subgroup G} (x : E) :
+    Subtype.val '' doubleCoset x (H.subgroupOf E : Set E) (K.subgroupOf E : Set E) =
+      doubleCoset (x : G) ((H ⊓ E : Subgroup G) : Set G) ((K ⊓ E : Subgroup G) : Set G) := by
+  have himg (L : Subgroup G) :
+      Subtype.val '' (L.subgroupOf E : Set E) = ((L ⊓ E : Subgroup G) : Set G) := by
+    rw [← Subgroup.coe_subtype, ← Subgroup.coe_map, Subgroup.subgroupOf_map_subtype]
+  simpa only [Subgroup.coe_subtype, himg] using
+    image_doubleCoset E.subtype x (H.subgroupOf E : Set E) (K.subgroupOf E : Set E)
+
+/-- Membership in a double coset of restricted subgroups `H.subgroupOf E` and `K.subgroupOf E`
+is equivalent to ambient membership in the double coset of `H ⊓ E` and `K ⊓ E`. -/
+theorem mem_doubleCoset_subgroupOf_iff {E H K : Subgroup G} (a x : E) :
+    x ∈ doubleCoset a (H.subgroupOf E : Set E) (K.subgroupOf E : Set E) ↔
+      (x : G) ∈ doubleCoset (a : G) ((H ⊓ E : Subgroup G) : Set G)
+        ((K ⊓ E : Subgroup G) : Set G) := by
+  rw [← E.subtype_injective.mem_set_image, Subgroup.coe_subtype, image_doubleCoset_subgroupOf]
+
 end DoubleCoset
+
+namespace Subgroup
+
+variable {G : Type*} [Group G]
+
+/-- For `T ≤ P` and `x, y ∈ P`, the double coset `T x Q` of `G` contains `y` exactly when the
+double coset `(T ∩ P) x (Q ∩ P)` of `P` does. -/
+theorem mem_doubleCoset_subgroupOf_iff {T Q P : Subgroup G} (hTP : T ≤ P) {x y : P} :
+    y ∈ DoubleCoset.doubleCoset x (T.subgroupOf P) (Q.subgroupOf P) ↔
+      (y : G) ∈ DoubleCoset.doubleCoset (x : G) T Q := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · obtain ⟨t, ht, k, hk, he⟩ := DoubleCoset.mem_doubleCoset.1 h
+    exact DoubleCoset.mem_doubleCoset.2 ⟨t, ht, k, hk, congrArg Subtype.val he⟩
+  · obtain ⟨t, ht, k, hk, he⟩ := DoubleCoset.mem_doubleCoset.1 h
+    have hkP : k ∈ P := by
+      rw [show k = (x : G)⁻¹ * t⁻¹ * y by rw [he]; group]
+      exact P.mul_mem (P.mul_mem (P.inv_mem x.property) (P.inv_mem (hTP ht))) y.property
+    exact DoubleCoset.mem_doubleCoset.2 ⟨⟨t, hTP ht⟩, by simpa [mem_subgroupOf] using ht,
+      ⟨k, hkP⟩, by simpa [mem_subgroupOf] using hk, Subtype.ext he⟩
+
+end Subgroup

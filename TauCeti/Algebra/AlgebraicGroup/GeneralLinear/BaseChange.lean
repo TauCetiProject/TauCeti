@@ -21,7 +21,8 @@ the scheme-side form of `GeneralLinear.coordinateHopfAlgebraBaseChangeIso`.
 * `TauCeti.GeneralLinear.groupSchemeBaseChangeIso`: the canonical base-change isomorphism for
   general linear group schemes.
 * `TauCeti.GeneralLinear.hopfIdealBaseChangeIso`: the corresponding comparison for a closed
-  subgroup presented by compatible Hopf ideals before and after base change.
+  subgroup presented by compatible Hopf ideals before and after base change, unfolded by
+  `TauCeti.GeneralLinear.hopfIdealBaseChangeIso_def`.
 -/
 
 public section
@@ -85,6 +86,20 @@ noncomputable def hopfIdealBaseChangeIso
   AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso
       (CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I) ≪≫
     (AlgebraicGeometry.hopfSpec (CommRingCat.of S)).mapIso e.op
+
+/-- The Hopf-ideal base-change comparison is the comparison of Hopf spectra followed by the
+spectrum of the given quotient presentation. -/
+theorem hopfIdealBaseChangeIso_def
+    (I : HopfIdeal R (coordinateHopfAlgebra R n))
+    (I' : HopfIdeal S (coordinateHopfAlgebra S n))
+    (e : CommHopfAlgCat.quotient (coordinateHopfAlgebra S n) I' ≅
+      CommHopfAlgCat.baseChange (K := S)
+        (CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I)) :
+    hopfIdealBaseChangeIso R S n I I' e =
+      AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso
+          (CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I) ≪≫
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of S)).mapIso e.op :=
+  (rfl)
 
 /-- A compatible quotient presentation identifies the base change of a closed-subgroup
 inclusion with the closed-subgroup inclusion over the target ring. -/

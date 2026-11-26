@@ -81,6 +81,8 @@ existence, compactness and counting of continuation cylinders are not treated he
 
 * `TauCeti.Floer.linearHomotopy_of_eq_zero`, `TauCeti.Floer.linearHomotopy_of_eq_one`: the
   linear homotopy is `H₀` where `β = 0` and `H₁` where `β = 1`.
+* `TauCeti.Floer.continuationHomotopy_self`: the continuation homotopy from `H` to itself is the
+  cylindrical perturbation `H_t dt`.
 * `TauCeti.Floer.continuationHomotopy_eq_left_of_nonpos`,
   `TauCeti.Floer.continuationHomotopy_eq_right_of_one_le`: the continuation homotopy is `H₀` for
   `s ≤ 0` and `H₁` for `s ≥ 1`.
@@ -102,6 +104,8 @@ existence, compactness and counting of continuation cylinders are not treated he
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction_add_of_continuationHomotopy`,
   `SymplecticForm.le_add_integral_of_tendsto_hamiltonianAction_continuationHomotopy`: the action
   shift of a continuation cylinder, over a rectangle and between the limiting actions.
+* `SymplecticForm.setLIntegral_univ_prod_Icc_floerEnergyDensity_continuationHomotopy_le`: for a
+  cylinder of period one in `t`, the energy bound over every strip `ℝ × [c, c + 1]`.
 
 ## References
 
@@ -142,15 +146,25 @@ theorem linearHomotopy_of_eq_one {β : ℝ → ℝ} {z : ℝ × ℝ} (h : β z.1
     linearHomotopy β H₀ H₁ z x = H₁ z.2 x := by
   simp [linearHomotopy_def, h]
 
+/-- The linear homotopy of two time-dependent Hamiltonians which are `Cⁿ` at `(t, x)`, with a
+profile which is `Cⁿ` at `s`, is `Cⁿ` at `((s, t), x)`. -/
+theorem contDiffAt_uncurry_linearHomotopy [NormedAddCommGroup V] [NormedSpace ℝ V] {n : ℕ∞}
+    {β : ℝ → ℝ} {p : (ℝ × ℝ) × V} (hβ : ContDiffAt ℝ n β p.1.1)
+    (hH₀ : ContDiffAt ℝ n (uncurry H₀) (p.1.2, p.2))
+    (hH₁ : ContDiffAt ℝ n (uncurry H₁) (p.1.2, p.2)) :
+    ContDiffAt ℝ n (uncurry (linearHomotopy β H₀ H₁)) p := by
+  have hp : ContDiffAt ℝ n (fun p : (ℝ × ℝ) × V ↦ (p.1.2, p.2)) p :=
+    ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd).contDiffAt
+  exact (hH₀.comp p hp).add ((hβ.comp p (contDiff_fst.comp contDiff_fst).contDiffAt).mul
+    ((hH₁.comp p hp).sub (hH₀.comp p hp)))
+
 /-- The linear homotopy of two `Cⁿ` time-dependent Hamiltonians with a `Cⁿ` profile is `Cⁿ`. -/
 theorem contDiff_uncurry_linearHomotopy [NormedAddCommGroup V] [NormedSpace ℝ V] {n : ℕ∞}
     {β : ℝ → ℝ} (hβ : ContDiff ℝ n β) (hH₀ : ContDiff ℝ n (uncurry H₀))
     (hH₁ : ContDiff ℝ n (uncurry H₁)) :
-    ContDiff ℝ n (uncurry (linearHomotopy β H₀ H₁)) := by
-  have hp : ContDiff ℝ n fun p : (ℝ × ℝ) × V ↦ (p.1.2, p.2) :=
-    (contDiff_snd.comp contDiff_fst).prodMk contDiff_snd
-  exact (hH₀.comp hp).add ((hβ.comp (contDiff_fst.comp contDiff_fst)).mul
-    ((hH₁.comp hp).sub (hH₀.comp hp)))
+    ContDiff ℝ n (uncurry (linearHomotopy β H₀ H₁)) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦
+    contDiffAt_uncurry_linearHomotopy hβ.contDiffAt hH₀.contDiffAt hH₁.contDiffAt
 
 /-- Where the linear homotopy is differentiable, its `s`-derivative, its derivative along the
 direction `1` of the domain, is `β'(s) (H₁ - H₀)(t)`. -/
@@ -201,6 +215,14 @@ theorem continuationHomotopy_def (z : ℝ × ℝ) (x : V) :
     continuationHomotopy H₀ H₁ z x = H₀ z.2 x + smoothTransition z.1 * (H₁ z.2 x - H₀ z.2 x) :=
   (rfl)
 
+/-- The continuation homotopy from a Hamiltonian to itself is that Hamiltonian at every `s`: its
+perturbation `H_{(s, t)} dt` is the cylindrical perturbation `H_t dt` of Floer cylinders. -/
+@[simp]
+theorem continuationHomotopy_self (H : ℝ → V → ℝ) :
+    continuationHomotopy H H = fun z ↦ H z.2 := by
+  ext z x
+  simp [continuationHomotopy_def]
+
 /-- The continuation homotopy is `H₀` for `s ≤ 0`. -/
 @[simp]
 theorem continuationHomotopy_of_nonpos {z : ℝ × ℝ} (hz : z.1 ≤ 0) (x : V) :
@@ -239,6 +261,28 @@ theorem contDiff_uncurry_continuationHomotopy [NormedAddCommGroup V] [NormedSpac
     (hH₀ : ContDiff ℝ n (uncurry H₀)) (hH₁ : ContDiff ℝ n (uncurry H₁)) :
     ContDiff ℝ n (uncurry (continuationHomotopy H₀ H₁)) :=
   contDiff_uncurry_linearHomotopy smoothTransition.contDiff hH₀ hH₁
+
+/-- The continuation homotopy from `H₀_μ` to `H₁_μ`, for families `H₀`, `H₁` of time-dependent
+Hamiltonians that are jointly `Cⁿ` in the parameter `μ`, the time and the point, is jointly `Cⁿ`
+in `μ`, the point of the cylinder and the point. -/
+theorem contDiff_uncurry_continuationHomotopy_family [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {n : ℕ∞} {H₀ H₁ : ℝ → ℝ → V → ℝ}
+    (hH₀ : ContDiff ℝ n fun p : ℝ × ℝ × V ↦ H₀ p.1 p.2.1 p.2.2)
+    (hH₁ : ContDiff ℝ n fun p : ℝ × ℝ × V ↦ H₁ p.1 p.2.1 p.2.2) :
+    ContDiff ℝ n
+      (uncurry fun p : ℝ × (ℝ × ℝ) ↦ continuationHomotopy (H₀ p.1) (H₁ p.1) p.2) := by
+  -- It is the continuation homotopy of `H₀`, `H₁` viewed as Hamiltonians on `ℝ × V`, read at
+  -- `(μ, y)`.
+  have heq : (uncurry fun p : ℝ × (ℝ × ℝ) ↦ continuationHomotopy (H₀ p.1) (H₁ p.1) p.2) =
+      uncurry (continuationHomotopy (fun t (q : ℝ × V) ↦ H₀ q.1 t q.2)
+        (fun t (q : ℝ × V) ↦ H₁ q.1 t q.2)) ∘ fun q ↦ (q.1.2, (q.1.1, q.2)) := by
+    funext q
+    simp only [comp_apply, uncurry_def, continuationHomotopy_def]
+  have hswap : ContDiff ℝ n fun p : ℝ × ℝ × V ↦ (p.2.1, p.1, p.2.2) :=
+    contDiff_snd.fst.prodMk (contDiff_fst.prodMk contDiff_snd.snd)
+  rw [heq]
+  exact (contDiff_uncurry_continuationHomotopy (V := ℝ × V) (hH₀.comp hswap)
+    (hH₁.comp hswap)).comp (contDiff_fst.snd.prodMk (contDiff_fst.fst.prodMk contDiff_snd))
 
 /-- The `s`-derivative of the continuation homotopy, its derivative along the direction `1` of
 the domain, is `β'(s) (H₁ - H₀)(t)`. -/
@@ -495,6 +539,48 @@ theorem le_add_integral_of_tendsto_hamiltonianAction_continuationHomotopy (ω : 
   exact ω.hamiltonianAction_le_hamiltonianAction_add_of_continuationHomotopy
     (fun z hz ↦ hJ z (hRsub n hz)) hH₀ hH₁ hU hu (neg_nonpos.2 (zero_le_one.trans hn')) hn'
     ((hRsub n).trans hRU) (fun s _ ↦ hper s) (fun z hz ↦ hfloer z (hRsub n hz)) hh hhi
+
+/-- **The energy bound of a continuation cylinder over every strip of height one.** Let `H₀` and
+`H₁` be `C¹` Hamiltonians of period one in time with `H₀ - H₁ ≤ h` on `[0, 1]`, uniformly on the
+target, and let `u` be a `C²` map of period one in `t` solving the Floer equation
+`∂_s u + J_z (∂_t u - X_{H_z}(u)) = 0` for the continuation homotopy, with almost complex
+structures `J_z` tamed by `ω`. If `A_{H₀}(u(s, ·))` tends to `A₁` as `s → -∞` and
+`A_{H₁}(u(s, ·))` tends to `A₂` as `s → ∞`, then for every real `c` the energy of `u` over the
+strip `ℝ × [c, c + 1]` is at most `A₂ - A₁ + ∫₀¹ h`. -/
+theorem setLIntegral_univ_prod_Icc_floerEnergyDensity_continuationHomotopy_le
+    (ω : SymplecticForm V) {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z)) (hH₀ : ContDiff ℝ 1 (uncurry H₀))
+    (hH₁ : ContDiff ℝ 1 (uncurry H₁)) (hH₀p : Periodic H₀ 1) (hH₁p : Periodic H₁ 1)
+    (hu : ContDiff ℝ 2 u) (hper : ∀ s t, u (s, t + 1) = u (s, t))
+    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, fderiv ℝ u z stdComplexLineReal +
+      J z (fderiv ℝ u z stdComplexLineImag -
+        ω.hamiltonianVectorField (continuationHomotopy H₀ H₁ z) (u z)) = 0)
+    {h : ℝ → ℝ} (hh : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, H₀ t x - H₁ t x ≤ h t)
+    (hhi : IntegrableOn h (Icc 0 1)) {A₁ A₂ : ℝ}
+    (hbot : Tendsto (fun s ↦ ω.hamiltonianAction H₀ (fun t ↦ u (s, t))) atBot (𝓝 A₁))
+    (htop : Tendsto (fun s ↦ ω.hamiltonianAction H₁ (fun t ↦ u (s, t))) atTop (𝓝 A₂)) (c : ℝ) :
+    ∫⁻ z in (univ : Set ℝ) ×ˢ Icc c (c + 1),
+        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (continuationHomotopy H₀ H₁) u z) ≤
+      ENNReal.ofReal (A₂ - A₁ + ∫ t in Icc 0 1, h t) := by
+  -- The continuation homotopy, like `u`, has period one in `t`, hence so does the energy density.
+  have hKper (s t : ℝ) :
+      continuationHomotopy H₀ H₁ (s, t + 1) = continuationHomotopy H₀ H₁ (s, t) :=
+    funext fun x ↦ by simp [continuationHomotopy_def, hH₀p t, hH₁p t]
+  have hcont := ω.continuousOn_floerEnergyDensity (Ks := fun _ _ ↦ 0)
+    (Kt := continuationHomotopy H₀ H₁) isOpen_univ (hu.of_le one_le_two).contDiffOn
+    contDiffOn_const (contDiff_uncurry_continuationHomotopy hH₀ hH₁).contDiffOn
+  rw [setLIntegral_univ_prod_Icc_add_one_eq_of_periodic
+    (g := fun z ↦ ENNReal.ofReal
+      (ω.floerEnergyDensity (fun _ _ ↦ 0) (continuationHomotopy H₀ H₁) u z))
+    (ENNReal.measurable_ofReal.comp (continuousOn_univ.1 hcont).measurable)
+    (fun s t ↦ by
+      have h := ω.periodic_floerEnergyDensity (Ks := fun _ _ ↦ 0) (v := ((0 : ℝ), (1 : ℝ)))
+        (fun _ ↦ rfl) (fun z ↦ by rw [Prod.add_def, add_zero]; exact hKper z.1 z.2)
+        (fun z ↦ by rw [Prod.add_def, add_zero]; exact hper z.1 z.2) (s, t)
+      rw [Prod.mk_add_mk, add_zero] at h
+      rw [h]) c]
+  exact ω.lintegral_floerEnergyDensity_continuationHomotopy_le hJ hH₀ hH₁ isOpen_univ
+    hu.contDiffOn (subset_univ _) (fun s ↦ by simpa using hper s 0) hfloer hh hhi hbot htop
 
 end ContinuationHomotopy
 

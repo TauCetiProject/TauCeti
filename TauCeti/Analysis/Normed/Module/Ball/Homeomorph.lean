@@ -32,6 +32,8 @@ valued in the closed unit ball.
 ## Main declarations
 
 * `ContinuousLinearEquiv.unitBallHomeomorph`: the rescaled homeomorphism.
+* `ContinuousLinearEquiv.unitBallHomeomorph_apply_of_norm_map`: for a norm-preserving `L` it is `L`
+  itself.
 * `ContinuousLinearEquiv.image_unitBallHomeomorph_closedBall`,
   `ContinuousLinearEquiv.image_unitBallHomeomorph_ball` and
   `ContinuousLinearEquiv.image_unitBallHomeomorph_sphere`: it matches the closed unit balls, the
@@ -119,6 +121,16 @@ def unitBallHomeomorph : E ≃ₜ F :=
 lemma unitBallHomeomorph_apply (x : E) :
     L.unitBallHomeomorph x = gaugeRescale (L '' closedBall 0 1) (closedBall 0 1) (L x) :=
   (rfl)
+
+/-- If `L` preserves norms, it already carries the closed unit ball onto the closed unit ball, so no
+rescaling is needed: `ContinuousLinearEquiv.unitBallHomeomorph L` is `L` itself. -/
+theorem unitBallHomeomorph_apply_of_norm_map (hL : ∀ x, ‖L x‖ = ‖x‖) (x : E) :
+    L.unitBallHomeomorph x = L x := by
+  have himage : L '' closedBall 0 1 = closedBall 0 1 := by
+    simpa using ({ L.toLinearEquiv with norm_map' := hL } : E ≃ₗᵢ[ℝ] F).image_closedBall 0 1
+  rw [unitBallHomeomorph_apply, himage,
+    gaugeRescale_self_apply (absorbent_nhds_zero (closedBall_mem_nhds 0 one_pos))
+      (NormedSpace.isVonNBounded_closedBall ℝ _ 1)]
 
 /-- `ContinuousLinearEquiv.unitBallHomeomorph L` carries the closed unit ball onto the closed unit
 ball. -/

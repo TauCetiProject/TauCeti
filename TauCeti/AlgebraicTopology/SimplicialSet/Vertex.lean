@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
+public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplex
 
 /-!
 # Vertices of simplices
@@ -23,6 +24,10 @@ monotone along the vertices of every simplex.
   vertices of each simplex.
 * `SSet.map_const_castSucc_of_δ_last`: the first `n + 1` vertices of an `(n + 1)`-simplex whose
   last face is constant at `x` are `x`.
+* `SSet.map_const_succ_of_δ_zero`: the last `n + 1` vertices of an `(n + 1)`-simplex whose
+  face opposite to the initial vertex is constant at `y` are `y`.
+* `SSet.yonedaEquiv_const_one`: the constant map `Δ[1] ⟶ X` at a vertex `x` is the degenerate
+  edge at `x`.
 -/
 
 public section
@@ -67,5 +72,20 @@ lemma map_const_castSucc_of_δ_last {n : ℕ} {σ : X _⦋n + 1⦌} {x : X _⦋0
   have h := congrArg (X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ j).op) hσ
   rw [SimplicialObject.δ_def, map_const_map, map_const_map] at h
   simpa [SimplexCategory.δ, Fin.succAbove_last] using h
+
+/-- If the face of an `(n + 1)`-simplex `σ` opposite to its initial vertex is the constant simplex
+at a vertex `y`, then the vertex `j.succ` of `σ` is `y`, since it is the vertex `j` of that face. -/
+lemma map_const_succ_of_δ_zero {n : ℕ} {σ : X _⦋n + 1⦌} {y : X _⦋0⦌}
+    (hσ : X.δ 0 σ = X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op y) (j : Fin (n + 1)) :
+    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ j.succ).op σ = y := by
+  have h := congrArg (X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ j).op) hσ
+  rw [SimplicialObject.δ_def, map_const_map, map_const_map] at h
+  simpa [SimplexCategory.δ, Fin.succAbove_zero] using h
+
+/-- The constant map `Δ[1] ⟶ X` at a vertex `x` is the degenerate edge at `x`. -/
+lemma yonedaEquiv_const_one (x : X _⦋0⦌) :
+    yonedaEquiv (const x : Δ[1] ⟶ X) = (Edge.id x).edge := by
+  rw [Edge.id_edge, ← comp_const (stdSimplex.σ 0), ← yonedaEquiv_symm_zero,
+    stdSimplex.yonedaEquiv_σ_comp, Equiv.apply_symm_apply]
 
 end SSet

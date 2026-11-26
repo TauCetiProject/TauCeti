@@ -39,6 +39,13 @@ Along a general continuous linear equivalence `e` of complete spaces the dual is
 the adjoint of `e⁻¹` instead (`ZLattice.dual_comap_continuousLinearEquiv`): the dual of `A L` is
 `(A⁻¹)ᵀ L^∨`, the transport of dual lattices under a linear change of variables.
 
+Duals taken inside a subspace `K` are slices of the ambient dual. The dual of the orthogonal
+projection `π(L)` of any lattice to `K`, taken inside `K`, is `L^∨ ∩ K`
+(`ZLattice.dual_map_orthogonalProjectionOnto`), and so is the dual of `L` inside `K` when `L ⊆ K`
+(`ZLattice.dual_comap_subtype_of_le`). In particular a discrete lattice `L` is full in its real span
+`W`, and `L^∨ ∩ W` is its dual there, again a full lattice in `W`, although `L^∨` itself contains
+`Wᗮ` and need not be discrete.
+
 This is the dual lattice entering Poisson summation over a lattice, and the integrality,
 evenness and unimodularity of a lattice in `TauCeti/Algebra/Module/ZLattice/Integral.lean` are
 defined from it.
@@ -77,6 +84,19 @@ defined from it.
 * `ZLattice.dual_comap`: the dual commutes with pulling back along a linear isometry equivalence.
 * `ZLattice.dual_comap_continuousLinearEquiv`: the dual of the pullback along a continuous linear
   equivalence `e` is the pullback of the dual along the adjoint of `e⁻¹`.
+* `ZLattice.dual_map_orthogonalProjectionOnto`: the dual of the orthogonal projection of `L` to a
+  subspace `K`, taken inside `K`, is `L^∨ ∩ K`.
+* `ZLattice.dual_comap_subtype_of_le`: for `L ⊆ K`, the dual of `L` taken inside `K` is
+  `L^∨ ∩ K`.
+* `ZLattice.instDiscreteTopologyComapDualSpanSubtype`,
+  `ZLattice.instIsZLatticeComapDualSpanSubtype`: for a discrete lattice `L` in a
+  finite-dimensional space, `L^∨ ∩ span ℝ L` is a full lattice in `span ℝ L`.
+
+## References
+
+* T. Horesh and Y. Karasik, *Equidistribution of primitive lattices in `ℝⁿ`*, Quart. J. Math. 74
+  (2023), 1253–1294, DOI 10.1093/qmath/haad008, Proposition B.5, p.1291, with its pairing proof.
+  This is the source of `ZLattice.dual_map_orthogonalProjectionOnto`.
 -/
 
 public section
@@ -123,6 +143,11 @@ theorem le_dual_comm {L M : Submodule ℤ E} : L ≤ dual M ↔ M ≤ dual L := 
 finite-dimensional space, `dual_dual`. -/
 theorem le_dual_dual (L : Submodule ℤ E) : L ≤ dual (dual L) :=
   le_dual_comm.mpr le_rfl
+
+/-- The dual of the zero lattice is the whole space. -/
+@[simp]
+theorem dual_bot : dual (⊥ : Submodule ℤ E) = ⊤ :=
+  eq_top_iff.mpr fun _ _ ↦ mem_dual.mpr fun y hy ↦ ⟨0, by simp [(mem_bot ℤ).mp hy]⟩
 
 /-- A vector orthogonal to a lattice lies in its dual lattice, its inner products with the lattice
 being `0`. -/
@@ -202,7 +227,7 @@ theorem dual_span_singleton_le_self_iff {c : ℝ} :
       ∃ m : ℤ, (m : ℝ) * c ^ 2 = 1 := by
   rcases eq_or_ne c 0 with rfl | hc
   · refine ⟨fun h ↦ ?_, fun ⟨m, hm⟩ ↦ by norm_num at hm⟩
-    have h1 : (1 : ℝ) ∈ span ℤ {(0 : ℝ)} := h (mem_dual.mpr fun y hy ↦ ⟨0, by simp_all⟩)
+    have h1 : (1 : ℝ) ∈ span ℤ {(0 : ℝ)} := h (by simp)
     rw [span_singleton_eq_bot.mpr rfl, mem_bot] at h1
     exact (one_ne_zero h1).elim
   · rw [dual_span_singleton hc, span_singleton_le_iff_mem, Submodule.mem_span_singleton]
@@ -332,6 +357,33 @@ theorem dual_comap_continuousLinearEquiv [CompleteSpace E] [CompleteSpace F] (L 
   · obtain ⟨m, hm⟩ := h (e z) hz
     exact ⟨m, by simpa [ContinuousLinearMap.adjoint_inner_left] using hm⟩
 
+section Subspace
+
+variable (K : Submodule ℝ E)
+
+/-- For a lattice `L` contained in a subspace `K`, the dual of `L` taken inside `K` is the
+ambient dual `L^∨` intersected with `K`. -/
+theorem dual_comap_subtype_of_le {L : Submodule ℤ E} (h : L ≤ K.restrictScalars ℤ) :
+    dual (ZLattice.comap ℝ L K.subtype) = ZLattice.comap ℝ (dual L) K.subtype := by
+  ext x
+  simp only [mem_comap, mem_dual, Submodule.coe_subtype, Submodule.coe_inner]
+  exact ⟨fun hx y hy ↦ hx ⟨y, h hy⟩ hy, fun hx y hy ↦ hx y hy⟩
+
+/-- **The dual of a projected lattice.** For any `ℤ`-submodule `L` and the orthogonal projection
+`π` onto a subspace `K`, the dual of `π(L)` taken inside `K` is the ambient dual `L^∨`
+intersected with `K`: for `x ∈ K` and `y ∈ E`, `⟪x, π y⟫ = ⟪x, y⟫`. No discreteness or fullness
+of `L` is needed. -/
+@[simp]
+theorem dual_map_orthogonalProjectionOnto (L : Submodule ℤ E) [K.HasOrthogonalProjection] :
+    dual (L.map ((K.orthogonalProjectionOnto : E →ₗ[ℝ] K).restrictScalars ℤ)) =
+      ZLattice.comap ℝ (dual L) K.subtype := by
+  ext x
+  simp only [mem_comap, mem_dual, Submodule.mem_map, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂, LinearMap.coe_restrictScalars, ContinuousLinearMap.coe_coe,
+    inner_orthogonalProjectionOnto_eq_of_mem_left, Submodule.coe_subtype]
+
+end Subspace
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E] (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
@@ -354,12 +406,11 @@ theorem dual_dual : dual (dual L) = L := by
   -- The lattice is full in its real span `K`, where the dual-basis description applies.
   set K := span ℝ (L : Set E)
   let L' : Submodule ℤ K := ZLattice.comap ℝ L K.subtype
-  have : IsZLattice ℝ L' := ⟨by rw [ZLattice.coe_comap]; exact Submodule.span_span_coe_preimage⟩
   have key : dual (dual L') = L' := by
     obtain ⟨ι, _, _, b, hb⟩ := exists_basis_span_eq ℝ L'
     rw [← hb]
     exact BilinForm.dualSubmodule_dualSubmodule_of_basis (innerₗ K)
-      TauCeti.nondegenerate_inner (BilinForm.isSymm_iff.mpr isSymm_inner) b
+      TauCeti.nondegenerate_inner TauCeti.isSymm_innerₗ b
   refine le_antisymm (fun y hy ↦ ?_) (le_dual_dual L)
   replace hy := mem_dual.mp hy
   -- `y` lies in `K`: a vector `u` orthogonal to `K` lies in `L^∨` with all its real multiples.
@@ -375,19 +426,38 @@ theorem dual_dual : dual (dual L) = L := by
       field_simp
     have : m * 2 = 1 := by exact_mod_cast this
     omega
-  -- Then `y` lies in `dual (dual L') = L'`, since `L'^∨ ⊆ L^∨` through the inclusion of `K`.
+  -- Then `y` lies in `dual (dual L') = L'`, since `L'^∨ = L^∨ ∩ K`.
   have hyL : (⟨y, hyK⟩ : K) ∈ L' := by
     rw [← key, mem_dual]
     intro z hz
-    have hzE : (z : E) ∈ dual L := mem_dual.mpr fun w hw ↦ by
-      obtain ⟨m, hm⟩ := mem_dual.mp hz ⟨w, Submodule.subset_span hw⟩
-        ((ZLattice.mem_comap ℝ L K.subtype).mpr hw)
-      exact ⟨m, by simpa using hm⟩
-    obtain ⟨m, hm⟩ := hy z hzE
+    rw [dual_comap_subtype_of_le K subset_span] at hz
+    obtain ⟨m, hm⟩ := hy z hz
     exact ⟨m, by simpa using hm⟩
   simpa using (ZLattice.mem_comap ℝ L K.subtype).mp hyL
 
 end FiniteDimensional
+
+section RealSpan
+
+variable [FiniteDimensional ℝ E] (L : Submodule ℤ E) [DiscreteTopology L]
+
+/-- The ambient dual of a discrete subgroup `L`, intersected with the real span of `L`, is
+discrete: it is the dual of `L` taken inside its span. The ambient dual itself need not be
+discrete, as it contains the orthogonal complement of the span. -/
+instance instDiscreteTopologyComapDualSpanSubtype :
+    DiscreteTopology (ZLattice.comap ℝ (dual L) (span ℝ (L : Set E)).subtype) := by
+  rw [← dual_comap_subtype_of_le _ subset_span]
+  infer_instance
+
+/-- The ambient dual of a discrete subgroup `L`, intersected with the real span of `L`, is a full
+lattice in that span. -/
+instance instIsZLatticeComapDualSpanSubtype :
+    IsZLattice ℝ (ZLattice.comap ℝ (dual L) (span ℝ (L : Set E)).subtype) where
+  span_top := by
+    rw [← dual_comap_subtype_of_le _ subset_span]
+    exact IsZLattice.span_top
+
+end RealSpan
 
 section Span
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Const
 import Mathlib.Analysis.Calculus.FDeriv.Linear
@@ -30,6 +31,10 @@ subspace.
 In the normed setting, `IsClosed.differentiableAt_submodule_iff` shows that a map into a closed
 submodule is differentiable at a point if and only if its composition with the subtype inclusion is
 differentiable there.
+
+Between complete inner product spaces, if `f` maps a neighbourhood of `x` into a subspace `V`,
+then the adjoint of its derivative at `x` vanishes on `Vᗮ`
+(`TauCeti.adjoint_fderiv_apply_eq_zero_of_eventually_mem`).
 -/
 
 public section
@@ -121,5 +126,24 @@ theorem _root_.IsClosed.differentiableAt_submodule_iff (hS : IsClosed (S : Set F
     S.subtypeL.hasFDerivAt Topology.IsEmbedding.subtypeVal hfg EventuallyEq.rfl).differentiableAt
 
 end Normed
+
+end TauCeti
+
+namespace TauCeti
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- If `f` maps a neighbourhood of `x` into a subspace `V`, then the adjoint of its derivative at
+`x` vanishes on `Vᗮ`. -/
+theorem adjoint_fderiv_apply_eq_zero_of_eventually_mem {V : Submodule 𝕜 F} {f : E → F} {x : E}
+    (hf : ∀ᶠ y in 𝓝 x, f y ∈ V) {η : F} (hη : η ∈ Vᗮ) : (fderiv 𝕜 f x).adjoint η = 0 := by
+  -- `Df(x)` takes values in the closure of `V`, which `η` is orthogonal to.
+  refine ext_inner_right 𝕜 fun u ↦ ?_
+  rw [ContinuousLinearMap.adjoint_inner_left, inner_zero_left]
+  refine Submodule.inner_left_of_mem_orthogonal
+    (fderiv_apply_mem_of_eventually_sub_mem V.isClosed_topologicalClosure
+      (hf.mono fun y hy ↦ V.le_topologicalClosure (V.sub_mem hy hf.self_of_nhds)) u) ?_
+  rwa [Submodule.orthogonal_closure]
 
 end TauCeti

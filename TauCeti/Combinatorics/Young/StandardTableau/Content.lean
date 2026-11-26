@@ -8,14 +8,16 @@ module
 public import TauCeti.Combinatorics.Young.StandardTableau.Basic
 import TauCeti.Combinatorics.Young.HookLength.Basic
 import TauCeti.Combinatorics.Young.StandardTableau.Order
+import TauCeti.Combinatorics.Young.StandardTableau.Separation
 import TauCeti.GroupTheory.Perm.Fin
 
 /-!
-# Contents of nearby labels in standard Young tableaux
+# Contents of labels in standard Young tableaux
 
 The content of a label `k` in a tableau `t` is `YoungTableau.labelContent t k`, the column minus the
-row of the cell carrying `k`. This file records the facts about the contents of the labels
-`k`, `k + 1` and `k + 2` of a standard Young tableau that govern Young's seminormal form, in which
+row of the cell carrying `k`. This file records the facts about the contents of the labels of a
+standard Young tableau that govern Young's seminormal form, chiefly of the nearby labels `k`,
+`k + 1` and `k + 2`: in that form
 the simple transposition of `k` and `k + 1` acts through the *axial distance*
 `labelContent T (k + 1) - labelContent T k`:
 
@@ -38,7 +40,10 @@ the simple transposition of `k` and `k + 1` acts through the *axial distance*
   other in one row or one column (`TauCeti.StandardYoungTableau.swap`); this changes the tableau
   (`TauCeti.StandardYoungTableau.swap_ne_self`) and negates the axial distance
   (`TauCeti.YoungTableau.axialDistance_relabel_swap`); otherwise the exchange is not standard
-  (`TauCeti.StandardYoungTableau.exists_toTableau_eq_relabel_swap_iff`).
+  (`TauCeti.StandardYoungTableau.exists_toTableau_eq_relabel_swap_iff`);
+* a standard tableau is determined by the contents of all its labels
+  (`TauCeti.StandardYoungTableau.labelContent_injective`), so the Jucys–Murphy eigenvalues of
+  Young's seminormal basis vectors tell the tableaux apart.
 
 ## References
 
@@ -303,6 +308,25 @@ theorem swap_ne_self (k : ℕ) (hk : k + 1 < μ.card) (h) : T.swap k hk h ≠ T 
 @[simp]
 theorem swap_swap (k : ℕ) (hk : k + 1 < μ.card) (h h') : (T.swap k hk h).swap k hk h' = T :=
   toTableau_injective (by simp)
+
+end StandardYoungTableau
+
+/-! ### A standard tableau is determined by the contents of its labels -/
+
+namespace StandardYoungTableau
+
+/-- **A standard Young tableau is determined by the contents of its labels**, as it is by their
+rows (`TauCeti.StandardYoungTableau.rowIndex_injective`). -/
+theorem labelContent_injective (μ : YoungDiagram) :
+    Function.Injective fun T : StandardYoungTableau μ => YoungTableau.labelContent T.toTableau := by
+  have h (p : μ.card.Partition) :
+      Function.Injective (fun T : StandardYoungTableau (YoungDiagram.ofPartition p) =>
+        YoungTableau.labelContent T.toTableau) := by
+    intro T U hTU
+    exact sigma_mk_injective (i := p) (sigma_comp_labelContent_injective_of_injOn_addables id
+      (fun D _ => D.injOn_cellContent) (a₁ := ⟨p, T⟩) (a₂ := ⟨p, U⟩)
+      (funext fun i => congrFun hTU _))
+  exact YoungDiagram.ofPartition_toPartition (μ := μ) rfl ▸ h (μ.toPartition rfl)
 
 end StandardYoungTableau
 

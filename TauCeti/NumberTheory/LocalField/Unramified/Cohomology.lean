@@ -7,10 +7,11 @@ module
 
 public import Mathlib.GroupTheory.Torsion
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.SeparableClosure
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Unramified
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Inflation
-import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Coinvariants
+import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Coinvariants.Basic
 import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Extension
 
 /-!
@@ -59,6 +60,8 @@ with finite `P^{I_K}` (`AddMonoidHom.explicitCup11_eq_zero_of_mem_unramifiedH1`)
 * `DistribMulActionHom.explicitCoeff1_mem_unramifiedH1`, `AlgHom.explicitMap1_mem_unramifiedH1`:
   functoriality of `unramifiedH1` in the coefficient module and along valuative extensions of local
   fields.
+* `DistribMulActionHom.comap_unramifiedH1_of_injective_of_smul_eq_self`: an injective coefficient
+  map between unramified modules pulls the target unramified condition back to the source one.
 * `TauCeti.ker_frobeniusSubId_eq_fixedPoints`, `TauCeti.natCard_unramifiedH1_eq_natCard_H0`:
   `ker(Frob_K - 1 | M^{I_K}) = (M^{I_K})^{G_K ⧸ I_K}`, and `#unramifiedH1 K M = #H⁰(G_K, M)` when
   `M^{I_K}` is discrete and finite.
@@ -76,6 +79,8 @@ with finite `P^{I_K}` (`AddMonoidHom.explicitCup11_eq_zero_of_mem_unramifiedH1`)
 * J. S. Milne, *Arithmetic Duality Theorems*, 2nd ed., Chapter I, Lemma 2.7 and Theorem 2.6.
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Proposition 7.2.14.
 * K. Rubin, *Euler Systems*, Annals of Mathematics Studies 147, Lemma I.3.2(i).
+* B. Mazur and K. Rubin, *Kolyvagin systems*, Mem. Amer. Math. Soc. 168 (2004), no. 799,
+  Lemma 1.1.9 (cartesianity of the unramified local condition).
 -/
 
 public noncomputable section
@@ -223,6 +228,22 @@ theorem _root_.DistribMulActionHom.explicitCoeff1_mem_unramifiedH1 {N : Type w} 
   rw [mem_unramifiedH1_iff, explicitCoeff1_eq_explicitMap1]
   exact (ContinuousMonoidHom.id _).explicitRes1_explicitMap1_eq_zero_of_map_le _ _ _
     (by rintro _ ⟨g, hg, rfl⟩; exact hg) (mem_unramifiedH1_iff.mp hc)
+
+/-- **The unramified local condition is cartesian on unramified coefficients.** For a continuous
+injective equivariant coefficient map whose target has trivial inertia action, the inverse image
+of the target unramified subgroup is exactly the source unramified subgroup. Equivariance and
+injectivity also force inertia to act trivially on the source. -/
+theorem _root_.DistribMulActionHom.comap_unramifiedH1_of_injective_of_smul_eq_self
+    {N : Type w} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+    [DistribMulAction (AbsoluteGaloisGroup K) N] [ContinuousSMul (AbsoluteGaloisGroup K) N]
+    (f : M →+[AbsoluteGaloisGroup K] N) (hf : Continuous f) (hinj : Function.Injective f)
+    (hI : ∀ (g : separableClosureInertiaSubgroup K) (n : N),
+      (g : AbsoluteGaloisGroup K) • n = n) :
+    (unramifiedH1 K N).comap (explicitCoeff1 (AbsoluteGaloisGroup K) M f hf) =
+      unramifiedH1 K M := by
+  rw [unramifiedH1_def, unramifiedH1_def]
+  exact (separableClosureInertiaSubgroup K).comap_ker_explicitRes1_of_injective_of_smul_eq_self
+    f hf hinj hI
 
 /-- **Functoriality of `unramifiedH1` along an extension of local fields.** For a valuative
 extension `L/K` of nonarchimedean local fields, a `K`-embedding `τ : Kˢ →ₐ[K] Lˢ` of separable
@@ -561,5 +582,26 @@ theorem _root_.AddMonoidHom.explicitCup11_eq_zero_of_mem_unramifiedH1
     Subsingleton.elim (explicitCup11 _ _ _ _ _ _ _ a₀ b₀) 0, map_zero]
 
 end CupProduct
+
+/-- **A continuous 1-cocycle vanishing on inertia and at a Frobenius lift vanishes identically.**
+No torsion or wild-inertia hypothesis is needed; only `T₁` on the coefficient module. -/
+theorem eq_zero_of_apply_inertiaSubgroup_eq_zero_of_isArithFrobeniusLift {K : Type} [Field K]
+    [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] {M : Type*}
+    [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M] [T1Space M]
+    [DistribMulAction (Field.absoluteGaloisGroup K) M]
+    (c : Z1 (Field.absoluteGaloisGroup K) M) {σ : Field.absoluteGaloisGroup K}
+    (hσ : IsArithFrobeniusLift K σ)
+    (hI : ∀ g ∈ inertiaSubgroup K, (c : Field.absoluteGaloisGroup K → M) g = 0)
+    (hσ0 : (c : Field.absoluteGaloisGroup K → M) σ = 0) :
+    c = 0 := by
+  have hc := mem_Z1_iff.1 c.property
+  have htop : (Subgroup.closure ({σ} ∪ (inertiaSubgroup K : Set _))).topologicalClosure = ⊤ := by
+    rw [Subgroup.closure_union, ← Subgroup.zpowers_eq_closure, Subgroup.closure_eq]
+    exact hσ.topologicalClosure_zpowers_sup_inertiaSubgroup
+  refine Subtype.ext (groupCohomology.eq_zero_of_eqOn_zero_of_topologicalClosure_closure_eq_top
+    hc.2 hc.1 htop ?_)
+  rintro g (rfl | hg)
+  · exact hσ0
+  · exact hI g hg
 
 end TauCeti

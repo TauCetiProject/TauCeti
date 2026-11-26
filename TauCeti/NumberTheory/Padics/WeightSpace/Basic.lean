@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Padics.AddChar
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.Padics.UnitsDecomposition.Logarithm
 import Mathlib.Analysis.Normed.Algebra.Ultra
+import TauCeti.Topology.Algebra.Group.Units
 
 /-!
 # Continuous weights of `ℤ_pˣ` and their parameters
@@ -239,15 +240,11 @@ noncomputable def ofAddChar (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ) (ψ
   continuous_toFun := by
     set e := padicIntUnitsEquivZModUnitsProd p
     set f := (η.coprod ψ.toMonoidHom.toHomUnits).comp e.toMonoidHom
-    -- A homomorphism from a group to `Rˣ` is continuous once its values in `R` are, since
-    -- inversion in `Rˣ` is read off by precomposing with inversion in the source.
-    have h : Continuous fun x ↦ (f x : R) :=
+    -- A homomorphism from a group to `Rˣ` is continuous once its values in `R` are.
+    exact (MonoidHom.continuous_iff_continuous_val f).2 <|
       (Units.continuous_val.comp <| (continuous_of_discreteTopology (f := η)).comp <|
         continuous_fst.comp e.continuous).mul <|
         hψ.comp <| continuous_toAdd.comp <| continuous_snd.comp e.continuous
-    have hf : Continuous f := Units.continuous_iff.mpr
-      ⟨h, by simpa only [Function.comp_def, ← map_inv] using h.comp continuous_inv⟩
-    exact hf
 
 @[simp]
 theorem coe_ofAddChar_apply (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ) (ψ : AddChar ℤ_[p] R)
@@ -389,7 +386,8 @@ variable (K : Type*) [SeminormedRing K] [NormedAlgebra ℚ_[p] K]
 algebraic weights `x ↦ x ^ k`. -/
 noncomputable def inclusion : WeightSpace p K where
   toMonoidHom := Units.map (padicIntAlgebraMap p K).toMonoidHom
-  continuous_toFun := Continuous.units_map _ continuous_padicIntAlgebraMap
+  continuous_toFun :=
+    Continuous.units_map _ (continuous_padicIntAlgebraMap (continuous_algebraMap ℚ_[p] K))
 
 variable {K}
 

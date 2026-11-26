@@ -32,8 +32,10 @@ with unitary multipliers `U_s` are obtained from nondegenerate representations o
 
 * `NonUnitalStarAlgHom.IsNondegenerate`: density of the span of the vectors `π a ξ`, unfolded by
   `isNondegenerate_iff_dense`.
-* `NonUnitalStarAlgHom.IsNondegenerate.map_one`, `NonUnitalStarAlgHom.isNondegenerate_of_map_one`:
-  a representation of a unital C⋆-algebra is nondegenerate exactly when it sends `1` to `1`.
+* `NonUnitalStarAlgHom.IsNondegenerate.map_one`, `NonUnitalStarAlgHom.isNondegenerate_of_map_one`,
+  `NonUnitalStarAlgHom.IsNondegenerate.toStarAlgHom`: a representation of a unital C⋆-algebra is
+  nondegenerate exactly when it sends `1` to `1`, and therefore upgrades to a unital
+  `⋆`-algebra homomorphism.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_forall_apply_eq_zero`: nondegeneracy means that no
   nonzero vector is killed by the whole representation.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_tendsto`: nondegeneracy means that the representation
@@ -46,6 +48,10 @@ with unitary multipliers `U_s` are obtained from nondegenerate representations o
   `mul_multiplierExtension_eq_snd`, the uniqueness statement
   `eq_multiplierExtension_of_apply_coe`, and the strong-limit formula
   `tendsto_multiplierExtension_apply`.
+* `NonUnitalStarAlgHom.isNondegenerate_of_subsingleton_space`,
+  `NonUnitalStarAlgHom.not_isNondegenerate_of_subsingleton_domain`,
+  `NonUnitalStarAlgHom.isNondegenerate_conjStarAlgEquiv_comp_iff`: degenerate-carrier edge cases
+  and invariance of nondegeneracy under unitary equivalence.
 
 ## References
 
@@ -97,6 +103,28 @@ operator. -/
 theorem IsNondegenerate.map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hρ : ρ.IsNondegenerate) : ρ 1 = 1 :=
   hρ.ext fun b => by rw [← map_mul, one_mul, one_mul]
+
+/-- Upgrade a nondegenerate representation of a unital C⋆-algebra to a unital `⋆`-algebra
+homomorphism. -/
+def IsNondegenerate.toStarAlgHom {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
+    (hρ : ρ.IsNondegenerate) : B →⋆ₐ[ℂ] (H →L[ℂ] H) where
+  __ := ρ
+  map_one' := hρ.map_one
+  commutes' r := by simp [Algebra.algebraMap_eq_smul_one, hρ.map_one]
+
+/-- Coercing `hρ.toStarAlgHom` to a function recovers `ρ`. -/
+@[simp]
+theorem IsNondegenerate.coe_toStarAlgHom {B : Type*} [CStarAlgebra B]
+    {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hρ : ρ.IsNondegenerate) :
+    ⇑hρ.toStarAlgHom = ρ :=
+  (rfl)
+
+/-- Coercing `hρ.toStarAlgHom` to a non-unital `⋆`-algebra homomorphism recovers `ρ`. -/
+@[simp]
+theorem IsNondegenerate.toNonUnitalStarAlgHom_toStarAlgHom {B : Type*} [CStarAlgebra B]
+    {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hρ : ρ.IsNondegenerate) :
+    hρ.toStarAlgHom.toNonUnitalStarAlgHom = ρ :=
+  (rfl)
 
 /-- The Banach-module extension, before recording preservation of star. -/
 private def extensionAlgHom (hπ : π.IsNondegenerate) : 𝓜(ℂ, A) →ₐ[ℂ] (H →L[ℂ] H) := by
@@ -238,5 +266,40 @@ theorem isNondegenerate_iff_dense_span_comp {ι : Type*} {g : ι → A} (hg : De
     π.IsNondegenerate ↔ Dense (Submodule.span ℂ (⋃ i, Set.range (π (g i))) : Set H) := by
   simp_rw [isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
     topologicalClosure_span_range_comp_eq hg]
+
+/-- Every representation on a zero Hilbert space is nondegenerate. -/
+@[simp]
+theorem isNondegenerate_of_subsingleton_space [Subsingleton H] (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
+    π.IsNondegenerate :=
+  isNondegenerate_iff_forall_apply_eq_zero.2 fun ξ _ => Subsingleton.elim ξ 0
+
+/-- No representation of a zero C⋆-algebra on a nontrivial Hilbert space is nondegenerate. -/
+@[simp]
+theorem not_isNondegenerate_of_subsingleton_domain [Subsingleton A] [Nontrivial H]
+    (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) : ¬ π.IsNondegenerate := by
+  intro hπ
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : H)
+  exact hξ <| (isNondegenerate_iff_forall_apply_eq_zero.1 hπ) ξ fun a => by
+    rw [Subsingleton.elim a 0, map_zero, _root_.zero_apply]
+
+/-- Conjugating a representation by a linear isometric equivalence preserves nondegeneracy. -/
+@[simp]
+theorem isNondegenerate_conjStarAlgEquiv_comp_iff {K : Type*}
+    [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
+    (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (U : H ≃ₗᵢ[ℂ] K) :
+    (U.conjStarAlgEquiv.toNonUnitalStarAlgHom.comp π).IsNondegenerate ↔ π.IsNondegenerate := by
+  simp only [isNondegenerate_iff_forall_apply_eq_zero, comp_apply,
+    StarAlgEquiv.toNonUnitalStarAlgHom_apply, LinearIsometryEquiv.conjStarAlgEquiv_apply_apply,
+    map_eq_zero_iff U U.injective]
+  refine ⟨fun h ξ hξ => U.injective ?_, fun h η hη => U.symm.injective ?_⟩
+  · simpa only [map_zero] using h (U ξ) fun a => by simpa only [U.symm_apply_apply] using hξ a
+  · simpa only [map_zero] using h (U.symm η) hη
+
+/-- Precomposing a representation with a star homomorphism of dense range preserves and reflects
+nondegeneracy. -/
+theorem isNondegenerate_comp_iff {B : Type*} [NonUnitalCStarAlgebra B] {φ : B →⋆ₙₐ[ℂ] A}
+    (hφ : DenseRange φ) : (π.comp φ).IsNondegenerate ↔ π.IsNondegenerate := by
+  rw [isNondegenerate_iff_dense_span_comp hφ, isNondegenerate_iff_dense]
+  simp only [comp_apply]
 
 end NonUnitalStarAlgHom

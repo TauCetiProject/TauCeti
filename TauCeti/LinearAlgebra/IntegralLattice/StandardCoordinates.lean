@@ -38,6 +38,8 @@ Cartan matrix computable from that matrix alone.
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_basisFun`: the Gram matrix of the standard
   coordinate basis is `G`.
 * `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_carrier_iff`: the carrier is `ℤⁿ`.
+* `TauCeti.IntegralLattice.eq_ofGramMatrix_basisFun`: a lattice with carrier `ℤⁿ` whose form pairs
+  the standard coordinate vectors by `G` is the lattice presented by `G`.
 * `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_dualCarrier_iff`: the dual carrier consists of
   the vectors whose row combinations against `G` are integers.
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_of_sum_eq_ite` and
@@ -50,6 +52,9 @@ Cartan matrix computable from that matrix alone.
   `ℤ`, a vector is recovered from its pairings `w` with the coordinate vectors as `M w / d`, and
   `d` times its norm is the value of the integral quadratic form `M` on `w`. For a Cartan matrix
   this computes in the weight lattice with an integral multiple of the inverse Cartan matrix.
+* `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_dualCarrier_of_mul_eq_smul_one` and
+  `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_of_mul_eq_smul_one`: if `G M = d • 1` over
+  `ℤ` with `d ≠ 0`, the columns of `M / d` are the dual basis vectors.
 -/
 
 public section
@@ -73,6 +78,13 @@ theorem sum_mul_div_eq_ite (h : ∀ i, ∑ j, G i j * c j = if i = i₀ then d e
     exact Finset.sum_congr rfl fun j _ ↦ by ring
   rw [hsum, hcast]
   split_ifs <;> simp [hd']
+
+/-- If `G M = d • 1` over `ℤ` with `d ≠ 0`, the rational `i`-th column of `M / d` has row
+combinations `δ_{k, i}` against `G`. -/
+theorem sum_mul_apply_div_eq_ite_of_mul_eq_smul_one {M : Matrix ι ι ℤ} (hM : G * M = d • 1)
+    (i k : ι) : ∑ j, ((G k j : ℤ) : ℚ) * ((M j i : ℚ) / d) = if k = i then 1 else 0 :=
+  sum_mul_div_eq_ite G (fun j ↦ M j i) d hd i
+    (fun k ↦ by simpa [Matrix.mul_apply, Matrix.one_apply] using congrFun₂ hM k i) k
 
 end Matrix
 
@@ -177,6 +189,18 @@ theorem mem_ofGramMatrix_basisFun_carrier_iff (x : ι → ℚ) :
   rw [ofGramMatrix_carrier, Module.Basis.mem_span_iff_repr_mem]
   simp [Pi.basisFun_repr]
 
+/-- **Characterization of a standard-coordinate Gram-matrix lattice**: an integral lattice on
+`ι → ℚ` whose carrier is the standard integral lattice `ι → ℤ`, and whose form pairs the standard
+coordinate vectors by the entries of `G`, is the lattice presented by `G`. -/
+theorem eq_ofGramMatrix_basisFun [DecidableEq ι] {L : IntegralLattice (ι → ℚ)}
+    (hcarrier : ∀ x, x ∈ L.carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i)
+    (hform : ∀ i j, L.form (Pi.single i 1) (Pi.single j 1) = ((G i j : ℤ) : ℚ)) :
+    L = ofGramMatrix (Pi.basisFun ℚ ι) G hG := by
+  refine IntegralLattice.ext (Submodule.ext fun x ↦
+    (hcarrier x).trans (mem_ofGramMatrix_basisFun_carrier_iff G hG x).symm) ?_
+  refine LinearMap.BilinForm.ext_basis (Pi.basisFun ℚ ι) fun i j ↦ ?_
+  rw [form_ofGramMatrix_basisFun_basisFun, Pi.basisFun_apply, Pi.basisFun_apply, hform]
+
 /-- A vector belongs to the dual of a Gram-matrix lattice exactly when every row combination of the
 Gram matrix against it is an integer. -/
 @[simp]
@@ -256,6 +280,20 @@ theorem apply_eq_sum_mul_form_ofGramMatrix_basisFun_div (hd : d ≠ 0) (x : ι �
   simp_rw [← Finset.sum_mul, hjk, ite_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ,
     ite_true]
   field_simp
+
+/-- If `G M = d • 1` over `ℤ` with `d ≠ 0`, the `i`-th column of `M / d` lies in the dual of the
+Gram-matrix lattice. -/
+theorem mem_ofGramMatrix_basisFun_dualCarrier_of_mul_eq_smul_one (hd : d ≠ 0) (i : ι) :
+    (fun j ↦ (M j i : ℚ) / d) ∈ (ofGramMatrix (Pi.basisFun ℚ ι) G hG).dualCarrier :=
+  mem_ofGramMatrix_basisFun_dualCarrier_of_sum_eq_ite G hG _ i
+    (Matrix.sum_mul_apply_div_eq_ite_of_mul_eq_smul_one G d hd hM i)
+
+/-- If `G M = d • 1` over `ℤ` with `d ≠ 0`, the `i`-th column of `M / d` is the dual vector of the
+`i`-th coordinate: `y` pairs with it to `y i`. -/
+theorem form_ofGramMatrix_basisFun_of_mul_eq_smul_one (hd : d ≠ 0) (y : ι → ℚ) (i : ι) :
+    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form y (fun j ↦ (M j i : ℚ) / d) = y i :=
+  form_ofGramMatrix_basisFun_of_sum_eq_ite G hG _ i
+    (Matrix.sum_mul_apply_div_eq_ite_of_mul_eq_smul_one G d hd hM i) y
 
 open _root_.Matrix in
 /-- If `G M = d • 1` over `ℤ`, then `d` times the norm of a vector is the value of the

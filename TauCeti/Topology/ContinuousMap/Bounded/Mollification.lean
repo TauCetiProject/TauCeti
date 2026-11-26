@@ -54,7 +54,7 @@ def normedConvolutionBUC (ρ : ContDiffBump (0 : G)) (μ : Measure G) [μ.IsAddH
   ⟨.ofNormedAddCommGroup (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] (f.val : G → F))
     (ρ.hasCompactSupport_normed.continuous_convolution_left (lsmul ℝ ℝ) ρ.continuous_normed
       f.val.continuous.locallyIntegrable) ‖f.val‖
-    (ρ.norm_normed_convolution_le f.val.norm_coe_le_norm),
+    (ρ.norm_normed_convolution_le (Eventually.of_forall f.val.norm_coe_le_norm)),
     (mem_uniformContinuousSubmodule _).2
       (ρ.hasCompactSupport_normed.lipschitzWith_convolution_left (μ := μ)
         (ρ.contDiff_normed (n := 1))
@@ -74,8 +74,7 @@ theorem normedConvolutionBUC_mem_smoothBoundedDerivativesSubmodule (ρ : ContDif
     ρ.normedConvolutionBUC μ f ∈ smoothBoundedDerivativesSubmodule ℝ G F := by
   refine (mem_smoothBoundedDerivativesSubmodule ℝ G F _).2 ⟨?_, fun m ↦
     ⟨‖f.val‖ * ∫ y, ‖iteratedFDeriv ℝ m (ρ.normed μ) y‖ ∂μ, fun x ↦ ?_⟩⟩
-  · exact ρ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) ρ.contDiff_normed
-      f.val.continuous.locallyIntegrable
+  · exact ρ.contDiff_normed_convolution f.val.continuous.locallyIntegrable
   · rw [coe_normedConvolutionBUC]
     exact ρ.hasCompactSupport_normed.norm_iteratedFDeriv_convolution_left_le
       (ρ.contDiff_normed (n := (⊤ : ℕ∞))) le_top f.val.continuous.locallyIntegrable

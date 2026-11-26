@@ -46,10 +46,13 @@ primitive. This is the manifold version of `TauCeti.cotangentGeneratedMap` on no
   For boundaryless `M` and `N`, the **branch** `TauCeti.CotangentBundle.generatingBranch` is the
   local inverse of the source projection through `x`. It is unique as a germ: every continuous
   local right inverse of the source projection through `x` agrees with it near `src x`
-  (`TauCeti.CotangentBundle.eventuallyEq_generatingBranch`). The **generated map**
-  `TauCeti.CotangentBundle.generatedMap` is the partial diffeomorphism `tgt ∘ branch`, between an
-  open neighbourhood of `src x` in `T*M` and an open subset of `T*N`. Near `x` its graph is the
-  generated correspondence (`TauCeti.CotangentBundle.eventually_generatedMap_generatingSource`).
+  (`TauCeti.CotangentBundle.eventuallyEq_generatingBranch`). Since every point near `src x` is the
+  source projection of its image under the branch, two maps agreeing at `src y` for all `y` near
+  `x` agree near `src x` (`TauCeti.CotangentBundle.eventuallyEq_of_eventually_generatingSource`).
+  The **generated map** `TauCeti.CotangentBundle.generatedMap` is the partial diffeomorphism
+  `tgt ∘ branch`, between an open neighbourhood of `src x` in `T*M` and an open subset of `T*N`.
+  Near `x` its graph is the generated correspondence
+  (`TauCeti.CotangentBundle.eventually_generatedMap_generatingSource`).
   At every point of its source it preserves the canonical symplectic form
   (`TauCeti.CotangentBundle.mpullback_generatedMap_symplecticForm`) and satisfies
   `λ_M - φ^*λ_N = d(S ∘ branch)`
@@ -329,6 +332,21 @@ theorem eventually_generatingBranch_generatingSource :
 @[simp]
 theorem generatingBranch_generatingSource : generatingBranch hS hx (generatingSource I S x) = x :=
   (eventually_generatingBranch_generatingSource hS hx).self_of_nhds
+
+include hS hx in
+/-- **Maps agreeing on the source projection agree near the source point.** Two maps out of `T*M`
+that agree at `(q, d_q S(q, Q))` for every `(q, Q)` near `x` agree near `(q₀, d_q S(q₀, Q₀))`,
+since every point there is the source projection of its image under the branch. -/
+theorem eventuallyEq_of_eventually_generatingSource {α : Type*} {f g : CotangentBundle I M → α}
+    (h : ∀ᶠ y in 𝓝 x, f (generatingSource I S y) = g (generatingSource I S y)) :
+    f =ᶠ[𝓝 (generatingSource I S x)] g := by
+  have hβ : Tendsto (generatingBranch hS hx) (𝓝 (generatingSource I S x)) (𝓝 x) := by
+    have hc := ((generatingBranch hS hx).mdifferentiableAt (by simp)
+      (mem_generatingBranch_source hS hx)).continuousAt
+    simpa only [generatingBranch_generatingSource] using hc.tendsto
+  filter_upwards [hβ.eventually h, eventually_generatingSource_generatingBranch hS hx
+    (mem_generatingBranch_source hS hx)] with z hz hz'
+  rwa [hz'] at hz
 
 /-- **Uniqueness of the branch.** Every right inverse `β` of the source projection near
 `(q₀, d_q S(q₀, Q₀))`, continuous there and sending it to `x`, agrees with the branch near that

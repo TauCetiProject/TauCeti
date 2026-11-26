@@ -7,10 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Linear
-import Mathlib.MeasureTheory.Function.Jacobian
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.LinearAlgebra.Complex.Determinant
 
 /-!
 # Haar measure under dilations and affine maps
@@ -23,9 +22,7 @@ An affine map of a finite-dimensional real normed space multiplies every additiv
 by the absolute value of the determinant of its linear part
 (`MeasureTheory.Measure.addHaar_image_affineMap`, and
 `MeasureTheory.Measure.addHaar_image_affineEquiv` for affine equivalences), the affine form of
-Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`. Correspondingly, the substitution
-`x = N y` for an invertible linear map `N` multiplies integrals by `|det N|`
-(`MeasureTheory.Measure.integral_eq_abs_det_smul_integral_comp`). The affine dilation
+Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`. The affine dilation
 `y ↦ x + r • y`, `r ≠ 0`, is quasi-measure-preserving for every additive Haar measure
 (`MeasureTheory.Measure.quasiMeasurePreserving_add_smul`), and it scales measures by the
 inverse dimension power of `|r|` (`MeasureTheory.Measure.addHaar_preimage_add_smul`,
@@ -50,6 +47,12 @@ For an invertible real square matrix `A` and nonnegative bounds `a i`, the regio
 `2 ^ n * (∏ i, a i) / |det A|`, where `n` is the size of `A`
 (`Matrix.volume_setOf_forall_abs_mulVec_le`). It is the preimage of a coordinate box under `A`;
 this is the volume computation behind Minkowski's linear forms theorem.
+
+An invertible complex matrix `u` rescales additive Haar measure on `ι → ℂ` by `‖u.det‖⁻²`
+under pushforward (`TauCeti.map_mulVec_addHaar_eq_smul`). The corresponding change of
+variables for nonnegative integrals is `TauCeti.lintegral_eq_norm_det_sq_mul_lintegral_mulVec`.
+These formulas adapt the change of variables in grh-lean,
+`src/Lib/General/Analysis/GaussianIntegral.lean`.
 
 We also bound the additive Haar measure of the closure of a set in a finite-dimensional real
 normed space by the measure of the unit ball times the dimension power of its diameter. This is
@@ -90,6 +93,39 @@ theorem volume_smul_rpow {A : Set E} (hn : Module.finrank ℝ E ≠ 0) (c : ℝ)
     abs_pow, ENNReal.ofReal_rpow_of_nonneg (by positivity) (by positivity),
     Real.pow_rpow_inv_natCast (abs_nonneg c) hn]
 
+section ComplexMatrix
+
+open Matrix
+
+variable {ι : Type*} [Fintype ι]
+
+/-- The pushforward of an additive Haar measure `μ` on `ι → ℂ` under an invertible complex matrix
+`u` is `‖u.det‖⁻² • μ`. -/
+theorem map_mulVec_addHaar_eq_smul [DecidableEq ι] {μ : Measure (ι → ℂ)} [μ.IsAddHaarMeasure]
+    {u : Matrix ι ι ℂ} (hu : u.det ≠ 0) :
+    μ.map (fun x : ι → ℂ ↦ u *ᵥ x) = (ENNReal.ofReal (‖u.det‖ ^ 2))⁻¹ • μ := by
+  let f : (ι → ℂ) →ₗ[ℝ] (ι → ℂ) := u.toLin'.restrictScalars ℝ
+  have h_det : LinearMap.det f = ‖u.det‖ ^ 2 := by
+    rw [LinearMap.det_restrictScalars_eq_normSq, LinearMap.det_toLin', Complex.normSq_eq_norm_sq]
+  have h_mulVec : (fun x : ι → ℂ ↦ u *ᵥ x) = (f : (ι → ℂ) → (ι → ℂ)) := by
+    funext x
+    rw [LinearMap.restrictScalars_apply, Matrix.toLin'_apply]
+  rw [h_mulVec]
+  simp [μ.map_linearMap_addHaar_eq_smul_addHaar, h_det, hu]
+
+/-- Change of variables on `ι → ℂ` for any additive Haar measure `μ`: for an invertible complex
+matrix `u` and any `g : (ι → ℂ) → ENNReal`,
+`∫⁻ y, g y ∂μ = ‖u.det‖² * ∫⁻ y, g (u *ᵥ y) ∂μ`. -/
+theorem lintegral_eq_norm_det_sq_mul_lintegral_mulVec [DecidableEq ι] {μ : Measure (ι → ℂ)}
+    [μ.IsAddHaarMeasure] {u : Matrix ι ι ℂ} (hu : u.det ≠ 0) (g : (ι → ℂ) → ENNReal) :
+    ∫⁻ y : ι → ℂ, g y ∂μ = ENNReal.ofReal (‖u.det‖ ^ 2) * ∫⁻ y : ι → ℂ, g (u *ᵥ y) ∂μ := by
+  have h_emb : MeasurableEmbedding (fun y : ι → ℂ ↦ u *ᵥ y) :=
+    Continuous.measurableEmbedding (by fun_prop) (mulVec_injective_of_det_ne_zero hu)
+  rw [← h_emb.lintegral_map, map_mulVec_addHaar_eq_smul hu]
+  simp [ENNReal.mul_inv_cancel_left, hu]
+
+end ComplexMatrix
+
 end TauCeti
 
 namespace MeasureTheory.Measure
@@ -127,20 +163,6 @@ the determinant of the linear part times the measure of the set. -/
 theorem addHaar_image_affineEquiv (f : F ≃ᵃ[ℝ] F) (s : Set F) :
     μ (f '' s) = ENNReal.ofReal |LinearMap.det (f.linear : F →ₗ[ℝ] F)| * μ s :=
   addHaar_image_affineMap μ (f : F →ᵃ[ℝ] F) s
-
-/-- **Linear change of variables.** Substituting `x = N y` for an invertible linear map `N`
-multiplies an integral against an additive Haar measure by `|det N|`. -/
-theorem integral_eq_abs_det_smul_integral_comp {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {N : F →L[ℝ] F} (hN : IsUnit N) (f : F → G) :
-    ∫ x, f x ∂μ = |N.det| • ∫ y, f (N y) ∂μ := by
-  obtain ⟨u, rfl⟩ := hN
-  set e := ContinuousLinearEquiv.unitsEquiv ℝ F u
-  have he : ⇑e = ⇑(u : F →L[ℝ] F) := funext (ContinuousLinearEquiv.unitsEquiv_apply ℝ F u)
-  have h := integral_image_eq_integral_abs_det_fderiv_smul μ MeasurableSet.univ
-    (fun y _ ↦ (u : F →L[ℝ] F).hasFDerivAt.hasFDerivWithinAt) (he ▸ e.injective).injOn f
-  rw [image_univ_of_surjective (he ▸ e.surjective)] at h
-  simp only [Measure.restrict_univ] at h
-  rw [h, integral_smul]
 
 /-- The affine dilation `y ↦ x + r • y` with `r ≠ 0` is quasi-measure-preserving for an additive
 Haar measure, so preimages under it of null-measurable sets are null-measurable. -/

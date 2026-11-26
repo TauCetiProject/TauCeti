@@ -11,7 +11,7 @@ public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC.Basic
 
 /-!
 # The half-spin representations of `Spin(4)` and `Spinᶜ(4)`
@@ -64,7 +64,8 @@ the associated bundles.
 
 * `CliffordAlgebra.det_halfSpinRep`: Spin elements act on a two-dimensional `W^ε` with
   determinant one.
-* `CliffordAlgebra.inner_halfSpinRep_apply_halfSpinRep_apply`: on a Hermitian Clifford module the
+* `CliffordAlgebra.inner_map_apply_map_apply_of_mem_spinGroup`,
+  `CliffordAlgebra.inner_halfSpinRep_apply_halfSpinRep_apply`: on a Hermitian Clifford module the
   Spin action is unitary.
 * `CliffordAlgebra.spinCHalfSpinRep_negOne_neg_one`: `(-1, -1)` acts trivially, so the twisted
   action descends to `Spinᶜ(4)`.
@@ -301,6 +302,16 @@ section Hermitian
 variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
   {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W} (ε : ℂ)
 
+omit [Fact (finrank ℝ V = 4)] in
+/-- **Spin elements act unitarily** on a Hermitian Clifford module, whose generators act
+skew-adjointly: `⟪ρ(s) w, ρ(s) w'⟫ = ⟪w, w'⟫`, since `s* s = 1`. -/
+theorem inner_map_apply_map_apply_of_mem_spinGroup
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {s : CliffordAlgebra Q}
+    (hs : s ∈ spinGroup Q) (w w' : W) :
+    ⟪ρ s w, ρ s w'⟫_ℂ = ⟪w, w'⟫_ℂ := by
+  rw [← LinearMap.adjoint_inner_right, adjoint_map_eq_map_star hρ, ← mul_apply_eq_comp,
+    ← map_mul, spinGroup.star_mul_self_of_mem hs, map_one, one_apply_eq_self]
+
 /-- **The half-spin representations are unitary** on a Hermitian Clifford module, whose
 generators act skew-adjointly: `⟪ρ(s) ψ, ρ(s) χ⟫ = ⟪ψ, χ⟫`. -/
 theorem inner_halfSpinRep_apply_halfSpinRep_apply
@@ -308,8 +319,7 @@ theorem inner_halfSpinRep_apply_halfSpinRep_apply
     (ψ χ : eigenspace (ρ (chirality Q o)) ε) :
     ⟪halfSpinRep o ρ ε s ψ, halfSpinRep o ρ ε s χ⟫_ℂ = ⟪ψ, χ⟫_ℂ := by
   rw [Submodule.coe_inner, Submodule.coe_inner, coe_halfSpinRep_apply, coe_halfSpinRep_apply,
-    ← LinearMap.adjoint_inner_right, adjoint_map_eq_map_star hρ, ← mul_apply_eq_comp,
-    ← map_mul, spinGroup.star_mul_self_of_mem s.property, map_one, one_apply_eq_self]
+    inner_map_apply_map_apply_of_mem_spinGroup hρ s.property]
 
 /-- **The twisted half-spin representations are unitary** on a Hermitian Clifford module. -/
 theorem inner_spinCHalfSpinRep_apply_spinCHalfSpinRep_apply

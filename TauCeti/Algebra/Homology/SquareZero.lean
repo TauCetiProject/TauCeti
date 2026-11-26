@@ -9,9 +9,14 @@ public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.LinearAlgebra.LinearMap.Ker
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Prod
 public import TauCeti.LinearAlgebra.Quotient.Prod
 import TauCeti.LinearAlgebra.LinearMap.RestrictScalars
+
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # The homology of a square-zero linear endomorphism
@@ -33,12 +38,17 @@ elements of `M`, on which such structure is defined. The image is represented in
 * `LinearMap.boundariesInKer`: the image of `d` as a submodule of the kernel of `d`.
 * `LinearMap.homology`: for square-zero `d`, the kernel of `d` modulo its image.
 * `LinearMap.homologyπ`: the class of an element of the kernel.
+* `LinearMap.homologyEquivOfEqZero`: the homology of the zero endomorphism is the whole module.
 * `LinearMap.homologyIso`: for `d ∘ d = 0`, Mathlib's homology of the short complex with both maps
   `d` is `d.homology hd`.
 * `LinearMap.homologyMap`: the map on homology induced by a semilinear chain map
   `f` across coefficient rings with `f ∘ d = e ∘ f`.
 * `LinearEquiv.homologyEquiv`: the equivalence of homologies induced by a semilinear equivalence `f`
   with `f ∘ d = e ∘ f`.
+* `LinearMap.homologyRTensorProdEquiv`: the homology of `d ⊗ 1` on `M ⊗ (S × S)` is the homology
+  of `d` tensored with `S × S`.
+* `LinearEquiv.conjHomologyEquiv`: the equivalence from the homology of `d` to that of its
+  conjugate `f ∘ d ∘ f⁻¹` by a semilinear equivalence `f`.
 * `LinearMap.mappingCone`: the mapping cone `(m, n) ↦ (-d m, f m + e n)` of a linear chain map
   over a single coefficient ring.
 * `LinearMap.sumMappingCone`: the mapping cone of a map between free modules `ι →₀ S` and
@@ -56,6 +66,8 @@ elements of `M`, on which such structure is defined. The image is represented in
   map on homology.
 * `LinearMap.comp_comp_sub_id_eq_of_sub_id_eq`: a chain homotopy for a composite of two chain
   homotopy equivalences.
+* `LinearMap.coprod_comp_mappingCone`: `(m, n) ↦ h m + g n` is a chain map out of the mapping
+  cone of `f` when `g` is a chain map and `h` is a null-homotopy of `g ∘ f`.
 * `LinearMap.ker_le_range_mappingCone_iff`: a linear chain map over a single coefficient ring
   induces a bijection on homology exactly when its mapping cone is exact.
 * `LinearMap.ker_le_range_sumMappingCone_iff`: the kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies
@@ -88,6 +100,15 @@ theorem mem_boundariesInKer {z : ker d} : z ∈ d.boundariesInKer ↔ (z : M) �
 
 end Semiring
 
+/-- A homotopy from `v` to zero modulo `N` makes `v` commute with `d` modulo `N`. -/
+theorem commutator_mem_of_homotopy {S M : Type*} [Ring S] [AddCommGroup M] [Module S M]
+    {d h v : M →ₗ[S] M} (hd : d ∘ₗ d = 0) {N : Submodule S M} (hN : N ≤ N.comap d)
+    (hhom : ∀ m, d (h m) + h (d m) - v m ∈ N) (u : M) : v (d u) - d (v u) ∈ N := by
+  have hdd (m : M) : d (d m) = 0 := congr($hd m)
+  have h := N.sub_mem (hN (hhom u)) (hhom (d u))
+  simp only [map_sub, map_add, hdd, map_zero, zero_add, add_zero] at h
+  simpa only [sub_sub_sub_cancel_left] using h
+
 section Ring
 
 variable {S M : Type*} [Ring S] [AddCommGroup M] [Module S M] (d : M →ₗ[S] M)
@@ -114,6 +135,17 @@ theorem homologyπ_surjective (hd : d ∘ₗ d = 0) : Function.Surjective (d.hom
 theorem homologyπ_eq_zero_iff (hd : d ∘ₗ d = 0) (z : ker d) :
     d.homologyπ hd z = 0 ↔ (z : M) ∈ range d :=
   Submodule.Quotient.mk_eq_zero _
+
+/-- The homology of a zero endomorphism is the whole module: every element is a cycle and only
+`0` is a boundary. -/
+noncomputable def homologyEquivOfEqZero (hd : d ∘ₗ d = 0) (h : d = 0) : d.homology hd ≃ₗ[S] M :=
+  (Submodule.quotEquivOfEqBot _ (by ext z; simp [h])).trans (LinearEquiv.ofTop _ (by simp [h]))
+
+/-- `homologyEquivOfEqZero` sends the class of a cycle to the cycle itself. -/
+@[simp]
+theorem homologyEquivOfEqZero_mk (hd : d ∘ₗ d = 0) (h : d = 0) (z : ker d) :
+    d.homologyEquivOfEqZero hd h (Submodule.Quotient.mk z) = z := by
+  simp [homologyEquivOfEqZero, Submodule.quotEquivOfEqBot_apply_mk, LinearEquiv.ofTop_apply]
 
 /-- The short complex `M ⟶ M ⟶ M` of `S`-modules whose two maps are a square-zero endomorphism
 `d`. -/
@@ -342,8 +374,7 @@ variable {N : Type*} [AddCommGroup N] [Module S N] (e : N →ₗ[S] N)
 noncomputable def homologyProdEquiv (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) :
     (d.prodMap e).homology (by rw [prodMap_comp, hd, he]; ext <;> simp) ≃ₗ[S]
       d.homology hd × e.homology he := by
-  let E : ker (d.prodMap e) ≃ₗ[S] ker d × ker e :=
-    (LinearEquiv.ofEq _ _ (ker_prodMap d e)).trans ((ker d).prodEquiv (ker e))
+  let E := kerProdMapEquiv d e
   refine (Submodule.Quotient.equiv (d.prodMap e).boundariesInKer
     (d.boundariesInKer.prod e.boundariesInKer) E ?_).trans
       (Submodule.quotientProdEquiv _ _)
@@ -352,10 +383,11 @@ noncomputable def homologyProdEquiv (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) 
   constructor
   · rintro ⟨w, hw, rfl⟩
     obtain ⟨v, hv⟩ := (mem_boundariesInKer _).mp hw
-    exact ⟨⟨v.1, congrArg Prod.fst hv⟩, ⟨v.2, congrArg Prod.snd hv⟩⟩
+    exact ⟨⟨v.1, by simpa [E] using congrArg Prod.fst hv⟩,
+      ⟨v.2, by simpa [E] using congrArg Prod.snd hv⟩⟩
   · rintro ⟨⟨u, hu⟩, ⟨v, hv⟩⟩
     refine ⟨E.symm z, ?_, E.apply_symm_apply z⟩
-    exact ⟨(u, v), Prod.ext hu hv⟩
+    exact ⟨(u, v), Prod.ext (by simpa [E] using hu) (by simpa [E] using hv)⟩
 
 /-- The product-homology equivalence sends a cycle class to its two component classes. -/
 @[simp]
@@ -364,7 +396,9 @@ theorem homologyProdEquiv_mk (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
     d.homologyProdEquiv e hd he (Submodule.Quotient.mk z) =
       (Submodule.Quotient.mk ⟨z.val.1, congrArg Prod.fst (mem_ker.mp z.property)⟩,
         Submodule.Quotient.mk ⟨z.val.2, congrArg Prod.snd (mem_ker.mp z.property)⟩) := by
-  simp [homologyProdEquiv, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
+  simp only [homologyProdEquiv, LinearEquiv.trans_apply, Submodule.Quotient.equiv_apply,
+    Submodule.mapQ_apply, Submodule.quotientProdEquiv_apply_mk, Prod.mk.injEq]
+  exact ⟨congrArg _ (Subtype.ext (by simp)), congrArg _ (Subtype.ext (by simp))⟩
 
 /-- The inverse product-homology equivalence sends two cycle classes to their product class. -/
 @[simp]
@@ -416,6 +450,18 @@ theorem mappingCone_comp_self (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e 
           rw [← map_add, he2]
       _ = 0 := by
           rw [neg_add_cancel, map_zero, add_zero]
+
+/-- The map `(m, n) ↦ h m + g n` from the mapping cone of `f` to `(P, q)` is a chain map when `g`
+is a chain map and `h` is a null-homotopy of `g ∘ f`, that is, `g ∘ f = q ∘ h + h ∘ d`. -/
+theorem coprod_comp_mappingCone {P : Type*} [AddCommGroup P] [Module S P] {q : P →ₗ[S] P}
+    {f : M →ₗ[S] N} {g : N →ₗ[S] P} {h : M →ₗ[S] P} (hg : g ∘ₗ e = q ∘ₗ g)
+    (hh : g ∘ₗ f = q ∘ₗ h + h ∘ₗ d) :
+    h.coprod g ∘ₗ mappingCone d e f = q ∘ₗ h.coprod g := by
+  refine LinearMap.ext fun x ↦ ?_
+  have hgf : g (f x.1) = q (h x.1) + h (d x.1) := congr($hh x.1)
+  have hge : g (e x.2) = q (g x.2) := congr($hg x.2)
+  simp only [comp_apply, mappingCone_apply, coprod_apply, map_neg, map_add, hgf, hge]
+  abel
 
 end MappingCone
 
@@ -515,10 +561,9 @@ theorem sumMappingCone_single_inr_apply_inr (d : (ι →₀ S) →ₗ[S] (ι →
 to zero. -/
 theorem sumMappingCone_comp_self {d : (ι →₀ S) →ₗ[S] (ι →₀ S)} {e : (κ →₀ S) →ₗ[S] (κ →₀ S)}
     {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) :
-    sumMappingCone d e f ∘ₗ sumMappingCone d e f = 0 := by
-  unfold sumMappingCone
-  rw [← Module.End.mul_eq_comp, ← map_mul, Module.End.mul_eq_comp,
-    mappingCone_comp_self f hd he hf, map_zero]
+    sumMappingCone d e f ∘ₗ sumMappingCone d e f = 0 :=
+  (sumFinsuppLEquivProdFinsupp S).symm.conjRingEquiv_apply_comp_self
+    (mappingCone_comp_self f hd he hf)
 
 /-- The kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies in its range exactly when the kernel of
 the mapping cone on `(ι →₀ S) × (κ →₀ S)` lies in its range. -/
@@ -566,6 +611,21 @@ theorem homologyEquiv_mk (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) (he : e 
         ⟨f z, LinearMap.map_mem_ker_of_comp_eq (d := d) (e := e) f.toLinearMap hf z.property⟩ :=
   LinearMap.homologyMap_mk f.toLinearMap hd he hf z
 
+/-- A semilinear equivalence `f` induces an equivalence from the homology of a square-zero
+endomorphism `d` to that of its conjugate `f ∘ d ∘ f⁻¹`. -/
+noncomputable def conjHomologyEquiv (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) :
+    d.homology hd ≃ₛₗ[σ] (f.conjRingEquiv d).homology (f.conjRingEquiv_apply_comp_self hd) :=
+  f.homologyEquiv hd _ (f.conjRingEquiv_apply_comp d).symm
+
+/-- The equivalence of homologies induced by conjugation sends the class of a cycle `z` to the
+class of `f z`. -/
+@[simp]
+theorem conjHomologyEquiv_mk (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) (z : LinearMap.ker d) :
+    f.conjHomologyEquiv hd (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk ⟨f z, LinearMap.map_mem_ker_of_comp_eq (d := d)
+        (e := f.conjRingEquiv d) f.toLinearMap (f.conjRingEquiv_apply_comp d).symm z.property⟩ :=
+  f.homologyEquiv_mk hd _ _ z
+
 end LinearEquiv
 
 namespace LinearMap
@@ -607,6 +667,37 @@ theorem homologyRestrictScalarsEquiv_symm_mk (hd : d ∘ₗ d = 0) (z : ker d) :
   rw [LinearEquiv.symm_apply_eq, homologyRestrictScalarsEquiv_mk]
 
 end RestrictScalars
+
+section RTensor
+
+variable {S M : Type*} [CommRing S] [AddCommGroup M] [Module S M] (d : M →ₗ[S] M)
+
+open TensorProduct
+
+/-- Tensoring a square-zero endomorphism with the identity of a module `W` gives a square-zero
+endomorphism `d ⊗ 1` of `M ⊗ W`. -/
+theorem rTensor_comp_rTensor_eq_zero (W : Type*) [AddCommGroup W] [Module S W]
+    (hd : d ∘ₗ d = 0) : d.rTensor W ∘ₗ d.rTensor W = 0 := by
+  rw [← rTensor_comp, hd, rTensor_zero]
+
+/-- **Homology commutes with tensoring by `S × S`.** For a square-zero endomorphism `d` of `M`,
+the homology of `d ⊗ 1` on `M ⊗ (S × S)` is the homology of `d` tensored with `S × S`: both are
+two copies of the homology of `d` (`TensorProduct.prodScalarRight`). -/
+noncomputable def homologyRTensorProdEquiv (hd : d ∘ₗ d = 0) :
+    (d.rTensor (S × S)).homology (d.rTensor_comp_rTensor_eq_zero (S × S) hd) ≃ₗ[S]
+      d.homology hd ⊗[S] (S × S) :=
+  ((prodScalarRight S S M).homologyEquiv _ _ (by ext m <;> simp)).trans
+    ((d.homologyProdEquiv d hd hd).trans (prodScalarRight S S _).symm)
+
+/-- The inverse of `homologyRTensorProdEquiv` sends the class of a cycle `z` of `d`, tensored with
+`w`, to the class of the cycle `z ⊗ w` of `d ⊗ 1`. -/
+@[simp]
+theorem homologyRTensorProdEquiv_symm_mk_tmul (hd : d ∘ₗ d = 0) (z : ker d) (w : S × S) :
+    (d.homologyRTensorProdEquiv hd).symm (Submodule.Quotient.mk z ⊗ₜ w) =
+      Submodule.Quotient.mk ⟨(z : M) ⊗ₜ w, tmul_mem_ker_rTensor z.property w⟩ := by
+  simp [homologyRTensorProdEquiv, LinearEquiv.symm_apply_eq, ← Submodule.Quotient.mk_smul]
+
+end RTensor
 
 section MappingConeHomotopy
 

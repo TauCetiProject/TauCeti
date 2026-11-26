@@ -49,6 +49,8 @@ comparisons gives homotopy and fibre homotopy equivalences with Moore models:
 * `TauCeti.contractibleConstLoopPathHomeomorphUnitPathsBetween`,
   `TauCeti.sphere2FiberHomotopyEquivMoorePaths`, `TauCeti.sphere2HomotopyEquivMoorePaths`:
   `P_{Q→Q} 𝓛₀Q ≃ₕ Map(S², Q)` over `Q × Q`.
+* `TauCeti.constContractibleMoorePathsInclusion`: the inclusion
+  `P_{Q→Q} 𝓛₀Q ↪ P_{Q→𝓛₀Q} 𝓛₀Q`.
 * `TauCeti.basedContractibleConstLoopPathHomeomorphUnitPathsBetween`,
   `TauCeti.basedMapSphere2FiberHomotopyEquivMoorePaths`,
   `TauCeti.basedMapSphere2HomotopyEquivMoorePaths`:
@@ -254,6 +256,20 @@ theorem constContractibleMooreEndpoints_apply (γ : ConstContractibleMoorePaths 
     constContractibleMooreEndpoints Q γ =
       (basepointContractibleLoop γ.val.source, basepointContractibleLoop γ.val.target) := by
   simp [constContractibleMooreEndpoints, MoorePath.endpointsBetween_apply]
+
+/-- The inclusion `P_{Q→Q} 𝓛₀Q ↪ P_{Q→𝓛₀Q} 𝓛₀Q` of the Moore paths in the contractible loops
+between constant loops into the Moore paths starting at a constant loop. -/
+def constContractibleMoorePathsInclusion :
+    C(ConstContractibleMoorePaths Q,
+      MoorePath.pathsBetween (Set.range (constContractibleLoop (Q := Q))) Set.univ) :=
+  ⟨Set.inclusion fun _ hγ ↦ MoorePath.mem_pathsBetween.2 ⟨(MoorePath.mem_pathsBetween.1 hγ).1,
+    Set.mem_univ _⟩, continuous_inclusion _⟩
+
+variable {Q} in
+@[simp]
+theorem coe_constContractibleMoorePathsInclusion (γ : ConstContractibleMoorePaths Q) :
+    (constContractibleMoorePathsInclusion Q γ : MoorePath (contractibleLoops Q)) = γ :=
+  (rfl)
 
 /-- Evaluation of a two-sphere map at `(north, south) : Sphere2 × Sphere2`. -/
 def sphere2Poles : C(C(Sphere2, Q), Q × Q) :=

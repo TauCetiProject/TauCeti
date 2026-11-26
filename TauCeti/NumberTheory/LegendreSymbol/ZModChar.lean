@@ -20,6 +20,7 @@ zeros of `χ₈`, and the formula `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd int
 ## Main statements
 
 * `ZMod.χ₄_neg`, `ZMod.χ₈_neg`: `χ₄` is odd and `χ₈` is even.
+* `ZMod.χ₄_two_mul_add_one`: `χ₄ (2 v + 1) = (-1) ^ v`.
 * `ZMod.χ₄_natCast_eq_neg_of_dvd_add`, `ZMod.χ₈_natCast_eq_of_dvd_add`: the same statements for
   natural numbers `b`, `b'` with `4 ∣ b + b'`, respectively `8 ∣ b + b'`.
 * `ZMod.int_mul_χ₄_modEq_one`: sign-normalizing an odd integer gives `1` modulo `4`.
@@ -48,6 +49,11 @@ theorem χ₄_natCast_eq_neg_of_dvd_add {b b' : ℕ} (h : 4 ∣ b + b') : χ₄ 
 /-- If `8 ∣ b + b'`, then `χ₈ b' = χ₈ b`, since `χ₈` is even. -/
 theorem χ₈_natCast_eq_of_dvd_add {b b' : ℕ} (h : 8 ∣ b + b') : χ₈ b' = χ₈ b := by
   rw [natCast_eq_neg_of_dvd_add h, χ₈_neg]
+
+/-- The first supplement at `2 v + 1`: `χ₄ (2 v + 1) = (-1) ^ v`. -/
+theorem χ₄_two_mul_add_one (v : ℕ) : χ₄ ((2 * v + 1 : ℕ) : ZMod 4) = (-1) ^ v := by
+  rw [χ₄_eq_neg_one_pow (Nat.odd_iff.mp (odd_two_mul_add_one v)),
+    show (2 * v + 1) / 2 = v by omega]
 
 /-- For odd `a`, `χ₄ a * χ₄ a = 1`. -/
 theorem χ₄_natCast_mul_self {a : ℕ} (ha : Odd a) : χ₄ a * χ₄ a = 1 := by

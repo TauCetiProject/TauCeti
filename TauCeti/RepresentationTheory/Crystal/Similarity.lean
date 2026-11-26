@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Crystal.Component
-public import TauCeti.RepresentationTheory.Crystal.Word
 import Mathlib.Tactic.Linarith
 import TauCeti.Data.Option.Basic
 

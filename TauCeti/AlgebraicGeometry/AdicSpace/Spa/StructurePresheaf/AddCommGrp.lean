@@ -115,6 +115,31 @@ theorem presentationLimitAddCommGrpPresheafObjEquiv_map_apply {W : Opens ↥(spa
         (presentationLimitAddCommGrpPresheafObjEquiv P Aplus V x) :=
   (rfl)
 
+/-- The sections of `presentationLimitAddCommGrpPresheaf` over `V` are the image of
+`presentationLimit Aplus V` under the forgetful functors from complete separated topological rings
+to abelian groups. -/
+-- Not `@[simp]`, for the same reason as `presentationLimitAddCommGrpPresheaf_obj`.
+theorem presentationLimitAddCommGrpPresheaf_obj_eq_forget₂ {W : Opens ↥(spa Aplus)}
+    (V : Set.Iic W) :
+    (presentationLimitAddCommGrpPresheaf P Aplus W).obj (op V) =
+      (forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat).obj
+        ((TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
+          (presentationLimit (P := P) Aplus V.val)) :=
+  (rfl)
+
+/-- Under `presentationLimitAddCommGrpPresheaf_obj_eq_forget₂`, the restriction maps of
+`presentationLimitAddCommGrpPresheaf` are the images of the `presentationLimitMap`s under the
+forgetful functors. -/
+theorem presentationLimitAddCommGrpPresheaf_map_eq_forget₂ {W : Opens ↥(spa Aplus)}
+    {V V' : Set.Iic W} (h : V' ⟶ V) :
+    (presentationLimitAddCommGrpPresheaf P Aplus W).map h.op =
+      eqToHom (presentationLimitAddCommGrpPresheaf_obj_eq_forget₂ P Aplus V) ≫
+        (forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat).map
+          ((TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
+            (presentationLimitMap (P := P) (Subtype.coe_le_coe.mpr (leOfHom h)))) ≫
+        eqToHom (presentationLimitAddCommGrpPresheaf_obj_eq_forget₂ P Aplus V').symm :=
+  (rfl)
+
 /-! ### Restriction to a smaller open -/
 
 section Restrict

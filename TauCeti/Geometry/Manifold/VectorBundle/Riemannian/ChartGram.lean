@@ -47,7 +47,9 @@ API replace them.
   the basis of the model space.
 * `Riemannian.Tensor.mvfderiv_chartLocalFrame`: on a boundaryless manifold, differentiating along
   the frame is taking coordinate partial derivatives in the chart.
-* `Riemannian.Tensor.contMDiffAt_chartLocalFrame`: smoothness of the frame at its base point.
+* `Riemannian.Tensor.contMDiffAt_chartLocalFrame` and
+  `Riemannian.Tensor.mdifferentiableAt_chartLocalFrame`: smoothness and differentiability of the
+  frame.
 * `Riemannian.Tensor.chartGramMatrix`: the metric Gram matrix in this frame.
 * `Riemannian.Tensor.chartGramMatrix_eq_toMatrix`: on the base set, it is the matrix of the fiber
   inner product in the basis given by the trivialization.
@@ -60,11 +62,18 @@ API replace them.
 * `Riemannian.Tensor.contMDiffOn_chartInvGramMatrix_entry`: smoothness of inverse entries.
 * `Riemannian.Tensor.chartDualFrame`: the metric-dual chart frame, identified with the dual
   basis on the chart domain by `Riemannian.Tensor.dualBasis_basisAt_eq_chartDualFrame`.
-* `Riemannian.Tensor.bilinFormTrace_eq_sum_chartInvGramMatrix`: on the chart domain, the metric
-  trace of a bilinear form is the contraction `gⁱʲ B(eᵢ, eⱼ)` in the chart-local frame.
+* `Riemannian.Tensor.metricTrace_eq_sum_chartInvGramMatrix`: on the chart domain, the metric
+  trace of a (vector-valued) bilinear map is the contraction `gⁱʲ B(eᵢ, eⱼ)` in the chart-local
+  frame.
+* `Riemannian.Tensor.metricTrace_eq_sum_chartDualFrame` and
+  `Riemannian.Tensor.eventually_metricTrace_eq_sum_chartDualFrame`: equivalently, it is
+  `∑ᵢ B(Fᵢ, Dᵢ)`, the chart-local frame paired with its metric-dual frame, pointwise on the
+  chart domain and locally near any point of it.
 * `Riemannian.Tensor.inner_chartDualFrame` and
   `Riemannian.Tensor.sum_inner_chartDualFrame_smul`: duality and vector expansion in the frames.
-* `Riemannian.Tensor.contMDiffAt_chartDualFrame`: regularity of the metric-dual frame.
+* `Riemannian.Tensor.contMDiffAt_chartDualFrame` and
+  `Riemannian.Tensor.mdifferentiableAt_chartDualFrame`: regularity and differentiability of the
+  metric-dual frame.
 * `Riemannian.Tensor.mvfderiv_chartGramMatrix_apply`,
   `Riemannian.Tensor.mvfderiv_det_chartGramMatrix`: the derivatives of the Gram matrix and of its
   determinant for a metric-compatible connection, `dG = Pᵀ G + G P` and
@@ -372,19 +381,41 @@ theorem chartGramMatrix_mul_chartInvGramMatrix (α : M) {x : M}
   unfold chartInvGramMatrix
   exact Matrix.mul_nonsing_inv _ hdet_unit
 
-/-- On the chart domain, the metric trace of a bilinear form `B` is the contraction
-`gⁱʲ B(eᵢ, eⱼ)` of its coefficients in the chart-local frame `eᵢ` at `α` against the inverse Gram
-matrix. The frame need not be orthonormal. -/
-theorem bilinFormTrace_eq_sum_chartInvGramMatrix (α : M) {x : M}
-    (hx : x ∈ (chartAt H α).source) (B : LinearMap.BilinForm ℝ (TangentSpace I x)) :
-    TauCeti.bilinFormTrace B = ∑ i, ∑ j, chartInvGramMatrix (I := I) α x i j *
-      B (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := by
+/-- On the chart domain, the metric trace of a bilinear map `B` with values in a real vector space
+`N` is `∑ᵢ B(Fᵢ, Dᵢ)`, where `Fᵢ` is the chart-local frame at `α` and `Dᵢ` its metric-dual frame. -/
+theorem metricTrace_eq_sum_chartDualFrame (α : M) {x : M}
+    (hx : x ∈ (chartAt H α).source) {N : Type*} [AddCommMonoid N] [Module ℝ N]
+    (B : LinearMap.BilinMap ℝ (TangentSpace I x) N) :
+    LinearMap.BilinMap.metricTrace B =
+      ∑ i, B (chartLocalFrame (I := I) α i x) (chartDualFrame (I := I) α i x) := by
   have hx' : x ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
     simpa only [TangentBundle.trivializationAt_baseSet] using hx
-  let b := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx'
-  have hb : ⇑b = fun i ↦ chartLocalFrame (I := I) α i x :=
-    funext fun i ↦ (chartLocalFrame_apply_of_mem_chart_source (I := I) α hx i).symm
-  rw [TauCeti.bilinFormTrace_eq_sum_inv_gram _ b, hb, ← chartGramMatrix, ← chartInvGramMatrix_def]
+  rw [LinearMap.BilinMap.metricTrace_eq_sum_dualBasis _
+    ((trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx')]
+  simp only [dualBasis_basisAt_eq_chartDualFrame, chartLocalFrame_apply_of_mem_chart_source α hx]
+
+/-- Near a point `x` of the chart domain, the metric trace of a family of bilinear maps `B` with
+values in a family of real vector spaces `N` is `∑ᵢ B(Fᵢ, Dᵢ)`, where `Fᵢ` is the chart-local
+frame at `α` and `Dᵢ` its metric-dual frame. -/
+theorem eventually_metricTrace_eq_sum_chartDualFrame (α : M) {x : M}
+    (hx : x ∈ (chartAt H α).source) {N : M → Type*}
+    [∀ y, AddCommMonoid (N y)] [∀ y, Module ℝ (N y)]
+    (B : Π y : M, LinearMap.BilinMap ℝ (TangentSpace I y) (N y)) :
+    ∀ᶠ y in 𝓝 x, LinearMap.BilinMap.metricTrace (B y) =
+      ∑ i, B y (chartLocalFrame (I := I) α i y) (chartDualFrame (I := I) α i y) := by
+  filter_upwards [(chartAt H α).open_source.mem_nhds hx] with y hy
+  exact metricTrace_eq_sum_chartDualFrame α hy (B y)
+
+/-- On the chart domain, the metric trace of a bilinear map `B` with values in a real vector space
+`N` is the contraction `gⁱʲ B(eᵢ, eⱼ)` of its coefficients in the chart-local frame `eᵢ` at `α`
+against the inverse Gram matrix. The frame need not be orthonormal. -/
+theorem metricTrace_eq_sum_chartInvGramMatrix (α : M) {x : M}
+    (hx : x ∈ (chartAt H α).source) {N : Type*} [AddCommMonoid N] [Module ℝ N]
+    (B : LinearMap.BilinMap ℝ (TangentSpace I x) N) :
+    LinearMap.BilinMap.metricTrace B = ∑ i, ∑ j, chartInvGramMatrix (I := I) α x i j •
+      B (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := by
+  rw [metricTrace_eq_sum_chartDualFrame α hx B]
+  simp only [chartDualFrame_apply, map_sum, map_smul]
 
 /-- On the chart domain, the dual frame pairs with the chart-local frame to the identity
 matrix. -/
@@ -483,6 +514,28 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
+omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
+/-- Each member of `chartLocalFrame α` is differentiable at every point of the
+tangent-trivialization base set. -/
+theorem mdifferentiableAt_chartLocalFrame (α : M) {y : M}
+    (hy : y ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (i : Fin (Module.finrank ℝ E)) :
+    MDiffAt (T% (chartLocalFrame (I := I) α i)) y := by
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+  exact ((contMDiffOn_chartLocalFrame (n := 1) α i).contMDiffAt
+    ((trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds hy)).mdifferentiableAt
+      one_ne_zero
+
+/-- Each metric-dual chart vector is differentiable at every point of the tangent-trivialization
+base set. -/
+theorem mdifferentiableAt_chartDualFrame (α : M) {y : M}
+    (hy : y ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (i : Fin (Module.finrank ℝ E)) :
+    MDiffAt (T% (chartDualFrame (I := I) α i)) y := by
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+  exact (contMDiffAt_chartDualFrame (n := 1) α hy i).mdifferentiableAt one_ne_zero
+
 /-- **The derivative of the chart metric.** For a connection `∇` compatible with the metric, the
 derivative along `v` of the metric coefficient `gᵢⱼ = ⟪eᵢ, eⱼ⟫` in the chart frame at `α` is
 `⟪∇ᵥ eᵢ, eⱼ⟫ + ⟪eᵢ, ∇ᵥ eⱼ⟫`. -/
@@ -494,12 +547,9 @@ theorem mvfderiv_chartGramMatrix_apply
     mvfderiv I (fun z ↦ chartGramMatrix (I := I) α z i j) y v =
       inner ℝ (cov (chartLocalFrame (I := I) α i) y v) (chartLocalFrame (I := I) α j y) +
         inner ℝ (chartLocalFrame (I := I) α i y) (cov (chartLocalFrame (I := I) α j) y v) := by
-  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
-  have hframe (k : Fin (Module.finrank ℝ E)) : MDiffAt (T% (chartLocalFrame (I := I) α k)) y :=
-    ((contMDiffOn_chartLocalFrame (n := 1) α k).contMDiffAt
-      ((trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds hy)).mdifferentiableAt
-        one_ne_zero
-  have := hcov.mvfderiv_inner_eq (extend E v) (hframe i) (hframe j)
+  have := hcov.mvfderiv_inner_eq (extend E v)
+    (mdifferentiableAt_chartLocalFrame (I := I) α hy i)
+    (mdifferentiableAt_chartLocalFrame (I := I) α hy j)
   simpa only [extend_apply_self, chartGramMatrix_apply] using this
 
 /-- **The derivative of the Gram determinant.** For a connection `∇` compatible with the metric,

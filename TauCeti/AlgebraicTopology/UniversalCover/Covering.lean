@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.AlgebraicTopology.UniversalCover.Basic
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 import TauCeti.Topology.SeparatedMap
 
 /-!
@@ -30,6 +30,7 @@ This file is adapted from Kim Morrison's
 * `UniversalCover.pathConnectedSpace`: the universal cover is path-connected.
 * `UniversalCover.simplyConnectedSpace`: the universal cover is simply connected.
 * `UniversalCover.existsUnique_continuousMap_lifts`: the universal lifting property.
+* `UniversalCover.monodromy_mk`: monodromy along `γ` sends the point `[q]` to `[q · γ]`.
 * `UniversalCover.apply_one_eq_ofBasedPath`: a lift of a based path starting at the constant-path
   point ends at the class of that path.
 
@@ -153,6 +154,27 @@ theorem liftPath_apply_one_eq_ofBasedPath_append
   change ofBasedPath x₀ (α.append (γ.initialSegmentFamily 1)) = _
   rw [Path.initialSegmentFamily_one]
   rfl
+
+/-- **Monodromy of the universal cover.** Transporting the point `[q]` over `x` along a path class
+`γ` from `x` to `y` gives the point `[q · γ]` over `y`: the lift of `γ` starting at the class of
+`q` ends at the class of the concatenation. -/
+theorem monodromy_mk [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] {y : X}
+    (q : Path.Homotopic.Quotient x₀ x) (γ : Path.Homotopic.Quotient x y) :
+    ((isCoveringMap x₀).monodromy γ ⟨mk x q, rfl⟩ : TauCeti.UniversalCover x₀) =
+      mk y (q.trans γ) := by
+  induction q using Path.Homotopic.Quotient.ind with | mk α => ?_
+  induction γ using Path.Homotopic.Quotient.ind with | mk δ => ?_
+  rw [IsCoveringMap.coe_monodromy_mk]
+  have h := liftPath_apply_one_eq_ofBasedPath_append (x₀ := x₀) (α := BasedPath.ofPath α)
+    (δ.cast (BasedPath.endpoint_ofPath α) rfl)
+  simp only [ofBasedPath_ofPath] at h
+  convert h using 1
+  -- The two lifts are of the same continuous map `δ`; `Path.cast` only changes proof fields.
+  · rfl
+  rw [ofBasedPath_def]
+  refine UniversalCover.ext (BasedPath.endpoint_append _ _).symm ?_
+  rw [← Path.Homotopic.Quotient.mk_trans]
+  exact Path.Homotopic.hpath_hext fun _ ↦ rfl
 
 /-- **The endpoint of a lift of a based path.** A continuous path in the universal cover that starts
 at the constant-path point and lies over the based path `γ` ends at the class of `γ`: by unique

@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.LinearAlgebra.Orientation.Basic
-import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.LinearAlgebra.Orientation.Basis
 
 /-!
 # Continuous families of linear maps transport orientations alike
@@ -21,10 +22,15 @@ is `1` at `x₀`, hence positive nearby.
 This is the local constancy step behind continuous families of orientations, such as orientations
 of vector bundles transported along fibrewise isomorphisms.
 
+In a line, two vectors of the same norm giving the same orientation are equal
+(`TauCeti.eq_of_orientation_basisSingleton_eq`).
+
 ## Main results
 
 * `Orientation.eventually_map_eq_map_of_continuousAt`: near `x₀`, the linear equivalences given by
   a continuous family `L` transport an orientation as its value at `x₀` does.
+* `TauCeti.eq_of_orientation_basisSingleton_eq`: a unit vector of a line is determined by the
+  orientation it gives.
 -/
 
 public section
@@ -63,9 +69,21 @@ theorem Orientation.eventually_map_eq_map_of_continuousAt {X : Type*} [Topologic
   have hK : ContinuousAt K x₀ := ContinuousAt.clm_comp continuousAt_const (hL this)
   filter_upwards [(ContinuousLinearMap.continuous_det.continuousAt.comp hK).eventually
     (lt_mem_nhds (hK₀ ▸ one_pos))] with x hx f hf
-  refine Orientation.map_eq_map_of_det_pos c _ _ hι ?_
+  refine (Orientation.map_eq_map_iff_det_pos c _ _ hι).mpr ?_
   have hKf : K x = (f.trans f₀.symm : E →L[ℝ] E) := by
     ext v
     simp [K, ← hf]
   rw [Function.comp_apply, hKf] at hx
   simpa [ContinuousLinearMap.det] using hx
+
+/-- Two vectors of the same norm in a line that give the same orientation are equal. -/
+theorem TauCeti.eq_of_orientation_basisSingleton_eq {V ι : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] [Unique ι] [Fintype ι] [DecidableEq ι] (hV : Module.finrank ℝ V = 1)
+    {v w : V} (hn : ‖w‖ = ‖v‖) (hv : v ≠ 0) (hw : w ≠ 0)
+    (h : (FiniteDimensional.basisSingleton ι hV w hw).orientation =
+      (FiniteDimensional.basisSingleton ι hV v hv).orientation) :
+    w = v := by
+  refine (eq_or_eq_neg_of_norm_eq_of_finrank_eq_one hV hn).resolve_right fun hwv ↦ ?_
+  subst hwv
+  rw [TauCeti.orientation_basisSingleton_neg hV hw] at h
+  exact Module.Ray.ne_neg_self _ h.symm

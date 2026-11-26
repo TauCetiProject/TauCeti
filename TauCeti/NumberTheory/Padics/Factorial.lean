@@ -7,8 +7,12 @@ module
 
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
+public import Mathlib.Data.Finsupp.Weight
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.Data.Nat.Factorial.Basic
+import Mathlib.Data.Nat.Digits.Lemmas
+import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -24,12 +28,34 @@ one-parameter subgroup. Divisibility by each fixed prime power suffices for the 
 * `TauCeti.padicValNat_factorial_eq_add_sum`: Legendre's formula truncated at level `h`,
   `v_p(n!) = v_p(⌊n / pʰ⌋!) + ∑_{k = 1}^{h} ⌊n / pᵏ⌋`.
 * `TauCeti.sub_one_mul_padicValNat_factorial_pow`: Legendre's formula for `(pᵏ)!`,
-  `(p - 1) v_p((pᵏ)!) = pᵏ - 1`.
+  `(p - 1) v_p((pᵏ)!) = pᵏ - 1`, and its real form `TauCeti.cast_multiplicity_factorial_pow`.
+* `TauCeti.multiplicity_factorial_lt_div`, `TauCeti.multiplicity_factorial_le_div`: Legendre's
+  bound `v_p(n!) < n / (p - 1)` for `n ≠ 0`, and its non-strict form for every `n`.
 * `TauCeti.norm_factorial_eq_norm_factorial_div_mul_pow`,
   `TauCeti.factorial_dvd_factorial_div_mul_pow`: its consequence that `n!` has the norm of, and
   divides, `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)` in `ℤ_[p]`.
+* `TauCeti.div_sub_log_le_multiplicity_factorial`: Legendre's lower bound with the number of
+  base-`p` digits, `v_p(n!) ≥ n / (p - 1) - (⌊log_p n⌋ + 1)`, and its form in `ℕ`,
+  `TauCeti.le_sub_one_mul_multiplicity_factorial_add_log`.
+* `TauCeti.div_sub_log_le_multiplicity_prod_factorial`,
+  `TauCeti.div_sub_logb_le_multiplicity_prod_factorial`: its form for a multi-index `κ`,
+  `v_p(∏ᵢ κᵢ!) ≥ |κ| / (p - 1) - #supp(κ) (⌊log_p |κ|⌋ + 1)`, and the weaker form with
+  `log_p max(|κ|, 1) + 1`.
 * `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
 * `Padic.rpow_neg_div_le_norm_factorial`: `p ^ (-n / (p - 1)) ≤ ‖n!‖` in `ℚ_[p]`.
+
+## Provenance
+
+`TauCeti.le_sub_one_mul_multiplicity_factorial_add_log` and
+`TauCeti.div_sub_log_le_multiplicity_factorial` are adapted from the lower half of
+`New.padicValNat_factorial_mem_Icc` (file `src/Lib/General/Algebra/IntegralPowerSeries.lean`) in
+grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), which
+states it for `n < p ^ K` with `K` in place of `⌊log_p n⌋ + 1`; the forms for a multi-index are new
+here.
+
+## References
+
+* A.-M. Legendre, *Essai sur la théorie des nombres*, 2nd ed., Courcier, Paris, 1808.
 -/
 
 public section
@@ -74,6 +100,109 @@ theorem sub_one_mul_padicValNat_factorial_pow (p : ℕ) [hp : Fact p.Prime] (k :
     Nat.digits_base_pow_mul hp.out.one_lt one_pos, Nat.digits_of_lt p 1 one_ne_zero hp.out.one_lt]
   simp
 
+/-- **Legendre's formula for `(pᵏ)!`, in `ℝ`.** `v_p((pᵏ)!) = (pᵏ - 1) / (p - 1)`. -/
+theorem cast_multiplicity_factorial_pow (p : ℕ) [hp : Fact p.Prime] (k : ℕ) :
+    (multiplicity p (p ^ k).factorial : ℝ) = ((p : ℝ) ^ k - 1) / ((p : ℝ) - 1) := by
+  have h : (((p - 1) * multiplicity p (p ^ k).factorial : ℕ) : ℝ) = ((p ^ k - 1 : ℕ) : ℝ) := by
+    rw [← Nat.padicValNat_def, sub_one_mul_padicValNat_factorial_pow p k]
+  push_cast [Nat.cast_sub hp.out.one_le, Nat.cast_sub (Nat.one_le_pow k p hp.out.pos)] at h
+  rw [eq_div_iff (sub_pos.mpr (by exact_mod_cast hp.out.one_lt : (1 : ℝ) < p)).ne']
+  linarith
+
+/-- **Legendre's bound.** `v_p(n!) < n / (p - 1)` for `n ≠ 0`, since the base-`p` digit sum of
+`n` is positive. -/
+theorem multiplicity_factorial_lt_div (p : ℕ) [hp : Fact p.Prime] {n : ℕ} (hn : n ≠ 0) :
+    (multiplicity p n.factorial : ℝ) < n / ((p : ℝ) - 1) := by
+  have h : (((p - 1) * multiplicity p n.factorial : ℕ) : ℝ) < n := by
+    exact_mod_cast sub_one_mul_multiplicity_factorial_lt_of_ne_zero p hn
+  push_cast [Nat.cast_sub hp.out.one_le] at h
+  rw [lt_div_iff₀ (sub_pos.mpr (by exact_mod_cast hp.out.one_lt : (1 : ℝ) < p))]
+  linarith
+
+/-- **Legendre's bound**, non-strict form: `v_p(n!) ≤ n / (p - 1)` for every `n`. -/
+theorem multiplicity_factorial_le_div (p : ℕ) [Fact p.Prime] (n : ℕ) :
+    (multiplicity p n.factorial : ℝ) ≤ n / ((p : ℝ) - 1) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · exact (multiplicity_factorial_lt_div p hn).le
+
+/-- **Legendre's bound with the number of digits**, in `ℕ`: `n ≤ (p - 1) (v_p(n!) + ⌊log_p n⌋ + 1)`,
+since `n - (p - 1) v_p(n!)` is the sum of the at most `⌊log_p n⌋ + 1` base-`p` digits of `n`. -/
+theorem le_sub_one_mul_multiplicity_factorial_add_log (p : ℕ) [hp : Fact p.Prime] (n : ℕ) :
+    n ≤ (p - 1) * (multiplicity p n.factorial + (Nat.log p n + 1)) := by
+  have hp1 := hp.out.one_lt
+  have hlen : (p.digits n).length ≤ Nat.log p n + 1 :=
+    (Nat.digits_length_le_iff hp1 n).2 (Nat.lt_pow_succ_log_self hp1 n)
+  have hsum : (p.digits n).sum ≤ (Nat.log p n + 1) * (p - 1) :=
+    (List.sum_le_length_nsmul _ _ fun d hd ↦
+      Nat.le_sub_one_of_lt (Nat.digits_lt_base hp1 hd)).trans (Nat.mul_le_mul_right _ hlen)
+  have h := hp.out.sub_one_mul_multiplicity_factorial (n := n)
+  have := Nat.digit_sum_le p n
+  rw [Nat.mul_add, mul_comm (p - 1) (Nat.log p n + 1)]
+  omega
+
+/-- **Legendre's bound with the number of digits.** `v_p(n!) ≥ n / (p - 1) - (⌊log_p n⌋ + 1)`:
+the base-`p` digit sum of `n` is at most `p - 1` times its number of digits. -/
+theorem div_sub_log_le_multiplicity_factorial (p : ℕ) [hp : Fact p.Prime] (n : ℕ) :
+    (n : ℝ) / ((p : ℝ) - 1) - (Nat.log p n + 1) ≤ multiplicity p n.factorial := by
+  have hp1 : (0 : ℝ) < (p : ℝ) - 1 := sub_pos.mpr (by exact_mod_cast hp.out.one_lt)
+  have h : (n : ℝ) ≤ (((p - 1 : ℕ) * (multiplicity p n.factorial + (Nat.log p n + 1)) : ℕ) : ℝ) :=
+    by exact_mod_cast le_sub_one_mul_multiplicity_factorial_add_log p n
+  push_cast [Nat.cast_sub hp.out.one_le] at h
+  rw [sub_le_iff_le_add, div_le_iff₀ hp1]
+  linarith
+
+/-- The `p`-adic valuation of `∏ᵢ κᵢ!` is the sum of those of the `κᵢ!`. -/
+private theorem multiplicity_prod_factorial (p : ℕ) [Fact p.Prime] {ι : Type*} (κ : ι →₀ ℕ) :
+    multiplicity p (κ.prod fun _ k ↦ k.factorial) =
+      ∑ i ∈ κ.support, multiplicity p (κ i).factorial := by
+  classical
+  rw [Finsupp.prod]
+  induction κ.support using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.sum_insert hi,
+      Nat.multiplicity_mul (Nat.factorial_ne_zero _)
+        (Finset.prod_ne_zero_iff.2 fun _ _ ↦ Nat.factorial_ne_zero _), ih]
+
+/-- **Legendre's bound with the number of digits, for a multi-index.** For `κ : ι →₀ ℕ`,
+`v_p(∏ᵢ κᵢ!) ≥ |κ| / (p - 1) - #supp(κ) (⌊log_p |κ|⌋ + 1)`, where `|κ|` is the total degree.
+Only the coordinates with `κᵢ ≠ 0` contribute, so for finite `ι` the same holds with `#ι` in place
+of `#supp(κ)`. -/
+theorem div_sub_log_le_multiplicity_prod_factorial (p : ℕ) [hp : Fact p.Prime] {ι : Type*}
+    (κ : ι →₀ ℕ) :
+    (κ.degree : ℝ) / ((p : ℝ) - 1) - κ.support.card * (Nat.log p κ.degree + 1) ≤
+      multiplicity p (κ.prod fun _ k ↦ k.factorial) := by
+  have hdeg : (κ.degree : ℝ) = ∑ i ∈ κ.support, (κ i : ℝ) := by
+    rw [Finsupp.degree_apply, Nat.cast_sum]
+  calc
+    _ = ∑ i ∈ κ.support, ((κ i : ℝ) / ((p : ℝ) - 1) - (Nat.log p κ.degree + 1)) := by
+      simp only [Finset.sum_sub_distrib, ← Finset.sum_div, Finset.sum_const, nsmul_eq_mul,
+        ← hdeg]
+    _ ≤ ∑ i ∈ κ.support, (multiplicity p (κ i).factorial : ℝ) := by
+      -- Coordinatewise, using `κᵢ ≤ |κ|`.
+      refine Finset.sum_le_sum fun i hi ↦ (sub_le_sub_left ?_ _).trans
+        (div_sub_log_le_multiplicity_factorial p (κ i))
+      gcongr
+      rw [Finsupp.degree_apply]
+      exact Finset.single_le_sum (f := κ) (fun _ _ ↦ Nat.zero_le _) hi
+    _ = _ := by rw [multiplicity_prod_factorial, Nat.cast_sum]
+
+/-- **Legendre's bound for a multi-index, with a real logarithm.** For `κ : ι →₀ ℕ`,
+`v_p(∏ᵢ κᵢ!) ≥ |κ| / (p - 1) - #supp(κ) (log_p max(|κ|, 1) + 1)`, a weakening of
+`TauCeti.div_sub_log_le_multiplicity_prod_factorial`. -/
+theorem div_sub_logb_le_multiplicity_prod_factorial (p : ℕ) [hp : Fact p.Prime] {ι : Type*}
+    (κ : ι →₀ ℕ) :
+    (κ.degree : ℝ) / ((p : ℝ) - 1) - κ.support.card * (Real.logb p (max κ.degree 1) + 1) ≤
+      multiplicity p (κ.prod fun _ k ↦ k.factorial) := by
+  refine le_trans ?_ (div_sub_log_le_multiplicity_prod_factorial p κ)
+  gcongr
+  refine (Real.natLog_le_logb _ _).trans ?_
+  rcases Nat.eq_zero_or_pos κ.degree with h | h
+  · simp [h]
+  · exact Real.logb_le_logb_of_le (by exact_mod_cast hp.out.one_lt) (by exact_mod_cast h)
+      (le_max_left _ _)
+
 open Nat in
 /-- In `ℤ_p`, `n!` has the norm of `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)`: by Legendre's formula
 both have valuation `v_p(n!)`. -/
@@ -107,18 +236,10 @@ variable {p : ℕ} [Fact p.Prime]
 formula. This gives the factorial denominator bound for the p-adic exponential. -/
 theorem rpow_neg_div_le_norm_factorial (n : ℕ) :
     (p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))) ≤ ‖(n ! : ℚ_[p])‖ := by
-  have hp := (Fact.out : p.Prime)
-  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.one_lt
   rw [norm_natCast_eq_zpow (factorial_ne_zero _), ← Real.rpow_intCast]
-  simp only [Int.cast_neg, Int.cast_natCast]
-  refine Real.rpow_le_rpow_of_exponent_le hp1.le (neg_le_neg ?_)
-  rw [le_div_iff₀ (sub_pos.mpr hp1)]
-  have hleg : (p - 1) * padicValNat p n.factorial ≤ n := by
-    rw [Nat.padicValNat_def, Nat.Prime.sub_one_mul_multiplicity_factorial hp]
-    exact Nat.sub_le _ _
-  have hcast : ((p - 1 : ℕ) : ℝ) = (p : ℝ) - 1 := by
-    rw [Nat.cast_sub hp.one_le, Nat.cast_one]
-  simpa only [Nat.cast_mul, hcast, mul_comm] using (Nat.cast_le (α := ℝ)).mpr hleg
+  simp only [Int.cast_neg, Int.cast_natCast, Nat.padicValNat_def]
+  exact Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast (Fact.out : p.Prime).one_le)
+    (neg_le_neg (TauCeti.multiplicity_factorial_le_div p n))
 
 /-- The factorial of `p k` has `p`-adic norm `p ^ (-k) ‖k!‖`: by Legendre's formula, passing from
 `k!` to `(p k)!` raises the valuation by `k`. -/
@@ -136,8 +257,7 @@ theorem norm_factorial_mul (k : ℕ) :
 This controls Cauchy products of factorial-weighted moment sequences. -/
 theorem norm_factorial_div_add_le (d i j : ℕ) :
     ‖(((i + j) / d)! : ℚ_[p])‖ ≤ ‖((i / d)! : ℚ_[p])‖ * ‖((j / d)! : ℚ_[p])‖ := by
-  obtain ⟨k, hk⟩ := (Nat.factorial_mul_factorial_dvd_factorial_add (i / d) (j / d)).trans
-    (Nat.factorial_dvd_factorial Nat.div_add_div_le_add_div)
+  obtain ⟨k, hk⟩ := Nat.factorial_div_mul_factorial_div_dvd d i j
   have hcast : (((i + j) / d)! : ℚ_[p]) = (i / d)! * (j / d)! * (k : ℚ_[p]) := by
     exact_mod_cast hk
   rw [hcast, norm_mul, norm_mul]

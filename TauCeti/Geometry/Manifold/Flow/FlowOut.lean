@@ -32,6 +32,7 @@ Liouville domain, `v` is the Liouville field, and transversality is the outward-
 
 ## Main results
 
+* `TauCeti.continuous_flowOf_comp`: the flow-out of a continuous map is continuous.
 * `TauCeti.mfderiv_globalFlow_comp_apply`: the differential of the flow-out.
 * `TauCeti.isLocalDiffeomorph_globalFlow_comp`: the flow-out of a transverse immersed hypersurface
   is a local diffeomorphism.
@@ -82,6 +83,14 @@ theorem mfderiv_globalFlow_comp_apply [IsManifold I 1 M] (hv : ContMDiff I I.tan
   · exact mfderiv_comp_apply (I' := I) p.2
       ((contMDiff_globalFlow_apply hc le_rfl hv p.1).mdifferentiableAt one_ne_zero) hι w
 
+include hc in
+/-- The flow-out `(t, s) ↦ ψₜ (ι s)` of a continuous map `ι` along a complete `C¹` vector field
+is continuous. -/
+theorem continuous_flowOf_comp [IsManifold I 1 M] (hv : ContMDiff I I.tangent 1 (T% v))
+    (hι : Continuous ι) : Continuous fun p : ℝ × S ↦ flowOf v p.1 (ι p.2) := by
+  rw [flowOf_eq_globalFlow hv hc]
+  exact (globalFlow v hv hc).continuous continuous_fst (hι.comp continuous_snd)
+
 variable [BoundarylessManifold J S]
 
 /-- **The flow-out theorem.** Let `v` be a complete `C^n` vector field, `1 ≤ n`, on a
@@ -112,10 +121,8 @@ theorem isLocalDiffeomorph_globalFlow_comp {n : ℕ∞} (hn : 1 ≤ n) [IsManifo
   set L := mfderiv (𝓘(ℝ).prod J) I (fun p : ℝ × S ↦ ψ p.1 (ι p.2)) p
   -- The differential `dψₜ` is injective, since `ψₜ` is a diffeomorphism.
   have hψinj : Injective (mfderiv I I (ψ p.1) (ι p.2)) := by
-    obtain ⟨e, he⟩ := (globalFlowDiffeomorph hc hn hv p.1).isInvertible_mfderiv
-      (x := ι p.2) hn0
-    rw [coe_globalFlowDiffeomorph] at he
-    exact he ▸ e.injective
+    have h := injective_mfderiv_flowOf (hv.of_le hn') hc p.1 (ι p.2)
+    rwa [flowOf_eq_globalFlow (hv.of_le hn') hc] at h
   -- Transversality makes the differential of the flow-out injective.
   have hinj : Injective L := by
     refine (injective_iff_map_eq_zero L).2 fun x hx ↦ ?_
@@ -125,10 +132,8 @@ theorem isLocalDiffeomorph_globalFlow_comp {n : ℕ∞} (hn : 1 ≤ n) [IsManifo
     rw [Manifold.tangentSpaceProdEquiv_symm_apply] at hL
     have h0 : a • v (ι p.2) + mfderiv J I ι p.2 w = 0 :=
       hψinj (hL.symm.trans (hx.trans (map_zero _).symm))
-    refine htr.injective_smul_add (himm p.2) (h0.trans ?_)
-    -- The zero tangent vector at `p` is the zero of `ℝ × E'`.
-    change 0 = (0 : ℝ) • v (ι p.2) + mfderiv J I ι p.2 0
-    rw [zero_smul, map_zero, add_zero]
+    obtain ⟨ha, hw⟩ := htr.eq_zero_of_smul_add_eq_zero (himm p.2) h0
+    exact Prod.ext ha hw
   -- Source and target have the same dimension, so the differential is invertible.
   have hfin : finrank ℝ (TangentSpace (𝓘(ℝ).prod J) p) =
       finrank ℝ (TangentSpace I (ψ p.1 (ι p.2))) := by

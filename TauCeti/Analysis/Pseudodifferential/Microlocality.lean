@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Tempered
+public import TauCeti.Analysis.Distribution.WaveFrontSet.VectorValued
 public import TauCeti.Analysis.Pseudodifferential.Composition.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
@@ -15,6 +15,7 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Sobolev
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.MeasureTheory.Integral.ConicDecay
 
 /-!
@@ -28,8 +29,29 @@ the Bessel-potential space `H^t`. This file proves that the pseudodifferential o
 
 (`TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_subset`), where both sides are wave
 front sets of the restrictions of tempered distributions to distributions on `ℝⁿ`
-(`TemperedDistribution.toDistribution`). Projecting to positions, `Op(a)` does not enlarge the
-singular support (`TauCeti.Symbol.singularSupport_toDistribution_quantizeSobolev_subset`).
+(`TemperedDistribution.toDistribution`).
+
+The same holds for a symbol `a` with values in `V →L[ℂ] W`, for a finite-dimensional complex
+inner product space `V`, acting on `v ∈ H^t(ℝⁿ; V)`
+(`TauCeti.Symbol.vectorWaveFrontSet_toDistribution_quantizeSobolev_subset`), for the wave front
+set of vector-valued distributions, the union of the wave front sets of the components
+(`Distribution.vectorWaveFrontSet`). This is the form in which operators between vector bundles
+appear in local frames. The component of `Op(a) v` along a functional `ℓ` on `W` is
+`∑ⱼ Op(ℓ ∘ a ∘ e_j) (c_j v)` for a basis `(e_j)` of `V` with coordinate functionals `(c_j)`
+(`TauCeti.Symbol.quantizeSobolev_map`,
+`BesselPotentialSpace.sum_postcomp_toSpanSingleton_coord`), so the scalar statement applies to each
+term. Projecting to positions, `Op(a)` does not enlarge the singular support when `W` is
+finite-dimensional as well (`TauCeti.Symbol.singularSupport_toDistribution_quantizeSobolev_subset`).
+
+The wave front set of `Op(a) v` also avoids every covector near which `a` vanishes conically at
+large frequencies: if `a(x, ξ) = 0` for `x` in a neighbourhood `U` of `x₀` and `ξ` of norm at least
+`R` in an open cone `Γ` containing `ξ₀`, then `(x₀, ξ₀) ∉ WF(Op(a) v)` for every `v ∈ H^t`
+(`TauCeti.Symbol.notMem_waveFrontSet_toDistribution_quantizeSobolev_of_eq_zero`). Applied to
+`ψ (1 - c)` for a cutoff `ψ` near `x₀`, this shows that an operator `Op(c)` whose symbol equals `1`
+at large frequencies on `U × Γ` is microlocally the identity there:
+`WF(Op(c) v) ∩ (U × Γ) = WF(v) ∩ (U × Γ)`. This is the step of microlocal elliptic regularity
+which recovers the singularities of `v` from those of `Op(c) v`, for `Op(c)` the composition of a
+microlocal parametrix with the elliptic operator.
 
 ## Proof
 
@@ -55,14 +77,26 @@ near `x₀` with `χ = 1` near the support `K` of `ψ`, and split `a = ψ a + (1
   rapidly decreasing in `θ` with polynomial growth in `ζ`, this integral decays rapidly on a
   smaller cone around `ξ₀` (`TauCeti.exists_one_add_norm_pow_mul_norm_integral_le`).
 
+If instead `a` vanishes on `U × Γ` at frequencies of norm at least `R`, then `b = ψ a` vanishes on
+`Γ` at those frequencies at every position, so `b̂(·, 2πζ) = 0` for such `ζ`, and the same integral
+decays rapidly on a smaller cone whatever the regularity of `v`.
+
 ## Main results
 
 * `TauCeti.Symbol.toDistr_quantizeSobolev_smulLeftCLM_fourierAtomMulSchwartzMap`: the localized
   Fourier transform of `Op(b) (χ v)`.
 * `TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_subset`: **microlocality**,
   `WF(Op(a) v) ⊆ WF(v)`.
+* `TauCeti.Symbol.vectorWaveFrontSet_toDistribution_quantizeSobolev_subset`: microlocality for
+  matrix-valued symbols.
 * `TauCeti.Symbol.singularSupport_toDistribution_quantizeSobolev_subset`: the singular support of
-  `Op(a) v` lies in that of `v`.
+  `Op(a) v` lies in that of `v`, for matrix-valued symbols between finite-dimensional spaces.
+* `TauCeti.Symbol.notMem_waveFrontSet_toDistribution_quantizeSobolev_of_eq_zero`,
+  `TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_subset_diff`: **`Op(a)` is smoothing
+  where `a` vanishes conically**, `WF(Op(a) v) ⊆ WF(v) \ (U × Γ)`.
+* `TauCeti.Symbol.waveFrontSet_toDistribution_inter_subset_quantizeSobolev`,
+  `TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_inter_eq`: **`Op(c)` is microlocally
+  the identity where `c` is**, `WF(Op(c) v) ∩ (U × Γ) = WF(v) ∩ (U × Γ)`.
 
 ## References
 
@@ -71,7 +105,8 @@ near `x₀` with `χ = 1` near the support `K` of `ψ`, and split `a = ψ a + (1
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, second edition,
   Springer, 1990, §8.1 (the wave front set and the localization of its decay estimates).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Springer, 1985,
-  §18.1 (pseudodifferential operators and wave front sets).
+  §18.1 (pseudodifferential operators and wave front sets, including the inclusion
+  `WF(Au) ⊆ WF(u) ∩ WF(A)` in terms of the conic support `WF(A)` of the symbol).
 -/
 
 public section
@@ -87,6 +122,25 @@ namespace TauCeti
 namespace Symbol
 
 variable {n : ℕ} {m : ℝ}
+
+/-- The frequencies near a large `η` in a narrower cone. If the closed balls of radius `c ‖η‖`
+about the points `η` of `Γ'` lie in `Γ`, then for `‖η‖ ≥ R / π` the closed ball of radius
+`min c (1 / 2) * ‖η‖` consists of frequencies `ζ ∈ Γ` with `‖2π ζ‖ ≥ R`. -/
+private theorem closedBall_subset_of_le_norm {Γ Γ' : Set (CoordinateSpace n)} {c : ℝ}
+    (hΓ' : ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ) {R : ℝ} :
+    ∀ η ∈ Γ' ∩ {η | R / Real.pi ≤ ‖η‖},
+      closedBall η (min c (1 / 2) * ‖η‖) ⊆ {ζ | ζ ∈ Γ ∧ R ≤ ‖(2 * Real.pi) • ζ‖} := by
+  rintro η ⟨hη, hηR⟩ ζ hζ
+  refine ⟨hΓ' η hη (closedBall_subset_closedBall (by gcongr; exact min_le_left _ _) hζ), ?_⟩
+  have hζη : ‖ζ - η‖ ≤ ‖η‖ / 2 := (mem_closedBall_iff_norm.1 hζ).trans (by
+    nlinarith [min_le_right c (1 / 2), norm_nonneg η])
+  have hζ' : ‖η‖ / 2 ≤ ‖ζ‖ := by
+    have := norm_sub_norm_le η ζ
+    rw [norm_sub_rev] at hζη
+    linarith
+  rw [norm_smul, Real.norm_of_nonneg (by positivity)]
+  rw [mem_ofPred_eq, div_le_iff₀ Real.pi_pos] at hηR
+  nlinarith [Real.pi_pos]
 
 /-! ### The localized Fourier transform of `Op(b) (χ v)` -/
 
@@ -110,6 +164,8 @@ private theorem HasCompactSpatialSupport.exists_one_add_norm_pow_mul_norm_fourie
         exact one_add_norm_sq_rpow_le_one_add_norm_pow_of_le ζ
           ((le_abs_self m).trans (Nat.le_ceil _))
     _ = C * C' * (1 + ‖ζ‖) ^ ⌈|m|⌉₊ := by ring
+
+section LocalizedSymbol
 
 variable {b : Symbol n ℂ ℂ m} (hb : b.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}
   (hbK : ∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0) {θ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)}
@@ -278,43 +334,83 @@ private theorem isMicrolocallySmoothAt_toDistribution_quantizeSobolev_smulLeftCL
     toDistr_quantizeSobolev_smulLeftCLM_fourierAtomMulSchwartzMap hb hbK hθ]
   exact hC η hη
 
-omit hb in
-/-- The analytic core of microlocality. Let `ψ` be smooth, vanishing outside `K` and equal to `1`
-on a neighbourhood `V₀` of `x₀`, and let the cutoff `χ` equal `1` near `K`, with `χ x₀ ≠ 0`. If
-the localized Fourier transform `ζ ↦ v (χ e_ζ)` decays rapidly on an open cone `Γ`, then `Op(a) v`
-is microlocally smooth at `(x₀, ξ)` for `ξ` in an open cone `Γ'` whose conic neighbourhoods
-`closedBall η (c ‖η‖)` lie in `Γ`. -/
-private theorem isMicrolocallySmoothAt_toDistribution_quantizeSobolev {a : Symbol n ℂ ℂ m}
-    (ha : a.HasCompactSpatialSupport) (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ))
-    {x₀ ξ : CoordinateSpace n} {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
-    (hψK : ∀ x ∉ K, ψ x = 0) {V₀ : Set (CoordinateSpace n)} (hV₀ : IsOpen V₀) (hx₀ : x₀ ∈ V₀)
-    (hψ1 : ∀ x ∈ V₀, ψ x = 1) (hχK : ∀ᶠ x in 𝓝ˢ K, χ x = 1) (hχx₀ : χ x₀ ≠ 0)
-    (hξ0 : ξ ≠ 0) {Γ Γ' : Set (CoordinateSpace n)} (hΓ'o : IsOpen Γ') (hξ : ξ ∈ Γ')
-    (hcone : ∀ s : ℝ, 0 < s → ∀ η ∈ Γ', s • η ∈ Γ') {c : ℝ} (hc : 0 < c)
-    (hΓ' : ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ)
-    (hdecay : ∀ N : ℕ, ∃ C, ∀ η ∈ Γ,
-      (1 + ‖η‖) ^ N * ‖v.toDistr (χ.fourierAtomMulSchwartzMap η)‖ ≤ C) :
+include hbK hθ in
+/-- **Microlocal smoothness of `Op(b) (θ v)` where `b` vanishes conically.** If `b` vanishes
+outside `K`, the cutoff `θ` equals `1` on `K` and `θ x₀ ≠ 0`, and `b(x, ζ) = 0` for every position
+`x` and every frequency `ζ` of norm at least `R` in an open cone `Γ`, then `Op(b) (θ v)` is
+microlocally smooth at `(x₀, ξ)` for every `ξ ∈ Γ`, whatever `v ∈ H^t`. -/
+private theorem isMicrolocallySmoothAt_toDistribution_quantizeSobolev_smulLeftCLM_of_eq_zero
+    (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ)) {x₀ ξ : CoordinateSpace n} (hθx₀ : θ x₀ ≠ 0)
+    {Γ : Set (CoordinateSpace n)} (hΓ : IsOpen Γ) (hξ : ξ ∈ Γ)
+    (hcone : ∀ s : ℝ, 0 < s → ∀ η ∈ Γ, s • η ∈ Γ) {R : ℝ}
+    (hbΓ : ∀ x, ∀ ζ ∈ Γ, R ≤ ‖ζ‖ → b.coefficient (x, ζ) = 0) :
+    (toDistribution ⊤ (b.quantizeSobolev hb t
+      (BesselPotentialSpace.smulLeftCLM t (toSchwartzMapCLM ℂ θ) v)).toDistr).IsMicrolocallySmoothAt
+        x₀ ξ := by
+  obtain ⟨Γ', hΓ'o, hξΓ', hcone', c, hc, hΓ'⟩ := hΓ.exists_cone_closedBall_subset hcone hξ
+  refine isMicrolocallySmoothAt_iff.2 ⟨θ, hθx₀, Γ', hΓ'o, hξΓ', hcone', fun N ↦ ?_⟩
+  -- The kernel `b̂(·, 2πζ)` vanishes for `ζ ∈ Γ₁`, so the localized Fourier transform `w` of `v`
+  -- may be replaced by `F`, which vanishes on `Γ₁` and so decays rapidly there.
+  set Γ₁ : Set (CoordinateSpace n) := {ζ | ζ ∈ Γ ∧ R ≤ ‖(2 * Real.pi) • ζ‖}
+  set w : CoordinateSpace n → ℂ := fun ζ ↦ v.toDistr (θ.fourierAtomMulSchwartzMap ζ)
+  set F := Γ₁ᶜ.indicator w
+  have hwF (η ζ : CoordinateSpace n) :
+      𝓕 (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) (η - ζ) (w ζ) =
+        𝓕 (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) (η - ζ) (F ζ) := by
+    by_cases hζ : ζ ∈ Γ₁
+    · have h0 : (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) = 0 :=
+        funext fun x ↦ hbΓ x _ (hcone _ (by positivity) ζ hζ.1) hζ.2
+      simp [h0, Real.fourier_eq, Circle.smul_def]
+    · simp [F, hζ]
+  obtain ⟨C₀, k, hC₀⟩ := (toDistribution ⊤ v.toDistr).exists_norm_localFourier_le θ
+  simp only [localFourier_toDistribution] at hC₀
+  have hF (ζ : CoordinateSpace n) : ‖F ζ‖ ≤ C₀ * (1 + ‖ζ‖) ^ k :=
+    (norm_indicator_le_norm_self w ζ).trans (hC₀ ζ)
+  -- Rapid decay on the part of `Γ'` at frequencies of norm at least `R / π`.
+  have hsub : ∀ η ∈ Γ' ∩ {η | R / Real.pi ≤ ‖η‖}, closedBall η (min c (1 / 2) * ‖η‖) ⊆ Γ₁ :=
+    closedBall_subset_of_le_norm hΓ'
+  obtain ⟨C₁, hC₁⟩ := exists_one_add_norm_pow_mul_norm_integral_le (μ := volume)
+    (K := fun θ' ζ ↦ 𝓕 (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) θ')
+    hb.exists_one_add_norm_pow_mul_norm_fourier_two_pi_le hF (lt_min hc one_half_pos) hsub
+    (N := N) ⟨0, fun η hη ↦ by simp [F, hη]⟩
+  -- Bounded frequencies are handled by the polynomial growth of the localized Fourier transform.
+  obtain ⟨C₂, k₂, hC₂⟩ := exists_norm_localFourier_le (toDistribution ⊤ (b.quantizeSobolev hb t
+    (BesselPotentialSpace.smulLeftCLM t (toSchwartzMapCLM ℂ θ) v)).toDistr) θ
+  refine ⟨max C₁ (|C₂| * (1 + |R / Real.pi|) ^ (N + k₂)), fun η hη ↦ ?_⟩
+  by_cases hηR : R / Real.pi ≤ ‖η‖
+  · refine le_max_of_le_left ?_
+    rw [localFourier_toDistribution,
+      toDistr_quantizeSobolev_smulLeftCLM_fourierAtomMulSchwartzMap hb hbK hθ,
+      integral_congr_ae (ae_of_all _ (hwF η))]
+    exact hC₁ η ⟨hη, hηR⟩
+  · refine le_max_of_le_right ?_
+    calc _ ≤ (1 + ‖η‖) ^ N * (|C₂| * (1 + ‖η‖) ^ k₂) := by
+          gcongr
+          exact (hC₂ η).trans (by gcongr; exact le_abs_self _)
+      _ = |C₂| * (1 + ‖η‖) ^ (N + k₂) := by ring
+      _ ≤ |C₂| * (1 + |R / Real.pi|) ^ (N + k₂) := by
+          gcongr
+          exact (not_le.1 hηR).le.trans (le_abs_self _)
+
+include hbK in
+/-- The splitting behind microlocality. Let `b` vanish outside `K` and agree with `a` on an open
+neighbourhood `V₀` of `x₀`, and let the cutoff `χ` equal `1` near `K`. If `Op(b) (χ v)` is
+microlocally smooth at `(x₀, ξ)`, then so is `Op(a) v`: the difference consists of a smoothing
+operator applied to `v` and of `Op(a - b) v`, which vanishes near `x₀`. -/
+private theorem isMicrolocallySmoothAt_toDistribution_quantizeSobolev_of_smulLeftCLM
+    {a : Symbol n ℂ ℂ m} (ha : a.HasCompactSpatialSupport) {V₀ : Set (CoordinateSpace n)}
+    (hV₀ : IsOpen V₀) {x₀ ξ : CoordinateSpace n} (hx₀ : x₀ ∈ V₀)
+    (hab : ∀ x ∈ V₀, ∀ ξ, b.coefficient (x, ξ) = a.coefficient (x, ξ))
+    (hχK : ∀ᶠ x in 𝓝ˢ K, χ x = 1) (hξ0 : ξ ≠ 0) (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ))
+    (hA : (toDistribution ⊤ (b.quantizeSobolev hb t
+      (BesselPotentialSpace.smulLeftCLM t (toSchwartzMapCLM ℂ χ) v)).toDistr).IsMicrolocallySmoothAt
+        x₀ ξ) :
     (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).IsMicrolocallySmoothAt x₀ ξ := by
-  -- `b = ψ a` vanishes outside `K`, and `a - b` vanishes on `V₀`.
-  have hψs : ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) • ContinuousLinearMap.id ℂ ℂ :=
-    (ofRealCLM.contDiff.comp hψ).smul contDiff_const
-  set Fψ := ofSpatial (fun x ↦ (ψ x : ℂ) • ContinuousLinearMap.id ℂ ℂ) hψs with hFψ
-  set b := Fψ.comp a with hbdef
-  have hb : b.HasCompactSpatialSupport := ha.comp_left Fψ
-  have hbψ (x ξ : CoordinateSpace n) : b.coefficient (x, ξ) =
-      ((ψ x : ℂ) • ContinuousLinearMap.id ℂ ℂ).comp (a.coefficient (x, ξ)) := by
-    rw [hbdef, coefficient_comp, hFψ, coefficient_ofSpatial]
-  have hbK : ∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0 := fun x hx ξ ↦ by
-    rw [hbψ, hψK x hx]
-    simp
-  set a' := Symbol.inclusion (le_of_eq (zero_add m).symm) a
-  have ha' : a'.HasCompactSpatialSupport := ha.of_coefficient_eq (coefficient_inclusion _ _)
-  have hab : (a' - b).HasCompactSpatialSupport := ha'.sub hb
-  have hdsupp : x₀ ∉ dsupport (toDistribution ⊤ ((a' - b).quantizeSobolev hab t v).toDistr) :=
-    fun h ↦ (dsupport_toDistribution_quantizeSobolev_subset hab hV₀.isClosed_compl
+  have hab' : (a - b).HasCompactSpatialSupport := ha.sub hb
+  have hdsupp : x₀ ∉ dsupport (toDistribution ⊤ ((a - b).quantizeSobolev hab' t v).toDistr) :=
+    fun h ↦ (dsupport_toDistribution_quantizeSobolev_subset hab' hV₀.isClosed_compl
       (fun x hx ξ ↦ by
-        rw [coefficient_sub, Pi.sub_apply, coefficient_inclusion, hbψ, hψ1 x (not_not.1 hx)]
-        simp) t v h) hx₀
+        rw [coefficient_sub, Pi.sub_apply, hab x (not_not.1 hx), sub_self]) t v h) hx₀
   -- `Op(b) v = Op(b) (χ v) + Op(e) v` with `e` smoothing.
   obtain ⟨e, he, hesm, hbe⟩ :=
     exists_isSmoothing_and_toDistr_quantizeSobolev_eq_quantizeSobolev_smulLeftCLM_add hb hbK
@@ -323,14 +419,11 @@ private theorem isMicrolocallySmoothAt_toDistribution_quantizeSobolev {a : Symbo
       toDistribution ⊤ (b.quantizeSobolev hb t
         (BesselPotentialSpace.smulLeftCLM t (toSchwartzMapCLM ℂ χ) v)).toDistr +
         toDistribution ⊤ (e.quantizeSobolev he t v).toDistr +
-        toDistribution ⊤ ((a' - b).quantizeSobolev hab t v).toDistr := by
-    rw [toDistr_quantizeSobolev_sub_apply ha' hb hab,
-      toDistr_quantizeSobolev_congr (coefficient_inclusion _ a) ha' ha rfl, hbe t v]
+        toDistribution ⊤ ((a - b).quantizeSobolev hab' t v).toDistr := by
+    rw [toDistr_quantizeSobolev_sub_apply ha hb hab', hbe t v]
     simp only [map_sub, map_add]
     abel
-  -- The three pieces are microlocally smooth at `(x₀, ξ)`.
-  have hA := isMicrolocallySmoothAt_toDistribution_quantizeSobolev_smulLeftCLM hb hbK
-    (fun x hx ↦ hχK.self_of_nhdsSet x hx) t v hχx₀ hΓ'o hξ hcone hc hΓ' hdecay
+  -- The smoothing piece lies in every `H^s`, and the last piece vanishes near `x₀`.
   have hE : (toDistribution ⊤ (e.quantizeSobolev he t v).toDistr).IsMicrolocallySmoothAt x₀ ξ := by
     by_contra h
     have hmem : (x₀, ξ) ∈ (toDistribution ⊤ (e.quantizeSobolev he t v).toDistr).waveFrontSet :=
@@ -340,23 +433,22 @@ private theorem isMicrolocallySmoothAt_toDistribution_quantizeSobolev {a : Symbo
   rw [hsplit]
   exact (hA.add hE).add (isMicrolocallySmoothAt_of_notMem_dsupport trivial hdsupp ξ)
 
-omit hb in
-/-- **Microlocality of pseudodifferential operators.** For a scalar symbol `a` with compact spatial
-support and every `v ∈ H^t`, the wave front set of `Op(a) v` is contained in the wave front set of
-`v`: `WF(Op(a) v) ⊆ WF(v)`. -/
-theorem waveFrontSet_toDistribution_quantizeSobolev_subset {a : Symbol n ℂ ℂ m}
-    (ha : a.HasCompactSpatialSupport) (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ)) :
-    (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).waveFrontSet ⊆
-      (toDistribution ⊤ v.toDistr).waveFrontSet := by
-  rintro ⟨x₀, ξ₀⟩ hp
-  obtain ⟨-, hξ₀, hnot⟩ := mem_waveFrontSet_iff.1 hp
-  refine mem_waveFrontSet_iff.2 ⟨trivial, hξ₀, fun hv ↦ hnot ?_⟩
-  -- Cones and a neighbourhood `ball x₀ R` on which `v` is microlocally smooth.
-  obtain ⟨U, hU, Γ, hΓ, hξΓ, hcone, hdecay⟩ := hv.exists_nhds_cone
-  obtain ⟨Γ', hΓ'o, hξΓ', hcone', c, hc, hΓ'⟩ := hΓ.exists_cone_closedBall_subset hcone hξΓ
+end LocalizedSymbol
+
+/-! ### Spatial cutoffs and scalar microlocality -/
+
+/-- The cutoffs of the microlocality arguments: inside a neighbourhood `U` of `x₀`, a compact set
+`K` with a smooth `ψ` vanishing outside `K` and equal to `1` on an open neighbourhood `V₀` of
+`x₀`, and a test function `χ` supported in `U`, equal to `1` near `K`. -/
+private theorem exists_cutoffs {x₀ : CoordinateSpace n} {U : Set (CoordinateSpace n)}
+    (hU : U ∈ 𝓝 x₀) :
+    ∃ (K V₀ : Set (CoordinateSpace n)) (ψ : CoordinateSpace n → ℝ)
+      (χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)), IsCompact K ∧ K ⊆ U ∧ IsOpen V₀ ∧ x₀ ∈ V₀ ∧
+        ContDiff ℝ ∞ ψ ∧ (∀ x ∉ K, ψ x = 0) ∧ (∀ x ∈ V₀, ψ x = 1) ∧
+        (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ χ x₀ ≠ 0 ∧ tsupport χ ⊆ U := by
   obtain ⟨R, hR, hRU⟩ := Metric.mem_nhds_iff.1 hU
-  -- Cutoffs: `χ = 1` on `ball x₀ (R / 2)` with support in `U`, and `ψ = 1` on `ball x₀ (R / 8)`
-  -- with support in `K = closedBall x₀ (R / 4)`.
+  -- `χ = 1` on `ball x₀ (R / 2)` with support in `U`, and `ψ = 1` on `ball x₀ (R / 8)` with
+  -- support in `K = closedBall x₀ (R / 4)`.
   let ρ : ContDiffBump x₀ := ⟨R / 2, 3 * R / 4, by positivity, by linarith⟩
   let ψ : ContDiffBump x₀ := ⟨R / 8, R / 4, by positivity, by linarith⟩
   let χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ) :=
@@ -369,26 +461,247 @@ theorem waveFrontSet_toDistribution_quantizeSobolev_subset {a : Symbol n ℂ ℂ
     refine (tsupport_comp_subset ofReal_zero _).trans ?_
     rw [ρ.tsupport_eq]
     exact (closedBall_subset_ball (by simp [ρ]; linarith)).trans hRU
-  exact isMicrolocallySmoothAt_toDistribution_quantizeSobolev (K := closedBall x₀ (R / 4))
-    (V₀ := ball x₀ (R / 8)) χ ha t v
-    ψ.contDiff (fun x hx ↦ ψ.zero_of_le_dist (le_of_lt (by simpa [ψ] using hx))) isOpen_ball
-    (mem_ball_self (by positivity))
-    (fun x hx ↦ ψ.one_of_mem_closedBall (ball_subset_closedBall (by simpa [ψ] using hx)))
-    (Filter.mem_of_superset (isOpen_ball.mem_nhdsSet.2 (closedBall_subset_ball (by linarith)))
-      fun y hy ↦ hχ1 y hy)
-    (by simp [hχ1 x₀ (mem_ball_self (by positivity))]) hξ₀ hΓ'o hξΓ' hcone' hc hΓ'
-    fun N ↦ by simpa only [localFourier_toDistribution] using hdecay χ hχU N
+  refine ⟨closedBall x₀ (R / 4), ball x₀ (R / 8), ψ, χ, isCompact_closedBall _ _,
+    (closedBall_subset_ball (by linarith)).trans hRU, isOpen_ball, mem_ball_self (by positivity),
+    ψ.contDiff, fun x hx ↦ ψ.zero_of_le_dist (le_of_lt (by simpa [ψ] using hx)),
+    fun x hx ↦ ψ.one_of_mem_closedBall (ball_subset_closedBall (by simpa [ψ] using hx)),
+    Filter.mem_of_superset (isOpen_ball.mem_nhdsSet.2 (closedBall_subset_ball (by linarith)))
+      fun y hy ↦ hχ1 y hy, by simp [hχ1 x₀ (mem_ball_self (by positivity))], hχU⟩
 
-omit hb in
-/-- **Pseudodifferential operators do not enlarge the singular support.** For a scalar symbol `a`
-with compact spatial support and every `v ∈ H^t`, the singular support of `Op(a) v` is contained in
-the singular support of `v`. -/
-theorem singularSupport_toDistribution_quantizeSobolev_subset {a : Symbol n ℂ ℂ m}
+/-- The localized symbol of the microlocality arguments: inside a neighbourhood `U` of `x₀`, a
+compact set `K` and a symbol `b = ψ a` vanishing outside `K`, vanishing wherever `a` does, and
+agreeing with `a` on an open neighbourhood `V₀` of `x₀`, together with a test function `χ`
+supported in `U`, equal to `1` near `K`. -/
+private theorem exists_localized (a : Symbol n ℂ ℂ m)
+    {x₀ : CoordinateSpace n} {U : Set (CoordinateSpace n)} (hU : U ∈ 𝓝 x₀) :
+    ∃ (K V₀ : Set (CoordinateSpace n)) (b : Symbol n ℂ ℂ m) (_ : b.HasCompactSpatialSupport)
+      (χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)), K ⊆ U ∧ IsOpen V₀ ∧ x₀ ∈ V₀ ∧
+        (∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0) ∧
+        (∀ x ξ, a.coefficient (x, ξ) = 0 → b.coefficient (x, ξ) = 0) ∧
+        (∀ x ∈ V₀, ∀ ξ, b.coefficient (x, ξ) = a.coefficient (x, ξ)) ∧
+        (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ χ x₀ ≠ 0 ∧ tsupport χ ⊆ U := by
+  obtain ⟨K, V₀, ψ, χ, hK, hKU, hV₀, hx₀, hψ, hψK, hψ1, hχK, hχx₀, hχU⟩ := exists_cutoffs hU
+  have hψ' : ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) := ofRealCLM.contDiff.comp hψ
+  have hbK (x) (hx : x ∉ K) (ξ) : (smulLeft hψ' a).coefficient (x, ξ) = 0 := by
+    simp [hψK x hx]
+  exact ⟨K, V₀, smulLeft hψ' a, hasCompactSpatialSupport_iff.2 ⟨K, hK, hbK⟩, χ, hKU, hV₀, hx₀, hbK,
+    fun x ξ h ↦ by simp [h], fun x hx ξ ↦ by simp [hψ1 x hx],
+    hχK, hχx₀, hχU⟩
+
+/-- **Microlocality of pseudodifferential operators.** For a scalar symbol `a` with compact spatial
+support and every `v ∈ H^t`, the wave front set of `Op(a) v` is contained in the wave front set of
+`v`: `WF(Op(a) v) ⊆ WF(v)`. -/
+theorem waveFrontSet_toDistribution_quantizeSobolev_subset {a : Symbol n ℂ ℂ m}
     (ha : a.HasCompactSpatialSupport) (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ)) :
-    (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).singularSupport ⊆
-      (toDistribution ⊤ v.toDistr).singularSupport := by
-  rw [← fst_image_waveFrontSet, ← fst_image_waveFrontSet]
-  exact image_mono (waveFrontSet_toDistribution_quantizeSobolev_subset ha t v)
+    (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).waveFrontSet ⊆
+      (toDistribution ⊤ v.toDistr).waveFrontSet := by
+  rintro ⟨x₀, ξ₀⟩ hp
+  obtain ⟨-, hξ₀, hnot⟩ := mem_waveFrontSet_iff.1 hp
+  refine mem_waveFrontSet_iff.2 ⟨trivial, hξ₀, fun hv ↦ hnot ?_⟩
+  -- Cones and a neighbourhood `U` of `x₀` on which `v` is microlocally smooth.
+  obtain ⟨U, hU, Γ, hΓ, hξΓ, hcone, hdecay⟩ := hv.exists_nhds_cone
+  obtain ⟨Γ', hΓ'o, hξΓ', hcone', c, hc, hΓ'⟩ := hΓ.exists_cone_closedBall_subset hcone hξΓ
+  -- Split off `b = ψ a`, which agrees with `a` on `V₀`.
+  obtain ⟨K, V₀, b, hb, χ, -, hV₀, hx₀, hbK, -, hba, hχK, hχx₀, hχU⟩ := exists_localized a hU
+  exact isMicrolocallySmoothAt_toDistribution_quantizeSobolev_of_smulLeftCLM hb hbK χ ha hV₀ hx₀
+    hba hχK hξ₀ t v
+    (isMicrolocallySmoothAt_toDistribution_quantizeSobolev_smulLeftCLM hb hbK
+      (fun x hx ↦ hχK.self_of_nhdsSet x hx) t v hχx₀ hΓ'o hξΓ' hcone' hc hΓ'
+      fun N ↦ by simpa only [localFourier_toDistribution] using hdecay χ hχU N)
+
+/-- **Pseudodifferential operators are smoothing where their symbol vanishes conically.** Let `a`
+be a scalar symbol with compact spatial support which vanishes at large frequencies conically near
+`(x₀, ξ₀)`: `a(x, ξ) = 0` for `x` in a neighbourhood `U` of `x₀` and `ξ` of norm at least `R` in
+an open cone `Γ` containing `ξ₀`. Then `(x₀, ξ₀)` does not lie in the wave front set of `Op(a) v`,
+for every `v ∈ H^t`. No regularity of `v` is needed. -/
+theorem notMem_waveFrontSet_toDistribution_quantizeSobolev_of_eq_zero {a : Symbol n ℂ ℂ m}
+    (ha : a.HasCompactSpatialSupport) (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ))
+    {x₀ ξ₀ : CoordinateSpace n} {U Γ : Set (CoordinateSpace n)} (hU : U ∈ 𝓝 x₀) (hΓ : IsOpen Γ)
+    (hξ₀ : ξ₀ ∈ Γ) (hcone : ∀ s : ℝ, 0 < s → ∀ η ∈ Γ, s • η ∈ Γ) {R : ℝ}
+    (haΓ : ∀ x ∈ U, ∀ ξ ∈ Γ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) :
+    (x₀, ξ₀) ∉ (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).waveFrontSet := by
+  intro hp
+  obtain ⟨-, hξ0, hnot⟩ := mem_waveFrontSet_iff.1 hp
+  -- `b = ψ a` agrees with `a` on `V₀` and vanishes on `Γ` at large frequencies, at every position.
+  obtain ⟨K, V₀, b, hb, χ, hKU, hV₀, hx₀, hbK, hb0, hba, hχK, hχx₀, -⟩ := exists_localized a hU
+  have hbΓ : ∀ x, ∀ ξ ∈ Γ, R ≤ ‖ξ‖ → b.coefficient (x, ξ) = 0 := fun x ξ hξ hR ↦ by
+    by_cases hx : x ∈ K
+    · exact hb0 x ξ (haΓ x (hKU hx) ξ hξ hR)
+    · exact hbK x hx ξ
+  exact hnot (isMicrolocallySmoothAt_toDistribution_quantizeSobolev_of_smulLeftCLM hb hbK χ ha hV₀
+    hx₀ hba hχK hξ0 t v
+    (isMicrolocallySmoothAt_toDistribution_quantizeSobolev_smulLeftCLM_of_eq_zero hb hbK
+      (fun x hx ↦ hχK.self_of_nhdsSet x hx) t v hχx₀ hΓ hξ₀ hcone hbΓ))
+
+/-- **Microlocality with the conic support of the symbol.** If the scalar symbol `a` with compact
+spatial support vanishes at large frequencies on `U × Γ`, for an open set `U` of positions and an
+open cone `Γ`, then for every `v ∈ H^t` the wave front set of `Op(a) v` lies in that of `v` and
+avoids `U × Γ`. -/
+theorem waveFrontSet_toDistribution_quantizeSobolev_subset_diff {a : Symbol n ℂ ℂ m}
+    (ha : a.HasCompactSpatialSupport) (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ))
+    {U Γ : Set (CoordinateSpace n)} (hU : IsOpen U) (hΓ : IsOpen Γ)
+    (hcone : ∀ s : ℝ, 0 < s → ∀ η ∈ Γ, s • η ∈ Γ) {R : ℝ}
+    (haΓ : ∀ x ∈ U, ∀ ξ ∈ Γ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) :
+    (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).waveFrontSet ⊆
+      (toDistribution ⊤ v.toDistr).waveFrontSet \ U ×ˢ Γ :=
+  fun _ hp ↦ ⟨waveFrontSet_toDistribution_quantizeSobolev_subset ha t v hp, fun hpUΓ ↦
+    notMem_waveFrontSet_toDistribution_quantizeSobolev_of_eq_zero ha t v (hU.mem_nhds hpUΓ.1) hΓ
+      hpUΓ.2 hcone haΓ hp⟩
+
+/-- If the scalar symbol `c` equals `1` at large frequencies on `U × Γ`, with `U` a neighbourhood of
+`x₀` and `Γ` an open cone containing `ξ₀ ≠ 0`, then for a compactly supported Schwartz function `ψ`
+and the symbol `b = ψ c`, the difference `ψ v - Op(b) v = Op(ψ (1 - c)) v` is microlocally smooth
+at `(x₀, ξ₀)`. -/
+private theorem exists_isMicrolocallySmoothAt_smulLeftCLM_sub (c : Symbol n ℂ ℂ m)
+    {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ : HasCompactSupport ψ)
+    (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ)) {x₀ ξ₀ : CoordinateSpace n}
+    {U Γ : Set (CoordinateSpace n)} (hU : U ∈ 𝓝 x₀) (hΓ : IsOpen Γ) (hξ₀ : ξ₀ ∈ Γ)
+    (hξ0 : ξ₀ ≠ 0) (hcone : ∀ s : ℝ, 0 < s → ∀ η ∈ Γ, s • η ∈ Γ) {R : ℝ}
+    (hcΓ : ∀ x ∈ U, ∀ ξ ∈ Γ, R ≤ ‖ξ‖ → c.coefficient (x, ξ) = ContinuousLinearMap.id ℂ ℂ) :
+    ∃ (b : Symbol n ℂ ℂ m) (hb : b.HasCompactSpatialSupport),
+      (∀ x ξ, b.coefficient (x, ξ) = ψ x • c.coefficient (x, ξ)) ∧
+      (toDistribution ⊤ ((BesselPotentialSpace.smulLeftCLM t ψ v).toDistr -
+        (b.quantizeSobolev hb t v).toDistr)).IsMicrolocallySmoothAt x₀ ξ₀ := by
+  -- The symbols `ψ`, `b = ψ c` and `d = ψ - ψ c`, the last two of order `max 0 m`.
+  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := ℂ) hψ
+  have hb := hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ c
+  have hF' := hF.of_coefficient_eq (coefficient_inclusion (le_max_left 0 m) _)
+  have hb' := hb.of_coefficient_eq (coefficient_inclusion (le_max_right 0 m) _)
+  have hd := hF'.sub hb'
+  refine ⟨_, hb, fun x ξ ↦ coefficient_smulLeft _ c (x, ξ), ?_⟩
+  rw [← toDistr_quantizeSobolev_ofSpatial_smul_id ψ hF,
+    ← toDistr_quantizeSobolev_congr (coefficient_inclusion _ _) hF' hF rfl,
+    ← toDistr_quantizeSobolev_congr (coefficient_inclusion _ _) hb' hb rfl,
+    ← toDistr_quantizeSobolev_sub_apply hF' hb' hd]
+  -- `d = ψ (1 - c)` vanishes on `U × Γ` at large frequencies.
+  by_contra h
+  refine notMem_waveFrontSet_toDistribution_quantizeSobolev_of_eq_zero hd t v hU hΓ hξ₀ hcone
+    (R := R) (fun x hx ξ hξ hR ↦ ?_) (mem_waveFrontSet_iff.2 ⟨trivial, hξ0, h⟩)
+  simp [hcΓ x hx ξ hξ hR]
+
+/-- **A pseudodifferential operator is microlocally the identity where its symbol is.** If the
+scalar symbol `c` with compact spatial support equals `1` at large frequencies on `U × Γ`, for an
+open set `U` of positions and an open cone `Γ`, then `Op(c)` does not remove any singularity of
+`v ∈ H^t` in `U × Γ`: `WF(v) ∩ (U × Γ) ⊆ WF(Op(c) v)`. -/
+theorem waveFrontSet_toDistribution_inter_subset_quantizeSobolev {c : Symbol n ℂ ℂ m}
+    (hc : c.HasCompactSpatialSupport) (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ))
+    {U Γ : Set (CoordinateSpace n)} (hU : IsOpen U) (hΓ : IsOpen Γ)
+    (hcone : ∀ s : ℝ, 0 < s → ∀ η ∈ Γ, s • η ∈ Γ) {R : ℝ}
+    (hcΓ : ∀ x ∈ U, ∀ ξ ∈ Γ, R ≤ ‖ξ‖ → c.coefficient (x, ξ) = ContinuousLinearMap.id ℂ ℂ) :
+    (toDistribution ⊤ v.toDistr).waveFrontSet ∩ U ×ˢ Γ ⊆
+      (toDistribution ⊤ (c.quantizeSobolev hc t v).toDistr).waveFrontSet := by
+  rintro ⟨x₀, ξ₀⟩ ⟨hp, hx₀U, hξ₀Γ⟩
+  obtain ⟨-, hξ0, hnot⟩ := mem_waveFrontSet_iff.1 hp
+  refine mem_waveFrontSet_iff.2 ⟨trivial, hξ0, fun hcv ↦ hnot ?_⟩
+  -- A Schwartz cutoff `ψ` equal to `1` on an open set `O` containing `x₀`.
+  obtain ⟨K, V₀, ψ₀, χ, -, -, -, hx₀, -, hψ₀K, hψ₀1, hχK, -, -⟩ :=
+    exists_cutoffs (hU.mem_nhds hx₀U)
+  obtain ⟨O, hO, hKO, hOχ⟩ := mem_nhdsSet_iff_exists.1 hχK
+  have hx₀O : x₀ ∈ O :=
+    hKO (by_contra fun h ↦ zero_ne_one ((hψ₀K x₀ h).symm.trans (hψ₀1 x₀ hx₀)))
+  set ψ : 𝓢(CoordinateSpace n, ℂ) := toSchwartzMapCLM ℂ χ
+  have hψO (x : CoordinateSpace n) (hx : x ∈ O) : ψ x = 1 := by
+    simp only [ψ, coe_toSchwartzMapCLM]
+    exact hOχ hx
+  -- `ψ v - Op(ψ c) v` is smooth microlocally at `(x₀, ξ₀)`, and `e = ψ c - c` vanishes on `O`.
+  obtain ⟨b, hb, hbψ, hD⟩ := exists_isMicrolocallySmoothAt_smulLeftCLM_sub c
+    (hasCompactSupport_toSchwartzMapCLM (𝕜 := ℂ) χ) t v (hU.mem_nhds hx₀U) hΓ hξ₀Γ hξ0 hcone hcΓ
+  have he := hb.sub hc
+  -- `v = Op(c) v + (v - ψ v) + (ψ v - Op(b) v) + Op(e) v`.
+  set S := v.toDistr - (BesselPotentialSpace.smulLeftCLM t ψ v).toDistr with hS_def
+  have hsplit : toDistribution ⊤ v.toDistr = toDistribution ⊤ (c.quantizeSobolev hc t v).toDistr +
+      toDistribution ⊤ S + toDistribution ⊤ ((BesselPotentialSpace.smulLeftCLM t ψ v).toDistr -
+        (b.quantizeSobolev hb t v).toDistr) +
+      toDistribution ⊤ ((b - c).quantizeSobolev he t v).toDistr := by
+    rw [toDistr_quantizeSobolev_sub_apply hb hc he]
+    simp only [S, map_sub]
+    abel
+  have hS : x₀ ∉ dsupport (toDistribution ⊤ S) := fun h ↦ by
+    have h' := dsupport_toDistribution_subset S h
+    rw [hS_def, BesselPotentialSpace.toDistr_smulLeftCLM] at h'
+    exact dsupport_sub_smulLeftCLM_subset v.toDistr ψ.hasTemperateGrowth hO hψO h' hx₀O
+  have he0 : x₀ ∉ dsupport (toDistribution ⊤ ((b - c).quantizeSobolev he t v).toDistr) :=
+    fun h ↦ (dsupport_toDistribution_quantizeSobolev_subset he hO.isClosed_compl
+      (fun x hx ξ ↦ by simp [hbψ, show χ x = 1 from hOχ (not_not.1 hx)]) t v h) hx₀O
+  rw [hsplit]
+  exact ((hcv.add (isMicrolocallySmoothAt_of_notMem_dsupport trivial hS ξ₀)).add hD).add
+    (isMicrolocallySmoothAt_of_notMem_dsupport trivial he0 ξ₀)
+
+/-- **A pseudodifferential operator is microlocally the identity where its symbol is**, as an
+equality of wave front sets: if the scalar symbol `c` with compact spatial support equals `1` at
+large frequencies on `U × Γ`, then `WF(Op(c) v)` and `WF(v)` agree on `U × Γ`. -/
+theorem waveFrontSet_toDistribution_quantizeSobolev_inter_eq {c : Symbol n ℂ ℂ m}
+    (hc : c.HasCompactSpatialSupport) (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ))
+    {U Γ : Set (CoordinateSpace n)} (hU : IsOpen U) (hΓ : IsOpen Γ)
+    (hcone : ∀ s : ℝ, 0 < s → ∀ η ∈ Γ, s • η ∈ Γ) {R : ℝ}
+    (hcΓ : ∀ x ∈ U, ∀ ξ ∈ Γ, R ≤ ‖ξ‖ → c.coefficient (x, ξ) = ContinuousLinearMap.id ℂ ℂ) :
+    (toDistribution ⊤ (c.quantizeSobolev hc t v).toDistr).waveFrontSet ∩ U ×ˢ Γ =
+      (toDistribution ⊤ v.toDistr).waveFrontSet ∩ U ×ˢ Γ :=
+  (inter_subset_inter_left _ (waveFrontSet_toDistribution_quantizeSobolev_subset hc t v)).antisymm
+    (subset_inter (waveFrontSet_toDistribution_inter_subset_quantizeSobolev hc t v hU hΓ hcone hcΓ)
+      inter_subset_right)
+
+/-! ### Matrix-valued symbols
+
+A symbol with values in `V →L[ℂ] W` acts on `V`-valued distributions, whose wave front set is the
+union of the wave front sets of their components (`Distribution.vectorWaveFrontSet`). The
+component of `Op(a) v` along a functional `ℓ` on `W` is a finite sum of scalar operators applied to
+the coordinates of `v` in a basis `(e_j)` of `V`: with dual basis `(c_j)`,
+`ℓ ∘ Op(a) = ∑ⱼ Op(ℓ ∘ a ∘ e_j) ∘ c_j`. -/
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ V]
+
+/-- **Microlocality of matrix-valued pseudodifferential operators.** Let `a` be a symbol of order
+`m` with values in `V →L[ℂ] W` and compact spatial support, where `V` is finite-dimensional. For
+every `v ∈ H^t(ℝⁿ; V)`, the wave front set of `Op(a) v` is contained in that of `v`:
+`WF(Op(a) v) ⊆ WF(v)`, for the wave front sets of vector-valued distributions. -/
+theorem vectorWaveFrontSet_toDistribution_quantizeSobolev_subset [CompleteSpace W]
+    {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (t : ℝ) :
+    haveI : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
+    ∀ v : H^{t}(CoordinateSpace n, V),
+      (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).vectorWaveFrontSet ⊆
+        (toDistribution ⊤ v.toDistr).vectorWaveFrontSet := by
+  intro v
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
+  let b := Module.finBasis ℂ V
+  intro p hp
+  obtain ⟨ℓ, hp⟩ := mem_vectorWaveFrontSet_iff.1 hp
+  -- The component of `Op(a) v` along `ℓ` is a sum of scalar quantizations of components of `v`.
+  have hℓ : mapCLM (ℓ.restrictScalars ℝ) (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr) =
+      ∑ j, toDistribution ⊤ ((a.map (entryMap ℓ (b j))).quantizeSobolev (ha.map _) t
+        (BesselPotentialSpace.postcomp _ t 2 (b.coord j).toContinuousLinearMap v)
+        ).toDistr := by
+    have h := congrArg (fun T ↦ toDistribution ⊤ (BesselPotentialSpace.toDistrCLM _ _ _ 2 (T v)))
+      (postcomp_comp_quantizeSobolev ha b ℓ t)
+    simp only [_root_.sum_apply, map_sum, ContinuousLinearMap.comp_apply,
+      BesselPotentialSpace.toDistrCLM_apply] at h
+    rw [← h, BesselPotentialSpace.toDistribution_toDistr_postcomp]
+  rw [hℓ] at hp
+  obtain ⟨j, -, hj⟩ := mem_iUnion₂.1 (waveFrontSet_sum_subset _ _ hp)
+  refine waveFrontSet_mapCLM_subset_vectorWaveFrontSet
+    (b.coord j).toContinuousLinearMap _ ?_
+  -- The coordinates of `v` have wave front sets inside that of `v`.
+  rw [← BesselPotentialSpace.toDistribution_toDistr_postcomp]
+  exact waveFrontSet_toDistribution_quantizeSobolev_subset _ t _ hj
+
+/-- **Pseudodifferential operators do not enlarge the singular support.** For a symbol `a` with
+values in `V →L[ℂ] W` between finite-dimensional spaces and compact spatial support, and every
+`v ∈ H^t(ℝⁿ; V)`, the singular support of `Op(a) v` is contained in the singular support of
+`v`. -/
+theorem singularSupport_toDistribution_quantizeSobolev_subset [FiniteDimensional ℂ W]
+    {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) (t : ℝ) :
+    haveI : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
+    haveI : CompleteSpace W := FiniteDimensional.completeSpace ℂ W
+    ∀ v : H^{t}(CoordinateSpace n, V),
+      (toDistribution ⊤ (a.quantizeSobolev ha t v).toDistr).singularSupport ⊆
+        (toDistribution ⊤ v.toDistr).singularSupport := by
+  intro v
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℂ V
+  have : CompleteSpace W := FiniteDimensional.completeSpace ℂ W
+  rw [← fst_image_vectorWaveFrontSet, ← fst_image_vectorWaveFrontSet]
+  exact image_mono (vectorWaveFrontSet_toDistribution_quantizeSobolev_subset ha t v)
 
 end Symbol
 

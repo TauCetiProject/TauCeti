@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.Morse.Pi
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 
 /-!
 # Exponential convergence of gradient trajectories: two test cases
@@ -39,10 +40,16 @@ the rate of that theorem.
   both signs arbitrarily close to it (`TauCeti.not_isLocalMin_sq_sub_sq`,
   `TauCeti.not_isLocalMax_sq_sub_sq`), so `f - f 0` is not of one sign near the limit. The
   trajectory through `(a, 0)` is `(a exp (-2 t), 0)`
-  (`TauCeti.maximalIntegralCurve_neg_mgradient_sq_sub_sq`), at distance exactly `|a| exp (-2 t)`
-  from the origin (`TauCeti.riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_sub_sq`). So
-  the exponential bound holds with the rate `2`, the positive eigenvalue of the Hessian, and for
-  `a ≠ 0` with no larger rate
+  (`TauCeti.maximalIntegralCurve_neg_mgradient_sq_sub_sq`), and it converges to the saddle point
+  (`TauCeti.tendsto_maximalIntegralCurve_neg_mgradient_sq_sub_sq`). Its energy
+  `f(γ t) - f(0) = a² exp (-4 t)` is nonnegative
+  (`TauCeti.sq_sub_sq_maximalIntegralCurve_neg_mgradient_sq_sub_sq`), although `f` takes negative
+  values arbitrarily close to the saddle point. In the coordinates `(u, v) = (y, x)` this is the
+  function `-u² + v²` on its stable axis `u = 0`, where the energy is `v²`. The trajectory is at
+  distance exactly `|a| exp (-2 t)` from the origin
+  (`TauCeti.riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_sub_sq`). So the exponential
+  bound holds with the rate `2`, the positive eigenvalue of the Hessian, and for `a ≠ 0` with no
+  larger rate
   (`TauCeti.not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient_sq_sub_sq`).
 
 The trajectories are identified with the maximal integral curves of `-grad f` by uniqueness of
@@ -233,6 +240,32 @@ theorem maximalIntegralCurve_neg_mgradient_sq_sub_sq (a t : ℝ) :
     (a := -(|t| + 1)) (b := |t| + 1) ⟨neg_lt_zero.2 hb, hb⟩
     (fun s _ ↦ hasDerivAt_sqSubSqTrajectory a s)
     ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
+
+/-- The stable trajectory of the saddle `x² - y²` through `(a, 0)` converges to the saddle
+point `0`. -/
+theorem tendsto_maximalIntegralCurve_neg_mgradient_sq_sub_sq (a : ℝ) :
+    Tendsto (maximalIntegralCurve (-mgradient 𝓘(ℝ, EuclideanSpace ℝ (Fin 2))
+        (fun z : EuclideanSpace ℝ (Fin 2) ↦ z 0 ^ 2 - z 1 ^ 2)) (EuclideanSpace.single 0 a))
+      atTop (𝓝 0) := by
+  rw [tendsto_zero_iff_norm_tendsto_zero]
+  simp_rw [maximalIntegralCurve_neg_mgradient_sq_sub_sq, PiLp.norm_single, norm_mul,
+    Real.norm_eq_abs, Real.abs_exp]
+  exact Real.tendsto_const_mul_exp_neg_mul_atTop |a| two_pos
+
+/-- **The energy along the stable trajectory of the saddle.** Along the trajectory of
+`-grad (x² - y²)` through `(a, 0)`, the energy `f(γ t) - f(0) = f(γ t)` is `a² exp (-4 t)`. It is
+nonnegative, although `f - f(0)` takes negative values arbitrarily close to the saddle point
+(`TauCeti.not_isLocalMin_sq_sub_sq`). -/
+theorem sq_sub_sq_maximalIntegralCurve_neg_mgradient_sq_sub_sq (a t : ℝ) :
+    (fun z : EuclideanSpace ℝ (Fin 2) ↦ z 0 ^ 2 - z 1 ^ 2)
+        (maximalIntegralCurve (-mgradient 𝓘(ℝ, EuclideanSpace ℝ (Fin 2))
+          (fun z : EuclideanSpace ℝ (Fin 2) ↦ z 0 ^ 2 - z 1 ^ 2)) (EuclideanSpace.single 0 a) t) =
+      a ^ 2 * Real.exp (-(4 * t)) := by
+  rw [maximalIntegralCurve_neg_mgradient_sq_sub_sq]
+  -- The first coordinate is `a exp (-2 t)` and the second vanishes.
+  simp only [PiLp.ofLp_single, Pi.single_eq_same, Pi.single_eq_of_ne one_ne_zero]
+  rw [mul_pow, ← Real.exp_natCast_mul]
+  ring_nf
 
 /-- The trajectory of `-grad (x² - y²)` through `(a, 0)` is at Riemannian distance exactly
 `|a| exp (-2 t)` from the saddle point `0` at time `t`. -/

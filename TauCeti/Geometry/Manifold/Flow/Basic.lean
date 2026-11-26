@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Geometry.Manifold.IntegralCurve.Flow
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+public import TauCeti.Geometry.Manifold.RegularValue
+import TauCeti.Dynamics.Flow.PeriodBound
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 
 /-!
 # The maximal flow of a vector field
@@ -38,10 +42,22 @@ compact set.
 * `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow for complete model spaces.
 * `TauCeti.contMDiffAt_flowOf_comp`: flowing `C^n` families of points for `C^n` families of times.
 * `TauCeti.isOpen_setOf_mem_flowDomain`: the parameters of a continuous family of times and
-  points at which the flow is defined form an open set.
+  points at which the flow is defined form an open set, and
+  `TauCeti.isOpen_setOf_mem_flowDomain_and_flowOf_mem` the times and points whose trajectory is
+  defined and in a given open set.
+* `TauCeti.exists_nullhomotopic_flowOf_comp`: flowing a nullhomotopic map, for times at which the
+  flow stays in a set `W`, gives a map nullhomotopic in `W`.
 * `TauCeti.mfderiv_flowOf_comp_apply`: the differential of `(t, s) ↦ φₜ(f s)`.
 * `TauCeti.mfderiv_flowOf_comp_prodMk_apply`: the differential of `y ↦ φ_{τ y}(f y)`.
 * `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
+* `TauCeti.lt_apply_flowOf_of_le_apply`, `TauCeti.apply_flowOf_lt_of_apply_le`: a trajectory
+  crosses a level transverse to the field only in the direction of the field.
+* `TauCeti.mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq`: a function that the flow rescales by
+  `e^s` is differentiated to itself by the field, and
+  `TauCeti.mvfderiv_apply_eq_one_of_eventually_apply_flowOf_eq_add`: a function that the flow
+  translates at unit speed has derivative `1` along the field, so
+  (`TauCeti.isRegularValue_of_apply_flowOf_eq_add`) the values it is translated through are
+  regular.
 * `TauCeti.mfderiv_flowOf_zero_apply`: the derivative of the flow at time zero.
 * `TauCeti.mfderiv_flowOf_zero_apply_eq_self`: the spatial derivative of the time-zero flow map is
   the identity.
@@ -51,9 +67,14 @@ compact set.
   derivative of a trajectory is the field.
 * `TauCeti.mfderiv_flowOf_apply_self`: the differential of the time-`t` map carries the field to
   itself.
-* `TauCeti.flowOf_add`: the domain-aware group law.
+* `TauCeti.flowOf_add`: the domain-aware group law, and `TauCeti.mem_flowDomain_flowOf_iff`, the
+  times of the flow through a point of a trajectory.
 * `TauCeti.mfderiv_flowOf_add_apply`: the differential of the composition of two local flow maps.
 * `TauCeti.flowOf_neg_flowOf`: flowing backwards undoes flowing forwards.
+* `TauCeti.exists_pos_period_le_nhds_flowOf`: positive return times near a point where the field
+  is nonzero are bounded away from zero.
+* `TauCeti.flowOf_ne_flowOf_of_lt`: a closed orbit of least period is not revisited within a
+  period.
 * `TauCeti.eventually_flowOf_notMem`: escape from compact sets at a finite right endpoint.
 
 ## References
@@ -66,7 +87,7 @@ public section
 
 noncomputable section
 
-open Function Manifold Set
+open Function Manifold Set Filter
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti
@@ -302,6 +323,42 @@ theorem isOpen_setOf_mem_flowDomain [IsManifold I 1 M] {v : (x : M) → TangentS
     IsOpen {y | (τ y, f y) ∈ flowDomain v} :=
   (isOpen_flowDomain hv).preimage (hτ.prodMk hf)
 
+/-- On a complete normed model space, the pairs `(t, y)` such that the trajectory through `y` is
+defined at time `t` and is then in an open set `U` form an open set. -/
+theorem isOpen_setOf_mem_flowDomain_and_flowOf_mem [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x} (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {U : Set M} (hU : IsOpen U) :
+    IsOpen {q : ℝ × M | q ∈ flowDomain v ∧ flowOf v q.1 q.2 ∈ U} :=
+  (contMDiffOn_flowOf le_rfl hv).continuousOn.isOpen_inter_preimage (isOpen_flowDomain hv) hU
+
+/-- **Flowing a nullhomotopic map.** On a complete normed model space, let `g : X → W` be
+nullhomotopic in `W`, and let the maximal flow of a `C¹` field `v` be defined at time `t` and stay
+in `W` at the times `u t`, `u ∈ [0, 1]`, from every point of `g`. Then `x ↦ φₜ(g x)` is
+nullhomotopic in `W`: the times `u t` move `g` to it inside `W`. -/
+theorem exists_nullhomotopic_flowOf_comp [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {X : Type*} [TopologicalSpace X]
+    {W : Set M} {g : C(X, W)} (hg : g.Nullhomotopic) {t : ℝ}
+    (hdom : ∀ x, (t, (g x : M)) ∈ flowDomain v)
+    (hmem : ∀ x, ∀ u ∈ Icc (0 : ℝ) 1, flowOf v (u * t) (g x) ∈ W) :
+    ∃ g' : C(X, W), g'.Nullhomotopic ∧ ∀ x, (g' x : M) = flowOf v t (g x) := by
+  have hcont : ContinuousOn (fun p : ℝ × M ↦ flowOf v p.1 p.2) (flowDomain v) :=
+    (contMDiffOn_flowOf le_rfl hv).continuousOn
+  let H : C(unitInterval × X, W) :=
+    { toFun := fun p : unitInterval × X ↦
+        ⟨flowOf v ((p.1 : ℝ) * t) (g p.2), hmem p.2 p.1 p.1.property⟩
+      continuous_toFun := (hcont.comp_continuous
+        (f := fun p : unitInterval × X ↦ ((p.1 : ℝ) * t, (g p.2 : M))) (by fun_prop)
+        fun p ↦ uIcc_subset_setOf_mem_flowDomain (hdom p.2)
+          ((convex_uIcc 0 t).smul_mem_of_zero_mem left_mem_uIcc right_mem_uIcc
+            p.1.property)).subtype_mk _ }
+  let g' : C(X, W) := ⟨fun x ↦ H (1, x), by fun_prop⟩
+  let hH : ContinuousMap.Homotopy g g' :=
+    { toContinuousMap := H
+      map_zero_left := fun x ↦ Subtype.ext <| by simp [H]
+      map_one_left := fun _ ↦ rfl }
+  obtain ⟨y, hy⟩ := hg
+  exact ⟨g', ⟨y, (ContinuousMap.Homotopic.symm ⟨hH⟩).trans hy⟩, fun x ↦ by simp [g', H]⟩
+
 /-- **The differential of flowing a family of points for a family of times.** On a complete normed
 model space, at a point `z` where `φ_{τ z}(f z)` is defined, the differential of
 `y ↦ φ_{τ y}(f y)` sends a tangent vector `w` to `dτ(w) v + dφ_{τ z}(df w)`. This is
@@ -340,6 +397,95 @@ theorem hasDerivAt_comp_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace 
       isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp hx)
   exact Manifold.hasDerivAt_comp_curve hg
     (((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hopen).hasMFDerivAt)
+
+omit [CompleteSpace E] in
+/-- **Trajectories cross a level only upwards.** Let `f` be continuous, differentiable with
+`df(v) > 0` at every point of the level `f⁻¹(c)`, and let `v` be `C¹`. If `c ≤ f x`, then
+`c < f (φₜ x)` at every positive time `t` at which the trajectory of `x` is defined. -/
+theorem lt_apply_flowOf_of_le_apply [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {f : M → ℝ} {c : ℝ}
+    (hf : Continuous f)
+    (hfc : ∀ y, f y = c → MDifferentiableAt I 𝓘(ℝ) f y ∧ 0 < mvfderiv I f y (v y)) {x : M}
+    (hx : c ≤ f x) {t : ℝ} (ht : 0 < t) (htx : (t, x) ∈ flowDomain v) :
+    c < f (flowOf v t x) := by
+  -- The trajectory is an integral curve on its open interval of existence, which contains
+  -- `[0, t]`.
+  have hdom : {τ | (τ, x) ∈ flowDomain v} = maximalIntegralCurveInterval v x :=
+    ext fun _ ↦ mem_flowDomain
+  have hs : IsOpen {τ | (τ, x) ∈ flowDomain v} := hdom ▸ isOpen_maximalIntegralCurveInterval
+  have hIcc : Icc 0 t ⊆ {τ | (τ, x) ∈ flowDomain v} := hdom ▸
+    ordConnected_maximalIntegralCurveInterval.out
+      (mem_flowDomain.1 (mem_flowDomain_zero_of_mem htx)) (mem_flowDomain.1 htx)
+  exact (isMIntegralCurveOn_flowOf hv x).lt_apply_of_le_apply hs hIcc
+    (hf.comp_continuousOn ((isMIntegralCurveOn_flowOf hv x).continuousOn.mono hIcc))
+    (fun τ _ hτ ↦ hfc _ hτ) (by rwa [flowOf_zero v]) ⟨ht, le_rfl⟩
+
+omit [CompleteSpace E] in
+/-- **Trajectories cross a level only downwards when the field decreases the function.** Let `f`
+be continuous, differentiable with `df(v) < 0` at every point of the level `f⁻¹(c)`, and let `v`
+be `C¹`. If `f x ≤ c`, then `f (φₜ x) < c` at every positive time `t` at which the trajectory of
+`x` is defined: the forward flow carries `{f ≤ c}` into `{f < c}`. -/
+theorem apply_flowOf_lt_of_apply_le [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {f : M → ℝ} {c : ℝ}
+    (hf : Continuous f)
+    (hfc : ∀ y, f y = c → MDifferentiableAt I 𝓘(ℝ) f y ∧ mvfderiv I f y (v y) < 0) {x : M}
+    (hx : f x ≤ c) {t : ℝ} (ht : 0 < t) (htx : (t, x) ∈ flowDomain v) :
+    f (flowOf v t x) < c := by
+  have hlt := lt_apply_flowOf_of_le_apply (f := -f) (c := -c) hv hf.neg
+    (fun y hy ↦ by
+      have hy' : f y = c := by simpa using hy
+      refine ⟨(hfc y hy').1.neg, ?_⟩
+      rw [mvfderiv_neg, neg_apply]
+      exact neg_pos.2 (hfc y hy').2)
+    (by simpa using hx) ht htx
+  simpa using hlt
+
+/-- **A function rescaled by a flow is differentiated to itself by the field.** If `F` is
+differentiable at `x` and `F(φ_s x) = e^s F(x)` for `s` near `0`, then `dF(v) = F` at `x`. -/
+theorem mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x} (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {F : M → ℝ} {x : M} (hF : MDifferentiableAt I 𝓘(ℝ) F x)
+    (heq : (F ∘ fun s ↦ flowOf v s x) =ᶠ[𝓝 0] fun s ↦ Real.exp s * F x) :
+    mvfderiv I F x (v x) = F x := by
+  have hcurve := hasDerivAt_comp_flowOf hv (mem_flowDomain_zero hv x)
+    (by rwa [flowOf_zero v])
+  rw [flowOf_zero v] at hcurve
+  refine hcurve.unique (HasDerivAt.congr_of_eventuallyEq ?_ heq)
+  simpa using (Real.hasDerivAt_exp 0).mul_const (F x)
+
+/-- **A function translated by a flow has unit derivative along the field.** If `F` is
+differentiable at `x` and `F(φ_s x) = F(x) + s` for `s` near `0`, then `dF(v) = 1` at `x`. -/
+theorem mvfderiv_apply_eq_one_of_eventually_apply_flowOf_eq_add [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x} (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {F : M → ℝ} {x : M} (hF : MDifferentiableAt I 𝓘(ℝ) F x)
+    (heq : ∀ᶠ s in 𝓝 0, F (flowOf v s x) = F x + s) :
+    mvfderiv I F x (v x) = 1 := by
+  have hcurve := hasDerivAt_comp_flowOf hv (mem_flowDomain_zero hv x)
+    (by rwa [flowOf_zero v])
+  rw [flowOf_zero v] at hcurve
+  exact ((((hasDerivAt_id' (0 : ℝ)).const_add (F x)).congr_of_eventuallyEq heq).unique
+    hcurve).symm
+
+/-- **Values swept by a local flow are regular.** If `f` is differentiable on the band
+`a < f < b` and the maximal flow `φ` of `v` translates `f` at unit speed there,
+`f (φ_t x) = f x + t` whenever `f x` and `f x + t` lie in `(a, b)`, then every value in `(a, b)`
+is a regular value of `f`. No completeness of `v` is needed: only the times near `0`, at which the
+flow is defined, enter. -/
+theorem isRegularValue_of_apply_flowOf_eq_add [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x} (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {f : M → ℝ} {a b : ℝ} (hf : ∀ x, f x ∈ Ioo a b → MDifferentiableAt I 𝓘(ℝ) f x)
+    (hfv : ∀ x t, f x ∈ Ioo a b → f x + t ∈ Ioo a b → f (flowOf v t x) = f x + t)
+    {c : ℝ} (hc : c ∈ Ioo a b) : IsRegularValue I 𝓘(ℝ) f c := by
+  rw [isRegularValue_iff]
+  rintro x rfl
+  rw [isRegularPoint_iff_mvfderiv_ne_zero]
+  intro h0
+  have h1 := mvfderiv_apply_eq_one_of_eventually_apply_flowOf_eq_add hv (hf x hc) <| by
+    filter_upwards [(isOpen_Ioo.preimage (by fun_prop : Continuous fun s ↦ f x + s)).mem_nhds
+      (by simpa using hc)] with s hs
+    exact hfv x s hc hs
+  rw [h0] at h1
+  exact zero_ne_one h1
 
 /-- **The derivative of the flow at time zero.** At `(0, x)`, the derivative of
 `(t, y) ↦ flowOf v t y` sends the time direction to the field at `x` and is the identity in the
@@ -400,14 +546,24 @@ theorem flowOf_add [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
   simpa only [flowOf_apply] using (maximalIntegralCurve_add hv hs' hst).symm
 
 omit [CompleteSpace E] in
+/-- The times of the flow through a point of a trajectory are those of the trajectory shifted: if
+time `s` is defined at `x`, then time `t` is defined at `flowOf v s x` exactly when time `s + t`
+is defined at `x`. -/
+theorem mem_flowDomain_flowOf_iff [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {s t : ℝ} {x : M}
+    (hs : (s, x) ∈ flowDomain v) :
+    (t, flowOf v s x) ∈ flowDomain v ↔ (s + t, x) ∈ flowDomain v := by
+  rw [mem_flowDomain, flowOf_apply,
+    mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp hs),
+    ← mem_flowDomain]
+
+omit [CompleteSpace E] in
 /-- The flow can be run backwards along a trajectory: if time `t` is defined at `x`, then time
 `-t` is defined at `flowOf v t x`. -/
 theorem neg_mem_flowDomain_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
     (ht : (t, x) ∈ flowDomain v) : (-t, flowOf v t x) ∈ flowDomain v := by
-  rw [mem_flowDomain, flowOf_apply,
-    mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp ht),
-    add_neg_cancel, ← mem_flowDomain]
+  rw [mem_flowDomain_flowOf_iff hv ht, add_neg_cancel]
   exact mem_flowDomain_zero_of_mem ht
 
 omit [CompleteSpace E] in
@@ -440,13 +596,80 @@ theorem flowOf_flowOf_of_flowOf_eq [IsManifold I 1 M] {v : (x : M) → TangentSp
     (ht : (t, x) ∈ flowDomain v) (hs : (s, x) ∈ flowDomain v) (hx : flowOf v s x = x) :
     (s, flowOf v t x) ∈ flowDomain v ∧ flowOf v s (flowOf v t x) = flowOf v t x := by
   obtain ⟨hst, heq⟩ := flowOf_add hv hs (hx.symm ▸ ht)
-  have hs' : (s, flowOf v t x) ∈ flowDomain v := by
-    rw [mem_flowDomain, flowOf_apply,
-      mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp ht), add_comm,
-      ← mem_flowDomain]
-    exact hst
+  have hs' : (s, flowOf v t x) ∈ flowDomain v :=
+    (mem_flowDomain_flowOf_iff hv ht).2 (by rwa [add_comm])
   refine ⟨hs', ?_⟩
   rw [(flowOf_add hv ht hs').2, add_comm, ← heq, hx]
+
+omit [CompleteSpace E] in
+private def flowOfPeriods [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (x : M) : AddSubgroup ℝ where
+  carrier := {t | (t, x) ∈ flowDomain v ∧ flowOf v t x = x}
+  zero_mem' := ⟨mem_flowDomain_zero hv x, flowOf_zero v x⟩
+  add_mem' := by
+    rintro s t ⟨hs, hsfix⟩ ⟨ht, htfix⟩
+    obtain ⟨hst, heq⟩ := flowOf_add hv hs (hsfix.symm ▸ ht)
+    rw [hsfix, htfix] at heq
+    exact ⟨hst, heq.symm⟩
+  neg_mem' := by
+    rintro t ⟨ht, htfix⟩
+    refine ⟨htfix ▸ neg_mem_flowDomain_flowOf hv ht, ?_⟩
+    have hneg := flowOf_neg_flowOf hv ht
+    rwa [htfix] at hneg
+
+/-- Near a point where a `C¹` field does not vanish, positive return times in its maximal
+flow domain are uniformly bounded away from zero. The field need not be complete. -/
+theorem exists_pos_period_le_nhds_flowOf [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {x : M} (hx : v x ≠ 0) :
+    ∃ ε > 0, ∃ U ∈ 𝓝 x, ∀ y ∈ U, ∀ T > 0,
+      (T, y) ∈ flowDomain v → flowOf v T y = y → ε ≤ T := by
+  have hex : ∃ s, flowOf v s x ≠ x := by
+    by_contra! h
+    have hconst : (fun s ↦ flowOf v s x) = (fun _ : ℝ ↦ x) := funext h
+    have hd : @Eq E (Manifold.curveVelocity I (fun s ↦ flowOf v s x) 0) (v x) :=
+      (curveVelocity_flowOf hv (mem_flowDomain_zero hv x)).trans
+        (congrArg (fun y : M ↦ (v y : E)) (flowOf_zero v x))
+    rw [hconst, Manifold.curveVelocity_const] at hd
+    exact hx hd.symm
+  obtain ⟨s, hs⟩ := hex
+  have hsdom : (s, x) ∈ flowDomain v := by
+    by_contra hdom
+    apply hs
+    rw [flowOf_apply, maximalIntegralCurve_eq_of_not_mem (mem_flowDomain.not.mp hdom)]
+  have hflow := (contMDiffAt_flowOf_comp (z := (s, x)) le_rfl hv contMDiffAt_fst contMDiffAt_snd
+    hsdom).continuousAt
+  have hne : ∀ᶠ p : ℝ × M in 𝓝 (s, x), flowOf v p.1 p.2 ≠ p.2 :=
+    (hflow.prodMk continuousAt_snd).preimage_mem_nhds
+      ((isOpen_ne_fun continuous_fst continuous_snd).mem_nhds hs)
+  have hnotMem : ∀ᶠ p : ℝ × M in 𝓝 (s, x), p.1 ∉ flowOfPeriods hv p.2 :=
+    hne.mono fun _ hp hreturn ↦ hp hreturn.2
+  obtain ⟨ε, hε, U, hU, hbound⟩ := exists_pos_period_le_nhds_of_eventually_not_mem hnotMem
+  exact ⟨ε, hε, U, hU, fun y hy T hT hdom hfix ↦ hbound y hy T hT ⟨hdom, hfix⟩⟩
+
+omit [CompleteSpace E] in
+/-- **A closed orbit of least period is not revisited within a period.** If `x` returns to itself
+at time `T₀` and at no time strictly between `0` and `T₀`, then for `0 < s < t ≤ T₀` the points of
+its trajectory at the times `s` and `t` are distinct. -/
+theorem flowOf_ne_flowOf_of_lt [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {T₀ s t : ℝ} {x : M}
+    (hP : (T₀, x) ∈ flowDomain v) (hx : flowOf v T₀ x = x)
+    (hmin : ∀ r ∈ Ioo 0 T₀, flowOf v r x ≠ x) (hs : 0 < s) (hst : s < t) (ht : t ≤ T₀) :
+    flowOf v s x ≠ flowOf v t x := by
+  intro h
+  have hdom : ∀ r ∈ Icc 0 T₀, (r, x) ∈ flowDomain v := fun r hr ↦
+    uIcc_subset_setOf_mem_flowDomain hP (Icc_subset_uIcc hr)
+  have hs' : s ∈ Icc 0 T₀ := ⟨hs.le, (hst.trans_le ht).le⟩
+  have ht' : t ∈ Icc 0 T₀ := ⟨hs.le.trans hst.le, ht⟩
+  have hr : s + (T₀ - t) ∈ Ioo 0 T₀ := ⟨by linarith, by linarith⟩
+  -- Flowing on for the time `T₀ - t` carries the point at time `t` to `x`, and the point at time
+  -- `s` to the point at time `s + (T₀ - t)`, strictly between `0` and `T₀`.
+  have h₁ := flowOf_add hv (hdom t ht')
+    ((mem_flowDomain_flowOf_iff hv (hdom t ht')).2 (by rwa [add_sub_cancel]))
+  have h₂ := flowOf_add hv (hdom s hs')
+    ((mem_flowDomain_flowOf_iff hv (hdom s hs')).2 (hdom _ ⟨hr.1.le, hr.2.le⟩))
+  rw [add_sub_cancel, hx] at h₁
+  exact hmin _ hr (by rw [← h₂.2, h, h₁.2])
 
 /-- **The flow preserves its generating field.** If time `t` is defined at `x`, the derivative of
 the time-`t` map of the flow carries `v x` to `v (flowOf v t x)`. -/
