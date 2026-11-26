@@ -302,23 +302,32 @@ theorem boundary_comp_correspondence_add_eq_zero (C D : ι) :
   simp only [hX, hY, Units.neg_smul, Finset.sum_neg_distrib]
   abel
 
+/-- The component identity of `D² = 0`, applied to a chain `x` on `C`. -/
+theorem boundary_comp_correspondence_add_eq_zero_apply (C D : ι) (x : M C) :
+    (B.rank D : ℤ).negOnePow • B.boundary D (B.correspondence C D x) +
+        (B.rank C : ℤ).negOnePow • B.correspondence C D (B.boundary C x) +
+      ∑ E, B.correspondence E D (B.correspondence C E x) = 0 := by
+  simpa [LinearMap.sum_apply] using
+    LinearMap.congr_fun (B.boundary_comp_correspondence_add_eq_zero C D) x
+
 /-- **The Bott differential squares to zero.** -/
 theorem differential_comp_differential : B.differential ∘ₗ B.differential = 0 := by
   ext x : 1
   funext D
-  have key : ∀ C, (B.rank D : ℤ).negOnePow • B.boundary D (B.correspondence C D (x C)) +
-      B.correspondence C D ((B.rank C : ℤ).negOnePow • B.boundary C (x C)) +
-        ∑ E, B.correspondence E D (B.correspondence C E (x C)) = 0 := fun C ↦ by
-    simpa [LinearMap.sum_apply] using
-      LinearMap.congr_fun (B.boundary_comp_correspondence_add_eq_zero C D) (x C)
   have hsq : B.boundary D (B.boundary D (x D)) = 0 :=
     LinearMap.congr_fun (B.boundary_comp_boundary D) (x D)
-  simp only [LinearMap.comp_apply, differential_apply, map_add, map_sum, LinearMap.zero_apply,
+  -- sum the component identity over the components `C` carrying the chains `x C`
+  have h := Finset.sum_eq_zero (s := Finset.univ) fun C _ ↦
+    B.boundary_comp_correspondence_add_eq_zero_apply C D (x C)
+  -- exchange the double sum to `∑_E ∑_C F_ED F_CE x_C`, the order in which `D (D x)` produces it
+  simp only [Finset.sum_add_distrib] at h
+  rw [Finset.sum_comm (f := fun C E ↦ B.correspondence E D (B.correspondence C E (x C)))] at h
+  simp only [Units.smul_def] at h
+  simp only [LinearMap.comp_apply, differential_apply, Units.smul_def, map_add, map_zsmul, map_sum,
+    hsq, smul_zero, zero_add, Finset.smul_sum, Finset.sum_add_distrib, LinearMap.zero_apply,
     Pi.zero_apply]
-  simp only [Units.smul_def, map_zsmul, hsq, smul_zero, zero_add] at key ⊢
-  rw [Finset.sum_add_distrib, Finset.sum_comm, Finset.smul_sum, ← Finset.sum_add_distrib,
-    ← Finset.sum_add_distrib]
-  exact Finset.sum_eq_zero fun C _ ↦ by rw [← add_assoc]; exact key C
+  rw [← h]
+  abel
 
 /-- The differential applied twice vanishes. -/
 @[simp]
