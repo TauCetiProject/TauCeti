@@ -37,9 +37,9 @@ Since the integral homology is free, hence projective, in every degree
 `Ext¹` terms of the universal coefficient sequence vanish, and the Kronecker map
 `TopCat.singularKroneckerEquivOfProjectiveHomology` identifies the cohomology `Hʲ(O; ℤ, M)` with
 `Hom(Hⱼ(O; ℤ), M)` for every abelian group `M`. So the same holds for cohomology, by
-`TopCat.isZero_singularCohomology_of_projective_homology`,
-`TopCat.free_singularCohomology_of_projective_homology` and
-`TopCat.finite_singularCohomology_of_projective_homology`:
+`TopCat.isZero_singularCohomology_of_projective_homology_lt`,
+`TopCat.free_singularCohomology_of_projective_homology_lt` and
+`TopCat.finite_singularCohomology_of_projective_homology_le`:
 
 * `Hʲ(O; ℤ, M)` vanishes in odd degrees, for every abelian group `M`
   (`Module.Dual.isZero_singularCohomology_int_quotient_stabilizer_coadjointRepresentation_of_odd`);
@@ -153,20 +153,19 @@ theorem isZero_singularCohomology_int_quotient_stabilizer_coadjointRepresentatio
     (hj : Odd j) :
     IsZero ((TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)).singularCohomology
       (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ M) j) :=
-  TopCat.isZero_singularCohomology_of_projective_homology _ _ _
+  TopCat.isZero_singularCohomology_of_projective_homology_lt _ _ (fun _ _ ↦ inferInstance)
     (ν.isZero_singularHomology_int_quotient_stabilizer_coadjointRepresentation_of_odd hj)
 
 /-- **The integral cohomology of a coadjoint orbit is free.** For a coadjoint orbit `O` of a
 compact Lie group and a free abelian group `M`, `Hʲ(O; ℤ, M)` is free in every degree: by the
-universal coefficient theorem it is `Hom(Hⱼ(O; ℤ), M)`, with `Hⱼ(O; ℤ)` free of finite rank. For
-`M = ℤ`, the integral cohomology of `O` is free and concentrated in even degrees. -/
+universal coefficient theorem it is `Hom(Hⱼ(O; ℤ), M)`, with `Hⱼ(O; ℤ)` free of finite rank. -/
 theorem free_singularCohomology_int_quotient_stabilizer_coadjointRepresentation [Module.Free ℤ M]
     (j : ℕ) :
     Module.Free ℤ (TopCat.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ M)
       (TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)) j) :=
   have := ν.free_singularHomology_int_quotient_stabilizer_coadjointRepresentation j
   have := ν.finite_singularHomology_int_quotient_stabilizer_coadjointRepresentation j
-  TopCat.free_singularCohomology_of_projective_homology _ _ _ j
+  TopCat.free_singularCohomology_of_projective_homology_lt _ _ j fun _ _ ↦ inferInstance
 
 /-- **The integral cohomology of a coadjoint orbit is finitely generated.** For a coadjoint orbit
 `O` of a compact Lie group and a finitely generated abelian group `M`, `Hʲ(O; ℤ, M)` is finitely
@@ -177,7 +176,7 @@ theorem finite_singularCohomology_int_quotient_stabilizer_coadjointRepresentatio
     Module.Finite ℤ (TopCat.singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ M)
       (TopCat.of (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)) j) :=
   have := ν.finite_singularHomology_int_quotient_stabilizer_coadjointRepresentation j
-  TopCat.finite_singularCohomology_of_projective_homology _ _ _ j
+  TopCat.finite_singularCohomology_of_projective_homology_le _ _ j fun _ _ ↦ inferInstance
 
 end Cohomology
 

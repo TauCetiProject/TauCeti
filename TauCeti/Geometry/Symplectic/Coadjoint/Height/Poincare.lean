@@ -55,6 +55,8 @@ The **Euler characteristic** of `O_μ` is the index `[W : W_μ]`: all Morse indi
 so `χ(O_μ)` is the number of critical points of `f_X`
 (`Module.Dual.eulerChar_quotient_stabilizer_coadjointRepresentation_eq_ncard`), and these are
 indexed by `W / W_μ`
+(`TauCeti.IsRootPlaneDecomposition.card_criticalPoints_orbitMap_coadjointRepresentation`), so
+`χ(O_μ) = [W : W_μ]`
 (`TauCeti.IsRootPlaneDecomposition.eulerChar_quotient_stabilizer_coadjointRepresentation_eq_index`).
 Every `Ad`-invariant inner product admits such a root-plane decomposition with a regular element,
 so `χ(O_μ) = [W : W_μ]` holds with no choice of `t` or `X`

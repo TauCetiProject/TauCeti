@@ -64,13 +64,15 @@ free in that degree and zero above it, while in the top degree it need not be to
 * `TopPair.singularKronecker_bijective_of_projective_homology` and
   `TopPair.singularKroneckerEquivOfProjectiveHomology`: the same for relative cohomology of a
   pair whose relative homology is projective.
-* `TopCat.singularKroneckerLinearEquivOfProjectiveHomology`: the same isomorphism into the module
-  of `k`-linear maps `Hₙ(X; R) →ₗ[k] M`.
-* `TopCat.isZero_singularCohomology_of_projective_homology`,
-  `TopCat.finite_singularCohomology_of_projective_homology` and
-  `TopCat.free_singularCohomology_of_projective_homology`: with projective homology, `Hⁿ(X; R, M)`
-  vanishes when `Hₙ(X; R)` does, is finitely generated when `Hₙ(X; R)` and `M` are, and is free
-  when `Hₙ(X; R)` is free of finite rank and `M` is free.
+* `TopCat.singularKroneckerLinearEquivOfProjectiveHomology` and
+  `TopPair.singularKroneckerLinearEquivOfProjectiveHomology`: the same isomorphisms into the
+  modules of `k`-linear maps `Hₙ(X; R) →ₗ[k] M` and `Hₙ(X, A; R) →ₗ[k] M`.
+* `TopCat.isZero_singularCohomology_of_projective_homology_lt`,
+  `TopCat.finite_singularCohomology_of_projective_homology_le` and
+  `TopCat.free_singularCohomology_of_projective_homology_lt`: with projective homology below
+  degree `n`, `Hⁿ(X; R, M)` vanishes when `Hₙ(X; R)` does, is finitely generated when `Hₙ(X; R)`
+  is projective and finitely generated and `M` is finitely generated, and is free when `Hₙ(X; R)`
+  is free of finite rank and `M` is free.
 * `TopCat.singularKronecker_bijective_of_projective_homology_lt` and
   `TopCat.injective_homologyMap_linearYonedaObjMap_of_projective_homology_lt`: the Kronecker map
   is bijective in degree `n` when the homology is projective below `n`, so that an injective map
@@ -205,6 +207,53 @@ instance isAddTorsionFree_singularCohomology_one [Module.Free k R] (M : ModuleCa
       map_add' α β := by simp }
     fun _ _ h ↦ X.singularCohomology_one_ext (congrFun h)
 
+/-- **Cohomology vanishes where homology vanishes above projective homology**: for a projective
+coefficient module `R`, if `Hⱼ(X; R)` is projective for `j < n` and `Hₙ(X; R) = 0`, then
+`Hⁿ(X; R, M) = 0` for every module `M`, since the universal coefficient theorem identifies it with
+`Hom(Hₙ(X; R), M)`. -/
+theorem isZero_singularCohomology_of_projective_homology_lt (M : ModuleCat.{w} k) {n : ℕ}
+    (h : ∀ j < n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj R).obj X))
+    (hn : IsZero (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)) :
+    IsZero (X.singularCohomology R k M n) := by
+  have : Subsingleton (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X ⟶ M) :=
+    ⟨hn.eq_of_src⟩
+  have := (X.singularKronecker_bijective_of_projective_homology_lt M n h).1.subsingleton
+  exact ModuleCat.isZero_of_subsingleton _
+
+/-- **Cohomology is finitely generated where projective homology is**: for a projective coefficient
+module `R`, if `Hⱼ(X; R)` is projective for `j ≤ n`, `Hₙ(X; R)` is finitely generated and `M` is
+finitely generated, then `Hⁿ(X; R, M)` is finitely generated, being `Hom(Hₙ(X; R), M)` by the
+universal coefficient theorem. -/
+theorem finite_singularCohomology_of_projective_homology_le (M : ModuleCat.{w} k) (n : ℕ)
+    (h : ∀ j ≤ n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj R).obj X))
+    [Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
+    [Module.Finite k M] : Module.Finite k (X.singularCohomology R k M n) := by
+  have := h n le_rfl
+  have : Module.Projective k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X) :=
+    ModuleCat.projective_of_module_projective _
+  -- `Hₙ(X; R)` is a retract of some `kᵐ`, so `Hom(Hₙ(X; R), M)` is a quotient of `Mᵐ`.
+  obtain ⟨m, s, hs⟩ := Module.Finite.exists_fin' k
+    (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)
+  obtain ⟨i, hi⟩ := Module.projective_lifting_property s LinearMap.id hs
+  have := Module.Finite.of_surjective (LinearMap.lcomp k M i) fun f ↦
+    ⟨f ∘ₗ s, by rw [LinearMap.lcomp_apply', LinearMap.comp_assoc, hi, LinearMap.comp_id]⟩
+  exact Module.Finite.equiv (LinearEquiv.ofBijective _
+    (X.singularKronecker_bijective_of_projective_homology_lt M n fun j hj ↦ h j hj.le) ≪≫ₗ
+      ModuleCat.homLinearEquiv).symm
+
+/-- **Cohomology is free where homology is free of finite rank above projective homology**: for a
+projective coefficient module `R`, if `Hⱼ(X; R)` is projective for `j < n`, `Hₙ(X; R)` is free and
+finitely generated and `M` is free, then `Hⁿ(X; R, M)` is free, being `Hom(Hₙ(X; R), M)` by the
+universal coefficient theorem. -/
+theorem free_singularCohomology_of_projective_homology_lt (M : ModuleCat.{w} k) (n : ℕ)
+    (h : ∀ j < n, Projective (((singularHomologyFunctor (ModuleCat.{w} k) j).obj R).obj X))
+    [Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
+    [Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
+    [Module.Free k M] : Module.Free k (X.singularCohomology R k M n) :=
+  Module.Free.of_equiv (LinearEquiv.ofBijective _
+    (X.singularKronecker_bijective_of_projective_homology_lt M n h) ≪≫ₗ
+      ModuleCat.homLinearEquiv).symm
+
 end ProjectiveHomologyBelow
 
 section ProjectiveHomology
@@ -254,41 +303,16 @@ lemma singularKroneckerLinearEquivOfProjectiveHomology_apply (n : ℕ)
       (X.singularKronecker k n α).hom :=
   (rfl)
 
-/-- **Cohomology vanishes where projective homology vanishes**: if every `Hⱼ(X; R)` is projective
-and `Hₙ(X; R) = 0`, then `Hⁿ(X; R, M) = 0` for every module `M`, since the universal coefficient
-theorem identifies it with `Hom(Hₙ(X; R), M)`. -/
-theorem isZero_singularCohomology_of_projective_homology {n : ℕ}
-    (h : IsZero (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)) :
-    IsZero (X.singularCohomology R k M n) := by
-  have : Subsingleton (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X ⟶ M) :=
-    ⟨h.eq_of_src⟩
-  exact (ModuleCat.isZero_of_subsingleton _).of_iso
-    (X.singularKroneckerEquivOfProjectiveHomology R M n).toModuleIso
-
-/-- **Cohomology is finitely generated where projective homology is**: if every `Hⱼ(X; R)` is
-projective, `Hₙ(X; R)` is finitely generated and `M` is finitely generated, then `Hⁿ(X; R, M)` is
-finitely generated, being `Hom(Hₙ(X; R), M)` by the universal coefficient theorem. -/
-theorem finite_singularCohomology_of_projective_homology (n : ℕ)
-    [Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
-    [Module.Finite k M] : Module.Finite k (X.singularCohomology R k M n) := by
-  have : Module.Projective k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X) :=
-    ModuleCat.projective_of_module_projective _
-  -- `Hₙ(X; R)` is a retract of some `kᵐ`, so `Hom(Hₙ(X; R), M)` is a quotient of `Mᵐ`.
-  obtain ⟨m, s, hs⟩ := Module.Finite.exists_fin' k
-    (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)
-  obtain ⟨i, hi⟩ := Module.projective_lifting_property s LinearMap.id hs
-  have := Module.Finite.of_surjective (LinearMap.lcomp k M i) fun f ↦
-    ⟨f ∘ₗ s, by rw [LinearMap.lcomp_apply', LinearMap.comp_assoc, hi, LinearMap.comp_id]⟩
-  exact Module.Finite.equiv (X.singularKroneckerLinearEquivOfProjectiveHomology R M n).symm
-
-/-- **Cohomology is free where projective homology is free of finite rank**: if every `Hⱼ(X; R)`
-is projective, `Hₙ(X; R)` is free and finitely generated and `M` is free, then `Hⁿ(X; R, M)` is
-free, being `Hom(Hₙ(X; R), M)` by the universal coefficient theorem. -/
-theorem free_singularCohomology_of_projective_homology (n : ℕ)
-    [Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
-    [Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
-    [Module.Free k M] : Module.Free k (X.singularCohomology R k M n) :=
-  Module.Free.of_equiv (X.singularKroneckerLinearEquivOfProjectiveHomology R M n).symm
+/-- The inverse of `TopCat.singularKroneckerLinearEquivOfProjectiveHomology` sends a linear map
+`φ : Hₙ(X; R) →ₗ[k] M` to the class whose Kronecker pairing is `φ`. -/
+@[simp]
+lemma singularKronecker_singularKroneckerLinearEquivOfProjectiveHomology_symm (n : ℕ)
+    (φ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X →ₗ[k] M) :
+    X.singularKronecker k n ((X.singularKroneckerLinearEquivOfProjectiveHomology R M n).symm φ) =
+      ModuleCat.ofHom φ := by
+  ext x
+  rw [← singularKroneckerLinearEquivOfProjectiveHomology_apply, LinearEquiv.apply_symm_apply,
+    ModuleCat.hom_ofHom]
 
 end ProjectiveHomology
 
@@ -509,6 +533,32 @@ lemma singularKroneckerEquivOfProjectiveHomology_apply (n : ℕ)
     (α : P.singularCohomology R k M n) :
     P.singularKroneckerEquivOfProjectiveHomology R M n α = P.singularKronecker k n α :=
   (rfl)
+
+/-- **The relative universal coefficient isomorphism with projective homology, into linear maps**:
+the equivalence `TopPair.singularKroneckerEquivOfProjectiveHomology`, with the morphisms
+`Hₙ(X, A; R) ⟶ M` read as `k`-linear maps, `Hⁿ(X, A; R, M) ≃ₗ[k] (Hₙ(X, A; R) →ₗ[k] M)`. -/
+def singularKroneckerLinearEquivOfProjectiveHomology (n : ℕ) :
+    P.singularCohomology R k M n ≃ₗ[k] (P.singularHomology (C := ModuleCat.{w} k) R n →ₗ[k] M) :=
+  P.singularKroneckerEquivOfProjectiveHomology R M n ≪≫ₗ ModuleCat.homLinearEquiv
+
+/-- The equivalence `TopPair.singularKroneckerLinearEquivOfProjectiveHomology` is the linear map
+underlying the relative Kronecker map. -/
+@[simp]
+lemma singularKroneckerLinearEquivOfProjectiveHomology_apply (n : ℕ)
+    (α : P.singularCohomology R k M n) :
+    P.singularKroneckerLinearEquivOfProjectiveHomology R M n α = (P.singularKronecker k n α).hom :=
+  (rfl)
+
+/-- The inverse of `TopPair.singularKroneckerLinearEquivOfProjectiveHomology` sends a linear map
+`φ : Hₙ(X, A; R) →ₗ[k] M` to the class whose relative Kronecker pairing is `φ`. -/
+@[simp]
+lemma singularKronecker_singularKroneckerLinearEquivOfProjectiveHomology_symm (n : ℕ)
+    (φ : P.singularHomology (C := ModuleCat.{w} k) R n →ₗ[k] M) :
+    P.singularKronecker k n ((P.singularKroneckerLinearEquivOfProjectiveHomology R M n).symm φ) =
+      ModuleCat.ofHom φ := by
+  ext x
+  rw [← singularKroneckerLinearEquivOfProjectiveHomology_apply, LinearEquiv.apply_symm_apply,
+    ModuleCat.hom_ofHom]
 
 end ArbitraryCommRing
 
