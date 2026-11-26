@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.ODE.InwardSemiflow.Existence
+import TauCeti.Analysis.Calculus.ContDiff.FDerivWithin
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.ODE.DysonSeries
 import TauCeti.Analysis.ODE.Gronwall
@@ -270,18 +271,6 @@ private theorem continuousOn_dysonSeriesLeft_forwardSemiflow {C U : Set E}
     (((continuous_snd.comp continuous_subtypeVal).subtype_mk fun p ↦ p.property.2).prodMk
       (continuous_fst.comp continuous_subtypeVal))
 
-omit [CompleteSpace E] in
-/-- `C^{k+1}` regularity of the lifted variational vector field on `(U ×ˢ univ) ∩ (C ×ˢ univ)`. -/
-private theorem contDiffOn_variationalField {C U : Set E} (hU_uniq : UniqueDiffOn ℝ (U ∩ C))
-    {k : ℕ} {X : E → E} (hX : ContDiffOn ℝ ((k + 1 : ℕ) + 1 : ℕ) X (U ∩ C)) :
-    ContDiffOn ℝ (k + 1 : ℕ)
-      (fun q : E × (E →L[ℝ] E) ↦ (X q.1, (fderivWithin ℝ X (U ∩ C) q.1).comp q.2))
-      ((U ×ˢ univ) ∩ (C ×ˢ univ)) :=
-  ((hX.of_le (by norm_cast; omega)).comp contDiffOn_fst
-      fun _ (hq : _ ∈ (U ×ˢ univ) ∩ (C ×ˢ univ)) ↦ ⟨hq.1.1, hq.2.1⟩).prodMk
-    (((hX.fderivWithin hU_uniq (by norm_cast)).comp contDiffOn_fst
-      fun _ (hq : _ ∈ (U ×ˢ univ) ∩ (C ×ˢ univ)) ↦ ⟨hq.1.1, hq.2.1⟩).clm_comp contDiffOn_snd)
-
 /-- Identification of the variational semiflow on `E × (E →L[ℝ] E)` starting at `(y, 1)` with the
 pair `(forwardSemiflow X (U ∩ C) · y, dysonSeriesLeft ·)`. -/
 private theorem eq_forwardSemiflow_variational {C U : Set E} (hC : Convex ℝ C) (hU : IsOpen U)
@@ -303,7 +292,8 @@ private theorem eq_forwardSemiflow_variational {C U : Set E} (hC : Convex ℝ C)
     hX.fderivWithin hU_uniq (by norm_num)
   have hX'_lip : LocallyLipschitzOn ((U ×ˢ univ) ∩ (C ×ˢ univ)) X' :=
     (hC.prod convex_univ).locallyLipschitzOn_inter_of_contDiffOn (hU.prod isOpen_univ)
-      (contDiffOn_variationalField (k := 0) hU_uniq (by simpa using hX))
+      ((hX.prodMk_fderivWithin_comp hU_uniq (by norm_num)).mono
+        fun _ hq ↦ ⟨⟨hq.1.1, hq.2.1⟩, trivial⟩)
   let M_y : ℝ → E →L[ℝ] E := fun s ↦
     fderivWithin ℝ X (U ∩ C) (forwardSemiflow X (U ∩ C) (projIcc 0 τ₁ hτ₁.le s) y)
   have hMy_cont : Continuous M_y := hDX.continuousOn.comp_continuous
@@ -387,7 +377,8 @@ private theorem exists_local_forwardSemiflow_contDiffOn_nat.{u} (k : ℕ) :
     let F := E × (E →L[ℝ] E); let C' : Set F := C ×ˢ univ; let U' : Set F := U ×ˢ univ
     let X' : F → F := fun q ↦ (X q.1, (fderivWithin ℝ X (U ∩ C) q.1).comp q.2)
     have hX' : ContDiffOn ℝ (k + 1 : ℕ) X' (U' ∩ C') :=
-      contDiffOn_variationalField hU_uniq hX
+      (hX.prodMk_fderivWithin_comp hU_uniq (by norm_cast)).mono
+        fun _ hq ↦ ⟨⟨hq.1.1, hq.2.1⟩, trivial⟩
     let q₀ : F := (x₀, (1 : E →L[ℝ] E))
     have hq₀ : q₀ ∈ U' ∩ C' := ⟨⟨hx₀.1, trivial⟩, ⟨hx₀.2, trivial⟩⟩
     have hX'_in : X' q₀ ∈ strictInwardCone C' q₀ :=
