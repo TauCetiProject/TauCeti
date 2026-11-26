@@ -25,7 +25,7 @@ which caps a class with compact support with the fundamental classes of `o` alon
 (`TauCeti.HomologicalOrientation.bijective_dualityMap`). No compactness, connectedness or
 countability of `M` is assumed. For compact `M` this is the classical statement that the cap
 product with the fundamental class `[M]` is a bijection `Hᵖ(M; L) → H_q(M; L)`
-(`TauCeti.HomologicalOrientation.bijective_singularCap_fundamentalClass`).
+(`TauCeti.HomologicalOrientation.bijective_singularCapAddHom_fundamentalClass`).
 
 The proof is Hatcher's induction over the open subsets of `M` (Lemma 3.36), run through the
 Mayer–Vietoris induction principle over convex chart domains
@@ -48,8 +48,8 @@ with the orientation restricted from `o`, that its duality map is bijective in e
 * `TauCeti.HomologicalOrientation.bijective_dualityMap`: **Poincaré duality**, the duality map of
   an oriented manifold is bijective, and `TauCeti.HomologicalOrientation.isIso_dualityMap` as an
   isomorphism.
-* `TauCeti.HomologicalOrientation.bijective_singularCap_fundamentalClass`: for a closed oriented
-  manifold, the cap product with the fundamental class is bijective.
+* `TauCeti.HomologicalOrientation.bijective_singularCapAddHom_fundamentalClass`: for a closed
+  oriented manifold, the cap product with the fundamental class is bijective.
 
 ## References
 
@@ -121,18 +121,18 @@ instance isIso_dualityMap (p q : ℕ) (h : p + q = n) : IsIso (o.dualityMap hn L
 
 /-- **Poincaré duality for a closed oriented manifold.** For a compact Hausdorff manifold `M`
 without boundary of dimension `n` with a homological orientation, the cap product with the
-fundamental class, `α ↦ [M] ⌢ α`, is a bijection `Hᵖ(M; L) → H_q(M; L)` for `p + q = n`. -/
-theorem bijective_singularCap_fundamentalClass [CompactSpace M] (p q : ℕ) (h : p + q = n) :
+fundamental class, `α ↦ [M] ⌢ α` (`TopCat.singularCapAddHom`), is a bijection
+`Hᵖ(M; L) → H_q(M; L)` for `p + q = n`. -/
+theorem bijective_singularCapAddHom_fundamentalClass [CompactSpace M] (p q : ℕ) (h : p + q = n) :
     Function.Bijective
-      fun α : (TopCat.of M).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p ↦
-        ((TopCat.of M).singularCap ℤ (ρ_ _).inv (ρ_ L).hom p q n h α).hom
-          (o.fundamentalClass hn) := by
+      ((TopCat.of M).singularCapAddHom ℤ (ρ_ _).inv (ρ_ L).hom h (o.fundamentalClass hn)) := by
   have := (o.bijective_dualityMap hn L p q h).comp (ConcreteCategory.bijective_of_isIso
     (TopCat.compactSupportCohomologyIsoOfCompactSpace (R := ModuleCat.of ℤ (ULift.{0} ℤ)) (k := ℤ)
       (M := L) (X := TopCat.of M) p).inv)
   convert this using 1
   funext α
-  exact (o.dualityMap_compactSupportCohomologyIsoOfCompactSpace_inv hn L p q h α).symm
+  exact (TopCat.singularCapAddHom_apply ..).trans
+    (o.dualityMap_compactSupportCohomologyIsoOfCompactSpace_inv hn L p q h α).symm
 
 end HomologicalOrientation
 

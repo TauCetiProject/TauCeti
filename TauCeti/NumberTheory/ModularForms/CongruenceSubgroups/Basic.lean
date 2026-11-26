@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Chris Birkbeck. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
@@ -92,9 +92,10 @@ infrastructure independent of the diamond operators.
   right coset of `Γ₁(N)` exactly when their lower rows agree modulo `N`.
 * `CongruenceSubgroup.mem_Gamma1_of_mul_eq`: a matrix of `SL(2, ℤ)` carrying an integral matrix
   that is `!![1, *; 0, *]` modulo `N` to another such matrix lies in `Γ₁(N)`.
-* `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0` and
-  `CongruenceSubgroup.isUnit_intCast_apply_one_one_of_mem_Gamma0`: a `Γ₀(N)` matrix has
-  unit diagonal entries modulo `N`.
+* `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0`,
+  `CongruenceSubgroup.isUnit_intCast_apply_one_one_of_mem_Gamma0`, and
+  `CongruenceSubgroup.isCoprime_apply_one_one_of_mem_Gamma0`: a `Γ₀(N)` matrix has unit diagonal
+  entries modulo `N`, and in particular lower-right entry coprime to `N`.
 * `CongruenceSubgroup.intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`: modulo its
   level, a `Γ₀(N)` matrix has mutually inverse diagonal entries.
 * `CongruenceSubgroup.intCast_add_natCast_mul_of_mem_Gamma0` and
@@ -420,6 +421,14 @@ entry (`intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`). -/
 theorem isUnit_intCast_apply_one_one_of_mem_Gamma0 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
     IsUnit ((γ 1 1 : ℤ) : ZMod N) :=
   IsUnit.of_mul_eq_one_right _ (intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hγ)
+
+/-- The lower-right entry of a `Γ₀(N)` matrix is coprime to `N`: the determinant identity
+`ad - bc = 1` combined with `(N : ℤ) ∣ c` gives a Bézout relation for `d` and `N`. -/
+theorem isCoprime_apply_one_one_of_mem_Gamma0 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
+    IsCoprime (γ 1 1) (N : ℤ) := by
+  obtain ⟨q, hq⟩ := mem_Gamma0_iff_dvd.mp hγ
+  exact ⟨γ 0 0, -(γ 0 1 * q),
+    by linear_combination Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ + γ 0 1 * hq⟩
 
 /-- **The first column of a `Γ₀(N)` matrix collapses under a natural-number shear**:
 `a + j c ≡ a` modulo `N` for every `j : ℕ`, because `c ≡ 0`. Stated with the casts already

@@ -13,6 +13,9 @@ public import Mathlib.Algebra.Lie.Abelian
 `TauCeti.AbelianLieAlgebra M` equips an additive group with the zero Lie bracket, retaining
 its module structure. This allows a vector space, for example a space of extra central
 directions, to occur as an abelian factor in a product of Lie algebras.
+
+`TauCeti.isLieAbelian_of_commRing` records that a commutative ring is an abelian Lie algebra
+under the commutator bracket `LieRing.ofAssociativeRing`.
 -/
 
 public section
@@ -57,5 +60,17 @@ instance [CommRing R] [Module R M] : LieAlgebra R (AbelianLieAlgebra M) where
   lie_smul _ _ _ := (smul_zero _).symm
 
 end AbelianLieAlgebra
+
+section CommRing
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- A commutative ring is an abelian Lie algebra under the commutator bracket. Since
+`LieRing.ofAssociativeRing` is not a global instance, neither is this; enable it with
+`attribute [local instance]` where that bracket is in use. -/
+theorem isLieAbelian_of_commRing (R : Type*) [CommRing R] : IsLieAbelian R :=
+  isMulCommutative_iff_isLieAbelian.mp inferInstance
+
+end CommRing
 
 end TauCeti

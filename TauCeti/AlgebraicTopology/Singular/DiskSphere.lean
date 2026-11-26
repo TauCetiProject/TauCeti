@@ -182,6 +182,18 @@ lemma singularHomologyDiskBoundaryPairIso_zero_hom :
         (TopCat.disk.{w} 0).singularHomology₀ε R := by
   rfl
 
+/-- In dimension zero, the inverse of the identification `H₀(D⁰, ∅) ≅ R` is the class of the point
+of `D⁰`. -/
+lemma singularHomologyDiskBoundaryPairIso_zero_inv :
+    (singularHomologyDiskBoundaryPairIso R 0).inv =
+      singularHomology₀Section R (diskCenter.{w} 0) ≫
+        (diskBoundaryPair.{w} 0).singularHomologyπ R 0 := by
+  refine ((Iso.comp_hom_eq_id _).1 ?_).symm
+  rw [singularHomologyDiskBoundaryPairIso_zero_hom]
+  -- The relative and absolute homology of `D⁰` agree only up to unfolding.
+  erw [Category.assoc, IsIso.hom_inv_id_assoc]
+  exact singularHomology₀Section_singularHomology₀ε R _
+
 end HigherDegrees
 
 section CubePairHomology

@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.Orientation.LinearMapSign
 public import TauCeti.LinearAlgebra.Orientation.Prod
 import TauCeti.Analysis.Normed.Module.Orientation
 import TauCeti.Data.Set.Card
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.LinearAlgebra.Ray
 
@@ -227,6 +226,15 @@ theorem trajectoryComparison_apply (y : M) (v : {i // φp.weight i < 0} → ℝ)
       (mvfderiv 𝓘(ℝ, E) f y (hX.unstableFrame φp y v),
         hX.stableNormal φq y (hX.unstableFrame φp y v)) :=
   (rfl)
+
+/-- The comparison map as the pairing of its two components by `ContinuousLinearMap.prodL`, a
+continuous linear map of the pair. -/
+theorem trajectoryComparison_eq_prodL :
+    hX.trajectoryComparison φp φq = fun y ↦ ContinuousLinearMap.prodL ℝ
+      ((mvfderiv 𝓘(ℝ, E) f y).comp (hX.unstableFrame φp y),
+        (hX.stableNormal φq y).comp (hX.unstableFrame φp y)) := by
+  funext y
+  rw [ContinuousLinearMap.prodL_apply, trajectoryComparison]
 
 /-- The **sign of the trajectory** through `y` from `p` to `q`, for orientations `op` and `oq` of
 the unstable manifolds at `p` and `q`: the sign `Orientation.linearMapSign` of the comparison map,
@@ -456,17 +464,16 @@ theorem trajectorySign_flow (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f
       e' v = hX.trajectoryComparison φp φq (hX.flow t y) v :=
     LinearEquiv.ofBijective_apply _ v
   obtain ⟨Tp, hTp⟩ := (hX.eventually_mem_linearBackwardTimes hφp hf hy.1).exists
-  obtain ⟨Tq, hTq⟩ := (hX.eventually_mem_linearForwardTimes hφq hy.2).exists
-  -- The unstable frame is rescaled by `e^{-t}` and the normal coordinates by `e^{t}`, so the
-  -- comparison maps at `y` and at `Φ_t y` have the same second component.
+  -- The unstable frame is rescaled by `e^{-t}`, and the comparison maps at `y` and at `Φ_t y` have
+  -- the same second component (`stableNormal_comp_unstableFrame_flow`).
   have hcomp (v : {i // φp.weight i < 0} → ℝ) :
       hX.trajectoryComparison φp φq (hX.flow t y) v =
         (Real.exp (-t) * mvfderiv 𝓘(ℝ, E) f (hX.flow t y)
           (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX.flow t) y (hX.unstableFrame φp y v)),
           hX.stableNormal φq y (hX.unstableFrame φp y v)) := by
-    rw [trajectoryComparison_apply, unstableFrame_flow hφp hTp, map_smul, map_smul,
-      stableNormal_mfderiv_flow hφq hTq, smul_smul, ← Real.exp_add, neg_add_cancel,
-      Real.exp_zero, one_smul, smul_eq_mul]
+    rw [trajectoryComparison_apply, ← ContinuousLinearMap.comp_apply (hX.stableNormal φq _),
+      stableNormal_comp_unstableFrame_flow hφp hφq hf hy t, ContinuousLinearMap.comp_apply,
+      unstableFrame_flow hφp hTp, map_smul, smul_eq_mul]
   -- So `e' = B ∘ e` for an endomorphism `B` of `ℝ × Vq` fixing the second component.
   set B := e.symm.trans e'
   have hBe (w : ℝ × ({i // φq.weight i < 0} → ℝ)) : B w = e' (e.symm w) :=
@@ -513,36 +520,22 @@ theorem continuousWithinAt_trajectoryComparison (hf : IsMorse 𝓘(ℝ, E) f) {y
   -- `e^{-T}` times the coordinates of negative weight of the derivative of `h = φq ∘ Φ_T`.
   obtain ⟨T, hT⟩ := hX.exists_eventually_mem_linearForwardTimes hφq hy₀.2
   have hT₀ : T ∈ hX.linearForwardTimes φq y₀ := hT.self_of_nhds hy₀.2
-  set h : M → E := φq.toChart ∘ hX.flow T
-  have hh : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) 1 h y₀ :=
-    ((contMDiffAt_of_mem_maximalAtlas φq.mem_maximalAtlas
-      ((hX.mem_linearForwardTimes φq).1 hT₀).1).comp _
-        (hX.contMDiff_flow_apply T).contMDiffAt).of_le (by norm_cast)
-  set C : E →L[ℝ] ({i // φq.weight i < 0} → ℝ) :=
-    Real.exp (-T) • LinearMap.toContinuousLinearMap φq.negativeCoord
   have hCh : ContinuousWithinAt
-      (fun y ↦ C.comp ((mvfderiv 𝓘(ℝ, E) h y).comp (hX.unstableFrame φp y)))
+      (fun y ↦ (Real.exp (-T) • LinearMap.toContinuousLinearMap φq.negativeCoord).comp
+        ((mvfderiv 𝓘(ℝ, E) (φq.toChart ∘ hX.flow T) y).comp (hX.unstableFrame φp y)))
       (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y₀ :=
     continuousWithinAt_const.clm_comp
-      ((hX.continuousWithinAt_mvfderiv_comp_unstableFrame hφp hf hh hy₀.1).mono
+      ((hX.continuousWithinAt_mvfderiv_comp_unstableFrame hφp hf
+        ((contMDiffAt_toChart_comp_flow ((hX.mem_linearForwardTimes φq).1 hT₀).1).of_le
+          (by norm_cast)) hy₀.1).mono
         (inter_subset_left (t := hX.flow.stableSet q)))
   have h₂ : ContinuousWithinAt (fun y ↦ (hX.stableNormal φq y).comp (hX.unstableFrame φp y))
       (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y₀ := by
     refine hCh.congr_of_eventuallyEq_of_mem ?_ hy₀
     filter_upwards [nhdsWithin_le_nhds hT, self_mem_nhdsWithin] with y hyT hy
-    ext v : 1
-    simp only [C, ContinuousLinearMap.comp_apply, smul_apply,
-      LinearMap.coe_toContinuousLinearMap', stableNormal_apply hφq (hyT hy.2)]
-    rw [mvfderiv_apply_eq_mfderiv_apply]
-  -- The comparison map is the pairing of its two components by `ContinuousLinearMap.prodₗᵢ`.
-  -- Mathlib has no apply lemma for `prodₗᵢ`; this holds by `rfl` because `prodₗᵢ ℝ (A, B)` is
-  -- `A.prod B` by definition, and `trajectoryComparison` is defined as exactly this `prod`.
-  have hprod : hX.trajectoryComparison φp φq = fun y ↦ ContinuousLinearMap.prodₗᵢ ℝ
-      ((mvfderiv 𝓘(ℝ, E) f y).comp (hX.unstableFrame φp y),
-        (hX.stableNormal φq y).comp (hX.unstableFrame φp y)) :=
-    rfl
-  rw [hprod]
-  exact (ContinuousLinearMap.prodₗᵢ ℝ).continuous.continuousAt.comp_continuousWithinAt
+    rw [stableNormal_eq_comp_mvfderiv hφq (hyT hy.2), ContinuousLinearMap.comp_assoc]
+  rw [trajectoryComparison_eq_prodL]
+  exact (ContinuousLinearMap.prodL ℝ).continuous.continuousAt.comp_continuousWithinAt
     (h₁.prodMk h₂)
 
 /-- **The comparison maps vary continuously on all of `W^u(p) ∩ W^s(q)`.** -/

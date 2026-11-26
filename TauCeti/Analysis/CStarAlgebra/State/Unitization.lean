@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import Mathlib.Analysis.CStarAlgebra.Unitization
+import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.StarAlgebra.GNS.Basic
 import TauCeti.Analysis.Real.Sqrt
@@ -224,9 +225,8 @@ theorem eq_zero_of_unitization_map_star_mul_self_eq_zero
   have hl : ∀ c : A, x.fst • c + c * x.snd = 0 := fun c => by
     refine hf _ ?_
     have h := TauCeti.map_star_mul_mul_self_eq_zero τ.unitization (c : Unitization ℂ A) hx
-    have hcx : (c : Unitization ℂ A) * x = ((x.fst • c + c * x.snd : A) : Unitization ℂ A) :=
-      Unitization.ext (by simp) (by simp [add_comm])
-    rwa [hcx, ← Unitization.inr_star, ← Unitization.inr_mul, unitization_apply_inr] at h
+    rwa [Unitization.inr_mul_eq_inr c x, ← Unitization.inr_star, ← Unitization.inr_mul,
+      unitization_apply_inr] at h
   obtain h0 | h0 := eq_or_ne x.fst 0
   · have hsnd : x.snd = 0 := hf _ <| by
       simpa [unitization_apply, h0] using hx

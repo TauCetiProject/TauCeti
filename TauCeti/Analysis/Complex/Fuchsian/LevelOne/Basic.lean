@@ -52,6 +52,8 @@ subgroup into congruence conditions on the bottom row of `γ`.
   projective image are those of `SL(2, ℤ)`.
 * `TauCeti.ModularGroup.stabilizer_psl2zToPSL2RRange_eq_bot_iff`: a stabilizer is trivial exactly
   off the orbits of `i` and `ρ`.
+* `TauCeti.ModularGroup.mem_freeLocus_of_mem_fdo`: the points of the open standard fundamental
+  domain have trivial stabilizer in every subgroup of the effective level-one group.
 * `Subgroup.card_stabilizer_map_smul_I` and `Subgroup.card_stabilizer_map_smul_ρ`: the stabilizer
   orders in the effective image of `Γ` at `γ • i` and at `γ • ρ`.
 * `Subgroup.card_stabilizer_map_eq_one_of_orbit_ne`: off the orbits of `i` and `ρ` the stabilizer
@@ -176,6 +178,23 @@ theorem stabilizer_psl2zToPSL2RRange_eq_bot_iff (z : ℍ) :
     omega
   · rw [hρ, ellipticOrder_ρ] at h
     omega
+
+/-- **Points of the open standard fundamental domain have trivial stabilizer** in every subgroup
+of the effective level-one group: the only elements of `SL(2, ℤ)` fixing such a point are `±1`,
+whose image in `PSL(2, ℝ)` is the identity. -/
+theorem mem_freeLocus_of_mem_fdo {Γ : Subgroup PSL(2, ℝ)} (hΓ : Γ ≤ psl2zToPSL2R.range) {z : ℍ}
+    (hz : z ∈ _root_.ModularGroup.fdo) : z ∈ freeLocus Γ ℍ := by
+  refine (mem_freeLocus Γ ℍ).mpr ((Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦ Subtype.ext ?_)
+  obtain ⟨γ, hγ⟩ : ∃ γ : SL(2, ℤ), sl2zToPSL2R γ = g := by
+    rw [← MonoidHom.mem_range, range_sl2zToPSL2R_eq_range_psl2zToPSL2R]
+    exact hΓ g.property
+  have hfix : γ • z = z := by
+    rw [← sl2zToPSL2R_smul, hγ]
+    exact mem_stabilizer_iff.mp hg
+  rw [← hγ]
+  rcases _root_.ModularGroup.eq_one_or_neg_one_of_mem_fdo_mem_fdo hz (hfix ▸ hz) with rfl | rfl
+  · exact map_one _
+  · exact (sl2zToPSL2R_neg 1).trans (map_one _)
 
 end TauCeti.ModularGroup
 

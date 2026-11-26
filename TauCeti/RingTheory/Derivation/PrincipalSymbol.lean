@@ -50,6 +50,8 @@ at `x`, a symmetric multilinear map `T_x*M × ⋯ × T_x*M → Hom(E_x, F_x)`.
   conjugation by algebra isomorphisms.
 * `TauCeti.commutatorSymbol_apply_of_intertwining`: more generally, the commutator symbols of two
   operators intertwined by maps semilinear over a ring map are intertwined.
+* `TauCeti.commutatorSymbol_apply_of_eq_comp_comp`: the commutator symbol of `σ ∘ D ∘ ρ`, for
+  linear maps `ρ` and `σ`, is that of `D` sandwiched between `ρ` and `σ`.
 * `TauCeti.commutatorSymbol_comp_const`: on the diagonal, commutator symbols multiply under
   composition, up to the binomial coefficient `(m + k).choose m`.
 * `Derivation.commutatorSymbol_derivation`: the commutator symbol of a derivation `δ` at `f` is
@@ -332,6 +334,35 @@ theorem commutatorSymbol_apply_of_intertwining {m : ℕ} {D : differentialOperat
     simp only [smulCommutator_apply_apply, ← LinearMap.map_smulₛₗ, h, map_sub]
 
 end Intertwining
+
+/-! ### Sandwiching between linear maps -/
+
+section Sandwich
+
+variable {R A M N M' N' : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid M] [Module A M] [Module R M] [IsScalarTower R A M]
+  [AddCommGroup N] [Module A N] [Module R N] [IsScalarTower R A N]
+  [AddCommMonoid M'] [Module A M'] [Module R M'] [IsScalarTower R A M']
+  [AddCommGroup N'] [Module A N'] [Module R N'] [IsScalarTower R A N']
+
+/-- **Sandwiching by linear maps.** If `D' = σ ∘ D ∘ ρ` for `A`-linear maps `ρ : M' → M` and
+`σ : N → N'`, then the commutator symbol of `D'` is the commutator symbol of `D` sandwiched between
+`ρ` and `σ`: `[⋯[D', a₁], …, aₘ] = σ ∘ [⋯[D, a₁], …, aₘ] ∘ ρ`. For the smooth sections of vector
+bundles, `ρ` and `σ` are bundle maps, and this gives the transformation of the principal symbol
+under bundle maps. -/
+theorem commutatorSymbol_apply_of_eq_comp_comp {m : ℕ} {D : differentialOperators R A M N m}
+    {D' : differentialOperators R A M' N' m} (ρ : M' →ₗ[A] M) (σ : N →ₗ[A] N')
+    (h : ∀ x, (D' : M' →ₗ[R] N') x = σ ((D : M →ₗ[R] N) (ρ x))) (a : Fin m → A) (x : M') :
+    commutatorSymbol R A M' N' m D' a x = σ (commutatorSymbol R A M N m D a (ρ x)) := by
+  induction m generalizing x with
+  | zero => exact h x
+  | succ m ih =>
+    rw [commutatorSymbol_succ_apply, commutatorSymbol_succ_apply]
+    refine ih (D := ⟨smulCommutator R (a 0) D, _⟩) (D' := ⟨smulCommutator R (a 0) D', _⟩)
+      (fun y ↦ ?_) (Fin.tail a) x
+    simp only [smulCommutator_apply_apply, h, map_smul, map_sub]
+
+end Sandwich
 
 /-! ### Transport along algebra isomorphisms -/
 

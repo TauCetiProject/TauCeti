@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Block
+import TauCeti.Data.Matrix.Mul
 
 /-!
 # Block matrix identities
@@ -52,6 +53,8 @@ a chain of nonzero entries of one gives a chain of nonzero entries of the other.
   `blockDiagonal d * X * blockDiagonal d'`.
 * `Matrix.BlockTriangular.toSquareBlockProp_mul_of_toDual` and
   `Matrix.BlockTriangular.toSquareBlockProp_mul`: square blocks of products on down-closed sets.
+* `Matrix.submatrix_mul_mul_of_isLowerTriangular_of_isUpperTriangular`: rectangular leading
+  submatrices of `L * M * U` only involve the corresponding blocks of the factors.
 * `Matrix.det_toSquareBlockProp_mul_mul`: the minor of `L * M * U` on a down-closed set is the
   product of the minors of `L`, `M` and `U`.
 * `Matrix.isUnit_det_toSquareBlockProp_lt`: unit leading block minors give unit determinants of
@@ -199,6 +202,22 @@ public theorem BlockTriangular.toSquareBlockProp_mul [NonUnitalNonAssocSemiring 
   refine (Fintype.sum_subtype_add_sum_subtype p fun k => B i k * A k j).symm.trans ?_
   rw [Fintype.sum_eq_zero (fun k : {k // ¬p k} => B i k * A k j) fun k => ?_, add_zero]
   rw [hA (lt_of_not_ge fun h => k.property (hp h j.property)), mul_zero]
+
+/-- A rectangular submatrix on initial segments of the rows and columns of `L * X * U`
+can be computed using only those rows and columns. The row and column embeddings need not
+have the same domain. -/
+public theorem submatrix_mul_mul_of_isLowerTriangular_of_isUpperTriangular
+    {m n p q R : Type*} [Fintype m] [Fintype n] [Fintype p] [Fintype q]
+    [LinearOrder m] [LinearOrder n] [NonUnitalNonAssocSemiring R]
+    {L : Matrix m m R} {U : Matrix n n R} (X : Matrix m n R)
+    (hL : L.IsLowerTriangular) (hU : U.IsUpperTriangular) (r : p ↪ m) (c : q ↪ n)
+    (hr : IsLowerSet (Set.range r)) (hc : IsLowerSet (Set.range c)) :
+    (L * X * U).submatrix r c = L.submatrix r r * X.submatrix r c * U.submatrix c c := by
+  have hleft := submatrix_mul_of_injective L X r r c r.injective fun i j hj ↦
+    hr (le_of_not_gt fun h ↦ hj (hL h)) ⟨i, rfl⟩
+  have hright := submatrix_mul_of_injective_right (L * X) U r c c c.injective fun j k hj ↦
+    hc (le_of_not_gt fun h ↦ hj (hU h)) ⟨k, rfl⟩
+  rw [hright, hleft]
 
 /-- If every leading block of `M` has a unit determinant, so does every leading block on a strict
 initial segment `{j | b j < b i}`: that segment is either empty or a leading segment itself. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.GraphPatch
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
@@ -34,6 +35,9 @@ bounds from derivative bounds, the Sobolev theory) then applies to it.
 * `TauCeti.isLipschitzDomain_of_forall_ball_inter_eq`: a set in an inner product space of
   dimension `n + 1` with a graph patch at every frontier point is a Lipschitz domain modelled on
   `EuclideanSpace ℝ (Fin n)`.
+* `Set.HasLipschitzGraphBoundary.isLipschitzDomain`: in particular, so is a set with Lipschitz
+  graph boundary, for instance a set with `C^{2,α}` boundary
+  (`Set.HasC2HolderBoundary.hasLipschitzGraphBoundary`).
 -/
 
 public section
@@ -131,3 +135,23 @@ theorem isLipschitzDomain_of_forall_ball_inter_eq {n : ℕ} (hF : finrank ℝ F 
   exact ⟨e, φ, _, _, _, hchart, hex ▸ zero_mem_normalCylinder hchart.height_pos hchart.radius_pos⟩
 
 end TauCeti
+
+namespace Set
+
+open Module
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- **A set with Lipschitz graph boundary is a Lipschitz domain.** In a real inner product space of
+dimension `n + 1`, a set which near each frontier point is the region above the graph of a
+Lipschitz function over a hyperplane (`Set.HasLipschitzGraphBoundary`) is a Lipschitz domain
+modelled on `EuclideanSpace ℝ (Fin n)`. This applies to a set with `C^{2,α}` boundary through
+`Set.HasC2HolderBoundary.hasLipschitzGraphBoundary`. -/
+theorem HasLipschitzGraphBoundary.isLipschitzDomain {n : ℕ} (hF : finrank ℝ F = n + 1)
+    {Ω : Set F} (h : Ω.HasLipschitzGraphBoundary) :
+    Ω.IsLipschitzDomain (EuclideanSpace ℝ (Fin n)) :=
+  TauCeti.isLipschitzDomain_of_forall_ball_inter_eq hF fun x hx => by
+    obtain ⟨ν, γ, G, r, hν, hγ, hγν, hr, hΩx⟩ := hasLipschitzGraphBoundary_iff.1 h x hx
+    exact ⟨ν, γ, G, r, norm_ne_zero_iff.1 (by rw [hν]; exact one_ne_zero), hγ, hγν, hr, hΩx⟩
+
+end Set

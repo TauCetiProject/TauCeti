@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Topology.JordanCurve.Basic
-public import TauCeti.Topology.Order.Interval
+public import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Rotational invariant curves of annulus maps

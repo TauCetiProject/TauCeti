@@ -56,6 +56,8 @@ parameter, therefore cannot produce a partial zeta function once the unit rank i
 * `TauCeti.LFunctions.LSeries_rayClassCoeff_one_eq_tsum_oneEquivClassGroup` and
   `TauCeti.LFunctions.LSeries_rayClassCoeff_one_eq_tsum`: the Dirichlet series of a trivial-modulus
   ray class as a sum over ideals in its class.
+* `TauCeti.LFunctions.sum_tsum_mk0_eq_dedekindZeta`: the partial zeta functions of the ideal
+  classes sum to the Dedekind zeta function.
 * `TauCeti.LFunctions.LSeries_rayClassCoeff_one_eq_tsum_idealSet`: Neukirch's (5.3)–(5.4), the
   Dirichlet series of the class of `J⁻¹` as a sum over the points of `J` in the fundamental cone.
 * `TauCeti.LFunctions.hasSum_norm_cpow_fundamentalCone_inter_idealLattice`: the same for an
@@ -201,6 +203,16 @@ theorem LSeries_rayClassCoeff_one_eq_tsum_oneEquivClassGroup (c : RayClassGroup 
   by_cases h : ClassGroup.mk0 𝔟 = oneEquivClassGroup c
   · simp [hclass.mpr h, h, Complex.cpow_neg]
   · simp [mt hclass.mp h, h]
+
+/-- **The partial zeta functions of the ideal classes sum to the Dedekind zeta function.** For
+`Re s > 1`, summing `∑_{𝔟 ∈ C} N(𝔟)^(-s)` over the ideal classes `C` gives `ζ_K(s)`. -/
+theorem sum_tsum_mk0_eq_dedekindZeta {s : ℂ} (hs : 1 < s.re) :
+    ∑ C : ClassGroup (𝓞 K), ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = C},
+      (absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) = dedekindZeta K s := by
+  have := Fintype.ofFinite (RayClassGroup (Modulus.one K))
+  rw [← sum_LSeries_rayClassCoeff_one hs]
+  exact (Fintype.sum_equiv oneEquivClassGroup.toEquiv _ _
+    fun c ↦ LSeries_rayClassCoeff_one_eq_tsum_oneEquivClassGroup c hs).symm
 
 /-- **The Dirichlet series of an ideal class as a sum over ideals.** For `Re s > 1`, the
 Dirichlet series of the class `c` of the trivial modulus, the ideal class of `J⁻¹`, is the sum of

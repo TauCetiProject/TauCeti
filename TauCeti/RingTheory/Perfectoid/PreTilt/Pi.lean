@@ -12,6 +12,8 @@ public import TauCeti.RingTheory.Perfectoid.PreTilt.Map
 public import TauCeti.RingTheory.WittVector.MapEquiv
 public import TauCeti.RingTheory.WittVector.Pi
 
+import TauCeti.RingTheory.Ideal.IsPrincipal
+
 /-!
 # Tilts and `A_inf` of products
 
@@ -25,9 +27,10 @@ coordinatewise as well, so `W(∏ R i) ≅ ∏ W(R i)` for any family of rings, 
 When every `A i` is `p`-adically complete, so is the product
 (`IsAdicComplete.pi_span_natCast`), and the isomorphisms above are compatible with the sharp maps
 and with Fontaine's maps `θ`: the sharp of a family of compatible root systems is the family of
-the sharps, and `θ` of the product is the product of the `θ`s. This is the input, at the level of
-tilts and Fontaine's maps, for the stability of integral perfectoid rings under products and
-fibre products.
+the sharps, and `θ` of the product is the product of the `θ`s. So `ker θ` of the product is the
+product of the kernels, and it is principal exactly when every factor's kernel is. This is the
+input, at the level of tilts and Fontaine's maps, for the stability of integral perfectoid rings
+under products and fibre products.
 
 No finiteness is assumed on the index type. The tilt of a ring is formed only when `p` is not a
 unit in it; for the product this holds as soon as the family is nonempty and `p` is a nonunit in
@@ -45,6 +48,10 @@ every factor (`Pi.fact_not_isUnit_natCast`).
   compatible with the sharp maps.
 * `PreTilt.fontaineTheta_wittVectorPiEquiv_apply`, `PreTilt.fontaineTheta_wittVectorPiEquiv_symm`:
   the `A_inf` isomorphism is compatible with Fontaine's maps.
+* `PreTilt.map_wittVectorPiEquiv_ker_fontaineTheta`: the `A_inf` isomorphism carries `ker θ` of
+  the product onto the product of the kernels.
+* `PreTilt.isPrincipal_ker_fontaineTheta_pi_iff`: `ker θ` of the product is principal if and only
+  if `ker θ` of every factor is (`Ideal.isPrincipal_pi_iff`).
 
 ## References
 
@@ -176,5 +183,26 @@ theorem fontaineTheta_wittVectorPiEquiv_symm (v : ∀ i, WittVector p (PreTilt (
     WittVector.fontaineTheta (∀ i, A i) p ((wittVectorPiEquiv p).symm v) =
       fun i ↦ WittVector.fontaineTheta (A i) p (v i) :=
   funext fun i ↦ by rw [← fontaineTheta_wittVectorPiEquiv_apply, RingEquiv.apply_symm_apply]
+
+/-- **The kernel of Fontaine's map of a product is the product of the kernels**: under
+`A_inf(∏ A i) ≃+* ∏ A_inf(A i)`, `ker θ` corresponds to `∏ ker θ_i`. -/
+theorem map_wittVectorPiEquiv_ker_fontaineTheta :
+    (RingHom.ker (WittVector.fontaineTheta (∀ i, A i) p)).map (wittVectorPiEquiv p) =
+      Ideal.pi fun i ↦ RingHom.ker (WittVector.fontaineTheta (A i) p) := by
+  ext v
+  rw [← comap_symm, mem_comap, RingHom.mem_ker, fontaineTheta_wittVectorPiEquiv_symm, mem_pi,
+    funext_iff]
+  simp [RingHom.mem_ker]
+
+/-- The kernel of Fontaine's map of a product is principal exactly when the kernel of Fontaine's
+map of every factor is principal. -/
+theorem isPrincipal_ker_fontaineTheta_pi_iff :
+    (RingHom.ker (WittVector.fontaineTheta (∀ i, A i) p)).IsPrincipal ↔
+      ∀ i, (RingHom.ker (WittVector.fontaineTheta (A i) p)).IsPrincipal := by
+  rw [← isPrincipal_pi_iff, ← map_wittVectorPiEquiv_ker_fontaineTheta]
+  -- principality is preserved by the ring isomorphism `wittVectorPiEquiv` and by its inverse
+  refine ⟨fun h ↦ h.map_ringHom _, fun h ↦ ?_⟩
+  simpa only [map_symm, comap_map_of_bijective _ (wittVectorPiEquiv p).bijective] using
+    h.map_ringHom (wittVectorPiEquiv p).symm
 
 end PreTilt

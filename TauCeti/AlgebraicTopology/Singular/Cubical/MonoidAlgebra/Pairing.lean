@@ -65,6 +65,8 @@ operations of the chain systems of trajectory spaces in Morse theory.
   map compatible with another pairing, or multiplicative into a topological monoid.
 * `TauCeti.cubicalChainModuleEquiv_op_smul`: read in the direct sums, the right action is the
   pairing induced by the action.
+* `TauCeti.cubicalChainModuleEquiv_op_smul_self`: the right action of the chains of a monoid on its
+  own chains is the Pontryagin product.
 * `TauCeti.cubicalChainModuleEquiv_cubicalChainPairing`: the pairing of chain modules is the
   pairing of direct sums, read through the equivalences.
 
@@ -599,6 +601,13 @@ theorem cubicalChainModuleEquiv_op_smul {G : Type*} [Monoid G] [TopologicalSpace
     ((cubicalChainModuleEquiv G G R).symm α) m
   rw [LinearEquiv.apply_symm_apply] at h
   rw [h, cubicalChainModuleEquiv_cubicalChainPairing, LinearEquiv.apply_symm_apply]
+
+/-- **The right action of the chains of a monoid on its own chains is the Pontryagin product**:
+read through the equivalence with the direct sum, `α · c = α * c`. -/
+theorem cubicalChainModuleEquiv_op_smul_self {G : Type*} [Monoid G] [TopologicalSpace G]
+    [ContinuousMul G] (c : normalizedCubicalChainAlgebra G R) (α : cubicalChainModule G G R) :
+    cubicalChainModuleEquiv G G R (op c • α) = cubicalChainModuleEquiv G G R α * c := by
+  rw [cubicalChainModuleEquiv_op_smul, actMap_self, cubicalChainSumPairing_mulMap]
 
 end SumPairing
 
