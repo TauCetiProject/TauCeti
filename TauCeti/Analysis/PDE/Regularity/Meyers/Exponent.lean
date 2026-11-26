@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.MeyersExample
+public import TauCeti.Analysis.PDE.Regularity.Meyers.Example
 
 /-!
 # The exponent in Meyers' theorem degenerates with the ellipticity ratio
@@ -21,7 +21,7 @@ file shows that in the plane every such gain satisfies
 so the gain tends to `0` as the ellipticity ratio tends to infinity, and no higher integrability
 exponent above `2` works for all measurable uniformly elliptic coefficients at once.
 
-The witness is Meyers' example (`TauCeti.Analysis.PDE.Regularity.MeyersExample`). For `0 < μ ≤ 1`
+The witness is Meyers' example (`TauCeti.Analysis.PDE.Regularity.Meyers.Example`). For `0 < μ ≤ 1`
 the coefficient field `a = TauCeti.PDE.meyersCoefficient μ` on `ℝ^{n+2}` is uniformly elliptic
 with constants `κ = μ (μ + n) / (n + 1)` and `1`, and `u(x) = ‖x‖ ^ (μ - 1) x₀` is a weak solution
 of `div(a ∇u) = 0` lying in `H¹` of every bounded open set, whose gradient is `p`-integrable near
@@ -115,8 +115,9 @@ theorem toReal_mul_one_sub_lt_of_forall_memLp_gradient {n : ℕ} {lam Lam : ℝ}
 neighbourhood of the origin. Suppose that for every measurable coefficient field `a`, uniformly
 elliptic on `Ω` with constants `λ, Λ`, every weak solution `u ∈ H¹(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0` on
 `Ω` has `p`-integrable gradient on `s`. Then `p (1 - √(λ / Λ)) < 2`, that is
-`p < 2 / (1 - √(λ / Λ))` when `λ < Λ`; this bound tends to `2` as `Λ / λ` tends to infinity. If
-`λ > Λ` no coefficient field qualifies, and the bound holds trivially. -/
+`p < 2 / (1 - √(λ / Λ))` when `p < ∞` and `λ < Λ`; this bound tends to `2` as `Λ / λ` tends to
+infinity. For `p = ∞` the conclusion is trivial, since `p.toReal = 0`. If `λ > Λ` no coefficient
+field qualifies, and the bound holds trivially. -/
 theorem toReal_mul_one_sub_sqrt_lt_two_of_forall_memLp_gradient {lam Lam : ℝ} (hlam : 0 < lam)
     (hLam : 0 < Lam) {Ω : Opens (EuclideanSpace ℝ (Fin 2))}
     (hb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin 2))))

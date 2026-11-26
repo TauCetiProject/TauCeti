@@ -770,8 +770,9 @@ theorem not_holderOnWith_meyersSolution {α : ℝ≥0} (hα : μ < α) (C : ℝ�
 
 /-- **The gradient of Meyers' solution is not `p`-integrable near the origin for large `p`.** For
 `μ > 0`, if the gradient of `‖x‖ ^ (μ - 1) x₀` is `p`-integrable on a neighbourhood of the origin
-of `ℝ^{n+2}`, then `p (1 - μ) < n + 2`. For `μ < 1` this says `p < (n + 2) / (1 - μ)`: near the
-origin the gradient is bounded below by `μ ‖x‖ ^ (μ - 1)`. -/
+of `ℝ^{n+2}`, then `p (1 - μ) < n + 2`. For finite `p` and `μ < 1` this says
+`p < (n + 2) / (1 - μ)`: near the origin the gradient is bounded below by `μ ‖x‖ ^ (μ - 1)`. For
+`p = ∞` the conclusion is trivial, since `p.toReal = 0`. -/
 theorem toReal_mul_one_sub_lt_of_memLp_gradient_meyersSolution (hμ0 : 0 < μ) {p : ℝ≥0∞}
     {s : Set (EuclideanSpace ℝ (Fin (n + 2)))} (hs : s ∈ 𝓝 0)
     (hmem : MemLp (∇ (meyersSolution μ)) p (volume.restrict s)) :

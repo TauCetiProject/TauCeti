@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.MeyersExample
+public import TauCeti.Analysis.PDE.Regularity.Meyers.Example
 public import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 
 /-!
@@ -23,7 +23,7 @@ In particular `α ≤ √((n + 1) λ / Λ)`, and for `n ≥ 1` also `α ≤ (n +
 dimension `α` tends to `0` as the ellipticity ratio `Λ / λ` tends to infinity. In the plane,
 `n = 0`, the bound reads `α ≤ √(λ / Λ)`.
 
-The witness is Meyers' example (`TauCeti.Analysis.PDE.Regularity.MeyersExample`). For
+The witness is Meyers' example (`TauCeti.Analysis.PDE.Regularity.Meyers.Example`). For
 `0 < μ ≤ 1` the coefficient field `a = TauCeti.PDE.meyersCoefficient μ` on `ℝ^{n+2}`, with
 eigenvalue `1` in the radial direction and `κ = μ (μ + n) / (n + 1)` in the tangential directions,
 is uniformly elliptic with constants `κ` and `1`, and `u(x) = ‖x‖ ^ (μ - 1) x₀` is a weak solution
