@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Coadjoint.Height.Perfect
 import Mathlib.Algebra.Module.Submodule.Union
+import TauCeti.Geometry.Lie.Adjoint.Compact
 import TauCeti.Topology.Algebra.Module.Hyperplane
 
 /-!
