@@ -348,8 +348,7 @@ instance compactSpace_ofSpf (A : Type u) [CommRing A] [TopologicalSpace A]
 theorem IsAffineOpen.isCompact {X : FormalScheme} {U : Opens X} (hU : X.IsAffineOpen U) :
     IsCompact (U : Set X) := by
   obtain ⟨A, _, _, _, _, ⟨e⟩⟩ := (isAffineOpen_iff X U).mp hU
-  have : CompactSpace (LocallyRingedSpace.forgetToTop.obj (Spf A)) :=
-    Spf.compactSpace_carrier (IsAdicRing.ideal_spec A).2.1
+  have : CompactSpace (LocallyRingedSpace.forgetToTop.obj (Spf A)) := compactSpace_ofSpf A
   have : CompactSpace U :=
     (TopCat.homeoOfIso (LocallyRingedSpace.forgetToTop.mapIso e)).symm.compactSpace
   exact isCompact_iff_compactSpace.mpr inferInstance

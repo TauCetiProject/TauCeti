@@ -57,6 +57,7 @@ noetherian (EGA I, Ch. 0, 7.2.6).
   `A` is noetherian.
 * `TauCeti.FormalScheme.IsLocallyNoetherian.of_isOpenImmersion`,
   `TauCeti.FormalScheme.isLocallyNoetherian_iff_of_iso`,
+  `TauCeti.FormalScheme.IsNoetherian.of_iso`,
   `TauCeti.FormalScheme.isNoetherian_iff_of_iso`: stability under open immersions, open
   restrictions (`isNoetherian_restrict`), and isomorphisms.
 * `TauCeti.FormalScheme.isNoetherianRing_stalk`: the stalks of a locally noetherian formal scheme
@@ -266,24 +267,23 @@ theorem isLocallyNoetherian_iff_of_iso {X Y : FormalScheme.{u}} (e : X ≅ Y) :
   exact ⟨fun _ ↦ IsLocallyNoetherian.of_isOpenImmersion e.inv,
     fun _ ↦ IsLocallyNoetherian.of_isOpenImmersion e.hom⟩
 
+/-- `IsNoetherian` is preserved along isomorphisms of formal schemes. -/
+theorem IsNoetherian.of_iso {X Y : FormalScheme.{u}} (e : X ≅ Y) [hX : X.IsNoetherian] :
+    Y.IsNoetherian := by
+  have : CompactSpace
+      (LocallyRingedSpace.forgetToTop.obj (forgetToLocallyRingedSpace.obj X)) :=
+    hX.toCompactSpace
+  exact
+    { toIsLocallyNoetherian := (isLocallyNoetherian_iff_of_iso e).mp hX.toIsLocallyNoetherian
+      toCompactSpace :=
+        (TopCat.homeoOfIso
+          (LocallyRingedSpace.forgetToTop.mapIso
+            (forgetToLocallyRingedSpace.mapIso e))).compactSpace }
+
 /-- `IsNoetherian` is invariant under isomorphism of formal schemes. -/
 theorem isNoetherian_iff_of_iso {X Y : FormalScheme.{u}} (e : X ≅ Y) :
-    X.IsNoetherian ↔ Y.IsNoetherian := by
-  let h := TopCat.homeoOfIso
-    (LocallyRingedSpace.forgetToTop.mapIso (forgetToLocallyRingedSpace.mapIso e))
-  refine ⟨fun hX ↦ ?_, fun hY ↦ ?_⟩
-  · have : CompactSpace
-        (LocallyRingedSpace.forgetToTop.obj (forgetToLocallyRingedSpace.obj X)) :=
-      hX.toCompactSpace
-    exact { toIsLocallyNoetherian :=
-              (isLocallyNoetherian_iff_of_iso e).mp hX.toIsLocallyNoetherian
-            toCompactSpace := h.compactSpace }
-  · have : CompactSpace
-        (LocallyRingedSpace.forgetToTop.obj (forgetToLocallyRingedSpace.obj Y)) :=
-      hY.toCompactSpace
-    exact { toIsLocallyNoetherian :=
-              (isLocallyNoetherian_iff_of_iso e).mpr hY.toIsLocallyNoetherian
-            toCompactSpace := h.symm.compactSpace }
+    X.IsNoetherian ↔ Y.IsNoetherian :=
+  ⟨fun _ ↦ .of_iso e, fun _ ↦ .of_iso e.symm⟩
 
 /-- The stalks of a locally noetherian formal scheme are noetherian local rings
 (EGA I, Ch. I, 10.1.6). -/
@@ -305,7 +305,7 @@ instance noetherianSpace_ofSpf [IsNoetherianRing A] : NoetherianSpace (ofSpf A) 
 instance [IsNoetherianRing A] : (ofSpf A).IsNoetherian where
   exists_isNoetherianRing x := ⟨A, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, 𝟙 _, inferInstanceAs (LocallyRingedSpace.IsOpenImmersion (𝟙 (Spf A))), x, rfl⟩
-  toCompactSpace := Spf.compactSpace_carrier (IsAdicRing.ideal_spec A).2.1
+  toCompactSpace := compactSpace_ofSpf A
 
 /-- `Spf A` is locally noetherian if and only if `A` is noetherian (EGA I, Ch. I, 10.6.5). -/
 @[simp]
@@ -368,10 +368,9 @@ section ring `Γ(U i, O_X)` is noetherian. -/
 theorem isNoetherian_iff_of_finite_iSup_eq_top {ι : Type*} [Finite ι] {U : ι → Opens X}
     (hU : ∀ i, X.IsAffineOpen (U i)) (hcov : ⨆ i, U i = ⊤) :
     X.IsNoetherian ↔ ∀ i, IsNoetherianRing (X.presheaf.obj (op (U i))) := by
-  have huniv : (Set.univ : Set X) = ⋃ i, (U i : Set X) :=
-    Set.ext fun x ↦ by simp [← Opens.mem_iSup, hcov]
-  have hc : CompactSpace X :=
-    isCompact_univ_iff.mp (huniv ▸ isCompact_iUnion fun i ↦ (hU i).isCompact)
+  have hc : CompactSpace X := by
+    rw [← isCompact_univ_iff, ← Opens.coe_top, ← hcov, Opens.coe_iSup]
+    exact isCompact_iUnion fun i ↦ (hU i).isCompact
   exact ⟨fun h ↦ (isLocallyNoetherian_iff_of_iSup_eq_top hU hcov).mp h.toIsLocallyNoetherian,
     fun h ↦ { toIsLocallyNoetherian := (isLocallyNoetherian_iff_of_iSup_eq_top hU hcov).mpr h
               toCompactSpace := hc }⟩
@@ -391,11 +390,9 @@ theorem isNoetherian_iff_exists_finite_affine_cover_isNoetherianRing :
 /-- Every noetherian formal scheme has a noetherian underlying topological space. -/
 instance IsNoetherian.noetherianSpace [X.IsNoetherian] : NoetherianSpace X := by
   obtain ⟨n, U, hU, hcov⟩ := X.exists_finite_affine_cover
-  have huniv : (⋃ i, (U i : Set X)) = Set.univ :=
-    Set.ext fun x ↦ by simp [← Opens.mem_iSup, hcov]
   have (i : Fin n) : NoetherianSpace (U i : Set X) := (hU i).noetherianSpace
-  exact TopologicalSpace.noetherian_univ_iff.mp
-    (huniv ▸ TopologicalSpace.NoetherianSpace.iUnion fun i ↦ (U i : Set X))
+  rw [← TopologicalSpace.noetherian_univ_iff, ← Opens.coe_top, ← hcov, Opens.coe_iSup]
+  exact TopologicalSpace.NoetherianSpace.iUnion fun i ↦ (U i : Set X)
 
 /-- A locally noetherian formal scheme with noetherian underlying space is noetherian. -/
 theorem isNoetherian_of_noetherianSpace [X.IsLocallyNoetherian] [NoetherianSpace X] :

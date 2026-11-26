@@ -232,6 +232,7 @@ theorem sectionsTopology_eq_adic (hU : X.IsAffineOpen U) {J : Ideal (X.presheaf.
   let _ := X.sectionsTopology U hU; have := X.sectionsTopology_isTopologicalRing U hU
   have := X.sectionsTopology_isAdicRing U hU
   obtain ⟨hIfg, hIadic, -⟩ := IsAdicRing.ideal_spec (X.presheaf.obj (op U))
+  rw [← IsAdic.eq_def (H := X.sectionsTopology U hU)]
   exact hIadic.of_radical_eq hIfg hJfg <| Ideal.ext fun s ↦
     hIadic.isTopologicallyNilpotent_iff_mem_radical.symm.trans <|
       (isTopologicallyNilpotent_iff_forall_evaluation_eq_zero X U hU s).trans <| by
@@ -1008,8 +1009,8 @@ theorem sectionsTopology_eq_induced_of_isAdic {X : FormalScheme.{u}} {U : Opens 
   let tU : TopologicalSpace (X.presheaf.obj (op U)) :=
     TopologicalSpace.induced φ ‹TopologicalSpace R›
   have hadic : @IsAdic _ _ tU (I.comap φ) := IsAdic.comap hI φ ⟨rfl⟩
-  rw [X.sectionsTopology_eq_adic hU (Ideal.map_symm φ ▸ hIfg.map φ.symm.toRingHom) hrad]
-  exact hadic.symm
+  rw [IsAdic.eq_def] at hadic
+  rw [X.sectionsTopology_eq_adic hU (Ideal.map_symm φ ▸ hIfg.map φ.symm.toRingHom) hrad, ← hadic]
 
 /-- If `φ : Γ(U, O_X) ≃+* R` pulls back a finitely generated ideal of definition `I` of `R` to an
 ideal with radical `X.vanishingIdeal U`, then `φ` is a homeomorphism from `(Γ(U, O_X),
@@ -1033,7 +1034,9 @@ theorem sectionsTopology_eq_induced_of_comap_vanishingIdeal {X Y : FormalScheme.
     Y.sectionsTopology V hV = TopologicalSpace.induced φ (X.sectionsTopology U hU) := by
   obtain ⟨J, hJfg, hJrad⟩ := X.exists_fg_radical_eq_vanishingIdeal U hU
   let tU : TopologicalSpace (X.presheaf.obj (op U)) := X.sectionsTopology U hU
-  have hJadic : @IsAdic _ _ tU J := X.sectionsTopology_eq_adic hU hJfg hJrad
+  have hJadic : @IsAdic _ _ tU J := by
+    rw [IsAdic.eq_def]
+    exact X.sectionsTopology_eq_adic hU hJfg hJrad
   have hKrad : (J.comap φ).radical = Y.vanishingIdeal V := by
     rw [← Ideal.comap_radical, hJrad, hvan]
   exact sectionsTopology_eq_induced_of_isAdic hV φ hJfg hJadic hKrad
@@ -1108,27 +1111,17 @@ theorem fromSpf_c_app_top_comp_topSectionsIso_hom {X : FormalScheme.{u}} {U : Op
         X.presheaf.obj (op ⊤) ⟶ (Spf hU.Sections).presheaf.obj (op ⊤)) ≫
       (Spf.topSectionsIso hU.Sections).hom =
       X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op := by
-  ext s
-  have h1 : (forgetToLocallyRingedSpace.map hU.fromSpf).c.app (op ⊤) s =
-      (forgetToLocallyRingedSpace.map hU.isoSpf.inv).c.app (op ⊤)
-        ((forgetToLocallyRingedSpace.map (X.ofRestrict U)).c.app (op ⊤) s) := by
-    rw [← isoSpf_inv_ofRestrict, Functor.map_comp]
-    exact (ConcreteCategory.congr_hom
-      (LocallyRingedSpace.Γ.map_comp
-        (forgetToLocallyRingedSpace.map (X.ofRestrict U)).op
-        (forgetToLocallyRingedSpace.map hU.isoSpf.inv).op) s).trans
-      (ConcreteCategory.comp_apply _ _ s)
-  have h2 := ConcreteCategory.congr_hom (isoSpf_inv_c_app_top_comp_topSectionsIso_hom hU)
-    ((forgetToLocallyRingedSpace.map (X.ofRestrict U)).c.app (op ⊤) s)
-  have h3 : (forgetToLocallyRingedSpace.map (X.ofRestrict U)).c.app (op ⊤) s =
-      (X.toPresheafedSpace.restrictTopSectionsIso U).hom
-        (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op s) := by
-    rw [forgetToLocallyRingedSpace_map_ofRestrict]
-    exact ConcreteCategory.congr_hom (X.toPresheafedSpace.ofRestrict_c_app_top U) s
-  have h4 := Iso.hom_inv_id_apply (X.toPresheafedSpace.restrictTopSectionsIso U)
-    (X.presheaf.map (homOfLE (le_top : U ≤ ⊤)).op s)
-  exact (congrArg (Spf.topSectionsIso hU.Sections).hom h1).trans <|
-    h2.trans <| (congrArg (X.toPresheafedSpace.restrictTopSectionsIso U).inv h3).trans h4
+  have hcomp : ((forgetToLocallyRingedSpace.map hU.fromSpf).c.app (op ⊤) :
+        X.presheaf.obj (op ⊤) ⟶ (Spf hU.Sections).presheaf.obj (op ⊤)) =
+      ((X.toPresheafedSpace.ofRestrict U.isOpenEmbedding).c.app (op ⊤) :
+          X.presheaf.obj (op ⊤) ⟶ _) ≫
+        ((forgetToLocallyRingedSpace.map hU.isoSpf.inv).c.app (op ⊤) :
+          _ ⟶ (Spf hU.Sections).presheaf.obj (op ⊤)) := by
+    rw [← isoSpf_inv_ofRestrict, Functor.map_comp, forgetToLocallyRingedSpace_map_ofRestrict]
+    exact LocallyRingedSpace.Γ.map_comp _ _
+  exact (congrArg (· ≫ _) hcomp).trans <| (Category.assoc _ _ _).trans <|
+    (congrArg (_ ≫ ·) (isoSpf_inv_c_app_top_comp_topSectionsIso_hom hU)).trans
+      ((Iso.comp_inv_eq _).mpr (X.toPresheafedSpace.ofRestrict_c_app_top U))
 
 instance isOpenImmersion_fromSpf {X : FormalScheme.{u}} {U : Opens X} (hU : X.IsAffineOpen U) :
     LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map hU.fromSpf) := by
@@ -1171,7 +1164,8 @@ theorem sectionsTopology_toFormalScheme_eq_bot (Y : Scheme.{u})
   rw [Y.toFormalScheme.sectionsTopology_eq_adic hU Submodule.fg_bot hrad]
   let : TopologicalSpace (Y.toFormalScheme.presheaf.obj (op U)) :=
     (⊥ : Ideal (Y.toFormalScheme.presheaf.obj (op U))).adicTopology
-  have : DiscreteTopology (Y.toFormalScheme.presheaf.obj (op U)) := is_bot_adic_iff.mp rfl
+  have hbot : IsAdic (⊥ : Ideal (Y.toFormalScheme.presheaf.obj (op U))) := by rw [IsAdic.eq_def]
+  have : DiscreteTopology (Y.toFormalScheme.presheaf.obj (op U)) := is_bot_adic_iff.mp hbot
   exact DiscreteTopology.eq_bot
 
 /-- On an ordinary scheme `Y`, the section ring over every affine formal open is discrete for
