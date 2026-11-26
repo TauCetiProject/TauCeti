@@ -42,6 +42,13 @@ chosen by `s`; when `b` is negatively oriented for `o`, the two labels are excha
 The central circle acts on them with weight one. Each point `p` of `P` over `x` is a unitary frame
 `S^ε ≃ W^ε_x`, and changing `p` acts by the half-spin representation.
 
+A conjugate-linear isometric equivalence `j : W ≃ W'` of model Hermitian Clifford modules
+commuting with Clifford multiplication, such as the quaternionic structure of the spinors, restricts
+to the model half-spinors (`Orientation.HalfSpinModel.conjEquiv`) and intertwines the action of `g`
+with that of its charge conjugate `χ g` (`Orientation.HalfSpinModel.conjEquiv_smul`). This is the
+model of charge conjugation of spinors `ψ ↦ j ψ` between the half-spinor bundles of a `Spinᶜ`
+structure and of its charge conjugate.
+
 **Clifford multiplication.** A point `p` of `P` over `x` also gives an orthonormal frame of
 `E x` (`TauCeti.OrthonormalFrameLift.frameAt`), hence a linear isometry `κ_p : E x ≃ V` through
 `b` (`TauCeti.SpinCStructure.vectorFrame`). Clifford multiplication `c(v) : W^ε_x → W^{ε'}_x`
@@ -66,6 +73,8 @@ half-spinors being the square of the twisting circle.
 * `Orientation.HalfSpinModel o hQ b ρ hρ ε`: the eigenspace `S^ε` with its action of `Spinᶜ(4)`.
 * `TauCeti.SpinCStructure.DeterminantModel n`: `ℂ` with `Spinᶜ(n)` acting by `z²`.
 * `TauCeti.SpinCStructure.DeterminantModel.conj`: complex conjugation of the determinant model.
+* `Orientation.HalfSpinModel.conjEquiv`: the conjugate-linear isometric isomorphism `S^ε ≃ S'^ε'`
+  induced by a conjugate-linear Clifford intertwiner `j : W ≃ W'`.
 * `TauCeti.SpinCStructure.determinantLine`: the determinant line `L` of a `Spinᶜ` structure.
 * `TauCeti.SpinCStructure.halfSpinorBundle`: the half-spinor bundle `W^ε` of a `Spinᶜ` structure
   of rank four.
@@ -81,6 +90,8 @@ half-spinors being the square of the twisting circle.
 * `Orientation.HalfSpinModel.smul_cliffordMul`: model Clifford multiplication is equivariant.
 * `TauCeti.SpinCStructure.DeterminantModel.conj_chargeConj_smul`:
   `conj (det (χ g) w) = det g (conj w)`.
+* `Orientation.HalfSpinModel.conjEquiv_smul`, `Orientation.HalfSpinModel.conjEquiv_cliffordMul`:
+  `j (g • ψ) = χ(g) • j ψ` and `c(v) (j ψ) = j (c(v) ψ)` on the model half-spinors.
 * `TauCeti.SpinCStructure.finrank_determinantLine`: `L` is a line bundle.
 * `TauCeti.SpinCStructure.mk_ofCircle_smul_determinantLine`,
   `TauCeti.SpinCStructure.mk_ofCircle_smul_halfSpinorBundle`: the central circle acts with weight
@@ -275,6 +286,91 @@ theorem alternatingMap_smul {N : Type*} [AddCommGroup N] [Module ℂ N]
     congrArg (· ψ) (AlternatingMap.compLinearMap_eq_det_smul e ω
       (DistribSMul.toLinearMap ℂ _ x))
 
+/-! ### Charge conjugation of the model half-spinors -/
+
+section ChargeConjugation
+
+variable {W' : Type*} [NormedAddCommGroup W'] [InnerProductSpace ℂ W'] [FiniteDimensional ℂ W']
+  {ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W'}
+  (hρ' : ∀ v, LinearMap.adjoint (ρ' (ι Q v)) = -ρ' (ι Q v)) {ε' : ℂ}
+
+variable (hρ)
+
+/-- **Charge conjugation of the model half-spinors**: a conjugate-linear isometric equivalence
+`j : W ≃ W'` of Hermitian Clifford modules commuting with Clifford multiplication,
+`j (c(v) w) = c(v) (j w)`, restricts to a conjugate-linear isometric equivalence `S^ε ≃ S'^ε'` of
+the model half-spinors, for `ε' = conj ε`; for the half-spinors `ε = ε' = ±1`. For the quaternionic
+structure of the spinors this is `ψ ↦ j ψ`. It intertwines the action of `g ∈ Spinᶜ(4)` with that
+of its charge conjugate (`Orientation.HalfSpinModel.conjEquiv_smul`), and Clifford multiplication
+on both sides (`Orientation.HalfSpinModel.conjEquiv_cliffordMul`). -/
+def conjEquiv (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+    (hε : starRingEnd ℂ ε = ε') :
+    HalfSpinModel o hQ b ρ hρ ε ≃ₗᵢ⋆[ℂ] HalfSpinModel o hQ b ρ' hρ' ε' where
+  toFun ψ := toEigenspace.symm
+    ⟨j (toEigenspace ψ), hε ▸ map_mem_eigenspace_chirality (fun r ↦ Complex.conj_ofReal r)
+      (U := j.toLinearEquiv.toLinearMap) hj (toEigenspace ψ).property⟩
+  invFun ψ := toEigenspace.symm
+    ⟨j.symm (toEigenspace ψ), (by rw [← hε, Complex.conj_conj] : starRingEnd ℂ ε' = ε) ▸
+      map_mem_eigenspace_chirality (fun r ↦ Complex.conj_ofReal r)
+        (U := j.symm.toLinearEquiv.toLinearMap) (fun v w ↦ by simp [j.symm_apply_eq, hj])
+        (toEigenspace ψ).property⟩
+  map_add' ψ φ := toEigenspace.injective (Subtype.ext (by simp))
+  map_smul' c ψ := toEigenspace.injective (Subtype.ext (by simp [map_smulₛₗ]))
+  left_inv ψ := toEigenspace.injective (Subtype.ext (by simp))
+  right_inv ψ := toEigenspace.injective (Subtype.ext (by simp))
+  norm_map' ψ := by
+    rw [← toEigenspace.norm_map, ← toEigenspace.norm_map ψ, ← Submodule.norm_coe,
+      ← Submodule.norm_coe]
+    exact j.norm_map _
+
+/-- `conjEquiv hρ hρ' j hj hε` is `j` on the underlying vectors of the Clifford modules. -/
+@[simp]
+theorem coe_toEigenspace_conjEquiv (j : W ≃ₗᵢ⋆[ℂ] W')
+    (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w)) (hε : starRingEnd ℂ ε = ε')
+    (ψ : HalfSpinModel o hQ b ρ hρ ε) :
+    (toEigenspace (conjEquiv hρ hρ' j hj hε ψ) : W') = j (toEigenspace ψ) :=
+  (rfl)
+
+/-- The inverse of `conjEquiv hρ hρ' j hj hε` is `j⁻¹` on the underlying vectors of the Clifford
+modules. -/
+@[simp]
+theorem coe_toEigenspace_conjEquiv_symm (j : W ≃ₗᵢ⋆[ℂ] W')
+    (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w)) (hε : starRingEnd ℂ ε = ε')
+    (ψ : HalfSpinModel o hQ b ρ' hρ' ε') :
+    (toEigenspace ((conjEquiv hρ hρ' j hj hε).symm ψ) : W) = j.symm (toEigenspace ψ) :=
+  (rfl)
+
+/-- **Charge conjugation of the model half-spinors intertwines charge conjugation of `Spinᶜ(4)`**:
+`j (g • ψ) = χ(g) • j ψ`, where `χ [s, z] = [s, z⁻¹]` (`CliffordAlgebra.spinCGroup.chargeConj`).
+At `g = [s, z]` both sides are `z⁻¹ ρ'(s) (j ψ)`, since `j` commutes with the Spin action and
+conjugates the circle factor. -/
+theorem conjEquiv_smul (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+    (hε : starRingEnd ℂ ε = ε') (g : SpinC) (ψ : HalfSpinModel o hQ b ρ hρ ε) :
+    conjEquiv hρ hρ' j hj hε (g • ψ) =
+      spinCGroup.chargeConj _ hpos g • conjEquiv hρ hρ' j hj hε ψ := by
+  apply toEigenspace.injective
+  apply Subtype.ext
+  rw [coe_toEigenspace_conjEquiv, toEigenspace_smul, toEigenspace_smul,
+    realSpinCHalfSpinSmoothHom_apply o hQ b ρ ε (b.ne_zero_of_neg_norm_sq hQ),
+    realSpinCHalfSpinSmoothHom_apply o hQ b ρ' ε' (b.ne_zero_of_neg_norm_sq hQ),
+    OrthonormalBasis.realSpinCGroupHom_chargeConj]
+  exact map_coe_spinCGroupHalfSpinRep_apply o ρ ε (b.ne_zero_of_neg_norm_sq hQ)
+    (j := j.toLinearEquiv.toLinearMap) hj _
+    (ψ' := toEigenspace (conjEquiv hρ hρ' j hj hε ψ)) (by simp)
+
+/-- **Charge conjugation of the model half-spinors commutes with Clifford multiplication**:
+`c(v) (j ψ) = j (c(v) ψ)` for `c(v) : S^ε → S^{-ε}` and `c(v) : S'^ε' → S'^{-ε'}`. -/
+theorem conjEquiv_cliffordMul (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
+    (hε : starRingEnd ℂ ε = ε') {δ δ' : ℂ} (hδ : δ = -ε) (hδ' : δ' = -ε') (v : V)
+    (ψ : HalfSpinModel o hQ b ρ hρ ε) :
+    cliffordMul hδ' v (conjEquiv hρ hρ' j hj hε ψ) =
+      conjEquiv hρ hρ' j hj (by rw [hδ, hδ', map_neg, hε]) (cliffordMul hδ v ψ) := by
+  apply toEigenspace.injective
+  apply Subtype.ext
+  simp [hj]
+
+end ChargeConjugation
+
 end HalfSpinModel
 
 end Orientation
@@ -466,6 +562,13 @@ theorem vectorFrame_apply (s : SpinCStructure F E 4) (b : OrthonormalBasis (Fin 
     s.vectorFrame b p v = b.negRealCliffordFormIsometryEquiv hQ ((s.frameAt p).symm v).ofLp := by
   rw [OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply, vectorFrame,
     LinearIsometryEquiv.trans_apply, ← b.sum_repr_symm]
+
+omit [Fact (finrank ℝ V = 4)] in
+/-- The vector frame `κ_p` depends only on the frame of `E x` at `p`: points of the principal
+bundles of two `Spinᶜ` structures on `E` with the same frame have the same vector frame. -/
+theorem vectorFrame_eq_of_frameAt_eq {s t : SpinCStructure F E 4} {x : X} {p : s.P x}
+    {q : t.P x} (h : s.frameAt p = t.frameAt q) : s.vectorFrame b p = t.vectorFrame b q := by
+  rw [vectorFrame, vectorFrame, h]
 
 omit [Fact (finrank ℝ V = 4)] in
 /-- **The vector frames are equivariant**: `κ_{p • g} = π(g)⁻¹ κ_p`, read through `b`. -/

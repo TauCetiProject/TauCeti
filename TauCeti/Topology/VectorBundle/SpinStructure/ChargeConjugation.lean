@@ -43,6 +43,17 @@ symplectic four-manifold this gives `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻�
 is `CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`. Neither equivalence is proved here; the
 identity `c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about determinant classes.
 
+**The half-spinor bundles.** In rank four, let `j : W ≃ W'` be a conjugate-linear isometric
+equivalence of model Hermitian Clifford modules commuting with Clifford multiplication, such as
+the quaternionic structure of the spinors. It intertwines the half-spin representation of `g` with
+that of `χ g` (`Orientation.HalfSpinModel.conjEquiv_smul`), so `[p, ψ] ↦ [[p, 1], j ψ]` is a
+well-defined fibrewise conjugate-linear isometric isomorphism
+`W^ε(s) ≃ W'^ε'(s.chargeConj)`, `ε' = conj ε`, from the half-spinors of `s` to those of its charge
+conjugate (`TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv`). This is charge conjugation
+of spinors `ψ ↦ j ψ`. It is continuous on total spaces and commutes with Clifford multiplication,
+because the frames `p` of `s` and `[p, 1]` of `s.chargeConj` give the same frame of `E`
+(`TauCeti.SpinCStructure.frameAt_chargeConj_inl`).
+
 ## Main definitions
 
 * `TauCeti.SpinCStructure.chargeConj`: the charge conjugate of a `Spinᶜ` structure.
@@ -50,6 +61,8 @@ identity `c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about de
   isomorphism `L(s.chargeConj) ≃ L(s)`.
 * `TauCeti.OrthonormalFrameLift.Equiv.chargeConj`: equivalences of charge conjugates.
 * `TauCeti.SpinCStructure.chargeConjChargeConjEquiv`: `s.chargeConj.chargeConj ≃ s`.
+* `TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv`: charge conjugation of spinors, the
+  fibrewise conjugate-linear isometric isomorphism `W^ε(s)_x ≃ W'^ε'(s.chargeConj)_x`.
 
 ## Main results
 
@@ -59,6 +72,12 @@ identity `c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about de
 * `TauCeti.SpinCStructure.continuous_determinantLineChargeConjEquiv`: it is continuous on total
   spaces.
 * `TauCeti.SpinCStructure.firstChernClass_chargeConj`: `c₁(s.chargeConj) = -c₁(s)`.
+* `TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv_mk`: the formula
+  `[p, ψ] ↦ [[p, 1], j ψ]`.
+* `TauCeti.SpinCStructure.continuous_halfSpinorBundleChargeConjEquiv`: charge conjugation of
+  spinors is continuous on total spaces.
+* `TauCeti.SpinCStructure.cliffordMul_halfSpinorBundleChargeConjEquiv`:
+  `c(v) (j ψ) = j (c(v) ψ)`.
 
 ## References
 
@@ -312,5 +331,150 @@ theorem firstChernClass_chargeConj (s : SpinCStructure F V n) :
 end SpinCStructure
 
 end FirstChernClass
+
+/-! ### The half-spinor bundles -/
+
+section HalfSpinor
+
+/-- The proof that the standard form on `ℝ⁴` is nonzero, on which `Spinᶜ(4)` depends. -/
+local notation "hpos" => QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm 4 0)
+local notation "SpinC₄" => spinCGroup (realCliffordForm 4 0) hpos
+
+/-- Charge conjugation of `Spinᶜ(4)` as a homomorphism. -/
+local notation "χ₄" => MonoidHom.ofClass (spinCGroup.chargeConj (realCliffordForm 4 0) hpos)
+
+/-- Charge conjugation of `Spinᶜ(4)` is continuous. -/
+local notation "hχ₄" => spinCGroup.continuous_chargeConj (realCliffordForm 4 0) hpos
+
+variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : X → Type} [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
+  {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (Module.finrank ℝ V = 4)]
+  {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin 4)) (hQV : ∀ v, Q v = -‖v‖ ^ 2)
+  (b : OrthonormalBasis (Fin 4) ℝ V)
+  {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
+  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
+  (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+  {W' : Type*} [NormedAddCommGroup W'] [InnerProductSpace ℂ W'] [FiniteDimensional ℂ W']
+  {ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W'}
+  (hρ' : ∀ v, LinearMap.adjoint (ρ' (ι Q v)) = -ρ' (ι Q v))
+  (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w)) {ε ε' : ℂ}
+  (hε : starRingEnd ℂ ε = ε')
+
+namespace SpinCStructure
+
+/-- **The frame of `[p, 1]`** in the charge conjugate of a `Spinᶜ` structure of rank four is the
+frame of `p`, as a frame of the fibre. -/
+@[simp]
+theorem frameAt_chargeConj_inl (s : SpinCStructure F E 4) {x : X} (p : s.P x) :
+    s.chargeConj.frameAt (Extend.inl χ₄ hχ₄ p) = s.frameAt p :=
+  OrthonormalFrameBundle.mk_eq_mk_iff.1 ((s.chargeConj.toFrame_mk (Extend.inl χ₄ hχ₄ p)).symm.trans
+    ((s.toFrame_chargeConj_inl x p).trans (s.toFrame_mk p)))
+
+omit [Fact (Module.finrank ℝ V = 4)] in
+/-- **The vector frame of `[p, 1]`** in the charge conjugate of a `Spinᶜ` structure of rank four
+is the vector frame `κ_p` of `p`. -/
+@[simp]
+theorem vectorFrame_chargeConj_inl (s : SpinCStructure F E 4) {x : X} (p : s.P x) :
+    s.chargeConj.vectorFrame b (Extend.inl χ₄ hχ₄ p) = s.vectorFrame b p :=
+  vectorFrame_eq_of_frameAt_eq (frameAt_chargeConj_inl s p)
+
+/-- **Charge conjugation of spinors** `ψ ↦ j ψ`: the fibrewise conjugate-linear isometric
+isomorphism `W^ε(s)_x ≃ W'^ε'(s.chargeConj)_x` from the half-spinors of a `Spinᶜ` structure of rank
+four to those of its charge conjugate, induced by a conjugate-linear isometric equivalence
+`j : W ≃ W'` of the model Hermitian Clifford modules commuting with Clifford multiplication, such
+as the quaternionic structure of the spinors, with `ε' = conj ε`. In frames it is
+`[p, ψ] ↦ [[p, 1], j ψ]` (`TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv_mk`), which is
+well defined because `j (g • ψ) = χ(g) • j ψ` for charge conjugation `χ` of `Spinᶜ(4)`
+(`Orientation.HalfSpinModel.conjEquiv_smul`). It is continuous on total spaces
+(`TauCeti.SpinCStructure.continuous_halfSpinorBundleChargeConjEquiv`) and commutes with Clifford
+multiplication (`TauCeti.SpinCStructure.cliffordMul_halfSpinorBundleChargeConjEquiv`). -/
+def halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E 4) (x : X) :
+    s.halfSpinorBundle o hQV b ρ hρ ε x ≃ₗᵢ⋆[ℂ]
+      s.chargeConj.halfSpinorBundle o hQV b ρ' hρ' ε' x :=
+  ((AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC₄ (Classical.arbitrary (s.P x))).symm.trans
+      (Orientation.HalfSpinModel.conjEquiv hρ hρ' j hj hε)).trans
+    (AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC₄
+      (Extend.inl χ₄ hχ₄ (Classical.arbitrary (s.P x))))
+
+/-- Charge conjugation of spinors through the chosen point `p₀` of `s.P x`, stated with the fibre
+`Extend s.P χ hχ` of the charge conjugate. -/
+private theorem halfSpinorBundleChargeConjEquiv_apply (s : SpinCStructure F E 4) {x : X}
+    (ψ : s.halfSpinorBundle o hQV b ρ hρ ε x) :
+    s.halfSpinorBundleChargeConjEquiv o hQV b hρ hρ' j hj hε x ψ =
+      AssociatedBundle.mkLinearIsometryEquiv (P := Extend s.P χ₄ hχ₄) ℂ SpinC₄
+        (Extend.inl χ₄ hχ₄ (Classical.arbitrary (s.P x)))
+        (Orientation.HalfSpinModel.conjEquiv hρ hρ' j hj hε
+          ((AssociatedBundle.mkLinearIsometryEquiv ℂ SpinC₄ (Classical.arbitrary (s.P x))).symm
+            ψ)) :=
+  (rfl)
+
+/-- **Charge conjugation of spinors in a frame**: `[p, ψ] ↦ [[p, 1], j ψ]` for every point `p` of
+the principal bundle over `x`. -/
+@[simp]
+theorem halfSpinorBundleChargeConjEquiv_mk (s : SpinCStructure F E 4) {x : X} (p : s.P x)
+    (ψ : o.HalfSpinModel hQV b ρ hρ ε) :
+    s.halfSpinorBundleChargeConjEquiv o hQV b hρ hρ' j hj hε x (AssociatedBundle.mk SpinC₄ p ψ) =
+      AssociatedBundle.mk (P := s.chargeConj.P) SpinC₄ (Extend.inl χ₄ hχ₄ p)
+        (Orientation.HalfSpinModel.conjEquiv hρ hρ' j hj hε ψ) := by
+  rw [halfSpinorBundleChargeConjEquiv_apply, AssociatedBundle.mkLinearIsometryEquiv_symm_apply_mk,
+    AssociatedBundle.mkLinearIsometryEquiv_apply]
+  -- Compare the chosen frame `p₀` with `p = p₀ • g`.
+  generalize Classical.arbitrary (s.P x) = p₀
+  obtain ⟨g, hg⟩ : ∃ g, PrincipalBundle.division SpinC₄ p₀ p = g := ⟨_, rfl⟩
+  obtain rfl : op g • p₀ = p := hg ▸ PrincipalBundle.smul_division p₀ p
+  rw [hg, Orientation.HalfSpinModel.conjEquiv_smul, Extend.inl_smul]
+  exact (AssociatedBundle.mk_smul (P := Extend s.P χ₄ hχ₄) _ _ _).symm
+
+/-- **The inverse of charge conjugation of spinors in a frame**: `[[p, 1], ψ] ↦ [p, j⁻¹ ψ]`. -/
+@[simp]
+theorem halfSpinorBundleChargeConjEquiv_symm_mk (s : SpinCStructure F E 4) {x : X} (p : s.P x)
+    (ψ : o.HalfSpinModel hQV b ρ' hρ' ε') :
+    (s.halfSpinorBundleChargeConjEquiv o hQV b hρ hρ' j hj hε x).symm
+        (AssociatedBundle.mk (P := s.chargeConj.P) SpinC₄ (Extend.inl χ₄ hχ₄ p) ψ) =
+      AssociatedBundle.mk SpinC₄ p
+        ((Orientation.HalfSpinModel.conjEquiv hρ hρ' j hj hε).symm ψ) := by
+  refine (LinearIsometryEquiv.symm_apply_eq _).2 ?_
+  rw [halfSpinorBundleChargeConjEquiv_mk, LinearIsometryEquiv.apply_symm_apply]
+
+/-- **Charge conjugation of spinors is continuous** on total spaces. -/
+theorem continuous_halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E 4) :
+    Continuous fun v : TotalSpace (o.HalfSpinModel hQV b ρ hρ ε)
+        (s.halfSpinorBundle o hQV b ρ hρ ε) ↦
+      TotalSpace.mk' (o.HalfSpinModel hQV b ρ' hρ' ε') v.proj
+        (s.halfSpinorBundleChargeConjEquiv o hQV b hρ hρ' j hj hε v.proj v.snd) := by
+  -- The total space of `W^ε(s)` is a quotient of `P × S^ε`, on which the map is
+  -- `(p, ψ) ↦ [[p, 1], j ψ]`.
+  refine (AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk SpinC₄ s.P
+    (o.HalfSpinModel hQV b ρ hρ ε)).continuous_comp_iff.1 ?_
+  have hc : Continuous fun y : TotalSpace SpinC₄ s.P × o.HalfSpinModel hQV b ρ hρ ε ↦
+      TotalSpace.mk' (o.HalfSpinModel hQV b ρ' hρ' ε') y.1.proj
+        (AssociatedBundle.mk (P := Extend s.P χ₄ hχ₄) SpinC₄ (Extend.inl χ₄ hχ₄ y.1.snd)
+          (Orientation.HalfSpinModel.conjEquiv hρ hρ' j hj hε y.2)) :=
+    Continuous.totalSpaceMk_associatedBundleMk
+      (f := fun y : TotalSpace SpinC₄ s.P × o.HalfSpinModel hQV b ρ hρ ε ↦ y.1.proj)
+      ((Extend.continuous_inl s.P χ₄ hχ₄).comp continuous_fst)
+      ((Orientation.HalfSpinModel.conjEquiv hρ hρ' j hj hε).continuous.comp continuous_snd)
+  refine hc.congr fun y ↦ ?_
+  exact (congrArg (TotalSpace.mk _)
+    (halfSpinorBundleChargeConjEquiv_mk o hQV b hρ hρ' j hj hε s y.1.snd y.2)).symm
+
+/-- **Charge conjugation of spinors commutes with Clifford multiplication**:
+`c(v) (j ψ) = j (c(v) ψ)` for `c(v) : W^ε(s)_x → W^{-ε}(s)_x` and
+`c(v) : W'^ε'(s.chargeConj)_x → W'^{-ε'}(s.chargeConj)_x`. -/
+theorem cliffordMul_halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E 4) {δ δ' : ℂ}
+    (hδ : δ = -ε) (hδ' : δ' = -ε') {x : X} (v : E x) (ψ : s.halfSpinorBundle o hQV b ρ hρ ε x) :
+    s.chargeConj.cliffordMul o hQV b ρ' hρ' hδ' x v
+        (s.halfSpinorBundleChargeConjEquiv o hQV b hρ hρ' j hj hε x ψ) =
+      s.halfSpinorBundleChargeConjEquiv o hQV b hρ hρ' j hj (by rw [hδ, hδ', map_neg, hε]) x
+        (s.cliffordMul o hQV b ρ hρ hδ x v ψ) := by
+  obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
+  rw [halfSpinorBundleChargeConjEquiv_mk, cliffordMul_mk, halfSpinorBundleChargeConjEquiv_mk]
+  refine (s.chargeConj.cliffordMul_mk hδ' (Extend.inl χ₄ hχ₄ p) v _).trans ?_
+  rw [vectorFrame_chargeConj_inl, Orientation.HalfSpinModel.conjEquiv_cliffordMul]
+
+end SpinCStructure
+
+end HalfSpinor
 
 end TauCeti
