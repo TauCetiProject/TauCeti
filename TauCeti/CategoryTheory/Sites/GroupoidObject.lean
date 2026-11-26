@@ -288,6 +288,13 @@ lemma homEquiv_apply_coe {U : Cᵒᵖ} {x y : GroupoidObject.Fiber.{w'} X.action
     (φ : x ⟶ y) : (homEquiv x y φ : G.obj.obj U) = φ.arr.1 :=
   (rfl)
 
+/-- The morphism given by a section `g` of the group with `g • x = y` has underlying arrow
+`(g, x)`. -/
+@[simp]
+lemma homEquiv_symm_apply_arr {U : Cᵒᵖ} {x y : GroupoidObject.Fiber.{w'} X.actionGroupoid U}
+    (g : {g : G.obj.obj U // g • x.as = y.as}) : ((homEquiv x y).symm g).arr = (g.val, x.as) :=
+  (rfl)
+
 /-- The identity of `x` corresponds to the unit of the group. -/
 @[simp]
 lemma homEquiv_id {U : Cᵒᵖ} (x : GroupoidObject.Fiber.{w'} X.actionGroupoid U) :
@@ -300,6 +307,13 @@ lemma homEquiv_comp {U : Cᵒᵖ} {x y z : GroupoidObject.Fiber.{w'} X.actionGro
     (φ : x ⟶ y) (ψ : y ⟶ z) :
     (homEquiv x z (φ ≫ ψ) : G.obj.obj U) = homEquiv y z ψ * homEquiv x y φ :=
   (rfl)
+
+/-- Inverses correspond to inverses in the group. -/
+@[simp]
+lemma homEquiv_inv {U : Cᵒᵖ} {x y : GroupoidObject.Fiber.{w'} X.actionGroupoid U}
+    (φ : x ⟶ y) : (homEquiv y x (inv φ) : G.obj.obj U) = (homEquiv x y φ : G.obj.obj U)⁻¹ := by
+  rw [homEquiv_apply_coe, GroupoidObject.Fiber.inv_arr]
+  rfl
 
 end actionGroupoid
 
