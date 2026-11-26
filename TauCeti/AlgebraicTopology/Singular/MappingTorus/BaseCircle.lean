@@ -57,15 +57,15 @@ the angular class and the time form of the circle are compared by
   identity of `ℝ/ℤ`, so it pulls the base class back to the base class
   (`TauCeti.MappingTorus.singularCohomologyMap_map_baseClass`).
 * **Comparison with the Wang class.** `circleWangClass` and the winding number are both
-  isomorphisms `H₁(ℝ/ℤ; ℤ) ≅ ℤ`, so they differ by a sign: `circleWangClass` is the winding number
-  times `TauCeti.MappingTorus.circleWangSign`, its value on the circuit class
-  `AddCircle.fundamentalClass 1` (`TauCeti.MappingTorus.circleWangClass_hom_apply`). This sign is
-  `-1` (`TauCeti.MappingTorus.circleWangSign_eq_neg_one`), computed on the chains of the cyclic
-  cover `pt × ℝ` of the circle: the circuit lifts to the path from height `0` to height `1`, whose
+  isomorphisms `H₁(ℝ/ℤ; ℤ) ≅ ℤ`, so they differ by a sign, the value
+  `TauCeti.MappingTorus.circleWangSign` of `circleWangClass` on the circuit class
+  `AddCircle.fundamentalClass 1`. This sign is `-1`
+  (`TauCeti.MappingTorus.circleWangSign_eq_neg_one`), computed on the chains of the cyclic cover
+  `pt × ℝ` of the circle: the circuit lifts to the path from height `0` to height `1`, whose
   boundary is `(𝟙 - τ_*)(-[0])` for the deck transformation `τ` raising the height by one, so the
   Wang connecting morphism sends the circuit class to `-[pt]`. Thus the Wang class of the circle is
-  minus the winding number
-  (`TauCeti.MappingTorus.circleWangClass_eq_neg_singularKronecker_angularClass`), and
+  minus the winding number (`TauCeti.MappingTorus.circleWangClass_hom_apply`,
+  `TauCeti.MappingTorus.circleWangClass_eq_neg_singularKronecker_angularClass`), and
   `⟨[dt], h⟩ = -ε(δ h)` on every mapping torus
   (`TauCeti.MappingTorus.singularKronecker_baseClass_eq_neg_wangClass`,
   `TauCeti.MappingTorus.singularKronecker_baseClass_apply_eq_neg`).
@@ -262,17 +262,6 @@ theorem circleWangClass_hom_fundamentalClass :
     (circleWangClass (ModuleCat.of ℤ ℤ)).hom (AddCircle.fundamentalClass 1) = circleWangSign :=
   (rfl)
 
-/-- The integral Wang class of the circle is the winding number times `circleWangSign`. -/
-theorem circleWangClass_hom_apply
-    (c : ((singularChains ℤ).obj (TopCat.of UnitAddCircle)).homology 1) :
-    (circleWangClass (ModuleCat.of ℤ ℤ)).hom c =
-      AddCircle.firstHomologyAddEquiv 1 c * circleWangSign := by
-  -- The source of `circleWangClass` is `H₁(ℝ/ℤ; ℤ)` written through `singularHomologyFunctor`,
-  -- definitionally the homology of `singularChains ℤ` used by `AddCircle.fundamentalClass`; `rw`
-  -- cannot form the motive across the two spellings, so the steps are chained in term mode.
-  exact (congrArg _ (AddCircle.eq_firstHomologyAddEquiv_zsmul_fundamentalClass 1 c)).trans
-    ((map_zsmul _ _ _).trans (smul_eq_mul _ _))
-
 /-! The value of `circleWangSign` is computed on the mapping torus `T` of the identity of a point,
 the circle of `circleWangClass`. The loop `t ↦ [⋆, t]` of `T` lifts to the path `t ↦ (⋆, t)` of the
 cylinder `pt × ℝ`, whose boundary `[⋆, 1] - [⋆, 0]` is `(𝟙 - τ_*)(-[⋆, 0])` for the deck
@@ -294,15 +283,21 @@ private lemma d_pathChain_coverMap_comp_unitHeightPath :
     simpa using mk_apply_add_one (Homeomorph.refl PUnit.{1}) PUnit.unit 0
   simp [unitHeightPath, h]
 
+/-- The cycle of `T` given by the loop `t ↦ [⋆, t]` of the mapping torus `T` of the identity of a
+point. -/
+private def unitLoopCycle :
+    ((singularChains ℤ).obj (TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))).cycles 1 :=
+  ((singularChains ℤ).obj (TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))).cyclesMk
+    (pathChain ℤ (X := TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))
+      ((coverMap (Homeomorph.refl PUnit.{1})).comp unitHeightPath)) 0 (by simp)
+    d_pathChain_coverMap_comp_unitHeightPath
+
 /-- The class in `H₁(T; ℤ)` of the loop `t ↦ [⋆, t]` of the mapping torus `T` of the identity of a
 point. -/
 private def unitLoopClass :
     ((singularChains ℤ).obj (TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))).homology 1 :=
   ((singularChains ℤ).obj (TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))).homologyπ 1
-    (((singularChains ℤ).obj (TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))).cyclesMk
-      (pathChain ℤ (X := TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))
-        ((coverMap (Homeomorph.refl PUnit.{1})).comp unitHeightPath)) 0 (by simp)
-      d_pathChain_coverMap_comp_unitHeightPath)
+    unitLoopCycle
 
 /-- The Wang class of the mapping torus of the identity of a point is `-1` on the class of the loop
 `t ↦ [⋆, t]`: the deck transformation raises the height of the cylinder by one. -/
@@ -319,10 +314,9 @@ private lemma wangClass_unitLoopClass :
   have hτ : ((deckChainMap φ (ModuleCat.of ℤ ℤ)).f 0).hom x₁ =
       -pointChain ℤ (X := TopCat.of (PUnit.{1} × ℝ)) (PUnit.unit, (1 : ℝ)) := by
     have hdeck : deck φ ((PUnit.unit, 0) : PUnit.{1} × ℝ) = (PUnit.unit, 1) := by simp
-    rw [deckChainMap_def, map_neg]
-    exact congrArg Neg.neg ((singularChains_map_f_simplexChain _ _ _).trans
-      (congrArg (fun p : PUnit.{1} × ℝ ↦ simplexChain (X := TopCat.of (PUnit.{1} × ℝ))
-        (TopCat.toSSetObj₀Equiv.symm p) (1 : ℤ)) hdeck))
+    rw [deckChainMap_def, map_neg, singularChains_map_f_simplexChain,
+      TopCat.toSSet_map_app_toSSetObj₀Equiv_symm]
+    simp [hdeck]
   have hx₁ : ((𝟙 _ - deckChainMap φ (ModuleCat.of ℤ ℤ)).f 0) x₁ =
       ((singularChains ℤ).obj (TopCat.of (PUnit.{1} × ℝ))).d 1 0 x₂ := by
     rw [singularChains_d_pathChain, HomologicalComplex.sub_f_apply, HomologicalComplex.id_f]
@@ -345,11 +339,7 @@ private lemma homologyMap_proj_unitLoopClass :
       AddCircle.fundamentalClass 1 := by
   let P := (singularChains ℤ).map
     (TopCat.ofHom ⟨proj (Homeomorph.refl PUnit.{1}), continuous_proj _⟩)
-  rw [AddCircle.fundamentalClass_eq_homologyπ 1 ((cyclesMap P 1).hom
-    (((singularChains ℤ).obj (TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))).cyclesMk
-      (pathChain ℤ (X := TopCat.of (MappingTorus (Homeomorph.refl PUnit.{1})))
-        ((coverMap (Homeomorph.refl PUnit.{1})).comp unitHeightPath)) 0 (by simp)
-      d_pathChain_coverMap_comp_unitHeightPath)) ?_]
+  rw [AddCircle.fundamentalClass_eq_homologyπ 1 ((cyclesMap P 1).hom unitLoopCycle) ?_]
   · exact ConcreteCategory.congr_hom (homologyπ_naturality P 1) _
   · rw [← ConcreteCategory.comp_apply, cyclesMap_i, ConcreteCategory.comp_apply]
     refine (congrArg _ (HomologicalComplex.i_cyclesMk (C := ModuleCat ℤ) _ _ _ _ _)).trans ?_
@@ -371,6 +361,18 @@ theorem circleWangSign_eq_neg_one : circleWangSign = -1 :=
       (singularHomologyMap_proj_comp_circleWangClass (ModuleCat.of ℤ ℤ)) unitLoopClass).trans
       wangClass_unitLoopClass)
 
+/-- The integral Wang class of the circle is minus the winding number, since its value
+`circleWangSign` on the circuit class is `-1`. -/
+theorem circleWangClass_hom_apply
+    (c : ((singularChains ℤ).obj (TopCat.of UnitAddCircle)).homology 1) :
+    (circleWangClass (ModuleCat.of ℤ ℤ)).hom c = -AddCircle.firstHomologyAddEquiv 1 c := by
+  -- The source of `circleWangClass` is `H₁(ℝ/ℤ; ℤ)` written through `singularHomologyFunctor`,
+  -- definitionally the homology of `singularChains ℤ` used by `AddCircle.fundamentalClass`; `rw`
+  -- cannot form the motive across the two spellings, so these steps are chained in term mode.
+  refine (congrArg _ (AddCircle.eq_firstHomologyAddEquiv_zsmul_fundamentalClass 1 c)).trans
+    ((map_zsmul _ _ _).trans ((smul_eq_mul _ _).trans ?_))
+  rw [circleWangClass_hom_fundamentalClass, circleWangSign_eq_neg_one, mul_neg_one]
+
 section Integral
 
 -- As in `TauCeti.AlgebraicTopology.Cohomology.AddCircle`, morphisms of `ℤ`-modules are scaled
@@ -384,7 +386,7 @@ theorem circleWangClass_eq_neg_singularKronecker_angularClass :
     circleWangClass (ModuleCat.of ℤ ℤ) =
       -(TopCat.of UnitAddCircle).singularKronecker ℤ 1 (AddCircle.angularClass 1) :=
   ModuleCat.hom_ext (LinearMap.ext fun c ↦ (circleWangClass_hom_apply c).trans (by
-    rw [circleWangSign_eq_neg_one, mul_neg_one, ModuleCat.hom_neg, LinearMap.neg_apply]
+    rw [ModuleCat.hom_neg, LinearMap.neg_apply]
     exact congrArg _ (AddCircle.singularKronecker_angularClass 1 c).symm))
 
 variable {F : Type} [TopologicalSpace F] (φ : F ≃ₜ F)
