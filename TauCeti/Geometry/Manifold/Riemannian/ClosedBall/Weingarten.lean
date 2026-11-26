@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.ClosedBall.SecondFundamentalForm
-public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Weingarten
+public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Weingarten.Basic
 
 /-!
 # The Weingarten map of the unit sphere bounding the closed unit ball

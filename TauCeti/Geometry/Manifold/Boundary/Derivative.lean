@@ -17,6 +17,11 @@ import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 The boundary inclusion is the coordinate hyperplane parametrization in the preferred charts.
 Its manifold derivative is therefore the actual zero-insertion linear map.
+
+Consequently a vector field `σ` of the boundary manifold is `C^k` as soon as its image `dι ∘ σ`
+under the differential of the inclusion `ι : ∂M → M` is a `C^k` vector field of `M` along `ι`
+(`TauCeti.contMDiffAt_of_mfderiv_subtypeVal_boundary`): in the preferred charts the coordinates of
+`σ` are those of `dι ∘ σ` with the normal coordinate deleted.
 -/
 
 public section
@@ -24,7 +29,7 @@ public section
 noncomputable section
 
 open Bundle Set Filter
-open scoped Manifold Topology
+open scoped Manifold Topology ContDiff
 
 namespace TauCeti
 
@@ -172,6 +177,36 @@ theorem tangentCoordChange_mfderiv_subtypeVal_apply_zero {α : M}
   obtain ⟨a, -, h⟩ := tangentCoordChange_normal_pos x.property (mem_extChartAt_source (x : M)) hα
   rw [mfderiv_subtypeVal_boundary]
   exact (h _).trans (mul_eq_zero_of_right a (euclideanHalfSpaceBoundaryParam_apply_zero w))
+
+/-- **Vector fields of the boundary are as regular as their images in `M`.** A vector field `σ` of
+the boundary manifold is `C^k` at `q₀` if `q ↦ dι_q (σ q)` is `C^k` at `q₀` as a vector field of
+`M` along the boundary inclusion `ι`. -/
+theorem contMDiffAt_of_mfderiv_subtypeVal_boundary {k : ℕ∞ω}
+    {σ : (q : (𝓡∂ (n + 1)).boundary M) → TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q}
+    {q₀ : (𝓡∂ (n + 1)).boundary M}
+    (hσ : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
+      ((𝓡∂ (n + 1)).prod 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))) k
+      (fun q : (𝓡∂ (n + 1)).boundary M ↦ TotalSpace.mk' (EuclideanSpace ℝ (Fin (n + 1)))
+        (E := TangentSpace (𝓡∂ (n + 1))) (q : M)
+        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q (σ q))) q₀) :
+    ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)).tangent k
+      (T% σ) q₀ := by
+  rw [contMDiffAt_totalSpace_iff] at hσ ⊢
+  refine ⟨contMDiffAt_id, ((euclideanHalfSpaceBoundaryProj n).contMDiff.contMDiffAt.comp q₀
+    hσ.2).congr_of_eventuallyEq ?_⟩
+  filter_upwards [extChartAt_source_mem_nhds (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin n))) q₀] with q hq
+  -- The trivializations of both tangent bundles read a vector through a tangent coordinate
+  -- change (`TangentBundle.trivializationAt_apply`, `tangentCoordChange_def`), up to unfolding
+  -- `extChartAt` to `OpenPartialHomeomorph.extend`.
+  change tangentCoordChange 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q q₀ q (σ q) =
+    euclideanHalfSpaceBoundaryProj n (tangentCoordChange (𝓡∂ (n + 1)) (q : M) (q₀ : M) (q : M)
+      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q (σ q)))
+  rw [tangentCoordChange_boundary (mem_extChartAt_source q) hq, mfderiv_subtypeVal_boundary]
+  -- Both sides apply `proj ∘ tangentCoordChange ∘ param`; `σ q` lives in `TangentSpace`, whose
+  -- defeq with the model space blocks `ContinuousLinearMap.comp_apply`.
+  rfl
 
 /-- Ambient and boundary transition determinants differ by a strictly positive normal factor. -/
 theorem exists_pos_det_tangentCoordChange_boundary {α β x : (𝓡∂ (n + 1)).boundary M}
