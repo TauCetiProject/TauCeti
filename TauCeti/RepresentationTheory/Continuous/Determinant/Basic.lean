@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Determinant.Projective.Basic
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
 
 /-!
 # The determinant character of a continuous representation

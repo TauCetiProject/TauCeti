@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.RepresentationTheory.Character.Twist
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Hom
 public import TauCeti.RepresentationTheory.LinHom.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 

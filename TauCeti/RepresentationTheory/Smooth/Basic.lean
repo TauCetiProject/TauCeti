@@ -70,6 +70,8 @@ case.
 * `Representation.not_isSmooth_pi_ofMulAction_quotient`: over a nontrivial semiring, an infinite
   product of coset permutation modules `∏ i, A[G ⧸ H i]` fails to be smooth when `⨅ i, H i` is
   not open.
+* `Representation.continuous_iff_isSmooth`: when right translations on `G` are continuous and `V`
+  carries the discrete topology, joint continuity on `G × V` is equivalent to smoothness.
 
 ## References
 
@@ -199,6 +201,26 @@ instance [ρ.IsTrivial] : IsSmooth ρ :=
 /-- A representation on a space with at most one vector is smooth. -/
 instance [Subsingleton V] : IsSmooth ρ :=
   ⟨fun v ↦ by rw [stabilizer_eq_top_of_subsingleton ρ v]; exact isOpen_univ⟩
+
+/-- When `V` carries the discrete topology and right translations on `G` are continuous, a
+representation `ρ` is jointly continuous on `G × V` if and only if it is smooth.
+
+Adapted from `continuousSMul_iff_stabilizer_isOpen` in `Mathlib.Topology.Algebra.MulAction`. -/
+theorem continuous_iff_isSmooth [ContinuousConstSMul Gᵐᵒᵖ G]
+    [TopologicalSpace V] [DiscreteTopology V] (ρ : Representation A G V) :
+    Continuous (fun p : G × V => ρ p.1 p.2) ↔ ρ.IsSmooth := by
+  rw [isSmooth_iff]
+  refine ⟨fun h v =>
+      (isOpen_discrete {v}).preimage (h.comp (continuous_id.prodMk continuous_const)),
+    fun h => continuous_prod_of_discrete_right.mpr fun v => continuous_discrete_rng.mpr fun w => ?_⟩
+  obtain hU | ⟨m, hm : ρ m v = w⟩ := {g : G | ρ g v = w}.eq_empty_or_nonempty
+  · simp [Set.preimage, hU]
+  · have hset : (fun g : G => ρ g v) ⁻¹' {w} =
+        (fun g : G => MulOpposite.op m⁻¹ • g) ⁻¹' (ρ.stabilizer w : Set G) := by
+      ext g
+      simp [Representation.mem_stabilizer, ← hm, ← mul_apply_eq_comp, ← map_mul]
+    rw [hset]
+    exact (h w).preimage (continuous_const_smul (MulOpposite.op m⁻¹))
 
 end IsSmooth
 

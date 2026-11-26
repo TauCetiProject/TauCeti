@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.BrauerNesbitt
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
 
 /-!
 # The Brauer–Nesbitt theorem for continuous representations
