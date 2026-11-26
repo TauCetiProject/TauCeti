@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.KyFan
+import TauCeti.Analysis.InnerProductSpace.Positive.Trace
 
 /-!
 # Ky Fan gauges of positive operators
@@ -129,12 +130,16 @@ theorem IsPositive.kyFanGauge_add_kyFanGauge_le {S T : E →L[𝕜] E}
     (finrank_range_le_card (R := 𝕜) (Sum.elim v w)).trans (by simpa using add_le_add hm hm')
   -- The diagonal sums along `v` and `w` are bounded by the traces of the compressions to `U`.
   set comp : (E →L[𝕜] E) → U →L[𝕜] U := fun X ↦ U.orthogonalProjectionOnto ∘L X ∘L U.subtypeL
+  have hinner (X : E →L[𝕜] E) (x : U) :
+      ⟪x, (comp X : U →ₗ[𝕜] U) x⟫_𝕜 = ⟪(x : E), X x⟫_𝕜 := by
+    simp [comp]
   have hdiag {X : E →L[𝕜] E} (hX : X.IsPositive) {n : ℕ} {x : Fin n → E} (hx : Orthonormal 𝕜 x)
       (hxU : ∀ i, x i ∈ U) :
       ∑ i, RCLike.re ⟪x i, X (x i)⟫_𝕜 ≤ RCLike.re ((comp X : U →ₗ[𝕜] U).trace 𝕜 U) := by
-    have := (hX.orthogonalProjectionOnto_comp U).toLinearMap.sum_re_inner_le_re_trace
+    have := (comp X : U →ₗ[𝕜] U).sum_re_inner_le_re_trace_of_re_inner_nonneg
+      (hX.orthogonalProjectionOnto_comp U).toLinearMap.re_inner_nonneg_right
       (hx.codRestrict U hxU)
-    simpa [comp] using this
+    simpa only [hinner, Set.val_codRestrict_apply] using this
   have hvS := hdiag hS hv fun i ↦ Submodule.subset_span ⟨Sum.inl i, rfl⟩
   have hwT := hdiag hT hw fun i ↦ Submodule.subset_span ⟨Sum.inr i, rfl⟩
   -- The trace of the compression of `S + T` is a diagonal sum along an orthonormal basis of `U`.
@@ -143,9 +148,6 @@ theorem IsPositive.kyFanGauge_add_kyFanGauge_le {S T : E →L[𝕜] E}
       RCLike.re ((comp T : U →ₗ[𝕜] U).trace 𝕜 U) ≤ (S + T).kyFanGauge (k + l) := by
     rw [← map_add, ← map_add, ← toLinearMap_add]
     have hcomp : comp S + comp T = comp (S + T) := by simp [comp, add_comp, comp_add]
-    have hinner (X : E →L[𝕜] E) (x : U) :
-        ⟪x, (comp X : U →ₗ[𝕜] U) x⟫_𝕜 = ⟪(x : E), X x⟫_𝕜 := by
-      simp [comp]
     rw [hcomp, LinearMap.trace_eq_sum_inner _ b]
     simp only [hinner]
     calc RCLike.re (∑ i, ⟪(b i : E), (S + T) (b i)⟫_𝕜)

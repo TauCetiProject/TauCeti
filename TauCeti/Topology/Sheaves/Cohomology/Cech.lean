@@ -22,6 +22,8 @@ terms are flasque: the Čech side by dimension shifting along the long exact Če
 flasque-resolution comparison (`TauCeti.Topology.rightDerivedΓIsoGodement`). The first
 identification is natural in the sheaf (`TauCeti.Topology.cechCohomologyIsoGodement`), and the
 comparison is the composite of the two (`TauCeti.Topology.cechCohomologyIsoRightDerivedΓ_hom_app`).
+In degree `0` it is compatible with the descriptions of both sides by global sections
+(`TauCeti.Topology.sectionsIsoCechZero_hom_comp_cechCohomologyIsoRightDerivedΓ_hom_app`).
 
 ## Main definitions
 
@@ -32,7 +34,9 @@ comparison is the composite of the two (`TauCeti.Topology.cechCohomologyIsoRight
 
 * `TauCeti.Topology.sectionsIsoCechZero_hom_comp_cechCohomologyIsoRightDerivedΓ_hom_app`: in
   degree `0` the comparison identifies the two normalizations by global sections, the
-  identification `Γ(F) ≅ H⁰(X, F)` and the canonical map `Γ(F) ⟶ R⁰Γ(F)`.
+  identification `Γ(F) ≅ H⁰(X, F)` and the canonical map `Γ(F) ⟶ R⁰Γ(F)`;
+* `TauCeti.Topology.cechCohomologyIsoRightDerivedΓ_hom_app_comp_rightDerivedZeroIsoSelf_hom`: the
+  same statement through Mathlib's isomorphism `R⁰Γ(F) ≅ Γ(F)`.
 
 ## References
 
@@ -85,7 +89,6 @@ lemma cechCohomologyIsoGodement_app (n : ℕ)
 end Ring
 
 variable {R : Type u} [CommRing R]
-  [(Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive]
 
 /-- **Čech cohomology is derived-functor cohomology on compact Hausdorff spaces.** For sheaves of
 `R`-modules on a compact normal space `X`, the cover-colimit Čech cohomology `Hⁿ(X, F)` is
@@ -122,5 +125,20 @@ theorem sectionsIsoCechZero_hom_comp_cechCohomologyIsoRightDerivedΓ_hom_app
   rw [cechCohomologyIsoRightDerivedΓ_hom_app, reassoc_of% h,
     ← toRightDerivedZero_app_comp_rightDerivedΓIsoGodement_hom_app_assoc]
   simp
+
+/-- **The Čech/derived comparison in degree zero.** Followed by Mathlib's identification
+`R⁰Γ(F) ≅ Γ(F)` of the zeroth derived functor of the left exact functor `Γ`, the comparison
+`H⁰(X, F) ≅ R⁰Γ(F)` is the inverse of the identification
+`TauCeti.Topology.sectionsIsoCechZero` of `H⁰(X, F)` with the global sections of `F`. -/
+@[reassoc (attr := simp)]
+theorem cechCohomologyIsoRightDerivedΓ_hom_app_comp_rightDerivedZeroIsoSelf_hom
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :
+    (cechCohomologyIsoRightDerivedΓ 0).hom.app F ≫
+        (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).rightDerivedZeroIsoSelf.hom.app
+          F =
+      (sectionsIsoCechZero F).inv := by
+  rw [← cancel_epi (sectionsIsoCechZero F).hom, Iso.hom_inv_id,
+    sectionsIsoCechZero_hom_comp_cechCohomologyIsoRightDerivedΓ_hom_app_assoc,
+    Functor.rightDerivedZeroIsoSelf_inv_hom_id_app]
 
 end TauCeti.Topology

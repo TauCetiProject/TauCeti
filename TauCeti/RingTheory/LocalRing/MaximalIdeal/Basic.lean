@@ -20,6 +20,10 @@ elements of `IsLocalRing.maximalIdeal R` (`Irreducible.ne_mul_of_mem_maximalIdea
 
 In a commutative local ring, a minimal nonzero ideal is annihilated by the maximal ideal
 (`IsAtom.maximalIdeal_mul_eq_bot`).
+
+For a homomorphism `f` of commutative local rings, the maximal ideal of the target is the greatest
+ideal whose contraction along `f` is contained in the maximal ideal of the source
+(`Ideal.isGreatest_comap_le_maximalIdeal`).
 -/
 
 public section
@@ -65,3 +69,19 @@ theorem IsAtom.maximalIdeal_mul_eq_bot {R : Type*} [CommRing R] [IsLocalRing R] 
   obtain ⟨x, hx, hxt⟩ := Ideal.mem_mul_span_singleton.mp htm
   have hunit := IsLocalRing.isUnit_one_sub_self_of_mem_nonunits x hx
   rw [← hunit.mul_right_eq_zero, sub_mul, one_mul, hxt, sub_self]
+
+namespace Ideal
+
+/-- For any homomorphism `f` of local rings, the maximal ideal of the target is the greatest ideal
+contracting into the maximal ideal of the source. For instance, if `V` is a field inside a
+local domain `W` and `p = 0`, then `p.map f = 0` while the greatest ideal of `W` contracting into
+`p` is the maximal ideal of `W`. -/
+theorem isGreatest_comap_le_maximalIdeal {V W : Type*} [CommSemiring V] [CommSemiring W]
+    (f : V →+* W) [IsLocalRing V] [IsLocalRing W] :
+    IsGreatest {J : Ideal W | J.comap f ≤ IsLocalRing.maximalIdeal V}
+      (IsLocalRing.maximalIdeal W) :=
+  ⟨IsLocalRing.le_maximalIdeal (comap_ne_top f (IsLocalRing.maximalIdeal.isMaximal W).ne_top),
+    fun J hJ ↦ IsLocalRing.le_maximalIdeal fun h ↦
+    (IsLocalRing.maximalIdeal.isMaximal V).ne_top (top_le_iff.mp (by simpa [h] using hJ))⟩
+
+end Ideal

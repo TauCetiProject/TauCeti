@@ -19,6 +19,12 @@ of `∇σ`, regarded as a section of `Hom(TM, V)` with the connection induced by
 identification connects the tensor `∇²σ` with the product rule for a bundle map acting on a
 field along a curve. The bundle `V` need not have finite rank or a norm.
 
+Through this identification, the covariant derivative of `∇σ` is additive and homogeneous on
+smooth sections (`CovariantDerivative.hom_covariantDerivative_add`,
+`CovariantDerivative.hom_covariantDerivative_const_smul`), and its double commutator with
+multiplication by smooth functions `f` and `g` is `(df ⊗ dg + dg ⊗ df) σ`
+(`CovariantDerivative.hom_covariantDerivative_smul_smul_sub`).
+
 Applied to the section `∇σ` of `Hom(TM, V)`, the identification gives `∇²(∇σ) = ∇³σ`, the
 covariant derivative of `∇²σ` (`CovariantDerivative.secondCovariantDerivative_covariantDerivative`).
 
@@ -73,6 +79,44 @@ theorem secondCovariantDerivative_eq_toLinearMap₁₂_hom (hσ : CMDiff ∞ (T%
   LinearMap.ext₂ fun u v ↦ by
     rw [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
       secondCovariantDerivative_eq_hom_apply cov covT hσ x u v]
+
+/-- The covariant derivative of `∇σ` for the induced connection on `Hom(TM, V)` is additive on
+smooth sections. -/
+theorem hom_covariantDerivative_add {τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ))
+    (hτ : CMDiff ∞ (T% τ)) (x : M) :
+    covT.hom cov (cov (σ + τ)) x = covT.hom cov (cov σ) x + covT.hom cov (cov τ) x := by
+  ext u v
+  rw [add_apply, add_apply, ← secondCovariantDerivative_eq_hom_apply cov covT (hσ.add_section hτ),
+    ← secondCovariantDerivative_eq_hom_apply cov covT hσ,
+    ← secondCovariantDerivative_eq_hom_apply cov covT hτ,
+    secondCovariantDerivative_add cov covT hσ hτ, LinearMap.add_apply, LinearMap.add_apply]
+
+/-- The covariant derivative of `∇σ` for the induced connection on `Hom(TM, V)` commutes with
+multiplication of a smooth section by a constant. -/
+theorem hom_covariantDerivative_const_smul (c : ℝ) (hσ : CMDiff ∞ (T% σ)) (x : M) :
+    covT.hom cov (cov (c • σ)) x = c • covT.hom cov (cov σ) x := by
+  ext u v
+  rw [smul_apply, smul_apply,
+    ← secondCovariantDerivative_eq_hom_apply cov covT (hσ.const_smul_section (a := c)),
+    ← secondCovariantDerivative_eq_hom_apply cov covT hσ,
+    secondCovariantDerivative_const_smul, LinearMap.smul_apply, LinearMap.smul_apply]
+
+/-- The double commutator of the covariant derivative of `∇σ`, for the induced connection on
+`Hom(TM, V)`, with multiplication by smooth functions `f` and `g` is `(df ⊗ dg + dg ⊗ df) σ`. -/
+theorem hom_covariantDerivative_smul_smul_sub {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hg : ContMDiff I 𝓘(ℝ) ∞ g) (hσ : CMDiff ∞ (T% σ)) (x : M) :
+    covT.hom cov (cov (f • g • σ)) x - f x • covT.hom cov (cov (g • σ)) x -
+        g x • covT.hom cov (cov (f • σ)) x + (f x * g x) • covT.hom cov (cov σ) x =
+      (mvfderiv I f x).smulRight ((mvfderiv I g x).smulRight (σ x)) +
+        (mvfderiv I g x).smulRight ((mvfderiv I f x).smulRight (σ x)) := by
+  ext u v
+  have h := secondCovariantDerivative_smul_smul_sub cov covT hf hg hσ x u v
+  simp only [add_apply, sub_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
+  rw [← secondCovariantDerivative_eq_hom_apply cov covT (hf.smul_section (hg.smul_section hσ)),
+    ← secondCovariantDerivative_eq_hom_apply cov covT (hg.smul_section hσ),
+    ← secondCovariantDerivative_eq_hom_apply cov covT (hf.smul_section hσ),
+    ← secondCovariantDerivative_eq_hom_apply cov covT hσ, h]
+  module
 
 section Third
 

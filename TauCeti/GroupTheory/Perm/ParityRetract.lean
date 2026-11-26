@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.MovedNorm
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # A nonexpanding parity retraction
@@ -13,7 +14,8 @@ public import TauCeti.GroupTheory.Perm.MovedNorm
 For a transposition `t`, `Equiv.Perm.parityRetract` sends even permutations to the identity and
 odd permutations to `t`. It is a homomorphism onto `{1, t}`, fixes that set pointwise, and does
 not increase the moved-point norm. Thus gauges with values in a symmetric group can be retracted
-to the two-element subgroup without increasing the cost of a cochain valued in that subgroup.
+to the two-element subgroup without increasing the cost of a cochain valued in that subgroup
+(`Equiv.Perm.ite_xor_sign_le_movedNorm_inv_mul_ite_mul`).
 
 This is the parity-retraction argument used in Jeromie Beasley, *The Permutation Coboundary
 Constant of the Complete Complex Is k/3 for Every k≥4*, version 7,
@@ -31,12 +33,9 @@ def parityRetract (ht : t.IsSwap) : Perm α →* Perm α where
   toFun σ := if sign σ = 1 then 1 else t
   map_one' := by simp
   map_mul' σ τ := by
-    have htt : t * t = 1 := by
-      obtain ⟨a, b, _, rfl⟩ := ht
-      simp
     rcases Int.units_eq_one_or (sign σ) with hσ | hσ <;>
       rcases Int.units_eq_one_or (sign τ) with hτ | hτ <;>
-      simp [hσ, hτ, htt, Units.ext_iff]
+      simp [hσ, hτ, ht.mul_self_eq_one, Units.ext_iff]
 
 /-- The parity retraction chooses between the identity and the given transposition. -/
 theorem parityRetract_apply (ht : t.IsSwap) (σ : Perm α) :
@@ -110,5 +109,25 @@ theorem movedNorm_parityRetract_le (ht : t.IsSwap) (σ : Perm α) :
   · simp [hσ]
   · rw [parityRetract_of_sign_eq_neg_one ht hσ, ht.movedNorm]
     exact two_le_movedNorm_of_sign_eq_neg_one hσ
+
+/-- For arbitrary `g h : Perm α`, retracting along `Equiv.Perm.parityRetract` bounds the moved-point
+norm of `g⁻¹ * (if p then t else 1) * h` from below by the `{0, 2}` parity indicator of the signs of
+`g` and `h`. -/
+theorem ite_xor_sign_le_movedNorm_inv_mul_ite_mul (ht : t.IsSwap) (g h : Perm α) (p : Prop)
+    [Decidable p] :
+    (if Xor p (Xor (sign g = -1) (sign h = -1)) then (2 : ℝ) else 0) ≤
+      movedNorm α (g⁻¹ * (if p then t else 1) * h) := by
+  let r := parityRetract ht
+  have hle := movedNorm_parityRetract_le ht (g⁻¹ * (if p then t else 1) * h)
+  have hmap : r (g⁻¹ * (if p then t else 1) * h) = (r g)⁻¹ * (if p then t else 1) * r h := by
+    rw [map_mul, map_mul, map_inv]
+    congr 2
+    split_ifs <;> simp [r]
+  have hr₁ (σ : Perm α) : r σ = 1 ∨ r σ = t := (mem_range_parityRetract ht (r σ)).mp ⟨σ, rfl⟩
+  have hr₂ (σ : Perm α) : r σ ≠ 1 ↔ sign σ = -1 := by
+    rw [ne_eq, parityRetract_eq_one_iff]
+    rcases Int.units_eq_one_or (sign σ) with hσ | hσ <;> simp [hσ, Units.ext_iff]
+  rw [hmap, movedNorm_inv_mul_ite_mul_of_eq_one_or ht (hr₁ g) (hr₁ h) p] at hle
+  simpa only [hr₂ g, hr₂ h] using hle
 
 end Equiv.Perm

@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.CategoryTheory.EqToHom
 public import Mathlib.CategoryTheory.Preadditive.Basic
+public import Mathlib.CategoryTheory.Whiskering
 
 /-!
 # Transporting categorical morphisms along object equalities
@@ -50,6 +51,10 @@ and avoid exposing the definitional equality of the objects being transported.
 * `CategoryTheory.Functor.map_comp_eq_of_eqToHom_conjugate`: a commuting triangle of conjugated
   images under a functor `F` after an epimorphism yields equality of the corresponding images under
   `F`.
+* `CategoryTheory.Functor.whiskeringLeft_eqToIso_hom_app_app`,
+  `CategoryTheory.Functor.map_comp_whiskeringLeft_eqToIso_op_id_app` and
+  `CategoryTheory.Functor.whiskeringLeft_transport_comp_hom_app`: components of precomposition
+  comparisons that transport along an equality of functors.
 -/
 
 public section
@@ -239,5 +244,62 @@ theorem map_comp_eq_of_eqToHom_conjugate {C D : Type*} [Category* C] [Category* 
   simp only [eqToHom_refl, Category.comp_id, Category.id_comp, Category.assoc,
     ← Functor.map_comp] at h
   exact (cancel_epi u).mp h
+
+open Opposite
+
+/-- In a thin category, transport of an identity precomposition cancels the two mapped arrows. -/
+theorem map_comp_whiskeringLeft_eqToIso_op_id_app
+    {C : Type*} [Category* C] [Quiver.IsThin C] {A : Type*} [Category* A]
+    (F : C ⥤ C) (q : F = 𝟭 C) (P : Cᵒᵖ ⥤ A) {V W : C}
+    (i : F.obj W ⟶ V) (j : V ⟶ W) :
+    P.map i.op ≫ (F.op ⋙ P).map j.op ≫
+      ((eqToIso (congrArg
+        (fun G : C ⥤ C ↦ (Functor.whiskeringLeft Cᵒᵖ Cᵒᵖ A).obj G.op) q) ≪≫
+        Functor.whiskeringLeftObjIdIso (C := Cᵒᵖ) (E := A)).hom.app P).app (op V) = 𝟙 _ := by
+  subst F
+  simp [Functor.whiskeringLeft, ← P.map_comp,
+    Subsingleton.elim (i.op ≫ j.op) (𝟙 (op V))]
+
+/-- The component of equality transport by precomposition is the image of object equality. -/
+theorem whiskeringLeft_eqToIso_hom_app_app
+    {C : Type*} [Category* C] {D : Type*} [Category* D] {A : Type*} [Category* A]
+    (F G : C ⥤ D) (q : F = G) (P : D ⥤ A) (V : C) :
+    (((eqToIso (congrArg
+      (fun G : C ⥤ D ↦ (Functor.whiskeringLeft C D A).obj G) q)).hom.app P).app V) =
+        P.map (eqToHom (congrArg (fun G : C ⥤ D ↦ G.obj V) q)) := by
+  subst G
+  simp
+
+/-- The component at `P` of a successive precomposition comparison `α`, `β`, followed by the
+composition comparison, equality transport along `q : F ⋙ G = H` and a final isomorphism `ε`,
+is the composite of the components of `α`, `β`, the transported equality and `ε`. -/
+theorem whiskeringLeft_transport_comp_hom_app
+    {C : Type*} [Category* C] {D : Type*} [Category* D]
+    {E : Type*} [Category* E] {A : Type*} [Category* A]
+    {B : Type*} [Category* B]
+    (F : C ⥤ D) (G : D ⥤ E) (H : C ⥤ E) (q : F ⋙ G = H)
+    {S : (E ⥤ A) ⥤ B} {U : (D ⥤ A) ⥤ B} {T : (C ⥤ A) ⥤ B}
+    {V : (E ⥤ A) ⥤ B}
+    (α : S ≅ (whiskeringLeft D E A).obj G ⋙ U)
+    (β : U ≅ (whiskeringLeft C D A).obj F ⋙ T)
+    (ε : (whiskeringLeft C E A).obj H ⋙ T ≅ V) (P : E ⥤ A) :
+    (α ≪≫ isoWhiskerLeft ((whiskeringLeft D E A).obj G) β ≪≫
+        (associator _ _ _).symm ≪≫
+        isoWhiskerRight ((whiskeringLeftObjCompIso (E := A) F G).symm ≪≫
+          eqToIso (congrArg (fun K : C ⥤ E ↦ (whiskeringLeft C E A).obj K) q)) T ≪≫
+        ε).hom.app P =
+      α.hom.app P ≫ β.hom.app (G ⋙ P) ≫
+        T.map ((eqToIso (congrArg
+          (fun K : C ⥤ E ↦ (whiskeringLeft C E A).obj K) q)).hom.app P) ≫
+        ε.hom.app P := by
+  -- Unfold the single canonical composition comparison here, before any client takes components.
+  simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, isoWhiskerLeft_hom,
+    whiskerLeft_app, isoWhiskerRight_hom, whiskerRight_app, associator_inv_app,
+    whiskeringLeftObjCompIso, Iso.refl_inv, NatTrans.id_app, Category.id_comp]
+  exact congrArg
+    (fun f : (F ⋙ G) ⋙ P ⟶ H ⋙ P ↦
+      α.hom.app P ≫ β.hom.app (G ⋙ P) ≫ T.map f ≫ ε.hom.app P)
+    (Category.id_comp ((eqToIso (congrArg
+      (fun K : C ⥤ E ↦ (whiskeringLeft C E A).obj K) q)).hom.app P))
 
 end CategoryTheory.Functor

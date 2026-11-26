@@ -49,10 +49,6 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {h : IsCurvedDGAlgebra 𝒜 d w} {J : Type u}
   (M : J → CurvedDGRightModuleCat.{u, u, u} h)
 
-local instance : SetLike.GradedMonoid (InternalGrading.ofDecomposition 𝒜).piece := by
-  rw [InternalGrading.ofDecomposition_piece]
-  infer_instance
-
 /-- The componentwise differential on the underlying degreewise graded product. -/
 noncomputable def productDifferential :
     GradedModuleCat.product (fun j ↦ toGradedModuleCat (M j)) →ₗ[R]

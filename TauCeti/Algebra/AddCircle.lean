@@ -81,6 +81,9 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 * `AddCircle.range_nsmul_coe_rat` and `AddCircle.ncard_range_nsmul_coe_rat`: for a positive
   period in a linearly ordered field, the `ℕ`-multiples of the class of a rational multiple
   `q * p` of the period form the `q.den`-torsion, so there are exactly `q.den` of them.
+* `Int.fract_natCast_mul_ratCast_eq_iff`: in a linearly ordered floor field, the multiples
+  `m * q` and `n * q` of a rational number `q` have the same fractional part exactly when
+  `m ≡ n [MOD q.den]`.
 * `AddCircle.nsmul_coe_period_div` and `AddCircle.nsmul_coe_period_div_of_mul_eq`: scaling the
   class of `p / n` by a divisor `d` of `n` gives the class of `p / (n / d)`; when `n` is nonzero
   in `𝕜` these are the canonical generators of the `n`- and the `n / d`-torsion.
@@ -492,6 +495,18 @@ theorem ncard_range_nsmul_coe_rat (q : ℚ) :
   rw [← AddSubmonoid.coe_multiples, ← Nat.card_coe_set_eq, SetLike.coe_sort_coe,
     Nat.card_addSubmonoidMultiples, addOrderOf_coe_rat]
 
+/-- For a rational number `q`, the multiples `m * q` and `n * q` have the same fractional part
+exactly when `m` and `n` are congruent modulo the denominator of `q`. -/
+theorem _root_.Int.fract_natCast_mul_ratCast_eq_iff [FloorRing 𝕜] (q : ℚ) {m n : ℕ} :
+    Int.fract (m * (q : 𝕜)) = Int.fract (n * (q : 𝕜)) ↔ m ≡ n [MOD q.den] := by
+  have : Fact ((0 : 𝕜) < 1) := ⟨one_pos⟩
+  -- Route: `m ≡ n [MOD q.den]` is `m • ↑q = n • ↑q` in `AddCircle 1`, as `q.den` is the order of
+  -- `↑q`; that is `↑(m * q) = ↑(n * q)`, i.e. `m * q - n * q` is an integer, which is the equality
+  -- of fractional parts.
+  rw [← addOrderOf_coe_rat (p := (1 : 𝕜)) (q := q), ← nsmul_eq_nsmul_iff_modEq, ← coe_nsmul,
+    ← coe_nsmul, Int.fract_eq_fract, ← sub_eq_zero, ← coe_sub, coe_eq_zero_iff]
+  simp [eq_comm]
+
 end RationalMultiple
 
 section PeriodDiv
@@ -734,6 +749,14 @@ theorem toRatAddCircle_apply (x : ZMod n) :
     have hx : ((x.val : ℕ) : ZMod n) = x := ZMod.natCast_rightInverse x
     conv_lhs => rw [← hx]
     rw [toRatAddCircle_natCast]
+
+/-- Transport along an equality of moduli commutes with the embeddings of `ℤ/m` and `ℤ/n` into
+`ℚ/ℤ`. -/
+@[simp]
+theorem toRatAddCircle_ringEquivCongr {m : ℕ} (h : m = n) (x : ZMod m) :
+    toRatAddCircle n (ZMod.ringEquivCongr h x) = toRatAddCircle m x := by
+  subst h
+  rw [ZMod.ringEquivCongr_refl_apply]
 
 /-- Only the zero residue has integral image in `ℚ/ℤ`. -/
 @[simp]

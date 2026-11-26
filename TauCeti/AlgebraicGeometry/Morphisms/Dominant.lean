@@ -51,6 +51,8 @@ the generic point, and a dominant one by its pullback of rational functions.
   irreducible schemes sends the generic point to the generic point.
 * `AlgebraicGeometry.isDominant_iff_genericPoint_eq`: conversely, a morphism of irreducible
   schemes sending the generic point to the generic point is dominant.
+* `AlgebraicGeometry.eq_genericPoint_of_mem_range_fromSpecStalk`: the only point in the image of
+  the canonical morphism `Spec K(Y) ⟶ Y` is the generic point of `Y`.
 * `AlgebraicGeometry.Scheme.Hom.isDominant_of_SpecMap_fromSpecStalk`: a morphism of irreducible
   schemes whose action on the generic point is given by a homomorphism of generic stalks is
   dominant.
@@ -188,6 +190,13 @@ instance isDominant_fromSpecStalk_genericPoint :
   ⟨(dense_iff_closure_eq.mpr (genericPoint_closure _)).mono
     (Set.singleton_subset_iff.mpr ⟨IsLocalRing.closedPoint _, Scheme.fromSpecStalk_closedPoint⟩)⟩
 
+/-- The only point in the image of the canonical morphism `Spec K(Y) ⟶ Y` of an irreducible
+scheme is the generic point: the points of the image are generizations of the generic point. -/
+theorem eq_genericPoint_of_mem_range_fromSpecStalk {y : Y}
+    (hy : y ∈ Set.range (Y.fromSpecStalk (genericPoint Y))) : y = genericPoint Y := by
+  rw [Scheme.range_fromSpecStalk] at hy
+  exact (hy.antisymm (genericPoint_specializes _)).eq
+
 namespace Scheme.Hom
 
 /-- A morphism `f : X ⟶ Y` of irreducible schemes is dominant when the canonical morphism
@@ -200,13 +209,12 @@ theorem isDominant_of_SpecMap_fromSpecStalk (f : X ⟶ Y) (φ : Y.functionField 
     (h : Spec.map φ ≫ Y.fromSpecStalk (genericPoint Y) = X.fromSpecStalk (genericPoint X) ≫ f) :
     IsDominant f := by
   -- evaluating `h` at the closed point of `Spec K(X)`, `f` sends the generic point of `X` into the
-  -- image of `Spec K(Y)`, whose points are generizations of the generic point, hence equal to it
+  -- image of `Spec K(Y)`, whose only point is the generic point
   have hf : f (genericPoint X) ∈ Set.range (Y.fromSpecStalk (genericPoint Y)) :=
     ⟨Spec.map φ (IsLocalRing.closedPoint _), (Scheme.Hom.comp_apply _ _ _).symm.trans <|
       congr($h _).trans <| (Scheme.Hom.comp_apply _ _ _).trans
         (congrArg f Scheme.fromSpecStalk_closedPoint)⟩
-  rw [Scheme.range_fromSpecStalk] at hf
-  exact isDominant_iff_genericPoint_eq.mpr (hf.antisymm (genericPoint_specializes _)).eq
+  exact isDominant_iff_genericPoint_eq.mpr (eq_genericPoint_of_mem_range_fromSpecStalk hf)
 
 /-- The **pullback of rational functions** `f^* : K(Y) ⟶ K(X)` along a dominant morphism
 `f : X ⟶ Y` of irreducible schemes: the map of stalks of `f` at the generic point of `X`, which `f`

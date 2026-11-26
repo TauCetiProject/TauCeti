@@ -161,7 +161,7 @@ theorem map_inclusion_restrict {K : PreAbstractSimplicialComplex ι} {s t : Set 
     (hs : ∀ τ ∈ K, (τ : Set ι) ⊆ s) (hst : s ⊆ t) :
     (K.restrict s).map (Set.inclusion hst) = K.restrict t := by
   let _ := Classical.decEq ι
-  rw [← map_inj_of_injective Subtype.val Subtype.val_injective, map_map, Set.val_comp_inclusion]
+  rw [← map_inj_of_injOn Subtype.val Subtype.val_injective.injOn, map_map, Set.val_comp_inclusion]
   exact (map_val_restrict hs).trans
     (map_val_restrict fun τ hτ => (hs τ hτ).trans hst).symm
 

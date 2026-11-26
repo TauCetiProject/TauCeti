@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.RingTheory.Kaehler.Basic
 public import Mathlib.RingTheory.Kaehler.JacobiZariski
 public import Mathlib.RingTheory.Kaehler.TensorProduct
+public import Mathlib.RingTheory.Kaehler.Polynomial
+public import Mathlib.RingTheory.Unramified.Basic
 
 /-!
 # Base-change maps for Kähler differentials
@@ -36,6 +38,11 @@ map `Ω[B⁄R] → Ω[B⁄S]` sending `d_R b` to `d_S b`.
 * `TauCeti.injective_mapBaseChange_of_subsingleton_h1Cotangent`
 * `TauCeti.injective_kaehlerDifferential_map_of_subsingleton_h1Cotangent`
 * `TauCeti.map_comp_mapBaseChange_eq_tensorKaehlerEquiv`
+* `KaehlerDifferential.mapBaseChange_surjective_of_formallyUnramified`: if `B` is formally
+  unramified over `A`, then `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` is surjective.
+* `TauCeti.finrank_kaehlerDifferential_le_of_formallyUnramified_mvPolynomial`: a field formally
+  unramified over a polynomial ring `K[X_i]` has Kähler differentials over `K` of dimension at most
+  the number of variables.
 -/
 
 public section
@@ -118,5 +125,40 @@ theorem map_comp_mapBaseChange_eq_tensorKaehlerEquiv (S : Type*) [CommRing S] [A
     [Algebra S B] [IsScalarTower R S B] [Algebra.IsPushout R S A B] :
     (map R S B B).comp (mapBaseChange R A B) = (tensorKaehlerEquiv R S A B).toLinearMap :=
   kaehlerBaseChange_linearMap_ext fun a ↦ by simp
+
+end TauCeti
+
+namespace KaehlerDifferential
+
+/-- If `A` is formally unramified over `S`, then `A ⊗[S] Ω[S⁄R] → Ω[A⁄R]` is surjective. This
+generalizes `KaehlerDifferential.mapBaseChange_surjective`, for `S → A` surjective. -/
+theorem mapBaseChange_surjective_of_formallyUnramified (R S A : Type*) [CommRing R] [CommRing S]
+    [CommRing A] [Algebra R S] [Algebra R A] [Algebra S A] [IsScalarTower R S A]
+    [Algebra.FormallyUnramified S A] :
+    Function.Surjective (mapBaseChange R S A) :=
+  LinearMap.range_eq_top.mp <|
+    (TauCeti.subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top R S A).mp
+      inferInstance
+
+end KaehlerDifferential
+
+namespace TauCeti
+
+open KaehlerDifferential TensorProduct
+
+/-- **Differentials of a field unramified over a polynomial ring.** If a field `L` over a ring `K`
+is a formally unramified algebra over the polynomial ring `K[X_i]`, then `Ω[L⁄K]` is spanned by the
+images of the `d X_i`, so its dimension is at most the number of variables. -/
+theorem finrank_kaehlerDifferential_le_of_formallyUnramified_mvPolynomial {σ K L : Type*}
+    [Finite σ] [CommRing K] [Field L] [Algebra K L] [Algebra (MvPolynomial σ K) L]
+    [IsScalarTower K (MvPolynomial σ K) L] [Algebra.FormallyUnramified (MvPolynomial σ K) L] :
+    Module.finrank L Ω[L⁄K] ≤ Nat.card σ := by
+  have hsurj := mapBaseChange_surjective_of_formallyUnramified K (MvPolynomial σ K) L
+  have b := (mvPolynomialBasis K σ).baseChange L
+  have : Module.Finite L (L ⊗[MvPolynomial σ K] Ω[MvPolynomial σ K⁄K]) := .of_basis b
+  calc Module.finrank L Ω[L⁄K]
+      ≤ Module.finrank L (L ⊗[MvPolynomial σ K] Ω[MvPolynomial σ K⁄K]) :=
+        LinearMap.finrank_le_finrank_of_surjective hsurj
+    _ = Nat.card σ := by rw [Module.finrank_eq_nat_card_basis b]
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Frobenius.AffineSpace
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.EtaleCoordinates
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.TargetLocal
 
 /-!
 # The relative Frobenius of a smooth morphism is finite locally free
@@ -75,11 +76,8 @@ instance flat_relativeFrobenius_of_smooth : Flat (π.relativeFrobenius p hS) :=
     AffineSpace.flat_relativeFrobenius_of_etale hS g hg
 
 /-- **The relative Frobenius of a smooth morphism is finite.** -/
-instance isFinite_relativeFrobenius_of_smooth : IsFinite (π.relativeFrobenius p hS) := by
-  observe h : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  have : IsZariskiLocalAtTarget @IsFinite.{u} := @HasAffineProperty.instIsZariskiLocalAtTarget _ _ h
-  exact of_smooth_relativeFrobenius π hS @IsFinite fun _ _ g _ hg ↦
+instance isFinite_relativeFrobenius_of_smooth : IsFinite (π.relativeFrobenius p hS) :=
+  of_smooth_relativeFrobenius π hS @IsFinite fun _ _ g _ hg ↦
     AffineSpace.isFinite_relativeFrobenius_of_etale hS g hg
 
 /-- **The relative Frobenius of a smooth morphism is locally of finite presentation.** -/

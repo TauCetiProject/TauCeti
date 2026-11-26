@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.Padics.GroupAlgebra.Rational
 import Mathlib.Algebra.Module.Projective
 import Mathlib.NumberTheory.Padics.RingHoms
 import Mathlib.RepresentationTheory.Basic
-import TauCeti.Algebra.Module.Projective.Reduction
+import TauCeti.Algebra.Module.Projective.Reduction.Basic
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.MonoidAlgebra.CosetBasis
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Invariants

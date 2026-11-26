@@ -36,7 +36,11 @@ its local uniqueness near `1`
 (`TauCeti.Vortex.SobolevFieldSpace.exists_mem_nhds_forall_eq_one_of_smul_mem_coulombSlice`),
 and the properness of the action (`TauCeti.Vortex.SobolevFieldSpace.properSMul`), which excludes
 gauges far from `1` between fields near `x`. The topological argument is
-`ProperSMul.exists_isOpen_isOpenEmbedding_quotientMk_inter`.
+`ProperSMul.exists_isOpen_isOpenEmbedding_quotientMk_inter`. Consequently the smooth Coulomb
+projection `π` near `x`, carrying the real coordinates of each nearby field `y` to those of its
+gauge transform in the slice, takes the same value on gauge equivalent nearby fields
+(`TauCeti.Vortex.SobolevFieldSpace.`
+`exists_isOpen_contDiffOn_forall_realSubRef_smul_eq_and_forall_apply_smul_eq`).
 
 **The vortex moduli.** At a plane vortex `x₀` of `A_m^(k+1)`, `k ≥ 2`, lying in every `A_m^j`,
 the vortices in its Coulomb slice form a `2m`-dimensional analytic submanifold near it, with the
@@ -56,14 +60,18 @@ orders of the same field space, `↑(k + 1)` for the gauge action and `↑k + 1`
 are identified by `TauCeti.Vortex.SobolevFieldSpace.congrOrder`.
 
 With these charts, invariance of domain makes the zero divisor a homeomorphism from the vortex
-moduli onto `Sym^m ℂ` (`TauCeti.Analysis.PDE.Vortex.FramedGauge.SymmetricPower`). Whether the
-transition maps of the charts are smooth is not treated here.
+moduli onto `Sym^m ℂ` (`TauCeti.Analysis.PDE.Vortex.FramedGauge.SymmetricPower`). Cut down to a
+neighbourhood of the orbit, these charts are smoothly compatible
+(`TauCeti.Analysis.PDE.Vortex.FramedGauge.SmoothChart`).
 
 ## Main results
 
 * `TauCeti.Vortex.SobolevFieldSpace.`
   `exists_isOpen_isOpenEmbedding_quotientMk_gaugeAdjoint_sub_eq_zero`: near a field, its Coulomb
   slice embeds openly into the orbit space.
+* `TauCeti.Vortex.SobolevFieldSpace.`
+  `exists_isOpen_contDiffOn_forall_realSubRef_smul_eq_and_forall_apply_smul_eq`: the smooth Coulomb
+  projection near a field is gauge invariant.
 * `TauCeti.Vortex.SobolevFieldSpace.exists_isOpen_openPartialHomeomorph_vortexModuli_eq`: near a
   vortex lying in every `A_m^j`, the Coulomb slice chart induces a chart of the vortex moduli
   space.
@@ -85,6 +93,7 @@ namespace TauCeti.Vortex
 namespace SobolevFieldSpace
 
 open BesselPotentialSpace Filter Topology SobolevTopologicalGaugeGroup
+open scoped ContDiff
 
 variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
 
@@ -114,6 +123,52 @@ theorem exists_isOpen_isOpenEmbedding_quotientMk_gaugeAdjoint_sub_eq_zero
       huniq y hy.2 u hu (mem_coulombSlice.2 hy₀) (mem_coulombSlice.2 huy₀)
   exact ⟨V, hV, hxV, hemb⟩
 
+/-- **The smooth Coulomb projection is gauge invariant.** Let `x` be a continuous field of
+`A_m^k`, `k ≥ 3`. In the real chart of `A_m^k`, there are an open neighbourhood `U` of the
+coordinates of `x` and a map `π` of the real coordinates, smooth on `U` and fixing the coordinates
+of `x`, such that `π` sends the coordinates of every field `y` with coordinates in `U` to those of a
+gauge transform `g · y` lying in the Coulomb slice of `x`, and takes the same value at `y` and at
+`g · y` for every gauge `g` keeping the coordinates in `U`. -/
+theorem exists_isOpen_contDiffOn_forall_realSubRef_smul_eq_and_forall_apply_smul_eq
+    (hs : 1 < (k : ℝ) + 1) (hk : 3 ≤ k) (x : SobolevFieldSpace f m k) :
+    ∃ U : Set (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k)), IsOpen U ∧
+      x.realSubRef (Nat.cast_nonneg k) ∈ U ∧
+      ∃ π : (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k)) →
+          Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k),
+        ContDiffOn ℝ ∞ π U ∧
+          π (x.realSubRef (Nat.cast_nonneg k)) = x.realSubRef (Nat.cast_nonneg k) ∧
+        (∀ y : SobolevFieldSpace f m k, y.realSubRef (Nat.cast_nonneg k) ∈ U →
+          ∃ g : SobolevTopologicalGaugeGroup hs, g • y ∈ coulombSlice x ∧
+            (g • y).realSubRef (Nat.cast_nonneg k) = π (y.realSubRef (Nat.cast_nonneg k))) ∧
+        ∀ (y : SobolevFieldSpace f m k) (g : SobolevTopologicalGaugeGroup hs),
+          y.realSubRef (Nat.cast_nonneg k) ∈ U → (g • y).realSubRef (Nat.cast_nonneg k) ∈ U →
+            π ((g • y).realSubRef (Nat.cast_nonneg k)) = π (y.realSubRef (Nat.cast_nonneg k)) := by
+  have hk1 : (1 : ℝ) < k := Nat.one_lt_cast.2 Fact.out
+  obtain ⟨U₁, hU₁, hxU₁, π, hπ, hπx, hπS⟩ :=
+    exists_isOpen_contDiffOn_forall_realSubRef_smul_eq hs hk x
+  obtain ⟨V, hV, hxV, hemb⟩ :=
+    exists_isOpen_isOpenEmbedding_quotientMk_gaugeAdjoint_sub_eq_zero hs hk x
+  -- Shrink `U₁` so that the Coulomb representatives lie in `V`, where the slice meets each orbit
+  -- once.
+  refine ⟨U₁ ∩ π ⁻¹' (ofRealSubRef (f := f) (m := m) hk1 ⁻¹' V),
+      hπ.continuousOn.isOpen_inter_preimage hU₁ (hV.preimage (continuous_ofRealSubRef hk1)),
+      ⟨hxU₁, by
+        rw [Set.mem_preimage, Set.mem_preimage, hπx, ofRealSubRef_realSubRef]; exact hxV⟩,
+      π, hπ.mono Set.inter_subset_left, hπx, fun y hy ↦ hπS y hy.1, fun y g hy hgy ↦ ?_⟩
+  obtain ⟨g₁, hg₁S, hg₁⟩ := hπS y hy.1
+  obtain ⟨g₂, hg₂S, hg₂⟩ := hπS (g • y) hgy.1
+  have hq : Quotient.mk (MulAction.orbitRel (SobolevTopologicalGaugeGroup hs)
+      (SobolevFieldSpace f m k)) (g₁ • y) = Quotient.mk _ (g₂ • g • y) :=
+    Quotient.sound (MulAction.orbitRel_apply.2 (MulAction.mem_orbit_iff.2 ⟨g₁ * (g₂ * g)⁻¹, by
+      rw [smul_smul g₂ g y, smul_smul, inv_mul_cancel_right]⟩))
+  have hV₁ : g₁ • y ∈ V := by rw [← ofRealSubRef_realSubRef hk1 (g₁ • y), hg₁]; exact hy.2
+  have hV₂ : g₂ • g • y ∈ V := by
+    rw [← ofRealSubRef_realSubRef hk1 (g₂ • g • y), hg₂]; exact hgy.2
+  have heq := congrArg Subtype.val (hemb.injective (a₁ := ⟨g₁ • y, hV₁, mem_coulombSlice.1 hg₁S⟩)
+    (a₂ := ⟨g₂ • g • y, hV₂, mem_coulombSlice.1 hg₂S⟩) hq)
+  rw [← hg₁, ← hg₂]
+  exact congrArg (realSubRef (Nat.cast_nonneg k)) heq.symm
+
 end
 
 /-! ### Charts of the vortex moduli -/
@@ -129,6 +184,47 @@ theorem realSobolevSliceEquation_realSubRef_congrOrder_eq_zero_iff (hk : 2 ≤ k
       y ∈ coulombSlice x ∧ ∀ z, equation y z = 0 := by
   simp only [realSobolevSliceEquation_realSubRef_eq_zero_iff, mem_coulombSlice, coe_congrOrder,
     funext_iff, Pi.zero_apply]
+
+/-- The real coordinates, at the order `↑k + 1` of the slice equation, of the fields of
+`A_m^(k+1)`. -/
+noncomputable def sliceCoords (hk : 2 ≤ k) :
+    SobolevFieldSpace f m (k + 1 : ℕ) ≃ₜ
+      (Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :=
+  (congrOrder (s := ((k + 1 : ℕ) : ℝ)) (Nat.cast_succ k)).trans
+    (realSubRefHomeomorph (by linarith [(Nat.ofNat_le_cast.2 hk : (2 : ℝ) ≤ k)]))
+
+/-- The slice coordinates of `y` are the real coordinates of `y` at the order `↑k + 1`. -/
+@[simp]
+theorem sliceCoords_apply (hk : 2 ≤ k) (y : SobolevFieldSpace f m (k + 1 : ℕ)) :
+    sliceCoords hk y = (congrOrder (Nat.cast_succ k) y).realSubRef _ := by
+  simp [sliceCoords]
+
+/-- The field with slice coordinates `u` is the field with real coordinates `u` at the order
+`↑k + 1`, read at the order `↑(k + 1)`. -/
+@[simp]
+theorem sliceCoords_symm_apply (hk : 2 ≤ k)
+    (u : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :
+    (sliceCoords (f := f) (m := m) hk).symm u = congrOrder (Nat.cast_succ k).symm
+      (ofRealSubRef (by linarith [(Nat.ofNat_le_cast.2 hk : (2 : ℝ) ≤ k)]) u) := by
+  simp [sliceCoords]
+
+/-- The slice coordinates of `y` are its real coordinates at the order `↑(k + 1)`, carried to the
+order `↑k + 1` by `realSubmoduleCongr`. -/
+theorem sliceCoords_eq_piCongrRight_realSubRef (hk : 2 ≤ k)
+    (y : SobolevFieldSpace f m (k + 1 : ℕ)) :
+    sliceCoords hk y = ContinuousLinearEquiv.piCongrRight (fun _ : Fin 4 ↦ realSubmoduleCongr ℂ
+      (Nat.cast_succ k) (Nat.cast_nonneg (k + 1)) (k.cast_add_one_pos (α := ℝ)).le)
+        (y.realSubRef (Nat.cast_nonneg (k + 1))) :=
+  (sliceCoords_apply hk y).trans (funext fun j ↦ realSubRef_congrOrder _ _ _ y j)
+
+/-- The real coordinates at the order `↑(k + 1)` of the field with slice coordinates `u` are `u`
+carried back from the order `↑k + 1` by `realSubmoduleCongr`. -/
+theorem realSubRef_sliceCoords_symm (hk : 2 ≤ k)
+    (u : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :
+    ((sliceCoords (f := f) (m := m) hk).symm u).realSubRef (Nat.cast_nonneg (k + 1)) =
+      (ContinuousLinearEquiv.piCongrRight (fun _ : Fin 4 ↦ realSubmoduleCongr ℂ
+        (Nat.cast_succ k) (Nat.cast_nonneg (k + 1)) (k.cast_add_one_pos (α := ℝ)).le)).symm u :=
+  funext fun j ↦ by simp [realSubRef_congrOrder _ (k.cast_add_one_pos (α := ℝ)).le]
 
 variable [Fact (1 < k + 1)] {hs : 1 < ((k + 1 : ℕ) : ℝ) + 1}
 
@@ -146,15 +242,8 @@ private theorem isOpenEmbedding_realSubRef_congrOrder (hk : 2 ≤ k)
           ⟨mem_coulombSlice.2 p.val.property.2,
             (mk_mem_vortexModuli_iff (by omega)).1 p.property⟩⟩ :
         {u | realSobolevSliceEquation f m hk (congrOrder (Nat.cast_succ k) x₀) u = 0}) := by
-  have hs' : 1 < (k : ℝ) + 1 := by
-    have : (2 : ℝ) ≤ k := by exact_mod_cast hk
-    linarith
-  set φ : SobolevFieldSpace f m (k + 1 : ℕ) ≃ₜ
-      (Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :=
-    (congrOrder (Nat.cast_succ k)).trans (realSubRefHomeomorph hs')
-  have hφ (y : SobolevFieldSpace f m (k + 1 : ℕ)) :
-      φ y = (congrOrder (Nat.cast_succ k) y).realSubRef (k.cast_add_one_pos (α := ℝ)).le := by
-    simp [φ]
+  have hφ := sliceCoords_apply (f := f) (m := m) hk
+  set φ := sliceCoords (f := f) (m := m) hk
   refine ⟨IsEmbedding.subtypeVal.of_comp_iff.1 ?_, ?_⟩
   · convert φ.isEmbedding.comp (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal) using 1
     exact funext fun p ↦ (hφ _).symm
