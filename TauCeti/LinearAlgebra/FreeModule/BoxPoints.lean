@@ -141,13 +141,6 @@ namespace TauCeti
 
 variable {m : ℕ} {G : Type*} [CommGroup G]
 
-/-- In `Additive G`, the linear combination `s₁ α₁ + ⋯ + sₘ αₘ` is the product
-`α₁ ^ s₁ ⋯ αₘ ^ sₘ`. -/
-private theorem fintypeLinearCombination_ofMul_apply (α : Fin m → G) (s : Fin m → ℤ) :
-    Fintype.linearCombination ℤ (fun j ↦ Additive.ofMul (α j)) s =
-      Additive.ofMul (∏ j, α j ^ s j) := by
-  simp [Fintype.linearCombination_apply, ofMul_prod, ofMul_zpow]
-
 /-- If `α₁, …, αₘ` generate a subgroup of rank at least `m - 1` of a commutative group, then at
 most `2R + 1` exponent vectors `s` with all coordinates of absolute value at most `R` satisfy
 `α₁ ^ s₁ ⋯ αₘ ^ sₘ = 1`. -/
@@ -157,7 +150,8 @@ theorem ncard_setOf_prod_zpow_eq_one_abs_le_le (α : Fin m → G)
   have h := LinearMap.ncard_setOf_apply_eq_zero_abs_le_le
     (Fintype.linearCombination ℤ fun j ↦ Additive.ofMul (α j))
     (by rwa [Fintype.range_linearCombination]) R
-  simpa only [fintypeLinearCombination_ofMul_apply, ofMul_eq_zero] using h
+  simpa only [Fintype.linearCombination_apply, ← ofMul_zpow, ← ofMul_prod, ofMul_eq_zero]
+    using h
 
 /-- Let `α₁, …, αₘ` generate a subgroup of rank at least `m - 1` of a commutative group, and let
 `g` be an additive homomorphism out of `ℤ^m` with `α₁ ^ s₁ ⋯ αₘ ^ sₘ = 1` whenever `g s = 0`. A
@@ -171,7 +165,9 @@ theorem ncard_le_mul_ncard_image_of_prod_zpow_eq_one {C : Type*} [AddZeroClass C
     S.ncard ≤ (g '' S).ncard * (2 * R + 1) :=
   (Fintype.linearCombination ℤ fun j ↦ Additive.ofMul (α j)).ncard_le_mul_ncard_image_of_ker_le
     (by rwa [Fintype.range_linearCombination]) g
-    (fun s hs ↦ by rw [fintypeLinearCombination_ofMul_apply, hg s hs, ofMul_one]) hR
+    (fun s hs ↦ by
+      rw [Fintype.linearCombination_apply]
+      simp only [← ofMul_zpow, ← ofMul_prod, hg s hs, ofMul_one]) hR
 
 /-- If every point of `A ⊆ ℤ^m` has coordinates of absolute value at most `R`, then every point
 of the `k`-fold sumset `k • A` has coordinates of absolute value at most `k R`. -/
