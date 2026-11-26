@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.EndEstima
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching
 
 /-!
 # The semi-Fredholm estimate of the linearized Floer operator on spheres with moving input ends
@@ -50,12 +51,24 @@ disc `‖w‖ ≤ 2 exp (2π)`, as along the associativity path (`TauCeti.Floer.
   transition function `ψ` and the longitudinal coordinate `s_e` of the end `e`. The operator
   differentiates the cutoffs only in the compact collars `R₀ ≤ s_e ≤ R₀ + 1`. Beyond the height
   `1` the ends are disjoint, so at most one end cutoff is nonzero at each point.
-* `exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearization_add_of_movingEnds`
-  is the estimate for the datum `TauCeti.Floer.puncturedSpherePerturbation c a H Hout`, along a
-  map that solves the Floer equation far out on the ends and converges there to nondegenerate
-  orbits, with structures cylindrical on the ends. The end estimates come from
+* The estimate for the datum `TauCeti.Floer.puncturedSpherePerturbation c a H Hout`, along a map
+  that solves the Floer equation far out on the ends and converges there to nondegenerate orbits,
+  with structures cylindrical on the ends, is
+`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_movingEnds`
+  . The end estimates come from
   `exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization_of_movingEnds` and
   `exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_movingEnds`
+* `TauCeti.Floer.integrableOn_sobolevDensity_comp_realChart_of_movingEnds`,
+  `TauCeti.Floer.integrableOn_sobolevDensity_comp_positiveEndChart_of_movingEnds`: a `C¹` section
+  with compact support in the sphere has integrable `W^{1,2}` energy density in the chart `ψ_i` of
+  every input end and in the chart `φ'_∞` of the output end.
+
+The patching (the cutoffs, the end and core pieces and their estimates, and the patching at one
+height) follows the proof for the pair of pants of
+`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_ends` in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm`, adapted to moving ends. The steps
+that do not depend on the domain are shared with it through
+`TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching`.
 
 The target is a symplectic vector space. The Sobolev realization of `D_u`, the estimate of its
 formal adjoint and the Fredholm index are not treated here.
@@ -139,6 +152,13 @@ private theorem movingEndCoord_none_le {r : ℝ} (hr : 0 ≤ r) {z : ℝ × ℝ}
   simp only [movingEndCoord, fst_positiveEndCoord, endSign_inf, neg_one_mul]
   exact neg_re_endCoord_inf_le hr hz
 
+/-- A point beyond the height `0` of the output end is not `0`. -/
+private theorem equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord_none {z : ℝ × ℝ}
+    (h : 0 < movingEndCoord c a none z) : Complex.equivRealProdCLM.symm z ≠ 0 := fun h0 ↦ by
+  have := movingEndCoord_none_le (c := c) (a := a) (r := 0) le_rfl (z := z)
+    (by rw [h0, norm_zero]; positivity)
+  linarith
+
 /-- Away from `0`, the longitudinal coordinate of the output end exceeds `r` exactly off the disc
 `‖w‖ ≤ 2 exp (2πr)`. -/
 private theorem lt_movingEndCoord_none_iff {r : ℝ} {z : ℝ × ℝ}
@@ -200,10 +220,7 @@ private theorem movingEndCoord_le_one_of_ne (ha : ∀ i, a i ≠ 0)
   cases e with
   | none =>
     -- Beyond the height `1` of the output end, `‖w‖ > 2 exp (2π)`.
-    have hw0 : w ≠ 0 := fun h0 ↦ by
-      have := movingEndCoord_none_le (c := c) (a := a) (r := 0) le_rfl (z := z)
-        (by rw [show Complex.equivRealProdCLM.symm z = 0 from h0, norm_zero]; positivity)
-      linarith
+    have hw0 : w ≠ 0 := equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord_none (by linarith)
     have hw := (lt_movingEndCoord_none_iff hw0).1 h
     rw [mul_one] at hw
     obtain _ | j := e'
@@ -305,10 +322,7 @@ private theorem exists_movingEndChart_eq (ha : ∀ i, a i ≠ 0) {e : Option ι}
   | none =>
     have h0 : Complex.equivRealProdCLM.symm z ≠ inf.endCenter := by
       rw [endCenter_inf]
-      intro h0
-      have := movingEndCoord_none_le (c := c) (a := a) (r := 0) le_rfl (z := z)
-        (by rw [show Complex.equivRealProdCLM.symm z = 0 from h0, norm_zero]; positivity)
-      linarith
+      exact equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord_none h
     exact ⟨endBandCoord inf z, by rw [endBandCoord_apply]; rfl,
       positiveEndChart_endBandCoord inf h0⟩
   | some i =>
@@ -344,6 +358,28 @@ private theorem movingEndCutoff_le_one (R₀ : ℝ) (e : Option ι) (z : ℝ × 
     movingEndCutoff c a R₀ e z ≤ 1 :=
   Real.smoothTransition.le_one _
 
+/-- For `R₀ ≥ 0` the cutoff of the output end vanishes near `0`, where the coordinate of the output
+end is not smooth. -/
+private theorem movingEndCutoff_none_eventuallyEq_zero {R₀ : ℝ} (hR₀ : 0 ≤ R₀) {z : ℝ × ℝ}
+    (h₀ : Complex.equivRealProdCLM.symm z = 0) : movingEndCutoff c a R₀ none =ᶠ[𝓝 z] 0 := by
+  have hopen : IsOpen {w : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm w‖ < 2} :=
+    isOpen_lt (by fun_prop) continuous_const
+  filter_upwards [hopen.mem_nhds (by simp [h₀])] with w hw
+  refine movingEndCutoff_eq_zero ((movingEndCoord_none_le le_rfl ?_).trans hR₀)
+  rw [mul_zero, Real.exp_zero, mul_one]
+  exact hw.le
+
+/-- The derivative of the cutoff of the end `e` at a point of the sphere, away from `0` if `e` is
+the output end. -/
+private theorem hasFDerivAt_movingEndCutoff (ha : ∀ i, a i ≠ 0) (R₀ : ℝ) {e : Option ι}
+    {z : ℝ × ℝ} (hz : z ∈ movingEndsDomain c)
+    (h₀ : e = none → Complex.equivRealProdCLM.symm z ≠ 0) :
+    HasFDerivAt (movingEndCutoff c a R₀ e)
+      (deriv Real.smoothTransition (2 * (movingEndCoord c a e z - R₀) - 1) •
+        (2 : ℝ) • fderiv ℝ (movingEndCoord c a e) z) z :=
+  ((((contDiffAt_movingEndCoord (n := 1) (fun i _ ↦ hz i) h₀ ha).differentiableAt
+    one_ne_zero).hasFDerivAt.sub_const R₀).const_mul 2 |>.sub_const 1).smoothTransition
+
 /-- The cutoff of an end is smooth on the sphere, for `R₀ ≥ 0`. At `0`, where the coordinate of
 the output end is not smooth, the cutoff of the output end vanishes near the point. -/
 private theorem contDiffAt_movingEndCutoff (ha : ∀ i, a i ≠ 0) {R₀ : ℝ} (hR₀ : 0 ≤ R₀)
@@ -351,13 +387,8 @@ private theorem contDiffAt_movingEndCutoff (ha : ∀ i, a i ≠ 0) {R₀ : ℝ} 
     ContDiffAt ℝ n (movingEndCutoff c a R₀ e) z := by
   by_cases h₀ : e = none ∧ Complex.equivRealProdCLM.symm z = 0
   · obtain ⟨rfl, h₀⟩ := h₀
-    refine contDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq ?_
-    have hopen : IsOpen {w : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm w‖ < 2} :=
-      isOpen_lt (by fun_prop) continuous_const
-    filter_upwards [hopen.mem_nhds (by simp [h₀])] with w hw
-    refine movingEndCutoff_eq_zero ((movingEndCoord_none_le le_rfl ?_).trans hR₀)
-    rw [mul_zero, Real.exp_zero, mul_one]
-    exact hw.le
+    exact contDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq
+      (movingEndCutoff_none_eventuallyEq_zero hR₀ h₀)
   · push Not at h₀
     exact Real.smoothTransition.contDiff.contDiffAt.comp z
       ((contDiffAt_const.mul ((contDiffAt_movingEndCoord (fun i _ ↦ hz i) h₀ ha).sub
@@ -371,20 +402,10 @@ private theorem mem_Icc_of_fderiv_movingEndCutoff_ne_zero (ha : ∀ i, a i ≠ 0
   by_cases h₀ : e = none ∧ Complex.equivRealProdCLM.symm z = 0
   · exfalso
     obtain ⟨rfl, h₀⟩ := h₀
-    refine h (HasFDerivAt.fderiv ((hasFDerivAt_const (0 : ℝ) z).congr_of_eventuallyEq ?_))
-    have hopen : IsOpen {w : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm w‖ < 2} :=
-      isOpen_lt (by fun_prop) continuous_const
-    filter_upwards [hopen.mem_nhds (by simp [h₀])] with w hw
-    refine movingEndCutoff_eq_zero ((movingEndCoord_none_le le_rfl ?_).trans hR₀)
-    rw [mul_zero, Real.exp_zero, mul_one]
-    exact hw.le
+    exact h (HasFDerivAt.fderiv ((hasFDerivAt_const (0 : ℝ) z).congr_of_eventuallyEq
+      (movingEndCutoff_none_eventuallyEq_zero hR₀ h₀)))
   push Not at h₀
-  have hd : HasFDerivAt (movingEndCutoff c a R₀ e)
-      (deriv Real.smoothTransition (2 * (movingEndCoord c a e z - R₀) - 1) •
-        (2 : ℝ) • fderiv ℝ (movingEndCoord c a e) z) z :=
-    ((((contDiffAt_movingEndCoord (n := 1) (fun i _ ↦ hz i) h₀ ha).differentiableAt
-      one_ne_zero).hasFDerivAt.sub_const R₀).const_mul 2 |>.sub_const 1).smoothTransition
-  rw [hd.fderiv] at h
+  rw [(hasFDerivAt_movingEndCutoff ha R₀ hz h₀).fderiv] at h
   refine ⟨?_, ?_⟩ <;> by_contra! h'
   · exact h (by rw [Real.smoothTransition.deriv_of_nonpos (by linarith), zero_smul])
   · exact h (by rw [Real.smoothTransition.deriv_of_one_le (by linarith), zero_smul])
@@ -479,19 +500,11 @@ private theorem movingCoreCutoff_eq_one_and_fderiv_eq_zero {R₀ : ℝ} (hR₀ :
   obtain ⟨h₁, -⟩ := mem_Icc_of_fderiv_movingEndCutoff_ne_zero ha (by linarith) hU h
   -- On the collar the cutoff has derivative `ψ'(2 (s - R₀) - 1) = ψ'(-1) = 0` at `s = R₀`.
   have hs : movingEndCoord c a e z = R₀ := le_antisymm (hle e) h₁
-  by_cases h₀ : e = none ∧ Complex.equivRealProdCLM.symm z = 0
-  · obtain ⟨rfl, h₀⟩ := h₀
-    have := movingEndCoord_none_le (c := c) (a := a) (r := 0) le_rfl (z := z)
-      (by rw [h₀, norm_zero]; positivity)
-    linarith
-  push Not at h₀
-  have hd : HasFDerivAt (movingEndCutoff c a R₀ e)
-      (deriv Real.smoothTransition (2 * (movingEndCoord c a e z - R₀) - 1) •
-        (2 : ℝ) • fderiv ℝ (movingEndCoord c a e) z) z :=
-    ((((contDiffAt_movingEndCoord (n := 1) (fun i _ ↦ hU i) h₀ ha).differentiableAt
-      one_ne_zero).hasFDerivAt.sub_const R₀).const_mul 2 |>.sub_const 1).smoothTransition
-  exact h (by rw [hd.fderiv, hs, Real.smoothTransition.deriv_of_nonpos (by linarith),
-    zero_smul])
+  have h₀ : e = none → Complex.equivRealProdCLM.symm z ≠ 0 := by
+    rintro rfl
+    exact equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord_none (by linarith)
+  exact h (by rw [(hasFDerivAt_movingEndCutoff ha R₀ hU h₀).fderiv, hs,
+    Real.smoothTransition.deriv_of_nonpos (by linarith), zero_smul])
 
 omit [FiniteDimensional ℝ V] [Fintype ι] hsep hout in
 /-- The cut-off section `β_e ξ` of the end `e` is supported in the chart of the end beyond any
@@ -507,11 +520,8 @@ private theorem tsupport_movingEndCutoff_smul_subset {R₀ R : ℝ} (hR₀ : 0 <
     refine le_of_not_gt fun h ↦ notMem_tsupport_iff_eventuallyEq.2 ?_ hz
     by_cases h₀ : e = none ∧ Complex.equivRealProdCLM.symm z = 0
     · obtain ⟨rfl, h₀⟩ := h₀
-      have hopen : IsOpen {w : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm w‖ < 2} :=
-        isOpen_lt (by fun_prop) continuous_const
-      filter_upwards [hopen.mem_nhds (by simp [h₀])] with w hw
-      rw [movingEndCutoff_eq_zero ((movingEndCoord_none_le le_rfl (by
-        rw [mul_zero, Real.exp_zero, mul_one]; exact hw.le)).trans hR₀.le), zero_smul]
+      filter_upwards [movingEndCutoff_none_eventuallyEq_zero hR₀.le h₀] with w hw
+      rw [hw, Pi.zero_apply, zero_smul]
       rfl
     push Not at h₀
     filter_upwards [(contDiffAt_movingEndCoord (n := 0) (fun i _ ↦ hzU i) h₀
@@ -532,10 +542,8 @@ private theorem tsupport_movingCoreCutoff_smul_subset {R₀ : ℝ} (hR₀ : 1 �
     notMem_tsupport_iff_eventuallyEq.2 ?_ hz⟩
   -- Beyond `R₀ + 1 > 0` on the output end, the point is not `0`.
   have h₀ : e = none → Complex.equivRealProdCLM.symm z ≠ 0 := by
-    rintro rfl h0
-    have := movingEndCoord_none_le (c := c) (a := a) (r := 0) le_rfl (z := z)
-      (by rw [show Complex.equivRealProdCLM.symm z = 0 from h0, norm_zero]; positivity)
-    linarith
+    rintro rfl
+    exact equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord_none (by linarith)
   filter_upwards [(contDiffAt_movingEndCoord (n := 0) (fun i _ ↦ hzU i) h₀
       ha).continuousAt.eventually (Ioi_mem_nhds h),
     (isOpen_movingEndsDomain c).mem_nhds hzU] with w hw hwU
@@ -547,53 +555,25 @@ end Geometry
 /-! ### The linearized operator on cut-off sections -/
 
 omit [Fintype ι] [FiniteDimensional ℝ V] in
-/-- A function that is `C²` on the sphere times a `C²` section supported in the sphere is `C²`. -/
-private theorem contDiff_smul_of_tsupport_subset_movingEndsDomain [Finite ι] {f : ℝ × ℝ → ℝ}
-    (hf : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 2 f z) {ξ : ℝ × ℝ → V}
-    (hξ : ContDiff ℝ 2 ξ) (hξU : tsupport ξ ⊆ movingEndsDomain c) :
-    ContDiff ℝ 2 fun z ↦ f z • ξ z :=
-  (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
-    (fun z hz ↦ (hf z hz).contDiffWithinAt) hξ.contDiffOn (isOpen_movingEndsDomain c) hξU
-
-omit [Fintype ι] in
-/-- **The `L²` norm of the operator on a cut-off section.** Let `f` be smooth on the sphere with
-`|f| ≤ 1` there, with derivative supported in a compact set `K` and bounded by `M` there, and let
-`‖J‖ ≤ B` along `u` on `K`. Then for a `C²` section `ξ` with compact support in the sphere,
-`∫ ‖D (f ξ)‖² ≤ 2 ∫ ‖D ξ‖² + 2 (M (1 + B))² ∫_K ‖ξ‖²`. -/
-private theorem integral_norm_floerLinearization_fun_smul_sq_le_of_movingEnds [Finite ι]
-    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hKs : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
-    (hKt : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
-    (hu : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 1 u z) {K : Set (ℝ × ℝ)}
-    (hK : IsCompact K) {f : ℝ × ℝ → ℝ}
-    (hf : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 2 f z)
-    (hf₁ : ∀ z ∈ movingEndsDomain c, |f z| ≤ 1)
-    (hfK : ∀ z ∈ movingEndsDomain c, fderiv ℝ f z ≠ 0 → z ∈ K) {M B : ℝ}
-    (hM : ∀ z ∈ K, ‖fderiv ℝ f z‖ ≤ M) (hB : ∀ z ∈ K, ‖J z (u z)‖ ≤ B) {ξ : ℝ × ℝ → V}
-    (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ)
+/-- The cut-off section `β_e ξ` of the end `e` of a `C²` section supported in the sphere is
+`C²`. -/
+private theorem contDiff_movingEndCutoff_smul [Finite ι] (ha : ∀ i, a i ≠ 0) {R₀ : ℝ}
+    (hR₀ : 0 ≤ R₀) (e : Option ι) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 2 ξ)
     (hξU : tsupport ξ ⊆ movingEndsDomain c) :
-    ∫ z, ‖ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z‖ ^ 2 ≤
-      2 * (∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) +
-        2 * (M * (1 + B)) ^ 2 * ∫ z in K, ‖ξ z‖ ^ 2 := by
-  have hint {η : ℝ × ℝ → V} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
-      (hηU : tsupport η ⊆ movingEndsDomain c) :
-      Integrable fun z ↦ 1 * ‖ω.floerLinearization J Ks Kt u η z‖ ^ 2 := by
-    simpa only [one_mul] using ω.integrable_norm_floerLinearization_sq
-      (ω.continuous_floerLinearization_of_tsupport_subset hJ hKs hKt hu (hη.of_le one_le_two)
-        hηU) hηc
-  simpa only [one_mul, mul_one] using integral_mul_norm_fun_smul_sq_le
-    (D := ω.floerLinearization J Ks Kt u) (w := fun _ ↦ 1) (b := fun z ↦ ‖J z (u z)‖)
-    (S := movingEndsDomain c) (fun _ ↦ zero_le_one) hK hfK hM hB zero_le_one
-    (fun _ _ ↦ le_rfl) hξ.continuous
-    (fun z hzU _ _ hM' hB' ↦ ω.norm_floerLinearization_fun_smul_sq_le J Ks Kt u ξ
-      ((hf z hzU).differentiableAt two_ne_zero) (hξ.differentiable two_ne_zero z) (hf₁ z hzU)
-      hM' hB')
-    (fun z hzU ↦ ω.floerLinearization_of_notMem_tsupport J Ks Kt u fun h ↦
-      hzU (hξU (tsupport_smul_subset_right _ _ h)))
-    (hint hξ hξc hξU)
-    (hint (contDiff_smul_of_tsupport_subset_movingEndsDomain hf hξ hξU) (hξc.smul_left (f := f))
-      ((tsupport_smul_subset_right _ _).trans hξU))
+    ContDiff ℝ 2 fun z ↦ movingEndCutoff c a R₀ e z • ξ z :=
+  (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
+    (fun _ hz ↦ (contDiffAt_movingEndCutoff ha hR₀ e hz).contDiffWithinAt) hξ.contDiffOn
+    (isOpen_movingEndsDomain c) hξU
+
+omit [FiniteDimensional ℝ V] in
+/-- The cut-off section `(1 - ∑_e β_e) ξ` of the core of a `C²` section supported in the sphere
+is `C²`. -/
+private theorem contDiff_movingCoreCutoff_smul (ha : ∀ i, a i ≠ 0) {R₀ : ℝ} (hR₀ : 0 ≤ R₀)
+    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 2 ξ) (hξU : tsupport ξ ⊆ movingEndsDomain c) :
+    ContDiff ℝ 2 fun z ↦ movingCoreCutoff c a R₀ z • ξ z :=
+  (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
+    (fun _ hz ↦ (contDiffAt_movingCoreCutoff ha hR₀ hz).contDiffWithinAt) hξ.contDiffOn
+    (isOpen_movingEndsDomain c) hξU
 
 omit [Fintype ι] [FiniteDimensional ℝ V] in
 /-- **The end piece.** Beyond `R₀ + 1` on the end `e`, a section agrees with its cut-off `β_e ξ`,
@@ -604,9 +584,7 @@ private theorem setIntegral_sobolevDensity_comp_movingEndChart_le [Finite ι] (h
     ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ movingEndChart c a e) ζ ≤
       ∫ ζ in Ioi 2 ×ˢ Icc (0 : ℝ) 1,
         sobolevDensity ((fun z ↦ movingEndCutoff c a R₀ e z • ξ z) ∘ movingEndChart c a e) ζ := by
-  have hβξ : ContDiff ℝ 2 fun z ↦ movingEndCutoff c a R₀ e z • ξ z :=
-    contDiff_smul_of_tsupport_subset_movingEndsDomain
-      (fun z hz ↦ contDiffAt_movingEndCutoff ha (by linarith) e hz) hξ hξU
+  have hβξ := contDiff_movingEndCutoff_smul ha (R₀ := R₀) (by linarith) e hξ hξU
   calc _ = ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1,
         sobolevDensity ((fun z ↦ movingEndCutoff c a R₀ e z • ξ z) ∘ movingEndChart c a e) ζ := by
         refine setIntegral_congr_fun (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
@@ -629,9 +607,7 @@ private theorem setIntegral_sobolevDensity_le_movingCoreCutoff (ha : ∀ i, a i 
     ∫ z in movingEndsTruncation c a R₀, sobolevDensity ξ z ≤
       ∫ z in movingEndsTruncation c a (R₀ + 1),
         sobolevDensity (fun w ↦ movingCoreCutoff c a R₀ w • ξ w) z := by
-  have hβξ : ContDiff ℝ 2 fun z ↦ movingCoreCutoff c a R₀ z • ξ z :=
-    contDiff_smul_of_tsupport_subset_movingEndsDomain
-      (fun z hz ↦ contDiffAt_movingCoreCutoff ha (by linarith) hz) hξ hξU
+  have hβξ := contDiff_movingCoreCutoff_smul ha (R₀ := R₀) (by linarith) hξ hξU
   calc _ = ∫ z in movingEndsTruncation c a R₀,
         sobolevDensity (fun w ↦ movingCoreCutoff c a R₀ w • ξ w) z := by
         refine setIntegral_congr_fun (isCompact_movingEndsTruncation c a R₀).measurableSet
@@ -694,11 +670,9 @@ private theorem setIntegral_sobolevDensity_comp_movingEndChart_le_of_end [Finite
     ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ movingEndChart c a e) ζ ≤
       max Ce 0 * (2 * (∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) +
         2 * (M * (1 + B)) ^ 2 * ∫ z in movingEndsTruncation c a (R₀ + 1), ‖ξ z‖ ^ 2) := by
-  have hβξ : ContDiff ℝ 2 fun z ↦ movingEndCutoff c a R₀ e z • ξ z :=
-    contDiff_smul_of_tsupport_subset_movingEndsDomain
-      (fun z hz ↦ contDiffAt_movingEndCutoff ha (by linarith) e hz) hξ hξU
-  have hD := ω.integral_norm_floerLinearization_fun_smul_sq_le_of_movingEnds hJ hKs hKt hu
-    (isCompact_movingEndsTruncation c a _)
+  have hβξ := contDiff_movingEndCutoff_smul ha (R₀ := R₀) (by linarith) e hξ hξU
+  have hD := ω.integral_norm_floerLinearization_fun_smul_sq_le (isOpen_movingEndsDomain c) hJ hKs
+    hKt hu (isCompact_movingEndsTruncation c a _)
     (fun z hz ↦ contDiffAt_movingEndCutoff ha (by linarith) e hz)
     (fun z _ ↦ abs_le.2 ⟨by linarith [movingEndCutoff_nonneg (c := c) (a := a) R₀ e z],
       movingEndCutoff_le_one R₀ e z⟩)
@@ -743,9 +717,10 @@ private theorem setIntegral_sobolevDensity_le_of_movingCoreCutoff (ω : Symplect
   have hK : IsCompact K := isCompact_movingEndsTruncation c a _
   have hKU : K ⊆ movingEndsDomain c := movingEndsTruncation_subset ha _
   set ξc : ℝ × ℝ → V := fun w ↦ movingCoreCutoff c a R₀ w • ξ w
-  have hξc' : ContDiff ℝ 2 ξc := contDiff_smul_of_tsupport_subset_movingEndsDomain
-    (fun z hz ↦ contDiffAt_movingCoreCutoff ha (by linarith) hz) hξ hξU
-  have hDc := ω.integral_norm_floerLinearization_fun_smul_sq_le_of_movingEnds hJ hKs hKt hu hK
+  have hξc' : ContDiff ℝ 2 ξc :=
+    contDiff_movingCoreCutoff_smul ha (R₀ := R₀) (by linarith) hξ hξU
+  have hDc := ω.integral_norm_floerLinearization_fun_smul_sq_le (isOpen_movingEndsDomain c) hJ hKs
+    hKt hu hK
     (fun z hz ↦ contDiffAt_movingCoreCutoff ha (by linarith) hz)
     (fun z hz ↦ abs_movingCoreCutoff_le_one ha hsep hout hR₀.le hz)
     (fun z hz ↦ mem_movingEndsTruncation_of_fderiv_movingCoreCutoff_ne_zero ha hsep hout hR₀ hz)
@@ -848,52 +823,6 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_a
     mul_nonneg (mul_nonneg hS (sq_nonneg c')) hY, mul_nonneg hC₀ hX, mul_nonneg hC₀ hY,
     mul_nonneg (mul_nonneg hC₀ (sq_nonneg c')) hX, mul_nonneg (mul_nonneg hC₀ (sq_nonneg c')) hY]
 
-omit [FiniteDimensional ℝ V] in
-/-- **Patching at two heights.** If for every height `R₀ > 1` above the heights `R e` the energy
-of `ξ` beyond `R₀ + 1` on the ends plus its energy on `Σ_{R₀}` is at most
-`C' (X ξ + ∫_{Σ_{R₀ + 1}} ‖ξ‖²)`, then at the single height `T = R₀ + 1` the ends beyond `T` and
-the core `Σ_T` are bounded by `C (X ξ + ∫_{Σ_{T + 1}} ‖ξ‖²)`: the bound at `R₀` controls the ends
-and the bound at `R₀ + 1` the core. -/
-private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_one_lt_of_movingEnds
-    {R : Option ι → ℝ} {X : (ℝ × ℝ → V) → ℝ}
-    (h : ∀ R₀, 1 < R₀ → (∀ e, R e < R₀) → ∃ C', 0 ≤ C' ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ →
-      HasCompactSupport ξ → tsupport ξ ⊆ movingEndsDomain c →
-      (∑ e, ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1,
-          sobolevDensity (ξ ∘ movingEndChart c a e) ζ) +
-          ∫ z in movingEndsTruncation c a R₀, sobolevDensity ξ z ≤
-        C' * (X ξ + ∫ z in movingEndsTruncation c a (R₀ + 1), ‖ξ z‖ ^ 2)) :
-    ∃ C', 0 ≤ C' ∧ ∃ T, 2 ≤ T ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
-      tsupport ξ ⊆ movingEndsDomain c →
-      (∑ e, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ movingEndChart c a e) ζ) +
-        ∫ z in movingEndsTruncation c a T, sobolevDensity ξ z ≤
-        C' * (X ξ + ∫ z in movingEndsTruncation c a (T + 1), ‖ξ z‖ ^ 2) := by
-  -- Patch at the heights `R₀` and `R₀ + 1`: the first controls the ends beyond `R₀ + 1`, the
-  -- second the core `Σ_{R₀ + 1}`.
-  set R₀ := 2 + ∑ e, |R e|
-  have hsum : 0 ≤ ∑ e, |R e| := Finset.sum_nonneg fun e _ ↦ abs_nonneg _
-  have hR (e : Option ι) : R e < R₀ := by
-    have := (le_abs_self (R e)).trans
-      (Finset.single_le_sum (fun e' _ ↦ abs_nonneg (R e')) (Finset.mem_univ e))
-    linarith
-  obtain ⟨C₁, hC₁, h₁⟩ := h R₀ (by linarith) hR
-  obtain ⟨C₂, hC₂, h₂⟩ := h (R₀ + 1) (by linarith) fun e ↦ (hR e).trans (lt_add_one _)
-  refine ⟨C₁ + C₂, by positivity, R₀ + 1, by linarith, fun ξ hξ hξc hξU ↦ ?_⟩
-  have e₁ := h₁ hξ hξc hξU
-  have e₂ := h₂ hξ hξc hξU
-  have hY : ∫ z in movingEndsTruncation c a (R₀ + 1), ‖ξ z‖ ^ 2 ≤
-      ∫ z in movingEndsTruncation c a (R₀ + 1 + 1), ‖ξ z‖ ^ 2 :=
-    setIntegral_mono_set ((hξ.continuous.norm.pow 2).continuousOn.integrableOn_compact
-      (isCompact_movingEndsTruncation _ _ _)) (ae_of_all _ fun _ ↦ sq_nonneg _)
-      (.of_forall fun _ hz ↦ movingEndsTruncation_mono c a (by linarith) hz)
-  have hcore₀ : 0 ≤ ∫ z in movingEndsTruncation c a R₀, sobolevDensity ξ z :=
-    setIntegral_nonneg (isCompact_movingEndsTruncation _ _ _).measurableSet fun z _ ↦
-      sobolevDensity_nonneg ξ z
-  have hends₀ : 0 ≤ ∑ e, ∫ ζ in Ioi (R₀ + 1 + 1) ×ˢ Icc (0 : ℝ) 1,
-      sobolevDensity (ξ ∘ movingEndChart c a e) ζ :=
-    Finset.sum_nonneg fun e _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
-      fun ζ _ ↦ sobolevDensity_nonneg _ ζ
-  nlinarith [mul_le_mul_of_nonneg_left hY hC₁]
-
 /-! ### The semi-Fredholm estimate -/
 
 /-- **Patching end estimates into the semi-Fredholm estimate on a sphere with moving input ends.**
@@ -964,10 +893,12 @@ theorem
     cases e with
     | none => exact hendOut hξ hξc hξR
     | some i => exact hend i hξ hξc hξR
-  obtain ⟨C', hC', T, hT, hest⟩ :=
-    exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_one_lt_of_movingEnds (R := Re)
-      fun _ hR₀ hR ↦ ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_aux ha hsep
-        hout hJ hKs hKt hu hc hend' hR₀ hR
+  obtain ⟨C', hC', T, hT, hest⟩ := exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le
+    (K := movingEndsTruncation c a) (isCompact_movingEndsTruncation c a)
+    (fun _ _ h ↦ movingEndsTruncation_mono c a h) two_pos (S := movingEndsDomain c) (R := Re)
+    (G := fun e ξ ↦ ξ ∘ movingEndChart c a e) fun _ hR₀ hR ↦
+      ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_aux ha hsep hout hJ hKs hKt
+        hu hc hend' (by linarith) hR
   refine ⟨C', hC', T, hT, fun ξ hξ hξc hξU ↦ ?_⟩
   have h := hest hξ hξc hξU
   rw [Fintype.sum_option] at h
@@ -997,7 +928,7 @@ sphere minus the centers satisfies
 for the linearized Floer operator `D_u` of these data, where `Σ_T` is the truncation
 `TauCeti.ThricePuncturedSphere.puncturedSphereTruncation c a T`. -/
 theorem
-    exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearization_add_of_movingEnds
+exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_movingEnds
     (ω : SymplecticForm V) {H : ι → ℝ → V → ℝ} {Hout : ℝ → V → ℝ} (hH : ∀ i, Periodic (H i) 1)
     (hHs : ∀ i, ContDiff ℝ 2 (uncurry (H i))) (hHout : Periodic Hout 1)
     (hHouts : ContDiff ℝ 2 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
@@ -1096,3 +1027,30 @@ theorem
         Complex.I) hu hc hend hendOut
 
 end TauCeti.SymplecticForm
+
+namespace TauCeti.Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {ι : Type*} {c a : ι → ℂ}
+
+/-- A `C¹` section with compact support in the sphere with moving input ends, the plane minus the
+centers `c i`, has integrable `W^{1,2}` energy density in the chart
+`ψ_i = realChart (z ↦ c i + a i φ₀(z))` of the input end `i`, over every half-cylinder
+`(b, ∞) × [0, 1]`: it vanishes far out on the end. -/
+theorem integrableOn_sobolevDensity_comp_realChart_of_movingEnds (ha : ∀ i, a i ≠ 0)
+    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ)
+    (hξU : tsupport ξ ⊆ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}) (i : ι) (b : ℝ) :
+    IntegrableOn
+      (sobolevDensity (ξ ∘ realChart fun z ↦ c i + a i * zero.cylindricalEndLift z))
+      (Ioi b ×ˢ Icc 0 1) :=
+  SymplecticForm.integrableOn_sobolevDensity_comp_movingEndChart ha hξ hξc hξU (some i) b
+
+/-- A `C¹` section with compact support in the sphere with moving input ends, the plane minus the
+centers `c i`, has integrable `W^{1,2}` energy density in the positive end chart `φ'_∞` of the
+output end, over every half-cylinder `(b, ∞) × [0, 1]`: it vanishes far out on the end. -/
+theorem integrableOn_sobolevDensity_comp_positiveEndChart_of_movingEnds (ha : ∀ i, a i ≠ 0)
+    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ)
+    (hξU : tsupport ξ ⊆ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}) (b : ℝ) :
+    IntegrableOn (sobolevDensity (ξ ∘ positiveEndChart inf)) (Ioi b ×ˢ Icc 0 1) :=
+  SymplecticForm.integrableOn_sobolevDensity_comp_movingEndChart ha hξ hξc hξU none b
+
+end TauCeti.Floer
