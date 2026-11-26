@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Flat
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.KFlat
 public import TauCeti.Algebra.Homology.DerivedCategory.InternalHom.Adjunction
 public import TauCeti.Algebra.Homology.ModelCategory.KInjective.Resolution
-public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
+public import TauCeti.AlgebraicGeometry.Modules.Derived.Tensor
 
 /-!
 # The derived tensor–internal Hom adjunction on `D(𝒪_X)`
@@ -26,9 +26,9 @@ Taking `L = 𝒪_X[0]` gives `R𝓗om(𝒪_X[0], M) ≅ M`
 
 These are the general results `TauCeti.derivedTensorInternalHomAdj` and
 `TauCeti.derivedInternalHomSingleUnitIso` for the closed symmetric monoidal Grothendieck abelian
-category `X.Modules`. The K-flat complexes of `𝒪_X`-modules form a left derivability structure
-(`TauCeti.AlgebraicGeometry.Coherent.isLeftDerivabilityStructure_kFlat_localizerMorphism`), so
-the derived tensor product `TauCeti.derivedTensor X.Modules` exists. The separating family is the
+category `X.Modules`, on which the derived tensor product `TauCeti.derivedTensor X.Modules` exists
+by `TauCeti.AlgebraicGeometry.Coherent.isLeftDerivabilityStructure_kFlat_localizerMorphism`
+(`TauCeti/AlgebraicGeometry/Modules/Derived/Tensor.lean`). The separating family is the
 extensions by zero `j_! 𝒪_U` of the structure sheaf of the opens `U` of `X`
 (`SheafOfModules.isSeparating_freeYonedaFunctor`); they are flat, so tensoring with them preserves
 acyclic complexes (`SheafOfModules.acyclic_tensorRight_freeYonedaFunctor_obj`).
@@ -50,13 +50,6 @@ universe w u
 namespace TauCeti.AlgebraicGeometry.Coherent
 
 variable (X : Scheme.{u})
-
-/-- K-flat complexes of `𝒪_X`-modules form a left derivability structure, so the derived tensor
-product exists on `D(𝒪_X)`. This is the site-level instance for the structure sheaf of `X`. -/
-instance isLeftDerivabilityStructure_kFlat_localizerMorphism :
-    (CochainComplex.KFlat.localizerMorphism X.Modules).IsLeftDerivabilityStructure :=
-  CochainComplex.KFlat.instIsLeftDerivabilityStructureLocalizerMorphismSheafOfModules
-    (R := X.sheaf)
 
 /-- The extensions by zero `j_! 𝒪_U` of the structure sheaf of the opens `U` of `X`, as a family
 of `𝒪_X`-modules. -/
