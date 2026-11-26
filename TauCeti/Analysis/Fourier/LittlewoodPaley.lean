@@ -1008,6 +1008,14 @@ theorem memLp_fourierInv_littlewoodPaley (j : ℤ) (p : ℝ≥0∞) :
   rw [← coe_littlewoodPaleySchwartz, ← SchwartzMap.fourierInv_coe]
   exact (𝓕⁻ (littlewoodPaleySchwartz φ j)).memLp p volume
 
+/-- The cutoff `ψⱼ` of a homogeneous Littlewood–Paley block, as a complex-valued function, is a
+Schwartz function, so it lies in every `Lᵖ`; for `p = ∞` it is an admissible `L²` multiplier
+symbol. -/
+theorem memLp_ofReal_littlewoodPaley (j : ℤ) (p : ℝ≥0∞) :
+    MemLp (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) p volume := by
+  rw [← coe_littlewoodPaleySchwartz]
+  exact (littlewoodPaleySchwartz φ j).memLp p volume
+
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
 /-- **The homogeneous Littlewood–Paley blocks are bounded on `Lᵖ` uniformly in the scale.** For

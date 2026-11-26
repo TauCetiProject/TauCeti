@@ -84,6 +84,9 @@ low-frequency blocks sum in `L^∞`
   `ℓ^q(ℤ, Lᵖ)`, and `TauCeti.HomogeneousBesovSpace.block` is the block `Pⱼ u` as an `Lᵖ` function.
 * `TauCeti.HomogeneousBesovSpace.tsum_eNorm_weightedBlocks`: for `q = 1` the seminorm is the sum
   of the weighted block norms.
+* `TauCeti.HomogeneousBesovSpace.exists_sum_fourierMultiplierCLM_block_eq`: the blocks of an element
+  of `\dot B^s_{2,q}` are reproduced by their neighbouring blocks, acting as `L²` Fourier
+  multipliers.
 * `TauCeti.HomogeneousBesovSpace.norm_eq_zero_iff` and
   `TauCeti.HomogeneousBesovSpace.inseparable_iff`: the seminorm vanishes exactly on the
   distributions with spectrum at the origin.
@@ -680,6 +683,33 @@ theorem inseparable_iff (u v : HomogeneousBesovSpace F φ s p q) :
   rw [Metric.inseparable_iff, dist_eq_norm, norm_eq_zero_iff, toDistr_sub]
 
 end Seminormed
+
+section L2
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [CompleteSpace G]
+
+variable (φ) in
+/-- **The blocks are reproduced by their neighbours.** There is `L`, depending only on `φ`, such
+that the block `Pⱼ u` of every `u ∈ \dot B^s_{2,q}` satisfies
+`∑_{-L ≤ d < L} P_{d + j} Pⱼ u = Pⱼ u`, where `Pₖ` acts on `L²` as the Fourier multiplier with any
+symbol almost everywhere equal to `ψₖ`. -/
+theorem exists_sum_fourierMultiplierCLM_block_eq :
+    ∃ L : ℕ, ∀ {m : ℤ → Lp ℂ ∞ (volume : Measure E)},
+      (∀ k, m k =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley k ξ : ℂ)) →
+      ∀ (u : HomogeneousBesovSpace G φ s 2 q) (j : ℤ),
+        ∑ d ∈ Finset.Ico (-(L : ℤ)) L, Lp.fourierMultiplierCLM G (m (d + j)) (u.block j) =
+          u.block j := by
+  obtain ⟨L, hL⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico (F := G) φ φ
+  refine ⟨L, fun {m} hm u j ↦ Lp.toTemperedDistribution_injective ?_⟩
+  dsimp only
+  rw [Lp.toTemperedDistribution_sum]
+  simp_rw [← homogeneousLittlewoodPaleyBlock_toTemperedDistribution φ (hm _), coe_block]
+  conv_rhs => rw [hL j u.toDistr]
+  rw [show Finset.Ico (j - L) (j + L) = (Finset.Ico (-(L : ℤ)) L).map (addRightEmbedding j) by
+    rw [Finset.map_add_right_Ico, neg_add_eq_sub, add_comm (L : ℤ)], Finset.sum_map]
+  simp only [addRightEmbedding_apply, homogeneousLittlewoodPaleyBlock_comm φ φ j]
+
+end L2
 
 end HomogeneousBesovSpace
 

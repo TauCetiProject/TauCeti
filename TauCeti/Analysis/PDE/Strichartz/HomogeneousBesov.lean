@@ -41,7 +41,7 @@ extends the evolution of `L²` data.
 On `L²` functions the blocks `Pⱼ` of tempered distributions are the `L²` Fourier multipliers with
 symbols `ψⱼ` (`TemperedDistribution.homogeneousLittlewoodPaleyBlock_toTemperedDistribution`), which
 is how the two descriptions of the blocks are compared. Each block `Pⱼ u` is reproduced by its
-neighbouring blocks, `Pⱼ u = ∑_{|k - j| < L} Pₖ Pⱼ u`
+neighbouring blocks, `Pⱼ u = ∑_{-L ≤ k - j < L} Pₖ Pⱼ u`
 (`TauCeti.HomogeneousBesovSpace.exists_sum_fourierMultiplierCLM_block_eq`), so the
 frequency-localized estimates bound the piece `T(·) Pⱼ u` by `K C 2^{jσ} ‖Pⱼ u‖₂`
 (`TauCeti.eLpNorm_eLpNorm_apply_le_of_sum_fourierMultiplierCLM_eq`). These bounds sum to
@@ -50,10 +50,6 @@ frequency-localized estimates bound the piece `T(·) Pⱼ u` by `K C 2^{jσ} ‖
 
 ## Main declarations
 
-* `TemperedDistribution.homogeneousLittlewoodPaleyBlock_toTemperedDistribution`: on `L²` the block
-  `Pⱼ` is the `L²` Fourier multiplier with symbol `ψⱼ`.
-* `TauCeti.HomogeneousBesovSpace.exists_sum_fourierMultiplierCLM_block_eq`: the blocks of an element
-  of `\dot B^σ_{2,q}` are reproduced by their neighbouring blocks.
 * `ContDiffBump.exists_tendsto_eLpNorm_eLpNorm_sub_sum_apply_block`: the dyadic series of the
   evolution of a datum in `\dot B^σ_{2,1}` converges, with the Strichartz estimate.
 * `ContDiffBump.ae_ae_eq_apply_of_tendsto_eLpNorm_sub_sum_apply_block`: for `L²` data the sum is
@@ -75,62 +71,6 @@ open scoped ENNReal NNReal SchwartzMap
 variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F] (φ : ContDiffBump (0 : V))
-
-namespace TemperedDistribution
-
-/-- **The homogeneous blocks of `L²` functions.** On `f ∈ L²`, the homogeneous block `Pⱼ` is the
-`L²` Fourier multiplier with symbol `ψⱼ`, given by any element of `L^∞` almost everywhere equal to
-`ψⱼ`. -/
-theorem homogeneousLittlewoodPaleyBlock_toTemperedDistribution {j : ℤ}
-    {m : Lp ℂ ∞ (volume : Measure V)} (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
-    (f : Lp F 2 (volume : Measure V)) :
-    homogeneousLittlewoodPaleyBlock F φ j (f : 𝓢'(V, F)) =
-      (Lp.fourierMultiplierCLM F m f : 𝓢'(V, F)) := by
-  have hmem : MemLp (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) ∞ (volume : Measure V) :=
-    (Lp.memLp m).ae_eq hm
-  rw [show m = hmem.toLp _ from Lp.ext (hm.trans hmem.coeFn_toLp.symm),
-    homogeneousLittlewoodPaleyBlock_eq_fourierMultiplierCLM]
-  exact Lp.fourierMultiplierCLM_toTemperedDistribution_eq f
-    (φ.hasTemperateGrowth_ofReal_littlewoodPaley j) hmem
-
-end TemperedDistribution
-
-namespace TauCeti.HomogeneousBesovSpace
-
-variable {σ : ℝ} {q : ℝ≥0∞}
-
-/-- **The blocks are reproduced by their neighbours.** There is `L`, depending only on `φ`, such
-that the block `Pⱼ u` of every `u ∈ \dot B^σ_{2,q}` satisfies
-`∑_{-L ≤ d < L} P_{d + j} Pⱼ u = Pⱼ u`, where `Pₖ` acts on `L²` as the Fourier multiplier with any
-symbol almost everywhere equal to `ψₖ`. -/
-theorem exists_sum_fourierMultiplierCLM_block_eq :
-    ∃ L : ℕ, ∀ {m : ℤ → Lp ℂ ∞ (volume : Measure V)},
-      (∀ k, m k =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley k ξ : ℂ)) →
-      ∀ (u : HomogeneousBesovSpace F φ σ 2 q) (j : ℤ),
-        ∑ d ∈ Finset.Ico (-(L : ℤ)) L, Lp.fourierMultiplierCLM F (m (d + j)) (u.block j) =
-          u.block j := by
-  obtain ⟨L, hL⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico (F := F) φ φ
-  refine ⟨L, fun {m} hm u j ↦ Lp.toTemperedDistribution_injective ?_⟩
-  -- The blocks commute: `Pⱼ Pₖ w = Pₖ Pⱼ w`.
-  have hcomm (k : ℤ) (w : 𝓢'(V, F)) :
-      homogeneousLittlewoodPaleyBlock F φ j (homogeneousLittlewoodPaleyBlock F φ k w) =
-        homogeneousLittlewoodPaleyBlock F φ k (homogeneousLittlewoodPaleyBlock F φ j w) := by
-    have h₁ := DFunLike.congr_fun
-      (homogeneousLittlewoodPaleyBlock_compL_homogeneousLittlewoodPaleyBlock (F := F) φ φ j k) w
-    have h₂ := DFunLike.congr_fun
-      (homogeneousLittlewoodPaleyBlock_compL_homogeneousLittlewoodPaleyBlock (F := F) φ φ k j) w
-    rw [ContinuousLinearMap.comp_apply] at h₁ h₂
-    rw [h₁, h₂]
-    simp_rw [mul_comm]
-  dsimp only
-  rw [Lp.toTemperedDistribution_sum]
-  simp_rw [← homogeneousLittlewoodPaleyBlock_toTemperedDistribution φ (hm _), coe_block]
-  conv_rhs => rw [hL j u.toDistr]
-  rw [show Finset.Ico (j - L) (j + L) = (Finset.Ico (-(L : ℤ)) L).map (addRightEmbedding j) by
-    rw [Finset.map_add_right_Ico, neg_add_eq_sub, add_comm (L : ℤ)], Finset.sum_map]
-  simp only [addRightEmbedding_apply, hcomm]
-
-end TauCeti.HomogeneousBesovSpace
 
 namespace ContDiffBump
 
@@ -164,13 +104,11 @@ theorem exists_tendsto_eLpNorm_eLpNorm_sub_sum_apply_block {q r : ℝ≥0∞} [F
             (𝓝 0) ∧
         eLpNorm (fun b ↦ ‖U b‖ₑ) q ρ ≤ C * ‖u‖ₑ := by
   obtain ⟨C, hC⟩ := hloc
-  have hmem (j : ℤ) : MemLp (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) ∞ (volume : Measure V) :=
-    ((φ.contDiff_littlewoodPaley j (n := 0)).continuous.memLp_top_of_hasCompactSupport
-      (φ.hasCompactSupport_littlewoodPaley j) volume).ofReal
-  set m : ℤ → Lp ℂ ∞ (volume : Measure V) := fun j ↦ (hmem j).toLp _
-  have hm (j : ℤ) : m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) := (hmem j).coeFn_toLp
+  set m : ℤ → Lp ℂ ∞ (volume : Measure V) := fun j ↦ (φ.memLp_ofReal_littlewoodPaley j ∞).toLp _
+  have hm (j : ℤ) : m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) :=
+    (φ.memLp_ofReal_littlewoodPaley j ∞).coeFn_toLp
   obtain ⟨L, hL⟩ := TauCeti.HomogeneousBesovSpace.exists_sum_fourierMultiplierCLM_block_eq
-    (F := F) (σ := σ) (q := 1) φ
+    (G := F) (s := σ) (q := 1) φ
   set K : ℝ≥0 := ∑ d ∈ Finset.Ico (-(L : ℤ)) L, (((2 : ℝ) ^ d) ^ σ).toNNReal
   refine ⟨K * C, fun u ↦ ?_⟩
   -- Each piece `T(·) Pⱼ u` is bounded by `K C 2^{jσ} ‖Pⱼ u‖₂`.
@@ -199,11 +137,9 @@ theorem ae_ae_eq_apply_of_tendsto_eLpNorm_sub_sum_apply_block [Nontrivial V] {σ
     (hU : ∀ᵐ b ∂ρ, Tendsto (fun s : Finset ℤ ↦
       eLpNorm (⇑(U b) - ⇑(∑ j ∈ s, T b (u.block j))) r volume) atTop (𝓝 0)) :
     ∀ᵐ b ∂ρ, ⇑(U b) =ᵐ[volume] ⇑(T b f) := by
-  have hmem (j : ℤ) : MemLp (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) ∞ (volume : Measure V) :=
-    ((φ.contDiff_littlewoodPaley j (n := 0)).continuous.memLp_top_of_hasCompactSupport
-      (φ.hasCompactSupport_littlewoodPaley j) volume).ofReal
-  set m : ℤ → Lp ℂ ∞ (volume : Measure V) := fun j ↦ (hmem j).toLp _
-  have hm (j : ℤ) : m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) := (hmem j).coeFn_toLp
+  set m : ℤ → Lp ℂ ∞ (volume : Measure V) := fun j ↦ (φ.memLp_ofReal_littlewoodPaley j ∞).toLp _
+  have hm (j : ℤ) : m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ) :=
+    (φ.memLp_ofReal_littlewoodPaley j ∞).coeFn_toLp
   -- The blocks of `u` are the `L²` blocks of `f`.
   have hblock (j : ℤ) : u.block j = Lp.fourierMultiplierCLM F (m j) f :=
     Lp.toTemperedDistribution_injective <| by
