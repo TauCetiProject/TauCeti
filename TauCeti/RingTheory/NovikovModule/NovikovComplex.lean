@@ -248,18 +248,15 @@ theorem novikovMap_novikovMap_sub_eq [DecidableEq (Σ i, P₁ i)] {e e' : A}
   have hfin := hm.kernelComp_mem_novikovModule hF₀ hF₁ hΨ
   -- The composite of the two maps and the identity are kernel maps, and the difference of their
   -- kernels is the kernel homotopy.
-  have h1 (p q) (h : (if p = q then (1 : R) else 0) ≠ 0) : F₁ q ≤ F₁ p + 0 := by
-    obtain rfl : p = q := by
-      by_contra hpq
-      simp [hpq] at h
-    simp
-  have h1fin (p) := mem_of_finite_support (F := F₁) (finite_support_diagonal (fun _ => (1 : R)) p)
   have hcomp : hΨ.novikovMap hF₀ hF₁ (hm.novikovMap hF₁ hF₀ a) = kernelMap hCC hfin a :=
     Subtype.ext <| funext fun q => by
       rw [hm.novikovMap_novikovMap_apply_val hF₁ hF₀ hF₁ hΨ, kernelMap_apply_val]
-  have hid : kernelMap h1 h1fin a = a := by rw [kernelMap_eq_id, LinearMap.id_apply]
+  have hid : kernelMap
+      (fun _ _ h => potential_le_of_diagonal_ne_zero (F := F₁) (s := fun _ => 1) h)
+      (diagonal_mem fun _ => (1 : R)) a = a := by
+    rw [kernelMap_eq_id, LinearMap.id_apply]
   rw [hcomp, ← congrArg (kernelMap hCC hfin a - ·) hid,
-    kernelMap_sub_kernelMap hCC hfin h1 h1fin hCk hK.mem_novikovModule hCδ
+    kernelMap_sub_kernelMap hCC hfin _ _ hCk hK.mem_novikovModule hCδ
       hδ.mem_novikovModule hCδ hδ.mem_novikovModule hmΨ]
   simp only [hK.novikovMap_apply hF₁ hF₁ hCk, hδ.novikovMap_apply hF₁ hF₁ hCδ]
 
