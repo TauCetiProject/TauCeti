@@ -13,7 +13,7 @@ public import TauCeti.GroupTheory.DoubleCoset.Finite
 public import TauCeti.GroupTheory.Index.Basic
 public import Mathlib.GroupTheory.Sylow
 public import TauCeti.RepresentationTheory.RelativeNorm
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 import TauCeti.Algebra.Group.Subgroup.Pointwise
 import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.GroupTheory.Coset.Basic
