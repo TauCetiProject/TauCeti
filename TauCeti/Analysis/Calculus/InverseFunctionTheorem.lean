@@ -317,7 +317,7 @@ theorem _root_.ContDiffOn.exists_openPartialHomeomorph_comp_fderiv_eq {G : Type*
     rwa [show A.comp L + (ContinuousLinearMap.id 𝕂 E - A.comp L) =
       ContinuousLinearMap.id 𝕂 E by abel] at h
   obtain ⟨Θ', hΘ', haΘ', hΘ't, hΘ'c⟩ := TauCeti.ContDiffOn.exists_openPartialHomeomorph hΘt ht hat
-    hn (e := ContinuousLinearEquiv.refl 𝕂 E) (by rw [hΘd.fderiv]; rfl)
+    hn (e := ContinuousLinearEquiv.refl 𝕂 E) (by rw [hΘd.fderiv, ContinuousLinearEquiv.coe_refl])
   exact ⟨Θ', haΘ', fun x ↦ by rw [hΘ', hΘA], hΘ' ▸ hΘd, hΘ' ▸ hΘt.mono hΘ't, hΘ'c⟩
 
 /-- **Invariance of the interior.** A map which is `C^n` on `s`, with `1 ≤ n`, has invertible

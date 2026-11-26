@@ -548,6 +548,7 @@ theorem cutoffPushforwardCLM_id_eq_smulLeftCLM {hid : ContDiffOn ℝ (⊤ : ℕ�
 
 /-- **Restriction of a pushforward**: restricting the pushforward `T ∘ (χ Φ^*)` on `Ω'` to an open
 subset `Ω₁ ≤ Ω'` gives the pushforward on `Ω₁`. -/
+@[simp]
 theorem restrictCLM_cutoffPushforwardCLM {Ω₁ : Opens E'} (h : Ω₁ ≤ Ω') (T : 𝓓'(Ω, F)) :
     (restrictCLM (cutoffPushforwardCLM χ Φ hΦ T : 𝓓'(Ω', F)) : 𝓓'(Ω₁, F)) =
       cutoffPushforwardCLM χ Φ hΦ T := by

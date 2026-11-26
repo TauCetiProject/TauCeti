@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Analysis.Fourier.Inversion
 import TauCeti.Topology.Algebra.Module.Cone
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # The wave front set of a smooth density pushed forward along an immersion
@@ -24,11 +25,13 @@ the distribution
 on an open set `Ω'` of `E'`, the pushforward `Φ_* (χ T)` of the constant function `T = 1`
 (`Distribution.cutoffPushforwardCLM`). When `Φ` is an immersion, injective on `supp χ`, this is a
 smooth density with weight `χ` on the immersed submanifold parametrized by `Φ`; for a constant map
-it is a multiple of a point mass. This file computes its wave front set: it is the conormal set of
-the image. The measure on the graph of a smooth map over a subspace, with a nowhere vanishing
-weight, is treated globally in `Distribution.waveFrontSet_smulLeftCLM_ofFun_one_map_graph`; here
-the immersion is arbitrary and the weight compactly supported, which is the form taken by a smooth
-density on a submanifold read in charts.
+it is a multiple of a point mass. This file shows that its wave front set lies in the conormal set
+of `Φ` over `supp χ`, and that over a point `Φ x₀` with `χ x₀ ≠ 0`, `DΦ(x₀)` injective and no other
+preimage in `supp χ` it is exactly the conormal space of the image. The measure on the graph of a
+smooth map over a subspace, with a nowhere vanishing weight, is treated globally in
+`Distribution.waveFrontSet_smulLeftCLM_ofFun_one_map_graph`; here the immersion is arbitrary and
+the weight compactly supported, which is the form taken by a smooth density on a submanifold read
+in charts.
 
 * `Distribution.waveFrontSet_cutoffPushforwardCLM_ofFun_one_subset`: every covector `(y, η)` in the
   wave front set lies over a point `x ∈ supp χ` with `Φ x = y` and `DΦ(x)ᵀ η = 0`. This is
@@ -41,8 +44,9 @@ density on a submanifold read in charts.
   wave front set is exactly the conormal space `{η ≠ 0 | DΦ(x₀)ᵀ η = 0}` of the image.
 
 The hypothesis that `Φ x₀` has no other preimage in `supp χ` cannot be dropped, since two sheets
-through `Φ x₀` can cancel: on `Ω = ℝ \ {0}` the map `x ↦ |x|` is an immersion, and for an odd
-weight `χ` the pushforward `f ↦ ∫ χ x f |x| dx` is zero.
+through `Φ x₀` can cancel: on `Ω = ℝ \ {0}` the map `Φ x = (|x|, 0)` into `ℝ²` is an immersion,
+and for an odd weight `χ` the pushforward `f ↦ ∫ χ x f (|x|, 0) dx` is zero, although every
+`(0, η₂)` with `η₂ ≠ 0` is conormal to the image at `Φ x₀`.
 
 ## The argument
 
@@ -97,7 +101,6 @@ theorem not_isMicrolocallySmoothAt_cutoffPushforwardCLM_ofFun_one {A : E →L[�
   obtain ⟨f, hf, Γ, hΓ, hηΓ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 hS
   obtain ⟨C, hC⟩ := hdecay 1
   set φ := cutoffCompCLM χ A A.contDiff.contDiffOn f
-  have hηpos : 0 < ‖η‖ := norm_pos_iff.2 hη
   -- The transpose of `A` is surjective, since `A` is injective.
   have hsurj : Surjective (A†) := by
     have h := (A†).orthogonal_range
@@ -116,20 +119,9 @@ theorem not_isMicrolocallySmoothAt_cutoffPushforwardCLM_ofFun_one {A : E →L[�
   have hF : 𝓕 (fun y => φ y) = 0 := by
     ext v
     obtain ⟨w, rfl⟩ := hsurj v
-    have hgrow : Tendsto (fun t : ℝ => 1 + ‖t • η + w‖) atTop atTop := by
-      refine tendsto_atTop_mono (fun t => ?_)
-        (tendsto_atTop_add_const_right _ (-‖w‖) (tendsto_id.atTop_mul_const hηpos))
-      have h := norm_sub_le (t • η + w) w
-      rw [add_sub_cancel_right, norm_smul, Real.norm_eq_abs] at h
-      have := mul_le_mul_of_nonneg_right (le_abs_self t) (norm_nonneg η)
-      simp only [id]
-      linarith
-    refine norm_le_zero_iff.1 (ge_of_tendsto ((tendsto_const_nhds (x := C)).div_atTop hgrow) ?_)
-    filter_upwards [hΓ.eventually_smul_add_mem hηΓ hcone w] with t ht
-    have hbound := hC _ ht
-    rw [localFourier_cutoffPushforwardCLM, map_add, map_smul, hAη, smul_zero, zero_add, hloc,
-      pow_one] at hbound
-    exact (le_div_iff₀' (by positivity)).2 hbound
+    refine eq_zero_of_forall_smul_add_eq (g := localFourier _ f) (w := w) hΓ hηΓ hη hcone
+      (fun ξ hξ => by simpa only [pow_one] using hC ξ hξ) fun t => ?_
+    rw [localFourier_cutoffPushforwardCLM, map_add, map_smul, hAη, smul_zero, zero_add, hloc]
   -- By Fourier inversion `χ (f ∘ A) = 0`, which fails at `x₀`.
   have hcont : Continuous (fun y => φ y) := φ.contDiff.continuous
   have h0 := congrFun (hcont.eq_zero_of_fourier_eq_zero
@@ -152,20 +144,6 @@ theorem waveFrontSet_cutoffPushforwardCLM_ofFun_one_subset {Φ : E → E'}
   rw [h1] at h
   exact ⟨hy, hξ, x, hx.1, hxp, h.resolve_right (notMem_empty _)⟩
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E'] in
-/-- If every point of `supp χ` mapped to `y` by `Φ` lies in an open set `N`, then so does every
-point of `supp χ` mapped near `y`, by compactness of `supp χ`. -/
-private theorem exists_mem_nhds_inter_preimage_subset {Φ : E → E'}
-    (hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω) {N : Set E} (hN : IsOpen N) {y : E'}
-    (hy : ∀ x ∈ tsupport χ, Φ x = y → x ∈ N) : ∃ O ∈ 𝓝 y, tsupport χ ∩ Φ ⁻¹' O ⊆ N := by
-  have hK : IsCompact (Φ '' (tsupport χ \ N)) :=
-    (χ.hasCompactSupport.isCompact.diff hN).image_of_continuousOn
-      (hΦ.continuousOn.mono (sdiff_subset.trans χ.tsupport_subset))
-  refine ⟨(Φ '' (tsupport χ \ N))ᶜ, hK.isClosed.isOpen_compl.mem_nhds
-    fun ⟨x, ⟨hxχ, hxN⟩, hxy⟩ => hxN (hy x hxχ hxy), fun x ⟨hxχ, hxO⟩ => ?_⟩
-  by_contra hxN
-  exact hxO ⟨x, ⟨hxχ, hxN⟩, rfl⟩
-
 /-- **A smooth density on an immersed submanifold is singular in its conormal directions.** Let
 `Φ` be smooth on `Ω` with injective derivative at `x₀`, let `χ x₀ ≠ 0`, and suppose that no other
 point of `supp χ` is mapped to `Φ x₀`. Then every nonzero covector `η` with `DΦ(x₀)ᵀ η = 0`, that is
@@ -187,8 +165,10 @@ theorem mem_waveFrontSet_cutoffPushforwardCLM_ofFun_one {Φ : E → E'}
   have hy : Φ x₀ ∈ θ.target := hθA x₀ ▸ θ.map_source hz₀θ
   have hθsymm : θ.symm (Φ x₀) = z₀ := hθA x₀ ▸ θ.left_inv hz₀θ
   -- The derivative of the inverse at `Φ x₀` is the identity.
-  have hθd : fderiv ℝ θ.symm (Φ x₀) = ContinuousLinearMap.id ℝ E' :=
-    (θ.hasFDerivAt_symm hy (f' := ContinuousLinearEquiv.refl ℝ E') (hθsymm ▸ hθd₀)).fderiv
+  have hθd : fderiv ℝ θ.symm (Φ x₀) = ContinuousLinearMap.id ℝ E' := by
+    have h := θ.hasFDerivAt_symm hy (f' := ContinuousLinearEquiv.refl ℝ E')
+      (by rw [ContinuousLinearEquiv.coe_refl, hθsymm]; exact hθd₀)
+    rw [h.fderiv, ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl]
   -- On `N₀ = A⁻¹ (source θ)` the inverse of `θ` undoes `Φ` to `A`.
   set N₀ : Set E := A ⁻¹' θ.source
   have hN₀ : IsOpen N₀ := θ.open_source.preimage A.continuous
@@ -196,8 +176,9 @@ theorem mem_waveFrontSet_cutoffPushforwardCLM_ofFun_one {Φ : E → E'}
     rw [← hθA x]
     exact θ.left_inv hx
   -- The points of `supp χ` mapped near `Φ x₀` lie in `N₀`.
-  obtain ⟨O, hO, hON⟩ := exists_mem_nhds_inter_preimage_subset hΦ hN₀ fun x hx hxy =>
-    (hfib x hx hxy ▸ hz₀θ : x ∈ N₀)
+  obtain ⟨O, hO, hON⟩ :=
+    χ.hasCompactSupport.isCompact.exists_mem_nhds_inter_preimage_subset_of_forall_eq
+      (hΦ.continuousOn.mono χ.tsupport_subset) hN₀ fun x hx hxy => (hfib x hx hxy ▸ hz₀θ : x ∈ N₀)
   -- A cutoff `κ` around `Φ x₀`, supported in `O` and in the target of `θ`.
   let Ω'' : Opens E' := ⟨θ.target ∩ Ω', θ.open_target.inter Ω'.isOpen⟩
   have hΩ'' : Ω'' ≤ Ω' := fun _ hz => hz.2

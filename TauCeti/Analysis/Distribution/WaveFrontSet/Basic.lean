@@ -69,6 +69,9 @@ not microlocally smooth.
 * `Distribution.isMicrolocallySmoothAt_of_apply_eq_integral`: there is no wave front set over an
   open set on which `T` is a smooth function; in particular
   `Distribution.waveFrontSet_ofFun_eq_empty` for a function smooth on `Ω`.
+* `Distribution.eq_zero_of_forall_smul_add_eq`: a function decaying like `1 / (1 + ‖η‖)` in an
+  open cone around `ξ ≠ 0` vanishes wherever it is constant along a line `t ↦ t • ξ + w`; this is
+  how lower bounds on the wave front set are proved.
 * `Distribution.waveFrontSet_delta`: the point mass at `x₀ ∈ Ω` has wave front set
   `{x₀} × (E \ {0})`.
 * `Distribution.waveFrontSet_ofFun_one_map_subtype`: the surface measure of a subspace `V`, that
@@ -470,6 +473,30 @@ theorem isMicrolocallySmoothAt_of_forall_decay {T : 𝓓'(Ω, ℂ)} {x : E} {φ 
   ⟨φ, hφ, univ, isOpen_univ, mem_univ ξ, fun _ _ _ _ => mem_univ _,
     fun N => (h N).imp fun _ hC η _ => hC η⟩
 
+/-- **Decay in a cone forces vanishing along lines.** Let `Γ` be an open cone containing a nonzero
+`ξ`, and let `(1 + ‖η‖) ‖g η‖` be bounded on `Γ`. If `g` is constant along the line
+`t ↦ t • ξ + w`, then the constant is zero: the line eventually lies in `Γ`, where
+`‖g (t • ξ + w)‖ ≤ C / (1 + ‖t • ξ + w‖)` tends to `0`. Applied to a localized Fourier transform,
+this shows that a distribution is not microlocally smooth. -/
+theorem eq_zero_of_forall_smul_add_eq {F : Type*} [NormedAddCommGroup F] {g : E → F}
+    {Γ : Set E} (hΓ : IsOpen Γ) {ξ : E} (hξΓ : ξ ∈ Γ) (hξ : ξ ≠ 0)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) {C : ℝ} (hC : ∀ η ∈ Γ, (1 + ‖η‖) * ‖g η‖ ≤ C)
+    {w : E} {c : F} (hc : ∀ t : ℝ, g (t • ξ + w) = c) : c = 0 := by
+  have hξpos : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  have hgrow : Tendsto (fun t : ℝ => 1 + ‖t • ξ + w‖) atTop atTop := by
+    refine tendsto_atTop_mono (fun t => ?_)
+      (tendsto_atTop_add_const_right _ (-‖w‖) (tendsto_id.atTop_mul_const hξpos))
+    have h := norm_sub_le (t • ξ + w) w
+    rw [add_sub_cancel_right, norm_smul, Real.norm_eq_abs] at h
+    have := mul_le_mul_of_nonneg_right (le_abs_self t) (norm_nonneg ξ)
+    simp only [id]
+    linarith
+  refine norm_le_zero_iff.1 (ge_of_tendsto ((tendsto_const_nhds (x := C)).div_atTop hgrow) ?_)
+  filter_upwards [hΓ.eventually_smul_add_mem hξΓ hcone w] with t ht
+  have hbound := hC _ ht
+  rw [hc] at hbound
+  exact (le_div_iff₀' (by positivity)).2 hbound
+
 /-- The localized Fourier transform of the complex point mass at `x₀`. -/
 @[simp]
 theorem localFourier_delta (x₀ : E) (φ : 𝓓(Ω, ℂ)) (η : E) :
@@ -738,27 +765,15 @@ private theorem not_isMicrolocallySmoothAt_ofFun_one_map_subtype (V : Submodule 
     ¬ (ofFun Ω 1 (MeasureTheory.volume.map ((↑) : V → E)) ⊤).IsMicrolocallySmoothAt x ξ := by
   rintro ⟨φ, hφ, Γ, hΓ, hξΓ, hcone, hdecay⟩
   obtain ⟨C, hC⟩ := hdecay 1
-  have hξpos : 0 < ‖ξ‖ := norm_pos_iff.2 hξ0
-  -- The Fourier transform of the restriction of the cutoff to `V` vanishes at each `w ∈ V`: at
-  -- `η = t • ξ + w` it is bounded by `C / (1 + ‖η‖)`, which tends to `0` as `t → ∞`.
+  -- The Fourier transform of the restriction of the cutoff to `V` vanishes at each `w ∈ V`: it is
+  -- the value of the localized Fourier transform all along the line `t ↦ t • ξ + w`.
   have hF : 𝓕 (fun v : V => φ v) = 0 := by
     ext w
-    have hgrow : Tendsto (fun t : ℝ => 1 + ‖t • ξ + (w : E)‖) atTop atTop := by
-      refine tendsto_atTop_mono (fun t => ?_)
-        (tendsto_atTop_add_const_right _ (-‖(w : E)‖) (tendsto_id.atTop_mul_const hξpos))
-      have h := norm_sub_le (t • ξ + (w : E)) (w : E)
-      rw [add_sub_cancel_right, norm_smul, Real.norm_eq_abs] at h
-      have := mul_le_mul_of_nonneg_right (le_abs_self t) (norm_nonneg ξ)
-      simp only [id]
-      linarith
-    refine norm_le_zero_iff.1 (ge_of_tendsto ((tendsto_const_nhds (x := C)).div_atTop hgrow) ?_)
-    filter_upwards [hΓ.eventually_smul_add_mem hξΓ hcone (w : E)] with t ht
-    have hP : V.orthogonalProjectionOnto (t • ξ + (w : E)) = w := by
-      rw [map_add, map_smul, (Submodule.orthogonalProjectionOnto_eq_zero_iff).2 hξ, smul_zero,
-        zero_add, Submodule.orthogonalProjectionOnto_mem_subspace_eq_self]
-    have hbound := hC _ ht
-    rw [localFourier_ofFun_one_map_subtype, hP, pow_one] at hbound
-    exact (le_div_iff₀' (by positivity)).2 hbound
+    refine eq_zero_of_forall_smul_add_eq (g := localFourier _ φ) (w := (w : E)) hΓ hξΓ hξ0 hcone
+      (fun η hη => by simpa only [pow_one] using hC η hη) fun t => ?_
+    rw [localFourier_ofFun_one_map_subtype, map_add, map_smul,
+      (Submodule.orthogonalProjectionOnto_eq_zero_iff).2 hξ, smul_zero, zero_add,
+      Submodule.orthogonalProjectionOnto_mem_subspace_eq_self]
   -- By Fourier inversion the restriction vanishes, contradicting `φ x ≠ 0`.
   have hg := contDiff_and_hasCompactSupport_restrict V φ
   exact hφ (congrFun (hg.1.continuous.eq_zero_of_fourier_eq_zero
