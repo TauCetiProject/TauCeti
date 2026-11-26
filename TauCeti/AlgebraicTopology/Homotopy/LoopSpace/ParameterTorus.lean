@@ -90,6 +90,11 @@ private def universalFreeLoop : C(UnitAddCircle, C(Circle, UnitAddCircle × Unit
   ContinuousMap.curry ⟨fun x : UnitAddCircle × Circle ↦
     ((AddCircle.homeomorphCircle one_ne_zero).symm x.2, x.1), by fun_prop⟩
 
+/-- The universal circle of free loops at `s` sends `exp (2πit)` to `(t, s)`. -/
+private theorem universalFreeLoop_apply (s : UnitAddCircle) (w : Circle) :
+    universalFreeLoop s w = ((AddCircle.homeomorphCircle one_ne_zero).symm w, s) :=
+  ContinuousMap.curry_apply _ s w
+
 /-- **The torus class of the universal loop of free loops is the class of the parameter torus.**
 The torus swept out by the universal loop is the cubical cross product of the circuit `1`-cube with
 itself, and the comparison carries the class of the circuit `1`-cube to minus the circuit class:
@@ -104,17 +109,16 @@ private theorem freeLoopTorusClassHom_universalFreeLoop :
     ((AddCircle.zsmulLoop 1 0 1).map universalFreeLoop.continuous)
   -- The circuit `t ↦ [t]` of `ℝ / ℤ`, as a generalized loop.
   set c : Ω^ (Fin 1) UnitAddCircle ((0 : ℝ) : UnitAddCircle) :=
-    (genLoopEquivOfUnique (Fin 1)).symm (AddCircle.zsmulLoop 1 0 1)
+    (genLoopEquivOfUnique (Fin 1)).symm (AddCircle.zsmulLoop 1 0 1) with hc_def
+  -- The values of the circuit are the classes `[t]`.
+  have hz (t : I) : AddCircle.zsmulLoop 1 0 1 t = ((t : ℝ) : UnitAddCircle) := by
+    rw [AddCircle.zsmulLoop_zero_apply_eq_coe, Int.cast_one, one_mul, one_mul]
   have hcube : freeLoopTorusCube (P : SingularCube C(Circle, UnitAddCircle × UnitAddCircle) 1) =
       SingularCube.crossProduct (c : SingularCube UnitAddCircle 1) (c : SingularCube _ 1) := by
-    ext z
-    · rw [freeLoopTorusCube_apply, SingularCube.crossProduct_apply]
-      change (AddCircle.homeomorphCircle one_ne_zero).symm (unitToCircle (z 0)) =
-        AddCircle.zsmulLoop 1 0 1 (z 0)
-      rw [homeomorphCircle_symm_unitToCircle, AddCircle.zsmulLoop_zero_apply_eq_coe]
-      simp
-    · rw [freeLoopTorusCube_apply, SingularCube.crossProduct_apply]
-      rfl
+    ext z <;>
+      rw [freeLoopTorusCube_apply, SingularCube.crossProduct_apply] <;>
+      simp [GenLoop.coe_coe, P, hc_def, GenLoop.genLoopEquivOfUnique_symm_apply, Path.map_coe,
+        universalFreeLoop_apply, homeomorphCircle_symm_unitToCircle, hz]
   obtain ⟨w, hw⟩ := exists_iCycles_eq_ofCube_freeLoopTorusCube ℤ P
   rw [freeLoopTorusClassHom_apply, cubicalFreeLoopTorusClassHom_mk ℤ P hw]
   rw [hcube] at hw
@@ -165,26 +169,21 @@ theorem freeLoopTorusClassHom_ofMul_mk_eq_singularHomologyMap {γ : C(Circle, Q)
       ((genLoopEquivOfUnique (Fin 1)).symm
         ((AddCircle.zsmulLoop 1 0 1).map universalFreeLoop.continuous)) = p := by
     ext x z
-    rw [GenLoop.map_apply]
+    rw [GenLoop.map_apply, GenLoop.genLoopEquivOfUnique_symm_apply, Path.map_coe,
+      Function.comp_apply]
     refine (DFunLike.congr_fun (hS _) z).trans ?_
-    change ℓ (AddCircle.zsmulLoop 1 0 1 (x 0)) z = p x z
     rw [AddCircle.zsmulLoop_zero_apply_eq_coe, Int.cast_one, one_mul, one_mul, hℓ]
-    exact congrArg (fun y ↦ p y z) (funext fun i ↦ by rw [Subsingleton.elim i 0])
+    exact congrArg (fun y ↦ p y z) (funext fun i ↦ by rw [Subsingleton.elim i default])
   rw [hP] at key
   rw [freeLoopTorusClassHom_apply, key, ← freeLoopTorusClassHom_universalFreeLoop,
-    freeLoopTorusClassHom_apply, singularCubicalHomologyIso_inv, singularCubicalHomologyIso_inv,
-    ← ConcreteCategory.comp_apply, ← HomologicalComplex.homologyMap_comp,
-    (cubicalToSingular ℤ).naturality, HomologicalComplex.homologyMap_comp,
-    ConcreteCategory.comp_apply]
-
-/-- A generalized loop of dimension one is traced by a map from the circle `ℝ / ℤ`. -/
-theorem _root_.GenLoop.exists_unitAddCircle_apply_eq {X : Type*} [TopologicalSpace X] {x : X}
-    (p : Ω^ (Fin 1) X x) : ∃ ℓ : C(UnitAddCircle, X), ∀ t : I, ℓ (t : ℝ) = p (fun _ ↦ t) :=
-  ⟨unitAddCircleMapHomeomorphClosedUnitPath.symm
-      ⟨⟨fun t ↦ p (fun _ ↦ t), by fun_prop⟩,
-        (GenLoop.boundary p _ ⟨0, Or.inl rfl⟩).trans
-          (GenLoop.boundary p _ ⟨0, Or.inr rfl⟩).symm⟩,
-    fun t ↦ unitAddCircleMapHomeomorphClosedUnitPath_symm_apply _ t⟩
+    freeLoopTorusClassHom_apply]
+  -- The naturality of the comparison isomorphism `singularCubicalHomologyNatIso`, along `S`.
+  generalize cubicalFreeLoopTorusClassHom (UnitAddCircle × UnitAddCircle) ℤ _ _ = a
+  have h := ConcreteCategory.congr_hom
+    ((singularCubicalHomologyNatIso ℤ 2).inv.naturality (TopCat.ofHom S)) a
+  simp only [Functor.comp_map, HomologicalComplex.homologyFunctor_map, ← Iso.app_inv,
+    singularCubicalHomologyNatIso_app, ConcreteCategory.comp_apply] at h
+  exact h
 
 /-- **Every torus class is the class of a swept parameter torus.** Every element of `π₁(𝓛Q, γ)`
 has the torus class of the torus `(t, s) ↦ ℓ s (exp (2πit))` swept out by some circle `ℓ` of free
