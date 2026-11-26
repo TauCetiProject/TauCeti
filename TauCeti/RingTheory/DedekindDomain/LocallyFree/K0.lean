@@ -11,13 +11,14 @@ public import TauCeti.RingTheory.DedekindDomain.LocallyFree.IdealClass
 -- `B ⊗[A] I ≃ I B`.
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.RingTheory.Ideal.TensorProduct
 import TauCeti.Algebra.Category.ModuleCat.BalancedExtension
 import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 -- Proof-only: `K₀` of the zero ring is trivial.
 import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Rank
 import TauCeti.LinearAlgebra.Dimension.Pi
 import TauCeti.LinearAlgebra.Dimension.Prod
-import TauCeti.RingTheory.DedekindDomain.Localization
+import TauCeti.RingTheory.DedekindDomain.Localization.Basic
 
 /-!
 # Projective `K₀` of a Dedekind domain
@@ -188,6 +189,7 @@ variable {A} {B : Type u} [CommRing B] [Algebra A B]
 /-- **Extension of scalars on reduced ideal classes.** Along an injective homomorphism `A → B` of
 Dedekind domains, extension of scalars sends the reduced class `[I] - [A]` of a nonzero ideal `I`
 to the reduced class `[I B] - [B]` of the extended ideal. -/
+@[simp]
 theorem map_extendScalars_idealClassHom [IsDedekindDomain B] [Module.IsTorsionFree A B]
     (c : Additive (ClassGroup A)) :
     SplitK0.map.{u, u} (algebraMap A B).finiteProjectiveModulesExtendScalars (idealClassHom A c) =
@@ -196,23 +198,12 @@ theorem map_extendScalars_idealClassHom [IsDedekindDomain B] [Module.IsTorsionFr
   rw [← ofMul_toMul c, ← hI, toMul_ofMul, ClassGroup.extendedHom_mk0]
   rw [idealClassHom_mk0, idealClassHom_mk0, map_extendScalars_classOf]
   refine classOf_congr ?_ 1
-  -- The balanced extension is Mathlib's `B ⊗[A] I`, which is `I B` because `B` is flat over `A`:
-  -- `B ⊗[A] I` embeds in `B ⊗[A] A = B` with image spanned by the `algebraMap A B x`, `x ∈ I`.
-  let f := algebraMap A B
-  let J : Submodule A A := I
-  have hJ : (J.baseChange B).map
-      (TensorProduct.AlgebraTensorModule.rid A B B : B ⊗[A] A →ₗ[B] B) =
-      (ClassGroup.extendedIdeal A B I : Ideal B) := by
-    rw [Submodule.baseChange_eq_span, Submodule.map_span, Submodule.map_coe, ← Set.image_comp]
-    refine congrArg (Submodule.span B) (Set.ext fun y ↦ ?_)
-    simp [J, Algebra.smul_def]
-  -- The underlying module of `(BalancedExtension.functor f).obj (ModuleCat.of A J)` is
-  -- `BalancedExtension f J` by definition (`BalancedExtension.functor_obj`).
-  exact ((BalancedExtension.extendScalarsIso f).app (ModuleCat.of A J) ≪≫
-    ModuleCat.extendScalarsAlgebraMapIso (ModuleCat.of A J)).toLinearEquiv.trans <|
-      (Submodule.toBaseChange.toLinearEquiv B J).trans <|
-        ((TensorProduct.AlgebraTensorModule.rid A B B).submoduleMap _).trans
-          (LinearEquiv.ofEq _ _ hJ)
+  -- The balanced extension is Mathlib's `B ⊗[A] I`, which is `I B` because `B` is flat over `A`.
+  -- The underlying module of `(BalancedExtension.functor (algebraMap A B)).obj (ModuleCat.of A I)`
+  -- is `BalancedExtension (algebraMap A B) I` by definition (`BalancedExtension.functor_obj`).
+  exact ((BalancedExtension.extendScalarsIso (algebraMap A B)).app (ModuleCat.of A (I : Ideal A)) ≪≫
+    ModuleCat.extendScalarsAlgebraMapIso (ModuleCat.of A (I : Ideal A))).toLinearEquiv.trans
+      (LinearEquiv.ofBijective _ (Ideal.liftBaseChange_idealMap_bijective B (I : Ideal A)))
 
 /-- **Extension of scalars in rank–Steinitz coordinates.** Along an injective homomorphism
 `A → B` of Dedekind domains, the rank of an extended class is unchanged and its Steinitz class is

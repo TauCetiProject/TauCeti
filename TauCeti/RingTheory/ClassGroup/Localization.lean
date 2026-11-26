@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.DedekindDomain.SInteger.ClassGroup
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Localization
 import TauCeti.RingTheory.ClassGroup.Extension
-import TauCeti.RingTheory.DedekindDomain.Localization
+import TauCeti.RingTheory.DedekindDomain.Localization.Basic
 import TauCeti.RingTheory.Localization.Defs
 
 /-!
