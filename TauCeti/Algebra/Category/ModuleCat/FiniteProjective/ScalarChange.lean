@@ -51,6 +51,8 @@ The module-level statements are the `Module.Finite` and `Module.Projective` inst
   `TauCeti.SplitK0.of_extendScalars_obj_finiteProjectiveModulesRegular`: `[S ⊗_R R] = [S]`.
 * `TauCeti.BalancedExtension.finiteProjectiveModules_le_inverseImage_functor`: extension of
   scalars preserves finitely generated projective modules.
+* `RingHom.finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_apply`: on every element, the
+  component of the square isomorphism is `D ⊗_B (B ⊗_A P) ≃ D ⊗_A P ≃ D ⊗_C (C ⊗_A P)`.
 * `RingHom.full_finiteProjectiveModulesExtendScalars`: extension of scalars along a surjective
   ring homomorphism is full on finitely generated projective modules, and in particular reduction
   modulo a two-sided ideal is full on finitely generated projective right modules (an instance);
@@ -95,6 +97,9 @@ open TauCeti
 /-- **Extension of scalars on finitely generated projective modules.** A ring homomorphism
 `f : R →+* S` induces a functor from the finitely generated projective `R`-modules to the
 finitely generated projective `S`-modules, sending `P` to `S ⊗_R P`. -/
+-- Exposed, like `TauCeti.BalancedExtension.functor`, so that elements of the extended modules can
+-- be written as tensors in `S ⊗_R P`.
+@[expose]
 noncomputable def finiteProjectiveModulesExtendScalars :
     (finiteProjectiveModules R).FullSubcategory ⥤ (finiteProjectiveModules S).FullSubcategory :=
   (finiteProjectiveModules S).lift
@@ -206,6 +211,25 @@ theorem finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom
               eqToHom (finiteProjectiveModulesExtendScalars_comp_obj_obj f₂ g₂ P).symm := by
   simp [finiteProjectiveModulesExtendScalarsCompIso,
     Functor.FullyFaithful.whiskeringRight_preimage_app, eqToHom_map]
+
+/-- The component of `RingHom.finiteProjectiveModulesExtendScalarsCompIso` at `P` on an arbitrary
+element of `D ⊗_B (B ⊗_A P)`: it is `TauCeti.BalancedExtension.cancelBaseChange` along `f₁, g₁`,
+followed by the transport `TauCeti.BalancedExtension.congrRingHom h` and by the inverse of
+`cancelBaseChange` along `f₂, g₂`. -/
+theorem finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_apply
+    (P : (finiteProjectiveModules A).FullSubcategory)
+    (x : BalancedExtension g₁ (BalancedExtension f₁ P.obj)) :
+    ((finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₂ g₂ h).hom.app P).hom x =
+      (BalancedExtension.cancelBaseChange f₂ g₂).symm
+        (BalancedExtension.congrRingHom h (BalancedExtension.cancelBaseChange f₁ g₁ x)) := by
+  -- The `eqToHom`s of `finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom` act as identities.
+  calc _ = (BalancedExtension.functorComp f₂ g₂).hom.app P.obj
+        ((BalancedExtension.functorCongr h).hom.app P.obj
+          ((BalancedExtension.functorComp f₁ g₁).inv.app P.obj x)) :=
+      congr($(finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom f₁ g₁ f₂ g₂ h P) x)
+    _ = _ := by
+      rw [BalancedExtension.functorComp_inv_app_apply, BalancedExtension.functorCongr_hom_app_apply,
+        BalancedExtension.functorComp_hom_app_apply]
 
 /-- The component of `RingHom.finiteProjectiveModulesExtendScalarsCompIso` at `P` sends
 `t ⊗ (s ⊗ p)` to `(t * g₁ s) ⊗ (1 ⊗ p)`; in particular it sends `1 ⊗ (1 ⊗ p)` to `1 ⊗ (1 ⊗ p)`. -/
