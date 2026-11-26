@@ -32,6 +32,10 @@ so the score of `N(m, v • 1)` is `-(y - m) / v`.
   density of `N(m, v • 1)` is smooth and all of its derivatives are bounded.
 * `TauCeti.Probability.exists_one_add_norm_pow_mul_multivariateGaussianPDFReal_smul_one_le`: the
   density of `N(0, v • 1)` absorbs every polynomial weight `(1 + ‖z‖)^k`.
+* `TauCeti.Probability.integrable_multivariateGaussianPDFReal_sub_smul` and
+  `TauCeti.Probability.integrable_multivariateGaussianPDFReal_sub_smul_smul`: against a finite
+  measure, `x ↦ φ(y - c • x)`, also times any continuous function of at most quadratic growth of
+  `y - c • x`, is integrable, for `φ` the density of `N(0, s² • 1)`.
 * `TauCeti.Probability.hasGradientAt_multivariateGaussianPDFReal_smul_one`: the density `φ` of
   `N(m, v • 1)` has gradient `-v⁻¹ φ(y) (y - m)`, so its score is `-(y - m) / v`.
 * `TauCeti.Probability.hasFDerivAt_multivariateGaussianPDFReal_smul_one_smul_self`: for the density
@@ -104,6 +108,43 @@ theorem exists_one_add_norm_pow_mul_multivariateGaussianPDFReal_smul_one_le {v :
     (-(Module.finrank ℝ (EuclideanSpace ℝ ι) : ℝ) / 2), fun z ↦ ?_⟩
   rw [multivariateGaussianPDFReal_zero_smul_one hv]
   exact (hC z).trans (mul_le_mul_of_nonneg_left (heatKernel_le (by positivity) z) hC0.le)
+
+/-- Against a finite measure `μ₀`, for `s ≠ 0`, the function `x ↦ φ_{s²}(y - c • x)` is integrable,
+where `φ_{s²}` is the density of `N(0, s² • 1)`. -/
+theorem integrable_multivariateGaussianPDFReal_sub_smul {μ₀ : Measure (EuclideanSpace ℝ ι)}
+    [IsFiniteMeasure μ₀] {c s : ℝ} (hs : s ≠ 0) (y : EuclideanSpace ℝ ι) :
+    Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x)) μ₀ := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_multivariateGaussianPDFReal_smul_one_le
+    (ι := ι) (by positivity : 0 < s ^ 2) 0 0
+  refine Integrable.of_bound (C := C)
+    ((measurable_multivariateGaussianPDFReal _ _).comp (by fun_prop)).aestronglyMeasurable
+    (.of_forall fun x ↦ ?_)
+  simpa using hC (y - c • x)
+
+/-- Against a finite measure, `x ↦ φ_{s²}(y - c • x) • g(y - c • x)` is integrable for every
+continuous `g` of at most quadratic growth, since `φ_{s²}` absorbs a quadratic weight. -/
+theorem integrable_multivariateGaussianPDFReal_sub_smul_smul
+    {μ₀ : Measure (EuclideanSpace ℝ ι)} [IsFiniteMeasure μ₀] {c s : ℝ} (hs : s ≠ 0)
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {g : EuclideanSpace ℝ ι → F}
+    (hg : Continuous g) {K : ℝ} (hgK : ∀ z, ‖g z‖ ≤ K * (1 + ‖z‖) ^ 2) (y : EuclideanSpace ℝ ι) :
+    Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
+      g (y - c • x)) μ₀ := by
+  obtain ⟨C, hC⟩ := exists_one_add_norm_pow_mul_multivariateGaussianPDFReal_smul_one_le
+    (ι := ι) (by positivity : 0 < s ^ 2) 2
+  have hφ : Continuous (multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1)) :=
+    (contDiff_multivariateGaussianPDFReal_smul_one (n := 0) (by positivity) 0).continuous
+  refine Integrable.of_bound (C := K * C)
+    ((hφ.smul hg).comp (by fun_prop : Continuous fun x : EuclideanSpace ℝ ι ↦ y - c • x)
+      |>.aestronglyMeasurable) (.of_forall fun x ↦ ?_)
+  set z := y - c • x
+  have hφz := multivariateGaussianPDFReal_nonneg (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1) z
+  have hK : 0 ≤ K := by simpa using (norm_nonneg _).trans (hgK 0)
+  rw [norm_smul, Real.norm_of_nonneg hφz]
+  calc multivariateGaussianPDFReal 0 (s ^ 2 • 1) z * ‖g z‖
+      ≤ multivariateGaussianPDFReal 0 (s ^ 2 • 1) z * (K * (1 + ‖z‖) ^ 2) :=
+        mul_le_mul_of_nonneg_left (hgK z) hφz
+    _ = K * ((1 + ‖z‖) ^ 2 * multivariateGaussianPDFReal 0 (s ^ 2 • 1) z) := by ring
+    _ ≤ K * C := mul_le_mul_of_nonneg_left (hC z) hK
 
 /-- For `v > 0`, the isotropic Gaussian law `N(m, v • 1)` is Lebesgue measure weighted by the
 heat kernel at time `v / 2`, translated to `m`. -/

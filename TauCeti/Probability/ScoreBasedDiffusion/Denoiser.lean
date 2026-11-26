@@ -203,8 +203,8 @@ private theorem integral_pdf_smul_rankOne_sub [IsFiniteMeasure μ₀] (hs : s �
   have hp := (integrable_multivariateGaussianPDFReal_sub_smul (μ₀ := μ₀) (c := c) hs y).smul_const
     (rankOne ℝ a a)
   -- `R` is the continuous linear map `u ↦ u ⊗ a`; it and `u ↦ a ⊗ u` commute with `∫`.
-  set R := StrongDual.smulRightL ℝ (EuclideanSpace ℝ ι) (EuclideanSpace ℝ ι) (innerSL ℝ a)
-  have hR (u : EuclideanSpace ℝ ι) : R u = rankOne ℝ u a := rfl
+  set R := (rankOne ℝ (E := EuclideanSpace ℝ ι)).flip a
+  have hR (u : EuclideanSpace ℝ ι) : R u = rankOne ℝ u a := ContinuousLinearMap.flip_apply _ _ _
   have hL := (rankOne ℝ a).integrable_comp hz
   set φ := multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1)
   -- Expand `(z - a) ⊗ (z - a)` by bilinearity of `rankOne`.

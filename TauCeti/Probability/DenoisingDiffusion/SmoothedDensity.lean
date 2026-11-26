@@ -100,51 +100,6 @@ theorem noisyScore_apply (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : ℝ) (
     noisyScore μ₀ c s y = gradient (fun y ↦ Real.log (smoothedDensity μ₀ c s y)) y :=
   (rfl)
 
-/-! ### The Gaussian kernel -/
-
-section Kernel
-
-private theorem measurable_pdf_sub_smul (y : EuclideanSpace ℝ ι) :
-    Measurable fun x : EuclideanSpace ℝ ι ↦
-      multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1) (y - c • x) :=
-  (measurable_multivariateGaussianPDFReal _ _).comp (by fun_prop)
-
-/-- Against a finite measure the integrand of the smoothed density is integrable. -/
-theorem integrable_multivariateGaussianPDFReal_sub_smul [IsFiniteMeasure μ₀] (hs : s ≠ 0)
-    (y : EuclideanSpace ℝ ι) :
-    Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x)) μ₀ := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_multivariateGaussianPDFReal_smul_one_le
-    (ι := ι) (by positivity : 0 < s ^ 2) 0 0
-  refine Integrable.of_bound (C := C) (measurable_pdf_sub_smul y).aestronglyMeasurable
-    (.of_forall fun x ↦ ?_)
-  simpa using hC (y - c • x)
-
-/-- Against a finite measure, `x ↦ φ_{s²}(y - c • x) • g(y - c • x)` is integrable for every
-continuous `g` of at most quadratic growth, since `φ_{s²}` absorbs a quadratic weight. -/
-theorem integrable_multivariateGaussianPDFReal_sub_smul_smul [IsFiniteMeasure μ₀] (hs : s ≠ 0)
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {g : EuclideanSpace ℝ ι → F}
-    (hg : Continuous g) {K : ℝ} (hgK : ∀ z, ‖g z‖ ≤ K * (1 + ‖z‖) ^ 2) (y : EuclideanSpace ℝ ι) :
-    Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
-      g (y - c • x)) μ₀ := by
-  obtain ⟨C, hC⟩ := exists_one_add_norm_pow_mul_multivariateGaussianPDFReal_smul_one_le
-    (ι := ι) (by positivity : 0 < s ^ 2) 2
-  have hφ : Continuous (multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1)) :=
-    (contDiff_multivariateGaussianPDFReal_smul_one (n := 0) (by positivity) 0).continuous
-  refine Integrable.of_bound (C := K * C)
-    ((hφ.smul hg).comp (by fun_prop : Continuous fun x : EuclideanSpace ℝ ι ↦ y - c • x)
-      |>.aestronglyMeasurable) (.of_forall fun x ↦ ?_)
-  set z := y - c • x
-  have hφz := multivariateGaussianPDFReal_nonneg (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1) z
-  have hK : 0 ≤ K := by simpa using (norm_nonneg _).trans (hgK 0)
-  rw [norm_smul, Real.norm_of_nonneg hφz]
-  calc multivariateGaussianPDFReal 0 (s ^ 2 • 1) z * ‖g z‖
-      ≤ multivariateGaussianPDFReal 0 (s ^ 2 • 1) z * (K * (1 + ‖z‖) ^ 2) :=
-        mul_le_mul_of_nonneg_left (hgK z) hφz
-    _ = K * ((1 + ‖z‖) ^ 2 * multivariateGaussianPDFReal 0 (s ^ 2 • 1) z) := by ring
-    _ ≤ K * C := mul_le_mul_of_nonneg_left (hC z) hK
-
-end Kernel
-
 /-! ### The density of the noisy observation -/
 
 /-- The smoothed density of the zero measure vanishes. -/
