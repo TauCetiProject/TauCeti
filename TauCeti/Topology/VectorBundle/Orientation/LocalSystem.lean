@@ -39,7 +39,7 @@ If `2 = 0` in `R`, as for `R = 𝔽₂`, the system itself is constant without a
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfTwoEqZero`): evaluation at either
 orientation of a fibre gives the same value, since `-1 = 1` in `R`.
 
-Over the base set of a trivialization of the atlas the system is trivialized without a global
+Over the base set of a linear trivialization the system is trivialized without a global
 orientation: transport along a path in the base set carries the element with value `r` at the
 orientation read as a fixed orientation `ω` of the model fibre to the element with value `r` at the
 orientation read as `ω` at the end of the path
@@ -79,8 +79,8 @@ two orientations of a fibre, and it projects to a loop whose monodromy exchanges
 * `TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`: the isomorphism of
   orientation local systems induced by a fibrewise isomorphism of bundles.
 * `TauCeti.VectorBundleOrientationCover.pullbackSignLocalSystemIso`: the trivialization of the
-  orientation system pulled back along a map into the base set of a trivialization, by evaluation
-  at the orientations which it reads as a fixed orientation of the model fibre.
+  orientation system pulled back along a map into the base set of a linear trivialization, by
+  evaluation at the orientations which it reads as a fixed orientation of the model fibre.
 * `TauCeti.VectorBundleOrientationCover.pullbackSignLocalSystemIsoOfLift`: the trivialization of
   the orientation system pulled back along a map with a continuous lift to the orientation double
   cover, by evaluation at the lifted orientations.
@@ -302,12 +302,11 @@ theorem signLocalSystemFiberEquiv_map {b b' : B}
     (IsIso.hom_inv_id p)
   exact congrArg _ (h'.trans (congrFun (isCoveringMap_proj (F := F) (E := E) hι).monodromy_refl _))
 
-/-- **Transport over a trivializing set**: along a path in the base set of a trivialization `e` of
-the atlas, transport in the orientation local system carries the element with value `r` at the
-orientation read as `ω` at the start to the element with value `r` at the orientation read as `ω`
-at the end. -/
+/-- **Transport over a trivializing set**: along a path in the base set of a linear trivialization
+`e`, transport in the orientation local system carries the element with value `r` at the orientation
+read as `ω` at the start to the element with value `r` at the orientation read as `ω` at the end. -/
 theorem signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) {x y : B} (γ : Path x y)
+    [e.IsLinear ℝ] (ω : Orientation ℝ F ι) {x y : B} (γ : Path x y)
     (hγ : ∀ t, γ t ∈ e.baseSet) (hx : x ∈ e.baseSet) (hy : y ∈ e.baseSet) (r : R) :
     ((signLocalSystem F E R hι).map (Path.Homotopic.Quotient.mk γ)).hom
         ((signLocalSystemFiberEquiv hι ((e.mapOrientation ι hx).symm ω)).symm r) =
@@ -341,16 +340,21 @@ theorem monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one (b : B)
   exact (isCoveringMap_proj hι).monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one
     (hσ := proj_comp_deck) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) g
 
-variable [FiniteDimensional ℝ F]
-
-/-- The fibres of the orientation local system are free of rank one, hence projective: evaluation
-at either orientation of the fibre identifies each of them with `R`. -/
+/-- The fibres of the orientation local system are projective: when the fibre over `x` admits an
+`ι`-orientation it is free of rank one, and otherwise it is the zero module. -/
 instance projective_signLocalSystem_obj (x : FundamentalGroupoid (TopCat.of B)) :
     Projective ((signLocalSystem F E R hι).obj x) := by
   obtain ⟨b⟩ := x
-  obtain ⟨p, rfl⟩ := surjective_proj (F := F) (E := E) hι b
-  exact ModuleCat.projective_of_free
-    ((Basis.singleton Unit R).map (signLocalSystemFiberEquiv hι p.orientation).symm)
+  by_cases ho : Nonempty (Orientation ℝ (E b) ι)
+  · exact ModuleCat.projective_of_free
+      ((Basis.singleton Unit R).map (signLocalSystemFiberEquiv hι ho.some).symm)
+  · have : Subsingleton ((signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) := by
+      refine ⟨fun f g ↦ (signLocalSystemObjEquiv hι (FundamentalGroupoid.mk b)).injective ?_⟩
+      ext ⟨p, hp⟩
+      exact (ho ⟨fiberEquiv F E ι b ⟨p, hp⟩⟩).elim
+    exact (ModuleCat.isZero_of_subsingleton _).projective
+
+variable [FiniteDimensional ℝ F]
 
 /-- **A non-orientable bundle has an orientation-reversing loop.** Over a connected, locally
 path-connected base, if `E` is not orientable, some loop at `b` acts by `-1` on the fibre of the
@@ -745,10 +749,10 @@ theorem pullbackSignLocalSystemIsoOfLift_inv_of_eq_deck {Y : TopCat.{uB}} (g : C
 /-! ### The trivializations of the orientation local system over a trivializing set -/
 
 variable (R) in
-/-- Over a map `g : Y → B` with values in the base set of a trivialization `e` of the atlas, the
+/-- Over a map `g : Y → B` with values in the base set of a linear trivialization `e`, the
 pulled-back orientation local system is trivialized by evaluating, over each point `y`, at the
 orientation of `E_{g y}` which `e` reads as a fixed orientation `ω` of the model fibre. -/
-def pullbackSignLocalSystemIso (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
+def pullbackSignLocalSystemIso (e : Trivialization F (π F E)) [e.IsLinear ℝ]
     (ω : Orientation ℝ F ι) {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
     (hg : ∀ y, g y ∈ e.baseSet) :
     (LocalCoefficientSystem.pullback g).obj (signLocalSystem F E R hι) ≅
@@ -763,7 +767,7 @@ def pullbackSignLocalSystemIso (e : Trivialization F (π F E)) [MemTrivializatio
 `ω`. -/
 @[simp]
 theorem pullbackSignLocalSystemIso_hom_app_apply (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
+    [e.IsLinear ℝ] (ω : Orientation ℝ F ι) {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
     (hg : ∀ y, g y ∈ e.baseSet) (y : Y)
     (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk (g y))) :
     (ModuleCat.Hom.hom (A := (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk (g y)))
@@ -776,7 +780,7 @@ theorem pullbackSignLocalSystemIso_hom_app_apply (e : Trivialization F (π F E))
 evaluation at the orientation of `E_{g y}` which `e` reads as `ω` is `r`. -/
 @[simp]
 theorem pullbackSignLocalSystemIso_inv_app_apply (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
+    [e.IsLinear ℝ] (ω : Orientation ℝ F ι) {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
     (hg : ∀ y, g y ∈ e.baseSet) (y : Y) (r : R) :
     (ModuleCat.Hom.hom (A := ModuleCat.of R R)
         (B := (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk (g y)))
@@ -788,7 +792,7 @@ theorem pullbackSignLocalSystemIso_inv_app_apply (e : Trivialization F (π F E))
 orientations of the fibres over `g` give the same trivialization of the pulled-back orientation
 local system. -/
 theorem pullbackSignLocalSystemIso_congr {e e' : Trivialization F (π F E)}
-    [MemTrivializationAtlas e] [MemTrivializationAtlas e'] {ω ω' : Orientation ℝ F ι}
+    [e.IsLinear ℝ] [e'.IsLinear ℝ] {ω ω' : Orientation ℝ F ι}
     {Y : TopCat.{uB}} (g : C(Y, TopCat.of B)) (hg : ∀ y, g y ∈ e.baseSet)
     (hg' : ∀ y, g y ∈ e'.baseSet)
     (h : ∀ y, (e'.mapOrientation ι (hg' y)).symm ω' = (e.mapOrientation ι (hg y)).symm ω) :
@@ -803,28 +807,24 @@ theorem pullbackSignLocalSystemIso_congr {e e' : Trivialization F (π F E)}
 orientation local system. -/
 @[simp]
 theorem pullbackSignLocalSystemIso_neg_hom (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
+    [e.IsLinear ℝ] (ω : Orientation ℝ F ι) {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
     (hg : ∀ y, g y ∈ e.baseSet) :
     (pullbackSignLocalSystemIso R hι e (-ω) g hg).hom =
-      -(pullbackSignLocalSystemIso R hι e ω g hg).hom := by
-  refine NatTrans.ext (funext fun ⟨y⟩ ↦ ModuleCat.hom_ext (LinearMap.ext fun
-    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk (g y))) ↦ ?_))
-  have h : (e.mapOrientation ι (hg y)).symm (-ω) = -(e.mapOrientation ι (hg y)).symm ω :=
-    (e.mapOrientation ι (hg y)).symm_apply_eq.2 (by
-      rw [Trivialization.mapOrientation_neg, Equiv.apply_symm_apply])
-  rw [NatTrans.app_neg, ModuleCat.hom_neg]
-  refine (pullbackSignLocalSystemIso_hom_app_apply hι e (-ω) g hg y f).trans ?_
-  rw [h, signLocalSystemFiberEquiv_neg]
-  exact congrArg Neg.neg (pullbackSignLocalSystemIso_hom_app_apply hι e ω g hg y f).symm
+      -(pullbackSignLocalSystemIso R hι e ω g hg).hom :=
+  pullbackSignLocalSystemIsoOfLift_hom_of_eq_deck hι g (fun _ ↦ rfl) (fun _ ↦ rfl) fun y ↦
+    (congrArg (mk (g y)) (e.mapOrientation_symm_neg (hg y) ω)).trans
+      (deck_apply ⟨g y, (e.mapOrientation ι (hg y)).symm ω⟩).symm
 
 /-- Reversing the orientation of the model fibre negates the inverse of the trivialization of the
 pulled-back orientation local system. -/
 @[simp]
 theorem pullbackSignLocalSystemIso_neg_inv (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
+    [e.IsLinear ℝ] (ω : Orientation ℝ F ι) {Y : TopCat.{uB}} (g : C(Y, TopCat.of B))
     (hg : ∀ y, g y ∈ e.baseSet) :
     (pullbackSignLocalSystemIso R hι e (-ω) g hg).inv =
       -(pullbackSignLocalSystemIso R hι e ω g hg).inv :=
-  Iso.inv_ext (by rw [pullbackSignLocalSystemIso_neg_hom, Preadditive.neg_comp_neg, Iso.hom_inv_id])
+  pullbackSignLocalSystemIsoOfLift_inv_of_eq_deck hι g (fun _ ↦ rfl) (fun _ ↦ rfl) fun y ↦
+    (congrArg (mk (g y)) (e.mapOrientation_symm_neg (hg y) ω)).trans
+      (deck_apply ⟨g y, (e.mapOrientation ι (hg y)).symm ω⟩).symm
 
 end TauCeti.VectorBundleOrientationCover
