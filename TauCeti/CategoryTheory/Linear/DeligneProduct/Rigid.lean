@@ -83,4 +83,34 @@ theorem leftDual_def [LeftRigidCategory C] [LeftRigidCategory D] (P : LinearTens
     (ᘁP : LinearTensor k C D) = ⟨ᘁP.fst, ᘁP.snd⟩ :=
   rfl
 
+-- Prefer the chosen-dual formulas to the general exact-pairing rewrites, which leave
+-- projections of the dual pair in the result.
+/-- The evaluation for the chosen right dual is the pure tensor of the right evaluations. -/
+@[simp high]
+theorem rightDual_evaluation [RightRigidCategory C] [RightRigidCategory D]
+    (P : LinearTensor k C D) :
+    ε_ P Pᘁ = tmul (ε_ P.fst P.fstᘁ) (ε_ P.snd P.sndᘁ) :=
+  (rfl)
+
+/-- The coevaluation for the chosen right dual is the pure tensor of the right coevaluations. -/
+@[simp high]
+theorem rightDual_coevaluation [RightRigidCategory C] [RightRigidCategory D]
+    (P : LinearTensor k C D) :
+    η_ P Pᘁ = tmul (η_ P.fst P.fstᘁ) (η_ P.snd P.sndᘁ) :=
+  (rfl)
+
+/-- The evaluation for the chosen left dual is the pure tensor of the left evaluations. -/
+@[simp high]
+theorem leftDual_evaluation [LeftRigidCategory C] [LeftRigidCategory D]
+    (P : LinearTensor k C D) :
+    ε_ (ᘁP) P = tmul (ε_ (ᘁP.fst) P.fst) (ε_ (ᘁP.snd) P.snd) :=
+  (rfl)
+
+/-- The coevaluation for the chosen left dual is the pure tensor of the left coevaluations. -/
+@[simp high]
+theorem leftDual_coevaluation [LeftRigidCategory C] [LeftRigidCategory D]
+    (P : LinearTensor k C D) :
+    η_ (ᘁP) P = tmul (η_ (ᘁP.fst) P.fst) (η_ (ᘁP.snd) P.snd) :=
+  (rfl)
+
 end TauCeti.LinearTensor
