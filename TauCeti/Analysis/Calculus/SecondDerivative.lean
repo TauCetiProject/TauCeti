@@ -75,6 +75,8 @@ Morse-theoretic definitions that use them.
   derivative of a `C²` map in a fixed direction is continuous.
 * `ContDiff.continuous_fderiv_fderiv_apply`: the second derivative of a `C^n` map, `2 ≤ n`, in
   two fixed directions is continuous.
+* `TauCeti.fderiv_sum_comp_fderiv_apply`: the derivative of `y ↦ ∑ᵢ Lᵢ (Dω(y) bᵢ)` for fixed
+  continuous linear maps `Lᵢ`, where the derivative of `ω` is differentiable.
 * `ContDiffOn.hasFDerivWithinAt_fderiv_and_fderiv_fderiv`: the first and second derivatives of a
   map that is `C²` on an open set `U ⊇ s`, as derivatives within `s`.
 * `TauCeti.fderiv_fderiv_of_notMem_tsupport`: the second derivative vanishes off the support.
@@ -206,6 +208,19 @@ theorem _root_.ContDiffOn.continuousOn_fderiv_fderiv_apply {g : E → F} {s : Se
     ContinuousOn (fun x ↦ fderiv 𝕜 (fun y ↦ fderiv 𝕜 g y v) x v) s :=
   (((hg.fderiv_of_isOpen hs (by norm_num)).clm_apply contDiffOn_const).continuousOn_fderiv_of_isOpen
     hs le_rfl).clm_apply continuousOn_const
+
+/-- The derivative of `y ↦ ∑ᵢ Lᵢ (Dω(y) bᵢ)` for fixed continuous linear maps `Lᵢ` and directions
+`bᵢ`, when the derivative of `ω` is differentiable at `x`: it is `w ↦ ∑ᵢ Lᵢ (D²ω(x)(w, bᵢ))`. -/
+theorem fderiv_sum_comp_fderiv_apply {ι : Type*} [Fintype ι] (L : ι → F →L[𝕜] G) (b : ι → E)
+    {ω : E → F} {x : E} (hω : DifferentiableAt 𝕜 (fderiv 𝕜 ω) x) (w : E) :
+    fderiv 𝕜 (fun y ↦ ∑ i, L i (fderiv 𝕜 ω y (b i))) x w =
+      ∑ i, L i (fderiv 𝕜 (fderiv 𝕜 ω) x w (b i)) := by
+  have h (i : ι) : HasFDerivAt (fun y ↦ L i (fderiv 𝕜 ω y (b i)))
+      ((L i).comp ((ContinuousLinearMap.apply 𝕜 F (b i)).comp (fderiv 𝕜 (fderiv 𝕜 ω) x))) x :=
+    (L i).hasFDerivAt.comp x
+      ((ContinuousLinearMap.apply 𝕜 F (b i)).hasFDerivAt.comp x hω.hasFDerivAt)
+  rw [(HasFDerivAt.fun_sum fun i _ ↦ h i).fderiv]
+  simp
 
 /-- The first and second derivatives of a map that is `C²` on an open set `U ⊇ s`, as
 derivatives within `s`: `g` has derivative `fderiv 𝕜 g` and `fderiv 𝕜 g` has derivative
