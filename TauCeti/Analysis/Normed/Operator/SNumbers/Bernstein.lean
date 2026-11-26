@@ -85,11 +85,12 @@ target spaces may be seminormed.
 * A. Pietsch, *Operator Ideals*, North-Holland (1980), Chapter 11, for the minimality of the
   Bernstein numbers among injective strict s-number sequences.
 * A. Pietsch, *Bad properties of the Bernstein numbers*, Studia Math. 184 (2008), 263–269,
-  Theorem 3.
+  Theorem 3, for the non-multiplicativity and non-additivity of the Bernstein numbers.
 * M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
   `SNumbers/Bernstein.lean`, `SNumbers/Injectivity.lean` and
   `SNumbers/Examples/IdentityL2Linfty.lean`: an earlier Lean formalization of the Bernstein
-  numbers, injective s-number sequences and the `ℓ₂ ↔ ℓ_∞` identity bounds.
+  numbers, injective s-number sequences, the `ℓ₂ ↔ ℓ_∞` identity bounds and the
+  finite-dimensional counterexamples to multiplicativity and additivity.
 -/
 
 public section
@@ -496,8 +497,8 @@ private theorem sqrt_three_div_two_mul_inv_sqrt_two_lt_one :
   rw [mul_inv_lt_iff₀ (NNReal.sqrt_pos.mpr (by norm_num)), one_mul]
   exact NNReal.sqrt_lt_sqrt.mpr (by norm_num)
 
-/-- **Bernstein numbers are not multiplicative.** Over `ℝ` or `ℂ`, the factorization
-`id : ℓ₂³ → ℓ_∞³ → ℓ₂³` gives
+/-- **Bernstein numbers are not multiplicative** (Pietsch 2008, Theorem 3). Over `ℝ` or `ℂ`, the
+factorization `id : ℓ₂³ → ℓ_∞³ → ℓ₂³` gives
 `1 = b₂(id) > √(3 / 2) · (√2)⁻¹ ≥ b₁(ℓ_∞³ → ℓ₂³) b₁(ℓ₂³ → ℓ_∞³)`. -/
 theorem not_multiplicative_bernstein {𝕜 : Type u} [RCLike 𝕜] :
     ¬ Multiplicative (bernstein (𝕜 := 𝕜)) := by
