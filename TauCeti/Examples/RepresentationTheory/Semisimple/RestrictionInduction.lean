@@ -55,8 +55,7 @@ example : IsSemisimpleRepresentation
 
 /-- The regular representation of the cyclic group of order `p` over `𝔽_p` is not semisimple. -/
 example : ¬ (leftRegular (ZMod p) (Multiplicative (ZMod p))).IsSemisimpleRepresentation :=
-  not_isSemisimpleRepresentation_leftRegular (by
-    rw [Nat.card_eq_fintype_card, Fintype.card_multiplicative, ZMod.card, ZMod.natCast_self])
+  not_isSemisimpleRepresentation_leftRegular (by simp)
 
 end Cyclic
 
@@ -90,10 +89,9 @@ example : ¬ IsSemisimpleRepresentation
   · have hw : w 1 = 0 := LinearMap.mem_ker.1 (Subrepresentation.mem_toSubmodule.2 hw)
     funext i
     fin_cases i
-    · rw [Fin.zero_eta, happ0, hw, mul_zero, add_zero]
+    · simpa [hw] using happ0 g w
     · exact happ1 g w
-  · rw [← Subrepresentation.mem_toSubmodule, LinearMap.mem_ker, LinearMap.proj_apply,
-      Pi.sub_apply, happ1, sub_self]
+  · simpa [← Subrepresentation.mem_toSubmodule, W, sub_eq_zero] using happ1 g v
   · intro h
     have := congrFun h 0
     rw [happ0] at this
