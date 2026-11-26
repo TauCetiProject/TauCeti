@@ -7,10 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.UniquelyDivisible
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.TwoDivisible
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo
-public import TauCeti.AlgebraicTopology.Singular.Coefficients.ULift
 
 /-!
 # Mod-two acyclic Eilenberg--Mac Lane spaces
@@ -51,12 +49,8 @@ vanishes exactly when `A = 2 A`
 
 ## Main results
 
-* `TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one`: the first integral
-  homology of a `K(G, 1)` space is the abelianization of `G`.
 * `TauCeti.IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_one_iff_surjective_zsmul`: the
   first mod-two homology of a `K(A, 1)` space vanishes exactly when `A` is two-divisible.
-* `TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one_of_comm`: for an
-  abelian group `A`, the first integral homology of a `K(A, 1)` space is `A`.
 * `TauCeti.IsEilenbergMacLaneSpace.isUniquelyTwoDivisible_of_subsingleton_singularHomology`: if a
   `K(A, n)` space has vanishing mod-two homology in the degrees `n` and `n + 1`, then `A` is
   uniquely two-divisible.
@@ -90,30 +84,7 @@ variable {k : Type u} [CommRing k] {X : Type u} [TopologicalSpace X] {x : X}
 
 namespace IsEilenbergMacLaneSpaceOne
 
-/-- **The first integral homology of a `K(G, 1)` space is the abelianization of `G`.** For a
-group `G` and a `K(G, 1)` space `X`, the Hurewicz map identifies the abelianized fundamental group
-of `X`, which is the abelianization of `G`, with the singular homology `H₁(X; ℤ)`. -/
-theorem nonempty_addEquiv_singularHomology_one {G : Type v} [Group G]
-    (hX : IsEilenbergMacLaneSpaceOne G X x) :
-    Nonempty (Additive (Group.Abelianization G) ≃+
-      ((singularHomologyFunctor (ModuleCat.{u} ℤ) 1).obj
-        (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of X)) := by
-  have := hX.isAspherical.pathConnectedSpace
-  obtain ⟨φ⟩ := hX.nonempty_fundamentalGroupMulEquiv
-  exact ⟨((MulEquiv.toAdditive φ.abelianizationCongr).symm.trans
-    (HurewiczOne.hurewiczHomologyAddEquiv (X := TopCat.of X) x ULift.ringEquiv)).trans
-    ((TopCat.of X).singularHomologyUliftAddEquiv.{u, 0} ℤ 1).symm⟩
-
 variable {A : Type v} [AddCommGroup A]
-
-/-- **The first integral homology of a `K(A, 1)` space is `A`.** For an abelian group `A`, the
-abelianization of `A` is `A` itself, so a `K(A, 1)` space `X` has `H₁(X; ℤ) ≅ A`. -/
-theorem nonempty_addEquiv_singularHomology_one_of_comm
-    (hX : IsEilenbergMacLaneSpaceOne (Multiplicative A) X x) :
-    Nonempty (A ≃+ ((singularHomologyFunctor (ModuleCat.{u} ℤ) 1).obj
-      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of X)) := by
-  obtain ⟨φ⟩ := hX.nonempty_addEquiv_singularHomology_one
-  exact ⟨(MulEquiv.toAdditiveLeft Group.Abelianization.equivOfComm).trans φ⟩
 
 /-- **The first mod-two homology of a `K(A, 1)` space vanishes exactly when `A` is
 two-divisible.** For an abelian group `A`, a `K(A, 1)` space `X` and a ring `k` isomorphic to
