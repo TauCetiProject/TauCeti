@@ -54,6 +54,11 @@ def pinnedRep :
       Module.End ℚ (Fin 56 → ℚ) :=
   weightTable.pinnedRepresentation (t := E7) valid_E7 weightTable_cartanMatrix_eq_transpose
 
+/-- The pinned minuscule action specializes the general table action. -/
+theorem pinnedRep_def :
+    pinnedRep = weightTable.pinnedRepresentation (t := E7) valid_E7
+      weightTable_cartanMatrix_eq_transpose := (rfl)
+
 /-- The pinned Cartan action is the existing Serre Cartan action. -/
 -- This bridge is for rewriting; the matrix equation below remains the simp normal form.
 theorem pinnedRep_ι_h (i : Fin E7.rank) :
@@ -149,11 +154,10 @@ theorem pinnedRep_ι_rootGenerator_sq (k : Fin E7.rank ⊕ Fin E7.rank) :
 theorem isCartanWeightVector_pinnedRep_latticeBasis (a : Fin 56) :
     UniversalEnvelopingAlgebra.IsCartanWeightVector (E7.lieBasis valid_E7).h pinnedRep
       (e7MinusculeWeight a) (latticeBasis a : Fin 56 → ℚ) := by
-  apply (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mpr
-  intro i
-  rw [pinnedRep_ι_h]
-  exact (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp
-    (isCartanWeightVector_latticeBasis a) i
+  simpa only [pinnedRep_def, weightTable_weight, coe_coordinateLatticeBasis, Pi.basisFun_apply,
+    coe_latticeBasis] using
+    weightTable.isCartanWeightVector_pinnedRepresentation_coordinateLatticeBasis
+      (t := E7) valid_E7 weightTable_cartanMatrix_eq_transpose a
 
 /-- The pinned minuscule representation is faithful on the rational Lie algebra. -/
 theorem pinnedRep_ι_injective :
@@ -178,6 +182,12 @@ standard coordinate lattice and fundamental-weight coordinates. -/
 @[expose] def chevalleyDatum : ChevalleyDatum E7 valid_E7 :=
   weightTable.chevalleyDatum (t := E7) valid_E7 weightTable_cartanMatrix_eq_transpose
     (weightTable_weight ▸ span_range_e7MinusculeWeight_eq_top)
+
+/-- The minuscule datum specializes the general full-weight table datum. -/
+theorem chevalleyDatum_def :
+    chevalleyDatum = weightTable.chevalleyDatum (t := E7) valid_E7
+      weightTable_cartanMatrix_eq_transpose
+      (weightTable_weight ▸ span_range_e7MinusculeWeight_eq_top) := (rfl)
 
 /-- The minuscule Chevalley datum has lattice rank fifty-six. -/
 @[simp] theorem chevalleyDatum_dim : chevalleyDatum.dim = 56 := (rfl)
