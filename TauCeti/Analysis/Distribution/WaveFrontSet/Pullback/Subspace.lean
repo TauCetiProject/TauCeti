@@ -11,10 +11,11 @@ import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Calculus.BumpFunction.Normed
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
+import TauCeti.Analysis.InnerProductSpace.ProdL2
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
-# Measures on subspaces cannot be restricted to them
+# Measures on subspaces fail the pullback criterion
 
 A distribution `T` on an open set of `E'` has a pullback along a smooth map `f` when its wave
 front set misses the *normal set* of `f`, the covectors `(f x, η)` with `η ≠ 0` and
@@ -23,7 +24,7 @@ front set misses the *normal set* of `f`, the covectors `(f x, η)` with `η ≠
 restriction of a measure on a subspace to that subspace.
 
 If `f` maps a neighbourhood of `x` into a subspace `V`, then `Df(x)ᵀ` vanishes on `Vᗮ`
-(`Distribution.adjoint_fderiv_apply_eq_zero_of_eventually_mem`), so the normal set of `f` at `x`
+(`TauCeti.adjoint_fderiv_apply_eq_zero_of_eventually_mem`), so the normal set of `f` at `x`
 contains every nonzero covector conormal to `V`. The surface measure of `V` has exactly these
 covectors as its wave front set over `V` (`Distribution.waveFrontSet_ofFun_one_map_subtype`). So,
 for a proper subspace `V`, the criterion fails at every point for every map into `V`
@@ -45,8 +46,6 @@ is therefore a choice, a renormalization, not a limit of these approximations.
 
 ## Main results
 
-* `Distribution.adjoint_fderiv_apply_eq_zero_of_eventually_mem`: the normal set of a map into a
-  subspace `V` contains the covectors conormal to `V`.
 * `Distribution.exists_mem_waveFrontSet_ofFun_one_map_subtype_and_adjoint_fderiv_apply_eq_zero`,
   `Distribution.not_forall_adjoint_fderiv_apply_ne_zero_ofFun_one_map_subtype`: the surface
   measure of a proper subspace fails the pullback criterion along every map into it.
@@ -79,20 +78,6 @@ variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-! ### Maps into a subspace -/
 
-/-- **The normal set of a map into a subspace.** If `f` maps a neighbourhood of `x` into a
-subspace `V`, then the transpose of its derivative at `x` vanishes on `Vᗮ`: every covector
-conormal to `V` at `f x` lies in the normal set of `f` at `x`. -/
-theorem adjoint_fderiv_apply_eq_zero_of_eventually_mem [CompleteSpace E] [CompleteSpace E']
-    {V : Submodule ℝ E'} {f : E → E'} {x : E} (hf : ∀ᶠ y in 𝓝 x, f y ∈ V) {η : E'}
-    (hη : η ∈ Vᗮ) : (fderiv ℝ f x).adjoint η = 0 := by
-  -- `Df(x)` takes values in the closure of `V`, which `η` is orthogonal to.
-  refine ext_inner_right ℝ fun u ↦ ?_
-  rw [ContinuousLinearMap.adjoint_inner_left, inner_zero_left]
-  refine Submodule.inner_left_of_mem_orthogonal
-    (TauCeti.fderiv_apply_mem_of_eventually_sub_mem V.isClosed_topologicalClosure
-      (hf.mono fun y hy ↦ V.le_topologicalClosure (V.sub_mem hy hf.self_of_nhds)) u) ?_
-  rwa [Submodule.orthogonal_closure]
-
 section Subspace
 
 variable [CompleteSpace E] [FiniteDimensional ℝ E'] [MeasurableSpace E'] [BorelSpace E']
@@ -108,12 +93,12 @@ theorem exists_mem_waveFrontSet_ofFun_one_map_subtype_and_adjoint_fderiv_apply_e
       (fderiv ℝ f x).adjoint η = 0 := by
   obtain ⟨η, hη, hη0⟩ :=
     Submodule.exists_mem_ne_zero_of_ne_bot (Submodule.orthogonal_eq_bot_iff.not.2 hV)
-  refine ⟨η, ?_, adjoint_fderiv_apply_eq_zero_of_eventually_mem hf hη⟩
+  refine ⟨η, ?_, TauCeti.adjoint_fderiv_apply_eq_zero_of_eventually_mem hf hη⟩
   rw [waveFrontSet_ofFun_one_map_subtype]
   exact ⟨⟨hx, hf.self_of_nhds⟩, hη, hη0⟩
 
-/-- **No pullback of the surface measure of a subspace to it.** For a proper subspace `V` of
-`E'` and a map `f` sending a nonempty open set `Ω` into `V ∩ Ω'`, the wave front set of the
+/-- **The pullback criterion fails for the surface measure of a subspace.** For a proper subspace
+`V` of `E'` and a map `f` sending a nonempty open set `Ω` into `V ∩ Ω'`, the wave front set of the
 surface measure of `V` on `Ω'` meets the normal set of `f`: the hypothesis of
 `Distribution.pullback` fails. -/
 theorem not_forall_adjoint_fderiv_apply_ne_zero_ofFun_one_map_subtype {V : Submodule ℝ E'}
@@ -133,72 +118,35 @@ end Subspace
 
 section Diagonal
 
-variable [FiniteDimensional ℝ E]
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [MeasurableSpace (WithLp 2 (E × E))] [BorelSpace (WithLp 2 (E × E))]
 
-/-- The diagonal `{(x, x)}` of `E × E`. -/
-private def diagonal : Submodule ℝ (WithLp 2 (E × E)) :=
-  LinearMap.ker (fstL 2 ℝ E E - sndL 2 ℝ E E).toLinearMap
-
-omit [FiniteDimensional ℝ E] in
-private theorem mem_diagonal_iff {p : WithLp 2 (E × E)} : p ∈ diagonal ↔ p.fst = p.snd := by
-  simp [diagonal, sub_eq_zero]
-
-omit [FiniteDimensional ℝ E] in
-/-- The covectors conormal to the diagonal are the `(η, -η)`. -/
-private theorem mem_orthogonal_diagonal_iff {ζ : WithLp 2 (E × E)} :
-    ζ ∈ (diagonal (E := E))ᗮ ↔ ζ.snd = -ζ.fst := by
-  rw [Submodule.mem_orthogonal]
-  refine ⟨fun h ↦ ?_, fun h u hu ↦ ?_⟩
-  · have h' := h (toLp 2 (ζ.fst + ζ.snd, ζ.fst + ζ.snd)) (mem_diagonal_iff.2 rfl)
-    rw [prod_inner_apply] at h'
-    simp only [ofLp_fst, ofLp_snd] at h'
-    rw [← inner_add_right, inner_self_eq_zero] at h'
-    exact eq_neg_iff_add_eq_zero.2 (by rwa [add_comm])
-  · rw [prod_inner_apply]
-    simp [mem_diagonal_iff.1 hu, h]
-
-/-- The diagonal map `x ↦ (x, x)` as an isomorphism of `E` onto the diagonal. -/
-private def diagonalEquiv : E ≃L[ℝ] diagonal (E := E) :=
-  LinearEquiv.toContinuousLinearEquiv
-    { toFun x := ⟨toLp 2 (x, x), mem_diagonal_iff.2 rfl⟩
-      map_add' x y := Subtype.ext (by simp [← toLp_add])
-      map_smul' c x := Subtype.ext (by simp [← toLp_smul])
-      invFun p := (p : WithLp 2 (E × E)).fst
-      left_inv x := rfl
-      right_inv p :=
-        Subtype.ext ((WithLp.ext_iff 2).2 (Prod.ext rfl (mem_diagonal_iff.1 p.property))) }
-
-variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace (WithLp 2 (E × E))]
-  [BorelSpace (WithLp 2 (E × E))]
-
-/-- Lebesgue measure of `E` pushed forward along `x ↦ (x, x)` is a positive multiple of the surface
-measure of the diagonal, by uniqueness of Haar measure on the diagonal. -/
-private theorem exists_volume_map_diagonal_eq_smul :
-    ∃ c : NNReal, 0 < c ∧ volume.map (fun x : E ↦ toLp 2 (x, x)) =
-      c • volume.map ((↑) : diagonal (E := E) → WithLp 2 (E × E)) := by
-  set e := diagonalEquiv (E := E)
-  have hd : (fun x : E ↦ toLp 2 (x, x)) = ((↑) : diagonal (E := E) → WithLp 2 (E × E)) ∘ e :=
-    rfl
-  refine ⟨Measure.addHaarScalarFactor (volume.map e) volume,
-    Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _, ?_⟩
-  rw [hd, ← Measure.map_map measurable_subtypeVal e.continuous.measurable,
-    congrArg (Measure.map _) (Measure.isAddLeftInvariant_eq_smul (volume.map e) volume),
-    Measure.map_smul]
-  exact measurable_subtypeVal.aemeasurable
-
-/-- `δ(x - y)` is a nonzero multiple of the surface measure of the diagonal. -/
+/-- `δ(x - y)` is a nonzero multiple of the surface measure of the diagonal: Lebesgue measure of
+`E` pushed forward along `x ↦ (x, x)` is a positive multiple of the surface measure of the
+diagonal, by uniqueness of Haar measure on the diagonal. -/
 private theorem exists_ofFun_one_map_diagonal_eq_smul (Ω : Opens (WithLp 2 (E × E))) :
     ∃ c : ℂ, c ≠ 0 ∧ ofFun Ω (1 : WithLp 2 (E × E) → ℂ) (volume.map fun x : E ↦ toLp 2 (x, x)) ⊤ =
-      c • ofFun Ω 1 (volume.map ((↑) : diagonal (E := E) → WithLp 2 (E × E))) ⊤ := by
-  obtain ⟨c, hc, hμ⟩ := exists_volume_map_diagonal_eq_smul (E := E)
-  have hce : Topology.IsClosedEmbedding ((↑) : diagonal (E := E) → WithLp 2 (E × E)) :=
-    diagonal.isClosedEmbedding_subtype diagonal.isClosed_of_finiteDimensional
+      c • ofFun Ω 1 (volume.map ((↑) : diagonal 2 ℝ E → WithLp 2 (E × E))) ⊤ := by
+  set e := diagonalEquiv 2 ℝ E
+  have hd : (fun x : E ↦ toLp 2 (x, x)) = ((↑) : diagonal 2 ℝ E → WithLp 2 (E × E)) ∘ e := by
+    funext x
+    simp [e]
+  set c := Measure.addHaarScalarFactor (volume.map e) volume
+  have hμ : volume.map (fun x : E ↦ toLp 2 (x, x)) =
+      c • volume.map ((↑) : diagonal 2 ℝ E → WithLp 2 (E × E)) := by
+    rw [hd, ← Measure.map_map measurable_subtypeVal e.continuous.measurable,
+      congrArg (Measure.map _) (Measure.isAddLeftInvariant_eq_smul (volume.map e) volume),
+      Measure.map_smul]
+    exact measurable_subtypeVal.aemeasurable
+  have hce : Topology.IsClosedEmbedding ((↑) : diagonal 2 ℝ E → WithLp 2 (E × E)) :=
+    (diagonal 2 ℝ E).isClosedEmbedding_subtype (diagonal 2 ℝ E).isClosed_of_finiteDimensional
   have := Measure.isFiniteMeasureOnCompacts_map_of_isProperMap volume hce.isProperMap
-  refine ⟨((c : ℝ) : ℂ), by exact_mod_cast hc.ne', ?_⟩
+  refine ⟨((c : ℝ) : ℂ), by exact_mod_cast
+    (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure (volume.map e) volume).ne', ?_⟩
   ext φ
-  rw [hμ, ofFun_apply (f := 1) ((locallyIntegrable_const 1).locallyIntegrableOn _),
-    smul_apply, ofFun_apply (f := 1) ((locallyIntegrable_const 1).locallyIntegrableOn _),
-    integral_smul_nnreal_measure, NNReal.smul_def, Complex.real_smul, smul_eq_mul]
+  rw [hμ, ofFun_apply (f := 1) ((locallyIntegrable_const 1).locallyIntegrableOn _), smul_apply,
+    ofFun_apply (f := 1) ((locallyIntegrable_const 1).locallyIntegrableOn _)]
+  simp [integral_smul_nnreal_measure, NNReal.smul_def]
 
 /-- **The wave front set of `δ(x - y)`.** The distribution `φ ↦ ∫ φ (x, x) dx` on an open set `Ω`
 of `E × E`, carried by the diagonal, is singular exactly at the points `(x, x)` of the diagonal in
@@ -210,21 +158,22 @@ theorem waveFrontSet_ofFun_one_map_diagonal (Ω : Opens (WithLp 2 (E × E))) :
   rw [h, waveFrontSet_smul hc, waveFrontSet_ofFun_one_map_subtype]
   ext ⟨p, ζ⟩
   simp only [mem_prod, mem_inter_iff, SetLike.mem_coe, Set.mem_sdiff, mem_singleton_iff,
-    mem_diagonal_iff, mem_orthogonal_diagonal_iff, mem_ofPred_eq]
+    WithLp.mem_diagonal_iff, mem_orthogonal_diagonal_iff, mem_ofPred_eq]
   tauto
 
-/-- **`δ(x - y)` cannot be restricted to the diagonal.** At every point `(x, x)` of the diagonal
-in `Ω` and for every `η ≠ 0`, the covector `(η, -η)` lies in the wave front set of `δ(x - y)`,
-and the transpose `(ξ, ζ) ↦ ξ + ζ` of the derivative of the diagonal map `x ↦ (x, x)` sends it to
-`0`. So the wave front set of `δ(x - y)` meets the normal set of the diagonal map at every point
-of the diagonal, and the hypothesis of `Distribution.pullback` fails. -/
+/-- **`δ(x - y)` fails the pullback criterion along the diagonal.** At every point `(x, x)` of
+the diagonal in `Ω` and for every `η ≠ 0`, the covector `(η, -η)` lies in the wave front set of
+`δ(x - y)`, and the transpose `(ξ, ζ) ↦ ξ + ζ` of the derivative of the diagonal map `x ↦ (x, x)`
+sends it to `0`. So the wave front set of `δ(x - y)` meets the normal set of the diagonal map at
+every point of the diagonal, and the hypothesis of `Distribution.pullback` fails. -/
 theorem mem_waveFrontSet_ofFun_one_map_diagonal_and_adjoint_fderiv_apply_eq_zero
     {Ω : Opens (WithLp 2 (E × E))} {x : E} (hx : toLp 2 (x, x) ∈ Ω) {η : E} (hη : η ≠ 0) :
     (toLp 2 (x, x), toLp 2 (η, -η)) ∈
         (ofFun Ω 1 (volume.map fun x : E ↦ toLp 2 (x, x)) ⊤).waveFrontSet ∧
       (fderiv ℝ (fun x : E ↦ toLp 2 (x, x)) x).adjoint (toLp 2 (η, -η)) = 0 := by
-  refine ⟨?_, adjoint_fderiv_apply_eq_zero_of_eventually_mem (V := diagonal)
-    (Eventually.of_forall fun y ↦ mem_diagonal_iff.2 rfl) (mem_orthogonal_diagonal_iff.2 rfl)⟩
+  refine ⟨?_, TauCeti.adjoint_fderiv_apply_eq_zero_of_eventually_mem (V := diagonal 2 ℝ E)
+    (Eventually.of_forall fun y ↦ WithLp.mem_diagonal_iff.2 rfl)
+    (mem_orthogonal_diagonal_iff.2 rfl)⟩
   rw [waveFrontSet_ofFun_one_map_diagonal]
   exact ⟨hx, rfl, fun h ↦ hη (by simpa using congrArg WithLp.fst h), rfl⟩
 
@@ -260,8 +209,7 @@ theorem tendsto_norm_ofFun_one_map_inl_atTop [Nontrivial D] {W : Opens (WithLp 2
       (σ i).normed volume 0 * |∫ x, ψ x| := by
     rw [ofFun_apply (f := 1) ((locallyIntegrable_const 1).locallyIntegrableOn _),
       hg.measurableEmbedding.integral_map]
-    simp only [g, hf, toLp_fst, toLp_snd, Pi.one_apply, Complex.real_smul, mul_one]
-    rw [integral_complex_ofReal, integral_mul_const, Complex.norm_real, Real.norm_eq_abs, abs_mul,
+    simp [g, hf, integral_complex_ofReal, integral_mul_const,
       abs_of_nonneg ((σ i).nonneg_normed 0), mul_comm]
   simp_rw [hval]
   exact (ContDiffBump.tendsto_normed_center_atTop volume hσ).atTop_mul_const (abs_pos.2 hψ)
