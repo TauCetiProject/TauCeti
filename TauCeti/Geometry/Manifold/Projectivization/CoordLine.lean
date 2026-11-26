@@ -85,8 +85,7 @@ theorem coordLineEmbedding_apply_succ_succ (v : Fin 2 → 𝕜) (l : Fin m) :
 variable (m) in
 /-- The inclusion of the first two coordinates is injective. -/
 theorem coordLineEmbedding_injective : Function.Injective (coordLineEmbedding (𝕜 := 𝕜) m) :=
-  fun v w h ↦ funext fun a ↦ by
-    simpa using congrFun h (Fin.castLE (Nat.le_add_left 2 m) a)
+  Function.extend_injective (Fin.castLE_injective (Nat.le_add_left 2 m)) 0
 
 variable (m) in
 /-- **The coordinate line** `[v₀ : v₁] ↦ [v₀ : v₁ : 0 : ⋯ : 0]` from the projective line to
