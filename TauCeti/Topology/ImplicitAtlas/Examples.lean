@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.ImplicitAtlas.DeformationSpace
+public import TauCeti.Topology.ImplicitAtlas.DeformationSpace.Basic
 public import TauCeti.Topology.ImplicitAtlas.Boundary
 public import TauCeti.Topology.ImplicitAtlas.Smooth
 public import Mathlib.Geometry.Manifold.ChartedSpace
