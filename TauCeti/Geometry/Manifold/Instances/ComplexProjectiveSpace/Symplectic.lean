@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Descent
 public import TauCeti.Geometry.Symplectic.Manifold.Rescale
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.InnerProductSpace.Complex
 import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 
@@ -154,10 +155,6 @@ theorem ker_bilinFormAt_mpullback_coe_sphere
   have horth (w : TangentSpace (𝓡 (2 * n + 1)) x) :
       ⟪(x : EuclideanSpace ℂ (Fin (n + 1))), D w⟫_ℝ = 0 :=
     inner_coe_mvfderiv_subtypeVal_sphere x w
-  -- `Im ⟪v, w⟫_ℂ = ⟪i v, w⟫_ℝ`.
-  have him (v w : EuclideanSpace ℂ (Fin (n + 1))) : (⟪v, w⟫_ℂ).im = ⟪I • v, w⟫_ℝ := by
-    rw [EuclideanSpace.real_inner_eq_re_inner, inner_smul_left]
-    simp
   ext u
   simp only [LinearMap.mem_ker, Submodule.mem_comap, Submodule.mem_span_singleton,
     ContinuousLinearMap.coe_coe, LinearMap.ext_iff, SmoothForm.bilinFormAt_apply,
@@ -176,7 +173,7 @@ theorem ker_bilinFormAt_mpullback_coe_sphere
     obtain ⟨w, hw⟩ := exists_mvfderiv_coe_sphere_eq (n := 2 * n + 1) x hy
     have hyy : ⟪y, y⟫_ℝ = 0 := by
       have h0 := h w
-      rw [hw, him] at h0
+      rw [hw, im_inner_eq_real_inner_I_smul] at h0
       have hsplit : I • D u = y + s • (x : EuclideanSpace ℂ (Fin (n + 1))) := by
         rw [sub_add_cancel]
       rw [hsplit, inner_add_left, real_inner_smul_left, real_inner_comm, hy, mul_zero,
@@ -200,7 +197,8 @@ theorem ker_bilinFormAt_mpullback_coe_sphere
       congr 1
       push_cast
       linear_combination (t : ℂ) * Complex.I_sq
-    rw [← ht, him, hIt, real_inner_smul_left, horth, mul_zero]
+    rw [← ht, im_inner_eq_real_inner_I_smul, hIt, real_inner_smul_left, horth,
+      mul_zero]
 
 /-- **The restriction of `Im ⟪·, ·⟫_ℂ` to the sphere is invariant under the circle** acting by
 unit scalars, which acts on `ℂⁿ⁺¹` by unitary maps. -/
@@ -224,11 +222,7 @@ theorem mpullback_smul_mpullback_coe_sphere (c : Circle) :
     refine SmoothBundleForm.ext_eval₂ fun p v w ↦ ?_
     rw [SmoothForm.eval₂_mpullback, SymplecticForm.eval₂_constSmooth_mfderiv_eq,
       SymplecticForm.fromTangentSpace_constSmooth_apply, mvfderiv_eq_fderiv, L.fderiv]
-    have hc (a b : EuclideanSpace ℂ (Fin (n + 1))) :
-        (⟪(c : ℂ) • a, (c : ℂ) • b⟫_ℂ).im = (⟪a, b⟫_ℂ).im := by
-      rw [inner_smul_left, inner_smul_right, ← mul_assoc, Complex.conj_mul', Circle.norm_coe]
-      simp
-    simpa [L] using hc _ _
+    simpa [L] using congrArg Complex.im (inner_smul_smul_of_norm_eq_one (Circle.norm_coe c) _ _)
   rw [SmoothForm.mpullback_mpullback_of_comp_eq _ _ contMDiff_coe_sphere L.contMDiff
     (funext fun z ↦ Circle.coe_smul_sphere c z), hL]
 
