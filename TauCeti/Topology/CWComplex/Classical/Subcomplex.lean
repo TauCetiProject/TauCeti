@@ -423,6 +423,15 @@ theorem finite_finsetSup {α : Type*} (s : Finset α)
     exact finite_sup (hf a (Finset.mem_insert_self a s))
       (ih fun b hb ↦ hf b (Finset.mem_insert_of_mem hb))
 
+omit [T2Space X] in
+private lemma mem_adjoinCell_cells {E : Subcomplex C} {n k : ℕ} {i : cell C n} {j : cell C k} :
+    j ∈ (if h : k = n then E.I k ∪ {h ▸ i} else E.I k : Set (cell C k)) ↔
+      j ∈ E.I k ∨ (⟨k, j⟩ : Σ m, cell C m) = ⟨n, i⟩ := by
+  split_ifs with h
+  · subst h
+    simp [or_comm]
+  · simp [h]
+
 /-- Adjoining a single `n`-cell `i` whose cell frontier already lies in `E` produces a subcomplex
 with carrier `(E : Set X) ∪ closedCell n i`. -/
 @[alias_in CWComplex.Subcomplex]
@@ -435,21 +444,20 @@ def adjoinCell (E : Subcomplex C) (n : ℕ) (i : cell C n)
     let J : ∀ k, Set (cell C k) := fun k ↦ if h : k = n then E.I k ∪ {h ▸ i} else E.I k
     have hsubE : (E : Set X) ⊆ D ∪ ⋃ (k : ℕ) (j : ↥(J k)), openCell k j.val := by
       rw [← E.union]
-      refine union_subset_union_right D (iUnion₂_subset fun k ⟨l, hlE⟩ ↦ ?_)
-      exact subset_iUnion₂ (s := fun k (j : ↥(J k)) ↦ openCell k j.val) k
-        ⟨l, by dsimp only [J]; split_ifs <;> simp [hlE]⟩
+      exact union_subset_union_right D (iUnion₂_subset fun k ⟨l, hlE⟩ ↦
+        subset_iUnion₂ (s := fun k (j : ↥(J k)) ↦ openCell k j.val) k
+          ⟨l, mem_adjoinCell_cells.2 (.inl hlE)⟩)
     refine Subset.antisymm
       (union_subset (E.base_subset.trans subset_union_left) (iUnion₂_subset fun k ⟨l, hl⟩ ↦ ?_))
       (union_subset hsubE ?_)
-    · by_cases hkn : k = n
-      · subst hkn
-        rcases (by simpa [J] using hl : l = i ∨ l ∈ E.I k) with rfl | hlE
-        · exact (openCell_subset_closedCell k l).trans subset_union_right
-        · exact (E.openCell_subset_of_mem hlE).trans subset_union_left
-      · exact (E.openCell_subset_of_mem (by simpa [J, hkn] using hl)).trans subset_union_left
+    · rcases mem_adjoinCell_cells.1 hl with hlE | hli
+      · exact (E.openCell_subset_of_mem hlE).trans subset_union_left
+      · cases hli
+        exact (openCell_subset_closedCell n i).trans subset_union_right
     · rw [← cellFrontier_union_openCell_eq_closedCell]
       exact union_subset (hi.trans hsubE) (subset_union_of_subset_right
-        (subset_iUnion₂ (s := fun k (j : ↥(J k)) ↦ openCell k j.val) n ⟨i, by simp [J]⟩) D)
+        (subset_iUnion₂ (s := fun k (j : ↥(J k)) ↦ openCell k j.val) n
+          ⟨i, mem_adjoinCell_cells.2 (.inr rfl)⟩) D)
 
 /-- The carrier of `E.adjoinCell n i hi` is `(E : Set X) ∪ closedCell n i`. -/
 @[simp, norm_cast, alias_in CWComplex.Subcomplex]
@@ -470,14 +478,11 @@ theorem adjoinCell_I (E : Subcomplex C) (n : ℕ) (i : cell C n) (hi : cellFront
 @[alias_in CWComplex.Subcomplex]
 theorem finite_adjoinCell {E : Subcomplex C} (hE : Finite (E : Set X))
     (n : ℕ) (i : cell C n) (hi : cellFrontier n i ⊆ E) :
-    Finite (E.adjoinCell n i hi : Set X) := by
-  refine finite_iff_finite_cells.2 <|
-    ((finite_iff_finite_cells.1 hE).insert ⟨n, i⟩).subset fun ⟨k, j⟩ hj ↦ ?_
-  rw [mem_ofPred_eq, adjoinCell_I] at hj
-  split_ifs at hj with h
-  · subst h
-    exact hj.elim Or.inr fun hj' ↦ Or.inl (congrArg (Sigma.mk k) (mem_singleton_iff.1 hj'))
-  · exact Or.inr hj
+    Finite (E.adjoinCell n i hi : Set X) :=
+  finite_iff_finite_cells.2 <|
+    ((finite_iff_finite_cells.1 hE).insert ⟨n, i⟩).subset fun _ hj ↦ by
+      rw [mem_ofPred_eq, adjoinCell_I, mem_adjoinCell_cells] at hj
+      exact hj.symm
 
 end
 

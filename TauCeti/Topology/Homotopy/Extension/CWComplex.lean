@@ -79,6 +79,28 @@ namespace TauCeti
 
 variable {X : Type u} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
 
+/-- Every value `F (z, x)` of a map `F` on `Z × skeletonLT C (n + 1)` glued from `G` on
+`Z × skeletonLT C n` and maps `K j` on the closed `n`-cells is either `G (z, ⟨x, hx⟩)` for `x` in
+`skeletonLT C n` or `K j (z, ⟨y, _⟩)` at an interior point `‖y‖ < 1` of an `n`-cell `j`. -/
+private lemma skeletonLT_succ_apply_eq {Z Y : Type*} [TopologicalSpace Z] [TopologicalSpace Y]
+    {n : ℕ} {G : C(Z × (skeletonLT C n : Set X), Y)}
+    {K : cell C n → C(Z × closedBall (0 : Fin n → ℝ) 1, Y)}
+    {F : C(Z × (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X), Y)}
+    (hFG : ∀ z (x : X) (hx : x ∈ (skeletonLT C n : Set X)),
+      F (z, ⟨x, skeletonLT_mono (by exact_mod_cast n.le_succ) hx⟩) = G (z, ⟨x, hx⟩))
+    (hFK : ∀ j z (y : closedBall (0 : Fin n → ℝ) 1),
+      F (z, ⟨map n j y, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.property)⟩) =
+        K j (z, y))
+    (z : Z) (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :
+    (∃ hx : (x : X) ∈ (skeletonLT C n : Set X), F (z, x) = G (z, ⟨x, hx⟩)) ∨
+      ∃ (j : cell C n) (y : Fin n → ℝ) (hy : ‖y‖ < 1),
+        x = ⟨map n j y, map_mem_skeletonLT_succ j hy.le⟩ ∧
+          F (z, x) = K j (z, ⟨y, mem_closedBall_zero_iff.2 hy.le⟩) := by
+  obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.property
+  · exact .inl ⟨hx, hFG z x hx⟩
+  · obtain rfl : x = ⟨map n j y, map_mem_skeletonLT_succ j hy.le⟩ := Subtype.ext hxy.symm
+    exact .inr ⟨j, y, hy, rfl, hFK j z ⟨y, mem_closedBall_zero_iff.2 hy.le⟩⟩
+
 /-- **`skeletonLT C n` has the homotopy extension property inside `skeletonLT C (n + 1)`.** -/
 theorem hasHomotopyExtensionProperty_skeletonLT_succ (n : ℕ) :
     HasHomotopyExtensionProperty (Subtype.val ⁻¹' (skeletonLT C n : Set X) :
@@ -116,11 +138,9 @@ theorem hasHomotopyExtensionProperty_skeletonLT_succ (n : ℕ) :
           (by exact_mod_cast n.le_succ) p.2.property⟩, p.2.property⟩),
       by fun_prop⟩) K hKs
   refine ⟨F, fun x ↦ ?_, fun t a ↦ hFG t a.val a.property⟩
-  obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.property
-  · rw [hFG 0 x hx]
-    exact hG ⟨x, hx⟩
-  · obtain rfl : x = ⟨map n j y, map_mem_skeletonLT_succ j hy.le⟩ := Subtype.ext hxy.symm
-    exact (hFK j 0 ⟨y, mem_closedBall_zero_iff.2 hy.le⟩).trans (hK0 j _)
+  rcases skeletonLT_succ_apply_eq hFG hFK 0 x with ⟨hx, hF⟩ | ⟨j, _, _, rfl, hF⟩
+  · exact hF.trans (hG ⟨x, hx⟩)
+  · exact hF.trans (hK0 j _)
 
 section Glue
 
@@ -299,22 +319,17 @@ private theorem exists_retraction_step (n : ℕ)
   choose K hK₀ hKs hKr using hext
   obtain ⟨F, hFG, hFK⟩ := exists_continuousMap_prod_skeletonLT_succ G K hKs
   refine ⟨F, hFG, fun x ↦ ?_, fun ⟨t, x⟩ ↦ ?_, fun {S} hSn hGS t x hxS ↦ ?_⟩
-  · obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.property
-    · exact (hFG 0 x hx).trans (hG₀ ⟨x, hx⟩)
-    · obtain rfl : x = ⟨map n j y, map_mem_skeletonLT_succ j hy.le⟩ := Subtype.ext hxy.symm
-      exact (hFK j 0 ⟨y, mem_closedBall_zero_iff.2 hy.le⟩).trans (hK₀ j _)
-  · obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.property
-    · exact hFG t x hx ▸ hG_dom _
-    · obtain rfl : x = ⟨map n j y, map_mem_skeletonLT_succ j hy.le⟩ := Subtype.ext hxy.symm
-      rw [hFK j t ⟨y, mem_closedBall_zero_iff.2 hy.le⟩]
-      exact (hKr j _).elim (fun ⟨_, hw⟩ ↦ hw ▸ zero_mem_cylinderExtensionDomain _)
+  · rcases skeletonLT_succ_apply_eq hFG hFK 0 x with ⟨hx, hF⟩ | ⟨j, _, _, rfl, hF⟩
+    · exact hF.trans (hG₀ ⟨x, hx⟩)
+    · exact hF.trans (hK₀ j _)
+  · rcases skeletonLT_succ_apply_eq hFG hFK t x with ⟨_, hF⟩ | ⟨j, _, _, _, hF⟩
+    · exact hF ▸ hG_dom _
+    · exact hF ▸ (hKr j _).elim (fun ⟨_, hw⟩ ↦ hw ▸ zero_mem_cylinderExtensionDomain _)
         fun ⟨_, hq⟩ ↦ hq ▸ hG_dom _
-  · obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.property
-    · exact hFG t x hx ▸ hGS t ⟨x, hx⟩ hxS
-    · have hclosedS : closedCell n j ⊆ S := hSn j ⟨x, ⟨y, mem_ball_zero_iff.2 hy, hxy⟩, hxS⟩
-      obtain rfl : x = ⟨map n j y, map_mem_skeletonLT_succ j hy.le⟩ := Subtype.ext hxy.symm
-      rw [hFK j t ⟨y, mem_closedBall_zero_iff.2 hy.le⟩]
-      exact (hKr j _).elim (fun ⟨w, hw⟩ ↦ hw ▸ hclosedS ⟨w, w.property, rfl⟩) fun ⟨q, hq⟩ ↦
+  · rcases skeletonLT_succ_apply_eq hFG hFK t x with ⟨hx, hF⟩ | ⟨j, y, hy, rfl, hF⟩
+    · exact hF ▸ hGS t ⟨x, hx⟩ hxS
+    · have hclosedS := hSn j ⟨map n j y, ⟨y, mem_ball_zero_iff.2 hy, rfl⟩, hxS⟩
+      exact hF ▸ (hKr j _).elim (fun ⟨w, hw⟩ ↦ hw ▸ hclosedS ⟨w, w.property, rfl⟩) fun ⟨q, hq⟩ ↦
         hq ▸ hGS q.1 _ (hclosedS (cellFrontier_subset_closedCell n j ⟨q.2.val, q.2.property, rfl⟩))
 
 /-- Recursive sequence of skeletal cylinder retractions on `I × skeletonLT C (0 + j)`. -/
