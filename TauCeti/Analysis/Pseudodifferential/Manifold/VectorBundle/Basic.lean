@@ -457,12 +457,6 @@ theorem toSpanSingleton_comp_comp_cutoffFrameCoeff_mem_sectionClassicalPseudodif
     (σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
     (LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∘ₗ A ∘ₗ t.cutoffFrameCoeff ρ hρ ℓ ∈
       sectionClassicalPseudodifferentialOperators m := by
-  -- The cut-off frame coefficient of `f s` is `f` times that of `s`.
-  have hC (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
-      (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
-      t.cutoffFrameCoeff ρ hρ ℓ (f • s) = t.cutoffFrameCoeff ρ hρ ℓ s * f := by
-    ext x
-    simp [mul_comm, mul_left_comm]
   refine mem_sectionClassicalPseudodifferentialOperators_iff.2
     ⟨isSectionProperlySupported_iff.2 fun K hK ↦ ?_, fun T _ ψ hψ v T' _ χ hχ ℓ' ↦ ?_⟩
   · obtain ⟨K', hK', hA₁, hA₂⟩ :=
@@ -481,7 +475,7 @@ theorem toSpanSingleton_comp_comp_cutoffFrameCoeff_mem_sectionClassicalPseudodif
         LinearMap.mulLeft ℂ (T'.cutoffFrameCoeff χ hχ ℓ' σ) ∘ₗ A ∘ₗ
           LinearMap.mulLeft ℂ (t.cutoffFrameCoeff ρ hρ ℓ (T.cutoffFrameSection ψ hψ v)) := by
       ext f x
-      simp [hC, mul_comm, mul_assoc]
+      simp [Bundle.Trivialization.cutoffFrameCoeff_smul_function, mul_comm, mul_assoc]
     rw [hentry]
     exact mulLeft_comp_mem_classicalPseudodifferentialOperators
       (comp_mulLeft_mem_classicalPseudodifferentialOperators hA _) _
