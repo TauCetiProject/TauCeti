@@ -348,13 +348,16 @@ theorem root'_apply_ne_intCast_of_mem_affineWeylGroup [P.IsCrystallographic]
 
 /-- For a crystallographic pairing over an ordered ring, the affine Weyl group preserves the set of
 points at which every root is bounded below by an integer. -/
-theorem exists_intCast_lt_root'_apply_of_mem_affineWeylGroup [PartialOrder R]
+theorem exists_intCast_lt_root'_apply_of_mem_affineWeylGroup [Preorder R]
     [IsOrderedAddMonoid R] [P.IsCrystallographic] {f : N ≃ᵃ[R] N} (hf : f ∈ P.affineWeylGroup)
     {x : N} (hx : ∀ j, ∃ n : ℤ, (n : R) < P.root' j x) (j : ι) :
     ∃ n : ℤ, (n : R) < P.root' j (f x) := by
   obtain ⟨j', m, hm⟩ := P.exists_root'_apply_eq_add_intCast_of_mem_affineWeylGroup hf j
   obtain ⟨n, hn⟩ := hx j'
-  exact ⟨n + m, by rw [hm x, Int.cast_add]; exact add_lt_add_left hn _⟩
+  -- A preorder gives no strict monotonicity of addition, so cancel `m` by hand.
+  refine ⟨n + m, ?_⟩
+  rw [hm x, Int.cast_add]
+  exact lt_of_le_not_ge (by gcongr) fun h ↦ hn.not_ge (by simpa using add_le_add_left h (-m : R))
 
 /-- For a crystallographic pairing over an ordered ring, the affine Weyl group preserves the
 relation of lying on the same side of each affine root hyperplane `αⱼ = m`: if `x` and `y` are on
