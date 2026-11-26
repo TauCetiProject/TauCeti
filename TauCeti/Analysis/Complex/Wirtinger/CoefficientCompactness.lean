@@ -14,6 +14,7 @@ import TauCeti.Analysis.Polynomial.Monic.RootBound
 import TauCeti.Order.Filter.AtTopBot
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
+import TauCeti.MeasureTheory.Integral.Lebesgue.UniformConvergence
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
@@ -260,28 +261,6 @@ theorem continuous_sum_map_conj_mul_esymm_erase (m k : ℕ) :
   simp only [Function.comp_def, key]
   fun_prop
 
-/-- An `m`-element multiset is recovered from its elementary symmetric functions by the inverse
-of the elementary symmetric chart. -/
-private theorem coeffHomeomorph_symm_esymm {m : ℕ} {R : Multiset ℂ}
-    (hR : Multiset.card R = m) :
-    (Sym.coeffHomeomorph ℂ m).symm (fun i : Fin m ↦ (-1) ^ (m - (i : ℕ)) * R.esymm (m - i)) =
-      Sym.mk R hR := by
-  rw [Homeomorph.symm_apply_eq, Sym.coeffHomeomorph_apply]
-  funext i
-  exact (Sym.coeffEquiv_apply (K := ℂ) (Sym.mk R hR) i).symm
-
-/-- Every tuple of coefficients `c₁, …, c_m` is the tuple of elementary symmetric functions of the
-`m` roots of `Wᵐ - c₁ Wᵐ⁻¹ + ⋯ + (-1)ᵐ cₘ`. -/
-private theorem exists_card_eq_and_esymm_eq (m : ℕ) (c : ℕ → ℂ) :
-    ∃ R : Multiset ℂ, Multiset.card R = m ∧ ∀ j ∈ Finset.Icc 1 m, c j = R.esymm j := by
-  set γ : Fin m → ℂ := fun i ↦ (-1) ^ (m - (i : ℕ)) * c (m - i) with hγ
-  refine ⟨((Sym.coeffEquiv ℂ m).symm γ : Multiset ℂ), Sym.card_coe, fun j hj ↦ ?_⟩
-  obtain ⟨hj₁, hjm⟩ := Finset.mem_Icc.1 hj
-  have hi := congrFun ((Sym.coeffEquiv ℂ m).apply_symm_apply γ) ⟨m - j, by omega⟩
-  rw [Sym.coeffEquiv_apply] at hi
-  simp only [hγ, Nat.sub_sub_self hjm] at hi
-  exact (mul_left_cancel₀ (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero)) hi).symm
-
 /-- **The zeroth-order term depends continuously on the coefficients.** If `R₀ z` has `m` elements
 for `z ∈ U` and its elementary symmetric functions `e_j(R₀ z)`, `1 ≤ j ≤ m`, are continuous on
 `U`, then so is `z ↦ ∑_{w ∈ R₀ z} \bar w e_k(R₀ z ∖ w)`. -/
@@ -295,7 +274,8 @@ theorem continuousOn_sum_map_conj_mul_esymm_erase {m k : ℕ} {U : Set ℂ} {R�
       (hR₀ _ (Finset.mem_Icc.2 ⟨by omega, by omega⟩))
   refine ((continuous_sum_map_conj_mul_esymm_erase m k).comp_continuousOn
     ((Sym.coeffHomeomorph ℂ m).symm.continuous.comp_continuousOn hγ)).congr fun z hz ↦ ?_
-  simp only [Function.comp_apply, coeffHomeomorph_symm_esymm (hcard z hz), Sym.coe_mk]
+  simp only [Function.comp_apply, Sym.coeffHomeomorph_symm_apply,
+    Sym.coeffEquiv_symm_esymm (hcard z hz), Sym.coe_mk]
 
 /-- **The zeroth-order term converges with the coefficients.** Let `R n z` and `R₀ z` have `m`
 elements for `z ∈ U`, an open set. If the elementary symmetric functions `e_j(R n z)` converge
@@ -334,40 +314,10 @@ theorem tendstoLocallyUniformlyOn_sum_map_conj_mul_esymm_erase {ι : Type*} {l :
   refine ((hK.image_of_continuousOn hγ).comp_tendstoUniformlyOn
     (fun _ _ ↦ hΦ.continuousAt) hβ).congr (.of_forall fun n z hz ↦ ?_) |>.congr_right
       fun z hz ↦ ?_
-  · simp only [Φ, β, coeffHomeomorph_symm_esymm (hcard n z (hKU hz)), Sym.coe_mk]
-  · simp only [Φ, γ, coeffHomeomorph_symm_esymm (hcard₀ z (hKU hz)), Sym.coe_mk]
-
-/-- If `‖F n z - f z‖ ≤ ‖r n z‖ + ‖G n z - g z‖` on a compact set `K`, where `G n → g` uniformly
-on `K` and `r n → 0` in `L¹(K)`, then `F n → f` in `L¹(K)`. No measurability is needed: the
-uniform part is bounded by a constant. -/
-private theorem tendsto_setLIntegral_enorm_sub_of_le {ι : Type*} {l : Filter ι} {K : Set ℂ}
-    (hK : IsCompact K) {F G r : ι → ℂ → ℂ} {f g : ℂ → ℂ} (hG : TendstoUniformlyOn G g l K)
-    (hr : Tendsto (fun n ↦ ∫⁻ z in K, ‖r n z‖ₑ) l (𝓝 0))
-    (hle : ∀ n, ∀ z ∈ K, ‖F n z - f z‖ ≤ ‖r n z‖ + ‖G n z - g z‖) :
-    Tendsto (fun n ↦ ∫⁻ z in K, ‖F n z - f z‖ₑ) l (𝓝 0) := by
-  rw [ENNReal.tendsto_nhds_zero]
-  intro δ hδ
-  have hδ2 : 0 < δ / 2 := ENNReal.half_pos hδ.ne'
-  -- Choose `ε > 0` with `ε vol(K) < δ / 2`.
-  have hsmall : Tendsto (fun ε : ℝ ↦ ENNReal.ofReal ε * volume K) (𝓝[>] 0) (𝓝 0) := by
-    have h0 : Tendsto (fun ε : ℝ ↦ ENNReal.ofReal ε) (𝓝[>] 0) (𝓝 0) := by
-      simpa using (ENNReal.continuous_ofReal.tendsto 0).mono_left nhdsWithin_le_nhds
-    simpa using ENNReal.Tendsto.mul_const h0 (Or.inr (hK.measure_lt_top (μ := volume)).ne)
-  obtain ⟨ε, hεδ, hε⟩ :=
-    ((hsmall.eventually (gt_mem_nhds hδ2)).and self_mem_nhdsWithin).exists
-  filter_upwards [Metric.tendstoUniformlyOn_iff.1 hG ε hε, ENNReal.tendsto_nhds_zero.1 hr _ hδ2]
-    with n hn hrn
-  calc ∫⁻ z in K, ‖F n z - f z‖ₑ ≤ ∫⁻ z in K, (‖r n z‖ₑ + ENNReal.ofReal ε) := by
-        refine lintegral_mono_ae ((ae_restrict_iff' hK.measurableSet).2
-          (.of_forall fun z hz ↦ ?_))
-        have hGz : ‖G n z - g z‖ ≤ ε := by
-          simpa only [dist_eq_norm, norm_sub_rev] using (hn z hz).le
-        rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_add (norm_nonneg _) (le_of_lt hε)]
-        exact ENNReal.ofReal_le_ofReal ((hle n z hz).trans (by gcongr))
-    _ = (∫⁻ z in K, ‖r n z‖ₑ) + ENNReal.ofReal ε * volume K := by
-        rw [lintegral_add_right _ measurable_const, setLIntegral_const]
-    _ ≤ δ / 2 + δ / 2 := add_le_add hrn hεδ.le
-    _ = δ := ENNReal.add_halves δ
+  · simp only [Φ, β, Sym.coeffHomeomorph_symm_apply,
+      Sym.coeffEquiv_symm_esymm (hcard n z (hKU hz)), Sym.coe_mk]
+  · simp only [Φ, γ, Sym.coeffHomeomorph_symm_apply,
+      Sym.coeffEquiv_symm_esymm (hcard₀ z (hKU hz)), Sym.coe_mk]
 
 /-- **The equation of elementary symmetric functions passes to locally uniform limits.** Let
 `U ⊆ ℂ` be open. Along a filter `l`, let `R n z` be a multiset of exactly `m` complex numbers, for
@@ -402,7 +352,10 @@ theorem exists_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn_esymm {�
       ∀ j ∈ Finset.Icc 1 m, HasWeakConjWirtingerDerivOn volume ⟨U, hU⟩ (c j) fun z ↦
         -((j * c j z) • ν₀ z +
           ((R₀ z).map fun w ↦ conj w * ((R₀ z).erase w).esymm (j - 1)).sum • μ₀ z) 1 := by
-  choose R₀ hcard₀ hcR₀ using fun z ↦ exists_card_eq_and_esymm_eq m fun j ↦ c j z
+  choose s hs using fun z ↦ Sym.exists_esymm_eq (n := m) fun j ↦ c j z
+  set R₀ : ℂ → Multiset ℂ := fun z ↦ (s z : Multiset ℂ)
+  have hcard₀ (z : ℂ) : Multiset.card (R₀ z) = m := Sym.card_coe
+  have hcR₀ (z : ℂ) (j : ℕ) (hj : j ∈ Finset.Icc 1 m) : c j z = (R₀ z).esymm j := (hs z j hj).symm
   refine ⟨R₀, fun z _ ↦ ⟨hcard₀ z, fun j hj ↦ hcR₀ z j hj⟩, fun j hj ↦ ?_⟩
   have hcU (j : ℕ) (hj : j ∈ Finset.Icc 1 m) : ContinuousOn (c j) U :=
     (hc j hj).continuousOn (.of_forall fun n ↦ (hb n j hj).continuousOn)
@@ -426,8 +379,9 @@ theorem exists_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn_esymm {�
       (hev.continuous.comp_continuousOn (((continuousOn_const.mul (hcU j hj)).smul hν₀).add
         (hN₀.smul hμ₀))).neg hU.measurableSet)
     (fun n ↦ hasWeakConjWirtingerDerivOn_of_contDiffOn (hb n j hj))
-    (fun K hKU hK ↦ tendsto_setLIntegral_enorm_sub_of_le (r := 0) hK (hloc K hKU hK (hc j hj))
-      (by simp) fun n z _ ↦ by simp) fun K hKU hK ↦ ?_
+    (fun K hKU hK ↦ (hloc K hKU hK (hc j hj)).tendsto_setLIntegral_enorm_sub_of_le
+      (r := fun _ _ ↦ (0 : ℂ)) hK.measurableSet hK.measure_lt_top.ne (by simp)
+      fun n z _ ↦ by simp) fun K hKU hK ↦ ?_
   have hT := (hloc K hKU hK (hc j hj)).prodMk_same
     ((hev.uniformContinuous.comp_tendstoUniformlyOn (hloc K hKU hK hν)).prodMk_same
       ((hev.uniformContinuous.comp_tendstoUniformlyOn (hloc K hKU hK hμ)).prodMk_same
@@ -438,8 +392,8 @@ theorem exists_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn_esymm {�
   have hA := hK.tendstoUniformlyOn_comp_prodMk_of_continuous hP
     (((hcU j hj).prodMk ((hev.continuous.comp_continuousOn hν₀).prodMk
       ((hev.continuous.comp_continuousOn hμ₀).prodMk hN₀))).mono hKU) hT
-  refine tendsto_setLIntegral_enorm_sub_of_le hK hA (hr K hKU hK j hj) fun n z _ ↦
-    le_of_eq_of_le (congrArg norm ?_) (norm_sub_le _ _)
+  refine hA.tendsto_setLIntegral_enorm_sub_of_le hK.measurableSet hK.measure_lt_top.ne
+    (hr K hKU hK j hj) fun n z _ ↦ le_of_eq_of_le (congrArg (‖·‖ₑ) ?_) eNorm_sub_le
   simp only [Function.comp_apply, add_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
   ring
 
