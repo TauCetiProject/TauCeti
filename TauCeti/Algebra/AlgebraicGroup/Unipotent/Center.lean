@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Commutative
 import TauCeti.Algebra.AlgebraicGroup.Center.Nilpotent
 import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Vanishing
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Augmentation
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.ClosedSubgroup
 
 /-!

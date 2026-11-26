@@ -21,12 +21,10 @@ The identification is the first isomorphism theorem for Hopf ideals. The augment
 by definition the kernel Hopf ideal of the counit, and the counit is surjective because the unit
 splits it, so the kernel quotient equivalence applies verbatim.
 
-## Main declarations
+## Main declaration
 
 * `TauCeti.HopfIdeal.quotientAugmentationIso`: the quotient by the augmentation ideal is the
   trivial finite-type Hopf algebra.
-* `TauCeti.HopfIdeal.augmentation_quotient_eq_bot_iff`: the closed subgroup cut out by a Hopf
-  ideal is trivial exactly when the Hopf ideal is the augmentation ideal.
 
 ## References
 
@@ -65,25 +63,6 @@ theorem mkQuotient_comp_quotientAugmentationIso_hom
       FiniteTypeCommHopfAlgCat.ofHom (Bialgebra.counitBialgHom k H) := by
   apply FiniteTypeCommHopfAlgCat.hom_ext
   ext
-
-/-- The coordinate Hopf algebra `H ⧸ I` of the closed subgroup cut out by a Hopf ideal `I` has
-zero augmentation ideal, so that the subgroup is trivial, exactly when `I` is the augmentation
-ideal of `H`. -/
-theorem augmentation_quotient_eq_bot_iff {H : Type*} [CommRing H] [HopfAlgebra k H]
-    (I : HopfIdeal k H) : augmentation k (H ⧸ I.toIdeal) = ⊥ ↔ I = augmentation k H := by
-  constructor
-  · intro h
-    refine le_antisymm (le_augmentation k H I) fun x hx ↦ ?_
-    have hmk : Ideal.Quotient.mk I.toIdeal x ∈ augmentation k (H ⧸ I.toIdeal) := by
-      rw [mem_augmentation, Bialgebra.Quotient.counit_mk]
-      exact (mem_augmentation k H).mp hx
-    rw [h, mem_bot, Ideal.Quotient.eq_zero_iff_mem] at hmk
-    exact mem_toIdeal.mp hmk
-  · rintro rfl
-    ext y
-    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [mem_augmentation, Bialgebra.Quotient.counit_mk, mem_bot, Ideal.Quotient.eq_zero_iff_mem,
-      mem_toIdeal, mem_augmentation]
 
 end HopfIdeal
 
