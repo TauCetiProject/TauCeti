@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TrivSqZeroExt.ZMod
+public import TauCeti.Algebra.TrivSqZeroExt.SymmetricBimodule
 public import TauCeti.RingTheory.DeltaRing.TrivSqZeroExt
 
 /-!

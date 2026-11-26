@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TrivSqZeroExt.MapEquiv
-public import TauCeti.Algebra.TrivSqZeroExt.ZMod
+public import TauCeti.Algebra.TrivSqZeroExt.SymmetricBimodule
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.SqrtNegFive.Projective
 public import TauCeti.RingTheory.DedekindDomain.LocallyFree.RankPicard
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
@@ -128,10 +128,9 @@ noncomputable def splitK0RingEquiv :
     SplitK0.{0} (finiteProjectiveModules (QuadraticAlgebra ℤ (-5) 0)).FullSubcategory ≃+*
       TrivSqZeroExt ℤ (ZMod 2) :=
   -- Any central right action of `ℤ` on the class group serves to form the square-zero extension.
-  letI : Module ℤᵐᵒᵖ (Additive (ClassGroup (QuadraticAlgebra ℤ (-5) 0))) :=
-    Module.compHom _ ((RingHom.id ℤ).fromOpposite mul_comm)
-  haveI : IsCentralScalar ℤ (Additive (ClassGroup (QuadraticAlgebra ℤ (-5) 0))) :=
-    ⟨fun _ _ ↦ rfl⟩
+  letI := TrivSqZeroExt.moduleMulOpposite ℤ (Additive (ClassGroup (QuadraticAlgebra ℤ (-5) 0)))
+  haveI := TrivSqZeroExt.isCentralScalar_moduleMulOpposite ℤ
+    (Additive (ClassGroup (QuadraticAlgebra ℤ (-5) 0)))
   (rankSteinitzRingEquiv _).trans classGroupEquiv.toIntLinearEquiv.trivSqZeroExtCongr.toRingEquiv
 
 /-- The first coordinate of `K₀(ℤ[√-5]) ≃+* ℤ ⋉ ℤ/2` is the rank. -/
