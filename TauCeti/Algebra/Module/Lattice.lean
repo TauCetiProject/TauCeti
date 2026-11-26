@@ -411,6 +411,28 @@ instance IsFullLattice.pointwise_smul (M : Submodule R V) [M.IsFullLattice A] (g
 
 end Pointwise
 
+section Subsingleton
+
+variable {R A V : Type*} [CommRing R] [CommRing A] [Algebra R A]
+variable [AddCommGroup V] [Module R V] [Module A V] [IsScalarTower R A V]
+
+/-- Every submodule of a subsingleton module is a full lattice. -/
+theorem IsFullLattice.of_subsingleton (S : Submodule R V) [Subsingleton V] :
+    S.IsFullLattice A where
+  fg := by
+    rw [eq_bot_of_subsingleton (p := S)]
+    exact fg_bot
+  linearIndepOn := by
+    intro s _ hs
+    rcases subsingleton_or_nontrivial A with hA | hA
+    · exact linearIndependent_of_subsingleton
+    · have : Nontrivial R := (algebraMap R A).domain_nontrivial
+      have : IsEmpty s := (linearIndependent_subsingleton_iff _).mp hs
+      exact linearIndependent_empty_type
+  span_eq_top := Subsingleton.elim _ _
+
+end Subsingleton
+
 section Comap
 
 variable {R A : Type*} {V : Type u} {W : Type v}

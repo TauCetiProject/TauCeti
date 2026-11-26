@@ -81,11 +81,7 @@ theorem classIndex_zero : O.classIndex 0 = 1 := by
   apply le_antisymm
   · exact (classIndex_le_iff O 0).2 fun M _ => (Module.freeClassIndex_zero (R := O) (M := M)).le
   · let M : Submodule O (Fin 0 → D) := ⊥
-    have hM : (M.restrictScalars ℤ).IsFullLattice ℚ := by
-      have heq : M.restrictScalars ℤ = ⊥ := Subsingleton.elim _ _
-      rw [heq]
-      exact { toIsLattice := Submodule.IsLattice.of_fg ℚ Submodule.fg_bot
-              span_eq_top := Subsingleton.elim _ _ }
+    have hM : (M.restrictScalars ℤ).IsFullLattice ℚ := .of_subsingleton _
     rw [classIndex_def]
     exact (Module.one_le_freeClassIndex (R := O) (e := 0) (M := M)).trans
       (le_iSup_of_le M (le_iSup_of_le hM le_rfl))

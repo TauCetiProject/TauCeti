@@ -85,9 +85,8 @@ theorem equivMapPiSemilinear_apply (O : Subalgebra R D) (f : D ≃ₐ[R] E)
 theorem equivMapPiSemilinear_symm_apply (O : Subalgebra R D) (f : D ≃ₐ[R] E)
     {ι : Type*} (x : ι → E) (i : ι) :
     (O.equivMapPiSemilinear f ι).symm x i = f.symm (x i) := by
-  apply f.injective
-  simpa only [equivMapPiSemilinear_apply, AlgEquiv.apply_symm_apply] using
-    congrFun ((O.equivMapPiSemilinear f ι).apply_symm_apply x) i
+  simp only [equivMapPiSemilinear, LinearEquiv.piCongrRightₛₗ_symm_apply,
+    equivMapSemilinear_symm_apply]
 
 end Transport
 

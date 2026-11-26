@@ -83,6 +83,12 @@ theorem piCongrRightₛₗ_apply (e : ∀ i, M i ≃ₛₗ[σ] N i) (x : ∀ i, 
     piCongrRightₛₗ e x i = e i (x i) := by
   rfl
 
+/-- Inverse pointwise semilinear transport applies the inverse equivalence at each coordinate. -/
+@[simp]
+theorem piCongrRightₛₗ_symm_apply (e : ∀ i, M i ≃ₛₗ[σ] N i) (x : ∀ i, N i) (i : ι) :
+    (piCongrRightₛₗ e).symm x i = (e i).symm (x i) := by
+  rfl
+
 end PiCongrRight
 
 section Coordinates
