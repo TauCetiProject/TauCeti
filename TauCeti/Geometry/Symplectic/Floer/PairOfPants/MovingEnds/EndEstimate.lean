@@ -337,7 +337,7 @@ theorem
 /-- Let `ψ` be a chart of an end of a sphere with moving input ends that avoids the centers of the
 input ends beyond the height `r`, where `u` and `J` along `u` are `C¹`, and let `g` be continuous.
 Then the formal adjoint of the linearized operator of the datum
-`TauCeti.Floer.puncturedSpherePerturbation c a H Hout`, on a `C²` covector field with compact
+`TauCeti.Floer.puncturedSpherePerturbation c a H Hout`, on a `C¹` covector field with compact
 support in `ψ ((r, ∞) × ℝ)`, has integrable square norm against the weight `g`. -/
 private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSpherePerturbation
     (ω : SymplecticForm V) (hH : ∀ i, Periodic (H i) 1) (hHs : ∀ i, ContDiff ℝ 2 (uncurry (H i)))
@@ -348,7 +348,7 @@ private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSphere
     (hJ : ∀ ζ : ℝ × ℝ, r < ζ.1 → ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (ψ ζ, u (ψ ζ)))
     (hu : ∀ ζ : ℝ × ℝ, r < ζ.1 → ContDiffAt ℝ 1 u (ψ ζ)) {g : ℝ × ℝ → ℝ} (hg : Continuous g)
-    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
     (hηU : tsupport η ⊆ ψ '' (Ioi r ×ˢ univ)) :
     Integrable fun z ↦ g z * ‖ω.floerLinearizationAdjoint
       (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
@@ -360,8 +360,7 @@ private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSphere
       (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
         Complex.I) u η) := by
-    refine continuous_floerLinearizationAdjoint_of_tsupport_subset ?_ ?_ ?_ ?_
-      (hη.of_le one_le_two) hηU
+    refine continuous_floerLinearizationAdjoint_of_tsupport_subset ?_ ?_ ?_ ?_ hη hηU
     · rintro _ ⟨ζ, hζ, rfl⟩
       exact hJ ζ hζ.1
     · rintro _ ⟨ζ, hζ, rfl⟩
@@ -468,7 +467,7 @@ exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdj
   obtain ⟨b, hb⟩ := exists_forall_notMem_Ioo_realChart_eq_zero (ha i) hηc hηR
   refine (hest hη hb (ω.integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSpherePerturbation
     hH hHs hHout hHouts ha (fun ζ hζ ↦ hψne ζ (by linarith)) (fun ζ hζ ↦ hJ ζ (by linarith))
-    (fun ζ hζ ↦ (hu ζ (by linarith)).of_le one_le_two) (by fun_prop) hη hηc
+    (fun ζ hζ ↦ (hu ζ (by linarith)).of_le one_le_two) (by fun_prop) (hη.of_le one_le_two) hηc
     (hηR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))).trans_eq ?_
   simp only [mul_assoc, integral_const_mul]
 
@@ -552,7 +551,7 @@ exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdj
     hH hHs hHout hHouts ha
     (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith))
     (fun ζ hζ ↦ hJ ζ (by linarith))
-    (fun ζ hζ ↦ (hu ζ (by linarith)).of_le one_le_two) (by fun_prop) hη hηc
+    (fun ζ hζ ↦ (hu ζ (by linarith)).of_le one_le_two) (by fun_prop) (hη.of_le one_le_two) hηc
     (hηR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))).trans_eq ?_
   simp only [mul_assoc, integral_const_mul]
 

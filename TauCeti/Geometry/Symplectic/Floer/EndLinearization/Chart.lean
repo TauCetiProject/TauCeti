@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Pullback
-public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
+import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
