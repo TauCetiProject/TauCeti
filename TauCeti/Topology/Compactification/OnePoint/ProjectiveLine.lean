@@ -59,6 +59,8 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 * `OnePoint.instMulActionPSL`: the action of `PSL(2, K)` on `OnePoint K`, with `pslMk_smul`.
 * `Matrix.ProjectiveSpecialLinearGroup.toPGL_smul`: the inclusion `PSL(2, K) → PGL(2, K)` is
   compatible with the actions.
+* `Matrix.GeneralLinearGroup.exists_psl_forall_smul_eq_smul`: over an algebraically closed field
+  every invertible matrix acts on `OnePoint K` as an element of `PSL(2, K)`.
 * `OnePoint.instIsMultiplyPretransitiveGL`: `GL(2, K)` acts 2-transitively on `OnePoint K`, and
   `OnePoint.exists_smul_zero_infty_eq`: any two distinct points are the images of `0` and `∞`
   under a matrix of determinant one.
@@ -308,6 +310,22 @@ both act through the underlying matrix. -/
 theorem toPGL_smul (g : PSL(2, K)) (c : OnePoint K) : toPGL g • c = g • c := by
   induction g using QuotientGroup.induction_on with
   | H g => simp
+
+/-- **Over an algebraically closed field every Möbius transformation is in `PSL(2, K)`**: an
+invertible matrix acts on the projective line as some element of `PSL(2, K)`, since `PSL(2, K)`
+maps onto `PGL(2, K)`. -/
+theorem _root_.Matrix.GeneralLinearGroup.exists_psl_forall_smul_eq_smul [IsAlgClosed K]
+    (g : GL (Fin 2) K) :
+    ∃ h : PSL(2, K), ∀ c : OnePoint K, h • c = g • c := by
+  -- Every unit has a square root, so `PSL(2, K) → PGL(2, K)` is onto.
+  obtain ⟨h, hh'⟩ := toPGL_surj_of_roots (fun r : Kˣ ↦ by
+    obtain ⟨x, hx⟩ := IsAlgClosed.exists_pow_nat_eq (r : K) (by simp : 0 < Fintype.card (Fin 2))
+    have hx0 : x ≠ 0 := by
+      rintro rfl
+      exact r.ne_zero (by simpa using hx.symm)
+    exact ⟨Units.mk0 x hx0, Units.ext (by simpa using hx)⟩)
+    (Matrix.ProjGenLinGroup.mk g)
+  exact ⟨h, fun c ↦ by rw [← toPGL_smul, hh', pglMk_smul]⟩
 
 /-- The translation `upperRightHom x` fixes `∞`. -/
 @[simp]
