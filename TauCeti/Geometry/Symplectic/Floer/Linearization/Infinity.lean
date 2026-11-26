@@ -21,8 +21,8 @@ On the Riemann sphere, read in the coordinate `w ∈ ℂ ≅ ℝ × ℝ`, Floer 
 `D^* η = -ω♭ (∂s ξ - J₀ ∂t ξ)`, `ξ = ω♭⁻¹ ∘ η`
 (`TauCeti.SymplecticForm.floerLinearizationAdjoint_const_eq_neg_flatEquiv`), a Cauchy–Riemann
 operator. The cokernel of the linearized operator `D_u : W^{1,2} → L²` of the sphere consists of
-square-integrable covector fields `η` with `D^* η = 0`; near the point at infinity they are read in
-the chart `ζ = w⁻¹` as the `(0, 1)`-forms
+square-integrable covector fields `η` with `D^* η = 0` in the weak sense. Near the point at infinity
+a covector field `η` is read in the chart `ζ = w⁻¹` as the `(0, 1)`-form
 `η' = η (ζ⁻¹) ∘ (a + b J₀)` (`TauCeti.Floer.covectorPullback` along
 `TauCeti.Complex.realChart (·⁻¹)`), where `a + i b = -ζ⁻²` is the derivative of the inversion. The
 point `ζ = 0` is not in the domain of `η'`. This file proves that it is removable: if `η` is
@@ -30,9 +30,13 @@ differentiable with `D^* η = 0` on `|w| > T` and `‖η‖²` is integrable the
 smoothly across `ζ = 0`
 (`exists_contDiffOn_eq_covectorPullback_inv_of_floerLinearizationAdjoint_eq_zero`, in the
 namespace `TauCeti.SymplecticForm`).
-The semi-Fredholm estimate of the formal adjoint on the sphere
-(`TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Sphere`) is stated for compactly supported fields;
-applying it to cokernel elements, through cutoffs near infinity, needs this regularity there.
+The hypotheses are pointwise: `η` is differentiable and solves `D^* η = 0` classically. A
+cokernel element is only a weak `L²` solution, so the theorem applies to it once it is known to be
+differentiable near infinity; that interior regularity is not proved here. The semi-Fredholm
+estimate of the formal adjoint on the sphere
+(`TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Sphere`) is stated for compactly supported
+fields, and applying it to cokernel elements through cutoffs near infinity needs both that
+regularity and the extension across infinity proved here.
 
 The proof complexifies `η`. For a vector `x`, the complex function
 `G_x(w) = η(w) x - i η(w) (J₀ x)` is holomorphic where `D^* η = 0`: the equation says

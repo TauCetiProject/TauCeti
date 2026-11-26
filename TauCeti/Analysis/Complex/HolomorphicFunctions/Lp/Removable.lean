@@ -43,8 +43,10 @@ holomorphic off `c` and `‖·‖ ^ p`-integrable near `c` for every `p < 2`, bu
 
 At the point at infinity, a function `G` holomorphic on `|w| > T` with `‖G‖²` integrable there is
 read through the holomorphic `1`-form `G dw` in the coordinate `q = w⁻¹`. Since `dw = -q⁻² dq` and
-the inversion distorts area by `|q|⁻⁴`, the coefficient `(q²)⁻¹ • G q⁻¹` is again square-integrable
-on a punctured disc about `0`, so the theorem at a point extends it across `q = 0`
+the inversion distorts area by `|q|⁻⁴`
+(`TauCeti.integrableOn_image_iff_integrableOn_norm_deriv_sq_smul`), the coefficient
+`(q²)⁻¹ • G q⁻¹` is again square-integrable on a punctured disc about `0`, so the theorem at a
+point extends it across `q = 0`
 (`TauCeti.HolomorphicFunctions.exists_differentiableOn_eq_inv_sq_smul_comp_inv`).
 
 ## Main results
@@ -129,11 +131,7 @@ theorem differentiableOn_update_limUnder_of_integrableOn_sq_norm (hs : s ∈ �
 /-- **The `L²` removable singularity at infinity.** If `G` is holomorphic on `|w| > T` and `‖G‖²`
 is integrable there, then the holomorphic `1`-form `G dw` read in the coordinate `q = w⁻¹` of the
 point at infinity has a coefficient, `q ↦ (q²)⁻¹ • G q⁻¹` up to sign, that extends holomorphically
-across `q = 0`. In particular `G(w) = O(|w|⁻²)` as `w → ∞`. The weight `(q²)⁻¹` is, up to sign,
-the factor by which `dw` changes under `w = q⁻¹` (`dw = -q⁻² dq`), and it is what turns the
-integrability of `‖G‖²` near infinity into that of the transformed function near `0`: the
-inversion distorts area by `|q|⁻⁴`
-(`TauCeti.integrableOn_image_iff_integrableOn_norm_deriv_sq_smul`). -/
+across `q = 0`. In particular `G(w) = O(|w|⁻²)` as `w → ∞`. -/
 theorem exists_differentiableOn_eq_inv_sq_smul_comp_inv {G : ℂ → F} {T : ℝ}
     (hd : DifferentiableOn ℂ G {w | T < ‖w‖})
     (hi : IntegrableOn (fun w ↦ ‖G w‖ ^ 2) {w | T < ‖w‖}) :
