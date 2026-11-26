@@ -147,7 +147,9 @@ open Polynomial in
 `det (1 - X M) = 1 - trace M X + det M X ^ 2`. -/
 theorem charpolyRev_fin_two {R : Type*} [CommRing R] (M : Matrix (Fin 2) (Fin 2) R) :
     M.charpolyRev = 1 - C M.trace * X + C M.det * X ^ 2 := by
-  simp [charpolyRev, det_fin_two, trace_fin_two, X_mul_C]
+  simp only [charpolyRev, det_fin_two, trace_fin_two, Matrix.sub_apply, Matrix.smul_apply,
+    smul_eq_mul, Matrix.map_apply, one_apply_eq, one_apply_ne zero_ne_one,
+    one_apply_ne one_ne_zero, map_add, map_sub, map_mul]
   ring
 
 end Matrix

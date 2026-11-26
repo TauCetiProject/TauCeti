@@ -178,7 +178,10 @@ theorem coeff_coe_charpolyRev_mul_mk_one_sq_fin_two (hA : A.det = 1) {n : ℕ} (
     coeff n ((A.charpolyRev : R⟦X⟧) * mk 1 ^ 2) = n * (1 - A).det := by
   rw [Polynomial.coeff_coe_mul_mk_one_sq _ ((natDegree_charpolyRev_le A).trans (by simp; omega)),
     eval_one_charpolyRev, charpolyRev_fin_two, det_one_sub_fin_two, hA]
-  simp
+  simp only [map_one, one_mul, Polynomial.derivative_add, Polynomial.derivative_sub,
+    Polynomial.derivative_one, Polynomial.derivative_C_mul_X, Polynomial.derivative_X_pow,
+    Polynomial.eval_add, Polynomial.eval_sub, Polynomial.eval_C, Polynomial.eval_mul,
+    Polynomial.eval_pow, Polynomial.eval_X, Polynomial.eval_zero]
   ring
 
 /-- **The coefficients of the Lefschetz zeta function of a `2 × 2` matrix of determinant one.**

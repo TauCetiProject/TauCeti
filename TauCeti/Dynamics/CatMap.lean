@@ -8,6 +8,7 @@ module
 public import TauCeti.Dynamics.TorusAutomorphism
 public import Mathlib.LinearAlgebra.SymplecticGroup
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Zeta
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -133,20 +134,15 @@ theorem subst_exp_two_sub_trace_catMap_pow :
     (PowerSeries.exp ℚ).subst
         (PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ • (2 - ((catMap ^ n).trace : ℚ))) =
       PowerSeries.mk fun n ↦ if n = 0 then 1 else -(n : ℚ) := by
-  set P := catMap.map (Int.castRingHom ℚ)
-  have hmap (M : Matrix (Fin 2) (Fin 2) ℤ) : (M.det : ℚ) = (M.map (Int.castRingHom ℚ)).det :=
-    Int.cast_det M
-  have hpow (n : ℕ) : (1 - catMap ^ n).map (Int.castRingHom ℚ) = 1 - P ^ n := by
-    rw [← RingHom.mapMatrix_apply, map_sub, map_one, map_pow, RingHom.mapMatrix_apply]
+  set P := catMap.map (Int.castRingHom ℚ) with hP
   -- The Lefschetz numbers are `2 - tr (P ^ n) = det (1 - P ^ n)`.
   have hL (n : ℕ) : (2 - ((catMap ^ n).trace : ℚ)) = (1 - P ^ n).det := by
-    rw [← hpow, ← hmap,
+    rw [hP, ← Matrix.map_pow, ← intCast_det_one_sub,
       det_one_sub_eq_two_sub_trace_of_det_eq_one (by rw [det_pow, det_catMap, one_pow])]
     push_cast
     ring
-  have hP : P.det = 1 := by rw [← hmap, det_catMap, Int.cast_one]
   have hP₁ : (1 - P).det = -1 := by
-    rw [← pow_one P, ← hpow, ← hmap, pow_one, det_one_sub_catMap, Int.cast_neg, Int.cast_one]
+    rw [hP, ← intCast_det_one_sub, det_one_sub_catMap, Int.cast_neg, Int.cast_one]
   simp_rw [hL]
   ext n
   rw [PowerSeries.coeff_mk]
@@ -154,7 +150,8 @@ theorem subst_exp_two_sub_trace_catMap_pow :
   · subst hn
     rw [PowerSeries.coeff_zero_eq_constantCoeff_apply,
       PowerSeries.constantCoeff_subst_exp (by simp)]
-  · rw [Matrix.coeff_subst_exp_det_one_sub_pow_fin_two_of_det_eq_one hP hn, hP₁, mul_neg_one]
+  · rw [Matrix.coeff_subst_exp_det_one_sub_pow_fin_two_of_det_eq_one
+      ((Int.castRingHom ℚ).det_map_eq_one det_catMap) hn, hP₁, mul_neg_one]
 
 /-! ### The cat map of the torus -/
 
