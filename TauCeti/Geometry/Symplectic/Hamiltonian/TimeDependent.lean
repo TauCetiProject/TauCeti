@@ -66,6 +66,8 @@ the autonomous Hamiltonian vector field.
   and the return map `Ψ(1)` of its linearized equation fixes no nonzero vector. The `_reverse`
   variants state the same for the reversed Hamiltonian `-H_{-t}`, whose one-periodic orbits are
   those of `H_t` traversed backwards.
+* `TauCeti.SymplecticForm.finite_setOf_periodic_hasDerivAt_of_isNondegenerateFixedPt`: if all
+  one-periodic orbits with values in a compact set are nondegenerate, there are finitely many.
 
 See McDuff--Salamon, *Introduction to Symplectic Topology*, the discussion of time-dependent
 Hamiltonian vector fields and flows.
@@ -418,6 +420,51 @@ theorem exists_pos_forall_eq_of_isNondegenerateFixedPt_reverse (omega : Symplect
     (omega.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse hy)
     (by simpa only [neg_zero] using hyx)) (-t)
   simpa only [neg_neg] using hxy
+
+/-- **Finitely many nondegenerate orbits in a compact set.** If every one-periodic orbit of `H`
+with values in a compact set `C` starts at a nondegenerate fixed point of the time-one map, then
+there are only finitely many one-periodic orbits with values in `C`. -/
+theorem finite_setOf_periodic_hasDerivAt_of_isNondegenerateFixedPt (omega : SymplecticForm V)
+    {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
+    {C : Set V} (hC : IsCompact C)
+    (hnd : ∀ x : ℝ → V, Periodic x 1 →
+      (∀ t, HasDerivAt x (omega.hamiltonianVectorField (H t) (x t)) t) → (∀ t, x t ∈ C) →
+      IsNondegenerateFixedPt 𝓘(ℝ, V) (omega.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    {x : ℝ → V | Periodic x 1 ∧
+      (∀ t, HasDerivAt x (omega.hamiltonianVectorField (H t) (x t)) t) ∧ ∀ t, x t ∈ C}.Finite := by
+  set O := {x : ℝ → V | Periodic x 1 ∧
+    (∀ t, HasDerivAt x (omega.hamiltonianVectorField (H t) (x t)) t) ∧ ∀ t, x t ∈ C}
+  have hflow (t : ℝ) : Continuous fun p : V ↦ omega.timeDependentHamiltonianFlow H hX 0 t p :=
+    (omega.continuous_timeDependentHamiltonianFlow H hX).comp
+      (continuous_const.prodMk continuous_id : Continuous fun p : V ↦ (((0 : ℝ), t), p))
+  -- An orbit is the flow through its initial point, so it is determined by that point.
+  have hinj : Set.InjOn (fun x : ℝ → V ↦ x 0) O := fun x hx y hy hxy ↦ funext fun t ↦ by
+    rw [omega.eq_timeDependentHamiltonianFlow H hX hx.2.1 0 t,
+      omega.eq_timeDependentHamiltonianFlow H hX hy.2.1 0 t]
+    exact congrArg _ hxy
+  refine Set.Finite.of_finite_image ?_ hinj
+  refine IsCompact.finite_of_isNondegenerateFixedPt (I := 𝓘(ℝ, V))
+    (f := omega.timeDependentHamiltonianFlow H hX 0 1)
+    (hC.of_isClosed_subset (isClosed_of_closure_subset fun p hp ↦ ?_) ?_) ?_
+  · -- A limit of initial points of orbits in `C` starts an orbit in `C`: the orbits converge
+    -- pointwise to the flow line through the limit.
+    obtain ⟨q, hqO, hq⟩ := mem_closure_iff_seq_limit.1 hp
+    choose x hx hxq using hqO
+    have hlim (t : ℝ) : Filter.Tendsto (fun n ↦ x n t) Filter.atTop
+        (nhds (omega.timeDependentHamiltonianFlow H hX 0 t p)) := by
+      have h := ((hflow t).tendsto p).comp hq
+      refine h.congr fun n ↦ ?_
+      simp only [Function.comp_apply, ← hxq n]
+      exact (omega.eq_timeDependentHamiltonianFlow H hX (hx n).2.1 0 t).symm
+    refine ⟨fun t ↦ omega.timeDependentHamiltonianFlow H hX 0 t p, ⟨fun t ↦ ?_, fun t ↦
+      omega.hasDerivAt_timeDependentHamiltonianFlow H hX 0 t p, fun t ↦
+      hC.isClosed.mem_of_tendsto (hlim t) (.of_forall fun n ↦ (hx n).2.2 t)⟩,
+      omega.timeDependentHamiltonianFlow_self H hX 0 p⟩
+    exact tendsto_nhds_unique ((hlim (t + 1)).congr fun n ↦ (hx n).1 t) (hlim t)
+  · rintro _ ⟨x, hx, rfl⟩
+    exact hx.2.2 0
+  · rintro _ ⟨x, hx, rfl⟩
+    exact hnd x hx.1 hx.2.1 hx.2.2
 
 /-- **The return map at a nondegenerate orbit fixes no nonzero vector.** Let `x` be an orbit of
 a jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field is globally Lipschitz,
