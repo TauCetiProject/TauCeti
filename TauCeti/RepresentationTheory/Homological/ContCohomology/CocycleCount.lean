@@ -50,6 +50,17 @@ namespace TauCeti.ContCohomology
 
 universe u v
 
+section Coboundaries
+
+variable (G : Type u) (M : Type v) [AddCommGroup M] [DistribSMul G M]
+
+/-- The image of `d⁰` is `B¹`. -/
+theorem range_d0 : (d0 G M).range = B1 G M :=
+  AddSubgroup.ext fun _ => ⟨fun ⟨m, hm⟩ => hm ▸ d0_mem_B1 m,
+    fun hf => (mem_B1_iff.1 hf).imp fun m hm => funext fun g => (d0_apply m g).trans (hm g)⟩
+
+end Coboundaries
+
 section DegreeZero
 
 variable (G : Type u) [Monoid G] (M : Type v) [AddCommGroup M] [DistribMulAction G M]
@@ -59,12 +70,6 @@ theorem ker_d0 : (d0 G M).ker = H0 G M := by
   ext m
   simp only [AddMonoidHom.mem_ker, FixedPoints.mem_addSubgroup, funext_iff, d0_apply,
     Pi.zero_apply, sub_eq_zero]
-
-/-- The image of `d⁰` is `B¹`. -/
-theorem range_d0 : (d0 G M).range = B1 G M := by
-  ext f
-  simp only [AddMonoidHom.mem_range, mem_B1_iff, groupCohomology.IsCoboundary₁, funext_iff,
-    d0_apply]
 
 /-- **Counting `1`-coboundaries.** `#B¹ · #H⁰ = #M`: the coboundary map `d⁰` has kernel `H⁰` and
 image `B¹`. -/
