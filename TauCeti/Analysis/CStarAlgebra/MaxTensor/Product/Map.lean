@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Map
-public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Product
+public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Product.Basic
 
 /-!
 # Functoriality and the flip of the maximal C*-tensor product
@@ -22,7 +22,8 @@ property (`TauCeti.MaxTensorProduct.lift_comp_map`).
 
 Since the maximal norm is invariant under the flip (`TauCeti.maxTensorNorm_comm`), the flip
 `a ⊗ b ↦ b ⊗ a` extends to a star isomorphism `A ⊗max B ≃ B ⊗max A`
-(`TauCeti.MaxTensorProduct.comm`).
+(`TauCeti.MaxTensorProduct.comm`), natural with respect to `TauCeti.MaxTensorProduct.map`
+(`TauCeti.MaxTensorProduct.commHom_comp_map`).
 
 The Hilbert spaces of the commuting pairs defining the maximal norm range over the universe
 `max u v` for `A : Type u` and `B : Type v`, so the functoriality is stated for `A, A' : Type u`
@@ -105,8 +106,7 @@ theorem map_comp (φ' : A' →⋆ₙₐ[ℂ] A'') (ψ' : B' →⋆ₙₐ[ℂ] B'
 /-- The induced map applied twice is the map induced by the composites. -/
 theorem map_map (φ' : A' →⋆ₙₐ[ℂ] A'') (ψ' : B' →⋆ₙₐ[ℂ] B'') (x : MaxTensorProduct A B) :
     map φ' ψ' (map φ ψ x) = map (φ'.comp φ) (ψ'.comp ψ) x := by
-  rw [map_comp]
-  rfl
+  rw [map_comp, NonUnitalStarAlgHom.comp_apply]
 
 /-- **Compatibility with the universal property.** If `φ' : A' → C` and `ψ' : B' → C` commute,
 then so do `φ' ∘ φ` and `ψ' ∘ ψ`, and the extension of the latter pair is the extension of the
@@ -122,12 +122,29 @@ theorem lift_comp_map {C : Type (max u v)} [NonUnitalCStarAlgebra C] (φ' : A' �
 
 /-- Star isomorphisms `e : A ≃ A'` and `f : B ≃ B'` induce a star isomorphism
 `A ⊗max B ≃ A' ⊗max B'`, sending `a ⊗ b` to `e a ⊗ f b`. -/
-@[expose, simps! apply symm_apply]
+@[expose, simps! apply]
 def congr (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') :
     MaxTensorProduct A B ≃⋆ₐ[ℂ] MaxTensorProduct A' B' :=
   .ofNonUnitalStarAlgHom (map e.toNonUnitalStarAlgHom f.toNonUnitalStarAlgHom)
     (map e.symm.toNonUnitalStarAlgHom f.symm.toNonUnitalStarAlgHom)
     (starAlgHom_ext fun a b ↦ by simp) (starAlgHom_ext fun a b ↦ by simp)
+
+/-- The identities induce the identity. -/
+@[simp]
+theorem congr_refl :
+    congr (.refl ℂ A) (.refl ℂ B) = StarAlgEquiv.refl ℂ (MaxTensorProduct A B) :=
+  StarAlgEquiv.ext fun x ↦ by simp [congr_apply]
+
+/-- The inverse of the induced isomorphism is induced by the inverses. -/
+@[simp]
+theorem congr_symm (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') :
+    (congr e f).symm = congr e.symm f.symm :=
+  StarAlgEquiv.symm_ofNonUnitalStarAlgHom _ _ _ _
+
+/-- The isomorphism induced by composites is the composite of the induced isomorphisms. -/
+theorem congr_trans (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') (e' : A' ≃⋆ₐ[ℂ] A'')
+    (f' : B' ≃⋆ₐ[ℂ] B'') : (congr e f).trans (congr e' f') = congr (e.trans e') (f.trans f') :=
+  StarAlgEquiv.ext fun x ↦ by simp [congr_apply, map_map]
 
 end Map
 
@@ -149,11 +166,15 @@ theorem commHom_of (x : A ⊗[ℂ] B) :
     commHom A B (of A B x) = of B A (TensorProduct.comm ℂ A B x) :=
   (extend_of _ _ x).trans (by simp [Algebra.TensorProduct.coe_commNonUnitalStarAlgHom])
 
+/-- Flipping twice is the identity, as a composite of star homomorphisms. -/
+@[simp]
+theorem commHom_comp_commHom : (commHom B A).comp (commHom A B) = NonUnitalStarAlgHom.id ℂ _ :=
+  starAlgHom_ext fun a b ↦ by simp
+
 /-- Flipping twice is the identity. -/
 @[simp]
 theorem commHom_commHom (x : MaxTensorProduct A B) : commHom B A (commHom A B x) = x :=
-  congrArg (· x) (show (commHom B A).comp (commHom A B) = NonUnitalStarAlgHom.id ℂ _ from
-    starAlgHom_ext fun a b ↦ by simp)
+  DFunLike.congr_fun commHom_comp_commHom x
 
 variable (A B)
 
@@ -161,8 +182,7 @@ variable (A B)
 sending `a ⊗ b` to `b ⊗ a` (`TauCeti.MaxTensorProduct.comm_of_tmul`). -/
 @[expose, simps! apply]
 def comm : MaxTensorProduct A B ≃⋆ₐ[ℂ] MaxTensorProduct B A :=
-  .ofNonUnitalStarAlgHom (commHom A B) (commHom B A) (NonUnitalStarAlgHom.ext commHom_commHom)
-    (NonUnitalStarAlgHom.ext commHom_commHom)
+  .ofNonUnitalStarAlgHom (commHom A B) (commHom B A) commHom_comp_commHom commHom_comp_commHom
 
 variable {A B}
 
@@ -176,6 +196,22 @@ theorem comm_of_tmul (a : A) (b : B) : comm A B (of A B (a ⊗ₜ b)) = of B A (
   simp [comm_apply]
 
 end Comm
+
+section CommMap
+
+variable {A A' : Type u} {B B' : Type v} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra A']
+  [NonUnitalCStarAlgebra B] [NonUnitalCStarAlgebra B'] (φ : A →⋆ₙₐ[ℂ] A') (ψ : B →⋆ₙₐ[ℂ] B')
+
+/-- **Naturality of the flip.** Flipping after `map φ ψ` is `map ψ φ` after flipping. -/
+theorem commHom_comp_map : (commHom A' B').comp (map φ ψ) = (map ψ φ).comp (commHom A B) :=
+  starAlgHom_ext fun a b ↦ by simp
+
+/-- **Naturality of the flip**, pointwise. -/
+theorem commHom_map (x : MaxTensorProduct A B) :
+    commHom A' B' (map φ ψ x) = map ψ φ (commHom A B x) :=
+  DFunLike.congr_fun (commHom_comp_map φ ψ) x
+
+end CommMap
 
 end MaxTensorProduct
 
