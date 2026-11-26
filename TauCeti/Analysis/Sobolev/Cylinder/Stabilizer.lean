@@ -34,7 +34,9 @@ vanish for `|s|` large (`TauCeti.CylinderSobolev.testSection`), whose `L²` clas
 
 * **Bounded support.** A finite-dimensional space of classes of test sections has a common bound
   `T` with all its sections vanishing for `|s| > T`
-  (`TauCeti.CylinderSobolev.exists_forall_ae_eq_zero_of_le_testSectionLp`).
+  (`TauCeti.CylinderSobolev.exists_forall_ae_eq_zero_of_le_testSectionLp`), so beyond any
+  `T' ≥ T` they vanish on either side (`TauCeti.CylinderSobolev.ae_subtypeL_eq_zero_of_lt`,
+  `TauCeti.CylinderSobolev.ae_subtypeL_eq_zero_of_lt_neg`).
 * **Stabilizers.** A Fredholm operator `D` from a Banach space into `L²` has a stabilizer `S` made
   of test sections, a topological complement of its range, hence finite-dimensional and isomorphic
   to the cokernel of `D`. The sections of `S` vanish for `|s|` large, and the stabilized operator
@@ -141,6 +143,22 @@ theorem exists_forall_ae_eq_zero_of_le_testSectionLp {S : Submodule ℝ (Lp W 2 
   rw [← ht] at hη
   exact Submodule.span_le.2 (fun ν hν ↦
     vanishingLp_mono (hM _ (Finset.mem_image_of_mem T hν)) (hT ν hν)) hη
+
+/-- Sections of `S` vanishing for `|s| > T` vanish for `s > T'` whenever `T ≤ T'`: as a stabilizer
+`S.subtypeL` of the left piece of a gluing, they vanish beyond its glued end. -/
+theorem ae_subtypeL_eq_zero_of_lt {S : Submodule ℝ (Lp W 2 stripMeasure)} {T T' : ℝ}
+    (hT : ∀ η ∈ S, ∀ᵐ z ∂stripMeasure, T < |z.1| → η z = 0) (hTT' : T ≤ T') (σ : S) :
+    ∀ᵐ z ∂stripMeasure, T' < z.1 → S.subtypeL σ z = 0 := by
+  filter_upwards [hT σ σ.property] with z hz h using
+    hz (hTT'.trans_lt (h.trans_le (le_abs_self _)))
+
+/-- Sections of `S` vanishing for `|s| > T` vanish for `s < -T'` whenever `T ≤ T'`: as a
+stabilizer `S.subtypeL` of the right piece of a gluing, they vanish beyond its glued end. -/
+theorem ae_subtypeL_eq_zero_of_lt_neg {S : Submodule ℝ (Lp W 2 stripMeasure)} {T T' : ℝ}
+    (hT : ∀ η ∈ S, ∀ᵐ z ∂stripMeasure, T < |z.1| → η z = 0) (hTT' : T ≤ T') (σ : S) :
+    ∀ᵐ z ∂stripMeasure, z.1 < -T' → S.subtypeL σ z = 0 := by
+  filter_upwards [hT σ σ.property] with z hz h using
+    hz (hTT'.trans_lt (lt_neg_of_lt_neg h |>.trans_le (neg_le_abs _)))
 
 /-! ### Smooth stabilizers supported in a compact piece of the cylinder -/
 
@@ -378,14 +396,8 @@ theorem exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff_of_is
   obtain ⟨S₁, hS₁, hc₁, -, ⟨T₁, hT₁⟩, Q₁, hQ₁⟩ := hD₁.exists_le_testSectionLp_isTopCompl
   obtain ⟨S₂, hS₂, hc₂, -, ⟨T₂, hT₂⟩, Q₂, hQ₂⟩ := hD₂.exists_le_testSectionLp_isTopCompl
   obtain ⟨R₀, hR₀⟩ := exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff
-    hM₁ hM₂ h₁ h₂ (T := max T₁ T₂)
-    (fun σ ↦ by
-      filter_upwards [hT₁ σ σ.property] with z hz hT using
-        hz ((le_max_left T₁ T₂).trans_lt (hT.trans_le (le_abs_self _))))
-    (fun σ ↦ by
-      filter_upwards [hT₂ σ σ.property] with z hz hT using
-        hz ((le_max_right T₁ T₂).trans_lt (lt_neg_of_lt_neg hT |>.trans_le (neg_le_abs _))))
-    hQ₁ hQ₂
+    hM₁ hM₂ h₁ h₂ (ae_subtypeL_eq_zero_of_lt hT₁ (le_max_left T₁ T₂))
+    (ae_subtypeL_eq_zero_of_lt_neg hT₂ (le_max_right T₁ T₂)) hQ₁ hQ₂
   exact ⟨S₁, S₂, hS₁, hS₂, hc₁, hc₂, 4 * (‖Q₁‖ + ‖Q₂‖), R₀, hR₀⟩
 
 omit [CompleteSpace V] in
@@ -427,10 +439,9 @@ theorem exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff_of_is
   have hQ₂ := hD₂.hasRightInverse_coprod hsurj₂
   obtain ⟨R₀, hR₀⟩ := exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff hM₁ hM₂
     h₁ h₂ (ι₁ := S₁.subtypeL) (ι₂ := S₂.subtypeL) (T := T)
-    (fun σ ↦ (ae_eq_zero_of_mem_smoothSectionLp (hS₁T' σ.property)).mono fun z hz hzT ↦
-      hz (hzT.trans_le (le_abs_self _)))
-    (fun σ ↦ (ae_eq_zero_of_mem_smoothSectionLp (hS₂T' σ.property)).mono fun z hz hzT ↦
-      hz (by linarith [neg_le_abs z.1]))
+    (ae_subtypeL_eq_zero_of_lt (fun _ hη ↦ ae_eq_zero_of_mem_smoothSectionLp (hS₁T' hη)) le_rfl)
+    (ae_subtypeL_eq_zero_of_lt_neg (fun _ hη ↦ ae_eq_zero_of_mem_smoothSectionLp (hS₂T' hη))
+      le_rfl)
     (ContinuousLinearMap.ext hQ₁.rightInverse_rightInverse)
     (ContinuousLinearMap.ext hQ₂.rightInverse_rightInverse)
   exact ⟨T, S₁, S₂, hS₁T', hS₂T', hS₁fin, hS₂fin, hS₁, hS₂, _, R₀, hR₀⟩

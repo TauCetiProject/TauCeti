@@ -24,6 +24,8 @@ values `f (Finsupp.single i 1) j` are the matrix coefficients of `f`. For a line
   `z.sum fun i a ↦ σ a * f (Finsupp.single i 1) j`.
 * `LinearMap.apply_single_apply_eq_mul`: the `j`-th coordinate of `f (Finsupp.single i r)` is
   `σ r * f (Finsupp.single i 1) j`.
+* `Finsupp.lhom_ext_of_forall_eq`: on the free module on a type with a single point `q`, two
+  linear maps agreeing at `Finsupp.single q 1` are equal.
 -/
 
 public section
@@ -52,3 +54,13 @@ theorem apply_single_apply_eq_mul (f : (ι →₀ R) →ₛₗ[σ] (κ →₀ S)
   rw [← Finsupp.smul_single_one, map_smulₛₗ, Finsupp.smul_apply, smul_eq_mul]
 
 end LinearMap
+
+namespace Finsupp
+
+/-- On the free module on a type whose only point is `q`, two linear maps that agree at
+`single q 1` are equal. -/
+theorem lhom_ext_of_forall_eq {R M ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {q : ι}
+    (hq : ∀ r, r = q) {a b : (ι →₀ R) →ₗ[R] M} (h : a (single q 1) = b (single q 1)) : a = b :=
+  lhom_ext' fun r ↦ LinearMap.ext_ring (by rw [hq r]; exact h)
+
+end Finsupp

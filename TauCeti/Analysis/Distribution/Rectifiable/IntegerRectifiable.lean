@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.Rectifiable.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.IntegrationCurrent
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Basic
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Local
+import TauCeti.Geometry.MeasureTheory.Rectifiable.Subspace
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.SpecialFunctions.FrameSign
@@ -42,7 +43,11 @@ measure in `Ω`). There the two orthonormal frames span the same plane, so they 
 orthogonal change of frame of determinant `±1`, and the sum is the frame current of the first frame
 with multiplicity `θ₁ ± θ₂`.
 
-For example the integration current `[[Ω]]` of the open set in top degree is integer-rectifiable
+The basic examples are carried by affine planes. An integer multiplicity vanishing off an affine
+plane `x₀ + span e` of an orthonormal family `e`, with the constant frame `e`, gives an
+integer-rectifiable current (`Distribution.isIntegerRectifiable_frameCurrent_of_sub_mem_span`): the
+plane is the approximate tangent plane at each point of the support. For example the integration
+current `[[Ω]]` of the open set in top degree is integer-rectifiable
 (`Distribution.isIntegerRectifiable_integrationCurrent`), with multiplicity one on `Ω` and a
 constant orthonormal frame.
 
@@ -50,6 +55,8 @@ constant orthonormal frame.
 
 * `Distribution.IsIntegerRectifiable`: integer-rectifiable currents.
 * `Distribution.integerRectifiableCurrents`: their additive subgroup.
+* `Distribution.isIntegerRectifiable_frameCurrent_of_sub_mem_span`: currents carried by an affine
+  plane with a constant frame.
 * `Distribution.isIntegerRectifiable_integrationCurrent`: the integration current of an open set.
 
 ## References
@@ -233,6 +240,28 @@ theorem mem_integerRectifiableCurrents {T : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ] 
     T ∈ integerRectifiableCurrents Ω n k ↔ IsIntegerRectifiable T :=
   Iff.rfl
 
+/-- **A current carried by an affine plane is integer-rectifiable.** If an integer multiplicity
+`θ`, measurable and locally integrable on `Ω`, vanishes off the affine plane `x₀ + span e` of an
+orthonormal family `e : Fin k → V`, then its frame current with the constant frame `e` is
+integer-rectifiable: the support lies in a `k`-dimensional affine plane, which is its approximate
+tangent plane at each of its points. -/
+theorem isIntegerRectifiable_frameCurrent_of_sub_mem_span {θ : V → ℤ} {e : Fin k → V}
+    (he : Orthonormal ℝ e) (x₀ : V) (hθm : Measurable θ)
+    (hθ : LocallyIntegrableOn (fun x ↦ (θ x : ℝ)) Ω μHE[k])
+    (hθe : ∀ x, θ x ≠ 0 → x - x₀ ∈ Submodule.span ℝ (range e)) :
+    IsIntegerRectifiable
+      (frameCurrent (fun x ↦ (θ x : ℝ)) (fun _ ↦ e) : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) := by
+  set P := Submodule.span ℝ (range e)
+  have hP : finrank ℝ P = k := by simpa using finrank_span_eq_card he.linearIndependent
+  refine ⟨θ, fun _ ↦ e, hθm, measurable_const, ?_, hθ, fun _ _ ↦ he,
+    ae_of_all _ fun x _ hx ↦ densityZeroOutsideCones_of_forall_sub_mem fun z hz ↦ ?_, rfl⟩
+  · -- The support lies in the translate `P + x₀` of the `k`-dimensional subspace `P`.
+    have h := (CountablyRectifiable.isometry_image_iff (isometry_add_right x₀)).2
+      P.countablyRectifiable
+    rw [hP] at h
+    exact h.mono fun x hx ↦ ⟨x - x₀, hθe x hx, sub_add_cancel x x₀⟩
+  · simpa using P.sub_mem (hθe z hz) (hθe x hx)
+
 /-- **The integration current of an open set is integer-rectifiable.** In top degree `m`, for an
 orthonormal basis `b`, the integration current `[[Ω]]` for the orientation of `b` is the frame
 current of the multiplicity one on `Ω` and the constant frame `b`; the approximate tangent plane is
@@ -247,32 +276,25 @@ theorem isIntegerRectifiable_integrationCurrent {m : ℕ} (b : OrthonormalBasis 
     exact InnerProductSpace.euclideanHausdorffMeasure_eq_volume
   set θ : V → ℤ := fun x ↦ if x ∈ (Ω : Set V) then 1 else 0
   have hθm : Measurable θ := Measurable.ite Ω.isOpen.measurableSet measurable_const measurable_const
-  have hS : {x | θ x ≠ 0} = (Ω : Set V) := by
-    ext x
-    by_cases hx : x ∈ Ω <;> simp [θ, hx]
   have hθ : LocallyIntegrableOn (fun x ↦ (θ x : ℝ)) Ω μHE[m] := by
     rw [hμ]
     exact ((locallyIntegrable_const (1 : ℝ)).locallyIntegrableOn _).mono
       (measurable_from_top.comp hθm).aestronglyMeasurable (ae_of_all _ fun y ↦ by
         by_cases hy : y ∈ Ω <;> simp [θ, hy])
-  refine ⟨θ, fun _ ↦ b, hθm, measurable_const, ?_, hθ, fun _ _ ↦ b.orthonormal,
-    ae_of_all _ fun x _ _ ↦ ?_, ?_⟩
-  · rw [hS]
-    simpa using (CountablyRectifiable.isometryEquiv_image_iff
-      (e := b.repr.toIsometryEquiv) (s := (Ω : Set V))).1 (CountablyRectifiable.euclidean _)
-  · -- The plane spanned by `b` is the whole space, so no point lies outside the cones.
-    have hspan : Submodule.span ℝ (range (b : Fin m → V)) = ⊤ := by
-      rw [← b.coe_toBasis]
-      exact b.toBasis.span_eq
-    rw [hspan]
-    exact densityZeroOutsideCones_top _ _
-  · ext ω
+  have hT : (b.toBasis.orientation.integrationCurrent Ω : 𝓓^{n}(Ω, V [⋀^Fin m]→L[ℝ] ℝ) →L[ℝ] ℝ) =
+      frameCurrent (fun x ↦ (θ x : ℝ)) (fun _ ↦ b) := by
+    ext ω
     rw [frameCurrent_apply hθ measurable_const (fun _ _ ↦ b.orthonormal),
       Orientation.integrationCurrent_apply_eq_integral_volume _ b rfl, hμ]
     refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
     by_cases hx : x ∈ Ω
     · simp [θ, hx]
     · simp [θ, hx, image_eq_zero_of_notMem_tsupport fun hmem ↦ hx (ω.tsupport_subset hmem)]
+  -- The plane spanned by `b` is the whole space.
+  rw [hT]
+  refine isIntegerRectifiable_frameCurrent_of_sub_mem_span b.orthonormal 0 hθm hθ fun x _ ↦ ?_
+  rw [← b.coe_toBasis, b.toBasis.span_eq]
+  exact Submodule.mem_top
 
 end Distribution
 
