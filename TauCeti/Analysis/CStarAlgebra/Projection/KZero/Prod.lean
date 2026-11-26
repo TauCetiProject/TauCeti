@@ -10,6 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Algebra.Star.Projection.Add
 public import TauCeti.Analysis.CStarAlgebra.Projection.Perturbation
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Unitization.Basic
+import TauCeti.Algebra.Ring.Idempotent.Basic
+import TauCeti.Algebra.Star.SelfAdjoint
 
 /-!
 # `K₀` of a direct sum of C⋆-algebras
@@ -27,7 +29,7 @@ For C⋆-algebras `A` and `B`, a projection `p` over the unitization `(A × B)�
 induced by the corner maps `inl ∘ fst` and `inr ∘ snd` add up, on `K₀((A × B)⁺)`, to the identity
 plus the scalar part, and on the `K₀`-group of the nonunital algebra `A × B` to the identity
 (`TauCeti.UnitizationKZero.map_inl_comp_fst_add_map_inr_comp_snd`). Hence
-`K₀(A × B) ≃ K₀(A) × K₀(B)` (`TauCeti.UnitizationKZero.prodAddEquiv`).
+`K₀(A × B) ≃ K₀(A) × K₀(B)` (`TauCeti.UnitizationKZero.prodFstSndEquiv`).
 
 ## Main statements
 
@@ -35,7 +37,7 @@ plus the scalar part, and on the `K₀`-group of the nonunital algebra `A × B` 
   `[e + x + y] + [e] = [e + x] + [e + y]` when `x y = y x = 0`.
 * `TauCeti.UnitizationKZero.map_inl_comp_fst_add_map_inr_comp_snd`: the corner maps of `A × B`
   add up to the identity of `K₀(A × B)`.
-* `TauCeti.UnitizationKZero.prodAddEquiv`: `K₀(A × B) ≃+ K₀(A) × K₀(B)`, induced by the
+* `TauCeti.UnitizationKZero.prodFstSndEquiv`: `K₀(A × B) ≃+ K₀(A) × K₀(B)`, induced by the
   projections and inverse to the sum of the maps induced by the inclusions.
 
 ## References
@@ -52,11 +54,6 @@ namespace TauCeti
 
 section Rotation
 
-/-- `x` is self-adjoint if `e` and `e + x` are. -/
-private theorem isSelfAdjoint_of_add {R : Type*} [AddCommGroup R] [StarAddMonoid R] {e x : R}
-    (he : IsSelfAdjoint e) (hex : IsSelfAdjoint (e + x)) : IsSelfAdjoint x := by
-  simpa using hex.sub he
-
 variable {C : Type*} [NonUnitalCStarAlgebra C] {n : Type*} [Fintype n] {e x y : Matrix n n C}
 
 /-- The rotation path at the angle with cosine `c` and sine `s` consists of projections. -/
@@ -68,8 +65,8 @@ private theorem isStarProjection_rotation (he : IsStarProjection e)
   have hx := he.isIdempotentElem.mul_add_mul_add_mul_eq hex.isIdempotentElem
   have hy := he.isIdempotentElem.mul_add_mul_add_mul_eq hey.isIdempotentElem
   have he' := he.isIdempotentElem.eq
-  have hxs := isSelfAdjoint_of_add he.isSelfAdjoint hex.isSelfAdjoint
-  have hys := isSelfAdjoint_of_add he.isSelfAdjoint hey.isSelfAdjoint
+  have hxs := hex.isSelfAdjoint.of_add_right he.isSelfAdjoint
+  have hys := hey.isSelfAdjoint.of_add_right he.isSelfAdjoint
   refine ⟨?_, ?_⟩
   · rw [IsIdempotentElem, fromBlocks_multiply]
     congr 1
@@ -211,7 +208,7 @@ theorem map_inl_comp_fst_add_map_inr_comp_snd :
 
 /-- **`K₀` of a direct sum.** The projections of `A × B` induce an isomorphism
 `K₀(A × B) ≃+ K₀(A) × K₀(B)`, whose inverse is the sum of the maps induced by the inclusions. -/
-noncomputable def prodAddEquiv :
+noncomputable def prodFstSndEquiv :
     UnitizationKZero ℂ (A × B) ≃+ UnitizationKZero ℂ A × UnitizationKZero ℂ B where
   toFun x := (map (NonUnitalStarAlgHom.fst ℂ A B) x, map (NonUnitalStarAlgHom.snd ℂ A B) x)
   invFun y := map (NonUnitalStarAlgHom.inl ℂ A B) y.1 + map (NonUnitalStarAlgHom.inr ℂ A B) y.2
@@ -231,14 +228,14 @@ noncomputable def prodAddEquiv :
   map_add' x y := by simp
 
 @[simp]
-theorem prodAddEquiv_apply (x : UnitizationKZero ℂ (A × B)) :
-    prodAddEquiv x =
+theorem prodFstSndEquiv_apply (x : UnitizationKZero ℂ (A × B)) :
+    prodFstSndEquiv x =
       (map (NonUnitalStarAlgHom.fst ℂ A B) x, map (NonUnitalStarAlgHom.snd ℂ A B) x) :=
   (rfl)
 
 @[simp]
-theorem prodAddEquiv_symm_apply (y : UnitizationKZero ℂ A × UnitizationKZero ℂ B) :
-    prodAddEquiv.symm y =
+theorem prodFstSndEquiv_symm_apply (y : UnitizationKZero ℂ A × UnitizationKZero ℂ B) :
+    prodFstSndEquiv.symm y =
       map (NonUnitalStarAlgHom.inl ℂ A B) y.1 + map (NonUnitalStarAlgHom.inr ℂ A B) y.2 :=
   (rfl)
 
