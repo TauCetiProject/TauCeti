@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Algebra.Lie.Cohomology.CartanThreeForm
 public import TauCeti.Geometry.Lie.LeftInvariantForm
+public import TauCeti.Geometry.Lie.Functor
 public import TauCeti.Geometry.Manifold.DeRham.Integration.Homotopy
-import TauCeti.Geometry.Lie.Functor
+import TauCeti.Geometry.Lie.Adjoint.Compact
 import TauCeti.Geometry.Lie.Interior
 
 /-!
@@ -38,6 +39,14 @@ map out of the three-sphere `SU(2)` that is not null-homotopic: on the basis `e�
 `𝔰𝔲(2)` with `⁅e₂, e₃⁆ = e₁`, the negative-definite Killing form of `G` takes a negative value at
 `dφ e₁`.
 
+When `G` is compact, its Lie algebra carries a positive-definite invariant form `B`
+(`TauCeti.Lie.exists_posDef_orthogonal_derivedSeries_one_eq_center_of_compactSpace`), and
+`B(dφ x, dφ x) > 0` as soon as `dφ x ≠ 0`. So a smooth homomorphism out of a compact
+three-dimensional Lie group whose Lie algebra is not abelian is not null-homotopic once its
+differential is injective (`ContMDiffMonoidMorphism.not_nullhomotopic_of_injective_lieMap`): take
+`x = ⁅y, z⁆ ≠ 0`. This applies to every homomorphism `SU(2) → G` with injective differential, for
+instance to the inclusions of the two factors of `SU(2) × SU(2)`.
+
 ## Main results
 
 * `ContMDiffMonoidMorphism.not_nullhomotopic_of_compContinuousLinearMap_ne_zero`: a smooth
@@ -46,6 +55,9 @@ map out of the three-sphere `SU(2)` that is not null-homotopic: on the basis `e�
 * `ContMDiffMonoidMorphism.not_nullhomotopic_of_lie_eq_of_apply_ne_zero`: a smooth homomorphism
   out of a compact three-dimensional Lie group along which the Cartan three-form of an invariant
   form pulls back nonzero is not null-homotopic.
+* `ContMDiffMonoidMorphism.not_nullhomotopic_of_injective_lieMap`: a smooth homomorphism with
+  injective differential from a compact three-dimensional Lie group with non-abelian Lie algebra
+  to a compact Lie group is not null-homotopic.
 
 ## References
 
@@ -122,5 +134,37 @@ theorem not_nullhomotopic_of_lie_eq_of_apply_ne_zero (φ : ContMDiffMonoidMorphi
   -- it takes the value `B(dφ x, dφ ⁅y, z⁆) = B(dφ x, dφ x)` there.
   have hv := congrArg (fun f ↦ f ![x, y, z]) h
   simpa [Matrix.cons_val_zero, Matrix.cons_val_one, ← φ.groupLieAlgebraMap_lie, hxyz] using hv
+
+/-- **Homomorphisms with injective differential out of a non-abelian three-dimensional compact Lie
+group are detected by the Cartan three-form.** Let `φ : K → G` be a smooth homomorphism of compact
+finite-dimensional real Lie groups, with `K` of dimension `3` and non-abelian Lie algebra. If the
+differential `lieMap φ` is injective, then `φ` is not null-homotopic: for a positive-definite
+invariant form `B` on the Lie algebra of `G` and `⁅y, z⁆ = x ≠ 0` in the Lie algebra of `K`, the
+Cartan three-form of `B` pulls back to a form taking the value `B(dφ x, dφ x) > 0` on
+`(x, y, z)`. -/
+theorem not_nullhomotopic_of_injective_lieMap [FiniteDimensional ℝ F] [CompactSpace G]
+    (φ : ContMDiffMonoidMorphism J I ∞ K G) (hk : Module.finrank ℝ F = 3)
+    (hK : ¬IsLieAbelian (LeftInvariantDerivation J K)) (hφ : Function.Injective (lieMap φ)) :
+    ¬(φ : C(K, G)).Nullhomotopic := by
+  obtain ⟨B, hinv, -, hpos, -⟩ :=
+    Lie.exists_posDef_orthogonal_derivedSeries_one_eq_center_of_compactSpace (I := I) (G := G)
+  obtain ⟨y, z, hyz⟩ : ∃ y z : LeftInvariantDerivation J K, ⁅y, z⁆ ≠ 0 := by
+    by_contra! h
+    exact hK ⟨fun y z ↦ h y z⟩
+  -- The Lie algebras as tangent spaces at the identity, where the Cartan three-form lives.
+  let eG := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+    (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)
+  let eK := leftInvariantDerivationLieEquivGroupLieAlgebra (I := J) (G := K)
+    (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)
+  let B' : LinearMap.BilinForm ℝ (GroupLieAlgebra I G) :=
+    B.compl₁₂ eG.symm.toLinearEquiv.toLinearMap eG.symm.toLinearEquiv.toLinearMap
+  refine φ.not_nullhomotopic_of_lie_eq_of_apply_ne_zero hk B' (fun x y z ↦ ?_)
+    (x := eK ⁅y, z⁆) (y := eK y) (z := eK z) (LieEquiv.map_lie _ _ _).symm ?_
+  · simp only [B', LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv,
+      LieEquiv.map_lie]
+    exact hinv _ _ _
+  · simp only [B', LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv,
+      eG, eK, leftInvariantDerivationLieEquivGroupLieAlgebra_symm_groupLieAlgebraMap]
+    exact (hpos _ ((map_ne_zero_iff _ hφ).mpr hyz)).ne'
 
 end ContMDiffMonoidMorphism
