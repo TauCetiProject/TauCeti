@@ -46,7 +46,7 @@ on the fixed base `U`, of the varying-base part of the Stacks Project, Lemma 8.1
 
 * `IntrinsicBandSections.map_localAut_hom_comp_hom`: the local evaluations commute with the gluing
   isomorphisms.
-* `IntrinsicBandSections.coverIso_one`, `IntrinsicBandSections.coverIso_inv`,
+* `IntrinsicBandSections.coverIso_one`, `IntrinsicBandSections.coverIso_inv_eq_symm`,
   `IntrinsicBandSections.coverIso_mul`: the identity family, inverse and product families.
 * `IntrinsicBandSections.map_coverAut_hom`, `IntrinsicBandSections.coverAut_unique`: the local
   components and uniqueness of the descended automorphism.
@@ -188,7 +188,7 @@ theorem coverIso_one (x : F.obj (.mk (op U))) :
 
 /-- The inverse family gives the inverse automorphism of the descent datum. -/
 @[simp]
-theorem coverIso_inv (hz : IsCompatible z) (x : F.obj (.mk (op U))) :
+theorem coverIso_inv_eq_symm (hz : IsCompatible z) (x : F.obj (.mk (op U))) :
     coverIso hz.inv x = (coverIso hz x).symm := by
   ext i
   simp only [coverIso_hom_hom, Iso.symm_hom, coverIso_inv_hom, map_inv, Aut.inv_asIso]
