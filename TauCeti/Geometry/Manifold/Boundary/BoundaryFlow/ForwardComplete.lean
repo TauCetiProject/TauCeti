@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.BoundaryFlow.Basic
 public import TauCeti.Geometry.Manifold.IntegralCurve.SmoothFlow
-import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 
 /-!
@@ -21,15 +20,16 @@ semigroup law `Φ x (t + u) = Φ (Φ x t) u`, whose curves lie in the interior o
 positive time (`TauCeti.exists_forwardFlow`). Running it backwards, the integral curves of a field
 pointing outward at every boundary point exist for all nonpositive times
 (`TauCeti.IsOutwardPointingField.exists_backwardFlow`), and the backward flow-out of the boundary
-is injective on `∂M × (-∞, 0]` (`TauCeti.injOn_flowOut_boundary`). For the Liouville field of a
-Liouville domain this is the backward Liouville flow, along which the boundary of the domain is
-collared by the negative half of its symplectization.
+is injective on `∂M × (-∞, 0]`, by `TauCeti.injOn_flowOut_boundary` applied to the forward flow of
+the negated field. For the Liouville field of a Liouville domain this is the backward Liouville
+flow used to collar the boundary of the domain by the negative half of its symplectization; this
+file supplies its global existence and the injectivity of its flow-out, not its smoothness.
 
 The interior statement is local. An integral curve defined on a left neighbourhood of a time `t`
 cannot arrive at a boundary point at which the field points strictly inward
-(`IsMIntegralCurveOn.not_isOutwardPointing_neg`): in the preferred chart there the normal
-coordinate of the curve is nonnegative and vanishes at `t`, so `t` is a local minimum on the left
-of `t`, while its derivative at `t` is the normal component of the field, which is positive.
+(`IsMIntegralCurveOn.not_isOutwardPointing_neg`): run backwards from `t`, the curve leaves the
+boundary point with the outward velocity `-v (γ t)`, which
+`TauCeti.not_isOutwardPointing_curveVelocityWithin_Ici` excludes.
 
 The existence statement follows the uniform-time argument for compact manifolds without boundary
 (Lee, Lemma 9.15 and Theorem 9.16). Near an interior point the local flow of
@@ -62,7 +62,7 @@ the forward flow.
 public section
 
 open Filter Function Manifold Set
-open scoped ContDiff Manifold Topology
+open scoped ContDiff Manifold Pointwise Topology
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
 
@@ -70,8 +70,7 @@ namespace IsMIntegralCurveOn
 
 open TauCeti
 
-variable [IsManifold (𝓡∂ (n + 1)) 1 M] {v : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
-  {γ : ℝ → M} {s : Set ℝ} {t : ℝ}
+variable {v : (x : M) → TangentSpace (𝓡∂ (n + 1)) x} {γ : ℝ → M} {s : Set ℝ} {t : ℝ}
 
 /-- **Integral curves do not arrive at the boundary where the field points inward.** If `γ` is an
 integral curve of `v` on a set `s` of times which is a neighbourhood of `t` on the left, then
@@ -79,40 +78,16 @@ integral curve of `v` on a set `s` of times which is a neighbourhood of `t` on t
 not outward. -/
 theorem not_isOutwardPointing_neg (hγ : IsMIntegralCurveOn γ v s) (ht : t ∈ s)
     (hs : s ∈ 𝓝[≤] t) : ¬IsOutwardPointing (γ t) (-v (γ t)) := by
-  intro hin
-  have hb : γ t ∈ (𝓡∂ (n + 1)).boundary M := (isOutwardPointing_iff.mp hin).1
-  let φ := extChartAt (𝓡∂ (n + 1)) (γ t)
-  let d := tangentCoordChange (𝓡∂ (n + 1)) (γ t) (γ t) (γ t) (v (γ t)) 0
-  -- The normal coordinate of the curve in the preferred chart at `γ t` has derivative `d > 0`.
-  have hd : HasDerivWithinAt (fun r ↦ φ (γ r) 0) d s t :=
-    (EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin (n + 1))).hasFDerivAt.comp_hasDerivWithinAt t
-      ((hγ t ht).hasDerivWithinAt_extChartAt_comp (mem_extChartAt_source _))
-  have hpos : 0 < d :=
-    (isOutwardPointing_neg_iff_tangentCoordChange hb (mem_extChartAt_source _) _).mp hin
-  -- It vanishes at `t`, since `γ t` is a boundary point, and is nonnegative near `t`, since the
-  -- chart takes values in the half-space.
-  have hmin : IsLocalMinOn (fun r ↦ φ (γ r) 0) s t := by
-    have h0 : φ (γ t) 0 = 0 := by
-      rw [extChartAt_coe, comp_apply, modelWithCornersEuclideanHalfSpace_apply]
-      exact (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (mem_chart_source _ _)).mp hb
-    have hsrc : ∀ᶠ r in 𝓝[s] t, γ r ∈ φ.source :=
-      hγ.continuousWithinAt ht (extChartAt_source_mem_nhds _)
-    filter_upwards [hsrc] with r hr
-    have hr' := extChartAt_target_subset_range (I := 𝓡∂ (n + 1)) (γ t) (φ.map_source hr)
-    rw [range_modelWithCornersEuclideanHalfSpace] at hr'
-    rw [h0]
-    exact hr'
-  -- So the derivative is nonnegative in the backward direction `-η`, a contradiction.
-  obtain ⟨η, hη, hηs⟩ : ∃ η > 0, Icc (t - η) t ⊆ s := by
+  -- Reversed in time, `γ` runs for parameters `≥ -t` with velocity `-v (γ t)` at `-t`.
+  have hs' : -s ∈ 𝓝[≥] (-t) := by
     obtain ⟨l, hl, hls⟩ := mem_nhdsLE_iff_exists_Ioc_subset.mp hs
-    have hl' : l < t := mem_Iio.mp hl
-    exact ⟨(t - l) / 2, by linarith, fun r hr ↦ hls ⟨by linarith [hr.1], hr.2⟩⟩
-  have hcone : -η ∈ posTangentConeAt s t := by
-    refine mem_posTangentConeAt_of_segment_subset (hηs.trans' ?_)
-    rw [segment_eq_Icc', min_eq_right (by linarith), max_eq_left (by linarith), ← sub_eq_add_neg]
-  have h := hmin.hasFDerivWithinAt_nonneg hd.hasFDerivWithinAt hcone
-  rw [ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, neg_mul, neg_nonneg] at h
-  exact (mul_pos hη hpos).not_ge h
+    refine mem_of_superset (Ico_mem_nhdsGE (neg_lt_neg (mem_Iio.mp hl))) fun r hr ↦ hls ?_
+    exact ⟨lt_neg_of_lt_neg hr.2, neg_le.mp hr.1⟩
+  have hc := ((hγ.comp_neg) (-t) (by rwa [Set.mem_neg, neg_neg])).mono_of_mem_nhdsWithin hs'
+  have h := not_isOutwardPointing_curveVelocityWithin_Ici (n := n) (fun r ↦ γ (-r)) (-t)
+  rw [Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt hc (uniqueDiffWithinAt_Ici _)] at h
+  simp only [Pi.neg_apply] at h
+  rwa [neg_neg] at h
 
 /-- **Integral curves stay off the boundary of an inward field.** If `v` points inward at every
 boundary point and `γ` is an integral curve of `v` on a set of times which is a neighbourhood of
