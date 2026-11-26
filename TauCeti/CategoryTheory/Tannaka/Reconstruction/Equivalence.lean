@@ -185,7 +185,7 @@ essentially small abelian `K`-linear category `C` and a `K`-linear, exact and fa
 comodules over the coalgebra `ω.reconstructionCoalgebra`. The functor of the equivalence is
 `ω.toReconstructionComodule`, whose underlying vector spaces are the values of `ω`
 (`CategoryTheory.Functor.toReconstructionComoduleCompForget₂Iso`). -/
-@[expose] noncomputable def reconstructionEquivalence :
+noncomputable def reconstructionEquivalence :
     C ≌ FGComoduleCat.{u, u, u} K ω.reconstructionCoalgebra :=
   ω.toReconstructionComodule.asEquivalence
 
@@ -193,6 +193,6 @@ comodules over the coalgebra `ω.reconstructionCoalgebra`. The functor of the eq
 @[simp]
 theorem reconstructionEquivalence_functor :
     ω.reconstructionEquivalence.functor = ω.toReconstructionComodule :=
-  rfl
+  (rfl)
 
 end CategoryTheory.Functor
