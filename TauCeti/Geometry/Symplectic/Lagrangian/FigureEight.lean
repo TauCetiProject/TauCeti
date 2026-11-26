@@ -73,7 +73,7 @@ namespace TauCeti
 local instance figureEightTwoPiPos : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
 /-- The parametrization `t ↦ (sin t, sin t cos t)` of the figure-eight has period `2π`. -/
-theorem periodic_sin_sin_mul_cos :
+private theorem periodic_sin_sin_mul_cos :
     Function.Periodic (fun t : ℝ ↦ (sin t, sin t * cos t)) (2 * π) := fun t ↦ by
   simp only [sin_add_two_pi, cos_add_two_pi]
 
