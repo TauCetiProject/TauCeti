@@ -50,6 +50,18 @@ vanishes below `n` (`TopPair.quasiIso_pushforwardCapChainMap`), and it is natura
 (`TopPair.pushforwardCapChainMap_naturality`). This is the form in which the homology Thom
 isomorphism can be compared with chain maps, for instance equivariant ones.
 
+The map `x ↦ p₀_*(x ⌢ u)` is linear over the cohomology ring of `Y` up to sign, the **projection
+formula** `p₀_*((x ⌢ p₀^* ψ) ⌢ u) = (-1)^(n r) p₀_*(x ⌢ u) ⌢ ψ` for `ψ ∈ Hʳ(Y; K)`, where
+`x ⌢ p₀^* ψ` is the cap product of absolute cohomology with relative homology
+(`TopPair.map_singularCap_absoluteSingularCap`, and `TopPair.pushforwardCap_absoluteSingularCap`
+for `pushforwardCap`). Both sides are compared through their Kronecker pairings with classes with
+injective coefficients, which separate homology classes: by
+`TopPair.absoluteSingularCap_comp_singularKronecker` and
+`TopPair.singularCap_comp_singularKronecker` the pairings are those of cup products, which agree
+up to the sign by graded commutativity and associativity of the cup product of absolute and
+relative cohomology (`TopPair.singularCup_cup_alexanderWhitneyDiagonal`). For the Thom pair of a
+vector bundle this is the linearity of the homology Thom map over the cohomology of the base.
+
 ## Main definitions and results
 
 * `TopPair.pushforwardCap`, `TopPair.pushforwardCap_naturality`: `x ↦ p₀_*(x ⌢ u)` and naturality.
@@ -67,6 +79,10 @@ isomorphism can be compared with chain maps, for instance equivariant ones.
   `pushforwardCap` of the class of `φ`, up to sign.
 * `TopPair.quasiIso_pushforwardCapChainMap`: it is a quasi-isomorphism when `pushforwardCap` of
   the class is an isomorphism in every degree and the relative homology vanishes below `n`.
+* `TopPair.singularCup_cup_alexanderWhitneyDiagonal`: `a ⌣ (v ⌣ b) = (-1)^(n r) v ⌣ (a ⌣ b)`
+  for a relative class `v` and absolute classes `a` and `b`.
+* `TopPair.map_singularCap_absoluteSingularCap`, `TopPair.pushforwardCap_absoluteSingularCap`:
+  the projection formula `p₀_*((x ⌢ p₀^* ψ) ⌢ u) = (-1)^(n r) p₀_*(x ⌢ u) ⌢ ψ`.
 
 ## References
 
@@ -337,6 +353,121 @@ theorem quasiIso_pushforwardCapChainMap
   exact hu p m h
 
 end ChainMap
+
+section ProjectionFormula
+
+variable {K : Type w} [CommRing K] (P : TopPair.{w}) {S T I : ModuleCat.{w} K}
+  (u : T ⟶ 𝟙_ (ModuleCat.{w} K) ⊗ S)
+
+/-- **Moving an absolute class past a relative class in a cup product**,
+`a ⌣ (v ⌣ b) = (-1)^(n r) v ⌣ (a ⌣ b)`: for a pair `(X, A)`, a relative class `v ∈ Hⁿ(X, A; K)`
+and absolute classes `a ∈ Hʳ(X; K)` and `b ∈ H^q(X; S, I)`, cupping `a` with the relative product
+`v ⌣ b`, taken along the relative Alexander–Whitney diagonal `P.alexanderWhitneyDiagonal u` with
+the relative factor first, is `(-1)^(n r)` times the relative product of `v` with `a ⌣ b`. -/
+theorem singularCup_cup_alexanderWhitneyDiagonal {n r q m' q' m : ℕ} (h₁ : n + q = m')
+    (h₀ : r + m' = m) (h₂ : n + q' = m) (h₃ : r + q = q')
+    (v : P.singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) n)
+    (a : P.fst.singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) r)
+    (b : P.fst.singularCohomology S K I q) :
+    P.singularCup K (λ_ T).inv (λ_ I).hom r m' m h₀ a
+        (TauCeti.ChainComplex.cup K (P.alexanderWhitneyDiagonal u) (λ_ I).hom n q m' h₁ v b) =
+      ((-1 : ℤ) ^ (n * r)) • TauCeti.ChainComplex.cup K (P.alexanderWhitneyDiagonal u)
+        (λ_ I).hom n q' m h₂ v (P.fst.singularCup K (λ_ S).inv (λ_ I).hom r q q' h₃ a b) := by
+  subst h₁ h₀ h₃
+  -- Put the relative class last in both products, by graded commutativity, and reassociate.
+  have hu : (u ≫ (λ_ S).hom ≫ (ρ_ S).inv) ≫ (β_ S (𝟙_ (ModuleCat.{w} K))).hom = u := by
+    simp [braiding_tensorUnit_right]
+  have hμ := braiding_leftUnitor I
+  have hassoc : (u ≫ (λ_ S).hom ≫ (ρ_ S).inv) ≫ (λ_ S).inv ▷ 𝟙_ (ModuleCat.{w} K) ≫
+      (α_ (𝟙_ (ModuleCat.{w} K)) S (𝟙_ (ModuleCat.{w} K))).hom =
+      (λ_ T).inv ≫ 𝟙_ (ModuleCat.{w} K) ◁ (u ≫ (λ_ S).hom ≫ (ρ_ S).inv) := by
+    rw [← leftUnitor_inv_naturality, leftUnitor_tensor_inv]
+  have hassocμ : (λ_ I).hom ▷ 𝟙_ (ModuleCat.{w} K) ≫ (ρ_ I).hom =
+      (α_ (𝟙_ (ModuleCat.{w} K)) I (𝟙_ (ModuleCat.{w} K))).hom ≫
+        𝟙_ (ModuleCat.{w} K) ◁ (ρ_ I).hom ≫ (λ_ I).hom := by
+    rw [leftUnitor_naturality, leftUnitor_tensor_hom_assoc, Iso.hom_inv_id_assoc]
+  rw [singularCup_gradedComm K P hu hμ (add_comm q n) b v, map_zsmul,
+    singularCup_gradedComm K P hu hμ (by omega) _ v,
+    ← singularCup_assoc K P hassoc hassocμ rfl (by omega) (add_comm q n) (by omega), smul_smul,
+    ← pow_add, show n * r + (r + q) * n = q * n + 2 * (n * r) by ring, pow_add,
+    (even_two_mul _).neg_one_pow, mul_one]
+
+/-- **The projection formula for the relative cap product followed by push-forward**: for a pair
+`(X, Z)`, a map `p₀ : X ⟶ Y`, a relative class `v ∈ Hⁿ(X, Z; K)`, a class `ψ ∈ Hʳ(Y; K)` and a
+relative class `x ∈ Hₘ(X, Z; T)`,
+
+`p₀_*((x ⌢ p₀^* ψ) ⌢ v) = (-1)^(n r) p₀_*(x ⌢ v) ⌢ ψ`
+
+in `H_q(Y; S)`, where `x ⌢ p₀^* ψ` is the cap product of absolute cohomology with relative
+homology (`TopPair.absoluteSingularCap`) and the relative cap products with `v` are taken along a
+coefficient morphism `u : T ⟶ K ⊗ S`. So `x ↦ p₀_*(x ⌢ v)` is linear over the cohomology ring of
+`Y`, up to the sign `(-1)^(n r)`. For `T = S` a module `A` and `u = (λ_ A).inv` this is the
+projection formula for `TopPair.pushforwardCap`; for the Thom pair of a vector bundle it is that
+for the homology Thom map. -/
+theorem map_singularCap_absoluteSingularCap {Y : TopCat.{w}} (p₀ : P.fst ⟶ Y) {n r q m' q' m : ℕ}
+    (h₀ : r + m' = m) (h₁ : n + q = m') (h₂ : n + q' = m) (h₃ : r + q = q')
+    (v : P.singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) n)
+    (ψ : Y.singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) r)
+    (x : (P.singularHomology T m : ModuleCat.{w} K)) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) q).obj S).map p₀
+        (P.singularCap K u (λ_ S).hom n q m' h₁ v
+          (P.absoluteSingularCap K (λ_ T).inv (λ_ T).hom r m' m h₀
+            (TopCat.singularCohomologyMap p₀ r ψ) x)) =
+      ((-1 : ℤ) ^ (n * r)) • Y.singularCap K (λ_ S).inv (λ_ S).hom r q q' h₃ ψ
+        (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) q').obj S).map p₀
+          (P.singularCap K u (λ_ S).hom n q' m h₂ v x)) := by
+  -- Classes of `H_q(Y; S)` are separated by their Kronecker pairings with classes with injective
+  -- coefficients: the inclusion into an injective module is such a pairing.
+  let ι := Injective.ι
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) q).obj S).obj Y)
+  apply (ModuleCat.mono_iff_injective ι).1 inferInstance
+  obtain ⟨c, hc⟩ := (Y.singularKronecker_bijective K (R := S) q).2 ι
+  -- Both sides pair with `c` to `⟨v ⌣ p₀^*(ψ ⌣ c), x⟩`, up to the sign.
+  have hL : Y.singularKronecker K q c
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) q).obj S).map p₀
+        (P.singularCap K u (λ_ S).hom n q m' h₁ v
+          (P.absoluteSingularCap K (λ_ T).inv (λ_ T).hom r m' m h₀
+            (TopCat.singularCohomologyMap p₀ r ψ) x))) =
+      ((-1 : ℤ) ^ (n * r)) • P.singularKronecker K m
+        (TauCeti.ChainComplex.cup K (P.alexanderWhitneyDiagonal u) (λ_ _).hom n q' m h₂ v
+          (TopCat.singularCohomologyMap p₀ q'
+            (Y.singularCup K (λ_ S).inv (λ_ _).hom r q q' h₃ ψ c)))
+        x := by
+    rw [← ConcreteCategory.comp_apply, ← TopCat.singularKronecker_naturality,
+      ← ConcreteCategory.comp_apply, TopPair.singularCap_comp_singularKronecker,
+      ← ConcreteCategory.comp_apply, absoluteSingularCap_comp_singularKronecker, ← singularCup_def,
+      singularCup_cup_alexanderWhitneyDiagonal P u h₁ h₀ h₂ h₃, map_zsmul,
+      TopCat.singularCup_naturality]
+    simp only [ModuleCat.hom_zsmul, LinearMap.smul_apply]
+  have hR : Y.singularKronecker K q c (Y.singularCap K (λ_ S).inv (λ_ S).hom r q q' h₃ ψ
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} K) q').obj S).map p₀
+        (P.singularCap K u (λ_ S).hom n q' m h₂ v x))) =
+      P.singularKronecker K m
+        (TauCeti.ChainComplex.cup K (P.alexanderWhitneyDiagonal u) (λ_ _).hom n q' m h₂ v
+          (TopCat.singularCohomologyMap p₀ q'
+            (Y.singularCup K (λ_ S).inv (λ_ _).hom r q q' h₃ ψ c)))
+        x := by
+    rw [← ConcreteCategory.comp_apply, TopCat.singularCap_comp_singularKronecker,
+      ← ConcreteCategory.comp_apply, ← TopCat.singularKronecker_naturality,
+      ← ConcreteCategory.comp_apply, TopPair.singularCap_comp_singularKronecker]
+  rw [← hc, map_zsmul, hL, hR]
+
+/-- **The projection formula for `TopPair.pushforwardCap`**: `x ↦ p₀_*(x ⌢ v)` is linear over the
+cohomology ring of `Y` up to sign, `p₀_*((x ⌢ p₀^* ψ) ⌢ v) = (-1)^(n r) p₀_*(x ⌢ v) ⌢ ψ` for
+`v ∈ Hⁿ(X, Z; K)`, `ψ ∈ Hʳ(Y; K)` and `x ∈ Hₘ(X, Z; A)`. -/
+theorem pushforwardCap_absoluteSingularCap {Y : TopCat.{w}} (p₀ : P.fst ⟶ Y) (A : ModuleCat.{w} K)
+    {n r q m' q' m : ℕ} (h₀ : r + m' = m) (h₁ : n + q = m') (h₂ : n + q' = m) (h₃ : r + q = q')
+    (v : P.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+    (ψ : Y.singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) r)
+    (x : (P.singularHomology A m : ModuleCat.{w} K)) :
+    P.pushforwardCap p₀ A n q m' h₁ v
+        (P.absoluteSingularCap K (λ_ A).inv (λ_ A).hom r m' m h₀
+          (TopCat.singularCohomologyMap p₀ r ψ) x) =
+      ((-1 : ℤ) ^ (n * r)) • Y.singularCap K (λ_ A).inv (λ_ A).hom r q q' h₃ ψ
+        (P.pushforwardCap p₀ A n q' m h₂ v x) :=
+  P.map_singularCap_absoluteSingularCap (λ_ A).inv p₀ h₀ h₁ h₂ h₃ v ψ x
+
+end ProjectionFormula
 
 end TopPair
 

@@ -34,7 +34,10 @@ isomorphism of groups, and under translation:
 * `Subgroup.mk_mulEquiv_out_bijective`: an isomorphism `e : G ≃* G'` carrying `H` onto `H'` carries
   the chosen representatives of `G ⧸ H` to a transversal of `H'` in `G'`;
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
-  translated coset `g • q` lies in the coset of `g * q.out`.
+  translated coset `g • q` lies in the coset of `g * q.out`, and `QuotientGroup.inv_smul_of_mk_eq`
+  and `QuotientGroup.out_inv_smul`: the inverse of a representative of `q`, for instance
+  `q.out⁻¹`, translates `q` to the base point; `QuotientGroup.smul_mk_one_eq_mk`: the orbit map
+  of the base point is the projection `G → G ⧸ H`.
 * `QuotientGroup.outCocycle`: the element `(g • q).out⁻¹ * g * q.out` of `H` relating the two, with
   the cocycle identity `QuotientGroup.outCocycle_mul`.
 * `QuotientGroup.iUnion_out_smul_eq` and `QuotientGroup.pairwise_disjoint_out_smul`: for an
@@ -51,11 +54,13 @@ element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, t
 `q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of `H`.
 `Subgroup.finite_image_mk_of_inv_mul_mem` passes finiteness of the image of a set in `G ⧸ K` to
 `G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
-`Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`.
+`Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`, and
+`Subgroup.sum_comp_quotientMapOfLE` sums a function on `G / K` along that map.
 `Subgroup.index_eq_of_equiv`, `Subgroup.ne_zero_of_equiv`, and `Subgroup.finiteIndex_of_equiv`
-read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection, and
-`Subgroup.quotientEquivFin` constructs a coset bijection `G ⧸ H ≃ Fin n` from `H.index = n` when
-`n ≠ 0`.
+read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection;
+`Subgroup.finiteIndex_of_surjective` and `Subgroup.index_le_of_surjective` deduce `FiniteIndex`
+and an index bound from a surjection from a finite type; and `Subgroup.quotientEquivFin` constructs
+a coset bijection `G ⧸ H ≃ Fin n` from `H.index = n` when `n ≠ 0`.
 -/
 
 public section
@@ -171,6 +176,18 @@ theorem card_fiber_quotientMapOfLE {G : Type*} [Group G] {H K : Subgroup G}
   -- Relative index is the cardinality of the quotient by the subgroup inside `K`.
   rfl
 
+/-- **Summing along the quotient map of a tower.** For `H ≤ K`, a function on `G / K` summed
+along `G / H → G / K` is `[K : H]` times its sum over `G / K`, since each fibre has `[K : H]`
+points (`card_fiber_quotientMapOfLE`). -/
+theorem sum_comp_quotientMapOfLE {G : Type*} [Group G] {H K : Subgroup G} [Fintype (G ⧸ H)]
+    [Fintype (G ⧸ K)] (hHK : H ≤ K) {M : Type*} [AddCommMonoid M] (F : G ⧸ K → M) :
+    ∑ q : G ⧸ H, F (quotientMapOfLE hHK q) = H.relIndex K • ∑ q : G ⧸ K, F q := by
+  classical
+  rw [← Finset.sum_fiberwise Finset.univ (quotientMapOfLE hHK), ← Finset.sum_nsmul]
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  rw [Finset.sum_congr rfl fun p hp ↦ by rw [(Finset.mem_filter.mp hp).2], Finset.sum_const,
+    ← card_fiber_quotientMapOfLE hHK q, Nat.card_eq_fintype_card, Fintype.card_subtype]
+
 /-- **Transversals multiply along a tower.** For subgroups `K ≤ H` of `G`, the products
 `p.out * k.out` of the chosen representatives of the cosets `p ∈ G ⧸ H` and
 `k ∈ H ⧸ K.subgroupOf H` represent each coset of `K` in `G` exactly once. -/
@@ -267,6 +284,22 @@ theorem finiteIndex_of_equiv {G β : Type*} [Group G] [Finite β] (H : Subgroup 
   have : Finite (G ⧸ H) := Finite.of_equiv β e.symm
   H.finiteIndex_of_finite_quotient
 
+/-- A subgroup whose coset space admits a surjection from a finite type has finite index. -/
+@[to_additive /-- An additive subgroup whose coset space admits a surjection from a finite type
+has finite index. -/]
+theorem finiteIndex_of_surjective {G β : Type*} [Group G] [Finite β] (H : Subgroup G)
+    {f : β → G ⧸ H} (hf : Function.Surjective f) : H.FiniteIndex :=
+  have : Finite (G ⧸ H) := Finite.of_surjective f hf
+  H.finiteIndex_of_finite_quotient
+
+/-- A surjection from a finite type onto `G ⧸ H` bounds `H.index` by `Nat.card β`. -/
+@[to_additive /-- A surjection from a finite type onto `G ⧸ H` bounds `H.index` by
+`Nat.card β`. -/]
+theorem index_le_of_surjective {G β : Type*} [Group G] [Finite β] (H : Subgroup G)
+    {f : β → G ⧸ H} (hf : Function.Surjective f) : H.index ≤ Nat.card β := by
+  rw [index_eq_card]
+  exact Nat.card_le_card_of_surjective f hf
+
 /-- An enumeration of the left cosets of a subgroup `H` of finite index `n ≠ 0`. -/
 @[to_additive /-- An enumeration of the left cosets of an additive subgroup `H` of finite index
 `n ≠ 0`. -/]
@@ -311,6 +344,27 @@ as `g` times the chosen representative of `q`. -/
 @[to_additive]
 theorem mk_out_smul (g : G) (q : G ⧸ H) : ((g • q).out : G ⧸ H) = (g * q.out : G) := by
   simp [← smul_eq_mul]
+
+/-- The inverse of a representative `g` of a left coset `q` translates `q` to the base point
+`⟦1⟧`. -/
+@[to_additive /-- The negative of a representative `g` of a left coset `q` translates `q` to the
+base point `⟦0⟧`. -/]
+theorem inv_smul_of_mk_eq {g : G} {q : G ⧸ H} (h : (g : G ⧸ H) = q) :
+    g⁻¹ • q = ((1 : G) : G ⧸ H) := by
+  rw [← h, MulAction.Quotient.smul_coe, smul_eq_mul, inv_mul_cancel]
+
+/-- The inverse of the chosen representative of a left coset `q` translates `q` to the base point
+`⟦1⟧`. -/
+@[to_additive (attr := simp) /-- The negative of the chosen representative of a left coset `q`
+translates `q` to the base point `⟦0⟧`. -/]
+theorem out_inv_smul (q : G ⧸ H) : q.out⁻¹ • q = ((1 : G) : G ⧸ H) :=
+  inv_smul_of_mk_eq (QuotientGroup.out_eq' q)
+
+/-- The orbit map `g ↦ g • ⟦1⟧` of the base point of `G ⧸ H` is the projection `G → G ⧸ H`. -/
+@[to_additive /-- The orbit map `g ↦ g +ᵥ ⟦0⟧` of the base point of `G ⧸ H` is the projection
+`G → G ⧸ H`. -/]
+theorem smul_mk_one_eq_mk : (fun g : G ↦ g • ((1 : G) : G ⧸ H)) = (QuotientGroup.mk : G → G ⧸ H) :=
+  funext fun g ↦ by rw [MulAction.Quotient.smul_coe, smul_eq_mul, mul_one]
 
 /-- For `h ∈ H` and a coset `k ∈ H ⧸ K.subgroupOf H`, the elements `a * (h • k).out` and
 `a * h * k.out` of `G` lie in the same left coset of `K`, for every `a ∈ G`. No inclusion `K ≤ H`

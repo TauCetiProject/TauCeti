@@ -9,7 +9,9 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
+import TauCeti.Geometry.Manifold.InvarianceOfDomain
 import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 import TauCeti.Geometry.Manifold.Polish
 
 /-!
@@ -23,7 +25,10 @@ invariant.
 
 The isometry condition is stated pointwise, on the tangent maps, and no orientation is used, so
 orientation-reversing isometries and manifolds with boundary or corners are covered. The two
-manifolds may be modelled on different model spaces `H` and `H'` over the same vector space `E`.
+manifolds may have different model vector spaces. The chart comparison uses an equivalence
+matching the coordinate bases and their normalized Haar measures, using
+`Module.Basis.measurePreserving_equiv` (based on Mathlib's `Module.Basis.map_addHaar`) and
+`MeasureTheory.lintegral_image_eq_lintegral_abs_det_fderiv_mul`.
 
 The statement is the invariance of the Riemannian density under isometries, as in
 J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 2
@@ -33,11 +38,14 @@ J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (20
 
 * `TauCeti.chartVolumeDensity_eq_abs_det_mul_of_inner_mfderiv`: the chart volume densities of
   two Riemannian manifolds differ by the absolute Jacobian determinant of a map whose tangent map
-  preserves the inner products.
+  preserves the inner products, after identifying their model spaces by an equivalence matching
+  the coordinate bases.
 * `TauCeti.chartRiemannianVolume_image_of_inner_mfderiv`: such a map, injective on a subset of a
-  chart source, carries its chart volume to the chart volume of its image.
-* `TauCeti.riemannianVolume_image_of_inner_mfderiv`: such a map, injective on any measurable set,
-  carries its Riemannian volume to the Riemannian volume of its image.
+  chart source, carries its chart volume to the chart volume of its image. The set must be
+  measurable and its image must lie in the target chart source; independent models must have
+  equal dimension.
+* `TauCeti.riemannianVolume_image_of_inner_mfderiv`: the global image formula for
+  a map injective on a measurable set, over independent model vector spaces of equal dimension.
 * `Homeomorph.measurePreserving_riemannianVolume`: a homeomorphism whose tangent maps preserve
   the inner products preserves the Riemannian volume.
 -/
@@ -55,138 +63,169 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
+
+section CrossModel
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ F H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' 1 N]
   [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
 
-/-- If the tangent map of `Φ` at `x` preserves the Riemannian inner products, then the volume
-density of `M` in the chart at `α` is the volume density of `N` in the chart at `β` multiplied by
-the absolute Jacobian determinant of `Φ` read in these two charts. -/
-theorem chartVolumeDensity_eq_abs_det_mul_of_inner_mfderiv {Φ : M → N} {α x : M} {β : N}
-    (hxα : x ∈ (chartAt H α).source) (hxβ : Φ x ∈ (chartAt H' β).source)
+/-- If the tangent map of `f` at `x` preserves the Riemannian inner products, then the source
+chart density is the target chart density multiplied by the absolute coordinate determinant.
+The equivalence `C` identifies the independent model spaces and matches their coordinate bases,
+up to the reindexing `σ`. -/
+theorem chartVolumeDensity_eq_abs_det_mul_of_inner_mfderiv
+    {C : E ≃L[ℝ] F} {σ : Fin (Module.finrank ℝ F) ≃ Fin (Module.finrank ℝ E)}
+    (hC : (Module.finBasis ℝ E).map C.toLinearEquiv = (Module.finBasis ℝ F).reindex σ)
+    {f : M → N} {α x : M} {β : N}
+    (hxα : x ∈ (chartAt H α).source) (hxβ : f x ∈ (chartAt H' β).source)
     (hinner : ∀ v w : TangentSpace I x,
-      ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ) :
+      ⟪mfderiv I I' f x v, mfderiv I I' f x w⟫_ℝ = ⟪v, w⟫_ℝ) :
     chartVolumeDensity (I := I) α x =
-      |(mfderiv I' 𝓘(ℝ, E) (extChartAt I' β) (Φ x) ∘L mfderiv I I' Φ x ∘L
-        mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) (extChartAt I α x) :
+      |(C.symm.toContinuousLinearMap ∘L
+        (mfderiv I' 𝓘(ℝ, F) (extChartAt I' β) (f x) ∘L mfderiv I I' f x ∘L
+          mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) (extChartAt I α x)) :
           E →L[ℝ] E).det| *
-        chartVolumeDensity (I := I') β (Φ x) := by
-  have hα : x ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using hxα
-  have hβ : Φ x ∈ (trivializationAt E (TangentSpace I') β).baseSet := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using hxβ
-  set b := Module.finBasis ℝ E
-  set bα := (trivializationAt E (TangentSpace I) α).basisAt b hα
-  set bβ := (trivializationAt E (TangentSpace I') β).basisAt b hβ
-  set L : E →L[ℝ] E := mfderiv I' 𝓘(ℝ, E) (extChartAt I' β) (Φ x) ∘L mfderiv I I' Φ x ∘L
-        mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) (extChartAt I α x)
-  -- In the trivialization bases, the tangent map of `Φ` has the Jacobian matrix of `L`.
-  have hmat : LinearMap.toMatrix bα bβ (mfderiv I I' Φ x).toLinearMap =
-      LinearMap.toMatrix b b L.toLinearMap := by
-    ext k i
-    simp only [LinearMap.toMatrix_apply, bα, bβ, Trivialization.basisAt, Module.Basis.map_apply,
-      Module.Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_symm,
-      Trivialization.linearEquivAt_symm_apply, Trivialization.linearEquivAt_apply]
-    rw [← Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hβ,
-      ← Trivialization.symmL_apply (R := ℝ) _ hα, TangentBundle.symmL_trivializationAt hxα,
-      TangentBundle.continuousLinearMapAt_trivializationAt hxβ]
-    -- `L` evaluates the composite on `b i`. It is ascribed `E →L[ℝ] E`, while its factors act on
-    -- tangent spaces of the model space, which are `E` only by definition, so
-    -- `ContinuousLinearMap.comp_apply` does not match syntactically.
-    rfl
-  -- The inner product at `x` is pulled back from the one at `Φ x`, so the Gram matrices are
-  -- congruent by that Jacobian matrix.
-  have hform : innerₗ (TangentSpace I x) = LinearMap.BilinForm.comp
-      (innerₗ (TangentSpace I' (Φ x))) (mfderiv I I' Φ x).toLinearMap
-      (mfderiv I I' Φ x).toLinearMap := by
-    ext v w
-    simp [hinner]
-  have hdet : (chartGramMatrix (I := I) α x).det =
-      L.det ^ 2 * (chartGramMatrix (I := I') β (Φ x)).det := by
-    rw [chartGramMatrix_eq_toMatrix α hα, chartGramMatrix_eq_toMatrix β hβ, hform,
-      LinearMap.BilinForm.toMatrix_comp bβ bα, hmat, Matrix.det_mul, Matrix.det_mul,
-      Matrix.det_transpose, LinearMap.det_toMatrix, ContinuousLinearMap.det]
-    ring
-  rw [chartVolumeDensity_def, hdet, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs,
-    chartVolumeDensity_def]
+      chartVolumeDensity (I := I') β (f x) := by
+  let D : E →L[ℝ] TangentSpace I' (f x) := mfderiv I I' f x ∘L
+    mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) (extChartAt I α x)
+  have hgram : Matrix.gram ℝ (fun i ↦ D (Module.finBasis ℝ E i)) =
+      chartGramMatrix (I := I) α x := by
+    ext i j
+    -- The inverse chart derivative takes the model basis to the source chart frame.
+    rw [Matrix.gram_apply, chartGramMatrix_apply, chartLocalFrame_eq_symmL,
+      chartLocalFrame_eq_symmL, TangentBundle.symmL_trivializationAt hxα]
+    exact hinner _ _
+  rw [chartVolumeDensity_def, ← hgram]
+  have h := sqrt_det_gram_eq_abs_det_mul_chartVolumeDensity hC hxβ D
+  -- Read the self-model tangent spaces as model vector spaces in the coordinate maps.
+  convert h using 2
 
 section Measure
 
 variable [MeasurableSpace M] [BorelSpace M] [MeasurableSpace N] [BorelSpace N]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)]
+  [IsContinuousRiemannianBundle F (fun y : N ↦ TangentSpace I' y)]
 
 attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 
-/-- A map which is injective on a measurable subset `s` of the chart source at
-`α`, maps `s` into the chart source at `β`, and whose tangent maps at points of `s` preserve the
-Riemannian inner products, carries the chart volume of `s` at `α` to the chart volume of its image
-at `β`. -/
-theorem chartRiemannianVolume_image_of_inner_mfderiv {Φ : M → N} {α : M} {β : N} {s : Set M}
-    (hs : MeasurableSet s) (hinj : InjOn Φ s)
-    (hsα : s ⊆ (chartAt H α).source) (hsβ : MapsTo Φ s (chartAt H' β).source)
+omit [MeasurableSpace N] [BorelSpace N]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  [IsContinuousRiemannianBundle F (fun y : N ↦ TangentSpace I' y)] in
+private theorem setLIntegral_chartVolumeDensity_image_of_inner_mfderiv
+    {C : E ≃L[ℝ] F} {σ : Fin (Module.finrank ℝ F) ≃ Fin (Module.finrank ℝ E)}
+    (hb : (Module.finBasis ℝ E).map C.toLinearEquiv = (Module.finBasis ℝ F).reindex σ)
+    {f : M → N} {α : M} {β : N} {s : Set M}
+    (hs : MeasurableSet s) (hinj : InjOn f s)
+    (hsα : s ⊆ (chartAt H α).source) (hsβ : MapsTo f s (chartAt H' β).source)
     (hinner : ∀ x ∈ s, ∀ v w : TangentSpace I x,
-      ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ) :
-    chartRiemannianVolume (I := I') β (Φ '' s) = chartRiemannianVolume (I := I) α s := by
-  -- This change-of-variables argument is adapted from the proof of
-  -- `TauCeti.chartRiemannianVolume_restrict_overlap`.
-  have hΦ (x : M) (hx : x ∈ s) : MDifferentiableAt I I' Φ x :=
+      ⟪mfderiv I I' f x v, mfderiv I I' f x w⟫_ℝ = ⟪v, w⟫_ℝ) :
+    ∫⁻ y in (C.symm ∘ extChartAt I' β ∘ f ∘ (extChartAt I α).symm) ''
+        (extChartAt I α '' s),
+      ENNReal.ofReal (chartVolumeDensity (I := I') β ((extChartAt I' β).symm (C y)))
+        ∂(Module.finBasis ℝ E).addHaar =
+      ∫⁻ y in extChartAt I α '' s,
+        ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y))
+          ∂(Module.finBasis ℝ E).addHaar := by
+  have hf (x : M) (hx : x ∈ s) : MDifferentiableAt I I' f x :=
     mdifferentiableAt_of_inner_mfderiv fun v ↦ hinner x hx v v
   have hsα' : s ⊆ (extChartAt I α).source := by rwa [extChartAt_source]
-  have hsβ' : Φ '' s ⊆ (extChartAt I' β).source := by
-    rw [extChartAt_source]; exact hsβ.image_subset
-  rw [chartRiemannianVolume_apply α hs, inter_eq_left.2 hsα']
-  -- Change variables along `Φ` read in the charts at `α` and `β`.
+  have hsβ' : f '' s ⊆ (extChartAt I' β).source := by
+    simpa only [extChartAt_source] using hsβ.image_subset
   let A := extChartAt I α '' s
-  let g := extChartAt I' β ∘ Φ ∘ (extChartAt I α).symm
+  let g := C.symm ∘ extChartAt I' β ∘ f ∘ (extChartAt I α).symm
   have hA : MeasurableSet A := hs.image_extChartAt α hsα'
   have hA_range : A ⊆ range I :=
     (image_mono hsα').trans ((extChartAt I α).image_source_eq_target.subset.trans
       (extChartAt_target_subset_range α))
-  have himage : g '' A = extChartAt I' β '' (Φ '' s) := by
-    simp only [A, g, image_image]
-    apply image_congr
-    intro x hx
-    simp only [Function.comp_apply, (extChartAt I α).left_inv (hsα' hx)]
-  have hinjA : InjOn g A := by
-    rintro _ ⟨x, hx, rfl⟩ _ ⟨x', hx', rfl⟩ h
+  have hinjg : InjOn g A := by
+    rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ h
     simp only [g, Function.comp_apply, (extChartAt I α).left_inv (hsα' hx),
-      (extChartAt I α).left_inv (hsα' hx')] at h
-    rw [hinj hx hx' ((extChartAt I' β).injOn (hsβ' (mem_image_of_mem Φ hx))
-      (hsβ' (mem_image_of_mem Φ hx')) h)]
-  have hderiv (x : M) (hx : x ∈ s) :
-      HasFDerivWithinAt g (mfderiv I' 𝓘(ℝ, E) (extChartAt I' β) (Φ x) ∘L mfderiv I I' Φ x ∘L
-        mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) (extChartAt I α x) :
-          E →L[ℝ] E) (range I) (extChartAt I α x) :=
-    (hΦ x hx).hasMFDerivAt.hasFDerivWithinAt_of_mem_source (hsα hx) (hsβ hx)
-  have hg' (y : E) (hy : y ∈ A) : HasFDerivWithinAt g (fderivWithin ℝ g (range I) y) A y := by
+      (extChartAt I α).left_inv (hsα' hy), C.symm.injective.eq_iff] at h
+    rw [hinj hx hy ((extChartAt I' β).injOn (hsβ' (mem_image_of_mem _ hx))
+      (hsβ' (mem_image_of_mem _ hy)) h)]
+  let D (x : M) : E →L[ℝ] E := C.symm.toContinuousLinearMap ∘L
+    (mfderiv I' 𝓘(ℝ, F) (extChartAt I' β) (f x) ∘L mfderiv I I' f x ∘L
+      mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) (extChartAt I α x))
+  have hD (y : E) (hy : y ∈ A) :
+      HasFDerivWithinAt g (D ((extChartAt I α).symm y)) A y := by
     obtain ⟨x, hx, rfl⟩ := hy
-    exact (hderiv x hx).differentiableWithinAt.hasFDerivWithinAt.mono hA_range
+    rw [(extChartAt I α).left_inv (hsα' hx)]
+    exact (C.symm : F →L[ℝ] E).hasFDerivAt.comp_hasFDerivWithinAt _
+      (((hf x hx).hasMFDerivAt.hasFDerivWithinAt_of_mem_source (hsα hx) (hsβ hx)).mono hA_range)
+  rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul
+    (Module.finBasis ℝ E).addHaar hA hD hinjg]
+  refine setLIntegral_congr_fun hA ?_
+  rintro _ ⟨x, hx, rfl⟩
+  simp only [D, g, Function.comp_apply, C.apply_symm_apply,
+    (extChartAt I α).left_inv (hsα' hx),
+    (extChartAt I' β).left_inv (hsβ' (mem_image_of_mem _ hx))]
+  rw [chartVolumeDensity_eq_abs_det_mul_of_inner_mfderiv hb
+      (hsα hx) (hsβ hx) (hinner x hx),
+    ENNReal.ofReal_mul (abs_nonneg _)]
+
+/-- An injective map on a measurable subset of the chart at `α`, with image in the chart at
+`β`, preserves chart volume if its tangent maps preserve inner products at points of the set
+and the two model vector spaces have equal dimension. No neighborhood isometry is assumed.
+
+The coordinate change-of-variables argument is adapted from
+`TauCeti.chartRiemannianVolume_restrict_overlap`. -/
+theorem chartRiemannianVolume_image_of_inner_mfderiv
+    {f : M → N} {α : M} {β : N} {s : Set M}
+    (hs : MeasurableSet s) (hinj : InjOn f s)
+    (hsα : s ⊆ (chartAt H α).source) (hsβ : MapsTo f s (chartAt H' β).source)
+    (hinner : ∀ x ∈ s, ∀ v w : TangentSpace I x,
+      ⟪mfderiv I I' f x v, mfderiv I I' f x w⟫_ℝ = ⟪v, w⟫_ℝ)
+    (hdim : Module.finrank ℝ E = Module.finrank ℝ F) :
+    chartRiemannianVolume (I := I') β (f '' s) = chartRiemannianVolume (I := I) α s := by
+  have hf (x : M) (hx : x ∈ s) : MDifferentiableAt I I' f x :=
+    mdifferentiableAt_of_inner_mfderiv fun v ↦ hinner x hx v v
+  have hsα' : s ⊆ (extChartAt I α).source := by rwa [extChartAt_source]
+  have hsβ' : f '' s ⊆ (extChartAt I' β).source := by
+    simpa only [extChartAt_source] using hsβ.image_subset
+  let C := ((Module.finBasis ℝ E).equiv (Module.finBasis ℝ F)
+    (finCongr hdim)).toContinuousLinearEquiv
+  have hb : (Module.finBasis ℝ E).map C.toLinearEquiv =
+      (Module.finBasis ℝ F).reindex (finCongr hdim).symm := by
+    dsimp only [C]
+    rw [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv, Module.Basis.map_equiv]
+  let A := extChartAt I α '' s
+  let g := C.symm ∘ extChartAt I' β ∘ f ∘ (extChartAt I α).symm
+  have himage : g '' A = C ⁻¹' (extChartAt I' β '' (f '' s)) := by
+    rw [← C.image_symm_eq_preimage]
+    simp only [g, A, image_comp]
+    rw [(extChartAt I α).symm_image_image_of_subset_source hsα']
+  have hC : MeasurableEmbedding C := C.toHomeomorph.measurableEmbedding
+  have hHaar : MeasurePreserving C (Module.finBasis ℝ E).addHaar
+      (Module.finBasis ℝ F).addHaar :=
+    (Module.finBasis ℝ E).measurePreserving_equiv (Module.finBasis ℝ F) (finCongr hdim)
   have : PolishSpace H := I.isClosedEmbedding.polishSpace
   have : T2Space H' := I'.isClosedEmbedding.isEmbedding.t2Space
-  have hΦs : MeasurableSet (Φ '' s) :=
-    hs.image_of_continuousOn_injOn_chartAt (fun x hx ↦ (hΦ x hx).continuousAt.continuousWithinAt)
+  have hfs : MeasurableSet (f '' s) :=
+    hs.image_of_continuousOn_injOn_chartAt (fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt)
       hinj hsα hsβ
-  rw [chartRiemannianVolume_apply β hΦs, inter_eq_left.2 hsβ', ← himage,
-    lintegral_image_eq_lintegral_abs_det_fderiv_mul (Module.finBasis ℝ E).addHaar hA hg' hinjA]
-  apply setLIntegral_congr_fun hA
-  rintro _ ⟨x, hx, rfl⟩
-  dsimp only
-  rw [(hderiv x hx).fderivWithin (I.uniqueDiffOn _ (hA_range (mem_image_of_mem _ hx))),
-    (extChartAt I α).left_inv (hsα' hx)]
-  simp only [g, Function.comp_apply, (extChartAt I α).left_inv (hsα' hx),
-    (extChartAt I' β).left_inv (hsβ' (mem_image_of_mem Φ hx))]
-  rw [chartVolumeDensity_eq_abs_det_mul_of_inner_mfderiv (β := β) (hsα hx) (hsβ hx)
-    (hinner x hx), ENNReal.ofReal_mul (abs_nonneg _)]
+  rw [chartRiemannianVolume_apply β hfs, inter_eq_left.2 hsβ',
+    chartRiemannianVolume_apply α hs, inter_eq_left.2 hsα']
+  calc
+    _ = ∫⁻ y in g '' A,
+        ENNReal.ofReal (chartVolumeDensity (I := I') β ((extChartAt I' β).symm (C y)))
+          ∂(Module.finBasis ℝ E).addHaar := by
+      rw [himage]
+      exact (hHaar.setLIntegral_comp_preimage_emb hC _ _).symm
+    _ = _ := setLIntegral_chartVolumeDensity_image_of_inner_mfderiv hb hs hinj hsα hsβ hinner
 
-/-- **Volume of an injective isometric image.** If `Φ` is injective on a measurable set `s` and
-its tangent maps at points of `s` preserve the Riemannian inner products, then `Φ '' s` has the
-Riemannian volume of `s`. The map is only required to be a local isometry along `s`; for instance,
+/-- **Volume of an injective isometric image in equal dimensions.** If `Φ` is injective on a
+measurable set `s` and preserves the tangent inner products there, then `Φ '' s` has the
+Riemannian volume of `s`. Tangent inner-product preservation is required only at points of `s`,
+with no neighborhood isometry assumption; for instance,
 a Riemannian covering map preserves the volume of every measurable set on which it is injective. -/
-theorem riemannianVolume_image_of_inner_mfderiv [LindelofSpace M] [LindelofSpace N]
+theorem riemannianVolume_image_of_inner_mfderiv
+    [LindelofSpace M] [LindelofSpace N]
     {Φ : M → N} {s : Set M} (hs : MeasurableSet s) (hinj : InjOn Φ s)
     (hinner : ∀ x ∈ s, ∀ v w : TangentSpace I x,
-      ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ) :
+      ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ)
+    (hdim : Module.finrank ℝ E = Module.finrank ℝ F) :
     riemannianVolume I' N (Φ '' s) = riemannianVolume I M s := by
   -- The models are a Polish space and a Hausdorff space, and a Lindelöf manifold modelled on a
   -- finite-dimensional space is second countable, hence hereditarily Lindelöf.
@@ -195,58 +234,40 @@ theorem riemannianVolume_image_of_inner_mfderiv [LindelofSpace M] [LindelofSpace
   have := ChartedSpace.secondCountable_of_lindelof H M
   have hΦ (x : M) (hx : x ∈ s) : MDifferentiableAt I I' Φ x :=
     mdifferentiableAt_of_inner_mfderiv fun v ↦ hinner x hx v v
-  -- Compare the measures `t ↦ vol (Φ '' t)` and `t ↦ vol t` on the subtype `s`. They agree near
-  -- each point `x` of `s`, on the open set `V x` which lies in the chart source at `x` and is
-  -- mapped by `Φ` into the chart source at `Φ x`.
+  -- The two volumes agree near each point `x` of `s`, on the open set `V x` which lies in the
+  -- chart source at `x` and is mapped by `Φ` into the chart source at `Φ x`.
   let V (x : M) : Set M := (chartAt H x).source ∩ interior (Φ ⁻¹' (chartAt H' (Φ x)).source)
-  have hV_open (x : M) : IsOpen (V x) := (chartAt H x).open_source.inter isOpen_interior
   have hV (x : M) (hx : x ∈ s) : V x ∈ 𝓝 x :=
-    (hV_open x).mem_nhds ⟨mem_chart_source H x, mem_interior_iff_mem_nhds.2 <|
-      (hΦ x hx).continuousAt.preimage_mem_nhds (chart_source_mem_nhds H' (Φ x))⟩
-  obtain ⟨T, hTc, -, hcover⟩ := (HereditarilyLindelofSpace.isLindelof s).elim_nhds_subcover V hV
-  have hι : MeasurableEmbedding (Subtype.val : s → M) := .subtypeVal hs
-  have hf_image (t : Set s) : s.domRestrict Φ '' t = Φ '' (Subtype.val '' t) := by
-    rw [Set.domRestrict_eq, image_comp]
-  -- Images of measurable subsets of `s` are measurable, by the Lusin–Souslin theorem.
-  have hf : ∀ t, MeasurableSet t → MeasurableSet (s.domRestrict Φ '' t) := fun t ht ↦ by
-    have hts := Subtype.coe_image_subset s t
-    rw [hf_image]
-    exact (hι.measurableSet_image' ht).image_of_continuousOn_injOn_chartedSpace H H'
-      (fun y hy ↦ (hΦ y (hts hy)).continuousAt.continuousWithinAt) (hinj.mono hts)
-  suffices h : (riemannianVolume I' N).comap (s.domRestrict Φ) =
-      (riemannianVolume I M).comap Subtype.val by
-    have h' := congr($h univ)
-    rwa [Measure.comap_apply _ hinj.injective hf _ MeasurableSet.univ, hι.comap_apply,
-      image_univ, image_univ, Set.range_domRestrict, Subtype.range_coe] at h'
-  refine Measure.ext_of_biUnion_eq_univ (s := fun x ↦ (Subtype.val : s → M) ⁻¹' V x) hTc
-    (by rw [← preimage_iUnion₂]; exact eq_univ_of_forall fun y ↦ hcover y.property)
-    fun x _ ↦ ?_
-  ext t ht
-  have htV : MeasurableSet (t ∩ Subtype.val ⁻¹' V x) :=
-    ht.inter ((hV_open x).measurableSet.preimage measurable_subtypeVal)
-  set u := Subtype.val '' (t ∩ Subtype.val ⁻¹' V x)
-  have hus : u ⊆ s := Subtype.coe_image_subset s _
-  have huV : u ⊆ V x := by rintro _ ⟨y, hy, rfl⟩; exact hy.2
+    ((chartAt H x).open_source.inter isOpen_interior).mem_nhds ⟨mem_chart_source H x,
+      mem_interior_iff_mem_nhds.2 <|
+        (hΦ x hx).continuousAt.preimage_mem_nhds (chart_source_mem_nhds H' (Φ x))⟩
+  -- The restriction of `Φ` to `s` is a measurable embedding, by the Lusin–Souslin theorem.
+  refine measure_image_eq_of_locally_eq hs (ContinuousOn.measurableEmbedding_chartedSpace H H'
+    (fun x hx ↦ (hΦ x hx).continuousAt.continuousWithinAt) hs hinj) hV
+    fun x _ u hu hus huV ↦ ?_
   have hmaps : MapsTo Φ u (chartAt H' (Φ x)).source := fun y hy ↦
     interior_subset (s := Φ ⁻¹' _) (huV hy).2
-  rw [Measure.restrict_apply ht, Measure.restrict_apply ht,
-    Measure.comap_apply _ hinj.injective hf _ htV, hι.comap_apply, hf_image,
-    riemannianVolume_apply_of_subset (α := Φ x) hmaps.image_subset,
+  rw [riemannianVolume_apply_of_subset (α := Φ x) hmaps.image_subset,
     riemannianVolume_apply_of_subset (α := x) (huV.trans inter_subset_left)]
-  exact chartRiemannianVolume_image_of_inner_mfderiv (hι.measurableSet_image' htV)
-    (hinj.mono hus) (huV.trans inter_subset_left) hmaps fun y hy ↦ hinner y (hus hy)
+  exact chartRiemannianVolume_image_of_inner_mfderiv hu (hinj.mono hus)
+    (huV.trans inter_subset_left) hmaps (fun y hy ↦ hinner y (hus hy)) hdim
 
 /-- **Isometry invariance of the Riemannian volume.** A homeomorphism whose tangent maps preserve
 the Riemannian inner products carries the Riemannian volume of `M` to the Riemannian volume of
-`N`. -/
+`N`, even over different model vector spaces. -/
 theorem _root_.Homeomorph.measurePreserving_riemannianVolume [LindelofSpace M] [LindelofSpace N]
     (Φ : M ≃ₜ N)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ) :
     MeasurePreserving Φ (riemannianVolume I M) (riemannianVolume I' N) := by
   refine ⟨Φ.measurable, Measure.ext fun s hs ↦ ?_⟩
-  rw [Measure.map_apply Φ.measurable hs, ← riemannianVolume_image_of_inner_mfderiv
-    (hs.preimage Φ.measurable) Φ.injective.injOn fun x _ ↦ hinner x, Φ.image_preimage]
+  rcases isEmpty_or_nonempty M with hM | hM
+  · have hs0 : s = ∅ := eq_empty_iff_forall_notMem.2 fun y _ ↦ isEmptyElim (Φ.symm y)
+    simp only [hs0, measure_empty]
+  have hdim := Φ.finrank_eq_of_chartedSpace I I'
+  rw [Measure.map_apply Φ.measurable hs,
+    ← riemannianVolume_image_of_inner_mfderiv
+      (hs.preimage Φ.measurable) Φ.injective.injOn (fun x _ ↦ hinner x) hdim, Φ.image_preimage]
 
 end Measure
 
@@ -254,7 +275,7 @@ namespace RiemannianIsometry
 
 variable [MeasurableSpace M] [BorelSpace M] [MeasurableSpace N] [BorelSpace N]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)]
+  [IsContinuousRiemannianBundle F (fun y : N ↦ TangentSpace I' y)]
 
 /-- A Riemannian isometry preserves the Riemannian volume measure.
 
@@ -269,5 +290,7 @@ theorem measurePreserving_riemannianVolume [LindelofSpace M] [LindelofSpace N]
     exact Φ.inner_mfderiv x v w
 
 end RiemannianIsometry
+
+end CrossModel
 
 end TauCeti

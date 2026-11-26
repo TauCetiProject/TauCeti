@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Basic
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Nat.ModEq
+public import Mathlib.Order.Directed
 import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Algebra.Ring.Nat
 import TauCeti.Data.Nat.Carry
@@ -39,6 +40,7 @@ import TauCeti.Data.Nat.Periodic.Basic
   is also bijective.
 * `TauCeti.pow_two_pow_of_odd` and `TauCeti.nsmul_two_nsmul_of_odd`: for odd `n`, raising to the
   power `(n + 1) / 2` inverts squaring on elements killed by `n`.
+* `TauCeti.directed_dvd_pow`: the powers of an element form a directed family for divisibility.
 -/
 
 public section
@@ -159,5 +161,26 @@ theorem pow_two_pow_of_odd {n : ℕ} (hn : Odd n) {a : M} (ha : a ^ n = 1) :
     (a ^ 2) ^ ((n + 1) / 2) = a := by
   obtain ⟨t, rfl⟩ := hn
   rw [← pow_mul, show 2 * ((2 * t + 1 + 1) / 2) = 2 * t + 1 + 1 by omega, pow_succ, ha, one_mul]
+
+/-- The powers of an element of a monoid form a directed family for divisibility. For example,
+this is the directedness hypothesis for inverse limits along the powers of one element. -/
+theorem directed_dvd_pow (a : M) : Directed (· ∣ ·) (fun k : ℕ ↦ a ^ k) :=
+  fun k l ↦ ⟨max k l, pow_dvd_pow a (le_max_left k l), pow_dvd_pow a (le_max_right k l)⟩
+
+/-- In a monoid with no `p`-torsion (`x ^ p = 1 → x = 1`), any element with `m ^ p ^ k = 1`
+equals `1`. -/
+@[to_additive eq_zero_of_pow_nsmul_eq_zero
+/-- In an additive monoid with no `p`-torsion (`p • x = 0 → x = 0`), any element with
+`p ^ k • m = 0` is zero. -/]
+theorem eq_one_of_pow_pow_eq_one {p k : ℕ} {m : M}
+    (hM : ∀ x : M, x ^ p = 1 → x = 1) (hk : m ^ p ^ k = 1) :
+    m = 1 := by
+  induction k with
+  | zero => simpa using hk
+  | succ k ih =>
+    apply ih
+    apply hM
+    rw [← pow_mul, ← pow_succ]
+    exact hk
 
 end TauCeti

@@ -15,12 +15,14 @@ import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 # Real matrices as complex matrices
 
 A real matrix `N` is viewed as a complex matrix through the entrywise coercion
-`N.map ((↑) : ℝ → ℂ)`. This file records that a real orthogonal matrix is unitary and a real
-symmetric matrix Hermitian as a complex matrix, that the determinant does not change, and how the
-real Gram matrix `Re (Mᴴ M)` of the columns of a complex matrix `M` behaves: it transforms by
-congruence under a real change of basis, and it is positive definite when `Mᴴ M` is, in particular
-when `M` has independent columns. The imaginary part `Im (Mᴴ M)`, the matrix of the symplectic
-form `Im ⟪·, ·⟫` on the columns, transforms by the same congruence.
+`N.map ((↑) : ℝ → ℂ)`. This file records that a real orthogonal matrix is unitary, a real
+symmetric matrix Hermitian and a real positive definite matrix positive definite as a complex
+matrix, that the determinant does not change, and how the real Gram matrix `Re (Mᴴ M)` of the
+columns of a complex matrix `M` behaves: it transforms by congruence under a real change of basis,
+and it is positive definite when `Mᴴ M` is, in particular when `M` has independent columns. The
+imaginary part `Im (Mᴴ M)`, the matrix of the symplectic form `Im ⟪·, ·⟫` on the columns,
+transforms by the same congruence. For a symmetric complex matrix `Ω`, the imaginary part is
+`Im Ω = (Ω - Ωᴴ) / 2i`.
 
 ## Main results
 
@@ -28,6 +30,8 @@ form `Im ⟪·, ·⟫` on the columns, transforms by the same congruence.
   `O Oᵀ = 1` as a complex matrix.
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
+* `Matrix.map_im_map_ofReal_of_transpose_eq`: for a symmetric complex matrix `Ω`, the complex
+  matrix of `Im Ω` is `(Ω - Ωᴴ) / 2i`.
 * `Matrix.map_ofReal_mul`, `Matrix.map_ofReal_one`, `Matrix.trace_map_ofReal`: the entrywise
   coercion is multiplicative, preserves the identity and commutes with the trace.
 * `Matrix.isUnit_map_ofReal_iff`: a real matrix is invertible exactly when it is invertible as a
@@ -39,6 +43,8 @@ form `Im ⟪·, ·⟫` on the columns, transforms by the same congruence.
   matrix of `M N` is `Nᵀ Im (Mᴴ M) N`.
 * `Matrix.PosDef.map_re`: the real part of a positive definite complex matrix is positive
   definite.
+* `Matrix.PosDef.map_ofReal`: a real positive definite matrix is positive definite as a complex
+  matrix.
 * `Matrix.PosDef.map_re_conjTranspose_mul_self`: the real Gram matrix of a complex matrix with
   independent columns is positive definite.
 -/
@@ -71,6 +77,13 @@ theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n 
 theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
     (A.map ((↑) : ℝ → ℂ)).IsHermitian :=
   hA.map _ fun _ ↦ by simp
+
+/-- For a symmetric complex matrix `Ω`, the complex matrix of `Im Ω` is `(Ω - Ωᴴ) / 2i`. -/
+theorem map_im_map_ofReal_of_transpose_eq {Ω : Matrix n n ℂ} (h : Ωᵀ = Ω) :
+    (Ω.map Complex.im).map ((↑) : ℝ → ℂ) = (2 * Complex.I)⁻¹ • (Ω - Ωᴴ) := by
+  ext i j
+  have hij : Ω j i = Ω i j := by simpa using congrFun (congrFun h i) j
+  simp [hij, Complex.ext_iff, Complex.sub_conj]
 
 /-- The entrywise coercion of real matrices to complex matrices is multiplicative. -/
 @[simp]
@@ -140,6 +153,49 @@ theorem PosDef.map_re [Finite n] {K : Matrix n n ℂ} (hK : K.PosDef) :
       simp [xc, dotProduct, mulVec, Complex.re_sum, Finset.mul_sum]
     rw [← hre]
     exact (Complex.pos_iff.1 (hK.dotProduct_mulVec_pos hxc)).1
+
+/-- A real positive definite matrix is positive definite as a complex matrix: for `x = a + i b`,
+`x* Y x = aᵀ Y a + bᵀ Y b`. -/
+theorem PosDef.map_ofReal [Finite n] {Y : Matrix n n ℝ} (hY : Y.PosDef) :
+    (Y.map ((↑) : ℝ → ℂ)).PosDef := by
+  classical
+  have := Fintype.ofFinite n
+  refine PosDef.of_dotProduct_mulVec_pos hY.isHermitian.map_ofReal fun x hx ↦ ?_
+  set a : n → ℝ := fun i ↦ (x i).re
+  set b : n → ℝ := fun i ↦ (x i).im
+  have hab : a ≠ 0 ∨ b ≠ 0 := by
+    by_contra! h
+    exact hx (funext fun i ↦ Complex.ext (by simpa [a] using congrFun h.1 i)
+      (by simpa [b] using congrFun h.2 i))
+  have hsymm : ∀ i j, Y i j = Y j i := fun i j ↦ by
+    simpa using congrFun (congrFun hY.isHermitian.eq j) i
+  -- the cross terms cancel by symmetry of `Y`
+  have hcross : ∑ i, ∑ j, (a i * Y i j * b j - b i * Y i j * a j) = 0 := by
+    simp only [Finset.sum_sub_distrib]
+    rw [sub_eq_zero, Finset.sum_comm]
+    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by
+      rw [hsymm i j]; ring
+  have key : star x ⬝ᵥ (Y.map ((↑) : ℝ → ℂ) *ᵥ x) =
+      ((a ⬝ᵥ (Y *ᵥ a) + b ⬝ᵥ (Y *ᵥ b) : ℝ) : ℂ) := by
+    apply Complex.ext
+    · simp only [dotProduct, mulVec, Finset.mul_sum, Pi.star_apply, map_apply, Complex.re_sum,
+        Complex.ofReal_re, ← Finset.sum_add_distrib]
+      refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+      simp [a, b, Complex.mul_re, Complex.mul_im]
+    · have : (star x ⬝ᵥ (Y.map ((↑) : ℝ → ℂ) *ᵥ x)).im =
+          ∑ i, ∑ j, (a i * Y i j * b j - b i * Y i j * a j) := by
+        simp only [dotProduct, mulVec, Finset.mul_sum, Pi.star_apply, map_apply, Complex.im_sum]
+        refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+        simp only [RCLike.star_def, Complex.mul_im, Complex.mul_re, Complex.conj_re,
+          Complex.conj_im, Complex.ofReal_re, Complex.ofReal_im, a, b]
+        ring
+      rw [this, hcross, Complex.ofReal_im]
+  rw [key, Complex.zero_lt_real]
+  rcases hab with ha | hb
+  · exact add_pos_of_pos_of_nonneg (by simpa using hY.dotProduct_mulVec_pos ha)
+      (by simpa using hY.posSemidef.dotProduct_mulVec_nonneg b)
+  · exact add_pos_of_nonneg_of_pos (by simpa using hY.posSemidef.dotProduct_mulVec_nonneg a)
+      (by simpa using hY.dotProduct_mulVec_pos hb)
 
 /-- The real Gram matrix `Re (Mᴴ M)` of a complex matrix `M` with linearly independent columns is
 positive definite. -/

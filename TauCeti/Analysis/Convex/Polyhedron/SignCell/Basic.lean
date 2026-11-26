@@ -128,6 +128,24 @@ theorem isClosed_weakSignCell (g : ι → (V →ᴬ[ℝ] ℝ)) (σ : ι → Sign
   · exact isClosed_le (g j).continuous continuous_const
   · exact isClosed_le continuous_const (g j).continuous
 
+/-- A sign cell of a finite arrangement prescribing no zero sign is open. -/
+theorem isOpen_signCell [Finite ι] {g : ι → (V →ᴬ[ℝ] ℝ)} {σ : ι → SignType}
+    (hσ : ∀ j, σ j ≠ 0) : IsOpen (signCell g σ) := by
+  have heq : signCell g σ = ⋂ j, {x | SignType.sign (g j x) = σ j} := by
+    ext x
+    simp
+  rw [heq]
+  apply isOpen_iInter_of_finite
+  intro j
+  cases hs : σ j with
+  | zero => exact (hσ j hs).elim
+  | neg =>
+    simpa only [SignType.neg_eq_neg_one, sign_eq_neg_one_iff] using
+      (isOpen_lt (g j).continuous continuous_const : IsOpen {x | g j x < 0})
+  | pos =>
+    simpa only [SignType.pos_eq_one, sign_eq_one_iff] using
+      (isOpen_lt continuous_const (g j).continuous : IsOpen {x | 0 < g j x})
+
 /-- Every affine row has a constant weak sign on a subset of a weak sign cell. -/
 theorem nonneg_or_nonpos_of_subset_weakSignCell
     {g : ι → (V →ᴬ[ℝ] ℝ)} {σ : ι → SignType} {S : Set V}

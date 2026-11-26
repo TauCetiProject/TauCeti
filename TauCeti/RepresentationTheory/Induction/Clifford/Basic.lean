@@ -38,7 +38,7 @@ Throughout, an irreducible constituent is presented as an **atom** of the lattic
 `N`-subrepresentations rather than as an abstract irreducible representation of `N` mapping in.
 That is what keeps the argument free of finiteness hypotheses: no dimension count and no counting of
 conjugates enters.  Finite-dimensionality is used only to *produce* an atom, in
-`Representation.isSemisimpleRepresentation_comp_subtype`.
+`Representation.isSemisimpleRepresentation_comp_subtype_of_isIrreducible`.
 
 The file stops at semisimplicity: nothing below mentions a decomposition, an isotypic component, a
 multiplicity or a `G`-orbit of constituents.  The translation machinery the semisimplicity statement
@@ -63,8 +63,8 @@ is proved from is also what **Clifford's theorem** runs on; its single-orbit for
   `N`-subrepresentation through conjugation-invariant scalars, it acts on everything through them.
 * `Representation.isSemisimpleRepresentation_comp_subtype_of_isAtom`: if some `N`-subrepresentation
   of an irreducible representation `IsAtom`, then the restriction to `N` is semisimple.
-* `Representation.isSemisimpleRepresentation_comp_subtype`: the same conclusion for a
-  **finite-dimensional** irreducible representation, where such an atom is automatic
+* `Representation.isSemisimpleRepresentation_comp_subtype_of_isIrreducible`: the same conclusion
+  for a **finite-dimensional** irreducible representation, where such an atom is automatic
   (`Representation.exists_isAtom`).
 
 ## Implementation notes
@@ -314,7 +314,8 @@ theorem isSemisimpleRepresentation_comp_subtype_of_isAtom [ρ.IsIrreducible]
 
 /-- **Restriction to a normal subgroup preserves semisimplicity.** The restriction to a normal
 subgroup of a finite-dimensional irreducible representation is semisimple. -/
-theorem isSemisimpleRepresentation_comp_subtype [ρ.IsIrreducible] [FiniteDimensional k V] :
+theorem isSemisimpleRepresentation_comp_subtype_of_isIrreducible [ρ.IsIrreducible]
+    [FiniteDimensional k V] :
     Representation.IsSemisimpleRepresentation (ρ.comp N.subtype) := by
   have : Nontrivial V := Representation.IsIrreducible.nontrivial ‹ρ.IsIrreducible›
   obtain ⟨σ, hσ⟩ := Representation.exists_isAtom (ρ.comp N.subtype)

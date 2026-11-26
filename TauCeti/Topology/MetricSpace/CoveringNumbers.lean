@@ -14,7 +14,7 @@ import Mathlib.Algebra.Order.Floor.Extended
 # Packing and covering numbers via finite subsets
 
 Facts relating `ℕ∞`-valued packing and external covering numbers to finite separated sets and
-finite covers.
+finite covers, and a criterion for sequences controlled by finite covers to tend to zero.
 
 ## Main results
 
@@ -29,6 +29,15 @@ finite covers.
 * `Metric.div_two_le_of_externalCoveringNumber_lt_card` and `Metric.IsCover.div_two_le_of_card_lt`:
   if `A` contains a finite subset of mutual distance at least `δ` strictly larger than an
   `ε`-cover, then `δ / 2 ≤ ε`.
+* `Antitone.tendsto_atTop_nhds_zero_of_isCover`: an antitone sequence bounded by a multiple of `ε`
+  at the size of every finite `ε`-cover of a totally bounded set tends to zero.
+* `Metric.IsCover.exists_finset_subset_isCover_two_mul`: a finite `ε`-cover of `A` by arbitrary
+  points gives a `2ε`-cover by points of `A` of no larger cardinality.
+
+## References
+
+* M. Rudelson and R. Vershynin, *The Littlewood–Offord problem and invertibility of random
+  matrices*, Adv. Math. 218 (2008), Lemma 5.7.
 -/
 
 public section
@@ -126,4 +135,37 @@ theorem IsCover.div_two_le_of_card_lt {X : Type*} [PseudoMetricSpace X] {ε : �
   div_two_le_of_externalCoveringNumber_lt_card hsA hsep <|
     hcov.externalCoveringNumber_le_encard.trans_lt (by simpa using hcard)
 
+/-- A finite `ε`-cover `N` of `A`, whose points need not lie in `A`, yields a `2ε`-cover by points
+of `A` with no more points than `N`. -/
+theorem IsCover.exists_finset_subset_isCover_two_mul {X : Type*} [PseudoEMetricSpace X]
+    {ε : ℝ≥0} {A : Set X} {N : Finset X} (hN : IsCover ε A N) :
+    ∃ N' : Finset X, (N' : Set X) ⊆ A ∧ IsCover (2 * ε) A N' ∧ N'.card ≤ N.card := by
+  have hle : coveringNumber (2 * ε) A ≤ N.card :=
+    (coveringNumber_two_mul_le_externalCoveringNumber ε A).trans
+      (hN.externalCoveringNumber_le_encard.trans_eq (encard_coe_eq_coe_finsetCard N))
+  obtain ⟨C, hCA, hCf, hC, hCcard⟩ :=
+    exists_set_encard_eq_coveringNumber (hle.trans_lt (ENat.natCast_lt_top _)).ne
+  refine ⟨hCf.toFinset, by simpa using hCA, by simpa using hC, ?_⟩
+  rw [← Nat.cast_le (α := ℕ∞), ← hCf.encard_eq_coe_toFinset_card, hCcard]
+  exact hle
+
 end Metric
+
+open Filter in
+open scoped Topology in
+/-- If `S` is totally bounded and the antitone sequence `s` satisfies `s |N| ≤ C ε` for every
+finite `ε`-cover `N` of `S`, then `s` tends to zero. -/
+theorem Antitone.tendsto_atTop_nhds_zero_of_isCover {X : Type*} [PseudoEMetricSpace X]
+    {S : Set X} {s : ℕ → ℝ≥0} (hs : Antitone s) (hS : TotallyBounded S) {C : ℝ≥0}
+    (h : ∀ (ε : ℝ≥0) (N : Finset X), IsCover ε S N → s N.card ≤ C * ε) :
+    Tendsto s atTop (𝓝 0) := by
+  refine tendsto_order.2 ⟨fun _ ha ↦ (ha.not_ge zero_le).elim, fun a ha ↦ ?_⟩
+  -- Cover `S` by finitely many balls of radius `a / (2 (C + 1))`.
+  have hε : a / (2 * (C + 1)) ≠ 0 := (div_pos ha (by positivity)).ne'
+  obtain ⟨N, -, hNfin, hN⟩ := exists_finite_isCover_of_totallyBounded hε hS
+  refine eventually_atTop.2 ⟨hNfin.toFinset.card, fun n hn ↦ ?_⟩
+  have hCa : C * (a / (2 * (C + 1))) ≤ a / 2 :=
+    calc C * (a / (2 * (C + 1))) ≤ (C + 1) * (a / (2 * (C + 1))) := by gcongr; exact le_self_add
+      _ = a / 2 := by field_simp
+  exact ((hs hn).trans (h _ _ (by simpa using hN))).trans_lt <|
+    hCa.trans_lt (NNReal.half_lt_self ha.ne')

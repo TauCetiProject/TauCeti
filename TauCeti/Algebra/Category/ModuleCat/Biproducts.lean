@@ -47,6 +47,9 @@ each summand of a finitely generated biproduct (`ModuleCat.finite_of_finite_bipr
 * `ModuleCat.inl_comp_biprodIsoProd_hom`, `ModuleCat.inr_comp_biprodIsoProd_hom`: under
   `ModuleCat.biprodIsoProd`, the binary biproduct inclusions are `LinearMap.inl` and
   `LinearMap.inr`.
+* `ModuleCat.biprod_lift_comp_biprodIsoProd_hom`, `ModuleCat.biprodIsoProd_hom_comp_ofHom_coprod`:
+  under `ModuleCat.biprodIsoProd`, `biprod.lift f g` and `biprod.desc f g` are the pair map
+  `f.hom.prod g.hom` and the sum map `f.hom.coprod g.hom`.
 * `ModuleCat.bijective_biprod_map`: `biprod.map f g` is bijective when `f` and `g` are.
 * `ModuleCat.finite_biproduct`: a finite biproduct of finitely generated modules is finitely
   generated.
@@ -62,6 +65,8 @@ each summand of a finitely generated biproduct (`ModuleCat.finite_of_finite_bipr
   element of `F.obj (⨁ f)` is the sum of the images of its components.
 * `CategoryTheory.Functor.finite_obj_biproduct`: such a functor has finitely generated value on a
   finite biproduct of objects with finitely generated values.
+* `CategoryTheory.Functor.map_biproductDesc_map_ι_apply`: for a functor to modules,
+  `biproduct.desc g` after the `j`-th inclusion acts on values as `g j`.
 -/
 
 public section
@@ -152,6 +157,21 @@ theorem inr_comp_biprodIsoProd_hom :
   apply biprod.hom_ext <;> ext x <;> simp
 
 variable {M N} in
+/-- The map `biprod.lift f g` into a biproduct, followed by the identification of the biproduct
+with the product module, is the pair map `f.hom.prod g.hom`. -/
+theorem biprod_lift_comp_biprodIsoProd_hom {X : ModuleCat.{v} R} (f : X ⟶ M) (g : X ⟶ N) :
+    biprod.lift f g ≫ (biprodIsoProd M N).hom = ofHom (f.hom.prod g.hom) := by
+  rw [← Iso.eq_comp_inv]
+  apply biprod.hom_ext <;> ext x <;> simp
+
+variable {M N} in
+/-- The identification of the biproduct with the product module, followed by the sum map
+`f.hom.coprod g.hom`, is the map `biprod.desc f g` out of the biproduct. -/
+theorem biprodIsoProd_hom_comp_ofHom_coprod {Z : ModuleCat.{v} R} (f : M ⟶ Z) (g : N ⟶ Z) :
+    (biprodIsoProd M N).hom ≫ ofHom (f.hom.coprod g.hom) = biprod.desc f g := by
+  apply biprod.hom_ext' <;> ext x <;> simp
+
+variable {M N} in
 /-- The biproduct `biprod.map f g` of two bijective linear maps is bijective. -/
 theorem bijective_biprod_map {M' N' : ModuleCat.{v} R} (f : M ⟶ M') (g : N ⟶ N')
     (hf : Function.Bijective f) (hg : Function.Bijective g) :
@@ -233,5 +253,21 @@ instance finite_obj_biproduct {ι : Type*} [Finite ι] (f : ι → C) [HasBiprod
     (∑ j, (F.map (biproduct.ι f j)).hom ∘ₗ LinearMap.proj (R := R) j) fun v ↦ ?_
   refine ⟨fun j ↦ (F.map (biproduct.π f j)).hom v, ?_⟩
   simpa using F.sum_map_ι_map_π_apply f v
+
+end CategoryTheory.Functor
+
+namespace CategoryTheory.Functor
+
+open CategoryTheory.Limits
+
+variable {C : Type*} [Category* C] {R : Type*} [Ring R] (F : C ⥤ ModuleCat R)
+
+/-- For a functor to modules, a morphism out of a biproduct, applied after the `j`-th inclusion on
+values, acts as its `j`-th component. -/
+@[simp]
+theorem map_biproductDesc_map_ι_apply [HasZeroMorphisms C] {ι : Type*} {f : ι → C}
+    [HasBiproduct f] {Y : C} (g : ∀ j, f j ⟶ Y) (j : ι) (v : F.obj (f j)) :
+    (F.map (biproduct.desc g)).hom ((F.map (biproduct.ι f j)).hom v) = (F.map (g j)).hom v := by
+  rw [← ModuleCat.comp_apply, ← F.map_comp, biproduct.ι_desc]
 
 end CategoryTheory.Functor

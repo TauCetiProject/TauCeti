@@ -34,14 +34,18 @@ vanishes exactly when the other does (`TopCat.isZero_singularHomology_zmod_iff`,
 The first map of the coefficient sequence `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/m ⟶ 0` is multiplication by `m`, so it
 induces multiplication by `m` on integral singular homology `Hₙ(X; ℤ)`
 (`TopCat.singularHomologyFunctor_map_zmodCoefficientSequence_f_app`), and its second map induces
-the reduction `ρ : Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/m)` (`TopCat.singularHomologyReductionZMod`). From the
+the reduction `ρ : Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/m)` (`TopCat.singularHomologyReductionMod`). From the
 coefficient long exact sequence for `m ≠ 0` (together with `ρ = id` at `m = 0`):
 
 * a class reduces to zero modulo `m` exactly when it is an `m`-multiple, for every `m : ℕ`
-  (`TopCat.ker_singularHomologyReductionZMod`);
+  (`TopCat.ker_singularHomologyReductionMod`);
 * for `m ≠ 0`, the reduction is onto in degree `n + 1` exactly when multiplication by `m` is
-  injective on `Hₙ(X; ℤ)` (`TopCat.surjective_singularHomologyReductionZMod_succ_iff`), and in
-  degree one it is always onto (`TopCat.surjective_singularHomologyReductionZMod_one`);
+  injective on `Hₙ(X; ℤ)` (`TopCat.surjective_singularHomologyReductionMod_succ_iff`), and in
+  degree one it is always onto (`TopCat.surjective_singularHomologyReductionMod_one`);
+* vanishing of `Hₙ(X; ℤ/m)` makes multiplication by `m` surjective on `Hₙ(X; ℤ)`
+  (`TopCat.surjective_lsmul_singularHomology_of_isZero_zmod`), and for `m ≠ 0` vanishing of
+  `Hₙ₊₁(X; ℤ/m)` makes multiplication by `m` injective on `Hₙ(X; ℤ)`
+  (`TopCat.injective_lsmul_singularHomology_of_isZero_zmod`);
 * for `m ≠ 0`, `Hₙ₊₁(X; ℤ/m)` vanishes exactly when multiplication by `m` is surjective on
   `Hₙ₊₁(X; ℤ)` and injective on `Hₙ(X; ℤ)` (`TopCat.isZero_singularHomology_zmod_succ_iff`);
 * for every `m : ℕ`, vanishing of `Hₙ(X; ℤ/m)` and `Hₙ₊₁(X; ℤ/m)` makes multiplication by `m`
@@ -130,8 +134,8 @@ theorem isZero_singularHomology_zmod_iff (X : TopCat.{u}) (m n : ℕ) :
 homology with coefficients in a ring `k ≅ ZMod m`, as a module over itself, does. For
 `k = ZMod m` and a space in the lowest universe this compares `ℤ/m` and `ZMod m` themselves rather
 than their lifts. -/
-theorem isZero_singularHomology_zmod_iff_of_ringEquiv (X : TopCat.{u}) {k : Type u}
-    [CommRing k] {m : ℕ} (e : k ≃+* ZMod m) (n : ℕ) :
+theorem isZero_singularHomology_zmod_iff_of_ringEquiv (X : TopCat.{u}) (m : ℕ) {k : Type u}
+    [CommRing k] (e : k ≃+* ZMod m) (n : ℕ) :
     IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} (ZMod m)))).obj X) ↔
       IsZero (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).obj X) := by
@@ -161,7 +165,7 @@ theorem singularHomologyFunctor_map_zmodCoefficientSequence_f_app (X : TopCat.{u
 
 /-- The **reduction modulo `m`** `Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/m)`, induced by the coefficient map
 `ℤ ⟶ ℤ/m`. -/
-abbrev singularHomologyReductionZMod (X : TopCat.{u}) (m n : ℕ) :
+abbrev singularHomologyReductionMod (X : TopCat.{u}) (m n : ℕ) :
     ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X ⟶
       ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} (ZMod m)))).obj X :=
@@ -170,18 +174,18 @@ abbrev singularHomologyReductionZMod (X : TopCat.{u}) (m n : ℕ) :
 
 /-- Reduction modulo `m` is natural in the space. -/
 @[reassoc]
-theorem singularHomologyReductionZMod_naturality {X Y : TopCat.{u}} (f : X ⟶ Y) (m n : ℕ) :
+theorem singularHomologyReductionMod_naturality {X Y : TopCat.{u}} (f : X ⟶ Y) (m n : ℕ) :
     ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj (ModuleCat.of ℤ (ULift.{u} ℤ))).map f ≫
-        Y.singularHomologyReductionZMod m n =
-      X.singularHomologyReductionZMod m n ≫
+        Y.singularHomologyReductionMod m n =
+      X.singularHomologyReductionMod m n ≫
         ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
           (ModuleCat.of ℤ (ULift.{u} (ZMod m)))).map f :=
   ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
     (TauCeti.zmodCoefficientSequence.{u} m).g).naturality f
 
 /-- For `m = 0`, reduction modulo `0` is `eqToHom` on singular homology (via `ZMod 0 = ℤ`). -/
-theorem singularHomologyReductionZMod_zero_eq (X : TopCat.{u}) (n : ℕ) :
-    X.singularHomologyReductionZMod 0 n =
+theorem singularHomologyReductionMod_zero_eq (X : TopCat.{u}) (n : ℕ) :
+    X.singularHomologyReductionMod 0 n =
       eqToHom (congrArg (fun M ↦ ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj M).obj X)
         TauCeti.zmodCoefficientSequence_zero_X₂_eq_X₃) := by
   have h := congrArg (fun f ↦ ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map f).app X)
@@ -191,23 +195,23 @@ theorem singularHomologyReductionZMod_zero_eq (X : TopCat.{u}) (n : ℕ) :
 
 /-- For `m = 0`, reduction modulo `0` acts as the identity on integral singular homology. -/
 @[simp]
-theorem singularHomologyReductionZMod_zero_apply (X : TopCat.{u}) (n : ℕ)
+theorem singularHomologyReductionMod_zero_apply (X : TopCat.{u}) (n : ℕ)
     (x : ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
       (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) :
-    X.singularHomologyReductionZMod 0 n x = x := by
-  rw [X.singularHomologyReductionZMod_zero_eq n]
+    X.singularHomologyReductionMod 0 n x = x := by
+  rw [X.singularHomologyReductionMod_zero_eq n]
   -- `eqToHom rfl` acts as the identity since `ZMod 0 = ℤ` definitionally.
   rfl
 
 /-- **The kernel of the reduction modulo `m`**: an integral homology class reduces to zero modulo
 `m` exactly when it is an `m`-multiple of a class (for all `m : ℕ`, including `m = 0`). -/
-theorem ker_singularHomologyReductionZMod (X : TopCat.{u}) (m n : ℕ) :
-    LinearMap.ker (X.singularHomologyReductionZMod m n).hom =
+theorem ker_singularHomologyReductionMod (X : TopCat.{u}) (m n : ℕ) :
+    LinearMap.ker (X.singularHomologyReductionMod m n).hom =
       LinearMap.range (LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m) := by
   rcases eq_or_ne m 0 with rfl | hm
-  · have : IsIso (X.singularHomologyReductionZMod 0 n) := by
-      rw [X.singularHomologyReductionZMod_zero_eq n]
+  · have : IsIso (X.singularHomologyReductionMod 0 n) := by
+      rw [X.singularHomologyReductionMod_zero_eq n]
       infer_instance
     rw [LinearMap.ker_eq_bot.2 ((ModuleCat.mono_iff_injective _).1 inferInstance)]
     simp
@@ -218,9 +222,9 @@ theorem ker_singularHomologyReductionZMod (X : TopCat.{u}) (m n : ℕ) :
 
 /-- For `m ≠ 0`, the reduction modulo `m` is onto in degree `n + 1` exactly when multiplication by
 `m` is injective on `Hₙ(X; ℤ)`. -/
-theorem surjective_singularHomologyReductionZMod_succ_iff (X : TopCat.{u}) (m : ℕ) [NeZero m]
+theorem surjective_singularHomologyReductionMod_succ_iff (X : TopCat.{u}) (m : ℕ) [NeZero m]
     (n : ℕ) :
-    Function.Surjective (X.singularHomologyReductionZMod m (n + 1)) ↔
+    Function.Surjective (X.singularHomologyReductionMod m (n + 1)) ↔
       Function.Injective (LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m) := by
   have hS := TauCeti.zmodCoefficientSequence_shortExact.{u} m
@@ -233,12 +237,12 @@ theorem surjective_singularHomologyReductionZMod_succ_iff (X : TopCat.{u}) (m : 
 /-- The reduction modulo `m` is onto in degree one (for all `m : ℕ`): the zeroth integral homology
 is a free abelian group, so multiplication by `m ≠ 0` is injective on it, and for `m = 0` reduction
 is the identity. -/
-theorem surjective_singularHomologyReductionZMod_one (X : TopCat.{u}) (m : ℕ) :
-    Function.Surjective (X.singularHomologyReductionZMod m 1) := by
+theorem surjective_singularHomologyReductionMod_one (X : TopCat.{u}) (m : ℕ) :
+    Function.Surjective (X.singularHomologyReductionMod m 1) := by
   rcases eq_or_ne m 0 with rfl | hm
-  · exact fun x ↦ ⟨x, X.singularHomologyReductionZMod_zero_apply 1 x⟩
+  · exact fun x ↦ ⟨x, X.singularHomologyReductionMod_zero_apply 1 x⟩
   · have : NeZero m := ⟨hm⟩
-    exact (X.surjective_singularHomologyReductionZMod_succ_iff m 0).2
+    exact (X.surjective_singularHomologyReductionMod_succ_iff m 0).2
       (smul_right_injective _ (Nat.cast_ne_zero.2 hm))
 
 /-- **The first mod-`m` homology is the first integral homology modulo `m`**: reduction modulo `m`
@@ -249,9 +253,9 @@ def singularHomologyOneZModAddEquiv (X : TopCat.{u}) (m : ℕ) :
           (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m)) ≃+
       ((singularHomologyFunctor (ModuleCat.{u} ℤ) 1).obj
         (ModuleCat.of ℤ (ULift.{u} (ZMod m)))).obj X :=
-  ((Submodule.quotEquivOfEq _ _ (X.ker_singularHomologyReductionZMod m 1).symm).trans
-    ((X.singularHomologyReductionZMod m 1).hom.quotKerEquivOfSurjective
-      (X.surjective_singularHomologyReductionZMod_one m)) : _ ≃+ _)
+  ((Submodule.quotEquivOfEq _ _ (X.ker_singularHomologyReductionMod m 1).symm).trans
+    ((X.singularHomologyReductionMod m 1).hom.quotKerEquivOfSurjective
+      (X.surjective_singularHomologyReductionMod_one m)) : _ ≃+ _)
 
 /-- The identification `H₁(X; ℤ) ⧸ m H₁(X; ℤ) ≃ H₁(X; ℤ/m)` sends the class of an integral class to
 its reduction modulo `m`. -/
@@ -260,7 +264,7 @@ theorem singularHomologyOneZModAddEquiv_mk (X : TopCat.{u}) (m : ℕ)
     (x : ((singularHomologyFunctor (ModuleCat.{u} ℤ) 1).obj
       (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) :
     X.singularHomologyOneZModAddEquiv m (Submodule.Quotient.mk x) =
-      X.singularHomologyReductionZMod m 1 x := by
+      X.singularHomologyReductionMod m 1 x := by
   simp [singularHomologyOneZModAddEquiv]
 
 /-! ### Vanishing criteria and divisibility transfer -/
@@ -286,16 +290,26 @@ theorem isZero_singularHomology_zmod_zero_iff (X : TopCat.{u}) (m : ℕ) :
     · rw [isZero_singularHomology_zmod_iff, ModuleCat.isZero_iff_subsingleton]
       exact Module.subsingleton (ZMod 1) _
 
-/-- Vanishing of mod-`m` singular homology in degree `n` makes multiplication by `m` surjective on
-degree-`n` integral singular homology. -/
-private lemma surjective_lsmul_singularHomology_of_isZero_zmod (X : TopCat.{u}) (m n : ℕ)
+/-- If the singular homology of `X` with coefficients in `ℤ/m` vanishes in degree `n`, then
+multiplication by `m` on the integral homology `Hₙ(X; ℤ)` is onto. -/
+theorem surjective_lsmul_singularHomology_of_isZero_zmod (X : TopCat.{u}) (m n : ℕ)
     (h : IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
       (ModuleCat.of ℤ (ULift.{u} (ZMod m)))).obj X)) :
     Function.Surjective (LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
       (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m) :=
-  LinearMap.range_eq_top.1 ((X.ker_singularHomologyReductionZMod m n).symm.trans
+  LinearMap.range_eq_top.1 ((X.ker_singularHomologyReductionMod m n).symm.trans
     (LinearMap.ker_eq_top.2
       (LinearMap.ext fun _ ↦ (ModuleCat.isZero_iff_subsingleton.1 h).elim _ _)))
+
+/-- If the singular homology of `X` with coefficients in `ℤ/m` vanishes in degree `n + 1`, then
+multiplication by `m` on the integral homology `Hₙ(X; ℤ)` is injective. -/
+theorem injective_lsmul_singularHomology_of_isZero_zmod (X : TopCat.{u}) (m : ℕ) [NeZero m]
+    (n : ℕ) (h : IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) (n + 1)).obj
+      (ModuleCat.of ℤ (ULift.{u} (ZMod m)))).obj X)) :
+    Function.Injective (LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
+      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m) :=
+  (X.surjective_singularHomologyReductionMod_succ_iff m n).1 fun _ ↦
+    ⟨0, (ModuleCat.isZero_iff_subsingleton.1 h).elim _ _⟩
 
 /-- **Vanishing of mod-`m` singular homology in positive degrees**: for `m ≠ 0`, `Hₙ₊₁(X; ℤ/m) = 0`
 exactly when multiplication by `m` is surjective on `Hₙ₊₁(X; ℤ)` and injective on `Hₙ(X; ℤ)`. -/
@@ -308,21 +322,19 @@ theorem isZero_singularHomology_zmod_succ_iff (X : TopCat.{u}) (m : ℕ) [NeZero
           (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m) := by
   constructor
   · intro h
-    have hsurj := X.surjective_lsmul_singularHomology_of_isZero_zmod m (n + 1) h
-    have hinj := (X.surjective_singularHomologyReductionZMod_succ_iff m n).1 fun y ↦
-      ⟨0, (ModuleCat.isZero_iff_subsingleton.1 h).elim _ _⟩
-    exact ⟨hsurj, hinj⟩
+    exact ⟨X.surjective_lsmul_singularHomology_of_isZero_zmod m (n + 1) h,
+      X.injective_lsmul_singularHomology_of_isZero_zmod m n h⟩
   · rintro ⟨hsurj, hinj⟩
-    have hρ : Function.Surjective (X.singularHomologyReductionZMod m (n + 1)) :=
-      (X.surjective_singularHomologyReductionZMod_succ_iff m n).2 hinj
-    have hker : LinearMap.ker (X.singularHomologyReductionZMod m (n + 1)).hom = ⊤ :=
-      (X.ker_singularHomologyReductionZMod m (n + 1)).trans (LinearMap.range_eq_top.2 hsurj)
+    have hρ : Function.Surjective (X.singularHomologyReductionMod m (n + 1)) :=
+      (X.surjective_singularHomologyReductionMod_succ_iff m n).2 hinj
+    have hker : LinearMap.ker (X.singularHomologyReductionMod m (n + 1)).hom = ⊤ :=
+      (X.ker_singularHomologyReductionMod m (n + 1)).trans (LinearMap.range_eq_top.2 hsurj)
     refine ModuleCat.isZero_iff_subsingleton.2 ⟨fun y z ↦ ?_⟩
     obtain ⟨a, rfl⟩ := hρ y
     obtain ⟨b, rfl⟩ := hρ z
-    have ha : (X.singularHomologyReductionZMod m (n + 1)).hom a = 0 :=
+    have ha : (X.singularHomologyReductionMod m (n + 1)).hom a = 0 :=
       LinearMap.mem_ker.1 (hker.symm ▸ Submodule.mem_top)
-    have hb : (X.singularHomologyReductionZMod m (n + 1)).hom b = 0 :=
+    have hb : (X.singularHomologyReductionMod m (n + 1)).hom b = 0 :=
       LinearMap.mem_ker.1 (hker.symm ▸ Submodule.mem_top)
     exact ha.trans hb.symm
 
@@ -346,10 +358,10 @@ theorem bijective_zsmul_singularHomology_of_isZero_zmod (X : TopCat.{u}) (m n : 
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) := ModuleCat.isZero_iff_subsingleton.1 hnℤ
     exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
   · have : NeZero m := ⟨hm⟩
-    have hinj := ((X.isZero_singularHomology_zmod_succ_iff m n).1 hn').2
-    have hsurj := X.surjective_lsmul_singularHomology_of_isZero_zmod m n hn
     have hbij : Function.Bijective (LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ)
-        n).obj (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) (m : ℤ)) := ⟨hinj, hsurj⟩
+        n).obj (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) (m : ℤ)) :=
+      ⟨X.injective_lsmul_singularHomology_of_isZero_zmod m n hn',
+        X.surjective_lsmul_singularHomology_of_isZero_zmod m n hn⟩
     convert hbij using 1
     funext x
     simp only [LinearMap.lsmul_apply, Nat.cast_smul_eq_nsmul, natCast_zsmul]

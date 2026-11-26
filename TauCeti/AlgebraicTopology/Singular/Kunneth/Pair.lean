@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Excision
+public import TauCeti.AlgebraicTopology.Singular.KoszulBraiding
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Relative
 
 /-!
@@ -38,6 +39,19 @@ the interiors of `A × Y` and `X × B` cover the union
 (`TopPair.isIso_singularHomologyMap_prodExcisionFst`). The five lemma concludes
 (`TopCat.quasiIso_shufflePair_of_isIso`). The cover is used only through this excision.
 
+On homology, the relative cross product `Hₚ(X, A; R) ⊗ H_q(Y; S) ⟶ Hₙ(X × Y, A × Y; R ⊗ S)`
+followed by the restriction to `(X × Y, A × Y ∪ X × B)` is the cross product with the image in
+`H_q(Y, B; S)`, through `shufflePair` (`TopCat.singularHomologyCrossRel_comp_singularHomologyMap`).
+
+In a braided coefficient category the shuffle map of a product of pairs is graded commutative.
+The swap `X × Y ⟶ Y × X` carries `A × Y ∪ X × B` into `B × X ∪ Y × A`
+(`TopCat.mapsTo_braiding_hom_preimage_union`), and together with the coefficient braiding
+`R ⊗ S ⟶ S ⊗ R` it intertwines `shufflePair` with the Koszul braiding
+`x ⊗ y ↦ (-1)^(p * q) y ⊗ x` (`TopCat.tensorBraiding_hom_comp_shufflePair`), as for the absolute
+shuffle map (`TopCat.tensorBraiding_hom_comp_shuffle`). On homology the swap sends the cross product
+`a × b` of `a ∈ Hₚ(X, A; R)` and `b ∈ H_q(Y, B; S)` to `(-1)^(p * q) b × a`
+(`TopCat.homologyCross_comp_homologyMap_shufflePair_comp_braiding`).
+
 The map lives on simplicial singular chains, the chain model of the shuffle and
 Alexander–Whitney maps (`TopCat.shuffle`, `TopCat.alexanderWhitney`). The relative homology of
 `(X × Y, A × Y ∪ X × B)` is also reached through cubical chains, by the comparison
@@ -54,15 +68,21 @@ chain-level constructions are not compared here.
 * `TopCat.singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair`: the shuffle map of a
   product of pairs is induced by the absolute shuffle map.
 * `TopCat.shufflePair_naturality`: naturality in maps of both pairs.
+* `TopCat.singularHomologyCrossRel_comp_singularHomologyMap`: the relative cross product restricts
+  to the product of pairs through `shufflePair`.
 * `TopCat.quasiIso_shufflePair_of_isIso`: the relative Eilenberg–Zilber theorem for a product of
   pairs whose excision map `TopPair.prodExcisionFst` is a homology isomorphism.
 * `TopCat.quasiIso_shufflePair`: the same when the interiors of `A × Y` and `X × B` cover their
   union, and `TopCat.quasiIso_shufflePair_of_isOpen` when `A` and `B` are open.
+* `TopCat.tensorBraiding_hom_comp_shufflePair`,
+  `TopCat.homologyCross_comp_homologyMap_shufflePair_comp_braiding`: graded commutativity of the
+  shuffle map of a product of pairs, on chains and on homology.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.B, the relative cross product `Hₚ(X, A) ⊗ H_q(Y, B) ⟶ Hₙ(X × Y, A × Y ∪ X × B)`.
+  Section 3.B, the relative cross product `Hₚ(X, A) ⊗ H_q(Y, B) ⟶ Hₙ(X × Y, A × Y ∪ X × B)`
+  and its graded commutativity.
 * E. H. Spanier, *Algebraic Topology*, Chapter 5, Section 3, excisive couples and the relative
   Eilenberg–Zilber theorem.
 -/
@@ -358,6 +378,58 @@ theorem shufflePair_naturality {X' Y' : TopCat.{w}} {A' : Set X'} {B' : Set Y'} 
 
 end Naturality
 
+section Cross
+
+variable (p q n : ℕ) (h : p + q = n)
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorLeft (((TopPair.ofSubset A).singularChainComplex R).homology p))]
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorRight (((toSSet.obj Y).chainComplex S).cycles q))]
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorRight (((toSSet.obj Y).chainComplex S).X ((ComplexShape.down ℕ).prev q)))]
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorRight (((TopPair.ofSubset B).singularChainComplex S).cycles q))]
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorRight (((TopPair.ofSubset B).singularChainComplex S).X ((ComplexShape.down ℕ).prev q)))]
+
+/-- **The relative cross product restricts to the product of pairs.** The image of
+`a × b ∈ Hₙ(X × Y, A × Y; R ⊗ S)` in `Hₙ(X × Y, A × Y ∪ X × B; R ⊗ S)` is the cross product of `a`
+with the image of `b` in `H_q(Y, B; S)`, through the shuffle map of the product of pairs. -/
+theorem singularHomologyCrossRel_comp_singularHomologyMap :
+    singularHomologyCrossRel X Y A R S p q n h ≫
+      TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) fun _ hz ↦ Or.inl hz :
+        TopPair.ofSubset (fst X Y ⁻¹' A) ⟶ TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B))
+        (R ⊗ S) n =
+      (𝟙 _ ⊗ₘ (TopPair.ofSubset B).singularHomologyπ S q) ≫
+        homologyCross ((TopPair.ofSubset A).singularChainComplex R)
+          ((TopPair.ofSubset B).singularChainComplex S) p q n h ≫
+        homologyMap (shufflePair X Y A B R S) n := by
+  have hcross : (𝟙 _ ⊗ₘ (TopPair.ofSubset B).singularHomologyπ S q) ≫
+      homologyCross ((TopPair.ofSubset A).singularChainComplex R)
+        ((TopPair.ofSubset B).singularChainComplex S) p q n h =
+      homologyCross ((TopPair.ofSubset A).singularChainComplex R) ((toSSet.obj Y).chainComplex S)
+        p q n h ≫
+        homologyMap (𝟙 _ ⊗ₘ (TopPair.ofSubset B).singularChainComplexπ S) n := by
+    have hn := homologyCross_naturality (L := (toSSet.obj Y).chainComplex S)
+      (𝟙 ((TopPair.ofSubset A).singularChainComplex R))
+      ((TopPair.ofSubset B).singularChainComplexπ S) p q n h
+    rw [homologyMap_id] at hn
+    -- `singularHomologyπ` is the map induced by `singularChainComplexπ`, and
+    -- `HomologicalComplex.tensorHom` is the tensor product `⊗ₘ` of chain maps.
+    exact hn
+  rw [singularHomologyCrossRel_def]
+  -- Relative singular homology and its maps are by definition the homology of the singular
+  -- chain complexes and the maps induced by chain maps.
+  change (homologyCross _ _ p q n h ≫ homologyMap (shuffleRel X Y A R S) n) ≫
+      homologyMap (TopPair.singularChainComplexMap _ _) n = _
+  rw [Category.assoc, ← homologyMap_comp, ← id_tensorHom_singularChainComplexπ_shufflePair,
+    reassoc_of% hcross]
+  -- The two sides differ only in the bracketing of `homologyMap ((𝟙 ⊗ π) ≫ shufflePair)`, which
+  -- `rw` cannot reach in the target produced by `change`.
+  exact (_ ≫= homologyMap_comp _ _ n).trans (Category.assoc _ _ _).symm
+
+end Cross
+
 section QuasiIso
 
 /-- The morphism from the sequence `C(X, A) ⊗ (C(B) ⟶ C(Y) ⟶ C(Y, B))` to the singular chain
@@ -411,5 +483,118 @@ theorem quasiIso_shufflePair_of_isOpen (hA : IsOpen A) (hB : IsOpen B) :
     (TopPair.isIso_singularHomologyMap_prodExcisionFst_of_isOpen (R ⊗ S) hA hB)
 
 end QuasiIso
+
+section Braiding
+
+variable [BraidedCategory C]
+
+/-- The swap `X × Y ⟶ Y × X` carries `A × Y ∪ X × B` into `B × X ∪ Y × A`. -/
+lemma mapsTo_braiding_hom_preimage_union :
+    Set.MapsTo (β_ X Y).hom (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B) (fst Y X ⁻¹' B ∪ snd Y X ⁻¹' A) :=
+  fun z hz ↦ by
+    simp only [Set.mem_union, Set.mem_preimage, ← ConcreteCategory.comp_apply,
+      braiding_hom_fst, braiding_hom_snd] at hz ⊢
+    exact hz.symm
+
+/-- **The shuffle map of a product of pairs is graded commutative**: the Koszul braiding
+`C(X, A; R) ⊗ C(Y, B; S) ⟶ C(Y, B; S) ⊗ C(X, A; R)`, `x ⊗ y ↦ (-1)^(p * q) y ⊗ x` in bidegree
+`(p, q)`, followed by the shuffle map of `(Y, B) × (X, A)`, is the shuffle map of `(X, A) × (Y, B)`
+followed by the maps induced by the coefficient braiding `R ⊗ S ⟶ S ⊗ R` and the swap
+`X × Y ⟶ Y × X`. This descends `TopCat.tensorBraiding_hom_comp_shuffle` to relative chains. -/
+@[reassoc]
+theorem tensorBraiding_hom_comp_shufflePair :
+    (HomologicalComplex.tensorBraiding ((TopPair.ofSubset A).singularChainComplex R)
+        ((TopPair.ofSubset B).singularChainComplex S)).hom ≫ shufflePair Y X B A S R =
+      shufflePair X Y A B R S ≫
+        ((SSetPair.chainComplexFunctor C).map (β_ R S).hom).app
+          (TopPair.toSSetPair.obj (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B))) ≫
+        TopPair.singularChainComplexMap
+          (TopPair.ofSubsetMap (β_ X Y).hom (mapsTo_braiding_hom_preimage_union X Y A B))
+          (S ⊗ R) := by
+  refine (cancel_epi ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ
+      (TopPair.ofSubset B).singularChainComplexπ S)).1 ?_
+  have hπ := TopPair.singularChainComplexπ_coefficient_naturality
+    (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)) (β_ R S).hom
+  have hswap := TopPair.singularChainComplexπ_ofSubsetMap_naturality (β_ X Y).hom
+    (mapsTo_braiding_hom_preimage_union X Y A B) (S ⊗ R)
+  -- Both sides are the shuffle map of `X × Y` followed by the coefficient braiding, the swap and
+  -- the projection to relative chains. The chain complexes of the pairs appear both as relative
+  -- chains and as the chains of their ambient spaces, which agree only up to unfolding, so the
+  -- composites are reassociated by `calc` rather than by `rw`.
+  calc _ = (HomologicalComplex.tensorBraiding ((toSSet.obj X).chainComplex R)
+          ((toSSet.obj Y).chainComplex S)).hom ≫
+        ((TopPair.ofSubset B).singularChainComplexπ S ⊗ₘ
+          (TopPair.ofSubset A).singularChainComplexπ R) ≫ shufflePair Y X B A S R :=
+        (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
+          (HomologicalComplex.tensorBraiding_hom_naturality _ _)).trans (Category.assoc _ _ _))
+    _ = shuffle X Y R S ≫ ((SSet.chainComplexFunctor C).map (β_ R S).hom).app
+          (toSSet.obj (X ⊗ Y)) ≫ SSet.chainComplexMap (toSSet.map (β_ X Y).hom) (S ⊗ R) ≫
+          (TopPair.ofSubset (fst Y X ⁻¹' B ∪ snd Y X ⁻¹' A)).singularChainComplexπ (S ⊗ R) :=
+        (congrArg (_ ≫ ·)
+          (singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair Y X B A S R)).trans
+          (tensorBraiding_hom_comp_shuffle_assoc X Y R S _)
+    _ = shuffle X Y R S ≫ ((SSet.chainComplexFunctor C).map (β_ R S).hom).app
+          (toSSet.obj (X ⊗ Y)) ≫
+          (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplexπ (S ⊗ R) ≫
+          TopPair.singularChainComplexMap
+            (TopPair.ofSubsetMap (β_ X Y).hom (mapsTo_braiding_hom_preimage_union X Y A B))
+            (S ⊗ R) :=
+        congrArg (fun φ ↦ shuffle X Y R S ≫ ((SSet.chainComplexFunctor C).map (β_ R S).hom).app
+          (toSSet.obj (X ⊗ Y)) ≫ φ) hswap
+    _ = shuffle X Y R S ≫
+          (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplexπ (R ⊗ S) ≫
+          ((SSetPair.chainComplexFunctor C).map (β_ R S).hom).app
+            (TopPair.toSSetPair.obj (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B))) ≫
+          TopPair.singularChainComplexMap
+            (TopPair.ofSubsetMap (β_ X Y).hom (mapsTo_braiding_hom_preimage_union X Y A B))
+            (S ⊗ R) :=
+        congrArg (shuffle X Y R S ≫ ·) ((Category.assoc _ _ _).symm.trans
+          ((congrArg (· ≫ _) hπ).trans (Category.assoc _ _ _)))
+    -- elaborated against the goal, so that the two bracketings are compared up to unfolding
+    _ = _ := by
+        exact (Category.assoc _ _ _).symm.trans
+          (singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair_assoc X Y A B R S
+            _).symm
+
+variable (p q n : ℕ) (h : p + q = n)
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorLeft (((TopPair.ofSubset A).singularChainComplex R).homology p))]
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorRight (((TopPair.ofSubset B).singularChainComplex S).cycles q))]
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorRight (((TopPair.ofSubset B).singularChainComplex S).X ((ComplexShape.down ℕ).prev q)))]
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorLeft (((TopPair.ofSubset B).singularChainComplex S).homology q))]
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorRight (((TopPair.ofSubset A).singularChainComplex R).cycles p))]
+  [PreservesColimitsOfShape WalkingParallelPair
+    (tensorRight (((TopPair.ofSubset A).singularChainComplex R).X ((ComplexShape.down ℕ).prev p)))]
+
+/-- **Graded commutativity of the cross product of pairs**: the maps induced by the coefficient
+braiding `R ⊗ S ⟶ S ⊗ R` and the swap `X × Y ⟶ Y × X` send the cross product `a × b` of
+`a ∈ Hₚ(X, A; R)` and `b ∈ H_q(Y, B; S)`, taken through the shuffle map of the product of pairs, to
+`(-1)^(p * q) b × a`. -/
+@[reassoc]
+theorem homologyCross_comp_homologyMap_shufflePair_comp_braiding :
+    homologyCross ((TopPair.ofSubset A).singularChainComplex R)
+        ((TopPair.ofSubset B).singularChainComplex S) p q n h ≫
+      homologyMap (shufflePair X Y A B R S) n ≫
+      homologyMap (((SSetPair.chainComplexFunctor C).map (β_ R S).hom).app
+          (TopPair.toSSetPair.obj (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)))) n ≫
+      TopPair.singularHomologyMap
+          (TopPair.ofSubsetMap (β_ X Y).hom (mapsTo_braiding_hom_preimage_union X Y A B))
+          (S ⊗ R) n =
+      ((-1 : ℤ) ^ (p * q)) • ((β_ _ _).hom ≫
+        homologyCross ((TopPair.ofSubset B).singularChainComplex S)
+          ((TopPair.ofSubset A).singularChainComplex R) q p n (by omega) ≫
+        homologyMap (shufflePair Y X B A S R) n) := by
+  have key := (homologyCross _ _ p q n h ≫=
+      congrArg (homologyMap · n) (tensorBraiding_hom_comp_shufflePair X Y A B R S)).symm.trans <|
+    (homologyCross _ _ p q n h ≫= homologyMap_comp _ _ n).trans <|
+      ChainComplex.homologyCross_comp_homologyMap_tensorBraiding_hom_assoc _ _ p q n h _
+  simp only [homologyMap_comp, Preadditive.zsmul_comp, Category.assoc] at key
+  exact key
+
+end Braiding
 
 end TopCat

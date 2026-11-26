@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Quasicategory.RightMappingSpace
+public import TauCeti.AlgebraicTopology.Quasicategory.LeftMappingSpace
 public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
 public import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.JoinVertex
+import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Parametrized
 import TauCeti.AlgebraicTopology.SimplicialSet.BoundaryColimits
 import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.One
 import Mathlib.AlgebraicTopology.Quasicategory.TwoTruncatedQuasicategory
@@ -21,9 +22,11 @@ the fibre over `(x, y)` of the restriction map `Fun(Δ[1], X) ⟶ Fun(∂Δ[1], 
 endpoints: its `n`-simplices are the maps `Δ[1] ⊗ Δ[n] ⟶ X` which are constant at `x` on
 `{0} × Δ[n]` and constant at `y` on `{1} × Δ[n]`, and its vertices are the edges from `x` to `y`.
 When `X` is a quasicategory, the restriction map is an inner fibration, so `Hom_X(x, y)` is again a
-quasicategory. Unlike the right mapping space `Hom^R_X(x, y)` of
-`TauCeti.AlgebraicTopology.Quasicategory.RightMappingSpace`, its definition is symmetric in the two
-endpoints and is functorial through the internal hom `Fun(Δ[1], X)`.
+quasicategory, and moreover a Kan complex: its horns `Λ[n + 2, 0]` are families of horns of `X`
+parametrized by `Δ[1]` with degenerate initial edges, which the parametrized form of Joyal's
+theorem fills, so every edge of `Hom_X(x, y)` is an equivalence. Unlike the right mapping space
+`Hom^R_X(x, y)` of `TauCeti.AlgebraicTopology.Quasicategory.RightMappingSpace`, its definition is
+symmetric in the two endpoints and is functorial through the internal hom `Fun(Δ[1], X)`.
 
 The two models are compared by a natural monomorphism `Hom^R_X(x, y) ⟶ Hom_X(x, y)`: an
 `n`-simplex of `Hom^R_X(x, y)`, an `(n + 1)`-simplex of `X`, is precomposed with the collapse
@@ -35,6 +38,14 @@ coincidence of the left and right homotopy relations in a quasicategory, show th
 joined in `Hom^R_X(x, y)`. That the comparison is a homotopy equivalence of Kan complexes
 (HTT, §4.2.1) is not proved here.
 
+Dually, the left mapping space `Hom^L_X(x, y)` of
+`TauCeti.AlgebraicTopology.Quasicategory.LeftMappingSpace` is compared with `Hom_X(x, y)` by a
+natural monomorphism `Hom^L_X(x, y) ⟶ Hom_X(x, y)`, precomposition with the collapse
+`Δ[1] ⊗ Δ[n] ⟶ Δ[n + 1]` of `{0} × Δ[n]` to the initial vertex
+(`SSet.prodStdSimplex.toVertexJoin`). It is again the identity of the edges from `x` to `y` on
+vertices and, for a quasicategory, a bijection on connected components, since the components of
+both `Hom^L_X(x, y)` and `Hom^R_X(x, y)` are the morphisms from `x` to `y` in the homotopy category.
+
 ## Main definitions
 
 * `SSet.mappingSpace X x y`: the mapping space `Hom_X(x, y)`, a subcomplex of `Fun(Δ[1], X)`.
@@ -42,23 +53,31 @@ joined in `Hom^R_X(x, y)`. That the comparison is a homotopy equivalence of Kan 
   `Δ[1] ⊗ Δ[n] ⟶ X` with constant ends, and its vertices are the edges from `x` to `y`.
 * `SSet.mappingSpace.map x y f`: the map `Hom_X(x, y) ⟶ Hom_Y(f x, f y)` induced by `f : X ⟶ Y`.
 * `SSet.rightMappingSpace.toMappingSpace x y`: the comparison `Hom^R_X(x, y) ⟶ Hom_X(x, y)`.
+* `SSet.leftMappingSpace.toMappingSpace x y`: the comparison `Hom^L_X(x, y) ⟶ Hom_X(x, y)`.
 
 ## Main results
 
 * `SSet.range_le_mappingSpace_iff`, `SSet.mem_mappingSpace_iff`: the universal property of
   `Hom_X(x, y)` and the description of its simplices.
 * `SSet.mappingSpace.quasicategory`: the mapping spaces of a quasicategory are quasicategories.
+* `SSet.mappingSpace.kanComplex`: the mapping spaces of a quasicategory are Kan complexes.
 * `SSet.rightMappingSpace.mono_toMappingSpace`,
   `SSet.rightMappingSpace.toMappingSpace_comp_map`: the comparison is a natural monomorphism.
 * `SSet.rightMappingSpace.bijective_toMappingSpace_app_zero`: it is a bijection on vertices.
 * `SSet.rightMappingSpace.bijective_mapπ₀_toMappingSpace`: for a quasicategory, it is a bijection
   on connected components.
+* `SSet.leftMappingSpace.mono_toMappingSpace`, `SSet.leftMappingSpace.toMappingSpace_comp_map`,
+  `SSet.leftMappingSpace.bijective_toMappingSpace_app_zero`,
+  `SSet.leftMappingSpace.bijective_mapπ₀_toMappingSpace`: the same properties of the comparison
+  `Hom^L_X(x, y) ⟶ Hom_X(x, y)`.
 
 ## References
 
-* J. Lurie, *Higher Topos Theory*, §1.2.2 (the mapping spaces `Hom_S(x, y)` and `Hom^R_S(x, y)`)
-  and §4.2.1 (their comparison).
+* J. Lurie, *Higher Topos Theory*, §1.2.2 (the mapping spaces `Hom_S(x, y)`, `Hom^R_S(x, y)` and
+  `Hom^L_S(x, y)`) and §4.2.1 (their comparison).
 * J. Lurie, *Kerodon*, Section 4.6 (morphism spaces of `∞`-categories).
+* A. Joyal, *Quasi-categories and Kan complexes*, J. Pure Appl. Algebra 175 (2002) (the special
+  outer horn theorem and the Kan criterion for quasicategories).
 -/
 
 public section
@@ -256,6 +275,76 @@ lemma obj₀Equiv_map_app (f : X ⟶ Y) (σ : (X.mappingSpace x y : SSet.{u}) _�
 
 end map
 
+/-! ### The Kan complex property -/
+
+section KanComplex
+
+variable [X.Quasicategory]
+
+/-- **Special outer horns in `Hom_X(x, y)`.** If `X` is a quasicategory, every horn
+`Λ[n + 2, 0] ⟶ Hom_X(x, y)` can be filled. Uncurried, such a horn is a family of horns
+`Λ[n + 2, 0] ⟶ X` parametrized by `Δ[1]`, which is constant at `x` over the vertex `0` and
+constant at `y` over the vertex `1`. Every horn of the family has a degenerate initial edge, so the
+parametrized form of Joyal's theorem (`SSet.Quasicategory.exists_lift_pre_horn_zero`) fills the
+family compatibly with the constant fillings over the two vertices. -/
+private theorem hornFilling_zero {n : ℕ}
+    (σ₀ : (Λ[n + 2, 0] : SSet.{u}) ⟶ (X.mappingSpace x y : SSet.{u})) :
+    ∃ σ : Δ[n + 2] ⟶ (X.mappingSpace x y : SSet.{u}), σ₀ = Λ[n + 2, 0].ι ≫ σ := by
+  -- The family of horns parametrized by `Δ[1]`, and the constant fillings over `∂Δ[1]`.
+  let b : Δ[1] ⟶ (ihom (Λ[n + 2, 0] : SSet.{u})).obj X :=
+    curry ((β_ _ _).hom ≫ uncurry (σ₀ ≫ (X.mappingSpace x y).ι))
+  let t : (∂Δ[1] : SSet.{u}) ⟶ (ihom Δ[n + 2]).obj X :=
+    boundary.descOne ((ihomObj₀Equiv _ X).symm (const x)) ((ihomObj₀Equiv _ X).symm (const y))
+  have hb (i : Fin 2) : stdSimplex.δ i ≫ b = curry (const (![y, x] i)) := by
+    rw [← curry_natural_left, BraidedCategory.braiding_naturality_right_assoc,
+      uncurry_natural_left, ← whisker_exchange_assoc]
+    fin_cases i <;> simp
+  have ht (i : Fin 2) : boundary.ι i ≫ t = curry (const (![y, x] i)) := by
+    fin_cases i <;> simp [t, const_ihomObj₀Equiv_symm]
+  have w : t ≫ (pre Λ[n + 2, 0].ι).app X = ∂Δ[1].ι ≫ b :=
+    boundary.hom_ext fun i ↦ by
+      rw [boundary.ι_ι_assoc, hb, ← Category.assoc, ht, curry_pre_app, comp_const]
+  -- Over each vertex of `Δ[1]`, the horn is constant, so its initial edge is degenerate.
+  obtain ⟨l, hl₁, hl₂⟩ := Quasicategory.exists_lift_pre_horn_zero ∂Δ[1].ι t b w fun z ↦ by
+    obtain ⟨f, rfl⟩ := stdSimplex.objEquiv.symm.surjective z
+    have : Mono f :=
+      SimplexCategory.mono_iff_injective.2 (Function.injective_of_subsingleton (α := Fin 1) _)
+    obtain ⟨i, rfl⟩ := SimplexCategory.eq_δ_of_mono f
+    have hz : b.app _ (stdSimplex.objEquiv.symm (SimplexCategory.δ i)) =
+        (ihomObj₀Equiv _ X).symm (const (![y, x] i)) := by
+      -- `stdSimplex.δ i` in `hb` is by definition `stdSimplex.map (SimplexCategory.δ i)`.
+      rw [← SSet.yonedaEquiv_map, ← yonedaEquiv_comp,
+        show stdSimplex.map (SimplexCategory.δ i) ≫ b = _ from hb i,
+        ← comp_const (fst (Λ[n + 2, 0] : SSet.{u}) Δ[0]), ← const_ihomObj₀Equiv_symm,
+        yonedaEquiv_const]
+    rw [hz, Equiv.apply_symm_apply]
+    exact Edge.isEquivalence_mk'_map_of_eq _ _ (Subsingleton.elim (α := Fin 1) _ _)
+  have hl (i : Fin 2) : stdSimplex.δ i ≫ l = curry (const (![y, x] i)) := by
+    rw [← boundary.ι_ι, Category.assoc, hl₁, ht]
+  -- The filling `l`, uncurried and with its factors swapped, lands in `Hom_X(x, y)`.
+  let g : Δ[1] ⊗ Δ[n + 2] ⟶ X := (β_ _ _).hom ≫ uncurry l
+  have hg (i : Fin 2) : stdSimplex.δ i ▷ _ ≫ g = const (![y, x] i) := by
+    rw [BraidedCategory.braiding_naturality_left_assoc, ← uncurry_natural_left, hl,
+      uncurry_curry, comp_const]
+  have hσ : Subcomplex.range (curry g) ≤ X.mappingSpace x y := by
+    rw [range_le_mappingSpace_iff, uncurry_curry]
+    exact ⟨hg 1, hg 0⟩
+  refine ⟨Subcomplex.lift _ hσ, ?_⟩
+  rw [← cancel_mono (X.mappingSpace x y).ι, Category.assoc, Subcomplex.lift_ι,
+    ← curry_natural_left, eq_curry_iff, BraidedCategory.braiding_naturality_right_assoc,
+    ← uncurry_pre_app, hl₂, uncurry_curry, SymmetricCategory.symmetry_assoc]
+
+/-- **The mapping spaces of a quasicategory are Kan complexes** (HTT, §1.2.2; Kerodon, Section 4.6):
+if `X` is a quasicategory, then for all vertices `x` and `y` of `X`, the mapping space
+`Hom_X(x, y)` is a Kan complex. -/
+-- By Joyal's criterion, it suffices that every edge of the quasicategory `Hom_X(x, y)` is an
+-- equivalence, and an edge all of whose special outer horns `Λ[n + 2, 0]` can be filled is one.
+instance kanComplex : (X.mappingSpace x y : SSet.{u}).KanComplex :=
+  Quasicategory.kanComplex_of_forall_isEquivalence fun _ ↦
+    (Edge.isEquivalence_iff_hornFilling_zero _).2 fun _ σ₀ _ ↦ hornFilling_zero σ₀
+
+end KanComplex
+
 end mappingSpace
 
 /-! ### The comparison with the right mapping space -/
@@ -451,5 +540,134 @@ theorem bijective_mapπ₀_toMappingSpace :
 end π₀
 
 end rightMappingSpace
+
+/-! ### The comparison with the left mapping space -/
+
+namespace leftMappingSpace
+
+open prodStdSimplex
+
+/-- The map `Δ[1] ⊗ Δ[n] ⟶ X` attached to an `n`-simplex of `Hom^L_X(x, y)` lies in
+`Hom_X(x, y)`. -/
+private lemma toVertexJoin_comp_mem {n : ℕ} (t : X _⦋n + 1⦌)
+    (ht : t ∈ (X.leftMappingSpace x y).obj (op ⦋n⦌)) :
+    (ihomObjEquiv _ X).symm (toVertexJoin n ≫ yonedaEquiv.symm t) ∈
+      (X.mappingSpace x y).obj _ := by
+  obtain ⟨h₁, h₂⟩ := (mem_leftMappingSpace_iff t).1 ht
+  rw [mem_mappingSpace_iff, Equiv.apply_symm_apply, whiskerRight_δ_one_toVertexJoin_assoc,
+    whiskerRight_δ_zero_toVertexJoin_assoc, stdSimplex.δ_comp_yonedaEquiv_symm, h₂, const_comp,
+    ← yonedaEquiv_symm_naturality_left, yonedaEquiv_symm_zero, comp_const, comp_const]
+  exact ⟨congrArg _ h₁, rfl⟩
+
+variable (x y) in
+/-- The comparison map `Hom^L_X(x, y) ⟶ Hom_X(x, y)` from the left mapping space to the
+mapping space. An `n`-simplex of `Hom^L_X(x, y)`, an `(n + 1)`-simplex `σ : Δ[n + 1] ⟶ X`, is
+sent to the composite of `σ` with the map `Δ[1] ⊗ Δ[n] ⟶ Δ[n + 1]` which collapses
+`{0} × Δ[n]` to the initial vertex (`SSet.prodStdSimplex.toVertexJoin`). -/
+noncomputable def toMappingSpace :
+    (X.leftMappingSpace x y : SSet.{u}) ⟶ (X.mappingSpace x y : SSet.{u}) where
+  app m := TypeCat.ofHom fun s ↦ ⟨(ihomObjEquiv _ X).symm
+    (toVertexJoin m.unop.len ≫ yonedaEquiv.symm (s.val : X _⦋m.unop.len + 1⦌)),
+    toVertexJoin_comp_mem _ s.property⟩
+  naturality m m' f := by
+    obtain ⟨⟨a⟩⟩ := m
+    obtain ⟨⟨b⟩⟩ := m'
+    ext s
+    refine Subtype.ext ((ihomObjEquiv _ X).injective ?_)
+    -- The simplicial operator `f` acts on `Hom^L_X(x, y)` through `vertexJoin.map f.unop`, and on
+    -- `Fun(Δ[1], X)` by precomposition with `Δ[1] ◁ stdSimplex.map f.unop`.
+    change ihomObjEquiv _ X ((ihomObjEquiv _ X).symm (toVertexJoin b ≫ yonedaEquiv.symm
+        (X.map (SimplexCategory.vertexJoin.map f.unop).op (s.val : X _⦋a + 1⦌)))) =
+      ihomObjEquiv _ X (((ihom Δ[1]).obj X).map f.unop.op
+        ((ihomObjEquiv _ X).symm (toVertexJoin a ≫ yonedaEquiv.symm (s.val : X _⦋a + 1⦌))))
+    rw [ihomObjEquiv_map, Equiv.apply_symm_apply, Equiv.apply_symm_apply,
+      whiskerLeft_map_toVertexJoin_assoc]
+    exact congrArg (toVertexJoin b ≫ ·) (yonedaEquiv_symm_naturality_left _ _).symm
+
+/-- The comparison map sends an `n`-simplex `σ : Δ[n + 1] ⟶ X` of `Hom^L_X(x, y)` to the map
+`Δ[1] ⊗ Δ[n] ⟶ Δ[n + 1] ⟶ X`. -/
+@[simp]
+lemma ihomObjEquiv_toMappingSpace_app_coe {n : ℕ}
+    (s : (X.leftMappingSpace x y : SSet.{u}) _⦋n⦌) :
+    dsimp% ihomObjEquiv _ X ((toMappingSpace x y).app _ s).val =
+      toVertexJoin n ≫ yonedaEquiv.symm (s.val : X _⦋n + 1⦌) :=
+  Equiv.apply_symm_apply _ _
+
+/-- The comparison map `Hom^L_X(x, y) ⟶ Hom_X(x, y)` is a monomorphism, since
+`toVertexJoin n : Δ[1] ⊗ Δ[n] ⟶ Δ[n + 1]` is an epimorphism. -/
+instance mono_toMappingSpace : Mono (toMappingSpace x y) := by
+  rw [NatTrans.mono_iff_mono_app]
+  rintro ⟨⟨n⟩⟩
+  rw [CategoryTheory.mono_iff_injective]
+  intro s t hst
+  have h : ihomObjEquiv _ X ((toMappingSpace x y).app _ s).val =
+      ihomObjEquiv _ X ((toMappingSpace x y).app _ t).val :=
+    congrArg _ (congrArg Subtype.val hst)
+  rw [ihomObjEquiv_toMappingSpace_app_coe, ihomObjEquiv_toMappingSpace_app_coe, cancel_epi] at h
+  exact Subtype.ext ((yonedaEquiv (X := X)).symm.injective h)
+
+/-- On vertices, the comparison map is the identity of the edges from `x` to `y`. -/
+@[simp]
+lemma obj₀Equiv_toMappingSpace_app (s : (X.leftMappingSpace x y : SSet.{u}) _⦋0⦌) :
+    dsimp% mappingSpace.obj₀Equiv ((toMappingSpace x y).app _ s) = obj₀Equiv s := by
+  refine Edge.ext ?_
+  rw [mappingSpace.obj₀Equiv_apply_edge, obj₀Equiv_apply_edge]
+  -- The map `Δ[1] ⟶ X` of the image of `s` is `s` itself, since `toVertexJoin 0` is the first
+  -- projection `Δ[1] ⊗ Δ[0] ⟶ Δ[1]`.
+  have h : fst _ Δ[0] ≫ ihomObj₀Equiv _ X ((toMappingSpace x y).app _ s).val =
+      fst _ Δ[0] ≫ (yonedaEquiv (X := X) (n := ⦋1⦌)).symm (s.val : X _⦋1⦌) := by
+    rw [fst_comp_ihomObj₀Equiv, ihomObjEquiv_toMappingSpace_app_coe, toVertexJoin_zero]
+  rw [cancel_epi] at h
+  rw [h]
+  exact (yonedaEquiv (X := X) (n := ⦋1⦌)).apply_symm_apply _
+
+/-- The comparison map is a bijection on vertices: both sets of vertices are the edges from `x`
+to `y`. -/
+lemma bijective_toMappingSpace_app_zero :
+    Function.Bijective ((toMappingSpace x y).app (op ⦋0⦌)) := by
+  have h : ⇑((toMappingSpace x y).app (op ⦋0⦌)) =
+      mappingSpace.obj₀Equiv.symm ∘ obj₀Equiv := by
+    funext s
+    exact mappingSpace.obj₀Equiv.injective (by simp)
+  rw [h]
+  exact mappingSpace.obj₀Equiv.symm.bijective.comp obj₀Equiv.bijective
+
+variable (x y) in
+/-- The comparison maps are natural in the simplicial set. -/
+@[reassoc]
+lemma toMappingSpace_comp_map {Y : SSet.{u}} (f : X ⟶ Y) :
+    toMappingSpace x y ≫ mappingSpace.map x y f =
+      map x y f ≫ toMappingSpace (f.app _ x) (f.app _ y) := by
+  ext ⟨⟨n⟩⟩ s
+  refine Subtype.ext ((ihomObjEquiv _ Y).injective ?_)
+  -- Evaluating the composites at `s` exposes the simp normal forms of the two comparison maps and
+  -- of the two maps induced by `f`.
+  change ihomObjEquiv _ Y ((mappingSpace.map x y f).app _ ((toMappingSpace x y).app _ s)).val =
+    ihomObjEquiv _ Y ((toMappingSpace (f.app _ x) (f.app _ y)).app _ ((map x y f).app _ s)).val
+  rw [mappingSpace.ihomObjEquiv_map_app_coe, ihomObjEquiv_toMappingSpace_app_coe,
+    ihomObjEquiv_toMappingSpace_app_coe, Category.assoc]
+  exact congrArg (toVertexJoin n ≫ ·)
+    ((yonedaEquiv_symm_comp (X := X) (n := ⦋n + 1⦌) s.val f).trans
+      (congrArg _ (map_app_coe f s).symm))
+
+variable (x y) in
+/-- **The comparison of mapping spaces on connected components**: for a quasicategory `X`, the
+comparison map `Hom^L_X(x, y) ⟶ Hom_X(x, y)` induces a bijection on connected components. Both
+sets of components are the morphisms from `x` to `y` in the homotopy category of `X`. -/
+theorem bijective_mapπ₀_toMappingSpace [X.Quasicategory] :
+    Function.Bijective (mapπ₀ (toMappingSpace x y)) := by
+  -- Through the homotopy category, the comparison on components factors as the comparison
+  -- `Hom^R_X(x, y) ⟶ Hom_X(x, y)` on components after a bijection.
+  have h : mapπ₀ (toMappingSpace x y) = mapπ₀ (rightMappingSpace.toMappingSpace x y) ∘
+      (rightMappingSpace.π₀Equiv x y).symm ∘ π₀Equiv x y := by
+    funext c
+    induction c with | mk s =>
+    simp only [Function.comp_apply, π₀Equiv_mk, rightMappingSpace.π₀Equiv_symm_homMk, mapπ₀_mk]
+    exact congrArg π₀.mk (mappingSpace.obj₀Equiv.injective (by simp))
+  rw [h]
+  exact (rightMappingSpace.bijective_mapπ₀_toMappingSpace x y).comp
+    ((rightMappingSpace.π₀Equiv x y).symm.bijective.comp (π₀Equiv x y).bijective)
+
+end leftMappingSpace
 
 end SSet

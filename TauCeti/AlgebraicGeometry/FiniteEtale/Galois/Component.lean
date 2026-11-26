@@ -63,7 +63,7 @@ theorem isEmpty_fiber_iso_of_isClopen {U : Set S} (hU : IsClopen U) {x : Spec (.
   refine ⟨fun e ↦ hy ?_⟩
   let V : S.Opens := ⟨U, hU.isOpen⟩
   have : IsClosedImmersion V.ι :=
-    Scheme.Opens.isClosedImmersion_ι_of_isClosed V hU.isClosed
+    (Scheme.Opens.isClosedImmersion_ι_iff V).mpr hU.isClosed
   obtain ⟨a⟩ := (nonempty_fiber_obj_ofHom_ι_iff V x).mpr hx
   exact (nonempty_fiber_obj_ofHom_ι_iff V y).mp ⟨e.hom.app _ a⟩
 

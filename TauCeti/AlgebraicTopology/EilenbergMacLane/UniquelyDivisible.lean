@@ -106,7 +106,7 @@ private theorem isZero_singularHomology_zmod_of_bijective_zsmul {m : ℕ} {A : T
         exact (hX.nonempty_homotopyGroupMulEquiv.some.toEquiv.trans
           Multiplicative.toAdd).subsingleton
       · exact hX.subsingleton_homotopyGroup hr
-    exact ((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv
+    exact ((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv 0
       (ULift.ringEquiv : ULift.{u} (ZMod 0) ≃+* ZMod 0) (n + 1)).2 <|
         isZero_singularHomologyFunctor_of_subsingleton_homotopyGroup (fun r _ ↦ hπ r)
           (ULift.{u} (ZMod 0)) (Nat.succ_ne_zero n) (Nat.lt_succ_self (n + 1))
@@ -118,7 +118,7 @@ private theorem isZero_singularHomology_zmod_of_bijective_zsmul {m : ℕ} {A : T
       TauCeti.bijective_zsmul_of_dvd (Int.natCast_dvd_natCast.2 hpm) hA
     have : IsSemisimpleRing (ULift.{u} (ZMod p)) :=
       (ULift.ringEquiv : ULift.{u} (ZMod p) ≃+* ZMod p).symm.isSemisimpleRing
-    exact ((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv
+    exact ((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv p
       (ULift.ringEquiv : ULift.{u} (ZMod p) ≃+* ZMod p) (n + 1)).2 <|
         ModuleCat.isZero_iff_subsingleton.2 <|
           subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne (ULift.{u} (ZMod p))

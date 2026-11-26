@@ -333,8 +333,7 @@ theorem IsMorse.exists_relCWComplex_sublevel_deformation (hf : IsMorse I f) (hδ
   have hball : ∀ p, closedBall 0 √ε ⊆ (ψ p).target := fun p ↦
     (closedBall_subset_closedBall (Real.sqrt_le_sqrt (by linarith))).trans (hψp p).2.2.1
   have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
-    ((hf.finite_criticalPoints_inter hcompact).subset
-      (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))).to_subtype
+    (hf.finite_criticalPoints_inter_level hδ.le hcompact).to_subtype
   -- The lower sublevel and the cells lie in `{f ≤ c}`.
   have hS : {x | f x ≤ c - ε} ∪ ⋃ p, (ψ p).source ∩ ψ p ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧
       ∀ i : Fin (Module.finrank ℝ E), manifoldMorseIndex I f p ≤ i.val → y i = 0} ⊆

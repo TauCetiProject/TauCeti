@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.FractionalIdeal.Operations
 public import Mathlib.RingTheory.PicardGroup
 
+import TauCeti.RingTheory.PicardGroup.Submodule
+
 /-!
 # Operations on fractional ideals
 
@@ -40,13 +42,17 @@ at pin `66889eada51a`, Apache 2.0, by Michael Stoll).
 * `FractionalIdeal.spanSingleton_smul_eq` and `FractionalIdeal.spanSingleton_units_smul`: scaling
   the generator of a principal fractional ideal by a unit of the base ring leaves the ideal
   unchanged.
+* `FractionalIdeal.coe_unitsMulEquivSubmodule`: the invertible submodule of an invertible
+  fractional ideal is its underlying submodule.
+* `FractionalIdeal.tensorEquivMul` and `FractionalIdeal.coe_tensorEquivMul_tmul`: the isomorphism
+  `I ⊗ J ≃ I * J` of invertible fractional ideals is multiplication.
 * `Ideal.moduleInvertible_of_isUnit_fractionalIdeal`: an ideal invertible in a faithful
   localization is an invertible module over the base ring.
 -/
 
 public section
 
-open scoped nonZeroDivisors
+open scoped nonZeroDivisors TensorProduct
 
 namespace FractionalIdeal
 
@@ -121,6 +127,32 @@ section Localization
 
 variable {R : Type*} [CommRing R] {S : Submonoid R} {P : Type*} [CommRing P] [Algebra R P]
   [IsLocalization S P]
+
+/-- The invertible submodule `unitsMulEquivSubmodule I` is the underlying submodule of `I`. -/
+@[simp]
+theorem coe_unitsMulEquivSubmodule (I : (FractionalIdeal S P)ˣ) :
+    ((unitsMulEquivSubmodule I : (Submodule R P)ˣ) : Submodule R P) =
+      ((I : FractionalIdeal S P) : Submodule R P) :=
+  rfl
+
+/-- The isomorphism `I ⊗ J ≃ I * J` of invertible fractional ideals, given by multiplication
+(`FractionalIdeal.coe_tensorEquivMul_tmul`); Mathlib's `Submodule.tensorEquivMul` for their
+underlying submodules. -/
+noncomputable def tensorEquivMul [FaithfulSMul R P] (I J : (FractionalIdeal S P)ˣ) :
+    ((I : FractionalIdeal S P) : Submodule R P) ⊗[R] ((J : FractionalIdeal S P) : Submodule R P)
+      ≃ₗ[R] (((I * J : (FractionalIdeal S P)ˣ) : FractionalIdeal S P) : Submodule R P) :=
+  TensorProduct.congr (.ofEq _ _ (coe_unitsMulEquivSubmodule I).symm)
+      (.ofEq _ _ (coe_unitsMulEquivSubmodule J).symm) ≪≫ₗ
+    Submodule.tensorEquivMul _ _ ≪≫ₗ .ofEq _ _ (by rw [← map_mul, coe_unitsMulEquivSubmodule])
+
+/-- The isomorphism `I ⊗ J ≃ I * J` of invertible fractional ideals is multiplication. -/
+theorem coe_tensorEquivMul_tmul [FaithfulSMul R P] (I J : (FractionalIdeal S P)ˣ)
+    (x : ((I : FractionalIdeal S P) : Submodule R P))
+    (y : ((J : FractionalIdeal S P) : Submodule R P)) :
+    (tensorEquivMul I J (x ⊗ₜ y) : P) = x * y := by
+  rw [tensorEquivMul, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, TensorProduct.congr_tmul, Submodule.coe_tensorEquivMul_tmul,
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.coe_ofEq_apply]
 
 /-- A fractional ideal is invertible exactly when its integral numerator is invertible.
 This extends Mathlib's `FractionalIdeal.isUnit_num` to any localization. -/

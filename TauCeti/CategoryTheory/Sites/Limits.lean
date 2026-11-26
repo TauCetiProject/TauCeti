@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.BinaryProducts
 public import Mathlib.CategoryTheory.Limits.Types.Products
+public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.Limits
 public import Mathlib.CategoryTheory.Sites.PreservesSheafification
 public import Mathlib.CategoryTheory.Sites.Whiskering
@@ -21,7 +22,10 @@ If a functor `F : A ⥤ B` preserves limits of shape `K`, then so does the induc
 on the underlying presheaves (Mathlib's `CategoryTheory.Sites.Limits`).
 
 Sheafifying sectionwise composition also preserves finite limits when the coefficient functor
-does (`CategoryTheory.Sheaf.preservesFiniteLimits_composeAndSheafify`).
+does (`CategoryTheory.Sheaf.preservesFiniteLimits_composeAndSheafify`), and so does the constant
+sheaf functor when sheafification is left exact
+(`CategoryTheory.Sheaf.preservesFiniteLimits_constantSheaf`). The constant sheaf functor
+preserves all colimits (`CategoryTheory.Sheaf.preservesColimitsOfSize_constantSheaf`).
 
 For sheaves of types, the sections of a binary product `F ⨯ G` over `W` are pairs of sections:
 any sections `a` of `F` and `b` of `G` over `W` are the projections of a section of `F ⨯ G`
@@ -32,7 +36,7 @@ public section
 
 open CategoryTheory Limits Opposite
 
-universe w
+universe w w' w''
 
 namespace CategoryTheory.Sheaf
 
@@ -61,6 +65,17 @@ instance preservesFiniteLimits_composeAndSheafify {A B : Type*} [Category* A] [C
   preservesFiniteLimits K _ _ :=
     inferInstanceAs (PreservesLimitsOfShape K
       (sheafToPresheaf J A ⋙ (Functor.whiskeringRight _ _ _).obj F ⋙ presheafToSheaf J B))
+
+/-- The constant sheaf functor preserves finite limits when sheafification is left exact. -/
+instance preservesFiniteLimits_constantSheaf (A : Type*) [Category* A] [HasSheafify J A] :
+    PreservesFiniteLimits (constantSheaf J A) :=
+  comp_preservesFiniteLimits _ _
+
+/-- The constant sheaf functor preserves all colimits: it is the constant presheaf functor, which
+preserves colimits, followed by sheafification, which is a left adjoint. -/
+instance preservesColimitsOfSize_constantSheaf (A : Type*) [Category* A] [HasWeakSheafify J A] :
+    PreservesColimitsOfSize.{w', w''} (constantSheaf J A) :=
+  inferInstanceAs (PreservesColimitsOfSize (Functor.const Cᵒᵖ ⋙ presheafToSheaf J A))
 
 variable {J} in
 /-- Sections `a` of `F` and `b` of `G` over `W` are the projections of a section of `F ⨯ G`. -/

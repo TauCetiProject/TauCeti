@@ -126,7 +126,7 @@ theorem bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod {Y : Type 
   bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv
     (ULift.ringEquiv : ULift.{u} (ZMod m) ≃+* ZMod m) fun q hq1 hq2 ↦ by
       rw [← singularHomologyFunctor_obj_obj]
-      exact ((TopCat.of Y).isZero_singularHomology_zmod_iff_of_ringEquiv
+      exact ((TopCat.of Y).isZero_singularHomology_zmod_iff_of_ringEquiv m
         (ULift.ringEquiv : ULift.{u} (ZMod m) ≃+* ZMod m) q).1 (hY q hq1 hq2)
 
 /-- **Reduced-homology mod-`m` vanishing theorem with ring coefficients.** If `π₁(Y, y)` is trivial

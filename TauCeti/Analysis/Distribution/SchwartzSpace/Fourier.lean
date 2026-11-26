@@ -60,6 +60,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 ## Main declarations
 
 * `SchwartzMap.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
+* `SchwartzMap.fourier_fourierMultiplierCLM_apply`: on the Fourier side a Fourier multiplier is
+  multiplication by its symbol.
 * `SchwartzMap.fourierMultiplierCLM_laplacian`: Fourier multipliers commute with the Laplacian.
 * `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM`: the Bessel
   multipliers of orders `t` and `t'` compose to the one of order `t + t'`.
@@ -201,6 +203,16 @@ theorem fourier_smulLeftCLM_fourierInv_eq {g : E → ℂ} (hg : g.HasTemperateGr
 variable [CompleteSpace F]
 
 omit [CompleteSpace F] in
+/-- On the Fourier side, the Fourier multiplier with a symbol `g` of temperate growth is
+multiplication by `g`: `𝓕 (𝓕⁻ (g • 𝓕 f)) ξ = g ξ • 𝓕 f ξ`. -/
+@[simp]
+theorem fourier_fourierMultiplierCLM_apply {g : E → ℂ} (hg : g.HasTemperateGrowth) (f : 𝓢(E, F))
+    (ξ : E) : 𝓕 (fourierMultiplierCLM F g f) ξ = g ξ • 𝓕 f ξ := by
+  by_cases hF : CompleteSpace F
+  · rw [fourierMultiplierCLM_apply, fourier_fourierInv_eq, smulLeftCLM_apply_apply hg]
+  · simp [fourier_eq_zero_of_not_completeSpace hF]
+
+omit [CompleteSpace F] in
 /-- Fourier multipliers commute with the Laplacian. Without completeness of the target or temperate
 growth of the symbol the multiplier is zero. -/
 theorem fourierMultiplierCLM_laplacian (g : E → 𝕜) (f : 𝓢(E, F)) :
@@ -224,7 +236,7 @@ theorem fourierMultiplierCLM_laplacian (g : E → 𝕜) (f : 𝓢(E, F)) :
       ext1 φ
       by_cases hF : CompleteSpace F
       · have hg := fun hg ↦ hmain ⟨hF, hg⟩
-        simp [fourierMultiplierCLM_apply, smulLeftCLM_of_not_hasTemperateGrowth hg]
+        simp [fourierMultiplierCLM_apply, TauCeti.smulLeftCLM_of_not_hasTemperateGrowth hg]
       · simp [fourierMultiplierCLM_apply, fourier_eq_zero_of_not_completeSpace hF]
     simp only [h, zero_apply]
     exact (map_zero _).symm
@@ -466,8 +478,7 @@ theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv {D : Type*}
       fourierInv_compCLMOfContinuousLinearEquiv]
   · have hgA : ¬(g ∘ A).HasTemperateGrowth :=
       A.toContinuousLinearEquiv.hasTemperateGrowth_comp_iff.not.mpr hg
-    simp [fourierMultiplierCLM_apply, smulLeftCLM_of_not_hasTemperateGrowth hg,
-      smulLeftCLM_of_not_hasTemperateGrowth hgA]
+    simp [fourierMultiplierCLM_apply, hg, hgA]
 
 /-- The Fourier transform of the second directional derivative `∂_v ∂_w u` of a Schwartz function
 is `𝓕 u` multiplied by `-(2π)² ⟪ξ, v⟫ ⟪ξ, w⟫`. -/

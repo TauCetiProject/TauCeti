@@ -631,53 +631,37 @@ section GradOperators
 variable {k : ℕ}
 
 /-- Exterior multiplication `ε_u` by the gradient `u = grad f x` of `f` at `x` on alternating
-forms of the tangent space, read through the identification of forms with the exterior algebra. -/
+forms of the tangent space, `TauCeti.wedgeCovector`. -/
 private def gradWedge (f : M → ℝ) (j : ℕ) (x : M) :
     (TangentSpace I x [⋀^Fin j]→L[ℝ] ℝ) →ₗ[ℝ] TangentSpace I x [⋀^Fin (j + 1)]→L[ℝ] ℝ :=
-  (alternatingFormEquiv _ (j + 1)).toLinearMap ∘ₗ
-    ExteriorAlgebra.wedgeLeft (Manifold.mgradient I f x) j ∘ₗ
-      (alternatingFormEquiv _ j).symm.toLinearMap
+  wedgeCovector (Manifold.mgradient I f x) j
 
 /-- The contraction `ι_u` by the gradient `u = grad f x` of `f` at `x` on alternating forms of the
-tangent space, read through the identification of forms with the exterior algebra. -/
+tangent space, the interior product `ContinuousAlternatingMap.curryLeftFlipL`. -/
 private def gradContr (f : M → ℝ) (j : ℕ) (x : M) :
     (TangentSpace I x [⋀^Fin (j + 1)]→L[ℝ] ℝ) →ₗ[ℝ] TangentSpace I x [⋀^Fin j]→L[ℝ] ℝ :=
-  (alternatingFormEquiv _ j).toLinearMap ∘ₗ
-    koszulDifferential (innerₗ _ (Manifold.mgradient I f x)) j ∘ₗ
-      (alternatingFormEquiv _ (j + 1)).symm.toLinearMap
+  ContinuousAlternatingMap.curryLeftFlipL (𝕜 := ℝ) (F := ℝ) (n := j) (Manifold.mgradient I f x)
 
 /-- The contraction by the gradient is the interior product with it. -/
 private theorem gradContr_apply (f : M → ℝ) (j : ℕ) (β : RoughForm I M ℝ (j + 1)) (x : M) :
     gradContr f j x (β x) = RoughForm.interior (Manifold.mgradient I f) β x := by
   ext v
-  simp [gradContr, alternatingFormEquiv_koszulDifferential]
+  simp [gradContr]
 
 /-- `ι_v ε_u = ⟪v, u⟫` on functions, for the gradients `u` of `f` and `v` of `g`. -/
 private theorem gradContr_gradWedge_zero (f g : M → ℝ) (x : M)
     (w : TangentSpace I x [⋀^Fin 0]→L[ℝ] ℝ) :
     gradContr g 0 x (gradWedge f 0 x w) =
-      ⟪Manifold.mgradient I g x, Manifold.mgradient I f x⟫ • w := by
-  have h := LinearMap.congr_fun (koszulDifferential_comp_wedgeLeft_zero
-    (innerₗ _ (Manifold.mgradient I g x)) (Manifold.mgradient I f x))
-    ((alternatingFormEquiv _ 0).symm w)
-  simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply,
-    innerₗ_apply_apply] at h
-  simp only [gradContr, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.symm_apply_apply, h, map_smul, LinearEquiv.apply_symm_apply]
+      ⟪Manifold.mgradient I g x, Manifold.mgradient I f x⟫ • w :=
+  curryLeftFlipL_wedgeCovector_zero _ _ w
 
 /-- The Koszul homotopy identity `ε_u ι_v + ι_v ε_u = ⟪v, u⟫` in positive degrees, for the
 gradients `u` of `f` and `v` of `g`. -/
 private theorem gradWedge_gradContr_add (f g : M → ℝ) (j : ℕ) (x : M)
     (w : TangentSpace I x [⋀^Fin (j + 1)]→L[ℝ] ℝ) :
     gradWedge f j x (gradContr g j x w) + gradContr g (j + 1) x (gradWedge f (j + 1) x w) =
-      ⟪Manifold.mgradient I g x, Manifold.mgradient I f x⟫ • w := by
-  have h := LinearMap.congr_fun (wedgeLeft_comp_koszulDifferential_add
-    (innerₗ _ (Manifold.mgradient I g x)) (Manifold.mgradient I f x) j)
-    ((alternatingFormEquiv _ (j + 1)).symm w)
-  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply,
-    innerₗ_apply_apply] at h
-  simp only [gradContr, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.symm_apply_apply, ← map_add, h, map_smul, LinearEquiv.apply_symm_apply]
+      ⟪Manifold.mgradient I g x, Manifold.mgradient I f x⟫ • w :=
+  (add_comm _ _).trans (curryLeftFlipL_wedgeCovector_add _ _ j w)
 
 /-- Exterior multiplication by `df` is exterior multiplication by the gradient of `f`, read through
 the identification of forms with the exterior algebra. -/
@@ -689,7 +673,7 @@ private theorem extDerivWedgeₗ_apply_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) (
   ext v
   rw [extDerivWedgeₗ_apply, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
     ← ContinuousAlternatingMap.wedge_def, mextDeriv_ofFunction, hdf]
-  simp only [gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
+  simp only [gradWedge, ContinuousLinearMap.coe_coe, wedgeCovector_apply,
     alternatingFormEquiv_wedgeLeft_apply, LinearEquiv.apply_symm_apply]
 
 /-- The Leibniz rule `d (f α) = f dα + df ∧ α` for smooth forms, with `df ∧ ·` written as exterior
@@ -719,25 +703,14 @@ theorem coe_codifferential_funSMulₗ (o : Manifold.Orientation I M (Fin m))
   have hlk : l + 1 + k = m := by omega
   funext x
   have hfin := o.fact_finrank_tangentSpace x
-  obtain ⟨b, hb⟩ := (alternatingFormEquiv (TangentSpace I x) (k + 1)).surjective (β.val x)
   rw [codifferential_apply o hkl hlk, hodgeStar_funSMulₗ, codifferential_apply o hkl hlk]
   simp only [SetLike.val_smul, coe_hodgeStar, Pi.smul_apply, RoughForm.hodgeStar_apply,
     mextDerivₗ_funSMulₗ_eq_gradWedge, map_add, map_smul, smul_add, Pi.sub_apply]
-  rw [smul_comm, sub_eq_add_neg, ← gradContr_apply, ← hb]
+  rw [smul_comm, sub_eq_add_neg, ← gradContr_apply]
   congr 1
-  simp only [gradWedge, gradContr, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    Orientation.formHodgeStar_alternatingFormEquiv, LinearEquiv.symm_apply_apply]
-  -- `ι_u = (-1) ^ (m k) ⋆ ε_u ⋆` on `(k + 1)`-forms, and `(-1) ^ (m (k + 2) + 1 + m k) = -1`.
-  have key := (o.orientationAt x).koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar
-    (Manifold.mgradient I f x) (hkl.trans hfin.out.symm) (hlk.trans hfin.out.symm) b
-  replace key := congrArg ((-1 : ℝ) ^ (Module.finrank ℝ (TangentSpace I x) * k) • ·) key
-  rw [smul_smul, ← pow_add, Even.neg_one_pow ⟨_, rfl⟩, one_smul] at key
-  have hsign :
-      (-1 : ℝ) ^ (m * (k + 2) + 1) * (-1) ^ (Module.finrank ℝ (TangentSpace I x) * k) = -1 := by
-    rw [hfin.out, ← pow_add]
-    exact Odd.neg_one_pow ⟨m * (k + 1), by ring⟩
-  rw [← key, map_smul, smul_smul, hsign]
-  exact neg_one_smul ℝ (M := TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) _
+  -- `(-1) ^ (m (k + 2) + 1) ⋆ ε_u ⋆ = -ι_u` on `(k + 1)`-forms.
+  exact (o.orientationAt x).neg_one_pow_smul_formHodgeStar_wedgeCovector_formHodgeStar _
+    (hkl.trans hfin.out.symm) (hlk.trans hfin.out.symm) _
 
 /-- **The codifferential has order one**: its double commutator with multiplication by smooth
 functions `f` and `g` vanishes, `[[d*, f], g] = 0`, since `[d*, f] = -ι_(grad f)` is fibrewise

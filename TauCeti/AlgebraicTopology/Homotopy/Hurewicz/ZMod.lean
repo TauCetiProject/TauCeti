@@ -101,7 +101,7 @@ theorem bijective_zsmul_homotopyGroup_of_subsingleton_lower_homotopyGroups_of_is
     Function.Bijective fun a : Additive (π_ (n + 2) X x) ↦ (m : ℤ) • a := by
   rw [← singularHomologyFunctor_obj_obj] at hn hn'
   exact bijective_zsmul_homotopyGroup_of_subsingleton_lower_homotopyGroups_of_isZero_zmod hX
-    (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv e (n + 2)).2 hn)
-    (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv e (n + 3)).2 hn')
+    (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv m e (n + 2)).2 hn)
+    (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv m e (n + 3)).2 hn')
 
 end TauCeti
