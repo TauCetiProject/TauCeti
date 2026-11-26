@@ -145,11 +145,25 @@ lemma toStackificationCompStackificationLiftIso_hom_as_app_toNatTrans_app (ψ : 
             M) ≫
         ((toStackification.{w, v', u'} J G).equivalenceOfIsEquivalence.unit.inv.as.app
           a).toNatTrans.app ((ψ.app a).toFunctor.obj M) := by
-  -- The Cat associators and unitor have identity components. Apply cancellation by
-  -- unification, since the composite component functors agree only definitionally.
-  have cancel {X Y Z : G.obj a} (f : X ⟶ Y) (g : Y ⟶ Z) :
-      𝟙 X ≫ f ≫ 𝟙 Y ≫ g ≫ 𝟙 Z = f ≫ g := by simp
-  exact cancel _ _
+  -- The unit's source uses `equivalenceOfIsEquivalence.hom`, which agrees with
+  -- `toStackification` only definitionally. This prevents `simp` from descending through
+  -- the composite modification. State its components explicitly, keeping the Cat
+  -- associators and right unitor visible so their named component lemmas apply.
+  let e := (toStackification.{w, v', u'} J G).equivalenceOfIsEquivalence
+  change (α_ ((toStackification.{w, v', u'} J F).app a) ((stackificationMap.{w} J ψ).app a)
+        (e.inv.app a)).inv.toNatTrans.app M ≫
+      (e.inv.app a).toFunctor.map
+        (((toStackificationCompStackificationMapIso.{w, v', u'} J ψ).hom.as.app a).toNatTrans.app
+          M) ≫
+      (α_ (ψ.app a) ((toStackification.{w, v', u'} J G).app a)
+        (e.inv.app a)).hom.toNatTrans.app M ≫
+      (e.unit.inv.as.app a).toNatTrans.app ((ψ.app a).toFunctor.obj M) ≫
+      (ρ_ (ψ.app a)).hom.toNatTrans.app M = _
+  simp only [Cat.associator_inv_app, Cat.associator_hom_app, Cat.rightUnitor_hom_app,
+    eqToHom_refl, Category.id_comp]
+  -- The remaining identities have definitionally equal composite-functor object types.
+  erw [Category.id_comp, Category.comp_id]
+  rfl
 
 variable (G) in
 /-- Precomposition with the unit of the stackification is essentially surjective on strong
