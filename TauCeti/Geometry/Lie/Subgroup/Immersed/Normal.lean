@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.Immersed.Correspondence
+import TauCeti.Geometry.Lie.Adjoint.Connected
 
 /-!
 # Normal immersed Lie subgroups and Lie ideals

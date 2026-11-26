@@ -13,10 +13,6 @@ public import Mathlib.Topology.Connected.TotallyDisconnected
 -- Non-public: the slope characterisation of a derivative and the module description of a slope
 -- are used only inside proofs, and no statement below mentions `slope`.
 import Mathlib.Analysis.Calculus.Deriv.Slope
--- Non-public: the adjoint-exponential formula and the generation of a connected group by
--- exponentials are used only inside the proof of `forall_Ad_mem_iff_forall_lie_mem`.
-import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
-import TauCeti.Geometry.Lie.Exponential.Generation
 
 /-!
 # The Lie subalgebra of a subgroup
@@ -90,8 +86,6 @@ closed-subgroup theorem, promoting `K` to an embedded Lie subgroup with `Lie(K) 
   orbit `s ↦ Ad (lieExp (s • X)) Y` contains `⁅X, Y⁆`.
 * `TauCeti.Lie.lie_mem_of_forall_Ad_mem`: a subspace of `𝔤` invariant under every `Ad g` is
   invariant under every `ad X`.
-* `TauCeti.Lie.forall_Ad_mem_iff_forall_lie_mem`: in a connected Lie group, a subspace of `𝔤` is
-  `Ad`-invariant exactly when it is `ad`-invariant.
 * `TauCeti.Lie.finiteDimensional_lieSubalgebraOfSubgroup`: finite-dimensional subgroup models.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_le_iff`: the universal property of the generated subalgebra,
   for an arbitrary subgroup.
@@ -274,36 +268,6 @@ theorem lie_mem_of_forall_Ad_mem {S : Submodule ℝ (LeftInvariantDerivation I G
     {Y : LeftInvariantDerivation I G} (hY : Y ∈ S) : ⁅X, Y⁆ ∈ S := by
   have _ : T2Space G := I.t2Space_of_lieGroup ∞
   exact lie_mem_of_forall_Ad_lieExp_smul_mem fun _ => hS _ _ hY
-
-omit [T2Space G] in
-/-- **In a connected Lie group, `Ad`-invariance is `ad`-invariance.** A subspace of `𝔤` is
-preserved by every `Ad g` exactly when it is preserved by every `ad X`. The reverse implication
-needs the connectedness of `G`: an `ad`-invariant subspace is preserved by `Ad` of the
-exponentials, which generate the identity component only. -/
-theorem forall_Ad_mem_iff_forall_lie_mem [PreconnectedSpace G]
-    {S : Submodule ℝ (LeftInvariantDerivation I G)} :
-    (∀ g : G, ∀ Y ∈ S, Ad (I := I) g Y ∈ S) ↔ ∀ X Y : LeftInvariantDerivation I G, Y ∈ S →
-      ⁅X, Y⁆ ∈ S := by
-  refine ⟨fun hS X _ hY => lie_mem_of_forall_Ad_mem hS X hY, fun h g => ?_⟩
-  have _ : T2Space G := I.t2Space_of_lieGroup ∞
-  have hg : g ∈ Subgroup.closure (Set.range (lieExp (I := I) (G := G))) := by
-    rw [closure_range_lieExp_eq_top]
-    exact Subgroup.mem_top g
-  induction hg using Subgroup.closure_induction'' with
-  | mem x hx =>
-    obtain ⟨X, rfl⟩ := hx
-    exact fun Y hY => Ad_lieExp_mem_of_forall_lie_mem (h X) hY
-  | inv_mem x hx =>
-    obtain ⟨X, rfl⟩ := hx
-    rw [← lieExp_neg]
-    refine fun Y hY => Ad_lieExp_mem_of_forall_lie_mem (fun Z hZ => ?_) hY
-    rw [neg_lie]
-    exact S.neg_mem (h X Z hZ)
-  | one => simp
-  | mul x y _ _ hx hy =>
-    intro Y hY
-    rw [Ad_mul, LieEquiv.trans_apply]
-    exact hx _ (hy Y hY)
 
 /-! ### Bracket closure -/
 
