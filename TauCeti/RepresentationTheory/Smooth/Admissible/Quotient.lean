@@ -42,12 +42,13 @@ variable {A G V W : Type*} [CommRing A] [Group G] [TopologicalSpace G]
   {ρ : Representation A G V} {σ : Representation A G W}
 
 /-- **Invariants of invertible pro-order are exact on the right**: a surjective intertwining map
-`f` between smooth representations maps `V^U` onto `W^U` for a compact subgroup `U` of invertible
+`f` out of a smooth representation maps `V^U` onto `W^U` for a compact subgroup `U` of invertible
 pro-order, since `f` commutes with the averaging projector `e_U`. -/
-theorem invariants_comp_subtype_eq_map_of_surjective [IsSmooth ρ] [IsSmooth σ] (U : Subgroup G)
+theorem invariants_comp_subtype_eq_map_of_surjective [IsSmooth ρ] (U : Subgroup G)
     [CompactSpace U] (hU : TauCeti.HasUnitProOrder A U) (f : ρ.IntertwiningMap σ)
     (hf : Function.Surjective f) :
     invariants (σ.comp U.subtype) = (invariants (ρ.comp U.subtype)).map f.toLinearMap := by
+  have := IsSmooth.of_surjective f hf
   refine le_antisymm (fun w hw ↦ ?_) ?_
   · obtain ⟨v, rfl⟩ := hf w
     refine ⟨smoothAverage (ρ.comp U.subtype) hU v,
