@@ -119,7 +119,7 @@ private theorem re_sum_addChar_mul_le {ψ : AddChar k ℂ} (hψ : ψ.IsPrimitive
       e ((π b : Matrix n n k) *ᵥ z) ⊗ₜ[ℂ] u b⟫_ℂ =
         ψ (x ⬝ᵥ (π (a⁻¹ * b) : Matrix n n k) *ᵥ z) * Θ (a⁻¹ * b) / r := by
     rw [TensorProduct.inner_tmul, inner_addChar_single, hu, ← dotProduct_mulVec, mulVec_mulVec,
-      ← π.val_map_mul, div_mul_eq_mul_div]
+      ← Units.val_mul, ← map_mul, div_mul_eq_mul_div]
   have h_X : ⟪X₁, X₀⟫_ℂ = Fintype.card G * ∑ s, ψ (x ⬝ᵥ (π s : Matrix n n k) *ᵥ z) * Θ s / r :=
     inner_sum_sum_eq_card_mul_sum _ h_inner
   have hG₀ : (0 : ℝ) ≤ Fintype.card G := Nat.cast_nonneg _

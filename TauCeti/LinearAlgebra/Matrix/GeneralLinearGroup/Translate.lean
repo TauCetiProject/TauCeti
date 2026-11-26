@@ -17,7 +17,6 @@ indexed by the cosets of its stabiliser.
 
 ## Main results
 
-* `MonoidHom.val_map_mul`: for `π : G →* Mˣ`, `π (g * h) = π g * π h` in `M`.
 * `MonoidHom.vecMul_inv_eq_vecMul_inv_iff`: `x π(a)⁻¹ = x π(b)⁻¹ ↔ x π(a⁻¹ b) = x`.
 * `MonoidHom.mulVec_eq_mulVec_iff`: `π(a) z = π(b) z ↔ π(a⁻¹ b) z = z`.
 -/
@@ -30,11 +29,6 @@ namespace MonoidHom
 
 variable {G : Type*} [Group G]
 
-/-- The value of a homomorphism into the units of `M` at a product is the product in `M`. -/
-theorem val_map_mul {M : Type*} [Monoid M] (π : G →* Mˣ) (g h : G) :
-    ((π (g * h) : Mˣ) : M) = π g * π h := by
-  rw [map_mul, Units.val_mul]
-
 variable {n k : Type*} [Fintype n] [DecidableEq n] [CommRing k]
 
 /-- The translates `x π(a)⁻¹` of a row agree exactly when `π(a⁻¹ b)` fixes the row. -/
@@ -43,7 +37,7 @@ theorem vecMul_inv_eq_vecMul_inv_iff (π : G →* GL n k) (x : n → k) (a b : G
       x ᵥ* (π (a⁻¹ * b) : Matrix n n k) = x := by
   have hvm (v : n → k) (g h : G) :
       v ᵥ* (π g : Matrix n n k) ᵥ* (π h : Matrix n n k) = v ᵥ* (π (g * h) : Matrix n n k) := by
-    rw [vecMul_vecMul, π.val_map_mul]
+    rw [vecMul_vecMul, map_mul, Units.val_mul]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · simpa [hvm] using congrArg (· ᵥ* (π b : Matrix n n k)) h
   · simpa [hvm, h] using congrArg (· ᵥ* (π b⁻¹ : Matrix n n k)) h
@@ -54,7 +48,7 @@ theorem mulVec_eq_mulVec_iff (π : G →* GL n k) (z : n → k) (a b : G) :
       (π (a⁻¹ * b) : Matrix n n k) *ᵥ z = z := by
   have hmv (v : n → k) (g h : G) :
       (π g : Matrix n n k) *ᵥ (π h : Matrix n n k) *ᵥ v = (π (g * h) : Matrix n n k) *ᵥ v := by
-    rw [mulVec_mulVec, π.val_map_mul]
+    rw [mulVec_mulVec, map_mul, Units.val_mul]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · simpa [hmv] using (congrArg ((π a⁻¹ : Matrix n n k) *ᵥ ·) h).symm
   · simpa [hmv, h] using (congrArg ((π a : Matrix n n k) *ᵥ ·) h).symm
