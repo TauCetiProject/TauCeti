@@ -52,6 +52,11 @@ chart, `α` is a section of the trivial line with connection form `a = i b`, and
 in an arbitrary normed group. The measure in the integral is arbitrary; the volume of the ball is
 computed only for an additive Haar measure.
 
+## Main definitions
+
+* `TauCeti.SeibergWitten.defectMeasure`: the defect measure `(r / 4) |1 - |α|² - |β|²| μ`, whose
+  value on a set is its defect energy.
+
 ## Main results
 
 * `TauCeti.SeibergWitten.norm_sq_le_mul_dist_of_eq_zero`: `|α(y)|² ≤ 2 A G |y - x₀|` on a convex
@@ -147,6 +152,19 @@ theorem inv_two_le_one_sub_norm_sq_sub_norm_sq_of_eq_zero {C r ρ : ℝ} (hC : 0
   linarith
 
 variable [MeasurableSpace E]
+
+/-- The **defect measure** `(r / 4) |1 - |α|² - |β|²| μ` of the normalized spinor `χ = α u₀ + β` at
+parameter `r`. Its value on a set `B` is the defect energy `E_r(B)` (`defectMeasure_apply`). -/
+noncomputable def defectMeasure (μ : Measure E) (r : ℝ) (α : E → ℂ) (β : E → F) : Measure E :=
+  μ.withDensity fun y ↦ ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|)
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- The defect measure of a set `B` is the defect energy
+`E_r(B) = (r / 4) ∫_B |1 - |α|² - |β|²|`. -/
+theorem defectMeasure_apply (μ : Measure E) [SFinite μ] (r : ℝ) (α : E → ℂ) (β : E → F)
+    (s : Set E) :
+    defectMeasure μ r α β s = ∫⁻ y in s, ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|) ∂μ :=
+  withDensity_apply' _ s
 
 section OpensMeasurable
 

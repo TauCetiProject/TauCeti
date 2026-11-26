@@ -20,7 +20,8 @@ in this distance with the local notion of Kuratowski convergence, `TauCeti.IsKur
 * If closed sets `F i` converge to `Z` in the Hausdorff distance, then `F i` converges to `Z` in
   the sense of Kuratowski (`Filter.Tendsto.isKuratowskiLimit`); in a metric space, every point of
   `Z` is eventually arbitrarily close to a point of `F i`
-  (`Filter.Tendsto.eventually_exists_dist_lt`).
+  (`Filter.Tendsto.eventually_exists_dist_lt`). The same holds for Kuratowski limits in a
+  pseudometric space (`TauCeti.IsKuratowskiLimit.eventually_exists_dist_lt`).
 * When `X` is compact the converse holds, so the two notions of convergence of closed sets agree
   (`TauCeti.isKuratowskiLimit_iff_tendsto`). On a noncompact space Kuratowski convergence is
   weaker: the sets `{n}` of `ℝ` converge to `∅` in the sense of Kuratowski but stay at Hausdorff
@@ -90,6 +91,14 @@ theorem Filter.Tendsto.eventually_exists_dist_lt {X : Type*} [MetricSpace X] {F 
   rw [edist_comm, Closeds.edist_eq] at hi
   obtain ⟨y, hy, hxy⟩ := exists_edist_lt_of_hausdorffEDist_lt hx hi
   exact ⟨y, hy, by rwa [edist_dist, ENNReal.ofReal_lt_ofReal_iff hε] at hxy⟩
+
+/-- If the sets `F i` converge to `Z` in the sense of Kuratowski, then every point of `Z` is
+eventually within any prescribed positive distance of a point of `F i`. -/
+theorem TauCeti.IsKuratowskiLimit.eventually_exists_dist_lt {Y : Type*} [PseudoMetricSpace Y]
+    {F : ι → Set Y} {Z : Set Y} (hF : TauCeti.IsKuratowskiLimit l F Z) {x : Y} (hx : x ∈ Z)
+    {ε : ℝ} (hε : 0 < ε) : ∀ᶠ i in l, ∃ y ∈ F i, dist y x < ε :=
+  (hF.eventually_inter_nonempty x hx _ (ball_mem_nhds x hε)).mono fun _ ⟨y, hy, hyx⟩ ↦
+    ⟨y, hy, mem_ball.1 hyx⟩
 
 /-- **Compact separation from a Kuratowski limit in a metric space.** If the sets `F i` converge to
 `Z` in the sense of Kuratowski and the compact set `K` is disjoint from `Z`, there is `δ > 0` such
