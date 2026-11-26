@@ -34,8 +34,6 @@ not yet known to generate one.
 * `LinearPMap.resolvent_neg`: reflection of the resolvent under negation.
 * `TauCeti.LinearPMap.mem_resolventSet_subScalar_iff`: translation of the resolvent set.
 * `TauCeti.LinearPMap.resolvent_subScalar`: translation of the resolvent itself.
-* `TauCeti.LinearPMap.mem_spectrum_of_ker_subScalar_ne_bot`: an eigenvalue, a scalar `omega` for
-  which `A - omega I` has a nonzero kernel, lies in the spectrum.
 -/
 
 public section
@@ -130,16 +128,6 @@ theorem resolvent_subScalar {A : X →ₗ.[𝕜] X} {omega lambda : 𝕜}
   apply resolvent_eq_of_isResolventAt
   have h := isResolventAt_resolvent hlambda
   exact (isResolventAt_subScalar_iff (A := A) (omega := omega)).mpr h
-
-/-- **Eigenvalues lie in the spectrum.** If `A - omega I` has a nonzero kernel, that is
-`A x = omega • x` for some nonzero `x` in the domain of `A`, then `omega` is not a resolvent point
-of `A`. -/
-theorem mem_spectrum_of_ker_subScalar_ne_bot {A : X →ₗ.[𝕜] X} {omega : 𝕜}
-    (h : (subScalar A omega).ker ≠ ⊥) : omega ∈ A.spectrum := by
-  obtain ⟨x, hx, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot h
-  obtain ⟨hxd, hAx⟩ := _root_.LinearPMap.mem_ker_subScalar_iff.1 hx
-  refine (_root_.LinearPMap.mem_spectrum_iff A omega).2 fun homega ↦ hx0 ?_
-  simpa using congrArg Subtype.val (_root_.LinearPMap.eq_zero_of_apply_eq_smul homega _ hAx)
 
 end TauCeti.LinearPMap
 

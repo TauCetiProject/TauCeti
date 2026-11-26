@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.Resolvent.PointSpectrum
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Laplacian
+import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Rellich
 
 /-!
 # The spectrum of the Laplacian of a closed manifold
@@ -21,9 +21,10 @@ self-adjoint realization `Δ⁺` of the nonnegative Laplacian `-div grad` on `L�
   (`TauCeti.Manifold.SobolevH1.ker_subScalar_negLaplacian`). For a `C¹` metric the value map
   `H¹(M) → L²(M)` is injective, so it restricts to a linear equivalence between the two
   (`TauCeti.Manifold.SobolevH1.weakEigenspaceEquivKerSubScalar`).
-* **Pure point spectrum.** `Δ⁺` has compact resolvent, so every point of its spectrum is an
-  eigenvalue (`LinearPMap.HasCompactResolvent.mem_spectrum_iff_ker_subScalar_ne_bot`): `μ` lies in
-  the spectrum exactly when the weak `μ`-eigenspace is nonzero
+* **Pure point spectrum.** `Δ⁺` is the operator of the Dirichlet form along the value map, which
+  is compact by the Rellich–Kondrachov theorem, so every point of its spectrum is a weak
+  eigenvalue (`TauCeti.IsCoercive.mem_spectrum_formOperator_iff`): `μ` lies in the spectrum exactly
+  when the weak `μ`-eigenspace is nonzero
   (`TauCeti.Manifold.SobolevH1.mem_spectrum_negLaplacian_iff`). Weak eigenvalues are nonnegative,
   so the spectrum lies in `[0, ∞)` (`TauCeti.Manifold.SobolevH1.spectrum_negLaplacian_subset_Ici`).
 
@@ -74,7 +75,28 @@ theorem ker_subScalar_negLaplacian (μ : ℝ) :
   rw [LinearPMap.mem_ker_subScalar_iff, exists_negLaplacian_apply_eq_smul_iff, Submodule.mem_map,
     ContinuousLinearMap.coe_coe]
 
-variable [I.Boundaryless] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+variable [I.Boundaryless]
+
+/-- **The Laplacian has pure point spectrum.** `μ` lies in the spectrum of the self-adjoint
+Laplacian `Δ⁺` on `L²(M)` exactly when the weak `μ`-eigenspace is nonzero. -/
+theorem mem_spectrum_negLaplacian_iff {μ : ℝ} :
+    μ ∈ (negLaplacian I M).spectrum ↔ weakEigenspace I M μ ≠ ⊥ := by
+  simp_rw [negLaplacian_def, isCoercive_innerSL.mem_spectrum_formOperator_iff isCompactOperator_toLp
+    denseRange_toLp inner_eq_dirichletForm_add, Submodule.ne_bot_iff, mem_weakEigenspace_iff]
+  exact exists_congr fun w ↦ and_comm
+
+/-- **The spectrum of the Laplacian is nonnegative.** Every point of the spectrum of the
+self-adjoint Laplacian `Δ⁺` on `L²(M)` is nonnegative. -/
+theorem spectrum_negLaplacian_subset_Ici : (negLaplacian I M).spectrum ⊆ Set.Ici 0 := fun μ hμ ↦ by
+  obtain ⟨w, hw, hw₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (mem_spectrum_negLaplacian_iff.1 hμ)
+  -- A weak eigenfunction with zero value is zero: its `H¹` norm is `D(w, w) + ‖J w‖² = 0`.
+  refine nonneg_of_mem_weakEigenspace_of_toLp_ne_zero hw fun h ↦ hw₀ ?_
+  have hw' := inner_eq_dirichletForm_add w w
+  rw [mem_weakEigenspace_iff.1 hw w, h, inner_zero_left, mul_zero, mul_zero, add_zero,
+    innerSL_apply_apply] at hw'
+  exact inner_self_eq_zero.1 hw'
+
+variable [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 variable (I M) in
 /-- For a `C¹` metric, the value map `H¹(M) → L²(M)` restricts to a linear equivalence from the weak
@@ -89,18 +111,10 @@ theorem coe_weakEigenspaceEquivKerSubScalar_apply (μ : ℝ) (w : weakEigenspace
     (weakEigenspaceEquivKerSubScalar I M μ w : Lp ℝ 2 (riemannianVolume I M)) = toLp w :=
   (rfl)
 
-/-- **The Laplacian has pure point spectrum.** For a `C¹` metric, `μ` lies in the spectrum of the
-self-adjoint Laplacian `Δ⁺` on `L²(M)` exactly when the weak `μ`-eigenspace is nonzero. -/
-theorem mem_spectrum_negLaplacian_iff {μ : ℝ} :
-    μ ∈ (negLaplacian I M).spectrum ↔ weakEigenspace I M μ ≠ ⊥ := by
-  rw [hasCompactResolvent_negLaplacian.mem_spectrum_iff_ker_subScalar_ne_bot,
-    ← Submodule.nontrivial_iff_ne_bot, ← Submodule.nontrivial_iff_ne_bot]
-  exact (weakEigenspaceEquivKerSubScalar I M μ).toEquiv.nontrivial_congr.symm
-
-/-- **The spectrum of the Laplacian is nonnegative.** For a `C¹` metric, every point of the spectrum
-of the self-adjoint Laplacian `Δ⁺` on `L²(M)` is nonnegative. -/
-theorem spectrum_negLaplacian_subset_Ici : (negLaplacian I M).spectrum ⊆ Set.Ici 0 := fun μ hμ ↦ by
-  obtain ⟨w, hw, hw₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (mem_spectrum_negLaplacian_iff.1 hμ)
-  exact nonneg_of_mem_weakEigenspace hw hw₀
+@[simp]
+theorem toLp_weakEigenspaceEquivKerSubScalar_symm_apply (μ : ℝ)
+    (f : ((negLaplacian I M).subScalar μ).ker) :
+    toLp ((weakEigenspaceEquivKerSubScalar I M μ).symm f : SobolevH1 I M) = f := by
+  rw [← coe_weakEigenspaceEquivKerSubScalar_apply, LinearEquiv.apply_symm_apply]
 
 end TauCeti.Manifold.SobolevH1
