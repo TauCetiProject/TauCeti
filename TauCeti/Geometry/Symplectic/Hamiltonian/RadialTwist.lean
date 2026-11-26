@@ -9,8 +9,8 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
 public import TauCeti.Geometry.Symplectic.Complex.Line
 public import Mathlib.Geometry.Manifold.Diffeomorph
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.EqOne
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -232,17 +232,8 @@ theorem eq_of_periodic_radialHamiltonian {G : ℝ → ℝ} {p : ℂ} {K : NNReal
   have hexp : exp (I * ↑(T * c)) = 1 := by
     refine mul_right_cancel₀ hw ?_
     rw [one_mul, ← sub_eq_iff_eq_add'.2 (hrot T), hper.eq]
-  obtain ⟨n, hn⟩ := Complex.exp_eq_one_iff.1 hexp
-  have hn' : T * c = n * (2 * Real.pi) := by
-    have := congrArg Complex.im hn
-    simpa using this
-  have hn0 : n = 0 := by
-    rw [hn', abs_mul, abs_of_pos Real.two_pi_pos] at hslow
-    have : |(n : ℝ)| < 1 := by nlinarith [Real.two_pi_pos]
-    exact Int.abs_lt_one_iff.1 (by exact_mod_cast this)
-  have hc : c = 0 := by
-    rw [hn0, Int.cast_zero, zero_mul] at hn'
-    exact (mul_eq_zero.1 hn').resolve_left hT
+  have h0 := Complex.eq_zero_of_exp_eq_one_of_norm_lt hexp (by simpa [norm_mul] using hslow)
+  have hc : c = 0 := (mul_eq_zero.1 (by simpa using h0)).resolve_left hT
   rw [hrot t, hc, mul_zero, ofReal_zero, mul_zero, Complex.exp_zero, one_mul, add_sub_cancel]
 
 /-- The orbit of `w` under the flow of a radial Hamiltonian stays on the circle through `w` about
