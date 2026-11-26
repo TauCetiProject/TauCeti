@@ -69,8 +69,9 @@ Public formalization references:
   integrable on a ball about `c` if and only if its radial integrand is integrable.
 * `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
   measure of `μ` to the surface measure of the image of `μ`.
-* `MeasureTheory.Measure.isNegInvariant_toSphere`, `MeasureTheory.Measure.integral_coe_toSphere`:
-  the sphere measure is antipodally invariant and has barycentre zero.
+* `MeasureTheory.Measure.isNegInvariant_toSphere`, `MeasureTheory.Measure.integral_coe_toSphere`,
+  `MeasureTheory.Measure.integral_inner_coe_toSphere`: the sphere measure is antipodally
+  invariant and has barycentre zero.
 * `MeasureTheory.Measure.toSphere_singleton`: points are null in dimension at least two.
 * `ContinuousOn.hasDerivAt_setIntegral_ball`: the derivative in the radius of the integral of a
   continuous function over a ball is its integral over the sphere of that radius.
@@ -472,6 +473,23 @@ theorem toSphere_singleton [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
   rw [Set.smul_singleton]
   rintro _ ⟨r, -, rfl⟩
   exact Submodule.smul_mem _ r (Submodule.mem_span_singleton_self _)
+
+end MeasureTheory.Measure
+
+namespace MeasureTheory.Measure
+
+open Metric
+open scoped RealInnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+
+/-- The sphere measure of a negation-invariant measure on an inner product space has vanishing
+first moments: `∫ ⟪v, x⟫ dμ.toSphere = 0` for every `v`. -/
+theorem integral_inner_coe_toSphere [μ.IsNegInvariant] (v : E) :
+    ∫ x : sphere (0 : E) 1, ⟪v, (x : E)⟫ ∂μ.toSphere = 0 :=
+  integral_eq_zero_of_odd (Filter.Eventually.of_forall fun x ↦ by
+    rw [coe_neg_sphere, inner_neg_right])
 
 end MeasureTheory.Measure
 

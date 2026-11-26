@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Geometry.Euclidean.Volume.Polar
-import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Ball
 
 /-!
@@ -36,7 +35,7 @@ radius, Hausdorff measure is the transported surface measure
 (`TauCeti.setIntegral_sphere_eq_smul_integral_toSphere`), and `⟪V x, ν x⟫` at `x = c + s θ` is
 `⟪V (c + s θ), θ⟫`, so the two fluxes agree. On the sphere of radius zero both fluxes vanish: the
 integrand `⟪V x, x - c⟫ / ‖x - c‖` is zero at `c`, and the surface measure has barycentre zero
-(`MeasureTheory.Measure.integral_coe_toSphere`).
+(`MeasureTheory.Measure.integral_inner_coe_toSphere`).
 
 ## Main results
 
@@ -69,10 +68,7 @@ private lemma setIntegral_sphere_inner_div_norm {V : E → E} {s : ℝ} (hs : 0 
   · -- Both fluxes vanish: the integrand is zero at `c`, and the surface measure has barycentre
     -- zero.
     rw [sphere_zero, integral_singleton, sub_self, inner_zero_right, zero_div, smul_zero]
-    simp only [zero_smul, add_zero]
-    rw [integral_inner (continuous_subtypeVal.integrable_of_hasCompactSupport
-      (HasCompactSupport.of_compactSpace _)), Measure.integral_coe_toSphere, inner_zero_right,
-      mul_zero]
+    simp only [zero_smul, add_zero, Measure.integral_inner_coe_toSphere, mul_zero]
   rw [setIntegral_sphere_eq_smul_integral_toSphere c hs, smul_eq_mul]
   congr 1
   refine integral_congr_ae (ae_of_all _ fun θ ↦ ?_)

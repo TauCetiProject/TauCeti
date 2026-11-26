@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.InnerProductSpace.NormPow
-import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Group.Integral
@@ -44,9 +43,10 @@ coordinates reads `∫ ψ' Φ = -∫ ψ g`: `g` is the weak derivative of `Φ`. 
 `Φ R - Φ r = ∫_r^R g` by the fundamental theorem of calculus for weak derivatives
 (`TauCeti.HasWeakLineDerivOn.integral_eq_sub`, which rests on the du Bois-Reymond lemma). For the
 ball, `Φ 0 = 0` because the surface measure has barycenter zero
-(`MeasureTheory.Measure.integral_coe_toSphere`). This is the radial test-function argument of the
-mean-value property for harmonic functions (`InnerProductSpace.HarmonicOnNhd.integral_toSphere_eq`),
-applied to the flux instead of the sphere average.
+(`MeasureTheory.Measure.integral_inner_coe_toSphere`). This is the radial test-function argument
+of the mean-value property for harmonic functions
+(`InnerProductSpace.HarmonicOnNhd.integral_toSphere_eq`), applied to the flux instead of the
+sphere average.
 
 ## Main results
 
@@ -88,6 +88,13 @@ private lemma hasCompactSupport_comp_norm {r R : ℝ} {ψ : ℝ → ℝ} (hψs :
   isCompact_of_isClosed_isBounded (isClosed_tsupport _)
     (isBounded_ball.subset ((tsupport_comp_norm_subset hψs).trans sdiff_subset))
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- For `0 ≤ r` and a smooth function `ψ` supported in `(r, R)`, the radial function
+`x ↦ ψ ‖x‖` is smooth. -/
+private lemma contDiff_comp_norm {r R : ℝ} (hr : 0 ≤ r) {ψ : ℝ → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψs : tsupport ψ ⊆ Ioo r R) : ContDiff ℝ ∞ (fun x : E ↦ ψ ‖x‖) :=
+  hψ.comp_norm fun h ↦ hr.not_gt (hψs h).1
+
 /-- For `0 ≤ r`, a field `V` that is `C¹` on the open shell `ball 0 R \ closedBall 0 r`, and a
 test function `ψ` on `(r, R)`, the derivative of the radial test function `χ x = ψ ‖x‖` applied
 to `V` is integrable. -/
@@ -99,7 +106,7 @@ private lemma integrable_fderiv_comp_norm_apply {r R : ℝ} (hr : 0 ≤ r) {V : 
   have hVc : ContinuousOn V (tsupport fun x : E ↦ ψ ‖x‖) := fun x hx ↦
     (hV x (tsupport_comp_norm_subset hψs hx)).continuousAt.continuousWithinAt
   exact integrable_fderiv_apply_of_tsupport_subset (G := id)
-    ((hψ.comp_norm fun h ↦ hr.not_gt (hψs h).1).of_le (by simp)) hχc subset_rfl
+    ((contDiff_comp_norm hr hψ hψs).of_le (by simp)) hχc subset_rfl
     aestronglyMeasurable_id ((integrable_indicator_iff (isClosed_tsupport _).measurableSet).mpr
       (hVc.integrableOn_compact hχc))
 
@@ -111,7 +118,7 @@ private lemma integrable_comp_norm_mul_trace_fderiv {r R : ℝ} (hr : 0 ≤ r) {
     (hψ : ContDiff ℝ ∞ ψ) (hψs : tsupport ψ ⊆ Ioo r R) :
     Integrable (fun x ↦ ψ ‖x‖ * LinearMap.trace ℝ E (fderiv ℝ V x : E →ₗ[ℝ] E)) μ :=
   integrable_mul_trace_fderiv (isOpen_ball.sdiff isClosed_closedBall)
-    (hψ.comp_norm fun h ↦ hr.not_gt (hψs h).1).continuous (hasCompactSupport_comp_norm hψs)
+    (contDiff_comp_norm hr hψ hψs).continuous (hasCompactSupport_comp_norm hψs)
     (tsupport_comp_norm_subset hψs) hV
 
 /-- **The weak divergence identity against a radial test function.** For `0 ≤ r`, a field `V`
@@ -125,7 +132,7 @@ private lemma integral_fderiv_comp_norm_apply_eq_neg {r R : ℝ} (hr : 0 ≤ r) 
   have hparts := (ContDiffOn.hasWeakFDerivOn_fderiv (μ := μ)
     (Ω := ⟨_, isOpen_ball.sdiff isClosed_closedBall⟩)
     fun x hx ↦ (hV x hx).contDiffWithinAt).integral_inner_gradient_eq_neg_integral_smul_trace
-      ⟨fun x ↦ ψ ‖x‖, hψ.comp_norm fun h ↦ hr.not_gt (hψs h).1, hasCompactSupport_comp_norm hψs,
+      ⟨fun x ↦ ψ ‖x‖, contDiff_comp_norm hr hψ hψs, hasCompactSupport_comp_norm hψs,
         tsupport_comp_norm_subset hψs⟩
   simpa only [TestFunction.coe_mk, inner_gradient_left, smul_eq_mul] using hparts
 
@@ -271,9 +278,6 @@ theorem setIntegral_ball_trace_fderiv (c : E) {R : ℝ} (hR : 0 ≤ R) {V : E �
   rw [closedBall_zero, setIntegral_congr_set (sdiff_null_ae_eq_self (measure_singleton c))] at h
   -- The flux through the sphere of radius zero vanishes: the surface measure has barycentre zero.
   rw [h]
-  simp only [zero_smul, add_zero]
-  rw [integral_inner (continuous_subtypeVal.integrable_of_hasCompactSupport
-    (HasCompactSupport.of_compactSpace _)), Measure.integral_coe_toSphere, inner_zero_right,
-    mul_zero, sub_zero]
+  simp only [zero_smul, add_zero, Measure.integral_inner_coe_toSphere, mul_zero, sub_zero]
 
 end TauCeti
