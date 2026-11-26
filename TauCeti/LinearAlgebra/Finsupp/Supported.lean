@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.LinearAlgebra.Finsupp.Supported
 public import Mathlib.RingTheory.Finiteness.Defs
 
@@ -44,6 +45,15 @@ A finitely generated submodule of `ℕ →₀ M` consists of functions supported
 * `Finsupp.map_mem_supported_of_map_single_eq_smul_single`: an operator
   `single j 1 ↦ c j • single (σ j) 1` maps `supported R R s` into `supported R R t` when `c j`
   vanishes whenever `σ` moves `j ∈ s` out of `t`.
+* `Finsupp.map_eq_self_of_forall_single_eq`: a linear map fixing the basis vectors over `s` fixes
+  `supported M R s`.
+* `Finsupp.op_smul_single_one`, `Finsupp.map_single_eq_op_smul`: in the right `A`-module
+  `α →₀ A`, `single k b` is `single k 1` scaled on the right by `b`, so a right-linear map is
+  determined by its values on the basis vectors `single k 1`.
+* `Finsupp.map_apply_eq_sum_of_mem_supported`: on vectors supported on `Finset.range n`, a
+  right-linear map out of `ℕ →₀ A` acts as the matrix of its values on `single k 1`, `k < n`.
+* `Finsupp.sum_mul_single_apply`: the sum `∑ j : Fin n, w j * single k a j` is `w k * a` when
+  `k < n` and `0` otherwise.
 * `Submodule.FG.exists_le_supported_Iio`: a finitely generated submodule of `ℕ →₀ M` is
   supported on some initial segment.
 * `Finsupp.exists_support_map_subset_range`: a linear map `(ℕ →₀ M) →ₗ[R] (ℕ →₀ N)` from a
@@ -164,6 +174,16 @@ theorem map_mem_supported_of_forall_single_mem [AddCommMonoid M] [Module R M] [A
   rw [← sum_single v, map_finsuppSum]
   exact Submodule.sum_mem _ fun j hj ↦ hf j ((mem_supported R v).1 hv hj) _
 
+/-- A linear map fixing every basis vector `single j x` with `j ∈ s` fixes every function
+supported on `s`. -/
+theorem map_eq_self_of_forall_single_eq [AddCommMonoid M] [Module R M] {s : Set α}
+    (f : (α →₀ M) →ₗ[R] (α →₀ M)) (hf : ∀ j ∈ s, ∀ x, f (single j x) = single j x)
+    {v : α →₀ M} (hv : v ∈ supported M R s) : f v = v := by
+  calc f v = f (v.sum single) := by rw [sum_single]
+    _ = v.sum fun j x ↦ f (single j x) := map_finsuppSum f _ _
+    _ = v.sum single := sum_congr fun j hj ↦ hf j ((mem_supported R v).1 hv hj) _
+    _ = v := sum_single v
+
 /-- A linear map sending each `single j 1` to a multiple `c j • single (σ j) 1` maps
 `supported R R s` into `supported R R t`, if `c j = 0` whenever `j ∈ s` and `σ j ∉ t`. -/
 theorem map_mem_supported_of_map_single_eq_smul_single {s : Set α} {t : Set β}
@@ -181,6 +201,37 @@ end Finsupp
 
 namespace Finsupp
 
+open MulOpposite
+
+variable {α A N : Type*} [Semiring A]
+
+/-- In the right `A`-module `α →₀ A`, the vector `single k b` is the basis vector `single k 1`
+scaled on the right by `b`. -/
+theorem op_smul_single_one (k : α) (b : A) : op b • single k (1 : A) = single k b := by
+  rw [smul_single, op_smul_eq_mul, one_mul]
+
+/-- A right-linear map on `α →₀ A` is determined on `single k b` by its value on the basis vector
+`single k 1`. -/
+theorem map_single_eq_op_smul {F : Type*} [AddCommMonoid N] [Module Aᵐᵒᵖ N]
+    [FunLike F (α →₀ A) N] [LinearMapClass F Aᵐᵒᵖ (α →₀ A) N] (f : F) (k : α) (b : A) :
+    f (single k b) = op b • f (single k 1) := by
+  rw [← map_smul, op_smul_single_one]
+
+/-- On a vector supported on the first `n` coordinates, a right-linear map is the matrix of its
+values on the basis vectors `single 0 1, …, single (n - 1) 1`. -/
+theorem map_apply_eq_sum_of_mem_supported {β : Type*} (f : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (β →₀ A)) {n : ℕ}
+    {x : ℕ →₀ A} (hx : x ∈ supported A Aᵐᵒᵖ (Finset.range n : Set ℕ)) (b : β) :
+    f x b = ∑ k : Fin n, f (single k 1) b * x k := by
+  have hx' : x.support ⊆ Finset.range n := by exact_mod_cast (mem_supported _ x).1 hx
+  conv_lhs => rw [← sum_single x, sum_of_support_subset x hx' _ fun _ _ ↦ single_zero _]
+  rw [map_sum, finsetSum_apply, ← Finset.sum_range fun k ↦ f (single k 1) b * x k]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [map_single_eq_op_smul, smul_apply, op_smul_eq_mul]
+
+end Finsupp
+
+namespace Finsupp
+
 /-- A linear map `(ℕ →₀ M) →ₗ[R] (ℕ →₀ N)` from a finitely generated module `M` sends sequences
 supported in `Finset.range n` into some `Finset.range m`. -/
 theorem exists_support_map_subset_range {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
@@ -193,6 +244,18 @@ theorem exists_support_map_subset_range {R M N : Type*} [Semiring R] [AddCommMon
         (Finset.coe_subset.2 hu))⟩
   exact Finset.mem_coe.2 <| Finset.mem_range.2 <| Nat.lt_succ_of_le <|
     Finset.le_sup (f := id) (Finset.mem_biUnion.2 ⟨j, Finset.mem_coe.1 hj, hT j x hk⟩)
+
+/-- Pairing a row `w` over `Fin n` with a basis vector `single k a` of `ℕ →₀ A` picks out
+`w k * a` when `k < n`, and gives `0` otherwise. -/
+theorem sum_mul_single_apply {A : Type*} [NonUnitalNonAssocSemiring A] (n : ℕ) (w : Fin n → A)
+    (k : ℕ) (a : A) :
+    ∑ j : Fin n, w j * single k a (j : ℕ) = if h : k < n then w ⟨k, h⟩ * a else 0 := by
+  split_ifs with h
+  · rw [Fintype.sum_eq_single ⟨k, h⟩ fun j hj ↦ by
+      rw [single_eq_of_ne fun hjk ↦ hj (Fin.ext hjk), mul_zero]]
+    simp
+  · exact Finset.sum_eq_zero fun j _ ↦ by
+      rw [single_eq_of_ne fun hjk ↦ h (by have := j.isLt; omega), mul_zero]
 
 /-- A finitely supported function is supported on the points of rank below some bound, for any
 rank function to `ℕ`. -/
