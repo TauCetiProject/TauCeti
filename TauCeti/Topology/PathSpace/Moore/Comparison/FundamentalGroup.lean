@@ -65,6 +65,7 @@ theorem fundamentalGroupHom_apply (γ : MooreLoopSpace X x) :
   (rfl)
 
 /-- The reversed Moore loop has the inverse class. -/
+@[simp↓]
 theorem fundamentalGroupHom_symm (γ : MooreLoopSpace X x) :
     fundamentalGroupHom x γ.symm = (fundamentalGroupHom x γ)⁻¹ := by
   rw [fundamentalGroupHom_apply, fundamentalGroupHom_apply, toPath_symm]
