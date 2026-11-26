@@ -40,10 +40,21 @@ unit and composition isomorphisms (`Obj.app_pullFunctorId_hom_app`,
 `Obj.app_pullFunctorComp_hom_app` and their inverses), as well as the pullbacks `pullHom` in the
 stackification (`TauCeti.Stack.stackification_pullHom`).
 
+Morphisms between pulled back descent data `t^* A ⟶ s^* B` over `T` are handled through their
+local evaluations `Obj.pullApp ψ a b h` at local sections `a` of `A` and `b` of `B` over a common
+`h : T' ⟶ T`, which avoid the iterated fibre products of the pulled back covering families. They
+determine `ψ` (`Obj.pullApp_ext`), every compatible family of local morphisms is the family of
+local evaluations of a morphism (`Obj.ofPullApp`), and they are compatible with pullback,
+composition, identities, pullback functors and the comparison isomorphisms of the
+stackification (`Obj.pullHom_pullApp`, `Obj.pullApp_comp`, `Obj.pullApp_id`, `Obj.pullApp_map`,
+`Obj.pullApp_pullHom`).
+
 ## Main declarations
 
 * `TauCeti.Stack.Stackification.Obj.PullbackData`: pullback data, and `transport` along it.
 * `TauCeti.Stack.Stackification.Obj.pullFunctor`: pulling back descent data along `q : V ⟶ U`.
+* `TauCeti.Stack.Stackification.Obj.pullApp`: local evaluations of morphisms of pulled back
+  descent data, with the constructor `Obj.ofPullApp`.
 * `TauCeti.Stack.stackification`: the pseudofunctor `LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` obtained from a
   prestack by adjoining descent data along `w`-small covering families.
 
@@ -650,6 +661,282 @@ lemma app_pullFunctorId_inv_app (U : C) (A : Obj.{w} J F U) ⦃T : C⦄ ⦃i j :
   erw [transportApp_def, id_app]
   simp only [PullbackData.refl, DescentData.iso_hom, DescentData.hom_self]
   exact Category.id_comp _
+
+section pullApp
+
+variable {U U' T V : C} {t : T ⟶ U} {s : T ⟶ U'} {A : Obj.{w} J F U} {B : Obj.{w} J F U'}
+
+/-- The local evaluation of a morphism `ψ : t^* A ⟶ s^* B` of pulled back descent data at local
+sections `a` of `A` and `b` of `B` over the same `h : T' ⟶ T`: the local evaluation of `ψ` at the
+local sections of `t^* A` and `s^* B` defined by `a` and `b`, composed with the isomorphisms
+`pullObjIso`. -/
+def pullApp (ψ : pullObj t A ⟶ pullObj s B) ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄ (a : T' ⟶ A.X i)
+    (b : T' ⟶ B.X j) (h : T' ⟶ T) (ha : a ≫ A.f i = h ≫ t) (hb : b ≫ B.f j = h ≫ s) :
+    (F.map a.op.toLoc).toFunctor.obj (A.D.obj i) ⟶ (F.map b.op.toLoc).toFunctor.obj (B.D.obj j) :=
+  (pullObjIso t A (pullback.lift a h ha) a (pullback.lift_fst a h ha)).inv ≫
+    Hom.app ψ (pullback.lift a h ha) (pullback.lift b h hb) (by simp) ≫
+    (pullObjIso s B (pullback.lift b h hb) b (pullback.lift_fst b h hb)).hom
+
+/-- `pullApp` may be computed through any local sections of `t^* A` and `s^* B` lying over the
+given local sections of `A` and `B`. -/
+lemma pullApp_eq (ψ : pullObj t A ⟶ pullObj s B) ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄
+    (a : T' ⟶ A.X i) (b : T' ⟶ B.X j) (h : T' ⟶ T) (ha : a ≫ A.f i = h ≫ t)
+    (hb : b ≫ B.f j = h ≫ s) (x : T' ⟶ pullback (A.f i) t) (y : T' ⟶ pullback (B.f j) s)
+    (hxa : x ≫ pullback.fst _ _ = a) (hxh : x ≫ pullback.snd _ _ = h)
+    (hyb : y ≫ pullback.fst _ _ = b) (hyh : y ≫ pullback.snd _ _ = h) :
+    pullApp ψ a b h ha hb = (pullObjIso t A x a hxa).inv ≫
+      Hom.app ψ x y (hxh.trans hyh.symm) ≫ (pullObjIso s B y b hyb).hom := by
+  obtain rfl : pullback.lift a h ha = x := pullback.hom_ext (by simp [hxa]) (by simp [hxh])
+  obtain rfl : pullback.lift b h hb = y := pullback.hom_ext (by simp [hyb]) (by simp [hyh])
+  rfl
+
+/-- The local evaluations of `ψ : t^* A ⟶ s^* B` are, up to the isomorphisms `pullObjIso`, its
+local evaluations `pullApp` at local sections of `A` and `B`. -/
+lemma app_eq_pullApp (ψ : pullObj t A ⟶ pullObj s B) ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄
+    (x : T' ⟶ pullback (A.f i) t) (y : T' ⟶ pullback (B.f j) s)
+    (w : x ≫ pullback.snd _ _ = y ≫ pullback.snd _ _) (a : T' ⟶ A.X i) (b : T' ⟶ B.X j)
+    (hxa : x ≫ pullback.fst _ _ = a) (hyb : y ≫ pullback.fst _ _ = b) :
+    Hom.app ψ x y w = (pullObjIso t A x a hxa).hom ≫
+      pullApp ψ a b (x ≫ pullback.snd _ _)
+        (by rw [← hxa, Category.assoc, Category.assoc, pullback.condition])
+        (by rw [← hyb, w, Category.assoc, Category.assoc, pullback.condition]) ≫
+      (pullObjIso s B y b hyb).inv := by
+  rw [pullApp_eq ψ a b _ _ _ x y hxa rfl hyb w.symm]
+  simp
+
+/-- `pullApp` is compatible with pullback. -/
+lemma pullHom_pullApp (ψ : pullObj t A ⟶ pullObj s B) ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄
+    (a : T' ⟶ A.X i) (b : T' ⟶ B.X j) (h : T' ⟶ T) (ha : a ≫ A.f i = h ≫ t)
+    (hb : b ≫ B.f j = h ≫ s) ⦃T'' : C⦄ (g : T'' ⟶ T') (ga : T'' ⟶ A.X i) (gb : T'' ⟶ B.X j)
+    (gh : T'' ⟶ T) (hga : g ≫ a = ga) (hgb : g ≫ b = gb) (hgh : g ≫ h = gh) :
+    pullHom (pullApp ψ a b h ha hb) g ga gb hga hgb =
+      pullApp ψ ga gb gh (by rw [← hga, ← hgh, Category.assoc, ha, Category.assoc])
+        (by rw [← hgb, ← hgh, Category.assoc, hb, Category.assoc]) := by
+  rw [pullApp_eq ψ ga gb gh _ _ (g ≫ pullback.lift a h ha) (g ≫ pullback.lift b h hb)
+    (by simp [hga]) (by simp [hgh]) (by simp [hgb]) (by simp [hgh]), pullApp,
+    pullHom_comp _ _ g ga (g ≫ pullback.lift a h ha) gb hga rfl hgb,
+    pullHom_comp _ _ g (g ≫ pullback.lift a h ha) (g ≫ pullback.lift b h hb) gb rfl rfl hgb,
+    pullHom_pullObjIso_hom, pullHom_pullObjIso_inv]
+  exact congrArg (_ ≫ ·) (congrArg (· ≫ _) (Hom.pullHom_app ψ _ _ _ g _ _ rfl rfl))
+
+/-- `pullApp` is compatible with composition. -/
+lemma pullApp_comp {U'' : C} {r : T ⟶ U''} {E : Obj.{w} J F U''} (ψ : pullObj t A ⟶ pullObj s B)
+    (χ : pullObj s B ⟶ pullObj r E) ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄ ⦃k : E.ι⦄ (a : T' ⟶ A.X i)
+    (b : T' ⟶ B.X j) (c : T' ⟶ E.X k) (h : T' ⟶ T) (ha : a ≫ A.f i = h ≫ t)
+    (hb : b ≫ B.f j = h ≫ s) (hc : c ≫ E.f k = h ≫ r) :
+    pullApp (ψ ≫ χ) a c h ha hc = pullApp ψ a b h ha hb ≫ pullApp χ b c h hb hc := by
+  rw [pullApp, pullApp, pullApp, comp_app _ _ _ (pullback.lift b h hb) _ _ (by simp) (by simp)]
+  simp
+
+/-- The local evaluations `pullApp` of an identity are the descent isomorphisms. -/
+@[simp]
+lemma pullApp_id ⦃T' : C⦄ ⦃i i' : A.ι⦄ (a : T' ⟶ A.X i) (a' : T' ⟶ A.X i') (h : T' ⟶ T)
+    (ha : a ≫ A.f i = h ≫ t) (ha' : a' ≫ A.f i' = h ≫ t) :
+    pullApp (𝟙 (pullObj t A)) a a' h ha ha' = A.D.hom (h ≫ t) a a' ha ha' := by
+  rw [pullApp, id_app, pullObj_D_hom t A _ _ _ (by simp) (by simp) a a' (by simp) (by simp)]
+  simpa using A.D.hom_congr _ _ a a' rfl (ha'.trans ha.symm) ha
+
+/-- The local evaluations `pullApp` of the pullback of a morphism `φ` are local evaluations of
+`φ`. -/
+@[simp]
+lemma pullApp_map {V : C} {P Q : Obj.{w} J F V} (g : T ⟶ V) (φ : P ⟶ Q) ⦃T' : C⦄ ⦃i : P.ι⦄
+    ⦃j : Q.ι⦄ (a : T' ⟶ P.X i) (b : T' ⟶ Q.X j) (h : T' ⟶ T) (ha : a ≫ P.f i = h ≫ g)
+    (hb : b ≫ Q.f j = h ≫ g) :
+    pullApp ((pullFunctor J F g).map φ) a b h ha hb = Hom.app φ a b (ha.trans hb.symm) := by
+  rw [pullApp, app_pullFunctor_map g φ _ _ (by simp) a b (by simp) (by simp)]
+  simp
+
+/-- The local evaluations `pullApp` of the pullback of a morphism `ψ : t^* A ⟶ s^* B` along `g`,
+composed with the composition isomorphisms, are local evaluations `pullApp` of `ψ`. By
+`stackification_pullHom`, this computes the pullbacks `pullHom` of `ψ` in the stackification. -/
+lemma pullApp_pullHom {V : C} (g : V ⟶ T) (gt : V ⟶ U) (gs : V ⟶ U') (hgt : g ≫ t = gt)
+    (hgs : g ≫ s = gs) (ψ : pullObj t A ⟶ pullObj s B) ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄
+    (a : T' ⟶ A.X i) (b : T' ⟶ B.X j) (h : T' ⟶ V) (ha : a ≫ A.f i = h ≫ gt)
+    (hb : b ≫ B.f j = h ≫ gs) :
+    pullApp ((pullFunctorComp J F t g gt hgt).hom.app A ≫ (pullFunctor J F g).map ψ ≫
+      (pullFunctorComp J F s g gs hgs).inv.app B) a b h ha hb =
+      pullApp ψ a b (h ≫ g) (by rw [ha, ← hgt, Category.assoc])
+        (by rw [hb, ← hgs, Category.assoc]) := by
+  have ha' : a ≫ A.f i = (h ≫ g) ≫ t := by rw [ha, ← hgt, Category.assoc]
+  have hb' : b ≫ B.f j = (h ≫ g) ≫ s := by rw [hb, ← hgs, Category.assoc]
+  rw [pullApp_eq _ a b h ha hb (pullback.lift a h ha) (pullback.lift b h hb) (by simp) (by simp)
+    (by simp) (by simp), pullApp_eq ψ a b (h ≫ g) _ _ (pullback.lift a (h ≫ g) ha')
+    (pullback.lift b (h ≫ g) hb') (by simp) (by simp) (by simp) (by simp)]
+  rw [comp_app _ _ _ (pullback.lift (pullback.lift a (h ≫ g) ha') h (by simp)) _ _ (by simp)
+      (by simp),
+    comp_app _ _ _ (pullback.lift (pullback.lift b (h ≫ g) hb') h (by simp)) _ _ (by simp)
+      (by simp),
+    app_pullFunctorComp_hom_app t g gt hgt A _ _ _ a (pullback.lift a (h ≫ g) ha') a (by simp)
+      (by simp) (by simp),
+    app_pullFunctor_map g ψ _ _ _ (pullback.lift a (h ≫ g) ha') (pullback.lift b (h ≫ g) hb')
+      (by simp) (by simp),
+    app_pullFunctorComp_inv_app s g gs hgs B _ _ _ (pullback.lift b (h ≫ g) hb') b b (by simp)
+      (by simp) (by simp)]
+  simp [DescentData.hom_self]
+
+/-- Precomposing a local evaluation `pullApp` with a descent isomorphism of the source changes the
+local section of the source. -/
+@[reassoc]
+lemma descentData_hom_comp_pullApp (ψ : pullObj t A ⟶ pullObj s B) ⦃T' : C⦄ ⦃i i' : A.ι⦄
+    ⦃j : B.ι⦄ (q : T' ⟶ U) (a : T' ⟶ A.X i) (a' : T' ⟶ A.X i') (b : T' ⟶ B.X j) (h : T' ⟶ T)
+    (hq : a ≫ A.f i = q) (hq' : a' ≫ A.f i' = q) (ha' : a' ≫ A.f i' = h ≫ t)
+    (hb : b ≫ B.f j = h ≫ s) :
+    A.D.hom q a a' hq hq' ≫ pullApp ψ a' b h ha' hb =
+      pullApp ψ a b h (hq.trans (hq'.symm.trans ha')) hb := by
+  rw [A.D.hom_congr q (h ≫ t) a a' hq hq' (hq'.symm.trans ha'), ← pullApp_id, ← pullApp_comp,
+    Category.id_comp]
+
+/-- Postcomposing a local evaluation `pullApp` with a descent isomorphism of the target changes
+the local section of the target. -/
+@[reassoc]
+lemma pullApp_comp_descentData_hom (ψ : pullObj t A ⟶ pullObj s B) ⦃T' : C⦄ ⦃i : A.ι⦄
+    ⦃j j' : B.ι⦄ (q : T' ⟶ U') (a : T' ⟶ A.X i) (b : T' ⟶ B.X j) (b' : T' ⟶ B.X j')
+    (h : T' ⟶ T) (ha : a ≫ A.f i = h ≫ t) (hq : b ≫ B.f j = q) (hq' : b' ≫ B.f j' = q)
+    (hb : b ≫ B.f j = h ≫ s) :
+    pullApp ψ a b h ha hb ≫ B.D.hom q b b' hq hq' =
+      pullApp ψ a b' h ha (hq'.trans (hq.symm.trans hb)) := by
+  rw [B.D.hom_congr q (h ≫ s) b b' hq hq' (hq.symm.trans hb), ← pullApp_id, ← pullApp_comp,
+    Category.comp_id]
+
+/-- Rewriting the base `h` of a local evaluation `pullApp ψ a b h`, transporting the proofs. -/
+lemma pullApp_congr (ψ : pullObj t A ⟶ pullObj s B) ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄
+    (a : T' ⟶ A.X i) (b : T' ⟶ B.X j) (h h' : T' ⟶ T) (ha : a ≫ A.f i = h ≫ t)
+    (hb : b ≫ B.f j = h ≫ s) (e : h = h') :
+    pullApp ψ a b h ha hb = pullApp ψ a b h' (by rw [ha, e]) (by rw [hb, e]) := by
+  subst e
+  rfl
+
+omit [F.IsPrestack J] in
+/-- Morphisms `t^* A ⟶ s^* B` are determined by their local evaluations `pullApp` over the members
+of a covering sieve of `T`. -/
+lemma pullApp_ext [F.IsPrestack J] {ψ ψ' : pullObj t A ⟶ pullObj s B} (R : Sieve T)
+    (hR : R ∈ J T)
+    (H : ∀ ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄ (a : T' ⟶ A.X i) (b : T' ⟶ B.X j) (h : T' ⟶ T)
+      (ha : a ≫ A.f i = h ≫ t) (hb : b ≫ B.f j = h ≫ s), R h →
+        pullApp ψ a b h ha hb = pullApp ψ' a b h ha hb) :
+    ψ = ψ' :=
+  Hom.ext_of_sieve R hR fun T' i j x y w hx ↦ by
+    rw [app_eq_pullApp ψ x y w _ _ rfl rfl, app_eq_pullApp ψ' x y w _ _ rfl rfl, H _ _ _ _ _ hx]
+
+section ofPullApp
+
+variable (G : ∀ ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄ (a : T' ⟶ A.X i) (b : T' ⟶ B.X j) (h : T' ⟶ T),
+    a ≫ A.f i = h ≫ t → b ≫ B.f j = h ≫ s →
+      ((F.map a.op.toLoc).toFunctor.obj (A.D.obj i) ⟶ (F.map b.op.toLoc).toFunctor.obj (B.D.obj j)))
+
+omit [HasPullbacks C] [F.IsPrestack J] in
+private lemma G_congr ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄ (a : T' ⟶ A.X i) (b : T' ⟶ B.X j)
+    (h h' : T' ⟶ T) (ha : a ≫ A.f i = h ≫ t) (hb : b ≫ B.f j = h ≫ s) (e : h = h') :
+    G a b h ha hb = G a b h' (by rw [ha, e]) (by rw [hb, e]) := by
+  subst e
+  rfl
+
+/-- The local evaluation of `ofPullApp G` at local sections `x` of `t^* A` and `y` of `s^* B`,
+through local sections `a` of `A` and `b` of `B` below them. -/
+private def ofPullAppApp ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄ (x : T' ⟶ pullback (A.f i) t)
+    (y : T' ⟶ pullback (B.f j) s) (w : x ≫ pullback.snd _ _ = y ≫ pullback.snd _ _)
+    (a : T' ⟶ A.X i) (b : T' ⟶ B.X j) (ha : x ≫ pullback.fst _ _ = a)
+    (hb : y ≫ pullback.fst _ _ = b) :
+    (F.map x.op.toLoc).toFunctor.obj ((pullObj t A).D.obj i) ⟶
+      (F.map y.op.toLoc).toFunctor.obj ((pullObj s B).D.obj j) :=
+  (pullObjIso t A x a ha).hom ≫
+    G a b (x ≫ pullback.snd _ _) (by simp [← ha, pullback.condition])
+      (by simp [← hb, w, pullback.condition]) ≫ (pullObjIso s B y b hb).inv
+
+omit [F.IsPrestack J] in
+private lemma ofPullAppApp_congr ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄ (x : T' ⟶ pullback (A.f i) t)
+    (y : T' ⟶ pullback (B.f j) s) (w : x ≫ pullback.snd _ _ = y ≫ pullback.snd _ _)
+    (a a' : T' ⟶ A.X i) (b b' : T' ⟶ B.X j) (ha : x ≫ pullback.fst _ _ = a)
+    (hb : y ≫ pullback.fst _ _ = b) (ha' : x ≫ pullback.fst _ _ = a')
+    (hb' : y ≫ pullback.fst _ _ = b') :
+    ofPullAppApp G x y w a b ha hb = ofPullAppApp G x y w a' b' ha' hb' := by
+  subst ha ha' hb hb'
+  rfl
+
+variable
+  (pull : ∀ ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄ (a : T' ⟶ A.X i) (b : T' ⟶ B.X j) (h : T' ⟶ T)
+    (ha : a ≫ A.f i = h ≫ t) (hb : b ≫ B.f j = h ≫ s) ⦃T'' : C⦄ (g : T'' ⟶ T'),
+    pullHom (G a b h ha hb) g (g ≫ a) (g ≫ b) rfl rfl =
+      G (g ≫ a) (g ≫ b) (g ≫ h) (by rw [Category.assoc, ha, Category.assoc])
+        (by rw [Category.assoc, hb, Category.assoc]))
+  (comm : ∀ ⦃T' : C⦄ ⦃i i' : A.ι⦄ ⦃j j' : B.ι⦄ (a : T' ⟶ A.X i) (a' : T' ⟶ A.X i')
+    (b : T' ⟶ B.X j) (b' : T' ⟶ B.X j') (h : T' ⟶ T) (ha : a ≫ A.f i = h ≫ t)
+    (ha' : a' ≫ A.f i' = h ≫ t) (hb : b ≫ B.f j = h ≫ s) (hb' : b' ≫ B.f j' = h ≫ s),
+    A.D.hom (h ≫ t) a a' ha ha' ≫ G a' b' h ha' hb' = G a b h ha hb ≫ B.D.hom (h ≫ s) b b' hb hb')
+
+/-- The morphism `t^* A ⟶ s^* B` whose local evaluations `pullApp` are given by a family `G` of
+local morphisms compatible with pullback and with the descent data (`pullApp_ofPullApp`). -/
+def ofPullApp : pullObj t A ⟶ pullObj s B :=
+  Hom.ofApp (fun _ _ _ x y w ↦ ofPullAppApp G x y w _ _ rfl rfl)
+    (fun T' i j x y w T'' g gx gy hgx hgy ↦ by
+      subst hgx hgy
+      rw [ofPullAppApp, pullHom_comp _ _ g _ (g ≫ x ≫ pullback.fst _ _) _ rfl (by simp) rfl,
+        pullHom_comp _ _ g _ (g ≫ y ≫ pullback.fst _ _) _ (by simp) rfl rfl,
+        pullHom_pullObjIso_hom, pullHom_pullObjIso_inv, pull,
+        ofPullAppApp_congr G _ _ _ _ (g ≫ x ≫ pullback.fst _ _) _ (g ≫ y ≫ pullback.fst _ _)
+          rfl rfl (by simp) (by simp), ofPullAppApp]
+      rw [G_congr G _ _ _ ((g ≫ x) ≫ pullback.snd _ _) _ _ (by simp)])
+    (fun T' i i' j j' x x' y y' w w' hx ↦ by
+      rw [ofPullAppApp, ofPullAppApp, pullObj_D_hom t A _ _ _ rfl hx.symm _ _ rfl rfl,
+        pullObj_D_hom s B _ _ _ w.symm (w'.symm.trans hx.symm) _ _ rfl rfl]
+      simp only [Category.assoc, Iso.inv_hom_id_assoc]
+      rw [G_congr G _ _ _ (x ≫ pullback.snd _ _) _ _ hx.symm]
+      have := comm (x ≫ pullback.fst _ _) (x' ≫ pullback.fst _ _) (y ≫ pullback.fst _ _)
+        (y' ≫ pullback.fst _ _) (x ≫ pullback.snd _ _) (by simp [pullback.condition])
+        (by simp [pullback.condition, hx]) (by simp [pullback.condition, w])
+        (by simp [pullback.condition, w', hx])
+      rw [A.D.hom_congr _ ((x ≫ pullback.snd _ _) ≫ t) _ _ _ _ (by simp [pullback.condition])]
+      refine congrArg (_ ≫ ·) ?_
+      rw [← Category.assoc, this, Category.assoc, B.D.hom_congr (y ≫ pullback.fst _ _ ≫ B.f j)
+        ((x ≫ pullback.snd _ _) ≫ s) _ _ _ _ (by simp [pullback.condition, w])])
+
+/-- The local evaluations `pullApp` of `ofPullApp G` are given by `G`. -/
+@[simp]
+lemma pullApp_ofPullApp ⦃T' : C⦄ ⦃i : A.ι⦄ ⦃j : B.ι⦄ (a : T' ⟶ A.X i) (b : T' ⟶ B.X j)
+    (h : T' ⟶ T) (ha : a ≫ A.f i = h ≫ t) (hb : b ≫ B.f j = h ≫ s) :
+    pullApp (ofPullApp G pull comm) a b h ha hb = G a b h ha hb := by
+  rw [pullApp, ofPullApp, Hom.app_ofApp,
+    ofPullAppApp_congr G _ _ _ _ a _ b rfl rfl (by simp) (by simp), ofPullAppApp,
+    G_congr G _ _ _ h _ _ (by simp)]
+  simp
+
+end ofPullApp
+
+/-- The local evaluations `pullApp` of the composition isomorphism `pullFunctorComp` are descent
+isomorphisms, up to the isomorphisms `pullObjIso`. -/
+lemma pullApp_pullFunctorComp_hom_app {W : C} (q : V ⟶ U) (r : W ⟶ V) (rq : W ⟶ U)
+    (hrq : r ≫ q = rq) (A : Obj.{w} J F U) ⦃T' : C⦄ ⦃i j : A.ι⦄ (a : T' ⟶ A.X i)
+    (y : T' ⟶ pullback (A.f j) q) (h : T' ⟶ W) (ha : a ≫ A.f i = h ≫ rq)
+    (hy : y ≫ pullback.snd _ _ = h ≫ r) :
+    pullApp (t := rq) (s := r) (B := pullObj q A) ((pullFunctorComp J F q r rq hrq).hom.app A) a y
+      h ha hy =
+      A.D.hom (a ≫ A.f i) a (y ≫ pullback.fst _ _) rfl
+        (by rw [Category.assoc, pullback.condition, reassoc_of% hy, hrq, ha]) ≫
+      (pullObjIso q A y _ rfl).inv := by
+  rw [pullApp, app_pullFunctorComp_hom_app q r rq hrq A _ _ _ a y (y ≫ pullback.fst _ _)
+    (by simp) (by simp) rfl]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id]
+  -- The identity is that of an object of `pullObj q A`, only definitionally that of the goal.
+  exact congrArg (_ ≫ ·) (Category.comp_id _)
+
+/-- The local evaluations `pullApp` of the inverse of the composition isomorphism
+`pullFunctorComp` are descent isomorphisms, up to the isomorphisms `pullObjIso`. -/
+lemma pullApp_pullFunctorComp_inv_app {W : C} (q : V ⟶ U) (r : W ⟶ V) (rq : W ⟶ U)
+    (hrq : r ≫ q = rq) (A : Obj.{w} J F U) ⦃T' : C⦄ ⦃i j : A.ι⦄
+    (x : T' ⟶ pullback (A.f i) q) (a : T' ⟶ A.X j) (h : T' ⟶ W)
+    (hx : x ≫ pullback.snd _ _ = h ≫ r) (ha : a ≫ A.f j = h ≫ rq) :
+    pullApp (t := r) (A := pullObj q A) (s := rq) ((pullFunctorComp J F q r rq hrq).inv.app A) x a
+      h hx ha =
+      (pullObjIso q A x _ rfl).hom ≫ A.D.hom ((x ≫ pullback.fst _ _) ≫ A.f i)
+        (x ≫ pullback.fst _ _) a rfl
+        (by rw [Category.assoc, pullback.condition, reassoc_of% hx, hrq, ha]) := by
+  rw [pullApp, app_pullFunctorComp_inv_app q r rq hrq A _ _ _ x (x ≫ pullback.fst _ _) a
+    (by simp) rfl (by simp)]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id]
+  -- The identity is that of an object of `pullObj q A`, only definitionally that of the goal.
+  exact congrArg (_ ≫ ·) (Category.comp_id _)
+
+end pullApp
 
 end TauCeti.Stack.Stackification.Obj
 
