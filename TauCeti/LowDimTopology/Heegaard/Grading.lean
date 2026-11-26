@@ -187,7 +187,8 @@ theorem exists_eq_add (h : H.IsMaslovGrading χ gr) (h' : H.IsMaslovGrading χ g
 
 /-- In the presence of a Maslov grading, a domain `E` from a generator to itself has Maslov index
 `2 ∑ᵢ n_{zᵢ}(E)`. -/
-theorem maslovIndex_self (h : H.IsMaslovGrading χ gr) (hE : H.IsDomainBetween x x E) :
+theorem maslovIndex_self_eq_two_mul_sum (h : H.IsMaslovGrading χ gr)
+    (hE : H.IsDomainBetween x x E) :
     H.maslovIndex χ x x E = 2 * ∑ z, (E (H.basepoint z) : ℚ) := by
   have := h.sub_eq hE
   rw [sub_self] at this
@@ -198,7 +199,8 @@ generator. -/
 theorem maslovIndex_eq_zero_of_mem_periodicDomains (h : H.IsMaslovGrading χ gr)
     {P : Region → ℤ} (hP : P ∈ H.periodicDomains) (x : H.Generator) :
     H.maslovIndex χ x x P = 0 :=
-  maslovIndex_eq_zero_of_mem_periodicDomains_of_forall (fun _ _ => h.maslovIndex_self) hP x
+  maslovIndex_eq_zero_of_mem_periodicDomains_of_forall
+    (fun _ _ => h.maslovIndex_self_eq_two_mul_sum) hP x
 
 /-- In the presence of a Maslov grading, the periodic Maslov indices vanish at every generator, so
 the relative grading is well defined in `ℚ` rather than only modulo them. -/
@@ -211,7 +213,7 @@ theorem periodicMaslovIndices_eq_bot (h : H.IsMaslovGrading χ gr) (x : H.Genera
 theorem relativeGrading_eq (h : H.IsMaslovGrading χ gr) (hD : H.IsDomainBetween x y D) :
     H.relativeGrading χ x y = gr x - gr y := by
   rw [hD.relativeGrading_eq (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_forall
-    fun _ _ => h.maslovIndex_self) (periodicMaslovIndices_eq_bot_iff.mp
+    fun _ _ => h.maslovIndex_self_eq_two_mul_sum) (periodicMaslovIndices_eq_bot_iff.mp
       (h.periodicMaslovIndices_eq_bot x)), h.sub_eq hD]
 
 /-- **The minus differential lowers a Maslov grading by one.** A term `U ^ k y` of the minus
@@ -239,7 +241,7 @@ relative grading from it. -/
 theorem exists_isMaslovGrading_iff :
     (∃ gr, H.IsMaslovGrading χ gr) ↔ ∀ (x : H.Generator) (E : Region → ℤ),
       H.IsDomainBetween x x E → H.maslovIndex χ x x E = 2 * ∑ z, (E (H.basepoint z) : ℚ) := by
-  refine ⟨fun ⟨_, h⟩ _ _ hE => h.maslovIndex_self hE, fun hself => ?_⟩
+  refine ⟨fun ⟨_, h⟩ _ _ hE => h.maslovIndex_self_eq_two_mul_sum hE, fun hself => ?_⟩
   -- The hypotheses of the lemmas on the relative grading.
   have hself' := maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_forall hself
   have hP : ∀ x : H.Generator, ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0 :=
