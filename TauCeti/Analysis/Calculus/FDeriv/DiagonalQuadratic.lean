@@ -35,6 +35,8 @@ derivatives are `aᵢ xᵢ`; over `ℝ` its second derivative is the diagonal bi
 * `TauCeti.fderiv_diagonalQuadratic_apply_single`: the partial derivatives of
   `∑ᵢ aᵢ xᵢ² / 2` are `aᵢ xᵢ`.
 * `TauCeti.fderiv_fderiv_diagonalQuadratic_apply`: its second derivative is diagonal.
+* `TauCeti.fderiv_fderiv_diagonalQuadratic_apply_single_single`: its second partial derivatives
+  are `aᵢ δᵢⱼ`.
 -/
 
 public section
@@ -114,6 +116,17 @@ theorem fderiv_fderiv_diagonalQuadratic_apply (a x v w : ι → ℝ) :
   unfold diagonalQuadratic
   rw [fderiv_fderiv_sum_comp_eval_apply (φ := fun i y ↦ a i * y ^ 2 / 2) fun i ↦ by fun_prop]
   simp [deriv_deriv_mul_sq_div_two]
+
+/-- The Hessian of `∑ᵢ aᵢ xᵢ² / 2` in the coordinate directions `i`, `j` is the diagonal entry `aᵢ`
+when `i = j` and `0` otherwise. -/
+theorem fderiv_fderiv_diagonalQuadratic_apply_single_single [DecidableEq ι] (a x : ι → ℝ)
+    (i j : ι) :
+    fderiv ℝ (fderiv ℝ (diagonalQuadratic a)) x (Pi.single i 1) (Pi.single j 1) =
+      if i = j then a i else 0 := by
+  by_cases h : i = j
+  · subst h
+    simp [Pi.single_apply]
+  · simpa [Pi.single_apply, h] using fun h' ↦ absurd h'.symm h
 
 end DiagonalQuadratic
 

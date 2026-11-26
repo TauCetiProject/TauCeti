@@ -80,8 +80,9 @@ quasimodes at different critical points combine into a low-energy space.
 * `TauCeti.sum_smul_euclideanWittenLaplacian_smul_apply`: the pointwise IMS localization formula.
 * `TauCeti.integral_sum_euclideanWittenLaplacian_mul_eq`: the IMS localization formula for the
   quadratic form of `Δ_t`.
-* `TauCeti.sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`: lower bounds for
-  the localized pieces give a lower bound for the quadratic form of `Δ_t`.
+* `TauCeti.sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul` and
+  `TauCeti.sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`: lower bounds for the
+  localized pieces give a lower bound for the quadratic form of `Δ_t`.
 * `TauCeti.sum_sum_neg_fderiv_fderiv_mul_add_mul_sum_sq_le_sum_euclideanWittenLaplacian_mul`: the
   pointwise lower bound for `⟨Δ_t φ, φ⟩`.
 * `TauCeti.integral_mul_sum_sq_le_integral_sum_euclideanWittenLaplacian_mul` and
@@ -290,6 +291,36 @@ theorem sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul {α : 
   · by_cases hx : φ x = 0
     · simp [hx]
     exact mul_le_mul_of_nonneg_right (hK x hx) (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
+
+/-- **A uniform lower bound from IMS localization.** Under the hypotheses of
+`TauCeti.sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`, if the quadratic form
+of `Δ_t` at every localized piece `Jₐ φ` is at least `κ` times its squared norm, then
+`(κ - K) ∫ |φ|² ≤ ∫ ⟨Δ_t φ, φ⟩`: the squared norms of the pieces add up to that of `φ`. -/
+theorem sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul {α : Type*}
+    {A : Finset α} {J : α → (ι → ℝ) → ℝ} {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ}
+    (hf : ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 f x)
+    (hJ : ∀ a ∈ A, ∀ x ∈ tsupport φ, ContDiffAt ℝ 2 (J a) x) (hφ : ContDiff ℝ 2 φ)
+    (hφc : HasCompactSupport φ) (hJA : ∀ x, φ x ≠ 0 → ∑ a ∈ A, J a x ^ 2 = 1) {K : ℝ}
+    (hK : ∀ x, φ x ≠ 0 → ∑ a ∈ A, ∑ i, fderiv ℝ (J a) x (Pi.single i 1) ^ 2 ≤ K) {t κ : ℝ}
+    (hκ : ∀ a ∈ A, κ * ∫ x, ∑ s, (J a • φ) x s ^ 2 ≤
+      ∫ x, ∑ s, euclideanWittenLaplacian f t (J a • φ) x s * (J a • φ) x s) :
+    (κ - K) * ∫ x, ∑ s, φ x s ^ 2 ≤ ∫ x, ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
+  have key := sum_sub_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul hf hJ hφ hφc hJA
+    hK hκ
+  -- The squared norms of the pieces `Jₐ φ` add up to `∫ |φ|²`.
+  have hsq : ∀ a x, ∑ s, (J a • φ) x s ^ 2 = J a x ^ 2 * ∑ s, φ x s ^ 2 := fun a x ↦ by
+    simp only [Pi.smul_apply', Pi.smul_apply, smul_eq_mul, mul_pow, Finset.mul_sum]
+  have hint : ∀ a ∈ A, Integrable fun x ↦ J a x ^ 2 * ∑ s, φ x s ^ 2 := fun a ha ↦
+    hφ.continuous.integrable_mul_sum_sq_of_continuousOn hφc subset_rfl fun x hx ↦
+      ((hJ a ha x hx).continuousAt.pow 2).continuousWithinAt
+  have hN : ∑ a ∈ A, ∫ x, J a x ^ 2 * ∑ s, φ x s ^ 2 = ∫ x, ∑ s, φ x s ^ 2 := by
+    rw [← integral_finsetSum _ hint]
+    refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
+    by_cases hx : φ x = 0
+    · simp [hx]
+    simp only [← Finset.sum_mul, hJA x hx, one_mul]
+  simp only [hsq, ← Finset.mul_sum, hN] at key
+  linarith
 
 /-! ### The lower bound away from the critical points -/
 
