@@ -564,6 +564,11 @@ theorem TwistingCocycle.twistedIndexSubobject_eq_top {p : ℤ} (hp : ∀ x, ind 
   have := HomologicalComplex.Hom.isIso_of_components (m.twistedIndexCochainComplexι hM p)
   exact Subobject.mk_eq_top_of_isIso _
 
+/-- Above all generator indices the stage inclusion is an isomorphism onto the twisted complex. -/
+theorem TwistingCocycle.isIso_twistedIndexCochainComplexι {p : ℤ} (hp : ∀ x, ind x ≤ p) :
+    IsIso (m.twistedIndexCochainComplexι hM p) :=
+  (Subobject.isIso_iff_mk_eq_top _).2 (m.twistedIndexSubobject_eq_top hM hp)
+
 /-- Below all generator indices the subobject filtration vanishes. -/
 theorem TwistingCocycle.twistedIndexSubobject_eq_bot {p : ℤ} (hp : ∀ x, p < ind x) :
     m.twistedIndexSubobject hM p = ⊥ := by
@@ -661,6 +666,15 @@ theorem twistedIndexShortComplex_X₃ (p : ℤ) :
     (m.twistedIndexShortComplex dM hM p).X₃ =
       (0 : TwistingCocycle 𝒜 d {x // ind x = p + 1} fun x ↦ ind x).twistedCochainComplex dM hM := by
   rw [twistedIndexShortComplex]
+
+/-- `twistedIndexShortComplex` is the short complex of the inclusion `F_p ⟶ F_{p+1}` and the
+restriction to the generators of index `p + 1`. Its body is not exposed, so other modules need
+this lemma. -/
+theorem twistedIndexShortComplex_eq (p : ℤ) :
+    m.twistedIndexShortComplex dM hM p =
+      ShortComplex.mk (m.twistedIndexCochainComplexMap hM (Int.le_add_one le_rfl))
+        (m.twistedIndexCochainComplexProj dM hM (p + 1)) (m.twistedIndexMap_comp_proj dM hM p) :=
+  (rfl)
 
 /-- The first map in `twistedIndexShortComplex` is the inclusion `F_p ⟶ F_{p+1}`. -/
 @[simp]
