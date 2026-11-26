@@ -450,9 +450,9 @@ theorem star_smul (σ : RingAut ℂ) (Φ : CMType E) : star (σ • Φ) = σ •
 @[simp]
 theorem starRingAut_smul (Φ : CMType E) : (starRingAut : RingAut ℂ) • Φ = star Φ := by
   ext ψ
-  -- `starRingAut⁻¹ ∘ ψ` is `conj ∘ ψ = star ψ` by definition.
-  rw [mem_smul, mem_star, ← star_mem_iff]
-  exact Iff.rfl
+  have h : ((starRingAut : RingAut ℂ).symm : ℂ →+* ℂ).comp ψ = star ψ :=
+    RingHom.ext fun _ ↦ by simp [RingEquiv.symm_apply_eq, RingHom.star_apply]
+  rw [mem_smul, h, mem_star, ← star_mem_iff]
 
 end StarCompCommute
 

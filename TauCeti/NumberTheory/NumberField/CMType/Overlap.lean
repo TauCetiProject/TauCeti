@@ -120,9 +120,11 @@ theorem overlap_inv (Φ : CMType E) (σ : RingAut ℂ) : overlap Φ σ⁻¹ = ov
 /-- The overlap `a_Φ(σ)` counts the embeddings `φ ∈ Φ` with `σ ∘ φ ∈ Φ`. -/
 theorem overlap_eq_ncard (Φ : CMType E) (σ : RingAut ℂ) :
     overlap Φ σ = {φ : E →+* ℂ | φ ∈ Φ ∧ (σ : ℂ →+* ℂ).comp φ ∈ Φ}.ncard := by
-  -- `φ ∈ σ⁻¹ • Φ` unfolds to `σ ∘ φ ∈ Φ` (`TauCeti.CMType.mem_smul`).
   rw [← overlap_inv, overlap_def]
-  congr 1
+  refine congrArg Set.ncard (Set.ext fun φ ↦ ?_)
+  -- `φ ∈ σ⁻¹ • Φ` exactly when `σ ∘ φ ∈ σ • σ⁻¹ • Φ = Φ`.
+  rw [Set.mem_inter_iff, SetLike.mem_coe, SetLike.mem_coe,
+    ← comp_mem_smul_iff (σ := σ) (Φ := σ⁻¹ • Φ), smul_inv_smul, Set.mem_ofPred_eq]
 
 /-- The overlap at the identity is the number `d = #Φ` of embeddings in the type. -/
 @[simp]
@@ -150,6 +152,15 @@ theorem overlap_mul_starRingAut (Φ : CMType E) (σ : RingAut ℂ) :
     star_smul]
 
 /-! ### The conjugacy average -/
+
+/-- Translating by an automorphism of `ℂ` permutes the `Aut(ℂ)`-orbit of a CM type, so it leaves
+finite sums over the orbit unchanged. -/
+private theorem finsum_mem_orbit_smul {M : Type*} [AddCommMonoid M] (τ : RingAut ℂ)
+    (Φ : CMType E) (f : CMType E → M) :
+    ∑ᶠ Ψ ∈ orbit (RingAut ℂ) Φ, f (τ • Ψ) = ∑ᶠ Ψ ∈ orbit (RingAut ℂ) Φ, f Ψ := by
+  have h := (MulAction.injective τ).injOn.bijOn_image (s := orbit (RingAut ℂ) Φ)
+  rw [Set.image_smul, smul_orbit] at h
+  exact finsum_mem_eq_of_bijOn _ h fun _ _ ↦ rfl
 
 /-- The **conjugacy-averaged overlap** `a⁰_Φ(σ)`: the mean of `a_Ψ(σ)` over the CM types `Ψ` in
 the `Aut(ℂ)`-orbit of `Φ`. This is the normalised conjugacy sum `|G|⁻¹ ∑_{τ ∈ G} a_Φ(τστ⁻¹)`
@@ -180,10 +191,9 @@ theorem averageOverlap_conj (τ σ : RingAut ℂ) (Φ : CMType E) :
     averageOverlap Φ (τ * σ * τ⁻¹) = averageOverlap Φ σ := by
   rw [averageOverlap_def, averageOverlap_def]
   congr 1
-  -- Translation by `τ⁻¹` permutes the orbit, and `a_Ψ(τστ⁻¹) = a_{τ⁻¹Ψ}(σ)`.
-  have h := (MulAction.injective τ⁻¹).injOn.bijOn_image (s := orbit (RingAut ℂ) Φ)
-  rw [Set.image_smul, smul_orbit] at h
-  exact finsum_mem_eq_of_bijOn _ h fun Ψ _ ↦ by rw [overlap_conj]
+  -- `a_Ψ(τστ⁻¹) = a_{τ⁻¹Ψ}(σ)`, and translation by `τ⁻¹` permutes the orbit.
+  simp_rw [overlap_conj]
+  exact finsum_mem_orbit_smul τ⁻¹ Φ fun Ψ ↦ (overlap Ψ σ : ℚ)
 
 /-- **The conjugacy average over a finite Galois quotient.** Let `π` map `Aut(ℂ)` to a finite
 group `G` such that every automorphism in the kernel of `π` fixes each embedding of `E`, and let
@@ -200,7 +210,11 @@ theorem averageOverlap_eq_inv_card_mul_sum {G : Type*} [Group G] [Fintype G]
     have hκ : π (τ⁻¹ * τ')⁻¹ = 1 := by simp [h]
     rw [smul_eq_iff_eq_inv_smul, smul_smul]
     ext ψ
-    rw [mem_smul, show ((τ⁻¹ * τ').symm : ℂ →+* ℂ).comp ψ = ψ from hπ _ hκ ψ]
+    -- The inverse of a ring automorphism acts as its `symm` (`RingAut.inv_apply`).
+    have hψ : ((τ⁻¹ * τ').symm : ℂ →+* ℂ).comp ψ = ψ := RingHom.ext fun x ↦ by
+      rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, ← RingAut.inv_apply]
+      exact RingHom.congr_fun (hπ _ hκ ψ) x
+    rw [mem_smul, hψ]
   -- Hence the orbit of `Φ` is the finite set of the `s(g)⁻¹ Φ`.
   have hfin : (orbit (RingAut ℂ) Φ).Finite := (Set.finite_range fun g ↦ (s g)⁻¹ • Φ).subset <| by
     rintro _ ⟨τ, rfl⟩
@@ -216,9 +230,7 @@ theorem averageOverlap_eq_inv_card_mul_sum {G : Type*} [Group G] [Fintype G]
   have hperm (g : G) : ∑ Ψ ∈ hfin.toFinset, (overlap ((s g)⁻¹ • Ψ) σ : ℚ) =
       ∑ Ψ ∈ hfin.toFinset, (overlap Ψ σ : ℚ) := by
     rw [← finsum_mem_eq_finite_toFinset_sum _ hfin, ← finsum_mem_eq_finite_toFinset_sum _ hfin]
-    have h := (MulAction.injective (s g)⁻¹).injOn.bijOn_image (s := orbit (RingAut ℂ) Φ)
-    rw [Set.image_smul, smul_orbit] at h
-    exact finsum_mem_eq_of_bijOn _ h fun _ _ ↦ rfl
+    exact finsum_mem_orbit_smul (s g)⁻¹ Φ fun Ψ ↦ (overlap Ψ σ : ℚ)
   -- Summing `∑_g a_{s(g)⁻¹Ψ}(σ)` over the orbit in both orders.
   have key : (hfin.toFinset.card : ℚ) * ∑ g, (overlap ((s g)⁻¹ • Φ) σ : ℚ) =
       Nat.card G * ∑ Ψ ∈ hfin.toFinset, (overlap Ψ σ : ℚ) := by
