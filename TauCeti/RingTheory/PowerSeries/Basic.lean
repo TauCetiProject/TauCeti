@@ -16,8 +16,7 @@ Mathlib's `PowerSeries.constantCoeff` is the constant coefficient `S⟦X⟧ → 
 homomorphism. This file records it as a homomorphism of `A`-algebras for any commutative semiring
 `A` over which `S` is an algebra: evaluation at `X = 0`. It also records how a change of
 coefficients `map f` acts on the constant coefficient, how multiplication splits into constant
-and positive-degree terms, and univariate bridges for `MvPowerSeries.liftOfSurjective` and
-coefficientwise membership.
+and positive-degree terms, and a univariate bridge for coefficientwise membership.
 
 ## Main definitions
 
@@ -29,8 +28,6 @@ coefficientwise membership.
   inclusion of constants.
 * `PowerSeries.constantCoeff_map`: a change of coefficients `map f` acts on the constant
   coefficient by `f`, as `MvPowerSeries.constantCoeff_map` does for multivariate power series.
-* `PowerSeries.map_liftOfSurjective`: mapping `MvPowerSeries.liftOfSurjective hπ f` back along
-  `π` recovers `f` as a univariate power series.
 * `PowerSeries.mk_mul_one_sub_X_eq`: if `b d + a (d + 1) = a d + c (d + 1)` for all integers `d`
   and `a`, `b` vanish at `d₀ - 1`, then the series of `a`, `b`, `c` from degree `d₀` satisfy
   `(1 - X) H_a = H_c - X H_b`.
@@ -86,16 +83,6 @@ variable {R S : Type*} [Semiring R] [Semiring S]
 theorem constantCoeff_map (f : R →+* S) (φ : R⟦X⟧) :
     constantCoeff (map f φ) = f (constantCoeff φ) := by
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply]
-
-/-- Mapping `MvPowerSeries.liftOfSurjective hπ f` back along `π` recovers `f` as a univariate
-power series. -/
-@[simp]
-theorem map_liftOfSurjective {π : R →+* S} (hπ : Function.Surjective π) (f : S⟦X⟧) :
-    map π (MvPowerSeries.liftOfSurjective hπ f) = f :=
-  ext fun n ↦ by
-    rw [coeff_map, coeff_def (s := Finsupp.single () n) Finsupp.single_eq_same,
-      MvPowerSeries.coeff_liftOfSurjective, Function.surjInv_eq hπ,
-      ← coeff_def (s := Finsupp.single () n) Finsupp.single_eq_same]
 
 end Map
 

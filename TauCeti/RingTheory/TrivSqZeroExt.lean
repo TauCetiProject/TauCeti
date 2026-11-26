@@ -56,13 +56,13 @@ variable (R M : Type*) [CommSemiring R] [AddCommMonoid M] [Module R M] [Module R
   [IsCentralScalar R M]
 
 /-- The square-zero ideal `TrivSqZeroExt.kerIdeal R M` is `R`-linearly equivalent to `M`. -/
-def kerIdealLinearEquiv : M ≃ₗ[R] kerIdeal R M where
-  toFun m := ⟨inr m, (mem_kerIdeal_iff_inr R M _).mpr rfl⟩
-  invFun z := z.val.snd
-  map_add' _ _ := Subtype.ext (inr_add R _ _)
-  map_smul' r m := Subtype.ext (by simp [Algebra.smul_def, algebraMap_eq_inl])
-  left_inv _ := by simp
-  right_inv z := Subtype.ext ((mem_kerIdeal_iff_inr R M z.val).mp z.property).symm
+def kerIdealLinearEquiv : M ≃ₗ[R] kerIdeal R M :=
+  LinearEquiv.ofLinearMap
+    ((inrHom R M).codRestrict ((kerIdeal R M).restrictScalars R) fun _ ↦
+      (mem_kerIdeal_iff_inr R M _).mpr rfl)
+    ((sndHom R M).comp ((kerIdeal R M).restrictScalars R).subtype)
+    (LinearMap.ext fun z ↦ Subtype.ext ((mem_kerIdeal_iff_inr R M z.val).mp z.property).symm)
+    (LinearMap.ext fun _ ↦ rfl)
 
 variable {R M}
 

@@ -568,9 +568,11 @@ private theorem exists_lubinTate_decomp_of_coeff_mem (hπ_A : Function.Surjectiv
   simp_rw [← smul_add]
   refine sum_smul_eq_of_map_eq hsmul b fun i ↦ ?_
   have hgA : PowerSeries.map π_A (gA i) = gk i := by
+    have hlift : PowerSeries.map π_A (liftOfSurjective hπ_A (gk i)) = gk i :=
+      MvPowerSeries.map_liftOfSurjective hπ_A (gk i)
     dsimp only [gA]
-    rw [map_sub, PowerSeries.map_C, ← PowerSeries.constantCoeff_map,
-      PowerSeries.map_liftOfSurjective, hgk₀ i, map_zero, sub_zero]
+    rw [map_sub, PowerSeries.map_C, ← PowerSeries.constantCoeff_map, hlift, hgk₀ i, map_zero,
+      sub_zero]
   rw [map_liftOfSurjective, map_add, map_sum_smul_lubinTateCocycle, FormalGroup.map_homDefect_𝔾ₐ,
     F.map_eq, hgA, hΦk_eq]
 
@@ -670,30 +672,17 @@ theorem bijective_map_of_height_eq_one [IsLocalRing B] [IsHausdorff (maximalIdea
   have hsub := (squareZeroFiberEquiv hπ_B hq hq_surj hFG hker hF₀ F).symm.injective.subsingleton
   exact congrArg Subtype.val (@Subsingleton.elim _ hsub ⟨x₁, hx⟩ ⟨⟦F⟧, map_mk q hq F⟩)
 
-private theorem mem_kerIdeal_iff_mem_ker_fstHom (k : Type*) [CommRing k] (x : TrivSqZeroExt k k) :
-    x ∈ TrivSqZeroExt.kerIdeal k k ↔ x ∈ RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom :=
-  Iff.rfl
-
-private theorem fg_ker_fstHom (k : Type*) [CommRing k] :
-    (RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom).FG :=
-  TrivSqZeroExt.fg_kerIdeal
-
 private noncomputable def piKerFstEquiv (k : Type*) [CommRing k] (n : ℕ) :
-    (Fin n → k) ≃ (Fin n → RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom) :=
-  Equiv.piCongrRight fun _ ↦
-    (TrivSqZeroExt.kerIdealLinearEquiv k k).toEquiv.trans
-      (Equiv.subtypeEquivRight (mem_kerIdeal_iff_mem_ker_fstHom k))
+    (Fin n → k) ≃ (Fin n → TrivSqZeroExt.kerIdeal k k) :=
+  Equiv.piCongrRight fun _ ↦ (TrivSqZeroExt.kerIdealLinearEquiv k k).toEquiv
 
 private theorem piKerFstEquiv_apply (k : Type*) [CommRing k] {n : ℕ} (c : Fin n → k) :
-    piKerFstEquiv k n c = fun j ↦ ⟨TrivSqZeroExt.inr (c j), by simp [RingHom.mem_ker]⟩ := by
+    piKerFstEquiv k n c = fun j ↦
+      ⟨TrivSqZeroExt.inr (c j), (TrivSqZeroExt.mem_kerIdeal_iff_inr k k _).mpr rfl⟩ := by
   funext j
   exact Subtype.ext <| by
-    rw [piKerFstEquiv, Equiv.piCongrRight_apply, Pi.map_apply, Equiv.trans_apply,
-      Equiv.subtypeEquivRight_apply, LinearEquiv.coe_toEquiv, TrivSqZeroExt.coe_kerIdealLinearEquiv]
-
-private theorem fstHom_surjective (k : Type*) [CommRing k] :
-    Function.Surjective (TrivSqZeroExt.fstHom k k k).toRingHom :=
-  TrivSqZeroExt.fst_surjective
+    rw [piKerFstEquiv, Equiv.piCongrRight_apply, Pi.map_apply, LinearEquiv.coe_toEquiv,
+      TrivSqZeroExt.coe_kerIdealLinearEquiv]
 
 private noncomputable def dualNumberTrivialLift (F₀ : FormalGroup k) [F₀.IsComm] :
     FormalGroupLift (TrivSqZeroExt.fstHom k k k).toRingHom F₀ :=
@@ -708,8 +697,10 @@ noncomputable def dualNumberEquiv {p h : ℕ} [Fact p.Prime] [CharP k p]
     (Fin (h - 1) → k) ≃
       FormalGroupDeformation (TrivSqZeroExt.fstHom k k k).toRingHom F₀ :=
   (piKerFstEquiv k (h - 1)).trans <|
-    (squareZeroFiberEquiv (B := k) (π_B := RingHom.id k) Function.surjective_id
-      (RingHom.id_comp _) (fstHom_surjective k) (fg_ker_fstHom k)
+    (squareZeroFiberEquiv (B := k) (π_B := RingHom.id k)
+      (q := (TrivSqZeroExt.fstHom k k k).toRingHom)
+      Function.surjective_id (RingHom.id_comp _)
+      TrivSqZeroExt.fst_surjective (TrivSqZeroExt.fg_kerIdeal (R := k) (M := k))
       ((pow_two _).symm.trans (TrivSqZeroExt.kerIdeal_sq k k))
       hF₀ (dualNumberTrivialLift F₀)).trans
       (Equiv.subtypeUnivEquiv fun _ ↦ Subsingleton.elim _ _)
@@ -723,8 +714,10 @@ theorem dualNumberEquiv_apply {p h : ℕ} [Fact p.Prime] [CharP k p]
           (algebraMap k (DualNumber k)) (RingHom.ext fun x ↦ by simp))
         (RingHom.id_comp _) ((pow_two _).symm.trans (TrivSqZeroExt.kerIdeal_sq k k))
         p h (fun j ↦ ⟨TrivSqZeroExt.inr (c j), by simp [RingHom.mem_ker]⟩) := by
-  rw [dualNumberEquiv, Equiv.trans_apply, Equiv.trans_apply, Equiv.subtypeUnivEquiv_apply,
-    squareZeroFiberEquiv_apply_coe, piKerFstEquiv_apply, dualNumberTrivialLift]
+  rw [dualNumberEquiv]
+  erw [Equiv.trans_apply, Equiv.trans_apply, Equiv.subtypeUnivEquiv_apply,
+    squareZeroFiberEquiv_apply_coe, piKerFstEquiv_apply]
+  rfl
 
 end SquareZeroFiber
 
