@@ -213,9 +213,8 @@ theorem covariantDeriv_continuousLinearMap_comp {W' : Type*} [NormedAddCommGroup
     covariantDeriv b (fun y ↦ L (ψ y)) x v = L (covariantDeriv b ψ x v) := by
   have H : HasFDerivAt (fun y ↦ L (ψ y)) ((L.restrictScalars ℝ).comp (fderiv ℝ ψ x)) x :=
     (L.restrictScalars ℝ).hasFDerivAt.comp x hψ.hasFDerivAt
-  rw [covariantDeriv_apply, covariantDeriv_apply, H.fderiv, map_add,
-    L.map_smul_of_tower, map_smul, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.coe_restrictScalars']
+  rw [covariantDeriv_apply, covariantDeriv_apply, H.fderiv]
+  simp [map_smul]
 
 /-- The second covariant derivative commutes with a constant complex-linear map:
 `∇_v ∇_w (L ψ) = L (∇_v ∇_w ψ)`, for a field differentiable near `x` whose derivative is

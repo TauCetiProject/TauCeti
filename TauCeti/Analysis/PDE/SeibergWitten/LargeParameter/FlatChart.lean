@@ -186,8 +186,8 @@ private theorem re_inner_smul_add_smul_cliffordProjection {ω' : ⋀[ℝ]^2 V}
   simp only [ContinuousLinearMap.coe_coe, hσ] at hsym
   have hσσ : (⟪σ, σ⟫_ℂ).re = ‖σ‖ ^ 2 := by
     rw [← RCLike.re_to_complex, inner_self_eq_norm_sq]
-  rw [inner_add_right, inner_smul_right_eq_smul, inner_smul_right_eq_smul, ← hsym,
-    Complex.add_re, Complex.smul_re, Complex.smul_re, smul_eq_mul, smul_eq_mul, hσσ]
+  rw [inner_add_right, inner_smul_right_eq_smul, inner_smul_right_eq_smul, ← hsym]
+  simp only [Complex.add_re, Complex.smul_re, smul_eq_mul, hσσ]
   ring
 
 include hQ hρ h₂ hω hω₂ in
