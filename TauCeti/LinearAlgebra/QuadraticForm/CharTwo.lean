@@ -213,17 +213,9 @@ theorem nondegenerate_polarBilin_binaryQuadraticForm [CharP R 2] (a b : R) :
 `(binaryQuadraticForm R a b).polarBilin`-orthogonal complement. -/
 theorem orthogonal_polarBilin_binaryQuadraticForm_span_one_zero [CharP R 2] (a b : R) :
     LinearMap.BilinForm.orthogonal (binaryQuadraticForm R a b).polarBilin (R ∙ ![(1 : R), 0]) =
-      R ∙ ![(1 : R), 0] := by
-  ext x
-  simp only [LinearMap.BilinForm.mem_orthogonal_iff, Submodule.mem_span_singleton,
-    forall_exists_index, forall_apply_eq_imp_iff, QuadraticMap.polarBilin_apply_apply,
-    polar_binaryQuadraticForm_of_charTwo]
-  refine ⟨fun hx ↦ ⟨x 0, ?_⟩, ?_⟩
-  · have h1 : x 1 = 0 := by simpa using hx 1
-    ext i
-    fin_cases i <;> simp [h1]
-  · rintro ⟨c, rfl⟩ d
-    simp
+      R ∙ ![(1 : R), 0] :=
+  orthogonal_polarBilin_binaryQuadraticForm_span_one_zero_of_two_mul_eq_zero b
+    (by rw [CharTwo.two_eq_zero, zero_mul])
 
 /-- In characteristic two, the orthogonal sum of two copies of `binaryQuadraticForm R 1 1` is
 explicitly isometric to the orthogonal sum of two hyperbolic planes

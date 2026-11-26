@@ -96,9 +96,8 @@ theorem Isometry.isTotallyIsotropic_map_iff {Q₁ : QuadraticMap R M' N}
 totally isotropic for `Q'`. -/
 theorem IsTotallyIsotropic.map_isometryEquiv {Q' : QuadraticMap R M' N}
     (hW : Q.IsTotallyIsotropic W) (e : Q.IsometryEquiv Q') :
-    Q'.IsTotallyIsotropic (W.map e.toLinearEquiv.toLinearMap) := by
-  rintro _ ⟨v, hv, rfl⟩
-  exact (e.map_app v).trans (hW v hv)
+    Q'.IsTotallyIsotropic (W.map e.toLinearEquiv.toLinearMap) :=
+  e.toIsometry.isTotallyIsotropic_map_iff.mpr hW
 
 /-- The preimage of a totally isotropic submodule under a linear map `f` is totally isotropic
 for `Q.comp f`. -/

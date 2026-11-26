@@ -92,8 +92,10 @@ isometric to the hyperbolic plane `[0, 0]`, in every characteristic.
 * `TauCeti.anisotropic_binary_iff`: `⟨a, b⟩` is anisotropic exactly when `-ab` is not a square;
   `TauCeti.anisotropic_binary_one_neg_iff` is its square-radicand form for `⟨1, -d⟩`.
 * `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm_zero`,
-  `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm_of_two_mul_eq_zero`: nondegeneracy of the
-  polar bilinear form of `[a, b]` when `2 * a = 0` and `2 * b = 0`.
+  `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm_of_two_mul_eq_zero`,
+  `TauCeti.orthogonal_polarBilin_binaryQuadraticForm_span_one_zero_of_two_mul_eq_zero`:
+  nondegeneracy of the polar bilinear form of `[a, b]` when `2 * a = 0` and `2 * b = 0`, and polar
+  self-orthogonality of the first coordinate axis `R ∙ ![1, 0]` when `2 * a = 0`.
 * `TauCeti.isTotallyIsotropic_ker_proj_one_binaryQuadraticForm`,
   `TauCeti.not_anisotropic_binaryQuadraticForm_zero`,
   `TauCeti.anisotropic_binaryQuadraticForm_one_iff`: isotropy and Artin--Schreier anisotropy
@@ -490,6 +492,26 @@ theorem nondegenerate_polarBilin_binaryQuadraticForm_of_two_mul_eq_zero {a b : R
     (binaryQuadraticForm R a b).polarBilin.Nondegenerate := by
   rw [polarBilin_binaryQuadraticForm_of_two_mul_eq_zero ha hb]
   exact nondegenerate_polarBilin_binaryQuadraticForm_zero
+
+/-- Whenever `2 * a = 0`, the first coordinate axis `R ∙ ![1, 0]` equals its own
+`(binaryQuadraticForm R a b).polarBilin`-orthogonal complement. -/
+theorem orthogonal_polarBilin_binaryQuadraticForm_span_one_zero_of_two_mul_eq_zero {a : R} (b : R)
+    (ha : 2 * a = 0) :
+    LinearMap.BilinForm.orthogonal (binaryQuadraticForm R a b).polarBilin (R ∙ ![(1 : R), 0]) =
+      R ∙ ![(1 : R), 0] := by
+  have hpol (x : Fin 2 → R) : polar (binaryQuadraticForm R a b) ![(1 : R), 0] x = x 1 := by
+    simp only [polar_binaryQuadraticForm, Matrix.cons_val_zero, Matrix.cons_val_one]
+    linear_combination x 0 * ha
+  ext x
+  simp only [LinearMap.BilinForm.mem_orthogonal_iff, Submodule.mem_span_singleton,
+    forall_exists_index, forall_apply_eq_imp_iff, polarBilin_apply_apply, polar_smul_left,
+    smul_eq_mul, hpol]
+  refine ⟨fun hx ↦ ⟨x 0, ?_⟩, ?_⟩
+  · have h1 : x 1 = 0 := by simpa using hx 1
+    ext i
+    fin_cases i <;> simp [h1]
+  · rintro ⟨c, rfl⟩ d
+    simp
 
 /-- Explicit shear isometry `(x 0, x 1) ↦ (x 0, a * x 0 + x 1)` from `binaryQuadraticForm R a 0`
 to the hyperbolic plane `binaryQuadraticForm R 0 0`, valid over every commutative ring. -/
