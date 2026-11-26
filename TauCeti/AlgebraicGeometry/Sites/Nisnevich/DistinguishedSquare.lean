@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Subscheme
 public import TauCeti.AlgebraicGeometry.Sites.Nisnevich.Basic
+import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
+import TauCeti.CategoryTheory.MorphismProperty.Limits
 import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 
 /-!
@@ -26,12 +28,20 @@ The pair `{j, p}` is a Nisnevich covering of `X`
 `p⁻¹(Z) ⟶ Z ⟶ X` does. Every open cover `X = U ∪ V` by two opens gives an elementary distinguished
 square (`TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.ofZariski`).
 
+Elementary distinguished squares are stable under base change along any `g : Y ⟶ X`
+(`TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.pullback`): `g` maps the reduced
+closed complement `Z'` of `U ×_X Y` in `Y` into the complement of `U`, so, `Z'` being reduced,
+`Z' ⟶ Y ⟶ X` factors through `Z`, and the base change of `p` to `Z'` is the base change of the
+isomorphism `p⁻¹(Z) ⟶ Z` along `Z' ⟶ Z`.
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare X`: an elementary distinguished
   square over `X`.
 * `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.ofZariski`: the square of an open
   cover `X = U ∪ V`, whose `p` is the open immersion of `V`.
+* `TauCeti.AlgebraicGeometry.Scheme.ElementaryDistinguishedSquare.pullback`: the base change of a
+  square along a morphism `Y ⟶ X`.
 
 ## Main results
 
@@ -158,6 +168,47 @@ lemma ofZariski_j (U V : X.Opens) (h : U ⊔ V = ⊤) : (ofZariski U V h).j = U.
 @[simp]
 lemma ofZariski_p (U V : X.Opens) (h : U ⊔ V = ⊤) : (ofZariski U V h).p = V.ι :=
   rfl
+
+section Pullback
+
+variable {Y : AlgebraicGeometry.Scheme.{u}} (g : Y ⟶ X)
+
+/-- **Base change of an elementary distinguished square** along `g : Y ⟶ X`: the open immersion
+`U ×_X Y ⟶ Y` and the étale morphism `V ×_X Y ⟶ Y`. -/
+@[expose]
+noncomputable def pullback : ElementaryDistinguishedSquare Y where
+  U := Limits.pullback Q.j g
+  V := Limits.pullback Q.p g
+  j := Limits.pullback.snd Q.j g
+  p := Limits.pullback.snd Q.p g
+  isIso_pullback_snd := by
+    set I := AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal Q.j.opensRange.compl
+    set I' := AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal
+      (Limits.pullback.snd Q.j g).opensRange.compl
+    have hrange : Set.range (I'.subschemeι ≫ g) ⊆ (Q.j.opensRange.compl : Set X) := by
+      rintro _ ⟨z, rfl⟩
+      have hz : I'.subschemeι z ∉ Set.range (Limits.pullback.snd Q.j g) := by
+        simpa using (mem_range_subschemeι_vanishingIdeal_compl_iff _ _).1 ⟨z, rfl⟩
+      rw [AlgebraicGeometry.Scheme.Pullback.range_snd] at hz
+      simpa using hz
+    have hker : I.subschemeι.ker ≤ (I'.subschemeι ≫ g).ker := by
+      rw [AlgebraicGeometry.Scheme.IdealSheafData.ker_subschemeι]
+      exact AlgebraicGeometry.Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset _ hrange
+    -- `Z' ⟶ Y ⟶ X` factors through `Z ⟶ X`.
+    have hh := IsClosedImmersion.lift_fac I.subschemeι (I'.subschemeι ≫ g) hker
+    -- So the base change of `p` to `Z'` is a base change of the isomorphism `p⁻¹(Z) ⟶ Z`.
+    exact MorphismProperty.pullback_snd_pullback_snd (P := .isomorphisms _) Q.p g I'.subschemeι
+      I.subschemeι _ hh.symm Q.isIso_pullback_snd
+
+@[simp]
+lemma pullback_j : (Q.pullback g).j = Limits.pullback.snd Q.j g :=
+  rfl
+
+@[simp]
+lemma pullback_p : (Q.pullback g).p = Limits.pullback.snd Q.p g :=
+  rfl
+
+end Pullback
 
 end ElementaryDistinguishedSquare
 

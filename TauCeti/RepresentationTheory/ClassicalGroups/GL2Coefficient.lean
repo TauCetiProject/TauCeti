@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.ClassicalGroups.Determinant
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.SymmetricPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Tensor
+public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Dual
 import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Combinatorics
 
 /-!
@@ -22,7 +23,9 @@ its coordinate description:
 * over a nontrivial commutative ring `k` without zero divisors whose weight characters separate
   weights (for instance an infinite field, `TauCeti.weightChar_injective`), its weights are the
   `(a - i, b + i)` for `0 ≤ i ≤ a - b`, and in particular `(a, b)` is a weight;
-* over such a field, each weight has multiplicity one.
+* over such a field, each weight has multiplicity one;
+* its contragredient has scalar weight `-(a + b)` and, over such a field, the weights of
+  `V_(-b,-a)` with the same multiplicities, so its highest weight is `(-b, -a)`.
 
 The weights are read off from those of the symmetric power
 (`TauCeti.RepresentationTheory.ClassicalGroups.Weight.SymmetricPower`) and the translation of
@@ -40,6 +43,11 @@ weights by the determinant twist (`TauCeti.weightSpace_tprod_detPowerRep`).
   `b ≤ l 0`, `b ≤ l 1` and `l 0 + l 1 = a + b`.
 * `TauCeti.finrank_weightSpace_gl2CoefficientRep`: each weight has multiplicity one.
 * `TauCeti.gl2CoefficientRep_scalar`: a scalar matrix `z` acts by `z ^ (a + b)`.
+* `TauCeti.gl2CoefficientRep_dual_scalar`: on the contragredient, by `z ^ (-(a + b))`.
+* `TauCeti.finrank_weightSpace_dual_gl2CoefficientRep`: the weight multiplicities of the
+  contragredient of `V_(a,b)` are those of `V_(-b,-a)`.
+* `TauCeti.weightSpace_dual_gl2CoefficientRep_highest_ne_bot`: `(-b, -a)` is a weight of the
+  contragredient of `V_(a,b)`.
 -/
 
 public section
@@ -79,6 +87,22 @@ theorem gl2CoefficientRep_scalar (hab : b ≤ a) (z : kˣ) (x : GL2CoefficientSp
       Units.val_mul, Units.val_pow_eq_pow_val]
     simp only [detPowerRep_apply, GeneralLinearGroup.det_scalar, Fintype.card_fin, ← smul_eq_mul,
       TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', smul_smul]
+
+/-- **A scalar matrix `z` acts on the contragredient of `V_(a,b)` by `z ^ (-(a + b))`.** -/
+theorem gl2CoefficientRep_dual_scalar (hab : b ≤ a) (z : kˣ)
+    (f : Dual k (GL2CoefficientSpace k a b)) :
+    (gl2CoefficientRep k a b).dual (GeneralLinearGroup.scalar (Fin 2) z) f =
+      ((z ^ (-(a + b)) : kˣ) : k) • f := by
+  refine LinearMap.ext fun x ↦ ?_
+  rw [Representation.dual_apply, Dual.transpose_apply, LinearMap.comp_apply, ← map_inv,
+    gl2CoefficientRep_scalar hab, map_smul, LinearMap.smul_apply, _root_.inv_zpow']
+
+/-- The weight spaces of `V_(a,b)` span it. -/
+theorem iSup_weightSpace_gl2CoefficientRep_eq_top :
+    ⨆ l : Fin 2 → ℤ, weightSpace (W := GL2CoefficientSpace k a b) (gl2CoefficientRep k a b) l =
+      ⊤ :=
+  iSup_weightSpace_tprod_eq_top iSup_weightSpace_symPowerRep_eq_top
+    (top_le_iff.mp ((weightSpace_detPowerRep b).symm.le.trans (le_iSup _ _)))
 
 end CommRing
 
@@ -130,6 +154,55 @@ theorem finrank_weightSpace_gl2CoefficientRep
       omega⟩
   rw [weightSpace_tprod_detPowerRep, Submodule.comap_equiv_eq_map_symm,
     LinearEquiv.finrank_map_eq, ← hs, finrank_weightSpace_symPowerRep hchar s]
+
+/-- The weight multiplicities of `V_(a,b)`: one on the weights `(a - i, b + i)`, zero
+elsewhere. -/
+theorem finrank_weightSpace_gl2CoefficientRep_eq_ite
+    (hchar : Function.Injective (weightChar k (κ := Fin 2))) (hab : b ≤ a) (l : Fin 2 → ℤ)
+    [Decidable (b ≤ l 0 ∧ b ≤ l 1 ∧ l 0 + l 1 = a + b)] :
+    finrank k (weightSpace (W := GL2CoefficientSpace k a b) (gl2CoefficientRep k a b) l) =
+      if b ≤ l 0 ∧ b ≤ l 1 ∧ l 0 + l 1 = a + b then 1 else 0 := by
+  split_ifs with hl
+  · exact finrank_weightSpace_gl2CoefficientRep hchar hl
+  · rw [← (weightSpace_gl2CoefficientRep_ne_bot_iff hchar hab l).not, not_not] at hl
+    rw [hl, finrank_bot]
+
+/-- **The contragredient of `V_(a,b)` has the weights of `V_(-b,-a)`, with the same
+multiplicities**, when the weight characters of `k` separate weights (for instance over an
+infinite field, `TauCeti.weightChar_injective`). -/
+theorem finrank_weightSpace_dual_gl2CoefficientRep
+    (hchar : Function.Injective (weightChar k (κ := Fin 2))) (hab : b ≤ a) (l : Fin 2 → ℤ) :
+    finrank k (weightSpace (gl2CoefficientRep k a b).dual l) =
+      finrank k (weightSpace (W := GL2CoefficientSpace k (-b) (-a))
+        (gl2CoefficientRep k (-b) (-a)) l) := by
+  classical
+  rw [finrank_weightSpace_dual hchar iSup_weightSpace_gl2CoefficientRep_eq_top,
+    finrank_weightSpace_gl2CoefficientRep_eq_ite hchar hab,
+    finrank_weightSpace_gl2CoefficientRep_eq_ite hchar (neg_le_neg hab)]
+  simp only [Pi.neg_apply]
+  congr 1
+  apply propext
+  omega
+
+/-- **The weights of the contragredient of `V_(a,b)`** are those of `V_(-b,-a)`: the `l` with
+`l 0 ≤ -b`, `l 1 ≤ -b` and `l 0 + l 1 = -(a + b)`, when the weight characters of `k` separate
+weights. -/
+theorem weightSpace_dual_gl2CoefficientRep_ne_bot_iff
+    (hchar : Function.Injective (weightChar k (κ := Fin 2))) (hab : b ≤ a) (l : Fin 2 → ℤ) :
+    weightSpace (gl2CoefficientRep k a b).dual l ≠ ⊥ ↔
+      -a ≤ l 0 ∧ -a ≤ l 1 ∧ l 0 + l 1 = -b + -a := by
+  rw [weightSpace_dual_ne_bot_iff hchar iSup_weightSpace_gl2CoefficientRep_eq_top,
+    weightSpace_gl2CoefficientRep_ne_bot_iff hchar hab]
+  simp only [Pi.neg_apply]
+  omega
+
+/-- **The highest weight `(-b, -a)` is a weight** of the contragredient of `V_(a,b)`, when the
+weight characters of `k` separate weights. -/
+theorem weightSpace_dual_gl2CoefficientRep_highest_ne_bot
+    (hchar : Function.Injective (weightChar k (κ := Fin 2))) (hab : b ≤ a) :
+    weightSpace (gl2CoefficientRep k a b).dual ![-b, -a] ≠ ⊥ :=
+  (weightSpace_dual_gl2CoefficientRep_ne_bot_iff hchar hab _).2
+    ⟨by simpa using hab, by simp, by simp⟩
 
 end Field
 

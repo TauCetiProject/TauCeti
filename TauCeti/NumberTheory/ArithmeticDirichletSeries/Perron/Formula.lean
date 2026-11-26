@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Perron.Basic
 public import Mathlib.NumberTheory.LSeries.Basic
 import Mathlib.Analysis.Normed.Group.Tannery
+import TauCeti.NumberTheory.LSeries.Continuity
 
 /-!
 # The arithmetic Perron formula
@@ -84,18 +85,6 @@ private theorem lintegral_norm_term_mul_perronIntegrand_ne_top (hx : 0 < x) (hc 
   rw [← ENNReal.ofReal_tsum_of_nonneg (fun n ↦ by positivity) (h.norm.mul_right _)]
   exact ENNReal.ofReal_lt_top
 
-/-- Each `L`-series term is continuous in the height along the line `Re s = c`. -/
-private theorem continuous_term_line (f : ℕ → ℂ) (c : ℝ) (n : ℕ) :
-    Continuous fun t : ℝ ↦ LSeries.term f ((c : ℂ) + t * I) n := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simpa using continuous_const
-  · have hline : Continuous fun t : ℝ ↦ (c : ℂ) + t * I :=
-      continuous_const.add (Complex.continuous_ofReal.mul continuous_const)
-    have hn0 : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hn
-    simp only [LSeries.term_of_ne_zero hn]
-    refine continuous_const.div (hline.const_cpow (Or.inl hn0)) fun t ↦ ?_
-    exact fun h ↦ hn0 ((Complex.cpow_eq_zero_iff _ _).mp h).1
-
 /-- **The interchange.**  Where the `L`-series converges absolutely on the line `Re s = c`, the
 integral over the truncated segment of the series times the Perron integrand is the series of the
 integrals. -/
@@ -107,7 +96,7 @@ theorem integral_LSeries_mul_perronIntegrand (hx : 0 < x) (hc : 0 < c)
   rw [← MeasureTheory.integral_tsum (fun n ↦ ?_) (lintegral_norm_term_mul_perronIntegrand_ne_top
     hx hc h)]
   · exact integral_congr_ae (.of_forall fun t ↦ tsum_mul_right.symm)
-  · exact ((continuous_term_line f c n).mul
+  · exact ((TauCeti.LSeries.continuous_term_vertical f (c : ℂ) n).mul
       (continuous_perronIntegrand hx.ne' hc.ne')).aestronglyMeasurable
 
 /-- **Collecting a term into the integrand.**  The `n`-th `L`-series term against the Perron
