@@ -285,14 +285,17 @@ theorem sectionEntry_apply_eq_cutoffFrameCoeff
       t'.cutoffFrameCoeff χ hχ ℓ (P (f • t.cutoffFrameSection ψ hψ v)) :=
   (rfl)
 
-omit [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)] in
-/-- Reading a properly supported operator `P` along a section `s` and through a cut-off frame
-coefficient, `f ↦ χ · ℓ(t' (P (f · s)))`, gives a properly supported operator on functions. -/
-theorem IsSectionProperlySupported.cutoffFrameCoeff_comp_comp_toSpanSingleton
+omit [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)]
+  [ContMDiffVectorBundle ∞ W F 𝓘(ℝ, CoordinateSpace n)] in
+/-- Reading a properly supported operator `P` along a section `s` and through an operator `L` from
+sections of `F` to functions such that `L r` vanishes wherever `r` does, `f ↦ L (P (f · s))`, gives
+a properly supported operator on functions. -/
+theorem IsSectionProperlySupported.comp_comp_toSpanSingleton
     {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
-    (hP : IsSectionProperlySupported P) (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
-    IsProperlySupported (t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
-      (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ) := by
+    (hP : IsSectionProperlySupported P)
+    {L : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hL : ∀ r x, r x = 0 → L r x = 0) (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    IsProperlySupported (L ∘ₗ P ∘ₗ (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ) := by
   refine isProperlySupported_iff.2 fun K hK ↦ ?_
   obtain ⟨K', hK', hP₁, hP₂⟩ := hP K hK
   refine ⟨K', hK', fun f hf ↦ ?_, fun f hf x hx ↦ ?_⟩
@@ -300,13 +303,18 @@ theorem IsSectionProperlySupported.cutoffFrameCoeff_comp_comp_toSpanSingleton
       s).trans (inter_subset_left.trans hf))
     rw [ContMDiffSection.tsupport_def] at h₂
     refine (closure_mono fun y hy ↦ ?_).trans h₂
-    simp only [Function.mem_support, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-      LinearMap.toSpanSingleton_apply, Trivialization.cutoffFrameCoeff_apply] at hy
-    exact fun h ↦ hy (by rw [h, map_zero, map_zero, smul_zero])
-  · have h := hP₂ (f • s) (hf.mono fun y hy ↦ by simp [hy]) x hx
-    simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-      LinearMap.toSpanSingleton_apply, Trivialization.cutoffFrameCoeff_apply, h]
-    simp
+    exact fun h ↦ hy (hL _ y h)
+  · exact hL _ x (hP₂ (f • s) (hf.mono fun y hy ↦ by simp [hy]) x hx)
+
+omit [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)] in
+/-- Reading a properly supported operator `P` along a section `s` and through a cut-off frame
+coefficient, `f ↦ χ · ℓ(t' (P (f · s)))`, gives a properly supported operator on functions. -/
+theorem IsSectionProperlySupported.cutoffFrameCoeff_comp_comp_toSpanSingleton
+    {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
+    (hP : IsSectionProperlySupported P) (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    IsProperlySupported (t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+      (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ) :=
+  hP.comp_comp_toSpanSingleton (fun r x h ↦ by simp [h]) s
 
 /-- The entries of a properly supported operator are properly supported. -/
 theorem IsSectionProperlySupported.sectionEntry

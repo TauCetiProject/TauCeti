@@ -49,6 +49,8 @@ complex-linear functional as `l y = ½ ∑ᵢ l (bᵢ) ⟪bᵢ, y⟫_ℂ`
   real inner product, `⟪v, w⟫ - i ⟪v, i w⟫` is a Hermitian form.
 * `OrthonormalBasis.eq_sum_mul_extendRCLike_innerₗ`: the expansion of a complex-linear functional
   in a real orthonormal basis.
+* `TauCeti.sum_sum_mul_extendRCLike_innerₗ_eq`: the expansion of a complex-linear functional in a
+  family of real orthonormal bases weighted by a partition of unity `∑ᵢ rᵢ² = 1`.
 -/
 
 public section
@@ -120,9 +122,8 @@ namespace TauCeti
 theorem extendRCLike_innerₗ_apply (v w : E) :
     Module.Dual.extendRCLike (𝕜 := ℂ) (innerₗ E v) w =
       (⟪v, w⟫_ℝ : ℂ) - Complex.I * (⟪v, Complex.I • w⟫_ℝ : ℂ) := by
-  rw [Module.Dual.extendRCLike_apply, innerₗ_apply_apply, innerₗ_apply_apply, RCLike.I_to_complex]
-  -- The coercion `ℝ → ℂ` of the `RCLike` structure of `ℂ` is `Complex.ofReal` by definition.
-  rfl
+  rw [Module.Dual.extendRCLike_apply, innerₗ_apply_apply, innerₗ_apply_apply, RCLike.I_to_complex,
+    RCLike.ofReal_eq_complex_ofReal]
 
 omit [IsScalarTower ℝ ℂ E] in
 /-- If multiplication by `i` preserves a real inner product, then `⟪i v, w⟫ = -⟪v, i w⟫`. -/
@@ -145,13 +146,10 @@ theorem extendRCLike_innerₗ_smul_left
       -Complex.I * Module.Dual.extendRCLike (𝕜 := ℂ) (innerₗ E v) w := by
     rw [extendRCLike_innerₗ_apply, extendRCLike_innerₗ_apply, hE, real_inner_I_smul_left hE]
     push_cast
-    ring_nf
-    simp only [Complex.I_sq]
-    ring
-  rw [← Module.Dual.extendRCLikeₗ_apply, hc, map_add, map_smul, map_smul, map_add, map_smul,
-    map_smul, LinearMap.add_apply, LinearMap.smul_apply, LinearMap.smul_apply,
-    Module.Dual.extendRCLikeₗ_apply, Module.Dual.extendRCLikeₗ_apply, hI, Complex.real_smul,
-    Complex.real_smul]
+    linear_combination -(⟪v, Complex.I • w⟫_ℝ : ℂ) * Complex.I_sq
+  rw [← Module.Dual.extendRCLikeₗ_apply, hc]
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply,
+    Module.Dual.extendRCLikeₗ_apply, hI, Complex.real_smul]
   conv_rhs => rw [← Complex.re_add_im c]
   simp only [map_add, map_mul, Complex.conj_ofReal, Complex.conj_I]
   ring
@@ -182,8 +180,7 @@ theorem OrthonormalBasis.eq_sum_mul_extendRCLike_innerₗ {ι : Type*} [Fintype 
     conv_lhs => rw [← b.sum_repr' z]
     rw [map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← algebraMap_smul ℂ, map_smul, smul_eq_mul]
-    rfl
+    rw [← algebraMap_smul ℂ, map_smul, smul_eq_mul, Complex.coe_algebraMap]
   have hI : l (Complex.I • y) = Complex.I * l y := by rw [map_smul, smul_eq_mul]
   have h2 : ∑ i, l (b i) * Module.Dual.extendRCLike (𝕜 := ℂ) (innerₗ E (b i)) y =
       l y - Complex.I * l (Complex.I • y) := by
@@ -193,5 +190,29 @@ theorem OrthonormalBasis.eq_sum_mul_extendRCLike_innerₗ {ι : Type*} [Fintype 
     ring
   rw [h2, hI, ← mul_assoc, Complex.I_mul_I]
   ring
+
+/-- **Expansion in a family of real orthonormal bases.** If `∑ᵢ rᵢ² = 1` and `(eᵢ a)ₐ` is a real
+orthonormal basis of `E` whenever `rᵢ ≠ 0`, then every complex-linear functional `l` on `E` is
+`l y = ∑ᵢ ∑ₐ ½ rᵢ l (eᵢ a) ⟪rᵢ eᵢ a, y⟫_ℂ`, for the complex-linear extensions
+`⟪v, y⟫_ℂ = ⟪v, y⟫ - i ⟪v, i y⟫` of `⟪v, ·⟫`. -/
+theorem TauCeti.sum_sum_mul_extendRCLike_innerₗ_eq {ι κ : Type*} [Fintype ι] [Fintype κ]
+    {r : ι → ℝ} (hr : ∑ i, r i ^ 2 = 1) {e : ι → κ → E}
+    (he : ∀ i, r i ≠ 0 → Orthonormal ℝ (e i) ∧ ⊤ ≤ Submodule.span ℝ (Set.range (e i)))
+    (l : Module.Dual ℂ E) (y : E) :
+    ∑ i, ∑ a, 2⁻¹ * (r i * l (e i a)) *
+      Module.Dual.extendRCLike (𝕜 := ℂ) (innerₗ E (r i • e i a)) y = l y := by
+  have key (i : ι) : ∑ a, 2⁻¹ * (r i * l (e i a)) *
+      Module.Dual.extendRCLike (𝕜 := ℂ) (innerₗ E (r i • e i a)) y = ((r i ^ 2 : ℝ) : ℂ) * l y := by
+    by_cases hri : r i = 0
+    · simp [hri]
+    obtain ⟨hon, hsp⟩ := he i hri
+    rw [(OrthonormalBasis.mk hon hsp).eq_sum_mul_extendRCLike_innerₗ l y, OrthonormalBasis.coe_mk,
+      Finset.mul_sum, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun a _ ↦ ?_
+    simp only [TauCeti.extendRCLike_innerₗ_apply, real_inner_smul_left]
+    push_cast
+    ring
+  rw [Finset.sum_congr rfl fun i _ ↦ key i, ← Finset.sum_mul, ← Complex.ofReal_sum, hr,
+    Complex.ofReal_one, one_mul]
 
 end ExtendRCLike
