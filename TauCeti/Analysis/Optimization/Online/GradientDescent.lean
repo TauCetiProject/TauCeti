@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Real.Sqrt
 public import TauCeti.Analysis.InnerProductSpace.Projection.MetricProj
 public import TauCeti.Analysis.Optimization.Online.Regret
+import TauCeti.Analysis.Real.SumInvSqrt
 
 /-!
 # Online gradient descent
@@ -290,22 +291,6 @@ theorem regret_ogd_le_of_antitone (hc : IsComplete K) (hK : Convex ℝ K) (x₀ 
   (regret_le_sum_inner_sub f _ g hf).trans
     (sum_inner_ogd_sub_le_of_antitone hc hK x₀ hη g hηT hu hx₀ hD)
 
-/-- The partial sums of `1 / √(t + 1)` grow at most like `2 * √n`:
-`∑_{t < n} 1 / √(t + 1) ≤ 2 * √n`. -/
-theorem sum_range_inv_sqrt_succ_le (n : ℕ) :
-    ∑ t ∈ range n, (√((t : ℝ) + 1))⁻¹ ≤ 2 * √(n : ℝ) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    -- Each term `1 / √(n + 1)` is at most `2 * (√(n + 1) - √n)`.
-    rw [sum_range_succ, Nat.cast_succ]
-    have hb : 0 < √((n : ℝ) + 1) := Real.sqrt_pos.2 (by positivity)
-    have ha2 := Real.sq_sqrt (Nat.cast_nonneg (α := ℝ) n)
-    have hb2 := Real.sq_sqrt (by positivity : (0 : ℝ) ≤ n + 1)
-    have : (√((n : ℝ) + 1))⁻¹ ≤ 2 * √((n : ℝ) + 1) - 2 * √(n : ℝ) :=
-      (inv_le_iff_one_le_mul₀ hb).2 (by nlinarith [sq_nonneg (√((n : ℝ) + 1) - √(n : ℝ))])
-    linarith
-
 /-- **The `(3 / 2) * D * G * √T` regret bound of online gradient descent** with the steps
 `η t = D / (G * √(t + 1))`, which need no knowledge of the horizon `T`. Let `K` be complete and
 convex, `u ∈ K`, and let `D` bound the distance from `u` to the start `x₀` and to every point
@@ -358,7 +343,7 @@ theorem regret_ogd_le_three_halves (hc : IsComplete K) (hK : Convex ℝ K) (x₀
       _ = D * G / 2 * ∑ t ∈ range (n + 1), (√((t : ℝ) + 1))⁻¹ := by rw [mul_sum]
       _ ≤ D * G / 2 * (2 * √((n : ℝ) + 1)) := by
           gcongr
-          simpa using sum_range_inv_sqrt_succ_le (n + 1)
+          simpa using Real.sum_range_inv_sqrt_succ_le (n + 1)
       _ = D * G * √((n : ℝ) + 1) := by ring
   have hfirst : D ^ 2 / (2 * (D / (G * √((n : ℝ) + 1)))) = D * G * √((n : ℝ) + 1) / 2 := by
     field_simp
