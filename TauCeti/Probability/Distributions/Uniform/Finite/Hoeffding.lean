@@ -11,9 +11,11 @@ import Mathlib.Probability.Moments.SubGaussian
 /-!
 # Hoeffding's inequality for counting in finite products
 
-Uniform counting on a product of finite sets is the product of the uniform laws. Applying
-Mathlib's Hoeffding inequality to functions of the individual coordinates bounds the cardinality
-of an upper tail of their sum by an exponential fraction of the cardinality of the product.
+The uniform measure on a finite product is the product of the factor uniform measures. It is
+a probability measure when every factor is nonempty. Applying
+`ProbabilityTheory.hasSubgaussianMGF_of_mem_Icc` to each coordinate and
+`ProbabilityTheory.HasSubgaussianMGF.measure_sum_ge_le_of_iIndepFun` to their sum bounds the
+cardinality of its upper tail by an exponential fraction of the product cardinality.
 -/
 
 public section
@@ -25,37 +27,24 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] {Ω : ι → Type*}
 
-/-- The uniform measure on a finite dependent product is the product of the uniform measures on
-its factors. Each factor can carry any measurable structure with measurable singletons. -/
-theorem uniformOn_univ_pi [∀ i, Finite (Ω i)] [∀ i, MeasurableSpace (Ω i)]
-    [∀ i, MeasurableSingletonClass (Ω i)] :
-    uniformOn (Set.univ : Set (∀ i, Ω i)) =
-      Measure.pi (fun i ↦ uniformOn (Set.univ : Set (Ω i))) := by
-  classical
-  let (i : ι) : Fintype (Ω i) := Fintype.ofFinite _
-  apply Measure.ext_of_singleton
-  intro x
-  have (i : ι) : Nonempty (Ω i) := ⟨x i⟩
-  simp only [Measure.pi_singleton, uniformOn_univ, Measure.count_singleton, Fintype.card_pi,
-    Nat.cast_prod, one_div]
-  symm
-  apply ENNReal.eq_inv_of_mul_eq_one_left
-  rw [← prod_mul_distrib]
-  exact prod_eq_one fun i _ ↦
-    ENNReal.inv_mul_cancel (by exact_mod_cast Fintype.card_ne_zero (α := Ω i))
-      (ENNReal.natCast_ne_top _)
-
-/-- For real functions `X i` on finite nonempty sets, with `X i` taking values in `[a i, b i]`,
+/-- For real functions `X i` on finite sets, with `X i` taking values in `[a i, b i]`,
 the number of tuples at which the sum of the functions exceeds the sum of their uniform means by
 at least `t ≥ 0` is at most the product cardinality times
 `exp (-2 t² / ∑ i, (b i - a i)²)`. -/
-theorem ncard_setOf_sum_sub_mean_ge_le_exp [∀ i, Fintype (Ω i)] [∀ i, Nonempty (Ω i)]
+theorem ncard_setOf_sum_sub_mean_ge_le_card_mul_exp [∀ i, Fintype (Ω i)]
     (X : ∀ i, Ω i → ℝ) {a b : ι → ℝ} (hX : ∀ i x, X i x ∈ Set.Icc (a i) (b i))
     {t : ℝ} (ht : 0 ≤ t) :
     ({x : ∀ i, Ω i |
         t ≤ ∑ i, (X i (x i) - (∑ y, X i y) / Fintype.card (Ω i))}.ncard : ℝ) ≤
       Nat.card (∀ i, Ω i) * Real.exp (-2 * t ^ 2 / ∑ i, (b i - a i) ^ 2) := by
   classical
+  rcases isEmpty_or_nonempty (∀ i, Ω i) with h | h
+  · have hs : {x : ∀ i, Ω i |
+        t ≤ ∑ i, (X i (x i) - (∑ y, X i y) / Fintype.card (Ω i))} = ∅ :=
+      Set.eq_empty_of_isEmpty _
+    rw [hs]
+    simp
+  have (i : ι) : Nonempty (Ω i) := ⟨Classical.choice h i⟩
   let (i : ι) : MeasurableSpace (Ω i) := ⊤
   let (i : ι) : MeasurableSingletonClass (Ω i) := ⟨fun _ ↦ trivial⟩
   rw [Nat.card_eq_fintype_card]
@@ -71,12 +60,8 @@ theorem ncard_setOf_sum_sub_mean_ge_le_exp [∀ i, Fintype (Ω i)] [∀ i, Nonem
       ((hmeas i).comp (measurable_pi_apply i)).aemeasurable
     have hmean : ∫ x : ∀ i, Ω i, X i (x i) ∂Measure.pi μ =
         (∑ y, X i y) / Fintype.card (Ω i) := by
-      calc
-        _ = ∫ y, X i y ∂(Measure.pi μ).map (Function.eval i) :=
-          (integral_map (measurable_pi_apply i).aemeasurable (hmeas i).aestronglyMeasurable).symm
-        _ = _ := by
-          rw [(measurePreserving_eval μ i).map_eq]
-          simp [μ, integral_uniformOn_univ, div_eq_inv_mul]
+      rw [integral_comp_eval (hmeas i).aestronglyMeasurable]
+      simp [μ, integral_uniformOn_univ, div_eq_inv_mul]
     simpa only [Y, hmean] using hasSubgaussianMGF_of_mem_Icc hx (ae_of_all _ fun x ↦ hX i (x i))
   have htail := HasSubgaussianMGF.measure_sum_ge_le_of_iIndepFun
     hindep (s := univ) (fun i _ ↦ hsub i) ht
