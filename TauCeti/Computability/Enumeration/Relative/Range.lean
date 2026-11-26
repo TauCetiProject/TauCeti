@@ -84,6 +84,7 @@ theorem primrec₂_rangeCode : Primrec₂ rangeCode :=
     (Primrec₂.natPair.comp (Primrec.encode.comp Primrec.fst) Primrec.snd)
 
 /-- The range program evaluates the domain stage at the input-stage pair coded by its input. -/
+@[simp]
 theorem eval_rangeCode (O : ℕ → ℕ) (c : Code) (a n : ℕ) :
     eval (O : ℕ →. ℕ) (c.rangeCode a) n =
       Part.some (if n.unpair.1 ∈ c.domStage (fun z => some (O z)) n.unpair.2
@@ -93,6 +94,7 @@ theorem eval_rangeCode (O : ℕ → ℕ) (c : Code) (a n : ℕ) :
 
 /-- The range consists of the source domain together with the fallback, which is returned
 at every pair with stage zero. -/
+@[simp]
 theorem ran_eval_rangeCode (O : ℕ → ℕ) (c : Code) (a : ℕ) :
     (eval (O : ℕ →. ℕ) (c.rangeCode a)).ran = insert a (eval (O : ℕ →. ℕ) c).Dom := by
   rw [← stageLimit_domStage_total]
@@ -172,6 +174,7 @@ theorem primrec_entryCode : Primrec entryCode :=
   primrec₂_curry.comp (Primrec.const _) Primrec.encode
 
 /-- The entry program runs the serialized entry search relative to every total oracle. -/
+@[simp]
 theorem eval_entryCode (O : ℕ → ℕ) (c : Code) (n : ℕ) :
     eval (O : ℕ →. ℕ) c.entryCode n =
       entryAt (serializedStage (c.domStage fun z => some (O z))) n := by
@@ -187,6 +190,7 @@ theorem existsUnique_mem_eval_entryCode_iff (O : ℕ → ℕ) (c : Code) (x : �
   rfl
 
 /-- The range of the entry program is the entire source domain, even when it is finite. -/
+@[simp]
 theorem ran_eval_entryCode (O : ℕ → ℕ) (c : Code) :
     (eval (O : ℕ →. ℕ) c.entryCode).ran = (eval (O : ℕ →. ℕ) c).Dom := by
   ext x
