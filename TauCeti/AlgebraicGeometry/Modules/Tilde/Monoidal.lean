@@ -76,6 +76,18 @@ private instance : (globalSections (R := R)).LaxMonoidal := by
   unfold globalSections
   infer_instance
 
+private lemma forgetSpec_map_app'_apply {A B : (Spec R).Modules} (f : A ⟶ B)
+    (U : (Spec R).Opens) (x : (forgetSpec.obj A).obj (.op U)) :
+    (forgetSpec.map f).app' (.op U) x = f.app U x :=
+  -- `forgetSpec` forgets to `f.val`, whose `U`-component acts as `f.app U` on sections.
+  rfl
+
+private lemma globalSections_map_apply {A B : (Spec R).Modules} (f : A ⟶ B)
+    (x : globalSections.obj A) :
+    globalSections.map f x = f.app ⊤ x :=
+  -- `globalSections` evaluates on `⊤` and restricts scalars, leaving `f.app ⊤` unchanged.
+  rfl
+
 private lemma globalSections_ε_apply (r : R) :
     ε (globalSections (R := R)) r = (Scheme.ΓSpecIso R).inv r := by
   have h : ε (forgetSpec (R := R)) = 𝟙 _ := SheafOfModules.forget_ε (Spec R).sheaf
@@ -163,10 +175,11 @@ theorem tilde_η : η (tilde.functor R) = (tildeSelf (R := R)).hom := by
   ext
   rw [globalSections_ε_apply]
   refine Eq.symm <| (ConcreteCategory.congr_hom
-    (tildeAdjunction.homEquiv_unit _ _ (tildeSelf (R := R)).hom) (1 : R)).trans ?_
-  rw [ConcreteCategory.comp_apply]
-  change (tildeSelf (R := R)).hom.app ⊤ (tildeAdjunction.unit.app (ModuleCat.of R R) (1 : R)) = _
-  rw [tildeAdjunction_unit_apply]
+    (tildeAdjunction.homEquiv_unit _ _ (tildeSelf (R := R)).hom) (1 : R)).trans <|
+    (ConcreteCategory.comp_apply _ _ _).trans <|
+    (globalSections_map_apply (tildeSelf (R := R)).hom _).trans <|
+    (congrArg (Scheme.Modules.Hom.app (tildeSelf (R := R)).hom ⊤)
+      (tildeAdjunction_unit_apply (ModuleCat.of R R) (1 : R))).trans ?_
   -- Both sides are the image of `1` in `Γ(Spec R, ⊤)`.
   rfl
 
@@ -216,18 +229,21 @@ theorem tilde_μ_app_top_toOpen (M N : ModuleCat.{u} R) (m : M) (n : N) :
     simp only [ConcreteCategory.comp_apply] at hA
     exact hA.trans ((congrArg (μ globalSections (tilde M) (tilde N)) htmul).trans
       (globalSections_μ_apply (tilde M) (tilde N) (tilde.toOpen M ⊤ m) (tilde.toOpen N ⊤ n)))
-  -- It remains to see that `μ` undoes `δ`; `SheafOfModules.forget` is `forgetSpec` and on
-  -- underlying sections `globalSections.map f` is `(forgetSpec.map f).app' (.op ⊤)`.
-  have hδμ : globalSections.map (μ (tilde.functor R) M N)
+  -- `μ` undoes `δ`, and the unit of `tildeAdjunction` is `tilde.toOpen`.
+  have hδμ : (μ (tilde.functor R) M N).app ⊤
       (globalSections.map (δ (tilde.functor R) M N) (tildeAdjunction.unit.app (M ⊗ N) (m ⊗ₜ n))) =
       tilde.toOpen (M ⊗ N) ⊤ (m ⊗ₜ n) := by
-    rw [← ConcreteCategory.comp_apply, ← CategoryTheory.Functor.map_comp, Functor.Monoidal.δ_μ,
+    rw [← globalSections_map_apply, ← ConcreteCategory.comp_apply,
+      ← CategoryTheory.Functor.map_comp, Functor.Monoidal.δ_μ,
       CategoryTheory.Functor.map_id, ConcreteCategory.id_apply, tildeAdjunction_unit_apply]
+  -- The goal binds `SheafOfModules.forget` (with `forgetLaxMonoidal`) via `letI`, which is
+  -- `forgetSpec` (`rw` cannot reach inside the `letI` or across `μ`'s functor-dependent
+  -- `LaxMonoidal` instance).
   change (forgetSpec.map (μ (tilde.functor R) M N)).app' (.op ⊤)
     ((μ forgetSpec (tilde M) (tilde N)).app' (.op ⊤)
       (tilde.toOpen M ⊤ m ⊗ₜ tilde.toOpen N ⊤ n)) = _
   rw [← key]
-  exact hδμ
+  exact (forgetSpec_map_app'_apply (μ (tilde.functor R) M N) ⊤ _).trans hδμ
 
 end
 
