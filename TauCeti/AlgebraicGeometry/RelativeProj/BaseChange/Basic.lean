@@ -39,6 +39,8 @@ sheaf.
   `relativeProjCover_f_relativeProjPullbackHom`.
 * `GradedQuasicoherentAlgebra.relativeProj_pullback_hom_ext`: morphisms out of the relative Proj of
   the pulled-back algebra agree once they agree on the charts over affine pairs.
+* `GradedQuasicoherentAlgebra.exists_mem_opensRange_relativeProjCover_f`: the charts over affine
+  pairs cover the relative Proj of the pulled-back algebra.
 * `GradedQuasicoherentAlgebra.isPullback_relativeProjPullbackHom`: relative Proj commutes with
   arbitrary base change.
 
@@ -285,6 +287,17 @@ theorem relativeProj_pullback_hom_ext {Z : Scheme.{u}}
         ((pullback g).obj A).obj.relativeProjCover.f V ≫ f₂) :
     f₁ = f₂ :=
   (relativeProjPullbackCover A g).hom_ext _ _ fun p ↦ h p.val.1 p.val.2 p.property
+
+/-- The charts of the relative `Proj` of `g^* A` over the affine opens of `X` lying over some
+affine open of `Y` cover it. -/
+theorem exists_mem_opensRange_relativeProjCover_f (x : ((pullback g).obj A).obj.relativeProj) :
+    ∃ V ∈ {V : X.AffineZariskiSite | ∃ U : Y.AffineZariskiSite, V.toOpens ≤ g ⁻¹ᵁ U.toOpens},
+      x ∈ (((pullback g).obj A).obj.relativeProjCover.f V).opensRange := by
+  obtain ⟨⟨⟨V, U⟩, hV⟩, hx⟩ := g.isOpenCover_affinePair.exists_mem
+    (((pullback g).obj A).obj.relativeProjToBase x)
+  refine ⟨V, ⟨U, hV⟩, ?_⟩
+  rw [← CommMon.relativeProjToBase_preimage _ V]
+  exact hx
 
 /-- **The relative `Proj` of `g^* A` is the base change of the relative `Proj` of `A`**: the
 square formed by the projection `relativeProjPullbackHom`, the structure morphisms and `g` is
