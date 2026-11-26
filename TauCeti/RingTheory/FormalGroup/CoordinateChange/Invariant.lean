@@ -12,6 +12,7 @@ import Mathlib.RingTheory.Localization.Ideal
 import TauCeti.Algebra.Algebra.Rat
 import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
 import TauCeti.RingTheory.FormalGroup.Logarithm.InfiniteHeight
+import TauCeti.RingTheory.Localization.Int
 
 /-!
 # Invariant ideals of the Lazard ring
@@ -22,9 +23,10 @@ right unit `η_R` and the left unit `η_L = C` agree: `η_R(I) Γ = η_L(I) Γ`.
 `I_(p, n)` and their union `I_(p, ∞)` are invariant
 (`TauCeti.LazardRing.map_rightUnit_heightIdeal`,
 `TauCeti.LazardRing.map_rightUnit_iSup_heightIdeal`). Landweber's classification says that, for
-each prime `p`, these are the homogeneous invariant prime ideals meeting `ℤ` in `(p)`, and that `0`
-is the only homogeneous invariant prime ideal meeting `ℤ` in `0`. This file proves the two
-extreme cases of that classification, for all ideals, homogeneous and prime or not:
+each prime `p`, the ideals `I_(p, n)` for `1 ≤ n ≤ ∞` are the homogeneous invariant prime ideals
+meeting `ℤ` in `(p)`, and that `0` is the only homogeneous invariant prime ideal meeting `ℤ` in `0`.
+This file proves the two extreme cases of that classification, for all ideals, homogeneous and
+prime or not:
 
 * an invariant ideal meeting `ℤ` in `0` is `0`
   (`TauCeti.LazardRing.eq_bot_of_map_rightUnit_eq_map_C`);
@@ -120,8 +122,7 @@ theorem eq_bot_of_map_rightUnit_eq_map_C {I : Ideal LazardRing} (hI : I.map righ
   let M := Algebra.algebraMapSubmonoid LazardRing (nonZeroDivisors ℤ)
   let S := Localization M
   have hunit (n : nonZeroDivisors ℤ) : IsUnit (algebraMap ℤ S n) := by
-    simpa using IsLocalization.map_units S
-      (⟨algebraMap ℤ LazardRing n, Submonoid.mem_map_of_mem _ n.property⟩ : M)
+    simpa using TauCeti.IsLocalization.isUnit_intCast_of_mem LazardRing (S := S) n.property
   let _ : Algebra ℚ S := (IsLocalization.lift (S := ℚ) hunit).toRatAlgebra
   have hdisj : Disjoint (M : Set LazardRing) I := by
     rw [Set.disjoint_left]
