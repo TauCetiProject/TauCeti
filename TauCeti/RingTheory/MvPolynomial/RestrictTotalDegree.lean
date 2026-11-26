@@ -43,7 +43,6 @@ the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members 
 * `MvPolynomial.basisRestrictTotalDegree`: the monomial basis of the polynomials of total degree
   at most `m`, whose coordinates are the coefficients.
 * `MvPolynomial.map_restrictTotalDegree_uniqueAlgEquiv`,
-  `MvPolynomial.uniqueAlgEquiv_mem_degreeLT_iff_mem_restrictTotalDegree`,
   `MvPolynomial.restrictTotalDegreeEquivDegreeLT`: in one variable, `uniqueAlgEquiv` identifies
   `restrictTotalDegree σ R d` with `Polynomial.degreeLT R (d + 1)`.
 * `MvPolynomial.boundedCoefficientEquiv`: monomial coefficients as finite coordinates on tuples of
@@ -149,15 +148,6 @@ theorem map_restrictTotalDegree_uniqueAlgEquiv [Unique σ] (d : ℕ) :
       Polynomial.degreeLT R (d + 1) := by
   rw [restrictTotalDegree_eq_restrictSupport, setOf_degree_le_eq_lt,
     map_restrictSupport_uniqueAlgEquiv]
-
-/-- In one variable, the image of a polynomial under `uniqueAlgEquiv` has degree below `d + 1` if
-and only if the polynomial lies in `restrictTotalDegree σ R d`. -/
-theorem uniqueAlgEquiv_mem_degreeLT_iff_mem_restrictTotalDegree [Unique σ] {d : ℕ}
-    {p : MvPolynomial σ R} :
-    uniqueAlgEquiv R σ p ∈ Polynomial.degreeLT R (d + 1) ↔
-      p ∈ restrictTotalDegree σ R d := by
-  rw [restrictTotalDegree_eq_restrictSupport, setOf_degree_le_eq_lt,
-    uniqueAlgEquiv_mem_degreeLT_iff]
 
 variable (σ R) in
 /-- In one variable, `uniqueAlgEquiv` restricts to an `R`-linear equivalence between

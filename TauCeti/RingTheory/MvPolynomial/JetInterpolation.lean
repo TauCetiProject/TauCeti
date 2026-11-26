@@ -35,8 +35,8 @@ matrix `TauCeti.firstJetMatrix P d`, the jet matrix `MvPolynomial.jetMatrix` of 
 whose `(i, none)` row lists the values `P i ^ α` of the monomials and whose `(i, some j)` row lists
 their derivatives `αⱼ P i ^ (α - eⱼ)`. Its rank equals
 `Module.finrank R (LinearMap.range (firstJetMap P d))` and is bounded above by
-`min ((card σ + d).choose d) (card ι * (card σ + 1))`. Over a field, the points are well poised
-exactly when this matrix has full row rank `|ι| (|σ| + 1)`.
+`min ((d + card σ).choose (card σ)) (card ι * (card σ + 1))`. Over a field, the points are
+well poised exactly when this matrix has full row rank `|ι| (|σ| + 1)`.
 
 In one variable (`[Unique σ]`), identifying `firstJetMap P d` with `Polynomial.hasseJet` of
 uniform multiplicity `2` via `MvPolynomial.uniqueAlgEquiv` yields Hermite interpolation for
@@ -300,21 +300,17 @@ theorem rank_firstJetMatrix_eq_finrank_range [Finite ι] [Finite σ] :
     toLin_firstJetMatrix, LinearMap.range_comp]
   exact (LinearEquiv.curry R R ι (Option σ)).symm.finrank_map_eq _
 
-private theorem card_degree_le [Fintype σ] (d : ℕ) [Fintype {s : σ →₀ ℕ // s.degree ≤ d}] :
-    Fintype.card {s : σ →₀ ℕ // s.degree ≤ d} = (Fintype.card σ + d).choose d := by
-  rw [← Nat.card_eq_fintype_card, Finsupp.card_degree_le_eq_choose, Nat.add_comm]
-  have h := Nat.choose_symm (Nat.le_add_left d (Fintype.card σ))
-  rwa [Nat.add_sub_cancel_right] at h
-
 /-- The rank of `firstJetMatrix P d` is bounded above by both the number of admissible monomials
-`(card σ + d).choose d` and the number of jet conditions `card ι * (card σ + 1)`. -/
+`(d + card σ).choose (card σ)` and the number of jet conditions `card ι * (card σ + 1)`. -/
 theorem rank_firstJetMatrix_le [StrongRankCondition R] [Fintype ι] [Fintype σ] :
     (firstJetMatrix P d).rank ≤
-      min ((Fintype.card σ + d).choose d) (Fintype.card ι * (Fintype.card σ + 1)) := by
+      min ((d + Fintype.card σ).choose (Fintype.card σ))
+        (Fintype.card ι * (Fintype.card σ + 1)) := by
   classical
   have _ : Fintype {s : σ →₀ ℕ // s.degree ≤ d} := Finsupp.fintypeDegreeLe d
   refine le_min ?_ ?_
-  · exact (Matrix.rank_le_card_width _).trans_eq (card_degree_le d)
+  · exact (Matrix.rank_le_card_width _).trans_eq <| by
+      rw [← Nat.card_eq_fintype_card, Finsupp.card_degree_le_eq_choose]
   · exact (Matrix.rank_le_card_height _).trans_eq (by rw [Fintype.card_prod, Fintype.card_option])
 
 /-- Reindexing the point family along an equivalence preserves the rank of `firstJetMatrix`. -/
@@ -389,17 +385,19 @@ theorem WellPoised.rank_firstJetMatrix [StrongRankCondition R] [Fintype ι] [Fin
 
 /-- Over a commutative semiring with the rank condition, a well-poised configuration of `card ι`
 points in `card σ` variables of degree `d` satisfies
-`card ι * (card σ + 1) ≤ (card σ + d).choose d`. -/
+`card ι * (card σ + 1) ≤ (d + card σ).choose (card σ)`. -/
 theorem WellPoised.card_mul_le_choose [RankCondition R] [Fintype ι] [Fintype σ]
     (h : WellPoised P d) :
-    Fintype.card ι * (Fintype.card σ + 1) ≤ (Fintype.card σ + d).choose d := by
+    Fintype.card ι * (Fintype.card σ + 1) ≤ (d + Fintype.card σ).choose (Fintype.card σ) := by
   classical
   let _ : Fintype {s : σ →₀ ℕ // s.degree ≤ d} := Finsupp.fintypeDegreeLe d
   have hsurj : Function.Surjective (firstJetMatrix P d).mulVecLin := by
     rw [Matrix.coe_mulVecLin]
     exact (firstJetMap_surjective_iff_mulVec_surjective (P := P) (d := d)).mp h
   have hle := card_le_of_surjective R (firstJetMatrix P d).mulVecLin hsurj
-  simpa only [Fintype.card_prod, Fintype.card_option, card_degree_le] using hle
+  rwa [Fintype.card_prod, Fintype.card_option,
+    ← Nat.card_eq_fintype_card (α := {s : σ →₀ ℕ // s.degree ≤ d}),
+    Finsupp.card_degree_le_eq_choose] at hle
 
 end CommSemiring
 
@@ -500,6 +498,10 @@ private theorem firstJetRowsEquivFinTwo_comp_firstJetMap_comp_inclusion
     firstJetMap_unique_eq_hasseJet, coe_restrictTotalDegreeEquivDegreeLT_symm_apply,
     Submodule.coe_inclusion, AlgEquiv.apply_symm_apply, Polynomial.hermiteJet_apply]
 
+private theorem sum_const_two (ι : Type*) [Fintype ι] :
+    ∑ _ : ι, 2 = 2 * Fintype.card ι := by
+  rw [Finset.sum_const, Finset.card_univ, smul_eq_mul, mul_comm]
+
 /-- **Univariate Hermite injectivity** for double points over a commutative ring: when the node
 differences are units and `d + 1 ≤ 2 * card ι`, `firstJetMap P d` is injective. -/
 theorem firstJetMap_injective_of_unique [CommRing R] [Unique σ] [Fintype ι] {P : ι → σ → R}
@@ -508,7 +510,7 @@ theorem firstJetMap_injective_of_unique [CommRing R] [Unique σ] [Fintype ι] {P
     Function.Injective (firstJetMap P d) := by
   rw [injective_iff_map_eq_zero]
   intro f hf
-  have hsum : d + 1 ≤ ∑ _ : ι, 2 := by simpa [mul_comm] using hd
+  have hsum : d + 1 ≤ ∑ _ : ι, 2 := hd.trans_eq (sum_const_two ι).symm
   let q : Polynomial.degreeLT R (∑ _ : ι, 2) :=
     Submodule.inclusion (Polynomial.degreeLT_mono hsum) (restrictTotalDegreeEquivDegreeLT σ R d f)
   have hq : Polynomial.hermiteJet (fun i ↦ P i default) (fun _ ↦ 2) q = 0 := by
@@ -516,7 +518,7 @@ theorem firstJetMap_injective_of_unique [CommRing R] [Unique σ] [Fintype ι] {P
     rw [Polynomial.hermiteJet_apply, Submodule.coe_inclusion,
       coe_restrictTotalDegreeEquivDegreeLT_apply,
       ← firstJetMap_unique_eq_hasseJet P d f i k, hf]
-    rfl
+    simp
   have hq0 := (Polynomial.hermiteJet_bijective_of_pairwise_isUnit_sub hP (fun _ ↦ 2)).injective
     (hq.trans (map_zero _).symm)
   have hf0 : uniqueAlgEquiv R σ f.val = 0 := by
@@ -529,7 +531,7 @@ theorem wellPoised_of_unique [CommRing R] [Unique σ] [Fintype ι] {P : ι → �
     (hP : Pairwise fun i j ↦ IsUnit (P i default - P j default)) {d : ℕ}
     (hd : 2 * Fintype.card ι ≤ d + 1) :
     WellPoised P d := by
-  have hle : ∑ _ : ι, 2 ≤ d + 1 := by simpa [mul_comm] using hd
+  have hle : ∑ _ : ι, 2 ≤ d + 1 := (sum_const_two ι).trans_le hd
   have hsurj : Function.Surjective
       (((firstJetRowsEquivFinTwo ι σ R).toLinearMap ∘ₗ firstJetMap P d) ∘ₗ
         ((restrictTotalDegreeEquivDegreeLT σ R d).symm.toLinearMap ∘ₗ
@@ -559,7 +561,7 @@ theorem wellPoised_iff_of_unique [CommRing R] [Nontrivial R] [Unique σ] [Fintyp
     WellPoised P d ↔ 2 * Fintype.card ι ≤ d + 1 := by
   refine ⟨fun h ↦ ?_, wellPoised_of_unique hP⟩
   have hle := h.card_mul_le_choose
-  rw [Fintype.card_unique (α := σ), Nat.add_comm 1 d, Nat.choose_succ_self_right] at hle
+  rw [Fintype.card_unique (α := σ), Nat.choose_one_right] at hle
   omega
 
 private theorem pairwise_isUnit_sub_default_of_injective {k : Type*} [Field k] [Unique σ]
