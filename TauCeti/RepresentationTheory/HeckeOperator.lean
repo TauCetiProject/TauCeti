@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.RepresentationTheory.WeightSpace
 import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.GroupTheory.DoubleCoset.Basic
+import TauCeti.Topology.Algebra.Group.DoubleCoset
 
 /-!
 # Hecke operators of a representation
@@ -53,35 +54,6 @@ The definitions and results are adapted from grh-lean (https://github.com/lserna
 public section
 
 open Function Set
-
-namespace QuotientGroup
-
-/-- A left translate `g ↦ f (x⁻¹ g)` of a right `K`-invariant `f` supported on finitely many cosets
-is again supported on finitely many cosets. -/
-theorem finite_support_comp_inv_mul {A G : Type*} [Zero A] [Group G] {K : Subgroup G}
-    {f : G → A} (hf : ∀ g, ∀ k ∈ K, f (g * k) = f g)
-    (hf_fin : (support fun q : G ⧸ K ↦ f q.out).Finite) (x : G) :
-    (support fun q : G ⧸ K ↦ f (x⁻¹ * q.out)).Finite := by
-  have h_value (q : G ⧸ K) : f (x⁻¹ * q.out) = f (x⁻¹ • q).out := by
-    rw [← MulAction.Quotient.mk_smul_out, smul_eq_mul, QuotientGroup.apply_out_mk hf]
-  refine (hf_fin.preimage (MulAction.injective x⁻¹).injOn).subset fun q hq ↦ ?_
-  simpa [h_value] using hq
-
-/-- For a compact open subgroup `K` of a topological group and `g ∈ G`, the indicator of the double
-coset `K g K` is supported on finitely many left cosets of `K`. This is the finiteness input for the
-double coset operator `[K g K]` (`Representation.doubleCosetOperator_apply_mem_weightSpace`). -/
-theorem finite_support_indicator_doubleCoset {A G : Type*} [Zero A] [One A] [Group G]
-    [TopologicalSpace G] [IsTopologicalGroup G] {K : Subgroup G}
-    (hK_open : IsOpen (K : Set G)) (hK : IsCompact (K : Set G)) (g : G) :
-    (support fun q : G ⧸ K ↦
-      (DoubleCoset.doubleCoset g K K).indicator (1 : G → A) q.out).Finite := by
-  have : DiscreteTopology (G ⧸ K) := QuotientGroup.discreteTopology hK_open
-  have h_cpt : IsCompact (DoubleCoset.doubleCoset g (K : Set G) K) :=
-    (hK.mul isCompact_singleton).mul hK
-  refine ((h_cpt.image QuotientGroup.continuous_mk).finite_of_discrete).subset fun q hq ↦ ?_
-  exact ⟨q.out, support_indicator_subset hq, QuotientGroup.out_eq' q⟩
-
-end QuotientGroup
 
 namespace Representation
 

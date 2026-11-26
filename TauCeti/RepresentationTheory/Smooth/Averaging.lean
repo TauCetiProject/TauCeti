@@ -285,7 +285,7 @@ theorem map_smoothAverage_of_forall_apply_eq (φ : V →ₗ[A] W) (hφ : ∀ k v
       simpa using hφ k v
   have h := IntertwiningMap.map_smoothAverage σ hK φ' v
   rw [smoothAverage_apply_of_mem_invariants (trivial A K W) hK (v := φ' v) fun _ ↦ by simp] at h
-  exact h
+  simpa only [φ', LinearMap.toIntertwiningMap] using h
 
 /-- **The average is self-adjoint** for every `σ`-invariant sesquilinear form `B`:
 `B (e_K x) y = B x (e_K y)` for all `x y`, stated with `LinearMap.IsSelfAdjoint` for `B.flip`,
