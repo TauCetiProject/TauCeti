@@ -753,7 +753,7 @@ private theorem exists_band_covectorPullback_realChart_cylindricalEndLift
   · -- The form is `C²`, since `J` is `J_e` and `u` is `C²` beyond `r`.
     refine contDiff_covectorPullback_of_eqOn
       (Je := fun ζ y ↦ (Je ζ.2 y).toLinearMap.toContinuousLinearMap)
-      (isOpen_lt continuous_const continuous_fst) hφ
+      (isOpen_lt continuous_const continuous_fst) (fun _ _ ↦ hφ.contDiffAt)
       (hJe.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd))
       (fun ζ hζ ↦ by simp only [Function.comp_apply, hJeq ζ hζ])
       (fun ζ hζ ↦ hu _ (positive.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2

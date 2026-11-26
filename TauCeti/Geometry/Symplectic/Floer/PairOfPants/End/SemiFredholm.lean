@@ -135,13 +135,11 @@ private theorem setIntegral_det_mul_comp_positiveEndChart_le_integral {g : ℝ �
         refine setIntegral_congr_set ?_
         rw [Measure.volume_eq_prod]
         exact (Measure.set_prod_ae_eq Ioo_ae_eq_Icc Ioo_ae_eq_Icc).symm
-    _ = ∫ z in positiveEndChart q '' (Ioo a b ×ˢ Ioo (0 : ℝ) 1), g z :=
-        (integral_image_eq_integral_of_eq_abs_det_smul hs
-          ((injOn_positiveEndChart q 0).mono
-            (prod_mono (subset_univ _) (by rw [zero_add]; exact Ioo_subset_Ico_self)))
-          (fun ζ _ ↦ (contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ)
-          fun ζ _ ↦ by rw [abs_of_pos (det_fderiv_positiveEndChart_pos q ζ), smul_eq_mul]).symm
-    _ ≤ _ := setIntegral_le_integral hgi (ae_of_all _ hg)
+    _ ≤ _ := setIntegral_det_mul_comp_le_integral hs
+        ((injOn_positiveEndChart q 0).mono
+          (prod_mono (subset_univ _) (by rw [zero_add]; exact Ioo_subset_Ico_self)))
+        (fun ζ _ ↦ (contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ)
+        (fun ζ _ ↦ (det_fderiv_positiveEndChart_pos q ζ).le) hg hgi
 
 /-- **The operator of an end, read in its chart.** Far out on the end `q`, where `J` is the
 cylindrical structure `J_q(t)` bounded by `B` along `u` and `u` solves the Floer equation for the
@@ -432,7 +430,8 @@ private theorem contDiff_covectorPullback_positiveEndChart {q : Puncture}
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) := by
   refine contDiff_covectorPullback_of_eqOn
     (Je := fun ζ y ↦ (Je ζ.2 y).toLinearMap.toContinuousLinearMap)
-    (isOpen_lt continuous_const continuous_fst) (contDiff_positiveEndChart q 3)
+    (isOpen_lt continuous_const continuous_fst)
+    (fun _ _ ↦ (contDiff_positiveEndChart q 3).contDiffAt)
     (hJe.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd))
     (fun ζ hζ ↦ by simp only [Function.comp_apply, hJeq ζ hζ.le]) (fun ζ hζ ↦ hu ζ hζ.le)
     (hη.comp (contDiff_positiveEndChart q 2)) fun ζ hζ ↦ ?_
