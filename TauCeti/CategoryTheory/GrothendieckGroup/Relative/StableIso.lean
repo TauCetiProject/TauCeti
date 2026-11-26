@@ -85,6 +85,8 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
 `(P, β ∘ α, S) ⊞ (Q, id, Q)` are isomorphic. The component on `P ⊞ Q` is the identity, and the
 component `Q ⊞ S ≅ S ⊞ Q` is Whitehead's isomorphism of preimages of `β` and `β⁻¹` under `T`,
 whose image under `T` is the diagonal sum of `β` and `β⁻¹`. -/
+-- The body is exposed: the `simps!` component lemmas are proved by `rfl`, and the module
+-- system validates such exported lemmas only against exposed bodies.
 @[expose, simps! hom_fst hom_snd inv_fst inv_snd]
 noncomputable def tripleBiprodTransIso [T.Full] {P Q S : C} (α : T.obj P ≅ T.obj Q)
     (β : T.obj Q ≅ T.obj S) :

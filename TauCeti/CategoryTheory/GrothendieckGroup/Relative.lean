@@ -140,10 +140,14 @@ lemma tripleBiprod_iso_hom_map_snd (x y : T ⊡ T) :
 The isomorphism conditions below are proved with `tripleBiprod` unfolded, as in the two
 characteristic lemmas above. The ends `(tripleBiprod T x y).fst` and `x.fst ⊞ y.fst` agree only
 up to unfolding `tripleBiprod`, so `simp` cannot apply the characteristic lemmas to composites
-whose objects are written one way and whose morphisms, such as `biprod.braiding`, the other. -/
+whose objects are written one way and whose morphisms, such as `biprod.braiding`, the other.
+
+The bodies of these isomorphisms are exposed because their `simps!` component lemmas are proved
+by `rfl`, and the module system validates such exported lemmas only against exposed bodies. -/
 
 /-- The direct sum of isomorphisms of triples `e : x ≅ x'` and `e' : y ≅ y'`, an isomorphism
 `x ⊞ y ≅ x' ⊞ y'` whose two components are the direct sums of the components of `e` and `e'`. -/
+-- The body is exposed for the `rfl`-proofs of its `simps!` lemmas; see the section note.
 @[expose, simps! hom_fst hom_snd inv_fst inv_snd]
 noncomputable def tripleBiprodMapIso {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : y ≅ y') :
     tripleBiprod T x y ≅ tripleBiprod T x' y' :=
@@ -162,6 +166,7 @@ noncomputable def tripleBiprodMapIso {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : 
 
 /-- The direct sum of triples is commutative: `x ⊞ y ≅ y ⊞ x` through the braidings of both
 components. -/
+-- The body is exposed for the `rfl`-proofs of its `simps!` lemmas; see the section note.
 @[expose, simps! hom_fst hom_snd inv_fst inv_snd]
 noncomputable def tripleBiprodComm (x y : T ⊡ T) :
     tripleBiprod T x y ≅ tripleBiprod T y x :=
@@ -176,6 +181,7 @@ noncomputable def tripleBiprodComm (x y : T ⊡ T) :
 
 /-- The direct sum of triples is associative: `(x ⊞ y) ⊞ z ≅ x ⊞ (y ⊞ z)` through the
 associators of both components. -/
+-- The body is exposed for the `rfl`-proofs of its `simps!` lemmas; see the section note.
 @[expose, simps! hom_fst hom_snd inv_fst inv_snd]
 noncomputable def tripleBiprodAssoc (x y z : T ⊡ T) :
     tripleBiprod T (tripleBiprod T x y) z ≅ tripleBiprod T x (tripleBiprod T y z) :=
@@ -194,6 +200,7 @@ noncomputable def tripleBiprodAssoc (x y z : T ⊡ T) :
 
 /-- The direct sum of the identity triples `(S, id, S)` and `(S', id, S')` is the identity triple
 `(S ⊞ S', id, S ⊞ S')`. -/
+-- The body is exposed for the `rfl`-proofs of its `simps!` lemmas; see the section note.
 @[expose, simps! hom_fst hom_snd inv_fst inv_snd]
 noncomputable def tripleBiprodReflIso (S S' : C) :
     tripleBiprod T ⟨S, S, Iso.refl _⟩ ⟨S', S', Iso.refl _⟩ ≅ ⟨S ⊞ S', S ⊞ S', Iso.refl _⟩ :=
