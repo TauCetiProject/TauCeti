@@ -211,14 +211,8 @@ private lemma exists_compStruct_id_of_hornFilling_zero (e : Edge x y)
     intro j k hj hk hjk
     fin_cases j <;> fin_cases k <;> simp at hj hk hjk ⊢
     simp [f, stdSimplex.δ_comp_yonedaEquiv_symm, -id_edge]
-  -- The initial edge of `Λ[2, 0]` is the edge of its face `2`.
-  have hedge : horn.edge.{u} 2 0 0 1 (Fin.zero_le _) (by simp) =
-      (horn.ι 0 2 (by decide)).app _ (yonedaEquiv (𝟙 Δ[1])) := by
-    refine (horn.ι_app_edge 0 2 (by decide) 0 1 (Fin.zero_le _)).symm.trans (congrArg _ ?_)
-    ext i
-    fin_cases i <;> rfl
   obtain ⟨σ, hσ⟩ := H hf.desc (by
-    rw [hedge, hf.desc_app_ι_app, ← yonedaEquiv_comp, Category.id_comp]
+    rw [horn.edge_two_zero_eq_ι_app, hf.desc_app_ι_app, ← yonedaEquiv_comp, Category.id_comp]
     exact yonedaEquiv.apply_symm_apply _)
   have hw₁ : C.δ 1 (yonedaEquiv σ) = (id x).edge := by
     simpa [f, -id_edge] using hf.δ_yonedaEquiv_of_desc_eq hσ 1 (by decide)
@@ -252,14 +246,8 @@ private lemma nonempty_compStruct_id_of_hornFilling_zero {e : Edge x y} {g : Edg
     fin_cases j <;> fin_cases k <;> simp at hj hk hjk ⊢ <;>
       simp [f, h₂, stdSimplex.δ_comp_yonedaEquiv_symm, -id_edge,
         -CompStruct.idComp_simplex, -CompStruct.compId_simplex]
-  -- The initial edge of `Λ[3, 0]` is the edge `δ 2` of its face `3`.
-  have hedge : horn.edge.{u} 3 0 0 1 (Fin.zero_le _) (by simp) =
-      (horn.ι 0 3 (by decide)).app _ (yonedaEquiv (stdSimplex.δ 2)) := by
-    refine (horn.ι_app_edge 0 3 (by decide) 0 1 (Fin.zero_le _)).symm.trans (congrArg _ ?_)
-    ext i
-    fin_cases i <;> rfl
   obtain ⟨σ, hσ⟩ := H hf.desc (by
-    rw [hedge, hf.desc_app_ι_app, ← yonedaEquiv_comp]
+    rw [horn.edge_three_zero_eq_ι_app, hf.desc_app_ι_app, ← yonedaEquiv_comp]
     simp [f, stdSimplex.δ_comp_yonedaEquiv_symm, c.d₂])
   have hw₁ : C.δ 1 (yonedaEquiv σ) = (CompStruct.idComp e).simplex := by
     simpa [f, -CompStruct.idComp_simplex] using hf.δ_yonedaEquiv_of_desc_eq hσ 1 (by decide)

@@ -126,17 +126,11 @@ lemma IsCoCartesian.exists_compStruct {f : Edge x y} (hf : f.IsCoCartesian p) {y
     intro j k hj hk hjk
     fin_cases j <;> fin_cases k <;> simp at hj hk hjk ⊢
     simp [F, stdSimplex.δ_comp_yonedaEquiv_symm]
-  -- The initial edge of `Λ[2, 0]` is the edge of its face `2`.
-  have hedge : horn.edge.{u} 2 0 0 1 (Fin.zero_le _) (by simp) =
-      (horn.ι 0 2 (by decide)).app _ (yonedaEquiv (𝟙 Δ[1])) := by
-    refine (horn.ι_app_edge 0 2 (by decide) 0 1 (Fin.zero_le _)).symm.trans (congrArg _ ?_)
-    ext i
-    fin_cases i <;> rfl
   -- The faces `1` and `2` of the degenerate `2`-simplex `s₁ e` are `e`.
   have h₁ : S.δ 1 (S.σ 1 (p.app _ f.edge)) = p.app _ f.edge := δ_comp_σ_self_apply (1 : Fin 2) _
   have h₂ : S.δ 2 (S.σ 1 (p.app _ f.edge)) = p.app _ f.edge := δ_comp_σ_succ_apply (1 : Fin 2) _
   obtain ⟨σ, hσ, hσp⟩ := hf.exists_lift_horn_zero hF.desc (by
-      rw [hedge, hF.desc_app_ι_app, ← yonedaEquiv_comp, Category.id_comp]
+      rw [horn.edge_two_zero_eq_ι_app, hF.desc_app_ι_app, ← yonedaEquiv_comp, Category.id_comp]
       exact yonedaEquiv.apply_symm_apply _)
     (yonedaEquiv.symm (S.σ 1 (p.app _ f.edge))) (horn.hom_ext' fun j hj ↦ by
       rw [hF.ι_desc_assoc, horn.ι_ι_assoc, stdSimplex.δ_comp_yonedaEquiv_symm]
@@ -155,6 +149,8 @@ lemma IsCoCartesian.exists_compStruct {f : Edge x y} (hf : f.IsCoCartesian p) {y
     rw [← f'.tgt_eq, ← hw₁]
     exact δ_comp_δ_self_apply (i := 0) _
   refine ⟨.mk _ hsrc htgt, .mk _ hw₂ rfl hw₁, ?_⟩
+  -- The `2`-simplex of the structure just built is `yonedaEquiv σ`, by definition of
+  -- `CompStruct.mk` (here `simp only [CompStruct.mk_simplex]` makes no progress).
   change p.app _ (yonedaEquiv σ) = _
   rw [← yonedaEquiv_comp, hσp, Equiv.apply_symm_apply]
 
@@ -185,12 +181,6 @@ lemma IsCoCartesian.exists_compStruct_id {f : Edge x y} (hf : f.IsCoCartesian p)
     intro j k hj hk hjk
     fin_cases j <;> fin_cases k <;> simp at hj hk hjk ⊢ <;>
       simp [F, h₂, stdSimplex.δ_comp_yonedaEquiv_symm, -CompStruct.compId_simplex]
-  -- The initial edge of `Λ[3, 0]` is the edge `δ 2` of its face `3`.
-  have hedge : horn.edge.{u} 3 0 0 1 (Fin.zero_le _) (by simp) =
-      (horn.ι 0 3 (by decide)).app _ (yonedaEquiv (stdSimplex.δ 2)) := by
-    refine (horn.ι_app_edge 0 3 (by decide) 0 1 (Fin.zero_le _)).symm.trans (congrArg _ ?_)
-    ext i
-    fin_cases i <;> rfl
   -- The faces `1`, `2` and `3` of the degenerate `3`-simplex `s₁ s₁ e` on `e = p f` are `s₁ e`.
   have h₁ : S.δ 1 (S.σ 1 (S.σ 1 (p.app _ f.edge))) = S.σ 1 (p.app _ f.edge) :=
     δ_comp_σ_self_apply (1 : Fin 3) _
@@ -200,7 +190,7 @@ lemma IsCoCartesian.exists_compStruct_id {f : Edge x y} (hf : f.IsCoCartesian p)
     (δ_comp_σ_of_gt'_apply (i := (3 : Fin 4)) (j := (1 : Fin 3)) (by decide) _).trans
       (congrArg (S.σ 1) (δ_comp_σ_succ_apply (1 : Fin 2) _))
   obtain ⟨σ, hσ, hσp⟩ := hf.exists_lift_horn_zero hF.desc (by
-      rw [hedge, hF.desc_app_ι_app, ← yonedaEquiv_comp]
+      rw [horn.edge_three_zero_eq_ι_app, hF.desc_app_ι_app, ← yonedaEquiv_comp]
       simp [F, stdSimplex.δ_comp_yonedaEquiv_symm, c.d₂])
     (yonedaEquiv.symm (S.σ 1 (S.σ 1 (p.app _ f.edge)))) (horn.hom_ext' fun j hj ↦ by
       rw [hF.ι_desc_assoc, horn.ι_ι_assoc, stdSimplex.δ_comp_yonedaEquiv_symm]
@@ -225,6 +215,8 @@ lemma IsCoCartesian.exists_compStruct_id {f : Edge x y} (hf : f.IsCoCartesian p)
     rw [← (CompStruct.compId f).d₀, ← hw₂]
     exact (δ_comp_δ_apply (i := 0) (j := 1) (by decide) _).symm
   refine ⟨.mk _ h₂ h₀ h₁, ?_⟩
+  -- The `2`-simplex of the structure just built is `X.δ 0 (yonedaEquiv σ)`, by definition of
+  -- `CompStruct.mk`.
   change p.app _ (X.δ 0 (yonedaEquiv σ)) = _
   rw [δ_naturality_apply, ← yonedaEquiv_comp, hσp, Equiv.apply_symm_apply]
   rw [δ_zero_σ_one_σ_one, ← δ_naturality_apply, f.tgt_eq]
@@ -252,11 +244,8 @@ theorem IsCoCartesian.isEquivalence_of_compStruct {t : S _⦋0⦌} {y y' : (fibe
   have h : p.app _ f'.edge = p.app _ f.edge :=
     ((congrArg (p.app _) c.d₁).symm.trans (δ_naturality_apply _ _ _)).trans
       ((congrArg (S.δ 1) hc).trans (δ_comp_σ_self_apply (1 : Fin 2) _))
-  have hy (z : (fiber p t : SSet) _⦋0⦌) : p.app _ z.val = t := by
-    have hz := z.property
-    rw [mem_fiber_iff] at hz
-    simpa [SimplexCategory.const_eq_id] using hz
-  have he : S.δ 0 (p.app _ f.edge) = t := by rw [← δ_naturality_apply, f.tgt_eq, hy]
+  have he : S.δ 0 (p.app _ f.edge) = t := by
+    rw [← δ_naturality_apply, f.tgt_eq, fiber.app_coe_obj₀]
   -- An inverse `g'`, and the `2`-simplices `d` and `d'` exhibiting `g ≫ g' = id y` and
   -- `g' ≫ g = id y'`, which lie over the degenerate `2`-simplex on `t`.
   obtain ⟨g', c', hc'⟩ := hf'.exists_compStruct f h.symm
@@ -267,9 +256,10 @@ theorem IsCoCartesian.isEquivalence_of_compStruct {t : S _⦋0⦌} {y y' : (fibe
   have hσσ (z : X _⦋2⦌) (hz : p.app _ z = S.σ 0 (S.σ 0 t)) : z ∈ (fiber p t).obj _ :=
     mem_fiber_of_app_eq_map _ _ z (SimplexCategory.σ 0 ≫ SimplexCategory.σ 0) (by
       rw [hz, op_comp, Functor.map_comp_apply]
+      -- `S.σ 0` is `S.map (SimplexCategory.σ 0).op` by definition.
       rfl)
-  have hd₀ : d.simplex ∈ (fiber p t).obj _ := hσσ _ (by rw [hd, hy])
-  have hd₀' : d'.simplex ∈ (fiber p t).obj _ := hσσ _ (by rw [hd', hy])
+  have hd₀ : d.simplex ∈ (fiber p t).obj _ := hσσ _ (by rw [hd, fiber.app_coe_obj₀])
+  have hd₀' : d'.simplex ∈ (fiber p t).obj _ := hσσ _ (by rw [hd', fiber.app_coe_obj₀])
   have hg' : g'.edge ∈ (fiber p t).obj _ := by
     rw [← c'.d₀]
     exact δ_zero_mem_fiber he _ hc'
@@ -292,10 +282,7 @@ theorem IsCoCartesian.exists_isEquivalence {t : S _⦋0⦌} {y y' : (fiber p t :
       ∃ c : CompStruct f (g.map (fiber p t).ι) f', p.app _ c.simplex = S.σ 1 (p.app _ f.edge) := by
   obtain ⟨g, c, hc⟩ := hf.exists_compStruct f' h
   have he : S.δ 0 (p.app _ f.edge) = t := by
-    have hy := y.property
-    rw [mem_fiber_iff] at hy
-    rw [← δ_naturality_apply, f.tgt_eq]
-    simpa [SimplexCategory.const_eq_id] using hy
+    rw [← δ_naturality_apply, f.tgt_eq, fiber.app_coe_obj₀]
   have hg : g.edge ∈ (fiber p t).obj _ := by
     rw [← c.d₀]
     exact δ_zero_mem_fiber he _ hc
@@ -367,6 +354,9 @@ theorem exists_lift_unionProd_horn_zero (p : X ⟶ S) [InnerFibration p] {m n : 
       exact (congrArg (g.app _) he).trans (congrArg (fun f ↦ f.app _ ((unionProd.ι₂ _ _).app _
         (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp),
           stdSimplex.const n ((s.x.cast s.hd).simplex.2 0) _))) hg)
+    -- The horn of the pairing has dimension `s.d + 1` and index `s.index.castSucc`, which are
+    -- `d + 2` and `0` only propositionally; `key` generalizes them so that substituting `hd` and
+    -- `hs` puts the horn in the form `Λ[d + 2, 0]` required by `exists_lift_horn_zero`.
     have key : ∀ (N : ℕ) (i : Fin (N + 2)) (_ : N = d + 1) (_ : i = 0)
         (φ : (Λ[N + 1, i] : SSet) ⟶ X) (τ : Δ[N + 1] ⟶ S), φ ≫ p = Λ[N + 1, i].ι ≫ τ →
         (∀ H, (Edge.mk' (φ.app _ (horn.edge (N + 1) i 0 1 (Fin.zero_le _) H))).IsCoCartesian p) →
@@ -392,14 +382,6 @@ section parametrized
 
 variable {X S : SSet.{u}} (p : X ⟶ S) {m : ℕ} (β : Δ[m + 2] ⟶ S)
 
-/-- The horn of a vertex `z` of a family `W ⟶ Fun_S(Λ[m + 2, 0], X)` of horns is the
-restriction of the uncurried family to `Λ[m + 2, 0] ⊗ {z}`. -/
-private lemma ihomOver_obj₀Equiv_app_coe {W : SSet.{u}}
-    (φ : W ⟶ ihomOver p (Λ[m + 2, 0].ι ≫ β)) (z : W _⦋0⦌) :
-    (ihomOver.obj₀Equiv (φ.app _ z)).val = lift (𝟙 _) (const z) ≫ (ihomOver.homEquiv φ).val := by
-  rw [ihomOver.obj₀Equiv_apply_coe, ihomOver.homEquiv_apply_coe, ← ihomObj₀Equiv_app]
-  rfl
-
 /-- The boundary case of `SSet.exists_lift_tensor_horn_zero`, in curried form: a lifting problem
 of `∂Δ[n] ⟶ Δ[n]` against restriction `Fun_S(Δ[m + 2], X) ⟶ Fun_S(Λ[m + 2, 0], X)` is an
 extension problem along the prism `(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n])`. -/
@@ -419,7 +401,7 @@ private lemma exists_lift_boundary_pre_horn_zero [InnerFibration p] {n : ℕ}
       (by simp [a, (ihomOver.homEquiv b₀).property]))
     fun v ↦ by
       have hv := hb₀ (stdSimplex.obj₀Equiv.symm v)
-      rw [ihomOver_obj₀Equiv_app_coe] at hv
+      rw [ihomOver.obj₀Equiv_app_coe] at hv
       have h₁ : (lift (𝟙 _) (const (stdSimplex.obj₀Equiv.symm v))).app _
           (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)) =
           (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp), stdSimplex.const n v _) :=
@@ -459,7 +441,7 @@ theorem exists_lift_tensor_horn_zero [InnerFibration p] {Z : SSet.{u}}
     (fun _ t₀ b₀ w₀ hb₀ ↦ exists_lift_boundary_pre_horn_zero p β t₀ b₀ w₀ hb₀)
     (initial.to Z) (initial.to _) (ihomOver.homEquiv.symm ⟨b', hb'⟩) (initial.hom_ext _ _)
     fun z ↦ by
-      rw [ihomOver_obj₀Equiv_app_coe, Equiv.apply_symm_apply]
+      rw [ihomOver.obj₀Equiv_app_coe, Equiv.apply_symm_apply]
       have hz : (lift (𝟙 _) (const z)).app _ (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)) =
           (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp), Z.σ 0 z) :=
         Prod.ext rfl (const_app_one (W := (Λ[m + 2, 0] : SSet)) z _)
@@ -475,23 +457,6 @@ end parametrized
 namespace CoCartesianTransport
 
 variable {X S : SSet.{u}} {p : X ⟶ S} {s t : S _⦋0⦌} {e : Edge s t}
-
-/-- The homotopy of a transport starts at the inclusion of the fiber. -/
-private lemma whiskerLeft_δ_one_homotopy (U : CoCartesianTransport p e) :
-    (fiber p s : SSet) ◁ stdSimplex.δ 1 ≫ U.homotopy = fst _ Δ[0] ≫ (fiber p s).ι := by
-  rw [← U.ι₀_homotopy, ← Category.assoc]
-  congr 1
-  exact CartesianMonoidalCategory.hom_ext _ _ (by simp [ι₀])
-    (by simp [ι₀, stdSimplex.δ_one_eq_const])
-
-/-- The homotopy of a transport ends at its functor. -/
-private lemma whiskerLeft_δ_zero_homotopy (U : CoCartesianTransport p e) :
-    (fiber p s : SSet) ◁ stdSimplex.δ 0 ≫ U.homotopy =
-      fst _ Δ[0] ≫ U.functor ≫ (fiber p t).ι := by
-  rw [← U.ι₁_homotopy, ← Category.assoc]
-  congr 1
-  exact CartesianMonoidalCategory.hom_ext _ _ (by simp [ι₁])
-    (by simp [ι₁, stdSimplex.δ_zero_eq_const])
 
 /-- The homotopies of two transports along `e` are the faces `2` and `1` of a family
 `X_s ⊗ Δ[2] ⟶ X` of `2`-simplices over the degenerate `2`-simplex `s₁ e`. -/
@@ -517,12 +482,6 @@ private lemma exists_lift_homotopies [InnerFibration p] (T T' : CoCartesianTrans
         whiskerLeft_snd_assoc, horn.ι_ι_assoc, stdSimplex.δ_comp_yonedaEquiv_symm]
       exact congrArg (fun φ ↦ curry (snd _ _ ≫ yonedaEquiv.symm φ))
         (δ_comp_σ_self_apply (1 : Fin 2) _).symm
-  -- The initial edge of `Λ[2, 0]` is the edge of its face `2`.
-  have hedge : horn.edge.{u} 2 0 0 1 (Fin.zero_le _) (by simp) =
-      horn₂₀.ι₀₁.app _ (yonedaEquiv (𝟙 Δ[1])) := by
-    refine (horn.ι_app_edge 0 2 (by decide) 0 1 (Fin.zero_le _)).symm.trans (congrArg _ ?_)
-    ext i
-    fin_cases i <;> rfl
   have hface₀₁ : (fiber p s : SSet) ◁ horn₂₀.ι₀₁ ≫ uncurry σ = T.homotopy := by
     rw [← uncurry_natural_left, hσ₀₁, uncurry_curry]
   have hface₀₂ : (fiber p s : SSet) ◁ horn₂₀.ι₀₂ ≫ uncurry σ = T'.homotopy := by
@@ -531,8 +490,8 @@ private lemma exists_lift_homotopies [InnerFibration p] (T T' : CoCartesianTrans
   obtain ⟨l, hl, hlp⟩ := exists_lift_tensor_horn_zero p _ (uncurry σ)
     (by rw [← uncurry_natural_right, hσp, uncurry_curry]) fun z ↦ by
       refine (T.isCoCartesian z).of_edge_eq ?_
-      rw [Edge.mk'_edge, Edge.mk'_edge, hedge, ← Category.id_comp (lift (const z) (𝟙 Δ[1])),
-        Category.assoc, yonedaEquiv_comp]
+      rw [Edge.mk'_edge, Edge.mk'_edge, horn.edge_two_zero_eq_ι_app,
+        ← Category.id_comp (lift (const z) (𝟙 Δ[1])), Category.assoc, yonedaEquiv_comp]
       -- Both sides are `T.homotopy` applied to the `1`-simplex `(s₀ z, 𝟙)` of `X_s ⊗ Δ[1]`.
       change T.homotopy.app _ ((lift (const z) (𝟙 Δ[1])).app _ _) =
         ((fiber p s : SSet) ◁ horn₂₀.ι₀₁ ≫ uncurry σ).app _
@@ -563,21 +522,25 @@ private lemma isEquivalence_of_lift (T T' : CoCartesianTransport p e)
       X.δ 1 (yonedaEquiv (lift (const x) (𝟙 Δ[1]) ≫ U.homotopy)) = x.val := by
     rw [← stdSimplex.yonedaEquiv_δ_comp, ← Category.assoc, hlc, Category.assoc,
       whiskerLeft_δ_one_homotopy, lift_fst_assoc, const_comp, yonedaEquiv_const]
+    -- The inclusion `(fiber p s).ι` sends `x` to its underlying vertex, by definition.
     rfl
   have htgt (U : CoCartesianTransport p e) :
       X.δ 0 (yonedaEquiv (lift (const x) (𝟙 Δ[1]) ≫ U.homotopy)) = (U.functor.app _ x).val := by
     rw [← stdSimplex.yonedaEquiv_δ_comp, ← Category.assoc, hlc, Category.assoc,
       whiskerLeft_δ_zero_homotopy, lift_fst_assoc, ← Category.assoc, const_comp, const_comp,
       yonedaEquiv_const]
+    -- The inclusion `(fiber p t).ι` sends a vertex to its underlying vertex, by definition.
     rfl
   let F : Edge x.val (T.functor.app _ x).val := Edge.mk _ (hsrc T) (htgt T)
   let F' : Edge x.val (T'.functor.app _ x).val := Edge.mk _ (hsrc T') (htgt T')
   -- The `2`-simplex of `l` at `x` exhibits `F'` as a composite of `F` and `g`.
   have hc₂ : X.δ 2 (yonedaEquiv (lift (const x) (𝟙 Δ[2]) ≫ l)) = F.edge := by
     rw [← stdSimplex.yonedaEquiv_δ_comp, ← Category.assoc, hlc, Category.assoc, hl₂]
+    -- `F.edge` is this simplex, by definition of `Edge.mk`.
     rfl
   have hc₁ : X.δ 1 (yonedaEquiv (lift (const x) (𝟙 Δ[2]) ≫ l)) = F'.edge := by
     rw [← stdSimplex.yonedaEquiv_δ_comp, ← Category.assoc, hlc, Category.assoc, hl₁]
+    -- `F'.edge` is this simplex, by definition of `Edge.mk`.
     rfl
   have hc₀ : X.δ 0 (yonedaEquiv (lift (const x) (𝟙 Δ[2]) ≫ l)) = (g.map (fiber p t).ι).edge := by
     rw [← stdSimplex.yonedaEquiv_δ_comp, ← Category.assoc, hlc, Category.assoc, hg]

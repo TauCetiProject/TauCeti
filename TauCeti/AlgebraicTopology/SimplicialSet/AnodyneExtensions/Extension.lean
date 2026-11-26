@@ -155,8 +155,8 @@ private lemma exists_lift_of_rankFunction (f : h.pairing.RankFunction ℕ) (a : 
             f.relativeCellComplex.isColimit.desc cocone := rfl
       _ = a := by rw [hfac]; exact (seq 0).property.1
   · refine f.relativeCellComplex.isColimit.hom_ext fun j ↦ ?_
-    change (f.filtration j).ι ≫ _ ≫ p = (f.filtration j).ι ≫ b
-    rw [reassoc_of% hfac, (seq j).property.2]
+    -- The legs of the colimit cocone of the filtration are the inclusions `(f.filtration j).ι`.
+    exact ((reassoc_of% (hfac j)) p).trans (seq j).property.2
 
 /-- **Lifting along a regular pairing.** Let `h` be a regular pairing of the subcomplex `A` of
 `X`, and let `p : C ⟶ S`. A map `a : A ⟶ C` over `b : X ⟶ S` lifts to a map `X ⟶ C` over `b`
