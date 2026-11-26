@@ -493,6 +493,11 @@ namespace TriEdge
 
 end TriEdge
 
+@[simp] theorem TriFace.across_vadd (w : ℤ × ℤ) (f : TriFace) (k : Fin 3) :
+    (w +ᵥ f).across k = w +ᵥ f.across k := by
+  rw [across_def, across_def, vadd_isWhite, edge_vadd]
+  split_ifs <;> simp
+
 @[simp] theorem vertexFaces_add (w v : ℤ × ℤ) : vertexFaces (w + v) = w +ᵥ vertexFaces v := by
   simp [vertexFaces, Finset.vadd_finset_insert, add_sub_assoc]
 
