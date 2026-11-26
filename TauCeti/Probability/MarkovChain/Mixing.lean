@@ -9,6 +9,7 @@ public import TauCeti.Probability.Kernel.Composition.TotalVariation
 public import Mathlib.Probability.Kernel.Invariance
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import TauCeti.Probability.Kernel.Composition.Power
+import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 
 /-!
@@ -64,6 +65,15 @@ theorem tvToStationary_nonneg {κ : Kernel α α} {π : Measure α} {t : ℕ} :
 /-- The worst-case distance between starts is nonnegative. -/
 theorem tvBetweenStarts_nonneg {κ : Kernel α α} {t : ℕ} : 0 ≤ κ.tvBetweenStarts t :=
   Real.iSup_nonneg fun _ ↦ div_nonneg tvDist_nonneg (by norm_num)
+
+/-- On a subsingleton state space, the worst-case distance to a reference probability measure
+is zero. -/
+@[simp] theorem tvToStationary_of_subsingleton [Subsingleton α] (κ : Kernel α α)
+    [IsMarkovKernel κ] (π : Measure α) [IsProbabilityMeasure π] (t : ℕ) :
+    κ.tvToStationary π t = 0 := by
+  have h (x : α) : tvDist ((κ ^ t) x) π = 0 := by
+    rw [((κ ^ t) x).eq_dirac_of_subsingleton x, π.eq_dirac_of_subsingleton x, tvDist_self]
+  simp [tvToStationary_def, h]
 
 /-- On a subsingleton state space, the worst-case distance between starts is zero. -/
 @[simp] theorem tvBetweenStarts_of_subsingleton [Subsingleton α] (κ : Kernel α α) (t : ℕ) :
@@ -141,7 +151,7 @@ singleton mass on a finite state space. -/
 theorem tvToStationary_zero [Finite α] [IsProbabilityMeasure π] :
     κ.tvToStationary π 0 = 1 - ⨅ x, π.real {x} := by
   have : Nonempty α := nonempty_of_isProbabilityMeasure π
-  simp only [tvToStationary_def, pow_zero, one_def, id_apply, tvDist_dirac_left,
+  simp only [tvToStationary_def, pow_zero, one_apply, tvDist_dirac_left,
     mul_div_cancel_left₀ _ (by norm_num : (2 : ℝ) ≠ 0)]
   have hb := (Set.finite_range (fun x : α ↦ π.real {x})).bddBelow
   have hd := (Set.finite_range (fun x : α ↦ 1 - π.real {x})).bddAbove
@@ -157,12 +167,12 @@ variable [MeasurableSingletonClass α]
     κ.tvBetweenStarts 0 = 1 := by
   obtain ⟨x, y, hxy⟩ := exists_pair_ne α
   have h : 1 ≤ κ.tvBetweenStarts 0 := by
-    simpa [pow_zero, one_def, id_apply, Measure.dirac_real_apply, hxy.symm] using
+    simpa [Measure.dirac_real_apply, hxy.symm] using
       κ.tvDist_pow_apply_le_tvBetweenStarts (t := 0) x y
   refine le_antisymm ?_ h
   rw [tvBetweenStarts_def]
   refine Real.iSup_le (fun ⟨a, b⟩ ↦ ?_) zero_le_one
-  simp only [pow_zero, one_def, id_apply, tvDist_dirac_left]
+  simp only [pow_zero, one_apply, tvDist_dirac_left]
   linarith [measureReal_nonneg (μ := Measure.dirac b) (s := {a})]
 
 end TimeZero

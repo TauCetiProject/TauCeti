@@ -42,7 +42,8 @@ theorem measureReal_comp_apply_eq_sum [Fintype α] [MeasurableSingletonClass α]
     (κ ∘ₘ μ).real s = ∑ x, μ.real {x} * (κ x).real s := by
   rw [measureReal_def, Measure.bind_apply hs κ.aemeasurable, lintegral_fintype,
     ENNReal.toReal_sum (fun _ _ ↦ ENNReal.mul_ne_top (measure_ne_top _ _) (measure_ne_top _ _))]
-  simp only [measureReal_def, ENNReal.toReal_mul, mul_comm]
+  refine Finset.sum_congr rfl fun _ _ ↦ ?_
+  rw [measureReal_def, measureReal_def, ENNReal.toReal_mul, mul_comm]
 
 variable [MeasurableSingletonClass α]
 

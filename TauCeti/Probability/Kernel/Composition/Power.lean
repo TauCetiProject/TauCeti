@@ -63,6 +63,10 @@ variable {α : Type*} [MeasurableSpace α]
 /-- The unit of the monoid of kernels `Kernel α α` is the identity kernel. -/
 theorem one_def : (1 : Kernel α α) = Kernel.id := (rfl)
 
+/-- The unit kernel returns the Dirac measure at the starting state. -/
+@[simp] theorem one_apply (x : α) : (1 : Kernel α α) x = Measure.dirac x := by
+  rw [one_def, id_apply]
+
 /-- Multiplication in the monoid of kernels `Kernel α α` is composition. -/
 theorem mul_def (κ η : Kernel α α) : κ * η = κ ∘ₖ η := (rfl)
 
