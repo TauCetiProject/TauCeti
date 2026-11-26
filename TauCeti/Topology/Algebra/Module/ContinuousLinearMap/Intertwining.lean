@@ -20,7 +20,7 @@ powers, and polynomials in the intertwined operators (`Function.Semiconj.aeval`)
 evaluation with zero constant coefficient commutes with extending an endomorphism along a
 continuous linear retract; no complement is needed. Along a splitting `i r + j s = id` for which
 an operator is upper triangular, the inclusion `i` intertwines its diagonal block with the
-operator.
+operator. An operator intertwining two maps has invariant kernel and range.
 
 ## Main results
 
@@ -28,6 +28,9 @@ operator.
   up to continuous errors again intertwine `T` up to a continuous error.
 * `Function.Semiconj.aeval`: a linear intertwiner intertwines every polynomial in the intertwined
   continuous endomorphisms.
+* `ContinuousLinearMap.mapsTo_ker_of_comp_eq_comp`,
+  `ContinuousLinearMap.mapsTo_range_of_comp_eq_comp`: an operator intertwining two maps has
+  invariant kernel and range.
 * `ContinuousLinearMap.semiconj_of_split`: along a splitting, the inclusion of the first summand
   intertwines the diagonal block of an upper triangular operator with the operator.
 * `ContinuousLinearMap.aeval_comp_comp_of_retract`: polynomial evaluation with zero constant
@@ -99,6 +102,26 @@ theorem continuous_comp_sub_comp_of_continuous_sub (T : E →ₗ[R] F) (P : ℕ 
 end LinearMap
 
 namespace ContinuousLinearMap
+
+section Intertwining
+
+variable {R E F : Type*} [Semiring R] [AddCommMonoid E] [AddCommMonoid F] [Module R E]
+  [Module R F] [TopologicalSpace E] [TopologicalSpace F]
+  {u : E →L[R] F} {σ : E →L[R] E} {τ : F →L[R] F}
+
+/-- If `u` intertwines `σ` with `τ`, then `σ` preserves the kernel of `u`. -/
+theorem mapsTo_ker_of_comp_eq_comp (h : u ∘L σ = τ ∘L u) : Set.MapsTo σ u.ker u.ker := by
+  intro x hx
+  simp only [SetLike.mem_coe, LinearMap.mem_ker, coe_coe] at hx ⊢
+  rw [← comp_apply, h, comp_apply, hx, map_zero]
+
+/-- If `u` intertwines `σ` with `τ`, then `τ` preserves the range of `u`. -/
+theorem mapsTo_range_of_comp_eq_comp (h : u ∘L σ = τ ∘L u) :
+    Set.MapsTo τ u.range u.range := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨σ x, congr($h x)⟩
+
+end Intertwining
 
 /-- If `u` is upper triangular for a splitting `i r + j s = id`, that is `s u i = 0`, then `i`
 intertwines the diagonal block `r u i` with `u`. -/

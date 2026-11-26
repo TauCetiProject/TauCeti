@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Fredholm.NormalForm.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Comp
-import TauCeti.Analysis.Fredholm.Equivariant
 import TauCeti.Topology.Algebra.Module.Complement
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # The equivariant Lyapunov–Schmidt reduction
