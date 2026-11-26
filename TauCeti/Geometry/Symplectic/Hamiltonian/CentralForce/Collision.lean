@@ -45,8 +45,9 @@ collision set `q = 0`.
   (`TauCeti.not_isCompleteVectorField_hamiltonianVectorField_puncturedPhaseSpace`).
 
 Central-force motions are reversible: `s ↦ (q(-s), -p(-s))` is again a motion
-(`TauCeti.hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian`). Its case `V = ℝ`
-with the effective potential is the reversibility of the radial motion
+(`TauCeti.hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian`, in
+`TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce`). Its case `V = ℝ` with the effective
+potential is the reversibility of the radial motion
 (`TauCeti.hasDerivAt_reverse_hamiltonianVectorField_effectivePotential`).
 
 The Kepler potential `-κ / r`, `κ > 0`, is attractive; its collision domain and collision orbits
@@ -69,33 +70,6 @@ open Set
 open scoped InnerProductSpace Manifold ContDiff
 
 namespace TauCeti
-
-/-! ### Time reversal -/
-
-section TimeReversal
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  {m : ℝ} {U : ℝ → ℝ}
-
-/-- **Time reversal of central-force motion.** If `γ = (q, p)` solves Hamilton's equations for
-`H(q, p) = ‖p‖² / (2m) + U(‖q‖)` at time `-t`, off the collision set and with `U` differentiable
-at `‖q‖`, then the reversed motion `s ↦ (q(-s), -p(-s))` solves them at time `t`. -/
-theorem hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian {γ : ℝ → V × V}
-    {t : ℝ}
-    (hγ : HasDerivAt γ ((stdSymplecticForm (V := V)).hamiltonianVectorField
-      (centralForceHamiltonian m U) (γ (-t))) (-t))
-    (hq : (γ (-t)).1 ≠ 0) (hU : DifferentiableAt ℝ U ‖(γ (-t)).1‖) :
-    HasDerivAt (fun s ↦ ((γ (-s)).1, -(γ (-s)).2))
-      ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U)
-        ((γ (-t)).1, -(γ (-t)).2)) t := by
-  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian hU.hasDerivAt hq] at hγ
-  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian
-    (x := ((γ (-t)).1, -(γ (-t)).2)) hU.hasDerivAt hq]
-  have h := ((ContinuousLinearMap.id ℝ V).prodMap (-ContinuousLinearMap.id ℝ V)).hasFDerivAt
-    |>.comp_hasDerivAt t (hγ.scomp t (hasDerivAt_neg t))
-  exact h.congr_deriv (by ext <;> simp)
-
-end TimeReversal
 
 /-! ### The reduced radial motion -/
 
