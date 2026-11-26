@@ -132,6 +132,26 @@ theorem shiftEquiv_differential (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ) 
       n.negOnePow • M.differential (M.shiftEquiv n x) :=
   M.shift_differential_apply n x
 
+/-- Read in `M`, the Koszul twist of parameter `q` of `M[n]` is `(-1)^(q n)` times that of `M`: an
+element of degree `p` of `M` has degree `p - n` in `M[n]`. -/
+theorem shiftEquiv_koszulTwist (M : DGRightModuleCat.{uR, uA, uM} h) (n q : ℤ) (x : M.shift n) :
+    M.shiftEquiv n ((InternalGrading.ofDecomposition (M.shift n).grading).koszulTwist q x) =
+      (q * n).negOnePow •
+        (InternalGrading.ofDecomposition M.grading).koszulTwist q (M.shiftEquiv n x) := by
+  -- Both sides are linear in `x`; on an element of degree `p` of `M`, of degree `p - n` in `M[n]`,
+  -- the two twists are the signs `(-1)^(q (p - n))` and `(-1)^(q p)`.
+  have key : (InternalGrading.ofDecomposition (M.shift n).grading).koszulTwist q =
+      (((q * n).negOnePow : ℤ) : R) •
+        (InternalGrading.ofDecomposition M.grading).koszulTwist q := by
+    rw [show InternalGrading.ofDecomposition (M.shift n).grading =
+        (InternalGrading.ofDecomposition M.grading).shift n from
+      InternalGrading.ext fun p ↦ by
+        rw [InternalGrading.ofDecomposition_piece, shift_grading, InternalGrading.shift_piece,
+          InternalGrading.ofDecomposition_piece]]
+    exact (InternalGrading.ofDecomposition M.grading).koszulTwist_shift n q
+  rw [shiftEquiv_apply, shiftEquiv_apply, key, LinearMap.smul_apply, ← negOnePowCast_eq_intCast,
+    ← negOnePow_smul_eq_negOnePowCast_smul]
+
 /-- **The shift functor** `M ↦ M[n]`, acting on morphisms by the same underlying maps. -/
 -- Reducing the object projection keeps its carrier usable in elementwise functor formulas.
 @[expose, implicit_reducible]
