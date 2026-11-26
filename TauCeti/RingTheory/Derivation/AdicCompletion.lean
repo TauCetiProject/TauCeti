@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.AdicCompletion.Algebra
 public import Mathlib.RingTheory.Derivation.Basic
 import Mathlib.RingTheory.AdicCompletion.Completeness
+import TauCeti.RingTheory.AdicCompletion.Algebra
 import TauCeti.RingTheory.AdicCompletion.Basic
 import TauCeti.RingTheory.Derivation.Basic
 import TauCeti.RingTheory.Derivation.Ideal
@@ -36,6 +37,8 @@ values in a module, and its uniqueness needs no continuity hypothesis.
 ## Main definitions
 
 * `Derivation.adicCompletion`: the extension of `D : A → M` to `Â → M̂`.
+* `Derivation.liftAdicCompletion`: the extension of `D : A → N` to `Â → N` when `N` is an
+  `I`-adically complete `Â`-module, such as `Â` itself.
 
 ## Main results
 
@@ -45,6 +48,9 @@ values in a module, and its uniqueness needs no continuity hypothesis.
 * `Derivation.adicCompletion_ext`: for finitely generated `I`, a derivation from `Â` into an
   `I`-adically separated module, such as `M̂`, is determined by its values on `A`;
   `Derivation.eq_adicCompletion` characterises `D̂` accordingly.
+* `Derivation.liftAdicCompletion_of` and `Derivation.eq_liftAdicCompletion`: for finitely
+  generated `I` and an `I`-adically complete `Â`-module `N`, the extension of `D : A → N` to `Â`
+  agrees with `D` on `A` and is the only derivation `Â → N` that does.
 -/
 
 public section
@@ -167,5 +173,52 @@ theorem eq_adicCompletion (hI : I.FG) (D : Derivation R A M)
     {D' : Derivation R (AdicCompletion I A) (AdicCompletion I M)}
     (h : ∀ a : A, D' (of I A a) = of I M (D a)) : D' = D.adicCompletion I :=
   adicCompletion_ext I hI fun a ↦ by rw [h, adicCompletion_of]
+
+section IsAdicComplete
+
+variable {N : Type*} [AddCommGroup N] [Module (AdicCompletion I A) N] [Module A N] [Module R N]
+  [IsScalarTower A (AdicCompletion I A) N] [IsScalarTower R A N] [IsAdicComplete I N]
+
+/-- For a finitely generated ideal `I` and an `I`-adically complete module `N` over the
+completion `Â`, an `R`-derivation `D : A → N` extends to an `R`-derivation `Â → N`: the extension
+`Â → N̂` of `D` followed by the inverse of the canonical isomorphism `N ≃ N̂`, which is `Â`-linear
+by `AdicCompletion.of_smul`. By `Derivation.eq_liftAdicCompletion` it is the only derivation
+`Â → N` agreeing with `D` on `A`. -/
+noncomputable def liftAdicCompletion (hI : I.FG) (D : Derivation R A N) :
+    Derivation R (AdicCompletion I A) N :=
+  haveI : IsScalarTower R (AdicCompletion I A) N := .of_algebraMap_smul fun r n ↦ by
+    rw [IsScalarTower.algebraMap_apply R A (AdicCompletion I A), algebraMap_smul,
+      algebraMap_smul]
+  haveI : IsScalarTower R (AdicCompletion I A) (AdicCompletion I N) :=
+    .of_algebraMap_smul fun r n ↦ by
+      rw [IsScalarTower.algebraMap_apply R A (AdicCompletion I A), algebraMap_smul,
+        algebraMap_smul]
+  let e : AdicCompletion I N →ₗ[AdicCompletion I A] N :=
+    { toFun := (ofLinearEquiv I N).symm
+      map_add' := map_add _
+      map_smul' x m := (ofLinearEquiv I N).injective <| by
+        simp [AdicCompletion.of_smul hI] }
+  e.compDer (D.adicCompletion I)
+
+/-- The image of `D.liftAdicCompletion I hI x` in the completion `N̂` is `D̂ x`. -/
+@[simp]
+theorem of_liftAdicCompletion (hI : I.FG) (D : Derivation R A N) (x : AdicCompletion I A) :
+    of I N (D.liftAdicCompletion I hI x) = D.adicCompletion I x :=
+  of_ofLinearEquiv_symm I (D.adicCompletion I x)
+
+/-- The extension of `D : A → N` to the completion agrees with `D` on `A`. -/
+@[simp]
+theorem liftAdicCompletion_of (hI : I.FG) (D : Derivation R A N) (a : A) :
+    D.liftAdicCompletion I hI (of I A a) = D a :=
+  (ofLinearEquiv I N).injective <| by simp
+
+/-- For a finitely generated ideal `I` and an `I`-adically complete `Â`-module `N`, the extension
+`D.liftAdicCompletion I hI` is the only derivation `Â → N` agreeing with `D` on `A`. -/
+theorem eq_liftAdicCompletion (hI : I.FG) (D : Derivation R A N)
+    {D' : Derivation R (AdicCompletion I A) N} (h : ∀ a : A, D' (of I A a) = D a) :
+    D' = D.liftAdicCompletion I hI :=
+  adicCompletion_ext I hI fun a ↦ by rw [h, liftAdicCompletion_of]
+
+end IsAdicComplete
 
 end Derivation

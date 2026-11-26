@@ -26,6 +26,10 @@ For a smooth affine lift `A` of a curve over a discrete valuation ring with unif
 is the derivation of the generic differential modules and of their Taylor expansions. A derivation
 of `A` itself first extends to `A_(π)` by `Derivation.extendOfIsLocalization`.
 
+More generally, a derivation `D : A → Ô` of `A` with values in the completion, rather than in `A`
+or `A_(π)`, extends in the same way to `Ô` and to `E`. This is the form in which a derivation of a
+weak completion of `A`, which need not preserve `A`, reaches the completed generic field.
+
 Extending to a completion requires no continuity hypothesis on `D`: by the Leibniz rule every
 derivation maps the `(n + 1)`-st power of an ideal into its `n`-th power
 (`Derivation.adicCompletion`). Uniqueness on the field does require a condition. For
@@ -39,6 +43,9 @@ itself.
   `A_(π)` to the completion `Ô`.
 * `TauCeti.AdicCompletion.completedGenericFieldDerivation`: its extension to the completed generic
   field.
+* `TauCeti.AdicCompletion.completedGenericIntegersDerivationLift` and
+  `TauCeti.AdicCompletion.completedGenericFieldDerivationLift`: the extensions of a derivation
+  `A → Ô` to `Ô` and to `E`.
 
 ## Main results
 
@@ -51,6 +58,12 @@ itself.
   determined by its values on `A`.
 * `TauCeti.AdicCompletion.completedGenericField_derivation_ext`: a derivation of `E` mapping the
   valuation ring into itself is determined by its values on `A`.
+* `TauCeti.AdicCompletion.eq_completedGenericIntegersDerivationLift` and
+  `TauCeti.AdicCompletion.eq_completedGenericFieldDerivationLift`: the extensions of `D : A → Ô`
+  are the only ones agreeing with `D` on `A` (and, on `E`, mapping the valuation ring into itself).
+* `TauCeti.AdicCompletion.completedGenericIntegersDerivation_eq_lift` and
+  `TauCeti.AdicCompletion.completedGenericFieldDerivation_eq_lift`: the extension of a derivation
+  of `A_(π)` is the extension of its restriction to `A`.
 
 ## References
 
@@ -116,6 +129,51 @@ theorem eq_completedGenericIntegersDerivation
   completedGenericIntegers_derivation_ext π fun a ↦ by
     rw [h, IsScalarTower.algebraMap_apply A (genericLocalRing π) (completedGenericIntegers π),
       completedGenericIntegersDerivation_algebraMap]
+
+/-- An `R`-derivation of `A` into the completed generic ring extends to an `R`-derivation of the
+completed generic ring: first to the generic local ring `A_(π)` by the quotient rule, then to its
+completion. It is the only derivation agreeing with `D` on `A`
+(`TauCeti.AdicCompletion.eq_completedGenericIntegersDerivationLift`). -/
+noncomputable def completedGenericIntegersDerivationLift
+    (D : Derivation R A (completedGenericIntegers π)) :
+    Derivation R (completedGenericIntegers π) (completedGenericIntegers π) :=
+  haveI := _root_.AdicCompletion.isAdicComplete (fg_maximalIdeal_genericLocalRing π)
+    (M := genericLocalRing π)
+  (D.extendOfIsLocalization (Ideal.span {π}).primeCompl
+    (T := genericLocalRing π)).liftAdicCompletion (maximalIdeal (genericLocalRing π))
+      (fg_maximalIdeal_genericLocalRing π)
+
+/-- The extension of `D : A → Ô` to the completed generic ring agrees with `D` on `A`. -/
+@[simp]
+theorem completedGenericIntegersDerivationLift_algebraMap
+    (D : Derivation R A (completedGenericIntegers π)) (a : A) :
+    completedGenericIntegersDerivationLift π D (algebraMap A (completedGenericIntegers π) a) =
+      D a := by
+  have := _root_.AdicCompletion.isAdicComplete (fg_maximalIdeal_genericLocalRing π)
+    (M := genericLocalRing π)
+  rw [IsScalarTower.algebraMap_apply A (genericLocalRing π), completedGenericIntegersDerivationLift,
+    _root_.AdicCompletion.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply,
+    Derivation.liftAdicCompletion_of, Derivation.extendOfIsLocalization_algebraMap]
+
+/-- The extension of `D : A → Ô` is the only derivation of the completed generic ring agreeing
+with `D` on `A`. -/
+theorem eq_completedGenericIntegersDerivationLift
+    (D : Derivation R A (completedGenericIntegers π))
+    {D' : Derivation R (completedGenericIntegers π) (completedGenericIntegers π)}
+    (h : ∀ a : A, D' (algebraMap A (completedGenericIntegers π) a) = D a) :
+    D' = completedGenericIntegersDerivationLift π D :=
+  completedGenericIntegers_derivation_ext π fun a ↦ by
+    rw [h, completedGenericIntegersDerivationLift_algebraMap]
+
+/-- The extension of a derivation `D` of `A_(π)` is the extension of its restriction to `A`,
+viewed with values in the completed generic ring. -/
+theorem completedGenericIntegersDerivation_eq_lift
+    (D : Derivation R (genericLocalRing π) (genericLocalRing π)) :
+    completedGenericIntegersDerivation π D = completedGenericIntegersDerivationLift π
+      (((Algebra.linearMap (genericLocalRing π) (completedGenericIntegers π)).compDer
+        D).compAlgebraMap A) :=
+  eq_completedGenericIntegersDerivationLift π _ fun a ↦ by
+    simp [IsScalarTower.algebraMap_apply A (genericLocalRing π) (completedGenericIntegers π)]
 
 end Integers
 
@@ -201,6 +259,70 @@ theorem eq_completedGenericFieldDerivation
         IsScalarTower.algebraMap_apply A (genericLocalRing π) (completedGenericIntegers π),
         completedGenericFieldDerivation_algebraMap, completedGenericIntegersDerivation_algebraMap,
         ← IsScalarTower.algebraMap_apply]
+
+/-- The extension of an `R`-derivation `D : A → Ô` to the completed generic field, through
+`TauCeti.AdicCompletion.completedGenericIntegersDerivationLift`. It maps the valuation ring into
+itself, and it is the only derivation that does and agrees with `D` on `A`
+(`TauCeti.AdicCompletion.eq_completedGenericFieldDerivationLift`). -/
+noncomputable def completedGenericFieldDerivationLift
+    (D : Derivation R A (completedGenericIntegers π)) :
+    Derivation R (completedGenericField π hπ) (completedGenericField π hπ) :=
+  ((Algebra.linearMap (completedGenericIntegers π) (completedGenericField π hπ)).compDer
+    (completedGenericIntegersDerivationLift π D)).extendOfIsLocalization
+      (nonZeroDivisors (completedGenericIntegers π))
+
+/-- On the valuation ring, the extension of `D : A → Ô` to the completed generic field is its
+extension to the completed generic ring. -/
+@[simp]
+theorem completedGenericFieldDerivationLift_algebraMap_completedGenericIntegers
+    (D : Derivation R A (completedGenericIntegers π)) (x : completedGenericIntegers π) :
+    completedGenericFieldDerivationLift π hπ D
+        (algebraMap (completedGenericIntegers π) (completedGenericField π hπ) x) =
+      algebraMap (completedGenericIntegers π) (completedGenericField π hπ)
+        (completedGenericIntegersDerivationLift π D x) := by
+  simp [completedGenericFieldDerivationLift]
+
+/-- The extension of `D : A → Ô` to the completed generic field agrees with `D` on `A`. -/
+@[simp]
+theorem completedGenericFieldDerivationLift_algebraMap
+    (D : Derivation R A (completedGenericIntegers π)) (a : A) :
+    completedGenericFieldDerivationLift π hπ D (algebraMap A (completedGenericField π hπ) a) =
+      algebraMap (completedGenericIntegers π) (completedGenericField π hπ) (D a) := by
+  rw [IsScalarTower.algebraMap_apply A (completedGenericIntegers π) (completedGenericField π hπ),
+    completedGenericFieldDerivationLift_algebraMap_completedGenericIntegers,
+    completedGenericIntegersDerivationLift_algebraMap]
+
+/-- The extension of `D : A → Ô` to the completed generic field maps the valuation ring into
+itself. -/
+theorem valuation_completedGenericFieldDerivationLift_le_one
+    (D : Derivation R A (completedGenericIntegers π)) {x : completedGenericField π hπ}
+    (hx : Valued.v x ≤ 1) : Valued.v (completedGenericFieldDerivationLift π hπ D x) ≤ 1 := by
+  obtain ⟨y, rfl⟩ := (completedGenericField_integers π hπ).exists_of_le_one hx
+  rw [completedGenericFieldDerivationLift_algebraMap_completedGenericIntegers]
+  exact (completedGenericField_integers π hπ).map_le_one _
+
+/-- The extension of `D : A → Ô` to the completed generic field is the only derivation mapping
+the valuation ring into itself and agreeing with `D` on `A`. -/
+theorem eq_completedGenericFieldDerivationLift
+    (D : Derivation R A (completedGenericIntegers π))
+    {D' : Derivation R (completedGenericField π hπ) (completedGenericField π hπ)}
+    (hD' : ∀ x, Valued.v x ≤ 1 → Valued.v (D' x) ≤ 1)
+    (h : ∀ a : A, D' (algebraMap A (completedGenericField π hπ) a) =
+      algebraMap (completedGenericIntegers π) (completedGenericField π hπ) (D a)) :
+    D' = completedGenericFieldDerivationLift π hπ D :=
+  completedGenericField_derivation_ext π hπ hD'
+    (fun _ ↦ valuation_completedGenericFieldDerivationLift_le_one π hπ D) fun a ↦ by
+      rw [h, completedGenericFieldDerivationLift_algebraMap]
+
+/-- The extension of a derivation `D` of `A_(π)` to the completed generic field is the extension
+of its restriction to `A`, viewed with values in the completed generic ring. -/
+theorem completedGenericFieldDerivation_eq_lift
+    (D : Derivation R (genericLocalRing π) (genericLocalRing π)) :
+    completedGenericFieldDerivation π hπ D = completedGenericFieldDerivationLift π hπ
+      (((Algebra.linearMap (genericLocalRing π) (completedGenericIntegers π)).compDer
+        D).compAlgebraMap A) := by
+  rw [completedGenericFieldDerivation, completedGenericIntegersDerivation_eq_lift,
+    completedGenericFieldDerivationLift]
 
 end Field
 
