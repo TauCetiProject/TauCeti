@@ -20,6 +20,8 @@ An essentially bounded operator-valued function `A : Lp (E →L[𝕜] F) ∞ μ`
 via `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p`, proving:
 * `1`, `algebraMap`, and `A * B` laws (`operatorMultiplication_one`,
   `operatorMultiplication_algebraMap`, `operatorMultiplication_comp_operatorMultiplication`);
+* multiplication by a field of maps with essentially bounded pointwise inverses is invertible
+  (`isInvertible_operatorMultiplication_of_comp_eq_id`);
 * the `L²` adjoint `adjoint_operatorMultiplication` and `operatorMultiplicationStarAlgHom`;
 * the symmetry `⟪A f, ι ∘ g⟫ = ⟪ι ∘ f, A g⟫` on `L²` for an `ι`-symmetric symbol `A`
   (`inner_operatorMultiplication_compLpL`, and `inner_compLpL_compLpL` for a constant one);
@@ -144,6 +146,29 @@ theorem operatorMultiplication_comp_operatorMultiplication (A B : Lp (E →L[�
     operatorMultiplication p A ∘L operatorMultiplication p B =
       operatorMultiplication p (A * B) := by
   rw [operatorMultiplication_comp_eq_operatorMultiplication_compL_holderL, compL_holderL_eq_mul]
+
+/-- Multiplication by an essentially bounded field `G` of maps, followed by multiplication by an
+essentially bounded field `G'` with `G' x ∘ G x = id` almost everywhere, is the identity. -/
+theorem operatorMultiplication_comp_operatorMultiplication_of_comp_eq_id {G : α → E →L[𝕜] F}
+    {G' : α → F →L[𝕜] E} (hG : MemLp G ∞ μ) (hG' : MemLp G' ∞ μ)
+    (h : ∀ᵐ x ∂μ, G' x ∘L G x = ContinuousLinearMap.id 𝕜 E) :
+    operatorMultiplication p (hG'.toLp G') ∘L operatorMultiplication p (hG.toLp G) =
+      ContinuousLinearMap.id 𝕜 (Lp E p μ) := by
+  refine ContinuousLinearMap.ext fun f ↦ Lp.ext ?_
+  filter_upwards [operatorMultiplication_ae (hG'.toLp G') (operatorMultiplication p (hG.toLp G) f),
+    operatorMultiplication_ae (hG.toLp G) f, hG.coeFn_toLp, hG'.coeFn_toLp, h]
+    with x h₁ h₂ h₃ h₄ h₅
+  rw [comp_apply, h₁, h₂, h₃, h₄, ← comp_apply, h₅, id_apply, id_apply]
+
+/-- Multiplication by an essentially bounded field `G` of maps whose pointwise inverses `G'` are
+essentially bounded is invertible on `Lᵖ`. -/
+theorem isInvertible_operatorMultiplication_of_comp_eq_id {G : α → E →L[𝕜] F}
+    {G' : α → F →L[𝕜] E} (hG : MemLp G ∞ μ) (hG' : MemLp G' ∞ μ)
+    (hG'G : ∀ᵐ x ∂μ, G' x ∘L G x = ContinuousLinearMap.id 𝕜 E)
+    (hGG' : ∀ᵐ x ∂μ, G x ∘L G' x = ContinuousLinearMap.id 𝕜 F) :
+    (operatorMultiplication p (hG.toLp G)).IsInvertible :=
+  .of_inverse (operatorMultiplication_comp_operatorMultiplication_of_comp_eq_id hG' hG hGG')
+    (operatorMultiplication_comp_operatorMultiplication_of_comp_eq_id hG hG' hG'G)
 
 /-- On a σ-finite space, `‖operatorMultiplication p A‖ = ‖A‖` (`1 ≤ p ≤ ∞`). -/
 @[simp] theorem norm_operatorMultiplication [SigmaFinite μ] (A : Lp (E →L[𝕜] F) ∞ μ) :

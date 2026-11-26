@@ -13,7 +13,6 @@ public import TauCeti.Analysis.ODE.FrameTrivialization
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.PeriodicDeriv
-import TauCeti.Topology.Instances.Real.Periodic
 
 /-!
 # Changes of frame on the Sobolev space of the cylinder
@@ -44,7 +43,7 @@ together, with equal indices
 (`TauCeti.CylinderSobolev.isFredholm_jetOperator_firstOrderJetCoeff_frame_iff`,
 `TauCeti.CylinderSobolev.index_jetOperator_firstOrderJetCoeff_frame`). The multiplication by `Ψ` on
 `L²` used for the target is invertible by
-`TauCeti.CylinderSobolev.isInvertible_operatorMultiplication_of_comp_eq_id`.
+`MeasureTheory.Lp.isInvertible_operatorMultiplication_of_comp_eq_id`.
 
 For a linearized Floer operator `∂s + J ∂t + C` written in a trivialization along a cylinder, this
 says that its Fredholm property and index do not depend on the trivialization. For a loop of
@@ -156,17 +155,6 @@ end Frame
 
 section Inverse
 
-/-- The first-order operator of the constant identity coefficient field is the identity of `L²`
-jets. -/
-private theorem jetOperator_const_id :
-    jetOperator stripMeasure (fun _ ↦ ContinuousLinearMap.id ℝ (V × V × V)) =
-      ContinuousLinearMap.id ℝ (Lp (V × V × V) 2 stripMeasure) := by
-  ext1 f
-  refine Lp.ext ?_
-  filter_upwards [coeFn_jetOperator (memLp_top_const (ContinuousLinearMap.id ℝ (V × V × V))) f]
-    with z h
-  rw [h, ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
-
 variable {Φ : ℝ × ℝ → V →L[ℝ] W} {Ψ : ℝ × ℝ → W →L[ℝ] V} {B : ℝ}
   (hΦ : ContDiff ℝ 2 Φ) (hΦp : ∀ s t, Φ (s, t + 1) = Φ (s, t))
   (hΦB : ∀ z, ‖Φ z‖ ≤ B) (hΦ'B : ∀ z, ‖fderiv ℝ Φ z‖ ≤ B)
@@ -190,7 +178,7 @@ theorem frameL_comp_frameL_of_comp_eq_id
   simp only [ContinuousLinearMap.comp_apply, coe_frameL, ContinuousLinearMap.id_apply]
   rw [← ContinuousLinearMap.comp_apply,
     jetOperator_comp_jetOperator (memLp_frameJetCoeff (hΨ.of_le one_le_two) hΨB hΨ'B)
-      (memLp_frameJetCoeff (hΦ.of_le one_le_two) hΦB hΦ'B), hcoeff, jetOperator_const_id,
+      (memLp_frameJetCoeff (hΦ.of_le one_le_two) hΦB hΦ'B), hcoeff, jetOperator_id,
     ContinuousLinearMap.id_apply]
 
 /-- **Reading in a frame is an isomorphism of Sobolev spaces.** For a `C²` frame `Φ` of period one
@@ -259,51 +247,6 @@ theorem index_jetOperator_comp_frameJetCoeff :
 
 end Fredholm
 
-/-! ### Multiplication by an invertible field on `L²` -/
-
-section Multiplication
-
-/-- Multiplication on `Lᵖ` of the strip by an essentially bounded field `G` of maps, followed by
-multiplication by an essentially bounded field `G'` with `G' z ∘ G z = id`, is the identity. -/
-theorem operatorMultiplication_comp_operatorMultiplication_of_comp_eq_id {p : ℝ≥0∞}
-    [Fact (1 ≤ p)] {G : ℝ × ℝ → V →L[ℝ] W} {G' : ℝ × ℝ → W →L[ℝ] V}
-    (hG : MemLp G ∞ stripMeasure) (hG' : MemLp G' ∞ stripMeasure)
-    (h : ∀ z, (G' z).comp (G z) = ContinuousLinearMap.id ℝ V) :
-    Lp.operatorMultiplication p (hG'.toLp G') ∘L Lp.operatorMultiplication p (hG.toLp G) =
-      ContinuousLinearMap.id ℝ (Lp V p stripMeasure) := by
-  refine ContinuousLinearMap.ext fun f ↦ Lp.ext ?_
-  filter_upwards [Lp.operatorMultiplication_ae (hG'.toLp G')
-      (Lp.operatorMultiplication p (hG.toLp G) f),
-    Lp.operatorMultiplication_ae (hG.toLp G) f, hG.coeFn_toLp, hG'.coeFn_toLp] with z h₁ h₂ h₃ h₄
-  rw [ContinuousLinearMap.comp_apply, h₁, h₂, h₃, h₄, ← ContinuousLinearMap.comp_apply, h z,
-    ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
-
-/-- Multiplication on `Lᵖ` of the strip by an essentially bounded field `G` of invertible maps
-whose inverses `G'` are essentially bounded is invertible. -/
-theorem isInvertible_operatorMultiplication_of_comp_eq_id {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    {G : ℝ × ℝ → V →L[ℝ] W} {G' : ℝ × ℝ → W →L[ℝ] V} (hG : MemLp G ∞ stripMeasure)
-    (hG' : MemLp G' ∞ stripMeasure) (hG'G : ∀ z, (G' z).comp (G z) = ContinuousLinearMap.id ℝ V)
-    (hGG' : ∀ z, (G z).comp (G' z) = ContinuousLinearMap.id ℝ W) :
-    (Lp.operatorMultiplication p (hG.toLp G)).IsInvertible :=
-  .of_inverse (operatorMultiplication_comp_operatorMultiplication_of_comp_eq_id hG' hG hGG')
-    (operatorMultiplication_comp_operatorMultiplication_of_comp_eq_id hG hG' hG'G)
-
-/-- Applying an essentially bounded field `G` after a first-order operator is the first-order
-operator of the composite coefficient field. -/
-theorem jetOperator_comp_eq_operatorMultiplication_comp {G : ℝ × ℝ → W →L[ℝ] U}
-    {N : ℝ × ℝ → V × V × V →L[ℝ] W}
-    (hG : MemLp G ∞ stripMeasure) (hN : MemLp N ∞ stripMeasure) :
-    jetOperator stripMeasure (fun z ↦ (G z).comp (N z)) =
-      (Lp.operatorMultiplication 2 (hG.toLp G)).comp (jetOperator stripMeasure N) := by
-  ext1 f
-  refine Lp.ext ?_
-  filter_upwards [coeFn_jetOperator (hG.clm_comp ∞ hN) f,
-    Lp.operatorMultiplication_ae (hG.toLp G) (jetOperator stripMeasure N f),
-    hG.coeFn_toLp, coeFn_jetOperator hN f] with z h₁ h₂ h₃ h₄
-  rw [h₁, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, h₂, h₃, h₄]
-
-end Multiplication
-
 /-! ### Operators `∂s + A ∂t + C` in a frame -/
 
 section FirstOrder
@@ -351,7 +294,8 @@ private theorem exists_jetOperator_firstOrderJetCoeff_frame_eq_comp :
     memLp_top_of_bound hΦ.continuous.aestronglyMeasurable B (ae_of_all _ hΦB)
   have hΨL : MemLp Ψ ∞ stripMeasure :=
     memLp_top_of_bound hΨ.continuous.aestronglyMeasurable B (ae_of_all _ hΨB)
-  obtain ⟨e, he⟩ := isInvertible_operatorMultiplication_of_comp_eq_id (p := 2) hΨL hΦL hΦΨ hΨΦ
+  obtain ⟨e, he⟩ := Lp.isInvertible_operatorMultiplication_of_comp_eq_id (p := 2) hΨL hΦL
+    (ae_of_all _ hΦΨ) (ae_of_all _ hΨΦ)
   refine ⟨e, frameEquiv hΦ hΦp hΦB hΦ'B hΨ hΨp hΨB hΨ'B hΨΦ hΦΨ, ?_⟩
   rw [jetOperator_firstOrderJetCoeff_frame_eq hΦ hΦp hΦB hΦ'B hΨΦ hAC hΨL, he, coe_frameEquiv]
 
@@ -389,26 +333,6 @@ end FirstOrder
 
 section Loop
 
-/-- A `C¹` function of `t` of period one, viewed as a function on the cylinder, is bounded
-together with its derivative. -/
-private theorem exists_forall_norm_le_comp_snd {X : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℝ X] {f : ℝ → X} (hf : ContDiff ℝ 1 f) (hfp : Periodic f 1) :
-    ∃ B, ∀ z : ℝ × ℝ, ‖f z.2‖ ≤ B ∧ ‖fderiv ℝ (fun w : ℝ × ℝ ↦ f w.2) z‖ ≤ B := by
-  obtain ⟨B₀, hB₀⟩ := hfp.exists_forall_norm_le one_ne_zero hf.continuous
-  obtain ⟨B₁, hB₁⟩ := hfp.deriv.exists_forall_norm_le one_ne_zero (hf.continuous_deriv le_rfl)
-  refine ⟨max B₀ B₁, fun z ↦ ⟨(hB₀ _).trans (le_max_left _ _), ?_⟩⟩
-  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ f w.2)
-      ((fderiv ℝ f z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) z :=
-    (hf.differentiable one_ne_zero z.2).hasFDerivAt.comp z hasFDerivAt_snd
-  rw [hd.fderiv]
-  calc ‖(fderiv ℝ f z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)‖
-      ≤ ‖fderiv ℝ f z.2‖ * ‖ContinuousLinearMap.snd ℝ ℝ ℝ‖ :=
-        ContinuousLinearMap.opNorm_comp_le _ _
-    _ ≤ ‖fderiv ℝ f z.2‖ * 1 := by gcongr; exact ContinuousLinearMap.norm_snd_le ℝ ℝ ℝ
-    _ ≤ max B₀ B₁ := by
-        rw [mul_one, ← norm_deriv_eq_norm_fderiv]
-        exact (hB₁ _).trans (le_max_right _ _)
-
 variable [CompleteSpace V] {Φ : ℝ → V →L[ℝ] W} (hΦ : ContDiff ℝ 2 Φ) (hΦp : Periodic Φ 1)
   (hΦi : ∀ t, (Φ t).IsInvertible) {J : ℝ → W →L[ℝ] W} {J₀ : ℝ → V →L[ℝ] V}
   (hJ : ∀ t, (J t).comp (Φ t) = (Φ t).comp (J₀ t)) {S : ℝ × ℝ → W →L[ℝ] W}
@@ -435,7 +359,10 @@ private theorem firstOrderJetCoeff_frame_loop_eq (z : ℝ × ℝ) :
   rw [hd.fderiv]
   congr 1 <;> refine ContinuousLinearMap.ext fun v ↦ ?_
   · simp [hJ', hinv]
-  · simp [hJ', trivializedCoeff_apply]
+  · simp only [ContinuousLinearMap.neg_comp, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.coe_snd', fderiv_eq_smul_deriv, zero_smul, add_zero, one_smul,
+      ContinuousLinearMap.comp_add, ContinuousLinearMap.comp_neg, add_apply, neg_apply, hJ',
+      trivializedCoeff_apply, Prod.mk.eta, map_sub, neg_sub]
     abel
 
 include hΦ hΦp hΦi hJ in
@@ -451,8 +378,10 @@ private theorem exists_jetOperator_firstOrderJetCoeff_trivializedCoeff_eq_comp
             (H1 W).subtypeL).comp (e' : H1 V →L[ℝ] H1 W)) := by
   have hΨ : ContDiff ℝ 2 fun t ↦ (Φ t).inverse := hΦ.clm_inverse hΦi
   have hΨp : Periodic (fun t ↦ (Φ t).inverse) 1 := fun t ↦ by simp only [hΦp t]
-  obtain ⟨B₁, hB₁⟩ := exists_forall_norm_le_comp_snd (hΦ.of_le one_le_two) hΦp
-  obtain ⟨B₂, hB₂⟩ := exists_forall_norm_le_comp_snd (hΨ.of_le one_le_two) hΨp
+  obtain ⟨B₁, hB₁⟩ :=
+    hΦp.exists_forall_norm_le_comp_snd (E := ℝ) one_ne_zero (hΦ.of_le one_le_two)
+  obtain ⟨B₂, hB₂⟩ :=
+    hΨp.exists_forall_norm_le_comp_snd (E := ℝ) one_ne_zero (hΨ.of_le one_le_two)
   rw [← funext (firstOrderJetCoeff_frame_loop_eq hΦ hΦi hJ (S := S))]
   exact exists_jetOperator_firstOrderJetCoeff_frame_eq_comp (B := max B₁ B₂)
     (hΦ.comp contDiff_snd) (fun _ t ↦ hΦp t) (fun z ↦ (hB₁ z).1.trans (le_max_left _ _))

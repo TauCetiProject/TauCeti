@@ -9,7 +9,8 @@ public import TauCeti.Analysis.Sobolev.Strip.Jet
 public import TauCeti.Analysis.Sobolev.JetOperator
 public import Mathlib.Analysis.Normed.Operator.Prod
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
-import TauCeti.MeasureTheory.Function.Holder
+import Mathlib.Analysis.Calculus.FDeriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Comp
 
 /-!
 # Changes of frame acting on jets
@@ -35,9 +36,9 @@ proves the properties that let it act on Sobolev spaces of jets:
   zeroth-order coefficient is the one that `TauCeti.frameCoeff` records for Cauchy–Riemann
   operators on domains of `ℂ`.
 
-The first-order operators of two coefficient fields compose to that of the pointwise composite
-(`TauCeti.jetOperator_comp_jetOperator`). Multiplication by a function `β(s)`,
-`TauCeti.StripSobolev.cutoffCoeff`, is the change of frame by the scalar frame `β(s) • id`.
+Multiplication by a differentiable function `β(s)`, `TauCeti.StripSobolev.cutoffCoeff`, is the
+change of frame by the scalar frame `β(s) • id`
+(`TauCeti.StripSobolev.cutoffCoeff_eq_frameJetCoeff`).
 
 Changes of frame are how a linearized Floer operator along a map is read in a trivialization of
 the pulled-back tangent bundle, and how two trivializations are compared; the action of frames
@@ -62,19 +63,6 @@ namespace TauCeti
 
 variable {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedAddCommGroup U] [NormedSpace ℝ U]
-
-/-- The first-order operators of two essentially bounded coefficient fields compose to the
-first-order operator of their pointwise composite. -/
-theorem jetOperator_comp_jetOperator {μ : Measure (ℝ × ℝ)}
-    {N : ℝ × ℝ → W × W × W →L[ℝ] U} {M : ℝ × ℝ → V × V × V →L[ℝ] W × W × W}
-    (hN : MemLp N ∞ μ) (hM : MemLp M ∞ μ) :
-    (jetOperator μ N).comp (jetOperator μ M) = jetOperator μ fun z ↦ (N z).comp (M z) := by
-  have hNM : MemLp (fun z ↦ (N z).comp (M z)) ∞ μ := hN.clm_comp ∞ hM
-  ext1 f
-  refine Lp.ext ?_
-  filter_upwards [coeFn_jetOperator hN (jetOperator μ M f), coeFn_jetOperator hM f,
-    coeFn_jetOperator hNM f] with z h₁ h₂ h₃
-  rw [ContinuousLinearMap.comp_apply, h₁, h₂, h₃, ContinuousLinearMap.comp_apply]
 
 namespace StripSobolev
 
@@ -127,6 +115,18 @@ theorem frameJetCoeff_const_id (z : ℝ × ℝ) :
   refine ContinuousLinearMap.ext fun v ↦ ?_
   simp
 
+/-- **Multiplication by `β(s)` is a change of frame.** For `β` differentiable at `s`, the
+coefficient field of multiplication by `β(s)` is that of the change of frame by `β(s) • id`. -/
+theorem cutoffCoeff_eq_frameJetCoeff {β : ℝ → ℝ} {z : ℝ × ℝ} (hβ : DifferentiableAt ℝ β z.1) :
+    cutoffCoeff V β z = frameJetCoeff (fun w ↦ β w.1 • ContinuousLinearMap.id ℝ V) z := by
+  have hβ' : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1)
+      ((ContinuousLinearMap.toSpanSingleton ℝ (deriv β z.1)).comp
+        (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
+    hβ.hasDerivAt.hasFDerivAt.comp z hasFDerivAt_fst
+  have hd := hβ'.smul_const (ContinuousLinearMap.id ℝ V)
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  simp [hd.fderiv]
+
 /-- The coefficient field of a change of frame has norm at most `‖Φ z‖ + ‖dΦ z‖`. -/
 theorem norm_frameJetCoeff_le (Φ : ℝ × ℝ → V →L[ℝ] W) (z : ℝ × ℝ) :
     ‖frameJetCoeff Φ z‖ ≤ ‖Φ z‖ + ‖fderiv ℝ Φ z‖ := by
@@ -146,7 +146,8 @@ theorem norm_frameJetCoeff_le (Φ : ℝ × ℝ → V →L[ℝ] W) (z : ℝ × �
   have hd₁ := hd (1, 0) (by simp [Prod.norm_def])
   have hd₂ := hd (0, 1) (by simp [Prod.norm_def])
   rw [frameJetCoeff_apply, add_mul]
-  refine max_le ((hΦv _ h₁).trans (le_add_of_nonneg_right (by positivity))) (max_le ?_ ?_)
+  refine norm_prod_le_iff.2 ⟨(hΦv _ h₁).trans (le_add_of_nonneg_right (by positivity)),
+    norm_prod_le_iff.2 ⟨?_, ?_⟩⟩
   · exact (norm_add_le _ _).trans (add_le_add (hΦv _ h₂) hd₁)
   · exact (norm_add_le _ _).trans (add_le_add (hΦv _ h₃) hd₂)
 
