@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.DiracSystem.Basic
+import TauCeti.Analysis.Matrix.L2OpNorm
 
 /-!
 # The norm of the Dirac fundamental matrix
@@ -56,18 +57,13 @@ theorem norm_toEuclideanCLM_diracFundamentalMatrix_le (hq : IntegrableOn q (Icc 
   simp only [intervalIntegral.integral_const, sub_zero, smul_eq_mul]
   rw [abs_of_nonneg (add_nonneg (by positivity) hint)]
 
+open scoped Matrix.Norms.L2Operator in
 /-- **Entries of the fundamental matrix.** If `q` is integrable on `[0, t]` and `t ≥ 0`, every
 entry of `M_q(t, z)` has modulus at most `exp(t|z| + ∫₀ᵗ |q|)`. -/
 theorem norm_diracFundamentalMatrix_apply_le (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t)
     (z : ℂ) (i j : Fin 2) :
-    ‖diracFundamentalMatrix q t z i j‖ ≤ Real.exp (t * ‖z‖ + ∫ s in (0 : ℝ)..t, ‖q s‖) := by
-  set M := diracFundamentalMatrix q t z
-  have h := (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) M).le_opNorm (EuclideanSpace.single j 1)
-  rw [PiLp.norm_single, norm_one, mul_one] at h
-  refine le_trans ?_ (h.trans (norm_toEuclideanCLM_diracFundamentalMatrix_le hq ht z))
-  refine le_of_eq_of_le ?_ (PiLp.norm_apply_le _ i)
-  clear_value M
-  simp
+    ‖diracFundamentalMatrix q t z i j‖ ≤ Real.exp (t * ‖z‖ + ∫ s in (0 : ℝ)..t, ‖q s‖) :=
+  (norm_apply_le_l2_opNorm _ i j).trans (norm_toEuclideanCLM_diracFundamentalMatrix_le hq ht z)
 
 /-- **A constant potential at `z = 0`.** For a constant `c`,
 `M_c(t, 0) = cosh(t|c|) + (sinh(t|c|)/|c|) Ω Q_c`, with
