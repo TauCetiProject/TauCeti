@@ -795,6 +795,17 @@ theorem logOneAddExpGrad_apply (x : ℝ) :
   ext
   simp [logOneAddExpGrad]
 
+/-- The `α`-Hölder norm (`α ≤ 1`) of `logOneAddExpGrad` is at most `2`. -/
+theorem norm_logOneAddExpGrad_le : ‖logOneAddExpGrad hα‖ ≤ 2 := by
+  refine (HolderSpace.norm_le_of_norm_le_of_holderWith (K := 1) zero_le_one (fun x ↦ ?_) ?_).trans
+    (by norm_num)
+  · rw [logOneAddExpGrad_apply, norm_toSpanSingleton, Real.norm_eq_abs,
+      abs_of_nonneg (sigmoid_nonneg x)]
+    exact sigmoid_le_one x
+  · intro x y
+    simpa [← (toSpanSingletonLIE (𝕜 := ℝ) (E := ℝ)).isometry.edist_eq] using
+      holderWith_sigmoid hα x y
+
 @[simp]
 theorem logOneAddExpHess_apply (x : ℝ) :
     logOneAddExpHess hα x =

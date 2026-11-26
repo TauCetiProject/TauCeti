@@ -7,35 +7,30 @@ module
 
 public import TauCeti.Analysis.Contour.Cycle.Winding
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
-import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 
 /-!
-# Curves in a star-shaped set are null-homologous there
+# Cycles in a star-shaped set are null-homologous there
 
-A closed piecewise-`C¹` curve drawn inside a set `Ω` that is star-shaped about `x` has winding
-number `0` about every point outside `Ω`, and so does a contour cycle of closed absolutely
-continuous curves in `Ω`. Both reduce to the absolutely continuous version
-`AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_starConvex`, which contracts the curve
-along straight segments to the constant curve at `x`.
+A contour cycle drawn inside a set `Ω` that is star-shaped about `x` has winding number `0` about
+every point outside `Ω` (`TauCeti.Contour.Cycle.isNullHomologous_of_starConvex`). Each generator is
+a closed absolutely continuous curve in `Ω`, which is null-homologous there by
+`AbsolutelyContinuousOnInterval.isNullHomologous_of_starConvex`: the straight-line contraction of
+the curve to the centre `x` stays in `Ω`, so it avoids every point outside `Ω`.
 
-This discharges the `TauCeti.Contour.IsNullHomologous` hypothesis carried by the homology form of
-Cauchy's theorem and by everything built on it, on the domains that ordinary applications supply — a
-disc, a half-plane, a strip, a rectangle, the slit plane. Star-shapedness is a condition on the
-*domain* alone: nothing is asked of the curves beyond the regularity the statements already carry,
-piecewise `C¹` for a single curve and absolute continuity for the curves of a cycle. The homotopy
-route, `TauCeti.Contour.isNullHomologous_of_pathHomotopy_refl`, covers strictly more domains, but
-asks the caller to exhibit a contracting homotopy; a star-shaped domain supplies one for free.
+This discharges the null-homology hypothesis carried by the homology form of Cauchy's theorem for
+cycles and by everything built on it, on the domains that ordinary applications supply — a disc, a
+half-plane, a strip, a rectangle, the slit plane. Star-shapedness is a condition on the *domain*
+alone. The homotopy route, `TauCeti.Contour.isNullHomologous_of_pathHomotopy_refl`, covers strictly
+more domains, but asks the caller to exhibit a contracting homotopy; a star-shaped domain supplies
+one for free.
 
 ## Main results
 
-* `TauCeti.Contour.windingNumber_eq_zero_of_starConvex` — a closed piecewise-`C¹` curve in a
-  star-shaped set has winding number `0` about every point outside that set.
-* `TauCeti.Contour.isNullHomologous_of_starConvex` — such a curve is null-homologous there.
 * `TauCeti.Contour.Cycle.isNullHomologous_of_starConvex` — a contour cycle of closed absolutely
   continuous curves in a star-shaped set is null-homologous there.
 
 A convex `Ω` is star-shaped about any of its points, so a caller holding `hconv : Convex ℝ Ω` and a
-curve in `Ω` supplies `hconv.starConvex (hγΩ a left_mem_uIcc)`.
+point `x ∈ Ω` supplies `hconv.starConvex hx`.
 
 ## Provenance
 
@@ -48,25 +43,6 @@ public section
 open Set
 
 namespace TauCeti.Contour
-
-variable {γ : ℝ → ℂ} {a b : ℝ} {w : ℂ}
-
-/-- **The winding number vanishes at every point outside a star-shaped set containing the curve.**
-If the closed piecewise-`C¹` curve `γ` stays in a set `Ω` star-shaped about `x` and `w ∉ Ω`, then
-`n_w(γ) = 0`. Indeed, the straight-line contraction of `γ` to the centre `x` stays in `Ω`, so it
-avoids `w`. -/
-theorem windingNumber_eq_zero_of_starConvex {Ω : Set ℂ} {x : ℂ} (hstar : StarConvex ℝ x Ω)
-    (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
-    (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hw : w ∉ Ω) :
-    windingNumber γ a b w = 0 :=
-  hγ.absolutelyContinuousOnInterval.windingNumber_eq_zero_of_starConvex hstar hclosed hγΩ hw
-
-/-- **A closed piecewise-`C¹` curve in a star-shaped set is null-homologous there.** -/
-theorem isNullHomologous_of_starConvex {Ω : Set ℂ} {x : ℂ} (hstar : StarConvex ℝ x Ω)
-    (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b) (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) :
-    IsNullHomologous γ a b Ω :=
-  isNullHomologous_iff.mpr fun _ hw ↦
-    windingNumber_eq_zero_of_starConvex hstar hγ hclosed hγΩ hw
 
 namespace Cycle
 

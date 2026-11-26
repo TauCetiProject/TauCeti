@@ -15,7 +15,7 @@ import Mathlib.Tactic.Module
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Topology.LocallyFinite.Basic
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Piecewise gluing and linear/bilinear interpolation on uniform grids
