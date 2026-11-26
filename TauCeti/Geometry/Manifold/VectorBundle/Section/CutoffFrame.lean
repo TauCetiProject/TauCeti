@@ -153,6 +153,14 @@ theorem cutoffFrameCoeff_apply (χ : C^n⟮I, M; ℝ⟯) (hχ : tsupport χ ⊆ 
     t.cutoffFrameCoeff χ hχ ℓ h x = χ x • ℓ (t.continuousLinearMapAt ℂ x (h x)) :=
   (rfl)
 
+/-- The cut-off frame coefficient of `f h`, for a complex-valued `C^n` function `f`, is that of `h`
+multiplied by `f`. -/
+theorem cutoffFrameCoeff_smul_function (χ : C^n⟮I, M; ℝ⟯) (hχ : tsupport χ ⊆ t.baseSet)
+    (ℓ : W →L[ℂ] ℂ) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (h : Cₛ^n⟮I; W, F⟯) :
+    t.cutoffFrameCoeff χ hχ ℓ (f • h) = t.cutoffFrameCoeff χ hχ ℓ h * f := by
+  ext x
+  simp [mul_comm, mul_left_comm]
+
 /-- On the base set of `t`, a real cut-off frame section `g t⁻¹ v` is the complex-linear inverse
 `t⁻¹ₓ` applied to `(g x : ℂ) • v`. -/
 theorem cutoffFrameSection_apply_eq_symmL (g : C^n⟮I, M; ℝ⟯) (hg : tsupport g ⊆ t.baseSet) (v : W)
