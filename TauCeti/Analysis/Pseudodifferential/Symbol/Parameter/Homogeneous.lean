@@ -33,7 +33,8 @@ behaviour under the operations of the symbol calculus.
   taken by the terms of Seeley's resolvent parametrix once they are cut off near the origin. It is
   implied by quasi-homogeneity
   (`TauCeti.ParameterSymbol.IsQuasiHomogeneous.isQuasiHomogeneousAbove`) and preserved by the
-  linear operations, the inclusions and pointwise composition.
+  linear operations, finite sums, the inclusions, pointwise composition and the inverse of a
+  parameter-elliptic symbol (`TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove.inverse`).
 * Examples: the quasi-homogeneous symbols `TauCeti.ParameterSymbol.ofQuasiHomogeneous`
   (`TauCeti.ParameterSymbol.isQuasiHomogeneous_ofQuasiHomogeneous`), such as the spectral
   parameter `z`, and the symbol `‖ξ‖² - z` of `-Δ - z`, of degree `2`
@@ -250,6 +251,10 @@ theorem IsQuasiHomogeneousAbove.mono {a : ParameterSymbol n Λ V W m}
     (ha : a.IsQuasiHomogeneousAbove μ R) (h : R ≤ R') : a.IsQuasiHomogeneousAbove μ R' :=
   fun x ξ hξ => ha x ξ (h.trans hξ)
 
+theorem IsQuasiHomogeneousAbove.congr_degree {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneousAbove μ R) (h : μ = μ') : a.IsQuasiHomogeneousAbove μ' R :=
+  h ▸ ha
+
 @[simp]
 theorem isQuasiHomogeneousAbove_zero :
     (0 : ParameterSymbol n Λ V W m).IsQuasiHomogeneousAbove μ R :=
@@ -280,6 +285,13 @@ theorem IsQuasiHomogeneousAbove.sub {a b : ParameterSymbol n Λ V W m}
     (a - b).IsQuasiHomogeneousAbove μ R := by
   simpa only [sub_eq_add_neg] using ha.add hb.neg
 
+theorem IsQuasiHomogeneousAbove.sum {ι : Type*} {s : Finset ι}
+    {f : ι → ParameterSymbol n Λ V W m} (hf : ∀ i ∈ s, (f i).IsQuasiHomogeneousAbove μ R) :
+    (∑ i ∈ s, f i).IsQuasiHomogeneousAbove μ R :=
+  fun x ξ hξ z hz t ht htz => by
+    simp only [coefficient_sum, Finset.sum_apply, Finset.smul_sum]
+    exact Finset.sum_congr rfl fun i hi => hf i hi x ξ hξ z hz t ht htz
+
 @[simp]
 theorem isQuasiHomogeneousAbove_inclusion_iff {a : ParameterSymbol n Λ V W m} (h : m ≤ m') :
     (inclusion h a).IsQuasiHomogeneousAbove μ R ↔ a.IsQuasiHomogeneousAbove μ R := by
@@ -299,6 +311,16 @@ theorem IsQuasiHomogeneousAbove.comp {b : ParameterSymbol n Λ W U m'}
     simp only [coefficient_comp, hb x ξ hξ z hz t ht htz, ha x ξ hξ z hz t ht htz,
       ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul, smul_smul,
       Real.rpow_add (zero_lt_one.trans_le ht), mul_comm]
+
+/-- The pointwise inverse of a parameter-elliptic symbol quasi-homogeneous of degree `μ` above the
+radius `R` is quasi-homogeneous of degree `-μ` above `R`. -/
+theorem IsQuasiHomogeneousAbove.inverse [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsQuasiHomogeneousAbove μ R) (he : a.IsElliptic) :
+    (a.inverse he).IsQuasiHomogeneousAbove (-μ) R :=
+  fun x ξ hξ z hz t ht htz => by
+    rw [coefficient_inverse, coefficient_inverse, ha x ξ hξ z hz t ht htz,
+      ContinuousLinearMap.inverse_smul_of_isScalarTower,
+      Real.rpow_neg (zero_le_one.trans ht)]
 
 end ParameterSymbol
 

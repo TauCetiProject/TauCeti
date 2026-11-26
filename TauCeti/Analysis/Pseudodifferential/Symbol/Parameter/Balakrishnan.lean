@@ -93,6 +93,8 @@ axis, its principal symbol is `A ^ (-σ)`
   integral of the resolvent symbol of `s - Δ` is `(s + ‖ξ‖²) ^ (-σ)`.
 * `TauCeti.ParameterSymbol.IsQuasiHomogeneousAbove.isHomogeneousAbove_balakrishnanIntegral`: the
   integral of a symbol quasi-homogeneous at large frequencies is homogeneous there.
+* `TauCeti.ParameterSymbol.IsAsymptoticSum.balakrishnanIntegral`: the integral of an asymptotic
+  sum is the asymptotic sum of the integrals.
 * `TauCeti.ParameterSymbol.classicalBalakrishnanIntegral`: the integral of a quasi-homogeneous
   expansion as a classical symbol, with its homogeneous terms
   (`TauCeti.ParameterSymbol.coefficient_term_classicalBalakrishnanIntegral`) and principal symbol
@@ -349,14 +351,17 @@ private theorem coefficient_principal_termClassical {j : ℕ} {b : ParameterSymb
           exact isHomogeneousAbove_inclusion_balakrishnanIntegral hΛ hσ hm hR) hξ hξ0,
     ClassicalSymbol.toSymbol_ofIsHomogeneousAbove, Symbol.coefficient_inclusion]
 
-/-- The Balakrishnan integral of `b ∼ ∑ⱼ bⱼ` is an asymptotic sum of the integrals of the `bⱼ`. -/
-private theorem isAsymptoticSum_balakrishnanIntegral (b : ParameterSymbol n Λ V W m)
-    (bs : ∀ j : ℕ, ParameterSymbol n Λ V W (m - j))
-    (hbs : ∀ j, ∃ R, (bs j).IsQuasiHomogeneousAbove (m - j) R)
+/-- **The Balakrishnan integral preserves asymptotic expansions.** If `b ∼ ∑ⱼ bⱼ` with `bⱼ` of
+order `m - j`, the Balakrishnan integral of `b`, of order `m - 2 σ + 2`, is the asymptotic sum of
+the Balakrishnan integrals of the `bⱼ`, of orders `m - 2 σ + 2 - j`. -/
+theorem IsAsymptoticSum.balakrishnanIntegral {b : ParameterSymbol n Λ V W m}
+    {bs : ∀ j : ℕ, ParameterSymbol n Λ V W (m - j)}
     (hb : IsAsymptoticSum (m := fun j : ℕ ↦ m - j) (inclusion (by simp) b) bs) :
     (Symbol.inclusion (by simp) (b.balakrishnanIntegral hΛ hσ hm) :
       Symbol n V W (m - 2 * σ + 2 - ((0 : ℕ) : ℝ))).IsAsymptoticSum
-        fun j ↦ (termClassical hΛ hσ hm (bs j) (hbs j)).toSymbol := by
+        fun j ↦ (Symbol.inclusion (le_of_eq (by ring))
+          ((bs j).balakrishnanIntegral hΛ hσ (by linarith [Nat.cast_nonneg (α := ℝ) j])) :
+            Symbol n V W (m - 2 * σ + 2 - j)) := by
   refine Symbol.isAsymptoticSum_iff.2 fun N ↦ ?_
   have hm' := sub_natCast_sub_two_mul_add_two_neg hm (σ := σ)
   obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hb N
@@ -369,8 +374,7 @@ private theorem isAsymptoticSum_balakrishnanIntegral (b : ParameterSymbol n Λ V
   refine ⟨Symbol.inclusion (le_of_eq (by ring)) (r.balakrishnanIntegral hΛ hσ (hm' N)), ?_⟩
   rw [sub_eq_iff_eq_add, hdecomp]
   ext p
-  simp only [termClassical, ClassicalSymbol.toSymbol_ofIsHomogeneousAbove,
-    balakrishnanIntegral_add, balakrishnanIntegral_sum, Symbol.coefficient_add,
+  simp only [balakrishnanIntegral_add, balakrishnanIntegral_sum, Symbol.coefficient_add,
     Symbol.coefficient_sum, Symbol.coefficient_inclusion, Pi.add_apply, Finset.sum_apply,
     coefficient_balakrishnanIntegral, coefficient_inclusion]
 
@@ -392,7 +396,8 @@ def classicalBalakrishnanIntegral (b : ParameterSymbol n Λ V W m)
     (hb : IsAsymptoticSum (m := fun j : ℕ ↦ m - j) (inclusion (by simp) b) bs) :
     ClassicalSymbol n V W (m - 2 * σ + 2) :=
   ClassicalSymbol.ofIsAsymptoticSum (fun j ↦ termClassical hΛ hσ hm (bs j) (hbs j))
-    (isAsymptoticSum_balakrishnanIntegral hΛ hσ hm b bs hbs hb)
+    (by simpa only [termClassical, ClassicalSymbol.toSymbol_ofIsHomogeneousAbove] using
+      hb.balakrishnanIntegral hΛ hσ hm)
 
 variable (b : ParameterSymbol n Λ V W m) (bs : ∀ j : ℕ, ParameterSymbol n Λ V W (m - j))
   (hbs : ∀ j, ∃ R, (bs j).IsQuasiHomogeneousAbove (m - j) R)
