@@ -27,12 +27,12 @@ and let `p > 0`. **Global action–angle coordinates** are an injective local di
 
 into the cotangent bundle of the torus which pulls the canonical form `ω = ∑ j, dθ_j ∧ dI_j` back
 to `σ` and whose actions are functions on the base, `I ∘ Φ = a ∘ π` for a map `a : B → ℝ^ι`
-(`TauCeti.CotangentBundle.torusActions`). Without injectivity of `Φ`, a symplectic local
-diffeomorphism with actions `a ∘ π` which is only injective on every fibre of `π` is the same as
-**action–angle coordinates on `B × Tⁿ`**: the map `y ↦ (π y, θ(Φ y))`, recording the base point and
-the angles of `Φ y`, is then a diffeomorphism `M ≃ B × Tⁿ` over `B`
-(`IsLagrangianTorusFibration.exists_diffeomorph_prod_of_actionAngle`), in which
-`σ = ∑ j, dθ_j ∧ d(a_j ∘ pr₁)`. Here `a` is a local diffeomorphism but need not be injective.
+(`TauCeti.CotangentBundle.torusActions`). Without injectivity of `Φ`, we call a symplectic local
+diffeomorphism with actions `a ∘ π` which is only injective on every fibre of `π`
+**action–angle coordinates on `B × Tⁿ`**: such a `Φ` gives a diffeomorphism `M ≃ B × Tⁿ` over `B`,
+the map `y ↦ (π y, θ(Φ y))` recording the base point and the angles of `Φ y`
+(`IsLagrangianTorusFibration.exists_diffeomorph_prod_of_actionAngle`). Here `a` is a local
+diffeomorphism but need not be injective.
 
 `IsLagrangianTorusFibration.exists_actionAngle_of_lagrangian_section` is the sufficiency half of
 Duistermaat's criterion. This file proves the necessity half: coordinates on `B × Tⁿ` force
@@ -399,12 +399,10 @@ private theorem isLocalDiffeomorph_prodMk_proj_of_actionAngle :
     omega
 
 include h hΦ hΦσ hΦa in
-/-- **Action–angle coordinates are coordinates on `B × Tⁿ`.** Let `Φ : M → T*Tⁿ` be a symplectic
+/-- **Action–angle coordinates on `B × Tⁿ` trivialise `π`.** Let `Φ : M → T*Tⁿ` be a symplectic
 local diffeomorphism with actions `a ∘ π` which is injective on every fibre of `π`. Then the map
 `y ↦ (π y, θ(Φ y))`, where the angles `θ(Φ y)` are the base point of the covector `Φ y`, is a
-diffeomorphism `M ≃ B × Tⁿ` over `B`. Since a covector of the torus is determined by its angles and
-actions (`TauCeti.CotangentBundle.ext_torusActions`), in these coordinates `Φ` is
-`(b, θ) ↦ ∑ j, a_j(b) dθ_j` at `θ`, and `σ = ∑ j, dθ_j ∧ d(a_j ∘ pr₁)`. -/
+diffeomorphism `M ≃ B × Tⁿ` over `B`. -/
 theorem exists_diffeomorph_prod_of_actionAngle (hΦi : ∀ b, InjOn Φ (π ⁻¹' {b})) :
     ∃ Ψ : M ≃ₘ⟮I, J.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))⟯ B × (ι → AddCircle p),
       ∀ y, Ψ y = (π y, (Φ y).proj) := by
@@ -512,9 +510,9 @@ private theorem exists_actionAngle_of_periodLattice_eq [BoundarylessManifold J B
 include h in
 /-- **Duistermaat's criterion for action–angle coordinates.** Let `σ` be closed and let
 `a : B → ℝ^ι` be a local diffeomorphism. There is a symplectic local diffeomorphism
-`Φ : M → T*Tⁿ` with actions `a ∘ π` which is injective on every fibre of `π`, that is, by
-`exists_diffeomorph_prod_of_actionAngle`, action–angle coordinates on `B × Tⁿ` with actions `a`,
-exactly when
+`Φ : M → T*Tⁿ` with actions `a ∘ π` which is injective on every fibre of `π` (action–angle
+coordinates on `B × Tⁿ` with actions `a`, which give a diffeomorphism `M ≃ B × Tⁿ` over `B` by
+`exists_diffeomorph_prod_of_actionAngle`) exactly when
 
 * the period lattice is spanned at every point by the exact forms `p • da_j`: the linear monodromy
   is trivial and the period forms are exact, with developing map `a`; and
