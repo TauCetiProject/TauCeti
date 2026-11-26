@@ -131,20 +131,17 @@ cup product of the restricted kernel classes over that extension. -/
 theorem kerH1WeilPairing_kerRes
     (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
     (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
-    (φ.baseChange L).kerH1WeilPairing
-        (by
-          have hd : (φ.baseChange L).degree = φ.degree := φ.degree_map (algebraMap K L)
-          simpa only [hd, map_natCast] using hn.map (algebraMap K L))
-        (φ.kerRes τ a) (φ.dualKerRes τ b) =
+    let hnL : IsUnit ((φ.baseChange L).degree : L) := by
+      have hd : (φ.baseChange L).degree = φ.degree := φ.degree_map (algebraMap K L)
+      simpa only [hd, map_natCast] using hn.map (algebraMap K L)
+    (φ.baseChange L).kerH1WeilPairing hnL (φ.kerRes τ a) (φ.dualKerRes τ b) =
       explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K φ.degree)
         (AbsoluteGaloisGroup L) (KummerCoeff L (φ.baseChange L).degree)
         (absoluteGaloisGroupMap τ)
         (kummerCoeffBaseChangeOfDvd τ (φ.degree_map (algebraMap K L)).symm.dvd)
         continuous_of_discreteTopology (kummerCoeffBaseChangeOfDvd_smul τ _)
         (φ.kerH1WeilPairing hn a b) := by
-  have hd : (φ.baseChange L).degree = φ.degree := φ.degree_map (algebraMap K L)
-  have hnL : IsUnit ((φ.baseChange L).degree : L) := by
-    simpa only [hd, map_natCast] using hn.map (algebraMap K L)
+  intro hnL
   simp only [kerH1WeilPairing_eq_explicitCup11, kerRes_eq_explicitMap1, dualKerRes_eq_explicitMap1]
   exact (explicitMap2_explicitCup11 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
     (ofIsogeny φ.dual).KerCoeff (KummerCoeff K φ.degree) (φ.kerCoeffWeilPairing hn)
