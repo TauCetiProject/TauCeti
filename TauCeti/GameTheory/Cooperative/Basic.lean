@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Function.Submodular
-public import TauCeti.Order.Lattice.Submodular.SMul
+public import TauCeti.Order.Lattice.Submodular
 import Mathlib.Data.Finset.Interval
-import Mathlib.Tactic.Linarith
 
 /-!
 # Classes of cooperative games
@@ -19,8 +17,6 @@ and superadditivity means that disjoint coalitions lose no worth by joining.
 
 The increasing-marginals characterization `TauCeti.isSubmodular_neg_iff_forall_insert`
 explains how convexity controls the gain from adding a player to a coalition.
-`ConvexOn.isSubmodular_neg_finsetSum` gives convexity of measure games, where the worth
-is a convex function of the sum of nonnegative player weights.
 
 ## References
 
@@ -34,39 +30,41 @@ open Finset
 
 namespace TauCeti
 
-variable {ι : Type*} [DecidableEq ι]
+variable {ι K : Type*} [DecidableEq ι]
 
 /-- A coalition worth function is superadditive if the worth of the union of two disjoint
 coalitions is at least the sum of their individual worths. -/
-def IsSuperadditive (v : Finset ι → ℝ) : Prop :=
+def IsSuperadditive [Add K] [LE K] (v : Finset ι → K) : Prop :=
   ∀ S T : Finset ι, Disjoint S T → v S + v T ≤ v (S ∪ T)
 
 /-- Superadditivity is the union inequality on disjoint coalitions. -/
-theorem isSuperadditive_def (v : Finset ι → ℝ) :
+theorem isSuperadditive_def [Add K] [LE K] (v : Finset ι → K) :
     IsSuperadditive v ↔ ∀ S T : Finset ι, Disjoint S T → v S + v T ≤ v (S ∪ T) :=
   Iff.rfl
 
-variable {v : Finset ι → ℝ}
+variable {v : Finset ι → K}
 
 /-- A convex coalition worth function whose empty coalition has nonpositive worth is
 superadditive. In particular this holds for a convex game. -/
-theorem IsSubmodular.isSuperadditive (hv : IsSubmodular (-v)) (h₀ : v ∅ ≤ 0) :
-    IsSuperadditive v := by
+theorem IsSubmodular.isSuperadditive [AddCommGroup K] [Preorder K] [IsOrderedAddMonoid K]
+    (hv : IsSubmodular (-v)) (h₀ : v ∅ ≤ 0) : IsSuperadditive v := by
   rw [isSuperadditive_def]
   intro S T hST
-  have h := hv.apply S T
-  simp only [disjoint_iff_inter_eq_empty.mp hST, Pi.neg_apply] at h
-  linarith only [h, h₀]
+  have h : v S + v T ≤ v (S ∪ T) + v ∅ := by
+    simpa only [disjoint_iff_inter_eq_empty.mp hST, Pi.neg_apply, ← neg_add, neg_le_neg_iff]
+      using hv.apply S T
+  exact h.trans (add_le_of_nonpos_right h₀)
 
 /-- The worth of the empty coalition is nonpositive for a superadditive set function. -/
-theorem IsSuperadditive.empty_le_zero (hv : IsSuperadditive v) : v ∅ ≤ 0 := by
+theorem IsSuperadditive.empty_le_zero [AddZeroClass K] [LE K] [AddLeftReflectLE K]
+    (hv : IsSuperadditive v) : v ∅ ≤ 0 := by
   have h := (isSuperadditive_def v).mp hv ∅ ∅ (by simp)
   rw [empty_union] at h
-  linarith only [h]
+  exact nonpos_of_add_le_right h
 
 /-- A superadditive set function with nonnegative singleton worths is monotone. -/
-theorem IsSuperadditive.monotone_of_nonneg_singleton (hv : IsSuperadditive v)
-    (h₀ : ∀ i, 0 ≤ v {i}) : Monotone v := by
+theorem IsSuperadditive.monotone_of_nonneg_singleton [AddZeroClass K] [Preorder K]
+    [AddRightMono K] (hv : IsSuperadditive v) (h₀ : ∀ i, 0 ≤ v {i}) : Monotone v := by
   apply monotone_iff_forall_le_insert.mpr
   intro S i hi
   have h := (isSuperadditive_def v).mp hv {i} S (disjoint_singleton_left.mpr hi)
