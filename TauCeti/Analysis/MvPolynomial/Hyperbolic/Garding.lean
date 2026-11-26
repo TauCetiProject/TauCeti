@@ -105,21 +105,17 @@ private theorem ne_zero_of_forall_ne_zero_of_isPreconnected {F : ℝ × ℂ → 
     isPreconnected_closed_iff.1 isPreconnected_Icc T T' hT hT' hcover
       ⟨0, left_mem_Icc.2 zero_le_one, hlow 0 h0⟩
       ⟨1, right_mem_Icc.2 zero_le_one, hmem (right_mem_Icc.2 zero_le_one) hτ h1⟩
-  have hτ'' : 0 ≤ τ'.im := hτ'
-  have hs := hsT τ' hτ''
-  rw [show F (s', τ') = 0 from hFτ, norm_zero] at hs
-  rcases hτ''.eq_or_lt with h | h
+  rw [mem_ofPred_eq] at hτ'
+  rw [mem_preimage, mem_singleton_iff] at hFτ
+  have hs := hsT τ' hτ'
+  rw [hFτ, norm_zero] at hs
+  rcases hτ'.eq_or_lt with h | h
   · exact hreal s' hs' τ' h.symm hFτ
   · exact (mul_pos hc (pow_pos h m)).not_ge hs
 
 namespace MvPolynomial
 
 variable {σ : Type*} {p : MvPolynomial σ ℝ} {m : ℕ} {a b x : σ → ℝ}
-
-/-- The complexification of a real polynomial takes real values at real points. -/
-private theorem eval_map_ofReal (p : MvPolynomial σ ℝ) (y : σ → ℝ) :
-    eval (ofReal ∘ y) (map ofRealHom p) = eval y p :=
-  (eval_map _ _ _).trans (eval₂_comp ofRealHom y p).symm
 
 /-- For `p` hyperbolic in the direction `a` and a real point `y`, the complexified `p` vanishes at
 `y + l • a` only for real `l`. -/
@@ -145,26 +141,19 @@ private theorem norm_mul_im_pow_le_norm_eval (hp : p.IsHomogeneous m) (hb : eval
     {τ : ℂ} (hτ : 0 ≤ τ.im) :
     ‖(eval b p : ℂ)‖ * τ.im ^ m ≤ ‖eval (w + τ • ofReal ∘ b) (map ofRealHom p)‖ := by
   have hP := hp.map ofRealHom
-  have hPb : eval (ofReal ∘ b) (map ofRealHom p) ≠ 0 := by
-    rw [eval_map_ofReal]
-    exact_mod_cast hb
+  have hPb : eval (ofReal ∘ b) (map ofRealHom p) ≠ 0 :=
+    (map_eval ofRealHom b p).symm.trans_ne (by simpa using hb)
   have hψ (z : ℂ) := eval_aeval_C_add_C_mul_X (map ofRealHom p) w (ofReal ∘ b) z
   have hdeg := natDegree_aeval_C_add_C_mul_X_of_isHomogeneous hP w hPb
   have hlc := leadingCoeff_aeval_C_add_C_mul_X_of_isHomogeneous hP w hPb
-  rw [eval_map_ofReal] at hlc
-  rw [← hψ, ← hlc]
-  rcases eq_or_ne m 0 with rfl | hm
-  · rw [Polynomial.eq_C_of_natDegree_eq_zero hdeg, Polynomial.eval_C,
-      Polynomial.leadingCoeff_C, pow_zero, mul_one]
-  obtain ⟨r, hr, hle⟩ := (IsAlgClosed.splits _).exists_mem_roots_norm_sub_pow_le
-    (hdeg ▸ hm) τ
+  replace hlc := hlc.trans (map_eval ofRealHom b p).symm
+  rw [← hψ, ← ofRealHom_eq_coe (eval b p), ← hlc, ← hdeg]
+  refine (IsAlgClosed.splits _).norm_leadingCoeff_mul_pow_le_norm_eval hτ fun r hr ↦ ?_
   have hr : r.im < 0 := by
     refine not_le.1 fun hr' ↦ h r hr' ?_
     rw [← hψ]
     exact (Polynomial.mem_roots (aeval_C_add_C_mul_X_ne_zero_of_isHomogeneous hP w hPb)).1 hr
-  refine le_trans ?_ (hdeg ▸ hle)
-  gcongr
-  calc τ.im ≤ (τ - r).im := by simp; linarith
+  calc τ.im ≤ (τ - r).im := by rw [sub_im]; linarith
     _ ≤ ‖τ - r‖ := (le_abs_self _).trans (abs_im_le_norm _)
 
 /-- For `p` hyperbolic in the direction `a`, `b ∈ Γ(p, a)` and `α > 0`, the complexified `p` does
@@ -175,8 +164,9 @@ private theorem IsHyperbolic.eval_I_smul_add_smul_ne_zero (hp : IsHyperbolic p m
     eval ((α * I) • ofReal ∘ a + τ • ofReal ∘ b) (map ofRealHom p) ≠ 0 := by
   have hP := hp.isHomogeneous.map ofRealHom
   rcases eq_or_ne τ 0 with rfl | hτ0
-  · rw [zero_smul, add_zero, hP.eval_smul, eval_map_ofReal]
-    exact mul_ne_zero (pow_ne_zero _ (by simp [hα.ne'])) (by exact_mod_cast hp.eval_pos.ne')
+  · rw [zero_smul, add_zero, hP.eval_smul]
+    exact mul_ne_zero (pow_ne_zero _ (by simp [hα.ne']))
+      ((map_eval ofRealHom a p).symm.trans_ne (by simpa using hp.eval_pos.ne'))
   have hpt : (α * I) • ofReal ∘ a + τ • ofReal ∘ b =
       τ • (ofReal ∘ b + (α * I / τ) • ofReal ∘ a) := by
     rw [smul_add, smul_smul, mul_div_cancel₀ _ hτ0, add_comm]
@@ -185,7 +175,8 @@ private theorem IsHyperbolic.eval_I_smul_add_smul_ne_zero (hp : IsHyperbolic p m
   -- `l = α i / τ` is a root of `t ↦ p(b + t • a)`, hence real and negative.
   have hl : α * I / τ = ((α * I / τ).re : ℂ) :=
     Complex.ext rfl (by simpa using hp.im_eq_zero_of_eval_eq_zero b h)
-  rw [hl, ofReal_comp_add_ofReal_smul, eval_map_ofReal, ofReal_eq_zero] at h
+  rw [hl, ofReal_comp_add_ofReal_smul] at h
+  replace h := (map_eq_zero ofRealHom).1 ((map_eval ofRealHom _ p).trans h)
   have hre : (α * I / τ).re < 0 := not_le.1 fun hre ↦ mem_gardingCone.1 hb _ hre h
   have := congrArg Complex.im (show α * I = (α * I / τ).re * τ by rw [← hl, div_mul_cancel₀ _ hτ0])
   simp only [mul_im, ofReal_re, I_im, mul_one, ofReal_im, I_re, mul_zero, add_zero,
@@ -204,8 +195,8 @@ private theorem exists_forall_eval_add_smul_ne_zero (hp : p.IsHomogeneous m)
     (continuous_eval _).comp (by fun_prop)
   have hb0 (s : ℝ) : eval (ofReal ∘ b + (0 : ℂ) • (s • ofReal ∘ x + (α * I) • ofReal ∘ a))
       (map ofRealHom p) ≠ 0 := by
-    rw [zero_smul, add_zero, eval_map_ofReal]
-    exact_mod_cast hb
+    rw [zero_smul, add_zero]
+    exact (map_eval ofRealHom b p).symm.trans_ne (by simpa using hb)
   have hev : ∀ᶠ u in 𝓝 (0 : ℂ), ∀ s ∈ Icc (0 : ℝ) 1,
       eval (ofReal ∘ b + u • (s • ofReal ∘ x + (α * I) • ofReal ∘ a)) (map ofRealHom p) ≠ 0 :=
     isCompact_Icc.eventually_forall_of_forall_eventually fun s _ ↦
@@ -287,20 +278,16 @@ theorem of_mem_gardingCone (hp : IsHyperbolic p m a) (hb : b ∈ gardingCone p a
       intro h
       rw [h, norm_zero] at h0
       exact (mul_pos (norm_pos_iff.2 (by exact_mod_cast hpb.ne')) (pow_pos hz m)).not_ge h0
-    -- The complex roots of a real polynomial are closed under conjugation.
-    have hconj (f : Polynomial ℝ) (z : ℂ) : (f.map ofRealHom).eval (conj z) =
-        conj ((f.map ofRealHom).eval z) := by
-      rw [Polynomial.eval_map, Polynomial.eval_map, Polynomial.hom_eval₂]
-      congr 1
-      ext r
-      simp
     refine Polynomial.Splits.of_splits_map ofRealHom (IsAlgClosed.splits _) fun z hz ↦ ?_
     have hz0 := (Polynomial.mem_roots (Polynomial.map_ne_zero hq)).1 hz
     rw [Polynomial.IsRoot.def] at hz0
     have him : z.im = 0 := by
       rcases lt_trichotomy z.im 0 with h | h | h
       · refine (hup (conj z) (by simpa using h) ?_).elim
-        rw [← hev, hconj, hz0, map_zero]
+        -- The complex roots of a real polynomial are closed under conjugation.
+        rw [← hev]
+        exact (Polynomial.eval_map _ _).trans <| (Polynomial.aeval_conj _ z).trans <|
+          (congrArg conj ((Polynomial.eval_map _ _).symm.trans hz0)).trans (map_zero _)
       · exact h
       · exact (hup z h (by rwa [← hev])).elim
     exact ⟨z.re, Complex.ext (by simp) (by simp [him])⟩
@@ -318,13 +305,9 @@ theorem mem_gardingCone_of_mem_closure (hp : IsHyperbolic p m a)
     have hdeg := natDegree_aeval_C_add_C_mul_X_of_isHomogeneous hp.isHomogeneous y hp.eval_pos.ne'
     have hroots := (mem_gardingCone_iff_forall_mem_roots hp.isHomogeneous hp.eval_pos.ne').1 hy
     rw [mem_ofPred_eq, ← eval_aeval_C_add_C_mul_X,
-      ← leadingCoeff_aeval_C_add_C_mul_X_of_isHomogeneous hp.isHomogeneous y hp.eval_pos.ne']
-    rcases eq_or_ne m 0 with rfl | hm
-    · rw [Polynomial.eq_C_of_natDegree_eq_zero hdeg, Polynomial.eval_C,
-        Polynomial.leadingCoeff_C, pow_zero, mul_one]
-    obtain ⟨r, hr, hle⟩ := (hp.splits y).exists_mem_roots_norm_sub_pow_le (hdeg ▸ hm) t
-    refine le_trans ?_ (hdeg ▸ hle)
-    gcongr
+      ← leadingCoeff_aeval_C_add_C_mul_X_of_isHomogeneous hp.isHomogeneous y hp.eval_pos.ne',
+      ← hdeg]
+    refine (hp.splits y).norm_leadingCoeff_mul_pow_le_norm_eval ht.le fun r hr ↦ ?_
     rw [Real.norm_eq_abs, abs_of_pos (by linarith [hroots r hr])]
     linarith [hroots r hr]
   have hx' := closure_minimal hlow
