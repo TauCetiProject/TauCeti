@@ -195,6 +195,12 @@ theorem jetShift_apply_eq_zero_of_forall_lt {n k : ℕ} {K : (i : Fin (n + 2)) �
   ext
   simp
 
+/-- The shift of a jet in a direction `h`, at order zero, is its entry of order one at `h`. -/
+theorem jetShift_apply_zero_apply {n : ℕ} (J : (i : Fin (n + 2)) → E [×i]→L[𝕜] F)
+    (h : E) : jetShift 𝕜 E F n J h 0 0 = J 1 fun _ ↦ h := by
+  rw [jetShift_apply, ContinuousMultilinearMap.curryLeft_apply]
+  exact congrArg (J 1) (funext fun i ↦ Fin.cases rfl (fun j ↦ j.elim0) i)
+
 end TauCeti
 
 open TauCeti
@@ -397,12 +403,6 @@ theorem leibnizJet_apply_const_of_forall_lt_eq_zero {n : ℕ}
         (fun i hi ↦ jetShift_apply_eq_zero_of_forall_lt hK h hi)]
     -- `init J` at order `0` is `J 0`, and `∂ₕ K` at order `n` is `K (n + 1)` curried at `h`.
     exact congrArg (B (J 0 0)) (ContinuousMultilinearMap.apply_const_eq_curryLeft _ h).symm
-
-/-- The shift of a jet in a direction `h`, at order zero, is its entry of order one at `h`. -/
-private theorem jetShift_apply_zero_apply {n : ℕ} (J : (i : Fin (n + 2)) → E [×i]→L[𝕜] F)
-    (h : E) : jetShift 𝕜 E F n J h 0 0 = J 1 fun _ ↦ h := by
-  rw [jetShift_apply, ContinuousMultilinearMap.curryLeft_apply]
-  exact congrArg (J 1) (funext fun i ↦ Fin.cases rfl (fun j ↦ j.elim0) i)
 
 /-- **The leading term of the Leibniz rule.** If `J₀ = 0` and the entries of `K` of order below
 `n` vanish, then on the diagonal the Leibniz map of order `n + 1` is

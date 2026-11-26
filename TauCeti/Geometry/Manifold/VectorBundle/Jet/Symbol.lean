@@ -97,19 +97,10 @@ chart and the trivialization at `x`. Its range is the kernel of the truncation t
 vanishing at `x` (`TauCeti.JetBundle.jet_prod_smul`). -/
 def ofTop [IsManifold I r M] [ContMDiffVectorBundle r F V I] (x : M) :
     ContinuousMultilinearMap 𝕜 (fun _ : Fin r ↦ TangentSpace I x) (V x) →ₗ[𝕜]
-      JetBundle I F V r x where
-  toFun A := SymmetricJet.ofTop 𝕜 E F r
-    (((trivializationAt F V x).continuousLinearMapAt 𝕜 x).compContinuousMultilinearMap A)
-  map_add' A B := by
-    refine (congrArg (SymmetricJet.ofTop 𝕜 E F r) ?_).trans
-      (map_add (SymmetricJet.ofTop 𝕜 E F r) _ _)
-    ext v
-    exact map_add ((trivializationAt F V x).continuousLinearMapAt 𝕜 x) (A v) (B v)
-  map_smul' c A := by
-    refine (congrArg (SymmetricJet.ofTop 𝕜 E F r) ?_).trans
-      (map_smul (SymmetricJet.ofTop 𝕜 E F r) c _)
-    ext v
-    exact map_smul ((trivializationAt F V x).continuousLinearMapAt 𝕜 x) c (A v)
+      JetBundle I F V r x :=
+  (SymmetricJet.ofTop 𝕜 E F r).toLinearMap ∘ₗ
+    (ContinuousLinearMap.compContinuousMultilinearMapL 𝕜 _ _ _
+      ((trivializationAt F V x).continuousLinearMapAt 𝕜 x)).toLinearMap
 
 section Order
 
@@ -123,6 +114,7 @@ theorem ofTop_apply (x : M)
 
 /-- The top component of `ofTop A`, read in the trivialization at `x`, is the symmetrization of
 `A`. -/
+@[simp]
 theorem toJets_ofTop_last (x : M)
     (A : ContinuousMultilinearMap 𝕜 (fun _ : Fin r ↦ TangentSpace I x) (V x)) :
     SymmetricJet.toJets 𝕜 E F r (ofTop I F V r x A) (Fin.last r) =
@@ -179,15 +171,6 @@ theorem range_ofTop [IsManifold I (r + 1 : ℕ) M] [ContMDiffVectorBundle (r + 1
   ext v
   exact (trivializationAt F V x).continuousLinearMapAt_symmL
     (mem_baseSet_trivializationAt F V x) _
-
-omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)] in
-/-- **Truncation of jets is onto.** -/
-theorem truncate_surjective [IsManifold I r M] [ContMDiffVectorBundle r F V I]
-    [IsManifold I r' M] [ContMDiffVectorBundle r' F V I] (hr : r' ≤ r) (x : M) :
-    Function.Surjective (truncate (I := I) (F := F) (V := V) hr x) := by
-  intro B
-  obtain ⟨A, hA⟩ := SymmetricJet.truncate_surjective (𝕜 := 𝕜) (E := E) (F := F) hr B
-  exact ⟨A, (truncate_apply hr x A).trans hA⟩
 
 end General
 
@@ -251,9 +234,7 @@ theorem jet_prod_smul {x : M} (f : Fin r → C^∞⟮I, M; ℝ⟯) (hf : ∀ i, 
             fun i ↦ mvfderiv I (f i) x) (fun _ ↦ v) =
         r.factorial • (∏ i, mvfderiv I (f i) x v) •
           (trivializationAt F V x).continuousLinearMapAt ℝ x (t x) := fun v ↦ by
-      rw [ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply, smul_apply,
-        ContinuousMultilinearMap.compContinuousLinearMap_apply,
-        ContinuousMultilinearMap.mkPiRing_apply, map_nsmul, map_smul]
+      simp
     simp only [hdg, hw0]
     -- The goal evaluates on `Fin (Fin.last r).val → E`, which is `Fin r → E` by definition; the
     -- dependent type of `Pi.single (Fin.last r) _ k` blocks rewriting `Fin.val_last` there.

@@ -56,9 +56,10 @@ is why the base is assumed boundaryless.
   bundle over a model space it is the tuple of iterated derivatives of the section
   (`TauCeti.JetBundle.toJets_jet_trivial`).
 * `TauCeti.JetBundle.truncate`: the truncation `JᵣV → Jᵣ'V` for `r' ≤ r`, which is the
-  truncation of symmetric jets in each fibre (`TauCeti.JetBundle.truncate_apply`), reads in every
-  chart as the truncation of symmetric jets (`TauCeti.JetBundle.coordChange_truncate`) and sends
-  `jʳs(x)` to `jʳ's(x)` (`TauCeti.JetBundle.truncate_jet`).
+  truncation of symmetric jets in each fibre (`TauCeti.JetBundle.truncate_apply`), is onto
+  (`TauCeti.JetBundle.truncate_surjective`), reads in every chart as the truncation of symmetric
+  jets (`TauCeti.JetBundle.coordChange_truncate`) and sends `jʳs(x)` to `jʳ's(x)`
+  (`TauCeti.JetBundle.truncate_jet`).
 * `TauCeti.JetBundle.value`: the projection `JᵣV → V`, which sends `jʳs(x)` to `s x`
   (`TauCeti.JetBundle.value_jet`).
 
@@ -629,6 +630,13 @@ theorem toJets_truncate (hr : r' ≤ r) (x : M) (j : JetBundle I F V r x) :
 theorem truncate_apply (hr : r' ≤ r) (x : M) (j : JetBundle I F V r x) :
     truncate hr x j = SymmetricJet.truncate 𝕜 E F hr j :=
   (rfl)
+
+/-- **Truncation of jets is onto.** -/
+theorem truncate_surjective (hr : r' ≤ r) (x : M) :
+    Function.Surjective (truncate (I := I) (F := F) (V := V) hr x) := by
+  intro B
+  obtain ⟨A, hA⟩ := SymmetricJet.truncate_surjective (𝕜 := 𝕜) (E := E) (F := F) hr B
+  exact ⟨A, (truncate_apply hr x A).trans hA⟩
 
 /-- Truncating to the same order is the identity. -/
 @[simp]
