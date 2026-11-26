@@ -52,9 +52,6 @@ conjugating the coordinates exchanges them.
   scales the area form by its determinant.
 * `TauCeti.stdComplexSymplecticForm_mul_mul`: multiplication by `u` scales the area form by
   `‖u‖²`, so rotations preserve it.
-* `LinearMap.stdComplexSymplecticForm_apply_apply`: every real-linear map of `ℂ` scales the area
-  form by its determinant, so one preserving it has determinant one
-  (`LinearMap.det_eq_one_of_forall_stdComplexSymplecticForm_apply_apply`).
 * `TauCeti.stdComplexSymplecticForm_tames_iff_im_pos` and
   `TauCeti.stdComplexSymplecticForm_tames_or_tames_transport_conj`: the orientation criterion
   and coverage of both components by the usual and conjugate real coordinates.
@@ -321,35 +318,3 @@ theorem exists_frame_of_tame_of_finrank_eq_two {V : Type*} [NormedAddCommGroup V
     ring
 
 end TauCeti
-
-namespace LinearMap
-
-open Complex TauCeti
-
-/-- A real-linear map `L` of `ℂ` scales the area form by its determinant:
-`ω(L v, L w) = det L * ω(v, w)`. -/
-theorem stdComplexSymplecticForm_apply_apply (L : ℂ →ₗ[ℝ] ℂ) (v w : ℂ) :
-    stdComplexSymplecticForm (L v) (L w) = LinearMap.det L * stdComplexSymplecticForm v w := by
-  have hdet : LinearMap.det L = (L 1).re * (L I).im - (L 1).im * (L I).re := by
-    rw [← LinearMap.det_toMatrix Complex.basisOneI, Matrix.det_fin_two]
-    simp [LinearMap.toMatrix_apply]
-    ring
-  -- `L` is determined by its values at the real basis `1, I`.
-  have hL (z : ℂ) : L z = z.re • L 1 + z.im • L I := by
-    rw [← map_smul, ← map_smul, ← map_add]
-    congr 1
-    apply Complex.ext <;> simp
-  rw [hL v, hL w, hdet]
-  simp only [stdComplexSymplecticForm_apply, Complex.add_re, Complex.add_im, Complex.real_smul,
-    Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im]
-  ring
-
-/-- A real-linear map of `ℂ` preserving the area form has determinant one. -/
-theorem det_eq_one_of_forall_stdComplexSymplecticForm_apply_apply (L : ℂ →ₗ[ℝ] ℂ)
-    (h : ∀ v w, stdComplexSymplecticForm (L v) (L w) = stdComplexSymplecticForm v w) :
-    LinearMap.det L = 1 := by
-  have h1 := h 1 I
-  rw [stdComplexSymplecticForm_apply_apply] at h1
-  simpa using h1
-
-end LinearMap

@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Perturbation
 import TauCeti.Dynamics.PeriodicPts.Finite
 import TauCeti.Dynamics.PeriodicPts.LocalPerturbation
 import TauCeti.Dynamics.PeriodicPts.Persistence
+import TauCeti.LinearAlgebra.BilinearForm.Isometry
 
 /-!
 # Making all periodic points of one period nondegenerate
@@ -77,7 +78,7 @@ up to period `N`. It is `C¹`-open
   points of period `n + 1` in `K`, and, being small, create no new ones
   (`IsCompact.eventually_forall_fixedPoints_iterate_inter_eq`). The twists need the return maps to
   have determinant one, which holds for an area-preserving map of the plane
-  (`LinearMap.det_eq_one_of_forall_stdComplexSymplecticForm_apply_apply`).
+  (`TauCeti.BilinForm.IsIsometry.det_eq_one_of_isAlt`).
 
 ## Main results
 
@@ -397,8 +398,9 @@ private theorem exists_isPerturbation_forall_isNondegenerateFixedPt {g : ℂ →
   obtain ⟨H, hH, -, ⟨L, hX⟩, htw⟩ := exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero_of_finite
     (k := fun _ ↦ k) (A := fun i ↦ fderiv ℝ g^[k] (p i)) (fun _ ↦ hk) hp
     (fun i ↦ (hgd.iterate _ _).hasFDerivAt)
-    (fun i ↦ LinearMap.det_eq_one_of_forall_stdComplexSymplecticForm_apply_apply _
-      (stdComplexSymplecticForm.apply_fderiv_iterate hgd hgω _ _))
+    (fun i ↦ BilinForm.IsIsometry.det_eq_one_of_isAlt stdComplexSymplecticForm.isAlt
+      stdComplexSymplecticForm.nondegenerate
+      (BilinForm.isIsometry_iff.2 (stdComplexSymplecticForm.apply_fderiv_iterate hgd hgω _ _)))
     (fun _ _ _ ↦ hg.continuous.continuousAt) hr
     (fun i i' j hj h ↦ (hrad i).2 _ (hpO i' j) (horb i i' j hj h)) hη
   obtain ⟨hψp, hid, hdisp, hderiv, hret⟩ := htw hX
