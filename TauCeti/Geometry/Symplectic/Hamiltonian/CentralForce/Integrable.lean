@@ -29,8 +29,11 @@ radial momentum vanishes, `⟪q, p⟫ = 0`, and `U'(‖q‖) = L² / (m ‖q‖�
 and `U_ℓ'(‖q‖) = 0` for `ℓ = L(q, p)`: the points of the circular orbits. At such a point the
 Hamiltonian vector field of `H` is `L / (m ‖q‖²)` times that of `L`
 (`TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_eq_smul`), so circular
-orbits are relative equilibria of the rotational symmetry. The critical values of `F` are the pairs
-`(U_ℓ(r), ℓ)` with `r > 0` a critical point of `U_ℓ`
+orbits are relative equilibria of the rotational symmetry; equivalently `dH = (L / (m ‖q‖²)) dL`
+there (`TauCeti.fderiv_centralForceHamiltonian_eq_smul`), so the differential of `F` has rank one,
+with image the line spanned by `(L / (m ‖q‖²), 1)`
+(`TauCeti.range_fderiv_centralForceEnergyMomentum`). The critical values of `F` are the
+pairs `(U_ℓ(r), ℓ)` with `r > 0` a critical point of `U_ℓ`
 (`TauCeti.image_centralForceEnergyMomentum_setOf_not_isRegularPoint`).
 
 On the punctured phase space `{(q, p) | q ≠ 0}` (`TauCeti.puncturedPhaseSpace`), the cotangent
@@ -45,6 +48,9 @@ completely integrable system there (`TauCeti.isIntegrableSystem_centralForceEner
   `(q, p)` with `q ≠ 0` unless `⟪q, p⟫ = 0` and `U'(‖q‖) = L² / (m ‖q‖³)`.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_eq_smul`: on circular
   orbits `X_H = (L / (m ‖q‖²)) X_L`.
+* `TauCeti.fderiv_centralForceHamiltonian_eq_smul`: on circular orbits `dH = (L / (m ‖q‖²)) dL`.
+* `TauCeti.range_fderiv_centralForceEnergyMomentum`: at the critical points off the collision set
+  the differential of `(H, L)` has image the line spanned by `(L / (m ‖q‖²), 1)`.
 * `TauCeti.image_centralForceEnergyMomentum_setOf_not_isRegularPoint`: the critical values.
 * `TauCeti.puncturedPhaseSpace`: the open set `{(q, p) | q ≠ 0}`.
 * `TauCeti.contMDiff_centralForceHamiltonian_comp_subtypeVal`: a central-force Hamiltonian is as
@@ -325,6 +331,73 @@ theorem stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_eq_smul
     stdSymplecticForm_hamiltonianVectorField_angularMomentum]
   dsimp only
   rw [hvq, hvp, Prod.smul_mk, ← smul_neg, neg_sub]
+
+/-- **On circular orbits the energy is critical along the rotation.** At a point `(q, p)` with
+`⟪q, p⟫ = 0` and `U'(‖q‖) = L² / (m ‖q‖³)`, the differential of the energy is the angular velocity
+`Ω = L / (m ‖q‖²)` times the differential of the angular momentum, `dH = Ω dL`. -/
+theorem fderiv_centralForceHamiltonian_eq_smul [FiniteDimensional ℝ V] {m : ℝ} {U : ℝ → ℝ}
+    {U' : ℝ} {x : V × V} (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+    (hU' : U' = angularMomentum (b 0) (b 1) x ^ 2 / (m * ‖x.1‖ ^ 3)) :
+    fderiv ℝ (centralForceHamiltonian m U) x =
+      (angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2)) •
+        fderiv ℝ (angularMomentum (b 0) (b 1)) x := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  rw [smul_apply, ← SymplecticForm.apply_hamiltonianVectorField (stdSymplecticForm (V := V)),
+    ← SymplecticForm.apply_hamiltonianVectorField (stdSymplecticForm (V := V)),
+    stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_eq_smul b hU hq h0 hU']
+  simp
+
+/-- Away from the collision set, the differential of the energy–momentum map has the components
+`dH` and `dL`. -/
+theorem fderiv_centralForceEnergyMomentum_apply {m : ℝ} {U : ℝ → ℝ} {U' : ℝ} {x : V × V}
+    (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) (v : V × V) :
+    fderiv ℝ (centralForceEnergyMomentum b m U) x v =
+      ![fderiv ℝ (centralForceHamiltonian m U) x v,
+        fderiv ℝ (angularMomentum (b 0) (b 1)) x v] := by
+  rw [(hasFDerivAt_centralForceEnergyMomentum b hU hq).fderiv,
+    (hasFDerivAt_centralForceHamiltonian hU hq).fderiv, (hasFDerivAt_angularMomentum _ _ x).fderiv]
+  ext i
+  fin_cases i <;> simp
+
+/-- On a circular orbit, the differential of the energy–momentum map sends `v` to
+`dL(v) (Ω, 1)`, for the angular velocity `Ω = L / (m ‖q‖²)`. -/
+theorem fderiv_centralForceEnergyMomentum_apply_eq_smul [FiniteDimensional ℝ V] {m : ℝ}
+    {U : ℝ → ℝ} {U' : ℝ} {x : V × V} (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0)
+    (h0 : ⟪x.1, x.2⟫_ℝ = 0) (hU' : U' = angularMomentum (b 0) (b 1) x ^ 2 / (m * ‖x.1‖ ^ 3))
+    (v : V × V) :
+    fderiv ℝ (centralForceEnergyMomentum b m U) x v = fderiv ℝ (angularMomentum (b 0) (b 1)) x v •
+      ![angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2), 1] := by
+  rw [fderiv_centralForceEnergyMomentum_apply b hU hq,
+    fderiv_centralForceHamiltonian_eq_smul b hU hq h0 hU']
+  ext i
+  fin_cases i <;> simp [mul_comm]
+
+/-- The angular momentum changes at the rate `‖q‖²` when the momentum moves along the rotated
+position `⟪q, b₀⟫ b₁ - ⟪q, b₁⟫ b₀`. -/
+private theorem fderiv_angularMomentum_apply_rotation (x : V × V) :
+    fderiv ℝ (angularMomentum (b 0) (b 1)) x
+        (0, ⟪x.1, b 0⟫_ℝ • b 1 - ⟪x.1, b 1⟫_ℝ • b 0) = ‖x.1‖ ^ 2 := by
+  have hb : ∀ i j, ⟪b i, b j⟫_ℝ = if i = j then 1 else 0 := orthonormal_iff_ite.1 b.orthonormal
+  rw [← real_inner_self_eq_norm_sq, b.real_inner_fin_two x.1 x.1]
+  simp [fderiv_angularMomentum_apply, angularMomentum_apply, inner_sub_right, inner_smul_right, hb,
+    real_inner_comm]
+
+/-- **The image of the differential on a circular orbit.** At a point `(q, p)` with
+`⟪q, p⟫ = 0` and `U'(‖q‖) = L² / (m ‖q‖³)`, the differential of the energy–momentum map has image
+the line spanned by `(Ω, 1)`, for the angular velocity `Ω = L / (m ‖q‖²)`. -/
+theorem range_fderiv_centralForceEnergyMomentum [FiniteDimensional ℝ V] {m : ℝ} {U : ℝ → ℝ}
+    {U' : ℝ} {x : V × V} (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
+    (hU' : U' = angularMomentum (b 0) (b 1) x ^ 2 / (m * ‖x.1‖ ^ 3)) :
+    (fderiv ℝ (centralForceEnergyMomentum b m U) x).range =
+      Submodule.span ℝ {![angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2), 1]} := by
+  have hT := fderiv_centralForceEnergyMomentum_apply_eq_smul b hU hq h0 hU'
+  refine le_antisymm ?_ ?_
+  · rintro _ ⟨v, rfl⟩
+    exact Submodule.mem_span_singleton.2 ⟨_, (hT v).symm⟩
+  · rw [Submodule.span_le, Set.singleton_subset_iff]
+    refine ⟨(‖x.1‖ ^ 2)⁻¹ • (0, ⟪x.1, b 0⟫_ℝ • b 1 - ⟪x.1, b 1⟫_ℝ • b 0), ?_⟩
+    rw [ContinuousLinearMap.coe_coe, hT, map_smul, fderiv_angularMomentum_apply_rotation,
+      smul_eq_mul, inv_mul_cancel₀ (pow_ne_zero 2 (norm_ne_zero_iff.2 hq)), one_smul]
 
 /-- **The critical values of a planar central force.** The images under the energy–momentum map
 of the critical points off the collision set are the pairs `(U_ℓ(r), ℓ)` of an effective energy
