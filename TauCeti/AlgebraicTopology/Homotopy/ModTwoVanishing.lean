@@ -66,7 +66,7 @@ The Eilenberg--Mac Lane fibre sits over the `(n - 1)`-connected stage `Z`, never
 space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between successive stages is used. Over the
 two-sphere, for instance, a Serre fibration whose fibre is simply connected, such as a
 `K(π₃(S²), 2)`, has a total space with nontrivial `π₂`, since `π₂(S²) ≅ ℤ`
-(`TauCeti.not_subsingleton_homotopyGroup_of_mem_serreFibrations_sphere` with `n = 0`). So no
+(`TauCeti.nontrivial_homotopyGroup_of_mem_serreFibrations_sphere` with `n = 0`). So no
 fibration `K(π₃(S²), 2) → E → S²` has a `3`-connected total space, as the tower over `S²` itself
 would need.
 
@@ -84,9 +84,11 @@ connected, its `πₙ ≅ ℤ` is not uniquely two-divisible
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent`:
   if the fundamental group of `Y` at `y` is trivial and the path component of `y` has the mod-two
   homology of a point, the higher homotopy groups of `Y` at `y` are uniquely two-divisible.
-* `TauCeti.not_isUniquelyTwoDivisible_homotopyGroup_sphere`: `πₙ(Sⁿ) ≅ ℤ` is not uniquely
-  two-divisible, so the conclusion fails for spheres, which are not mod-two acyclic.
-* `TauCeti.not_subsingleton_homotopyGroup_of_mem_serreFibrations_sphere`: a Serre fibration over
+* `TauCeti.not_isUniquelyTwoDivisible_homotopyGroup_sphere`: `π_{n+2}(S^{n+2}) ≅ ℤ` is not
+  uniquely two-divisible, so the conclusion fails for spheres, which are not mod-two acyclic.
+* `TauCeti.nontrivial_homotopyGroup_of_mem_serreFibrations`: if the fibre of a Serre fibration
+  has trivial `π_{n+1}` and the base has nontrivial `π_{n+2}`, so does the total space.
+* `TauCeti.nontrivial_homotopyGroup_of_mem_serreFibrations_sphere`: a Serre fibration over
   `S^{n+2}` whose fibre has trivial `π_{n+1}` has a total space with nontrivial `π_{n+2}`.
 
 ## References
@@ -187,25 +189,34 @@ theorem not_isUniquelyTwoDivisible_homotopyGroup_sphere
     ¬ IsUniquelyTwoDivisible (Additive (π_ (n + 2) (sphere (0 : E) 1) x)) := fun h ↦
   not_isUniquelyTwoDivisible_int (h.of_addEquiv (homotopyGroupSphereAddEquiv b x))
 
-/-- **No fibre with trivial `π_{n+1}` over `S^{n+2}` has a total space with trivial
-`π_{n+2}`.** Let `p : X → S^{n+2}` be a Serre fibration whose fibre over `y` has trivial
-`π_{n+1}` at `e`, as a `K(A, n + 2)` space does. Then `π_{n+2}(X, e)` is nontrivial: by exactness
-of `π_{n+2}(X) → π_{n+2}(S^{n+2}) → π_{n+1}(p⁻¹(y))`, the projection maps `π_{n+2}(X, e)` onto
-`π_{n+2}(S^{n+2}) ≅ ℤ`. In particular, for `n = 0`, there is no fibration `K(π₃(S²), 2) → X → S²`
-with `X` `3`-connected. -/
-theorem not_subsingleton_homotopyGroup_of_mem_serreFibrations_sphere
-    (b : OrthonormalBasis (Fin (n + 3)) ℝ E) {X : TopCat.{0}}
-    {p : X ⟶ TopCat.of (sphere (0 : E) 1)} (hp : TopCat.serreFibrations p)
-    {y : sphere (0 : E) 1} (e : p.fiber y) (hF : Subsingleton (π_ (n + 1) (p.fiber y) e)) :
-    ¬ Subsingleton (π_ (n + 2) X e.val) := fun hX ↦ by
+/-- **A fibre with trivial `π_{n+1}` keeps `π_{n+2}` of the base.** Let `p : X → B` be a Serre
+fibration whose fibre over `y` has trivial `π_{n+1}` at `e`. If `π_{n+2}(B, y)` is nontrivial,
+then so is `π_{n+2}(X, e)`: by exactness of `π_{n+2}(X) → π_{n+2}(B) → π_{n+1}(p⁻¹(y))`, the
+projection maps `π_{n+2}(X, e)` onto `π_{n+2}(B, y)`. -/
+theorem nontrivial_homotopyGroup_of_mem_serreFibrations {X B : TopCat.{u}} {p : X ⟶ B}
+    (hp : TopCat.serreFibrations p) {y : B} (e : p.fiber y)
+    [Subsingleton (π_ (n + 1) (p.fiber y) e)] [Nontrivial (π_ (n + 2) B y)] :
+    Nontrivial (π_ (n + 2) X e.val) := by
   -- Read `π_{n+2}` on the cube `I^(Option (Fin (n + 1)))` of the exact sequence.
   let c : Fin (n + 2) ≃ Option (Fin (n + 1)) := finSuccEquiv (n + 1)
-  have : Subsingleton (HomotopyGroup (Option (Fin (n + 1))) X e.val) :=
-    (HomotopyGroup.congrEquiv c).symm.subsingleton
+  have : Nontrivial (HomotopyGroup (Option (Fin (n + 1))) B y) :=
+    (HomotopyGroup.congrEquiv c).symm.nontrivial
   have := (TopCat.surjective_homotopyGroupMap_of_subsingleton (N := Fin (n + 1)) hp
-    (e := e)).subsingleton
-  have : Subsingleton (π_ (n + 2) (sphere (0 : E) 1) y) := (HomotopyGroup.congrEquiv c).subsingleton
-  exact absurd ((homotopyGroupSphereAddEquiv b y).symm.subsingleton.elim 0 1) (by decide)
+    (e := e)).nontrivial
+  exact (HomotopyGroup.congrEquiv c).nontrivial
+
+/-- **No fibre with trivial `π_{n+1}` over `S^{n+2}` has a total space with trivial
+`π_{n+2}`.** Let `p : X → S^{n+2}` be a Serre fibration whose fibre over `y` has trivial
+`π_{n+1}` at `e`, as a `K(A, n + 2)` space does. Then `π_{n+2}(X, e)` is nontrivial, since
+`π_{n+2}(S^{n+2}) ≅ ℤ` is (`TauCeti.nontrivial_homotopyGroup_of_mem_serreFibrations`). In
+particular, for `n = 0`, there is no fibration `K(π₃(S²), 2) → X → S²` with `X` `3`-connected. -/
+theorem nontrivial_homotopyGroup_of_mem_serreFibrations_sphere {E : Type u}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (hE : Module.finrank ℝ E = n + 3) {X : TopCat.{u}}
+    {p : X ⟶ TopCat.of (sphere (0 : E) 1)} (hp : TopCat.serreFibrations p)
+    {y : sphere (0 : E) 1} (e : p.fiber y) [Subsingleton (π_ (n + 1) (p.fiber y) e)] :
+    Nontrivial (π_ (n + 2) X e.val) :=
+  have := nontrivial_homotopyGroup_sphere hE y
+  nontrivial_homotopyGroup_of_mem_serreFibrations hp e
 
 end Sphere
 

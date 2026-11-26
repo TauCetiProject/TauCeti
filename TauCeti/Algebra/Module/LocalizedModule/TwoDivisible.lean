@@ -123,7 +123,8 @@ by two is onto, hence bijective, exactly when two is prime to the order
 (`TauCeti.nsmulAddMonoidHom_range_eq_top_iff_coprime`). -/
 theorem isUniquelyTwoDivisible_iff_odd_natCard (G : Type*) [AddCommGroup G] [Finite G] :
     IsUniquelyTwoDivisible G ↔ Odd (Nat.card G) := by
-  have h : (fun x : G ↦ (2 : ℤ) • x) = nsmulAddMonoidHom 2 := funext fun x ↦ natCast_zsmul x 2
+  have h : (fun x : G ↦ (2 : ℤ) • x) = nsmulAddMonoidHom 2 := funext fun x ↦ by
+    rw [nsmulAddMonoidHom_apply, ← natCast_zsmul, Nat.cast_ofNat]
   rw [isUniquelyTwoDivisible_iff, h, ← Finite.surjective_iff_bijective,
     ← AddMonoidHom.range_eq_top, nsmulAddMonoidHom_range_eq_top_iff_coprime, Nat.coprime_two_right]
 
