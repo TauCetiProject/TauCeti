@@ -85,6 +85,30 @@ theorem inversionPoints_def (w : (t.simplyConnectedRootDatum ht).weylGroup) :
         (t.simplyConnectedBase ht) w⁻¹) A :=
   (rfl)
 
+/-- Containment of the inversion subgroup can be checked on all inverted root parameters. -/
+theorem inversionPoints_le_iff {A : Type v} [CommRing A]
+    {w : (t.simplyConnectedRootDatum ht).weylGroup} {P : Subgroup (D.points A)} :
+    D.inversionPoints A w ≤ P ↔
+      ∀ γ ∈ inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) w⁻¹, ∀ u,
+        D.rootSubgroupPoints γ A u ∈ P :=
+  D.subsystemPoints_le_iff
+
+/-- Each root element at an inversion of `w⁻¹` belongs to `D.inversionPoints A w`. -/
+@[simp]
+theorem rootSubgroupPoints_mem_inversionPoints
+    {w : (t.simplyConnectedRootDatum ht).weylGroup} {γ : Fin t.numRoots}
+    (hγ : γ ∈ inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) w⁻¹)
+    (u : Multiplicative A) :
+    D.rootSubgroupPoints γ A u ∈ D.inversionPoints A w :=
+  D.rootSubgroupPoints_mem_subsystemPoints A hγ u
+
+/-- The actual character-lattice torus normalizes every inversion subgroup. -/
+theorem range_torusPoints_le_normalizer_inversionPoints
+    (w : (t.simplyConnectedRootDatum ht).weylGroup) :
+    (D.torusPoints A).range ≤ Subgroup.normalizer (D.inversionPoints A w : Set _) := by
+  rw [D.inversionPoints_def]
+  exact D.range_torusPoints_le_normalizer_subsystemPoints _ A
+
 /-- The inversion subgroup at `1` is trivial. -/
 @[simp]
 theorem inversionPoints_one : D.inversionPoints A 1 = ⊥ := by
@@ -148,7 +172,7 @@ contained in `n U⁻(K) n⁻¹`. -/
 theorem inversionPoints_le_map_negativePoints_conj (n : D.weylSubgroup K) :
     D.inversionPoints K (D.weylProjection K n) ≤
       (D.negativePoints K).map (MulAut.conj (n : D.points K)).toMonoidHom := by
-  rw [D.inversionPoints_def, D.subsystemPoints_le_iff]
+  rw [D.inversionPoints_le_iff]
   intro γ hγ u
   let δ := (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K n)⁻¹ γ
   have hδ : δ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
@@ -182,7 +206,7 @@ private theorem map_inversionPoints_weylElement_conj_le (i : Fin t.rank)
       (w⁻¹ * RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) (t.simpleIndex ht i)) :=
     fun hmem => ((mem_inversions_mul_ofIdx_iff_not_mem _ w⁻¹ _
       (isPos_simplyConnectedBase_simpleIndex i)).mp hmem) hαinv
-  rw [Subgroup.map_le_iff_le_comap, D.inversionPoints_def, D.subsystemPoints_le_iff]
+  rw [Subgroup.map_le_iff_le_comap, D.inversionPoints_le_iff]
   intro γ hγ u
   rw [mul_inv_rev, inv_inv] at hγ
   have hγα : γ ≠ t.simpleIndex ht i := fun heq => hαnot (heq ▸ hγ)
@@ -192,8 +216,8 @@ private theorem map_inversionPoints_weylElement_conj_le (i : Fin t.rank)
     refine (mem_inversions _ _ _ _).mpr ⟨hγ'.1.reflectionPerm hαsupp hγα, ?_⟩
     simpa only [RootPairing.weylGroupToPerm_mul_ofIdx_apply] using hγ'.2
   rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply,
-    ← ofAdd_toAdd u, D.weylElement_conj_rootSubgroupPoints, D.inversionPoints_def]
-  exact D.rootSubgroupPoints_mem_subsystemPoints K hδinv _
+    ← ofAdd_toAdd u, D.weylElement_conj_rootSubgroupPoints]
+  exact D.rootSubgroupPoints_mem_inversionPoints K hδinv _
 
 private theorem exists_inversionPoints_mul_borelSubgroup_step (i : Fin t.rank)
     (n : D.weylSubgroup K)
@@ -226,8 +250,7 @@ private theorem exists_inversionPoints_mul_borelSubgroup_step (i : Fin t.rank)
       D.map_inversionPoints_weylElement_conj_le K i (D.weylProjection K n) hαinv ⟨u', hu', rfl⟩
   have hx_mem : D.rootSubgroupPoints (t.simpleIndex ht i) K a ∈
       D.inversionPoints K (D.weylProjection K n) :=
-    D.inversionPoints_def K (D.weylProjection K n) ▸
-      D.rootSubgroupPoints_mem_subsystemPoints K hαinv a
+    D.rootSubgroupPoints_mem_inversionPoints K hαinv a
   refine ⟨D.rootSubgroupPoints (t.simpleIndex ht i) K a *
     ((D.simpleWeylLift K i : D.points K) * u' * (D.simpleWeylLift K i : D.points K)⁻¹),
     mul_mem hx_mem hu'conj, b₀, hb₀, ?_⟩

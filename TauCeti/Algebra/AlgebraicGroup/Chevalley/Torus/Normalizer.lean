@@ -59,18 +59,10 @@ private theorem mem_centralizer_range_torusPoints_of_mul_mul_eq_of_mem_normalize
   let tr := D.torusPoints K r
   have htr' : g⁻¹ * tr * g ∈ (D.torusPoints K).range :=
     (Subgroup.mem_normalizer_iff''.mp hgN tr).mp ⟨r, rfl⟩
-  have hu_sub : (u : D.points K) ∈
-      D.subsystemPoints (inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
-        (D.weylProjection K n)⁻¹) K := by
-    simpa only [D.inversionPoints_def] using u.property
   have hu' : tr * (u : D.points K) * tr⁻¹ ∈
-      D.inversionPoints K (D.weylProjection K n) := by
-    have hconj : tr * (u : D.points K) * tr⁻¹ ∈
-        D.subsystemPoints (inversions (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
-          (D.weylProjection K n)⁻¹) K :=
-      (Subgroup.mem_normalizer_iff.mp
-        (D.range_torusPoints_le_normalizer_subsystemPoints _ K ⟨r, rfl⟩) u).mp hu_sub
-    simpa only [D.inversionPoints_def] using hconj
+      D.inversionPoints K (D.weylProjection K n) :=
+    (Subgroup.mem_normalizer_iff.mp
+      (D.range_torusPoints_le_normalizer_inversionPoints K _ ⟨r, rfl⟩) u).mp u.property
   have hnt : (n : D.points K)⁻¹ * tr * (n : D.points K) ∈ (D.torusPoints K).range :=
     (Subgroup.mem_normalizer_iff''.mp
       (D.weylSubgroup_le_normalizer_range_torusPoints K n.property) tr).mp ⟨r, rfl⟩

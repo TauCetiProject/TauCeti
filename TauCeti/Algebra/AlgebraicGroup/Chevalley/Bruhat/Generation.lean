@@ -106,18 +106,10 @@ theorem exists_mem_elementarySubgroup_weylProjection_eq (K : Type v) [Field K]
     (w : (t.simplyConnectedRootDatum ht).weylGroup) :
     ∃ n : D.weylSubgroup K,
       (n : D.points K) ∈ D.elementarySubgroup K ∧ D.weylProjection K n = w := by
-  have hword (l : List (Fin t.rank)) :
-      ∃ n : D.weylSubgroup K,
-        (n : D.points K) ∈ D.elementarySubgroup K ∧
-          D.weylProjection K n = t.simplyConnectedWeylWordProd ht l := by
-    induction l with
-    | nil => exact ⟨1, one_mem _, by simp⟩
-    | cons i l ih =>
-      obtain ⟨n, hnE, hnw⟩ := ih
-      refine ⟨D.simpleWeylLift K i * n, ?_, by simp [hnw]⟩
-      rw [Subgroup.coe_mul, D.coe_simpleWeylLift]
-      exact (D.elementarySubgroup K).mul_mem (D.weylElement_mem_elementarySubgroup K _ 1) hnE
   obtain ⟨l, rfl⟩ := t.simplyConnectedWeylWordProd_surjective ht w
-  exact hword l
+  refine ⟨(l.map (D.simpleWeylLift K)).prod, ?_,
+    D.map_list_prod_simpleWeylLift K (D.weylProjection K) (D.weylProjection_simpleWeylLift K) l⟩
+  rw [D.coe_list_prod_simpleWeylLift K l]
+  exact Subgroup.list_prod_mem _ (by simp [D.weylElement_mem_elementarySubgroup])
 
 end TauCeti.DynkinType.ChevalleyDatum

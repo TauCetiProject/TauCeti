@@ -27,6 +27,8 @@ elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`. In pointwise form, an automorphis
   `t ⊆ f(s)`.
 * `MulEquiv.centralizerMap`: the restriction `C_G(s) ≃* C_{G'}(t)` of `e : G ≃* G'`, for
   `t = e(s)`.
+* `Subgroup.centerEquivOfMapSubtypeEq`: an isomorphism identifying `S ≤ G` with `Subgroup.center H`
+  when `(Subgroup.center H).map H.subtype = S`.
 
 ## Main results
 
@@ -90,6 +92,45 @@ theorem map_center_subtype (H : Subgroup G) :
     rw [Set.image_univ, ← MonoidHom.coe_range, range_subtype]
   rw [← centralizer_univ, ← comap_centralizer_image_of_injective H.subtype_injective Set.univ, him,
     map_comap_eq, range_subtype]
+
+/-- An isomorphism identifying a subgroup `S ≤ G` with `Subgroup.center H` when
+`(Subgroup.center H).map H.subtype = S`. -/
+@[to_additive /-- An isomorphism identifying an additive subgroup `S ≤ G` with
+`AddSubgroup.center H` when `(AddSubgroup.center H).map H.subtype = S`. -/]
+noncomputable def centerEquivOfMapSubtypeEq {H S : Subgroup G}
+    (h : (Subgroup.center H).map H.subtype = S) : S ≃* Subgroup.center H :=
+  (MulEquiv.subgroupCongr h.symm).trans
+    ((Subgroup.center H).equivMapOfInjective H.subtype H.subtype_injective).symm
+
+/-- Coercing `centerEquivOfMapSubtypeEq h x` from `Subgroup.center H` via `H` to `G` recovers
+`(x : G)`. -/
+@[to_additive (attr := simp) /-- Coercing `centerEquivOfMapSubtypeEq h x` from
+`AddSubgroup.center H` via `H` to `G` recovers `(x : G)`. -/]
+theorem coe_centerEquivOfMapSubtypeEq {H S : Subgroup G}
+    (h : (Subgroup.center H).map H.subtype = S) (x : S) :
+    ((centerEquivOfMapSubtypeEq h x : H) : G) = x := by
+  rw [centerEquivOfMapSubtypeEq, MulEquiv.trans_apply, ← coe_subtype,
+    ← (Subgroup.center H).coe_equivMapOfInjective_apply H.subtype H.subtype_injective,
+    MulEquiv.apply_symm_apply, MulEquiv.subgroupCongr_apply]
+
+/-- Coercing `(centerEquivOfMapSubtypeEq h).symm x` to `G` recovers `((x : H) : G)`. -/
+@[to_additive (attr := simp) /-- Coercing `(centerEquivOfMapSubtypeEq h).symm x` to `G` recovers
+`((x : H) : G)`. -/]
+theorem coe_centerEquivOfMapSubtypeEq_symm {H S : Subgroup G}
+    (h : (Subgroup.center H).map H.subtype = S) (x : Subgroup.center H) :
+    ((centerEquivOfMapSubtypeEq h).symm x : G) = (x : H) := by
+  simp [centerEquivOfMapSubtypeEq]
+
+/-- Applying `(centerEquivOfMapSubtypeEq h).symm` to an explicit central element of `H` gives the
+corresponding element of `S`. -/
+@[to_additive (attr := simp) /-- Applying `(centerEquivOfMapSubtypeEq h).symm` to an explicit
+central element of `H` gives the corresponding element of `S`. -/]
+theorem centerEquivOfMapSubtypeEq_symm_mk {H S : Subgroup G}
+    (h : (Subgroup.center H).map H.subtype = S) {a : G} (ha : a ∈ H)
+    (hc : (⟨a, ha⟩ : H) ∈ Subgroup.center H) :
+    (centerEquivOfMapSubtypeEq h).symm ⟨⟨a, ha⟩, hc⟩ =
+      ⟨a, h ▸ mem_map_of_mem H.subtype hc⟩ :=
+  Subtype.ext (by simp)
 
 end Subgroup
 

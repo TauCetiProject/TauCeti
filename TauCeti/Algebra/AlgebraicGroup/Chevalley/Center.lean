@@ -21,11 +21,9 @@ finite fields such as `𝔽₂`).
 
 ## Main definitions
 
-* `ChevalleyDatum.weightLatticeQuotientEquiv`: the `ℤ`-linear isomorphism `Λ(D) / Q ≃ₗ[ℤ]
-  (Fin t.rank → ℤ) / span (range D.coordinateRoot)` induced by `D.weightLatticeBasis.repr`.
 * `ChevalleyDatum.centerExtendedElementarySubgroupEquiv`: over every field `K` and for every
   Chevalley datum `D`, the centre of `D.extendedElementarySubgroup K` is canonically
-  isomorphic to `AddChar (Λ(D) / Q) Kˣ`, expressed in the chosen basis of `Λ(D)`.
+  isomorphic to `AddChar (Λ(D) / Q) Kˣ`.
 * `DynkinType.scChevalleyDatumCenterElementarySubgroupEquiv`: for the simply connected datum
   over every field `K`, the extended and elementary subgroups coincide and the centre of
   `(t.scChevalleyDatum ht).elementarySubgroup K` is canonically isomorphic to
@@ -65,51 +63,6 @@ variable {t : DynkinType} {ht : t.Valid}
 namespace ChevalleyDatum
 
 variable (D : ChevalleyDatum t ht)
-
-/-- The chosen `ℤ`-basis `D.weightLatticeBasis` identifies the weight-lattice quotient
-`Λ(D) / Q` with the coordinate quotient `(Fin t.rank → ℤ) / span (range D.coordinateRoot)`. -/
-def weightLatticeQuotientEquiv :
-    (D.weightLattice ⧸
-        ((t.simplyConnectedRootDatum ht).rootSpan ℤ).comap D.weightLattice.subtype) ≃ₗ[ℤ]
-      ((Fin t.rank → ℤ) ⧸ Submodule.span ℤ (Set.range D.coordinateRoot)) :=
-  Submodule.Quotient.equiv _ _ D.weightLatticeBasis.equivFun (by
-    have hle : (t.simplyConnectedRootDatum ht).rootSpan ℤ ≤ D.weightLattice := by
-      rw [RootPairing.rootSpan, Submodule.span_le]
-      rintro _ ⟨γ, rfl⟩
-      exact D.root_mem_weightLattice γ
-    have hcomap :
-        ((t.simplyConnectedRootDatum ht).rootSpan ℤ).comap D.weightLattice.subtype =
-          Submodule.span ℤ
-            (Set.range fun γ =>
-              (⟨(t.simplyConnectedRootDatum ht).root γ, D.root_mem_weightLattice γ⟩ :
-                D.weightLattice)) := by
-      apply Submodule.map_injective_of_injective D.weightLattice.injective_subtype
-      rw [Submodule.map_comap_eq, Submodule.range_subtype, inf_of_le_right hle,
-        Submodule.map_span, ← Set.range_comp]
-      rfl
-    have hfun :
-        ((D.weightLatticeBasis.equivFun : D.weightLattice →ₗ[ℤ] (Fin t.rank → ℤ)) ∘ fun γ =>
-          (⟨(t.simplyConnectedRootDatum ht).root γ, D.root_mem_weightLattice γ⟩ :
-            D.weightLattice)) = D.coordinateRoot := by
-      ext γ i
-      simp [D.weightLatticeBasis.equivFun_apply, coordinateRoot_def]
-    rw [hcomap, Submodule.map_span, ← Set.range_comp, hfun])
-
-/-- On quotient classes, `weightLatticeQuotientEquiv` applies `D.weightLatticeBasis.repr`. -/
-@[simp]
-theorem weightLatticeQuotientEquiv_mk (μ : D.weightLattice) :
-    D.weightLatticeQuotientEquiv (Submodule.Quotient.mk μ) =
-      Submodule.Quotient.mk (D.weightLatticeBasis.repr μ : Fin t.rank → ℤ) := by
-  simp [weightLatticeQuotientEquiv, D.weightLatticeBasis.equivFun_apply]
-
-/-- On coordinate quotient classes, `weightLatticeQuotientEquiv.symm` applies
-`D.weightLatticeBasis.equivFun.symm`. -/
-@[simp]
-theorem weightLatticeQuotientEquiv_symm_mk (μ : Fin t.rank → ℤ) :
-    D.weightLatticeQuotientEquiv.symm (Submodule.Quotient.mk μ) =
-      Submodule.Quotient.mk (D.weightLatticeBasis.equivFun.symm μ) := by
-  simp [weightLatticeQuotientEquiv]
-
 variable (K : Type v) [Field K]
 
 /-- Over every field `K`, every element of `D.extendedElementarySubgroup K` centralizing
@@ -125,14 +78,8 @@ theorem extendedElementarySubgroup_inf_centralizer_elementarySubgroup :
   · rintro g ⟨hgE, hgC⟩
     have hle : D.positivePoints K ≤ D.elementarySubgroup K :=
       D.positivePoints_le_iff.mpr fun _ _ u => D.rootSubgroupPoints_mem_elementarySubgroup K _ u
-    have hgN : g ∈ Subgroup.normalizer (D.positivePoints K : Set (D.points K)) := by
-      refine Subgroup.mem_normalizer_iff.mpr fun y => ⟨fun hyU => ?_, fun hyU => ?_⟩
-      · have hcomm := (Subgroup.mem_centralizer_iff.mp hgC y (hle hyU)).symm
-        simpa only [mul_inv_eq_iff_eq_mul.mpr hcomm] using hyU
-      · have hcomm := Subgroup.mem_centralizer_iff.mp hgC (g * y * g⁻¹) (hle hyU)
-        have hy_eq : g * y * g⁻¹ = y :=
-          (mul_left_cancel ((inv_mul_cancel_right (g * y) g).symm.trans hcomm)).symm
-        rwa [← hy_eq]
+    have hgN : g ∈ Subgroup.normalizer (D.positivePoints K : Set (D.points K)) :=
+      Subgroup.centralizer_le_normalizer _ (Subgroup.centralizer_le hle hgC)
     have hgB : g ∈ D.borelSubgroup K :=
       (D.extendedElementarySubgroup_inf_normalizer_positivePoints K).le ⟨hgE, hgN⟩
     let w₀ := longestElement (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht)
@@ -248,49 +195,52 @@ theorem torusPoints_mem_center_elementarySubgroup_iff (s : Fin t.rank → Kˣ)
   simp only [(D.torusPoints_injective K).eq_iff, exists_eq_left']
 
 /-- **Centre of an extended elementary Chevalley group.** Over every field `K` and for every
-Chevalley datum `D`, unit-valued characters of `Λ(D) / Q` (in the chosen basis of `Λ(D)`)
-canonically identify with `Subgroup.center (D.extendedElementarySubgroup K)`. -/
+Chevalley datum `D`, unit-valued characters of `Λ(D) / Q` canonically identify with
+`Subgroup.center (D.extendedElementarySubgroup K)`. -/
 def centerExtendedElementarySubgroupEquiv :
-    AddChar ((Fin t.rank → ℤ) ⧸ Submodule.span ℤ (Set.range D.coordinateRoot)) Kˣ ≃*
+    AddChar (D.weightLattice ⧸
+        ((t.simplyConnectedRootDatum ht).rootSpan ℤ).comap D.weightLattice.subtype) Kˣ ≃*
       Subgroup.center (D.extendedElementarySubgroup K) :=
-  (D.torusInfCentralizerRootTorusSubgroupEquiv K (D.rootSubgroupPoints_injective K)).trans
-    ((MulEquiv.subgroupCongr (D.map_center_extendedElementarySubgroup K).symm).trans
-      (((Subgroup.center (D.extendedElementarySubgroup K)).equivMapOfInjective
-        (D.extendedElementarySubgroup K).subtype
-        (D.extendedElementarySubgroup K).subtype_injective).symm))
+  MulEquiv.trans
+    { toFun := fun χ => χ.compAddMonoidHom D.weightLatticeQuotientEquiv.symm.toAddMonoidHom
+      invFun := fun ψ => ψ.compAddMonoidHom D.weightLatticeQuotientEquiv.toAddMonoidHom
+      left_inv := fun χ => by ext x; simp
+      right_inv := fun ψ => by ext x; simp
+      map_mul' := fun _ _ => by ext x; rfl }
+    ((D.torusInfCentralizerRootTorusSubgroupEquiv K (D.rootSubgroupPoints_injective K)).trans
+      (Subgroup.centerEquivOfMapSubtypeEq (D.map_center_extendedElementarySubgroup K)))
 
-/-- The forward equivalence sends a character of `Λ(D) / Q` to the corresponding torus point. -/
+/-- The forward equivalence sends a character of `Λ(D) / Q` to the torus point whose
+coordinates in `D.weightLatticeBasis` are its values on the basis classes. -/
 @[simp]
 theorem coe_centerExtendedElementarySubgroupEquiv
-    (χ : AddChar ((Fin t.rank → ℤ) ⧸ Submodule.span ℤ (Set.range D.coordinateRoot)) Kˣ) :
+    (χ : AddChar (D.weightLattice ⧸
+        ((t.simplyConnectedRootDatum ht).rootSpan ℤ).comap D.weightLattice.subtype) Kˣ) :
     ((D.centerExtendedElementarySubgroupEquiv K χ : D.extendedElementarySubgroup K) :
         D.points K) =
-      D.torusPoints K (quotientCharTorusPoint _ χ) := by
-  rw [centerExtendedElementarySubgroupEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    ← Subgroup.coe_subtype,
-    ← (Subgroup.center (D.extendedElementarySubgroup K)).coe_equivMapOfInjective_apply
-      (D.extendedElementarySubgroup K).subtype
-      (D.extendedElementarySubgroup K).subtype_injective,
-    MulEquiv.apply_symm_apply, MulEquiv.subgroupCongr_apply,
+      D.torusPoints K (fun i => χ (Submodule.Quotient.mk (D.weightLatticeBasis i))) := by
+  simp only [centerExtendedElementarySubgroupEquiv, MulEquiv.trans_apply,
+    MulEquiv.coe_mk, Equiv.coe_fn_mk, Subgroup.coe_centerEquivOfMapSubtypeEq,
     D.coe_torusInfCentralizerRootTorusSubgroupEquiv K]
+  refine congrArg (D.torusPoints K) (funext fun i => ?_)
+  have hsingle : D.weightLatticeBasis.equivFun.symm (Pi.single i 1) = D.weightLatticeBasis i := by
+    rw [LinearEquiv.symm_apply_eq]
+    ext j
+    simp [Pi.single_apply, eq_comm]
+  simp [quotientCharTorusPoint_apply, hsingle]
 
-/-- The inverse equivalence recovers the character on a quotient class by evaluating the torus
-parameter. -/
+/-- The inverse equivalence recovers the character on a quotient class in `Λ(D) / Q` by
+evaluating the torus parameter in the chosen basis. -/
 @[simp]
 theorem centerExtendedElementarySubgroupEquiv_symm_apply_mk
     (s : Fin t.rank → Kˣ)
     (hg : (⟨D.torusPoints K s, D.torusPoints_mem_extendedElementarySubgroup K s⟩ :
         D.extendedElementarySubgroup K) ∈ Subgroup.center (D.extendedElementarySubgroup K))
-    (μ : Fin t.rank → ℤ) :
+    (μ : D.weightLattice) :
     (D.centerExtendedElementarySubgroupEquiv K).symm
       ⟨⟨D.torusPoints K s, D.torusPoints_mem_extendedElementarySubgroup K s⟩, hg⟩
-      (Submodule.Quotient.mk μ) = torusCharacter s μ := by
-  have hcoord : quotientCharTorusPoint _
-      ((D.centerExtendedElementarySubgroupEquiv K).symm
-        ⟨⟨D.torusPoints K s, D.torusPoints_mem_extendedElementarySubgroup K s⟩, hg⟩) = s := by
-    apply D.torusPoints_injective K
-    rw [← D.coe_centerExtendedElementarySubgroupEquiv K, MulEquiv.apply_symm_apply]
-  rw [← Submodule.mkQ_apply, ← torusCharacter_quotientCharTorusPoint, hcoord]
+      (Submodule.Quotient.mk μ) = torusCharacter s (D.weightLatticeBasis.repr μ) := by
+  simp [centerExtendedElementarySubgroupEquiv]
 
 end ChevalleyDatum
 
@@ -314,10 +264,7 @@ def scChevalleyDatumCenterElementarySubgroupEquiv (K : Type v) [Field K] :
     AddChar ((Fin t.rank → ℤ) ⧸ (t.simplyConnectedRootDatum ht).rootSpan ℤ) Kˣ ≃*
       Subgroup.center ((t.scChevalleyDatum ht).elementarySubgroup K) :=
   (t.scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv ht K).trans
-    ((MulEquiv.subgroupCongr (t.map_center_scChevalleyDatum_elementarySubgroup ht K).symm).trans
-      (((Subgroup.center ((t.scChevalleyDatum ht).elementarySubgroup K)).equivMapOfInjective
-        ((t.scChevalleyDatum ht).elementarySubgroup K).subtype
-        ((t.scChevalleyDatum ht).elementarySubgroup K).subtype_injective).symm))
+    (Subgroup.centerEquivOfMapSubtypeEq (t.map_center_scChevalleyDatum_elementarySubgroup ht K))
 
 /-- The simply connected centre equivalence sends a character of `P / Q` to the corresponding
 torus point. -/
@@ -327,13 +274,7 @@ theorem coe_scChevalleyDatumCenterElementarySubgroupEquiv (K : Type v) [Field K]
     ((t.scChevalleyDatumCenterElementarySubgroupEquiv ht K χ :
         (t.scChevalleyDatum ht).elementarySubgroup K) : (t.scChevalleyDatum ht).points K) =
       (t.scChevalleyDatum ht).torusPoints K (quotientCharTorusPoint _ χ) := by
-  rw [scChevalleyDatumCenterElementarySubgroupEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    ← Subgroup.coe_subtype,
-    ← (Subgroup.center ((t.scChevalleyDatum ht).elementarySubgroup K)).coe_equivMapOfInjective_apply
-      ((t.scChevalleyDatum ht).elementarySubgroup K).subtype
-      ((t.scChevalleyDatum ht).elementarySubgroup K).subtype_injective,
-    MulEquiv.apply_symm_apply, MulEquiv.subgroupCongr_apply,
-    coe_scChevalleyDatumTorusInfCentralizerRootTorusSubgroupEquiv]
+  simp [scChevalleyDatumCenterElementarySubgroupEquiv]
 
 /-- The inverse simply connected centre equivalence evaluates a weight class by the character
 of the given torus parameter. -/
@@ -349,13 +290,7 @@ theorem scChevalleyDatumCenterElementarySubgroupEquiv_symm_apply_mk (K : Type v)
       ⟨⟨(t.scChevalleyDatum ht).torusPoints K s,
         t.scChevalleyDatum_torusPoints_mem_elementarySubgroup ht K s⟩, hg⟩
       (Submodule.Quotient.mk μ) = torusCharacter s μ := by
-  have hcoord : quotientCharTorusPoint _
-      ((t.scChevalleyDatumCenterElementarySubgroupEquiv ht K).symm
-        ⟨⟨(t.scChevalleyDatum ht).torusPoints K s,
-          t.scChevalleyDatum_torusPoints_mem_elementarySubgroup ht K s⟩, hg⟩) = s := by
-    apply (t.scChevalleyDatum ht).torusPoints_injective K
-    rw [← coe_scChevalleyDatumCenterElementarySubgroupEquiv, MulEquiv.apply_symm_apply]
-  rw [← Submodule.mkQ_apply, ← torusCharacter_quotientCharTorusPoint, hcoord]
+  simp [scChevalleyDatumCenterElementarySubgroupEquiv]
 
 end
 
