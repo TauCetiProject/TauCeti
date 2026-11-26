@@ -150,7 +150,8 @@ variable {x : FundamentalGroupoid (TopCat.of Z)} (e : β ⁻¹' {x.as})
   dsimp only [torusFamilyAffineQuotientHomologyLocalSystemIso, NatIso.ofComponents_hom_app,
     Iso.trans_hom, Iso.symm_hom]
   rw [sheetMarkingObjIso_comp_fiberIso_inv_eq P hcont hinj R ρ hequiv b hb hone hmul hbmul hR hbc
-    β hβ L n _ e, Category.assoc, Iso.inv_hom_id, Category.comp_id]; rfl
+    β hβ L n _ e, Category.assoc, Iso.inv_hom_id, Category.comp_id, sheetMarkingObjIso,
+    Iso.trans_hom]
 
 /-- **Inverse sheet-coordinate characterization in degree `n`.** -/
 @[reassoc] theorem torusFamilyAffineQuotientHomologyLocalSystemIso_inv_app_comp_singularObjIso_hom

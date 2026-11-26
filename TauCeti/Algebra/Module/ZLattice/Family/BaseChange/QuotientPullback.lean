@@ -171,13 +171,13 @@ theorem torusFamilyAffineQuotientBaseChangeCommSq_fiberMap_comp_fiberHomeomorph 
   let _ := periodAddAction P; let _ := periodAddAction (P ∘ f)
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   let _ := torusFamilyBaseChangeAffineMulAction P b hb R ρ hequiv hone hmul hbmul σ f hf
+  -- State `CommSq.fiberMap_apply_coe` in `.hom` normal form so `simp` rewrites both fiber maps.
+  have hfiber {E B E' B' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B'} {g₁ : E ⟶ E'} {g₂ : B ⟶ B'}
+      (sq : CommSq g₁ p p' g₂) (x₀ : B) (v : p.fiber x₀) :
+      ((sq.fiberMap x₀).hom v : E') = g₁.hom v.val :=
+    sq.fiberMap_apply_coe x₀ v
   refine TopCat.ext fun u ↦ Subtype.ext ?_
-  rw [TopCat.comp_app, TopCat.comp_app, CommSq.fiberMap_apply_coe]
-  simp only [TopCat.isoOfHomeo_hom, ConcreteCategory.hom_ofHom, ContinuousMap.coe_mk]
-  rw [torusFamilyBaseChangeQuotientFiberHomeomorph_coe,
-    torusFamilyAffineQuotientFiberHomeomorph_coe, MulActionHom.orbitRelQuotientMap_mk,
-    torusFamilyAffineBaseChangeHom_apply, CommSq.fiberMap_apply_coe]
-  rfl
+  simp [hfiber, MulActionHom.orbitRelQuotientMap_mk]
 
 include hcont hR hbc in
 /-- Equivariant base change of descended torus families induces an isomorphism on every fiber. -/

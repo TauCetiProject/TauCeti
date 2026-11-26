@@ -316,8 +316,7 @@ theorem torusFamilyAffineQuotientHomologyMarking_transport_of_lift_smul (γ : Pa
       hR hbc β hβ y hy g hgy n (ContinuousMap.singularHomologyMap ℤ n (L.transport γ) c)).symm.trans
       (torusFamilyAffineQuotientHomologyMarking_transport_of_lift P hcont hinj R ρ hequiv b hb hone
         hmul hbmul hR hbc β hβ L hy hgy γ γ' hγ' n c)
-  simpa only [← LinearMap.comp_apply, ← Module.End.mul_eq_comp, ← map_mul, inv_mul_cancel,
-    map_one, one_apply_eq_self] using hinv
+  rwa [Representation.inv_self_apply] at hinv
 
 /-- **Monodromy in degree one for a loop lifted `y ↝ g • y`**, acting by `ρ g⁻¹`. -/
 theorem torusFamilyAffineQuotientMarking_transport_of_lift_smul (γ : Path z z) (γ' : Path y (g • y))
@@ -418,7 +417,7 @@ theorem torusFamilyAffineQuotientHomologyMarking_smul_transport_of_lift_smul (h 
       hcont hinj R ρ hequiv b hb hone hmul hbmul hR hbc β hβ L hy γ γ' hγ' n c,
     torusFamilyAffineQuotientHomologyMarking_smul P hcont hinj R ρ hequiv b hb hone hmul hbmul
       hR hbc β hβ y hy h hhy n]
-  simp only [← LinearMap.comp_apply, ← Module.End.mul_eq_comp, ← map_mul, inv_mul_cancel_right]
+  simp only [map_mul, mul_apply_eq_comp, Representation.inv_self_apply]
 
 include hy in
 /-- **Conjugation under change of base sheet in degree one.** -/
