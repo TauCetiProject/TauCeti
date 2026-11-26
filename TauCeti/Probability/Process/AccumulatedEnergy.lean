@@ -62,6 +62,21 @@ def accumulatedEnergy (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E) (t : ℝ
 theorem accumulatedEnergy_def (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E) :
     accumulatedEnergy μ H = fun t ω ↦ ∫⁻ s in Iic t, ‖H s ω‖ₑ ^ 2 ∂μ := (rfl)
 
+/-- Restricting the time measure to `Iic T` caps the accumulated energy clock at `T`. -/
+theorem accumulatedEnergy_restrict_Iic (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E)
+    (t T : ℝ≥0) (ω : Ω) :
+    (μ.restrict (Iic T)).accumulatedEnergy H t ω = μ.accumulatedEnergy H (min t T) ω := by
+  simp only [accumulatedEnergy_def, Measure.restrict_restrict measurableSet_Iic, Iic_inter_Iic]
+
+/-- The real value of accumulated energy equals the Bochner set integral of the squared norms
+when the squared norms are a.e. strongly measurable on the initial segment. -/
+theorem toReal_accumulatedEnergy_eq_setIntegral (μ : Measure ℝ≥0) {H : ℝ≥0 → Ω → E}
+    {t : ℝ≥0} {ω : Ω} (hH : AEStronglyMeasurable (fun s ↦ ‖H s ω‖ ^ 2) (μ.restrict (Iic t))) :
+    (μ.accumulatedEnergy H t ω).toReal = ∫ s in Iic t, ‖H s ω‖ ^ 2 ∂μ := by
+  rw [accumulatedEnergy_def]
+  simp_rw [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
+  exact (integral_eq_lintegral_of_nonneg_ae (.of_forall fun _ ↦ sq_nonneg _) hH).symm
+
 /-- For an atomless time measure, accumulated energy is the square-energy integral over
 `(0,t]`; the time-zero section contributes no mass. -/
 theorem accumulatedEnergy_eq_setLIntegral_Ioc (μ : Measure ℝ≥0) [NullSingletonClass μ]
@@ -167,13 +182,10 @@ theorem tendsto_measure_exists_eNorm_toReal_accumulatedEnergy_sub_gt {K : Type*}
     hFk.norm.integrable_sq
   apply measure_congr
   filter_upwards [hH₂.prod_left_ae, hF₂.prod_left_ae] with ω hHω hFω
-  have heq (G : ℝ≥0 → Ω → E) (hG : Integrable (fun s ↦ ‖G s ω‖ ^ 2) μ) (t : ℝ≥0) :
-      (∫ s in Iic t, ‖G s ω‖ ^ 2 ∂μ) = (μ.accumulatedEnergy G t ω).toReal := by
-    rw [accumulatedEnergy_def]
-    simp_rw [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
-    exact integral_eq_lintegral_of_nonneg_ae (.of_forall fun _ ↦ sq_nonneg _)
-      hG.restrict.aestronglyMeasurable
-  simp only [Function.uncurry_apply_pair, heq (F k) hFω, heq H hHω]
+  simp only [Function.uncurry_apply_pair]
+  exact exists_congr fun t ↦ by
+    rw [μ.toReal_accumulatedEnergy_eq_setIntegral hFω.restrict.aestronglyMeasurable,
+      μ.toReal_accumulatedEnergy_eq_setIntegral hHω.restrict.aestronglyMeasurable]
 
 /-- L² convergence on the time-product measure restricted to a horizon gives uniform
 convergence in outer probability of the accumulated energies up to that horizon. -/
@@ -187,13 +199,10 @@ theorem tendsto_measure_exists_le_eNorm_toReal_accumulatedEnergy_sub_gt {K : Typ
     Filter.Tendsto (fun k ↦ P {ω | ∃ t ≤ T, ε <
       ‖(μ.accumulatedEnergy (F k) t ω).toReal - (μ.accumulatedEnergy H t ω).toReal‖ₑ})
       l (𝓝 0) := by
-  have heq (G : ℝ≥0 → Ω → E) (t : ℝ≥0) (ω : Ω) :
-      (μ.restrict (Iic T)).accumulatedEnergy G t ω = μ.accumulatedEnergy G (min t T) ω := by
-    simp only [accumulatedEnergy_def, Measure.restrict_restrict measurableSet_Iic, Iic_inter_Iic]
   refine (tendsto_measure_exists_eNorm_toReal_accumulatedEnergy_sub_gt hH hlim hε).congr fun k ↦ ?_
   congr 1
   ext ω
-  simp only [Set.mem_ofPred_eq, heq]
+  simp only [Set.mem_ofPred_eq, accumulatedEnergy_restrict_Iic]
   constructor
   · rintro ⟨t, ht⟩
     exact ⟨min t T, min_le_right _ _, ht⟩
