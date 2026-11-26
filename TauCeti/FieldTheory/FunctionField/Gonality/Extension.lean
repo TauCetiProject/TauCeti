@@ -85,9 +85,11 @@ theorem gonality_le_gonality_of_finiteDimensional : gonality k F ≤ gonality k 
     (mem_riemannRochSpace_poles hF' (Units.mk0 z hz.ne_zero)) i
   have hle := Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF
     (Divisor.norm_nonneg k F hD) hmem
-  rw [Divisor.degree_norm, Module.finrank_self, Nat.cast_one, one_mul,
-    Divisor.degree_poles hF' (Units.mk0 z hz.ne_zero) hz, Units.val_mk0, hrank,
-    Nat.cast_le] at hle
-  exact (gonality_le_finrank_adjoin hi).trans hle
+  -- `deg N((z)_∞) = [k : k] · deg (z)_∞ = [F' : k(z)]`.
+  have hdeg : (Divisor.norm k F D).degree = gonality k F' := by
+    rw [Divisor.degree_norm, Divisor.degree_poles hF' (Units.mk0 z hz.ne_zero) hz,
+      Units.val_mk0, hrank]
+    simp
+  exact (gonality_le_finrank_adjoin hi).trans (by exact_mod_cast hle.trans_eq hdeg)
 
 end TauCeti

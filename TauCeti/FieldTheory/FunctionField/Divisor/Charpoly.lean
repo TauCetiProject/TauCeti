@@ -97,20 +97,30 @@ theorem norm_mul_coeff_charpoly_mem_integers [FiniteDimensional F F'] (P : Place
       (C : P.integers →+* _).mapMatrix My).det with hQ
   have hmul : Algebra.leftMulMatrix b w * Algebra.leftMulMatrix b z =
       Algebra.leftMulMatrix b (w * z) := (map_mul _ _ _).symm
-  -- `det (w) · det (X - z) = det (X · w - w z)`, and the right side is defined over `𝒪_P`.
-  have key : C (Algebra.norm F w) * (Algebra.lmul F F' z).charpoly = Q.map φ := by
-    rw [Algebra.norm_eq_matrix_det b, ← LinearMap.charpoly_toMatrix _ b,
-      ← Algebra.leftMulMatrix_apply, Matrix.charpoly, RingHom.map_det, ← Matrix.det_mul,
-      hQ, ← Polynomial.coe_mapRingHom, RingHom.map_det (Polynomial.mapRingHom φ)]
-    congr 1
-    rw [Matrix.charmatrix, Matrix.mul_sub, ← RingHom.map_mul, hmul, ← hMw, ← hMy]
-    have hC (M : Matrix ι ι P.integers) : (mapRingHom φ).mapMatrix ((C : _ →+* _).mapMatrix M) =
-        (C : F →+* _).mapMatrix (φ.mapMatrix M) := by
-      ext; simp
-    have hX : (mapRingHom φ).mapMatrix (Matrix.scalar ι (X : P.integers[X])) =
-        Matrix.scalar ι X := by
-      ext i j; by_cases h : i = j <;> simp [h]
-    rw [map_sub, map_mul, hC, hC, hX, (Matrix.scalar_commute X commute_X _).eq]
+  have hC (M : Matrix ι ι P.integers) : (mapRingHom φ).mapMatrix ((C : _ →+* _).mapMatrix M) =
+      (C : F →+* _).mapMatrix (φ.mapMatrix M) := by
+    ext; simp
+  have hX : (mapRingHom φ).mapMatrix (Matrix.scalar ι (X : P.integers[X])) =
+      Matrix.scalar ι X := by
+    ext i j; by_cases h : i = j <;> simp [h]
+  -- `w · (X - z) = X · w - w z` as matrices over `F[X]`, and the right side comes from `𝒪_P[X]`.
+  have hmat : (C : F →+* F[X]).mapMatrix (Algebra.leftMulMatrix b w) *
+      (Algebra.leftMulMatrix b z).charmatrix =
+      (mapRingHom φ).mapMatrix (Matrix.scalar ι X * (C : P.integers →+* _).mapMatrix Mw -
+        (C : P.integers →+* _).mapMatrix My) := by
+    rw [Matrix.charmatrix, Matrix.mul_sub, ← RingHom.map_mul, hmul, ← hMw, ← hMy, map_sub,
+      map_mul, hC, hC, hX, (Matrix.scalar_commute X commute_X _).eq]
+  -- Taking determinants: `det (w) · det (X - z) = det (X · w - w z)`.
+  have key : C (Algebra.norm F w) * (Algebra.lmul F F' z).charpoly = Q.map φ :=
+    calc C (Algebra.norm F w) * (Algebra.lmul F F' z).charpoly
+        = C (Algebra.leftMulMatrix b w).det * (Algebra.leftMulMatrix b z).charmatrix.det := by
+          rw [Algebra.norm_eq_matrix_det b, ← LinearMap.charpoly_toMatrix _ b,
+            ← Algebra.leftMulMatrix_apply, Matrix.charpoly]
+      _ = ((C : F →+* F[X]).mapMatrix (Algebra.leftMulMatrix b w) *
+            (Algebra.leftMulMatrix b z).charmatrix).det := by
+          rw [Matrix.det_mul, RingHom.map_det]
+      _ = Q.map φ := by
+          rw [hmat, ← RingHom.map_det, hQ, Polynomial.coe_mapRingHom]
   have := congrArg (fun p ↦ p.coeff i) key
   simp only [coeff_C_mul, coeff_map] at this
   rw [this]
@@ -162,13 +172,9 @@ theorem coeff_charpoly_mem_riemannRochSpace_norm (hF : IsFunctionField k F) {D :
       Place.ord_norm_of_isFunctionField hF P hs, coeff_norm k F D P hs]
     congr 2
     exact Finset.sum_congr rfl fun P' hP' ↦ by rw [hw P' hP']
-  rw [map_mul, hNw] at hmem
-  calc P.valuation ((Algebra.lmul F F' z).charpoly.coeff i)
-      = (WithZero.exp (-(norm k F D).coeff P))⁻¹ * (WithZero.exp (-(norm k F D).coeff P) *
-          P.valuation ((Algebra.lmul F F' z).charpoly.coeff i)) := by
-        rw [inv_mul_cancel_left₀ WithZero.exp_ne_zero]
-    _ ≤ (WithZero.exp (-(norm k F D).coeff P))⁻¹ * 1 := mul_le_mul_right hmem _
-    _ = WithZero.exp ((norm k F D).coeff P) := by rw [mul_one, ← WithZero.exp_neg, neg_neg]
+  rw [map_mul, hNw, WithZero.exp_neg] at hmem
+  -- `(exp n)⁻¹ · v ≤ 1` means `v ≤ exp n`.
+  exact (inv_mul_le_one₀ WithZero.exp_pos).mp hmem
 
 end Divisor
 
