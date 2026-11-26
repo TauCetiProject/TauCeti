@@ -49,14 +49,12 @@ open scoped Quaternion
 namespace Quaternion
 
 /-- The determinant of the real-linear map `q ↦ a * q` of `ℍ` is `‖a‖ ^ 4`. -/
-@[simp]
 theorem det_mul_apply (a : ℍ) : (ContinuousLinearMap.mul ℝ ℍ a).det = ‖a‖ ^ 4 := by
   rw [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_mul_eq_mulLeft, det_mulLeft,
     normSq_eq_norm_mul_self]
   ring
 
 /-- The determinant of the real-linear map `q ↦ q * a` of `ℍ` is `‖a‖ ^ 4`. -/
-@[simp]
 theorem det_flip_mul_apply (a : ℍ) : ((ContinuousLinearMap.mul ℝ ℍ).flip a).det = ‖a‖ ^ 4 := by
   rw [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_flip_mul_eq_mulRight, det_mulRight,
     normSq_eq_norm_mul_self]
