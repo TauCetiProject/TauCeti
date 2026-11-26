@@ -11,6 +11,7 @@ public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Calculus.SecondDerivative
 import Mathlib.LinearAlgebra.Transvection.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Normed.Operator.Holder
@@ -35,8 +36,9 @@ This file records the calculus of this shear. It is `C^m` when `γ` is
 (`TauCeti.hasFDerivAt_shearAlong`), of norm at most `1 + ‖Dγ(y)‖` when `‖ν‖ ≤ 1`
 (`TauCeti.norm_fderiv_shearAlong_le`). When `Dγ(y) ν = 0`, for instance when `γ` is invariant
 along `ν`, this derivative is a transvection, of Jacobian determinant one
-(`TauCeti.det_fderiv_shearAlong`), and for `γ` invariant along `ν` the derivative of the inverse
-shear at `shearAlong γ ν y` inverts it (`TauCeti.fderiv_shearAlong_neg_comp_fderiv`,
+(`TauCeti.det_fderiv_shearAlong`, and `TauCeti.abs_det_fderiv_shearAlong` for `γ` differentiable
+and invariant along `ν`). For `γ` invariant along `ν` the derivative of the inverse shear at
+`shearAlong γ ν y` inverts it (`TauCeti.fderiv_shearAlong_neg_comp_fderiv`,
 `TauCeti.fderiv_comp_fderiv_shearAlong_neg`). Its second
 derivative is `D²γ(h, k) ν`. The second-order chain rule through it
 (`TauCeti.fderiv_fderiv_comp_shearAlong_apply`) reads
@@ -257,6 +259,14 @@ theorem det_fderiv_shearAlong [FiniteDimensional ℝ E] {y : E} (hγ : Different
     simp [fderiv_shearAlong hγ, LinearMap.transvection.apply]
   rw [ContinuousLinearMap.det, h, LinearMap.transvection.det, ContinuousLinearMap.coe_coe, hγν,
     add_zero]
+
+/-- For `γ` differentiable and invariant along `ν`, the shear `shearAlong γ ν` has Jacobian
+determinant of absolute value one everywhere, by `TauCeti.det_fderiv_shearAlong`. -/
+theorem abs_det_fderiv_shearAlong [FiniteDimensional ℝ E] (hγ : Differentiable ℝ γ)
+    (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) (y : E) :
+    |(fderiv ℝ (shearAlong γ ν) y).det| = 1 := by
+  rw [det_fderiv_shearAlong (hγ y)
+    (fderiv_apply_eq_zero_of_forall_periodic_smul (fun t x => hγν x t) y), abs_one]
 
 /-- The second derivative of the shear `shearAlong γ ν` is `D²γ (h, k) ν`. -/
 theorem fderiv_fderiv_shearAlong_apply {y : E} (hγ : ContDiffAt ℝ 2 γ y) (h k : E) :

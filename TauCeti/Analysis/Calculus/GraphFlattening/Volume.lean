@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import TauCeti.Analysis.Calculus.GraphFlattening.Direction
 import Mathlib.MeasureTheory.Function.Jacobian
-import TauCeti.Analysis.Calculus.PeriodicDeriv
 
 /-!
 # The shear along a direction preserves volume
@@ -41,12 +40,9 @@ private theorem addHaar_image_shearAlong (μ : Measure E) [μ.IsAddHaarMeasure]
     (hγ : Differentiable ℝ γ) (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) {s : Set E}
     (hs : MeasurableSet s) : μ (shearAlong γ ν '' s) = μ s := by
   rw [← lintegral_abs_det_fderiv_eq_addHaar_image μ hs
-      (fun x _ => (hasFDerivAt_shearAlong (hγ x)).hasFDerivWithinAt)
+      (fun x _ => (differentiable_shearAlong hγ x).hasFDerivAt.hasFDerivWithinAt)
       (injective_shearAlong hγν).injOn]
-  have hdet (x : E) : (ContinuousLinearMap.id ℝ E + (fderiv ℝ γ x).smulRight ν).det = 1 := by
-    rw [← fderiv_shearAlong (hγ x), det_fderiv_shearAlong (hγ x)
-      (fderiv_apply_eq_zero_of_forall_periodic_smul (fun t x => hγν x t) x)]
-  simp [hdet]
+  simp [abs_det_fderiv_shearAlong hγ hγν]
 
 /-- **The shear along a direction preserves volume.** If `γ` is differentiable and invariant
 under translation along `ν`, the shear `z ↦ z + γ z • ν` preserves every additive Haar measure. -/

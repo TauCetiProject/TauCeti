@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Calculus.GraphFlattening.Direction
 public import TauCeti.Analysis.PDE.Regularity.Boundary.GradientLp
 import TauCeti.Analysis.Calculus.FDeriv.EuclideanMatrix
 import TauCeti.Analysis.Calculus.GraphFlattening.Volume
-import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
@@ -86,14 +85,6 @@ section Shear
 
 variable {γ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {ν : EuclideanSpace ℝ (Fin (n + 1))} {K : ℝ≥0}
 
-/-- For `γ` differentiable and invariant along `ν`, the shear `shearAlong γ ν` has Jacobian of
-absolute value one, by `TauCeti.det_fderiv_shearAlong`. -/
-private theorem abs_det_fderiv_shearAlong (hγ : Differentiable ℝ γ)
-    (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) (y : E) :
-    |(fderiv ℝ (shearAlong γ ν) y).det| = 1 := by
-  rw [det_fderiv_shearAlong (hγ y)
-    (fderiv_apply_eq_zero_of_forall_periodic_smul (fun t x => hγν x t) y), abs_one]
-
 /-- The principal coefficient transformed by the shear `Φ = shearAlong γ ν` is measurable on the
 half-space `H = Φ⁻¹(Ω)` when the coefficient is measurable on `Ω`. -/
 private theorem aestronglyMeasurable_pullbackPrincipal_shearAlong (hγ : Differentiable ℝ γ)
@@ -143,8 +134,8 @@ private theorem uniformlyEllipticOn_pullbackPrincipal_shearAlong_const (hν : �
           rw [← ContinuousLinearMap.comp_apply, fderiv_shearAlong_neg_comp_fderiv hγν (hγ _) (hγ _),
             ContinuousLinearMap.id_apply]
       _ ≤ (1 + K) * ‖fderiv ℝ (shearAlong γ ν) y w‖ :=
-          (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul_of_nonneg_right
-            (norm_fderiv_shearAlong_neg_le hν.le (hγ _) (hK _)) (norm_nonneg _))
+          ContinuousLinearMap.le_of_opNorm_le _
+            (norm_fderiv_shearAlong_neg_le hν.le (hγ _) (hK _)) _
 
 /-- **The flattened coefficient is close to the flattened constant.** Let `Φ = shearAlong γ ν`
 and `Ψ = shearAlong (-γ) ν`. If at the point `Φ y` the coefficient `a` is within `δ` of the
@@ -181,12 +172,8 @@ private theorem norm_matrixBilinearForm_pullbackPrincipal_sub_le (hν : ‖ν‖
     rw [← map_sub, LinearIsometryEquiv.norm_map, hdiff, ContinuousLinearMap.norm_smulRight_apply,
       hν, mul_one, norm_sub_rev]
     exact hγx₀
-  have hT : ‖T.adjoint‖ ≤ 1 + K := by
-    rw [LinearIsometryEquiv.norm_map]
-    exact norm_fderiv_shearAlong_neg_le hν.le (hγ _) (hK _)
-  have hT₀' : ‖T₀.adjoint‖ ≤ 1 + K := by
-    rw [LinearIsometryEquiv.norm_map]
-    exact norm_fderiv_shearAlong_neg_le hν.le (hγ _) (hK _)
+  have hT (z : E) : ‖(fderiv ℝ (shearAlong (-γ) ν) z).adjoint‖ ≤ 1 + K :=
+    (LinearIsometryEquiv.norm_map _ _).trans_le (norm_fderiv_shearAlong_neg_le hν.le (hγ _) (hK _))
   have hδ : 0 ≤ δ :=
     (norm_nonneg (matrixBilinearForm (a (shearAlong γ ν y)) - matrixBilinearForm A)).trans ha
   have hM : 0 ≤ M := (norm_nonneg (matrixBilinearForm A)).trans hA
@@ -206,7 +193,7 @@ private theorem norm_matrixBilinearForm_pullbackPrincipal_sub_le (hν : ‖ν‖
       (ContinuousLinearMap.norm_bilinearComp_le _ _ _)
       (ContinuousLinearMap.norm_bilinearComp_le _ _ _)) ?_)
   calc _ ≤ δ * (1 + K) * (1 + K) + M * δ * (1 + K) + M * (1 + K) * δ := by
-        gcongr
+        gcongr <;> exact hT _
     _ = δ * ((1 + K) ^ 2 + 2 * M * (1 + K)) := by ring
 
 /-- **The flattened function.** Precomposition with the shear `Φ = shearAlong γ ν` maps
@@ -298,10 +285,26 @@ private theorem norm_gradient_comp_shearAlong_le (hν : ‖ν‖ = 1) (hγ : Dif
           ContinuousLinearMap.id_apply]
     _ ≤ (1 + K) * ‖h y‖ := by
         rw [hy]
-        refine (ContinuousLinearMap.le_opNorm _ _).trans ?_
-        rw [LinearIsometryEquiv.norm_map]
-        gcongr
-        exact norm_fderiv_shearAlong_neg_le hν.le (hγ _) (hK _)
+        exact ContinuousLinearMap.le_of_opNorm_le _ ((LinearIsometryEquiv.norm_map _ _).trans_le
+          (norm_fderiv_shearAlong_neg_le hν.le (hγ _) (hK _))) _
+
+/-- **Gradients in `Lᵖ` under the shear.** If `h = DΦ* (g ∘ Φ)` for the shear `Φ = shearAlong γ ν`
+and `g ∈ Lᵖ`, then `h ∈ Lᵖ` and `‖g‖_{Lᵖ} ≤ (1 + K) ‖h‖_{Lᵖ}`, since `Φ` preserves volume. -/
+private theorem memLp_and_eLpNorm_le_of_eq_adjoint_shearAlong (hν : ‖ν‖ = 1)
+    (hγ : Differentiable ℝ γ) (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x)
+    (hK : ∀ x, ‖fderiv ℝ γ x‖ ≤ K) {g h : E → E} {p : ℝ≥0∞} (hh : AEStronglyMeasurable h volume)
+    (hgh : ∀ᵐ y, h y = (fderiv ℝ (shearAlong γ ν) y).adjoint (g (shearAlong γ ν y)))
+    (hg : MemLp g p volume) :
+    MemLp h p volume ∧ eLpNorm g p volume ≤ ENNReal.ofReal (1 + K) * eLpNorm h p volume := by
+  have hmp := measurePreserving_shearAlong volume hγ hγν
+  refine ⟨(hg.comp_measurePreserving hmp).of_le_mul (c := 1 + K) hh ?_, ?_⟩
+  · filter_upwards [hgh] with y hy
+    rw [hy, Function.comp_apply]
+    exact ContinuousLinearMap.le_of_opNorm_le _ ((LinearIsometryEquiv.norm_map _ _).trans_le
+      (norm_fderiv_shearAlong_le hν.le (hγ y) (hK y))) _
+  · rw [← eLpNorm_comp_measurePreserving hg.aestronglyMeasurable hmp]
+    exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul (hg.aestronglyMeasurable.comp_measurePreserving hmp)
+      (hgh.mono fun y hy => norm_gradient_comp_shearAlong_le hν hγ hγν hK hy) p
 
 /-- **Divergence data under the shear.** For the shear `Φ = shearAlong γ ν` carrying `H` onto `Ω`,
 the transformed datum `G' = DΨ(Φ ·) (G ∘ Φ)` lies in `L^q(H)` when `G ∈ L^q(Ω)`, with
@@ -330,8 +333,7 @@ private theorem memLp_pullbackDrift_shearAlong_and_eLpNorm_le (hν : ‖ν‖ = 
     (differentiable_shearAlong hγ.neg).differentiableOn
     (fun x _ => shearAlong_shearAlong_neg hγν x) (fun y _ => shearAlong_neg_shearAlong hγν y) G hy,
     abs_det_fderiv_shearAlong hγ hγν y, one_smul, Function.comp_apply]
-  exact (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul_of_nonneg_right
-    (norm_fderiv_shearAlong_neg_le hν.le (hγ _) (hK _)) (norm_nonneg _))
+  exact ContinuousLinearMap.le_of_opNorm_le _ (norm_fderiv_shearAlong_neg_le hν.le (hγ _) (hK _)) _
 
 end Shear
 
@@ -381,35 +383,22 @@ theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_graph {p : ℝ≥0∞} (hp 
   refine ⟨(1 + K) ^ 2 * C₀, δ₀ / D, div_pos hδ₀ hD, ?_⟩
   intro Ω ν γ a A s x₀ hν hγd hγν hK hΩ hs ha hA hγs has u G hu0 hus hu hgp hG2 hGp
   -- The half-space `H = {0 < ⟪y, ν⟫}`, carried onto `Ω` by the shear `Φ = shearAlong γ ν`.
-  let H : Opens E :=
-    ⟨{y | 0 < ⟪y, ν⟫_ℝ}, isOpen_lt continuous_const (continuous_id.inner continuous_const)⟩
+  let H : Opens E := ⟨{y | 0 < ⟪y, ν⟫_ℝ}, isOpen_lt continuous_const (by fun_prop)⟩
   have hΩ' : (Ω : Set E) = {x | γ x < ⟪x, ν⟫_ℝ} := Set.ext hΩ
-  have hpre : shearAlong γ ν ⁻¹' (Ω : Set E) = H := by
-    rw [hΩ']
-    exact preimage_shearAlong_setOf_lt_inner hν hγν
-  have hmp : MeasurePreserving (shearAlong γ ν) volume volume :=
-    measurePreserving_shearAlong volume hγd hγν
-  have hmpH : MeasurePreserving (shearAlong γ ν) (volume.restrict H) (volume.restrict Ω) := by
-    rw [hΩ']
-    exact measurePreserving_shearAlong_restrict volume hν hγd hγν
+  have hpre : shearAlong γ ν ⁻¹' (Ω : Set E) = H := hΩ' ▸ preimage_shearAlong_setOf_lt_inner hν hγν
+  have hmp := measurePreserving_shearAlong (ν := ν) volume hγd hγν
+  have hmpH : MeasurePreserving (shearAlong γ ν) (volume.restrict H) (volume.restrict Ω) :=
+    hΩ' ▸ measurePreserving_shearAlong_restrict volume hν hγd hγν
   -- The flattened function `v = u ∘ Φ` and the hypotheses of the flat estimate for it.
   obtain ⟨v, hv_val, hv_grad⟩ := exists_value_and_gradient_compL_shearAlong hν hγd hγν hK u
   have hv0 : ∀ᵐ y, y ∉ H → W1p.value v y = 0 := by
     filter_upwards [hv_val, hmp.quasiMeasurePreserving.ae hu0] with y h1 h2 hy
-    rw [h1]
-    exact h2 fun h => hy (by rw [← SetLike.mem_coe, ← hpre]; exact h)
+    exact h1.trans (h2 fun h => hy (by rw [← SetLike.mem_coe, ← hpre]; exact h))
   have hvs : ∀ᵐ y, y ∉ shearAlong γ ν ⁻¹' s → W1p.gradient v y = 0 := by
     filter_upwards [hv_grad, hmp.quasiMeasurePreserving.ae hus] with y h1 h2 hy
     rw [h1, h2 hy, map_zero]
-  have hvp : MemLp (W1p.gradient v : E → E) p volume := by
-    refine (hgp.comp_measurePreserving hmp).of_le_mul (c := 1 + K)
-      (by simpa using Lp.aestronglyMeasurable (W1p.gradient v)) ?_
-    filter_upwards [hv_grad] with y h
-    rw [h, Function.comp_apply]
-    refine ((fderiv ℝ (shearAlong γ ν) y).adjoint.le_opNorm _).trans ?_
-    rw [LinearIsometryEquiv.norm_map]
-    gcongr
-    exact norm_fderiv_shearAlong_le hν.le (hγd y) (hK y)
+  obtain ⟨hvp, hgv⟩ := memLp_and_eLpNorm_le_of_eq_adjoint_shearAlong hν hγd hγν hK
+    (by simpa using Lp.aestronglyMeasurable (W1p.gradient v)) hv_grad hgp
   obtain ⟨hG'2, -⟩ := memLp_pullbackDrift_shearAlong_and_eLpNorm_le hν hγd hγν hK hpre hmpH hG2
   obtain ⟨hG'p, hG'⟩ := memLp_pullbackDrift_shearAlong_and_eLpNorm_le hν hγd hγν hK hpre hmpH hGp
   -- The flat estimate, with the constant matrix `A' = DΨ(x₀) A DΨ(x₀)ᵀ`.
@@ -426,20 +415,14 @@ theorem exists_eLpNorm_gradient_le_of_norm_sub_le_of_graph {p : ℝ≥0∞} (hp 
     v (pullbackDrift (shearAlong γ ν) G) hv0 hvs
     (energyFormH1_pullbackPrincipal_shearAlong_eq hν hγd hγν hK hpre hmpH hv_val hu) hvp hG'2 hG'p
   -- Back to `Ω`: the norms of `∇u` and `G` are those of `∇v` and `G'` up to factors `1 + K`.
-  have hK1 : ENNReal.ofReal (1 + K) = ((1 + K : ℝ≥0) : ℝ≥0∞) := by
-    rw [← ENNReal.ofReal_coe_nnreal, NNReal.coe_add, NNReal.coe_one]
-  calc eLpNorm (W1p.gradient u : E → E) p volume =
-        eLpNorm ((W1p.gradient u : E → E) ∘ shearAlong γ ν) p volume :=
-        (eLpNorm_comp_measurePreserving hgp.aestronglyMeasurable hmp).symm
-    _ ≤ ENNReal.ofReal (1 + K) * eLpNorm (W1p.gradient v : E → E) p volume :=
-        eLpNorm_le_mul_eLpNorm_of_ae_le_mul (hgp.aestronglyMeasurable.comp_measurePreserving hmp)
-          (hv_grad.mono fun y hy => norm_gradient_comp_shearAlong_le hν hγd hγν hK hy) p
+  calc eLpNorm (W1p.gradient u : E → E) p volume ≤
+        ENNReal.ofReal (1 + K) * eLpNorm (W1p.gradient v : E → E) p volume := hgv
     _ ≤ ENNReal.ofReal (1 + K) * (C₀ * (ENNReal.ofReal (1 + K) *
-          eLpNorm G p (volume.restrict Ω))) := by
-        gcongr
-        exact hflat'.trans (mul_le_mul_right hG' _)
+          eLpNorm G p (volume.restrict Ω))) :=
+        mul_le_mul_right (hflat'.trans (mul_le_mul_right hG' _)) _
     _ = ((1 + K) ^ 2 * C₀ : ℝ≥0) * eLpNorm G p (volume.restrict Ω) := by
-        rw [hK1]
+        rw [ENNReal.ofReal_add zero_le_one K.coe_nonneg, ENNReal.ofReal_one,
+          ENNReal.ofReal_coe_nnreal]
         push_cast
         ring
 
