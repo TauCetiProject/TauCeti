@@ -46,9 +46,9 @@ The bounds on the blown-up fields are hypotheses here: for actual solutions they
 rescaled derivative estimates that come from the equations by elliptic regularity. The fields are
 assumed to be defined and regular on all of `V`, but the equations are only used, at each point of
 the blown-up picture, for all large indices, so the theorem applies to solutions on balls whose
-blown-up radii tend to infinity, once they are extended to fields of class `C^(k+2)` and
-`C^(l+1)` on `V` that still satisfy the uniform bounds (e.g. by a cutoff on a slightly smaller
-ball).
+blown-up radii tend to infinity, provided the user extends them to fields of class `C^(k+2)` and
+`C^(l+1)` on `V` that still satisfy the uniform bounds; constructing such an extension is not
+treated here.
 
 ## Main results
 
