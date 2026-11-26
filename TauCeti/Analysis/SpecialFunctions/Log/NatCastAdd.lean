@@ -56,8 +56,7 @@ theorem floor_exp_eq_of_mem_Ioo {n : ℕ} {t : ℝ}
 /-- The logarithm of `⌊exp t⌋₊` for `t ≥ 0` is between `t - log 2` and `t`. -/
 theorem log_natFloor_exp_mem_Icc {t : ℝ} (ht : 0 ≤ t) :
     log (⌊exp t⌋₊ : ℝ) ∈ Icc (t - log 2) t := by
-  have hn : (1 : ℝ) ≤ (⌊exp t⌋₊ : ℕ) := by
-    exact_mod_cast Nat.succ_le_of_lt (Nat.floor_pos.mpr (one_le_exp ht))
+  have hn : (1 : ℝ) ≤ (⌊exp t⌋₊ : ℕ) := Nat.one_le_cast.mpr (by simpa using ht)
   have hn' : 0 < (⌊exp t⌋₊ : ℝ) := zero_lt_one.trans_le hn
   have h : exp t ≤ 2 * (⌊exp t⌋₊ : ℕ) := (Nat.lt_floor_add_one (exp t)).le.trans (by linarith)
   have hlo := log_le_log (exp_pos t) h

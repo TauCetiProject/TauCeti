@@ -33,7 +33,8 @@ open Asymptotics Filter Real Set
 intermediate cutoff changes its logarithm by at most one. -/
 private theorem eventually_exists_least_cutoff {ε : ℝ} (hε : 0 < ε) (D : ℝ) :
     ∀ᶠ x : ℝ in atTop, ∀ q : ℕ, 0 < q → (q : ℝ) ≤ x ^ D →
-      ∃ b : ℕ, IsLeast {n : ℕ | q * ⌊exp (x ^ (ε / 6))⌋₊ ∣ n ∧ exp (x ^ ε) < n} b ∧
+      let x₁ := ⌊exp (x ^ (ε / 6))⌋₊
+      1 ≤ x₁ ∧ ∃ b : ℕ, IsLeast {n : ℕ | q * x₁ ∣ n ∧ exp (x ^ ε) < n} b ∧
         log (b : ℝ) ∈ Icc (x ^ ε) (x ^ ε + 1) := by
   have hsmall := ((isLittleO_log_rpow_atTop hε).const_mul_left D).add
     (isLittleO_rpow_rpow_atTop (by linarith : ε / 6 < ε))
@@ -41,8 +42,8 @@ private theorem eventually_exists_least_cutoff {ε : ℝ} (hε : 0 < ε) (D : �
   have hx' : 0 < x := zero_lt_one.trans_le hx
   have hsum : D * log x + x ^ (ε / 6) ≤ x ^ ε :=
     (le_abs_self _).trans (by simpa [Real.norm_eq_abs, abs_of_pos (rpow_pos_of_pos hx' ε)] using hs)
-  let x₁ := ⌊exp (x ^ (ε / 6))⌋₊
-  have hx₁ : 0 < x₁ := Nat.floor_pos.mpr (one_le_exp (rpow_nonneg hx'.le _))
+  intro x₁
+  have hx₁ : 1 ≤ x₁ := by simpa [x₁] using rpow_nonneg hx'.le (ε / 6)
   obtain ⟨b, hb, hupper⟩ := Nat.exists_isLeast_dvd_and_lt_le_add
     (Nat.mul_pos hq hx₁) (exp_nonneg (x ^ ε))
   have hstep : ((q * x₁ : ℕ) : ℝ) ≤ exp (x ^ ε) := calc
@@ -53,7 +54,7 @@ private theorem eventually_exists_least_cutoff {ε : ℝ} (hε : 0 < ε) (D : �
     _ = exp (D * log x + x ^ (ε / 6)) := by rw [exp_add, rpow_def_of_pos hx', mul_comm D]
     _ ≤ exp (x ^ ε) := exp_le_exp.mpr hsum
   have hpos : 0 < (b : ℝ) := (exp_pos _).trans hb.1.2
-  refine ⟨b, hb, ⟨?_, ?_⟩⟩
+  refine ⟨hx₁, b, hb, ⟨?_, ?_⟩⟩
   · simpa only [log_exp] using log_le_log (exp_pos _) hb.1.2.le
   · apply (log_le_iff_le_exp hpos).mpr
     rw [exp_add]
@@ -92,10 +93,10 @@ theorem eventually_exists_admissible_cutoffs {ε : ℝ} (hε : 0 < ε) (hε' : �
   simp only [Real.norm_eq_abs, abs_of_pos (rpow_pos_of_pos hx' _),
     abs_of_nonneg (by positivity : 0 ≤ x ^ ε + 1), abs_mul,
     abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1000000)] at hpowx hgrowx hsepx
-  obtain ⟨b, hb, hlogb, hlogb'⟩ := hcut q hq hqD
-  let x₁ := ⌊exp (x ^ (ε / 6))⌋₊
-  have hx₁ : 0 < x₁ := Nat.floor_pos.mpr (one_le_exp (rpow_nonneg hx'.le _))
-  have hx₁' : (0 : ℝ) < x₁ := Nat.cast_pos.mpr hx₁
+  intro x₁
+  obtain ⟨hx₁, b, hb, hlogb, hlogb'⟩ := hcut q hq hqD
+  have hx₁le : (1 : ℝ) ≤ x₁ := Nat.one_le_cast.mpr hx₁
+  have hx₁' : (0 : ℝ) < x₁ := zero_lt_one.trans_le hx₁le
   have hb' : (0 : ℝ) < b := (exp_pos _).trans hb.1.2
   have hlog₁ : log (x₁ : ℝ) ∈ Icc (x ^ (ε / 6) - log 2) (x ^ (ε / 6)) :=
     log_natFloor_exp_mem_Icc (rpow_nonneg hx'.le _)
@@ -117,7 +118,7 @@ theorem eventually_exists_admissible_cutoffs {ε : ℝ} (hε : 0 < ε) (hε' : �
     exact h
   · calc
       (log (x₁ : ℝ)) ^ 6 ≤ (x ^ (ε / 6)) ^ (6 : ℕ) :=
-        pow_le_pow_left₀ (log_nonneg (by exact_mod_cast Nat.succ_le_of_lt hx₁)) hlog₁.2 _
+        pow_le_pow_left₀ (log_nonneg hx₁le) hlog₁.2 _
       _ = x ^ ε := by rw [← rpow_mul_natCast hx'.le]; norm_num
       _ ≤ log (b : ℝ) := hlogb
 
