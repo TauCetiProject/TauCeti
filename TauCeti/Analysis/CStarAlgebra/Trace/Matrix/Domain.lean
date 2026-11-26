@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Trace.Domain
-public import TauCeti.Analysis.CStarAlgebra.Trace.Matrix
+public import TauCeti.Analysis.CStarAlgebra.Trace.Matrix.Basic
 
 /-!
 # The domain of the matrix amplification of a trace
@@ -46,34 +46,32 @@ variable {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing
 
 namespace IsTrace
 
+/-- The matrix with the single entry `z` at `(i, j)` is square-integrable for `τ_n` when `z` is
+square-integrable for `τ`. -/
+private theorem single_mem_sqIntegrable_matrixTrace [DecidableEq n] (hτ : IsTrace τ) (i j : n)
+    {z : B} (hz : z ∈ sqIntegrable τ) :
+    CStarMatrix.ofMatrix (Matrix.single i j z) ∈ sqIntegrable (matrixTrace τ n) := by
+  refine hτ.mem_sqIntegrable_matrixTrace_iff.2 fun p q ↦ ?_
+  by_cases h : i = p ∧ j = q
+  · obtain ⟨rfl, rfl⟩ := h
+    simpa [CStarMatrix.ofMatrix_apply] using hz
+  · simpa [CStarMatrix.ofMatrix_apply, Matrix.single_apply, h] using hτ.zero_mem_sqIntegrable
+
 /-- The matrix with the single entry `b` at `(i, j)` lies in the domain of `τ_n` when `b` lies in
 the domain of `τ`. -/
 private theorem single_mem_domain_matrixTrace [DecidableEq n] (hτ : IsTrace τ) (i j : n) {b : B}
     (hb : b ∈ domain τ) :
     CStarMatrix.ofMatrix (Matrix.single i j b) ∈ domain (matrixTrace τ n) := by
-  have hn (z : B) (hz : z ∈ sqIntegrable τ) (k l : n) :
-      CStarMatrix.ofMatrix (Matrix.single k l z) ∈ sqIntegrable (matrixTrace τ n) := by
-    refine hτ.mem_sqIntegrable_matrixTrace_iff.2 fun p q ↦ ?_
-    by_cases h : k = p ∧ l = q
-    · obtain ⟨rfl, rfl⟩ := h
-      simpa [CStarMatrix.ofMatrix_apply] using hz
-    · simpa [CStarMatrix.ofMatrix_apply, Matrix.single_apply, h] using
-        hτ.zero_mem_sqIntegrable
   rw [hτ.domain_eq_span_star_mul] at hb
   induction hb using Submodule.span_induction with
   | mem z hz =>
     obtain ⟨x, hx, y, hy, rfl⟩ := hz
     -- `Eᵢⱼ(y⋆x) = Eᵢᵢ(y)⋆ Eᵢⱼ(x)`.
-    have h : CStarMatrix.ofMatrix (Matrix.single i j (star y * x)) =
-        star (CStarMatrix.ofMatrix (Matrix.single i i y)) *
-          CStarMatrix.ofMatrix (Matrix.single i j x) := by
-      ext p q
-      simp only [CStarMatrix.mul_apply, CStarMatrix.star_apply, CStarMatrix.ofMatrix_apply,
-        Matrix.single_apply]
-      rw [Finset.sum_eq_single i (fun k _ hk ↦ by simp [Ne.symm hk]) (by simp)]
-      by_cases hp : i = p <;> by_cases hq : j = q <;> simp [hp, hq]
-    rw [h]
-    exact hτ.isTrace_matrixTrace.star_mul_mem_domain (hn x hx i j) (hn y hy i i)
+    rw [← CStarMatrix.ofMatrix_single_mul_ofMatrix_single_same i i j (star y) x,
+      ← CStarMatrix.star_ofMatrix_single i i y]
+    exact hτ.isTrace_matrixTrace.star_mul_mem_domain
+      (hτ.single_mem_sqIntegrable_matrixTrace i j hx)
+      (hτ.single_mem_sqIntegrable_matrixTrace i i hy)
   | zero => simp [Matrix.single_zero]
   | add x y _ _ hx hy =>
     simpa [Matrix.single_add] using (domain (matrixTrace τ n)).add_mem hx hy
@@ -101,9 +99,7 @@ theorem mem_domain_matrixTrace_iff (hτ : IsTrace τ) {x : CStarMatrix n n B} :
     | smul c x _ hx => exact fun i j ↦ (domain τ).smul_mem c (hx i j)
   · intro hx
     classical
-    have h : x = ∑ i, ∑ j, CStarMatrix.ofMatrix (Matrix.single i j (x i j)) :=
-      Matrix.matrix_eq_sum_single (CStarMatrix.ofMatrix.symm x)
-    rw [h]
+    rw [CStarMatrix.eq_sum_ofMatrix_single x]
     exact Submodule.sum_mem _ fun i _ ↦ Submodule.sum_mem _ fun j _ ↦
       hτ.single_mem_domain_matrixTrace i j (hx i j)
 
@@ -113,21 +109,17 @@ theorem linearMap_matrixTrace (hτ : IsTrace τ) (x : domain (matrixTrace τ n))
     hτ.isTrace_matrixTrace.linearMap x =
       ∑ i, hτ.linearMap ⟨(x : CStarMatrix n n B) i i,
         hτ.mem_domain_matrixTrace_iff.1 x.property i i⟩ := by
+  -- The diagonal entry `x ↦ xᵢᵢ` as a linear map `𝔪_{τ_n} → 𝔪_τ`.
+  let d (i : n) : domain (matrixTrace τ n) →ₗ[ℂ] domain τ :=
+    LinearMap.codRestrict (domain τ)
+      (Matrix.entryLinearMap ℂ B i i ∘ₗ CStarMatrix.ofMatrixₗ.symm.toLinearMap ∘ₗ
+        (domain (matrixTrace τ n)).subtype)
+      fun x ↦ by simpa using hτ.mem_domain_matrixTrace_iff.1 x.property i i
+  have hd (i : n) (x : domain (matrixTrace τ n)) :
+      d i x = ⟨(x : CStarMatrix n n B) i i, hτ.mem_domain_matrixTrace_iff.1 x.property i i⟩ :=
+    Subtype.ext (by simp [d])
   -- The right side is linear in `x` and agrees with `τ_n` on `𝔪_{τ_n}⁺`.
-  let f : domain (matrixTrace τ n) →ₗ[ℂ] ℂ :=
-    { toFun x := ∑ i, hτ.linearMap ⟨(x : CStarMatrix n n B) i i,
-        hτ.mem_domain_matrixTrace_iff.1 x.property i i⟩
-      map_add' x y := by
-        rw [← Finset.sum_add_distrib]
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [← map_add]
-        rfl
-      map_smul' c x := by
-        rw [RingHom.id_apply, Finset.smul_sum]
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [← map_smul]
-        rfl }
-  have hf : f = hτ.isTrace_matrixTrace.linearMap := by
+  have hf : ∑ i, hτ.linearMap ∘ₗ d i = hτ.isTrace_matrixTrace.linearMap := by
     refine hτ.isTrace_matrixTrace.eq_linearMap fun y hy ↦ ?_
     have hdiag (i : n) : y i i ∈ finitePart τ := by
       refine mem_finitePart.2 ⟨CStarMatrix.diag_nonneg_of_nonneg (mem_finitePart.1 hy).1 i,
@@ -135,12 +127,12 @@ theorem linearMap_matrixTrace (hτ : IsTrace τ) (x : domain (matrixTrace τ n))
       rw [matrixTrace_apply]
       exact Finset.single_le_sum (f := fun i ↦ τ (y i i)) (fun _ _ ↦ zero_le)
         (Finset.mem_univ i)
-    change ∑ i, hτ.linearMap ⟨y i i, _⟩ = _
+    simp only [LinearMap.sum_apply, LinearMap.comp_apply, hd]
     rw [matrixTrace_apply, ENNReal.toReal_sum fun i _ ↦ (mem_finitePart.1 (hdiag i)).2.ne,
       Complex.ofReal_sum]
     exact Finset.sum_congr rfl fun i _ ↦ hτ.linearMap_apply_of_mem_finitePart (hdiag i)
-  rw [← hf]
-  rfl
+  rw [← hf, LinearMap.sum_apply]
+  simp only [LinearMap.comp_apply, hd]
 
 end IsTrace
 
