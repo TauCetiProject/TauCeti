@@ -45,8 +45,9 @@ Reindexing the coordinates along the identity bijection is the identity.
 Maps into `PiLp p β` converge uniformly exactly when each coordinate does.
 
 We also record `PiLp.univ_sum_single`, the coordinate isometry `PiLp.singleLI` (and the
-continuous coordinate inclusion `PiLp.singleCLM`), the power identity `PiLp.norm_rpow_eq_sum`,
-and coordinatewise submodule restriction `LinearIsometryEquiv.submodulePiLp`.
+continuous coordinate inclusion `PiLp.singleCLM`), the projection-composition norm identity
+`PiLp.opNorm_comp_proj`, the power identity `PiLp.norm_rpow_eq_sum`, and coordinatewise submodule
+restriction `LinearIsometryEquiv.submodulePiLp`.
 
 For a family of operators `T i : E i →L[𝕜] F i`, the block-diagonal operator
 `PiLp.piMap p T : PiLp p E →L[𝕜] PiLp p F` acts coordinatewise; it is
@@ -389,6 +390,24 @@ theorem norm_singleCLM_le [Fact (1 ≤ p)] {𝕜 : Type*} [NontriviallyNormedFie
     ‖singleCLM p 𝕜 β i‖ ≤ 1 := by
   rw [← toContinuousLinearMap_singleLI]
   exact (singleLI (𝕜 := 𝕜) p β i).norm_toContinuousLinearMap_le
+
+omit [DecidableEq ι] in
+/-- Precomposing a continuous linear map on coordinate `i` with `PiLp.proj p β i` preserves its
+operator norm. -/
+@[simp]
+theorem opNorm_comp_proj [Fact (1 ≤ p)] {𝕜 G : Type*} [NontriviallyNormedField 𝕜]
+    {β : ι → Type*} [∀ i, NormedAddCommGroup (β i)] [∀ i, NormedSpace 𝕜 (β i)]
+    [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] {i : ι} (L : β i →L[𝕜] G) :
+    ‖L.comp (proj p β i : PiLp p β →L[𝕜] β i)‖ = ‖L‖ := by
+  classical
+  let q := (proj p β i : PiLp p β →L[𝕜] β i)
+  refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg L) fun y ↦ ?_)
+    (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg (L.comp q)) fun y ↦ ?_)
+  · simpa only [ContinuousLinearMap.comp_apply, q, proj_apply] using
+      (L.le_opNorm (y i)).trans (mul_le_mul_of_nonneg_left (norm_apply_le y i) (norm_nonneg _))
+  · simpa only [ContinuousLinearMap.comp_apply, q, proj_apply,
+      ofLp_single, Pi.single_eq_same, norm_single] using
+      (L.comp q).le_opNorm (single p i y)
 
 end Single
 

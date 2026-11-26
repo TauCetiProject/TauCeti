@@ -54,6 +54,10 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
   one-dimensional integral of `exp (-(l * x)) * g x`.
 * `TauCeti.integral_pi_comp_perm`: a function invariant under a permutation of the coordinates
   has the same integral under the product measure and under the product of the permuted factors.
+* `MeasurableEquiv.piCongrLeft_update`, `TauCeti.sum_integral_piCongrLeft_update`, and
+  `TauCeti.sum_lintegral_piCongrLeft_update`: reindexing a finite product along an equivalence of
+  coordinates intertwines `Function.update` and preserves the sum of integrated single-coordinate
+  slice functionals.
 * `TauCeti.ae_slice_pi_eq_zero`: for a binary kernel whose second-variable slices are a.e.
   integrable with integral zero, fixing one coordinate and integrating another against
   `Measure.pi μ` yields an a.e. integrable function with integral zero.
@@ -331,5 +335,47 @@ theorem integral_pi_comp_perm {ι β E : Type*} [Fintype ι] [MeasurableSpace β
   congr 1
   funext i
   exact (Equiv.piCongrLeft_apply_apply (fun _ ↦ β) σ x i).symm
+
+/-- Reindexing a dependent product along `e : κ ≃ ι` intertwines `Function.update` at `k` with
+`Function.update` at `e k`. -/
+@[simp]
+theorem _root_.MeasurableEquiv.piCongrLeft_update {κ ι : Type*} [DecidableEq κ] [DecidableEq ι]
+    {π : ι → Type*} [∀ i, MeasurableSpace (π i)] (e : κ ≃ ι) (y : ∀ k, π (e k)) (k : κ)
+    (v : π (e k)) :
+    MeasurableEquiv.piCongrLeft π e (Function.update y k v) =
+      Function.update (MeasurableEquiv.piCongrLeft π e y) (e k) v := by
+  simpa [MeasurableEquiv.piCongrLeft, Equiv.piCongrLeft] using
+    Function.piCongrLeft'_symm_update π e.symm y k v
+
+/-- Reindexing a finite product of σ-finite measures along `e : κ ≃ ι` preserves the sum over all
+coordinates of the Bochner integral of any functional of the one-coordinate slices. -/
+theorem sum_integral_piCongrLeft_update {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] (e : κ ≃ ι)
+    {β E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (H : ∀ i, (α i → β) → E) (g : (∀ i, α i) → β) :
+    (∑ k, ∫ y, H (e k) (fun v ↦ g (MeasurableEquiv.piCongrLeft α e (Function.update y k v)))
+        ∂Measure.pi (fun k ↦ μ (e k))) =
+      ∑ i, ∫ x, H i (fun v ↦ g (Function.update x i v)) ∂Measure.pi μ := by
+  have mp := measurePreserving_piCongrLeft μ e
+  refine (Finset.sum_congr rfl fun k _ ↦ ?_).trans
+    (e.sum_comp fun i ↦ ∫ x, H i (fun v ↦ g (Function.update x i v)) ∂Measure.pi μ)
+  simp_rw [MeasurableEquiv.piCongrLeft_update]
+  exact mp.integral_comp (MeasurableEquiv.piCongrLeft α e).measurableEmbedding
+    (fun x ↦ H (e k) (fun v ↦ g (Function.update x (e k) v)))
+
+/-- Reindexing a finite product of σ-finite measures along `e : κ ≃ ι` preserves the sum over all
+coordinates of the lower integral of any functional of the one-coordinate slices. -/
+theorem sum_lintegral_piCongrLeft_update {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] (e : κ ≃ ι) {β : Type*}
+    (H : ∀ i, (α i → β) → ℝ≥0∞) (g : (∀ i, α i) → β) :
+    (∑ k, ∫⁻ y, H (e k) (fun v ↦ g (MeasurableEquiv.piCongrLeft α e (Function.update y k v)))
+        ∂Measure.pi (fun k ↦ μ (e k))) =
+      ∑ i, ∫⁻ x, H i (fun v ↦ g (Function.update x i v)) ∂Measure.pi μ := by
+  have mp := measurePreserving_piCongrLeft μ e
+  refine (Finset.sum_congr rfl fun k _ ↦ ?_).trans
+    (e.sum_comp fun i ↦ ∫⁻ x, H i (fun v ↦ g (Function.update x i v)) ∂Measure.pi μ)
+  simp_rw [MeasurableEquiv.piCongrLeft_update]
+  exact mp.lintegral_comp_emb (MeasurableEquiv.piCongrLeft α e).measurableEmbedding
+    (fun x ↦ H (e k) (fun v ↦ g (Function.update x (e k) v)))
 
 end TauCeti

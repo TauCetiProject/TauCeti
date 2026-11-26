@@ -20,10 +20,12 @@ approximated by smooth compactly supported functions, simultaneously in the `L�
 of every derivative through order `k`, for every finite `p`. The domain is a finite-dimensional
 real normed space, the codomain is a real normed space, and the measure is arbitrary.
 
-The approximations are `χ ((n + 1)⁻¹ • x) • f x`, with a fixed smooth compactly supported
-cutoff `χ` equal to one near zero. The Leibniz estimate gives an integrable envelope consisting
-of a finite sum of norms of derivatives of `f`. At each point the approximation eventually
-agrees with `f` on a neighborhood, so all its derivatives eventually agree there as well.
+The approximations are `χ ((n + 1)⁻¹ • x) • f x`, with a fixed `[0, 1]`-valued smooth compactly
+supported cutoff `χ` equal to one near zero. The Leibniz estimate gives an integrable envelope
+consisting of a finite sum of norms of derivatives of `f`, while `0 ≤ χ ≤ 1` bounds `‖g n x‖` by
+`‖f x‖`. At each point the approximation eventually agrees with `f` on a neighborhood, giving
+pointwise convergence together with eventual agreement of all derivatives
+(`TauCeti.exists_contDiff_hasCompactSupport_approximation`).
 This is the cutoff step used after smoothing in whole-space Sobolev density arguments.
 The approximation holds for functions of finite smoothness `m ≥ k`, with approximants of the same
 smoothness. For `Cᵐ` functions, `1 ≤ m`, with value and derivative in `Lᵖ`, the approximants
@@ -181,8 +183,9 @@ theorem memLp_iteratedFDeriv_smul_of_bounded
         (Nat.cast_nonneg _)) (norm_nonneg _))
 
 /-- A `Cᵐ` function with `Lᵖ` classical derivatives through order `k ≤ m` admits `Cᵐ`
-compactly supported approximations converging in the `Lᵖ` seminorm of every such derivative.
-The same approximation sequence works for all orders through `k`. -/
+compactly supported approximations bounded in norm by `‖f x‖`, converging pointwise to `f`, and
+converging in the `Lᵖ` seminorm of every derivative through order `k`. The same approximation
+sequence works for all orders through `k`. -/
 theorem exists_contDiff_hasCompactSupport_approximation
     [FiniteDimensional ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
     {μ : Measure E} {p : ENNReal} (hp : p ≠ ⊤)
@@ -191,8 +194,10 @@ theorem exists_contDiff_hasCompactSupport_approximation
     ∃ g : ℕ → E → F,
       (∀ n, ContDiff ℝ m (g n) ∧ HasCompactSupport (g n)) ∧
       (∀ n i, i ≤ k → MemLp (iteratedFDeriv ℝ i (g n)) p μ) ∧
-      ∀ i ≤ k, Tendsto (fun n ↦
-        eLpNorm (iteratedFDeriv ℝ i (g n) - iteratedFDeriv ℝ i f) p μ) atTop (𝓝 0) := by
+      (∀ i ≤ k, Tendsto (fun n ↦
+        eLpNorm (iteratedFDeriv ℝ i (g n) - iteratedFDeriv ℝ i f) p μ) atTop (𝓝 0)) ∧
+      (∀ n x, ‖g n x‖ ≤ ‖f x‖) ∧
+      ∀ x, Tendsto (fun n ↦ g n x) atTop (𝓝 (f x)) := by
   let χ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
   have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B :=
     (χ.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
@@ -209,7 +214,9 @@ theorem exists_contDiff_hasCompactSupport_approximation
     simpa only [one_mul] using mul_le_mul hpow (hB i _) (norm_nonneg _) zero_le_one
   have hfk (i : ℕ) (hi : i ≤ k) : ContDiff ℝ i f :=
     hf.of_le (by exact_mod_cast (Nat.cast_le.2 hi).trans hk)
-  refine ⟨fun n x ↦ χ (((n : ℝ) + 1)⁻¹ • x) • f x, ?_, ?_, ?_⟩
+  have hr : Tendsto (fun n : ℕ ↦ (n : ℝ) + 1) atTop atTop :=
+    tendsto_atTop_mono (fun n : ℕ ↦ by linarith) tendsto_natCast_atTop_atTop
+  refine ⟨fun n x ↦ χ (((n : ℝ) + 1)⁻¹ • x) • f x, ?_, ?_, ?_, ?_, ?_⟩
   · intro n
     exact ⟨(χ.contDiff.comp (contDiff_const_smul _)).smul hf,
       (χ.hasCompactSupport.comp_smul (by positivity : ((n : ℝ) + 1)⁻¹ ≠ 0)).smul_right⟩
@@ -219,12 +226,20 @@ theorem exists_contDiff_hasCompactSupport_approximation
       (fun j _ x ↦ hscaled n j x) (hfk i hi)
       (fun j hj ↦ hmem j (hj.trans hi))
   · intro i hi
-    exact tendsto_eLpNorm_iteratedFDeriv_cutoff_sub hp
-      (r := fun n : ℕ ↦ (n : ℝ) + 1)
-      (tendsto_atTop_mono (fun n : ℕ ↦ by linarith) tendsto_natCast_atTop_atTop)
+    exact tendsto_eLpNorm_iteratedFDeriv_cutoff_sub hp hr
       (χ.contDiff.of_le (mod_cast le_top)) χ.eventuallyEq_one
       (fun j _ x ↦ hB j x) (hfk i hi)
       (fun j hj ↦ hmem j (hj.trans hi))
+  · intro n x
+    rw [norm_smul, Real.norm_of_nonneg χ.nonneg]
+    exact mul_le_of_le_one_left (norm_nonneg _) χ.le_one
+  · intro x
+    have ht : Tendsto (fun n : ℕ ↦ ((n : ℝ) + 1)⁻¹ • x) atTop (𝓝 0) := by
+      simpa only [Function.comp_def, zero_smul] using
+        ((tendsto_inv_atTop_zero (𝕜 := ℝ)).comp hr).smul_const x
+    refine (tendsto_congr' ?_).2 tendsto_const_nhds
+    filter_upwards [ht.eventually χ.eventuallyEq_one] with n hn
+    simp only [hn, Pi.one_apply, one_smul]
 
 /-- A `Cᵐ` function `f`, `1 ≤ m`, such that `f` and its derivative lie in `Lᵖ` admits `Cᵐ`
 compactly supported approximations `g n` with `g n → f` and `fderiv ℝ (g n) → fderiv ℝ f` in the
@@ -244,7 +259,7 @@ theorem exists_contDiff_hasCompactSupport_tendsto_eLpNorm_sub_fderiv_sub
         (.of_forall fun x ↦ norm_iteratedFDeriv_zero.symm)
     · exact hdf.congr_norm (hf1.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable
         (.of_forall fun x ↦ (norm_iteratedFDeriv_one f).symm)
-  obtain ⟨g, hg, -, hlim⟩ := exists_contDiff_hasCompactSupport_approximation hp hf 1
+  obtain ⟨g, hg, -, hlim, -, -⟩ := exists_contDiff_hasCompactSupport_approximation hp hf 1
     (by exact_mod_cast hm) hmem
   have hg1 (n : ℕ) : ContDiff ℝ 1 (g n) := (hg n).1.of_le (by exact_mod_cast hm)
   refine ⟨g, hg, (hlim 0 zero_le_one).congr fun n ↦ ?_, (hlim 1 le_rfl).congr fun n ↦ ?_⟩

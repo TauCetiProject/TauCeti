@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Moments.Variance
 import TauCeti.MeasureTheory.Function.Lp.Iterated
+import TauCeti.MeasureTheory.Integral.Pi
 
 /-!
 # The Efron–Stein inequality
@@ -148,33 +149,15 @@ theorem efronStein {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type 
       ∑ i, ∫⁻ x, evariance (fun y => f (Function.update x i y)) (μ i) ∂Measure.pi μ := by
   let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
   let Φ := MeasurableEquiv.piCongrLeft α e
-  have mp : MeasurePreserving Φ (Measure.pi fun k => μ (e k)) (Measure.pi μ) :=
-    measurePreserving_piCongrLeft μ e
-  have hupd : ∀ (k : Fin (Fintype.card ι)) (y : ∀ k, α (e k)) (v : α (e k)),
-      Φ (Function.update y k v) = Function.update (Φ y) (e k) v := by
-    intro k y v
-    simpa [Φ, MeasurableEquiv.piCongrLeft, Equiv.piCongrLeft] using
-      Function.piCongrLeft'_symm_update α e.symm y k v
-  have hEv : evariance (fun x => f (Φ x)) (Measure.pi fun k => μ (e k)) =
-      evariance f (Measure.pi μ) := mp.evariance_fun_comp Φ.measurableEmbedding f
-  have hterm : ∀ k : Fin (Fintype.card ι),
-      ∫⁻ y, evariance (fun v => f (Φ (Function.update y k v))) (μ (e k))
-          ∂Measure.pi (fun k => μ (e k)) =
-        ∫⁻ x, evariance (fun v => f (Function.update x (e k) v)) (μ (e k)) ∂Measure.pi μ := by
-    intro k
-    simp_rw [hupd]
-    exact mp.lintegral_comp_emb Φ.measurableEmbedding
-      (fun x => evariance (fun v => f (Function.update x (e k) v)) (μ (e k)))
+  have mp := measurePreserving_piCongrLeft μ e
   calc evariance f (Measure.pi μ)
-      = evariance (fun x => f (Φ x)) (Measure.pi fun k => μ (e k)) := hEv.symm
+      = evariance (fun x => f (Φ x)) (Measure.pi fun k => μ (e k)) :=
+        (mp.evariance_fun_comp Φ.measurableEmbedding f).symm
     _ ≤ ∑ k, ∫⁻ y, evariance (fun v => f (Φ (Function.update y k v))) (μ (e k))
           ∂Measure.pi (fun k => μ (e k)) :=
         efronStein_fin (α := fun k => α (e k)) (fun k => μ (e k)) (f := fun x => f (Φ x))
           (hf.comp Φ.measurable) (hL.comp_measurePreserving mp)
-    _ = ∑ k, ∫⁻ x, evariance (fun v => f (Function.update x (e k) v)) (μ (e k)) ∂Measure.pi μ :=
-        Finset.sum_congr rfl fun k _ => hterm k
     _ = ∑ i, ∫⁻ x, evariance (fun y => f (Function.update x i y)) (μ i) ∂Measure.pi μ :=
-        Equiv.sum_comp e fun i =>
-          ∫⁻ x, evariance (fun y => f (Function.update x i y)) (μ i) ∂Measure.pi μ
+        TauCeti.sum_lintegral_piCongrLeft_update μ e (fun i h => evariance h (μ i)) f
 
 end TauCeti.Probability

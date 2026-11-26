@@ -10,13 +10,16 @@ public import TauCeti.Analysis.Calculus.Gradient
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Derivatives of coordinates on finite `L^p` products
 
 The derivative of a coordinate of a function into a finite `L^p` product is the corresponding
 coordinate of its derivative (`DifferentiableAt.fderiv_piLp_apply`); likewise for curves
-(`HasDerivWithinAt.piLp_apply`).
+(`HasDerivWithinAt.piLp_apply`). Conversely, precomposing a differentiable function on one
+coordinate with `PiLp.proj` preserves the operator norm of its Fréchet derivative
+(`PiLp.norm_fderiv_comp_proj`).
 
 Freezing all but one coordinate of a scalar function on `PiLp 2 E` gives a function on
 that factor. At a differentiability point, its derivative norm equals the norm of the
@@ -58,6 +61,25 @@ theorem HasDerivWithinAt.piLp_apply {n : ℕ} {F : Fin n → Type*} [∀ i, Norm
 end Coordinate
 
 namespace PiLp
+
+section Proj
+
+variable {𝕜 ι F : Type*} {E : ι → Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
+  {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- Precomposing a differentiable function on coordinate `i` with `PiLp.proj p E i` preserves the
+operator norm of its Fréchet derivative. -/
+theorem norm_fderiv_comp_proj [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {i : ι} {f : E i → F} {x : PiLp p E}
+    (hf : DifferentiableAt 𝕜 f (x i)) :
+    ‖fderiv 𝕜 (fun y : PiLp p E ↦ f ((PiLp.proj p E i : PiLp p E →L[𝕜] E i) y)) x‖ =
+      ‖fderiv 𝕜 f (x i)‖ := by
+  let q := (PiLp.proj p E i : PiLp p E →L[𝕜] E i)
+  have hfd : fderiv 𝕜 (fun y : PiLp p E ↦ f (q y)) x = (fderiv 𝕜 f (x i)).comp q := by
+    simpa only [Function.comp_def] using (hf.hasFDerivAt.comp x q.hasFDerivAt).fderiv
+  rw [hfd, opNorm_comp_proj]
+
+end Proj
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {E : ι → Type*}
   [∀ i, NormedAddCommGroup (E i)] [∀ i, InnerProductSpace ℝ (E i)]

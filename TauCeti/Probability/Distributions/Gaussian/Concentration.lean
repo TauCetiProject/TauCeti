@@ -8,21 +8,19 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Probability.Distributions.Fernique
-public import Mathlib.Probability.Distributions.Gaussian.Multivariate
+public import Mathlib.Probability.Distributions.Gaussian.Basic
 public import Mathlib.Probability.Moments.SubGaussian
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Probability.Distributions.Gaussian.Fernique
-import TauCeti.Analysis.Calculus.BumpFunction.SmoothApprox
 import TauCeti.Analysis.Calculus.IntervalIntegral.Rotation
 import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.Distributions.Gaussian.Transforms
 import TauCeti.Probability.Moments.Basic
-import TauCeti.Probability.Moments.SubGaussian.Basic
 import TauCeti.Probability.Distributions.Uniform.Basic
 
 /-!
-# Gaussian concentration of smooth and Lipschitz functions
+# Gaussian concentration of smooth functions on Banach spaces
 
 Let `μ` be a centred Gaussian measure on a separable Banach space `E`, and let `f : E → ℝ` be a
 `C¹` function whose derivative has variance at most `v` under `μ` at almost every point, that is
@@ -31,17 +29,14 @@ is sub-Gaussian with variance proxy `π² v / 4`, and
 
 `μ {x | ε ≤ |f x - 𝔼 f|} ≤ 2 exp (-2 ε² / (π² v))`.
 
-For the standard Gaussian measure on a finite-dimensional inner product space the variance of a
-linear functional is its squared norm, so the hypothesis holds with `v = K²` when `‖f' x‖ ≤ K`,
-that is, when the `C¹` function `f` is `K`-Lipschitz. Every `K`-Lipschitz function, smooth or not,
-is a uniform limit of smooth `K`-Lipschitz functions
-(`LipschitzWith.exists_contDiff_lipschitzWith_dist_lt`), and a fixed variance proxy survives
-uniform limits (`ProbabilityTheory.HasSubgaussianMGF.of_forall_exists_abs_sub_le`), so the same
-bounds hold for all `K`-Lipschitz functions. Estimates of this kind, transported to the Euclidean
-sphere, are the concentration of measure behind Dvoretzky's theorem on almost Euclidean sections
-of normed spaces.
+For the standard Gaussian measure on a finite-dimensional inner product space, the sharp
+Lipschitz concentration bound with variance proxy `K²` is proved via Gross's logarithmic Sobolev
+inequality and Herbst's argument in
+`TauCeti.Probability.Concentration.Poincare.Gaussian.LogSobolev.Basic`
+(`LipschitzWith.hasSubgaussianMGF_stdGaussian_sub_integral` and
+`LipschitzWith.measureReal_stdGaussian_setOf_le_abs_sub_integral_le`).
 
-The proof is the interpolation argument of Maurey and Pisier. For `(x, y) ∈ E × E` and the
+The proof here is the interpolation argument of Maurey and Pisier. For `(x, y) ∈ E × E` and the
 rotation `R θ (x, y) = (cos θ • x + sin θ • y, -sin θ • x + cos θ • y)`, the first coordinate of
 `R θ (x, y)` runs along a quarter circle from `x` to `y` with velocity the second coordinate, so
 (`ContDiff.sub_eq_integral_fderiv_rotation`)
@@ -65,10 +60,6 @@ contributes the same amount, which is an exponential moment of the Gaussian vari
   `f - 𝔼 f` is sub-Gaussian with variance proxy `π² v / 4`.
 * `ProbabilityTheory.IsGaussian.measureReal_setOf_le_abs_sub_integral_le_of_variance_fderiv_le`:
   the two-sided tail bound.
-* `LipschitzWith.hasSubgaussianMGF_stdGaussian_sub_integral`: under the standard Gaussian
-  measure, a `K`-Lipschitz `f` has `f - 𝔼 f` sub-Gaussian with variance proxy `π² K² / 4`.
-* `LipschitzWith.measureReal_stdGaussian_setOf_le_abs_sub_integral_le`: the tail bound
-  `2 exp (-2 ε² / (π² K²))` for the standard Gaussian measure and a `K`-Lipschitz `f`.
 
 ## References
 
@@ -268,67 +259,3 @@ theorem measureReal_setOf_le_abs_sub_integral_le_of_variance_fderiv_le (hμ : μ
 end Gaussian
 
 end ProbabilityTheory.IsGaussian
-
-namespace TauCeti.Probability
-
-/-- Under the standard Gaussian measure, the variance of the derivative of `f` is at most `K²`
-when `‖f' x‖ ≤ K` everywhere. -/
-private lemma variance_fderiv_stdGaussian_le {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    {f : E → ℝ} {K : ℝ≥0} (hK : ∀ x, ‖fderiv ℝ f x‖ ≤ K) (x : E) :
-    Var[fderiv ℝ f x; stdGaussian E] ≤ ((K ^ 2 : ℝ≥0) : ℝ) := by
-  rw [variance_dual_stdGaussian, NNReal.coe_pow]
-  exact pow_le_pow_left₀ (norm_nonneg _) (hK x) 2
-
-end TauCeti.Probability
-
-namespace LipschitzWith
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {f : E → ℝ} {K : ℝ≥0}
-
-/-- **Gaussian concentration of Lipschitz functions, exponential-moment form.** Under the
-standard Gaussian measure, a `K`-Lipschitz function `f` is sub-Gaussian about its mean with
-variance proxy `π² K² / 4`: `𝔼 exp (t (f - 𝔼 f)) ≤ exp (π² K² t² / 8)`. -/
-theorem hasSubgaussianMGF_stdGaussian_sub_integral (hf : LipschitzWith K f) :
-    HasSubgaussianMGF (fun x ↦ f x - ∫ y, f y ∂stdGaussian E)
-      (NNReal.pi ^ 2 / 4 * K ^ 2) (stdGaussian E) := by
-  refine .of_forall_exists_abs_sub_le fun ε hε ↦ ?_
-  -- A smooth `K`-Lipschitz `g` within `ε / 2` of `f` concentrates by the Maurey–Pisier bound.
-  obtain ⟨g, hg, hgK, hgf⟩ := hf.exists_contDiff_lipschitzWith_dist_lt (half_pos hε)
-  have hfg' (x : E) : |f x - g x| ≤ ε / 2 := by rw [abs_sub_comm]; exact (hgf x).le
-  have hgsub : HasSubgaussianMGF (fun x ↦ g x - ∫ y, g y ∂stdGaussian E)
-      (NNReal.pi ^ 2 / 4 * K ^ 2) (stdGaussian E) :=
-    IsGaussian.hasSubgaussianMGF_sub_integral_of_variance_fderiv_le (by simp)
-      (hg.of_le (by simp)) (.of_forall (TauCeti.Probability.variance_fderiv_stdGaussian_le
-        fun _ ↦ norm_fderiv_le_of_lipschitz ℝ hgK))
-  -- The means of `f` and `g` are also within `ε / 2`.
-  have hgi : Integrable g (stdGaussian E) :=
-    (hgsub.integrable.add (integrable_const (∫ y, g y ∂stdGaussian E))).congr
-      (.of_forall fun x ↦ sub_add_cancel _ _)
-  have hfg : Integrable (fun x ↦ f x - g x) (stdGaussian E) :=
-    .of_bound (hf.continuous.sub hgK.continuous).aestronglyMeasurable (ε / 2)
-      (.of_forall fun x ↦ (Real.norm_eq_abs _).trans_le (hfg' x))
-  have hmean : |∫ y, f y ∂stdGaussian E - ∫ y, g y ∂stdGaussian E| ≤ ε / 2 := by
-    rw [← integral_sub ((hfg.add hgi).congr (.of_forall fun x ↦ sub_add_cancel _ _)) hgi,
-      ← Real.norm_eq_abs]
-    have h := norm_integral_le_of_norm_le_const (μ := stdGaussian E) (C := ε / 2)
-      (.of_forall fun x ↦ (Real.norm_eq_abs _).trans_le (hfg' x))
-    rwa [probReal_univ, mul_one] at h
-  refine ⟨_, hgsub, .of_forall fun x ↦ ?_⟩
-  calc |f x - ∫ y, f y ∂stdGaussian E - (g x - ∫ y, g y ∂stdGaussian E)|
-      = |(f x - g x) - (∫ y, f y ∂stdGaussian E - ∫ y, g y ∂stdGaussian E)| := by congr 1; ring
-    _ ≤ |f x - g x| + |∫ y, f y ∂stdGaussian E - ∫ y, g y ∂stdGaussian E| := abs_sub _ _
-    _ ≤ ε := by linarith [hfg' x]
-
-/-- **Gaussian concentration of Lipschitz functions.** Under the standard Gaussian measure `γ`, a
-`K`-Lipschitz function `f` satisfies `γ {x | ε ≤ |f x - 𝔼 f|} ≤ 2 exp (-2 ε² / (π² K²))` for
-`ε ≥ 0`. -/
-theorem measureReal_stdGaussian_setOf_le_abs_sub_integral_le (hf : LipschitzWith K f) {ε : ℝ}
-    (hε : 0 ≤ ε) :
-    (stdGaussian E).real {x | ε ≤ |f x - ∫ y, f y ∂stdGaussian E|} ≤
-      2 * exp (-2 * ε ^ 2 / (π ^ 2 * K ^ 2)) := by
-  simpa only [TauCeti.Probability.exponent_pi_sq_div_four_proxy, NNReal.coe_pow] using
-    hf.hasSubgaussianMGF_stdGaussian_sub_integral.measureReal_abs_ge_le hε
-
-end LipschitzWith

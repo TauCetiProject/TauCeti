@@ -11,6 +11,8 @@ public import TauCeti.Probability.Distributions.Gaussian.Moments
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.Probability.HasLaw
+import TauCeti.Probability.Distributions.Gaussian.Symmetry
 
 /-!
 # Gaussian integration by parts
@@ -20,7 +22,9 @@ values in a Banach space. For a differentiable test function, it assumes only th
 and the centered first moment are integrable; integrability of the function itself follows.
 Real-valued and standard-normal forms are recorded as corollaries, as is a parametric form that
 integrates the identity against an s-finite measure in an auxiliary variable.
-It also records the identity for affine test functions.
+It also records the identity for affine test functions and the two-variable trigonometric
+interpolation identity (`integral_mul_deriv_rot_gaussianReal`) used in the Gaussian Poincaré and
+logarithmic Sobolev inequalities.
 -/
 
 public section
@@ -151,5 +155,66 @@ theorem integral_mul_comp_affine_gaussianReal {f : ℝ → ℝ} {A B : ℝ}
   rw [key, hder]
   simp_rw [mul_comm (deriv f _) s]
   exact integral_const_mul s _
+
+/-- **Gaussian integration by parts along the trigonometric coupling.** Under the standard planar
+Gaussian law `γ ⊗ γ` (`γ = gaussianReal 0 1`), planar reflection symmetry and Gaussian integration
+by parts rewrite the cross integral against the angular derivative of
+`g (cos θ · p.1 + sin θ · p.2)` in terms of `deriv Φ` and `deriv g`. -/
+theorem integral_mul_deriv_rot_gaussianReal {Φ g : ℝ → ℝ} {A₁ B₁ B₂ : ℝ}
+    (hΦ : ContDiff ℝ 1 Φ) (hA₁ : ∀ x, |Φ x| ≤ A₁) (hB₁ : ∀ x, |deriv Φ x| ≤ B₁)
+    (hg : ContDiff ℝ 1 g) (hB₂ : ∀ x, |deriv g x| ≤ B₂) (θ : ℝ) :
+    ∫ p, Φ p.1 * (deriv g (Real.cos θ * p.1 + Real.sin θ * p.2) *
+        (-Real.sin θ * p.1 + Real.cos θ * p.2))
+        ∂(Measure.prod (gaussianReal 0 1) (gaussianReal 0 1)) =
+      -Real.sin θ * ∫ p, deriv Φ p.1 * deriv g (Real.cos θ * p.1 + Real.sin θ * p.2)
+        ∂(Measure.prod (gaussianReal 0 1) (gaussianReal 0 1)) := by
+  have := hΦ.continuous
+  have := hg.continuous_deriv le_rfl
+  have := hΦ.continuous_deriv le_rfl
+  have hB₂0 : 0 ≤ B₂ := (abs_nonneg _).trans (hB₂ 0)
+  have hmp := measurePreserving_reflection_gaussianReal θ
+  set c := Real.cos θ; set s := Real.sin θ
+  have hrot (p : ℝ × ℝ) : c * (c * p.1 + s * p.2) + s * (s * p.1 - c * p.2) = p.1 := by
+    linear_combination p.1 * Real.cos_sq_add_sin_sq θ
+  -- Reflect `(p.1, p.2) ↦ (c * p.1 + s * p.2, s * p.1 - c * p.2)` and integrate by parts in `q.2`.
+  let H : ℝ × ℝ → ℝ := fun q ↦ Φ (c * q.1 + s * q.2) * (deriv g q.1 * (-q.2))
+  have hHc : Continuous H := by fun_prop
+  have hHint : Integrable H (Measure.prod (gaussianReal 0 1) (gaussianReal 0 1)) :=
+    ((integrable_abs_add_abs_gaussianReal 0 0 1 1).const_mul (A₁ * B₂)).mono'
+      hHc.aestronglyMeasurable <| ae_of_all _ fun q ↦ by
+        simp only [H, Real.norm_eq_abs, abs_mul, abs_neg, mul_assoc]
+        exact mul_le_mul (hA₁ _) (mul_le_mul (hB₂ _) (le_add_of_nonneg_left (abs_nonneg _))
+          (abs_nonneg _) hB₂0) (by positivity) ((abs_nonneg _).trans (hA₁ 0))
+  have hH_refl (p : ℝ × ℝ) :
+      Φ p.1 * (deriv g (c * p.1 + s * p.2) * (-s * p.1 + c * p.2)) =
+        H (c * p.1 + s * p.2, s * p.1 - c * p.2) := by
+    simp only [H, hrot p]; ring
+  have hch1 := hmp.hasLaw.integral_comp hHc.aestronglyMeasurable
+  simp only [Function.comp_def] at hch1
+  simp_rw [hH_refl]
+  rw [hch1, integral_prod _ hHint]
+  have hinner (u : ℝ) :
+      ∫ v, H (u, v) ∂(gaussianReal 0 1) =
+        -s * (deriv g u * ∫ v, deriv Φ (c * u + s * v) ∂(gaussianReal 0 1)) := by
+    have hH_split (v : ℝ) : H (u, v) = -(deriv g u) * (v * Φ (c * u + s * v)) := by
+      simp only [H]; ring
+    simp_rw [hH_split]
+    rw [integral_const_mul, integral_mul_comp_affine_gaussianReal hΦ hA₁ hB₁]; ring
+  simp_rw [hinner, integral_const_mul]; congr 1
+  -- Reflect back so `deriv Φ` is evaluated at `p.1` and `deriv g` at `c * p.1 + s * p.2`.
+  let K : ℝ × ℝ → ℝ := fun q ↦ deriv g q.1 * deriv Φ (c * q.1 + s * q.2)
+  have hKc : Continuous K := by fun_prop
+  have hKint : Integrable K (Measure.prod (gaussianReal 0 1) (gaussianReal 0 1)) :=
+    Integrable.of_bound hKc.aestronglyMeasurable (B₂ * B₁) <| ae_of_all _ fun _ ↦ by
+      rw [Real.norm_eq_abs]
+      simpa only [K, abs_mul] using mul_le_mul (hB₂ _) (hB₁ _) (abs_nonneg _) hB₂0
+  have hK_refl (p : ℝ × ℝ) :
+      K (c * p.1 + s * p.2, s * p.1 - c * p.2) =
+        deriv Φ p.1 * deriv g (c * p.1 + s * p.2) := by
+    simp only [K, hrot p]; ring
+  have hch2 := hmp.hasLaw.integral_comp hKc.aestronglyMeasurable
+  simp only [Function.comp_def, hK_refl] at hch2
+  rw [hch2, integral_prod _ hKint]
+  exact (integral_congr_ae (.of_forall fun _ ↦ integral_const_mul _ _)).symm
 
 end TauCeti.Probability

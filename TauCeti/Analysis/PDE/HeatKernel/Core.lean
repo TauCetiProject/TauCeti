@@ -95,7 +95,7 @@ private theorem mem_closure_graph_domRestrict_range_ambientToLp (hp : p ≠ ∞)
         (LinearMap.range (TestFunction.ambientToLp ℝ p (volume : Measure E) :
           𝓓((⊤ : Opens E), F) →L[ℝ] Lp F p (volume : Measure E)).toLinearMap)).graph) := by
   have hD := range_ambientToLp_le_domain_generator_heatSemigroup (E := E) (F := F) hp
-  obtain ⟨g, hg, -, hlim⟩ :=
+  obtain ⟨g, hg, -, hlim, -, -⟩ :=
     exists_contDiff_hasCompactSupport_approximation hp (m := ⊤) hu 2 (by simp) hmem
   let φ (n : ℕ) : 𝓓((⊤ : Opens E), F) := ⟨g n, (hg n).1, (hg n).2, by simp⟩
   have hφ (n : ℕ) : TestFunction.ambientToLp ℝ p volume (φ n) =ᵐ[volume] g n := by
