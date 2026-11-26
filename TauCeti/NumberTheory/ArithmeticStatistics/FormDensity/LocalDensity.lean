@@ -9,6 +9,8 @@ public import Mathlib.Basic.Real.Basic
 public import TauCeti.NumberTheory.ArithmeticStatistics.FormDensity.Basic
 public import TauCeti.NumberTheory.ArithmeticStatistics.FormDensity.PrimitiveVectors
 
+import TauCeti.LinearAlgebra.Unimodular
+
 /-!
 # Local densities of forms modulo `Q`
 
@@ -69,10 +71,8 @@ theorem primitiveZeros_smul_of_isUnit {u : R} (hu : IsUnit u) (a : Monomials σ 
 form. -/
 theorem comp_mem_primitiveZeros_iff (e : R ≃+* S) {a : Monomials σ d → R} {b : σ → R} :
     ⇑e ∘ b ∈ primitiveZeros (⇑e ∘ a) ↔ b ∈ primitiveZeros a := by
-  have h := eval_form_comp (e : R →+* S) b a
-  rw [RingEquiv.coe_toRingHom] at h
-  rw [mem_primitiveZeros, mem_primitiveZeros, comp_mem_primitiveVectors_iff, h,
-    map_eq_zero_iff e e.injective]
+  have h : eval (e ∘ b) (form (e ∘ a)) = e (eval b (form a)) := eval_form_comp (e : R →+* S) b a
+  simp [h]
 
 /-- Over a product ring, the primitive zeros of `f_a` are the pairs of primitive zeros of its two
 components. -/
@@ -80,12 +80,11 @@ theorem mem_primitiveZeros_prod_iff {a : Monomials σ d → R × S} {b : σ → 
     b ∈ primitiveZeros a ↔
       Prod.fst ∘ b ∈ primitiveZeros (Prod.fst ∘ a) ∧
         Prod.snd ∘ b ∈ primitiveZeros (Prod.snd ∘ a) := by
-  have h₁ := eval_form_comp (RingHom.fst R S) b a
-  have h₂ := eval_form_comp (RingHom.snd R S) b a
-  rw [RingHom.coe_fst] at h₁
-  rw [RingHom.coe_snd] at h₂
-  rw [mem_primitiveZeros, mem_primitiveZeros, mem_primitiveZeros, mem_primitiveVectors_prod_iff,
-    h₁, h₂, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero, and_and_and_comm]
+  have h₁ : eval (Prod.fst ∘ b) (form (Prod.fst ∘ a)) = (eval b (form a)).1 :=
+    eval_form_comp (RingHom.fst R S) b a
+  have h₂ : eval (Prod.snd ∘ b) (form (Prod.snd ∘ a)) = (eval b (form a)).2 :=
+    eval_form_comp (RingHom.snd R S) b a
+  simp [TauCeti.Module.isUnimodular_pi_prod_iff, h₁, h₂, Prod.ext_iff, and_and_and_comm]
 
 /-- Ring isomorphisms preserve the number of primitive zeros. -/
 theorem card_primitiveZeros_comp (e : R ≃+* S) (a : Monomials σ d → R) :
@@ -112,6 +111,11 @@ theorem localDensity_def (a : Monomials (Fin (n + 1)) d → R) :
     localDensity a = #(primitiveZeros a) / (Fintype.card R : ℝ) ^ n :=
   (rfl)
 
+/-- The normalizing factor `(#R) ^ n` of the local density is positive. -/
+private theorem card_pow_pos : (0 : ℝ) < (Fintype.card R : ℝ) ^ n := by
+  have := Fintype.card_pos (α := R)
+  positivity
+
 theorem localDensity_nonneg (a : Monomials (Fin (n + 1)) d → R) : 0 ≤ localDensity a := by
   rw [localDensity_def]
   positivity
@@ -119,19 +123,13 @@ theorem localDensity_nonneg (a : Monomials (Fin (n + 1)) d → R) : 0 ≤ localD
 /-- The local density is positive exactly when the form has a primitive zero. -/
 theorem localDensity_pos_iff {a : Monomials (Fin (n + 1)) d → R} :
     0 < localDensity a ↔ ∃ b ∈ primitiveVectors (Fin (n + 1)) R, eval b (form a) = 0 := by
-  have hR : (0 : ℝ) < (Fintype.card R : ℝ) ^ n := by
-    have := Fintype.card_pos (α := R)
-    positivity
-  rw [localDensity_def, div_pos_iff_of_pos_right hR, Nat.cast_pos, card_pos]
+  rw [localDensity_def, div_pos_iff_of_pos_right card_pow_pos, Nat.cast_pos, card_pos]
   simp [Finset.Nonempty]
 
 /-- The local density is at most `#R`: there are at most `(#R) ^ (n + 1)` zeros. -/
 theorem localDensity_le_card (a : Monomials (Fin (n + 1)) d → R) :
     localDensity a ≤ Fintype.card R := by
-  have hR : (0 : ℝ) < (Fintype.card R : ℝ) ^ n := by
-    have := Fintype.card_pos (α := R)
-    positivity
-  rw [localDensity_def, div_le_iff₀ hR, ← pow_succ']
+  rw [localDensity_def, div_le_iff₀ card_pow_pos, ← pow_succ']
   have h := card_le_univ (primitiveZeros a)
   rw [Fintype.card_fun, Fintype.card_fin] at h
   exact_mod_cast h

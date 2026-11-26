@@ -155,6 +155,7 @@ unweighted monomials. -/
 def veronese (x : σ → R) (m : Monomials σ d) : R :=
   ∏ i, x i ^ (m : σ →₀ ℕ) i
 
+@[simp]
 theorem veronese_apply (x : σ → R) (m : Monomials σ d) :
     veronese x m = ∏ i, x i ^ (m : σ →₀ ℕ) i :=
   (rfl)
@@ -183,7 +184,7 @@ theorem veronese_comp (φ : R →+* S) (x : σ → R) :
 point. -/
 theorem eval_form_comp (φ : R →+* S) (x : σ → R) (a : Monomials σ d → R) :
     eval (φ ∘ x) (form (φ ∘ a)) = φ (eval x (form a)) := by
-  simp [eval_form, veronese_comp, dotProduct, map_sum]
+  simp [eval_form, dotProduct, map_sum]
 
 end CommSemiring
 
