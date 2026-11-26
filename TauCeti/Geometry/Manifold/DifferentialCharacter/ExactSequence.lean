@@ -6,12 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialCharacter.Basic
-public import TauCeti.Algebra.Homology.Kronecker
-public import TauCeti.Geometry.Manifold.SmoothSingular.Smoothing
+public import TauCeti.Geometry.Manifold.SmoothSingular.SingularCohomology
 public import Mathlib.Algebra.Exact.Basic
-public import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.Algebra.Category.Grp.Injective
-import Mathlib.Algebra.Category.ModuleCat.Injective
 
 /-!
 # The curvature exact sequence of differential characters
@@ -185,49 +182,6 @@ section SingularCohomology
 
 variable [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
 
-variable (I M k) in
-/-- The **universal coefficient theorem for `ℝ/ℤ`-coefficients** on a smooth manifold:
-`Hᵏ(M; ℝ/ℤ) ≃ Hom(H_k(M; ℤ), ℝ/ℤ)`, with homology the smooth singular homology. It is the smoothing
-isomorphism from singular cohomology to the cohomology of the smooth singular cochains, followed by
-the Kronecker pairing, which is an equivalence because `ℝ/ℤ` is divisible, hence injective. -/
-def singularCohomologyUnitAddCircleAddEquiv :
-    (TopCat.of M).singularCohomology (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ UnitAddCircle) k ≃+
-      (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).homology k →+
-        UnitAddCircle) :=
-  -- `ℝ/ℤ` is divisible, hence an injective `ℤ`-module.
-  haveI := (Module.Baer.of_divisible UnitAddCircle).injective
-  haveI := Module.injective_object_of_injective_module ℤ UnitAddCircle
-  (smoothSingularCohomologyIso I M (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ UnitAddCircle)
-      k).toLinearEquiv.toAddEquiv.trans <|
-    (ChainComplex.kroneckerEquiv ℤ _ (ModuleCat.of ℤ UnitAddCircle) k).toAddEquiv.trans <|
-      ModuleCat.homAddEquiv.trans
-        { toFun f := f.toAddMonoidHom
-          invFun f :=
-            { toFun := f
-              map_add' := map_add f
-              map_smul' n x := by
-                simpa only [Int.cast_id, RingHom.id_apply] using map_intCast_smul f ℤ ℤ n x }
-          left_inv _ := rfl
-          right_inv _ := rfl
-          map_add' _ _ := rfl }
-
-/-- The universal coefficient equivalence evaluates a singular cohomology class on a smooth
-singular homology class by the Kronecker pairing of its smooth singular representative. -/
-theorem singularCohomologyUnitAddCircleAddEquiv_apply
-    (x : (TopCat.of M).singularCohomology (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ UnitAddCircle) k)
-    (y : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).homology k) :
-    singularCohomologyUnitAddCircleAddEquiv I M k x y =
-      (ChainComplex.kronecker ℤ _ (ModuleCat.of ℤ UnitAddCircle) k
-        ((smoothSingularCohomologyIso I M (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ UnitAddCircle)
-          k).hom x)).hom y := by
-  have := (Module.Baer.of_divisible UnitAddCircle).injective
-  have := Module.injective_object_of_injective_module ℤ UnitAddCircle
-  simp only [singularCohomologyUnitAddCircleAddEquiv, AddEquiv.trans_apply,
-    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply]
-  rw [ChainComplex.kroneckerEquiv_apply, Iso.toLinearEquiv_apply]
-  -- What remains is the passage from a morphism of `ℤ`-modules to its underlying homomorphism.
-  rfl
-
 namespace differentialCharacters
 
 variable (I) in
@@ -250,6 +204,13 @@ theorem ofSingularCohomology_apply
       singularCohomologyUnitAddCircleAddEquiv I M k x
         (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).homologyπ k z) :=
   (rfl)
+
+/-- Flat characters of singular cohomology classes have curvature zero. -/
+@[simp]
+theorem curvature_ofSingularCohomology [BoundarylessManifold I M]
+    (x : (TopCat.of M).singularCohomology (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ UnitAddCircle) k) :
+    curvature (ofSingularCohomology I x) = 0 :=
+  curvature_ofHomology _
 
 /-- **Exactness at `Hᵏ(M; ℝ/ℤ)`.** The flat character map from singular cohomology with
 coefficients in `ℝ/ℤ` is injective. -/

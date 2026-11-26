@@ -114,58 +114,6 @@ theorem differentialCharacters.ext {k : ℕ} {χ ψ : differentialCharacters I M
           →+ UnitAddCircle) z) : χ = ψ :=
   Subtype.ext (AddMonoidHom.ext h)
 
-/-- The smooth real `k`-forms with **integral periods**: those whose integral over every smooth
-singular integral `k`-cycle is an integer. The curvatures of differential characters of degree `k`
-are exactly the forms with integral periods of degree `k + 1`
-(`TauCeti.differentialCharacters.range_curvature`). -/
-def integralPeriodForms (k : ℕ) : AddSubgroup (SmoothForm I M ℝ k) where
-  carrier := {φ | ∀ z : ((smoothSingularSubcomplex I M : SSet).chainComplex
-      (ModuleCat.of ℤ ℤ)).cycles k, ∃ n : ℤ, (integrationCochain φ.val).hom
-        (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles k z) = n}
-  zero_mem' _ := ⟨0, by simp⟩
-  add_mem' := by
-    rintro φ ψ hφ hψ z
-    obtain ⟨m, hm⟩ := hφ z
-    obtain ⟨n, hn⟩ := hψ z
-    refine ⟨m + n, ?_⟩
-    rw [SmoothForm.integrationCochain_add]
-    simp [hm, hn]
-  neg_mem' := by
-    rintro φ hφ z
-    obtain ⟨n, hn⟩ := hφ z
-    exact ⟨-n, by simp [hn]⟩
-
-variable {I M} in
-/-- A form has integral periods when its integral over every smooth singular integral cycle is an
-integer. -/
-theorem mem_integralPeriodForms_iff {k : ℕ} {φ : SmoothForm I M ℝ k} :
-    φ ∈ integralPeriodForms I M k ↔
-      ∀ z : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).cycles k,
-        ∃ n : ℤ, (integrationCochain φ.val).hom
-          (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles k z) =
-            n :=
-  Iff.rfl
-
-variable {I M} in
-/-- **Forms with integral periods are closed.** On a boundaryless manifold, by Stokes' theorem the
-integral of `dφ` over every smooth singular simplex is the integral of `φ` over its boundary
-cycle, an integer, so the continuous form `dφ` vanishes. -/
-theorem mem_closedForms_of_mem_integralPeriodForms [IsManifold I ∞ M] [BoundarylessManifold I M]
-    {k : ℕ} {φ : SmoothForm I M ℝ k} (hφ : φ ∈ integralPeriodForms I M k) :
-    φ ∈ closedForms I M k := by
-  rw [mem_closedForms]
-  have hd : IsSmoothForm I 0 (mextDeriv φ.val) := by
-    simpa only [mextDerivₗ_apply] using
-      (mextDerivₗ I k φ).isSmoothForm.of_le (m := 0) (by simp)
-  refine RoughForm.eq_zero_of_forall_integral_eq_intCast k.succ_ne_zero hd fun σ ↦ ?_
-  let c := ((smoothSingularSubcomplex I M : SSet).ιChainComplex (R := ModuleCat.of ℤ ℤ) σ).hom 1
-  obtain ⟨n, hn⟩ := hφ (((smoothSingularSubcomplex I M : SSet).chainComplex
-    (ModuleCat.of ℤ ℤ)).toCycles (k + 1) k c)
-  rw [moduleCat_iCycles_toCycles_apply,
-    integrationCochain_d_apply (φ.isSmoothForm.of_le (by simp)),
-    integrationCochain_ιChainComplex, one_smul] at hn
-  exact ⟨n, hn⟩
-
 end Characters
 
 namespace differentialCharacters
@@ -221,7 +169,7 @@ theorem curvature_eq_of_forall {χ : differentialCharacters I M k}
 /-- **Integral periods.** The integral of the curvature of a differential character over every
 smooth singular integral `(k + 1)`-cycle is an integer. -/
 theorem curvature_mem_integralPeriodForms (χ : differentialCharacters I M k) :
-    curvature χ ∈ integralPeriodForms I M (k + 1) := fun z ↦ by
+    curvature χ ∈ integralPeriodForms I M (k + 1) := mem_integralPeriodForms_iff.2 fun z ↦ by
   have h := apply_toCycles χ
     (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).iCycles (k + 1) z)
   -- The boundary of a cycle vanishes.
