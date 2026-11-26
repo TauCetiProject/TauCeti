@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Kunneth.Sphere
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
 import Mathlib.Analysis.Quaternion
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
-import TauCeti.Topology.MappingSpace.Sphere.Group
+import TauCeti.Topology.MappingSpace.FreeLoop
 
 /-!
 # The homology of the free loop space of the three-sphere

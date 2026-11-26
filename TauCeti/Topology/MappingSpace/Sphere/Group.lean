@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.MappingSpace.FreeLoop
 public import TauCeti.Topology.MappingSpace.Group
 public import TauCeti.Topology.MappingSpace.Sphere.Basic
 
@@ -19,18 +18,11 @@ topological group `G` the fibration is trivial, `G × Map_*(S^k, G) ≃ₜ Map(S
 with the iterated loop space, `G × Ω^[k] G ≃ₜ Map(S^k, G)`, in particular
 `G × Ω²G ≃ₜ Map(S², G)`.
 
-For the circle this reads `G × ΩG ≃ₜ C(S¹, G)`: the free loop space of a topological group is the
-product of the group and its based loop space at `1`
-(`TauCeti.circleMapGroupHomeomorphLoopSpace`), through the identification of loops based at
-`1 ∈ S¹` with paths (`TauCeti.basedMapCircleOneHomeomorphPath`).
-
 ## Main declarations
 
 * `TauCeti.sphereGroupHomeomorphIteratedLoopSpace`: `G × Ω^[k] G ≃ₜ Map(S^k, G)` for `k ≥ 1`,
   sending `(g, γ)` to the product of the constant sphere `g` and the based sphere map of `γ`, with
   the characteristic lemmas `_apply`, `_symm_fst` and `_symm_snd`.
-* `TauCeti.circleMapGroupHomeomorphLoopSpace`: `G × ΩG ≃ₜ C(S¹, G)`, sending `(g, γ)` to the loop
-  `t ↦ g γ(t)`, with the characteristic lemmas `_apply`, `_symm_fst` and `_symm_snd_apply`.
 
 ## References
 
@@ -93,40 +85,5 @@ theorem sphereGroupHomeomorphIteratedLoopSpace_symm_snd
   rw [sphereGroupHomeomorphIteratedLoopSpace, Homeomorph.symm_trans_apply]
   -- the loop coordinate is the second component of the inverse of the product decomposition
   rfl
-
-section FreeLoop
-
-variable (G : Type*) [TopologicalSpace G] [Group G] [IsTopologicalGroup G]
-
-/-- **The free loop space of a topological group is a product**, `G × ΩG ≃ₜ C(S¹, G)`: the pair
-`(g, γ)` of a group element and a loop at `1` goes to the free loop `t ↦ g γ(t)`, read on the
-circle through `TauCeti.basedMapCircleOneHomeomorphPath`. The inverse records the value at `1 ∈ S¹`
-and translates the loop back to `1`. -/
-def circleMapGroupHomeomorphLoopSpace : G × Path (1 : G) 1 ≃ₜ C(Circle, G) :=
-  (Homeomorph.prodCongr (Homeomorph.refl G) (basedMapCircleOneHomeomorphPath (1 : G)).symm).trans
-    (mappingSpaceGroupHomeomorph 1)
-
-variable {G}
-
-/-- The free loop of `(g, γ)` at the image `unitToCircle t` of a time `t` is `g γ(t)`. -/
-@[simp]
-theorem circleMapGroupHomeomorphLoopSpace_apply_unitToCircle (g : G) (γ : Path (1 : G) 1)
-    (t : unitInterval) :
-    circleMapGroupHomeomorphLoopSpace G (g, γ) (unitToCircle t) = g * γ t := by
-  simp [circleMapGroupHomeomorphLoopSpace]
-
-/-- The group coordinate of a free loop in `G` is its value at `1 ∈ S¹`. -/
-@[simp]
-theorem circleMapGroupHomeomorphLoopSpace_symm_fst (f : C(Circle, G)) :
-    ((circleMapGroupHomeomorphLoopSpace G).symm f).1 = f 1 :=
-  mappingSpaceGroupHomeomorph_symm_fst 1 f
-
-/-- The loop coordinate of a free loop `f` in `G` is the loop `t ↦ f(1)⁻¹ f(t)` at `1`. -/
-@[simp]
-theorem circleMapGroupHomeomorphLoopSpace_symm_snd_apply (f : C(Circle, G)) (t : unitInterval) :
-    ((circleMapGroupHomeomorphLoopSpace G).symm f).2 t = (f 1)⁻¹ * f (unitToCircle t) := by
-  simp [circleMapGroupHomeomorphLoopSpace]
-
-end FreeLoop
 
 end TauCeti
