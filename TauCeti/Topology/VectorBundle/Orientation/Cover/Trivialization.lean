@@ -144,7 +144,7 @@ theorem coe_orientationCharacter_fromPath_trans (γ : Path b₀ b₁) (γ' : Pat
         Orientation.map ι M (e.mapOrientation ι hb₀ o) = e.mapOrientation ι hb₀ o' := by
     rw [← mapOrientation_orientationTransport_trans hι e e' γ γ' hγ hγ' hb₀,
       (e.mapOrientation ι hb₀).injective.eq_iff]
-  refine coe_units_eq_sign_of_eq_one_iff (LinearEquiv.coe_det M ▸ (LinearEquiv.det M).ne_zero) ?_
+  refine coe_units_eq_sign_of_eq_one_iff M.isUnit_det'.ne_zero ?_
   rw [orientationCharacter_fromPath_eq_one_iff hι _ o, key, Orientation.map_eq_iff_det_pos _ _ hι]
 
 end TauCeti.VectorBundleOrientationCover

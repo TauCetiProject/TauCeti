@@ -168,9 +168,8 @@ namespace ContinuousLinearEquiv
 /-- A continuous linear automorphism has nonzero determinant. -/
 theorem det_coe_ne_zero {R M : Type*} [CommRing R] [Nontrivial R] [TopologicalSpace M]
     [AddCommGroup M] [Module R M] (A : M ≃L[R] M) : (A : M →L[R] M).det ≠ 0 := by
-  rw [ContinuousLinearMap.det, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
-    ← LinearEquiv.coe_det]
-  exact Units.ne_zero _
+  rw [ContinuousLinearMap.det, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+  exact A.toLinearEquiv.isUnit_det'.ne_zero
 
 section Relative
 
