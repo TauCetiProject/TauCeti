@@ -530,8 +530,8 @@ theorem commutatorElement_h_h_inv_of_add_eq_one {i j k : ι} (hij : i ≠ j) (hi
 /-- Over a commutative ring, the images in `GL ι R` of any two diagonal elements commute. -/
 theorem toGL_commutatorElement_h_h [Fintype ι] [DecidableEq ι] {i j k l : ι} (hij : i ≠ j)
     (hkl : k ≠ l) (u v : Rˣ) : toGL ⁅h hij u, h hkl v⁆ = 1 := by
-  rw [map_commutatorElement, toGL_h, toGL_h, ← map_commutatorElement,
-    commutatorElement_eq_one_iff_commute.mpr (Commute.all _ _), map_one]
+  rw [← MonoidHom.mem_ker, toGL.commutatorElement_mem_ker_iff, toGL_h, toGL_h]
+  exact (Commute.all _ _).map _
 
 end IndexedSteinbergGroup
 
@@ -548,10 +548,10 @@ variable {R : Type*} [CommRing R]
 theorem commutatorElement_h_h_mem_ker {i j k l : ℕ} (hij : i ≠ j) (hkl : k ≠ l) (u v : Rˣ) :
     ⁅h hij u, h hkl v⁆ ∈ (toStableGL R).ker := by
   set n := max (max i j) (max k l) + 1
-  rw [MonoidHom.mem_ker, map_commutatorElement, toStableGL_h hij u (n := n) (by omega) (by omega),
-    toStableGL_h hkl v (n := n) (by omega) (by omega), ← map_commutatorElement,
-    ← map_commutatorElement, commutatorElement_eq_one_iff_commute.mpr (Commute.all _ _), map_one,
-    map_one]
+  rw [(toStableGL R).commutatorElement_mem_ker_iff,
+    toStableGL_h hij u (n := n) (by omega) (by omega),
+    toStableGL_h hkl v (n := n) (by omega) (by omega)]
+  exact ((Commute.all _ _).map _).map _
 
 /-- Over a commutative ring, the commutator of two diagonal elements of `St(R)` is central. -/
 theorem commutatorElement_h_h_mem_center {i j k l : ℕ} (hij : i ≠ j) (hkl : k ≠ l) (u v : Rˣ) :
